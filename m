@@ -1,192 +1,665 @@
-From: Tsutomu Itoh <t-itoh@jp.fujitsu.com>
-Subject: Re: [3.0-rc1] kernel BUG at fs/btrfs/relocation.c:4285!
-Date: Tue, 31 May 2011 15:58:00 +0900
-Message-ID: <4DE49178.2070403@jp.fujitsu.com>
-References: <4DE43607.2090105@jp.fujitsu.com> <1306804322-sup-3529@shiny> <4DE46F33.6040706@jp.fujitsu.com> <4DE4870E.4020307@cn.fujitsu.com>
+From: Adrian Hunter <adrian.hunter@linux.intel.com>
+Subject: btrfs hang on brd
+Date: Tue, 31 May 2011 10:03:12 +0300
+Message-ID: <4DE492B0.9020302@linux.intel.com>
 Mime-Version: 1.0
-Content-Type: multipart/mixed;
- boundary="------------000208040006040401020901"
-Cc: Chris Mason <chris.mason@oracle.com>,
-	Linux Btrfs <linux-btrfs@vger.kernel.org>
-To: liubo <liubo2009@cn.fujitsu.com>
+Content-Type: text/plain; charset=ISO-8859-1; format=flowed
+Cc: linux-btrfs@vger.kernel.org
+To: chris.mason@oracle.com
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <4DE4870E.4020307@cn.fujitsu.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-This is a multi-part message in MIME format.
---------------000208040006040401020901
-Content-Type: text/plain; charset=UTF-8
-Content-Transfer-Encoding: 7bit
+Hi
 
-(2011/05/31 15:13), liubo wrote:
-> On 05/31/2011 12:31 PM, Tsutomu Itoh wrote:
->> (2011/05/31 10:13), Chris Mason wrote:
->>> Excerpts from Tsutomu Itoh's message of 2011-05-30 20:27:51 -0400:
->>>> The panic occurred when 'btrfs fi bal /test5' was executed.
->>>>
->>>> /test5 is as follows:
->>>> # mount -o space_cache,compress=lzo /dev/sdc3 /test5
->>>> #
->>>> # btrfs fi sh /dev/sdc3
->>>> Label: none  uuid: 38ec48b2-a64b-4225-8cc6-5eb08024dc64
->>>>         Total devices 5 FS bytes used 7.87MB
->>>>         devid    1 size 10.00GB used 2.02GB path /dev/sdc3
->>>>         devid    2 size 15.01GB used 3.00GB path /dev/sdc5
->>>>         devid    3 size 15.01GB used 3.00GB path /dev/sdc6
->>>>         devid    4 size 20.01GB used 2.01GB path /dev/sdc7
->>>>         devid    5 size 10.00GB used 2.01GB path /dev/sdc8
->>>>
->>>> Btrfs v0.19-50-ge6bd18d
->>>> # btrfs fi df /test5
->>>> Data, RAID0: total=10.00GB, used=3.52MB
->>>> Data: total=8.00MB, used=1.60MB
->>>> System, RAID1: total=8.00MB, used=4.00KB
->>>> System: total=4.00MB, used=0.00
->>>> Metadata, RAID1: total=1.00GB, used=216.00KB
->>>> Metadata: total=8.00MB, used=0.00
->>> The oops is happening as we write inode cache during a commit during thekk
->>> balance.  I did run a number of balances on the inode cache code, do you
->>> have a test script that sets up the filesystem to recreate this?
->>
->> Yes, I have.
->> In my test, the panic is done at frequency once every about ten times.
->>
->> I attached the test script to this mail. (though it is a dirty test script
->> that scrapes up script...)
->>
-> 
-> I'm getting it to run, hope we can get something valuable. ;)
+I seem to be able to get btrfs reproducibly to
+produce warnings and finally hang when running
+a stress test on a ramdisk.
 
-I executed again, the write error occurred though the panic have not occurred.
+Testing was done using the "integration-test"
+branch of btrfs-unstable.  Note that I also tested
+v2.6.39 and "integration-test" took much longer to
+hang i.e. it is an improvement
 
-See below:
-=============================
-...
+The test script and stack dumps are below.
 
-+ sleep 30
-+ ./fsync3.sh
-Tue May 31 13:50:57 JST 2011
+Is this a valid test?
 
-+ btrfs fi bal /test5
-+ wait
-write error: Inappropriate ioctl for device
-cmp: EOF on /test5/_de100.t
+Is it worth me investigating these?
 
-...
-...
+Regards
+Adrian
 
-$ ls -l /test5/_de100*
--rw-r--r-- 1 root root 3000000000 May 31 13:56 /test5/_de100.f
--rw-r--r-- 1 root root  607789056 May 31 13:56 /test5/_de100.t
 
-write error occurred by writing in /test5/_de100.t or mistake of
-error number? (it should be ENOSPC??)
-(operation: copy from /test5/_de100.f to /test5/_de100.t)
-=============================
 
-And, in my environment, it seems to be easy for the script attached to
-this mail to do the panic.
+Test
+----
 
-> 
-> thanks,
-> liubo
-> 
->> Thanks,
->> Tsutomu
->>
->>
->>> -chris
->>>
+#!/bin/sh
 
---------------000208040006040401020901
-Content-Type: application/gzip;
- name="RT2.tar.gz"
-Content-Transfer-Encoding: base64
-Content-Disposition: attachment;
- filename="RT2.tar.gz"
+sudo modprobe brd rd_size=262144
 
-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
-h2ziAHgAAA==
---------------000208040006040401020901--
+sudo umount /mnt/test/ 2> /dev/null
 
+echo 'mkfs.btrfs /dev/ram0'
+
+sudo mkfs.btrfs /dev/ram0
+
+sudo mkdir -p /mnt/test
+
+echo 'mount -t btrfs /dev/ram0 /mnt/test'
+
+sudo mount -t btrfs /dev/ram0 /mnt/test
+
+sudo mkdir -p /mnt/test/test
+
+sudo chown $USER /mnt/test/test
+sudo chgrp $USER /mnt/test/test
+
+sudo umount /mnt/test
+
+full=0
+i=0
+while true; do
+	sudo mount -t btrfs /dev/ram0 /mnt/test
+
+	if df | grep ram0 | grep 100% > /dev/null; then
+		full=`expr $full \+ 1`
+		if test $full -gt 6;then
+			rm -rf /mnt/test/test/*
+			full=0
+		fi
+	else
+		full=0
+	fi
+
+	fsstress -c -r -d /mnt/test/test -p 3 -n 1000 -l 10
+
+	sudo umount /mnt/test
+
+	i=`expr $i \+ 1`
+	echo $i
+done
+
+
+
+Stack dumps for warnings
+------------------------
+
+
+[ 7481.520750] WARNING: at fs/btrfs/extent-tree.c:5648 
+btrfs_alloc_free_block+0x14e/0x357 [btrfs]()
+[ 7481.520753] Hardware name: XPS 8300
+[ 7481.520754] Modules linked in: tcp_lp tun btrfs zlib_deflate 
+libcrc32c brd fuse cpufreq_ondemand acpi_cpufreq freq_table mperf 
+ip6t_REJECT nf_conntrack_ipv6 nf_defrag_ipv6 ip6table_filter ip6_tables 
+ipv6 uinput snd_hda_codec_hdmi snd_hda_codec_realtek snd_hda_intel 
+snd_hda_codec broadcom tg3 snd_hwdep snd_seq snd_seq_device snd_pcm 
+joydev pcspkr iTCO_wdt iTCO_vendor_support dcdbas serio_raw i2c_i801 
+snd_timer snd microcode soundcore snd_page_alloc usb_storage i915 
+drm_kms_helper drm i2c_algo_bit i2c_core video [last unloaded: 
+scsi_wait_scan]
+[ 7481.520805] Pid: 3980, comm: btrfs-endio-wri Not tainted 
+2.6.39-integration-test-20110526-01+ #2
+[ 7481.520808] Call Trace:
+[ 7481.520818]  [<ffffffff8104df7a>] warn_slowpath_common+0x85/0x9d
+[ 7481.520824]  [<ffffffff8104dfac>] warn_slowpath_null+0x1a/0x1c
+[ 7481.520838]  [<ffffffffa02dfca8>] btrfs_alloc_free_block+0x14e/0x357 
+[btrfs]
+[ 7481.520865]  [<ffffffffa030a073>] ? 
+map_private_extent_buffer+0xb1/0xd5 [btrfs]
+[ 7481.520875]  [<ffffffffa02d2987>] __btrfs_cow_block+0x102/0x31e [btrfs]
+[ 7481.520883]  [<ffffffffa02d1300>] ? btrfs_set_item_key+0x3/0x20 [btrfs]
+[ 7481.520892]  [<ffffffffa02d2ca7>] btrfs_cow_block+0x104/0x14d [btrfs]
+[ 7481.520910]  [<ffffffffa02d5a87>] btrfs_search_slot+0x162/0x502 [btrfs]
+[ 7481.520925]  [<ffffffffa02e3e66>] btrfs_lookup_file_extent+0x3c/0x3e 
+[btrfs]
+[ 7481.520936]  [<ffffffffa02d2124>] ? btrfs_alloc_path+0x1a/0x2b [btrfs]
+[ 7481.520955]  [<ffffffffa02f9319>] btrfs_drop_extents+0x10e/0x731 [btrfs]
+[ 7481.520960]  [<ffffffff8103cc9e>] ? need_resched+0x23/0x2d
+[ 7481.520966]  [<ffffffff81474da6>] ? _cond_resched+0xe/0x22
+[ 7481.520972]  [<ffffffff8110d58c>] ? 
+slab_pre_alloc_hook.clone.32+0x2d/0x31
+[ 7481.520977]  [<ffffffff8110e0c7>] ? kmem_cache_alloc+0x29/0xf7
+[ 7481.521002]  [<ffffffffa02f09fa>] 
+insert_reserved_file_extent.clone.34+0x70/0x1fc [btrfs]
+[ 7481.521027]  [<ffffffffa03071c9>] ? lock_extent_bits+0x5e/0xa8 [btrfs]
+[ 7481.521044]  [<ffffffffa02f362c>] 
+btrfs_endio_direct_write+0x171/0x29a [btrfs]
+[ 7481.521060]  [<ffffffffa02e6afc>] ? end_workqueue_fn+0xf6/0x10e [btrfs]
+[ 7481.521065]  [<ffffffff81141934>] bio_endio+0x2d/0x2f
+[ 7481.521087]  [<ffffffffa02e6b07>] end_workqueue_fn+0x101/0x10e [btrfs]
+[ 7481.521101]  [<ffffffffa0310951>] worker_loop+0x193/0x4ca [btrfs]
+[ 7481.521116]  [<ffffffffa03107be>] ? btrfs_queue_worker+0x214/0x214 
+[btrfs]
+[ 7481.521119]  [<ffffffff81068dce>] kthread+0x82/0x8a
+[ 7481.521124]  [<ffffffff8147db64>] kernel_thread_helper+0x4/0x10
+[ 7481.521136]  [<ffffffff81068d4c>] ? kthread_worker_fn+0x14b/0x14b
+[ 7481.521141]  [<ffffffff8147db60>] ? gs_change+0x13/0x13
+[ 7481.521144] ---[ end trace abb147a5624a0a24 ]---
+[ 7481.521161] ------------[ cut here ]------------
+[ 7481.521176] WARNING: at fs/btrfs/extent-tree.c:5648 
+btrfs_alloc_free_block+0x14e/0x357 [btrfs]()
+[ 7481.521178] Hardware name: XPS 8300
+[ 7481.521180] Modules linked in: tcp_lp tun btrfs zlib_deflate 
+libcrc32c brd fuse cpufreq_ondemand acpi_cpufreq freq_table mperf 
+ip6t_REJECT nf_conntrack_ipv6 nf_defrag_ipv6 ip6table_filter ip6_tables 
+ipv6 uinput snd_hda_codec_hdmi snd_hda_codec_realtek snd_hda_intel 
+snd_hda_codec broadcom tg3 snd_hwdep snd_seq snd_seq_device snd_pcm 
+joydev pcspkr iTCO_wdt iTCO_vendor_support dcdbas serio_raw i2c_i801 
+snd_timer snd microcode soundcore snd_page_alloc usb_storage i915 
+drm_kms_helper drm i2c_algo_bit i2c_core video [last unloaded: 
+scsi_wait_scan]
+[ 7481.521237] Pid: 3980, comm: btrfs-endio-wri Tainted: G        W 
+2.6.39-integration-test-20110526-01+ #2
+[ 7481.521240] Call Trace:
+[ 7481.521245]  [<ffffffff8104df7a>] warn_slowpath_common+0x85/0x9d
+[ 7481.521250]  [<ffffffff8104dfac>] warn_slowpath_null+0x1a/0x1c
+[ 7481.521288]  [<ffffffffa02dfca8>] btrfs_alloc_free_block+0x14e/0x357 
+[btrfs]
+[ 7481.521303]  [<ffffffffa030a073>] ? 
+map_private_extent_buffer+0xb1/0xd5 [btrfs]
+[ 7481.521313]  [<ffffffffa02d2987>] __btrfs_cow_block+0x102/0x31e [btrfs]
+[ 7481.521322]  [<ffffffffa02d1300>] ? btrfs_set_item_key+0x3/0x20 [btrfs]
+[ 7481.521341]  [<ffffffffa02d2ca7>] btrfs_cow_block+0x104/0x14d [btrfs]
+[ 7481.521353]  [<ffffffffa02d5a87>] btrfs_search_slot+0x162/0x502 [btrfs]
+[ 7481.521378]  [<ffffffffa02e3e66>] btrfs_lookup_file_extent+0x3c/0x3e 
+[btrfs]
+[ 7481.521388]  [<ffffffffa02d2124>] ? btrfs_alloc_path+0x1a/0x2b [btrfs]
+[ 7481.521405]  [<ffffffffa02f9319>] btrfs_drop_extents+0x10e/0x731 [btrfs]
+[ 7481.521410]  [<ffffffff8103cc9e>] ? need_resched+0x23/0x2d
+[ 7481.521415]  [<ffffffff81474da6>] ? _cond_resched+0xe/0x22
+[ 7481.521420]  [<ffffffff8110d58c>] ? 
+slab_pre_alloc_hook.clone.32+0x2d/0x31
+[ 7481.521426]  [<ffffffff8110e0c7>] ? kmem_cache_alloc+0x29/0xf7
+[ 7481.521441]  [<ffffffffa02f09fa>] 
+insert_reserved_file_extent.clone.34+0x70/0x1fc [btrfs]
+[ 7481.521470]  [<ffffffffa03071c9>] ? lock_extent_bits+0x5e/0xa8 [btrfs]
+[ 7481.521496]  [<ffffffffa02f362c>] 
+btrfs_endio_direct_write+0x171/0x29a [btrfs]
+[ 7481.521511]  [<ffffffffa02e6afc>] ? end_workqueue_fn+0xf6/0x10e [btrfs]
+[ 7481.521516]  [<ffffffff81141934>] bio_endio+0x2d/0x2f
+[ 7481.521539]  [<ffffffffa02e6b07>] end_workqueue_fn+0x101/0x10e [btrfs]
+[ 7481.521565]  [<ffffffffa0310951>] worker_loop+0x193/0x4ca [btrfs]
+[ 7481.521581]  [<ffffffffa03107be>] ? btrfs_queue_worker+0x214/0x214 
+[btrfs]
+[ 7481.521586]  [<ffffffff81068dce>] kthread+0x82/0x8a
+[ 7481.521591]  [<ffffffff8147db64>] kernel_thread_helper+0x4/0x10
+[ 7481.521596]  [<ffffffff81068d4c>] ? kthread_worker_fn+0x14b/0x14b
+[ 7481.521601]  [<ffffffff8147db60>] ? gs_change+0x13/0x13
+[ 7481.521604] ---[ end trace abb147a5624a0a25 ]---
+[ 7481.521639] ------------[ cut here ]------------
+[ 7481.521654] WARNING: at fs/btrfs/extent-tree.c:5648 
+btrfs_alloc_free_block+0x14e/0x357 [btrfs]()
+[ 7481.521658] Hardware name: XPS 8300
+[ 7481.521669] Modules linked in: tcp_lp tun btrfs zlib_deflate 
+libcrc32c brd fuse cpufreq_ondemand acpi_cpufreq freq_table mperf 
+ip6t_REJECT nf_conntrack_ipv6 nf_defrag_ipv6 ip6table_filter ip6_tables 
+ipv6 uinput snd_hda_codec_hdmi snd_hda_codec_realtek snd_hda_intel 
+snd_hda_codec broadcom tg3 snd_hwdep snd_seq snd_seq_device snd_pcm 
+joydev pcspkr iTCO_wdt iTCO_vendor_support dcdbas serio_raw i2c_i801 
+snd_timer snd microcode soundcore snd_page_alloc usb_storage i915 
+drm_kms_helper drm i2c_algo_bit i2c_core video [last unloaded: 
+scsi_wait_scan]
+[ 7481.521736] Pid: 3980, comm: btrfs-endio-wri Tainted: G        W 
+2.6.39-integration-test-20110526-01+ #2
+[ 7481.521739] Call Trace:
+[ 7481.521745]  [<ffffffff8104df7a>] warn_slowpath_common+0x85/0x9d
+[ 7481.521750]  [<ffffffff8104dfac>] warn_slowpath_null+0x1a/0x1c
+[ 7481.521763]  [<ffffffffa02dfca8>] btrfs_alloc_free_block+0x14e/0x357 
+[btrfs]
+[ 7481.521773]  [<ffffffffa02d127f>] ? btrfs_item_offset_nr+0x19/0x1b 
+[btrfs]
+[ 7481.521783]  [<ffffffffa02d1551>] ? leaf_space_used+0x5e/0x86 [btrfs]
+[ 7481.521803]  [<ffffffffa02d2987>] __btrfs_cow_block+0x102/0x31e [btrfs]
+[ 7481.521822]  [<ffffffffa0309674>] ? 
+clear_extent_buffer_dirty+0x131/0x142 [btrfs]
+[ 7481.521834]  [<ffffffffa02d1500>] ? leaf_space_used+0xd/0x86 [btrfs]
+[ 7481.521845]  [<ffffffffa02d2ca7>] btrfs_cow_block+0x104/0x14d [btrfs]
+[ 7481.521864]  [<ffffffffa0314f32>] ? btrfs_spin_on_block+0x55/0x55 [btrfs]
+[ 7481.521876]  [<ffffffffa02d5a87>] btrfs_search_slot+0x162/0x502 [btrfs]
+[ 7481.521889]  [<ffffffffa02d6d2d>] btrfs_insert_empty_items+0x6a/0xba 
+[btrfs]
+[ 7481.521895]  [<ffffffff8110e0c7>] ? kmem_cache_alloc+0x29/0xf7
+[ 7481.521921]  [<ffffffffa02f0a37>] 
+insert_reserved_file_extent.clone.34+0xad/0x1fc [btrfs]
+[ 7481.521947]  [<ffffffffa03071c9>] ? lock_extent_bits+0x5e/0xa8 [btrfs]
+[ 7481.521965]  [<ffffffffa02f362c>] 
+btrfs_endio_direct_write+0x171/0x29a [btrfs]
+[ 7481.521989]  [<ffffffffa02e6afc>] ? end_workqueue_fn+0xf6/0x10e [btrfs]
+[ 7481.521994]  [<ffffffff81141934>] bio_endio+0x2d/0x2f
+[ 7481.522007]  [<ffffffffa02e6b07>] end_workqueue_fn+0x101/0x10e [btrfs]
+[ 7481.522034]  [<ffffffffa0310951>] worker_loop+0x193/0x4ca [btrfs]
+[ 7481.522052]  [<ffffffffa03107be>] ? btrfs_queue_worker+0x214/0x214 
+[btrfs]
+[ 7481.522057]  [<ffffffff81068dce>] kthread+0x82/0x8a
+[ 7481.522071]  [<ffffffff8147db64>] kernel_thread_helper+0x4/0x10
+[ 7481.522076]  [<ffffffff81068d4c>] ? kthread_worker_fn+0x14b/0x14b
+[ 7481.522081]  [<ffffffff8147db60>] ? gs_change+0x13/0x13
+[ 7481.522084] ---[ end trace abb147a5624a0a26 ]---
+[ 7481.522108] ------------[ cut here ]------------
+[ 7481.522123] WARNING: at fs/btrfs/extent-tree.c:5648 
+btrfs_alloc_free_block+0x14e/0x357 [btrfs]()
+[ 7481.522126] Hardware name: XPS 8300
+[ 7481.522128] Modules linked in: tcp_lp tun btrfs zlib_deflate 
+libcrc32c brd fuse cpufreq_ondemand acpi_cpufreq freq_table mperf 
+ip6t_REJECT nf_conntrack_ipv6 nf_defrag_ipv6 ip6table_filter ip6_tables 
+ipv6 uinput snd_hda_codec_hdmi snd_hda_codec_realtek snd_hda_intel 
+snd_hda_codec broadcom tg3 snd_hwdep snd_seq snd_seq_device snd_pcm 
+joydev pcspkr iTCO_wdt iTCO_vendor_support dcdbas serio_raw i2c_i801 
+snd_timer snd microcode soundcore snd_page_alloc usb_storage i915 
+drm_kms_helper drm i2c_algo_bit i2c_core video [last unloaded: 
+scsi_wait_scan]
+[ 7481.522203] Pid: 3980, comm: btrfs-endio-wri Tainted: G        W 
+2.6.39-integration-test-20110526-01+ #2
+[ 7481.522206] Call Trace:
+[ 7481.522211]  [<ffffffff8104df7a>] warn_slowpath_common+0x85/0x9d
+[ 7481.522226]  [<ffffffff8104dfac>] warn_slowpath_null+0x1a/0x1c
+[ 7481.522240]  [<ffffffffa02dfca8>] btrfs_alloc_free_block+0x14e/0x357 
+[btrfs]
+[ 7481.522269]  [<ffffffffa030a073>] ? 
+map_private_extent_buffer+0xb1/0xd5 [btrfs]
+[ 7481.522283]  [<ffffffffa02d2987>] __btrfs_cow_block+0x102/0x31e [btrfs]
+[ 7481.522293]  [<ffffffffa02d1500>] ? leaf_space_used+0xd/0x86 [btrfs]
+[ 7481.522304]  [<ffffffffa02d2ca7>] btrfs_cow_block+0x104/0x14d [btrfs]
+[ 7481.522315]  [<ffffffffa02d5a87>] btrfs_search_slot+0x162/0x502 [btrfs]
+[ 7481.522326]  [<ffffffffa02d6d2d>] btrfs_insert_empty_items+0x6a/0xba 
+[btrfs]
+[ 7481.522332]  [<ffffffff8110e0c7>] ? kmem_cache_alloc+0x29/0xf7
+[ 7481.522359]  [<ffffffffa02f0a37>] 
+insert_reserved_file_extent.clone.34+0xad/0x1fc [btrfs]
+[ 7481.522385]  [<ffffffffa03071c9>] ? lock_extent_bits+0x5e/0xa8 [btrfs]
+[ 7481.522401]  [<ffffffffa02f362c>] 
+btrfs_endio_direct_write+0x171/0x29a [btrfs]
+[ 7481.522415]  [<ffffffffa02e6afc>] ? end_workqueue_fn+0xf6/0x10e [btrfs]
+[ 7481.522420]  [<ffffffff81141934>] bio_endio+0x2d/0x2f
+[ 7481.522433]  [<ffffffffa02e6b07>] end_workqueue_fn+0x101/0x10e [btrfs]
+[ 7481.522459]  [<ffffffffa0310951>] worker_loop+0x193/0x4ca [btrfs]
+[ 7481.522477]  [<ffffffffa03107be>] ? btrfs_queue_worker+0x214/0x214 
+[btrfs]
+[ 7481.522482]  [<ffffffff81068dce>] kthread+0x82/0x8a
+[ 7481.522488]  [<ffffffff8147db64>] kernel_thread_helper+0x4/0x10
+[ 7481.522493]  [<ffffffff81068d4c>] ? kthread_worker_fn+0x14b/0x14b
+[ 7481.522499]  [<ffffffff8147db60>] ? gs_change+0x13/0x13
+[ 7481.522502] ---[ end trace abb147a5624a0a27 ]---
+[ 7481.522526] ------------[ cut here ]------------
+[ 7481.522549] WARNING: at fs/btrfs/extent-tree.c:5648 
+btrfs_alloc_free_block+0x14e/0x357 [btrfs]()
+[ 7481.522552] Hardware name: XPS 8300
+[ 7481.522555] Modules linked in: tcp_lp tun btrfs zlib_deflate 
+libcrc32c brd fuse cpufreq_ondemand acpi_cpufreq freq_table mperf 
+ip6t_REJECT nf_conntrack_ipv6 nf_defrag_ipv6 ip6table_filter ip6_tables 
+ipv6 uinput snd_hda_codec_hdmi snd_hda_codec_realtek snd_hda_intel 
+snd_hda_codec broadcom tg3 snd_hwdep snd_seq snd_seq_device snd_pcm 
+joydev pcspkr iTCO_wdt iTCO_vendor_support dcdbas serio_raw i2c_i801 
+snd_timer snd microcode soundcore snd_page_alloc usb_storage i915 
+drm_kms_helper drm i2c_algo_bit i2c_core video [last unloaded: 
+scsi_wait_scan]
+[ 7481.522651] Pid: 3980, comm: btrfs-endio-wri Tainted: G        W 
+2.6.39-integration-test-20110526-01+ #2
+[ 7481.522654] Call Trace:
+[ 7481.522659]  [<ffffffff8104df7a>] warn_slowpath_common+0x85/0x9d
+[ 7481.522665]  [<ffffffff8104dfac>] warn_slowpath_null+0x1a/0x1c
+[ 7481.522686]  [<ffffffffa02dfca8>] btrfs_alloc_free_block+0x14e/0x357 
+[btrfs]
+[ 7481.522705]  [<ffffffffa030a073>] ? 
+map_private_extent_buffer+0xb1/0xd5 [btrfs]
+[ 7481.522726]  [<ffffffffa02d2987>] __btrfs_cow_block+0x102/0x31e [btrfs]
+[ 7481.522736]  [<ffffffffa02d1500>] ? leaf_space_used+0xd/0x86 [btrfs]
+[ 7481.522746]  [<ffffffffa02d2ca7>] btrfs_cow_block+0x104/0x14d [btrfs]
+[ 7481.522767]  [<ffffffffa02d5a87>] btrfs_search_slot+0x162/0x502 [btrfs]
+[ 7481.522780]  [<ffffffffa02d6d2d>] btrfs_insert_empty_items+0x6a/0xba 
+[btrfs]
+[ 7481.522786]  [<ffffffff8110e0c7>] ? kmem_cache_alloc+0x29/0xf7
+[ 7481.522812]  [<ffffffffa02f0a37>] 
+insert_reserved_file_extent.clone.34+0xad/0x1fc [btrfs]
+[ 7481.522838]  [<ffffffffa03071c9>] ? lock_extent_bits+0x5e/0xa8 [btrfs]
+[ 7481.522856]  [<ffffffffa02f362c>] 
+btrfs_endio_direct_write+0x171/0x29a [btrfs]
+[ 7481.522872]  [<ffffffffa02e6afc>] ? end_workqueue_fn+0xf6/0x10e [btrfs]
+[ 7481.522886]  [<ffffffff81141934>] bio_endio+0x2d/0x2f
+[ 7481.522899]  [<ffffffffa02e6b07>] end_workqueue_fn+0x101/0x10e [btrfs]
+[ 7481.522925]  [<ffffffffa0310951>] worker_loop+0x193/0x4ca [btrfs]
+[ 7481.522942]  [<ffffffffa03107be>] ? btrfs_queue_worker+0x214/0x214 
+[btrfs]
+[ 7481.522948]  [<ffffffff81068dce>] kthread+0x82/0x8a
+[ 7481.522962]  [<ffffffff8147db64>] kernel_thread_helper+0x4/0x10
+[ 7481.522967]  [<ffffffff81068d4c>] ? kthread_worker_fn+0x14b/0x14b
+[ 7481.522972]  [<ffffffff8147db60>] ? gs_change+0x13/0x13
+[ 7481.522975] ---[ end trace abb147a5624a0a28 ]---
+
+
+Stack dumps for  more warnings
+------------------------------
+
+
+[21976.930845] WARNING: at fs/btrfs/extent-tree.c:5648 
+btrfs_alloc_free_block+0x14e/0x357 [btrfs]()
+[21976.930847] Hardware name: XPS 8300
+[21976.930848] Modules linked in: tcp_lp tun btrfs zlib_deflate 
+libcrc32c brd fuse cpufreq_ondemand acpi_cpufreq freq_table mperf 
+ip6t_REJECT nf_conntrack_ipv6 nf_defrag_ipv6 ip6table_filter ip6_tables 
+ipv6 uinput snd_hda_codec_hdmi snd_hda_codec_realtek snd_hda_intel 
+snd_hda_codec broadcom tg3 snd_hwdep snd_seq snd_seq_device snd_pcm 
+joydev pcspkr iTCO_wdt iTCO_vendor_support dcdbas serio_raw i2c_i801 
+snd_timer snd microcode soundcore snd_page_alloc usb_storage i915 
+drm_kms_helper drm i2c_algo_bit i2c_core video [last unloaded: 
+scsi_wait_scan]
+[21976.930872] Pid: 31794, comm: btrfs-endio-wri Tainted: G        W 
+2.6.39-integration-test-20110526-01+ #2
+[21976.930874] Call Trace:
+[21976.930880]  [<ffffffff8104df7a>] warn_slowpath_common+0x85/0x9d
+[21976.930882]  [<ffffffff8104dfac>] warn_slowpath_null+0x1a/0x1c
+[21976.930889]  [<ffffffffa02dfca8>] btrfs_alloc_free_block+0x14e/0x357 
+[btrfs]
+[21976.930898]  [<ffffffffa030a073>] ? 
+map_private_extent_buffer+0xb1/0xd5 [btrfs]
+[21976.930904]  [<ffffffffa02d2987>] __btrfs_cow_block+0x102/0x31e [btrfs]
+[21976.930909]  [<ffffffffa02d1300>] ? btrfs_set_item_key+0x3/0x20 [btrfs]
+[21976.930913]  [<ffffffffa02d2ca7>] btrfs_cow_block+0x104/0x14d [btrfs]
+[21976.930919]  [<ffffffffa02d5a87>] btrfs_search_slot+0x162/0x502 [btrfs]
+[21976.930926]  [<ffffffffa02e3e66>] btrfs_lookup_file_extent+0x3c/0x3e 
+[btrfs]
+[21976.930931]  [<ffffffffa02d2124>] ? btrfs_alloc_path+0x1a/0x2b [btrfs]
+[21976.930940]  [<ffffffffa02f9319>] btrfs_drop_extents+0x10e/0x731 [btrfs]
+[21976.930943]  [<ffffffff8103cc9e>] ? need_resched+0x23/0x2d
+[21976.930946]  [<ffffffff81474da6>] ? _cond_resched+0xe/0x22
+[21976.930949]  [<ffffffff8110d58c>] ? 
+slab_pre_alloc_hook.clone.32+0x2d/0x31
+[21976.930952]  [<ffffffff8110e0c7>] ? kmem_cache_alloc+0x29/0xf7
+[21976.930960]  [<ffffffffa02f09fa>] 
+insert_reserved_file_extent.clone.34+0x70/0x1fc [btrfs]
+[21976.930970]  [<ffffffffa03071c9>] ? lock_extent_bits+0x5e/0xa8 [btrfs]
+[21976.930978]  [<ffffffffa02f362c>] 
+btrfs_endio_direct_write+0x171/0x29a [btrfs]
+[21976.930985]  [<ffffffffa02e6afc>] ? end_workqueue_fn+0xf6/0x10e [btrfs]
+[21976.930988]  [<ffffffff81141934>] bio_endio+0x2d/0x2f
+[21976.930995]  [<ffffffffa02e6b07>] end_workqueue_fn+0x101/0x10e [btrfs]
+[21976.931005]  [<ffffffffa0310951>] worker_loop+0x193/0x4ca [btrfs]
+[21976.931014]  [<ffffffffa03107be>] ? btrfs_queue_worker+0x214/0x214 
+[btrfs]
+[21976.931016]  [<ffffffff81068dce>] kthread+0x82/0x8a
+[21976.931019]  [<ffffffff8147db64>] kernel_thread_helper+0x4/0x10
+[21976.931021]  [<ffffffff81068d4c>] ? kthread_worker_fn+0x14b/0x14b
+[21976.931023]  [<ffffffff8147db60>] ? gs_change+0x13/0x13
+[21976.931025] ---[ end trace abb147a5624a0a29 ]---
+[21983.399883] ------------[ cut here ]------------
+[21983.399906] WARNING: at fs/btrfs/extent-tree.c:3832 
+btrfs_free_block_groups+0x13a/0x228 [btrfs]()
+[21983.399910] Hardware name: XPS 8300
+[21983.399912] Modules linked in: tcp_lp tun btrfs zlib_deflate 
+libcrc32c brd fuse cpufreq_ondemand acpi_cpufreq freq_table mperf 
+ip6t_REJECT nf_conntrack_ipv6 nf_defrag_ipv6 ip6table_filter ip6_tables 
+ipv6 uinput snd_hda_codec_hdmi snd_hda_codec_realtek snd_hda_intel 
+snd_hda_codec broadcom tg3 snd_hwdep snd_seq snd_seq_device snd_pcm 
+joydev pcspkr iTCO_wdt iTCO_vendor_support dcdbas serio_raw i2c_i801 
+snd_timer snd microcode soundcore snd_page_alloc usb_storage i915 
+drm_kms_helper drm i2c_algo_bit i2c_core video [last unloaded: 
+scsi_wait_scan]
+[21983.399958] Pid: 31847, comm: umount Tainted: G        W 
+2.6.39-integration-test-20110526-01+ #2
+[21983.399961] Call Trace:
+[21983.399969]  [<ffffffff8104df7a>] warn_slowpath_common+0x85/0x9d
+[21983.399975]  [<ffffffff8104dfac>] warn_slowpath_null+0x1a/0x1c
+[21983.399989]  [<ffffffffa02e0a2b>] btrfs_free_block_groups+0x13a/0x228 
+[btrfs]
+[21983.400006]  [<ffffffffa02e975a>] close_ctree+0x1b2/0x35e [btrfs]
+[21983.400011]  [<ffffffff8112eebb>] ? evict+0x10c/0x115
+[21983.400016]  [<ffffffff8103cc9e>] ? need_resched+0x23/0x2d
+[21983.400021]  [<ffffffff8103ccb6>] ? should_resched+0xe/0x2e
+[21983.400025]  [<ffffffff81474da6>] ? _cond_resched+0xe/0x22
+[21983.400029]  [<ffffffff814759b1>] ? down_write+0x29/0x49
+[21983.400039]  [<ffffffffa02cfa1e>] btrfs_put_super+0x1d/0x2c [btrfs]
+[21983.400044]  [<ffffffff8111c9d4>] generic_shutdown_super+0x74/0xe9
+[21983.400048]  [<ffffffff8111cac9>] kill_anon_super+0x16/0x50
+[21983.400052]  [<ffffffff8111ccfc>] deactivate_locked_super+0x26/0x4b
+[21983.400056]  [<ffffffff8111d4ee>] deactivate_super+0x3a/0x3f
+[21983.400061]  [<ffffffff81132732>] mntput_no_expire+0xd0/0xd5
+[21983.400065]  [<ffffffff811333b8>] sys_umount+0x2dc/0x30a
+[21983.400069]  [<ffffffff8112399e>] ? path_put+0x22/0x27
+[21983.400074]  [<ffffffff8147ca42>] system_call_fastpath+0x16/0x1b
+[21983.400077] ---[ end trace abb147a5624a0a2a ]---
+[21983.400079] ------------[ cut here ]------------
+[21983.400092] WARNING: at fs/btrfs/extent-tree.c:3833 
+btrfs_free_block_groups+0x155/0x228 [btrfs]()
+[21983.400095] Hardware name: XPS 8300
+[21983.400097] Modules linked in: tcp_lp tun btrfs zlib_deflate 
+libcrc32c brd fuse cpufreq_ondemand acpi_cpufreq freq_table mperf 
+ip6t_REJECT nf_conntrack_ipv6 nf_defrag_ipv6 ip6table_filter ip6_tables 
+ipv6 uinput snd_hda_codec_hdmi snd_hda_codec_realtek snd_hda_intel 
+snd_hda_codec broadcom tg3 snd_hwdep snd_seq snd_seq_device snd_pcm 
+joydev pcspkr iTCO_wdt iTCO_vendor_support dcdbas serio_raw i2c_i801 
+snd_timer snd microcode soundcore snd_page_alloc usb_storage i915 
+drm_kms_helper drm i2c_algo_bit i2c_core video [last unloaded: 
+scsi_wait_scan]
+[21983.400136] Pid: 31847, comm: umount Tainted: G        W 
+2.6.39-integration-test-20110526-01+ #2
+[21983.400139] Call Trace:
+[21983.400143]  [<ffffffff8104df7a>] warn_slowpath_common+0x85/0x9d
+[21983.400148]  [<ffffffff8104dfac>] warn_slowpath_null+0x1a/0x1c
+[21983.400160]  [<ffffffffa02e0a46>] btrfs_free_block_groups+0x155/0x228 
+[btrfs]
+[21983.400176]  [<ffffffffa02e975a>] close_ctree+0x1b2/0x35e [btrfs]
+[21983.400179]  [<ffffffff8112eebb>] ? evict+0x10c/0x115
+[21983.400184]  [<ffffffff8103cc9e>] ? need_resched+0x23/0x2d
+[21983.400188]  [<ffffffff8103ccb6>] ? should_resched+0xe/0x2e
+[21983.400191]  [<ffffffff81474da6>] ? _cond_resched+0xe/0x22
+[21983.400195]  [<ffffffff814759b1>] ? down_write+0x29/0x49
+[21983.400204]  [<ffffffffa02cfa1e>] btrfs_put_super+0x1d/0x2c [btrfs]
+[21983.400209]  [<ffffffff8111c9d4>] generic_shutdown_super+0x74/0xe9
+[21983.400213]  [<ffffffff8111cac9>] kill_anon_super+0x16/0x50
+[21983.400216]  [<ffffffff8111ccfc>] deactivate_locked_super+0x26/0x4b
+[21983.400220]  [<ffffffff8111d4ee>] deactivate_super+0x3a/0x3f
+[21983.400225]  [<ffffffff81132732>] mntput_no_expire+0xd0/0xd5
+[21983.400229]  [<ffffffff811333b8>] sys_umount+0x2dc/0x30a
+[21983.400232]  [<ffffffff8112399e>] ? path_put+0x22/0x27
+[21983.400237]  [<ffffffff8147ca42>] system_call_fastpath+0x16/0x1b
+[21983.400240] ---[ end trace abb147a5624a0a2b ]---
+[21983.400242] ------------[ cut here ]------------
+[21983.400254] WARNING: at fs/btrfs/extent-tree.c:6846 
+btrfs_free_block_groups+0x1e6/0x228 [btrfs]()
+[21983.400257] Hardware name: XPS 8300
+[21983.400259] Modules linked in: tcp_lp tun btrfs zlib_deflate 
+libcrc32c brd fuse cpufreq_ondemand acpi_cpufreq freq_table mperf 
+ip6t_REJECT nf_conntrack_ipv6 nf_defrag_ipv6 ip6table_filter ip6_tables 
+ipv6 uinput snd_hda_codec_hdmi snd_hda_codec_realtek snd_hda_intel 
+snd_hda_codec broadcom tg3 snd_hwdep snd_seq snd_seq_device snd_pcm 
+joydev pcspkr iTCO_wdt iTCO_vendor_support dcdbas serio_raw i2c_i801 
+snd_timer snd microcode soundcore snd_page_alloc usb_storage i915 
+drm_kms_helper drm i2c_algo_bit i2c_core video [last unloaded: 
+scsi_wait_scan]
+[21983.400298] Pid: 31847, comm: umount Tainted: G        W 
+2.6.39-integration-test-20110526-01+ #2
+[21983.400300] Call Trace:
+[21983.400305]  [<ffffffff8104df7a>] warn_slowpath_common+0x85/0x9d
+[21983.400317]  [<ffffffffa02e0af5>] ? 
+btrfs_free_block_groups+0x204/0x228 [btrfs]
+[21983.400322]  [<ffffffff8104dfac>] warn_slowpath_null+0x1a/0x1c
+[21983.400334]  [<ffffffffa02e0ad7>] btrfs_free_block_groups+0x1e6/0x228 
+[btrfs]
+[21983.400349]  [<ffffffffa02e975a>] close_ctree+0x1b2/0x35e [btrfs]
+[21983.400352]  [<ffffffff8112eebb>] ? evict+0x10c/0x115
+[21983.400356]  [<ffffffff8103cc9e>] ? need_resched+0x23/0x2d
+[21983.400360]  [<ffffffff8103ccb6>] ? should_resched+0xe/0x2e
+[21983.400364]  [<ffffffff81474da6>] ? _cond_resched+0xe/0x22
+[21983.400367]  [<ffffffff814759b1>] ? down_write+0x29/0x49
+[21983.400377]  [<ffffffffa02cfa1e>] btrfs_put_super+0x1d/0x2c [btrfs]
+[21983.400381]  [<ffffffff8111c9d4>] generic_shutdown_super+0x74/0xe9
+[21983.400385]  [<ffffffff8111cac9>] kill_anon_super+0x16/0x50
+[21983.400389]  [<ffffffff8111ccfc>] deactivate_locked_super+0x26/0x4b
+[21983.400392]  [<ffffffff8111d4ee>] deactivate_super+0x3a/0x3f
+[21983.400397]  [<ffffffff81132732>] mntput_no_expire+0xd0/0xd5
+[21983.400401]  [<ffffffff811333b8>] sys_umount+0x2dc/0x30a
+[21983.400404]  [<ffffffff8112399e>] ? path_put+0x22/0x27
+[21983.400409]  [<ffffffff8147ca42>] system_call_fastpath+0x16/0x1b
+[21983.400412] ---[ end trace abb147a5624a0a2c ]---
+
+
+
+Stack dumps for the hang
+------------------------
+
+
+[73934.130640] SysRq : Show Blocked State
+[73934.130644]   task                        PC stack   pid father
+[73934.130676] btrfs-transacti D ffff8801a4a0b440     0  6769      2 
+0x00000080
+[73934.130679]  ffff88011f78bd60 0000000000000046 0000000000000000 
+ffff880100000001
+[73934.130682]  0000000000013a80 0000000000013a80 0000000000013a80 
+ffff8801a21a0000
+[73934.130684]  0000000000013a80 ffff88011f78bfd8 0000000000013a80 
+0000000000013a80
+[73934.130687] Call Trace:
+[73934.130692]  [<ffffffff8106953e>] ? prepare_to_wait+0x6c/0x79
+[73934.130704]  [<ffffffffa02eb098>] wait_for_commit.clone.14+0x90/0xd5 
+[btrfs]
+[73934.130706]  [<ffffffff810692ab>] ? wake_up_bit+0x2a/0x2a
+[73934.130714]  [<ffffffffa02ebf1c>] 
+btrfs_commit_transaction+0x102/0x693 [btrfs]
+[73934.130721]  [<ffffffffa02eb816>] ? 
+join_transaction.clone.20+0x17b/0x186 [btrfs]
+[73934.130723]  [<ffffffff810692ab>] ? wake_up_bit+0x2a/0x2a
+[73934.130730]  [<ffffffffa02e6772>] transaction_kthread+0x17a/0x22f [btrfs]
+[73934.130736]  [<ffffffffa02e65f8>] ? btrfs_congested_fn+0x8c/0x8c [btrfs]
+[73934.130738]  [<ffffffff81068dce>] kthread+0x82/0x8a
+[73934.130742]  [<ffffffff8147db64>] kernel_thread_helper+0x4/0x10
+[73934.130743]  [<ffffffff81068d4c>] ? kthread_worker_fn+0x14b/0x14b
+[73934.130745]  [<ffffffff8147db60>] ? gs_change+0x13/0x13
+[73934.130747] flush-btrfs-630 D 00000001046677f8     0  6778      2 
+0x00000080
+[73934.130749]  ffff88012031fb10 0000000000000046 ffff88012031fa70 
+ffff880100000000
+[73934.130751]  0000000000013a80 0000000000013a80 0000000000013a80 
+ffff8801a5c68000
+[73934.130754]  0000000000013a80 ffff88012031ffd8 0000000000013a80 
+0000000000013a80
+[73934.130756] Call Trace:
+[73934.130759]  [<ffffffff814750a4>] schedule_timeout+0x36/0xe3
+[73934.130761]  [<ffffffff8107b6c2>] ? arch_local_irq_save+0x18/0x1e
+[73934.130763]  [<ffffffff814762bf>] ? _raw_spin_unlock_irqrestore+0x17/0x19
+[73934.130765]  [<ffffffff8106953e>] ? prepare_to_wait+0x6c/0x79
+[73934.130771]  [<ffffffffa02ec0dd>] 
+btrfs_commit_transaction+0x2c3/0x693 [btrfs]
+[73934.130773]  [<ffffffff810692ab>] ? wake_up_bit+0x2a/0x2a
+[73934.130781]  [<ffffffffa02f58ba>] btrfs_write_inode+0xa0/0xa9 [btrfs]
+[73934.130784]  [<ffffffff81138d78>] writeback_single_inode+0x125/0x1bf
+[73934.130786]  [<ffffffff81139055>] writeback_sb_inodes+0xce/0x160
+[73934.130788]  [<ffffffff81139d68>] wb_writeback+0x257/0x3a7
+[73934.130790]  [<ffffffff81139f40>] wb_do_writeback+0x88/0x1a0
+[73934.130792]  [<ffffffff8105b0a1>] ? run_timer_softirq+0x298/0x298
+[73934.130794]  [<ffffffff8113a0e3>] bdi_writeback_thread+0x8b/0x20c
+[73934.130796]  [<ffffffff8113a058>] ? wb_do_writeback+0x1a0/0x1a0
+[73934.130798]  [<ffffffff81068dce>] kthread+0x82/0x8a
+[73934.130800]  [<ffffffff8147db64>] kernel_thread_helper+0x4/0x10
+[73934.130802]  [<ffffffff81068d4c>] ? kthread_worker_fn+0x14b/0x14b
+[73934.130804]  [<ffffffff8147db60>] ? gs_change+0x13/0x13
+[73934.130805] fsstress        D 0000000102eb08dd     0  6808      1 
+0x00000084
+[73934.130807]  ffff88011d941d48 0000000000000086 0000000000000000 
+0000000000000400
+[73934.130809]  0000000000013a80 0000000000013a80 0000000000013a80 
+ffff88018c3f5c40
+[73934.130812]  0000000000013a80 ffff88011d941fd8 0000000000013a80 
+0000000000013a80
+[73934.130814] Call Trace:
+[73934.130816]  [<ffffffff8103dadf>] ? resched_task+0x48/0x72
+[73934.130818]  [<ffffffff814750a4>] schedule_timeout+0x36/0xe3
+[73934.130820]  [<ffffffff814762bf>] ? _raw_spin_unlock_irqrestore+0x17/0x19
+[73934.130822]  [<ffffffff8103cc9e>] ? need_resched+0x23/0x2d
+[73934.130824]  [<ffffffff81474e67>] wait_for_common+0xad/0x102
+[73934.130826]  [<ffffffff81046df8>] ? try_to_wake_up+0x226/0x226
+[73934.130828]  [<ffffffff81053dbc>] ? local_bh_enable_ip+0xe/0x10
+[73934.130830]  [<ffffffff8113cf5c>] ? __sync_filesystem+0x7a/0x7a
+[73934.130832]  [<ffffffff81474f74>] wait_for_completion+0x1d/0x1f
+[73934.130834]  [<ffffffff81139717>] sync_inodes_sb+0x91/0x187
+[73934.130835]  [<ffffffff8113cf5c>] ? __sync_filesystem+0x7a/0x7a
+[73934.130837]  [<ffffffff8113cf29>] __sync_filesystem+0x47/0x7a
+[73934.130839]  [<ffffffff8113cf72>] sync_one_sb+0x16/0x18
+[73934.130841]  [<ffffffff8111d632>] iterate_supers+0x6d/0xc4
+[73934.130843]  [<ffffffff8113cea7>] sync_filesystems+0x20/0x22
+[73934.130845]  [<ffffffff8113cfe5>] sys_sync+0x21/0x33
+[73934.130847]  [<ffffffff8147ca42>] system_call_fastpath+0x16/0x1b
+[73934.130848] fsstress        D 0000000102eb08dd     0  6809      1 
+0x00000084
+[73934.130850]  ffff88011f07fa58 0000000000000082 ffff88010b9bf058 
+0000000100000001
+[73934.130853]  0000000000013a80 0000000000013a80 0000000000013a80 
+ffff88018c3f2e20
+[73934.130855]  0000000000013a80 ffff88011f07ffd8 0000000000013a80 
+0000000000013a80
+[73934.130857] Call Trace:
+[73934.130859]  [<ffffffff811ea828>] ? avc_has_perm_flags+0x6c/0x81
+[73934.130861]  [<ffffffff814750a4>] schedule_timeout+0x36/0xe3
+[73934.130863]  [<ffffffff81476256>] ? _raw_spin_lock+0xe/0x10
+[73934.130865]  [<ffffffff8103e624>] ? task_rq_lock+0x40/0x72
+[73934.130867]  [<ffffffff814762bf>] ? _raw_spin_unlock_irqrestore+0x17/0x19
+[73934.130869]  [<ffffffff8103cc9e>] ? need_resched+0x23/0x2d
+[73934.130870]  [<ffffffff81474e67>] wait_for_common+0xad/0x102
+[73934.130872]  [<ffffffff81046df8>] ? try_to_wake_up+0x226/0x226
+[73934.130874]  [<ffffffff81053dbc>] ? local_bh_enable_ip+0xe/0x10
+[73934.130876]  [<ffffffff81474f74>] wait_for_completion+0x1d/0x1f
+[73934.130877]  [<ffffffff811395bd>] writeback_inodes_sb_nr+0x76/0x7d
+[73934.130880]  [<ffffffff81139670>] 
+writeback_inodes_sb_nr_if_idle+0x41/0x57
+[73934.130885]  [<ffffffffa02d9ec4>] shrink_delalloc.clone.46+0xb2/0x155 
+[btrfs]
+[73934.130888]  [<ffffffff811f560f>] ? sidtab_context_to_sid+0x5a/0x12c
+[73934.130893]  [<ffffffffa02da060>] 
+reserve_metadata_bytes.clone.47+0xf9/0x1b3 [btrfs]
+[73934.130899]  [<ffffffffa02dcc09>] btrfs_block_rsv_add+0x2c/0x4f [btrfs]
+[73934.130901]  [<ffffffff8103ccb6>] ? should_resched+0xe/0x2e
+[73934.130907]  [<ffffffffa02dce32>] 
+btrfs_trans_reserve_metadata+0x4f/0x74 [btrfs]
+[73934.130914]  [<ffffffffa02ec899>] start_transaction+0x190/0x24f [btrfs]
+[73934.130921]  [<ffffffffa02ecc7b>] btrfs_start_transaction+0x13/0x15 
+[btrfs]
+[73934.130928]  [<ffffffffa02f6e04>] btrfs_mkdir+0x46/0x1e5 [btrfs]
+[73934.130931]  [<ffffffff8112520a>] vfs_mkdir+0x63/0x9f
+[73934.130933]  [<ffffffff81127373>] sys_mkdirat+0x96/0xe7
+[73934.130934]  [<ffffffff8112399e>] ? path_put+0x22/0x27
+[73934.130937]  [<ffffffff810988fb>] ? audit_syscall_entry+0x11c/0x148
+[73934.130938]  [<ffffffff811273dc>] sys_mkdir+0x18/0x1a
+[73934.130940]  [<ffffffff8147ca42>] system_call_fastpath+0x16/0x1b
+[73934.130942] updatedb        D 0000000102f9f23b     0  7525   7519 
+0x00000080
+[73934.130944]  ffff88011ee61e28 0000000000000086 ffff88011ee61f28 
+ffff880100000000
+[73934.130946]  0000000000013a80 0000000000013a80 0000000000013a80 
+ffff8801a5ccae20
+[73934.130949]  0000000000013a80 ffff88011ee61fd8 0000000000013a80 
+0000000000013a80
+[73934.130951] Call Trace:
+[73934.130953]  [<ffffffff81475660>] __mutex_lock_common.clone.5+0x12f/0x196
+[73934.130955]  [<ffffffff81129280>] ? filldir64+0xd5/0xd5
+[73934.130957]  [<ffffffff814756ef>] 
+__mutex_lock_killable_slowpath+0x13/0x15
+[73934.130960]  [<ffffffff8106bd38>] __mutex_fastpath_lock_retval+0x18/0x1a
+[73934.130961]  [<ffffffff81475471>] mutex_lock_killable+0x38/0x54
+[73934.130963]  [<ffffffff81129460>] vfs_readdir+0x56/0xac
+[73934.130965]  [<ffffffff8112959f>] sys_getdents+0x81/0xd1
+[73934.130967]  [<ffffffff8147ca42>] system_call_fastpath+0x16/0x1b
+[73934.130970] sync            D 0000000104667813     0  8162   1930 
+0x00000080
+[73934.130972]  ffff880190491d48 0000000000000082 0000000000000000 
+0000000000000000
+[73934.130974]  0000000000013a80 0000000000013a80 0000000000013a80 
+ffff88015abe0000
+[73934.130976]  0000000000013a80 ffff880190491fd8 0000000000013a80 
+0000000000013a80
+[73934.130978] Call Trace:
+[73934.130980]  [<ffffffff814750a4>] schedule_timeout+0x36/0xe3
+[73934.130982]  [<ffffffff814762bf>] ? _raw_spin_unlock_irqrestore+0x17/0x19
+[73934.130984]  [<ffffffff8103cc9e>] ? need_resched+0x23/0x2d
+[73934.130985]  [<ffffffff81474e67>] wait_for_common+0xad/0x102
+[73934.130987]  [<ffffffff81046df8>] ? try_to_wake_up+0x226/0x226
+[73934.130989]  [<ffffffff81053dbc>] ? local_bh_enable_ip+0xe/0x10
+[73934.130991]  [<ffffffff8113cf5c>] ? __sync_filesystem+0x7a/0x7a
+[73934.130993]  [<ffffffff81474f74>] wait_for_completion+0x1d/0x1f
+[73934.130994]  [<ffffffff811395bd>] writeback_inodes_sb_nr+0x76/0x7d
+[73934.130996]  [<ffffffff811395e6>] writeback_inodes_sb+0x22/0x24
+[73934.130998]  [<ffffffff8113cf33>] __sync_filesystem+0x51/0x7a
+[73934.131000]  [<ffffffff8113cf72>] sync_one_sb+0x16/0x18
+[73934.131002]  [<ffffffff8111d632>] iterate_supers+0x6d/0xc4
+[73934.131004]  [<ffffffff8113cea7>] sync_filesystems+0x20/0x22
+[73934.131005]  [<ffffffff8113cfdb>] sys_sync+0x17/0x33
+[73934.131007]  [<ffffffff8147ca42>] system_call_fastpath+0x16/0x1b

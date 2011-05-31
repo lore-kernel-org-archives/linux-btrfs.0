@@ -1,128 +1,145 @@
-From: Andreas Philipp <philipp.andreas@gmail.com>
-Subject: Re: strange btrfs sub list output
-Date: Tue, 31 May 2011 20:50:34 +0200
-Message-ID: <4DE5387A.7080704@gmail.com>
-References: <20110526212203.GA4611@yahoo.fr> <chaz20110527080157.GA27537@seebyte.com> <4DDF5EEF.6060706@gmail.com> <chaz20110527084733.GC27537@seebyte.com> <20110527091224.GA15627@carfax.org.uk> <chaz20110527093029.GA30613@seebyte.com> <20110527094523.GA12089@carfax.org.uk> <chaz20110527113010.GA12775@seebyte.com> <4DDF8FE0.9040107@gmail.com> <20110531100014.GA12396@yahoo.fr> <BANLkTikWE6b8nO7azgrCVhdZZ8b0ZfneVg@mail.gmail.com>
+From: Sergei Trofimovich <slyfox@gentoo.org>
+Subject: Re: [PATCH 0/9] some fixes for bugs spotted by valgrind
+Date: Tue, 31 May 2011 22:10:37 +0300
+Message-ID: <20110531221037.0454f16e@sf>
+References: <1306790348-9553-1-git-send-email-slyfox@gentoo.org>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=UTF-8
-Cc: Stephane Chazelas <stephane_chazelas@yahoo.fr>,
-	Hugo Mills <hugo@carfax.org.uk>,
-	linux-btrfs <linux-btrfs@vger.kernel.org>
-To: C Anthony Risinger <anthony@xtfx.me>
+Content-Type: multipart/signed; micalg=PGP-SHA1;
+ boundary="Sig_/5T+W+7oHA1bmv6d__7c=xlf"; protocol="application/pgp-signature"
+Cc: Sergei Trofimovich <slyfox@gentoo.org>, linux-btrfs@vger.kernel.org
+To: Chris Mason <chris.mason@oracle.com>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <BANLkTikWE6b8nO7azgrCVhdZZ8b0ZfneVg@mail.gmail.com>
+In-Reply-To: <1306790348-9553-1-git-send-email-slyfox@gentoo.org>
 List-ID: <linux-btrfs.vger.kernel.org>
 
+--Sig_/5T+W+7oHA1bmv6d__7c=xlf
+Content-Type: text/plain; charset=US-ASCII
+Content-Transfer-Encoding: quoted-printable
 
------BEGIN PGP SIGNED MESSAGE-----
-Hash: SHA1
- 
-On 31.05.2011 19:40, C Anthony Risinger wrote:
-> On Tue, May 31, 2011 at 5:00 AM, Stephane Chazelas
-> <stephane_chazelas@yahoo.fr> wrote:
->> 2011-05-27 13:49:52 +0200, Andreas Philipp: [...]
->>>> Thanks, I can understand that. What I don't get is how one
->>>> creates a subvol with a top-level other than 5. I might be
->>>> missing the obvious, though.
->>>>
->>>> If I do:
->>>>
->>>> btrfs sub create A btrfs sub create A/B btrfs sub snap A
->>>> A/B/C
->>>>
->>>> A, A/B, A/B/C have their top-level being 5. How would I get a
->>>> new snapshot to be a child of A/B for instance?
->>>>
->>>> In my case, 285, was not appearing in the btrfs sub list
->>>> output, 287 was a child of 285 with path "data" while all I
->>>> did was create a snapshot of 284 (path
->>>> u6:10022/vm+xfs@u8/xvda1/g8/v3/data in vol 5) in
->>>> u6:10022/vm+xfs@u8/xvda1/g8/v3/snapshots/2011-03-30
->>>>
->>>> So I did manage to get a volume with a parent other than 5,
->>>> but I did not ask for it.
->> [...]
->>> Reconsidering the explanations on btrfs subvolume list in this
->>> thread I get the impression that a line in the output of btrfs
->>> subvolume list with top level other than 5 indicates that the
->>> backrefs from one subvolume to its parent are broken.
->>>
->>> What's your opinion on this?
->> [...]
->>
->> Given that I don't really get what the parent-child relationship
->> means in that context, I can't really comment.
->>
->> In effect, the snapshot had been created and was attached to the
->> right directory (but didn't appear in the sub list), and there
->> was an additional "data" volume that I had not asked for nor
->> created that had the snapshot above as parent and that did appear
->> in the sub list.
->>
->> It pretty much looks like a bug to me, I'd like to understand
->> more so that I can maybe try and avoid running into it again.
->
-> i'm actually really interested in the conclusion to this thread
-> because i _want_ to create subvols with a new parent ... i didn't
-> realize this wasn't possible (nor the mount option) until reading
-> this thread. this would give me a little more flexibility with
-> initcpio hooks and the like vs. packing the btrfs root with tons of
-> hidden files [subvols] or using IDs directly ...
->
-> i tried absolutely everything i could think of to reproduce this
-> but all subvols ended up having a top level id of `5`.
->
-> ... so, is there any known way to _purposefully_ create parented
-> subvols with the current tools?
-Hopefully, I can help clarify this a little bit. In fact, this is the
-'usual' case. With the attached patch to the master branch of
-btrfs-progs-unstable you can 'watch' how the btrfs subvolume list
-command builds the full path of the listed subvolumes. Additionally,
-it gives you the IDs of the parent subvolumes. See the following example.
+Some clarifications:
 
-ID 256 top level 5 path test1
-ID 257 top level 256 path test1.1
-ID 257 top level 5 path test1/test1.1
-ID 258 top level 5 path test2
-ID 259 top level 258 path test2.1
-ID 259 top level 5 path test2/test2.1
+> Patchset based on 'tmp' branch e6bd18d8938986c997c45f0ea95b221d4edec095.
+All patches are against btrfs-progs.
 
-- From the second line you see that subvolume ID 256 really is ID 257's
-parent. Additionally, only test1 and test2 have parent ID 5 or in your
-terminology are in the btrfs root.
+=3D=3D=3D=3D
 
-diff --git a/btrfs-list.c b/btrfs-list.c
-index 93766a8..e75d6cf 100644
-- --- a/btrfs-list.c
-+++ b/btrfs-list.c
-@@ -248,6 +248,9 @@ static int resolve_root(struct root_lookup *rl,
-struct root_info *ri)
-                        top_id = next;
-                        break;
-                }
-+
-+               printf("ID %llu top level %llu path %s\n",
-ri->root_id, next,
-+                              full_path);
-        }
-        printf("ID %llu top level %llu path %s\n", ri->root_id, top_id,
-               full_path);
+The rest of rambling is about kernel code, which handles supers.
+I have read what I've wrote last night (braindump of insane!)
+and will try to elaborate a bit:
+
+> Poking at valgrind warnings I have noticed very worrying problem.
+> When we (over)write superblock we take 4096 continuous bytes in memory.
+
+The common pattern in disk-io.c is the following:
+
+    struct btrfs_super_block *sb =3D root->fs_info->sb // or ->sb_for_commit
+    memcpy(dest, sb, BTRFS_SUPER_INFO_SIZE /* 4096 */);
+
+With a memcpy we go out of sizeof(*sb) (~2.5K) and pick more fields from fs=
+_info struct.
+Let's look at them:
+struct btrfs_fs_info {
+...
+        struct btrfs_super_block super_copy;
+        struct btrfs_super_block super_for_commit;
+        struct block_device *__bdev;
+        struct super_block *sb;
+        struct inode *btree_inode;
+        struct backing_dev_info bdi;
+        struct mutex trans_mutex;
+        struct mutex tree_log_mutex;
+        struct mutex transaction_kthread_mutex;
+        struct mutex cleaner_mutex;
+        struct mutex chunk_mutex;
+        struct mutex volume_mutex;
+        struct mutex ordered_operations_mutex;
+        struct rw_semaphore extent_commit_sem;
+
+        struct rw_semaphore cleanup_work_sem;
+
+        struct rw_semaphore subvol_sem;
+        struct srcu_struct subvol_srcu;
+
+        struct list_head trans_list;
+        struct list_head hashers;
+        struct list_head dead_roots;
+        struct list_head caching_block_groups;
+
+        spinlock_t delayed_iput_lock;
+        struct list_head delayed_iputs;
+
+        atomic_t nr_async_submits;
+...
+So we copyout (and even checksum!) atomic counters and other volatile stuff
+(I haven't looked at mutexes and semaphores, but i'm sure there is yet some
+volatile stuff)=20
+
+> In kernel the structures reside in btrfs_fs_info structure, so we compute
+> CRC for:
+>     struct btrfs_super_block super_copy;
+>     struct btrfs_super_block super_for_commit;
+> and then write it to disk. [H]ere we have 2 issues:
+> 1. kernel pointers and other random stuff leaks out to kernel.
+>    It's nondeterministic and leaks out data (not too bad,
+>    as it should be accessible only for root, but still)
+> 2. more serious: is there guarantee, that noone will kick-in
+>    between CRC computation and superblock outwrite?
+>=20
+>    What if some of mutexes, semaphores or lists will change
+>    it's internal state? Some async thread will kick it
+>    an we will end-up writing superblock with invalid CRC!
+>    This might well be the cause of recend superblock
+>    corruptions under heavy load + hangup retorted to the list.
+>=20
+> Consider the following call chain:
+> [somewhere in write_dev_supers ...]
+>=20
+>                         bh->b_end_io =3D btrfs_end_buffer_write_sync;
+>                         crc =3D ~(u32)0;
+>                         crc =3D btrfs_csum_data(NULL, (char *)sb +
+>                                               BTRFS_CSUM_SIZE, crc,
+>                                               BTRFS_SUPER_INFO_SIZE -
+>                                               BTRFS_CSUM_SIZE);
+>                         btrfs_csum_final(crc, sb->csum);
+
+Now the problem should be a bit more clear: sb is a thing pointing to the m=
+iddle
+of fs_info. We checksum it with data after it in fs_info.
+
+>                         bh =3D __getblk(device->bdev, bytenr / 4096,
+>                                       BTRFS_SUPER_INFO_SIZE);
+>=20
+>                         memcpy(bh->b_data, sb, BTRFS_SUPER_INFO_SIZE);
+
+and here we write all the checksummed contents. Is there guard, which
+prevents things from updating fs_info?
+
+>=20
+>                         /* one reference for submit_bh */
+>                         get_bh(bh);
+>=20
+>                         set_buffer_uptodate(bh);
+>                         lock_buffer(bh);
+>                         bh->b_end_io =3D btrfs_end_buffer_write_sync;
+
+Am I too paranoid about the issue?
+
+Thanks!
+
+--=20
+
+  Sergei
+
+--Sig_/5T+W+7oHA1bmv6d__7c=xlf
+Content-Type: application/pgp-signature; name=signature.asc
+Content-Disposition: attachment; filename=signature.asc
+
 -----BEGIN PGP SIGNATURE-----
-Version: GnuPG v1.4.9 (MingW32)
-Comment: Using GnuPG with Mozilla - http://enigmail.mozdev.org/
- 
-iQIcBAEBAgAGBQJN5Th6AAoJEJIcBJ3+XkgiWNQP/jsWQymukrgESfqndQvrJwl6
-QZOe5y9IMmV8jBDPot4EAVAQhLrG2twA1ALVvj+DfD0Ks9VATpmnP4QB39XIWlNz
-/cRxoUev/Z8a0zNnXXneUsbJ1rYx5vX6R0yzRWiZ6Yd0EZ9GCRp+HvPRs5NNGGIc
-0NZCQk1BOe+MAovSQpUbRtyfd4JcxdPEYkt29VySu2wrD02MdXVyzohegCzmUZWv
-ou8COpWvquPmNvYHfudVir6r4BSEfqpIEkkGY61yts00rnnPXuOh1uZQKGyDuK/S
-2o6EOAN3SIONEWts7nx95/IjfAbVa/XUmj+bhr2xJspH4Q93tr8rDns0XCCN/GYY
-xTfMMUFajZHOhv5qjbUF9BFLAU62eKdw4zCPAmed4f/klBcXZ/Ri1pIBwaJv3CTp
-J3camkJBwmTiSwTIIl1qTOMypv0xT602uiiegnBe/UAzz59+cSLDyWFXBc2QQoTV
-jhJiLd281kjPqEqALMNJOOZ0pQ6hDxOoBqg7cA5VEY9619coQE93H6UXgtd0E4YX
-U32bO7WypGbgd3HuNDWd44p4gVYR/Mzu8symvjJDKg5iChLkBEmYyN8hAGryYhtO
-mZBWntTxYPm+Twkf+ovAtVpLGV5Gr1kfGln5lsmsIn1bPW8ZnVbWIDhulD1lQSVw
-Th5rDp6lY0ZBe4+mbOXy
-=M8dp
+Version: GnuPG v2.0.17 (GNU/Linux)
+
+iEYEARECAAYFAk3lPTAACgkQcaHudmEf86rmfQCggcWC3gnld7MB48KkOrD7/MX6
+F6QAn1HCQe+04r4jc1pP1q4NoB0WG1eX
+=V3ON
 -----END PGP SIGNATURE-----
 
+--Sig_/5T+W+7oHA1bmv6d__7c=xlf--

@@ -1,103 +1,182 @@
-From: Daniel J Blueman <daniel.blueman@gmail.com>
-Subject: [3.0-rc1] insert_dir_item hitting assertion during log replay
-Date: Tue, 31 May 2011 23:37:55 +0800
-Message-ID: <BANLkTi=h98Zi8dkLDK2Q9qNHNqfTMCZ8xw@mail.gmail.com>
-References: <BANLkTi=M5q6WbkgNMURWkBCi-46E6-UOkA@mail.gmail.com>
-Mime-Version: 1.0
-Content-Type: text/plain; charset=ISO-8859-1
-Cc: Chris Mason <chris.mason@oracle.com>,
-	Josef Bacik <josef@redhat.com>
-To: Linux BTRFS <linux-btrfs@vger.kernel.org>
+From: David Sterba <dsterba@suse.cz>
+Subject: [PATCH] btrfs: add helper for fs_info->closing
+Date: Tue, 31 May 2011 18:30:06 +0200
+Message-ID: <1306859406-3870-1-git-send-email-dsterba@suse.cz>
+Cc: linux-btrfs@vger.kernel.org, David Sterba <dsterba@suse.cz>
+To: chris.mason@oracle.com
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <BANLkTi=M5q6WbkgNMURWkBCi-46E6-UOkA@mail.gmail.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 10 April 2011 16:29, Daniel J Blueman <daniel.blueman@gmail.com> wro=
-te:
-> When rebooting from a crash, thus during log replay on 2.6.29-rc2,
-> btrfs_insert_dir_item caused an assertion failure [1]. The fs was
-> being mounted clear_cache on an SSD.
+wrap checking of filesystem 'closing' flag and fix a few missing memory
+barriers.
 
-On 3.0-rc1 with a fresh filesystem, after a few crashes with other
-bugs, I tripped the assert at inode.c:4582 during log replay at mount
-time, ie btrfs_insert_dir_item() is returning non-zero.
+Signed-off-by: David Sterba <dsterba@suse.cz>
+---
 
-I have a metadata image captured from when this occurred in 2.6.29-rc2
-and have instrumented the upstream functions to locate where we're
-failing if it happens in my debug session soon. Anything else we can
-do?
+based on 'for-linus' branch of mason/btrfs-unstable.git
 
-Thanks,
-  Daniel
+ fs/btrfs/ctree.h            |    9 +++++++++
+ fs/btrfs/extent-tree.c      |    3 +--
+ fs/btrfs/file.c             |    4 ++--
+ fs/btrfs/free-space-cache.c |   10 ++++------
+ fs/btrfs/inode-map.c        |    3 +--
+ fs/btrfs/inode.c            |    3 +--
+ fs/btrfs/scrub.c            |    2 +-
+ fs/btrfs/transaction.c      |    2 +-
+ 8 files changed, 20 insertions(+), 16 deletions(-)
 
-> --- [1] 2.6.29-rc2 trace
->
-> kernel BUG at fs/btrfs/inode.c:4665!
-> invalid opcode: 0000 [#1] PREEMPT SMP DEBUG_PAGEALLOC
-> last sysfs file:
-> /sys/devices/virtual/wmi/A80593CE-A997-11DA-B012-B622A1EF5492/uevent
-> CPU 3
-> Modules linked in: video sdhci_pci sdhci mmc_core
->
-> Pid: 328, comm: mount Not tainted 2.6.39-rc2-350cd+ #1 Dell Inc.
-> Latitude E5420/0H5TG2
-> RIP: 0010:[<ffffffff812a2962>] =A0[<ffffffff812a2962>] btrfs_add_link=
-+0x132/0x190
-> RSP: 0018:ffff88021e1097d8 =A0EFLAGS: 00010282
-> RAX: 00000000ffffffef RBX: ffff88021d965f70 RCX: 0000000000000006
-> RDX: 00000000ffffffef RSI: ffff88021efe4710 RDI: ffff88021efe4020
-> RBP: ffff88021e109848 R08: 0000000000000000 R09: ffff88022d7c03f0
-> R10: 0000000000000001 R11: 0000000000000001 R12: ffff88021d966720
-> R13: ffff88021e0261b0 R14: 000000000000000f R15: ffff88021d959000
-> FS: =A000007fcee7b3d800(0000) GS:ffff88022ec60000(0000) knlGS:0000000=
-000000000
-> CS: =A00010 DS: 0000 ES: 0000 CR0: 000000008005003b
-> CR2: 00007f5e5ffff700 CR3: 000000021e6ef000 CR4: 00000000000406e0
-> DR0: 0000000000000000 DR1: 0000000000000000 DR2: 0000000000000000
-> DR3: 0000000000000000 DR6: 00000000ffff0ff0 DR7: 0000000000000400
-> Process mount (pid: 328, threadinfo ffff88021e108000, task ffff88021e=
-fe4020)
-> Stack:
-> =A0ffff880200000001 0000000000000016 ffff88021e109978 000000000000001=
-6
-> =A0000000000010555e 0000000000000001 0000000000001000 000000000000000=
-0
-> =A0ffff88021e03a000 0000000000000000 00000000000000b0 ffff88021e109ae=
-8
-> Call Trace:
-> =A0[<ffffffff812ccb45>] add_inode_ref+0x2f5/0x3b0
-> =A0[<ffffffff81058e61>] ? get_parent_ip+0x11/0x50
-> =A0[<ffffffff812cdff6>] replay_one_buffer+0x2c6/0x3a0
-> =A0[<ffffffff81099fd0>] ? mark_held_locks+0x70/0xa0
-> =A0[<ffffffff81058e61>] ? get_parent_ip+0x11/0x50
-> =A0[<ffffffff812ca978>] walk_up_log_tree+0x168/0x320
-> =A0[<ffffffff812cdd30>] ? replay_one_dir_item+0xe0/0xe0
-> =A0[<ffffffff812cb188>] walk_log_tree+0xe8/0x290
-> =A0[<ffffffff8109a18d>] ? trace_hardirqs_on+0xd/0x10
-> =A0[<ffffffff812d0000>] btrfs_recover_log_trees+0x220/0x320
-> =A0[<ffffffff812cdd30>] ? replay_one_dir_item+0xe0/0xe0
-> =A0[<ffffffff81295521>] open_ctree+0x1301/0x16b0
-> =A0[<ffffffff81331ab4>] ? snprintf+0x34/0x40
-> =A0[<ffffffff812701e3>] btrfs_fill_super.clone.14+0x73/0x130
-> =A0[<ffffffff811a4aaf>] ? disk_name+0x5f/0xc0
-> =A0[<ffffffff8132ef77>] ? strlcpy+0x47/0x60
-> =A0[<ffffffff812705e0>] btrfs_mount+0x340/0x3e0
-> =A0[<ffffffff81143e9b>] mount_fs+0x1b/0xd0
-> =A0[<ffffffff8115fece>] vfs_kern_mount+0x5e/0xd0
-> =A0[<ffffffff8116045f>] do_kern_mount+0x4f/0x100
-> =A0[<ffffffff81161ea4>] do_mount+0x1e4/0x220
-> =A0[<ffffffff8116228b>] sys_mount+0x8b/0xe0
-> =A0[<ffffffff8170adfb>] system_call_fastpath+0x16/0x1b
-> Code: 4c 89 d2 44 89 f1 4c 89 ee 4c 89 1c 24 4c 89 55 a8 4c 89 5d a0
-> e8 5f c6 fe ff 4c 8b 5d a0 4c 8b 55 a8 85 c0 75 bc e9 31 ff ff ff <0f=
->
-> 0b 48 8b b2 d0 fc ff ff 48 8d 7d b0 b9 11 00 00 00 4d 89 d9
-> RIP =A0[<ffffffff812a2962>] btrfs_add_link+0x132/0x190
-> =A0RSP <ffff88021e1097d8>
---=20
-Daniel J Blueman
---
-To unsubscribe from this list: send the line "unsubscribe linux-btrfs" =
-in
-the body of a message to majordomo@vger.kernel.org
-More majordomo info at  http://vger.kernel.org/majordomo-info.html
+diff --git a/fs/btrfs/ctree.h b/fs/btrfs/ctree.h
+index 332323e..07482a47 100644
+--- a/fs/btrfs/ctree.h
++++ b/fs/btrfs/ctree.h
+@@ -2350,6 +2350,15 @@ int btrfs_drop_subtree(struct btrfs_trans_handle *trans,
+ 			struct btrfs_root *root,
+ 			struct extent_buffer *node,
+ 			struct extent_buffer *parent);
++static inline int btrfs_fs_closing(struct btrfs_fs_info *fs_info)
++{
++	/*
++	 * Get synced with close_ctree()
++	 */
++	smp_mb();
++	return fs_info->closing;
++}
++
+ /* root-item.c */
+ int btrfs_find_root_ref(struct btrfs_root *tree_root,
+ 			struct btrfs_path *path,
+diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
+index 169bd62..ce466da 100644
+--- a/fs/btrfs/extent-tree.c
++++ b/fs/btrfs/extent-tree.c
+@@ -366,8 +366,7 @@ again:
+ 	nritems = btrfs_header_nritems(leaf);
+ 
+ 	while (1) {
+-		smp_mb();
+-		if (fs_info->closing > 1) {
++		if (btrfs_fs_closing(fs_info) > 1) {
+ 			last = (u64)-1;
+ 			break;
+ 		}
+diff --git a/fs/btrfs/file.c b/fs/btrfs/file.c
+index c6a22d7..3ba6d19 100644
+--- a/fs/btrfs/file.c
++++ b/fs/btrfs/file.c
+@@ -129,7 +129,7 @@ int btrfs_add_inode_defrag(struct btrfs_trans_handle *trans,
+ 	if (!btrfs_test_opt(root, AUTO_DEFRAG))
+ 		return 0;
+ 
+-	if (root->fs_info->closing)
++	if (btrfs_fs_closing(root->fs_info))
+ 		return 0;
+ 
+ 	if (BTRFS_I(inode)->in_defrag)
+@@ -229,7 +229,7 @@ int btrfs_run_defrag_inodes(struct btrfs_fs_info *fs_info)
+ 		first_ino = defrag->ino + 1;
+ 		rb_erase(&defrag->rb_node, &fs_info->defrag_inodes);
+ 
+-		if (fs_info->closing)
++		if (btrfs_fs_closing(fs_info))
+ 			goto next_free;
+ 
+ 		spin_unlock(&fs_info->defrag_inodes_lock);
+diff --git a/fs/btrfs/free-space-cache.c b/fs/btrfs/free-space-cache.c
+index 70d4579..e65a8b0 100644
+--- a/fs/btrfs/free-space-cache.c
++++ b/fs/btrfs/free-space-cache.c
+@@ -98,7 +98,7 @@ struct inode *lookup_free_space_inode(struct btrfs_root *root,
+ 		return inode;
+ 
+ 	spin_lock(&block_group->lock);
+-	if (!root->fs_info->closing) {
++	if (!btrfs_fs_closing(root->fs_info)) {
+ 		block_group->inode = igrab(inode);
+ 		block_group->iref = 1;
+ 	}
+@@ -478,8 +478,7 @@ int load_free_space_cache(struct btrfs_fs_info *fs_info,
+ 	 * If we're unmounting then just return, since this does a search on the
+ 	 * normal root and not the commit root and we could deadlock.
+ 	 */
+-	smp_mb();
+-	if (fs_info->closing)
++	if (btrfs_fs_closing(fs_info))
+ 		return 0;
+ 
+ 	/*
+@@ -2481,7 +2480,7 @@ struct inode *lookup_free_ino_inode(struct btrfs_root *root,
+ 		return inode;
+ 
+ 	spin_lock(&root->cache_lock);
+-	if (!root->fs_info->closing)
++	if (!btrfs_fs_closing(root->fs_info))
+ 		root->cache_inode = igrab(inode);
+ 	spin_unlock(&root->cache_lock);
+ 
+@@ -2508,8 +2507,7 @@ int load_free_ino_cache(struct btrfs_fs_info *fs_info, struct btrfs_root *root)
+ 	 * If we're unmounting then just return, since this does a search on the
+ 	 * normal root and not the commit root and we could deadlock.
+ 	 */
+-	smp_mb();
+-	if (fs_info->closing)
++	if (btrfs_fs_closing(fs_info))
+ 		return 0;
+ 
+ 	path = btrfs_alloc_path();
+diff --git a/fs/btrfs/inode-map.c b/fs/btrfs/inode-map.c
+index 3262cd1..41359bd 100644
+--- a/fs/btrfs/inode-map.c
++++ b/fs/btrfs/inode-map.c
+@@ -59,8 +59,7 @@ again:
+ 		goto out;
+ 
+ 	while (1) {
+-		smp_mb();
+-		if (fs_info->closing)
++		if (btrfs_fs_closing(fs_info))
+ 			goto out;
+ 
+ 		leaf = path->nodes[0];
+diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
+index bb51bb1..66c1446 100644
+--- a/fs/btrfs/inode.c
++++ b/fs/btrfs/inode.c
+@@ -4268,8 +4268,7 @@ int btrfs_write_inode(struct inode *inode, struct writeback_control *wbc)
+ 	if (BTRFS_I(inode)->dummy_inode)
+ 		return 0;
+ 
+-	smp_mb();
+-	if (root->fs_info->closing && is_free_space_inode(root, inode))
++	if (btrfs_fs_closing(root->fs_info) && is_free_space_inode(root, inode))
+ 		nolock = true;
+ 
+ 	if (wbc->sync_mode == WB_SYNC_ALL) {
+diff --git a/fs/btrfs/scrub.c b/fs/btrfs/scrub.c
+index 6dfed0c..be69ff1 100644
+--- a/fs/btrfs/scrub.c
++++ b/fs/btrfs/scrub.c
+@@ -1166,7 +1166,7 @@ int btrfs_scrub_dev(struct btrfs_root *root, u64 devid, u64 start, u64 end,
+ 	int ret;
+ 	struct btrfs_device *dev;
+ 
+-	if (root->fs_info->closing)
++	if (btrfs_fs_closing(root->fs_info))
+ 		return -EINVAL;
+ 
+ 	/*
+diff --git a/fs/btrfs/transaction.c b/fs/btrfs/transaction.c
+index dc80f71..c2786da 100644
+--- a/fs/btrfs/transaction.c
++++ b/fs/btrfs/transaction.c
+@@ -786,7 +786,7 @@ int btrfs_defrag_root(struct btrfs_root *root, int cacheonly)
+ 		btrfs_btree_balance_dirty(info->tree_root, nr);
+ 		cond_resched();
+ 
+-		if (root->fs_info->closing || ret != -EAGAIN)
++		if (btrfs_fs_closing(root->fs_info) || ret != -EAGAIN)
+ 			break;
+ 	}
+ 	root->defrag_running = 0;
+-- 
+1.7.5.2.353.g5df3e
+

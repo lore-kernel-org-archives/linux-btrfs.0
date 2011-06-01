@@ -1,27 +1,26 @@
-From: Arne Jansen <sensille@gmx.net>
-Subject: [GIT PULL] scrub fix for -rc2
-Date: Wed, 01 Jun 2011 16:36:16 +0200
-Message-ID: <4DE64E60.4090502@gmx.net>
+From: David Sterba <dave@jikos.cz>
+Subject: Re: [PATCH] Btrfs: don't save the inode cache if we are deleting
+ this root
+Date: Wed, 1 Jun 2011 16:56:32 +0200
+Message-ID: <20110601145632.GQ12709@twin.jikos.cz>
+References: <1306870413-3490-1-git-send-email-josef@redhat.com>
+Reply-To: dave@jikos.cz
 Mime-Version: 1.0
-Content-Type: text/plain; charset=ISO-8859-1
-Cc: Linux Btrfs <linux-btrfs@vger.kernel.org>
-To: Chris Mason <chris.mason@oracle.com>
+Content-Type: text/plain; charset=us-ascii
+Cc: linux-btrfs@vger.kernel.org, lizf@cn.fujitsu.com,
+	chris.mason@oracle.com
+To: Josef Bacik <josef@redhat.com>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
+In-Reply-To: <1306870413-3490-1-git-send-email-josef@redhat.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hi Chris,
+Hi,
 
-please pull from
+On Tue, May 31, 2011 at 03:33:33PM -0400, Josef Bacik wrote:
+> Signed-off-by: Josef Bacik <josef@redhat.com>
+Tested-by: David Sterba <dsterba@suse.cz>
 
-git://git.kernel.org/pub/scm/linux/kernel/git/arne/btrfs-unstable-arne.git
-for-chris
+really needed in order to run xfstests, thanks.
 
-the bio-reuse fix. I also included the small fix for the false BUG_ON
-in volumes.c. Here's the shortlog:
 
-Arne Jansen (2):
-      btrfs: scrub: don't reuse bios and pages
-      btrfs: false BUG_ON when degraded
-
-Thanks,
-Arne
+david

@@ -1,100 +1,81 @@
-From: Chris Mason <chris.mason@oracle.com>
-Subject: Re: btrfs error after using kernel 3.0-rc1
-Date: Wed, 01 Jun 2011 17:48:37 -0400
-Message-ID: <1306964572-sup-4244@shiny>
-References: <BANLkTimGPgn9CERxCNQPqJLTiRkFUc03OA@mail.gmail.com> <BANLkTinP-Rit3tc2HRDx4d2WArkxqUBuug@mail.gmail.com>
+From: Hugo Mills <hugo@carfax.org.uk>
+Subject: Announcing btrfs-gui
+Date: Thu, 2 Jun 2011 00:20:58 +0100
+Message-ID: <20110601232058.GA22619@carfax.org.uk>
 Mime-Version: 1.0
-Content-Type: TEXT/PLAIN; charset=ISO-8859-1
-Cc: linux-btrfs <linux-btrfs@vger.kernel.org>
-To: "Fajar A. Nugraha" <list@fajar.net>
+Content-Type: multipart/signed; micalg=pgp-sha1;
+	protocol="application/pgp-signature"; boundary="LZvS9be/3tNcYl/X"
+To: Btrfs mailing list <linux-btrfs@vger.kernel.org>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-reply-to: <BANLkTinP-Rit3tc2HRDx4d2WArkxqUBuug@mail.gmail.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Excerpts from Fajar A. Nugraha's message of 2011-06-01 08:22:40 -0400:
-> On Wed, Jun 1, 2011 at 6:06 AM, Fajar A. Nugraha <list@fajar.net> wro=
-te:
-> > While using btrfs as root on kernel 3.0-rc1, there was some errors =
-(I
-> > wasn't able to capture the error) that forced me to do hard reset.
-> >
-> > Now during startup system drops to busybox shell because it's unabl=
-e
-> > to mount root partition.
-> > Is there a way to recover the data, as at least grub2 was still hap=
-py
-> > enough to load kernel and initrd (both of which located on the same
-> > btrfs partition)?
-> >
-> > This is what dmesg says
-> >
-> > [ =C2=A0 =C2=A04.536798] device label SSD-ROOT devid 1 transid 3824=
-5 /dev/sda2
-> > [ =C2=A0 =C2=A09.552086] device label SSD-ROOT devid 1 transid 3824=
-5
-> > /dev/disk/by-label/SSD-ROOT
-> > [ =C2=A0 =C2=A09.554563] btrfs: disk space caching is enabled
-> > [ =C2=A0 =C2=A09.564301] parent transid verify failed on 44040192 w=
-anted 38240 found 32526
-> > [ =C2=A0 =C2=A09.564535] parent transid verify failed on 44040192 w=
-anted 38240 found 32526
-> > [ =C2=A0 =C2=A09.564778] parent transid verify failed on 44040192 w=
-anted 38240 found 32526
-> > [ =C2=A0 =C2=A09.575679] parent transid verify failed on 44052480 w=
-anted 38240 found 31547
-> > [ =C2=A0 =C2=A09.575904] parent transid verify failed on 44052480 w=
-anted 38240 found 31547
-> > [ =C2=A0 =C2=A09.576176] parent transid verify failed on 44052480 w=
-anted 38240 found 31547
-> > [ =C2=A0 =C2=A09.586121] parent transid verify failed on 44064768 w=
-anted 38240 found 34145
-> > [ =C2=A0 =C2=A09.586319] parent transid verify failed on 44064768 w=
-anted 38240 found 34145
-> > [ =C2=A0 =C2=A09.586515] parent transid verify failed on 44064768 w=
-anted 38240 found 34145
-> > [ =C2=A0 =C2=A09.587027] parent transid verify failed on 44068864 w=
-anted 38240 found 34476
-> > [ =C2=A0 =C2=A09.589732] Btrfs detected SSD devices, enabling SSD m=
-ode
-> > [ =C2=A0 =C2=A09.592923] block group 29360128 has an wrong amount o=
-f free space
-> > [ =C2=A0 =C2=A09.592959] btrfs: failed to load free space cache for=
- block group 29360128
->=20
->=20
-> For anyone who got the same problem,
->=20
-> I was finally able to mount the fs using Ubuntu Natty's
-> 2.6.38-8-generic (the one on live CD).
-> Previously I tried using 2.6.38-9-generic and and 3.0-rc1, none works=
-=2E
-> Now I'm copying the files somewhere else before reinstalling this
-> system.
 
-The tools have a command to zero out the btrfs log tree, that would hav=
-e
-allowed you to mount.  Do you still have the busted FS?
+--LZvS9be/3tNcYl/X
+Content-Type: text/plain; charset=us-ascii
+Content-Disposition: inline
 
-Thanks a lot for this bug report, I'll try to reproduce it.
+   Over the last few weeks, I've been playing with a foolish idea,
+mostly triggered by a cluster of people being confused by btrfs's free
+space reporting (df vs btrfs fi df vs btrfs fi show). I also wanted an
+excuse, and some code, to mess around in the depths of the FS data
+structures.
 
->=20
-> On another note, does anybody know how btrfs allocates ID for subvols=
-?
-> It doesn't seem to reuse deleted subvol's ID. What happens when the
-> last subvol ID is 999?
->=20
+   Like all silly ideas, this one got a bit out of hand, and seems to
+have turned into something vaguely useful. I'm therefore pleased to
+announce the first major public release of btrfs-gui[1]: a point-and-
+click tool for managing btrfs filesystems.
 
-We don't reuse the ids for subvols or snapshots, but we can have a
-little less than 2^64 of them.  An id can be reused as long as there ar=
-e
-no blocks with refs for it in the extent allocation tree, but that need=
-s
-to be checked before we reuse it.
+   The tool currently can scan for and list btrfs filesystems and the
+volumes they live on. It can show the allocation and usage of data in
+a selected filesystem, categorised by use, replication, and device. It
+can show and manipulate subvolumes and snapshots: creation, deletion,
+and setting the default. For those with servers to manage, it also has
+the ability to ssh into a remote machine, and manage its filesystems
+remotely (so you don't have to have X installed on your servers just
+to use btrfs-gui on them).
 
--chris
+   You can get the latest version from git[2] (or gitweb[3]), or
+tarball download of the sources from [4]. To install and run the GUI,
+you will need python3 and the python tk libraries (package python3-tk
+on my Debian system). The root helper component (which can be
+installed independently on an X-less server) will run under python2 or
+python3, depending on how it's installed. Installation instructions
+can be found on the main web page, and in the README file.
 
---
-To unsubscribe from this list: send the line "unsubscribe linux-btrfs" =
-in
-the body of a message to majordomo@vger.kernel.org
-More majordomo info at  http://vger.kernel.org/majordomo-info.html
+   Unless the traffic gets too high-volume, or unless someone
+important objects, I'm going to suggest that bug reports should go to
+this list for now (cc'd me, if you like). Note that this isn't an
+"offical" btrfs project -- it's just something I knocked together on
+my own.
+
+   Finally, I'd like to thank David Sterba for testing the pre-release
+versions, reporting bugs, and making many good suggestions for
+improvements. Any deviation from his instructions is entirely my
+fault. :)
+
+   Hugo.
+
+[1] http://carfax.org.uk/btrfs-gui/
+[2] http://git.darksatanic.net/repo/btrfs-gui.git/
+[3] http://git.darksatanic.net/cgi/gitweb.cgi?p=btrfs-gui.git;a=summary
+[4] http://carfax.org.uk/node/79
+
+-- 
+=== Hugo Mills: hugo@... carfax.org.uk | darksatanic.net | lug.org.uk ===
+  PGP key: 515C238D from wwwkeys.eu.pgp.net or http://www.carfax.org.uk
+      --- Great oxymorons of the world, no. 7: The Simple Truth ---      
+
+--LZvS9be/3tNcYl/X
+Content-Type: application/pgp-signature; name="signature.asc"
+Content-Description: Digital signature
+Content-Disposition: inline
+
+-----BEGIN PGP SIGNATURE-----
+Version: GnuPG v1.4.10 (GNU/Linux)
+
+iD8DBQFN5slaIKyzvlFcI40RAtp0AJ9cY5MFTFpZVHIWsuSZTGMf6J8WOACdH96P
+9W+9w9MQrC6SPQfeyT/W+B8=
+=lP1s
+-----END PGP SIGNATURE-----
+
+--LZvS9be/3tNcYl/X--

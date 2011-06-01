@@ -1,98 +1,76 @@
-From: Tsutomu Itoh <t-itoh@jp.fujitsu.com>
-Subject: Re: [3.0-rc1] kernel BUG at fs/btrfs/relocation.c:4285!
-Date: Wed, 01 Jun 2011 19:44:27 +0900
-Message-ID: <4DE6180B.5050005@jp.fujitsu.com>
-References: <4DE43607.2090105@jp.fujitsu.com> <4DE5EDF0.4030601@cn.fujitsu.com> <4DE5F450.9000506@cn.fujitsu.com> <4DE60999.4000208@cn.fujitsu.com>
+From: "Fajar A. Nugraha" <list@fajar.net>
+Subject: Re: btrfs error after using kernel 3.0-rc1
+Date: Wed, 1 Jun 2011 12:22:40 +0000
+Message-ID: <BANLkTinP-Rit3tc2HRDx4d2WArkxqUBuug@mail.gmail.com>
+References: <BANLkTimGPgn9CERxCNQPqJLTiRkFUc03OA@mail.gmail.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=ISO-2022-JP
-Cc: Linux Btrfs <linux-btrfs@vger.kernel.org>
-To: liubo <liubo2009@cn.fujitsu.com>
+Content-Type: text/plain; charset=ISO-8859-1
+To: linux-btrfs <linux-btrfs@vger.kernel.org>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <4DE60999.4000208@cn.fujitsu.com>
+In-Reply-To: <BANLkTimGPgn9CERxCNQPqJLTiRkFUc03OA@mail.gmail.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hi, liubo,
-
-(2011/06/01 18:42), liubo wrote:
-> On 06/01/2011 04:12 PM, liubo wrote:
->> On 06/01/2011 03:44 PM, liubo wrote:
->>>> On 05/31/2011 08:27 AM, Tsutomu Itoh wrote:
->>>>>>>> The panic occurred when 'btrfs fi bal /test5' was executed.
->>>>>>>>
->>>>>>>> /test5 is as follows:
->>>>>>>> # mount -o space_cache,compress=lzo /dev/sdc3 /test5
->>>>>>>> #
->>>>>>>> # btrfs fi sh /dev/sdc3
->>>>>>>> Label: none  uuid: 38ec48b2-a64b-4225-8cc6-5eb08024dc64
->>>>>>>>          Total devices 5 FS bytes used 7.87MB
->>>>>>>>          devid    1 size 10.00GB used 2.02GB path /dev/sdc3
->>>>>>>>          devid    2 size 15.01GB used 3.00GB path /dev/sdc5
->>>>>>>>          devid    3 size 15.01GB used 3.00GB path /dev/sdc6
->>>>>>>>          devid    4 size 20.01GB used 2.01GB path /dev/sdc7
->>>>>>>>          devid    5 size 10.00GB used 2.01GB path /dev/sdc8
->>>>>>>>
->>>>>>>> Btrfs v0.19-50-ge6bd18d
->>>>>>>> # btrfs fi df /test5
->>>>>>>> Data, RAID0: total=10.00GB, used=3.52MB
->>>>>>>> Data: total=8.00MB, used=1.60MB
->>>>>>>> System, RAID1: total=8.00MB, used=4.00KB
->>>>>>>> System: total=4.00MB, used=0.00
->>>>>>>> Metadata, RAID1: total=1.00GB, used=216.00KB
->>>>>>>> Metadata: total=8.00MB, used=0.00
->>>>>>>>
->>>>
->>>> Hi, Itoh san,
->>>>
->>>> I've come up with a patch aiming to fix this bug.
->>>> The problems is that the inode allocator stores one inode cache per root,
->>>> which is at least not good for relocation tree, cause we only find
->>>> new inode number from fs tree or file tree (subvol/snapshot).
->>>>
->>>> I've tested with your run.sh and it works well on my box, so you can try this:
->>>>
-> 
-> I've tested the following patch for about 1.5 hour, and nothing happened.
-> And would you please test this patch?
-
-Thank you for your investigation.
-
-I will also test again. but, I cannot test until next week because I
-will go to LinuxCon tomorrow and the day after tomorrow.
-
-Thanks,
-Tsutomu
+On Wed, Jun 1, 2011 at 6:06 AM, Fajar A. Nugraha <list@fajar.net> wrote=
+:
+> While using btrfs as root on kernel 3.0-rc1, there was some errors (I
+> wasn't able to capture the error) that forced me to do hard reset.
+>
+> Now during startup system drops to busybox shell because it's unable
+> to mount root partition.
+> Is there a way to recover the data, as at least grub2 was still happy
+> enough to load kernel and initrd (both of which located on the same
+> btrfs partition)?
+>
+> This is what dmesg says
+>
+> [ =A0 =A04.536798] device label SSD-ROOT devid 1 transid 38245 /dev/s=
+da2
+> [ =A0 =A09.552086] device label SSD-ROOT devid 1 transid 38245
+> /dev/disk/by-label/SSD-ROOT
+> [ =A0 =A09.554563] btrfs: disk space caching is enabled
+> [ =A0 =A09.564301] parent transid verify failed on 44040192 wanted 38=
+240 found 32526
+> [ =A0 =A09.564535] parent transid verify failed on 44040192 wanted 38=
+240 found 32526
+> [ =A0 =A09.564778] parent transid verify failed on 44040192 wanted 38=
+240 found 32526
+> [ =A0 =A09.575679] parent transid verify failed on 44052480 wanted 38=
+240 found 31547
+> [ =A0 =A09.575904] parent transid verify failed on 44052480 wanted 38=
+240 found 31547
+> [ =A0 =A09.576176] parent transid verify failed on 44052480 wanted 38=
+240 found 31547
+> [ =A0 =A09.586121] parent transid verify failed on 44064768 wanted 38=
+240 found 34145
+> [ =A0 =A09.586319] parent transid verify failed on 44064768 wanted 38=
+240 found 34145
+> [ =A0 =A09.586515] parent transid verify failed on 44064768 wanted 38=
+240 found 34145
+> [ =A0 =A09.587027] parent transid verify failed on 44068864 wanted 38=
+240 found 34476
+> [ =A0 =A09.589732] Btrfs detected SSD devices, enabling SSD mode
+> [ =A0 =A09.592923] block group 29360128 has an wrong amount of free s=
+pace
+> [ =A0 =A09.592959] btrfs: failed to load free space cache for block g=
+roup 29360128
 
 
-> 
-> thanks,
-> 
-> From: Liu Bo<liubo2009@cn.fujitsu.com>
-> 
-> [PATCH] Btrfs: fix save ino cache bug
-> 
-> We just get new inode number from fs root or subvol/snap root,
-> so we'd like to save fs/subvol/snap root's inode cache into disk.
-> 
-> Signed-off-by: Liu Bo<liubo2009@cn.fujitsu.com>
-> ---
->   fs/btrfs/inode-map.c |    6 ++++++
->   1 files changed, 6 insertions(+), 0 deletions(-)
-> 
-> diff --git a/fs/btrfs/inode-map.c b/fs/btrfs/inode-map.c
-> index 0009705..8c0c25b 100644
-> --- a/fs/btrfs/inode-map.c
-> +++ b/fs/btrfs/inode-map.c
-> @@ -372,6 +372,12 @@ int btrfs_save_ino_cache(struct btrfs_root *root,
->   	int prealloc;
->   	bool retry = false;
-> 
-> +	/* only fs tree and subvol/snap needs ino cache */
-> +	if (root->root_key.objectid != BTRFS_FS_TREE_OBJECTID&&
-> +	    (root->root_key.objectid<  BTRFS_FIRST_FREE_OBJECTID ||
-> +	     root->root_key.objectid>  BTRFS_LAST_FREE_OBJECTID))
-> +		return 0;
-> +
->   	path = btrfs_alloc_path();
->   	if (!path)
->   		return -ENOMEM;
+=46or anyone who got the same problem,
 
+I was finally able to mount the fs using Ubuntu Natty's
+2.6.38-8-generic (the one on live CD).
+Previously I tried using 2.6.38-9-generic and and 3.0-rc1, none works.
+Now I'm copying the files somewhere else before reinstalling this
+system.
+
+On another note, does anybody know how btrfs allocates ID for subvols?
+It doesn't seem to reuse deleted subvol's ID. What happens when the
+last subvol ID is 999?
+
+--=20
+=46ajar
+--
+To unsubscribe from this list: send the line "unsubscribe linux-btrfs" =
+in
+the body of a message to majordomo@vger.kernel.org
+More majordomo info at  http://vger.kernel.org/majordomo-info.html

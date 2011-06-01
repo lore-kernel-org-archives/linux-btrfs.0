@@ -1,87 +1,122 @@
-From: liubo <liubo2009@cn.fujitsu.com>
-Subject: Re: [3.0-rc1] kernel BUG at fs/btrfs/relocation.c:4285!
-Date: Wed, 01 Jun 2011 17:42:49 +0800
-Message-ID: <4DE60999.4000208@cn.fujitsu.com>
-References: <4DE43607.2090105@jp.fujitsu.com> <4DE5EDF0.4030601@cn.fujitsu.com> <4DE5F450.9000506@cn.fujitsu.com>
+From: Adrian Hunter <adrian.hunter@linux.intel.com>
+Subject: Re: btrfs hang on brd
+Date: Wed, 01 Jun 2011 13:07:00 +0300
+Message-ID: <4DE60F44.6090400@linux.intel.com>
+References: <4DE492B0.9020302@linux.intel.com> <20110601085439.GD12709@twin.jikos.cz>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=ISO-2022-JP
-Cc: Linux Btrfs <linux-btrfs@vger.kernel.org>
-To: Tsutomu Itoh <t-itoh@jp.fujitsu.com>
+Content-Type: text/plain; charset=ISO-8859-1; format=flowed
+Cc: chris.mason@oracle.com, linux-btrfs@vger.kernel.org
+To: dave@jikos.cz
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <4DE5F450.9000506@cn.fujitsu.com>
+In-Reply-To: <20110601085439.GD12709@twin.jikos.cz>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 06/01/2011 04:12 PM, liubo wrote:
-> On 06/01/2011 03:44 PM, liubo wrote:
->> > On 05/31/2011 08:27 AM, Tsutomu Itoh wrote:
->>>> >> > The panic occurred when 'btrfs fi bal /test5' was executed.
->>>> >> > 
->>>> >> > /test5 is as follows:
->>>> >> > # mount -o space_cache,compress=lzo /dev/sdc3 /test5
->>>> >> > #
->>>> >> > # btrfs fi sh /dev/sdc3
->>>> >> > Label: none  uuid: 38ec48b2-a64b-4225-8cc6-5eb08024dc64
->>>> >> >         Total devices 5 FS bytes used 7.87MB
->>>> >> >         devid    1 size 10.00GB used 2.02GB path /dev/sdc3
->>>> >> >         devid    2 size 15.01GB used 3.00GB path /dev/sdc5
->>>> >> >         devid    3 size 15.01GB used 3.00GB path /dev/sdc6
->>>> >> >         devid    4 size 20.01GB used 2.01GB path /dev/sdc7
->>>> >> >         devid    5 size 10.00GB used 2.01GB path /dev/sdc8
->>>> >> > 
->>>> >> > Btrfs v0.19-50-ge6bd18d
->>>> >> > # btrfs fi df /test5
->>>> >> > Data, RAID0: total=10.00GB, used=3.52MB
->>>> >> > Data: total=8.00MB, used=1.60MB
->>>> >> > System, RAID1: total=8.00MB, used=4.00KB
->>>> >> > System: total=4.00MB, used=0.00
->>>> >> > Metadata, RAID1: total=1.00GB, used=216.00KB
->>>> >> > Metadata: total=8.00MB, used=0.00
->>>> >> > 
->> > 
->> > Hi, Itoh san, 
->> > 
->> > I've come up with a patch aiming to fix this bug.
->> > The problems is that the inode allocator stores one inode cache per root,
->> > which is at least not good for relocation tree, cause we only find
->> > new inode number from fs tree or file tree (subvol/snapshot).
->> > 
->> > I've tested with your run.sh and it works well on my box, so you can try this:
->> > 
+On 01/06/11 11:54, David Sterba wrote:
+> On Tue, May 31, 2011 at 10:03:12AM +0300, Adrian Hunter wrote:
+>> Hi
+>>
+>> I seem to be able to get btrfs reproducibly to
+>> produce warnings and finally hang when running
+>> a stress test on a ramdisk.
+>>
+>> Testing was done using the "integration-test"
+>> branch of btrfs-unstable.  Note that I also tested
+>> v2.6.39 and "integration-test" took much longer to
+>> hang i.e. it is an improvement
+>>
+>> The test script and stack dumps are below.
+>>
+>> Is this a valid test?
+>>
+>> Is it worth me investigating these?
+>
+> I've tried to reproduce myself, but the fsstress utility (taken from
+> latest LTP suite) crashes sometimes and I cannot take it as a proper
+> reproduction. Can you point me to the exact version you used?
 
-I've tested the following patch for about 1.5 hour, and nothing happened.
-And would you please test this patch?
+The LTP version does not compile properly:
 
-thanks,
+make[4]: Entering directory 
+`/home/ahunter/Desktop/Projects/ltp/ltp-full-20110228/testcases/kernel/fs/fsstress'
+gcc -g -O2 -g -O2 -fno-strict-aliasing -pipe -Wall  -DNO_XFS 
+-I/home/ahunter/Desktop/Projects/ltp/ltp-full-20110228/testcases/kernel/fs/fsstress 
+-D_LARGEFILE64_SOURCE -D_GNU_SOURCE -Wno-error -I../../../../include 
+-I../../../../include   -L../../../../lib  fsstress.c   -o fsstress
+fsstress.c: In function 'dread_f':
+fsstress.c:1829:2: warning: implicit declaration of function 'memalign'
+fsstress.c:1829:6: warning: assignment makes pointer from integer 
+without a cast
+fsstress.c: In function 'dwrite_f':
+fsstress.c:1912:6: warning: assignment makes pointer from integer 
+without a cast
+fsstress.c:1844:17: warning: 'diob.d_miniosz' may be used uninitialized 
+in this function
+fsstress.c:1844:17: warning: 'diob.d_maxiosz' may be used uninitialized 
+in this function
+fsstress.c:1844:17: warning: 'diob.d_mem' may be used uninitialized in 
+this function
+fsstress.c: In function 'dread_f':
+fsstress.c:1750:17: warning: 'diob.d_miniosz' may be used uninitialized 
+in this function
+fsstress.c:1750:17: warning: 'diob.d_maxiosz' may be used uninitialized 
+in this function
+fsstress.c:1750:17: warning: 'diob.d_mem' may be used uninitialized in 
+this function
 
-From: Liu Bo <liubo2009@cn.fujitsu.com>
 
-[PATCH] Btrfs: fix save ino cache bug
+I hacked a couple of changes but I need to check them before
+mailing to the ltp-list:
 
-We just get new inode number from fs root or subvol/snap root,
-so we'd like to save fs/subvol/snap root's inode cache into disk.
 
-Signed-off-by: Liu Bo <liubo2009@cn.fujitsu.com>
+From: Adrian Hunter <adrian.hunter@intel.com>
+Date: Wed, 1 Jun 2011 13:01:48 +0300
+Subject: [PATCH] fsstress: quick fix for compile errors
+
+Signed-off-by: Adrian Hunter <adrian.hunter@intel.com>
 ---
- fs/btrfs/inode-map.c |    6 ++++++
- 1 files changed, 6 insertions(+), 0 deletions(-)
+  testcases/kernel/fs/fsstress/fsstress.c |    2 ++
+  testcases/kernel/fs/fsstress/global.h   |    1 +
+  2 files changed, 3 insertions(+), 0 deletions(-)
 
-diff --git a/fs/btrfs/inode-map.c b/fs/btrfs/inode-map.c
-index 0009705..8c0c25b 100644
---- a/fs/btrfs/inode-map.c
-+++ b/fs/btrfs/inode-map.c
-@@ -372,6 +372,12 @@ int btrfs_save_ino_cache(struct btrfs_root *root,
- 	int prealloc;
- 	bool retry = false;
- 
-+	/* only fs tree and subvol/snap needs ino cache */
-+	if (root->root_key.objectid != BTRFS_FS_TREE_OBJECTID &&
-+	    (root->root_key.objectid < BTRFS_FIRST_FREE_OBJECTID ||
-+	     root->root_key.objectid > BTRFS_LAST_FREE_OBJECTID))
-+		return 0;
-+
- 	path = btrfs_alloc_path();
- 	if (!path)
- 		return -ENOMEM;
+diff --git a/testcases/kernel/fs/fsstress/fsstress.c 
+b/testcases/kernel/fs/fsstress/fsstress.c
+index e3b48ea..83c23ed 100644
+--- a/testcases/kernel/fs/fsstress/fsstress.c
++++ b/testcases/kernel/fs/fsstress/fsstress.c
+@@ -1757,6 +1757,7 @@ dread_f(int opno, long r)
+  	struct stat64	stb;
+  	int		v;
+
++	memset(&diob, 0, sizeof(struct dioattr));
+  	init_pathname(&f);
+  	if (!get_fname(FT_REGFILE, r, &f, NULL, NULL, &v)) {
+  		if (v)
+@@ -1851,6 +1852,7 @@ dwrite_f(int opno, long r)
+  	struct stat64	stb;
+  	int		v;
+
++	memset(&diob, 0, sizeof(struct dioattr));
+  	init_pathname(&f);
+  	if (!get_fname(FT_REGFILE, r, &f, NULL, NULL, &v)) {
+  		if (v)
+diff --git a/testcases/kernel/fs/fsstress/global.h 
+b/testcases/kernel/fs/fsstress/global.h
+index f788395..5ab5d56 100644
+--- a/testcases/kernel/fs/fsstress/global.h
++++ b/testcases/kernel/fs/fsstress/global.h
+@@ -58,6 +58,7 @@
+  #include <stdlib.h>
+  #include <stdio.h>
+  #include <unistd.h>
++#include <malloc.h>
+
+  #ifndef O_DIRECT
+  #define O_DIRECT 040000
 -- 
-1.6.5.2
+1.7.4.4
+
+
+> (But no warning or hang observed, on top of 3.0-rc1 + cmason/for-linus)
+
+I will try it tonight.
 

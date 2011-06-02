@@ -1,54 +1,36 @@
-From: Chris Mason <chris.mason@oracle.com>
-Subject: Re: [BUG 3.0-rc1] oops during file removal, severe lock contention
-Date: Thu, 02 Jun 2011 18:21:22 -0400
-Message-ID: <1307053107-sup-492@shiny>
-References: <20110602011139.GP561@dastard>
-Content-Type: text/plain; charset=UTF-8
-Cc: linux-btrfs <linux-btrfs@vger.kernel.org>
-To: Dave Chinner <david@fromorbit.com>
+From: Andi Kleen <andi@firstfloor.org>
+Subject: Re: [PATCH 0/9] some fixes for bugs spotted by valgrind
+Date: Fri, 3 Jun 2011 01:26:36 +0200
+Message-ID: <20110602232636.GJ27166@one.firstfloor.org>
+References: <1306790348-9553-1-git-send-email-slyfox@gentoo.org> <20110531221037.0454f16e@sf> <m262oot2bw.fsf@firstfloor.org> <20110603001325.4a64b7c3@sf>
+Mime-Version: 1.0
+Content-Type: text/plain; charset=us-ascii
+Cc: Andi Kleen <andi@firstfloor.org>,
+	Chris Mason <chris.mason@oracle.com>,
+	linux-btrfs@vger.kernel.org
+To: Sergei Trofimovich <slyfox@gentoo.org>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-reply-to: <20110602011139.GP561@dastard>
+In-Reply-To: <20110603001325.4a64b7c3@sf>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Excerpts from Dave Chinner's message of 2011-06-01 21:11:39 -0400:
-> Hi Folks,
+>         bh = btrfs_read_dev_super(fs_devices->latest_bdev);
+>         if (!bh) {
+>                 err = -EINVAL;
+>                 goto fail_alloc;
+>         }
 > 
-> Running on 3.0-rc1 on an 8p/4G RAM VM with a 16TB filesystem (12
-> disk DM stripe) a 50 million inode 8-way fsmark creation workload
-> via:
+>         memcpy(&fs_info->super_copy, bh->b_data, sizeof(fs_info->super_copy));
+>         memcpy(&fs_info->super_for_commit, &fs_info->super_copy,
+>                sizeof(fs_info->super_for_commit));
+>         brelse(bh);
 > 
-> $ /usr/bin/time ./fs_mark -D 10000 -S0 -n 100000 -s 0 -L 63 \
-> > -d /mnt/scratch/0 -d /mnt/scratch/1 \
-> > -d /mnt/scratch/2 -d /mnt/scratch/3 \
-> > -d /mnt/scratch/4 -d /mnt/scratch/5 \
-> > -d /mnt/scratch/6 -d /mnt/scratch/7
-> 
-> followed by an 8-way rm -rf on the result via:
-> 
-> $ for i in /mnt/scratch/*; do /usr/bin/time rm -rf $i 2>&1 & done
-> 
-> resulted in this oops:
+> But the way superblocks are written look racy.
 
-Josef is looking at this one, we have a theory.
+FWIW for my ext4 checksumming work I had to add an extra lock to stabilize 
+the super block (and the inodes) during checksumming.
 
-> 
-> Also, there is massive lock contention while running these workloads.
-> perf top shows this for the create after about 5m inodes have been
-> created:
+Maybe something similar is needed here too.
 
-For the fs_mark workload, the lock contention mostly goes away if you
-do:
-
-btrfs subvol create /mnt/scratch/0
-btrfs subvol create /mnt/scratch/1
-btrfs subvol create /mnt/scratch/2
-...
-btrfs subvol create /mnt/scratch/8
-
-(etc)
-
-This switches one btree root for 8 btree roots.
-
-I'm working on really fixing that as well.
-
--chris
+-Andi
+-- 
+ak@linux.intel.com -- Speaking for myself only.

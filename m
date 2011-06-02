@@ -1,68 +1,32 @@
-From: Hugo Mills <hugo@carfax.org.uk>
-Subject: Re: btrfs w/ckd
-Date: Thu, 2 Jun 2011 20:59:56 +0100
-Message-ID: <20110602195956.GC8002@carfax.org.uk>
-References: <47C68B986D117D40A7E109AE2FC85C291128DB4A12@MX01A.corp.emc.com>
+From: Andi Kleen <andi@firstfloor.org>
+Subject: Re: [PATCH 0/9] some fixes for bugs spotted by valgrind
+Date: Thu, 02 Jun 2011 13:17:55 -0700
+Message-ID: <m262oot2bw.fsf@firstfloor.org>
+References: <1306790348-9553-1-git-send-email-slyfox@gentoo.org>
+	<20110531221037.0454f16e@sf>
 Mime-Version: 1.0
-Content-Type: multipart/signed; micalg=pgp-sha1;
-	protocol="application/pgp-signature"; boundary="/e2eDi0V/xtL+Mc8"
-Cc: linux-btrfs@vger.kernel.org
-To: kathleen.hodge@emc.com
+Content-Type: text/plain; charset=us-ascii
+Cc: Chris Mason <chris.mason@oracle.com>, linux-btrfs@vger.kernel.org
+To: Sergei Trofimovich <slyfox@gentoo.org>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <47C68B986D117D40A7E109AE2FC85C291128DB4A12@MX01A.corp.emc.com>
+In-Reply-To: <20110531221037.0454f16e@sf> (Sergei Trofimovich's message of
+	"Tue, 31 May 2011 22:10:37 +0300")
 List-ID: <linux-btrfs.vger.kernel.org>
 
+Sergei Trofimovich <slyfox@gentoo.org> writes:
+>
+> Am I too paranoid about the issue?
 
---/e2eDi0V/xtL+Mc8
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
+It sounds weird, because if the kernel would really checksum
+mutexes on disk you would have a lot of on disk
+format incompatibility between different kernel versions
+(e.g. between lockdep and normal kernels or kernels
+running on different architectures)
 
-On Thu, Jun 02, 2011 at 03:45:07PM -0400, kathleen.hodge@emc.com wrote:
-> Hello,
-> I'm trying to use mod3 ckds which are already RAID10 protection. (most of the doc I'm looking at uses fba instead of ckd, so I didn't know if this was a limitation)
-> I'm addressing the head device and able to use these devices with no problem as ext3.  I've been reading that cache may remember that it used to be ext3, so I detached and reattached, but get the same result when trying to mount after formatting.
-> 
-> I use the following to make the file system after I've attached, varied online, formated and partitioned (also tried without the journaling switch).
-> mke2fs -j -t btrfs /dev/dasdbj1
+If it would really happen (no opinion on that) it would
+be a serious bug.
 
-   Quoting the man page for that command:
-
-"mke2fs  is used to create an ext2, ext3, or ext4 filesystem, [...]"
-
-The -t option specifies which of ext2, ext3, and ext4 to create.  I'm
-surprised it did anything at all given a type of "btrfs"...
-
-   You probably wanted mkfs.btrfs instead:
-
-# mkfs.btrfs -d single -m single /dev/dasdbj1
-
-> Then the mount command:
-> mount -t btrfs /dev/dasdbj1 /home/sdasd/d01
-> mount: /dev/dasdbj1: can't read superblock
-
-   If it created an ext2/3/4 filesystem, I'm not entirely surprised
-that it can't find a btrfs superblock there. :)
-
-   Hugo.
+-Andi
 
 -- 
-=== Hugo Mills: hugo@... carfax.org.uk | darksatanic.net | lug.org.uk ===
-  PGP key: 515C238D from wwwkeys.eu.pgp.net or http://www.carfax.org.uk
-  --- We teach people management skills by examining characters in ---   
-            Shakespeare.  You could look at Claudius's crisis            
-                   management techniques, for example.                   
-
---/e2eDi0V/xtL+Mc8
-Content-Type: application/pgp-signature; name="signature.asc"
-Content-Description: Digital signature
-Content-Disposition: inline
-
------BEGIN PGP SIGNATURE-----
-Version: GnuPG v1.4.10 (GNU/Linux)
-
-iD8DBQFN5+u8IKyzvlFcI40RApK6AJ42pPJ4Yre0CA3Vh8S+m29AWgJkwwCgnhJj
-G8cdW/Kye6iwx9EZ4ioHBi4=
-=lDdr
------END PGP SIGNATURE-----
-
---/e2eDi0V/xtL+Mc8--
+ak@linux.intel.com -- Speaking for myself only

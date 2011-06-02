@@ -1,27 +1,45 @@
-From: Andi Kleen <andi@firstfloor.org>
-Subject: Re: [BUG 3.0-rc1] oops during file removal, severe lock contention
-Date: Thu, 02 Jun 2011 12:46:24 -0700
-Message-ID: <m2aae0t3sf.fsf@firstfloor.org>
-References: <20110602011139.GP561@dastard>
+From: <kathleen.hodge@emc.com>
+Subject: btrfs w/ckd
+Date: Thu, 2 Jun 2011 15:45:07 -0400
+Message-ID: <47C68B986D117D40A7E109AE2FC85C291128DB4A12@MX01A.corp.emc.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Cc: linux-btrfs@vger.kernel.org
-To: Dave Chinner <david@fromorbit.com>
+Content-Type: text/plain; charset=iso-8859-1
+Cc: <kathleen.hodge@emc.com>
+To: <linux-btrfs@vger.kernel.org>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <20110602011139.GP561@dastard> (Dave Chinner's message of "Thu, 2
-	Jun 2011 11:11:39 +1000")
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Dave Chinner <david@fromorbit.com> writes:
->
-> Also, there is massive lock contention while running these workloads.
-> perf top shows this for the create after about 5m inodes have been
-> created:
+Hello,
+I'm trying to use mod3 ckds which are already RAID10 protection. (most =
+of the doc I'm looking at uses fba instead of ckd, so I didn't know if =
+this was a limitation)
+I'm addressing the head device and able to use these devices with no pr=
+oblem as ext3.  I've been reading that cache may remember that it used =
+to be ext3, so I detached and reattached, but get the same result when =
+trying to mount after formatting.
 
-We saw pretty much the same thing in some simple tests on large systems
-(extent io tree locking and higher level b*tree locks are a problem)
-It is being looked at I believe.
+I use the following to make the file system after I've attached, varied=
+ online, formated and partitioned (also tried without the journaling sw=
+itch).
+mke2fs -j -t btrfs /dev/dasdbj1
 
--Andi
--- 
-ak@linux.intel.com -- Speaking for myself only
+Then the mount command:
+mount -t btrfs /dev/dasdbj1 /home/sdasd/d01
+mount: /dev/dasdbj1: can't read superblock
+
+Can you please give me some direction?Thanks,
+          Kathy Hodge
+
+           EMC=B2
+Mainframe Software QA
+Phone:  1-508-293-6121 x76121
+Cell:      1-303 -887-9292
+Email:    kathleen.hodge@emc.com
+
+
+
+--
+To unsubscribe from this list: send the line "unsubscribe linux-btrfs" =
+in
+the body of a message to majordomo@vger.kernel.org
+More majordomo info at  http://vger.kernel.org/majordomo-info.html

@@ -1,44 +1,102 @@
-From: Geoff Ritter <geoff.ritter@gmail.com>
-Subject: Re: filesystem seeding ... BUGs on .38, .39, loopback, real
- devices, tmp branch ... everything
-Date: Thu, 02 Jun 2011 04:40:41 -0700
-Message-ID: <1307014855.13841.10.camel@quintos.origo>
-References: <BANLkTikZyg0gyUZH5pQ9d=P4brsTUA9PCg@mail.gmail.com>
-Mime-Version: 1.0
-Content-Type: text/plain; charset="ISO-8859-1"
-Cc: linux-btrfs@vger.kernel.org
-To: C Anthony Risinger <anthony@xtfx.me>
-Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <BANLkTikZyg0gyUZH5pQ9d=P4brsTUA9PCg@mail.gmail.com>
+From: Mimi Zohar <zohar@linux.vnet.ibm.com>
+Subject: [PATCH v6 11/20] evm: add evm_inode_post_init call in btrfs
+Date: Thu,  2 Jun 2011 08:23:34 -0400
+Message-ID: <1307017423-15093-12-git-send-email-zohar@linux.vnet.ibm.com>
+References: <1307017423-15093-1-git-send-email-zohar@linux.vnet.ibm.com>
+Cc: Mimi Zohar <zohar@linux.vnet.ibm.com>,
+	linux-kernel@vger.kernel.org, linux-fsdevel@vger.kernel.org,
+	James Morris <jmorris@namei.org>,
+	David Safford <safford@watson.ibm.com>,
+	Andrew Morton <akpm@linux-foundation.org>,
+	Greg KH <greg@kroah.com>,
+	Dmitry Kasatkin <dmitry.s.kasatkin@gmail.com>,
+	Chris Mason <chris.mason@oracle.com>,
+	linux-btrfs@vger.kernel.org, Mimi Zohar <zohar@us.ibm.com>
+To: linux-security-module@vger.kernel.org
+Return-path: <linux-kernel-owner@vger.kernel.org>
+In-Reply-To: <1307017423-15093-1-git-send-email-zohar@linux.vnet.ibm.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Thu, 2011-06-02 at 04:20 -0500, C Anthony Risinger wrote:
-> 
-> i tried with loop devices at first, then "real" devices -- this is all
-> under KVM/QEMU, and with FSs that are/will be smaller than 1G.
+After creating the initial LSM security extended attribute, call
+evm_inode_post_init_security() to create the 'security.evm'
+extended attribute.
 
-I have tried the seed option as well.  I was able to successfully mount
-the read write partition after setting up the seed.  However, both had
-to be independent partitions on a real device.
+Signed-off-by: Mimi Zohar <zohar@us.ibm.com>
+---
+ fs/btrfs/xattr.c |   39 +++++++++++++++++++++++++++++----------
+ 1 files changed, 29 insertions(+), 10 deletions(-)
 
-During testing, both .38 and .39rc could NOT create a seed if one or
-both partitions were encrypted.  I believe encrypted partitions also
-work with a loop device for the unlocked version you write too.  The
-response I got after a few days is as follows:
-
-> Chris Mason chris.mason@oracle.com
-> cwillu <cwillu@cwillu.com>
-> date	Thu, May 5, 2011 at 4:42 PM
-> Ok, looks like I busted the seed support
-> when I fixed up some of the chunk
-> allocations.  I'll reproduce this and
-> work out a fix.
-
-I just assumed it would take a while to fix so I haven't tried again
-since.  If the root of the problem appears to be loop devices, you might
-want to report that.  Err I guess you did.  To me, this doesn't explain
-why it wouldn't work in a Virtual Machine.  I would have thought the VM
-would treat it as a real device.
-
-
-
+diff --git a/fs/btrfs/xattr.c b/fs/btrfs/xattr.c
+index f3107e4..8e9afcb2 100644
+--- a/fs/btrfs/xattr.c
++++ b/fs/btrfs/xattr.c
+@@ -22,6 +22,7 @@
+ #include <linux/rwsem.h>
+ #include <linux/xattr.h>
+ #include <linux/security.h>
++#include <linux/evm.h>
+ #include "ctree.h"
+ #include "btrfs_inode.h"
+ #include "transaction.h"
+@@ -367,31 +368,49 @@ int btrfs_xattr_security_init(struct btrfs_trans_handle *trans,
+ 			      const struct qstr *qstr)
+ {
+ 	int err;
+-	size_t len;
+-	void *value;
+-	char *suffix;
++	struct xattr lsm_xattr;
++	struct xattr evm_xattr;
+ 	char *name;
+ 
+-	err = security_inode_init_security(inode, dir, qstr, &suffix, &value,
+-					   &len);
++	err = security_inode_init_security(inode, dir, qstr, &lsm_xattr.name,
++					   &lsm_xattr.value,
++					   &lsm_xattr.value_len);
+ 	if (err) {
+ 		if (err == -EOPNOTSUPP)
+ 			return 0;
+ 		return err;
+ 	}
+ 
+-	name = kmalloc(XATTR_SECURITY_PREFIX_LEN + strlen(suffix) + 1,
++	name = kmalloc(XATTR_SECURITY_PREFIX_LEN + strlen(lsm_xattr.name) + 1,
+ 		       GFP_NOFS);
+ 	if (!name) {
+ 		err = -ENOMEM;
+ 	} else {
+ 		strcpy(name, XATTR_SECURITY_PREFIX);
+-		strcpy(name + XATTR_SECURITY_PREFIX_LEN, suffix);
+-		err = __btrfs_setxattr(trans, inode, name, value, len, 0);
++		strcpy(name + XATTR_SECURITY_PREFIX_LEN, lsm_xattr.name);
++		err = __btrfs_setxattr(trans, inode, name, lsm_xattr.value,
++				       lsm_xattr.value_len, 0);
+ 		kfree(name);
+ 	}
++	if (err)
++		goto out;
++
++	err = evm_inode_post_init_security(inode, &lsm_xattr, &evm_xattr);
++	if (err)
++		goto out;
+ 
+-	kfree(suffix);
+-	kfree(value);
++	name = kasprintf(GFP_NOFS, "%s%s", XATTR_SECURITY_PREFIX,
++			 evm_xattr.name);
++	if (!name)
++		err = -ENOMEM;
++	else {
++		err = __btrfs_setxattr(trans, inode, name, evm_xattr.value,
++				       evm_xattr.value_len, 0);
++		kfree(name);
++	}
++	kfree(evm_xattr.value);
++out:
++	kfree(lsm_xattr.name);
++	kfree(lsm_xattr.value);
+ 	return err;
+ }
+-- 
+1.7.3.4

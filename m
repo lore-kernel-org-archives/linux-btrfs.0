@@ -1,36 +1,80 @@
-From: Andi Kleen <andi@firstfloor.org>
-Subject: Re: [PATCH 0/9] some fixes for bugs spotted by valgrind
-Date: Fri, 3 Jun 2011 01:26:36 +0200
-Message-ID: <20110602232636.GJ27166@one.firstfloor.org>
-References: <1306790348-9553-1-git-send-email-slyfox@gentoo.org> <20110531221037.0454f16e@sf> <m262oot2bw.fsf@firstfloor.org> <20110603001325.4a64b7c3@sf>
-Mime-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Cc: Andi Kleen <andi@firstfloor.org>,
-	Chris Mason <chris.mason@oracle.com>,
-	linux-btrfs@vger.kernel.org
-To: Sergei Trofimovich <slyfox@gentoo.org>
+From: Arne Jansen <sensille@gmx.net>
+Subject: [PATCH] btrfs: scrub: errors in tree enumeration
+Date: Fri,  3 Jun 2011 11:28:05 +0200
+Message-ID: <1307093285-7966-1-git-send-email-sensille@gmx.net>
+To: chris.mason@oracle.com, linux-btrfs@vger.kernel.org
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <20110603001325.4a64b7c3@sf>
 List-ID: <linux-btrfs.vger.kernel.org>
 
->         bh = btrfs_read_dev_super(fs_devices->latest_bdev);
->         if (!bh) {
->                 err = -EINVAL;
->                 goto fail_alloc;
->         }
-> 
->         memcpy(&fs_info->super_copy, bh->b_data, sizeof(fs_info->super_copy));
->         memcpy(&fs_info->super_for_commit, &fs_info->super_copy,
->                sizeof(fs_info->super_for_commit));
->         brelse(bh);
-> 
-> But the way superblocks are written look racy.
+due to the semantics of btrfs_search_slot the path can point to an
+invalid slot when ret > 0. This condition went unnoticed, which in
+turn could have led to an incomplete scrubbing.
 
-FWIW for my ext4 checksumming work I had to add an extra lock to stabilize 
-the super block (and the inodes) during checksumming.
+Signed-off-by: Arne Jansen <sensille@gmx.net>
+---
+ fs/btrfs/scrub.c |   21 ++++++++++++---------
+ 1 files changed, 12 insertions(+), 9 deletions(-)
 
-Maybe something similar is needed here too.
-
--Andi
+diff --git a/fs/btrfs/scrub.c b/fs/btrfs/scrub.c
+index 2d1f890..3dff244 100644
+--- a/fs/btrfs/scrub.c
++++ b/fs/btrfs/scrub.c
+@@ -906,11 +906,7 @@ again:
+ 		ret = btrfs_search_slot(NULL, root, &key, path, 0, 0);
+ 		if (ret < 0)
+ 			goto out;
+-
+-		l = path->nodes[0];
+-		slot = path->slots[0];
+-		btrfs_item_key_to_cpu(l, &key, slot);
+-		if (key.objectid != logical) {
++		if (ret > 0) {
+ 			ret = btrfs_previous_item(root, path, 0,
+ 						  BTRFS_EXTENT_ITEM_KEY);
+ 			if (ret < 0)
+@@ -1063,7 +1059,15 @@ int scrub_enumerate_chunks(struct scrub_dev *sdev, u64 start, u64 end)
+ 	while (1) {
+ 		ret = btrfs_search_slot(NULL, root, &key, path, 0, 0);
+ 		if (ret < 0)
+-			goto out;
++			break;
++		if (ret > 0) {
++			if (path->slots[0] >=
++			    btrfs_header_nritems(path->nodes[0])) {
++				ret = btrfs_next_leaf(root, path);
++				if (ret)
++					break;
++			}
++		}
+ 		ret = 0;
+ 
+ 		l = path->nodes[0];
+@@ -1074,7 +1078,7 @@ int scrub_enumerate_chunks(struct scrub_dev *sdev, u64 start, u64 end)
+ 		if (found_key.objectid != sdev->dev->devid)
+ 			break;
+ 
+-		if (btrfs_key_type(&key) != BTRFS_DEV_EXTENT_KEY)
++		if (btrfs_key_type(&found_key) != BTRFS_DEV_EXTENT_KEY)
+ 			break;
+ 
+ 		if (found_key.offset >= end)
+@@ -1103,7 +1107,7 @@ int scrub_enumerate_chunks(struct scrub_dev *sdev, u64 start, u64 end)
+ 		cache = btrfs_lookup_block_group(fs_info, chunk_offset);
+ 		if (!cache) {
+ 			ret = -ENOENT;
+-			goto out;
++			break;
+ 		}
+ 		ret = scrub_chunk(sdev, chunk_tree, chunk_objectid,
+ 				  chunk_offset, length);
+@@ -1115,7 +1119,6 @@ int scrub_enumerate_chunks(struct scrub_dev *sdev, u64 start, u64 end)
+ 		btrfs_release_path(path);
+ 	}
+ 
+-out:
+ 	btrfs_free_path(path);
+ 	return ret;
+ }
 -- 
-ak@linux.intel.com -- Speaking for myself only.
+1.7.3.4
+

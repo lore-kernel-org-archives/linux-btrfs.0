@@ -1,91 +1,133 @@
-From: Hugo Mills <hugo@carfax.org.uk>
-Subject: Re: Quota Implementation
-Date: Fri, 3 Jun 2011 17:47:30 +0100
-Message-ID: <20110603164730.GB10842@carfax.org.uk>
-References: <4DE90AC9.5040106@gmx.net>
-Mime-Version: 1.0
-Content-Type: multipart/signed; micalg=pgp-sha1;
-	protocol="application/pgp-signature"; boundary="6sX45UoQRIJXqkqR"
-Cc: linux-btrfs <linux-btrfs@vger.kernel.org>,
-	Chris Mason <chris.mason@oracle.com>, hch@infradead.org,
-	ricwheeler@gmail.com
-To: Arne Jansen <sensille@gmx.net>
+From: Milan Broz <mbroz@redhat.com>
+Subject: [PATCH] btrfs-progs: Avoid buffer overflow for device name
+Date: Fri,  3 Jun 2011 19:33:44 +0200
+Message-ID: <1307122424-25026-1-git-send-email-mbroz@redhat.com>
+Cc: Milan Broz <mbroz@redhat.com>
+To: linux-btrfs@vger.kernel.org
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <4DE90AC9.5040106@gmx.net>
 List-ID: <linux-btrfs.vger.kernel.org>
 
+btrfs overwrites memory for too long device paramater
 
---6sX45UoQRIJXqkqR
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
+try
+btrfs device scan $(awk 'BEGIN{$5090=OFS="x";print}')
+...
 
-On Fri, Jun 03, 2011 at 06:24:41PM +0200, Arne Jansen wrote:
-> Hi,
-> 
-> If no one is already working on it, I'd like to take the Quota lock and
-> see how far I come.
-> Let me sketch out in short what I'm planning to do:
-> 
->  - Quota will be subvolume based. Only the FS-trees and data extents
->    will be accounted.
->  - Quota Groups can be defined. Every quota group can comprise any
->    number of subvolumes. A subvolume can be assigned to any number
->    of quota groups.
->  - A Quota Group can account/limit the total amount of space that is
->    referenced by it and/or the amount of space that is exclusively
->    referenced (i.e. referenced by no other quota group).
->  - With this it is possible to define a hierarchical quota that need
->    not necessarily reflect the filesystem hierarchy.
->  - It is also possible to decide for each snapshot if it should be
->    accounted into the parent group. So in a scenario where each
->    subvolume reflect a user home, it's possible to have some snapshots
->    accounted to the user and others not (e.g. the ones needed for system
->    backups).
->  - Quota information will be stored in new records, possibly in a
->    separate tree.
->  - It should be possible to change the Quota config and group
->    assignments online, though this might need a full re-scan of the fs.
->  - It does NOT include any kind of user/group (UID/GID) quota.
-> 
-> Any addenda or arguments why it's impossible or insane welcome.
+** buffer overflow detected ***: btrfs terminated
+======= Backtrace: =========
+/lib64/libc.so.6(__fortify_fail+0x37)[0x7f0ef2ea0607]
+/lib64/libc.so.6(+0xf6580)[0x7f0ef2e9e580]
+btrfs[0x402ec4]
+btrfs[0x401b48]
+/lib64/libc.so.6(__libc_start_main+0xed)[0x7f0ef2dc943d]
+btrfs[0x401df1]
 
-   There's a problem in that in some cases, it's possible to get into
-a situation where you can't *delete* files because you're going over
-quota. If I have two subvolumes that share most of their data
-(e.g. one is a snapshot of the other), and both subvolumes have a
-limit under the "exclusive use" clause, then deleting material from
-subvolume A could cause subvolume B to go over quota.
+Patch just add obvious strncpy() checks to several users
+osf this paramater, probably still some path length check
+is needed to properly report error.
 
-   If users can create their own subvolumes, then using the "exclusive
-use" form is also pointless, because as a user, I can simply snapshot
-(or otherwise CoW copy) all my data into a snapshot, and I then don't
-pay for it. That one probably comes under the "admin shot himself in
-the foot", though.
+See https://bugzilla.redhat.com/show_bug.cgi?id=710534
 
-   Getting out the bike-shed brush, I might suggest the use of some
-name other than "quota", because inevitably people will think of
-UID/GID-type quotas, and we've got enough confusingly-modified
-terminology already. "Size bounds", "storage bounds", possibly?
+Signed-off-by: Milan Broz <mbroz@redhat.com>
+---
+ btrfs-vol.c  |    2 +-
+ btrfs_cmds.c |   14 +++++++-------
+ btrfsctl.c   |    2 +-
+ 3 files changed, 9 insertions(+), 9 deletions(-)
 
-   Hugo.
-
+diff --git a/btrfs-vol.c b/btrfs-vol.c
+index 4ed799d..e06a54e 100644
+--- a/btrfs-vol.c
++++ b/btrfs-vol.c
+@@ -151,7 +151,7 @@ int main(int ac, char **av)
+ 	}
+ 	fd = dirfd(dirstream);
+ 	if (device)
+-		strcpy(args.name, device);
++		strncpy(args.name, device, sizeof(args.name));
+ 	else
+ 		args.name[0] = '\0';
+ 
+diff --git a/btrfs_cmds.c b/btrfs_cmds.c
+index 8031c58..6f5c634 100644
+--- a/btrfs_cmds.c
++++ b/btrfs_cmds.c
+@@ -375,7 +375,7 @@ int do_clone(int argc, char **argv)
+ 	printf("Create a snapshot of '%s' in '%s/%s'\n",
+ 	       subvol, dstdir, newname);
+ 	args.fd = fd;
+-	strcpy(args.name, newname);
++	strncpy(args.name, newname, sizeof(args.name));
+ 	res = ioctl(fddst, BTRFS_IOC_SNAP_CREATE, &args);
+ 
+ 	close(fd);
+@@ -436,7 +436,7 @@ int do_delete_subvolume(int argc, char **argv)
+ 	}
+ 
+ 	printf("Delete subvolume '%s/%s'\n", dname, vname);
+-	strcpy(args.name, vname);
++	strncpy(args.name, vname, sizeof(args.name));
+ 	res = ioctl(fd, BTRFS_IOC_SNAP_DESTROY, &args);
+ 
+ 	close(fd);
+@@ -490,7 +490,7 @@ int do_create_subvol(int argc, char **argv)
+ 	}
+ 
+ 	printf("Create subvolume '%s/%s'\n", dstdir, newname);
+-	strcpy(args.name, newname);
++	strncpy(args.name, newname, sizeof(args.name));
+ 	res = ioctl(fddst, BTRFS_IOC_SUBVOL_CREATE, &args);
+ 
+ 	close(fddst);
+@@ -553,7 +553,7 @@ int do_scan(int argc, char **argv)
+ 
+ 		printf("Scanning for Btrfs filesystems in '%s'\n", argv[i]);
+ 
+-		strcpy(args.name, argv[i]);
++		strncpy(args.name, argv[i], sizeof(args.name));
+ 		/*
+ 		 * FIXME: which are the error code returned by this ioctl ?
+ 		 * it seems that is impossible to understand if there no is
+@@ -593,7 +593,7 @@ int do_resize(int argc, char **argv)
+ 	}
+ 
+ 	printf("Resize '%s' of '%s'\n", path, amount);
+-	strcpy(args.name, amount);
++	strncpy(args.name, amount, sizeof(args.name));
+ 	res = ioctl(fd, BTRFS_IOC_RESIZE, &args);
+ 	close(fd);
+ 	if( res < 0 ){
+@@ -736,7 +736,7 @@ int do_add_volume(int nargs, char **args)
+ 		}
+ 		close(devfd);
+ 
+-		strcpy(ioctl_args.name, args[i]);
++		strncpy(ioctl_args.name, args[i], sizeof(ioctl_args.name));
+ 		res = ioctl(fdmnt, BTRFS_IOC_ADD_DEV, &ioctl_args);
+ 		if(res<0){
+ 			fprintf(stderr, "ERROR: error adding the device '%s'\n", args[i]);
+@@ -792,7 +792,7 @@ int do_remove_volume(int nargs, char **args)
+ 		struct	btrfs_ioctl_vol_args arg;
+ 		int	res;
+ 
+-		strcpy(arg.name, args[i]);
++		strncpy(arg.name, args[i], sizeof(arg.name));
+ 		res = ioctl(fdmnt, BTRFS_IOC_RM_DEV, &arg);
+ 		if(res<0){
+ 			fprintf(stderr, "ERROR: error removing the device '%s'\n", args[i]);
+diff --git a/btrfsctl.c b/btrfsctl.c
+index 92bdf39..29210f5 100644
+--- a/btrfsctl.c
++++ b/btrfsctl.c
+@@ -237,7 +237,7 @@ int main(int ac, char **av)
+ 	 }
+ 
+ 	if (name)
+-		strcpy(args.name, name);
++		strncpy(args.name, name, sizeof(args.name));
+ 	else
+ 		args.name[0] = '\0';
+ 
 -- 
-=== Hugo Mills: hugo@... carfax.org.uk | darksatanic.net | lug.org.uk ===
-  PGP key: 515C238D from wwwkeys.eu.pgp.net or http://www.carfax.org.uk
-         --- Is it true that "last known good" on Windows XP ---         
-                            boots into CP/M?                             
+1.7.5.3
 
---6sX45UoQRIJXqkqR
-Content-Type: application/pgp-signature; name="signature.asc"
-Content-Description: Digital signature
-Content-Disposition: inline
-
------BEGIN PGP SIGNATURE-----
-Version: GnuPG v1.4.10 (GNU/Linux)
-
-iD8DBQFN6RAiIKyzvlFcI40RAkkQAKCAulO65dL1F/vaO7W20qJEAKuonwCghfvH
-XlliA+eCfmLmP/G0quVALe0=
-=m513
------END PGP SIGNATURE-----
-
---6sX45UoQRIJXqkqR--

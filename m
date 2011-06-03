@@ -1,45 +1,58 @@
-From: Joel Becker <jlbec@evilplan.org>
-Subject: Re: [PATCH 4/8] fs: kill i_alloc_sem
-Date: Thu, 30 Jun 2011 19:58:53 -0700
-Message-ID: <20110701025853.GB24254@noexit.corp.google.com>
-References: <20110620201533.847236272@bombadil.infradead.org>
- <20110620202031.175620498@bombadil.infradead.org>
- <20110620213203.GB26204@noexit.corp.google.com>
- <20110620221857.GA3473@infradead.org>
-Mime-Version: 1.0
+Return-Path: <linux-btrfs-owner@vger.kernel.org>
+Received: from out3.smtp.messagingengine.com ([66.111.4.27]:46562 "EHLO
+	out3.smtp.messagingengine.com" rhost-flags-OK-OK-OK-OK)
+	by vger.kernel.org with ESMTP id S1750990Ab1FCNnO (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>);
+	Fri, 3 Jun 2011 09:43:14 -0400
+Date: Fri, 3 Jun 2011 22:16:28 +0900
+From: Greg KH <greg@kroah.com>
+To: Mitch Harder <mitch.harder@sabayonlinux.org>, dave@jikos.cz,
+        Stephen Rothwell <sfr@canb.auug.org.au>,
+        Chris Mason <chris.mason@oracle.com>, linux-next@vger.kernel.org,
+        linux-kernel@vger.kernel.org, linux-btrfs@vger.kernel.org,
+        kreijack@libero.it
+Subject: Re: linux-next: build warninga in Linus' tree
+Message-ID: <20110603131628.GB7355@kroah.com>
+References: <20110530113653.5c7084f0.sfr@canb.auug.org.au>
+ <20110531175709.GC12709@twin.jikos.cz>
+ <BANLkTi=t5H8sAc_0sHyFt_xJgbeVibO3KQ@mail.gmail.com>
+ <20110603111048.GR12709@twin.jikos.cz>
+MIME-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
-Cc: viro@zeniv.linux.org.uk, tglx@linutronix.de,
-	linux-fsdevel@vger.kernel.org, linux-ext4@vger.kernel.org,
-	linux-btrfs@vger.kernel.org, hirofumi@mail.parknet.co.jp,
-	mfasheh@suse.com
-To: Christoph Hellwig <hch@infradead.org>
-Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <20110620221857.GA3473@infradead.org>
+In-Reply-To: <20110603111048.GR12709@twin.jikos.cz>
+Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Mon, Jun 20, 2011 at 06:18:57PM -0400, Christoph Hellwig wrote:
-> On Mon, Jun 20, 2011 at 02:32:03PM -0700, Joel Becker wrote:
-> > 	Are we guaranteed that all allocation changes are locked out by
-> > i_dio_count>0?  I don't think we are.  The ocfs2 code very strongly
-> > assumes the state of a file's allocation when it holds i_alloc_sem.  I
-> > feel like we lose that here. 
+On Fri, Jun 03, 2011 at 01:10:49PM +0200, David Sterba wrote:
+> On Wed, Jun 01, 2011 at 10:16:48AM -0500, Mitch Harder wrote:
+> > I've been playing around with resurrecting the basic sysfs
+> > capabilities that had been previously incorporated into btrfs.
+> > 
+> > As it stands right now, it was relatively easy to re-implement sysfs
+> > as it was originally.  However, that implementation of sysfs wasn't
+> > populated with much information (only total_blocks, blocks_used, and
+> > blocksize).
 > 
-> You aren't, neither with the old i_alloc_sem code, nor with the 1:1
-> replacement using i_dio_count.
+> Goffredo Baroncelli (CCed) posted a patch to enhance sysfs interface:
 > 
-> Do a quick grep who gets i_alloc_sem exclusively (down_write): it's
-> really just the truncate code, and it's cut & paste duplicates in ntfs
-> and reiserfs.
+> https://patchwork.kernel.org/patch/308902/
+> (http://www.spinics.net/lists/linux-btrfs/msg06777.html)
+> 
+> > I also had to reverse a small portion of code that was in the last
+> > clean-up.
+> 
+> Restoring the code should not be a problem, the cleanup was too eager
+> and I think a sysfs inteface would be good, not only for debugging
+> purposes or tuning.
+> 
+> > If a CONFIG_BTRFS_DEBUG type configuration flag is ever introduced, it
+> > would be interesting to resurrect btrfs' sysfs capabilities.
+> 
+> Hearing about CONFIG_BTRFS_DEBUG again, seems worth to add it.
 
-	Sorry, I confused this with our ip_alloc_sem.  I was tired.
+For debugging stuff, please use debugfs instead of sysfs, as that is
+what it is there for.
 
-Joel
+thanks,
 
--- 
-
-Life's Little Instruction Book #24
-
-	"Drink champagne for no reason at all."
-
-			http://www.jlbec.org/
-			jlbec@evilplan.org
+greg k-h

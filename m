@@ -1,42 +1,39 @@
-From: Arne Jansen <sensille@gmx.net>
-Subject: Quota Implementation
-Date: Fri, 03 Jun 2011 18:24:41 +0200
-Message-ID: <4DE90AC9.5040106@gmx.net>
+From: David Sterba <dave@jikos.cz>
+Subject: Re: [PATCH][RESEND] btrfs: separate superblock items out of fs_info
+Date: Fri, 3 Jun 2011 18:36:43 +0200
+Message-ID: <20110603163643.GV12709@twin.jikos.cz>
+References: <1307031202-14029-1-git-send-email-dsterba@suse.cz>
+ <20110602213643.6d62caef@sf>
+Reply-To: dave@jikos.cz
 Mime-Version: 1.0
-Content-Type: text/plain; charset=ISO-8859-1; format=flowed
-Cc: Chris Mason <chris.mason@oracle.com>, hch@infradead.org,
-	ricwheeler@gmail.com
-To: linux-btrfs <linux-btrfs@vger.kernel.org>
+Content-Type: text/plain; charset=us-ascii
+Cc: David Sterba <dsterba@suse.cz>, linux-btrfs@vger.kernel.org,
+	chris.mason@oracle.com
+To: Sergei Trofimovich <slyich@gmail.com>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
+In-Reply-To: <20110602213643.6d62caef@sf>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hi,
+On Thu, Jun 02, 2011 at 09:36:43PM +0300, Sergei Trofimovich wrote:
+> ...
+> > @@ -801,6 +800,15 @@ static struct dentry *btrfs_mount(struct file_system_type *fs_type, int flags,
+> >  	fs_info->fs_devices = fs_devices;
+> >  	tree_root->fs_info = fs_info;
+> >  
+> > +	fs_info->super_copy = kzalloc(sizeof(struct btrfs_super_block),
+> > +			GFP_NOFS);
+> > +	fs_info->super_for_commit = kzalloc(sizeof(struct btrfs_super_block),
+> > +			GFP_NOFS);
+> 
+> In light of http://thread.gmane.org/gmane.comp.file-systems.btrfs/11004/focus=11038
+> what do you think of allocating BTRFS_SUPER_INFO_SIZE instead of sizeof?
 
-If no one is already working on it, I'd like to take the Quota lock and
-see how far I come.
-Let me sketch out in short what I'm planning to do:
+that it's absolutely correct fix. Although allocator would provide a 4kb
+buffer (slab) and the rest of the 2.5-4kb space would remain untouched,
+this could bite later, when this assumption would not hold.
 
-  - Quota will be subvolume based. Only the FS-trees and data extents
-    will be accounted.
-  - Quota Groups can be defined. Every quota group can comprise any
-    number of subvolumes. A subvolume can be assigned to any number
-    of quota groups.
-  - A Quota Group can account/limit the total amount of space that is
-    referenced by it and/or the amount of space that is exclusively
-    referenced (i.e. referenced by no other quota group).
-  - With this it is possible to define a hierarchical quota that need
-    not necessarily reflect the filesystem hierarchy.
-  - It is also possible to decide for each snapshot if it should be
-    accounted into the parent group. So in a scenario where each
-    subvolume reflect a user home, it's possible to have some snapshots
-    accounted to the user and others not (e.g. the ones needed for system
-    backups).
-  - Quota information will be stored in new records, possibly in a
-    separate tree.
-  - It should be possible to change the Quota config and group
-    assignments online, though this might need a full re-scan of the fs.
-  - It does NOT include any kind of user/group (UID/GID) quota.
+Passed through xfstests and a few fs_mark rounds.
+Patch updated in git://repo.or.cz/linux-2.6/btrfs-unstable.git #cleanups
 
-Any addenda or arguments why it's impossible or insane welcome.
 
--Arne
+david

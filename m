@@ -1,42 +1,53 @@
-From: David Sterba <dsterba@suse.cz>
-Subject: [PATCH] btrfs: move extra checks under debug option in btrfs_search_slot
-Date: Fri,  3 Jun 2011 14:09:51 +0200
-Message-ID: <1307102991-18308-1-git-send-email-dsterba@suse.cz>
-References: <1307101404-15199-1-git-send-email-dsterba@suse.cz>
-Cc: chris.mason@oracle.com, David Sterba <dsterba@suse.cz>,
-	Josef Bacik <josef@redhat.com>
-To: linux-btrfs@vger.kernel.org
-Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <1307101404-15199-1-git-send-email-dsterba@suse.cz>
+From: Sedat Dilek <sedat.dilek@googlemail.com>
+Subject: Re: linux-next: build warninga in Linus' tree
+Date: Fri, 3 Jun 2011 14:25:34 +0200
+Message-ID: <BANLkTim-0xj7Pr2EkZs2JEkyVw_7F9eM=g@mail.gmail.com>
+References: <20110530113653.5c7084f0.sfr@canb.auug.org.au>
+Reply-To: sedat.dilek@gmail.com
+Mime-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Cc: Chris Mason <chris.mason@oracle.com>, linux-next@vger.kernel.org,
+	linux-kernel@vger.kernel.org, linux-btrfs@vger.kernel.org
+To: Stephen Rothwell <sfr@canb.auug.org.au>
+Return-path: <linux-next-owner@vger.kernel.org>
+In-Reply-To: <20110530113653.5c7084f0.sfr@canb.auug.org.au>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-CC: Josef Bacik <josef@redhat.com>
-Signed-off-by: David Sterba <dsterba@suse.cz>
----
+On Mon, May 30, 2011 at 3:36 AM, Stephen Rothwell <sfr@canb.auug.org.au=
+> wrote:
+> Hi all,
+>
+> After merging the Linus' tree, today's linux-next build (powerpc
+> ppc64_defconfig) produced these warnings:
+>
+> fs/btrfs/sysfs.c:76:26: warning: 'btrfs_root_attrs' defined but not u=
+sed
+> fs/btrfs/sysfs.c:97:26: warning: 'btrfs_super_attrs' defined but not =
+used
+> fs/btrfs/sysfs.c:153:13: warning: 'btrfs_super_release' defined but n=
+ot used
+> fs/btrfs/sysfs.c:160:13: warning: 'btrfs_root_release' defined but no=
+t used
+>
+> I have started using gcc v4.5.2 (instead of v4.4.4) if that makes a
+> difference.
 
-this patch is in conflict with josef's patch
+I see the same warnings with Debian's gcc-4.6 (here: next-20110603),
+plus some more:
 
-http://git.kernel.org/?p=linux/kernel/git/josef/btrfs-work.git;a=commit;h=98cdd9ffc5da7aa4c516347f7fc8f65cb08df6ae
+fs/btrfs/ioctl.c: In function 'btrfs_ioctl_fs_info.isra.24':
+fs/btrfs/ioctl.c:2080:1: warning: the frame size of 1032 bytes is
+larger than 1024 bytes [-Wframe-larger-than=3D]
 
- fs/btrfs/ctree.c |    2 ++
- 1 files changed, 2 insertions(+), 0 deletions(-)
+fs/btrfs/delayed-inode.c: In function 'btrfs_batch_insert_items':
+fs/btrfs/delayed-inode.c:690:9: warning: 'nitems' may be used
+uninitialized in this function [-Wuninitialized]
 
-diff --git a/fs/btrfs/ctree.c b/fs/btrfs/ctree.c
-index b0e18d9..4fe7634 100644
---- a/fs/btrfs/ctree.c
-+++ b/fs/btrfs/ctree.c
-@@ -1648,9 +1648,11 @@ again:
- 		}
- cow_done:
- 		BUG_ON(!cow && ins_len);
-+#ifdef CONFIG_BTRFS_DEBUG
- 		if (level != btrfs_header_level(b))
- 			WARN_ON(1);
- 		level = btrfs_header_level(b);
-+#endif
- 
- 		p->nodes[level] = b;
- 		if (!p->skip_locking)
--- 
-1.7.5.2.353.g5df3e
+- Sedat -
 
+> --
+> Cheers,
+> Stephen Rothwell =C2=A0 =C2=A0 =C2=A0 =C2=A0 =C2=A0 =C2=A0 =C2=A0 =C2=
+=A0 =C2=A0 =C2=A0sfr@canb.auug.org.au
+> http://www.canb.auug.org.au/~sfr/
+>

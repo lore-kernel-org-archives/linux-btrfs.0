@@ -1,86 +1,112 @@
-From: Josef Bacik <josef@redhat.com>
-Subject: Delayed inode operations not doing the right thing with enospc
-Date: Fri, 03 Jun 2011 14:46:10 -0400
-Message-ID: <4DE92BF2.1060905@redhat.com>
+From: Andrey Kuzmin <andrey.v.kuzmin@gmail.com>
+Subject: Re: Quota Implementation
+Date: Sat, 4 Jun 2011 00:44:54 +0400
+Message-ID: <BANLkTikaEpiDucHfTALmh=Ndsf-j=dwSJA@mail.gmail.com>
+References: <4DE90AC9.5040106@gmx.net> <20110603164730.GB10842@carfax.org.uk>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=ISO-8859-1
-Cc: miaox@cn.fujitsu.com
-To: linux-btrfs <linux-btrfs@vger.kernel.org>
+Content-Type: text/plain; charset=UTF-8
+To: Hugo Mills <hugo@carfax.org.uk>, Arne Jansen <sensille@gmx.net>,
+	linux-btrfs <linux-btrfs@vger.kernel.org>,
+	Chris Mason <chris.mason@oracle.com>, hch@infradead.org,
+	ricwheeler@gmail.com
 Return-path: <linux-btrfs-owner@vger.kernel.org>
+In-Reply-To: <20110603164730.GB10842@carfax.org.uk>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hello,
+On Fri, Jun 3, 2011 at 8:47 PM, Hugo Mills <hugo@carfax.org.uk> wrote:
+> On Fri, Jun 03, 2011 at 06:24:41PM +0200, Arne Jansen wrote:
+>> Hi,
+>>
+>> If no one is already working on it, I'd like to take the Quota lock =
+and
+>> see how far I come.
+>> Let me sketch out in short what I'm planning to do:
+>>
+>> =C2=A0- Quota will be subvolume based. Only the FS-trees and data ex=
+tents
+>> =C2=A0 =C2=A0will be accounted.
+>> =C2=A0- Quota Groups can be defined. Every quota group can comprise =
+any
+>> =C2=A0 =C2=A0number of subvolumes. A subvolume can be assigned to an=
+y number
+>> =C2=A0 =C2=A0of quota groups.
+>> =C2=A0- A Quota Group can account/limit the total amount of space th=
+at is
+>> =C2=A0 =C2=A0referenced by it and/or the amount of space that is exc=
+lusively
+>> =C2=A0 =C2=A0referenced (i.e. referenced by no other quota group).
+>> =C2=A0- With this it is possible to define a hierarchical quota that=
+ need
+>> =C2=A0 =C2=A0not necessarily reflect the filesystem hierarchy.
+>> =C2=A0- It is also possible to decide for each snapshot if it should=
+ be
+>> =C2=A0 =C2=A0accounted into the parent group. So in a scenario where=
+ each
+>> =C2=A0 =C2=A0subvolume reflect a user home, it's possible to have so=
+me snapshots
+>> =C2=A0 =C2=A0accounted to the user and others not (e.g. the ones nee=
+ded for system
+>> =C2=A0 =C2=A0backups).
+>> =C2=A0- Quota information will be stored in new records, possibly in=
+ a
+>> =C2=A0 =C2=A0separate tree.
+>> =C2=A0- It should be possible to change the Quota config and group
+>> =C2=A0 =C2=A0assignments online, though this might need a full re-sc=
+an of the fs.
+>> =C2=A0- It does NOT include any kind of user/group (UID/GID) quota.
+>>
+>> Any addenda or arguments why it's impossible or insane welcome.
+>
+> =C2=A0 There's a problem in that in some cases, it's possible to get =
+into
+> a situation where you can't *delete* files because you're going over
+> quota. If I have two subvolumes that share most of their data
+> (e.g. one is a snapshot of the other), and both subvolumes have a
+> limit under the "exclusive use" clause, then deleting material from
+> subvolume A could cause subvolume B to go over quota.
+>
+> =C2=A0 If users can create their own subvolumes, then using the "excl=
+usive
+> use" form is also pointless, because as a user, I can simply snapshot
+> (or otherwise CoW copy) all my data into a snapshot, and I then don't
+> pay for it. That one probably comes under the "admin shot himself in
+> the foot", though.
+>
+> =C2=A0 Getting out the bike-shed brush, I might suggest the use of so=
+me
+> name other than "quota", because inevitably people will think of
+> UID/GID-type quotas, and we've got enough confusingly-modified
+> terminology already. "Size bounds", "storage bounds", possibly?
 
-I got a lot of these when running stress.sh on my test box
+Budget :)?
 
-[ 9792.654889] ------------[ cut here ]------------
-[ 9792.654898] WARNING: at fs/btrfs/extent-tree.c:5681
-btrfs_alloc_free_block+0xca/0x27c [btrfs]()
-[ 9792.654899] Hardware name: To Be Filled By O.E.M.
-[ 9792.654900] Modules linked in: btrfs zlib_deflate libcrc32c
-ip6t_REJECT nf_conntrack_ipv6 nf_defrag_ipv6 ip6table_filter ip6_tables
-arc4 rt61pci rt2x00pci rt2x00lib snd_hda_codec_hdmi mac80211
-snd_hda_codec_realtek cfg80211 snd_hda_intel edac_core snd_seq rfkill
-pcspkr serio_raw snd_hda_codec eeprom_93cx6 edac_mce_amd sp5100_tco
-i2c_piix4 k10temp snd_hwdep snd_seq_device snd_pcm floppy r8169 xhci_hcd
-mii snd_timer snd soundcore snd_page_alloc ipv6 firewire_ohci pata_acpi
-ata_generic firewire_core pata_via crc_itu_t radeon ttm drm_kms_helper
-drm i2c_algo_bit i2c_core [last unloaded: scsi_wait_scan]
-[ 9792.654919] Pid: 2762, comm: rm Tainted: G        W   2.6.39+ #1
-[ 9792.654920] Call Trace:
-[ 9792.654922]  [<ffffffff81053c4a>] warn_slowpath_common+0x83/0x9b
-[ 9792.654925]  [<ffffffff81053c7c>] warn_slowpath_null+0x1a/0x1c
-[ 9792.654933]  [<ffffffffa038e747>] btrfs_alloc_free_block+0xca/0x27c
-[btrfs]
-[ 9792.654945]  [<ffffffffa03b8562>] ? map_extent_buffer+0x6e/0xa8 [btrfs]
-[ 9792.654953]  [<ffffffffa038189b>] __btrfs_cow_block+0xfc/0x30c [btrfs]
-[ 9792.654963]  [<ffffffffa0396aa6>] ? btrfs_buffer_uptodate+0x47/0x58
-[btrfs]
-[ 9792.654970]  [<ffffffffa0382e48>] ? read_block_for_search+0x94/0x368
-[btrfs]
-[ 9792.654978]  [<ffffffffa0381ba9>] btrfs_cow_block+0xfe/0x146 [btrfs]
-[ 9792.654986]  [<ffffffffa03848b0>] btrfs_search_slot+0x14d/0x4b6 [btrfs]
-[ 9792.654997]  [<ffffffffa03b8562>] ? map_extent_buffer+0x6e/0xa8 [btrfs]
-[ 9792.655022]  [<ffffffffa03938e8>] btrfs_lookup_inode+0x2f/0x8f [btrfs]
-[ 9792.655025]  [<ffffffff8147afac>] ? _cond_resched+0xe/0x22
-[ 9792.655027]  [<ffffffff8147b892>] ? mutex_lock+0x29/0x50
-[ 9792.655039]  [<ffffffffa03d41b1>]
-btrfs_update_delayed_inode+0x72/0x137 [btrfs]
-[ 9792.655051]  [<ffffffffa03d4ea2>] btrfs_run_delayed_items+0x90/0xdb
-[btrfs]
-[ 9792.655062]  [<ffffffffa039a69b>]
-btrfs_commit_transaction+0x228/0x654 [btrfs]
-[ 9792.655064]  [<ffffffff8106e8da>] ? remove_wait_queue+0x3a/0x3a
-[ 9792.655075]  [<ffffffffa03a2fa5>] btrfs_evict_inode+0x14d/0x202 [btrfs]
-[ 9792.655077]  [<ffffffff81132bd6>] evict+0x71/0x111
-[ 9792.655079]  [<ffffffff81132de0>] iput+0x12a/0x132
-[ 9792.655081]  [<ffffffff8112aa3a>] do_unlinkat+0x106/0x155
-[ 9792.655083]  [<ffffffff81127b83>] ? path_put+0x1f/0x23
-[ 9792.655085]  [<ffffffff8109c53c>] ? audit_syscall_entry+0x145/0x171
-[ 9792.655087]  [<ffffffff81128410>] ? putname+0x34/0x36
-[ 9792.655090]  [<ffffffff8112b441>] sys_unlinkat+0x29/0x2b
-[ 9792.655092]  [<ffffffff81482c42>] system_call_fastpath+0x16/0x1b
-[ 9792.655093] ---[ end trace 02b696eb02b3f768 ]---
+Regards,
+Andrey
 
-
-This is because use_block_rsv() is having to do a
-reserve_metadata_bytes(), which shouldn't happen as we should have
-reserved enough space for those operations to complete.  This is
-happening because use_block_rsv() will call get_block_rsv(), which if
-root->ref_cows is set (which is the case on all fs roots) we will use
-trans->block_rsv, which will only have what the current transaction
-starter had reserved.
-
-What needs to be done instead is we need to have a block reserve that
-any reservation that is done at create time for these inodes is migrated
-to this special reserve, and then when you run the delayed inode items
-stuff you set trans->block_rsv to the special block reserve so the
-accounting is all done properly.
-
-This is just off the top of my head, there may be a better way to do it,
-I've not actually looked that the delayed inode code at all.
-
-I would do this myself but I have a ever increasing list of shit to do
-so will somebody pick this up and fix it please?  Thanks,
-
-Josef
+>
+> =C2=A0 Hugo.
+>
+> --
+> =3D=3D=3D Hugo Mills: hugo@... carfax.org.uk | darksatanic.net | lug.=
+org.uk =3D=3D=3D
+> =C2=A0PGP key: 515C238D from wwwkeys.eu.pgp.net or http://www.carfax.=
+org.uk
+> =C2=A0 =C2=A0 =C2=A0 =C2=A0 --- Is it true that "last known good" on =
+Windows XP ---
+> =C2=A0 =C2=A0 =C2=A0 =C2=A0 =C2=A0 =C2=A0 =C2=A0 =C2=A0 =C2=A0 =C2=A0=
+ =C2=A0 =C2=A0 =C2=A0 =C2=A0boots into CP/M?
+>
+> -----BEGIN PGP SIGNATURE-----
+> Version: GnuPG v1.4.10 (GNU/Linux)
+>
+> iD8DBQFN6RAiIKyzvlFcI40RAkkQAKCAulO65dL1F/vaO7W20qJEAKuonwCghfvH
+> XlliA+eCfmLmP/G0quVALe0=3D
+> =3Dm513
+> -----END PGP SIGNATURE-----
+>
+>
+--
+To unsubscribe from this list: send the line "unsubscribe linux-btrfs" =
+in
+the body of a message to majordomo@vger.kernel.org
+More majordomo info at  http://vger.kernel.org/majordomo-info.html

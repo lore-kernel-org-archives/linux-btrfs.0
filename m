@@ -1,54 +1,98 @@
-From: Johannes Hirte <johannes.hirte@fem.tu-ilmenau.de>
-Subject: Re: Quota Implementation
-Date: Fri, 3 Jun 2011 23:18:37 +0200
-Message-ID: <201106032318.38305.johannes.hirte@fem.tu-ilmenau.de>
-References: <4DE90AC9.5040106@gmx.net>
+From: Hugo Mills <hugo@carfax.org.uk>
+Subject: Re: Announcing btrfs-gui
+Date: Fri, 3 Jun 2011 22:48:53 +0100
+Message-ID: <20110603214853.GA25614@carfax.org.uk>
+References: <20110601232058.GA22619@carfax.org.uk>
+ <BANLkTin_2u0VmmAJXVKnA_s3LuCkoKt29Q@mail.gmail.com>
+ <20110602084108.GB8002@carfax.org.uk>
 Mime-Version: 1.0
-Content-Type: Text/Plain;
-  charset="iso-8859-1"
-Cc: "linux-btrfs" <linux-btrfs@vger.kernel.org>,
-	Chris Mason <chris.mason@oracle.com>, hch@infradead.org,
-	ricwheeler@gmail.com, linux-fsdevel@vger.kernel.org
-To: Arne Jansen <sensille@gmx.net>
+Content-Type: multipart/signed; micalg=pgp-sha1;
+	protocol="application/pgp-signature"; boundary="bg08WKrSYDhXBjb5"
+To: "Fajar A. Nugraha" <list@fajar.net>,
+	Btrfs mailing list <linux-btrfs@vger.kernel.org>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <4DE90AC9.5040106@gmx.net>
+In-Reply-To: <20110602084108.GB8002@carfax.org.uk>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Friday 03 June 2011 18:24:41 Arne Jansen wrote:
-> Hi,
-> 
-> If no one is already working on it, I'd like to take the Quota lock and
-> see how far I come.
-> Let me sketch out in short what I'm planning to do:
-> 
->   - Quota will be subvolume based. Only the FS-trees and data extents
->     will be accounted.
->   - Quota Groups can be defined. Every quota group can comprise any
->     number of subvolumes. A subvolume can be assigned to any number
->     of quota groups.
->   - A Quota Group can account/limit the total amount of space that is
->     referenced by it and/or the amount of space that is exclusively
->     referenced (i.e. referenced by no other quota group).
->   - With this it is possible to define a hierarchical quota that need
->     not necessarily reflect the filesystem hierarchy.
->   - It is also possible to decide for each snapshot if it should be
->     accounted into the parent group. So in a scenario where each
->     subvolume reflect a user home, it's possible to have some snapshots
->     accounted to the user and others not (e.g. the ones needed for system
->     backups).
->   - Quota information will be stored in new records, possibly in a
->     separate tree.
->   - It should be possible to change the Quota config and group
->     assignments online, though this might need a full re-scan of the fs.
->   - It does NOT include any kind of user/group (UID/GID) quota.
-> 
-> Any addenda or arguments why it's impossible or insane welcome.
 
-What's the benefit of this complexity? Why not a more simple quota/reservation 
-per subvolume? The semantics you described, can be achived by user/group 
-quotas too. And we need them anyway. Perhaps this can be implemented together, 
-reusing the code. Then we have the question if user/group quotas are per 
-filesystem or per subvolume.
+--bg08WKrSYDhXBjb5
+Content-Type: text/plain; charset=iso-8859-1
+Content-Disposition: inline
+Content-Transfer-Encoding: quoted-printable
 
-regards,
-  Johannes
+On Thu, Jun 02, 2011 at 09:41:08AM +0100, Hugo Mills wrote:
+> On Thu, Jun 02, 2011 at 03:31:16PM +0700, Fajar A. Nugraha wrote:
+> > On Thu, Jun 2, 2011 at 6:20 AM, Hugo Mills <hugo@carfax.org.uk> wrote:
+> > > =A0 Over the last few weeks, I've been playing with a foolish idea,
+> > > mostly triggered by a cluster of people being confused by btrfs's free
+> > > space reporting (df vs btrfs fi df vs btrfs fi show). I also wanted an
+> > > excuse, and some code, to mess around in the depths of the FS data
+> > > structures.
+> > >
+> > > =A0 Like all silly ideas, this one got a bit out of hand, and seems to
+> > > have turned into something vaguely useful. I'm therefore pleased to
+> > > announce the first major public release of btrfs-gui[1]: a point-and-
+> > > click tool for managing btrfs filesystems.
+> > >
+> > > =A0 The tool currently can scan for and list btrfs filesystems and the
+> > > volumes they live on. It can show the allocation and usage of data in
+> > > a selected filesystem, categorised by use, replication, and device. It
+> > > can show and manipulate subvolumes and snapshots: creation, deletion,
+> > > and setting the default.
+> >=20
+> >=20
+> > Some comments:
+> > (1) Currently it needs to be run from the directory where it's
+> > downloaded, even after a "python3 setup.py install". When run from
+> > other directory, it bails with
+[snip]
+> > OSError: [Errno 2] No such file or directory: './btrfs-gui-helper'
+> >=20
+> > Is this intentional?
+>=20
+>    No, and will be fixed later today. I forsee an emergency 0.2.1
+> coming shortly. :)
+
+   OK, it's fixed in git in the stable-v0.2 branch. Unless anyone else
+reports something that needs fixing over the weekend, I'll tag it as
+0.2.1 on Sunday and roll another release tarball.
+
+   (The fix is actually pretty ugly, and has some poor UX in it for
+one case, but I've run out of brain this evening, and can't face the
+shell hackery necessary to do it nicely right now.)
+
+> > (2) When showing space usage for a single-device FS, selecting "Show
+> > unallocated space as raw space", why is the top and bottom graph
+> > different? Shouldn't it be the same, since there's only one device?
+>=20
+>    Good question. I shall investigate what's going on.
+
+   OK, on investigation and reflection, it shouldn't be identical,
+because metadata is DUP. The per-disk displays show actual physical
+disk usage; the filesystem display at the top shows unique
+data. Therefore, the top display will show half the amount of metadata
+than the bottom.
+
+   Hugo.
+
+--=20
+=3D=3D=3D Hugo Mills: hugo@... carfax.org.uk | darksatanic.net | lug.org.uk=
+ =3D=3D=3D
+  PGP key: 515C238D from wwwkeys.eu.pgp.net or http://www.carfax.org.uk
+   --- Comic Sans goes into a bar,  and the barman says, "We don't ---  =20
+                         serve your type here."                         =20
+
+--bg08WKrSYDhXBjb5
+Content-Type: application/pgp-signature; name="signature.asc"
+Content-Description: Digital signature
+Content-Disposition: inline
+
+-----BEGIN PGP SIGNATURE-----
+Version: GnuPG v1.4.10 (GNU/Linux)
+
+iD8DBQFN6VbFIKyzvlFcI40RAr7cAJ9XeG1AkKJD6U1X6l5D7GYhClVoKQCeNj9P
+z1jRRU1qwLDdFW/TUdpvcT0=
+=Co4p
+-----END PGP SIGNATURE-----
+
+--bg08WKrSYDhXBjb5--

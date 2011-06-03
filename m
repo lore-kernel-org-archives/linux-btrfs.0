@@ -1,43 +1,42 @@
-From: Chris Mason <chris.mason@oracle.com>
-Subject: Re: [PATCH] btrfs: fix uninitialized variable warning
-Date: Fri, 03 Jun 2011 10:56:18 -0400
-Message-ID: <1307112880-sup-4802@shiny>
-References: <20110603110011.77121203.sfr@canb.auug.org.au> <20110603145014.GU12709@twin.jikos.cz>
-Content-Type: text/plain; charset=UTF-8
-Cc: Stephen Rothwell <sfr@canb.auug.org.au>,
-	linux-next <linux-next@vger.kernel.org>,
-	linux-kernel <linux-kernel@vger.kernel.org>,
-	Miao Xie <miaox@cn.fujitsu.com>,
-	Tsutomu Itoh <t-itoh@jp.fujitsu.com>,
-	Itaru Kitayama <kitayama@cl.bb4u.ne.jp>,
-	linux-btrfs <linux-btrfs@vger.kernel.org>
-To: dave <dave@jikos.cz>
-Return-path: <linux-next-owner@vger.kernel.org>
-In-reply-to: <20110603145014.GU12709@twin.jikos.cz>
+From: Arne Jansen <sensille@gmx.net>
+Subject: Quota Implementation
+Date: Fri, 03 Jun 2011 18:24:41 +0200
+Message-ID: <4DE90AC9.5040106@gmx.net>
+Mime-Version: 1.0
+Content-Type: text/plain; charset=ISO-8859-1; format=flowed
+Cc: Chris Mason <chris.mason@oracle.com>, hch@infradead.org,
+	ricwheeler@gmail.com
+To: linux-btrfs <linux-btrfs@vger.kernel.org>
+Return-path: <linux-btrfs-owner@vger.kernel.org>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Excerpts from David Sterba's message of 2011-06-03 10:50:14 -0400:
-> From: David Sterba <dsterba@suse.cz>
-> 
-> With Linus' tree, today's linux-next build (powercp ppc64_defconfig)
-> produced this warning:
-> 
-> fs/btrfs/delayed-inode.c: In function 'btrfs_delayed_update_inode':
-> fs/btrfs/delayed-inode.c:1598:6: warning: 'ret' may be used
-> uninitialized in this function
-> 
-> Introduced by commit 16cdcec736cd ("btrfs: implement delayed inode items
-> operation").
-> 
-> This fixes a bug in btrfs_update_inode(): if the returned value from
-> btrfs_delayed_update_inode is a nonzero garbage, inode stat data are not
-> updated and several call paths may hit a BUG_ON or fail with strange
-> code.
+Hi,
 
-Ugh, thanks!  It looks like the gcc uninit stuff isn't as verbose as it
-used to be, but it does catch a bunch of allocated/set but not used
-vars.
+If no one is already working on it, I'd like to take the Quota lock and
+see how far I come.
+Let me sketch out in short what I'm planning to do:
 
-I have a nitems = 0 fix in my tree as well.
+  - Quota will be subvolume based. Only the FS-trees and data extents
+    will be accounted.
+  - Quota Groups can be defined. Every quota group can comprise any
+    number of subvolumes. A subvolume can be assigned to any number
+    of quota groups.
+  - A Quota Group can account/limit the total amount of space that is
+    referenced by it and/or the amount of space that is exclusively
+    referenced (i.e. referenced by no other quota group).
+  - With this it is possible to define a hierarchical quota that need
+    not necessarily reflect the filesystem hierarchy.
+  - It is also possible to decide for each snapshot if it should be
+    accounted into the parent group. So in a scenario where each
+    subvolume reflect a user home, it's possible to have some snapshots
+    accounted to the user and others not (e.g. the ones needed for system
+    backups).
+  - Quota information will be stored in new records, possibly in a
+    separate tree.
+  - It should be possible to change the Quota config and group
+    assignments online, though this might need a full re-scan of the fs.
+  - It does NOT include any kind of user/group (UID/GID) quota.
 
--chris
+Any addenda or arguments why it's impossible or insane welcome.
+
+-Arne

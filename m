@@ -1,53 +1,51 @@
-From: Sedat Dilek <sedat.dilek@googlemail.com>
+From: Greg KH <greg@kroah.com>
 Subject: Re: linux-next: build warninga in Linus' tree
-Date: Fri, 3 Jun 2011 14:25:34 +0200
-Message-ID: <BANLkTim-0xj7Pr2EkZs2JEkyVw_7F9eM=g@mail.gmail.com>
+Date: Fri, 3 Jun 2011 22:16:28 +0900
+Message-ID: <20110603131628.GB7355__25517.1809615151$1307108625$gmane$org@kroah.com>
 References: <20110530113653.5c7084f0.sfr@canb.auug.org.au>
-Reply-To: sedat.dilek@gmail.com
+ <20110531175709.GC12709@twin.jikos.cz>
+ <BANLkTi=t5H8sAc_0sHyFt_xJgbeVibO3KQ@mail.gmail.com>
+ <20110603111048.GR12709@twin.jikos.cz>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=UTF-8
-Cc: Chris Mason <chris.mason@oracle.com>, linux-next@vger.kernel.org,
-	linux-kernel@vger.kernel.org, linux-btrfs@vger.kernel.org
-To: Stephen Rothwell <sfr@canb.auug.org.au>
-Return-path: <linux-next-owner@vger.kernel.org>
-In-Reply-To: <20110530113653.5c7084f0.sfr@canb.auug.org.au>
+Content-Type: text/plain; charset=us-ascii
+To: Mitch Harder <mitch.harder@sabayonlinux.org>, dave@jikos.cz,
+	Stephen Rothwell <sfr@canb.auug.org.au>,
+	Chris Mason <chris.mason@oracle.com>,
+	linux-next@vger.kernel.org, linux-kernel@vg
+Return-path: <linux-btrfs-owner@vger.kernel.org>
+In-Reply-To: <20110603111048.GR12709@twin.jikos.cz>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Mon, May 30, 2011 at 3:36 AM, Stephen Rothwell <sfr@canb.auug.org.au=
-> wrote:
-> Hi all,
->
-> After merging the Linus' tree, today's linux-next build (powerpc
-> ppc64_defconfig) produced these warnings:
->
-> fs/btrfs/sysfs.c:76:26: warning: 'btrfs_root_attrs' defined but not u=
-sed
-> fs/btrfs/sysfs.c:97:26: warning: 'btrfs_super_attrs' defined but not =
-used
-> fs/btrfs/sysfs.c:153:13: warning: 'btrfs_super_release' defined but n=
-ot used
-> fs/btrfs/sysfs.c:160:13: warning: 'btrfs_root_release' defined but no=
-t used
->
-> I have started using gcc v4.5.2 (instead of v4.4.4) if that makes a
-> difference.
+On Fri, Jun 03, 2011 at 01:10:49PM +0200, David Sterba wrote:
+> On Wed, Jun 01, 2011 at 10:16:48AM -0500, Mitch Harder wrote:
+> > I've been playing around with resurrecting the basic sysfs
+> > capabilities that had been previously incorporated into btrfs.
+> > 
+> > As it stands right now, it was relatively easy to re-implement sysfs
+> > as it was originally.  However, that implementation of sysfs wasn't
+> > populated with much information (only total_blocks, blocks_used, and
+> > blocksize).
+> 
+> Goffredo Baroncelli (CCed) posted a patch to enhance sysfs interface:
+> 
+> https://patchwork.kernel.org/patch/308902/
+> (http://www.spinics.net/lists/linux-btrfs/msg06777.html)
+> 
+> > I also had to reverse a small portion of code that was in the last
+> > clean-up.
+> 
+> Restoring the code should not be a problem, the cleanup was too eager
+> and I think a sysfs inteface would be good, not only for debugging
+> purposes or tuning.
+> 
+> > If a CONFIG_BTRFS_DEBUG type configuration flag is ever introduced, it
+> > would be interesting to resurrect btrfs' sysfs capabilities.
+> 
+> Hearing about CONFIG_BTRFS_DEBUG again, seems worth to add it.
 
-I see the same warnings with Debian's gcc-4.6 (here: next-20110603),
-plus some more:
+For debugging stuff, please use debugfs instead of sysfs, as that is
+what it is there for.
 
-fs/btrfs/ioctl.c: In function 'btrfs_ioctl_fs_info.isra.24':
-fs/btrfs/ioctl.c:2080:1: warning: the frame size of 1032 bytes is
-larger than 1024 bytes [-Wframe-larger-than=3D]
+thanks,
 
-fs/btrfs/delayed-inode.c: In function 'btrfs_batch_insert_items':
-fs/btrfs/delayed-inode.c:690:9: warning: 'nitems' may be used
-uninitialized in this function [-Wuninitialized]
-
-- Sedat -
-
-> --
-> Cheers,
-> Stephen Rothwell =C2=A0 =C2=A0 =C2=A0 =C2=A0 =C2=A0 =C2=A0 =C2=A0 =C2=
-=A0 =C2=A0 =C2=A0sfr@canb.auug.org.au
-> http://www.canb.auug.org.au/~sfr/
->
+greg k-h

@@ -1,39 +1,91 @@
-From: David Sterba <dave@jikos.cz>
-Subject: Re: [PATCH][RESEND] btrfs: separate superblock items out of fs_info
-Date: Fri, 3 Jun 2011 18:36:43 +0200
-Message-ID: <20110603163643.GV12709@twin.jikos.cz>
-References: <1307031202-14029-1-git-send-email-dsterba@suse.cz>
- <20110602213643.6d62caef@sf>
-Reply-To: dave@jikos.cz
+From: Hugo Mills <hugo@carfax.org.uk>
+Subject: Re: Quota Implementation
+Date: Fri, 3 Jun 2011 17:47:30 +0100
+Message-ID: <20110603164730.GB10842@carfax.org.uk>
+References: <4DE90AC9.5040106@gmx.net>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Cc: David Sterba <dsterba@suse.cz>, linux-btrfs@vger.kernel.org,
-	chris.mason@oracle.com
-To: Sergei Trofimovich <slyich@gmail.com>
+Content-Type: multipart/signed; micalg=pgp-sha1;
+	protocol="application/pgp-signature"; boundary="6sX45UoQRIJXqkqR"
+Cc: linux-btrfs <linux-btrfs@vger.kernel.org>,
+	Chris Mason <chris.mason@oracle.com>, hch@infradead.org,
+	ricwheeler@gmail.com
+To: Arne Jansen <sensille@gmx.net>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <20110602213643.6d62caef@sf>
+In-Reply-To: <4DE90AC9.5040106@gmx.net>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Thu, Jun 02, 2011 at 09:36:43PM +0300, Sergei Trofimovich wrote:
-> ...
-> > @@ -801,6 +800,15 @@ static struct dentry *btrfs_mount(struct file_system_type *fs_type, int flags,
-> >  	fs_info->fs_devices = fs_devices;
-> >  	tree_root->fs_info = fs_info;
-> >  
-> > +	fs_info->super_copy = kzalloc(sizeof(struct btrfs_super_block),
-> > +			GFP_NOFS);
-> > +	fs_info->super_for_commit = kzalloc(sizeof(struct btrfs_super_block),
-> > +			GFP_NOFS);
+
+--6sX45UoQRIJXqkqR
+Content-Type: text/plain; charset=us-ascii
+Content-Disposition: inline
+
+On Fri, Jun 03, 2011 at 06:24:41PM +0200, Arne Jansen wrote:
+> Hi,
 > 
-> In light of http://thread.gmane.org/gmane.comp.file-systems.btrfs/11004/focus=11038
-> what do you think of allocating BTRFS_SUPER_INFO_SIZE instead of sizeof?
+> If no one is already working on it, I'd like to take the Quota lock and
+> see how far I come.
+> Let me sketch out in short what I'm planning to do:
+> 
+>  - Quota will be subvolume based. Only the FS-trees and data extents
+>    will be accounted.
+>  - Quota Groups can be defined. Every quota group can comprise any
+>    number of subvolumes. A subvolume can be assigned to any number
+>    of quota groups.
+>  - A Quota Group can account/limit the total amount of space that is
+>    referenced by it and/or the amount of space that is exclusively
+>    referenced (i.e. referenced by no other quota group).
+>  - With this it is possible to define a hierarchical quota that need
+>    not necessarily reflect the filesystem hierarchy.
+>  - It is also possible to decide for each snapshot if it should be
+>    accounted into the parent group. So in a scenario where each
+>    subvolume reflect a user home, it's possible to have some snapshots
+>    accounted to the user and others not (e.g. the ones needed for system
+>    backups).
+>  - Quota information will be stored in new records, possibly in a
+>    separate tree.
+>  - It should be possible to change the Quota config and group
+>    assignments online, though this might need a full re-scan of the fs.
+>  - It does NOT include any kind of user/group (UID/GID) quota.
+> 
+> Any addenda or arguments why it's impossible or insane welcome.
 
-that it's absolutely correct fix. Although allocator would provide a 4kb
-buffer (slab) and the rest of the 2.5-4kb space would remain untouched,
-this could bite later, when this assumption would not hold.
+   There's a problem in that in some cases, it's possible to get into
+a situation where you can't *delete* files because you're going over
+quota. If I have two subvolumes that share most of their data
+(e.g. one is a snapshot of the other), and both subvolumes have a
+limit under the "exclusive use" clause, then deleting material from
+subvolume A could cause subvolume B to go over quota.
 
-Passed through xfstests and a few fs_mark rounds.
-Patch updated in git://repo.or.cz/linux-2.6/btrfs-unstable.git #cleanups
+   If users can create their own subvolumes, then using the "exclusive
+use" form is also pointless, because as a user, I can simply snapshot
+(or otherwise CoW copy) all my data into a snapshot, and I then don't
+pay for it. That one probably comes under the "admin shot himself in
+the foot", though.
 
+   Getting out the bike-shed brush, I might suggest the use of some
+name other than "quota", because inevitably people will think of
+UID/GID-type quotas, and we've got enough confusingly-modified
+terminology already. "Size bounds", "storage bounds", possibly?
 
-david
+   Hugo.
+
+-- 
+=== Hugo Mills: hugo@... carfax.org.uk | darksatanic.net | lug.org.uk ===
+  PGP key: 515C238D from wwwkeys.eu.pgp.net or http://www.carfax.org.uk
+         --- Is it true that "last known good" on Windows XP ---         
+                            boots into CP/M?                             
+
+--6sX45UoQRIJXqkqR
+Content-Type: application/pgp-signature; name="signature.asc"
+Content-Description: Digital signature
+Content-Disposition: inline
+
+-----BEGIN PGP SIGNATURE-----
+Version: GnuPG v1.4.10 (GNU/Linux)
+
+iD8DBQFN6RAiIKyzvlFcI40RAkkQAKCAulO65dL1F/vaO7W20qJEAKuonwCghfvH
+XlliA+eCfmLmP/G0quVALe0=
+=m513
+-----END PGP SIGNATURE-----
+
+--6sX45UoQRIJXqkqR--

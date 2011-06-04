@@ -1,77 +1,72 @@
-From: Sergei Trofimovich <slyfox@gentoo.org>
-Subject: [PATCH v2 9/9] mkfs.btrfs: fix error text in '-r' mode
-Date: Sat,  4 Jun 2011 11:19:24 +0300
-Message-ID: <1307175564-25355-10-git-send-email-slyfox@gentoo.org>
-References: <1307175564-25355-1-git-send-email-slyfox@gentoo.org>
-Cc: linux-btrfs@vger.kernel.org, Sergei Trofimovich <slyfox@gentoo.org>
-To: Chris Mason <chris.mason@oracle.com>
+From: Martin Steigerwald <Martin@lichtvoll.de>
+Subject: Safe fsck / consistent backup while mounted
+Date: Sat, 4 Jun 2011 12:25:55 +0200
+Message-ID: <201106041225.56028.Martin@lichtvoll.de>
+Mime-Version: 1.0
+Content-Type: multipart/signed;
+  boundary="nextPart1378788.jD5h3qRMXR";
+  protocol="application/pgp-signature";
+  micalg=pgp-sha1
+To: "linux-btrfs" <linux-btrfs@vger.kernel.org>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <1307175564-25355-1-git-send-email-slyfox@gentoo.org>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Smart gcc noticed use of uninitialized warning when compiled
-with -O0 flags:
+--nextPart1378788.jD5h3qRMXR
+Content-Type: text/plain;
+  charset="iso-8859-1"
+Content-Transfer-Encoding: quoted-printable
 
-    mkfs.c:1291: error: 'file' may be used uninitialized in this function
+Hi!
 
-Signed-off-by: Sergei Trofimovich <slyfox@gentoo.org>
----
- mkfs.c |    2 +-
- 1 files changed, 1 insertions(+), 1 deletions(-)
+In mailing list debian-user-german we are discussing safe ways to do a=20
+fsck when mounted.
 
-diff --git a/mkfs.c b/mkfs.c
-index a65fb4d..44a05e8 100644
---- a/mkfs.c
-+++ b/mkfs.c
-@@ -1272,47 +1272,47 @@ int main(int ac, char **av)
- 			fprintf(stderr, "error checking %s mount status\n", file);
- 			exit(1);
- 		}
- 		if (ret == 1) {
- 			fprintf(stderr, "%s is mounted\n", file);
- 			exit(1);
- 		}
- 		ac--;
- 		fd = open(file, O_RDWR);
- 		if (fd < 0) {
- 			fprintf(stderr, "unable to open %s\n", file);
- 			exit(1);
- 		}
- 		first_fd = fd;
- 		first_file = file;
- 		ret = btrfs_prepare_device(fd, file, zero_end, &dev_block_count, &mixed);
- 		if (block_count == 0)
- 			block_count = dev_block_count;
- 	} else {
- 		ac = 0;
-+		file = output;
- 		fd = open_target(output);
- 		if (fd < 0) {
- 			fprintf(stderr, "unable to open the %s\n", file);
- 			exit(1);
- 		}
- 
--		file = output;
- 		first_fd = fd;
- 		first_file = file;
- 		block_count = size_sourcedir(source_dir, sectorsize,
- 					     &num_of_meta_chunks, &size_of_data);
- 		ret = zero_output_file(fd, block_count, sectorsize);
- 		if (ret) {
- 			fprintf(stderr, "unable to zero the output file\n");
- 			exit(1);
- 		}
- 	}
- 	if (mixed) {
- 		if (!metadata_profile_opt)
- 			metadata_profile = 0;
- 		if (!data_profile_opt)
- 			data_profile = 0;
- 
- 		if (metadata_profile != data_profile) {
- 			fprintf(stderr, "With mixed block groups data and metadata "
- 				"profiles must be the same\n");
- 			exit(1);
--- 
-1.7.3.4
+I tested with Ext4 that fsck -nf works either with mount -o remount,ro or=20
+fsfreeze -f while writing with:
 
+I=3D0; while true ; let I=3DI+1 ; do touch /boot/test$I ; sleep 0.2 ; done
+
+In the read only mount case the write application returns errors, in the=20
+fsfreeze case Linux kernel stacks the changes in memory, but the fsck=20
+reports no errors like it should.
+
+
+Now I thought about a way to safely backup a MySQL or other database -=20
+without long service interruption:
+
+=2D Tell DB to turn itself into consistent state and freeze there
+=2D sync / btrfs filesystem sync ; fsfreeze -f /mountpoint
+=2D btrfs subvolume snapshot
+=2D fsfreeze -u /mountpoint
+=2D Tell DB to continue business as usual
+
+My questions are:
+
+1) Would this work?
+
+2) Is the sync needed? And if so how to avoid the race condition between=20
+the sync and the fsfreeze invocation? Reading from the fsfreeze manpage I=20
+understand that fsfreeze allows all ongoing transactions to complete. But=20
+does that include everything what sync would bring to disk?
+
+3) Is the fsfreeze needed at all? Does btrfs subvolume freeze the=20
+filesystem prior to the snapshot? The manpage doesn=B4t tell it.
+
+Thanks,
+=2D-=20
+Martin 'Helios' Steigerwald - http://www.Lichtvoll.de
+GPG: 03B0 0D6C 0040 0710 4AFA  B82F 991B EAAC A599 84C7
+
+--nextPart1378788.jD5h3qRMXR
+Content-Type: application/pgp-signature; name=signature.asc 
+Content-Description: This is a digitally signed message part.
+
+-----BEGIN PGP SIGNATURE-----
+Version: GnuPG v1.4.11 (GNU/Linux)
+
+iEYEABECAAYFAk3qCDMACgkQmRvqrKWZhMdSbQCfcXgmaj1Um5/DkPES39gIukbK
+wY4AnRBXfiDVwN7dQEl1Fd2OZWtlMoZQ
+=I4AT
+-----END PGP SIGNATURE-----
+
+--nextPart1378788.jD5h3qRMXR--

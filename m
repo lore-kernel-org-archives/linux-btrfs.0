@@ -1,7 +1,7 @@
 From: Sergei Trofimovich <slyfox@gentoo.org>
-Subject: [PATCH v2 5/9] mkfs.btrfs: fix symlink names writing
-Date: Sat,  4 Jun 2011 11:19:20 +0300
-Message-ID: <1307175564-25355-6-git-send-email-slyfox@gentoo.org>
+Subject: [PATCH v2 6/9] mkfs.btrfs: write zeroes instead on uninitialized data.
+Date: Sat,  4 Jun 2011 11:19:21 +0300
+Message-ID: <1307175564-25355-7-git-send-email-slyfox@gentoo.org>
 References: <1307175564-25355-1-git-send-email-slyfox@gentoo.org>
 Cc: linux-btrfs@vger.kernel.org, Sergei Trofimovich <slyfox@gentoo.org>
 To: Chris Mason <chris.mason@oracle.com>
@@ -22,66 +22,117 @@ Found by valgrind:
 ==8968==  Uninitialised value was created by a stack allocation
 ==8968==    at 0x42B5FB: add_inode_items (mkfs.c:493)
 
-readlink(2) does not write '\0' for us, so make it manually.
+1. On-disk inode format has reserved (and thus, random at alloc time) fields:
+   btrfs_inode_item: __le64 reserved[4]
+2. Sometimes extents are created on disk without writing data there.
+   (Or at least not all data is written there). Kernel code always had
+   it kzalloc'ed.
+Zero them all.
 
 Signed-off-by: Sergei Trofimovich <slyfox@gentoo.org>
 ---
- mkfs.c |    4 +++-
- 1 files changed, 3 insertions(+), 1 deletions(-)
+ extent_io.c |    1 +
+ mkfs.c      |    7 +++++++
+ 2 files changed, 8 insertions(+), 0 deletions(-)
 
+diff --git a/extent_io.c b/extent_io.c
+index 069c199..a93d4d6 100644
+--- a/extent_io.c
++++ b/extent_io.c
+@@ -555,40 +555,41 @@ static int free_some_buffers(struct extent_io_tree *tree)
+ 		} else {
+ 			list_move_tail(&eb->lru, &tree->lru);
+ 		}
+ 		if (nrscan++ > 64)
+ 			break;
+ 	}
+ 	return 0;
+ }
+ 
+ static struct extent_buffer *__alloc_extent_buffer(struct extent_io_tree *tree,
+ 						   u64 bytenr, u32 blocksize)
+ {
+ 	struct extent_buffer *eb;
+ 	int ret;
+ 
+ 	eb = malloc(sizeof(struct extent_buffer) + blocksize);
+ 	if (!eb) {
+ 		BUG();
+ 		return NULL;
+ 	}
++	memset (eb, 0, sizeof(struct extent_buffer) + blocksize);
+ 
+ 	eb->start = bytenr;
+ 	eb->len = blocksize;
+ 	eb->refs = 2;
+ 	eb->flags = 0;
+ 	eb->tree = tree;
+ 	eb->fd = -1;
+ 	eb->dev_bytenr = (u64)-1;
+ 	eb->cache_node.start = bytenr;
+ 	eb->cache_node.size = blocksize;
+ 
+ 	free_some_buffers(tree);
+ 	ret = insert_existing_cache_extent(&tree->cache, &eb->cache_node);
+ 	if (ret) {
+ 		free(eb);
+ 		return NULL;
+ 	}
+ 	list_add_tail(&eb->lru, &tree->lru);
+ 	tree->cache_size += blocksize;
+ 	return eb;
 diff --git a/mkfs.c b/mkfs.c
-index 9d7b792..8ff2b1e 100644
+index 8ff2b1e..32f25f5 100644
 --- a/mkfs.c
 +++ b/mkfs.c
-@@ -692,45 +692,47 @@ static int record_file_extent(struct btrfs_trans_handle *trans,
- 				   root->root_key.objectid,
- 				   objectid, 0);
- fail:
- 	btrfs_release_path(root, &path);
+@@ -394,40 +394,47 @@ static int add_directory_items(struct btrfs_trans_handle *trans,
+ 	if (S_ISLNK(st->st_mode))
+ 		filetype = BTRFS_FT_SYMLINK;
+ 
+ 	ret = btrfs_insert_dir_item(trans, root, name, name_len,
+ 				    parent_inum, &location,
+ 				    filetype, index_cnt);
+ 
+ 	*dir_index_cnt = index_cnt;
+ 	index_cnt++;
+ 
  	return ret;
  }
  
- static int add_symbolic_link(struct btrfs_trans_handle *trans,
- 			     struct btrfs_root *root,
- 			     u64 objectid, const char *path_name)
+ static int fill_inode_item(struct btrfs_trans_handle *trans,
+ 			   struct btrfs_root *root,
+ 			   struct btrfs_inode_item *dst, struct stat *src)
  {
- 	int ret;
+ 	u64 blocks = 0;
  	u64 sectorsize = root->sectorsize;
- 	char *buf = malloc(sectorsize);
  
- 	ret = readlink(path_name, buf, sectorsize);
- 	if (ret <= 0) {
- 		fprintf(stderr, "readlink failed for %s\n", path_name);
- 		goto fail;
- 	}
--	if (ret > sectorsize) {
-+	if (ret >= sectorsize) {
- 		fprintf(stderr, "symlink too long for %s", path_name);
- 		ret = -1;
- 		goto fail;
- 	}
++	/*
++	 * btrfs_inode_item has some reserved fields
++	 * and represents on-disk inode entry, so
++	 * zero everything to prevent information leak
++	 */
++	memset (dst, 0, sizeof (*dst));
 +
-+	buf[ret] = '\0'; /* readlink does not do it for us */
- 	ret = btrfs_insert_inline_extent(trans, root, objectid, 0,
- 					 buf, ret + 1);
- fail:
- 	free(buf);
- 	return ret;
- }
+ 	btrfs_set_stack_inode_generation(dst, trans->transid);
+ 	btrfs_set_stack_inode_size(dst, src->st_size);
+ 	btrfs_set_stack_inode_nbytes(dst, 0);
+ 	btrfs_set_stack_inode_block_group(dst, 0);
+ 	btrfs_set_stack_inode_nlink(dst, src->st_nlink);
+ 	btrfs_set_stack_inode_uid(dst, src->st_uid);
+ 	btrfs_set_stack_inode_gid(dst, src->st_gid);
+ 	btrfs_set_stack_inode_mode(dst, src->st_mode);
+ 	btrfs_set_stack_inode_rdev(dst, 0);
+ 	btrfs_set_stack_inode_flags(dst, 0);
+ 	btrfs_set_stack_timespec_sec(&dst->atime, src->st_atime);
+ 	btrfs_set_stack_timespec_nsec(&dst->atime, 0);
+ 	btrfs_set_stack_timespec_sec(&dst->ctime, src->st_ctime);
+ 	btrfs_set_stack_timespec_nsec(&dst->ctime, 0);
+ 	btrfs_set_stack_timespec_sec(&dst->mtime, src->st_mtime);
+ 	btrfs_set_stack_timespec_nsec(&dst->mtime, 0);
+ 	btrfs_set_stack_timespec_sec(&dst->otime, 0);
+ 	btrfs_set_stack_timespec_nsec(&dst->otime, 0);
  
- static int add_file_items(struct btrfs_trans_handle *trans,
- 			  struct btrfs_root *root,
- 			  struct btrfs_inode_item *btrfs_inode, u64 objectid,
- 			  ino_t parent_inum, struct stat *st,
- 			  const char *path_name, int out_fd)
- {
- 	int ret;
- 	ssize_t ret_read;
- 	u64 bytes_read = 0;
- 	char *buffer = NULL;
- 	struct btrfs_key key;
- 	int blocks;
- 	u32 sectorsize = root->sectorsize;
+ 	if (S_ISDIR(src->st_mode)) {
 -- 
 1.7.3.4
 

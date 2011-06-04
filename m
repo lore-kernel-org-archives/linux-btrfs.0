@@ -1,7 +1,7 @@
 From: Sergei Trofimovich <slyfox@gentoo.org>
-Subject: [PATCH v2 7/9] mkfs.btrfs: free buffers allocated by pretty_sizes
-Date: Sat,  4 Jun 2011 11:19:22 +0300
-Message-ID: <1307175564-25355-8-git-send-email-slyfox@gentoo.org>
+Subject: [PATCH v2 8/9] mkfs.btrfs: fix memory leak caused by 'scandir()' calls
+Date: Sat,  4 Jun 2011 11:19:23 +0300
+Message-ID: <1307175564-25355-9-git-send-email-slyfox@gentoo.org>
 References: <1307175564-25355-1-git-send-email-slyfox@gentoo.org>
 Cc: linux-btrfs@vger.kernel.org, Sergei Trofimovich <slyfox@gentoo.org>
 To: Chris Mason <chris.mason@oracle.com>
@@ -9,107 +9,135 @@ Return-path: <linux-btrfs-owner@vger.kernel.org>
 In-Reply-To: <1307175564-25355-1-git-send-email-slyfox@gentoo.org>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-found by valgrind:
-==2559== 16 bytes in 1 blocks are definitely lost in loss record 3 of 19
-==2559==    at 0x4C2720E: malloc (vg_replace_malloc.c:236)
-==2559==    by 0x412F7E: pretty_sizes (utils.c:1054)
-==2559==    by 0x4179E9: main (mkfs.c:1395)
-
 Signed-off-by: Sergei Trofimovich <slyfox@gentoo.org>
 ---
- mkfs.c |    4 +++-
- 1 files changed, 3 insertions(+), 1 deletions(-)
+ mkfs.c |   16 ++++++++++++++++
+ 1 files changed, 16 insertions(+), 0 deletions(-)
 
 diff --git a/mkfs.c b/mkfs.c
-index 32f25f5..c8b19c1 100644
+index c8b19c1..a65fb4d 100644
 --- a/mkfs.c
 +++ b/mkfs.c
-@@ -1159,40 +1159,41 @@ int main(int ac, char **av)
- 	u64 data_profile = BTRFS_BLOCK_GROUP_RAID0;
- 	u32 leafsize = getpagesize();
- 	u32 sectorsize = 4096;
- 	u32 nodesize = leafsize;
- 	u32 stripesize = 4096;
- 	int zero_end = 1;
- 	int option_index = 0;
- 	int fd;
- 	int first_fd;
- 	int ret;
- 	int i;
- 	int mixed = 0;
- 	int data_profile_opt = 0;
- 	int metadata_profile_opt = 0;
- 
- 	char *source_dir = NULL;
- 	int source_dir_set = 0;
- 	char *output = "output.img";
- 	u64 num_of_meta_chunks = 0;
- 	u64 size_of_data = 0;
-+	char * pretty_buf;
- 
- 	while(1) {
- 		int c;
- 		c = getopt_long(ac, av, "A:b:l:n:s:m:d:L:r:VM", long_options,
- 				&option_index);
- 		if (c < 0)
- 			break;
- 		switch(c) {
- 			case 'A':
- 				alloc_start = parse_size(optarg);
- 				break;
- 			case 'd':
- 				data_profile = parse_profile(optarg);
- 				data_profile_opt = 1;
- 				break;
- 			case 'l':
- 				leafsize = parse_size(optarg);
- 				break;
- 			case 'L':
- 				label = parse_label(optarg);
-@@ -1378,41 +1379,42 @@ raid_groups:
- 	if (!source_dir_set) {
- 		ret = create_raid_groups(trans, root, data_profile,
- 				 metadata_profile, mixed);
- 		BUG_ON(ret);
+@@ -451,53 +451,67 @@ static int fill_inode_item(struct btrfs_trans_handle *trans,
+ 				blocks += 1;
+ 			blocks *= sectorsize;
+ 			btrfs_set_stack_inode_nbytes(dst, blocks);
+ 		}
  	}
+ 	if (S_ISLNK(src->st_mode))
+ 		btrfs_set_stack_inode_nbytes(dst, src->st_size + 1);
  
- 	ret = create_data_reloc_tree(trans, root);
- 	BUG_ON(ret);
- 
- 	if (mixed) {
- 		struct btrfs_super_block *super = &root->fs_info->super_copy;
- 		u64 flags = btrfs_super_incompat_flags(super);
- 
- 		flags |= BTRFS_FEATURE_INCOMPAT_MIXED_GROUPS;
- 		btrfs_set_super_incompat_flags(super, flags);
- 	}
- 
- 	printf("fs created label %s on %s\n\tnodesize %u leafsize %u "
- 	    "sectorsize %u size %s\n",
- 	    label, first_file, nodesize, leafsize, sectorsize,
--	    pretty_sizes(btrfs_super_total_bytes(&root->fs_info->super_copy)));
-+	    pretty_buf = pretty_sizes(btrfs_super_total_bytes(&root->fs_info->super_copy)));
-+	free (pretty_buf);
- 
- 	printf("%s\n", BTRFS_BUILD_VERSION);
- 	btrfs_commit_transaction(trans, root);
- 
- 	if (source_dir_set) {
- 		trans = btrfs_start_transaction(root, 1);
- 		ret = create_chunks(trans, root,
- 				    num_of_meta_chunks, size_of_data);
- 		BUG_ON(ret);
- 		btrfs_commit_transaction(trans, root);
- 
- 		ret = make_image(source_dir, root, fd);
- 		BUG_ON(ret);
- 	}
- 
- 	ret = close_ctree(root);
- 	BUG_ON(ret);
- 
- 	free(label);
  	return 0;
+ }
+ 
+ static int directory_select(const struct direct *entry)
+ {
+ 	if ((strncmp(entry->d_name, ".", entry->d_reclen) == 0) ||
+ 		(strncmp(entry->d_name, "..", entry->d_reclen) == 0))
+ 		return 0;
+ 	else
+ 		return 1;
+ }
+ 
++static void free_namelist(struct direct **files, int count)
++{
++	int i;
++
++	if (count < 0)
++		return;
++
++	for (i = 0; i < count; ++i)
++		free(files[i]);
++	free (files);
++}
++
+ static u64 calculate_dir_inode_size(char *dirname)
+ {
+ 	int count, i;
+ 	struct direct **files, *cur_file;
+ 	u64 dir_inode_size = 0;
+ 
+ 	count = scandir(dirname, &files, directory_select, NULL);
+ 
+ 	for (i = 0; i < count; i++) {
+ 		cur_file = files[i];
+ 		dir_inode_size += strlen(cur_file->d_name);
+ 	}
+ 
++	free_namelist(files, count);
++
+ 	dir_inode_size *= 2;
+ 	return dir_inode_size;
+ }
+ 
+ static int add_inode_items(struct btrfs_trans_handle *trans,
+ 			   struct btrfs_root *root,
+ 			   struct stat *st, char *name,
+ 			   u64 self_objectid, ino_t parent_inum,
+ 			   int dir_index_cnt, struct btrfs_inode_item *inode_ret)
+ {
+ 	int ret;
+ 	struct btrfs_key inode_key;
+ 	struct btrfs_inode_item btrfs_inode;
+ 	u64 objectid;
+ 	u64 inode_size = 0;
+ 	int name_len;
+ 
+ 	name_len = strlen(name);
+ 	fill_inode_item(trans, root, &btrfs_inode, st);
+ 	objectid = self_objectid;
+@@ -954,49 +968,51 @@ static int traverse_directory(struct btrfs_trans_handle *trans,
+ 				dir_entry->inum = cur_inum;
+ 				list_add_tail(&dir_entry->list,	&dir_head->list);
+ 			} else if (S_ISREG(st.st_mode)) {
+ 				ret = add_file_items(trans, root, &cur_inode,
+ 						     cur_inum, parent_inum, &st,
+ 						     cur_file->d_name, out_fd);
+ 				if (ret) {
+ 					fprintf(stderr, "add_file_items failed\n");
+ 					goto fail;
+ 				}
+ 			} else if (S_ISLNK(st.st_mode)) {
+ 				ret = add_symbolic_link(trans, root,
+ 						        cur_inum, cur_file->d_name);
+ 				if (ret) {
+ 					fprintf(stderr, "add_symbolic_link failed\n");
+ 					goto fail;
+ 				}
+ 			}
+ 		}
+ 
++		free_namelist(files, count);
+ 		free(parent_dir_entry->path);
+ 		free(parent_dir_entry);
+ 
+ 		index_cnt = 2;
+ 
+ 	} while (!list_empty(&dir_head->list));
+ 
+ 	return 0;
+ fail:
++	free_namelist(files, count);
+ 	free(parent_dir_entry->path);
+ 	free(parent_dir_entry);
+ 	return -1;
+ }
+ 
+ static int open_target(char *output_name)
+ {
+ 	int output_fd;
+ 	output_fd = open(output_name, O_CREAT | O_RDWR | O_TRUNC,
+ 		         S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP | S_IROTH);
+ 
+ 	return output_fd;
+ }
+ 
+ static int create_chunks(struct btrfs_trans_handle *trans,
+ 			 struct btrfs_root *root, u64 num_of_meta_chunks,
+ 			 u64 size_of_data)
+ {
+ 	u64 chunk_start;
+ 	u64 chunk_size;
 -- 
 1.7.3.4
 

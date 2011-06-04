@@ -1,7 +1,7 @@
 From: Sergei Trofimovich <slyfox@gentoo.org>
-Subject: [PATCH v2 4/9] mkfs.btrfs: return some defined value instead of garbage when lookup checksum
-Date: Sat,  4 Jun 2011 11:19:19 +0300
-Message-ID: <1307175564-25355-5-git-send-email-slyfox@gentoo.org>
+Subject: [PATCH v2 5/9] mkfs.btrfs: fix symlink names writing
+Date: Sat,  4 Jun 2011 11:19:20 +0300
+Message-ID: <1307175564-25355-6-git-send-email-slyfox@gentoo.org>
 References: <1307175564-25355-1-git-send-email-slyfox@gentoo.org>
 Cc: linux-btrfs@vger.kernel.org, Sergei Trofimovich <slyfox@gentoo.org>
 To: Chris Mason <chris.mason@oracle.com>
@@ -9,79 +9,79 @@ Return-path: <linux-btrfs-owner@vger.kernel.org>
 In-Reply-To: <1307175564-25355-1-git-send-email-slyfox@gentoo.org>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-==31873== Command: ./mkfs.btrfs -r /some/root/
-==31873== Parent PID: 31872
-==31873==
-==31873== Conditional jump or move depends on uninitialised value(s)
-==31873==    at 0x42C3D0: add_file_items (mkfs.c:792)
-==31873==    by 0x42CAB3: traverse_directory (mkfs.c:948)
-==31873==    by 0x42CF11: make_image (mkfs.c:1047)
-==31873==    by 0x42DE53: main (mkfs.c:1401)
-==31873==  Uninitialised value was created by a stack allocation
-==31873==    at 0x41B1B1: btrfs_csum_file_block (file-item.c:195)
+Found by valgrind:
+==8968== Use of uninitialised value of size 8
+==8968==    at 0x41CE7D: crc32c_le (crc32c.c:98)
+==8968==    by 0x40A1D0: csum_tree_block_size (disk-io.c:82)
+==8968==    by 0x40A2D4: csum_tree_block (disk-io.c:105)
+==8968==    by 0x40A7D6: write_tree_block (disk-io.c:241)
+==8968==    by 0x40ACEE: __commit_transaction (disk-io.c:354)
+==8968==    by 0x40AE9E: btrfs_commit_transaction (disk-io.c:385)
+==8968==    by 0x42CF66: make_image (mkfs.c:1061)
+==8968==    by 0x42DE63: main (mkfs.c:1410)
+==8968==  Uninitialised value was created by a stack allocation
+==8968==    at 0x42B5FB: add_inode_items (mkfs.c:493)
 
-'ret' value was not initialized for 'found' branch.
-
-The same fix sits in kernel:
-> commit 639cb58675ce9b507eed9c3d6b3335488079b21a
-> Author: Chris Mason <chris.mason@oracle.com>
-> Date:   Thu Aug 28 06:15:25 2008 -0400
->
->     Btrfs: Fix variable init during csum creation
->
->     Signed-off-by: Chris Mason <chris.mason@oracle.com>
+readlink(2) does not write '\0' for us, so make it manually.
 
 Signed-off-by: Sergei Trofimovich <slyfox@gentoo.org>
 ---
- file-item.c |    1 +
- 1 files changed, 1 insertions(+), 0 deletions(-)
+ mkfs.c |    4 +++-
+ 1 files changed, 3 insertions(+), 1 deletions(-)
 
-diff --git a/file-item.c b/file-item.c
-index 9732282..47f6ad2 100644
---- a/file-item.c
-+++ b/file-item.c
-@@ -201,40 +201,41 @@ int btrfs_csum_file_block(struct btrfs_trans_handle *trans,
- 	struct btrfs_path *path;
- 	struct btrfs_csum_item *item;
- 	struct extent_buffer *leaf = NULL;
- 	u64 csum_offset;
- 	u32 csum_result = ~(u32)0;
- 	u32 nritems;
- 	u32 ins_size;
- 	u16 csum_size =
- 		btrfs_super_csum_size(&root->fs_info->super_copy);
+diff --git a/mkfs.c b/mkfs.c
+index 9d7b792..8ff2b1e 100644
+--- a/mkfs.c
++++ b/mkfs.c
+@@ -692,45 +692,47 @@ static int record_file_extent(struct btrfs_trans_handle *trans,
+ 				   root->root_key.objectid,
+ 				   objectid, 0);
+ fail:
+ 	btrfs_release_path(root, &path);
+ 	return ret;
+ }
  
- 	path = btrfs_alloc_path();
- 	BUG_ON(!path);
+ static int add_symbolic_link(struct btrfs_trans_handle *trans,
+ 			     struct btrfs_root *root,
+ 			     u64 objectid, const char *path_name)
+ {
+ 	int ret;
+ 	u64 sectorsize = root->sectorsize;
+ 	char *buf = malloc(sectorsize);
  
- 	file_key.objectid = BTRFS_EXTENT_CSUM_OBJECTID;
- 	file_key.offset = bytenr;
- 	file_key.type = BTRFS_EXTENT_CSUM_KEY;
- 
- 	item = btrfs_lookup_csum(trans, root, path, bytenr, 1);
- 	if (!IS_ERR(item)) {
- 		leaf = path->nodes[0];
-+		ret = 0;
- 		goto found;
+ 	ret = readlink(path_name, buf, sectorsize);
+ 	if (ret <= 0) {
+ 		fprintf(stderr, "readlink failed for %s\n", path_name);
+ 		goto fail;
  	}
- 	ret = PTR_ERR(item);
- 	if (ret == -EFBIG) {
- 		u32 item_size;
- 		/* we found one, but it isn't big enough yet */
- 		leaf = path->nodes[0];
- 		item_size = btrfs_item_size_nr(leaf, path->slots[0]);
- 		if ((item_size / csum_size) >= MAX_CSUM_ITEMS(root, csum_size)) {
- 			/* already at max size, make a new one */
- 			goto insert;
- 		}
- 	} else {
- 		int slot = path->slots[0] + 1;
- 		/* we didn't find a csum item, insert one */
- 		nritems = btrfs_header_nritems(path->nodes[0]);
- 		if (path->slots[0] >= nritems - 1) {
- 			ret = btrfs_next_leaf(root, path);
- 			if (ret == 1)
- 				found_next = 1;
+-	if (ret > sectorsize) {
++	if (ret >= sectorsize) {
+ 		fprintf(stderr, "symlink too long for %s", path_name);
+ 		ret = -1;
+ 		goto fail;
+ 	}
++
++	buf[ret] = '\0'; /* readlink does not do it for us */
+ 	ret = btrfs_insert_inline_extent(trans, root, objectid, 0,
+ 					 buf, ret + 1);
+ fail:
+ 	free(buf);
+ 	return ret;
+ }
+ 
+ static int add_file_items(struct btrfs_trans_handle *trans,
+ 			  struct btrfs_root *root,
+ 			  struct btrfs_inode_item *btrfs_inode, u64 objectid,
+ 			  ino_t parent_inum, struct stat *st,
+ 			  const char *path_name, int out_fd)
+ {
+ 	int ret;
+ 	ssize_t ret_read;
+ 	u64 bytes_read = 0;
+ 	char *buffer = NULL;
+ 	struct btrfs_key key;
+ 	int blocks;
+ 	u32 sectorsize = root->sectorsize;
 -- 
 1.7.3.4
 

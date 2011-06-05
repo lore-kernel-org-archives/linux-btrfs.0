@@ -1,55 +1,48 @@
-From: Hugo Mills <hugo@carfax.org.uk>
-Subject: Re: convert raid-10 to raid-0?
-Date: Sun, 5 Jun 2011 11:54:32 +0100
-Message-ID: <20110605105432.GE8002@carfax.org.uk>
-References: <20110605013645.GD8111@taz.net.au>
+From: Joe Peterson <lavajoe@gentoo.org>
+Subject: Fix to btrfs-progs to avoid "underlinking"
+Date: Sun, 5 Jun 2011 10:41:15 -0600
+Message-ID: <BANLkTikPLUU=3bG0-S9X9a5oDQsKCD9E5Q@mail.gmail.com>
 Mime-Version: 1.0
-Content-Type: multipart/signed; micalg=pgp-sha1;
-	protocol="application/pgp-signature"; boundary="Ns7jmDPpOpCD+GE/"
-Cc: linux-btrfs@vger.kernel.org
-To: Craig Sanders <cas@taz.net.au>
+Content-Type: multipart/mixed; boundary=0016365edf76c1ed5104a4f9a70b
+To: linux-btrfs@vger.kernel.org
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <20110605013645.GD8111@taz.net.au>
 List-ID: <linux-btrfs.vger.kernel.org>
 
+--0016365edf76c1ed5104a4f9a70b
+Content-Type: text/plain; charset=ISO-8859-1
 
---Ns7jmDPpOpCD+GE/
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
+Attached is a simple patch to the makefile line that builds "convert".
+ It explicitly includes libcom_err, which is implicitly pulled in by
+libext2fs.  This fixes a what is called "underlinking" in this blog
+post:
 
-On Sun, Jun 05, 2011 at 11:36:45AM +1000, Craig Sanders wrote:
-> Please CC me on any replies as I am not subscribed to this list. Thanks.
-> 
-> Is it possible to convert an existing 4-disk btrfs volume created as
-> raid-10 to a btrfs raid-0/striped volume?
+    http://blog.flameeyes.eu/2010/11/26/it-s-not-all-gold-that-shines-why-underlinking-is-a-bad-thing
 
-   Not at present.
+Apparently, this condition causes links to fail using the "gold link
+editor", and it can cause future library version incompatibilities to
+not be detected (so that affected programs can be rebuilt).
 
-> i've got a btrfs raid-10 volume made with 4x1TB drives that's running
-> out of space, and i'd prefer not to reformat it if i don't have to.
+-Joe
 
-   There's a GSoC student due to be working on this over the summer.
-(I was looking at it, but I've stopped to give the student a clear run
-at it).
+[Note: please CC my email address in any responses]
 
-   Hugo.
+--0016365edf76c1ed5104a4f9a70b
+Content-Type: text/x-patch; charset=US-ASCII;
+	name="btrfs-progs-0.19-fix-underlinking.patch"
+Content-Disposition: attachment;
+	filename="btrfs-progs-0.19-fix-underlinking.patch"
+Content-Transfer-Encoding: base64
+X-Attachment-Id: f_gok7x9le0
 
--- 
-=== Hugo Mills: hugo@... carfax.org.uk | darksatanic.net | lug.org.uk ===
-  PGP key: 515C238D from wwwkeys.eu.pgp.net or http://www.carfax.org.uk
-                   --- Ceci n'est pas une pipe:  | ---                   
-
---Ns7jmDPpOpCD+GE/
-Content-Type: application/pgp-signature; name="signature.asc"
-Content-Description: Digital signature
-Content-Disposition: inline
-
------BEGIN PGP SIGNATURE-----
-Version: GnuPG v1.4.10 (GNU/Linux)
-
-iD8DBQFN62BnIKyzvlFcI40RAjQJAJ99IztEg+7xI+74jaiPD7ZXBaNCvQCeJCJ6
-HFvrwpi6VBHGHuvepmiT8Iw=
-=jwrc
------END PGP SIGNATURE-----
-
---Ns7jmDPpOpCD+GE/--
+LS0tIGJ0cmZzLXByb2dzLTAuMTkvTWFrZWZpbGV+CTIwMTEtMDYtMDUgMTA6MjE6MDQuMDAwMDAw
+MDAwIC0wNjAwCisrKyBidHJmcy1wcm9ncy0wLjE5L01ha2VmaWxlCTIwMTEtMDYtMDUgMTA6MjE6
+NDYuMDAwMDAwMDAwIC0wNjAwCkBAIC03NSw3ICs3NSw3IEBAIHF1aWNrLXRlc3Q6ICQob2JqZWN0
+cykgcXVpY2stdGVzdC5vCiAJZ2NjICQoQ0ZMQUdTKSAtbyBxdWljay10ZXN0ICQob2JqZWN0cykg
+cXVpY2stdGVzdC5vICQoTERGTEFHUykgJChMSUJTKQogCiBjb252ZXJ0OiAkKG9iamVjdHMpIGNv
+bnZlcnQubwotCWdjYyAkKENGTEFHUykgLW8gYnRyZnMtY29udmVydCAkKG9iamVjdHMpIGNvbnZl
+cnQubyAtbGV4dDJmcyAkKExERkxBR1MpICQoTElCUykKKwlnY2MgJChDRkxBR1MpIC1vIGJ0cmZz
+LWNvbnZlcnQgJChvYmplY3RzKSBjb252ZXJ0Lm8gLWxleHQyZnMgLWxjb21fZXJyICQoTERGTEFH
+UykgJChMSUJTKQogCiBpb2N0bC10ZXN0OiAkKG9iamVjdHMpIGlvY3RsLXRlc3QubwogCWdjYyAk
+KENGTEFHUykgLW8gaW9jdGwtdGVzdCAkKG9iamVjdHMpIGlvY3RsLXRlc3QubyAkKExERkxBR1Mp
+ICQoTElCUykK
+--0016365edf76c1ed5104a4f9a70b--

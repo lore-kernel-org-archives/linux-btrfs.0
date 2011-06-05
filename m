@@ -1,43 +1,55 @@
-From: David Pottage <david@electric-spoon.com>
-Subject: Re: Safe fsck / consistent backup while mounted
-Date: Sun, 05 Jun 2011 08:58:57 +0100
-Message-ID: <4DEB3741.6010701@electric-spoon.com>
-References: <201106041225.56028.Martin@lichtvoll.de>
+From: Hugo Mills <hugo@carfax.org.uk>
+Subject: Re: convert raid-10 to raid-0?
+Date: Sun, 5 Jun 2011 11:54:32 +0100
+Message-ID: <20110605105432.GE8002@carfax.org.uk>
+References: <20110605013645.GD8111@taz.net.au>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=ISO-8859-1
-Cc: linux-btrfs <linux-btrfs@vger.kernel.org>
-To: Martin Steigerwald <Martin@lichtvoll.de>
+Content-Type: multipart/signed; micalg=pgp-sha1;
+	protocol="application/pgp-signature"; boundary="Ns7jmDPpOpCD+GE/"
+Cc: linux-btrfs@vger.kernel.org
+To: Craig Sanders <cas@taz.net.au>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <201106041225.56028.Martin@lichtvoll.de>
+In-Reply-To: <20110605013645.GD8111@taz.net.au>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 04/06/11 11:25, Martin Steigerwald wrote:
 
-> > Now I thought about a way to safely backup a MySQL or other database - 
-> > without long service interruption:
-> >
-> > - Tell DB to turn itself into consistent state and freeze there
-> > - sync / btrfs filesystem sync ; fsfreeze -f /mountpoint
-> > - btrfs subvolume snapshot
-> > - fsfreeze -u /mountpoint
-> > - Tell DB to continue business as usual
-> >
-> > My questions are:
-> >
-> > 1) Would this work?
-It should do, and it is common way to backup or check high availability
-databases.
+--Ns7jmDPpOpCD+GE/
+Content-Type: text/plain; charset=us-ascii
+Content-Disposition: inline
 
-About a year ago I was responsible for a database backup and checking
-system at a large blue chip company. The database was Informix, and it's
-files where kept on a Netapp storage appliance, but the basic principle
-was the same.
+On Sun, Jun 05, 2011 at 11:36:45AM +1000, Craig Sanders wrote:
+> Please CC me on any replies as I am not subscribed to this list. Thanks.
+> 
+> Is it possible to convert an existing 4-disk btrfs volume created as
+> raid-10 to a btrfs raid-0/striped volume?
 
-The database was frozen temporarily, a snapshot taken, and then the
-database un-frozen. The snapshot was then made writable, and was then
-mounted by the database engine and checked for errors. The live database
-is only off line for a few seconds so the users don't notice, especaly
-if the snapshot is taken at night when there are few users.
+   Not at present.
 
--- David Pottage
+> i've got a btrfs raid-10 volume made with 4x1TB drives that's running
+> out of space, and i'd prefer not to reformat it if i don't have to.
 
+   There's a GSoC student due to be working on this over the summer.
+(I was looking at it, but I've stopped to give the student a clear run
+at it).
+
+   Hugo.
+
+-- 
+=== Hugo Mills: hugo@... carfax.org.uk | darksatanic.net | lug.org.uk ===
+  PGP key: 515C238D from wwwkeys.eu.pgp.net or http://www.carfax.org.uk
+                   --- Ceci n'est pas une pipe:  | ---                   
+
+--Ns7jmDPpOpCD+GE/
+Content-Type: application/pgp-signature; name="signature.asc"
+Content-Description: Digital signature
+Content-Disposition: inline
+
+-----BEGIN PGP SIGNATURE-----
+Version: GnuPG v1.4.10 (GNU/Linux)
+
+iD8DBQFN62BnIKyzvlFcI40RAjQJAJ99IztEg+7xI+74jaiPD7ZXBaNCvQCeJCJ6
+HFvrwpi6VBHGHuvepmiT8Iw=
+=jwrc
+-----END PGP SIGNATURE-----
+
+--Ns7jmDPpOpCD+GE/--

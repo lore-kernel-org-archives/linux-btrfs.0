@@ -1,134 +1,56 @@
-From: Josef Bacik <josef@redhat.com>
-Subject: [PATCH] Btrfs: account for space reservations properly
-Date: Mon,  6 Jun 2011 17:00:36 -0400
-Message-ID: <1307394036-3727-1-git-send-email-josef@redhat.com>
-To: linux-btrfs@vger.kernel.org
+From: Nirbheek Chauhan <nirbheek@gentoo.org>
+Subject: Applications using fsync cause hangs for several seconds every few minutes
+Date: Tue, 7 Jun 2011 04:28:04 +0530
+Message-ID: <BANLkTimMv_MMVmsJeVvr_1_wEVam1WZ6BA@mail.gmail.com>
+Mime-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+To: linux-btrfs <linux-btrfs@vger.kernel.org>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-We have been using space_info->bytes_reserved in the metadata case to cover our
-reservations for ENOSPC.  The problem with this is thats horribly wrong.  We use
-bytes_reserved to keep track of how many bytes the allocator has outstanding
-that haven't actually been made into extents yet.  So what has been happening is
-that we've been using bytes_reserved for our ENOSPC reservations and our
-allocations.
+Hello list,
 
-Currently that isn't a big deal, everything is being accounted for
-appropriately.  The only thing this affects is how we allocate chunks, so we've
-grown all these horrible things to make sure we don't end up with a stupid
-amount of metadata chunks.  The problem is we think that the entire space is
-used up because we use bytes_used and bytes_reserved to get an idea of how much
-is actually in use by real data, but thats not the case.
+I've been using btrfs on my personal machines for about two years now,
+and on this machine for about a year with absolutely no problems.
+Infact, it has held up better than ext4 with regards to reliability.
 
-So switch over to using bytes_may_use, which the data space info stuff has
-already been using for the same exact reason.  This will allow us to go back to
-pre-emptively allocating chunks in the enospc code.  Thanks,
+However, recently, perhaps with 2.6.39, or after I quickly started
+filling up my disk again, it has become impossible for me to work for
+long periods on my machine.
 
-Signed-off-by: Josef Bacik <josef@redhat.com>
----
- fs/btrfs/ctree.h       |    2 +-
- fs/btrfs/extent-tree.c |   22 +++++++++++-----------
- 2 files changed, 12 insertions(+), 12 deletions(-)
+Every few minutes, (I guess) when applications do fsync (firefox,
+xchat, vim, etc), all applications that use fsync() hang for several
+seconds, and applications that use general IO suffer extreme
+slowdowns. iotop shows various combinations of the processes listed
+below doing writes, and the total write as 2-3MB/s.
 
-diff --git a/fs/btrfs/ctree.h b/fs/btrfs/ctree.h
-index 91806fe..93a409f 100644
---- a/fs/btrfs/ctree.h
-+++ b/fs/btrfs/ctree.h
-@@ -745,7 +745,7 @@ struct btrfs_space_info {
- 
- 	/*
- 	 * we bump reservation progress every time we decrement
--	 * bytes_reserved.  This way people waiting for reservations
-+	 * bytes_may_use.  This way people waiting for reservations
- 	 * know something good has happened and they can check
- 	 * for progress.  The number here isn't to be trusted, it
- 	 * just shows reclaim activity
-diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
-index b42efc2..099095e 100644
---- a/fs/btrfs/extent-tree.c
-+++ b/fs/btrfs/extent-tree.c
-@@ -3308,7 +3308,7 @@ static int shrink_delalloc(struct btrfs_trans_handle *trans,
- 	space_info = block_rsv->space_info;
- 
- 	smp_mb();
--	reserved = space_info->bytes_reserved;
-+	reserved = space_info->bytes_may_use;
- 	progress = space_info->reservation_progress;
- 
- 	if (reserved == 0)
-@@ -3328,9 +3328,9 @@ static int shrink_delalloc(struct btrfs_trans_handle *trans,
- 		writeback_inodes_sb_nr_if_idle(root->fs_info->sb, nr_pages);
- 
- 		spin_lock(&space_info->lock);
--		if (reserved > space_info->bytes_reserved)
--			reclaimed += reserved - space_info->bytes_reserved;
--		reserved = space_info->bytes_reserved;
-+		if (reserved > space_info->bytes_may_use)
-+			reclaimed += reserved - space_info->bytes_may_use;
-+		reserved = space_info->bytes_may_use;
- 		spin_unlock(&space_info->lock);
- 
- 		loops++;
-@@ -3408,7 +3408,7 @@ again:
- 		unused = space_info->total_bytes - unused;
- 		if (unused >= num_bytes) {
- 			if (!reserved)
--				space_info->bytes_reserved += orig_bytes;
-+				space_info->bytes_may_use += orig_bytes;
- 			ret = 0;
- 		} else {
- 			/*
-@@ -3434,7 +3434,7 @@ again:
- 	 * stealing it from us.
- 	 */
- 	if (ret && !reserved) {
--		space_info->bytes_reserved += orig_bytes;
-+		space_info->bytes_may_use += orig_bytes;
- 		reserved = true;
- 	}
- 
-@@ -3495,7 +3495,7 @@ again:
- out:
- 	if (reserved) {
- 		spin_lock(&space_info->lock);
--		space_info->bytes_reserved -= orig_bytes;
-+		space_info->bytes_may_use -= orig_bytes;
- 		spin_unlock(&space_info->lock);
- 	}
- 
-@@ -3579,7 +3579,7 @@ static void block_rsv_release_bytes(struct btrfs_block_rsv *block_rsv,
- 		}
- 		if (num_bytes) {
- 			spin_lock(&space_info->lock);
--			space_info->bytes_reserved -= num_bytes;
-+			space_info->bytes_may_use -= num_bytes;
- 			space_info->reservation_progress++;
- 			spin_unlock(&space_info->lock);
- 		}
-@@ -3791,12 +3791,12 @@ static void update_global_block_rsv(struct btrfs_fs_info *fs_info)
- 	if (sinfo->total_bytes > num_bytes) {
- 		num_bytes = sinfo->total_bytes - num_bytes;
- 		block_rsv->reserved += num_bytes;
--		sinfo->bytes_reserved += num_bytes;
-+		sinfo->bytes_may_use += num_bytes;
- 	}
- 
- 	if (block_rsv->reserved >= block_rsv->size) {
- 		num_bytes = block_rsv->reserved - block_rsv->size;
--		sinfo->bytes_reserved -= num_bytes;
-+		sinfo->bytes_may_use -= num_bytes;
- 		sinfo->reservation_progress++;
- 		block_rsv->reserved = block_rsv->size;
- 		block_rsv->full = 1;
-@@ -4696,7 +4696,7 @@ void btrfs_free_tree_block(struct btrfs_trans_handle *trans,
- 
- 		if (ret) {
- 			spin_lock(&cache->space_info->lock);
--			cache->space_info->bytes_reserved -= buf->len;
-+			cache->space_info->bytes_may_use -= buf->len;
- 			cache->space_info->reservation_progress++;
- 			spin_unlock(&cache->space_info->lock);
- 		}
+[btrfs-dealloc-]
+[btrfs-submit-0]
+[btrfs-transacti]
+[btrfs-endio-wri]
+[flush-btrfs-1]
+
+In some extreme cases, I've had hangs for 5 whole minutes. I'm really
+beginning to appreciate how little I/O GNOME Shell does since it
+remains completely responsive throughout this. I have a feeling that
+the cause for this is extreme fragmentation.
+
+My hard disk is a 500GB SATA hdd, my btrfs partition details are:
+
+# btrfs filesystem show
+Label: 'gentoo'  uuid: 6f539d7f-f70f-4216-a4a9-6f7a2117a04a
+	Total devices 1 FS bytes used 246.37GB
+	devid    1 size 345.13GB used 345.13GB path /dev/sda7
+
+Btrfs v0.19-35-g1b444cd-dirty
+
+What can I do to debug this issue? What other information should I
+supply? Could someone guide me on how to figure out why my machine is
+unusable now?
+
+Thanks in advance,
+
 -- 
-1.7.2.3
+~Nirbheek Chauhan
 
+Gentoo GNOME+Mozilla Team

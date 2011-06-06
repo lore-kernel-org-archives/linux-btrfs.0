@@ -1,35 +1,25 @@
-From: Christian Hesse <list@eworm.de>
-Subject: Re: New btrfsck status
-Date: Mon, 6 Jun 2011 16:41:09 +0200
-Message-ID: <20110606164109.7b032c17@io.vpn.lugor.de>
-Mime-Version: 1.0
-Content-Type: text/plain; charset=US-ASCII
-To: Linux Btrfs <linux-btrfs@vger.kernel.org>
+From: Chris Mason <chris.mason@oracle.com>
+Subject: Re: Announcing btrfs-gui
+Date: Mon, 06 Jun 2011 11:40:45 -0400
+Message-ID: <1307374774-sup-6811@shiny>
+References: <20110601232058.GA22619@carfax.org.uk>
+Content-Type: text/plain; charset=UTF-8
+Cc: Btrfs mailing list <linux-btrfs@vger.kernel.org>
+To: Hugo Mills <hugo@carfax.org.uk>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
+In-reply-to: <20110601232058.GA22619@carfax.org.uk>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Chris Mason on 10 Feb 13:17:
-> Excerpts from Ben Gamari's message of 2011-02-09 21:52:20 -0500:
-> > Over the last several months there have been many claims regarding
-> > the release of the rewritten btrfsck. Unfortunately, despite
-> > numerous claims that it will be released Real Soon Now(c), I have
-> > yet to see even a repository with preliminary code. Did I miss an
-> > announcement? There is something to be said for "release early,
-> > release often." Is there a timeline for getting btrfsck into some
-> > sort of usable form?
->
-> Yes, but its still real soon now.  I've been at about 90% done since
-> Christmas.  It would have been out last week but I've been chasing a
-> debugging a very difficult corruption under load.
->
-> I finally found a race in btrfs causing the corruption and now I'm
-> back on fsck full time again.
+Excerpts from Hugo Mills's message of 2011-06-01 19:20:58 -0400:
+>    Over the last few weeks, I've been playing with a foolish idea,
+> mostly triggered by a cluster of people being confused by btrfs's free
+> space reporting (df vs btrfs fi df vs btrfs fi show). I also wanted an
+> excuse, and some code, to mess around in the depths of the FS data
+> structures.
+> 
 
-This mail was about four month ago...
-Any news on this topic?
+This is really interesting.  I'm updating my local install of python and
+friends so it can run properly.  But I like the idea and will check it
+out.
 
-I really would like to test btrfs on my desktop systems, but I still
-hesitate because of the missing fsck.
--- 
-Schoene Gruesse
-Chris
+-chris

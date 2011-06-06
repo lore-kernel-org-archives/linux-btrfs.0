@@ -1,117 +1,151 @@
-From: Tsutomu Itoh <t-itoh@jp.fujitsu.com>
-Subject: kernel BUG at fs/btrfs/extent-tree.c:6164!
-Date: Mon, 06 Jun 2011 17:33:15 +0900
-Message-ID: <4DEC90CB.4050609@jp.fujitsu.com>
+From: Marek Otahal <markotahal@gmail.com>
+Subject: kernel BUG at fs/btrfs/inode.c:4676!
+Date: Mon, 6 Jun 2011 12:19:56 +0200
+Message-ID: <201106061220.05696.markotahal@gmail.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=ISO-2022-JP
-Cc: Chris Mason <chris.mason@Oracle.COM>,
-	liubo <liubo2009@cn.fujitsu.com>
+Content-Type: multipart/signed;
+  boundary="nextPart10378600.RqnutFfbvi";
+  protocol="application/pgp-signature";
+  micalg=pgp-sha1
 To: Linux Btrfs <linux-btrfs@vger.kernel.org>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hi,
+--nextPart10378600.RqnutFfbvi
+Content-Type: text/plain;
+  charset="utf-8"
+Content-Transfer-Encoding: quoted-printable
 
-I encountered following panic using 'btrfs-unstable + for-linus'
-kernel.
+Hello,=20
+the issue happens every time when i have to hard power-off my notebook (sus=
+pend problems).=20
+With kernel 2.6.39 the partition is unmountable, solution is to boot 2.6.38=
+ kernel which=20
+1/ is able to mount the partition,=20
+2/ by doing that fixes the problem so later .39 (after clean shutdown) can =
+mount it also.=20
 
-I ran "btrfs fi bal /test5" command, and mount option of /test5
-is as follows:
+Attached dmesg follows.=20
 
- /dev/sdc3 on /test5 type btrfs (rw,space_cache,compress=lzo,inode_cache)
+Thank you,=20
+Mark
 
-Thanks,
-Tsutomu
+mount options:
+/dev/mapper/homeDevice /home btrfs defaults,relatime,nodev,nosuid,compress-=
+force=3Dlzo 0 2 # /dev/sda9 home
 
-=================================================================
+dmesg:
+[   56.994241] loop: module loaded
+[   57.172283] Btrfs loaded
+[   57.191655] device label store devid 1 transid 26106 /dev/dm-3
+[   57.218783] device label home devid 1 transid 450932 /dev/dm-2
+[   57.459448] scsi 4:0:0:0: Direct-Access     Generic- Multi-Card       1.=
+00 PQ: 0 ANSI: 0 CCS
+[   57.460293] sd 4:0:0:0: Attached scsi generic sg1 type 0
+[   57.467030] sd 4:0:0:0: [sdb] Attached SCSI removable disk
+[   61.585618] EXT4-fs (sda4): warning: checktime reached, running e2fsck i=
+s recommended
+[   61.671534] EXT4-fs (sda4): re-mounted. Opts: (null)
+[   62.211037] device label home devid 1 transid 450932 /dev/mapper/homeDev=
+ice
+[   62.212058] btrfs: force lzo compression
+[   65.335194] ------------[ cut here ]------------
+[   65.335308] kernel BUG at fs/btrfs/inode.c:4676!
+[   65.335406] invalid opcode: 0000 [#1] PREEMPT SMP=20
+[   65.335532] last sysfs file: /sys/devices/virtual/bdi/btrfs-1/uevent
+[   65.337833] Modules linked in: btrfs zlib_deflate crc32c libcrc32c loop =
+uas ums_realtek uvcvideo usb_storage msr videodev media btusb bluetooth sbs=
+ sbshc arc4 ecb b43 mac80211 joydev cfg80211 ssb mmc_core pcmcia sg fuse tg=
+3 uhci_hcd ideapad_laptop evdev sparse_keymap psmouse pcspkr snd_hda_codec_=
+realtek iTCO_wdt iTCO_vendor_support rfkill serio_raw ehci_hcd snd_hda_inte=
+l pcmcia_core i2c_i801 libphy usbcore ac wmi battery thermal snd_hda_codec =
+snd_hwdep snd_pcm snd_timer snd soundcore snd_page_alloc acpi_cpufreq freq_=
+table processor mperf sha256_generic sha512_generic ext4 mbcache jbd2 crc16=
+ cryptd aes_i586 aes_generic xts gf128mul dm_crypt dm_mod sd_mod ata_piix l=
+ibata scsi_mod i915 drm_kms_helper drm i2c_algo_bit button i2c_core video i=
+ntel_agp intel_gtt agpgart
+[   65.337833]=20
+[   65.337833] Pid: 883, comm: mount Not tainted 2.6.39-ARCH #1 LENOVO     =
+                      41875QG         /Kuril                          =20
+[   65.337833] EIP: 0060:[<f9604072>] EFLAGS: 00010282 CPU: 1
+[   65.337833] EIP is at btrfs_add_link+0x172/0x200 [btrfs]
+[   65.337833] EAX: ffffffef EBX: ef448908 ECX: 00000119 EDX: 00000111
+[   65.337833] ESI: 004255d9 EDI: 00000020 EBP: eec77ba4 ESP: eec77b48
+[   65.337833]  DS: 007b ES: 007b FS: 00d8 GS: 00e0 SS: 0068
+[   65.337833] Process mount (pid: 883, ti=3Deec76000 task=3Df4c8c450 task.=
+ti=3Deec76000)
+[   65.337833] Stack:
+[   65.396712]  00000020 004255d9 00000000 eec77b87 00000001 0000e55e 00000=
+000 f960d6f8
+[   65.396712]  eec77b88 eec77b8c eec77b90 eec77b94 ef472000 f5076800 ef448=
+ba8 6f43c090
+[   65.396712]  000046ab 01000000 00000000 00000000 00000000 0046ab6f 00000=
+000 eec77c0c
+[   65.396712] Call Trace:
+[   65.396712]  [<f960d6f8>] ? btrfs_inode_ref_index+0xd8/0xe0 [btrfs]
+[   65.396712]  [<f962cfcf>] add_inode_ref+0x28f/0x320 [btrfs]
+[   65.396712]  [<f962de69>] replay_one_buffer+0x239/0x320 [btrfs]
+[   65.396712]  [<f961cc97>] ? alloc_extent_buffer+0x77/0x3a0 [btrfs]
+[   65.396712]  [<f962b7a9>] walk_down_log_tree+0x1d9/0x370 [btrfs]
+[   65.396712]  [<f962b9d9>] walk_log_tree+0x99/0x1c0 [btrfs]
+[   65.396712]  [<f962f2fa>] btrfs_recover_log_trees+0x1da/0x2a0 [btrfs]
+[   65.396712]  [<f962dc30>] ? replay_one_dir_item+0xb0/0xb0 [btrfs]
+[   65.396712]  [<f95f6749>] open_ctree+0x1129/0x1490 [btrfs]
+[   65.396712]  [<c11ac7a9>] ? strlcpy+0x39/0x50
+[   65.396712]  [<f95d756b>] btrfs_mount+0x4ab/0x5b0 [btrfs]
+[   65.396712]  [<c1109d31>] mount_fs+0x31/0x170
+[   65.396712]  [<c11207ac>] vfs_kern_mount+0x4c/0x90
+[   65.396712]  [<c1120b49>] do_kern_mount+0x39/0xd0
+[   65.396712]  [<c1121e31>] do_mount+0x161/0x700
+[   65.396712]  [<c11226f6>] sys_mount+0x66/0xa0
+[   65.396712]  [<c1330edf>] sysenter_do_call+0x12/0x28
+[   65.396712] Code: 44 24 08 00 00 00 00 89 4c 24 0c 8b 4d 08 89 34 24 e8 =
+73 cc fe ff 85 c0 0f 84 f0 fe ff ff 8b 5d f4 8b 75 f8 8b 7d fc 89 ec 5d c3 =
+<0f> 0b 8b 81 d8 fe ff ff 8d 55 e3 b9 11 00 00 00 89 d7 05 03 01=20
+[   65.396712] EIP: [<f9604072>] btrfs_add_link+0x172/0x200 [btrfs] SS:ESP =
+0068:eec77b48
+[   65.397464] ---[ end trace 5f278c10a67bc917 ]---
+[   65.519660] Adding 2561304k swap on /dev/mapper/swapDevice.  Priority:-1=
+ extents:1 across:2561304k=20
+[   67.243199] microcode: CPU0 sig=3D0x106c2, pf=3D0x4, revision=3D0x20a
+[   67.292031] microcode: CPU1 sig=3D0x106c2, pf=3D0x4, revision=3D0x20a
+[   67.298402] microcode: Microcode Update Driver: v2.00 <tigran@aivazian.f=
+snet.co.uk>, Peter Oruba
+[   67.305857] microcode: CPU0 updated to revision 0x218, date =3D 2009-04-=
+10
+[   67.315268] microcode: CPU1 updated to revision 0x218, date =3D 2009-04-=
+10
+[   70.985116] Bluetooth: BNEP (Ethernet Emulation) ver 1.3
+[   71.152025] Bluetooth: RFCOMM TTY layer initialized
+[   71.156497] Bluetooth: RFCOMM socket layer initialized
+[   71.160691] Bluetooth: RFCOMM ver 1.11
+[  118.324105] ip_tables: (C) 2000-2006 Netfilter Core Team
+[  118.574729] nf_conntrack version 0.5.0 (16384 buckets, 65536 max)
 
-btrfs: relocating block group 23383244800 flags 20
-btrfs: found 2959 extents
-------------[ cut here ]------------
-WARNING: at fs/btrfs/transaction.c:213 start_transaction+0x2a7/0x2b0 [btrfs]()
-Hardware name: PRIMERGY
-Modules linked in: autofs4 sunrpc 8021q garp stp llc cpufreq_ondemand acpi_cpufr
-eq freq_table mperf ipv6 btrfs zlib_deflate crc32c libcrc32c ext3 jbd dm_mirror
-dm_region_hash dm_log dm_mod kvm uinput ppdev parport_pc parport sg pcspkr i2c_i
-801 i2c_core iTCO_wdt iTCO_vendor_support tg3 shpchp pci_hotplug i3000_edac edac
-_core ext4 mbcache jbd2 crc16 sd_mod crc_t10dif sr_mod cdrom megaraid_sas pata_a
-cpi ata_generic ata_piix libata scsi_mod floppy [last unloaded: microcode]
-Pid: 23781, comm: btrfs Tainted: G        W   2.6.39btrfs-test+ #4
-Call Trace:
- [<ffffffff8106004f>] warn_slowpath_common+0x7f/0xc0
- [<ffffffff810600aa>] warn_slowpath_null+0x1a/0x20
- [<ffffffffa0337047>] start_transaction+0x2a7/0x2b0 [btrfs]
- [<ffffffffa035498d>] ? btrfs_wait_ordered_range+0x10d/0x160 [btrfs]
- [<ffffffffa0337323>] btrfs_start_transaction+0x13/0x20 [btrfs]
- [<ffffffffa033bbca>] btrfs_evict_inode+0x11a/0x260 [btrfs]
- [<ffffffff811687f8>] evict+0x78/0x170
- [<ffffffff81168c92>] iput+0xe2/0x1a0
- [<ffffffffa031f171>] btrfs_remove_block_group+0x141/0x3c0 [btrfs]
- [<ffffffffa035e6ea>] btrfs_relocate_chunk+0x54a/0x670 [btrfs]
- [<ffffffffa0357668>] ? read_extent_buffer+0xd8/0x1d0 [btrfs]
- [<ffffffffa031be51>] ? btrfs_previous_item+0xb1/0x150 [btrfs]
- [<ffffffffa035f43a>] btrfs_balance+0x21a/0x2b0 [btrfs]
- [<ffffffff8115dc41>] ? path_openat+0x101/0x3d0
- [<ffffffffa03685bc>] btrfs_ioctl+0x51c/0xc40 [btrfs]
- [<ffffffff8111e358>] ? handle_mm_fault+0x148/0x270
- [<ffffffff814809e8>] ? do_page_fault+0x1d8/0x4b0
- [<ffffffff81160d6a>] do_vfs_ioctl+0x9a/0x540
- [<ffffffff811612b1>] sys_ioctl+0xa1/0xb0
- [<ffffffff81484ec2>] system_call_fastpath+0x16/0x1b
----[ end trace e5c5cb2e98a3cd1a ]---
-btrfs: relocating block group 20971520 flags 18
-btrfs: relocating block group 34925969408 flags 18
-btrfs: found 1 extents
-------------[ cut here ]------------
-kernel BUG at fs/btrfs/extent-tree.c:6164!
-invalid opcode: 0000 [#1] SMP
-last sysfs file: /sys/kernel/mm/ksm/run
-CPU 0
-Modules linked in: autofs4 sunrpc 8021q garp stp llc cpufreq_ondemand acpi_cpufreq freq_table mperf ipv6 btrfs zlib_deflate crc32c libcrc32c ext3 jbd dm_mirror dm_region_hash dm_log dm_mod kvm uinput ppdev parport_pc parport sg pcspkr i2c_i801 i2c_core iTCO_wdt iTCO_vendor_support tg3 shpchp pci_hotplug i3000_edac edac_core ext4 mbcache jbd2 crc16 sd_mod crc_t10dif sr_mod cdrom megaraid_sas pata_acpi ata_generic ata_piix libata scsi_mod floppy [last unloaded: microcode]
+=2D-=20
 
-Pid: 4109, comm: btrfs Tainted: G        W   2.6.39btrfs-test+ #4 FUJITSU-SV      PRIMERGY            /D2399
-RIP: 0010:[<ffffffffa0325b95>]  [<ffffffffa0325b95>] walk_up_proc+0x375/0x420 [btrfs]
-RSP: 0018:ffff8801801eb9c8  EFLAGS: 00010286
-RAX: 0000000000000005 RBX: ffff880167a70140 RCX: fffffffffffffff8
-RDX: ffff8801801ea000 RSI: ffff880000000000 RDI: ffff880194909fa8
-RBP: ffff8801801eba18 R08: 0000000000000000 R09: 0000000000000005
-R10: 0000000000000001 R11: ffff880194909fa8 R12: 0000000000000000
-R13: ffff88013973d000 R14: ffff88015ad4d9a0 R15: ffff880042203920
-FS:  00007fa86bcb9740(0000) GS:ffff88019fc00000(0000) knlGS:0000000000000000
-CS:  0010 DS: 0000 ES: 0000 CR0: 000000008005003b
-CR2: 00000033cf60b0c0 CR3: 0000000181cf7000 CR4: 00000000000006f0
-DR0: 0000000000000000 DR1: 0000000000000000 DR2: 0000000000000000
-DR3: 0000000000000000 DR6: 00000000ffff0ff0 DR7: 0000000000000400
-Process btrfs (pid: 4109, threadinfo ffff8801801ea000, task ffff88011a4914a0)
-Stack:
- ffff8801801eba18 ffff880194909fa8 ffff880100000000 ffffffffa03280e8
- ffff8801801eba58 ffff88015ad4d9a0 0000000000000000 0000000000000000
- ffff8801801ea000 ffff880167a70140 ffff8801801eba78 ffffffffa0325d71
-Call Trace:
- [<ffffffffa03280e8>] ? btrfs_run_delayed_refs+0xc8/0x210 [btrfs]
- [<ffffffffa0325d71>] walk_up_tree+0x131/0x1b0 [btrfs]
- [<ffffffffa03260b0>] btrfs_drop_snapshot+0x2c0/0x5c0 [btrfs]
- [<ffffffffa03328b0>] ? btrfs_read_fs_root_no_name+0x1b0/0x280 [btrfs]
- [<ffffffffa037b45f>] merge_reloc_roots+0xdf/0x150 [btrfs]
- [<ffffffffa037f311>] relocate_block_group+0x481/0x660 [btrfs]
- [<ffffffffa0334d15>] ? btrfs_clean_old_snapshots+0x35/0x150 [btrfs]
- [<ffffffffa037f6a3>] btrfs_relocate_block_group+0x1b3/0x2e0 [btrfs]
- [<ffffffffa0368d80>] ? btrfs_tree_unlock+0x50/0x50 [btrfs]
- [<ffffffffa035e22b>] btrfs_relocate_chunk+0x8b/0x670 [btrfs]
- [<ffffffffa031303d>] ? btrfs_set_path_blocking+0x3d/0x50 [btrfs]
- [<ffffffffa0357668>] ? read_extent_buffer+0xd8/0x1d0 [btrfs]
- [<ffffffffa031be51>] ? btrfs_previous_item+0xb1/0x150 [btrfs]
- [<ffffffffa0357668>] ? read_extent_buffer+0xd8/0x1d0 [btrfs]
- [<ffffffffa035f43a>] btrfs_balance+0x21a/0x2b0 [btrfs]
- [<ffffffff8115dc41>] ? path_openat+0x101/0x3d0
- [<ffffffffa03685bc>] btrfs_ioctl+0x51c/0xc40 [btrfs]
- [<ffffffff8111e358>] ? handle_mm_fault+0x148/0x270
- [<ffffffff814809e8>] ? do_page_fault+0x1d8/0x4b0
- [<ffffffff81160d6a>] do_vfs_ioctl+0x9a/0x540
- [<ffffffff811612b1>] sys_ioctl+0xa1/0xb0
- [<ffffffff81484ec2>] system_call_fastpath+0x16/0x1b
-Code: fe ff ff 0f 1f 00 4c 89 df 31 c9 4c 89 fa 4c 89 ee 44 89 55 c0 4c 89 5d b8 e8 c8 d5 ff ff 4c 8b 5d b8 44 8b 55 c0 e9 85 fe ff ff <0f> 0b eb fe 0f 1f 80 00 00 00 00 65 48 8b 14 25 c8 cc 00 00 48
-RIP  [<ffffffffa0325b95>] walk_up_proc+0x375/0x420 [btrfs]
- RSP <ffff8801801eb9c8>
+Marek Otahal :o)
 
+--nextPart10378600.RqnutFfbvi
+Content-Type: application/pgp-signature; name=signature.asc 
+Content-Description: This is a digitally signed message part.
 
+-----BEGIN PGP SIGNATURE-----
+Version: GnuPG v1.4.11 (GNU/Linux)
+
+iQIcBAABAgAGBQJN7KnNAAoJEKvC5zPWx/wKBcMP/1std6Kli6pswhX41XghJiZm
+ExIna1d1QcZwIVJDBMmpoH/zaMHSsHFMNVzYneCE2neChiQ47yLGrbL9JaGWnN29
+lVsgbo87qpY/GSpvACPZbMtxqJtjbZeV3UWv6F4BN+huVrAMbmizwl6db6dif3A+
+Qr4xgVEqiqSoghOcRXShOuo7vJKAtB9f8pHMs+Eqg7r+tXzUXMNeF6CgfXHuJIdR
+w27feliS8ls7Uk3/Mn3xUfTi/MO78gcWgW92aBvDK3sl1lEqO7t9K9SLKhaDgvfg
+yet6skUCB/eddOXpRGyoL4T31cBisC0r2aRdi9eO0m0N9KtERUSzDB0cM6h9yBSA
++IVkf9VItGuBWSsrClpyhM9/kP0D0Mc4dA6gdIpTKcNl3gxqHXwTGxuhD8gHP7J2
+qw9JORGKckgm9tTiJXFnuPncVwh3VByoGC5ewVlvnT88if1HlQlteD03FOxsQ9sN
+JZonhke4qX7aE6UOzRWkUh8L53E3fQWBoINij+mQB4/lskMD7y6mpDMS0CaMdKxB
+PJtjhAprau/RPTxSFz0Awnn3kzOhsIZsVUMgNHbSHICKMP8XfKOJ2Ot3tqFap3cX
+2J+fs+mNFOnt3t821zFRu+VJav885doKEsDgo7gslEB8QhRSrWx55G+cNBA7sgGh
+qzeg85eElY0p25BLPMGg
+=ulnY
+-----END PGP SIGNATURE-----
+
+--nextPart10378600.RqnutFfbvi--

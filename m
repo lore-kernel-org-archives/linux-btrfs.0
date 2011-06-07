@@ -1,59 +1,140 @@
-From: Jeff Putney <jeffrey.putney@gmail.com>
-Subject: Re: New btrfsck status
-Date: Tue, 7 Jun 2011 11:52:21 -0500
-Message-ID: <BANLkTimzVU6_dqYOWVJ1sdio2akOKT3ghQ@mail.gmail.com>
-References: <20110606164109.7b032c17@io.vpn.lugor.de>
-Mime-Version: 1.0
-Content-Type: text/plain; charset=ISO-8859-1
-Cc: Linux Btrfs <linux-btrfs@vger.kernel.org>
-To: Christian Hesse <list@eworm.de>
+From: Josef Bacik <josef@redhat.com>
+Subject: [PATCH] Btrfs: account for space reservations properly V2
+Date: Tue,  7 Jun 2011 13:37:45 -0400
+Message-ID: <1307468265-22726-1-git-send-email-josef@redhat.com>
+References: <1307394036-3727-1-git-send-email-josef@redhat.com>
+To: linux-btrfs@vger.kernel.org
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <20110606164109.7b032c17@io.vpn.lugor.de>
+In-Reply-To: <1307394036-3727-1-git-send-email-josef@redhat.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Me too.  I've got a 9TB filesystem that I can't mount since rebooting
-during a rebalance.  I want to get the fs as repaired as possible, but
-I am not in a hurry, and I have enough space at present to make a
-duplicate and play with test versions of the repair.
+We have been using space_info->bytes_reserved in the metadata case to cover our
+reservations for ENOSPC.  The problem with this is thats horribly wrong.  We use
+bytes_reserved to keep track of how many bytes the allocator has outstanding
+that haven't actually been made into extents yet.  So what has been happening is
+that we've been using bytes_reserved for our ENOSPC reservations and our
+allocations.
 
---jeff
+Currently that isn't a big deal, everything is being accounted for
+appropriately.  The only thing this affects is how we allocate chunks, so we've
+grown all these horrible things to make sure we don't end up with a stupid
+amount of metadata chunks.  The problem is we think that the entire space is
+used up because we use bytes_used and bytes_reserved to get an idea of how much
+is actually in use by real data, but thats not the case.
 
-On Mon, Jun 6, 2011 at 9:41 AM, Christian Hesse <list@eworm.de> wrote:
-> Chris Mason on 10 Feb 13:17:
->> Excerpts from Ben Gamari's message of 2011-02-09 21:52:20 -0500:
->> > Over the last several months there have been many claims regarding
->> > the release of the rewritten btrfsck. Unfortunately, despite
->> > numerous claims that it will be released Real Soon Now(c), I have
->> > yet to see even a repository with preliminary code. Did I miss an
->> > announcement? There is something to be said for "release early,
->> > release often." Is there a timeline for getting btrfsck into some
->> > sort of usable form?
->>
->> Yes, but its still real soon now. =A0I've been at about 90% done sin=
-ce
->> Christmas. =A0It would have been out last week but I've been chasing=
- a
->> debugging a very difficult corruption under load.
->>
->> I finally found a race in btrfs causing the corruption and now I'm
->> back on fsck full time again.
->
-> This mail was about four month ago...
-> Any news on this topic?
->
-> I really would like to test btrfs on my desktop systems, but I still
-> hesitate because of the missing fsck.
-> --
-> Schoene Gruesse
-> Chris
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-btrfs=
-" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at =A0http://vger.kernel.org/majordomo-info.html
->
---
-To unsubscribe from this list: send the line "unsubscribe linux-btrfs" =
-in
-the body of a message to majordomo@vger.kernel.org
-More majordomo info at  http://vger.kernel.org/majordomo-info.html
+So switch over to using bytes_may_use, which the data space info stuff has
+already been using for the same exact reason.  This will allow us to go back to
+pre-emptively allocating chunks in the enospc code.  Thanks,
+
+Signed-off-by: Josef Bacik <josef@redhat.com>
+---
+V1->V2:
+-fixed updating bytes_reserved in free_tree_block
+-update bytes_may_use in unpin_extent_range
+
+ fs/btrfs/ctree.h       |    2 +-
+ fs/btrfs/extent-tree.c |   22 +++++++++++-----------
+ 2 files changed, 12 insertions(+), 12 deletions(-)
+
+diff --git a/fs/btrfs/ctree.h b/fs/btrfs/ctree.h
+index 91806fe..93a409f 100644
+--- a/fs/btrfs/ctree.h
++++ b/fs/btrfs/ctree.h
+@@ -745,7 +745,7 @@ struct btrfs_space_info {
+ 
+ 	/*
+ 	 * we bump reservation progress every time we decrement
+-	 * bytes_reserved.  This way people waiting for reservations
++	 * bytes_may_use.  This way people waiting for reservations
+ 	 * know something good has happened and they can check
+ 	 * for progress.  The number here isn't to be trusted, it
+ 	 * just shows reclaim activity
+diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
+index b42efc2..933d7dc 100644
+--- a/fs/btrfs/extent-tree.c
++++ b/fs/btrfs/extent-tree.c
+@@ -3308,7 +3308,7 @@ static int shrink_delalloc(struct btrfs_trans_handle *trans,
+ 	space_info = block_rsv->space_info;
+ 
+ 	smp_mb();
+-	reserved = space_info->bytes_reserved;
++	reserved = space_info->bytes_may_use;
+ 	progress = space_info->reservation_progress;
+ 
+ 	if (reserved == 0)
+@@ -3328,9 +3328,9 @@ static int shrink_delalloc(struct btrfs_trans_handle *trans,
+ 		writeback_inodes_sb_nr_if_idle(root->fs_info->sb, nr_pages);
+ 
+ 		spin_lock(&space_info->lock);
+-		if (reserved > space_info->bytes_reserved)
+-			reclaimed += reserved - space_info->bytes_reserved;
+-		reserved = space_info->bytes_reserved;
++		if (reserved > space_info->bytes_may_use)
++			reclaimed += reserved - space_info->bytes_may_use;
++		reserved = space_info->bytes_may_use;
+ 		spin_unlock(&space_info->lock);
+ 
+ 		loops++;
+@@ -3408,7 +3408,7 @@ again:
+ 		unused = space_info->total_bytes - unused;
+ 		if (unused >= num_bytes) {
+ 			if (!reserved)
+-				space_info->bytes_reserved += orig_bytes;
++				space_info->bytes_may_use += orig_bytes;
+ 			ret = 0;
+ 		} else {
+ 			/*
+@@ -3434,7 +3434,7 @@ again:
+ 	 * stealing it from us.
+ 	 */
+ 	if (ret && !reserved) {
+-		space_info->bytes_reserved += orig_bytes;
++		space_info->bytes_may_use += orig_bytes;
+ 		reserved = true;
+ 	}
+ 
+@@ -3495,7 +3495,7 @@ again:
+ out:
+ 	if (reserved) {
+ 		spin_lock(&space_info->lock);
+-		space_info->bytes_reserved -= orig_bytes;
++		space_info->bytes_may_use -= orig_bytes;
+ 		spin_unlock(&space_info->lock);
+ 	}
+ 
+@@ -3579,7 +3579,7 @@ static void block_rsv_release_bytes(struct btrfs_block_rsv *block_rsv,
+ 		}
+ 		if (num_bytes) {
+ 			spin_lock(&space_info->lock);
+-			space_info->bytes_reserved -= num_bytes;
++			space_info->bytes_may_use -= num_bytes;
+ 			space_info->reservation_progress++;
+ 			spin_unlock(&space_info->lock);
+ 		}
+@@ -3791,12 +3791,12 @@ static void update_global_block_rsv(struct btrfs_fs_info *fs_info)
+ 	if (sinfo->total_bytes > num_bytes) {
+ 		num_bytes = sinfo->total_bytes - num_bytes;
+ 		block_rsv->reserved += num_bytes;
+-		sinfo->bytes_reserved += num_bytes;
++		sinfo->bytes_may_use += num_bytes;
+ 	}
+ 
+ 	if (block_rsv->reserved >= block_rsv->size) {
+ 		num_bytes = block_rsv->reserved - block_rsv->size;
+-		sinfo->bytes_reserved -= num_bytes;
++		sinfo->bytes_may_use -= num_bytes;
+ 		sinfo->reservation_progress++;
+ 		block_rsv->reserved = block_rsv->size;
+ 		block_rsv->full = 1;
+@@ -4302,7 +4302,7 @@ static int unpin_extent_range(struct btrfs_root *root, u64 start, u64 end)
+ 		} else if (cache->reserved_pinned > 0) {
+ 			len = min(len, cache->reserved_pinned);
+ 			cache->reserved_pinned -= len;
+-			cache->space_info->bytes_reserved += len;
++			cache->space_info->bytes_may_use += len;
+ 		}
+ 		spin_unlock(&cache->lock);
+ 		spin_unlock(&cache->space_info->lock);
+-- 
+1.7.2.3
+

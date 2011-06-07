@@ -1,47 +1,59 @@
-From: Chris Mason <chris.mason@oracle.com>
-Subject: Re: kernel BUG at fs/btrfs/extent-tree.c:6164!
-Date: Tue, 07 Jun 2011 11:46:37 -0400
-Message-ID: <1307461229-sup-9822@shiny>
-References: <4DEC90CB.4050609@jp.fujitsu.com> <4DEDB7AF.2060308@cn.fujitsu.com> <4DEDBE4B.2020403@jp.fujitsu.com> <4DEDC293.30105@jp.fujitsu.com> <4DEDE03B.9050907@jp.fujitsu.com> <4DEDE328.5060405@cn.fujitsu.com>
-Content-Type: text/plain; charset=UTF-8
-Cc: Tsutomu Itoh <t-itoh@jp.fujitsu.com>,
-	Linux Btrfs <linux-btrfs@vger.kernel.org>
-To: liubo <liubo2009@cn.fujitsu.com>
+From: Jeff Putney <jeffrey.putney@gmail.com>
+Subject: Re: New btrfsck status
+Date: Tue, 7 Jun 2011 11:52:21 -0500
+Message-ID: <BANLkTimzVU6_dqYOWVJ1sdio2akOKT3ghQ@mail.gmail.com>
+References: <20110606164109.7b032c17@io.vpn.lugor.de>
+Mime-Version: 1.0
+Content-Type: text/plain; charset=ISO-8859-1
+Cc: Linux Btrfs <linux-btrfs@vger.kernel.org>
+To: Christian Hesse <list@eworm.de>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-reply-to: <4DEDE328.5060405@cn.fujitsu.com>
+In-Reply-To: <20110606164109.7b032c17@io.vpn.lugor.de>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Excerpts from liubo's message of 2011-06-07 04:36:56 -0400:
-> On 06/07/2011 04:24 PM, Tsutomu Itoh wrote:
-> > (2011/06/07 15:17), Tsutomu Itoh wrote:
-> >> (2011/06/07 14:59), Tsutomu Itoh wrote:
-> >>> Hi liubo,
-> >>>
-> >>> (2011/06/07 14:31), liubo wrote:
-> >>>> On 06/06/2011 04:33 PM, Tsutomu Itoh wrote:
-> >>>>> Hi,
-> >>>>>
-> >>>>> I encountered following panic using 'btrfs-unstable + for-linus'
-> >>>>> kernel.
-> >>>>>
-> >>>>> I ran "btrfs fi bal /test5" command, and mount option of /test5
-> >>>>> is as follows:
-> >>>>>
-> >>>>>  /dev/sdc3 on /test5 type btrfs (rw,space_cache,compress=lzo,inode_cache)
-> >>>>>
-> >>>> So, just a "btrfs fi bal" would lead to the bug?
-> >>> I think so.
+Me too.  I've got a 9TB filesystem that I can't mount since rebooting
+during a rebalance.  I want to get the fs as repaired as possible, but
+I am not in a hurry, and I have enough space at present to make a
+duplicate and play with test versions of the repair.
 
-It should be specific to the inode caching code.  The balancing code is
-finding the inode map cache extents, but it doesn't know how to relocate
-them.
+--jeff
 
-I think we need to switch the inode map cache over to regular extents
-that are not preallocated.  It will fix the overflow problem and it will
-fix the balancing.
-
-There are a lot of special cases for the free extent cache that don't
-apply to the inode map cache, and I think sharing the extent
-preallocation is hurting us.
-
--chris
+On Mon, Jun 6, 2011 at 9:41 AM, Christian Hesse <list@eworm.de> wrote:
+> Chris Mason on 10 Feb 13:17:
+>> Excerpts from Ben Gamari's message of 2011-02-09 21:52:20 -0500:
+>> > Over the last several months there have been many claims regarding
+>> > the release of the rewritten btrfsck. Unfortunately, despite
+>> > numerous claims that it will be released Real Soon Now(c), I have
+>> > yet to see even a repository with preliminary code. Did I miss an
+>> > announcement? There is something to be said for "release early,
+>> > release often." Is there a timeline for getting btrfsck into some
+>> > sort of usable form?
+>>
+>> Yes, but its still real soon now. =A0I've been at about 90% done sin=
+ce
+>> Christmas. =A0It would have been out last week but I've been chasing=
+ a
+>> debugging a very difficult corruption under load.
+>>
+>> I finally found a race in btrfs causing the corruption and now I'm
+>> back on fsck full time again.
+>
+> This mail was about four month ago...
+> Any news on this topic?
+>
+> I really would like to test btrfs on my desktop systems, but I still
+> hesitate because of the missing fsck.
+> --
+> Schoene Gruesse
+> Chris
+> --
+> To unsubscribe from this list: send the line "unsubscribe linux-btrfs=
+" in
+> the body of a message to majordomo@vger.kernel.org
+> More majordomo info at =A0http://vger.kernel.org/majordomo-info.html
+>
+--
+To unsubscribe from this list: send the line "unsubscribe linux-btrfs" =
+in
+the body of a message to majordomo@vger.kernel.org
+More majordomo info at  http://vger.kernel.org/majordomo-info.html

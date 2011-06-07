@@ -1,56 +1,104 @@
-From: Nirbheek Chauhan <nirbheek@gentoo.org>
-Subject: Applications using fsync cause hangs for several seconds every few minutes
-Date: Tue, 7 Jun 2011 04:28:04 +0530
-Message-ID: <BANLkTimMv_MMVmsJeVvr_1_wEVam1WZ6BA@mail.gmail.com>
+From: Miao Xie <miaox@cn.fujitsu.com>
+Subject: Re: Delayed inode operations not doing the right thing with enospc
+Date: Tue, 07 Jun 2011 09:39:15 +0800
+Message-ID: <4DED8143.3090803@cn.fujitsu.com>
+References: <4DE92BF2.1060905@redhat.com>
+Reply-To: miaox@cn.fujitsu.com
 Mime-Version: 1.0
-Content-Type: text/plain; charset=UTF-8
-To: linux-btrfs <linux-btrfs@vger.kernel.org>
+Content-Type: text/plain; charset=ISO-8859-1
+Cc: linux-btrfs <linux-btrfs@vger.kernel.org>
+To: Josef Bacik <josef@redhat.com>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
+In-Reply-To: <4DE92BF2.1060905@redhat.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hello list,
+On fri, 03 Jun 2011 14:46:10 -0400, Josef Bacik wrote:
+> I got a lot of these when running stress.sh on my test box
+> 
+> [ 9792.654889] ------------[ cut here ]------------
+> [ 9792.654898] WARNING: at fs/btrfs/extent-tree.c:5681
+> btrfs_alloc_free_block+0xca/0x27c [btrfs]()
+> [ 9792.654899] Hardware name: To Be Filled By O.E.M.
+> [ 9792.654900] Modules linked in: btrfs zlib_deflate libcrc32c
+> ip6t_REJECT nf_conntrack_ipv6 nf_defrag_ipv6 ip6table_filter ip6_tables
+> arc4 rt61pci rt2x00pci rt2x00lib snd_hda_codec_hdmi mac80211
+> snd_hda_codec_realtek cfg80211 snd_hda_intel edac_core snd_seq rfkill
+> pcspkr serio_raw snd_hda_codec eeprom_93cx6 edac_mce_amd sp5100_tco
+> i2c_piix4 k10temp snd_hwdep snd_seq_device snd_pcm floppy r8169 xhci_hcd
+> mii snd_timer snd soundcore snd_page_alloc ipv6 firewire_ohci pata_acpi
+> ata_generic firewire_core pata_via crc_itu_t radeon ttm drm_kms_helper
+> drm i2c_algo_bit i2c_core [last unloaded: scsi_wait_scan]
+> [ 9792.654919] Pid: 2762, comm: rm Tainted: G        W   2.6.39+ #1
+> [ 9792.654920] Call Trace:
+> [ 9792.654922]  [<ffffffff81053c4a>] warn_slowpath_common+0x83/0x9b
+> [ 9792.654925]  [<ffffffff81053c7c>] warn_slowpath_null+0x1a/0x1c
+> [ 9792.654933]  [<ffffffffa038e747>] btrfs_alloc_free_block+0xca/0x27c
+> [btrfs]
+> [ 9792.654945]  [<ffffffffa03b8562>] ? map_extent_buffer+0x6e/0xa8 [btrfs]
+> [ 9792.654953]  [<ffffffffa038189b>] __btrfs_cow_block+0xfc/0x30c [btrfs]
+> [ 9792.654963]  [<ffffffffa0396aa6>] ? btrfs_buffer_uptodate+0x47/0x58
+> [btrfs]
+> [ 9792.654970]  [<ffffffffa0382e48>] ? read_block_for_search+0x94/0x368
+> [btrfs]
+> [ 9792.654978]  [<ffffffffa0381ba9>] btrfs_cow_block+0xfe/0x146 [btrfs]
+> [ 9792.654986]  [<ffffffffa03848b0>] btrfs_search_slot+0x14d/0x4b6 [btrfs]
+> [ 9792.654997]  [<ffffffffa03b8562>] ? map_extent_buffer+0x6e/0xa8 [btrfs]
+> [ 9792.655022]  [<ffffffffa03938e8>] btrfs_lookup_inode+0x2f/0x8f [btrfs]
+> [ 9792.655025]  [<ffffffff8147afac>] ? _cond_resched+0xe/0x22
+> [ 9792.655027]  [<ffffffff8147b892>] ? mutex_lock+0x29/0x50
+> [ 9792.655039]  [<ffffffffa03d41b1>]
+> btrfs_update_delayed_inode+0x72/0x137 [btrfs]
+> [ 9792.655051]  [<ffffffffa03d4ea2>] btrfs_run_delayed_items+0x90/0xdb
+> [btrfs]
+> [ 9792.655062]  [<ffffffffa039a69b>]
+> btrfs_commit_transaction+0x228/0x654 [btrfs]
+> [ 9792.655064]  [<ffffffff8106e8da>] ? remove_wait_queue+0x3a/0x3a
+> [ 9792.655075]  [<ffffffffa03a2fa5>] btrfs_evict_inode+0x14d/0x202 [btrfs]
+> [ 9792.655077]  [<ffffffff81132bd6>] evict+0x71/0x111
+> [ 9792.655079]  [<ffffffff81132de0>] iput+0x12a/0x132
+> [ 9792.655081]  [<ffffffff8112aa3a>] do_unlinkat+0x106/0x155
+> [ 9792.655083]  [<ffffffff81127b83>] ? path_put+0x1f/0x23
+> [ 9792.655085]  [<ffffffff8109c53c>] ? audit_syscall_entry+0x145/0x171
+> [ 9792.655087]  [<ffffffff81128410>] ? putname+0x34/0x36
+> [ 9792.655090]  [<ffffffff8112b441>] sys_unlinkat+0x29/0x2b
+> [ 9792.655092]  [<ffffffff81482c42>] system_call_fastpath+0x16/0x1b
+> [ 9792.655093] ---[ end trace 02b696eb02b3f768 ]---
+> 
+> 
+> This is because use_block_rsv() is having to do a
+> reserve_metadata_bytes(), which shouldn't happen as we should have
+> reserved enough space for those operations to complete.  This is
+> happening because use_block_rsv() will call get_block_rsv(), which if
+> root->ref_cows is set (which is the case on all fs roots) we will use
+> trans->block_rsv, which will only have what the current transaction
+> starter had reserved.
+> 
+> What needs to be done instead is we need to have a block reserve that
+> any reservation that is done at create time for these inodes is migrated
+> to this special reserve, and then when you run the delayed inode items
+> stuff you set trans->block_rsv to the special block reserve so the
+> accounting is all done properly.
+> 
+> This is just off the top of my head, there may be a better way to do it,
+> I've not actually looked that the delayed inode code at all.
+> 
+> I would do this myself but I have a ever increasing list of shit to do
+> so will somebody pick this up and fix it please?  Thanks,
 
-I've been using btrfs on my personal machines for about two years now,
-and on this machine for about a year with absolutely no problems.
-Infact, it has held up better than ext4 with regards to reliability.
+Sorry, it's my miss.
+I forgot to set trans->block_rsv to global_block_rsv, since we have migrated
+the space from trans_block_rsv to global_block_rsv.
 
-However, recently, perhaps with 2.6.39, or after I quickly started
-filling up my disk again, it has become impossible for me to work for
-long periods on my machine.
+I'll fix it soon.
 
-Every few minutes, (I guess) when applications do fsync (firefox,
-xchat, vim, etc), all applications that use fsync() hang for several
-seconds, and applications that use general IO suffer extreme
-slowdowns. iotop shows various combinations of the processes listed
-below doing writes, and the total write as 2-3MB/s.
+Thanks for your help.
+Miao
 
-[btrfs-dealloc-]
-[btrfs-submit-0]
-[btrfs-transacti]
-[btrfs-endio-wri]
-[flush-btrfs-1]
+> 
+> Josef
+> --
+> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
+> the body of a message to majordomo@vger.kernel.org
+> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+> 
 
-In some extreme cases, I've had hangs for 5 whole minutes. I'm really
-beginning to appreciate how little I/O GNOME Shell does since it
-remains completely responsive throughout this. I have a feeling that
-the cause for this is extreme fragmentation.
-
-My hard disk is a 500GB SATA hdd, my btrfs partition details are:
-
-# btrfs filesystem show
-Label: 'gentoo'  uuid: 6f539d7f-f70f-4216-a4a9-6f7a2117a04a
-	Total devices 1 FS bytes used 246.37GB
-	devid    1 size 345.13GB used 345.13GB path /dev/sda7
-
-Btrfs v0.19-35-g1b444cd-dirty
-
-What can I do to debug this issue? What other information should I
-supply? Could someone guide me on how to figure out why my machine is
-unusable now?
-
-Thanks in advance,
-
--- 
-~Nirbheek Chauhan
-
-Gentoo GNOME+Mozilla Team

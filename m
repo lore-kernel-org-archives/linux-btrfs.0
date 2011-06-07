@@ -1,142 +1,157 @@
-From: liubo <liubo2009@cn.fujitsu.com>
-Subject: Re: kernel BUG at fs/btrfs/extent-tree.c:6164!
-Date: Tue, 07 Jun 2011 13:31:27 +0800
-Message-ID: <4DEDB7AF.2060308@cn.fujitsu.com>
-References: <4DEC90CB.4050609@jp.fujitsu.com>
+From: Adrian Hunter <adrian.hunter@intel.com>
+Subject: Re: btrfs hang on brd
+Date: Tue, 07 Jun 2011 08:35:45 +0300
+Message-ID: <4DEDB8B1.1040901@intel.com>
+References: <4DE492B0.9020302@linux.intel.com> <20110601085439.GD12709@twin.jikos.cz> <4DE60F44.6090400@linux.intel.com> <4DE8AC3E.8020908@intel.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=ISO-2022-JP
-Cc: Linux Btrfs <linux-btrfs@vger.kernel.org>,
-	Chris Mason <chris.mason@oracle.com>
-To: Tsutomu Itoh <t-itoh@jp.fujitsu.com>
+Content-Type: text/plain; charset=ISO-8859-1; format=flowed
+Cc: chris.mason@oracle.com, linux-btrfs@vger.kernel.org
+To: dave@jikos.cz
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <4DEC90CB.4050609@jp.fujitsu.com>
+In-Reply-To: <4DE8AC3E.8020908@intel.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 06/06/2011 04:33 PM, Tsutomu Itoh wrote:
-> Hi,
-> 
-> I encountered following panic using 'btrfs-unstable + for-linus'
-> kernel.
-> 
-> I ran "btrfs fi bal /test5" command, and mount option of /test5
-> is as follows:
-> 
->  /dev/sdc3 on /test5 type btrfs (rw,space_cache,compress=lzo,inode_cache)
-> 
+On 03/06/11 12:41, Adrian Hunter wrote:
+> No improvement on 3.0-rc1+ (commit
+> 5c6cce92bc8aee751aafe82c5d9caf7553226a3d).
 
-So, just a "btrfs fi bal" would lead to the bug?
+And on 59c5f46fbe01a00eedf54a23789634438bb80603 Linux 3.0-rc2
+btrfs quickly fails to mount due to no space e.g.
 
-I've figured out the warnings, but not reproduced the bug yet...
-I used 'btrfs-unstable + for-linus" whose top commit is
 
-commit aa0467d8d2a00e75b2bb6a56a4ee6d70c5d1928f
-Author: David Sterba <dsterba@suse.cz>
-Date:   Fri Jun 3 16:29:08 2011 +0200
+Script
+------
 
-    btrfs: fix uninitialized variable warning
-    
-and tried on 1) a single disk, 2) 2 disks and 3) 4 disks respectively,
-but none of them leaded to the below bug.
+#!/bin/sh
 
-I guess maybe I miss something to reproduce it?
+sudo modprobe brd rd_size=262144
 
-thanks,
-liubo
+sudo umount /mnt/test/ 2> /dev/null
 
-> Thanks,
-> Tsutomu
-> 
-> =================================================================
-> 
-> btrfs: relocating block group 23383244800 flags 20
-> btrfs: found 2959 extents
-> ------------[ cut here ]------------
-> WARNING: at fs/btrfs/transaction.c:213 start_transaction+0x2a7/0x2b0 [btrfs]()
-> Hardware name: PRIMERGY
-> Modules linked in: autofs4 sunrpc 8021q garp stp llc cpufreq_ondemand acpi_cpufr
-> eq freq_table mperf ipv6 btrfs zlib_deflate crc32c libcrc32c ext3 jbd dm_mirror
-> dm_region_hash dm_log dm_mod kvm uinput ppdev parport_pc parport sg pcspkr i2c_i
-> 801 i2c_core iTCO_wdt iTCO_vendor_support tg3 shpchp pci_hotplug i3000_edac edac
-> _core ext4 mbcache jbd2 crc16 sd_mod crc_t10dif sr_mod cdrom megaraid_sas pata_a
-> cpi ata_generic ata_piix libata scsi_mod floppy [last unloaded: microcode]
-> Pid: 23781, comm: btrfs Tainted: G        W   2.6.39btrfs-test+ #4
-> Call Trace:
->  [<ffffffff8106004f>] warn_slowpath_common+0x7f/0xc0
->  [<ffffffff810600aa>] warn_slowpath_null+0x1a/0x20
->  [<ffffffffa0337047>] start_transaction+0x2a7/0x2b0 [btrfs]
->  [<ffffffffa035498d>] ? btrfs_wait_ordered_range+0x10d/0x160 [btrfs]
->  [<ffffffffa0337323>] btrfs_start_transaction+0x13/0x20 [btrfs]
->  [<ffffffffa033bbca>] btrfs_evict_inode+0x11a/0x260 [btrfs]
->  [<ffffffff811687f8>] evict+0x78/0x170
->  [<ffffffff81168c92>] iput+0xe2/0x1a0
->  [<ffffffffa031f171>] btrfs_remove_block_group+0x141/0x3c0 [btrfs]
->  [<ffffffffa035e6ea>] btrfs_relocate_chunk+0x54a/0x670 [btrfs]
->  [<ffffffffa0357668>] ? read_extent_buffer+0xd8/0x1d0 [btrfs]
->  [<ffffffffa031be51>] ? btrfs_previous_item+0xb1/0x150 [btrfs]
->  [<ffffffffa035f43a>] btrfs_balance+0x21a/0x2b0 [btrfs]
->  [<ffffffff8115dc41>] ? path_openat+0x101/0x3d0
->  [<ffffffffa03685bc>] btrfs_ioctl+0x51c/0xc40 [btrfs]
->  [<ffffffff8111e358>] ? handle_mm_fault+0x148/0x270
->  [<ffffffff814809e8>] ? do_page_fault+0x1d8/0x4b0
->  [<ffffffff81160d6a>] do_vfs_ioctl+0x9a/0x540
->  [<ffffffff811612b1>] sys_ioctl+0xa1/0xb0
->  [<ffffffff81484ec2>] system_call_fastpath+0x16/0x1b
-> ---[ end trace e5c5cb2e98a3cd1a ]---
-> btrfs: relocating block group 20971520 flags 18
-> btrfs: relocating block group 34925969408 flags 18
-> btrfs: found 1 extents
-> ------------[ cut here ]------------
-> kernel BUG at fs/btrfs/extent-tree.c:6164!
-> invalid opcode: 0000 [#1] SMP
-> last sysfs file: /sys/kernel/mm/ksm/run
-> CPU 0
-> Modules linked in: autofs4 sunrpc 8021q garp stp llc cpufreq_ondemand acpi_cpufreq freq_table mperf ipv6 btrfs zlib_deflate crc32c libcrc32c ext3 jbd dm_mirror dm_region_hash dm_log dm_mod kvm uinput ppdev parport_pc parport sg pcspkr i2c_i801 i2c_core iTCO_wdt iTCO_vendor_support tg3 shpchp pci_hotplug i3000_edac edac_core ext4 mbcache jbd2 crc16 sd_mod crc_t10dif sr_mod cdrom megaraid_sas pata_acpi ata_generic ata_piix libata scsi_mod floppy [last unloaded: microcode]
-> 
-> Pid: 4109, comm: btrfs Tainted: G        W   2.6.39btrfs-test+ #4 FUJITSU-SV      PRIMERGY            /D2399
-> RIP: 0010:[<ffffffffa0325b95>]  [<ffffffffa0325b95>] walk_up_proc+0x375/0x420 [btrfs]
-> RSP: 0018:ffff8801801eb9c8  EFLAGS: 00010286
-> RAX: 0000000000000005 RBX: ffff880167a70140 RCX: fffffffffffffff8
-> RDX: ffff8801801ea000 RSI: ffff880000000000 RDI: ffff880194909fa8
-> RBP: ffff8801801eba18 R08: 0000000000000000 R09: 0000000000000005
-> R10: 0000000000000001 R11: ffff880194909fa8 R12: 0000000000000000
-> R13: ffff88013973d000 R14: ffff88015ad4d9a0 R15: ffff880042203920
-> FS:  00007fa86bcb9740(0000) GS:ffff88019fc00000(0000) knlGS:0000000000000000
-> CS:  0010 DS: 0000 ES: 0000 CR0: 000000008005003b
-> CR2: 00000033cf60b0c0 CR3: 0000000181cf7000 CR4: 00000000000006f0
-> DR0: 0000000000000000 DR1: 0000000000000000 DR2: 0000000000000000
-> DR3: 0000000000000000 DR6: 00000000ffff0ff0 DR7: 0000000000000400
-> Process btrfs (pid: 4109, threadinfo ffff8801801ea000, task ffff88011a4914a0)
-> Stack:
->  ffff8801801eba18 ffff880194909fa8 ffff880100000000 ffffffffa03280e8
->  ffff8801801eba58 ffff88015ad4d9a0 0000000000000000 0000000000000000
->  ffff8801801ea000 ffff880167a70140 ffff8801801eba78 ffffffffa0325d71
-> Call Trace:
->  [<ffffffffa03280e8>] ? btrfs_run_delayed_refs+0xc8/0x210 [btrfs]
->  [<ffffffffa0325d71>] walk_up_tree+0x131/0x1b0 [btrfs]
->  [<ffffffffa03260b0>] btrfs_drop_snapshot+0x2c0/0x5c0 [btrfs]
->  [<ffffffffa03328b0>] ? btrfs_read_fs_root_no_name+0x1b0/0x280 [btrfs]
->  [<ffffffffa037b45f>] merge_reloc_roots+0xdf/0x150 [btrfs]
->  [<ffffffffa037f311>] relocate_block_group+0x481/0x660 [btrfs]
->  [<ffffffffa0334d15>] ? btrfs_clean_old_snapshots+0x35/0x150 [btrfs]
->  [<ffffffffa037f6a3>] btrfs_relocate_block_group+0x1b3/0x2e0 [btrfs]
->  [<ffffffffa0368d80>] ? btrfs_tree_unlock+0x50/0x50 [btrfs]
->  [<ffffffffa035e22b>] btrfs_relocate_chunk+0x8b/0x670 [btrfs]
->  [<ffffffffa031303d>] ? btrfs_set_path_blocking+0x3d/0x50 [btrfs]
->  [<ffffffffa0357668>] ? read_extent_buffer+0xd8/0x1d0 [btrfs]
->  [<ffffffffa031be51>] ? btrfs_previous_item+0xb1/0x150 [btrfs]
->  [<ffffffffa0357668>] ? read_extent_buffer+0xd8/0x1d0 [btrfs]
->  [<ffffffffa035f43a>] btrfs_balance+0x21a/0x2b0 [btrfs]
->  [<ffffffff8115dc41>] ? path_openat+0x101/0x3d0
->  [<ffffffffa03685bc>] btrfs_ioctl+0x51c/0xc40 [btrfs]
->  [<ffffffff8111e358>] ? handle_mm_fault+0x148/0x270
->  [<ffffffff814809e8>] ? do_page_fault+0x1d8/0x4b0
->  [<ffffffff81160d6a>] do_vfs_ioctl+0x9a/0x540
->  [<ffffffff811612b1>] sys_ioctl+0xa1/0xb0
->  [<ffffffff81484ec2>] system_call_fastpath+0x16/0x1b
-> Code: fe ff ff 0f 1f 00 4c 89 df 31 c9 4c 89 fa 4c 89 ee 44 89 55 c0 4c 89 5d b8 e8 c8 d5 ff ff 4c 8b 5d b8 44 8b 55 c0 e9 85 fe ff ff <0f> 0b eb fe 0f 1f 80 00 00 00 00 65 48 8b 14 25 c8 cc 00 00 48
-> RIP  [<ffffffffa0325b95>] walk_up_proc+0x375/0x420 [btrfs]
->  RSP <ffff8801801eb9c8>
-> 
-> 
-> 
+echo 'mkfs.btrfs /dev/ram0'
 
+sudo mkfs.btrfs /dev/ram0
+
+sudo mkdir -p /mnt/test
+
+echo 'mount -t btrfs /dev/ram0 /mnt/test'
+
+sudo mount -t btrfs /dev/ram0 /mnt/test
+
+sudo mkdir -p /mnt/test/test
+
+sudo chown $USER /mnt/test/test
+sudo chgrp $USER /mnt/test/test
+
+sudo umount /mnt/test
+
+full=0
+i=0
+while true; do
+	sudo mount -t btrfs /dev/ram0 /mnt/test
+
+	if df | grep ram0 | grep 100% > /dev/null; then
+		full=`expr $full \+ 1`
+		if test $full -gt 6;then
+			rm -rf /mnt/test/test/*
+			full=0
+		fi
+	else
+		full=0
+	fi
+
+	fsstress -c -r -d /mnt/test/test -p 3 -n 1000 -l 10
+
+	sudo umount /mnt/test
+
+	i=`expr $i \+ 1`
+	echo $i
+done
+
+
+
+Script Output
+-------------
+
+mkfs.btrfs /dev/ram0
+
+WARNING! - Btrfs Btrfs v0.19 IS EXPERIMENTAL
+WARNING! - see http://btrfs.wiki.kernel.org before using
+
+fs created label (null) on /dev/ram0
+	nodesize 4096 leafsize 4096 sectorsize 4096 size 256.00MB
+Btrfs Btrfs v0.19
+mount -t btrfs /dev/ram0 /mnt/test
+1
+2
+3
+4
+mount: No space left on device
+^C
+
+
+
+Kernel messages
+---------------
+
+[   95.084429] brd: module loaded
+[   95.368708] Btrfs loaded
+[   95.369455] device fsid 9644bae59f78285c-8db3a698a8a82293 devid 1 
+transid 7 /dev/ram0
+[   95.370582] SELinux: initialized (dev ram0, type btrfs), uses xattr
+[   95.487905] device fsid 9644bae59f78285c-8db3a698a8a82293 devid 1 
+transid 10 /dev/ram0
+[   95.488889] SELinux: initialized (dev ram0, type btrfs), uses xattr
+[  107.336869] device fsid 9644bae59f78285c-8db3a698a8a82293 devid 1 
+transid 2664 /dev/ram0
+[  107.338873] SELinux: initialized (dev ram0, type btrfs), uses xattr
+[  115.861909] device fsid 9644bae59f78285c-8db3a698a8a82293 devid 1 
+transid 6816 /dev/ram0
+[  115.864089] SELinux: initialized (dev ram0, type btrfs), uses xattr
+[  122.586606] device fsid 9644bae59f78285c-8db3a698a8a82293 devid 1 
+transid 10872 /dev/ram0
+[  122.587779] SELinux: initialized (dev ram0, type btrfs), uses xattr
+[  128.824401] BTRFS: inode 19622 still on the orphan list
+[  128.844945] ------------[ cut here ]------------
+[  128.844969] WARNING: at fs/btrfs/extent-tree.c:6878 
+btrfs_free_block_groups+0x1e6/0x228 [btrfs]()
+[  128.844973] Hardware name: XPS 8300
+[  128.844974] Modules linked in: btrfs zlib_deflate libcrc32c brd tun 
+fuse cpufreq_ondemand acpi_cpufreq freq_table mperf ip6t_REJECT 
+nf_conntrack_ipv6 nf_defrag_ipv6 ip6table_filter ip6_tables ipv6 uinput 
+snd_hda_codec_hdmi snd_hda_codec_realtek snd_hda_intel snd_hda_codec 
+snd_hwdep snd_seq snd_seq_device snd_pcm broadcom snd_timer snd tg3 
+pcspkr joydev iTCO_wdt iTCO_vendor_support soundcore snd_page_alloc 
+i2c_i801 serio_raw dcdbas microcode usb_storage i915 drm_kms_helper drm 
+i2c_algo_bit i2c_core video [last unloaded: scsi_wait_scan]
+[  128.845024] Pid: 2503, comm: umount Not tainted 
+3.0.0-rc2-2011-06-06-02+ #13
+[  128.845026] Call Trace:
+[  128.845035]  [<ffffffff8104db2e>] warn_slowpath_common+0x85/0x9d
+[  128.845050]  [<ffffffffa02a6b70>] ? 
+btrfs_free_block_groups+0x204/0x228 [btrfs]
+[  128.845056]  [<ffffffff8104db60>] warn_slowpath_null+0x1a/0x1c
+[  128.845069]  [<ffffffffa02a6b52>] btrfs_free_block_groups+0x1e6/0x228 
+[btrfs]
+[  128.845087]  [<ffffffffa02afa0b>] close_ctree+0x22c/0x346 [btrfs]
+[  128.845092]  [<ffffffff8103d068>] ? should_resched+0xe/0x2e
+[  128.845097]  [<ffffffff8147abfe>] ? _cond_resched+0xe/0x22
+[  128.845100]  [<ffffffff8147b7d5>] ? down_write+0x29/0x49
+[  128.845110]  [<ffffffffa0295a1e>] btrfs_put_super+0x1d/0x2c [btrfs]
+[  128.845116]  [<ffffffff8111ecb4>] generic_shutdown_super+0x74/0xe9
+[  128.845120]  [<ffffffff8111eda9>] kill_anon_super+0x16/0x50
+[  128.845125]  [<ffffffff8111efd6>] deactivate_locked_super+0x26/0x4b
+[  128.845129]  [<ffffffff8111f7c5>] deactivate_super+0x3a/0x3f
+[  128.845133]  [<ffffffff81134a09>] mntput_no_expire+0xd0/0xd5
+[  128.845136]  [<ffffffff81135688>] sys_umount+0x2dc/0x30a
+[  128.845141]  [<ffffffff81125c64>] ? path_put+0x22/0x27
+[  128.845145]  [<ffffffff814828c2>] system_call_fastpath+0x16/0x1b
+[  128.845149] ---[ end trace e535ebf83dd43354 ]---
+[  128.845152] space_info has 8814592 free, is full
+[  128.845156] space_info total=41943040, used=24576000, pinned=0, 
+reserved=98304, may_use=0, readonly=8454144
+[  128.897312] device fsid 9644bae59f78285c-8db3a698a8a82293 devid 1 
+transid 14722 /dev/ram0
+[  128.910740] BTRFS: inode 19622 still on the orphan list
+[  128.910747] btrfs: could not do orphan cleanup -28
+[  128.948912] btrfs: open_ctree failed

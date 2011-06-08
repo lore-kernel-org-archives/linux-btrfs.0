@@ -1,83 +1,23 @@
-From: Arne Jansen <sensille@gmx.net>
+From: Li Zefan <lizf@cn.fujitsu.com>
 Subject: Re: [PATCH] Btrfs: avoid stack bloat in btrfs_ioctl_fs_info()
-Date: Wed, 08 Jun 2011 09:10:38 +0200
-Message-ID: <4DEF206E.9000600@gmx.net>
-References: <4DEEF352.7050401@cn.fujitsu.com>
+Date: Wed, 08 Jun 2011 15:23:32 +0800
+Message-ID: <4DEF2374.5020905@cn.fujitsu.com>
+References: <4DEEF352.7050401@cn.fujitsu.com> <4DEF206E.9000600@gmx.net>
 Mime-Version: 1.0
 Content-Type: text/plain; charset=ISO-8859-1
 Cc: "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
-To: Li Zefan <lizf@cn.fujitsu.com>
+To: Arne Jansen <sensille@gmx.net>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <4DEEF352.7050401@cn.fujitsu.com>
+In-Reply-To: <4DEF206E.9000600@gmx.net>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 08.06.2011 05:58, Li Zefan wrote:
-> The size of struct btrfs_ioctl_fs_info_args is as big as 1KB, so
-> don't declare the variable on stack.
+>> -	if (copy_to_user(arg, &fi_args, sizeof(fi_args)))
+>> -		return -EFAULT;
+>> +	if (copy_to_user(arg, fi_args, sizeof(fi_args)))
 > 
-> Signed-off-by: Li Zefan <lizf@cn.fujitsu.com>
-> ---
->  fs/btrfs/ioctl.c |   23 ++++++++++++++---------
->  1 files changed, 14 insertions(+), 9 deletions(-)
+> sizeof(*fi_args)
 > 
-> diff --git a/fs/btrfs/ioctl.c b/fs/btrfs/ioctl.c
-> index ac37040..9705c5c 100644
-> --- a/fs/btrfs/ioctl.c
-> +++ b/fs/btrfs/ioctl.c
-> @@ -2054,29 +2054,34 @@ static long btrfs_ioctl_rm_dev(struct btrfs_root *root, void __user *arg)
->  
->  static long btrfs_ioctl_fs_info(struct btrfs_root *root, void __user *arg)
->  {
-> -	struct btrfs_ioctl_fs_info_args fi_args;
-> +	struct btrfs_ioctl_fs_info_args *fi_args;
->  	struct btrfs_device *device;
->  	struct btrfs_device *next;
->  	struct btrfs_fs_devices *fs_devices = root->fs_info->fs_devices;
-> +	int ret = 0;
->  
->  	if (!capable(CAP_SYS_ADMIN))
->  		return -EPERM;
->  
-> -	fi_args.num_devices = fs_devices->num_devices;
-> -	fi_args.max_id = 0;
-> -	memcpy(&fi_args.fsid, root->fs_info->fsid, sizeof(fi_args.fsid));
-> +	fi_args = kzalloc(sizeof(*fi_args), GFP_KERNEL);
-> +	if (!fi_args)
-> +		return -ENOMEM;
-> +
-> +	fi_args->num_devices = fs_devices->num_devices;
-> +	memcpy(&fi_args->fsid, root->fs_info->fsid, sizeof(fi_args->fsid));
->  
->  	mutex_lock(&fs_devices->device_list_mutex);
->  	list_for_each_entry_safe(device, next, &fs_devices->devices, dev_list) {
-> -		if (device->devid > fi_args.max_id)
-> -			fi_args.max_id = device->devid;
-> +		if (device->devid > fi_args->max_id)
-> +			fi_args->max_id = device->devid;
->  	}
->  	mutex_unlock(&fs_devices->device_list_mutex);
->  
-> -	if (copy_to_user(arg, &fi_args, sizeof(fi_args)))
-> -		return -EFAULT;
-> +	if (copy_to_user(arg, fi_args, sizeof(fi_args)))
+> will integrate that, thanks :)
+> 
 
-sizeof(*fi_args)
-
-will integrate that, thanks :)
-
--Arne
-
-> +		ret = -EFAULT;
->  
-> -	return 0;
-> +	kfree(fi_args);
-> +	return ret;
->  }
->  
->  static long btrfs_ioctl_dev_info(struct btrfs_root *root, void __user *arg)
-> -- 1.7.3.1 
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
-
+Oops, what a silly mistake!

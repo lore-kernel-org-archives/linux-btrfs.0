@@ -1,41 +1,38 @@
-From: Arne Jansen <sensille@gmx.net>
-Subject: [GIT PULL] scrub fixes for -rc3
-Date: Wed, 08 Jun 2011 10:58:40 +0200
-Message-ID: <4DEF39C0.8040405@gmx.net>
+From: liubo <liubo2009@cn.fujitsu.com>
+Subject: [PATCH] Btrfs: check root_key's offset instead
+Date: Wed, 08 Jun 2011 17:46:13 +0800
+Message-ID: <4DEF44E5.6020906@cn.fujitsu.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=ISO-8859-1
-Cc: Linux Btrfs <linux-btrfs@vger.kernel.org>,
-	Josef Bacik <josef@redhat.com>
-To: Chris Mason <chris.mason@oracle.com>
+Content-Type: text/plain; charset=UTF-8
+Cc: Tsutomu Itoh <t-itoh@jp.fujitsu.com>
+To: Linux Btrfs <linux-btrfs@vger.kernel.org>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hi Chris,
+When we use reloc root to cow or copy a tree block, we do not set the block's
+owner, instead we set its header's flag with BTRFS_HEADER_FLAG_RELOC.
 
-please pull from
+So here we should check for root_key's offset.
 
-git://git.kernel.org/pub/scm/linux/kernel/git/arne/btrfs-unstable-arne.git
-for-chris
+Signed-off-by: Liu Bo <liubo2009@cn.fujitsu.com>
+---
+ fs/btrfs/extent-tree.c |    2 +-
+ 1 files changed, 1 insertions(+), 1 deletions(-)
 
-It contains the 2 commits
+diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
+index 5b9b6b6..0bda273 100644
+--- a/fs/btrfs/extent-tree.c
++++ b/fs/btrfs/extent-tree.c
+@@ -6160,7 +6160,7 @@ static noinline int walk_up_proc(struct btrfs_trans_handle *trans,
+ 		if (wc->flags[level + 1] & BTRFS_BLOCK_FLAG_FULL_BACKREF)
+ 			parent = path->nodes[level + 1]->start;
+ 		else
+-			BUG_ON(root->root_key.objectid !=
++			BUG_ON(root->root_key.offset !=
+ 			       btrfs_header_owner(path->nodes[level + 1]));
+ 	}
+ 
+-- 
+1.6.5.2
 
-Arne Jansen (1):
-      btrfs: scrub: errors in tree enumeration
 
-Li Zefan (1):
-      Btrfs: avoid stack bloat in btrfs_ioctl_fs_info()
-
-It also reverts
-
-commit cb25c2ea6a79702ab7895b873c6c43e0d3bc3c72
-Author: Josef Bacik <josef@redhat.com>
-Date:   Wed May 11 12:17:34 2011 -0400
-
-    Btrfs: map the node block when looking for readahead targets
-
-because it breaks readahead and with it scrub. This went unnoticed,
-because another commit disabled reada in many calling sites. Scrub
-is a heavy user of reada.
-
-Thanks,
-Arne

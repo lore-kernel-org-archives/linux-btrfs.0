@@ -1,37 +1,68 @@
 From: Li Zefan <lizf@cn.fujitsu.com>
-Subject: [PATCH] Btrfs: use join_transaction in btrfs_evict_inode()
-Date: Wed, 08 Jun 2011 11:56:44 +0800
-Message-ID: <4DEEF2FC.9060209@cn.fujitsu.com>
+Subject: [PATCH] Btrfs: avoid stack bloat in btrfs_ioctl_fs_info()
+Date: Wed, 08 Jun 2011 11:58:10 +0800
+Message-ID: <4DEEF352.7050401@cn.fujitsu.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset=UTF-8
-Cc: Tsutomu Itoh <t-itoh@jp.fujitsu.com>
+Cc: Arne Jansen <sensille@gmx.net>
 To: "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-The WARN_ON() in start_transaction() was triggered while balancing.
+The size of struct btrfs_ioctl_fs_info_args is as big as 1KB, so
+don't declare the variable on stack.
 
-The cause is btrfs_relocate_chunk() started a transaction and
-then called iput() on the inode that stores free space cache,
-and iput() called btrfs_start_transaction() again.
-
-Reported-by: Tsutomu Itoh <t-itoh@jp.fujitsu.com>
 Signed-off-by: Li Zefan <lizf@cn.fujitsu.com>
 ---
- fs/btrfs/inode.c |    2 +-
- 1 files changed, 1 insertions(+), 1 deletions(-)
+ fs/btrfs/ioctl.c |   23 ++++++++++++++---------
+ 1 files changed, 14 insertions(+), 9 deletions(-)
 
-diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
-index 02ff4a1..4e9aa28 100644
---- a/fs/btrfs/inode.c
-+++ b/fs/btrfs/inode.c
-@@ -3646,7 +3646,7 @@ void btrfs_evict_inode(struct inode *inode)
- 	btrfs_i_size_write(inode, 0);
+diff --git a/fs/btrfs/ioctl.c b/fs/btrfs/ioctl.c
+index ac37040..9705c5c 100644
+--- a/fs/btrfs/ioctl.c
++++ b/fs/btrfs/ioctl.c
+@@ -2054,29 +2054,34 @@ static long btrfs_ioctl_rm_dev(struct btrfs_root *root, void __user *arg)
  
- 	while (1) {
--		trans = btrfs_start_transaction(root, 0);
-+		trans = btrfs_join_transaction(root);
- 		BUG_ON(IS_ERR(trans));
- 		trans->block_rsv = root->orphan_block_rsv;
+ static long btrfs_ioctl_fs_info(struct btrfs_root *root, void __user *arg)
+ {
+-	struct btrfs_ioctl_fs_info_args fi_args;
++	struct btrfs_ioctl_fs_info_args *fi_args;
+ 	struct btrfs_device *device;
+ 	struct btrfs_device *next;
+ 	struct btrfs_fs_devices *fs_devices = root->fs_info->fs_devices;
++	int ret = 0;
  
+ 	if (!capable(CAP_SYS_ADMIN))
+ 		return -EPERM;
+ 
+-	fi_args.num_devices = fs_devices->num_devices;
+-	fi_args.max_id = 0;
+-	memcpy(&fi_args.fsid, root->fs_info->fsid, sizeof(fi_args.fsid));
++	fi_args = kzalloc(sizeof(*fi_args), GFP_KERNEL);
++	if (!fi_args)
++		return -ENOMEM;
++
++	fi_args->num_devices = fs_devices->num_devices;
++	memcpy(&fi_args->fsid, root->fs_info->fsid, sizeof(fi_args->fsid));
+ 
+ 	mutex_lock(&fs_devices->device_list_mutex);
+ 	list_for_each_entry_safe(device, next, &fs_devices->devices, dev_list) {
+-		if (device->devid > fi_args.max_id)
+-			fi_args.max_id = device->devid;
++		if (device->devid > fi_args->max_id)
++			fi_args->max_id = device->devid;
+ 	}
+ 	mutex_unlock(&fs_devices->device_list_mutex);
+ 
+-	if (copy_to_user(arg, &fi_args, sizeof(fi_args)))
+-		return -EFAULT;
++	if (copy_to_user(arg, fi_args, sizeof(fi_args)))
++		ret = -EFAULT;
+ 
+-	return 0;
++	kfree(fi_args);
++	return ret;
+ }
+ 
+ static long btrfs_ioctl_dev_info(struct btrfs_root *root, void __user *arg)
 -- 1.7.3.1 

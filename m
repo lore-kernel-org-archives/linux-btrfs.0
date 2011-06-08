@@ -1,53 +1,46 @@
-From: "Yan, Zheng " <yanzheng@21cn.com>
-Subject: Re: [PATCH] Btrfs: check root_key's offset instead
-Date: Wed, 8 Jun 2011 18:24:57 +0800
-Message-ID: <BANLkTik83m9d1m-_R9fGuidcR2Ygx4Z_gw@mail.gmail.com>
-References: <4DEF44E5.6020906@cn.fujitsu.com>
+From: Josef Bacik <josef@redhat.com>
+Subject: Re: [GIT PULL] scrub fixes for -rc3
+Date: Wed, 08 Jun 2011 09:25:57 -0400
+Message-ID: <4DEF7865.5070403@redhat.com>
+References: <4DEF39C0.8040405@gmx.net>
 Mime-Version: 1.0
 Content-Type: text/plain; charset=ISO-8859-1
-Cc: Linux Btrfs <linux-btrfs@vger.kernel.org>,
-	Tsutomu Itoh <t-itoh@jp.fujitsu.com>
-To: liubo <liubo2009@cn.fujitsu.com>
+Cc: Chris Mason <chris.mason@oracle.com>,
+	Linux Btrfs <linux-btrfs@vger.kernel.org>
+To: Arne Jansen <sensille@gmx.net>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <4DEF44E5.6020906@cn.fujitsu.com>
+In-Reply-To: <4DEF39C0.8040405@gmx.net>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Wed, Jun 8, 2011 at 5:46 PM, liubo <liubo2009@cn.fujitsu.com> wrote:
-> When we use reloc root to cow or copy a tree block, we do not set the=
- block's
-> owner, instead we set its header's flag with BTRFS_HEADER_FLAG_RELOC.
->
-> So here we should check for root_key's offset.
->
-> Signed-off-by: Liu Bo <liubo2009@cn.fujitsu.com>
-> ---
-> =A0fs/btrfs/extent-tree.c | =A0 =A02 +-
-> =A01 files changed, 1 insertions(+), 1 deletions(-)
->
-> diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
-> index 5b9b6b6..0bda273 100644
-> --- a/fs/btrfs/extent-tree.c
-> +++ b/fs/btrfs/extent-tree.c
-> @@ -6160,7 +6160,7 @@ static noinline int walk_up_proc(struct btrfs_t=
-rans_handle *trans,
-> =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0if (wc->flags[level + 1] & BTRFS_BLOCK=
-_FLAG_FULL_BACKREF)
-> =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0parent =3D path->nodes=
-[level + 1]->start;
-> =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0else
-> - =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 BUG_ON(root->root_key.o=
-bjectid !=3D
-> + =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 BUG_ON(root->root_key.o=
-ffset !=3D
-> =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 btrfs_hea=
-der_owner(path->nodes[level + 1]));
-> =A0 =A0 =A0 =A0}
->
+On 06/08/2011 04:58 AM, Arne Jansen wrote:
+> Hi Chris,
+> 
+> please pull from
+> 
+> git://git.kernel.org/pub/scm/linux/kernel/git/arne/btrfs-unstable-arne.git
+> for-chris
+> 
+> It contains the 2 commits
+> 
+> Arne Jansen (1):
+>       btrfs: scrub: errors in tree enumeration
+> 
+> Li Zefan (1):
+>       Btrfs: avoid stack bloat in btrfs_ioctl_fs_info()
+> 
+> It also reverts
+> 
+> commit cb25c2ea6a79702ab7895b873c6c43e0d3bc3c72
+> Author: Josef Bacik <josef@redhat.com>
+> Date:   Wed May 11 12:17:34 2011 -0400
+> 
+>     Btrfs: map the node block when looking for readahead targets
+> 
+> because it breaks readahead and with it scrub. This went unnoticed,
+> because another commit disabled reada in many calling sites. Scrub
+> is a heavy user of reada.
+> 
 
-This is wrong, all blocks with BTRFS_HEADER_FLAG_RELOC flag set should
-uss full back references.
---
-To unsubscribe from this list: send the line "unsubscribe linux-btrfs" =
-in
-the body of a message to majordomo@vger.kernel.org
-More majordomo info at  http://vger.kernel.org/majordomo-info.html
+NAK, this commit isn't wrong, something else is happening.  Thanks,
+
+Josef

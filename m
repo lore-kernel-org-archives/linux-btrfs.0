@@ -1,52 +1,78 @@
 From: Arne Jansen <sensille@gmx.net>
-Subject: Re: [GIT PULL] scrub fixes for -rc3
-Date: Thu, 09 Jun 2011 08:51:39 +0200
-Message-ID: <4DF06D7B.8050003@gmx.net>
-References: <4DEF39C0.8040405@gmx.net> <4DEF7865.5070403@redhat.com> <1307555576-sup-582@shiny>
+Subject: Re: [PATCH] Btrfs: don't map extent buffer if path->skip_locking
+ is set
+Date: Thu, 09 Jun 2011 08:55:18 +0200
+Message-ID: <4DF06E56.1030808@gmx.net>
+References: <1307558750-19721-1-git-send-email-josef@redhat.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset=ISO-8859-1
-Cc: Josef Bacik <josef@redhat.com>,
-	Linux Btrfs <linux-btrfs@vger.kernel.org>
-To: Chris Mason <chris.mason@oracle.com>
+Cc: linux-btrfs@vger.kernel.org
+To: Josef Bacik <josef@redhat.com>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <1307555576-sup-582@shiny>
+In-Reply-To: <1307558750-19721-1-git-send-email-josef@redhat.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 08.06.2011 19:54, Chris Mason wrote:
-> Excerpts from Josef Bacik's message of 2011-06-08 09:25:57 -0400:
->> On 06/08/2011 04:58 AM, Arne Jansen wrote:
->>> Hi Chris,
->>>
->>> please pull from
->>>
->>> git://git.kernel.org/pub/scm/linux/kernel/git/arne/btrfs-unstable-arne.git
->>> for-chris
->>>
->>> It contains the 2 commits
->>>
->>> Arne Jansen (1):
->>>       btrfs: scrub: errors in tree enumeration
->>>
->>> Li Zefan (1):
->>>       Btrfs: avoid stack bloat in btrfs_ioctl_fs_info()
+On 08.06.2011 20:45, Josef Bacik wrote:
+> Arne's scrub stuff exposed a problem with mapping the extent buffer in
+> reada_for_search.  He searches the commit root with multiple threads and with
+> skip_locking set, so we can race and overwrite node->map_token since node isn't
+> locked.  So fix this so that we only map the extent buffer if we don't already
+> have a map_token and skip_locking isn't set.  Without this patch scrub would
+> panic almost immediately, with the patch it doesn't panic anymore.  Thanks,
 > 
-> Please leave off commits from others unless you somehow depend on
-> them ;)  I'll pull in the stack bloat patch separately.
+> Reported-by: Arne Jansen <sensille@gmx.net>
+> Signed-off-by: Josef Bacik <josef@redhat.com>
 
-ok, will not do it again ;)
-
-> 
-> re: the revert, it sounds like the lack of locking is causing trouble.
-> We'll have to figure something else out.
-
-Josef sent a patch for that. It fixes the crashes I saw, so please take
-it instead.
-
-The branch is now updated to contain only the tree enumeration
-correction, now even more correct.
+This fixes the BUGs I saw, so you can add a Tested-by: Arne Jansen
+<sensille@gmx.net> if you like.
 
 -Arne
 
+> ---
+>  fs/btrfs/ctree.c |   10 +++++++---
+>  1 files changed, 7 insertions(+), 3 deletions(-)
 > 
-> -chris
+> diff --git a/fs/btrfs/ctree.c b/fs/btrfs/ctree.c
+> index d840893..2e66786 100644
+> --- a/fs/btrfs/ctree.c
+> +++ b/fs/btrfs/ctree.c
+> @@ -1228,6 +1228,7 @@ static void reada_for_search(struct btrfs_root *root,
+>  	u32 nr;
+>  	u32 blocksize;
+>  	u32 nscan = 0;
+> +	bool map = true;
+>  
+>  	if (level != 1)
+>  		return;
+> @@ -1249,8 +1250,11 @@ static void reada_for_search(struct btrfs_root *root,
+>  
+>  	nritems = btrfs_header_nritems(node);
+>  	nr = slot;
+> +	if (node->map_token || path->skip_locking)
+> +		map = false;
+> +
+>  	while (1) {
+> -		if (!node->map_token) {
+> +		if (map && !node->map_token) {
+>  			unsigned long offset = btrfs_node_key_ptr_offset(nr);
+>  			map_private_extent_buffer(node, offset,
+>  						  sizeof(struct btrfs_key_ptr),
+> @@ -1277,7 +1281,7 @@ static void reada_for_search(struct btrfs_root *root,
+>  		if ((search <= target && target - search <= 65536) ||
+>  		    (search > target && search - target <= 65536)) {
+>  			gen = btrfs_node_ptr_generation(node, nr);
+> -			if (node->map_token) {
+> +			if (map && node->map_token) {
+>  				unmap_extent_buffer(node, node->map_token,
+>  						    KM_USER1);
+>  				node->map_token = NULL;
+> @@ -1289,7 +1293,7 @@ static void reada_for_search(struct btrfs_root *root,
+>  		if ((nread > 65536 || nscan > 32))
+>  			break;
+>  	}
+> -	if (node->map_token) {
+> +	if (map && node->map_token) {
+>  		unmap_extent_buffer(node, node->map_token, KM_USER1);
+>  		node->map_token = NULL;
+>  	}
 

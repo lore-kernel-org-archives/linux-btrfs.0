@@ -1,24 +1,21 @@
-From: David Sterba <dave@jikos.cz>
-Subject: Re: [PATCH 2/2] Btrfs: serialize flushers in reserve_metadata_bytes
-Date: Thu, 9 Jun 2011 20:00:15 +0200
-Message-ID: <20110609180015.GM12709@twin.jikos.cz>
-References: <1307479449-14765-1-git-send-email-josef@redhat.com>
- <1307479449-14765-3-git-send-email-josef@redhat.com>
- <20110609094547.GK12709@twin.jikos.cz>
- <4DF0D20A.4040906@redhat.com>
-Reply-To: dave@jikos.cz
+From: Ilya Dryomov <idryomov@gmail.com>
+Subject: Re: [PATCH] Btrfs - use %pU to print fsid
+Date: Thu, 9 Jun 2011 21:02:06 +0300
+Message-ID: <20110609180206.GA4604@zambezi.lan>
+References: <20110209140531.GA26945@kwango.lan.net>
 Mime-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
-Cc: linux-btrfs@vger.kernel.org
-To: Josef Bacik <josef@redhat.com>
+Cc: Chris Mason <chris.mason@oracle.com>
+To: linux-btrfs@vger.kernel.org
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <4DF0D20A.4040906@redhat.com>
+In-Reply-To: <20110209140531.GA26945@kwango.lan.net>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Thu, Jun 09, 2011 at 10:00:42AM -0400, Josef Bacik wrote:
-> We're not trying to be perfect here, we're trying to be fast :).
+Hi Chris,
 
-Be even faster with smp_rmb() :)
+Can you pull this into the next -rc ?  It's minor, but people think it's
+useful.  I just had another person asking about this patch.
 
+Thanks,
 
-david
+		Ilya

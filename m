@@ -1,67 +1,153 @@
-From: Josef Bacik <josef@redhat.com>
-Subject: [PATCH] Btrfs: don't map extent buffer if path->skip_locking is set
-Date: Wed,  8 Jun 2011 14:45:50 -0400
-Message-ID: <1307558750-19721-1-git-send-email-josef@redhat.com>
-To: linux-btrfs@vger.kernel.org
+From: Arne Jansen <sensille@gmx.net>
+Subject: [PATCH v3] btrfs: scrub: errors in tree enumeration
+Date: Thu,  9 Jun 2011 08:42:33 +0200
+Message-ID: <1307601753-25555-1-git-send-email-sensille@gmx.net>
+To: chris.mason@oracle.com, linux-btrfs@vger.kernel.org
 Return-path: <linux-btrfs-owner@vger.kernel.org>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Arne's scrub stuff exposed a problem with mapping the extent buffer in
-reada_for_search.  He searches the commit root with multiple threads and with
-skip_locking set, so we can race and overwrite node->map_token since node isn't
-locked.  So fix this so that we only map the extent buffer if we don't already
-have a map_token and skip_locking isn't set.  Without this patch scrub would
-panic almost immediately, with the patch it doesn't panic anymore.  Thanks,
+due to the semantics of btrfs_search_slot the path can point to an
+invalid slot when ret > 0. This condition went unnoticed, which in
+turn could have led to an incomplete scrubbing.
 
-Reported-by: Arne Jansen <sensille@gmx.net>
-Signed-off-by: Josef Bacik <josef@redhat.com>
+Signed-off-by: Arne Jansen <sensille@gmx.net>
 ---
- fs/btrfs/ctree.c |   10 +++++++---
- 1 files changed, 7 insertions(+), 3 deletions(-)
+ 
+Change in v2:
+ - fix return value of scrub_enumerate_chunks
+ 
+Change in v3:
+ - check return value of btrfs_previous_item
+ - some error paths did a unplug without a plug
 
-diff --git a/fs/btrfs/ctree.c b/fs/btrfs/ctree.c
-index d840893..2e66786 100644
---- a/fs/btrfs/ctree.c
-+++ b/fs/btrfs/ctree.c
-@@ -1228,6 +1228,7 @@ static void reada_for_search(struct btrfs_root *root,
- 	u32 nr;
- 	u32 blocksize;
- 	u32 nscan = 0;
-+	bool map = true;
+---
+
+ fs/btrfs/scrub.c |   57 ++++++++++++++++++++++++++++++++---------------------
+ 1 files changed, 34 insertions(+), 23 deletions(-)
+
+diff --git a/fs/btrfs/scrub.c b/fs/btrfs/scrub.c
+index df50fd1..d5a4108 100644
+--- a/fs/btrfs/scrub.c
++++ b/fs/btrfs/scrub.c
+@@ -804,18 +804,12 @@ static noinline_for_stack int scrub_stripe(struct scrub_dev *sdev,
  
- 	if (level != 1)
- 		return;
-@@ -1249,8 +1250,11 @@ static void reada_for_search(struct btrfs_root *root,
+ 		ret = btrfs_search_slot(NULL, root, &key, path, 0, 0);
+ 		if (ret < 0)
+-			goto out;
+-
+-		l = path->nodes[0];
+-		slot = path->slots[0];
+-		btrfs_item_key_to_cpu(l, &key, slot);
+-		if (key.objectid != logical) {
+-			ret = btrfs_previous_item(root, path, 0,
+-						  BTRFS_EXTENT_ITEM_KEY);
+-			if (ret < 0)
+-				goto out;
+-		}
++			goto out_noplug;
  
- 	nritems = btrfs_header_nritems(node);
- 	nr = slot;
-+	if (node->map_token || path->skip_locking)
-+		map = false;
-+
++		/*
++		 * we might miss half an extent here, but that doesn't matter,
++		 * as it's only the prefetch
++		 */
+ 		while (1) {
+ 			l = path->nodes[0];
+ 			slot = path->slots[0];
+@@ -824,7 +818,7 @@ static noinline_for_stack int scrub_stripe(struct scrub_dev *sdev,
+ 				if (ret == 0)
+ 					continue;
+ 				if (ret < 0)
+-					goto out;
++					goto out_noplug;
+ 
+ 				break;
+ 			}
+@@ -906,15 +900,20 @@ again:
+ 		ret = btrfs_search_slot(NULL, root, &key, path, 0, 0);
+ 		if (ret < 0)
+ 			goto out;
+-
+-		l = path->nodes[0];
+-		slot = path->slots[0];
+-		btrfs_item_key_to_cpu(l, &key, slot);
+-		if (key.objectid != logical) {
++		if (ret > 0) {
+ 			ret = btrfs_previous_item(root, path, 0,
+ 						  BTRFS_EXTENT_ITEM_KEY);
+ 			if (ret < 0)
+ 				goto out;
++			if (ret > 0) {
++				/* there's no smaller item, so stick with the
++				 * larger one */
++				btrfs_release_path(path);
++				ret = btrfs_search_slot(NULL, root, &key,
++							path, 0, 0);
++				if (ret < 0)
++					goto out;
++			}
+ 		}
+ 
+ 		while (1) {
+@@ -989,6 +988,7 @@ next:
+ 
+ out:
+ 	blk_finish_plug(&plug);
++out_noplug:
+ 	btrfs_free_path(path);
+ 	return ret < 0 ? ret : 0;
+ }
+@@ -1064,8 +1064,15 @@ int scrub_enumerate_chunks(struct scrub_dev *sdev, u64 start, u64 end)
  	while (1) {
--		if (!node->map_token) {
-+		if (map && !node->map_token) {
- 			unsigned long offset = btrfs_node_key_ptr_offset(nr);
- 			map_private_extent_buffer(node, offset,
- 						  sizeof(struct btrfs_key_ptr),
-@@ -1277,7 +1281,7 @@ static void reada_for_search(struct btrfs_root *root,
- 		if ((search <= target && target - search <= 65536) ||
- 		    (search > target && search - target <= 65536)) {
- 			gen = btrfs_node_ptr_generation(node, nr);
--			if (node->map_token) {
-+			if (map && node->map_token) {
- 				unmap_extent_buffer(node, node->map_token,
- 						    KM_USER1);
- 				node->map_token = NULL;
-@@ -1289,7 +1293,7 @@ static void reada_for_search(struct btrfs_root *root,
- 		if ((nread > 65536 || nscan > 32))
+ 		ret = btrfs_search_slot(NULL, root, &key, path, 0, 0);
+ 		if (ret < 0)
+-			goto out;
+-		ret = 0;
++			break;
++		if (ret > 0) {
++			if (path->slots[0] >=
++			    btrfs_header_nritems(path->nodes[0])) {
++				ret = btrfs_next_leaf(root, path);
++				if (ret)
++					break;
++			}
++		}
+ 
+ 		l = path->nodes[0];
+ 		slot = path->slots[0];
+@@ -1075,7 +1082,7 @@ int scrub_enumerate_chunks(struct scrub_dev *sdev, u64 start, u64 end)
+ 		if (found_key.objectid != sdev->dev->devid)
  			break;
+ 
+-		if (btrfs_key_type(&key) != BTRFS_DEV_EXTENT_KEY)
++		if (btrfs_key_type(&found_key) != BTRFS_DEV_EXTENT_KEY)
+ 			break;
+ 
+ 		if (found_key.offset >= end)
+@@ -1104,7 +1111,7 @@ int scrub_enumerate_chunks(struct scrub_dev *sdev, u64 start, u64 end)
+ 		cache = btrfs_lookup_block_group(fs_info, chunk_offset);
+ 		if (!cache) {
+ 			ret = -ENOENT;
+-			goto out;
++			break;
+ 		}
+ 		ret = scrub_chunk(sdev, chunk_tree, chunk_objectid,
+ 				  chunk_offset, length);
+@@ -1116,9 +1123,13 @@ int scrub_enumerate_chunks(struct scrub_dev *sdev, u64 start, u64 end)
+ 		btrfs_release_path(path);
  	}
--	if (node->map_token) {
-+	if (map && node->map_token) {
- 		unmap_extent_buffer(node, node->map_token, KM_USER1);
- 		node->map_token = NULL;
- 	}
+ 
+-out:
+ 	btrfs_free_path(path);
+-	return ret;
++
++	/*
++	 * ret can still be 1 from search_slot or next_leaf,
++	 * that's not an error
++	 */
++	return ret < 0 ? ret : 0;
+ }
+ 
+ static noinline_for_stack int scrub_supers(struct scrub_dev *sdev)
 -- 
-1.7.5.2
+1.7.3.4
 

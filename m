@@ -1,42 +1,52 @@
-From: Li Dongyang <lidongyang@novell.com>
-Subject: Re: [PATCH] Btrfs: add discard flag to btrfs_device and make btrfs_discard_extent aware of that
-Date: Fri, 10 Jun 2011 13:40:31 +0800
-Message-ID: <201106101340.31230.lidongyang@novell.com>
-References: <1307604489-7884-1-git-send-email-lidongyang@novell.com> <20110610000017.GP12709@twin.jikos.cz>
-Mime-Version: 1.0
-Content-Type: Text/Plain;
-  charset="iso-8859-1"
-Cc: linux-btrfs@vger.kernel.org, David Sterba <dsterba@suse.cz>
-To: dave@jikos.cz
+From: Arne Jansen <sensille@gmx.net>
+Subject: [PATCH] btrfs: reinitialize scrub workers
+Date: Fri, 10 Jun 2011 12:19:49 +0200
+Message-ID: <1307701189-10297-1-git-send-email-sensille@gmx.net>
+To: chris.mason@oracle.com, linux-btrfs@vger.kernel.org
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <20110610000017.GP12709@twin.jikos.cz>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Friday, June 10, 2011 08:00:17 AM David Sterba wrote:
-> On Thu, Jun 09, 2011 at 03:28:09PM +0800, Li Dongyang wrote:
-> > --- a/fs/btrfs/volumes.h
-> > +++ b/fs/btrfs/volumes.h
-> > @@ -45,6 +45,7 @@ struct btrfs_device {
-> >  	int running_pending;
-> >  	u64 generation;
-> >  
-> > +	int discard;
-> 
-> can you pick a better name? this does not describe that it's the
-> capability of the device, but rather 'do a discard'.
-I feel the same, I picked the name because there was btrfs_device->barriers,
-and it was removed in commit c3b9a62c8f932f32a733d6b628f61f3f28345727
-> 
-> something like has_discard, can_discard, has_trim, etc
-> 
-> >  	int writeable;
-> >  	int in_fs_metadata;
-> >  	int missing;
-> 
-> otherwise the patch looks good (and matches my view how to do it). I
-> will test it eventually.
-Thanks a lot, I'll resend this this a proper name.
-> 
-> 
-> david
-> 
+Scrub starts the workers each time a scrub starts and stops them after it
+finished. This patch adds an initialization for the workers before each
+start, otherwise the workers behave strangely.
+
+Signed-off-by: Arne Jansen <sensille@gmx.net>
+---
+ fs/btrfs/disk-io.c |    2 --
+ fs/btrfs/scrub.c   |    6 +++++-
+ 2 files changed, 5 insertions(+), 3 deletions(-)
+
+diff --git a/fs/btrfs/disk-io.c b/fs/btrfs/disk-io.c
+index a203d36..7bbbfeb 100644
+--- a/fs/btrfs/disk-io.c
++++ b/fs/btrfs/disk-io.c
+@@ -1668,8 +1668,6 @@ struct btrfs_root *open_ctree(struct super_block *sb,
+ 	init_waitqueue_head(&fs_info->scrub_pause_wait);
+ 	init_rwsem(&fs_info->scrub_super_lock);
+ 	fs_info->scrub_workers_refcnt = 0;
+-	btrfs_init_workers(&fs_info->scrub_workers, "scrub",
+-			   fs_info->thread_pool_size, &fs_info->generic_worker);
+ 
+ 	sb->s_blocksize = 4096;
+ 	sb->s_blocksize_bits = blksize_bits(4096);
+diff --git a/fs/btrfs/scrub.c b/fs/btrfs/scrub.c
+index d5a4108..92cac19 100644
+--- a/fs/btrfs/scrub.c
++++ b/fs/btrfs/scrub.c
+@@ -1166,8 +1166,12 @@ static noinline_for_stack int scrub_workers_get(struct btrfs_root *root)
+ 	struct btrfs_fs_info *fs_info = root->fs_info;
+ 
+ 	mutex_lock(&fs_info->scrub_lock);
+-	if (fs_info->scrub_workers_refcnt == 0)
++	if (fs_info->scrub_workers_refcnt == 0) {
++		btrfs_init_workers(&fs_info->scrub_workers, "scrub",
++			   fs_info->thread_pool_size, &fs_info->generic_worker);
++		fs_info->scrub_workers.idle_thresh = 4;
+ 		btrfs_start_workers(&fs_info->scrub_workers, 1);
++	}
+ 	++fs_info->scrub_workers_refcnt;
+ 	mutex_unlock(&fs_info->scrub_lock);
+ 
+-- 
+1.7.3.4
+

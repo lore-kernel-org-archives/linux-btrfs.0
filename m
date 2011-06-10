@@ -1,38 +1,38 @@
 From: David Sterba <dave@jikos.cz>
-Subject: Re: defrag makes fragmentation worse
-Date: Fri, 10 Jun 2011 01:53:41 +0200
-Message-ID: <20110609235341.GO12709@twin.jikos.cz>
-References: <201106100048.36499.johannes.hirte@fem.tu-ilmenau.de>
+Subject: Re: [PATCH] Btrfs: add discard flag to btrfs_device and make
+ btrfs_discard_extent aware of that
+Date: Fri, 10 Jun 2011 02:00:17 +0200
+Message-ID: <20110610000017.GP12709@twin.jikos.cz>
+References: <1307604489-7884-1-git-send-email-lidongyang@novell.com>
 Reply-To: dave@jikos.cz
 Mime-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
-Cc: linux-btrfs <linux-btrfs@vger.kernel.org>
-To: Johannes Hirte <johannes.hirte@fem.tu-ilmenau.de>
+Cc: linux-btrfs@vger.kernel.org, David Sterba <dsterba@suse.cz>
+To: Li Dongyang <lidongyang@novell.com>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <201106100048.36499.johannes.hirte@fem.tu-ilmenau.de>
+In-Reply-To: <1307604489-7884-1-git-send-email-lidongyang@novell.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Fri, Jun 10, 2011 at 12:48:36AM +0200, Johannes Hirte wrote:
-> I've observed several times that after a btrfs filesystem defrag a file was way 
-> more fragmented than before. For example, a file that was recently written, had 
-> 10 extents (output from filefrag). After a defrag filefrag showed more than 1900 
-> extents.
-> For curiosity, a simple copy of this "defragmented" file reduced the 
-> number of fragments to 1. With a different file I got 63 extents before and over 
-> 3000 extents after defrag.
+On Thu, Jun 09, 2011 at 03:28:09PM +0800, Li Dongyang wrote:
+> --- a/fs/btrfs/volumes.h
+> +++ b/fs/btrfs/volumes.h
+> @@ -45,6 +45,7 @@ struct btrfs_device {
+>  	int running_pending;
+>  	u64 generation;
+>  
+> +	int discard;
 
-Do you have compression enabled? Or autodefrag mount option?
+can you pick a better name? this does not describe that it's the
+capability of the device, but rather 'do a discard'.
 
-'filefrag -v' will tell you size of the extents, would be interesting
-to see.
+something like has_discard, can_discard, has_trim, etc
 
-> It's no problem if defrag can't reduce the fragmentation. But in this case it 
-> shouldn't be done at all. 
+>  	int writeable;
+>  	int in_fs_metadata;
+>  	int missing;
 
-AFAIK defragmentation just reads the file, marks all pages dirty and
-lets it be written  back. If the free space is fragmented, so will be
-the newly written copy. I do not know if there is some logic comparing
-old and new extent layout (or if it's even possible).
+otherwise the patch looks good (and matches my view how to do it). I
+will test it eventually.
 
 
 david

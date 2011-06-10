@@ -1,34 +1,212 @@
 From: Arne Jansen <sensille@gmx.net>
-Subject: [PATCH] btrfs: remove unneeded includes from scrub.c
-Date: Fri, 10 Jun 2011 15:01:09 +0200
-Message-ID: <1307710869-19304-1-git-send-email-sensille@gmx.net>
+Subject: [PATCH] btrfs: use readahead API for scrub
+Date: Fri, 10 Jun 2011 15:14:30 +0200
+Message-ID: <1307711670-21382-1-git-send-email-sensille@gmx.net>
 To: chris.mason@oracle.com, linux-btrfs@vger.kernel.org
 Return-path: <linux-btrfs-owner@vger.kernel.org>
 List-ID: <linux-btrfs.vger.kernel.org>
 
+Scrub uses a simple tree-enumeration to bring the relevant portions
+of the extent- and csum-tree into the page cache before starting the
+scrub-I/O. This is now replaced by using the new readahead-API.
+During readahead the scrub is being accounted as paused, so it won't
+hold off transaction commits.
+
+This change raises the average disk bandwith utilisation on my test
+volume from 70% to 90%. On another volume, the time for a test run
+went down from 89s to 43s.
+
 Signed-off-by: Arne Jansen <sensille@gmx.net>
 ---
- fs/btrfs/scrub.c |    6 ------
- 1 files changed, 0 insertions(+), 6 deletions(-)
+ fs/btrfs/scrub.c |  116 ++++++++++++++++++++++++------------------------------
+ 1 files changed, 52 insertions(+), 64 deletions(-)
 
 diff --git a/fs/btrfs/scrub.c b/fs/btrfs/scrub.c
-index 92cac19..a8d03d5 100644
+index a8d03d5..ce5208c 100644
 --- a/fs/btrfs/scrub.c
 +++ b/fs/btrfs/scrub.c
-@@ -16,13 +16,7 @@
-  * Boston, MA 021110-1307, USA.
+@@ -29,15 +29,12 @@
+  * any can be found.
+  *
+  * Future enhancements:
+- *  - To enhance the performance, better read-ahead strategies for the
+- *    extent-tree can be employed.
+  *  - In case an unrepairable extent is encountered, track which files are
+  *    affected and report them
+  *  - In case of a read error on files with nodatasum, map the file and read
+  *    the extent to trigger a writeback of the good copy
+  *  - track and record media errors, throw out bad devices
+  *  - add a mode to also read unallocated space
+- *  - make the prefetch cancellable
   */
  
--#include <linux/sched.h>
--#include <linux/pagemap.h>
--#include <linux/writeback.h>
- #include <linux/blkdev.h>
--#include <linux/rbtree.h>
--#include <linux/slab.h>
--#include <linux/workqueue.h>
- #include "ctree.h"
- #include "volumes.h"
- #include "disk-io.h"
+ struct scrub_bio;
+@@ -741,13 +738,16 @@ static noinline_for_stack int scrub_stripe(struct scrub_dev *sdev,
+ 	int slot;
+ 	int i;
+ 	u64 nstripes;
+-	int start_stripe;
+ 	struct extent_buffer *l;
+ 	struct btrfs_key key;
+ 	u64 physical;
+ 	u64 logical;
+ 	u64 generation;
+ 	u64 mirror_num;
++	void *reada1;
++	void *reada2;
++	struct btrfs_key key_start;
++	struct btrfs_key key_end;
+ 
+ 	u64 increment = map->stripe_len;
+ 	u64 offset;
+@@ -779,81 +779,67 @@ static noinline_for_stack int scrub_stripe(struct scrub_dev *sdev,
+ 	if (!path)
+ 		return -ENOMEM;
+ 
+-	path->reada = 2;
+ 	path->search_commit_root = 1;
+ 	path->skip_locking = 1;
+ 
+ 	/*
+-	 * find all extents for each stripe and just read them to get
+-	 * them into the page cache
+-	 * FIXME: we can do better. build a more intelligent prefetching
++	 * trigger the readahead for extent tree csum tree and wait for
++	 * completion. During readahead, the scrub is officially paused
++	 * to not hold off transaction commits
+ 	 */
+ 	logical = base + offset;
+-	physical = map->stripes[num].physical;
+-	ret = 0;
+-	for (i = 0; i < nstripes; ++i) {
+-		key.objectid = logical;
+-		key.type = BTRFS_EXTENT_ITEM_KEY;
+-		key.offset = (u64)0;
+-
+-		ret = btrfs_search_slot(NULL, root, &key, path, 0, 0);
+-		if (ret < 0)
+-			goto out_noplug;
+-
+-		/*
+-		 * we might miss half an extent here, but that doesn't matter,
+-		 * as it's only the prefetch
+-		 */
+-		while (1) {
+-			l = path->nodes[0];
+-			slot = path->slots[0];
+-			if (slot >= btrfs_header_nritems(l)) {
+-				ret = btrfs_next_leaf(root, path);
+-				if (ret == 0)
+-					continue;
+-				if (ret < 0)
+-					goto out_noplug;
+ 
+-				break;
+-			}
+-			btrfs_item_key_to_cpu(l, &key, slot);
++	wait_event(sdev->list_wait,
++		   atomic_read(&sdev->in_flight) == 0);
++	atomic_inc(&fs_info->scrubs_paused);
++	wake_up(&fs_info->scrub_pause_wait);
+ 
+-			if (key.objectid >= logical + map->stripe_len)
+-				break;
++	/* FIXME it might be better to start readahead at commit root */
++	key_start.objectid = logical;
++	key_start.type = BTRFS_EXTENT_ITEM_KEY;
++	key_start.offset = (u64)0;
++	key_end.objectid = base + offset + nstripes * increment;
++	key_end.type = BTRFS_EXTENT_ITEM_KEY;
++	key_end.offset = (u64)0;
++	reada1 = btrfs_reada_add(root, &key_start, &key_end);
++
++	key_start.objectid = BTRFS_EXTENT_CSUM_OBJECTID;
++	key_start.type = BTRFS_EXTENT_CSUM_KEY;
++	key_start.offset = logical;
++	key_end.objectid = BTRFS_EXTENT_CSUM_OBJECTID;
++	key_end.type = BTRFS_EXTENT_CSUM_KEY;
++	key_end.offset = base + offset + nstripes * increment;
++	reada2 = btrfs_reada_add(csum_root, &key_start, &key_end);
++
++	if (!IS_ERR(reada1))
++		btrfs_reada_wait(reada1);
++	if (!IS_ERR(reada2))
++		btrfs_reada_wait(reada2);
+ 
+-			path->slots[0]++;
+-		}
+-		btrfs_release_path(path);
+-		logical += increment;
+-		physical += map->stripe_len;
+-		cond_resched();
++	mutex_lock(&fs_info->scrub_lock);
++	while (atomic_read(&fs_info->scrub_pause_req)) {
++		mutex_unlock(&fs_info->scrub_lock);
++		wait_event(fs_info->scrub_pause_wait,
++		   atomic_read(&fs_info->scrub_pause_req) == 0);
++		mutex_lock(&fs_info->scrub_lock);
+ 	}
++	atomic_dec(&fs_info->scrubs_paused);
++	mutex_unlock(&fs_info->scrub_lock);
++	wake_up(&fs_info->scrub_pause_wait);
+ 
+ 	/*
+ 	 * collect all data csums for the stripe to avoid seeking during
+ 	 * the scrub. This might currently (crc32) end up to be about 1MB
+ 	 */
+-	start_stripe = 0;
+ 	blk_start_plug(&plug);
+-again:
+-	logical = base + offset + start_stripe * increment;
+-	for (i = start_stripe; i < nstripes; ++i) {
+-		ret = btrfs_lookup_csums_range(csum_root, logical,
+-					       logical + map->stripe_len - 1,
+-					       &sdev->csum_list, 1);
+-		if (ret)
+-			goto out;
+ 
+-		logical += increment;
+-		cond_resched();
+-	}
+ 	/*
+ 	 * now find all extents for each stripe and scrub them
+ 	 */
+-	logical = base + offset + start_stripe * increment;
+-	physical = map->stripes[num].physical + start_stripe * map->stripe_len;
++	logical = base + offset;
++	physical = map->stripes[num].physical;
+ 	ret = 0;
+-	for (i = start_stripe; i < nstripes; ++i) {
++	for (i = 0; i < nstripes; ++i) {
+ 		/*
+ 		 * canceled?
+ 		 */
+@@ -882,11 +868,14 @@ again:
+ 			atomic_dec(&fs_info->scrubs_paused);
+ 			mutex_unlock(&fs_info->scrub_lock);
+ 			wake_up(&fs_info->scrub_pause_wait);
+-			scrub_free_csums(sdev);
+-			start_stripe = i;
+-			goto again;
+ 		}
+ 
++		ret = btrfs_lookup_csums_range(csum_root, logical,
++					       logical + map->stripe_len - 1,
++					       &sdev->csum_list, 1);
++		if (ret)
++			goto out;
++
+ 		key.objectid = logical;
+ 		key.type = BTRFS_EXTENT_ITEM_KEY;
+ 		key.offset = (u64)0;
+@@ -982,7 +971,6 @@ next:
+ 
+ out:
+ 	blk_finish_plug(&plug);
+-out_noplug:
+ 	btrfs_free_path(path);
+ 	return ret < 0 ? ret : 0;
+ }
 -- 
 1.7.3.4
 

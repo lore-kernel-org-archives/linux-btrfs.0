@@ -1,95 +1,60 @@
 From: Arne Jansen <sensille@gmx.net>
-Subject: [PATCH v2 2/6] btrfs: add READAHEAD extent buffer flag
-Date: Fri, 10 Jun 2011 14:57:12 +0200
-Message-ID: <9f3fd310a7f4fe6282c7ad154b918e8c17b0849e.1307710254.git.sensille@gmx.net>
-References: <cover.1307710254.git.sensille@gmx.net>
+Subject: [PATCH v2 0/6] btrfs: generic readeahead interface
+Date: Fri, 10 Jun 2011 14:57:10 +0200
+Message-ID: <cover.1307710254.git.sensille@gmx.net>
 To: chris.mason@oracle.com, linux-btrfs@vger.kernel.org
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <cover.1307710254.git.sensille@gmx.net>
-In-Reply-To: <cover.1307710254.git.sensille@gmx.net>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Add a READAHEAD extent buffer flag.
-Add a function to trigger a read with this flag set.
+This series introduces a generic readahead interface for btrfs trees.
+The intention is to use it to speed up scrub in a first run, but balance
+is another hot candidate. In general, every tree walk could be accompanied
+by a readahead. Deletion of large files comes to mind, where the fetching
+of the csums takes most of the time.
+Also the initial build-ups of free-space-caches and inode-allocator-caches
+could be sped up.
 
-Changes v2:
- - use extent buffer flags instead of extent state flags
+To make testing easier, a simple ioctl interface is added to trigger a read-
+ahead from user mode. It also implements a tree walk in the traditional way.
+A tool to send the ioctl follows shortly.
 
-Signed-off-by: Arne Jansen <sensille@gmx.net>
----
- fs/btrfs/disk-io.c   |   32 ++++++++++++++++++++++++++++++++
- fs/btrfs/disk-io.h   |    2 ++
- fs/btrfs/extent_io.h |    1 +
- 3 files changed, 35 insertions(+), 0 deletions(-)
+A simple demonstration from my 7-disk test btrfs:
+ - enumerating the extent tree (traditional): 351s
+ - enumerating the extent tree (readahead): 41s
+ - enumerating extents+csum tree (readahead): 49s
 
-diff --git a/fs/btrfs/disk-io.c b/fs/btrfs/disk-io.c
-index 0339cc0..0195172 100644
---- a/fs/btrfs/disk-io.c
-+++ b/fs/btrfs/disk-io.c
-@@ -945,6 +945,38 @@ int readahead_tree_block(struct btrfs_root *root, u64 bytenr, u32 blocksize,
- 	return ret;
- }
- 
-+int reada_tree_block_flagged(struct btrfs_root *root, u64 bytenr, u32 blocksize,
-+			 int mirror_num, struct extent_buffer **eb)
-+{
-+	struct extent_buffer *buf = NULL;
-+	struct inode *btree_inode = root->fs_info->btree_inode;
-+	struct extent_io_tree *io_tree = &BTRFS_I(btree_inode)->io_tree;
-+	int ret;
-+
-+	buf = btrfs_find_create_tree_block(root, bytenr, blocksize);
-+	if (!buf)
-+		return 0;
-+
-+	set_bit(EXTENT_BUFFER_READAHEAD, &buf->bflags);
-+
-+	ret = read_extent_buffer_pages(io_tree, buf, 0, 0, 1, btree_get_extent,
-+				 mirror_num);
-+	if (ret) {
-+		free_extent_buffer(buf);
-+		return ret;
-+	}
-+
-+	if (test_bit(EXTENT_BUFFER_CORRUPT, &buf->bflags)) {
-+		*eb = buf;
-+		return -EIO;
-+	} else if (extent_buffer_uptodate(io_tree, buf, NULL)) {
-+		*eb = buf;
-+	} else {
-+		free_extent_buffer(buf);
-+	}
-+	return 0;
-+}
-+
- struct extent_buffer *btrfs_find_tree_block(struct btrfs_root *root,
- 					    u64 bytenr, u32 blocksize)
- {
-diff --git a/fs/btrfs/disk-io.h b/fs/btrfs/disk-io.h
-index a0b610a..fb35c4e 100644
---- a/fs/btrfs/disk-io.h
-+++ b/fs/btrfs/disk-io.h
-@@ -40,6 +40,8 @@ struct extent_buffer *read_tree_block(struct btrfs_root *root, u64 bytenr,
- 				      u32 blocksize, u64 parent_transid);
- int readahead_tree_block(struct btrfs_root *root, u64 bytenr, u32 blocksize,
- 			 u64 parent_transid);
-+int reada_tree_block_flagged(struct btrfs_root *root, u64 bytenr, u32 blocksize,
-+			 int mirror_num, struct extent_buffer **eb);
- struct extent_buffer *btrfs_find_create_tree_block(struct btrfs_root *root,
- 						   u64 bytenr, u32 blocksize);
- int clean_tree_block(struct btrfs_trans_handle *trans,
-diff --git a/fs/btrfs/extent_io.h b/fs/btrfs/extent_io.h
-index 118c30b..e0a09e8 100644
---- a/fs/btrfs/extent_io.h
-+++ b/fs/btrfs/extent_io.h
-@@ -32,6 +32,7 @@
- #define EXTENT_BUFFER_BLOCKING 1
- #define EXTENT_BUFFER_DIRTY 2
- #define EXTENT_BUFFER_CORRUPT 3
-+#define EXTENT_BUFFER_READAHEAD 4	/* this got triggered by readahead */
- 
- /* these are flags for extent_clear_unlock_delalloc */
- #define EXTENT_CLEAR_UNLOCK_PAGE 0x1
+The implementation is also tested with this tool in various combinations of
+parallel reads of the same and of different trees.
+
+The main changes from v1 are:
+ - Switch from extent_state flags to extent_buffer flags.
+ - Fix a race when triggering the read.
+ - Fix a bug where only parts of the requested range where actually prefetched.
+   The hit only when requesting parts of a tree, so the above numbers doesn't
+   change.
+
+Arne Jansen (6):
+  btrfs: add an extra wait mode to read_extent_buffer_pages
+  btrfs: add READAHEAD extent buffer flag
+  btrfs: state information for readahead
+  btrfs: initial readahead code and prototypes
+  btrfs: hooks for readahead
+  btrfs: test ioctl for readahead
+
+ fs/btrfs/Makefile    |    3 +-
+ fs/btrfs/ctree.h     |   13 +
+ fs/btrfs/disk-io.c   |   84 ++++-
+ fs/btrfs/disk-io.h   |    2 +
+ fs/btrfs/extent_io.c |    8 +-
+ fs/btrfs/extent_io.h |    4 +-
+ fs/btrfs/ioctl.c     |   93 +++++-
+ fs/btrfs/ioctl.h     |   16 +
+ fs/btrfs/reada.c     |  997 ++++++++++++++++++++++++++++++++++++++++++++++++++
+ fs/btrfs/volumes.c   |    8 +
+ fs/btrfs/volumes.h   |    8 +
+ 11 files changed, 1225 insertions(+), 11 deletions(-)
+ create mode 100644 fs/btrfs/reada.c
+
 -- 
 1.7.3.4
 

@@ -1,7 +1,7 @@
 From: Arne Jansen <sensille@gmx.net>
-Subject: [PATCH v2 1/6] btrfs: add an extra wait mode to read_extent_buffer_pages
-Date: Fri, 10 Jun 2011 14:57:11 +0200
-Message-ID: <2c7792461e8fea061b340bd149db2856eb345c27.1307710254.git.sensille@gmx.net>
+Subject: [PATCH v2 2/6] btrfs: add READAHEAD extent buffer flag
+Date: Fri, 10 Jun 2011 14:57:12 +0200
+Message-ID: <9f3fd310a7f4fe6282c7ad154b918e8c17b0849e.1307710254.git.sensille@gmx.net>
 References: <cover.1307710254.git.sensille@gmx.net>
 To: chris.mason@oracle.com, linux-btrfs@vger.kernel.org
 Return-path: <linux-btrfs-owner@vger.kernel.org>
@@ -9,86 +9,87 @@ In-Reply-To: <cover.1307710254.git.sensille@gmx.net>
 In-Reply-To: <cover.1307710254.git.sensille@gmx.net>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-read_extent_buffer_pages currently has two modes, either trigger a read
-without waiting for anything, or wait for the I/O to finish. The former
-also bails when it's unable to lock the page. This patch now adds an
-additional parameter to allow it to block on page lock, but don't wait
-for completion.
+Add a READAHEAD extent buffer flag.
+Add a function to trigger a read with this flag set.
+
+Changes v2:
+ - use extent buffer flags instead of extent state flags
 
 Signed-off-by: Arne Jansen <sensille@gmx.net>
 ---
- fs/btrfs/disk-io.c   |    4 ++--
- fs/btrfs/extent_io.c |    6 +++---
- fs/btrfs/extent_io.h |    3 ++-
- 3 files changed, 7 insertions(+), 6 deletions(-)
+ fs/btrfs/disk-io.c   |   32 ++++++++++++++++++++++++++++++++
+ fs/btrfs/disk-io.h   |    2 ++
+ fs/btrfs/extent_io.h |    1 +
+ 3 files changed, 35 insertions(+), 0 deletions(-)
 
 diff --git a/fs/btrfs/disk-io.c b/fs/btrfs/disk-io.c
-index 7bbbfeb..0339cc0 100644
+index 0339cc0..0195172 100644
 --- a/fs/btrfs/disk-io.c
 +++ b/fs/btrfs/disk-io.c
-@@ -325,7 +325,7 @@ static int btree_read_extent_buffer_pages(struct btrfs_root *root,
- 	clear_bit(EXTENT_BUFFER_CORRUPT, &eb->bflags);
- 	io_tree = &BTRFS_I(root->fs_info->btree_inode)->io_tree;
- 	while (1) {
--		ret = read_extent_buffer_pages(io_tree, eb, start, 1,
-+		ret = read_extent_buffer_pages(io_tree, eb, start, 1, 1,
- 					       btree_get_extent, mirror_num);
- 		if (!ret &&
- 		    !verify_parent_transid(io_tree, eb, parent_transid))
-@@ -940,7 +940,7 @@ int readahead_tree_block(struct btrfs_root *root, u64 bytenr, u32 blocksize,
- 	if (!buf)
- 		return 0;
- 	read_extent_buffer_pages(&BTRFS_I(btree_inode)->io_tree,
--				 buf, 0, 0, btree_get_extent, 0);
-+				 buf, 0, 0, 0, btree_get_extent, 0);
- 	free_extent_buffer(buf);
+@@ -945,6 +945,38 @@ int readahead_tree_block(struct btrfs_root *root, u64 bytenr, u32 blocksize,
  	return ret;
  }
-diff --git a/fs/btrfs/extent_io.c b/fs/btrfs/extent_io.c
-index b181a94..b7f0b9b 100644
---- a/fs/btrfs/extent_io.c
-+++ b/fs/btrfs/extent_io.c
-@@ -3358,7 +3358,7 @@ int extent_buffer_uptodate(struct extent_io_tree *tree,
  
- int read_extent_buffer_pages(struct extent_io_tree *tree,
- 			     struct extent_buffer *eb,
--			     u64 start, int wait,
-+			     u64 start, int wait_lock, int wait_complete,
- 			     get_extent_t *get_extent, int mirror_num)
++int reada_tree_block_flagged(struct btrfs_root *root, u64 bytenr, u32 blocksize,
++			 int mirror_num, struct extent_buffer **eb)
++{
++	struct extent_buffer *buf = NULL;
++	struct inode *btree_inode = root->fs_info->btree_inode;
++	struct extent_io_tree *io_tree = &BTRFS_I(btree_inode)->io_tree;
++	int ret;
++
++	buf = btrfs_find_create_tree_block(root, bytenr, blocksize);
++	if (!buf)
++		return 0;
++
++	set_bit(EXTENT_BUFFER_READAHEAD, &buf->bflags);
++
++	ret = read_extent_buffer_pages(io_tree, buf, 0, 0, 1, btree_get_extent,
++				 mirror_num);
++	if (ret) {
++		free_extent_buffer(buf);
++		return ret;
++	}
++
++	if (test_bit(EXTENT_BUFFER_CORRUPT, &buf->bflags)) {
++		*eb = buf;
++		return -EIO;
++	} else if (extent_buffer_uptodate(io_tree, buf, NULL)) {
++		*eb = buf;
++	} else {
++		free_extent_buffer(buf);
++	}
++	return 0;
++}
++
+ struct extent_buffer *btrfs_find_tree_block(struct btrfs_root *root,
+ 					    u64 bytenr, u32 blocksize)
  {
- 	unsigned long i;
-@@ -3392,7 +3392,7 @@ int read_extent_buffer_pages(struct extent_io_tree *tree,
- 	num_pages = num_extent_pages(eb->start, eb->len);
- 	for (i = start_i; i < num_pages; i++) {
- 		page = extent_buffer_page(eb, i);
--		if (!wait) {
-+		if (!wait_lock) {
- 			if (!trylock_page(page))
- 				goto unlock_exit;
- 		} else {
-@@ -3436,7 +3436,7 @@ int read_extent_buffer_pages(struct extent_io_tree *tree,
- 	if (bio)
- 		submit_one_bio(READ, bio, mirror_num, bio_flags);
- 
--	if (ret || !wait)
-+	if (ret || !wait_complete)
- 		return ret;
- 
- 	for (i = start_i; i < num_pages; i++) {
+diff --git a/fs/btrfs/disk-io.h b/fs/btrfs/disk-io.h
+index a0b610a..fb35c4e 100644
+--- a/fs/btrfs/disk-io.h
++++ b/fs/btrfs/disk-io.h
+@@ -40,6 +40,8 @@ struct extent_buffer *read_tree_block(struct btrfs_root *root, u64 bytenr,
+ 				      u32 blocksize, u64 parent_transid);
+ int readahead_tree_block(struct btrfs_root *root, u64 bytenr, u32 blocksize,
+ 			 u64 parent_transid);
++int reada_tree_block_flagged(struct btrfs_root *root, u64 bytenr, u32 blocksize,
++			 int mirror_num, struct extent_buffer **eb);
+ struct extent_buffer *btrfs_find_create_tree_block(struct btrfs_root *root,
+ 						   u64 bytenr, u32 blocksize);
+ int clean_tree_block(struct btrfs_trans_handle *trans,
 diff --git a/fs/btrfs/extent_io.h b/fs/btrfs/extent_io.h
-index 4e8445a..118c30b 100644
+index 118c30b..e0a09e8 100644
 --- a/fs/btrfs/extent_io.h
 +++ b/fs/btrfs/extent_io.h
-@@ -241,7 +241,8 @@ struct extent_buffer *find_extent_buffer(struct extent_io_tree *tree,
- 					 u64 start, unsigned long len);
- void free_extent_buffer(struct extent_buffer *eb);
- int read_extent_buffer_pages(struct extent_io_tree *tree,
--			     struct extent_buffer *eb, u64 start, int wait,
-+			     struct extent_buffer *eb, u64 start,
-+			     int wait_lock, int wait_complete,
- 			     get_extent_t *get_extent, int mirror_num);
+@@ -32,6 +32,7 @@
+ #define EXTENT_BUFFER_BLOCKING 1
+ #define EXTENT_BUFFER_DIRTY 2
+ #define EXTENT_BUFFER_CORRUPT 3
++#define EXTENT_BUFFER_READAHEAD 4	/* this got triggered by readahead */
  
- static inline void extent_buffer_get(struct extent_buffer *eb)
+ /* these are flags for extent_clear_unlock_delalloc */
+ #define EXTENT_CLEAR_UNLOCK_PAGE 0x1
 -- 
 1.7.3.4
 

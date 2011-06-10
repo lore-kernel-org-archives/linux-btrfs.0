@@ -1,156 +1,335 @@
-From: "Jim Schutt" <jaschut@sandia.gov>
-Subject: Re: 3.0-rcX BUG at fs/btrfs/ioctl.c:432 - bisected
-Date: Fri, 10 Jun 2011 13:29:11 -0600
-Message-ID: <4DF27087.8020706@sandia.gov>
-References: <4DF140AB.4030805@sandia.gov>
- <20110609234553.GN12709@twin.jikos.cz> <4DF24F0E.4040306@sandia.gov>
- <1307726732-sup-3404@shiny>
- <Pine.LNX.4.64.1106101100310.5245@cobra.newdream.net>
- <Pine.LNX.4.64.1106101112470.5245@cobra.newdream.net>
- <4DF2627F.4030600@redhat.com>
- <Pine.LNX.4.64.1106101134530.5245@cobra.newdream.net>
- <4DF263AD.3070901@redhat.com>
- <Pine.LNX.4.64.1106101139150.5245@cobra.newdream.net>
-Mime-Version: 1.0
-Content-Type: text/plain;
- charset=utf-8;
- format=flowed
-Cc: "Josef Bacik" <josef@redhat.com>,
-	"Chris Mason" <chris.mason@oracle.com>, dave <dave@jikos.cz>,
-	miaox <miaox@cn.fujitsu.com>,
-	linux-kernel <linux-kernel@vger.kernel.org>,
-	linux-btrfs <linux-btrfs@vger.kernel.org>,
-	ceph-devel@vger.kernel.org
-To: "Sage Weil" <sage@newdream.net>
-Return-path: <ceph-devel-owner@vger.kernel.org>
-In-Reply-To: <Pine.LNX.4.64.1106101139150.5245@cobra.newdream.net>
+From: Josef Bacik <josef@redhat.com>
+Subject: [PATCH] Btrfs: use the normal checksumming infrastructure for free space cache
+Date: Fri, 10 Jun 2011 15:40:27 -0400
+Message-ID: <1307734827-10697-1-git-send-email-josef@redhat.com>
+To: linux-btrfs@vger.kernel.org
+Return-path: <linux-btrfs-owner@vger.kernel.org>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Sage Weil wrote:
-> On Fri, 10 Jun 2011, Josef Bacik wrote:
->> On 06/10/2011 02:35 PM, Sage Weil wrote:
->>> On Fri, 10 Jun 2011, Josef Bacik wrote:
->>>> On 06/10/2011 02:14 PM, Sage Weil wrote:
->>>>> On Fri, 10 Jun 2011, Sage Weil wrote:
->>>>>> On Fri, 10 Jun 2011, Chris Mason wrote:
->>>>>>> Excerpts from Jim Schutt's message of 2011-06-10 13:06:22 -0400:
->>>>>>>
->>>>>>> [ two different btrfs crashes ]
->>>>>>>
->>>>>>> I think your two crashes in btrfs were from the uninit variables and
->>>>>>> those should be fixed in rc2.
->>>>>>>
->>>>>>>> When I did my bisection, my criteria for success/failure was
->>>>>>>> "did mkcephfs succeed?".  When I apply this criteria to a recent
->>>>>>>> linus kernel (e.g. 06e86849cf4019), which includes the fix you
->>>>>>>> mentioned (aa0467d8d2a00e), I get still a different failure mode,
->>>>>>>> which doesn't actually reference btrfs:
->>>>>>>>
->>>>>>>> [  276.364178] BUG: unable to handle kernel NULL pointer dereference at 000000000000000a
->>>>>>>> [  276.365127] IP: [<ffffffffa05434b1>] journal_start+0x3e/0x9c [jbd]
->>>>>>> Looking at the resulting code in the oops, we're here in journal_start:
->>>>>>>
->>>>>>>         if (handle) {
->>>>>>>                 J_ASSERT(handle->h_transaction->t_journal == journal);
->>>>>>>
->>>>>>> handle comes from current->journal_info, and we're doing a deref on
->>>>>>> handle->h_transaction, which is probably 0xa.
->>>>>>>
->>>>>>> So, we're leaving crud in current->journal_info and ext3 is finding it.
->>>>>>>
->>>>>>> Perhaps its from ceph starting a transaction but leaving it running?
->>>>>>> The bug came with Josef's transaction performance fixes, but it is
->>>>>>> probably a mixture of his code with the ioctls ceph is using.
->>>>>> Ah, yeah, that's the problem.  We saw a similar problem a while back with 
->>>>>> the start/stop transaction ioctls.  In this case, create_snapshot is doing
->>>>>>
->>>>>> 	trans = btrfs_start_transaction(root->fs_info->extent_root, 5);
->>>>>> 	if (IS_ERR(trans)) {
->>>>>> 		ret = PTR_ERR(trans);
->>>>>> 		goto fail;
->>>>>> 	}
->>>>>>
->>>>>> which sets current->journal_info.  Then
->>>>>>
->>>>>> 	ret = btrfs_snap_reserve_metadata(trans, pending_snapshot);
->>>>>> 	BUG_ON(ret);
->>>>>>
->>>>>> 	list_add(&pending_snapshot->list,
->>>>>> 		 &trans->transaction->pending_snapshots);
->>>>>> 	if (async_transid) {
->>>>>> 		*async_transid = trans->transid;
->>>>>> 		ret = btrfs_commit_transaction_async(trans,
->>>>>> 				     root->fs_info->extent_root, 1);
->>>>>> 	} else {
->>>>>> 		ret = btrfs_commit_transaction(trans,
->>>>>> 				       root->fs_info->extent_root);
->>>>>> 	}
->>>>>>
->>>>>> but the async snap creation ioctl takes the async path, which runs 
->>>>>> btrfs_commit_transaction in a worker thread.
->>>>>>
->>>>>> I'm not sure what the right thing to do is here is... can whatever is in 
->>>>>> journal_info be attached to trans instead in 
->>>>>> btrfs_commit_transaction_async()?
->>>>> It looks like it's not used for anything in btrfs, actually; it's just set 
->>>>> and cleared.  What's the point of that?
->>>>>
->>>> It is used now, check the beginning of start_transaction().  Thanks,
->>> Oh I see, okay.
->>>
->>> So clearing it in btrfs_commit_transaction_async should be fine then, 
->>> right?  When btrfs_commit_transaction runs in the other thread it won't 
->>> care that current->journal_info is NULL.
->>>
->> Oh yeah your patch is good :),
-> 
-> Okay cool.  Here's the fix with a proper changelog and a little 
-> use-after-free paranoia.
+We used to store the checksums of the space cache directly in the space cache,
+however that doesn't work out too well if we have more space than we can fit the
+checksums into the first page.  So instead use the normal checksumming
+infrastructure.  There were problems with doing this originally but those
+problems don't exist now so this works out fine.  Thanks,
 
-This patch solves my issue - thanks a lot.
+Signed-off-by: Josef Bacik <josef@redhat.com>
+---
+ fs/btrfs/free-space-cache.c |  137 +++++++++----------------------------------
+ 1 files changed, 28 insertions(+), 109 deletions(-)
 
-Tested-by: Jim Schutt <jaschut@sandia.gov>
-
--- Jim
-
-> 
-> Thanks!
-> sage
-> 
-> 
->>From 9881c0752293769d5133c01dff3ab04c0c24c61b Mon Sep 17 00:00:00 2001
-> From: Sage Weil <sage@newdream.net>
-> Date: Fri, 10 Jun 2011 11:41:25 -0700
-> Subject: [PATCH] Btrfs: clear current->journal_info on async transaction commit
-> 
-> Normally current->jouranl_info is cleared by commit_transaction.  For an
-> async snap or subvol creation, though, it runs in a work queue.  Clear
-> it in btrfs_commit_transaction_async() to avoid leaking a non-NULL
-> journal_info when we return to userspace.  When the actual commit runs in
-> the other thread it won't care that it's current->journal_info is already
-> NULL.
-> 
-> Signed-off-by: Sage Weil <sage@newdream.net>
-> ---
->  fs/btrfs/transaction.c |    5 ++++-
->  1 files changed, 4 insertions(+), 1 deletions(-)
-> 
-> diff --git a/fs/btrfs/transaction.c b/fs/btrfs/transaction.c
-> index dd71966..9d516ed 100644
-> --- a/fs/btrfs/transaction.c
-> +++ b/fs/btrfs/transaction.c
-> @@ -1118,8 +1118,11 @@ int btrfs_commit_transaction_async(struct btrfs_trans_handle *trans,
->  		wait_current_trans_commit_start_and_unblock(root, cur_trans);
->  	else
->  		wait_current_trans_commit_start(root, cur_trans);
-> -	put_transaction(cur_trans);
->  
-> +	if (current->journal_info == trans)
-> +		current->journal_info = NULL;
-> +
-> +	put_transaction(cur_trans);
->  	return 0;
->  }
->  
-
+diff --git a/fs/btrfs/free-space-cache.c b/fs/btrfs/free-space-cache.c
+index 38f3fd9..17c26aa 100644
+--- a/fs/btrfs/free-space-cache.c
++++ b/fs/btrfs/free-space-cache.c
+@@ -98,6 +98,12 @@ struct inode *lookup_free_space_inode(struct btrfs_root *root,
+ 		return inode;
+ 
+ 	spin_lock(&block_group->lock);
++	if (BTRFS_I(inode)->flags & BTRFS_INODE_NODATASUM) {
++		printk(KERN_INFO "Old style space inode found, converting.\n");
++		BTRFS_I(inode)->flags &= ~BTRFS_INODE_NODATASUM;
++		block_group->disk_cache_state = BTRFS_DC_CLEAR;
++	}
++
+ 	if (!btrfs_fs_closing(root->fs_info)) {
+ 		block_group->inode = igrab(inode);
+ 		block_group->iref = 1;
+@@ -135,7 +141,7 @@ int __create_free_space_inode(struct btrfs_root *root,
+ 	btrfs_set_inode_gid(leaf, inode_item, 0);
+ 	btrfs_set_inode_mode(leaf, inode_item, S_IFREG | 0600);
+ 	btrfs_set_inode_flags(leaf, inode_item, BTRFS_INODE_NOCOMPRESS |
+-			      BTRFS_INODE_PREALLOC | BTRFS_INODE_NODATASUM);
++			      BTRFS_INODE_PREALLOC);
+ 	btrfs_set_inode_nlink(leaf, inode_item, 1);
+ 	btrfs_set_inode_transid(leaf, inode_item, trans->transid);
+ 	btrfs_set_inode_block_group(leaf, inode_item, offset);
+@@ -239,17 +245,12 @@ int __load_free_space_cache(struct btrfs_root *root, struct inode *inode,
+ 	struct btrfs_free_space_header *header;
+ 	struct extent_buffer *leaf;
+ 	struct page *page;
+-	u32 *checksums = NULL, *crc;
+-	char *disk_crcs = NULL;
+ 	struct btrfs_key key;
+ 	struct list_head bitmaps;
+ 	u64 num_entries;
+ 	u64 num_bitmaps;
+ 	u64 generation;
+-	u32 cur_crc = ~(u32)0;
+ 	pgoff_t index = 0;
+-	unsigned long first_page_offset;
+-	int num_checksums;
+ 	int ret = 0;
+ 
+ 	INIT_LIST_HEAD(&bitmaps);
+@@ -292,16 +293,6 @@ int __load_free_space_cache(struct btrfs_root *root, struct inode *inode,
+ 	if (!num_entries)
+ 		goto out;
+ 
+-	/* Setup everything for doing checksumming */
+-	num_checksums = i_size_read(inode) / PAGE_CACHE_SIZE;
+-	checksums = crc = kzalloc(sizeof(u32) * num_checksums, GFP_NOFS);
+-	if (!checksums)
+-		goto out;
+-	first_page_offset = (sizeof(u32) * num_checksums) + sizeof(u64);
+-	disk_crcs = kzalloc(first_page_offset, GFP_NOFS);
+-	if (!disk_crcs)
+-		goto out;
+-
+ 	ret = readahead_cache(inode);
+ 	if (ret)
+ 		goto out;
+@@ -311,17 +302,11 @@ int __load_free_space_cache(struct btrfs_root *root, struct inode *inode,
+ 		struct btrfs_free_space *e;
+ 		void *addr;
+ 		unsigned long offset = 0;
+-		unsigned long start_offset = 0;
+ 		int need_loop = 0;
+ 
+ 		if (!num_entries && !num_bitmaps)
+ 			break;
+ 
+-		if (index == 0) {
+-			start_offset = first_page_offset;
+-			offset = start_offset;
+-		}
+-
+ 		page = grab_cache_page(inode->i_mapping, index);
+ 		if (!page)
+ 			goto free_cache;
+@@ -342,8 +327,7 @@ int __load_free_space_cache(struct btrfs_root *root, struct inode *inode,
+ 		if (index == 0) {
+ 			u64 *gen;
+ 
+-			memcpy(disk_crcs, addr, first_page_offset);
+-			gen = addr + (sizeof(u32) * num_checksums);
++			gen = addr;
+ 			if (*gen != BTRFS_I(inode)->generation) {
+ 				printk(KERN_ERR "btrfs: space cache generation"
+ 				       " (%llu) does not match inode (%llu)\n",
+@@ -355,24 +339,10 @@ int __load_free_space_cache(struct btrfs_root *root, struct inode *inode,
+ 				page_cache_release(page);
+ 				goto free_cache;
+ 			}
+-			crc = (u32 *)disk_crcs;
+-		}
+-		entry = addr + start_offset;
+-
+-		/* First lets check our crc before we do anything fun */
+-		cur_crc = ~(u32)0;
+-		cur_crc = btrfs_csum_data(root, addr + start_offset, cur_crc,
+-					  PAGE_CACHE_SIZE - start_offset);
+-		btrfs_csum_final(cur_crc, (char *)&cur_crc);
+-		if (cur_crc != *crc) {
+-			printk(KERN_ERR "btrfs: crc mismatch for page %lu\n",
+-			       index);
+-			kunmap(page);
+-			unlock_page(page);
+-			page_cache_release(page);
+-			goto free_cache;
++			addr += sizeof(u64);
++			offset += sizeof(u64);
+ 		}
+-		crc++;
++		entry = addr;
+ 
+ 		while (1) {
+ 			if (!num_entries)
+@@ -470,8 +440,6 @@ next:
+ 
+ 	ret = 1;
+ out:
+-	kfree(checksums);
+-	kfree(disk_crcs);
+ 	return ret;
+ free_cache:
+ 	__btrfs_remove_free_space_cache(ctl);
+@@ -569,8 +537,6 @@ int __btrfs_write_out_cache(struct btrfs_root *root, struct inode *inode,
+ 	struct btrfs_key key;
+ 	u64 start, end, len;
+ 	u64 bytes = 0;
+-	u32 *crc, *checksums;
+-	unsigned long first_page_offset;
+ 	int index = 0, num_pages = 0;
+ 	int entries = 0;
+ 	int bitmaps = 0;
+@@ -590,34 +556,13 @@ int __btrfs_write_out_cache(struct btrfs_root *root, struct inode *inode,
+ 	num_pages = (i_size_read(inode) + PAGE_CACHE_SIZE - 1) >>
+ 		PAGE_CACHE_SHIFT;
+ 
+-	/* Since the first page has all of our checksums and our generation we
+-	 * need to calculate the offset into the page that we can start writing
+-	 * our entries.
+-	 */
+-	first_page_offset = (sizeof(u32) * num_pages) + sizeof(u64);
+-
+ 	filemap_write_and_wait(inode->i_mapping);
+ 	btrfs_wait_ordered_range(inode, inode->i_size &
+ 				 ~(root->sectorsize - 1), (u64)-1);
+ 
+-	/* make sure we don't overflow that first page */
+-	if (first_page_offset + sizeof(struct btrfs_free_space_entry) >= PAGE_CACHE_SIZE) {
+-		/* this is really the same as running out of space, where we also return 0 */
+-		printk(KERN_CRIT "Btrfs: free space cache was too big for the crc page\n");
+-		ret = 0;
+-		goto out_update;
+-	}
+-
+-	/* We need a checksum per page. */
+-	crc = checksums = kzalloc(sizeof(u32) * num_pages, GFP_NOFS);
+-	if (!crc)
+-		return -1;
+-
+ 	pages = kzalloc(sizeof(struct page *) * num_pages, GFP_NOFS);
+-	if (!pages) {
+-		kfree(crc);
++	if (!pages)
+ 		return -1;
+-	}
+ 
+ 	/* Get the cluster for this block_group if it exists */
+ 	if (block_group && !list_empty(&block_group->cluster_list))
+@@ -648,7 +593,7 @@ int __btrfs_write_out_cache(struct btrfs_root *root, struct inode *inode,
+ 				unlock_page(pages[i]);
+ 				page_cache_release(pages[i]);
+ 			}
+-			goto out_free;
++			goto out;
+ 		}
+ 		pages[index] = page;
+ 		index++;
+@@ -670,15 +615,9 @@ int __btrfs_write_out_cache(struct btrfs_root *root, struct inode *inode,
+ 		struct btrfs_free_space_entry *entry;
+ 		void *addr;
+ 		unsigned long offset = 0;
+-		unsigned long start_offset = 0;
+ 
+ 		next_page = false;
+ 
+-		if (index == 0) {
+-			start_offset = first_page_offset;
+-			offset = start_offset;
+-		}
+-
+ 		if (index >= num_pages) {
+ 			out_of_space = true;
+ 			break;
+@@ -687,9 +626,17 @@ int __btrfs_write_out_cache(struct btrfs_root *root, struct inode *inode,
+ 		page = pages[index];
+ 
+ 		addr = kmap(page);
+-		entry = addr + start_offset;
++		if (index == 0) {
++			u64 *gen;
+ 
+-		memset(addr, 0, PAGE_CACHE_SIZE);
++			gen = addr;
++			*gen = trans->transid;
++			addr += sizeof(u64);
++			offset += sizeof(u64);
++		}
++		entry = addr;
++
++		memset(addr, 0, PAGE_CACHE_SIZE - offset);
+ 		while (node && !next_page) {
+ 			struct btrfs_free_space *e;
+ 
+@@ -752,14 +699,8 @@ int __btrfs_write_out_cache(struct btrfs_root *root, struct inode *inode,
+ 				next_page = true;
+ 			entry++;
+ 		}
+-		*crc = ~(u32)0;
+-		*crc = btrfs_csum_data(root, addr + start_offset, *crc,
+-				       PAGE_CACHE_SIZE - start_offset);
+ 		kunmap(page);
+ 
+-		btrfs_csum_final(*crc, (char *)crc);
+-		crc++;
+-
+ 		bytes += PAGE_CACHE_SIZE;
+ 
+ 		index++;
+@@ -779,11 +720,7 @@ int __btrfs_write_out_cache(struct btrfs_root *root, struct inode *inode,
+ 
+ 		addr = kmap(page);
+ 		memcpy(addr, entry->bitmap, PAGE_CACHE_SIZE);
+-		*crc = ~(u32)0;
+-		*crc = btrfs_csum_data(root, addr, *crc, PAGE_CACHE_SIZE);
+ 		kunmap(page);
+-		btrfs_csum_final(*crc, (char *)crc);
+-		crc++;
+ 		bytes += PAGE_CACHE_SIZE;
+ 
+ 		list_del_init(&entry->list);
+@@ -796,7 +733,7 @@ int __btrfs_write_out_cache(struct btrfs_root *root, struct inode *inode,
+ 				     i_size_read(inode) - 1, &cached_state,
+ 				     GFP_NOFS);
+ 		ret = 0;
+-		goto out_free;
++		goto out;
+ 	}
+ 
+ 	/* Zero out the rest of the pages just to make sure */
+@@ -811,20 +748,6 @@ int __btrfs_write_out_cache(struct btrfs_root *root, struct inode *inode,
+ 		index++;
+ 	}
+ 
+-	/* Write the checksums and trans id to the first page */
+-	{
+-		void *addr;
+-		u64 *gen;
+-
+-		page = pages[0];
+-
+-		addr = kmap(page);
+-		memcpy(addr, checksums, sizeof(u32) * num_pages);
+-		gen = addr + (sizeof(u32) * num_pages);
+-		*gen = trans->transid;
+-		kunmap(page);
+-	}
+-
+ 	ret = btrfs_dirty_pages(root, inode, pages, num_pages, 0,
+ 					    bytes, &cached_state);
+ 	btrfs_drop_pages(pages, num_pages);
+@@ -833,7 +756,7 @@ int __btrfs_write_out_cache(struct btrfs_root *root, struct inode *inode,
+ 
+ 	if (ret) {
+ 		ret = 0;
+-		goto out_free;
++		goto out;
+ 	}
+ 
+ 	BTRFS_I(inode)->generation = trans->transid;
+@@ -850,7 +773,7 @@ int __btrfs_write_out_cache(struct btrfs_root *root, struct inode *inode,
+ 		clear_extent_bit(&BTRFS_I(inode)->io_tree, 0, bytes - 1,
+ 				 EXTENT_DIRTY | EXTENT_DELALLOC |
+ 				 EXTENT_DO_ACCOUNTING, 0, 0, NULL, GFP_NOFS);
+-		goto out_free;
++		goto out;
+ 	}
+ 	leaf = path->nodes[0];
+ 	if (ret > 0) {
+@@ -866,7 +789,7 @@ int __btrfs_write_out_cache(struct btrfs_root *root, struct inode *inode,
+ 					 EXTENT_DO_ACCOUNTING, 0, 0, NULL,
+ 					 GFP_NOFS);
+ 			btrfs_release_path(path);
+-			goto out_free;
++			goto out;
+ 		}
+ 	}
+ 	header = btrfs_item_ptr(leaf, path->slots[0],
+@@ -879,11 +802,7 @@ int __btrfs_write_out_cache(struct btrfs_root *root, struct inode *inode,
+ 
+ 	ret = 1;
+ 
+-out_free:
+-	kfree(checksums);
+-	kfree(pages);
+-
+-out_update:
++out:
+ 	if (ret != 1) {
+ 		invalidate_inode_pages2_range(inode->i_mapping, 0, index);
+ 		BTRFS_I(inode)->generation = 0;
+-- 
+1.7.2.3
 

@@ -1,47 +1,36 @@
-From: Andreas Philipp <philipp.andreas@gmail.com>
-Subject: strange filefrag output on btrfs
-Date: Sat, 11 Jun 2011 17:39:15 +0200
-Message-ID: <4DF38C23.7010603@gmail.com>
+From: Tomasz Chmielewski <mangoo@wpkg.org>
+Subject: cannot remove files: No space left on device
+Date: Sun, 12 Jun 2011 01:32:37 +0200
+Message-ID: <4DF3FB15.1040108@wpkg.org>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=ISO-8859-1
-Cc: Andreas Philipp <philipp.andreas@gmail.com>
+Content-Type: text/plain; charset=UTF-8
 To: linux-btrfs <linux-btrfs@vger.kernel.org>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
 List-ID: <linux-btrfs.vger.kernel.org>
 
+I'm trying to remove some files on a btrfs filesystem which has 26 GB free:
 
------BEGIN PGP SIGNED MESSAGE-----
-Hash: SHA1
- 
-Hi,
+/dev/sdb4             336G  310G   26G  93% /mnt/btrfs
 
-On one of my btrfs volumes I see a strange output from filefrag when
-run against a particular large (~8GB) file. filefrag and filefrag -v
-give me a different number of extents, see below.
 
-aph@thor /mnt/nutshell $ sudo filefrag -v funtoo.img | grep extents
-funtoo.img: 2624 extents found
-aph@thor /mnt/nutshell $ sudo filefrag funtoo.img | grep extents
-funtoo.img: 2653 extents found
+Unfortunately, removing some of the files fails, due to "No space left on device":
 
-Thanks,
-Andreas
------BEGIN PGP SIGNATURE-----
-Version: GnuPG v1.4.9 (MingW32)
-Comment: Using GnuPG with Mozilla - http://enigmail.mozdev.org/
- 
-iQIcBAEBAgAGBQJN84wiAAoJEJIcBJ3+XkgikzsQAKlH4dMcDMAplulM67TNUDRy
-hMwQhgpkLTBfvB7SRcNImojPwj2TQq6CXWHqk+yjufN6Mz4Tb1F5vWbgPwQOkC3S
-BNtNCJrua6COO2ijOv12UubTY6qQZqXSXNB2be5SVeh9Jt+DUZ55EJRUlhbPb7al
-xhXIRNzIW4P0TfTfLgrQ4cZT+89FGilMe0x4YAw6TCl50f28X7Xjj94UHurM/wzX
-eX2rR37GALSOw2CwIR2m9fmTOPXw61puXyx2ddO4iv3KWmu8lpp9Cl7QkacSKpOd
-kxg0jFVAGj7NAeZU4ekVqZq0GVOqlNEwYfAZyGPI6D6PfO+Fj7l+hWh2aohv0GsL
-xU1mcN9d7X+dvwt4NwbAS3H+ZlHIwJeRIdKyFwvMu3gyLmASuDJIZfFkomFzSfjN
-DNMWvJdXoB4NZoi4I4cIIrQkcVHwglz3NjjCTErbvKHP7oALXqKGVaB2jIQQCOzz
-gi201uGWaOM/tbIUGUxe9nL2cMfID+frMtBng7Q0muPiI57ek4vm7c2wA//2PK9S
-/ZGfhzgZPOWQcULhzQ1/o9vIq6asnnd3eGAgEQAeuO90QAEMrnUY8MAsfK8m3i0L
-EU7XyziQ3j2vXrN5HKkEJiKHjCrnK7/kFG0y0L5iWGBt0/29YMYqAqxDSvu7RXo/
-laQ+Z6t5BcfRrP3I2lX/
-=6T05
------END PGP SIGNATURE-----
+root@dom:/mnt/btrfs# rm -rfv postgresql-noindex
+removed `postgresql-noindex/postgresql/8.4/main/base/16384/16508.6'
+removed `postgresql-noindex/postgresql/8.4/main/base/16384/16508.7'
+rm: cannot remove `postgresql-noindex/postgresql/8.4/main/base/16384/16508.8': No space left on device
+removed `postgresql-noindex/postgresql/8.4/main/base/16384/16508.9'
+removed `postgresql-noindex/postgresql/8.4/main/base/16384/16508_fsm'
+removed `postgresql-noindex/postgresql/8.4/main/base/16384/16511'
+removed `postgresql-noindex/postgresql/8.4/main/base/16384/16513'
+removed `postgresql-noindex/postgresql/8.4/main/base/16384/16516'
+removed `postgresql-noindex/postgresql/8.4/main/base/16384/16516_fsm'
+removed `postgresql-noindex/postgresql/8.4/main/base/16384/16521'
 
+This is a snapshot of a different directory (with some changes).
+
+Is it expected? I'm running 2.6.39.1 kernel.
+
+-- 
+Tomasz Chmielewski
+http://wpkg.org

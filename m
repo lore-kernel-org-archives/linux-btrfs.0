@@ -1,168 +1,181 @@
-From: "Jim Schutt" <jaschut@sandia.gov>
-Subject: stalls with latest btrfs merge into 3.0-rc2
-Date: Mon, 13 Jun 2011 15:07:18 -0600
-Message-ID: <4DF67C06.4000307@sandia.gov>
+From: libor.klepac@bcom.cz
+Subject: unable to mount with "parent transid verify failed on 140554240
+ wanted 166764 found 166765"
+Date: Mon, 13 Jun 2011 23:52:23 +0200
+Message-ID: <53919e9fc9d2f0a5cf9e896393c78b2d@bcom.cz>
 Mime-Version: 1.0
-Content-Type: text/plain;
- charset=utf-8;
+Content-Type: text/plain; charset=UTF-8;
  format=flowed
-Cc: ceph-devel@vger.kernel.org
-To: linux-btrfs@vger.kernel.org
-Return-path: <ceph-devel-owner@vger.kernel.org>
+To: <linux-btrfs@vger.kernel.org>
+Return-path: <linux-btrfs-owner@vger.kernel.org>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hi,
+ Hi,
+ i have had crash again today (running 2.6.39-2 from debian) - another 
+ from i reported yesterday
 
-On a system under a heavy write load from multiple ceph OSDs,
-I'm running into the following hung tasks where btrfs is implicated.
-I'm running commit 3c25fa740e2 from Linus' tree merged with
-commit cb9b41c92fa from git://ceph.newdream.net/git/ceph-client.git.
+ Jun 13 22:44:29 libor-fnb kernel: [132545.450965] ------------[ cut 
+ here ]------------
+ Jun 13 22:44:29 libor-fnb kernel: [132545.451009] kernel BUG at 
+ /build/buildd-linux-2.6_2.6.39-2-amd64-kuqdRa/linux-2.6-2.6.39/debian/build/source_amd64_none/fs/btrfs/inode.
+ c:780!
+ Jun 13 22:44:29 libor-fnb kernel: [132545.451092] invalid opcode: 0000 
+ [#1] SMP
+ Jun 13 22:44:29 libor-fnb kernel: [132545.451127] last sysfs file: 
+ /sys/devices/system/cpu/cpu1/cache/index2/shared_cpu_map
+ Jun 13 22:44:29 libor-fnb kernel: [132545.451179] CPU 0
+ Jun 13 22:44:29 libor-fnb kernel: [132545.451194] Modules linked in: 
+ xfs md4 hmac cifs nls_utf8 nls_cp437 vfat fat uas tun usb_storage 
+ vmnet(O) parport_pc vmblock(O) vsock(O
+ ) vmci(O) vmmon(O) cryptd aes_x86_64 aes_generic acpi_cpufreq mperf 
+ cpufreq_conservative cpufreq_userspace cpufreq_stats cpufreq_powersave 
+ ppdev lp parport bnep rfcomm autof
+ s4 binfmt_misc uinput ib_iser rdma_cm ib_cm iw_cm ib_sa ib_mad ib_core 
+ ib_addr iscsi_tcp libiscsi_tcp libiscsi scsi_transport_iscsi fuse 
+ microcode nfsd nfs lockd fscache aut
+ h_rpcgss nfs_acl sunrpc btusb bluetooth ext2 usbhid hid dm_round_robin 
+ dm_multipath scsi_dh coretemp loop firewire_sbp2 firewire_core crc_itu_t 
+ uvcvideo videodev media v4l2_
+ compat_ioctl32 raid1 md_mod joydev snd_hda_codec_realtek snd_hda_intel 
+ snd_hda_codec snd_hwdep snd_pcm_oss snd_mixer_oss snd_pcm snd_seq_midi 
+ arc4 snd_rawmidi ecb snd_seq_mi
+ di_event snd_seq iwlagn option usb_wwan usbserial mac80211 dell_wmi 
+ sparse_keymap snd_timer cfg80211 snd_seq_device uhci_hcd dell_laptop tg3 
+ rfkill snd psmouse dcdba
+ Jun 13 22:44:29 libor-fnb kernel: s ehci_hcd i2c_i801 serio_raw 
+ soundcore pcspkr libphy snd_page_alloc usbcore evdev battery wmi ac 
+ power_supply processor ext4 mbcache jbd2
+ crc16 dm_mod btrfs zlib_deflate crc32c libcrc32c i915 sd_mod crc_t10dif 
+ drm_kms_helper drm ahci libahci i2c_algo_bit libata i2c_core thermal 
+ scsi_mod video button thermal_sy
+ s [last unloaded: parport_pc]
+ Jun 13 22:44:29 libor-fnb kernel: [132545.452421]
+ Jun 13 22:44:29 libor-fnb kernel: [132545.452436] Pid: 1002, comm: 
+ btrfs-transacti Tainted: G           O 2.6.39-2-amd64 #1 Dell Inc. 
+ Latitude 13                     /067KDW
+ Jun 13 22:44:29 libor-fnb kernel: [132545.452524] RIP: 
+ 0010:[<ffffffffa0174483>]  [<ffffffffa0174483>] 
+ cow_file_range+0x57/0x31c [btrfs]
+ Jun 13 22:44:29 libor-fnb kernel: [132545.452615] RSP: 
+ 0018:ffff88011971f620  EFLAGS: 00010246
+ Jun 13 22:44:29 libor-fnb kernel: [132545.452652] RAX: ffff8801185a0000 
+ RBX: ffff8801191b1800 RCX: 000000000000ffff
+ Jun 13 22:44:29 libor-fnb kernel: [132545.452700] RDX: ffff880107964450 
+ RSI: ffffea00001671b0 RDI: ffff8801079645c8
+ Jun 13 22:44:29 libor-fnb kernel: [132545.452748] RBP: 0000000000000000 
+ R08: ffff88011971f96c R09: ffff88011971f950
+ Jun 13 22:44:29 libor-fnb kernel: [132545.452797] R10: ffffffffffffffff 
+ R11: 0000000000000000 R12: ffff8801079645c8
+ Jun 13 22:44:29 libor-fnb kernel: [132545.452845] R13: ffff88011971f950 
+ R14: ffff880107964430 R15: 0000000000010000
+ Jun 13 22:44:29 libor-fnb kernel: [132545.452893] FS:  
+ 0000000000000000(0000) GS:ffff88011fc00000(0000) knlGS:0000000000000000
+ Jun 13 22:44:29 libor-fnb kernel: [132545.452946] CS:  0010 DS: 0000 
+ ES: 0000 CR0: 000000008005003b
+ Jun 13 22:44:29 libor-fnb kernel: [132545.452987] CR2: 00007f4eb3708000 
+ CR3: 0000000001603000 CR4: 00000000000406f0
+ Jun 13 22:44:29 libor-fnb kernel: [132545.453035] DR0: 0000000000000000 
+ DR1: 0000000000000000 DR2: 0000000000000000
+ Jun 13 22:44:29 libor-fnb kernel: [132545.453083] DR3: 0000000000000000 
+ DR6: 00000000ffff0ff0 DR7: 0000000000000400
+ Jun 13 22:44:29 libor-fnb kernel: [132545.453133] Process 
+ btrfs-transacti (pid: 1002, threadinfo ffff88011971e000, task 
+ ffff880119180080)
+ Jun 13 22:44:29 libor-fnb kernel: [132545.453191] Stack:
+ Jun 13 22:44:29 libor-fnb kernel: [132545.453207]  ffff880000000000 
+ 00000000000008f8 0000000000000004 0000000f1d6c9fff
+ Jun 13 22:44:29 libor-fnb kernel: [132545.453271]  ffff88011971f6c0 
+ 0000000f1d6ca000 000000000000ffff 00000000000000a0
+ Jun 13 22:44:29 libor-fnb kernel: [132545.453335]  ffffffff00001000 
+ ffff88011971f96c ffff880107964450 ffffea00001671b0
+ Jun 13 22:44:29 libor-fnb kernel: [132545.453398] Call Trace:
+ Jun 13 22:44:29 libor-fnb kernel: [132545.453444]  [<ffffffffa0174cda>] 
+ ? run_delalloc_nocow+0x592/0x5e7 [btrfs]
+ Jun 13 22:44:29 libor-fnb kernel: [132545.453513]  [<ffffffffa0174da0>] 
+ ? run_delalloc_range+0x71/0x32c [btrfs]
+ Jun 13 22:44:29 libor-fnb kernel: [132545.453579]  [<ffffffffa018d2f5>] 
+ ? find_lock_delalloc_range+0x19c/0x1be [btrfs]
+ Jun 13 22:44:29 libor-fnb kernel: [132545.453648]  [<ffffffffa018d502>] 
+ ? __extent_writepage+0x1eb/0x621 [btrfs]
+ Jun 13 22:44:29 libor-fnb kernel: [132545.453697]  [<ffffffff810b5ac8>] 
+ ? find_get_pages_tag+0x69/0xdd
+ Jun 13 22:44:29 libor-fnb kernel: [132545.453759]  [<ffffffffa018de22>] 
+ ? T.1113+0x139/0x234 [btrfs]
+ Jun 13 22:44:29 libor-fnb kernel: [132545.453818]  [<ffffffffa018e00d>] 
+ ? extent_writepages+0x40/0x57 [btrfs]
+ Jun 13 22:44:29 libor-fnb kernel: [132545.453886]  [<ffffffffa0175c46>] 
+ ? uncompress_inline+0x125/0x125 [btrfs]
+ Jun 13 22:44:29 libor-fnb kernel: [132545.453934]  [<ffffffff810b634e>] 
+ ? __filemap_fdatawrite_range+0x48/0x4d
+ Jun 13 22:44:29 libor-fnb kernel: [132545.453980]  [<ffffffff810b6867>] 
+ ? filemap_write_and_wait+0x17/0x32
+ Jun 13 22:44:29 libor-fnb kernel: [132545.454040]  [<ffffffffa019f08a>] 
+ ? btrfs_write_out_cache+0x74d/0x96f [btrfs]
+ Jun 13 22:44:29 libor-fnb kernel: [132545.454109]  [<ffffffffa0164f88>] 
+ ? btrfs_run_delayed_refs+0xf4/0x16c [btrfs]
+ Jun 13 22:44:29 libor-fnb kernel: [132545.454176]  [<ffffffffa01653d2>] 
+ ? btrfs_write_dirty_block_groups+0x3d2/0x446 [btrfs]
+ Jun 13 22:44:29 libor-fnb kernel: [132545.454249]  [<ffffffffa016f622>] 
+ ? commit_cowonly_roots+0xd8/0x19d [btrfs]
+ Jun 13 22:44:29 libor-fnb kernel: [132545.454319]  [<ffffffffa017019b>] 
+ ? btrfs_commit_transaction+0x378/0x676 [btrfs]
+ Jun 13 22:44:29 libor-fnb kernel: [132545.454372]  [<ffffffff8105f351>] 
+ ? wake_up_bit+0x20/0x20
+ Jun 13 22:44:29 libor-fnb kernel: [132545.454431]  [<ffffffffa01708cc>] 
+ ? start_transaction+0x209/0x238 [btrfs]
+ Jun 13 22:44:29 libor-fnb kernel: [132545.454499]  [<ffffffffa016b5dd>] 
+ ? transaction_kthread+0x178/0x232 [btrfs]
+ Jun 13 22:44:29 libor-fnb kernel: [132545.454566]  [<ffffffffa016b465>] 
+ ? btrfs_bio_wq_end_io+0x62/0x62 [btrfs]
+ Jun 13 22:44:29 libor-fnb kernel: [132545.454635]  [<ffffffffa016b465>] 
+ ? btrfs_bio_wq_end_io+0x62/0x62 [btrfs]
+ Jun 13 22:44:29 libor-fnb kernel: [132545.454875]  [<ffffffff8105ef05>] 
+ ? kthread+0x7a/0x82
+ Jun 13 22:44:29 libor-fnb kernel: [132545.454875]  [<ffffffff81339ee4>] 
+ ? kernel_thread_helper+0x4/0x10
+ Jun 13 22:44:29 libor-fnb kernel: [132545.454875]  [<ffffffff8105ee8b>] 
+ ? kthread_worker_fn+0x147/0x147
+ Jun 13 22:44:29 libor-fnb kernel: [132545.454875]  [<ffffffff81339ee0>] 
+ ? gs_change+0x13/0x13
+ Jun 13 22:44:29 libor-fnb kernel: [132545.464888] Code: 4c 24 30 4c 89 
+ 44 24 48 48 8b 9f 68 fe ff ff 8b 83 a0 02 00 00 48 89 54 24 50 89 44 24 
+ 40 48 8b 83 28 01 00 00 48 3b
+ 58 28 75 04 <0f> 0b eb fe be 01 00 00 00 48 89 df e8 8b c4 ff ff 48 3d 
+ 00 f0
+ Jun 13 22:44:29 libor-fnb kernel: [132545.464888] RIP  
+ [<ffffffffa0174483>] cow_file_range+0x57/0x31c [btrfs]
+ Jun 13 22:44:29 libor-fnb kernel: [132545.464888]  RSP 
+ <ffff88011971f620>
+ Jun 13 22:44:29 libor-fnb kernel: [132545.591802] ---[ end trace 
+ 818ba76a36556366 ]---
 
-Let me know what else I can do to help sort this out.
 
-[  961.318047] INFO: task kworker/1:2:2346 blocked for more than 120 seconds.
-[  961.324993] "echo 0 > /proc/sys/kernel/hung_task_timeout_secs" disables this message.
-[  961.332891]  ffff8802253dbcd0 0000000000000046 ffff8802253dbcb0 ffff88021c138000
-[  961.340398]  ffff880222c3dac0 ffff880222c3dac0 00000000000108c0 ffff88021c138000
-[  961.347893]  ffff880222c3de80 0000000000000001 ffff8802253dbd00 ffffffff813b0f69
-[  961.355384] Call Trace:
-[  961.357838]  [<ffffffff813b0f69>] schedule+0x164/0x19e
-[  961.363041]  [<ffffffffa066069c>] btrfs_start_ordered_extent+0xa8/0xc4 [btrfs]
-[  961.370268]  [<ffffffff81066544>] ? list_del_init+0x21/0x21
-[  961.376075]  [<ffffffffa0660f93>] btrfs_wait_ordered_extents+0xd8/0x143 [btrfs]
-[  961.383387]  [<ffffffffa0647065>] btrfs_commit_transaction+0x20b/0x5a4 [btrfs]
-[  961.390642]  [<ffffffff81066544>] ? list_del_init+0x21/0x21
-[  961.396284]  [<ffffffffa064741d>] do_async_commit+0x1f/0x2c [btrfs]
-[  961.402638]  [<ffffffff81060bba>] process_one_work+0x124/0x1e0
-[  961.408478]  [<ffffffffa06473fe>] ? btrfs_commit_transaction+0x5a4/0x5a4 [btrfs]
-[  961.415917]  [<ffffffff81062219>] ? destroy_workqueue+0x161/0x161
-[  961.422155]  [<ffffffff810622a8>] worker_thread+0x8f/0x124
-[  961.427642]  [<ffffffff8106603f>] kthread+0x72/0x7a
-[  961.432636]  [<ffffffff813b9e94>] kernel_thread_helper+0x4/0x10
-[  961.438561]  [<ffffffff813b272d>] ? retint_restore_args+0xe/0xe
-[  961.444530]  [<ffffffff81065fcd>] ? kthread_bind+0x53/0x53
-[  961.450100]  [<ffffffff813b9e90>] ? gs_change+0xb/0xb
-[  961.455188] INFO: task btrfs-transacti:7653 blocked for more than 120 seconds.
-[  961.462506] "echo 0 > /proc/sys/kernel/hung_task_timeout_secs" disables this message.
-[  961.477512]  ffff88021c24fd90 0000000000000046 ffff88021c24fd70 ffff880190a65ac0
-[  961.491735]  ffff8802246cad60 ffff8802246cad60 00000000000108c0 ffff880190a65ac0
-[  961.505853]  ffff8802246cb120 0000000000000001 ffff88021c24fdc0 ffffffff813b0f69
-[  961.521106] Call Trace:
-[  961.526052]  [<ffffffff813b0f69>] schedule+0x164/0x19e
-[  961.531910]  [<ffffffffa06460b4>] wait_current_trans+0xb8/0xec [btrfs]
-[  961.544101]  [<ffffffff81066544>] ? list_del_init+0x21/0x21
-[  961.550394]  [<ffffffffa0645cd2>] ? spin_lock+0xe/0x10 [btrfs]
-[  961.556471]  [<ffffffffa0647970>] start_transaction+0xd1/0x206 [btrfs]
-[  961.563023]  [<ffffffffa0643ec7>] ? btree_readpage_end_io_hook+0x192/0x192 [btrfs]
-[  961.570597]  [<ffffffffa0647ae8>] btrfs_join_transaction+0x15/0x17 [btrfs]
-[  961.577609]  [<ffffffffa064401b>] transaction_kthread+0x154/0x22d [btrfs]
-[  961.584465]  [<ffffffff81036a33>] ? need_resched+0x23/0x2d
-[  961.589967]  [<ffffffff8106603f>] kthread+0x72/0x7a
-[  961.594843]  [<ffffffff813b9e94>] kernel_thread_helper+0x4/0x10
-[  961.600777]  [<ffffffff813b272d>] ? retint_restore_args+0xe/0xe
-[  961.606702]  [<ffffffff81065fcd>] ? kthread_bind+0x53/0x53
-[  961.612206]  [<ffffffff813b9e90>] ? gs_change+0xb/0xb
-[  961.617322] INFO: task cosd:16719 blocked for more than 120 seconds.
-[  961.623702] "echo 0 > /proc/sys/kernel/hung_task_timeout_secs" disables this message.
-[  961.631542]  ffff8801bf163cb8 0000000000000086 ffff8801bf163c98 ffff880226db16b0
-[  961.639072]  ffff8801df4f5ac0 ffff8801df4f5ac0 00000000000108c0 ffff880226db16b0
-[  961.646516]  ffff8801df4f5e80 0000000000000001 ffff8801bf163ce8 ffffffff813b0f69
-[  961.653955] Call Trace:
-[  961.656483]  [<ffffffff813b0f69>] schedule+0x164/0x19e
-[  961.661725]  [<ffffffffa0645dbd>] wait_current_trans_commit_start_and_unblock+0xa9/0xce [btrfs]
-[  961.670461]  [<ffffffff81066544>] ? list_del_init+0x21/0x21
-[  961.676028]  [<ffffffff81061512>] ? queue_work+0x1f/0x21
-[  961.681436]  [<ffffffffa0647bbd>] btrfs_commit_transaction_async+0xd3/0x115 [btrfs]
-[  961.689118]  [<ffffffffa066d8b3>] create_snapshot+0xe5/0x177 [btrfs]
-[  961.695546]  [<ffffffffa0671559>] btrfs_mksubvol+0xfa/0x167 [btrfs]
-[  961.702416]  [<ffffffffa06716c5>] btrfs_ioctl_snap_create_transid+0xff/0x121 [btrfs]
-[  961.710454]  [<ffffffffa067176f>] btrfs_ioctl_snap_create_v2+0x88/0xea [btrfs]
-[  961.718000]  [<ffffffffa0671a40>] btrfs_ioctl+0x208/0x358 [btrfs]
-[  961.724088]  [<ffffffff8112221a>] vfs_ioctl+0x1d/0x34
-[  961.729159]  [<ffffffff81122895>] do_vfs_ioctl+0x171/0x17a
-[  961.734732]  [<ffffffff811154bb>] ? fget_light+0x69/0x81
-[  961.740057]  [<ffffffff811228fa>] sys_ioctl+0x5c/0x7c
-[  961.745333]  [<ffffffffa0534af5>] ? jbd_free_handle+0x1b/0x1d [jbd]
-[  961.752028]  [<ffffffff813b8dab>] system_call_fastpath+0x16/0x1b
-[  961.758429] INFO: task cosd:16720 blocked for more than 120 seconds.
-[  961.765416] "echo 0 > /proc/sys/kernel/hung_task_timeout_secs" disables this message.
-[  961.776419]  ffff8801bf123bb8 0000000000000086 ffff8801bf123b98 ffff8801664bad60
-[  961.792604]  ffff8801df4f2d60 ffff8801df4f2d60 00000000000108c0 ffff8801664bad60
-[  961.814250]  ffff8801df4f3120 0000000000000000 ffff8801bf123be8 ffffffff813b0f69
-[  961.825356] Call Trace:
-[  961.830932]  [<ffffffff813b0f69>] schedule+0x164/0x19e
-[  961.837403]  [<ffffffffa06460b4>] wait_current_trans+0xb8/0xec [btrfs]
-[  961.844413]  [<ffffffff81066544>] ? list_del_init+0x21/0x21
-[  961.850203]  [<ffffffff81109fe6>] ? kmem_cache_alloc+0xad/0xb9
-[  961.856255]  [<ffffffffa0647970>] start_transaction+0xd1/0x206 [btrfs]
-[  961.863351]  [<ffffffffa0647c12>] btrfs_start_transaction+0x13/0x15 [btrfs]
-[  961.870549]  [<ffffffffa064dc24>] btrfs_create+0x3b/0x197 [btrfs]
-[  961.876889]  [<ffffffff8111edd8>] vfs_create+0x72/0x92
-[  961.882115]  [<ffffffff8111f024>] do_last+0x22c/0x40b
-[  961.887195]  [<ffffffff8111fd02>] path_openat+0xc0/0x2ef
-[  961.892581]  [<ffffffff81121011>] do_filp_open+0x3d/0x87
-[  961.897888]  [<ffffffff811e070c>] ? strncpy_from_user+0x43/0x4d
-[  961.903880]  [<ffffffff8111e78d>] ? getname_flags+0x2e/0x80
-[  961.909463]  [<ffffffff8111e711>] ? do_getname+0x14b/0x173
-[  961.915472]  [<ffffffff8111e74f>] ? audit_getname+0x16/0x26
-[  961.921259]  [<ffffffff8112a743>] ? spin_lock+0xe/0x10
-[  961.926480]  [<ffffffff811122d1>] do_sys_open+0x69/0xae
-[  961.931759]  [<ffffffff81112349>] sys_open+0x20/0x22
-[  961.936730]  [<ffffffff813b8dab>] system_call_fastpath+0x16/0x1b
-[  961.942878] INFO: task cosd:16721 blocked for more than 120 seconds.
-[  961.949231] "echo 0 > /proc/sys/kernel/hung_task_timeout_secs" disables this message.
-[  961.957398]  ffff8801502dfb38 0000000000000086 ffff8801502dfb18 ffff8801dd19c410
-[  961.965782]  ffff880150314410 ffff880150314410 00000000000108c0 ffff8801dd19c410
-[  961.973784]  ffff8801503147d0 0000000000400000 ffff8801502dfb68 ffffffff813b0f69
-[  961.981702] Call Trace:
-[  961.984239]  [<ffffffff813b0f69>] schedule+0x164/0x19e
-[  961.989445]  [<ffffffffa06460b4>] wait_current_trans+0xb8/0xec [btrfs]
-[  961.995993]  [<ffffffff81066544>] ? list_del_init+0x21/0x21
-[  962.001781]  [<ffffffffa0647692>] btrfs_throttle+0x1f/0x21 [btrfs]
-[  962.008040]  [<ffffffffa0655672>] __btrfs_buffered_write+0x29e/0x2dd [btrfs]
-[  962.015217]  [<ffffffffa06559df>] btrfs_file_aio_write+0x203/0x2df [btrfs]
-[  962.022152]  [<ffffffffa06557dc>] ? __btrfs_direct_write+0x12b/0x12b [btrfs]
-[  962.029240]  [<ffffffff81113a17>] do_sync_readv_writev+0xc1/0x109
-[  962.035448]  [<ffffffff8112c187>] ? mnt_dec_count+0x11/0x13
-[  962.041016]  [<ffffffff81036a33>] ? need_resched+0x23/0x2d
-[  962.046796]  [<ffffffff81036a4b>] ? should_resched+0xe/0x2f
-[  962.057128]  [<ffffffff811986c3>] ? security_file_permission+0x2c/0x31
-[  962.068078]  [<ffffffff81113d21>] ? rw_verify_area+0xac/0xdb
-[  962.073949]  [<ffffffff811140a6>] do_readv_writev+0xbf/0x127
-[  962.079741]  [<ffffffff8111e78d>] ? getname_flags+0x2e/0x80
-[  962.096720]  [<ffffffff81106005>] ? compound_head+0x12/0x20
-[  962.103380]  [<ffffffff81036a33>] ? need_resched+0x23/0x2d
-[  962.109497]  [<ffffffff81036a4b>] ? should_resched+0xe/0x2f
-[  962.119919]  [<ffffffff813b117f>] ? _cond_resched+0xe/0x22
-[  962.131022]  [<ffffffff813b1895>] ? mutex_lock+0x16/0x34
-[  962.137370]  [<ffffffff81114151>] vfs_writev+0x43/0x4e
-[  962.142531]  [<ffffffff81114729>] sys_writev+0x4c/0x71
-[  962.148853]  [<ffffffff813b8dab>] system_call_fastpath+0x16/0x1b
-[  962.155452] INFO: task btrfs-endio-wri:23430 blocked for more than 120 seconds.
-[  962.162885] "echo 0 > /proc/sys/kernel/hung_task_timeout_secs" disables this message.
-[  962.170846]  ffff8801dd943c20 0000000000000046 ffff8801dd943c00 ffff8801df4f5ac0
-[  962.178326]  ffff880182060000 ffff880182060000 00000000000108c0 ffff8801df4f5ac0
-[  962.185821]  ffff8801820603c0 0000000000000001 ffff8801dd943c50 ffffffff813b0f69
-[  962.193386] Call Trace:
-[  962.195837]  [<ffffffff813b0f69>] schedule+0x164/0x19e
-[  962.201044]  [<ffffffffa06460b4>] wait_current_trans+0xb8/0xec [btrfs]
-[  962.208020]  [<ffffffff81066544>] ? list_del_init+0x21/0x21
-[  962.213751]  [<ffffffffa0645cd2>] ? spin_lock+0xe/0x10 [btrfs]
-[  962.219713]  [<ffffffffa0647970>] start_transaction+0xd1/0x206 [btrfs]
-[  962.226247]  [<ffffffffa0647ae8>] btrfs_join_transaction+0x15/0x17 [btrfs]
-[  962.233127]  [<ffffffffa064ec90>] btrfs_finish_ordered_io+0x135/0x2c1 [btrfs]
-[  962.240308]  [<ffffffffa064ee59>] btrfs_writepage_end_io_hook+0x3d/0x45 [btrfs]
-[  962.247648]  [<ffffffffa0665e20>] end_bio_extent_writepage+0xaa/0x15a [btrfs]
-[  962.255291]  [<ffffffff8113d194>] bio_endio+0x2d/0x2f
-[  962.260613]  [<ffffffffa0642c2c>] end_workqueue_fn+0x72/0x7b [btrfs]
-[  962.267510]  [<ffffffffa066cd4f>] worker_loop+0x60/0x1f6 [btrfs]
-[  962.273543]  [<ffffffff81033dad>] ? calc_load_account_idle+0xe/0x1d
-[  962.279841]  [<ffffffffa066ccef>] ? run_ordered_completions+0x99/0x99 [btrfs]
-[  962.286968]  [<ffffffff8106603f>] kthread+0x72/0x7a
-[  962.291965]  [<ffffffff813b9e94>] kernel_thread_helper+0x4/0x10
-[  962.297888]  [<ffffffff813b272d>] ? retint_restore_args+0xe/0xe
-[  962.303801]  [<ffffffff81065fcd>] ? kthread_bind+0x53/0x53
-[  962.309278]  [<ffffffff813b9e90>] ? gs_change+0xb/0xb
+ my filesystem doesn't want to mount. running btrfsck produces
 
--- Jim
+ ./btrfsck /dev/md0
+ parent transid verify failed on 140554240 wanted 166764 found 166765
+ parent transid verify failed on 140554240 wanted 166764 found 166765
+ parent transid verify failed on 140554240 wanted 166764 found 166765
+ Segmentation fault
 
+ ./btrfsck -s 1 /dev/md0
+ using SB copy 1, bytenr 67108864
+ parent transid verify failed on 140554240 wanted 166764 found 166765
+ parent transid verify failed on 140554240 wanted 166764 found 166765
+ parent transid verify failed on 140554240 wanted 166764 found 166765
+ Segmentation fault
+
+ ./btrfsck -s 2 /dev/md0
+ using SB copy 2, bytenr 274877906944
+ No valid Btrfs found on /dev/md0
+
+ I have compiled btrfsck from 
+ git://git.kernel.org/pub/scm/linux/kernel/git/mason/btrfs-progs-unstable.git
+
+ Is there anything i can do?
+
+ With regards
+ Libor
+
+ (sorry for formating, i'm using webmail, because i don't have /home 
+ partition now)

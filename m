@@ -1,68 +1,43 @@
-From: Chris Mason <chris.mason@oracle.com>
-Subject: Re: bug caused by removal of trans_mutex? (Was: Re: kernel BUG at fs/btrfs/extent-tree.c:6164!)
-Date: Mon, 13 Jun 2011 09:12:06 -0400
-Message-ID: <1307970688-sup-9381@shiny>
-References: <4DEC90CB.4050609@jp.fujitsu.com> <4DEDB7AF.2060308@cn.fujitsu.com> <4DEDBE4B.2020403@jp.fujitsu.com> <4DEDC293.30105@jp.fujitsu.com> <4DEDE03B.9050907@jp.fujitsu.com> <4DEDE328.5060405@cn.fujitsu.com> <1307461229-sup-9822@shiny> <4DEF04CF.8010502@jp.fujitsu.com> <4DF5B889.5080202@cn.fujitsu.com>
+From: Josef Bacik <josef@redhat.com>
+Subject: Re: [PATCH] Btrfs: use the normal checksumming infrastructure for
+ free space cache
+Date: Mon, 13 Jun 2011 09:56:04 -0400
+Message-ID: <4DF616F4.30202@redhat.com>
+References: <1307734827-10697-1-git-send-email-josef@redhat.com> <4DF56D60.4070208@cn.fujitsu.com>
+Mime-Version: 1.0
 Content-Type: text/plain; charset=UTF-8
-Cc: Tsutomu Itoh <t-itoh@jp.fujitsu.com>,
-	liubo <liubo2009@cn.fujitsu.com>,
-	Linux Btrfs <linux-btrfs@vger.kernel.org>,
-	Josef Bacik <josef@redhat.com>
+Cc: linux-btrfs@vger.kernel.org
 To: Li Zefan <lizf@cn.fujitsu.com>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-reply-to: <4DF5B889.5080202@cn.fujitsu.com>
+In-Reply-To: <4DF56D60.4070208@cn.fujitsu.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Excerpts from Li Zefan's message of 2011-06-13 03:13:13 -0400:
-> Cc: Josef
+On 06/12/2011 09:52 PM, Li Zefan wrote:
+> Josef Bacik wrote:
+>> We used to store the checksums of the space cache directly in the space cache,
+>> however that doesn't work out too well if we have more space than we can fit the
+>> checksums into the first page.  So instead use the normal checksumming
+>> infrastructure.  There were problems with doing this originally but those
+>> problems don't exist now so this works out fine.  Thanks,
+>>
 > 
-> >>>>>>>> I encountered following panic using 'btrfs-unstable + for-linus'
-> >>>>>>>> kernel.
-> >>>>>>>>
-> >>>>>>>> I ran "btrfs fi bal /test5" command, and mount option of /test5
-> >>>>>>>> is as follows:
-> >>>>>>>>
-> >>>>>>>>  /dev/sdc3 on /test5 type btrfs (rw,space_cache,compress=lzo,inode_cache)
-> >>>>>>>>
-> >>>>>>> So, just a "btrfs fi bal" would lead to the bug?
-> >>>>>> I think so.
-> >>
-> >> It should be specific to the inode caching code.  The balancing code is
-> >> finding the inode map cache extents, but it doesn't know how to relocate
-> >> them.
-> > 
-> > However, the panic has occurred even if inode_cahce is turned off.
-> > Is this another problem?
-> > 
+> This looks great, so I'll drop my patch that extends the original code to
+> allow more than 1 crc page.
 > 
-> I don't think free inode cache isthe cause of the bug here (even if inode_cache
-> is turned on).
+> one comment below:
 > 
-> What I have found out is:
+> ...
+>> @@ -879,11 +802,7 @@ int __btrfs_write_out_cache(struct btrfs_root *root, struct inode *inode,
+>>  
+>>  	ret = 1;
+>>  
+>> -out_free:
+>> -	kfree(checksums);
+>> -	kfree(pages);
+>> -
 > 
-> 1. git checkout a4abeea41adfa3c143c289045f4625dfaeba2212
-> 
-> So the top commit is the removal of trans_mutex and no delayed_inode patch
-> or free inode cache patchset in the tree, and bug can be triggered.
-> 
-> 2. git checkout 2a1eb4614d984d5cd4c928784e9afcf5c07f93be
-> 
-> So the top commit is the one before trans_mutex removal, and no bug triggered.
-> 
-> 3. test linus' tree
-> 
-> bug triggered.
-> 
-> 4. revert that suspicoius commit manually from linus' tree
-> 
-> no bug.
-> 
-> so either that commit is buggy or it reveals some bugs covered by the trans_mutex.
+> leak memory by removing kfree(pages).
 
-Ok, what dataset are you balancing?
+Ah right good catch, I'll fix that up, thanks,
 
-What are you doing concurrently with the balance?
-
-I haven't been able to trigger this here.
-
--chris
+Josef

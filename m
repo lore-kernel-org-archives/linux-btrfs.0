@@ -1,30 +1,26 @@
-From: Bernhard Duebi <bernhard@due.bi>
-Subject: btrfs defra
-Date: Mon, 13 Jun 2011 16:50:37 +0200
-Message-ID: <1307976637.2285.15.camel@andromeda>
+From: David Sterba <dave@jikos.cz>
+Subject: Re: [PATCH] Btrfs: add discard flag to btrfs_device and make
+ btrfs_discard_extent aware of that
+Date: Mon, 13 Jun 2011 17:43:08 +0200
+Message-ID: <20110613154308.GU12709@twin.jikos.cz>
+References: <1307604489-7884-1-git-send-email-lidongyang@novell.com>
+ <20110610000017.GP12709@twin.jikos.cz>
+ <201106101340.31230.lidongyang@novell.com>
+Reply-To: dave@jikos.cz
 Mime-Version: 1.0
-Content-Type: text/plain; charset="UTF-8"
-To: linux-btrfs@vger.kernel.org
+Content-Type: text/plain; charset=us-ascii
+Cc: linux-btrfs@vger.kernel.org
+To: Li Dongyang <lidongyang@novell.com>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
+In-Reply-To: <201106101340.31230.lidongyang@novell.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hello everybody,
+On Fri, Jun 10, 2011 at 01:40:31PM +0800, Li Dongyang wrote:
+> > otherwise the patch looks good (and matches my view how to do it). I
+> > will test it eventually.
+> Thanks a lot, I'll resend this this a proper name.
 
-I'm no developer, just a simple user. I use btrfs as the root filesystem
-on my laptop. I use VirtualBox. Every VB disk lives in a separat btrfs
-subvolume. I use btrfs snapshots for backup and to clone VB VMs.
+JFYI, tested in the previous scenario, ie. all devices without trim
+support, does not crash.
 
-I wonder what happens when I defrag a file that is part of multiple
-snapshots? Will all instances of this file be defragmented, or will the
-file get its own fresh copy?
-
-If it is important, my system is a 64bit ubuntu 10.10 and the filesystem
-is mounted with the option compress. If it helps, I would consider to
-upgrade to 11.04.
-
-BTW: what is the difference between defrag and balance ?
-
-Sincerely
-Bernhard
-
-
+david

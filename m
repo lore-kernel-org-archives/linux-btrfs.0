@@ -1,73 +1,65 @@
-From: Chris Mason <chris.mason@oracle.com>
-Subject: Re: bug caused by removal of trans_mutex? (Was: Re: kernel BUG at fs/btrfs/extent-tree.c:6164!)
-Date: Mon, 13 Jun 2011 11:18:53 -0400
-Message-ID: <1307978298-sup-2663@shiny>
-References: <4DEC90CB.4050609@jp.fujitsu.com> <4DEDB7AF.2060308@cn.fujitsu.com> <4DEDBE4B.2020403@jp.fujitsu.com> <4DEDC293.30105@jp.fujitsu.com> <4DEDE03B.9050907@jp.fujitsu.com> <4DEDE328.5060405@cn.fujitsu.com> <1307461229-sup-9822@shiny> <4DEF04CF.8010502@jp.fujitsu.com> <4DF5B889.5080202@cn.fujitsu.com> <1307970688-sup-9381@shiny>
-Content-Type: text/plain; charset=UTF-8
-Cc: Li Zefan <lizf@cn.fujitsu.com>,
-	Tsutomu Itoh <t-itoh@jp.fujitsu.com>,
-	liubo <liubo2009@cn.fujitsu.com>,
-	Linux Btrfs <linux-btrfs@vger.kernel.org>,
-	Josef Bacik <josef@redhat.com>
-To: Chris Mason <chris.mason@oracle.com>
+From: Andreas Philipp <philipp.andreas@gmail.com>
+Subject: Re: strange filefrag output on btrfs
+Date: Mon, 13 Jun 2011 17:16:42 +0200
+Message-ID: <4DF629DA.4050300@gmail.com>
+References: <4DF38C23.7010603@gmail.com> <20110613115018.GT12709@twin.jikos.cz>
+Mime-Version: 1.0
+Content-Type: text/plain; charset=ISO-8859-1
+To: linux-btrfs <linux-btrfs@vger.kernel.org>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-reply-to: <1307970688-sup-9381@shiny>
+In-Reply-To: <20110613115018.GT12709@twin.jikos.cz>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Excerpts from Chris Mason's message of 2011-06-13 09:12:06 -0400:
-> Excerpts from Li Zefan's message of 2011-06-13 03:13:13 -0400:
-> > Cc: Josef
-> > 
-> > >>>>>>>> I encountered following panic using 'btrfs-unstable + for-linus'
-> > >>>>>>>> kernel.
-> > >>>>>>>>
-> > >>>>>>>> I ran "btrfs fi bal /test5" command, and mount option of /test5
-> > >>>>>>>> is as follows:
-> > >>>>>>>>
-> > >>>>>>>>  /dev/sdc3 on /test5 type btrfs (rw,space_cache,compress=lzo,inode_cache)
-> > >>>>>>>>
-> > >>>>>>> So, just a "btrfs fi bal" would lead to the bug?
-> > >>>>>> I think so.
-> > >>
-> > >> It should be specific to the inode caching code.  The balancing code is
-> > >> finding the inode map cache extents, but it doesn't know how to relocate
-> > >> them.
-> > > 
-> > > However, the panic has occurred even if inode_cahce is turned off.
-> > > Is this another problem?
-> > > 
-> > 
-> > I don't think free inode cache isthe cause of the bug here (even if inode_cache
-> > is turned on).
-> > 
-> > What I have found out is:
-> > 
-> > 1. git checkout a4abeea41adfa3c143c289045f4625dfaeba2212
-> > 
-> > So the top commit is the removal of trans_mutex and no delayed_inode patch
-> > or free inode cache patchset in the tree, and bug can be triggered.
-> > 
-> > 2. git checkout 2a1eb4614d984d5cd4c928784e9afcf5c07f93be
-> > 
-> > So the top commit is the one before trans_mutex removal, and no bug triggered.
-> > 
-> > 3. test linus' tree
-> > 
-> > bug triggered.
-> > 
-> > 4. revert that suspicoius commit manually from linus' tree
-> > 
-> > no bug.
-> > 
-> > so either that commit is buggy or it reveals some bugs covered by the trans_mutex.
-> 
-> Ok, what dataset are you balancing?
-> 
-> What are you doing concurrently with the balance?
-> 
-> I haven't been able to trigger this here.
 
-There we go.  It took about two hours but I hit this with the balancing
-exerciser that was posted.
+-----BEGIN PGP SIGNED MESSAGE-----
+Hash: SHA1
+ 
+On 13.06.2011 13:50, David Sterba wrote:
+> On Sat, Jun 11, 2011 at 05:39:15PM +0200, Andreas Philipp wrote:
+>> On one of my btrfs volumes I see a strange output from filefrag when
+>> run against a particular large (~8GB) file. filefrag and filefrag -v
+>> give me a different number of extents, see below.
+>>
+>> aph@thor /mnt/nutshell $ sudo filefrag -v funtoo.img | grep extents
+>> funtoo.img: 2624 extents found
+>> aph@thor /mnt/nutshell $ sudo filefrag funtoo.img | grep extents
+>> funtoo.img: 2653 extents found
+>
+> is the file open and being written to? did you run sync before the first
+> command?
+The file is not open. Yes, I have run sync before the first command.
+Now, I tested again with a copy of file but the results is more or
+less the same.
 
--chris
+aph@thor /mnt/nutshell $ cp funtoo.img funtoo.1.img
+aph@thor /mnt/nutshell $ sync
+aph@thor /mnt/nutshell $ sudo filefrag -v funtoo.img funtoo.1.img |
+grep extents
+funtoo.img: 2624 extents found
+funtoo.1.img: 57 extents found
+aph@thor /mnt/nutshell $ sudo filefrag funtoo.img funtoo.1.img | grep
+extents
+funtoo.img: 2653 extents found
+funtoo.1.img: 311 extents found
+
+Thanks,
+Andreas
+-----BEGIN PGP SIGNATURE-----
+Version: GnuPG v1.4.9 (MingW32)
+Comment: Using GnuPG with Mozilla - http://enigmail.mozdev.org/
+ 
+iQIcBAEBAgAGBQJN9inZAAoJEJIcBJ3+XkgiADgP/1+B26+vvEhb2cFy64gCh9c1
+eeJJXgZgQsMkq4ScTwmdgBkG49XtFRao+IAJLT8NEEYfWK2s/e7COK5KvjqHQP6T
+Z64TKo/SKD3YaskszZEO30fM/A9pXcsDDRaCgOXJosCjRfl2vNyxvSMjnRRGEGGL
+F4qI9sr9pkZrqbzwIrhPFBm1etkwMOOrXyqByg/VQoNxTts6xZ9hz0l42qOhrjXW
+EZ1zLRrDqd0HTBPmrkntG4yACBW4/eJf0vPPn7cNRFf1a6ts9UTAgEOkobgP4tho
+D+mGle5bPElyB72tcQ2jutk9+qr89VrUjrNHNHU3QAI9ZtvWLeHIS1P2PkiXk/s2
+xQKL83V8QGoeK8BQTB2exMf7cBrgoVs4IfTcXaQyperFRFTYtjQ78J8p2iPvwTKY
+6/4LkHkIEPJO3IZ81TFv1Vm5wefGqMWnpTRgvzLv52UlbNEkdcvdNM5IWGiIhFD6
+cVQohZuHaTidhn2ancBVd3qE3oYMiBQknvKG39seUw8zTRixz7Ac+/uF7kcQSP6U
+4RatjRADGN99Kt4ydwpZbIBiDQxttR+Js/sv8E8skqll96LeT+DVzMh2JRx+iy93
+eatIlrTIgoPfi3Oo+NUXczMfamYfG7UcVhBUxDlQUTtKPAhPHmXvE9pkjqIJ5sxD
+3mkSkEZ6ZXGujyIPXnfQ
+=Yx0a
+-----END PGP SIGNATURE-----
+

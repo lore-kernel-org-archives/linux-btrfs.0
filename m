@@ -1,99 +1,40 @@
-From: Chris Mason <chris.mason@oracle.com>
-Subject: Re: bug caused by removal of trans_mutex? (Was: Re: kernel BUG at fs/btrfs/extent-tree.c:6164!)
-Date: Mon, 13 Jun 2011 11:09:48 -0400
-Message-ID: <1307977739-sup-6108@shiny>
-References: <4DEC90CB.4050609@jp.fujitsu.com> <4DEDB7AF.2060308@cn.fujitsu.com> <4DEDBE4B.2020403@jp.fujitsu.com> <4DEDC293.30105@jp.fujitsu.com> <4DEDE03B.9050907@jp.fujitsu.com> <4DEDE328.5060405@cn.fujitsu.com> <1307461229-sup-9822@shiny> <4DEF04CF.8010502@jp.fujitsu.com> <4DF5B889.5080202@cn.fujitsu.com> <BANLkTi=m2CkcSQNPNja=A7eG62vLstM1sw@mail.gmail.com>
-Mime-Version: 1.0
-Content-Type: TEXT/PLAIN; charset=ISO-8859-1
-Cc: Li Zefan <lizf@cn.fujitsu.com>,
-	Tsutomu Itoh <t-itoh@jp.fujitsu.com>,
-	liubo <liubo2009@cn.fujitsu.com>,
-	Linux Btrfs <linux-btrfs@vger.kernel.org>,
-	Josef Bacik <josef@redhat.com>
-To: "Yan, Zheng" <yanzheng@21cn.com>
+From: David Sterba <dsterba@suse.cz>
+Subject: [PATCH] btrfs: fix uninitialized return value
+Date: Mon, 13 Jun 2011 17:18:23 +0200
+Message-ID: <1307978303-2756-1-git-send-email-dsterba@suse.cz>
+Cc: chris.mason@oracle.com, David Sterba <dsterba@suse.cz>
+To: linux-btrfs@vger.kernel.org
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-reply-to: <BANLkTi=m2CkcSQNPNja=A7eG62vLstM1sw@mail.gmail.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Excerpts from Yan, Zheng's message of 2011-06-13 10:58:35 -0400:
-> The usage of trans_mutex in relocation code is subtle. It controls
-> interaction of relocation
-> with transaction start, transaction commit and snapshot creation.
-> Simple replacing
-> trans_mutex with trans_lock is wrong.
+When allocation fails in btrfs_read_fs_root_no_name, ret is not set
+although it is returned, holding a garbage value.
 
-What requirements of the relocation stuff are we currently missing?  I'=
-d
-rather add extra waiting for relocation than go back to the mutex.
+Signed-off-by: David Sterba <dsterba@suse.cz>
+---
+ fs/btrfs/disk-io.c |    6 +++---
+ 1 files changed, 3 insertions(+), 3 deletions(-)
 
--chris
+diff --git a/fs/btrfs/disk-io.c b/fs/btrfs/disk-io.c
+index 9f68c68..7e48b01 100644
+--- a/fs/btrfs/disk-io.c
++++ b/fs/btrfs/disk-io.c
+@@ -1300,12 +1300,12 @@ again:
+ 		return root;
+ 
+ 	root->free_ino_ctl = kzalloc(sizeof(*root->free_ino_ctl), GFP_NOFS);
+-	if (!root->free_ino_ctl)
+-		goto fail;
+ 	root->free_ino_pinned = kzalloc(sizeof(*root->free_ino_pinned),
+ 					GFP_NOFS);
+-	if (!root->free_ino_pinned)
++	if (!root->free_ino_pinned || !root->free_ino_ctl) {
++		ret = -ENOMEM;
+ 		goto fail;
++	}
+ 
+ 	btrfs_init_free_ino_ctl(root);
+ 	mutex_init(&root->fs_commit_mutex);
+-- 
+1.7.5.2.353.g5df3e
 
->=20
-> On Mon, Jun 13, 2011 at 3:13 PM, Li Zefan <lizf@cn.fujitsu.com> wrote=
-:
-> > Cc: Josef
-> >
-> >>>>>>>>> I encountered following panic using 'btrfs-unstable + for-l=
-inus'
-> >>>>>>>>> kernel.
-> >>>>>>>>>
-> >>>>>>>>> I ran "btrfs fi bal /test5" command, and mount option of /t=
-est5
-> >>>>>>>>> is as follows:
-> >>>>>>>>>
-> >>>>>>>>> =C2=A0/dev/sdc3 on /test5 type btrfs (rw,space_cache,compre=
-ss=3Dlzo,inode_cache)
-> >>>>>>>>>
-> >>>>>>>> So, just a "btrfs fi bal" would lead to the bug?
-> >>>>>>> I think so.
-> >>>
-> >>> It should be specific to the inode caching code. =C2=A0The balanc=
-ing code is
-> >>> finding the inode map cache extents, but it doesn't know how to r=
-elocate
-> >>> them.
-> >>
-> >> However, the panic has occurred even if inode_cahce is turned off.
-> >> Is this another problem?
-> >>
-> >
-> > I don't think free inode cache isthe cause of the bug here (even if=
- inode_cache
-> > is turned on).
-> >
-> > What I have found out is:
-> >
-> > 1. git checkout a4abeea41adfa3c143c289045f4625dfaeba2212
-> >
-> > So the top commit is the removal of trans_mutex and no delayed_inod=
-e patch
-> > or free inode cache patchset in the tree, and bug can be triggered.
-> >
-> > 2. git checkout 2a1eb4614d984d5cd4c928784e9afcf5c07f93be
-> >
-> > So the top commit is the one before trans_mutex removal, and no bug=
- triggered.
-> >
-> > 3. test linus' tree
-> >
-> > bug triggered.
-> >
-> > 4. revert that suspicoius commit manually from linus' tree
-> >
-> > no bug.
-> >
-> > so either that commit is buggy or it reveals some bugs covered by t=
-he trans_mutex.
-> >
-> > --
-> > To unsubscribe from this list: send the line "unsubscribe linux-btr=
-fs" in
-> > the body of a message to majordomo@vger.kernel.org
-> > More majordomo info at =C2=A0http://vger.kernel.org/majordomo-info.=
-html
-> >
---
-To unsubscribe from this list: send the line "unsubscribe linux-btrfs" =
-in
-the body of a message to majordomo@vger.kernel.org
-More majordomo info at  http://vger.kernel.org/majordomo-info.html

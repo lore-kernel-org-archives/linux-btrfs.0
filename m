@@ -1,40 +1,73 @@
-From: David Sterba <dsterba@suse.cz>
-Subject: [PATCH] btrfs: fix uninitialized return value
-Date: Mon, 13 Jun 2011 17:18:23 +0200
-Message-ID: <1307978303-2756-1-git-send-email-dsterba@suse.cz>
-Cc: chris.mason@oracle.com, David Sterba <dsterba@suse.cz>
-To: linux-btrfs@vger.kernel.org
+From: Chris Mason <chris.mason@oracle.com>
+Subject: Re: bug caused by removal of trans_mutex? (Was: Re: kernel BUG at fs/btrfs/extent-tree.c:6164!)
+Date: Mon, 13 Jun 2011 11:18:53 -0400
+Message-ID: <1307978298-sup-2663@shiny>
+References: <4DEC90CB.4050609@jp.fujitsu.com> <4DEDB7AF.2060308@cn.fujitsu.com> <4DEDBE4B.2020403@jp.fujitsu.com> <4DEDC293.30105@jp.fujitsu.com> <4DEDE03B.9050907@jp.fujitsu.com> <4DEDE328.5060405@cn.fujitsu.com> <1307461229-sup-9822@shiny> <4DEF04CF.8010502@jp.fujitsu.com> <4DF5B889.5080202@cn.fujitsu.com> <1307970688-sup-9381@shiny>
+Content-Type: text/plain; charset=UTF-8
+Cc: Li Zefan <lizf@cn.fujitsu.com>,
+	Tsutomu Itoh <t-itoh@jp.fujitsu.com>,
+	liubo <liubo2009@cn.fujitsu.com>,
+	Linux Btrfs <linux-btrfs@vger.kernel.org>,
+	Josef Bacik <josef@redhat.com>
+To: Chris Mason <chris.mason@oracle.com>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
+In-reply-to: <1307970688-sup-9381@shiny>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-When allocation fails in btrfs_read_fs_root_no_name, ret is not set
-although it is returned, holding a garbage value.
+Excerpts from Chris Mason's message of 2011-06-13 09:12:06 -0400:
+> Excerpts from Li Zefan's message of 2011-06-13 03:13:13 -0400:
+> > Cc: Josef
+> > 
+> > >>>>>>>> I encountered following panic using 'btrfs-unstable + for-linus'
+> > >>>>>>>> kernel.
+> > >>>>>>>>
+> > >>>>>>>> I ran "btrfs fi bal /test5" command, and mount option of /test5
+> > >>>>>>>> is as follows:
+> > >>>>>>>>
+> > >>>>>>>>  /dev/sdc3 on /test5 type btrfs (rw,space_cache,compress=lzo,inode_cache)
+> > >>>>>>>>
+> > >>>>>>> So, just a "btrfs fi bal" would lead to the bug?
+> > >>>>>> I think so.
+> > >>
+> > >> It should be specific to the inode caching code.  The balancing code is
+> > >> finding the inode map cache extents, but it doesn't know how to relocate
+> > >> them.
+> > > 
+> > > However, the panic has occurred even if inode_cahce is turned off.
+> > > Is this another problem?
+> > > 
+> > 
+> > I don't think free inode cache isthe cause of the bug here (even if inode_cache
+> > is turned on).
+> > 
+> > What I have found out is:
+> > 
+> > 1. git checkout a4abeea41adfa3c143c289045f4625dfaeba2212
+> > 
+> > So the top commit is the removal of trans_mutex and no delayed_inode patch
+> > or free inode cache patchset in the tree, and bug can be triggered.
+> > 
+> > 2. git checkout 2a1eb4614d984d5cd4c928784e9afcf5c07f93be
+> > 
+> > So the top commit is the one before trans_mutex removal, and no bug triggered.
+> > 
+> > 3. test linus' tree
+> > 
+> > bug triggered.
+> > 
+> > 4. revert that suspicoius commit manually from linus' tree
+> > 
+> > no bug.
+> > 
+> > so either that commit is buggy or it reveals some bugs covered by the trans_mutex.
+> 
+> Ok, what dataset are you balancing?
+> 
+> What are you doing concurrently with the balance?
+> 
+> I haven't been able to trigger this here.
 
-Signed-off-by: David Sterba <dsterba@suse.cz>
----
- fs/btrfs/disk-io.c |    6 +++---
- 1 files changed, 3 insertions(+), 3 deletions(-)
+There we go.  It took about two hours but I hit this with the balancing
+exerciser that was posted.
 
-diff --git a/fs/btrfs/disk-io.c b/fs/btrfs/disk-io.c
-index 9f68c68..7e48b01 100644
---- a/fs/btrfs/disk-io.c
-+++ b/fs/btrfs/disk-io.c
-@@ -1300,12 +1300,12 @@ again:
- 		return root;
- 
- 	root->free_ino_ctl = kzalloc(sizeof(*root->free_ino_ctl), GFP_NOFS);
--	if (!root->free_ino_ctl)
--		goto fail;
- 	root->free_ino_pinned = kzalloc(sizeof(*root->free_ino_pinned),
- 					GFP_NOFS);
--	if (!root->free_ino_pinned)
-+	if (!root->free_ino_pinned || !root->free_ino_ctl) {
-+		ret = -ENOMEM;
- 		goto fail;
-+	}
- 
- 	btrfs_init_free_ino_ctl(root);
- 	mutex_init(&root->fs_commit_mutex);
--- 
-1.7.5.2.353.g5df3e
-
+-chris

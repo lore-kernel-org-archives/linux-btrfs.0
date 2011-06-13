@@ -1,56 +1,98 @@
-From: Josef Bacik <josef@redhat.com>
-Subject: Re: [PATCH] Btrfs: use the normal checksumming infrastructure for
- free space cache
-Date: Mon, 13 Jun 2011 10:26:25 -0400
-Message-ID: <4DF61E11.7070702@redhat.com>
-References: <1307734827-10697-1-git-send-email-josef@redhat.com> <4DF56D60.4070208@cn.fujitsu.com> <1307929964-sup-6781@shiny> <4DF573FB.1080709@cn.fujitsu.com> <1307974249-sup-2733@shiny>
+From: "Yan, Zheng " <yanzheng@21cn.com>
+Subject: Re: bug caused by removal of trans_mutex? (Was: Re: kernel BUG at fs/btrfs/extent-tree.c:6164!)
+Date: Mon, 13 Jun 2011 22:58:35 +0800
+Message-ID: <BANLkTi=m2CkcSQNPNja=A7eG62vLstM1sw@mail.gmail.com>
+References: <4DEC90CB.4050609@jp.fujitsu.com>
+	<4DEDB7AF.2060308@cn.fujitsu.com>
+	<4DEDBE4B.2020403@jp.fujitsu.com>
+	<4DEDC293.30105@jp.fujitsu.com>
+	<4DEDE03B.9050907@jp.fujitsu.com>
+	<4DEDE328.5060405@cn.fujitsu.com>
+	<1307461229-sup-9822@shiny>
+	<4DEF04CF.8010502@jp.fujitsu.com>
+	<4DF5B889.5080202@cn.fujitsu.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=UTF-8
-Cc: Li Zefan <lizf@cn.fujitsu.com>,
-	linux-btrfs <linux-btrfs@vger.kernel.org>
-To: Chris Mason <chris.mason@oracle.com>
+Content-Type: text/plain; charset=ISO-8859-1
+Cc: Tsutomu Itoh <t-itoh@jp.fujitsu.com>,
+	Chris Mason <chris.mason@oracle.com>,
+	liubo <liubo2009@cn.fujitsu.com>,
+	Linux Btrfs <linux-btrfs@vger.kernel.org>,
+	Josef Bacik <josef@redhat.com>
+To: Li Zefan <lizf@cn.fujitsu.com>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <1307974249-sup-2733@shiny>
+In-Reply-To: <4DF5B889.5080202@cn.fujitsu.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 06/13/2011 10:11 AM, Chris Mason wrote:
-> Excerpts from Li Zefan's message of 2011-06-12 22:20:43 -0400:
->> Chris Mason wrote:
->>> Excerpts from Li Zefan's message of 2011-06-12 21:52:32 -0400:
->>>> Josef Bacik wrote:
->>>>> We used to store the checksums of the space cache directly in the space cache,
->>>>> however that doesn't work out too well if we have more space than we can fit the
->>>>> checksums into the first page.  So instead use the normal checksumming
->>>>> infrastructure.  There were problems with doing this originally but those
->>>>> problems don't exist now so this works out fine.  Thanks,
->>>>>
->>>>
->>>> This looks great, so I'll drop my patch that extends the original code to
->>>> allow more than 1 crc page.
->>>
->>> I do like them a lot, but what happens when a special case crc kernel
->>> mounts a free space cache created by this patch?
->>>
->>
->> The generation number will be checked, and then we'll get this warning:
->>
->> "btrfs: space cache generation xx does not match inode yy"
->>
->> If xx happens to be equal to yy, crcs will be checked and this warning
->> will pop up:
->>
->> "btrfs: crc mismatch for page zz"
->>
->> but it won't crash (not tested).
-> 
-> Right, but that's a lot of trust to put into our small crcs.
+The usage of trans_mutex in relocation code is subtle. It controls
+interaction of relocation
+with transaction start, transaction commit and snapshot creation.
+Simple replacing
+trans_mutex with trans_lock is wrong.
 
-Yeah we're trusting that the crc's or the generation won't match, which
-really should be the case always.  Unfortunately there is no real way to
-force the old kernels to flush the space cache with the new format, we
-just have to assume that it will get the wrong checksum, which really it
-should.  Course now that I've said this some user will hit that one in a
-hundred trillion chance that the entries will end up having valid crc's
-for the pages.  Thanks,
 
-Josef
+On Mon, Jun 13, 2011 at 3:13 PM, Li Zefan <lizf@cn.fujitsu.com> wrote:
+> Cc: Josef
+>
+>>>>>>>>> I encountered following panic using 'btrfs-unstable + for-lin=
+us'
+>>>>>>>>> kernel.
+>>>>>>>>>
+>>>>>>>>> I ran "btrfs fi bal /test5" command, and mount option of /tes=
+t5
+>>>>>>>>> is as follows:
+>>>>>>>>>
+>>>>>>>>> =A0/dev/sdc3 on /test5 type btrfs (rw,space_cache,compress=3D=
+lzo,inode_cache)
+>>>>>>>>>
+>>>>>>>> So, just a "btrfs fi bal" would lead to the bug?
+>>>>>>> I think so.
+>>>
+>>> It should be specific to the inode caching code. =A0The balancing c=
+ode is
+>>> finding the inode map cache extents, but it doesn't know how to rel=
+ocate
+>>> them.
+>>
+>> However, the panic has occurred even if inode_cahce is turned off.
+>> Is this another problem?
+>>
+>
+> I don't think free inode cache isthe cause of the bug here (even if i=
+node_cache
+> is turned on).
+>
+> What I have found out is:
+>
+> 1. git checkout a4abeea41adfa3c143c289045f4625dfaeba2212
+>
+> So the top commit is the removal of trans_mutex and no delayed_inode =
+patch
+> or free inode cache patchset in the tree, and bug can be triggered.
+>
+> 2. git checkout 2a1eb4614d984d5cd4c928784e9afcf5c07f93be
+>
+> So the top commit is the one before trans_mutex removal, and no bug t=
+riggered.
+>
+> 3. test linus' tree
+>
+> bug triggered.
+>
+> 4. revert that suspicoius commit manually from linus' tree
+>
+> no bug.
+>
+> so either that commit is buggy or it reveals some bugs covered by the=
+ trans_mutex.
+>
+> --
+> To unsubscribe from this list: send the line "unsubscribe linux-btrfs=
+" in
+> the body of a message to majordomo@vger.kernel.org
+> More majordomo info at =A0http://vger.kernel.org/majordomo-info.html
+>
+--
+To unsubscribe from this list: send the line "unsubscribe linux-btrfs" =
+in
+the body of a message to majordomo@vger.kernel.org
+More majordomo info at  http://vger.kernel.org/majordomo-info.html

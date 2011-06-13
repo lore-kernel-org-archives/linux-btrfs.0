@@ -1,47 +1,35 @@
 From: David Sterba <dsterba@suse.cz>
-Subject: [PATCH][RFC] btrfs: fix potential overflow in leafsize accounting
-Date: Mon, 13 Jun 2011 19:31:04 +0200
-Message-ID: <1307986264-5707-1-git-send-email-dsterba@suse.cz>
+Subject: [PATCH] btrfs: fix dereference of ERR_PTR value
+Date: Mon, 13 Jun 2011 19:54:22 +0200
+Message-ID: <1307987662-6772-1-git-send-email-dsterba@suse.cz>
 Cc: chris.mason@oracle.com, David Sterba <dsterba@suse.cz>
 To: linux-btrfs@vger.kernel.org
 Return-path: <linux-btrfs-owner@vger.kernel.org>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-smatch reported a dead code. It seems to allow wrong item size counting
-in leaves, as the first for loop does not adjust the maximum number for
-items that would fit in BTRFS_LEAF_DATA_SIZE, and the rest of the code
-works with the wrong value. The value of 'nr' is accompanied with
-accumulating total_data and total_size, which are compared to the leaf
-size and probably prevent this bug to do more harm, but the errorneously
-computed value of 'nr' is later used in moving existing items and lastly
-for setting up the item for new data.
+smatch reports:
 
-The bug has a potential to silently corrupt data when leaves are near to
-full, though I'm not aware of any related reports so far.
+btrfs_recover_log_trees error: 'wc.replay_dest' dereferencing
+possible ERR_PTR()
 
 Signed-off-by: David Sterba <dsterba@suse.cz>
 ---
-
-I haven't tested this yet (thoug I will) because I want to let it out ASAP.
-
-
- fs/btrfs/ctree.c |    2 +-
+ fs/btrfs/tree-log.c |    2 +-
  1 files changed, 1 insertions(+), 1 deletions(-)
 
-diff --git a/fs/btrfs/ctree.c b/fs/btrfs/ctree.c
-index d840893..c4407a6 100644
---- a/fs/btrfs/ctree.c
-+++ b/fs/btrfs/ctree.c
-@@ -3433,8 +3433,8 @@ int btrfs_insert_some_items(struct btrfs_trans_handle *trans,
- 	for (i = 0; i < nr; i++) {
- 		if (total_size + data_size[i] + sizeof(struct btrfs_item) >
- 		    BTRFS_LEAF_DATA_SIZE(root)) {
--			break;
- 			nr = i;
-+			break;
- 		}
- 		total_data += data_size[i];
- 		total_size += data_size[i] + sizeof(struct btrfs_item);
+diff --git a/fs/btrfs/tree-log.c b/fs/btrfs/tree-log.c
+index 592396c..4ce8a9f 100644
+--- a/fs/btrfs/tree-log.c
++++ b/fs/btrfs/tree-log.c
+@@ -3177,7 +3177,7 @@ again:
+ 		tmp_key.offset = (u64)-1;
+ 
+ 		wc.replay_dest = btrfs_read_fs_root_no_name(fs_info, &tmp_key);
+-		BUG_ON(!wc.replay_dest);
++		BUG_ON(IS_ERR_OR_NULL(wc.replay_dest));
+ 
+ 		wc.replay_dest->log_root = log;
+ 		btrfs_record_root_in_trans(trans, wc.replay_dest);
 -- 
 1.7.5.2.353.g5df3e
 

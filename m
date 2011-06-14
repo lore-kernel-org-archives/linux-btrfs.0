@@ -1,43 +1,95 @@
-From: Li Zefan <lizf@cn.fujitsu.com>
-Subject: Re: bug caused by removal of trans_mutex? (Was: Re: kernel BUG at
- fs/btrfs/extent-tree.c:6164!)
-Date: Tue, 14 Jun 2011 13:44:45 +0800
-Message-ID: <4DF6F54D.3050603@cn.fujitsu.com>
-References: <4DEC90CB.4050609@jp.fujitsu.com>	<4DEDB7AF.2060308@cn.fujitsu.com>	<4DEDBE4B.2020403@jp.fujitsu.com>	<4DEDC293.30105@jp.fujitsu.com>	<4DEDE03B.9050907@jp.fujitsu.com>	<4DEDE328.5060405@cn.fujitsu.com>	<1307461229-sup-9822@shiny>	<4DEF04CF.8010502@jp.fujitsu.com>	<4DF5B889.5080202@cn.fujitsu.com>	<BANLkTi=m2CkcSQNPNja=A7eG62vLstM1sw@mail.gmail.com>	<1307994828-sup-6461@shiny> <BANLkTik9NcRhK9MS6G8aVxY9xvgXfpR=hA@mail.gmail.com>
+From: "Yan, Zheng " <yanzheng@21cn.com>
+Subject: Re: bug caused by removal of trans_mutex? (Was: Re: kernel BUG at fs/btrfs/extent-tree.c:6164!)
+Date: Tue, 14 Jun 2011 14:53:26 +0800
+Message-ID: <BANLkTi=NxkP5OAhKSdTdY7Skj8xGOfaeBg@mail.gmail.com>
+References: <4DEC90CB.4050609@jp.fujitsu.com>
+	<4DEDB7AF.2060308@cn.fujitsu.com>
+	<4DEDBE4B.2020403@jp.fujitsu.com>
+	<4DEDC293.30105@jp.fujitsu.com>
+	<4DEDE03B.9050907@jp.fujitsu.com>
+	<4DEDE328.5060405@cn.fujitsu.com>
+	<1307461229-sup-9822@shiny>
+	<4DEF04CF.8010502@jp.fujitsu.com>
+	<4DF5B889.5080202@cn.fujitsu.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset=ISO-8859-1
-Cc: Chris Mason <chris.mason@oracle.com>,
-	Tsutomu Itoh <t-itoh@jp.fujitsu.com>,
+Cc: Tsutomu Itoh <t-itoh@jp.fujitsu.com>,
+	Chris Mason <chris.mason@oracle.com>,
 	liubo <liubo2009@cn.fujitsu.com>,
 	Linux Btrfs <linux-btrfs@vger.kernel.org>,
 	Josef Bacik <josef@redhat.com>
-To: "Yan, Zheng " <yanzheng@21cn.com>
+To: Li Zefan <lizf@cn.fujitsu.com>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <BANLkTik9NcRhK9MS6G8aVxY9xvgXfpR=hA@mail.gmail.com>
+In-Reply-To: <4DF5B889.5080202@cn.fujitsu.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Yan, Zheng wrote:
-> On Tue, Jun 14, 2011 at 3:55 AM, Chris Mason <chris.mason@oracle.com> wrote:
->> Excerpts from Yan, Zheng's message of 2011-06-13 10:58:35 -0400:
->>> The usage of trans_mutex in relocation code is subtle. It controls
->>> interaction of relocation
->>> with transaction start, transaction commit and snapshot creation.
->>> Simple replacing
->>> trans_mutex with trans_lock is wrong.
->>
->> So, I've got a mutex around the reloc_root here and that was almost but
->> not quite enough.  It looks like the biggest problem is that we need to
->> wait in btrfs_record_root_in_trans for anyone inside merge_reloc_roots.
->>
->> I'm surviving much longer with a patch in place that synchronizes
->> btrfs_record_root_in_trans better.
->>
->> Zheng if you have other comments on the locking please let me know.
->>
-> 
-> following untested patch may help.
+I found another bug. There are codes (btrfs_save_ino_cache) that
+modify fs trees after
+create_pending_snapshots is called. This can corrupt your fs.
 
-I've tested this patch, and the bug was triggered in minutes as usual.
-
-Also I've tested a patch in an offline email from Chris, which survived
-the test.
+On Mon, Jun 13, 2011 at 3:13 PM, Li Zefan <lizf@cn.fujitsu.com> wrote:
+> Cc: Josef
+>
+>>>>>>>>> I encountered following panic using 'btrfs-unstable + for-lin=
+us'
+>>>>>>>>> kernel.
+>>>>>>>>>
+>>>>>>>>> I ran "btrfs fi bal /test5" command, and mount option of /tes=
+t5
+>>>>>>>>> is as follows:
+>>>>>>>>>
+>>>>>>>>> =A0/dev/sdc3 on /test5 type btrfs (rw,space_cache,compress=3D=
+lzo,inode_cache)
+>>>>>>>>>
+>>>>>>>> So, just a "btrfs fi bal" would lead to the bug?
+>>>>>>> I think so.
+>>>
+>>> It should be specific to the inode caching code. =A0The balancing c=
+ode is
+>>> finding the inode map cache extents, but it doesn't know how to rel=
+ocate
+>>> them.
+>>
+>> However, the panic has occurred even if inode_cahce is turned off.
+>> Is this another problem?
+>>
+>
+> I don't think free inode cache isthe cause of the bug here (even if i=
+node_cache
+> is turned on).
+>
+> What I have found out is:
+>
+> 1. git checkout a4abeea41adfa3c143c289045f4625dfaeba2212
+>
+> So the top commit is the removal of trans_mutex and no delayed_inode =
+patch
+> or free inode cache patchset in the tree, and bug can be triggered.
+>
+> 2. git checkout 2a1eb4614d984d5cd4c928784e9afcf5c07f93be
+>
+> So the top commit is the one before trans_mutex removal, and no bug t=
+riggered.
+>
+> 3. test linus' tree
+>
+> bug triggered.
+>
+> 4. revert that suspicoius commit manually from linus' tree
+>
+> no bug.
+>
+> so either that commit is buggy or it reveals some bugs covered by the=
+ trans_mutex.
+>
+> --
+> To unsubscribe from this list: send the line "unsubscribe linux-btrfs=
+" in
+> the body of a message to majordomo@vger.kernel.org
+> More majordomo info at =A0http://vger.kernel.org/majordomo-info.html
+>
+--
+To unsubscribe from this list: send the line "unsubscribe linux-btrfs" =
+in
+the body of a message to majordomo@vger.kernel.org
+More majordomo info at  http://vger.kernel.org/majordomo-info.html

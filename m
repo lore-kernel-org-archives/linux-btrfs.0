@@ -1,31 +1,37 @@
 From: Josef Bacik <josef@redhat.com>
-Subject: [PATCH] Btrfs: fix path leakage on subvol deletion
-Date: Tue, 14 Jun 2011 14:25:41 -0400
-Message-ID: <1308075941-17234-1-git-send-email-josef@redhat.com>
+Subject: [PATCH] Btrfs: protect the pending_snapshots list with trans_lock
+Date: Tue, 14 Jun 2011 15:17:47 -0400
+Message-ID: <1308079067-20733-1-git-send-email-josef@redhat.com>
 To: linux-btrfs@vger.kernel.org
 Return-path: <linux-btrfs-owner@vger.kernel.org>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-The delayed ref patch accidently removed the btrfs_free_path in
-btrfs_unlink_subvol, this puts it back and means we don't leak a path.  Thanks,
+Currently there is nothing protecting the pending_snapshots list on the
+transaction.  We only hold the directory mutex that we are snapshotting and a
+read lock on the subvol_sem, so we could race with somebody else creating a
+snapshot in a different directory and end up with list corruption.  So protect
+this list with the trans_lock.  Thanks,
 
 Signed-off-by: Josef Bacik <josef@redhat.com>
 ---
- fs/btrfs/inode.c |    1 +
- 1 files changed, 1 insertions(+), 0 deletions(-)
+ fs/btrfs/ioctl.c |    2 ++
+ 1 files changed, 2 insertions(+), 0 deletions(-)
 
-diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
-index 30a1d24..1483372 100644
---- a/fs/btrfs/inode.c
-+++ b/fs/btrfs/inode.c
-@@ -3074,6 +3074,7 @@ int btrfs_unlink_subvol(struct btrfs_trans_handle *trans,
- 	ret = btrfs_update_inode(trans, root, dir);
+diff --git a/fs/btrfs/ioctl.c b/fs/btrfs/ioctl.c
+index b793d11..a3c4751 100644
+--- a/fs/btrfs/ioctl.c
++++ b/fs/btrfs/ioctl.c
+@@ -482,8 +482,10 @@ static int create_snapshot(struct btrfs_root *root, struct dentry *dentry,
+ 	ret = btrfs_snap_reserve_metadata(trans, pending_snapshot);
  	BUG_ON(ret);
  
-+	btrfs_free_path(path);
- 	return 0;
- }
- 
++	spin_lock(&root->fs_info->trans_lock);
+ 	list_add(&pending_snapshot->list,
+ 		 &trans->transaction->pending_snapshots);
++	spin_unlock(&root->fs_info->trans_lock);
+ 	if (async_transid) {
+ 		*async_transid = trans->transid;
+ 		ret = btrfs_commit_transaction_async(trans,
 -- 
 1.7.5.2
 

@@ -1,95 +1,81 @@
-From: "Yan, Zheng " <yanzheng@21cn.com>
-Subject: Re: bug caused by removal of trans_mutex? (Was: Re: kernel BUG at fs/btrfs/extent-tree.c:6164!)
-Date: Tue, 14 Jun 2011 14:53:26 +0800
-Message-ID: <BANLkTi=NxkP5OAhKSdTdY7Skj8xGOfaeBg@mail.gmail.com>
-References: <4DEC90CB.4050609@jp.fujitsu.com>
-	<4DEDB7AF.2060308@cn.fujitsu.com>
-	<4DEDBE4B.2020403@jp.fujitsu.com>
-	<4DEDC293.30105@jp.fujitsu.com>
-	<4DEDE03B.9050907@jp.fujitsu.com>
-	<4DEDE328.5060405@cn.fujitsu.com>
-	<1307461229-sup-9822@shiny>
-	<4DEF04CF.8010502@jp.fujitsu.com>
-	<4DF5B889.5080202@cn.fujitsu.com>
+From: Andreas Philipp <philipp.andreas@gmail.com>
+Subject: Re: strange filefrag output on btrfs
+Date: Tue, 14 Jun 2011 09:11:44 +0200
+Message-ID: <4DF709B0.60805@gmail.com>
+References: <4DF38C23.7010603@gmail.com> <20110613115018.GT12709@twin.jikos.cz> <4DF629DA.4050300@gmail.com> <4DF6CD61.6050102@cn.fujitsu.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset=ISO-8859-1
-Cc: Tsutomu Itoh <t-itoh@jp.fujitsu.com>,
-	Chris Mason <chris.mason@oracle.com>,
-	liubo <liubo2009@cn.fujitsu.com>,
-	Linux Btrfs <linux-btrfs@vger.kernel.org>,
-	Josef Bacik <josef@redhat.com>
+Cc: linux-btrfs <linux-btrfs@vger.kernel.org>
 To: Li Zefan <lizf@cn.fujitsu.com>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <4DF5B889.5080202@cn.fujitsu.com>
+In-Reply-To: <4DF6CD61.6050102@cn.fujitsu.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-I found another bug. There are codes (btrfs_save_ino_cache) that
-modify fs trees after
-create_pending_snapshots is called. This can corrupt your fs.
 
-On Mon, Jun 13, 2011 at 3:13 PM, Li Zefan <lizf@cn.fujitsu.com> wrote:
-> Cc: Josef
->
->>>>>>>>> I encountered following panic using 'btrfs-unstable + for-lin=
-us'
->>>>>>>>> kernel.
->>>>>>>>>
->>>>>>>>> I ran "btrfs fi bal /test5" command, and mount option of /tes=
-t5
->>>>>>>>> is as follows:
->>>>>>>>>
->>>>>>>>> =A0/dev/sdc3 on /test5 type btrfs (rw,space_cache,compress=3D=
-lzo,inode_cache)
->>>>>>>>>
->>>>>>>> So, just a "btrfs fi bal" would lead to the bug?
->>>>>>> I think so.
+-----BEGIN PGP SIGNED MESSAGE-----
+Hash: SHA1
+ 
+On 14.06.2011 04:54, Li Zefan wrote:
+> Andreas Philipp wrote:
+>>
+>> -----BEGIN PGP SIGNED MESSAGE----- Hash: SHA1
+>>
+>> On 13.06.2011 13:50, David Sterba wrote:
+>>> On Sat, Jun 11, 2011 at 05:39:15PM +0200, Andreas Philipp
+>>> wrote:
+>>>> On one of my btrfs volumes I see a strange output from
+>>>> filefrag when run against a particular large (~8GB) file.
+>>>> filefrag and filefrag -v give me a different number of
+>>>> extents, see below.
+>>>>
+>>>> aph@thor /mnt/nutshell $ sudo filefrag -v funtoo.img | grep
+>>>> extents funtoo.img: 2624 extents found aph@thor /mnt/nutshell
+>>>> $ sudo filefrag funtoo.img | grep extents funtoo.img: 2653
+>>>> extents found
 >>>
->>> It should be specific to the inode caching code. =A0The balancing c=
-ode is
->>> finding the inode map cache extents, but it doesn't know how to rel=
-ocate
->>> them.
+>>> is the file open and being written to? did you run sync before
+>>> the first command?
+>> The file is not open. Yes, I have run sync before the first
+>> command. Now, I tested again with a copy of file but the results
+>> is more or less the same.
 >>
->> However, the panic has occurred even if inode_cahce is turned off.
->> Is this another problem?
+>> aph@thor /mnt/nutshell $ cp funtoo.img funtoo.1.img aph@thor
+>> /mnt/nutshell $ sync aph@thor /mnt/nutshell $ sudo filefrag -v
+>> funtoo.img funtoo.1.img | grep extents funtoo.img: 2624 extents
+>> found funtoo.1.img: 57 extents found aph@thor /mnt/nutshell $
+>> sudo filefrag funtoo.img funtoo.1.img | grep extents funtoo.img:
+>> 2653 extents found funtoo.1.img: 311 extents found
 >>
 >
-> I don't think free inode cache isthe cause of the bug here (even if i=
-node_cache
-> is turned on).
+> If you look into the source code of filefrag, you'll know why.
 >
-> What I have found out is:
+> There are two ways to calc the extent number, depending on whether
+> verbose option is turned on or not.
 >
-> 1. git checkout a4abeea41adfa3c143c289045f4625dfaeba2212
+> In the verbose mode, it will check if the next extent is adjacent
+> to the prev extent in the physical position, and in this case they
+> are considered to be one extent.
 >
-> So the top commit is the removal of trans_mutex and no delayed_inode =
-patch
-> or free inode cache patchset in the tree, and bug can be triggered.
->
-> 2. git checkout 2a1eb4614d984d5cd4c928784e9afcf5c07f93be
->
-> So the top commit is the one before trans_mutex removal, and no bug t=
-riggered.
->
-> 3. test linus' tree
->
-> bug triggered.
->
-> 4. revert that suspicoius commit manually from linus' tree
->
-> no bug.
->
-> so either that commit is buggy or it reveals some bugs covered by the=
- trans_mutex.
->
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-btrfs=
-" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at =A0http://vger.kernel.org/majordomo-info.html
->
---
-To unsubscribe from this list: send the line "unsubscribe linux-btrfs" =
-in
-the body of a message to majordomo@vger.kernel.org
-More majordomo info at  http://vger.kernel.org/majordomo-info.html
+> That's why the number returned in verbose mode is smaller.
+Thank you for this explanation.
+
+Andreas
+-----BEGIN PGP SIGNATURE-----
+Version: GnuPG v1.4.9 (MingW32)
+Comment: Using GnuPG with Mozilla - http://enigmail.mozdev.org/
+ 
+iQIcBAEBAgAGBQJN9wmvAAoJEJIcBJ3+XkgiIWgQAL0+SLwnc6V6nar30rG6wCt+
+czTTy7wFgdP5oYby9NMj2a5YifxG2XBa+Hnw3doLSxTHv4i7WqouaFeT4OotBzb+
+jV8GBAn3vRyGlV0mfEx1PHzqUJNzUpJHZpWKvKx4JW91z3gZ/FdXEhbZXNyTVvPm
+WtaLXz71CMtCSy81TN437T92H7yvv4SxiRubbe+IuBpKCJaIA1eH2yoJ+72yDNKH
+TS74hvfYoDXngxZry4EA2/3mGTOq3PMSljWBw76pqx47KhsZged0ZN+YA8th7iiK
+H3Pm3m19yzvt5niA5aS/ilwR50pKE2LI2dq7kkc2yjol/A86iUmIkAEm94Bv7a/3
+hdBHslzqZpb2sWaQB2qjDA9aWGyDld3B2C1a+CiYSr0kqtPRlWKPPCQiDNibxrMp
+cC2vT92OCoJMnsz7OC3nQN+UZAzBTnx7deFVAlgxnLrsuVT2IZMfxeurTLGJy0vG
+zygp7pXdLbj4pzvLcIbf53DQ8wsSfQfLlMDec7wj+TpDLWCuBLQRVmWIKsc1ovMb
+epoBihD4xJZguaeQAsyxBuFgYNoWCj0ebxWejGIYvilCZ8SJflN8/dEN3HaT8haR
+9k6qdNB9cNULggs4dN8zvB530InDNxJHuI67hRcdLs+VDcWHjCdXmfcgn3Lz5km4
+wDAlG4uZi/T5Pqz1Eqvq
+=NrYD
+-----END PGP SIGNATURE-----
+

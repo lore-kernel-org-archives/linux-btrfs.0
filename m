@@ -1,7 +1,7 @@
 From: Maarten Lankhorst <m.b.lankhorst@gmail.com>
-Subject: btrfs: Remove all sysfs entries
-Date: Wed, 15 Jun 2011 10:36:40 +0200
-Message-ID: <4DF86F18.3010704@gmail.com>
+Subject: [PATCH v2] btrfs: Remove all sysfs entries
+Date: Wed, 15 Jun 2011 10:40:31 +0200
+Message-ID: <4DF86FFF.5000406@gmail.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset=ISO-8859-1
 Cc: linux-btrfs@vger.kernel.org,
@@ -16,6 +16,9 @@ remove sysfs support entirely.
 Fixes compiling warnings in 3.0rc3
 
 Signed-off-by: Maarten Lankhorst <m.b.lankhorst@gmail.com>
+
+--
+Oops, forgot to amend the compiling fix
 
 diff --git a/fs/btrfs/Makefile b/fs/btrfs/Makefile
 index 9b72dcf..78fdd86 100644
@@ -80,7 +83,7 @@ index 0bb4ebb..02bf74e 100644
  	err = btrfs_init_compress();
  	if (err)
 -		goto free_sysfs;
-+		return ret;
++		return err;
  
  	err = btrfs_init_cachep();
  	if (err)

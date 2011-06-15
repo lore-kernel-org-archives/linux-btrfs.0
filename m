@@ -1,71 +1,69 @@
-From: David Sterba <dave@jikos.cz>
-Subject: Re: [PATCH] Btrfs: protect the pending_snapshots list with trans_lock
-Date: Wed, 15 Jun 2011 11:53:29 +0200
-Message-ID: <20110615095329.GZ12709@twin.jikos.cz>
-References: <1308079067-20733-1-git-send-email-josef@redhat.com>
-Reply-To: dave@jikos.cz
+From: Hugo Mills <hugo@carfax.org.uk>
+Subject: Re: [PATCH v2] btrfs: Remove all sysfs entries
+Date: Wed, 15 Jun 2011 11:34:31 +0100
+Message-ID: <20110615103431.GA15127@carfax.org.uk>
+References: <4DF86FFF.5000406@gmail.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Cc: linux-btrfs@vger.kernel.org
-To: Josef Bacik <josef@redhat.com>
+Content-Type: multipart/signed; micalg=pgp-sha1;
+	protocol="application/pgp-signature"; boundary="n8g4imXOkfNTN/H1"
+Cc: Chris Mason <chris.mason@oracle.com>, linux-btrfs@vger.kernel.org,
+	Linux Kernel Mailing List <linux-kernel@vger.kernel.org>
+To: Maarten Lankhorst <m.b.lankhorst@gmail.com>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <1308079067-20733-1-git-send-email-josef@redhat.com>
+In-Reply-To: <4DF86FFF.5000406@gmail.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hi,
 
-On Tue, Jun 14, 2011 at 03:17:47PM -0400, Josef Bacik wrote:
-> Currently there is nothing protecting the pending_snapshots list on the
-> transaction.  We only hold the directory mutex that we are snapshotting and a
-> read lock on the subvol_sem, so we could race with somebody else creating a
-> snapshot in a different directory and end up with list corruption.  So protect
-> this list with the trans_lock.  Thanks,
+--n8g4imXOkfNTN/H1
+Content-Type: text/plain; charset=iso-8859-1
+Content-Disposition: inline
+Content-Transfer-Encoding: quoted-printable
 
-it's correct that the pending_snapshots list is not protected, but I do
-not see a way how to corrupt the list.
+On Wed, Jun 15, 2011 at 10:40:31AM +0200, Maarten Lankhorst wrote:
+> Seems that currently none of the sysfs are created any more, so just
+> remove sysfs support entirely.
+>=20
+> Fixes compiling warnings in 3.0rc3
 
-The callchain goes like this:
+   I would actually like to retain sysfs support -- the current
+entries may not be used (or useful, or in the right place, or even
+visible these days), but there's plenty of things that could and
+should go in sysfs from btrfs.
 
-<user called ioctl>
-  btrfs_ioctl_snap_create_transid
-    btrfs_mksubvol
-      create_snapshot
+   So, please do remove the unwanted/unused file entries, but could
+you leave the sysfs file itself, and the (limited) bits that create
+the btrfs subdir? Otherwise, I'm going to be putting it all back in
+this weekend when I get the time to revisit Goffredo's old sysfs
+patch...
 
-the interesting stuff happens inside create_snapshot:
+   Thanks,
+   Hugo.
 
-* alloc pending snapshot struct
-* start transaction (btrfs_start_transaction)
-* reserve metadata
-* list_add pending_snapshot to the transaction
-* commit the transaction (sync or async)
-* free pending snapshot struct
+> Signed-off-by: Maarten Lankhorst <m.b.lankhorst@gmail.com>
+>=20
+> --
 
-the snapshots are really created from btrfs_commit_transaction,
-create_pending_snapshots(), which does not protect the
-trans->pending_snapshots list, just traverses it. There is a potential
-corruption too but ...
+   (I think this should be three - signs, not two: my signature-
+cropping script removed the whole patch)
 
-... there is the 'start transaction' call, which tries very hard to
-start a new transaction, ie. this call returns a new transaction handle.
-To prove this point needs more space, I will skip it now. The important
-thing for our case is that new transaction waits for the current to
-unblock.
+--=20
+=3D=3D=3D Hugo Mills: hugo@... carfax.org.uk | darksatanic.net | lug.org.uk=
+ =3D=3D=3D
+  PGP key: 515C238D from wwwkeys.eu.pgp.net or http://www.carfax.org.uk
+      --- What's a Nazg=FBl like you doing in a place like this? ---     =
+=20
 
-Then, each snap create will have its own transaction and own
-pending_snapshots list, and will create just one snapshot per
-transaction, because any concurrently running ioctl snap create will block
-in the start_transaction call.
+--n8g4imXOkfNTN/H1
+Content-Type: application/pgp-signature; name="signature.asc"
+Content-Description: Digital signature
+Content-Disposition: inline
 
-Therefore I think that either
+-----BEGIN PGP SIGNATURE-----
+Version: GnuPG v1.4.10 (GNU/Linux)
 
-1) there is no locking needed around pending_snapshots (under assumption
-one snapshot per transaction), or
+iD8DBQFN+Iq3IKyzvlFcI40RAhGnAJ9Egsnp1XI8TiFC4jiWnakefORnGQCeL+XW
+/FxmTMu8x9AMKiMg7vrRF9E=
+=B5df
+-----END PGP SIGNATURE-----
 
-2) you need to protect every access to the pending_snapshot:
-- add in create_snapshot
-- splice in btrfs_destroy_pending_snapshots
-- list foreach in create_pending_snapshots
-- list_empty in btrfs_commit_transaction
-
-
-david
+--n8g4imXOkfNTN/H1--

@@ -1,200 +1,262 @@
-From: Maarten Lankhorst <m.b.lankhorst@gmail.com>
-Subject: [PATCH] btrfs: Remove unused sysfs code
-Date: Thu, 16 Jun 2011 11:04:57 +0200
-Message-ID: <4DF9C739.9010301@gmail.com>
-Mime-Version: 1.0
-Content-Type: text/plain; charset=ISO-8859-1
-Cc: linux-btrfs@vger.kernel.org,
-	Linux Kernel Mailing List <linux-kernel@vger.kernel.org>,
-	Hugo Mills <hugo@carfax.org.uk>
-To: Chris Robinson <chris.kcat@gmail.com>
-Return-path: <linux-kernel-owner@vger.kernel.org>
+From: Liu Bo <liubo2009@cn.fujitsu.com>
+Subject: [PATCH 1/2] Btrfs: kill location key of in-memory inode
+Date: Thu, 16 Jun 2011 17:22:59 +0800
+Message-ID: <1308216180-13132-1-git-send-email-liubo2009@cn.fujitsu.com>
+Cc: <t-itoh@jp.fujitsu.com>, <mfedyk@mikefedyk.com>
+To: <linux-btrfs@vger.kernel.org>
+Return-path: <linux-btrfs-owner@vger.kernel.org>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Removes code no longer used. The sysfs file itself is kept, because the
-btrfs developers expressed interest in putting new entries to sysfs.
+In btrfs's in-memory inode, there is a btrfs_key which has the structure:
+- key.objectid : inode id
+- key.type: BTRFS_INODE_ITEM_KEY
+- key.offset: 0 or -1ULL
 
-Signed-off-by: Maarten Lankhorst <m.b.lankhorst@gmail.com>
+however, we only use key.objectid to search, to check or something else,
+and to reduce in-memory inode size I just keep what is valuable.
+
+Signed-off-by: Liu Bo <liubo2009@cn.fujitsu.com>
 ---
+ fs/btrfs/btrfs_inode.h |   10 ++++------
+ fs/btrfs/disk-io.c     |    3 +--
+ fs/btrfs/export.c      |    2 +-
+ fs/btrfs/extent-tree.c |    2 +-
+ fs/btrfs/inode.c       |   48 +++++++++++++++++++++++++++++-------------------
+ 5 files changed, 36 insertions(+), 29 deletions(-)
 
-diff --git a/fs/btrfs/ctree.h b/fs/btrfs/ctree.h
-index 378b5b4..81f4083 100644
---- a/fs/btrfs/ctree.h
-+++ b/fs/btrfs/ctree.h
-@@ -1181,7 +1181,6 @@ struct btrfs_root {
- 	struct btrfs_key defrag_max;
- 	int defrag_running;
- 	char *name;
--	int in_sysfs;
+diff --git a/fs/btrfs/btrfs_inode.h b/fs/btrfs/btrfs_inode.h
+index 52d7eca..31337df 100644
+--- a/fs/btrfs/btrfs_inode.h
++++ b/fs/btrfs/btrfs_inode.h
+@@ -29,11 +29,6 @@ struct btrfs_inode {
+ 	/* which subvolume this inode belongs to */
+ 	struct btrfs_root *root;
  
- 	/* the dirty list is only used by non-reference counted roots */
- 	struct list_head dirty_list;
+-	/* key used to find this inode on disk.  This is used by the code
+-	 * to read in roots of subvolumes
+-	 */
+-	struct btrfs_key location;
+-
+ 	/* the extent_tree has caches of all the extent mappings to disk */
+ 	struct extent_map_tree extent_tree;
+ 
+@@ -72,6 +67,9 @@ struct btrfs_inode {
+ 	/* the space_info for where this inode's data allocations are done */
+ 	struct btrfs_space_info *space_info;
+ 
++	/* full 64 bit inode number */
++	u64 inode_id;
++
+ 	/* full 64 bit generation number, struct vfs_inode doesn't have a big
+ 	 * enough field for this.
+ 	 */
+@@ -171,7 +169,7 @@ static inline struct btrfs_inode *BTRFS_I(struct inode *inode)
+ 
+ static inline u64 btrfs_ino(struct inode *inode)
+ {
+-	u64 ino = BTRFS_I(inode)->location.objectid;
++	u64 ino = BTRFS_I(inode)->inode_id;
+ 
+ 	if (ino <= BTRFS_FIRST_FREE_OBJECTID)
+ 		ino = inode->i_ino;
 diff --git a/fs/btrfs/disk-io.c b/fs/btrfs/disk-io.c
-index 9f68c68..5df6d8f 100644
+index a203d36..5d6bbb9 100644
 --- a/fs/btrfs/disk-io.c
 +++ b/fs/btrfs/disk-io.c
-@@ -1044,7 +1044,6 @@ static int __setup_root(u32 nodesize, u32 leafsize, u32 sectorsize,
- 	root->last_trans = 0;
- 	root->highest_objectid = 0;
- 	root->name = NULL;
--	root->in_sysfs = 0;
- 	root->inode_tree = RB_ROOT;
- 	INIT_RADIX_TREE(&root->delayed_nodes_tree, GFP_ATOMIC);
- 	root->block_rsv = NULL;
-diff --git a/fs/btrfs/sysfs.c b/fs/btrfs/sysfs.c
-index c3c223a..daac9ae 100644
---- a/fs/btrfs/sysfs.c
-+++ b/fs/btrfs/sysfs.c
-@@ -28,152 +28,6 @@
- #include "disk-io.h"
- #include "transaction.h"
+@@ -1693,9 +1693,8 @@ struct btrfs_root *open_ctree(struct super_block *sb,
  
--static ssize_t root_blocks_used_show(struct btrfs_root *root, char *buf)
--{
--	return snprintf(buf, PAGE_SIZE, "%llu\n",
--		(unsigned long long)btrfs_root_used(&root->root_item));
--}
--
--static ssize_t root_block_limit_show(struct btrfs_root *root, char *buf)
--{
--	return snprintf(buf, PAGE_SIZE, "%llu\n",
--		(unsigned long long)btrfs_root_limit(&root->root_item));
--}
--
--static ssize_t super_blocks_used_show(struct btrfs_fs_info *fs, char *buf)
--{
--
--	return snprintf(buf, PAGE_SIZE, "%llu\n",
--		(unsigned long long)btrfs_super_bytes_used(&fs->super_copy));
--}
--
--static ssize_t super_total_blocks_show(struct btrfs_fs_info *fs, char *buf)
--{
--	return snprintf(buf, PAGE_SIZE, "%llu\n",
--		(unsigned long long)btrfs_super_total_bytes(&fs->super_copy));
--}
--
--static ssize_t super_blocksize_show(struct btrfs_fs_info *fs, char *buf)
--{
--	return snprintf(buf, PAGE_SIZE, "%llu\n",
--		(unsigned long long)btrfs_super_sectorsize(&fs->super_copy));
--}
--
--/* this is for root attrs (subvols/snapshots) */
--struct btrfs_root_attr {
--	struct attribute attr;
--	ssize_t (*show)(struct btrfs_root *, char *);
--	ssize_t (*store)(struct btrfs_root *, const char *, size_t);
--};
--
--#define ROOT_ATTR(name, mode, show, store) \
--static struct btrfs_root_attr btrfs_root_attr_##name = __ATTR(name, mode, \
--							      show, store)
--
--ROOT_ATTR(blocks_used,	0444,	root_blocks_used_show,	NULL);
--ROOT_ATTR(block_limit,	0644,	root_block_limit_show,	NULL);
--
--static struct attribute *btrfs_root_attrs[] = {
--	&btrfs_root_attr_blocks_used.attr,
--	&btrfs_root_attr_block_limit.attr,
--	NULL,
--};
--
--/* this is for super attrs (actual full fs) */
--struct btrfs_super_attr {
--	struct attribute attr;
--	ssize_t (*show)(struct btrfs_fs_info *, char *);
--	ssize_t (*store)(struct btrfs_fs_info *, const char *, size_t);
--};
--
--#define SUPER_ATTR(name, mode, show, store) \
--static struct btrfs_super_attr btrfs_super_attr_##name = __ATTR(name, mode, \
--								show, store)
--
--SUPER_ATTR(blocks_used,		0444,	super_blocks_used_show,		NULL);
--SUPER_ATTR(total_blocks,	0444,	super_total_blocks_show,	NULL);
--SUPER_ATTR(blocksize,		0444,	super_blocksize_show,		NULL);
--
--static struct attribute *btrfs_super_attrs[] = {
--	&btrfs_super_attr_blocks_used.attr,
--	&btrfs_super_attr_total_blocks.attr,
--	&btrfs_super_attr_blocksize.attr,
--	NULL,
--};
--
--static ssize_t btrfs_super_attr_show(struct kobject *kobj,
--				    struct attribute *attr, char *buf)
--{
--	struct btrfs_fs_info *fs = container_of(kobj, struct btrfs_fs_info,
--						super_kobj);
--	struct btrfs_super_attr *a = container_of(attr,
--						  struct btrfs_super_attr,
--						  attr);
--
--	return a->show ? a->show(fs, buf) : 0;
--}
--
--static ssize_t btrfs_super_attr_store(struct kobject *kobj,
--				     struct attribute *attr,
--				     const char *buf, size_t len)
--{
--	struct btrfs_fs_info *fs = container_of(kobj, struct btrfs_fs_info,
--						super_kobj);
--	struct btrfs_super_attr *a = container_of(attr,
--						  struct btrfs_super_attr,
--						  attr);
--
--	return a->store ? a->store(fs, buf, len) : 0;
--}
--
--static ssize_t btrfs_root_attr_show(struct kobject *kobj,
--				    struct attribute *attr, char *buf)
--{
--	struct btrfs_root *root = container_of(kobj, struct btrfs_root,
--						root_kobj);
--	struct btrfs_root_attr *a = container_of(attr,
--						 struct btrfs_root_attr,
--						 attr);
--
--	return a->show ? a->show(root, buf) : 0;
--}
--
--static ssize_t btrfs_root_attr_store(struct kobject *kobj,
--				     struct attribute *attr,
--				     const char *buf, size_t len)
--{
--	struct btrfs_root *root = container_of(kobj, struct btrfs_root,
--						root_kobj);
--	struct btrfs_root_attr *a = container_of(attr,
--						 struct btrfs_root_attr,
--						 attr);
--	return a->store ? a->store(root, buf, len) : 0;
--}
--
--static void btrfs_super_release(struct kobject *kobj)
--{
--	struct btrfs_fs_info *fs = container_of(kobj, struct btrfs_fs_info,
--						super_kobj);
--	complete(&fs->kobj_unregister);
--}
--
--static void btrfs_root_release(struct kobject *kobj)
--{
--	struct btrfs_root *root = container_of(kobj, struct btrfs_root,
--						root_kobj);
--	complete(&root->kobj_unregister);
--}
--
--static const struct sysfs_ops btrfs_super_attr_ops = {
--	.show	= btrfs_super_attr_show,
--	.store	= btrfs_super_attr_store,
--};
--
--static const struct sysfs_ops btrfs_root_attr_ops = {
--	.show	= btrfs_root_attr_show,
--	.store	= btrfs_root_attr_store,
--};
--
- /* /sys/fs/btrfs/ entry */
- static struct kset *btrfs_kset;
+ 	BTRFS_I(fs_info->btree_inode)->io_tree.ops = &btree_extent_io_ops;
  
++	BTRFS_I(fs_info->btree_inode)->inode_id = BTRFS_BTREE_INODE_OBJECTID;
+ 	BTRFS_I(fs_info->btree_inode)->root = tree_root;
+-	memset(&BTRFS_I(fs_info->btree_inode)->location, 0,
+-	       sizeof(struct btrfs_key));
+ 	BTRFS_I(fs_info->btree_inode)->dummy_inode = 1;
+ 	insert_inode_hash(fs_info->btree_inode);
+ 
+diff --git a/fs/btrfs/export.c b/fs/btrfs/export.c
+index 1b8dc33..cdd3a84 100644
+--- a/fs/btrfs/export.c
++++ b/fs/btrfs/export.c
+@@ -43,7 +43,7 @@ static int btrfs_encode_fh(struct dentry *dentry, u32 *fh, int *max_len,
+ 		spin_lock(&dentry->d_lock);
+ 
+ 		parent = dentry->d_parent->d_inode;
+-		fid->parent_objectid = BTRFS_I(parent)->location.objectid;
++		fid->parent_objectid = btrfs_ino(parent);
+ 		fid->parent_gen = parent->i_generation;
+ 		parent_root_id = BTRFS_I(parent)->root->objectid;
+ 
+diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
+index 5b9b6b6..3a1f8ee 100644
+--- a/fs/btrfs/extent-tree.c
++++ b/fs/btrfs/extent-tree.c
+@@ -3037,7 +3037,7 @@ int btrfs_check_data_free_space(struct inode *inode, u64 bytes)
+ 	bytes = (bytes + root->sectorsize - 1) & ~((u64)root->sectorsize - 1);
+ 
+ 	if (root == root->fs_info->tree_root ||
+-	    BTRFS_I(inode)->location.objectid == BTRFS_FREE_INO_OBJECTID) {
++	    BTRFS_I(inode)->inode_id == BTRFS_FREE_INO_OBJECTID) {
+ 		alloc_chunk = 0;
+ 		committed = 1;
+ 	}
+diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
+index 02ff4a1..e01a084 100644
+--- a/fs/btrfs/inode.c
++++ b/fs/btrfs/inode.c
+@@ -754,7 +754,7 @@ static inline bool is_free_space_inode(struct btrfs_root *root,
+ 				       struct inode *inode)
+ {
+ 	if (root == root->fs_info->tree_root ||
+-	    BTRFS_I(inode)->location.objectid == BTRFS_FREE_INO_OBJECTID)
++	    BTRFS_I(inode)->inode_id == BTRFS_FREE_INO_OBJECTID)
+ 		return true;
+ 	return false;
+ }
+@@ -2513,7 +2513,10 @@ static void btrfs_read_locked_inode(struct inode *inode)
+ 	path = btrfs_alloc_path();
+ 	BUG_ON(!path);
+ 	path->leave_spinning = 1;
+-	memcpy(&location, &BTRFS_I(inode)->location, sizeof(location));
++
++	location.objectid = btrfs_ino(inode);
++	location.offset = 0;
++	btrfs_set_key_type(&location, BTRFS_INODE_ITEM_KEY);
+ 
+ 	ret = btrfs_lookup_inode(NULL, root, path, &location, 0);
+ 	if (ret)
+@@ -2667,6 +2670,7 @@ noinline int btrfs_update_inode(struct btrfs_trans_handle *trans,
+ 	struct btrfs_inode_item *inode_item;
+ 	struct btrfs_path *path;
+ 	struct extent_buffer *leaf;
++	struct btrfs_key location;
+ 	int ret;
+ 
+ 	/*
+@@ -2687,8 +2691,12 @@ noinline int btrfs_update_inode(struct btrfs_trans_handle *trans,
+ 		return -ENOMEM;
+ 
+ 	path->leave_spinning = 1;
+-	ret = btrfs_lookup_inode(trans, root, path, &BTRFS_I(inode)->location,
+-				 1);
++
++	location.objectid = btrfs_ino(inode);
++	location.offset = 0;
++	btrfs_set_key_type(&location, BTRFS_INODE_ITEM_KEY);
++
++	ret = btrfs_lookup_inode(trans, root, path, &location, 1);
+ 	if (ret) {
+ 		if (ret > 0)
+ 			ret = -ENOENT;
+@@ -2839,6 +2847,7 @@ static struct btrfs_trans_handle *__unlink_start_trans(struct inode *dir,
+ 	struct btrfs_path *path;
+ 	struct btrfs_inode_ref *ref;
+ 	struct btrfs_dir_item *di;
++	struct btrfs_key location;
+ 	struct inode *inode = dentry->d_inode;
+ 	u64 index;
+ 	int check_link = 1;
+@@ -2880,8 +2889,11 @@ static struct btrfs_trans_handle *__unlink_start_trans(struct inode *dir,
+ 	path->skip_locking = 1;
+ 	path->search_commit_root = 1;
+ 
+-	ret = btrfs_lookup_inode(trans, root, path,
+-				&BTRFS_I(dir)->location, 0);
++	location.objectid = btrfs_ino(dir);
++	location.offset = 0;
++	btrfs_set_key_type(&location, BTRFS_INODE_ITEM_KEY);
++
++	ret = btrfs_lookup_inode(trans, root, path, &location, 0);
+ 	if (ret < 0) {
+ 		err = ret;
+ 		goto out;
+@@ -2894,8 +2906,11 @@ static struct btrfs_trans_handle *__unlink_start_trans(struct inode *dir,
+ 	}
+ 	btrfs_release_path(path);
+ 
+-	ret = btrfs_lookup_inode(trans, root, path,
+-				&BTRFS_I(inode)->location, 0);
++	location.objectid = btrfs_ino(inode);
++	location.offset = 0;
++	btrfs_set_key_type(&location, BTRFS_INODE_ITEM_KEY);
++
++	ret = btrfs_lookup_inode(trans, root, path, &location, 0);
+ 	if (ret < 0) {
+ 		err = ret;
+ 		goto out;
+@@ -3097,7 +3112,7 @@ static int btrfs_rmdir(struct inode *dir, struct dentry *dentry)
+ 
+ 	if (unlikely(btrfs_ino(inode) == BTRFS_EMPTY_SUBVOL_DIR_OBJECTID)) {
+ 		err = btrfs_unlink_subvol(trans, root, dir,
+-					  BTRFS_I(inode)->location.objectid,
++					  BTRFS_I(inode)->inode_id,
+ 					  dentry->d_name.name,
+ 					  dentry->d_name.len);
+ 		goto out;
+@@ -3331,7 +3346,7 @@ delete:
+ 		if (path->slots[0] == 0 ||
+ 		    path->slots[0] != pending_del_slot) {
+ 			if (root->ref_cows &&
+-			    BTRFS_I(inode)->location.objectid !=
++			    BTRFS_I(inode)->inode_id !=
+ 						BTRFS_FREE_INO_OBJECTID) {
+ 				err = -EAGAIN;
+ 				goto out;
+@@ -3965,7 +3980,7 @@ struct inode *btrfs_iget(struct super_block *s, struct btrfs_key *location,
+ 
+ 	if (inode->i_state & I_NEW) {
+ 		BTRFS_I(inode)->root = root;
+-		memcpy(&BTRFS_I(inode)->location, location, sizeof(*location));
++		BTRFS_I(inode)->inode_id = location->objectid;
+ 		btrfs_read_locked_inode(inode);
+ 		inode_tree_add(inode);
+ 		unlock_new_inode(inode);
+@@ -3986,7 +4001,7 @@ static struct inode *new_simple_dir(struct super_block *s,
+ 		return ERR_PTR(-ENOMEM);
+ 
+ 	BTRFS_I(inode)->root = root;
+-	memcpy(&BTRFS_I(inode)->location, key, sizeof(*key));
++	BTRFS_I(inode)->inode_id = key->objectid;
+ 	BTRFS_I(inode)->dummy_inode = 1;
+ 
+ 	inode->i_ino = BTRFS_EMPTY_SUBVOL_DIR_OBJECTID;
+@@ -4417,7 +4432,6 @@ static struct inode *btrfs_new_inode(struct btrfs_trans_handle *trans,
+ {
+ 	struct inode *inode;
+ 	struct btrfs_inode_item *inode_item;
+-	struct btrfs_key *location;
+ 	struct btrfs_path *path;
+ 	struct btrfs_inode_ref *ref;
+ 	struct btrfs_key key[2];
+@@ -4461,6 +4475,7 @@ static struct inode *btrfs_new_inode(struct btrfs_trans_handle *trans,
+ 	BTRFS_I(inode)->generation = trans->transid;
+ 	inode->i_generation = BTRFS_I(inode)->generation;
+ 	btrfs_set_inode_space_info(root, inode);
++	BTRFS_I(inode)->inode_id = objectid;
+ 
+ 	if (mode & S_IFDIR)
+ 		owner = 0;
+@@ -4500,11 +4515,6 @@ static struct inode *btrfs_new_inode(struct btrfs_trans_handle *trans,
+ 	btrfs_mark_buffer_dirty(path->nodes[0]);
+ 	btrfs_free_path(path);
+ 
+-	location = &BTRFS_I(inode)->location;
+-	location->objectid = objectid;
+-	location->offset = 0;
+-	btrfs_set_key_type(location, BTRFS_INODE_ITEM_KEY);
+-
+ 	btrfs_inherit_iflags(inode, dir);
+ 
+ 	if ((mode & S_IFREG)) {
+@@ -7029,7 +7039,7 @@ static int btrfs_rename(struct inode *old_dir, struct dentry *old_dentry,
+ 		new_inode->i_ctime = CURRENT_TIME;
+ 		if (unlikely(btrfs_ino(new_inode) ==
+ 			     BTRFS_EMPTY_SUBVOL_DIR_OBJECTID)) {
+-			root_objectid = BTRFS_I(new_inode)->location.objectid;
++			root_objectid = BTRFS_I(new_inode)->inode_id;
+ 			ret = btrfs_unlink_subvol(trans, dest, new_dir,
+ 						root_objectid,
+ 						new_dentry->d_name.name,
+-- 
+1.6.5.2
+

@@ -1,89 +1,52 @@
-From: Josef Bacik <josef@redhat.com>
-Subject: Re: [PATCH 2/2] btrfs: fix deadlock when doing reservation
-Date: Thu, 16 Jun 2011 13:17:50 -0400
-Message-ID: <4DFA3ABE.5000109@redhat.com>
-References: <4DF88DCF.2030502@cn.fujitsu.com>	<4DF8B722.2090704@redhat.com>	<BANLkTikPyw1tFcXvF9+eKWXjJdSYTxWU5A@mail.gmail.com>	<4DFA189E.8020606@redhat.com> <BANLkTikORTcAmq0H66jqUG+q=8kewrWc+w@mail.gmail.com>
+From: Goffredo Baroncelli <kreijack@libero.it>
+Subject: Re: [RFC][BTRFS-PROG] Avoid to scan cdrom and floppy
+Date: Thu, 16 Jun 2011 22:07:53 +0200
+Message-ID: <4DFA6299.3040904@libero.it>
+References: <Bn+os9hi1uB@helmut.hullen.de>
+Reply-To: kreijack@inwind.it
 Mime-Version: 1.0
-Content-Type: text/plain; charset=ISO-8859-1
-Cc: miaox@cn.fujitsu.com, Chris Mason <chris.mason@oracle.com>,
-	Linux Btrfs <linux-btrfs@vger.kernel.org>
-To: Mitch Harder <mitch.harder@sabayonlinux.org>
+Content-Type: text/plain; charset=ISO-8859-1; format=flowed
+Cc: Helmut Hullen <Hullen@t-online.de>, linux-btrfs@vger.kernel.org
+To: helmut@hullen.de
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <BANLkTikORTcAmq0H66jqUG+q=8kewrWc+w@mail.gmail.com>
+In-Reply-To: <Bn+os9hi1uB@helmut.hullen.de>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 06/16/2011 01:17 PM, Mitch Harder wrote:
-> On Thu, Jun 16, 2011 at 9:52 AM, Josef Bacik <josef@redhat.com> wrote:
->> On 06/16/2011 10:36 AM, Mitch Harder wrote:
->>> 2011/6/15 Josef Bacik <josef@redhat.com>:
->>>> On 06/15/2011 06:47 AM, Miao Xie wrote:
->>>>> The following deadlock may happen when doing reservation for metadata:
->>>>>
->>>>> Task0                         Flush thread            Task1
->>>>> start_transaction()
->>>>>   shrink_delalloc()
->>>>>     writeback_inodes_sb_nr()
->>>>>       wait for flush thread
->>>>>       end.
->>>>>                               btrfs_writepages()
->>>>>                                 cow_file_range()
->>>>>                                                       btrfs_commit_transaction
->>>>>                                                         wait num_writer == 1
->>>>>                                                         (wait Task0 end
->>>>>                                                          transaction)
->>>>>                                 start_transaction()
->>>>>                                   wait trans commit
->>>>>                                   end
->>>>>
->>>>> Task0 -> Flush thread -> Task1 -> Task0
->>>>>
->>>>> Fix the above deadlock by doing reservation before the trans handle has
->>>>> been joined into the transaction.
->>>>>
->>>>> Signed-off-by: Miao Xie <miaox@cn.fujitsu.com>
->>>>
->>>> I've already taken care of this in
->>>>
->>>> [PATCH 1/2] Btrfs: do transaction space reservation before joining the
->>>> transaction
->>>>
->>>> Thanks,
->>>>
->>>> Josef
->>>
->>> I've been trying to run down an issue with btrfs freezing with the
->>> 3.0_rc btrfs patch set.  I've found a test case that repeatably
->>> freezes up on my system, and have been surveying the patches on the
->>> list to see if the issue has already been resolved.
->>>
->>> I've been successful in addressing the deadlock by applying Miao Xie's
->>> patches (I've tested with both "[1/2] btrfs: fix wrong reservation
->>> when doing delayed inode operations" and "[2/2] btrfs: fix deadlock
->>> when doing reservation").
->>>
->>> I've only been partially successful in running my test case with Josef
->>> Bacik's patches (the deadlock is cleared; however, now I'm running
->>> into a premature ENOSPC).
->>>
->>> When evaluating Josef's patches, I've applied:
->>> Btrfs: account for space reservations properly V2
->>> Btrfs: fix btrfs_update_reserved_bytes usage
->>> [1/2] Btrfs: do transaction space reservation before joining the transaction
->>> [2/2] Btrfs: serialize flushers in reserve_metadata_bytes
->>>
->>
->> So drop those first 2, they are wrong and why they are giving you early
->> enospc.  The last two are what you want and should fix your deadlock.
->> Thanks,
->>
-> 
-> Confirmed.
-> 
-> The deadlock is cleared in my test case when applying just the "[1/2]
-> Btrfs: do transaction space reservation before joining the
-> transaction" patch and the "[2/2] Btrfs: serialize flushers in
-> reserve_metadata_bytes" patch.
+Hi Helmut
 
-Perfect, thanks,
+On 06/16/2011 05:09 PM, Helmut Hullen wrote:
+> Hallo, Josef,
+>
+> Du meintest am 16.06.11:
+>
+>>>> Who the hell doesn't use udev?
+>
+>>> Me - p.e.
+>>> "udev" may be interesting for desktop users, for multimedia
+>>> computers. It's not necessary for a simple server, for a machine
+>>> where the administrator wants to rule instead of "udev".
+>
+>> You don't need udev to use btrfs, I've just not seen a distro that
+>> allows you to not run with udev, so my question is more curiosity
+>> than anything.
+>
+> But the developers seem to use only machines where "udev" runs.
+>
+> p.e. when testing the disks (I've told this bug about 1 year ago), p.e.
+> with "/dev/btrfs-control".
+>
+> "btrfs-control" has to exist before btrfs is started, and there is
+> neither a hint in the documentation nor a check.
+>
 
-Josef
+Sorry Helmut, but I don't understand if you are blaming about lack of 
+documentation or about a problem.
+
+The fact that the file /dev/btrfs-control doesn't exist, is not a 
+bug/problem of btrfs. This file should be created by the distribution: 
+or via the udev or via devtmpfs or statically. In this is not different 
+by any other device (like /dev/sdaX for example). They have to exists 
+before mounting the root-filesystem.
+
+BR
+G.Baroncelli

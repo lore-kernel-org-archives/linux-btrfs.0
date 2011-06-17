@@ -1,29 +1,131 @@
 From: Chris Mason <chris.mason@oracle.com>
-Subject: Re: [PATCH][RFC] btrfs: fix potential overflow in leafsize accounting
-Date: Fri, 17 Jun 2011 15:18:43 -0400
-Message-ID: <1308338282-sup-4067@shiny>
-References: <1307986264-5707-1-git-send-email-dsterba@suse.cz>
+Subject: please review snapshot corruption path with delayed metadata insertion
+Date: Fri, 17 Jun 2011 17:12:28 -0400
+Message-ID: <1308345034-sup-1969@shiny>
 Content-Type: text/plain; charset=UTF-8
-Cc: linux-btrfs <linux-btrfs@vger.kernel.org>
-To: David Sterba <dsterba@suse.cz>
+To: "linux-btrfs" <linux-btrfs@vger.kernel.org>,
+	"Miao Xie" <miaox@cn.fujitsu.com>,
+	"Tsutomu Itoh" <t-itoh@jp.fujitsu.com>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-reply-to: <1307986264-5707-1-git-send-email-dsterba@suse.cz>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Excerpts from David Sterba's message of 2011-06-13 13:31:04 -0400:
-> smatch reported a dead code. It seems to allow wrong item size counting
-> in leaves, as the first for loop does not adjust the maximum number for
-> items that would fit in BTRFS_LEAF_DATA_SIZE, and the rest of the code
-> works with the wrong value. The value of 'nr' is accompanied with
-> accumulating total_data and total_size, which are compared to the leaf
-> size and probably prevent this bug to do more harm, but the errorneously
-> computed value of 'nr' is later used in moving existing items and lastly
-> for setting up the item for new data.
-> 
-> The bug has a potential to silently corrupt data when leaves are near to
-> full, though I'm not aware of any related reports so far.
+Hi everyone,
 
-btrfs_insert_some_items is actually dead code.  I've just deleted it
-instead, but you're completely right that this is a bug.
+I think I tracked down the oops we were seeing Tsutomu Itoh's balance
+test.  The delayed metadata insertion code was allowing delayed updates
+to queue up and be process after the snapshot was created.
 
--chris
+I've fixed this up by moving the delayed metadata run down into the
+snapshot creation code, please take a look.  If nobody objects I'll have
+this in the pull I send to Linus this weekend.
+
+
+commit e999376f094162aa425ae749aa1df95ab928d010
+Author: Chris Mason <chris.mason@oracle.com>
+Date:   Fri Jun 17 16:14:09 2011 -0400
+
+    Btrfs: avoid delayed metadata items during commits
+    
+    Snapshot creation has two phases.  One is the initial snapshot setup,
+    and the second is done during commit, while nobody is allowed to modify
+    the root we are snapshotting.
+    
+    The delayed metadata insertion code can break that rule, it does a
+    delayed inode update on the inode of the parent of the snapshot,
+    and delayed directory item insertion.
+    
+    This makes sure to run the pending delayed operations before we
+    record the snapshot root, which avoids corruptions.
+    
+    Signed-off-by: Chris Mason <chris.mason@oracle.com>
+
+diff --git a/fs/btrfs/delayed-inode.c b/fs/btrfs/delayed-inode.c
+index fc515b7..f1cbd02 100644
+--- a/fs/btrfs/delayed-inode.c
++++ b/fs/btrfs/delayed-inode.c
+@@ -1237,6 +1237,13 @@ again:
+ 	return 0;
+ }
+ 
++void btrfs_assert_delayed_root_empty(struct btrfs_root *root)
++{
++	struct btrfs_delayed_root *delayed_root;
++	delayed_root = btrfs_get_delayed_root(root);
++	WARN_ON(btrfs_first_delayed_node(delayed_root));
++}
++
+ void btrfs_balance_delayed_items(struct btrfs_root *root)
+ {
+ 	struct btrfs_delayed_root *delayed_root;
+diff --git a/fs/btrfs/delayed-inode.h b/fs/btrfs/delayed-inode.h
+index cb79b67..d1a6a29 100644
+--- a/fs/btrfs/delayed-inode.h
++++ b/fs/btrfs/delayed-inode.h
+@@ -137,4 +137,8 @@ int btrfs_readdir_delayed_dir_index(struct file *filp, void *dirent,
+ /* for init */
+ int __init btrfs_delayed_inode_init(void);
+ void btrfs_delayed_inode_exit(void);
++
++/* for debugging */
++void btrfs_assert_delayed_root_empty(struct btrfs_root *root);
++
+ #endif
+diff --git a/fs/btrfs/transaction.c b/fs/btrfs/transaction.c
+index c073d85..51dcec8 100644
+--- a/fs/btrfs/transaction.c
++++ b/fs/btrfs/transaction.c
+@@ -957,6 +957,15 @@ static noinline int create_pending_snapshot(struct btrfs_trans_handle *trans,
+ 	ret = btrfs_update_inode(trans, parent_root, parent_inode);
+ 	BUG_ON(ret);
+ 
++	/*
++	 * pull in the delayed directory update
++	 * and the delayed inode item
++	 * otherwise we corrupt the FS during
++	 * snapshot
++	 */
++	ret = btrfs_run_delayed_items(trans, root);
++	BUG_ON(ret);
++
+ 	record_root_in_trans(trans, root);
+ 	btrfs_set_root_last_snapshot(&root->root_item, trans->transid);
+ 	memcpy(new_root_item, &root->root_item, sizeof(*new_root_item));
+@@ -1018,14 +1027,6 @@ static noinline int create_pending_snapshots(struct btrfs_trans_handle *trans,
+ 	int ret;
+ 
+ 	list_for_each_entry(pending, head, list) {
+-		/*
+-		 * We must deal with the delayed items before creating
+-		 * snapshots, or we will create a snapthot with inconsistent
+-		 * information.
+-		*/
+-		ret = btrfs_run_delayed_items(trans, fs_info->fs_root);
+-		BUG_ON(ret);
+-
+ 		ret = create_pending_snapshot(trans, fs_info, pending);
+ 		BUG_ON(ret);
+ 	}
+@@ -1319,15 +1320,21 @@ int btrfs_commit_transaction(struct btrfs_trans_handle *trans,
+ 	 */
+ 	mutex_lock(&root->fs_info->reloc_mutex);
+ 
+-	ret = create_pending_snapshots(trans, root->fs_info);
++	ret = btrfs_run_delayed_items(trans, root);
+ 	BUG_ON(ret);
+ 
+-	ret = btrfs_run_delayed_items(trans, root);
++	ret = create_pending_snapshots(trans, root->fs_info);
+ 	BUG_ON(ret);
+ 
+ 	ret = btrfs_run_delayed_refs(trans, root, (unsigned long)-1);
+ 	BUG_ON(ret);
+ 
++	/*
++	 * make sure none of the code above managed to slip in a
++	 * delayed item
++	 */
++	btrfs_assert_delayed_root_empty(root);
++
+ 	WARN_ON(cur_trans != trans->transaction);
+ 
+ 	btrfs_scrub_pause(root);

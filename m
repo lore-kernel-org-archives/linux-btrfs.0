@@ -1,7 +1,7 @@
 From: Jan Schmidt <list.btrfs@jan-o-sch.net>
-Subject: [PATCH v2 5/7] add mirror_num to extent_read_full_page
-Date: Sat, 18 Jun 2011 13:46:02 +0200
-Message-ID: <962be306a4f7ae3004d1d065703738b66b8b573a.1308397267.git.list.btrfs@jan-o-sch.net>
+Subject: [PATCH v2 6/7] scrub: use int for mirror_num, not u64
+Date: Sat, 18 Jun 2011 13:46:03 +0200
+Message-ID: <3a21e534c7cd76ace502e6b10d954f8936fccdb8.1308397267.git.list.btrfs@jan-o-sch.net>
 References: <cover.1308397267.git.list.btrfs@jan-o-sch.net>
 To: chris.mason@oracle.com, linux-btrfs@vger.kernel.org
 Return-path: <linux-btrfs-owner@vger.kernel.org>
@@ -9,81 +9,53 @@ In-Reply-To: <cover.1308397267.git.list.btrfs@jan-o-sch.net>
 In-Reply-To: <cover.1308397267.git.list.btrfs@jan-o-sch.net>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Currently, extent_read_full_page always assumes we are trying to read mirror
-0, which generally is the best we can do. To add flexibility, pass it as a
-parameter. This will be needed by scrub fixup code.
+the rest of the code uses int mirror_num, and so should scrub
 
 Signed-off-by: Jan Schmidt <list.btrfs@jan-o-sch.net>
 ---
- fs/btrfs/disk-io.c   |    2 +-
- fs/btrfs/extent_io.c |    6 +++---
- fs/btrfs/extent_io.h |    2 +-
- fs/btrfs/inode.c     |    2 +-
- 4 files changed, 6 insertions(+), 6 deletions(-)
+ fs/btrfs/scrub.c |    8 ++++----
+ 1 files changed, 4 insertions(+), 4 deletions(-)
 
-diff --git a/fs/btrfs/disk-io.c b/fs/btrfs/disk-io.c
-index a203d36..daf1e47 100644
---- a/fs/btrfs/disk-io.c
-+++ b/fs/btrfs/disk-io.c
-@@ -874,7 +874,7 @@ static int btree_readpage(struct file *file, struct page *page)
- {
- 	struct extent_io_tree *tree;
- 	tree = &BTRFS_I(page->mapping->host)->io_tree;
--	return extent_read_full_page(tree, page, btree_get_extent);
-+	return extent_read_full_page(tree, page, btree_get_extent, 0);
+diff --git a/fs/btrfs/scrub.c b/fs/btrfs/scrub.c
+index 519bf4b..de918ff 100644
+--- a/fs/btrfs/scrub.c
++++ b/fs/btrfs/scrub.c
+@@ -71,7 +71,7 @@ static void scrub_fixup(struct scrub_bio *sbio, int ix);
+ struct scrub_page {
+ 	u64			flags;  /* extent flags */
+ 	u64			generation;
+-	u64			mirror_num;
++	int			mirror_num;
+ 	int			have_csum;
+ 	u8			csum[BTRFS_CSUM_SIZE];
+ };
+@@ -761,7 +761,7 @@ nomem:
  }
  
- static int btree_releasepage(struct page *page, gfp_t gfp_flags)
-diff --git a/fs/btrfs/extent_io.c b/fs/btrfs/extent_io.c
-index b181a94..b78f665 100644
---- a/fs/btrfs/extent_io.c
-+++ b/fs/btrfs/extent_io.c
-@@ -2111,16 +2111,16 @@ static int __extent_read_full_page(struct extent_io_tree *tree,
- }
- 
- int extent_read_full_page(struct extent_io_tree *tree, struct page *page,
--			    get_extent_t *get_extent)
-+			    get_extent_t *get_extent, int mirror_num)
+ static int scrub_page(struct scrub_dev *sdev, u64 logical, u64 len,
+-		      u64 physical, u64 flags, u64 gen, u64 mirror_num,
++		      u64 physical, u64 flags, u64 gen, int mirror_num,
+ 		      u8 *csum, int force)
  {
- 	struct bio *bio = NULL;
- 	unsigned long bio_flags = 0;
+ 	struct scrub_bio *sbio;
+@@ -858,7 +858,7 @@ static int scrub_find_csum(struct scrub_dev *sdev, u64 logical, u64 len,
+ 
+ /* scrub extent tries to collect up to 64 kB for each bio */
+ static int scrub_extent(struct scrub_dev *sdev, u64 logical, u64 len,
+-			u64 physical, u64 flags, u64 gen, u64 mirror_num)
++			u64 physical, u64 flags, u64 gen, int mirror_num)
+ {
  	int ret;
+ 	u8 csum[BTRFS_CSUM_SIZE];
+@@ -904,7 +904,7 @@ static noinline_for_stack int scrub_stripe(struct scrub_dev *sdev,
+ 	u64 physical;
+ 	u64 logical;
+ 	u64 generation;
+-	u64 mirror_num;
++	int mirror_num;
  
--	ret = __extent_read_full_page(tree, page, get_extent, &bio, 0,
-+	ret = __extent_read_full_page(tree, page, get_extent, &bio, mirror_num,
- 				      &bio_flags);
- 	if (bio)
--		ret = submit_one_bio(READ, bio, 0, bio_flags);
-+		ret = submit_one_bio(READ, bio, mirror_num, bio_flags);
- 	return ret;
- }
- 
-diff --git a/fs/btrfs/extent_io.h b/fs/btrfs/extent_io.h
-index 4e8445a..2fef77f 100644
---- a/fs/btrfs/extent_io.h
-+++ b/fs/btrfs/extent_io.h
-@@ -177,7 +177,7 @@ int unlock_extent_cached(struct extent_io_tree *tree, u64 start, u64 end,
- int try_lock_extent(struct extent_io_tree *tree, u64 start, u64 end,
- 		    gfp_t mask);
- int extent_read_full_page(struct extent_io_tree *tree, struct page *page,
--			  get_extent_t *get_extent);
-+			  get_extent_t *get_extent, int mirror_num);
- int __init extent_io_init(void);
- void extent_io_exit(void);
- 
-diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
-index 113913a..938fc10 100644
---- a/fs/btrfs/inode.c
-+++ b/fs/btrfs/inode.c
-@@ -6238,7 +6238,7 @@ int btrfs_readpage(struct file *file, struct page *page)
- {
- 	struct extent_io_tree *tree;
- 	tree = &BTRFS_I(page->mapping->host)->io_tree;
--	return extent_read_full_page(tree, page, btrfs_get_extent);
-+	return extent_read_full_page(tree, page, btrfs_get_extent, 0);
- }
- 
- static int btrfs_writepage(struct page *page, struct writeback_control *wbc)
+ 	u64 increment = map->stripe_len;
+ 	u64 offset;
 -- 
 1.7.3.4
 

@@ -1,49 +1,43 @@
-From: Tomasz Chmielewski <mangoo@wpkg.org>
-Subject: Re: No space left, with 80 GB space free
-Date: Sat, 18 Jun 2011 20:52:25 +0200
-Message-ID: <4DFCF3E9.1080508@wpkg.org>
-References: <4DD16817.9020302@wpkg.org>	<4DD6985E.8040100@wpkg.org> <BANLkTimA_dJDNUqPUssV5ZbLTr=T7k+doA@mail.gmail.com>
-Mime-Version: 1.0
-Content-Type: text/plain; charset=ISO-8859-1; format=flowed
-Cc: linux-btrfs <linux-btrfs@vger.kernel.org>
-To: Miguel Garrido <miguel@mjgar.com>
+From: Ilya Dryomov <idryomov@gmail.com>
+Subject: [PATCH] Btrfs: fix type mismatch in find_free_extent()
+Date: Sat, 18 Jun 2011 23:26:38 +0300
+Message-ID: <1308428798-29471-1-git-send-email-idryomov@gmail.com>
+Cc: idryomov@gmail.com
+To: linux-btrfs@vger.kernel.org
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <BANLkTimA_dJDNUqPUssV5ZbLTr=T7k+doA@mail.gmail.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 21.05.2011 01:05, Miguel Garrido wrote:
-> On Fri, May 20, 2011 at 12:35 PM, Tomasz Chmielewski<mangoo@wpkg.org>  wrote:
->>
->> Nobody has a clue what makes btrfs run out of space when used with PostgreSQL, even when there is plenty of free space left?
->>
->>
->> # df -h
->> Filesystem            Size  Used Avail Use% Mounted on
->> /dev/sdb4             336G  257G   78G  77% /mnt/btrfs
->>
->>
->> coredb=# DELETE FROM core_trevent where "date"<  E'2011-05-07 00:00';
->> ERROR:  could not write block 1014999 of relation base/16384/16521: No space left on device
->> CONTEXT:  writing block 1014999 of relation base/16384/16521
+data parameter should be u64 because a full-sized chunk flags field is
+passed instead of 0/1 for distinguishing data from metadata.  All
+underlying functions expect u64.
 
-Hmm, this "No space left on device" only shows up if I write to the 
-btrfs filesystem relatively fast.
+Signed-off-by: Ilya Dryomov <idryomov@gmail.com>
+---
+ fs/btrfs/extent-tree.c |    4 ++--
+ 1 files changed, 2 insertions(+), 2 deletions(-)
 
-For example, this way, I can only write around 1 GB (~60 MB/s write):
-
-# cp -v acer.img.xz /mnt/btrfs/
-`ac.img.xz' -> `/mnt/btrfs/ac.img.xz'
-cp: writing `/mnt/btrfs/ac.img.xz': No space left on device
-
-
-This way, when the writes are CPU-bound, I'm able to fully fill the 
-btrfs filesystem (~8 MB/s):
-
-# dd if=/dev/urandom of=/mnt/btrfs/bigfile
-
-
-Delayed allocation?
-
+diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
+index b42efc2..5646348 100644
+--- a/fs/btrfs/extent-tree.c
++++ b/fs/btrfs/extent-tree.c
+@@ -4846,7 +4846,7 @@ static noinline int find_free_extent(struct btrfs_trans_handle *trans,
+ 				     u64 num_bytes, u64 empty_size,
+ 				     u64 search_start, u64 search_end,
+ 				     u64 hint_byte, struct btrfs_key *ins,
+-				     int data)
++				     u64 data)
+ {
+ 	int ret = 0;
+ 	struct btrfs_root *root = orig_root->fs_info->extent_root;
+@@ -4873,7 +4873,7 @@ static noinline int find_free_extent(struct btrfs_trans_handle *trans,
+ 
+ 	space_info = __find_space_info(root->fs_info, data);
+ 	if (!space_info) {
+-		printk(KERN_ERR "No space info for %d\n", data);
++		printk(KERN_ERR "No space info for %llu\n", data);
+ 		return -ENOSPC;
+ 	}
+ 
 -- 
-Tomasz Chmielewski
-http://wpkg.org
+1.7.2.5
+

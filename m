@@ -1,229 +1,57 @@
-From: Jan Schmidt <list.btrfs@jan-o-sch.net>
-Subject: [PATCH v2 3/7] scrub: print paths of corrupted files
-Date: Sat, 18 Jun 2011 13:46:00 +0200
-Message-ID: <3dbbb9d80daa4ff703e3f63e2097d28913fee7a5.1308397267.git.list.btrfs@jan-o-sch.net>
-References: <cover.1308397267.git.list.btrfs@jan-o-sch.net>
-To: chris.mason@oracle.com, linux-btrfs@vger.kernel.org
+From: Peter Silva <Peter.A.Silva@gmail.com>
+Subject: usage, fs balance segfault, then hung.
+Date: Sat, 18 Jun 2011 08:35:42 -0400
+Message-ID: <BANLkTin7mCxEajK6o5DopH_bC+Uc_sGT6g@mail.gmail.com>
+Mime-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+To: linux-btrfs@vger.kernel.org
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <cover.1308397267.git.list.btrfs@jan-o-sch.net>
-In-Reply-To: <cover.1308397267.git.list.btrfs@jan-o-sch.net>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-While scrubbing, we may encounter various errors. Previously, a logical
-address was printed to the log only. Now, all paths belonging to that
-address are resolved and printed separately. That should work for hardlinks
-as well as reflinks.
+hello,
 
-Signed-off-by: Jan Schmidt <list.btrfs@jan-o-sch.net>
----
- fs/btrfs/scrub.c |  148 +++++++++++++++++++++++++++++++++++++++++++++++++++--
- 1 files changed, 142 insertions(+), 6 deletions(-)
+Using an ubuntu natty std kernel, had a file system with 2 x 500 G
+drives.  One was giving lots of SMART errors, and saying "failure
+imminent".  Added a 750 GB to replace (btrfs device add), did a btrfs
+device delete <the first bad drive> ... ran for a few hours, completed
+correctly afaict.
 
-diff --git a/fs/btrfs/scrub.c b/fs/btrfs/scrub.c
-index 00e4e58..55b722c 100644
---- a/fs/btrfs/scrub.c
-+++ b/fs/btrfs/scrub.c
-@@ -23,10 +23,12 @@
- #include <linux/rbtree.h>
- #include <linux/slab.h>
- #include <linux/workqueue.h>
-+#include <linux/ratelimit.h>
- #include "ctree.h"
- #include "volumes.h"
- #include "disk-io.h"
- #include "ordered-data.h"
-+#include "backref.h"
- 
- /*
-  * This is only the first step towards a full-features scrub. It reads all
-@@ -106,6 +108,19 @@ struct scrub_dev {
- 	spinlock_t		stat_lock;
- };
- 
-+struct scrub_warning {
-+	struct btrfs_path	*path;
-+	u64			extent_item_size;
-+	char			*scratch_buf;
-+	char			*msg_buf;
-+	const char		*errstr;
-+	sector_t		sector;
-+	u64			logical;
-+	struct btrfs_device	*dev;
-+	int			msg_bufsize;
-+	int			scratch_bufsize;
-+};
-+
- static void scrub_free_csums(struct scrub_dev *sdev)
- {
- 	while (!list_empty(&sdev->csum_list)) {
-@@ -201,6 +216,122 @@ nomem:
- 	return ERR_PTR(-ENOMEM);
- }
- 
-+static int scrub_print_warning_inode(u64 inum, loff_t offset, void *ctx)
-+{
-+	u64 isize;
-+	int ret;
-+	struct extent_buffer *eb;
-+	struct btrfs_inode_item *inode_item;
-+	struct scrub_warning *swarn = ctx;
-+	struct btrfs_fs_info *fs_info = swarn->dev->dev_root->fs_info;
-+	struct inode_fs_paths ipath;
-+
-+	ret = inode_item_info(inum, 0, fs_info->fs_root, swarn->path);
-+	if (ret)
-+		goto err;
-+	eb = swarn->path->nodes[0];
-+	inode_item = btrfs_item_ptr(eb, swarn->path->slots[0],
-+					struct btrfs_inode_item);
-+	btrfs_release_path(swarn->path);
-+
-+	isize = btrfs_inode_size(eb, inode_item);
-+
-+	ipath.bytes_left = swarn->msg_bufsize - 1;
-+	ipath.dest = swarn->msg_buf;
-+	ipath.path = swarn->path;
-+	ipath.scratch_buf = swarn->scratch_buf;
-+	ipath.scratch_bufsize = swarn->scratch_bufsize;
-+	ipath.fs_root = fs_info->fs_root;
-+	ipath.eb = eb;
-+
-+	ret = paths_from_inode(inum, &ipath);
-+
-+	if (ret >= 0) {
-+		printk(KERN_WARNING "btrfs: %s at logical %llu on dev "
-+			"%s, sector %llu, inode %llu, offset %llu, "
-+			"length %llu, links %u (path:%s)\n", swarn->errstr,
-+			swarn->logical, swarn->dev->name,
-+			(unsigned long long)swarn->sector, inum, offset,
-+			min(isize - offset, (u64)PAGE_SIZE),
-+			btrfs_inode_nlink(eb, inode_item), swarn->msg_buf);
-+	} else {
-+err:
-+		printk(KERN_WARNING "btrfs: %s at logical %llu on dev "
-+			"%s, sector %llu, inode %llu, offset %llu: path "
-+			"resolving failed with ret=%d\n", swarn->errstr,
-+			swarn->logical, swarn->dev->name,
-+			(unsigned long long)swarn->sector, inum, offset, ret);
-+	}
-+
-+	return 0;
-+}
-+
-+static void scrub_print_warning(const char *errstr, struct scrub_bio *sbio,
-+				int ix)
-+{
-+	struct btrfs_device *dev = sbio->sdev->dev;
-+	struct btrfs_fs_info *fs_info = dev->dev_root->fs_info;
-+	struct btrfs_path *path;
-+	struct btrfs_key found_key;
-+	struct extent_buffer *eb;
-+	struct btrfs_extent_item *ei;
-+	struct scrub_warning swarn;
-+	u32 item_size;
-+	int ret;
-+	u64 ref_root;
-+	u8 ref_level;
-+	unsigned long ptr = 0;
-+	const int bufsize = 4096;
-+	loff_t extent_item_offset;
-+
-+	path = btrfs_alloc_path();
-+
-+	swarn.scratch_buf = kmalloc(bufsize, GFP_NOFS);
-+	swarn.msg_buf = kmalloc(bufsize, GFP_NOFS);
-+	swarn.sector = (sbio->physical + ix * PAGE_SIZE) >> 9;
-+	swarn.logical = sbio->logical + ix * PAGE_SIZE;
-+	swarn.errstr = errstr;
-+	swarn.dev = dev;
-+	swarn.msg_bufsize = bufsize;
-+	swarn.scratch_bufsize = bufsize;
-+
-+	if (!path || !swarn.scratch_buf || !swarn.msg_buf)
-+		goto out;
-+
-+	ret = data_extent_from_logical(fs_info->extent_root,
-+					swarn.logical, path, &found_key);
-+	if (ret < 0)
-+		goto out;
-+
-+	extent_item_offset = swarn.logical - found_key.objectid;
-+	swarn.extent_item_size = found_key.offset;
-+
-+	eb = path->nodes[0];
-+	ei = btrfs_item_ptr(eb, path->slots[0], struct btrfs_extent_item);
-+	item_size = btrfs_item_size_nr(eb, path->slots[0]);
-+
-+	if (ret) {
-+		ret = tree_backref_for_extent(&ptr, eb, ei, item_size,
-+						&ref_root, &ref_level);
-+		printk(KERN_WARNING "%s at logical %llu on dev %s, "
-+			"sector %llu: metadata %s (level %d) in tree %llu\n",
-+			errstr, swarn.logical, dev->name,
-+			(unsigned long long)swarn.sector,
-+			ref_level ? "node" : "leaf", ret < 0 ? -1 : ref_level,
-+			ret < 0 ? -1 : ref_root);
-+	} else {
-+		btrfs_release_path(path);
-+		swarn.path = path;
-+		iterate_extent_inodes(eb, ei, extent_item_offset, item_size,
-+					scrub_print_warning_inode, &swarn);
-+	}
-+
-+out:
-+	btrfs_free_path(path);
-+	kfree(swarn.scratch_buf);
-+	kfree(swarn.msg_buf);
-+}
-+
- /*
-  * scrub_recheck_error gets called when either verification of the page
-  * failed or the bio failed to read, e.g. with EIO. In the latter case,
-@@ -211,6 +342,8 @@ static int scrub_recheck_error(struct scrub_bio *sbio, int ix)
- {
- 	struct scrub_dev *sdev = sbio->sdev;
- 	u64 sector = (sbio->physical + ix * PAGE_SIZE) >> 9;
-+	static DEFINE_RATELIMIT_STATE(_rs, DEFAULT_RATELIMIT_INTERVAL,
-+					DEFAULT_RATELIMIT_BURST);
- 
- 	if (sbio->err) {
- 		if (scrub_fixup_io(READ, sbio->sdev->dev->bdev, sector,
-@@ -218,6 +351,11 @@ static int scrub_recheck_error(struct scrub_bio *sbio, int ix)
- 			if (scrub_fixup_check(sbio, ix) == 0)
- 				return 0;
- 		}
-+		if (__ratelimit(&_rs))
-+			scrub_print_warning("i/o error", sbio, ix);
-+	} else {
-+		if (__ratelimit(&_rs))
-+			scrub_print_warning("checksum error", sbio, ix);
- 	}
- 
- 	spin_lock(&sdev->stat_lock);
-@@ -332,9 +470,8 @@ static void scrub_fixup(struct scrub_bio *sbio, int ix)
- 	++sdev->stat.corrected_errors;
- 	spin_unlock(&sdev->stat_lock);
- 
--	if (printk_ratelimit())
--		printk(KERN_ERR "btrfs: fixed up at %llu\n",
--		       (unsigned long long)logical);
-+	printk_ratelimited(KERN_ERR "btrfs: fixed up error at logical %llu\n",
-+			       (unsigned long long)logical);
- 	return;
- 
- uncorrectable:
-@@ -343,9 +480,8 @@ uncorrectable:
- 	++sdev->stat.uncorrectable_errors;
- 	spin_unlock(&sdev->stat_lock);
- 
--	if (printk_ratelimit())
--		printk(KERN_ERR "btrfs: unable to fixup at %llu\n",
--			 (unsigned long long)logical);
-+	printk_ratelimited(KERN_ERR "btrfs: unable to fixup (regular) error at "
-+				"logical %llu\n", (unsigned long long)logical);
- }
- 
- static int scrub_fixup_io(int rw, struct block_device *bdev, sector_t sector,
--- 
-1.7.3.4
+Noticed that the other 500 G device was acting strangely as well.  It
+had issues staying on the bus.   The 750 G drive is on another bus,
+and unaffected by issues with the 500.  Two power cycles without
+proper shutdown were necessary until I gave
+up and removed the second drive.  fs would then only mount with -o
+degraded.  Did that.  Added a 1 TB drive OK.
+this did not trigger a balance.  Left it alone for an hour or two,
+trying to delete the second 500 G drive.
+no luck. ...
 
+alu% btrfs filesystem balance /alu/tr8m_1      # ran for a few hours...
+Segmentation fault
+alu% btrfs filesystem balance /alu/tr8m_1     # running for eight
+hours or so,...
+
+in another window tried:
+alu% btrfs filesystem show
+failed to read /dev/sr0
+Label: none  uuid: aec637e6-422a-41c6-8c03-b58d7912decb
+	Total devices 2 FS bytes used 677.79GB
+	devid    1 size 931.51GB used 680.27GB path /dev/sde
+	devid    2 size 931.51GB used 680.27GB path /dev/sdf
+
+Label: none  uuid: b7d56b78-f15a-42bf-bef1-0bff947dedbb
+	Total devices 3 FS bytes used 95.08GB
+	devid    3 size 698.64GB used 97.02GB path /dev/sdd
+	devid    4 size 931.51GB used 95.01GB path /dev/sdg
+	*** Some devices missing
+
+Btrfs Btrfs v0.19
+alu% btrfs device delete missing /alu/tr8m_1
+^C^Z
+
+so the balance and device delete have been hung for around 8 hours,
+there is no activity on the devices.
+All data is still accessible, file system is behaving normally.
+processes are not killable.
+
+Would like to return to safe state with current drives.  Suggestions?

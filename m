@@ -1,157 +1,307 @@
 From: Jan Schmidt <list.btrfs@jan-o-sch.net>
-Subject: Re: [PATCH v1 3/6] scrub: print paths of corrupted files
-Date: Sat, 18 Jun 2011 13:26:29 +0200
-Message-ID: <4DFC8B65.3010003@jan-o-sch.net>
-References: <cover.1307991539.git.list.btrfs@jan-o-sch.net> <4dff2bfbba0f059cf91185c290d0c78bf9f6648d.1307991539.git.list.btrfs@jan-o-sch.net> <20110616212614.GC12709@twin.jikos.cz>
-Mime-Version: 1.0
-Content-Type: text/plain; charset=ISO-8859-1
-Cc: chris.mason@oracle.com
-To: linux-btrfs@vger.kernel.org
+Subject: [PATCH v2 7/7] scrub: add fixup code for errors on nodatasum files
+Date: Sat, 18 Jun 2011 13:46:04 +0200
+Message-ID: <9570b4aaf848e9b0a6e81f4c6106bb6e18f6e21a.1308397267.git.list.btrfs@jan-o-sch.net>
+References: <cover.1308397267.git.list.btrfs@jan-o-sch.net>
+To: chris.mason@oracle.com, linux-btrfs@vger.kernel.org
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <20110616212614.GC12709@twin.jikos.cz>
+In-Reply-To: <cover.1308397267.git.list.btrfs@jan-o-sch.net>
+In-Reply-To: <cover.1308397267.git.list.btrfs@jan-o-sch.net>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Lots of quotation removed. All removed comments accepted.
+This removes a FIXME comment and introduces the first part of nodatasum
+fixup: It gets the corresponding inode for a logical address and triggers a
+regular readpage for the corrupted sector.
 
-On 16.06.2011 23:26, David Sterba wrote:
-> On Mon, Jun 13, 2011 at 09:10:36PM +0200, Jan Schmidt wrote:
->> +struct scrub_warning {
->> +	struct btrfs_path	*path;
->> +	u64			extent_item_size;
->> +	char			*scratch_buf;
->> +	char			*msg_buf;
->> +	const char		*errstr;
->> +	u64			sector;
-> 
-> better named 'physical', like in scrub_bio
+Once we have on-the-fly error correction our error will be automatically
+corrected. The correction code is expected to clear the newly introduced
+EXTENT_DAMAGED flag, making scrub report that error as "corrected" instead
+of "uncorrectable" eventually.
 
-As I save a sector there and not a physical address, I still prefer
-"sector". But as a compromise, I'll change the type to sector_t instead.
+Signed-off-by: Jan Schmidt <list.btrfs@jan-o-sch.net>
+---
+ fs/btrfs/extent_io.h |    1 +
+ fs/btrfs/scrub.c     |  185 +++++++++++++++++++++++++++++++++++++++++++++++--
+ 2 files changed, 178 insertions(+), 8 deletions(-)
 
->> +static void scrub_print_warning(const char *errstr, struct scrub_bio *sbio,
->> +				int ix)
-> 
-> please rename 'ix' to eg 'idx', more readable
+diff --git a/fs/btrfs/extent_io.h b/fs/btrfs/extent_io.h
+index 2fef77f..906ea42 100644
+--- a/fs/btrfs/extent_io.h
++++ b/fs/btrfs/extent_io.h
+@@ -17,6 +17,7 @@
+ #define EXTENT_NODATASUM (1 << 10)
+ #define EXTENT_DO_ACCOUNTING (1 << 11)
+ #define EXTENT_FIRST_DELALLOC (1 << 12)
++#define EXTENT_DAMAGED (1 << 13)
+ #define EXTENT_IOBITS (EXTENT_LOCKED | EXTENT_WRITEBACK)
+ #define EXTENT_CTLBITS (EXTENT_DO_ACCOUNTING | EXTENT_FIRST_DELALLOC)
+ 
+diff --git a/fs/btrfs/scrub.c b/fs/btrfs/scrub.c
+index de918ff..211606f 100644
+--- a/fs/btrfs/scrub.c
++++ b/fs/btrfs/scrub.c
+@@ -28,6 +28,7 @@
+ #include "volumes.h"
+ #include "disk-io.h"
+ #include "ordered-data.h"
++#include "transaction.h"
+ #include "backref.h"
+ 
+ /*
+@@ -95,6 +96,7 @@ struct scrub_dev {
+ 	int			first_free;
+ 	int			curr;
+ 	atomic_t		in_flight;
++	atomic_t		fixup_cnt;
+ 	spinlock_t		list_lock;
+ 	wait_queue_head_t	list_wait;
+ 	u16			csum_size;
+@@ -108,6 +110,14 @@ struct scrub_dev {
+ 	spinlock_t		stat_lock;
+ };
+ 
++struct scrub_fixup_nodatasum {
++	struct scrub_dev	*sdev;
++	u64			logical;
++	struct btrfs_root	*root;
++	struct btrfs_work	work;
++	int			mirror_num;
++};
++
+ struct scrub_warning {
+ 	struct btrfs_path	*path;
+ 	u64			extent_item_size;
+@@ -196,12 +206,13 @@ struct scrub_dev *scrub_setup_dev(struct btrfs_device *dev)
+ 
+ 		if (i != SCRUB_BIOS_PER_DEV-1)
+ 			sdev->bios[i]->next_free = i + 1;
+-		 else
++		else
+ 			sdev->bios[i]->next_free = -1;
+ 	}
+ 	sdev->first_free = 0;
+ 	sdev->curr = -1;
+ 	atomic_set(&sdev->in_flight, 0);
++	atomic_set(&sdev->fixup_cnt, 0);
+ 	atomic_set(&sdev->cancel_req, 0);
+ 	sdev->csum_size = btrfs_super_csum_size(&fs_info->super_copy);
+ 	INIT_LIST_HEAD(&sdev->csum_list);
+@@ -216,7 +227,7 @@ nomem:
+ 	return ERR_PTR(-ENOMEM);
+ }
+ 
+-static int scrub_print_warning_inode(u64 inum, loff_t offset, void *ctx)
++static int scrub_print_warning_inode(u64 inum, u64 offset, void *ctx)
+ {
+ 	u64 isize;
+ 	int ret;
+@@ -282,7 +293,7 @@ static void scrub_print_warning(const char *errstr, struct scrub_bio *sbio,
+ 	u8 ref_level;
+ 	unsigned long ptr = 0;
+ 	const int bufsize = 4096;
+-	loff_t extent_item_offset;
++	u64 extent_item_offset;
+ 
+ 	path = btrfs_alloc_path();
+ 
+@@ -332,6 +343,144 @@ out:
+ 	kfree(swarn.msg_buf);
+ }
+ 
++static int scrub_fixup_readpage(u64 inum, u64 offset, void *ctx)
++{
++	struct page *page;
++	unsigned long index;
++	struct scrub_fixup_nodatasum *fixup = ctx;
++	int ret;
++	int corrected;
++	struct btrfs_key key;
++	struct inode *inode;
++	u64 end = offset + PAGE_SIZE - 1;
++
++	key.type = BTRFS_INODE_ITEM_KEY;
++	key.objectid = inum;
++	key.offset = 0;
++	inode = btrfs_iget(fixup->root->fs_info->sb, &key,
++				fixup->root->fs_info->fs_root, NULL);
++	if (IS_ERR(inode))
++		return PTR_ERR(inode);
++
++	ret = set_extent_bit(&BTRFS_I(inode)->io_tree, offset, end,
++				EXTENT_DAMAGED, 0, NULL, NULL, GFP_NOFS);
++
++	/* set_extent_bit should either succeed or give proper error */
++	WARN_ON(ret > 0);
++	if (ret)
++		return ret < 0 ? ret : -EFAULT;
++
++	index = offset >> PAGE_CACHE_SHIFT;
++
++	page = find_or_create_page(inode->i_mapping, index, GFP_NOFS);
++	if (!page)
++		return -ENOMEM;
++
++	ret = extent_read_full_page(&BTRFS_I(inode)->io_tree, page,
++					btrfs_get_extent, fixup->mirror_num);
++	wait_on_page_locked(page);
++	corrected = !test_range_bit(&BTRFS_I(inode)->io_tree, offset, end,
++					EXTENT_DAMAGED, 0, NULL);
++
++	if (corrected)
++		WARN_ON(!PageUptodate(page));
++	else
++		clear_extent_bit(&BTRFS_I(inode)->io_tree, offset, end,
++					EXTENT_DAMAGED, 0, 0, NULL, GFP_NOFS);
++
++	put_page(page);
++	iput(inode);
++
++	if (ret < 0)
++		return ret;
++
++	if (ret == 0 && corrected) {
++		/*
++		 * we only need to call readpage for one of the inodes belonging
++		 * to this extent. so make iterate_extent_inodes stop
++		 */
++		return 1;
++	}
++
++	return -EIO;
++}
++
++static void scrub_fixup_nodatasum(struct btrfs_work *work)
++{
++	int ret;
++	struct scrub_fixup_nodatasum *fixup;
++	struct scrub_dev *sdev;
++	struct btrfs_trans_handle *trans = NULL;
++	struct btrfs_fs_info *fs_info;
++	struct btrfs_path *path;
++	int uncorrectable = 0;
++
++	fixup = container_of(work, struct scrub_fixup_nodatasum, work);
++	sdev = fixup->sdev;
++	fs_info = fixup->root->fs_info;
++
++	path = btrfs_alloc_path();
++	if (!path) {
++		spin_lock(&sdev->stat_lock);
++		++sdev->stat.malloc_errors;
++		spin_unlock(&sdev->stat_lock);
++		uncorrectable = 1;
++		goto out;
++	}
++
++	trans = btrfs_join_transaction(fixup->root);
++	if (IS_ERR(trans)) {
++		uncorrectable = 1;
++		goto out;
++	}
++
++	/*
++	 * the idea is to trigger a regular read through the standard path. we
++	 * read a page from the (failed) logical address by specifying the
++	 * corresponding copynum of the failed sector. thus, that readpage is
++	 * expected to fail.
++	 * that is the point where on-the-fly error correction will kick in
++	 * (once it's finished) and rewrite the failed sector if a good copy
++	 * can be found.
++	 */
++	ret = iterate_inodes_from_logical(fixup->logical, fixup->root->fs_info,
++						path, scrub_fixup_readpage,
++						fixup);
++	if (ret < 0) {
++		uncorrectable = 1;
++		goto out;
++	}
++	WARN_ON(ret != 1);
++
++	spin_lock(&sdev->stat_lock);
++	++sdev->stat.corrected_errors;
++	spin_unlock(&sdev->stat_lock);
++
++out:
++	if (trans && !IS_ERR(trans))
++		btrfs_end_transaction(trans, fixup->root);
++	if (uncorrectable) {
++		spin_lock(&sdev->stat_lock);
++		++sdev->stat.uncorrectable_errors;
++		spin_unlock(&sdev->stat_lock);
++		printk_ratelimited(KERN_ERR "btrfs: unable to fixup "
++					"(nodatasum) error at logical %llu\n",
++					fixup->logical);
++	}
++
++	btrfs_free_path(path);
++	kfree(fixup);
++
++	/* see caller why we're pretending to be paused in the scrub counters */
++	mutex_lock(&fs_info->scrub_lock);
++	atomic_dec(&fs_info->scrubs_running);
++	atomic_dec(&fs_info->scrubs_paused);
++	mutex_unlock(&fs_info->scrub_lock);
++	atomic_dec(&sdev->fixup_cnt);
++	wake_up(&fs_info->scrub_pause_wait);
++	wake_up(&sdev->list_wait);
++}
++
+ /*
+  * scrub_recheck_error gets called when either verification of the page
+  * failed or the bio failed to read, e.g. with EIO. In the latter case,
+@@ -402,6 +551,7 @@ static void scrub_fixup(struct scrub_bio *sbio, int ix)
+ 	struct btrfs_fs_info *fs_info = sdev->dev->dev_root->fs_info;
+ 	struct btrfs_mapping_tree *map_tree = &fs_info->mapping_tree;
+ 	struct btrfs_multi_bio *multi = NULL;
++	struct scrub_fixup_nodatasum *fixup;
+ 	u64 logical = sbio->logical + ix * PAGE_SIZE;
+ 	u64 length;
+ 	int i;
+@@ -410,12 +560,30 @@ static void scrub_fixup(struct scrub_bio *sbio, int ix)
+ 
+ 	if ((sbio->spag[ix].flags & BTRFS_EXTENT_FLAG_DATA) &&
+ 	    (sbio->spag[ix].have_csum == 0)) {
++		fixup = kzalloc(sizeof(*fixup), GFP_NOFS);
++		if (!fixup)
++			goto uncorrectable;
++		fixup->sdev = sdev;
++		fixup->logical = logical;
++		fixup->root = fs_info->extent_root;
++		fixup->mirror_num = sbio->spag[ix].mirror_num;
+ 		/*
+-		 * nodatasum, don't try to fix anything
+-		 * FIXME: we can do better, open the inode and trigger a
+-		 * writeback
++		 * increment scrubs_running to prevent cancel requests from
++		 * completing as long as a fixup worker is running. we must also
++		 * increment scrubs_paused to prevent deadlocking on pause
++		 * requests used for transactions commits (as the worker uses a
++		 * transaction context). it is safe to regard the fixup worker
++		 * as paused for all matters practical. effectively, we only
++		 * avoid cancellation requests from completing.
+ 		 */
+-		goto uncorrectable;
++		mutex_lock(&fs_info->scrub_lock);
++		atomic_inc(&fs_info->scrubs_running);
++		atomic_inc(&fs_info->scrubs_paused);
++		mutex_unlock(&fs_info->scrub_lock);
++		atomic_inc(&sdev->fixup_cnt);
++		fixup->work.func = scrub_fixup_nodatasum;
++		btrfs_queue_worker(&fs_info->scrub_workers, &fixup->work);
++		return;
+ 	}
+ 
+ 	length = PAGE_SIZE;
+@@ -1405,7 +1573,8 @@ int btrfs_scrub_dev(struct btrfs_root *root, u64 devid, u64 start, u64 end,
+ 	if (!ret)
+ 		ret = scrub_enumerate_chunks(sdev, start, end);
+ 
+-	wait_event(sdev->list_wait, atomic_read(&sdev->in_flight) == 0);
++	wait_event(sdev->list_wait, atomic_read(&sdev->in_flight) == 0 &&
++				    atomic_read(&sdev->fixup_cnt) == 0);
+ 
+ 	atomic_dec(&fs_info->scrubs_running);
+ 	wake_up(&fs_info->scrub_pause_wait);
+-- 
+1.7.3.4
 
-I'd like to stay consistent with the rest of the file, using ix at
-similar opportunities. And besides: I like ix more than idx :-)
-
->> +{
->> +	struct btrfs_device *dev = sbio->sdev->dev;
->> +	struct btrfs_fs_info *fs_info = dev->dev_root->fs_info;
->> +	struct btrfs_path *path;
->> +	struct btrfs_key found_key;
->> +	struct extent_buffer *eb;
->> +	struct btrfs_extent_item *ei;
->> +	struct scrub_warning swarn;
->> +	u32 item_size;
->> +	int ret;
->> +	u64 ref_root;
-> 
-> i'm not able to understand what a u64 value describing a root means, seeing it
-> here or in the printk message. it's returned as 
-> 
-> 	*dest_root = btrfs_extent_inline_ref_offset(eb, eiref);
-> 
-> can you please explain it to me?
-
-Have a look at the BTRFS_*_TREE_OBJECTID #defines in ctree.h.
-btrfs-debug-tree prints them as
-                tree block backref root 2
-
->> +	u64 ref_level;
-> 
-> int is enough, as noted elsewhere
-> 
->> +	unsigned long ptr = 0;
->> +	static const int bufsize = 4096;
-> 
-> drop static, this would allocate a memory cell to hold the value 4096, while
-> without it, it's just a named constant and this will make the compiler happy
-> 
->> +	loff_t extent_item_offset;
-> 
-> loff_t is a signed long long, do you really need it?
-
-Seems I don't. I was looking around how I came to use loff_t in the
-first place, but couldn't find a good reason. I'm replacing it with u64,
-which makes more sense anyway, since the loff_t parameter I'm passing
-around is the result of a subtraction of two u64s.
-
->> +
->> +	path = btrfs_alloc_path();
->> +
->> +	swarn.scratch_buf = kmalloc(bufsize, GFP_NOFS);
->> +	swarn.msg_buf = kmalloc(bufsize, GFP_NOFS);
->> +	swarn.sector = (sbio->physical + ix * PAGE_SIZE) >> 9;
->> +	swarn.logical = sbio->logical + ix * PAGE_SIZE;
->> +	swarn.errstr = errstr;
->> +	swarn.dev = dev;
->> +	swarn.msg_bufsize = bufsize;
->> +	swarn.scratch_bufsize = bufsize;
->> +
->> +	if (!path || !swarn.scratch_buf || !swarn.msg_buf)
->> +		goto out;
->> +
->> +	ret = data_extent_from_logical(fs_info->extent_root,
->> +					swarn.logical, path, &found_key);
->> +	if (ret < 0)
->> +		goto out;
->> +
->> +	extent_item_offset = swarn.logical - found_key.objectid;
->> +	swarn.extent_item_size = found_key.offset;
->> +
->> +	eb = path->nodes[0];
->> +	ei = btrfs_item_ptr(eb, path->slots[0], struct btrfs_extent_item);
->> +	item_size = btrfs_item_size_nr(eb, path->slots[0]);
->> +
->> +	btrfs_release_path(path);
-> 
-> is it safe to release the path here? it's used in the else branch below
-
-Yes, and it's even required, since iterate_extent_inodes() wants a
-clean, usable path for itself. To make that more clear, I'll move the
-call to btrfs_release_path inside the else block.
-
->> +
->> +	if (ret) {
->> +		ret = tree_backref_for_extent(&ptr, eb, ei, item_size,
->> +						&ref_root, &ref_level);
->> +		printk(KERN_WARNING "%s at logical %llu on dev %s, "
->> +			"sector %llu: metadata %s (level %llu) in tree %llu\n",
->> +			errstr, swarn.logical, dev->name, swarn.sector,
->> +			ref_level ? "node" : "leaf", ret < 0 ? -1 : ref_level,
->> +			ret < 0 ? -1 : ref_root);
->> +	} else {
->> +		swarn.path = path;
->> +		iterate_extent_inodes(eb, ei, extent_item_offset, item_size,
->> +					scrub_print_warning_inode, &swarn);
->> +	}
->> +
->> +out:
->> +	btrfs_free_path(path);
->> +	kfree(swarn.scratch_buf);
->> +	kfree(swarn.msg_buf);
->> +}
->> +
->>  /*
->>   * scrub_recheck_error gets called when either verification of the page
->>   * failed or the bio failed to read, e.g. with EIO. In the latter case,
->> @@ -218,6 +347,11 @@ static int scrub_recheck_error(struct scrub_bio *sbio, int ix)
->>  			if (scrub_fixup_check(sbio, ix) == 0)
->>  				return 0;
->>  		}
->> +		if (printk_ratelimit())
-> 
-> please don't use printk_ratelimit; as a simple printk_ratelimited is not
-> applicable here, we have to use __ratelimit: (include/linux/printk.h)
-> 
-> static DEFINE_RATELIMIT_STATE(_rs, DEFAULT_RATELIMIT_INTERVAL,
-> 	DEFAULT_RATELIMIT_BURST);
-> 
-> if (__ratelimit(&_rs))
-
-Modified as you suggested, I only included linux/ratelimit.h instead.
-
-Thanks!
-Jan

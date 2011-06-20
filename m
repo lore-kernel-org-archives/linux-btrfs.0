@@ -1,62 +1,311 @@
-From: Chris Mason <chris.mason@oracle.com>
-Subject: [GIT PULL] Btrfs updates
-Date: Sun, 19 Jun 2011 21:12:53 -0400
-Message-ID: <1308531566-sup-1586@shiny>
-Content-Type: text/plain; charset=UTF-8
-To: "Linus Torvalds" <torvalds@linux-foundation.org>,
-	"linux-btrfs" <linux-btrfs@vger.kernel.org>,
-	"LKML" <linux-kernel@vger.kernel.org>
+From: liubo <liubo2009@cn.fujitsu.com>
+Subject: Re: [PATCH 1/2] Btrfs: kill location key of in-memory inode
+Date: Mon, 20 Jun 2011 10:04:35 +0800
+Message-ID: <4DFEAAB3.4040109@cn.fujitsu.com>
+References: <1308217271-13259-1-git-send-email-liubo2009@cn.fujitsu.com> <20110618152144.GF12709@twin.jikos.cz>
+Mime-Version: 1.0
+Content-Type: text/plain; charset=ISO-8859-1
+Cc: linux-btrfs@vger.kernel.org, t-itoh@jp.fujitsu.com
+To: David Sterba <dave@jikos.cz>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
+In-Reply-To: <20110618152144.GF12709@twin.jikos.cz>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hi everyone,
+On 06/18/2011 11:21 PM, David Sterba wrote:
+> Hi,
+> 
+> On Thu, Jun 16, 2011 at 05:41:10PM +0800, Liu Bo wrote:
+>> --- a/fs/btrfs/btrfs_inode.h
+>> +++ b/fs/btrfs/btrfs_inode.h
+>> @@ -29,11 +29,6 @@ struct btrfs_inode {
+>>  	/* which subvolume this inode belongs to */
+>>  	struct btrfs_root *root;
+>>  
+>> -	/* key used to find this inode on disk.  This is used by the code
+>> -	 * to read in roots of subvolumes
+>> -	 */
+>> -	struct btrfs_key location;
+>> -
+>>  	/* the extent_tree has caches of all the extent mappings to disk */
+>>  	struct extent_map_tree extent_tree;
+>>  
+>> @@ -72,6 +67,9 @@ struct btrfs_inode {
+>>  	/* the space_info for where this inode's data allocations are done */
+>>  	struct btrfs_space_info *space_info;
+>>  
+>> +	/* full 64 bit inode number */
+>> +	u64 inode_id;
+> 
+> I like this optimization! It saves 16 bytes (7 for padding after
+> locatioin and 1+8 for the removed key type and offset). However I'd
+> rather see this named 'ino' or 'i_ino', it's a more common name for
+> inode number.
+> 
 
-The for-linus branch of the btrfs unstable repo:
+This is what I'm going to improve then.
 
-git://git.kernel.org/pub/scm/linux/kernel/git/mason/btrfs-unstable.git for-linus
+>> +
+>>  	/* full 64 bit generation number, struct vfs_inode doesn't have a big
+>>  	 * enough field for this.
+>>  	 */
+>> @@ -171,7 +169,7 @@ static inline struct btrfs_inode *BTRFS_I(struct inode *inode)
+>>  
+>>  static inline u64 btrfs_ino(struct inode *inode)
+>>  {
+>> -	u64 ino = BTRFS_I(inode)->location.objectid;
+>> +	u64 ino = BTRFS_I(inode)->inode_id;
+> 
+> see? :)
+> 
+>>  
+>>  	if (ino <= BTRFS_FIRST_FREE_OBJECTID)
+>>  		ino = inode->i_ino;
+>> diff --git a/fs/btrfs/disk-io.c b/fs/btrfs/disk-io.c
+>> index a203d36..5d6bbb9 100644
+>> --- a/fs/btrfs/disk-io.c
+>> +++ b/fs/btrfs/disk-io.c
+>> @@ -1693,9 +1693,8 @@ struct btrfs_root *open_ctree(struct super_block *sb,
+>>  
+>>  	BTRFS_I(fs_info->btree_inode)->io_tree.ops = &btree_extent_io_ops;
+>>  
+>> +	BTRFS_I(fs_info->btree_inode)->inode_id = BTRFS_BTREE_INODE_OBJECTID;
+>>  	BTRFS_I(fs_info->btree_inode)->root = tree_root;
+>> -	memset(&BTRFS_I(fs_info->btree_inode)->location, 0,
+>> -	       sizeof(struct btrfs_key));
+>>  	BTRFS_I(fs_info->btree_inode)->dummy_inode = 1;
+>>  	insert_inode_hash(fs_info->btree_inode);
+>>  
+>> diff --git a/fs/btrfs/export.c b/fs/btrfs/export.c
+>> index 1b8dc33..cdd3a84 100644
+>> --- a/fs/btrfs/export.c
+>> +++ b/fs/btrfs/export.c
+>> @@ -43,7 +43,7 @@ static int btrfs_encode_fh(struct dentry *dentry, u32 *fh, int *max_len,
+>>  		spin_lock(&dentry->d_lock);
+>>  
+>>  		parent = dentry->d_parent->d_inode;
+>> -		fid->parent_objectid = BTRFS_I(parent)->location.objectid;
+>> +		fid->parent_objectid = btrfs_ino(parent);
+> 
+> is there a reason to do btrfs_ino here instead of simple
+> BTRFS_I(parent)->inode_id ? Although there is just one more conditional
+> test whether i_ino is <= BTRFS_FREE_INO_OBJECTID, which would not hurt
+> so much, using btrfs_ino says this is to be expected and has a different
+> meaning than the original code.
+> 
 
-Has our current queue of fixes.  One of the fixes removes our unused
-sysfs code, mostly because gcc likes to complain about it since
-we removed some dead code in rc1.  We do plan on eventually putting more
-info into the sysfs dir, so the directory itself is still there.
+btrfs_ino provides the 64bit ino, so if we want to get a 64bit one, just
+use btrfs_ino instead.
 
-Otherwise these are regression fixes.  The new delayed metadata
-insertion code and the new transaction locking code had races with the
-code to balance space between drives, and races against snapshot
-creation.  There are also two ENOSPC regression fixes included as well.
+> The changes are not consistent, you add btrfs_ino where was a memcpy in
+> the original code but not everywhere:
 
-Chris Mason (4) commits (+136/-28):
-    Btrfs: drop the delalloc_bytes check in shrink_delalloc (+0/-4)
-    Btrfs: avoid delayed metadata items during commits (+28/-10)
-    Btrfs: check the return value from set_anon_super (+3/-1)
-    Btrfs: fix relocation races (+105/-13)
+leave those memcpy alone, what we want is to get the ino, since we have killed
+the location key, right?
 
-Josef Bacik (3) commits (+14/-3):
-    Btrfs: set no_trans_join after trying to expand the transaction (+11/-3)
-    Btrfs: protect the pending_snapshots list with trans_lock (+2/-0)
-    Btrfs: fix path leakage on subvol deletion (+1/-0)
+> 
+>>  		fid->parent_gen = parent->i_generation;
+>>  		parent_root_id = BTRFS_I(parent)->root->objectid;
+>>  
+>> diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
+>> index 5b9b6b6..3a1f8ee 100644
+>> --- a/fs/btrfs/extent-tree.c
+>> +++ b/fs/btrfs/extent-tree.c
+>> @@ -3037,7 +3037,7 @@ int btrfs_check_data_free_space(struct inode *inode, u64 bytes)
+>>  	bytes = (bytes + root->sectorsize - 1) & ~((u64)root->sectorsize - 1);
+>>  
+>>  	if (root == root->fs_info->tree_root ||
+>> -	    BTRFS_I(inode)->location.objectid == BTRFS_FREE_INO_OBJECTID) {
+>> +	    BTRFS_I(inode)->inode_id == BTRFS_FREE_INO_OBJECTID) {
+>>  		alloc_chunk = 0;
+>>  		committed = 1;
+>>  	}
+>> diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
+>> index 02ff4a1..e01a084 100644
+>> --- a/fs/btrfs/inode.c
+>> +++ b/fs/btrfs/inode.c
+>> @@ -754,7 +754,7 @@ static inline bool is_free_space_inode(struct btrfs_root *root,
+>>  				       struct inode *inode)
+>>  {
+>>  	if (root == root->fs_info->tree_root ||
+>> -	    BTRFS_I(inode)->location.objectid == BTRFS_FREE_INO_OBJECTID)
+>> +	    BTRFS_I(inode)->inode_id == BTRFS_FREE_INO_OBJECTID)
+>>  		return true;
+>>  	return false;
+>>  }
+>> @@ -2513,7 +2513,10 @@ static void btrfs_read_locked_inode(struct inode *inode)
+>>  	path = btrfs_alloc_path();
+>>  	BUG_ON(!path);
+>>  	path->leave_spinning = 1;
+>> -	memcpy(&location, &BTRFS_I(inode)->location, sizeof(location));
+>> +
+>> +	location.objectid = btrfs_ino(inode);
+>> +	location.offset = 0;
+>> +	btrfs_set_key_type(&location, BTRFS_INODE_ITEM_KEY);
+> 
+> memcpy -> btrfs_ino
+> 
+>>  
+>>  	ret = btrfs_lookup_inode(NULL, root, path, &location, 0);
+>>  	if (ret)
+>> @@ -2667,6 +2670,7 @@ noinline int btrfs_update_inode(struct btrfs_trans_handle *trans,
+>>  	struct btrfs_inode_item *inode_item;
+>>  	struct btrfs_path *path;
+>>  	struct extent_buffer *leaf;
+>> +	struct btrfs_key location;
+>>  	int ret;
+>>  
+>>  	/*
+>> @@ -2687,8 +2691,12 @@ noinline int btrfs_update_inode(struct btrfs_trans_handle *trans,
+>>  		return -ENOMEM;
+>>  
+>>  	path->leave_spinning = 1;
+>> -	ret = btrfs_lookup_inode(trans, root, path, &BTRFS_I(inode)->location,
+>> -				 1);
+>> +
+>> +	location.objectid = btrfs_ino(inode);
+> 
+> not sure about this, but I assume location.objectid will never be
+> <= FIRST_FREE_OBJECT_ID and btrfs_ino will return
+> BTRFS_I->location.objectid anyway. (there are more occurences of this
+> pattern)
+> 
+>> +	location.offset = 0;
+>> +	btrfs_set_key_type(&location, BTRFS_INODE_ITEM_KEY);
+>> +
+>> +	ret = btrfs_lookup_inode(trans, root, path, &location, 1);
+>>  	if (ret) {
+>>  		if (ret > 0)
+>>  			ret = -ENOENT;
+>> @@ -2839,6 +2847,7 @@ static struct btrfs_trans_handle *__unlink_start_trans(struct inode *dir,
+>>  	struct btrfs_path *path;
+>>  	struct btrfs_inode_ref *ref;
+>>  	struct btrfs_dir_item *di;
+>> +	struct btrfs_key location;
+>>  	struct inode *inode = dentry->d_inode;
+>>  	u64 index;
+>>  	int check_link = 1;
+>> @@ -2880,8 +2889,11 @@ static struct btrfs_trans_handle *__unlink_start_trans(struct inode *dir,
+>>  	path->skip_locking = 1;
+>>  	path->search_commit_root = 1;
+>>  
+>> -	ret = btrfs_lookup_inode(trans, root, path,
+>> -				&BTRFS_I(dir)->location, 0);
+>> +	location.objectid = btrfs_ino(dir);
+>> +	location.offset = 0;
+>> +	btrfs_set_key_type(&location, BTRFS_INODE_ITEM_KEY);
+>> +
+>> +	ret = btrfs_lookup_inode(trans, root, path, &location, 0);
+>>  	if (ret < 0) {
+>>  		err = ret;
+>>  		goto out;
+>> @@ -2894,8 +2906,11 @@ static struct btrfs_trans_handle *__unlink_start_trans(struct inode *dir,
+>>  	}
+>>  	btrfs_release_path(path);
+>>  
+>> -	ret = btrfs_lookup_inode(trans, root, path,
+>> -				&BTRFS_I(inode)->location, 0);
+>> +	location.objectid = btrfs_ino(inode);
+>> +	location.offset = 0;
+>> +	btrfs_set_key_type(&location, BTRFS_INODE_ITEM_KEY);
+>> +
+>> +	ret = btrfs_lookup_inode(trans, root, path, &location, 0);
+>>  	if (ret < 0) {
+>>  		err = ret;
+>>  		goto out;
+>> @@ -3097,7 +3112,7 @@ static int btrfs_rmdir(struct inode *dir, struct dentry *dentry)
+>>  
+>>  	if (unlikely(btrfs_ino(inode) == BTRFS_EMPTY_SUBVOL_DIR_OBJECTID)) {
+>>  		err = btrfs_unlink_subvol(trans, root, dir,
+>> -					  BTRFS_I(inode)->location.objectid,
+>> +					  BTRFS_I(inode)->inode_id,
+>>  					  dentry->d_name.name,
+>>  					  dentry->d_name.len);
+>>  		goto out;
+>> @@ -3331,7 +3346,7 @@ delete:
+>>  		if (path->slots[0] == 0 ||
+>>  		    path->slots[0] != pending_del_slot) {
+>>  			if (root->ref_cows &&
+>> -			    BTRFS_I(inode)->location.objectid !=
+>> +			    BTRFS_I(inode)->inode_id !=
+>>  						BTRFS_FREE_INO_OBJECTID) {
+>>  				err = -EAGAIN;
+>>  				goto out;
+>> @@ -3965,7 +3980,7 @@ struct inode *btrfs_iget(struct super_block *s, struct btrfs_key *location,
+>>  
+>>  	if (inode->i_state & I_NEW) {
+>>  		BTRFS_I(inode)->root = root;
+>> -		memcpy(&BTRFS_I(inode)->location, location, sizeof(*location));
+>> +		BTRFS_I(inode)->inode_id = location->objectid;
+> 
+> memcpy -> direct assignment
+> 
+>>  		btrfs_read_locked_inode(inode);
+>>  		inode_tree_add(inode);
+>>  		unlock_new_inode(inode);
+>> @@ -3986,7 +4001,7 @@ static struct inode *new_simple_dir(struct super_block *s,
+>>  		return ERR_PTR(-ENOMEM);
+>>  
+>>  	BTRFS_I(inode)->root = root;
+>> -	memcpy(&BTRFS_I(inode)->location, key, sizeof(*key));
+>> +	BTRFS_I(inode)->inode_id = key->objectid;
+> 
+> memcpy -> direct assignment
+> 
+>>  	BTRFS_I(inode)->dummy_inode = 1;
+>>  
+>>  	inode->i_ino = BTRFS_EMPTY_SUBVOL_DIR_OBJECTID;
+>> @@ -4417,7 +4432,6 @@ static struct inode *btrfs_new_inode(struct btrfs_trans_handle *trans,
+>>  {
+>>  	struct inode *inode;
+>>  	struct btrfs_inode_item *inode_item;
+>> -	struct btrfs_key *location;
+>>  	struct btrfs_path *path;
+>>  	struct btrfs_inode_ref *ref;
+>>  	struct btrfs_key key[2];
+>> @@ -4461,6 +4475,7 @@ static struct inode *btrfs_new_inode(struct btrfs_trans_handle *trans,
+>>  	BTRFS_I(inode)->generation = trans->transid;
+>>  	inode->i_generation = BTRFS_I(inode)->generation;
+>>  	btrfs_set_inode_space_info(root, inode);
+>> +	BTRFS_I(inode)->inode_id = objectid;
+>>  
+>>  	if (mode & S_IFDIR)
+>>  		owner = 0;
+>> @@ -4500,11 +4515,6 @@ static struct inode *btrfs_new_inode(struct btrfs_trans_handle *trans,
+>>  	btrfs_mark_buffer_dirty(path->nodes[0]);
+>>  	btrfs_free_path(path);
+>>  
+>> -	location = &BTRFS_I(inode)->location;
+>> -	location->objectid = objectid;
+>> -	location->offset = 0;
+>> -	btrfs_set_key_type(location, BTRFS_INODE_ITEM_KEY);
+>> -
+>>  	btrfs_inherit_iflags(inode, dir);
+>>  
+>>  	if ((mode & S_IFREG)) {
+>> @@ -7029,7 +7039,7 @@ static int btrfs_rename(struct inode *old_dir, struct dentry *old_dentry,
+>>  		new_inode->i_ctime = CURRENT_TIME;
+>>  		if (unlikely(btrfs_ino(new_inode) ==
+>>  			     BTRFS_EMPTY_SUBVOL_DIR_OBJECTID)) {
+>> -			root_objectid = BTRFS_I(new_inode)->location.objectid;
+>> +			root_objectid = BTRFS_I(new_inode)->inode_id;
+> 
+> direct assignment, no btrfs_ino as in the first hunk
 
-David Sterba (2) commits (+4/-4):
-    btrfs: fix dereference of ERR_PTR value (+1/-1)
-    btrfs: fix uninitialized return value (+3/-3)
+This is a special case, where is new_inode->i_ino is BTRFS_EMPTY_SUBVOL_DIR_OBJECTID, 
+while BTRFS_I(new_inode)->location.objectid is 256.
 
-Miao Xie (1) commits (+20/-6):
-    btrfs: fix wrong reservation when doing delayed inode operations
+Thanks for the reviewing!
 
-Maarten Lankhorst (1) commits (+0/-148):
-    btrfs: Remove unused sysfs code
+liubo
+thanks,
 
-Total: (11) commits (+174/-189)
+> 
+>>  			ret = btrfs_unlink_subvol(trans, dest, new_dir,
+>>  						root_objectid,
+>>  						new_dentry->d_name.name,
+>> -- 
+> 
+> 
+> david
+> 
 
- fs/btrfs/ctree.h         |   15 +++++-
- fs/btrfs/delayed-inode.c |   32 +++++++++--
- fs/btrfs/delayed-inode.h |    5 +-
- fs/btrfs/disk-io.c       |   12 ++--
- fs/btrfs/extent-tree.c   |    4 -
- fs/btrfs/inode.c         |    1 +
- fs/btrfs/ioctl.c         |    2 +
- fs/btrfs/relocation.c    |   30 +++++++---
- fs/btrfs/sysfs.c         |  146 ----------------------------------------------
- fs/btrfs/transaction.c   |  114 ++++++++++++++++++++++++++++++-----
- fs/btrfs/tree-log.c      |    2 +-
- 11 files changed, 174 insertions(+), 189 deletions(-)

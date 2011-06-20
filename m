@@ -1,119 +1,36 @@
-From: Liu Bo <liubo2009@cn.fujitsu.com>
-Subject: [PATCH 2/2 v2] Btrfs: fix 'ls -lis' mismatch
-Date: Mon, 20 Jun 2011 10:59:16 +0800
-Message-ID: <1308538756-31203-2-git-send-email-liubo2009@cn.fujitsu.com>
-References: <1308538756-31203-1-git-send-email-liubo2009@cn.fujitsu.com>
-Cc: <t-itoh@jp.fujitsu.com>, <dave@jikos.cz>
-To: <linux-btrfs@vger.kernel.org>
+From: Li Zefan <lizf@cn.fujitsu.com>
+Subject: [PATCH] Btrfs: copy string correctly in BTRFS_IOC_INO_LOOKUP ioctl
+Date: Mon, 20 Jun 2011 13:53:37 +0800
+Message-ID: <4DFEE061.1070604@cn.fujitsu.com>
+Mime-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+To: "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <1308538756-31203-1-git-send-email-liubo2009@cn.fujitsu.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-As btrfs uses delay allocation mechanism and data=order mode, there can be
-a period window, during which we sub delalloc_bytes and add_inode_bytes,
-and we may get a value of '0' referred to inode's blocks via 'ls -lis'.
+Memory areas [ptr, ptr+total_len] and [name, name+total_len]
+may overlap, so it's wrong to use memcpy().
 
-ino:291 blocks:198656 i_blocks:0 i_bytes:0 delalloc_bytes:101711872
-ino:291 blocks:198656 i_blocks:0 i_bytes:0 delalloc_bytes:101711872
-                                                       <---------
-ino:291 blocks:0 i_blocks:0 i_bytes:0 delalloc_bytes:0 |  THE
-ino:291 blocks:0 i_blocks:0 i_bytes:0 delalloc_bytes:0 |  WINDOW
-                                                       <---------
-ino:291 blocks:819200 i_blocks:819200 i_bytes:0 delalloc_bytes:0
-
-This may make btrfs's users confused.
-
-Hence, we use anther counter for the number of delalloc bytes in flight
-that are accounted for in coordination with inode_add_bytes to ensure
-correct output results.
-
-Signed-off-by: Liu Bo <liubo2009@cn.fujitsu.com>
+Signed-off-by: Li Zefan <lizf@cn.fujitsu.com>
 ---
- fs/btrfs/btrfs_inode.h |    8 ++++++--
- fs/btrfs/inode.c       |   15 ++++++++++++---
- 2 files changed, 18 insertions(+), 5 deletions(-)
+ fs/btrfs/ioctl.c |    3 +--
+ 1 files changed, 1 insertions(+), 2 deletions(-)
 
-diff --git a/fs/btrfs/btrfs_inode.h b/fs/btrfs/btrfs_inode.h
-index 9f1bbf2..b406c79 100644
---- a/fs/btrfs/btrfs_inode.h
-+++ b/fs/btrfs/btrfs_inode.h
-@@ -93,9 +93,13 @@ struct btrfs_inode {
- 	 */
- 	u64 logged_trans;
- 
--	/* total number of bytes pending delalloc, used by stat to calc the
--	 * real block usage of the file
-+	/*
-+	 * total number of bytes pending delalloc, used by stat to
-+	 * calc the real block usage of the file.
- 	 */
-+	u64 pending_bytes;
-+
-+	/* total number of bytes pending delalloc */
- 	u64 delalloc_bytes;
- 
- 	/* total number of bytes that may be used for this inode for
-diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
-index bbe4cdc..c5f9067 100644
---- a/fs/btrfs/inode.c
-+++ b/fs/btrfs/inode.c
-@@ -106,6 +106,13 @@ static int btrfs_init_inode_security(struct btrfs_trans_handle *trans,
- 	return err;
- }
- 
-+static void btrfs_inode_add_bytes(struct inode *inode, loff_t bytes)
-+{
-+	if (BTRFS_I(inode)->pending_bytes >= bytes)
-+		BTRFS_I(inode)->pending_bytes -= bytes;
-+	inode_add_bytes(inode, bytes);
-+}
-+
- /*
-  * this does all the hard work for inserting an inline extent into
-  * the btree.  The caller should have done a btrfs_drop_extents so that
-@@ -144,7 +151,7 @@ static noinline int insert_inline_extent(struct btrfs_trans_handle *trans,
- 	btrfs_set_key_type(&key, BTRFS_EXTENT_DATA_KEY);
- 	datasize = btrfs_file_extent_calc_inline_size(cur_size);
- 
--	inode_add_bytes(inode, size);
-+	btrfs_inode_add_bytes(inode, size);
- 	ret = btrfs_insert_empty_item(trans, root, path, &key,
- 				      datasize);
- 	BUG_ON(ret);
-@@ -1346,6 +1353,7 @@ static int btrfs_set_bit_hook(struct inode *inode,
- 
- 		spin_lock(&root->fs_info->delalloc_lock);
- 		BTRFS_I(inode)->delalloc_bytes += len;
-+		BTRFS_I(inode)->pending_bytes += len;
- 		root->fs_info->delalloc_bytes += len;
- 		if (do_list && list_empty(&BTRFS_I(inode)->delalloc_inodes)) {
- 			list_add_tail(&BTRFS_I(inode)->delalloc_inodes,
-@@ -1685,7 +1693,7 @@ static int insert_reserved_file_extent(struct btrfs_trans_handle *trans,
- 
- 	btrfs_mark_buffer_dirty(leaf);
- 
--	inode_add_bytes(inode, num_bytes);
-+	btrfs_inode_add_bytes(inode, num_bytes);
- 
- 	ins.objectid = disk_bytenr;
- 	ins.offset = disk_num_bytes;
-@@ -6726,6 +6734,7 @@ struct inode *btrfs_alloc_inode(struct super_block *sb)
- 	ei->last_trans = 0;
- 	ei->last_sub_trans = 0;
- 	ei->logged_trans = 0;
-+	ei->pending_bytes = 0;
- 	ei->delalloc_bytes = 0;
- 	ei->reserved_bytes = 0;
- 	ei->disk_i_size = 0;
-@@ -6901,7 +6910,7 @@ static int btrfs_getattr(struct vfsmount *mnt,
- 	stat->dev = BTRFS_I(inode)->root->anon_super.s_dev;
- 	stat->blksize = PAGE_CACHE_SIZE;
- 	stat->blocks = (inode_get_bytes(inode) +
--			BTRFS_I(inode)->delalloc_bytes) >> 9;
-+			BTRFS_I(inode)->pending_bytes) >> 9;
- 	return 0;
- }
- 
--- 
-1.6.5.2
-
+diff --git a/fs/btrfs/ioctl.c b/fs/btrfs/ioctl.c
+index b793d11..76f52b3 100644
+--- a/fs/btrfs/ioctl.c
++++ b/fs/btrfs/ioctl.c
+@@ -1753,11 +1753,10 @@ static noinline int btrfs_search_path_in_tree(struct btrfs_fs_info *info,
+ 		key.objectid = key.offset;
+ 		key.offset = (u64)-1;
+ 		dirid = key.objectid;
+-
+ 	}
+ 	if (ptr < name)
+ 		goto out;
+-	memcpy(name, ptr, total_len);
++	memmove(name, ptr, total_len);
+ 	name[total_len]='\0';
+ 	ret = 0;
+ out:
+-- 1.7.3.1 

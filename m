@@ -1,391 +1,115 @@
 From: Josef Bacik <josef@redhat.com>
-Subject: [PATCH] Btrfs: save preloaded extent_state's in a percpu cache
-Date: Mon, 20 Jun 2011 14:24:55 -0400
-Message-ID: <1308594295-20076-1-git-send-email-josef@redhat.com>
+Subject: [PATCH] Btrfs: fix how we merge extent states and deal with cached states
+Date: Mon, 20 Jun 2011 14:56:35 -0400
+Message-ID: <1308596195-22223-1-git-send-email-josef@redhat.com>
 To: linux-btrfs@vger.kernel.org
 Return-path: <linux-btrfs-owner@vger.kernel.org>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-When doing DIO tracing I noticed we were doing a ton of allocations, a lot of
-the time for extent_states.  Some of the time we don't even use the prealloc'ed
-extent_state, it just get's free'd up.  So instead create a per-cpu cache like
-the radix tree stuff.  So we will check to see if our per-cpu cache has a
-prealloc'ed extent_state in it and if so we just continue, else we alloc a new
-one and fill the cache.  Then if we need to use a prealloc'ed extent_state we
-can just take it out of our per-cpu cache.  We will also refill the cache on
-free to try and limit the number of times we have to ask the allocator for
-caches.  With this patch dbench 50 goes from ~210 mb/s to ~260 mb/s.  Thanks,
+First, we can sometimes free the state we're merging, which means anybody who
+calls merge_state() may have the state it passed in free'ed.  This is
+problematic because we could end up caching the state, which makes caching
+useless as the state will no longer be part of the tree.  So instead of free'ing
+the state we passed into merge_state(), set it's end to the other->end and free
+the other state.  This way we are sure to cache the correct state.  Also because
+we can merge states together, instead of only using the cache'd state if it's
+start == the start we are looking for, go ahead and use it if the start we are
+looking for is within the range of the cached state.  Thanks,
 
 Signed-off-by: Josef Bacik <josef@redhat.com>
 ---
- fs/btrfs/extent_io.c |  163 ++++++++++++++++++++++++++++++++++++++------------
- 1 files changed, 124 insertions(+), 39 deletions(-)
+ fs/btrfs/extent_io.c |   24 +++++++++++-------------
+ 1 files changed, 11 insertions(+), 13 deletions(-)
 
 diff --git a/fs/btrfs/extent_io.c b/fs/btrfs/extent_io.c
-index 7055d11..3a33c11 100644
+index 3a33c11..4443b0f 100644
 --- a/fs/btrfs/extent_io.c
 +++ b/fs/btrfs/extent_io.c
-@@ -12,6 +12,7 @@
- #include <linux/pagevec.h>
- #include <linux/prefetch.h>
- #include <linux/cleancache.h>
-+#include <linux/cpu.h>
- #include "extent_io.h"
- #include "extent_map.h"
- #include "compat.h"
-@@ -31,6 +32,8 @@ static DEFINE_SPINLOCK(leak_lock);
- 
- #define BUFFER_LRU_MAX 64
- 
-+static DEFINE_PER_CPU(struct extent_state *, extent_state_preloads) = NULL;
-+
- struct tree_entry {
- 	u64 start;
- 	u64 end;
-@@ -71,10 +74,36 @@ free_state_cache:
- 	return -ENOMEM;
- }
- 
-+static void __free_extent_state(struct extent_state *state)
-+{
-+	if (!state)
-+		return;
-+	if (atomic_dec_and_test(&state->refs)) {
-+#if LEAK_DEBUG
-+		unsigned long flags;
-+#endif
-+		WARN_ON(state->tree);
-+#if LEAK_DEBUG
-+		spin_lock_irqsave(&leak_lock, flags);
-+		list_del(&state->leak_list);
-+		spin_unlock_irqrestore(&leak_lock, flags);
-+#endif
-+		kmem_cache_free(extent_state_cache, state);
-+	}
-+}
- void extent_io_exit(void)
- {
- 	struct extent_state *state;
- 	struct extent_buffer *eb;
-+	int cpu;
-+
-+	for_each_possible_cpu(cpu) {
-+		state = per_cpu(extent_state_preloads, cpu);
-+		if (!state)
-+			continue;
-+		per_cpu(extent_state_preloads, cpu) = NULL;
-+		__free_extent_state(state);
-+	}
- 
- 	while (!list_empty(&states)) {
- 		state = list_entry(states.next, struct extent_state, leak_list);
-@@ -114,16 +143,11 @@ void extent_io_tree_init(struct extent_io_tree *tree,
- 	tree->mapping = mapping;
- }
- 
--static struct extent_state *alloc_extent_state(gfp_t mask)
-+static void init_extent_state(struct extent_state *state)
- {
--	struct extent_state *state;
- #if LEAK_DEBUG
- 	unsigned long flags;
- #endif
--
--	state = kmem_cache_alloc(extent_state_cache, mask);
--	if (!state)
--		return state;
- 	state->state = 0;
- 	state->private = 0;
- 	state->tree = NULL;
-@@ -134,6 +158,16 @@ static struct extent_state *alloc_extent_state(gfp_t mask)
- #endif
- 	atomic_set(&state->refs, 1);
- 	init_waitqueue_head(&state->wq);
-+}
-+
-+static struct extent_state *alloc_extent_state(gfp_t mask)
-+{
-+	struct extent_state *state;
-+
-+	state = kmem_cache_alloc(extent_state_cache, mask);
-+	if (!state)
-+		return state;
-+	init_extent_state(state);
- 	return state;
- }
- 
-@@ -142,6 +176,7 @@ void free_extent_state(struct extent_state *state)
- 	if (!state)
- 		return;
- 	if (atomic_dec_and_test(&state->refs)) {
-+		struct extent_state *tmp;
- #if LEAK_DEBUG
- 		unsigned long flags;
- #endif
-@@ -151,10 +186,53 @@ void free_extent_state(struct extent_state *state)
- 		list_del(&state->leak_list);
- 		spin_unlock_irqrestore(&leak_lock, flags);
- #endif
--		kmem_cache_free(extent_state_cache, state);
-+		preempt_disable();
-+		tmp = __get_cpu_var(extent_state_preloads);
-+		if (!tmp) {
-+			init_extent_state(state);
-+			__get_cpu_var(extent_state_preloads) = state;
-+		} else {
-+			kmem_cache_free(extent_state_cache, state);
-+		}
-+		preempt_enable();
- 	}
- }
- 
-+/*
-+ * Pre-load an extent state.
-+ */
-+static int extent_state_preload(gfp_t mask)
-+{
-+	struct extent_state *state;
-+
-+	preempt_disable();
-+	state = __get_cpu_var(extent_state_preloads);
-+	if (!state) {
-+		struct extent_state *tmp;
-+		preempt_enable();
-+		tmp = alloc_extent_state(mask);
-+		if (!tmp)
-+			return -ENOMEM;
-+		preempt_disable();
-+		state = __get_cpu_var(extent_state_preloads);
-+		if (state)
-+			free_extent_state(tmp);
-+		else
-+			__get_cpu_var(extent_state_preloads) = tmp;
-+	}
-+
-+	return 0;
-+}
-+
-+/*
-+ * Just re-enable preemption, this is here to make patch reviewing easier, to
-+ * make sure we match up extent_state_preloads with the end() properly.
-+ */
-+static void extent_state_preload_end(void)
-+{
-+	preempt_enable();
-+}
-+
- static struct rb_node *tree_insert(struct rb_root *root, u64 offset,
- 				   struct rb_node *node)
- {
-@@ -441,13 +519,24 @@ static int clear_state_bit(struct extent_io_tree *tree,
- 	return ret;
- }
- 
--static struct extent_state *
--alloc_extent_state_atomic(struct extent_state *prealloc)
-+static struct extent_state *get_prealloc_state(void)
- {
--	if (!prealloc)
--		prealloc = alloc_extent_state(GFP_ATOMIC);
-+	struct extent_state *state;
- 
--	return prealloc;
-+	state = __get_cpu_var(extent_state_preloads);
-+	__get_cpu_var(extent_state_preloads) = NULL;
-+	return state;
-+}
-+
-+static struct extent_state *alloc_extent_state_atomic(void)
-+{
-+	struct extent_state *state;
-+
-+	state = get_prealloc_state();
-+	if (!state)
-+		state = alloc_extent_state(GFP_ATOMIC);
-+
-+	return state;
- }
- 
- /*
-@@ -477,6 +566,7 @@ int clear_extent_bit(struct extent_io_tree *tree, u64 start, u64 end,
- 	int err;
- 	int set = 0;
- 	int clear = 0;
-+	bool preload = !(mask & __GFP_WAIT);
- 
- 	if (delete)
- 		bits |= ~EXTENT_CTLBITS;
-@@ -485,9 +575,8 @@ int clear_extent_bit(struct extent_io_tree *tree, u64 start, u64 end,
- 	if (bits & (EXTENT_IOBITS | EXTENT_BOUNDARY))
- 		clear = 1;
- again:
--	if (!prealloc && (mask & __GFP_WAIT)) {
--		prealloc = alloc_extent_state(mask);
--		if (!prealloc)
-+	if (!prealloc && preload) {
-+		if (extent_state_preload(mask))
- 			return -ENOMEM;
+@@ -359,11 +359,10 @@ static int merge_state(struct extent_io_tree *tree,
+ 		if (other->start == state->end + 1 &&
+ 		    other->state == state->state) {
+ 			merge_cb(tree, state, other);
+-			other->start = state->start;
+-			state->tree = NULL;
+-			rb_erase(&state->rb_node, &tree->state);
+-			free_extent_state(state);
+-			state = NULL;
++			state->end = other->end;
++			other->tree = NULL;
++			rb_erase(&other->rb_node, &tree->state);
++			free_extent_state(other);
+ 		}
  	}
  
-@@ -540,11 +629,10 @@ hit_next:
- 	 */
- 
- 	if (state->start < start) {
--		prealloc = alloc_extent_state_atomic(prealloc);
-+		prealloc = alloc_extent_state_atomic();
- 		BUG_ON(!prealloc);
- 		err = split_state(tree, state, prealloc, start);
- 		BUG_ON(err == -EEXIST);
--		prealloc = NULL;
- 		if (err)
- 			goto out;
- 		if (state->end <= end) {
-@@ -562,7 +650,7 @@ hit_next:
- 	 * on the first half
- 	 */
- 	if (state->start <= end && state->end > end) {
--		prealloc = alloc_extent_state_atomic(prealloc);
-+		prealloc = alloc_extent_state_atomic();
- 		BUG_ON(!prealloc);
- 		err = split_state(tree, state, prealloc, end + 1);
- 		BUG_ON(err == -EEXIST);
-@@ -571,7 +659,6 @@ hit_next:
- 
- 		set |= clear_state_bit(tree, prealloc, &bits, wake);
- 
--		prealloc = NULL;
- 		goto out;
+@@ -429,7 +428,6 @@ static int insert_state(struct extent_io_tree *tree,
+ 		       "%llu %llu\n", (unsigned long long)found->start,
+ 		       (unsigned long long)found->end,
+ 		       (unsigned long long)start, (unsigned long long)end);
+-		free_extent_state(state);
+ 		return -EEXIST;
  	}
- 
-@@ -594,8 +681,8 @@ hit_next:
- 
- out:
- 	spin_unlock(&tree->lock);
--	if (prealloc)
--		free_extent_state(prealloc);
-+	if (preload)
-+		extent_state_preload_end();
- 
- 	return set;
- 
-@@ -603,8 +690,10 @@ search_again:
- 	if (start > end)
- 		goto out;
- 	spin_unlock(&tree->lock);
--	if (mask & __GFP_WAIT)
-+	if (preload) {
-+		extent_state_preload_end();
- 		cond_resched();
-+	}
- 	goto again;
- }
- 
-@@ -731,12 +820,13 @@ int set_extent_bit(struct extent_io_tree *tree, u64 start, u64 end,
- 	int err = 0;
- 	u64 last_start;
- 	u64 last_end;
-+	bool preload = !(mask & __GFP_WAIT);
- 
- 	bits |= EXTENT_FIRST_DELALLOC;
- again:
--	if (!prealloc && (mask & __GFP_WAIT)) {
--		prealloc = alloc_extent_state(mask);
--		BUG_ON(!prealloc);
-+	if (!prealloc && preload) {
-+		if (extent_state_preload(mask))
-+			return -ENOMEM;
- 	}
- 
- 	spin_lock(&tree->lock);
-@@ -753,10 +843,9 @@ again:
- 	 */
- 	node = tree_search(tree, start);
- 	if (!node) {
--		prealloc = alloc_extent_state_atomic(prealloc);
-+		prealloc = alloc_extent_state_atomic();
- 		BUG_ON(!prealloc);
- 		err = insert_state(tree, prealloc, start, end, &bits);
--		prealloc = NULL;
- 		BUG_ON(err == -EEXIST);
- 		goto out;
- 	}
-@@ -822,11 +911,10 @@ hit_next:
- 			goto out;
+ 	state->tree = tree;
+@@ -589,7 +587,8 @@ again:
+ 			cached_state = NULL;
  		}
  
--		prealloc = alloc_extent_state_atomic(prealloc);
-+		prealloc = alloc_extent_state_atomic();
- 		BUG_ON(!prealloc);
- 		err = split_state(tree, state, prealloc, start);
- 		BUG_ON(err == -EEXIST);
--		prealloc = NULL;
+-		if (cached && cached->tree && cached->start == start) {
++		if (cached && cached->tree && cached->start <= start &&
++		    cached->end > start) {
+ 			if (clear)
+ 				atomic_dec(&cached->refs);
+ 			state = cached;
+@@ -832,7 +831,8 @@ again:
+ 	spin_lock(&tree->lock);
+ 	if (cached_state && *cached_state) {
+ 		state = *cached_state;
+-		if (state->start == start && state->tree) {
++		if (state->start <= start && state->end > start &&
++		    state->tree) {
+ 			node = &state->rb_node;
+ 			goto hit_next;
+ 		}
+@@ -872,13 +872,12 @@ hit_next:
  		if (err)
  			goto out;
- 		if (state->end <= end) {
-@@ -855,7 +943,7 @@ hit_next:
- 		else
- 			this_end = last_start - 1;
  
--		prealloc = alloc_extent_state_atomic(prealloc);
-+		prealloc = alloc_extent_state_atomic();
- 		BUG_ON(!prealloc);
+-		next_node = rb_next(node);
+-		cache_state(state, cached_state);
+ 		merge_state(tree, state);
+ 		if (last_end == (u64)-1)
+ 			goto out;
  
- 		/*
-@@ -868,12 +956,10 @@ hit_next:
+ 		start = last_end + 1;
++		next_node = rb_next(&state->rb_node);
+ 		if (next_node && start < end && prealloc && !need_resched()) {
+ 			state = rb_entry(next_node, struct extent_state,
+ 					 rb_node);
+@@ -950,7 +949,6 @@ hit_next:
+ 		 * Avoid to free 'prealloc' if it can be merged with
+ 		 * the later extent.
+ 		 */
+-		atomic_inc(&prealloc->refs);
+ 		err = insert_state(tree, prealloc, start, this_end,
+ 				   &bits);
  		BUG_ON(err == -EEXIST);
- 		if (err) {
- 			free_extent_state(prealloc);
--			prealloc = NULL;
+@@ -959,7 +957,6 @@ hit_next:
  			goto out;
  		}
  		cache_state(prealloc, cached_state);
- 		free_extent_state(prealloc);
--		prealloc = NULL;
+-		free_extent_state(prealloc);
  		start = this_end + 1;
  		goto search_again;
  	}
-@@ -890,19 +976,16 @@ hit_next:
- 			goto out;
- 		}
+@@ -1649,7 +1646,8 @@ int test_range_bit(struct extent_io_tree *tree, u64 start, u64 end,
+ 	int bitset = 0;
  
--		prealloc = alloc_extent_state_atomic(prealloc);
-+		prealloc = alloc_extent_state_atomic();
- 		BUG_ON(!prealloc);
- 		err = split_state(tree, state, prealloc, end + 1);
- 		BUG_ON(err == -EEXIST);
- 
- 		err = set_state_bits(tree, prealloc, &bits);
--		if (err) {
--			prealloc = NULL;
-+		if (err)
- 			goto out;
--		}
- 		cache_state(prealloc, cached_state);
- 		merge_state(tree, prealloc);
--		prealloc = NULL;
- 		goto out;
- 	}
- 
-@@ -910,8 +993,8 @@ hit_next:
- 
- out:
- 	spin_unlock(&tree->lock);
--	if (prealloc)
--		free_extent_state(prealloc);
-+	if (preload)
-+		extent_state_preload_end();
- 
- 	return err;
- 
-@@ -919,6 +1002,8 @@ search_again:
- 	if (start > end)
- 		goto out;
- 	spin_unlock(&tree->lock);
-+	if (preload)
-+		extent_state_preload_end();
- 	if (mask & __GFP_WAIT)
- 		cond_resched();
- 	goto again;
+ 	spin_lock(&tree->lock);
+-	if (cached && cached->tree && cached->start == start)
++	if (cached && cached->tree && cached->start <= start &&
++	    cached->end > start)
+ 		node = &cached->rb_node;
+ 	else
+ 		node = tree_search(tree, start);
 -- 
 1.7.5.2
 

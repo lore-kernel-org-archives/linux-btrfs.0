@@ -1,115 +1,75 @@
-From: Josef Bacik <josef@redhat.com>
-Subject: [PATCH] Btrfs: fix how we merge extent states and deal with cached states
-Date: Mon, 20 Jun 2011 14:56:35 -0400
-Message-ID: <1308596195-22223-1-git-send-email-josef@redhat.com>
-To: linux-btrfs@vger.kernel.org
+From: Christoph Hellwig <hch@infradead.org>
+Subject: [PATCH 8/8] rw_semaphore: remove up/down_read_non_owner
+Date: Mon, 20 Jun 2011 16:15:41 -0400
+Message-ID: <20110620202031.976772585@bombadil.infradead.org>
+References: <20110620201533.847236272@bombadil.infradead.org>
+Cc: linux-fsdevel@vger.kernel.org, linux-ext4@vger.kernel.org,
+	linux-btrfs@vger.kernel.org, hirofumi@mail.parknet.co.jp,
+	mfasheh@suse.com, jlbec@evilplan.org
+To: viro@zeniv.linux.org.uk, tglx@linutronix.de
 Return-path: <linux-btrfs-owner@vger.kernel.org>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-First, we can sometimes free the state we're merging, which means anybody who
-calls merge_state() may have the state it passed in free'ed.  This is
-problematic because we could end up caching the state, which makes caching
-useless as the state will no longer be part of the tree.  So instead of free'ing
-the state we passed into merge_state(), set it's end to the other->end and free
-the other state.  This way we are sure to cache the correct state.  Also because
-we can merge states together, instead of only using the cache'd state if it's
-start == the start we are looking for, go ahead and use it if the start we are
-looking for is within the range of the cached state.  Thanks,
+Now that the last users is gone these can be removed.
 
-Signed-off-by: Josef Bacik <josef@redhat.com>
----
- fs/btrfs/extent_io.c |   24 +++++++++++-------------
- 1 files changed, 11 insertions(+), 13 deletions(-)
+Signed-off-by: Christoph Hellwig <hch@lst.de>
 
-diff --git a/fs/btrfs/extent_io.c b/fs/btrfs/extent_io.c
-index 3a33c11..4443b0f 100644
---- a/fs/btrfs/extent_io.c
-+++ b/fs/btrfs/extent_io.c
-@@ -359,11 +359,10 @@ static int merge_state(struct extent_io_tree *tree,
- 		if (other->start == state->end + 1 &&
- 		    other->state == state->state) {
- 			merge_cb(tree, state, other);
--			other->start = state->start;
--			state->tree = NULL;
--			rb_erase(&state->rb_node, &tree->state);
--			free_extent_state(state);
--			state = NULL;
-+			state->end = other->end;
-+			other->tree = NULL;
-+			rb_erase(&other->rb_node, &tree->state);
-+			free_extent_state(other);
- 		}
- 	}
+Index: linux-2.6/include/linux/rwsem.h
+===================================================================
+--- linux-2.6.orig/include/linux/rwsem.h	2011-06-20 14:58:15.449148809 +0200
++++ linux-2.6/include/linux/rwsem.h	2011-06-20 14:58:30.915814691 +0200
+@@ -124,19 +124,9 @@ extern void downgrade_write(struct rw_se
+  */
+ extern void down_read_nested(struct rw_semaphore *sem, int subclass);
+ extern void down_write_nested(struct rw_semaphore *sem, int subclass);
+-/*
+- * Take/release a lock when not the owner will release it.
+- *
+- * [ This API should be avoided as much as possible - the
+- *   proper abstraction for this case is completions. ]
+- */
+-extern void down_read_non_owner(struct rw_semaphore *sem);
+-extern void up_read_non_owner(struct rw_semaphore *sem);
+ #else
+ # define down_read_nested(sem, subclass)		down_read(sem)
+ # define down_write_nested(sem, subclass)	down_write(sem)
+-# define down_read_non_owner(sem)		down_read(sem)
+-# define up_read_non_owner(sem)			up_read(sem)
+ #endif
  
-@@ -429,7 +428,6 @@ static int insert_state(struct extent_io_tree *tree,
- 		       "%llu %llu\n", (unsigned long long)found->start,
- 		       (unsigned long long)found->end,
- 		       (unsigned long long)start, (unsigned long long)end);
--		free_extent_state(state);
- 		return -EEXIST;
- 	}
- 	state->tree = tree;
-@@ -589,7 +587,8 @@ again:
- 			cached_state = NULL;
- 		}
+ #endif /* _LINUX_RWSEM_H */
+Index: linux-2.6/kernel/rwsem.c
+===================================================================
+--- linux-2.6.orig/kernel/rwsem.c	2011-06-20 14:58:34.509147842 +0200
++++ linux-2.6/kernel/rwsem.c	2011-06-20 14:58:47.479147187 +0200
+@@ -117,15 +117,6 @@ void down_read_nested(struct rw_semaphor
  
--		if (cached && cached->tree && cached->start == start) {
-+		if (cached && cached->tree && cached->start <= start &&
-+		    cached->end > start) {
- 			if (clear)
- 				atomic_dec(&cached->refs);
- 			state = cached;
-@@ -832,7 +831,8 @@ again:
- 	spin_lock(&tree->lock);
- 	if (cached_state && *cached_state) {
- 		state = *cached_state;
--		if (state->start == start && state->tree) {
-+		if (state->start <= start && state->end > start &&
-+		    state->tree) {
- 			node = &state->rb_node;
- 			goto hit_next;
- 		}
-@@ -872,13 +872,12 @@ hit_next:
- 		if (err)
- 			goto out;
+ EXPORT_SYMBOL(down_read_nested);
  
--		next_node = rb_next(node);
--		cache_state(state, cached_state);
- 		merge_state(tree, state);
- 		if (last_end == (u64)-1)
- 			goto out;
+-void down_read_non_owner(struct rw_semaphore *sem)
+-{
+-	might_sleep();
+-
+-	__down_read(sem);
+-}
+-
+-EXPORT_SYMBOL(down_read_non_owner);
+-
+ void down_write_nested(struct rw_semaphore *sem, int subclass)
+ {
+ 	might_sleep();
+@@ -136,13 +127,6 @@ void down_write_nested(struct rw_semapho
  
- 		start = last_end + 1;
-+		next_node = rb_next(&state->rb_node);
- 		if (next_node && start < end && prealloc && !need_resched()) {
- 			state = rb_entry(next_node, struct extent_state,
- 					 rb_node);
-@@ -950,7 +949,6 @@ hit_next:
- 		 * Avoid to free 'prealloc' if it can be merged with
- 		 * the later extent.
- 		 */
--		atomic_inc(&prealloc->refs);
- 		err = insert_state(tree, prealloc, start, this_end,
- 				   &bits);
- 		BUG_ON(err == -EEXIST);
-@@ -959,7 +957,6 @@ hit_next:
- 			goto out;
- 		}
- 		cache_state(prealloc, cached_state);
--		free_extent_state(prealloc);
- 		start = this_end + 1;
- 		goto search_again;
- 	}
-@@ -1649,7 +1646,8 @@ int test_range_bit(struct extent_io_tree *tree, u64 start, u64 end,
- 	int bitset = 0;
+ EXPORT_SYMBOL(down_write_nested);
  
- 	spin_lock(&tree->lock);
--	if (cached && cached->tree && cached->start == start)
-+	if (cached && cached->tree && cached->start <= start &&
-+	    cached->end > start)
- 		node = &cached->rb_node;
- 	else
- 		node = tree_search(tree, start);
--- 
-1.7.5.2
+-void up_read_non_owner(struct rw_semaphore *sem)
+-{
+-	__up_read(sem);
+-}
+-
+-EXPORT_SYMBOL(up_read_non_owner);
+-
+ #endif
+ 
+ 
 

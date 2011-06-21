@@ -1,41 +1,37 @@
-From: Josef Bacik <josef@redhat.com>
-Subject: Re: [PATCH] Btrfs: save preloaded extent_state's in a percpu cache
- V2
-Date: Tue, 21 Jun 2011 17:25:32 -0400
-Message-ID: <4E010C4C.6080100@redhat.com>
-References: <1308670095-15480-1-git-send-email-josef@redhat.com> <m2sjr32ay0.fsf@firstfloor.org>
+From: Jan Kara <jack@suse.cz>
+Subject: Re: [PATCH 0/8] remove i_alloc_sem
+Date: Wed, 22 Jun 2011 01:54:25 +0200
+Message-ID: <20110621235425.GA24067@quack.suse.cz>
+References: <20110620201533.847236272@bombadil.infradead.org>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=ISO-8859-1
-Cc: linux-btrfs@vger.kernel.org
-To: Andi Kleen <andi@firstfloor.org>
-Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <m2sjr32ay0.fsf@firstfloor.org>
+Content-Type: text/plain; charset=us-ascii
+Cc: viro@zeniv.linux.org.uk, tglx@linutronix.de,
+	linux-fsdevel@vger.kernel.org, linux-ext4@vger.kernel.org,
+	linux-btrfs@vger.kernel.org, hirofumi@mail.parknet.co.jp,
+	mfasheh@suse.com, jlbec@evilplan.org, tytso@mit.edu
+To: Christoph Hellwig <hch@infradead.org>
+Return-path: <linux-ext4-owner@vger.kernel.org>
+In-Reply-To: <20110620201533.847236272@bombadil.infradead.org>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 06/21/2011 04:20 PM, Andi Kleen wrote:
-> Josef Bacik <josef@redhat.com> writes:
+On Mon 20-06-11 16:15:33, Christoph Hellwig wrote:
+> i_alloc_sem has always been a bit of an odd "lock".  It's the only remaining
+> rw_semaphore that can be released by a different thread than the one that
+> locked it, and it's use case in the core direct I/O code is more like a
+> counter given that the writers already have external serialization.
 > 
->> When doing DIO tracing I noticed we were doing a ton of allocations, a lot of
->> the time for extent_states.  Some of the time we don't even use the prealloc'ed
->> extent_state, it just get's free'd up.  So instead create a per-cpu cache like
->> the radix tree stuff.  So we will check to see if our per-cpu cache has a
->> prealloc'ed extent_state in it and if so we just continue, else we alloc a new
->> one and fill the cache.  Then if we need to use a prealloc'ed extent_state we
->> can just take it out of our per-cpu cache.  We will also refill the cache on
->> free to try and limit the number of times we have to ask the allocator for
->> caches.  With this patch dbench 50 goes from ~210 mb/s to ~260 mb/s.  Thanks,
+> This series removes it in favour of a simpler counter scheme, thus getting
+> rid of the rw_semaphore non-owner APIs as requests by Thomas, while at the
+> same time shrinking the size of struct inode by 160 bytes on 64-bit systems.
 > 
-> You're just reimplementing a poor man's custom slab cache -- all of this is already
-> done in slab.
-> 
-> If the difference is really that big better fix slab and have everyone 
-> benefit?
-> 
-> Did you use slub or slab?
-> Did you analyze where the cycles are spent?
-> 
+> The only nasty bit is that two filesystems (fat and ext4) have started
+> abusing the lock for their own purposes.  I've added a new rw_semaphore
+  ext4 abuse should be gone when Ted merges my rewrite of
+ext4_page_mkwrite()... Ted, what happened to that patch. Should I resend
+it?
 
-Ugh slub debugging bites me again.  Thanks,
+								Honza
 
-Josef
-
+-- 
+Jan Kara <jack@suse.cz>
+SUSE Labs, CR

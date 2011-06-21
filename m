@@ -1,48 +1,57 @@
-From: Li Dongyang <lidongyang@novell.com>
-Subject: Re: [PATCH 2/2] Btrfs: fix space leak when trimming free extents
-Date: Tue, 21 Jun 2011 17:45:03 +0800
-Message-ID: <201106211745.03356.lidongyang@novell.com>
-References: <4E0030DF.4080704@cn.fujitsu.com> <4E003112.9050702@cn.fujitsu.com>
+From: Jan Stilow <jstilow@mobileobjects.de>
+Subject: Re: Applications using fsync cause hangs for several seconds every
+ few minutes
+Date: Tue, 21 Jun 2011 13:15:30 +0200
+Message-ID: <4E007D52.4000509@mobileobjects.de>
 Mime-Version: 1.0
-Content-Type: Text/Plain;
-  charset="utf-8"
-Cc: "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
-To: Li Zefan <lizf@cn.fujitsu.com>
+Content-Type: text/plain; charset=windows-1252
+To: linux-btrfs@vger.kernel.org
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <4E003112.9050702@cn.fujitsu.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Tuesday, June 21, 2011 01:50:10 PM Li Zefan wrote:
-> When the end of an extent exceeds the end of the specified range,
-> the extent will be accidentally truncated.
-> 
-> Signed-off-by: Li Zefan <lizf@cn.fujitsu.com>
-> ---
->  fs/btrfs/free-space-cache.c |    9 ++++++++-
->  1 files changed, 8 insertions(+), 1 deletions(-)
-> 
-> diff --git a/fs/btrfs/free-space-cache.c b/fs/btrfs/free-space-cache.c
-> index 292c0d9..185cf8e 100644
-> --- a/fs/btrfs/free-space-cache.c
-> +++ b/fs/btrfs/free-space-cache.c
-> @@ -2509,8 +2509,15 @@ int btrfs_trim_block_group(struct btrfs_block_group_cache *block_group,
->  			bytes = min(entry->bytes, end - start);
->  			if (bytes < minlen)
->  				goto next;
-> +
->  			unlink_free_space(ctl, entry);
-> -			kmem_cache_free(btrfs_free_space_cachep, entry);
-> +			if (bytes < entry->bytes) {
-> +				entry->offset = entry->offset + bytes;
-> +				entry->bytes = entry->bytes - bytes;
-> +				link_free_space(ctl, entry);
-yes, I forgot to link the rest extent to the free space cache.
-Thanks for the fix!
-> +			} else {
-> +				kmem_cache_free(btrfs_free_space_cachep, entry);
-> +			}
->  		}
->  
->  		spin_unlock(&ctl->tree_lock);
-> -- 1.7.3.1 
-> 
+Hello,
+
+Nirbheek Chauhan <nirbheek <at> gentoo.org> writes:
+> However, recently, perhaps with 2.6.39, or after I quickly started
+> filling up my disk again, it has become impossible for me to work for
+> long periods on my machine.
+>
+> Every few minutes, (I guess) when applications do fsync (firefox,
+> xchat, vim, etc), all applications that use fsync() hang for several
+> seconds, and applications that use general IO suffer extreme
+> slowdowns. iotop shows various combinations of the processes listed
+> below doing writes, and the total write as 2-3MB/s.
+>
+> [btrfs-dealloc-]
+> [btrfs-submit-0]
+> [btrfs-transacti]
+> [btrfs-endio-wri]
+> [flush-btrfs-1]
+
+I'm using btrfs under a 2.6.39-ARCH kernel and run into the same issue.
+
+In my case the [btrfs-submit-0] and [btrfs-transacti] shows up in iotop
+and produce 99% of IO at the time a application is frozen. For something
+like 10 to 30 seconds.
+
+After a fresh boot everything runs quiet acceptable and goes worse over
+the day. If I reboot the unmount process takes a lot of time something
+up to 8 minutes. After the reboot everything is back to normal. At least
+for a while.
+
+I use snapshots on a daily base and have 20 active snapshots all the
+time. Maybe this is the reason for the performance impact?
+
+> What can I do to debug this issue? What other information should I
+> supply? Could someone guide me on how to figure out why my machine is
+> unusable now?
+
+I have no solution for this problem. In fact a reboot helps me even if
+only temporary. I also changed the IO scheduler, switched to laptop mode
+and remounted the device. Neither of these helped.
+
+Maybe someone else has any suggestion?
+
+Thanks.
+
+Jan Stilow

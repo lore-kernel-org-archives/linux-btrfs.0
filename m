@@ -1,31 +1,18 @@
-From: Josef Bacik <josef@redhat.com>
-Subject: Re: [PATCH 10/12 v3] Btrfs: deal with EEXIST after iput
-Date: Tue, 21 Jun 2011 10:00:02 -0400
-Message-ID: <4E00A3E2.9030108@redhat.com>
-References: <1308646193-7086-1-git-send-email-liubo2009@cn.fujitsu.com> <1308646193-7086-11-git-send-email-liubo2009@cn.fujitsu.com>
+From: Daniel Witzel <dannyboy48888@gmail.com>
+Subject: Re: [HELP!] parent transid verify failed on 600755752960 wanted 757102 found 756726
+Date: Tue, 21 Jun 2011 14:01:34 +0000 (UTC)
+Message-ID: <loom.20110621T155927-215@post.gmane.org>
+References: <BANLkTimgsJa6MzR+Gm4vCkW4wqku9NjxFw@mail.gmail.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=ISO-8859-1; format=flowed
-Cc: linux-btrfs@vger.kernel.org, dave@jikos.cz, chris.mason@oracle.com
-To: Liu Bo <liubo2009@cn.fujitsu.com>
+Content-Type: text/plain; charset=us-ascii
+To: linux-btrfs@vger.kernel.org
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <1308646193-7086-11-git-send-email-liubo2009@cn.fujitsu.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 06/21/2011 04:49 AM, Liu Bo wrote:
-> There are two cases when BTRFS_I(inode)->logged_trans is zero:
-> a) an inode is just allocated;
-> b) iput an inode and reread it.
->
-> However, in b) if btrfs is not committed yet, and this inode _may_ still remain
-> in log tree.
->
-> So we need to check the log tree to get logged_trans a right value
-> in case it hits a EEXIST while logging.
+Welcome to the club, I have a similar issue. We pretty much have to wait for the
+fsck tool to finish being developed. If possible unhook the drives and leave
+them be until the tool is done. I don't know when it will be done as I am not a
+developer, mearly a follower.
 
-Instead of doing this why not just check and see if the inode has been 
-logged but the transaction has not yet been committed in 
-btrfs_drop_inode?  That way the inode doesn't get evicted from cache 
-until after we know it's ok and that way we don't have to waste a tree 
-lookup.  Thanks,
 
-Josef
+

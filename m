@@ -1,137 +1,345 @@
-From: Francesco R <vivo75@gmail.com>
-Subject: [HELP!] parent transid verify failed on 600755752960 wanted 757102
- found 756726
-Date: Tue, 21 Jun 2011 14:10:20 +0200
-Message-ID: <BANLkTimgsJa6MzR+Gm4vCkW4wqku9NjxFw@mail.gmail.com>
+From: Josef Bacik <josef@redhat.com>
+Subject: Re: [PATCH 06/12 v3] Btrfs: improve log with sub transaction
+Date: Tue, 21 Jun 2011 09:46:50 -0400
+Message-ID: <4E00A0CA.90108@redhat.com>
+References: <1308646193-7086-1-git-send-email-liubo2009@cn.fujitsu.com> <1308646193-7086-7-git-send-email-liubo2009@cn.fujitsu.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=ISO-8859-1
-To: linux-btrfs@vger.kernel.org
+Content-Type: text/plain; charset=ISO-8859-1; format=flowed
+Cc: linux-btrfs@vger.kernel.org, dave@jikos.cz, chris.mason@oracle.com
+To: Liu Bo <liubo2009@cn.fujitsu.com>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
+In-Reply-To: <1308646193-7086-7-git-send-email-liubo2009@cn.fujitsu.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-[HELP!] parent transid verify failed on 600755752960 wanted 757102 found 756726
+On 06/21/2011 04:49 AM, Liu Bo wrote:
+> When logging an inode _A_, current btrfs will
+> a) clear all items belonged to _A_ in log,
+> b) copy all items belonged to _A_ from fs/file tree to log tree,
+> and this just wastes a lot of time, especially when logging big files.
+>
+> So we want to use a smarter approach, i.e. "find and merge".
+> The amount of file extent items is the largest, so we focus on it.
+> Thanks to sub transaction, now we can find those file extent items which
+> are changed after last _transaction commit_ or last _log commit_, and
+> then merge them with the existed ones in log tree.
+>
+> It will be great helpful on fsync performance, cause the common case is
+> "make changes on a _part_ of inode".
+>
+> Signed-off-by: Liu Bo<liubo2009@cn.fujitsu.com>
+> ---
+>   fs/btrfs/tree-log.c |  179 ++++++++++++++++++++++++++++++++++++---------------
+>   1 files changed, 127 insertions(+), 52 deletions(-)
+>
+> diff --git a/fs/btrfs/tree-log.c b/fs/btrfs/tree-log.c
+> index b91fe8b..6193e27 100644
+> --- a/fs/btrfs/tree-log.c
+> +++ b/fs/btrfs/tree-log.c
+> @@ -2581,61 +2581,106 @@ again:
+>   }
+>
+>   /*
+> - * a helper function to drop items from the log before we relog an
+> - * inode.  max_key_type indicates the highest item type to remove.
+> - * This cannot be run for file data extents because it does not
+> - * free the extents they point to.
+> + * a helper function to drop items from the log before we merge
+> + * the uptodate items into the log tree.
+>    */
+> -static int drop_objectid_items(struct btrfs_trans_handle *trans,
+> -				  struct btrfs_root *log,
+> -				  struct btrfs_path *path,
+> -				  u64 objectid, int max_key_type)
+> +static  int prepare_for_merge_items(struct btrfs_trans_handle *trans,
+> +				    struct inode *inode,
+> +				    struct extent_buffer *eb,
+> +				    int slot, int nr)
+>   {
+> -	int ret;
+> -	struct btrfs_key key;
+> +	struct btrfs_root *log = BTRFS_I(inode)->root->log_root;
+> +	struct btrfs_path *path;
+>   	struct btrfs_key found_key;
+> +	struct btrfs_key key;
+> +	int i;
+> +	int ret;
+>
+> -	key.objectid = objectid;
+> -	key.type = max_key_type;
+> -	key.offset = (u64)-1;
+> +	/* There are no relative items of the inode in log. */
+> +	if (BTRFS_I(inode)->logged_trans<  trans->transaction->transid)
+> +		return 0;
+>
+> -	while (1) {
+> +	path = btrfs_alloc_path();
+> +	if (!path)
+> +		return -ENOMEM;
+> +
+> +	for (i = 0; i<  nr; i++) {
+> +		btrfs_item_key_to_cpu(eb,&key, i + slot);
+> +
 
-Hi list, I've a broken btrfs filesystem to deal with can someone
-please help me in recover the data?
+Just a nit, but it would be less of a pain to do
 
-The filesystem has been created a pair of years ago with 4 devices
-with the command at #create and is mounted with #fstab options.
-Recently I've added a pair of devices and made a `btrfs filesystem
-balance`, after it succeded I was doing a `btrfs device delete` on
-"space02" (the currently broken one) in the middle of this the power
-cable has been axed.
-After replacing the cable cord 'space01' is mountable, 'space02' is not.
+for (i = slot; i < slot+nr; i++)
 
-tryed to use a backup copy of super with `btrfs-select-super` but it
-fail as reported in #btrfs-select-super
+that way you don't have a bunch of getter(eb, slot + i) things scattered 
+around.
 
-please, pretty please have you suggestion on what try next?
+> +		if (btrfs_key_type(&key) == BTRFS_EXTENT_DATA_KEY) {
+> +			struct btrfs_file_extent_item *fi;
+> +			int found_type;
+> +			u64 mask = BTRFS_I(inode)->root->sectorsize - 1;
+> +			u64 start = key.offset;
+> +			u64 extent_end;
+> +			u64 hint;
+> +			unsigned long size;
+> +
+> +			fi = btrfs_item_ptr(eb, slot + i,
+> +					    struct btrfs_file_extent_item);
+> +			found_type = btrfs_file_extent_type(eb, fi);
+> +
+> +			if (found_type == BTRFS_FILE_EXTENT_REG ||
+> +			    found_type == BTRFS_FILE_EXTENT_PREALLOC)
+> +				extent_end = start +
+> +					    btrfs_file_extent_num_bytes(eb, fi);
+> +			else if (found_type == BTRFS_FILE_EXTENT_INLINE) {
+> +				size = btrfs_file_extent_inline_len(eb, fi);
+> +				extent_end = (start + size + mask)&  ~mask;
+> +			} else
+> +				BUG_ON(1);
+> +
 
+Style screw up, if one chunk of an if/else block has braces, they all 
+need it.
 
-#current kernel (vanilla + linux-vserver)
-uname -a
-Linux dobbia 2.6.38.8-vs2.3.0.37-rc17 #5 SMP Mon Jun 20 15:04:39 CEST
-2011 x86_64 Intel(R) Core(TM) i7 CPU 950 @ 3.07GHz GenuineIntel
-GNU/Linux
+> +			/* drop any overlapping extents */
+> +			ret = btrfs_drop_extents(trans, inode, start,
+> +						 extent_end,&hint, 0, 1);
 
-#create
-modprobe btrfs
-mkfs.btrfs -L space01 -m raid10 -d raid10 $DEVICES1
-mkfs.btrfs -L space02 -m raid10 -d raid10 $DEVICES2
+There are lot's of places where you've missed a space, like here where 
+you have extent_end,&hint
 
-# fstab
-/dev/sda6 /mnt/space01 btrfs
-defaults,device=/dev/sda6,device=/dev/sdc6,device=/dev/sdd1,device=/dev/sde1,device=/dev/sdf6,device=/dev/sdg6
-0 0
-/dev/sda7 /mnt/space02 btrfs
-defaults,device=/dev/sda7,device=/dev/sdb7,device=/dev/sdc7,device=/dev/sdd2,device=/dev/sde2,device=/dev/sdf7,device=/dev/sdg7
-0 0
+> +			BUG_ON(ret);
+> +
+> +			continue;
+> +		}
+> +
+> +		/* non file extent */
+>   		ret = btrfs_search_slot(trans, log,&key, path, -1, 1);
+> -		BUG_ON(ret == 0);
+>   		if (ret<  0)
+>   			break;
+>
+> -		if (path->slots[0] == 0)
+> +		/* empty log! */
+> +		if (ret>  0&&  path->slots[0] == 0)
 
-# current layout
-btrfs filesystem show
-failed to read /dev/sr0
-Label: 'space01'  uuid: c77c6e87-fccd-4204-bd2c-d924fe06be31
-        Total devices 6 FS bytes used 164.81GB
-        devid    7 size 244.14GB used 56.59GB path /dev/sdf6
-        devid    5 size 244.93GB used 56.59GB path /dev/sdd1
-        devid    8 size 244.14GB used 56.59GB path /dev/sdg6
-        devid    6 size 244.93GB used 56.59GB path /dev/sde1
-        devid    4 size 244.14GB used 56.59GB path /dev/sda6
-        devid    3 size 244.14GB used 56.59GB path /dev/sdc6
+Here too.
 
-Label: 'space02'  uuid: f752def1-1abc-48c7-8ebb-47ba37b8ffa6
-        Total devices 7 FS bytes used 172.94GB
-        devid    7 size 487.65GB used 0.00 path /dev/sdf7
-        devid    6 size 488.94GB used 60.25GB path /dev/sde2
-        devid    5 size 488.94GB used 58.75GB path /dev/sdd2
-        devid    4 size 487.65GB used 60.26GB path /dev/sda7
-        devid    7 size 487.65GB used 1.50GB path /dev/sdg7
-        devid    2 size 487.65GB used 58.76GB path /dev/sdb7
-        devid    3 size 487.65GB used 60.26GB path /dev/sdc7
+>   			break;
+>
+> -		path->slots[0]--;
+> +		if (ret>  0) {
 
-Btrfs v0.19-35-g1b444cd-dirty
+Here.
 
-# first error messages
-Jun 20 14:04:35 dobbia kernel: [  806.587580] device label space02
-devid 4 transid 757294 /dev/sda7
-Jun 20 14:04:35 dobbia kernel: [  806.629781] device label space02
-devid 2 transid 756848 /dev/sdb7
-Jun 20 14:04:35 dobbia kernel: [  806.630107] device label space02
-devid 3 transid 757294 /dev/sdc7
-Jun 20 14:04:35 dobbia kernel: [  806.652126] device label space02
-devid 5 transid 756846 /dev/sdd2
-Jun 20 14:04:37 dobbia kernel: [  808.201719] device label space02
-devid 6 transid 757294 /dev/sde2
-Jun 20 14:04:37 dobbia kernel: [  808.218108] device label space02
-devid 7 transid 756846 /dev/sdf7
-Jun 20 14:04:37 dobbia kernel: [  808.218433] device label space02
-devid 7 transid 757294 /dev/sdg7
-Jun 20 14:04:37 dobbia kernel: [  808.218715] device label space02
-devid 4 transid 757294 /dev/sda7
-Jun 20 14:04:37 dobbia kernel: [  808.271797] btrfs: failed to read
-the system array on sdg7
-Jun 20 14:04:37 dobbia kernel: [  808.293776] btrfs: open_ctree failed
-Jun 20 14:04:56 dobbia kernel: [  827.190208] device label space02
-devid 4 transid 757294 /dev/sda7
-Jun 20 14:04:56 dobbia kernel: [  827.254517] btrfs: failed to read
-the system array on sdg7
-Jun 20 14:04:56 dobbia kernel: [  827.280152] btrfs: open_ctree failed
-Jun 20 14:05:01 dobbia kernel: [  832.442454] device label space02
-devid 4 transid 757294 /dev/sda7
-Jun 20 14:05:01 dobbia kernel: [  832.502017] btrfs: failed to read
-the system array on sdg7
-Jun 20 14:05:01 dobbia kernel: [  832.521492] btrfs: open_ctree failed
-Jun 20 14:05:20 dobbia kernel: [  851.113237] device label space02
-devid 4 transid 757294 /dev/sda7
-Jun 20 14:05:20 dobbia kernel: [  851.199478] btrfs: allowing degraded mounts
-Jun 20 14:05:20 dobbia kernel: [  851.563583] parent transid verify
-failed on 600755752960 wanted 757102 found 756726
-Jun 20 14:05:20 dobbia kernel: [  851.564146] parent transid verify
-failed on 600755752960 wanted 757102 found 756726
-Jun 20 14:05:20 dobbia kernel: [  851.651006] btrfs bad tree block
-start 0 600859951104
-Jun 20 14:05:20 dobbia kernel: [  851.671362] parent transid verify
-failed on 600859955200 wanted 756926 found 756726
-Jun 20 14:05:20 dobbia kernel: [  851.671636] parent transid verify
-failed on 600859955200 wanted 756926 found 756726
-Jun 20 14:05:20 dobbia kernel: [  851.693515] btrfs bad tree block
-start 0 601053986816
-Jun 20 14:05:20 dobbia kernel: [  851.693559] btrfs bad tree block
-start 0 601054003200
-Jun 20 14:05:20 dobbia kernel: [  851.693566] btrfs bad tree block
-start 0 601054007296
-Jun 20 14:05:20 dobbia kernel: [  851.693669] btrfs bad tree block
-start 0 601053990912
-Jun 20 14:05:20 dobbia kernel: [  851.693714] btrfs bad tree block
-start 0 601053995008
-Jun 20 14:05:25 dobbia kernel: [  856.642102] verify_parent_transid:
-90 callbacks suppressed
+> +			btrfs_release_path(path);
+> +			continue;
+> +		}
+> +
+>   		btrfs_item_key_to_cpu(path->nodes[0],&found_key,
+>   				      path->slots[0]);
+>
+> -		if (found_key.objectid != objectid)
+> -			break;
+> +		if (btrfs_comp_cpu_keys(&found_key,&key))
+> +			BUG_ON(1);
+>
+>   		ret = btrfs_del_item(trans, log, path);
+> -		if (ret)
+> -			break;
+> +		BUG_ON(ret);
+>   		btrfs_release_path(path);
+>   	}
+>   	btrfs_release_path(path);
+> -	return ret;
+> +	btrfs_free_path(path);
+> +
+> +	return 0;
+>   }
+>
+>   static noinline int copy_items(struct btrfs_trans_handle *trans,
+> -			       struct btrfs_root *log,
+> +			       struct inode *inode,
+>   			       struct btrfs_path *dst_path,
+>   			       struct extent_buffer *src,
+>   			       int start_slot, int nr, int inode_only)
+>   {
+>   	unsigned long src_offset;
+>   	unsigned long dst_offset;
+> +	struct btrfs_root *log = BTRFS_I(inode)->root->log_root;
+>   	struct btrfs_file_extent_item *extent;
+>   	struct btrfs_inode_item *inode_item;
+> -	int ret;
+>   	struct btrfs_key *ins_keys;
+> +	int ret;
+>   	u32 *ins_sizes;
+>   	char *ins_data;
+>   	int i;
+> @@ -2643,6 +2688,10 @@ static noinline int copy_items(struct btrfs_trans_handle *trans,
+>
+>   	INIT_LIST_HEAD(&ordered_sums);
+>
+> +	ret = prepare_for_merge_items(trans, inode, src, start_slot, nr);
+> +	if (ret)
+> +		return ret;
+> +
+>   	ins_data = kmalloc(nr * sizeof(struct btrfs_key) +
+>   			   nr * sizeof(u32), GFP_NOFS);
+>   	if (!ins_data)
+> @@ -2749,6 +2798,34 @@ static noinline int copy_items(struct btrfs_trans_handle *trans,
+>   	return ret;
+>   }
+>
+> +/*
+> + * a helper function to filter the old file extent items by checking their
+> + * generation.
+> + */
+> +static inline int is_extent_uptodate(struct btrfs_path *path, u64 min_trans)
+> +{
+> +	struct btrfs_file_extent_item *fi;
+> +	struct btrfs_key key;
+> +	struct extent_buffer *eb;
+> +	int slot;
+> +	u64 gen;
+> +
+> +	eb = path->nodes[0];
+> +	slot = path->slots[0];
+> +
+> +	btrfs_item_key_to_cpu(eb,&key, slot);
+> +
+> +	if (btrfs_key_type(&key) != BTRFS_EXTENT_DATA_KEY)
+> +		return 1;
+> +
+> +	fi = btrfs_item_ptr(eb, slot, struct btrfs_file_extent_item);
+> +	gen = btrfs_file_extent_generation(eb, fi);
+> +	if (gen<  min_trans)
 
-#btrfs-select-super
-./btrfs-select-super -s 1 /dev/sda7
-using SB copy 1, bytenr 67108864
-failed to read /dev/sr0
-failed to read /dev/sr0
-btrfs-select-super: volumes.c:1367: btrfs_read_sys_array: Assertion
-`!(ret)' failed.
-Aborted
+Here.
+
+> +		return 0;
+> +
+> +	return 1;
+> +}
+> +
+>   /* log a single inode in the tree log.
+>    * At least one parent directory for this inode must exist in the tree
+>    * or be logged already.
+> @@ -2779,6 +2856,16 @@ static int btrfs_log_inode(struct btrfs_trans_handle *trans,
+>   	int ins_start_slot = 0;
+>   	int ins_nr;
+>   	u64 ino = btrfs_ino(inode);
+> +	u64 transid;
+> +
+> +	/*
+> +	* We use transid in btrfs_search_forward() as a filter, in order to
+> +	* find the uptodate block (node or leaf).
+> +	*/
+> +	if (BTRFS_I(inode)->first_sub_trans>  trans->transaction->transid)
+
+Here.
+
+> +		transid = BTRFS_I(inode)->first_sub_trans;
+> +	else
+> +		transid = trans->transaction->transid;
+>
+>   	log = root->log_root;
+>
+> @@ -2816,29 +2903,12 @@ static int btrfs_log_inode(struct btrfs_trans_handle *trans,
+>
+>   	mutex_lock(&BTRFS_I(inode)->log_mutex);
+>
+> -	/*
+> -	 * a brute force approach to making sure we get the most uptodate
+> -	 * copies of everything.
+> -	 */
+> -	if (S_ISDIR(inode->i_mode)) {
+> -		int max_key_type = BTRFS_DIR_LOG_INDEX_KEY;
+> -
+> -		if (inode_only == LOG_INODE_EXISTS)
+> -			max_key_type = BTRFS_XATTR_ITEM_KEY;
+> -		ret = drop_objectid_items(trans, log, path, ino, max_key_type);
+> -	} else {
+> -		ret = btrfs_truncate_inode_items(trans, log, inode, 0, 0);
+> -	}
+> -	if (ret) {
+> -		err = ret;
+> -		goto out_unlock;
+> -	}
+>   	path->keep_locks = 1;
+>
+>   	while (1) {
+>   		ins_nr = 0;
+>   		ret = btrfs_search_forward(root,&min_key,&max_key,
+> -					   path, 0, trans->transid);
+> +					   path, 0, transid);
+>   		if (ret != 0)
+>   			break;
+>   again:
+> @@ -2849,6 +2919,9 @@ again:
+>   			break;
+>
+>   		src = path->nodes[0];
+> +		if (!is_extent_uptodate(path, transid))
+> +			goto filter;
+> +
+>   		if (ins_nr&&  ins_start_slot + ins_nr == path->slots[0]) {
+>   			ins_nr++;
+>   			goto next_slot;
+> @@ -2857,15 +2930,17 @@ again:
+>   			ins_nr = 1;
+>   			goto next_slot;
+>   		}
+> -
+> -		ret = copy_items(trans, log, dst_path, src, ins_start_slot,
+> -				 ins_nr, inode_only);
+> -		if (ret) {
+> -			err = ret;
+> -			goto out_unlock;
+> +filter:
+> +		if (ins_nr) {
+> +			ret = copy_items(trans, inode, dst_path, src,
+> +					 ins_start_slot,
+> +					 ins_nr, inode_only);
+> +			if (ret) {
+> +				err = ret;
+> +				goto out_unlock;
+> +			}
+> +			ins_nr = 0;
+>   		}
+> -		ins_nr = 1;
+> -		ins_start_slot = path->slots[0];
+>   next_slot:
+>
+>   		nritems = btrfs_header_nritems(path->nodes[0]);
+> @@ -2876,7 +2951,7 @@ next_slot:
+>   			goto again;
+>   		}
+>   		if (ins_nr) {
+> -			ret = copy_items(trans, log, dst_path, src,
+> +			ret = copy_items(trans, inode, dst_path, src,
+>   					 ins_start_slot,
+>   					 ins_nr, inode_only);
+>   			if (ret) {
+> @@ -2897,7 +2972,7 @@ next_slot:
+>   			break;
+>   	}
+>   	if (ins_nr) {
+> -		ret = copy_items(trans, log, dst_path, src,
+> +		ret = copy_items(trans, inode, dst_path, src,
+>   				 ins_start_slot,
+>   				 ins_nr, inode_only);
+>   		if (ret) {
+

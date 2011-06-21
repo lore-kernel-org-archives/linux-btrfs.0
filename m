@@ -1,7 +1,7 @@
 From: Liu Bo <liubo2009@cn.fujitsu.com>
-Subject: [PATCH 05/12 v3] Btrfs: still update inode trans stuff when size remains unchanged
-Date: Tue, 21 Jun 2011 16:49:46 +0800
-Message-ID: <1308646193-7086-6-git-send-email-liubo2009@cn.fujitsu.com>
+Subject: [PATCH 09/12 v3] Btrfs: kick off useless code
+Date: Tue, 21 Jun 2011 16:49:50 +0800
+Message-ID: <1308646193-7086-10-git-send-email-liubo2009@cn.fujitsu.com>
 References: <1308646193-7086-1-git-send-email-liubo2009@cn.fujitsu.com>
 Cc: <dave@jikos.cz>, <chris.mason@oracle.com>, <josef@redhat.com>
 To: <linux-btrfs@vger.kernel.org>
@@ -9,30 +9,39 @@ Return-path: <linux-btrfs-owner@vger.kernel.org>
 In-Reply-To: <1308646193-7086-1-git-send-email-liubo2009@cn.fujitsu.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Due to DIO stuff, commit 1ef30be142d2cc60e2687ef267de864cf31be995 makes btrfs
-not call btrfs_update_inode when it does not update i_disk_size, but in buffer
-write case, we need to update btrfs internal inode's trans stuff, so that the
-log code can find the inode's changes.
+fsync will wait for writeback till it finishes, and last_trans will get the real
+transid recorded in writeback, so it does not need an extra +1 to ensure fsync's
+process on the file.
 
 Signed-off-by: Liu Bo <liubo2009@cn.fujitsu.com>
 ---
- fs/btrfs/inode.c |    3 ++-
- 1 files changed, 2 insertions(+), 1 deletions(-)
+ fs/btrfs/file.c |   13 -------------
+ 1 files changed, 0 insertions(+), 13 deletions(-)
 
-diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
-index 93c9d22..47dcbc0 100644
---- a/fs/btrfs/inode.c
-+++ b/fs/btrfs/inode.c
-@@ -1790,7 +1790,8 @@ static int btrfs_finish_ordered_io(struct inode *inode, u64 start, u64 end)
- 	if (!ret) {
- 		ret = btrfs_update_inode(trans, root, inode);
- 		BUG_ON(ret);
--	}
-+	} else
-+		btrfs_set_inode_last_trans(trans, inode);
- 	ret = 0;
- out:
- 	if (nolock) {
+diff --git a/fs/btrfs/file.c b/fs/btrfs/file.c
+index 3c434bb..8f27007 100644
+--- a/fs/btrfs/file.c
++++ b/fs/btrfs/file.c
+@@ -1404,19 +1404,6 @@ static ssize_t btrfs_file_aio_write(struct kiocb *iocb,
+ 
+ 	mutex_unlock(&inode->i_mutex);
+ 
+-	/*
+-	 * we want to make sure fsync finds this change
+-	 * but we haven't joined a transaction running right now.
+-	 *
+-	 * Later on, someone is sure to update the inode and get the
+-	 * real transid recorded.
+-	 *
+-	 * We set last_trans now to the fs_info generation + 1,
+-	 * this will either be one more than the running transaction
+-	 * or the generation used for the next transaction if there isn't
+-	 * one running right now.
+-	 */
+-	BTRFS_I(inode)->last_trans = root->fs_info->generation + 1;
+ 	if (num_written > 0 || num_written == -EIOCBQUEUED) {
+ 		err = generic_write_sync(file, pos, num_written);
+ 		if (err < 0 && num_written > 0)
 -- 
 1.6.5.2
 

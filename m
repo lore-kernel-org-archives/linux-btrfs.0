@@ -1,27 +1,48 @@
-From: Christoph Hellwig <hch@infradead.org>
-Subject: Re: [PATCH 4/8] fs: kill i_alloc_sem
-Date: Tue, 21 Jun 2011 05:35:21 -0400
-Message-ID: <20110621093521.GA32071@infradead.org>
-References: <20110620201533.847236272@bombadil.infradead.org>
- <20110620202031.175620498@bombadil.infradead.org>
- <20110621054056.GP32466@dastard>
+From: Li Dongyang <lidongyang@novell.com>
+Subject: Re: [PATCH 2/2] Btrfs: fix space leak when trimming free extents
+Date: Tue, 21 Jun 2011 17:45:03 +0800
+Message-ID: <201106211745.03356.lidongyang@novell.com>
+References: <4E0030DF.4080704@cn.fujitsu.com> <4E003112.9050702@cn.fujitsu.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Cc: Christoph Hellwig <hch@infradead.org>, viro@zeniv.linux.org.uk,
-	tglx@linutronix.de, linux-fsdevel@vger.kernel.org,
-	linux-ext4@vger.kernel.org, linux-btrfs@vger.kernel.org,
-	hirofumi@mail.parknet.co.jp, mfasheh@suse.com, jlbec@evilplan.org
-To: Dave Chinner <david@fromorbit.com>
+Content-Type: Text/Plain;
+  charset="utf-8"
+Cc: "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
+To: Li Zefan <lizf@cn.fujitsu.com>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <20110621054056.GP32466@dastard>
+In-Reply-To: <4E003112.9050702@cn.fujitsu.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Tue, Jun 21, 2011 at 03:40:56PM +1000, Dave Chinner wrote:
-> Modification of inode->i_state is not safe outside the
-> inode->i_lock.
-
-We never actually set the new bit in i_state, we just use it as a key
-for the hashed lookups.  Or rather we try to, as I misunderstood how
-wait_on_bit works, so currently we busywait for i_dio_count to reach
-zero.  I'll respin a version that actually works as expected.
-
+On Tuesday, June 21, 2011 01:50:10 PM Li Zefan wrote:
+> When the end of an extent exceeds the end of the specified range,
+> the extent will be accidentally truncated.
+> 
+> Signed-off-by: Li Zefan <lizf@cn.fujitsu.com>
+> ---
+>  fs/btrfs/free-space-cache.c |    9 ++++++++-
+>  1 files changed, 8 insertions(+), 1 deletions(-)
+> 
+> diff --git a/fs/btrfs/free-space-cache.c b/fs/btrfs/free-space-cache.c
+> index 292c0d9..185cf8e 100644
+> --- a/fs/btrfs/free-space-cache.c
+> +++ b/fs/btrfs/free-space-cache.c
+> @@ -2509,8 +2509,15 @@ int btrfs_trim_block_group(struct btrfs_block_group_cache *block_group,
+>  			bytes = min(entry->bytes, end - start);
+>  			if (bytes < minlen)
+>  				goto next;
+> +
+>  			unlink_free_space(ctl, entry);
+> -			kmem_cache_free(btrfs_free_space_cachep, entry);
+> +			if (bytes < entry->bytes) {
+> +				entry->offset = entry->offset + bytes;
+> +				entry->bytes = entry->bytes - bytes;
+> +				link_free_space(ctl, entry);
+yes, I forgot to link the rest extent to the free space cache.
+Thanks for the fix!
+> +			} else {
+> +				kmem_cache_free(btrfs_free_space_cachep, entry);
+> +			}
+>  		}
+>  
+>  		spin_unlock(&ctl->tree_lock);
+> -- 1.7.3.1 
+> 

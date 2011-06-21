@@ -1,7 +1,7 @@
 From: Liu Bo <liubo2009@cn.fujitsu.com>
-Subject: [PATCH 07/12 v3] Btrfs: add checksum check for log
-Date: Tue, 21 Jun 2011 16:49:48 +0800
-Message-ID: <1308646193-7086-8-git-send-email-liubo2009@cn.fujitsu.com>
+Subject: [PATCH 11/12 v3] Btrfs: use the right generation number to read log_root_tree
+Date: Tue, 21 Jun 2011 16:49:52 +0800
+Message-ID: <1308646193-7086-12-git-send-email-liubo2009@cn.fujitsu.com>
 References: <1308646193-7086-1-git-send-email-liubo2009@cn.fujitsu.com>
 Cc: <dave@jikos.cz>, <chris.mason@oracle.com>, <josef@redhat.com>
 To: <linux-btrfs@vger.kernel.org>
@@ -9,73 +9,53 @@ Return-path: <linux-btrfs-owner@vger.kernel.org>
 In-Reply-To: <1308646193-7086-1-git-send-email-liubo2009@cn.fujitsu.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-If a inode is a BTRFS_INODE_NODATASUM one, it need not to look for csum items
-any more.
+Currently we use the generation number of the super to read in the log
+tree root after a crash.  This doesn't always match the sub trans id and
+so it doesn't always match the transid stored in the btree blocks.
+
+We can use log_root_transid to record the log_root_tree's generation
+so that when we recover from crash, we can match log_root_tree's btree blocks.
 
 Signed-off-by: Liu Bo <liubo2009@cn.fujitsu.com>
 ---
- fs/btrfs/tree-log.c |   13 ++++++++-----
- 1 files changed, 8 insertions(+), 5 deletions(-)
+ fs/btrfs/disk-io.c  |    3 ++-
+ fs/btrfs/tree-log.c |    2 ++
+ 2 files changed, 4 insertions(+), 1 deletions(-)
 
+diff --git a/fs/btrfs/disk-io.c b/fs/btrfs/disk-io.c
+index d6d71f2..4568317 100644
+--- a/fs/btrfs/disk-io.c
++++ b/fs/btrfs/disk-io.c
+@@ -2002,6 +2002,7 @@ struct btrfs_root *open_ctree(struct super_block *sb,
+ 	if (btrfs_super_log_root(disk_super) != 0 &&
+ 	    !(fs_info->fs_state & BTRFS_SUPER_FLAG_ERROR)) {
+ 		u64 bytenr = btrfs_super_log_root(disk_super);
++		u64 log_root_transid = btrfs_super_log_root_transid(disk_super);
+ 
+ 		if (fs_devices->rw_devices == 0) {
+ 			printk(KERN_WARNING "Btrfs log replay required "
+@@ -2024,7 +2025,7 @@ struct btrfs_root *open_ctree(struct super_block *sb,
+ 
+ 		log_tree_root->node = read_tree_block(tree_root, bytenr,
+ 						      blocksize,
+-						      generation + 1);
++						      log_root_transid);
+ 		ret = btrfs_recover_log_trees(log_tree_root);
+ 		BUG_ON(ret);
+ 
 diff --git a/fs/btrfs/tree-log.c b/fs/btrfs/tree-log.c
-index 6193e27..1eca1d4 100644
+index 3cf7ed2..166fda5 100644
 --- a/fs/btrfs/tree-log.c
 +++ b/fs/btrfs/tree-log.c
-@@ -2672,7 +2672,8 @@ static noinline int copy_items(struct btrfs_trans_handle *trans,
- 			       struct inode *inode,
- 			       struct btrfs_path *dst_path,
- 			       struct extent_buffer *src,
--			       int start_slot, int nr, int inode_only)
-+			       int start_slot, int nr, int inode_only,
-+			       int csum)
- {
- 	unsigned long src_offset;
- 	unsigned long dst_offset;
-@@ -2739,7 +2740,8 @@ static noinline int copy_items(struct btrfs_trans_handle *trans,
- 		 * or deletes of this inode don't have to relog the inode
- 		 * again
- 		 */
--		if (btrfs_key_type(ins_keys + i) == BTRFS_EXTENT_DATA_KEY) {
-+		if (btrfs_key_type(ins_keys + i) ==
-+						BTRFS_EXTENT_DATA_KEY && csum) {
- 			int found_type;
- 			extent = btrfs_item_ptr(src, start_slot + i,
- 						struct btrfs_file_extent_item);
-@@ -2857,6 +2859,7 @@ static int btrfs_log_inode(struct btrfs_trans_handle *trans,
- 	int ins_nr;
- 	u64 ino = btrfs_ino(inode);
- 	u64 transid;
-+	int csum = (BTRFS_I(inode)->flags & BTRFS_INODE_NODATASUM) ? 0 : 1;
+@@ -2105,6 +2105,8 @@ int btrfs_sync_log(struct btrfs_trans_handle *trans,
+ 				log_root_tree->node->start);
+ 	btrfs_set_super_log_root_level(&root->fs_info->super_for_commit,
+ 				btrfs_header_level(log_root_tree->node));
++	btrfs_set_super_log_root_transid(&root->fs_info->super_for_commit,
++					 trans->transid);
  
- 	/*
- 	* We use transid in btrfs_search_forward() as a filter, in order to
-@@ -2934,7 +2937,7 @@ filter:
- 		if (ins_nr) {
- 			ret = copy_items(trans, inode, dst_path, src,
- 					 ins_start_slot,
--					 ins_nr, inode_only);
-+					 ins_nr, inode_only, csum);
- 			if (ret) {
- 				err = ret;
- 				goto out_unlock;
-@@ -2953,7 +2956,7 @@ next_slot:
- 		if (ins_nr) {
- 			ret = copy_items(trans, inode, dst_path, src,
- 					 ins_start_slot,
--					 ins_nr, inode_only);
-+					 ins_nr, inode_only, csum);
- 			if (ret) {
- 				err = ret;
- 				goto out_unlock;
-@@ -2974,7 +2977,7 @@ next_slot:
- 	if (ins_nr) {
- 		ret = copy_items(trans, inode, dst_path, src,
- 				 ins_start_slot,
--				 ins_nr, inode_only);
-+				 ins_nr, inode_only, csum);
- 		if (ret) {
- 			err = ret;
- 			goto out_unlock;
+ 	log_root_tree->log_batch = 0;
+ 	log_root_tree->log_transid++;
 -- 
 1.6.5.2
 

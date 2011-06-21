@@ -1,118 +1,90 @@
-From: Josef Bacik <josef@redhat.com>
-Subject: [PATCH] Btrfs: fix how we merge extent states and deal with cached states V2
-Date: Tue, 21 Jun 2011 11:33:32 -0400
-Message-ID: <1308670412-16027-1-git-send-email-josef@redhat.com>
-To: linux-btrfs@vger.kernel.org
+From: OGAWA Hirofumi <hirofumi@mail.parknet.co.jp>
+Subject: Re: [PATCH 1/8] far: remove i_alloc_sem abuse
+Date: Wed, 22 Jun 2011 00:57:43 +0900
+Message-ID: <87fwn3mb2g.fsf@devron.myhome.or.jp>
+References: <20110620201533.847236272@bombadil.infradead.org>
+	<20110620202030.577464178@bombadil.infradead.org>
+Mime-Version: 1.0
+Content-Type: text/plain
+Cc: viro@zeniv.linux.org.uk, tglx@linutronix.de,
+	linux-fsdevel@vger.kernel.org, linux-ext4@vger.kernel.org,
+	linux-btrfs@vger.kernel.org, mfasheh@suse.com, jlbec@evilplan.org
+To: Christoph Hellwig <hch@infradead.org>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
+In-Reply-To: <20110620202030.577464178@bombadil.infradead.org> (Christoph
+	Hellwig's message of "Mon, 20 Jun 2011 16:15:34 -0400")
 List-ID: <linux-btrfs.vger.kernel.org>
 
-First, we can sometimes free the state we're merging, which means anybody who
-calls merge_state() may have the state it passed in free'ed.  This is
-problematic because we could end up caching the state, which makes caching
-useless as the state will no longer be part of the tree.  So instead of free'ing
-the state we passed into merge_state(), set it's end to the other->end and free
-the other state.  This way we are sure to cache the correct state.  Also because
-we can merge states together, instead of only using the cache'd state if it's
-start == the start we are looking for, go ahead and use it if the start we are
-looking for is within the range of the cached state.  Thanks,
+Christoph Hellwig <hch@infradead.org> writes:
 
-Signed-off-by: Josef Bacik <josef@redhat.com>
----
-V1->V2:
--Make this patch apply properly ontop of the new percpu cache
--Accidently removed a cache_state(), add that back
- fs/btrfs/extent_io.c |   23 +++++++++++------------
- 1 files changed, 11 insertions(+), 12 deletions(-)
+> Add a new rw_semaphore to protect bmap against truncate.  Previous
+> i_alloc_sem was abused for this, but it's going away in this series.
 
-diff --git a/fs/btrfs/extent_io.c b/fs/btrfs/extent_io.c
-index 9adc614..9a43a96 100644
---- a/fs/btrfs/extent_io.c
-+++ b/fs/btrfs/extent_io.c
-@@ -359,11 +359,10 @@ static int merge_state(struct extent_io_tree *tree,
- 		if (other->start == state->end + 1 &&
- 		    other->state == state->state) {
- 			merge_cb(tree, state, other);
--			other->start = state->start;
--			state->tree = NULL;
--			rb_erase(&state->rb_node, &tree->state);
--			free_extent_state(state);
--			state = NULL;
-+			state->end = other->end;
-+			other->tree = NULL;
-+			rb_erase(&other->rb_node, &tree->state);
-+			free_extent_state(other);
- 		}
- 	}
- 
-@@ -429,7 +428,6 @@ static int insert_state(struct extent_io_tree *tree,
- 		       "%llu %llu\n", (unsigned long long)found->start,
- 		       (unsigned long long)found->end,
- 		       (unsigned long long)start, (unsigned long long)end);
--		free_extent_state(state);
- 		return -EEXIST;
- 	}
- 	state->tree = tree;
-@@ -589,7 +587,8 @@ again:
- 			cached_state = NULL;
- 		}
- 
--		if (cached && cached->tree && cached->start == start) {
-+		if (cached && cached->tree && cached->start <= start &&
-+		    cached->end > start) {
- 			if (clear)
- 				atomic_dec(&cached->refs);
- 			state = cached;
-@@ -832,7 +831,8 @@ again:
- 	spin_lock(&tree->lock);
- 	if (cached_state && *cached_state) {
- 		state = *cached_state;
--		if (state->start == start && state->tree) {
-+		if (state->start <= start && state->end > start &&
-+		    state->tree) {
- 			node = &state->rb_node;
- 			goto hit_next;
- 		}
-@@ -872,13 +872,13 @@ hit_next:
- 		if (err)
- 			goto out;
- 
--		next_node = rb_next(node);
- 		cache_state(state, cached_state);
- 		merge_state(tree, state);
- 		if (last_end == (u64)-1)
- 			goto out;
- 
- 		start = last_end + 1;
-+		next_node = rb_next(&state->rb_node);
- 		if (next_node && start < end && !need_resched()) {
- 			state = rb_entry(next_node, struct extent_state,
- 					 rb_node);
-@@ -950,7 +950,6 @@ hit_next:
- 		 * Avoid to free 'prealloc' if it can be merged with
- 		 * the later extent.
- 		 */
--		atomic_inc(&prealloc->refs);
- 		err = insert_state(tree, prealloc, start, this_end,
- 				   &bits);
- 		BUG_ON(err == -EEXIST);
-@@ -959,7 +958,6 @@ hit_next:
- 			goto out;
- 		}
- 		cache_state(prealloc, cached_state);
--		free_extent_state(prealloc);
- 		start = this_end + 1;
- 		goto search_again;
- 	}
-@@ -1649,7 +1647,8 @@ int test_range_bit(struct extent_io_tree *tree, u64 start, u64 end,
- 	int bitset = 0;
- 
- 	spin_lock(&tree->lock);
--	if (cached && cached->tree && cached->start == start)
-+	if (cached && cached->tree && cached->start <= start &&
-+	    cached->end > start)
- 		node = &cached->rb_node;
- 	else
- 		node = tree_search(tree, start);
+In FAT case, ->i_mutex was better. But, last time I saw, shmfs was using
+->i_mutex to call ->bmap. So, this was chosen instead.
+
+I'm not checking current version yet though, if shmfs had change, we can
+use ->i_mutex.
+
+BTW, this patch looks good to me.
+
+Thanks.
+
+> Signed-off-by: Christoph Hellwig <hch@lst.de>
+>
+> Index: linux-2.6/fs/fat/inode.c
+> ===================================================================
+> --- linux-2.6.orig/fs/fat/inode.c	2011-06-20 21:28:19.707963855 +0200
+> +++ linux-2.6/fs/fat/inode.c	2011-06-20 21:29:25.031293882 +0200
+> @@ -224,9 +224,9 @@ static sector_t _fat_bmap(struct address
+>  	sector_t blocknr;
+>  
+>  	/* fat_get_cluster() assumes the requested blocknr isn't truncated. */
+> -	down_read(&mapping->host->i_alloc_sem);
+> +	down_read(&MSDOS_I(mapping->host)->truncate_lock);
+>  	blocknr = generic_block_bmap(mapping, block, fat_get_block);
+> -	up_read(&mapping->host->i_alloc_sem);
+> +	up_read(&MSDOS_I(mapping->host)->truncate_lock);
+>  
+>  	return blocknr;
+>  }
+> @@ -510,6 +510,8 @@ static struct inode *fat_alloc_inode(str
+>  	ei = kmem_cache_alloc(fat_inode_cachep, GFP_NOFS);
+>  	if (!ei)
+>  		return NULL;
+> +
+> +	init_rwsem(&ei->truncate_lock);
+>  	return &ei->vfs_inode;
+>  }
+>  
+> Index: linux-2.6/fs/fat/fat.h
+> ===================================================================
+> --- linux-2.6.orig/fs/fat/fat.h	2011-06-20 21:28:19.724630522 +0200
+> +++ linux-2.6/fs/fat/fat.h	2011-06-20 21:29:25.034627215 +0200
+> @@ -109,6 +109,7 @@ struct msdos_inode_info {
+>  	int i_attrs;		/* unused attribute bits */
+>  	loff_t i_pos;		/* on-disk position of directory entry or 0 */
+>  	struct hlist_node i_fat_hash;	/* hash by i_location */
+> +	struct rw_semaphore truncate_lock; /* protect bmap against truncate */
+>  	struct inode vfs_inode;
+>  };
+>  
+> Index: linux-2.6/fs/fat/file.c
+> ===================================================================
+> --- linux-2.6.orig/fs/fat/file.c	2011-06-20 21:28:19.744630521 +0200
+> +++ linux-2.6/fs/fat/file.c	2011-06-20 21:29:54.501292390 +0200
+> @@ -429,8 +429,10 @@ int fat_setattr(struct dentry *dentry, s
+>  	}
+>  
+>  	if (attr->ia_valid & ATTR_SIZE) {
+> +		down_write(&MSDOS_I(inode)->truncate_lock);
+>  		truncate_setsize(inode, attr->ia_size);
+>  		fat_truncate_blocks(inode, attr->ia_size);
+> +		up_write(&MSDOS_I(inode)->truncate_lock);
+>  	}
+>  
+>  	setattr_copy(inode, attr);
+>
+
 -- 
-1.7.5.2
-
+OGAWA Hirofumi <hirofumi@mail.parknet.co.jp>

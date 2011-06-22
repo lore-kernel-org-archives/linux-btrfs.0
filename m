@@ -1,182 +1,179 @@
-From: Arne Jansen <sensille@gmx.net>
-Subject: Re: [PATCH] btrfs: kick off the useless parameter
-Date: Wed, 22 Jun 2011 21:53:54 +0200
-Message-ID: <4E024852.2050302@gmx.net>
-References: <BANLkTi=yifUriAo7A-9sVbY32-WASWN7=Q@mail.gmail.com>
+From: Andrej Podzimek <andrej@podzimek.org>
+Subject: Re: [HELP!] parent transid verify failed on 600755752960 wanted 757102
+ found 756726
+Date: Thu, 23 Jun 2011 00:01:13 +0200
+Message-ID: <4E026629.6080300@podzimek.org>
+References: <BANLkTimgsJa6MzR+Gm4vCkW4wqku9NjxFw@mail.gmail.com> <loom.20110621T155927-215@post.gmane.org> <BANLkTikrDb4dGjgSi=1OOaLLcffmrdaLTA@mail.gmail.com> <20110622184505.GA3837@carfax.org.uk> <loom.20110622T212623-869@post.gmane.org>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=ISO-8859-1; format=flowed
-Cc: linux-btrfs <linux-btrfs@vger.kernel.org>
-To: Wenyi Liu <qingshenlwy@gmail.com>
+Content-Type: multipart/signed; protocol="application/pkcs7-signature"; micalg=sha1; boundary="=_charon-15416-1308780075-0001-2"
+Cc: linux-btrfs@vger.kernel.org
+To: unlisted-recipients:; (no To-header on input)
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <BANLkTi=yifUriAo7A-9sVbY32-WASWN7=Q@mail.gmail.com>
+In-Reply-To: <loom.20110622T212623-869@post.gmane.org>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 22.06.2011 16:56, Wenyi Liu wrote:
-> If there is no future development plan, this parameter for btrfs_root
-> should be removed.
-> ---
->
-> Signed-off-by: Liu Wenyi<qingshenlwy@gmail.com>
->
-> ---
->   fs/btrfs/compression.c      |    3 +--
->   fs/btrfs/disk-io.c          |    6 +++---
->   fs/btrfs/disk-io.h          |    2 +-
->   fs/btrfs/file-item.c        |    3 +--
->   fs/btrfs/free-space-cache.c |    6 +++---
->   fs/btrfs/inode.c            |    5 ++---
->   6 files changed, 11 insertions(+), 14 deletions(-)
->
-> diff --git a/fs/btrfs/compression.c b/fs/btrfs/compression.c
-> index 41d1d7c..499d8a4 100644
-> --- a/fs/btrfs/compression.c
-> +++ b/fs/btrfs/compression.c
-> @@ -105,7 +105,6 @@ static int check_compressed_csum(struct inode *inode,
->   				 u64 disk_start)
->   {
->   	int ret;
-> -	struct btrfs_root *root = BTRFS_I(inode)->root;
->   	struct page *page;
->   	unsigned long i;
->   	char *kaddr;
-> @@ -120,7 +119,7 @@ static int check_compressed_csum(struct inode *inode,
->   		csum = ~(u32)0;
->
->   		kaddr = kmap_atomic(page, KM_USER0);
-> -		csum = btrfs_csum_data(root, kaddr, csum, PAGE_CACHE_SIZE);
-> +		csum = btrfs_csum_data(kaddr, csum, PAGE_CACHE_SIZE);
->   		btrfs_csum_final(csum, (char *)&csum);
->   		kunmap_atomic(kaddr, KM_USER0);
->
-> diff --git a/fs/btrfs/disk-io.c b/fs/btrfs/disk-io.c
-> index fe5aec9..77fee13 100644
-> --- a/fs/btrfs/disk-io.c
-> +++ b/fs/btrfs/disk-io.c
-> @@ -192,7 +192,7 @@ out:
->   	return em;
->   }
->
-> -u32 btrfs_csum_data(struct btrfs_root *root, char *data, u32 seed, size_t len)
-> +u32 btrfs_csum_data(char *data, u32 seed, size_t len)
+This is a MIME-formatted message.  If you see this text it means that your
+E-mail software does not support MIME-formatted messages.
 
-This is also included in my patch
+--=_charon-15416-1308780075-0001-2
+Content-Type: text/plain; charset=UTF-8; format=flowed
+Content-Transfer-Encoding: quoted-printable
 
-[PATCH v1 1/3] btrfs: remove struct btrfs_root parameter where unused
+Hello,
 
--Arne
+I am facing the same issue on a Btrfs RAID0 with 2 drives:
 
->   {
->   	return crc32c(seed, data, len);
->   }
-> @@ -231,7 +231,7 @@ static int csum_tree_block(struct btrfs_root
-> *root, struct extent_buffer *buf,
->   		if (err)
->   			return 1;
->   		cur_len = min(len, map_len - (offset - map_start));
-> -		crc = btrfs_csum_data(root, kaddr + offset - map_start,
-> +		crc = btrfs_csum_data(kaddr + offset - map_start,
->   				      crc, cur_len);
->   		len -= cur_len;
->   		offset += cur_len;
-> @@ -2359,7 +2359,7 @@ static int write_dev_supers(struct btrfs_device *device,
->   			btrfs_set_super_bytenr(sb, bytenr);
->
->   			crc = ~(u32)0;
-> -			crc = btrfs_csum_data(NULL, (char *)sb +
-> +			crc = btrfs_csum_data((char *)sb +
->   					      BTRFS_CSUM_SIZE, crc,
->   					      BTRFS_SUPER_INFO_SIZE -
->   					      BTRFS_CSUM_SIZE);
-> diff --git a/fs/btrfs/disk-io.h b/fs/btrfs/disk-io.h
-> index 07b20dc..9bef3e0 100644
-> --- a/fs/btrfs/disk-io.h
-> +++ b/fs/btrfs/disk-io.h
-> @@ -79,7 +79,7 @@ int btrfs_set_buffer_uptodate(struct extent_buffer *buf);
->   int wait_on_tree_block_writeback(struct btrfs_root *root,
->   				 struct extent_buffer *buf);
->   int btrfs_read_buffer(struct extent_buffer *buf, u64 parent_transid);
-> -u32 btrfs_csum_data(struct btrfs_root *root, char *data, u32 seed, size_t len);
-> +u32 btrfs_csum_data(char *data, u32 seed, size_t len);
->   void btrfs_csum_final(u32 crc, char *result);
->   int btrfs_open_device(struct btrfs_device *dev);
->   int btrfs_verify_block_csum(struct btrfs_root *root,
-> diff --git a/fs/btrfs/file-item.c b/fs/btrfs/file-item.c
-> index a6a9d4e..611a1be 100644
-> --- a/fs/btrfs/file-item.c
-> +++ b/fs/btrfs/file-item.c
-> @@ -432,8 +432,7 @@ int btrfs_csum_one_bio(struct btrfs_root *root,
-> struct inode *inode,
->
->   		data = kmap_atomic(bvec->bv_page, KM_USER0);
->   		sector_sum->sum = ~(u32)0;
-> -		sector_sum->sum = btrfs_csum_data(root,
-> -						  data + bvec->bv_offset,
-> +		sector_sum->sum = btrfs_csum_data(data + bvec->bv_offset,
->   						  sector_sum->sum,
->   						  bvec->bv_len);
->   		kunmap_atomic(data, KM_USER0);
-> diff --git a/fs/btrfs/free-space-cache.c b/fs/btrfs/free-space-cache.c
-> index 63731a1..64ffb39 100644
-> --- a/fs/btrfs/free-space-cache.c
-> +++ b/fs/btrfs/free-space-cache.c
-> @@ -378,7 +378,7 @@ int load_free_space_cache(struct btrfs_fs_info *fs_info,
->
->   		/* First lets check our crc before we do anything fun */
->   		cur_crc = ~(u32)0;
-> -		cur_crc = btrfs_csum_data(root, addr + start_offset, cur_crc,
-> +		cur_crc = btrfs_csum_data(addr + start_offset, cur_crc,
->   					  PAGE_CACHE_SIZE - start_offset);
->   		btrfs_csum_final(cur_crc, (char *)&cur_crc);
->   		if (cur_crc != *crc) {
-> @@ -710,7 +710,7 @@ int btrfs_write_out_cache(struct btrfs_root *root,
->   			entry++;
->   		}
->   		*crc = ~(u32)0;
-> -		*crc = btrfs_csum_data(root, addr + start_offset, *crc,
-> +		*crc = btrfs_csum_data(addr + start_offset, *crc,
->   				       PAGE_CACHE_SIZE - start_offset);
->   		kunmap(page);
->
-> @@ -737,7 +737,7 @@ int btrfs_write_out_cache(struct btrfs_root *root,
->   		addr = kmap(page);
->   		memcpy(addr, entry->bitmap, PAGE_CACHE_SIZE);
->   		*crc = ~(u32)0;
-> -		*crc = btrfs_csum_data(root, addr, *crc, PAGE_CACHE_SIZE);
-> +		*crc = btrfs_csum_data(addr, *crc, PAGE_CACHE_SIZE);
->   		kunmap(page);
->   		btrfs_csum_final(*crc, (char *)crc);
->   		crc++;
-> diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
-> index 870869a..9aa2103 100644
-> --- a/fs/btrfs/inode.c
-> +++ b/fs/btrfs/inode.c
-> @@ -1989,7 +1989,7 @@ static int btrfs_readpage_end_io_hook(struct
-> page *page, u64 start, u64 end,
->   	if (ret)
->   		goto zeroit;
->
-> -	csum = btrfs_csum_data(root, kaddr + offset, csum,  end - start + 1);
-> +	csum = btrfs_csum_data(kaddr + offset, csum,  end - start + 1);
->   	btrfs_csum_final(csum, (char *)&csum);
->   	if (csum != private)
->   		goto zeroit;
-> @@ -5770,7 +5770,6 @@ static void btrfs_endio_direct_read(struct bio
-> *bio, int err)
->   	struct bio_vec *bvec_end = bio->bi_io_vec + bio->bi_vcnt - 1;
->   	struct bio_vec *bvec = bio->bi_io_vec;
->   	struct inode *inode = dip->inode;
-> -	struct btrfs_root *root = BTRFS_I(inode)->root;
->   	u64 start;
->   	u32 *private = dip->csums;
->
-> @@ -5784,7 +5783,7 @@ static void btrfs_endio_direct_read(struct bio
-> *bio, int err)
->
->   			local_irq_save(flags);
->   			kaddr = kmap_atomic(page, KM_IRQ0);
-> -			csum = btrfs_csum_data(root, kaddr + bvec->bv_offset,
-> +			csum = btrfs_csum_data(kaddr + bvec->bv_offset,
->   					       csum, bvec->bv_len);
->   			btrfs_csum_final(csum, (char *)&csum);
->   			kunmap_atomic(kaddr, KM_IRQ0);
+	Label: 'root'  uuid: 1e26b203-fc1e-4ebf-9551-451bd34d3ac4
+	        Total devices 2 FS bytes used 36.14GB
+	        devid    1 size 80.43GB used 41.65GB path /dev/sda6
+	        devid    2 size 80.43GB used 41.63GB path /dev/sdb6
 
+	Btrfs v0.19-36-g70c6c10-dirty
+
+Tried btrfs-select-super -s 1 /dev/sd[ab]6, but that does not help at all=
+=2E On both drives, its standard output is identical:
+
+	parent transid verify failed on 576901120 wanted 70669 found 70755
+	btrfs-select-super: disk-io.c:412: find_and_setup_root: Assertion `!(!ro=
+ot->node)' failed.
+	using SB copy 1, bytenr 67108864
+
+This is the first error message from dmesg:
+
+	[  156.617407] parent transid verify failed on 576901120 wanted 70669 fo=
+und 70755
+	[  156.617504] parent transid verify failed on 576901120 wanted 70669 fo=
+und 70755
+	[  156.635322] btrfs: open_ctree failed
+
+The problem occurred shortly after this issue: http://www.mail-archive.co=
+m/linux-btrfs@vger.kernel.org/msg10618.html The machine booted (and worke=
+d normally) at least ten times between the error message and the current =
+problem.
+
+The kernel version was 2.6.39.1 when the first BUG message appeared in dm=
+esg. I downgraded to 2.6.38.8 after that and everything seemed to work fi=
+ne ... up to now.
+
+Any suggestions? ;-) I can always restore the data from another machine w=
+ith identical installation. But first of all I'd like to understand this =
+problem and know whether it can be dealt with somehow.
+
+Andrej
+
+
+--=_charon-15416-1308780075-0001-2
+Content-Type: application/pkcs7-signature; name="smime.p7s"
+Content-Transfer-Encoding: base64
+Content-Disposition: attachment; filename="smime.p7s"
+Content-Description: S/MIME Cryptographic Signature
+
+MIAGCSqGSIb3DQEHAqCAMIACAQExCzAJBgUrDgMCGgUAMIAGCSqGSIb3DQEHAQAAoIISszCC
+BakwggSRoAMCAQICAT0wDQYJKoZIhvcNAQEFBQAwgYQxFDASBgNVBAMMC1BvZHppbWVrIENB
+MQswCQYDVQQGEwJDWjEOMAwGA1UEBwwFWmzDrW4xFTATBgNVBAoMDHBvZHppbWVrLm9yZzEV
+MBMGA1UECwwMcG9kemltZWsub3JnMSEwHwYJKoZIhvcNAQkBFhJhZG1pbkBwb2R6aW1lay5v
+cmcwHhcNMTEwMzMwMTYwNzM3WhcNMTIwMzI5MTYwNzM3WjCBiTELMAkGA1UEBhMCQ1oxDjAM
+BgNVBAcMBVpsw61uMRUwEwYDVQQKDAxwb2R6aW1lay5vcmcxFTATBgNVBAsMDHBvZHppbWVr
+Lm9yZzEYMBYGA1UEAwwPQW5kcmVqIFBvZHppbWVrMSIwIAYJKoZIhvcNAQkBFhNhbmRyZWpA
+cG9kemltZWsub3JnMIICIjANBgkqhkiG9w0BAQEFAAOCAg8AMIICCgKCAgEAqxdSN8GoC0Ny
+yPVoc9uZhuN+ezgtvKodMPunwlZCqaV4p7g3rgzDe3rrQ+Afkj05R+7WqLStjPn1lr9KINtn
+mxqjUF07U4CqGZgKCruKxWiTI1pvpTljTKssoa/sbEf0UgjQvO0UNhjYF1iHE1VBVWALKgI0
+Kbb+zCftvdwtnKVh9ncQushra5MZLEeMTcXisyzasFgDb8teLn8MtDQuJb0QzHkqhwRBzj7u
+pKTGKcZxGhxzZdmcqfvZdjLAcxQApLyMq7O8Y+0FHgZHW5peeuHSgeC+kScffJvGloHGPzVt
+CqODxDOHtjS8ZfkAKKt7PKdTfqiF8/+/zZ8pT98GlLXZtrz5IXlt8YQRh3ugE+o76vikx6ho
+SZQZsVFsc0KT/S7PA5fwkorUyhhuYcs53rTDO2IN4kPVoU2Tq6iyV6D8zF5/OiMxJ5lhYUGu
+RjAHM4hAFJ1ROp3LRn5VwYotogdj81xucd/hW7tc1HUN7lHnd51WK4xXjJ5o1gF0wUUYlxMc
+wpXqv9ZW1P+zD28Wj7BxmiAtll5oAButMBjLVWgJYlpOY3Ikh6rx+TVAwfDD5oVmOzc8NAYI
+pJCSmrX4MDahymq+ayjOhIw2OPXaFBbGP7YTgp68e86p+I2JTQ/tXCH08MZYFpRB11M3dI2L
+IkDlcWOm4Ptc3794p8yS0T8CAwEAAaOCAR0wggEZMAkGA1UdEwQCMAAwHQYDVR0OBBYEFBas
+PXfIN+SpJaWzrihb8DnOUJGZMIG5BgNVHSMEgbEwga6AFE6juEwI0K5X6Rv/eMJTk7Q8cg65
+oYGKpIGHMIGEMRQwEgYDVQQDDAtQb2R6aW1layBDQTELMAkGA1UEBhMCQ1oxDjAMBgNVBAcM
+BVpsw61uMRUwEwYDVQQKDAxwb2R6aW1lay5vcmcxFTATBgNVBAsMDHBvZHppbWVrLm9yZzEh
+MB8GCSqGSIb3DQEJARYSYWRtaW5AcG9kemltZWsub3JnggkAkctHSQfLqowwMQYJYIZIAYb4
+QgEEBCQWImh0dHBzOi8vY2EucG9kemltZWsub3JnL2NhLWNybC5wZW0wDQYJKoZIhvcNAQEF
+BQADggEBAH5XwT/0jYayTafRvAcJfRAm5E6z6wqX0x5OYNdO6JQ9JcCYQeFa1XD80Yu/VHy8
+NmaF+p2iAaCZWcTbIeAzidSozgbDJlVYcMdUjer0WHbBpyIBcVJZY4im/ygyVTACOIlLnfXM
+ZaNfdsCBP/minHHonm5e8DU8Go2/viAKPfXxsCOzl0bZFnU2b2D5Ii6Gk4n6kyduzQWYVUqA
+fNQjQIKZDSIMPzh119QsbR+6vNQ5t46qpHVMUkn1JLf+MIJQSBjxoXXt9ORnpTRstVw1ATPz
+RxDYYltHxaqKUY07bSo5czyWyUN5Rd35SP1mlQSHJhmNVUuOHQ58yDEADUEqkSkwggY0MIIE
+HKADAgECAgEgMA0GCSqGSIb3DQEBBQUAMH0xCzAJBgNVBAYTAklMMRYwFAYDVQQKEw1TdGFy
+dENvbSBMdGQuMSswKQYDVQQLEyJTZWN1cmUgRGlnaXRhbCBDZXJ0aWZpY2F0ZSBTaWduaW5n
+MSkwJwYDVQQDEyBTdGFydENvbSBDZXJ0aWZpY2F0aW9uIEF1dGhvcml0eTAeFw0wNzEwMjQy
+MTAyNTVaFw0xNzEwMjQyMTAyNTVaMIGMMQswCQYDVQQGEwJJTDEWMBQGA1UEChMNU3RhcnRD
+b20gTHRkLjErMCkGA1UECxMiU2VjdXJlIERpZ2l0YWwgQ2VydGlmaWNhdGUgU2lnbmluZzE4
+MDYGA1UEAxMvU3RhcnRDb20gQ2xhc3MgMiBQcmltYXJ5IEludGVybWVkaWF0ZSBDbGllbnQg
+Q0EwggEiMA0GCSqGSIb3DQEBAQUAA4IBDwAwggEKAoIBAQDLKIVFnAEs+xnyq6UzjCqgDcvQ
+Ve1dIoFnRsQPCFO+y92k8RK0Pn3MbQ2Gd+mehh9GBZ+36uUQA7Xj9AGM6wgPhEE34vKtfpAN
+5tJ8LcFxveDObCKrL7O5UT9WsnAZHv7OYPYSR68mdmnEnJ83M4wQgKO19b+Rt8sPDAz9ptkQ
+sntCn4GeJzg3q2SVc4QJTg/WHo7wF2ah5LMOeh8xJVSKGEmd6uPkSbj113yKMm8vmNptRPmM
+1+YgmVwcdOYJOjCgFtb2sOP79jji8uhWR91xx7TpM1K3hv/wrBZwffrmmEpUeuXHRs07JqCC
+vFh9coKF4UQZvfEg+x3/69xRCzb1AgMBAAGjggGtMIIBqTAPBgNVHRMBAf8EBTADAQH/MA4G
+A1UdDwEB/wQEAwIBBjAdBgNVHQ4EFgQUrlWDb+wxyrn3HfqvazHzyB3jrLswHwYDVR0jBBgw
+FoAUTgvvGqRAW6UXaYcwyjRoQ9BBrvIwZgYIKwYBBQUHAQEEWjBYMCcGCCsGAQUFBzABhhto
+dHRwOi8vb2NzcC5zdGFydHNzbC5jb20vY2EwLQYIKwYBBQUHMAKGIWh0dHA6Ly93d3cuc3Rh
+cnRzc2wuY29tL3Nmc2NhLmNydDBbBgNVHR8EVDBSMCegJaAjhiFodHRwOi8vd3d3LnN0YXJ0
+c3NsLmNvbS9zZnNjYS5jcmwwJ6AloCOGIWh0dHA6Ly9jcmwuc3RhcnRzc2wuY29tL3Nmc2Nh
+LmNybDCBgAYDVR0gBHkwdzB1BgsrBgEEAYG1NwECATBmMC4GCCsGAQUFBwIBFiJodHRwOi8v
+d3d3LnN0YXJ0c3NsLmNvbS9wb2xpY3kucGRmMDQGCCsGAQUFBwIBFihodHRwOi8vd3d3LnN0
+YXJ0c3NsLmNvbS9pbnRlcm1lZGlhdGUucGRmMA0GCSqGSIb3DQEBBQUAA4ICAQA6qScNyNO0
+FpHvaZTQacVMXH33O51KyEKSRw3IvdQxRu31YR0ZDGdSfgSoOVDVMSBSdmfQfdDInHPzV3LO
+5DwUXZ+lxjv7z3PO2OkfnFkvTXPfn6dxJ5rJveDsTsCPcJ/Kp6/+qN5g+J6D/SaYcFD018B6
+L42r0Z4VEBy36P4tjRtF14Ex10tl5tJFVKM16qWKQHbpjIgf73s49UB0CQ5lHT2DHKfq3oPf
+dNc5Mk93w1v4ryVb+qVrZIej8NsrWU+5r4O2IV91edDb/OtHFddZqHFFXKgS79IHE/hwQ2LW
+7r3sTX7cDUCg+dfdwO8zeLxuwk2JF8crUoyrl66RGrRIhT8VoG/OJ1Y9uUlOav69V4cG8upi
+4ZG2l7JZFbcBFk91Wp+Payo5SuF61CmGFrZ386umkmpObtFacXda2O/bVoQ9xHQrzoTc/0KZ
+TWvlZCLK3Ke/vGYT9ZdW9lOjGsSFbXrlTA919L84iMK+48WGnvRWY28ZaVHpql43AtEGhXze
+6iNCbEDACy+4hkQYOytAqDgcxAnQ937mYpeZFPyz/XK9QSt9VNFMuudWxZwDDDJKoQAoSG59
+Hou9lZ26UrK60nRdAQBmEPL8h2nuWgoPh++XVQld9yuhbsWa39Pck8/lcfz5HUVGJF5mc/zk
+38iV7FDlF68puiryNq2KXHEpOTCCBsowggWyoAMCAQICAgtGMA0GCSqGSIb3DQEBBQUAMIGM
+MQswCQYDVQQGEwJJTDEWMBQGA1UEChMNU3RhcnRDb20gTHRkLjErMCkGA1UECxMiU2VjdXJl
+IERpZ2l0YWwgQ2VydGlmaWNhdGUgU2lnbmluZzE4MDYGA1UEAxMvU3RhcnRDb20gQ2xhc3Mg
+MiBQcmltYXJ5IEludGVybWVkaWF0ZSBDbGllbnQgQ0EwHhcNMTAwOTI3MDA0ODU2WhcNMTIw
+OTI3MDk1NjI4WjCBwjEgMB4GA1UEDRMXMjY0MzU2LVV6cDI4MnFISHRiQ2I1ZDMxCzAJBgNV
+BAYTAkNaMRUwEwYDVQQIEwxabGluc2t5IEtyYWoxDTALBgNVBAcTBFpsaW4xLTArBgNVBAsT
+JFN0YXJ0Q29tIFZlcmlmaWVkIENlcnRpZmljYXRlIE1lbWJlcjEYMBYGA1UEAxMPQW5kcmVq
+IFBvZHppbWVrMSIwIAYJKoZIhvcNAQkBFhNhbmRyZWpAcG9kemltZWsub3JnMIIBIjANBgkq
+hkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEArldROEvlaSy4OX9PPg22Xl7GCivziuBcbrkH+St9
+vIAyefDb3kfdtHT/J1NRlQDYTrDFQ3cZM2J7vicm4/uu67KzdAF/14mdml1b1prWRiUT3IRw
+Cwbt8wuNhZfa6dGkQ374EuOWDVX+5YCEufr5GMHrkkZy5RYtO9r3avglOI1ZB2F9Z56Zb42k
+S7N2ebEE7Oj+pFeQwaj2pz/B4d3gu6wX+c7GwDiy26iN/33Cl+spa5uFWITb8XD6P6aob9Ep
+yDxn90KEr5+9ug1tmh833Kdll4mmjzAv5ZK0iVFnxsBq+V1TN/2NW6oiIvOLxTIHCfC1MdYi
+88HMC1PaQZF4ywIDAQABo4IC/DCCAvgwCQYDVR0TBAIwADALBgNVHQ8EBAMCBLAwHQYDVR0l
+BBYwFAYIKwYBBQUHAwIGCCsGAQUFBwMEMB0GA1UdDgQWBBT3GSEvnmmKZPBGzpElp7HtmoV7
+FzAfBgNVHSMEGDAWgBSuVYNv7DHKufcd+q9rMfPIHeOsuzAeBgNVHREEFzAVgRNhbmRyZWpA
+cG9kemltZWsub3JnMIIBQgYDVR0gBIIBOTCCATUwggExBgsrBgEEAYG1NwECAjCCASAwLgYI
+KwYBBQUHAgEWImh0dHA6Ly93d3cuc3RhcnRzc2wuY29tL3BvbGljeS5wZGYwNAYIKwYBBQUH
+AgEWKGh0dHA6Ly93d3cuc3RhcnRzc2wuY29tL2ludGVybWVkaWF0ZS5wZGYwgbcGCCsGAQUF
+BwICMIGqMBQWDVN0YXJ0Q29tIEx0ZC4wAwIBARqBkUxpbWl0ZWQgTGlhYmlsaXR5LCBzZWUg
+c2VjdGlvbiAqTGVnYWwgTGltaXRhdGlvbnMqIG9mIHRoZSBTdGFydENvbSBDZXJ0aWZpY2F0
+aW9uIEF1dGhvcml0eSBQb2xpY3kgYXZhaWxhYmxlIGF0IGh0dHA6Ly93d3cuc3RhcnRzc2wu
+Y29tL3BvbGljeS5wZGYwYwYDVR0fBFwwWjAroCmgJ4YlaHR0cDovL3d3dy5zdGFydHNzbC5j
+b20vY3J0dTItY3JsLmNybDAroCmgJ4YlaHR0cDovL2NybC5zdGFydHNzbC5jb20vY3J0dTIt
+Y3JsLmNybDCBjgYIKwYBBQUHAQEEgYEwfzA5BggrBgEFBQcwAYYtaHR0cDovL29jc3Auc3Rh
+cnRzc2wuY29tL3N1Yi9jbGFzczIvY2xpZW50L2NhMEIGCCsGAQUFBzAChjZodHRwOi8vd3d3
+LnN0YXJ0c3NsLmNvbS9jZXJ0cy9zdWIuY2xhc3MyLmNsaWVudC5jYS5jcnQwIwYDVR0SBBww
+GoYYaHR0cDovL3d3dy5zdGFydHNzbC5jb20vMA0GCSqGSIb3DQEBBQUAA4IBAQCEI21EOM71
+hKXRNFHbWFaemV86fxAs1yMl6SohZhNRea/Pc5hMpoFoUZBf0qJ3AvFy2PzsyspTsqZhBOwo
+I3rVJlgZapKi4x4k7FXM43xFmU/koQLdQPDS1Jfbr8zFTVBx+K6xD+L9y+M1M7JX+EcQgTIu
+CZn80YjSxEpAGND09NUPrgwJ/v9Nn5zqbEraf5MRSAun11fhkqIORlqkAi393N+kvXEsAtRJ
+A0CizQzFfmLFNY4xWtWtRYJGatOIzDO8s8gA8kfC99CcygpRQbrMBaBZ3fzMgoNXhP7A6801
+XYg+flS0kxPSubBbEfEUCVOHNcm4TAdyKwYehI9N8PD+MYIDuzCCA7cCAQEwgZMwgYwxCzAJ
+BgNVBAYTAklMMRYwFAYDVQQKEw1TdGFydENvbSBMdGQuMSswKQYDVQQLEyJTZWN1cmUgRGln
+aXRhbCBDZXJ0aWZpY2F0ZSBTaWduaW5nMTgwNgYDVQQDEy9TdGFydENvbSBDbGFzcyAyIFBy
+aW1hcnkgSW50ZXJtZWRpYXRlIENsaWVudCBDQQICC0YwCQYFKw4DAhoFAKCCAfwwGAYJKoZI
+hvcNAQkDMQsGCSqGSIb3DQEHATAcBgkqhkiG9w0BCQUxDxcNMTEwNjIyMjIwMTEzWjAjBgkq
+hkiG9w0BCQQxFgQUEHxM/XUESGUTBeeQMLAZTTbhMpQwXwYJKoZIhvcNAQkPMVIwUDALBglg
+hkgBZQMEAQIwCgYIKoZIhvcNAwcwDgYIKoZIhvcNAwICAgCAMA0GCCqGSIb3DQMCAgFAMAcG
+BSsOAwIHMA0GCCqGSIb3DQMCAgEoMIGbBgkrBgEEAYI3EAQxgY0wgYowgYQxFDASBgNVBAMM
+C1BvZHppbWVrIENBMQswCQYDVQQGEwJDWjEOMAwGA1UEBwwFWmzDrW4xFTATBgNVBAoMDHBv
+ZHppbWVrLm9yZzEVMBMGA1UECwwMcG9kemltZWsub3JnMSEwHwYJKoZIhvcNAQkBFhJhZG1p
+bkBwb2R6aW1lay5vcmcCAT0wgZ0GCyqGSIb3DQEJEAILMYGNoIGKMIGEMRQwEgYDVQQDDAtQ
+b2R6aW1layBDQTELMAkGA1UEBhMCQ1oxDjAMBgNVBAcMBVpsw61uMRUwEwYDVQQKDAxwb2R6
+aW1lay5vcmcxFTATBgNVBAsMDHBvZHppbWVrLm9yZzEhMB8GCSqGSIb3DQEJARYSYWRtaW5A
+cG9kemltZWsub3JnAgE9MA0GCSqGSIb3DQEBAQUABIIBAHdft5CF8hA5jVKYM+GAImM6J+m3
+5PWZ1ySa4E0l4alQvvULo65i15bG6jfk4fpJJFo1lPOLglIv1hdMoebuSwwfYqIhaKMyhlc5
+R2RycsX5nYA5aZOvXneDVZUK9pHylzwcDSicsSXPJ+nIgHpMpLTtRVPhy1LeX2j+MJyG46qh
+Q+lC/vxzdTCZXZF6iTNpYCTNEL776shEpRCBlztWe/VGPDQzJhiWiySTPcImD7F9z9YRBXjX
+rf2wVbDO3pb+3L4cYtoQddKe/gmVmgx+NDB8W6u1+GcRNFptTKhhTgAgl7K3nsApnL9XAsqX
++Gj0LrvIi77gCGF/qtbbz8ryVJgAAAAAAAA=
+--=_charon-15416-1308780075-0001-2--

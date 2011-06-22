@@ -1,37 +1,41 @@
-From: Jan Kara <jack@suse.cz>
-Subject: Re: [PATCH 0/8] remove i_alloc_sem
-Date: Wed, 22 Jun 2011 01:54:25 +0200
-Message-ID: <20110621235425.GA24067@quack.suse.cz>
-References: <20110620201533.847236272@bombadil.infradead.org>
+From: liubo <liubo2009@cn.fujitsu.com>
+Subject: Re: [PATCH 10/12 v3] Btrfs: deal with EEXIST after iput
+Date: Wed, 22 Jun 2011 09:57:58 +0800
+Message-ID: <4E014C26.8050705@cn.fujitsu.com>
+References: <1308646193-7086-1-git-send-email-liubo2009@cn.fujitsu.com> <1308646193-7086-11-git-send-email-liubo2009@cn.fujitsu.com> <4E00A3E2.9030108@redhat.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Cc: viro@zeniv.linux.org.uk, tglx@linutronix.de,
-	linux-fsdevel@vger.kernel.org, linux-ext4@vger.kernel.org,
-	linux-btrfs@vger.kernel.org, hirofumi@mail.parknet.co.jp,
-	mfasheh@suse.com, jlbec@evilplan.org, tytso@mit.edu
-To: Christoph Hellwig <hch@infradead.org>
-Return-path: <linux-ext4-owner@vger.kernel.org>
-In-Reply-To: <20110620201533.847236272@bombadil.infradead.org>
+Content-Type: text/plain; charset=ISO-8859-1
+Cc: linux-btrfs@vger.kernel.org, dave@jikos.cz, chris.mason@oracle.com
+To: Josef Bacik <josef@redhat.com>
+Return-path: <linux-btrfs-owner@vger.kernel.org>
+In-Reply-To: <4E00A3E2.9030108@redhat.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Mon 20-06-11 16:15:33, Christoph Hellwig wrote:
-> i_alloc_sem has always been a bit of an odd "lock".  It's the only remaining
-> rw_semaphore that can be released by a different thread than the one that
-> locked it, and it's use case in the core direct I/O code is more like a
-> counter given that the writers already have external serialization.
+On 06/21/2011 10:00 PM, Josef Bacik wrote:
+> On 06/21/2011 04:49 AM, Liu Bo wrote:
+>> There are two cases when BTRFS_I(inode)->logged_trans is zero:
+>> a) an inode is just allocated;
+>> b) iput an inode and reread it.
+>>
+>> However, in b) if btrfs is not committed yet, and this inode _may_
+>> still remain
+>> in log tree.
+>>
+>> So we need to check the log tree to get logged_trans a right value
+>> in case it hits a EEXIST while logging.
 > 
-> This series removes it in favour of a simpler counter scheme, thus getting
-> rid of the rw_semaphore non-owner APIs as requests by Thomas, while at the
-> same time shrinking the size of struct inode by 160 bytes on 64-bit systems.
+> Instead of doing this why not just check and see if the inode has been
+> logged but the transaction has not yet been committed in
+> btrfs_drop_inode?  That way the inode doesn't get evicted from cache
+> until after we know it's ok and that way we don't have to waste a tree
+> lookup.  Thanks,
 > 
-> The only nasty bit is that two filesystems (fat and ext4) have started
-> abusing the lock for their own purposes.  I've added a new rw_semaphore
-  ext4 abuse should be gone when Ted merges my rewrite of
-ext4_page_mkwrite()... Ted, what happened to that patch. Should I resend
-it?
 
-								Honza
+Good idea, I'll follow it.
 
--- 
-Jan Kara <jack@suse.cz>
-SUSE Labs, CR
+thanks,
+liubo
+
+> Josef
+> 
+

@@ -1,41 +1,34 @@
-From: Tobias Kronawitter <tobias.kronawitter@tuhh.de>
-Subject: Mounting a RAID 1 in degraded mode
-Date: Wed, 22 Jun 2011 13:15:43 +0200
-Message-ID: <BANLkTikKNpUfGadK72tg2yq0y_G=3=v6Ew@mail.gmail.com>
+From: Miguel Garrido <miguel@mjgar.com>
+Subject: Re: Mounting a RAID 1 in degraded mode
+Date: Wed, 22 Jun 2011 08:45:34 -0400
+Message-ID: <BANLkTik14JF5Mxt7ay+wkrsNZX9c0ZadZA@mail.gmail.com>
+References: <BANLkTikKNpUfGadK72tg2yq0y_G=3=v6Ew@mail.gmail.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset=ISO-8859-1
-To: linux-btrfs@vger.kernel.org
+Cc: linux-btrfs@vger.kernel.org
+To: Tobias Kronawitter <tobias.kronawitter@tuhh.de>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
+In-Reply-To: <BANLkTikKNpUfGadK72tg2yq0y_G=3=v6Ew@mail.gmail.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hi
+On Wed, Jun 22, 2011 at 7:15 AM, Tobias Kronawitter
+<tobias.kronawitter@tuhh.de> wrote:
+>
+>
+> It looks like I added another device instead of replacing.
+> I got the info so far from
+> https://btrfs.wiki.kernel.org/index.php/Using_Btrfs_with_Multiple_Devices#Creating_a_Multi-device_FS
+> last paragraph.
+>
 
-I fooled around with RAID and didn't quite get how to use -o degraded
-the way it's meant. I asked on
-http://askubuntu.com/questions/49893/how-does-btrfs-raid-work-in-degraded-mode/
-. It goes like this:
--Create the raid array "sudo mkfs.btrfs -m raid1 -d raid1 /dev/loop1 /dev/loop2"
--mount them "sudo mount /dev/loop1 /mnt" and mark them "touch goodcondition"
--You unmount and simulate disk failure (remove disk or delete loopback
-device loop2 in my case)
--You mount degraded "-o degraded" and mark again "touch degraded"
--You add the bad disk again "sudo btrfs dev add /dev/loop2"
--You rebalance "sudo btrfs fi ba /mnt"
-And Raid 1 should work again. But that's not the case. "sudo btrfs fi show":
+Take a look a the "Replacing Failed Devices" section of that page.
 
-Total devices 3 FS bytes used 28.00KB
-devid    3 size 4.00GB used 264.00MB path /dev/loop1
-devid    2 size 4.00GB used 272.00MB path /dev/loop2
-*** Some devices missing
+It is possible if you created a brand new loop device that it was
+picked up as a different disk altogether by btrfs (different unique
+ID) so you need to delete the missing disk from the volume and then
+rebalance.
 
-It looks like I added another device instead of replacing.
-I got the info so far from
-https://btrfs.wiki.kernel.org/index.php/Using_Btrfs_with_Multiple_Devices#Creating_a_Multi-device_FS
-last paragraph.
+At least that is my understanding of how it is supposed to work.
 
-So howdo I tell btrfs to use the newly created loop2 as a replacement for loop2
-
-NB This is the first time I'm using a mailing list, so if I'm making
-some obvious mistakes please point them out.
-
-Tobias Kronawitter
+--
+MG

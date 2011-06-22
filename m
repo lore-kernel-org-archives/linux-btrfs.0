@@ -1,68 +1,105 @@
 From: Andrej Podzimek <andrej@podzimek.org>
-Subject: Re: [HELP!] parent transid verify failed on 600755752960 wanted 757102
- found 756726
-Date: Thu, 23 Jun 2011 00:01:13 +0200
-Message-ID: <4E026629.6080300@podzimek.org>
-References: <BANLkTimgsJa6MzR+Gm4vCkW4wqku9NjxFw@mail.gmail.com> <loom.20110621T155927-215@post.gmane.org> <BANLkTikrDb4dGjgSi=1OOaLLcffmrdaLTA@mail.gmail.com> <20110622184505.GA3837@carfax.org.uk> <loom.20110622T212623-869@post.gmane.org>
+Subject: Re: parent transid verify failures on 2.6.39
+Date: Thu, 23 Jun 2011 00:42:28 +0200
+Message-ID: <4E026FD4.7020606@podzimek.org>
 Mime-Version: 1.0
-Content-Type: multipart/signed; protocol="application/pkcs7-signature"; micalg=sha1; boundary="=_charon-15416-1308780075-0001-2"
+Content-Type: multipart/signed; protocol="application/pkcs7-signature"; micalg=sha1; boundary="=_charon-16626-1308782548-0001-2"
 Cc: linux-btrfs@vger.kernel.org
-To: unlisted-recipients:; (no To-header on input)
+To: Josef Bacik <josef@redhat.com>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <loom.20110622T212623-869@post.gmane.org>
 List-ID: <linux-btrfs.vger.kernel.org>
 
 This is a MIME-formatted message.  If you see this text it means that your
 E-mail software does not support MIME-formatted messages.
 
---=_charon-15416-1308780075-0001-2
+--=_charon-16626-1308782548-0001-2
 Content-Type: text/plain; charset=UTF-8; format=flowed
 Content-Transfer-Encoding: quoted-printable
 
-Hello,
+>> After doing an upgrade to 2.6.39 from 2.6.39-rc7, I am unable to mount=
 
-I am facing the same issue on a Btrfs RAID0 with 2 drives:
+>> my 3 disk btrfs volume.  It was a clean reboot, which makes it all the=
 
-	Label: 'root'  uuid: 1e26b203-fc1e-4ebf-9551-451bd34d3ac4
-	        Total devices 2 FS bytes used 36.14GB
-	        devid    1 size 80.43GB used 41.65GB path /dev/sda6
-	        devid    2 size 80.43GB used 41.63GB path /dev/sdb6
+>> more puzzling.  This is what I'm getting:
+>>
+>>
+>> [68808.339109] device fsid a941511a96bcbfb8-8c123cb07aa6aaa1 devid 2
+>> transid 339584 /dev/sdc1
+>> [68808.340354] device fsid a941511a96bcbfb8-8c123cb07aa6aaa1 devid 1
+>> transid 339584 /dev/sda1
+>> [68808.340774] device fsid a941511a96bcbfb8-8c123cb07aa6aaa1 devid 3
+>> transid 339584 /dev/sdb1
+>>
+>> [70106.913668] btrfs: disk space caching is enabled
+>> [70106.968648] parent transid verify failed on 6038227976192 wanted
+>> 337418 found 337853
+>> [70106.969031] parent transid verify failed on 6038227976192 wanted
+>> 337418 found 337853
+>> [70106.969403] parent transid verify failed on 6038227976192 wanted
+>> 337418 found 337853
+>> [70106.969671] parent transid verify failed on 6038227976192 wanted
+>> 337418 found 337853
+>> [70106.969691] parent transid verify failed on 6038227976192 wanted
+>> 337418 found 337853
+>> [70106.969704] Failed to read block groups: -5
+>> [70107.050658] btrfs: open_ctree failed
+>>
+>> I went to run a btrfsck, but found out that I needed to compile with
+>> the tmp branch or I would get an unsupported features message (lzo and=
 
-	Btrfs v0.19-36-g70c6c10-dirty
+>> space_cache).  After compiling that, when I run btrfsck, I get this:
+>>
+>> parent transid verify failed on 6038227976192 wanted 337418 found 3378=
+53
+>> parent transid verify failed on 6038227976192 wanted 337418 found 3378=
+53
+>> parent transid verify failed on 6038227976192 wanted 337418 found 3378=
+53
+>>
+>> And then it stops.  This happens with btrfs-debug-tree, or
+>> btrfs-select-super.  I've tried it on sda1, sdb1, and sdc1 and also
+>> with -s 0, -s 1, and -s 2.  Dmesg shows a segfault:
+>>
+>> [71775.589462] btrfsck[14453]: segfault at c4 ip 000000000040e477 sp
+>> 00007fffa9eb4d30 error 4 in btrfsck[400000+21000]
+>>
+>> For fun, I ran it through gdb and I got this:
+>>
+>> Program received signal SIGSEGV, Segmentation fault.
+>> find_first_block_group (root=3D0x61d1b0, path=3D0x61ef10, key=3D0x7fff=
+ffffe240)
+>>     at extent-tree.c:3028
+>> 3028                    if (slot >=3D btrfs_header_nritems(leaf)) {
+>>
+>>
+>>
+>> Is there any hope of recovery here?  Not the end of the world if the
+>> volume is lost, but it would be a bit of a pain and I'm at a loss as
+>> to why it happened.  I tried mounting with the new integration-test
+>> branch just for fun, but there's no difference on the mounting.  Any
+>> help that could be provided would be immensely appreciated.  Thanks!
+>>
+>
+> So I have a patch I can give you that will possibly help you recover
+> your data if you don't have backups, or you can wait a couple of days
+> (hopefully) for the new btrfsck tool that will be much better than the
+> hack I can give you.  Thanks,
+>
+> Josef
 
-Tried btrfs-select-super -s 1 /dev/sd[ab]6, but that does not help at all=
-=2E On both drives, its standard output is identical:
+Could I try your hack, pretty please? If there's any chance it could eith=
+er resolve this problem
 
-	parent transid verify failed on 576901120 wanted 70669 found 70755
-	btrfs-select-super: disk-io.c:412: find_and_setup_root: Assertion `!(!ro=
-ot->node)' failed.
-	using SB copy 1, bytenr 67108864
+	http://www.mail-archive.com/linux-btrfs@vger.kernel.org/msg10683.html ,
 
-This is the first error message from dmesg:
+or at least restore the data from the filesystem, then I'd like to give i=
+t a go. Waiting for the new btrfsck is currently not an option for me :-)=
 
-	[  156.617407] parent transid verify failed on 576901120 wanted 70669 fo=
-und 70755
-	[  156.617504] parent transid verify failed on 576901120 wanted 70669 fo=
-und 70755
-	[  156.635322] btrfs: open_ctree failed
-
-The problem occurred shortly after this issue: http://www.mail-archive.co=
-m/linux-btrfs@vger.kernel.org/msg10618.html The machine booted (and worke=
-d normally) at least ten times between the error message and the current =
-problem.
-
-The kernel version was 2.6.39.1 when the first BUG message appeared in dm=
-esg. I downgraded to 2.6.38.8 after that and everything seemed to work fi=
-ne ... up to now.
-
-Any suggestions? ;-) I can always restore the data from another machine w=
-ith identical installation. But first of all I'd like to understand this =
-problem and know whether it can be dealt with somehow.
 
 Andrej
 
 
---=_charon-15416-1308780075-0001-2
+--=_charon-16626-1308782548-0001-2
 Content-Type: application/pkcs7-signature; name="smime.p7s"
 Content-Transfer-Encoding: base64
 Content-Disposition: attachment; filename="smime.p7s"
@@ -161,8 +198,8 @@ XYg+flS0kxPSubBbEfEUCVOHNcm4TAdyKwYehI9N8PD+MYIDuzCCA7cCAQEwgZMwgYwxCzAJ
 BgNVBAYTAklMMRYwFAYDVQQKEw1TdGFydENvbSBMdGQuMSswKQYDVQQLEyJTZWN1cmUgRGln
 aXRhbCBDZXJ0aWZpY2F0ZSBTaWduaW5nMTgwNgYDVQQDEy9TdGFydENvbSBDbGFzcyAyIFBy
 aW1hcnkgSW50ZXJtZWRpYXRlIENsaWVudCBDQQICC0YwCQYFKw4DAhoFAKCCAfwwGAYJKoZI
-hvcNAQkDMQsGCSqGSIb3DQEHATAcBgkqhkiG9w0BCQUxDxcNMTEwNjIyMjIwMTEzWjAjBgkq
-hkiG9w0BCQQxFgQUEHxM/XUESGUTBeeQMLAZTTbhMpQwXwYJKoZIhvcNAQkPMVIwUDALBglg
+hvcNAQkDMQsGCSqGSIb3DQEHATAcBgkqhkiG9w0BCQUxDxcNMTEwNjIyMjI0MjI4WjAjBgkq
+hkiG9w0BCQQxFgQUlgjz0dRFvck46c5C8Cq57FbUABUwXwYJKoZIhvcNAQkPMVIwUDALBglg
 hkgBZQMEAQIwCgYIKoZIhvcNAwcwDgYIKoZIhvcNAwICAgCAMA0GCCqGSIb3DQMCAgFAMAcG
 BSsOAwIHMA0GCCqGSIb3DQMCAgEoMIGbBgkrBgEEAYI3EAQxgY0wgYowgYQxFDASBgNVBAMM
 C1BvZHppbWVrIENBMQswCQYDVQQGEwJDWjEOMAwGA1UEBwwFWmzDrW4xFTATBgNVBAoMDHBv
@@ -170,10 +207,10 @@ ZHppbWVrLm9yZzEVMBMGA1UECwwMcG9kemltZWsub3JnMSEwHwYJKoZIhvcNAQkBFhJhZG1p
 bkBwb2R6aW1lay5vcmcCAT0wgZ0GCyqGSIb3DQEJEAILMYGNoIGKMIGEMRQwEgYDVQQDDAtQ
 b2R6aW1layBDQTELMAkGA1UEBhMCQ1oxDjAMBgNVBAcMBVpsw61uMRUwEwYDVQQKDAxwb2R6
 aW1lay5vcmcxFTATBgNVBAsMDHBvZHppbWVrLm9yZzEhMB8GCSqGSIb3DQEJARYSYWRtaW5A
-cG9kemltZWsub3JnAgE9MA0GCSqGSIb3DQEBAQUABIIBAHdft5CF8hA5jVKYM+GAImM6J+m3
-5PWZ1ySa4E0l4alQvvULo65i15bG6jfk4fpJJFo1lPOLglIv1hdMoebuSwwfYqIhaKMyhlc5
-R2RycsX5nYA5aZOvXneDVZUK9pHylzwcDSicsSXPJ+nIgHpMpLTtRVPhy1LeX2j+MJyG46qh
-Q+lC/vxzdTCZXZF6iTNpYCTNEL776shEpRCBlztWe/VGPDQzJhiWiySTPcImD7F9z9YRBXjX
-rf2wVbDO3pb+3L4cYtoQddKe/gmVmgx+NDB8W6u1+GcRNFptTKhhTgAgl7K3nsApnL9XAsqX
-+Gj0LrvIi77gCGF/qtbbz8ryVJgAAAAAAAA=
---=_charon-15416-1308780075-0001-2--
+cG9kemltZWsub3JnAgE9MA0GCSqGSIb3DQEBAQUABIIBAHStPrGIq2Z6+cHDD0iJSB25e9gG
+8l9rBOrkDoU35GVF7bXP7Irnj10iBgSELgrdZQCZIBgQQw1xQ/W1vOnXapV4SMpDZlt0IpQs
++39nBdZ7blQzczJ6YAfb36S9L5cBnhrL9t3J/wp1MB83uRZnmTIEXLYGOwQO5wgjJJ6m1SsW
+xAPhmSnK52HNmBLa2aVhbiEhz/YGEX1dMXBxa7lsYbZq+5Lp3lTWfgpcXgUr9YFZMG8lQx94
+DhpX24OOatLvbUOVUtJk7h37zcEkp+BXzITE4R6CNzFTnS8Pr1vsTW0HSkabQ4DQaJ7Fb62f
+9fPDzz4p7hLlZfxwXOgttQdOlfoAAAAAAAA=
+--=_charon-16626-1308782548-0001-2--

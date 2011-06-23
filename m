@@ -1,52 +1,135 @@
-From: Timothy Renner <timothy.renner@gmail.com>
-Subject: Unable to remove devices in multi-device setup
-Date: Thu, 23 Jun 2011 11:40:07 -0700
-Message-ID: <4E038887.4070709@gmail.com>
-Reply-To: timothy.renner@gmail.com
+From: Josef Bacik <josef@redhat.com>
+Subject: Re: parent transid verify failures on 2.6.39
+Date: Thu, 23 Jun 2011 15:54:09 -0400
+Message-ID: <20110623195409.GA21007@dhcp231-156.rdu.redhat.com>
+References: <4E026FD4.7020606@podzimek.org> <1308793398-sup-9234@shiny>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=ISO-8859-1; format=flowed
-To: linux-btrfs@vger.kernel.org
+Content-Type: text/plain; charset=us-ascii
+Cc: Andrej Podzimek <andrej@podzimek.org>,
+	Josef Bacik <josef@redhat.com>,
+	linux-btrfs <linux-btrfs@vger.kernel.org>
+To: Chris Mason <chris.mason@oracle.com>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
+In-Reply-To: <1308793398-sup-9234@shiny>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Apologies if this has been asked already...
+On Wed, Jun 22, 2011 at 09:45:20PM -0400, Chris Mason wrote:
+> Excerpts from Andrej Podzimek's message of 2011-06-22 18:42:28 -0400:
+> > 
+> > Could I try your hack, pretty please? If there's any chance it could either resolve this problem
+> > 
+> >     http://www.mail-archive.com/linux-btrfs@vger.kernel.org/msg10683.html ,
+> > 
+> > or at least restore the data from the filesystem, then I'd like to give it a go. Waiting for the new btrfsck is currently not an option for me :-)
+> 
+> It looks like your box is failing to read the extent allocation tree.
+> We don't allow the mount to proceed without that tree, but you don't
+> actually need it for a readonly mount (to copy things off).
+> 
+> Josef, is your hack just a mount option to make -o readonly skip the
+> extent allocation tree?
+> 
+> I can put this into my -o recovery patch and we can give it a try.
+> 
 
-I am testing btrfs across multiple devices to see if removing them is 
-working smoothly yet(smallish loopback devices, a few 2GB and one 5GB) 
-and I always seem to hit a point where I can no longer remove a device.  
-I've created the filesystem as RAID 0, so there should be no duplication 
-of metadata or data.  I'm running yesterday's git checkout of 
-btrfs-progs and kernel 2.6.39.1, so am reasonably up to date.
+Here's the patch, you _have_ to mount -o readonly.  Basically what it does is
+search all the mirrors and finds the one with the newest generation number and
+just uses that one, assuming that it will be the closest one to what we want.
+This has worked relatively well for the people who have used it, so hopefully it
+will work for you.  Thanks,
 
+Josef
 
-Label: none  uuid: 3898d5ac-868f-41d3-94ad-89be0b6c5841
-         Total devices 3 FS bytes used 3.10GB
-         devid    6 size 2.00GB used 2.00GB path /dev/loop0
-         devid    5 size 2.00GB used 309.81MB path /dev/loop1
-         devid    7 size 5.08GB used 2.00GB path /dev/loop4
-
-(= ~9 GB total space)
-
-/dev/sda7            158374020 107979012  42350036  72% /d
-
-Data, RAID0: total=4.03GB, used=3.10GB
-System, RAID0: total=16.00MB, used=4.00KB
-Metadata, RAID0: total=256.00MB, used=3.66MB
-
-When I try to remove /dev/loop1, it chugs away for a while, 
-re-allocating my data and then I get the error: "ERROR: error removing 
-the device '/dev/loop1'"
-
-My first question is why the data on this device can't be fully 
-re-allocated, even though there is plenty of space on other of the other 
-devices...  Is this a currently known bug in removing devices, or is 
-there a good reason that brtfs can't let go of this device?  Is it 
-holding onto a metadata block and can't re-allocate it elsewhere?  I've 
-tried a rebalance to no effect... It moves some data back into 
-/dev/loop1, but on a remove I run into the same problem.
-
-My second question is:  Is there is a public bug database for btrfs?  A 
-bugzilla or other such setup?
-
--Tim
-
+diff --git a/fs/btrfs/disk-io.c b/fs/btrfs/disk-io.c
+index c650a1d..53e330e 100644
+--- a/fs/btrfs/disk-io.c
++++ b/fs/btrfs/disk-io.c
+@@ -281,7 +281,7 @@ static int csum_tree_block(struct btrfs_root *root, struct extent_buffer *buf,
+  * in the wrong place.
+  */
+ static int verify_parent_transid(struct extent_io_tree *io_tree,
+-				 struct extent_buffer *eb, u64 parent_transid)
++				 struct extent_buffer *eb, u64 parent_transid, int uptodate)
+ {
+ 	struct extent_state *cached_state = NULL;
+ 	int ret;
+@@ -296,6 +296,11 @@ static int verify_parent_transid(struct extent_io_tree *io_tree,
+ 		ret = 0;
+ 		goto out;
+ 	}
++	if (!uptodate) {
++		ret = 0;
++		goto out;
++	}
++
+ 	if (printk_ratelimit()) {
+ 		printk("parent transid verify failed on %llu wanted %llu "
+ 		       "found %llu\n",
+@@ -323,6 +328,9 @@ static int btree_read_extent_buffer_pages(struct btrfs_root *root,
+ 	int ret;
+ 	int num_copies = 0;
+ 	int mirror_num = 0;
++	int uptodate = 1;
++	int good_mirror = 0;
++	u64 generation = 0;
+ 
+ 	clear_bit(EXTENT_BUFFER_CORRUPT, &eb->bflags);
+ 	io_tree = &BTRFS_I(root->fs_info->btree_inode)->io_tree;
+@@ -330,9 +338,14 @@ static int btree_read_extent_buffer_pages(struct btrfs_root *root,
+ 		ret = read_extent_buffer_pages(io_tree, eb, start, 1,
+ 					       btree_get_extent, mirror_num);
+ 		if (!ret &&
+-		    !verify_parent_transid(io_tree, eb, parent_transid))
++		    !verify_parent_transid(io_tree, eb, parent_transid, uptodate))
+ 			return ret;
+ 
++		if (btrfs_header_generation(eb) > generation) {
++			good_mirror = mirror_num;
++			generation = btrfs_header_generation(eb);
++		}
++
+ 		/*
+ 		 * This buffer's crc is fine, but its contents are corrupted, so
+ 		 * there is no reason to read the other copies, they won't be
+@@ -347,8 +360,11 @@ static int btree_read_extent_buffer_pages(struct btrfs_root *root,
+ 			return ret;
+ 
+ 		mirror_num++;
+-		if (mirror_num > num_copies)
+-			return ret;
++		if (mirror_num > num_copies) {
++			mirror_num = good_mirror;
++			uptodate = 0;
++			continue;
++		}
+ 	}
+ 	return -EIO;
+ }
+@@ -1996,11 +2012,13 @@ struct btrfs_root *open_ctree(struct super_block *sb,
+ 		goto fail_block_groups;
+ 	}
+ 
++	/*
+ 	ret = btrfs_read_block_groups(extent_root);
+ 	if (ret) {
+ 		printk(KERN_ERR "Failed to read block groups: %d\n", ret);
+ 		goto fail_block_groups;
+ 	}
++	*/
+ 
+ 	fs_info->cleaner_kthread = kthread_run(cleaner_kthread, tree_root,
+ 					       "btrfs-cleaner");
+@@ -2613,12 +2631,7 @@ int btrfs_buffer_uptodate(struct extent_buffer *buf, u64 parent_transid)
+ 
+ 	ret = extent_buffer_uptodate(&BTRFS_I(btree_inode)->io_tree, buf,
+ 				     NULL);
+-	if (!ret)
+-		return ret;
+-
+-	ret = verify_parent_transid(&BTRFS_I(btree_inode)->io_tree, buf,
+-				    parent_transid);
+-	return !ret;
++	return ret;
+ }
+ 
+ int btrfs_set_buffer_uptodate(struct extent_buffer *buf)

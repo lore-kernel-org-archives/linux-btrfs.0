@@ -1,188 +1,119 @@
-From: Miao Xie <miaox@cn.fujitsu.com>
-Subject: Re: please review snapshot corruption path with delayed metadata
- insertion
-Date: Thu, 23 Jun 2011 16:52:11 +0800
-Message-ID: <4E02FEBB.5060205@cn.fujitsu.com>
-References: <1308345034-sup-1969@shiny> <4DFD7C63.6040902@jp.fujitsu.com> <4DFE8933.7040101@jp.fujitsu.com> <20110621002435.GK12709@twin.jikos.cz> <1308616798-sup-2605@shiny> <4DFFF0B2.1070403@jp.fujitsu.com>
-Reply-To: miaox@cn.fujitsu.com
+From: David Sterba <dave@jikos.cz>
+Subject: Re: [PATCH 3.0-rc3] btrfs: fix oops on failure path
+Date: Thu, 23 Jun 2011 12:31:09 +0200
+Message-ID: <20110623103109.GN12709@twin.jikos.cz>
+References: <BANLkTimrzmLdgg6NN_vU-Q6Euh1sE8SNNg@mail.gmail.com>
+Reply-To: dave@jikos.cz
 Mime-Version: 1.0
-Content-Type: text/plain; charset=UTF-8
-Cc: Chris Mason <chris.mason@oracle.com>, David Sterba <dave@jikos.cz>,
-	linux-btrfs <linux-btrfs@vger.kernel.org>
-To: Tsutomu Itoh <t-itoh@jp.fujitsu.com>
+Content-Type: text/plain; charset=us-ascii
+Cc: Chris Mason <chris.mason@oracle.com>,
+	Linux BTRFS <linux-btrfs@vger.kernel.org>
+To: Daniel J Blueman <daniel.blueman@gmail.com>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <4DFFF0B2.1070403@jp.fujitsu.com>
+In-Reply-To: <BANLkTimrzmLdgg6NN_vU-Q6Euh1sE8SNNg@mail.gmail.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Tue, 21 Jun 2011 10:15:30 +0900, Tsutomu Itoh wrote:
-[SNIP]
-> Bad news.
+Hi,
+
+On Sun, Jun 19, 2011 at 06:53:28PM +0800, Daniel J Blueman wrote:
+> I hit this BTRFS oops [1] in 3.0-rc3, clearly due to filesystem corruption.
 > 
-> I changed my test environment to 'btrfs-unstable + for-linus', I encountered
-> following panic without inode_cache. (in about 4 hours after test begins)
+> If lookup_extent_backref fails, path->nodes[0] reasonably could be
+> null, so look before leaping [2].
+
+I think the check should be placed into btrfs_print_leaf, this function
+is mostly called before a BUG after some error condition. The
+extent_buffer leaf argument could be NULL in more cases (i've seen at
+least another 2). Otherwise the if-NULL check would have to be placed
+before each call of btrfs_print_leaf.
+
+
+david
+
+> Chris, if happy, can you squeeze this into the drop for -rc4 please?
 > 
-> btrfs: relocating block group 49161437184 flags 9
-> btrfs: found 57523 extents
-> ------------[ cut here ]------------
-> kernel BUG at fs/btrfs/relocation.c:4303!
-> invalid opcode: 0000 [#1] SMP
-> last sysfs file: /sys/kernel/mm/ksm/run
-> CPU 0
-> Modules linked in: autofs4 sunrpc 8021q garp stp llc cpufreq_ondemand acpi_cpufreq freq_table mperf ipv6 btrfs zlib_deflate crc32c libcrc32c ext3 jbd dm_mirror dm_region_hash dm_log dm_mod kvm uinput ppdev parport_pc parport sg pcspkr i2c_i801 i2c_core iTCO_wdt iTCO_vendor_support tg3 shpchp pci_hotplug i3000_edac edac_core ext4 mbcache jbd2 crc16 sd_mod crc_t10dif sr_mod cdrom megaraid_sas pata_acpi ata_generic ata_piix libata scsi_mod floppy [last unloaded: microcode]
+> Signed-off-by: Daniel J Blueman <daniel.blueman@gmail.com>
 > 
-> Pid: 1329, comm: btrfs Not tainted 2.6.39btrfs-test2+ #1 FUJITSU-SV      PRIMERGY            /D2399
-> RIP: 0010:[<ffffffffa037c1cc>]  [<ffffffffa037c1cc>] btrfs_reloc_cow_block+0x22c/0x270 [btrfs]
-> RSP: 0018:ffff880009665738  EFLAGS: 00010246
-> RAX: ffff8801925a4000 RBX: ffff88011ee9e000 RCX: ffff8801566889a8
-> RDX: ffff8800a3601728 RSI: ffff880143fa3000 RDI: ffff88014124d4b0
-> RBP: ffff880009665798 R08: 6db6db6db6db6db7 R09: 0000160000000000
-> R10: 0000000000000001 R11: 0000000000000000 R12: ffff880143fa3000
-> R13: ffff8800a3601728 R14: ffff88014124d4b0 R15: ffff880194a87ba8
-> FS:  00007f7f5fb40740(0000) GS:ffff88019fc00000(0000) knlGS:0000000000000000
+> --- [1]
+> 
+> leaf free space ret -1678719553, leaf data size 3995, used 1678723548 nritems 60
+> parent transid verify failed on 113373184 wanted 31 found 13951
+> leaf free space ret -1678719553, leaf data size 3995, used 1678723548 nritems 60
+> leaf free space ret -1678719553, leaf data size 3995, used 1678723548 nritems 60
+> leaf free space ret -1678719553, leaf data size 3995, used 1678723548 nritems 60
+> leaf free space ret -1678719553, leaf data size 3995, used 1678723548 nritems 60
+> BUG: unable to handle kernel NULL pointer dereference at 0000000000000030
+> IP: [<ffffffff8122d8e8>] btrfs_print_leaf+0x28/0x810
+> PGD 206386067 PUD 20639e067 PMD 0
+> Oops: 0000 [#1] SMP
+> CPU 2
+> Modules linked in: binfmt_misc kvm_intel kvm microcode arc4 uvcvideo
+> videodev v4l2_compat_ioctl32 i915 mei(C) iwlagn drm_kms_helper
+> mac80211 drm i2c_algo_bit video sdhci_pci sdhci mmc_core usb_storage
+> 
+> Pid: 1526, comm: rm Tainted: G         C  3.0.0-rc3-340c+ #4 Dell Inc.
+> Latitude E5420/0H5TG2
+> RIP: 0010:[<ffffffff8122d8e8>]  [<ffffffff8122d8e8>] btrfs_print_leaf+0x28/0x810
+> RSP: 0018:ffff8802063f7ab8  EFLAGS: 00010286
+> RAX: 00000000fffffffb RBX: ffff88022dc5de10 RCX: 000000000000af74
+> RDX: 0000000000000008 RSI: 0000000000000000 RDI: ffff880223f5b000
+> RBP: ffff8802063f7b48 R08: ffffffff81259152 R09: 0000000000000001
+> R10: 00000000fffffffb R11: 000000020562a000 R12: 0000000000000005
+> R13: ffff8802063f7fd8 R14: 0000000000000000 R15: 0000000000001000
+> FS:  00007f95c55b3720(0000) GS:ffff88022ec40000(0000) knlGS:0000000000000000
 > CS:  0010 DS: 0000 ES: 0000 CR0: 000000008005003b
-> CR2: 00000033cfea6d80 CR3: 000000003fd47000 CR4: 00000000000006f0
+> CR2: 0000000000000030 CR3: 00000002063ac000 CR4: 00000000000406e0
 > DR0: 0000000000000000 DR1: 0000000000000000 DR2: 0000000000000000
 > DR3: 0000000000000000 DR6: 00000000ffff0ff0 DR7: 0000000000000400
-> Process btrfs (pid: 1329, threadinfo ffff880009664000, task ffff880011c73520)
+> Process rm (pid: 1526, threadinfo ffff8802063f6000, task ffff880210a15da0)
 > Stack:
->  ffff8800a3601728 ffff88014124d4b0 ffff880009665798 ffffffffa03143fd
->  0000000000000000 0000000000000001 ffff880009665798 ffff880143fa3000
->  ffff8801566889a8 ffff8800a3601728 ffff88014124d4b0 ffff880194a87ba8
+>  0000000000001000 ffff8802063f7c00 0000000006bb0000 ffffffff8125a124
+>  ffff880223f5b000 0000000000001000 ffff8802063f7b48 ffff88022dc5de10
+>  0000000006bb0000 00000000001000a8 ffff8802063f7b00 ffff880210bb8360
 > Call Trace:
->  [<ffffffffa03143fd>] ? update_ref_for_cow+0x22d/0x330 [btrfs]
->  [<ffffffffa0314951>] __btrfs_cow_block+0x451/0x5e0 [btrfs]
->  [<ffffffffa031355d>] ? read_block_for_search+0x14d/0x4d0 [btrfs]
->  [<ffffffffa0314beb>] btrfs_cow_block+0x10b/0x240 [btrfs]
->  [<ffffffffa031acae>] btrfs_search_slot+0x49e/0x7a0 [btrfs]
->  [<ffffffffa032d8af>] btrfs_lookup_inode+0x2f/0xa0 [btrfs]
->  [<ffffffff8147bf0e>] ? mutex_lock+0x1e/0x50
->  [<ffffffffa0380cf1>] btrfs_update_delayed_inode+0x71/0x160 [btrfs]
->  [<ffffffffa037ff27>] ? __btrfs_release_delayed_node+0x67/0x190 [btrfs]
->  [<ffffffffa0381cf8>] btrfs_run_delayed_items+0xe8/0x120 [btrfs]
->  [<ffffffffa03365e0>] btrfs_commit_transaction+0x250/0x850 [btrfs]
->  [<ffffffff810f91d9>] ? find_get_pages+0x39/0x130
->  [<ffffffffa0336cd5>] ? join_transaction+0x25/0x250 [btrfs]
->  [<ffffffff81081de0>] ? wake_up_bit+0x40/0x40
->  [<ffffffffa03785fa>] prepare_to_relocate+0xda/0xf0 [btrfs]
->  [<ffffffffa037f2bb>] relocate_block_group+0x4b/0x620 [btrfs]
->  [<ffffffffa0334cf5>] ? btrfs_clean_old_snapshots+0x35/0x150 [btrfs]
->  [<ffffffffa037fa43>] btrfs_relocate_block_group+0x1b3/0x2e0 [btrfs]
->  [<ffffffffa0368ec0>] ? btrfs_tree_unlock+0x50/0x50 [btrfs]
->  [<ffffffffa035e39b>] btrfs_relocate_chunk+0x8b/0x670 [btrfs]
->  [<ffffffffa031303d>] ? btrfs_set_path_blocking+0x3d/0x50 [btrfs]
->  [<ffffffffa03577d8>] ? read_extent_buffer+0xd8/0x1d0 [btrfs]
->  [<ffffffffa031bea1>] ? btrfs_previous_item+0xb1/0x150 [btrfs]
->  [<ffffffffa03577d8>] ? read_extent_buffer+0xd8/0x1d0 [btrfs]
->  [<ffffffffa035f5aa>] btrfs_balance+0x21a/0x2b0 [btrfs]
->  [<ffffffffa0368898>] btrfs_ioctl+0x798/0xd20 [btrfs]
->  [<ffffffff8111e358>] ? handle_mm_fault+0x148/0x270
->  [<ffffffff814809e8>] ? do_page_fault+0x1d8/0x4b0
->  [<ffffffff81160d6a>] do_vfs_ioctl+0x9a/0x540
->  [<ffffffff811612b1>] sys_ioctl+0xa1/0xb0
->  [<ffffffff81484ec2>] system_call_fastpath+0x16/0x1b
-> Code: 8b 76 10 e8 c7 65 eb e0 4c 8b 45 b0 41 80 48 71 20 48 8b 4d b8 8b 45 c0 e9 52 ff ff ff 48 83 be 0f 01 00 00 f7 0f 85 22 fe ff ff <0f> 0b eb fe 49 3b 50 20 0f 84 02 ff ff ff 0f 0b 0f 1f 40 00 eb
-> RIP  [<ffffffffa037c1cc>] btrfs_reloc_cow_block+0x22c/0x270 [btrfs]
->  RSP <ffff880009665738>
+>  [<ffffffff8125a124>] ? set_extent_dirty+0x24/0x30
+>  [<ffffffff812261f2>] __btrfs_free_extent+0x672/0x720
+>  [<ffffffff8121bf60>] ? btrfs_del_leaf+0xd0/0x100
+>  [<ffffffff81228ac9>] run_clustered_refs+0x379/0x840
+>  [<ffffffff81279b00>] ? btrfs_find_ref_cluster+0x60/0x190
+>  [<ffffffff81229050>] btrfs_run_delayed_refs+0xc0/0x200
+>  [<ffffffff8123a558>] __btrfs_end_transaction+0x88/0x250
+>  [<ffffffff8123a780>] btrfs_end_transaction+0x10/0x20
+>  [<ffffffff81244420>] btrfs_evict_inode+0x180/0x210
+>  [<ffffffff8110dd2b>] evict+0x7b/0x150
+>  [<ffffffff8110df25>] iput+0xd5/0x1a0
+>  [<ffffffff81103964>] do_unlinkat+0x104/0x1d0
+>  [<ffffffff8112b88b>] ? fsnotify_find_inode_mark+0x2b/0x40
+>  [<ffffffff810f4561>] ? filp_close+0x61/0x90
+>  [<ffffffff81104c5d>] sys_unlinkat+0x1d/0x40
+>  [<ffffffff8165f0fb>] system_call_fastpath+0x16/0x1b
+> Code: 00 00 00 55 48 89 e5 48 81 ec 90 00 00 00 48 89 5d d8 4c 89 6d
+> e8 4c 89 65 e0 4c 89 75 f0 4c 89 7d f8 65 4c 8b 2c 25 c8 b5 00 00
+>  8b 46 30 49 81 ed d8 1f 00 00 48 89 f3 41 ff 45 1c 48 ba 00
+> RIP  [<ffffffff8122d8e8>] btrfs_print_leaf+0x28/0x810
+>  RSP <ffff8802063f7ab8>
+> CR2: 0000000000000030
 > 
-> (gdb) l *btrfs_reloc_cow_block+0x22c
-> 0x6f1fc is in btrfs_reloc_cow_block (fs/btrfs/relocation.c:4302).
-> 4297
-> 4298            rc = root->fs_info->reloc_ctl;
-> 4299            if (!rc)
-> 4300                    return;
-> 4301
-> 4302            BUG_ON(rc->stage == UPDATE_DATA_PTRS &&
-> 4303                   root->root_key.objectid == BTRFS_DATA_RELOC_TREE_OBJECTID);
-> 4304
-> 4305            level = btrfs_header_level(buf);
-> 4306            if (btrfs_header_generation(buf) <=
-
-It seems the data relocation inode was delayed to be updated.
-I will deal with it next week.
-
-Thanks
-Miao
-
+> --- [2]
 > 
->>>>
->>>> But, following panics still occur if inode_cache is specified.
->>>>
->>>> [75164.963860] btrfs: relocating block group 18551406592 flags 18
->>>> [75165.565282] btrfs: relocating block group 18282971136 flags 20
->>>> [75165.883577] ------------[ cut here ]------------
->>>> [75165.883779] kernel BUG at fs/btrfs/relocation.c:2502!
->>>> [75165.883992] invalid opcode: 0000 [#1] SMP
->>>> [75165.884002] CPU 0
->>>> [75165.884002] Modules linked in: autofs4 sunrpc 8021q garp stp llc cpufreq_ondemand acpi_cpufreq freq_table mperf ipv6 btrfs zlib_deflate crc32c libcrc32c ext3 jbd dm_mirror dm_region_hash dm_log dm_mod kvm uinput ppdev parport_pc parport sg pcspkr i2c_i801 i2c_core iTCO_wdt iTCO_vendor_support tg3 shpchp pci_hotplug i3000_edac edac_core ext4 mbcache jbd2 crc16 sd_mod crc_t10dif sr_mod cdrom megaraid_sas pata_acpi ata_generic ata_piix libata scsi_mod floppy [last unloaded: microcode]
->>>> [75165.884002]
->>>> [75165.884002] Pid: 18615, comm: btrfs Not tainted 3.0.0-rc3test #1 FUJITSU-SV      PRIMERGY            /D2399
->>>> [75165.884002] RIP: 0010:[<ffffffffa02dede3>]  [<ffffffffa02dede3>] do_relocation+0x163/0x44b [btrfs]
->>>> [75165.884002] RSP: 0018:ffff8801026f7a08  EFLAGS: 00010202
->>>> [75165.884002] RAX: 0000000000000001 RBX: ffff8801949e7c00 RCX: 0000000000000002
->>>> [75165.884002] RDX: 0000000000000001 RSI: 0000000000000001 RDI: 0000000000000000
->>>> [75165.884002] RBP: ffff8801026f7ad8 R08: 00000000000006c7 R09: ffff8801026f78f0
->>>> [75165.884002] R10: ffff88009f9d7800 R11: 0000000442149000 R12: ffff880037c99180
->>>> [75165.884002] R13: ffff880152695f30 R14: ffff88009f9d4800 R15: ffff88013cfdbf78
->>>> [75165.884002] FS:  00007f490c045740(0000) GS:ffff88019fc00000(0000) knlGS:0000000000000000
->>>> [75165.884002] CS:  0010 DS: 0000 ES: 0000 CR0: 000000008005003b
->>>> [75165.884002] CR2: 00000033cfea6a60 CR3: 0000000100d47000 CR4: 00000000000006f0
->>>> [75165.884002] DR0: 0000000000000000 DR1: 0000000000000000 DR2: 0000000000000000
->>>> [75165.884002] DR3: 0000000000000000 DR6: 00000000ffff0ff0 DR7: 0000000000000400
->>>> [75165.884002] Process btrfs (pid: 18615, threadinfo ffff8801026f6000, task ffff880102060000)
->>>> [75165.884002] Stack:
->>>> [75165.884002]  ffff88000516d000 ffff88009f9d7d80 00000001026f7a98 ffff880037c99180
->>>> [75165.884002]  ffff880037c991c0 000000019f9d7820 ffff88011bf09ba0 ffff88009f9d7800
->>>> [75165.884002]  ffff8801026f7ad8 ffff88011bf094c0 ffff88013cfdbf78 00ff88009f9d7800
->>>> [75165.884002] Call Trace:
->>>> [75165.884002]  [<ffffffffa02926ec>] ? block_rsv_add_bytes+0x24/0x4d [btrfs]
->>>> [75165.884002]  [<ffffffffa02e137a>] relocate_tree_blocks+0x2fb/0x4a9 [btrfs]
->>>> [75165.884002]  [<ffffffffa02de227>] ? add_tree_block+0xff/0x121 [btrfs]
->>>> [75165.884002]  [<ffffffffa02e1b13>] relocate_block_group+0x214/0x4dc [btrfs]
->>>> [75165.884002]  [<ffffffffa02e1f26>] btrfs_relocate_block_group+0x14b/0x285 [btrfs]
->>>> [75165.884002]  [<ffffffffa02c7183>] ? btrfs_relocate_chunk+0x4a4/0x50d [btrfs]
->>>> [75165.884002]  [<ffffffffa02c6d48>] btrfs_relocate_chunk+0x69/0x50d [btrfs]
->>>> [75165.884002]  [<ffffffffa028b3f5>] ? btrfs_item_key_to_cpu+0x1a/0x36 [btrfs]
->>>> [75165.884002]  [<ffffffffa02c0d0f>] ? read_extent_buffer+0xba/0xf6 [btrfs]
->>>> [75165.884002]  [<ffffffffa02c561a>] ? btrfs_item_key_to_cpu+0x2a/0x46 [btrfs]
->>>> [75165.884002]  [<ffffffffa02c77be>] btrfs_balance+0x1ca/0x219 [btrfs]
->>>> [75165.884002]  [<ffffffffa02cfcbd>] btrfs_ioctl+0x922/0xc19 [btrfs]
->>>> [75165.884002]  [<ffffffff810e88e4>] ? handle_mm_fault+0x233/0x24a
->>>> [75165.884002]  [<ffffffff813a6be5>] ? do_page_fault+0x340/0x3b2
->>>> [75165.884002]  [<ffffffff8111d828>] do_vfs_ioctl+0x474/0x4c3
->>>> [75165.884002]  [<ffffffff810ffe41>] ? virt_to_head_page+0xe/0x31
->>>> [75165.884002]  [<ffffffff811010e8>] ? kmem_cache_free+0x20/0xae
->>>> [75165.884002]  [<ffffffff8111d8cd>] sys_ioctl+0x56/0x79
->>>> [75165.884002]  [<ffffffff813aa302>] system_call_fastpath+0x16/0x1b
->>>> [75165.884002] Code: 00 00 48 8b 95 60 ff ff ff 45 31 c0 41 b9 01 00 00 00 4c 89 e9 4c 89 f6 4c 89 ff e8 52 15 fb ff 83 f8 00 0f 8c e6 02 00 00 74 04 <0f> 0b eb fe 48 8b 53 68 0f b6 43 70 48 85 d2 75 14 49 8b 54 c5
->>>> [75165.884002] RIP  [<ffffffffa02dede3>] do_relocation+0x163/0x44b [btrfs]
->>>> [75165.884002]  RSP <ffff8801026f7a08>
->>>>
->>>> (gdb) l *do_relocation+0x163
->>>> 0x58e07 is in do_relocation (fs/btrfs/relocation.c:2502).
->>>> 2497                            ret = btrfs_search_slot(trans, root, key, path, 0, 1);
->>>> 2498                            if (ret < 0) {
->>>> 2499                                    err = ret;
->>>> 2500                                    break;
->>>> 2501                            }
->>>> 2502                            BUG_ON(ret > 0);
->>>
->>> this translates btrfs_search_slot() result to
->>>
->>> 1600  * If the key isn't found, the path points to the slot where it should
->>> 1601  * be inserted, and 1 is returned.  If there are other errors during the
->>> 1602  * search a negative error number is returned.
->>>
->>> ie. the key is not in the tree. If you can reproduce it reliably, add
->>> some printks about the key and path's ->search_commit_root,
->>> ->skip_locking, and ->leave_spinning which are accessed within
->>> btrfs_search_slot().
->>
->> With the inode cache on, this is the expected result right now.  It is
->> changing the tree after the snapshot is taken, which isn't allowed.  I'm
->> hoping to nail it down this week.
->>
->> -chris
->>
-> 
-> 
-
+> diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
+> index b42efc2..1848f8f 100644
+> --- a/fs/btrfs/extent-tree.c
+> +++ b/fs/btrfs/extent-tree.c
+> @@ -4454,7 +4454,8 @@ static int __btrfs_free_extent(struct
+> btrfs_trans_handle *trans,
+>  			extent_slot = path->slots[0];
+>  		}
+>  	} else {
+> -		btrfs_print_leaf(extent_root, path->nodes[0]);
+> +		if (path->nodes[0])
+> +			btrfs_print_leaf(extent_root, path->nodes[0]);
+>  		WARN_ON(1);
+>  		printk(KERN_ERR "btrfs unable to find ref byte nr %llu "
+>  		       "parent %llu root %llu  owner %llu offset %llu\n",
+> -- 
+> Daniel J Blueman
+> --
+> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
+> the body of a message to majordomo@vger.kernel.org
+> More majordomo info at  http://vger.kernel.org/majordomo-info.html

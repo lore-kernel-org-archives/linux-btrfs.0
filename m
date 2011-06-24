@@ -1,54 +1,110 @@
-From: David Sterba <dave@jikos.cz>
-Subject: [nico-lkml-20110623@schottelius.org: Mis-Design of Btrfs?]
-Date: Fri, 24 Jun 2011 12:52:07 +0200
-Message-ID: <20110624105207.GP12709@twin.jikos.cz>
-Reply-To: dave@jikos.cz
+From: Martin Steigerwald <Martin@lichtvoll.de>
+Subject: Re: btrfs: failed to load free space cache for block group on
+ =?iso-8859-1?q?rsync=B4ing_to_space=5Fcache_BTRFS_with?= subvolume
+Date: Fri, 24 Jun 2011 14:46:30 +0200
+Message-ID: <201106241446.30504.Martin@lichtvoll.de>
+References: <201106231937.12848.Martin@lichtvoll.de> <20110623200526.GB21007@dhcp231-156.rdu.redhat.com> (sfid-20110623_220639_720071_D83B5044)
 Mime-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-To: linux-btrfs@vger.kernel.org
+Content-Type: Text/Plain; charset=iso-8859-1
+Cc: linux-btrfs@vger.kernel.org
+To: Josef Bacik <josef@redhat.com>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
+In-Reply-To: <20110623200526.GB21007@dhcp231-156.rdu.redhat.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
------ Forwarded message from Nico Schottelius <nico-lkml-20110623@schottelius.org> -----
+Am Donnerstag, 23. Juni 2011 schrieb Josef Bacik:
+> On Thu, Jun 23, 2011 at 07:37:12PM +0200, Martin Steigerwald wrote:
+> > Hi!
+> >=20
+> > Short summary: I suspect that rsync=B4ing files to a newly created
+> > BTRFS partition with a subvolume *and* enabled space_cache triggers
+> > the error mentioned in the subject line of this mail. I reported
+> > this also as:
+> >=20
+> > Bug 38112 -  btrfs: failed to load free space cache for block group
+> > on rsync=B4ing to space_cache BTRFS with subvolume
+> >=20
+> > https://bugzilla.kernel.org/show_bug.cgi?id=3D38112
+> >=20
+> > I will add a reference to my post here to the bug report, so feel
+> > free to use whatever suits you best to follow up.
+> >=20
+> >=20
+> > This happened on a ThinkPad T520 with 3.0.0-rc3-amd64 Debian/GNU
+> > Linux kernel. The issue happened on a 2.5 inch external eSATA/USB
+> > harddisk which I changed to BTRFS. On the repoot after the rsync
+> > process was stalled the unrelated non space cache using root
+> > filesystem did not mount anymore with 3.0.0-rc3-amd64 and
+> > 2.6.39-2-amd64 kernel. But thankfully it did mount with a 2.6.38
+> > grml 2011 amd64 kernel and now work again.
+> >=20
+> >=20
+> > Thus I did
+> >=20
+> > merkaba:~> mkfs.btrfs -L daten /dev/sdc2
+> >=20
+> > WARNING! - Btrfs Btrfs v0.19 IS EXPERIMENTAL
+> > WARNING! - see http://btrfs.wiki.kernel.org before using
+> >=20
+> > fs created label daten on /dev/sdc2
+> >=20
+> >         nodesize 4096 leafsize 4096 sectorsize 4096 size 447.13GB
+> >=20
+> > Btrfs Btrfs v0.19
+> >=20
+> > merkaba:~> mount -o space_cache,compress=3Dlzo /dev/sdc2
+> > /mnt/amazon-daten merkaba:~> dmesg | tail -3
+> > [137440.930038] device label daten devid 1 transid 7 /dev/sdc2
+> > [137440.930507] btrfs: enabling disk space caching
+> > [137440.930518] btrfs: use lzo compression
+> >=20
+> >=20
+> > Then I unmounted, added a fstab entry without space_cache option
+> > since I read that once BTRFS created a space_cache it would use it
+> > anyway it is mounted with clear_cache to clear the cache again.
+> >=20
+> > I created a sub volume for movies, cause I wanted to be able to not
+> > snapshot the movie files:
+> >=20
+> > merkaba:~> btrfs subvolume create /mnt/amazon-daten/Filme
+> > Create subvolume '/mnt/amazon-daten/Filme'
+> >=20
+> > I then did my rsync from the backup which BTW was a BTRFS with
+> > space_cache as well - created today:
+> >=20
+> > merkaba:~> rsync -a -H --acls --xattrs --sparse
+> > /mnt/steigerwald-daten/ /mnt/amazon-daten
+>=20
+> > A short while after starting the rsync I got:
+> I've just posted a patch for this, sorry about that I've fixed this
+> before but there has been recent work in this area to make it more
+> generic and we lost that particular fix.  Thanks,
 
-To: LKML <linux-kernel@vger.kernel.org>
-Date: Thu, 23 Jun 2011 12:53:37 +0200
-From: Nico Schottelius <nico-lkml-20110623@schottelius.org>
-Subject: Mis-Design of Btrfs?
+Is it:
 
-Good morning devs,
+[PATCH] Btrfs: make sure to update total_bitmaps when freeing cache V2
 
-I'm wondering whether the raid- and volume-management-builtin of btrfs is
-actually a sane idea or not.
-Currently we do have md/device-mapper support for raid
-already, btrfs lacks raid5 support and re-implements stuff that
-has already been done.
+?
 
-I'm aware of the fact that it is very useful to know on which devices
-we are in a filesystem. But I'm wondering, whether it wouldn't be
-smarter to generalise the information exposure through the VFS layer
-instead of replicating functionality:
+Do you need testing? Is this scheduled for 3.0.0-rc5 or something like=20
+this? Then I could wait for the Debian kernel 3.0.0-rc5 to become=20
+available. I can do without space_cache for the time being.
 
-Physical:   USB-HD   SSD   USB-Flash          | Exposes information to
-Raid:       Raid1, Raid5, Raid10, etc.        | higher levels
-Crypto:     Luks                              |
-LVM:        Groups/Volumes                    |
-FS:         xfs/jfs/reiser/ext3               v
+I am a bit reluctant with testing as even tough the problem happened on=
+ a=20
+different filesystem my root filesystem located on a different was not=20
+mountable with 2.6.39 and 3.0.0-rc3. Too bad I didn=B4t take a photo of=
+ the=20
+backtrace that dumped me to initramfs. I can try this again, hoping, th=
+at=20
+again 2.6.38 grml will mount this, but I am a bit wary with that.
 
-Thus a filesystem like ext3 could be aware that it is running
-on a USB HD, enable -o sync be default or have the filesystem
-to rewrite blocks when running on crypto or optimise for an SSD, ...
-
-Cheers,
-
-Nico
-
--- 
-PGP key: 7ED9 F7D3 6B10 81D7 0EC5  5C09 D7DC C8E4 3187 7DF0
+Thanks,
+--=20
+Martin 'Helios' Steigerwald - http://www.Lichtvoll.de
+GPG: 03B0 0D6C 0040 0710 4AFA  B82F 991B EAAC A599 84C7
 --
-To unsubscribe from this list: send the line "unsubscribe linux-kernel" in
+To unsubscribe from this list: send the line "unsubscribe linux-btrfs" =
+in
 the body of a message to majordomo@vger.kernel.org
 More majordomo info at  http://vger.kernel.org/majordomo-info.html
-Please read the FAQ at  http://www.tux.org/lkml/
-
------ End forwarded message -----

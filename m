@@ -1,177 +1,128 @@
-From: Andrej Podzimek <andrej@podzimek.org>
-Subject: Re: parent transid verify failures on 2.6.39
-Date: Fri, 24 Jun 2011 03:30:32 +0200
-Message-ID: <4E03E8B8.9080500@podzimek.org>
-References: <4E026FD4.7020606@podzimek.org> <1308793398-sup-9234@shiny> <20110623195409.GA21007@dhcp231-156.rdu.redhat.com>
-Mime-Version: 1.0
-Content-Type: multipart/signed; protocol="application/pkcs7-signature"; micalg=sha1; boundary="=_charon-2416-1308879033-0001-2"
-Cc: Chris Mason <chris.mason@oracle.com>,
-	linux-btrfs <linux-btrfs@vger.kernel.org>
-To: Josef Bacik <josef@redhat.com>
+From: Li Dongyang <lidongyang@novell.com>
+Subject: [PATCH v2] Btrfs: add discard flag to btrfs_device
+Date: Fri, 24 Jun 2011 15:49:27 +0800
+Message-ID: <1308901767-4580-1-git-send-email-lidongyang@novell.com>
+To: linux-btrfs@vger.kernel.org
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <20110623195409.GA21007@dhcp231-156.rdu.redhat.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-This is a MIME-formatted message.  If you see this text it means that your
-E-mail software does not support MIME-formatted messages.
+With discard flag in btrfs_device, we will only push trim request to the
+devices support that.
+Now we don't return EOPNOTSUPP to the caller, so we won't trigger BUG_ONs
+in the walk_log_tree functions if we mount a drive without DISCARD
+using -o discard, but it is still possible if we get errors from
+blkdev_issue_discard.
+This won't affect the return value of fstrim on the drives without DISCARD,
+because we've already checked that in btrfs_ioctl_fitrim, Thanks
 
---=_charon-2416-1308879033-0001-2
-Content-Type: text/plain; charset=UTF-8; format=flowed
-Content-Transfer-Encoding: quoted-printable
+Changes v2:
+  better name for the discard flag
 
->>> Could I try your hack, pretty please? If there's any chance it could =
-either resolve this problem
->>>
->>>      http://www.mail-archive.com/linux-btrfs@vger.kernel.org/msg10683=
-=2Ehtml ,
->>>
->>> or at least restore the data from the filesystem, then I'd like to gi=
-ve it a go. Waiting for the new btrfsck is currently not an option for me=
- :-)
->>
->> It looks like your box is failing to read the extent allocation tree.
->> We don't allow the mount to proceed without that tree, but you don't
->> actually need it for a readonly mount (to copy things off).
->>
->> Josef, is your hack just a mount option to make -o readonly skip the
->> extent allocation tree?
->>
->> I can put this into my -o recovery patch and we can give it a try.
->>
->
-> Here's the patch, you _have_ to mount -o readonly.  Basically what it d=
-oes is
-> search all the mirrors and finds the one with the newest generation num=
-ber and
-> just uses that one, assuming that it will be the closest one to what we=
- want.
-> This has worked relatively well for the people who have used it, so hop=
-efully it
-> will work for you.  Thanks,
+Signed-off-by: Li Dongyang <lidongyang@novell.com>
+---
+ fs/btrfs/extent-tree.c |   24 ++++++++++++------------
+ fs/btrfs/volumes.c     |    4 ++++
+ fs/btrfs/volumes.h     |    1 +
+ 3 files changed, 17 insertions(+), 12 deletions(-)
 
-Great, it works for me. I could mount the RAID0 root partition from an Ar=
-chLinux live CD (after patching, compiling and replacing the btrfs module=
- first). Thank you very much!
+diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
+index 1f61bf5..81ccae2 100644
+--- a/fs/btrfs/extent-tree.c
++++ b/fs/btrfs/extent-tree.c
+@@ -1774,7 +1774,6 @@ static int btrfs_discard_extent(struct btrfs_root *root, u64 bytenr,
+ 	u64 discarded_bytes = 0;
+ 	struct btrfs_multi_bio *multi = NULL;
+ 
+-
+ 	/* Tell the block device(s) that the sectors can be discarded */
+ 	ret = btrfs_map_block(&root->fs_info->mapping_tree, REQ_DISCARD,
+ 			      bytenr, &num_bytes, &multi, 0);
+@@ -1782,25 +1781,26 @@ static int btrfs_discard_extent(struct btrfs_root *root, u64 bytenr,
+ 		struct btrfs_bio_stripe *stripe = multi->stripes;
+ 		int i;
+ 
+-
+ 		for (i = 0; i < multi->num_stripes; i++, stripe++) {
+-			ret = btrfs_issue_discard(stripe->dev->bdev,
+-						  stripe->physical,
+-						  stripe->length);
+-			if (!ret)
+-				discarded_bytes += stripe->length;
+-			else if (ret != -EOPNOTSUPP)
+-				break;
++			if (stripe->dev->has_trim) {
++				ret = btrfs_issue_discard(stripe->dev->bdev,
++							  stripe->physical,
++							  stripe->length);
++				if (!ret)
++					discarded_bytes += stripe->length;
++				else if (ret == -EOPNOTSUPP) {
++					stripe->dev->has_trim = 0;
++					ret = 0;
++				} else
++					break;
++			}
+ 		}
+ 		kfree(multi);
+ 	}
+-	if (discarded_bytes && ret == -EOPNOTSUPP)
+-		ret = 0;
+ 
+ 	if (actual_bytes)
+ 		*actual_bytes = discarded_bytes;
+ 
+-
+ 	return ret;
+ }
+ 
+diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
+index 1efa56e..3d86b35 100644
+--- a/fs/btrfs/volumes.c
++++ b/fs/btrfs/volumes.c
+@@ -341,6 +341,7 @@ static noinline int device_list_add(const char *path,
+ 		device->work.func = pending_bios_fn;
+ 		memcpy(device->uuid, disk_super->dev_item.uuid,
+ 		       BTRFS_UUID_SIZE);
++		device->has_trim = 1;
+ 		spin_lock_init(&device->io_lock);
+ 		device->name = kstrdup(path, GFP_NOFS);
+ 		if (!device->name) {
+@@ -408,6 +409,7 @@ static struct btrfs_fs_devices *clone_fs_devices(struct btrfs_fs_devices *orig)
+ 		device->devid = orig_dev->devid;
+ 		device->work.func = pending_bios_fn;
+ 		memcpy(device->uuid, orig_dev->uuid, sizeof(device->uuid));
++		device->has_trim = 1;
+ 		spin_lock_init(&device->io_lock);
+ 		INIT_LIST_HEAD(&device->dev_list);
+ 		INIT_LIST_HEAD(&device->dev_alloc_list);
+@@ -1612,6 +1614,7 @@ int btrfs_init_new_device(struct btrfs_root *root, char *device_path)
+ 	lock_chunks(root);
+ 
+ 	device->writeable = 1;
++	device->has_trim = 1;
+ 	device->work.func = pending_bios_fn;
+ 	generate_random_uuid(device->uuid);
+ 	spin_lock_init(&device->io_lock);
+@@ -3342,6 +3345,7 @@ static struct btrfs_device *add_missing_dev(struct btrfs_root *root,
+ 		return NULL;
+ 	list_add(&device->dev_list,
+ 		 &fs_devices->devices);
++	device->has_trim = 1;
+ 	device->dev_root = root->fs_info->dev_root;
+ 	device->devid = devid;
+ 	device->work.func = pending_bios_fn;
+diff --git a/fs/btrfs/volumes.h b/fs/btrfs/volumes.h
+index 7c12d61..376d71c 100644
+--- a/fs/btrfs/volumes.h
++++ b/fs/btrfs/volumes.h
+@@ -45,6 +45,7 @@ struct btrfs_device {
+ 	int running_pending;
+ 	u64 generation;
+ 
++	int has_trim;
+ 	int writeable;
+ 	int in_fs_metadata;
+ 	int missing;
+-- 
+1.7.5.4
 
-My RAID1 /boot partition looks odd and mount froze (with an ooops) when I=
- tried to access it this way. Fortunately, /boot doesn't matter that much=
-, it will be easy to recover.
-
-Andrej
-
-
---=_charon-2416-1308879033-0001-2
-Content-Type: application/pkcs7-signature; name="smime.p7s"
-Content-Transfer-Encoding: base64
-Content-Disposition: attachment; filename="smime.p7s"
-Content-Description: S/MIME Cryptographic Signature
-
-MIAGCSqGSIb3DQEHAqCAMIACAQExCzAJBgUrDgMCGgUAMIAGCSqGSIb3DQEHAQAAoIISszCC
-BakwggSRoAMCAQICAT0wDQYJKoZIhvcNAQEFBQAwgYQxFDASBgNVBAMMC1BvZHppbWVrIENB
-MQswCQYDVQQGEwJDWjEOMAwGA1UEBwwFWmzDrW4xFTATBgNVBAoMDHBvZHppbWVrLm9yZzEV
-MBMGA1UECwwMcG9kemltZWsub3JnMSEwHwYJKoZIhvcNAQkBFhJhZG1pbkBwb2R6aW1lay5v
-cmcwHhcNMTEwMzMwMTYwNzM3WhcNMTIwMzI5MTYwNzM3WjCBiTELMAkGA1UEBhMCQ1oxDjAM
-BgNVBAcMBVpsw61uMRUwEwYDVQQKDAxwb2R6aW1lay5vcmcxFTATBgNVBAsMDHBvZHppbWVr
-Lm9yZzEYMBYGA1UEAwwPQW5kcmVqIFBvZHppbWVrMSIwIAYJKoZIhvcNAQkBFhNhbmRyZWpA
-cG9kemltZWsub3JnMIICIjANBgkqhkiG9w0BAQEFAAOCAg8AMIICCgKCAgEAqxdSN8GoC0Ny
-yPVoc9uZhuN+ezgtvKodMPunwlZCqaV4p7g3rgzDe3rrQ+Afkj05R+7WqLStjPn1lr9KINtn
-mxqjUF07U4CqGZgKCruKxWiTI1pvpTljTKssoa/sbEf0UgjQvO0UNhjYF1iHE1VBVWALKgI0
-Kbb+zCftvdwtnKVh9ncQushra5MZLEeMTcXisyzasFgDb8teLn8MtDQuJb0QzHkqhwRBzj7u
-pKTGKcZxGhxzZdmcqfvZdjLAcxQApLyMq7O8Y+0FHgZHW5peeuHSgeC+kScffJvGloHGPzVt
-CqODxDOHtjS8ZfkAKKt7PKdTfqiF8/+/zZ8pT98GlLXZtrz5IXlt8YQRh3ugE+o76vikx6ho
-SZQZsVFsc0KT/S7PA5fwkorUyhhuYcs53rTDO2IN4kPVoU2Tq6iyV6D8zF5/OiMxJ5lhYUGu
-RjAHM4hAFJ1ROp3LRn5VwYotogdj81xucd/hW7tc1HUN7lHnd51WK4xXjJ5o1gF0wUUYlxMc
-wpXqv9ZW1P+zD28Wj7BxmiAtll5oAButMBjLVWgJYlpOY3Ikh6rx+TVAwfDD5oVmOzc8NAYI
-pJCSmrX4MDahymq+ayjOhIw2OPXaFBbGP7YTgp68e86p+I2JTQ/tXCH08MZYFpRB11M3dI2L
-IkDlcWOm4Ptc3794p8yS0T8CAwEAAaOCAR0wggEZMAkGA1UdEwQCMAAwHQYDVR0OBBYEFBas
-PXfIN+SpJaWzrihb8DnOUJGZMIG5BgNVHSMEgbEwga6AFE6juEwI0K5X6Rv/eMJTk7Q8cg65
-oYGKpIGHMIGEMRQwEgYDVQQDDAtQb2R6aW1layBDQTELMAkGA1UEBhMCQ1oxDjAMBgNVBAcM
-BVpsw61uMRUwEwYDVQQKDAxwb2R6aW1lay5vcmcxFTATBgNVBAsMDHBvZHppbWVrLm9yZzEh
-MB8GCSqGSIb3DQEJARYSYWRtaW5AcG9kemltZWsub3JnggkAkctHSQfLqowwMQYJYIZIAYb4
-QgEEBCQWImh0dHBzOi8vY2EucG9kemltZWsub3JnL2NhLWNybC5wZW0wDQYJKoZIhvcNAQEF
-BQADggEBAH5XwT/0jYayTafRvAcJfRAm5E6z6wqX0x5OYNdO6JQ9JcCYQeFa1XD80Yu/VHy8
-NmaF+p2iAaCZWcTbIeAzidSozgbDJlVYcMdUjer0WHbBpyIBcVJZY4im/ygyVTACOIlLnfXM
-ZaNfdsCBP/minHHonm5e8DU8Go2/viAKPfXxsCOzl0bZFnU2b2D5Ii6Gk4n6kyduzQWYVUqA
-fNQjQIKZDSIMPzh119QsbR+6vNQ5t46qpHVMUkn1JLf+MIJQSBjxoXXt9ORnpTRstVw1ATPz
-RxDYYltHxaqKUY07bSo5czyWyUN5Rd35SP1mlQSHJhmNVUuOHQ58yDEADUEqkSkwggY0MIIE
-HKADAgECAgEgMA0GCSqGSIb3DQEBBQUAMH0xCzAJBgNVBAYTAklMMRYwFAYDVQQKEw1TdGFy
-dENvbSBMdGQuMSswKQYDVQQLEyJTZWN1cmUgRGlnaXRhbCBDZXJ0aWZpY2F0ZSBTaWduaW5n
-MSkwJwYDVQQDEyBTdGFydENvbSBDZXJ0aWZpY2F0aW9uIEF1dGhvcml0eTAeFw0wNzEwMjQy
-MTAyNTVaFw0xNzEwMjQyMTAyNTVaMIGMMQswCQYDVQQGEwJJTDEWMBQGA1UEChMNU3RhcnRD
-b20gTHRkLjErMCkGA1UECxMiU2VjdXJlIERpZ2l0YWwgQ2VydGlmaWNhdGUgU2lnbmluZzE4
-MDYGA1UEAxMvU3RhcnRDb20gQ2xhc3MgMiBQcmltYXJ5IEludGVybWVkaWF0ZSBDbGllbnQg
-Q0EwggEiMA0GCSqGSIb3DQEBAQUAA4IBDwAwggEKAoIBAQDLKIVFnAEs+xnyq6UzjCqgDcvQ
-Ve1dIoFnRsQPCFO+y92k8RK0Pn3MbQ2Gd+mehh9GBZ+36uUQA7Xj9AGM6wgPhEE34vKtfpAN
-5tJ8LcFxveDObCKrL7O5UT9WsnAZHv7OYPYSR68mdmnEnJ83M4wQgKO19b+Rt8sPDAz9ptkQ
-sntCn4GeJzg3q2SVc4QJTg/WHo7wF2ah5LMOeh8xJVSKGEmd6uPkSbj113yKMm8vmNptRPmM
-1+YgmVwcdOYJOjCgFtb2sOP79jji8uhWR91xx7TpM1K3hv/wrBZwffrmmEpUeuXHRs07JqCC
-vFh9coKF4UQZvfEg+x3/69xRCzb1AgMBAAGjggGtMIIBqTAPBgNVHRMBAf8EBTADAQH/MA4G
-A1UdDwEB/wQEAwIBBjAdBgNVHQ4EFgQUrlWDb+wxyrn3HfqvazHzyB3jrLswHwYDVR0jBBgw
-FoAUTgvvGqRAW6UXaYcwyjRoQ9BBrvIwZgYIKwYBBQUHAQEEWjBYMCcGCCsGAQUFBzABhhto
-dHRwOi8vb2NzcC5zdGFydHNzbC5jb20vY2EwLQYIKwYBBQUHMAKGIWh0dHA6Ly93d3cuc3Rh
-cnRzc2wuY29tL3Nmc2NhLmNydDBbBgNVHR8EVDBSMCegJaAjhiFodHRwOi8vd3d3LnN0YXJ0
-c3NsLmNvbS9zZnNjYS5jcmwwJ6AloCOGIWh0dHA6Ly9jcmwuc3RhcnRzc2wuY29tL3Nmc2Nh
-LmNybDCBgAYDVR0gBHkwdzB1BgsrBgEEAYG1NwECATBmMC4GCCsGAQUFBwIBFiJodHRwOi8v
-d3d3LnN0YXJ0c3NsLmNvbS9wb2xpY3kucGRmMDQGCCsGAQUFBwIBFihodHRwOi8vd3d3LnN0
-YXJ0c3NsLmNvbS9pbnRlcm1lZGlhdGUucGRmMA0GCSqGSIb3DQEBBQUAA4ICAQA6qScNyNO0
-FpHvaZTQacVMXH33O51KyEKSRw3IvdQxRu31YR0ZDGdSfgSoOVDVMSBSdmfQfdDInHPzV3LO
-5DwUXZ+lxjv7z3PO2OkfnFkvTXPfn6dxJ5rJveDsTsCPcJ/Kp6/+qN5g+J6D/SaYcFD018B6
-L42r0Z4VEBy36P4tjRtF14Ex10tl5tJFVKM16qWKQHbpjIgf73s49UB0CQ5lHT2DHKfq3oPf
-dNc5Mk93w1v4ryVb+qVrZIej8NsrWU+5r4O2IV91edDb/OtHFddZqHFFXKgS79IHE/hwQ2LW
-7r3sTX7cDUCg+dfdwO8zeLxuwk2JF8crUoyrl66RGrRIhT8VoG/OJ1Y9uUlOav69V4cG8upi
-4ZG2l7JZFbcBFk91Wp+Payo5SuF61CmGFrZ386umkmpObtFacXda2O/bVoQ9xHQrzoTc/0KZ
-TWvlZCLK3Ke/vGYT9ZdW9lOjGsSFbXrlTA919L84iMK+48WGnvRWY28ZaVHpql43AtEGhXze
-6iNCbEDACy+4hkQYOytAqDgcxAnQ937mYpeZFPyz/XK9QSt9VNFMuudWxZwDDDJKoQAoSG59
-Hou9lZ26UrK60nRdAQBmEPL8h2nuWgoPh++XVQld9yuhbsWa39Pck8/lcfz5HUVGJF5mc/zk
-38iV7FDlF68puiryNq2KXHEpOTCCBsowggWyoAMCAQICAgtGMA0GCSqGSIb3DQEBBQUAMIGM
-MQswCQYDVQQGEwJJTDEWMBQGA1UEChMNU3RhcnRDb20gTHRkLjErMCkGA1UECxMiU2VjdXJl
-IERpZ2l0YWwgQ2VydGlmaWNhdGUgU2lnbmluZzE4MDYGA1UEAxMvU3RhcnRDb20gQ2xhc3Mg
-MiBQcmltYXJ5IEludGVybWVkaWF0ZSBDbGllbnQgQ0EwHhcNMTAwOTI3MDA0ODU2WhcNMTIw
-OTI3MDk1NjI4WjCBwjEgMB4GA1UEDRMXMjY0MzU2LVV6cDI4MnFISHRiQ2I1ZDMxCzAJBgNV
-BAYTAkNaMRUwEwYDVQQIEwxabGluc2t5IEtyYWoxDTALBgNVBAcTBFpsaW4xLTArBgNVBAsT
-JFN0YXJ0Q29tIFZlcmlmaWVkIENlcnRpZmljYXRlIE1lbWJlcjEYMBYGA1UEAxMPQW5kcmVq
-IFBvZHppbWVrMSIwIAYJKoZIhvcNAQkBFhNhbmRyZWpAcG9kemltZWsub3JnMIIBIjANBgkq
-hkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEArldROEvlaSy4OX9PPg22Xl7GCivziuBcbrkH+St9
-vIAyefDb3kfdtHT/J1NRlQDYTrDFQ3cZM2J7vicm4/uu67KzdAF/14mdml1b1prWRiUT3IRw
-Cwbt8wuNhZfa6dGkQ374EuOWDVX+5YCEufr5GMHrkkZy5RYtO9r3avglOI1ZB2F9Z56Zb42k
-S7N2ebEE7Oj+pFeQwaj2pz/B4d3gu6wX+c7GwDiy26iN/33Cl+spa5uFWITb8XD6P6aob9Ep
-yDxn90KEr5+9ug1tmh833Kdll4mmjzAv5ZK0iVFnxsBq+V1TN/2NW6oiIvOLxTIHCfC1MdYi
-88HMC1PaQZF4ywIDAQABo4IC/DCCAvgwCQYDVR0TBAIwADALBgNVHQ8EBAMCBLAwHQYDVR0l
-BBYwFAYIKwYBBQUHAwIGCCsGAQUFBwMEMB0GA1UdDgQWBBT3GSEvnmmKZPBGzpElp7HtmoV7
-FzAfBgNVHSMEGDAWgBSuVYNv7DHKufcd+q9rMfPIHeOsuzAeBgNVHREEFzAVgRNhbmRyZWpA
-cG9kemltZWsub3JnMIIBQgYDVR0gBIIBOTCCATUwggExBgsrBgEEAYG1NwECAjCCASAwLgYI
-KwYBBQUHAgEWImh0dHA6Ly93d3cuc3RhcnRzc2wuY29tL3BvbGljeS5wZGYwNAYIKwYBBQUH
-AgEWKGh0dHA6Ly93d3cuc3RhcnRzc2wuY29tL2ludGVybWVkaWF0ZS5wZGYwgbcGCCsGAQUF
-BwICMIGqMBQWDVN0YXJ0Q29tIEx0ZC4wAwIBARqBkUxpbWl0ZWQgTGlhYmlsaXR5LCBzZWUg
-c2VjdGlvbiAqTGVnYWwgTGltaXRhdGlvbnMqIG9mIHRoZSBTdGFydENvbSBDZXJ0aWZpY2F0
-aW9uIEF1dGhvcml0eSBQb2xpY3kgYXZhaWxhYmxlIGF0IGh0dHA6Ly93d3cuc3RhcnRzc2wu
-Y29tL3BvbGljeS5wZGYwYwYDVR0fBFwwWjAroCmgJ4YlaHR0cDovL3d3dy5zdGFydHNzbC5j
-b20vY3J0dTItY3JsLmNybDAroCmgJ4YlaHR0cDovL2NybC5zdGFydHNzbC5jb20vY3J0dTIt
-Y3JsLmNybDCBjgYIKwYBBQUHAQEEgYEwfzA5BggrBgEFBQcwAYYtaHR0cDovL29jc3Auc3Rh
-cnRzc2wuY29tL3N1Yi9jbGFzczIvY2xpZW50L2NhMEIGCCsGAQUFBzAChjZodHRwOi8vd3d3
-LnN0YXJ0c3NsLmNvbS9jZXJ0cy9zdWIuY2xhc3MyLmNsaWVudC5jYS5jcnQwIwYDVR0SBBww
-GoYYaHR0cDovL3d3dy5zdGFydHNzbC5jb20vMA0GCSqGSIb3DQEBBQUAA4IBAQCEI21EOM71
-hKXRNFHbWFaemV86fxAs1yMl6SohZhNRea/Pc5hMpoFoUZBf0qJ3AvFy2PzsyspTsqZhBOwo
-I3rVJlgZapKi4x4k7FXM43xFmU/koQLdQPDS1Jfbr8zFTVBx+K6xD+L9y+M1M7JX+EcQgTIu
-CZn80YjSxEpAGND09NUPrgwJ/v9Nn5zqbEraf5MRSAun11fhkqIORlqkAi393N+kvXEsAtRJ
-A0CizQzFfmLFNY4xWtWtRYJGatOIzDO8s8gA8kfC99CcygpRQbrMBaBZ3fzMgoNXhP7A6801
-XYg+flS0kxPSubBbEfEUCVOHNcm4TAdyKwYehI9N8PD+MYIDuzCCA7cCAQEwgZMwgYwxCzAJ
-BgNVBAYTAklMMRYwFAYDVQQKEw1TdGFydENvbSBMdGQuMSswKQYDVQQLEyJTZWN1cmUgRGln
-aXRhbCBDZXJ0aWZpY2F0ZSBTaWduaW5nMTgwNgYDVQQDEy9TdGFydENvbSBDbGFzcyAyIFBy
-aW1hcnkgSW50ZXJtZWRpYXRlIENsaWVudCBDQQICC0YwCQYFKw4DAhoFAKCCAfwwGAYJKoZI
-hvcNAQkDMQsGCSqGSIb3DQEHATAcBgkqhkiG9w0BCQUxDxcNMTEwNjI0MDEzMDMyWjAjBgkq
-hkiG9w0BCQQxFgQUygkHG5hvpHMWRaTYwMoBm2YKcDMwXwYJKoZIhvcNAQkPMVIwUDALBglg
-hkgBZQMEAQIwCgYIKoZIhvcNAwcwDgYIKoZIhvcNAwICAgCAMA0GCCqGSIb3DQMCAgFAMAcG
-BSsOAwIHMA0GCCqGSIb3DQMCAgEoMIGbBgkrBgEEAYI3EAQxgY0wgYowgYQxFDASBgNVBAMM
-C1BvZHppbWVrIENBMQswCQYDVQQGEwJDWjEOMAwGA1UEBwwFWmzDrW4xFTATBgNVBAoMDHBv
-ZHppbWVrLm9yZzEVMBMGA1UECwwMcG9kemltZWsub3JnMSEwHwYJKoZIhvcNAQkBFhJhZG1p
-bkBwb2R6aW1lay5vcmcCAT0wgZ0GCyqGSIb3DQEJEAILMYGNoIGKMIGEMRQwEgYDVQQDDAtQ
-b2R6aW1layBDQTELMAkGA1UEBhMCQ1oxDjAMBgNVBAcMBVpsw61uMRUwEwYDVQQKDAxwb2R6
-aW1lay5vcmcxFTATBgNVBAsMDHBvZHppbWVrLm9yZzEhMB8GCSqGSIb3DQEJARYSYWRtaW5A
-cG9kemltZWsub3JnAgE9MA0GCSqGSIb3DQEBAQUABIIBAKcS6hbXckZhJcyo6W70+0+t3tSi
-APBKrT72VG43DBSfJscwSRfmiLsw9yT7t2R78v1usU+JGW4XIkTPTXZWOk4ykCPggnXyA6N6
-Jy4Lz2rc2ypFf+PDxl5va4PjfsTVy0OYfJCuDG9TRhJza1sUBDyyEuW8P6hvnsERl4Tl8a+j
-ClC/dydFAcLDEXDU39RWFKZcVtZF0TGphedlzbMHnBDEXo1rF7J2ef0/3etC1Gv42c93rXoh
-Ij9t8aEICVFRj2q/lQR8xkfTDvEbAy1Gg+GPfwnfHsca1pf8F+BChhHAjyv6QuLizxzP41+C
-rDdUBh7GOKiA08gYMOh/IEYwRcQAAAAAAAA=
---=_charon-2416-1308879033-0001-2--

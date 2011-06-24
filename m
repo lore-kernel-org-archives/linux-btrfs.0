@@ -1,47 +1,44 @@
-From: Chris Mason <chris.mason@oracle.com>
-Subject: Re: [PATCH] Btrfs: make sure to update total_bitmaps when freeing cache V2
-Date: Fri, 24 Jun 2011 12:07:15 -0400
-Message-ID: <1308931535-sup-9349@shiny>
-References: <1308858866-24124-1-git-send-email-josef@redhat.com> <20110624155820.GQ12709@twin.jikos.cz>
-Content-Type: text/plain; charset=UTF-8
-Cc: Josef Bacik <josef@redhat.com>,
-	linux-btrfs <linux-btrfs@vger.kernel.org>
-To: David Sterba <dave@jikos.cz>
-Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-reply-to: <20110624155820.GQ12709@twin.jikos.cz>
+From: Christoph Hellwig <hch@infradead.org>
+Subject: [PATCH 3/9] fs: simplify handling of zero sized reads in __blockdev_direct_IO
+Date: Fri, 24 Jun 2011 14:29:42 -0400
+Message-ID: <20110624183207.346483338@bombadil.infradead.org>
+References: <20110624182939.401012221@bombadil.infradead.org>
+Cc: linux-fsdevel@vger.kernel.org, linux-ext4@vger.kernel.org,
+	linux-btrfs@vger.kernel.org, hirofumi@mail.parknet.co.jp,
+	mfasheh@suse.com, jlbec@evilplan.org
+To: viro@zeniv.linux.org.uk, tglx@linutronix.de
+Return-path: <linux-ext4-owner@vger.kernel.org>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Excerpts from David Sterba's message of 2011-06-24 11:58:20 -0400:
-> On Thu, Jun 23, 2011 at 03:54:26PM -0400, Josef Bacik wrote:
-> > A user reported this bug again where we have more bitmaps than we are supposed
-> > to.  This is because we failed to load the free space cache, but don't update
-> > the ctl->total_bitmaps counter when we remove entries from the tree.  This patch
-> > fixes this problem and we should be good to go again.  Thanks,
-> > 
-> > Signed-off-by: Josef Bacik <josef@redhat.com>
-> > ---
-> > V1->V2: made the patch actually correct
-> >  fs/btrfs/free-space-cache.c |    6 +++++-
-> >  1 files changed, 5 insertions(+), 1 deletions(-)
-> > 
-> > diff --git a/fs/btrfs/free-space-cache.c b/fs/btrfs/free-space-cache.c
-> > index 3c1a047..e7987f9 100644
-> > --- a/fs/btrfs/free-space-cache.c
-> > +++ b/fs/btrfs/free-space-cache.c
-> > @@ -1843,7 +1843,11 @@ void __btrfs_remove_free_space_cache_locked(struct btrfs_free_space_ctl *ctl)
-> >      while ((node = rb_last(&ctl->free_space_offset)) != NULL) {
-> >          info = rb_entry(node, struct btrfs_free_space, offset_index);
-> >          unlink_free_space(ctl, info);
-> > -        kfree(info->bitmap);
-> > +        if (info->bitmap) {
-> > +            kfree(info->bitmap);
-> > +            ctl->total_bitmaps--;
-> > +            ctl->op->recalc_thresholds(ctl);
-> > +        }
-> 
-> this was a result of incorrect merge resolution in
-> 0965537308ac3b267ea16e731bd73870a51c53b8:
+Reject zero sized reads as soon as we know our I/O length, and don't
+borther with locks or allocations that might have to be cleaned up
+otherwise.
 
-Right, I missed this one up.
+Signed-off-by: Christoph Hellwig <hch@lst.de>
 
--chris
+Index: linux-2.6/fs/direct-io.c
+===================================================================
+--- linux-2.6.orig/fs/direct-io.c	2011-06-24 14:30:22.488402525 +0200
++++ linux-2.6/fs/direct-io.c	2011-06-24 15:13:16.711605526 +0200
+@@ -1200,6 +1200,10 @@ __blockdev_direct_IO(int rw, struct kioc
+ 		}
+ 	}
+ 
++	/* watch out for a 0 len io from a tricksy fs */
++	if (rw == READ && end == offset)
++		return 0;
++
+ 	dio = kmalloc(sizeof(*dio), GFP_KERNEL);
+ 	retval = -ENOMEM;
+ 	if (!dio)
+@@ -1213,8 +1217,7 @@ __blockdev_direct_IO(int rw, struct kioc
+ 
+ 	dio->flags = flags;
+ 	if (dio->flags & DIO_LOCKING) {
+-		/* watch out for a 0 len io from a tricksy fs */
+-		if (rw == READ && end > offset) {
++		if (rw == READ) {
+ 			struct address_space *mapping =
+ 					iocb->ki_filp->f_mapping;
+ 
+

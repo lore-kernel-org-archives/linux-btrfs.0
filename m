@@ -1,43 +1,63 @@
 From: Hugo Mills <hugo@carfax.org.uk>
-Subject: [PATCH v8 0/8] Balance management patches, v8
-Date: Sun, 26 Jun 2011 21:36:47 +0100
-Message-ID: <1309120615-18104-1-git-send-email-hugo@carfax.org.uk>
-To: Btrfs mailing list <linux-btrfs@vger.kernel.org>,
-	Chris Mason <chris.mason@oracle.com>,
-	David Sterba <dave@jikos.cz>
+Subject: Integration branch updated
+Date: Sun, 26 Jun 2011 22:10:22 +0100
+Message-ID: <20110626211022.GA24675@carfax.org.uk>
+Mime-Version: 1.0
+Content-Type: multipart/signed; micalg=pgp-sha1;
+	protocol="application/pgp-signature"; boundary="ew6BAiZeqk4r7MaW"
+To: Btrfs mailing list <linux-btrfs@vger.kernel.org>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-   v7 was a real mess -- I made any number of errors in rebasing it
-onto the 3.0 tree -- so I've skipped direct to v8. Thanks to David
-Sterba for pointing out all the problems.
 
-   Changes since v6: rebased to 3.0-rc4.
+--ew6BAiZeqk4r7MaW
+Content-Type: text/plain; charset=us-ascii
+Content-Disposition: inline
 
-   This series can also be pulled from the balance-management-v8
-branch of http://git.darksatanic.net/repo/btrfs-kernel.git/
+   I've just updated the btrfs-progs integration branch I've been
+keeping. Not a huge amount new since last time:
+
+Andreas Philipp (1):
+      print parent ID in btrfs subvolume list
+
+Goffredo Baroncelli (1):
+      Scan the devices listed in /proc/partitions
+
+Hugo Mills (1):
+      mkfs.btrfs: Fix compilation errors with gcc 4.6
+
+Zhong, Xin (1):
+      btrfs-progs: Improvement for making btrfs image from source directory.
+
+cwillu (1):
+      Btrfs-progs: Correct path munging in bcp
+
+   I've also re-worked my balance-management patches to deal with a
+few oddities in the ordering of the help output, and the parameter
+counts for the various balance commands.
+
+   You can get the latest version from:
+
+http://git.darksatanic.net/repo/btrfs-progs-unstable.git/ integration-20110626
 
    Hugo.
 
-Hugo Mills (8):
-  btrfs: Balance progress monitoring
-  btrfs: Cancel filesystem balance
-  btrfs: Factor out enumeration of chunks to a separate function
-  btrfs: Implement filtered balance ioctl
-  btrfs: Balance filter for device ID
-  btrfs: Balance filter for virtual address ranges
-  btrfs: Replication-type information
-  btrfs: Balance filter for physical device address
-
- fs/btrfs/ctree.h   |   10 ++
- fs/btrfs/disk-io.c |    2 +
- fs/btrfs/ioctl.c   |  104 +++++++++++++-
- fs/btrfs/ioctl.h   |   49 ++++++
- fs/btrfs/super.c   |   16 +--
- fs/btrfs/volumes.c |  414 ++++++++++++++++++++++++++++++++++++----------------
- fs/btrfs/volumes.h |   23 +++-
- 7 files changed, 482 insertions(+), 136 deletions(-)
-
 -- 
-1.7.2.5
+=== Hugo Mills: hugo@... carfax.org.uk | darksatanic.net | lug.org.uk ===
+  PGP key: 515C238D from wwwkeys.eu.pgp.net or http://www.carfax.org.uk
+     --- "I am the author. You are the audience. I outrank you!" ---     
 
+--ew6BAiZeqk4r7MaW
+Content-Type: application/pgp-signature; name="signature.asc"
+Content-Description: Digital signature
+Content-Disposition: inline
+
+-----BEGIN PGP SIGNATURE-----
+Version: GnuPG v1.4.10 (GNU/Linux)
+
+iD8DBQFOB6A+IKyzvlFcI40RAri7AJ9FOmthuapfjgruvcxCNS9eWUd07gCfdspJ
+gdiRhdqH9b/smCqxhUZtM7c=
+=eJOI
+-----END PGP SIGNATURE-----
+
+--ew6BAiZeqk4r7MaW--

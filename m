@@ -1,7 +1,7 @@
 From: Hugo Mills <hugo@carfax.org.uk>
-Subject: [PATCH v8 7/8] btrfs: Replication-type information
-Date: Sun, 26 Jun 2011 21:36:54 +0100
-Message-ID: <1309120615-18104-8-git-send-email-hugo@carfax.org.uk>
+Subject: [PATCH v8 4/8] btrfs: Implement filtered balance ioctl
+Date: Sun, 26 Jun 2011 21:36:51 +0100
+Message-ID: <1309120615-18104-5-git-send-email-hugo@carfax.org.uk>
 References: <1309120615-18104-1-git-send-email-hugo@carfax.org.uk>
 To: Btrfs mailing list <linux-btrfs@vger.kernel.org>,
 	Chris Mason <chris.mason@oracle.com>,
@@ -10,352 +10,266 @@ Return-path: <linux-btrfs-owner@vger.kernel.org>
 In-Reply-To: <1309120615-18104-1-git-send-email-hugo@carfax.org.uk>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-There are a few places in btrfs where knowledge of the various
-parameters of a replication type is needed. Factor this out into a
-single function which can supply all the relevant information.
+The filtered balance ioctl provides a facility to perform a balance
+operation on a subset of the chunks in the filesystem. This patch
+implements the base ioctl for this operation, and one filter type.
+The filter in this patch selects chunks on the basis of their chunk
+flags field, and can select any combination of bits set or unset.
 
 Signed-off-by: Hugo Mills <hugo@carfax.org.uk>
 ---
- fs/btrfs/super.c   |   16 ++---
- fs/btrfs/volumes.c |  155 +++++++++++++++++++++++++---------------------------
- fs/btrfs/volumes.h |   17 ++++++
- 3 files changed, 98 insertions(+), 90 deletions(-)
+ fs/btrfs/ioctl.c   |   42 +++++++++++++++++++++++++++++++++-
+ fs/btrfs/ioctl.h   |   27 ++++++++++++++++++++++
+ fs/btrfs/volumes.c |   64 +++++++++++++++++++++++++++++++++++++++++++++------
+ fs/btrfs/volumes.h |    6 ++++-
+ 4 files changed, 129 insertions(+), 10 deletions(-)
 
-diff --git a/fs/btrfs/super.c b/fs/btrfs/super.c
-index 0bb4ebb..2ea4e01 100644
---- a/fs/btrfs/super.c
-+++ b/fs/btrfs/super.c
-@@ -965,12 +965,12 @@ static int btrfs_calc_avail_data_space(struct btrfs_root *root, u64 *free_bytes)
- 	struct btrfs_device_info *devices_info;
- 	struct btrfs_fs_devices *fs_devices = fs_info->fs_devices;
- 	struct btrfs_device *device;
-+	struct btrfs_replication_info repl_info;
- 	u64 skip_space;
- 	u64 type;
- 	u64 avail_space;
- 	u64 used_space;
- 	u64 min_stripe_size;
--	int min_stripes = 1;
- 	int i = 0, nr_devices;
- 	int ret;
- 
-@@ -984,12 +984,7 @@ static int btrfs_calc_avail_data_space(struct btrfs_root *root, u64 *free_bytes)
- 
- 	/* calc min stripe number for data space alloction */
- 	type = btrfs_get_alloc_profile(root, 1);
--	if (type & BTRFS_BLOCK_GROUP_RAID0)
--		min_stripes = 2;
--	else if (type & BTRFS_BLOCK_GROUP_RAID1)
--		min_stripes = 2;
--	else if (type & BTRFS_BLOCK_GROUP_RAID10)
--		min_stripes = 4;
-+	btrfs_get_replication_info(&repl_info, type);
- 
- 	if (type & BTRFS_BLOCK_GROUP_DUP)
- 		min_stripe_size = 2 * BTRFS_STRIPE_LEN;
-@@ -1057,14 +1052,15 @@ static int btrfs_calc_avail_data_space(struct btrfs_root *root, u64 *free_bytes)
- 
- 	i = nr_devices - 1;
- 	avail_space = 0;
--	while (nr_devices >= min_stripes) {
-+	while (nr_devices >= repl_info.devs_min) {
- 		if (devices_info[i].max_avail >= min_stripe_size) {
- 			int j;
- 			u64 alloc_size;
- 
--			avail_space += devices_info[i].max_avail * min_stripes;
-+			avail_space += devices_info[i].max_avail
-+				* repl_info.devs_min;
- 			alloc_size = devices_info[i].max_avail;
--			for (j = i + 1 - min_stripes; j <= i; j++)
-+			for (j = i + 1 - repl_info.devs_min; j <= i; j++)
- 				devices_info[j].max_avail -= alloc_size;
- 		}
- 		i--;
-diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
-index 828aa34..fb11550 100644
---- a/fs/btrfs/volumes.c
-+++ b/fs/btrfs/volumes.c
-@@ -117,6 +117,52 @@ static void requeue_list(struct btrfs_pending_bios *pending_bios,
- 		pending_bios->tail = tail;
+diff --git a/fs/btrfs/ioctl.c b/fs/btrfs/ioctl.c
+index d4458d0..3e577b8 100644
+--- a/fs/btrfs/ioctl.c
++++ b/fs/btrfs/ioctl.c
+@@ -2894,6 +2894,44 @@ error:
+ 	return err;
  }
  
-+void btrfs_get_replication_info(struct btrfs_replication_info *info,
-+								u64 type)
++long btrfs_ioctl_balance(struct btrfs_root *dev_root,
++			 struct btrfs_ioctl_balance_start __user *user_filters)
 +{
-+	info->sub_stripes = 1;
-+	info->dev_stripes = 1;
-+	info->devs_increment = 1;
-+	info->num_copies = 1;
-+	info->devs_max = 0;	/* 0 == as many as possible */
-+	info->devs_min = 1;
++	int ret = 0;
++	struct btrfs_ioctl_balance_start *dest;
 +
-+	if (type & BTRFS_BLOCK_GROUP_DUP) {
-+		info->dev_stripes = 2;
-+		info->num_copies = 2;
-+		info->devs_max = 1;
-+	} else if (type & BTRFS_BLOCK_GROUP_RAID0) {
-+		info->devs_min = 2;
-+	} else if (type & BTRFS_BLOCK_GROUP_RAID1) {
-+		info->devs_increment = 2;
-+		info->num_copies = 2;
-+		info->devs_max = 2;
-+		info->devs_min = 2;
-+	} else if (type & BTRFS_BLOCK_GROUP_RAID10) {
-+		info->sub_stripes = 2;
-+		info->devs_increment = 2;
-+		info->num_copies = 2;
-+		info->devs_min = 4;
++	dest = kmalloc(sizeof(struct btrfs_ioctl_balance_start), GFP_KERNEL);
++	if (!dest)
++		return -ENOMEM;
++
++	if (copy_from_user(dest, user_filters,
++			   sizeof(struct btrfs_ioctl_balance_start))) {
++		ret = -EFAULT;
++		goto error;
 +	}
 +
-+	if (type & BTRFS_BLOCK_GROUP_DATA) {
-+		info->max_stripe_size = 1024 * 1024 * 1024;
-+		info->min_stripe_size = 64 * 1024 * 1024;
-+		info->max_chunk_size = 10 * info->max_stripe_size;
-+	} else if (type & BTRFS_BLOCK_GROUP_METADATA) {
-+		info->max_stripe_size = 256 * 1024 * 1024;
-+		info->min_stripe_size = 32 * 1024 * 1024;
-+		info->max_chunk_size = info->max_stripe_size;
-+	} else if (type & BTRFS_BLOCK_GROUP_SYSTEM) {
-+		info->max_stripe_size = 8 * 1024 * 1024;
-+		info->min_stripe_size = 1 * 1024 * 1024;
-+		info->max_chunk_size = 2 * info->max_stripe_size;
-+	} else {
-+		printk(KERN_ERR "Block group is of an unknown usage type: not data, metadata or system.\n");
-+		BUG_ON(1);
++	/* Basic sanity checking: has the user requested anything outside
++	 * the range we know about? */
++	if (dest->flags & ~BTRFS_BALANCE_FILTER_MASK) {
++		ret = -ENOTSUPP;
++		goto error;
 +	}
++
++	/* Do the balance */
++	ret = btrfs_balance(dev_root, dest);
++	if (ret)
++		goto error;
++
++	if (copy_to_user(user_filters, dest,
++			 sizeof(struct btrfs_ioctl_balance_start))) {
++		ret = -EFAULT;
++	}
++
++error:
++	kfree(dest);
++	return ret;
 +}
 +
- /*
-  * we try to collect pending bios for a device so we don't get a large
-  * number of procs sending bios down to the same device.  This greatly
-@@ -1216,6 +1262,7 @@ int btrfs_rm_device(struct btrfs_root *root, char *device_path)
- 	struct block_device *bdev;
- 	struct buffer_head *bh = NULL;
- 	struct btrfs_super_block *disk_super;
-+	struct btrfs_replication_info repl_info;
- 	struct btrfs_fs_devices *cur_devices;
- 	u64 all_avail;
- 	u64 devid;
-@@ -1231,18 +1278,16 @@ int btrfs_rm_device(struct btrfs_root *root, char *device_path)
- 		root->fs_info->avail_system_alloc_bits |
- 		root->fs_info->avail_metadata_alloc_bits;
- 
--	if ((all_avail & BTRFS_BLOCK_GROUP_RAID10) &&
--	    root->fs_info->fs_devices->num_devices <= 4) {
--		printk(KERN_ERR "btrfs: unable to go below four devices "
--		       "on raid10\n");
--		ret = -EINVAL;
--		goto out;
--	}
-+	btrfs_get_replication_info(&repl_info, all_avail);
- 
--	if ((all_avail & BTRFS_BLOCK_GROUP_RAID1) &&
--	    root->fs_info->fs_devices->num_devices <= 2) {
--		printk(KERN_ERR "btrfs: unable to go below two "
--		       "devices on raid1\n");
-+	if (root->fs_info->fs_devices->num_devices <= repl_info.devs_min) {
-+		if (all_avail & BTRFS_BLOCK_GROUP_RAID10) {
-+			printk(KERN_ERR "btrfs: unable to go below four "
-+				   "devices on raid10\n");
-+		} else if (all_avail & BTRFS_BLOCK_GROUP_RAID1) {
-+			printk(KERN_ERR "btrfs: unable to go below two "
-+				   "devices on raid1\n");
-+		}
- 		ret = -EINVAL;
- 		goto out;
- 	}
-@@ -2446,16 +2491,10 @@ static int __btrfs_alloc_chunk(struct btrfs_trans_handle *trans,
- 	struct extent_map_tree *em_tree;
- 	struct extent_map *em;
- 	struct btrfs_device_info *devices_info = NULL;
-+	struct btrfs_replication_info repl_info;
- 	u64 total_avail;
- 	int num_stripes;	/* total number of stripes to allocate */
--	int sub_stripes;	/* sub_stripes info for map */
--	int dev_stripes;	/* stripes per dev */
--	int devs_max;		/* max devs to use */
--	int devs_min;		/* min devs needed */
--	int devs_increment;	/* ndevs has to be a multiple of this */
--	int ncopies;		/* how many copies to data has */
- 	int ret;
--	u64 max_stripe_size;
- 	u64 max_chunk_size;
- 	u64 stripe_size;
- 	u64 num_bytes;
-@@ -2472,56 +2511,11 @@ static int __btrfs_alloc_chunk(struct btrfs_trans_handle *trans,
- 	if (list_empty(&fs_devices->alloc_list))
- 		return -ENOSPC;
- 
--	sub_stripes = 1;
--	dev_stripes = 1;
--	devs_increment = 1;
--	ncopies = 1;
--	devs_max = 0;	/* 0 == as many as possible */
--	devs_min = 1;
--
--	/*
--	 * define the properties of each RAID type.
--	 * FIXME: move this to a global table and use it in all RAID
--	 * calculation code
--	 */
--	if (type & (BTRFS_BLOCK_GROUP_DUP)) {
--		dev_stripes = 2;
--		ncopies = 2;
--		devs_max = 1;
--	} else if (type & (BTRFS_BLOCK_GROUP_RAID0)) {
--		devs_min = 2;
--	} else if (type & (BTRFS_BLOCK_GROUP_RAID1)) {
--		devs_increment = 2;
--		ncopies = 2;
--		devs_max = 2;
--		devs_min = 2;
--	} else if (type & (BTRFS_BLOCK_GROUP_RAID10)) {
--		sub_stripes = 2;
--		devs_increment = 2;
--		ncopies = 2;
--		devs_min = 4;
--	} else {
--		devs_max = 1;
--	}
--
--	if (type & BTRFS_BLOCK_GROUP_DATA) {
--		max_stripe_size = 1024 * 1024 * 1024;
--		max_chunk_size = 10 * max_stripe_size;
--	} else if (type & BTRFS_BLOCK_GROUP_METADATA) {
--		max_stripe_size = 256 * 1024 * 1024;
--		max_chunk_size = max_stripe_size;
--	} else if (type & BTRFS_BLOCK_GROUP_SYSTEM) {
--		max_stripe_size = 8 * 1024 * 1024;
--		max_chunk_size = 2 * max_stripe_size;
--	} else {
--		printk(KERN_ERR "btrfs: invalid chunk type 0x%llx requested\n",
--		       type);
--		BUG_ON(1);
--	}
-+	btrfs_get_replication_info(&repl_info, type);
- 
- 	/* we don't want a chunk larger than 10% of writeable space */
- 	max_chunk_size = min(div_factor(fs_devices->total_rw_bytes, 1),
--			     max_chunk_size);
-+			     repl_info.max_chunk_size);
- 
- 	devices_info = kzalloc(sizeof(*devices_info) * fs_devices->rw_devices,
- 			       GFP_NOFS);
-@@ -2563,15 +2557,15 @@ static int __btrfs_alloc_chunk(struct btrfs_trans_handle *trans,
- 		 */
- 
- 		ret = find_free_dev_extent(trans, device,
--					   max_stripe_size * dev_stripes,
-+					   repl_info.max_stripe_size * repl_info.dev_stripes,
- 					   &dev_offset, &max_avail);
- 		if (ret && ret != -ENOSPC)
- 			goto error;
- 
- 		if (ret == 0)
--			max_avail = max_stripe_size * dev_stripes;
-+			max_avail = repl_info.max_stripe_size * repl_info.dev_stripes;
- 
--		if (max_avail < BTRFS_STRIPE_LEN * dev_stripes)
-+		if (max_avail < BTRFS_STRIPE_LEN * repl_info.dev_stripes)
- 			continue;
- 
- 		devices_info[ndevs].dev_offset = dev_offset;
-@@ -2588,28 +2582,29 @@ static int __btrfs_alloc_chunk(struct btrfs_trans_handle *trans,
- 	     btrfs_cmp_device_info, NULL);
- 
- 	/* round down to number of usable stripes */
--	ndevs -= ndevs % devs_increment;
-+	ndevs -= ndevs % repl_info.devs_increment;
- 
--	if (ndevs < devs_increment * sub_stripes || ndevs < devs_min) {
-+	if (ndevs < repl_info.devs_increment * repl_info.sub_stripes
-+		|| ndevs < repl_info.devs_min) {
- 		ret = -ENOSPC;
- 		goto error;
- 	}
- 
--	if (devs_max && ndevs > devs_max)
--		ndevs = devs_max;
-+	if (repl_info.devs_max && ndevs > repl_info.devs_max)
-+		ndevs = repl_info.devs_max;
- 	/*
- 	 * the primary goal is to maximize the number of stripes, so use as many
- 	 * devices as possible, even if the stripes are not maximum sized.
- 	 */
- 	stripe_size = devices_info[ndevs-1].max_avail;
--	num_stripes = ndevs * dev_stripes;
-+	num_stripes = ndevs * repl_info.dev_stripes;
- 
--	if (stripe_size * num_stripes > max_chunk_size * ncopies) {
--		stripe_size = max_chunk_size * ncopies;
-+	if (stripe_size * num_stripes > max_chunk_size * repl_info.num_copies) {
-+		stripe_size = max_chunk_size * repl_info.num_copies;
- 		do_div(stripe_size, num_stripes);
- 	}
- 
--	do_div(stripe_size, dev_stripes);
-+	do_div(stripe_size, repl_info.dev_stripes);
- 	do_div(stripe_size, BTRFS_STRIPE_LEN);
- 	stripe_size *= BTRFS_STRIPE_LEN;
- 
-@@ -2621,8 +2616,8 @@ static int __btrfs_alloc_chunk(struct btrfs_trans_handle *trans,
- 	map->num_stripes = num_stripes;
- 
- 	for (i = 0; i < ndevs; ++i) {
--		for (j = 0; j < dev_stripes; ++j) {
--			int s = i * dev_stripes + j;
-+		for (j = 0; j < repl_info.dev_stripes; ++j) {
-+			int s = i * repl_info.dev_stripes + j;
- 			map->stripes[s].dev = devices_info[i].dev;
- 			map->stripes[s].physical = devices_info[i].dev_offset +
- 						   j * stripe_size;
-@@ -2633,10 +2628,10 @@ static int __btrfs_alloc_chunk(struct btrfs_trans_handle *trans,
- 	map->io_align = BTRFS_STRIPE_LEN;
- 	map->io_width = BTRFS_STRIPE_LEN;
- 	map->type = type;
--	map->sub_stripes = sub_stripes;
-+	map->sub_stripes = repl_info.sub_stripes;
- 
- 	*map_ret = map;
--	num_bytes = stripe_size * (num_stripes / ncopies);
-+	num_bytes = stripe_size * (num_stripes / repl_info.num_copies);
- 
- 	*stripe_size_out = stripe_size;
- 	*num_bytes_out = num_bytes;
-diff --git a/fs/btrfs/volumes.h b/fs/btrfs/volumes.h
-index 08ec502..4fe9580 100644
---- a/fs/btrfs/volumes.h
-+++ b/fs/btrfs/volumes.h
-@@ -164,6 +164,22 @@ struct map_lookup {
- 	struct btrfs_bio_stripe stripes[];
+ long btrfs_ioctl(struct file *file, unsigned int
+ 		cmd, unsigned long arg)
+ {
+@@ -2938,11 +2976,13 @@ long btrfs_ioctl(struct file *file, unsigned int
+ 	case BTRFS_IOC_DEV_INFO:
+ 		return btrfs_ioctl_dev_info(root, argp);
+ 	case BTRFS_IOC_BALANCE:
+-		return btrfs_balance(root->fs_info->dev_root);
++		return btrfs_ioctl_balance(root->fs_info->dev_root, NULL);
+ 	case BTRFS_IOC_BALANCE_PROGRESS:
+ 		return btrfs_ioctl_balance_progress(root->fs_info, argp);
+ 	case BTRFS_IOC_BALANCE_CANCEL:
+ 		return btrfs_ioctl_balance_cancel(root->fs_info);
++	case BTRFS_IOC_BALANCE_FILTERED:
++		return btrfs_ioctl_balance(root->fs_info->dev_root, argp);
+ 	case BTRFS_IOC_CLONE:
+ 		return btrfs_ioctl_clone(file, arg, 0, 0, 0);
+ 	case BTRFS_IOC_CLONE_RANGE:
+diff --git a/fs/btrfs/ioctl.h b/fs/btrfs/ioctl.h
+index edcbe61..124296e 100644
+--- a/fs/btrfs/ioctl.h
++++ b/fs/btrfs/ioctl.h
+@@ -198,6 +198,31 @@ struct btrfs_ioctl_balance_progress {
+ 	__u32 completed;
  };
  
-+/*
-+ * Information about a the parameters of a replication strategy (RAID
-+ * level)
-+ */
-+struct btrfs_replication_info {
-+	u32 sub_stripes;
-+	u32 dev_stripes;
-+	u32 devs_increment;
-+	u32 num_copies;
-+	u32 devs_max;
-+	u32 devs_min;
-+	u64 max_stripe_size;
-+	u64 min_stripe_size;
-+	u64 max_chunk_size;
++/* Types of balance filter */
++#define BTRFS_BALANCE_FILTER_COUNT_ONLY (1 << 0)
++
++#define BTRFS_BALANCE_FILTER_CHUNK_TYPE (1 << 1)
++#define BTRFS_BALANCE_FILTER_MASK ((1 << 2) - 1) /* Logical or of all filter
++				       * flags -- effectively versions
++				       * the filtered balance ioctl */
++
++/* All the possible options for a filter */
++struct btrfs_ioctl_balance_start {
++	__u64 flags; /* Bit field indicating which fields of this struct
++			are filled */
++
++	/* Output values: chunk counts */
++	__u32 examined;
++	__u32 balanced;
++
++	/* For FILTER_CHUNK_TYPE */
++	__u64 chunk_type;      /* Flag bits required */
++	__u64 chunk_type_mask; /* Mask of bits to examine */
++
++	__u64 spare[507]; /* Make up the size of the structure to 4088
++			   * bytes for future expansion */
 +};
 +
- #define map_lookup_size(n) (sizeof(struct map_lookup) + \
- 			    (sizeof(struct btrfs_bio_stripe) * (n)))
+ #define BTRFS_IOC_SNAP_CREATE _IOW(BTRFS_IOCTL_MAGIC, 1, \
+ 				   struct btrfs_ioctl_vol_args)
+ #define BTRFS_IOC_DEFRAG _IOW(BTRFS_IOCTL_MAGIC, 2, \
+@@ -256,4 +281,6 @@ struct btrfs_ioctl_balance_progress {
+ #define BTRFS_IOC_BALANCE_PROGRESS _IOR(BTRFS_IOCTL_MAGIC, 32, \
+ 				  struct btrfs_ioctl_balance_progress)
+ #define BTRFS_IOC_BALANCE_CANCEL _IO(BTRFS_IOCTL_MAGIC, 33)
++#define BTRFS_IOC_BALANCE_FILTERED _IOWR(BTRFS_IOCTL_MAGIC, 34, \
++				struct btrfs_ioctl_balance_start)
+ #endif
+diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
+index a81fd3c..ea466ab 100644
+--- a/fs/btrfs/volumes.c
++++ b/fs/btrfs/volumes.c
+@@ -2014,6 +2014,36 @@ static u64 div_factor(u64 num, int factor)
+ 	return num;
+ }
  
-@@ -217,4 +233,5 @@ int btrfs_chunk_readonly(struct btrfs_root *root, u64 chunk_offset);
++int balance_chunk_filter(struct btrfs_ioctl_balance_start *filter,
++						 struct btrfs_root *chunk_root,
++						 struct btrfs_path *path,
++						 struct btrfs_key *key)
++{
++	struct extent_buffer *eb;
++	struct btrfs_chunk *chunk;
++
++	/* No filter defined, everything matches */
++	if (!filter)
++		return 1;
++
++	/* No flags set, everything matches */
++	if (filter->flags == 0)
++		return 1;
++
++	eb = path->nodes[0];
++	chunk = btrfs_item_ptr(eb, path->slots[0],
++						   struct btrfs_chunk);
++
++	if (filter->flags & BTRFS_BALANCE_FILTER_CHUNK_TYPE) {
++		if ((btrfs_chunk_type(eb, chunk) & filter->chunk_type_mask)
++			!= filter->chunk_type) {
++			return 0;
++		}
++	}
++
++	return 1;
++}
++
+ /* Define a type, and two functions which can be used for the two
+  * phases of the balance operation: one for counting chunks, and one
+  * for actually moving them. */
+@@ -2054,6 +2084,7 @@ static void balance_move_chunks(struct btrfs_root *chunk_root,
+ /* Iterate through all chunks, performing some function on each one. */
+ static int balance_iterate_chunks(struct btrfs_root *chunk_root,
+ 			   struct btrfs_balance_info *bal_info,
++			   struct btrfs_ioctl_balance_start *filter,
+ 			   balance_iterator_function iterator_fn)
+ {
+ 	int ret = 0;
+@@ -2069,6 +2100,9 @@ static int balance_iterate_chunks(struct btrfs_root *chunk_root,
+ 	key.offset = (u64)-1;
+ 	key.type = BTRFS_CHUNK_ITEM_KEY;
+ 
++	filter->examined = 0;
++	filter->balanced = 0;
++
+ 	while (!bal_info->cancel_pending) {
+ 		ret = btrfs_search_slot(NULL, chunk_root, &key, path, 0, 0);
+ 		if (ret < 0)
+@@ -2095,17 +2129,29 @@ static int balance_iterate_chunks(struct btrfs_root *chunk_root,
+ 			break;
+ 
+ 		/* Call the function to do the work for this chunk */
+-		btrfs_release_path(path);
+-		iterator_fn(chunk_root, bal_info, path, &found_key);
++		filter->examined += 1;
++
++		if (balance_chunk_filter(filter, chunk_root,
++					 path, &found_key)) {
++			btrfs_release_path(path);
++			iterator_fn(chunk_root, bal_info, path, &found_key);
++			filter->balanced += 1;
++		} else {
++			btrfs_release_path(path);
++		}
+ 
+ 		key.offset = found_key.offset - 1;
+ 	}
+ 
++	printk(KERN_INFO "btrfs: balance: %u chunks considered, %u chunks balanced\n",
++		   filter->examined, filter->balanced);
++
+ 	btrfs_free_path(path);
+ 	return ret;
+ }
+ 
+-int btrfs_balance(struct btrfs_root *dev_root)
++int btrfs_balance(struct btrfs_root *dev_root,
++				  struct btrfs_ioctl_balance_start *filters)
+ {
+ 	int ret;
+ 	struct list_head *devices = &dev_root->fs_info->fs_devices->devices;
+@@ -2164,15 +2210,17 @@ int btrfs_balance(struct btrfs_root *dev_root)
+ 
+ 	/* step two, count the chunks */
+ 	ret = balance_iterate_chunks(chunk_root, bal_info,
+-				     balance_count_chunks);
++				 filters, balance_count_chunks);
+ 	if (ret)
+ 		goto error;
+ 
+ 	/* step three, relocate all the chunks */
+-	ret = balance_iterate_chunks(chunk_root, bal_info,
+-				     balance_move_chunks);
+-	if (ret)
+-		goto error;
++	if (!(filters->flags & BTRFS_BALANCE_FILTER_COUNT_ONLY)) {
++		ret = balance_iterate_chunks(chunk_root, bal_info,
++					     filters, balance_move_chunks);
++		if (ret)
++			goto error;
++	}
+ 
+ 	ret = 0;
+ 	if (bal_info->cancel_pending) {
+diff --git a/fs/btrfs/volumes.h b/fs/btrfs/volumes.h
+index 7c12d61..08ec502 100644
+--- a/fs/btrfs/volumes.h
++++ b/fs/btrfs/volumes.h
+@@ -22,6 +22,7 @@
+ #include <linux/bio.h>
+ #include <linux/sort.h>
+ #include "async-thread.h"
++#include "ioctl.h"
+ 
+ #define BTRFS_STRIPE_LEN	(64 * 1024)
+ 
+@@ -208,7 +209,10 @@ struct btrfs_device *btrfs_find_device(struct btrfs_root *root, u64 devid,
+ 				       u8 *uuid, u8 *fsid);
+ int btrfs_shrink_device(struct btrfs_device *device, u64 new_size);
+ int btrfs_init_new_device(struct btrfs_root *root, char *path);
+-int btrfs_balance(struct btrfs_root *dev_root);
++int btrfs_balance(struct btrfs_root *dev_root,
++		  struct btrfs_ioctl_balance_start *filters);
++void btrfs_unlock_volumes(void);
++void btrfs_lock_volumes(void);
+ int btrfs_chunk_readonly(struct btrfs_root *root, u64 chunk_offset);
  int find_free_dev_extent(struct btrfs_trans_handle *trans,
  			 struct btrfs_device *device, u64 num_bytes,
- 			 u64 *start, u64 *max_avail);
-+void btrfs_get_replication_info(struct btrfs_replication_info *info, u64 type);
- #endif
 -- 
 1.7.2.5
 

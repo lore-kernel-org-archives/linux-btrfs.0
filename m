@@ -1,67 +1,108 @@
-From: buff@cs.boisestate.edu
-Subject: exposing checksums to user-space programs
-Date: Mon, 27 Jun 2011 10:47:57 -0600
-Message-ID: <4404.1309193277@wave.linux.bogus>
-Cc: buff@cs.boisestate.edu
-To: linux-btrfs@vger.kernel.org
-Return-path: <linux-btrfs-owner@vger.kernel.org>
+From: Josef Bacik <josef@redhat.com>
+Subject: [PATCH 1/4] fs: add SEEK_HOLE and SEEK_DATA flags
+Date: Mon, 27 Jun 2011 14:02:21 -0400
+Message-ID: <1309197745-14107-1-git-send-email-josef@redhat.com>
+To: linux-fsdevel@vger.kernel.org, linux-btrfs@vger.kernel.org,
+	linux-kernel@vger.kernel.org, viro@ZenIV.linux.org.uk
+Return-path: <linux-kernel-owner@vger.kernel.org>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hi Folks (please cc: any replies to me),
+This just gets us ready to support the SEEK_HOLE and SEEK_DATA flags.  Turns out
+using fiemap in things like cp cause more problems than it solves, so lets try
+and give userspace an interface that doesn't suck.  We need to match solaris
+here, and the definitions are
 
-I have modified GNU Make to use checksums rather than
-timestamps. I would like the operating system and/or
-filesystem to compute and provide the checksums, because it
-can safely cache them.
+*o* If /whence/ is SEEK_HOLE, the offset of the start of the
+next hole greater than or equal to the supplied offset
+is returned. The definition of a hole is provided near
+the end of the DESCRIPTION.
 
-Since btrfs checksums its files, I am trying to transfer its
-checksums to user space. I believe I saw a thread where
-Chris Mason said he didn't want to expose checksums, but
-then I found a patch that sounds like it does what I want:
+*o* If /whence/ is SEEK_DATA, the file pointer is set to the
+start of the next non-hole file region greater than or
+equal to the supplied offset.
 
-    http://www.mail-archive.com/linux-btrfs@vger.kernel.org/msg01182.html
+So in the generic case the entire file is data and there is a virtual hole at
+the end.  That means we will just return i_size for SEEK_HOLE and will return
+the same offset for SEEK_DATA.  This is how Solaris does it so we have to do it
+the same way.
 
-In the thread, Chris said he would take the patch, but it
-evidently never made it to distribution.  I applied the
-patch to kernel 2.6.30.8, which is old but available on one
-of my expendable laptops. I created a btrfs filesystem on a
-USB thumb drive and copied a file to it. Then, I cobbled
-together this example user-space program:
+Thanks,
 
-    http://cs.boisestate.edu/~buff/files/trycsum.c
+Signed-off-by: Josef Bacik <josef@redhat.com>
+---
+ fs/read_write.c    |   37 +++++++++++++++++++++++++++++++++++++
+ include/linux/fs.h |    4 +++-
+ 2 files changed, 40 insertions(+), 1 deletions(-)
 
-which produces this output:
-
-    spruce$ sudo mount /mnt/sdb1
-    spruce$ trycsum /mnt/sdb1/yum.list 
-    File /mnt/sdb1/yum.list has 1 extents:
-    #	Logical          Physical         Length           Flags
-    0:	0000000000000000 0000000000c00000 000000000015b000 0001
-    sizeof(args)=420
-    size=0
-    csum[0]=0000007b
-    spruce$ 
-
-The "size=0" tells me the file's one extent has no
-checksum. However:
-
-    spruce$ sudo btrfs-debug-tree  /dev/sdb1 | grep -i csum
-	    item 0 key (18446744073709551606 EXTENT_CSUM 12582912) itemoff 2607 itemsize 1388
-		    extent csum item
-    spruce$ 
-
-suggests it has a checksum.
-
-I traced the function defined in the patch, with printk()
-calls. It seemed be accepting and processing its arguments
-correctly.
-
-I'm not a kernel-hacking expert, but I was hoping someone
-could tell me what I'm doing wrong or give me some
-direction. Thanks!
-
--- Jim
-
-PS: I think I also noticed that a small file has no
-checksum, and a big file has no checksum until after a
-umount/mount. Is this true?
+diff --git a/fs/read_write.c b/fs/read_write.c
+index 5520f8a..d58551e 100644
+--- a/fs/read_write.c
++++ b/fs/read_write.c
+@@ -64,6 +64,23 @@ generic_file_llseek_unlocked(struct file *file, loff_t offset, int origin)
+ 			return file->f_pos;
+ 		offset += file->f_pos;
+ 		break;
++	case SEEK_DATA:
++		/*
++		 * In the generic case the entire file is data, so as long as
++		 * offset isn't at the end of the file then the offset is data.
++		 */
++		if (offset >= inode->i_size)
++			return -ENXIO;
++		break;
++	case SEEK_HOLE:
++		/*
++		 * There is a virtual hole at the end of the file, so as long as
++		 * offset isn't i_size or larger, return i_size.
++		 */
++		if (offset >= inode->i_size)
++			return -ENXIO;
++		offset = inode->i_size;
++		break;
+ 	}
+ 
+ 	if (offset < 0 && !unsigned_offsets(file))
+@@ -141,6 +158,26 @@ loff_t default_llseek(struct file *file, loff_t offset, int origin)
+ 				goto out;
+ 			}
+ 			offset += file->f_pos;
++			break;
++		case SEEK_DATA:
++			/*
++			 * In the generic case the entire file is data, so as
++			 * long as offset isn't at the end of the file then the
++			 * offset is data.
++			 */
++			if (offset >= inode->i_size)
++				return -ENXIO;
++			break;
++		case SEEK_HOLE:
++			/*
++			 * There is a virtual hole at the end of the file, so
++			 * as long as offset isn't i_size or larger, return
++			 * i_size.
++			 */
++			if (offset >= inode->i_size)
++				return -ENXIO;
++			offset = inode->i_size;
++			break;
+ 	}
+ 	retval = -EINVAL;
+ 	if (offset >= 0 || unsigned_offsets(file)) {
+diff --git a/include/linux/fs.h b/include/linux/fs.h
+index 6e73e2e..552cdfe 100644
+--- a/include/linux/fs.h
++++ b/include/linux/fs.h
+@@ -32,7 +32,9 @@
+ #define SEEK_SET	0	/* seek relative to beginning of file */
+ #define SEEK_CUR	1	/* seek relative to current file position */
+ #define SEEK_END	2	/* seek relative to end of file */
+-#define SEEK_MAX	SEEK_END
++#define SEEK_DATA	3	/* seek to the next data */
++#define SEEK_HOLE	4	/* seek to the next hole */
++#define SEEK_MAX	SEEK_HOLE
+ 
+ struct fstrim_range {
+ 	__u64 start;
+-- 
+1.7.5.2

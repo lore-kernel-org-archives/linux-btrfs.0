@@ -1,27 +1,62 @@
-From: Chris Mason <chris.mason@oracle.com>
-Subject: Re: [PATCH 1/2 v2] Btrfs: kill location key of in-memory inode
-Date: Mon, 27 Jun 2011 21:54:16 -0400
-Message-ID: <1309226015-sup-8915@shiny>
-References: <1308538756-31203-1-git-send-email-liubo2009@cn.fujitsu.com>
-Content-Type: text/plain; charset=UTF-8
-Cc: linux-btrfs <linux-btrfs@vger.kernel.org>,
-	t-itoh <t-itoh@jp.fujitsu.com>, dave <dave@jikos.cz>
-To: Liu Bo <liubo2009@cn.fujitsu.com>
+From: Tsutomu Itoh <t-itoh@jp.fujitsu.com>
+Subject: [PATCH] Btrfs: fix error check of btrfs_lookup_dentry()
+Date: Tue, 28 Jun 2011 12:34:49 +0900
+Message-ID: <201106280334.AA00027@T-ITOH1.jp.fujitsu.com>
+Mime-Version: 1.0
+Content-Type: text/plain; charset=us-ascii
+Cc: chris.mason@oracle.com
+To: linux-btrfs@vger.kernel.org
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-reply-to: <1308538756-31203-1-git-send-email-liubo2009@cn.fujitsu.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Excerpts from Liu Bo's message of 2011-06-19 22:59:15 -0400:
-> In btrfs's in-memory inode, there is a btrfs_key which has the structure:
-> - key.objectid
-> - key.type
-> - key.offset
-> 
-> however, we only use key.objectid to search, to check or something else,
-> and to reduce in-memory inode size I just keep what is valuable.
+The return value of btrfs_lookup_dentry is checked so that
+the panic such as illegal address reference should not occur.
 
-I'm still reviewing this, mostly because I had plans on using the full
-location as part of the inodes for tree roots.  But this might not
-really be required anymore.
+Signed-off-by: Tsutomu Itoh <t-itoh@jp.fujitsu.com>
+---
+ fs/btrfs/inode.c |    1 +
+ fs/btrfs/ioctl.c |   10 +++++++++-
+ 2 files changed, 10 insertions(+), 1 deletions(-)
 
--chris
+diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
+index 447612d..1364ae8 100644
+--- a/fs/btrfs/inode.c
++++ b/fs/btrfs/inode.c
+@@ -4082,6 +4082,7 @@ static struct dentry *btrfs_lookup(struct inode *dir, struct dentry *dentry,
+ 	inode = btrfs_lookup_dentry(dir, dentry);
+ 	if (IS_ERR(inode))
+ 		return ERR_CAST(inode);
++	BUG_ON(!inode);
+ 
+ 	return d_splice_alias(inode, dentry);
+ }
+diff --git a/fs/btrfs/ioctl.c b/fs/btrfs/ioctl.c
+index a3c4751..39c62d3 100644
+--- a/fs/btrfs/ioctl.c
++++ b/fs/btrfs/ioctl.c
+@@ -325,6 +325,7 @@ static noinline int create_subvol(struct btrfs_root *root,
+ 	struct btrfs_root *new_root;
+ 	struct dentry *parent = dget_parent(dentry);
+ 	struct inode *dir;
++	struct inode *inode;
+ 	int ret;
+ 	int err;
+ 	u64 objectid;
+@@ -437,7 +438,14 @@ static noinline int create_subvol(struct btrfs_root *root,
+ 
+ 	BUG_ON(ret);
+ 
+-	d_instantiate(dentry, btrfs_lookup_dentry(dir, dentry));
++	inode = btrfs_lookup_dentry(dir, dentry);
++	if (IS_ERR(inode)) {
++		ret = PTR_ERR(inode);
++		goto fail;
++	}
++	BUG_ON(!inode);
++
++	d_instantiate(dentry, inode);
+ fail:
+ 	dput(parent);
+ 	if (async_transid) {
+
+

@@ -1,46 +1,55 @@
-From: Arne Jansen <sensille@gmx.net>
-Subject: Re: How to handle badblocks with btrfs?
-Date: Tue, 28 Jun 2011 13:14:39 +0200
-Message-ID: <4E09B79F.70703@gmx.net>
-References: <BANLkTinrJV8DApCp8R=MnN-UZdPe6OrujA@mail.gmail.com>
-Mime-Version: 1.0
-Content-Type: text/plain; charset=ISO-8859-1
-Cc: linux-btrfs@vger.kernel.org
-To: "Marco L. Crociani" <marco.crociani@gmail.com>
+From: =?iso-8859-1?Q?Jo=E3o_Eduardo_Lu=EDs?= <jecluis@gmail.com>
+Subject: Snapshot reconciliation
+Date: Tue, 28 Jun 2011 12:39:53 +0100
+Message-ID: <9577A2A8-5786-4491-A676-2CBD10DBAC1B@gmail.com>
+Mime-Version: 1.0 (Apple Message framework v1084)
+Content-Type: multipart/signed; protocol="application/pgp-signature"; micalg=pgp-sha1; boundary="Apple-Mail-1-241511975"
+To: linux-btrfs <linux-btrfs@vger.kernel.org>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <BANLkTinrJV8DApCp8R=MnN-UZdPe6OrujA@mail.gmail.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 28.06.2011 01:36, Marco L. Crociani wrote:
-> # smartctl -d ata -l selftest /dev/sda
-> smartctl 5.40 2010-07-12 r3124 [x86_64-unknown-linux-gnu] (local build)
-> Copyright (C) 2002-10 by Bruce Allen, http://smartmontools.sourceforge.net
-> 
-> === START OF READ SMART DATA SECTION ===
-> SMART Self-test log structure revision number 1
-> Num  Test_Description    Status                  Remaining
-> LifeTime(hours)  LBA_of_first_error
-> # 1  Extended offline    Completed: read failure       90%       171
->       494581664
-> 
-> 
-> What should I do to repair the disk?
+This is an OpenPGP/MIME signed message (RFC 2440 and 3156)
+--Apple-Mail-1-241511975
+Content-Transfer-Encoding: quoted-printable
+Content-Type: text/plain; charset=iso-8859-1
 
-Scrub can repair bad blocks as long as there's a good copy. To use scrub
-you'll need the most recent rc-kernel and a btrfs-utility that supports
-scrub, e.g. from the integration branch of Hugo Mills git tree, see his
-recent mail for this.
+Hello.
 
-> Is it possible to know which file is affected by the badblock?
+Can anyone think of a simple way to copy a set of pages from a given =
+file (which may or may not be scattered throughout multiple extents) =
+from a snapshot to correct pages within another file on another =
+snapshot?
 
-There's a patch from Jan Schmidt for this, but it's not yet integrated.
+This might sound silly, but the whole purpose is to create some sort of =
+reconciliation method between divergent snapshots taken from the same =
+original subvolume.
 
-> 
-> I found http://smartmontools.sourceforge.net/badblockhowto.html but is
-> about to ext2/3/4 fs.
-> 
-> I am concerned about the absence of fsck tool. Should I run badblocks
-> on the unmounted fs?
-> Thanks,
-> 
+---
+Jo=E3o Eduardo Lu=EDs
+gpg key: 477C26E5 from pool.keyserver.eu=20
 
+
+
+
+
+
+--Apple-Mail-1-241511975
+content-type: application/pgp-signature; x-mac-type=70674453;
+	name=PGP.sig
+content-description: This is a digitally signed message part
+content-disposition: inline; filename=PGP.sig
+content-transfer-encoding: 7bit
+
+-----BEGIN PGP SIGNATURE-----
+Version: GnuPG/MacGPG2 v2.0.16 (Darwin)
+
+iQEcBAEBAgAGBQJOCb2PAAoJEJ9vvxhHfCblMJ0H/RmReIkzv3nUI2bAMCq4ly9X
+ufP5hF8zBNOF2dgTuitDFRI5SqyRCff4INinlT2+xn7GI0Ha9Bc46mRuPq1RNSyR
+tOZQ42BRVKyRrJ6dRj5xskkFEyC6tTTXN275xfIKMZxAlqbbj3POTARLknsKRMik
+7S5jjv3zJ6cSals979XhUfCoOVtQ6OcziZJ+BZbPfegR+dCP8fkw6oD18Warm0cZ
+z71lOoynwJ99XUdv540bI8muddCODRLg+KV8v26/XCkaw8X3cDiuNoBXiUOccvOB
+97I+xPrGwsZEVUuGPDIytMYXFWifzE580//WkmG52VcDFOxQUKSrnyeNRwnuFsA=
+=vLHV
+-----END PGP SIGNATURE-----
+
+--Apple-Mail-1-241511975--

@@ -1,201 +1,26 @@
-From: Josef Bacik <josef@redhat.com>
-Subject: [PATCH 2/4] Btrfs: implement our own ->llseek
-Date: Tue, 28 Jun 2011 11:33:16 -0400
-Message-ID: <1309275199-10801-2-git-send-email-josef@redhat.com>
-References: <1309275199-10801-1-git-send-email-josef@redhat.com>
-To: linux-fsdevel@vger.kernel.org, linux-kernel@vger.kernel.org,
-	linux-btrfs@vger.kernel.org, xfs@oss.sgi.com,
-	viro@ZenIV.linux.org.uk
-Return-path: <linux-fsdevel-owner@vger.kernel.org>
-In-Reply-To: <1309275199-10801-1-git-send-email-josef@redhat.com>
+From: Daniel Witzel <dannyboy48888@gmail.com>
+Subject: Re: parent transid verify failures on 2.6.39
+Date: Tue, 28 Jun 2011 15:46:25 +0000 (UTC)
+Message-ID: <loom.20110628T174243-342@post.gmane.org>
+References: <4E026FD4.7020606@podzimek.org> <1308793398-sup-9234@shiny> <20110623195409.GA21007@dhcp231-156.rdu.redhat.com> <4E03E8B8.9080500@podzimek.org>
+Mime-Version: 1.0
+Content-Type: text/plain; charset=us-ascii
+To: linux-btrfs@vger.kernel.org
+Return-path: <linux-btrfs-owner@vger.kernel.org>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-In order to handle SEEK_HOLE/SEEK_DATA we need to implement our own llseek.
-Basically for the normal SEEK_*'s we will just defer to the generic helper, and
-for SEEK_HOLE/SEEK_DATA we will use our fiemap helper to figure out the nearest
-hole or data.  Currently this helper doesn't check for delalloc bytes for
-prealloc space, so for now treat prealloc as data until that is fixed.  Thanks,
+Earlier I tried the read only patch with no result. Josef said I must be 
+applying it wrong because the error I get is not possible with the patch applied.
+I tried again with no luck and posted my steps for review. Well here I am a few 
+days later with the following questions:
 
-Signed-off-by: Josef Bacik <josef@redhat.com>
----
- fs/btrfs/ctree.h |    3 +
- fs/btrfs/file.c  |  148 +++++++++++++++++++++++++++++++++++++++++++++++++++++-
- 2 files changed, 150 insertions(+), 1 deletions(-)
+1) If my steps are correct what else could be the problem
+2) if my steps are wrong what do i need to do to get it right
 
-diff --git a/fs/btrfs/ctree.h b/fs/btrfs/ctree.h
-index f30ac05..32be5e0 100644
---- a/fs/btrfs/ctree.h
-+++ b/fs/btrfs/ctree.h
-@@ -2505,6 +2505,9 @@ int btrfs_csum_truncate(struct btrfs_trans_handle *trans,
- int btrfs_lookup_csums_range(struct btrfs_root *root, u64 start, u64 end,
- 			     struct list_head *list, int search_commit);
- /* inode.c */
-+struct extent_map *btrfs_get_extent_fiemap(struct inode *inode, struct page *page,
-+					   size_t pg_offset, u64 start, u64 len,
-+					   int create);
- 
- /* RHEL and EL kernels have a patch that renames PG_checked to FsMisc */
- #if defined(ClearPageFsMisc) && !defined(ClearPageChecked)
-diff --git a/fs/btrfs/file.c b/fs/btrfs/file.c
-index fa4ef18..bd4d061 100644
---- a/fs/btrfs/file.c
-+++ b/fs/btrfs/file.c
-@@ -1664,8 +1664,154 @@ out:
- 	return ret;
- }
- 
-+static int find_desired_extent(struct inode *inode, loff_t *offset, int origin)
-+{
-+	struct btrfs_root *root = BTRFS_I(inode)->root;
-+	struct extent_map *em;
-+	struct extent_state *cached_state = NULL;
-+	u64 lockstart = *offset;
-+	u64 lockend = i_size_read(inode);
-+	u64 start = *offset;
-+	u64 orig_start = *offset;
-+	u64 len = i_size_read(inode);
-+	u64 last_end = 0;
-+	int ret = 0;
-+
-+	lockend = max_t(u64, root->sectorsize, lockend);
-+	if (lockend <= lockstart)
-+		lockend = lockstart + root->sectorsize;
-+
-+	len = lockend - lockstart + 1;
-+
-+	len = max_t(u64, len, root->sectorsize);
-+	if (inode->i_size == 0)
-+		return -ENXIO;
-+
-+	lock_extent_bits(&BTRFS_I(inode)->io_tree, lockstart, lockend, 0,
-+			 &cached_state, GFP_NOFS);
-+
-+	/*
-+	 * Delalloc is such a pain.  If we have a hole and we have pending
-+	 * delalloc for a portion of the hole we will get back a hole that
-+	 * exists for the entire range since it hasn't been actually written
-+	 * yet.  So to take care of this case we need to look for an extent just
-+	 * before the position we want in case there is outstanding delalloc
-+	 * going on here.
-+	 */
-+	if (origin == SEEK_HOLE && start != 0) {
-+		if (start <= root->sectorsize)
-+			em = btrfs_get_extent_fiemap(inode, NULL, 0, 0,
-+						     root->sectorsize, 0);
-+		else
-+			em = btrfs_get_extent_fiemap(inode, NULL, 0,
-+						     start - root->sectorsize,
-+						     root->sectorsize, 0);
-+		if (IS_ERR(em)) {
-+			ret = -ENXIO;
-+			goto out;
-+		}
-+		last_end = em->start + em->len;
-+		if (em->block_start == EXTENT_MAP_DELALLOC)
-+			last_end = min_t(u64, last_end, inode->i_size);
-+		free_extent_map(em);
-+	}
-+
-+	while (1) {
-+		em = btrfs_get_extent_fiemap(inode, NULL, 0, start, len, 0);
-+		if (IS_ERR(em)) {
-+			ret = -ENXIO;
-+			break;
-+		}
-+
-+		if (em->block_start == EXTENT_MAP_HOLE) {
-+			if (test_bit(EXTENT_FLAG_VACANCY, &em->flags)) {
-+				if (last_end <= orig_start) {
-+					free_extent_map(em);
-+					ret = -ENXIO;
-+					break;
-+				}
-+			}
-+
-+			if (origin == SEEK_HOLE) {
-+				*offset = start;
-+				free_extent_map(em);
-+				break;
-+			}
-+		} else {
-+			if (origin == SEEK_DATA) {
-+				if (em->block_start == EXTENT_MAP_DELALLOC) {
-+					if (start >= inode->i_size) {
-+						free_extent_map(em);
-+						ret = -ENXIO;
-+						break;
-+					}
-+				}
-+
-+				*offset = start;
-+				free_extent_map(em);
-+				break;
-+			}
-+		}
-+
-+		start = em->start + em->len;
-+		last_end = em->start + em->len;
-+
-+		if (em->block_start == EXTENT_MAP_DELALLOC)
-+			last_end = min_t(u64, last_end, inode->i_size);
-+
-+		if (test_bit(EXTENT_FLAG_VACANCY, &em->flags)) {
-+			free_extent_map(em);
-+			ret = -ENXIO;
-+			break;
-+		}
-+		free_extent_map(em);
-+		cond_resched();
-+	}
-+	if (!ret)
-+		*offset = min(*offset, inode->i_size);
-+out:
-+	unlock_extent_cached(&BTRFS_I(inode)->io_tree, lockstart, lockend,
-+			     &cached_state, GFP_NOFS);
-+	return ret;
-+}
-+
-+static loff_t btrfs_file_llseek(struct file *file, loff_t offset, int origin)
-+{
-+	struct inode *inode = file->f_mapping->host;
-+	int ret;
-+
-+	mutex_lock(&inode->i_mutex);
-+	switch (origin) {
-+	case SEEK_END:
-+	case SEEK_CUR:
-+		offset = generic_file_llseek_unlocked(file, offset, origin);
-+		goto out;
-+	case SEEK_DATA:
-+	case SEEK_HOLE:
-+		ret = find_desired_extent(inode, &offset, origin);
-+		if (ret) {
-+			mutex_unlock(&inode->i_mutex);
-+			return ret;
-+		}
-+	}
-+
-+	if (offset < 0 && !(file->f_mode & FMODE_UNSIGNED_OFFSET))
-+		return -EINVAL;
-+	if (offset > inode->i_sb->s_maxbytes)
-+		return -EINVAL;
-+
-+	/* Special lock needed here? */
-+	if (offset != file->f_pos) {
-+		file->f_pos = offset;
-+		file->f_version = 0;
-+	}
-+out:
-+	mutex_unlock(&inode->i_mutex);
-+	return offset;
-+}
-+
- const struct file_operations btrfs_file_operations = {
--	.llseek		= generic_file_llseek,
-+	.llseek		= btrfs_file_llseek,
- 	.read		= do_sync_read,
- 	.write		= do_sync_write,
- 	.aio_read       = generic_file_aio_read,
--- 
-1.7.5.2
+Any help would be awesome
+
+Thanks
+Dan Witzel
+
+
 

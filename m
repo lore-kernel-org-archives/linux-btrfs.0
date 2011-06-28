@@ -1,92 +1,51 @@
-From: David Sterba <dave@jikos.cz>
-Subject: Re: [PATCH v8 7/8] btrfs: Replication-type information
-Date: Tue, 28 Jun 2011 18:32:43 +0200
-Message-ID: <20110628163243.GS12709@twin.jikos.cz>
-References: <1309120615-18104-1-git-send-email-hugo@carfax.org.uk>
- <1309120615-18104-8-git-send-email-hugo@carfax.org.uk>
-Reply-To: dave@jikos.cz
+From: Mitch Harder <mitch.harder@sabayonlinux.org>
+Subject: Re: parent transid verify failures on 2.6.39
+Date: Tue, 28 Jun 2011 11:44:33 -0500
+Message-ID: <BANLkTi=w4ZcVktZzwdKw7oszNvYyUoXjRA@mail.gmail.com>
+References: <4E026FD4.7020606@podzimek.org>
+	<1308793398-sup-9234@shiny>
+	<20110623195409.GA21007@dhcp231-156.rdu.redhat.com>
+	<4E03E8B8.9080500@podzimek.org>
+	<loom.20110628T174243-342@post.gmane.org>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Cc: Btrfs mailing list <linux-btrfs@vger.kernel.org>,
-	Chris Mason <chris.mason@oracle.com>,
-	David Sterba <dave@jikos.cz>
-To: Hugo Mills <hugo@carfax.org.uk>
+Content-Type: text/plain; charset=ISO-8859-1
+Cc: linux-btrfs@vger.kernel.org
+To: Daniel Witzel <dannyboy48888@gmail.com>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <1309120615-18104-8-git-send-email-hugo@carfax.org.uk>
+In-Reply-To: <loom.20110628T174243-342@post.gmane.org>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Sun, Jun 26, 2011 at 09:36:54PM +0100, Hugo Mills wrote:
-> diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
-> index 828aa34..fb11550 100644
-> --- a/fs/btrfs/volumes.c
-> +++ b/fs/btrfs/volumes.c
-> @@ -117,6 +117,52 @@ static void requeue_list(struct btrfs_pending_bios *pending_bios,
->  		pending_bios->tail = tail;
->  }
->  
-> +void btrfs_get_replication_info(struct btrfs_replication_info *info,
-> +								u64 type)
-> +{
-> +	info->sub_stripes = 1;
-> +	info->dev_stripes = 1;
-> +	info->devs_increment = 1;
-> +	info->num_copies = 1;
-> +	info->devs_max = 0;	/* 0 == as many as possible */
-> +	info->devs_min = 1;
-> +
-> +	if (type & BTRFS_BLOCK_GROUP_DUP) {
-> +		info->dev_stripes = 2;
-> +		info->num_copies = 2;
-> +		info->devs_max = 1;
-> +	} else if (type & BTRFS_BLOCK_GROUP_RAID0) {
-> +		info->devs_min = 2;
-> +	} else if (type & BTRFS_BLOCK_GROUP_RAID1) {
-> +		info->devs_increment = 2;
-> +		info->num_copies = 2;
-> +		info->devs_max = 2;
-> +		info->devs_min = 2;
-> +	} else if (type & BTRFS_BLOCK_GROUP_RAID10) {
-> +		info->sub_stripes = 2;
-> +		info->devs_increment = 2;
-> +		info->num_copies = 2;
-> +		info->devs_min = 4;
-> +	}
-> +
-> +	if (type & BTRFS_BLOCK_GROUP_DATA) {
-> +		info->max_stripe_size = 1024 * 1024 * 1024;
-> +		info->min_stripe_size = 64 * 1024 * 1024;
-> +		info->max_chunk_size = 10 * info->max_stripe_size;
-> +	} else if (type & BTRFS_BLOCK_GROUP_METADATA) {
-> +		info->max_stripe_size = 256 * 1024 * 1024;
-> +		info->min_stripe_size = 32 * 1024 * 1024;
-> +		info->max_chunk_size = info->max_stripe_size;
-> +	} else if (type & BTRFS_BLOCK_GROUP_SYSTEM) {
-> +		info->max_stripe_size = 8 * 1024 * 1024;
-> +		info->min_stripe_size = 1 * 1024 * 1024;
-> +		info->max_chunk_size = 2 * info->max_stripe_size;
-> +	} else {
-> +		printk(KERN_ERR "Block group is of an unknown usage type: not data, metadata or system.\n");
-> +		BUG_ON(1);
+On Tue, Jun 28, 2011 at 10:46 AM, Daniel Witzel <dannyboy48888@gmail.com> wrote:
+> Earlier I tried the read only patch with no result. Josef said I must be
+> applying it wrong because the error I get is not possible with the patch applied.
+> I tried again with no luck and posted my steps for review. Well here I am a few
+> days later with the following questions:
+>
+> 1) If my steps are correct what else could be the problem
+> 2) if my steps are wrong what do i need to do to get it right
+>
+> Any help would be awesome
+>
+> Thanks
+> Dan Witzel
+>
 
-I'm hitting this BUG_ON with 'btrfs device delete', type = 24 which is
-BTRFS_BLOCK_GROUP_RAID0 + BTRFS_BLOCK_GROUP_RAID1 .
+I just used this patch yesterday to help with a slightly different corruption.
 
-in btrfs_rm_device:
+I know the patch didn't apply cleanly for me, and I had to massage it.
 
-1277         all_avail = root->fs_info->avail_data_alloc_bits |
-1278                 root->fs_info->avail_system_alloc_bits |
-1279                 root->fs_info->avail_metadata_alloc_bits;
+You may want to manually audit disk-io.c to make sure the entire patch
+is applied.
 
-the values before the call are:
+I know if I try to apply this patch to my 2.6.39.1 kernel, it fails.
 
-[  105.107074] D: all_avail 24
-[  105.111844] D: root->fs_info->avail_data_alloc_bits 8
-[  105.118858] D: root->fs_info->avail_system_alloc_bits 16
-[  105.126110] D: root->fs_info->avail_metadata_alloc_bits 16
-
-
-there are 5 devices, sdb5 - sdb9, i'm removing sdb9, after clean
-mount.
-
-
-david
+# patch -p1 --dry-run <
+/mnt/local/local/dontpanic/parent-transid-verify-failures-on-2.6.39.patch
+patching file fs/btrfs/disk-io.c
+Hunk #2 FAILED at 296.
+Hunk #3 succeeded at 321 (offset -2 lines).
+Hunk #4 succeeded at 331 (offset -2 lines).
+Hunk #5 succeeded at 353 (offset -2 lines).
+Hunk #6 succeeded at 1993 (offset -14 lines).
+Hunk #7 succeeded at 2629 (offset 3 lines).
+1 out of 7 hunks FAILED -- saving rejects to file fs/btrfs/disk-io.c.rej

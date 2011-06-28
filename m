@@ -1,62 +1,46 @@
-From: Tsutomu Itoh <t-itoh@jp.fujitsu.com>
-Subject: [PATCH] Btrfs: fix error check of btrfs_lookup_dentry()
-Date: Tue, 28 Jun 2011 12:34:49 +0900
-Message-ID: <201106280334.AA00027@T-ITOH1.jp.fujitsu.com>
+From: Norbert Preining <preining@logic.at>
+Subject: Re: [BUG] btrfs is tearing down whole kernel when disk is
+	disconnected
+Date: Tue, 28 Jun 2011 13:42:16 +0900
+Message-ID: <20110628044216.GH6792@gamma.logic.tuwien.ac.at>
+References: <20110627014101.GA1517@gamma.logic.tuwien.ac.at> <1865303E0DED764181A9D882DEF65FB69F4CCC13B8@shsmsx502.ccr.corp.intel.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
-Cc: chris.mason@oracle.com
-To: linux-btrfs@vger.kernel.org
+Cc: "linux-kernel@vger.kernel.org" <linux-kernel@vger.kernel.org>,
+	"linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
+To: "Zhong, Xin" <xin.zhong@intel.com>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
+In-Reply-To: <1865303E0DED764181A9D882DEF65FB69F4CCC13B8@shsmsx502.ccr.corp.intel.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-The return value of btrfs_lookup_dentry is checked so that
-the panic such as illegal address reference should not occur.
+Hi Zhong,
 
-Signed-off-by: Tsutomu Itoh <t-itoh@jp.fujitsu.com>
----
- fs/btrfs/inode.c |    1 +
- fs/btrfs/ioctl.c |   10 +++++++++-
- 2 files changed, 10 insertions(+), 1 deletions(-)
+On Mo, 27 Jun 2011, Zhong, Xin wrote:
+> We met this situation in meego too:
+> https://bugs.meego.com/show_bug.cgi?id=18156
 
-diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
-index 447612d..1364ae8 100644
---- a/fs/btrfs/inode.c
-+++ b/fs/btrfs/inode.c
-@@ -4082,6 +4082,7 @@ static struct dentry *btrfs_lookup(struct inode *dir, struct dentry *dentry,
- 	inode = btrfs_lookup_dentry(dir, dentry);
- 	if (IS_ERR(inode))
- 		return ERR_CAST(inode);
-+	BUG_ON(!inode);
- 
- 	return d_splice_alias(inode, dentry);
- }
-diff --git a/fs/btrfs/ioctl.c b/fs/btrfs/ioctl.c
-index a3c4751..39c62d3 100644
---- a/fs/btrfs/ioctl.c
-+++ b/fs/btrfs/ioctl.c
-@@ -325,6 +325,7 @@ static noinline int create_subvol(struct btrfs_root *root,
- 	struct btrfs_root *new_root;
- 	struct dentry *parent = dget_parent(dentry);
- 	struct inode *dir;
-+	struct inode *inode;
- 	int ret;
- 	int err;
- 	u64 objectid;
-@@ -437,7 +438,14 @@ static noinline int create_subvol(struct btrfs_root *root,
- 
- 	BUG_ON(ret);
- 
--	d_instantiate(dentry, btrfs_lookup_dentry(dir, dentry));
-+	inode = btrfs_lookup_dentry(dir, dentry);
-+	if (IS_ERR(inode)) {
-+		ret = PTR_ERR(inode);
-+		goto fail;
-+	}
-+	BUG_ON(!inode);
-+
-+	d_instantiate(dentry, inode);
- fail:
- 	dput(parent);
- 	if (async_transid) {
+Ah, good to hear that I am not the only one.
+(Last time I was told: "It only happens to you!" until the real bug
+was found ;-)
 
+> I am now working on a patch to handle this kind of IO problem more
+> gracefully (at least for sync/umount) by using the error handling
+> API (btrfs_std_error). So far, I am still debugging my patch. Will
+> send it to mailing list for review later. 
 
+Please include me in the recipient list when sending the patch, I will
+give it a try!
+
+Thanks
+
+Norbert
+------------------------------------------------------------------------
+Norbert Preining            preining@{jaist.ac.jp, logic.at, debian.org}
+JAIST, Japan                                 TeX Live & Debian Developer
+DSA: 0x09C5B094   fp: 14DF 2E6C 0307 BE6D AD76  A9C0 D2BF 4AA3 09C5 B094
+------------------------------------------------------------------------
+SNITTERFIELD (n.)
+Office noticeboard on which snitters (q.v.), cards saying 'You don't
+have to be mad to work here, but if you are it helps !!!' and slightly
+smutty postcards from Ibiza get pinned up by snitterbies (q.v.)
+			--- Douglas Adams, The Meaning of Liff

@@ -1,55 +1,23 @@
-From: =?iso-8859-1?Q?Jo=E3o_Eduardo_Lu=EDs?= <jecluis@gmail.com>
-Subject: Snapshot reconciliation
-Date: Tue, 28 Jun 2011 12:39:53 +0100
-Message-ID: <9577A2A8-5786-4491-A676-2CBD10DBAC1B@gmail.com>
-Mime-Version: 1.0 (Apple Message framework v1084)
-Content-Type: multipart/signed; protocol="application/pgp-signature"; micalg=pgp-sha1; boundary="Apple-Mail-1-241511975"
-To: linux-btrfs <linux-btrfs@vger.kernel.org>
+From: Josef Bacik <josef@redhat.com>
+Subject: Re: [PATCH] Btrfs: fix error check of btrfs_lookup_dentry()
+Date: Tue, 28 Jun 2011 10:22:23 -0400
+Message-ID: <4E09E39F.1070408@redhat.com>
+References: <201106280334.AA00027@T-ITOH1.jp.fujitsu.com>
+Mime-Version: 1.0
+Content-Type: text/plain; charset=ISO-8859-1
+Cc: linux-btrfs@vger.kernel.org, chris.mason@oracle.com
+To: Tsutomu Itoh <t-itoh@jp.fujitsu.com>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
+In-Reply-To: <201106280334.AA00027@T-ITOH1.jp.fujitsu.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-This is an OpenPGP/MIME signed message (RFC 2440 and 3156)
---Apple-Mail-1-241511975
-Content-Transfer-Encoding: quoted-printable
-Content-Type: text/plain; charset=iso-8859-1
+On 06/27/2011 11:34 PM, Tsutomu Itoh wrote:
+> The return value of btrfs_lookup_dentry is checked so that
+> the panic such as illegal address reference should not occur.
+> 
+> Signed-off-by: Tsutomu Itoh <t-itoh@jp.fujitsu.com>
 
-Hello.
+Nack, please fix btrfs_lookup_dentry to return ERR_PTR(-ENOENT) if it
+doesn't find something.  Thanks,
 
-Can anyone think of a simple way to copy a set of pages from a given =
-file (which may or may not be scattered throughout multiple extents) =
-from a snapshot to correct pages within another file on another =
-snapshot?
-
-This might sound silly, but the whole purpose is to create some sort of =
-reconciliation method between divergent snapshots taken from the same =
-original subvolume.
-
----
-Jo=E3o Eduardo Lu=EDs
-gpg key: 477C26E5 from pool.keyserver.eu=20
-
-
-
-
-
-
---Apple-Mail-1-241511975
-content-type: application/pgp-signature; x-mac-type=70674453;
-	name=PGP.sig
-content-description: This is a digitally signed message part
-content-disposition: inline; filename=PGP.sig
-content-transfer-encoding: 7bit
-
------BEGIN PGP SIGNATURE-----
-Version: GnuPG/MacGPG2 v2.0.16 (Darwin)
-
-iQEcBAEBAgAGBQJOCb2PAAoJEJ9vvxhHfCblMJ0H/RmReIkzv3nUI2bAMCq4ly9X
-ufP5hF8zBNOF2dgTuitDFRI5SqyRCff4INinlT2+xn7GI0Ha9Bc46mRuPq1RNSyR
-tOZQ42BRVKyRrJ6dRj5xskkFEyC6tTTXN275xfIKMZxAlqbbj3POTARLknsKRMik
-7S5jjv3zJ6cSals979XhUfCoOVtQ6OcziZJ+BZbPfegR+dCP8fkw6oD18Warm0cZ
-z71lOoynwJ99XUdv540bI8muddCODRLg+KV8v26/XCkaw8X3cDiuNoBXiUOccvOB
-97I+xPrGwsZEVUuGPDIytMYXFWifzE580//WkmG52VcDFOxQUKSrnyeNRwnuFsA=
-=vLHV
------END PGP SIGNATURE-----
-
---Apple-Mail-1-241511975--
+Josef

@@ -1,69 +1,38 @@
-From: =?ISO-8859-1?Q?P=E1draig_Brady?= <P@draigBrady.com>
-Subject: Re: [PATCH] xfstests 255: add a seek_data/seek_hole tester
-Date: Wed, 29 Jun 2011 11:42:38 +0100
-Message-ID: <4E0B019E.8080800@draigBrady.com>
-References: <1309275199-10801-1-git-send-email-josef@redhat.com> <1309275199-10801-5-git-send-email-josef@redhat.com> <20110629065306.GC1026@dastard> <20110629074021.GA26086@infradead.org>
+From: David Sterba <dave@jikos.cz>
+Subject: Re: [PATCH v8 2/8] btrfs: Cancel filesystem balance
+Date: Wed, 29 Jun 2011 12:43:23 +0200
+Message-ID: <20110629104323.GT12709@twin.jikos.cz>
+References: <1309120615-18104-1-git-send-email-hugo@carfax.org.uk>
+ <1309120615-18104-3-git-send-email-hugo@carfax.org.uk>
+ <4E0ABF74.1070901@cn.fujitsu.com>
+Reply-To: dave@jikos.cz
 Mime-Version: 1.0
-Content-Type: text/plain; charset=ISO-8859-1
-Cc: Dave Chinner <david@fromorbit.com>, Josef Bacik <josef@redhat.com>,
-	linux-fsdevel@vger.kernel.org, viro@ZenIV.linux.org.uk,
-	linux-kernel@vger.kernel.org, linux-btrfs@vger.kernel.org,
-	xfs@oss.sgi.com
-To: Christoph Hellwig <hch@infradead.org>
+Content-Type: text/plain; charset=us-ascii
+Cc: Hugo Mills <hugo@carfax.org.uk>,
+	Btrfs mailing list <linux-btrfs@vger.kernel.org>,
+	Chris Mason <chris.mason@oracle.com>,
+	David Sterba <dave@jikos.cz>
+To: Li Zefan <lizf@cn.fujitsu.com>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <20110629074021.GA26086@infradead.org>
+In-Reply-To: <4E0ABF74.1070901@cn.fujitsu.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 29/06/11 08:40, Christoph Hellwig wrote:
-> On Wed, Jun 29, 2011 at 04:53:07PM +1000, Dave Chinner wrote:
->> On Tue, Jun 28, 2011 at 11:33:19AM -0400, Josef Bacik wrote:
->>> This is a test to make sure seek_data/seek_hole is acting like it d=
-oes on
->>> Solaris.  It will check to see if the fs supports finding a hole or=
- not and will
->>> adjust as necessary.
->>
->> So I just looked at this with an eye to validating an XFS
->> implementation, and I came up with this list of stuff that the test
->> does not cover that I'd need to test in some way:
->>
->> 	- files with clean unwritten extents. Are they a hole or
->> 	  data? What's SEEK_DATA supposed to return on layout like
->> 	  hole-unwritten-data? i.e. needs to add fallocate to the
->> 	  picture...
->>
->> 	- files with dirty unwritten extents (i.e. dirty in memory,
->> 	  not on disk). They are most definitely data, and most
->> 	  filesystems will need a separate lookup path to detect
->> 	  dirty unwritten ranges because the state is kept
->> 	  separately (page cache vs extent cache).  Plenty of scope
->> 	  for filesystem specific bugs here so needs a roubust test.
->=20
-> The discussion leading up to the resurrection of SEEK_HOLE/SEEK_DATA
-> was pretty much about that point.  The conclusion based on the Sun
-> documentation and common sense was that SEEK_DATA may only consider
-> unwritten extents as hole if the filesystem has a way to distinguish
-> plain unwritten extents and those that have been dirtied.  Else it
-> should be considered data.
->=20
-> Testing for making sure dirty preallocated areas aren't wrongly
-> reported sounds relatively easy, the rest falls into implementation
-> details, which imho is fine.  Not reporting preallocated extents
-> as holes just is a quality of implementation issue and not a bug.
+On Wed, Jun 29, 2011 at 02:00:20PM +0800, Li Zefan wrote:
+> Hugo Mills wrote:
+> > @@ -2149,6 +2150,10 @@ int btrfs_balance(struct btrfs_root *dev_root)
+> >  		       bal_info->completed, bal_info->expected);
+> >  	}
+> >  	ret = 0;
+> > +	if (bal_info->cancel_pending) {
+> > +		printk(KERN_INFO "btrfs: balance cancelled\n");
+> > +		ret = -EINTR;
+> > +	}
+> 
+> Why not detect if there's any pending signal in the while loop? so
+> we can just use Ctrl+C to cancel balance.
 
-There is the argument, that if this interface can distinguish
-these dirty unwritten extents, then why can't the fiemap interface too?
-The advantage of the fiemap interface is that it can distinguish
-empty extents vs holes. Empty extents will become increasingly common
-I think, given the fragmentation and space guarantee benefits they give=
-=2E
-It would be cool for cp for example to be able to efficiently copy
-empty extents from source to dest.
+Balance is capable of running in background, you could not send the
+Ctrl-C to such process.
 
-cheers,
-P=E1draig.
---
-To unsubscribe from this list: send the line "unsubscribe linux-btrfs" =
-in
-the body of a message to majordomo@vger.kernel.org
-More majordomo info at  http://vger.kernel.org/majordomo-info.html
+
+david

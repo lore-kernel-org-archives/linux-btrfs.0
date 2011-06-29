@@ -1,134 +1,70 @@
-From: Goffredo Baroncelli <kreijack@libero.it>
-Subject: Re: subvolumes missing from "btrfs subvolume list" output
-Date: Wed, 29 Jun 2011 22:41:18 +0200
-Message-ID: <4E0B8DEE.9010202@libero.it>
-References: <chaz20110629143747.GA28702@seebyte.com> <chaz20110629150041.GB28702@seebyte.com> <4E0B4FC6.4030006@redhat.com> <20110629164741.GA11170@carfax.org.uk>
-Reply-To: kreijack@inwind.it
+From: Josef Bacik <josef@redhat.com>
+Subject: Re: [PATCH v4 1/7] btrfs: add an extra wait mode to read_extent_buffer_pages
+Date: Wed, 29 Jun 2011 16:50:25 -0400
+Message-ID: <4E0B9011.4050902@redhat.com>
+References: <cover.1309375866.git.sensille@gmx.net> <85d9e7d63ee2492ae15c2693654d3837e6037ad2.1309375866.git.sensille@gmx.net>
 Mime-Version: 1.0
 Content-Type: text/plain; charset=ISO-8859-1
-To: Hugo Mills <hugo@carfax.org.uk>, linux-btrfs@vger.kernel.org
+Cc: chris.mason@oracle.com, linux-btrfs@vger.kernel.org
+To: Arne Jansen <sensille@gmx.net>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <20110629164741.GA11170@carfax.org.uk>
+In-Reply-To: <85d9e7d63ee2492ae15c2693654d3837e6037ad2.1309375866.git.sensille@gmx.net>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-
-Hi Hugo
-
-On 06/29/2011 06:47 PM, Hugo Mills wrote:
-> On Wed, Jun 29, 2011 at 12:16:06PM -0400, Josef Bacik wrote:
->> On 06/29/2011 11:00 AM, Stephane Chazelas wrote:
->>> 2011-06-29 15:37:47 +0100, Stephane Chazelas:
->>> [...]
->>>> I found
->>>> http://thread.gmane.org/gmane.comp.file-systems.btrfs/8123/focus=8208
->>>>
->>>> which looks like the same issue, with Li Zefan saying he had a
->>>> fix, but I couldn't find any mention that it was actually fixed.
->>>>
->>>> Has anybody got any update on that?
->>> [...]
->>>
->>> I've found
->>> http://thread.gmane.org/gmane.comp.file-systems.btrfs/8232
->>>
->>> but no corresponding fix or ioctl.c
->>> http://git.kernel.org/?p=linux/kernel/git/mason/btrfs-unstable.git;a=history;f=fs/btrfs/ioctl.c
->>>
->>> I'm under the impression that the issue has been forgotten
->>> about.
->>>
->>> From what I managed to gather though, it seems that what's on
->>> disk is correct, it's just the ioctl and/or "btrfs sub list"
->>> that's wrong. Am I right?
->>
->> Yeah, did you apply the patch from that thread and verify that it fixes
->> your problem?  Thanks,
+On 06/29/2011 04:10 PM, Arne Jansen wrote:
+> read_extent_buffer_pages currently has two modes, either trigger a read
+> without waiting for anything, or wait for the I/O to finish. The former
+> also bails when it's unable to lock the page. This patch now adds an
+> additional parameter to allow it to block on page lock, but don't wait
+> for completion.
 > 
->    Note that changing this API will probably break btrfs-gui's listing
-> of subvolumes...
+> Signed-off-by: Arne Jansen <sensille@gmx.net>
+> ---
+>  fs/btrfs/disk-io.c   |    4 ++--
+>  fs/btrfs/extent_io.c |    6 +++---
+>  fs/btrfs/extent_io.h |    3 ++-
+>  3 files changed, 7 insertions(+), 6 deletions(-)
 > 
->    The issue with that patch is that there are two distinct behaviours
-> that people want or expect with the tree-search ioctl:
-> 
-> (A) Return all items with keys which collate linearly between
->     (min_objectid, min_type, min_offset) and 
->     (max_objectid, max_type, max_offset)
-> 
->     i.e. treating keys as indivisible objects and sorting lexically,
->     as the trees do.
-> 
-> (B) Return all items with keys (i, t, o) which fulfil the criteria
->     (min_objectid <= i <= max_objectid,
->      min_type <= t <= max_type,
->      min_offset <= o <= max_offset)
-> 
->     i.e. treating keys as 3-tuples, and selecting from a rectilinear
->     subsset of the tuple space, which is natural for some
->     applications.
-> 
->    Clearly, we can't do both with the same call (except for some
-> limited cases (*)). However, different users expect different
-> behaviours. The current behaviour is (A), which is the "natural"
-> behaviour for tree searches within the btrfs code, and is (IMO) the
-> right thing to be doing for an API like this.
+> diff --git a/fs/btrfs/disk-io.c b/fs/btrfs/disk-io.c
+> index 1ac8db5d..cff882c 100644
+> --- a/fs/btrfs/disk-io.c
+> +++ b/fs/btrfs/disk-io.c
+> @@ -325,7 +325,7 @@ static int btree_read_extent_buffer_pages(struct btrfs_root *root,
+>  	clear_bit(EXTENT_BUFFER_CORRUPT, &eb->bflags);
+>  	io_tree = &BTRFS_I(root->fs_info->btree_inode)->io_tree;
+>  	while (1) {
+> -		ret = read_extent_buffer_pages(io_tree, eb, start, 1,
+> +		ret = read_extent_buffer_pages(io_tree, eb, start, 1, 1,
+>  					       btree_get_extent, mirror_num);
+>  		if (!ret &&
+>  		    !verify_parent_transid(io_tree, eb, parent_transid))
+> @@ -940,7 +940,7 @@ int readahead_tree_block(struct btrfs_root *root, u64 bytenr, u32 blocksize,
+>  	if (!buf)
+>  		return 0;
+>  	read_extent_buffer_pages(&BTRFS_I(btree_inode)->io_tree,
+> -				 buf, 0, 0, btree_get_extent, 0);
+> +				 buf, 0, 0, 0, btree_get_extent, 0);
+>  	free_extent_buffer(buf);
+>  	return ret;
+>  }
+> diff --git a/fs/btrfs/extent_io.c b/fs/btrfs/extent_io.c
+> index b181a94..b7f0b9b 100644
+> --- a/fs/btrfs/extent_io.c
+> +++ b/fs/btrfs/extent_io.c
+> @@ -3358,7 +3358,7 @@ int extent_buffer_uptodate(struct extent_io_tree *tree,
+>  
+>  int read_extent_buffer_pages(struct extent_io_tree *tree,
+>  			     struct extent_buffer *eb,
+> -			     u64 start, int wait,
+> +			     u64 start, int wait_lock, int wait_complete,
+>  			     get_extent_t *get_extent, int mirror_num)
 
-looking at the function copy_to_sk() it seems that the key advance is
-made on the following logic:
+Don't do this, it makes it confusing to figure out which one is which.
+Add a flags parameter at the end so we can specify stuff like
 
-        if (key->offset < (u64)-1 && key->offset < sk->max_offset)
-                key->offset++;
-        else if (key->type < (u8)-1 && key->type < sk->max_type) {
-                key->offset = 0;
-                key->type++;
-        } else if (key->objectid < (u64)-1 &&
-	   key->objectid < sk->max_objectid) {
-                key->offset = 0;
-                key->type = 0;
-                key->objectid++;
+WAIT_COMPLETE
+WAIT_PAGE_LOCK
 
-which to me it seems a bit different from the case A. In fact (if I read
-the code correctly) *both* the following condition are always true
+which is easier to read.  Thanks,
 
-     (min_objectid, min_type, min_offset) <= key   and
-     key < (max_objectid, max_type, max_offset)    and
-     (key_objectid <= max_objectid                 and
-      key_type <= max_type                         and
-      key_offset <= max_offset)
-
-In conclusion the code is an hybrid between A and B.
-
-
-
-
-
-> 
->    It sounds to me like the user of the API needs to be fixed, not the
-> ioctl itself -- possibly the author of the subvol scanning code
-> assumed (B) when they were getting (A). Note that there is at least
-> one other user of the ioctl outside btrfs-progs: btrfs-gui, which uses
-> the ioctl for several things, one of which is enumerating subvolumes
-> as btrfs-progs does.
-
-
-
-> 
->    It should be possible to write an additional ioctl for behaviour
-> (B) which contains both min and max limits on each element of the key
-> 3-tuple, *and* the current search state. That would reduce developer
-> confusion (given appropriate comments or documentation to explain what
-> the difference between the two is). However, I'm not sufficiently
-> convinced that it's actually necessary right now. I may change my tune
-> after I've started doing some of the more complex bits I'd thought of
-> doing with btrfs-gui, but for now, it's perfectly possible to use the
-> existing API without too much hassle.
-> 
->    Hugo.
-> 
-> (*) The limited cases where both behaviours return the same set of
-> keys are:
-> 
-> (i_0, 0, 0) to (i_1, -1UL, -1UL)
-> (i, t_0, 0) to (i, t_1, -1UL)
-> (i, t, o_0) to (i, t, o_1)
-> 
-
+Josef

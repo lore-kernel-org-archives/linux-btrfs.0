@@ -1,7 +1,7 @@
 From: Hubert Kario <kario@wit.edu.pl>
-Subject: [PATCH] remove unused variables
-Date: Wed, 29 Jun 2011 19:54:35 +0200
-Message-ID: <201106291954.36065.kario@wit.edu.pl>
+Subject: [PATCH] initialize all fields of commands[] struct
+Date: Wed, 29 Jun 2011 20:10:03 +0200
+Message-ID: <201106292010.03582.kario@wit.edu.pl>
 Mime-Version: 1.0
 Content-Type: Text/Plain;
   charset="us-ascii"
@@ -9,54 +9,63 @@ To: "linux-btrfs" <linux-btrfs@vger.kernel.org>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-fixes compilation warnings with gcc 4.6.0 20110429
+some help messages don't use advanced help message (shown when
+invoked as `btrfs command subcommand --help`)
+initialize them to NULL (meaning "use regular help message").
 
 Signed-off-by: Hubert Kario <kario@wit.edu.pl>
 ---
- mkfs.c    |    3 ---
- volumes.c |    2 --
- 2 files changed, 0 insertions(+), 5 deletions(-)
+this patch is for the branch integration-20110626 in 
+http://git.darksatanic.net/repo/btrfs-progs-unstable.git/ integration-20110626
 
-diff --git a/mkfs.c b/mkfs.c
-index 1b5ef06..d40b2e8 100644
---- a/mkfs.c
-+++ b/mkfs.c
-@@ -1060,7 +1060,6 @@ static int make_image(char *source_dir, struct btrfs_root *root, int out_fd)
-        struct btrfs_trans_handle *trans;
- 
-        struct stat root_st;
--       int root_len;
- 
-        struct directory_name_entry dir_head;
- 
-@@ -1070,8 +1069,6 @@ static int make_image(char *source_dir, struct btrfs_root *root, int out_fd)
-                goto fail;
-        }
- 
--       root_len = strlen(source_dir);
--
-        INIT_LIST_HEAD(&dir_head.list);
- 
-        trans = btrfs_start_transaction(root, 1);
-diff --git a/volumes.c b/volumes.c
-index 61af845..95c2e0d 100644
---- a/volumes.c
-+++ b/volumes.c
-@@ -868,7 +868,6 @@ int btrfs_alloc_data_chunk(struct btrfs_trans_handle *trans,
-        struct list_head *dev_list = &extent_root->fs_info->fs_devices->devices;
-        struct list_head *cur;
-        struct map_lookup *map;
--       u64 physical;
-        u64 calc_size = 8 * 1024 * 1024;
-        int num_stripes = 1;
-        int sub_stripes = 0;
-@@ -920,7 +919,6 @@ int btrfs_alloc_data_chunk(struct btrfs_trans_handle *trans,
-                btrfs_set_stack_stripe_devid(stripe, device->devid);
-                btrfs_set_stack_stripe_offset(stripe, dev_offset);
-                memcpy(stripe->dev_uuid, device->uuid, BTRFS_UUID_SIZE);
--               physical = dev_offset;
-                index++;
-        }
- 
+ btrfs.c |   18 ++++++++++++------
+ 1 files changed, 12 insertions(+), 6 deletions(-)
+
+diff --git a/btrfs.c b/btrfs.c
+index e117172..8875911 100644
+--- a/btrfs.c
++++ b/btrfs.c
+@@ -132,29 +132,35 @@ static struct Command commands[] = {
+        },
+        { do_balance_cancel, 1,
+          "balance cancel", "<path>\n"
+-               "Cancel the balance operation running on <path>."
++               "Cancel the balance operation running on <path>.",
++          NULL
+        },
+        { do_scrub_start, -1,
+          "scrub start", "[-Bdqr] <path>|<device>\n"
+-               "Start a new scrub."
++               "Start a new scrub.",
++          NULL
+        }, 
+        { do_scrub_cancel, 1,
+          "scrub cancel", "<path>|<device>\n"
+-               "Cancel a running scrub."
++               "Cancel a running scrub.",
++          NULL
+        }, 
+        { do_scrub_resume, -1,
+          "scrub resume", "[-Bdqr] <path>|<device>\n"
+-               "Resume previously canceled or interrupted scrub."
++               "Resume previously canceled or interrupted scrub.",
++          NULL
+        }, 
+        { do_scrub_status, -1,
+          "scrub status", "[-d] <path>|<device>\n"
+-               "Show status of running or finished scrub."
++               "Show status of running or finished scrub.",
++          NULL
+        }, 
+        { do_change_label, -1,
+          "filesystem label", "<device> [<newlabel>]\n"
+          "With one argument, get the label of filesystem on <device>.\n"
+          "If <newlabel> is passed, set the filesystem label to <newlabel>.\n"
+-         "The filesystem must be unmounted.\n"
++         "The filesystem must be unmounted.\n",
++          NULL
+        },
+        { do_scan, 999,
+          "device scan", "[--all-devices|<device> [<device>..]\n"
 -- 
 1.7.5.1

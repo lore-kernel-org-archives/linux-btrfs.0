@@ -1,146 +1,134 @@
-From: Arne Jansen <sensille@gmx.net>
-Subject: [PATCH v4 3/7] btrfs: state information for readahead
-Date: Wed, 29 Jun 2011 22:10:06 +0200
-Message-ID: <700f178eaaca9af9d54f2ebcc939b9acf745a832.1309375866.git.sensille@gmx.net>
-References: <cover.1309375866.git.sensille@gmx.net>
-To: chris.mason@oracle.com, linux-btrfs@vger.kernel.org
+From: Goffredo Baroncelli <kreijack@libero.it>
+Subject: Re: subvolumes missing from "btrfs subvolume list" output
+Date: Wed, 29 Jun 2011 22:41:18 +0200
+Message-ID: <4E0B8DEE.9010202@libero.it>
+References: <chaz20110629143747.GA28702@seebyte.com> <chaz20110629150041.GB28702@seebyte.com> <4E0B4FC6.4030006@redhat.com> <20110629164741.GA11170@carfax.org.uk>
+Reply-To: kreijack@inwind.it
+Mime-Version: 1.0
+Content-Type: text/plain; charset=ISO-8859-1
+To: Hugo Mills <hugo@carfax.org.uk>, linux-btrfs@vger.kernel.org
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <cover.1309375866.git.sensille@gmx.net>
-In-Reply-To: <cover.1309375866.git.sensille@gmx.net>
+In-Reply-To: <20110629164741.GA11170@carfax.org.uk>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Add state information for readahead to btrfs_fs_info and btrfs_device
 
-Changes v2:
- - don't wait in radix_trees
- - add own set of workers for readahead
+Hi Hugo
 
-Signed-off-by: Arne Jansen <sensille@gmx.net>
----
- fs/btrfs/ctree.h   |    5 +++++
- fs/btrfs/disk-io.c |   11 +++++++++++
- fs/btrfs/volumes.c |    8 ++++++++
- fs/btrfs/volumes.h |    8 ++++++++
- 4 files changed, 32 insertions(+), 0 deletions(-)
+On 06/29/2011 06:47 PM, Hugo Mills wrote:
+> On Wed, Jun 29, 2011 at 12:16:06PM -0400, Josef Bacik wrote:
+>> On 06/29/2011 11:00 AM, Stephane Chazelas wrote:
+>>> 2011-06-29 15:37:47 +0100, Stephane Chazelas:
+>>> [...]
+>>>> I found
+>>>> http://thread.gmane.org/gmane.comp.file-systems.btrfs/8123/focus=8208
+>>>>
+>>>> which looks like the same issue, with Li Zefan saying he had a
+>>>> fix, but I couldn't find any mention that it was actually fixed.
+>>>>
+>>>> Has anybody got any update on that?
+>>> [...]
+>>>
+>>> I've found
+>>> http://thread.gmane.org/gmane.comp.file-systems.btrfs/8232
+>>>
+>>> but no corresponding fix or ioctl.c
+>>> http://git.kernel.org/?p=linux/kernel/git/mason/btrfs-unstable.git;a=history;f=fs/btrfs/ioctl.c
+>>>
+>>> I'm under the impression that the issue has been forgotten
+>>> about.
+>>>
+>>> From what I managed to gather though, it seems that what's on
+>>> disk is correct, it's just the ioctl and/or "btrfs sub list"
+>>> that's wrong. Am I right?
+>>
+>> Yeah, did you apply the patch from that thread and verify that it fixes
+>> your problem?  Thanks,
+> 
+>    Note that changing this API will probably break btrfs-gui's listing
+> of subvolumes...
+> 
+>    The issue with that patch is that there are two distinct behaviours
+> that people want or expect with the tree-search ioctl:
+> 
+> (A) Return all items with keys which collate linearly between
+>     (min_objectid, min_type, min_offset) and 
+>     (max_objectid, max_type, max_offset)
+> 
+>     i.e. treating keys as indivisible objects and sorting lexically,
+>     as the trees do.
+> 
+> (B) Return all items with keys (i, t, o) which fulfil the criteria
+>     (min_objectid <= i <= max_objectid,
+>      min_type <= t <= max_type,
+>      min_offset <= o <= max_offset)
+> 
+>     i.e. treating keys as 3-tuples, and selecting from a rectilinear
+>     subsset of the tuple space, which is natural for some
+>     applications.
+> 
+>    Clearly, we can't do both with the same call (except for some
+> limited cases (*)). However, different users expect different
+> behaviours. The current behaviour is (A), which is the "natural"
+> behaviour for tree searches within the btrfs code, and is (IMO) the
+> right thing to be doing for an API like this.
 
-diff --git a/fs/btrfs/ctree.h b/fs/btrfs/ctree.h
-index 8e948ec..51534bf 100644
---- a/fs/btrfs/ctree.h
-+++ b/fs/btrfs/ctree.h
-@@ -1033,6 +1033,7 @@ struct btrfs_fs_info {
- 	struct btrfs_workers endio_write_workers;
- 	struct btrfs_workers endio_freespace_worker;
- 	struct btrfs_workers submit_workers;
-+	struct btrfs_workers readahead_workers;
- 	/*
- 	 * fixup workers take dirty pages that didn't properly go through
- 	 * the cow mechanism and make them safe to write.  It happens
-@@ -1115,6 +1116,10 @@ struct btrfs_fs_info {
- 	u64 fs_state;
- 
- 	struct btrfs_delayed_root *delayed_root;
-+
-+	/* readahead tree */
-+	spinlock_t reada_lock;
-+	struct radix_tree_root reada_tree;
- };
- 
- /*
-diff --git a/fs/btrfs/disk-io.c b/fs/btrfs/disk-io.c
-index 20edd2d..a1f85d6 100644
---- a/fs/btrfs/disk-io.c
-+++ b/fs/btrfs/disk-io.c
-@@ -1681,6 +1681,10 @@ struct btrfs_root *open_ctree(struct super_block *sb,
- 	fs_info->defrag_inodes = RB_ROOT;
- 	fs_info->trans_no_join = 0;
- 
-+	/* readahead state */
-+	INIT_RADIX_TREE(&fs_info->reada_tree, GFP_NOFS & ~__GFP_WAIT);
-+	spin_lock_init(&fs_info->reada_lock);
-+
- 	fs_info->thread_pool_size = min_t(unsigned long,
- 					  num_online_cpus() + 2, 8);
- 
-@@ -1870,6 +1874,9 @@ struct btrfs_root *open_ctree(struct super_block *sb,
- 	btrfs_init_workers(&fs_info->delayed_workers, "delayed-meta",
- 			   fs_info->thread_pool_size,
- 			   &fs_info->generic_worker);
-+	btrfs_init_workers(&fs_info->readahead_workers, "readahead",
-+			   fs_info->thread_pool_size,
-+			   &fs_info->generic_worker);
- 
- 	/*
- 	 * endios are largely parallel and should have a very
-@@ -1880,6 +1887,7 @@ struct btrfs_root *open_ctree(struct super_block *sb,
- 
- 	fs_info->endio_write_workers.idle_thresh = 2;
- 	fs_info->endio_meta_write_workers.idle_thresh = 2;
-+	fs_info->readahead_workers.idle_thresh = 2;
- 
- 	btrfs_start_workers(&fs_info->workers, 1);
- 	btrfs_start_workers(&fs_info->generic_worker, 1);
-@@ -1892,6 +1900,7 @@ struct btrfs_root *open_ctree(struct super_block *sb,
- 	btrfs_start_workers(&fs_info->endio_write_workers, 1);
- 	btrfs_start_workers(&fs_info->endio_freespace_worker, 1);
- 	btrfs_start_workers(&fs_info->delayed_workers, 1);
-+	btrfs_start_workers(&fs_info->readahead_workers, 1);
- 
- 	fs_info->bdi.ra_pages *= btrfs_super_num_devices(disk_super);
- 	fs_info->bdi.ra_pages = max(fs_info->bdi.ra_pages,
-@@ -2149,6 +2158,7 @@ fail_sb_buffer:
- 	btrfs_stop_workers(&fs_info->endio_freespace_worker);
- 	btrfs_stop_workers(&fs_info->submit_workers);
- 	btrfs_stop_workers(&fs_info->delayed_workers);
-+	btrfs_stop_workers(&fs_info->readahead_workers);
- fail_alloc:
- 	kfree(fs_info->delayed_root);
- fail_iput:
-@@ -2616,6 +2626,7 @@ int close_ctree(struct btrfs_root *root)
- 	btrfs_stop_workers(&fs_info->endio_freespace_worker);
- 	btrfs_stop_workers(&fs_info->submit_workers);
- 	btrfs_stop_workers(&fs_info->delayed_workers);
-+	btrfs_stop_workers(&fs_info->readahead_workers);
- 
- 	btrfs_close_devices(fs_info->fs_devices);
- 	btrfs_mapping_tree_free(&fs_info->mapping_tree);
-diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
-index 1efa56e..a1a4b02 100644
---- a/fs/btrfs/volumes.c
-+++ b/fs/btrfs/volumes.c
-@@ -349,6 +349,14 @@ static noinline int device_list_add(const char *path,
- 		}
- 		INIT_LIST_HEAD(&device->dev_alloc_list);
- 
-+		/* init readahead state */
-+		spin_lock_init(&device->reada_lock);
-+		device->reada_curr_zone = NULL;
-+		atomic_set(&device->reada_in_flight, 0);
-+		device->reada_next = 0;
-+		INIT_RADIX_TREE(&device->reada_zones, GFP_NOFS & ~__GFP_WAIT);
-+		INIT_RADIX_TREE(&device->reada_extents, GFP_NOFS & ~__GFP_WAIT);
-+
- 		mutex_lock(&fs_devices->device_list_mutex);
- 		list_add_rcu(&device->dev_list, &fs_devices->devices);
- 		mutex_unlock(&fs_devices->device_list_mutex);
-diff --git a/fs/btrfs/volumes.h b/fs/btrfs/volumes.h
-index 7c12d61..63ac242 100644
---- a/fs/btrfs/volumes.h
-+++ b/fs/btrfs/volumes.h
-@@ -91,6 +91,14 @@ struct btrfs_device {
- 	struct btrfs_work work;
- 	struct rcu_head rcu;
- 	struct work_struct rcu_work;
-+
-+	/* readahead state */
-+	spinlock_t reada_lock;
-+	atomic_t reada_in_flight;
-+	u64 reada_next;
-+	struct reada_zone *reada_curr_zone;
-+	struct radix_tree_root reada_zones;
-+	struct radix_tree_root reada_extents;
- };
- 
- struct btrfs_fs_devices {
--- 
-1.7.3.4
+looking at the function copy_to_sk() it seems that the key advance is
+made on the following logic:
+
+        if (key->offset < (u64)-1 && key->offset < sk->max_offset)
+                key->offset++;
+        else if (key->type < (u8)-1 && key->type < sk->max_type) {
+                key->offset = 0;
+                key->type++;
+        } else if (key->objectid < (u64)-1 &&
+	   key->objectid < sk->max_objectid) {
+                key->offset = 0;
+                key->type = 0;
+                key->objectid++;
+
+which to me it seems a bit different from the case A. In fact (if I read
+the code correctly) *both* the following condition are always true
+
+     (min_objectid, min_type, min_offset) <= key   and
+     key < (max_objectid, max_type, max_offset)    and
+     (key_objectid <= max_objectid                 and
+      key_type <= max_type                         and
+      key_offset <= max_offset)
+
+In conclusion the code is an hybrid between A and B.
+
+
+
+
+
+> 
+>    It sounds to me like the user of the API needs to be fixed, not the
+> ioctl itself -- possibly the author of the subvol scanning code
+> assumed (B) when they were getting (A). Note that there is at least
+> one other user of the ioctl outside btrfs-progs: btrfs-gui, which uses
+> the ioctl for several things, one of which is enumerating subvolumes
+> as btrfs-progs does.
+
+
+
+> 
+>    It should be possible to write an additional ioctl for behaviour
+> (B) which contains both min and max limits on each element of the key
+> 3-tuple, *and* the current search state. That would reduce developer
+> confusion (given appropriate comments or documentation to explain what
+> the difference between the two is). However, I'm not sufficiently
+> convinced that it's actually necessary right now. I may change my tune
+> after I've started doing some of the more complex bits I'd thought of
+> doing with btrfs-gui, but for now, it's perfectly possible to use the
+> existing API without too much hassle.
+> 
+>    Hugo.
+> 
+> (*) The limited cases where both behaviours return the same set of
+> keys are:
+> 
+> (i_0, 0, 0) to (i_1, -1UL, -1UL)
+> (i, t_0, 0) to (i, t_1, -1UL)
+> (i, t, o_0) to (i, t, o_1)
+> 
 

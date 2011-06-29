@@ -1,54 +1,54 @@
-From: Hugo Mills <hugo@carfax.org.uk>
-Subject: Re: subvolumes missing from "btrfs subvolume list" output
-Date: Wed, 29 Jun 2011 17:50:20 +0100
-Message-ID: <20110629165020.GB11170@carfax.org.uk>
-References: <chaz20110629143747.GA28702@seebyte.com>
- <chaz20110629150041.GB28702@seebyte.com>
- <4E0B4FC6.4030006@redhat.com>
- <20110629164741.GA11170@carfax.org.uk>
+From: Sunil Mushran <sunil.mushran@oracle.com>
+Subject: Re: [PATCH] xfstests 255: add a seek_data/seek_hole tester
+Date: Wed, 29 Jun 2011 10:10:07 -0700
+Message-ID: <4E0B5C6F.3060803@oracle.com>
+References: <1309275199-10801-1-git-send-email-josef@redhat.com> <1309275199-10801-5-git-send-email-josef@redhat.com> <20110629065306.GC1026@dastard> <20110629074021.GA26086@infradead.org>
 Mime-Version: 1.0
-Content-Type: multipart/signed; micalg=pgp-sha1;
-	protocol="application/pgp-signature"; boundary="eJnRUKwClWJh1Khz"
-To: Josef Bacik <josef@redhat.com>,
-	Stephane Chazelas <stephane.chazelas@gmail.com>,
-	linux-btrfs@vger.kernel.org
+Content-Type: text/plain; charset=ISO-8859-1; format=flowed
+Cc: Dave Chinner <david@fromorbit.com>, Josef Bacik <josef@redhat.com>,
+	linux-fsdevel@vger.kernel.org, viro@ZenIV.linux.org.uk,
+	linux-kernel@vger.kernel.org, linux-btrfs@vger.kernel.org,
+	xfs@oss.sgi.com
+To: Christoph Hellwig <hch@infradead.org>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <20110629164741.GA11170@carfax.org.uk>
+In-Reply-To: <20110629074021.GA26086@infradead.org>
 List-ID: <linux-btrfs.vger.kernel.org>
 
+On 06/29/2011 12:40 AM, Christoph Hellwig wrote:
+> On Wed, Jun 29, 2011 at 04:53:07PM +1000, Dave Chinner wrote:
+>> On Tue, Jun 28, 2011 at 11:33:19AM -0400, Josef Bacik wrote:
+>>> This is a test to make sure seek_data/seek_hole is acting like it does on
+>>> Solaris.  It will check to see if the fs supports finding a hole or not and will
+>>> adjust as necessary.
+>> So I just looked at this with an eye to validating an XFS
+>> implementation, and I came up with this list of stuff that the test
+>> does not cover that I'd need to test in some way:
+>>
+>> 	- files with clean unwritten extents. Are they a hole or
+>> 	  data? What's SEEK_DATA supposed to return on layout like
+>> 	  hole-unwritten-data? i.e. needs to add fallocate to the
+>> 	  picture...
+>>
+>> 	- files with dirty unwritten extents (i.e. dirty in memory,
+>> 	  not on disk). They are most definitely data, and most
+>> 	  filesystems will need a separate lookup path to detect
+>> 	  dirty unwritten ranges because the state is kept
+>> 	  separately (page cache vs extent cache).  Plenty of scope
+>> 	  for filesystem specific bugs here so needs a roubust test.
+> The discussion leading up to the resurrection of SEEK_HOLE/SEEK_DATA
+> was pretty much about that point.  The conclusion based on the Sun
+> documentation and common sense was that SEEK_DATA may only consider
+> unwritten extents as hole if the filesystem has a way to distinguish
+> plain unwritten extents and those that have been dirtied.  Else it
+> should be considered data.
+>
+> Testing for making sure dirty preallocated areas aren't wrongly
+> reported sounds relatively easy, the rest falls into implementation
+> details, which imho is fine.  Not reporting preallocated extents
+> as holes just is a quality of implementation issue and not a bug.
 
---eJnRUKwClWJh1Khz
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
-
-On Wed, Jun 29, 2011 at 05:47:41PM +0100, Hugo Mills wrote:
-> (*) The limited cases where both behaviours return the same set of
-> keys are:
-> 
-> (i_0, 0, 0) to (i_1, -1UL, -1UL)
-I clearly meant  (i_1,  255, -1UL) here...
-
-> (i, t_0, 0) to (i, t_1, -1UL)
-> (i, t, o_0) to (i, t, o_1)
-
--- 
-=== Hugo Mills: hugo@... carfax.org.uk | darksatanic.net | lug.org.uk ===
-  PGP key: 515C238D from wwwkeys.eu.pgp.net or http://www.carfax.org.uk
-    --- I get nervous when I see words like 'mayhaps' in a novel, ---    
-                because I fear that just round the corner                
-                          is lurking 'forsooth'                          
-
---eJnRUKwClWJh1Khz
-Content-Type: application/pgp-signature; name="signature.asc"
-Content-Description: Digital signature
-Content-Disposition: inline
-
------BEGIN PGP SIGNATURE-----
-Version: GnuPG v1.4.10 (GNU/Linux)
-
-iD8DBQFOC1fMIKyzvlFcI40RAtFdAJ4mElwheDIUEWpbgEP39RuKU8QsYACcDl7W
-O+G1gW/eV1QAbO+AZedF3yI=
-=8+Wd
------END PGP SIGNATURE-----
-
---eJnRUKwClWJh1Khz--
+I agree. And if I might add my 2 cents that it would be much easier
+if we added another test that created files with all the worrisome boundary
+conditions and used SEEK_DATA/HOLE to copy the files and compared
+using md5sum. This would be far easier than one that expects a certain
+pos for each operation.

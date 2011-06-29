@@ -1,42 +1,62 @@
-From: Josef Bacik <josef@redhat.com>
-Subject: Re: subvolumes missing from "btrfs subvolume list" output
-Date: Wed, 29 Jun 2011 12:16:06 -0400
-Message-ID: <4E0B4FC6.4030006@redhat.com>
-References: <chaz20110629143747.GA28702@seebyte.com> <chaz20110629150041.GB28702@seebyte.com>
-Mime-Version: 1.0
-Content-Type: text/plain; charset=ISO-8859-1
-Cc: linux-btrfs@vger.kernel.org
-To: Stephane Chazelas <stephane.chazelas@gmail.com>
+From: Arne Jansen <sensille@gmx.net>
+Subject: [PATCH v3 0/6] btrfs: generic readeahead interface
+Date: Wed, 29 Jun 2011 18:32:16 +0200
+Message-ID: <cover.1309364964.git.sensille@gmx.net>
+To: chris.mason@oracle.com, linux-btrfs@vger.kernel.org
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <chaz20110629150041.GB28702@seebyte.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 06/29/2011 11:00 AM, Stephane Chazelas wrote:
-> 2011-06-29 15:37:47 +0100, Stephane Chazelas:
-> [...]
->> I found
->> http://thread.gmane.org/gmane.comp.file-systems.btrfs/8123/focus=8208
->>
->> which looks like the same issue, with Li Zefan saying he had a
->> fix, but I couldn't find any mention that it was actually fixed.
->>
->> Has anybody got any update on that?
-> [...]
-> 
-> I've found
-> http://thread.gmane.org/gmane.comp.file-systems.btrfs/8232
-> 
-> but no corresponding fix or ioctl.c
-> http://git.kernel.org/?p=linux/kernel/git/mason/btrfs-unstable.git;a=history;f=fs/btrfs/ioctl.c
-> 
-> I'm under the impression that the issue has been forgotten
-> about.
-> 
-> From what I managed to gather though, it seems that what's on
-> disk is correct, it's just the ioctl and/or "btrfs sub list"
-> that's wrong. Am I right?
+This series introduces a generic readahead interface for btrfs trees.
+The intention is to use it to speed up scrub in a first run, but balance
+is another hot candidate. In general, every tree walk could be accompanied
+by a readahead. Deletion of large files comes to mind, where the fetching
+of the csums takes most of the time.
+Also the initial build-ups of free-space-caches and inode-allocator-caches
+could be sped up.
 
-Yeah, did you apply the patch from that thread and verify that it fixes
-your problem?  Thanks,
+To make testing easier, a simple ioctl interface is added to trigger a read-
+ahead from user mode. It also implements a tree walk in the traditional way.
 
-Josef
+A simple demonstration from my 7-disk test btrfs:
+ - enumerating the extent tree (traditional): 351s
+ - enumerating the extent tree (readahead): 41s
+ - enumerating extents+csum tree (readahead): 49s
+
+The implementation is also tested with this tool in various combinations of
+parallel reads of the same and of different trees.
+
+The main changes from v1 are:
+ - Switch from extent_state flags to extent_buffer flags.
+ - Fix a race when triggering the read.
+ - Fix a bug where only parts of the requested range where actually prefetched.
+   The hit only when requesting parts of a tree, so the above numbers doesn't
+   change.
+Change from v2:
+ - use rcu instead of transaction to protect root->node
+
+Arne Jansen (6):
+  btrfs: add READAHEAD extent buffer flag
+  btrfs: state information for readahead
+  btrfs: initial readahead code and prototypes
+  btrfs: hooks for readahead
+  btrfs: test ioctl for readahead
+  btrfs: use readahead API for scrub
+
+ fs/btrfs/Makefile    |    3 +-
+ fs/btrfs/ctree.h     |   13 +
+ fs/btrfs/disk-io.c   |   80 ++++
+ fs/btrfs/disk-io.h   |    2 +
+ fs/btrfs/extent_io.c |    2 +-
+ fs/btrfs/extent_io.h |    1 +
+ fs/btrfs/ioctl.c     |   93 +++++-
+ fs/btrfs/ioctl.h     |   16 +
+ fs/btrfs/reada.c     |  994 ++++++++++++++++++++++++++++++++++++++++++++++++++
+ fs/btrfs/scrub.c     |  116 +++----
+ fs/btrfs/volumes.c   |    8 +
+ fs/btrfs/volumes.h   |    8 +
+ 12 files changed, 1267 insertions(+), 69 deletions(-)
+ create mode 100644 fs/btrfs/reada.c
+
+-- 
+1.7.3.4
+

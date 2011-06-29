@@ -1,41 +1,45 @@
-From: Stephane Chazelas <stephane.chazelas@gmail.com>
-Subject: Re: subvolumes missing from "btrfs subvolume list" output
-Date: Wed, 29 Jun 2011 16:00:41 +0100
-Message-ID: <chaz20110629150041.GB28702@seebyte.com>
-References: <chaz20110629143747.GA28702@seebyte.com>
+From: Proskurin Kirill <k.proskurin@corp.mail.ru>
+Subject: [btrfs-transacti] & btrfs-endio-wri] - WAS: Re: [btrfs-delalloc-]
+Date: Wed, 29 Jun 2011 19:37:46 +0400
+Message-ID: <4E0B46CA.2030205@corp.mail.ru>
+References: <4E084786.2070200@corp.mail.ru> <201106271521.54497.hka@qbs.com.pl>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-To: linux-btrfs@vger.kernel.org
+Content-Type: text/plain; charset=ISO-8859-1; format=flowed
+Cc: Btrfs mailing list <linux-btrfs@vger.kernel.org>
+To: Hubert Kario <hka@qbs.com.pl>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <chaz20110629143747.GA28702@seebyte.com>
+In-Reply-To: <201106271521.54497.hka@qbs.com.pl>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-2011-06-29 15:37:47 +0100, Stephane Chazelas:
-[...]
-> I found
-> http://thread.gmane.org/gmane.comp.file-systems.btrfs/8123/focus=8208
-> 
-> which looks like the same issue, with Li Zefan saying he had a
-> fix, but I couldn't find any mention that it was actually fixed.
-> 
-> Has anybody got any update on that?
-[...]
+On 06/27/2011 05:21 PM, Hubert Kario wrote:
+> On Monday 27 of June 2011 11:04:06 Proskurin Kirill wrote:
+>> Hello all.
+>>
+>> What we have:
+>> SL6 - kernel 2.6.32-131.2.1.el6.x86_64
+>> btrfs on mdadm RAID5 with 8 HDD - 27T partition.
+>>
+>> I see this at top:
+>> 1182 root      20   0     0    0    0 R 100.0  0.0  16:39.73
+>> [btrfs-delalloc-]
+>>
+>> And LA is grow. What is this and how can I fix it?
+>
+> delalloc is a delayed allocation kernel thread -- it probably means something
+> is writing large amounts of data to the file system
+>
+> 2.6.32 is *old* as far as btrfs is concerned, there have been many bugs fixed
+> and performance improvements since
 
-I've found
-http://thread.gmane.org/gmane.comp.file-systems.btrfs/8232
+Ok - I upgrade to 2.6.39-2 but it is seems to all things get worse.
+Now I see [btrfs-transacti] & btrfs-endio-wri] 80-100% all the time and 
+io performance looks like lower then before.
 
-but no corresponding fix or ioctl.c
-http://git.kernel.org/?p=linux/kernel/git/mason/btrfs-unstable.git;a=history;f=fs/btrfs/ioctl.c
+Our scribe daemon in state D most of the time with half of a normal 
+load. Only kernel was changed.
 
-I'm under the impression that the issue has been forgotten
-about.
+Any performance tune recommendation?
 
->From what I managed to gather though, it seems that what's on
-disk is correct, it's just the ioctl and/or "btrfs sub list"
-that's wrong. Am I right?
-
-(btw, I forgot to mention the kernel version: 3.0rc4 amd64,
-btrfs tools from git)
-
-Cheers,
-Stephane
+-- 
+Best regards,
+Proskurin Kirill

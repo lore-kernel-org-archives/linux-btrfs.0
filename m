@@ -1,7 +1,7 @@
 From: Arne Jansen <sensille@gmx.net>
-Subject: [PATCH v4 6/7] btrfs: test ioctl for readahead
-Date: Wed, 29 Jun 2011 22:10:09 +0200
-Message-ID: <07e874ae6c7f9a6a6991e7771dc0f50f16be5262.1309375866.git.sensille@gmx.net>
+Subject: [PATCH v4 7/7] btrfs: use readahead API for scrub
+Date: Wed, 29 Jun 2011 22:10:10 +0200
+Message-ID: <df81a64bc24b0f3c50e76bda3b2104a3d0269303.1309375866.git.sensille@gmx.net>
 References: <cover.1309375866.git.sensille@gmx.net>
 To: chris.mason@oracle.com, linux-btrfs@vger.kernel.org
 Return-path: <linux-btrfs-owner@vger.kernel.org>
@@ -9,166 +9,207 @@ In-Reply-To: <cover.1309375866.git.sensille@gmx.net>
 In-Reply-To: <cover.1309375866.git.sensille@gmx.net>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-This ioctl is added to trigger a readahead from user mode. It implements
-a readahead using the new interface and also a traditional tree walk.
-This way it's possible to measure the two side by side.
+Scrub uses a simple tree-enumeration to bring the relevant portions
+of the extent- and csum-tree into the page cache before starting the
+scrub-I/O. This is now replaced by using the new readahead-API.
+During readahead the scrub is being accounted as paused, so it won't
+hold off transaction commits.
+
+This change raises the average disk bandwith utilisation on my test
+volume from 70% to 90%. On another volume, the time for a test run
+went down from 89s to 43s.
 
 Signed-off-by: Arne Jansen <sensille@gmx.net>
 ---
- fs/btrfs/ioctl.c |   93 ++++++++++++++++++++++++++++++++++++++++++++++++++++--
- fs/btrfs/ioctl.h |   16 +++++++++
- 2 files changed, 106 insertions(+), 3 deletions(-)
+ fs/btrfs/scrub.c |  116 ++++++++++++++++++++++++------------------------------
+ 1 files changed, 52 insertions(+), 64 deletions(-)
 
-diff --git a/fs/btrfs/ioctl.c b/fs/btrfs/ioctl.c
-index a3c4751..6e77c20 100644
---- a/fs/btrfs/ioctl.c
-+++ b/fs/btrfs/ioctl.c
-@@ -2784,6 +2784,93 @@ static noinline long btrfs_ioctl_wait_sync(struct file *file, void __user *argp)
- 	return btrfs_wait_for_commit(root, transid);
- }
+diff --git a/fs/btrfs/scrub.c b/fs/btrfs/scrub.c
+index a8d03d5..ce5208c 100644
+--- a/fs/btrfs/scrub.c
++++ b/fs/btrfs/scrub.c
+@@ -29,15 +29,12 @@
+  * any can be found.
+  *
+  * Future enhancements:
+- *  - To enhance the performance, better read-ahead strategies for the
+- *    extent-tree can be employed.
+  *  - In case an unrepairable extent is encountered, track which files are
+  *    affected and report them
+  *  - In case of a read error on files with nodatasum, map the file and read
+  *    the extent to trigger a writeback of the good copy
+  *  - track and record media errors, throw out bad devices
+  *  - add a mode to also read unallocated space
+- *  - make the prefetch cancellable
+  */
  
-+static noinline long btrfs_ioctl_reada_test(struct btrfs_fs_info *fs_info,
-+					    void __user *argp)
-+{
-+	struct btrfs_key start = { 0 };
-+	struct btrfs_key end = {
-+		.objectid = (u64)-1,
-+		.type = (u8)-1,
-+		.offset = (u64)-1
-+	};
-+	struct btrfs_ioctl_reada_args reada_args;
-+	struct btrfs_key key;
-+	struct btrfs_root *root = NULL;
+ struct scrub_bio;
+@@ -741,13 +738,16 @@ static noinline_for_stack int scrub_stripe(struct scrub_dev *sdev,
+ 	int slot;
+ 	int i;
+ 	u64 nstripes;
+-	int start_stripe;
+ 	struct extent_buffer *l;
+ 	struct btrfs_key key;
+ 	u64 physical;
+ 	u64 logical;
+ 	u64 generation;
+ 	u64 mirror_num;
++	void *reada1;
++	void *reada2;
++	struct btrfs_key key_start;
++	struct btrfs_key key_end;
+ 
+ 	u64 increment = map->stripe_len;
+ 	u64 offset;
+@@ -779,81 +779,67 @@ static noinline_for_stack int scrub_stripe(struct scrub_dev *sdev,
+ 	if (!path)
+ 		return -ENOMEM;
+ 
+-	path->reada = 2;
+ 	path->search_commit_root = 1;
+ 	path->skip_locking = 1;
+ 
+ 	/*
+-	 * find all extents for each stripe and just read them to get
+-	 * them into the page cache
+-	 * FIXME: we can do better. build a more intelligent prefetching
++	 * trigger the readahead for extent tree csum tree and wait for
++	 * completion. During readahead, the scrub is officially paused
++	 * to not hold off transaction commits
+ 	 */
+ 	logical = base + offset;
+-	physical = map->stripes[num].physical;
+-	ret = 0;
+-	for (i = 0; i < nstripes; ++i) {
+-		key.objectid = logical;
+-		key.type = BTRFS_EXTENT_ITEM_KEY;
+-		key.offset = (u64)0;
+-
+-		ret = btrfs_search_slot(NULL, root, &key, path, 0, 0);
+-		if (ret < 0)
+-			goto out_noplug;
+-
+-		/*
+-		 * we might miss half an extent here, but that doesn't matter,
+-		 * as it's only the prefetch
+-		 */
+-		while (1) {
+-			l = path->nodes[0];
+-			slot = path->slots[0];
+-			if (slot >= btrfs_header_nritems(l)) {
+-				ret = btrfs_next_leaf(root, path);
+-				if (ret == 0)
+-					continue;
+-				if (ret < 0)
+-					goto out_noplug;
+ 
+-				break;
+-			}
+-			btrfs_item_key_to_cpu(l, &key, slot);
++	wait_event(sdev->list_wait,
++		   atomic_read(&sdev->in_flight) == 0);
++	atomic_inc(&fs_info->scrubs_paused);
++	wake_up(&fs_info->scrub_pause_wait);
+ 
+-			if (key.objectid >= logical + map->stripe_len)
+-				break;
++	/* FIXME it might be better to start readahead at commit root */
++	key_start.objectid = logical;
++	key_start.type = BTRFS_EXTENT_ITEM_KEY;
++	key_start.offset = (u64)0;
++	key_end.objectid = base + offset + nstripes * increment;
++	key_end.type = BTRFS_EXTENT_ITEM_KEY;
++	key_end.offset = (u64)0;
++	reada1 = btrfs_reada_add(root, &key_start, &key_end);
 +
-+	if (!argp)
-+		return -EINVAL;
++	key_start.objectid = BTRFS_EXTENT_CSUM_OBJECTID;
++	key_start.type = BTRFS_EXTENT_CSUM_KEY;
++	key_start.offset = logical;
++	key_end.objectid = BTRFS_EXTENT_CSUM_OBJECTID;
++	key_end.type = BTRFS_EXTENT_CSUM_KEY;
++	key_end.offset = base + offset + nstripes * increment;
++	reada2 = btrfs_reada_add(csum_root, &key_start, &key_end);
 +
-+	if (!capable(CAP_SYS_ADMIN))
-+		return -EPERM;
-+
-+	if (copy_from_user(&reada_args,
-+			   (struct btrfs_ioctl_reada_args __user *)argp,
-+			   sizeof(reada_args)))
-+		return -EFAULT;
-+
-+	start.objectid = reada_args.start_objectid;
-+	start.type = reada_args.start_type;
-+	start.offset = reada_args.start_offset;
-+	end.objectid = reada_args.end_objectid;
-+	end.type = reada_args.end_type;
-+	end.offset = reada_args.end_offset;
-+
-+	key.objectid = reada_args.tree;
-+	key.type = BTRFS_ROOT_ITEM_KEY;
-+	key.offset = (u64)-1;
-+	root = btrfs_read_fs_root_no_name(fs_info, &key);
-+	if (IS_ERR(root))
-+		return -ENOENT;
-+
-+	if (!(reada_args.flags & BTRFS_READA_IOC_FLAGS_TRAD)) {
-+		void *handle;
-+
-+		handle = btrfs_reada_add(root, &start, &end);
-+		if (IS_ERR(handle))
-+			return PTR_ERR(handle);
-+
-+		if (reada_args.flags & BTRFS_READA_IOC_FLAGS_WAIT)
-+			btrfs_reada_wait(handle);
-+		else
-+			btrfs_reada_detach(handle);
-+	} else {
-+		struct btrfs_path *path;
-+		struct extent_buffer *leaf;
-+		int slot;
-+		int ret;
-+
-+		/*
-+		 * enumerate the tree the traditional way
-+		 */
-+		path = btrfs_alloc_path();
-+		if (!path)
-+			return -ENOMEM;
-+		path->reada = 2;
-+
-+		ret = btrfs_search_slot(NULL, root, &start, path, 0, 0);
-+		if (ret < 0)
++	if (!IS_ERR(reada1))
++		btrfs_reada_wait(reada1);
++	if (!IS_ERR(reada2))
++		btrfs_reada_wait(reada2);
+ 
+-			path->slots[0]++;
+-		}
+-		btrfs_release_path(path);
+-		logical += increment;
+-		physical += map->stripe_len;
+-		cond_resched();
++	mutex_lock(&fs_info->scrub_lock);
++	while (atomic_read(&fs_info->scrub_pause_req)) {
++		mutex_unlock(&fs_info->scrub_lock);
++		wait_event(fs_info->scrub_pause_wait,
++		   atomic_read(&fs_info->scrub_pause_req) == 0);
++		mutex_lock(&fs_info->scrub_lock);
+ 	}
++	atomic_dec(&fs_info->scrubs_paused);
++	mutex_unlock(&fs_info->scrub_lock);
++	wake_up(&fs_info->scrub_pause_wait);
+ 
+ 	/*
+ 	 * collect all data csums for the stripe to avoid seeking during
+ 	 * the scrub. This might currently (crc32) end up to be about 1MB
+ 	 */
+-	start_stripe = 0;
+ 	blk_start_plug(&plug);
+-again:
+-	logical = base + offset + start_stripe * increment;
+-	for (i = start_stripe; i < nstripes; ++i) {
+-		ret = btrfs_lookup_csums_range(csum_root, logical,
+-					       logical + map->stripe_len - 1,
+-					       &sdev->csum_list, 1);
+-		if (ret)
+-			goto out;
+ 
+-		logical += increment;
+-		cond_resched();
+-	}
+ 	/*
+ 	 * now find all extents for each stripe and scrub them
+ 	 */
+-	logical = base + offset + start_stripe * increment;
+-	physical = map->stripes[num].physical + start_stripe * map->stripe_len;
++	logical = base + offset;
++	physical = map->stripes[num].physical;
+ 	ret = 0;
+-	for (i = start_stripe; i < nstripes; ++i) {
++	for (i = 0; i < nstripes; ++i) {
+ 		/*
+ 		 * canceled?
+ 		 */
+@@ -882,11 +868,14 @@ again:
+ 			atomic_dec(&fs_info->scrubs_paused);
+ 			mutex_unlock(&fs_info->scrub_lock);
+ 			wake_up(&fs_info->scrub_pause_wait);
+-			scrub_free_csums(sdev);
+-			start_stripe = i;
+-			goto again;
+ 		}
+ 
++		ret = btrfs_lookup_csums_range(csum_root, logical,
++					       logical + map->stripe_len - 1,
++					       &sdev->csum_list, 1);
++		if (ret)
 +			goto out;
 +
-+		do {
-+			leaf = path->nodes[0];
-+			slot = path->slots[0];
-+			btrfs_item_key_to_cpu(leaf, &key, slot);
-+
-+			if (key.objectid > end.objectid)
-+				break;
-+			if (key.objectid == end.objectid && key.type > end.type)
-+				break;
-+			if (key.objectid == end.objectid &&
-+			    key.type == end.type && key.offset > end.offset)
-+				break;
-+		} while ((ret = btrfs_next_leaf(root, path)) == 0);
-+out:
-+		btrfs_free_path(path);
-+		return ret >= 0 ? 0 : ret;
-+	}
-+	return 0;
-+}
-+
- static long btrfs_ioctl_scrub(struct btrfs_root *root, void __user *arg)
- {
- 	int ret;
-@@ -2836,8 +2923,7 @@ static long btrfs_ioctl_scrub_progress(struct btrfs_root *root,
- 	return ret;
- }
+ 		key.objectid = logical;
+ 		key.type = BTRFS_EXTENT_ITEM_KEY;
+ 		key.offset = (u64)0;
+@@ -982,7 +971,6 @@ next:
  
--long btrfs_ioctl(struct file *file, unsigned int
--		cmd, unsigned long arg)
-+long btrfs_ioctl(struct file *file, unsigned int cmd, unsigned long arg)
- {
- 	struct btrfs_root *root = BTRFS_I(fdentry(file)->d_inode)->root;
- 	void __user *argp = (void __user *)arg;
-@@ -2908,7 +2994,8 @@ long btrfs_ioctl(struct file *file, unsigned int
- 		return btrfs_ioctl_scrub_cancel(root, argp);
- 	case BTRFS_IOC_SCRUB_PROGRESS:
- 		return btrfs_ioctl_scrub_progress(root, argp);
-+	case BTRFS_IOC_READA_TEST:
-+		return btrfs_ioctl_reada_test(root->fs_info, argp);
- 	}
--
- 	return -ENOTTY;
+ out:
+ 	blk_finish_plug(&plug);
+-out_noplug:
+ 	btrfs_free_path(path);
+ 	return ret < 0 ? ret : 0;
  }
-diff --git a/fs/btrfs/ioctl.h b/fs/btrfs/ioctl.h
-index ad1ea78..ee83259 100644
---- a/fs/btrfs/ioctl.h
-+++ b/fs/btrfs/ioctl.h
-@@ -193,6 +193,20 @@ struct btrfs_ioctl_space_args {
- 	struct btrfs_ioctl_space_info spaces[0];
- };
- 
-+#define BTRFS_READA_IOC_FLAGS_WAIT	1
-+#define BTRFS_READA_IOC_FLAGS_TRAD	2
-+struct btrfs_ioctl_reada_args {
-+	__u64 flags;
-+	__u64 tree;
-+	__u64 start_objectid;
-+	__u8 start_type;
-+	__u64 start_offset;
-+	__u64 end_objectid;
-+	__u8 end_type;
-+	__u64 end_offset;
-+	__u64 unused[100];
-+};
-+
- #define BTRFS_IOC_SNAP_CREATE _IOW(BTRFS_IOCTL_MAGIC, 1, \
- 				   struct btrfs_ioctl_vol_args)
- #define BTRFS_IOC_DEFRAG _IOW(BTRFS_IOCTL_MAGIC, 2, \
-@@ -248,4 +262,6 @@ struct btrfs_ioctl_space_args {
- 				 struct btrfs_ioctl_dev_info_args)
- #define BTRFS_IOC_FS_INFO _IOR(BTRFS_IOCTL_MAGIC, 31, \
- 			       struct btrfs_ioctl_fs_info_args)
-+#define BTRFS_IOC_READA_TEST _IOW(BTRFS_IOCTL_MAGIC, 99, \
-+				struct btrfs_ioctl_reada_args)
- #endif
 -- 
 1.7.3.4
 

@@ -1,174 +1,126 @@
-From: Arne Jansen <sensille@gmx.net>
-Subject: [PATCH v3 5/6] btrfs: test ioctl for readahead
-Date: Wed, 29 Jun 2011 18:32:21 +0200
-Message-ID: <074ce0a1f252ddcad6efcdcc1553357521957d1c.1309364964.git.sensille@gmx.net>
-References: <cover.1309364964.git.sensille@gmx.net>
-To: chris.mason@oracle.com, linux-btrfs@vger.kernel.org
+From: Hugo Mills <hugo@carfax.org.uk>
+Subject: Re: subvolumes missing from "btrfs subvolume list" output
+Date: Wed, 29 Jun 2011 17:47:41 +0100
+Message-ID: <20110629164741.GA11170@carfax.org.uk>
+References: <chaz20110629143747.GA28702@seebyte.com>
+ <chaz20110629150041.GB28702@seebyte.com>
+ <4E0B4FC6.4030006@redhat.com>
+Mime-Version: 1.0
+Content-Type: multipart/signed; micalg=pgp-sha1;
+	protocol="application/pgp-signature"; boundary="opJtzjQTFsWo+cga"
+Cc: Stephane Chazelas <stephane.chazelas@gmail.com>,
+	linux-btrfs@vger.kernel.org
+To: Josef Bacik <josef@redhat.com>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <cover.1309364964.git.sensille@gmx.net>
-In-Reply-To: <cover.1309364964.git.sensille@gmx.net>
+In-Reply-To: <4E0B4FC6.4030006@redhat.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-This ioctl is added to trigger a readahead from user mode. It implements
-a readahead using the new interface and also a traditional tree walk.
-This way it's possible to measure the two side by side.
 
-Signed-off-by: Arne Jansen <sensille@gmx.net>
----
- fs/btrfs/ioctl.c |   93 ++++++++++++++++++++++++++++++++++++++++++++++++++++--
- fs/btrfs/ioctl.h |   16 +++++++++
- 2 files changed, 106 insertions(+), 3 deletions(-)
+--opJtzjQTFsWo+cga
+Content-Type: text/plain; charset=us-ascii
+Content-Disposition: inline
 
-diff --git a/fs/btrfs/ioctl.c b/fs/btrfs/ioctl.c
-index ac37040..77de17c 100644
---- a/fs/btrfs/ioctl.c
-+++ b/fs/btrfs/ioctl.c
-@@ -2777,6 +2777,93 @@ static noinline long btrfs_ioctl_wait_sync(struct file *file, void __user *argp)
- 	return btrfs_wait_for_commit(root, transid);
- }
- 
-+static noinline long btrfs_ioctl_reada_test(struct btrfs_fs_info *fs_info,
-+					    void __user *argp)
-+{
-+	struct btrfs_key start = { 0 };
-+	struct btrfs_key end = {
-+		.objectid = (u64)-1,
-+		.type = (u8)-1,
-+		.offset = (u64)-1
-+	};
-+	struct btrfs_ioctl_reada_args reada_args;
-+	struct btrfs_key key;
-+	struct btrfs_root *root = NULL;
-+
-+	if (!argp)
-+		return -EINVAL;
-+
-+	if (!capable(CAP_SYS_ADMIN))
-+		return -EPERM;
-+
-+	if (copy_from_user(&reada_args,
-+			   (struct btrfs_ioctl_reada_args __user *)argp,
-+			   sizeof(reada_args)))
-+		return -EFAULT;
-+
-+	start.objectid = reada_args.start_objectid;
-+	start.type = reada_args.start_type;
-+	start.offset = reada_args.start_offset;
-+	end.objectid = reada_args.end_objectid;
-+	end.type = reada_args.end_type;
-+	end.offset = reada_args.end_offset;
-+
-+	key.objectid = reada_args.tree;
-+	key.type = BTRFS_ROOT_ITEM_KEY;
-+	key.offset = (u64)-1;
-+	root = btrfs_read_fs_root_no_name(fs_info, &key);
-+	if (IS_ERR(root))
-+		return -ENOENT;
-+
-+	if (!(reada_args.flags & BTRFS_READA_IOC_FLAGS_TRAD)) {
-+		void *handle;
-+
-+		handle = btrfs_reada_add(root, &start, &end);
-+		if (IS_ERR(handle))
-+			return PTR_ERR(handle);
-+
-+		if (reada_args.flags & BTRFS_READA_IOC_FLAGS_WAIT)
-+			btrfs_reada_wait(handle);
-+		else
-+			btrfs_reada_detach(handle);
-+	} else {
-+		struct btrfs_path *path;
-+		struct extent_buffer *leaf;
-+		int slot;
-+		int ret;
-+
-+		/*
-+		 * enumerate the tree the traditional way
-+		 */
-+		path = btrfs_alloc_path();
-+		if (!path)
-+			return -ENOMEM;
-+		path->reada = 2;
-+
-+		ret = btrfs_search_slot(NULL, root, &start, path, 0, 0);
-+		if (ret < 0)
-+			goto out;
-+
-+		do {
-+			leaf = path->nodes[0];
-+			slot = path->slots[0];
-+			btrfs_item_key_to_cpu(leaf, &key, slot);
-+
-+			if (key.objectid > end.objectid)
-+				break;
-+			if (key.objectid == end.objectid && key.type > end.type)
-+				break;
-+			if (key.objectid == end.objectid &&
-+			    key.type == end.type && key.offset > end.offset)
-+				break;
-+		} while ((ret = btrfs_next_leaf(root, path)) == 0);
-+out:
-+		btrfs_free_path(path);
-+		return ret >= 0 ? 0 : ret;
-+	}
-+	return 0;
-+}
-+
- static long btrfs_ioctl_scrub(struct btrfs_root *root, void __user *arg)
- {
- 	int ret;
-@@ -2829,8 +2916,7 @@ static long btrfs_ioctl_scrub_progress(struct btrfs_root *root,
- 	return ret;
- }
- 
--long btrfs_ioctl(struct file *file, unsigned int
--		cmd, unsigned long arg)
-+long btrfs_ioctl(struct file *file, unsigned int cmd, unsigned long arg)
- {
- 	struct btrfs_root *root = BTRFS_I(fdentry(file)->d_inode)->root;
- 	void __user *argp = (void __user *)arg;
-@@ -2901,7 +2987,8 @@ long btrfs_ioctl(struct file *file, unsigned int
- 		return btrfs_ioctl_scrub_cancel(root, argp);
- 	case BTRFS_IOC_SCRUB_PROGRESS:
- 		return btrfs_ioctl_scrub_progress(root, argp);
-+	case BTRFS_IOC_READA_TEST:
-+		return btrfs_ioctl_reada_test(root->fs_info, argp);
- 	}
--
- 	return -ENOTTY;
- }
-diff --git a/fs/btrfs/ioctl.h b/fs/btrfs/ioctl.h
-index ad1ea78..ee83259 100644
---- a/fs/btrfs/ioctl.h
-+++ b/fs/btrfs/ioctl.h
-@@ -193,6 +193,20 @@ struct btrfs_ioctl_space_args {
- 	struct btrfs_ioctl_space_info spaces[0];
- };
- 
-+#define BTRFS_READA_IOC_FLAGS_WAIT	1
-+#define BTRFS_READA_IOC_FLAGS_TRAD	2
-+struct btrfs_ioctl_reada_args {
-+	__u64 flags;
-+	__u64 tree;
-+	__u64 start_objectid;
-+	__u8 start_type;
-+	__u64 start_offset;
-+	__u64 end_objectid;
-+	__u8 end_type;
-+	__u64 end_offset;
-+	__u64 unused[100];
-+};
-+
- #define BTRFS_IOC_SNAP_CREATE _IOW(BTRFS_IOCTL_MAGIC, 1, \
- 				   struct btrfs_ioctl_vol_args)
- #define BTRFS_IOC_DEFRAG _IOW(BTRFS_IOCTL_MAGIC, 2, \
-@@ -248,4 +262,6 @@ struct btrfs_ioctl_space_args {
- 				 struct btrfs_ioctl_dev_info_args)
- #define BTRFS_IOC_FS_INFO _IOR(BTRFS_IOCTL_MAGIC, 31, \
- 			       struct btrfs_ioctl_fs_info_args)
-+#define BTRFS_IOC_READA_TEST _IOW(BTRFS_IOCTL_MAGIC, 99, \
-+				struct btrfs_ioctl_reada_args)
- #endif
+On Wed, Jun 29, 2011 at 12:16:06PM -0400, Josef Bacik wrote:
+> On 06/29/2011 11:00 AM, Stephane Chazelas wrote:
+> > 2011-06-29 15:37:47 +0100, Stephane Chazelas:
+> > [...]
+> >> I found
+> >> http://thread.gmane.org/gmane.comp.file-systems.btrfs/8123/focus=8208
+> >>
+> >> which looks like the same issue, with Li Zefan saying he had a
+> >> fix, but I couldn't find any mention that it was actually fixed.
+> >>
+> >> Has anybody got any update on that?
+> > [...]
+> > 
+> > I've found
+> > http://thread.gmane.org/gmane.comp.file-systems.btrfs/8232
+> > 
+> > but no corresponding fix or ioctl.c
+> > http://git.kernel.org/?p=linux/kernel/git/mason/btrfs-unstable.git;a=history;f=fs/btrfs/ioctl.c
+> > 
+> > I'm under the impression that the issue has been forgotten
+> > about.
+> > 
+> > From what I managed to gather though, it seems that what's on
+> > disk is correct, it's just the ioctl and/or "btrfs sub list"
+> > that's wrong. Am I right?
+> 
+> Yeah, did you apply the patch from that thread and verify that it fixes
+> your problem?  Thanks,
+
+   Note that changing this API will probably break btrfs-gui's listing
+of subvolumes...
+
+   The issue with that patch is that there are two distinct behaviours
+that people want or expect with the tree-search ioctl:
+
+(A) Return all items with keys which collate linearly between
+    (min_objectid, min_type, min_offset) and 
+    (max_objectid, max_type, max_offset)
+
+    i.e. treating keys as indivisible objects and sorting lexically,
+    as the trees do.
+
+(B) Return all items with keys (i, t, o) which fulfil the criteria
+    (min_objectid <= i <= max_objectid,
+     min_type <= t <= max_type,
+     min_offset <= o <= max_offset)
+
+    i.e. treating keys as 3-tuples, and selecting from a rectilinear
+    subsset of the tuple space, which is natural for some
+    applications.
+
+   Clearly, we can't do both with the same call (except for some
+limited cases (*)). However, different users expect different
+behaviours. The current behaviour is (A), which is the "natural"
+behaviour for tree searches within the btrfs code, and is (IMO) the
+right thing to be doing for an API like this.
+
+   It sounds to me like the user of the API needs to be fixed, not the
+ioctl itself -- possibly the author of the subvol scanning code
+assumed (B) when they were getting (A). Note that there is at least
+one other user of the ioctl outside btrfs-progs: btrfs-gui, which uses
+the ioctl for several things, one of which is enumerating subvolumes
+as btrfs-progs does.
+
+   It should be possible to write an additional ioctl for behaviour
+(B) which contains both min and max limits on each element of the key
+3-tuple, *and* the current search state. That would reduce developer
+confusion (given appropriate comments or documentation to explain what
+the difference between the two is). However, I'm not sufficiently
+convinced that it's actually necessary right now. I may change my tune
+after I've started doing some of the more complex bits I'd thought of
+doing with btrfs-gui, but for now, it's perfectly possible to use the
+existing API without too much hassle.
+
+   Hugo.
+
+(*) The limited cases where both behaviours return the same set of
+keys are:
+
+(i_0, 0, 0) to (i_1, -1UL, -1UL)
+(i, t_0, 0) to (i, t_1, -1UL)
+(i, t, o_0) to (i, t, o_1)
+
 -- 
-1.7.3.4
+=== Hugo Mills: hugo@... carfax.org.uk | darksatanic.net | lug.org.uk ===
+  PGP key: 515C238D from wwwkeys.eu.pgp.net or http://www.carfax.org.uk
+    --- I get nervous when I see words like 'mayhaps' in a novel, ---    
+                because I fear that just round the corner                
+                          is lurking 'forsooth'                          
 
+--opJtzjQTFsWo+cga
+Content-Type: application/pgp-signature; name="signature.asc"
+Content-Description: Digital signature
+Content-Disposition: inline
+
+-----BEGIN PGP SIGNATURE-----
+Version: GnuPG v1.4.10 (GNU/Linux)
+
+iD8DBQFOC1ctIKyzvlFcI40RAnU0AKCUYWxbBV748PP/zB9im30gVLeuUACghVO4
+2g8r28zLB3CaZowHT+fJ0y0=
+=xkGm
+-----END PGP SIGNATURE-----
+
+--opJtzjQTFsWo+cga--

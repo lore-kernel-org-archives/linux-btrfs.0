@@ -1,89 +1,132 @@
-From: Tsutomu Itoh <t-itoh@jp.fujitsu.com>
-Subject: [PATCH v3] Btrfs: fix error check of btrfs_lookup_dentry()
-Date: Wed, 29 Jun 2011 13:54:51 +0900
-Message-ID: <201106290454.AA00029@T-ITOH1.jp.fujitsu.com>
+From: Li Zefan <lizf@cn.fujitsu.com>
+Subject: Re: [PATCH v8 2/8] btrfs: Cancel filesystem balance
+Date: Wed, 29 Jun 2011 14:00:20 +0800
+Message-ID: <4E0ABF74.1070901@cn.fujitsu.com>
+References: <1309120615-18104-1-git-send-email-hugo@carfax.org.uk> <1309120615-18104-3-git-send-email-hugo@carfax.org.uk>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Cc: chris.mason@oracle.com, josef@redhat.com
-To: linux-btrfs@vger.kernel.org
+Content-Type: text/plain; charset=UTF-8
+Cc: Btrfs mailing list <linux-btrfs@vger.kernel.org>,
+	Chris Mason <chris.mason@oracle.com>,
+	David Sterba <dave@jikos.cz>
+To: Hugo Mills <hugo@carfax.org.uk>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
+In-Reply-To: <1309120615-18104-3-git-send-email-hugo@carfax.org.uk>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-The return value of btrfs_lookup_dentry is checked so that
-the panic such as illegal address reference should not occur.
+Hugo Mills wrote:
+> This patch adds an ioctl for cancelling a btrfs balance operation
+> mid-flight. The ioctl simply sets a flag, and the operation terminates
+> after the current block group move has completed.
+> 
+> Signed-off-by: Hugo Mills <hugo@carfax.org.uk>
+> ---
+>  fs/btrfs/ctree.h   |    1 +
+>  fs/btrfs/ioctl.c   |   28 ++++++++++++++++++++++++++++
+>  fs/btrfs/ioctl.h   |    1 +
+>  fs/btrfs/volumes.c |    7 ++++++-
+>  4 files changed, 36 insertions(+), 1 deletions(-)
+> 
+> diff --git a/fs/btrfs/ctree.h b/fs/btrfs/ctree.h
+> index 25aa3cf..5031085 100644
+> --- a/fs/btrfs/ctree.h
+> +++ b/fs/btrfs/ctree.h
+> @@ -876,6 +876,7 @@ struct btrfs_block_group_cache {
+>  struct btrfs_balance_info {
+>  	u32 expected;
+>  	u32 completed;
+> +	int cancel_pending;
+>  };
+>  
+>  struct reloc_control;
+> diff --git a/fs/btrfs/ioctl.c b/fs/btrfs/ioctl.c
+> index 5ddf816..d4458d0 100644
+> --- a/fs/btrfs/ioctl.c
+> +++ b/fs/btrfs/ioctl.c
+> @@ -2868,6 +2868,32 @@ error:
+>  	return ret;
+>  }
+>  
+> +/*
+> + * Cancel a running balance operation
+> + */
+> +long btrfs_ioctl_balance_cancel(struct btrfs_fs_info *fs_info)
+> +{
+> +	int err = 0;
+> +
+> +	if (!capable(CAP_SYS_ADMIN))
+> +		return -EPERM;
+> +
+> +	spin_lock(&fs_info->balance_info_lock);
+> +	if (!fs_info->balance_info) {
+> +		err = -EINVAL;
+> +		goto error;
+> +	}
+> +	if (fs_info->balance_info->cancel_pending) {
+> +		err = -ECANCELED;
+> +		goto error;
+> +	}
+> +	fs_info->balance_info->cancel_pending = 1;
+> +
+> +error:
+> +	spin_unlock(&fs_info->balance_info_lock);
+> +	return err;
+> +}
+> +
+>  long btrfs_ioctl(struct file *file, unsigned int
+>  		cmd, unsigned long arg)
+>  {
+> @@ -2915,6 +2941,8 @@ long btrfs_ioctl(struct file *file, unsigned int
+>  		return btrfs_balance(root->fs_info->dev_root);
+>  	case BTRFS_IOC_BALANCE_PROGRESS:
+>  		return btrfs_ioctl_balance_progress(root->fs_info, argp);
+> +	case BTRFS_IOC_BALANCE_CANCEL:
+> +		return btrfs_ioctl_balance_cancel(root->fs_info);
+>  	case BTRFS_IOC_CLONE:
+>  		return btrfs_ioctl_clone(file, arg, 0, 0, 0);
+>  	case BTRFS_IOC_CLONE_RANGE:
+> diff --git a/fs/btrfs/ioctl.h b/fs/btrfs/ioctl.h
+> index 575b25f..edcbe61 100644
+> --- a/fs/btrfs/ioctl.h
+> +++ b/fs/btrfs/ioctl.h
+> @@ -255,4 +255,5 @@ struct btrfs_ioctl_balance_progress {
+>  			       struct btrfs_ioctl_fs_info_args)
+>  #define BTRFS_IOC_BALANCE_PROGRESS _IOR(BTRFS_IOCTL_MAGIC, 32, \
+>  				  struct btrfs_ioctl_balance_progress)
+> +#define BTRFS_IOC_BALANCE_CANCEL _IO(BTRFS_IOCTL_MAGIC, 33)
+>  #endif
+> diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
+> index 4c0a386..f38b231 100644
+> --- a/fs/btrfs/volumes.c
+> +++ b/fs/btrfs/volumes.c
+> @@ -2049,6 +2049,7 @@ int btrfs_balance(struct btrfs_root *dev_root)
+>  	bal_info->expected = -1; /* One less than actually counted,
+>  				    because chunk 0 is special */
+>  	bal_info->completed = 0;
+> +	bal_info->cancel_pending = 0;
+>  	spin_unlock(&dev_root->fs_info->balance_info_lock);
+>  
+>  	/* step one make some room on all the devices */
+> @@ -2109,7 +2110,7 @@ int btrfs_balance(struct btrfs_root *dev_root)
+>  	key.offset = (u64)-1;
+>  	key.type = BTRFS_CHUNK_ITEM_KEY;
+>  
+> -	while (1) {
+> +	while (!bal_info->cancel_pending) {
+>  		ret = btrfs_search_slot(NULL, chunk_root, &key, path, 0, 0);
+>  		if (ret < 0)
+>  			goto error;
+> @@ -2149,6 +2150,10 @@ int btrfs_balance(struct btrfs_root *dev_root)
+>  		       bal_info->completed, bal_info->expected);
+>  	}
+>  	ret = 0;
+> +	if (bal_info->cancel_pending) {
+> +		printk(KERN_INFO "btrfs: balance cancelled\n");
+> +		ret = -EINTR;
+> +	}
 
-Signed-off-by: Tsutomu Itoh <t-itoh@jp.fujitsu.com>
----
-V1->V2: unnecessary BUG_ON was deleted
-V2->V3: to return -ENOENT instead of NULL when no entry was found,
-        return value of btrfs_lookup_dentry is changed.
+Why not detect if there's any pending signal in the while loop? so
+we can just use Ctrl+C to cancel balance.
 
- fs/btrfs/inode.c |   10 +++++++---
- fs/btrfs/ioctl.c |   10 ++++++++--
- 2 files changed, 15 insertions(+), 5 deletions(-)
-
-diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
-index 447612d..9210c60 100644
---- a/fs/btrfs/inode.c
-+++ b/fs/btrfs/inode.c
-@@ -4025,7 +4025,7 @@ struct inode *btrfs_lookup_dentry(struct inode *dir, struct dentry *dentry)
- 		return ERR_PTR(ret);
- 
- 	if (location.objectid == 0)
--		return NULL;
-+		return ERR_PTR(-ENOENT);
- 
- 	if (location.type == BTRFS_INODE_ITEM_KEY) {
- 		inode = btrfs_iget(dir->i_sb, &location, root, NULL);
-@@ -4080,8 +4080,12 @@ static struct dentry *btrfs_lookup(struct inode *dir, struct dentry *dentry,
- 	struct inode *inode;
- 
- 	inode = btrfs_lookup_dentry(dir, dentry);
--	if (IS_ERR(inode))
--		return ERR_CAST(inode);
-+	if (IS_ERR(inode)) {
-+		if (PTR_ERR(inode) == -ENOENT)
-+			inode = NULL;
-+		else
-+			return ERR_CAST(inode);
-+	}
- 
- 	return d_splice_alias(inode, dentry);
- }
-diff --git a/fs/btrfs/ioctl.c b/fs/btrfs/ioctl.c
-index a3c4751..981084d 100644
---- a/fs/btrfs/ioctl.c
-+++ b/fs/btrfs/ioctl.c
-@@ -325,6 +325,7 @@ static noinline int create_subvol(struct btrfs_root *root,
- 	struct btrfs_root *new_root;
- 	struct dentry *parent = dget_parent(dentry);
- 	struct inode *dir;
-+	struct inode *inode;
- 	int ret;
- 	int err;
- 	u64 objectid;
-@@ -437,7 +438,13 @@ static noinline int create_subvol(struct btrfs_root *root,
- 
- 	BUG_ON(ret);
- 
--	d_instantiate(dentry, btrfs_lookup_dentry(dir, dentry));
-+	inode = btrfs_lookup_dentry(dir, dentry);
-+	if (IS_ERR(inode)) {
-+		ret = PTR_ERR(inode);
-+		goto fail;
-+	}
-+
-+	d_instantiate(dentry, inode);
- fail:
- 	dput(parent);
- 	if (async_transid) {
-@@ -511,7 +518,6 @@ static int create_snapshot(struct btrfs_root *root, struct dentry *dentry,
- 		ret = PTR_ERR(inode);
- 		goto fail;
- 	}
--	BUG_ON(!inode);
- 	d_instantiate(dentry, inode);
- 	ret = 0;
- fail:
-
-
+>  error:
+>  	btrfs_free_path(path);
+>  	spin_lock(&dev_root->fs_info->balance_info_lock);

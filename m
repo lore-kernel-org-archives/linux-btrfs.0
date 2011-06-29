@@ -1,34 +1,41 @@
 From: Stephane Chazelas <stephane.chazelas@gmail.com>
-Subject: subvolumes missing from "btrfs subvolume list" output
-Date: Wed, 29 Jun 2011 15:37:47 +0100
-Message-ID: <chaz20110629143747.GA28702@seebyte.com>
+Subject: Re: subvolumes missing from "btrfs subvolume list" output
+Date: Wed, 29 Jun 2011 16:00:41 +0100
+Message-ID: <chaz20110629150041.GB28702@seebyte.com>
+References: <chaz20110629143747.GA28702@seebyte.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
 To: linux-btrfs@vger.kernel.org
 Return-path: <linux-btrfs-owner@vger.kernel.org>
+In-Reply-To: <chaz20110629143747.GA28702@seebyte.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hiya,
+2011-06-29 15:37:47 +0100, Stephane Chazelas:
+[...]
+> I found
+> http://thread.gmane.org/gmane.comp.file-systems.btrfs/8123/focus=8208
+> 
+> which looks like the same issue, with Li Zefan saying he had a
+> fix, but I couldn't find any mention that it was actually fixed.
+> 
+> Has anybody got any update on that?
+[...]
 
-I've got a btrfs FS with 84 subvolumes in it (some created
-with "btrfs sub create", some with "btrfs sub snap" of the other
-ones). There's no nesting of subvolumes at all (all direct
-children of the root subvolume).
+I've found
+http://thread.gmane.org/gmane.comp.file-systems.btrfs/8232
 
-The "btrfs subvolume list" is only showing 80 subvolumes. The 4
-missing ones (1 original volume, 3 snapshots) do exist on disk
-and files in there have different st_devs from any other
-subvolume.
+but no corresponding fix or ioctl.c
+http://git.kernel.org/?p=linux/kernel/git/mason/btrfs-unstable.git;a=history;f=fs/btrfs/ioctl.c
 
-How would I start investigating what's wrong? And how to fix it.
+I'm under the impression that the issue has been forgotten
+about.
 
-I found
-http://thread.gmane.org/gmane.comp.file-systems.btrfs/8123/focus=8208
+>From what I managed to gather though, it seems that what's on
+disk is correct, it's just the ioctl and/or "btrfs sub list"
+that's wrong. Am I right?
 
-which looks like the same issue, with Li Zefan saying he had a
-fix, but I couldn't find any mention that it was actually fixed.
+(btw, I forgot to mention the kernel version: 3.0rc4 amd64,
+btrfs tools from git)
 
-Has anybody got any update on that?
-
-Thanks in advance,
+Cheers,
 Stephane

@@ -1,113 +1,174 @@
 From: Arne Jansen <sensille@gmx.net>
-Subject: Re: [PATCH v3 1/6] btrfs: add READAHEAD extent buffer flag
-Date: Wed, 29 Jun 2011 20:48:11 +0200
-Message-ID: <4E0B736B.2050608@gmx.net>
-References: <cover.1309364964.git.sensille@gmx.net> <9f3fd310a7f4fe6282c7ad154b918e8c17b0849e.1309364964.git.sensille@gmx.net> <4E0B6B33.6090308@redhat.com> <4E0B6DF3.6010906@gmx.net>
-Mime-Version: 1.0
-Content-Type: text/plain; charset=windows-1252;
-	format=flowed
-Cc: chris.mason@oracle.com, linux-btrfs@vger.kernel.org
-To: Josef Bacik <josef@redhat.com>
+Subject: [PATCH v4 6/7] btrfs: test ioctl for readahead
+Date: Wed, 29 Jun 2011 22:10:09 +0200
+Message-ID: <07e874ae6c7f9a6a6991e7771dc0f50f16be5262.1309375866.git.sensille@gmx.net>
+References: <cover.1309375866.git.sensille@gmx.net>
+To: chris.mason@oracle.com, linux-btrfs@vger.kernel.org
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <4E0B6DF3.6010906@gmx.net>
+In-Reply-To: <cover.1309375866.git.sensille@gmx.net>
+In-Reply-To: <cover.1309375866.git.sensille@gmx.net>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 29.06.2011 20:24, Arne Jansen wrote:
-> On 29.06.2011 20:13, Josef Bacik wrote:
->> On 06/29/2011 12:32 PM, Arne Jansen wrote:
->>> Add a READAHEAD extent buffer flag.
->>> Add a function to trigger a read with this flag set.
->>>
->>> Changes v2:
->>> - use extent buffer flags instead of extent state flags
->>>
->>> Signed-off-by: Arne Jansen<sensille@gmx.net>
->>> ---
->>> fs/btrfs/disk-io.c | 32 ++++++++++++++++++++++++++++++++
->>> fs/btrfs/disk-io.h | 2 ++
->>> fs/btrfs/extent_io.h | 1 +
->>> 3 files changed, 35 insertions(+), 0 deletions(-)
->>>
->>> diff --git a/fs/btrfs/disk-io.c b/fs/btrfs/disk-io.c
->>> index 0339cc0..0195172 100644
->>> --- a/fs/btrfs/disk-io.c
->>> +++ b/fs/btrfs/disk-io.c
->>> @@ -945,6 +945,38 @@ int readahead_tree_block(struct btrfs_root
->>> *root, u64 bytenr, u32 blocksize,
->>> return ret;
->>> }
->>>
->>> +int reada_tree_block_flagged(struct btrfs_root *root, u64 bytenr,
->>> u32 blocksize,
->>> + int mirror_num, struct extent_buffer **eb)
->>> +{
->>> + struct extent_buffer *buf =3D NULL;
->>> + struct inode *btree_inode =3D root->fs_info->btree_inode;
->>> + struct extent_io_tree *io_tree =3D&BTRFS_I(btree_inode)->io_tree;
->>> + int ret;
->>> +
->>> + buf =3D btrfs_find_create_tree_block(root, bytenr, blocksize);
->>> + if (!buf)
->>> + return 0;
->>> +
->>> + set_bit(EXTENT_BUFFER_READAHEAD,&buf->bflags);
->>> +
->>> + ret =3D read_extent_buffer_pages(io_tree, buf, 0, 0, 1,
->>> btree_get_extent,
->>> + mirror_num);
->>
->> This patch doesn't compile for me, it says there are too many
->> arguments here.
->
-> Ok, commit d1310b2e0cd98eb134 changed a lot here, I'll take a lot how=
- to
-> rebase this and send a v4.
+This ioctl is added to trigger a readahead from user mode. It implements
+a readahead using the new interface and also a traditional tree walk.
+This way it's possible to measure the two side by side.
 
-hm, no, that was bullshit, I just forgot to send the first patch in the
-series :-/
+Signed-off-by: Arne Jansen <sensille@gmx.net>
+---
+ fs/btrfs/ioctl.c |   93 ++++++++++++++++++++++++++++++++++++++++++++++++++++--
+ fs/btrfs/ioctl.h |   16 +++++++++
+ 2 files changed, 106 insertions(+), 3 deletions(-)
 
->
-> Thanks,
-> Arne
->
->>
->> [root@destiny btrfs-work]# make M=3Dfs/btrfs
->> CC [M] fs/btrfs/disk-io.o
->> fs/btrfs/disk-io.c: In function =91reada_tree_block_flagged=92:
->> fs/btrfs/disk-io.c:963:6: warning: passing argument 5 of
->> =91read_extent_buffer_pages=92 makes pointer from integer without a =
-cast
->> [enabled by default]
->> fs/btrfs/extent_io.h:244:5: note: expected =91struct extent_map *
->> (*)(struct inode *, struct page *, size_t, u64, u64, int)=92 but
->> argument is of type =91int=92
->> fs/btrfs/disk-io.c:963:6: warning: passing argument 6 of
->> =91read_extent_buffer_pages=92 makes integer from pointer without a =
-cast
->> [enabled by default]
->> fs/btrfs/extent_io.h:244:5: note: expected =91int=92 but argument is=
- of
->> type =91struct extent_map * (*)(struct inode *, struct page *, size_=
-t,
->> u64, u64, int)=92
->> fs/btrfs/disk-io.c:963:6: error: too many arguments to function
->> =91read_extent_buffer_pages=92
->> fs/btrfs/extent_io.h:244:5: note: declared here
->> make[1]: *** [fs/btrfs/disk-io.o] Error 1
->> make: *** [_module_fs/btrfs] Error 2
->>
->> Thanks,
->>
->> Josef
->
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-btrfs=
-" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at http://vger.kernel.org/majordomo-info.html
+diff --git a/fs/btrfs/ioctl.c b/fs/btrfs/ioctl.c
+index a3c4751..6e77c20 100644
+--- a/fs/btrfs/ioctl.c
++++ b/fs/btrfs/ioctl.c
+@@ -2784,6 +2784,93 @@ static noinline long btrfs_ioctl_wait_sync(struct file *file, void __user *argp)
+ 	return btrfs_wait_for_commit(root, transid);
+ }
+ 
++static noinline long btrfs_ioctl_reada_test(struct btrfs_fs_info *fs_info,
++					    void __user *argp)
++{
++	struct btrfs_key start = { 0 };
++	struct btrfs_key end = {
++		.objectid = (u64)-1,
++		.type = (u8)-1,
++		.offset = (u64)-1
++	};
++	struct btrfs_ioctl_reada_args reada_args;
++	struct btrfs_key key;
++	struct btrfs_root *root = NULL;
++
++	if (!argp)
++		return -EINVAL;
++
++	if (!capable(CAP_SYS_ADMIN))
++		return -EPERM;
++
++	if (copy_from_user(&reada_args,
++			   (struct btrfs_ioctl_reada_args __user *)argp,
++			   sizeof(reada_args)))
++		return -EFAULT;
++
++	start.objectid = reada_args.start_objectid;
++	start.type = reada_args.start_type;
++	start.offset = reada_args.start_offset;
++	end.objectid = reada_args.end_objectid;
++	end.type = reada_args.end_type;
++	end.offset = reada_args.end_offset;
++
++	key.objectid = reada_args.tree;
++	key.type = BTRFS_ROOT_ITEM_KEY;
++	key.offset = (u64)-1;
++	root = btrfs_read_fs_root_no_name(fs_info, &key);
++	if (IS_ERR(root))
++		return -ENOENT;
++
++	if (!(reada_args.flags & BTRFS_READA_IOC_FLAGS_TRAD)) {
++		void *handle;
++
++		handle = btrfs_reada_add(root, &start, &end);
++		if (IS_ERR(handle))
++			return PTR_ERR(handle);
++
++		if (reada_args.flags & BTRFS_READA_IOC_FLAGS_WAIT)
++			btrfs_reada_wait(handle);
++		else
++			btrfs_reada_detach(handle);
++	} else {
++		struct btrfs_path *path;
++		struct extent_buffer *leaf;
++		int slot;
++		int ret;
++
++		/*
++		 * enumerate the tree the traditional way
++		 */
++		path = btrfs_alloc_path();
++		if (!path)
++			return -ENOMEM;
++		path->reada = 2;
++
++		ret = btrfs_search_slot(NULL, root, &start, path, 0, 0);
++		if (ret < 0)
++			goto out;
++
++		do {
++			leaf = path->nodes[0];
++			slot = path->slots[0];
++			btrfs_item_key_to_cpu(leaf, &key, slot);
++
++			if (key.objectid > end.objectid)
++				break;
++			if (key.objectid == end.objectid && key.type > end.type)
++				break;
++			if (key.objectid == end.objectid &&
++			    key.type == end.type && key.offset > end.offset)
++				break;
++		} while ((ret = btrfs_next_leaf(root, path)) == 0);
++out:
++		btrfs_free_path(path);
++		return ret >= 0 ? 0 : ret;
++	}
++	return 0;
++}
++
+ static long btrfs_ioctl_scrub(struct btrfs_root *root, void __user *arg)
+ {
+ 	int ret;
+@@ -2836,8 +2923,7 @@ static long btrfs_ioctl_scrub_progress(struct btrfs_root *root,
+ 	return ret;
+ }
+ 
+-long btrfs_ioctl(struct file *file, unsigned int
+-		cmd, unsigned long arg)
++long btrfs_ioctl(struct file *file, unsigned int cmd, unsigned long arg)
+ {
+ 	struct btrfs_root *root = BTRFS_I(fdentry(file)->d_inode)->root;
+ 	void __user *argp = (void __user *)arg;
+@@ -2908,7 +2994,8 @@ long btrfs_ioctl(struct file *file, unsigned int
+ 		return btrfs_ioctl_scrub_cancel(root, argp);
+ 	case BTRFS_IOC_SCRUB_PROGRESS:
+ 		return btrfs_ioctl_scrub_progress(root, argp);
++	case BTRFS_IOC_READA_TEST:
++		return btrfs_ioctl_reada_test(root->fs_info, argp);
+ 	}
+-
+ 	return -ENOTTY;
+ }
+diff --git a/fs/btrfs/ioctl.h b/fs/btrfs/ioctl.h
+index ad1ea78..ee83259 100644
+--- a/fs/btrfs/ioctl.h
++++ b/fs/btrfs/ioctl.h
+@@ -193,6 +193,20 @@ struct btrfs_ioctl_space_args {
+ 	struct btrfs_ioctl_space_info spaces[0];
+ };
+ 
++#define BTRFS_READA_IOC_FLAGS_WAIT	1
++#define BTRFS_READA_IOC_FLAGS_TRAD	2
++struct btrfs_ioctl_reada_args {
++	__u64 flags;
++	__u64 tree;
++	__u64 start_objectid;
++	__u8 start_type;
++	__u64 start_offset;
++	__u64 end_objectid;
++	__u8 end_type;
++	__u64 end_offset;
++	__u64 unused[100];
++};
++
+ #define BTRFS_IOC_SNAP_CREATE _IOW(BTRFS_IOCTL_MAGIC, 1, \
+ 				   struct btrfs_ioctl_vol_args)
+ #define BTRFS_IOC_DEFRAG _IOW(BTRFS_IOCTL_MAGIC, 2, \
+@@ -248,4 +262,6 @@ struct btrfs_ioctl_space_args {
+ 				 struct btrfs_ioctl_dev_info_args)
+ #define BTRFS_IOC_FS_INFO _IOR(BTRFS_IOCTL_MAGIC, 31, \
+ 			       struct btrfs_ioctl_fs_info_args)
++#define BTRFS_IOC_READA_TEST _IOW(BTRFS_IOCTL_MAGIC, 99, \
++				struct btrfs_ioctl_reada_args)
+ #endif
+-- 
+1.7.3.4
 
---
-To unsubscribe from this list: send the line "unsubscribe linux-btrfs" =
-in
-the body of a message to majordomo@vger.kernel.org
-More majordomo info at  http://vger.kernel.org/majordomo-info.html

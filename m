@@ -1,83 +1,66 @@
 From: Liu Bo <liubo2009@cn.fujitsu.com>
-Subject: [PATCH 02/12] Btrfs: update block generation if should_cow_block fails
-Date: Thu, 30 Jun 2011 15:36:22 +0800
-Message-ID: <1309419392-17770-3-git-send-email-liubo2009@cn.fujitsu.com>
-References: <1309419392-17770-1-git-send-email-liubo2009@cn.fujitsu.com>
+Subject: [GIT PULL v4] Btrfs: improve write ahead log with sub transaction
+Date: Thu, 30 Jun 2011 15:36:20 +0800
+Message-ID: <1309419392-17770-1-git-send-email-liubo2009@cn.fujitsu.com>
 Cc: <dave@jikos.cz>, <chris.mason@oracle.com>, <josef@redhat.com>
 To: <linux-btrfs@vger.kernel.org>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <1309419392-17770-1-git-send-email-liubo2009@cn.fujitsu.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Cause we've added sub transaction, if it do not want to cow a block, we also
-need to get new sub transid recorded.  This is used for log code to find the
-most uptodate file extents.
+I've been working to try to improve the write-ahead log's performance,
+and I found that the bottleneck addresses in the checksum items,
+especially when we want to make a random write on a large file, e.g a 4G file.
 
-Signed-off-by: Liu Bo <liubo2009@cn.fujitsu.com>
----
- fs/btrfs/ctree.c |   34 +++++++++++++++++++++++++++++++++-
- 1 files changed, 33 insertions(+), 1 deletions(-)
+Then a idea for this suggested by Chris is to use sub transaction ids and just
+to log the part of inode that had changed since either the last log commit or
+the last transaction commit.  And as we also push the sub transid into the btree
+blocks, we'll get much faster tree walks.  As a result, we abandon the original
+brute force approach, which is "to delete all items of the inode in log",
+to making sure we get the most uptodate copies of everything, and instead
+we manage to "find and merge", i.e. finding extents in the log tree and merging
+in the new extents from the file.
 
-diff --git a/fs/btrfs/ctree.c b/fs/btrfs/ctree.c
-index f35b517..cfddb05 100644
---- a/fs/btrfs/ctree.c
-+++ b/fs/btrfs/ctree.c
-@@ -477,6 +477,33 @@ static noinline int __btrfs_cow_block(struct btrfs_trans_handle *trans,
- 	return 0;
- }
+This patchset puts the above idea into code, and although the code is now more
+complex, it brings us a great deal of performance improvement:
+
+in my sysbench "write + fsync" test:
+
+        451.01Kb/sec -> 4.3621Mb/sec
+
+Also, I've run the "synctest", and it works well with both directory and file.
+
+v1->v2, rebase.
+v2->v3, thanks to Chris, we worked together to solve 2 bugs, and after that it
+worked as expected.
+v3->v4, thanks to Josef, we simplify several codes.
  
-+static inline void update_block_generation(struct btrfs_trans_handle *trans,
-+					   struct btrfs_root *root,
-+					   struct extent_buffer *buf,
-+					   struct extent_buffer *parent,
-+					   int slot)
-+{
-+	/*
-+	 * If it does not need to cow this block, we still need to
-+	 * update the block's generation, for transid may have been
-+	 * changed during fsync.
-+	*/
-+	if (btrfs_header_generation(buf) == trans->transid)
-+		return;
-+
-+	if (buf == root->node) {
-+		btrfs_set_header_generation(buf, trans->transid);
-+		btrfs_mark_buffer_dirty(buf);
-+		add_root_to_dirty_list(root);
-+	} else {
-+		btrfs_set_node_ptr_generation(parent, slot,
-+					      trans->transid);
-+		btrfs_set_header_generation(buf, trans->transid);
-+		btrfs_mark_buffer_dirty(parent);
-+		btrfs_mark_buffer_dirty(buf);
-+	}
-+}
-+
- static inline int should_cow_block(struct btrfs_trans_handle *trans,
- 				   struct btrfs_root *root,
- 				   struct extent_buffer *buf)
-@@ -517,6 +544,7 @@ noinline int btrfs_cow_block(struct btrfs_trans_handle *trans,
- 	}
- 
- 	if (!should_cow_block(trans, root, buf)) {
-+		update_block_generation(trans, root, buf, parent, parent_slot);
- 		*cow_ret = buf;
- 		return 0;
- 	}
-@@ -1655,8 +1683,12 @@ again:
- 			 * then we don't want to set the path blocking,
- 			 * so we test it here
- 			 */
--			if (!should_cow_block(trans, root, b))
-+			if (!should_cow_block(trans, root, b)) {
-+				update_block_generation(trans, root, b,
-+							p->nodes[level + 1],
-+							p->slots[level + 1]);
- 				goto cow_done;
-+			}
- 
- 			btrfs_set_path_blocking(p);
- 
--- 
-1.6.5.2
+Liu Bo (12):
+  Btrfs: introduce sub transaction stuff
+  Btrfs: update block generation if should_cow_block fails
+  Btrfs: modify btrfs_drop_extents API
+  Btrfs: introduce first sub trans
+  Btrfs: still update inode trans stuff when size remains unchanged
+  Btrfs: improve log with sub transaction
+  Btrfs: add checksum check for log
+  Btrfs: fix a bug of log check
+  Btrfs: kick off useless code
+  Btrfs: use the right generation number to read log_root_tree
+  Btrfs: do not iput inode when inode is still in log
+  Revert "Btrfs: do not flush csum items of unchanged file data during
+    treelog"
+
+ fs/btrfs/btrfs_inode.h |   12 ++-
+ fs/btrfs/ctree.c       |   69 +++++++++++----
+ fs/btrfs/ctree.h       |    5 +-
+ fs/btrfs/disk-io.c     |   12 ++--
+ fs/btrfs/extent-tree.c |   10 ++-
+ fs/btrfs/file.c        |   22 ++---
+ fs/btrfs/inode.c       |   39 ++++++---
+ fs/btrfs/ioctl.c       |    6 +-
+ fs/btrfs/relocation.c  |    6 +-
+ fs/btrfs/transaction.c |   13 ++-
+ fs/btrfs/transaction.h |   19 ++++-
+ fs/btrfs/tree-defrag.c |    2 +-
+ fs/btrfs/tree-log.c    |  225 ++++++++++++++++++++++++++++++++----------------
+ 13 files changed, 293 insertions(+), 147 deletions(-)
 

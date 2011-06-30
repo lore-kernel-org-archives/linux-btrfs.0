@@ -1,368 +1,218 @@
-From: Proskurin Kirill <k.proskurin@corp.mail.ru>
-Subject: Re: [btrfs-transacti] & btrfs-endio-wri] - WAS: Re: [btrfs-delalloc-]
-Date: Thu, 30 Jun 2011 22:13:10 +0400
-Message-ID: <4E0CBCB6.7060808@corp.mail.ru>
-References: <4E084786.2070200@corp.mail.ru> <201106271521.54497.hka@qbs.com.pl> <4E0B46CA.2030205@corp.mail.ru> <4E0B4F67.30702@redhat.com> <4E0C8443.7070109@corp.mail.ru> <4E0CAE9E.7000406@redhat.com>
-Reply-To: Btrfs mailing list <linux-btrfs@vger.kernel.org>
-Mime-Version: 1.0
-Content-Type: multipart/mixed;
- boundary="------------080606090802080003010407"
-To: Btrfs mailing list <linux-btrfs@vger.kernel.org>
+From: Josef Bacik <josef@redhat.com>
+Subject: [PATCH] Btrfs: use a worker thread to do caching
+Date: Thu, 30 Jun 2011 16:03:48 -0400
+Message-ID: <1309464228-20566-1-git-send-email-josef@redhat.com>
+Cc: rm@romanrm.ru
+To: linux-btrfs@vger.kernel.org
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <4E0CAE9E.7000406@redhat.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-This is a multi-part message in MIME format.
---------------080606090802080003010407
-Content-Type: text/plain; charset=ISO-8859-1; format=flowed
-Content-Transfer-Encoding: 7bit
+A user reported a deadlock when copying a bunch of files.  This is because they
+were low on memory and kthreadd got hung up trying to migrate pages for an
+allocation when starting the caching kthread.  The page was locked by the person
+starting the caching kthread.  To fix this we just need to use the async thread
+stuff so that the threads are already created and we don't have to worry about
+deadlocks.  Thanks,
 
-On 06/30/2011 09:13 PM, Josef Bacik wrote:
-> On 06/30/2011 10:12 AM, Proskurin Kirill wrote:
->> On 06/29/2011 08:14 PM, Josef Bacik wrote:
->>>> Ok - I upgrade to 2.6.39-2 but it is seems to all things get worse.
->>>> Now I see [btrfs-transacti]&   btrfs-endio-wri] 80-100% all the time and
->>>> io performance looks like lower then before.
->>>>
->>>> Our scribe daemon in state D most of the time with half of a normal
->>>> load. Only kernel was changed.
->>>>
->>>> Any performance tune recommendation?
->>>>
->>>
->>> Can you get sysrq+w while this problem is happening so we can see whats
->>> going on?  Thanks,
->>
->> I attached sysrq+w. Hope it helps.
->>
->
-> Heh so it just looks like you are writing a bunch of stuff, that's not
-> particularly helpful.  What does this program do generically?  How full
-> is your fs?  Do you have snapshots/subvolumes?  If so how many?  Thanks,
+Reported-by: Roman Mamedov <rm@romanrm.ru>
+Signed-off-by: Josef Bacik <josef@redhat.com>
+---
+ fs/btrfs/ctree.h       |    4 +++-
+ fs/btrfs/disk-io.c     |    6 ++++++
+ fs/btrfs/extent-tree.c |   47 +++++++++++++++++++----------------------------
+ 3 files changed, 28 insertions(+), 29 deletions(-)
 
-I found what my btrfs partition now is really slow. Something wrong 
-happend. I try on 2.6.32 and 2.6.39 - same result. It is because 
-partition is almost full?
-
-I run a simple cycle to clean some old files:
-for i in `cat /tmp/delit`; do rm -f $i ; done
-
-And it is takes about 5-10 second per file to delete.
-I get sysrq+w while rm is work - it is attached.
-
+diff --git a/fs/btrfs/ctree.h b/fs/btrfs/ctree.h
+index ae9560a..c01b9d7 100644
+--- a/fs/btrfs/ctree.h
++++ b/fs/btrfs/ctree.h
+@@ -766,7 +766,6 @@ struct btrfs_space_info {
+ 	struct list_head block_groups[BTRFS_NR_RAID_TYPES];
+ 	spinlock_t lock;
+ 	struct rw_semaphore groups_sem;
+-	atomic_t caching_threads;
+ 	wait_queue_head_t wait;
+ };
+ 
+@@ -827,6 +826,7 @@ struct btrfs_caching_control {
+ 	struct list_head list;
+ 	struct mutex mutex;
+ 	wait_queue_head_t wait;
++	struct btrfs_work work;
+ 	struct btrfs_block_group_cache *block_group;
+ 	u64 progress;
+ 	atomic_t count;
+@@ -1035,6 +1035,8 @@ struct btrfs_fs_info {
+ 	struct btrfs_workers endio_write_workers;
+ 	struct btrfs_workers endio_freespace_worker;
+ 	struct btrfs_workers submit_workers;
++	struct btrfs_workers caching_workers;
++
+ 	/*
+ 	 * fixup workers take dirty pages that didn't properly go through
+ 	 * the cow mechanism and make them safe to write.  It happens
+diff --git a/fs/btrfs/disk-io.c b/fs/btrfs/disk-io.c
+index 1ac8db5d..234a084 100644
+--- a/fs/btrfs/disk-io.c
++++ b/fs/btrfs/disk-io.c
+@@ -1807,6 +1807,9 @@ struct btrfs_root *open_ctree(struct super_block *sb,
+ 			   fs_info->thread_pool_size),
+ 			   &fs_info->generic_worker);
+ 
++	btrfs_init_workers(&fs_info->caching_workers, "cache",
++			   2, &fs_info->generic_worker);
++
+ 	/* a higher idle thresh on the submit workers makes it much more
+ 	 * likely that bios will be send down in a sane order to the
+ 	 * devices
+@@ -1860,6 +1863,7 @@ struct btrfs_root *open_ctree(struct super_block *sb,
+ 	btrfs_start_workers(&fs_info->endio_write_workers, 1);
+ 	btrfs_start_workers(&fs_info->endio_freespace_worker, 1);
+ 	btrfs_start_workers(&fs_info->delayed_workers, 1);
++	btrfs_start_workers(&fs_info->caching_workers, 1);
+ 
+ 	fs_info->bdi.ra_pages *= btrfs_super_num_devices(disk_super);
+ 	fs_info->bdi.ra_pages = max(fs_info->bdi.ra_pages,
+@@ -2117,6 +2121,7 @@ fail_sb_buffer:
+ 	btrfs_stop_workers(&fs_info->endio_freespace_worker);
+ 	btrfs_stop_workers(&fs_info->submit_workers);
+ 	btrfs_stop_workers(&fs_info->delayed_workers);
++	btrfs_stop_workers(&fs_info->caching_workers);
+ fail_alloc:
+ 	kfree(fs_info->delayed_root);
+ fail_iput:
+@@ -2584,6 +2589,7 @@ int close_ctree(struct btrfs_root *root)
+ 	btrfs_stop_workers(&fs_info->endio_freespace_worker);
+ 	btrfs_stop_workers(&fs_info->submit_workers);
+ 	btrfs_stop_workers(&fs_info->delayed_workers);
++	btrfs_stop_workers(&fs_info->caching_workers);
+ 
+ 	btrfs_close_devices(fs_info->fs_devices);
+ 	btrfs_mapping_tree_free(&fs_info->mapping_tree);
+diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
+index 340c147..3e52b85 100644
+--- a/fs/btrfs/extent-tree.c
++++ b/fs/btrfs/extent-tree.c
+@@ -320,12 +320,12 @@ static u64 add_new_free_space(struct btrfs_block_group_cache *block_group,
+ 	return total_added;
+ }
+ 
+-static int caching_kthread(void *data)
++static noinline void caching_thread(struct btrfs_work *work)
+ {
+-	struct btrfs_block_group_cache *block_group = data;
+-	struct btrfs_fs_info *fs_info = block_group->fs_info;
+-	struct btrfs_caching_control *caching_ctl = block_group->caching_ctl;
+-	struct btrfs_root *extent_root = fs_info->extent_root;
++	struct btrfs_block_group_cache *block_group;
++	struct btrfs_fs_info *fs_info;
++	struct btrfs_caching_control *caching_ctl;
++	struct btrfs_root *extent_root;
+ 	struct btrfs_path *path;
+ 	struct extent_buffer *leaf;
+ 	struct btrfs_key key;
+@@ -334,9 +334,14 @@ static int caching_kthread(void *data)
+ 	u32 nritems;
+ 	int ret = 0;
+ 
++	caching_ctl = container_of(work, struct btrfs_caching_control, work);
++	block_group = caching_ctl->block_group;
++	fs_info = block_group->fs_info;
++	extent_root = fs_info->extent_root;
++
+ 	path = btrfs_alloc_path();
+ 	if (!path)
+-		return -ENOMEM;
++		goto out;
+ 
+ 	last = max_t(u64, block_group->key.objectid, BTRFS_SUPER_INFO_OFFSET);
+ 
+@@ -433,13 +438,11 @@ err:
+ 	free_excluded_extents(extent_root, block_group);
+ 
+ 	mutex_unlock(&caching_ctl->mutex);
++out:
+ 	wake_up(&caching_ctl->wait);
+ 
+ 	put_caching_control(caching_ctl);
+-	atomic_dec(&block_group->space_info->caching_threads);
+ 	btrfs_put_block_group(block_group);
+-
+-	return 0;
+ }
+ 
+ static int cache_block_group(struct btrfs_block_group_cache *cache,
+@@ -449,7 +452,6 @@ static int cache_block_group(struct btrfs_block_group_cache *cache,
+ {
+ 	struct btrfs_fs_info *fs_info = cache->fs_info;
+ 	struct btrfs_caching_control *caching_ctl;
+-	struct task_struct *tsk;
+ 	int ret = 0;
+ 
+ 	smp_mb();
+@@ -501,6 +503,7 @@ static int cache_block_group(struct btrfs_block_group_cache *cache,
+ 	caching_ctl->progress = cache->key.objectid;
+ 	/* one for caching kthread, one for caching block group list */
+ 	atomic_set(&caching_ctl->count, 2);
++	caching_ctl->work.func = caching_thread;
+ 
+ 	spin_lock(&cache->lock);
+ 	if (cache->cached != BTRFS_CACHE_NO) {
+@@ -516,16 +519,10 @@ static int cache_block_group(struct btrfs_block_group_cache *cache,
+ 	list_add_tail(&caching_ctl->list, &fs_info->caching_block_groups);
+ 	up_write(&fs_info->extent_commit_sem);
+ 
+-	atomic_inc(&cache->space_info->caching_threads);
+ 	btrfs_get_block_group(cache);
+ 
+-	tsk = kthread_run(caching_kthread, cache, "btrfs-cache-%llu\n",
+-			  cache->key.objectid);
+-	if (IS_ERR(tsk)) {
+-		ret = PTR_ERR(tsk);
+-		printk(KERN_ERR "error running thread %d\n", ret);
+-		BUG();
+-	}
++	btrfs_queue_worker(&root->fs_info->caching_workers,
++			   &caching_ctl->work);
+ 
+ 	return ret;
+ }
+@@ -2936,7 +2933,6 @@ static int update_space_info(struct btrfs_fs_info *info, u64 flags,
+ 	init_waitqueue_head(&found->wait);
+ 	*space_info = found;
+ 	list_add_rcu(&found->list, &info->space_info);
+-	atomic_set(&found->caching_threads, 0);
+ 	return 0;
+ }
+ 
+@@ -4997,14 +4993,10 @@ have_block_group:
+ 			}
+ 
+ 			/*
+-			 * We only want to start kthread caching if we are at
+-			 * the point where we will wait for caching to make
+-			 * progress, or if our ideal search is over and we've
+-			 * found somebody to start caching.
++			 * The caching workers are limited to 2 threads, so we
++			 * can queue as much work as we care to.
+ 			 */
+-			if (loop > LOOP_CACHING_NOWAIT ||
+-			    (loop > LOOP_FIND_IDEAL &&
+-			     atomic_read(&space_info->caching_threads) < 2)) {
++			if (loop > LOOP_FIND_IDEAL) {
+ 				ret = cache_block_group(block_group, trans,
+ 							orig_root, 0);
+ 				BUG_ON(ret);
+@@ -5226,8 +5218,7 @@ loop:
+ 		if (loop == LOOP_FIND_IDEAL && found_uncached_bg) {
+ 			found_uncached_bg = false;
+ 			loop++;
+-			if (!ideal_cache_percent &&
+-			    atomic_read(&space_info->caching_threads))
++			if (!ideal_cache_percent)
+ 				goto search;
+ 
+ 			/*
 -- 
-Best regards,
-Proskurin Kirill
+1.7.5.2
 
---------------080606090802080003010407
-Content-Type: application/vnd.rn-realmedia;
- name="dmesg.rm"
-Content-Transfer-Encoding: base64
-Content-Disposition: attachment;
- filename="dmesg.rm"
-
-U3lzUnEgOiBTaG93IEJsb2NrZWQgU3RhdGUKICB0YXNrICAgICAgICAgICAgICAgICAgICAg
-ICAgUEMgc3RhY2sgICBwaWQgZmF0aGVyCnJtICAgICAgICAgICAgRCAwMDAwMDAwMDAwMDAw
-MDAyICAgICAwICA1NjYyICAgNDUxNSAweDAwMDAwMDgwCiBmZmZmODgwMTEwZDkxNmQ4IDAw
-MDAwMDAwMDAwMDAwODIgMDAwMDAwMDAwMDAwMDAwMCBmZmZmZmZmZmEwMjRkOTdiCiBmZmZm
-ODgwMDY3MzI0ZTQwIDAwMDAwMDAwNDVlMWFiMTAgMDAwMDAwMDAwMDAwMzAwMCAwMDAwMDAw
-MTAwMTVkY2RlCiBmZmZmODgwMTNiNjE0NWY4IGZmZmY4ODAxMTBkOTFmZDggMDAwMDAwMDAw
-MDAwZjU5OCBmZmZmODgwMTNiNjE0NWY4CkNhbGwgVHJhY2U6CiBbPGZmZmZmZmZmYTAyNGQ5
-N2I+XSA/IG1kX3JhaWQ1X3VucGx1Z19kZXZpY2UrMHg3Yi8weDEwMCBbcmFpZDQ1Nl0KIFs8
-ZmZmZmZmZmY4MTEwZDMxMD5dID8gc3luY19wYWdlKzB4MC8weDUwCiBbPGZmZmZmZmZmODE0
-ZGIwMTM+XSBpb19zY2hlZHVsZSsweDczLzB4YzAKIFs8ZmZmZmZmZmY4MTEwZDM0ZD5dIHN5
-bmNfcGFnZSsweDNkLzB4NTAKIFs8ZmZmZmZmZmY4MTRkYjg3Zj5dIF9fd2FpdF9vbl9iaXQr
-MHg1Zi8weDkwCiBbPGZmZmZmZmZmODExMGQ1MDM+XSB3YWl0X29uX3BhZ2VfYml0KzB4NzMv
-MHg4MAogWzxmZmZmZmZmZjgxMDhlMTQwPl0gPyB3YWtlX2JpdF9mdW5jdGlvbisweDAvMHg1
-MAogWzxmZmZmZmZmZmEwMjAzNTEyPl0gPyBzdWJtaXRfb25lX2JpbysweDgyLzB4YTAgW2J0
-cmZzXQogWzxmZmZmZmZmZmEwMjBhMzBhPl0gcmVhZF9leHRlbnRfYnVmZmVyX3BhZ2VzKzB4
-MzlhLzB4NDMwIFtidHJmc10KIFs8ZmZmZmZmZmZhMDFkZDBkMD5dID8gYnRyZWVfZ2V0X2V4
-dGVudCsweDAvMHgxYjAgW2J0cmZzXQogWzxmZmZmZmZmZmEwMWUwNjlkPl0gYnRyZWVfcmVh
-ZF9leHRlbnRfYnVmZmVyX3BhZ2VzKzB4NWQvMHhjMCBbYnRyZnNdCiBbPGZmZmZmZmZmYTAx
-ZTA3N2M+XSByZWFkX3RyZWVfYmxvY2srMHgzYy8weDYwIFtidHJmc10KIFs8ZmZmZmZmZmZh
-MDFjMjI1MT5dIHJlYWRfYmxvY2tfZm9yX3NlYXJjaCsweGYxLzB4M2IwIFtidHJmc10KIFs8
-ZmZmZmZmZmZhMDFjYTA3OT5dIGJ0cmZzX3NlYXJjaF9zbG90KzB4MzA5LzB4OGEwIFtidHJm
-c10KIFs8ZmZmZmZmZmZhMDIwNDAwMj5dID8gaW5zZXJ0X3N0YXRlKzB4MTAyLzB4MTgwIFti
-dHJmc10KIFs8ZmZmZmZmZmZhMDFkNWQwYz5dIGxvb2t1cF9pbmxpbmVfZXh0ZW50X2JhY2ty
-ZWYrMHhiYy8weDNmMCBbYnRyZnNdCiBbPGZmZmZmZmZmYTAxZDY0MDY+XSBfX2J0cmZzX2Zy
-ZWVfZXh0ZW50KzB4ZDYvMHg3MzAgW2J0cmZzXQogWzxmZmZmZmZmZmEwMWQ2ZjNlPl0gcnVu
-X2NsdXN0ZXJlZF9yZWZzKzB4NGRlLzB4N2YwIFtidHJmc10KIFs8ZmZmZmZmZmZhMDIyM2Yw
-MD5dID8gYnRyZnNfZmluZF9yZWZfY2x1c3RlcisweDcwLzB4MTgwIFtidHJmc10KIFs8ZmZm
-ZmZmZmZhMDFkNzMxOD5dIGJ0cmZzX3J1bl9kZWxheWVkX3JlZnMrMHhjOC8weDIyMCBbYnRy
-ZnNdCiBbPGZmZmZmZmZmYTAxZTRjMGY+XSBfX2J0cmZzX2VuZF90cmFuc2FjdGlvbisweDZm
-LzB4MjQwIFtidHJmc10KIFs8ZmZmZmZmZmZhMDFlNGUzNT5dIGJ0cmZzX2VuZF90cmFuc2Fj
-dGlvbisweDE1LzB4MjAgW2J0cmZzXQogWzxmZmZmZmZmZmEwMWVjMDc3Pl0gYnRyZnNfZGVs
-ZXRlX2lub2RlKzB4MTk3LzB4MjAwIFtidHJmc10KIFs8ZmZmZmZmZmZhMDFlYmVlMD5dID8g
-YnRyZnNfZGVsZXRlX2lub2RlKzB4MC8weDIwMCBbYnRyZnNdCiBbPGZmZmZmZmZmODExOGNm
-YmU+XSBnZW5lcmljX2RlbGV0ZV9pbm9kZSsweGRlLzB4MWQwCiBbPGZmZmZmZmZmODExOGQx
-MTU+XSBnZW5lcmljX2Ryb3BfaW5vZGUrMHg2NS8weDgwCiBbPGZmZmZmZmZmYTAxZTU5M2Q+
-XSBidHJmc19kcm9wX2lub2RlKzB4M2QvMHg1MCBbYnRyZnNdCiBbPGZmZmZmZmZmODExOGJm
-ODI+XSBpcHV0KzB4NjIvMHg3MAogWzxmZmZmZmZmZjgxMTgzMzMyPl0gZG9fdW5saW5rYXQr
-MHgxMTIvMHgxYzAKIFs8ZmZmZmZmZmY4MTBkMWFjMj5dID8gYXVkaXRfc3lzY2FsbF9lbnRy
-eSsweDI3Mi8weDJhMAogWzxmZmZmZmZmZjgxMDBjNjM1Pl0gPyBtYXRoX3N0YXRlX3Jlc3Rv
-cmUrMHg0NS8weDYwCiBbPGZmZmZmZmZmODExODM1NDI+XSBzeXNfdW5saW5rYXQrMHgyMi8w
-eDQwCiBbPGZmZmZmZmZmODEwMGIxNzI+XSBzeXN0ZW1fY2FsbF9mYXN0cGF0aCsweDE2LzB4
-MWIKU2NoZWQgRGVidWcgVmVyc2lvbjogdjAuMDksIDIuNi4zMi0xMzEuMi4xLmVsNi54ODZf
-NjQgIzEKbm93IGF0IDE3MzMyNjYuNzc0Njc1IG1zZWNzCiAgLmppZmZpZXMgICAgICAgICAg
-ICAgICAgICAgICAgICAgICAgICAgICA6IDQyOTY0MDA1NjIKICAuc3lzY3RsX3NjaGVkX2xh
-dGVuY3kgICAgICAgICAgICAgICAgICAgIDogMjAuMDAwMDAwCiAgLnN5c2N0bF9zY2hlZF9t
-aW5fZ3JhbnVsYXJpdHkgICAgICAgICAgICA6IDQuMDAwMDAwCiAgLnN5c2N0bF9zY2hlZF93
-YWtldXBfZ3JhbnVsYXJpdHkgICAgICAgICA6IDQuMDAwMDAwCiAgLnN5c2N0bF9zY2hlZF9j
-aGlsZF9ydW5zX2ZpcnN0ICAgICAgICAgICA6IDAuMDAwMDAwCiAgLnN5c2N0bF9zY2hlZF9m
-ZWF0dXJlcyAgICAgICAgICAgICAgICAgICA6IDE1NDcxCiAgLnN5c2N0bF9zY2hlZF90dW5h
-YmxlX3NjYWxpbmcgICAgICAgICAgICA6IDEgKGxvZ2FyaXRtaWMpCgpjcHUjMCwgMjEzMy4y
-OTEgTUh6CiAgLm5yX3J1bm5pbmcgICAgICAgICAgICAgICAgICAgIDogMAogIC5sb2FkICAg
-ICAgICAgICAgICAgICAgICAgICAgICA6IDAKICAubnJfc3dpdGNoZXMgICAgICAgICAgICAg
-ICAgICAgOiAzNzIxNDgKICAubnJfbG9hZF91cGRhdGVzICAgICAgICAgICAgICAgOiA4OTQ4
-NQogIC5ucl91bmludGVycnVwdGlibGUgICAgICAgICAgICA6IDAKICAubmV4dF9iYWxhbmNl
-ICAgICAgICAgICAgICAgICAgOiA0Mjk2LjQwMDc3NwogIC5jdXJyLT5waWQgICAgICAgICAg
-ICAgICAgICAgICA6IDAKICAuY2xvY2sgICAgICAgICAgICAgICAgICAgICAgICAgOiAxNzMz
-NTU4LjYwNzA1NQogIC5jcHVfbG9hZFswXSAgICAgICAgICAgICAgICAgICA6IDAKICAuY3B1
-X2xvYWRbMV0gICAgICAgICAgICAgICAgICAgOiAwCiAgLmNwdV9sb2FkWzJdICAgICAgICAg
-ICAgICAgICAgIDogMAogIC5jcHVfbG9hZFszXSAgICAgICAgICAgICAgICAgICA6IDAKICAu
-Y3B1X2xvYWRbNF0gICAgICAgICAgICAgICAgICAgOiA2CiAgLnlsZF9jb3VudCAgICAgICAg
-ICAgICAgICAgICAgIDogMAogIC5zY2hlZF9zd2l0Y2ggICAgICAgICAgICAgICAgICA6IDAK
-ICAuc2NoZWRfY291bnQgICAgICAgICAgICAgICAgICAgOiA0NTc4NjYKICAuc2NoZWRfZ29p
-ZGxlICAgICAgICAgICAgICAgICAgOiAxNDU0NzYKICAuYXZnX2lkbGUgICAgICAgICAgICAg
-ICAgICAgICAgOiA5OTQ5MDAKICAudHR3dV9jb3VudCAgICAgICAgICAgICAgICAgICAgOiAy
-MjQxNzQKICAudHR3dV9sb2NhbCAgICAgICAgICAgICAgICAgICAgOiAyMDQzMDIKICAuYmts
-X2NvdW50ICAgICAgICAgICAgICAgICAgICAgOiA0NjUwCgpjZnNfcnFbMF06LwogIC5leGVj
-X2Nsb2NrICAgICAgICAgICAgICAgICAgICA6IDEzNTMyLjgwMTkyOQogIC5NSU5fdnJ1bnRp
-bWUgICAgICAgICAgICAgICAgICA6IDAuMDAwMDAxCiAgLm1pbl92cnVudGltZSAgICAgICAg
-ICAgICAgICAgIDogMTA4NzMuNzE4MDE4CiAgLm1heF92cnVudGltZSAgICAgICAgICAgICAg
-ICAgIDogMC4wMDAwMDEKICAuc3ByZWFkICAgICAgICAgICAgICAgICAgICAgICAgOiAwLjAw
-MDAwMAogIC5zcHJlYWQwICAgICAgICAgICAgICAgICAgICAgICA6IDAuMDAwMDAwCiAgLm5y
-X3J1bm5pbmcgICAgICAgICAgICAgICAgICAgIDogMAogIC5sb2FkICAgICAgICAgICAgICAg
-ICAgICAgICAgICA6IDAKICAubnJfc3ByZWFkX292ZXIgICAgICAgICAgICAgICAgOiAzCiAg
-LnNoYXJlcyAgICAgICAgICAgICAgICAgICAgICAgIDogMAoKcnRfcnFbMF06LwogIC5ydF9u
-cl9ydW5uaW5nICAgICAgICAgICAgICAgICA6IDAKICAucnRfdGhyb3R0bGVkICAgICAgICAg
-ICAgICAgICAgOiAwCiAgLnJ0X3RpbWUgICAgICAgICAgICAgICAgICAgICAgIDogMC4wMDAw
-MDAKICAucnRfcnVudGltZSAgICAgICAgICAgICAgICAgICAgOiA5NTAuMDAwMDAwCgpydW5u
-YWJsZSB0YXNrczoKICAgICAgICAgICAgdGFzayAgIFBJRCAgICAgICAgIHRyZWUta2V5ICBz
-d2l0Y2hlcyAgcHJpbyAgICAgZXhlYy1ydW50aW1lICAgICAgICAgc3VtLWV4ZWMgICAgICAg
-IHN1bS1zbGVlcAotLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0t
-LS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0t
-LS0tLS0tLS0tCgpjcHUjMSwgMjEzMy4yOTEgTUh6CiAgLm5yX3J1bm5pbmcgICAgICAgICAg
-ICAgICAgICAgIDogMQogIC5sb2FkICAgICAgICAgICAgICAgICAgICAgICAgICA6IDEwMjQK
-ICAubnJfc3dpdGNoZXMgICAgICAgICAgICAgICAgICAgOiAxMjUwNjkKICAubnJfbG9hZF91
-cGRhdGVzICAgICAgICAgICAgICAgOiA5NjU5OAogIC5ucl91bmludGVycnVwdGlibGUgICAg
-ICAgICAgICA6IDAKICAubmV4dF9iYWxhbmNlICAgICAgICAgICAgICAgICAgOiA0Mjk2LjQw
-MDMwMQogIC5jdXJyLT5waWQgICAgICAgICAgICAgICAgICAgICA6IDE1ODAKICAuY2xvY2sg
-ICAgICAgICAgICAgICAgICAgICAgICAgOiAxNzMzNTU4LjYwNTk1OAogIC5jcHVfbG9hZFsw
-XSAgICAgICAgICAgICAgICAgICA6IDAKICAuY3B1X2xvYWRbMV0gICAgICAgICAgICAgICAg
-ICAgOiAwCiAgLmNwdV9sb2FkWzJdICAgICAgICAgICAgICAgICAgIDogMAogIC5jcHVfbG9h
-ZFszXSAgICAgICAgICAgICAgICAgICA6IDAKICAuY3B1X2xvYWRbNF0gICAgICAgICAgICAg
-ICAgICAgOiAwCiAgLnlsZF9jb3VudCAgICAgICAgICAgICAgICAgICAgIDogMAogIC5zY2hl
-ZF9zd2l0Y2ggICAgICAgICAgICAgICAgICA6IDAKICAuc2NoZWRfY291bnQgICAgICAgICAg
-ICAgICAgICAgOiAxMjcwODIKICAuc2NoZWRfZ29pZGxlICAgICAgICAgICAgICAgICAgOiA2
-MDY4NAogIC5hdmdfaWRsZSAgICAgICAgICAgICAgICAgICAgICA6IDEwMDAwMDAKICAudHR3
-dV9jb3VudCAgICAgICAgICAgICAgICAgICAgOiA2MDI2NgogIC50dHd1X2xvY2FsICAgICAg
-ICAgICAgICAgICAgICA6IDEwMDY0CiAgLmJrbF9jb3VudCAgICAgICAgICAgICAgICAgICAg
-IDogNjYzMAoKY2ZzX3JxWzFdOi8KICAuZXhlY19jbG9jayAgICAgICAgICAgICAgICAgICAg
-OiAyNTAxMy4zNjA4MzEKICAuTUlOX3ZydW50aW1lICAgICAgICAgICAgICAgICAgOiAwLjAw
-MDAwMQogIC5taW5fdnJ1bnRpbWUgICAgICAgICAgICAgICAgICA6IDQ1Mjg5Ljk2Mjc5Nwog
-IC5tYXhfdnJ1bnRpbWUgICAgICAgICAgICAgICAgICA6IDAuMDAwMDAxCiAgLnNwcmVhZCAg
-ICAgICAgICAgICAgICAgICAgICAgIDogMC4wMDAwMDAKICAuc3ByZWFkMCAgICAgICAgICAg
-ICAgICAgICAgICAgOiAzNDQxNi4yNDQ3NzkKICAubnJfcnVubmluZyAgICAgICAgICAgICAg
-ICAgICAgOiAxCiAgLmxvYWQgICAgICAgICAgICAgICAgICAgICAgICAgIDogMTAyNAogIC5u
-cl9zcHJlYWRfb3ZlciAgICAgICAgICAgICAgICA6IDIKICAuc2hhcmVzICAgICAgICAgICAg
-ICAgICAgICAgICAgOiAwCgpydF9ycVsxXTovCiAgLnJ0X25yX3J1bm5pbmcgICAgICAgICAg
-ICAgICAgIDogMAogIC5ydF90aHJvdHRsZWQgICAgICAgICAgICAgICAgICA6IDAKICAucnRf
-dGltZSAgICAgICAgICAgICAgICAgICAgICAgOiAwLjAwMDAwMAogIC5ydF9ydW50aW1lICAg
-ICAgICAgICAgICAgICAgICA6IDk1MC4wMDAwMDAKCnJ1bm5hYmxlIHRhc2tzOgogICAgICAg
-ICAgICB0YXNrICAgUElEICAgICAgICAgdHJlZS1rZXkgIHN3aXRjaGVzICBwcmlvICAgICBl
-eGVjLXJ1bnRpbWUgICAgICAgICBzdW0tZXhlYyAgICAgICAgc3VtLXNsZWVwCi0tLS0tLS0t
-LS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0t
-LS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0KUiAgICAgICAg
-ICAgYmFzaCAgMTU4MCAgICAgNDUyNzkuOTYyNzk3ICAgICAgMTQ4OSAgIDEyMCAgICAgNDUy
-NzkuOTYyNzk3ICAgICAgIDM1Mi40ODI4NDAgICAxNjU5MjU3LjgyODc4NCAvCgpjcHUjMiwg
-MjEzMy4yOTEgTUh6CiAgLm5yX3J1bm5pbmcgICAgICAgICAgICAgICAgICAgIDogMAogIC5s
-b2FkICAgICAgICAgICAgICAgICAgICAgICAgICA6IDAKICAubnJfc3dpdGNoZXMgICAgICAg
-ICAgICAgICAgICAgOiAxMjI5MjAKICAubnJfbG9hZF91cGRhdGVzICAgICAgICAgICAgICAg
-OiAyNjY0OQogIC5ucl91bmludGVycnVwdGlibGUgICAgICAgICAgICA6IDEKICAubmV4dF9i
-YWxhbmNlICAgICAgICAgICAgICAgICAgOiA0Mjk2LjQwMDYyMQogIC5jdXJyLT5waWQgICAg
-ICAgICAgICAgICAgICAgICA6IDAKICAuY2xvY2sgICAgICAgICAgICAgICAgICAgICAgICAg
-OiAxNzMzNTMzLjY1Mjg3NQogIC5jcHVfbG9hZFswXSAgICAgICAgICAgICAgICAgICA6IDAK
-ICAuY3B1X2xvYWRbMV0gICAgICAgICAgICAgICAgICAgOiA2CiAgLmNwdV9sb2FkWzJdICAg
-ICAgICAgICAgICAgICAgIDogNzgKICAuY3B1X2xvYWRbM10gICAgICAgICAgICAgICAgICAg
-OiAxNDkKICAuY3B1X2xvYWRbNF0gICAgICAgICAgICAgICAgICAgOiAxNDMKICAueWxkX2Nv
-dW50ICAgICAgICAgICAgICAgICAgICAgOiAwCiAgLnNjaGVkX3N3aXRjaCAgICAgICAgICAg
-ICAgICAgIDogMAogIC5zY2hlZF9jb3VudCAgICAgICAgICAgICAgICAgICA6IDEyNDQ4Mwog
-IC5zY2hlZF9nb2lkbGUgICAgICAgICAgICAgICAgICA6IDYxMzgyCiAgLmF2Z19pZGxlICAg
-ICAgICAgICAgICAgICAgICAgIDogNjAzODAzCiAgLnR0d3VfY291bnQgICAgICAgICAgICAg
-ICAgICAgIDogNjEyOTcKICAudHR3dV9sb2NhbCAgICAgICAgICAgICAgICAgICAgOiAzMjYw
-CiAgLmJrbF9jb3VudCAgICAgICAgICAgICAgICAgICAgIDogMzM5MTIKCmNmc19ycVsyXTov
-CiAgLmV4ZWNfY2xvY2sgICAgICAgICAgICAgICAgICAgIDogNzkwMy42ODA0NTkKICAuTUlO
-X3ZydW50aW1lICAgICAgICAgICAgICAgICAgOiAwLjAwMDAwMQogIC5taW5fdnJ1bnRpbWUg
-ICAgICAgICAgICAgICAgICA6IDkzMTQuMDI1MDIyCiAgLm1heF92cnVudGltZSAgICAgICAg
-ICAgICAgICAgIDogMC4wMDAwMDEKICAuc3ByZWFkICAgICAgICAgICAgICAgICAgICAgICAg
-OiAwLjAwMDAwMAogIC5zcHJlYWQwICAgICAgICAgICAgICAgICAgICAgICA6IC0xNTU5LjY5
-Mjk5NgogIC5ucl9ydW5uaW5nICAgICAgICAgICAgICAgICAgICA6IDAKICAubG9hZCAgICAg
-ICAgICAgICAgICAgICAgICAgICAgOiAwCiAgLm5yX3NwcmVhZF9vdmVyICAgICAgICAgICAg
-ICAgIDogMAogIC5zaGFyZXMgICAgICAgICAgICAgICAgICAgICAgICA6IDAKCnJ0X3JxWzJd
-Oi8KICAucnRfbnJfcnVubmluZyAgICAgICAgICAgICAgICAgOiAwCiAgLnJ0X3Rocm90dGxl
-ZCAgICAgICAgICAgICAgICAgIDogMAogIC5ydF90aW1lICAgICAgICAgICAgICAgICAgICAg
-ICA6IDAuMDAwMDAwCiAgLnJ0X3J1bnRpbWUgICAgICAgICAgICAgICAgICAgIDogOTUwLjAw
-MDAwMAoKcnVubmFibGUgdGFza3M6CiAgICAgICAgICAgIHRhc2sgICBQSUQgICAgICAgICB0
-cmVlLWtleSAgc3dpdGNoZXMgIHByaW8gICAgIGV4ZWMtcnVudGltZSAgICAgICAgIHN1bS1l
-eGVjICAgICAgICBzdW0tc2xlZXAKLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0t
-LS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0t
-LS0tLS0tLS0tLS0tLS0tLS0tLQoKY3B1IzMsIDIxMzMuMjkxIE1IegogIC5ucl9ydW5uaW5n
-ICAgICAgICAgICAgICAgICAgICA6IDAKICAubG9hZCAgICAgICAgICAgICAgICAgICAgICAg
-ICAgOiAwCiAgLm5yX3N3aXRjaGVzICAgICAgICAgICAgICAgICAgIDogNzA1MDAKICAubnJf
-bG9hZF91cGRhdGVzICAgICAgICAgICAgICAgOiAxMjc4NgogIC5ucl91bmludGVycnVwdGli
-bGUgICAgICAgICAgICA6IDAKICAubmV4dF9iYWxhbmNlICAgICAgICAgICAgICAgICAgOiA0
-Mjk2LjM5OTgzMwogIC5jdXJyLT5waWQgICAgICAgICAgICAgICAgICAgICA6IDAKICAuY2xv
-Y2sgICAgICAgICAgICAgICAgICAgICAgICAgOiAxNzMxOTg3LjgyMjA1MQogIC5jcHVfbG9h
-ZFswXSAgICAgICAgICAgICAgICAgICA6IDAKICAuY3B1X2xvYWRbMV0gICAgICAgICAgICAg
-ICAgICAgOiAwCiAgLmNwdV9sb2FkWzJdICAgICAgICAgICAgICAgICAgIDogMAogIC5jcHVf
-bG9hZFszXSAgICAgICAgICAgICAgICAgICA6IDAKICAuY3B1X2xvYWRbNF0gICAgICAgICAg
-ICAgICAgICAgOiAwCiAgLnlsZF9jb3VudCAgICAgICAgICAgICAgICAgICAgIDogMAogIC5z
-Y2hlZF9zd2l0Y2ggICAgICAgICAgICAgICAgICA6IDAKICAuc2NoZWRfY291bnQgICAgICAg
-ICAgICAgICAgICAgOiA3MjcyMQogIC5zY2hlZF9nb2lkbGUgICAgICAgICAgICAgICAgICA6
-IDM1MzQ5CiAgLmF2Z19pZGxlICAgICAgICAgICAgICAgICAgICAgIDogMTAwMDAwMAogIC50
-dHd1X2NvdW50ICAgICAgICAgICAgICAgICAgICA6IDM1MjIyCiAgLnR0d3VfbG9jYWwgICAg
-ICAgICAgICAgICAgICAgIDogMTQ3OAogIC5ia2xfY291bnQgICAgICAgICAgICAgICAgICAg
-ICA6IDI1CgpjZnNfcnFbM106LwogIC5leGVjX2Nsb2NrICAgICAgICAgICAgICAgICAgICA6
-IDI4ODMuMjM5ODY5CiAgLk1JTl92cnVudGltZSAgICAgICAgICAgICAgICAgIDogMC4wMDAw
-MDEKICAubWluX3ZydW50aW1lICAgICAgICAgICAgICAgICAgOiA2MDU1LjA4MzcyNQogIC5t
-YXhfdnJ1bnRpbWUgICAgICAgICAgICAgICAgICA6IDAuMDAwMDAxCiAgLnNwcmVhZCAgICAg
-ICAgICAgICAgICAgICAgICAgIDogMC4wMDAwMDAKICAuc3ByZWFkMCAgICAgICAgICAgICAg
-ICAgICAgICAgOiAtNDgxOC42MzQyOTMKICAubnJfcnVubmluZyAgICAgICAgICAgICAgICAg
-ICAgOiAwCiAgLmxvYWQgICAgICAgICAgICAgICAgICAgICAgICAgIDogMAogIC5ucl9zcHJl
-YWRfb3ZlciAgICAgICAgICAgICAgICA6IDEKICAuc2hhcmVzICAgICAgICAgICAgICAgICAg
-ICAgICAgOiAwCgpydF9ycVszXTovCiAgLnJ0X25yX3J1bm5pbmcgICAgICAgICAgICAgICAg
-IDogMAogIC5ydF90aHJvdHRsZWQgICAgICAgICAgICAgICAgICA6IDAKICAucnRfdGltZSAg
-ICAgICAgICAgICAgICAgICAgICAgOiAwLjAwMDAwMAogIC5ydF9ydW50aW1lICAgICAgICAg
-ICAgICAgICAgICA6IDk1MC4wMDAwMDAKCnJ1bm5hYmxlIHRhc2tzOgogICAgICAgICAgICB0
-YXNrICAgUElEICAgICAgICAgdHJlZS1rZXkgIHN3aXRjaGVzICBwcmlvICAgICBleGVjLXJ1
-bnRpbWUgICAgICAgICBzdW0tZXhlYyAgICAgICAgc3VtLXNsZWVwCi0tLS0tLS0tLS0tLS0t
-LS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0t
-LS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0KCmNwdSM0LCAyMTMzLjI5
-MSBNSHoKICAubnJfcnVubmluZyAgICAgICAgICAgICAgICAgICAgOiAwCiAgLmxvYWQgICAg
-ICAgICAgICAgICAgICAgICAgICAgIDogMAogIC5ucl9zd2l0Y2hlcyAgICAgICAgICAgICAg
-ICAgICA6IDEwODgzNgogIC5ucl9sb2FkX3VwZGF0ZXMgICAgICAgICAgICAgICA6IDQ1MDgy
-CiAgLm5yX3VuaW50ZXJydXB0aWJsZSAgICAgICAgICAgIDogMAogIC5uZXh0X2JhbGFuY2Ug
-ICAgICAgICAgICAgICAgICA6IDQyOTYuNDAwNDc0CiAgLmN1cnItPnBpZCAgICAgICAgICAg
-ICAgICAgICAgIDogMAogIC5jbG9jayAgICAgICAgICAgICAgICAgICAgICAgICA6IDE3MzM0
-NjYuNjY5NDE1CiAgLmNwdV9sb2FkWzBdICAgICAgICAgICAgICAgICAgIDogMAogIC5jcHVf
-bG9hZFsxXSAgICAgICAgICAgICAgICAgICA6IDAKICAuY3B1X2xvYWRbMl0gICAgICAgICAg
-ICAgICAgICAgOiAwCiAgLmNwdV9sb2FkWzNdICAgICAgICAgICAgICAgICAgIDogMAogIC5j
-cHVfbG9hZFs0XSAgICAgICAgICAgICAgICAgICA6IDAKICAueWxkX2NvdW50ICAgICAgICAg
-ICAgICAgICAgICAgOiAwCiAgLnNjaGVkX3N3aXRjaCAgICAgICAgICAgICAgICAgIDogMAog
-IC5zY2hlZF9jb3VudCAgICAgICAgICAgICAgICAgICA6IDEyMjgyMwogIC5zY2hlZF9nb2lk
-bGUgICAgICAgICAgICAgICAgICA6IDQ0OTM1CiAgLmF2Z19pZGxlICAgICAgICAgICAgICAg
-ICAgICAgIDogMTAwMDAwMAogIC50dHd1X2NvdW50ICAgICAgICAgICAgICAgICAgICA6IDYz
-NjQ0CiAgLnR0d3VfbG9jYWwgICAgICAgICAgICAgICAgICAgIDogNTI4NTEKICAuYmtsX2Nv
-dW50ICAgICAgICAgICAgICAgICAgICAgOiAzNwoKY2ZzX3JxWzRdOi8KICAuZXhlY19jbG9j
-ayAgICAgICAgICAgICAgICAgICAgOiA1NjA1LjA2MjYwNgogIC5NSU5fdnJ1bnRpbWUgICAg
-ICAgICAgICAgICAgICA6IDAuMDAwMDAxCiAgLm1pbl92cnVudGltZSAgICAgICAgICAgICAg
-ICAgIDogNTg4MS4wNjgwMTAKICAubWF4X3ZydW50aW1lICAgICAgICAgICAgICAgICAgOiAw
-LjAwMDAwMQogIC5zcHJlYWQgICAgICAgICAgICAgICAgICAgICAgICA6IDAuMDAwMDAwCiAg
-LnNwcmVhZDAgICAgICAgICAgICAgICAgICAgICAgIDogLTQ5OTIuNjUwMDA4CiAgLm5yX3J1
-bm5pbmcgICAgICAgICAgICAgICAgICAgIDogMAogIC5sb2FkICAgICAgICAgICAgICAgICAg
-ICAgICAgICA6IDAKICAubnJfc3ByZWFkX292ZXIgICAgICAgICAgICAgICAgOiAxCiAgLnNo
-YXJlcyAgICAgICAgICAgICAgICAgICAgICAgIDogMAoKcnRfcnFbNF06LwogIC5ydF9ucl9y
-dW5uaW5nICAgICAgICAgICAgICAgICA6IDAKICAucnRfdGhyb3R0bGVkICAgICAgICAgICAg
-ICAgICAgOiAwCiAgLnJ0X3RpbWUgICAgICAgICAgICAgICAgICAgICAgIDogMC4wMDAwMDAK
-ICAucnRfcnVudGltZSAgICAgICAgICAgICAgICAgICAgOiA5NTAuMDAwMDAwCgpydW5uYWJs
-ZSB0YXNrczoKICAgICAgICAgICAgdGFzayAgIFBJRCAgICAgICAgIHRyZWUta2V5ICBzd2l0
-Y2hlcyAgcHJpbyAgICAgZXhlYy1ydW50aW1lICAgICAgICAgc3VtLWV4ZWMgICAgICAgIHN1
-bS1zbGVlcAotLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0t
-LS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0t
-LS0tLS0tCgpjcHUjNSwgMjEzMy4yOTEgTUh6CiAgLm5yX3J1bm5pbmcgICAgICAgICAgICAg
-ICAgICAgIDogMAogIC5sb2FkICAgICAgICAgICAgICAgICAgICAgICAgICA6IDAKICAubnJf
-c3dpdGNoZXMgICAgICAgICAgICAgICAgICAgOiA2MDM2MgogIC5ucl9sb2FkX3VwZGF0ZXMg
-ICAgICAgICAgICAgICA6IDY2MDk1CiAgLm5yX3VuaW50ZXJydXB0aWJsZSAgICAgICAgICAg
-IDogMAogIC5uZXh0X2JhbGFuY2UgICAgICAgICAgICAgICAgICA6IDQyOTYuMzk5ODMzCiAg
-LmN1cnItPnBpZCAgICAgICAgICAgICAgICAgICAgIDogMAogIC5jbG9jayAgICAgICAgICAg
-ICAgICAgICAgICAgICA6IDE3MzE5ODEuNzk0NTkwCiAgLmNwdV9sb2FkWzBdICAgICAgICAg
-ICAgICAgICAgIDogMAogIC5jcHVfbG9hZFsxXSAgICAgICAgICAgICAgICAgICA6IDAKICAu
-Y3B1X2xvYWRbMl0gICAgICAgICAgICAgICAgICAgOiAwCiAgLmNwdV9sb2FkWzNdICAgICAg
-ICAgICAgICAgICAgIDogMAogIC5jcHVfbG9hZFs0XSAgICAgICAgICAgICAgICAgICA6IDAK
-ICAueWxkX2NvdW50ICAgICAgICAgICAgICAgICAgICAgOiAwCiAgLnNjaGVkX3N3aXRjaCAg
-ICAgICAgICAgICAgICAgIDogMAogIC5zY2hlZF9jb3VudCAgICAgICAgICAgICAgICAgICA6
-IDYyNTQxCiAgLnNjaGVkX2dvaWRsZSAgICAgICAgICAgICAgICAgIDogMjg4MTUKICAuYXZn
-X2lkbGUgICAgICAgICAgICAgICAgICAgICAgOiAxMDAwMDAwCiAgLnR0d3VfY291bnQgICAg
-ICAgICAgICAgICAgICAgIDogMjcwNTEKICAudHR3dV9sb2NhbCAgICAgICAgICAgICAgICAg
-ICAgOiAxMTAyNgogIC5ia2xfY291bnQgICAgICAgICAgICAgICAgICAgICA6IDI5CgpjZnNf
-cnFbNV06LwogIC5leGVjX2Nsb2NrICAgICAgICAgICAgICAgICAgICA6IDE3NTc3LjMwNjYx
-NgogIC5NSU5fdnJ1bnRpbWUgICAgICAgICAgICAgICAgICA6IDAuMDAwMDAxCiAgLm1pbl92
-cnVudGltZSAgICAgICAgICAgICAgICAgIDogMzg1MTEuNzc2ODUwCiAgLm1heF92cnVudGlt
-ZSAgICAgICAgICAgICAgICAgIDogMC4wMDAwMDEKICAuc3ByZWFkICAgICAgICAgICAgICAg
-ICAgICAgICAgOiAwLjAwMDAwMAogIC5zcHJlYWQwICAgICAgICAgICAgICAgICAgICAgICA6
-IDI3NjM4LjA1ODgzMgogIC5ucl9ydW5uaW5nICAgICAgICAgICAgICAgICAgICA6IDAKICAu
-bG9hZCAgICAgICAgICAgICAgICAgICAgICAgICAgOiAwCiAgLm5yX3NwcmVhZF9vdmVyICAg
-ICAgICAgICAgICAgIDogMAogIC5zaGFyZXMgICAgICAgICAgICAgICAgICAgICAgICA6IDAK
-CnJ0X3JxWzVdOi8KICAucnRfbnJfcnVubmluZyAgICAgICAgICAgICAgICAgOiAwCiAgLnJ0
-X3Rocm90dGxlZCAgICAgICAgICAgICAgICAgIDogMAogIC5ydF90aW1lICAgICAgICAgICAg
-ICAgICAgICAgICA6IDAuMDAwMDAwCiAgLnJ0X3J1bnRpbWUgICAgICAgICAgICAgICAgICAg
-IDogOTUwLjAwMDAwMAoKcnVubmFibGUgdGFza3M6CiAgICAgICAgICAgIHRhc2sgICBQSUQg
-ICAgICAgICB0cmVlLWtleSAgc3dpdGNoZXMgIHByaW8gICAgIGV4ZWMtcnVudGltZSAgICAg
-ICAgIHN1bS1leGVjICAgICAgICBzdW0tc2xlZXAKLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0t
-LS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0t
-LS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLQoKY3B1IzYsIDIxMzMuMjkxIE1IegogIC5u
-cl9ydW5uaW5nICAgICAgICAgICAgICAgICAgICA6IDAKICAubG9hZCAgICAgICAgICAgICAg
-ICAgICAgICAgICAgOiAwCiAgLm5yX3N3aXRjaGVzICAgICAgICAgICAgICAgICAgIDogMjk5
-MzEKICAubnJfbG9hZF91cGRhdGVzICAgICAgICAgICAgICAgOiAyNjQ4NQogIC5ucl91bmlu
-dGVycnVwdGlibGUgICAgICAgICAgICA6IDAKICAubmV4dF9iYWxhbmNlICAgICAgICAgICAg
-ICAgICAgOiA0Mjk2LjM5OTgzMwogIC5jdXJyLT5waWQgICAgICAgICAgICAgICAgICAgICA6
-IDAKICAuY2xvY2sgICAgICAgICAgICAgICAgICAgICAgICAgOiAxNzMxOTc4LjcxOTk4Nwog
-IC5jcHVfbG9hZFswXSAgICAgICAgICAgICAgICAgICA6IDAKICAuY3B1X2xvYWRbMV0gICAg
-ICAgICAgICAgICAgICAgOiAwCiAgLmNwdV9sb2FkWzJdICAgICAgICAgICAgICAgICAgIDog
-MAogIC5jcHVfbG9hZFszXSAgICAgICAgICAgICAgICAgICA6IDAKICAuY3B1X2xvYWRbNF0g
-ICAgICAgICAgICAgICAgICAgOiAwCiAgLnlsZF9jb3VudCAgICAgICAgICAgICAgICAgICAg
-IDogMAogIC5zY2hlZF9zd2l0Y2ggICAgICAgICAgICAgICAgICA6IDAKICAuc2NoZWRfY291
-bnQgICAgICAgICAgICAgICAgICAgOiAzMjEwOQogIC5zY2hlZF9nb2lkbGUgICAgICAgICAg
-ICAgICAgICA6IDE1MDQ2CiAgLmF2Z19pZGxlICAgICAgICAgICAgICAgICAgICAgIDogMTAw
-MDAwMAogIC50dHd1X2NvdW50ICAgICAgICAgICAgICAgICAgICA6IDE0NjU4CiAgLnR0d3Vf
-bG9jYWwgICAgICAgICAgICAgICAgICAgIDogMjg2MAogIC5ia2xfY291bnQgICAgICAgICAg
-ICAgICAgICAgICA6IDM1CgpjZnNfcnFbNl06LwogIC5leGVjX2Nsb2NrICAgICAgICAgICAg
-ICAgICAgICA6IDI1MzMuOTM1NDAxCiAgLk1JTl92cnVudGltZSAgICAgICAgICAgICAgICAg
-IDogMC4wMDAwMDEKICAubWluX3ZydW50aW1lICAgICAgICAgICAgICAgICAgOiA0NjQxLjIy
-OTk0NgogIC5tYXhfdnJ1bnRpbWUgICAgICAgICAgICAgICAgICA6IDAuMDAwMDAxCiAgLnNw
-cmVhZCAgICAgICAgICAgICAgICAgICAgICAgIDogMC4wMDAwMDAKICAuc3ByZWFkMCAgICAg
-ICAgICAgICAgICAgICAgICAgOiAtNjIzMi40ODgwNzIKICAubnJfcnVubmluZyAgICAgICAg
-ICAgICAgICAgICAgOiAwCiAgLmxvYWQgICAgICAgICAgICAgICAgICAgICAgICAgIDogMAog
-IC5ucl9zcHJlYWRfb3ZlciAgICAgICAgICAgICAgICA6IDAKICAuc2hhcmVzICAgICAgICAg
-ICAgICAgICAgICAgICAgOiAwCgpydF9ycVs2XTovCiAgLnJ0X25yX3J1bm5pbmcgICAgICAg
-ICAgICAgICAgIDogMAogIC5ydF90aHJvdHRsZWQgICAgICAgICAgICAgICAgICA6IDAKICAu
-cnRfdGltZSAgICAgICAgICAgICAgICAgICAgICAgOiAwLjAwMDAwMAogIC5ydF9ydW50aW1l
-ICAgICAgICAgICAgICAgICAgICA6IDk1MC4wMDAwMDAKCnJ1bm5hYmxlIHRhc2tzOgogICAg
-ICAgICAgICB0YXNrICAgUElEICAgICAgICAgdHJlZS1rZXkgIHN3aXRjaGVzICBwcmlvICAg
-ICBleGVjLXJ1bnRpbWUgICAgICAgICBzdW0tZXhlYyAgICAgICAgc3VtLXNsZWVwCi0tLS0t
-LS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0t
-LS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0KCmNwdSM3
-LCAyMTMzLjI5MSBNSHoKICAubnJfcnVubmluZyAgICAgICAgICAgICAgICAgICAgOiAwCiAg
-LmxvYWQgICAgICAgICAgICAgICAgICAgICAgICAgIDogMAogIC5ucl9zd2l0Y2hlcyAgICAg
-ICAgICAgICAgICAgICA6IDczMDMKICAubnJfbG9hZF91cGRhdGVzICAgICAgICAgICAgICAg
-OiAxMTYyNwogIC5ucl91bmludGVycnVwdGlibGUgICAgICAgICAgICA6IDAKICAubmV4dF9i
-YWxhbmNlICAgICAgICAgICAgICAgICAgOiA0Mjk2LjM5OTgzMwogIC5jdXJyLT5waWQgICAg
-ICAgICAgICAgICAgICAgICA6IDAKICAuY2xvY2sgICAgICAgICAgICAgICAgICAgICAgICAg
-OiAxNzMyMjkzLjczNjc5MAogIC5jcHVfbG9hZFswXSAgICAgICAgICAgICAgICAgICA6IDAK
-ICAuY3B1X2xvYWRbMV0gICAgICAgICAgICAgICAgICAgOiAwCiAgLmNwdV9sb2FkWzJdICAg
-ICAgICAgICAgICAgICAgIDogMAogIC5jcHVfbG9hZFszXSAgICAgICAgICAgICAgICAgICA6
-IDAKICAuY3B1X2xvYWRbNF0gICAgICAgICAgICAgICAgICAgOiAwCiAgLnlsZF9jb3VudCAg
-ICAgICAgICAgICAgICAgICAgIDogMAogIC5zY2hlZF9zd2l0Y2ggICAgICAgICAgICAgICAg
-ICA6IDAKICAuc2NoZWRfY291bnQgICAgICAgICAgICAgICAgICAgOiA5MTA3CiAgLnNjaGVk
-X2dvaWRsZSAgICAgICAgICAgICAgICAgIDogMzg1MAogIC5hdmdfaWRsZSAgICAgICAgICAg
-ICAgICAgICAgICA6IDEwMDAwMDAKICAudHR3dV9jb3VudCAgICAgICAgICAgICAgICAgICAg
-OiAzNDM3CiAgLnR0d3VfbG9jYWwgICAgICAgICAgICAgICAgICAgIDogMTUxOQogIC5ia2xf
-Y291bnQgICAgICAgICAgICAgICAgICAgICA6IDE3CgpjZnNfcnFbN106LwogIC5leGVjX2Ns
-b2NrICAgICAgICAgICAgICAgICAgICA6IDc2Ni42MDM3OTgKICAuTUlOX3ZydW50aW1lICAg
-ICAgICAgICAgICAgICAgOiAwLjAwMDAwMQogIC5taW5fdnJ1bnRpbWUgICAgICAgICAgICAg
-ICAgICA6IDk5OC4xMTk4MjcKICAubWF4X3ZydW50aW1lICAgICAgICAgICAgICAgICAgOiAw
-LjAwMDAwMQogIC5zcHJlYWQgICAgICAgICAgICAgICAgICAgICAgICA6IDAuMDAwMDAwCiAg
-LnNwcmVhZDAgICAgICAgICAgICAgICAgICAgICAgIDogLTk4NzUuNTk4MTkxCiAgLm5yX3J1
-bm5pbmcgICAgICAgICAgICAgICAgICAgIDogMAogIC5sb2FkICAgICAgICAgICAgICAgICAg
-ICAgICAgICA6IDAKICAubnJfc3ByZWFkX292ZXIgICAgICAgICAgICAgICAgOiAwCiAgLnNo
-YXJlcyAgICAgICAgICAgICAgICAgICAgICAgIDogMAoKcnRfcnFbN106LwogIC5ydF9ucl9y
-dW5uaW5nICAgICAgICAgICAgICAgICA6IDAKICAucnRfdGhyb3R0bGVkICAgICAgICAgICAg
-ICAgICAgOiAwCiAgLnJ0X3RpbWUgICAgICAgICAgICAgICAgICAgICAgIDogMC4wMDAwMDAK
-ICAucnRfcnVudGltZSAgICAgICAgICAgICAgICAgICAgOiA5NTAuMDAwMDAwCgpydW5uYWJs
-ZSB0YXNrczoKICAgICAgICAgICAgdGFzayAgIFBJRCAgICAgICAgIHRyZWUta2V5ICBzd2l0
-Y2hlcyAgcHJpbyAgICAgZXhlYy1ydW50aW1lICAgICAgICAgc3VtLWV4ZWMgICAgICAgIHN1
-bS1zbGVlcAotLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0t
-LS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0t
-LS0tLS0tCgo=
---------------080606090802080003010407--

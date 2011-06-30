@@ -1,33 +1,27 @@
-From: Josef Bacik <josef@redhat.com>
-Subject: Re: btrfs lock-up on copying files
-Date: Thu, 30 Jun 2011 10:52:57 -0400
-Message-ID: <4E0C8DC9.6080402@redhat.com>
-References: <20110630123738.6042e563@natsu>	<4E0C8A3F.2060202@redhat.com> <20110630204347.0d70506e@natsu>
+From: "PROF.MAURICE IWU" <iwumaurice900@sify.com>
+Subject: Equity Business Investment
+Date: Thu, 30 Jun 2011 17:44:46 +0200
+Message-ID: <EXCHANGE03YW8BYXifW0000054a__36435.6578830213$1309448723$gmane$org@exchange03.2besource.com>
+Reply-To: <profmauriceiwu2221@yahoo.co.jp>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=ISO-8859-1
-Cc: linux-btrfs <linux-btrfs@vger.kernel.org>
-To: Roman Mamedov <rm@romanrm.ru>
+Content-Type: text/plain;
+	charset="Windows-1251"
+To: unlisted-recipients:; (no To-header on input)
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <20110630204347.0d70506e@natsu>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 06/30/2011 10:43 AM, Roman Mamedov wrote:
-> On Thu, 30 Jun 2011 10:37:51 -0400
-> Josef Bacik <josef@redhat.com> wrote:
-> 
->> Can you do sysrq+w when this happens?  The caching kthread should still
->> be able to make progress, which is what we seem to be waiting on.  Does
->> it eventually unhang and continue on?  Thanks,
-> 
-> Hello,
-> 
-> Unfortunately I already rebooted that server so can't check SysRq+W.
-> Before the reboot I waited for about 40 minutes, and the block device seemed to be 100% idle during all this time.
-> I got an advice on IRC to wait for a couple of hours if this happens again, which I am going to try if it does.
-> 
+Equity Business Investment
+>From Prof. Maurice Iwu 
 
-Oh well crud I see what happened, the caching_kthread didn't even get
-started, kthreadd got locked up waiting on the page lock for migration.
- I will try and figure out what to do for this.  Thanks for reporting it,
+Dear Friend,
 
-Josef
+I am Prof. Maurice M. Iwu, Former Chairman Independent Electoral Commission 
+(INEC).Currently, I am on compulsory terminal leave presently in UK , 
+leading up to my final retirement from public service.
+
+I am seeking your partnership in a mutual benefit project involving 
+investing into your company and secondly on properties and to be precise Estate Development or any other profitable venture of your great idea for our mutual benefit of Equity Market Investment.,
+
+Sincerely,
+Prof. Maurice M.Iwu.
+{INEC.}

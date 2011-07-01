@@ -1,78 +1,48 @@
-From: Anand Jain <Anand.Jain@oracle.com>
+From: Roman Mamedov <rm@romanrm.ru>
 Subject: Re: device failure hangs the system
-Date: Fri, 01 Jul 2011 17:42:33 +0800
-Message-ID: <4E0D9689.6040700@oracle.com>
+Date: Fri, 1 Jul 2011 15:44:39 +0600
+Message-ID: <20110701154439.46da0098@natsu>
 References: <4E0D929E.7030704@oracle.com>
+	<4E0D9689.6040700@oracle.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=ISO-8859-1; format=flowed
-To: linux-btrfs@vger.kernel.org
+Content-Type: multipart/signed; micalg=PGP-SHA1;
+ boundary="Sig_/j/SjbWVRLj5fHmnO0BiDW4t"; protocol="application/pgp-signature"
+Cc: linux-btrfs@vger.kernel.org
+To: Anand Jain <Anand.Jain@oracle.com>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <4E0D929E.7030704@oracle.com>
+In-Reply-To: <4E0D9689.6040700@oracle.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
+--Sig_/j/SjbWVRLj5fHmnO0BiDW4t
+Content-Type: text/plain; charset=US-ASCII
+Content-Transfer-Encoding: quoted-printable
 
+On Fri, 01 Jul 2011 17:42:33 +0800
+Anand Jain <Anand.Jain@oracle.com> wrote:
 
-  Looks like there is a panic (not system hang).
-  any idea where is the panic log after the system has been
-  power-recycled. (its not in the /var/log/messages or dmesg or
-  /var/crash is empty)
+>   Looks like there is a panic (not system hang).
+>   any idea where is the panic log after the system has been
+>   power-recycled. (its not in the /var/log/messages or dmesg or
+>   /var/crash is empty)
 
-Thanks, Anand
+You can get it by seting up netconsole logging to another machine and then =
+reproducing the crash.
+http://www.cyberciti.biz/tips/linux-netconsole-log-management-tutorial.html
 
+--=20
+With respect,
+Roman
 
-On 07/01/2011 05:25 PM, Anand Jain wrote:
->
-> hi,
->
-> Following test case causes my remote system to hard-hang and does
-> not respond to any key strokes.
->
-> -----------
-> # btrfs fi show
-> failed to read /dev/sr0
-> Label: none uuid: 75ad3c9f-f661-498e-8c13-89d4e4c58312
-> Total devices 3 FS bytes used 28.00KB
-> devid 1 size 465.76GB used 2.02GB path /dev/sdb
-> devid 3 size 465.76GB used 2.01GB path /dev/sdd
-> devid 2 size 465.76GB used 1.01GB path /dev/sdc
->
-> Btrfs v0.19-35-g1b444cd
-> ------------
->
->
-> Stopping the disk
-> ------------
-> # echo 1 > /sys/block/sdd/device/delete
-> ------------
-> ------------
-> # dmesg | tail
-> sd 3:0:0:0: [sdd] Stopping disk
-> ::
-> #
-> ------------
->
-> ------------
-> # btrfs fi show
-> failed to read /dev/sr0
-> Label: none uuid: 75ad3c9f-f661-498e-8c13-89d4e4c58312
-> Total devices 3 FS bytes used 28.00KB
-> devid 1 size 465.76GB used 2.02GB path /dev/sdb
-> devid 2 size 465.76GB used 1.01GB path /dev/sdc
-> *** Some devices missing
->
-> Btrfs v0.19-35-g1b444cd
-> ------------
->
-> and the following command hangs the system.
-> -------------
-> # btrfs fi balance /btrfs
-> -------------
->
-> Any idea if this is an known issue ? OR if there is any better way
-> to fail a disk (or a loop disk) for testing.
->
-> (something similar to cfgadm -c unconfigure in solaris).
->
-> Thanks
-> -Anand
->
+--Sig_/j/SjbWVRLj5fHmnO0BiDW4t
+Content-Type: application/pgp-signature; name=signature.asc
+Content-Disposition: attachment; filename=signature.asc
+
+-----BEGIN PGP SIGNATURE-----
+Version: GnuPG v1.4.11 (GNU/Linux)
+
+iEYEARECAAYFAk4NlwcACgkQTLKSvz+PZwjmdgCfe5p3t1QrAlFmrGzgnJjo3c5l
+BrIAnAtWv5+sssBhfqIrUQaYHYhZSo77
+=XyU5
+-----END PGP SIGNATURE-----
+
+--Sig_/j/SjbWVRLj5fHmnO0BiDW4t--

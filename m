@@ -1,43 +1,36 @@
 From: Josef Bacik <josef@redhat.com>
-Subject: Re: device failure hangs the system
-Date: Fri, 01 Jul 2011 16:14:37 -0400
-Message-ID: <4E0E2AAD.1020406@redhat.com>
-References: <4E0D929E.7030704@oracle.com>
-Mime-Version: 1.0
-Content-Type: text/plain; charset=ISO-8859-1
-Cc: linux-btrfs@vger.kernel.org
-To: Anand Jain <Anand.Jain@oracle.com>
+Subject: [PATCH] Btrfs: don't panic if we get an error while balancing
+Date: Fri,  1 Jul 2011 16:21:45 -0400
+Message-ID: <1309551705-16299-1-git-send-email-josef@redhat.com>
+Cc: Anand.Jain@oracle.com
+To: linux-btrfs@vger.kernel.org
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <4E0D929E.7030704@oracle.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 07/01/2011 05:25 AM, Anand Jain wrote:
-> 
-> hi,
-> 
-> Following test case causes my remote system to hard-hang and does
-> not respond to any key strokes.
-> 
-> -----------
-> # btrfs fi show
-> failed to read /dev/sr0
-> Label: none  uuid: 75ad3c9f-f661-498e-8c13-89d4e4c58312
->     Total devices 3 FS bytes used 28.00KB
->     devid    1 size 465.76GB used 2.02GB path /dev/sdb
->     devid    3 size 465.76GB used 2.01GB path /dev/sdd
->     devid    2 size 465.76GB used 1.01GB path /dev/sdc
-> 
-> Btrfs v0.19-35-g1b444cd
-> ------------
-> 
-> 
-> Stopping the disk
-> ------------
-> # echo 1 > /sys/block/sdd/device/delete
-> ------------
+A user reported an error where if we try to balance an fs after a device has
+been removed it will blow up.  This is because we get an EIO back and this is
+where BUG_ON(ret) bites us in the ass.  To fix we just exit.  Thanks,
 
-Well that's a neat trick, do you have a way to undo that action too?
-Seems a rescan doesn't make it show back up.  Please try the patch I
-just posted to the list to fix this problem.  Thanks,
+Reported-by: Anand Jain <Anand.Jain@oracle.com>
+Signed-off-by: Josef Bacik <josef@redhat.com>
+---
+ fs/btrfs/volumes.c |    3 ++-
+ 1 files changed, 2 insertions(+), 1 deletions(-)
 
-Josef
+diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
+index 1efa56e..685bc0f 100644
+--- a/fs/btrfs/volumes.c
++++ b/fs/btrfs/volumes.c
+@@ -2098,7 +2098,8 @@ int btrfs_balance(struct btrfs_root *dev_root)
+ 					   chunk_root->root_key.objectid,
+ 					   found_key.objectid,
+ 					   found_key.offset);
+-		BUG_ON(ret && ret != -ENOSPC);
++		if (ret != -ENOSPC)
++			goto error;
+ 		key.offset = found_key.offset - 1;
+ 	}
+ 	ret = 0;
+-- 
+1.7.5.2
+

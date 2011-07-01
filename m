@@ -1,7 +1,7 @@
 From: Arne Jansen <sensille@gmx.net>
-Subject: [PATCH v5 1/7] btrfs: add an extra wait mode to read_extent_buffer_pages
-Date: Fri,  1 Jul 2011 22:58:47 +0200
-Message-ID: <6b5dcad7aaba7887e9cbd18f511e062103c5ccee.1309553533.git.sensille@gmx.net>
+Subject: [PATCH v5 7/7] btrfs: use readahead API for scrub
+Date: Fri,  1 Jul 2011 22:58:53 +0200
+Message-ID: <2ff498db0df5a28f7c4b526928130a1ef8f03ddd.1309553533.git.sensille@gmx.net>
 References: <cover.1309553533.git.sensille@gmx.net>
 To: chris.mason@oracle.com, linux-btrfs@vger.kernel.org
 Return-path: <linux-btrfs-owner@vger.kernel.org>
@@ -9,92 +9,210 @@ In-Reply-To: <cover.1309553533.git.sensille@gmx.net>
 In-Reply-To: <cover.1309553533.git.sensille@gmx.net>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-read_extent_buffer_pages currently has two modes, either trigger a read
-without waiting for anything, or wait for the I/O to finish. The former
-also bails when it's unable to lock the page. This patch now adds an
-additional parameter to allow it to block on page lock, but don't wait
-for completion.
+Scrub uses a simple tree-enumeration to bring the relevant portions
+of the extent- and csum-tree into the page cache before starting the
+scrub-I/O. This is now replaced by using the new readahead-API.
+During readahead the scrub is being accounted as paused, so it won't
+hold off transaction commits.
+
+This change raises the average disk bandwith utilisation on my test
+volume from 70% to 90%. On another volume, the time for a test run
+went down from 89s to 43s.
 
 Changes v5:
- - merge the 2 wait parameters into one and define WAIT_NONE, WAIT_COMPLETE and
-   WAIT_PAGE_LOCK
+ - reada1/2 are now of type struct reada_control *
 
 Signed-off-by: Arne Jansen <sensille@gmx.net>
 ---
- fs/btrfs/disk-io.c   |    5 +++--
- fs/btrfs/extent_io.c |    7 +++----
- fs/btrfs/extent_io.h |    3 +++
- 3 files changed, 9 insertions(+), 6 deletions(-)
+ fs/btrfs/scrub.c |  116 ++++++++++++++++++++++++------------------------------
+ 1 files changed, 52 insertions(+), 64 deletions(-)
 
-diff --git a/fs/btrfs/disk-io.c b/fs/btrfs/disk-io.c
-index 1ac8db5d..a8c1941 100644
---- a/fs/btrfs/disk-io.c
-+++ b/fs/btrfs/disk-io.c
-@@ -325,7 +325,8 @@ static int btree_read_extent_buffer_pages(struct btrfs_root *root,
- 	clear_bit(EXTENT_BUFFER_CORRUPT, &eb->bflags);
- 	io_tree = &BTRFS_I(root->fs_info->btree_inode)->io_tree;
- 	while (1) {
--		ret = read_extent_buffer_pages(io_tree, eb, start, 1,
-+		ret = read_extent_buffer_pages(io_tree, eb, start,
-+					       WAIT_COMPLETE,
- 					       btree_get_extent, mirror_num);
- 		if (!ret &&
- 		    !verify_parent_transid(io_tree, eb, parent_transid))
-@@ -940,7 +941,7 @@ int readahead_tree_block(struct btrfs_root *root, u64 bytenr, u32 blocksize,
- 	if (!buf)
- 		return 0;
- 	read_extent_buffer_pages(&BTRFS_I(btree_inode)->io_tree,
--				 buf, 0, 0, btree_get_extent, 0);
-+				 buf, 0, WAIT_NONE, btree_get_extent, 0);
- 	free_extent_buffer(buf);
- 	return ret;
+diff --git a/fs/btrfs/scrub.c b/fs/btrfs/scrub.c
+index a8d03d5..f930f27 100644
+--- a/fs/btrfs/scrub.c
++++ b/fs/btrfs/scrub.c
+@@ -29,15 +29,12 @@
+  * any can be found.
+  *
+  * Future enhancements:
+- *  - To enhance the performance, better read-ahead strategies for the
+- *    extent-tree can be employed.
+  *  - In case an unrepairable extent is encountered, track which files are
+  *    affected and report them
+  *  - In case of a read error on files with nodatasum, map the file and read
+  *    the extent to trigger a writeback of the good copy
+  *  - track and record media errors, throw out bad devices
+  *  - add a mode to also read unallocated space
+- *  - make the prefetch cancellable
+  */
+ 
+ struct scrub_bio;
+@@ -741,13 +738,16 @@ static noinline_for_stack int scrub_stripe(struct scrub_dev *sdev,
+ 	int slot;
+ 	int i;
+ 	u64 nstripes;
+-	int start_stripe;
+ 	struct extent_buffer *l;
+ 	struct btrfs_key key;
+ 	u64 physical;
+ 	u64 logical;
+ 	u64 generation;
+ 	u64 mirror_num;
++	struct reada_control *reada1;
++	struct reada_control *reada2;
++	struct btrfs_key key_start;
++	struct btrfs_key key_end;
+ 
+ 	u64 increment = map->stripe_len;
+ 	u64 offset;
+@@ -779,81 +779,67 @@ static noinline_for_stack int scrub_stripe(struct scrub_dev *sdev,
+ 	if (!path)
+ 		return -ENOMEM;
+ 
+-	path->reada = 2;
+ 	path->search_commit_root = 1;
+ 	path->skip_locking = 1;
+ 
+ 	/*
+-	 * find all extents for each stripe and just read them to get
+-	 * them into the page cache
+-	 * FIXME: we can do better. build a more intelligent prefetching
++	 * trigger the readahead for extent tree csum tree and wait for
++	 * completion. During readahead, the scrub is officially paused
++	 * to not hold off transaction commits
+ 	 */
+ 	logical = base + offset;
+-	physical = map->stripes[num].physical;
+-	ret = 0;
+-	for (i = 0; i < nstripes; ++i) {
+-		key.objectid = logical;
+-		key.type = BTRFS_EXTENT_ITEM_KEY;
+-		key.offset = (u64)0;
+-
+-		ret = btrfs_search_slot(NULL, root, &key, path, 0, 0);
+-		if (ret < 0)
+-			goto out_noplug;
+-
+-		/*
+-		 * we might miss half an extent here, but that doesn't matter,
+-		 * as it's only the prefetch
+-		 */
+-		while (1) {
+-			l = path->nodes[0];
+-			slot = path->slots[0];
+-			if (slot >= btrfs_header_nritems(l)) {
+-				ret = btrfs_next_leaf(root, path);
+-				if (ret == 0)
+-					continue;
+-				if (ret < 0)
+-					goto out_noplug;
+ 
+-				break;
+-			}
+-			btrfs_item_key_to_cpu(l, &key, slot);
++	wait_event(sdev->list_wait,
++		   atomic_read(&sdev->in_flight) == 0);
++	atomic_inc(&fs_info->scrubs_paused);
++	wake_up(&fs_info->scrub_pause_wait);
+ 
+-			if (key.objectid >= logical + map->stripe_len)
+-				break;
++	/* FIXME it might be better to start readahead at commit root */
++	key_start.objectid = logical;
++	key_start.type = BTRFS_EXTENT_ITEM_KEY;
++	key_start.offset = (u64)0;
++	key_end.objectid = base + offset + nstripes * increment;
++	key_end.type = BTRFS_EXTENT_ITEM_KEY;
++	key_end.offset = (u64)0;
++	reada1 = btrfs_reada_add(root, &key_start, &key_end);
++
++	key_start.objectid = BTRFS_EXTENT_CSUM_OBJECTID;
++	key_start.type = BTRFS_EXTENT_CSUM_KEY;
++	key_start.offset = logical;
++	key_end.objectid = BTRFS_EXTENT_CSUM_OBJECTID;
++	key_end.type = BTRFS_EXTENT_CSUM_KEY;
++	key_end.offset = base + offset + nstripes * increment;
++	reada2 = btrfs_reada_add(csum_root, &key_start, &key_end);
++
++	if (!IS_ERR(reada1))
++		btrfs_reada_wait(reada1);
++	if (!IS_ERR(reada2))
++		btrfs_reada_wait(reada2);
+ 
+-			path->slots[0]++;
+-		}
+-		btrfs_release_path(path);
+-		logical += increment;
+-		physical += map->stripe_len;
+-		cond_resched();
++	mutex_lock(&fs_info->scrub_lock);
++	while (atomic_read(&fs_info->scrub_pause_req)) {
++		mutex_unlock(&fs_info->scrub_lock);
++		wait_event(fs_info->scrub_pause_wait,
++		   atomic_read(&fs_info->scrub_pause_req) == 0);
++		mutex_lock(&fs_info->scrub_lock);
+ 	}
++	atomic_dec(&fs_info->scrubs_paused);
++	mutex_unlock(&fs_info->scrub_lock);
++	wake_up(&fs_info->scrub_pause_wait);
+ 
+ 	/*
+ 	 * collect all data csums for the stripe to avoid seeking during
+ 	 * the scrub. This might currently (crc32) end up to be about 1MB
+ 	 */
+-	start_stripe = 0;
+ 	blk_start_plug(&plug);
+-again:
+-	logical = base + offset + start_stripe * increment;
+-	for (i = start_stripe; i < nstripes; ++i) {
+-		ret = btrfs_lookup_csums_range(csum_root, logical,
+-					       logical + map->stripe_len - 1,
+-					       &sdev->csum_list, 1);
+-		if (ret)
+-			goto out;
+ 
+-		logical += increment;
+-		cond_resched();
+-	}
+ 	/*
+ 	 * now find all extents for each stripe and scrub them
+ 	 */
+-	logical = base + offset + start_stripe * increment;
+-	physical = map->stripes[num].physical + start_stripe * map->stripe_len;
++	logical = base + offset;
++	physical = map->stripes[num].physical;
+ 	ret = 0;
+-	for (i = start_stripe; i < nstripes; ++i) {
++	for (i = 0; i < nstripes; ++i) {
+ 		/*
+ 		 * canceled?
+ 		 */
+@@ -882,11 +868,14 @@ again:
+ 			atomic_dec(&fs_info->scrubs_paused);
+ 			mutex_unlock(&fs_info->scrub_lock);
+ 			wake_up(&fs_info->scrub_pause_wait);
+-			scrub_free_csums(sdev);
+-			start_stripe = i;
+-			goto again;
+ 		}
+ 
++		ret = btrfs_lookup_csums_range(csum_root, logical,
++					       logical + map->stripe_len - 1,
++					       &sdev->csum_list, 1);
++		if (ret)
++			goto out;
++
+ 		key.objectid = logical;
+ 		key.type = BTRFS_EXTENT_ITEM_KEY;
+ 		key.offset = (u64)0;
+@@ -982,7 +971,6 @@ next:
+ 
+ out:
+ 	blk_finish_plug(&plug);
+-out_noplug:
+ 	btrfs_free_path(path);
+ 	return ret < 0 ? ret : 0;
  }
-diff --git a/fs/btrfs/extent_io.c b/fs/btrfs/extent_io.c
-index b181a94..f48b072 100644
---- a/fs/btrfs/extent_io.c
-+++ b/fs/btrfs/extent_io.c
-@@ -3357,8 +3357,7 @@ int extent_buffer_uptodate(struct extent_io_tree *tree,
- }
- 
- int read_extent_buffer_pages(struct extent_io_tree *tree,
--			     struct extent_buffer *eb,
--			     u64 start, int wait,
-+			     struct extent_buffer *eb, u64 start, int wait,
- 			     get_extent_t *get_extent, int mirror_num)
- {
- 	unsigned long i;
-@@ -3392,7 +3391,7 @@ int read_extent_buffer_pages(struct extent_io_tree *tree,
- 	num_pages = num_extent_pages(eb->start, eb->len);
- 	for (i = start_i; i < num_pages; i++) {
- 		page = extent_buffer_page(eb, i);
--		if (!wait) {
-+		if (wait != WAIT_NONE) {
- 			if (!trylock_page(page))
- 				goto unlock_exit;
- 		} else {
-@@ -3436,7 +3435,7 @@ int read_extent_buffer_pages(struct extent_io_tree *tree,
- 	if (bio)
- 		submit_one_bio(READ, bio, mirror_num, bio_flags);
- 
--	if (ret || !wait)
-+	if (ret || wait != WAIT_COMPLETE)
- 		return ret;
- 
- 	for (i = start_i; i < num_pages; i++) {
-diff --git a/fs/btrfs/extent_io.h b/fs/btrfs/extent_io.h
-index a11a92e..ff3abe8 100644
---- a/fs/btrfs/extent_io.h
-+++ b/fs/btrfs/extent_io.h
-@@ -240,6 +240,9 @@ struct extent_buffer *alloc_extent_buffer(struct extent_io_tree *tree,
- struct extent_buffer *find_extent_buffer(struct extent_io_tree *tree,
- 					 u64 start, unsigned long len);
- void free_extent_buffer(struct extent_buffer *eb);
-+#define WAIT_NONE	0
-+#define WAIT_COMPLETE	1
-+#define WAIT_PAGE_LOCK	2
- int read_extent_buffer_pages(struct extent_io_tree *tree,
- 			     struct extent_buffer *eb, u64 start, int wait,
- 			     get_extent_t *get_extent, int mirror_num);
 -- 
 1.7.3.4
 

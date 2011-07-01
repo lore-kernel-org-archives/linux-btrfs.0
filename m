@@ -1,72 +1,72 @@
-From: Stephane Chazelas <stephane.chazelas@gmail.com>
-Subject: Re: [PATCH] Re: [btrfs-progs integration] incorrect argument
-	checking for "btrfs sub snap -r"
-Date: Fri, 1 Jul 2011 13:55:36 +0100
-Message-ID: <chaz20110701125536.GG28702@seebyte.com>
-References: <4E0BC7AA.7000709@cn.fujitsu.com> <chaz20110630084046.GC28702@seebyte.com> <4E0C3F72.5040508@gmail.com> <chaz20110630104340.GD28702@seebyte.com> <20110630105813.GD11170@carfax.org.uk> <chaz20110630123438.GE28702@seebyte.com> <4E0CE2B3.1080600@gmail.com> <chaz20110701082652.GF28702@seebyte.com> <4E0D9DCA.1090204@gmail.com> <20110701104223.GA7606@carfax.org.uk>
+From: Josef Bacik <josef@redhat.com>
+Subject: Re: [btrfs-transacti] & btrfs-endio-wri] - WAS: Re: [btrfs-delalloc-]
+Date: Fri, 01 Jul 2011 10:07:39 -0400
+Message-ID: <4E0DD4AB.9040900@redhat.com>
+References: <4E0D7323.9010202@corp.mail.ru>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-To: Hugo Mills <hugo@carfax.org.uk>,
-	Andreas Philipp <philipp.andreas@gmail.com>,
-	linux-btrfs@vger.kernel.org
+Content-Type: text/plain; charset=ISO-8859-1
+Cc: Proskurin Kirill <k.proskurin@corp.mail.ru>
+To: Btrfs mailing list <linux-btrfs@vger.kernel.org>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <20110701104223.GA7606@carfax.org.uk>
+In-Reply-To: <4E0D7323.9010202@corp.mail.ru>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-2011-07-01 11:42:23 +0100, Hugo Mills:
-[...]
-> > > diff --git a/btrfs.c b/btrfs.c
-> > > index e117172..b50c58a 100644
-> > > --- a/btrfs.c
-> > > +++ b/btrfs.c
-> > > @@ -49,7 +49,7 @@ static struct Command commands[] = {
-> > >  	/*
-> > >  		avoid short commands different for the case only
-> > >  	*/
-> > > -	{ do_clone, 2,
-> > > +	{ do_clone, -2,
-> > >  	  "subvolume snapshot", "[-r] <source> [<dest>/]<name>\n"
-> > >  		"Create a writable/readonly snapshot of the subvolume <source> with\n"
-> > >  		"the name <name> in the <dest> directory.",
-> > > diff --git a/btrfs_cmds.c b/btrfs_cmds.c
-> > > index 1d18c59..3415afc 100644
-> > > --- a/btrfs_cmds.c
-> > > +++ b/btrfs_cmds.c
-> > > @@ -355,7 +355,7 @@ int do_clone(int argc, char **argv)
-> > >  			return 1;
-> > >  		}
-> > >  	}
-> > > -	if (argc - optind < 2) {
-> > > +	if (argc - optind != 2) {
-> > >  		fprintf(stderr, "Invalid arguments for subvolume snapshot\n");
-> > >  		free(argv);
-> > >  		return 1;
-> > >
-> > Thanks for having another look at this. You are perfectly right. Should
-> > we patch my patch or should I rework a corrected version? What do you
-> > think Hugo?
+On 07/01/2011 03:11 AM, Proskurin Kirill wrote:
+> On 06/30/2011 09:13 PM, Josef Bacik wrote:
+>> On 06/30/2011 10:12 AM, Proskurin Kirill wrote:
+>>> On 06/29/2011 08:14 PM, Josef Bacik wrote:
+>>>>> Ok - I upgrade to 2.6.39-2 but it is seems to all things get worse.
+>>>>> Now I see [btrfs-transacti]&   btrfs-endio-wri] 80-100% all the
+> time and
+>>>>> io performance looks like lower then before.
+>>>>>
+>>>>> Our scribe daemon in state D most of the time with half of a normal
+>>>>> load. Only kernel was changed.
+>>>>>
+>>>>> Any performance tune recommendation?
+>>>>>
+>>>>
+>>>> Can you get sysrq+w while this problem is happening so we can see whats
+>>>> going on?  Thanks,
+>>>
+>>> I attached sysrq+w. Hope it helps.
+>>>
+>>
+>> Heh so it just looks like you are writing a bunch of stuff, that's not
+>> particularly helpful.  What does this program do generically?  How full
+>> is your fs?  Do you have snapshots/subvolumes?  If so how many?  Thanks,
 > 
->    Could you send a follow-up patch with just the second hunk, please?
-> I screwed up the process with this (processing patches too quickly to
-> catch the review), and I've already published the patch with the first
-> hunk, above, into the for-chris branch.
+> I found what my btrfs partition now is really slow. Something wrong
+> happend. I try on 2.6.32 and 2.6.39 - same result. It is because
+> partition is almost full?
+> 
+> I run a simple cycle to clean some old files:
+> for i in `cat /tmp/delit`; do rm -f $i ; done
+> 
+> And it is takes about 5-10 second per file to delete.
+> I get sysrq+w while rm is work - it is attached.
+> 
 
-Hugo, not sure what you mean nor whom you're talking to, but I
-can certainly copy-paste the second hunk from above here:
+Just a shot in the dark, but will you give this a shot and let me know
+how it goes?  Thanks
 
-diff --git a/btrfs_cmds.c b/btrfs_cmds.c
-index 1d18c59..3415afc 100644
---- a/btrfs_cmds.c
-+++ b/btrfs_cmds.c
-@@ -355,7 +355,7 @@ int do_clone(int argc, char **argv)
- 			return 1;
- 		}
- 	}
--	if (argc - optind < 2) {
-+	if (argc - optind != 2) {
- 		fprintf(stderr, "Invalid arguments for subvolume snapshot\n");
- 		free(argv);
- 		return 1;
+Josef
 
-Cheers,
-Stephane
+diff --git a/fs/btrfs/transaction.c b/fs/btrfs/transaction.c
+index 654755b..698a406 100644
+--- a/fs/btrfs/transaction.c
++++ b/fs/btrfs/transaction.c
+@@ -475,12 +475,6 @@ static int __btrfs_end_transaction(struct
+btrfs_trans_handle *trans,
+ 		    trans->transaction->delayed_refs.num_heads_ready > 64) {
+ 			trans->delayed_ref_updates = 0;
+
+-			/*
+-			 * do a full flush if the transaction is trying
+-			 * to close
+-			 */
+-			if (trans->transaction->delayed_refs.flushing)
+-				cur = 0;
+ 			btrfs_run_delayed_refs(trans, root, cur);
+ 		} else {
+ 			break;

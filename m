@@ -1,65 +1,36 @@
-From: Anand Jain <Anand.Jain@oracle.com>
-Subject: device failure hangs the system
-Date: Fri, 01 Jul 2011 17:25:50 +0800
-Message-ID: <4E0D929E.7030704@oracle.com>
+From: Christoph Hellwig <hch@infradead.org>
+Subject: Re: [PATCH] xfstests 255: add a seek_data/seek_hole tester
+Date: Fri, 1 Jul 2011 05:37:02 -0400
+Message-ID: <20110701093702.GA28684@infradead.org>
+References: <1309275199-10801-1-git-send-email-josef@redhat.com>
+ <1309275199-10801-5-git-send-email-josef@redhat.com>
+ <20110629065306.GC1026@dastard>
+ <20110629074021.GA26086@infradead.org>
+ <4E0B019E.8080800@draigBrady.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=ISO-8859-1; format=flowed
-To: linux-btrfs@vger.kernel.org
-Return-path: <linux-btrfs-owner@vger.kernel.org>
+Content-Type: text/plain; charset=us-ascii
+Cc: Christoph Hellwig <hch@infradead.org>,
+	linux-kernel@vger.kernel.org, Josef Bacik <josef@redhat.com>,
+	xfs@oss.sgi.com, viro@ZenIV.linux.org.uk,
+	linux-fsdevel@vger.kernel.org, linux-btrfs@vger.kernel.org
+To: P?draig Brady <P@draigBrady.com>
+Return-path: <linux-kernel-owner@vger.kernel.org>
+In-Reply-To: <4E0B019E.8080800@draigBrady.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
+On Wed, Jun 29, 2011 at 11:42:38AM +0100, P?draig Brady wrote:
+> There is the argument, that if this interface can distinguish
+> these dirty unwritten extents, then why can't the fiemap interface too?
+> The advantage of the fiemap interface is that it can distinguish
+> empty extents vs holes. Empty extents will become increasingly common
+> I think, given the fragmentation and space guarantee benefits they give.
+> It would be cool for cp for example to be able to efficiently copy
+> empty extents from source to dest.
 
-hi,
-
-Following test case causes my remote system to hard-hang and does
-not respond to any key strokes.
-
------------
-# btrfs fi show
-failed to read /dev/sr0
-Label: none  uuid: 75ad3c9f-f661-498e-8c13-89d4e4c58312
-	Total devices 3 FS bytes used 28.00KB
-	devid    1 size 465.76GB used 2.02GB path /dev/sdb
-	devid    3 size 465.76GB used 2.01GB path /dev/sdd
-	devid    2 size 465.76GB used 1.01GB path /dev/sdc
-
-Btrfs v0.19-35-g1b444cd
-------------
-
-
-Stopping the disk
-------------
-# echo 1 > /sys/block/sdd/device/delete
-------------
-------------
-# dmesg | tail
-sd 3:0:0:0: [sdd] Stopping disk
-::
-#
-------------
-
-------------
-# btrfs fi show
-failed to read /dev/sr0
-Label: none  uuid: 75ad3c9f-f661-498e-8c13-89d4e4c58312
-	Total devices 3 FS bytes used 28.00KB
-	devid    1 size 465.76GB used 2.02GB path /dev/sdb
-	devid    2 size 465.76GB used 1.01GB path /dev/sdc
-	*** Some devices missing
-
-Btrfs v0.19-35-g1b444cd
-------------
-
-and the following command hangs the system.
--------------
-# btrfs fi balance /btrfs
--------------
-
-Any idea if this is an known issue ? OR if there is any better way
-to fail a disk (or a loop disk) for testing.
-
-(something similar to cfgadm -c unconfigure in solaris).
-
-Thanks
--Anand
-
+That brings us back to square one.  FIEMAP is supposed to tell you about
+the physical layout on disk.  Unwritten extents physically always are
+there, but whether they might have to be copied depends entirely on
+in-core state.  Finding that incore state in addition is not all that
+easy compared to simply walking the extents.  People might decide it's
+worth for an interface like SEEK_HOLE specificly asking for that, but
+grafting it into FIEMAP through the backdoor is a horrible idea.

@@ -1,83 +1,56 @@
 From: Hugo Mills <hugo@carfax.org.uk>
 Subject: Re: btrfs-progs: integration branch updated
-Date: Fri, 1 Jul 2011 09:54:19 +0100
-Message-ID: <20110701085419.GB4067@carfax.org.uk>
+Date: Fri, 1 Jul 2011 10:06:45 +0100
+Message-ID: <20110701090645.GC4067@carfax.org.uk>
 References: <20110630211902.GC4352@carfax.org.uk>
- <4E0CEEF8.7030901@gmail.com>
+ <4E0D27E5.4060807@cn.fujitsu.com>
 Mime-Version: 1.0
 Content-Type: multipart/signed; micalg=pgp-sha1;
-	protocol="application/pgp-signature"; boundary="kORqDWCi7qDJ0mEj"
+	protocol="application/pgp-signature"; boundary="ctP54qlpMx3WjD+/"
 Cc: Btrfs mailing list <linux-btrfs@vger.kernel.org>
-To: Andreas Philipp <philipp.andreas@gmail.com>
+To: Li Zefan <lizf@cn.fujitsu.com>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <4E0CEEF8.7030901@gmail.com>
+In-Reply-To: <4E0D27E5.4060807@cn.fujitsu.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
 
---kORqDWCi7qDJ0mEj
+--ctP54qlpMx3WjD+/
 Content-Type: text/plain; charset=us-ascii
 Content-Disposition: inline
 
-On Thu, Jun 30, 2011 at 11:47:36PM +0200, Andreas Philipp wrote:
+On Fri, Jul 01, 2011 at 09:50:29AM +0800, Li Zefan wrote:
+> > Jan Schmidt (5):
+> >       commands added
+> >       scrub ioctls
+> >       added check_mounted_where
+> >       scrub userland implementation
+> >       scrub added to manpage
+> > 
+> > WuBo (1):
+> >       Btrfs-progs: Add chunk tree recover tool
+> > 
 > 
-> -----BEGIN PGP SIGNED MESSAGE-----
-> Hash: SHA1
->  
-> On 30.06.2011 23:19, Hugo Mills wrote:
-> > After a reorganisation of patches, and sending a bunch of them to
-> > Chris, I've also updated the integration branch to match that.
-> > It's available from:
-> >
-> > http://git.darksatanic.net/repo/btrfs-progs-unstable.git/
-> > integration-20110630
-> >
-> > The shortlog of 17 patches in this branch beyond the ones I've
-> > sent to Chris is below.
-> >
-> > Hugo.
-> >
-> >
-> > Andreas Philipp (1): print parent ID in btrfs subvolume list
-> >
-> > Goffredo Baroncelli (1): Scan the devices listed in
-> > /proc/partitions
-> >
-> > Hugo Mills (8): Balance progress monitoring. Add --monitor option
-> > to btrfs balance progress. User-space tool for cancelling balance
-> > operations. Run userspace tool in background for balances. Initial
-> > implementation of userspace interface for filtered balancing.
-> > Balance filter by device ID Balance filter for virtual address
-> > range Interface for device range balance filter
-> >
-> > Jan Schmidt (5): commands added scrub ioctls added
-> > check_mounted_where scrub userland implementation scrub added to
-> > manpage
-> >
-> > WuBo (1): Btrfs-progs: Add chunk tree recover tool
-> >
-> > Zhong, Xin (1): btrfs-progs: Improvement for making btrfs image
-> > from source directory.
-> 
-> When issuing 'make all' in this branch I get the following error:
-> make: *** No rule to make target `btrfs-recover-chunk.o', needed by
-> `btrfs-recover-chunk'.  Stop.
-> When trying to figure out what is going wrong I did not find a file
-> called btrfs-recover-chunk.c. Might it be missing?
+> I think we should wait for the kernel patch to be accepted before
+> adding this to btrfs-progs ?
 
-   It is. The file was still on my disk (which is why I didn't see
-this when compile-testing), but it had dropped out of its patch when I
-was re-working the stack. I've added it again and will be producing a
-new integration branch later today.
+   Yes, the same applies to the balance-management series. Most of
+this set of patches won't be going in immediately (there's also a
+couple that still need revisions).
+
+   In fact, the only patches in this collection that I'm expecting to
+push to Chris as soon as I can are the five scrub ones. The remaining
+13 (in my current stack) are either waiting on kernel features to be
+added, or need a little more maturity/review. Some are known to be
+wrong and are waiting on a new version of the patch.
 
    Hugo.
 
 -- 
 === Hugo Mills: hugo@... carfax.org.uk | darksatanic.net | lug.org.uk ===
   PGP key: 515C238D from wwwkeys.eu.pgp.net or http://www.carfax.org.uk
-   --- Nothing wrong with being written in Perl... Some of my best ---   
-                      friends are written in Perl.                       
+  --- "You know,  the British have always been nice to mad people." ---  
 
---kORqDWCi7qDJ0mEj
+--ctP54qlpMx3WjD+/
 Content-Type: application/pgp-signature; name="signature.asc"
 Content-Description: Digital signature
 Content-Disposition: inline
@@ -85,9 +58,9 @@ Content-Disposition: inline
 -----BEGIN PGP SIGNATURE-----
 Version: GnuPG v1.4.10 (GNU/Linux)
 
-iD8DBQFODYs7IKyzvlFcI40RAk3SAJwN8cZASVGgm0kOxbFgUNDBp9P0ewCglfIA
-aMEPe38TO3hc1yeKAOTfBSE=
-=M1ZS
+iD8DBQFODY4lIKyzvlFcI40RAuJ/AJwIhkelnRyxM5NtoK0rxNRHhCFTNwCeKxO8
+ujEtjbIUHnt8GGBGS03/o0E=
+=OE+c
 -----END PGP SIGNATURE-----
 
---kORqDWCi7qDJ0mEj--
+--ctP54qlpMx3WjD+/--

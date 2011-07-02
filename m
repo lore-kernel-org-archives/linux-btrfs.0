@@ -1,34 +1,39 @@
-From: Christian <cdysthe@gmail.com>
-Subject: Re: Balancing takes "forever"
-Date: Sat, 02 Jul 2011 15:59:57 -0500
-Message-ID: <iuo0sf$t3f$1@dough.gmane.org>
-References: <iulhuk$j0f$1@dough.gmane.org> <CAE5mzvib3TsOK+FH9URbmJyOpM0EJihnPyqNYah=mmsXfFxCeg@mail.gmail.com>
-Mime-Version: 1.0
-Content-Type: text/plain; charset=UTF-8; format=flowed
+From: Josef Bacik <josef@redhat.com>
+Subject: [PATCH] Btrfs: don't panic if we get an error while balancing V2
+Date: Sat,  2 Jul 2011 17:24:41 -0400
+Message-ID: <1309641881-3393-1-git-send-email-josef@redhat.com>
+References: <1309551705-16299-1-git-send-email-josef@redhat.com>
+Cc: Anand.Jain@oracle.com
 To: linux-btrfs@vger.kernel.org
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <CAE5mzvib3TsOK+FH9URbmJyOpM0EJihnPyqNYah=mmsXfFxCeg@mail.gmail.com>
+In-Reply-To: <1309551705-16299-1-git-send-email-josef@redhat.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 07/02/2011 01:47 AM, cwillu wrote:
+A user reported an error where if we try to balance an fs after a device has
+been removed it will blow up.  This is because we get an EIO back and this is
+where BUG_ON(ret) bites us in the ass.  To fix we just exit.  Thanks,
 
->
-> Balance currently rewrites everything, and does it in a
-> not-terribly-efficient way.  It's probably done by now (8 hours since
-> your message), which isn't unusual.  There's some improvements in the
-> pipeline, but they're not in a released kernel yet.
+Reported-by: Anand Jain <Anand.Jain@oracle.com>
+Signed-off-by: Josef Bacik <josef@redhat.com>
+---
+V1->V2: only break if ret is actually set, I always screw this up.
+ fs/btrfs/volumes.c |    3 ++-
+ 1 files changed, 2 insertions(+), 1 deletions(-)
 
-Thanks. That explains time used on this. It ended up taking around two 
-hours. It also raises another question: Since I enabled compression 
-after having used the file system for a while will all files that aren't 
-compressed be compressed during the full balance process?
-
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
->
-
+diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
+index 1efa56e..19450bc 100644
+--- a/fs/btrfs/volumes.c
++++ b/fs/btrfs/volumes.c
+@@ -2098,7 +2098,8 @@ int btrfs_balance(struct btrfs_root *dev_root)
+ 					   chunk_root->root_key.objectid,
+ 					   found_key.objectid,
+ 					   found_key.offset);
+-		BUG_ON(ret && ret != -ENOSPC);
++		if (ret && ret != -ENOSPC)
++			goto error;
+ 		key.offset = found_key.offset - 1;
+ 	}
+ 	ret = 0;
 -- 
-//Christian
+1.7.5.2
 

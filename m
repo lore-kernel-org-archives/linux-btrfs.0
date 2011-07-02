@@ -1,39 +1,29 @@
 From: Josef Bacik <josef@redhat.com>
-Subject: [PATCH] Btrfs: don't panic if we get an error while balancing V2
-Date: Sat,  2 Jul 2011 17:24:41 -0400
-Message-ID: <1309641881-3393-1-git-send-email-josef@redhat.com>
-References: <1309551705-16299-1-git-send-email-josef@redhat.com>
-Cc: Anand.Jain@oracle.com
-To: linux-btrfs@vger.kernel.org
+Subject: Re: [GIT PULL] Btrfs updates for 3.1
+Date: Sat, 02 Jul 2011 17:25:20 -0400
+Message-ID: <4E0F8CC0.8010909@redhat.com>
+References: <4E0E3091.9060704@redhat.com>
+Mime-Version: 1.0
+Content-Type: text/plain; charset=ISO-8859-1
+Cc: linux-btrfs <linux-btrfs@vger.kernel.org>
+To: Chris Mason <chris.mason@oracle.com>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <1309551705-16299-1-git-send-email-josef@redhat.com>
+In-Reply-To: <4E0E3091.9060704@redhat.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-A user reported an error where if we try to balance an fs after a device has
-been removed it will blow up.  This is because we get an EIO back and this is
-where BUG_ON(ret) bites us in the ass.  To fix we just exit.  Thanks,
+On 07/01/2011 04:39 PM, Josef Bacik wrote:
+> Hey Chris,
+> 
+> Since I'm going on vacation next week I wanted to get everything ready for you
+> in case you get bored with fsck and want to put together a 3.1 tree :).  If you
+> can pull
+> 
+> git://git.kernel.org/pub/scm/linux/kernel/git/josef/btrfs-work.git for-chris
+> 
+> It is based on your for-linus branch.  Here is the shortlog and diffstat
+> 
 
-Reported-by: Anand Jain <Anand.Jain@oracle.com>
-Signed-off-by: Josef Bacik <josef@redhat.com>
----
-V1->V2: only break if ret is actually set, I always screw this up.
- fs/btrfs/volumes.c |    3 ++-
- 1 files changed, 2 insertions(+), 1 deletions(-)
+Ugh sorry I had to update the don't panic patch because I'm an idiot.
+Thanks,
 
-diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
-index 1efa56e..19450bc 100644
---- a/fs/btrfs/volumes.c
-+++ b/fs/btrfs/volumes.c
-@@ -2098,7 +2098,8 @@ int btrfs_balance(struct btrfs_root *dev_root)
- 					   chunk_root->root_key.objectid,
- 					   found_key.objectid,
- 					   found_key.offset);
--		BUG_ON(ret && ret != -ENOSPC);
-+		if (ret && ret != -ENOSPC)
-+			goto error;
- 		key.offset = found_key.offset - 1;
- 	}
- 	ret = 0;
--- 
-1.7.5.2
-
+Josef

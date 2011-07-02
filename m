@@ -1,41 +1,34 @@
-From: Calvin Walton <calvin.walton@kepstin.ca>
-Subject: Re: TRIM support
-Date: Sat, 02 Jul 2011 15:45:17 -0400
-Message-ID: <1309635918.3774.7.camel@nayuki>
-References: <CAAeznTr5FMOqyJA9JfP2H-h1rJjasfxUJAeNNnNKhiHCTV03mA@mail.gmail.com>
+From: Christian <cdysthe@gmail.com>
+Subject: Re: Balancing takes "forever"
+Date: Sat, 02 Jul 2011 15:59:57 -0500
+Message-ID: <iuo0sf$t3f$1@dough.gmane.org>
+References: <iulhuk$j0f$1@dough.gmane.org> <CAE5mzvib3TsOK+FH9URbmJyOpM0EJihnPyqNYah=mmsXfFxCeg@mail.gmail.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="UTF-8"
-Cc: linux-btrfs@vger.kernel.org
-To: Leonidas Spyropoulos <artafinde@gmail.com>
+Content-Type: text/plain; charset=UTF-8; format=flowed
+To: linux-btrfs@vger.kernel.org
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <CAAeznTr5FMOqyJA9JfP2H-h1rJjasfxUJAeNNnNKhiHCTV03mA@mail.gmail.com>
+In-Reply-To: <CAE5mzvib3TsOK+FH9URbmJyOpM0EJihnPyqNYah=mmsXfFxCeg@mail.gmail.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Sat, 2011-07-02 at 19:08 +0100, Leonidas Spyropoulos wrote:
-> Hello,
-> 
-> I just installed an archlinux with btrfs root partition and would like
-> to set the correct mount properties
-> Following this:
-> https://wiki.archlinux.org/index.php/Solid_State_Drives
-> it says there that I should use the discard mount parameter to enable TRIM.
-> 
-> I would like to ask by using ssd mount parameter would TRIM be enabled?
-> The SSD is Intel 320 Series 120Gb
+On 07/02/2011 01:47 AM, cwillu wrote:
 
-No, the "ssd" mount parameter has nothing to do with TRIM.
+>
+> Balance currently rewrites everything, and does it in a
+> not-terribly-efficient way.  It's probably done by now (8 hours since
+> your message), which isn't unusual.  There's some improvements in the
+> pipeline, but they're not in a released kernel yet.
 
-The "ssd" mount parameter adjusts a couple of tuning parameters where
-the default setting is designed to improve performance on spinning HDD,
-and instead tunes for the random-access ability of an SSD.
+Thanks. That explains time used on this. It ended up taking around two 
+hours. It also raises another question: Since I enabled compression 
+after having used the file system for a while will all files that aren't 
+compressed be compressed during the full balance process?
 
-The ssd option is automatically enabled if the kernel detects that your
-drive is an SSD (you can check with 'cat /proc/mounts').
-
-The discard option is not currently automatically enabled; I think there
-may have been some performance issues in certain cases with drives that
-have slow trim implementations. But feel free to give it a try.
+> --
+> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
+> the body of a message to majordomo@vger.kernel.org
+> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+>
 
 -- 
-Calvin Walton <calvin.walton@kepstin.ca>
+//Christian
 

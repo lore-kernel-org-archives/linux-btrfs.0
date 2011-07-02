@@ -1,29 +1,26 @@
-From: Andi Kleen <andi@firstfloor.org>
-Subject: Re: [PATCH] Btrfs: initial online fsck support
-Date: Sat, 2 Jul 2011 19:04:43 +0200
-Message-ID: <20110702170443.GI23059@one.firstfloor.org>
-References: <4E0C4303.1080406@cn.fujitsu.com> <m239ipnb7v.fsf@firstfloor.org> <201107021347.42281.hka@qbs.com.pl>
+From: Leonidas Spyropoulos <artafinde@gmail.com>
+Subject: TRIM support
+Date: Sat, 2 Jul 2011 19:08:40 +0100
+Message-ID: <CAAeznTr5FMOqyJA9JfP2H-h1rJjasfxUJAeNNnNKhiHCTV03mA@mail.gmail.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Cc: Andi Kleen <andi@firstfloor.org>, Li Zefan <lizf@cn.fujitsu.com>,
-	Btrfs mailing list <linux-btrfs@vger.kernel.org>
-To: Hubert Kario <hka@qbs.com.pl>
+Content-Type: text/plain; charset=ISO-8859-1
+To: linux-btrfs@vger.kernel.org
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <201107021347.42281.hka@qbs.com.pl>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-> The two big features of btrfs are self-healing and online fsck, those have to 
+Hello,
 
-Are they?
+I just installed an archlinux with btrfs root partition and would like
+to set the correct mount properties
+Following this:
+https://wiki.archlinux.org/index.php/Solid_State_Drives
+it says there that I should use the discard mount parameter to enable TRIM.
 
-> be implemented in kernel space.
+I would like to ask by using ssd mount parameter would TRIM be enabled?
+The SSD is Intel 320 Series 120Gb
 
-Why? There have been online fscks in user space in the past,
-e.g. the various schemes using LVM snapshots for ext* and 
-other related work on the BSD FFS. I don't see any principal
-reason why it couldn't be done for btrfs either.
+Thanks
+Leonidas
 
-A good fsck is quite complex and you are unlikely to want all
-that code in kernel space.
-
--Andi
+--
+Caution: breathing may be hazardous to your health.

@@ -1,33 +1,53 @@
-From: Andreas Philipp <philipp.andreas@gmail.com>
-Subject: [PATCH] remove unused include "version.h"
-Date: Sun,  3 Jul 2011 21:34:20 +0200
-Message-ID: <1309721660-23401-1-git-send-email-philipp.andreas@gmail.com>
-Cc: Andreas Philipp <philipp.andreas@gmail.com>,
-	Hugo Mills <hugo@carfax.org.uk>
-To: linux-btrfs@vger.kernel.org
+From: cwillu <cwillu@cwillu.com>
+Subject: Re: Memory leak?
+Date: Sun, 3 Jul 2011 13:38:57 -0600
+Message-ID: <CAE5mzvhZc4afuBTT0GrDvPXKaSwYeyPdyiQaYPjCTmvzBahr7g@mail.gmail.com>
+References: <20110703190913.GA4474@yahoo.fr>
+Mime-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Cc: linux-btrfs@vger.kernel.org
+To: Stephane Chazelas <stephane_chazelas@yahoo.fr>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
+In-Reply-To: <20110703190913.GA4474@yahoo.fr>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-In the file btrfs-list.c version.h was included but not used. So just
-drop it.
+On Sun, Jul 3, 2011 at 1:09 PM, Stephane Chazelas
+<stephane_chazelas@yahoo.fr> wrote:
+> Hiya,
+>
+> I've got a server using brtfs to implement a backup system.
+> Basically, every night, for a few machines, I rsync (and other
+> methods) their file systems into one btrfs subvolume each and
+> then snapshot it.
+>
+> On that server, the btrfs fs is on 3 3TB drives, mounted with
+> compress-force. Every week, I rsync the most recent snapshot of
+> a selection of subvolumes onto an encrypted (LUKS) external hard
+> drive (3TB as well).
+>
+> Now, on a few occasions (actually, most of the time), when I
+> rsynced the data (about 2.5TB) onto the external drive, the
+> system would crash after some time with "Out of memory and no
+> killable process". Basically, something in kernel was allocating
+> the whole memory, then oom mass killed everybody and crash.
+>
+> That was with ubuntu 2.6.38. I had then moved to debian and
+> 2.6.39 and thought the problem was fixed, but it just happened
+> again with 3.0.0rc5 while rsyncing onto an initially empty btrfs
+> fs.
+>
+> I'm going to resume the rsync again, and it's likely to happen
+> again. Is there anything simple (as I've got very little time to
+> look into that) I could do to help debug the issue (I'm not 100%
+> sure it's btrfs fault but that's the most likely culprit).
+>
+> For a start, I'll switch the console to serial, and watch
+> /proc/vmstat. Anything else I could do?
+>
+> Note that that server has never crashed when doing a lot of IO
+> at the same time in a lot of subvolumes with remote hosts. It's
+> only when copying data to that external drive on LUKS that it
+> seems to crash.
 
-Signed-off-by: Andreas Philipp <philipp.andreas@gmail.com>
----
- btrfs-list.c |    1 -
- 1 files changed, 0 insertions(+), 1 deletions(-)
-
-diff --git a/btrfs-list.c b/btrfs-list.c
-index f804dfc..1495dae 100644
---- a/btrfs-list.c
-+++ b/btrfs-list.c
-@@ -34,7 +34,6 @@
- #include "ctree.h"
- #include "transaction.h"
- #include "utils.h"
--#include "version.h"
- 
- /* we store all the roots we find in an rbtree so that we can
-  * search for them later.
--- 
-1.7.3.4
-
+Look at the output of slabtop (should be installed by default, procfs
+package), before rsync for comparison, and during.

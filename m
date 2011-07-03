@@ -1,53 +1,88 @@
-From: cwillu <cwillu@cwillu.com>
-Subject: Re: Memory leak?
-Date: Sun, 3 Jul 2011 13:38:57 -0600
-Message-ID: <CAE5mzvhZc4afuBTT0GrDvPXKaSwYeyPdyiQaYPjCTmvzBahr7g@mail.gmail.com>
-References: <20110703190913.GA4474@yahoo.fr>
+From: Hugo Mills <hugo@carfax.org.uk>
+Subject: btrfs-progs: integration branch for 2011-07-03 now out
+Date: Sun, 3 Jul 2011 21:21:59 +0100
+Message-ID: <20110703202159.GD4325@carfax.org.uk>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=UTF-8
-Cc: linux-btrfs@vger.kernel.org
-To: Stephane Chazelas <stephane_chazelas@yahoo.fr>
+Content-Type: multipart/signed; micalg=pgp-sha1;
+	protocol="application/pgp-signature"; boundary="FFoLq8A0u+X9iRU8"
+To: Btrfs mailing list <linux-btrfs@vger.kernel.org>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <20110703190913.GA4474@yahoo.fr>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Sun, Jul 3, 2011 at 1:09 PM, Stephane Chazelas
-<stephane_chazelas@yahoo.fr> wrote:
-> Hiya,
->
-> I've got a server using brtfs to implement a backup system.
-> Basically, every night, for a few machines, I rsync (and other
-> methods) their file systems into one btrfs subvolume each and
-> then snapshot it.
->
-> On that server, the btrfs fs is on 3 3TB drives, mounted with
-> compress-force. Every week, I rsync the most recent snapshot of
-> a selection of subvolumes onto an encrypted (LUKS) external hard
-> drive (3TB as well).
->
-> Now, on a few occasions (actually, most of the time), when I
-> rsynced the data (about 2.5TB) onto the external drive, the
-> system would crash after some time with "Out of memory and no
-> killable process". Basically, something in kernel was allocating
-> the whole memory, then oom mass killed everybody and crash.
->
-> That was with ubuntu 2.6.38. I had then moved to debian and
-> 2.6.39 and thought the problem was fixed, but it just happened
-> again with 3.0.0rc5 while rsyncing onto an initially empty btrfs
-> fs.
->
-> I'm going to resume the rsync again, and it's likely to happen
-> again. Is there anything simple (as I've got very little time to
-> look into that) I could do to help debug the issue (I'm not 100%
-> sure it's btrfs fault but that's the most likely culprit).
->
-> For a start, I'll switch the console to serial, and watch
-> /proc/vmstat. Anything else I could do?
->
-> Note that that server has never crashed when doing a lot of IO
-> at the same time in a lot of subvolumes with remote hosts. It's
-> only when copying data to that external drive on LUKS that it
-> seems to crash.
 
-Look at the output of slabtop (should be installed by default, procfs
-package), before rsync for comparison, and during.
+--FFoLq8A0u+X9iRU8
+Content-Type: text/plain; charset=us-ascii
+Content-Disposition: inline
+Content-Transfer-Encoding: quoted-printable
+
+   I've just updated the integration branch with additional patches
+=66rom Andreas Philipp and the patch from Hubert Kario that I forgot to
+include last time.
+
+   Available from:
+
+http://git.darksatanic.net/repo/btrfs-progs-unstable.git/ integration-20110=
+703
+
+   Hugo.
+
+Andreas Philipp (5):
+      add all targets to clean target
+      some style/layout changes
+      print parent ID in btrfs suvolume list
+      update manpage entries for btrfs subvolume list
+      remove unused include "version.h"
+
+Goffredo Baroncelli (1):
+      Scan the devices listed in /proc/partitions
+
+Hubert Kario (1):
+      remove unused variables
+
+Hugo Mills (9):
+      Balance progress monitoring.
+      Add --monitor option to btrfs balance progress.
+      User-space tool for cancelling balance operations.
+      Run userspace tool in background for balances.
+      Initial implementation of userspace interface for filtered balancing.
+      Balance filter by device ID
+      Balance filter for virtual address range
+      Interface for device range balance filter
+      Fix variable-set-but-not-used warnings in chunk recovery tool
+
+Jan Schmidt (5):
+      commands added
+      scrub ioctls
+      added check_mounted_where
+      scrub userland implementation
+      scrub added to manpage
+
+Li Zefan (1):
+      Fix missing entries in listing of subvolumes
+
+WuBo (1):
+      Btrfs-progs: Add chunk tree recover tool
+
+Zhong, Xin (1):
+      btrfs-progs: Improvement for making btrfs image from source directory.
+
+--=20
+=3D=3D=3D Hugo Mills: hugo@... carfax.org.uk | darksatanic.net | lug.org.uk=
+ =3D=3D=3D
+  PGP key: 515C238D from wwwkeys.eu.pgp.net or http://www.carfax.org.uk
+               --- Doughnut furs ache me, Omar Dorlin. ---              =20
+
+--FFoLq8A0u+X9iRU8
+Content-Type: application/pgp-signature; name="signature.asc"
+Content-Description: Digital signature
+Content-Disposition: inline
+
+-----BEGIN PGP SIGNATURE-----
+Version: GnuPG v1.4.10 (GNU/Linux)
+
+iD8DBQFOEM9nIKyzvlFcI40RAuzNAKDFtvpX9ecFBiZ0A24n4DexGuNPvwCgwpdO
+0ygvZuLonMFLu+W34y8wYJA=
+=UgFv
+-----END PGP SIGNATURE-----
+
+--FFoLq8A0u+X9iRU8--

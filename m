@@ -1,68 +1,109 @@
-From: Martin Steigerwald <Martin@lichtvoll.de>
-Subject: Re: TRIM support
-Date: Mon, 4 Jul 2011 21:51:03 +0200
-Message-ID: <201107042151.03835.Martin@lichtvoll.de>
-References: <CAAeznTr5FMOqyJA9JfP2H-h1rJjasfxUJAeNNnNKhiHCTV03mA@mail.gmail.com> <201107041820.11370.Martin@lichtvoll.de> <CAAeznTp0i4RCF61p-4SbFfipkHt9dzuAN=ec1ZrtEzD9Vxgx1g@mail.gmail.com> (sfid-20110704_203025_892608_953B6221)
+From: Li Dongyang <lidongyang@novell.com>
+Subject: Re: [PATCH 1/2] Btrfs: fix space leak when skipping small extents during trimming
+Date: Tue, 5 Jul 2011 12:07:12 +0800
+Message-ID: <201107051207.12368.lidongyang@novell.com>
+References: <4E0030DF.4080704@cn.fujitsu.com>
 Mime-Version: 1.0
 Content-Type: Text/Plain;
-  charset="iso-8859-1"
-Cc: linux-btrfs@vger.kernel.org,
-	Calvin Walton <calvin.walton@kepstin.ca>
-To: Leonidas Spyropoulos <artafinde@gmail.com>
+  charset="utf-8"
+Cc: "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
+To: Li Zefan <lizf@cn.fujitsu.com>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <CAAeznTp0i4RCF61p-4SbFfipkHt9dzuAN=ec1ZrtEzD9Vxgx1g@mail.gmail.com>
+In-Reply-To: <4E0030DF.4080704@cn.fujitsu.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Am Montag, 4. Juli 2011 schrieb Leonidas Spyropoulos:
-> On Mon, Jul 4, 2011 at 5:20 PM, Martin Steigerwald <Martin@lichtvoll.de> 
-wrote:
-> > Am Samstag, 2. Juli 2011 schrieben Sie:
-> >> On Sat, 2011-07-02 at 19:08 +0100, Leonidas Spyropoulos wrote:
-> >> > Hello,
-> >> > 
-> >> > I just installed an archlinux with btrfs root partition and would
-> >> > like to set the correct mount properties
-> >> > Following this:
-> >> > https://wiki.archlinux.org/index.php/Solid_State_Drives
-> >> > it says there that I should use the discard mount parameter to
-> >> > enable TRIM.
-> >> > 
-> >> > I would like to ask by using ssd mount parameter would TRIM be
-> >> > enabled? The SSD is Intel 320 Series 120Gb
-> >> 
-> >> No, the "ssd" mount parameter has nothing to do with TRIM.
-> > 
-> > [...]
-> > 
-> >> The discard option is not currently automatically enabled; I think
-> >> there may have been some performance issues in certain cases with
-> >> drives that have slow trim implementations. But feel free to give it
-> >> a try.
-> > 
-> > As alternative use fstrim command from time to time or regularily
-> > during a cron job. From what I understood it does batched discard of
-> > all free blocks in a filesystem.
-> > 
-> > merkaba:~> time fstrim -v /
-> > /: 5044342784 bytes was trimmed
-> > fstrim -v /  0,00s user 0,36s system 10% cpu 3,486 total
-> > 
-> > merkaba:~> time fstrim -v /home
-> > /home: 27062587392 bytes was trimmed
-> > fstrim -v /home  0,00s user 0,92s system 20% cpu 4,512 total
-> > 
-> > First one is BTRFS, second one is Ext4 - and will be, until I am
-> > convinced that BTRFS has a fully featured and working fsck and until
-> > its experimental flag is removed.
-> > 
-> > fstrim is in util-linux(-ng) when its new enough.
+On Tuesday, June 21, 2011 01:49:19 PM Li Zefan wrote:
+> We're taking a free space extent out of the free space cache, trimming
+> it and then putting it back into the cache.
 > 
-> Do I need to run fstrim command while the partition is offline or can
-> it be done while mounted?
-
-It is run on a mount point, so I think the filesystem needs to be mounted. 
-They are here.
-
--- 
-Martin 'Helios' Steigerwald - http://www.Lichtvoll.de
-GPG: 03B0 0D6C 0040 0710 4AFA  B82F 991B EAAC A599 84C7
+sorry for the late reply, I can hardly to find time look at this.
+> However for an extent that is smaller than the specified minimum length,
+> it's taken out but won't be put back, which causes space leak.
+yes, you are correct, and the fix looks good to me, Thanks
+> 
+> Signed-off-by: Li Zefan <lizf@cn.fujitsu.com>
+> ---
+> 
+> Unfortunately I have no trim-able device to test the patch.
+> 
+> ---
+>  fs/btrfs/free-space-cache.c |   34 +++++++++++++++++-----------------
+>  1 files changed, 17 insertions(+), 17 deletions(-)
+> 
+> diff --git a/fs/btrfs/free-space-cache.c b/fs/btrfs/free-space-cache.c
+> index 9f985a4..292c0d9 100644
+> --- a/fs/btrfs/free-space-cache.c
+> +++ b/fs/btrfs/free-space-cache.c
+> @@ -2460,6 +2460,7 @@ int btrfs_trim_block_group(struct btrfs_block_group_cache *block_group,
+>  	u64 bytes = 0;
+>  	u64 actually_trimmed;
+>  	int ret = 0;
+> +	int update_ret;
+>  
+>  	*trimmed = 0;
+>  
+> @@ -2483,6 +2484,7 @@ int btrfs_trim_block_group(struct btrfs_block_group_cache *block_group,
+>  		}
+>  
+>  		if (entry->bitmap) {
+> +			bytes = 0;
+>  			ret = search_bitmap(ctl, entry, &start, &bytes);
+>  			if (!ret) {
+>  				if (start >= end) {
+> @@ -2490,6 +2492,8 @@ int btrfs_trim_block_group(struct btrfs_block_group_cache *block_group,
+>  					break;
+>  				}
+>  				bytes = min(bytes, end - start);
+> +				if (bytes < minlen)
+> +					goto next;
+>  				bitmap_clear_bits(ctl, entry, start, bytes);
+>  				if (entry->bytes == 0)
+>  					free_bitmap(ctl, entry);
+> @@ -2503,33 +2507,29 @@ int btrfs_trim_block_group(struct btrfs_block_group_cache *block_group,
+>  		} else {
+>  			start = entry->offset;
+>  			bytes = min(entry->bytes, end - start);
+> +			if (bytes < minlen)
+> +				goto next;
+>  			unlink_free_space(ctl, entry);
+>  			kmem_cache_free(btrfs_free_space_cachep, entry);
+>  		}
+>  
+>  		spin_unlock(&ctl->tree_lock);
+>  
+> -		if (bytes >= minlen) {
+> -			int update_ret;
+> -			update_ret = btrfs_update_reserved_bytes(block_group,
+> -								 bytes, 1, 1);
+> +		update_ret = btrfs_update_reserved_bytes(block_group,
+> +							 bytes, 1, 1);
+>  
+> -			ret = btrfs_error_discard_extent(fs_info->extent_root,
+> -							 start,
+> -							 bytes,
+> -							 &actually_trimmed);
+> +		ret = btrfs_error_discard_extent(fs_info->extent_root, start,
+> +						 bytes, &actually_trimmed);
+>  
+> -			btrfs_add_free_space(block_group, start, bytes);
+> -			if (!update_ret)
+> -				btrfs_update_reserved_bytes(block_group,
+> -							    bytes, 0, 1);
+> +		btrfs_add_free_space(block_group, start, bytes);
+> +		if (!update_ret)
+> +			btrfs_update_reserved_bytes(block_group, bytes, 0, 1);
+>  
+> -			if (ret)
+> -				break;
+> -			*trimmed += actually_trimmed;
+> -		}
+> +		if (ret)
+> +			break;
+> +		*trimmed += actually_trimmed;
+> +next:
+>  		start += bytes;
+> -		bytes = 0;
+>  
+>  		if (fatal_signal_pending(current)) {
+>  			ret = -ERESTARTSYS;
+> 

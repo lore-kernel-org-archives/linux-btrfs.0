@@ -1,39 +1,42 @@
-From: Proskurin Kirill <k.proskurin@corp.mail.ru>
-Subject: Re: [btrfs-transacti] & btrfs-endio-wri] - WAS: Re: [btrfs-delalloc-]
-Date: Wed, 06 Jul 2011 20:31:32 +0400
-Message-ID: <4E148DE4.7070904@corp.mail.ru>
-References: <4E0D7323.9010202@corp.mail.ru> <4E0DD4AB.9040900@redhat.com>
+From: Andreas Philipp <philipp.andreas@gmail.com>
+Subject: free space defragmentation?
+Date: Wed, 06 Jul 2011 22:17:27 +0200
+Message-ID: <4E14C2D7.5060101@gmail.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=ISO-8859-1; format=flowed
-Cc: Btrfs mailing list <linux-btrfs@vger.kernel.org>
-To: Josef Bacik <josef@redhat.com>
+Content-Type: text/plain; charset=ISO-8859-1
+To: linux-btrfs <linux-btrfs@vger.kernel.org>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <4E0DD4AB.9040900@redhat.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 07/01/2011 06:07 PM, Josef Bacik wrote:
 
->> I found what my btrfs partition now is really slow. Something wrong
->> happend. I try on 2.6.32 and 2.6.39 - same result. It is because
->> partition is almost full?
->>
->> I run a simple cycle to clean some old files:
->> for i in `cat /tmp/delit`; do rm -f $i ; done
->>
->> And it is takes about 5-10 second per file to delete.
->> I get sysrq+w while rm is work - it is attached.
->>
->
-> Just a shot in the dark, but will you give this a shot and let me know
-> how it goes?  Thanks
+-----BEGIN PGP SIGNED MESSAGE-----
+Hash: SHA1
+ 
+Hi,
+ 
+Since the defragmentation tool of btrfs-more or less-just copies the
+file to the free space the file gets fragmented again (maybe even worse)
+if the free space is fragmented. Thus I wanted to ask whether there is
+some tool or idea for a free space defragmentation.
+ 
+Thanks,
+Andreas Philipp
+-----BEGIN PGP SIGNATURE-----
+Version: GnuPG v1.4.9 (MingW32)
+Comment: Using GnuPG with Mozilla - http://enigmail.mozdev.org/
+ 
+iQIcBAEBAgAGBQJOFMLXAAoJEJIcBJ3+XkgiK8cQAJqYE9VpDak555/5U1YHrrkH
+eVJKn/N2nR0qO9pUh/XsMyStpntZ+yv/cVQ/i12mfG5ZZaCS6VBEZzNxooGQP6J2
+jLgxYtfKUKaR8AHC0dzOkDN3OE78U1/grZV9SEE1wx05wXGMOipKcuVQZQSMOS1n
+jP6FHYRVd22GGbMob9GxxNv+j/2ZSx5ThgYI1ZWbYRwD/XAEWHuMZuWElGTZrQaQ
+7TZ4IzlQ4sMpZLbrp5m60EjdmW1G4mwREygSh8jmnZp0ndhWVzfbJorWJYDLLXIP
+prlptDH0KJsAf5MBmxbG4fe7nKX+XagvbSaYEKaORS0di61NripELc3QgalPrfdN
+r/NjirXuIhnmQMowV288ntsuOe/QHYn7RQbxOgLxxw0ageCZGay/Rwfcq9deI2pe
+QoSbC2PBecGhGe7jd0jVpB3TmYil8uWs7VzzdxIhknadtYTotEP4WQYQyK4xQqU1
+GDfYXnqLXXhFrJkSZ3EFEeRlfSVdw33VGEEdjnqoRoKkKTvXpwE+JhrdiJvSkOC2
+7sIbocvU+KFWLjtXYqDZgOFndCx+6NQIRR/pP9NOYnSk4x8qqthi9h3EqiCq1jRo
+JIttYHS3IEXv0P58VmCUwMaaXdNfWEqXr93j12WdvcoNDm/oCwdTB8u9Ckk9rhQQ
+yuygcOK6z0XAAh/vlZFm
+=jT/r
+-----END PGP SIGNATURE-----
 
-Sorry for late answer. Im afraid I can`t test it now - then problem 
-occurs I have no time to wait and format partition. But I will save 
-this patch and if I run at this problem again I will try it and report 
-here.
-
-Thanks for your help anyway.
-
--- 
-Best regards,
-Proskurin Kirill

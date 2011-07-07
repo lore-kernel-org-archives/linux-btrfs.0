@@ -1,180 +1,255 @@
-From: Chris Mason <chris.mason@oracle.com>
-Subject: Re: please review snapshot corruption path with delayed metadata insertion
-Date: Thu, 07 Jul 2011 16:26:22 -0400
-Message-ID: <1310070350-sup-5716@shiny>
-References: <1308345034-sup-1969@shiny> <4DFD7C63.6040902@jp.fujitsu.com> <4DFE8933.7040101@jp.fujitsu.com> <20110621002435.GK12709@twin.jikos.cz> <1308616798-sup-2605@shiny> <4DFFF0B2.1070403@jp.fujitsu.com> <4E0C186C.8060101@cn.fujitsu.com> <4E0D8130.8040101@jp.fujitsu.com>
-Content-Type: text/plain; charset=UTF-8
-Cc: miaox <miaox@cn.fujitsu.com>, David Sterba <dave@jikos.cz>,
-	linux-btrfs <linux-btrfs@vger.kernel.org>
-To: Tsutomu Itoh <t-itoh@jp.fujitsu.com>
+From: Hugo Mills <hugo@carfax.org.uk>
+Subject: Re: [PATCH v3 8/8] new ioctls to do logical->inode and inode->path
+ resolving
+Date: Thu, 7 Jul 2011 23:29:47 +0100
+Message-ID: <20110707222947.GE4325@carfax.org.uk>
+References: <cover.1310053204.git.list.btrfs@jan-o-sch.net>
+ <d7f2eb7de3b6e8bc9f40ad96b9943d9680f88987.1310053204.git.list.btrfs@jan-o-sch.net>
+Mime-Version: 1.0
+Content-Type: multipart/signed; micalg=pgp-sha1;
+	protocol="application/pgp-signature"; boundary="0QFb0wBpEddLcDHQ"
+Cc: chris.mason@oracle.com, linux-btrfs@vger.kernel.org
+To: Jan Schmidt <list.btrfs@jan-o-sch.net>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-reply-to: <4E0D8130.8040101@jp.fujitsu.com>
+In-Reply-To: <d7f2eb7de3b6e8bc9f40ad96b9943d9680f88987.1310053204.git.list.btrfs@jan-o-sch.net>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Excerpts from Tsutomu Itoh's message of 2011-07-01 04:11:28 -0400:
-> Hi, Miao,
+
+--0QFb0wBpEddLcDHQ
+Content-Type: text/plain; charset=us-ascii
+Content-Disposition: inline
+
+   Hi, Jan,
+
+On Thu, Jul 07, 2011 at 05:48:33PM +0200, Jan Schmidt wrote:
+> these ioctls make use of the new functions initially added for scrub. they
+> return all inodes belonging to a logical address (BTRFS_IOC_LOGICAL_INO) and
+> all paths belonging to an inode (BTRFS_IOC_INO_PATHS).
+
+   I've not read this patch in detail, so I may have missed something,
+but why do we need new ioctls for these functions, when we have
+BTRFS_IOC_TREE_SEARCH, which will allow us to perform the same two
+operations using existing kernel-side infrastructure?
+
+   Hugo.
+
+> Signed-off-by: Jan Schmidt <list.btrfs@jan-o-sch.net>
+> ---
+>  fs/btrfs/ioctl.c |  134 ++++++++++++++++++++++++++++++++++++++++++++++++++++++
+>  fs/btrfs/ioctl.h |   19 ++++++++
+>  2 files changed, 153 insertions(+), 0 deletions(-)
 > 
-> (2011/06/30 15:32), Miao Xie wrote:
-> > Hi, Itoh-san
-> > 
-> > Could you test the following patch to check whether it can fix the bug or not?
-> > I have tested it on my x86_64 machine by your test script for two days, it worked well.
-> 
-> I ran my test script about a day, I was not able to reproduce this BUG.
+> diff --git a/fs/btrfs/ioctl.c b/fs/btrfs/ioctl.c
+> index a3c4751..5299b40 100644
+> --- a/fs/btrfs/ioctl.c
+> +++ b/fs/btrfs/ioctl.c
+> @@ -51,6 +51,7 @@
+>  #include "volumes.h"
+>  #include "locking.h"
+>  #include "inode-map.h"
+> +#include "backref.h"
+>  
+>  /* Mask out flags that are inappropriate for the given type of inode. */
+>  static inline __u32 btrfs_mask_flags(umode_t mode, __u32 flags)
+> @@ -2836,6 +2837,135 @@ static long btrfs_ioctl_scrub_progress(struct btrfs_root *root,
+>  	return ret;
+>  }
+>  
+> +static long btrfs_ioctl_ino_to_path(struct btrfs_root *root, void __user *arg)
+> +{
+> +	int ret = 0;
+> +	int i;
+> +	unsigned long rel_ptr;
+> +	int size;
+> +	struct btrfs_ioctl_ino_path_args *ipa;
+> +	struct inode_fs_paths *ipath = NULL;
+> +	struct btrfs_path *path;
+> +
+> +	path = btrfs_alloc_path();
+> +	if (!path) {
+> +		ret = -ENOMEM;
+> +		goto out;
+> +	}
+> +
+> +	ipa = memdup_user(arg, sizeof(*ipa));
+> +	if (IS_ERR(ipa)) {
+> +		ret = PTR_ERR(ipa);
+> +		ipa = NULL;
+> +		goto out;
+> +	}
+> +
+> +	size = min(ipa->size, 4096);
+> +	ipath = init_ipath(size, root, path);
+> +	if (IS_ERR(ipath)) {
+> +		ret = PTR_ERR(ipath);
+> +		ipath = NULL;
+> +		goto out;
+> +	}
+> +
+> +	ret = paths_from_inode(ipa->inum, ipath);
+> +	if (ret < 0)
+> +		goto out;
+> +
+> +	for (i = 0; i < ipath->fspath->elem_cnt; ++i) {
+> +		rel_ptr = ipath->fspath->str[i] - (char *)ipath->fspath->str;
+> +		ipath->fspath->str[i] = (void *)rel_ptr;
+> +	}
+> +
+> +	ret = copy_to_user(ipa->fspath, ipath->fspath, size);
+> +	if (ret) {
+> +		ret = -EFAULT;
+> +		goto out;
+> +	}
+> +
+> +out:
+> +	btrfs_free_path(path);
+> +	free_ipath(ipath);
+> +	kfree(ipa);
+> +
+> +	return ret;
+> +}
+> +
+> +static int build_ino_list(u64 inum, u64 offset, u64 root, void *ctx)
+> +{
+> +	struct btrfs_data_container *inodes = ctx;
+> +
+> +	inodes->size -= 3 * sizeof(u64);
+> +	if (inodes->size > 0) {
+> +		inodes->val[inodes->elem_cnt] = inum;
+> +		inodes->val[inodes->elem_cnt + 1] = offset;
+> +		inodes->val[inodes->elem_cnt + 2] = root;
+> +		inodes->elem_cnt += 3;
+> +	} else {
+> +		inodes->elem_missed += 3;
+> +	}
+> +
+> +	return 0;
+> +}
+> +
+> +static long btrfs_ioctl_logical_to_ino(struct btrfs_root *root,
+> +					void __user *arg)
+> +{
+> +	int ret = 0;
+> +	int size;
+> +	u64 extent_offset;
+> +	struct btrfs_ioctl_logical_ino_args *loi;
+> +	struct btrfs_data_container *inodes = NULL;
+> +	struct btrfs_path *path = NULL;
+> +	struct btrfs_key key;
+> +
+> +	loi = memdup_user(arg, sizeof(*loi));
+> +	if (IS_ERR(loi)) {
+> +		ret = PTR_ERR(loi);
+> +		loi = NULL;
+> +		goto out;
+> +	}
+> +
+> +	path = btrfs_alloc_path();
+> +	if (!path) {
+> +		ret = -ENOMEM;
+> +		goto out;
+> +	}
+> +
+> +	size = min(loi->size, 4096);
+> +	inodes = init_data_container(size);
+> +	if (IS_ERR(inodes)) {
+> +		ret = PTR_ERR(inodes);
+> +		inodes = NULL;
+> +		goto out;
+> +	}
+> +
+> +	ret = extent_from_logical(root->fs_info, loi->logical, path, &key);
+> +
+> +	if (ret & BTRFS_EXTENT_FLAG_TREE_BLOCK)
+> +		ret = -ENOENT;
+> +	if (ret < 0)
+> +		goto out;
+> +
+> +	extent_offset = loi->logical - key.objectid;
+> +	ret = iterate_extent_inodes(root->fs_info, path, key.objectid,
+> +					extent_offset, build_ino_list, inodes);
+> +
+> +	if (ret < 0)
+> +		goto out;
+> +
+> +	ret = copy_to_user(loi->inodes, inodes, size);
+> +	if (ret)
+> +		ret = -EFAULT;
+> +
+> +out:
+> +	btrfs_free_path(path);
+> +	kfree(inodes);
+> +	kfree(loi);
+> +
+> +	return ret;
+> +}
+> +
+>  long btrfs_ioctl(struct file *file, unsigned int
+>  		cmd, unsigned long arg)
+>  {
+> @@ -2893,6 +3023,10 @@ long btrfs_ioctl(struct file *file, unsigned int
+>  		return btrfs_ioctl_tree_search(file, argp);
+>  	case BTRFS_IOC_INO_LOOKUP:
+>  		return btrfs_ioctl_ino_lookup(file, argp);
+> +	case BTRFS_IOC_INO_PATHS:
+> +		return btrfs_ioctl_ino_to_path(root, argp);
+> +	case BTRFS_IOC_LOGICAL_INO:
+> +		return btrfs_ioctl_logical_to_ino(root, argp);
+>  	case BTRFS_IOC_SPACE_INFO:
+>  		return btrfs_ioctl_space_info(root, argp);
+>  	case BTRFS_IOC_SYNC:
+> diff --git a/fs/btrfs/ioctl.h b/fs/btrfs/ioctl.h
+> index 4afb60b..10a0c10 100644
+> --- a/fs/btrfs/ioctl.h
+> +++ b/fs/btrfs/ioctl.h
+> @@ -203,6 +203,20 @@ struct btrfs_data_container {
+>  	};
+>  };
+>  
+> +struct btrfs_ioctl_ino_path_args {
+> +	__u64				inum;		/* in */
+> +	__s32				size;		/* in */
+> +	__u64				reserved[4];
+> +	struct btrfs_data_container	*fspath;	/* out */
+> +};
+> +
+> +struct btrfs_ioctl_logical_ino_args {
+> +	__u64				logical;	/* in */
+> +	__s32				size;		/* in */
+> +	__u64				reserved[4];
+> +	struct btrfs_data_container	*inodes;	/* out */
+> +};
+> +
+>  #define BTRFS_IOC_SNAP_CREATE _IOW(BTRFS_IOCTL_MAGIC, 1, \
+>  				   struct btrfs_ioctl_vol_args)
+>  #define BTRFS_IOC_DEFRAG _IOW(BTRFS_IOCTL_MAGIC, 2, \
+> @@ -258,4 +272,9 @@ struct btrfs_data_container {
+>  				 struct btrfs_ioctl_dev_info_args)
+>  #define BTRFS_IOC_FS_INFO _IOR(BTRFS_IOCTL_MAGIC, 31, \
+>  			       struct btrfs_ioctl_fs_info_args)
+> +#define BTRFS_IOC_INO_PATHS _IOWR(BTRFS_IOCTL_MAGIC, 35, \
+> +					struct btrfs_ioctl_ino_path_args)
+> +#define BTRFS_IOC_LOGICAL_INO _IOWR(BTRFS_IOCTL_MAGIC, 36, \
+> +					struct btrfs_ioctl_ino_path_args)
+> +
+>  #endif
 
-Can you please try this patch with the inode_cache option (in addition
-to Miao's code).
+-- 
+=== Hugo Mills: hugo@... carfax.org.uk | darksatanic.net | lug.org.uk ===
+  PGP key: 515C238D from wwwkeys.eu.pgp.net or http://www.carfax.org.uk
+                 --- This year,  I'm giving up Lent. ---                 
 
-commit d0243d46f7a1e4cd57c74fa14556be65b454687d
-Author: Chris Mason <chris.mason@oracle.com>
-Date:   Thu Jul 7 15:53:12 2011 -0400
+--0QFb0wBpEddLcDHQ
+Content-Type: application/pgp-signature; name="signature.asc"
+Content-Description: Digital signature
+Content-Disposition: inline
 
-    Btrfs: write out free inode cache before taking snapshots
-    
-    The btrfs snapshotting code requires that once a root has been
-    snapshotted, we don't change it during a commit
-    
-    But the free inode cache was changing the roots when it root the cache,
-    which lead to corruptions.
-    
-    This fixes things by making sure we write the cache while we are taking
-    the snapshot, and that we don't write it again later.
-    
-    Signed-off-by: Chris Mason <chris.mason@oracle.com>
+-----BEGIN PGP SIGNATURE-----
+Version: GnuPG v1.4.10 (GNU/Linux)
 
-diff --git a/fs/btrfs/free-space-cache.c b/fs/btrfs/free-space-cache.c
-index bf0d615..d594cf7 100644
---- a/fs/btrfs/free-space-cache.c
-+++ b/fs/btrfs/free-space-cache.c
-@@ -1651,6 +1651,7 @@ int __btrfs_add_free_space(struct btrfs_free_space_ctl *ctl,
- 	info->bytes = bytes;
- 
- 	spin_lock(&ctl->tree_lock);
-+	ctl->dirty = 1;
- 
- 	if (try_merge_free_space(ctl, info, true))
- 		goto link;
-@@ -1691,6 +1692,7 @@ int btrfs_remove_free_space(struct btrfs_block_group_cache *block_group,
- 	int ret = 0;
- 
- 	spin_lock(&ctl->tree_lock);
-+	ctl->dirty = 1;
- 
- again:
- 	info = tree_search_offset(ctl, offset, 0, 0);
-@@ -2589,6 +2591,7 @@ u64 btrfs_find_ino_for_alloc(struct btrfs_root *fs_root)
- 		if (entry->bytes == 0)
- 			free_bitmap(ctl, entry);
- 	}
-+	ctl->dirty = 1;
- out:
- 	spin_unlock(&ctl->tree_lock);
- 
-@@ -2688,6 +2691,10 @@ int btrfs_write_out_ino_cache(struct btrfs_root *root,
- 		printk(KERN_ERR "btrfs: failed to write free ino cache "
- 		       "for root %llu\n", root->root_key.objectid);
- 
-+	/* we write out at transaction commit time, there's no racing. */
-+	if (ret == 0)
-+		ctl->dirty = 0;
-+
- 	iput(inode);
- 	return ret;
- }
-diff --git a/fs/btrfs/free-space-cache.h b/fs/btrfs/free-space-cache.h
-index 8f2613f..1e92c93 100644
---- a/fs/btrfs/free-space-cache.h
-+++ b/fs/btrfs/free-space-cache.h
-@@ -35,6 +35,11 @@ struct btrfs_free_space_ctl {
- 	int free_extents;
- 	int total_bitmaps;
- 	int unit;
-+	/*
-+	 * record if we've changed since written.  This can turn
-+	 * into a bit field if we need more flags
-+	 */
-+	unsigned long dirty;
- 	u64 start;
- 	struct btrfs_free_space_op *op;
- 	void *private;
-diff --git a/fs/btrfs/inode-map.c b/fs/btrfs/inode-map.c
-index b4087e0..e7c1493 100644
---- a/fs/btrfs/inode-map.c
-+++ b/fs/btrfs/inode-map.c
-@@ -376,6 +376,7 @@ void btrfs_init_free_ino_ctl(struct btrfs_root *root)
- 	ctl->start = 0;
- 	ctl->private = NULL;
- 	ctl->op = &free_ino_op;
-+	ctl->dirty = 1;
- 
- 	/*
- 	 * Initially we allow to use 16K of ram to cache chunks of
-@@ -417,6 +418,9 @@ int btrfs_save_ino_cache(struct btrfs_root *root,
- 	if (!btrfs_test_opt(root, INODE_MAP_CACHE))
- 		return 0;
- 
-+	if (!ctl->dirty)
-+		return 0;
-+
- 	path = btrfs_alloc_path();
- 	if (!path)
- 		return -ENOMEM;
-@@ -485,6 +489,24 @@ out:
- 	return ret;
- }
- 
-+/*
-+ * this tries to save the cache, but if it fails for any reason we clear
-+ * the dirty flag so that it won't be saved again during this commit.
-+ *
-+ * This is used by the snapshotting code to make sure we don't corrupt the
-+ * FS by saving the inode cache after the snapshot is taken.
-+ */
-+int btrfs_force_save_ino_cache(struct btrfs_root *root,
-+			       struct btrfs_trans_handle *trans)
-+{
-+	struct btrfs_free_space_ctl *ctl = root->free_ino_ctl;
-+	int ret;
-+	ret = btrfs_save_ino_cache(root, trans);
-+
-+	ctl->dirty = 0;
-+	return ret;
-+}
-+
- static int btrfs_find_highest_objectid(struct btrfs_root *root, u64 *objectid)
- {
- 	struct btrfs_path *path;
-diff --git a/fs/btrfs/inode-map.h b/fs/btrfs/inode-map.h
-index ddb347b..2be060e 100644
---- a/fs/btrfs/inode-map.h
-+++ b/fs/btrfs/inode-map.h
-@@ -7,7 +7,8 @@ void btrfs_return_ino(struct btrfs_root *root, u64 objectid);
- int btrfs_find_free_ino(struct btrfs_root *root, u64 *objectid);
- int btrfs_save_ino_cache(struct btrfs_root *root,
- 			 struct btrfs_trans_handle *trans);
--
-+int btrfs_force_save_ino_cache(struct btrfs_root *root,
-+			       struct btrfs_trans_handle *trans);
- int btrfs_find_free_objectid(struct btrfs_root *root, u64 *objectid);
- 
- #endif
-diff --git a/fs/btrfs/transaction.c b/fs/btrfs/transaction.c
-index 51dcec8..e34827c 100644
---- a/fs/btrfs/transaction.c
-+++ b/fs/btrfs/transaction.c
-@@ -966,6 +966,15 @@ static noinline int create_pending_snapshot(struct btrfs_trans_handle *trans,
- 	ret = btrfs_run_delayed_items(trans, root);
- 	BUG_ON(ret);
- 
-+	/*
-+	 * there are a few transient reasons the free inode cache writeback can fail.
-+	 * and if it does, we'll try again later in the commit.  This forces the
-+	 * clean bit, tossing the cache.  Tossing the cache isn't really good, but
-+	 * if we try to write it again later in the commit we'll corrupt things.
-+	 */
-+	btrfs_force_save_ino_cache(parent_root, trans);
-+
-+
- 	record_root_in_trans(trans, root);
- 	btrfs_set_root_last_snapshot(&root->root_item, trans->transid);
- 	memcpy(new_root_item, &root->root_item, sizeof(*new_root_item));
+iD8DBQFOFjNbIKyzvlFcI40RAui6AJ9T/9geG8NUcFECmeoNvdLe8EL2JACfWVBq
+KLsmxoaj8UoT2R0eBPPiXF8=
+=l7cQ
+-----END PGP SIGNATURE-----
+
+--0QFb0wBpEddLcDHQ--

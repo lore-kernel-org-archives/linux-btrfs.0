@@ -1,7 +1,7 @@
 From: Jan Schmidt <list.btrfs@jan-o-sch.net>
-Subject: [PATCH v3 2/8] scrub: added unverified_errors
-Date: Thu,  7 Jul 2011 17:48:27 +0200
-Message-ID: <af6ca6e532a545d0e069fe2fa928443345672880.1310053204.git.list.btrfs@jan-o-sch.net>
+Subject: [PATCH v3 8/8] new ioctls to do logical->inode and inode->path resolving
+Date: Thu,  7 Jul 2011 17:48:33 +0200
+Message-ID: <d7f2eb7de3b6e8bc9f40ad96b9943d9680f88987.1310053204.git.list.btrfs@jan-o-sch.net>
 References: <cover.1310053204.git.list.btrfs@jan-o-sch.net>
 To: chris.mason@oracle.com, linux-btrfs@vger.kernel.org
 Return-path: <linux-btrfs-owner@vger.kernel.org>
@@ -9,97 +9,210 @@ In-Reply-To: <cover.1310053204.git.list.btrfs@jan-o-sch.net>
 In-Reply-To: <cover.1310053204.git.list.btrfs@jan-o-sch.net>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-In normal operation, scrub is reading data sequentially in large portions.
-In case of an i/o error, we try to find the corrupted area(s) by issuing
-page sized read requests. With this commit we increment the
-unverified_errors counter if all of the small size requests succeed.
-
-Userland patches carrying such conspicous events to the administrator should
-already be around.
+these ioctls make use of the new functions initially added for scrub. they
+return all inodes belonging to a logical address (BTRFS_IOC_LOGICAL_INO) and
+all paths belonging to an inode (BTRFS_IOC_INO_PATHS).
 
 Signed-off-by: Jan Schmidt <list.btrfs@jan-o-sch.net>
 ---
- fs/btrfs/scrub.c |   37 ++++++++++++++++++++++++++-----------
- 1 files changed, 26 insertions(+), 11 deletions(-)
+ fs/btrfs/ioctl.c |  134 ++++++++++++++++++++++++++++++++++++++++++++++++++++++
+ fs/btrfs/ioctl.h |   19 ++++++++
+ 2 files changed, 153 insertions(+), 0 deletions(-)
 
-diff --git a/fs/btrfs/scrub.c b/fs/btrfs/scrub.c
-index a8d03d5..35099fa 100644
---- a/fs/btrfs/scrub.c
-+++ b/fs/btrfs/scrub.c
-@@ -201,18 +201,25 @@ nomem:
-  * recheck_error gets called for every page in the bio, even though only
-  * one may be bad
-  */
--static void scrub_recheck_error(struct scrub_bio *sbio, int ix)
-+static int scrub_recheck_error(struct scrub_bio *sbio, int ix)
- {
-+	struct scrub_dev *sdev = sbio->sdev;
-+	u64 sector = (sbio->physical + ix * PAGE_SIZE) >> 9;
-+
- 	if (sbio->err) {
--		if (scrub_fixup_io(READ, sbio->sdev->dev->bdev,
--				   (sbio->physical + ix * PAGE_SIZE) >> 9,
-+		if (scrub_fixup_io(READ, sbio->sdev->dev->bdev, sector,
- 				   sbio->bio->bi_io_vec[ix].bv_page) == 0) {
- 			if (scrub_fixup_check(sbio, ix) == 0)
--				return;
-+				return 0;
- 		}
- 	}
+diff --git a/fs/btrfs/ioctl.c b/fs/btrfs/ioctl.c
+index a3c4751..5299b40 100644
+--- a/fs/btrfs/ioctl.c
++++ b/fs/btrfs/ioctl.c
+@@ -51,6 +51,7 @@
+ #include "volumes.h"
+ #include "locking.h"
+ #include "inode-map.h"
++#include "backref.h"
  
-+	spin_lock(&sdev->stat_lock);
-+	++sdev->stat.read_errors;
-+	spin_unlock(&sdev->stat_lock);
-+
- 	scrub_fixup(sbio, ix);
-+	return 1;
+ /* Mask out flags that are inappropriate for the given type of inode. */
+ static inline __u32 btrfs_mask_flags(umode_t mode, __u32 flags)
+@@ -2836,6 +2837,135 @@ static long btrfs_ioctl_scrub_progress(struct btrfs_root *root,
+ 	return ret;
  }
  
- static int scrub_fixup_check(struct scrub_bio *sbio, int ix)
-@@ -382,8 +389,14 @@ static void scrub_checksum(struct btrfs_work *work)
- 	int ret;
++static long btrfs_ioctl_ino_to_path(struct btrfs_root *root, void __user *arg)
++{
++	int ret = 0;
++	int i;
++	unsigned long rel_ptr;
++	int size;
++	struct btrfs_ioctl_ino_path_args *ipa;
++	struct inode_fs_paths *ipath = NULL;
++	struct btrfs_path *path;
++
++	path = btrfs_alloc_path();
++	if (!path) {
++		ret = -ENOMEM;
++		goto out;
++	}
++
++	ipa = memdup_user(arg, sizeof(*ipa));
++	if (IS_ERR(ipa)) {
++		ret = PTR_ERR(ipa);
++		ipa = NULL;
++		goto out;
++	}
++
++	size = min(ipa->size, 4096);
++	ipath = init_ipath(size, root, path);
++	if (IS_ERR(ipath)) {
++		ret = PTR_ERR(ipath);
++		ipath = NULL;
++		goto out;
++	}
++
++	ret = paths_from_inode(ipa->inum, ipath);
++	if (ret < 0)
++		goto out;
++
++	for (i = 0; i < ipath->fspath->elem_cnt; ++i) {
++		rel_ptr = ipath->fspath->str[i] - (char *)ipath->fspath->str;
++		ipath->fspath->str[i] = (void *)rel_ptr;
++	}
++
++	ret = copy_to_user(ipa->fspath, ipath->fspath, size);
++	if (ret) {
++		ret = -EFAULT;
++		goto out;
++	}
++
++out:
++	btrfs_free_path(path);
++	free_ipath(ipath);
++	kfree(ipa);
++
++	return ret;
++}
++
++static int build_ino_list(u64 inum, u64 offset, u64 root, void *ctx)
++{
++	struct btrfs_data_container *inodes = ctx;
++
++	inodes->size -= 3 * sizeof(u64);
++	if (inodes->size > 0) {
++		inodes->val[inodes->elem_cnt] = inum;
++		inodes->val[inodes->elem_cnt + 1] = offset;
++		inodes->val[inodes->elem_cnt + 2] = root;
++		inodes->elem_cnt += 3;
++	} else {
++		inodes->elem_missed += 3;
++	}
++
++	return 0;
++}
++
++static long btrfs_ioctl_logical_to_ino(struct btrfs_root *root,
++					void __user *arg)
++{
++	int ret = 0;
++	int size;
++	u64 extent_offset;
++	struct btrfs_ioctl_logical_ino_args *loi;
++	struct btrfs_data_container *inodes = NULL;
++	struct btrfs_path *path = NULL;
++	struct btrfs_key key;
++
++	loi = memdup_user(arg, sizeof(*loi));
++	if (IS_ERR(loi)) {
++		ret = PTR_ERR(loi);
++		loi = NULL;
++		goto out;
++	}
++
++	path = btrfs_alloc_path();
++	if (!path) {
++		ret = -ENOMEM;
++		goto out;
++	}
++
++	size = min(loi->size, 4096);
++	inodes = init_data_container(size);
++	if (IS_ERR(inodes)) {
++		ret = PTR_ERR(inodes);
++		inodes = NULL;
++		goto out;
++	}
++
++	ret = extent_from_logical(root->fs_info, loi->logical, path, &key);
++
++	if (ret & BTRFS_EXTENT_FLAG_TREE_BLOCK)
++		ret = -ENOENT;
++	if (ret < 0)
++		goto out;
++
++	extent_offset = loi->logical - key.objectid;
++	ret = iterate_extent_inodes(root->fs_info, path, key.objectid,
++					extent_offset, build_ino_list, inodes);
++
++	if (ret < 0)
++		goto out;
++
++	ret = copy_to_user(loi->inodes, inodes, size);
++	if (ret)
++		ret = -EFAULT;
++
++out:
++	btrfs_free_path(path);
++	kfree(inodes);
++	kfree(loi);
++
++	return ret;
++}
++
+ long btrfs_ioctl(struct file *file, unsigned int
+ 		cmd, unsigned long arg)
+ {
+@@ -2893,6 +3023,10 @@ long btrfs_ioctl(struct file *file, unsigned int
+ 		return btrfs_ioctl_tree_search(file, argp);
+ 	case BTRFS_IOC_INO_LOOKUP:
+ 		return btrfs_ioctl_ino_lookup(file, argp);
++	case BTRFS_IOC_INO_PATHS:
++		return btrfs_ioctl_ino_to_path(root, argp);
++	case BTRFS_IOC_LOGICAL_INO:
++		return btrfs_ioctl_logical_to_ino(root, argp);
+ 	case BTRFS_IOC_SPACE_INFO:
+ 		return btrfs_ioctl_space_info(root, argp);
+ 	case BTRFS_IOC_SYNC:
+diff --git a/fs/btrfs/ioctl.h b/fs/btrfs/ioctl.h
+index 4afb60b..10a0c10 100644
+--- a/fs/btrfs/ioctl.h
++++ b/fs/btrfs/ioctl.h
+@@ -203,6 +203,20 @@ struct btrfs_data_container {
+ 	};
+ };
  
- 	if (sbio->err) {
-+		ret = 0;
- 		for (i = 0; i < sbio->count; ++i)
--			scrub_recheck_error(sbio, i);
-+			ret |= scrub_recheck_error(sbio, i);
-+		if (!ret) {
-+			spin_lock(&sdev->stat_lock);
-+			++sdev->stat.unverified_errors;
-+			spin_unlock(&sdev->stat_lock);
-+		}
- 
- 		sbio->bio->bi_flags &= ~(BIO_POOL_MASK - 1);
- 		sbio->bio->bi_flags |= 1 << BIO_UPTODATE;
-@@ -396,10 +409,6 @@ static void scrub_checksum(struct btrfs_work *work)
- 			bi->bv_offset = 0;
- 			bi->bv_len = PAGE_SIZE;
- 		}
--
--		spin_lock(&sdev->stat_lock);
--		++sdev->stat.read_errors;
--		spin_unlock(&sdev->stat_lock);
- 		goto out;
- 	}
- 	for (i = 0; i < sbio->count; ++i) {
-@@ -420,8 +429,14 @@ static void scrub_checksum(struct btrfs_work *work)
- 			WARN_ON(1);
- 		}
- 		kunmap_atomic(buffer, KM_USER0);
--		if (ret)
--			scrub_recheck_error(sbio, i);
-+		if (ret) {
-+			ret = scrub_recheck_error(sbio, i);
-+			if (!ret) {
-+				spin_lock(&sdev->stat_lock);
-+				++sdev->stat.unverified_errors;
-+				spin_unlock(&sdev->stat_lock);
-+			}
-+		}
- 	}
- 
- out:
++struct btrfs_ioctl_ino_path_args {
++	__u64				inum;		/* in */
++	__s32				size;		/* in */
++	__u64				reserved[4];
++	struct btrfs_data_container	*fspath;	/* out */
++};
++
++struct btrfs_ioctl_logical_ino_args {
++	__u64				logical;	/* in */
++	__s32				size;		/* in */
++	__u64				reserved[4];
++	struct btrfs_data_container	*inodes;	/* out */
++};
++
+ #define BTRFS_IOC_SNAP_CREATE _IOW(BTRFS_IOCTL_MAGIC, 1, \
+ 				   struct btrfs_ioctl_vol_args)
+ #define BTRFS_IOC_DEFRAG _IOW(BTRFS_IOCTL_MAGIC, 2, \
+@@ -258,4 +272,9 @@ struct btrfs_data_container {
+ 				 struct btrfs_ioctl_dev_info_args)
+ #define BTRFS_IOC_FS_INFO _IOR(BTRFS_IOCTL_MAGIC, 31, \
+ 			       struct btrfs_ioctl_fs_info_args)
++#define BTRFS_IOC_INO_PATHS _IOWR(BTRFS_IOCTL_MAGIC, 35, \
++					struct btrfs_ioctl_ino_path_args)
++#define BTRFS_IOC_LOGICAL_INO _IOWR(BTRFS_IOCTL_MAGIC, 36, \
++					struct btrfs_ioctl_ino_path_args)
++
+ #endif
 -- 
 1.7.3.4
 

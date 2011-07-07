@@ -1,67 +1,117 @@
-From: "Yulin, Denis" <delin@eridan.la>
-Subject: btrfs: open_ctree failed
-Date: Thu, 7 Jul 2011 13:20:38 +0400
-Message-ID: <CAPXeO6Rx5EJRf4iVUwp64BQSEsJ8Kps5ebJM8dmbrnnCrYuveg@mail.gmail.com>
-References: <CAPXeO6QbDxyoqYRhXxMGvc9JYQ6TZrTF7MwCNg-xdU-MgCQU3w@mail.gmail.com>
+From: Tsutomu Itoh <t-itoh@jp.fujitsu.com>
+Subject: [PATCH] Btrfs: fix return value check of btrfs_alloc_path()
+Date: Thu, 07 Jul 2011 18:31:44 +0900
+Message-ID: <201107070931.AA00030@T-ITOH1.jp.fujitsu.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=UTF-8
+Content-Type: text/plain; charset=us-ascii
+Cc: chris.mason@oracle.com
 To: linux-btrfs@vger.kernel.org
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <CAPXeO6QbDxyoqYRhXxMGvc9JYQ6TZrTF7MwCNg-xdU-MgCQU3w@mail.gmail.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hi all,=C2=A0just=C2=A0apologize for=C2=A0my English.
-In=C2=A0a=C2=A0nice,=C2=A0warm evening,=C2=A0turn off the=C2=A0electric=
-ity,=C2=A0and=C2=A0my router=C2=A0with
-btrfs on root,=C2=A0broke=C2=A0..
-I removed the image of a partition (10G), I will now rearrange the
-system is probably on ext4 ..
+The return value check of btrfs_alloc_path() in several places is
+changed from BUG_ON() to error return.
 
-Start the discussion -=C2=A0http://www.linux.org.ru/forum/general/64658=
-51
-OS=C2=A0during the fall=C2=A0- Debian=C2=A06 (2.6.39=C2=A0kernel=C2=A0f=
-rom=C2=A0sid),=C2=A0mounted
-filesystem=C2=A0with parameters=C2=A0compression=3Dlzo
-btfs-progs v0.19 from git.
-btrfs-show - all ok;
-=46S is the LVM;
+Signed-off-by: Tsutomu Itoh <t-itoh@jp.fujitsu.com>
+---
+ fs/btrfs/extent-tree.c |    3 ++-
+ fs/btrfs/extent_io.c   |    9 ++++++---
+ fs/btrfs/inode.c       |   15 +++++++++++----
+ fs/btrfs/ioctl.c       |    1 +
+ 4 files changed, 20 insertions(+), 8 deletions(-)
 
-root@sysresccd /root % mount -t btrfs -o compress=3Dlzo /dev/mapper/nas=
--root /re
-mount: wrong fs type, bad option, bad superblock on /dev/mapper/nas-roo=
-t,
-=C2=A0 =C2=A0 =C2=A0 =C2=A0missing codepage or helper program, or other=
- error
-=C2=A0 =C2=A0 =C2=A0 =C2=A0In some cases useful info is found in syslog=
- - try
-=C2=A0 =C2=A0 =C2=A0 =C2=A0dmesg | tail =C2=A0or so
-root@sysresccd /root % dmesg | tail
-[ 3821.972350] parent transid verify failed on 3807195136 wanted 5412 f=
-ound 5414
-[ 3821.972364] parent transid verify failed on 3807195136 wanted 5412 f=
-ound 5414
-[ 3821.979182] btrfs: open_ctree failed
-[ 6298.660270] device label root devid 1 transid 12174 /dev/mapper/nas-=
-root
-[ 6298.660657] btrfs: use lzo compression
-[ 6298.662878] parent transid verify failed on 3807195136 wanted 5412 f=
-ound 5414
-[ 6298.663321] parent transid verify failed on 3807195136 wanted 5412 f=
-ound 5414
-[ 6298.663584] parent transid verify failed on 3807195136 wanted 5412 f=
-ound 5414
-[ 6298.663595] parent transid verify failed on 3807195136 wanted 5412 f=
-ound 5414
-[ 6298.669180] btrfs: open_ctree failed
-root@sysresccd /root % btrfsck /dev/nas/root
-parent transid verify failed on 3807195136 wanted 5412 found 5414
-parent transid verify failed on 3807195136 wanted 5412 found 5414
-parent transid verify failed on 3807195136 wanted 5412 found 5414
-btrfsck: disk-io.c:416: find_and_setup_root: Assertion `!(!root->node)'=
- failed.
-zsh: abort =C2=A0 =C2=A0 =C2=A0btrfsck /dev/nas/root
---
-To unsubscribe from this list: send the line "unsubscribe linux-btrfs" =
-in
-the body of a message to majordomo@vger.kernel.org
-More majordomo info at  http://vger.kernel.org/majordomo-info.html
+diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
+index 71cd456..624ca25 100644
+--- a/fs/btrfs/extent-tree.c
++++ b/fs/btrfs/extent-tree.c
+@@ -5494,7 +5494,8 @@ static int alloc_reserved_tree_block(struct btrfs_trans_handle *trans,
+ 	u32 size = sizeof(*extent_item) + sizeof(*block_info) + sizeof(*iref);
+ 
+ 	path = btrfs_alloc_path();
+-	BUG_ON(!path);
++	if (!path)
++		return -ENOMEM;
+ 
+ 	path->leave_spinning = 1;
+ 	ret = btrfs_insert_empty_item(trans, fs_info->extent_root, path,
+diff --git a/fs/btrfs/extent_io.c b/fs/btrfs/extent_io.c
+index b181a94..9703b65 100644
+--- a/fs/btrfs/extent_io.c
++++ b/fs/btrfs/extent_io.c
+@@ -2222,9 +2222,12 @@ static int __extent_writepage(struct page *page, struct writeback_control *wbc,
+ 				delalloc_start = delalloc_end + 1;
+ 				continue;
+ 			}
+-			tree->ops->fill_delalloc(inode, page, delalloc_start,
+-						 delalloc_end, &page_started,
+-						 &nr_written);
++			ret = tree->ops->fill_delalloc(inode, page,
++						       delalloc_start,
++						       delalloc_end,
++						       &page_started,
++						       &nr_written);
++			BUG_ON(ret);
+ 			/*
+ 			 * delalloc_end is already one less than the total
+ 			 * length, so we don't subtract one from
+diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
+index 447612d..d0dee5e 100644
+--- a/fs/btrfs/inode.c
++++ b/fs/btrfs/inode.c
+@@ -1070,7 +1070,8 @@ static noinline int run_delalloc_nocow(struct inode *inode,
+ 	u64 ino = btrfs_ino(inode);
+ 
+ 	path = btrfs_alloc_path();
+-	BUG_ON(!path);
++	if (!path)
++		return -ENOMEM;
+ 
+ 	nolock = is_free_space_inode(root, inode);
+ 
+@@ -3711,7 +3712,8 @@ static int btrfs_inode_by_name(struct inode *dir, struct dentry *dentry,
+ 	int ret = 0;
+ 
+ 	path = btrfs_alloc_path();
+-	BUG_ON(!path);
++	if (!path)
++		return -ENOMEM;
+ 
+ 	di = btrfs_lookup_dir_item(NULL, root, path, btrfs_ino(dir), name,
+ 				    namelen, 0);
+@@ -4436,7 +4438,8 @@ static struct inode *btrfs_new_inode(struct btrfs_trans_handle *trans,
+ 	int owner;
+ 
+ 	path = btrfs_alloc_path();
+-	BUG_ON(!path);
++	if (!path)
++		return ERR_PTR(-ENOMEM);
+ 
+ 	inode = new_inode(root->fs_info->sb);
+ 	if (!inode) {
+@@ -7192,7 +7195,11 @@ static int btrfs_symlink(struct inode *dir, struct dentry *dentry,
+ 		goto out_unlock;
+ 
+ 	path = btrfs_alloc_path();
+-	BUG_ON(!path);
++	if (!path) {
++		err = -ENOMEM;
++		drop_inode = 1;
++		goto out_unlock;
++	}
+ 	key.objectid = btrfs_ino(inode);
+ 	key.offset = 0;
+ 	btrfs_set_key_type(&key, BTRFS_EXTENT_DATA_KEY);
+diff --git a/fs/btrfs/ioctl.c b/fs/btrfs/ioctl.c
+index a3c4751..b12f7fe 100644
+--- a/fs/btrfs/ioctl.c
++++ b/fs/btrfs/ioctl.c
+@@ -415,6 +415,7 @@ static noinline int create_subvol(struct btrfs_root *root,
+ 	btrfs_record_root_in_trans(trans, new_root);
+ 
+ 	ret = btrfs_create_subvol_root(trans, new_root, new_dirid);
++	BUG_ON(ret);
+ 	/*
+ 	 * insert the directory item
+ 	 */
+
+

@@ -1,41 +1,45 @@
-From: Chris Mason <chris.mason@oracle.com>
-Subject: Re: Memory leak?
-Date: Fri, 08 Jul 2011 12:15:08 -0400
-Message-ID: <1310141349-sup-9515@shiny>
-References: <20110703190913.GA4474@yahoo.fr> <CAE5mzvhZc4afuBTT0GrDvPXKaSwYeyPdyiQaYPjCTmvzBahr7g@mail.gmail.com> <20110706081111.GA6931@yahoo.fr> <20110708124429.GB4284@yahoo.fr> <1310137241-sup-8158@shiny> <20110708154123.GA17886@yahoo.fr>
-Content-Type: text/plain; charset=UTF-8
-Cc: cwillu <cwillu@cwillu.com>,
-	linux-btrfs <linux-btrfs@vger.kernel.org>
-To: Stephane Chazelas <stephane_chazelas@yahoo.fr>
-Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-reply-to: <20110708154123.GA17886@yahoo.fr>
+From: Al Viro <viro@ZenIV.linux.org.uk>
+Subject: Re: [PATCH] fs/vfs/security: pass last path component to LSM on
+ inode creation
+Date: Fri, 8 Jul 2011 17:17:22 +0100
+Message-ID: <20110708161722.GG11013@ZenIV.linux.org.uk>
+References: <20101208194527.13537.77202.stgit@paris.rdu.redhat.com>
+Mime-Version: 1.0
+Content-Type: text/plain; charset=us-ascii
+Cc: xfs-masters@oss.sgi.com, linux-btrfs@vger.kernel.org,
+	linux-kernel@vger.kernel.org, linux-ext4@vger.kernel.org,
+	cluster-devel@redhat.com, linux-mtd@lists.infradead.org,
+	jfs-discussion@lists.sourceforge.net, ocfs2-devel@oss.oracle.com,
+	reiserfs-devel@vger.kernel.org, xfs@oss.sgi.com,
+	linux-mm@kvack.org, linux-security-module@vger.kernel.org,
+	jack@suse.cz, penguin-kernel@I-love.SAKURA.ne.jp, jeffm@suse.com,
+	jmorris@namei.org, dhowells@redhat.com, adilger.kernel@dilger.ca,
+	shaggy@linux.vnet.ibm.com, shemminger@vyatta.com, hch@lst.de,
+	hughd@google.com, joel.becker@oracle.com, chris.mason@oracle.com,
+	aelder@sgi.com, kees.cook@canonical.com, sds@tycho.nsa.gov,
+	paul.moore@hp.com, mfasheh@suse.com, dchinner@redhat.com,
+	eparis@parisplace.org, swhiteho@redhat.com, tao.ma@oracle.com,
+	tytso@mit.edu, casey@schaufler-ca.com, serue@us.ibm.com,
+	akpm@linux-foundation.org, dwmw2@infradea
+To: Eric Paris <eparis@redhat.com>
+Return-path: <linux-security-module-owner@vger.kernel.org>
+In-Reply-To: <20101208194527.13537.77202.stgit@paris.rdu.redhat.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Excerpts from Stephane Chazelas's message of 2011-07-08 11:41:23 -0400:
-> 2011-07-08 11:06:08 -0400, Chris Mason:
-> [...]
-> > So the invalidate opcode in btrfs-fixup-0 is the big problem.  We're
-> > either failing to write because we weren't able to allocate memory (and
-> > not dealing with it properly) or there is a bigger problem.
-> > 
-> > Does the btrfs-fixup-0 oops come before or after the ooms?
+On Wed, Dec 08, 2010 at 02:45:27PM -0500, Eric Paris wrote:
+> SELinux would like to implement a new labeling behavior of newly created
+> inodes.  We currently label new inodes based on the parent and the creating
+> process.  This new behavior would also take into account the name of the
+> new object when deciding the new label.  This is not the (supposed) full path,
+> just the last component of the path.
 > 
-> Hi Chris, thanks for looking into this.
-> 
-> It comes long before. Hours before there's any problem. So it
-> seems unrelated.
+> This is very useful because creating /etc/shadow is different than creating
+> /etc/passwd but the kernel hooks are unable to differentiate these
+> operations.  We currently require that userspace realize it is doing some
+> difficult operation like that and than userspace jumps through SELinux hoops
+> to get things set up correctly.  This patch does not implement new
+> behavior, that is obviously contained in a seperate SELinux patch, but it
+> does pass the needed name down to the correct LSM hook.  If no such name
+> exists it is fine to pass NULL.
 
-It could be the cause of the problem.  We're calling BUG() with the page
-locked, which means that page will never ever be freed, and since this
-worker thread is gone, it could be messing up various parts of the
-reclaim code.
-
-But, this worker thread isn't supposed to get called very often...it's
-really catching a corner of a corner of a strange race.  So we do need
-to get a better understanding of why and how often.
-
-You described this workload as rsync, is there anything else running?
-
-I'd definitely try without -o compress_force.
-
--chris
+-ETOOFUCKINGUGLY...

@@ -1,59 +1,116 @@
-From: Chris Mason <chris.mason@oracle.com>
-Subject: Re: Memory leak?
-Date: Fri, 08 Jul 2011 12:17:54 -0400
-Message-ID: <1310141768-sup-424@shiny>
-References: <20110703190913.GA4474@yahoo.fr> <CAE5mzvhZc4afuBTT0GrDvPXKaSwYeyPdyiQaYPjCTmvzBahr7g@mail.gmail.com> <20110706081111.GA6931@yahoo.fr> <20110708124429.GB4284@yahoo.fr> <1310137241-sup-8158@shiny> <20110708154123.GA17886@yahoo.fr> <20110708161103.GD4284@yahoo.fr>
-Content-Type: text/plain; charset=UTF-8
-Cc: cwillu <cwillu@cwillu.com>,
-	linux-btrfs <linux-btrfs@vger.kernel.org>
-To: Stephane Chazelas <stephane_chazelas@yahoo.fr>
+From: Goffredo Baroncelli <kreijack@libero.it>
+Subject: Re: [PATCH v1 0/2] Btrfs-progs: commands "resolve inode" and "resolve
+ logical"
+Date: Fri, 08 Jul 2011 18:42:01 +0200
+Message-ID: <4E173359.1020407@libero.it>
+References: <cover.1310053983.git.list.btrfs@jan-o-sch.net> <4E163EF5.4070405@libero.it> <4E16BED8.50106@jan-o-sch.net>
+Reply-To: kreijack@inwind.it
+Mime-Version: 1.0
+Content-Type: text/plain; charset=ISO-8859-1
+Cc: kreijack@inwind.it, linux-btrfs <linux-btrfs@vger.kernel.org>,
+	Chris Mason <chris.mason@oracle.com>
+To: Jan Schmidt <list.btrfs@jan-o-sch.net>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-reply-to: <20110708161103.GD4284@yahoo.fr>
+In-Reply-To: <4E16BED8.50106@jan-o-sch.net>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Excerpts from Stephane Chazelas's message of 2011-07-08 12:11:03 -0400:
-> 2011-07-08 16:41:23 +0100, Stephane Chazelas:
-> > 2011-07-08 11:06:08 -0400, Chris Mason:
-> > [...]
-> > > So the invalidate opcode in btrfs-fixup-0 is the big problem.  We're
-> > > either failing to write because we weren't able to allocate memory (and
-> > > not dealing with it properly) or there is a bigger problem.
-> > > 
-> > > Does the btrfs-fixup-0 oops come before or after the ooms?
-> > 
-> > Hi Chris, thanks for looking into this.
-> > 
-> > It comes long before. Hours before there's any problem. So it
-> > seems unrelated.
+On 07/08/2011 10:24 AM, Jan Schmidt wrote:
+> On 08.07.2011 01:19, Goffredo Baroncelli wrote:
+>> On 07/07/2011 06:01 PM, Jan Schmidt wrote:
+>>> The kernel patch series just sent (Subject: "Btrfs: scrub: print path to
+>>> corrupted files and trigger nodatasum fixup") introduces two new ioctls to
+>>> do in-kernel filesystem path construction. This series provides the
+>>> corresponding userspace changes, adding two new commands to the btrfs utility:
+>>
+>> Which is the aim of these commands ? It seems more a "debug" utilities
+>> than a standard command. If so, these commands may be put under a new
+>> group called "debug" or "test" or whichever we decided to use. But,
+>> please, highlight the fact that these commands aren't for a general use.
 > 
-> Though every time I had the issue, there had been such an
-> "invalid opcode" before. But also, I only had both the "invalid
-> opcode" and memory issue when doing that rsync onto external
-> hard drive.
-> 
-> > > Please send along any oops output during the run.  Only the first
-> > > (earliest) oops matters.
-> > 
-> > There's always only  one in between two reboots. I've sent two
-> > already, but here they  are:
-> [...]
-> 
-> I dug up the traces for before I switched to debian (thinking
-> getting a newer kernel would improve matters) in case it helps:
-> 
-> And:
-> 
-> Jun  5 00:58:10  BUG: Bad page state in process rsync  pfn:1bfdf
-> Jun  5 00:58:10  page:ffffea000061f8c8 count:0 mapcount:0 mapping:          (null) index:0x2300
-> Jun  5 00:58:10  page flags: 0x100000000000010(dirty)
-> Jun  5 00:58:10  Pid: 1584, comm: rsync Tainted: G      D  C  2.6.38-7-server #35-Ubuntu
-> Jun  5 00:58:10  Call Trace:
+> Well, in my opinion, they are. Finding files for an inode is not that
+> exotic, is it?
 
-Ok, this one is really interesting.  Did you get this after another oops
-or was it after a reboot?
+In my opinion it is a bit exotic. But there would be some interesting
+case, like: find all the link which point to an inode.
 
-How easily can you recompile your kernel with more debugging flags?
-That should help narrow it down.  I'm looking for CONFIG_SLAB_DEBUG (or
-slub) and CONFIG_DEBUG_PAGEALLOC
+> 
+> The command to find files for logical addresses is useful until each and
+> every error message in the kernel log does that resolving itself.
+> Currently, we log logical addresses everywhere. Once that's changed,
+> this one becomes more like a debug command, I agree.
 
--chris
+I am not fully aligned to you, but the difference is so small that
+doesn't matter anyway.
+
+> 
+>> I suggest to use
+>>
+>> 	btrfs debug resolve ...
+>>
+>> Or better
+>>
+>> 	btrfs inspect resolve ...
+> 
+> I don't give much in command names (I admit they should make sense), I'm
+> happy to insert an "inspect" there. Although "btrfs inspect resolve
+> inode" sounds strange to me. Any other opinions? I suggest we'd better
+> do the naming process in #btrfs.
+
+For the name my I can suggest:
+
+	btrfs inspect-internal inode-resolve
+
+	btrfs inspect-internal logical-resolve
+
+which may be abbreviate to
+
+	btrfs inspect inode
+
+	btrfs inspect logical
+
+which are (IMHO) a good balancing between shortness and clarity
+
+The command group "inspect-internal" (IMHO) is quite generic and in the
+future other commands may be inserted here. And the name is sufficent
+"strange" to highlight that these command are not for "faint of heart"'
+admins.
+
+
+
+> 
+>>>
+>>> --
+>>> btrfs resolve inode [-v] <inode> <path>
+>>> 	resolves an <inode> to all filesystem paths local to the fs mounted
+>>> 	at <path>.
+>>> 		-v  print count of returned and missed paths
+>>>
+>>> btrfs resolve logical [-v] [-P] <logical> <path>
+>>> 	resolves a <logical> address to all filesystem paths in the file
+>>> 	system mounted at <path> and all its subvolumes.
+>>> 		-v  print count of returned and missed inode/offset/root
+>>> 		    triples
+>>> 		-P  do not resolve the path but stop after finding all
+>>> 		    inodes at this logical address and print them instead
+>>> --
+>>>
+>>> These patches are based on Hugo's current integration branch.
+>>>
+>>> Please try them out and report bugs here. I'll send an update to the manpages
+>>> later.
+>>
+>> Please update the man pages at the same time of the code. Develop the
+>> man page coupled with the code may help to design a "good interface"
+>> (from an user point of view) and to explain better the aim of the new
+>> command.
+> 
+> Agreed. Next version will come with man pages.
+> 
+> -Jan
+> --
+> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
+> the body of a message to majordomo@vger.kernel.org
+> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+> .
+> 
+

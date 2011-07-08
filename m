@@ -1,45 +1,59 @@
-From: Al Viro <viro@ZenIV.linux.org.uk>
-Subject: Re: [PATCH] fs/vfs/security: pass last path component to LSM on
- inode creation
-Date: Fri, 8 Jul 2011 17:17:22 +0100
-Message-ID: <20110708161722.GG11013@ZenIV.linux.org.uk>
-References: <20101208194527.13537.77202.stgit@paris.rdu.redhat.com>
-Mime-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Cc: xfs-masters@oss.sgi.com, linux-btrfs@vger.kernel.org,
-	linux-kernel@vger.kernel.org, linux-ext4@vger.kernel.org,
-	cluster-devel@redhat.com, linux-mtd@lists.infradead.org,
-	jfs-discussion@lists.sourceforge.net, ocfs2-devel@oss.oracle.com,
-	reiserfs-devel@vger.kernel.org, xfs@oss.sgi.com,
-	linux-mm@kvack.org, linux-security-module@vger.kernel.org,
-	jack@suse.cz, penguin-kernel@I-love.SAKURA.ne.jp, jeffm@suse.com,
-	jmorris@namei.org, dhowells@redhat.com, adilger.kernel@dilger.ca,
-	shaggy@linux.vnet.ibm.com, shemminger@vyatta.com, hch@lst.de,
-	hughd@google.com, joel.becker@oracle.com, chris.mason@oracle.com,
-	aelder@sgi.com, kees.cook@canonical.com, sds@tycho.nsa.gov,
-	paul.moore@hp.com, mfasheh@suse.com, dchinner@redhat.com,
-	eparis@parisplace.org, swhiteho@redhat.com, tao.ma@oracle.com,
-	tytso@mit.edu, casey@schaufler-ca.com, serue@us.ibm.com,
-	akpm@linux-foundation.org, dwmw2@infradea
-To: Eric Paris <eparis@redhat.com>
-Return-path: <linux-security-module-owner@vger.kernel.org>
-In-Reply-To: <20101208194527.13537.77202.stgit@paris.rdu.redhat.com>
+From: Chris Mason <chris.mason@oracle.com>
+Subject: Re: Memory leak?
+Date: Fri, 08 Jul 2011 12:17:54 -0400
+Message-ID: <1310141768-sup-424@shiny>
+References: <20110703190913.GA4474@yahoo.fr> <CAE5mzvhZc4afuBTT0GrDvPXKaSwYeyPdyiQaYPjCTmvzBahr7g@mail.gmail.com> <20110706081111.GA6931@yahoo.fr> <20110708124429.GB4284@yahoo.fr> <1310137241-sup-8158@shiny> <20110708154123.GA17886@yahoo.fr> <20110708161103.GD4284@yahoo.fr>
+Content-Type: text/plain; charset=UTF-8
+Cc: cwillu <cwillu@cwillu.com>,
+	linux-btrfs <linux-btrfs@vger.kernel.org>
+To: Stephane Chazelas <stephane_chazelas@yahoo.fr>
+Return-path: <linux-btrfs-owner@vger.kernel.org>
+In-reply-to: <20110708161103.GD4284@yahoo.fr>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Wed, Dec 08, 2010 at 02:45:27PM -0500, Eric Paris wrote:
-> SELinux would like to implement a new labeling behavior of newly created
-> inodes.  We currently label new inodes based on the parent and the creating
-> process.  This new behavior would also take into account the name of the
-> new object when deciding the new label.  This is not the (supposed) full path,
-> just the last component of the path.
+Excerpts from Stephane Chazelas's message of 2011-07-08 12:11:03 -0400:
+> 2011-07-08 16:41:23 +0100, Stephane Chazelas:
+> > 2011-07-08 11:06:08 -0400, Chris Mason:
+> > [...]
+> > > So the invalidate opcode in btrfs-fixup-0 is the big problem.  We're
+> > > either failing to write because we weren't able to allocate memory (and
+> > > not dealing with it properly) or there is a bigger problem.
+> > > 
+> > > Does the btrfs-fixup-0 oops come before or after the ooms?
+> > 
+> > Hi Chris, thanks for looking into this.
+> > 
+> > It comes long before. Hours before there's any problem. So it
+> > seems unrelated.
 > 
-> This is very useful because creating /etc/shadow is different than creating
-> /etc/passwd but the kernel hooks are unable to differentiate these
-> operations.  We currently require that userspace realize it is doing some
-> difficult operation like that and than userspace jumps through SELinux hoops
-> to get things set up correctly.  This patch does not implement new
-> behavior, that is obviously contained in a seperate SELinux patch, but it
-> does pass the needed name down to the correct LSM hook.  If no such name
-> exists it is fine to pass NULL.
+> Though every time I had the issue, there had been such an
+> "invalid opcode" before. But also, I only had both the "invalid
+> opcode" and memory issue when doing that rsync onto external
+> hard drive.
+> 
+> > > Please send along any oops output during the run.  Only the first
+> > > (earliest) oops matters.
+> > 
+> > There's always only  one in between two reboots. I've sent two
+> > already, but here they  are:
+> [...]
+> 
+> I dug up the traces for before I switched to debian (thinking
+> getting a newer kernel would improve matters) in case it helps:
+> 
+> And:
+> 
+> Jun  5 00:58:10  BUG: Bad page state in process rsync  pfn:1bfdf
+> Jun  5 00:58:10  page:ffffea000061f8c8 count:0 mapcount:0 mapping:          (null) index:0x2300
+> Jun  5 00:58:10  page flags: 0x100000000000010(dirty)
+> Jun  5 00:58:10  Pid: 1584, comm: rsync Tainted: G      D  C  2.6.38-7-server #35-Ubuntu
+> Jun  5 00:58:10  Call Trace:
 
--ETOOFUCKINGUGLY...
+Ok, this one is really interesting.  Did you get this after another oops
+or was it after a reboot?
+
+How easily can you recompile your kernel with more debugging flags?
+That should help narrow it down.  I'm looking for CONFIG_SLAB_DEBUG (or
+slub) and CONFIG_DEBUG_PAGEALLOC
+
+-chris

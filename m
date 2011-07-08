@@ -1,33 +1,41 @@
-From: Stephane Chazelas <stephane_chazelas@yahoo.fr>
-Subject: Re: Memory leak?
-Date: Fri, 8 Jul 2011 18:06:30 +0100
-Message-ID: <20110708170630.GF4284@yahoo.fr>
-References: <20110703190913.GA4474@yahoo.fr>
- <CAE5mzvhZc4afuBTT0GrDvPXKaSwYeyPdyiQaYPjCTmvzBahr7g@mail.gmail.com>
- <20110706081111.GA6931@yahoo.fr>
- <20110708124429.GB4284@yahoo.fr>
- <1310137241-sup-8158@shiny>
- <20110708154123.GA17886@yahoo.fr>
- <1310141349-sup-9515@shiny>
-Mime-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Cc: cwillu <cwillu@cwillu.com>,
-	linux-btrfs <linux-btrfs@vger.kernel.org>
-To: Chris Mason <chris.mason@oracle.com>
+From: Chris Mason <chris.mason@oracle.com>
+Subject: [GIT PULL] btrfs fixes
+Date: Fri, 08 Jul 2011 14:55:51 -0400
+Message-ID: <1310151138-sup-6548@shiny>
+Content-Type: text/plain; charset=UTF-8
+To: "Linus Torvalds" <torvalds@linux-foundation.org>,
+	"linux-btrfs" <linux-btrfs@vger.kernel.org>,
+	"linux-kernel@vger.kernel.org" <linux-kernel@vger.kernel.org>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <1310141349-sup-9515@shiny>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-2011-07-08 12:15:08 -0400, Chris Mason:
-[...]
-> You described this workload as rsync, is there anything else running?
-[...]
+Hi everyone,
 
-Nope. Nothing else. And at least initially, that was onto an
-empty drive so basic copy.
+The for-linus branch of the btrfs-unstable repo:
 
-rsync --archive --xattrs --hard-links --numeric-ids --sparse --acls
+git://git.kernel.org/pub/scm/linux/kernel/git/mason/btrfs-unstable.git for-linus
 
+Has three more fixes.  We're fixing oopsen during space balancing (btrfs
+filesystem balance /mnt)) and during device removal.
 
-Cheers,
-Stephane
+Dave Sterba also sent in a patch to make /proc/mounts properly match a
+few new mount options, which he (correctly I think) considers a
+regression fix because it makes it hard for testers/users to verify the
+options in a running config.
+
+Josef Bacik (1) commits (+2/-1):
+    Btrfs: don't panic if we get an error while balancing V2
+
+David Sterba (1) commits (+11/-0):
+    btrfs: add missing options displayed in mount output
+
+Miao Xie (1) commits (+7/-5):
+    btrfs: fix oops when doing space balance
+
+Total: (3) commits (+20/-6)
+
+ fs/btrfs/ctree.h   |    5 +++++
+ fs/btrfs/inode.c   |   12 +++++++-----
+ fs/btrfs/super.c   |    6 ++++++
+ fs/btrfs/volumes.c |    3 ++-
+ 4 files changed, 20 insertions(+), 6 deletions(-)

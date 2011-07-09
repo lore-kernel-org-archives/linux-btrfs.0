@@ -1,27 +1,24 @@
-From: Tomasz Chmielewski <mangoo@wpkg.org>
-Subject: Re: Raid root filesystem?
-Date: Sat, 09 Jul 2011 13:05:11 +0200
-Message-ID: <4E1835E7.60901@wpkg.org>
+From: Jeremy Sanders <jeremy@jeremysanders.net>
+Subject: Re: btrfs hang in flush-btrfs-5
+Date: Sat, 09 Jul 2011 14:13:20 +0100
+Message-ID: <iv9k5g$avt$1@dough.gmane.org>
+References: <iv6ntd$3o5$1@dough.gmane.org>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=UTF-8; format=flowed
-To: linux-btrfs <linux-btrfs@vger.kernel.org>, hugo@carfax.org.uk
+Content-Type: text/plain; charset="ISO-8859-1"
+To: linux-btrfs@vger.kernel.org
 Return-path: <linux-btrfs-owner@vger.kernel.org>
 List-ID: <linux-btrfs.vger.kernel.org>
 
->> It would be awesome to be able to just boot a btrfs raid without the
->> need for pesky partitions, as this would allow a system to be "grown"
->> later when space gets scarce...
->
->    You still need a partition for swap, of course.
+Jeremy Sanders wrote:
 
-With btrfs it's still true, unfortunately, as you can't swap to a file 
-placed on btrfs.
+> Hi - I'm trying btrfs with kernel 2.6.38.8-32.fc15.x86_64 (a Fedora
+> kernel). I'm just doing a tar-to-tar copy onto the file system with
+> compress- force=zlib. Here are some traces of the stuck processes.
 
-Are there any middle-term plans to let swap to a file on btrfs (without 
-the workarounds like loop devices etc.)?
+Does anyone have any idea what caused this? Is it fixed in a recent btrfs?
 
+Thanks
 
--- 
-Tomasz Chmielewski
-http://wpkg.org
+Jeremy
+
 

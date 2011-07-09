@@ -1,34 +1,41 @@
 From: Hugo Mills <hugo@carfax.org.uk>
-Subject: Re: balance on only one subvolume
-Date: Sat, 9 Jul 2011 09:41:02 +0100
-Message-ID: <20110709084102.GF4325@carfax.org.uk>
-References: <CAJ1PRSksnE8D6K3HCLG-0Kcc5wrEJDqDjxROafJh-NHKpus2-w@mail.gmail.com>
+Subject: Re: Raid root filesystem?
+Date: Sat, 9 Jul 2011 09:45:35 +0100
+Message-ID: <20110709084535.GG4325@carfax.org.uk>
+References: <CAER78vQwkSv1-bgKSRN2_ULRN7fG5mJDf6ZNkBKxYyO_jjuNAw@mail.gmail.com>
 Mime-Version: 1.0
 Content-Type: multipart/signed; micalg=pgp-sha1;
-	protocol="application/pgp-signature"; boundary="3oCie2+XPXTnK5a5"
+	protocol="application/pgp-signature"; boundary="3xoW37o/FfUZJwQG"
 Cc: linux-btrfs@vger.kernel.org
-To: "krzf83@gmail.com " <krzf83@gmail.com>
+To: Evert Vorster <evorster@gmail.com>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <CAJ1PRSksnE8D6K3HCLG-0Kcc5wrEJDqDjxROafJh-NHKpus2-w@mail.gmail.com>
+In-Reply-To: <CAER78vQwkSv1-bgKSRN2_ULRN7fG5mJDf6ZNkBKxYyO_jjuNAw@mail.gmail.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
 
---3oCie2+XPXTnK5a5
+--3xoW37o/FfUZJwQG
 Content-Type: text/plain; charset=us-ascii
 Content-Disposition: inline
 
-On Sat, Jul 09, 2011 at 01:40:19AM +0200, krzf83@gmail.com  wrote:
-> btrfs balance takes very long time on large filesystems. Possibility
-> of running balance on only one subvolume 
+On Fri, Jul 08, 2011 at 09:45:05PM -0700, Evert Vorster wrote:
+> A year ago a btrfs raid needs to be scanned before it can be mounted.
+> Is this still the case?
+> 
+> I would like to have a btrfs raid as root, but so far this was not
+> possible due to the scanning thing, and thus I still need a /boot
+> filesystem.
 
-   That doesn't make a great deal of sense in terms of the on-disk
-data structures.
+   It's perfectly possible, as far as I know. There's two solutions:
+use an initrd that does the scan for you, or specify all of the
+devices in the filesystem in the mount command (-o device=...). In
+either case, you will need a boot manager that understands btrfs --
+grub2 does, and (I think) syslinux.
 
-> or running balance to reclaim
-> only after deleing subvolume would be usefull.
+> It would be awesome to be able to just boot a btrfs raid without the
+> need for pesky partitions, as this would allow a system to be "grown"
+> later when space gets scarce...
 
-   Reclaim what? Deleting a subvolme doesn't need a balance following
-it to reclaim *anything*. What exactly are you trying to achieve?
+   You still need a partition for swap, of course.
 
    Hugo.
 
@@ -37,7 +44,7 @@ it to reclaim *anything*. What exactly are you trying to achieve?
   PGP key: 515C238D from wwwkeys.eu.pgp.net or http://www.carfax.org.uk
                        ---   __(_'>  Squeak!   ---                       
 
---3oCie2+XPXTnK5a5
+--3xoW37o/FfUZJwQG
 Content-Type: application/pgp-signature; name="signature.asc"
 Content-Description: Digital signature
 Content-Disposition: inline
@@ -45,9 +52,9 @@ Content-Disposition: inline
 -----BEGIN PGP SIGNATURE-----
 Version: GnuPG v1.4.10 (GNU/Linux)
 
-iD8DBQFOGBQdIKyzvlFcI40RAju8AJ9deaVocE34aXyzGpy/J8d9bHwe+ACgryAH
-NUsDGk+HFkfJoRuO17eaypc=
-=7CP3
+iD8DBQFOGBUvIKyzvlFcI40RAhMUAJ9gbbiu4pVGqXn6+x0uFtNXeFnS7gCcC7u6
+Pl5yqWfYApzT4AMBsA+54+4=
+=ZtIW
 -----END PGP SIGNATURE-----
 
---3oCie2+XPXTnK5a5--
+--3xoW37o/FfUZJwQG--

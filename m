@@ -1,74 +1,31 @@
-From: Andreas Philipp <philipp.andreas@gmail.com>
+From: CACook@quantum-sci.com
 Subject: Re: Kernel Modules
-Date: Sat, 09 Jul 2011 19:12:43 +0200
-Message-ID: <4E188C0B.4060004@gmail.com>
-References: <201107090919.12739.CACook@quantum-sci.com>
+Date: Sat, 9 Jul 2011 10:28:03 -0700
+Message-ID: <201107091028.04403.CACook@quantum-sci.com>
+References: <201107090919.12739.CACook@quantum-sci.com> <4E188C0B.4060004@gmail.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=ISO-8859-1
-Cc: linux-btrfs@vger.kernel.org,
-	Andreas Philipp <philipp.andreas@gmail.com>
-To: CACook@quantum-sci.com
+Content-Type: Text/Plain;
+  charset="iso-8859-1"
+To: linux-btrfs@vger.kernel.org
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <201107090919.12739.CACook@quantum-sci.com>
+In-Reply-To: <4E188C0B.4060004@gmail.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 09.07.2011 18:19, CACook@quantum-sci.com wrote:
-> Just compiled a custom kernel, but unable to mount a btrfs partition.  It essentially says 'unrecognized filesystem'.  What could be missing?
->
-> # File systems
-> #
-> CONFIG_EXT2_FS=y
-> CONFIG_EXT2_FS_XATTR=y
-> CONFIG_EXT2_FS_POSIX_ACL=y
-> CONFIG_EXT2_FS_SECURITY=y
-> # CONFIG_EXT2_FS_XIP is not set
-> CONFIG_EXT3_FS=y
-> CONFIG_EXT3_DEFAULTS_TO_ORDERED=y
-> CONFIG_EXT3_FS_XATTR=y
-> CONFIG_EXT3_FS_POSIX_ACL=y
-> CONFIG_EXT3_FS_SECURITY=y
-> CONFIG_EXT4_FS=y
-> CONFIG_EXT4_FS_XATTR=y
-> # CONFIG_EXT4_FS_POSIX_ACL is not set
-> # CONFIG_EXT4_FS_SECURITY is not set
-> # CONFIG_EXT4_DEBUG is not set
-> CONFIG_JBD=y
-> # CONFIG_JBD_DEBUG is not set
-> CONFIG_JBD2=y
-> # CONFIG_JBD2_DEBUG is not set
-> CONFIG_FS_MBCACHE=y
-> # CONFIG_REISERFS_FS is not set
-> CONFIG_JFS_FS=y
-> # CONFIG_JFS_POSIX_ACL is not set
-> # CONFIG_JFS_SECURITY is not set
-> # CONFIG_JFS_DEBUG is not set
-> # CONFIG_JFS_STATISTICS is not set
-> # CONFIG_XFS_FS is not set
-> # CONFIG_GFS2_FS is not set
-> # CONFIG_OCFS2_FS is not set
-> CONFIG_BTRFS_FS=y
-> CONFIG_BTRFS_FS_POSIX_ACL=y
-> # CONFIG_NILFS2_FS is not set
-> CONFIG_FS_POSIX_ACL=y
-> CONFIG_FILE_LOCKING=y
-> CONFIG_FSNOTIFY=y
-> CONFIG_DNOTIFY=y
-> CONFIG_INOTIFY_USER=y
-> # CONFIG_FANOTIFY is not set
-> CONFIG_QUOTA=y
-> CONFIG_QUOTA_NETLINK_INTERFACE=y
-> CONFIG_PRINT_QUOTA_WARNING=y
-> # CONFIG_QUOTA_DEBUG is not set
-> CONFIG_QUOTA_TREE=m
-> # CONFIG_QFMT_V1 is not set
-> CONFIG_QFMT_V2=m
-> CONFIG_QUOTACTL=y
-> CONFIG_QUOTACTL_COMPAT=y
-> CONFIG_AUTOFS4_FS=y
-> CONFIG_FUSE_FS=y
-> CONFIG_CUSE=y
-> CONFIG_GENERIC_ACL=y
-If your btrfs lives on two or more devices you will have to run 'btrfs
-device scan' prior to mount or give all devices as arguments to mount.btrfs.
+On Saturday 9 July, 2011 10:12:43 you wrote:
+> If your btrfs lives on two or more devices you will have to run 'btrfs
+> device scan' prior to mount or give all devices as arguments to mount.btrfs.
 
-Andreas
+Ohhh, I'd added a disk drive without modifying fstab.  Thanks.
+
+Where would you put a device scan to happen at boot?
+
+
+On another subject, I guess there are two ways to remove old snapshot directories:
+- btrfs subvolume delete
+- rm -rf
+
+I understand that snapshots are cumulative for files and do not duplicate, but is it necessary to use the subvolume delete command to preserve the integrity of remaining snapshots?
+
+
+And also, about once a week KDE locks up on me after a suspend, and I have to power-cycle it.  Is there any maintenance I should do on a btrfs part when this happens?
+

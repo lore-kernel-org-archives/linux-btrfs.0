@@ -1,13 +1,25 @@
-From: "krzf83@gmail.com " <krzf83@gmail.com>
-Subject: balance on only one subvolume
-Date: Sat, 9 Jul 2011 01:40:19 +0200
-Message-ID: <CAJ1PRSksnE8D6K3HCLG-0Kcc5wrEJDqDjxROafJh-NHKpus2-w@mail.gmail.com>
+From: Evert Vorster <evorster@gmail.com>
+Subject: Raid root filesystem?
+Date: Fri, 8 Jul 2011 21:45:05 -0700
+Message-ID: <CAER78vQwkSv1-bgKSRN2_ULRN7fG5mJDf6ZNkBKxYyO_jjuNAw@mail.gmail.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset=ISO-8859-1
 To: linux-btrfs@vger.kernel.org
 Return-path: <linux-btrfs-owner@vger.kernel.org>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-btrfs balance takes very long time on large filesystems. Possibility
-of running balance on only one subvolume or running balance to reclaim
-only after deleing subvolume would be usefull.
+Hi there...
+
+A year ago a btrfs raid needs to be scanned before it can be mounted.
+Is this still the case?
+
+I would like to have a btrfs raid as root, but so far this was not
+possible due to the scanning thing, and thus I still need a /boot
+filesystem.
+
+It would be awesome to be able to just boot a btrfs raid without the
+need for pesky partitions, as this would allow a system to be "grown"
+later when space gets scarce...
+
+-- 
+-Evert-

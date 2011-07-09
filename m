@@ -1,31 +1,32 @@
-From: CACook@quantum-sci.com
+From: "Helmut Hullen" <Hullen@t-online.de>
 Subject: Re: Kernel Modules
-Date: Sat, 9 Jul 2011 10:28:03 -0700
-Message-ID: <201107091028.04403.CACook@quantum-sci.com>
-References: <201107090919.12739.CACook@quantum-sci.com> <4E188C0B.4060004@gmail.com>
+Date: 09 Jul 2011 19:33:00 +0200
+Message-ID: <BpWht+my1uB@helmut.hullen.de>
+References: <201107090919.12739.CACook@quantum-sci.com>
+Reply-To: helmut@hullen.de
 Mime-Version: 1.0
-Content-Type: Text/Plain;
-  charset="iso-8859-1"
+Content-Type: text/plain; charset=US-ASCII
 To: linux-btrfs@vger.kernel.org
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <4E188C0B.4060004@gmail.com>
+In-Reply-To: <201107090919.12739.CACook@quantum-sci.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Saturday 9 July, 2011 10:12:43 you wrote:
-> If your btrfs lives on two or more devices you will have to run 'btrfs
-> device scan' prior to mount or give all devices as arguments to mount.btrfs.
+Hallo, Cacook,
 
-Ohhh, I'd added a disk drive without modifying fstab.  Thanks.
+Du meintest am 09.07.11:
 
-Where would you put a device scan to happen at boot?
+> Just compiled a custom kernel, but unable to mount a btrfs partition.
+>  It essentially says 'unrecognized filesystem'.  What could be
+> missing?
 
+Perhaps you only need a newer kernel. Sounds funny, but  some days ago I  
+had a similar problem, with kernel 2.6.38.5
 
-On another subject, I guess there are two ways to remove old snapshot directories:
-- btrfs subvolume delete
-- rm -rf
+Then I compiled kernel 2.6.39.2 - all worked as well as (about) a week  
+ago.
 
-I understand that snapshots are cumulative for files and do not duplicate, but is it necessary to use the subvolume delete command to preserve the integrity of remaining snapshots?
+Maybe I can't reproduce this behaviour, but I don't want to see it again  
+- restoring more than 4 TByte is no fun.
 
-
-And also, about once a week KDE locks up on me after a suspend, and I have to power-cycle it.  Is there any maintenance I should do on a btrfs part when this happens?
-
+Viele Gruesse!
+Helmut

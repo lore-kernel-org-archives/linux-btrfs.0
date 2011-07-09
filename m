@@ -1,33 +1,74 @@
-From: Stephane Chazelas <stephane_chazelas@yahoo.fr>
-Subject: Re: Memory leak?
-Date: Sat, 9 Jul 2011 18:09:59 +0100
-Message-ID: <20110709170959.GC4294@yahoo.fr>
-References: <20110703190913.GA4474@yahoo.fr>
- <CAE5mzvhZc4afuBTT0GrDvPXKaSwYeyPdyiQaYPjCTmvzBahr7g@mail.gmail.com>
- <20110706081111.GA6931@yahoo.fr>
- <20110708124429.GB4284@yahoo.fr>
- <1310137241-sup-8158@shiny>
+From: Andreas Philipp <philipp.andreas@gmail.com>
+Subject: Re: Kernel Modules
+Date: Sat, 09 Jul 2011 19:12:43 +0200
+Message-ID: <4E188C0B.4060004@gmail.com>
+References: <201107090919.12739.CACook@quantum-sci.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Cc: cwillu <cwillu@cwillu.com>,
-	linux-btrfs <linux-btrfs@vger.kernel.org>
-To: Chris Mason <chris.mason@oracle.com>
+Content-Type: text/plain; charset=ISO-8859-1
+Cc: linux-btrfs@vger.kernel.org,
+	Andreas Philipp <philipp.andreas@gmail.com>
+To: CACook@quantum-sci.com
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <1310137241-sup-8158@shiny>
+In-Reply-To: <201107090919.12739.CACook@quantum-sci.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-2011-07-08 11:06:08 -0400, Chris Mason:
-[...]
-> I would do two things.  First, I'd turn off compress_force.  There's no
-> explicit reason for this, it just seems like the mostly likely place for
-> a bug.
-[...]
+On 09.07.2011 18:19, CACook@quantum-sci.com wrote:
+> Just compiled a custom kernel, but unable to mount a btrfs partition.  It essentially says 'unrecognized filesystem'.  What could be missing?
+>
+> # File systems
+> #
+> CONFIG_EXT2_FS=y
+> CONFIG_EXT2_FS_XATTR=y
+> CONFIG_EXT2_FS_POSIX_ACL=y
+> CONFIG_EXT2_FS_SECURITY=y
+> # CONFIG_EXT2_FS_XIP is not set
+> CONFIG_EXT3_FS=y
+> CONFIG_EXT3_DEFAULTS_TO_ORDERED=y
+> CONFIG_EXT3_FS_XATTR=y
+> CONFIG_EXT3_FS_POSIX_ACL=y
+> CONFIG_EXT3_FS_SECURITY=y
+> CONFIG_EXT4_FS=y
+> CONFIG_EXT4_FS_XATTR=y
+> # CONFIG_EXT4_FS_POSIX_ACL is not set
+> # CONFIG_EXT4_FS_SECURITY is not set
+> # CONFIG_EXT4_DEBUG is not set
+> CONFIG_JBD=y
+> # CONFIG_JBD_DEBUG is not set
+> CONFIG_JBD2=y
+> # CONFIG_JBD2_DEBUG is not set
+> CONFIG_FS_MBCACHE=y
+> # CONFIG_REISERFS_FS is not set
+> CONFIG_JFS_FS=y
+> # CONFIG_JFS_POSIX_ACL is not set
+> # CONFIG_JFS_SECURITY is not set
+> # CONFIG_JFS_DEBUG is not set
+> # CONFIG_JFS_STATISTICS is not set
+> # CONFIG_XFS_FS is not set
+> # CONFIG_GFS2_FS is not set
+> # CONFIG_OCFS2_FS is not set
+> CONFIG_BTRFS_FS=y
+> CONFIG_BTRFS_FS_POSIX_ACL=y
+> # CONFIG_NILFS2_FS is not set
+> CONFIG_FS_POSIX_ACL=y
+> CONFIG_FILE_LOCKING=y
+> CONFIG_FSNOTIFY=y
+> CONFIG_DNOTIFY=y
+> CONFIG_INOTIFY_USER=y
+> # CONFIG_FANOTIFY is not set
+> CONFIG_QUOTA=y
+> CONFIG_QUOTA_NETLINK_INTERFACE=y
+> CONFIG_PRINT_QUOTA_WARNING=y
+> # CONFIG_QUOTA_DEBUG is not set
+> CONFIG_QUOTA_TREE=m
+> # CONFIG_QFMT_V1 is not set
+> CONFIG_QFMT_V2=m
+> CONFIG_QUOTACTL=y
+> CONFIG_QUOTACTL_COMPAT=y
+> CONFIG_AUTOFS4_FS=y
+> CONFIG_FUSE_FS=y
+> CONFIG_CUSE=y
+> CONFIG_GENERIC_ACL=y
+If your btrfs lives on two or more devices you will have to run 'btrfs
+device scan' prior to mount or give all devices as arguments to mount.btrfs.
 
-I couldn't reproduce it with compress_force turned off, the
-inode_cache reached 600MB but never stayed high.
-
-Not using compress_force is not an option for me though
-unfortunately.
-
--- 
-Stephane
+Andreas

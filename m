@@ -1,41 +1,53 @@
-From: Stephane Chazelas <stephane_chazelas@yahoo.fr>
-Subject: A lot of writing to FS only read (Was: Memory leak?)
-Date: Sat, 9 Jul 2011 08:42:52 +0100
-Message-ID: <20110709074252.GB4294@yahoo.fr>
-References: <20110703190913.GA4474@yahoo.fr>
- <CAE5mzvhZc4afuBTT0GrDvPXKaSwYeyPdyiQaYPjCTmvzBahr7g@mail.gmail.com>
- <20110706081111.GA6931@yahoo.fr>
- <20110708124429.GB4284@yahoo.fr>
- <1310137241-sup-8158@shiny>
- <20110708154123.GA17886@yahoo.fr>
- <1310141349-sup-9515@shiny>
- <20110708200412.GG4284@yahoo.fr>
- <1310155908-sup-9183@shiny>
- <20110709070955.GA4294@yahoo.fr>
+From: Hugo Mills <hugo@carfax.org.uk>
+Subject: Re: balance on only one subvolume
+Date: Sat, 9 Jul 2011 09:41:02 +0100
+Message-ID: <20110709084102.GF4325@carfax.org.uk>
+References: <CAJ1PRSksnE8D6K3HCLG-0Kcc5wrEJDqDjxROafJh-NHKpus2-w@mail.gmail.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Cc: cwillu <cwillu@cwillu.com>,
-	linux-btrfs <linux-btrfs@vger.kernel.org>
-To: Chris Mason <chris.mason@oracle.com>
+Content-Type: multipart/signed; micalg=pgp-sha1;
+	protocol="application/pgp-signature"; boundary="3oCie2+XPXTnK5a5"
+Cc: linux-btrfs@vger.kernel.org
+To: "krzf83@gmail.com " <krzf83@gmail.com>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <20110709070955.GA4294@yahoo.fr>
+In-Reply-To: <CAJ1PRSksnE8D6K3HCLG-0Kcc5wrEJDqDjxROafJh-NHKpus2-w@mail.gmail.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-2011-07-09 08:09:55 +0100, Stephane Chazelas:
-> 2011-07-08 16:12:28 -0400, Chris Mason:
-> [...]
-> > > I'm running a "dstat -df" at the same time and I'm seeing
-> > > substantive amount of disk writes on the disks that hold the
-> > > source FS (and I'm rsyncing from read-only snapshot subvolumes
-> > > in case you're thinking of atimes) almost more than onto the
-> > > drive holding the target FS!?
-[...]
 
-One thing I didn't mention is that before doing the rsync, I
-deleted a few snapshot volumes (those were read-only snapshots
-of read-only snapshots) and recreated them and that's the ones
-I'm rsyncing from (basically, I prepare an area to be rsynced
-made of the latests snapshots of a few subvolumes).
+--3oCie2+XPXTnK5a5
+Content-Type: text/plain; charset=us-ascii
+Content-Disposition: inline
+
+On Sat, Jul 09, 2011 at 01:40:19AM +0200, krzf83@gmail.com  wrote:
+> btrfs balance takes very long time on large filesystems. Possibility
+> of running balance on only one subvolume 
+
+   That doesn't make a great deal of sense in terms of the on-disk
+data structures.
+
+> or running balance to reclaim
+> only after deleing subvolume would be usefull.
+
+   Reclaim what? Deleting a subvolme doesn't need a balance following
+it to reclaim *anything*. What exactly are you trying to achieve?
+
+   Hugo.
 
 -- 
-Stephane
+=== Hugo Mills: hugo@... carfax.org.uk | darksatanic.net | lug.org.uk ===
+  PGP key: 515C238D from wwwkeys.eu.pgp.net or http://www.carfax.org.uk
+                       ---   __(_'>  Squeak!   ---                       
+
+--3oCie2+XPXTnK5a5
+Content-Type: application/pgp-signature; name="signature.asc"
+Content-Description: Digital signature
+Content-Disposition: inline
+
+-----BEGIN PGP SIGNATURE-----
+Version: GnuPG v1.4.10 (GNU/Linux)
+
+iD8DBQFOGBQdIKyzvlFcI40RAju8AJ9deaVocE34aXyzGpy/J8d9bHwe+ACgryAH
+NUsDGk+HFkfJoRuO17eaypc=
+=7CP3
+-----END PGP SIGNATURE-----
+
+--3oCie2+XPXTnK5a5--

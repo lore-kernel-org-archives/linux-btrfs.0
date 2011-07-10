@@ -1,53 +1,51 @@
 From: Stephane Chazelas <stephane_chazelas@yahoo.fr>
 Subject: Re: Memory leak?
-Date: Sat, 9 Jul 2011 21:36:50 +0100
-Message-ID: <20110709203649.GE4294@yahoo.fr>
+Date: Sun, 10 Jul 2011 06:58:33 +0100
+Message-ID: <20110710055833.GA4277@yahoo.fr>
 References: <20110703190913.GA4474@yahoo.fr>
  <CAE5mzvhZc4afuBTT0GrDvPXKaSwYeyPdyiQaYPjCTmvzBahr7g@mail.gmail.com>
  <20110706081111.GA6931@yahoo.fr>
  <20110708124429.GB4284@yahoo.fr>
  <1310137241-sup-8158@shiny>
- <20110709170959.GC4294@yahoo.fr>
- <CAE5mzvhZwrtEZ8FUfcYzoMsRwuPjNDn=iCZ6_-CKaifEPZWAKA@mail.gmail.com>
+ <20110708154123.GA17886@yahoo.fr>
+ <1310141349-sup-9515@shiny>
+ <20110708200412.GG4284@yahoo.fr>
+ <1310155908-sup-9183@shiny>
+ <20110709070955.GA4294@yahoo.fr>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=iso-8859-1
-Cc: Chris Mason <chris.mason@oracle.com>,
+Content-Type: text/plain; charset=us-ascii
+Cc: cwillu <cwillu@cwillu.com>,
 	linux-btrfs <linux-btrfs@vger.kernel.org>
-To: cwillu <cwillu@cwillu.com>
+To: Chris Mason <chris.mason@oracle.com>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <CAE5mzvhZwrtEZ8FUfcYzoMsRwuPjNDn=iCZ6_-CKaifEPZWAKA@mail.gmail.com>
+In-Reply-To: <20110709070955.GA4294@yahoo.fr>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-2011-07-09 13:25:00 -0600, cwillu:
-> On Sat, Jul 9, 2011 at 11:09 AM, Stephane Chazelas
-> <stephane_chazelas@yahoo.fr> wrote:
-> > 2011-07-08 11:06:08 -0400, Chris Mason:
-> > [...]
-> >> I would do two things. =A0First, I'd turn off compress_force. =A0T=
-here's no
-> >> explicit reason for this, it just seems like the mostly likely pla=
-ce for
-> >> a bug.
-> > [...]
-> >
-> > I couldn't reproduce it with compress_force turned off, the
-> > inode_cache reached 600MB but never stayed high.
-> >
-> > Not using compress_force is not an option for me though
-> > unfortunately.
->=20
-> Disabling compression doesn't decompress everything that's already co=
-mpressed.
+2011-07-09 08:09:55 +0100, Stephane Chazelas:
+> 2011-07-08 16:12:28 -0400, Chris Mason:
+> [...]
+> > > I'm running a "dstat -df" at the same time and I'm seeing
+> > > substantive amount of disk writes on the disks that hold the
+> > > source FS (and I'm rsyncing from read-only snapshot subvolumes
+> > > in case you're thinking of atimes) almost more than onto the
+> > > drive holding the target FS!?
+> > 
+> > These are probably atime updates.  You can completely disable them with
+> > mount -o noatime.
+> [...]
+> 
+> I don't think it is. First, as I said, I'm rsyncing from
+> read-only snapshots (and I could see atimes were not updated)
+> and nothing else is running. Then now looking at the traces this
+> morning, There was a lot written in the first minutes, then it
+> calmed down.
+[...]
 
-Yes. But the very issue here is that I get this problem when I
-copy data onto an empty drive. If I don't enable compression
-there, it simply doesn't fit. In that very case, support for
-compression is the main reason why I use brtfs here.
+How embarrassing, sorry
 
---=20
+In that instance I wasn't rsyncing from the right place, so I
+was indeed copying non-readonly volumes before copying readonly
+ones. So, those writes were probably due to atimes.
+
+-- 
 Stephane
---
-To unsubscribe from this list: send the line "unsubscribe linux-btrfs" =
-in
-the body of a message to majordomo@vger.kernel.org
-More majordomo info at  http://vger.kernel.org/majordomo-info.html

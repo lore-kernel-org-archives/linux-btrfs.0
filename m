@@ -1,57 +1,55 @@
-From: Chris Samuel <chris@csamuel.org>
-Subject: Re: TRIM support
-Date: Sun, 10 Jul 2011 18:33:28 +1000
-Message-ID: <201107101833.31450.chris@csamuel.org>
-References: <CAAeznTr5FMOqyJA9JfP2H-h1rJjasfxUJAeNNnNKhiHCTV03mA@mail.gmail.com> <1309635918.3774.7.camel@nayuki>
+From: Chris Mason <chris.mason@oracle.com>
+Subject: Re: Memory leak?
+Date: Sun, 10 Jul 2011 08:44:34 -0400
+Message-ID: <1310301809-sup-9903@shiny>
+References: <20110703190913.GA4474@yahoo.fr> <CAE5mzvhZc4afuBTT0GrDvPXKaSwYeyPdyiQaYPjCTmvzBahr7g@mail.gmail.com> <20110706081111.GA6931@yahoo.fr> <20110708124429.GB4284@yahoo.fr> <1310137241-sup-8158@shiny> <20110709170959.GC4294@yahoo.fr> <CAE5mzvhZwrtEZ8FUfcYzoMsRwuPjNDn=iCZ6_-CKaifEPZWAKA@mail.gmail.com> <20110709203649.GE4294@yahoo.fr>
 Mime-Version: 1.0
-Content-Type: multipart/signed;
-  boundary="nextPart2977095.WJ55d2GMuM";
-  protocol="application/pgp-signature";
-  micalg=pgp-sha1
-To: linux-btrfs@vger.kernel.org
+Content-Type: TEXT/PLAIN; charset=ISO-8859-1
+Cc: cwillu <cwillu@cwillu.com>,
+	linux-btrfs <linux-btrfs@vger.kernel.org>
+To: Stephane Chazelas <stephane_chazelas@yahoo.fr>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <1309635918.3774.7.camel@nayuki>
+In-reply-to: <20110709203649.GE4294@yahoo.fr>
 List-ID: <linux-btrfs.vger.kernel.org>
 
---nextPart2977095.WJ55d2GMuM
-Content-Type: Text/Plain;
-  charset="utf-8"
-Content-Transfer-Encoding: quoted-printable
+Excerpts from Stephane Chazelas's message of 2011-07-09 16:36:50 -0400:
+> 2011-07-09 13:25:00 -0600, cwillu:
+> > On Sat, Jul 9, 2011 at 11:09 AM, Stephane Chazelas
+> > <stephane_chazelas@yahoo.fr> wrote:
+> > > 2011-07-08 11:06:08 -0400, Chris Mason:
+> > > [...]
+> > >> I would do two things. =C2=A0First, I'd turn off compress_force.=
+ =C2=A0There's no
+> > >> explicit reason for this, it just seems like the mostly likely p=
+lace for
+> > >> a bug.
+> > > [...]
+> > >
+> > > I couldn't reproduce it with compress_force turned off, the
+> > > inode_cache reached 600MB but never stayed high.
+> > >
+> > > Not using compress_force is not an option for me though
+> > > unfortunately.
+> >=20
+> > Disabling compression doesn't decompress everything that's already =
+compressed.
+>=20
+> Yes. But the very issue here is that I get this problem when I
+> copy data onto an empty drive. If I don't enable compression
+> there, it simply doesn't fit. In that very case, support for
+> compression is the main reason why I use brtfs here.
+>=20
 
-On Sun, 3 Jul 2011 05:45:17 AM Calvin Walton wrote:
+Great, we're on the right track.  Does it trigger with mount -o compres=
+s
+instead of mount -o compress_force?
 
-> The discard option is not currently automatically enabled; I think
-> there may have been some performance issues in certain cases with
-> drives that have slow trim implementations. But feel free to give
-> it a try.
+This is very likely to be a bug in compress_force, so the extra
+verification will help.
 
-This LWN article from 2009 explains why it can be problematic
-(especially on SATA drives where TRIM is a non-queued command):
-
-https://lwn.net/Articles/347511/
-
-cheers,
-Chris
-=2D-=20
- Chris Samuel  :  http://www.csamuel.org/  :  Melbourne, VIC
-
-This email may come with a PGP signature as a file. Do not panic.
-=46or more info see: http://en.wikipedia.org/wiki/OpenPGP
-
---nextPart2977095.WJ55d2GMuM
-Content-Type: application/pgp-signature; name=signature.asc 
-Content-Description: This is a digitally signed message part.
-
------BEGIN PGP SIGNATURE-----
-Version: GnuPG v1.4.11 (GNU/Linux)
-
-iQEVAwUAThlj2I1yjaOTJg85AQIScgf/TwFoMKdvq2QU1rr9ZyP99vJH6VmQWVhz
-JO/pvz7Qzd7JV55vxhJwoWNmqDREEvtWD2VPJ/SmS/KG2S1izH1tyGsJJBHA13mf
-XORooJa+1SwT4C39etIP9kjrZLaukB+g1xh2fEUf5ISohLPiOcTHrW94bG3hd07X
-3tbLGQNALkqy5ED7wA5zVnV1pQbLgMfacbTO4u5HV/+KVo5YQKyarHr8oVfsIZLG
-ODvZ4m3BRtTFVPPRRIjlzsKRMwSK85s8v8nRLPVIfHXG0ePYkS5uaW216CuKkzZA
-AYRCaGnTYl1FurSgjFRVAPt+2X6Zi1jMnmRtdkjPb7jUndjv/l33tg==
-=TOB3
------END PGP SIGNATURE-----
-
---nextPart2977095.WJ55d2GMuM--
+-chris
+--
+To unsubscribe from this list: send the line "unsubscribe linux-btrfs" =
+in
+the body of a message to majordomo@vger.kernel.org
+More majordomo info at  http://vger.kernel.org/majordomo-info.html

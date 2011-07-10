@@ -1,55 +1,56 @@
-From: Chris Mason <chris.mason@oracle.com>
-Subject: Re: Memory leak?
-Date: Sun, 10 Jul 2011 08:44:34 -0400
-Message-ID: <1310301809-sup-9903@shiny>
-References: <20110703190913.GA4474@yahoo.fr> <CAE5mzvhZc4afuBTT0GrDvPXKaSwYeyPdyiQaYPjCTmvzBahr7g@mail.gmail.com> <20110706081111.GA6931@yahoo.fr> <20110708124429.GB4284@yahoo.fr> <1310137241-sup-8158@shiny> <20110709170959.GC4294@yahoo.fr> <CAE5mzvhZwrtEZ8FUfcYzoMsRwuPjNDn=iCZ6_-CKaifEPZWAKA@mail.gmail.com> <20110709203649.GE4294@yahoo.fr>
+From: Felix Blanke <felixblanke@gmail.com>
+Subject: Re: Kernel Modules
+Date: Sun, 10 Jul 2011 10:24:38 -0400
+Message-ID: <4E19B626.7060204@gmail.com>
+References: <Bp$inqOy1uB@helmut.hullen.de>
 Mime-Version: 1.0
-Content-Type: TEXT/PLAIN; charset=ISO-8859-1
-Cc: cwillu <cwillu@cwillu.com>,
-	linux-btrfs <linux-btrfs@vger.kernel.org>
-To: Stephane Chazelas <stephane_chazelas@yahoo.fr>
+Content-Type: text/plain; charset=ISO-8859-1; format=flowed
+Cc: Helmut Hullen <Hullen@t-online.de>, linux-btrfs@vger.kernel.org
+To: helmut@hullen.de
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-reply-to: <20110709203649.GE4294@yahoo.fr>
+In-Reply-To: <Bp$inqOy1uB@helmut.hullen.de>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Excerpts from Stephane Chazelas's message of 2011-07-09 16:36:50 -0400:
-> 2011-07-09 13:25:00 -0600, cwillu:
-> > On Sat, Jul 9, 2011 at 11:09 AM, Stephane Chazelas
-> > <stephane_chazelas@yahoo.fr> wrote:
-> > > 2011-07-08 11:06:08 -0400, Chris Mason:
-> > > [...]
-> > >> I would do two things. =C2=A0First, I'd turn off compress_force.=
- =C2=A0There's no
-> > >> explicit reason for this, it just seems like the mostly likely p=
-lace for
-> > >> a bug.
-> > > [...]
-> > >
-> > > I couldn't reproduce it with compress_force turned off, the
-> > > inode_cache reached 600MB but never stayed high.
-> > >
-> > > Not using compress_force is not an option for me though
-> > > unfortunately.
-> >=20
-> > Disabling compression doesn't decompress everything that's already =
-compressed.
->=20
-> Yes. But the very issue here is that I get this problem when I
-> copy data onto an empty drive. If I don't enable compression
-> there, it simply doesn't fit. In that very case, support for
-> compression is the main reason why I use brtfs here.
->=20
+You don't understood me. Ofc the developer need bug reports and all that 
+stuff. But it's the way youre doing it. Imho a lot of your mails sounds 
+like the only goal of them are to punish btrfs.
 
-Great, we're on the right track.  Does it trigger with mount -o compres=
-s
-instead of mount -o compress_force?
+Maybe I'm the only one who feels this way, then I'm sorry. I'll be quite 
+about this topic now. I've to admit that I was a little bit drunk 
+yesterday. Sorry again!
 
-This is very likely to be a bug in compress_force, so the extra
-verification will help.
+Regards,
+Felix
 
--chris
---
-To unsubscribe from this list: send the line "unsubscribe linux-btrfs" =
-in
-the body of a message to majordomo@vger.kernel.org
-More majordomo info at  http://vger.kernel.org/majordomo-info.html
+On 7/10/11 3:29 AM, Helmut Hullen wrote:
+> Hallo, Felix,
+>
+> Du meintest am 10.07.11:
+>
+>> Did you ever say something positive about btrfs? :D All I read from
+>> in the last months is complaining about btrfs.
+>
+> I use it, since many months.
+> But it's still an adventure, I won't use it for valuable data.
+>
+>> I'm sorry but it seems that 90% for your comments are useless and
+>> they sound like you only want to say something bad about btrfs.
+>
+> Do you really mean that this is a mailing list where everybody has to
+> tell "it works!"?
+>
+> The most mailing list where I'm subscribed mostly have threads starting
+> with "Houston, we've got a problem".
+>
+> -----------------------------
+>
+> By the way: I'm writing programs since more than 40 years, I know that
+> nearly every program contains errors which the programmer didn't wish or
+> expect. The programmer needs the reactions of the users.
+>
+> Viele Gruesse!
+> Helmut
+> --
+> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
+> the body of a message to majordomo@vger.kernel.org
+> More majordomo info at  http://vger.kernel.org/majordomo-info.html

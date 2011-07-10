@@ -1,56 +1,57 @@
-From: Goffredo Baroncelli <kreijack@libero.it>
-Subject: Re: Kernel Modules
-Date: Sun, 10 Jul 2011 10:24:26 +0200
-Message-ID: <4E1961BA.8020603@libero.it>
-References: <201107090919.12739.CACook@quantum-sci.com> <4E188C0B.4060004@gmail.com> <201107091028.04403.CACook@quantum-sci.com>
-Reply-To: kreijack@inwind.it
+From: Chris Samuel <chris@csamuel.org>
+Subject: Re: TRIM support
+Date: Sun, 10 Jul 2011 18:33:28 +1000
+Message-ID: <201107101833.31450.chris@csamuel.org>
+References: <CAAeznTr5FMOqyJA9JfP2H-h1rJjasfxUJAeNNnNKhiHCTV03mA@mail.gmail.com> <1309635918.3774.7.camel@nayuki>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=ISO-8859-1
-Cc: linux-btrfs@vger.kernel.org
-To: CACook@quantum-sci.com
+Content-Type: multipart/signed;
+  boundary="nextPart2977095.WJ55d2GMuM";
+  protocol="application/pgp-signature";
+  micalg=pgp-sha1
+To: linux-btrfs@vger.kernel.org
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <201107091028.04403.CACook@quantum-sci.com>
+In-Reply-To: <1309635918.3774.7.camel@nayuki>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 07/09/2011 07:28 PM, CACook@quantum-sci.com wrote:
-> On Saturday 9 July, 2011 10:12:43 you wrote:
->> If your btrfs lives on two or more devices you will have to run
->> 'btrfs device scan' prior to mount or give all devices as arguments
->> to mount.btrfs.
-> 
-> Ohhh, I'd added a disk drive without modifying fstab.  Thanks.
-> 
-> Where would you put a device scan to happen at boot?
+--nextPart2977095.WJ55d2GMuM
+Content-Type: Text/Plain;
+  charset="utf-8"
+Content-Transfer-Encoding: quoted-printable
 
-The more recent distro put the scanning logic in the initrd. This should
-be the right place.
+On Sun, 3 Jul 2011 05:45:17 AM Calvin Walton wrote:
 
+> The discard option is not currently automatically enabled; I think
+> there may have been some performance issues in certain cases with
+> drives that have slow trim implementations. But feel free to give
+> it a try.
 
-> On another subject, I guess there are two ways to remove old snapshot
-> directories: - btrfs subvolume delete - rm -rf
+This LWN article from 2009 explains why it can be problematic
+(especially on SATA drives where TRIM is a non-queued command):
 
-with rm -rf you can remove only the subvolume contents, but you cannot
-delete a subvoulume.
+https://lwn.net/Articles/347511/
 
-> 
-> I understand that snapshots are cumulative for files and do not
-> duplicate, but is it necessary to use the subvolume delete command to
-> preserve the integrity of remaining snapshots?
+cheers,
+Chris
+=2D-=20
+ Chris Samuel  :  http://www.csamuel.org/  :  Melbourne, VIC
 
-No. Apart removing the subvolume entry, "rm -rf" and "btrfs subvolume
-delete" reach the same result. The latter is only a lot more efficient.
+This email may come with a PGP signature as a file. Do not panic.
+=46or more info see: http://en.wikipedia.org/wiki/OpenPGP
 
-> And also, about once a week KDE locks up on me after a suspend, and I
-> have to power-cycle it.  Is there any maintenance I should do on a
-> btrfs part when this happens?
+--nextPart2977095.WJ55d2GMuM
+Content-Type: application/pgp-signature; name=signature.asc 
+Content-Description: This is a digitally signed message part.
 
-Normally you don't do anything. In any case you are not able to do
-anything because there no is a tool like fsck available :-)
+-----BEGIN PGP SIGNATURE-----
+Version: GnuPG v1.4.11 (GNU/Linux)
 
+iQEVAwUAThlj2I1yjaOTJg85AQIScgf/TwFoMKdvq2QU1rr9ZyP99vJH6VmQWVhz
+JO/pvz7Qzd7JV55vxhJwoWNmqDREEvtWD2VPJ/SmS/KG2S1izH1tyGsJJBHA13mf
+XORooJa+1SwT4C39etIP9kjrZLaukB+g1xh2fEUf5ISohLPiOcTHrW94bG3hd07X
+3tbLGQNALkqy5ED7wA5zVnV1pQbLgMfacbTO4u5HV/+KVo5YQKyarHr8oVfsIZLG
+ODvZ4m3BRtTFVPPRRIjlzsKRMwSK85s8v8nRLPVIfHXG0ePYkS5uaW216CuKkzZA
+AYRCaGnTYl1FurSgjFRVAPt+2X6Zi1jMnmRtdkjPb7jUndjv/l33tg==
+=TOB3
+-----END PGP SIGNATURE-----
 
-> 
-> -- To unsubscribe from this list: send the line "unsubscribe
-> linux-btrfs" in the body of a message to majordomo@vger.kernel.org 
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html .
-> 
-
+--nextPart2977095.WJ55d2GMuM--

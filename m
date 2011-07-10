@@ -1,51 +1,48 @@
-From: Stephane Chazelas <stephane_chazelas@yahoo.fr>
-Subject: Re: Memory leak?
-Date: Sun, 10 Jul 2011 06:58:33 +0100
-Message-ID: <20110710055833.GA4277@yahoo.fr>
-References: <20110703190913.GA4474@yahoo.fr>
- <CAE5mzvhZc4afuBTT0GrDvPXKaSwYeyPdyiQaYPjCTmvzBahr7g@mail.gmail.com>
- <20110706081111.GA6931@yahoo.fr>
- <20110708124429.GB4284@yahoo.fr>
- <1310137241-sup-8158@shiny>
- <20110708154123.GA17886@yahoo.fr>
- <1310141349-sup-9515@shiny>
- <20110708200412.GG4284@yahoo.fr>
- <1310155908-sup-9183@shiny>
- <20110709070955.GA4294@yahoo.fr>
+From: Felix Blanke <felixblanke@gmail.com>
+Subject: Re: Kernel Modules
+Date: Sun, 10 Jul 2011 02:56:28 -0400
+Message-ID: <4E194D1C.9060707@gmail.com>
+References: <BpWht+my1uB@helmut.hullen.de>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Cc: cwillu <cwillu@cwillu.com>,
-	linux-btrfs <linux-btrfs@vger.kernel.org>
-To: Chris Mason <chris.mason@oracle.com>
+Content-Type: text/plain; charset=ISO-8859-1; format=flowed
+Cc: Helmut Hullen <Hullen@t-online.de>, linux-btrfs@vger.kernel.org
+To: helmut@hullen.de
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <20110709070955.GA4294@yahoo.fr>
+In-Reply-To: <BpWht+my1uB@helmut.hullen.de>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-2011-07-09 08:09:55 +0100, Stephane Chazelas:
-> 2011-07-08 16:12:28 -0400, Chris Mason:
-> [...]
-> > > I'm running a "dstat -df" at the same time and I'm seeing
-> > > substantive amount of disk writes on the disks that hold the
-> > > source FS (and I'm rsyncing from read-only snapshot subvolumes
-> > > in case you're thinking of atimes) almost more than onto the
-> > > drive holding the target FS!?
-> > 
-> > These are probably atime updates.  You can completely disable them with
-> > mount -o noatime.
-> [...]
-> 
-> I don't think it is. First, as I said, I'm rsyncing from
-> read-only snapshots (and I could see atimes were not updated)
-> and nothing else is running. Then now looking at the traces this
-> morning, There was a lot written in the first minutes, then it
-> calmed down.
-[...]
+Did you ever say something positive about btrfs? :D All I read from in 
+the last months is complaining about btrfs.
+In this case it was his fault because he forget to update the fstab. Im 
+pretty sure it was also your fault when you screwed up your 2.6.38.5 
+kernel...
+I'm sorry but it seems that 90% for your comments are useless and they 
+sound like you only want to say something bad about btrfs.
 
-How embarrassing, sorry
+Regards,
+Felix
 
-In that instance I wasn't rsyncing from the right place, so I
-was indeed copying non-readonly volumes before copying readonly
-ones. So, those writes were probably due to atimes.
-
--- 
-Stephane
+On 7/9/11 1:33 PM, Helmut Hullen wrote:
+> Hallo, Cacook,
+>
+> Du meintest am 09.07.11:
+>
+>> Just compiled a custom kernel, but unable to mount a btrfs partition.
+>>   It essentially says 'unrecognized filesystem'.  What could be
+>> missing?
+>
+> Perhaps you only need a newer kernel. Sounds funny, but  some days ago I
+> had a similar problem, with kernel 2.6.38.5
+>
+> Then I compiled kernel 2.6.39.2 - all worked as well as (about) a week
+> ago.
+>
+> Maybe I can't reproduce this behaviour, but I don't want to see it again
+> - restoring more than 4 TByte is no fun.
+>
+> Viele Gruesse!
+> Helmut
+> --
+> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
+> the body of a message to majordomo@vger.kernel.org
+> More majordomo info at  http://vger.kernel.org/majordomo-info.html

@@ -1,126 +1,190 @@
-From: Jeremy Sanders <jeremy@jeremysanders.net>
-Subject: Re: btrfs hang in flush-btrfs-5
-Date: Mon, 11 Jul 2011 12:40:34 +0100
-Message-ID: <ivenfi$iph$1@dough.gmane.org>
-References: <iv6ntd$3o5$1@dough.gmane.org>
+From: "Goffredo Baroncelli <kreijack@libero.it>" <kreijack@libero.it>
+Subject: R: [PATCH V2] Btrfs-progs: add "btrfs subvolume get-default"
+ subcommand
+Date: Mon, 11 Jul 2011 14:02:45 +0200 (CEST)
+Message-ID: <1989742.2131011310385765409.JavaMail.defaultUser@defaultHost>
+Reply-To: "Goffredo Baroncelli <kreijack@libero.it>" <kreijack@libero.it>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="ISO-8859-1"
-To: linux-btrfs@vger.kernel.org
+Content-Type: text/plain;charset="UTF-8"
+Cc: <linux-btrfs@vger.kernel.org>
+To: <xin.zhong@intel.com>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Jeremy Sanders wrote:
+>----Messaggio originale----
+>Da: xin.zhong@intel.com
+>Data: 11/07/2011 10.56
+>A: <linux-btrfs@vger.kernel.org>
+>Cc: <xin.zhong@intel.com>
+>Ogg: [PATCH V2] Btrfs-progs: add &quot;btrfs subvolume get-default&quot; 
+subcommand
+>
+>Add subcommand to get the default subvolume of btrfs filesystem
+>
+>Reported-by: Yang, Yi <yi.y.yang@intel.com>
+>Signed-off-by: Zhong, Xin <xin.zhong@intel.com>
+>---
+> btrfs-list.c |   57 
++++++++++++++++++++++++++++++++++++++++++++++++++++++++--
+> btrfs.c      |    3 +++
+> btrfs_cmds.c |   31 ++++++++++++++++++++++++++++++-
+> btrfs_cmds.h |    3 ++-
+> 4 files changed, 90 insertions(+), 4 deletions(-)
 
-> Hi - I'm trying btrfs with kernel 2.6.38.8-32.fc15.x86_64 (a Fedora
-> kernel). I'm just doing a tar-to-tar copy onto the file system with
-> compress- force=zlib. Here are some traces of the stuck processes.
+please update the man page too.
 
-I've managed to reproduce the hang using the latest btrfs from the 
-repository. I had to remove some of the tracing lines to get it to compile 
-under 2.6.38.8 and an ioctl which wasn't defined. Here is is where it is 
-stuck:
+>
+>diff --git a/btrfs-list.c b/btrfs-list.c
+>index 93766a8..aa6a9b4 100644
+>--- a/btrfs-list.c
+>+++ b/btrfs-list.c
+>@@ -536,7 +536,7 @@ build:
+> 	return full;
+[...]
+>+	/* search dir item */
+>+	sk->max_type = BTRFS_DIR_ITEM_KEY;
+>+	sk->min_type = BTRFS_DIR_ITEM_KEY;
+>+
+>+	sk->max_objectid = BTRFS_ROOT_TREE_DIR_OBJECTID;
+>+	sk->min_objectid = BTRFS_ROOT_TREE_DIR_OBJECTID;
+>+	sk->max_offset = (u64)-1;
+>+	sk->max_transid = (u64)-1;
+>+
+[...]
+>+		/* go through each item to find dir item named "default" */
+>+		for (i = 0; i < sk->nr_items; i++) {
+>+			sh = (struct btrfs_ioctl_search_header *)(args.buf +
+>+								  off);
+>+			off += sizeof(*sh);
+>+			if (sh->type == BTRFS_DIR_ITEM_KEY) {
+>+				di = (struct btrfs_dir_item *)(args.buf + off);
+>+				name_len = le16_to_cpu(di->name_len);
+>+				name = (char *)di + sizeof(struct btrfs_dir_item);
+>+				if (!strncmp("default", name, name_len)) {
+>+					subvol_id = btrfs_disk_key_objectid(
+>+						&di->location);
+>+					break;
+>+				}
+>+			}
+>+
+>+			off += sh->len;
+>+		}
 
-[ 8390.923737] flush-btrfs-4   D ffff88005aeef480     0  2965      2 
-0x00000080
-[ 8390.923907]  ffff8800026cb720 0000000000000046 ffff8800026cb690 
-ffffffff00000001
-[ 8390.924037]  0000000000013840 0000000000013840 0000000000013840 
-ffff88005931ae60
-[ 8390.924037]  0000000000013840 ffff8800026cbfd8 0000000000013840 
-0000000000013840
-[ 8390.924037] Call Trace:
-[ 8390.924037]  [<ffffffff810e03e7>] ? sync_page+0x0/0x4d
-[ 8390.924037]  [<ffffffff8148ad2f>] io_schedule+0x47/0x62
-[ 8390.924037]  [<ffffffff810e0430>] sync_page+0x49/0x4d
-[ 8390.924037]  [<ffffffff8148b1cc>] __wait_on_bit_lock+0x46/0x8f
-[ 8390.924037]  [<ffffffff810e038c>] __lock_page+0x66/0x6d
-[ 8390.924037]  [<ffffffff8107374c>] ? wake_bit_function+0x0/0x31
-[ 8390.924037]  [<ffffffff8104767a>] ? should_resched+0xe/0x2e
-[ 8390.924037]  [<ffffffffa0541727>] lock_page+0x3d/0x41 [btrfs]
-[ 8390.924037]  [<ffffffffa0541d22>] lock_delalloc_pages+0xb7/0x1a2 [btrfs]
-[ 8390.924037]  [<ffffffffa05439b9>] 
-find_lock_delalloc_range.clone.18+0xd9/0x1cb [btrfs]
-[ 8390.924037]  [<ffffffff8123fe95>] ? __lookup_tag+0xb9/0x123
-[ 8390.924037]  [<ffffffffa05442ce>] __extent_writepage+0x156/0x561 [btrfs]
-[ 8390.924037]  [<ffffffff8123ff80>] ? 
-radix_tree_gang_lookup_tag_slot+0x81/0xa2
-[ 8390.924037]  [<ffffffff810e00d5>] ? find_get_pages_tag+0x6f/0xd5
-[ 8390.924037]  [<ffffffffa054480d>] 
-extent_write_cache_pages.clone.9.clone.16+0x134/0x2a1 [btrfs]
-[ 8390.924037]  [<ffffffffa0544bea>] extent_writepages+0x47/0x5c [btrfs]
-[ 8390.924037]  [<ffffffffa052b78c>] ? btrfs_get_extent+0x0/0x77f [btrfs]
-[ 8390.924037]  [<ffffffff81073620>] ? bit_waitqueue+0x17/0xa9
-[ 8390.924037]  [<ffffffffa052a980>] btrfs_writepages+0x27/0x29 [btrfs]
-[ 8390.924037]  [<ffffffff810e8a0e>] do_writepages+0x21/0x2a
-[ 8390.924037]  [<ffffffff81149aa0>] writeback_single_inode+0x9c/0x19b
-[ 8390.924037]  [<ffffffff81149d9b>] writeback_sb_inodes+0xa1/0x12b
-[ 8390.924037]  [<ffffffff8114a7bc>] writeback_inodes_wb+0x163/0x175
-[ 8390.924037]  [<ffffffff8114aa1d>] wb_writeback+0x24f/0x368
-[ 8390.924037]  [<ffffffff8114acb9>] wb_do_writeback+0x183/0x19e
-[ 8390.924037]  [<ffffffff8148b0f6>] ? schedule_timeout+0xb3/0xe3
-[ 8390.924037]  [<ffffffff8114ad5c>] bdi_writeback_thread+0x88/0x205
-[ 8390.924037]  [<ffffffff8114acd4>] ? bdi_writeback_thread+0x0/0x205
-[ 8390.924037]  [<ffffffff8107326e>] kthread+0x82/0x8a
-[ 8390.924037]  [<ffffffff8100ba64>] kernel_thread_helper+0x4/0x10
-[ 8390.924037]  [<ffffffff810731ec>] ? kthread+0x0/0x8a
-[ 8390.924037]  [<ffffffff8100ba60>] ? kernel_thread_helper+0x0/0x10
+I am not familiar with the "default subvolume key", but are you sure that the 
+key is always in the first set of returned keys ?
 
-[ 8390.933163] tar             D ffff880019053478     0  4195   2953 
-0x00000084
-[ 8390.933163]  ffff8800190533d8 0000000000000086 ffffffff813b9878 
-0000000000000010
-[ 8390.933163]  0000000000013840 0000000000013840 0000000000013840 
-ffff880045beae60
-[ 8390.933163]  0000000000013840 ffff880019053fd8 0000000000013840 
-0000000000013840
-[ 8390.933163] Call Trace:
-[ 8390.933163]  [<ffffffff813b9878>] ? read_pmtmr+0x10/0x17
-[ 8390.933163]  [<ffffffff810e03e7>] ? sync_page+0x0/0x4d
-[ 8390.933163]  [<ffffffff8148ad2f>] io_schedule+0x47/0x62
-[ 8390.933163]  [<ffffffff810e0430>] sync_page+0x49/0x4d
-[ 8390.933163]  [<ffffffff8148b1cc>] __wait_on_bit_lock+0x46/0x8f
-[ 8390.933163]  [<ffffffff810e038c>] __lock_page+0x66/0x6d
-[ 8390.933163]  [<ffffffff8107374c>] ? wake_bit_function+0x0/0x31
-[ 8390.933163]  [<ffffffff8111ec72>] lock_page+0x3d/0x41
-[ 8390.933163]  [<ffffffff8111f61d>] move_to_new_page+0x11e/0x195
-[ 8390.933163]  [<ffffffff8111f9fc>] migrate_pages+0x24e/0x38d
-[ 8390.933163]  [<ffffffff8111501d>] ? compaction_alloc+0x0/0x29a
-[ 8390.933163]  [<ffffffff810f523b>] ? zone_page_state_add+0x2f/0x34
-[ 8390.933163]  [<ffffffff81115735>] compact_zone+0x3f0/0x5e1
-[ 8390.933163]  [<ffffffff81115ad9>] compact_zone_order+0xb0/0xbf
-[ 8390.933163]  [<ffffffff810e6bc6>] ? get_page_from_freelist+0x627/0x670
-[ 8390.933163]  [<ffffffff81115b79>] try_to_compact_pages+0x91/0xe7
-[ 8390.933163]  [<ffffffff810e6cb8>] __alloc_pages_direct_compact+0xa9/0x16f
-[ 8390.933163]  [<ffffffff810e71e7>] __alloc_pages_nodemask+0x469/0x762
-[ 8390.933163]  [<ffffffff81123b15>] ? signal_pending+0x17/0x21
-[ 8390.933163]  [<ffffffff81111c69>] alloc_pages_current+0xb1/0xca
-[ 8390.933163]  [<ffffffff81119f3f>] alloc_slab_page+0x1c/0x4a
-[ 8390.933163]  [<ffffffff8111a9f7>] new_slab+0x52/0x1a7
-[ 8390.933163]  [<ffffffff8111b2dd>] __slab_alloc+0x224/0x302
-[ 8390.933163]  [<ffffffff8124078b>] ? radix_tree_preload+0x34/0x85
-[ 8390.933163]  [<ffffffff8124078b>] ? radix_tree_preload+0x34/0x85
-[ 8390.933163]  [<ffffffff8111b953>] kmem_cache_alloc+0x5b/0xe1
-[ 8390.933163]  [<ffffffff8124078b>] radix_tree_preload+0x34/0x85
-[ 8390.933163]  [<ffffffff810e0740>] add_to_page_cache_locked+0x58/0x124
-[ 8390.933163]  [<ffffffff810e0836>] add_to_page_cache_lru+0x2a/0x58
-[ 8390.933163]  [<ffffffff810e0b58>] find_or_create_page+0x5a/0x8a
-[ 8390.933163]  [<ffffffffa0533e2c>] prepare_pages.clone.9+0xf1/0x30a 
-[btrfs]
-[ 8390.933163]  [<ffffffffa05143c0>] ? block_rsv_add_bytes+0x24/0x4e [btrfs]
-[ 8390.933163]  [<ffffffffa0534358>] 
-__btrfs_buffered_write.clone.11+0x126/0x2a1 [btrfs]
-[ 8390.933163]  [<ffffffff8114a01c>] ? __mark_inode_dirty+0x30/0x169
-[ 8390.933163]  [<ffffffff8113f534>] ? file_update_time+0xf7/0x111
-[ 8390.933163]  [<ffffffffa05348ad>] btrfs_file_aio_write+0x3da/0x492 
-[btrfs]
-[ 8390.933163]  [<ffffffff81133939>] ? pipe_read+0x3bd/0x3d2
-[ 8390.933163]  [<ffffffff810d98a7>] ? __perf_event_task_sched_out+0x27/0x2c
-[ 8390.933163]  [<ffffffff8112b7e2>] do_sync_write+0xcb/0x108
-[ 8390.933163]  [<ffffffff811f72da>] ? security_file_permission+0x2e/0x33
-[ 8390.933163]  [<ffffffff8112be61>] vfs_write+0xac/0xff
-[ 8390.933163]  [<ffffffff8112c068>] sys_write+0x4a/0x6e
-[ 8390.933163]  [<ffffffff8100ac42>] system_call_fastpath+0x16/0x1b
+>+	}
+>+
+> 	/* now that we have all the subvol-relative paths filled in,
+> 	 * we have to string the subvols together so that we can get
+> 	 * a path all the way back to the FS root
+>@@ -650,7 +698,12 @@ int list_subvols(int fd)
+> 	while (n) {
+> 		struct root_info *entry;
+> 		entry = rb_entry(n, struct root_info, rb_node);
+>-		resolve_root(&root_lookup, entry);
+>+		if(!get_default)
+>+			resolve_root(&root_lookup, entry);
+>+		/* we only want the default subvolume */
+>+		else if(subvol_id == entry->root_id)
+>+			resolve_root(&root_lookup, entry);
+>+		
 
-Jeremy
+What happens if there no is a default subvolume (for example a very old btrfs 
+filesystem, and/or after removing the "default" subvolume) ?
+I suggest to handle this case printing something like "No default subvolume 
+found"
+
+
+BR
+G.Baroncelli
+	
+> 		n = rb_prev(n);
+> 	}
+> 
+>diff --git a/btrfs.c b/btrfs.c
+>index 46314cf..6b73f88 100644
+>--- a/btrfs.c
+>+++ b/btrfs.c
+>@@ -73,6 +73,9 @@ static struct Command commands[] = {
+> 		"Set the subvolume of the filesystem <path> which will be mounted\n"
+> 		"as default."
+> 	},
+>+	{ do_get_default_subvol, 1, "subvolume get-default", "<path>\n"
+>+		"Get the default subvolume of a filesystem."
+>+	},
+> 	{ do_fssync, 1,
+> 	  "filesystem sync", "<path>\n"
+> 		"Force a sync on the filesystem <path>."
+>diff --git a/btrfs_cmds.c b/btrfs_cmds.c
+>index 8031c58..11c56f6 100644
+>--- a/btrfs_cmds.c
+>+++ b/btrfs_cmds.c
+>@@ -301,7 +301,7 @@ int do_subvol_list(int argc, char **argv)
+> 		fprintf(stderr, "ERROR: can't access '%s'\n", subvol);
+> 		return 12;
+> 	}
+>-	ret = list_subvols(fd);
+>+	ret = list_subvols(fd, 0);
+> 	if (ret)
+> 		return 19;
+> 	return 0;
+>@@ -834,6 +834,35 @@ int do_set_default_subvol(int nargs, char **argv)
+> 	return 0;
+> }
+> 
+>+int do_get_default_subvol(int nargs, char **argv)
+>+{
+>+	int fd;
+>+	int ret;
+>+	char *subvol;
+>+
+>+	subvol = argv[1];
+>+
+>+	ret = test_issubvolume(subvol);
+>+	if (ret < 0) {
+>+		fprintf(stderr, "ERROR: error accessing '%s'\n", subvol);
+>+		return 12;
+>+	}
+>+	if (!ret) {
+>+		fprintf(stderr, "ERROR: '%s' is not a subvolume\n", subvol);
+>+		return 13;
+>+	}
+>+
+>+	fd = open_file_or_dir(subvol);
+>+	if (fd < 0) {
+>+		fprintf(stderr, "ERROR: can't access '%s'\n", subvol);
+>+		return 12;
+>+	}
+>+	ret = list_subvols(fd, 1);
+>+	if (ret)
+>+		return 19;
+>+	return 0;
+>+}
+>+
+> int do_df_filesystem(int nargs, char **argv)
+> {
+> 	struct btrfs_ioctl_space_args *sargs;
+>diff --git a/btrfs_cmds.h b/btrfs_cmds.h
+>index 7bde191..9cf1ca1 100644
+>--- a/btrfs_cmds.h
+>+++ b/btrfs_cmds.h
+>@@ -28,7 +28,8 @@ int do_scan(int nargs, char **argv);
+> int do_resize(int nargs, char **argv);
+> int do_subvol_list(int nargs, char **argv);
+> int do_set_default_subvol(int nargs, char **argv);
+>-int list_subvols(int fd);
+>+int do_get_default_subvol(int nargs, char **argv);
+>+int list_subvols(int fd, int get_default);
+> int do_df_filesystem(int nargs, char **argv);
+> int find_updated_files(int fd, u64 root_id, u64 oldest_gen);
+> int do_find_newer(int argc, char **argv);
+>-- 
+>1.7.0.4
+>
+>--
+>To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
+>the body of a message to majordomo@vger.kernel.org
+>More majordomo info at  http://vger.kernel.org/majordomo-info.html
 
 

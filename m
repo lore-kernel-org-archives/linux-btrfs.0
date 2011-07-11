@@ -1,67 +1,219 @@
-From: =?iso-8859-1?Q?Jo=E3o_Eduardo_Lu=EDs?= <jecluis@gmail.com>
-Subject: last_index variable in btrfs_buffered_write function
-Date: Mon, 11 Jul 2011 17:56:25 +0100
-Message-ID: <28FB38ED-FC82-4EAD-BED8-330C8FA9AF83@gmail.com>
-Mime-Version: 1.0 (Apple Message framework v1084)
-Content-Type: multipart/signed; protocol="application/pgp-signature"; micalg=pgp-sha1; boundary="Apple-Mail-13--763780003"
-To: linux-btrfs <linux-btrfs@vger.kernel.org>
+From: Jan Schmidt <list.btrfs@jan-o-sch.net>
+Subject: [PATCH v2 1/3] Btrfs-progs: btrfs-list: split list_subvols
+Date: Mon, 11 Jul 2011 19:47:57 +0200
+Message-ID: <8838579cff0333e7df836111fc5aa0f64423526c.1310405883.git.list.btrfs@jan-o-sch.net>
+References: <cover.1310405883.git.list.btrfs@jan-o-sch.net>
+To: chris.mason@oracle.com, linux-btrfs@vger.kernel.org
 Return-path: <linux-btrfs-owner@vger.kernel.org>
+In-Reply-To: <cover.1310405883.git.list.btrfs@jan-o-sch.net>
+In-Reply-To: <cover.1310405883.git.list.btrfs@jan-o-sch.net>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-This is an OpenPGP/MIME signed message (RFC 2440 and 3156)
---Apple-Mail-13--763780003
-Content-Transfer-Encoding: quoted-printable
-Content-Type: text/plain; charset=iso-8859-1
+split list_subvols to separate functions and allow printing only in the
+containing function. lets us make use of those functions when resolving
+logical addresses.
 
-Hello.
-
-Am I reading the code the wrong way, or is the 'last_index' variable in =
-'__btrfs_buffered_write()' (and previously used in =
-'btrfs_file_aio_write()') irrelevant?=20
-
-It appears to just be used in 'prepare_pages()', passed as an argument, =
-but never actually used by this function.
-
-Furthermore, I'm not sure what is intended with this variable, but if =
-the idea is to assign it with the  last page in the range, then I would =
-say that instead of
-
-> last_index =3D (pos + iov_iter_count(i)) >> PAGE_CACHE_SHIFT;
-
-it should be
-
->  last_index =3D (pos + iov_iter_count(i) - 1) >> PAGE_CACHE_SHIFT;
-
-Then again, I may be missing something.
-
-Cheers.
-
+Signed-off-by: Jan Schmidt <list.btrfs@jan-o-sch.net>
 ---
-Jo=E3o Eduardo Lu=EDs
-gpg key: 477C26E5 from pool.keyserver.eu=20
+ btrfs-list.c |  104 ++++++++++++++++++++++++++++++++++++++-------------------
+ 1 files changed, 69 insertions(+), 35 deletions(-)
 
+diff --git a/btrfs-list.c b/btrfs-list.c
+index 07b179a..dd685c2 100644
+--- a/btrfs-list.c
++++ b/btrfs-list.c
+@@ -199,10 +199,9 @@ static int add_root(struct root_lookup *root_lookup,
+  * This can't be called until all the root_info->path fields are filled
+  * in by lookup_ino_path
+  */
+-static int resolve_root(struct root_lookup *rl, struct root_info *ri, int print_parent)
++static int resolve_root(struct root_lookup *rl, struct root_info *ri,
++			u64 *root_id, u64 *parent_id, u64 *top_id, char **path)
+ {
+-	u64 top_id;
+-	u64 parent_id = 0;
+ 	char *full_path = NULL;
+ 	int len = 0;
+ 	struct root_info *found;
+@@ -211,6 +210,7 @@ static int resolve_root(struct root_lookup *rl, struct root_info *ri, int print_
+ 	 * we go backwards from the root_info object and add pathnames
+ 	 * from parent directories as we go.
+ 	 */
++	*parent_id = 0;
+ 	found = ri;
+ 	while (1) {
+ 		char *tmp;
+@@ -234,13 +234,12 @@ static int resolve_root(struct root_lookup *rl, struct root_info *ri, int print_
+ 
+ 		next = found->ref_tree;
+ 		/* record the first parent */
+-		if ( parent_id == 0 ) {
+-			parent_id = next;
+-		}
++		if (*parent_id == 0)
++			*parent_id = next;
+ 
+ 		/* if the ref_tree refers to ourselves, we're at the top */
+ 		if (next == found->root_id) {
+-			top_id = next;
++			*top_id = next;
+ 			break;
+ 		}
+ 
+@@ -250,20 +249,15 @@ static int resolve_root(struct root_lookup *rl, struct root_info *ri, int print_
+ 		 */
+ 		found = tree_search(&rl->root, next);
+ 		if (!found) {
+-			top_id = next;
++			*top_id = next;
+ 			break;
+ 		}
+ 	}
+-	if (print_parent) {
+-		printf("ID %llu parent %llu top level %llu path %s\n",
+-		       (unsigned long long)ri->root_id, (unsigned long long)parent_id, (unsigned long long)top_id,
+-			full_path);
+-	} else {
+-		printf("ID %llu top level %llu path %s\n",
+-		       (unsigned long long)ri->root_id, (unsigned long long)top_id,
+-			full_path);
+-	}
+-	free(full_path);
++
++	*root_id = ri->root_id;
++	*parent_id = ri->root_id;
++	*path = full_path;
++
+ 	return 0;
+ }
+ 
+@@ -560,10 +554,8 @@ build:
+ 	return full;
+ }
+ 
+-int list_subvols(int fd, int print_parent)
++static int __list_subvol_search(int fd, struct root_lookup *root_lookup)
+ {
+-	struct root_lookup root_lookup;
+-	struct rb_node *n;
+ 	int ret;
+ 	struct btrfs_ioctl_search_args args;
+ 	struct btrfs_ioctl_search_key *sk = &args.key;
+@@ -574,9 +566,11 @@ int list_subvols(int fd, int print_parent)
+ 	char *name;
+ 	u64 dir_id;
+ 	int i;
+-	int e;
+ 
+-	root_lookup_init(&root_lookup);
++	root_lookup_init(root_lookup);
++	memset(&args, 0, sizeof(args));
++
++	root_lookup_init(root_lookup);
+ 
+ 	memset(&args, 0, sizeof(args));
+ 
+@@ -603,12 +597,8 @@ int list_subvols(int fd, int print_parent)
+ 
+ 	while(1) {
+ 		ret = ioctl(fd, BTRFS_IOC_TREE_SEARCH, &args);
+-		e = errno;
+-		if (ret < 0) {
+-			fprintf(stderr, "ERROR: can't perform the search - %s\n",
+-				strerror(e));
++		if (ret < 0)
+ 			return ret;
+-		}
+ 		/* the ioctl returns the number of item it found in nr_items */
+ 		if (sk->nr_items == 0)
+ 			break;
+@@ -629,7 +619,7 @@ int list_subvols(int fd, int print_parent)
+ 				name = (char *)(ref + 1);
+ 				dir_id = btrfs_stack_root_ref_dirid(ref);
+ 
+-				add_root(&root_lookup, sh->objectid, sh->offset,
++				add_root(root_lookup, sh->objectid, sh->offset,
+ 					 dir_id, name, name_len);
+ 			}
+ 
+@@ -657,11 +647,15 @@ int list_subvols(int fd, int print_parent)
+ 		} else
+ 			break;
+ 	}
+-	/*
+-	 * now we have an rbtree full of root_info objects, but we need to fill
+-	 * in their path names within the subvol that is referencing each one.
+-	 */
+-	n = rb_first(&root_lookup.root);
++
++	return 0;
++}
++
++static int __list_subvol_fill_paths(int fd, struct root_lookup *root_lookup)
++{
++	struct rb_node *n;
++
++	n = rb_first(&root_lookup->root);
+ 	while (n) {
+ 		struct root_info *entry;
+ 		int ret;
+@@ -672,6 +666,30 @@ int list_subvols(int fd, int print_parent)
+ 		n = rb_next(n);
+ 	}
+ 
++	return 0;
++}
++
++int list_subvols(int fd, int print_parent)
++{
++	struct root_lookup root_lookup;
++	struct rb_node *n;
++	int ret;
++
++	ret = __list_subvol_search(fd, &root_lookup);
++	if (ret) {
++		fprintf(stderr, "ERROR: can't perform the search - %s\n",
++				strerror(errno));
++		return ret;
++	}
++
++	/*
++	 * now we have an rbtree full of root_info objects, but we need to fill
++	 * in their path names within the subvol that is referencing each one.
++	 */
++	ret = __list_subvol_fill_paths(fd, &root_lookup);
++	if (ret < 0)
++		return ret;
++
+ 	/* now that we have all the subvol-relative paths filled in,
+ 	 * we have to string the subvols together so that we can get
+ 	 * a path all the way back to the FS root
+@@ -679,8 +697,24 @@ int list_subvols(int fd, int print_parent)
+ 	n = rb_last(&root_lookup.root);
+ 	while (n) {
+ 		struct root_info *entry;
++		u64 root_id;
++		u64 level;
++		u64 parent_id;
++		char *path;
+ 		entry = rb_entry(n, struct root_info, rb_node);
+-		resolve_root(&root_lookup, entry, print_parent);
++		resolve_root(&root_lookup, entry, &root_id, &parent_id,
++				&level, &path);
++		if (print_parent) {
++			printf("ID %llu parent %llu top level %llu path %s\n",
++				(unsigned long long)root_id,
++				(unsigned long long)parent_id,
++				(unsigned long long)level, path);
++		} else {
++			printf("ID %llu top level %llu path %s\n",
++				(unsigned long long)root_id,
++				(unsigned long long)level, path);
++		}
++		free(path);
+ 		n = rb_prev(n);
+ 	}
+ 
+-- 
+1.7.3.4
 
-
-
-
-
---Apple-Mail-13--763780003
-content-type: application/pgp-signature; x-mac-type=70674453;
-	name=PGP.sig
-content-description: This is a digitally signed message part
-content-disposition: inline; filename=PGP.sig
-content-transfer-encoding: 7bit
-
------BEGIN PGP SIGNATURE-----
-Version: GnuPG/MacGPG2 v2.0.16 (Darwin)
-
-iQEcBAEBAgAGBQJOGys5AAoJEJ9vvxhHfCblc8EH/iVUdtzdxolmdu+B3MoMlAdM
-hCWfklFIdgfU+DfHMXUp3VcbnAiAPE9i0LTVr8/TjkoZMtdlQ56wnvxcW7KUoPVa
-clFq3vX0o27NSbT6lmBkWqPv8Zsq79YxqD5YjcZenDFGbk7t32U+EVhhgaJkje29
-pQwyXSl9/Qsnbmsmv0Z6hf/x5kCKDp0EKMyRN1klEAncH5P5VAI2YJf3tV2h173V
-anLeCnvdR0jmJq3oeQz1Nok6CJMF/WS3ANo122R7Mc3O/BTUPVJj98B40IB+tEKx
-NAjOjGv4ao0oAiIuYC0QqN0sGmVbqy7MrzNSnFZwijKAisHA1tT77Sp4XPUfR/M=
-=pvEr
------END PGP SIGNATURE-----
-
---Apple-Mail-13--763780003--

@@ -1,102 +1,42 @@
-From: Josef Bacik <josef@redhat.com>
-Subject: [PATCH] Btrfs: use find_or_create_page instead of grab_cache_page
-Date: Mon, 11 Jul 2011 10:51:30 -0400
-Message-ID: <1310395890-11805-1-git-send-email-josef@redhat.com>
-To: linux-btrfs@vger.kernel.org
+From: Chris Mason <chris.mason@oracle.com>
+Subject: Re: Memory leak?
+Date: Mon, 11 Jul 2011 11:00:19 -0400
+Message-ID: <1310396262-sup-7882@shiny>
+References: <20110703190913.GA4474@yahoo.fr> <CAE5mzvhZc4afuBTT0GrDvPXKaSwYeyPdyiQaYPjCTmvzBahr7g@mail.gmail.com> <20110706081111.GA6931@yahoo.fr> <20110708124429.GB4284@yahoo.fr> <1310137241-sup-8158@shiny> <20110709170959.GC4294@yahoo.fr> <CAE5mzvhZwrtEZ8FUfcYzoMsRwuPjNDn=iCZ6_-CKaifEPZWAKA@mail.gmail.com> <20110709203649.GE4294@yahoo.fr> <1310301809-sup-9903@shiny> <20110710183728.GB4277@yahoo.fr> <20110711090121.GA2537@yahoo.fr>
+Content-Type: text/plain; charset=UTF-8
+Cc: cwillu <cwillu@cwillu.com>,
+	linux-btrfs <linux-btrfs@vger.kernel.org>
+To: Stephane Chazelas <stephane_chazelas@yahoo.fr>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
+In-reply-to: <20110711090121.GA2537@yahoo.fr>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-grab_cache_page will use mapping_gfp_mask(), which for all inodes is set to
-GFP_HIGHUSER_MOVABLE.  So instead use find_or_create_page in all cases where we
-need GFP_NOFS so we don't deadlock.  Thanks,
+Excerpts from Stephane Chazelas's message of 2011-07-11 05:01:21 -0400:
+> 2011-07-10 19:37:28 +0100, Stephane Chazelas:
+> > 2011-07-10 08:44:34 -0400, Chris Mason:
+> > [...]
+> > > Great, we're on the right track.  Does it trigger with mount -o compress
+> > > instead of mount -o compress_force?
+> > [...]
+> > 
+> > It does trigger. I get that same "invalid opcode".
+> > 
+> > BTW, I tried with CONFIG_SLUB and slub_debug and no more useful
+> > information than with SLAB_DEBUG.
+> > 
+> > I'm trying now without dmcrypt. Then I won't have much bandwidth
+> > for testing.
+> [...]
+> 
+> Same without dmcrypt. So to sum up, BUG() reached in btrfs-fixup
+> thread when doing an 
 
-Signed-off-by: Josef Bacik <josef@redhat.com>
----
- fs/btrfs/file.c             |    3 ++-
- fs/btrfs/free-space-cache.c |    4 ++--
- fs/btrfs/inode.c            |    2 +-
- fs/btrfs/ioctl.c            |    4 ++--
- fs/btrfs/relocation.c       |    3 ++-
- 5 files changed, 9 insertions(+), 7 deletions(-)
+This is some fantastic debugging, thank you.  I know you tested with
+slab debugging turned on, did you have CONFIG_DEBUG_PAGEALLOC on as
+well?
 
-diff --git a/fs/btrfs/file.c b/fs/btrfs/file.c
-index 59cbdb1..3c8c435 100644
---- a/fs/btrfs/file.c
-+++ b/fs/btrfs/file.c
-@@ -1081,7 +1081,8 @@ static noinline int prepare_pages(struct btrfs_root *root, struct file *file,
- 
- again:
- 	for (i = 0; i < num_pages; i++) {
--		pages[i] = grab_cache_page(inode->i_mapping, index + i);
-+		pages[i] = find_or_create_page(inode->i_mapping, index + i,
-+					       GFP_NOFS);
- 		if (!pages[i]) {
- 			faili = i - 1;
- 			err = -ENOMEM;
-diff --git a/fs/btrfs/free-space-cache.c b/fs/btrfs/free-space-cache.c
-index fd7fa2a..6377713 100644
---- a/fs/btrfs/free-space-cache.c
-+++ b/fs/btrfs/free-space-cache.c
-@@ -307,7 +307,7 @@ int __load_free_space_cache(struct btrfs_root *root, struct inode *inode,
- 		if (!num_entries && !num_bitmaps)
- 			break;
- 
--		page = grab_cache_page(inode->i_mapping, index);
-+		page = find_or_create_page(inode->i_mapping, index, GFP_NOFS);
- 		if (!page)
- 			goto free_cache;
- 
-@@ -594,7 +594,7 @@ int __btrfs_write_out_cache(struct btrfs_root *root, struct inode *inode,
- 	 * know and don't freak out.
- 	 */
- 	while (index < num_pages) {
--		page = grab_cache_page(inode->i_mapping, index);
-+		page = find_or_create_page(inode->i_mapping, index, GFP_NOFS);
- 		if (!page) {
- 			int i;
- 
-diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
-index e6ede58..faf516e 100644
---- a/fs/btrfs/inode.c
-+++ b/fs/btrfs/inode.c
-@@ -3398,7 +3398,7 @@ static int btrfs_truncate_page(struct address_space *mapping, loff_t from)
- 
- 	ret = -ENOMEM;
- again:
--	page = grab_cache_page(mapping, index);
-+	page = find_or_create_page(mapping, index, GFP_NOFS);
- 	if (!page) {
- 		btrfs_delalloc_release_space(inode, PAGE_CACHE_SIZE);
- 		goto out;
-diff --git a/fs/btrfs/ioctl.c b/fs/btrfs/ioctl.c
-index a3c4751..09c9a8d 100644
---- a/fs/btrfs/ioctl.c
-+++ b/fs/btrfs/ioctl.c
-@@ -867,8 +867,8 @@ again:
- 	/* step one, lock all the pages */
- 	for (i = 0; i < num_pages; i++) {
- 		struct page *page;
--		page = grab_cache_page(inode->i_mapping,
--					    start_index + i);
-+		page = find_or_create_page(inode->i_mapping,
-+					    start_index + i, GFP_NOFS);
- 		if (!page)
- 			break;
- 
-diff --git a/fs/btrfs/relocation.c b/fs/btrfs/relocation.c
-index 5e0a3dc..59bb176 100644
---- a/fs/btrfs/relocation.c
-+++ b/fs/btrfs/relocation.c
-@@ -2955,7 +2955,8 @@ static int relocate_file_extent_cluster(struct inode *inode,
- 			page_cache_sync_readahead(inode->i_mapping,
- 						  ra, NULL, index,
- 						  last_index + 1 - index);
--			page = grab_cache_page(inode->i_mapping, index);
-+			page = find_or_create_page(inode->i_mapping, index,
-+						   GFP_NOFS);
- 			if (!page) {
- 				btrfs_delalloc_release_metadata(inode,
- 							PAGE_CACHE_SIZE);
--- 
-1.7.5.2
+It's probably something to do with a specific file, but pulling that
+file out without extra printks is going to be tricky.  I'll see if I can
+reproduce it here.
 
+-chris

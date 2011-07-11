@@ -1,58 +1,51 @@
-From: Jan Schmidt <list.btrfs@jan-o-sch.net>
-Subject: Re: [PATCH 2/2] add detailed help messages to btrfs command
-Date: Mon, 11 Jul 2011 21:11:24 +0200
-Message-ID: <4E1B4ADC.1000202@jan-o-sch.net>
-References: <201101231339.36599.kario@wit.edu.pl> <201101231342.43637.kario@wit.edu.pl> <4E1B1309.2080408@jan-o-sch.net> <4E1B430C.3020008@libero.it>
+From: Mitch Harder <mitch.harder@sabayonlinux.org>
+Subject: Re: last_index variable in btrfs_buffered_write function
+Date: Mon, 11 Jul 2011 14:38:45 -0500
+Message-ID: <CAKcLGm_wag+9zEwt-=6uNpG203EP+vHcOA9NG0t=xJACiiOGuQ@mail.gmail.com>
+References: <28FB38ED-FC82-4EAD-BED8-330C8FA9AF83@gmail.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset=ISO-8859-1
-Cc: Hubert Kario <kario@wit.edu.pl>, Hugo Mills <hugo@carfax.org.uk>
-To: Goffredo Baroncelli <kreijack@libero.it>,
-	linux-btrfs@vger.kernel.org
+Cc: linux-btrfs <linux-btrfs@vger.kernel.org>
+To: =?ISO-8859-1?Q?Jo=E3o_Eduardo_Lu=EDs?= <jecluis@gmail.com>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <4E1B430C.3020008@libero.it>
+In-Reply-To: <28FB38ED-FC82-4EAD-BED8-330C8FA9AF83@gmail.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 07/11/2011 08:38 PM, Goffredo Baroncelli wrote:
-> what about generating the man page on the basis of the btrfs help
-> detailed messages ?
-> 
-> My idea is the following:
-> before the function source associated to the command we can put a
-> comment with a detailed help. The comment may be:
-> 
-> [...]
-> /*** man:btrfs subvolume create
->  *
->  *  btrfs subvolume create <path>
->  *     create a new subvolume
->  *
->  *  The command [b]btrfs subvolume create[b] is used.....
->  *
->  ***/
-> 
-> void do_create_subvolume(int argc, char **argv)
-> {
-> [...]
+2011/7/11 Jo=E3o Eduardo Lu=EDs <jecluis@gmail.com>:
+> Hello.
+>
+> Am I reading the code the wrong way, or is the 'last_index' variable =
+in '__btrfs_buffered_write()' (and previously used in 'btrfs_file_aio_w=
+rite()') irrelevant?
+>
+> It appears to just be used in 'prepare_pages()', passed as an argumen=
+t, but never actually used by this function.
+>
+> Furthermore, I'm not sure what is intended with this variable, but if=
+ the idea is to assign it with the =A0last page in the range, then I wo=
+uld say that instead of
+>
+>> last_index =3D (pos + iov_iter_count(i)) >> PAGE_CACHE_SHIFT;
+>
+> it should be
+>
+>> =A0last_index =3D (pos + iov_iter_count(i) - 1) >> PAGE_CACHE_SHIFT;
+>
+> Then again, I may be missing something.
+>
+> Cheers.
+>
 
-Reminds me of java, but nevertheless, I like the general idea.
+I came to the same conclusion a few months ago when looking at a bug
+in the same area of code.
 
-> A script extracts from the comment in the source both:
-> - the text for the man page
-> - the text for the detailed help.
+The calculation appears to be wrong, but since it's not used anywhere,
+you can't say for certain.  :)
 
-Does anybody have such a script around? I suppose we're not the first
-ones writing help texts and man pages.
-
-> So we can reach the following goals:
-> - the help is linked to the code
-> - is less likely to forget to update the message
-> - the man page, the helps are always aligned
-
-Only, we still will need like short and long help. E.g. the full text in
-the man page may be inappropriate as a --help message. Also, we do need
-a clever idea to get indentation right in the man pages. I fiddled a lot
-on the man pages for scrub parameter indentation (to get the second line
-describing a command line option indented correctly to start below the
-text of the first line, that was).
-
--Jan
+I just haven't gotten around to testing a patch to confirm the hypothes=
+is.
+--
+To unsubscribe from this list: send the line "unsubscribe linux-btrfs" =
+in
+the body of a message to majordomo@vger.kernel.org
+More majordomo info at  http://vger.kernel.org/majordomo-info.html

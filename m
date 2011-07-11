@@ -1,55 +1,51 @@
-From: Chris Samuel <chris@csamuel.org>
+From: "Fajar A. Nugraha" <list@fajar.net>
 Subject: Re: TRIM support
-Date: Mon, 11 Jul 2011 15:53:13 +1000
-Message-ID: <201107111553.17293.chris@csamuel.org>
-References: <CAAeznTr5FMOqyJA9JfP2H-h1rJjasfxUJAeNNnNKhiHCTV03mA@mail.gmail.com> <CAAeznTrXzt+jYByWz3fkSH41qStNfWupWNk8SZt75ousuJ3iYg@mail.gmail.com> <CAG1y0seg-TTgbdr5_xTjaA_rYoW44AF_pPAFC5_nCNG1qEmNHg@mail.gmail.com>
+Date: Mon, 11 Jul 2011 13:04:53 +0700
+Message-ID: <CAG1y0sf=8PdiXwavma7Vc40td_mpEt+uZJBto+OLW_B+M8QVEQ@mail.gmail.com>
+References: <CAAeznTr5FMOqyJA9JfP2H-h1rJjasfxUJAeNNnNKhiHCTV03mA@mail.gmail.com>
+	<1309635918.3774.7.camel@nayuki>
+	<201107101833.31450.chris@csamuel.org>
+	<CAAeznTrXzt+jYByWz3fkSH41qStNfWupWNk8SZt75ousuJ3iYg@mail.gmail.com>
+	<CAG1y0seg-TTgbdr5_xTjaA_rYoW44AF_pPAFC5_nCNG1qEmNHg@mail.gmail.com>
+	<CAAeznTp-XB2eGarkfyVRASyLTULYLz0myPE+GN6TggrxPjv_YA@mail.gmail.com>
 Mime-Version: 1.0
-Content-Type: multipart/signed;
-  boundary="nextPart7805707.pKaGZCQ3dB";
-  protocol="application/pgp-signature";
-  micalg=pgp-sha1
-To: linux-btrfs@vger.kernel.org
+Content-Type: text/plain; charset=ISO-8859-1
+To: linux-btrfs <linux-btrfs@vger.kernel.org>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <CAG1y0seg-TTgbdr5_xTjaA_rYoW44AF_pPAFC5_nCNG1qEmNHg@mail.gmail.com>
+In-Reply-To: <CAAeznTp-XB2eGarkfyVRASyLTULYLz0myPE+GN6TggrxPjv_YA@mail.gmail.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
---nextPart7805707.pKaGZCQ3dB
-Content-Type: Text/Plain;
-  charset="iso-8859-1"
-Content-Transfer-Encoding: quoted-printable
+On Mon, Jul 11, 2011 at 5:34 AM, Leonidas Spyropoulos
+<artafinde@gmail.com> wrote:
+> So any clues for the intel 320 series? I think it doesn't use compression.
 
-On Mon, 11 Jul 2011 07:59:54 AM Fajar A. Nugraha wrote:
+At this point your best bet is to try it yourself and see. If it
+doesn't result in poor performance, then keep on using "-o discard".
 
-> Sandforce-based SSDs have their own way of reducing writes
-> (e.g. by using internal compression), so you don't have to
-> do anything special
+-- 
+Fajar
 
-Not just compression, but also block level de-duplication too
-(i.e. potentially removing the redundancy of btrfs's duplication
-of metadata for safety).
-
-cheers,
-Chris
-=2D-=20
- Chris Samuel  :  http://www.csamuel.org/  :  Melbourne, VIC
-
-This email may come with a PGP signature as a file. Do not panic.
-=46or more info see: http://en.wikipedia.org/wiki/OpenPGP
-
---nextPart7805707.pKaGZCQ3dB
-Content-Type: application/pgp-signature; name=signature.asc 
-Content-Description: This is a digitally signed message part.
-
------BEGIN PGP SIGNATURE-----
-Version: GnuPG v1.4.11 (GNU/Linux)
-
-iQEVAwUAThqPyY1yjaOTJg85AQLKyQgAsn+SbnACFPNQBueGtYGsj5zCTSKe6tfG
-OzTUno6vTBELURqddaf3Y3Y5vyLk5nHnbQ0xMJaLYu/qQn0Kp/rUD9poyHnLNJxj
-05WeNvjVWwz3REKdzxZL505qLYlWDdMjNI73Pjjplu4+kp2xp7/YHFtvYSHmRqQq
-t92b4GxykqEm9HoKSmrqNPhhO5WspsZjOtqkgvRXTZ6O72UjhcXjW7sZfF0pjIPZ
-bpDIAybHD/22ZmS5WahRHLKnm4zXcDhumBKqOlDXERncyeGSgZKMhY2STZTgzJmm
-SmVa6EGzB+m14mWje4pV+edbbPHxLG4eq4Y1H8tFcS9Ia9SZaLqNWw==
-=fPvG
------END PGP SIGNATURE-----
-
---nextPart7805707.pKaGZCQ3dB--
+>
+> On Sun, Jul 10, 2011 at 10:59 PM, Fajar A. Nugraha <list@fajar.net> wrote:
+>> On Mon, Jul 11, 2011 at 3:58 AM, Leonidas Spyropoulos
+>> <artafinde@gmail.com> wrote:
+>>> On Sun, Jul 10, 2011 at 9:33 AM, Chris Samuel <chris@csamuel.org> wrote:
+>>>> On Sun, 3 Jul 2011 05:45:17 AM Calvin Walton wrote:
+>>>> This LWN article from 2009 explains why it can be problematic
+>>>> (especially on SATA drives where TRIM is a non-queued command):
+>>>>
+>>>> https://lwn.net/Articles/347511/
+>>>>
+>>> So the current problem with TRIM in ATA (and SATA) is that it
+>>> introduce delays? As long as it keeps your SSD in a good shape it's
+>>> still better than not having TRIM at all, right?
+>>
+>> Not quite.
+>>
+>> Sandforce-based SSDs have their own way of reducing writes (e.g. by
+>> using internal compression), so you don't have to do anything special.
+>> Also, AFAIK currently TRIM is useless if the drives are behind a
+>> hardware raid controller anyway.
+>>
+>> My Corsair F60 (on a notebook) is actually MUCH SLOWER with -o discard
+>> (i.e. writes capped at 100 iops)

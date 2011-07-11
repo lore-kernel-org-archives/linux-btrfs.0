@@ -1,118 +1,231 @@
-From: Josef Bacik <josef@redhat.com>
-Subject: Re: [GIT PULL] Btrfs updates for 3.1
-Date: Mon, 11 Jul 2011 09:33:18 -0400
-Message-ID: <4E1AFB9E.9080807@redhat.com>
-References: <4E0E3091.9060704@redhat.com>	<4E0F8CC0.8010909@redhat.com> <CAKcLGm9ukUsfp87D0PJ56uYv8DHmFzu8Z7Kq33Bi55+NO=8kTg@mail.gmail.com>
+From: Andreas Philipp <philipp.andreas@gmail.com>
+Subject: Re: [PATCH V2] Btrfs-progs: add "btrfs subvolume get-default" subcommand
+Date: Mon, 11 Jul 2011 16:11:21 +0200
+Message-ID: <4E1B0489.8030703@gmail.com>
+References: <1310374571-20811-1-git-send-email-xin.zhong@intel.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset=ISO-8859-1
-Cc: Chris Mason <chris.mason@oracle.com>,
-	linux-btrfs <linux-btrfs@vger.kernel.org>
-To: Mitch Harder <mitch.harder@sabayonlinux.org>
+Cc: linux-btrfs@vger.kernel.org, Hugo Mills <hugo@carfax.org.uk>
+To: "Zhong, Xin" <xin.zhong@intel.com>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <CAKcLGm9ukUsfp87D0PJ56uYv8DHmFzu8Z7Kq33Bi55+NO=8kTg@mail.gmail.com>
+In-Reply-To: <1310374571-20811-1-git-send-email-xin.zhong@intel.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 07/10/2011 08:20 PM, Mitch Harder wrote:
-> On Sat, Jul 2, 2011 at 4:25 PM, Josef Bacik <josef@redhat.com> wrote:
->> On 07/01/2011 04:39 PM, Josef Bacik wrote:
->>> Hey Chris,
->>>
->>> Since I'm going on vacation next week I wanted to get everything ready for you
->>> in case you get bored with fsck and want to put together a 3.1 tree :).  If you
->>> can pull
->>>
->>> git://git.kernel.org/pub/scm/linux/kernel/git/josef/btrfs-work.git for-chris
->>>
->>> It is based on your for-linus branch.  Here is the shortlog and diffstat
->>>
->>
->> Ugh sorry I had to update the don't panic patch because I'm an idiot.
->> Thanks,
->>
->> Josef
->> --
->> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
->> the body of a message to majordomo@vger.kernel.org
->> More majordomo info at  http://vger.kernel.org/majordomo-info.html
->>
-> 
-> Josef:
-> 
-> I've been testing this series of patches in a 2.6.39.3 kernel merged
-> with the latest 'for-linus' branch in Chris btrfs-unstable repository.
-> 
-> I'm getting a kernel BUG that looks like it could be attributed to the
-> "Btrfs: try to only do one btrfs_search_slot in do_setxattr" patch.
-> 
-> [ 5959.860027] ------------[ cut here ]------------
-> [ 5959.860032] kernel BUG at include/linux/spinlock.h:380!
-> [ 5959.860035] invalid opcode: 0000 [#1] SMP
-> [ 5959.860038] last sysfs file: /sys/kernel/uevent_seqnum
-> [ 5959.860041] CPU 1
-> [ 5959.860042] Modules linked in: snd_seq_midi nvidia(P) lgdt330x
-> cx88_dvb cx88_vp3054_i2c videobuf_dvb snd_ens1371 tuner_simple
-> tuner_types snd_rawmidi tda9887 tda8290 tuner cx8800 cx88_alsa cx8802
-> snd_ac97_codec r8169 i2c_i801 cx88xx tveeprom videobuf_dma_sg
-> btcx_risc videobuf_core ac97_bus
-> [ 5959.860062]
-> [ 5959.860065] Pid: 13521, comm: install Tainted: P
-> 2.6.39.3-git-local-v10+ #1 Gigabyte Technology Co., Ltd.
-> P35-DS3L/P35-DS3L
-> [ 5959.860071] RIP: 0010:[<ffffffff813a4021>]  [<ffffffff813a4021>]
-> btrfs_assert_tree_locked+0x21/0x30
-> [ 5959.860079] RSP: 0018:ffff880005dffaf8  EFLAGS: 00010246
-> [ 5959.860082] RAX: 0000000000003300 RBX: ffff88007be51b40 RCX: 0000000000000001
-> [ 5959.860084] RDX: 0000000000003333 RSI: ffff880005dfe000 RDI: ffff880025993900
-> [ 5959.860087] RBP: ffff880005dffaf8 R08: 0000000000000001 R09: 0000000000000001
-> [ 5959.860089] R10: 0000000000000000 R11: 0000000000000000 R12: ffff88005a8c2800
-> [ 5959.860092] R13: 0000000000000001 R14: 000000000000000b R15: ffff88003e41ebd0
-> [ 5959.860095] FS:  00007f495b017700(0000) GS:ffff88007fd00000(0000)
-> knlGS:0000000000000000
-> [ 5959.860098] CS:  0010 DS: 0000 ES: 0000 CR0: 0000000080050033
-> [ 5959.860100] CR2: 00007f495afdc000 CR3: 000000003482b000 CR4: 00000000000006e0
-> [ 5959.860103] DR0: 0000000000000000 DR1: 0000000000000000 DR2: 0000000000000000
-> [ 5959.860106] DR3: 0000000000000000 DR6: 00000000ffff0ff0 DR7: 0000000000000400
-> [ 5959.860109] Process install (pid: 13521, threadinfo
-> ffff880005dfe000, task ffff880056aaac40)
-> [ 5959.860111] Stack:
-> [ 5959.860113]  ffff880005dffb88 ffffffff813536f7 ffff88000343f000
-> ffffffff8138add4
-> [ 5959.860117]  ffff880078546700 000000000000000b 0000000000000072
-> 0000000000000001
-> [ 5959.860122]  ffff880005dffb88 0000000100000001 0000000000000000
-> 00000efb0343f000
-> [ 5959.860126] Call Trace:
-> [ 5959.860132]  [<ffffffff813536f7>] push_leaf_left+0xc7/0x190
-> [ 5959.860136]  [<ffffffff8138add4>] ? btrfs_item_size+0xe4/0xf0
-> [ 5959.860140]  [<ffffffff81356f6d>] btrfs_del_items+0x39d/0x570
-> [ 5959.860144]  [<ffffffff81365f49>] btrfs_delete_one_dir_name+0xf9/0x100
-> [ 5959.860148]  [<ffffffff8138e251>] do_setxattr+0x191/0x1f0
-> [ 5959.860152]  [<ffffffff81370761>] ? join_transaction.clone.24+0x21/0x220
-> [ 5959.860156]  [<ffffffff8138e493>] __btrfs_setxattr+0x93/0xf0
-> [ 5959.860159]  [<ffffffff813aa2c3>] btrfs_set_acl+0x103/0x230
-> [ 5959.860163]  [<ffffffff813aab1a>] btrfs_acl_chmod+0xea/0xf0
-> [ 5959.860167]  [<ffffffff8113e478>] ? __mark_inode_dirty+0x68/0x200
-> [ 5959.860171]  [<ffffffff8137b9be>] btrfs_setattr+0x9e/0xd0
-> [ 5959.860175]  [<ffffffff81133809>] notify_change+0x189/0x370
-> [ 5959.860179]  [<ffffffff81118a5d>] sys_fchmodat+0xcd/0x100
-> [ 5959.860183]  [<ffffffff810f9adb>] ? do_munmap+0x2eb/0x360
-> [ 5959.860187]  [<ffffffff81118aa8>] sys_chmod+0x18/0x20
-> [ 5959.860191]  [<ffffffff81883ceb>] system_call_fastpath+0x16/0x1b
-> [ 5959.860193] Code: 66 2e 0f 1f 84 00 00 00 00 00 55 48 89 e5 0f 1f
-> 44 00 00 48 8b 47 38 a8 02 75 0e 8b 57 64 89 d0 c1 f8 08 31 d0 84 c0
-> 74 02 c9 c3 <0f> 0b 90 90 90 90 90 90 90 90 90 90 90 90 90 55 48 89 e5
-> 48 83
-> [ 5959.860226] RIP  [<ffffffff813a4021>] btrfs_assert_tree_locked+0x21/0x30
-> [ 5959.860230]  RSP <ffff880005dffaf8>
-> [ 5959.860233] ---[ end trace 56253344f3b39a7c ]---
-> 
-> I'll try dropping the patch to confirm the source, but it's been an
-> intermittent bug.  I haven't run across a simple way to reliably
-> reproduce it.
 
-Oh I see what's going on, if we're trying to overwrite an existing xattr
-we will panic because I just take the path and try to delete the sucker,
-but because the path was originally setup for insertion it unlocked the
-parent's parent and boom.  I will fix this up, thanks for reporting it,
+-----BEGIN PGP SIGNED MESSAGE-----
+Hash: SHA1
+ 
+Would you mind rebasing your patch on Hugo Mills' integration-branch for
+btrfs progs at
+http://git.darksatanic.net/repo/btrfs-progs-unstable.git
+integration-20110705
+since it does not apply on top of all changes which are already there.
+Additionally, I spotted one whitespace error in the patch and marked it
+below.
+ 
+Thanks,
+Andreas Philipp
+ 
+On 11.07.2011 10:56, Zhong, Xin wrote:
+> Add subcommand to get the default subvolume of btrfs filesystem
+>
+> Reported-by: Yang, Yi <yi.y.yang@intel.com>
+> Signed-off-by: Zhong, Xin <xin.zhong@intel.com>
+> ---
+> btrfs-list.c | 57
++++++++++++++++++++++++++++++++++++++++++++++++++++++++--
+> btrfs.c | 3 +++
+> btrfs_cmds.c | 31 ++++++++++++++++++++++++++++++-
+> btrfs_cmds.h | 3 ++-
+> 4 files changed, 90 insertions(+), 4 deletions(-)
+>
+> diff --git a/btrfs-list.c b/btrfs-list.c
+> index 93766a8..aa6a9b4 100644
+> --- a/btrfs-list.c
+> +++ b/btrfs-list.c
+> @@ -536,7 +536,7 @@ build:
+> return full;
+> }
+>
+> -int list_subvols(int fd)
+> +int list_subvols(int fd, int get_default)
+> {
+> struct root_lookup root_lookup;
+> struct rb_node *n;
+> @@ -545,10 +545,12 @@ int list_subvols(int fd)
+> struct btrfs_ioctl_search_key *sk = &args.key;
+> struct btrfs_ioctl_search_header *sh;
+> struct btrfs_root_ref *ref;
+> + struct btrfs_dir_item *di;
+> unsigned long off = 0;
+> int name_len;
+> char *name;
+> u64 dir_id;
+> + u64 subvol_id = 0;
+> int i;
+>
+> root_lookup_init(&root_lookup);
+> @@ -642,6 +644,52 @@ int list_subvols(int fd)
+> n = rb_next(n);
+> }
+>
+> + memset(&args, 0, sizeof(args));
+> +
+> + /* search in the tree of tree roots */
+> + sk->tree_id = BTRFS_ROOT_TREE_OBJECTID;
+> +
+> + /* search dir item */
+> + sk->max_type = BTRFS_DIR_ITEM_KEY;
+> + sk->min_type = BTRFS_DIR_ITEM_KEY;
+> +
+> + sk->max_objectid = BTRFS_ROOT_TREE_DIR_OBJECTID;
+> + sk->min_objectid = BTRFS_ROOT_TREE_DIR_OBJECTID;
+> + sk->max_offset = (u64)-1;
+> + sk->max_transid = (u64)-1;
+> +
+> + /* just a big number, doesn't matter much */
+> + sk->nr_items = 4096;
+> +
+> + /* try to get the objectid of default subvolume */
+> + if(get_default) {
+> + ret = ioctl(fd, BTRFS_IOC_TREE_SEARCH, &args);
+> + if (ret < 0) {
+> + fprintf(stderr, "ERROR: can't perform the search\n");
+> + return ret;
+> + }
+> +
+> + off = 0;
+> + /* go through each item to find dir item named "default" */
+> + for (i = 0; i < sk->nr_items; i++) {
+> + sh = (struct btrfs_ioctl_search_header *)(args.buf +
+> + off);
+> + off += sizeof(*sh);
+> + if (sh->type == BTRFS_DIR_ITEM_KEY) {
+> + di = (struct btrfs_dir_item *)(args.buf + off);
+> + name_len = le16_to_cpu(di->name_len);
+> + name = (char *)di + sizeof(struct btrfs_dir_item);
+> + if (!strncmp("default", name, name_len)) {
+> + subvol_id = btrfs_disk_key_objectid(
+> + &di->location);
+> + break;
+> + }
+> + }
+> +
+> + off += sh->len;
+> + }
+> + }
+> +
+> /* now that we have all the subvol-relative paths filled in,
+> * we have to string the subvols together so that we can get
+> * a path all the way back to the FS root
+> @@ -650,7 +698,12 @@ int list_subvols(int fd)
+> while (n) {
+> struct root_info *entry;
+> entry = rb_entry(n, struct root_info, rb_node);
+> - resolve_root(&root_lookup, entry);
+> + if(!get_default)
+> + resolve_root(&root_lookup, entry);
+> + /* we only want the default subvolume */
+> + else if(subvol_id == entry->root_id)
+> + resolve_root(&root_lookup, entry);
+> +
+This line adds a whitespace error.
+> n = rb_prev(n);
+> }
+>
+> diff --git a/btrfs.c b/btrfs.c
+> index 46314cf..6b73f88 100644
+> --- a/btrfs.c
+> +++ b/btrfs.c
+> @@ -73,6 +73,9 @@ static struct Command commands[] = {
+> "Set the subvolume of the filesystem <path> which will be mounted\n"
+> "as default."
+> },
+> + { do_get_default_subvol, 1, "subvolume get-default", "<path>\n"
+> + "Get the default subvolume of a filesystem."
+> + },
+> { do_fssync, 1,
+> "filesystem sync", "<path>\n"
+> "Force a sync on the filesystem <path>."
+> diff --git a/btrfs_cmds.c b/btrfs_cmds.c
+> index 8031c58..11c56f6 100644
+> --- a/btrfs_cmds.c
+> +++ b/btrfs_cmds.c
+> @@ -301,7 +301,7 @@ int do_subvol_list(int argc, char **argv)
+> fprintf(stderr, "ERROR: can't access '%s'\n", subvol);
+> return 12;
+> }
+> - ret = list_subvols(fd);
+> + ret = list_subvols(fd, 0);
+> if (ret)
+> return 19;
+> return 0;
+> @@ -834,6 +834,35 @@ int do_set_default_subvol(int nargs, char **argv)
+> return 0;
+> }
+>
+> +int do_get_default_subvol(int nargs, char **argv)
+> +{
+> + int fd;
+> + int ret;
+> + char *subvol;
+> +
+> + subvol = argv[1];
+> +
+> + ret = test_issubvolume(subvol);
+> + if (ret < 0) {
+> + fprintf(stderr, "ERROR: error accessing '%s'\n", subvol);
+> + return 12;
+> + }
+> + if (!ret) {
+> + fprintf(stderr, "ERROR: '%s' is not a subvolume\n", subvol);
+> + return 13;
+> + }
+> +
+> + fd = open_file_or_dir(subvol);
+> + if (fd < 0) {
+> + fprintf(stderr, "ERROR: can't access '%s'\n", subvol);
+> + return 12;
+> + }
+> + ret = list_subvols(fd, 1);
+> + if (ret)
+> + return 19;
+> + return 0;
+> +}
+> +
+> int do_df_filesystem(int nargs, char **argv)
+> {
+> struct btrfs_ioctl_space_args *sargs;
+> diff --git a/btrfs_cmds.h b/btrfs_cmds.h
+> index 7bde191..9cf1ca1 100644
+> --- a/btrfs_cmds.h
+> +++ b/btrfs_cmds.h
+> @@ -28,7 +28,8 @@ int do_scan(int nargs, char **argv);
+> int do_resize(int nargs, char **argv);
+> int do_subvol_list(int nargs, char **argv);
+> int do_set_default_subvol(int nargs, char **argv);
+> -int list_subvols(int fd);
+> +int do_get_default_subvol(int nargs, char **argv);
+> +int list_subvols(int fd, int get_default);
+> int do_df_filesystem(int nargs, char **argv);
+> int find_updated_files(int fd, u64 root_id, u64 oldest_gen);
+> int do_find_newer(int argc, char **argv);
+-----BEGIN PGP SIGNATURE-----
+Version: GnuPG v1.4.9 (MingW32)
+Comment: Using GnuPG with Mozilla - http://enigmail.mozdev.org/
+ 
+iQIcBAEBAgAGBQJOGwSIAAoJEJIcBJ3+XkgiWBsP/2wV25KV8h+k3vD0DcttepMD
+hnoG1uIcDtCR+bqPGt5Lu/IQBeH2UhYfxTS5Hpn8sjqC44KxfeSCxHXBYOVreVw+
+xMCJjXp+tIddO/BlF/dcN/anrL22vbawFKEV+kfofYvC00BQ7Mz2Uz28/N+hStV4
+NuTHRdxDzROO7cHXu90RjfmuAjnkNd32uaQjiBpDJGcLbT4Mg6NsSmF23gcTr31X
+FzklXi5PyXKHksy+UTdzMfi0s2b/ss12hzlWPWydWlSPsCiGeuNJF5s/Dis+o4K3
+1YxZYGB7JsK84CGXZhvdLlUcsM8ZxSZQySiCDhsbf27rpv3/waMfG73n8DsESbFr
+3uyXodGUEiJgz5dVVwLEu1Pzo7sfJtjm7/LGm0xv+uKqzYc3omQmrbIyAQsvC3bK
+6DY2FDx701jGf4LjfY4k0JQBCGzOL9hCqHwaXqNxh9gHSOkFU7jtaVgpCbo0uttd
+IGaY1vS4DIBzrFJjpN78rIdIwSKPJpgXbY7ONHIluQJOx0IW2mU+dQAVI1VuNmXp
+shdQ4MEuPLg7rdKKFyOhJlasvJqmc1zgPAoDz4TjFEwSMvSijBEEo/ZbrHcpVydj
+unS6SeyrDfDLniiBy4O/c/7/GkeypVU/ggAxxAxcGT/fkB272j1OEc4OalukGVs/
+2fx83ZIAsN7jhzQMtDDu
+=lqbJ
+-----END PGP SIGNATURE-----
 
-Josef

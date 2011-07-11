@@ -1,34 +1,67 @@
-From: Stephane Chazelas <stephane_chazelas@yahoo.fr>
-Subject: Re: Memory leak?
-Date: Mon, 11 Jul 2011 17:34:39 +0100
-Message-ID: <chaz20110711163439.GB18391@seebyte.com>
-References: <1310137241-sup-8158@shiny> <20110709170959.GC4294@yahoo.fr> <CAE5mzvhZwrtEZ8FUfcYzoMsRwuPjNDn=iCZ6_-CKaifEPZWAKA@mail.gmail.com> <20110709203649.GE4294@yahoo.fr> <1310301809-sup-9903@shiny> <20110710183728.GB4277@yahoo.fr> <20110711090121.GA2537@yahoo.fr> <1310396262-sup-7882@shiny> <chaz20110711153556.GC23450@seebyte.com> <1310401526-sup-1289@shiny>
-Mime-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Cc: cwillu <cwillu@cwillu.com>,
-	linux-btrfs <linux-btrfs@vger.kernel.org>
-To: Chris Mason <chris.mason@oracle.com>
+From: =?iso-8859-1?Q?Jo=E3o_Eduardo_Lu=EDs?= <jecluis@gmail.com>
+Subject: last_index variable in btrfs_buffered_write function
+Date: Mon, 11 Jul 2011 17:56:25 +0100
+Message-ID: <28FB38ED-FC82-4EAD-BED8-330C8FA9AF83@gmail.com>
+Mime-Version: 1.0 (Apple Message framework v1084)
+Content-Type: multipart/signed; protocol="application/pgp-signature"; micalg=pgp-sha1; boundary="Apple-Mail-13--763780003"
+To: linux-btrfs <linux-btrfs@vger.kernel.org>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <1310401526-sup-1289@shiny>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-2011-07-11 12:25:51 -0400, Chris Mason:
-[...]
-> > Also, when I resume the rsync (so it doesn't transfer the
-> > already transfered files), it does BUG() again.
-> 
-> Ok, could you please send along the exact rsync command you were
-> running?
-[...]
+This is an OpenPGP/MIME signed message (RFC 2440 and 3156)
+--Apple-Mail-13--763780003
+Content-Transfer-Encoding: quoted-printable
+Content-Type: text/plain; charset=iso-8859-1
 
-I did earlier, but here it is again:
+Hello.
 
-rsync --archive --xattrs --hard-links --numeric-ids --sparse --acls /src/ /dst/
+Am I reading the code the wrong way, or is the 'last_index' variable in =
+'__btrfs_buffered_write()' (and previously used in =
+'btrfs_file_aio_write()') irrelevant?=20
 
-Also with:
+It appears to just be used in 'prepare_pages()', passed as an argument, =
+but never actually used by this function.
 
-(cd /src && bsdtar cf - .) | pv | (cd /dst && bsdtar -xpSf - --numeric-owner)
+Furthermore, I'm not sure what is intended with this variable, but if =
+the idea is to assign it with the  last page in the range, then I would =
+say that instead of
 
--- 
-Stephane
+> last_index =3D (pos + iov_iter_count(i)) >> PAGE_CACHE_SHIFT;
 
+it should be
+
+>  last_index =3D (pos + iov_iter_count(i) - 1) >> PAGE_CACHE_SHIFT;
+
+Then again, I may be missing something.
+
+Cheers.
+
+---
+Jo=E3o Eduardo Lu=EDs
+gpg key: 477C26E5 from pool.keyserver.eu=20
+
+
+
+
+
+
+--Apple-Mail-13--763780003
+content-type: application/pgp-signature; x-mac-type=70674453;
+	name=PGP.sig
+content-description: This is a digitally signed message part
+content-disposition: inline; filename=PGP.sig
+content-transfer-encoding: 7bit
+
+-----BEGIN PGP SIGNATURE-----
+Version: GnuPG/MacGPG2 v2.0.16 (Darwin)
+
+iQEcBAEBAgAGBQJOGys5AAoJEJ9vvxhHfCblc8EH/iVUdtzdxolmdu+B3MoMlAdM
+hCWfklFIdgfU+DfHMXUp3VcbnAiAPE9i0LTVr8/TjkoZMtdlQ56wnvxcW7KUoPVa
+clFq3vX0o27NSbT6lmBkWqPv8Zsq79YxqD5YjcZenDFGbk7t32U+EVhhgaJkje29
+pQwyXSl9/Qsnbmsmv0Z6hf/x5kCKDp0EKMyRN1klEAncH5P5VAI2YJf3tV2h173V
+anLeCnvdR0jmJq3oeQz1Nok6CJMF/WS3ANo122R7Mc3O/BTUPVJj98B40IB+tEKx
+NAjOjGv4ao0oAiIuYC0QqN0sGmVbqy7MrzNSnFZwijKAisHA1tT77Sp4XPUfR/M=
+=pvEr
+-----END PGP SIGNATURE-----
+
+--Apple-Mail-13--763780003--

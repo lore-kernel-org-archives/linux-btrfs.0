@@ -1,110 +1,51 @@
-From: Hugo Mills <hugo@carfax.org.uk>
-Subject: Re: [PATCH v2 4/5] scrub userland implementation
-Date: Tue, 12 Jul 2011 10:44:19 +0100
-Message-ID: <20110712094419.GA10498@carfax.org.uk>
-References: <cover.1301503683.git.list.btrfs@jan-o-sch.net>
- <6321f041bfb9f439198cc03d2f7cb8ce8c5db867.1301503683.git.list.btrfs@jan-o-sch.net>
- <20110710182300.GI4325@carfax.org.uk>
- <4E1B08C4.8070000@jan-o-sch.net>
- <20110711205716.GM4325@carfax.org.uk>
- <4E1C0AB7.4020902@jan-o-sch.net>
+From: Ilya Dryomov <idryomov@gmail.com>
+Subject: Re: after mounting with -o degraded: ioctl: LOOP_CLR_FD: Device or
+ resource busy
+Date: Tue, 12 Jul 2011 13:09:50 +0300
+Message-ID: <20110712100950.GA2041@zambezi.lan>
+References: <CAJ1PRS=uL3xyJi57xz1taqh1mOYLUJDSRzUs3LsGBx7UVBG=Dg@mail.gmail.com>
 Mime-Version: 1.0
-Content-Type: multipart/signed; micalg=pgp-sha1;
-	protocol="application/pgp-signature"; boundary="nFreZHaLTZJo0R7j"
-Cc: linux-btrfs <linux-btrfs@vger.kernel.org>,
-	Chris Mason <chris.mason@oracle.com>
-To: Jan Schmidt <list.btrfs@jan-o-sch.net>
+Content-Type: text/plain; charset=us-ascii
+Cc: linux-btrfs@vger.kernel.org
+To: "krzf83@gmail.com " <krzf83@gmail.com>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <4E1C0AB7.4020902@jan-o-sch.net>
+In-Reply-To: <CAJ1PRS=uL3xyJi57xz1taqh1mOYLUJDSRzUs3LsGBx7UVBG=Dg@mail.gmail.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-
---nFreZHaLTZJo0R7j
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
-
-On Tue, Jul 12, 2011 at 10:49:59AM +0200, Jan Schmidt wrote:
-> On 11.07.2011 22:57, Hugo Mills wrote:
-> > On Mon, Jul 11, 2011 at 04:29:24PM +0200, Jan Schmidt wrote:
-> >> On 10.07.2011 20:23, Hugo Mills wrote:
-> >>>    Yes, this is over three months after the initial posting, but since
-> >>> nobody else has looked at it yet, and the patch is in my integration
-> >>> stack...
-> >>
-> >> ... thanks!
-> >>
-> >>>    I've not reviewed the whole thing -- just the "scrub start" code so
-> >>> far. I've removed the bits I've not checked from the file below.
-> >>
-> >> I rebased the old branch I found to your current integration branch and
-> >> fixed up a most of what you mentioned. I'll not send a new version out
-> >> until after your complete review (or your statement that this is it or
-> >> your statement that you would rather going on reviewing the revised
-> >> version).
-> > 
-> >    Thanks. The other half has just gone out (with few comments).
+On Tue, Jul 12, 2011 at 02:47:41AM +0200, krzf83@gmail.com  wrote:
+> dd if=/dev/null of=img5 bs=1 seek=2G
+> dd if=/dev/null of=img6 bs=1 seek=2G
+> mkfs.btrfs -d raid1 -m raid1 img5 img6
+> losetup /dev/loop4 img5
+> losetup /dev/loop5 img6
+> btrfs device scan
+> mount -t btrfs /dev/loop4 dir
+> umount dir
+> losetup -d /dev/loop5
+> mount -t btrfs -o degraded /dev/loop4 dir
+> umount dir
+> losetup -d /dev/loop4
+> ioctl: LOOP_CLR_FD: Device or resource busy
+> mkfs.ext3 /dev/loop4
+> mke2fs 1.39 (29-May-2006)
+> /dev/loop4 is apparently in use by the system; will not make a filesystem here!
 > 
-> I'm through now, but I'll wait another day for you to protest on my
-> latest comments before sending the new version.
-> 
-> >> Things I ripped out are accepted and corrected without resistance.
-> >> Comments follow.
-> > 
-> >    Only a couple of rejoinders below.
-> > 
-> >>> On Wed, Mar 30, 2011 at 06:53:12PM +0200, Jan Schmidt wrote:
-> > [...]
-> > 
-> >>>> +		case 4: /* read dev id */
-> >>>> +			for (j=0; isdigit(l[i+j]) && i+j < avail; ++j)
-> >>>> +				;
-> >>>> +			if (!j || i+j+1 >= avail)
-> >>>
-> >>>    j == 0 is clearer than !j here, IMO
-> >>>
-> >>>> +				_SCRUB_ILLEGAL;
-> >>>> +			p[curr]->devid = atoll(&l[i]);
-> >>>> +			i += j + 1;
-> >>>
-> >>>    Is there any reason that you couldn't just use strtoull here? We
-> >>> know that the string is terminated with a \n (by the guarantee of
-> >>> state 1), so strtoull will always finish within the buffer.
-> >>
-> >> I just found it way easier to use atoll. We already know the first
-> >> character really is a digit, so why bother with a more cumbersome function?
-> > 
-> >    Ah, my mistake for not being clearer, I think: I was talking about
-> > the for loop at the head of the state 4 code as well. That only exists
-> > in order to find the end of the number read in by atoll, and strtoull
-> > would do that for you.
-> 
-> Alright, now I see your point. However, with strtoull I would have to
-> calculate with character pointers, whereas anything else uses direct
-> character access with i and j here. And I don't need the fancy bits of
-> strtoull, either. So I'd like to stick with atoll.
+> this only happens after mouting with -o degraded. loopback device is
+> unusable until next reboot
 
-   OK, it's not something I feel massively strongly about. Stick with
-atoll, then.
+So mkfs.ext3 fails to open device with O_EXCL.
 
-   Hugo.
+We are missing blk_put() call on error path.  At least once: if
+btrfs_open_devices() fails (and it does if you e.g. zero out the
+superblock on a raid1 fs while it's unmounted and then immediately
+mount) it's caller never releases the other device(s).  If nobody else
+steps up I can try to fix this in the next couple of days.
 
--- 
-=== Hugo Mills: hugo@... carfax.org.uk | darksatanic.net | lug.org.uk ===
-  PGP key: 515C238D from wwwkeys.eu.pgp.net or http://www.carfax.org.uk
-  --- "He's a nutcase, you know. There's no getting away from it -- ---  
-                     he'll end up with a knighthood"                     
+Thanks,
 
---nFreZHaLTZJo0R7j
-Content-Type: application/pgp-signature; name="signature.asc"
-Content-Description: Digital signature
-Content-Disposition: inline
+		Ilya
 
------BEGIN PGP SIGNATURE-----
-Version: GnuPG v1.4.10 (GNU/Linux)
-
-iD8DBQFOHBdzIKyzvlFcI40RAipfAJ0akWUIq/oXOTNsOQTvp1sgjjAbmACg1OAk
-FuaJb2jfvr079YlPNY+Et/o=
-=jYSa
------END PGP SIGNATURE-----
-
---nFreZHaLTZJo0R7j--
+> --
+> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
+> the body of a message to majordomo@vger.kernel.org
+> More majordomo info at  http://vger.kernel.org/majordomo-info.html

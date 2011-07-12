@@ -1,75 +1,30 @@
-From: Josef Bacik <josef@redhat.com>
-Subject: Re: Delayed inode operations not doing the right thing with enospc
-Date: Tue, 12 Jul 2011 11:25:51 -0400
-Message-ID: <4E1C677F.1030704@redhat.com>
-References: <4DE92BF2.1060905@redhat.com>	<4DED8143.3090803@cn.fujitsu.com>	<4DEE9263.1000802@redhat.com> <CAO47_--zux0kiKsY9Edinj98ihoXP4n2ton+j5LgdpNJv9hLbQ@mail.gmail.com>
+From: Qiang Zhu <qiang.zhu@yahoo.cn>
+Subject: =?utf-8?B?c2lnbiBhIGJ1ZyBpbiDigJxzZXRfZXh0ZW50X2JpdOKAnQ==?=
+Date: Tue, 12 Jul 2011 23:40:39 +0800 (CST)
+Message-ID: <1310485239.13883.YahooMailNeo@web92401.mail.cnh.yahoo.com>
+Reply-To: Qiang Zhu <qiang.zhu@yahoo.cn>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=ISO-8859-1
-Cc: miaox@cn.fujitsu.com, linux-btrfs <linux-btrfs@vger.kernel.org>,
-	ceph-devel@vger.kernel.org
-To: chb@muc.de
-Return-path: <ceph-devel-owner@vger.kernel.org>
-In-Reply-To: <CAO47_--zux0kiKsY9Edinj98ihoXP4n2ton+j5LgdpNJv9hLbQ@mail.gmail.com>
+Content-Type: text/plain; charset=utf-8
+To: linux-btrfs <linux-btrfs@vger.kernel.org>
+Return-path: <linux-btrfs-owner@vger.kernel.org>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 07/12/2011 11:20 AM, Christian Brunner wrote:
-> 2011/6/7 Josef Bacik <josef@redhat.com>:
->> On 06/06/2011 09:39 PM, Miao Xie wrote:
->>> On fri, 03 Jun 2011 14:46:10 -0400, Josef Bacik wrote:
->>>> I got a lot of these when running stress.sh on my test box
->>>>
->>>>
->>>>
->>>> This is because use_block_rsv() is having to do a
->>>> reserve_metadata_bytes(), which shouldn't happen as we should have
->>>> reserved enough space for those operations to complete.  This is
->>>> happening because use_block_rsv() will call get_block_rsv(), which if
->>>> root->ref_cows is set (which is the case on all fs roots) we will use
->>>> trans->block_rsv, which will only have what the current transaction
->>>> starter had reserved.
->>>>
->>>> What needs to be done instead is we need to have a block reserve that
->>>> any reservation that is done at create time for these inodes is migrated
->>>> to this special reserve, and then when you run the delayed inode items
->>>> stuff you set trans->block_rsv to the special block reserve so the
->>>> accounting is all done properly.
->>>>
->>>> This is just off the top of my head, there may be a better way to do it,
->>>> I've not actually looked that the delayed inode code at all.
->>>>
->>>> I would do this myself but I have a ever increasing list of shit to do
->>>> so will somebody pick this up and fix it please?  Thanks,
->>>
->>> Sorry, it's my miss.
->>> I forgot to set trans->block_rsv to global_block_rsv, since we have migrated
->>> the space from trans_block_rsv to global_block_rsv.
->>>
->>> I'll fix it soon.
->>>
->>
->> There is another problem, we're failing xfstest 204.  I tried making
->> reserve_metadata_bytes commit the transaction regardless of whether or
->> not there were pinned bytes but the test just hung there.  Usually it
->> takes 7 seconds to run and I ctrl+c'ed it after a couple of minutes.
->> 204 just creates a crap ton of files, which is what is killing us.
->> There needs to be a way to start flushing delayed inode items so we can
->> reclaim the space they are holding onto so we don't get enospc, and it
->> needs to be better than just committing the transaction because that is
->> dog slow.  Thanks,
->>
->> Josef
-> 
-> Is there a solution for this?
-> 
-> I'm running a 2.6.38.8 kernel with all the btrfs patches from 3.0rc7
-> (except the pluging). When starting a ceph rebuild on the btrfs
-> volumes I get a lot of warnings from block_rsv_use_bytes in
-> use_block_rsv:
-> 
+hi=C2=A0
 
-Yeah there is something wonky going on here, I meant to take a look this
-week but I will go ahead and look into it now.  I have a way to
-reproduce it thankfully, but I may have you run my patches when I get
-somewhere.  Thanks,
+In the end part of =E2=80=9Cset_extent_bit=E2=80=9D=EF=BC=8CI found whe=
+n err occurs =EF=BC=8Cthere is no operate to free "prealloc" which have=
+ been allocated in "alloc_extent_state_atomic"
+this may lead a menory leak when "set_state_bits" failed.
+err =3D set_state_bits(tree, prealloc, &bits);
 
-Josef
+if (err) {
+prealloc =3D NULL;
+goto out; // this direct will do nothing because prealloc=3DNULL.
+}
+wish your reply.
+thanks
+--
+To unsubscribe from this list: send the line "unsubscribe linux-btrfs" =
+in
+the body of a message to majordomo@vger.kernel.org
+More majordomo info at  http://vger.kernel.org/majordomo-info.html

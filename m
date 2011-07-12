@@ -1,67 +1,62 @@
 From: Mitch Harder <mitch.harder@sabayonlinux.org>
-Subject: Re: last_index variable in btrfs_buffered_write function
-Date: Tue, 12 Jul 2011 14:43:23 -0500
-Message-ID: <CAKcLGm-Oq1WtU8QGO+pMGwbcj61CHL837oGTZUSeu33nF-qu6Q@mail.gmail.com>
-References: <28FB38ED-FC82-4EAD-BED8-330C8FA9AF83@gmail.com>
-	<CAKcLGm_wag+9zEwt-=6uNpG203EP+vHcOA9NG0t=xJACiiOGuQ@mail.gmail.com>
-	<1310479850-sup-3754@shiny>
-Mime-Version: 1.0
-Content-Type: text/plain; charset=ISO-8859-1
-Cc: =?ISO-8859-1?Q?Jo=E3o_Eduardo_Lu=EDs?= <jecluis@gmail.com>,
-	linux-btrfs <linux-btrfs@vger.kernel.org>
-To: Chris Mason <chris.mason@oracle.com>
+Subject: [PATCH] Btrfs: Remove unused variable 'last_index' in file.c
+Date: Tue, 12 Jul 2011 14:43:45 -0500
+Message-ID: <1310499825-18695-1-git-send-email-mitch.harder@sabayonlinux.org>
+Cc: Mitch Harder <mitch.harder@sabayonlinux.org>
+To: linux-btrfs@vger.kernel.org
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <1310479850-sup-3754@shiny>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-2011/7/12 Chris Mason <chris.mason@oracle.com>:
-> Excerpts from Mitch Harder's message of 2011-07-11 15:38:45 -0400:
->> 2011/7/11 Jo=E3o Eduardo Lu=EDs <jecluis@gmail.com>:
->> > Hello.
->> >
->> > Am I reading the code the wrong way, or is the 'last_index' variab=
-le in '__btrfs_buffered_write()' (and previously used in 'btrfs_file_ai=
-o_write()') irrelevant?
->> >
->> > It appears to just be used in 'prepare_pages()', passed as an argu=
-ment, but never actually used by this function.
->> >
->> > Furthermore, I'm not sure what is intended with this variable, but=
- if the idea is to assign it with the =A0last page in the range, then I=
- would say that instead of
->> >
->> >> last_index =3D (pos + iov_iter_count(i)) >> PAGE_CACHE_SHIFT;
->> >
->> > it should be
->> >
->> >> =A0last_index =3D (pos + iov_iter_count(i) - 1) >> PAGE_CACHE_SHI=
-=46T;
->> >
->> > Then again, I may be missing something.
->> >
->> > Cheers.
->> >
->>
->> I came to the same conclusion a few months ago when looking at a bug
->> in the same area of code.
->>
->> The calculation appears to be wrong, but since it's not used anywher=
-e,
->> you can't say for certain. =A0:)
->>
->> I just haven't gotten around to testing a patch to confirm the hypot=
-hesis.
->
-> I'd say it is a victim of a cleanup that didn't completely clean it u=
-p.
-> It is unused ;)
->
+The variable 'last_index' is calculated in the __btrfs_buffered_write
+function and passed as a parameter to the prepare_pages function,
+but is not used anywhere in the prepare_pages function.
 
-I've put together a patch for this clean-up.
+Remove instances of 'last_index' in these functions.
 
-I'll send it to the list.
---
-To unsubscribe from this list: send the line "unsubscribe linux-btrfs" =
-in
-the body of a message to majordomo@vger.kernel.org
-More majordomo info at  http://vger.kernel.org/majordomo-info.html
+Signed-off-by: Mitch Harder <mitch.harder@sabayonlinux.org>
+---
+ fs/btrfs/file.c |    7 ++-----
+ 1 files changed, 2 insertions(+), 5 deletions(-)
+
+diff --git a/fs/btrfs/file.c b/fs/btrfs/file.c
+index bd6bbb8..b061de0 100644
+--- a/fs/btrfs/file.c
++++ b/fs/btrfs/file.c
+@@ -1059,7 +1059,7 @@ static int prepare_uptodate_page(struct page *page, u64 pos)
+ static noinline int prepare_pages(struct btrfs_root *root, struct file *file,
+ 			 struct page **pages, size_t num_pages,
+ 			 loff_t pos, unsigned long first_index,
+-			 unsigned long last_index, size_t write_bytes)
++			 size_t write_bytes)
+ {
+ 	struct extent_state *cached_state = NULL;
+ 	int i;
+@@ -1159,7 +1159,6 @@ static noinline ssize_t __btrfs_buffered_write(struct file *file,
+ 	struct btrfs_root *root = BTRFS_I(inode)->root;
+ 	struct page **pages = NULL;
+ 	unsigned long first_index;
+-	unsigned long last_index;
+ 	size_t num_written = 0;
+ 	int nrptrs;
+ 	int ret = 0;
+@@ -1172,7 +1171,6 @@ static noinline ssize_t __btrfs_buffered_write(struct file *file,
+ 		return -ENOMEM;
+ 
+ 	first_index = pos >> PAGE_CACHE_SHIFT;
+-	last_index = (pos + iov_iter_count(i)) >> PAGE_CACHE_SHIFT;
+ 
+ 	while (iov_iter_count(i) > 0) {
+ 		size_t offset = pos & (PAGE_CACHE_SIZE - 1);
+@@ -1206,8 +1204,7 @@ static noinline ssize_t __btrfs_buffered_write(struct file *file,
+ 		 * contents of pages from loop to loop
+ 		 */
+ 		ret = prepare_pages(root, file, pages, num_pages,
+-				    pos, first_index, last_index,
+-				    write_bytes);
++				    pos, first_index, write_bytes);
+ 		if (ret) {
+ 			btrfs_delalloc_release_space(inode,
+ 					num_pages << PAGE_CACHE_SHIFT);
+-- 
+1.7.3.4
+

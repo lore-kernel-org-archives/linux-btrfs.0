@@ -1,247 +1,123 @@
 From: "Zhong, Xin" <xin.zhong@intel.com>
 Subject: RE: [PATCH V2] Btrfs-progs: add "btrfs subvolume get-default"
  subcommand
-Date: Tue, 12 Jul 2011 10:43:47 +0800
-Message-ID: <1865303E0DED764181A9D882DEF65FB6A6B2BCC394@shsmsx502.ccr.corp.intel.com>
-References: <1310374571-20811-1-git-send-email-xin.zhong@intel.com>
- <4E1B0489.8030703@gmail.com>
+Date: Tue, 12 Jul 2011 10:48:52 +0800
+Message-ID: <1865303E0DED764181A9D882DEF65FB6A6B2BCC39F@shsmsx502.ccr.corp.intel.com>
+References: <1989742.2131011310385765409.JavaMail.defaultUser@defaultHost>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Cc: "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>,
-	Hugo Mills <hugo@carfax.org.uk>
-To: Andreas Philipp <philipp.andreas@gmail.com>
+Content-Type: text/plain; charset="utf-8"
+Cc: "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
+To: "Goffredo Baroncelli <kreijack@libero.it>" <kreijack@libero.it>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <4E1B0489.8030703@gmail.com>
+In-Reply-To: <1989742.2131011310385765409.JavaMail.defaultUser@defaultHost>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-
-
-> -----Original Message-----
-> From: Andreas Philipp [mailto:philipp.andreas@gmail.com]
-> Sent: Monday, July 11, 2011 10:11 PM
-> To: Zhong, Xin
-> Cc: linux-btrfs@vger.kernel.org; Hugo Mills
-> Subject: Re: [PATCH V2] Btrfs-progs: add "btrfs subvolume get-default"
-> subcommand
-> 
-> 
-> -----BEGIN PGP SIGNED MESSAGE-----
-> Hash: SHA1
-> 
-> Would you mind rebasing your patch on Hugo Mills' integration-branch
-> for
-> btrfs progs at
-> http://git.darksatanic.net/repo/btrfs-progs-unstable.git
-> integration-20110705
-> since it does not apply on top of all changes which are already there.
-> Additionally, I spotted one whitespace error in the patch and marked it
-> below.
-
-Ok. I will update my patch. Thanks!
-
-> Thanks,
-> Andreas Philipp
-> 
-> On 11.07.2011 10:56, Zhong, Xin wrote:
-> > Add subcommand to get the default subvolume of btrfs filesystem
-> >
-> > Reported-by: Yang, Yi <yi.y.yang@intel.com>
-> > Signed-off-by: Zhong, Xin <xin.zhong@intel.com>
-> > ---
-> > btrfs-list.c | 57
-> +++++++++++++++++++++++++++++++++++++++++++++++++++++++--
-> > btrfs.c | 3 +++
-> > btrfs_cmds.c | 31 ++++++++++++++++++++++++++++++-
-> > btrfs_cmds.h | 3 ++-
-> > 4 files changed, 90 insertions(+), 4 deletions(-)
-> >
-> > diff --git a/btrfs-list.c b/btrfs-list.c
-> > index 93766a8..aa6a9b4 100644
-> > --- a/btrfs-list.c
-> > +++ b/btrfs-list.c
-> > @@ -536,7 +536,7 @@ build:
-> > return full;
-> > }
-> >
-> > -int list_subvols(int fd)
-> > +int list_subvols(int fd, int get_default)
-> > {
-> > struct root_lookup root_lookup;
-> > struct rb_node *n;
-> > @@ -545,10 +545,12 @@ int list_subvols(int fd)
-> > struct btrfs_ioctl_search_key *sk = &args.key;
-> > struct btrfs_ioctl_search_header *sh;
-> > struct btrfs_root_ref *ref;
-> > + struct btrfs_dir_item *di;
-> > unsigned long off = 0;
-> > int name_len;
-> > char *name;
-> > u64 dir_id;
-> > + u64 subvol_id = 0;
-> > int i;
-> >
-> > root_lookup_init(&root_lookup);
-> > @@ -642,6 +644,52 @@ int list_subvols(int fd)
-> > n = rb_next(n);
-> > }
-> >
-> > + memset(&args, 0, sizeof(args));
-> > +
-> > + /* search in the tree of tree roots */
-> > + sk->tree_id = BTRFS_ROOT_TREE_OBJECTID;
-> > +
-> > + /* search dir item */
-> > + sk->max_type = BTRFS_DIR_ITEM_KEY;
-> > + sk->min_type = BTRFS_DIR_ITEM_KEY;
-> > +
-> > + sk->max_objectid = BTRFS_ROOT_TREE_DIR_OBJECTID;
-> > + sk->min_objectid = BTRFS_ROOT_TREE_DIR_OBJECTID;
-> > + sk->max_offset = (u64)-1;
-> > + sk->max_transid = (u64)-1;
-> > +
-> > + /* just a big number, doesn't matter much */
-> > + sk->nr_items = 4096;
-> > +
-> > + /* try to get the objectid of default subvolume */
-> > + if(get_default) {
-> > + ret = ioctl(fd, BTRFS_IOC_TREE_SEARCH, &args);
-> > + if (ret < 0) {
-> > + fprintf(stderr, "ERROR: can't perform the search\n");
-> > + return ret;
-> > + }
-> > +
-> > + off = 0;
-> > + /* go through each item to find dir item named "default" */
-> > + for (i = 0; i < sk->nr_items; i++) {
-> > + sh = (struct btrfs_ioctl_search_header *)(args.buf +
-> > + off);
-> > + off += sizeof(*sh);
-> > + if (sh->type == BTRFS_DIR_ITEM_KEY) {
-> > + di = (struct btrfs_dir_item *)(args.buf + off);
-> > + name_len = le16_to_cpu(di->name_len);
-> > + name = (char *)di + sizeof(struct btrfs_dir_item);
-> > + if (!strncmp("default", name, name_len)) {
-> > + subvol_id = btrfs_disk_key_objectid(
-> > + &di->location);
-> > + break;
-> > + }
-> > + }
-> > +
-> > + off += sh->len;
-> > + }
-> > + }
-> > +
-> > /* now that we have all the subvol-relative paths filled in,
-> > * we have to string the subvols together so that we can get
-> > * a path all the way back to the FS root
-> > @@ -650,7 +698,12 @@ int list_subvols(int fd)
-> > while (n) {
-> > struct root_info *entry;
-> > entry = rb_entry(n, struct root_info, rb_node);
-> > - resolve_root(&root_lookup, entry);
-> > + if(!get_default)
-> > + resolve_root(&root_lookup, entry);
-> > + /* we only want the default subvolume */
-> > + else if(subvol_id == entry->root_id)
-> > + resolve_root(&root_lookup, entry);
-> > +
-> This line adds a whitespace error.
-> > n = rb_prev(n);
-> > }
-> >
-> > diff --git a/btrfs.c b/btrfs.c
-> > index 46314cf..6b73f88 100644
-> > --- a/btrfs.c
-> > +++ b/btrfs.c
-> > @@ -73,6 +73,9 @@ static struct Command commands[] = {
-> > "Set the subvolume of the filesystem <path> which will be mounted\n"
-> > "as default."
-> > },
-> > + { do_get_default_subvol, 1, "subvolume get-default", "<path>\n"
-> > + "Get the default subvolume of a filesystem."
-> > + },
-> > { do_fssync, 1,
-> > "filesystem sync", "<path>\n"
-> > "Force a sync on the filesystem <path>."
-> > diff --git a/btrfs_cmds.c b/btrfs_cmds.c
-> > index 8031c58..11c56f6 100644
-> > --- a/btrfs_cmds.c
-> > +++ b/btrfs_cmds.c
-> > @@ -301,7 +301,7 @@ int do_subvol_list(int argc, char **argv)
-> > fprintf(stderr, "ERROR: can't access '%s'\n", subvol);
-> > return 12;
-> > }
-> > - ret = list_subvols(fd);
-> > + ret = list_subvols(fd, 0);
-> > if (ret)
-> > return 19;
-> > return 0;
-> > @@ -834,6 +834,35 @@ int do_set_default_subvol(int nargs, char **argv)
-> > return 0;
-> > }
-> >
-> > +int do_get_default_subvol(int nargs, char **argv)
-> > +{
-> > + int fd;
-> > + int ret;
-> > + char *subvol;
-> > +
-> > + subvol = argv[1];
-> > +
-> > + ret = test_issubvolume(subvol);
-> > + if (ret < 0) {
-> > + fprintf(stderr, "ERROR: error accessing '%s'\n", subvol);
-> > + return 12;
-> > + }
-> > + if (!ret) {
-> > + fprintf(stderr, "ERROR: '%s' is not a subvolume\n", subvol);
-> > + return 13;
-> > + }
-> > +
-> > + fd = open_file_or_dir(subvol);
-> > + if (fd < 0) {
-> > + fprintf(stderr, "ERROR: can't access '%s'\n", subvol);
-> > + return 12;
-> > + }
-> > + ret = list_subvols(fd, 1);
-> > + if (ret)
-> > + return 19;
-> > + return 0;
-> > +}
-> > +
-> > int do_df_filesystem(int nargs, char **argv)
-> > {
-> > struct btrfs_ioctl_space_args *sargs;
-> > diff --git a/btrfs_cmds.h b/btrfs_cmds.h
-> > index 7bde191..9cf1ca1 100644
-> > --- a/btrfs_cmds.h
-> > +++ b/btrfs_cmds.h
-> > @@ -28,7 +28,8 @@ int do_scan(int nargs, char **argv);
-> > int do_resize(int nargs, char **argv);
-> > int do_subvol_list(int nargs, char **argv);
-> > int do_set_default_subvol(int nargs, char **argv);
-> > -int list_subvols(int fd);
-> > +int do_get_default_subvol(int nargs, char **argv);
-> > +int list_subvols(int fd, int get_default);
-> > int do_df_filesystem(int nargs, char **argv);
-> > int find_updated_files(int fd, u64 root_id, u64 oldest_gen);
-> > int do_find_newer(int argc, char **argv);
-> -----BEGIN PGP SIGNATURE-----
-> Version: GnuPG v1.4.9 (MingW32)
-> Comment: Using GnuPG with Mozilla - http://enigmail.mozdev.org/
-> 
-> iQIcBAEBAgAGBQJOGwSIAAoJEJIcBJ3+XkgiWBsP/2wV25KV8h+k3vD0DcttepMD
-> hnoG1uIcDtCR+bqPGt5Lu/IQBeH2UhYfxTS5Hpn8sjqC44KxfeSCxHXBYOVreVw+
-> xMCJjXp+tIddO/BlF/dcN/anrL22vbawFKEV+kfofYvC00BQ7Mz2Uz28/N+hStV4
-> NuTHRdxDzROO7cHXu90RjfmuAjnkNd32uaQjiBpDJGcLbT4Mg6NsSmF23gcTr31X
-> FzklXi5PyXKHksy+UTdzMfi0s2b/ss12hzlWPWydWlSPsCiGeuNJF5s/Dis+o4K3
-> 1YxZYGB7JsK84CGXZhvdLlUcsM8ZxSZQySiCDhsbf27rpv3/waMfG73n8DsESbFr
-> 3uyXodGUEiJgz5dVVwLEu1Pzo7sfJtjm7/LGm0xv+uKqzYc3omQmrbIyAQsvC3bK
-> 6DY2FDx701jGf4LjfY4k0JQBCGzOL9hCqHwaXqNxh9gHSOkFU7jtaVgpCbo0uttd
-> IGaY1vS4DIBzrFJjpN78rIdIwSKPJpgXbY7ONHIluQJOx0IW2mU+dQAVI1VuNmXp
-> shdQ4MEuPLg7rdKKFyOhJlasvJqmc1zgPAoDz4TjFEwSMvSijBEEo/ZbrHcpVydj
-> unS6SeyrDfDLniiBy4O/c/7/GkeypVU/ggAxxAxcGT/fkB272j1OEc4OalukGVs/
-> 2fx83ZIAsN7jhzQMtDDu
-> =lqbJ
-> -----END PGP SIGNATURE-----
-
+PiAtLS0tLU9yaWdpbmFsIE1lc3NhZ2UtLS0tLQ0KPiBGcm9tOiBHb2ZmcmVkbyBCYXJvbmNlbGxp
+IDxrcmVpamFja0BsaWJlcm8uaXQ+DQo+IFttYWlsdG86a3JlaWphY2tAbGliZXJvLml0XQ0KPiBT
+ZW50OiBNb25kYXksIEp1bHkgMTEsIDIwMTEgODowMyBQTQ0KPiBUbzogWmhvbmcsIFhpbg0KPiBD
+YzogbGludXgtYnRyZnNAdmdlci5rZXJuZWwub3JnDQo+IFN1YmplY3Q6IFI6IFtQQVRDSCBWMl0g
+QnRyZnMtcHJvZ3M6IGFkZCAiYnRyZnMgc3Vidm9sdW1lIGdldC1kZWZhdWx0Ig0KPiBzdWJjb21t
+YW5kDQo+IA0KPiA+LS0tLU1lc3NhZ2dpbyBvcmlnaW5hbGUtLS0tDQo+ID5EYTogeGluLnpob25n
+QGludGVsLmNvbQ0KPiA+RGF0YTogMTEvMDcvMjAxMSAxMC41Ng0KPiA+QTogPGxpbnV4LWJ0cmZz
+QHZnZXIua2VybmVsLm9yZz4NCj4gPkNjOiA8eGluLnpob25nQGludGVsLmNvbT4NCj4gPk9nZzog
+W1BBVENIIFYyXSBCdHJmcy1wcm9nczogYWRkICZxdW90O2J0cmZzIHN1YnZvbHVtZSBnZXQtDQo+
+IGRlZmF1bHQmcXVvdDsNCj4gc3ViY29tbWFuZA0KPiA+DQo+ID5BZGQgc3ViY29tbWFuZCB0byBn
+ZXQgdGhlIGRlZmF1bHQgc3Vidm9sdW1lIG9mIGJ0cmZzIGZpbGVzeXN0ZW0NCj4gPg0KPiA+UmVw
+b3J0ZWQtYnk6IFlhbmcsIFlpIDx5aS55LnlhbmdAaW50ZWwuY29tPg0KPiA+U2lnbmVkLW9mZi1i
+eTogWmhvbmcsIFhpbiA8eGluLnpob25nQGludGVsLmNvbT4NCj4gPi0tLQ0KPiA+IGJ0cmZzLWxp
+c3QuYyB8ICAgNTcNCj4gKysrKysrKysrKysrKysrKysrKysrKysrKysrKysrKysrKysrKysrKysr
+KysrKysrKysrKysrKy0tDQo+ID4gYnRyZnMuYyAgICAgIHwgICAgMyArKysNCj4gPiBidHJmc19j
+bWRzLmMgfCAgIDMxICsrKysrKysrKysrKysrKysrKysrKysrKysrKysrKy0NCj4gPiBidHJmc19j
+bWRzLmggfCAgICAzICsrLQ0KPiA+IDQgZmlsZXMgY2hhbmdlZCwgOTAgaW5zZXJ0aW9ucygrKSwg
+NCBkZWxldGlvbnMoLSkNCj4gDQo+IHBsZWFzZSB1cGRhdGUgdGhlIG1hbiBwYWdlIHRvby4NCj4g
+DQo+ID4NCj4gPmRpZmYgLS1naXQgYS9idHJmcy1saXN0LmMgYi9idHJmcy1saXN0LmMNCj4gPmlu
+ZGV4IDkzNzY2YTguLmFhNmE5YjQgMTAwNjQ0DQo+ID4tLS0gYS9idHJmcy1saXN0LmMNCj4gPisr
+KyBiL2J0cmZzLWxpc3QuYw0KPiA+QEAgLTUzNiw3ICs1MzYsNyBAQCBidWlsZDoNCj4gPiAJcmV0
+dXJuIGZ1bGw7DQo+IFsuLi5dDQo+ID4rCS8qIHNlYXJjaCBkaXIgaXRlbSAqLw0KPiA+Kwlzay0+
+bWF4X3R5cGUgPSBCVFJGU19ESVJfSVRFTV9LRVk7DQo+ID4rCXNrLT5taW5fdHlwZSA9IEJUUkZT
+X0RJUl9JVEVNX0tFWTsNCj4gPisNCj4gPisJc2stPm1heF9vYmplY3RpZCA9IEJUUkZTX1JPT1Rf
+VFJFRV9ESVJfT0JKRUNUSUQ7DQo+ID4rCXNrLT5taW5fb2JqZWN0aWQgPSBCVFJGU19ST09UX1RS
+RUVfRElSX09CSkVDVElEOw0KPiA+Kwlzay0+bWF4X29mZnNldCA9ICh1NjQpLTE7DQo+ID4rCXNr
+LT5tYXhfdHJhbnNpZCA9ICh1NjQpLTE7DQo+ID4rDQo+IFsuLi5dDQo+ID4rCQkvKiBnbyB0aHJv
+dWdoIGVhY2ggaXRlbSB0byBmaW5kIGRpciBpdGVtIG5hbWVkICJkZWZhdWx0IiAqLw0KPiA+KwkJ
+Zm9yIChpID0gMDsgaSA8IHNrLT5ucl9pdGVtczsgaSsrKSB7DQo+ID4rCQkJc2ggPSAoc3RydWN0
+IGJ0cmZzX2lvY3RsX3NlYXJjaF9oZWFkZXIgKikoYXJncy5idWYgKw0KPiA+KwkJCQkJCQkJICBv
+ZmYpOw0KPiA+KwkJCW9mZiArPSBzaXplb2YoKnNoKTsNCj4gPisJCQlpZiAoc2gtPnR5cGUgPT0g
+QlRSRlNfRElSX0lURU1fS0VZKSB7DQo+ID4rCQkJCWRpID0gKHN0cnVjdCBidHJmc19kaXJfaXRl
+bSAqKShhcmdzLmJ1ZiArIG9mZik7DQo+ID4rCQkJCW5hbWVfbGVuID0gbGUxNl90b19jcHUoZGkt
+Pm5hbWVfbGVuKTsNCj4gPisJCQkJbmFtZSA9IChjaGFyICopZGkgKyBzaXplb2Yoc3RydWN0DQo+
+IGJ0cmZzX2Rpcl9pdGVtKTsNCj4gPisJCQkJaWYgKCFzdHJuY21wKCJkZWZhdWx0IiwgbmFtZSwg
+bmFtZV9sZW4pKSB7DQo+ID4rCQkJCQlzdWJ2b2xfaWQgPSBidHJmc19kaXNrX2tleV9vYmplY3Rp
+ZCgNCj4gPisJCQkJCQkmZGktPmxvY2F0aW9uKTsNCj4gPisJCQkJCWJyZWFrOw0KPiA+KwkJCQl9
+DQo+ID4rCQkJfQ0KPiA+Kw0KPiA+KwkJCW9mZiArPSBzaC0+bGVuOw0KPiA+KwkJfQ0KPiANCj4g
+SSBhbSBub3QgZmFtaWxpYXIgd2l0aCB0aGUgImRlZmF1bHQgc3Vidm9sdW1lIGtleSIsIGJ1dCBh
+cmUgeW91IHN1cmUNCj4gdGhhdCB0aGUNCj4ga2V5IGlzIGFsd2F5cyBpbiB0aGUgZmlyc3Qgc2V0
+IG9mIHJldHVybmVkIGtleXMgPw0KPg0KDQpJdCBzZWVtcyB0aGVyZSdzIG5vdCB0b28gbXVjaCBk
+aXIgaXRlbSBpbiB0aGUgcm9vdCB0cmVlLiBJbiBmYWN0LCBJIG9ubHkgc2VlIGl0IHVzZWQgZm9y
+IGZvciBkZWZhdWx0IHN1YnZvbHVtZSBpbiB0aGUgcm9vdCB0cmVlLg0KU28gaXQgc2hvdWxkIGJl
+IGVub3VnaC4gDQoNCj4gPisJfQ0KPiA+Kw0KPiA+IAkvKiBub3cgdGhhdCB3ZSBoYXZlIGFsbCB0
+aGUgc3Vidm9sLXJlbGF0aXZlIHBhdGhzIGZpbGxlZCBpbiwNCj4gPiAJICogd2UgaGF2ZSB0byBz
+dHJpbmcgdGhlIHN1YnZvbHMgdG9nZXRoZXIgc28gdGhhdCB3ZSBjYW4gZ2V0DQo+ID4gCSAqIGEg
+cGF0aCBhbGwgdGhlIHdheSBiYWNrIHRvIHRoZSBGUyByb290DQo+ID5AQCAtNjUwLDcgKzY5OCwx
+MiBAQCBpbnQgbGlzdF9zdWJ2b2xzKGludCBmZCkNCj4gPiAJd2hpbGUgKG4pIHsNCj4gPiAJCXN0
+cnVjdCByb290X2luZm8gKmVudHJ5Ow0KPiA+IAkJZW50cnkgPSByYl9lbnRyeShuLCBzdHJ1Y3Qg
+cm9vdF9pbmZvLCByYl9ub2RlKTsNCj4gPi0JCXJlc29sdmVfcm9vdCgmcm9vdF9sb29rdXAsIGVu
+dHJ5KTsNCj4gPisJCWlmKCFnZXRfZGVmYXVsdCkNCj4gPisJCQlyZXNvbHZlX3Jvb3QoJnJvb3Rf
+bG9va3VwLCBlbnRyeSk7DQo+ID4rCQkvKiB3ZSBvbmx5IHdhbnQgdGhlIGRlZmF1bHQgc3Vidm9s
+dW1lICovDQo+ID4rCQllbHNlIGlmKHN1YnZvbF9pZCA9PSBlbnRyeS0+cm9vdF9pZCkNCj4gPisJ
+CQlyZXNvbHZlX3Jvb3QoJnJvb3RfbG9va3VwLCBlbnRyeSk7DQo+ID4rDQo+IA0KPiBXaGF0IGhh
+cHBlbnMgaWYgdGhlcmUgbm8gaXMgYSBkZWZhdWx0IHN1YnZvbHVtZSAoZm9yIGV4YW1wbGUgYSB2
+ZXJ5IG9sZA0KPiBidHJmcw0KPiBmaWxlc3lzdGVtLCBhbmQvb3IgYWZ0ZXIgcmVtb3ZpbmcgdGhl
+ICJkZWZhdWx0IiBzdWJ2b2x1bWUpID8NCj4gSSBzdWdnZXN0IHRvIGhhbmRsZSB0aGlzIGNhc2Ug
+cHJpbnRpbmcgc29tZXRoaW5nIGxpa2UgIk5vIGRlZmF1bHQNCj4gc3Vidm9sdW1lDQo+IGZvdW5k
+Ig0KPg0KSWYgdGhlcmUncyBubyBkZWZhdWx0IHN1YnZvbHVtZSwgdGhlIG91dHB1dCBpcyBlbXB0
+eS4gSnVzdCB0aGUgc2FtZSBhcyB3aGVuIHlvdSB1c2UgImJ0cmZzIHN1YnZvbHVtZSBsaXN0IiBh
+bmQgdGhlcmUncyBubyBzdWJ2b2x1bWUgYXQgYWxsLg0KVGhhbmtzIGZvciBhbGwgdGhlIHJldmll
+dyENCj4gDQo+IEJSDQo+IEcuQmFyb25jZWxsaQ0KPiANCj4gPiAJCW4gPSByYl9wcmV2KG4pOw0K
+PiA+IAl9DQo+ID4NCj4gPmRpZmYgLS1naXQgYS9idHJmcy5jIGIvYnRyZnMuYw0KPiA+aW5kZXgg
+NDYzMTRjZi4uNmI3M2Y4OCAxMDA2NDQNCj4gPi0tLSBhL2J0cmZzLmMNCj4gPisrKyBiL2J0cmZz
+LmMNCj4gPkBAIC03Myw2ICs3Myw5IEBAIHN0YXRpYyBzdHJ1Y3QgQ29tbWFuZCBjb21tYW5kc1td
+ID0gew0KPiA+IAkJIlNldCB0aGUgc3Vidm9sdW1lIG9mIHRoZSBmaWxlc3lzdGVtIDxwYXRoPiB3
+aGljaCB3aWxsIGJlDQo+IG1vdW50ZWRcbiINCj4gPiAJCSJhcyBkZWZhdWx0LiINCj4gPiAJfSwN
+Cj4gPisJeyBkb19nZXRfZGVmYXVsdF9zdWJ2b2wsIDEsICJzdWJ2b2x1bWUgZ2V0LWRlZmF1bHQi
+LCAiPHBhdGg+XG4iDQo+ID4rCQkiR2V0IHRoZSBkZWZhdWx0IHN1YnZvbHVtZSBvZiBhIGZpbGVz
+eXN0ZW0uIg0KPiA+Kwl9LA0KPiA+IAl7IGRvX2Zzc3luYywgMSwNCj4gPiAJICAiZmlsZXN5c3Rl
+bSBzeW5jIiwgIjxwYXRoPlxuIg0KPiA+IAkJIkZvcmNlIGEgc3luYyBvbiB0aGUgZmlsZXN5c3Rl
+bSA8cGF0aD4uIg0KPiA+ZGlmZiAtLWdpdCBhL2J0cmZzX2NtZHMuYyBiL2J0cmZzX2NtZHMuYw0K
+PiA+aW5kZXggODAzMWM1OC4uMTFjNTZmNiAxMDA2NDQNCj4gPi0tLSBhL2J0cmZzX2NtZHMuYw0K
+PiA+KysrIGIvYnRyZnNfY21kcy5jDQo+ID5AQCAtMzAxLDcgKzMwMSw3IEBAIGludCBkb19zdWJ2
+b2xfbGlzdChpbnQgYXJnYywgY2hhciAqKmFyZ3YpDQo+ID4gCQlmcHJpbnRmKHN0ZGVyciwgIkVS
+Uk9SOiBjYW4ndCBhY2Nlc3MgJyVzJ1xuIiwgc3Vidm9sKTsNCj4gPiAJCXJldHVybiAxMjsNCj4g
+PiAJfQ0KPiA+LQlyZXQgPSBsaXN0X3N1YnZvbHMoZmQpOw0KPiA+KwlyZXQgPSBsaXN0X3N1YnZv
+bHMoZmQsIDApOw0KPiA+IAlpZiAocmV0KQ0KPiA+IAkJcmV0dXJuIDE5Ow0KPiA+IAlyZXR1cm4g
+MDsNCj4gPkBAIC04MzQsNiArODM0LDM1IEBAIGludCBkb19zZXRfZGVmYXVsdF9zdWJ2b2woaW50
+IG5hcmdzLCBjaGFyICoqYXJndikNCj4gPiAJcmV0dXJuIDA7DQo+ID4gfQ0KPiA+DQo+ID4raW50
+IGRvX2dldF9kZWZhdWx0X3N1YnZvbChpbnQgbmFyZ3MsIGNoYXIgKiphcmd2KQ0KPiA+K3sNCj4g
+PisJaW50IGZkOw0KPiA+KwlpbnQgcmV0Ow0KPiA+KwljaGFyICpzdWJ2b2w7DQo+ID4rDQo+ID4r
+CXN1YnZvbCA9IGFyZ3ZbMV07DQo+ID4rDQo+ID4rCXJldCA9IHRlc3RfaXNzdWJ2b2x1bWUoc3Vi
+dm9sKTsNCj4gPisJaWYgKHJldCA8IDApIHsNCj4gPisJCWZwcmludGYoc3RkZXJyLCAiRVJST1I6
+IGVycm9yIGFjY2Vzc2luZyAnJXMnXG4iLCBzdWJ2b2wpOw0KPiA+KwkJcmV0dXJuIDEyOw0KPiA+
+Kwl9DQo+ID4rCWlmICghcmV0KSB7DQo+ID4rCQlmcHJpbnRmKHN0ZGVyciwgIkVSUk9SOiAnJXMn
+IGlzIG5vdCBhIHN1YnZvbHVtZVxuIiwgc3Vidm9sKTsNCj4gPisJCXJldHVybiAxMzsNCj4gPisJ
+fQ0KPiA+Kw0KPiA+KwlmZCA9IG9wZW5fZmlsZV9vcl9kaXIoc3Vidm9sKTsNCj4gPisJaWYgKGZk
+IDwgMCkgew0KPiA+KwkJZnByaW50ZihzdGRlcnIsICJFUlJPUjogY2FuJ3QgYWNjZXNzICclcydc
+biIsIHN1YnZvbCk7DQo+ID4rCQlyZXR1cm4gMTI7DQo+ID4rCX0NCj4gPisJcmV0ID0gbGlzdF9z
+dWJ2b2xzKGZkLCAxKTsNCj4gPisJaWYgKHJldCkNCj4gPisJCXJldHVybiAxOTsNCj4gPisJcmV0
+dXJuIDA7DQo+ID4rfQ0KPiA+Kw0KPiA+IGludCBkb19kZl9maWxlc3lzdGVtKGludCBuYXJncywg
+Y2hhciAqKmFyZ3YpDQo+ID4gew0KPiA+IAlzdHJ1Y3QgYnRyZnNfaW9jdGxfc3BhY2VfYXJncyAq
+c2FyZ3M7DQo+ID5kaWZmIC0tZ2l0IGEvYnRyZnNfY21kcy5oIGIvYnRyZnNfY21kcy5oDQo+ID5p
+bmRleCA3YmRlMTkxLi45Y2YxY2ExIDEwMDY0NA0KPiA+LS0tIGEvYnRyZnNfY21kcy5oDQo+ID4r
+KysgYi9idHJmc19jbWRzLmgNCj4gPkBAIC0yOCw3ICsyOCw4IEBAIGludCBkb19zY2FuKGludCBu
+YXJncywgY2hhciAqKmFyZ3YpOw0KPiA+IGludCBkb19yZXNpemUoaW50IG5hcmdzLCBjaGFyICoq
+YXJndik7DQo+ID4gaW50IGRvX3N1YnZvbF9saXN0KGludCBuYXJncywgY2hhciAqKmFyZ3YpOw0K
+PiA+IGludCBkb19zZXRfZGVmYXVsdF9zdWJ2b2woaW50IG5hcmdzLCBjaGFyICoqYXJndik7DQo+
+ID4taW50IGxpc3Rfc3Vidm9scyhpbnQgZmQpOw0KPiA+K2ludCBkb19nZXRfZGVmYXVsdF9zdWJ2
+b2woaW50IG5hcmdzLCBjaGFyICoqYXJndik7DQo+ID4raW50IGxpc3Rfc3Vidm9scyhpbnQgZmQs
+IGludCBnZXRfZGVmYXVsdCk7DQo+ID4gaW50IGRvX2RmX2ZpbGVzeXN0ZW0oaW50IG5hcmdzLCBj
+aGFyICoqYXJndik7DQo+ID4gaW50IGZpbmRfdXBkYXRlZF9maWxlcyhpbnQgZmQsIHU2NCByb290
+X2lkLCB1NjQgb2xkZXN0X2dlbik7DQo+ID4gaW50IGRvX2ZpbmRfbmV3ZXIoaW50IGFyZ2MsIGNo
+YXIgKiphcmd2KTsNCj4gPi0tDQo+ID4xLjcuMC40DQo+ID4NCj4gPi0tDQo+ID5UbyB1bnN1YnNj
+cmliZSBmcm9tIHRoaXMgbGlzdDogc2VuZCB0aGUgbGluZSAidW5zdWJzY3JpYmUgbGludXgtYnRy
+ZnMiDQo+IGluDQo+ID50aGUgYm9keSBvZiBhIG1lc3NhZ2UgdG8gbWFqb3Jkb21vQHZnZXIua2Vy
+bmVsLm9yZw0KPiA+TW9yZSBtYWpvcmRvbW8gaW5mbyBhdCAgaHR0cDovL3ZnZXIua2VybmVsLm9y
+Zy9tYWpvcmRvbW8taW5mby5odG1sDQo+IA0KDQo=

@@ -1,70 +1,81 @@
-From: Li Zefan <lizf@cn.fujitsu.com>
-Subject: Re: extremely slow syncing on btrfs with 2.6.39.1
-Date: Tue, 12 Jul 2011 16:44:31 +0800
-Message-ID: <4E1C096F.9020609@cn.fujitsu.com>
-References: <CABsxX9KzpMRXs0MDD45rXLLsRiU6Gfadd=nUFsTviE4EVL1E9g@mail.gmail.com>	<4E1BF52E.9090100@mobileobjects.de> <ivgugm$6i2$1@dough.gmane.org>
+From: Jan Schmidt <list.btrfs@jan-o-sch.net>
+Subject: Re: [PATCH v2 4/5] scrub userland implementation
+Date: Tue, 12 Jul 2011 10:48:39 +0200
+Message-ID: <4E1C0A67.8010203@jan-o-sch.net>
+References: <cover.1301503683.git.list.btrfs@jan-o-sch.net> <6321f041bfb9f439198cc03d2f7cb8ce8c5db867.1301503683.git.list.btrfs@jan-o-sch.net> <20110711204555.GL4325@carfax.org.uk>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=UTF-8
-Cc: linux-btrfs@vger.kernel.org
-To: Lubos Kolouch <lubos.kolouch@gmail.com>
+Content-Type: text/plain; charset=ISO-8859-1
+Cc: chris.mason@oracle.com
+To: Hugo Mills <hugo@carfax.org.uk>, linux-btrfs@vger.kernel.org
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <ivgugm$6i2$1@dough.gmane.org>
+In-Reply-To: <20110711204555.GL4325@carfax.org.uk>
 List-ID: <linux-btrfs.vger.kernel.org>
 
->>> I've been monitoring the lists for a while now but didn't see this
->>> problem mentioned in particular: I've got a fairly standard desktop
->>> system at home, 700gb WD drive, nothing special, with 2 btrfs
->>> filesystems and some snapshots. The system runs for days, and I've
->>> noticed unusual disk activity the other evening - turns out that it's
->>> taking forever to sync().
->>>
->>> $ uname -r
->>> 2.6.39.1
->>> $ grep btrfs /proc/mounts
->>> /dev/root / btrfs rw,relatime 0 0    # is /dev/sdb2 # /dev/sdb5 /home
->>> btrfs rw,relatime 0 0 $ time sync
->>>
->>> real	1m5.552s
->>> user	0m0.000s
->>> sys	0m2.102s
->>>
->>> $ time sync
->>>
->>> real	1m16.830s
->>> user	0m0.001s
->>> sys	0m1.490s
->>>
->>> $ df -h / /home
->>> Filesystem      Size  Used Avail Use% Mounted on /dev/root        47G  
->>> 33G  7.7G  82% / /dev/sdb5       652G  216G  421G  34% /home $ btrfs fi
->>> df /
->>> Data: total=35.48GB, used=29.86GB
->>> System, DUP: total=16.00MB, used=12.00KB System: total=4.00MB,
->>> used=0.00
->>> Metadata, DUP: total=4.50GB, used=1.67GB
->>>  $ btrfs fi df /home
->>> Data: total=310.01GB, used=209.53GB
->>> System, DUP: total=8.00MB, used=48.00KB System: total=4.00MB, used=0.00
->>> Metadata, DUP: total=11.00GB, used=2.98GB Metadata: total=8.00MB,
->>> used=0.00
->>>
->>> I'll switch to 3.0 soon, but, given the fact that we're going to be
->>> running MeeGo on 2.6.39 probably for a while, I was wondering if anyone
->>> knows off the top of their heads if this issue is known/identified. If
->>> not then I'll need to make someone do some patching ;).
->>>
->>> Auke
->>
->> You should read the thread "Abysmal Performance" of these mailing list
->> from last month. They had a similar problem and downgraded to a 2.6.38
->> kernel. By the way, that works for me too for the time being.
->>
->> Best Regards.
->>
->> Jan Stilow
-> 
-> I had similar experience with two servers running on 2.6.39 - the 
-> performance was terrible, after downgrade to 2.6.38 the speed is OK again.
-> 
+On 11.07.2011 22:45, Hugo Mills wrote:
+>    OK, here's the remainder of my comments for this file. Not much for
+> this bit -- just one comment about locking, a reminder, and an
+> observation.
 
-Then you can turn to bisection to find out the culprit.
+Again, I ripped out the bits I simply corrected. My comments below.
+
+> [...]
+>
+>> +static int scrub_write_progress(pthread_mutex_t *m, const char *fsid,
+>> +                                struct scrub_progress* data, int n)
+>> +{
+>> +	int ret;
+>> +	int fd;
+>> +	int old;
+>> +
+>> +	ret = pthread_mutex_lock(m);
+>> +	if (ret) {
+>> +		ret = -errno;
+>> +		goto out;
+>> +	}
+>> +
+>> +	pthread_setcancelstate(PTHREAD_CANCEL_DISABLE, &old);
+> 
+>    Probably not massively important, but you don't check for the
+> return value of this call or its counterpart at the end of this
+> function.
+
+pthread_* return values where wrong throughout the code. Good that you
+pointed at this one. It's all fixed now.
+
+> [...]
+>
+>> +static void *scrub_one_dev(void *ctx)
+>> +{
+>> +	struct scrub_progress *sp = ctx;
+>> +	int ret;
+>> +	struct timeval tv;
+>> +
+>> +	sp->stats.canceled = 0;
+>> +	sp->stats.duration = 0;
+>> +	sp->stats.finished = 0;
+>> +
+>> +	ret = ioctl(sp->fd, BTRFS_IOC_SCRUB, &sp->scrub_args);
+>> +	gettimeofday(&tv, NULL);
+>> +	sp->ret = ret;
+>> +	sp->stats.duration = tv.tv_sec - sp->stats.t_start;
+>> +	sp->stats.canceled = !!ret;
+>> +	sp->ioctl_errno = errno;
+>> +	ret = pthread_mutex_lock(&sp->progress_mutex);
+>> +	if (ret)
+>> +		return ERR_PTR(-errno);
+>> +	sp->stats.finished = 1;
+>> +	ret = pthread_mutex_unlock(&sp->progress_mutex);
+> 
+>    If you downgrade .finished to a plain int, rather than a u64, then
+> is this locking actually be needed? You have one place where the lock
+> is held to write a single value (which is atomic for an int, IIRC),
+> and you have another place where you hold the lock to read and compare
+> it. I don't see any problem with removing the lock for that.
+
+Conclusion first: I want to stick with the mutex. My reasoning:
+- this is by no means time critical code
+- the mutexes do the memory barriers required for synchronization
+- using int instead of u64 would complicate the kvread macros
+
+Thanks,
+-Jan

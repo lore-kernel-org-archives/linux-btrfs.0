@@ -1,51 +1,98 @@
-From: Ilya Dryomov <idryomov@gmail.com>
-Subject: Re: after mounting with -o degraded: ioctl: LOOP_CLR_FD: Device or
- resource busy
-Date: Tue, 12 Jul 2011 13:09:50 +0300
-Message-ID: <20110712100950.GA2041@zambezi.lan>
-References: <CAJ1PRS=uL3xyJi57xz1taqh1mOYLUJDSRzUs3LsGBx7UVBG=Dg@mail.gmail.com>
+From: Hubert Kario <kario@wit.edu.pl>
+Subject: Re: [PATCH 2/2] add detailed help messages to btrfs command
+Date: Tue, 12 Jul 2011 12:40:06 +0200
+Message-ID: <201107121240.06740.kario@wit.edu.pl>
+References: <201101231339.36599.kario@wit.edu.pl> <201101231342.43637.kario@wit.edu.pl> <4E1B1309.2080408@jan-o-sch.net>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
+Content-Type: Text/Plain;
+  charset="iso-8859-1"
 Cc: linux-btrfs@vger.kernel.org
-To: "krzf83@gmail.com " <krzf83@gmail.com>
+To: Jan Schmidt <list.btrfs@jan-o-sch.net>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <CAJ1PRS=uL3xyJi57xz1taqh1mOYLUJDSRzUs3LsGBx7UVBG=Dg@mail.gmail.com>
+In-Reply-To: <4E1B1309.2080408@jan-o-sch.net>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Tue, Jul 12, 2011 at 02:47:41AM +0200, krzf83@gmail.com  wrote:
-> dd if=/dev/null of=img5 bs=1 seek=2G
-> dd if=/dev/null of=img6 bs=1 seek=2G
-> mkfs.btrfs -d raid1 -m raid1 img5 img6
-> losetup /dev/loop4 img5
-> losetup /dev/loop5 img6
-> btrfs device scan
-> mount -t btrfs /dev/loop4 dir
-> umount dir
-> losetup -d /dev/loop5
-> mount -t btrfs -o degraded /dev/loop4 dir
-> umount dir
-> losetup -d /dev/loop4
-> ioctl: LOOP_CLR_FD: Device or resource busy
-> mkfs.ext3 /dev/loop4
-> mke2fs 1.39 (29-May-2006)
-> /dev/loop4 is apparently in use by the system; will not make a filesystem here!
+On Monday 11 of July 2011 17:13:13 Jan Schmidt wrote:
+> Hi Hubert,
 > 
-> this only happens after mouting with -o degraded. loopback device is
-> unusable until next reboot
+> I have to admit I did not recognize this patch but now Hugo is forcing
+> me to use the "detailed help messages" and I've got an improvement to
+> suggest:
+> 
+> On 23.01.2011 13:42, Hubert Kario wrote:
+[snip]
+> >  	{ do_defrag, -1,
+> >  	
+> >  	  "filesystem defragment", "[-vcf] [-s start] [-l len] [-t size]
+> >  	  <file>|<dir> [<file>|<dir>...]\n"
+> > 
+> > -		"Defragment a file or a directory."
+> > +		"Defragment a file or a directory.",
+> > +          "[-vcf] [-s start] [-l len] [-t size] <file>|<dir>
+> > [<file>|<dir>...]\n" +          "Defragment file data or directory
+> > metadata.\n"
+> > +                "-v         be verbose\n"
+> > +                "-c         compress the file while defragmenting\n"
+> > +                "-f         flush data to disk immediately after
+> > defragmenting\n" +                "-s start   defragment only from byte
+> > onward\n" +                "-l len     defragment only up to len
+> > bytes\n"
+> > +                "-t size    minimal size of file to be considered for
+> > defragmenting\n"
+> 
+> Lots of too long lines.
 
-So mkfs.ext3 fails to open device with O_EXCL.
+you mean the code or the printed messages? 
+messages fit a 80 column screen, I remember I double checked it
 
-We are missing blk_put() call on error path.  At least once: if
-btrfs_open_devices() fails (and it does if you e.g. zero out the
-superblock on a raid1 fs while it's unmounted and then immediately
-mount) it's caller never releases the other device(s).  If nobody else
-steps up I can try to fix this in the next couple of days.
+> 
+> I don't like to repeat the synopsis passage. How about adding the
+> general ->help when printing ->adv_help as well? This reduces the need
+> of duplication.
 
-Thanks,
+I think I added it because of differences in formatting.
+Also I'd say we don't want to overload the user with information when he 
+mistypes a command so the main help command should be as concise as possible 
+while the advanced may be much more detailed (looking at the mailing list, `fi 
+df` could definitely use some more verbose help message)
 
-		Ilya
+> 
+> To prove my point, looking at the current version in Hugo's integration
+> branch, your two synopsis lines already got inconsistent regarding the
+> -c option :-)
 
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+That's because the patches are submitted with base as Chris tree, not the 
+Hugo's so the result is a real patchwork that needs some clean-up
+
+[snip]
+
+> > @@ -148,10 +184,10 @@ static void help(char *np)
+> > 
+> >  	printf("Usage:\n");
+> >  	for( cp = commands; cp->verb; cp++ )
+> > 
+> > -		print_help(np, cp);
+> > +		print_help(np, cp, BASIC_HELP);
+> > 
+> >  	printf("\n\t%s help|--help|-h\n\t\tShow the help.\n",np);
+> 
+>                             ^^^^^^^^^
+> You did not change this, but as we are here, ...
+
+I wanted to leave as much code unchanged as possible (this /was/ my first 
+patch to btrfs-tools)
+
+> 
+> > -	printf("\n\t%s <cmd> --help\n\t\tShow detailed help for a command
+> > or\n\t\t" +	printf("\n\t%s <cmd> --help\n\t\tShow detailed help for a
+> > command or"
+> 
+>                              ^^^^^^^
+> ... why not extending the general rule so that help messages will be
+> printed with --help and -h?
+
+We have to remember that this way we loose -h switch, quite intuitive to show 
+base 2 sizes with `btrfs file df`... 
+
+-- 
+Hubert

@@ -1,30 +1,18 @@
 From: "krzf83@gmail.com " <krzf83@gmail.com>
-Subject: after mounting with -o degraded: ioctl: LOOP_CLR_FD: Device or
- resource busy
-Date: Tue, 12 Jul 2011 02:47:41 +0200
-Message-ID: <CAJ1PRS=uL3xyJi57xz1taqh1mOYLUJDSRzUs3LsGBx7UVBG=Dg@mail.gmail.com>
+Subject: Re: raid1
+Date: Tue, 12 Jul 2011 02:53:16 +0200
+Message-ID: <CAJ1PRSk7Uvg-R5+rM1k=-MCWhSOq4hx9C93StunJgKTwU7p6gQ@mail.gmail.com>
+References: <CAJ1PRSkz86G+4XfDMp1fq8f7ar5LOPux06FJTQ4WxhkT1Bu6vQ@mail.gmail.com>
+	<4E1B9790.3050002@redhat.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset=ISO-8859-1
 To: linux-btrfs@vger.kernel.org
 Return-path: <linux-btrfs-owner@vger.kernel.org>
+In-Reply-To: <4E1B9790.3050002@redhat.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-dd if=/dev/null of=img5 bs=1 seek=2G
-dd if=/dev/null of=img6 bs=1 seek=2G
-mkfs.btrfs -d raid1 -m raid1 img5 img6
-losetup /dev/loop4 img5
-losetup /dev/loop5 img6
-btrfs device scan
-mount -t btrfs /dev/loop4 dir
-umount dir
-losetup -d /dev/loop5
-mount -t btrfs -o degraded /dev/loop4 dir
-umount dir
-losetup -d /dev/loop4
-ioctl: LOOP_CLR_FD: Device or resource busy
-mkfs.ext3 /dev/loop4
-mke2fs 1.39 (29-May-2006)
-/dev/loop4 is apparently in use by the system; will not make a filesystem here!
+Thanks.
 
-this only happens after mouting with -o degraded. loopback device is
-unusable until next reboot
+I don't see reason why this needs another mount switch. This would
+fail to start whole system in / parition was btrfs raid1, with no
+reason to do so.

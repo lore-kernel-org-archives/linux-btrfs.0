@@ -1,38 +1,46 @@
-From: Li Zefan <lizf@cn.fujitsu.com>
-Subject: Re: sign a bug in =?UTF-8?B?4oCcc2V0X2V4dGVudF9iaXTigJ0=?=
-Date: Wed, 13 Jul 2011 09:30:57 +0800
-Message-ID: <4E1CF551.3060405@cn.fujitsu.com>
-References: <1310485239.13883.YahooMailNeo@web92401.mail.cnh.yahoo.com>
+From: Josef Bacik <josef@redhat.com>
+Subject: Re: btrfs hang in flush-btrfs-5
+Date: Wed, 13 Jul 2011 10:55:06 -0400
+Message-ID: <4E1DB1CA.1050307@redhat.com>
+References: <iv6ntd$3o5$1@dough.gmane.org> <ivenfi$iph$1@dough.gmane.org> <4E1B08FC.6030907@redhat.com> <ivfpgh$g8r$1@dough.gmane.org>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=UTF-8
-Cc: linux-btrfs <linux-btrfs@vger.kernel.org>
-To: Qiang Zhu <qiang.zhu@yahoo.cn>
+Content-Type: text/plain; charset=ISO-8859-1
+Cc: linux-btrfs@vger.kernel.org
+To: Jeremy Sanders <jeremy@jeremysanders.net>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <1310485239.13883.YahooMailNeo@web92401.mail.cnh.yahoo.com>
+In-Reply-To: <ivfpgh$g8r$1@dough.gmane.org>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Qiang Zhu wrote:
-> hi=20
->=20
-> In the end part of =E2=80=9Cset_extent_bit=E2=80=9D=EF=BC=8CI found w=
-hen err occurs =EF=BC=8Cthere is no operate to free "prealloc" which ha=
-ve been allocated in "alloc_extent_state_atomic"
-> this may lead a menory leak when "set_state_bits" failed.
+On 07/11/2011 05:21 PM, Jeremy Sanders wrote:
+> Josef Bacik wrote:
+> 
+>> On 07/11/2011 07:40 AM, Jeremy Sanders wrote:
+>>> Jeremy Sanders wrote:
+>>>
+>>>> Hi - I'm trying btrfs with kernel 2.6.38.8-32.fc15.x86_64 (a Fedora
+>>>> kernel). I'm just doing a tar-to-tar copy onto the file system with
+>>>> compress- force=zlib. Here are some traces of the stuck processes.
+>>>
+>>> I've managed to reproduce the hang using the latest btrfs from the
+>>> repository. I had to remove some of the tracing lines to get it to
+>>> compile under 2.6.38.8 and an ioctl which wasn't defined. Here is is
+>>> where it is stuck:
+>>>
+>>
+>> Hrm well that is just unlikely and hard to hit.  Will you try this and
+>> see if it helps you?  Thanks,
+> 
+> It's got quite a bit further past than where it got before and hasn't 
+> crashed yet. I will let you know when it has finished ok.
+> 
+> I see that the btrfs-delalloc (rather than endio-write) thread is taking up 
+> 100% of CPU and the write speed seems to have dropped during the copying, 
+> however. The copy started with using endio-write fully on both cores and now 
+> is using dealloc a lot.
+> 
 
-No, it won't. 'prealloc' has been inserted into rbtree before set_state=
-_bits()
-is called().
 
-> err =3D set_state_bits(tree, prealloc, &bits);
->=20
-> if (err) {
-> prealloc =3D NULL;
-> goto out; // this direct will do nothing because prealloc=3DNULL.
-> }
-> wish your reply.
+When you see that can you get sysrq+w or sysrq+t to get a stacktrace of
+what it's doing so I can see if it's something that can be fixed.  Thanks,
 
---
-To unsubscribe from this list: send the line "unsubscribe linux-btrfs" =
-in
-the body of a message to majordomo@vger.kernel.org
-More majordomo info at  http://vger.kernel.org/majordomo-info.html
+Josef

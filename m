@@ -1,63 +1,40 @@
 From: Li Zefan <lizf@cn.fujitsu.com>
-Subject: [PATCH 00/16] Btrfs: fixes and cleanups for 3.1
-Date: Thu, 14 Jul 2011 11:15:37 +0800
-Message-ID: <4E1E5F59.5030208@cn.fujitsu.com>
+Subject: [PATCH 01/16] Btrfs: copy string correctly in INO_LOOKUP ioctl
+Date: Thu, 14 Jul 2011 11:16:00 +0800
+Message-ID: <4E1E5F70.4030504@cn.fujitsu.com>
+References: <4E1E5F59.5030208@cn.fujitsu.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset=UTF-8
 Cc: "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
 To: Chris Mason <chris.mason@oracle.com>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
+In-Reply-To: <4E1E5F59.5030208@cn.fujitsu.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-The first 4 patches are bug-fixes, and the remaining are small
-cleanups that have sit in my git tree for some time.
+Memory areas [ptr, ptr+total_len] and [name, name+total_len]
+may overlap, so it's wrong to use memcpy().
 
-The first 3 patches have been sent to the list before.
+Signed-off-by: Li Zefan <lizf@cn.fujitsu.com>
+---
+ fs/btrfs/ioctl.c |    3 +--
+ 1 files changed, 1 insertions(+), 2 deletions(-)
 
-We save some bytes after this patchset:
-
-   text    data     bss     dec     hex filename
- 426387    3854    1024  431265   694a1 fs/btrfs/btrfs.o.orig
- 425651    3854    1024  430529   691c1 fs/btrfs/btrfs.o
-
-I've run xfstests for testing.
-
-===
-
-Li Zefan (12):
-      Btrfs: copy string correctly in INO_LOOKUP ioctl
-      Btrfs: fix space leak when skipping small extents during trimming
-      Btrfs: fix space leak when trimming free extents
-      Btrfs: check the nodatasum flag when writing compressed files
-      Btrfs: use wait_event()
-      Btrfs: remove a BUG_ON() in btrfs_commit_transaction()
-      Btrfs: remove remaining ref-cache code
-      Btrfs: make acl functions really no-op if acl is not enabled
-      Btrfs: remove redundant code for dir item lookup
-      Btrfs: clean up search_extent_mapping()
-      Btrfs: clean up code for extent_map lookup
-      Btrfs: clean up code for merging extent maps
-
-Xiao Guangrong (4):
-      Btrfs: remove unused members from struct extent_state
-      Btrfs: clean up for insert_state()
-      Btrfs: clean up for wait_extent_bit()
-      Btrfs: clean up for find_first_extent_bit()
-
- fs/btrfs/Makefile           |    4 +-
- fs/btrfs/acl.c              |   17 -----
- fs/btrfs/compression.c      |   14 +++-
- fs/btrfs/ctree.h            |   15 ++++-
- fs/btrfs/dir-item.c         |   30 +--------
- fs/btrfs/extent_io.c        |   80 ++++++++--------------
- fs/btrfs/extent_io.h        |    2 -
- fs/btrfs/extent_map.c       |  155 ++++++++++++++-----------------------------
- fs/btrfs/free-space-cache.c |   43 +++++++-----
- fs/btrfs/ioctl.c            |    3 +-
- fs/btrfs/ref-cache.c        |   68 -------------------
- fs/btrfs/ref-cache.h        |   52 --------------
- fs/btrfs/transaction.c      |   65 +++----------------
- 13 files changed, 142 insertions(+), 406 deletions(-)
- delete mode 100644 fs/btrfs/ref-cache.c
- delete mode 100644 fs/btrfs/ref-cache.h
-
+diff --git a/fs/btrfs/ioctl.c b/fs/btrfs/ioctl.c
+index a3c4751..08a4580 100644
+--- a/fs/btrfs/ioctl.c
++++ b/fs/btrfs/ioctl.c
+@@ -1755,11 +1755,10 @@ static noinline int btrfs_search_path_in_tree(struct btrfs_fs_info *info,
+ 		key.objectid = key.offset;
+ 		key.offset = (u64)-1;
+ 		dirid = key.objectid;
+-
+ 	}
+ 	if (ptr < name)
+ 		goto out;
+-	memcpy(name, ptr, total_len);
++	memmove(name, ptr, total_len);
+ 	name[total_len]='\0';
+ 	ret = 0;
+ out:
+-- 
+1.7.3.1

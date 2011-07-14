@@ -1,7 +1,8 @@
 From: Li Zefan <lizf@cn.fujitsu.com>
-Subject: [PATCH 07/16] Btrfs: remove remaining ref-cache code
-Date: Thu, 14 Jul 2011 11:17:27 +0800
-Message-ID: <4E1E5FC7.1060402@cn.fujitsu.com>
+Subject: [PATCH 08/16] Btrfs: make acl functions really no-op if acl is not
+ enabled
+Date: Thu, 14 Jul 2011 11:17:39 +0800
+Message-ID: <4E1E5FD3.4020408@cn.fujitsu.com>
 References: <4E1E5F59.5030208@cn.fujitsu.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset=UTF-8
@@ -11,149 +12,88 @@ Return-path: <linux-btrfs-owner@vger.kernel.org>
 In-Reply-To: <4E1E5F59.5030208@cn.fujitsu.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Since commit f2a97a9dbd86eb1ef956bdf20e05c507b32beb96
-("btrfs: remove all unused functions"), there's no extern functions
-at all in ref-cache.c, so just remove the remaining dead code.
+So there's no overhead for something we don't use.
 
 Signed-off-by: Li Zefan <lizf@cn.fujitsu.com>
 ---
- fs/btrfs/ref-cache.c |   68 --------------------------------------------------
- fs/btrfs/ref-cache.h |   52 --------------------------------------
- 2 files changed, 0 insertions(+), 120 deletions(-)
- delete mode 100644 fs/btrfs/ref-cache.c
- delete mode 100644 fs/btrfs/ref-cache.h
+ fs/btrfs/Makefile |    4 +++-
+ fs/btrfs/acl.c    |   17 -----------------
+ fs/btrfs/ctree.h  |   15 ++++++++++++---
+ 3 files changed, 15 insertions(+), 21 deletions(-)
 
-diff --git a/fs/btrfs/ref-cache.c b/fs/btrfs/ref-cache.c
-deleted file mode 100644
-index 82d569c..0000000
---- a/fs/btrfs/ref-cache.c
-+++ /dev/null
-@@ -1,68 +0,0 @@
--/*
-- * Copyright (C) 2008 Oracle.  All rights reserved.
-- *
-- * This program is free software; you can redistribute it and/or
-- * modify it under the terms of the GNU General Public
-- * License v2 as published by the Free Software Foundation.
-- *
-- * This program is distributed in the hope that it will be useful,
-- * but WITHOUT ANY WARRANTY; without even the implied warranty of
-- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
-- * General Public License for more details.
-- *
-- * You should have received a copy of the GNU General Public
-- * License along with this program; if not, write to the
-- * Free Software Foundation, Inc., 59 Temple Place - Suite 330,
-- * Boston, MA 021110-1307, USA.
-- */
+diff --git a/fs/btrfs/Makefile b/fs/btrfs/Makefile
+index 9b72dcf..40e6ac0 100644
+--- a/fs/btrfs/Makefile
++++ b/fs/btrfs/Makefile
+@@ -6,5 +6,7 @@ btrfs-y += super.o ctree.o extent-tree.o print-tree.o root-tree.o dir-item.o \
+ 	   transaction.o inode.o file.o tree-defrag.o \
+ 	   extent_map.o sysfs.o struct-funcs.o xattr.o ordered-data.o \
+ 	   extent_io.o volumes.o async-thread.o ioctl.o locking.o orphan.o \
+-	   export.o tree-log.o acl.o free-space-cache.o zlib.o lzo.o \
++	   export.o tree-log.o free-space-cache.o zlib.o lzo.o \
+ 	   compression.o delayed-ref.o relocation.o delayed-inode.o scrub.o
++
++btrfs-$(CONFIG_BTRFS_FS_POSIX_ACL) += acl.o
+diff --git a/fs/btrfs/acl.c b/fs/btrfs/acl.c
+index f66fc99..b206d4c 100644
+--- a/fs/btrfs/acl.c
++++ b/fs/btrfs/acl.c
+@@ -28,8 +28,6 @@
+ #include "btrfs_inode.h"
+ #include "xattr.h"
+ 
+-#ifdef CONFIG_BTRFS_FS_POSIX_ACL
 -
--#include <linux/sched.h>
--#include <linux/slab.h>
--#include <linux/sort.h>
--#include "ctree.h"
--#include "ref-cache.h"
--#include "transaction.h"
+ static struct posix_acl *btrfs_get_acl(struct inode *inode, int type)
+ {
+ 	int size;
+@@ -318,18 +316,3 @@ const struct xattr_handler btrfs_xattr_acl_access_handler = {
+ 	.get	= btrfs_xattr_acl_get,
+ 	.set	= btrfs_xattr_acl_set,
+ };
 -
--static struct rb_node *tree_insert(struct rb_root *root, u64 bytenr,
--				   struct rb_node *node)
+-#else /* CONFIG_BTRFS_FS_POSIX_ACL */
+-
+-int btrfs_acl_chmod(struct inode *inode)
 -{
--	struct rb_node **p = &root->rb_node;
--	struct rb_node *parent = NULL;
--	struct btrfs_leaf_ref *entry;
--
--	while (*p) {
--		parent = *p;
--		entry = rb_entry(parent, struct btrfs_leaf_ref, rb_node);
--
--		if (bytenr < entry->bytenr)
--			p = &(*p)->rb_left;
--		else if (bytenr > entry->bytenr)
--			p = &(*p)->rb_right;
--		else
--			return parent;
--	}
--
--	entry = rb_entry(node, struct btrfs_leaf_ref, rb_node);
--	rb_link_node(node, parent, p);
--	rb_insert_color(node, root);
--	return NULL;
+-	return 0;
 -}
 -
--static struct rb_node *tree_search(struct rb_root *root, u64 bytenr)
+-int btrfs_init_acl(struct btrfs_trans_handle *trans,
+-		   struct inode *inode, struct inode *dir)
 -{
--	struct rb_node *n = root->rb_node;
--	struct btrfs_leaf_ref *entry;
--
--	while (n) {
--		entry = rb_entry(n, struct btrfs_leaf_ref, rb_node);
--		WARN_ON(!entry->in_tree);
--
--		if (bytenr < entry->bytenr)
--			n = n->rb_left;
--		else if (bytenr > entry->bytenr)
--			n = n->rb_right;
--		else
--			return n;
--	}
--	return NULL;
+-	return 0;
 -}
-diff --git a/fs/btrfs/ref-cache.h b/fs/btrfs/ref-cache.h
-deleted file mode 100644
-index 24f7001..0000000
---- a/fs/btrfs/ref-cache.h
-+++ /dev/null
-@@ -1,52 +0,0 @@
--/*
-- * Copyright (C) 2008 Oracle.  All rights reserved.
-- *
-- * This program is free software; you can redistribute it and/or
-- * modify it under the terms of the GNU General Public
-- * License v2 as published by the Free Software Foundation.
-- *
-- * This program is distributed in the hope that it will be useful,
-- * but WITHOUT ANY WARRANTY; without even the implied warranty of
-- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
-- * General Public License for more details.
-- *
-- * You should have received a copy of the GNU General Public
-- * License along with this program; if not, write to the
-- * Free Software Foundation, Inc., 59 Temple Place - Suite 330,
-- * Boston, MA 021110-1307, USA.
-- */
--#ifndef __REFCACHE__
--#define __REFCACHE__
 -
--struct btrfs_extent_info {
--	/* bytenr and num_bytes find the extent in the extent allocation tree */
--	u64 bytenr;
--	u64 num_bytes;
--
--	/* objectid and offset find the back reference for the file */
--	u64 objectid;
--	u64 offset;
--};
--
--struct btrfs_leaf_ref {
--	struct rb_node rb_node;
--	struct btrfs_leaf_ref_tree *tree;
--	int in_tree;
--	atomic_t usage;
--
--	u64 root_gen;
--	u64 bytenr;
--	u64 owner;
--	u64 generation;
--	int nritems;
--
--	struct list_head list;
--	struct btrfs_extent_info extents[];
--};
--
--static inline size_t btrfs_leaf_ref_size(int nr_extents)
--{
--	return sizeof(struct btrfs_leaf_ref) +
--	       sizeof(struct btrfs_extent_info) * nr_extents;
--}
+-#endif /* CONFIG_BTRFS_FS_POSIX_ACL */
+diff --git a/fs/btrfs/ctree.h b/fs/btrfs/ctree.h
+index 60e13ef..b5097e2 100644
+--- a/fs/btrfs/ctree.h
++++ b/fs/btrfs/ctree.h
+@@ -2644,12 +2644,21 @@ do {								\
+ /* acl.c */
+ #ifdef CONFIG_BTRFS_FS_POSIX_ACL
+ int btrfs_check_acl(struct inode *inode, int mask, unsigned int flags);
+-#else
+-#define btrfs_check_acl NULL
 -#endif
+ int btrfs_init_acl(struct btrfs_trans_handle *trans,
+ 		   struct inode *inode, struct inode *dir);
+ int btrfs_acl_chmod(struct inode *inode);
++#else
++#define btrfs_check_acl NULL
++static inline int btrfs_init_acl(struct btrfs_trans_handle *trans,
++				 struct inode *inode, struct inode *dir)
++{
++	return 0;
++}
++static inline int btrfs_acl_chmod(struct inode *inode)
++{
++	return 0;
++}
++#endif
+ 
+ /* relocation.c */
+ int btrfs_relocate_block_group(struct btrfs_root *root, u64 group_start);
 -- 
 1.7.3.1

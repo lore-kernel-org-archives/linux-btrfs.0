@@ -1,72 +1,49 @@
 From: Mark Fasheh <mfasheh@suse.com>
-Subject: [PATCH 4/7] btrfs: Don't BUG_ON alloc_path errors in btrfs_read_locked_inode
-Date: Thu, 14 Jul 2011 15:14:59 -0700
-Message-ID: <1310681702-13922-5-git-send-email-mfasheh@suse.com>
+Subject: [PATCH 7/7] btrfs: don't BUG_ON allocation errors in btrfs_drop_snapshot
+Date: Thu, 14 Jul 2011 15:15:02 -0700
+Message-ID: <1310681702-13922-8-git-send-email-mfasheh@suse.com>
 References: <1310681702-13922-1-git-send-email-mfasheh@suse.com>
  <1310681702-13922-2-git-send-email-mfasheh@suse.com>
  <1310681702-13922-3-git-send-email-mfasheh@suse.com>
  <1310681702-13922-4-git-send-email-mfasheh@suse.com>
+ <1310681702-13922-5-git-send-email-mfasheh@suse.com>
+ <1310681702-13922-6-git-send-email-mfasheh@suse.com>
+ <1310681702-13922-7-git-send-email-mfasheh@suse.com>
 Cc: chris.mason@oracle.com, Mark Fasheh <mfasheh@suse.com>
 To: linux-btrfs@vger.kernel.org
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <1310681702-13922-4-git-send-email-mfasheh@suse.com>
+In-Reply-To: <1310681702-13922-7-git-send-email-mfasheh@suse.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-btrfs_iget() also needed an update so that errors from btrfs_locked_inode()
-are caught and bubbled back up.
+In addition to properly handling allocation failure from btrfs_alloc_path, I
+also fixed up the kzalloc error handling code immediately below it.
 
 Signed-off-by: Mark Fasheh <mfasheh@suse.com>
 ---
- fs/btrfs/inode.c |   22 +++++++++++++++++-----
- 1 files changed, 17 insertions(+), 5 deletions(-)
+ fs/btrfs/extent-tree.c |    8 ++++++--
+ 1 files changed, 6 insertions(+), 2 deletions(-)
 
-diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
-index a0faf7d..8882999 100644
---- a/fs/btrfs/inode.c
-+++ b/fs/btrfs/inode.c
-@@ -2518,7 +2518,9 @@ static void btrfs_read_locked_inode(struct inode *inode)
- 		filled = true;
+diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
+index aa91773..a016590 100644
+--- a/fs/btrfs/extent-tree.c
++++ b/fs/btrfs/extent-tree.c
+@@ -6268,10 +6268,14 @@ int btrfs_drop_snapshot(struct btrfs_root *root,
+ 	int level;
  
  	path = btrfs_alloc_path();
 -	BUG_ON(!path);
 +	if (!path)
-+		goto make_bad;
-+
- 	path->leave_spinning = 1;
- 	memcpy(&location, &BTRFS_I(inode)->location, sizeof(location));
++		return -ENOMEM;
  
-@@ -3973,6 +3975,7 @@ struct inode *btrfs_iget(struct super_block *s, struct btrfs_key *location,
- 			 struct btrfs_root *root, int *new)
- {
- 	struct inode *inode;
-+	int bad_inode = 0;
- 
- 	inode = btrfs_iget_locked(s, location->objectid, root);
- 	if (!inode)
-@@ -3982,10 +3985,19 @@ struct inode *btrfs_iget(struct super_block *s, struct btrfs_key *location,
- 		BTRFS_I(inode)->root = root;
- 		memcpy(&BTRFS_I(inode)->location, location, sizeof(*location));
- 		btrfs_read_locked_inode(inode);
--		inode_tree_add(inode);
--		unlock_new_inode(inode);
--		if (new)
--			*new = 1;
-+		if (!is_bad_inode(inode)) {
-+			inode_tree_add(inode);
-+			unlock_new_inode(inode);
-+			if (new)
-+				*new = 1;
-+		} else {
-+			bad_inode = 1;
-+		}
+ 	wc = kzalloc(sizeof(*wc), GFP_NOFS);
+-	BUG_ON(!wc);
++	if (!wc) {
++		btrfs_free_path(path);
++		return -ENOMEM;
 +	}
-+
-+	if (bad_inode) {
-+		iput(inode);
-+		inode = ERR_PTR(-ESTALE);
- 	}
  
- 	return inode;
+ 	trans = btrfs_start_transaction(tree_root, 0);
+ 	BUG_ON(IS_ERR(trans));
 -- 
 1.7.5.3
 

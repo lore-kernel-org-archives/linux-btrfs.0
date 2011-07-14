@@ -1,8 +1,7 @@
 From: Li Zefan <lizf@cn.fujitsu.com>
-Subject: [PATCH 08/16] Btrfs: make acl functions really no-op if acl is not
- enabled
-Date: Thu, 14 Jul 2011 11:17:39 +0800
-Message-ID: <4E1E5FD3.4020408@cn.fujitsu.com>
+Subject: [PATCH 09/16] Btrfs: remove redundant code for dir item lookup
+Date: Thu, 14 Jul 2011 11:17:52 +0800
+Message-ID: <4E1E5FE0.7080608@cn.fujitsu.com>
 References: <4E1E5F59.5030208@cn.fujitsu.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset=UTF-8
@@ -12,88 +11,76 @@ Return-path: <linux-btrfs-owner@vger.kernel.org>
 In-Reply-To: <4E1E5F59.5030208@cn.fujitsu.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-So there's no overhead for something we don't use.
+When we search a dir item with a specific hash code, we can
+just return NULL without further checking if btrfs_search_slot()
+returns 1.
 
 Signed-off-by: Li Zefan <lizf@cn.fujitsu.com>
 ---
- fs/btrfs/Makefile |    4 +++-
- fs/btrfs/acl.c    |   17 -----------------
- fs/btrfs/ctree.h  |   15 ++++++++++++---
- 3 files changed, 15 insertions(+), 21 deletions(-)
+ fs/btrfs/dir-item.c |   30 ++----------------------------
+ 1 files changed, 2 insertions(+), 28 deletions(-)
 
-diff --git a/fs/btrfs/Makefile b/fs/btrfs/Makefile
-index 9b72dcf..40e6ac0 100644
---- a/fs/btrfs/Makefile
-+++ b/fs/btrfs/Makefile
-@@ -6,5 +6,7 @@ btrfs-y += super.o ctree.o extent-tree.o print-tree.o root-tree.o dir-item.o \
- 	   transaction.o inode.o file.o tree-defrag.o \
- 	   extent_map.o sysfs.o struct-funcs.o xattr.o ordered-data.o \
- 	   extent_io.o volumes.o async-thread.o ioctl.o locking.o orphan.o \
--	   export.o tree-log.o acl.o free-space-cache.o zlib.o lzo.o \
-+	   export.o tree-log.o free-space-cache.o zlib.o lzo.o \
- 	   compression.o delayed-ref.o relocation.o delayed-inode.o scrub.o
-+
-+btrfs-$(CONFIG_BTRFS_FS_POSIX_ACL) += acl.o
-diff --git a/fs/btrfs/acl.c b/fs/btrfs/acl.c
-index f66fc99..b206d4c 100644
---- a/fs/btrfs/acl.c
-+++ b/fs/btrfs/acl.c
-@@ -28,8 +28,6 @@
- #include "btrfs_inode.h"
- #include "xattr.h"
+diff --git a/fs/btrfs/dir-item.c b/fs/btrfs/dir-item.c
+index 685f259..81533a0 100644
+--- a/fs/btrfs/dir-item.c
++++ b/fs/btrfs/dir-item.c
+@@ -203,8 +203,6 @@ struct btrfs_dir_item *btrfs_lookup_dir_item(struct btrfs_trans_handle *trans,
+ 	struct btrfs_key key;
+ 	int ins_len = mod < 0 ? -1 : 0;
+ 	int cow = mod != 0;
+-	struct btrfs_key found_key;
+-	struct extent_buffer *leaf;
  
--#ifdef CONFIG_BTRFS_FS_POSIX_ACL
+ 	key.objectid = dir;
+ 	btrfs_set_key_type(&key, BTRFS_DIR_ITEM_KEY);
+@@ -214,18 +212,7 @@ struct btrfs_dir_item *btrfs_lookup_dir_item(struct btrfs_trans_handle *trans,
+ 	ret = btrfs_search_slot(trans, root, &key, path, ins_len, cow);
+ 	if (ret < 0)
+ 		return ERR_PTR(ret);
+-	if (ret > 0) {
+-		if (path->slots[0] == 0)
+-			return NULL;
+-		path->slots[0]--;
+-	}
 -
- static struct posix_acl *btrfs_get_acl(struct inode *inode, int type)
- {
- 	int size;
-@@ -318,18 +316,3 @@ const struct xattr_handler btrfs_xattr_acl_access_handler = {
- 	.get	= btrfs_xattr_acl_get,
- 	.set	= btrfs_xattr_acl_set,
- };
+-	leaf = path->nodes[0];
+-	btrfs_item_key_to_cpu(leaf, &found_key, path->slots[0]);
 -
--#else /* CONFIG_BTRFS_FS_POSIX_ACL */
--
--int btrfs_acl_chmod(struct inode *inode)
--{
--	return 0;
--}
--
--int btrfs_init_acl(struct btrfs_trans_handle *trans,
--		   struct inode *inode, struct inode *dir)
--{
--	return 0;
--}
--
--#endif /* CONFIG_BTRFS_FS_POSIX_ACL */
-diff --git a/fs/btrfs/ctree.h b/fs/btrfs/ctree.h
-index 60e13ef..b5097e2 100644
---- a/fs/btrfs/ctree.h
-+++ b/fs/btrfs/ctree.h
-@@ -2644,12 +2644,21 @@ do {								\
- /* acl.c */
- #ifdef CONFIG_BTRFS_FS_POSIX_ACL
- int btrfs_check_acl(struct inode *inode, int mask, unsigned int flags);
--#else
--#define btrfs_check_acl NULL
--#endif
- int btrfs_init_acl(struct btrfs_trans_handle *trans,
- 		   struct inode *inode, struct inode *dir);
- int btrfs_acl_chmod(struct inode *inode);
-+#else
-+#define btrfs_check_acl NULL
-+static inline int btrfs_init_acl(struct btrfs_trans_handle *trans,
-+				 struct inode *inode, struct inode *dir)
-+{
-+	return 0;
-+}
-+static inline int btrfs_acl_chmod(struct inode *inode)
-+{
-+	return 0;
-+}
-+#endif
+-	if (found_key.objectid != dir ||
+-	    btrfs_key_type(&found_key) != BTRFS_DIR_ITEM_KEY ||
+-	    found_key.offset != key.offset)
++	if (ret > 0)
+ 		return NULL;
  
- /* relocation.c */
- int btrfs_relocate_block_group(struct btrfs_root *root, u64 group_start);
+ 	return btrfs_match_dir_item_name(root, path, name, name_len);
+@@ -320,8 +307,6 @@ struct btrfs_dir_item *btrfs_lookup_xattr(struct btrfs_trans_handle *trans,
+ 	struct btrfs_key key;
+ 	int ins_len = mod < 0 ? -1 : 0;
+ 	int cow = mod != 0;
+-	struct btrfs_key found_key;
+-	struct extent_buffer *leaf;
+ 
+ 	key.objectid = dir;
+ 	btrfs_set_key_type(&key, BTRFS_XATTR_ITEM_KEY);
+@@ -329,18 +314,7 @@ struct btrfs_dir_item *btrfs_lookup_xattr(struct btrfs_trans_handle *trans,
+ 	ret = btrfs_search_slot(trans, root, &key, path, ins_len, cow);
+ 	if (ret < 0)
+ 		return ERR_PTR(ret);
+-	if (ret > 0) {
+-		if (path->slots[0] == 0)
+-			return NULL;
+-		path->slots[0]--;
+-	}
+-
+-	leaf = path->nodes[0];
+-	btrfs_item_key_to_cpu(leaf, &found_key, path->slots[0]);
+-
+-	if (found_key.objectid != dir ||
+-	    btrfs_key_type(&found_key) != BTRFS_XATTR_ITEM_KEY ||
+-	    found_key.offset != key.offset)
++	if (ret > 0)
+ 		return NULL;
+ 
+ 	return btrfs_match_dir_item_name(root, path, name, name_len);
 -- 
 1.7.3.1

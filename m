@@ -1,103 +1,102 @@
-From: Josef Bacik <josef@redhat.com>
-Subject: Re: Delayed inode operations not doing the right thing with enospc
-Date: Thu, 14 Jul 2011 11:53:18 -0400
-Message-ID: <4E1F10EE.6050706@redhat.com>
-References: <4DE92BF2.1060905@redhat.com>	<4DED8143.3090803@cn.fujitsu.com>	<4DEE9263.1000802@redhat.com>	<CAO47_--zux0kiKsY9Edinj98ihoXP4n2ton+j5LgdpNJv9hLbQ@mail.gmail.com>	<4E1DB22F.1060405@redhat.com> <CAO47_-9qn31AfGQksLnRAreMudBcOQz0UnXxmhFC4cSQW5ZHFQ@mail.gmail.com>
+From: Goffredo Baroncelli <kreijack@libero.it>
+Subject: Re: Mis-Design of Btrfs?
+Date: Thu, 14 Jul 2011 18:27:14 +0200
+Message-ID: <4E1F18E2.9030100@libero.it>
+References: <20110623105337.GD3753@ethz.ch>	<20110627164637.377314e2@notabene.brown>	<4E0AF091.9030301@redhat.com>	<20110714155620.6e9ac2cc@notabene.brown>	<4E1E866E.2050405@redhat.com> <20110714163836.35a729c1@notabene.brown>
+Reply-To: kreijack@inwind.it
 Mime-Version: 1.0
 Content-Type: text/plain; charset=ISO-8859-1
-Cc: miaox@cn.fujitsu.com, linux-btrfs <linux-btrfs@vger.kernel.org>,
-	ceph-devel@vger.kernel.org
-To: chb@muc.de
-Return-path: <ceph-devel-owner@vger.kernel.org>
-In-Reply-To: <CAO47_-9qn31AfGQksLnRAreMudBcOQz0UnXxmhFC4cSQW5ZHFQ@mail.gmail.com>
+Cc: Ric Wheeler <rwheeler@redhat.com>,
+	Nico Schottelius <nico-lkml-20110623@schottelius.org>,
+	LKML <linux-kernel@vger.kernel.org>,
+	Chris Mason <chris.mason@oracle.com>,
+	linux-btrfs <linux-btrfs@vger.kernel.org>,
+	Alasdair G Kergon <agk@redhat.com>
+To: NeilBrown <neilb@suse.de>
+Return-path: <linux-kernel-owner@vger.kernel.org>
+In-Reply-To: <20110714163836.35a729c1@notabene.brown>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 07/14/2011 03:27 AM, Christian Brunner wrote:
-> 2011/7/13 Josef Bacik <josef@redhat.com>:
->> On 07/12/2011 11:20 AM, Christian Brunner wrote:
->>> 2011/6/7 Josef Bacik <josef@redhat.com>:
->>>> On 06/06/2011 09:39 PM, Miao Xie wrote:
->>>>> On fri, 03 Jun 2011 14:46:10 -0400, Josef Bacik wrote:
->>>>>> I got a lot of these when running stress.sh on my test box
->>>>>>
->>>>>>
->>>>>>
->>>>>> This is because use_block_rsv() is having to do a
->>>>>> reserve_metadata_bytes(), which shouldn't happen as we should have
->>>>>> reserved enough space for those operations to complete.  This is
->>>>>> happening because use_block_rsv() will call get_block_rsv(), which if
->>>>>> root->ref_cows is set (which is the case on all fs roots) we will use
->>>>>> trans->block_rsv, which will only have what the current transaction
->>>>>> starter had reserved.
->>>>>>
->>>>>> What needs to be done instead is we need to have a block reserve that
->>>>>> any reservation that is done at create time for these inodes is migrated
->>>>>> to this special reserve, and then when you run the delayed inode items
->>>>>> stuff you set trans->block_rsv to the special block reserve so the
->>>>>> accounting is all done properly.
->>>>>>
->>>>>> This is just off the top of my head, there may be a better way to do it,
->>>>>> I've not actually looked that the delayed inode code at all.
->>>>>>
->>>>>> I would do this myself but I have a ever increasing list of shit to do
->>>>>> so will somebody pick this up and fix it please?  Thanks,
->>>>>
->>>>> Sorry, it's my miss.
->>>>> I forgot to set trans->block_rsv to global_block_rsv, since we have migrated
->>>>> the space from trans_block_rsv to global_block_rsv.
->>>>>
->>>>> I'll fix it soon.
->>>>>
->>>>
->>>> There is another problem, we're failing xfstest 204.  I tried making
->>>> reserve_metadata_bytes commit the transaction regardless of whether or
->>>> not there were pinned bytes but the test just hung there.  Usually it
->>>> takes 7 seconds to run and I ctrl+c'ed it after a couple of minutes.
->>>> 204 just creates a crap ton of files, which is what is killing us.
->>>> There needs to be a way to start flushing delayed inode items so we can
->>>> reclaim the space they are holding onto so we don't get enospc, and it
->>>> needs to be better than just committing the transaction because that is
->>>> dog slow.  Thanks,
->>>>
->>>> Josef
+On 07/14/2011 08:38 AM, NeilBrown wrote:
+> On Thu, 14 Jul 2011 07:02:22 +0100 Ric Wheeler <rwheeler@redhat.com> wrote:
+> 
+>>> I'm certainly open to suggestions and collaboration.  Do you have in mind any
+>>> particular way to make the interface richer??
 >>>
->>> Is there a solution for this?
->>>
->>> I'm running a 2.6.38.8 kernel with all the btrfs patches from 3.0rc7
->>> (except the pluging). When starting a ceph rebuild on the btrfs
->>> volumes I get a lot of warnings from block_rsv_use_bytes in
->>> use_block_rsv:
->>>
+>>> NeilBrown
 >>
->> Ok I think I've got this nailed down.  Will you run with this patch and make sure the warnings go away?  Thanks,
+>> Hi Neil,
+>>
+>> I know that Chris has a very specific set of use cases for btrfs and think that 
+>> Alasdair and others have started to look at what is doable.
+>>
+>> The obvious use case is the following:
+>>
+>> If a file system uses checksumming or other data corruption detection bits, it 
+>> can detect that it got bad data on a write. If that data was protected by RAID, 
+>> it would like to ask the block layer to try to read from another mirror (for 
+>> raid1) or try to validate/rebuild from parity.
+>>
+>> Today, I think that a retry will basically just give us back a random chance of 
+>> getting data from a different mirror or the same one that we got data from on 
+>> the first go.
+>>
+>> Chris, Alasdair, was that a good summary of one concern?
+>>
+>> Thanks!
+>>
+>> Ric
 > 
-> I'm sorry, I'm still getting a lot of warnings like the one below.
+> I imagine a new field in 'struct bio' which was normally zero but could be
+> some small integer.  It is only meaningful for read.
+> When 0 it means "get this data way you like".
+> When non-zero it means "get this data using method N", where the different
+> methods are up to the device.
+
+In more general terms, the filesystem should be able to require: try
+another read different regarding the previous ones. The term are
+important because we should differentiate the case of "wrong data from
+disk1, read from disk0" and "wrong data from disk0 read disk1". I prefer
+thinking the field as bitmap. Every bit represent a different way of
+read. So it is possible to reuse to track which "kind of read" was
+already used.
+
+After a 2nd read, the block layer should:
+	a) redo the read if possible, otherwise FAIL
+	b) pass the data to the filesystem
+	c) if the filesystem accepts the new data, replace the wrong
+	   data with the correct one or mark the block as broken.
+	d) inform the userspace/filesystem of the result
+
 > 
-> I've also noticed, that I'm not getting these messages when the
-> free_space_cache is disabled.
+> For a mirrored RAID, method N means read from device N-1.
+> For stripe/parity RAID, method 1 means "use other data blocks and parity
+> blocks to reconstruct data.
 > 
->
-
-Ok I see what's wrong, our checksum calculation is completely bogus.
-I'm in the middle of something big so I can't give you a nice clean
-patch, so if you can just go into extent-tree.c and replace
-calc_csum_metadata_size with this you should be good to go
-
-static u64 calc_csum_metadata_size(struct inode *inode, u64 num_bytes)
-{
-        struct btrfs_root *root = BTRFS_I(inode)->root;
-        int num_leaves;
-        int num_csums;
-        u16 csum_size =
-                btrfs_super_csum_size(&root->fs_info->super_copy);
-
-        num_csums = (int)div64_u64(num_bytes, root->sectorsize);
-        num_leaves = (int)((num_csums * csum_size) / root->leafsize);
-
-        return btrfs_calc_trans_metadata_size(root, num_leaves);
-}
-
-
-Thanks,
-
-Josef
+> The default for non RAID devices is to return EINVAL for any N > 0.
+> A remapping device (dm-linear, dm-stripe etc) would just pass the number
+> down.  I'm not sure how RAID1 over RAID5 would handle it... that might need
+> some thought.
+> 
+> So if btrfs reads a block and the checksum looks wrong, it reads again with
+> a larger N.  It continues incrementing N and retrying until it gets a block
+> that it likes or it gets EINVAL.  There should probably be an error code
+> (EAGAIN?) which means "I cannot work with that number, but try the next one".
+> 
+> It would be trivial for me to implement this for RAID1 and RAID10, and
+> relatively easy for RAID5.
+> I'd need to give a bit of thought to RAID6 as there are possibly multiple
+> ways to reconstruct from different combinations of parity and data.  I'm not
+> sure if there would be much point in doing that though.
+> 
+> It might make sense for a device to be able to report what the maximum
+> 'N' supported is... that might make stacked raid easier to manage...
+> 
+> NeilBrown
+> 
+> --
+> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
+> the body of a message to majordomo@vger.kernel.org
+> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+> .
+> 

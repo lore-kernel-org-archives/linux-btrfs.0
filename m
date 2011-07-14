@@ -1,52 +1,53 @@
 From: Mark Fasheh <mfasheh@suse.com>
-Subject: [PATCH 3/7] btrfs: Don't BUG_ON alloc_path errors in btrfs_truncate_inode_items
-Date: Thu, 14 Jul 2011 15:14:58 -0700
-Message-ID: <1310681702-13922-4-git-send-email-mfasheh@suse.com>
+Subject: [PATCH 6/7] btrfs: Don't BUG_ON alloc_path errors in find_next_chunk
+Date: Thu, 14 Jul 2011 15:15:01 -0700
+Message-ID: <1310681702-13922-7-git-send-email-mfasheh@suse.com>
 References: <1310681702-13922-1-git-send-email-mfasheh@suse.com>
  <1310681702-13922-2-git-send-email-mfasheh@suse.com>
  <1310681702-13922-3-git-send-email-mfasheh@suse.com>
+ <1310681702-13922-4-git-send-email-mfasheh@suse.com>
+ <1310681702-13922-5-git-send-email-mfasheh@suse.com>
+ <1310681702-13922-6-git-send-email-mfasheh@suse.com>
 Cc: chris.mason@oracle.com, Mark Fasheh <mfasheh@suse.com>
 To: linux-btrfs@vger.kernel.org
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <1310681702-13922-3-git-send-email-mfasheh@suse.com>
+In-Reply-To: <1310681702-13922-6-git-send-email-mfasheh@suse.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-I moved the path allocation up a few lines to the top of the function so
-that we couldn't get into the state where we've dropped delayed items and
-the extent cache but fail due to -ENOMEM.
+I also removed the BUG_ON from error return of find_next_chunk in
+init_first_rw_device(). It turns out that the only caller of
+init_first_rw_device() also BUGS on any nonzero return so no actual behavior
+change has occurred here.
 
 Signed-off-by: Mark Fasheh <mfasheh@suse.com>
 ---
- fs/btrfs/inode.c |    9 +++++----
- 1 files changed, 5 insertions(+), 4 deletions(-)
+ fs/btrfs/volumes.c |    6 ++++--
+ 1 files changed, 4 insertions(+), 2 deletions(-)
 
-diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
-index 8be7d7a..a0faf7d 100644
---- a/fs/btrfs/inode.c
-+++ b/fs/btrfs/inode.c
-@@ -3172,6 +3172,11 @@ int btrfs_truncate_inode_items(struct btrfs_trans_handle *trans,
+diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
+index 530a2fc..90d956c 100644
+--- a/fs/btrfs/volumes.c
++++ b/fs/btrfs/volumes.c
+@@ -1037,7 +1037,8 @@ static noinline int find_next_chunk(struct btrfs_root *root,
+ 	struct btrfs_key found_key;
  
- 	BUG_ON(new_size > 0 && min_type != BTRFS_EXTENT_DATA_KEY);
- 
-+	path = btrfs_alloc_path();
+ 	path = btrfs_alloc_path();
+-	BUG_ON(!path);
 +	if (!path)
 +		return -ENOMEM;
-+	path->reada = -1;
-+
- 	if (root->ref_cows || root == root->fs_info->tree_root)
- 		btrfs_drop_extent_cache(inode, new_size & (~mask), (u64)-1, 0);
  
-@@ -3184,10 +3189,6 @@ int btrfs_truncate_inode_items(struct btrfs_trans_handle *trans,
- 	if (min_type == 0 && root == BTRFS_I(inode)->root)
- 		btrfs_kill_delayed_inode_items(inode);
- 
--	path = btrfs_alloc_path();
--	BUG_ON(!path);
--	path->reada = -1;
--
- 	key.objectid = ino;
+ 	key.objectid = objectid;
  	key.offset = (u64)-1;
- 	key.type = (u8)-1;
+@@ -2663,7 +2664,8 @@ static noinline int init_first_rw_device(struct btrfs_trans_handle *trans,
+ 
+ 	ret = find_next_chunk(fs_info->chunk_root,
+ 			      BTRFS_FIRST_CHUNK_TREE_OBJECTID, &chunk_offset);
+-	BUG_ON(ret);
++	if (ret)
++		return ret;
+ 
+ 	alloc_profile = BTRFS_BLOCK_GROUP_METADATA |
+ 			(fs_info->metadata_alloc_profile &
 -- 
 1.7.5.3
 

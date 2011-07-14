@@ -1,62 +1,47 @@
 From: Mark Fasheh <mfasheh@suse.com>
-Subject: [PATCH] btrfs: make btrfs_set_root_node void
-Date: Thu, 14 Jul 2011 14:23:06 -0700
-Message-ID: <20110714212306.GE10500@wotan.suse.de>
-Reply-To: Mark Fasheh <mfasheh@suse.com>
-Mime-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
+Subject: [PATCH 0/7] btrfs: don't BUG_ON btrfs_alloc_path errors
+Date: Thu, 14 Jul 2011 15:00:06 -0700
+Message-ID: <1310680807-13360-1-git-send-email-mfasheh@suse.com>
 Cc: chris.mason@oracle.com
 To: linux-btrfs@vger.kernel.org
 Return-path: <linux-btrfs-owner@vger.kernel.org>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-This is fairly trivial - btrfs_set_root_node() - always returns zero so we
-can just make it void.  All callers ignore the return code now anyway.  I
-also made sure to check that none of the functions that
-btrfs_set_root_node() calls returns an error that we might have needed to
-catch and pass back.
+Hi,
 
-Signed-off-by: Mark Fasheh <mfasheh@suse.com>
----
- fs/btrfs/ctree.h     |    4 ++--
- fs/btrfs/root-tree.c |    5 ++---
- 2 files changed, 4 insertions(+), 5 deletions(-)
+	The following patches attempt to replace all the paths where we
+BUG_ON the return value of btrfs_alloc_path with proper error handling. It's
+pretty clear that these places aren't BUGing because of code error. To be
+explicit, much of the code is doing something like this:
 
-diff --git a/fs/btrfs/ctree.h b/fs/btrfs/ctree.h
-index 3b859a3..20bd05f 100644
---- a/fs/btrfs/ctree.h
-+++ b/fs/btrfs/ctree.h
-@@ -2404,8 +2404,8 @@ int btrfs_find_last_root(struct btrfs_root *root, u64 objectid, struct
- 			 btrfs_root_item *item, struct btrfs_key *key);
- int btrfs_find_dead_roots(struct btrfs_root *root, u64 objectid);
- int btrfs_find_orphan_roots(struct btrfs_root *tree_root);
--int btrfs_set_root_node(struct btrfs_root_item *item,
--			struct extent_buffer *node);
-+void btrfs_set_root_node(struct btrfs_root_item *item,
-+			 struct extent_buffer *node);
- void btrfs_check_and_init_root_item(struct btrfs_root_item *item);
- 
- /* dir-item.c */
-diff --git a/fs/btrfs/root-tree.c b/fs/btrfs/root-tree.c
-index ea96ab8..d411cb4 100644
---- a/fs/btrfs/root-tree.c
-+++ b/fs/btrfs/root-tree.c
-@@ -71,13 +71,12 @@ out:
- 	return ret;
- }
- 
--int btrfs_set_root_node(struct btrfs_root_item *item,
--			struct extent_buffer *node)
-+void btrfs_set_root_node(struct btrfs_root_item *item,
-+			 struct extent_buffer *node)
- {
- 	btrfs_set_root_bytenr(item, node->start);
- 	btrfs_set_root_level(item, btrfs_header_level(node));
- 	btrfs_set_root_generation(item, btrfs_header_generation(node));
--	return 0;
- }
- 
- /*
--- 
-1.7.5.3
+	path = btrfs_alloc_path();
+	BUG_ON(!path);
 
+which can be fixed by sending -ENOMEM back up the stack instead of the BUG.
+
+	The first patch in my series fixes the most trivial sites in one go.
+The patches after the 1st fix one (more complicated) site each. In the patch
+descriptions I try my best to describe the thought process that went behind
+each change.
+
+	Generally my guiding principle is that we want to "bubble up" some
+of the BUG_ON's that can be trapped and handled at a higher level -- the lower
+layer has an error and instead of killing the machine, sends it back up the
+stack for later handling
+
+	I tested the patches with some kernel builds and snapshot commands.
+Please review - comments and feedback are welcome.
+
+The patches can also be had from git:
+
+git pull git://git.kernel.org/pub/scm/linux/kernel/git/mfasheh/btrfs-error-handling.git alloc_path
+	--Mark
+
+
+ extent-tree.c |   20 +++++++++++++++-----
+ file-item.c   |    7 +++++--
+ file.c        |    3 ++-
+ inode.c       |   49 +++++++++++++++++++++++++++++++++++--------------
+ tree-log.c    |   12 +++++++++---
+ volumes.c     |   12 ++++++++----
+ 6 files changed, 74 insertions(+), 29 deletions(-)

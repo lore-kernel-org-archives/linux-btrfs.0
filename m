@@ -1,7 +1,7 @@
 From: Li Zefan <lizf@cn.fujitsu.com>
-Subject: [PATCH 09/16] Btrfs: remove redundant code for dir item lookup
-Date: Thu, 14 Jul 2011 11:17:52 +0800
-Message-ID: <4E1E5FE0.7080608@cn.fujitsu.com>
+Subject: [PATCH 10/16] Btrfs: clean up search_extent_mapping()
+Date: Thu, 14 Jul 2011 11:18:03 +0800
+Message-ID: <4E1E5FEB.7000804@cn.fujitsu.com>
 References: <4E1E5F59.5030208@cn.fujitsu.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset=UTF-8
@@ -11,76 +11,44 @@ Return-path: <linux-btrfs-owner@vger.kernel.org>
 In-Reply-To: <4E1E5F59.5030208@cn.fujitsu.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-When we search a dir item with a specific hash code, we can
-just return NULL without further checking if btrfs_search_slot()
-returns 1.
+rb_node returned by __tree_search() can be a valid pointer or NULL,
+but won't be some errno.
 
 Signed-off-by: Li Zefan <lizf@cn.fujitsu.com>
 ---
- fs/btrfs/dir-item.c |   30 ++----------------------------
- 1 files changed, 2 insertions(+), 28 deletions(-)
+ fs/btrfs/extent_map.c |   17 +++--------------
+ 1 files changed, 3 insertions(+), 14 deletions(-)
 
-diff --git a/fs/btrfs/dir-item.c b/fs/btrfs/dir-item.c
-index 685f259..81533a0 100644
---- a/fs/btrfs/dir-item.c
-+++ b/fs/btrfs/dir-item.c
-@@ -203,8 +203,6 @@ struct btrfs_dir_item *btrfs_lookup_dir_item(struct btrfs_trans_handle *trans,
- 	struct btrfs_key key;
- 	int ins_len = mod < 0 ? -1 : 0;
- 	int cow = mod != 0;
--	struct btrfs_key found_key;
--	struct extent_buffer *leaf;
- 
- 	key.objectid = dir;
- 	btrfs_set_key_type(&key, BTRFS_DIR_ITEM_KEY);
-@@ -214,18 +212,7 @@ struct btrfs_dir_item *btrfs_lookup_dir_item(struct btrfs_trans_handle *trans,
- 	ret = btrfs_search_slot(trans, root, &key, path, ins_len, cow);
- 	if (ret < 0)
- 		return ERR_PTR(ret);
--	if (ret > 0) {
--		if (path->slots[0] == 0)
--			return NULL;
--		path->slots[0]--;
+diff --git a/fs/btrfs/extent_map.c b/fs/btrfs/extent_map.c
+index 2d04103..911a9db 100644
+--- a/fs/btrfs/extent_map.c
++++ b/fs/btrfs/extent_map.c
+@@ -379,23 +379,12 @@ struct extent_map *search_extent_mapping(struct extent_map_tree *tree,
+ 		em = rb_entry(next, struct extent_map, rb_node);
+ 		goto found;
+ 	}
+-	if (!rb_node) {
+-		em = NULL;
+-		goto out;
 -	}
--
--	leaf = path->nodes[0];
--	btrfs_item_key_to_cpu(leaf, &found_key, path->slots[0]);
--
--	if (found_key.objectid != dir ||
--	    btrfs_key_type(&found_key) != BTRFS_DIR_ITEM_KEY ||
--	    found_key.offset != key.offset)
-+	if (ret > 0)
- 		return NULL;
- 
- 	return btrfs_match_dir_item_name(root, path, name, name_len);
-@@ -320,8 +307,6 @@ struct btrfs_dir_item *btrfs_lookup_xattr(struct btrfs_trans_handle *trans,
- 	struct btrfs_key key;
- 	int ins_len = mod < 0 ? -1 : 0;
- 	int cow = mod != 0;
--	struct btrfs_key found_key;
--	struct extent_buffer *leaf;
- 
- 	key.objectid = dir;
- 	btrfs_set_key_type(&key, BTRFS_XATTR_ITEM_KEY);
-@@ -329,18 +314,7 @@ struct btrfs_dir_item *btrfs_lookup_xattr(struct btrfs_trans_handle *trans,
- 	ret = btrfs_search_slot(trans, root, &key, path, ins_len, cow);
- 	if (ret < 0)
- 		return ERR_PTR(ret);
--	if (ret > 0) {
--		if (path->slots[0] == 0)
--			return NULL;
--		path->slots[0]--;
+-	if (IS_ERR(rb_node)) {
+-		em = ERR_CAST(rb_node);
+-		goto out;
 -	}
+-	em = rb_entry(rb_node, struct extent_map, rb_node);
+-	goto found;
 -
--	leaf = path->nodes[0];
--	btrfs_item_key_to_cpu(leaf, &found_key, path->slots[0]);
--
--	if (found_key.objectid != dir ||
--	    btrfs_key_type(&found_key) != BTRFS_XATTR_ITEM_KEY ||
--	    found_key.offset != key.offset)
-+	if (ret > 0)
- 		return NULL;
+-	em = NULL;
+-	goto out;
++	if (!rb_node)
++		return NULL;
  
- 	return btrfs_match_dir_item_name(root, path, name, name_len);
++	em = rb_entry(rb_node, struct extent_map, rb_node);
+ found:
+ 	atomic_inc(&em->refs);
+-out:
+ 	return em;
+ }
+ 
 -- 
 1.7.3.1

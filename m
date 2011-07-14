@@ -1,100 +1,103 @@
-From: Xiao Guangrong <xiaoguangrong@cn.fujitsu.com>
-Subject: btrfs panic
-Date: Thu, 14 Jul 2011 18:01:45 +0800
-Message-ID: <4E1EBE89.4040302@cn.fujitsu.com>
+From: Josef Bacik <josef@redhat.com>
+Subject: Re: Delayed inode operations not doing the right thing with enospc
+Date: Thu, 14 Jul 2011 11:53:18 -0400
+Message-ID: <4E1F10EE.6050706@redhat.com>
+References: <4DE92BF2.1060905@redhat.com>	<4DED8143.3090803@cn.fujitsu.com>	<4DEE9263.1000802@redhat.com>	<CAO47_--zux0kiKsY9Edinj98ihoXP4n2ton+j5LgdpNJv9hLbQ@mail.gmail.com>	<4E1DB22F.1060405@redhat.com> <CAO47_-9qn31AfGQksLnRAreMudBcOQz0UnXxmhFC4cSQW5ZHFQ@mail.gmail.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=UTF-8
-Cc: BTRFS <linux-btrfs@vger.kernel.org>
-To: Chris Mason <chris.mason@oracle.com>
-Return-path: <linux-btrfs-owner@vger.kernel.org>
+Content-Type: text/plain; charset=ISO-8859-1
+Cc: miaox@cn.fujitsu.com, linux-btrfs <linux-btrfs@vger.kernel.org>,
+	ceph-devel@vger.kernel.org
+To: chb@muc.de
+Return-path: <ceph-devel-owner@vger.kernel.org>
+In-Reply-To: <CAO47_-9qn31AfGQksLnRAreMudBcOQz0UnXxmhFC4cSQW5ZHFQ@mail.gmail.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-When xfstests 224 was running, the box was panic, and i got this message:
+On 07/14/2011 03:27 AM, Christian Brunner wrote:
+> 2011/7/13 Josef Bacik <josef@redhat.com>:
+>> On 07/12/2011 11:20 AM, Christian Brunner wrote:
+>>> 2011/6/7 Josef Bacik <josef@redhat.com>:
+>>>> On 06/06/2011 09:39 PM, Miao Xie wrote:
+>>>>> On fri, 03 Jun 2011 14:46:10 -0400, Josef Bacik wrote:
+>>>>>> I got a lot of these when running stress.sh on my test box
+>>>>>>
+>>>>>>
+>>>>>>
+>>>>>> This is because use_block_rsv() is having to do a
+>>>>>> reserve_metadata_bytes(), which shouldn't happen as we should have
+>>>>>> reserved enough space for those operations to complete.  This is
+>>>>>> happening because use_block_rsv() will call get_block_rsv(), which if
+>>>>>> root->ref_cows is set (which is the case on all fs roots) we will use
+>>>>>> trans->block_rsv, which will only have what the current transaction
+>>>>>> starter had reserved.
+>>>>>>
+>>>>>> What needs to be done instead is we need to have a block reserve that
+>>>>>> any reservation that is done at create time for these inodes is migrated
+>>>>>> to this special reserve, and then when you run the delayed inode items
+>>>>>> stuff you set trans->block_rsv to the special block reserve so the
+>>>>>> accounting is all done properly.
+>>>>>>
+>>>>>> This is just off the top of my head, there may be a better way to do it,
+>>>>>> I've not actually looked that the delayed inode code at all.
+>>>>>>
+>>>>>> I would do this myself but I have a ever increasing list of shit to do
+>>>>>> so will somebody pick this up and fix it please?  Thanks,
+>>>>>
+>>>>> Sorry, it's my miss.
+>>>>> I forgot to set trans->block_rsv to global_block_rsv, since we have migrated
+>>>>> the space from trans_block_rsv to global_block_rsv.
+>>>>>
+>>>>> I'll fix it soon.
+>>>>>
+>>>>
+>>>> There is another problem, we're failing xfstest 204.  I tried making
+>>>> reserve_metadata_bytes commit the transaction regardless of whether or
+>>>> not there were pinned bytes but the test just hung there.  Usually it
+>>>> takes 7 seconds to run and I ctrl+c'ed it after a couple of minutes.
+>>>> 204 just creates a crap ton of files, which is what is killing us.
+>>>> There needs to be a way to start flushing delayed inode items so we can
+>>>> reclaim the space they are holding onto so we don't get enospc, and it
+>>>> needs to be better than just committing the transaction because that is
+>>>> dog slow.  Thanks,
+>>>>
+>>>> Josef
+>>>
+>>> Is there a solution for this?
+>>>
+>>> I'm running a 2.6.38.8 kernel with all the btrfs patches from 3.0rc7
+>>> (except the pluging). When starting a ceph rebuild on the btrfs
+>>> volumes I get a lot of warnings from block_rsv_use_bytes in
+>>> use_block_rsv:
+>>>
+>>
+>> Ok I think I've got this nailed down.  Will you run with this patch and make sure the warnings go away?  Thanks,
+> 
+> I'm sorry, I'm still getting a lot of warnings like the one below.
+> 
+> I've also noticed, that I'm not getting these messages when the
+> free_space_cache is disabled.
+> 
+>
 
-[ 1998.327235] =============================================
-[ 1998.329940] [ INFO: possible recursive locking detected ]
-[ 1998.329940] 2.6.39+ #3
-[ 1998.329940] ---------------------------------------------
-[ 1998.329940] dd/25718 is trying to acquire lock:
-[ 1998.329940]  (&(&eb->lock)->rlock){+.+...}, at: [<ffffffffa025dbe1>] btrfs_try_spin_lock+0x2a/0x89 [btrfs]
-[ 1998.329940] 
-[ 1998.329940] but task is already holding lock:
-[ 1998.329940]  (&(&eb->lock)->rlock){+.+...}, at: [<ffffffffa025dbae>] btrfs_clear_lock_blocking+0x22/0x2b [btrfs]
-[ 1998.478275] 
-[ 1998.478275] other info that might help us debug this:
-[ 1998.478275] 2 locks held by dd/25718:
-[ 1998.478275]  #0:  (&sb->s_type->i_mutex_key#13){+.+.+.}, at: [<ffffffffa0240d97>] btrfs_file_aio_write+0xdc/0x49a [btrfs]
-[ 1998.478275]  #1:  (&(&eb->lock)->rlock){+.+...}, at: [<ffffffffa025dbae>] btrfs_clear_lock_blocking+0x22/0x2b [btrfs]
-[ 1998.478275] 
-[ 1998.478275] stack backtrace:
-[ 1998.478275] Pid: 25718, comm: dd Not tainted 2.6.39+ #3
-[ 1998.478275] Call Trace:
-[ 1998.478275]  [<ffffffff8107ff48>] __lock_acquire+0xd47/0xdcf
-[ 1998.478275]  [<ffffffff8100fec9>] ? sched_clock+0x9/0xd
-[ 1998.478275]  [<ffffffff81071d71>] ? sched_clock_local+0x12/0x75
-[ 1998.478275]  [<ffffffffa025dbae>] ? btrfs_clear_lock_blocking+0x22/0x2b [btrfs]
-[ 1998.478275]  [<ffffffffa025dbe1>] ? btrfs_try_spin_lock+0x2a/0x89 [btrfs]
-[ 1998.478275]  [<ffffffff810804f9>] lock_acquire+0xd1/0xfb
-[ 1998.478275]  [<ffffffffa025dbe1>] ? btrfs_try_spin_lock+0x2a/0x89 [btrfs]
-[ 1998.478275]  [<ffffffff81468ad3>] _raw_spin_lock+0x36/0x69
-[ 1998.478275]  [<ffffffffa025dbe1>] ? btrfs_try_spin_lock+0x2a/0x89 [btrfs]
-[ 1998.478275]  [<ffffffffa025dbe1>] btrfs_try_spin_lock+0x2a/0x89 [btrfs]
-[ 1998.478275]  [<ffffffffa021d025>] btrfs_search_slot+0x39c/0x4c0 [btrfs]
-[ 1998.478275]  [<ffffffffa022a7c9>] btrfs_lookup_xattr+0x76/0xd7 [btrfs]
-[ 1998.478275]  [<ffffffffa0219290>] ? btrfs_alloc_path+0x1a/0x1c [btrfs]
-[ 1998.478275]  [<ffffffff81114a76>] ? kmem_cache_alloc+0x57/0xfc
-[ 1998.478275]  [<ffffffffa0240d00>] ? btrfs_file_aio_write+0x45/0x49a [btrfs]
-[ 1998.478275]  [<ffffffffa024c066>] __btrfs_getxattr+0x86/0x11c [btrfs]
-[ 1998.478275]  [<ffffffffa024c466>] btrfs_getxattr+0x77/0x82 [btrfs]
-[ 1998.478275]  [<ffffffff811f3044>] cap_inode_need_killpriv+0x2d/0x37
-[ 1998.478275]  [<ffffffff810d8309>] file_remove_suid+0x27/0x64
-[ 1998.478275]  [<ffffffffa0240e14>] btrfs_file_aio_write+0x159/0x49a [btrfs]
-[ 1998.478275]  [<ffffffff8107bfd2>] ? trace_hardirqs_off+0xd/0xf
-[ 1998.478275]  [<ffffffff81071f42>] ? local_clock+0x36/0x4d
-[ 1998.478275]  [<ffffffff810800ab>] ? lock_release_non_nested+0xdb/0x263
-[ 1998.478275]  [<ffffffff81121996>] do_sync_write+0xcb/0x108
-[ 1998.478275]  [<ffffffff810f33a4>] ? might_fault+0x5c/0xac
-[ 1998.478275]  [<ffffffff8107ed01>] ? lock_is_held+0x8d/0x98
-[ 1998.478275]  [<ffffffff8112200f>] vfs_write+0xaf/0x102
-[ 1998.478275]  [<ffffffff8112347e>] ? fget_light+0x3a/0xa1
-[ 1998.478275]  [<ffffffff81122222>] sys_write+0x4d/0x74
-[ 1998.478275]  [<ffffffff8146fec2>] system_call_fastpath+0x16/0x1b
+Ok I see what's wrong, our checksum calculation is completely bogus.
+I'm in the middle of something big so I can't give you a nice clean
+patch, so if you can just go into extent-tree.c and replace
+calc_csum_metadata_size with this you should be good to go
 
-[ 2160.937580] INFO: task xfs_io:22734 blocked for more than 120 seconds.
-[ 2160.953899] "echo 0 > /proc/sys/kernel/hung_task_timeout_secs" disables this message.
-[ 2160.978494] xfs_io          D 0000000000000000     0 22734  21963 0x00000000
-[ 2160.996597]  ffff88000ac8dc68 0000000000000046 ffff88000ac8dc08 ffffffff00000000
-[ 2161.107976]  00000000001d3ec0 00000000001d3ec0 00000000001d3ec0 ffff8800002423a0
-[ 2161.117511]  00000000001d3ec0 ffff88000ac8dfd8 00000000001d3ec0 00000000001d3ec0
-[ 2161.127543] Call Trace:
-[ 2161.131247]  [<ffffffff8112cb40>] ? do_last+0x1d2/0x59d
-[ 2161.136678]  [<ffffffff8112cb40>] ? do_last+0x1d2/0x59d
-[ 2161.142181]  [<ffffffff81467a75>] __mutex_lock_common+0x22b/0x35b
-[ 2161.148104]  [<ffffffff8112cb40>] ? do_last+0x1d2/0x59d
-[ 2161.153578]  [<ffffffff81467c69>] mutex_lock_nested+0x3e/0x43
-[ 2161.159300]  [<ffffffff8112cb40>] do_last+0x1d2/0x59d
-[ 2161.164589]  [<ffffffff8112e264>] path_openat+0xcb/0x33a
-[ 2161.170358]  [<ffffffff8100fec9>] ? sched_clock+0x9/0xd
-[ 2161.175941]  [<ffffffff81071d71>] ? sched_clock_local+0x12/0x75
-[ 2161.182033]  [<ffffffff8112e510>] do_filp_open+0x3d/0x89
-[ 2161.187301]  [<ffffffff8146945f>] ? _raw_spin_unlock+0x2b/0x2f
-[ 2161.192937]  [<ffffffff81139104>] ? alloc_fd+0x181/0x193
-[ 2161.198541]  [<ffffffff81121548>] do_sys_open+0x74/0x106
-[ 2161.204058]  [<ffffffff811215fa>] sys_open+0x20/0x22
-[ 2161.209488]  [<ffffffff8146fec2>] system_call_fastpath+0x16/0x1b
-[ 2161.215279] INFO: lockdep is turned off.
-[ 2161.219841] Kernel panic - not syncing: hung_task: blocked tasks
-[ 2161.225647] Pid: 42, comm: khungtaskd Not tainted 2.6.39+ #3
-[ 2161.231535] Call Trace:
-[ 2161.235146]  [<ffffffff8146653b>] panic+0x91/0x1a9
-[ 2161.240266]  [<ffffffff810a8c81>] watchdog+0x1ae/0x219
-[ 2161.244863]  [<ffffffff810a8ad3>] ? rcu_read_unlock+0x23/0x23
-[ 2161.250816]  [<ffffffff8106c0e4>] kthread+0xa0/0xa8
-[ 2161.255995]  [<ffffffff8107de2a>] ? trace_hardirqs_on_caller+0x13f/0x172
-[ 2161.262333]  [<ffffffff81471064>] kernel_thread_helper+0x4/0x10
-[ 2161.268211]  [<ffffffff814696d4>] ? retint_restore_args+0x13/0x13
-[ 2161.274113]  [<ffffffff8106c044>] ? __init_kthread_worker+0x5b/0x5b
-[ 2161.280135]  [<ffffffff81471060>] ? gs_change+0x13/0x13
+static u64 calc_csum_metadata_size(struct inode *inode, u64 num_bytes)
+{
+        struct btrfs_root *root = BTRFS_I(inode)->root;
+        int num_leaves;
+        int num_csums;
+        u16 csum_size =
+                btrfs_super_csum_size(&root->fs_info->super_copy);
+
+        num_csums = (int)div64_u64(num_bytes, root->sectorsize);
+        num_leaves = (int)((num_csums * csum_size) / root->leafsize);
+
+        return btrfs_calc_trans_metadata_size(root, num_leaves);
+}
 
 
-I am happy to answer any questions.
+Thanks,
+
+Josef

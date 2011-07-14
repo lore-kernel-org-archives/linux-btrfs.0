@@ -1,49 +1,52 @@
 From: Mark Fasheh <mfasheh@suse.com>
-Subject: [PATCH 7/7] btrfs: don't BUG_ON allocation errors in btrfs_drop_snapshot
-Date: Thu, 14 Jul 2011 15:15:02 -0700
-Message-ID: <1310681702-13922-8-git-send-email-mfasheh@suse.com>
+Subject: [PATCH 3/7] btrfs: Don't BUG_ON alloc_path errors in btrfs_truncate_inode_items
+Date: Thu, 14 Jul 2011 15:14:58 -0700
+Message-ID: <1310681702-13922-4-git-send-email-mfasheh@suse.com>
 References: <1310681702-13922-1-git-send-email-mfasheh@suse.com>
  <1310681702-13922-2-git-send-email-mfasheh@suse.com>
  <1310681702-13922-3-git-send-email-mfasheh@suse.com>
- <1310681702-13922-4-git-send-email-mfasheh@suse.com>
- <1310681702-13922-5-git-send-email-mfasheh@suse.com>
- <1310681702-13922-6-git-send-email-mfasheh@suse.com>
- <1310681702-13922-7-git-send-email-mfasheh@suse.com>
 Cc: chris.mason@oracle.com, Mark Fasheh <mfasheh@suse.com>
 To: linux-btrfs@vger.kernel.org
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <1310681702-13922-7-git-send-email-mfasheh@suse.com>
+In-Reply-To: <1310681702-13922-3-git-send-email-mfasheh@suse.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-In addition to properly handling allocation failure from btrfs_alloc_path, I
-also fixed up the kzalloc error handling code immediately below it.
+I moved the path allocation up a few lines to the top of the function so
+that we couldn't get into the state where we've dropped delayed items and
+the extent cache but fail due to -ENOMEM.
 
 Signed-off-by: Mark Fasheh <mfasheh@suse.com>
 ---
- fs/btrfs/extent-tree.c |    8 ++++++--
- 1 files changed, 6 insertions(+), 2 deletions(-)
+ fs/btrfs/inode.c |    9 +++++----
+ 1 files changed, 5 insertions(+), 4 deletions(-)
 
-diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
-index aa91773..a016590 100644
---- a/fs/btrfs/extent-tree.c
-+++ b/fs/btrfs/extent-tree.c
-@@ -6268,10 +6268,14 @@ int btrfs_drop_snapshot(struct btrfs_root *root,
- 	int level;
+diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
+index 8be7d7a..a0faf7d 100644
+--- a/fs/btrfs/inode.c
++++ b/fs/btrfs/inode.c
+@@ -3172,6 +3172,11 @@ int btrfs_truncate_inode_items(struct btrfs_trans_handle *trans,
  
- 	path = btrfs_alloc_path();
--	BUG_ON(!path);
+ 	BUG_ON(new_size > 0 && min_type != BTRFS_EXTENT_DATA_KEY);
+ 
++	path = btrfs_alloc_path();
 +	if (!path)
 +		return -ENOMEM;
++	path->reada = -1;
++
+ 	if (root->ref_cows || root == root->fs_info->tree_root)
+ 		btrfs_drop_extent_cache(inode, new_size & (~mask), (u64)-1, 0);
  
- 	wc = kzalloc(sizeof(*wc), GFP_NOFS);
--	BUG_ON(!wc);
-+	if (!wc) {
-+		btrfs_free_path(path);
-+		return -ENOMEM;
-+	}
+@@ -3184,10 +3189,6 @@ int btrfs_truncate_inode_items(struct btrfs_trans_handle *trans,
+ 	if (min_type == 0 && root == BTRFS_I(inode)->root)
+ 		btrfs_kill_delayed_inode_items(inode);
  
- 	trans = btrfs_start_transaction(tree_root, 0);
- 	BUG_ON(IS_ERR(trans));
+-	path = btrfs_alloc_path();
+-	BUG_ON(!path);
+-	path->reada = -1;
+-
+ 	key.objectid = ino;
+ 	key.offset = (u64)-1;
+ 	key.type = (u8)-1;
 -- 
 1.7.5.3
 

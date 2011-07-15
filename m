@@ -1,180 +1,127 @@
-From: Tsutomu Itoh <t-itoh@jp.fujitsu.com>
-Subject: Re: [PATCH 1/7] btrfs: don't BUG_ON btrfs_alloc_path() errors
-Date: Fri, 15 Jul 2011 09:44:19 +0900
-Message-ID: <4E1F8D63.4070907@jp.fujitsu.com>
-References: <1310681702-13922-1-git-send-email-mfasheh@suse.com> <1310681702-13922-2-git-send-email-mfasheh@suse.com>
-Mime-Version: 1.0
-Content-Type: text/plain; charset=ISO-2022-JP
-Cc: linux-btrfs@vger.kernel.org, chris.mason@oracle.com
-To: Mark Fasheh <mfasheh@suse.com>
+From: Chris Mason <chris.mason@oracle.com>
+Subject: Re: Mis-Design of Btrfs?
+Date: Thu, 14 Jul 2011 22:32:22 -0400
+Message-ID: <1310696606-sup-710@shiny>
+References: <20110623105337.GD3753@ethz.ch> <20110627164637.377314e2@notabene.brown> <4E0AF091.9030301@redhat.com> <20110714155620.6e9ac2cc@notabene.brown> <4E1E866E.2050405@redhat.com> <20110714163836.35a729c1@notabene.brown> <4E1E9372.3030208@redhat.com>
+Content-Type: text/plain; charset=UTF-8
+Cc: NeilBrown <neilb@suse.de>,
+	Nico Schottelius <nico-lkml-20110623@schottelius.org>,
+	LKML <linux-kernel@vger.kernel.org>,
+	linux-btrfs <linux-btrfs@vger.kernel.org>,
+	Alasdair G Kergon <agk@redhat.com>
+To: Ric Wheeler <rwheeler@redhat.com>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <1310681702-13922-2-git-send-email-mfasheh@suse.com>
+In-reply-to: <4E1E9372.3030208@redhat.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-(2011/07/15 7:14), Mark Fasheh wrote:
-> This patch fixes many callers of btrfs_alloc_path() which BUG_ON allocation
-> failure. All the sites that are fixed in this patch were checked by me to
-> be fairly trivial to fix because of at least one of two criteria:
+Excerpts from Ric Wheeler's message of 2011-07-14 02:57:54 -0400:
+> On 07/14/2011 07:38 AM, NeilBrown wrote:
+> > On Thu, 14 Jul 2011 07:02:22 +0100 Ric Wheeler<rwheeler@redhat.com>  wrote:
+> >
+> >>> I'm certainly open to suggestions and collaboration.  Do you have in mind any
+> >>> particular way to make the interface richer??
+> >>>
+> >>> NeilBrown
+> >> Hi Neil,
+> >>
+> >> I know that Chris has a very specific set of use cases for btrfs and think that
+> >> Alasdair and others have started to look at what is doable.
+> >>
+> >> The obvious use case is the following:
+> >>
+> >> If a file system uses checksumming or other data corruption detection bits, it
+> >> can detect that it got bad data on a write. If that data was protected by RAID,
+> >> it would like to ask the block layer to try to read from another mirror (for
+> >> raid1) or try to validate/rebuild from parity.
+> >>
+> >> Today, I think that a retry will basically just give us back a random chance of
+> >> getting data from a different mirror or the same one that we got data from on
+> >> the first go.
+> >>
+> >> Chris, Alasdair, was that a good summary of one concern?
+> >>
+> >> Thanks!
+> >>
+> >> Ric
+> > I imagine a new field in 'struct bio' which was normally zero but could be
+> > some small integer.  It is only meaningful for read.
+> > When 0 it means "get this data way you like".
+> > When non-zero it means "get this data using method N", where the different
+> > methods are up to the device.
+> >
+> > For a mirrored RAID, method N means read from device N-1.
+> > For stripe/parity RAID, method 1 means "use other data blocks and parity
+> > blocks to reconstruct data.
+> >
+> > The default for non RAID devices is to return EINVAL for any N>  0.
+> > A remapping device (dm-linear, dm-stripe etc) would just pass the number
+> > down.  I'm not sure how RAID1 over RAID5 would handle it... that might need
+> > some thought.
+> >
+> > So if btrfs reads a block and the checksum looks wrong, it reads again with
+> > a larger N.  It continues incrementing N and retrying until it gets a block
+> > that it likes or it gets EINVAL.  There should probably be an error code
+> > (EAGAIN?) which means "I cannot work with that number, but try the next one".
+> >
+> > It would be trivial for me to implement this for RAID1 and RAID10, and
+> > relatively easy for RAID5.
+> > I'd need to give a bit of thought to RAID6 as there are possibly multiple
+> > ways to reconstruct from different combinations of parity and data.  I'm not
+> > sure if there would be much point in doing that though.
+> >
+> > It might make sense for a device to be able to report what the maximum
+> > 'N' supported is... that might make stacked raid easier to manage...
+> >
+> > NeilBrown
+> >
 > 
->  - Callers of the function catch errors from it already so bubbling the
->    error up will be handled.
->  - Callers of the function might BUG_ON any nonzero return code in which
->    case there is no behavior changed (but we still got to remove a BUG_ON)
+> I think that the above makes sense. Not sure what your "0" definition is, but I 
+> would assume that for non-raided devices (i.e., a single s-ata disk), "0" would 
+> be an indication that there is nothing more that can be tried. The data you got 
+> is all you are ever going to get :)
 > 
-> The following functions were updated:
-> 
-> btrfs_lookup_extent, alloc_reserved_tree_block, btrfs_remove_block_group,
-> btrfs_lookup_csums_range, btrfs_csum_file_blocks, btrfs_mark_extent_written,
-> btrfs_inode_by_name, btrfs_new_inode, btrfs_symlink,
-> insert_reserved_file_extent, and run_delalloc_nocow
+> For multiple mirrors, you might want to have a scheme where you would be able to 
+> cycle through the mirrors. You could retry, cycling through the various mirrors 
+> until you have tried and returned them all at which point you would get a "no 
+> more" error back or some such thing.
 
-Some patches have already been posted.
-Please refer: http://marc.info/?l=linux-btrfs&m=131003114917755&w=2
+Hi everyone,
 
-Thanks,
-Tsutomu
+The mirror number idea is basically what btrfs does today, and I think
+it fits in with Neil's idea to have different policies for different
+blocks.
 
-> 
-> Signed-off-by: Mark Fasheh <mfasheh@suse.com>
-> ---
->  fs/btrfs/extent-tree.c |   12 +++++++++---
->  fs/btrfs/file-item.c   |    7 +++++--
->  fs/btrfs/file.c        |    3 ++-
->  fs/btrfs/inode.c       |   18 +++++++++++++-----
->  4 files changed, 29 insertions(+), 11 deletions(-)
-> 
-> diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
-> index 71cd456..aa91773 100644
-> --- a/fs/btrfs/extent-tree.c
-> +++ b/fs/btrfs/extent-tree.c
-> @@ -667,7 +667,9 @@ int btrfs_lookup_extent(struct btrfs_root *root, u64 start, u64 len)
->  	struct btrfs_path *path;
->  
->  	path = btrfs_alloc_path();
-> -	BUG_ON(!path);
-> +	if (!path)
-> +		return -ENOMEM;
-> +
->  	key.objectid = start;
->  	key.offset = len;
->  	btrfs_set_key_type(&key, BTRFS_EXTENT_ITEM_KEY);
-> @@ -5494,7 +5496,8 @@ static int alloc_reserved_tree_block(struct btrfs_trans_handle *trans,
->  	u32 size = sizeof(*extent_item) + sizeof(*block_info) + sizeof(*iref);
->  
->  	path = btrfs_alloc_path();
-> -	BUG_ON(!path);
-> +	if (!path)
-> +		return -ENOMEM;
->  
->  	path->leave_spinning = 1;
->  	ret = btrfs_insert_empty_item(trans, fs_info->extent_root, path,
-> @@ -7162,7 +7165,10 @@ int btrfs_remove_block_group(struct btrfs_trans_handle *trans,
->  	spin_unlock(&cluster->refill_lock);
->  
->  	path = btrfs_alloc_path();
-> -	BUG_ON(!path);
-> +	if (!path) {
-> +		ret = -ENOMEM;
-> +		goto out;
-> +	}
->  
->  	inode = lookup_free_space_inode(root, block_group, path);
->  	if (!IS_ERR(inode)) {
-> diff --git a/fs/btrfs/file-item.c b/fs/btrfs/file-item.c
-> index 90d4ee5..f92ff0e 100644
-> --- a/fs/btrfs/file-item.c
-> +++ b/fs/btrfs/file-item.c
-> @@ -282,7 +282,8 @@ int btrfs_lookup_csums_range(struct btrfs_root *root, u64 start, u64 end,
->  	u16 csum_size = btrfs_super_csum_size(&root->fs_info->super_copy);
->  
->  	path = btrfs_alloc_path();
-> -	BUG_ON(!path);
-> +	if (!path)
-> +		return -ENOMEM;
->  
->  	if (search_commit) {
->  		path->skip_locking = 1;
-> @@ -672,7 +673,9 @@ int btrfs_csum_file_blocks(struct btrfs_trans_handle *trans,
->  		btrfs_super_csum_size(&root->fs_info->super_copy);
->  
->  	path = btrfs_alloc_path();
-> -	BUG_ON(!path);
-> +	if (!path)
-> +		return -ENOMEM;
-> +
->  	sector_sum = sums->sums;
->  again:
->  	next_offset = (u64)-1;
-> diff --git a/fs/btrfs/file.c b/fs/btrfs/file.c
-> index fa4ef18..23d1d81 100644
-> --- a/fs/btrfs/file.c
-> +++ b/fs/btrfs/file.c
-> @@ -855,7 +855,8 @@ int btrfs_mark_extent_written(struct btrfs_trans_handle *trans,
->  	btrfs_drop_extent_cache(inode, start, end - 1, 0);
->  
->  	path = btrfs_alloc_path();
-> -	BUG_ON(!path);
-> +	if (!path)
-> +		return -ENOMEM;
->  again:
->  	recow = 0;
->  	split = start;
-> diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
-> index 3601f0a..8be7d7a 100644
-> --- a/fs/btrfs/inode.c
-> +++ b/fs/btrfs/inode.c
-> @@ -1070,7 +1070,8 @@ static noinline int run_delalloc_nocow(struct inode *inode,
->  	u64 ino = btrfs_ino(inode);
->  
->  	path = btrfs_alloc_path();
-> -	BUG_ON(!path);
-> +	if (!path)
-> +		return -ENOMEM;
->  
->  	nolock = is_free_space_inode(root, inode);
->  
-> @@ -1644,7 +1645,8 @@ static int insert_reserved_file_extent(struct btrfs_trans_handle *trans,
->  	int ret;
->  
->  	path = btrfs_alloc_path();
-> -	BUG_ON(!path);
-> +	if (!path)
-> +		return -ENOMEM;
->  
->  	path->leave_spinning = 1;
->  
-> @@ -3713,7 +3715,8 @@ static int btrfs_inode_by_name(struct inode *dir, struct dentry *dentry,
->  	int ret = 0;
->  
->  	path = btrfs_alloc_path();
-> -	BUG_ON(!path);
-> +	if (!path)
-> +		return -ENOMEM;
->  
->  	di = btrfs_lookup_dir_item(NULL, root, path, btrfs_ino(dir), name,
->  				    namelen, 0);
-> @@ -4438,7 +4441,8 @@ static struct inode *btrfs_new_inode(struct btrfs_trans_handle *trans,
->  	int owner;
->  
->  	path = btrfs_alloc_path();
-> -	BUG_ON(!path);
-> +	if (!path)
-> +		return ERR_PTR(-ENOMEM);
->  
->  	inode = new_inode(root->fs_info->sb);
->  	if (!inode) {
-> @@ -7194,7 +7198,11 @@ static int btrfs_symlink(struct inode *dir, struct dentry *dentry,
->  		goto out_unlock;
->  
->  	path = btrfs_alloc_path();
-> -	BUG_ON(!path);
-> +	if (!path) {
-> +		err = -ENOMEM;
-> +		drop_inode = 1;
-> +		goto out_unlock;
-> +	}
->  	key.objectid = btrfs_ino(inode);
->  	key.offset = 0;
->  	btrfs_set_key_type(&key, BTRFS_EXTENT_DATA_KEY);
+Basically what btrfs does:
 
+read_block(block_num, mirror = 0)
+if (no io error and not csum error)
+	horray()
 
+num_mirrors = get_num_copies(block number)
+for (i = 1; i < num_mirrors; i++) {
+	read_block(block_num, mirror = i);
+}
+
+In a stacked configuration, the get_num_copies function can be smarter,
+basically adding up all the copies of the lower levels and finding a way
+to combine them.  We could just send down a fake bio that is responsible
+for adding up the storage combinations into a bitmask or whatever works.
+
+We could also just keep retrying until the lower layers reported no more
+mirror were available.
+
+In btrfs at least, we don't set the data blocks up to date until the crc
+has passed, so replacing bogus blocks is easy.  Metadata is a little
+more complex, but that's not really related to this topic.
+
+mirror number 0 just means "no mirror preference/pick the fastest
+mirror" to the btrfs block mapping code.
+
+Btrfs has the concept of different raid levels for different logical
+block numbers, so you get_num_copies might return one answer for block A
+and a different answer for block B.
+
+Either way, we could easily make use of a bio field here if it were
+exported out.
+
+-chris

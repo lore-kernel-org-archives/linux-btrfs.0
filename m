@@ -1,183 +1,168 @@
-From: NeilBrown <neilb@suse.de>
-Subject: Re: Mis-Design of Btrfs?
-Date: Fri, 15 Jul 2011 16:33:54 +1000
-Message-ID: <20110715163354.74fa2083@notabene.brown>
-References: <20110623105337.GD3753@ethz.ch>
-	<20110627164637.377314e2@notabene.brown>
-	<4E0AF091.9030301@redhat.com>
-	<20110714155620.6e9ac2cc@notabene.brown>
-	<4E1E866E.2050405@redhat.com>
-	<20110714163836.35a729c1@notabene.brown>
-	<4E1E9372.3030208@redhat.com>
-	<1310696606-sup-710@shiny>
-	<alpine.DEB.2.02.1107142149420.3558@asgard.lang.hm>
+From: Miao Xie <miaox@cn.fujitsu.com>
+Subject: [PATCH] Btrfs: fix BUG_ON() caused by ENOSPC when relocating space
+Date: Fri, 15 Jul 2011 18:34:36 +0800
+Message-ID: <4E2017BC.8060903@cn.fujitsu.com>
+Reply-To: miaox@cn.fujitsu.com
 Mime-Version: 1.0
-Content-Type: text/plain; charset=US-ASCII
-Cc: Chris Mason <chris.mason@oracle.com>,
-	Ric Wheeler <rwheeler@redhat.com>,
-	Nico Schottelius <nico-lkml-20110623@schottelius.org>,
-	LKML <linux-kernel@vger.kernel.org>,
-	linux-btrfs <linux-btrfs@vger.kernel.org>,
-	Alasdair G Kergon <agk@redhat.com>
-To: david@lang.hm
-Return-path: <linux-kernel-owner@vger.kernel.org>
-In-Reply-To: <alpine.DEB.2.02.1107142149420.3558@asgard.lang.hm>
+Content-Type: text/plain; charset=GB2312
+Cc: Chris Mason <chris.mason@oracle.com>
+To: Linux Btrfs <linux-btrfs@vger.kernel.org>
+Return-path: <linux-btrfs-owner@vger.kernel.org>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Thu, 14 Jul 2011 21:58:46 -0700 (PDT) david@lang.hm wrote:
+When we balanced the chunks across the devices, BUG_ON() in
+__finish_chunk_alloc() was triggered.
 
-> On Thu, 14 Jul 2011, Chris Mason wrote:
-> 
-> > Excerpts from Ric Wheeler's message of 2011-07-14 02:57:54 -0400:
-> >> On 07/14/2011 07:38 AM, NeilBrown wrote:
-> >>> On Thu, 14 Jul 2011 07:02:22 +0100 Ric Wheeler<rwheeler@redhat.com>  wrote:
-> >>>
-> >>>>> I'm certainly open to suggestions and collaboration.  Do you have in mind any
-> >>>>> particular way to make the interface richer??
-> >>>>>
-> >>>>> NeilBrown
-> >>>> Hi Neil,
-> >>>>
-> >>>> I know that Chris has a very specific set of use cases for btrfs and think that
-> >>>> Alasdair and others have started to look at what is doable.
-> >>>>
-> >>>> The obvious use case is the following:
-> >>>>
-> >>>> If a file system uses checksumming or other data corruption detection bits, it
-> >>>> can detect that it got bad data on a write. If that data was protected by RAID,
-> >>>> it would like to ask the block layer to try to read from another mirror (for
-> >>>> raid1) or try to validate/rebuild from parity.
-> >>>>
-> >>>> Today, I think that a retry will basically just give us back a random chance of
-> >>>> getting data from a different mirror or the same one that we got data from on
-> >>>> the first go.
-> >>>>
-> >>>> Chris, Alasdair, was that a good summary of one concern?
-> >>>>
-> >>>> Thanks!
-> >>>>
-> >>>> Ric
-> >>> I imagine a new field in 'struct bio' which was normally zero but could be
-> >>> some small integer.  It is only meaningful for read.
-> >>> When 0 it means "get this data way you like".
-> >>> When non-zero it means "get this data using method N", where the different
-> >>> methods are up to the device.
-> >>>
-> >>> For a mirrored RAID, method N means read from device N-1.
-> >>> For stripe/parity RAID, method 1 means "use other data blocks and parity
-> >>> blocks to reconstruct data.
-> >>>
-> >>> The default for non RAID devices is to return EINVAL for any N>  0.
-> >>> A remapping device (dm-linear, dm-stripe etc) would just pass the number
-> >>> down.  I'm not sure how RAID1 over RAID5 would handle it... that might need
-> >>> some thought.
-> >>>
-> >>> So if btrfs reads a block and the checksum looks wrong, it reads again with
-> >>> a larger N.  It continues incrementing N and retrying until it gets a block
-> >>> that it likes or it gets EINVAL.  There should probably be an error code
-> >>> (EAGAIN?) which means "I cannot work with that number, but try the next one".
-> >>>
-> >>> It would be trivial for me to implement this for RAID1 and RAID10, and
-> >>> relatively easy for RAID5.
-> >>> I'd need to give a bit of thought to RAID6 as there are possibly multiple
-> >>> ways to reconstruct from different combinations of parity and data.  I'm not
-> >>> sure if there would be much point in doing that though.
-> >>>
-> >>> It might make sense for a device to be able to report what the maximum
-> >>> 'N' supported is... that might make stacked raid easier to manage...
-> >>>
-> >>> NeilBrown
-> >>>
-> >>
-> >> I think that the above makes sense. Not sure what your "0" definition is, but I
-> >> would assume that for non-raided devices (i.e., a single s-ata disk), "0" would
-> >> be an indication that there is nothing more that can be tried. The data you got
-> >> is all you are ever going to get :)
-> >>
-> >> For multiple mirrors, you might want to have a scheme where you would be able to
-> >> cycle through the mirrors. You could retry, cycling through the various mirrors
-> >> until you have tried and returned them all at which point you would get a "no
-> >> more" error back or some such thing.
-> >
-> > Hi everyone,
-> >
-> > The mirror number idea is basically what btrfs does today, and I think
-> > it fits in with Neil's idea to have different policies for different
-> > blocks.
-> >
-> > Basically what btrfs does:
-> >
-> > read_block(block_num, mirror = 0)
-> > if (no io error and not csum error)
-> > 	horray()
-> >
-> > num_mirrors = get_num_copies(block number)
-> > for (i = 1; i < num_mirrors; i++) {
-> > 	read_block(block_num, mirror = i);
-> > }
-> >
-> > In a stacked configuration, the get_num_copies function can be smarter,
-> > basically adding up all the copies of the lower levels and finding a way
-> > to combine them.  We could just send down a fake bio that is responsible
-> > for adding up the storage combinations into a bitmask or whatever works.
-> >
-> > We could also just keep retrying until the lower layers reported no more
-> > mirror were available.
-> >
-> > In btrfs at least, we don't set the data blocks up to date until the crc
-> > has passed, so replacing bogus blocks is easy.  Metadata is a little
-> > more complex, but that's not really related to this topic.
-> >
-> > mirror number 0 just means "no mirror preference/pick the fastest
-> > mirror" to the btrfs block mapping code.
-> >
-> > Btrfs has the concept of different raid levels for different logical
-> > block numbers, so you get_num_copies might return one answer for block A
-> > and a different answer for block B.
-> >
-> > Either way, we could easily make use of a bio field here if it were
-> > exported out.
-> 
-> you don't want to just pass the value down as that will cause problems 
-> with layering (especially if the lower layer supports more values than a 
-> higher layer)
-> 
-> I would suggest that each layer take the value it's give, do an integer 
-> division by the number of values that layer supports, using the modulo 
-> value for that layer and pass the rest of the result down to the next 
-> layer.
+------------[ cut here ]------------
+kernel BUG at fs/btrfs/volumes.c:2568!
+[SNIP]
+Call Trace:
+ [<ffffffffa049525e>] btrfs_alloc_chunk+0x8e/0xa0 [btrfs]
+ [<ffffffffa04546b0>] do_chunk_alloc+0x330/0x3a0 [btrfs]
+ [<ffffffffa045c654>] btrfs_reserve_extent+0xb4/0x1f0 [btrfs]
+ [<ffffffffa045c86b>] btrfs_alloc_free_block+0xdb/0x350 [btrfs]
+ [<ffffffffa048a8d8>] ? read_extent_buffer+0xd8/0x1d0 [btrfs]
+ [<ffffffffa04476fd>] __btrfs_cow_block+0x14d/0x5e0 [btrfs]
+ [<ffffffffa044660d>] ? read_block_for_search+0x14d/0x4d0 [btrfs]
+ [<ffffffffa0447c9b>] btrfs_cow_block+0x10b/0x240 [btrfs]
+ [<ffffffffa044dd5e>] btrfs_search_slot+0x49e/0x7a0 [btrfs]
+ [<ffffffffa044f07d>] btrfs_insert_empty_items+0x8d/0xf0 [btrfs]
+ [<ffffffffa045e973>] insert_with_overflow+0x43/0x110 [btrfs]
+ [<ffffffffa045eb0d>] btrfs_insert_dir_item+0xcd/0x1f0 [btrfs]
+ [<ffffffffa0489bd0>] ? map_extent_buffer+0xb0/0xc0 [btrfs]
+ [<ffffffff812276ad>] ? rb_insert_color+0x9d/0x160
+ [<ffffffffa046cc40>] ? inode_tree_add+0xf0/0x150 [btrfs]
+ [<ffffffffa0474801>] btrfs_add_link+0xc1/0x1c0 [btrfs]
+ [<ffffffff811dacac>] ? security_inode_init_security+0x1c/0x30
+ [<ffffffffa04a28aa>] ? btrfs_init_acl+0x4a/0x180 [btrfs]
+ [<ffffffffa047492f>] btrfs_add_nondir+0x2f/0x70 [btrfs]
+ [<ffffffffa046af16>] ? btrfs_init_inode_security+0x46/0x60 [btrfs]
+ [<ffffffffa0474ac0>] btrfs_create+0x150/0x1d0 [btrfs]
+ [<ffffffff81159c63>] ? generic_permission+0x23/0xb0
+ [<ffffffff8115b415>] vfs_create+0xa5/0xc0
+ [<ffffffff8115ce6e>] do_last+0x5fe/0x880
+ [<ffffffff8115dc0d>] path_openat+0xcd/0x3d0
+ [<ffffffff8115e029>] do_filp_open+0x49/0xa0
+ [<ffffffff8116a965>] ? alloc_fd+0x95/0x160
+ [<ffffffff8114f0c7>] do_sys_open+0x107/0x1e0
+ [<ffffffff810bcc3f>] ? audit_syscall_entry+0x1bf/0x1f0
+ [<ffffffff8114f1e0>] sys_open+0x20/0x30
+ [<ffffffff81484ec2>] system_call_fastpath+0x16/0x1b
+[SNIP]
+RIP  [<ffffffffa049444a>] __finish_chunk_alloc+0x20a/0x220 [btrfs]
 
-I, on the other hand, would suggest that each layer be given the freedom, and
-the responsibility, to do whatever it thinks is most appropriate.
+The reason is:
+Task1					Space balance task
+do_chunk_alloc()
+  __finish_chunk_alloc()
+    update device info
+    in the chunk tree
+      alloc system metadata block
+					relocate system metadata block group
+					  set system metadata block group
+					  readonly, This block group is the
+					  only one that can allocate space. So
+					  there is no free space that can be
+					  allocated now.
+        find no space and don't try
+        to alloc new chunk, and then
+        return ENOSPC
+  BUG_ON() in __finish_chunk_alloc()
+  was triggered.
 
-This would probably involved checking the lower levels to see how many
-strategies each has, and doing some appropriate arithmetic depending on how
-it combines those devices.
+Fix this bug by allocating a new system metadata chunk before relocating the
+old one if we find there is no free space which can be allocated after setting
+the old block group to be read-only.
 
-One problem here is the assumption that the lower levels don't change, and we
-know that not to be the case.
-However this is already a problem.  It is entirely possible that the request
-size parameters of devices can change at any moment, even while a request is
-in-flight ... though we try to avoid that or work around it.
+Reported-by: Tsutomu Itoh <t-itoh@jp.fujitsu.com>
+Signed-off-by: Miao Xie <miaox@cn.fujitsu.com>
+Tested-by: Tsutomu Itoh <t-itoh@jp.fujitsu.com>
+---
+ fs/btrfs/extent-tree.c |   28 +++++++++++++++++++++-------
+ 1 files changed, 21 insertions(+), 7 deletions(-)
 
-The sort of dependencies that we see forming here would probably just make
-the problem worse.
-
-Not sure what to do about it though.... maybe just hope it isn't a problem.
-
-NeilBrown
-
-
-> 
-> this works for just trying values until you get the error that tells you 
-> there are no more options.
-> 
-> 
-> things can get very 'intersesting' if the different options below you have 
-> different number of options (say a raid1 across a raid5 and a single disk) 
-> but I can't think of any good way to figure this out and assemble a 
-> sane order without doing an exaustive search down to find the number of 
-> options for each layer (and since this can be different for different 
-> blocks, you would have to do this each time you invoked this option)
-> 
-> David Lang
+diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
+index 71cd456..00c8a1a 100644
+--- a/fs/btrfs/extent-tree.c
++++ b/fs/btrfs/extent-tree.c
+@@ -6524,15 +6524,28 @@ static u64 update_block_group_flags(struct btrfs_root *root, u64 flags)
+ 	return flags;
+ }
+ 
+-static int set_block_group_ro(struct btrfs_block_group_cache *cache)
++static int set_block_group_ro(struct btrfs_block_group_cache *cache, int force)
+ {
+ 	struct btrfs_space_info *sinfo = cache->space_info;
+ 	u64 num_bytes;
++	u64 min_allocable_bytes;
+ 	int ret = -ENOSPC;
+ 
+ 	if (cache->ro)
+ 		return 0;
+ 
++	/*
++	 * We need some metadata space and system metadata space for
++	 * allocating chunks in some corner cases until we force to set
++	 * it to be readonly.
++	 */
++	if ((sinfo->flags &
++	     (BTRFS_BLOCK_GROUP_SYSTEM | BTRFS_BLOCK_GROUP_METADATA)) &&
++	    !force)
++		min_allocable_bytes = 1 * 1024 * 1024;
++	else
++		min_allocable_bytes = 0;
++
+ 	spin_lock(&sinfo->lock);
+ 	spin_lock(&cache->lock);
+ 	num_bytes = cache->key.offset - cache->reserved - cache->pinned -
+@@ -6540,7 +6553,8 @@ static int set_block_group_ro(struct btrfs_block_group_cache *cache)
+ 
+ 	if (sinfo->bytes_used + sinfo->bytes_reserved + sinfo->bytes_pinned +
+ 	    sinfo->bytes_may_use + sinfo->bytes_readonly +
+-	    cache->reserved_pinned + num_bytes <= sinfo->total_bytes) {
++	    cache->reserved_pinned + num_bytes + min_allocable_bytes <=
++	    sinfo->total_bytes) {
+ 		sinfo->bytes_readonly += num_bytes;
+ 		sinfo->bytes_reserved += cache->reserved_pinned;
+ 		cache->reserved_pinned = 0;
+@@ -6571,7 +6585,7 @@ int btrfs_set_block_group_ro(struct btrfs_root *root,
+ 		do_chunk_alloc(trans, root, 2 * 1024 * 1024, alloc_flags,
+ 			       CHUNK_ALLOC_FORCE);
+ 
+-	ret = set_block_group_ro(cache);
++	ret = set_block_group_ro(cache, 0);
+ 	if (!ret)
+ 		goto out;
+ 	alloc_flags = get_alloc_profile(root, cache->space_info->flags);
+@@ -6579,7 +6593,7 @@ int btrfs_set_block_group_ro(struct btrfs_root *root,
+ 			     CHUNK_ALLOC_FORCE);
+ 	if (ret < 0)
+ 		goto out;
+-	ret = set_block_group_ro(cache);
++	ret = set_block_group_ro(cache, 0);
+ out:
+ 	btrfs_end_transaction(trans, root);
+ 	return ret;
+@@ -7016,7 +7030,7 @@ int btrfs_read_block_groups(struct btrfs_root *root)
+ 
+ 		set_avail_alloc_bits(root->fs_info, cache->flags);
+ 		if (btrfs_chunk_readonly(root, cache->key.objectid))
+-			set_block_group_ro(cache);
++			set_block_group_ro(cache, 1);
+ 	}
+ 
+ 	list_for_each_entry_rcu(space_info, &root->fs_info->space_info, list) {
+@@ -7030,9 +7044,9 @@ int btrfs_read_block_groups(struct btrfs_root *root)
+ 		 * mirrored block groups.
+ 		 */
+ 		list_for_each_entry(cache, &space_info->block_groups[3], list)
+-			set_block_group_ro(cache);
++			set_block_group_ro(cache, 1);
+ 		list_for_each_entry(cache, &space_info->block_groups[4], list)
+-			set_block_group_ro(cache);
++			set_block_group_ro(cache, 1);
+ 	}
+ 
+ 	init_global_block_rsv(info);
+-- 
+1.7.4

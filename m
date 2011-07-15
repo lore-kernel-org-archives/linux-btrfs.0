@@ -1,70 +1,75 @@
-From: Tsutomu Itoh <t-itoh@jp.fujitsu.com>
-Subject: Re: [PATCH 6/7] btrfs: Don't BUG_ON alloc_path errors in find_next_chunk
-Date: Fri, 15 Jul 2011 11:43:52 +0900
-Message-ID: <4E1FA968.1070703@jp.fujitsu.com>
-References: <1310681702-13922-1-git-send-email-mfasheh@suse.com> <1310681702-13922-2-git-send-email-mfasheh@suse.com> <1310681702-13922-3-git-send-email-mfasheh@suse.com> <1310681702-13922-4-git-send-email-mfasheh@suse.com> <1310681702-13922-5-git-send-email-mfasheh@suse.com> <1310681702-13922-6-git-send-email-mfasheh@suse.com> <1310681702-13922-7-git-send-email-mfasheh@suse.com>
+From: liubo <liubo2009@cn.fujitsu.com>
+Subject: Re: [PATCH] Btrfs: fix deadlock when throttling transactions
+Date: Fri, 15 Jul 2011 10:56:42 +0800
+Message-ID: <4E1FAC6A.3050501@cn.fujitsu.com>
+References: <1310664370-20091-1-git-send-email-josef@redhat.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=ISO-2022-JP
-Cc: linux-btrfs@vger.kernel.org, chris.mason@oracle.com
-To: Mark Fasheh <mfasheh@suse.com>
+Content-Type: text/plain; charset=UTF-8
+Cc: linux-btrfs@vger.kernel.org
+To: Josef Bacik <josef@redhat.com>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <1310681702-13922-7-git-send-email-mfasheh@suse.com>
+In-Reply-To: <1310664370-20091-1-git-send-email-josef@redhat.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-(2011/07/15 7:15), Mark Fasheh wrote:
-> I also removed the BUG_ON from error return of find_next_chunk in
-> init_first_rw_device(). It turns out that the only caller of
-> init_first_rw_device() also BUGS on any nonzero return so no actual behavior
-> change has occurred here.
+On 07/15/2011 01:26 AM, Josef Bacik wrote:
+> Hit this nice little deadlock.  What happens is this
 > 
-> Signed-off-by: Mark Fasheh <mfasheh@suse.com>
+> __btrfs_end_transaction with throttle set, --use_count so it equals 0
+>   btrfs_commit_transaction
+>     <somebody else actually manages to start the commit>
+>     btrfs_end_transaction --use_count so now its -1 <== BAD
+>       we just return and wait on the transaction
+> 
+> This is bad because we just return after our use_count is -1 and don't let go
+> of our num_writer count on the transaction, so the guy committing the
+> transaction just sits there forever.  Fix this by inc'ing our use_count if we're
+> going to call commit_transaction so that if we call btrfs_end_transaction it's
+> valid.  Thanks,
+> 
+> Signed-off-by: Josef Bacik <josef@redhat.com>
 > ---
->  fs/btrfs/volumes.c |    6 ++++--
->  1 files changed, 4 insertions(+), 2 deletions(-)
+>  fs/btrfs/transaction.c |   13 ++++++++++---
+>  1 files changed, 10 insertions(+), 3 deletions(-)
 > 
-> diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
-> index 530a2fc..90d956c 100644
-> --- a/fs/btrfs/volumes.c
-> +++ b/fs/btrfs/volumes.c
-> @@ -1037,7 +1037,8 @@ static noinline int find_next_chunk(struct btrfs_root *root,
->  	struct btrfs_key found_key;
+> diff --git a/fs/btrfs/transaction.c b/fs/btrfs/transaction.c
+> index 654755b..00b81fb5 100644
+> --- a/fs/btrfs/transaction.c
+> +++ b/fs/btrfs/transaction.c
+> @@ -497,10 +497,17 @@ static int __btrfs_end_transaction(struct btrfs_trans_handle *trans,
+>  	}
 >  
->  	path = btrfs_alloc_path();
-> -	BUG_ON(!path);
-> +	if (!path)
-> +		return -ENOMEM;
-
-If find_next_chunk() returns -ENOMEM, space_info->full becomes 1 by following code.
-
-3205 static int do_chunk_alloc(struct btrfs_trans_handle *trans,
-3206                           struct btrfs_root *extent_root, u64 alloc_bytes,
-3207                           u64 flags, int force)
-3208 {
-...
-3277         ret = btrfs_alloc_chunk(trans, extent_root, flags);
-3278         spin_lock(&space_info->lock);
-3279         if (ret)
-3280                 space_info->full = 1;
-3281         else
-3282                 ret = 1;
-
-Is it OK?
-
-Thanks,
-Tsutomu
-
+>  	if (lock && cur_trans->blocked && !cur_trans->in_commit) {
+> -		if (throttle)
+> +		if (throttle) {
+> +			/*
+> +			 * We may race with somebody else here so end up having
+> +			 * to call end_transaction on ourselves again, so inc
+> +			 * our use_count.
+> +			 */
+> +			trans->use_count++;
+>  			return btrfs_commit_transaction(trans, root);
+> -		else
+> +		} else {
+>  			wake_up_process(info->transaction_kthread);
+> +		}
+>  	}
 >  
->  	key.objectid = objectid;
->  	key.offset = (u64)-1;
-> @@ -2663,7 +2664,8 @@ static noinline int init_first_rw_device(struct btrfs_trans_handle *trans,
+>  	WARN_ON(cur_trans != info->running_transaction);
+> @@ -1225,7 +1232,7 @@ int btrfs_commit_transaction(struct btrfs_trans_handle *trans,
+>  	if (cur_trans->in_commit) {
+>  		spin_unlock(&cur_trans->commit_lock);
+>  		atomic_inc(&cur_trans->use_count);
+> -		btrfs_end_transaction(trans, root);
+> +		__btrfs_end_transaction(trans, root, 0, 1);
 >  
->  	ret = find_next_chunk(fs_info->chunk_root,
->  			      BTRFS_FIRST_CHUNK_TREE_OBJECTID, &chunk_offset);
-> -	BUG_ON(ret);
-> +	if (ret)
-> +		return ret;
->  
->  	alloc_profile = BTRFS_BLOCK_GROUP_METADATA |
->  			(fs_info->metadata_alloc_profile &
 
+Looks good.
+
+BTW, btrfs_end_transaction(trans, root) is just __btrfs_end_transaction(trans, root, 0, 1).
+
+thanks,
+liubo
+
+>  		ret = wait_for_commit(root, cur_trans);
+>  		BUG_ON(ret);
 

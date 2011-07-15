@@ -1,96 +1,186 @@
-From: Ric Wheeler <rwheeler@redhat.com>
-Subject: Re: Mis-Design of Btrfs?
-Date: Fri, 15 Jul 2011 18:23:48 +0100
-Message-ID: <4E2077A4.4010307@redhat.com>
-References: <20110623105337.GD3753@ethz.ch> <20110627164637.377314e2@notabene.brown> <4E0AF091.9030301@redhat.com> <20110714155620.6e9ac2cc@notabene.brown> <4E1E866E.2050405@redhat.com> <20110714163836.35a729c1@notabene.brown> <4E1E9372.3030208@redhat.com> <1310696606-sup-710@shiny> <alpine.DEB.2.02.1107142149420.3558@asgard.lang.hm> <20110715163354.74fa2083@notabene.brown> <1310728784-sup-9024@shiny> <4E20395C.1000301@redhat.com> <1310735821-sup-2589@shiny> <alpine.DEB.2.02.1107150920180.3745@asgard.lang.hm> <4E206FF8.9090803@redhat.com> <alpine.DEB.2.02.1107150954300.3745@asgard.lang.hm>
-Mime-Version: 1.0
-Content-Type: text/plain; charset=ISO-8859-1; format=flowed
-Cc: Chris Mason <chris.mason@oracle.com>, NeilBrown <neilb@suse.de>,
-	Nico Schottelius <nico-lkml-20110623@schottelius.org>,
-	LKML <linux-kernel@vger.kernel.org>,
-	linux-btrfs <linux-btrfs@vger.kernel.org>,
-	Alasdair G Kergon <agk@redhat.com>
-To: david@lang.hm
+From: Josef Bacik <josef@redhat.com>
+Subject: [PATCH] Btrfs: don't be as agressive with delalloc metadata reservations
+Date: Fri, 15 Jul 2011 14:29:11 -0400
+Message-ID: <1310754551-30924-1-git-send-email-josef@redhat.com>
+To: linux-btrfs@vger.kernel.org
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <alpine.DEB.2.02.1107150954300.3745@asgard.lang.hm>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 07/15/2011 06:01 PM, david@lang.hm wrote:
-> On Fri, 15 Jul 2011, Ric Wheeler wrote:
->
->> On 07/15/2011 05:23 PM, david@lang.hm wrote:
->>> On Fri, 15 Jul 2011, Chris Mason wrote:
->>>
->>>> Excerpts from Ric Wheeler's message of 2011-07-15 08:58:04 -0400:
->>>>> On 07/15/2011 12:34 PM, Chris Mason wrote:
->>>>
->>>> By bubble up I mean that if you have multiple layers capable of doing
->>>> retries, the lowest levels would retry first.  Basically by the time we
->>>> get an -EIO_ALREADY_RETRIED we know there's nothing that lower level can
->>>> do to help.
->>>
->>> the problem with doing this is that it can end up stalling the box for 
->>> significant amounts of time while all the retries happen.
->>>
->>> we already see this happening today where a disk read failure is retried 
->>> multiple times by the disk, multiple times by the raid controller, and then 
->>> multiple times by Linux, resulting is multi-minute stalls when you hit a 
->>> disk error in some cases.
->>>
->>> having the lower layers do the retries automatically runs the risk of making 
->>> this even worse.
->>>
->>> This needs to be able to be throttled by some layer that can see the entire 
->>> picture (either by cutting off the retries after a number, after some time, 
->>> or by spacing out the retries to allow other queries to get in and let the 
->>> box do useful work in the meantime)
->>>
->>> David Lang
->>>
->>
->> That should not be an issue - we have a "fast fail" path for IO that should 
->> avoid retrying just for those reasons (i.e., for multi-path or when 
->> recovering a flaky drive).
->>
->> This is not a scheme for unbounded retries. If you have a 3 disk mirror in 
->> RAID1, you would read the data no more than 2 extra times and almost never 
->> more than once.  That should be *much* faster than the multiple-second long 
->> timeout you see when waiting for SCSI timeout to fire, etc.
->
-> this issue is when you stack things.
->
-> what if you have a 3 piece raid 1 on top of a 4 piece raid 6?
->
-> so you have 3 raid1 retries * N raid 6 retries. depending on the order that 
-> you do the retries in, and how long it takes that try to fail, this could 
-> start to take significant amounts of time.
->
-> if you do a retry on the lower level first, the raid 6 could try several 
-> different ways to combine the drives to get the valid data (disks 1,2  2,3 3,4 
-> 1,3 1,4 2,4 1,2,3 1,2,4 1,3,4 2,3,4) add more disks and it gets worse fast.
->
-> add more layers and you multiple the number of possible retries.
->
-> my guess is that changing to a different method at the upper level is going to 
-> avoid the problem area faster then doing so at a lower level (because there is 
-> less hardware in common with the method that just gave the wrong answer)
->
-> David Lang
+Currently we reserve enough space to COW an entirely full btree for every extent
+we have reserved for an inode.  This _sucks_, because you only need to COW once,
+and then everybody else is ok.  Unfortunately we don't know we'll all be able to
+get into the same transaction so that's what we have had to do.  But the global
+reserve holds a reservation large enough to cover a large percentage of all the
+metadata currently in the fs.  So all we really need to account for is any new
+blocks that we may allocate.  So fix this by
 
-At some point, the question is why would you do that?  Two parity drives for 
-each 4 drive RAID-6 set and then mirror that 3 times (12 drives in total, only 2 
-data drives)? Better off doing a 4 way mirror :)
+1) Passing to btrfs_alloc_free_block() wether this is a new block or a COW
+block.  If it is a COW block we use the global reserve, if not we use the
+trans->block_rsv.
+2) Reduce the amount of space we reserve.  Since we don't need to account for
+cow'ing the tree we can just keep track of new blocks to reserve, which greatly
+reduces the reservation amount.
 
-I think that you are still missing the point.
+This makes my basic random write test go from 3 mb/s to 75 mb/s.  I've tested
+this with my horrible ENOSPC test and it seems to work out fine.  Thanks,
 
-If the lowest layer can repair the data, it would return the first validated 
-answer. The major time sync would be the IO to read the sectors from each of the 
-4 drives in your example, not computing the various combination of parity or 
-validating (all done in memory).
+Signed-off-by: Josef Bacik <josef@redhat.com>
+---
+ fs/btrfs/ctree.c       |   10 +++++-----
+ fs/btrfs/ctree.h       |    5 ++---
+ fs/btrfs/disk-io.c     |    3 ++-
+ fs/btrfs/extent-tree.c |   20 +++++++++++++++-----
+ fs/btrfs/ioctl.c       |    2 +-
+ 5 files changed, 25 insertions(+), 15 deletions(-)
 
-If the RAID-6 layer failed, you would do the same for each of the mirrors which 
-would read the IO from each of their RAID-6 low levels exactly once as well (and 
-then verify in memory).
-
-Ric
+diff --git a/fs/btrfs/ctree.c b/fs/btrfs/ctree.c
+index 2e66786..fbd48e9 100644
+--- a/fs/btrfs/ctree.c
++++ b/fs/btrfs/ctree.c
+@@ -206,7 +206,7 @@ int btrfs_copy_root(struct btrfs_trans_handle *trans,
+ 
+ 	cow = btrfs_alloc_free_block(trans, root, buf->len, 0,
+ 				     new_root_objectid, &disk_key, level,
+-				     buf->start, 0);
++				     buf->start, 0, 1);
+ 	if (IS_ERR(cow))
+ 		return PTR_ERR(cow);
+ 
+@@ -412,7 +412,7 @@ static noinline int __btrfs_cow_block(struct btrfs_trans_handle *trans,
+ 
+ 	cow = btrfs_alloc_free_block(trans, root, buf->len, parent_start,
+ 				     root->root_key.objectid, &disk_key,
+-				     level, search_start, empty_size);
++				     level, search_start, empty_size, 0);
+ 	if (IS_ERR(cow))
+ 		return PTR_ERR(cow);
+ 
+@@ -1985,7 +1985,7 @@ static noinline int insert_new_root(struct btrfs_trans_handle *trans,
+ 
+ 	c = btrfs_alloc_free_block(trans, root, root->nodesize, 0,
+ 				   root->root_key.objectid, &lower_key,
+-				   level, root->node->start, 0);
++				   level, root->node->start, 0, 1);
+ 	if (IS_ERR(c))
+ 		return PTR_ERR(c);
+ 
+@@ -2112,7 +2112,7 @@ static noinline int split_node(struct btrfs_trans_handle *trans,
+ 
+ 	split = btrfs_alloc_free_block(trans, root, root->nodesize, 0,
+ 					root->root_key.objectid,
+-					&disk_key, level, c->start, 0);
++					&disk_key, level, c->start, 0, 1);
+ 	if (IS_ERR(split))
+ 		return PTR_ERR(split);
+ 
+@@ -2937,7 +2937,7 @@ again:
+ 
+ 	right = btrfs_alloc_free_block(trans, root, root->leafsize, 0,
+ 					root->root_key.objectid,
+-					&disk_key, 0, l->start, 0);
++					&disk_key, 0, l->start, 0, 1);
+ 	if (IS_ERR(right))
+ 		return PTR_ERR(right);
+ 
+diff --git a/fs/btrfs/ctree.h b/fs/btrfs/ctree.h
+index 3ba4d5f..1accb56 100644
+--- a/fs/btrfs/ctree.h
++++ b/fs/btrfs/ctree.h
+@@ -2135,8 +2135,7 @@ static inline bool btrfs_mixed_space_info(struct btrfs_space_info *space_info)
+ static inline u64 btrfs_calc_trans_metadata_size(struct btrfs_root *root,
+ 						 unsigned num_items)
+ {
+-	return (root->leafsize + root->nodesize * (BTRFS_MAX_LEVEL - 1)) *
+-		3 * num_items;
++	return root->leafsize * 3 * num_items;
+ }
+ 
+ void btrfs_put_block_group(struct btrfs_block_group_cache *cache);
+@@ -2161,7 +2160,7 @@ struct extent_buffer *btrfs_alloc_free_block(struct btrfs_trans_handle *trans,
+ 					struct btrfs_root *root, u32 blocksize,
+ 					u64 parent, u64 root_objectid,
+ 					struct btrfs_disk_key *key, int level,
+-					u64 hint, u64 empty_size);
++					u64 hint, u64 empty_size, int new_block);
+ void btrfs_free_tree_block(struct btrfs_trans_handle *trans,
+ 			   struct btrfs_root *root,
+ 			   struct extent_buffer *buf,
+diff --git a/fs/btrfs/disk-io.c b/fs/btrfs/disk-io.c
+index 234a084..0245cad 100644
+--- a/fs/btrfs/disk-io.c
++++ b/fs/btrfs/disk-io.c
+@@ -1143,7 +1143,8 @@ static struct btrfs_root *alloc_log_tree(struct btrfs_trans_handle *trans,
+ 	root->ref_cows = 0;
+ 
+ 	leaf = btrfs_alloc_free_block(trans, root, root->leafsize, 0,
+-				      BTRFS_TREE_LOG_OBJECTID, NULL, 0, 0, 0);
++				      BTRFS_TREE_LOG_OBJECTID, NULL, 0, 0, 0,
++				      1);
+ 	if (IS_ERR(leaf)) {
+ 		kfree(root);
+ 		return ERR_CAST(leaf);
+diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
+index 2e0f87b..e2dd833 100644
+--- a/fs/btrfs/extent-tree.c
++++ b/fs/btrfs/extent-tree.c
+@@ -5661,13 +5661,23 @@ struct extent_buffer *btrfs_init_new_buffer(struct btrfs_trans_handle *trans,
+ 
+ static struct btrfs_block_rsv *
+ use_block_rsv(struct btrfs_trans_handle *trans,
+-	      struct btrfs_root *root, u32 blocksize)
++	      struct btrfs_root *root, u32 blocksize, int new_block)
+ {
+-	struct btrfs_block_rsv *block_rsv;
++	struct btrfs_block_rsv *block_rsv = NULL;
+ 	struct btrfs_block_rsv *global_rsv = &root->fs_info->global_block_rsv;
+ 	int ret;
+ 
+-	block_rsv = get_block_rsv(trans, root);
++	if (root->ref_cows) {
++		if (new_block)
++			block_rsv = trans->block_rsv;
++		else
++			block_rsv = global_rsv;
++	} else {
++		block_rsv = root->block_rsv;
++	}
++
++	if (!block_rsv)
++		block_rsv = &root->fs_info->empty_block_rsv;
+ 
+ 	if (block_rsv->size == 0) {
+ 		ret = reserve_metadata_bytes(trans, root, block_rsv,
+@@ -5726,7 +5736,7 @@ struct extent_buffer *btrfs_alloc_free_block(struct btrfs_trans_handle *trans,
+ 					struct btrfs_root *root, u32 blocksize,
+ 					u64 parent, u64 root_objectid,
+ 					struct btrfs_disk_key *key, int level,
+-					u64 hint, u64 empty_size)
++					u64 hint, u64 empty_size, int new_block)
+ {
+ 	struct btrfs_key ins;
+ 	struct btrfs_block_rsv *block_rsv;
+@@ -5735,7 +5745,7 @@ struct extent_buffer *btrfs_alloc_free_block(struct btrfs_trans_handle *trans,
+ 	int ret;
+ 
+ 
+-	block_rsv = use_block_rsv(trans, root, blocksize);
++	block_rsv = use_block_rsv(trans, root, blocksize, new_block);
+ 	if (IS_ERR(block_rsv))
+ 		return ERR_CAST(block_rsv);
+ 
+diff --git a/fs/btrfs/ioctl.c b/fs/btrfs/ioctl.c
+index fd252ff..39fb634 100644
+--- a/fs/btrfs/ioctl.c
++++ b/fs/btrfs/ioctl.c
+@@ -352,7 +352,7 @@ static noinline int create_subvol(struct btrfs_root *root,
+ 	}
+ 
+ 	leaf = btrfs_alloc_free_block(trans, root, root->leafsize,
+-				      0, objectid, NULL, 0, 0, 0);
++				      0, objectid, NULL, 0, 0, 0, 1);
+ 	if (IS_ERR(leaf)) {
+ 		ret = PTR_ERR(leaf);
+ 		goto fail;
+-- 
+1.7.5.2
 

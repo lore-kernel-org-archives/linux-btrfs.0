@@ -1,75 +1,51 @@
-From: liubo <liubo2009@cn.fujitsu.com>
-Subject: Re: [PATCH] Btrfs: fix deadlock when throttling transactions
-Date: Fri, 15 Jul 2011 10:56:42 +0800
-Message-ID: <4E1FAC6A.3050501@cn.fujitsu.com>
-References: <1310664370-20091-1-git-send-email-josef@redhat.com>
+From: Tsutomu Itoh <t-itoh@jp.fujitsu.com>
+Subject: Re: [PATCH 7/7] btrfs: don't BUG_ON allocation errors in btrfs_drop_snapshot
+Date: Fri, 15 Jul 2011 12:04:46 +0900
+Message-ID: <4E1FAE4E.5030508@jp.fujitsu.com>
+References: <1310681702-13922-1-git-send-email-mfasheh@suse.com> <1310681702-13922-2-git-send-email-mfasheh@suse.com> <1310681702-13922-3-git-send-email-mfasheh@suse.com> <1310681702-13922-4-git-send-email-mfasheh@suse.com> <1310681702-13922-5-git-send-email-mfasheh@suse.com> <1310681702-13922-6-git-send-email-mfasheh@suse.com> <1310681702-13922-7-git-send-email-mfasheh@suse.com> <1310681702-13922-8-git-send-email-mfasheh@suse.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=UTF-8
-Cc: linux-btrfs@vger.kernel.org
-To: Josef Bacik <josef@redhat.com>
+Content-Type: text/plain; charset=ISO-2022-JP
+Cc: linux-btrfs@vger.kernel.org, chris.mason@oracle.com
+To: Mark Fasheh <mfasheh@suse.com>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <1310664370-20091-1-git-send-email-josef@redhat.com>
+In-Reply-To: <1310681702-13922-8-git-send-email-mfasheh@suse.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 07/15/2011 01:26 AM, Josef Bacik wrote:
-> Hit this nice little deadlock.  What happens is this
+(2011/07/15 7:15), Mark Fasheh wrote:
+> In addition to properly handling allocation failure from btrfs_alloc_path, I
+> also fixed up the kzalloc error handling code immediately below it.
+
+Need not you correct the caller of btrfs_drop_snapshot()?
+
+Thanks,
+Tsutomu
+
 > 
-> __btrfs_end_transaction with throttle set, --use_count so it equals 0
->   btrfs_commit_transaction
->     <somebody else actually manages to start the commit>
->     btrfs_end_transaction --use_count so now its -1 <== BAD
->       we just return and wait on the transaction
-> 
-> This is bad because we just return after our use_count is -1 and don't let go
-> of our num_writer count on the transaction, so the guy committing the
-> transaction just sits there forever.  Fix this by inc'ing our use_count if we're
-> going to call commit_transaction so that if we call btrfs_end_transaction it's
-> valid.  Thanks,
-> 
-> Signed-off-by: Josef Bacik <josef@redhat.com>
+> Signed-off-by: Mark Fasheh <mfasheh@suse.com>
 > ---
->  fs/btrfs/transaction.c |   13 ++++++++++---
->  1 files changed, 10 insertions(+), 3 deletions(-)
+>  fs/btrfs/extent-tree.c |    8 ++++++--
+>  1 files changed, 6 insertions(+), 2 deletions(-)
 > 
-> diff --git a/fs/btrfs/transaction.c b/fs/btrfs/transaction.c
-> index 654755b..00b81fb5 100644
-> --- a/fs/btrfs/transaction.c
-> +++ b/fs/btrfs/transaction.c
-> @@ -497,10 +497,17 @@ static int __btrfs_end_transaction(struct btrfs_trans_handle *trans,
->  	}
+> diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
+> index aa91773..a016590 100644
+> --- a/fs/btrfs/extent-tree.c
+> +++ b/fs/btrfs/extent-tree.c
+> @@ -6268,10 +6268,14 @@ int btrfs_drop_snapshot(struct btrfs_root *root,
+>  	int level;
 >  
->  	if (lock && cur_trans->blocked && !cur_trans->in_commit) {
-> -		if (throttle)
-> +		if (throttle) {
-> +			/*
-> +			 * We may race with somebody else here so end up having
-> +			 * to call end_transaction on ourselves again, so inc
-> +			 * our use_count.
-> +			 */
-> +			trans->use_count++;
->  			return btrfs_commit_transaction(trans, root);
-> -		else
-> +		} else {
->  			wake_up_process(info->transaction_kthread);
-> +		}
->  	}
+>  	path = btrfs_alloc_path();
+> -	BUG_ON(!path);
+> +	if (!path)
+> +		return -ENOMEM;
 >  
->  	WARN_ON(cur_trans != info->running_transaction);
-> @@ -1225,7 +1232,7 @@ int btrfs_commit_transaction(struct btrfs_trans_handle *trans,
->  	if (cur_trans->in_commit) {
->  		spin_unlock(&cur_trans->commit_lock);
->  		atomic_inc(&cur_trans->use_count);
-> -		btrfs_end_transaction(trans, root);
-> +		__btrfs_end_transaction(trans, root, 0, 1);
+>  	wc = kzalloc(sizeof(*wc), GFP_NOFS);
+> -	BUG_ON(!wc);
+> +	if (!wc) {
+> +		btrfs_free_path(path);
+> +		return -ENOMEM;
+> +	}
 >  
+>  	trans = btrfs_start_transaction(tree_root, 0);
+>  	BUG_ON(IS_ERR(trans));
 
-Looks good.
-
-BTW, btrfs_end_transaction(trans, root) is just __btrfs_end_transaction(trans, root, 0, 1).
-
-thanks,
-liubo
-
->  		ret = wait_for_commit(root, cur_trans);
->  		BUG_ON(ret);
 

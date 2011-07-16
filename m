@@ -1,70 +1,32 @@
-From: "Fajar A. Nugraha" <list@fajar.net>
-Subject: Re: corruption. notreelog has no effect? anything else to try?
-Date: Sat, 16 Jul 2011 05:19:49 +0700
-Message-ID: <CAG1y0sc-D1-5zkgsovtZG6emOc78GoZ64gQ1Lhufm=6Z3huEAg@mail.gmail.com>
-References: <1310763102.3972.31.camel@ubuntu>
+From: Josef Bacik <josef@redhat.com>
+Subject: Re: [PATCH] Btrfs: tag pages for writeback in sync
+Date: Fri, 15 Jul 2011 20:47:23 -0400
+Message-ID: <4E20DF9B.8010003@redhat.com>
+References: <1310765198-10077-1-git-send-email-josef@redhat.com> <20110715215011.GA32601@infradead.org>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=ISO-8859-1
-To: linux-btrfs <linux-btrfs@vger.kernel.org>
+Content-Type: text/plain; charset=ISO-8859-1; format=flowed
+Cc: linux-btrfs@vger.kernel.org
+To: Christoph Hellwig <hch@infradead.org>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <1310763102.3972.31.camel@ubuntu>
+In-Reply-To: <20110715215011.GA32601@infradead.org>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Sat, Jul 16, 2011 at 3:51 AM, mck <mick@wever.org> wrote:
-> My laptop btrfs partition has become corrupt after a power+battery
-> outage.
+On 07/15/2011 05:50 PM, Christoph Hellwig wrote:
+> On Fri, Jul 15, 2011 at 05:26:38PM -0400, Josef Bacik wrote:
+>> Everybody else does this, we need to do it too.  If we're syncing, we need to
+>> tag the pages we're going to write for writeback so we don't end up writing the
+>> same stuff over and over again if somebody is constantly redirtying our file.
+>> This will keep us from having latencies with heavy sync workloads.  Thanks,
 >
-> # btrfs-show
-> Label: none =A0uuid: e7b37e5d-c704-4ca8-ae7e-f22dd063e165
-> =A0 =A0 =A0 =A0Total devices 1 FS bytes used 116.33GB
-> =A0 =A0 =A0 =A0devid =A0 =A01 size 226.66GB used 226.66GB path /dev/s=
-da4
->
-> I typically mount w/
-> =A0 =A0 =A0 =A0-o subvol=3Dxyz,compress,noatime,nodiratime
-> =A0and take snapshots of (some) subvolumes at every boot.
-> =A0(not that these snapshots seem to be of much use now).
->
-> Now:
-> btrfsck gives loads of "root x inode y errors 400" and finishes w/
-> =A0 =A0found 124906840074 bytes used err is 1
-> =A0 =A0total csum bytes: 117696892
-> =A0 =A0total tree bytes: 4385128448
-> =A0 =A0total fs tree bytes: 3926626304
-> =A0 =A0btree space waste bytes: 1078295916
-> =A0 =A0file data blocks allocated: 3619739602944
-> =A0 =A0 referenced 162976624640
-> =A0 =A0Btrfs Btrfs v0.19
->
+> Maybe it's time to find a wait to merge the btrfs copy of write_cache_pages
+> back into the main one?
 
-does btrfsck -s1 complete without error? If yes, you can try btrfs-sele=
-ct-super.
+I looked at it, but we need to be able to call a special helper to lock 
+the page for our btree pages, and we can queue up a bio in order to add 
+pages to it from delalloc which we will submit if we have to wait on a 
+page to complete writeback.  Maybe I can use the block plugging stuff 
+instead of our bio thing so that if we have to wait it will get flushed 
+automatically, then that just leaves our locking thing which I guess 
+would be ok to pass down to write_cache_pages?  Thanks,
 
->
-> mounting always results in the crash
->
-> [ 6977.513528] Call Trace:
-> [ 6977.513542] =A0[<ffffffffa057ac18>] replay_one_dir_item+0x88/0xb0 =
-[btrfs]
-> [ 6977.513557] =A0[<ffffffffa057d5b3>] replay_one_buffer+0x223/0x330 =
-[btrfs]
-> [ 6977.513573] =A0[<ffffffffa056a8ba>] ? alloc_extent_buffer+0x7a/0x4=
-20 [btrfs]
-> [ 6977.513584] =A0[<ffffffffa057c139>] walk_down_log_tree+0x339/0x480=
- [btrfs]
-> [ 6977.513595] =A0[<ffffffffa057c375>] walk_log_tree+0xf5/0x230 [btrf=
-s]
-> [ 6977.513606] =A0[<ffffffffa057f1c1>] btrfs_recover_log_trees+0x221/=
-0x310 [btrfs]
-
-if there's something mentioning "log", I'd try btrfs-zero-log first.
-It's not built by default, so you should run "make btrfs-zero-log" on
-btrfs-tools source directory.
-
---=20
-=46ajar
---
-To unsubscribe from this list: send the line "unsubscribe linux-btrfs" =
-in
-the body of a message to majordomo@vger.kernel.org
-More majordomo info at  http://vger.kernel.org/majordomo-info.html
+Josef

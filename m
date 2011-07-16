@@ -1,113 +1,91 @@
-From: Stephane Chazelas <stephane_chazelas@yahoo.fr>
-Subject: Re: write(2) taking 4s. (Was: Memory leak?)
-Date: Sat, 16 Jul 2011 17:22:10 +0100
-Message-ID: <20110716162210.GB5638@yahoo.fr>
-References: <20110706081111.GA6931@yahoo.fr>
- <20110708124429.GB4284@yahoo.fr>
- <1310137241-sup-8158@shiny>
- <20110709170959.GC4294@yahoo.fr>
- <CAE5mzvhZwrtEZ8FUfcYzoMsRwuPjNDn=iCZ6_-CKaifEPZWAKA@mail.gmail.com>
- <20110709203649.GE4294@yahoo.fr>
- <1310301809-sup-9903@shiny>
- <20110710183728.GB4277@yahoo.fr>
- <20110711090121.GA2537@yahoo.fr>
- <20110716121210.GA5638@yahoo.fr>
+From: "Jan Schubert" <jan.schubert@gmx.li>
+Subject: Broken btrfs?
+Date: Sat, 16 Jul 2011 23:44:04 +0200
+Message-ID: <20110716214404.50480@gmx.net>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-To: linux-btrfs <linux-btrfs@vger.kernel.org>
+Content-Type: text/plain; charset="utf-8"
+To: linux-btrfs@vger.kernel.org
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <20110716121210.GA5638@yahoo.fr>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-2011-07-16 13:12:10 +0100, Stephane Chazelas:
-[...]
-> ntfsclone (patched to only write modified clusters):
-> 
-> # strace -Te write -p 4717
-> Process 4717 attached - interrupt to quit
-> write(1, " 65.16 percent completed\r", 25) = 25 <0.008996>
-> write(1, " 65.16 percent completed\r", 25) = 25 <0.743358>
-> write(1, " 65.16 percent completed\r", 25) = 25 <0.306582>
-> write(1, " 65.17 percent completed\r", 25) = 25 <4.082723>
-> write(1, " 65.17 percent completed\r", 25) = 25 <0.006402>
-> write(1, " 65.17 percent completed\r", 25) = 25 <0.012582>
-> write(1, " 65.17 percent completed\r", 25) = 25 <4.052504>
-> write(1, " 65.17 percent completed\r", 25) = 25 <0.012111>
-> write(1, " 65.17 percent completed\r", 25) = 25 <0.016001>
-> write(1, " 65.17 percent completed\r", 25) = 25 <4.028017>
-> write(1, " 65.18 percent completed\r", 25) = 25 <0.013365>
-> write(1, " 65.18 percent completed\r", 25) = 25 <0.003963>
-> (that's writing to a log file)
-> 
-> See how many write(2)s take 4 seconds.
-[...]
+For some while now I can reproduce a kernel oops. The reading of the oops migt point to btrfs so I also did a btrfsk which gives me this warning before aborting:
 
-top - 17:14:18 up 1 day,  9:20,  3 users,  load average: 1.00, 1.06, 1.11
-Tasks: 146 total,   1 running, 145 sleeping,   0 stopped,   0 zombie
-Cpu0  :  0.0%us,  0.0%sy,  0.0%ni, 25.0%id, 75.0%wa,  0.0%hi,  0.0%si,  0.0%st
-Cpu1  :  0.0%us,  0.0%sy,  0.0%ni,100.0%id,  0.0%wa,  0.0%hi,  0.0%si,  0.0%st
-Mem:   5094800k total,  4616412k used,   478388k free,  1420192k buffers
-Swap:  4194300k total,     8720k used,  4185580k free,  2266240k cached
+warning, start mismatch 13636968448 13636997120
 
-  PID USER      PR  NI  VIRT  RES  SHR S %CPU %MEM    TIME+  P COMMAND
- 2156 root      20   0     0    0    0 D    0  0.0   0:00.02 0 flush-btrfs-1
- 6206 root      20   0 19112 1284  916 R    0  0.0   0:00.09 0 top
-    1 root      20   0  8400  220  196 S    0  0.0   0:02.26 0 init
-(all the other processes sleeping)
+I also find several entries in my dmesg concerning missing or wrong csum.
 
-I suspect load 1 is for that flush-btrfs-1 in
+Please find some data and log below. Is there any chance to fix this?
 
-[86372.445554] flush-btrfs-1   D ffff88014438da30     0  2156      2 0x00000000
-[86372.445554]  ffff88014438da30 0000000000000046 ffffffff8100e366 ffff88014438a9a0
-[86372.445554]  00000000000127c0 ffff880021501fd8 ffff880021501fd8 00000000000127c0
-[86372.445554]  ffff88014438da30 ffff880021500010 ffffffff8100e366 ffffffff81066ec6
-[86372.445554] Call Trace:
-[86372.445554]  [<ffffffff8100e366>] ? read_tsc+0x5/0x16
-[86372.445554]  [<ffffffff8100e366>] ? read_tsc+0x5/0x16
-[86372.445554]  [<ffffffff81066ec6>] ? timekeeping_get_ns+0xd/0x2a
-[86372.445554]  [<ffffffff810b607c>] ? __lock_page+0x63/0x63
-[86372.445554]  [<ffffffff81339473>] ? io_schedule+0x84/0xc3
-[86372.445554]  [<ffffffff811aa0aa>] ? radix_tree_gang_lookup_tag_slot+0x7a/0x9f
-[86372.445554]  [<ffffffff810b6085>] ? sleep_on_page+0x9/0xd
-[86372.445554]  [<ffffffff813399d5>] ? __wait_on_bit_lock+0x3c/0x85
-[86372.445554]  [<ffffffff810b6076>] ? __lock_page+0x5d/0x63
-[86372.445554]  [<ffffffff8105fff7>] ? autoremove_wake_function+0x2a/0x2a
-[86372.445554]  [<ffffffffa0192784>] ? T.1090+0xba/0x234 [btrfs]
-[86372.445554]  [<ffffffffa01929ee>] ? extent_writepages+0x40/0x56 [btrfs]
-[86372.445554]  [<ffffffffa017e5f0>] ? btrfs_submit_direct+0x403/0x403 [btrfs]
-[86372.445554]  [<ffffffff8111b29c>] ? writeback_single_inode+0xb8/0x1b8
-[86372.445554]  [<ffffffff8111b5af>] ? writeback_sb_inodes+0xc2/0x13b
-[86372.445554]  [<ffffffff8111b96e>] ? writeback_inodes_wb+0xfd/0x10f
-[86372.445554]  [<ffffffff8111c088>] ? wb_writeback+0x213/0x330
-[86372.445554]  [<ffffffff81052368>] ? lock_timer_base+0x25/0x49
-[86372.445554]  [<ffffffff8111c312>] ? wb_do_writeback+0x16d/0x1fc
-[86372.445554]  [<ffffffff81052824>] ? del_timer_sync+0x34/0x3e
-[86372.445554]  [<ffffffff8111c464>] ? bdi_writeback_thread+0xc3/0x1ff
-[86372.445554]  [<ffffffff8111c3a1>] ? wb_do_writeback+0x1fc/0x1fc
-[86372.445554]  [<ffffffff8111c3a1>] ? wb_do_writeback+0x1fc/0x1fc
-[86372.445554]  [<ffffffff8105fb91>] ? kthread+0x7a/0x82
-[86372.445554]  [<ffffffff81340f24>] ? kernel_thread_helper+0x4/0x10
-[86372.445554]  [<ffffffff8105fb17>] ? kthread_worker_fn+0x147/0x147
-[86372.445554]  [<ffffffff81340f20>] ? gs_change+0x13/0x13
+Thx,
+Jan
 
-Also, if I run sync(1), it seems to never return.
+# uname -a
+Linux toral 2.6.39-ARCH #1 SMP PREEMPT Sat Jul 9 14:57:41 CEST 2011 x86_64 Intel(R) Core(TM) i7 CPU M 620 @ 2.67GHz GenuineIntel GNU/Linux
 
-[120348.788021] sync            D ffff88011b3e1bc0     0  6215   1789 0x00000000
-[120348.788021]  ffff88011b3e1bc0 0000000000000082 0000000000000000 ffffffff8160b020
-[120348.788021]  00000000000127c0 ffff8800b0f25fd8 ffff8800b0f25fd8 00000000000127c0
-[120348.788021]  ffff88011b3e1bc0 ffff8800b0f24010 ffff88011b3e1bc0 000000014fc127c0
-[120348.788021] Call Trace:
-[120348.788021]  [<ffffffff8133989f>] ? schedule_timeout+0x2d/0xd7
-[120348.788021]  [<ffffffff8111f2fa>] ? __sync_filesystem+0x74/0x74
-[120348.788021]  [<ffffffff81339714>] ? wait_for_common+0xd1/0x14e
-[120348.788021]  [<ffffffff810427f2>] ? try_to_wake_up+0x18c/0x18c
-[120348.788021]  [<ffffffff8111f2fa>] ? __sync_filesystem+0x74/0x74
-[120348.788021]  [<ffffffff8111f2fa>] ? __sync_filesystem+0x74/0x74
-[120348.788021]  [<ffffffff8111bab6>] ? writeback_inodes_sb_nr+0x72/0x78
-[120348.788021]  [<ffffffff8111f2d4>] ? __sync_filesystem+0x4e/0x74
-[120348.788021]  [<ffffffff81100d0d>] ? iterate_supers+0x5e/0xab
-[120348.788021]  [<ffffffff8111f337>] ? sys_sync+0x28/0x53
-[120348.788021]  [<ffffffff8133fe12>] ? system_call_fastpath+0x16/0x1b
-
+Kernel oops incl. some trailing dmesg entries:
+Jul 15 17:45:28 toral kernel: [    8.939884] btrfs: use ssd allocation scheme
+Jul 15 17:45:28 toral kernel: [    9.215458] btrfs: unlinked 9 orphans
+Jul 15 17:45:28 toral kernel: [   11.742539] IBM TrackPoint firmware: 0x0e, buttons: 3/3
+Jul 15 17:45:28 toral kernel: [   11.989808] input: TPPS/2 IBM TrackPoint as /devices/platform/i8042/serio1/serio2/input/input10
+Jul 15 17:45:28 toral kernel: [   12.783222] Adding 4194300k swap on /dev/sda3.  Priority:-1 extents:1 across:4194300k SS
+Jul 15 17:45:48 toral kernel: [   32.414686] block group 13182697472 has an wrong amount of free space
+Jul 15 17:48:48 toral kernel: [  212.347409] chrome-sandbox (1281): /proc/1278/oom_adj is deprecated, please use /proc/1278/oom_score_adj instead.
+Jul 15 17:48:48 toral kernel: [  212.795221] btrfs no csum found for inode 199934 start 729088
+Jul 15 17:48:48 toral kernel: [  212.796185] btrfs csum failed ino 199934 off 729088 csum 3390946210 private 0
+Jul 15 17:48:49 toral kernel: [  213.458279] btrfs no csum found for inode 199934 start 24096768
+Jul 15 17:48:49 toral kernel: [  213.461443] btrfs csum failed ino 199934 off 24096768 csum 439962552 private 0
+Jul 15 17:48:49 toral kernel: [  213.471893] btrfs no csum found for inode 199934 start 24801280
+Jul 15 17:48:49 toral kernel: [  213.471897] btrfs no csum found for inode 199934 start 24805376
+Jul 15 17:48:49 toral kernel: [  213.473736] btrfs csum failed ino 199934 off 24801280 csum 158010657 private 0
+Jul 15 17:48:49 toral kernel: [  213.473750] btrfs csum failed ino 199934 off 24805376 csum 127231121 private 0
+Jul 15 17:49:18 toral kernel: [  241.943511] e1000e 0000:00:19.0: irq 42 for MSI/MSI-X
+Jul 15 17:49:18 toral kernel: [  241.996564] e1000e 0000:00:19.0: irq 42 for MSI/MSI-X
+Jul 15 17:49:21 toral kernel: [  245.266971] e1000e: eth0 NIC Link is Up 1000 Mbps Full Duplex, Flow Control: Rx
+Jul 15 17:53:46 toral kernel: [  509.790018] BUG: unable to handle kernel paging request at ffffc9001153d000
+Jul 15 17:53:46 toral kernel: [  509.790024] IP: [<ffffffff8121fb0b>] memcpy+0xb/0x120
+Jul 15 17:53:46 toral kernel: [  509.790032] PGD 137020067 PUD 137021067 PMD 12a687067 PTE 0
+Jul 15 17:53:46 toral kernel: [  509.790035] Oops: 0002 [#1] PREEMPT SMP 
+Jul 15 17:53:46 toral kernel: [  509.790038] last sysfs file: /sys/devices/LNXSYSTM:00/device:00/PNP0A08:00/device:0a/PNP0C09:00/PNP0C0A:00/power_supply/BAT0/status
+Jul 15 17:53:46 toral kernel: [  509.790041] CPU 1 
+Jul 15 17:53:46 toral kernel: [  509.790042] Modules linked in: fpu aesni_intel cryptd aes_x86_64 aes_generic xts gf128mul dm_crypt dm_mod loop acpi_cpufreq freq_table mperf joydev snd_hda_codec_hdmi nvidia(P) snd_hda_codec_conexant qcserial usbhid snd_pcm_oss usb_wwan snd_mixer_oss hid btusb usbserial snd_hda_intel bluetooth arc4 ecb crc16 snd_hda_codec snd_hwdep snd_pcm iwlagn sdhci_pci snd_timer sdhci thinkpad_acpi serio_raw mac80211 iTCO_wdt evdev psmouse pcspkr i2c_i801 snd battery sg nvram intel_agp ac mmc_core iTCO_vendor_support cfg80211 soundcore video intel_gtt intel_ips snd_page_alloc i2c_core wmi thermal rfkill button processor e1000e btrfs zlib_deflate crc32c libcrc32c ext2 mbcache ehci_hcd usbcore sr_mod cdrom sd_mod ahci libahci libata scsi_mod
+Jul 15 17:53:46 toral kernel: [  509.790082] 
+Jul 15 17:53:46 toral kernel: [  509.790085] Pid: 1668, comm: btrfs-endio-1 Tainted: P            2.6.39-ARCH #1 LENOVO 25223FG/25223FG
+Jul 15 17:53:46 toral kernel: [  509.790088] RIP: 0010:[<ffffffff8121fb0b>]  [<ffffffff8121fb0b>] memcpy+0xb/0x120
+Jul 15 17:53:46 toral kernel: [  509.790090] RSP: 0018:ffff880103793c58  EFLAGS: 00010246
+Jul 15 17:53:46 toral kernel: [  509.790092] RAX: ffffc9001153cff8 RBX: 0000000000001000 RCX: 00000000000001ff
+Jul 15 17:53:46 toral kernel: [  509.790093] RDX: 0000000000000000 RSI: ffff8800b1d6c008 RDI: ffffc9001153d000
+Jul 15 17:53:46 toral kernel: [  509.790095] RBP: ffff880103793d30 R08: 000000006fb3eeb1 R09: ffffc9001153b000
+Jul 15 17:53:46 toral kernel: [  509.790096] R10: 0000000000000000 R11: 0000000000000001 R12: 0000000000000000
+Jul 15 17:53:46 toral kernel: [  509.790098] R13: ffff880129b16b58 R14: 000000006fb40ea9 R15: 000000006fb40eb1
+Jul 15 17:53:46 toral kernel: [  509.790100] FS:  0000000000000000(0000) GS:ffff880137c80000(0000) knlGS:0000000000000000
+Jul 15 17:53:46 toral kernel: [  509.790101] CS:  0010 DS: 0000 ES: 0000 CR0: 000000008005003b
+Jul 15 17:53:46 toral kernel: [  509.790103] CR2: ffffc9001153d000 CR3: 0000000001693000 CR4: 00000000000006e0
+Jul 15 17:53:46 toral kernel: [  509.790104] DR0: 0000000000000000 DR1: 0000000000000000 DR2: 0000000000000000
+Jul 15 17:53:46 toral kernel: [  509.790106] DR3: 0000000000000000 DR6: 00000000ffff0ff0 DR7: 0000000000000400
+Jul 15 17:53:46 toral kernel: [  509.790107] Process btrfs-endio-1 (pid: 1668, threadinfo ffff880103792000, task ffff88013167d4c0)
+Jul 15 17:53:46 toral kernel: [  509.790109] Stack:
+Jul 15 17:53:46 toral kernel: [  509.790110]  ffffffffa014f84b ffff880103793cb0 ffffffffa013316b ffff880103793fd8
+Jul 15 17:53:46 toral kernel: [  509.790113]  000000006fb3eeb1 ffffc9001153b000 0000000000001000 0000000000000000
+Jul 15 17:53:46 toral kernel: [  509.790115]  ffff88012f8bc780 0000000000000002 00000020a014ff66 ffff8800b1f9e000
+Jul 15 17:53:46 toral kernel: [  509.790118] Call Trace:
+Jul 15 17:53:46 toral kernel: [  509.790131]  [<ffffffffa014f84b>] ? lzo_decompress_biovec+0x27b/0x2f0 [btrfs]
+Jul 15 17:53:46 toral kernel: [  509.790139]  [<ffffffffa013316b>] ? clear_state_bit+0xfb/0x170 [btrfs]
+Jul 15 17:53:46 toral kernel: [  509.790145]  [<ffffffffa0150f58>] btrfs_decompress_biovec+0x68/0xa0 [btrfs]
+Jul 15 17:53:46 toral kernel: [  509.790151]  [<ffffffffa01510ed>] end_compressed_bio_read+0x15d/0x240 [btrfs]
+Jul 15 17:53:46 toral kernel: [  509.790158]  [<ffffffffa010d14b>] ? end_workqueue_fn+0x4b/0x140 [btrfs]
+Jul 15 17:53:46 toral kernel: [  509.790163]  [<ffffffff8118392d>] bio_endio+0x1d/0x40
+Jul 15 17:53:46 toral kernel: [  509.790169]  [<ffffffffa010d156>] end_workqueue_fn+0x56/0x140 [btrfs]
+Jul 15 17:53:46 toral kernel: [  509.790176]  [<ffffffffa0140d25>] worker_loop+0x165/0x520 [btrfs]
+Jul 15 17:53:46 toral kernel: [  509.790182]  [<ffffffffa0140bc0>] ? btrfs_queue_worker+0x2f0/0x2f0 [btrfs]
+Jul 15 17:53:46 toral kernel: [  509.790187]  [<ffffffff8107d6ec>] kthread+0x8c/0xa0
+Jul 15 17:53:46 toral kernel: [  509.790190]  [<ffffffff813e9fe4>] kernel_thread_helper+0x4/0x10
+Jul 15 17:53:46 toral kernel: [  509.790192]  [<ffffffff8107d660>] ? kthread_worker_fn+0x190/0x190
+Jul 15 17:53:46 toral kernel: [  509.790194]  [<ffffffff813e9fe0>] ? gs_change+0x13/0x13
+Jul 15 17:53:46 toral kernel: [  509.790195] Code: 58 2a 43 50 88 43 4e 48 83 c4 08 5b 5d c3 66 90 e8 0b fd ff ff eb e6 90 90 90 90 90 90 90 90 90 48 89 f8 89 d1 c1 e9 03 83 e2 07 <f3> 48 a5 89 d1 f3 a4 c3 20 48 83 ea 20 4c 8b 06 4c 8b 4e 08 4c 
+Jul 15 17:53:46 toral kernel: [  509.790214] RIP  [<ffffffff8121fb0b>] memcpy+0xb/0x120
+Jul 15 17:53:46 toral kernel: [  509.790216]  RSP <ffff880103793c58>
+Jul 15 17:53:46 toral kernel: [  509.790217] CR2: ffffc9001153d000
+Jul 15 17:53:46 toral kernel: [  509.790219] ---[ end trace e610e9ec534eb542 ]---
 -- 
-Stephane
+NEU: FreePhone - kostenlos mobil telefonieren!			
+Jetzt informieren: http://www.gmx.net/de/go/freephone

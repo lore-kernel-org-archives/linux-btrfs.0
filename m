@@ -1,58 +1,37 @@
-From: Mck <mick@wever.org>
-Subject: Re: Applications using fsync cause hangs for several seconds every
- few minutes
-Date: Mon, 18 Jul 2011 17:37:18 +0000
-Message-ID: <1311010638.6713.5.camel@localhost>
-References: <BANLkTimMv_MMVmsJeVvr_1_wEVam1WZ6BA@mail.gmail.com>
+From: Goffredo Baroncelli <kreijack@libero.it>
+Subject: [PATCH 0/6] Series short description
+Date: Mon, 18 Jul 2011 19:33:09 +0200
+Message-ID: <20110718173151.4029.66663.stgit@venice.bhome>
 Mime-Version: 1.0
-Content-Type: multipart/signed; micalg="pgp-sha1"; protocol="application/pgp-signature"; boundary="=-D4kxStrZlsNzpQf6+UOq"
-Cc: linux-btrfs <linux-btrfs@vger.kernel.org>
-To: Nirbheek Chauhan <nirbheek@gentoo.org>
+Content-Type: text/plain; charset="utf-8"
+To: linux-btrfs <linux-btrfs@vger.kernel.org>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <BANLkTimMv_MMVmsJeVvr_1_wEVam1WZ6BA@mail.gmail.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
+The following series implements...
 
---=-D4kxStrZlsNzpQf6+UOq
-Content-Type: text/plain; charset="UTF-8"
-Content-Transfer-Encoding: quoted-printable
+---
 
-On Tue, 2011-06-07 at 04:28 +0530, Nirbheek Chauhan wrote:
-> Every few minutes, (I guess) when applications do fsync (firefox,
-> xchat, vim, etc), all applications that use fsync() hang for several
-> seconds, and applications that use general IO suffer extreme
-> slowdowns. iotop shows various combinations of the processes listed
-> below doing writes, and the total write as 2-3MB/s.=20
+Goffredo Baroncelli (6):
+      Add info for the commands.
+      Add the header/footer/introduction of the man page.
+      helpextract: tool to extract the info for the help from the source.
+      Update the makefile for generating the man page.
+      Show the help messages from the info in the comment.
+      Update the makefile for generating the help messages.
 
-I have experienced this too. It /seemed/ to help removing a lot of
-snapshots (i have hundreds that i didn't really need).
 
-Would it be stupid to try disabling fsync like described at=20
- http://ubuntuforums.org/archive/index.php/t-1103926.html ?
+ Makefile           |   28 +++
+ btrfs.c            |  210 +++++++++++++++++++++++++
+ btrfs_cmds.c       |  276 +++++++++++++++++++++++++++++++++
+ helpextract.c      |  435 ++++++++++++++++++++++++++++++++++++++++++++++++++++
+ man/btrfs.8.in     |  359 -------------------------------------------
+ man/btrfs.8.in.old |  359 +++++++++++++++++++++++++++++++++++++++++++
+ scrub.c            |   79 +++++++++
+ 7 files changed, 1380 insertions(+), 366 deletions(-)
+ create mode 100644 helpextract.c
+ delete mode 100644 man/btrfs.8.in
+ create mode 100644 man/btrfs.8.in.old
 
-I don't know of the consequences... but it would prove your theory?
-
-~mck
-
---=20
-=E2=80=9CDon=E2=80=99t worry about people stealing your ideas. If your idea=
-s are any
-good, you=E2=80=99ll have to ram them down people=E2=80=99s throats.=E2=80=
-=9D - Howard Aiken=20
-| http://semb.wever.org | http://sesat.no
-| http://tech.finn.no       | Java XSS Filter
-
---=-D4kxStrZlsNzpQf6+UOq
-Content-Type: application/pgp-signature; name="signature.asc"
-Content-Description: This is a digitally signed message part
-
------BEGIN PGP SIGNATURE-----
-Version: GnuPG v2.0.17 (GNU/Linux)
-
-iEYEABECAAYFAk4kb04ACgkQkdPrePiuutOmigCfQBBRXSIstsbUvZ4CXgFAws+m
-WKgAnj5Ee5+y8lyQP4IXZrTjbM4+BBAx
-=B6Ko
------END PGP SIGNATURE-----
-
---=-D4kxStrZlsNzpQf6+UOq--
-
+-- 
+Signature

@@ -1,49 +1,26 @@
 From: Mark Fasheh <mfasheh@suse.com>
-Subject: Re: [PATCH 6/7] btrfs: Don't BUG_ON alloc_path errors in find_next_chunk
-Date: Mon, 18 Jul 2011 14:36:57 -0700
-Message-ID: <20110718213657.GB6911@wotan.suse.de>
-References: <1310681702-13922-1-git-send-email-mfasheh@suse.com> <1310681702-13922-2-git-send-email-mfasheh@suse.com> <1310681702-13922-3-git-send-email-mfasheh@suse.com> <1310681702-13922-4-git-send-email-mfasheh@suse.com> <1310681702-13922-5-git-send-email-mfasheh@suse.com> <1310681702-13922-6-git-send-email-mfasheh@suse.com> <1310681702-13922-7-git-send-email-mfasheh@suse.com> <4E1FA968.1070703@jp.fujitsu.com>
+Subject: Re: [PATCH 7/7] btrfs: don't BUG_ON allocation errors in btrfs_drop_snapshot
+Date: Mon, 18 Jul 2011 15:09:19 -0700
+Message-ID: <20110718220919.GC6911@wotan.suse.de>
+References: <1310681702-13922-1-git-send-email-mfasheh@suse.com> <1310681702-13922-2-git-send-email-mfasheh@suse.com> <1310681702-13922-3-git-send-email-mfasheh@suse.com> <1310681702-13922-4-git-send-email-mfasheh@suse.com> <1310681702-13922-5-git-send-email-mfasheh@suse.com> <1310681702-13922-6-git-send-email-mfasheh@suse.com> <1310681702-13922-7-git-send-email-mfasheh@suse.com> <1310681702-13922-8-git-send-email-mfasheh@suse.com> <4E1FAE4E.5030508@jp.fujitsu.com>
 Reply-To: Mark Fasheh <mfasheh@suse.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
 Cc: linux-btrfs@vger.kernel.org, chris.mason@oracle.com
 To: Tsutomu Itoh <t-itoh@jp.fujitsu.com>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <4E1FA968.1070703@jp.fujitsu.com>
+In-Reply-To: <4E1FAE4E.5030508@jp.fujitsu.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hi Tsutomu,
-
-	Thanks for the review, it is appreciated!
-
-On Fri, Jul 15, 2011 at 11:43:52AM +0900, Tsutomu Itoh wrote:
-> > @@ -1037,7 +1037,8 @@ static noinline int find_next_chunk(struct btrfs_root *root,
-> >  	struct btrfs_key found_key;
-> >  
-> >  	path = btrfs_alloc_path();
-> > -	BUG_ON(!path);
-> > +	if (!path)
-> > +		return -ENOMEM;
+On Fri, Jul 15, 2011 at 12:04:46PM +0900, Tsutomu Itoh wrote:
+> (2011/07/15 7:15), Mark Fasheh wrote:
+> > In addition to properly handling allocation failure from btrfs_alloc_path, I
+> > also fixed up the kzalloc error handling code immediately below it.
 > 
-> If find_next_chunk() returns -ENOMEM, space_info->full becomes 1 by following code.
-> 
-> 3205 static int do_chunk_alloc(struct btrfs_trans_handle *trans,
-> 3206                           struct btrfs_root *extent_root, u64 alloc_bytes,
-> 3207                           u64 flags, int force)
-> 3208 {
-> ...
-> 3277         ret = btrfs_alloc_chunk(trans, extent_root, flags);
-> 3278         spin_lock(&space_info->lock);
-> 3279         if (ret)
-> 3280                 space_info->full = 1;
-> 3281         else
-> 3282                 ret = 1;
-> 
-> Is it OK?
+> Need not you correct the caller of btrfs_drop_snapshot()?
 
-I don't think so actually. It looks like in this case we might want to
-bubble the error back up past do_chunk_alloc and leave space_info untouched.
-Chris, does that seem reasonable?
+Hmm, I don't think so - the only two callers of btrfs_drop_snapshot() are merge_reloc_roots() and
+btrfs_clean_old_snapshots(). Both of which currently ignore the return code.
 	--Mark
 
 --

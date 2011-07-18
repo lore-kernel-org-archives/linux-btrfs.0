@@ -1,7 +1,7 @@
 From: Jan Schmidt <list.btrfs@jan-o-sch.net>
-Subject: [PATCH v3 5/5] btrfs-progs: scrub added to manpage
-Date: Mon, 18 Jul 2011 14:37:25 +0200
-Message-ID: <f65da9ed89733c87a61af063fa798c9c6e525450.1310990184.git.list.btrfs@jan-o-sch.net>
+Subject: [PATCH v3 2/5] btrfs-progs: scrub ioctls
+Date: Mon, 18 Jul 2011 14:37:22 +0200
+Message-ID: <fa659061910569495fd5685385ba0c087987937c.1310990184.git.list.btrfs@jan-o-sch.net>
 References: <cover.1310990184.git.list.btrfs@jan-o-sch.net>
 To: chris.mason@oracle.com, linux-btrfs@vger.kernel.org
 Return-path: <linux-btrfs-owner@vger.kernel.org>
@@ -9,93 +9,116 @@ In-Reply-To: <cover.1310990184.git.list.btrfs@jan-o-sch.net>
 In-Reply-To: <cover.1310990184.git.list.btrfs@jan-o-sch.net>
 List-ID: <linux-btrfs.vger.kernel.org>
 
+- scrub structs added
+- ioctls for scrub
+- BTRFS_FSID_SIZE moved
+
 Signed-off-by: Jan Schmidt <list.btrfs@jan-o-sch.net>
 ---
- man/btrfs.8.in |   64 +++++++++++++++++++++++++++++++++++++++++++++++++++++++-
- 1 files changed, 63 insertions(+), 1 deletions(-)
+ ctree.h |    2 +-
+ ioctl.h |   54 +++++++++++++++++++++++++++++++++++++++++++++++++++++-
+ 2 files changed, 54 insertions(+), 2 deletions(-)
 
-diff --git a/man/btrfs.8.in b/man/btrfs.8.in
-index e1a6ad9..84a60cd 100644
---- a/man/btrfs.8.in
-+++ b/man/btrfs.8.in
-@@ -41,7 +41,15 @@ btrfs \- control a btrfs filesystem
- .PP
- \fBbtrfs\fP \fBdevice add\fP\fI <device> [<device>...] <path> \fP
- .PP
--\fBbtrfs\fP \fBdevice delete\fP\fI <device> [<device>...] <path> \fP]
-+\fBbtrfs\fP \fBdevice delete\fP\fI <device> [<device>...] <path> \fP
-+.PP
-+\fBbtrfs\fP \fBscrub start\fP [-Bdqru] {\fI<path>\fP|\fI<device>\fP}
-+.PP
-+\fBbtrfs\fP \fBscrub cancel\fP {\fI<path>\fP|\fI<device>\fP}
-+.PP
-+\fBbtrfs\fP \fBscrub resume\fP [-Bdqru] {\fI<path>\fP|\fI<device>\fP}
-+.PP
-+\fBbtrfs\fP \fBscrub status\fP [-d] {\fI<path>\fP|\fI<device>\fP}
- .PP
- \fBbtrfs\fP \fBhelp|\-\-help|\-h \fP\fI\fP
- .PP
-@@ -225,6 +233,60 @@ Finally, if \fB--all-devices\fP is passed, all the devices under /dev are
- scanned.
- .TP
+diff --git a/ctree.h b/ctree.h
+index 61eb639..6e1b80b 100644
+--- a/ctree.h
++++ b/ctree.h
+@@ -24,6 +24,7 @@
+ #include "radix-tree.h"
+ #include "extent-cache.h"
+ #include "extent_io.h"
++#include "ioctl.h"
  
-+\fBscrub start\fP [-Bdqru] {\fI<path>\fP|\fI<device>\fP}
-+Start a scrub on all devices of the filesystem identified by \fI<path>\fR or on
-+a single \fI<device>\fR. Without options, scrub is started as a background
-+process. Progress can be obtained with the \fBscrub status\fR command. Scrubbing
-+involves reading all data from all disks and verifying checksums. Errors are
-+corrected along the way if possible.
-+.RS
-+
-+\fIOptions\fR
-+.IP -B 5
-+Do not background and print scrub statistics when finished.
-+.IP -d 5
-+Print separate statistics for each device of the filesystem (-B only).
-+.IP -q 5
-+Quiet. Omit error messages and statistics.
-+.IP -r 5
-+Read only mode. Do not attempt to correct anything.
-+.IP -u 5
-+Scrub unused space as well. (NOT IMPLEMENTED)
-+.RE
-+.TP
-+
-+\fBscrub cancel\fP {\fI<path>\fP|\fI<device>\fP}
-+If a scrub is running on the filesystem identified by \fI<path>\fR, cancel it.
-+Progress is saved in the scrub progress file and scrubbing can be resumed later
-+using the \fBscrub resume\fR command.
-+If a \fI<device>\fR is given, the corresponding filesystem is found and
-+\fBscrub cancel\fP behaves as if it was called on that filesystem.
-+.TP
-+
-+\fBscrub resume\fP [-Bdqru] {\fI<path>\fP|\fI<device>\fP}
-+Resume a canceled or interrupted scrub cycle on the filesystem identified by
-+\fI<path>\fR or on a given \fI<device>\fR. Does not start a new scrub if the
-+last scrub finished successfully.
-+.RS
-+
-+\fIOptions\fR
-+.TP
-+see \fBscrub start\fP.
-+.RE
-+.TP
-+
-+\fBscrub status\fP [-d] {\fI<path>\fP|\fI<device>\fP}
-+Show status of a running scrub for the filesystem identified by \fI<path>\fR or
-+for the specified \fI<device>\fR.
-+If no scrub is running, show statistics of the last finished or canceled scrub
-+for that filesystem or device.
-+.RS
-+
-+\fIOptions\fR
-+.IP -d 5
-+Print separate statistics for each device of the filesystem.
-+.RE
-+
- .PP
+ struct btrfs_root;
+ struct btrfs_trans_handle;
+@@ -250,7 +251,6 @@ static inline unsigned long btrfs_chunk_item_size(int num_stripes)
+ 		sizeof(struct btrfs_stripe) * (num_stripes - 1);
+ }
  
- \fBbalance progress\fP [\fB-m\fP|\fB--monitor\fP] \fI<path>\fP
+-#define BTRFS_FSID_SIZE 16
+ #define BTRFS_HEADER_FLAG_WRITTEN		(1ULL << 0)
+ #define BTRFS_HEADER_FLAG_RELOC			(1ULL << 1)
+ #define BTRFS_SUPER_FLAG_SEEDING		(1ULL << 32)
+diff --git a/ioctl.h b/ioctl.h
+index 7be1177..11730d2 100644
+--- a/ioctl.h
++++ b/ioctl.h
+@@ -23,8 +23,9 @@
+ 
+ #define BTRFS_IOCTL_MAGIC 0x94
+ #define BTRFS_VOL_NAME_MAX 255
+-#define BTRFS_PATH_NAME_MAX 4087
+ 
++/* this should be 4k */
++#define BTRFS_PATH_NAME_MAX 4087
+ struct btrfs_ioctl_vol_args {
+ 	__s64 fd;
+ 	char name[BTRFS_PATH_NAME_MAX + 1];
+@@ -44,6 +45,52 @@ struct btrfs_ioctl_vol_args_v2 {
+ #define BTRFS_FSID_SIZE 16
+ #define BTRFS_UUID_SIZE 16
+ 
++struct btrfs_scrub_progress {
++	__u64 data_extents_scrubbed;
++	__u64 tree_extents_scrubbed;
++	__u64 data_bytes_scrubbed;
++	__u64 tree_bytes_scrubbed;
++	__u64 read_errors;
++	__u64 csum_errors;
++	__u64 verify_errors;
++	__u64 no_csum;
++	__u64 csum_discards;
++	__u64 super_errors;
++	__u64 malloc_errors;
++	__u64 uncorrectable_errors;
++	__u64 corrected_errors;
++	__u64 last_physical;
++	__u64 unverified_errors;
++};
++
++#define BTRFS_SCRUB_READONLY	1
++struct btrfs_ioctl_scrub_args {
++	__u64 devid;				/* in */
++	__u64 start;				/* in */
++	__u64 end;				/* in */
++	__u64 flags;				/* in */
++	struct btrfs_scrub_progress progress;	/* out */
++	/* pad to 1k */
++	__u64 unused[(1024-32-sizeof(struct btrfs_scrub_progress))/8];
++};
++
++#define BTRFS_DEVICE_PATH_NAME_MAX 1024
++struct btrfs_ioctl_dev_info_args {
++	__u64 devid;				/* in/out */
++	__u8 uuid[BTRFS_UUID_SIZE];		/* in/out */
++	__u64 bytes_used;			/* out */
++	__u64 total_bytes;			/* out */
++	__u64 unused[379];			/* pad to 4k */
++	__u8 path[BTRFS_DEVICE_PATH_NAME_MAX];	/* out */
++};
++
++struct btrfs_ioctl_fs_info_args {
++	__u64 max_id;				/* out */
++	__u64 num_devices;			/* out */
++	__u8 fsid[BTRFS_FSID_SIZE];		/* out */
++	__u64 reserved[124];			/* pad to 1k */
++};
++
+ struct btrfs_ioctl_search_key {
+ 	/* which root are we searching.  0 is the tree of tree roots */
+ 	__u64 tree_id;
+@@ -234,6 +281,11 @@ struct btrfs_ioctl_balance_start {
+ 				    struct btrfs_ioctl_space_args)
+ #define BTRFS_IOC_SNAP_CREATE_V2 _IOW(BTRFS_IOCTL_MAGIC, 23, \
+ 				   struct btrfs_ioctl_vol_args_v2)
++#define BTRFS_IOC_SCRUB _IOWR(BTRFS_IOCTL_MAGIC, 27, \
++				struct btrfs_ioctl_scrub_args)
++#define BTRFS_IOC_SCRUB_CANCEL _IO(BTRFS_IOCTL_MAGIC, 28)
++#define BTRFS_IOC_SCRUB_PROGRESS _IOWR(BTRFS_IOCTL_MAGIC, 29, \
++					struct btrfs_ioctl_scrub_args)
+ #define BTRFS_IOC_DEV_INFO _IOWR(BTRFS_IOCTL_MAGIC, 30, \
+                                  struct btrfs_ioctl_dev_info_args)
+ #define BTRFS_IOC_FS_INFO _IOR(BTRFS_IOCTL_MAGIC, 31, \
 -- 
 1.7.3.4
 

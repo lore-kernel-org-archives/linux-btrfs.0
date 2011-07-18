@@ -1,42 +1,30 @@
-From: Wang Sheng-Hui <shhuiw@gmail.com>
-Subject: [PATCH] btrfs-progs-unstable: replace debug-tree to btrfs-debug-tree
- in INSTALL
-Date: Mon, 18 Jul 2011 15:26:56 +0800
-Message-ID: <4E23E040.6040408@gmail.com>
+From: Jan Schmidt <list.btrfs@jan-o-sch.net>
+Subject: Re: Broken btrfs?
+Date: Mon, 18 Jul 2011 10:29:07 +0200
+Message-ID: <4E23EED3.8000301@jan-o-sch.net>
+References: <20110716214404.50480@gmx.net> <loom.20110717T160020-81@post.gmane.org>
 Mime-Version: 1.0
 Content-Type: text/plain; charset=ISO-8859-1
-To: linux-btrfs@vger.kernel.org, linux-kernel@vger.kernel.org,
-	Chris Mason <chris.mason@oracle.com>
-Return-path: <linux-kernel-owner@vger.kernel.org>
+Cc: linux-btrfs@vger.kernel.org
+To: Jan Schubert <Jan.Schubert@GMX.li>
+Return-path: <linux-btrfs-owner@vger.kernel.org>
+In-Reply-To: <loom.20110717T160020-81@post.gmane.org>
 List-ID: <linux-btrfs.vger.kernel.org>
 
->From c04da1655df6d75db834ddbd3a3b4a58a0d9a0c9 Mon Sep 17 00:00:00 2001
-From: Wang Sheng-Hui <shhuiw@gmail.com>
-Date: Mon, 18 Jul 2011 02:17:31 -0500
-Subject: [PATCH] btrfs-progs-unstable: replace debug-tree to btrfs-debug-tree in INSTALL
+On 17.07.2011 16:01, Jan Schubert wrote:
+> Jan Schubert <jan.schubert <at> gmx.li> writes:
+>> Please find some data and log below. Is there any chance to fix this?
+>
+> After playing around (incl. deleting the log) I get the strong feeling
+> it has something todo with compression=lzo. Dunno why it started suddenly
+> but I disabled compression and did reinstall everything which helped a
+lot.
+> I still have some broken configuration and other (non reinstalable) files
+> which causes crashing the box when I try to access them. I detect them
+> manually, is there any way to do this automagically?
 
-debug-tree doesn't exist after btrfs-progs installed.
-Use btrfs-debug-tree to print FS metadata in text form,
-not debug-tree.
+If you are on a 3.0 kernel, get the most current version of btrfs tools
+from Hugo's integration-20110705 branch at
+http://git.darksatanic.net/repo/btrfs-progs-unstable.git/ and do a scrub.
 
-Signed-off-by: Wang Sheng-Hui <shhuiw@gmail.com>
----
- INSTALL |    4 ++--
- 1 files changed, 2 insertions(+), 2 deletions(-)
-
-diff --git a/INSTALL b/INSTALL
-index 16b45a5..2db6d27 100644
---- a/INSTALL
-+++ b/INSTALL
-@@ -42,7 +42,7 @@ btrfsctl: control program to create snapshots and subvolumes:
- 
- btrfsck: do a limited check of the FS extent trees.</li>
- 
--debug-tree: print all of the FS metadata in text form.  Example:
-+btrfs-debug-tree: print all of the FS metadata in text form.  Example:
- 
--	debug-tree /dev/sda2 >& big_output_file
-+	btrfs-debug-tree /dev/sda2 >& big_output_file
- 
--- 
-1.7.1
+-Jan

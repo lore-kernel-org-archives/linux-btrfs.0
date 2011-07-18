@@ -1,62 +1,107 @@
 From: Jan Schmidt <list.btrfs@jan-o-sch.net>
-Subject: [PATCH v3 0/5] btrfs-progs: scrub interface
-Date: Mon, 18 Jul 2011 14:37:20 +0200
-Message-ID: <cover.1310990184.git.list.btrfs@jan-o-sch.net>
+Subject: [PATCH v3 1/5] btrfs-progs: commands added
+Date: Mon, 18 Jul 2011 14:37:21 +0200
+Message-ID: <ac1ef7fc3e25d7f766ace6934fb183945e9ac3f0.1310990184.git.list.btrfs@jan-o-sch.net>
+References: <cover.1310990184.git.list.btrfs@jan-o-sch.net>
 To: chris.mason@oracle.com, linux-btrfs@vger.kernel.org
 Return-path: <linux-btrfs-owner@vger.kernel.org>
+In-Reply-To: <cover.1310990184.git.list.btrfs@jan-o-sch.net>
+In-Reply-To: <cover.1310990184.git.list.btrfs@jan-o-sch.net>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-This is the next patch series for scrub userland tools.
+- scrub commands added
+- open_file_or_dir no longer static (needed by scrub.c)
 
-Change log v1->v2:
-- commands now reachable as "btrfs scrub ..." instead of "btrfs filesystem
-  scrub ..."
-- ability to scrub a single device instead of a whole file system
-- superfluous command line options removed
-- resume is now a separate command ("scrub resume") instead of "scrub start -r"
-- read-only mode (which inherited the -r option immediately, sorry for that)
-- up to date progress numbers with "btrfs scrub status" while scrub is running
-- effective locking to protect against multiple scrubs on a filesystem
-- man page entry for scrub added
+Signed-off-by: Jan Schmidt <list.btrfs@jan-o-sch.net>
+---
+ Makefile     |    4 ++--
+ btrfs.c      |   23 +++++++++++++++++++++++
+ btrfs_cmds.c |    2 +-
+ btrfs_cmds.h |    5 +++++
+ 4 files changed, 31 insertions(+), 3 deletions(-)
 
-Change log v2->v3:
-- unverified_errors counter added
-- return code of utility now depends on detected disk errors
-- bail out when check_mounted_where returns an error
-- changes as suggested by Hugo Mill's review. incomplete list:
-	- style (checkpatch is happy now)
-	- pthread_* error handling
-	- use /var/lib/btrfs instead of /var/btrfs for storing history
-
-Attention: This version may be useful for Hugo, only. It is meant to be
-	   included in his current integration branch. Also, I wanted to avoid
-	   patching the patches previously sent and rather deliver a fresh
-	   version. Therefore, I used "integration-20110705" from
-	   http://git.darksatanic.net/repo/btrfs-progs-unstable.git/ as a base,
-	   reverted the scrub patches in the middle and built upon that.
-
--Jan
-
-Jan Schmidt (5):
-  btrfs-progs: commands added
-  btrfs-progs: scrub ioctls
-  btrfs-progs: added check_mounted_where
-  btrfs-progs: scrub userland implementation
-  btrfs-progs: scrub added to manpage
-
- Makefile       |    4 +-
- btrfs.c        |   23 +
- btrfs_cmds.c   |    2 +-
- btrfs_cmds.h   |    5 +
- ctree.h        |    2 +-
- ioctl.h        |   54 ++-
- man/btrfs.8.in |   64 +++-
- scrub.c        | 1666 ++++++++++++++++++++++++++++++++++++++++++++++++++++++++
- utils.c        |   29 +-
- utils.h        |    2 +
- 10 files changed, 1838 insertions(+), 13 deletions(-)
- create mode 100644 scrub.c
-
+diff --git a/Makefile b/Makefile
+index 22bae25..edee1a0 100644
+--- a/Makefile
++++ b/Makefile
+@@ -35,8 +35,8 @@ all: version $(progs) manpages
+ version:
+ 	bash version.sh
+ 
+-btrfs: $(objects) btrfs.o btrfs_cmds.o
+-	$(CC) -lpthread $(CFLAGS) -o btrfs btrfs.o btrfs_cmds.o \
++btrfs: $(objects) btrfs.o btrfs_cmds.o scrub.o
++	$(CC) -lpthread $(CFLAGS) -o btrfs btrfs.o btrfs_cmds.o scrub.o \
+ 		$(objects) $(LDFLAGS) $(LIBS)
+ 
+ btrfsctl: $(objects) btrfsctl.o
+diff --git a/btrfs.c b/btrfs.c
+index ee4e756..f494738 100644
+--- a/btrfs.c
++++ b/btrfs.c
+@@ -142,6 +142,29 @@ static struct Command commands[] = {
+ 	  "balance cancel", "<path>\n"
+ 		"Cancel the balance operation running on <path>."
+ 	},
++	{ do_scrub_start, -1,
++	  "scrub start", "[-Bdqr] <path>|<device>\n"
++		"Start a new scrub.",
++		"\n-B  do not background\n"
++		"-d  stats per device (-B only)\n"
++		"-q  quiet\n"
++		"-r  read only mode\n"
++	},
++	{ do_scrub_cancel, 1,
++	  "scrub cancel", "<path>|<device>\n"
++		"Cancel a running scrub.",
++	  NULL
++	},
++	{ do_scrub_resume, -1,
++	  "scrub resume", "[-Bdqr] <path>|<device>\n"
++		"Resume previously canceled or interrupted scrub.",
++	  NULL
++	},
++	{ do_scrub_status, -1,
++	  "scrub status", "[-d] <path>|<device>\n"
++		"Show status of running or finished scrub.",
++	  NULL
++	},
+ 	{ do_scan, 999, 
+ 	  "device scan", "[--all-devices|<device> [<device> ...]]\n"
+ 		"Scan all device for or the passed device for a btrfs\n"
+diff --git a/btrfs_cmds.c b/btrfs_cmds.c
+index 43ffc38..0612f34 100644
+--- a/btrfs_cmds.c
++++ b/btrfs_cmds.c
+@@ -92,7 +92,7 @@ static int test_isdir(char *path)
+ 
+ }
+ 
+-static int open_file_or_dir(const char *fname)
++int open_file_or_dir(const char *fname)
+ {
+ 	int ret;
+ 	struct stat st;
+diff --git a/btrfs_cmds.h b/btrfs_cmds.h
+index 067b53f..83faa5b 100644
+--- a/btrfs_cmds.h
++++ b/btrfs_cmds.h
+@@ -23,6 +23,10 @@ int do_defrag(int argc, char **argv);
+ int do_show_filesystem(int nargs, char **argv);
+ int do_add_volume(int nargs, char **args);
+ int do_balance(int nargs, char **argv);
++int do_scrub_start(int nargs, char **argv);
++int do_scrub_status(int argc, char **argv);
++int do_scrub_resume(int argc, char **argv);
++int do_scrub_cancel(int nargs, char **argv);
+ int do_balance_progress(int nargs, char **argv);
+ int do_balance_cancel(int nargs, char **argv);
+ int do_remove_volume(int nargs, char **args);
+@@ -35,3 +39,4 @@ int do_df_filesystem(int nargs, char **argv);
+ int find_updated_files(int fd, u64 root_id, u64 oldest_gen);
+ int do_find_newer(int argc, char **argv);
+ int do_change_label(int argc, char **argv);
++int open_file_or_dir(const char *fname);
 -- 
 1.7.3.4
 

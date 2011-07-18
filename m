@@ -1,68 +1,62 @@
-From: Wanlong Gao <wanlong.gao@gmail.com>
-Subject: [PATCH] Btrfs:don't check the return value of __btrfs_add_inode_defrag
-Date: Mon, 18 Jul 2011 20:19:35 +0800
-Message-ID: <1310991575-7528-1-git-send-email-wanlong.gao@gmail.com>
-Cc: Chris Mason <chris.mason@oracle.com>,
-	Wanlong Gao <wanlong.gao@gmail.com>,
-	Wanlong Gao <gaowanlong@cn.fujitsu.com>
-To: linux-btrfs@vger.kernel.org, linux-kernel@vger.kernel.org
-Return-path: <linux-kernel-owner@vger.kernel.org>
+From: Jan Schmidt <list.btrfs@jan-o-sch.net>
+Subject: [PATCH v3 0/5] btrfs-progs: scrub interface
+Date: Mon, 18 Jul 2011 14:37:20 +0200
+Message-ID: <cover.1310990184.git.list.btrfs@jan-o-sch.net>
+To: chris.mason@oracle.com, linux-btrfs@vger.kernel.org
+Return-path: <linux-btrfs-owner@vger.kernel.org>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Don't need to check the return value of __btrfs_add_inode_defrag(),
-since it will always return 0.
+This is the next patch series for scrub userland tools.
 
-Signed-off-by: Wanlong Gao <gaowanlong@cn.fujitsu.com>
----
- fs/btrfs/file.c |   11 +++++------
- 1 files changed, 5 insertions(+), 6 deletions(-)
+Change log v1->v2:
+- commands now reachable as "btrfs scrub ..." instead of "btrfs filesystem
+  scrub ..."
+- ability to scrub a single device instead of a whole file system
+- superfluous command line options removed
+- resume is now a separate command ("scrub resume") instead of "scrub start -r"
+- read-only mode (which inherited the -r option immediately, sorry for that)
+- up to date progress numbers with "btrfs scrub status" while scrub is running
+- effective locking to protect against multiple scrubs on a filesystem
+- man page entry for scrub added
 
-diff --git a/fs/btrfs/file.c b/fs/btrfs/file.c
-index fa4ef18..4a6d190 100644
---- a/fs/btrfs/file.c
-+++ b/fs/btrfs/file.c
-@@ -74,7 +74,7 @@ struct inode_defrag {
-  * If an existing record is found the defrag item you
-  * pass in is freed
-  */
--static int __btrfs_add_inode_defrag(struct inode *inode,
-+static void __btrfs_add_inode_defrag(struct inode *inode,
- 				    struct inode_defrag *defrag)
- {
- 	struct btrfs_root *root = BTRFS_I(inode)->root;
-@@ -106,11 +106,11 @@ static int __btrfs_add_inode_defrag(struct inode *inode,
- 	BTRFS_I(inode)->in_defrag = 1;
- 	rb_link_node(&defrag->rb_node, parent, p);
- 	rb_insert_color(&defrag->rb_node, &root->fs_info->defrag_inodes);
--	return 0;
-+	return;
- 
- exists:
- 	kfree(defrag);
--	return 0;
-+	return;
- 
- }
- 
-@@ -123,7 +123,6 @@ int btrfs_add_inode_defrag(struct btrfs_trans_handle *trans,
- {
- 	struct btrfs_root *root = BTRFS_I(inode)->root;
- 	struct inode_defrag *defrag;
--	int ret = 0;
- 	u64 transid;
- 
- 	if (!btrfs_test_opt(root, AUTO_DEFRAG))
-@@ -150,9 +149,9 @@ int btrfs_add_inode_defrag(struct btrfs_trans_handle *trans,
- 
- 	spin_lock(&root->fs_info->defrag_inodes_lock);
- 	if (!BTRFS_I(inode)->in_defrag)
--		ret = __btrfs_add_inode_defrag(inode, defrag);
-+		__btrfs_add_inode_defrag(inode, defrag);
- 	spin_unlock(&root->fs_info->defrag_inodes_lock);
--	return ret;
-+	return 0;
- }
- 
- /*
+Change log v2->v3:
+- unverified_errors counter added
+- return code of utility now depends on detected disk errors
+- bail out when check_mounted_where returns an error
+- changes as suggested by Hugo Mill's review. incomplete list:
+	- style (checkpatch is happy now)
+	- pthread_* error handling
+	- use /var/lib/btrfs instead of /var/btrfs for storing history
+
+Attention: This version may be useful for Hugo, only. It is meant to be
+	   included in his current integration branch. Also, I wanted to avoid
+	   patching the patches previously sent and rather deliver a fresh
+	   version. Therefore, I used "integration-20110705" from
+	   http://git.darksatanic.net/repo/btrfs-progs-unstable.git/ as a base,
+	   reverted the scrub patches in the middle and built upon that.
+
+-Jan
+
+Jan Schmidt (5):
+  btrfs-progs: commands added
+  btrfs-progs: scrub ioctls
+  btrfs-progs: added check_mounted_where
+  btrfs-progs: scrub userland implementation
+  btrfs-progs: scrub added to manpage
+
+ Makefile       |    4 +-
+ btrfs.c        |   23 +
+ btrfs_cmds.c   |    2 +-
+ btrfs_cmds.h   |    5 +
+ ctree.h        |    2 +-
+ ioctl.h        |   54 ++-
+ man/btrfs.8.in |   64 +++-
+ scrub.c        | 1666 ++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+ utils.c        |   29 +-
+ utils.h        |    2 +
+ 10 files changed, 1838 insertions(+), 13 deletions(-)
+ create mode 100644 scrub.c
+
 -- 
-1.7.4.1
+1.7.3.4
+

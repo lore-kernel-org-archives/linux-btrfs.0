@@ -1,7 +1,7 @@
 From: Goffredo Baroncelli <kreijack@libero.it>
-Subject: [PATCH 5/6] Show the help messages from the info in the comment.
-Date: Tue, 19 Jul 2011 18:12:22 +0200
-Message-ID: <20110719161222.3210.30489.stgit@venice.bhome>
+Subject: [PATCH 4/6] Update the makefile for generating the man page.
+Date: Tue, 19 Jul 2011 18:12:16 +0200
+Message-ID: <20110719161216.3210.76829.stgit@venice.bhome>
 References: <20110719161049.3210.54794.stgit@venice.bhome>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="utf-8"
@@ -12,74 +12,780 @@ List-ID: <linux-btrfs.vger.kernel.org>
 
 From: Goffredo Baroncelli <kreijack@inwind.it>
 
-The makefile is update in order to use the tool "helpextract" to extract
-the info from the sources comments and to generate the file "helpmsg.c"
-which contains an array of string with all the information.
-Then the function "print_help" prints these information.
+The makefile is update in order to generate the man/btrfs.8.in by the
+helpextract tool on the basis of the sources comments. The old man page
+is renamed as btrfs.8.in.old.
 ---
- btrfs.c |   34 +++++++++++++++++++++++++++++-----
- 1 files changed, 29 insertions(+), 5 deletions(-)
+ Makefile           |   11 +-
+ man/btrfs.8.in     |  359 ----------------------------------------------------
+ man/btrfs.8.in.old |  359 ++++++++++++++++++++++++++++++++++++++++++++++++++++
+ 3 files changed, 369 insertions(+), 360 deletions(-)
+ delete mode 100644 man/btrfs.8.in
+ create mode 100644 man/btrfs.8.in.old
 
-diff --git a/btrfs.c b/btrfs.c
-index 98abb6c..53422f7 100644
---- a/btrfs.c
-+++ b/btrfs.c
-@@ -357,6 +357,8 @@ static struct Command commands[] = {
- 	{ 0, 0, 0, 0 }
- };
+diff --git a/Makefile b/Makefile
+index edee1a0..dc1342f 100644
+--- a/Makefile
++++ b/Makefile
+@@ -18,6 +18,8 @@ LIBS = -luuid
+ progs = btrfsctl mkfs.btrfs btrfs-debug-tree btrfs-show btrfs-vol btrfsck \
+ 	btrfs btrfs-map-logical
  
-+extern char * help_messages[];
++btrfs_man_page_source = btrfs.c btrfs_cmds.c scrub.c
 +
- static char *get_prgname(char *programname)
- {
- 	char	*np;
-@@ -372,21 +374,43 @@ static char *get_prgname(char *programname)
- static void print_help(char *programname, struct Command *cmd, int helptype)
- {
- 	char	*pc;
-+	int	i;
-+	char	*adv_help;
-+	char	*std_help;
-+
-+	/* printf("\t%s %s ", programname, cmd->verb ); */
-+
-+	adv_help = cmd->adv_help;
-+	std_help = cmd->help;
-+
-+	for(i = 0; help_messages[i]; i+= 4 ){
-+		if(!strncmp(help_messages[i],"btrfs ",6) &&
-+		   !strcmp(help_messages[i]+6,cmd->verb) ){
-+			if(help_messages[i+2])
-+				std_help = help_messages[i+2];
-+			if(help_messages[i+3])
-+				adv_help = help_messages[i+3];
-+			printf("\t%s\t\t",help_messages[i+1]);
-+			break;
-+		}
-+	}
+ # make C=1 to enable sparse
+ ifdef C
+ 	check = sparse $(CHECKFLAGS)
+@@ -84,13 +86,20 @@ convert: $(objects) convert.o
+ ioctl-test: $(objects) ioctl-test.o
+ 	$(CC) $(CFLAGS) -o ioctl-test $(objects) ioctl-test.o $(LDFLAGS) $(LIBS)
  
--	printf("\t%s %s ", programname, cmd->verb );
-+	if( !help_messages[i])
-+		printf("\t%s %s ", programname, cmd->verb );
+-manpages:
++helpextract: helpextract.o
++	$(CC) $(CFLAGS) -o $@ helpextract.o
++
++man/btrfs.8.in: helpextract $(btrfs_man_page_source)
++	./helpextract --man-page $(btrfs_man_page_source) >$@
++
++manpages: man/btrfs.8.in
+ 	cd man; make
  
--	if (helptype == ADVANCED_HELP && cmd->adv_help)
--		for(pc = cmd->adv_help; *pc; pc++){
-+	if (helptype == ADVANCED_HELP && adv_help){
-+		for(pc = adv_help; *pc; pc++){
- 			putchar(*pc);
- 			if(*pc == '\n')
- 				printf("\t\t");
- 		}
--	else
--		for(pc = cmd->help; *pc; pc++){
-+	}else{
-+		for(pc = std_help; *pc; pc++){
- 			putchar(*pc);
- 			if(*pc == '\n')
- 				printf("\t\t");
- 		}
-+	}
+ install-man:
+ 	cd man; make install
  
- 	putchar('\n');
- }
+ clean :
++	rm -f man/btrfs.8.in
+ 	rm -f $(progs) cscope.out *.o .*.d btrfs-convert btrfs-image btrfs-select-super \
+ 	      btrfs-zero-log btrfstune dir-test ioctl-test quick-test version.h
+ 	cd man; make clean
+diff --git a/man/btrfs.8.in b/man/btrfs.8.in
+deleted file mode 100644
+index 84a60cd..0000000
+--- a/man/btrfs.8.in
++++ /dev/null
+@@ -1,359 +0,0 @@
+-.TH BTRFS 8 "" "btrfs" "btrfs"
+-.\"
+-.\" Man page written by Goffredo Baroncelli <kreijack@inwind.it> (Feb 2010)
+-.\"
+-.SH NAME
+-btrfs \- control a btrfs filesystem
+-.SH SYNOPSIS
+-\fBbtrfs\fP \fBsubvolume snapshot\fP\fI [-r] <source> [<dest>/]<name>\fP
+-.PP
+-\fBbtrfs\fP \fBsubvolume delete\fP\fI <subvolume>\fP
+-.PP
+-\fBbtrfs\fP \fBsubvolume create\fP\fI [<dest>/]<name>\fP
+-.PP
+-\fBbtrfs\fP \fBsubvolume list\fP\fI [-p] <path>\fP
+-.PP
+-\fBbtrfs\fP \fBsubvolume set-default\fP\fI <id> <path>\fP
+-.PP
+-\fBbtrfs\fP \fBfilesystem sync\fP\fI <path> \fP
+-.PP
+-\fBbtrfs\fP \fBfilesystem resize\fP\fI [+/\-]<size>[gkm]|max <filesystem>\fP
+-.PP
+-\fBbtrfs\fP \fBfilesystem label\fP\fI <dev> [newlabel]\fP
+-.PP
+-\fBbtrfs\fP \fBfilesystem defrag\fP\fI [options] <file>|<dir> [<file>|<dir>...]\fP
+-.PP
+-\fBbtrfs\fP \fBsubvolume find-new\fP\fI <subvolume> <last_gen>\fP
+-.PP
+-\fBbtrfs\fP \fBfilesystem balance\fP [\fB-wcv\fP] [\fB--wait\fP] [\fB--count\fP] [\fB--verbose\fP] [\fB-f\fP|\fBfilter=\fP\fI<filter>\fP] \fI<path>\fP
+-.PP
+-\fBbtrfs\fP \fBbalance start\fP [\fB-wcv\fP] [\fB--wait\fP] [\fB--count\fP] [\fB--verbose\fP] [\fB-f\fP|\fBfilter=\fP\fI<filter>\fP] \fI<path>\fP
+-.PP
+-\fBbtrfs\fP \fBbalance progress\fP [\fB-m\fP|\fB--monitor\fP] \fI<path>\fP
+-.PP
+-\fBbtrfs\fP \fBbalance cancel\fP \fI<path>\fP
+-.PP
+-\fBbtrfs\fP \fBfilesystem defragment\fP\fI <file>|<dir> [<file>|<dir>...]\fP
+-.PP
+-\fBbtrfs\fP \fBdevice scan\fP\fI [--all-devices|<device> [<device>...]]\fP
+-.PP
+-\fBbtrfs\fP \fBdevice show\fP\fI [--all-devices|<uuid>|<label>]\fP
+-.PP
+-\fBbtrfs\fP \fBdevice add\fP\fI <device> [<device>...] <path> \fP
+-.PP
+-\fBbtrfs\fP \fBdevice delete\fP\fI <device> [<device>...] <path> \fP
+-.PP
+-\fBbtrfs\fP \fBscrub start\fP [-Bdqru] {\fI<path>\fP|\fI<device>\fP}
+-.PP
+-\fBbtrfs\fP \fBscrub cancel\fP {\fI<path>\fP|\fI<device>\fP}
+-.PP
+-\fBbtrfs\fP \fBscrub resume\fP [-Bdqru] {\fI<path>\fP|\fI<device>\fP}
+-.PP
+-\fBbtrfs\fP \fBscrub status\fP [-d] {\fI<path>\fP|\fI<device>\fP}
+-.PP
+-\fBbtrfs\fP \fBhelp|\-\-help|\-h \fP\fI\fP
+-.PP
+-\fBbtrfs\fP \fB<command> \-\-help \fP\fI\fP
+-.PP
+-.SH DESCRIPTION
+-.B btrfs
+-is used to control the filesystem and the files and directories stored. It is
+-the tool to create or destroy a snapshot or a subvolume for the
+-filesystem, to defrag a file or a directory, flush the data to the disk,
+-to resize the filesystem, to scan the device.
+-
+-It is possible to abbreviate the commands unless the commands  are ambiguous.
+-For example: it is possible to run
+-.I btrfs sub snaps
+-instead of
+-.I btrfs subvolume snapshot.
+-But
+-.I btrfs file s
+-is not allowed, because
+-.I file s
+-may be interpreted both as
+-.I filesystem show
+-and as
+-.I filesystem sync.
+-In this case
+-.I btrfs
+-returnsfilesystem sync
+-If a command is terminated by
+-.I --help
+-, the detailed help is showed. If the passed command matches more commands,
+-detailed help of all the matched commands is showed. For example
+-.I btrfs dev --help
+-shows the help of all
+-.I device*
+-commands.
+-
+-.SH COMMANDS
+-.TP
+-
+-\fBsubvolume snapshot\fR\fI [-r] <source> [<dest>/]<name>\fR
+-Create a writable/readonly snapshot of the subvolume \fI<source>\fR with the
+-name \fI<name>\fR in the \fI<dest>\fR directory. If \fI<source>\fR is not a
+-subvolume, \fBbtrfs\fR returns an error. If \fI-r\fR is given, the snapshot
+-will be readonly.
+-.TP
+-
+-\fBsubvolume delete\fR\fI <subvolume>\fR
+-Delete the subvolume \fI<subvolume>\fR. If \fI<subvolume>\fR is not a
+-subvolume, \fBbtrfs\fR returns an error.
+-.TP
+-
+-\fBsubvolume create\fR\fI [<dest>/]<name>\fR
+-Create a subvolume in \fI<dest>\fR (or in the current directory if
+-\fI<dest>\fR is omitted).
+-.TP
+-
+-\fBsubvolume list\fR\fI [-p] <path>\fR
+-List the subvolumes present in the filesystem \fI<path>\fR. For every
+-subvolume the following information is shown by default.
+-ID <ID> top level <ID> path <path>
+-where path is the relative path of the subvolume to the \fItop level\fR
+-subvolume.
+-The subvolume's ID may be used by the \fBsubvolume set-default\fR command, or
+-at mount time via the \fIsubvol=\fR option.
+-If \fI-p\fR is given, then \fIparent <ID>\fR is added to the output between ID
+-and top level. The parent's ID may be used at mount time via the
+-\fIsubvolrootid=\fR option.
+-.TP
+-
+-\fBsubvolume set-default\fR\fI <id> <path>\fR
+-Set the subvolume of the filesystem \fI<path>\fR which is mounted as 
+-\fIdefault\fR. The subvolume is identified by \fI<id>\fR, which 
+-is returned by the \fBsubvolume list\fR command.
+-.TP
+-
+-\fBfilesystem defragment\fP -c[zlib|lzo] [-l \fIlen\fR] [-s \fIstart\fR] [-t \fIsize\fR] -[vf] <\fIfile\fR>|<\fIdir\fR> [<\fIfile\fR>|<\fIdir\fR>...]
+-
+-Defragment file data and/or directory metadata. To defragment all files in a
+-directory you have to specify each one on its own or use your shell wildcards.
+-
+-The start position and the number of bytes to deframention can be specified by \fIstart\fR and \fIlen\fR. Any extent bigger than \fIthresh\fR will be considered already defragged. Use 0 to take the kernel default, and use 1 to say eveery single extent must be rewritten. You can also turn on compression in defragment operations.
+-
+-\fB-v\fP be verbose
+-
+-\fB-c\fP compress file contents while defragmenting
+-
+-\fB-f\fP flush filesystem after defragmenting
+-
+-\fB-s start\fP defragment only from byte \fIstart\fR onward
+-
+-\fB-l len\fP defragment only up to \fIlen\fR bytes
+-
+-\fB-t size\fP defragment only files at least \fIsize\fR bytes big
+-
+-NOTE: defragmenting with kernels up to 2.6.37 will unlink COW-ed copies of data, don't 
+-use it if you use snapshots, have de-duplicated your data or made copies with 
+-\fBcp --reflink\fP.
+-\fBsubvolume find-new\fR\fI <subvolume> <last_gen>\fR
+-List the recently modified files in a subvolume, after \fI<last_gen>\fR ID.
+-.TP
+-
+-\fBfilesystem sync\fR\fI <path> \fR
+-Force a sync for the filesystem identified by \fI<path>\fR.
+-.TP
+-
+-.\"
+-.\" Some wording are extracted by the resize2fs man page
+-.\"
+-
+-\fBfilesystem resize\fR\fI [+/\-]<size>[gkm]|max <path>\fR
+-Resize a filesystem identified by \fI<path>\fR.
+-The \fI<size>\fR parameter specifies the new size of the filesystem.
+-If the prefix \fI+\fR or \fI\-\fR is present the size is increased or decreased
+-by the quantity \fI<size>\fR.
+-If no units are specified, the unit of the \fI<size>\fR parameter defaults to
+-bytes. Optionally, the size parameter may be suffixed by one of the following
+-the units designators: 'K', 'M', or 'G', kilobytes, megabytes, or gigabytes,
+-respectively.
+-
+-If 'max' is passed, the filesystem will occupy all available space on the
+-volume(s).
+-
+-The \fBresize\fR command \fBdoes not\fR manipulate the size of underlying
+-partition.  If you wish to enlarge/reduce a filesystem, you must make sure you
+-can expand the partition before enlarging the filesystem and shrink the
+-partition after reducing the size of the filesystem.
+-.TP
+-
+-\fBbtrfs\fP \fBfilesystem label\fP\fI <dev> [newlabel]\fP
+-Show or update the label of a filesystem. \fI<dev>\fR is used to identify the
+-filesystem. 
+-If a \fInewlabel\fR optional argument is passed, the label is changed. The
+-following costraints exist for a label:
+-.IP
+-- the maximum allowable lenght shall be less or equal than 256 chars
+-.IP
+-- the label shall not  contain the '/' or '\\' characters.
+-
+-NOTE: Currently there are the following limitations:
+-.IP
+-- the filesystem has to be unmounted
+-.IP
+-- the filesystem should not have more than one device.
+-.TP
+-
+-\fBfilesystem show\fR [--all-devices|<uuid>|<label>]\fR
+-Show the btrfs filesystem with some additional info. If no \fIUUID\fP or 
+-\fIlabel\fP is passed, \fBbtrfs\fR show info of all the btrfs filesystem.
+-If \fB--all-devices\fP is passed, all the devices under /dev are scanned;
+-otherwise the devices list is extracted from the /proc/partitions file.
+-.TP
+-
+-\fBdevice balance\fP [\fB-wcv\fP] [\fB--wait\fP] [\fB--count\fP] [\fB--verbose\fP] [\fB-f\fP|\fBfilter=\fP\fI<filter>\fP] \fI<path>\fP
+-.TP
+-\fBbalance start\fR [\fB-wcv\fP] [\fB--wait\fP] [\fB--count\fP] [\fB--verbose\fP] [\fB-f\fP|\fBfilter=\fP\fI<filter>\fP] \fI<path>\fP
+-
+-Balance the chunks of the filesystem identified by \fI<path>\fR across
+-the devices. The command returns immediately, and the balance
+-operation runs in the background. Use \fB--wait\fP to run
+-synchronously instead. Use \fB--count\fP to scan the filesystem and
+-report the number of chunks that would be processed. Use
+-\fB--verbose\fP in synchronous mode to report the number of chunks
+-examined and balanced. See \fBBALANCE FILTERS\fR, below, for details
+-of the different filter types and syntax.
+-.TP
+-
+-\fBdevice add\fR\fI <dev> [<dev>..] <path>\fR
+-Add device(s) to the filesystem identified by \fI<path>\fR.
+-.TP
+-
+-\fBdevice delete\fR\fI <dev> [<dev>..] <path>\fR
+-Remove device(s) from a filesystem identified by \fI<path>\fR.
+-.TP
+-
+-\fBdevice scan\fR \fI[--all-devices|<device> [<device>...]\fR
+-If one or more devices are passed, these are scanned for a btrfs filesystem. 
+-If no devices are passed, \fBbtrfs\fR scans all the block devices listed
+-in the /proc/partitions file.
+-Finally, if \fB--all-devices\fP is passed, all the devices under /dev are 
+-scanned.
+-.TP
+-
+-\fBscrub start\fP [-Bdqru] {\fI<path>\fP|\fI<device>\fP}
+-Start a scrub on all devices of the filesystem identified by \fI<path>\fR or on
+-a single \fI<device>\fR. Without options, scrub is started as a background
+-process. Progress can be obtained with the \fBscrub status\fR command. Scrubbing
+-involves reading all data from all disks and verifying checksums. Errors are
+-corrected along the way if possible.
+-.RS
+-
+-\fIOptions\fR
+-.IP -B 5
+-Do not background and print scrub statistics when finished.
+-.IP -d 5
+-Print separate statistics for each device of the filesystem (-B only).
+-.IP -q 5
+-Quiet. Omit error messages and statistics.
+-.IP -r 5
+-Read only mode. Do not attempt to correct anything.
+-.IP -u 5
+-Scrub unused space as well. (NOT IMPLEMENTED)
+-.RE
+-.TP
+-
+-\fBscrub cancel\fP {\fI<path>\fP|\fI<device>\fP}
+-If a scrub is running on the filesystem identified by \fI<path>\fR, cancel it.
+-Progress is saved in the scrub progress file and scrubbing can be resumed later
+-using the \fBscrub resume\fR command.
+-If a \fI<device>\fR is given, the corresponding filesystem is found and
+-\fBscrub cancel\fP behaves as if it was called on that filesystem.
+-.TP
+-
+-\fBscrub resume\fP [-Bdqru] {\fI<path>\fP|\fI<device>\fP}
+-Resume a canceled or interrupted scrub cycle on the filesystem identified by
+-\fI<path>\fR or on a given \fI<device>\fR. Does not start a new scrub if the
+-last scrub finished successfully.
+-.RS
+-
+-\fIOptions\fR
+-.TP
+-see \fBscrub start\fP.
+-.RE
+-.TP
+-
+-\fBscrub status\fP [-d] {\fI<path>\fP|\fI<device>\fP}
+-Show status of a running scrub for the filesystem identified by \fI<path>\fR or
+-for the specified \fI<device>\fR.
+-If no scrub is running, show statistics of the last finished or canceled scrub
+-for that filesystem or device.
+-.RS
+-
+-\fIOptions\fR
+-.IP -d 5
+-Print separate statistics for each device of the filesystem.
+-.RE
+-
+-.PP
+-
+-\fBbalance progress\fP [\fB-m\fP|\fB--monitor\fP] \fI<path>\fP
+-Report progress on the currently-running balance operation on the
+-filesystem mounted at \fI<path>\fP. Use --monitor to report progress
+-continually, including an estimate of completion time.
+-
+-\fBbalance cancel\fP \fI<path>\fP
+-Cancel the balance currently running on the filesystem mounted at
+-\fI<path>\fP.
+-
+-.SH BALANCE FILTERS
+-With balance filters, it is possible to perform a balance operation on
+-only a subset of the available chunks. Filters are specified with the
+-\fB--filter\fR option of \fBbtrfs device balance\fR or \fBbtrfs
+-balance start\fR. Multiple filters may be given, either with multiple
+-\fB--filter\fR options, or in a colon-separated list. When multiple
+-filters are given, only the chunks meeting all of the selection
+-critera are balanced. Help on the avaialble filters can be obtained
+-with \fB--filter=help\fR.
+-
+-.TP
+-\fBtype\fR=[\fB~\fR]\fI<flagname>\fR[\fB,\fR...]
+-
+-Select only the chunks with the given type flag(s). Requiring a flag
+-to be off can be specified with a \fB~\fR preceding the flag
+-name. Flag names are:
+-
+-\fBmeta\fR, \fBdata\fR, \fBsys\fR for metadata, file data and system
+-chunk types.
+-
+-\fBraid0\fR, \fBraid1\fR, \fBraid10\fR, \fBdup\fR for chunks of the
+-given replication levels.
+-
+-.TP
+-\fBdevid\fR=\fI<n>\fR
+-
+-Select chunks which have data on device ID \fI<n>\fR. This can be
+-used, for example, to reduplicate data in a mirrored configuration
+-where one drive has been lost due to hardware failure.
+-
+-.TP
+-\fBvrange\fR=\fI<start>\fB,\fI<end>\fR
+-
+-Select chunks which have btrfs-internal virtual addresses within the
+-range \fI<start>\fR (inclusive) to \fI<end>\fR (exclusive). Given the
+-address of the last chunk moved, this filter can be used to restart a
+-cancelled or interrupted balance operation, by supplying a range of
+-\fB0,\fI<chunkaddr+1>\fR.
+-
+-.TP
+-\fBdrange\fR=\fI<start>\fB,\fI<end>\fR
+-
+-Select chunks which contain data in the address range \fI<start>\fR
+-(inclusive) to \fI<end>\fR (exclusive) on \fIany\fR block device in
+-the filesystem. Can be mixed with the \fBdevid\fR filter to select
+-chunks in a given address range on a specific device.
+-
+-.SH EXIT STATUS
+-\fBbtrfs\fR returns a zero exist status if it succeeds. Non zero is returned in
+-case of failure.
+-
+-.SH AVAILABILITY
+-.B btrfs
+-is part of btrfs-progs. Btrfs filesystem is currently under heavy development,
+-and not suitable for any uses other than benchmarking and review.
+-Please refer to the btrfs wiki http://btrfs.wiki.kernel.org for
+-further details.
+-.SH SEE ALSO
+-.BR mkfs.btrfs (8)
+diff --git a/man/btrfs.8.in.old b/man/btrfs.8.in.old
+new file mode 100644
+index 0000000..84a60cd
+--- /dev/null
++++ b/man/btrfs.8.in.old
+@@ -0,0 +1,359 @@
++.TH BTRFS 8 "" "btrfs" "btrfs"
++.\"
++.\" Man page written by Goffredo Baroncelli <kreijack@inwind.it> (Feb 2010)
++.\"
++.SH NAME
++btrfs \- control a btrfs filesystem
++.SH SYNOPSIS
++\fBbtrfs\fP \fBsubvolume snapshot\fP\fI [-r] <source> [<dest>/]<name>\fP
++.PP
++\fBbtrfs\fP \fBsubvolume delete\fP\fI <subvolume>\fP
++.PP
++\fBbtrfs\fP \fBsubvolume create\fP\fI [<dest>/]<name>\fP
++.PP
++\fBbtrfs\fP \fBsubvolume list\fP\fI [-p] <path>\fP
++.PP
++\fBbtrfs\fP \fBsubvolume set-default\fP\fI <id> <path>\fP
++.PP
++\fBbtrfs\fP \fBfilesystem sync\fP\fI <path> \fP
++.PP
++\fBbtrfs\fP \fBfilesystem resize\fP\fI [+/\-]<size>[gkm]|max <filesystem>\fP
++.PP
++\fBbtrfs\fP \fBfilesystem label\fP\fI <dev> [newlabel]\fP
++.PP
++\fBbtrfs\fP \fBfilesystem defrag\fP\fI [options] <file>|<dir> [<file>|<dir>...]\fP
++.PP
++\fBbtrfs\fP \fBsubvolume find-new\fP\fI <subvolume> <last_gen>\fP
++.PP
++\fBbtrfs\fP \fBfilesystem balance\fP [\fB-wcv\fP] [\fB--wait\fP] [\fB--count\fP] [\fB--verbose\fP] [\fB-f\fP|\fBfilter=\fP\fI<filter>\fP] \fI<path>\fP
++.PP
++\fBbtrfs\fP \fBbalance start\fP [\fB-wcv\fP] [\fB--wait\fP] [\fB--count\fP] [\fB--verbose\fP] [\fB-f\fP|\fBfilter=\fP\fI<filter>\fP] \fI<path>\fP
++.PP
++\fBbtrfs\fP \fBbalance progress\fP [\fB-m\fP|\fB--monitor\fP] \fI<path>\fP
++.PP
++\fBbtrfs\fP \fBbalance cancel\fP \fI<path>\fP
++.PP
++\fBbtrfs\fP \fBfilesystem defragment\fP\fI <file>|<dir> [<file>|<dir>...]\fP
++.PP
++\fBbtrfs\fP \fBdevice scan\fP\fI [--all-devices|<device> [<device>...]]\fP
++.PP
++\fBbtrfs\fP \fBdevice show\fP\fI [--all-devices|<uuid>|<label>]\fP
++.PP
++\fBbtrfs\fP \fBdevice add\fP\fI <device> [<device>...] <path> \fP
++.PP
++\fBbtrfs\fP \fBdevice delete\fP\fI <device> [<device>...] <path> \fP
++.PP
++\fBbtrfs\fP \fBscrub start\fP [-Bdqru] {\fI<path>\fP|\fI<device>\fP}
++.PP
++\fBbtrfs\fP \fBscrub cancel\fP {\fI<path>\fP|\fI<device>\fP}
++.PP
++\fBbtrfs\fP \fBscrub resume\fP [-Bdqru] {\fI<path>\fP|\fI<device>\fP}
++.PP
++\fBbtrfs\fP \fBscrub status\fP [-d] {\fI<path>\fP|\fI<device>\fP}
++.PP
++\fBbtrfs\fP \fBhelp|\-\-help|\-h \fP\fI\fP
++.PP
++\fBbtrfs\fP \fB<command> \-\-help \fP\fI\fP
++.PP
++.SH DESCRIPTION
++.B btrfs
++is used to control the filesystem and the files and directories stored. It is
++the tool to create or destroy a snapshot or a subvolume for the
++filesystem, to defrag a file or a directory, flush the data to the disk,
++to resize the filesystem, to scan the device.
++
++It is possible to abbreviate the commands unless the commands  are ambiguous.
++For example: it is possible to run
++.I btrfs sub snaps
++instead of
++.I btrfs subvolume snapshot.
++But
++.I btrfs file s
++is not allowed, because
++.I file s
++may be interpreted both as
++.I filesystem show
++and as
++.I filesystem sync.
++In this case
++.I btrfs
++returnsfilesystem sync
++If a command is terminated by
++.I --help
++, the detailed help is showed. If the passed command matches more commands,
++detailed help of all the matched commands is showed. For example
++.I btrfs dev --help
++shows the help of all
++.I device*
++commands.
++
++.SH COMMANDS
++.TP
++
++\fBsubvolume snapshot\fR\fI [-r] <source> [<dest>/]<name>\fR
++Create a writable/readonly snapshot of the subvolume \fI<source>\fR with the
++name \fI<name>\fR in the \fI<dest>\fR directory. If \fI<source>\fR is not a
++subvolume, \fBbtrfs\fR returns an error. If \fI-r\fR is given, the snapshot
++will be readonly.
++.TP
++
++\fBsubvolume delete\fR\fI <subvolume>\fR
++Delete the subvolume \fI<subvolume>\fR. If \fI<subvolume>\fR is not a
++subvolume, \fBbtrfs\fR returns an error.
++.TP
++
++\fBsubvolume create\fR\fI [<dest>/]<name>\fR
++Create a subvolume in \fI<dest>\fR (or in the current directory if
++\fI<dest>\fR is omitted).
++.TP
++
++\fBsubvolume list\fR\fI [-p] <path>\fR
++List the subvolumes present in the filesystem \fI<path>\fR. For every
++subvolume the following information is shown by default.
++ID <ID> top level <ID> path <path>
++where path is the relative path of the subvolume to the \fItop level\fR
++subvolume.
++The subvolume's ID may be used by the \fBsubvolume set-default\fR command, or
++at mount time via the \fIsubvol=\fR option.
++If \fI-p\fR is given, then \fIparent <ID>\fR is added to the output between ID
++and top level. The parent's ID may be used at mount time via the
++\fIsubvolrootid=\fR option.
++.TP
++
++\fBsubvolume set-default\fR\fI <id> <path>\fR
++Set the subvolume of the filesystem \fI<path>\fR which is mounted as 
++\fIdefault\fR. The subvolume is identified by \fI<id>\fR, which 
++is returned by the \fBsubvolume list\fR command.
++.TP
++
++\fBfilesystem defragment\fP -c[zlib|lzo] [-l \fIlen\fR] [-s \fIstart\fR] [-t \fIsize\fR] -[vf] <\fIfile\fR>|<\fIdir\fR> [<\fIfile\fR>|<\fIdir\fR>...]
++
++Defragment file data and/or directory metadata. To defragment all files in a
++directory you have to specify each one on its own or use your shell wildcards.
++
++The start position and the number of bytes to deframention can be specified by \fIstart\fR and \fIlen\fR. Any extent bigger than \fIthresh\fR will be considered already defragged. Use 0 to take the kernel default, and use 1 to say eveery single extent must be rewritten. You can also turn on compression in defragment operations.
++
++\fB-v\fP be verbose
++
++\fB-c\fP compress file contents while defragmenting
++
++\fB-f\fP flush filesystem after defragmenting
++
++\fB-s start\fP defragment only from byte \fIstart\fR onward
++
++\fB-l len\fP defragment only up to \fIlen\fR bytes
++
++\fB-t size\fP defragment only files at least \fIsize\fR bytes big
++
++NOTE: defragmenting with kernels up to 2.6.37 will unlink COW-ed copies of data, don't 
++use it if you use snapshots, have de-duplicated your data or made copies with 
++\fBcp --reflink\fP.
++\fBsubvolume find-new\fR\fI <subvolume> <last_gen>\fR
++List the recently modified files in a subvolume, after \fI<last_gen>\fR ID.
++.TP
++
++\fBfilesystem sync\fR\fI <path> \fR
++Force a sync for the filesystem identified by \fI<path>\fR.
++.TP
++
++.\"
++.\" Some wording are extracted by the resize2fs man page
++.\"
++
++\fBfilesystem resize\fR\fI [+/\-]<size>[gkm]|max <path>\fR
++Resize a filesystem identified by \fI<path>\fR.
++The \fI<size>\fR parameter specifies the new size of the filesystem.
++If the prefix \fI+\fR or \fI\-\fR is present the size is increased or decreased
++by the quantity \fI<size>\fR.
++If no units are specified, the unit of the \fI<size>\fR parameter defaults to
++bytes. Optionally, the size parameter may be suffixed by one of the following
++the units designators: 'K', 'M', or 'G', kilobytes, megabytes, or gigabytes,
++respectively.
++
++If 'max' is passed, the filesystem will occupy all available space on the
++volume(s).
++
++The \fBresize\fR command \fBdoes not\fR manipulate the size of underlying
++partition.  If you wish to enlarge/reduce a filesystem, you must make sure you
++can expand the partition before enlarging the filesystem and shrink the
++partition after reducing the size of the filesystem.
++.TP
++
++\fBbtrfs\fP \fBfilesystem label\fP\fI <dev> [newlabel]\fP
++Show or update the label of a filesystem. \fI<dev>\fR is used to identify the
++filesystem. 
++If a \fInewlabel\fR optional argument is passed, the label is changed. The
++following costraints exist for a label:
++.IP
++- the maximum allowable lenght shall be less or equal than 256 chars
++.IP
++- the label shall not  contain the '/' or '\\' characters.
++
++NOTE: Currently there are the following limitations:
++.IP
++- the filesystem has to be unmounted
++.IP
++- the filesystem should not have more than one device.
++.TP
++
++\fBfilesystem show\fR [--all-devices|<uuid>|<label>]\fR
++Show the btrfs filesystem with some additional info. If no \fIUUID\fP or 
++\fIlabel\fP is passed, \fBbtrfs\fR show info of all the btrfs filesystem.
++If \fB--all-devices\fP is passed, all the devices under /dev are scanned;
++otherwise the devices list is extracted from the /proc/partitions file.
++.TP
++
++\fBdevice balance\fP [\fB-wcv\fP] [\fB--wait\fP] [\fB--count\fP] [\fB--verbose\fP] [\fB-f\fP|\fBfilter=\fP\fI<filter>\fP] \fI<path>\fP
++.TP
++\fBbalance start\fR [\fB-wcv\fP] [\fB--wait\fP] [\fB--count\fP] [\fB--verbose\fP] [\fB-f\fP|\fBfilter=\fP\fI<filter>\fP] \fI<path>\fP
++
++Balance the chunks of the filesystem identified by \fI<path>\fR across
++the devices. The command returns immediately, and the balance
++operation runs in the background. Use \fB--wait\fP to run
++synchronously instead. Use \fB--count\fP to scan the filesystem and
++report the number of chunks that would be processed. Use
++\fB--verbose\fP in synchronous mode to report the number of chunks
++examined and balanced. See \fBBALANCE FILTERS\fR, below, for details
++of the different filter types and syntax.
++.TP
++
++\fBdevice add\fR\fI <dev> [<dev>..] <path>\fR
++Add device(s) to the filesystem identified by \fI<path>\fR.
++.TP
++
++\fBdevice delete\fR\fI <dev> [<dev>..] <path>\fR
++Remove device(s) from a filesystem identified by \fI<path>\fR.
++.TP
++
++\fBdevice scan\fR \fI[--all-devices|<device> [<device>...]\fR
++If one or more devices are passed, these are scanned for a btrfs filesystem. 
++If no devices are passed, \fBbtrfs\fR scans all the block devices listed
++in the /proc/partitions file.
++Finally, if \fB--all-devices\fP is passed, all the devices under /dev are 
++scanned.
++.TP
++
++\fBscrub start\fP [-Bdqru] {\fI<path>\fP|\fI<device>\fP}
++Start a scrub on all devices of the filesystem identified by \fI<path>\fR or on
++a single \fI<device>\fR. Without options, scrub is started as a background
++process. Progress can be obtained with the \fBscrub status\fR command. Scrubbing
++involves reading all data from all disks and verifying checksums. Errors are
++corrected along the way if possible.
++.RS
++
++\fIOptions\fR
++.IP -B 5
++Do not background and print scrub statistics when finished.
++.IP -d 5
++Print separate statistics for each device of the filesystem (-B only).
++.IP -q 5
++Quiet. Omit error messages and statistics.
++.IP -r 5
++Read only mode. Do not attempt to correct anything.
++.IP -u 5
++Scrub unused space as well. (NOT IMPLEMENTED)
++.RE
++.TP
++
++\fBscrub cancel\fP {\fI<path>\fP|\fI<device>\fP}
++If a scrub is running on the filesystem identified by \fI<path>\fR, cancel it.
++Progress is saved in the scrub progress file and scrubbing can be resumed later
++using the \fBscrub resume\fR command.
++If a \fI<device>\fR is given, the corresponding filesystem is found and
++\fBscrub cancel\fP behaves as if it was called on that filesystem.
++.TP
++
++\fBscrub resume\fP [-Bdqru] {\fI<path>\fP|\fI<device>\fP}
++Resume a canceled or interrupted scrub cycle on the filesystem identified by
++\fI<path>\fR or on a given \fI<device>\fR. Does not start a new scrub if the
++last scrub finished successfully.
++.RS
++
++\fIOptions\fR
++.TP
++see \fBscrub start\fP.
++.RE
++.TP
++
++\fBscrub status\fP [-d] {\fI<path>\fP|\fI<device>\fP}
++Show status of a running scrub for the filesystem identified by \fI<path>\fR or
++for the specified \fI<device>\fR.
++If no scrub is running, show statistics of the last finished or canceled scrub
++for that filesystem or device.
++.RS
++
++\fIOptions\fR
++.IP -d 5
++Print separate statistics for each device of the filesystem.
++.RE
++
++.PP
++
++\fBbalance progress\fP [\fB-m\fP|\fB--monitor\fP] \fI<path>\fP
++Report progress on the currently-running balance operation on the
++filesystem mounted at \fI<path>\fP. Use --monitor to report progress
++continually, including an estimate of completion time.
++
++\fBbalance cancel\fP \fI<path>\fP
++Cancel the balance currently running on the filesystem mounted at
++\fI<path>\fP.
++
++.SH BALANCE FILTERS
++With balance filters, it is possible to perform a balance operation on
++only a subset of the available chunks. Filters are specified with the
++\fB--filter\fR option of \fBbtrfs device balance\fR or \fBbtrfs
++balance start\fR. Multiple filters may be given, either with multiple
++\fB--filter\fR options, or in a colon-separated list. When multiple
++filters are given, only the chunks meeting all of the selection
++critera are balanced. Help on the avaialble filters can be obtained
++with \fB--filter=help\fR.
++
++.TP
++\fBtype\fR=[\fB~\fR]\fI<flagname>\fR[\fB,\fR...]
++
++Select only the chunks with the given type flag(s). Requiring a flag
++to be off can be specified with a \fB~\fR preceding the flag
++name. Flag names are:
++
++\fBmeta\fR, \fBdata\fR, \fBsys\fR for metadata, file data and system
++chunk types.
++
++\fBraid0\fR, \fBraid1\fR, \fBraid10\fR, \fBdup\fR for chunks of the
++given replication levels.
++
++.TP
++\fBdevid\fR=\fI<n>\fR
++
++Select chunks which have data on device ID \fI<n>\fR. This can be
++used, for example, to reduplicate data in a mirrored configuration
++where one drive has been lost due to hardware failure.
++
++.TP
++\fBvrange\fR=\fI<start>\fB,\fI<end>\fR
++
++Select chunks which have btrfs-internal virtual addresses within the
++range \fI<start>\fR (inclusive) to \fI<end>\fR (exclusive). Given the
++address of the last chunk moved, this filter can be used to restart a
++cancelled or interrupted balance operation, by supplying a range of
++\fB0,\fI<chunkaddr+1>\fR.
++
++.TP
++\fBdrange\fR=\fI<start>\fB,\fI<end>\fR
++
++Select chunks which contain data in the address range \fI<start>\fR
++(inclusive) to \fI<end>\fR (exclusive) on \fIany\fR block device in
++the filesystem. Can be mixed with the \fBdevid\fR filter to select
++chunks in a given address range on a specific device.
++
++.SH EXIT STATUS
++\fBbtrfs\fR returns a zero exist status if it succeeds. Non zero is returned in
++case of failure.
++
++.SH AVAILABILITY
++.B btrfs
++is part of btrfs-progs. Btrfs filesystem is currently under heavy development,
++and not suitable for any uses other than benchmarking and review.
++Please refer to the btrfs wiki http://btrfs.wiki.kernel.org for
++further details.
++.SH SEE ALSO
++.BR mkfs.btrfs (8)
 

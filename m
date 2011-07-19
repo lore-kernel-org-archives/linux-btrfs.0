@@ -1,895 +1,829 @@
 From: Chris Mason <chris.mason@oracle.com>
-Subject: [PATCH 1/2] stop using highmem for extent_buffers
-Date: Tue, 19 Jul 2011 13:32:35 -0400
-Message-ID: <1311096700-sup-8175@shiny>
+Subject: [PATCH 2/2] Btrfs: switch to reader/writer locks for metadata
+Date: Tue, 19 Jul 2011 13:33:45 -0400
+Message-ID: <1311096777-sup-5422@shiny>
 Content-Type: text/plain; charset=UTF-8
 To: "linux-btrfs" <linux-btrfs@vger.kernel.org>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-I haven't yet tested this on x86-32, if someone is willing to try this
-on non-critical test machines I'd appreciate it.
+Btrfs: switch the btrfs tree locks to reader/writer
 
----------------------------------------------------------
-The extent_buffers have a very complex interface where
-we use HIGHMEM for metadata and try to cache a kmap mapping
-to access the memory.
+The btrfs metadata btree is the source of significant
+lock contention, especially in the root node.   This
+commit changes our locking to use a reader/writer
+lock.
 
-The next commit adds reader/writer locks, and concurrent use
-of this kmap cache would make it even more complex.
+The lock is built on top of mutexes, which are much faster
+for dealing with heavy write contention.  We don't try
+very hard to be fair, from a latency point of view
+allowing the readers to come in is very important.
 
-This commit drops the ability to use HIGHMEM with extent buffers,
-and rips out all of the related code.
+In read heavy workloads this is dramatically faster.  In write
+heavy workloads we're often faster because of less contention
+on the root node lock.
+
+We suffer slightly in dbench because we schedule more often
+during write locks.  This still has some adaptive spinning
+in the btrfs code, which I'm trying to get rid of long term.
 
 Signed-off-by: Chris Mason <chris.mason@oracle.com>
 
 diff --git a/fs/btrfs/ctree.c b/fs/btrfs/ctree.c
-index fbd48e9..8c83c88 100644
+index 8c83c88..441d945 100644
 --- a/fs/btrfs/ctree.c
 +++ b/fs/btrfs/ctree.c
-@@ -626,14 +626,6 @@ int btrfs_realloc_node(struct btrfs_trans_handle *trans,
- 	for (i = start_slot; i < end_slot; i++) {
- 		int close = 1;
- 
--		if (!parent->map_token) {
--			map_extent_buffer(parent,
--					btrfs_node_key_ptr_offset(i),
--					sizeof(struct btrfs_key_ptr),
--					&parent->map_token, &parent->kaddr,
--					&parent->map_start, &parent->map_len,
--					KM_USER1);
--		}
- 		btrfs_node_key(parent, &disk_key, i);
- 		if (!progress_passed && comp_keys(&disk_key, progress) < 0)
+@@ -119,7 +119,7 @@ noinline void btrfs_release_path(struct btrfs_path *p)
+ 		if (!p->nodes[i])
  			continue;
-@@ -656,11 +648,6 @@ int btrfs_realloc_node(struct btrfs_trans_handle *trans,
- 			last_block = blocknr;
- 			continue;
+ 		if (p->locks[i]) {
+-			btrfs_tree_unlock(p->nodes[i]);
++			btrfs_tree_unlock_rw(p->nodes[i], p->locks[i]);
+ 			p->locks[i] = 0;
  		}
--		if (parent->map_token) {
--			unmap_extent_buffer(parent, parent->map_token,
--					    KM_USER1);
--			parent->map_token = NULL;
--		}
- 
- 		cur = btrfs_find_tree_block(root, blocknr, blocksize);
- 		if (cur)
-@@ -701,11 +688,6 @@ int btrfs_realloc_node(struct btrfs_trans_handle *trans,
- 		btrfs_tree_unlock(cur);
- 		free_extent_buffer(cur);
- 	}
--	if (parent->map_token) {
--		unmap_extent_buffer(parent, parent->map_token,
--				    KM_USER1);
--		parent->map_token = NULL;
--	}
- 	return err;
+ 		free_extent_buffer(p->nodes[i]);
+@@ -167,6 +167,25 @@ struct extent_buffer *btrfs_lock_root_node(struct btrfs_root *root)
+ 	return eb;
  }
  
-@@ -746,7 +728,6 @@ static noinline int generic_bin_search(struct extent_buffer *eb,
- 	struct btrfs_disk_key *tmp = NULL;
- 	struct btrfs_disk_key unaligned;
- 	unsigned long offset;
--	char *map_token = NULL;
- 	char *kaddr = NULL;
- 	unsigned long map_start = 0;
- 	unsigned long map_len = 0;
-@@ -756,18 +737,13 @@ static noinline int generic_bin_search(struct extent_buffer *eb,
- 		mid = (low + high) / 2;
- 		offset = p + mid * item_size;
++/* loop around taking references on and locking the root node of the
++ * tree until you end up with a lock on the root.  A locked buffer
++ * is returned, with a reference held.
++ */
++struct extent_buffer *btrfs_read_lock_root_node(struct btrfs_root *root)
++{
++	struct extent_buffer *eb;
++
++	while (1) {
++		eb = btrfs_root_node(root);
++		btrfs_tree_read_lock(eb);
++		if (eb == root->node)
++			break;
++		btrfs_tree_read_unlock(eb);
++		free_extent_buffer(eb);
++	}
++	return eb;
++}
++
+ /* cowonly root (everything not a reference counted cow subvolume), just get
+  * put onto a simple dirty list.  transaction.c walks this to make sure they
+  * get properly updated on disk.
+@@ -862,7 +881,7 @@ static noinline int balance_level(struct btrfs_trans_handle *trans,
  
--		if (!map_token || offset < map_start ||
-+		if (!kaddr || offset < map_start ||
- 		    (offset + sizeof(struct btrfs_disk_key)) >
- 		    map_start + map_len) {
--			if (map_token) {
--				unmap_extent_buffer(eb, map_token, KM_USER0);
--				map_token = NULL;
--			}
+ 	mid = path->nodes[level];
  
- 			err = map_private_extent_buffer(eb, offset,
- 						sizeof(struct btrfs_disk_key),
--						&map_token, &kaddr,
--						&map_start, &map_len, KM_USER0);
-+						&kaddr, &map_start, &map_len);
+-	WARN_ON(!path->locks[level]);
++	WARN_ON(path->locks[level] != BTRFS_WRITE_LOCK);
+ 	WARN_ON(btrfs_header_generation(mid) != trans->transid);
  
- 			if (!err) {
- 				tmp = (struct btrfs_disk_key *)(kaddr + offset -
-@@ -790,14 +766,10 @@ static noinline int generic_bin_search(struct extent_buffer *eb,
- 			high = mid;
- 		else {
- 			*slot = mid;
--			if (map_token)
--				unmap_extent_buffer(eb, map_token, KM_USER0);
- 			return 0;
+ 	orig_ptr = btrfs_node_blockptr(mid, orig_slot);
+@@ -1360,7 +1379,7 @@ static noinline void unlock_up(struct btrfs_path *path, int level,
+ 
+ 		t = path->nodes[i];
+ 		if (i >= lowest_unlock && i > skip_level && path->locks[i]) {
+-			btrfs_tree_unlock(t);
++			btrfs_tree_unlock_rw(t, path->locks[i]);
+ 			path->locks[i] = 0;
  		}
  	}
- 	*slot = low;
--	if (map_token)
--		unmap_extent_buffer(eb, map_token, KM_USER0);
- 	return 1;
+@@ -1387,7 +1406,7 @@ noinline void btrfs_unlock_up_safe(struct btrfs_path *path, int level)
+ 			continue;
+ 		if (!path->locks[i])
+ 			continue;
+-		btrfs_tree_unlock(path->nodes[i]);
++		btrfs_tree_unlock_rw(path->nodes[i], path->locks[i]);
+ 		path->locks[i] = 0;
+ 	}
  }
+@@ -1491,13 +1510,20 @@ read_block_for_search(struct btrfs_trans_handle *trans,
+ static int
+ setup_nodes_for_search(struct btrfs_trans_handle *trans,
+ 		       struct btrfs_root *root, struct btrfs_path *p,
+-		       struct extent_buffer *b, int level, int ins_len)
++		       struct extent_buffer *b, int level, int ins_len,
++		       int *write_lock_level)
+ {
+ 	int ret;
+ 	if ((p->search_for_split || ins_len > 0) && btrfs_header_nritems(b) >=
+ 	    BTRFS_NODEPTRS_PER_BLOCK(root) - 3) {
+ 		int sret;
  
-@@ -1228,7 +1200,6 @@ static void reada_for_search(struct btrfs_root *root,
- 	u32 nr;
- 	u32 blocksize;
- 	u32 nscan = 0;
--	bool map = true;
++		if (*write_lock_level < level + 1) {
++			*write_lock_level = level + 1;
++			btrfs_release_path(p);
++			goto again;
++		}
++
+ 		sret = reada_for_balance(root, p, level);
+ 		if (sret)
+ 			goto again;
+@@ -1516,6 +1542,12 @@ setup_nodes_for_search(struct btrfs_trans_handle *trans,
+ 		   BTRFS_NODEPTRS_PER_BLOCK(root) / 2) {
+ 		int sret;
  
- 	if (level != 1)
- 		return;
-@@ -1250,19 +1221,8 @@ static void reada_for_search(struct btrfs_root *root,
++		if (*write_lock_level < level + 1) {
++			*write_lock_level = level + 1;
++			btrfs_release_path(p);
++			goto again;
++		}
++
+ 		sret = reada_for_balance(root, p, level);
+ 		if (sret)
+ 			goto again;
+@@ -1566,27 +1598,78 @@ int btrfs_search_slot(struct btrfs_trans_handle *trans, struct btrfs_root
+ 	int err;
+ 	int level;
+ 	int lowest_unlock = 1;
++	int root_lock;
++	/* everything at write_lock_level or lower must be write locked */
++	int write_lock_level = 0;
+ 	u8 lowest_level = 0;
  
- 	nritems = btrfs_header_nritems(node);
- 	nr = slot;
--	if (node->map_token || path->skip_locking)
--		map = false;
+ 	lowest_level = p->lowest_level;
+ 	WARN_ON(lowest_level && ins_len > 0);
+ 	WARN_ON(p->nodes[0] != NULL);
  
- 	while (1) {
--		if (map && !node->map_token) {
--			unsigned long offset = btrfs_node_key_ptr_offset(nr);
--			map_private_extent_buffer(node, offset,
--						  sizeof(struct btrfs_key_ptr),
--						  &node->map_token,
--						  &node->kaddr,
--						  &node->map_start,
--						  &node->map_len, KM_USER1);
--		}
- 		if (direction < 0) {
- 			if (nr == 0)
- 				break;
-@@ -1281,11 +1241,6 @@ static void reada_for_search(struct btrfs_root *root,
- 		if ((search <= target && target - search <= 65536) ||
- 		    (search > target && search - target <= 65536)) {
- 			gen = btrfs_node_ptr_generation(node, nr);
--			if (map && node->map_token) {
--				unmap_extent_buffer(node, node->map_token,
--						    KM_USER1);
--				node->map_token = NULL;
--			}
- 			readahead_tree_block(root, search, blocksize, gen);
- 			nread += blocksize;
+-	if (ins_len < 0)
++	if (ins_len < 0) {
+ 		lowest_unlock = 2;
+ 
++		/* when we are removing items, we might have to go up to level
++		 * two as we update tree pointers  Make sure we keep write
++		 * for those levels as well
++		 */
++		write_lock_level = 2;
++	} else if (ins_len > 0) {
++		/*
++		 * for inserting items, make sure we have a write lock on
++		 * level 1 so we can update keys
++		 */
++		write_lock_level = 1;
++	}
++
++	if (!cow)
++		write_lock_level = -1;
++
++	if (cow && (p->keep_locks || p->lowest_level))
++		write_lock_level = BTRFS_MAX_LEVEL;
++
+ again:
++	/*
++	 * we try very hard to do read locks on the root
++	 */
++	root_lock = BTRFS_READ_LOCK;
++	level = 0;
+ 	if (p->search_commit_root) {
++		/*
++		 * the commit roots are read only
++		 * so we always do read locks
++		 */
+ 		b = root->commit_root;
+ 		extent_buffer_get(b);
++		level = btrfs_header_level(b);
+ 		if (!p->skip_locking)
+-			btrfs_tree_lock(b);
++			btrfs_tree_read_lock(b);
+ 	} else {
+-		if (p->skip_locking)
++		if (p->skip_locking) {
+ 			b = btrfs_root_node(root);
+-		else
+-			b = btrfs_lock_root_node(root);
++			level = btrfs_header_level(b);
++		} else {
++			/* we don't know the level of the root node
++			 * until we actually have it read locked
++			 */
++			b = btrfs_read_lock_root_node(root);
++			level = btrfs_header_level(b);
++			if (level <= write_lock_level) {
++				/* whoops, must trade for write lock */
++				btrfs_tree_read_unlock(b);
++				free_extent_buffer(b);
++				b = btrfs_lock_root_node(root);
++				root_lock = BTRFS_WRITE_LOCK;
++
++				/* the level might have changed, check again */
++				level = btrfs_header_level(b);
++			}
++		}
+ 	}
++	p->nodes[level] = b;
++	if (!p->skip_locking)
++		p->locks[level] = root_lock;
+ 
+ 	while (b) {
+ 		level = btrfs_header_level(b);
+@@ -1595,10 +1678,6 @@ again:
+ 		 * setup the path here so we can release it under lock
+ 		 * contention with the cow code
+ 		 */
+-		p->nodes[level] = b;
+-		if (!p->skip_locking)
+-			p->locks[level] = 1;
+-
+ 		if (cow) {
+ 			/*
+ 			 * if we don't really need to cow this block
+@@ -1608,7 +1687,15 @@ again:
+ 			if (!should_cow_block(trans, root, b))
+ 				goto cow_done;
+ 
+-			btrfs_set_path_blocking(p);
++			/*
++			 * must have write locks on this node and the
++			 * parent
++			 */
++			if (level + 1 > write_lock_level) {
++				write_lock_level = level + 1;
++				btrfs_release_path(p);
++				goto again;
++			}
+ 
+ 			err = btrfs_cow_block(trans, root, b,
+ 					      p->nodes[level + 1],
+@@ -1622,10 +1709,6 @@ cow_done:
+ 		BUG_ON(!cow && ins_len);
+ 
+ 		p->nodes[level] = b;
+-		if (!p->skip_locking)
+-			p->locks[level] = 1;
+-
+-		btrfs_clear_path_blocking(p, NULL);
+ 
+ 		/*
+ 		 * we have a lock on b and as long as we aren't changing
+@@ -1651,7 +1734,7 @@ cow_done:
+ 			}
+ 			p->slots[level] = slot;
+ 			err = setup_nodes_for_search(trans, root, p, b, level,
+-						     ins_len);
++					     ins_len, &write_lock_level);
+ 			if (err == -EAGAIN)
+ 				goto again;
+ 			if (err) {
+@@ -1661,6 +1744,19 @@ cow_done:
+ 			b = p->nodes[level];
+ 			slot = p->slots[level];
+ 
++			/*
++			 * slot 0 is special, if we change the key
++			 * we have to update the parent pointer
++			 * which means we must have a write lock
++			 * on the parent
++			 */
++			if (slot == 0 && cow &&
++			    write_lock_level < level + 1) {
++				write_lock_level = level + 1;
++				btrfs_release_path(p);
++				goto again;
++			}
++
+ 			unlock_up(p, level, lowest_unlock);
+ 
+ 			if (level == lowest_level) {
+@@ -1679,19 +1775,26 @@ cow_done:
+ 			}
+ 
+ 			if (!p->skip_locking) {
+-				btrfs_clear_path_blocking(p, NULL);
+-				err = btrfs_try_spin_lock(b);
+-
+-				if (!err) {
+-					btrfs_set_path_blocking(p);
++				level = btrfs_header_level(b);
++				if (level <= write_lock_level) {
+ 					btrfs_tree_lock(b);
+-					btrfs_clear_path_blocking(p, b);
++					p->locks[level] = BTRFS_WRITE_LOCK;
++				} else {
++					btrfs_tree_read_lock(b);
++					p->locks[level] = BTRFS_READ_LOCK;
+ 				}
++				p->nodes[level] = b;
+ 			}
+ 		} else {
+ 			p->slots[level] = slot;
+ 			if (ins_len > 0 &&
+ 			    btrfs_leaf_free_space(root, b) < ins_len) {
++				if (write_lock_level < 1) {
++					write_lock_level = 1;
++					btrfs_release_path(p);
++					goto again;
++				}
++
+ 				btrfs_set_path_blocking(p);
+ 				err = split_leaf(trans, root, key,
+ 						 p, ins_len, ret == 0);
+@@ -3819,11 +3922,11 @@ int btrfs_search_forward(struct btrfs_root *root, struct btrfs_key *min_key,
+ 
+ 	WARN_ON(!path->keep_locks);
+ again:
+-	cur = btrfs_lock_root_node(root);
++	cur = btrfs_read_lock_root_node(root);
+ 	level = btrfs_header_level(cur);
+ 	WARN_ON(path->nodes[level]);
+ 	path->nodes[level] = cur;
+-	path->locks[level] = 1;
++	path->locks[level] = BTRFS_READ_LOCK;
+ 
+ 	if (btrfs_header_generation(cur) < min_trans) {
+ 		ret = 1;
+@@ -3913,9 +4016,9 @@ find_next_key:
+ 		cur = read_node_slot(root, cur, slot);
+ 		BUG_ON(!cur);
+ 
+-		btrfs_tree_lock(cur);
++		btrfs_tree_read_lock(cur);
+ 
+-		path->locks[level - 1] = 1;
++		path->locks[level - 1] = BTRFS_READ_LOCK;
+ 		path->nodes[level - 1] = cur;
+ 		unlock_up(path, level, 1);
+ 		btrfs_clear_path_blocking(path, NULL);
+@@ -4034,6 +4137,7 @@ int btrfs_next_leaf(struct btrfs_root *root, struct btrfs_path *path)
+ 	int ret;
+ 	int old_spinning = path->leave_spinning;
+ 	int force_blocking = 0;
++	int next_rw_lock = 0;
+ 
+ 	nritems = btrfs_header_nritems(path->nodes[0]);
+ 	if (nritems == 0)
+@@ -4051,6 +4155,7 @@ int btrfs_next_leaf(struct btrfs_root *root, struct btrfs_path *path)
+ again:
+ 	level = 1;
+ 	next = NULL;
++	next_rw_lock = 0;
+ 	btrfs_release_path(path);
+ 
+ 	path->keep_locks = 1;
+@@ -4096,11 +4201,12 @@ again:
  		}
-@@ -1293,10 +1248,6 @@ static void reada_for_search(struct btrfs_root *root,
- 		if ((nread > 65536 || nscan > 32))
+ 
+ 		if (next) {
+-			btrfs_tree_unlock(next);
++			btrfs_tree_unlock_rw(next, next_rw_lock);
+ 			free_extent_buffer(next);
+ 		}
+ 
+ 		next = c;
++		next_rw_lock = path->locks[level];
+ 		ret = read_block_for_search(NULL, root, path, &next, level,
+ 					    slot, &key);
+ 		if (ret == -EAGAIN)
+@@ -4111,17 +4217,8 @@ again:
+ 			goto done;
+ 		}
+ 
+-		if (!path->skip_locking) {
+-			ret = btrfs_try_spin_lock(next);
+-			if (!ret) {
+-				btrfs_set_path_blocking(path);
+-				btrfs_tree_lock(next);
+-				if (!force_blocking)
+-					btrfs_clear_path_blocking(path, next);
+-			}
+-			if (force_blocking)
+-				btrfs_set_lock_blocking(next);
+-		}
++		if (!path->skip_locking)
++			btrfs_tree_read_lock(next);
+ 		break;
+ 	}
+ 	path->slots[level] = slot;
+@@ -4129,13 +4226,13 @@ again:
+ 		level--;
+ 		c = path->nodes[level];
+ 		if (path->locks[level])
+-			btrfs_tree_unlock(c);
++			btrfs_tree_unlock_rw(c, path->locks[level]);
+ 
+ 		free_extent_buffer(c);
+ 		path->nodes[level] = next;
+ 		path->slots[level] = 0;
+ 		if (!path->skip_locking)
+-			path->locks[level] = 1;
++			path->locks[level] = BTRFS_READ_LOCK;
+ 
+ 		if (!level)
  			break;
+@@ -4150,18 +4247,8 @@ again:
+ 			goto done;
+ 		}
+ 
+-		if (!path->skip_locking) {
+-			btrfs_assert_tree_locked(path->nodes[level]);
+-			ret = btrfs_try_spin_lock(next);
+-			if (!ret) {
+-				btrfs_set_path_blocking(path);
+-				btrfs_tree_lock(next);
+-				if (!force_blocking)
+-					btrfs_clear_path_blocking(path, next);
+-			}
+-			if (force_blocking)
+-				btrfs_set_lock_blocking(next);
+-		}
++		if (!path->skip_locking)
++			btrfs_tree_read_lock(next);
  	}
--	if (map && node->map_token) {
--		unmap_extent_buffer(node, node->map_token, KM_USER1);
--		node->map_token = NULL;
+ 	ret = 0;
+ done:
+diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
+index ff3402a..1860fa8 100644
+--- a/fs/btrfs/extent-tree.c
++++ b/fs/btrfs/extent-tree.c
+@@ -5929,7 +5929,7 @@ static noinline int walk_down_proc(struct btrfs_trans_handle *trans,
+ 			return 1;
+ 
+ 		if (path->locks[level] && !wc->keep_locks) {
+-			btrfs_tree_unlock(eb);
++			btrfs_tree_unlock_rw(eb, path->locks[level]);
+ 			path->locks[level] = 0;
+ 		}
+ 		return 0;
+@@ -5953,7 +5953,7 @@ static noinline int walk_down_proc(struct btrfs_trans_handle *trans,
+ 	 * keep the tree lock
+ 	 */
+ 	if (path->locks[level] && level > 0) {
+-		btrfs_tree_unlock(eb);
++		btrfs_tree_unlock_rw(eb, path->locks[level]);
+ 		path->locks[level] = 0;
+ 	}
+ 	return 0;
+@@ -6066,7 +6066,7 @@ static noinline int do_walk_down(struct btrfs_trans_handle *trans,
+ 	BUG_ON(level != btrfs_header_level(next));
+ 	path->nodes[level] = next;
+ 	path->slots[level] = 0;
+-	path->locks[level] = 1;
++	path->locks[level] = BTRFS_WRITE_LOCK;
+ 	wc->level = level;
+ 	if (wc->level == 1)
+ 		wc->reada_slot = 0;
+@@ -6137,7 +6137,7 @@ static noinline int walk_up_proc(struct btrfs_trans_handle *trans,
+ 			BUG_ON(level == 0);
+ 			btrfs_tree_lock(eb);
+ 			btrfs_set_lock_blocking(eb);
+-			path->locks[level] = 1;
++			path->locks[level] = BTRFS_WRITE_LOCK;
+ 
+ 			ret = btrfs_lookup_extent_info(trans, root,
+ 						       eb->start, eb->len,
+@@ -6146,8 +6146,7 @@ static noinline int walk_up_proc(struct btrfs_trans_handle *trans,
+ 			BUG_ON(ret);
+ 			BUG_ON(wc->refs[level] == 0);
+ 			if (wc->refs[level] == 1) {
+-				btrfs_tree_unlock(eb);
+-				path->locks[level] = 0;
++				btrfs_tree_unlock_rw(eb, path->locks[level]);
+ 				return 1;
+ 			}
+ 		}
+@@ -6169,7 +6168,7 @@ static noinline int walk_up_proc(struct btrfs_trans_handle *trans,
+ 		    btrfs_header_generation(eb) == trans->transid) {
+ 			btrfs_tree_lock(eb);
+ 			btrfs_set_lock_blocking(eb);
+-			path->locks[level] = 1;
++			path->locks[level] = BTRFS_WRITE_LOCK;
+ 		}
+ 		clean_tree_block(trans, root, eb);
+ 	}
+@@ -6248,7 +6247,8 @@ static noinline int walk_up_tree(struct btrfs_trans_handle *trans,
+ 				return 0;
+ 
+ 			if (path->locks[level]) {
+-				btrfs_tree_unlock(path->nodes[level]);
++				btrfs_tree_unlock_rw(path->nodes[level],
++						     path->locks[level]);
+ 				path->locks[level] = 0;
+ 			}
+ 			free_extent_buffer(path->nodes[level]);
+@@ -6300,7 +6300,7 @@ int btrfs_drop_snapshot(struct btrfs_root *root,
+ 		path->nodes[level] = btrfs_lock_root_node(root);
+ 		btrfs_set_lock_blocking(path->nodes[level]);
+ 		path->slots[level] = 0;
+-		path->locks[level] = 1;
++		path->locks[level] = BTRFS_WRITE_LOCK;
+ 		memset(&wc->update_progress, 0,
+ 		       sizeof(wc->update_progress));
+ 	} else {
+@@ -6468,7 +6468,7 @@ int btrfs_drop_subtree(struct btrfs_trans_handle *trans,
+ 	level = btrfs_header_level(node);
+ 	path->nodes[level] = node;
+ 	path->slots[level] = 0;
+-	path->locks[level] = 1;
++	path->locks[level] = BTRFS_WRITE_LOCK;
+ 
+ 	wc->refs[parent_level] = 1;
+ 	wc->flags[parent_level] = BTRFS_BLOCK_FLAG_FULL_BACKREF;
+diff --git a/fs/btrfs/extent_io.c b/fs/btrfs/extent_io.c
+index 20f24f1..20070cd 100644
+--- a/fs/btrfs/extent_io.c
++++ b/fs/btrfs/extent_io.c
+@@ -3017,8 +3017,10 @@ static struct extent_buffer *__alloc_extent_buffer(struct extent_io_tree *tree,
+ 		return NULL;
+ 	eb->start = start;
+ 	eb->len = len;
+-	spin_lock_init(&eb->lock);
++	mutex_init(&eb->lock);
++	atomic_set(&eb->lock_readers, 0);
+ 	init_waitqueue_head(&eb->lock_wq);
++	init_waitqueue_head(&eb->read_lock_wq);
+ 
+ #if LEAK_DEBUG
+ 	spin_lock_irqsave(&leak_lock, flags);
+diff --git a/fs/btrfs/extent_io.h b/fs/btrfs/extent_io.h
+index b5f120c..3b8ec90 100644
+--- a/fs/btrfs/extent_io.h
++++ b/fs/btrfs/extent_io.h
+@@ -128,14 +128,21 @@ struct extent_buffer {
+ 	struct rcu_head rcu_head;
+ 	atomic_t refs;
+ 
+-	/* the spinlock is used to protect most operations */
+-	spinlock_t lock;
++	/* count of read lock holders on the extent buffer */
++	atomic_t lock_readers;;
++
++	/* protects write locks */
++	struct mutex lock;
+ 
+-	/*
+-	 * when we keep the lock held while blocking, waiters go onto
+-	 * the wq
++	/* readers use lock_wq while they wait for the write
++	 * lock holders to unlock
+ 	 */
+ 	wait_queue_head_t lock_wq;
++
++	/* writers use read_lock_wq while they wait for readers
++	 * to unlock
++	 */
++	wait_queue_head_t read_lock_wq;
+ };
+ 
+ static inline void extent_set_compress_type(unsigned long *bio_flags,
+diff --git a/fs/btrfs/locking.c b/fs/btrfs/locking.c
+index 66fa43d..d59f873 100644
+--- a/fs/btrfs/locking.c
++++ b/fs/btrfs/locking.c
+@@ -24,185 +24,87 @@
+ #include "extent_io.h"
+ #include "locking.h"
+ 
+-static inline void spin_nested(struct extent_buffer *eb)
+-{
+-	spin_lock(&eb->lock);
+-}
+-
+ /*
+- * Setting a lock to blocking will drop the spinlock and set the
+- * flag that forces other procs who want the lock to wait.  After
+- * this you can safely schedule with the lock held.
++ * This is a noop today, but it might come back
+  */
+ void btrfs_set_lock_blocking(struct extent_buffer *eb)
+ {
+-	if (!test_bit(EXTENT_BUFFER_BLOCKING, &eb->bflags)) {
+-		set_bit(EXTENT_BUFFER_BLOCKING, &eb->bflags);
+-		spin_unlock(&eb->lock);
 -	}
+-	/* exit with the spin lock released and the bit set */
++	return;
  }
  
  /*
-@@ -2253,14 +2204,6 @@ static noinline int __push_leaf_right(struct btrfs_trans_handle *trans,
- 		if (path->slots[0] == i)
- 			push_space += data_size;
- 
--		if (!left->map_token) {
--			map_extent_buffer(left, (unsigned long)item,
--					sizeof(struct btrfs_item),
--					&left->map_token, &left->kaddr,
--					&left->map_start, &left->map_len,
--					KM_USER1);
--		}
--
- 		this_item_size = btrfs_item_size(left, item);
- 		if (this_item_size + sizeof(*item) + push_space > free_space)
- 			break;
-@@ -2271,10 +2214,6 @@ static noinline int __push_leaf_right(struct btrfs_trans_handle *trans,
- 			break;
- 		i--;
- 	}
--	if (left->map_token) {
--		unmap_extent_buffer(left, left->map_token, KM_USER1);
--		left->map_token = NULL;
+- * clearing the blocking flag will take the spinlock again.
+- * After this you can't safely schedule
++ * This is a noop today, but it might come back
+  */
+ void btrfs_clear_lock_blocking(struct extent_buffer *eb)
+ {
+-	if (test_bit(EXTENT_BUFFER_BLOCKING, &eb->bflags)) {
+-		spin_nested(eb);
+-		clear_bit(EXTENT_BUFFER_BLOCKING, &eb->bflags);
+-		smp_mb__after_clear_bit();
 -	}
- 
- 	if (push_items == 0)
- 		goto out_unlock;
-@@ -2316,21 +2255,10 @@ static noinline int __push_leaf_right(struct btrfs_trans_handle *trans,
- 	push_space = BTRFS_LEAF_DATA_SIZE(root);
- 	for (i = 0; i < right_nritems; i++) {
- 		item = btrfs_item_nr(right, i);
--		if (!right->map_token) {
--			map_extent_buffer(right, (unsigned long)item,
--					sizeof(struct btrfs_item),
--					&right->map_token, &right->kaddr,
--					&right->map_start, &right->map_len,
--					KM_USER1);
--		}
- 		push_space -= btrfs_item_size(right, item);
- 		btrfs_set_item_offset(right, item, push_space);
- 	}
- 
--	if (right->map_token) {
--		unmap_extent_buffer(right, right->map_token, KM_USER1);
--		right->map_token = NULL;
--	}
- 	left_nritems -= push_items;
- 	btrfs_set_header_nritems(left, left_nritems);
- 
-@@ -2467,13 +2395,6 @@ static noinline int __push_leaf_left(struct btrfs_trans_handle *trans,
- 
- 	for (i = 0; i < nr; i++) {
- 		item = btrfs_item_nr(right, i);
--		if (!right->map_token) {
--			map_extent_buffer(right, (unsigned long)item,
--					sizeof(struct btrfs_item),
--					&right->map_token, &right->kaddr,
--					&right->map_start, &right->map_len,
--					KM_USER1);
--		}
- 
- 		if (!empty && push_items > 0) {
- 			if (path->slots[0] < i)
-@@ -2496,11 +2417,6 @@ static noinline int __push_leaf_left(struct btrfs_trans_handle *trans,
- 		push_space += this_item_size + sizeof(*item);
- 	}
- 
--	if (right->map_token) {
--		unmap_extent_buffer(right, right->map_token, KM_USER1);
--		right->map_token = NULL;
--	}
--
- 	if (push_items == 0) {
- 		ret = 1;
- 		goto out;
-@@ -2530,23 +2446,12 @@ static noinline int __push_leaf_left(struct btrfs_trans_handle *trans,
- 		u32 ioff;
- 
- 		item = btrfs_item_nr(left, i);
--		if (!left->map_token) {
--			map_extent_buffer(left, (unsigned long)item,
--					sizeof(struct btrfs_item),
--					&left->map_token, &left->kaddr,
--					&left->map_start, &left->map_len,
--					KM_USER1);
--		}
- 
- 		ioff = btrfs_item_offset(left, item);
- 		btrfs_set_item_offset(left, item,
- 		      ioff - (BTRFS_LEAF_DATA_SIZE(root) - old_left_item_size));
- 	}
- 	btrfs_set_header_nritems(left, old_left_nritems + push_items);
--	if (left->map_token) {
--		unmap_extent_buffer(left, left->map_token, KM_USER1);
--		left->map_token = NULL;
--	}
- 
- 	/* fixup right node */
- 	if (push_items > right_nritems) {
-@@ -2574,21 +2479,9 @@ static noinline int __push_leaf_left(struct btrfs_trans_handle *trans,
- 	for (i = 0; i < right_nritems; i++) {
- 		item = btrfs_item_nr(right, i);
- 
--		if (!right->map_token) {
--			map_extent_buffer(right, (unsigned long)item,
--					sizeof(struct btrfs_item),
--					&right->map_token, &right->kaddr,
--					&right->map_start, &right->map_len,
--					KM_USER1);
--		}
--
- 		push_space = push_space - btrfs_item_size(right, item);
- 		btrfs_set_item_offset(right, item, push_space);
- 	}
--	if (right->map_token) {
--		unmap_extent_buffer(right, right->map_token, KM_USER1);
--		right->map_token = NULL;
--	}
- 
- 	btrfs_mark_buffer_dirty(left);
- 	if (right_nritems)
-@@ -2729,23 +2622,10 @@ static noinline int copy_for_split(struct btrfs_trans_handle *trans,
- 		struct btrfs_item *item = btrfs_item_nr(right, i);
- 		u32 ioff;
- 
--		if (!right->map_token) {
--			map_extent_buffer(right, (unsigned long)item,
--					sizeof(struct btrfs_item),
--					&right->map_token, &right->kaddr,
--					&right->map_start, &right->map_len,
--					KM_USER1);
--		}
--
- 		ioff = btrfs_item_offset(right, item);
- 		btrfs_set_item_offset(right, item, ioff + rt_data_off);
- 	}
- 
--	if (right->map_token) {
--		unmap_extent_buffer(right, right->map_token, KM_USER1);
--		right->map_token = NULL;
--	}
--
- 	btrfs_set_header_nritems(l, mid);
- 	ret = 0;
- 	btrfs_item_key(right, &disk_key, 0);
-@@ -3264,23 +3144,10 @@ int btrfs_truncate_item(struct btrfs_trans_handle *trans,
- 		u32 ioff;
- 		item = btrfs_item_nr(leaf, i);
- 
--		if (!leaf->map_token) {
--			map_extent_buffer(leaf, (unsigned long)item,
--					sizeof(struct btrfs_item),
--					&leaf->map_token, &leaf->kaddr,
--					&leaf->map_start, &leaf->map_len,
--					KM_USER1);
--		}
--
- 		ioff = btrfs_item_offset(leaf, item);
- 		btrfs_set_item_offset(leaf, item, ioff + size_diff);
- 	}
- 
--	if (leaf->map_token) {
--		unmap_extent_buffer(leaf, leaf->map_token, KM_USER1);
--		leaf->map_token = NULL;
--	}
--
- 	/* shift the data */
- 	if (from_end) {
- 		memmove_extent_buffer(leaf, btrfs_leaf_data(leaf) +
-@@ -3377,22 +3244,10 @@ int btrfs_extend_item(struct btrfs_trans_handle *trans,
- 		u32 ioff;
- 		item = btrfs_item_nr(leaf, i);
- 
--		if (!leaf->map_token) {
--			map_extent_buffer(leaf, (unsigned long)item,
--					sizeof(struct btrfs_item),
--					&leaf->map_token, &leaf->kaddr,
--					&leaf->map_start, &leaf->map_len,
--					KM_USER1);
--		}
- 		ioff = btrfs_item_offset(leaf, item);
- 		btrfs_set_item_offset(leaf, item, ioff - data_size);
- 	}
- 
--	if (leaf->map_token) {
--		unmap_extent_buffer(leaf, leaf->map_token, KM_USER1);
--		leaf->map_token = NULL;
--	}
--
- 	/* shift the data */
- 	memmove_extent_buffer(leaf, btrfs_leaf_data(leaf) +
- 		      data_end - data_size, btrfs_leaf_data(leaf) +
-@@ -3494,27 +3349,13 @@ int btrfs_insert_some_items(struct btrfs_trans_handle *trans,
- 		 * item0..itemN ... dataN.offset..dataN.size .. data0.size
- 		 */
- 		/* first correct the data pointers */
--		WARN_ON(leaf->map_token);
- 		for (i = slot; i < nritems; i++) {
- 			u32 ioff;
- 
- 			item = btrfs_item_nr(leaf, i);
--			if (!leaf->map_token) {
--				map_extent_buffer(leaf, (unsigned long)item,
--					sizeof(struct btrfs_item),
--					&leaf->map_token, &leaf->kaddr,
--					&leaf->map_start, &leaf->map_len,
--					KM_USER1);
--			}
--
- 			ioff = btrfs_item_offset(leaf, item);
- 			btrfs_set_item_offset(leaf, item, ioff - total_data);
- 		}
--		if (leaf->map_token) {
--			unmap_extent_buffer(leaf, leaf->map_token, KM_USER1);
--			leaf->map_token = NULL;
--		}
--
- 		/* shift the items */
- 		memmove_extent_buffer(leaf, btrfs_item_nr_offset(slot + nr),
- 			      btrfs_item_nr_offset(slot),
-@@ -3608,27 +3449,13 @@ int setup_items_for_insert(struct btrfs_trans_handle *trans,
- 		 * item0..itemN ... dataN.offset..dataN.size .. data0.size
- 		 */
- 		/* first correct the data pointers */
--		WARN_ON(leaf->map_token);
- 		for (i = slot; i < nritems; i++) {
- 			u32 ioff;
- 
- 			item = btrfs_item_nr(leaf, i);
--			if (!leaf->map_token) {
--				map_extent_buffer(leaf, (unsigned long)item,
--					sizeof(struct btrfs_item),
--					&leaf->map_token, &leaf->kaddr,
--					&leaf->map_start, &leaf->map_len,
--					KM_USER1);
--			}
--
- 			ioff = btrfs_item_offset(leaf, item);
- 			btrfs_set_item_offset(leaf, item, ioff - total_data);
- 		}
--		if (leaf->map_token) {
--			unmap_extent_buffer(leaf, leaf->map_token, KM_USER1);
--			leaf->map_token = NULL;
--		}
--
- 		/* shift the items */
- 		memmove_extent_buffer(leaf, btrfs_item_nr_offset(slot + nr),
- 			      btrfs_item_nr_offset(slot),
-@@ -3840,22 +3667,10 @@ int btrfs_del_items(struct btrfs_trans_handle *trans, struct btrfs_root *root,
- 			u32 ioff;
- 
- 			item = btrfs_item_nr(leaf, i);
--			if (!leaf->map_token) {
--				map_extent_buffer(leaf, (unsigned long)item,
--					sizeof(struct btrfs_item),
--					&leaf->map_token, &leaf->kaddr,
--					&leaf->map_start, &leaf->map_len,
--					KM_USER1);
--			}
- 			ioff = btrfs_item_offset(leaf, item);
- 			btrfs_set_item_offset(leaf, item, ioff + dsize);
- 		}
- 
--		if (leaf->map_token) {
--			unmap_extent_buffer(leaf, leaf->map_token, KM_USER1);
--			leaf->map_token = NULL;
--		}
--
- 		memmove_extent_buffer(leaf, btrfs_item_nr_offset(slot),
- 			      btrfs_item_nr_offset(slot + nr),
- 			      sizeof(struct btrfs_item) *
-diff --git a/fs/btrfs/disk-io.c b/fs/btrfs/disk-io.c
-index 0245cad..288d522 100644
---- a/fs/btrfs/disk-io.c
-+++ b/fs/btrfs/disk-io.c
-@@ -217,7 +217,6 @@ static int csum_tree_block(struct btrfs_root *root, struct extent_buffer *buf,
- 	unsigned long len;
- 	unsigned long cur_len;
- 	unsigned long offset = BTRFS_CSUM_SIZE;
--	char *map_token = NULL;
- 	char *kaddr;
- 	unsigned long map_start;
- 	unsigned long map_len;
-@@ -228,8 +227,7 @@ static int csum_tree_block(struct btrfs_root *root, struct extent_buffer *buf,
- 	len = buf->len - offset;
- 	while (len > 0) {
- 		err = map_private_extent_buffer(buf, offset, 32,
--					&map_token, &kaddr,
--					&map_start, &map_len, KM_USER0);
-+					&kaddr, &map_start, &map_len);
- 		if (err)
- 			return 1;
- 		cur_len = min(len, map_len - (offset - map_start));
-@@ -237,7 +235,6 @@ static int csum_tree_block(struct btrfs_root *root, struct extent_buffer *buf,
- 				      crc, cur_len);
- 		len -= cur_len;
- 		offset += cur_len;
--		unmap_extent_buffer(buf, map_token, KM_USER0);
- 	}
- 	if (csum_size > sizeof(inline_result)) {
- 		result = kzalloc(csum_size * sizeof(char), GFP_NOFS);
-diff --git a/fs/btrfs/extent_io.c b/fs/btrfs/extent_io.c
-index 89bbde4..20f24f1 100644
---- a/fs/btrfs/extent_io.c
-+++ b/fs/btrfs/extent_io.c
-@@ -3487,9 +3487,8 @@ void read_extent_buffer(struct extent_buffer *eb, void *dstv,
- 		page = extent_buffer_page(eb, i);
- 
- 		cur = min(len, (PAGE_CACHE_SIZE - offset));
--		kaddr = kmap_atomic(page, KM_USER1);
-+		kaddr = page_address(page);
- 		memcpy(dst, kaddr + offset, cur);
--		kunmap_atomic(kaddr, KM_USER1);
- 
- 		dst += cur;
- 		len -= cur;
-@@ -3499,9 +3498,9 @@ void read_extent_buffer(struct extent_buffer *eb, void *dstv,
+-	/* exit with the spin lock held */
++	return;
  }
  
- int map_private_extent_buffer(struct extent_buffer *eb, unsigned long start,
--			       unsigned long min_len, char **token, char **map,
-+			       unsigned long min_len, char **map,
- 			       unsigned long *map_start,
--			       unsigned long *map_len, int km)
-+			       unsigned long *map_len)
+-/*
+- * unfortunately, many of the places that currently set a lock to blocking
+- * don't end up blocking for very long, and often they don't block
+- * at all.  For a dbench 50 run, if we don't spin on the blocking bit
+- * at all, the context switch rate can jump up to 400,000/sec or more.
+- *
+- * So, we're still stuck with this crummy spin on the blocking bit,
+- * at least until the most common causes of the short blocks
+- * can be dealt with.
+- */
+-static int btrfs_spin_on_block(struct extent_buffer *eb)
++void btrfs_tree_read_lock(struct extent_buffer *eb)
  {
- 	size_t offset = start & (PAGE_CACHE_SIZE - 1);
- 	char *kaddr;
-@@ -3531,42 +3530,12 @@ int map_private_extent_buffer(struct extent_buffer *eb, unsigned long start,
- 	}
+ 	int i;
  
- 	p = extent_buffer_page(eb, i);
--	kaddr = kmap_atomic(p, km);
--	*token = kaddr;
-+	kaddr = page_address(p);
- 	*map = kaddr + offset;
- 	*map_len = PAGE_CACHE_SIZE - offset;
+-	for (i = 0; i < 512; i++) {
+-		if (!test_bit(EXTENT_BUFFER_BLOCKING, &eb->bflags))
+-			return 1;
+-		if (need_resched())
+-			break;
++	atomic_inc(&eb->lock_readers);
++	smp_mb();
++	for (i = 0; i < 256; i++) {
++		if (!mutex_is_locked(&eb->lock))
++			return;
+ 		cpu_relax();
+ 	}
+-	return 0;
++	wait_event(eb->read_lock_wq, mutex_is_locked(&eb->lock) == 0);
+ }
+ 
+-/*
+- * This is somewhat different from trylock.  It will take the
+- * spinlock but if it finds the lock is set to blocking, it will
+- * return without the lock held.
+- *
+- * returns 1 if it was able to take the lock and zero otherwise
+- *
+- * After this call, scheduling is not safe without first calling
+- * btrfs_set_lock_blocking()
+- */
+-int btrfs_try_spin_lock(struct extent_buffer *eb)
++void btrfs_tree_read_unlock(struct extent_buffer *eb)
+ {
+-	int i;
+-
+-	if (btrfs_spin_on_block(eb)) {
+-		spin_nested(eb);
+-		if (!test_bit(EXTENT_BUFFER_BLOCKING, &eb->bflags))
+-			return 1;
+-		spin_unlock(&eb->lock);
+-	}
+-	/* spin for a bit on the BLOCKING flag */
+-	for (i = 0; i < 2; i++) {
+-		cpu_relax();
+-		if (!btrfs_spin_on_block(eb))
+-			break;
++	WARN_ON(atomic_read(&eb->lock_readers) == 0);
+ 
+-		spin_nested(eb);
+-		if (!test_bit(EXTENT_BUFFER_BLOCKING, &eb->bflags))
+-			return 1;
+-		spin_unlock(&eb->lock);
++	if (atomic_dec_and_test(&eb->lock_readers)) {
++		if (waitqueue_active(&eb->lock_wq))
++			wake_up(&eb->lock_wq);
+ 	}
+-	return 0;
+ }
+ 
+-/*
+- * the autoremove wake function will return 0 if it tried to wake up
+- * a process that was already awake, which means that process won't
+- * count as an exclusive wakeup.  The waitq code will continue waking
+- * procs until it finds one that was actually sleeping.
+- *
+- * For btrfs, this isn't quite what we want.  We want a single proc
+- * to be notified that the lock is ready for taking.  If that proc
+- * already happen to be awake, great, it will loop around and try for
+- * the lock.
+- *
+- * So, btrfs_wake_function always returns 1, even when the proc that we
+- * tried to wake up was already awake.
+- */
+-static int btrfs_wake_function(wait_queue_t *wait, unsigned mode,
+-			       int sync, void *key)
+-{
+-	autoremove_wake_function(wait, mode, sync, key);
+-	return 1;
+-}
+-
+-/*
+- * returns with the extent buffer spinlocked.
+- *
+- * This will spin and/or wait as required to take the lock, and then
+- * return with the spinlock held.
+- *
+- * After this call, scheduling is not safe without first calling
+- * btrfs_set_lock_blocking()
+- */
+ int btrfs_tree_lock(struct extent_buffer *eb)
+ {
+-	DEFINE_WAIT(wait);
+-	wait.func = btrfs_wake_function;
+-
+-	if (!btrfs_spin_on_block(eb))
+-		goto sleep;
+-
+-	while(1) {
+-		spin_nested(eb);
+-
+-		/* nobody is blocking, exit with the spinlock held */
+-		if (!test_bit(EXTENT_BUFFER_BLOCKING, &eb->bflags))
+-			return 0;
+-
+-		/*
+-		 * we have the spinlock, but the real owner is blocking.
+-		 * wait for them
+-		 */
+-		spin_unlock(&eb->lock);
+-
+-		/*
+-		 * spin for a bit, and if the blocking flag goes away,
+-		 * loop around
+-		 */
+-		cpu_relax();
+-		if (btrfs_spin_on_block(eb))
+-			continue;
+-sleep:
+-		prepare_to_wait_exclusive(&eb->lock_wq, &wait,
+-					  TASK_UNINTERRUPTIBLE);
+-
+-		if (test_bit(EXTENT_BUFFER_BLOCKING, &eb->bflags))
+-			schedule();
++	int i;
+ 
+-		finish_wait(&eb->lock_wq, &wait);
++again:
++	/* use try lock to avoid might_sleep() */
++	if (!mutex_trylock(&eb->lock))
++		mutex_lock(&eb->lock);
++	else
++		smp_mb();
++	if (atomic_read(&eb->lock_readers)) {
++		mutex_unlock(&eb->lock);
++		for (i = 0; i < 256; i++) {
++			if (!atomic_read(&eb->lock_readers))
++				goto again;;
++			cpu_relax();
++		}
++		smp_mb();
++		if (waitqueue_active(&eb->read_lock_wq))
++			wake_up(&eb->read_lock_wq);
++
++		wait_event(eb->lock_wq, atomic_read(&eb->lock_readers) == 0);
++		goto again;
+ 	}
  	return 0;
  }
  
--int map_extent_buffer(struct extent_buffer *eb, unsigned long start,
--		      unsigned long min_len,
--		      char **token, char **map,
--		      unsigned long *map_start,
--		      unsigned long *map_len, int km)
--{
--	int err;
--	int save = 0;
--	if (eb->map_token) {
--		unmap_extent_buffer(eb, eb->map_token, km);
--		eb->map_token = NULL;
--		save = 1;
--	}
--	err = map_private_extent_buffer(eb, start, min_len, token, map,
--				       map_start, map_len, km);
--	if (!err && save) {
--		eb->map_token = *token;
--		eb->kaddr = *map;
--		eb->map_start = *map_start;
--		eb->map_len = *map_len;
--	}
--	return err;
--}
--
--void unmap_extent_buffer(struct extent_buffer *eb, char *token, int km)
--{
--	kunmap_atomic(token, km);
--}
--
- int memcmp_extent_buffer(struct extent_buffer *eb, const void *ptrv,
- 			  unsigned long start,
- 			  unsigned long len)
-@@ -3590,9 +3559,8 @@ int memcmp_extent_buffer(struct extent_buffer *eb, const void *ptrv,
- 
- 		cur = min(len, (PAGE_CACHE_SIZE - offset));
- 
--		kaddr = kmap_atomic(page, KM_USER0);
-+		kaddr = page_address(page);
- 		ret = memcmp(ptr, kaddr + offset, cur);
--		kunmap_atomic(kaddr, KM_USER0);
- 		if (ret)
- 			break;
- 
-@@ -3625,9 +3593,8 @@ void write_extent_buffer(struct extent_buffer *eb, const void *srcv,
- 		WARN_ON(!PageUptodate(page));
- 
- 		cur = min(len, PAGE_CACHE_SIZE - offset);
--		kaddr = kmap_atomic(page, KM_USER1);
-+		kaddr = page_address(page);
- 		memcpy(kaddr + offset, src, cur);
--		kunmap_atomic(kaddr, KM_USER1);
- 
- 		src += cur;
- 		len -= cur;
-@@ -3656,9 +3623,8 @@ void memset_extent_buffer(struct extent_buffer *eb, char c,
- 		WARN_ON(!PageUptodate(page));
- 
- 		cur = min(len, PAGE_CACHE_SIZE - offset);
--		kaddr = kmap_atomic(page, KM_USER0);
-+		kaddr = page_address(page);
- 		memset(kaddr + offset, c, cur);
--		kunmap_atomic(kaddr, KM_USER0);
- 
- 		len -= cur;
- 		offset = 0;
-@@ -3689,9 +3655,8 @@ void copy_extent_buffer(struct extent_buffer *dst, struct extent_buffer *src,
- 
- 		cur = min(len, (unsigned long)(PAGE_CACHE_SIZE - offset));
- 
--		kaddr = kmap_atomic(page, KM_USER0);
-+		kaddr = page_address(page);
- 		read_extent_buffer(src, kaddr + offset, src_offset, cur);
--		kunmap_atomic(kaddr, KM_USER0);
- 
- 		src_offset += cur;
- 		len -= cur;
-@@ -3704,20 +3669,17 @@ static void move_pages(struct page *dst_page, struct page *src_page,
- 		       unsigned long dst_off, unsigned long src_off,
- 		       unsigned long len)
+ int btrfs_tree_unlock(struct extent_buffer *eb)
  {
--	char *dst_kaddr = kmap_atomic(dst_page, KM_USER0);
-+	char *dst_kaddr = page_address(dst_page);
- 	if (dst_page == src_page) {
- 		memmove(dst_kaddr + dst_off, dst_kaddr + src_off, len);
- 	} else {
--		char *src_kaddr = kmap_atomic(src_page, KM_USER1);
-+		char *src_kaddr = page_address(src_page);
- 		char *p = dst_kaddr + dst_off + len;
- 		char *s = src_kaddr + src_off + len;
- 
- 		while (len--)
- 			*--p = *--s;
+-	/*
+-	 * if we were a blocking owner, we don't have the spinlock held
+-	 * just clear the bit and look for waiters
+-	 */
+-	if (test_and_clear_bit(EXTENT_BUFFER_BLOCKING, &eb->bflags))
+-		smp_mb__after_clear_bit();
+-	else
+-		spin_unlock(&eb->lock);
 -
--		kunmap_atomic(src_kaddr, KM_USER1);
- 	}
--	kunmap_atomic(dst_kaddr, KM_USER0);
+-	if (waitqueue_active(&eb->lock_wq))
+-		wake_up(&eb->lock_wq);
++	mutex_unlock(&eb->lock);
++	if (waitqueue_active(&eb->read_lock_wq))
++		wake_up(&eb->read_lock_wq);
+ 	return 0;
  }
  
- static inline bool areas_overlap(unsigned long src, unsigned long dst, unsigned long len)
-@@ -3730,20 +3692,17 @@ static void copy_pages(struct page *dst_page, struct page *src_page,
- 		       unsigned long dst_off, unsigned long src_off,
- 		       unsigned long len)
+ void btrfs_assert_tree_locked(struct extent_buffer *eb)
  {
--	char *dst_kaddr = kmap_atomic(dst_page, KM_USER0);
-+	char *dst_kaddr = page_address(dst_page);
- 	char *src_kaddr;
- 
- 	if (dst_page != src_page) {
--		src_kaddr = kmap_atomic(src_page, KM_USER1);
-+		src_kaddr = page_address(src_page);
- 	} else {
- 		src_kaddr = dst_kaddr;
- 		BUG_ON(areas_overlap(src_off, dst_off, len));
- 	}
- 
- 	memcpy(dst_kaddr + dst_off, src_kaddr + src_off, len);
--	kunmap_atomic(dst_kaddr, KM_USER0);
--	if (dst_page != src_page)
--		kunmap_atomic(src_kaddr, KM_USER1);
- }
- 
- void memcpy_extent_buffer(struct extent_buffer *dst, unsigned long dst_offset,
-diff --git a/fs/btrfs/extent_io.h b/fs/btrfs/extent_io.h
-index a11a92e..b5f120c 100644
---- a/fs/btrfs/extent_io.h
-+++ b/fs/btrfs/extent_io.h
-@@ -120,8 +120,6 @@ struct extent_state {
- struct extent_buffer {
- 	u64 start;
- 	unsigned long len;
--	char *map_token;
--	char *kaddr;
- 	unsigned long map_start;
- 	unsigned long map_len;
- 	struct page *first_page;
-@@ -279,15 +277,10 @@ int clear_extent_buffer_uptodate(struct extent_io_tree *tree,
- int extent_buffer_uptodate(struct extent_io_tree *tree,
- 			   struct extent_buffer *eb,
- 			   struct extent_state *cached_state);
--int map_extent_buffer(struct extent_buffer *eb, unsigned long offset,
--		      unsigned long min_len, char **token, char **map,
--		      unsigned long *map_start,
--		      unsigned long *map_len, int km);
- int map_private_extent_buffer(struct extent_buffer *eb, unsigned long offset,
--		      unsigned long min_len, char **token, char **map,
-+		      unsigned long min_len, char **map,
- 		      unsigned long *map_start,
--		      unsigned long *map_len, int km);
--void unmap_extent_buffer(struct extent_buffer *eb, char *token, int km);
-+		      unsigned long *map_len);
- int extent_range_uptodate(struct extent_io_tree *tree,
- 			  u64 start, u64 end);
- int extent_clear_unlock_delalloc(struct inode *inode,
-diff --git a/fs/btrfs/file-item.c b/fs/btrfs/file-item.c
-index 90d4ee5..bb22a44 100644
---- a/fs/btrfs/file-item.c
-+++ b/fs/btrfs/file-item.c
-@@ -664,10 +664,6 @@ int btrfs_csum_file_blocks(struct btrfs_trans_handle *trans,
- 	struct btrfs_sector_sum *sector_sum;
- 	u32 nritems;
- 	u32 ins_size;
--	char *eb_map;
--	char *eb_token;
--	unsigned long map_len;
--	unsigned long map_start;
- 	u16 csum_size =
- 		btrfs_super_csum_size(&root->fs_info->super_copy);
- 
-@@ -814,30 +810,9 @@ found:
- 	item_end = btrfs_item_ptr(leaf, path->slots[0], struct btrfs_csum_item);
- 	item_end = (struct btrfs_csum_item *)((unsigned char *)item_end +
- 				      btrfs_item_size_nr(leaf, path->slots[0]));
--	eb_token = NULL;
- next_sector:
- 
--	if (!eb_token ||
--	   (unsigned long)item + csum_size >= map_start + map_len) {
--		int err;
--
--		if (eb_token)
--			unmap_extent_buffer(leaf, eb_token, KM_USER1);
--		eb_token = NULL;
--		err = map_private_extent_buffer(leaf, (unsigned long)item,
--						csum_size,
--						&eb_token, &eb_map,
--						&map_start, &map_len, KM_USER1);
--		if (err)
--			eb_token = NULL;
--	}
--	if (eb_token) {
--		memcpy(eb_token + ((unsigned long)item & (PAGE_CACHE_SIZE - 1)),
--		       &sector_sum->sum, csum_size);
--	} else {
--		write_extent_buffer(leaf, &sector_sum->sum,
--				    (unsigned long)item, csum_size);
--	}
-+	write_extent_buffer(leaf, &sector_sum->sum, (unsigned long)item, csum_size);
- 
- 	total_bytes += root->sectorsize;
- 	sector_sum++;
-@@ -850,10 +825,7 @@ next_sector:
- 			goto next_sector;
- 		}
- 	}
--	if (eb_token) {
--		unmap_extent_buffer(leaf, eb_token, KM_USER1);
--		eb_token = NULL;
--	}
+-	if (!test_bit(EXTENT_BUFFER_BLOCKING, &eb->bflags))
+-		assert_spin_locked(&eb->lock);
++	BUG_ON(!mutex_is_locked(&eb->lock));
++}
 +
- 	btrfs_mark_buffer_dirty(path->nodes[0]);
- 	if (total_bytes < sums->len) {
- 		btrfs_release_path(path);
-diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
-index 55d68ea..3b5763a 100644
---- a/fs/btrfs/inode.c
-+++ b/fs/btrfs/inode.c
-@@ -2541,13 +2541,6 @@ static void btrfs_read_locked_inode(struct inode *inode)
- 
- 	inode_item = btrfs_item_ptr(leaf, path->slots[0],
- 				    struct btrfs_inode_item);
--	if (!leaf->map_token)
--		map_private_extent_buffer(leaf, (unsigned long)inode_item,
--					  sizeof(struct btrfs_inode_item),
--					  &leaf->map_token, &leaf->kaddr,
--					  &leaf->map_start, &leaf->map_len,
--					  KM_USER1);
--
- 	inode->i_mode = btrfs_inode_mode(leaf, inode_item);
- 	inode->i_nlink = btrfs_inode_nlink(leaf, inode_item);
- 	inode->i_uid = btrfs_inode_uid(leaf, inode_item);
-@@ -2585,11 +2578,6 @@ cache_acl:
- 	if (!maybe_acls)
- 		cache_no_acl(inode);
- 
--	if (leaf->map_token) {
--		unmap_extent_buffer(leaf, leaf->map_token, KM_USER1);
--		leaf->map_token = NULL;
--	}
--
- 	btrfs_free_path(path);
- 
- 	switch (inode->i_mode & S_IFMT) {
-@@ -2634,13 +2622,6 @@ static void fill_inode_item(struct btrfs_trans_handle *trans,
- 			    struct btrfs_inode_item *item,
- 			    struct inode *inode)
- {
--	if (!leaf->map_token)
--		map_private_extent_buffer(leaf, (unsigned long)item,
--					  sizeof(struct btrfs_inode_item),
--					  &leaf->map_token, &leaf->kaddr,
--					  &leaf->map_start, &leaf->map_len,
--					  KM_USER1);
--
- 	btrfs_set_inode_uid(leaf, item, inode->i_uid);
- 	btrfs_set_inode_gid(leaf, item, inode->i_gid);
- 	btrfs_set_inode_size(leaf, item, BTRFS_I(inode)->disk_i_size);
-@@ -2669,11 +2650,6 @@ static void fill_inode_item(struct btrfs_trans_handle *trans,
- 	btrfs_set_inode_rdev(leaf, item, inode->i_rdev);
- 	btrfs_set_inode_flags(leaf, item, BTRFS_I(inode)->flags);
- 	btrfs_set_inode_block_group(leaf, item, 0);
--
--	if (leaf->map_token) {
--		unmap_extent_buffer(leaf, leaf->map_token, KM_USER1);
--		leaf->map_token = NULL;
--	}
++void btrfs_assert_tree_read_locked(struct extent_buffer *eb)
++{
++	BUG_ON(!atomic_read(&eb->lock_readers));
  }
+diff --git a/fs/btrfs/locking.h b/fs/btrfs/locking.h
+index 5c33a56..65b14f2 100644
+--- a/fs/btrfs/locking.h
++++ b/fs/btrfs/locking.h
+@@ -19,11 +19,25 @@
+ #ifndef __BTRFS_LOCKING_
+ #define __BTRFS_LOCKING_
  
- /*
-diff --git a/fs/btrfs/struct-funcs.c b/fs/btrfs/struct-funcs.c
-index c0f7eca..bc1f6ad 100644
---- a/fs/btrfs/struct-funcs.c
-+++ b/fs/btrfs/struct-funcs.c
-@@ -50,36 +50,22 @@ u##bits btrfs_##name(struct extent_buffer *eb,				\
- 	unsigned long part_offset = (unsigned long)s;			\
- 	unsigned long offset = part_offset + offsetof(type, member);	\
- 	type *p;							\
--	/* ugly, but we want the fast path here */			\
--	if (eb->map_token && offset >= eb->map_start &&			\
--	    offset + sizeof(((type *)0)->member) <= eb->map_start +	\
--	    eb->map_len) {						\
--		p = (type *)(eb->kaddr + part_offset - eb->map_start);	\
--		return le##bits##_to_cpu(p->member);			\
--	}								\
--	{								\
--		int err;						\
--		char *map_token;					\
--		char *kaddr;						\
--		int unmap_on_exit = (eb->map_token == NULL);		\
--		unsigned long map_start;				\
--		unsigned long map_len;					\
--		u##bits res;						\
--		err = map_extent_buffer(eb, offset,			\
--				sizeof(((type *)0)->member),		\
--				&map_token, &kaddr,			\
--				&map_start, &map_len, KM_USER1);	\
--		if (err) {						\
--			__le##bits leres;				\
--			read_eb_member(eb, s, type, member, &leres);	\
--			return le##bits##_to_cpu(leres);		\
--		}							\
--		p = (type *)(kaddr + part_offset - map_start);		\
--		res = le##bits##_to_cpu(p->member);			\
--		if (unmap_on_exit)					\
--			unmap_extent_buffer(eb, map_token, KM_USER1);	\
--		return res;						\
--	}								\
-+	int err;						\
-+	char *kaddr;						\
-+	unsigned long map_start;				\
-+	unsigned long map_len;					\
-+	u##bits res;						\
-+	err = map_private_extent_buffer(eb, offset,		\
-+			sizeof(((type *)0)->member),		\
-+			&kaddr, &map_start, &map_len);		\
-+	if (err) {						\
-+		__le##bits leres;				\
-+		read_eb_member(eb, s, type, member, &leres);	\
-+		return le##bits##_to_cpu(leres);		\
-+	}							\
-+	p = (type *)(kaddr + part_offset - map_start);		\
-+	res = le##bits##_to_cpu(p->member);			\
-+	return res;						\
- }									\
- void btrfs_set_##name(struct extent_buffer *eb,				\
- 				    type *s, u##bits val)		\
-@@ -87,36 +73,21 @@ void btrfs_set_##name(struct extent_buffer *eb,				\
- 	unsigned long part_offset = (unsigned long)s;			\
- 	unsigned long offset = part_offset + offsetof(type, member);	\
- 	type *p;							\
--	/* ugly, but we want the fast path here */			\
--	if (eb->map_token && offset >= eb->map_start &&			\
--	    offset + sizeof(((type *)0)->member) <= eb->map_start +	\
--	    eb->map_len) {						\
--		p = (type *)(eb->kaddr + part_offset - eb->map_start);	\
--		p->member = cpu_to_le##bits(val);			\
--		return;							\
--	}								\
--	{								\
--		int err;						\
--		char *map_token;					\
--		char *kaddr;						\
--		int unmap_on_exit = (eb->map_token == NULL);		\
--		unsigned long map_start;				\
--		unsigned long map_len;					\
--		err = map_extent_buffer(eb, offset,			\
--				sizeof(((type *)0)->member),		\
--				&map_token, &kaddr,			\
--				&map_start, &map_len, KM_USER1);	\
--		if (err) {						\
--			__le##bits val2;				\
--			val2 = cpu_to_le##bits(val);			\
--			write_eb_member(eb, s, type, member, &val2);	\
--			return;						\
--		}							\
--		p = (type *)(kaddr + part_offset - map_start);		\
--		p->member = cpu_to_le##bits(val);			\
--		if (unmap_on_exit)					\
--			unmap_extent_buffer(eb, map_token, KM_USER1);	\
--	}								\
-+	int err;						\
-+	char *kaddr;						\
-+	unsigned long map_start;				\
-+	unsigned long map_len;					\
-+	err = map_private_extent_buffer(eb, offset,		\
-+			sizeof(((type *)0)->member),		\
-+			&kaddr, &map_start, &map_len);		\
-+	if (err) {						\
-+		__le##bits val2;				\
-+		val2 = cpu_to_le##bits(val);			\
-+		write_eb_member(eb, s, type, member, &val2);	\
-+		return;						\
-+	}							\
-+	p = (type *)(kaddr + part_offset - map_start);		\
-+	p->member = cpu_to_le##bits(val);			\
- }
++#define BTRFS_WRITE_LOCK 1
++#define BTRFS_READ_LOCK 2
++
+ int btrfs_tree_lock(struct extent_buffer *eb);
+ int btrfs_tree_unlock(struct extent_buffer *eb);
+ int btrfs_try_spin_lock(struct extent_buffer *eb);
  
- #include "ctree.h"
-@@ -125,15 +96,6 @@ void btrfs_node_key(struct extent_buffer *eb,
- 		    struct btrfs_disk_key *disk_key, int nr)
- {
- 	unsigned long ptr = btrfs_node_key_ptr_offset(nr);
--	if (eb->map_token && ptr >= eb->map_start &&
--	    ptr + sizeof(*disk_key) <= eb->map_start + eb->map_len) {
--		memcpy(disk_key, eb->kaddr + ptr - eb->map_start,
--			sizeof(*disk_key));
--		return;
--	} else if (eb->map_token) {
--		unmap_extent_buffer(eb, eb->map_token, KM_USER1);
--		eb->map_token = NULL;
--	}
- 	read_eb_member(eb, (struct btrfs_key_ptr *)ptr,
- 		       struct btrfs_key_ptr, key, disk_key);
- }
++void btrfs_tree_read_lock(struct extent_buffer *eb);
++void btrfs_tree_read_unlock(struct extent_buffer *eb);
+ void btrfs_set_lock_blocking(struct extent_buffer *eb);
+ void btrfs_clear_lock_blocking(struct extent_buffer *eb);
+ void btrfs_assert_tree_locked(struct extent_buffer *eb);
++
++static inline void btrfs_tree_unlock_rw(struct extent_buffer *eb, int rw)
++{
++	if (rw == BTRFS_WRITE_LOCK)
++		btrfs_tree_unlock(eb);
++	else
++		btrfs_tree_read_unlock(eb);
++}
++
+ #endif

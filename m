@@ -1,70 +1,83 @@
-From: Tsutomu Itoh <t-itoh@jp.fujitsu.com>
-Subject: [PATCH] Btrfs: return error to caller when btrfs_unlink() failes
-Date: Tue, 19 Jul 2011 16:27:20 +0900
-Message-ID: <201107190727.AA00031@T-ITOH1.jp.fujitsu.com>
+From: Stephane Chazelas <stephane_chazelas@yahoo.fr>
+Subject: Re: write(2) taking 4s
+Date: Tue, 19 Jul 2011 10:32:52 +0100
+Message-ID: <20110719093252.GA24559@yahoo.fr>
+References: <20110709170959.GC4294@yahoo.fr>
+ <CAE5mzvhZwrtEZ8FUfcYzoMsRwuPjNDn=iCZ6_-CKaifEPZWAKA@mail.gmail.com>
+ <20110709203649.GE4294@yahoo.fr>
+ <1310301809-sup-9903@shiny>
+ <20110710183728.GB4277@yahoo.fr>
+ <20110711090121.GA2537@yahoo.fr>
+ <20110716121210.GA5638@yahoo.fr>
+ <20110717091737.GA4301@yahoo.fr>
+ <chaz20110718103912.GA4014@seebyte.com>
+ <20110718193725.GA6298@yahoo.fr>
 Mime-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
-Cc: chris.mason@oracle.com
-To: linux-btrfs@vger.kernel.org
+To: linux-btrfs <linux-btrfs@vger.kernel.org>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
+In-Reply-To: <20110718193725.GA6298@yahoo.fr>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-When btrfs_unlink_inode() and btrfs_orphan_add() in btrfs_unlink()
-are error, the error code is returned to the caller instead of
-BUG_ON(). 
+2011-07-18 20:37:25 +0100, Stephane Chazelas:
+> 2011-07-18 11:39:12 +0100, Stephane Chazelas:
+> > 2011-07-17 10:17:37 +0100, Stephane Chazelas:
+> > > 2011-07-16 13:12:10 +0100, Stephane Chazelas:
+> > > > Still on my btrfs-based backup system. I still see one BUG()
+> > > > reached in btrfs-fixup per boot time, no memory exhaustion
+> > > > anymore. There is now however something new: write performance
+> > > > is down to a few bytes per second.
+> > > [...]
+> > > 
+> > > The condition that was causing that seems to have cleared by
+> > > itself this morning before 4am.
+> > > 
+> > > flush-btrfs-1 and sync are still in D state.
+> > > 
+> > > Can't really tell what cleared it. Could be when the first of
+> > > the rsyncs ended as all the other ones (and ntfsclones from nbd
+> > > devices) ended soon after
+> > [...]
+> > 
+> > New nightly backup, and it's happening again. Started about 40
+> > minutes after the start of the backup.
+> [...]
+> > Actively  running at the moment are 1 rsync and 3 ntfsclone.
+> [...]
+> 
+> And then again today.
+> 
+> Interestingly, I "killall -STOP"ed all the ntfsclone and rsync
+> processes and:
+[...]
+> Now 95% of the write(2)s take 4 seconds (while it was about 15%
+> before I stopped the processes).
+[...]
 
-Signed-off-by: Tsutomu Itoh <t-itoh@jp.fujitsu.com>
----
- fs/btrfs/extent-tree.c |    3 ++-
- fs/btrfs/inode.c       |   10 +++++++---
- 2 files changed, 9 insertions(+), 4 deletions(-)
+And this morning, after killing everything so that nothing was
+writing to the FS anymore, 95% of write(2)s were delayed as well
+(according to strace -Te write yes > file-on-btrfs).
 
-diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
-index 71cd456..eb92721 100644
---- a/fs/btrfs/extent-tree.c
-+++ b/fs/btrfs/extent-tree.c
-@@ -7166,7 +7166,8 @@ int btrfs_remove_block_group(struct btrfs_trans_handle *trans,
- 
- 	inode = lookup_free_space_inode(root, block_group, path);
- 	if (!IS_ERR(inode)) {
--		btrfs_orphan_add(trans, inode);
-+		ret = btrfs_orphan_add(trans, inode);
-+		BUG_ON(ret);
- 		clear_nlink(inode);
- 		/* One for the block groups ref */
- 		spin_lock(&block_group->lock);
-diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
-index 4a13730..af57c2b 100644
---- a/fs/btrfs/inode.c
-+++ b/fs/btrfs/inode.c
-@@ -2214,7 +2214,8 @@ int btrfs_orphan_add(struct btrfs_trans_handle *trans, struct inode *inode)
- 
- 	if (!root->orphan_block_rsv) {
- 		block_rsv = btrfs_alloc_block_rsv(root);
--		BUG_ON(!block_rsv);
-+		if (!block_rsv)
-+			return -ENOMEM;
- 	}
- 
- 	spin_lock(&root->orphan_lock);
-@@ -3021,13 +3022,16 @@ static int btrfs_unlink(struct inode *dir, struct dentry *dentry)
- 
- 	ret = btrfs_unlink_inode(trans, root, dir, dentry->d_inode,
- 				 dentry->d_name.name, dentry->d_name.len);
--	BUG_ON(ret);
-+	if (ret)
-+		goto out;
- 
- 	if (inode->i_nlink == 0) {
- 		ret = btrfs_orphan_add(trans, inode);
--		BUG_ON(ret);
-+		if (ret)
-+			goto out;
- 	}
- 
-+out:
- 	nr = trans->blocks_used;
- 	__unlink_end_trans(trans, root);
- 	btrfs_btree_balance_dirty(root, nr);
+Then I rebooted (sysrq-b) and am trying btrfsck (from
+integration-20110705) on it, but btrfsck is using 8G of memory
+on a system that has only 5G so it's swapping in and out
+constantly and getting nowhere (and renders the system hardly usable)
 
+I found
+http://thread.gmane.org/gmane.comp.file-systems.btrfs/5716/focus=5728
+from last year. Is that still the case?
 
+  PID USER      PR  NI  VIRT  RES  SHR S %CPU %MEM    TIME+  COMMAND
+ 1950 root      20   0 7684m 4.4g  232 R    4 91.1   4:22.87 btrfsck
+(and still growing)
+
+ vmstat 1
+procs -----------memory---------- ---swap-- -----io---- -system-- ----cpu----
+ r  b   swpd   free   buff  cache   si   so    bi    bo   in   cs us sy id wa
+ 2  2 3232016 115232   4524   3520  698  708  3305   716  991  570  3  1 56 39
+ 0  2 3231816 111536   5976   3428 2964  532  4912   532 1569  683  1  0 46 53
+ 0  2 3231144 105832   8144   3536 3140   24  5324    24 1612  392  1  1 38 60
+ 0  2 3231532 104964   8180   3684 2672  900  2708   900 1017  324  1  1 34 64
+
+-- 
+Stephane

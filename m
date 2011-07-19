@@ -1,7 +1,7 @@
 From: Goffredo Baroncelli <kreijack@libero.it>
-Subject: [PATCH 1/6] Add info for the commands.
-Date: Tue, 19 Jul 2011 18:11:59 +0200
-Message-ID: <20110719161159.3210.80622.stgit@venice.bhome>
+Subject: [PATCH 2/6] Add the header/footer/introduction of the man page.
+Date: Tue, 19 Jul 2011 18:12:05 +0200
+Message-ID: <20110719161205.3210.53603.stgit@venice.bhome>
 References: <20110719161049.3210.54794.stgit@venice.bhome>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="utf-8"
@@ -12,516 +12,198 @@ List-ID: <linux-btrfs.vger.kernel.org>
 
 From: Goffredo Baroncelli <kreijack@inwind.it>
 
-Add info for every btrfs sub-commands in the sources.
+Add the header/footer/introduction of the man page. There is also an
+introduction to the syntax recognized by the tool helpextract to format
+the information.
 ---
- btrfs_cmds.c |  276 ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
- scrub.c      |   79 +++++++++++++++++
- 2 files changed, 355 insertions(+), 0 deletions(-)
+ btrfs.c |  176 +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+ 1 files changed, 176 insertions(+), 0 deletions(-)
 
-diff --git a/btrfs_cmds.c b/btrfs_cmds.c
-index 0612f34..3cdebea 100644
---- a/btrfs_cmds.c
-+++ b/btrfs_cmds.c
-@@ -156,6 +156,42 @@ static int parse_compress_type(char *s)
- 	};
- }
+diff --git a/btrfs.c b/btrfs.c
+index 67d6f6f..98abb6c 100644
+--- a/btrfs.c
++++ b/btrfs.c
+@@ -26,6 +26,182 @@
+ #define BASIC_HELP 0
+ #define ADVANCED_HELP 1
  
++/**
++ ** The comments below are used to make the man page
++ **
++ ** There are:
++ ** - Header, 
++ ** - The synopsis title section (the content are extracted from other 
++ **   comments)
++ ** - The synopsis format, which is a template: the '%s' is replaced by 
++ **   the command line "syntax"
++ ** - The btrfs introduction section
++ ** - The btfrs command title section (the content are extracted from other 
++ **   comments)
++ ** - The command format, which is a template: the first '%s' is replaced by 
++ **   the command line "syntax"; the ssecond '%s' is replaced by the
++ **   detailed descritpion
++ ** - The "notes" section 
++ ** - The footer (currentli empty)
++ **
++ ** The comments are the following sytax [replace '{slash}' with '/']
++ **
++ ** If the comment starts with '{slash}**** text: ', then all the text below
++ ** are used until ' ***'. The text after 'text: ' are the key used to
++ ** index teh content. 
++ **
++ ** If the comment starts with '{slash}**** man: ', then below the comment are
++ ** divided in three section:
++ ** 1) (one line) command line syntax
++ ** 2) (multiple line) short description (showed in the command "btrfs help")
++ ** 3) (multiple line) detailled description (showed in the man page and
++ **    command "btrfs <subcommand> --help")
++ ** The text after 'man: ' are the key used to index the content. This must
++ ** be equal to the subcommand which the info is referred.
++ ** 
++ ** Below the escape sequence which may be used in the text
++ **
++ **	     escape      troff
++ **          sequence    command
++ **
++ **                \B	 \fB         bold 
++ **                \b	 \fP         end bold 
++ **                \I	 \fI         italic 
++ **                \i	 \fP         end italic 
++ **                \c	 .\"         comment 
++ **                \P	 .PP         start paragraph 
++ **                \p	 .TP         indented paragraph 
++ **                \h	 .SH         header 
++ **                \d	 .BR         bold regular 
++ **                \e	 .B          bold 
++ **                \t	 .IP         indented paragraph 
++ **                \w	 .RS         move the left margin 
++ **                \q	 .RE         move the left margin back
++ **		   \-    \-          minus (it *must* escaped )
++ **
++ **
++ **/
 +
-+/**** man: btrfs filesystem defragment
++
++/**** text: man btrfs header
++ * .TH BTRFS 8 "" "btrfs" "btrfs"
++ * .\"
++ * .\" Man page for the "btrfs" tool 
++ * .\"
++ * .SH NAME
++ * btrfs \- control a btrfs filesystem
++ ****/
++
++/**** text: man btrfs synopsis
++ * .SH SYNOPSIS
++ ****/
++
++/**** text: man btrfs synopsis format
++ * \fB%s\fP
++ * .PP
++ ****/
++
++/**** text: btrfs introduction
++ * \h DESCRIPTION
++ * \Bbtrfs\b is used to control the filesystem and the files and directories 
++ * stored. It is the tool to create or destroy a snapshot or a subvolume for 
++ * the filesystem, to defrag a file or a directory, flush the data to the disk,
++ * to resize the filesystem, to scan the device.
 + * 
-+ * \Bbtrfs\b \Bfilesystem defragment\b -c[zlib|lzo] [-l \Ilen\i] [-s \Istart\i] [-t \Isize\i] -[vf] <\Ifile\i>|<\Idir\i> [<\Ifile\i>|<\Idir\i>...]
++ * It is possible to abbreviate the commands unless the commands  are ambiguous.
++ * For example: it is possible to run
++ * \Ibtrfs sub snaps\i instead of \Ibtrfs subvolume snapshot\i. But \Ibtrfs 
++ * file s\i is not allowed, because \Ifile s\i may be interpreted both as
++ * \Ifilesystem show\i and as \Ifilesystem sync\i.  
 + * 
-+ * Defragment a file or a directory.
-+ * 
-+ * Defragment file data and/or directory metadata. To defragment all files in a
-+ * directory you have to specify each one on its own or use your shell 
-+ * wildcards.
-+ * 
-+ * The start position and the number of bytes to deframention can be specified 
-+ * by \Istart\i and \Ilen\i. Any extent bigger than \Ithresh\i will be 
-+ * considered already defragged. Use 0 to take the kernel default, and use 1 
-+ * to say eveery single extent must be rewritten. You can also turn on 
-+ * compression in defragment operations.
-+ * 
-+ * \B-v\b be verbose
-+ * 
-+ * \B-c\b compress file contents while defragmenting
-+ * 
-+ * \B-f\b flush filesystem after defragmenting
-+ * 
-+ * \B-s start\b defragment only from byte \Istart\i onward
-+ * 
-+ * \B-l len\b defragment only up to \Ilen\i bytes
-+ * 
-+ * \B-t size\b defragment only files at least \Isize\i bytes big
-+ * 
-+ * NOTE: defragmenting with kernels up to 2.6.37 will unlink COW-ed copies of 
-+ * data, don't use it if you use snapshots, have de-duplicated your data or 
-+ * made copies with 
++ * If a command is terminated by \I--help\i, the detailed help is showed. 
++ * If the passed command matches more commands, detailed help of all the 
++ * matched commands is showed. For example \Ibtrfs dev --help\i shows the 
++ * help of all \Idevice*\i commands.
++ ****/
++
++/**** text: man btrfs command format
 + *
-+ * \Bcp --reflink\b.
++ * .TP
++ * %s%s
 + ****/
 +
- int do_defrag(int ac, char **av)
- {
- 	int fd;
-@@ -268,6 +304,16 @@ int do_defrag(int ac, char **av)
- 	return errors + 20;
- }
- 
++/**** text: man btrfs commands
++ * .SH COMMANDS
++ * .TP
++ */
 +
-+/**** man: btrfs subvolume find-new
++/**** text: btrfs notes
++ * \h BALANCE FILTERS
 + * 
-+ * \Bbtrfs\b \Bsubvolume find-new\b\I <subvolume> <last_gen>\i
++ * With balance filters, it is possible to perform a balance operation on
++ * only a subset of the available chunks. Filters are specified with the
++ * \B--filter\b option of \Bbtrfs filesystem balance\b or \Bbtrfs
++ * balance start\b. Multiple filters may be given, either with multiple
++ * \B--filter\b options, or in a colon-separated list. When multiple
++ * filters are given, only the chunks meeting all of the selection
++ * critera are balanced. Help on the avaialble filters can be obtained
++ * with \B--filter=help\b.
 + * 
-+ * List the recently modified files in a filesystem.
 + * 
-+ * List the recently modified files in a subvolume, after \I<last_gen>\i ID.
++ * \Btype\b=[\B~\b]\I<flagname>\i[\B,\b...]
++ * 
++ * Select only the chunks with the given type flag(s). Requiring a flag
++ * to be off can be specified with a \B~\b preceding the flag
++ * name. Flag names are:
++ * 
++ * \Bmeta\b, \Bdata\b, \Bsys\b for metadata, file data and system
++ * chunk types.
++ * 
++ * \Braid0\b, \Braid1\b, \Braid10\b, \Bdup\b for chunks of the
++ * given replication levels.
++ * 
++ * 
++ * \Bdevid\b=\I<n>\i
++ * 
++ * Select chunks which have data on device ID \I<n>\i. This can be
++ * used, for example, to reduplicate data in a mirrored configuration
++ * where one drive has been lost due to hardware failure.
++ * 
++ * 
++ * \Bvrange\b=\I<start>\i,\I<end>\i
++ * 
++ * Select chunks which have btrfs-internal virtual addresses within the
++ * range \I<start>\i (inclusive) to \I<end>\i (exclusive). Given the
++ * address of the last chunk moved, this filter can be used to restart a
++ * cancelled or interrupted balance operation, by supplying a range of
++ * \I0,<chunkaddr+1>\i.
++ * 
++ * \Bdrange\b=\I<start>\i,\I<end>\i
++ * 
++ * Select chunks which contain data in the address range \I<start>\i
++ * (inclusive) to \I<end>\i (exclusive) on \Iany\i block device in
++ * the filesystem. Can be mixed with the \Bdevid\b filter to select
++ * chunks in a given address range on a specific device.
++ * 
++ * \h EXIT STATUS
++ * \Bbtrfs\b returns a zero exist status if it succeeds. Non zero is returned in
++ * case of failure.
++ * 
++ * \h AVAILABILITY
++ * \Bbtrfs\b is part of btrfs-progs. Btrfs filesystem is currently under 
++ * heavy development, and not suitable for any uses other than benchmarking and
++ * review.
++ *
++ * Please refer to the btrfs wiki http://btrfs.wiki.kernel.org for
++ * further details.
++ *
++ * \h SEE ALSO
++ * \Bmkfs.btrfs (8)\b
 + ****/
 +
- int do_find_newer(int argc, char **argv)
- {
- 	int fd;
-@@ -299,6 +345,25 @@ int do_find_newer(int argc, char **argv)
- 	return 0;
- }
- 
-+
-+/**** man: btrfs subvolume list
-+ * 
-+ * \Bbtrfs\b \Bsubvolume list\b\I [-p] <path>\i
-+ * 
-+ * List the snapshot/subvolume of a filesystem.
-+ * 
-+ * List the subvolumes present in the filesystem \I<path>\i. For every
-+ * subvolume the following information is shown by default.
-+ * ID <ID> top level <ID> path <path>
-+ * where path is the relative path of the subvolume to the \Itop level\i
-+ * subvolume.
-+ * The subvolume's ID may be used by the \Bsubvolume set-default\b command, or
-+ * at mount time via the \Isubvol=\i option.
-+ * If \I-p\i is given, then \Iparent <ID>\i is added to the output between ID
-+ * and top level. The parent's ID may be used at mount time via the
-+ * \Isubvolrootid=\i option.
++/**** text: man btrfs footer
 + ****/
 +
- int do_subvol_list(int argc, char **argv)
- {
- 	int fd;
-@@ -346,6 +411,20 @@ int do_subvol_list(int argc, char **argv)
- 	return 0;
- }
++
++
++
++
+ typedef int (*CommandFunction)(int argc, char **argv);
  
-+
-+/**** man: btrfs subvolume snapshot
-+ * 
-+ * \Bbtrfs\b \Bsubvolume snapshot\b\I [-r] <source> [<dest>/]<name>\i
-+ * 
-+ * Create a writable/readonly snapshot of the subvolume <source> with
-+ * the name <name> in the <dest> directory.
-+ * 
-+ * Create a writable/readonly snapshot of the subvolume \I<source>\i with the
-+ * name \I<name>\i in the \I<dest>\i directory. If \I<source>\i is not a
-+ * subvolume, \Bbtrfs\b returns an error. If \I-r\i is given, the snapshot
-+ * will be readonly.
-+ ****/
-+
- int do_clone(int argc, char **argv)
- {
- 	char	*subvol, *dst;
-@@ -463,6 +542,17 @@ int do_clone(int argc, char **argv)
- 
- }
- 
-+
-+/**** man: btrfs subvolume delete
-+ * 
-+ * \Bbtrfs\b \Bsubvolume delete\b\I <subvolume>\i
-+ * 
-+ * Delete the subvolume <subvolume>.
-+ * 
-+ * Delete the subvolume \I<subvolume>\i. If \I<subvolume>\i is not a
-+ * subvolume, \Bbtrfs\b returns an error.
-+ ****/
-+
- int do_delete_subvolume(int argc, char **argv)
- {
- 	int	res, fd, len, e;
-@@ -525,6 +615,18 @@ int do_delete_subvolume(int argc, char **argv)
- 
- }
- 
-+
-+/**** man: btrfs subvolume create
-+ * 
-+ * \Bbtrfs\b \Bsubvolume create\b\I [<dest>/]<name>\i
-+ * 
-+ * Create a subvolume in <dest> (or the current directory if
-+ * not passed).
-+ * 
-+ * Create a subvolume in \I<dest>\i (or in the current directory if
-+ * \I<dest>\i is omitted).
-+ ****/
-+
- int do_create_subvol(int argc, char **argv)
- {
- 	int	res, fddst, len, e;
-@@ -581,6 +683,16 @@ int do_create_subvol(int argc, char **argv)
- 
- }
- 
-+
-+/**** man: btrfs filesystem sync
-+ * 
-+ * \Bbtrfs\b \Bfilesystem sync\b\I <path> \i
-+ * 
-+ * Force a sync on the filesystem <path>.
-+ * 
-+ * Force a sync for the filesystem identified by \I<path>\i.
-+ ****/
-+
- int do_fssync(int argc, char **argv)
- {
- 	int 	fd, res, e;
-@@ -605,6 +717,21 @@ int do_fssync(int argc, char **argv)
- 	return 0;
- }
- 
-+
-+/**** man: btrfs device scan
-+ * 
-+ * \Bbtrfs\b \Bdevice scan\b \I[--all-devices|<device> [<device>...]\i
-+ * 
-+ * Scan all device for or the passed device for a btrfs
-+ * filesystem.
-+ * 
-+ * If one or more devices are passed, these are scanned for a btrfs filesystem. 
-+ * If no devices are passed, \Bbtrfs\b scans all the block devices listed
-+ * in the /proc/partitions file.
-+ * Finally, if \B--all-devices\b is passed, all the devices under /dev are 
-+ * scanned.
-+ ****/
-+
- int do_scan(int argc, char **argv)
- {
- 	int	i, fd, e;
-@@ -672,6 +799,32 @@ int do_scan(int argc, char **argv)
- 
- }
- 
-+
-+/**** man: btrfs filesystem resize
-+ * 
-+ * \Bbtrfs\b \Bfilesystem resize\b\I [+/\-]<size>[gkm]|max <path>\i
-+ * 
-+ * Resize the file system. If 'max' is passed, the filesystem
-+ * will occupe all available space on the device.
-+ * 
-+ * Resize a filesystem identified by \I<path>\i.
-+ * The \I<size>\i parameter specifies the new size of the filesystem.
-+ * If the prefix \I+\i or \I\-\i is present the size is increased or decreased
-+ * by the quantity \I<size>\i.
-+ * If no units are specified, the unit of the \I<size>\i parameter defaults to
-+ * bytes. Optionally, the size parameter may be suffixed by one of the following
-+ * the units designators: 'K', 'M', or 'G', kilobytes, megabytes, or gigabytes,
-+ * respectively.
-+ * 
-+ * If 'max' is passed, the filesystem will occupy all available space on the
-+ * volume(s).
-+ * 
-+ * The \Bresize\b command \Bdoes not\b manipulate the size of underlying
-+ * partition.  If you wish to enlarge/reduce a filesystem, you must make sure
-+ * you can expand the partition before enlarging the filesystem and shrink the
-+ * partition after reducing the size of the filesystem.
-+ ****/
-+
- int do_resize(int argc, char **argv)
- {
- 
-@@ -762,6 +915,20 @@ static void print_one_uuid(struct btrfs_fs_devices *fs_devices)
- 	printf("\n");
- }
- 
-+
-+/**** man: btrfs filesystem show
-+ * 
-+ * \Bbtrfs\b \Bfilesystem show\b [--all-devices|<uuid>|<label>]\b
-+ * 
-+ * Show the info of a btrfs filesystem. If no argument
-+ * is passed, info of all the btrfs filesystem are shown.
-+ * 
-+ * Show the btrfs filesystem with some additional info. If no \IUUID\i or 
-+ * \Ilabel\i is passed, \Bbtrfs\b show info of all the btrfs filesystem.
-+ * If \B--all-devices\b is passed, all the devices under /dev are scanned;
-+ * otherwise the devices list is extracted from the /proc/partitions file.
-+ ****/
-+
- int do_show_filesystem(int argc, char **argv)
- {
- 	struct list_head *all_uuids;
-@@ -807,6 +974,16 @@ int do_show_filesystem(int argc, char **argv)
- 	return 0;
- }
- 
-+
-+/**** man: btrfs device add
-+ * 
-+ * \Bbtrfs\b \Bdevice add\b\I <dev> [<dev>..] <path>\i
-+ * 
-+ * Add a device to a filesystem.
-+ * 
-+ * Add device(s) to the filesystem identified by \I<path>\i.
-+ ****/
-+
- int do_add_volume(int nargs, char **args)
- {
- 
-@@ -1068,6 +1245,34 @@ int parse_filter(struct btrfs_ioctl_balance_start *args, char *filters_string)
- 	return 0;
- }
- 
-+
-+/**** man: btrfs filesystem balance
-+ * 
-+ * \Bbtrfs\b \Bfilesystem balance\b [\B-wcv\b] [\B--wait\b] [\B--count\b] [\B--verbose\b] [\B-f\b|\Bfilter=\b\I<filter>\i] \I<path>\i
-+ * 
-+ * Balance chunks across the devices. --filter=help for help on filters.
-+ * --count to count chunks only (no balance performed).
-+ * 
-+ * Balance chunks across the devices. --filter=help for help on filters.
-+ * --count to count chunks only (no balance performed).
-+ ****/
-+
-+/**** man: btrfs balance start
-+ * 
-+ * \Bbtrfs\b \Bbalance start\b [\B-wcv\b] [\B--wait\b] [\B--count\b] [\B--verbose\b] [\B-f\b|\Bfilter=\b\I<filter>\i] \I<path>\i
-+ * 
-+ * Synonym for "btrfs filesystem balance".
-+ * 
-+ * Balance the chunks of the filesystem identified by \I<path>\i across
-+ * the devices. The command returns immediately, and the balance
-+ * operation runs in the background. Use \B--wait\b to run
-+ * synchronously instead. Use \B--count\b to scan the filesystem and
-+ * report the number of chunks that would be processed. Use
-+ * \B--verbose\b in synchronous mode to report the number of chunks
-+ * examined and balanced. See \BBALANCE FILTERS\b, below, for details
-+ * of the different filter types and syntax.
-+ ****/
-+
- int do_balance(int argc, char **argv)
- {
- 	int	fdmnt, ret=0, e;
-@@ -1205,6 +1410,18 @@ const struct option progress_options[] = {
- 	{ NULL, 0, NULL, 0 }
- };
- 
-+
-+/**** man: btrfs balance progress
-+ * 
-+ * \Bbtrfs\b \Bbalance progress\b [\B-m\b|\B--monitor\b] \I<path>\i
-+ * 
-+ * Show progress of the balance operation running on <path>.
-+ * 
-+ * Report progress on the currently-running balance operation on the
-+ * filesystem mounted at \I<path>\i. Use --monitor to report progress
-+ * continually, including an estimate of completion time.
-+ ****/
-+
- int do_balance_progress(int argc, char **argv)
- {
- 	char *path;
-@@ -1325,6 +1542,17 @@ int do_balance_progress(int argc, char **argv)
- 	return 0;
- }
- 
-+
-+/**** man: btrfs balance cancel
-+ * 
-+ * \Bbtrfs\b \Bbalance cancel\b \I<path>\i
-+ * 
-+ * Cancel the balance operation running on <path>.
-+ * 
-+ * Cancel the balance currently running on the filesystem mounted at
-+ * \I<path>\i.
-+ ****/
-+
- int do_balance_cancel(int nargs, char **argv)
- {
- 	char *path = argv[1];
-@@ -1366,6 +1594,16 @@ int do_balance_cancel(int nargs, char **argv)
- 	return err;
- }
- 
-+
-+/**** man: btrfs device delete
-+ * 
-+ * \Bbtrfs\b \Bdevice delete\b\I <dev> [<dev>..] <path>\i
-+ * 
-+ * Remove a device from a filesystem.
-+ * 
-+ * Remove device(s) from a filesystem identified by \I<path>\i.
-+ ****/
-+
- int do_remove_volume(int nargs, char **args)
- {
- 
-@@ -1399,6 +1637,19 @@ int do_remove_volume(int nargs, char **args)
- 		return 0;
- }
- 
-+
-+/**** man: btrfs subvolume set-default
-+ * 
-+ * \Bbtrfs\b \Bsubvolume set-default\b\I <id> <path>\i
-+ * 
-+ * Set the subvolume of the filesystem <path> which will be mounted
-+ * as default.
-+ * 
-+ * Set the subvolume of the filesystem \I<path>\i which is mounted as 
-+ * \Idefault\i. The subvolume is identified by \I<id>\i, which 
-+ * is returned by the \Bsubvolume list\b command.
-+ ****/
-+
- int do_set_default_subvol(int nargs, char **argv)
- {
- 	int	ret=0, fd, e;
-@@ -1428,6 +1679,31 @@ int do_set_default_subvol(int nargs, char **argv)
- 	return 0;
- }
- 
-+
-+/**** man: btrfs filesystem label
-+ * 
-+ * \Bbtrfs\b \Bfilesystem label\b\I <dev> [newlabel]\i
-+ * 
-+ * With one argument, get the label of filesystem on <device>.
-+ * If <newlabel> is passed, set the filesystem label to <newlabel>.
-+ * The filesystem must be unmounted.
-+ * 
-+ * Show or update the label of a filesystem. \I<dev>\i is used to identify the
-+ * filesystem. 
-+ * If a \Inewlabel\i optional argument is passed, the label is changed. The
-+ * following costraints exist for a label:
-+ * \t
-+ * - the maximum allowable lenght shall be less or equal than 256 chars
-+ * \t
-+ * - the label shall not  contain the '/' or '\\' characters.
-+ * 
-+ * NOTE: Currently there are the following limitations:
-+ * \t
-+ * - the filesystem has to be unmounted
-+ * \t
-+ * - the filesystem should not have more than one device.
-+ ****/
-+
- int do_change_label(int nargs, char **argv)
- {
- 	/* check the number of argument */
-diff --git a/scrub.c b/scrub.c
-index 22052ed..4c58ab8 100644
---- a/scrub.c
-+++ b/scrub.c
-@@ -1378,16 +1378,76 @@ out:
- 	return !!err;
- }
- 
-+
-+/**** man: btrfs scrub start
-+ * 
-+ * \Bbtrfs\b \Bscrub start\b [-Bdqru] {\I<path>\i|\I<device>\i}
-+ * 
-+ * Start a new scrub.
-+ * 
-+ * Start a scrub on all devices of the filesystem identified by \I<path>\i or on
-+ * a single \I<device>\i. Without options, scrub is started as a background
-+ * process. Progress can be obtained with the \Bscrub status\b command. 
-+ * Scrubbing involves reading all data from all disks and verifying checksums. 
-+ * Errors are corrected along the way if possible.
-+ * \w
-+ * 
-+ * \IOptions\i
-+ * \t -B 5
-+ * Do not background and print scrub statistics when finished.
-+ * \t -d 5
-+ * Print separate statistics for each device of the filesystem (-B only).
-+ * \t -q 5
-+ * Quiet. Omit error messages and statistics.
-+ * \t -r 5
-+ * Read only mode. Do not attempt to correct anything.
-+ * \t -u 5
-+ * Scrub unused space as well. (NOT IMPLEMENTED)
-+ * \q
-+ ****/
-+
- int do_scrub_start(int argc, char **argv)
- {
- 	return scrub_start(argc, argv, 0);
- }
- 
-+
-+/**** man: btrfs scrub resume
-+ * 
-+ * \Bbtrfs\b \Bscrub resume\b [-Bdqru] {\I<path>\i|\I<device>\i}
-+ * 
-+ * Resume previously canceled or interrupted scrub.
-+ * 
-+ * Resume a canceled or interrupted scrub cycle on the filesystem identified by
-+ * \I<path>\i or on a given \I<device>\i. Does not start a new scrub if the
-+ * last scrub finished successfully.
-+ * \w
-+ * 
-+ * \IOptions\i
-+ * \p
-+ * see \Bscrub start\b.
-+ * \q
-+ ****/
-+
- int do_scrub_resume(int argc, char **argv)
- {
- 	return scrub_start(argc, argv, 1);
- }
- 
-+
-+/**** man: btrfs scrub cancel
-+ * 
-+ * \Bbtrfs\b \Bscrub cancel\b {\I<path>\i|\I<device>\i}
-+ * 
-+ * Cancel a running scrub.
-+ * 
-+ * If a scrub is running on the filesystem identified by \I<path>\i, cancel it.
-+ * Progress is saved in the scrub progress file and scrubbing can be resumed later
-+ * using the \Bscrub resume\b command.
-+ * If a \I<device>\i is given, the corresponding filesystem is found and
-+ * \Bscrub cancel\b behaves as if it was called on that filesystem.
-+ ****/
-+
- int do_scrub_cancel(int argc, char **argv)
- {
- 	char *path = argv[1];
-@@ -1433,6 +1493,25 @@ again:
- 	return 0;
- }
- 
-+
-+/**** man: btrfs scrub status
-+ * 
-+ * \Bbtrfs\b \Bscrub status\b [-d] {\I<path>\i|\I<device>\i}
-+ * 
-+ * Show status of running or finished scrub.
-+ * 
-+ * Show status of a running scrub for the filesystem identified by \I<path>\i or
-+ * for the specified \I<device>\i.
-+ * If no scrub is running, show statistics of the last finished or canceled scrub
-+ * for that filesystem or device.
-+ * \w
-+ * 
-+ * \IOptions\i
-+ * \t -d 5
-+ * Print separate statistics for each device of the filesystem.
-+ * \q
-+ ****/
-+
- int do_scrub_status(int argc, char **argv)
- {
- 
+ struct Command {
 

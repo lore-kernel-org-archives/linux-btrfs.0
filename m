@@ -1,7 +1,8 @@
 From: Goffredo Baroncelli <kreijack@libero.it>
-Subject: [PATCH 2/6] Add the header/footer/introduction of the man page.
-Date: Tue, 19 Jul 2011 18:12:05 +0200
-Message-ID: <20110719161205.3210.53603.stgit@venice.bhome>
+Subject: [PATCH 3/6] helpextract: tool to extract the info for the help from
+	the source.
+Date: Tue, 19 Jul 2011 18:12:11 +0200
+Message-ID: <20110719161211.3210.54842.stgit@venice.bhome>
 References: <20110719161049.3210.54794.stgit@venice.bhome>
 Mime-Version: 1.0
 Content-Type: text/plain; charset="utf-8"
@@ -12,198 +13,453 @@ List-ID: <linux-btrfs.vger.kernel.org>
 
 From: Goffredo Baroncelli <kreijack@inwind.it>
 
-Add the header/footer/introduction of the man page. There is also an
-introduction to the syntax recognized by the tool helpextract to format
-the information.
+It is created the file helpextract.c, which is the source for the tool
+"helpextract". This program extract the info showed in the man page and
+the help command from the sources comments.
 ---
- btrfs.c |  176 +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
- 1 files changed, 176 insertions(+), 0 deletions(-)
+ helpextract.c |  435 +++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+ 1 files changed, 435 insertions(+), 0 deletions(-)
+ create mode 100644 helpextract.c
 
-diff --git a/btrfs.c b/btrfs.c
-index 67d6f6f..98abb6c 100644
---- a/btrfs.c
-+++ b/btrfs.c
-@@ -26,6 +26,182 @@
- #define BASIC_HELP 0
- #define ADVANCED_HELP 1
- 
-+/**
-+ ** The comments below are used to make the man page
-+ **
-+ ** There are:
-+ ** - Header, 
-+ ** - The synopsis title section (the content are extracted from other 
-+ **   comments)
-+ ** - The synopsis format, which is a template: the '%s' is replaced by 
-+ **   the command line "syntax"
-+ ** - The btrfs introduction section
-+ ** - The btfrs command title section (the content are extracted from other 
-+ **   comments)
-+ ** - The command format, which is a template: the first '%s' is replaced by 
-+ **   the command line "syntax"; the ssecond '%s' is replaced by the
-+ **   detailed descritpion
-+ ** - The "notes" section 
-+ ** - The footer (currentli empty)
-+ **
-+ ** The comments are the following sytax [replace '{slash}' with '/']
-+ **
-+ ** If the comment starts with '{slash}**** text: ', then all the text below
-+ ** are used until ' ***'. The text after 'text: ' are the key used to
-+ ** index teh content. 
-+ **
-+ ** If the comment starts with '{slash}**** man: ', then below the comment are
-+ ** divided in three section:
-+ ** 1) (one line) command line syntax
-+ ** 2) (multiple line) short description (showed in the command "btrfs help")
-+ ** 3) (multiple line) detailled description (showed in the man page and
-+ **    command "btrfs <subcommand> --help")
-+ ** The text after 'man: ' are the key used to index the content. This must
-+ ** be equal to the subcommand which the info is referred.
-+ ** 
-+ ** Below the escape sequence which may be used in the text
-+ **
-+ **	     escape      troff
-+ **          sequence    command
-+ **
-+ **                \B	 \fB         bold 
-+ **                \b	 \fP         end bold 
-+ **                \I	 \fI         italic 
-+ **                \i	 \fP         end italic 
-+ **                \c	 .\"         comment 
-+ **                \P	 .PP         start paragraph 
-+ **                \p	 .TP         indented paragraph 
-+ **                \h	 .SH         header 
-+ **                \d	 .BR         bold regular 
-+ **                \e	 .B          bold 
-+ **                \t	 .IP         indented paragraph 
-+ **                \w	 .RS         move the left margin 
-+ **                \q	 .RE         move the left margin back
-+ **		   \-    \-          minus (it *must* escaped )
-+ **
-+ **
-+ **/
+diff --git a/helpextract.c b/helpextract.c
+new file mode 100644
+index 0000000..9489ea0
+--- /dev/null
++++ b/helpextract.c
+@@ -0,0 +1,435 @@
++#include <stdio.h>
++#include <errno.h>
++#include <stdlib.h>
++#include <string.h>
++#include <ctype.h>
++
++#define PREFIX_MAN	"/**** man: "
++#define PREFIX_TEXT	"/**** text: "
++#define PREFIX_END 	" ****"
++#define PREFIX_SKIP	" * "
++
++#define LINEBUF		1024
++
++char **msgs=0;
++int nmsg=0;
++
++static char *xstrdup(char *str){
++	char	*new = strdup(str);
++	if(!new){
++		fprintf(stderr,"*** Memory allocation fail ! (xstrdup)\n");
++		exit(101);
++	}
++	return new;
++}
++
++static void *xrealloc(void *ptr, int newsize){
++	void *new = realloc(ptr, newsize);
++	if(!new){
++		fprintf(stderr,"*** Memory allocation fail ! (xrealloc)\n");
++		exit(101);
++	}
++	return new;
 +
 +
-+/**** text: man btrfs header
-+ * .TH BTRFS 8 "" "btrfs" "btrfs"
-+ * .\"
-+ * .\" Man page for the "btrfs" tool 
-+ * .\"
-+ * .SH NAME
-+ * btrfs \- control a btrfs filesystem
-+ ****/
++}
 +
-+/**** text: man btrfs synopsis
-+ * .SH SYNOPSIS
-+ ****/
++static char *xstrip(char *s){
 +
-+/**** text: man btrfs synopsis format
-+ * \fB%s\fP
-+ * .PP
-+ ****/
++	char *last=NULL;
++	char *first;
 +
-+/**** text: btrfs introduction
-+ * \h DESCRIPTION
-+ * \Bbtrfs\b is used to control the filesystem and the files and directories 
-+ * stored. It is the tool to create or destroy a snapshot or a subvolume for 
-+ * the filesystem, to defrag a file or a directory, flush the data to the disk,
-+ * to resize the filesystem, to scan the device.
-+ * 
-+ * It is possible to abbreviate the commands unless the commands  are ambiguous.
-+ * For example: it is possible to run
-+ * \Ibtrfs sub snaps\i instead of \Ibtrfs subvolume snapshot\i. But \Ibtrfs 
-+ * file s\i is not allowed, because \Ifile s\i may be interpreted both as
-+ * \Ifilesystem show\i and as \Ifilesystem sync\i.  
-+ * 
-+ * If a command is terminated by \I--help\i, the detailed help is showed. 
-+ * If the passed command matches more commands, detailed help of all the 
-+ * matched commands is showed. For example \Ibtrfs dev --help\i shows the 
-+ * help of all \Idevice*\i commands.
-+ ****/
++	while(*s && isspace(*s) ) s++;
 +
-+/**** text: man btrfs command format
-+ *
-+ * .TP
-+ * %s%s
-+ ****/
++	first=s;
 +
-+/**** text: man btrfs commands
-+ * .SH COMMANDS
-+ * .TP
-+ */
++	while(*s){
++		if(isspace(*s)) last=s;
++		s++;
++	}
 +
-+/**** text: btrfs notes
-+ * \h BALANCE FILTERS
-+ * 
-+ * With balance filters, it is possible to perform a balance operation on
-+ * only a subset of the available chunks. Filters are specified with the
-+ * \B--filter\b option of \Bbtrfs filesystem balance\b or \Bbtrfs
-+ * balance start\b. Multiple filters may be given, either with multiple
-+ * \B--filter\b options, or in a colon-separated list. When multiple
-+ * filters are given, only the chunks meeting all of the selection
-+ * critera are balanced. Help on the avaialble filters can be obtained
-+ * with \B--filter=help\b.
-+ * 
-+ * 
-+ * \Btype\b=[\B~\b]\I<flagname>\i[\B,\b...]
-+ * 
-+ * Select only the chunks with the given type flag(s). Requiring a flag
-+ * to be off can be specified with a \B~\b preceding the flag
-+ * name. Flag names are:
-+ * 
-+ * \Bmeta\b, \Bdata\b, \Bsys\b for metadata, file data and system
-+ * chunk types.
-+ * 
-+ * \Braid0\b, \Braid1\b, \Braid10\b, \Bdup\b for chunks of the
-+ * given replication levels.
-+ * 
-+ * 
-+ * \Bdevid\b=\I<n>\i
-+ * 
-+ * Select chunks which have data on device ID \I<n>\i. This can be
-+ * used, for example, to reduplicate data in a mirrored configuration
-+ * where one drive has been lost due to hardware failure.
-+ * 
-+ * 
-+ * \Bvrange\b=\I<start>\i,\I<end>\i
-+ * 
-+ * Select chunks which have btrfs-internal virtual addresses within the
-+ * range \I<start>\i (inclusive) to \I<end>\i (exclusive). Given the
-+ * address of the last chunk moved, this filter can be used to restart a
-+ * cancelled or interrupted balance operation, by supplying a range of
-+ * \I0,<chunkaddr+1>\i.
-+ * 
-+ * \Bdrange\b=\I<start>\i,\I<end>\i
-+ * 
-+ * Select chunks which contain data in the address range \I<start>\i
-+ * (inclusive) to \I<end>\i (exclusive) on \Iany\i block device in
-+ * the filesystem. Can be mixed with the \Bdevid\b filter to select
-+ * chunks in a given address range on a specific device.
-+ * 
-+ * \h EXIT STATUS
-+ * \Bbtrfs\b returns a zero exist status if it succeeds. Non zero is returned in
-+ * case of failure.
-+ * 
-+ * \h AVAILABILITY
-+ * \Bbtrfs\b is part of btrfs-progs. Btrfs filesystem is currently under 
-+ * heavy development, and not suitable for any uses other than benchmarking and
-+ * review.
-+ *
-+ * Please refer to the btrfs wiki http://btrfs.wiki.kernel.org for
-+ * further details.
-+ *
-+ * \h SEE ALSO
-+ * \Bmkfs.btrfs (8)\b
-+ ****/
-+
-+/**** text: man btrfs footer
-+ ****/
++	if(last) *last=0;
++	return first;
 +
 +
++}
++
++static void addtuple(char *key, char *cmdline, char *short_help, 
++		char *long_help){
++
++	msgs = (char**)xrealloc(msgs, sizeof(char *)*(nmsg+1)*4);
++	
++	key = xstrip(key);
++
++	if( !long_help || !strcmp(long_help,"\n"))
++		long_help = short_help;
++	else if(!short_help || !strcmp(short_help, "\n"))
++		short_help = long_help;
++
++	msgs[nmsg*4] = key;
++	msgs[nmsg*4+1] = cmdline;
++	msgs[nmsg*4+2] = short_help;
++	msgs[nmsg*4+3] = long_help;
++	nmsg++;
++}
 +
 +
++static int search_in_file(char *nf){
++	char	buf[LINEBUF+1];
++	FILE	*fp;
++	int	status; 
++	char	*key=NULL;
++	char	*cmdline=NULL;
++	char	*short_help=NULL;
++	char	*long_help=NULL;
 +
- typedef int (*CommandFunction)(int argc, char **argv);
- 
- struct Command {
++	fp = fopen(nf,"r");
++	if(!fp){
++		int	e=errno;
++		fprintf(stderr, "*** Cannot open '%s'; error = %d - '%s'\n",
++			nf, e, strerror(e));
++		return -1;
++	}
++
++	status = 0;
++	while(fgets(buf,LINEBUF,fp)){
++	//	printf("status = %d, buf=%s",status, buf);
++	
++		if(status == 0){
++			if(!strncmp(buf,PREFIX_MAN, strlen(PREFIX_MAN)) ){
++				key = xstrdup(buf+strlen(PREFIX_MAN));
++				status++;
++			}else if(!strncmp(buf,PREFIX_TEXT, 
++					strlen(PREFIX_TEXT))){
++				key = xstrdup(buf+strlen(PREFIX_TEXT));
++				status=5;
++			}
++			continue;
++
++		}
++
++		if( !strncmp(buf,PREFIX_END, strlen(PREFIX_END)) || 
++				strncmp(buf, PREFIX_SKIP,2)){
++
++			addtuple(key, cmdline, short_help, long_help);
++			key = cmdline = short_help = long_help = 0;
++			status = 0;
++
++			continue;
++		} 
++		if( status == 2){
++			if(strlen(buf)>strlen(PREFIX_SKIP))
++				cmdline = xstrdup(buf+strlen(PREFIX_SKIP));
++			status++;
++			continue;
++		}
++		if( status == 4){
++			int len;
++			int len2;
++			char *p;
++
++			if(strlen(buf)<=strlen(PREFIX_SKIP)){
++				status++;
++				continue;
++			}
++			p=buf+3;
++			while(isspace(*p) && *p ) p++;
++			if(!*p){
++				status++;
++				continue;
++			}
++
++			len2 = strlen(buf)-strlen(PREFIX_SKIP);
++
++			if(short_help)
++				len = strlen(short_help);
++			else
++				len = 0;
++			short_help = (char*)xrealloc(short_help, len+len2+1);
++			strcpy(short_help+len,buf+strlen(PREFIX_SKIP));
++			continue;
++		}
++		if( status == 5){
++			int len;
++			int len2 = strlen(buf)-strlen(PREFIX_SKIP);
++
++			if(long_help)
++				len = strlen(long_help);
++			else
++				len = 0;
++			long_help = (char*)xrealloc(long_help, len+len2+1);
++			strcpy(long_help+len,buf+strlen(PREFIX_SKIP));
++			continue;
++		}
++		if( status == 1 || status == 3 ){
++			status++;
++			continue;
++		}
++
++		fprintf(stderr,"*** Internal error: status = %d\n",status);
++		exit(100);
++
++	}
++
++	if( status != 0 ){
++		fprintf(stderr,"*** Parse error: file = '%s', "
++				"status = %d at the end of file\n",
++				nf, status);
++		exit(100);
++
++	}
++
++	fclose(fp);
++
++	return 0;
++}
++
++/* remove all the escape sequence excepet \\ */
++static char * my_escape(char *src, char *filters[] ){
++
++	static char buffer[LINEBUF*5];
++
++	int	i=0;
++	while(*src){
++		int 	j;
++		int	next_char = *(src+1);
++		if(*src != '\\'){
++			buffer[i++]=*src++;
++			continue;
++		}
++		if(!next_char){
++			buffer[i++]=*src++;
++			continue;
++		}
++		if( !filters ){
++			src +=2;
++			continue;
++		}
++
++		j=0;
++		while(filters[j]){
++			if(filters[j][0] == next_char ){
++				strcpy(buffer+i, filters[j]+2);
++				i+=strlen(filters[j]+2);
++				break;
++			}
++			j++;
++		}
++		if(!filters[j]){
++			char *p=src;
++			int l=40;
++			fprintf(stderr, 
++				"Unknow escape sequence '\%c' in [\"",
++				next_char);
++			while(*p && l--) fputc(*p++, stderr);
++			fprintf(stderr, "\"...]\n");
++		}
++		src += 2;
++
++	}
++
++	buffer[i]=0;
++	return buffer;
++
++}
++
++static char * escape_c_array(char *src ){
++	static char *filters[]={
++
++		/* remove the all know esc-sequence */
++
++		"B ",	/* bold */
++		"b ",	/* end bold */
++		"I ",	/* italic */
++		"i ",	/* end italic */
++		"c ",	/* comment */
++		"P ",	/* start paragraph */
++		"p ",	/* indented paragraph */
++		"h ",	/* header */
++		"d ",	/* bold regular */
++		"e ",	/* bold */
++		"t ",	/* indented paragraph */
++		"w ",	/* move the left margin */
++		"q ",	/* move the left margin back */
++
++		"\\ \\\\",
++		"- -",
++
++		0
++	};
++
++	return my_escape(src, filters);
++}
++
++static char *escape_man_page(char *src){
++	/* from Gnu troff manual */
++	static char *filters[]={
++		"B \\fB",	/* bold */
++		"b \\fP",	/* end bold */
++		"I \\fI",	/* italic */
++		"i \\fP",	/* end italic */
++		"c .\\\"",	/* comment */
++		"P .PP",	/* start paragraph */
++		"p .TP",	/* indented paragraph */
++		"h .SH",	/* header */
++		"d .BR",	/* bold regular */
++		"e .B",		/* bold */
++		"t .IP",	/* indented paragraph */
++		"w .RS",	/* move the left margin */
++		"q .RE",	/* move the left margin back */
++
++		"- \\-",	/* escape the minus sign */
++		"\\ \\",
++
++		0
++	};
++
++	return my_escape(src, filters);
++}
++	
++
++static void dump_c_array(){
++
++	int	i;
++
++	printf("{");
++	for(i=0; i < nmsg*4 ; i++){
++		char *c = msgs[i];
++		int begin;
++
++		if(!(i%4) && strncmp(c,"btrfs ",5)){
++			i+=3;
++			continue;
++		}
++
++		if(i>0){
++			putchar(',');
++			if(!(i%4)) putchar('\n');
++		}
++
++		if(!c){
++			printf("\n  NULL");
++			continue;
++		}
++
++		c = escape_c_array(c);
++
++		begin = 1;
++		while( *c ){
++			if(begin)
++				printf("\n  \"");
++			begin = 0;
++			if( *c == '\n' ){
++				printf("\\n\"");
++				begin = 1;
++			}else if( *c == '"' ){
++				printf("\\\"");
++			}else{
++				putchar(*c);
++			}
++
++			c++;
++		}
++		if(!begin) putchar('"');
++	}
++	printf(",\n\n  ");
++	for(i=0; i < 4; i++){
++		if(i>0) putchar(',');
++		printf("NULL");
++	}
++	printf("\n}\n");
++
++}
++
++static int my_sort_cmp(const void *p1, const void *p2){
++	return strcmp(*(char**)p1, *(char **)p2);
++}
++
++static void my_sort(){
++	qsort(msgs, nmsg, sizeof(char*)*4, my_sort_cmp);
++}
++
++static int find_section(char *key){
++	int 	i;
++	for(i = 0 ; i < nmsg ; i++ )
++		if(!strcmp( msgs[i*4],key) )	return i;
++	
++	return -1;
++}
++
++static void dump_man_page(){
++
++	int	i, fmt;
++
++	i = find_section("man btrfs header");
++	if( i>= 0 ) printf(msgs[i*4+3]);
++
++	i = find_section("man btrfs synopsis");
++	if( i>= 0 ) printf(msgs[i*4+3]);
++
++	fmt = find_section("man btrfs synopsis format");
++	for(i = 0; i < nmsg && fmt>=0; i++ ){
++		if( strncmp("btrfs ",msgs[i*4], 6) ||
++		    !strcmp("btrfs introduction", msgs[i*4] ) ||
++		    !strcmp("btrfs notes", msgs[i*4] ) )
++		    		continue;
++
++		printf(msgs[fmt*4+3], escape_man_page(msgs[i*4+1]));
++	}
++
++	i = find_section("btrfs introduction");
++	if( i>= 0 ) printf(escape_man_page(msgs[i*4+3]));
++	
++	i = find_section("man btrfs commands");
++	if( i>= 0 ) printf(msgs[i*4+3]);
++
++	fmt = find_section("man btrfs command format");
++	for(i = 0; i < nmsg && fmt>=0; i++ ){
++
++		char big2[LINEBUF*5];
++		if( strncmp("btrfs ",msgs[i*4], 6) ||
++		    !strcmp("btrfs introduction", msgs[i*4] ) ||
++		    !strcmp("btrfs notes", msgs[i*4] ) )
++		    		continue;
++		
++		strcpy(big2, escape_man_page(msgs[i*4+3]));
++		printf(msgs[fmt*4+3], escape_man_page(msgs[i*4+1]), big2);
++
++	}
++
++	i = find_section("man btrfs notes");
++	if( i>= 0 ) printf(msgs[i*4+3]);
++
++	i = find_section("btrfs notes");
++	if( i>= 0 ) printf(escape_man_page(msgs[i*4+3]));
++
++	i = find_section("man btrfs footer");
++	if( i>= 0 ) printf(msgs[i*4+3]);
++}
++
++static void usage(char *np){
++	printf("usage: %s --man-page|--c-array <file> [<file> [...]]\n", np);
++}
++
++int main(int argc, char **argv ){
++
++	int	i;
++	if( argc < 3 || ( strcmp(argv[1],"--man-page") && 
++			  strcmp(argv[1],"--c-array") )){
++		usage(argv[0]);
++		return 0;
++	}
++
++	for(i=2; i < argc ; i++)
++		search_in_file(argv[i]);
++
++	my_sort();
++
++	if(!strcmp(argv[1], "--man-page"))
++		dump_man_page();
++	else if (!strcmp(argv[1], "--c-array"))
++		dump_c_array();
++
++	return 0;
++
++}
 

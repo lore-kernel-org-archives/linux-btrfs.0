@@ -1,34 +1,46 @@
-From: Chris Mason <chris.mason@oracle.com>
-Subject: Re: new metadata reader/writer locks in integration-test
-Date: Wed, 20 Jul 2011 14:51:07 -0400
-Message-ID: <1311187835-sup-7598@shiny>
-References: <1311096438-sup-1263@shiny> <1311182478-sup-9986@shiny>
+From: Nirbheek Chauhan <nirbheek@gentoo.org>
+Subject: Re: Applications using fsync cause hangs for several seconds every
+ few minutes
+Date: Thu, 21 Jul 2011 02:29:25 +0530
+Message-ID: <CADqQcK7_p_H6ZYPJ4h5cDHunoCGRFTSQ6+zrKMQZ8mu8BpOuHw@mail.gmail.com>
+References: <BANLkTimMv_MMVmsJeVvr_1_wEVam1WZ6BA@mail.gmail.com> <4E2478B1.60601@redhat.com>
+Mime-Version: 1.0
 Content-Type: text/plain; charset=UTF-8
 Cc: linux-btrfs <linux-btrfs@vger.kernel.org>
-To: Chris Mason <chris.mason@oracle.com>
+To: Josef Bacik <josef@redhat.com>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-reply-to: <1311182478-sup-9986@shiny>
+In-Reply-To: <4E2478B1.60601@redhat.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Excerpts from Chris Mason's message of 2011-07-20 13:21:47 -0400:
-> Excerpts from Chris Mason's message of 2011-07-19 13:30:22 -0400:
-> > Hi everyone,
-> > 
-> > I've pushed out a new integration-test branch, and it includes a new
-> > reader/writer locking scheme for the btree locks.
-> > 
-> > We've seen a number of benchmarks dominated by contention on the root
-> > node lock.  This changes our locks into a simple reader/writer lock.
-> > They are based on mutexes so that we still take advantage of the mutex
-> > adaptive spins for write locks (rwsemaphores were much slower).
-> > 
-> > I'm also sending the individual commits, please do take a look.
-> 
-> Hi everyone,
-> 
-> I just rebased Josef's enospc fixes into integration-test, it should fix
-> the warnings in extent-tree.c
+On Mon, Jul 18, 2011 at 11:47 PM, Josef Bacik <josef@redhat.com> wrote:
+> On 06/06/2011 06:58 PM, Nirbheek Chauhan wrote:
+>> What can I do to debug this issue? What other information should I
+>> supply? Could someone guide me on how to figure out why my machine i=
+s
+>> unusable now?
+>
+> I've been looking into this and I have a suspicion. =C2=A0Would you r=
+un with this
+> patch and see if the problem goes away? =C2=A0If so I'm on the right =
+track
+> and I'll
+> have more test patches for you to try :). =C2=A0Thanks,
+>
 
-And one more rebase to fix the x86-32 problems.
+Hello!
 
--chris
+Thanks for taking a look! I'm currently travelling and as soon as I
+get a bit closer to my backups, I'll try the patch out and report back
+for further testing :)
+
+Cheers,
+
+--=20
+~Nirbheek Chauhan
+
+Gentoo GNOME+Mozilla Team
+--
+To unsubscribe from this list: send the line "unsubscribe linux-btrfs" =
+in
+the body of a message to majordomo@vger.kernel.org
+More majordomo info at  http://vger.kernel.org/majordomo-info.html

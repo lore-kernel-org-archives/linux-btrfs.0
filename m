@@ -1,46 +1,97 @@
-From: Tsutomu Itoh <t-itoh@jp.fujitsu.com>
-Subject: Re: new metadata reader/writer locks in integration-test
-Date: Wed, 20 Jul 2011 17:36:09 +0900
-Message-ID: <4E269379.20405@jp.fujitsu.com>
-References: <1311096438-sup-1263@shiny> <4E2638A6.2070404@jp.fujitsu.com> <1311148631-sup-9551@shiny>
-Mime-Version: 1.0
+From: Chris Mason <chris.mason@oracle.com>
+Subject: Re: kernel BUG at fs/btrfs/inode.c:4676!
+Date: Wed, 20 Jul 2011 04:44:26 -0400
+Message-ID: <1311150979-sup-1740@shiny>
+References: <201106061220.05696.markotahal@gmail.com> <201106102043.19025.markotahal@gmail.com> <4DF28414.8090601@redhat.com> <1340741.hHfqtiVQGn@beruska> <4E0213C8.20006@redhat.com> <1311141916.4652.4.camel@shinybook.infradead.org>
 Content-Type: text/plain; charset=UTF-8
-Cc: linux-btrfs <linux-btrfs@vger.kernel.org>
-To: Chris Mason <chris.mason@oracle.com>
+Cc: Josef Bacik <josef@redhat.com>,
+	Marek Otahal <markotahal@gmail.com>,
+	Daniel J Blueman <daniel.blueman@gmail.com>,
+	Linux Btrfs <linux-btrfs@vger.kernel.org>,
+	Andy Lutomirski <luto@mit.edu>
+To: David Woodhouse <dwmw2@infradead.org>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <1311148631-sup-9551@shiny>
+In-reply-to: <1311141916.4652.4.camel@shinybook.infradead.org>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-(2011/07/20 16:58), Chris Mason wrote:
-> Excerpts from Tsutomu Itoh's message of 2011-07-19 22:08:38 -0400:
->> (2011/07/20 2:30), Chris Mason wrote:
->>> Hi everyone,
->>>
->>> I've pushed out a new integration-test branch, and it includes a new
->>> reader/writer locking scheme for the btree locks.
->>>
->>> We've seen a number of benchmarks dominated by contention on the root
->>> node lock.  This changes our locks into a simple reader/writer lock.
->>> They are based on mutexes so that we still take advantage of the mutex
->>> adaptive spins for write locks (rwsemaphores were much slower).
->>>
->>> I'm also sending the individual commits, please do take a look.
->>
->> I pulled the new integration-test branch, and I got the following
->> warning messages.
->>
->> Jul 20 10:03:30 luna kernel: ------------[ cut here ]------------
->> Jul 20 10:03:30 luna kernel: WARNING: at fs/btrfs/extent-tree.c:5704 btrfs_alloc_free_block+0x178/0x340 [btrfs]()
+Excerpts from David Woodhouse's message of 2011-07-20 02:05:02 -0400:
+> On Wed, 2011-06-22 at 12:09 -0400, Josef Bacik wrote:
+> > >>>>>>>
+> > >>>>>>> Hello,
+> > >>>>>>> the issue happens every time when i have to hard power-off my notebook
+> > >>>>>>> (suspend problems).
+> > >>>>>>> With kernel 2.6.39 the partition is unmountable, solution is to boot
+> > >>>>>>> 2.6.38 kernel which
+> > >>>>>>> 1/ is able to mount the partition,
+> > >>>>>>> 2/ by doing that fixes the problem so later .39 (after clean shutdown) can
+> > >>>>>>> mount it also.
+> > >>>>>>
+> > >>>>>> Same problem here.  Mounting with 2.6.38 says:
+> > >>>>>>
+> > >>>>>> [   41.906259] Btrfs loaded
+> > >>>>>> [   41.906747] device fsid e040a9d60da49596-66c0275e348878bf devid 1 transid
+> > >>>>>> 69217 /dev/mapper/vg_midnight_ssd-home
+> > >>>>>> [   41.908767] btrfs: disk space caching is enabled
+> > >>>>>> [   42.232185] btrfs: unlinked 17 orphans
+> > >>>>>> [   42.232189] btrfs: truncated 2 orphans
+> > >>>>>>
+> > >>>>>> dmesg in 2.6.39.1 says:
+> > >>>>> []
+> > >>>>>> [   15.004255] kernel BUG at fs/btrfs/inode.c:4676!
+> > >>>>> []
+> > >>>>>
+> > >>>>> I've been experiencing the same issue also.
+> > >>>>>
+> > >>>>> Josef/Chris, would an metadata snapshot or full block snapshot help
+> > >>>>> debug this regression? I can probably setup a small testcase to
+> > >>>>> trigger this.
+> > >>>>>
+> > >>>>
+> > >>>> If you can come up with a testcase to reproduce I would love you forever
+> > >>>> ;).  If I get done what I wanted to do today I will try and reproduce.
+> > >>>> Thanks,
+> > >>>>
+> > >>>> Josef
+> > >>>>
+> > >>> ...I was getting ready for you eternal love, Josef :P...but I can't reproduce it 100%, like 70% 
+> > > success-rate. 
+> > >>>
+> > >>> The test-case is quite easy, 
+> > >>> 1. mount the FS, just with compress-force=lzo option // I didn't try without, but on my other 
+> > > btrfs partition that doesn't use compression the err never happened ...so, can the others who 
+> > > experience the bug confirm compress=lzo used?   
+> > >>> 2. cd to it & create a file (not sure if needed)
+> > >>> 3. hard power-off
+> > >>>
+> > >>> To reproduce my tests: 
+> > >>> dd /dev/zero /btrfstest bs=1M count=256 (min required for default mksf.btrfs)
+> > >>> losetup /dev/loop0 /btrfstest
+> > >>> mkfs.btrfs /dev/loop0
+> > >>> mount -o compress-force=lzo /dev/loop0 /mnt/tmp
+> > >>> vim /mnt/tmp/hello.txt
+> > >>> ---power off!
+
+Oh, the dirty little secret of loop devices is they don't actually write
+things to disk properly.   They are not power off safe.  But you can
+trigger this without a loop device, correct?
+
 > 
-> Thanks, I think this one is related to Josef's enospc changes, but I'll
-> double check.  
+> While repeatedly crashing 3.0-rc7 with attempts to make Broadcom
+> wireless work, I've seen something very similar to this. Like Marek, I
+> have to boot 2.6.38 to recover, and then I can boot 3.0 again. I've been
+> seeing it for a while, but upon looking in to the mailing list I saw it
+> was already being discussed and even had a test case more useful than
+> "sometimes when I crash my kernel...", so I figured it was already in
+> hand.
+> 
+> I'll try to crash it tonight so I can hand it to Chris in the morning.
+> Obviously, my attempts to reproduce it on demand so far have failed :)
+> 
 
->What was the test?
+The oops were hitting is a -EEXIST on trying to insert the directory
+entry for the inode back ref, but the tree-logging stuff is already
+trying to check for dups.
 
-I ran my original test script. 
-This script concurrently executes the making deletion of a lot of files,
-and the making deletion of a big file, etc. 
+I'll take a look.
 
-Thanks,
-Tsutomu
-
+-chris

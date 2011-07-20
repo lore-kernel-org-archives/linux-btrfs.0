@@ -1,57 +1,43 @@
-From: Clint Adams <clint@debian.org>
-Subject: Bug#632475: btrfs flushing hangs
-Date: Wed, 20 Jul 2011 09:51:28 +0000
-Message-ID: <20110720095128.GA1071@scru.org>
-References: <20110702162649.GA14328@scru.org>
- <1309750917.3244.94.camel@localhost>
- <20110704182631.GA17222@scru.org>
- <1310357615.8783.76.camel@localhost>
-Reply-To: Clint Adams <clint@debian.org>, 632475@bugs.debian.org
+From: David Woodhouse <dwmw2@infradead.org>
+Subject: Re: kernel BUG at fs/btrfs/inode.c:4676!
+Date: Wed, 20 Jul 2011 07:37:50 -0700
+Message-ID: <1311172680.7531.18.camel@shinybook.infradead.org>
+References: <201106061220.05696.markotahal@gmail.com>
+	 <201106102043.19025.markotahal@gmail.com> <4DF28414.8090601@redhat.com>
+	 <1340741.hHfqtiVQGn@beruska> <4E0213C8.20006@redhat.com>
+	 <1311141916.4652.4.camel@shinybook.infradead.org>
+	 <1311150979-sup-1740@shiny>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Cc: 632475@bugs.debian.org
-To: Chris Mason <chris.mason@oracle.com>, linux-btrfs@vger.kernel.org
-Return-path: <bounce-debian-bugs-dist=glddb-debian-bugs-dist=m.gmane.org@lists.debian.org>
-In-Reply-To: <1310357615.8783.76.camel@localhost>
-List-Post: <mailto:debian-bugs-dist@lists.debian.org>
-List-Help: <mailto:debian-bugs-dist-request@lists.debian.org?subject=help>
-List-Subscribe: <mailto:debian-bugs-dist-request@lists.debian.org?subject=subscribe>
-List-Unsubscribe: <mailto:debian-bugs-dist-request@lists.debian.org?subject=unsubscribe>
+Content-Type: text/plain; charset="UTF-8"
+Cc: Josef Bacik <josef@redhat.com>,
+	Marek Otahal <markotahal@gmail.com>,
+	Daniel J Blueman <daniel.blueman@gmail.com>,
+	Linux Btrfs <linux-btrfs@vger.kernel.org>,
+	Andy Lutomirski <luto@mit.edu>
+To: Chris Mason <chris.mason@oracle.com>
+Return-path: <linux-btrfs-owner@vger.kernel.org>
+In-Reply-To: <1311150979-sup-1740@shiny>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hi Chris,
+On Wed, 2011-07-20 at 04:44 -0400, Chris Mason wrote:
+> Oh, the dirty little secret of loop devices is they don't actually write
+> things to disk properly.   They are not power off safe.  But you can
+> trigger this without a loop device, correct?
 
-When my Sheevaplug's btrfs partition gets near-full (df will report 1.8
-or 1.9 gigs free), the filesystem hangs.  I get messages as seen below,
-and I can no longer read or write.
+Yes. I would have liked to reproduce it last night and show it to you
+this morning, and that way I'd double-check that it really is the *same*
+BUG(). But certainly I thought it was a few weeks ago when I looked, and
+the bit about having to reboot into 2.6.38 before I can boot 3.0 is
+*definitely* the same.
 
-This occurs with Debian's linux-image-2.6.39-2-kirkwood and
-3.0.0~rc5-1~experimental.1 as well.  It is consistently reproducible.
+> The oops were hitting is a -EEXIST on trying to insert the directory
+> entry for the inode back ref, but the tree-logging stuff is already
+> trying to check for dups.
+> 
+> I'll take a look.
 
-Please let me know what additional information would be helpful.
+Thanks. I'll *try* to make it happen again, but I haven't managed it so
+far... and no, I haven't updated my kernel; this is the *same* kernel
+that was doing it before.
 
-[ 4852.113592] device fsid 1b48baae86d0b237-51ab536c499a6594 devid 1 transid 163957 /dev/sda1
-[ 5288.244963] INFO: task btrfs-transacti:2232 blocked for more than 120 seconds.
-[ 5288.252250] "echo 0 > /proc/sys/kernel/hung_task_timeout_secs" disables this message.
-[ 5288.260132] btrfs-transacti D c02e3e4c     0  2232      2 0x00000000
-[ 5288.266549] [<c02e3e4c>] (schedule+0x4ac/0x510) from [<c02e43b8>] (schedule_timeout+0x1c/0x230)
-[ 5288.275492] [<c02e43b8>] (schedule_timeout+0x1c/0x230) from [<bf0df564>] (btrfs_commit_transaction+0x2dc/0x6ec [btrfs])
-[ 5288.286568] [<bf0df564>] (btrfs_commit_transaction+0x2dc/0x6ec [btrfs]) from [<bf0d9df8>] (transaction_kthread+0x12c/0x200 [btrfs])
-[ 5288.298586] [<bf0d9df8>] (transaction_kthread+0x12c/0x200 [btrfs]) from [<c006177c>] (kthread+0x84/0x8c)
-[ 5288.308149] [<c006177c>] (kthread+0x84/0x8c) from [<c00315b0>] (kernel_thread_exit+0x0/0x8)
-[ 5408.308976] INFO: task btrfs-transacti:2232 blocked for more than 120 seconds.
-[ 5408.316338] "echo 0 > /proc/sys/kernel/hung_task_timeout_secs" disables this message.
-[ 5408.324204] btrfs-transacti D c02e3e4c     0  2232      2 0x00000000
-[ 5408.330642] [<c02e3e4c>] (schedule+0x4ac/0x510) from [<c02e43b8>] (schedule_timeout+0x1c/0x230)
-[ 5408.339655] [<c02e43b8>] (schedule_timeout+0x1c/0x230) from [<bf0df564>] (btrfs_commit_transaction+0x2dc/0x6ec [btrfs])
-[ 5408.350780] [<bf0df564>] (btrfs_commit_transaction+0x2dc/0x6ec [btrfs]) from [<bf0d9df8>] (transaction_kthread+0x12c/0x200 [btrfs])
-[ 5408.362807] [<bf0d9df8>] (transaction_kthread+0x12c/0x200 [btrfs]) from [<c006177c>] (kthread+0x84/0x8c)
-[ 5408.372359] [<c006177c>] (kthread+0x84/0x8c) from [<c00315b0>] (kernel_thread_exit+0x0/0x8)
-[ 5528.397412] INFO: task btrfs-transacti:2232 blocked for more than 120 seconds.
-[ 5528.404701] "echo 0 > /proc/sys/kernel/hung_task_timeout_secs" disables this message.
-[ 5528.412564] btrfs-transacti D c02e3e4c     0  2232      2 0x00000000
-[ 5528.418985] [<c02e3e4c>] (schedule+0x4ac/0x510) from [<c02e43b8>] (schedule_timeout+0x1c/0x230)
-[ 5528.427927] [<c02e43b8>] (schedule_timeout+0x1c/0x230) from [<bf0df564>] (btrfs_commit_transaction+0x2dc/0x6ec [btrfs])
-[ 5528.439004] [<bf0df564>] (btrfs_commit_transaction+0x2dc/0x6ec [btrfs]) from [<bf0d9df8>] (transaction_kthread+0x12c/0x200 [btrfs])
-[ 5528.451025] [<bf0d9df8>] (transaction_kthread+0x12c/0x200 [btrfs]) from [<c006177c>] (kthread+0x84/0x8c)
-[ 5528.460580] [<c006177c>] (kthread+0x84/0x8c) from [<c00315b0>] (kernel_thread_exit+0x0/0x8)
+

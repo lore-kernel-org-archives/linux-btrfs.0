@@ -1,61 +1,55 @@
-From: Mark Fasheh <mfasheh@suse.com>
-Subject: [PATCH 2/7] btrfs: Don't BUG_ON alloc_path errors in replay_one_buffer()
-Date: Thu, 21 Jul 2011 12:48:28 -0700
-Message-ID: <1311277713-7747-3-git-send-email-mfasheh@suse.com>
-References: <1311277713-7747-1-git-send-email-mfasheh@suse.com>
- <1311277713-7747-2-git-send-email-mfasheh@suse.com>
-Cc: chris.mason@oracle.com, Mark Fasheh <mfasheh@suse.com>
-To: linux-btrfs@vger.kernel.org
+From: Andi Kleen <andi@firstfloor.org>
+Subject: Re: [PATCH v5 8/8] btrfs: new ioctls to do logical->inode and inode->path resolving
+Date: Thu, 21 Jul 2011 13:14:16 -0700
+Message-ID: <m2d3h34civ.fsf@firstfloor.org>
+References: <cover.1311244592.git.list.btrfs@jan-o-sch.net>
+	<d1e9e9c9695a1291d624ad86abb8648f7d04a848.1311244592.git.list.btrfs@jan-o-sch.net>
+Mime-Version: 1.0
+Content-Type: text/plain; charset=us-ascii
+Cc: chris.mason@oracle.com, linux-btrfs@vger.kernel.org
+To: Jan Schmidt <list.btrfs@jan-o-sch.net>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <1311277713-7747-2-git-send-email-mfasheh@suse.com>
+In-Reply-To: <d1e9e9c9695a1291d624ad86abb8648f7d04a848.1311244592.git.list.btrfs@jan-o-sch.net>
+	(Jan Schmidt's message of "Thu, 21 Jul 2011 13:19:48 +0200")
 List-ID: <linux-btrfs.vger.kernel.org>
 
-The two ->process_func call sites in tree-log.c which were ignoring a return
-code have also been updated to gracefully exit as well.
+Jan Schmidt <list.btrfs@jan-o-sch.net> writes:
+> +
+> +static long btrfs_ioctl_logical_to_ino(struct btrfs_root *root,
+> +					void __user *arg)
+> +{
+> +	int ret = 0;
+> +	int size;
+> +	u64 extent_offset;
+> +	struct btrfs_ioctl_logical_ino_args *loi;
+> +	struct btrfs_data_container *inodes = NULL;
+> +	struct btrfs_path *path = NULL;
+> +	struct btrfs_key key;
 
-Signed-off-by: Mark Fasheh <mfasheh@suse.com>
----
- fs/btrfs/tree-log.c |   12 +++++++++---
- 1 files changed, 9 insertions(+), 3 deletions(-)
+This really needs to be root-only for obvious reasons.
+The same for the ino_path function
 
-diff --git a/fs/btrfs/tree-log.c b/fs/btrfs/tree-log.c
-index 4ce8a9f..f3cacc0 100644
---- a/fs/btrfs/tree-log.c
-+++ b/fs/btrfs/tree-log.c
-@@ -1617,7 +1617,8 @@ static int replay_one_buffer(struct btrfs_root *log, struct extent_buffer *eb,
- 		return 0;
- 
- 	path = btrfs_alloc_path();
--	BUG_ON(!path);
-+	if (!path)
-+		return -ENOMEM;
- 
- 	nritems = btrfs_header_nritems(eb);
- 	for (i = 0; i < nritems; i++) {
-@@ -1723,7 +1724,9 @@ static noinline int walk_down_log_tree(struct btrfs_trans_handle *trans,
- 			return -ENOMEM;
- 
- 		if (*level == 1) {
--			wc->process_func(root, next, wc, ptr_gen);
-+			ret = wc->process_func(root, next, wc, ptr_gen);
-+			if (ret)
-+				return ret;
- 
- 			path->slots[*level]++;
- 			if (wc->free) {
-@@ -1788,8 +1791,11 @@ static noinline int walk_up_log_tree(struct btrfs_trans_handle *trans,
- 				parent = path->nodes[*level + 1];
- 
- 			root_owner = btrfs_header_owner(parent);
--			wc->process_func(root, path->nodes[*level], wc,
-+			ret = wc->process_func(root, path->nodes[*level], wc,
- 				 btrfs_header_generation(path->nodes[*level]));
-+			if (ret)
-+				return ret;
-+
- 			if (wc->free) {
- 				struct extent_buffer *next;
- 
+> +
+> +	loi = memdup_user(arg, sizeof(*loi));
+> +	if (IS_ERR(loi)) {
+> +		ret = PTR_ERR(loi);
+> +		loi = NULL;
+> +		goto out;
+> +	}
+> +
+> +	path = btrfs_alloc_path();
+> +	if (!path) {
+> +		ret = -ENOMEM;
+> +		goto out;
+> +	}
+> +
+> +	size = min(loi->size, 4096);
+
+This is likely a root hole. loi->size is signed! Consider the case
+of a negative value being passed in.
+
+Same for the earlier function.
+
+-Andi
 -- 
-1.7.5.3
-
+ak@linux.intel.com -- Speaking for myself only

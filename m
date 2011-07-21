@@ -1,218 +1,121 @@
-From: Jan Schmidt <list.btrfs@jan-o-sch.net>
-Subject: [PATCH v5 8/8] btrfs: new ioctls to do logical->inode and inode->path resolving
-Date: Thu, 21 Jul 2011 13:19:48 +0200
-Message-ID: <d1e9e9c9695a1291d624ad86abb8648f7d04a848.1311244592.git.list.btrfs@jan-o-sch.net>
-References: <cover.1311244592.git.list.btrfs@jan-o-sch.net>
-To: chris.mason@oracle.com, linux-btrfs@vger.kernel.org
+From: Christian Brunner <chb@muc.de>
+Subject: Re: [PATCH] Btrfs: don't be as agressive with delalloc metadata
+ reservations V2
+Date: Thu, 21 Jul 2011 16:12:06 +0200
+Message-ID: <CAO47_-9F11i0X0gm0iupF6byc88Dnu=QaekKjmr3kAD9c4wqOA@mail.gmail.com>
+References: <1311012712-24828-1-git-send-email-josef@redhat.com>
+	<4E2477EE.4090701@redhat.com>
+Reply-To: chb@muc.de
+Mime-Version: 1.0
+Content-Type: text/plain; charset=ISO-8859-1
+Cc: linux-btrfs@vger.kernel.org
+To: Josef Bacik <josef@redhat.com>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <cover.1311244592.git.list.btrfs@jan-o-sch.net>
-In-Reply-To: <cover.1311244592.git.list.btrfs@jan-o-sch.net>
+In-Reply-To: <4E2477EE.4090701@redhat.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-these ioctls make use of the new functions initially added for scrub. they
-return all inodes belonging to a logical address (BTRFS_IOC_LOGICAL_INO) and
-all paths belonging to an inode (BTRFS_IOC_INO_PATHS).
+2011/7/18 Josef Bacik <josef@redhat.com>:
+> On 07/18/2011 02:11 PM, Josef Bacik wrote:
+>> Currently we reserve enough space to COW an entirely full btree for =
+every extent
+>> we have reserved for an inode. =A0This _sucks_, because you only nee=
+d to COW once,
+>> and then everybody else is ok. =A0Unfortunately we don't know we'll =
+all be able to
+>> get into the same transaction so that's what we have had to do. =A0B=
+ut the global
+>> reserve holds a reservation large enough to cover a large percentage=
+ of all the
+>> metadata currently in the fs. =A0So all we really need to account fo=
+r is any new
+>> blocks that we may allocate. =A0So fix this by
+>>
+>> 1) Passing to btrfs_alloc_free_block() wether this is a new block or=
+ a COW
+>> block. =A0If it is a COW block we use the global reserve, if not we =
+use the
+>> trans->block_rsv.
+>> 2) Reduce the amount of space we reserve. =A0Since we don't need to =
+account for
+>> cow'ing the tree we can just keep track of new blocks to reserve, wh=
+ich greatly
+>> reduces the reservation amount.
+>>
+>> This makes my basic random write test go from 3 mb/s to 75 mb/s. =A0=
+I've tested
+>> this with my horrible ENOSPC test and it seems to work out fine. =A0=
+Thanks,
+>>
+>> Signed-off-by: Josef Bacik <josef@redhat.com>
+>> ---
+>> V1->V2:
+>> -fix a problem reported by Liubo, we need to make sure that we move =
+bytes
+>> over for any new extents we may add to the extent tree so we don't g=
+et a bunch
+>> of warnings.
+>> -fix the global reserve to reserve 50% of the metadata space current=
+ly used.
 
-Signed-off-by: Jan Schmidt <list.btrfs@jan-o-sch.net>
----
- fs/btrfs/ioctl.c |  134 ++++++++++++++++++++++++++++++++++++++++++++++++++++++
- fs/btrfs/ioctl.h |   19 ++++++++
- 2 files changed, 153 insertions(+), 0 deletions(-)
+When I run this patch I get a lot of messages like these (V1 seemed to
+run fine).
 
-diff --git a/fs/btrfs/ioctl.c b/fs/btrfs/ioctl.c
-index a3c4751..5299b40 100644
---- a/fs/btrfs/ioctl.c
-+++ b/fs/btrfs/ioctl.c
-@@ -51,6 +51,7 @@
- #include "volumes.h"
- #include "locking.h"
- #include "inode-map.h"
-+#include "backref.h"
- 
- /* Mask out flags that are inappropriate for the given type of inode. */
- static inline __u32 btrfs_mask_flags(umode_t mode, __u32 flags)
-@@ -2836,6 +2837,135 @@ static long btrfs_ioctl_scrub_progress(struct btrfs_root *root,
- 	return ret;
- }
- 
-+static long btrfs_ioctl_ino_to_path(struct btrfs_root *root, void __user *arg)
-+{
-+	int ret = 0;
-+	int i;
-+	unsigned long rel_ptr;
-+	int size;
-+	struct btrfs_ioctl_ino_path_args *ipa;
-+	struct inode_fs_paths *ipath = NULL;
-+	struct btrfs_path *path;
-+
-+	path = btrfs_alloc_path();
-+	if (!path) {
-+		ret = -ENOMEM;
-+		goto out;
-+	}
-+
-+	ipa = memdup_user(arg, sizeof(*ipa));
-+	if (IS_ERR(ipa)) {
-+		ret = PTR_ERR(ipa);
-+		ipa = NULL;
-+		goto out;
-+	}
-+
-+	size = min(ipa->size, 4096);
-+	ipath = init_ipath(size, root, path);
-+	if (IS_ERR(ipath)) {
-+		ret = PTR_ERR(ipath);
-+		ipath = NULL;
-+		goto out;
-+	}
-+
-+	ret = paths_from_inode(ipa->inum, ipath);
-+	if (ret < 0)
-+		goto out;
-+
-+	for (i = 0; i < ipath->fspath->elem_cnt; ++i) {
-+		rel_ptr = ipath->fspath->str[i] - (char *)ipath->fspath->str;
-+		ipath->fspath->str[i] = (void *)rel_ptr;
-+	}
-+
-+	ret = copy_to_user(ipa->fspath, ipath->fspath, size);
-+	if (ret) {
-+		ret = -EFAULT;
-+		goto out;
-+	}
-+
-+out:
-+	btrfs_free_path(path);
-+	free_ipath(ipath);
-+	kfree(ipa);
-+
-+	return ret;
-+}
-+
-+static int build_ino_list(u64 inum, u64 offset, u64 root, void *ctx)
-+{
-+	struct btrfs_data_container *inodes = ctx;
-+
-+	inodes->size -= 3 * sizeof(u64);
-+	if (inodes->size > 0) {
-+		inodes->val[inodes->elem_cnt] = inum;
-+		inodes->val[inodes->elem_cnt + 1] = offset;
-+		inodes->val[inodes->elem_cnt + 2] = root;
-+		inodes->elem_cnt += 3;
-+	} else {
-+		inodes->elem_missed += 3;
-+	}
-+
-+	return 0;
-+}
-+
-+static long btrfs_ioctl_logical_to_ino(struct btrfs_root *root,
-+					void __user *arg)
-+{
-+	int ret = 0;
-+	int size;
-+	u64 extent_offset;
-+	struct btrfs_ioctl_logical_ino_args *loi;
-+	struct btrfs_data_container *inodes = NULL;
-+	struct btrfs_path *path = NULL;
-+	struct btrfs_key key;
-+
-+	loi = memdup_user(arg, sizeof(*loi));
-+	if (IS_ERR(loi)) {
-+		ret = PTR_ERR(loi);
-+		loi = NULL;
-+		goto out;
-+	}
-+
-+	path = btrfs_alloc_path();
-+	if (!path) {
-+		ret = -ENOMEM;
-+		goto out;
-+	}
-+
-+	size = min(loi->size, 4096);
-+	inodes = init_data_container(size);
-+	if (IS_ERR(inodes)) {
-+		ret = PTR_ERR(inodes);
-+		inodes = NULL;
-+		goto out;
-+	}
-+
-+	ret = extent_from_logical(root->fs_info, loi->logical, path, &key);
-+
-+	if (ret & BTRFS_EXTENT_FLAG_TREE_BLOCK)
-+		ret = -ENOENT;
-+	if (ret < 0)
-+		goto out;
-+
-+	extent_offset = loi->logical - key.objectid;
-+	ret = iterate_extent_inodes(root->fs_info, path, key.objectid,
-+					extent_offset, build_ino_list, inodes);
-+
-+	if (ret < 0)
-+		goto out;
-+
-+	ret = copy_to_user(loi->inodes, inodes, size);
-+	if (ret)
-+		ret = -EFAULT;
-+
-+out:
-+	btrfs_free_path(path);
-+	kfree(inodes);
-+	kfree(loi);
-+
-+	return ret;
-+}
-+
- long btrfs_ioctl(struct file *file, unsigned int
- 		cmd, unsigned long arg)
- {
-@@ -2893,6 +3023,10 @@ long btrfs_ioctl(struct file *file, unsigned int
- 		return btrfs_ioctl_tree_search(file, argp);
- 	case BTRFS_IOC_INO_LOOKUP:
- 		return btrfs_ioctl_ino_lookup(file, argp);
-+	case BTRFS_IOC_INO_PATHS:
-+		return btrfs_ioctl_ino_to_path(root, argp);
-+	case BTRFS_IOC_LOGICAL_INO:
-+		return btrfs_ioctl_logical_to_ino(root, argp);
- 	case BTRFS_IOC_SPACE_INFO:
- 		return btrfs_ioctl_space_info(root, argp);
- 	case BTRFS_IOC_SYNC:
-diff --git a/fs/btrfs/ioctl.h b/fs/btrfs/ioctl.h
-index 4afb60b..10a0c10 100644
---- a/fs/btrfs/ioctl.h
-+++ b/fs/btrfs/ioctl.h
-@@ -203,6 +203,20 @@ struct btrfs_data_container {
- 	};
- };
- 
-+struct btrfs_ioctl_ino_path_args {
-+	__u64				inum;		/* in */
-+	__s32				size;		/* in */
-+	__u64				reserved[4];
-+	struct btrfs_data_container	*fspath;	/* out */
-+};
-+
-+struct btrfs_ioctl_logical_ino_args {
-+	__u64				logical;	/* in */
-+	__s32				size;		/* in */
-+	__u64				reserved[4];
-+	struct btrfs_data_container	*inodes;	/* out */
-+};
-+
- #define BTRFS_IOC_SNAP_CREATE _IOW(BTRFS_IOCTL_MAGIC, 1, \
- 				   struct btrfs_ioctl_vol_args)
- #define BTRFS_IOC_DEFRAG _IOW(BTRFS_IOCTL_MAGIC, 2, \
-@@ -258,4 +272,9 @@ struct btrfs_data_container {
- 				 struct btrfs_ioctl_dev_info_args)
- #define BTRFS_IOC_FS_INFO _IOR(BTRFS_IOCTL_MAGIC, 31, \
- 			       struct btrfs_ioctl_fs_info_args)
-+#define BTRFS_IOC_INO_PATHS _IOWR(BTRFS_IOCTL_MAGIC, 35, \
-+					struct btrfs_ioctl_ino_path_args)
-+#define BTRFS_IOC_LOGICAL_INO _IOWR(BTRFS_IOCTL_MAGIC, 36, \
-+					struct btrfs_ioctl_ino_path_args)
-+
- #endif
--- 
-1.7.3.4
+Regards,
+Christian
 
+Jul 21 15:25:59 os00 kernel: [   35.411360] ------------[ cut here ]---=
+---------
+Jul 21 15:25:59 os00 kernel: [   35.416589] WARNING: at
+fs/btrfs/extent-tree.c:5564
+btrfs_alloc_reserved_file_extent+0xf8/0x100 [btrfs]()
+Jul 21 15:25:59 os00 kernel: [   35.427311] Hardware name: ProLiant DL1=
+80 G6
+Jul 21 15:25:59 os00 kernel: [   35.432326] Modules linked in: btrfs
+zlib_deflate libcrc32c bonding ipv6 serio_raw pcspkr ghes hed iTCO_wdt
+iTCO_vendor_support ixgbe dca mdio i7core_edac edac_core
+iomemory_vsl(P) hpsa squashfs usb_storage [last unloaded:
+scsi_wait_scan]
+Jul 21 15:25:59 os00 kernel: [   35.456799] Pid: 1876, comm:
+btrfs-endio-wri Tainted: P            3.0.0-1.fits.4.el6.x86_64 #1
+Jul 21 15:25:59 os00 kernel: [   35.466610] Call Trace:
+Jul 21 15:25:59 os00 kernel: [   35.469497]  [<ffffffff8106306f>]
+warn_slowpath_common+0x7f/0xc0
+Jul 21 15:25:59 os00 kernel: [   35.476254]  [<ffffffff810630ca>]
+warn_slowpath_null+0x1a/0x20
+Jul 21 15:25:59 os00 kernel: [   35.482839]  [<ffffffffa02227f8>]
+btrfs_alloc_reserved_file_extent+0xf8/0x100 [btrfs]
+Jul 21 15:25:59 os00 kernel: [   35.491683]  [<ffffffffa023d871>]
+insert_reserved_file_extent.clone.0+0x201/0x270 [btrfs]
+Jul 21 15:25:59 os00 kernel: [   35.500912]  [<ffffffffa023debb>]
+btrfs_finish_ordered_io+0x2eb/0x360 [btrfs]
+Jul 21 15:25:59 os00 kernel: [   35.508978]  [<ffffffff81073841>] ?
+try_to_del_timer_sync+0x81/0xe0
+Jul 21 15:25:59 os00 kernel: [   35.516081]  [<ffffffffa023df7c>]
+btrfs_writepage_end_io_hook+0x4c/0xa0 [btrfs]
+Jul 21 15:25:59 os00 kernel: [   35.524340]  [<ffffffffa0277846>]
+end_compressed_bio_write+0x86/0xf0 [btrfs]
+Jul 21 15:25:59 os00 kernel: [   35.532259]  [<ffffffff8118f0cd>]
+bio_endio+0x1d/0x40
+Jul 21 15:25:59 os00 kernel: [   35.538034]  [<ffffffffa0232654>]
+end_workqueue_fn+0xf4/0x130 [btrfs]
+Jul 21 15:25:59 os00 kernel: [   35.545384]  [<ffffffffa0265e7e>]
+worker_loop+0x13e/0x540 [btrfs]
+Jul 21 15:25:59 os00 kernel: [   35.552307]  [<ffffffffa0265d40>] ?
+btrfs_queue_worker+0x2d0/0x2d0 [btrfs]
+Jul 21 15:25:59 os00 kernel: [   35.560039]  [<ffffffffa0265d40>] ?
+btrfs_queue_worker+0x2d0/0x2d0 [btrfs]
+Jul 21 15:25:59 os00 kernel: [   35.567768]  [<ffffffff81085836>]
+kthread+0x96/0xa0
+Jul 21 15:25:59 os00 kernel: [   35.573275]  [<ffffffff81562b84>]
+kernel_thread_helper+0x4/0x10
+Jul 21 15:25:59 os00 kernel: [   35.579931]  [<ffffffff810857a0>] ?
+kthread_worker_fn+0x1a0/0x1a0
+Jul 21 15:25:59 os00 kernel: [   35.586816]  [<ffffffff81562b80>] ?
+gs_change+0x13/0x13
+Jul 21 15:25:59 os00 kernel: [   35.592779] ---[ end trace d87e2733f1e9=
+78b8 ]---
+--
+To unsubscribe from this list: send the line "unsubscribe linux-btrfs" =
+in
+the body of a message to majordomo@vger.kernel.org
+More majordomo info at  http://vger.kernel.org/majordomo-info.html

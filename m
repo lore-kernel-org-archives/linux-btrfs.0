@@ -1,46 +1,42 @@
-From: Li Zefan <lizf@cn.fujitsu.com>
-Subject: Re: new metadata reader/writer locks in integration-test
-Date: Thu, 21 Jul 2011 12:54:02 +0800
-Message-ID: <4E27B0EA.2070601@cn.fujitsu.com>
-References: <1311096438-sup-1263@shiny> <1311182478-sup-9986@shiny> <1311187835-sup-7598@shiny>
-Mime-Version: 1.0
-Content-Type: text/plain; charset=UTF-8
-Cc: linux-btrfs <linux-btrfs@vger.kernel.org>
-To: Chris Mason <chris.mason@oracle.com>
+From: Mark Fasheh <mfasheh@suse.com>
+Subject: [PATCH 0/7] btrfs: don't BUG_ON btrfs_alloc_path errors v2
+Date: Thu, 21 Jul 2011 12:48:26 -0700
+Message-ID: <1311277713-7747-1-git-send-email-mfasheh@suse.com>
+Cc: chris.mason@oracle.com
+To: linux-btrfs@vger.kernel.org
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <1311187835-sup-7598@shiny>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Chris Mason wrote:
-> Excerpts from Chris Mason's message of 2011-07-20 13:21:47 -0400:
->> Excerpts from Chris Mason's message of 2011-07-19 13:30:22 -0400:
->>> Hi everyone,
->>>
->>> I've pushed out a new integration-test branch, and it includes a new
->>> reader/writer locking scheme for the btree locks.
->>>
->>> We've seen a number of benchmarks dominated by contention on the root
->>> node lock.  This changes our locks into a simple reader/writer lock.
->>> They are based on mutexes so that we still take advantage of the mutex
->>> adaptive spins for write locks (rwsemaphores were much slower).
->>>
->>> I'm also sending the individual commits, please do take a look.
->>
->> Hi everyone,
->>
->> I just rebased Josef's enospc fixes into integration-test, it should fix
->> the warnings in extent-tree.c
-> 
-> And one more rebase to fix the x86-32 problems.
-> 
+Changelog:
+  - Updated patch 6 after review from Tsutomu Itoh
 
-We can simply use page_address() in this macro:
+Hi,
 
-#define BTRFS_SETGET_HEADER_FUNCS(name, type, member, bits)             \
-static inline u##bits btrfs_##name(struct extent_buffer *eb)            \
-{                                                                       \
-        type *p = kmap_atomic(eb->first_page, KM_USER0);                \
-        u##bits res = le##bits##_to_cpu(p->member);                     \
-        kunmap_atomic(p, KM_USER0);                                     \
-        return res;                                                     \
-}
+	The following patches attempt to replace all the paths where we
+BUG_ON the return value of btrfs_alloc_path with proper error handling. It's
+pretty clear that these places aren't BUGing because of code error. To be
+explicit, much of the code is doing something like this:
+
+	path = btrfs_alloc_path();
+	BUG_ON(!path);
+
+which can be fixed by sending -ENOMEM back up the stack instead of the BUG.
+
+	The first patch in my series fixes the most trivial sites in one go.
+The patches after the 1st fix one (more complicated) site each. In the patch
+descriptions I try my best to describe the thought process that went behind
+each change.
+
+	Generally my guiding principle is that we want to "bubble up" some
+of the BUG_ON's that can be trapped and handled at a higher level -- the lower
+layer has an error and instead of killing the machine, sends it back up the
+stack for later handling
+
+	I tested the patches with some kernel builds and snapshot commands.
+Please review - comments and feedback are welcome.
+
+The patches can also be had from git:
+
+git pull git://git.kernel.org/pub/scm/linux/kernel/git/mfasheh/btrfs-error-handling.git alloc_path
+	--Mark
+

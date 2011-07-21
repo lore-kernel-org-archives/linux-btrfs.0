@@ -1,42 +1,105 @@
-From: Arne Jansen <sensille@gmx.net>
-Subject: Re: new metadata reader/writer locks in integration-test
-Date: Thu, 21 Jul 2011 07:44:01 +0200
-Message-ID: <4E27BCA1.6030508@gmx.net>
-References: <1311096438-sup-1263@shiny> <1311182478-sup-9986@shiny>
-Mime-Version: 1.0
-Content-Type: text/plain; charset=ISO-8859-1
-Cc: linux-btrfs <linux-btrfs@vger.kernel.org>,
-	Josef Bacik <josef@redhat.com>
-To: Chris Mason <chris.mason@oracle.com>
+From: Jan Schmidt <list.btrfs@jan-o-sch.net>
+Subject: [PATCH v5 2/8] btrfs scrub: added unverified_errors
+Date: Thu, 21 Jul 2011 13:19:42 +0200
+Message-ID: <a0d21041d2cdeb4960e800fa015c616cd9853790.1311244592.git.list.btrfs@jan-o-sch.net>
+References: <cover.1311244592.git.list.btrfs@jan-o-sch.net>
+To: chris.mason@oracle.com, linux-btrfs@vger.kernel.org
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <1311182478-sup-9986@shiny>
+In-Reply-To: <cover.1311244592.git.list.btrfs@jan-o-sch.net>
+In-Reply-To: <cover.1311244592.git.list.btrfs@jan-o-sch.net>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 20.07.2011 19:21, Chris Mason wrote:
-> Excerpts from Chris Mason's message of 2011-07-19 13:30:22 -0400:
->> Hi everyone,
->>
->> I've pushed out a new integration-test branch, and it includes a new
->> reader/writer locking scheme for the btree locks.
->>
->> We've seen a number of benchmarks dominated by contention on the root
->> node lock.  This changes our locks into a simple reader/writer lock.
->> They are based on mutexes so that we still take advantage of the mutex
->> adaptive spins for write locks (rwsemaphores were much slower).
->>
->> I'm also sending the individual commits, please do take a look.
-> 
-> Hi everyone,
-> 
-> I just rebased Josef's enospc fixes into integration-test, it should fix
-> the warnings in extent-tree.c
-> 
+In normal operation, scrub is reading data sequentially in large portions.
+In case of an i/o error, we try to find the corrupted area(s) by issuing
+page sized read requests. With this commit we increment the
+unverified_errors counter if all of the small size requests succeed.
 
-With the current integration-test branch I get very early enospc on
-a 7G volume create with -m single -d single and
+Userland patches carrying such conspicous events to the administrator should
+already be around.
 
-fs_mark-3.3/fs_mark -d /mnt/fsm -D 512 -t 16 -n 4096 -s 51200 -L5 -S0 -R1
+Signed-off-by: Jan Schmidt <list.btrfs@jan-o-sch.net>
+---
+ fs/btrfs/scrub.c |   37 ++++++++++++++++++++++++++-----------
+ 1 files changed, 26 insertions(+), 11 deletions(-)
 
-It enospces at about 20%, but I can continue to fill it up to 94%.
+diff --git a/fs/btrfs/scrub.c b/fs/btrfs/scrub.c
+index a8d03d5..35099fa 100644
+--- a/fs/btrfs/scrub.c
++++ b/fs/btrfs/scrub.c
+@@ -201,18 +201,25 @@ nomem:
+  * recheck_error gets called for every page in the bio, even though only
+  * one may be bad
+  */
+-static void scrub_recheck_error(struct scrub_bio *sbio, int ix)
++static int scrub_recheck_error(struct scrub_bio *sbio, int ix)
+ {
++	struct scrub_dev *sdev = sbio->sdev;
++	u64 sector = (sbio->physical + ix * PAGE_SIZE) >> 9;
++
+ 	if (sbio->err) {
+-		if (scrub_fixup_io(READ, sbio->sdev->dev->bdev,
+-				   (sbio->physical + ix * PAGE_SIZE) >> 9,
++		if (scrub_fixup_io(READ, sbio->sdev->dev->bdev, sector,
+ 				   sbio->bio->bi_io_vec[ix].bv_page) == 0) {
+ 			if (scrub_fixup_check(sbio, ix) == 0)
+-				return;
++				return 0;
+ 		}
+ 	}
+ 
++	spin_lock(&sdev->stat_lock);
++	++sdev->stat.read_errors;
++	spin_unlock(&sdev->stat_lock);
++
+ 	scrub_fixup(sbio, ix);
++	return 1;
+ }
+ 
+ static int scrub_fixup_check(struct scrub_bio *sbio, int ix)
+@@ -382,8 +389,14 @@ static void scrub_checksum(struct btrfs_work *work)
+ 	int ret;
+ 
+ 	if (sbio->err) {
++		ret = 0;
+ 		for (i = 0; i < sbio->count; ++i)
+-			scrub_recheck_error(sbio, i);
++			ret |= scrub_recheck_error(sbio, i);
++		if (!ret) {
++			spin_lock(&sdev->stat_lock);
++			++sdev->stat.unverified_errors;
++			spin_unlock(&sdev->stat_lock);
++		}
+ 
+ 		sbio->bio->bi_flags &= ~(BIO_POOL_MASK - 1);
+ 		sbio->bio->bi_flags |= 1 << BIO_UPTODATE;
+@@ -396,10 +409,6 @@ static void scrub_checksum(struct btrfs_work *work)
+ 			bi->bv_offset = 0;
+ 			bi->bv_len = PAGE_SIZE;
+ 		}
+-
+-		spin_lock(&sdev->stat_lock);
+-		++sdev->stat.read_errors;
+-		spin_unlock(&sdev->stat_lock);
+ 		goto out;
+ 	}
+ 	for (i = 0; i < sbio->count; ++i) {
+@@ -420,8 +429,14 @@ static void scrub_checksum(struct btrfs_work *work)
+ 			WARN_ON(1);
+ 		}
+ 		kunmap_atomic(buffer, KM_USER0);
+-		if (ret)
+-			scrub_recheck_error(sbio, i);
++		if (ret) {
++			ret = scrub_recheck_error(sbio, i);
++			if (!ret) {
++				spin_lock(&sdev->stat_lock);
++				++sdev->stat.unverified_errors;
++				spin_unlock(&sdev->stat_lock);
++			}
++		}
+ 	}
+ 
+ out:
+-- 
+1.7.3.4
 
--Arne

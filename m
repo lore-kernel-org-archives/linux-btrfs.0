@@ -1,299 +1,92 @@
-From: Jan Schmidt <list.btrfs@jan-o-sch.net>
-Subject: [PATCH v5 7/8] btrfs scrub: add fixup code for errors on nodatasum files
-Date: Thu, 21 Jul 2011 13:19:47 +0200
-Message-ID: <441261ef5bd99212bc42c6255aa628a6feece88b.1311244592.git.list.btrfs@jan-o-sch.net>
-References: <cover.1311244592.git.list.btrfs@jan-o-sch.net>
-To: chris.mason@oracle.com, linux-btrfs@vger.kernel.org
+From: Arne Jansen <sensille@gmx.net>
+Subject: Re: new metadata reader/writer locks in integration-test
+Date: Thu, 21 Jul 2011 07:46:55 +0200
+Message-ID: <4E27BD4F.6020900@gmx.net>
+References: <1311096438-sup-1263@shiny> <1311182478-sup-9986@shiny> <4E277757.9070504@jp.fujitsu.com>
+Mime-Version: 1.0
+Content-Type: text/plain; charset=ISO-8859-1
+Cc: Chris Mason <chris.mason@oracle.com>,
+	linux-btrfs <linux-btrfs@vger.kernel.org>
+To: Tsutomu Itoh <t-itoh@jp.fujitsu.com>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <cover.1311244592.git.list.btrfs@jan-o-sch.net>
-In-Reply-To: <cover.1311244592.git.list.btrfs@jan-o-sch.net>
+In-Reply-To: <4E277757.9070504@jp.fujitsu.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-This removes a FIXME comment and introduces the first part of nodatasum
-fixup: It gets the corresponding inode for a logical address and triggers a
-regular readpage for the corrupted sector.
+On 21.07.2011 02:48, Tsutomu Itoh wrote:
+> (2011/07/21 2:21), Chris Mason wrote:
+>> Excerpts from Chris Mason's message of 2011-07-19 13:30:22 -0400:
+>>> Hi everyone,
+>>>
+>>> I've pushed out a new integration-test branch, and it includes a new
+>>> reader/writer locking scheme for the btree locks.
+>>>
+>>> We've seen a number of benchmarks dominated by contention on the root
+>>> node lock.  This changes our locks into a simple reader/writer lock.
+>>> They are based on mutexes so that we still take advantage of the mutex
+>>> adaptive spins for write locks (rwsemaphores were much slower).
+>>>
+>>> I'm also sending the individual commits, please do take a look.
+>>
+>> Hi everyone,
+>>
+>> I just rebased Josef's enospc fixes into integration-test, it should fix
+>> the warnings in extent-tree.c
+>>
+> 
+> Unfortunately, I got the following messages.
+> 
+> 
+> Jul 21 09:41:22 luna kernel: ------------[ cut here ]------------
+> Jul 21 09:41:22 luna kernel: WARNING: at fs/btrfs/extent-tree.c:5564 btrfs_alloc_reserved_file_extent+0xf8/0x100 [btrfs]()
+> Jul 21 09:41:22 luna kernel: Hardware name: PRIMERGY
+> Jul 21 09:41:22 luna kernel: Modules linked in: btrfs zlib_deflate crc32c libcrc32c autofs4 sunrpc 8021q garp stp llc cpufreq_ondemand acpi_cpufreq freq_table mperf ipv6 ext3 jbd dm_mirror dm_region_hash dm_log dm_mod kvm uinput ppdev parport_pc parport sg pcspkr i2c_i801 i2c_core iTCO_wdt iTCO_vendor_support tg3 shpchp pci_hotplug i3000_edac edac_core ext4 mbcache jbd2 crc16 sd_mod crc_t10dif sr_mod cdrom megaraid_sas floppy pata_acpi ata_generic ata_piix libata scsi_mod [last unloaded: microcode]
+> Jul 21 09:41:22 luna kernel: Pid: 5517, comm: btrfs-endio-wri Tainted: G        W   2.6.39btrfs-tc1+ #1
+> Jul 21 09:41:22 luna kernel: Call Trace:
+> Jul 21 09:41:22 luna kernel: [<ffffffff8106004f>] warn_slowpath_common+0x7f/0xc0
+> Jul 21 09:41:22 luna kernel: [<ffffffff810600aa>] warn_slowpath_null+0x1a/0x20
+> Jul 21 09:41:22 luna kernel: [<ffffffffa044a068>] btrfs_alloc_reserved_file_extent+0xf8/0x100 [btrfs]
+> Jul 21 09:41:22 luna kernel: [<ffffffffa0464121>] insert_reserved_file_extent.clone.0+0x201/0x270 [btrfs]
+> Jul 21 09:41:22 luna kernel: [<ffffffffa0468c0b>] btrfs_finish_ordered_io+0x2eb/0x360 [btrfs]
+> Jul 21 09:41:22 luna kernel: [<ffffffff8106fe23>] ? try_to_del_timer_sync+0x83/0xe0
+> Jul 21 09:41:22 luna kernel: [<ffffffffa0468cd0>] btrfs_writepage_end_io_hook+0x50/0xa0 [btrfs]
+> Jul 21 09:41:22 luna kernel: [<ffffffffa049a3c6>] end_compressed_bio_write+0x86/0xf0 [btrfs]
+> Jul 21 09:41:22 luna kernel: [<ffffffff8117f96d>] bio_endio+0x1d/0x40
+> Jul 21 09:41:22 luna kernel: [<ffffffffa0459d84>] end_workqueue_fn+0xf4/0x130 [btrfs]
+> Jul 21 09:41:22 luna kernel: [<ffffffffa048841e>] worker_loop+0x13e/0x540 [btrfs]
+> Jul 21 09:41:22 luna kernel: [<ffffffffa04882e0>] ? btrfs_queue_worker+0x2d0/0x2d0 [btrfs]
+> Jul 21 09:41:22 luna kernel: [<ffffffffa04882e0>] ? btrfs_queue_worker+0x2d0/0x2d0 [btrfs]
+> Jul 21 09:41:22 luna kernel: [<ffffffff81081756>] kthread+0x96/0xa0
+> Jul 21 09:41:22 luna kernel: [<ffffffff81486004>] kernel_thread_helper+0x4/0x10
+> Jul 21 09:41:22 luna kernel: [<ffffffff810816c0>] ? kthread_worker_fn+0x1a0/0x1a0
+> Jul 21 09:41:22 luna kernel: [<ffffffff81486000>] ? gs_change+0x13/0x13
+> Jul 21 09:41:22 luna kernel: ---[ end trace 02c1fa3044677043 ]---
+> 
 
-Once we have on-the-fly error correction our error will be automatically
-corrected. The correction code is expected to clear the newly introduced
-EXTENT_DAMAGED flag, making scrub report that error as "corrected" instead
-of "uncorrectable" eventually.
+a very similar warning here, but without compression involved:
 
-Signed-off-by: Jan Schmidt <list.btrfs@jan-o-sch.net>
----
- fs/btrfs/extent_io.h |    1 +
- fs/btrfs/scrub.c     |  188 ++++++++++++++++++++++++++++++++++++++++++++++++--
- 2 files changed, 183 insertions(+), 6 deletions(-)
-
-diff --git a/fs/btrfs/extent_io.h b/fs/btrfs/extent_io.h
-index 22bf366..2734fd9 100644
---- a/fs/btrfs/extent_io.h
-+++ b/fs/btrfs/extent_io.h
-@@ -17,6 +17,7 @@
- #define EXTENT_NODATASUM (1 << 10)
- #define EXTENT_DO_ACCOUNTING (1 << 11)
- #define EXTENT_FIRST_DELALLOC (1 << 12)
-+#define EXTENT_DAMAGED (1 << 13)
- #define EXTENT_IOBITS (EXTENT_LOCKED | EXTENT_WRITEBACK)
- #define EXTENT_CTLBITS (EXTENT_DO_ACCOUNTING | EXTENT_FIRST_DELALLOC)
- 
-diff --git a/fs/btrfs/scrub.c b/fs/btrfs/scrub.c
-index 41a0114..db09f01 100644
---- a/fs/btrfs/scrub.c
-+++ b/fs/btrfs/scrub.c
-@@ -22,6 +22,7 @@
- #include "volumes.h"
- #include "disk-io.h"
- #include "ordered-data.h"
-+#include "transaction.h"
- #include "backref.h"
- 
- /*
-@@ -89,6 +90,7 @@ struct scrub_dev {
- 	int			first_free;
- 	int			curr;
- 	atomic_t		in_flight;
-+	atomic_t		fixup_cnt;
- 	spinlock_t		list_lock;
- 	wait_queue_head_t	list_wait;
- 	u16			csum_size;
-@@ -102,6 +104,14 @@ struct scrub_dev {
- 	spinlock_t		stat_lock;
- };
- 
-+struct scrub_fixup_nodatasum {
-+	struct scrub_dev	*sdev;
-+	u64			logical;
-+	struct btrfs_root	*root;
-+	struct btrfs_work	work;
-+	int			mirror_num;
-+};
-+
- struct scrub_warning {
- 	struct btrfs_path	*path;
- 	u64			extent_item_size;
-@@ -190,12 +200,13 @@ struct scrub_dev *scrub_setup_dev(struct btrfs_device *dev)
- 
- 		if (i != SCRUB_BIOS_PER_DEV-1)
- 			sdev->bios[i]->next_free = i + 1;
--		 else
-+		else
- 			sdev->bios[i]->next_free = -1;
- 	}
- 	sdev->first_free = 0;
- 	sdev->curr = -1;
- 	atomic_set(&sdev->in_flight, 0);
-+	atomic_set(&sdev->fixup_cnt, 0);
- 	atomic_set(&sdev->cancel_req, 0);
- 	sdev->csum_size = btrfs_super_csum_size(&fs_info->super_copy);
- 	INIT_LIST_HEAD(&sdev->csum_list);
-@@ -347,6 +358,151 @@ out:
- 	kfree(swarn.msg_buf);
- }
- 
-+static int scrub_fixup_readpage(u64 inum, u64 offset, u64 root, void *ctx)
-+{
-+	struct page *page;
-+	unsigned long index;
-+	struct scrub_fixup_nodatasum *fixup = ctx;
-+	int ret;
-+	int corrected;
-+	struct btrfs_key key;
-+	struct inode *inode;
-+	u64 end = offset + PAGE_SIZE - 1;
-+	struct btrfs_root *local_root;
-+
-+	key.objectid = root;
-+	key.type = BTRFS_ROOT_ITEM_KEY;
-+	key.offset = (u64)-1;
-+	local_root = btrfs_read_fs_root_no_name(fixup->root->fs_info, &key);
-+	if (IS_ERR(local_root))
-+		return PTR_ERR(local_root);
-+
-+	key.type = BTRFS_INODE_ITEM_KEY;
-+	key.objectid = inum;
-+	key.offset = 0;
-+	inode = btrfs_iget(fixup->root->fs_info->sb, &key, local_root, NULL);
-+	if (IS_ERR(inode))
-+		return PTR_ERR(inode);
-+
-+	ret = set_extent_bit(&BTRFS_I(inode)->io_tree, offset, end,
-+				EXTENT_DAMAGED, 0, NULL, NULL, GFP_NOFS);
-+
-+	/* set_extent_bit should either succeed or give proper error */
-+	WARN_ON(ret > 0);
-+	if (ret)
-+		return ret < 0 ? ret : -EFAULT;
-+
-+	index = offset >> PAGE_CACHE_SHIFT;
-+
-+	page = find_or_create_page(inode->i_mapping, index, GFP_NOFS);
-+	if (!page)
-+		return -ENOMEM;
-+
-+	ret = extent_read_full_page(&BTRFS_I(inode)->io_tree, page,
-+					btrfs_get_extent, fixup->mirror_num);
-+	wait_on_page_locked(page);
-+	corrected = !test_range_bit(&BTRFS_I(inode)->io_tree, offset, end,
-+					EXTENT_DAMAGED, 0, NULL);
-+
-+	if (corrected)
-+		WARN_ON(!PageUptodate(page));
-+	else
-+		clear_extent_bit(&BTRFS_I(inode)->io_tree, offset, end,
-+					EXTENT_DAMAGED, 0, 0, NULL, GFP_NOFS);
-+
-+	put_page(page);
-+	iput(inode);
-+
-+	if (ret < 0)
-+		return ret;
-+
-+	if (ret == 0 && corrected) {
-+		/*
-+		 * we only need to call readpage for one of the inodes belonging
-+		 * to this extent. so make iterate_extent_inodes stop
-+		 */
-+		return 1;
-+	}
-+
-+	return -EIO;
-+}
-+
-+static void scrub_fixup_nodatasum(struct btrfs_work *work)
-+{
-+	int ret;
-+	struct scrub_fixup_nodatasum *fixup;
-+	struct scrub_dev *sdev;
-+	struct btrfs_trans_handle *trans = NULL;
-+	struct btrfs_fs_info *fs_info;
-+	struct btrfs_path *path;
-+	int uncorrectable = 0;
-+
-+	fixup = container_of(work, struct scrub_fixup_nodatasum, work);
-+	sdev = fixup->sdev;
-+	fs_info = fixup->root->fs_info;
-+
-+	path = btrfs_alloc_path();
-+	if (!path) {
-+		spin_lock(&sdev->stat_lock);
-+		++sdev->stat.malloc_errors;
-+		spin_unlock(&sdev->stat_lock);
-+		uncorrectable = 1;
-+		goto out;
-+	}
-+
-+	trans = btrfs_join_transaction(fixup->root);
-+	if (IS_ERR(trans)) {
-+		uncorrectable = 1;
-+		goto out;
-+	}
-+
-+	/*
-+	 * the idea is to trigger a regular read through the standard path. we
-+	 * read a page from the (failed) logical address by specifying the
-+	 * corresponding copynum of the failed sector. thus, that readpage is
-+	 * expected to fail.
-+	 * that is the point where on-the-fly error correction will kick in
-+	 * (once it's finished) and rewrite the failed sector if a good copy
-+	 * can be found.
-+	 */
-+	ret = iterate_inodes_from_logical(fixup->logical, fixup->root->fs_info,
-+						path, scrub_fixup_readpage,
-+						fixup);
-+	if (ret < 0) {
-+		uncorrectable = 1;
-+		goto out;
-+	}
-+	WARN_ON(ret != 1);
-+
-+	spin_lock(&sdev->stat_lock);
-+	++sdev->stat.corrected_errors;
-+	spin_unlock(&sdev->stat_lock);
-+
-+out:
-+	if (trans && !IS_ERR(trans))
-+		btrfs_end_transaction(trans, fixup->root);
-+	if (uncorrectable) {
-+		spin_lock(&sdev->stat_lock);
-+		++sdev->stat.uncorrectable_errors;
-+		spin_unlock(&sdev->stat_lock);
-+		printk_ratelimited(KERN_ERR "btrfs: unable to fixup "
-+					"(nodatasum) error at logical %llu\n",
-+					fixup->logical);
-+	}
-+
-+	btrfs_free_path(path);
-+	kfree(fixup);
-+
-+	/* see caller why we're pretending to be paused in the scrub counters */
-+	mutex_lock(&fs_info->scrub_lock);
-+	atomic_dec(&fs_info->scrubs_running);
-+	atomic_dec(&fs_info->scrubs_paused);
-+	mutex_unlock(&fs_info->scrub_lock);
-+	atomic_dec(&sdev->fixup_cnt);
-+	wake_up(&fs_info->scrub_pause_wait);
-+	wake_up(&sdev->list_wait);
-+}
-+
- /*
-  * scrub_recheck_error gets called when either verification of the page
-  * failed or the bio failed to read, e.g. with EIO. In the latter case,
-@@ -417,6 +573,7 @@ static void scrub_fixup(struct scrub_bio *sbio, int ix)
- 	struct btrfs_fs_info *fs_info = sdev->dev->dev_root->fs_info;
- 	struct btrfs_mapping_tree *map_tree = &fs_info->mapping_tree;
- 	struct btrfs_multi_bio *multi = NULL;
-+	struct scrub_fixup_nodatasum *fixup;
- 	u64 logical = sbio->logical + ix * PAGE_SIZE;
- 	u64 length;
- 	int i;
-@@ -425,12 +582,30 @@ static void scrub_fixup(struct scrub_bio *sbio, int ix)
- 
- 	if ((sbio->spag[ix].flags & BTRFS_EXTENT_FLAG_DATA) &&
- 	    (sbio->spag[ix].have_csum == 0)) {
-+		fixup = kzalloc(sizeof(*fixup), GFP_NOFS);
-+		if (!fixup)
-+			goto uncorrectable;
-+		fixup->sdev = sdev;
-+		fixup->logical = logical;
-+		fixup->root = fs_info->extent_root;
-+		fixup->mirror_num = sbio->spag[ix].mirror_num;
- 		/*
--		 * nodatasum, don't try to fix anything
--		 * FIXME: we can do better, open the inode and trigger a
--		 * writeback
-+		 * increment scrubs_running to prevent cancel requests from
-+		 * completing as long as a fixup worker is running. we must also
-+		 * increment scrubs_paused to prevent deadlocking on pause
-+		 * requests used for transactions commits (as the worker uses a
-+		 * transaction context). it is safe to regard the fixup worker
-+		 * as paused for all matters practical. effectively, we only
-+		 * avoid cancellation requests from completing.
- 		 */
--		goto uncorrectable;
-+		mutex_lock(&fs_info->scrub_lock);
-+		atomic_inc(&fs_info->scrubs_running);
-+		atomic_inc(&fs_info->scrubs_paused);
-+		mutex_unlock(&fs_info->scrub_lock);
-+		atomic_inc(&sdev->fixup_cnt);
-+		fixup->work.func = scrub_fixup_nodatasum;
-+		btrfs_queue_worker(&fs_info->scrub_workers, &fixup->work);
-+		return;
- 	}
- 
- 	length = PAGE_SIZE;
-@@ -1425,10 +1600,11 @@ int btrfs_scrub_dev(struct btrfs_root *root, u64 devid, u64 start, u64 end,
- 		ret = scrub_enumerate_chunks(sdev, start, end);
- 
- 	wait_event(sdev->list_wait, atomic_read(&sdev->in_flight) == 0);
--
- 	atomic_dec(&fs_info->scrubs_running);
- 	wake_up(&fs_info->scrub_pause_wait);
- 
-+	wait_event(sdev->list_wait, atomic_read(&sdev->fixup_cnt) == 0);
-+
- 	if (progress)
- 		memcpy(progress, &sdev->stat, sizeof(*progress));
- 
--- 
-1.7.3.4
+Jul 21 07:42:55 qualactin kernel: [57061.396898] ------------[ cut here ]------------
+Jul 21 07:42:55 qualactin kernel: [57061.396923] WARNING: at fs/btrfs/extent-tree.c:5564 btrfs_alloc_reserved_file_extent+0xf8/0x100 [btrfs]()
+Jul 21 07:42:55 qualactin kernel: [57061.396927] Hardware name: X8SIL
+Jul 21 07:42:55 qualactin kernel: [57061.396930] Modules linked in: btrfs mpt2sas scsi_transport_sas raid_class [last unloaded: btrfs]
+Jul 21 07:42:55 qualactin kernel: [57061.396943] Pid: 10500, comm: btrfs-endio-wri Tainted: G        W   2.6.39+ #53
+Jul 21 07:42:55 qualactin kernel: [57061.396947] Call Trace:
+Jul 21 07:42:55 qualactin kernel: [57061.396958]  [<ffffffff81091f0a>] warn_slowpath_common+0x7a/0xb0
+Jul 21 07:42:55 qualactin kernel: [57061.396965]  [<ffffffff81091f55>] warn_slowpath_null+0x15/0x20
+Jul 21 07:42:55 qualactin kernel: [57061.396982]  [<ffffffffa0264908>] btrfs_alloc_reserved_file_extent+0xf8/0x100 [btrfs]
+Jul 21 07:42:55 qualactin kernel: [57061.396991]  [<ffffffff818742d6>] ? _raw_spin_unlock+0x26/0x30
+Jul 21 07:42:55 qualactin kernel: [57061.397007]  [<ffffffffa027f6ba>] T.1250+0x20a/0x260 [btrfs]
+Jul 21 07:42:55 qualactin kernel: [57061.397018]  [<ffffffffa02839cb>] btrfs_finish_ordered_io+0x2db/0x330 [btrfs]
+Jul 21 07:42:55 qualactin kernel: [57061.397028]  [<ffffffffa0283a69>] btrfs_writepage_end_io_hook+0x49/0x90 [btrfs]
+Jul 21 07:42:55 qualactin kernel: [57061.397039]  [<ffffffffa029778e>] end_bio_extent_writepage+0x13e/0x180 [btrfs]
+Jul 21 07:42:55 qualactin kernel: [57061.397043]  [<ffffffff811ad1c8>] bio_endio+0x18/0x40
+Jul 21 07:42:55 qualactin kernel: [57061.397052]  [<ffffffffa027500c>] end_workqueue_fn+0xec/0x120 [btrfs]
+Jul 21 07:42:55 qualactin kernel: [57061.397062]  [<ffffffffa02a3e3c>] worker_loop+0x14c/0x540 [btrfs]
+Jul 21 07:42:55 qualactin kernel: [57061.397072]  [<ffffffffa02a3cf0>] ? btrfs_queue_worker+0x320/0x320 [btrfs]
+Jul 21 07:42:55 qualactin kernel: [57061.397076]  [<ffffffff810b37de>] kthread+0x9e/0xb0
+Jul 21 07:42:55 qualactin kernel: [57061.397079]  [<ffffffff8187cb14>] kernel_thread_helper+0x4/0x10
+Jul 21 07:42:55 qualactin kernel: [57061.397082]  [<ffffffff8187423b>] ? _raw_spin_unlock_irq+0x2b/0x40
+Jul 21 07:42:55 qualactin kernel: [57061.397085]  [<ffffffff81874540>] ? retint_restore_args+0xe/0xe
+Jul 21 07:42:55 qualactin kernel: [57061.397088]  [<ffffffff810b3740>] ? __init_kthread_worker+0x70/0x70
+Jul 21 07:42:55 qualactin kernel: [57061.397090]  [<ffffffff8187cb10>] ? gs_change+0xb/0xb
+Jul 21 07:42:55 qualactin kernel: [57061.397092] ---[ end trace dd9e6d8cc54aa5e0 ]---
 

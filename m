@@ -1,7 +1,7 @@
 From: Jan Schmidt <list.btrfs@jan-o-sch.net>
-Subject: [PATCH v5 3/8] btrfs scrub: print paths of corrupted files
-Date: Thu, 21 Jul 2011 13:19:43 +0200
-Message-ID: <6288e829e3d0153b3fb9d250f8d63150609906e4.1311244592.git.list.btrfs@jan-o-sch.net>
+Subject: [PATCH v5 5/8] btrfs: add mirror_num to extent_read_full_page
+Date: Thu, 21 Jul 2011 13:19:45 +0200
+Message-ID: <166fdda71455977fae1bb34894cc5b55d72c2c77.1311244592.git.list.btrfs@jan-o-sch.net>
 References: <cover.1311244592.git.list.btrfs@jan-o-sch.net>
 To: chris.mason@oracle.com, linux-btrfs@vger.kernel.org
 Return-path: <linux-btrfs-owner@vger.kernel.org>
@@ -9,242 +9,81 @@ In-Reply-To: <cover.1311244592.git.list.btrfs@jan-o-sch.net>
 In-Reply-To: <cover.1311244592.git.list.btrfs@jan-o-sch.net>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-While scrubbing, we may encounter various errors. Previously, a logical
-address was printed to the log only. Now, all paths belonging to that
-address are resolved and printed separately. That should work for hardlinks
-as well as reflinks.
+Currently, extent_read_full_page always assumes we are trying to read mirror
+0, which generally is the best we can do. To add flexibility, pass it as a
+parameter. This will be needed by scrub fixup code.
 
 Signed-off-by: Jan Schmidt <list.btrfs@jan-o-sch.net>
 ---
- fs/btrfs/scrub.c |  169 ++++++++++++++++++++++++++++++++++++++++++++++++++++--
- 1 files changed, 163 insertions(+), 6 deletions(-)
+ fs/btrfs/disk-io.c   |    2 +-
+ fs/btrfs/extent_io.c |    6 +++---
+ fs/btrfs/extent_io.h |    2 +-
+ fs/btrfs/inode.c     |    2 +-
+ 4 files changed, 6 insertions(+), 6 deletions(-)
 
-diff --git a/fs/btrfs/scrub.c b/fs/btrfs/scrub.c
-index 35099fa..221fd5c 100644
---- a/fs/btrfs/scrub.c
-+++ b/fs/btrfs/scrub.c
-@@ -17,10 +17,12 @@
-  */
- 
- #include <linux/blkdev.h>
-+#include <linux/ratelimit.h>
- #include "ctree.h"
- #include "volumes.h"
- #include "disk-io.h"
- #include "ordered-data.h"
-+#include "backref.h"
- 
- /*
-  * This is only the first step towards a full-features scrub. It reads all
-@@ -100,6 +102,19 @@ struct scrub_dev {
- 	spinlock_t		stat_lock;
- };
- 
-+struct scrub_warning {
-+	struct btrfs_path	*path;
-+	u64			extent_item_size;
-+	char			*scratch_buf;
-+	char			*msg_buf;
-+	const char		*errstr;
-+	sector_t		sector;
-+	u64			logical;
-+	struct btrfs_device	*dev;
-+	int			msg_bufsize;
-+	int			scratch_bufsize;
-+};
-+
- static void scrub_free_csums(struct scrub_dev *sdev)
+diff --git a/fs/btrfs/disk-io.c b/fs/btrfs/disk-io.c
+index 1ac8db5d..b898319 100644
+--- a/fs/btrfs/disk-io.c
++++ b/fs/btrfs/disk-io.c
+@@ -874,7 +874,7 @@ static int btree_readpage(struct file *file, struct page *page)
  {
- 	while (!list_empty(&sdev->csum_list)) {
-@@ -195,6 +210,143 @@ nomem:
- 	return ERR_PTR(-ENOMEM);
+ 	struct extent_io_tree *tree;
+ 	tree = &BTRFS_I(page->mapping->host)->io_tree;
+-	return extent_read_full_page(tree, page, btree_get_extent);
++	return extent_read_full_page(tree, page, btree_get_extent, 0);
  }
  
-+static int scrub_print_warning_inode(u64 inum, u64 offset, u64 root, void *ctx)
-+{
-+	u64 isize;
-+	u32 nlink;
-+	int ret;
-+	int i;
-+	struct extent_buffer *eb;
-+	struct btrfs_inode_item *inode_item;
-+	struct scrub_warning *swarn = ctx;
-+	struct btrfs_fs_info *fs_info = swarn->dev->dev_root->fs_info;
-+	struct inode_fs_paths *ipath = NULL;
-+	struct btrfs_root *local_root;
-+	struct btrfs_key root_key;
-+
-+	root_key.objectid = root;
-+	root_key.type = BTRFS_ROOT_ITEM_KEY;
-+	root_key.offset = (u64)-1;
-+	local_root = btrfs_read_fs_root_no_name(fs_info, &root_key);
-+	if (IS_ERR(local_root)) {
-+		ret = PTR_ERR(local_root);
-+		goto err;
-+	}
-+
-+	ret = inode_item_info(inum, 0, local_root, swarn->path);
-+	if (ret) {
-+		btrfs_release_path(swarn->path);
-+		goto err;
-+	}
-+
-+	eb = swarn->path->nodes[0];
-+	inode_item = btrfs_item_ptr(eb, swarn->path->slots[0],
-+					struct btrfs_inode_item);
-+	isize = btrfs_inode_size(eb, inode_item);
-+	nlink = btrfs_inode_nlink(eb, inode_item);
-+	btrfs_release_path(swarn->path);
-+
-+	ipath = init_ipath(4096, local_root, swarn->path);
-+	ret = paths_from_inode(inum, ipath);
-+
-+	if (ret < 0)
-+		goto err;
-+
-+	/*
-+	 * we deliberately ignore the bit ipath might have been too small to
-+	 * hold all of the paths here
-+	 */
-+	for (i = 0; i < ipath->fspath->elem_cnt; ++i)
-+		printk(KERN_WARNING "btrfs: %s at logical %llu on dev "
-+			"%s, sector %llu, root %llu, inode %llu, offset %llu, "
-+			"length %llu, links %u (path: %s)\n", swarn->errstr,
-+			swarn->logical, swarn->dev->name,
-+			(unsigned long long)swarn->sector, root, inum, offset,
-+			min(isize - offset, (u64)PAGE_SIZE), nlink,
-+			ipath->fspath->str[i]);
-+
-+	free_ipath(ipath);
-+	return 0;
-+
-+err:
-+	printk(KERN_WARNING "btrfs: %s at logical %llu on dev "
-+		"%s, sector %llu, root %llu, inode %llu, offset %llu: path "
-+		"resolving failed with ret=%d\n", swarn->errstr,
-+		swarn->logical, swarn->dev->name,
-+		(unsigned long long)swarn->sector, root, inum, offset, ret);
-+
-+	free_ipath(ipath);
-+	return 0;
-+}
-+
-+static void scrub_print_warning(const char *errstr, struct scrub_bio *sbio,
-+				int ix)
-+{
-+	struct btrfs_device *dev = sbio->sdev->dev;
-+	struct btrfs_fs_info *fs_info = dev->dev_root->fs_info;
-+	struct btrfs_path *path;
-+	struct btrfs_key found_key;
-+	struct extent_buffer *eb;
-+	struct btrfs_extent_item *ei;
-+	struct scrub_warning swarn;
-+	u32 item_size;
-+	int ret;
-+	u64 ref_root;
-+	u8 ref_level;
-+	unsigned long ptr = 0;
-+	const int bufsize = 4096;
-+	u64 extent_offset;
-+
-+	path = btrfs_alloc_path();
-+
-+	swarn.scratch_buf = kmalloc(bufsize, GFP_NOFS);
-+	swarn.msg_buf = kmalloc(bufsize, GFP_NOFS);
-+	swarn.sector = (sbio->physical + ix * PAGE_SIZE) >> 9;
-+	swarn.logical = sbio->logical + ix * PAGE_SIZE;
-+	swarn.errstr = errstr;
-+	swarn.dev = dev;
-+	swarn.msg_bufsize = bufsize;
-+	swarn.scratch_bufsize = bufsize;
-+
-+	if (!path || !swarn.scratch_buf || !swarn.msg_buf)
-+		goto out;
-+
-+	ret = extent_from_logical(fs_info, swarn.logical, path, &found_key);
-+	if (ret < 0)
-+		goto out;
-+
-+	extent_offset = swarn.logical - found_key.objectid;
-+	swarn.extent_item_size = found_key.offset;
-+
-+	eb = path->nodes[0];
-+	ei = btrfs_item_ptr(eb, path->slots[0], struct btrfs_extent_item);
-+	item_size = btrfs_item_size_nr(eb, path->slots[0]);
-+
-+	if (ret & BTRFS_EXTENT_FLAG_TREE_BLOCK) {
-+		do {
-+			ret = tree_backref_for_extent(&ptr, eb, ei, item_size,
-+							&ref_root, &ref_level);
-+			printk(KERN_WARNING "%s at logical %llu on dev %s, "
-+				"sector %llu: metadata %s (level %d) in tree "
-+				"%llu\n", errstr, swarn.logical, dev->name,
-+				(unsigned long long)swarn.sector,
-+				ref_level ? "node" : "leaf",
-+				ret < 0 ? -1 : ref_level,
-+				ret < 0 ? -1 : ref_root);
-+		} while (ret != 1);
-+	} else {
-+		swarn.path = path;
-+		iterate_extent_inodes(fs_info, path, found_key.objectid,
-+					extent_offset,
-+					scrub_print_warning_inode, &swarn);
-+	}
-+
-+out:
-+	btrfs_free_path(path);
-+	kfree(swarn.scratch_buf);
-+	kfree(swarn.msg_buf);
-+}
-+
- /*
-  * scrub_recheck_error gets called when either verification of the page
-  * failed or the bio failed to read, e.g. with EIO. In the latter case,
-@@ -205,6 +357,8 @@ static int scrub_recheck_error(struct scrub_bio *sbio, int ix)
- {
- 	struct scrub_dev *sdev = sbio->sdev;
- 	u64 sector = (sbio->physical + ix * PAGE_SIZE) >> 9;
-+	static DEFINE_RATELIMIT_STATE(_rs, DEFAULT_RATELIMIT_INTERVAL,
-+					DEFAULT_RATELIMIT_BURST);
- 
- 	if (sbio->err) {
- 		if (scrub_fixup_io(READ, sbio->sdev->dev->bdev, sector,
-@@ -212,6 +366,11 @@ static int scrub_recheck_error(struct scrub_bio *sbio, int ix)
- 			if (scrub_fixup_check(sbio, ix) == 0)
- 				return 0;
- 		}
-+		if (__ratelimit(&_rs))
-+			scrub_print_warning("i/o error", sbio, ix);
-+	} else {
-+		if (__ratelimit(&_rs))
-+			scrub_print_warning("checksum error", sbio, ix);
- 	}
- 
- 	spin_lock(&sdev->stat_lock);
-@@ -326,9 +485,8 @@ static void scrub_fixup(struct scrub_bio *sbio, int ix)
- 	++sdev->stat.corrected_errors;
- 	spin_unlock(&sdev->stat_lock);
- 
--	if (printk_ratelimit())
--		printk(KERN_ERR "btrfs: fixed up at %llu\n",
--		       (unsigned long long)logical);
-+	printk_ratelimited(KERN_ERR "btrfs: fixed up error at logical %llu\n",
-+			       (unsigned long long)logical);
- 	return;
- 
- uncorrectable:
-@@ -337,9 +495,8 @@ uncorrectable:
- 	++sdev->stat.uncorrectable_errors;
- 	spin_unlock(&sdev->stat_lock);
- 
--	if (printk_ratelimit())
--		printk(KERN_ERR "btrfs: unable to fixup at %llu\n",
--			 (unsigned long long)logical);
-+	printk_ratelimited(KERN_ERR "btrfs: unable to fixup (regular) error at "
-+				"logical %llu\n", (unsigned long long)logical);
+ static int btree_releasepage(struct page *page, gfp_t gfp_flags)
+diff --git a/fs/btrfs/extent_io.c b/fs/btrfs/extent_io.c
+index b181a94..b78f665 100644
+--- a/fs/btrfs/extent_io.c
++++ b/fs/btrfs/extent_io.c
+@@ -2111,16 +2111,16 @@ static int __extent_read_full_page(struct extent_io_tree *tree,
  }
  
- static int scrub_fixup_io(int rw, struct block_device *bdev, sector_t sector,
+ int extent_read_full_page(struct extent_io_tree *tree, struct page *page,
+-			    get_extent_t *get_extent)
++			    get_extent_t *get_extent, int mirror_num)
+ {
+ 	struct bio *bio = NULL;
+ 	unsigned long bio_flags = 0;
+ 	int ret;
+ 
+-	ret = __extent_read_full_page(tree, page, get_extent, &bio, 0,
++	ret = __extent_read_full_page(tree, page, get_extent, &bio, mirror_num,
+ 				      &bio_flags);
+ 	if (bio)
+-		ret = submit_one_bio(READ, bio, 0, bio_flags);
++		ret = submit_one_bio(READ, bio, mirror_num, bio_flags);
+ 	return ret;
+ }
+ 
+diff --git a/fs/btrfs/extent_io.h b/fs/btrfs/extent_io.h
+index a11a92e..22bf366 100644
+--- a/fs/btrfs/extent_io.h
++++ b/fs/btrfs/extent_io.h
+@@ -177,7 +177,7 @@ int unlock_extent_cached(struct extent_io_tree *tree, u64 start, u64 end,
+ int try_lock_extent(struct extent_io_tree *tree, u64 start, u64 end,
+ 		    gfp_t mask);
+ int extent_read_full_page(struct extent_io_tree *tree, struct page *page,
+-			  get_extent_t *get_extent);
++			  get_extent_t *get_extent, int mirror_num);
+ int __init extent_io_init(void);
+ void extent_io_exit(void);
+ 
+diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
+index 4a13730..730ee3d 100644
+--- a/fs/btrfs/inode.c
++++ b/fs/btrfs/inode.c
+@@ -6250,7 +6250,7 @@ int btrfs_readpage(struct file *file, struct page *page)
+ {
+ 	struct extent_io_tree *tree;
+ 	tree = &BTRFS_I(page->mapping->host)->io_tree;
+-	return extent_read_full_page(tree, page, btrfs_get_extent);
++	return extent_read_full_page(tree, page, btrfs_get_extent, 0);
+ }
+ 
+ static int btrfs_writepage(struct page *page, struct writeback_control *wbc)
 -- 
 1.7.3.4
 

@@ -1,7 +1,7 @@
 From: Jan Schmidt <list.btrfs@jan-o-sch.net>
-Subject: [PATCH v5 6/8] btrfs scrub: use int for mirror_num, not u64
-Date: Thu, 21 Jul 2011 13:19:46 +0200
-Message-ID: <4e73ff27921162fa84bf1ff686680e011d828d67.1311244592.git.list.btrfs@jan-o-sch.net>
+Subject: [PATCH v5 7/8] btrfs scrub: add fixup code for errors on nodatasum files
+Date: Thu, 21 Jul 2011 13:19:47 +0200
+Message-ID: <441261ef5bd99212bc42c6255aa628a6feece88b.1311244592.git.list.btrfs@jan-o-sch.net>
 References: <cover.1311244592.git.list.btrfs@jan-o-sch.net>
 To: chris.mason@oracle.com, linux-btrfs@vger.kernel.org
 Return-path: <linux-btrfs-owner@vger.kernel.org>
@@ -9,53 +9,291 @@ In-Reply-To: <cover.1311244592.git.list.btrfs@jan-o-sch.net>
 In-Reply-To: <cover.1311244592.git.list.btrfs@jan-o-sch.net>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-the rest of the code uses int mirror_num, and so should scrub
+This removes a FIXME comment and introduces the first part of nodatasum
+fixup: It gets the corresponding inode for a logical address and triggers a
+regular readpage for the corrupted sector.
+
+Once we have on-the-fly error correction our error will be automatically
+corrected. The correction code is expected to clear the newly introduced
+EXTENT_DAMAGED flag, making scrub report that error as "corrected" instead
+of "uncorrectable" eventually.
 
 Signed-off-by: Jan Schmidt <list.btrfs@jan-o-sch.net>
 ---
- fs/btrfs/scrub.c |    8 ++++----
- 1 files changed, 4 insertions(+), 4 deletions(-)
+ fs/btrfs/extent_io.h |    1 +
+ fs/btrfs/scrub.c     |  188 ++++++++++++++++++++++++++++++++++++++++++++++++--
+ 2 files changed, 183 insertions(+), 6 deletions(-)
 
+diff --git a/fs/btrfs/extent_io.h b/fs/btrfs/extent_io.h
+index 22bf366..2734fd9 100644
+--- a/fs/btrfs/extent_io.h
++++ b/fs/btrfs/extent_io.h
+@@ -17,6 +17,7 @@
+ #define EXTENT_NODATASUM (1 << 10)
+ #define EXTENT_DO_ACCOUNTING (1 << 11)
+ #define EXTENT_FIRST_DELALLOC (1 << 12)
++#define EXTENT_DAMAGED (1 << 13)
+ #define EXTENT_IOBITS (EXTENT_LOCKED | EXTENT_WRITEBACK)
+ #define EXTENT_CTLBITS (EXTENT_DO_ACCOUNTING | EXTENT_FIRST_DELALLOC)
+ 
 diff --git a/fs/btrfs/scrub.c b/fs/btrfs/scrub.c
-index 59caf8f..41a0114 100644
+index 41a0114..db09f01 100644
 --- a/fs/btrfs/scrub.c
 +++ b/fs/btrfs/scrub.c
-@@ -65,7 +65,7 @@ static void scrub_fixup(struct scrub_bio *sbio, int ix);
- struct scrub_page {
- 	u64			flags;  /* extent flags */
- 	u64			generation;
--	u64			mirror_num;
-+	int			mirror_num;
- 	int			have_csum;
- 	u8			csum[BTRFS_CSUM_SIZE];
+@@ -22,6 +22,7 @@
+ #include "volumes.h"
+ #include "disk-io.h"
+ #include "ordered-data.h"
++#include "transaction.h"
+ #include "backref.h"
+ 
+ /*
+@@ -89,6 +90,7 @@ struct scrub_dev {
+ 	int			first_free;
+ 	int			curr;
+ 	atomic_t		in_flight;
++	atomic_t		fixup_cnt;
+ 	spinlock_t		list_lock;
+ 	wait_queue_head_t	list_wait;
+ 	u16			csum_size;
+@@ -102,6 +104,14 @@ struct scrub_dev {
+ 	spinlock_t		stat_lock;
  };
-@@ -776,7 +776,7 @@ nomem:
+ 
++struct scrub_fixup_nodatasum {
++	struct scrub_dev	*sdev;
++	u64			logical;
++	struct btrfs_root	*root;
++	struct btrfs_work	work;
++	int			mirror_num;
++};
++
+ struct scrub_warning {
+ 	struct btrfs_path	*path;
+ 	u64			extent_item_size;
+@@ -190,12 +200,13 @@ struct scrub_dev *scrub_setup_dev(struct btrfs_device *dev)
+ 
+ 		if (i != SCRUB_BIOS_PER_DEV-1)
+ 			sdev->bios[i]->next_free = i + 1;
+-		 else
++		else
+ 			sdev->bios[i]->next_free = -1;
+ 	}
+ 	sdev->first_free = 0;
+ 	sdev->curr = -1;
+ 	atomic_set(&sdev->in_flight, 0);
++	atomic_set(&sdev->fixup_cnt, 0);
+ 	atomic_set(&sdev->cancel_req, 0);
+ 	sdev->csum_size = btrfs_super_csum_size(&fs_info->super_copy);
+ 	INIT_LIST_HEAD(&sdev->csum_list);
+@@ -347,6 +358,151 @@ out:
+ 	kfree(swarn.msg_buf);
  }
  
- static int scrub_page(struct scrub_dev *sdev, u64 logical, u64 len,
--		      u64 physical, u64 flags, u64 gen, u64 mirror_num,
-+		      u64 physical, u64 flags, u64 gen, int mirror_num,
- 		      u8 *csum, int force)
- {
- 	struct scrub_bio *sbio;
-@@ -873,7 +873,7 @@ static int scrub_find_csum(struct scrub_dev *sdev, u64 logical, u64 len,
++static int scrub_fixup_readpage(u64 inum, u64 offset, u64 root, void *ctx)
++{
++	struct page *page;
++	unsigned long index;
++	struct scrub_fixup_nodatasum *fixup = ctx;
++	int ret;
++	int corrected;
++	struct btrfs_key key;
++	struct inode *inode;
++	u64 end = offset + PAGE_SIZE - 1;
++	struct btrfs_root *local_root;
++
++	key.objectid = root;
++	key.type = BTRFS_ROOT_ITEM_KEY;
++	key.offset = (u64)-1;
++	local_root = btrfs_read_fs_root_no_name(fixup->root->fs_info, &key);
++	if (IS_ERR(local_root))
++		return PTR_ERR(local_root);
++
++	key.type = BTRFS_INODE_ITEM_KEY;
++	key.objectid = inum;
++	key.offset = 0;
++	inode = btrfs_iget(fixup->root->fs_info->sb, &key, local_root, NULL);
++	if (IS_ERR(inode))
++		return PTR_ERR(inode);
++
++	ret = set_extent_bit(&BTRFS_I(inode)->io_tree, offset, end,
++				EXTENT_DAMAGED, 0, NULL, NULL, GFP_NOFS);
++
++	/* set_extent_bit should either succeed or give proper error */
++	WARN_ON(ret > 0);
++	if (ret)
++		return ret < 0 ? ret : -EFAULT;
++
++	index = offset >> PAGE_CACHE_SHIFT;
++
++	page = find_or_create_page(inode->i_mapping, index, GFP_NOFS);
++	if (!page)
++		return -ENOMEM;
++
++	ret = extent_read_full_page(&BTRFS_I(inode)->io_tree, page,
++					btrfs_get_extent, fixup->mirror_num);
++	wait_on_page_locked(page);
++	corrected = !test_range_bit(&BTRFS_I(inode)->io_tree, offset, end,
++					EXTENT_DAMAGED, 0, NULL);
++
++	if (corrected)
++		WARN_ON(!PageUptodate(page));
++	else
++		clear_extent_bit(&BTRFS_I(inode)->io_tree, offset, end,
++					EXTENT_DAMAGED, 0, 0, NULL, GFP_NOFS);
++
++	put_page(page);
++	iput(inode);
++
++	if (ret < 0)
++		return ret;
++
++	if (ret == 0 && corrected) {
++		/*
++		 * we only need to call readpage for one of the inodes belonging
++		 * to this extent. so make iterate_extent_inodes stop
++		 */
++		return 1;
++	}
++
++	return -EIO;
++}
++
++static void scrub_fixup_nodatasum(struct btrfs_work *work)
++{
++	int ret;
++	struct scrub_fixup_nodatasum *fixup;
++	struct scrub_dev *sdev;
++	struct btrfs_trans_handle *trans = NULL;
++	struct btrfs_fs_info *fs_info;
++	struct btrfs_path *path;
++	int uncorrectable = 0;
++
++	fixup = container_of(work, struct scrub_fixup_nodatasum, work);
++	sdev = fixup->sdev;
++	fs_info = fixup->root->fs_info;
++
++	path = btrfs_alloc_path();
++	if (!path) {
++		spin_lock(&sdev->stat_lock);
++		++sdev->stat.malloc_errors;
++		spin_unlock(&sdev->stat_lock);
++		uncorrectable = 1;
++		goto out;
++	}
++
++	trans = btrfs_join_transaction(fixup->root);
++	if (IS_ERR(trans)) {
++		uncorrectable = 1;
++		goto out;
++	}
++
++	/*
++	 * the idea is to trigger a regular read through the standard path. we
++	 * read a page from the (failed) logical address by specifying the
++	 * corresponding copynum of the failed sector. thus, that readpage is
++	 * expected to fail.
++	 * that is the point where on-the-fly error correction will kick in
++	 * (once it's finished) and rewrite the failed sector if a good copy
++	 * can be found.
++	 */
++	ret = iterate_inodes_from_logical(fixup->logical, fixup->root->fs_info,
++						path, scrub_fixup_readpage,
++						fixup);
++	if (ret < 0) {
++		uncorrectable = 1;
++		goto out;
++	}
++	WARN_ON(ret != 1);
++
++	spin_lock(&sdev->stat_lock);
++	++sdev->stat.corrected_errors;
++	spin_unlock(&sdev->stat_lock);
++
++out:
++	if (trans && !IS_ERR(trans))
++		btrfs_end_transaction(trans, fixup->root);
++	if (uncorrectable) {
++		spin_lock(&sdev->stat_lock);
++		++sdev->stat.uncorrectable_errors;
++		spin_unlock(&sdev->stat_lock);
++		printk_ratelimited(KERN_ERR "btrfs: unable to fixup "
++					"(nodatasum) error at logical %llu\n",
++					fixup->logical);
++	}
++
++	btrfs_free_path(path);
++	kfree(fixup);
++
++	/* see caller why we're pretending to be paused in the scrub counters */
++	mutex_lock(&fs_info->scrub_lock);
++	atomic_dec(&fs_info->scrubs_running);
++	atomic_dec(&fs_info->scrubs_paused);
++	mutex_unlock(&fs_info->scrub_lock);
++	atomic_dec(&sdev->fixup_cnt);
++	wake_up(&fs_info->scrub_pause_wait);
++	wake_up(&sdev->list_wait);
++}
++
+ /*
+  * scrub_recheck_error gets called when either verification of the page
+  * failed or the bio failed to read, e.g. with EIO. In the latter case,
+@@ -417,6 +573,7 @@ static void scrub_fixup(struct scrub_bio *sbio, int ix)
+ 	struct btrfs_fs_info *fs_info = sdev->dev->dev_root->fs_info;
+ 	struct btrfs_mapping_tree *map_tree = &fs_info->mapping_tree;
+ 	struct btrfs_multi_bio *multi = NULL;
++	struct scrub_fixup_nodatasum *fixup;
+ 	u64 logical = sbio->logical + ix * PAGE_SIZE;
+ 	u64 length;
+ 	int i;
+@@ -425,12 +582,30 @@ static void scrub_fixup(struct scrub_bio *sbio, int ix)
  
- /* scrub extent tries to collect up to 64 kB for each bio */
- static int scrub_extent(struct scrub_dev *sdev, u64 logical, u64 len,
--			u64 physical, u64 flags, u64 gen, u64 mirror_num)
-+			u64 physical, u64 flags, u64 gen, int mirror_num)
- {
- 	int ret;
- 	u8 csum[BTRFS_CSUM_SIZE];
-@@ -919,7 +919,7 @@ static noinline_for_stack int scrub_stripe(struct scrub_dev *sdev,
- 	u64 physical;
- 	u64 logical;
- 	u64 generation;
--	u64 mirror_num;
-+	int mirror_num;
+ 	if ((sbio->spag[ix].flags & BTRFS_EXTENT_FLAG_DATA) &&
+ 	    (sbio->spag[ix].have_csum == 0)) {
++		fixup = kzalloc(sizeof(*fixup), GFP_NOFS);
++		if (!fixup)
++			goto uncorrectable;
++		fixup->sdev = sdev;
++		fixup->logical = logical;
++		fixup->root = fs_info->extent_root;
++		fixup->mirror_num = sbio->spag[ix].mirror_num;
+ 		/*
+-		 * nodatasum, don't try to fix anything
+-		 * FIXME: we can do better, open the inode and trigger a
+-		 * writeback
++		 * increment scrubs_running to prevent cancel requests from
++		 * completing as long as a fixup worker is running. we must also
++		 * increment scrubs_paused to prevent deadlocking on pause
++		 * requests used for transactions commits (as the worker uses a
++		 * transaction context). it is safe to regard the fixup worker
++		 * as paused for all matters practical. effectively, we only
++		 * avoid cancellation requests from completing.
+ 		 */
+-		goto uncorrectable;
++		mutex_lock(&fs_info->scrub_lock);
++		atomic_inc(&fs_info->scrubs_running);
++		atomic_inc(&fs_info->scrubs_paused);
++		mutex_unlock(&fs_info->scrub_lock);
++		atomic_inc(&sdev->fixup_cnt);
++		fixup->work.func = scrub_fixup_nodatasum;
++		btrfs_queue_worker(&fs_info->scrub_workers, &fixup->work);
++		return;
+ 	}
  
- 	u64 increment = map->stripe_len;
- 	u64 offset;
+ 	length = PAGE_SIZE;
+@@ -1425,10 +1600,11 @@ int btrfs_scrub_dev(struct btrfs_root *root, u64 devid, u64 start, u64 end,
+ 		ret = scrub_enumerate_chunks(sdev, start, end);
+ 
+ 	wait_event(sdev->list_wait, atomic_read(&sdev->in_flight) == 0);
+-
+ 	atomic_dec(&fs_info->scrubs_running);
+ 	wake_up(&fs_info->scrub_pause_wait);
+ 
++	wait_event(sdev->list_wait, atomic_read(&sdev->fixup_cnt) == 0);
++
+ 	if (progress)
+ 		memcpy(progress, &sdev->stat, sizeof(*progress));
+ 
 -- 
 1.7.3.4
 

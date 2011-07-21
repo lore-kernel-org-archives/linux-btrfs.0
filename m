@@ -1,130 +1,274 @@
-From: Miao Xie <miaox@cn.fujitsu.com>
-Subject: [BUG] Chunk allocation fails when the system meta-data block group
- is full
-Date: Thu, 21 Jul 2011 17:08:22 +0800
-Message-ID: <4E27EC86.3030006@cn.fujitsu.com>
-Reply-To: miaox@cn.fujitsu.com
+From: Jeff Mahoney <jeffm@suse.de>
+Subject: [PATCH] btrfs: Make extent-io callbacks that never fail return void
+Date: Thu, 21 Jul 2011 12:56:09 -0400
+Message-ID: <4E285A29.2000908@suse.de>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=GB2312
-To: Linux Btrfs <linux-btrfs@vger.kernel.org>
+Content-Type: text/plain; charset=ISO-8859-1
+To: Btrfs Development List <linux-btrfs@vger.kernel.org>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hi, Everyone
+ The set/clear bit and the extent split/merge hooks only ever return 0.
 
-I found there is an bug in the code of the chunk allocation by reading
-the code, That is:
+ Changing them to return void simplifies the error handling cases later.
 
-  If we allocate lots of the meta-data chunks or data chunks, and make
-  the system meta-data block group be full, then we can not allocate
-  any chunk for ever, even though there is lots of free disk space.
+ This patch changes the hook prototypes, the single implementation of each,
+ and the functions that call them to return void instead.
 
-It is because Btrfs do not allocate any new system meta-data chunk when
-the old block group is full, and then we have no system meta-data space
-to store the new meta-data chunk information.
+ Since all four of these hooks execute under a spinlock, they're necessarily
+ simple.
 
-This bug is hard to be triggered in the normal way, because we need
-lots of disk space to allocate new meta-data chunks, and fill the
-system meta-data block group. So I used a tricky method to triggered
-this bug:
-1. modify the source of Btrfs to exclude most free space of the system
-   meta-data block group, and change the max size of the deta chunk,
-   by this way, we can allocate lots of the chunks and fill the system
-   meta-data block group easily. (See the attached patch)
-2. create a new Btrfs filesystem. (Data profile: single)
-3. mount the new filesystem.
-4. create a large file
-(Oops happened)
-------------[ cut here ]------------
-kernel BUG at fs/btrfs/volumes.c:2602!
-[SNIP]
-Call Trace:
- [<ffffffffa034069e>] btrfs_alloc_chunk+0x71/0x84 [btrfs]
- [<ffffffffa031453f>] do_chunk_alloc+0x28e/0x2f3 [btrfs]
- [<ffffffffa0316ef6>] btrfs_reserve_extent+0xfb/0x1c2 [btrfs]
- [<ffffffffa0327dc6>] cow_file_range+0x1c0/0x32b [btrfs]
- [<ffffffffa03285dd>] run_delalloc_range+0xb7/0x33f [btrfs]
- [<ffffffffa033afbd>] __extent_writepage+0x1c1/0x5d0 [btrfs]
- [<ffffffffa03395ee>] ? clear_extent_buffer_uptodate+0x85/0x85 [btrfs]
- [<ffffffffa033b8fe>] extent_write_cache_pages.clone.0+0x176/0x2ad [btrfs]
- [<ffffffffa033bb23>] extent_writepages+0x3e/0x53 [btrfs]
- [<ffffffffa03252b0>] ? uncompress_inline+0x122/0x122 [btrfs]
- [<ffffffffa032516c>] btrfs_writepages+0x22/0x24 [btrfs]
- [<ffffffff810c95cc>] do_writepages+0x1c/0x28
- [<ffffffff81123a5a>] writeback_single_inode+0xc2/0x1c3
- [<ffffffff81123f32>] writeback_sb_inodes+0xcc/0x15a
- [<ffffffff81124801>] writeback_inodes_wb+0x10a/0x11c
- [<ffffffff810c8ca6>] balance_dirty_pages_ratelimited_nr+0x2f9/0x3fd
- [<ffffffffa032f7fd>] __btrfs_buffered_write+0x298/0x315 [btrfs]
- [<ffffffff81119891>] ? file_update_time+0xf2/0x10c
- [<ffffffffa032fc41>] btrfs_file_aio_write+0x3c7/0x47e [btrfs]
- [<ffffffff8110690a>] do_sync_write+0xc6/0x103
- [<ffffffff811cc010>] ? security_file_permission+0x29/0x2e
- [<ffffffff8110729a>] vfs_write+0xa9/0x105
- [<ffffffff811073af>] sys_write+0x45/0x6c
- [<ffffffff81451bd2>] system_call_fastpath+0x16/0x1b
-[SNIP] 
-RIP  [<ffffffffa033eb0a>] __finish_chunk_alloc+0x176/0x1f8 [btrfs]
- RSP <ffff8801377cf448>
----[ end trace 5a55cd7f2763cc4c ]---
+Signed-off-by: Jeff Mahoney <jeffm@suse.com>
+---
+ fs/btrfs/extent_io.c |   52 +++++++++++++--------------------------------------
+ fs/btrfs/extent_io.h |   18 ++++++++---------
+ fs/btrfs/inode.c     |   26 ++++++++++---------------
+ 3 files changed, 34 insertions(+), 62 deletions(-)
 
-If my analysis is right, and this bug actually exists, I think we can fix this bug by
-splitting the chunk allocation to two steps:
-
-  1. do chunk allocation and in-memory information update
-  2. update the meta-data and the system meta-data according to all the new chunks
-     allocated at the 1st step.
-
-And we also split the 1st step to 3 sub-steps:
-
-  1. If we want to allocate a system meta-data chunk, or the free space of old
-     system meta-data block group is not enough though we don't want to allocate
-     a system meta-data chunk, we allocate a new system meta-data chunk and update
-     the system meta-data space information in the memory.
-  2. If we want to allocate a meta-data chunk, or the free space of old meta-data
-     block group is not enough though we don't want to allocate a meta-data chunk,
-     we allocate a new meta-data chunk and update the meta-data space information
-     in the memory.
-  3. If we want to allocate a data chunk, we allocate a new data chunk.
-
-Does anyone have other good idea to fix it?
-
-Thanks
-Miao
-
-(The patch that make the bug be triggered easily)
-diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
-index 1860fa8..8d4ab87 100644
---- a/fs/btrfs/extent-tree.c
-+++ b/fs/btrfs/extent-tree.c
-@@ -7012,6 +7012,12 @@ int btrfs_read_block_groups(struct btrfs_root *root)
- 		 */
- 		exclude_super_stripes(root, cache);
+--- a/fs/btrfs/extent_io.c
++++ b/fs/btrfs/extent_io.c
+@@ -254,14 +254,14 @@ static void merge_cb(struct extent_io_tr
+  *
+  * This should be called with the tree lock held.
+  */
+-static int merge_state(struct extent_io_tree *tree,
+-		       struct extent_state *state)
++static void merge_state(struct extent_io_tree *tree,
++		        struct extent_state *state)
+ {
+ 	struct extent_state *other;
+ 	struct rb_node *other_node;
  
-+		if (cache->flags & BTRFS_BLOCK_GROUP_SYSTEM) {
-+			ret = add_excluded_extent(root, cache->key.objectid,
-+						  cache->key.offset - 4096);
-+			BUG_ON(ret);
-+		}
-+
- 		/*
- 		 * check for two cases, either we are full, and therefore
- 		 * don't need to bother with the caching work since we won't
-diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
-index 19450bc..96c0c5e 100644
---- a/fs/btrfs/volumes.c
-+++ b/fs/btrfs/volumes.c
-@@ -2357,8 +2357,10 @@ static int __btrfs_alloc_chunk(struct btrfs_trans_handle *trans,
+ 	if (state->state & (EXTENT_IOBITS | EXTENT_BOUNDARY))
+-		return 0;
++		return;
+ 
+ 	other_node = rb_prev(&state->rb_node);
+ 	if (other_node) {
+@@ -288,19 +288,13 @@ static int merge_state(struct extent_io_
+ 			state = NULL;
+ 		}
  	}
+-
+-	return 0;
+ }
  
- 	if (type & BTRFS_BLOCK_GROUP_DATA) {
--		max_stripe_size = 1024 * 1024 * 1024;
--		max_chunk_size = 10 * max_stripe_size;
-+//		max_stripe_size = 1024 * 1024 * 1024;
-+//		max_chunk_size = 10 * max_stripe_size;
-+		max_stripe_size = 64 * 1024 * 1024;
-+		max_chunk_size = 2 * max_stripe_size;
- 	} else if (type & BTRFS_BLOCK_GROUP_METADATA) {
- 		max_stripe_size = 256 * 1024 * 1024;
- 		max_chunk_size = max_stripe_size;
-
+-static int set_state_cb(struct extent_io_tree *tree,
++static void set_state_cb(struct extent_io_tree *tree,
+ 			 struct extent_state *state, int *bits)
+ {
+-	if (tree->ops && tree->ops->set_bit_hook) {
+-		return tree->ops->set_bit_hook(tree->mapping->host,
+-					       state, bits);
+-	}
+-
+-	return 0;
++	if (tree->ops && tree->ops->set_bit_hook)
++		tree->ops->set_bit_hook(tree->mapping->host, state, bits);
+ }
+ 
+ static void clear_state_cb(struct extent_io_tree *tree,
+@@ -326,7 +320,6 @@ static int insert_state(struct extent_io
+ {
+ 	struct rb_node *node;
+ 	int bits_to_set = *bits & ~EXTENT_CTLBITS;
+-	int ret;
+ 
+ 	if (end < start) {
+ 		printk(KERN_ERR "btrfs end < start %llu %llu\n",
+@@ -336,9 +329,7 @@ static int insert_state(struct extent_io
+ 	}
+ 	state->start = start;
+ 	state->end = end;
+-	ret = set_state_cb(tree, state, bits);
+-	if (ret)
+-		return ret;
++	set_state_cb(tree, state, bits);
+ 
+ 	if (bits_to_set & EXTENT_DIRTY)
+ 		tree->dirty_bytes += end - start + 1;
+@@ -359,13 +350,11 @@ static int insert_state(struct extent_io
+ 	return 0;
+ }
+ 
+-static int split_cb(struct extent_io_tree *tree, struct extent_state *orig,
++static void split_cb(struct extent_io_tree *tree, struct extent_state *orig,
+ 		     u64 split)
+ {
+ 	if (tree->ops && tree->ops->split_extent_hook)
+-		return tree->ops->split_extent_hook(tree->mapping->host,
+-						    orig, split);
+-	return 0;
++		tree->ops->split_extent_hook(tree->mapping->host, orig, split);
+ }
+ 
+ /*
+@@ -671,23 +660,18 @@ out:
+ 	return 0;
+ }
+ 
+-static int set_state_bits(struct extent_io_tree *tree,
++static void set_state_bits(struct extent_io_tree *tree,
+ 			   struct extent_state *state,
+ 			   int *bits)
+ {
+-	int ret;
+ 	int bits_to_set = *bits & ~EXTENT_CTLBITS;
+ 
+-	ret = set_state_cb(tree, state, bits);
+-	if (ret)
+-		return ret;
++	set_state_cb(tree, state, bits);
+ 	if ((bits_to_set & EXTENT_DIRTY) && !(state->state & EXTENT_DIRTY)) {
+ 		u64 range = state->end - state->start + 1;
+ 		tree->dirty_bytes += range;
+ 	}
+ 	state->state |= bits_to_set;
+-
+-	return 0;
+ }
+ 
+ static void cache_state(struct extent_state *state,
+@@ -779,9 +763,7 @@ hit_next:
+ 			goto out;
+ 		}
+ 
+-		err = set_state_bits(tree, state, &bits);
+-		if (err)
+-			goto out;
++		set_state_bits(tree, state, &bits);
+ 
+ 		next_node = rb_next(node);
+ 		cache_state(state, cached_state);
+@@ -830,9 +812,7 @@ hit_next:
+ 		if (err)
+ 			goto out;
+ 		if (state->end <= end) {
+-			err = set_state_bits(tree, state, &bits);
+-			if (err)
+-				goto out;
++			set_state_bits(tree, state, &bits);
+ 			cache_state(state, cached_state);
+ 			merge_state(tree, state);
+ 			if (last_end == (u64)-1)
+@@ -895,11 +875,7 @@ hit_next:
+ 		err = split_state(tree, state, prealloc, end + 1);
+ 		BUG_ON(err == -EEXIST);
+ 
+-		err = set_state_bits(tree, prealloc, &bits);
+-		if (err) {
+-			prealloc = NULL;
+-			goto out;
+-		}
++		set_state_bits(tree, prealloc, &bits);
+ 		cache_state(prealloc, cached_state);
+ 		merge_state(tree, prealloc);
+ 		prealloc = NULL;
+--- a/fs/btrfs/extent_io.h
++++ b/fs/btrfs/extent_io.h
+@@ -76,15 +76,15 @@ struct extent_io_ops {
+ 				    struct extent_state *state);
+ 	int (*writepage_end_io_hook)(struct page *page, u64 start, u64 end,
+ 				      struct extent_state *state, int uptodate);
+-	int (*set_bit_hook)(struct inode *inode, struct extent_state *state,
+-			    int *bits);
+-	int (*clear_bit_hook)(struct inode *inode, struct extent_state *state,
+-			      int *bits);
+-	int (*merge_extent_hook)(struct inode *inode,
+-				 struct extent_state *new,
+-				 struct extent_state *other);
+-	int (*split_extent_hook)(struct inode *inode,
+-				 struct extent_state *orig, u64 split);
++	void (*set_bit_hook)(struct inode *inode, struct extent_state *state,
++			     int *bits);
++	void (*clear_bit_hook)(struct inode *inode, struct extent_state *state,
++			       int *bits);
++	void (*merge_extent_hook)(struct inode *inode,
++				  struct extent_state *new,
++				  struct extent_state *other);
++	void (*split_extent_hook)(struct inode *inode,
++				  struct extent_state *orig, u64 split);
+ 	int (*write_cache_pages_lock_hook)(struct page *page);
+ };
+ 
+--- a/fs/btrfs/inode.c
++++ b/fs/btrfs/inode.c
+@@ -1292,15 +1292,14 @@ static int run_delalloc_range(struct ino
+ 	return ret;
+ }
+ 
+-static int btrfs_split_extent_hook(struct inode *inode,
+-				   struct extent_state *orig, u64 split)
++static void btrfs_split_extent_hook(struct inode *inode,
++				    struct extent_state *orig, u64 split)
+ {
+ 	/* not delalloc, ignore it */
+ 	if (!(orig->state & EXTENT_DELALLOC))
+-		return 0;
++		return;
+ 
+ 	atomic_inc(&BTRFS_I(inode)->outstanding_extents);
+-	return 0;
+ }
+ 
+ /*
+@@ -1309,16 +1308,15 @@ static int btrfs_split_extent_hook(struc
+  * extents, such as when we are doing sequential writes, so we can properly
+  * account for the metadata space we'll need.
+  */
+-static int btrfs_merge_extent_hook(struct inode *inode,
+-				   struct extent_state *new,
+-				   struct extent_state *other)
++static void btrfs_merge_extent_hook(struct inode *inode,
++				    struct extent_state *new,
++				    struct extent_state *other)
+ {
+ 	/* not delalloc, ignore it */
+ 	if (!(other->state & EXTENT_DELALLOC))
+-		return 0;
++		return;
+ 
+ 	atomic_dec(&BTRFS_I(inode)->outstanding_extents);
+-	return 0;
+ }
+ 
+ /*
+@@ -1326,8 +1324,8 @@ static int btrfs_merge_extent_hook(struc
+  * bytes in this file, and to maintain the list of inodes that
+  * have pending delalloc work to be done.
+  */
+-static int btrfs_set_bit_hook(struct inode *inode,
+-			      struct extent_state *state, int *bits)
++static void btrfs_set_bit_hook(struct inode *inode,
++			       struct extent_state *state, int *bits)
+ {
+ 
+ 	/*
+@@ -1354,14 +1352,13 @@ static int btrfs_set_bit_hook(struct ino
+ 		}
+ 		spin_unlock(&root->fs_info->delalloc_lock);
+ 	}
+-	return 0;
+ }
+ 
+ /*
+  * extent_io.c clear_bit_hook, see set_bit_hook for why
+  */
+-static int btrfs_clear_bit_hook(struct inode *inode,
+-				struct extent_state *state, int *bits)
++static void btrfs_clear_bit_hook(struct inode *inode,
++				 struct extent_state *state, int *bits)
+ {
+ 	/*
+ 	 * set_bit and clear bit hooks normally require _irqsave/restore
+@@ -1395,7 +1392,6 @@ static int btrfs_clear_bit_hook(struct i
+ 		}
+ 		spin_unlock(&root->fs_info->delalloc_lock);
+ 	}
+-	return 0;
+ }
+ 
+ /*
+-- 
+Jeff Mahoney
+SUSE Labs

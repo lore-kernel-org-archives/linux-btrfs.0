@@ -1,121 +1,130 @@
-From: Christian Brunner <chb@muc.de>
-Subject: Re: [PATCH] Btrfs: don't be as agressive with delalloc metadata
- reservations V2
-Date: Thu, 21 Jul 2011 16:12:06 +0200
-Message-ID: <CAO47_-9F11i0X0gm0iupF6byc88Dnu=QaekKjmr3kAD9c4wqOA@mail.gmail.com>
-References: <1311012712-24828-1-git-send-email-josef@redhat.com>
-	<4E2477EE.4090701@redhat.com>
-Reply-To: chb@muc.de
+From: Miao Xie <miaox@cn.fujitsu.com>
+Subject: [BUG] Chunk allocation fails when the system meta-data block group
+ is full
+Date: Thu, 21 Jul 2011 17:08:22 +0800
+Message-ID: <4E27EC86.3030006@cn.fujitsu.com>
+Reply-To: miaox@cn.fujitsu.com
 Mime-Version: 1.0
-Content-Type: text/plain; charset=ISO-8859-1
-Cc: linux-btrfs@vger.kernel.org
-To: Josef Bacik <josef@redhat.com>
+Content-Type: text/plain; charset=GB2312
+To: Linux Btrfs <linux-btrfs@vger.kernel.org>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <4E2477EE.4090701@redhat.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-2011/7/18 Josef Bacik <josef@redhat.com>:
-> On 07/18/2011 02:11 PM, Josef Bacik wrote:
->> Currently we reserve enough space to COW an entirely full btree for =
-every extent
->> we have reserved for an inode. =A0This _sucks_, because you only nee=
-d to COW once,
->> and then everybody else is ok. =A0Unfortunately we don't know we'll =
-all be able to
->> get into the same transaction so that's what we have had to do. =A0B=
-ut the global
->> reserve holds a reservation large enough to cover a large percentage=
- of all the
->> metadata currently in the fs. =A0So all we really need to account fo=
-r is any new
->> blocks that we may allocate. =A0So fix this by
->>
->> 1) Passing to btrfs_alloc_free_block() wether this is a new block or=
- a COW
->> block. =A0If it is a COW block we use the global reserve, if not we =
-use the
->> trans->block_rsv.
->> 2) Reduce the amount of space we reserve. =A0Since we don't need to =
-account for
->> cow'ing the tree we can just keep track of new blocks to reserve, wh=
-ich greatly
->> reduces the reservation amount.
->>
->> This makes my basic random write test go from 3 mb/s to 75 mb/s. =A0=
-I've tested
->> this with my horrible ENOSPC test and it seems to work out fine. =A0=
-Thanks,
->>
->> Signed-off-by: Josef Bacik <josef@redhat.com>
->> ---
->> V1->V2:
->> -fix a problem reported by Liubo, we need to make sure that we move =
-bytes
->> over for any new extents we may add to the extent tree so we don't g=
-et a bunch
->> of warnings.
->> -fix the global reserve to reserve 50% of the metadata space current=
-ly used.
+Hi, Everyone
 
-When I run this patch I get a lot of messages like these (V1 seemed to
-run fine).
+I found there is an bug in the code of the chunk allocation by reading
+the code, That is:
 
-Regards,
-Christian
+  If we allocate lots of the meta-data chunks or data chunks, and make
+  the system meta-data block group be full, then we can not allocate
+  any chunk for ever, even though there is lots of free disk space.
 
-Jul 21 15:25:59 os00 kernel: [   35.411360] ------------[ cut here ]---=
----------
-Jul 21 15:25:59 os00 kernel: [   35.416589] WARNING: at
-fs/btrfs/extent-tree.c:5564
-btrfs_alloc_reserved_file_extent+0xf8/0x100 [btrfs]()
-Jul 21 15:25:59 os00 kernel: [   35.427311] Hardware name: ProLiant DL1=
-80 G6
-Jul 21 15:25:59 os00 kernel: [   35.432326] Modules linked in: btrfs
-zlib_deflate libcrc32c bonding ipv6 serio_raw pcspkr ghes hed iTCO_wdt
-iTCO_vendor_support ixgbe dca mdio i7core_edac edac_core
-iomemory_vsl(P) hpsa squashfs usb_storage [last unloaded:
-scsi_wait_scan]
-Jul 21 15:25:59 os00 kernel: [   35.456799] Pid: 1876, comm:
-btrfs-endio-wri Tainted: P            3.0.0-1.fits.4.el6.x86_64 #1
-Jul 21 15:25:59 os00 kernel: [   35.466610] Call Trace:
-Jul 21 15:25:59 os00 kernel: [   35.469497]  [<ffffffff8106306f>]
-warn_slowpath_common+0x7f/0xc0
-Jul 21 15:25:59 os00 kernel: [   35.476254]  [<ffffffff810630ca>]
-warn_slowpath_null+0x1a/0x20
-Jul 21 15:25:59 os00 kernel: [   35.482839]  [<ffffffffa02227f8>]
-btrfs_alloc_reserved_file_extent+0xf8/0x100 [btrfs]
-Jul 21 15:25:59 os00 kernel: [   35.491683]  [<ffffffffa023d871>]
-insert_reserved_file_extent.clone.0+0x201/0x270 [btrfs]
-Jul 21 15:25:59 os00 kernel: [   35.500912]  [<ffffffffa023debb>]
-btrfs_finish_ordered_io+0x2eb/0x360 [btrfs]
-Jul 21 15:25:59 os00 kernel: [   35.508978]  [<ffffffff81073841>] ?
-try_to_del_timer_sync+0x81/0xe0
-Jul 21 15:25:59 os00 kernel: [   35.516081]  [<ffffffffa023df7c>]
-btrfs_writepage_end_io_hook+0x4c/0xa0 [btrfs]
-Jul 21 15:25:59 os00 kernel: [   35.524340]  [<ffffffffa0277846>]
-end_compressed_bio_write+0x86/0xf0 [btrfs]
-Jul 21 15:25:59 os00 kernel: [   35.532259]  [<ffffffff8118f0cd>]
-bio_endio+0x1d/0x40
-Jul 21 15:25:59 os00 kernel: [   35.538034]  [<ffffffffa0232654>]
-end_workqueue_fn+0xf4/0x130 [btrfs]
-Jul 21 15:25:59 os00 kernel: [   35.545384]  [<ffffffffa0265e7e>]
-worker_loop+0x13e/0x540 [btrfs]
-Jul 21 15:25:59 os00 kernel: [   35.552307]  [<ffffffffa0265d40>] ?
-btrfs_queue_worker+0x2d0/0x2d0 [btrfs]
-Jul 21 15:25:59 os00 kernel: [   35.560039]  [<ffffffffa0265d40>] ?
-btrfs_queue_worker+0x2d0/0x2d0 [btrfs]
-Jul 21 15:25:59 os00 kernel: [   35.567768]  [<ffffffff81085836>]
-kthread+0x96/0xa0
-Jul 21 15:25:59 os00 kernel: [   35.573275]  [<ffffffff81562b84>]
-kernel_thread_helper+0x4/0x10
-Jul 21 15:25:59 os00 kernel: [   35.579931]  [<ffffffff810857a0>] ?
-kthread_worker_fn+0x1a0/0x1a0
-Jul 21 15:25:59 os00 kernel: [   35.586816]  [<ffffffff81562b80>] ?
-gs_change+0x13/0x13
-Jul 21 15:25:59 os00 kernel: [   35.592779] ---[ end trace d87e2733f1e9=
-78b8 ]---
---
-To unsubscribe from this list: send the line "unsubscribe linux-btrfs" =
-in
-the body of a message to majordomo@vger.kernel.org
-More majordomo info at  http://vger.kernel.org/majordomo-info.html
+It is because Btrfs do not allocate any new system meta-data chunk when
+the old block group is full, and then we have no system meta-data space
+to store the new meta-data chunk information.
+
+This bug is hard to be triggered in the normal way, because we need
+lots of disk space to allocate new meta-data chunks, and fill the
+system meta-data block group. So I used a tricky method to triggered
+this bug:
+1. modify the source of Btrfs to exclude most free space of the system
+   meta-data block group, and change the max size of the deta chunk,
+   by this way, we can allocate lots of the chunks and fill the system
+   meta-data block group easily. (See the attached patch)
+2. create a new Btrfs filesystem. (Data profile: single)
+3. mount the new filesystem.
+4. create a large file
+(Oops happened)
+------------[ cut here ]------------
+kernel BUG at fs/btrfs/volumes.c:2602!
+[SNIP]
+Call Trace:
+ [<ffffffffa034069e>] btrfs_alloc_chunk+0x71/0x84 [btrfs]
+ [<ffffffffa031453f>] do_chunk_alloc+0x28e/0x2f3 [btrfs]
+ [<ffffffffa0316ef6>] btrfs_reserve_extent+0xfb/0x1c2 [btrfs]
+ [<ffffffffa0327dc6>] cow_file_range+0x1c0/0x32b [btrfs]
+ [<ffffffffa03285dd>] run_delalloc_range+0xb7/0x33f [btrfs]
+ [<ffffffffa033afbd>] __extent_writepage+0x1c1/0x5d0 [btrfs]
+ [<ffffffffa03395ee>] ? clear_extent_buffer_uptodate+0x85/0x85 [btrfs]
+ [<ffffffffa033b8fe>] extent_write_cache_pages.clone.0+0x176/0x2ad [btrfs]
+ [<ffffffffa033bb23>] extent_writepages+0x3e/0x53 [btrfs]
+ [<ffffffffa03252b0>] ? uncompress_inline+0x122/0x122 [btrfs]
+ [<ffffffffa032516c>] btrfs_writepages+0x22/0x24 [btrfs]
+ [<ffffffff810c95cc>] do_writepages+0x1c/0x28
+ [<ffffffff81123a5a>] writeback_single_inode+0xc2/0x1c3
+ [<ffffffff81123f32>] writeback_sb_inodes+0xcc/0x15a
+ [<ffffffff81124801>] writeback_inodes_wb+0x10a/0x11c
+ [<ffffffff810c8ca6>] balance_dirty_pages_ratelimited_nr+0x2f9/0x3fd
+ [<ffffffffa032f7fd>] __btrfs_buffered_write+0x298/0x315 [btrfs]
+ [<ffffffff81119891>] ? file_update_time+0xf2/0x10c
+ [<ffffffffa032fc41>] btrfs_file_aio_write+0x3c7/0x47e [btrfs]
+ [<ffffffff8110690a>] do_sync_write+0xc6/0x103
+ [<ffffffff811cc010>] ? security_file_permission+0x29/0x2e
+ [<ffffffff8110729a>] vfs_write+0xa9/0x105
+ [<ffffffff811073af>] sys_write+0x45/0x6c
+ [<ffffffff81451bd2>] system_call_fastpath+0x16/0x1b
+[SNIP] 
+RIP  [<ffffffffa033eb0a>] __finish_chunk_alloc+0x176/0x1f8 [btrfs]
+ RSP <ffff8801377cf448>
+---[ end trace 5a55cd7f2763cc4c ]---
+
+If my analysis is right, and this bug actually exists, I think we can fix this bug by
+splitting the chunk allocation to two steps:
+
+  1. do chunk allocation and in-memory information update
+  2. update the meta-data and the system meta-data according to all the new chunks
+     allocated at the 1st step.
+
+And we also split the 1st step to 3 sub-steps:
+
+  1. If we want to allocate a system meta-data chunk, or the free space of old
+     system meta-data block group is not enough though we don't want to allocate
+     a system meta-data chunk, we allocate a new system meta-data chunk and update
+     the system meta-data space information in the memory.
+  2. If we want to allocate a meta-data chunk, or the free space of old meta-data
+     block group is not enough though we don't want to allocate a meta-data chunk,
+     we allocate a new meta-data chunk and update the meta-data space information
+     in the memory.
+  3. If we want to allocate a data chunk, we allocate a new data chunk.
+
+Does anyone have other good idea to fix it?
+
+Thanks
+Miao
+
+(The patch that make the bug be triggered easily)
+diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
+index 1860fa8..8d4ab87 100644
+--- a/fs/btrfs/extent-tree.c
++++ b/fs/btrfs/extent-tree.c
+@@ -7012,6 +7012,12 @@ int btrfs_read_block_groups(struct btrfs_root *root)
+ 		 */
+ 		exclude_super_stripes(root, cache);
+ 
++		if (cache->flags & BTRFS_BLOCK_GROUP_SYSTEM) {
++			ret = add_excluded_extent(root, cache->key.objectid,
++						  cache->key.offset - 4096);
++			BUG_ON(ret);
++		}
++
+ 		/*
+ 		 * check for two cases, either we are full, and therefore
+ 		 * don't need to bother with the caching work since we won't
+diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
+index 19450bc..96c0c5e 100644
+--- a/fs/btrfs/volumes.c
++++ b/fs/btrfs/volumes.c
+@@ -2357,8 +2357,10 @@ static int __btrfs_alloc_chunk(struct btrfs_trans_handle *trans,
+ 	}
+ 
+ 	if (type & BTRFS_BLOCK_GROUP_DATA) {
+-		max_stripe_size = 1024 * 1024 * 1024;
+-		max_chunk_size = 10 * max_stripe_size;
++//		max_stripe_size = 1024 * 1024 * 1024;
++//		max_chunk_size = 10 * max_stripe_size;
++		max_stripe_size = 64 * 1024 * 1024;
++		max_chunk_size = 2 * max_stripe_size;
+ 	} else if (type & BTRFS_BLOCK_GROUP_METADATA) {
+ 		max_stripe_size = 256 * 1024 * 1024;
+ 		max_chunk_size = max_stripe_size;
+

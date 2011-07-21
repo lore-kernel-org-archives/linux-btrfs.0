@@ -1,55 +1,36 @@
-From: Andi Kleen <andi@firstfloor.org>
-Subject: Re: [PATCH v5 8/8] btrfs: new ioctls to do logical->inode and inode->path resolving
-Date: Thu, 21 Jul 2011 13:14:16 -0700
-Message-ID: <m2d3h34civ.fsf@firstfloor.org>
-References: <cover.1311244592.git.list.btrfs@jan-o-sch.net>
-	<d1e9e9c9695a1291d624ad86abb8648f7d04a848.1311244592.git.list.btrfs@jan-o-sch.net>
+From: Jan Schubert <Jan.Schubert@GMX.li>
+Subject: Re: Broken btrfs?
+Date: Thu, 21 Jul 2011 23:13:03 +0200
+Message-ID: <4E28965F.1010508@GMX.li>
+References: <20110716214404.50480@gmx.net> <loom.20110717T160020-81@post.gmane.org> <4E23EED3.8000301@jan-o-sch.net>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Cc: chris.mason@oracle.com, linux-btrfs@vger.kernel.org
-To: Jan Schmidt <list.btrfs@jan-o-sch.net>
+Content-Type: text/plain; charset=ISO-8859-1
+To: Jan Schmidt <list.btrfs@jan-o-sch.net>, linux-btrfs@vger.kernel.org
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <d1e9e9c9695a1291d624ad86abb8648f7d04a848.1311244592.git.list.btrfs@jan-o-sch.net>
-	(Jan Schmidt's message of "Thu, 21 Jul 2011 13:19:48 +0200")
+In-Reply-To: <4E23EED3.8000301@jan-o-sch.net>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Jan Schmidt <list.btrfs@jan-o-sch.net> writes:
-> +
-> +static long btrfs_ioctl_logical_to_ino(struct btrfs_root *root,
-> +					void __user *arg)
-> +{
-> +	int ret = 0;
-> +	int size;
-> +	u64 extent_offset;
-> +	struct btrfs_ioctl_logical_ino_args *loi;
-> +	struct btrfs_data_container *inodes = NULL;
-> +	struct btrfs_path *path = NULL;
-> +	struct btrfs_key key;
+On 07/18/2011 10:29 AM, Jan Schmidt wrote:
+> If you are on a 3.0 kernel, get the most current version of btrfs
+> tools from Hugo's integration-20110705 branch at
+> http://git.darksatanic.net/repo/btrfs-progs-unstable.git/ and do a
+> scrub. -Jan 
 
-This really needs to be root-only for obvious reasons.
-The same for the ino_path function
+Thx Jan, I did. This is the result:
 
-> +
-> +	loi = memdup_user(arg, sizeof(*loi));
-> +	if (IS_ERR(loi)) {
-> +		ret = PTR_ERR(loi);
-> +		loi = NULL;
-> +		goto out;
-> +	}
-> +
-> +	path = btrfs_alloc_path();
-> +	if (!path) {
-> +		ret = -ENOMEM;
-> +		goto out;
-> +	}
-> +
-> +	size = min(loi->size, 4096);
+scrub status for 03201fc0-7695-4468-9a10-f61ad79f23ca
+        scrub started at Thu Jul 21 22:27:31 2011 and finished after 787
+seconds
+        total bytes scrubbed: 173.91GB with 2211 errors
+        error details: csum=2211
+        corrected errors: 0, uncorrectable errors: 2211
 
-This is likely a root hole. loi->size is signed! Consider the case
-of a negative value being passed in.
+Any help what to do now? Should I stick with this filesystem or create a
+new one?
 
-Same for the earlier function.
+The good thing is, running 3.0 does not crash the system anymore while
+accessing corrupt data but just printing an I/O error.
 
--Andi
--- 
-ak@linux.intel.com -- Speaking for myself only
+TiA,
+Jan
+

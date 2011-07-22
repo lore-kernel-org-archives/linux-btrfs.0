@@ -1,105 +1,95 @@
 From: Jan Schmidt <list.btrfs@jan-o-sch.net>
-Subject: [PATCH v6 2/8] btrfs scrub: added unverified_errors
-Date: Fri, 22 Jul 2011 13:03:33 +0200
-Message-ID: <a0d21041d2cdeb4960e800fa015c616cd9853790.1311332399.git.list.btrfs@jan-o-sch.net>
-References: <cover.1311332399.git.list.btrfs@jan-o-sch.net>
+Subject: [PATCH v6 0/8] Btrfs scrub: print path to corrupted files and trigger nodatasum fixup
+Date: Fri, 22 Jul 2011 13:03:31 +0200
+Message-ID: <cover.1311332399.git.list.btrfs@jan-o-sch.net>
 To: chris.mason@oracle.com, linux-btrfs@vger.kernel.org
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <cover.1311332399.git.list.btrfs@jan-o-sch.net>
-In-Reply-To: <cover.1311332399.git.list.btrfs@jan-o-sch.net>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-In normal operation, scrub is reading data sequentially in large portions.
-In case of an i/o error, we try to find the corrupted area(s) by issuing
-page sized read requests. With this commit we increment the
-unverified_errors counter if all of the small size requests succeed.
+Here comes the fix for the bug immediately following the very last bug in
+this patch series:
 
-Userland patches carrying such conspicous events to the administrator should
-already be around.
+Changelog v5->v6:
+- fixed ioctl priviledge and input sanity checking (reported by Andi Kleen)
 
-Signed-off-by: Jan Schmidt <list.btrfs@jan-o-sch.net>
----
- fs/btrfs/scrub.c |   37 ++++++++++++++++++++++++++-----------
- 1 files changed, 26 insertions(+), 11 deletions(-)
+Original message follows:
+------------------------
+This patch set introduces two new features for scrub. They share the backref
+iteration code which is the reason they made it into the same patch set.
 
-diff --git a/fs/btrfs/scrub.c b/fs/btrfs/scrub.c
-index a8d03d5..35099fa 100644
---- a/fs/btrfs/scrub.c
-+++ b/fs/btrfs/scrub.c
-@@ -201,18 +201,25 @@ nomem:
-  * recheck_error gets called for every page in the bio, even though only
-  * one may be bad
-  */
--static void scrub_recheck_error(struct scrub_bio *sbio, int ix)
-+static int scrub_recheck_error(struct scrub_bio *sbio, int ix)
- {
-+	struct scrub_dev *sdev = sbio->sdev;
-+	u64 sector = (sbio->physical + ix * PAGE_SIZE) >> 9;
-+
- 	if (sbio->err) {
--		if (scrub_fixup_io(READ, sbio->sdev->dev->bdev,
--				   (sbio->physical + ix * PAGE_SIZE) >> 9,
-+		if (scrub_fixup_io(READ, sbio->sdev->dev->bdev, sector,
- 				   sbio->bio->bi_io_vec[ix].bv_page) == 0) {
- 			if (scrub_fixup_check(sbio, ix) == 0)
--				return;
-+				return 0;
- 		}
- 	}
- 
-+	spin_lock(&sdev->stat_lock);
-+	++sdev->stat.read_errors;
-+	spin_unlock(&sdev->stat_lock);
-+
- 	scrub_fixup(sbio, ix);
-+	return 1;
- }
- 
- static int scrub_fixup_check(struct scrub_bio *sbio, int ix)
-@@ -382,8 +389,14 @@ static void scrub_checksum(struct btrfs_work *work)
- 	int ret;
- 
- 	if (sbio->err) {
-+		ret = 0;
- 		for (i = 0; i < sbio->count; ++i)
--			scrub_recheck_error(sbio, i);
-+			ret |= scrub_recheck_error(sbio, i);
-+		if (!ret) {
-+			spin_lock(&sdev->stat_lock);
-+			++sdev->stat.unverified_errors;
-+			spin_unlock(&sdev->stat_lock);
-+		}
- 
- 		sbio->bio->bi_flags &= ~(BIO_POOL_MASK - 1);
- 		sbio->bio->bi_flags |= 1 << BIO_UPTODATE;
-@@ -396,10 +409,6 @@ static void scrub_checksum(struct btrfs_work *work)
- 			bi->bv_offset = 0;
- 			bi->bv_len = PAGE_SIZE;
- 		}
--
--		spin_lock(&sdev->stat_lock);
--		++sdev->stat.read_errors;
--		spin_unlock(&sdev->stat_lock);
- 		goto out;
- 	}
- 	for (i = 0; i < sbio->count; ++i) {
-@@ -420,8 +429,14 @@ static void scrub_checksum(struct btrfs_work *work)
- 			WARN_ON(1);
- 		}
- 		kunmap_atomic(buffer, KM_USER0);
--		if (ret)
--			scrub_recheck_error(sbio, i);
-+		if (ret) {
-+			ret = scrub_recheck_error(sbio, i);
-+			if (!ret) {
-+				spin_lock(&sdev->stat_lock);
-+				++sdev->stat.unverified_errors;
-+				spin_unlock(&sdev->stat_lock);
-+			}
-+		}
- 	}
- 
- out:
+The first feature adds printk statements in case scrub finds an error which list
+all affected files. You will need patch 1, 2 and 3 for that.
+
+The second feature adds the trigger which enables us to correct i/o errors in
+case the affected extent does not have a checksum (nodatasum), eventually. You
+will need patch 1, 4, 5 and 6 for that.
+
+I tried to apply all patches to the current cmason/for-linus branch and to
+Arne's current for-chris branch. They do apply with no errors (some offsets
+possible).
+
+The new ioctl()s can be tested from usermode by applying the patch series
+	[PATCH v2 0/3] Btrfs-progs: add the first "inspect-internal" commands
+from this mailing list to the user land tools.
+
+Please review.
+
+Next I'm starting to make up my mind how to implement on-the-fly error
+correction correctly. This will enable us to rewrite good data whenever we
+encounter a bad copy. I have some preliminary patches already, the stress in the
+first sentence is on "correctly". The second feature mentioned in this patch
+series will then automatically use that code, too.
+
+Changelog v1->v2:
+- Various cleanup, sensible error codes as suggested by David Sterba
+
+Changelog v2->v3:
+- evaluation and iteration of shared refs
+- support for in-tree refs (v2 iterated inline refs only)
+- never call an interator function without releasing the path
+- iterate_irefs now returns -ENOENT in case no refs are found
+- some stupid bugs removed where release_path was called too early
+- ioctls added to provide new functions to user mode
+- bugfixes for cases where search_slot found the very end of a leaf
+- bugfix: use right fs root for readpage instead of fs_root->fs_info
+- based on current cmason/for-linus
+
+Changelog v3->v4:
+- fixed a regression with mirror_num that could prevent error correction
+- based on current cmason/for-linus
+
+Changelog v4->v5:
+- fixed a deadlock when fixup is taking longer while scrub is about to end
+
+Please try it and report errors (or confirm there are none, of course). I can
+provide a place to pull from if anyone likes.
+
+-Jan
+
+Jan Schmidt (8):
+  btrfs: added helper functions to iterate backrefs
+  btrfs scrub: added unverified_errors
+  btrfs scrub: print paths of corrupted files
+  btrfs scrub: bugfix: mirror_num off by one
+  btrfs: add mirror_num to extent_read_full_page
+  btrfs scrub: use int for mirror_num, not u64
+  btrfs scrub: add fixup code for errors on nodatasum files
+  btrfs: new ioctls to do logical->inode and inode->path resolving
+
+ fs/btrfs/Makefile    |    3 +-
+ fs/btrfs/backref.c   |  748 ++++++++++++++++++++++++++++++++++++++++++++++++++
+ fs/btrfs/backref.h   |   62 +++++
+ fs/btrfs/disk-io.c   |    2 +-
+ fs/btrfs/extent_io.c |    6 +-
+ fs/btrfs/extent_io.h |    3 +-
+ fs/btrfs/inode.c     |    2 +-
+ fs/btrfs/ioctl.c     |  145 ++++++++++
+ fs/btrfs/ioctl.h     |   29 ++
+ fs/btrfs/scrub.c     |  414 +++++++++++++++++++++++++---
+ 10 files changed, 1374 insertions(+), 40 deletions(-)
+ create mode 100644 fs/btrfs/backref.c
+ create mode 100644 fs/btrfs/backref.h
+
 -- 
 1.7.3.4
 

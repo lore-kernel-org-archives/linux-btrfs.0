@@ -1,67 +1,153 @@
-From: Jan Schubert <Jan.Schubert@GMX.li>
-Subject: Re: Broken btrfs?
-Date: Fri, 22 Jul 2011 15:18:40 +0200
-Message-ID: <4E2978B0.9050501@GMX.li>
-References: <20110716214404.50480@gmx.net> <loom.20110717T160020-81@post.gmane.org> <4E23EED3.8000301@jan-o-sch.net> <4E28965F.1010508@GMX.li> <4E292598.2090308@jan-o-sch.net>
+From: David Sterba <dave@jikos.cz>
+Subject: Re: [PATCH 11/16] Btrfs: clean up code for extent_map lookup
+Date: Fri, 22 Jul 2011 15:20:14 +0200
+Message-ID: <20110722132014.GC19273@twin.jikos.cz>
+References: <4E1E5F59.5030208@cn.fujitsu.com>
+ <4E1E5FF7.7060202@cn.fujitsu.com>
+Reply-To: dave@jikos.cz
 Mime-Version: 1.0
-Content-Type: text/plain; charset=ISO-8859-1
-Cc: linux-btrfs@vger.kernel.org
-To: Jan Schmidt <list.btrfs@jan-o-sch.net>
+Content-Type: text/plain; charset=us-ascii
+Cc: Chris Mason <chris.mason@oracle.com>,
+	"linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
+To: Li Zefan <lizf@cn.fujitsu.com>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <4E292598.2090308@jan-o-sch.net>
+In-Reply-To: <4E1E5FF7.7060202@cn.fujitsu.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 07/22/2011 09:24 AM, Jan Schmidt wrote:
-> Scrub should be printing inode numbers to your system log while
-> detecting those errors. If you want to know the exact files corrupted,
-> you can grab my patch set with subject "Btrfs scrub: print path to
-> corrupted files and trigger nodatasum fixup" from the list and give it
-> a try.
+On Thu, Jul 14, 2011 at 11:18:15AM +0800, Li Zefan wrote:
+> lookup_extent_map() and search_extent_map() can share most of code.
+> 
+> Signed-off-by: Li Zefan <lizf@cn.fujitsu.com>
+> ---
+>  fs/btrfs/extent_map.c |   85 +++++++++++++++++--------------------------------
+>  1 files changed, 29 insertions(+), 56 deletions(-)
+> 
+> diff --git a/fs/btrfs/extent_map.c b/fs/btrfs/extent_map.c
+> index 911a9db..df7a803 100644
+> --- a/fs/btrfs/extent_map.c
+> +++ b/fs/btrfs/extent_map.c
+> @@ -299,19 +299,8 @@ static u64 range_end(u64 start, u64 len)
+>  	return start + len;
+>  }
+>  
+> -/**
+> - * lookup_extent_mapping - lookup extent_map
+> - * @tree:	tree to lookup in
+> - * @start:	byte offset to start the search
+> - * @len:	length of the lookup range
+> - *
+> - * Find and return the first extent_map struct in @tree that intersects the
+> - * [start, len] range.  There may be additional objects in the tree that
+> - * intersect, so check the object returned carefully to make sure that no
+> - * additional lookups are needed.
+> - */
+> -struct extent_map *lookup_extent_mapping(struct extent_map_tree *tree,
+> -					 u64 start, u64 len)
+> +struct extent_map *__lookup_extent_mapping(struct extent_map_tree *tree,
+> +					   u64 start, u64 len, int strict)
 
-Cool Jan, this is exactly what I asked for in my original post.
+just minor thing: can be defined static
 
-Your patch set is against kernel sources (not btrfs-progs), right? I
-took the opportunity to upgrade to official 3.0 where your patch applied
-and compiled without any issues. I also did recompile
-btrfs-progs-unstable and run a scrub.
-
-This scrub completed without any errors:
-# btrfs scrub status .
-scrub status for 03201fc0-7695-4468-9a10-f61ad79f23ca
-        scrub started at Fri Jul 22 14:24:21 2011, running for 706 seconds
-        total bytes scrubbed: 158.01GB with 0 errors
-
-Is'nt this strange? This message is generated after rebooting the box
-(due to a crash, see below), I remember to have seen some more
-information before the crash but also 0 errors.
-
-While doing the scrub I still did see csum errors in my dmesg but no
-files associated:
-
-Jul 22 14:17:50 toral kernel: btrfs no csum found for inode 199934 start
-729088
-Jul 22 14:17:50 toral kernel: btrfs csum failed ino 199934 off 729088
-csum 3390946210 private 0
-Jul 22 14:17:51 toral kernel: btrfs no csum found for inode 199934 start
-24096768
-Jul 22 14:17:51 toral kernel: btrfs csum failed ino 199934 off 24096768
-csum 439962552 private 0
-Jul 22 14:17:51 toral kernel: btrfs no csum found for inode 199934 start
-24801280
-Jul 22 14:17:51 toral kernel: btrfs no csum found for inode 199934 start
-24805376
-Jul 22 14:17:51 toral kernel: btrfs csum failed ino 199934 off 24801280
-csum 158010657 private 0
-Jul 22 14:17:51 toral kernel: btrfs csum failed ino 199934 off 24805376
-csum 127231121 private 0
-
-And sorry to say, it also crashed my box throwing a kernel expception
-and a reference to somtehing like scrub_print_warning_inode (or similar)
-which I could not find after rebooting my box. Seems my kernel.log and
-all others logs are empty for the last 30min, Sry.
-
-What is the most current btrfs-progs git branch to use for further
-investigation?
-
-Thx,
-Jan
+>  {
+>  	struct extent_map *em;
+>  	struct rb_node *rb_node;
+> @@ -320,38 +309,42 @@ struct extent_map *lookup_extent_mapping(struct extent_map_tree *tree,
+>  	u64 end = range_end(start, len);
+>  
+>  	rb_node = __tree_search(&tree->map, start, &prev, &next);
+> -	if (!rb_node && prev) {
+> -		em = rb_entry(prev, struct extent_map, rb_node);
+> -		if (end > em->start && start < extent_map_end(em))
+> -			goto found;
+> -	}
+> -	if (!rb_node && next) {
+> -		em = rb_entry(next, struct extent_map, rb_node);
+> -		if (end > em->start && start < extent_map_end(em))
+> -			goto found;
+> -	}
+>  	if (!rb_node) {
+> -		em = NULL;
+> -		goto out;
+> -	}
+> -	if (IS_ERR(rb_node)) {
+> -		em = ERR_CAST(rb_node);
+> -		goto out;
+> +		if (prev)
+> +			rb_node = prev;
+> +		else if (next)
+> +			rb_node = next;
+> +		else
+> +			return NULL;
+>  	}
+> +
+>  	em = rb_entry(rb_node, struct extent_map, rb_node);
+> -	if (end > em->start && start < extent_map_end(em))
+> -		goto found;
+>  
+> -	em = NULL;
+> -	goto out;
+> +	if (strict && !(end > em->start && start < extent_map_end(em)))
+> +		return NULL;
+>  
+> -found:
+>  	atomic_inc(&em->refs);
+> -out:
+>  	return em;
+>  }
+>  
+>  /**
+> + * lookup_extent_mapping - lookup extent_map
+> + * @tree:	tree to lookup in
+> + * @start:	byte offset to start the search
+> + * @len:	length of the lookup range
+> + *
+> + * Find and return the first extent_map struct in @tree that intersects the
+> + * [start, len] range.  There may be additional objects in the tree that
+> + * intersect, so check the object returned carefully to make sure that no
+> + * additional lookups are needed.
+> + */
+> +struct extent_map *lookup_extent_mapping(struct extent_map_tree *tree,
+> +					 u64 start, u64 len)
+> +{
+> +	return __lookup_extent_mapping(tree, start, len, 1);
+> +}
+> +
+> +/**
+>   * search_extent_mapping - find a nearby extent map
+>   * @tree:	tree to lookup in
+>   * @start:	byte offset to start the search
+> @@ -365,27 +358,7 @@ out:
+>  struct extent_map *search_extent_mapping(struct extent_map_tree *tree,
+>  					 u64 start, u64 len)
+>  {
+> -	struct extent_map *em;
+> -	struct rb_node *rb_node;
+> -	struct rb_node *prev = NULL;
+> -	struct rb_node *next = NULL;
+> -
+> -	rb_node = __tree_search(&tree->map, start, &prev, &next);
+> -	if (!rb_node && prev) {
+> -		em = rb_entry(prev, struct extent_map, rb_node);
+> -		goto found;
+> -	}
+> -	if (!rb_node && next) {
+> -		em = rb_entry(next, struct extent_map, rb_node);
+> -		goto found;
+> -	}
+> -	if (!rb_node)
+> -		return NULL;
+> -
+> -	em = rb_entry(rb_node, struct extent_map, rb_node);
+> -found:
+> -	atomic_inc(&em->refs);
+> -	return em;
+> +	return __lookup_extent_mapping(tree, start, len, 0);
+>  }
+>  
+>  /**
+> -- 
+> 1.7.3.1
+> --
+> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
+> the body of a message to majordomo@vger.kernel.org
+> More majordomo info at  http://vger.kernel.org/majordomo-info.html

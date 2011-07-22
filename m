@@ -1,40 +1,57 @@
 From: Jan Schmidt <list.btrfs@jan-o-sch.net>
-Subject: [RFC PATCH 2/4] btrfs: Do not use bio->bi_bdev after submission
-Date: Fri, 22 Jul 2011 16:58:06 +0200
-Message-ID: <74d6cec5467dcf696e28846edd1d17843cc4451a.1311344751.git.list.btrfs@jan-o-sch.net>
-References: <cover.1311344751.git.list.btrfs@jan-o-sch.net>
+Subject: [RFC PATCH 0/4] btrfs: Suggestion for raid auto-repair
+Date: Fri, 22 Jul 2011 16:58:04 +0200
+Message-ID: <cover.1311344751.git.list.btrfs@jan-o-sch.net>
 To: chris.mason@oracle.com, linux-btrfs@vger.kernel.org
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <cover.1311344751.git.list.btrfs@jan-o-sch.net>
-In-Reply-To: <cover.1311344751.git.list.btrfs@jan-o-sch.net>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-The block layer modifies bio->bi_bdev and bio->bi_sector while working on
-the bio, they do _not_ come back unmodified in the completion callback.
+Hi all!
 
-To call add_page, we need at least some bi_bdev set, which is why the code
-was working, previously. With this patch, we use the latest_bdev from
-fsinfo instead of the leftover in the bio. This gives us the possibility to
-use the bi_bdev field for another purpose.
+This is my suggestion how to do on the fly repair for corrupted raid setups. 
+Currently, btrfs can cope with a hardware failure in a way that it tries to
+find another mirror and ... that's it. The bad mirror always stays bad and your
+data is lost when the last copy vanishes.
 
-Signed-off-by: Jan Schmidt <list.btrfs@jan-o-sch.net>
----
- fs/btrfs/inode.c |    2 +-
- 1 files changed, 1 insertions(+), 1 deletions(-)
+Here is where I got on my way changing this. I built upon the retry code
+originally used for data (inode.c), moved it to a more central place
+(extent_io.c) and made it repair errors when possible. Those two steps are
+currently inlcuded in patch 4, because what I actually did was somewhat more
+iterative. If it helps reviewing, I can try to split that up in a move-commit
+and a change-commit - just tell me you'd like this.
 
-diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
-index 4a13730..6ec7a93 100644
---- a/fs/btrfs/inode.c
-+++ b/fs/btrfs/inode.c
-@@ -1916,7 +1916,7 @@ static int btrfs_io_failed_hook(struct bio *failed_bio,
- 	bio->bi_private = state;
- 	bio->bi_end_io = failed_bio->bi_end_io;
- 	bio->bi_sector = failrec->logical >> 9;
--	bio->bi_bdev = failed_bio->bi_bdev;
-+	bio->bi_bdev = BTRFS_I(inode)->root->fs_info->fs_devices->latest_bdev;
- 	bio->bi_size = 0;
+To test this, I made some bad sectors with hdparm (data and metadata) and had
+them corrected while reading the affected data. Anyway, this patch touches
+critical parts and can potentially screw up your data, in case i have an error
+in determination of the destination for corrective writes. You have been warned!
+But please, try it anyway :-)
+
+One remark concerning scrub: My latest scrub patches include a change that
+triggers a regular page read to correct some kind of errors. This code is meant
+to end up exactly in the error correction routines added here, too.
+
+There are some special cases (nodatasum and a certain state of page cache) where
+scrub comes across an error that it reports as incorrectable, which it isn't. I
+have a patch for that as well, but as it is only relevant when you combine those
+two patch series, I did not include it.
  
- 	bio_add_page(bio, page, failrec->len, start - page_offset(page));
+-Jan
+
+Jan Schmidt (4):
+  btrfs: btrfs_multi_bio replaced with btrfs_bio
+  btrfs: Do not use bio->bi_bdev after submission
+  btrfs: Put mirror_num in bi_bdev
+  btrfs: Moved repair code from inode.c to extent_io.c
+
+ fs/btrfs/extent-tree.c |   10 +-
+ fs/btrfs/extent_io.c   |  386 +++++++++++++++++++++++++++++++++++++++++++++++-
+ fs/btrfs/extent_io.h   |   11 ++-
+ fs/btrfs/inode.c       |  155 +-------------------
+ fs/btrfs/scrub.c       |   20 ++--
+ fs/btrfs/volumes.c     |  130 +++++++++--------
+ fs/btrfs/volumes.h     |   10 +-
+ 7 files changed, 485 insertions(+), 237 deletions(-)
+
 -- 
 1.7.3.4
 

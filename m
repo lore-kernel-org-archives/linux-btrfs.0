@@ -1,7 +1,7 @@
 From: Jan Schmidt <list.btrfs@jan-o-sch.net>
-Subject: [PATCH v6 3/8] btrfs scrub: print paths of corrupted files
-Date: Fri, 22 Jul 2011 13:03:34 +0200
-Message-ID: <6288e829e3d0153b3fb9d250f8d63150609906e4.1311332399.git.list.btrfs@jan-o-sch.net>
+Subject: [PATCH v6 2/8] btrfs scrub: added unverified_errors
+Date: Fri, 22 Jul 2011 13:03:33 +0200
+Message-ID: <a0d21041d2cdeb4960e800fa015c616cd9853790.1311332399.git.list.btrfs@jan-o-sch.net>
 References: <cover.1311332399.git.list.btrfs@jan-o-sch.net>
 To: chris.mason@oracle.com, linux-btrfs@vger.kernel.org
 Return-path: <linux-btrfs-owner@vger.kernel.org>
@@ -9,242 +9,97 @@ In-Reply-To: <cover.1311332399.git.list.btrfs@jan-o-sch.net>
 In-Reply-To: <cover.1311332399.git.list.btrfs@jan-o-sch.net>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-While scrubbing, we may encounter various errors. Previously, a logical
-address was printed to the log only. Now, all paths belonging to that
-address are resolved and printed separately. That should work for hardlinks
-as well as reflinks.
+In normal operation, scrub is reading data sequentially in large portions.
+In case of an i/o error, we try to find the corrupted area(s) by issuing
+page sized read requests. With this commit we increment the
+unverified_errors counter if all of the small size requests succeed.
+
+Userland patches carrying such conspicous events to the administrator should
+already be around.
 
 Signed-off-by: Jan Schmidt <list.btrfs@jan-o-sch.net>
 ---
- fs/btrfs/scrub.c |  169 ++++++++++++++++++++++++++++++++++++++++++++++++++++--
- 1 files changed, 163 insertions(+), 6 deletions(-)
+ fs/btrfs/scrub.c |   37 ++++++++++++++++++++++++++-----------
+ 1 files changed, 26 insertions(+), 11 deletions(-)
 
 diff --git a/fs/btrfs/scrub.c b/fs/btrfs/scrub.c
-index 35099fa..221fd5c 100644
+index a8d03d5..35099fa 100644
 --- a/fs/btrfs/scrub.c
 +++ b/fs/btrfs/scrub.c
-@@ -17,10 +17,12 @@
+@@ -201,18 +201,25 @@ nomem:
+  * recheck_error gets called for every page in the bio, even though only
+  * one may be bad
   */
- 
- #include <linux/blkdev.h>
-+#include <linux/ratelimit.h>
- #include "ctree.h"
- #include "volumes.h"
- #include "disk-io.h"
- #include "ordered-data.h"
-+#include "backref.h"
- 
- /*
-  * This is only the first step towards a full-features scrub. It reads all
-@@ -100,6 +102,19 @@ struct scrub_dev {
- 	spinlock_t		stat_lock;
- };
- 
-+struct scrub_warning {
-+	struct btrfs_path	*path;
-+	u64			extent_item_size;
-+	char			*scratch_buf;
-+	char			*msg_buf;
-+	const char		*errstr;
-+	sector_t		sector;
-+	u64			logical;
-+	struct btrfs_device	*dev;
-+	int			msg_bufsize;
-+	int			scratch_bufsize;
-+};
-+
- static void scrub_free_csums(struct scrub_dev *sdev)
+-static void scrub_recheck_error(struct scrub_bio *sbio, int ix)
++static int scrub_recheck_error(struct scrub_bio *sbio, int ix)
  {
- 	while (!list_empty(&sdev->csum_list)) {
-@@ -195,6 +210,143 @@ nomem:
- 	return ERR_PTR(-ENOMEM);
- }
- 
-+static int scrub_print_warning_inode(u64 inum, u64 offset, u64 root, void *ctx)
-+{
-+	u64 isize;
-+	u32 nlink;
-+	int ret;
-+	int i;
-+	struct extent_buffer *eb;
-+	struct btrfs_inode_item *inode_item;
-+	struct scrub_warning *swarn = ctx;
-+	struct btrfs_fs_info *fs_info = swarn->dev->dev_root->fs_info;
-+	struct inode_fs_paths *ipath = NULL;
-+	struct btrfs_root *local_root;
-+	struct btrfs_key root_key;
++	struct scrub_dev *sdev = sbio->sdev;
++	u64 sector = (sbio->physical + ix * PAGE_SIZE) >> 9;
 +
-+	root_key.objectid = root;
-+	root_key.type = BTRFS_ROOT_ITEM_KEY;
-+	root_key.offset = (u64)-1;
-+	local_root = btrfs_read_fs_root_no_name(fs_info, &root_key);
-+	if (IS_ERR(local_root)) {
-+		ret = PTR_ERR(local_root);
-+		goto err;
-+	}
-+
-+	ret = inode_item_info(inum, 0, local_root, swarn->path);
-+	if (ret) {
-+		btrfs_release_path(swarn->path);
-+		goto err;
-+	}
-+
-+	eb = swarn->path->nodes[0];
-+	inode_item = btrfs_item_ptr(eb, swarn->path->slots[0],
-+					struct btrfs_inode_item);
-+	isize = btrfs_inode_size(eb, inode_item);
-+	nlink = btrfs_inode_nlink(eb, inode_item);
-+	btrfs_release_path(swarn->path);
-+
-+	ipath = init_ipath(4096, local_root, swarn->path);
-+	ret = paths_from_inode(inum, ipath);
-+
-+	if (ret < 0)
-+		goto err;
-+
-+	/*
-+	 * we deliberately ignore the bit ipath might have been too small to
-+	 * hold all of the paths here
-+	 */
-+	for (i = 0; i < ipath->fspath->elem_cnt; ++i)
-+		printk(KERN_WARNING "btrfs: %s at logical %llu on dev "
-+			"%s, sector %llu, root %llu, inode %llu, offset %llu, "
-+			"length %llu, links %u (path: %s)\n", swarn->errstr,
-+			swarn->logical, swarn->dev->name,
-+			(unsigned long long)swarn->sector, root, inum, offset,
-+			min(isize - offset, (u64)PAGE_SIZE), nlink,
-+			ipath->fspath->str[i]);
-+
-+	free_ipath(ipath);
-+	return 0;
-+
-+err:
-+	printk(KERN_WARNING "btrfs: %s at logical %llu on dev "
-+		"%s, sector %llu, root %llu, inode %llu, offset %llu: path "
-+		"resolving failed with ret=%d\n", swarn->errstr,
-+		swarn->logical, swarn->dev->name,
-+		(unsigned long long)swarn->sector, root, inum, offset, ret);
-+
-+	free_ipath(ipath);
-+	return 0;
-+}
-+
-+static void scrub_print_warning(const char *errstr, struct scrub_bio *sbio,
-+				int ix)
-+{
-+	struct btrfs_device *dev = sbio->sdev->dev;
-+	struct btrfs_fs_info *fs_info = dev->dev_root->fs_info;
-+	struct btrfs_path *path;
-+	struct btrfs_key found_key;
-+	struct extent_buffer *eb;
-+	struct btrfs_extent_item *ei;
-+	struct scrub_warning swarn;
-+	u32 item_size;
-+	int ret;
-+	u64 ref_root;
-+	u8 ref_level;
-+	unsigned long ptr = 0;
-+	const int bufsize = 4096;
-+	u64 extent_offset;
-+
-+	path = btrfs_alloc_path();
-+
-+	swarn.scratch_buf = kmalloc(bufsize, GFP_NOFS);
-+	swarn.msg_buf = kmalloc(bufsize, GFP_NOFS);
-+	swarn.sector = (sbio->physical + ix * PAGE_SIZE) >> 9;
-+	swarn.logical = sbio->logical + ix * PAGE_SIZE;
-+	swarn.errstr = errstr;
-+	swarn.dev = dev;
-+	swarn.msg_bufsize = bufsize;
-+	swarn.scratch_bufsize = bufsize;
-+
-+	if (!path || !swarn.scratch_buf || !swarn.msg_buf)
-+		goto out;
-+
-+	ret = extent_from_logical(fs_info, swarn.logical, path, &found_key);
-+	if (ret < 0)
-+		goto out;
-+
-+	extent_offset = swarn.logical - found_key.objectid;
-+	swarn.extent_item_size = found_key.offset;
-+
-+	eb = path->nodes[0];
-+	ei = btrfs_item_ptr(eb, path->slots[0], struct btrfs_extent_item);
-+	item_size = btrfs_item_size_nr(eb, path->slots[0]);
-+
-+	if (ret & BTRFS_EXTENT_FLAG_TREE_BLOCK) {
-+		do {
-+			ret = tree_backref_for_extent(&ptr, eb, ei, item_size,
-+							&ref_root, &ref_level);
-+			printk(KERN_WARNING "%s at logical %llu on dev %s, "
-+				"sector %llu: metadata %s (level %d) in tree "
-+				"%llu\n", errstr, swarn.logical, dev->name,
-+				(unsigned long long)swarn.sector,
-+				ref_level ? "node" : "leaf",
-+				ret < 0 ? -1 : ref_level,
-+				ret < 0 ? -1 : ref_root);
-+		} while (ret != 1);
-+	} else {
-+		swarn.path = path;
-+		iterate_extent_inodes(fs_info, path, found_key.objectid,
-+					extent_offset,
-+					scrub_print_warning_inode, &swarn);
-+	}
-+
-+out:
-+	btrfs_free_path(path);
-+	kfree(swarn.scratch_buf);
-+	kfree(swarn.msg_buf);
-+}
-+
- /*
-  * scrub_recheck_error gets called when either verification of the page
-  * failed or the bio failed to read, e.g. with EIO. In the latter case,
-@@ -205,6 +357,8 @@ static int scrub_recheck_error(struct scrub_bio *sbio, int ix)
- {
- 	struct scrub_dev *sdev = sbio->sdev;
- 	u64 sector = (sbio->physical + ix * PAGE_SIZE) >> 9;
-+	static DEFINE_RATELIMIT_STATE(_rs, DEFAULT_RATELIMIT_INTERVAL,
-+					DEFAULT_RATELIMIT_BURST);
- 
  	if (sbio->err) {
- 		if (scrub_fixup_io(READ, sbio->sdev->dev->bdev, sector,
-@@ -212,6 +366,11 @@ static int scrub_recheck_error(struct scrub_bio *sbio, int ix)
+-		if (scrub_fixup_io(READ, sbio->sdev->dev->bdev,
+-				   (sbio->physical + ix * PAGE_SIZE) >> 9,
++		if (scrub_fixup_io(READ, sbio->sdev->dev->bdev, sector,
+ 				   sbio->bio->bi_io_vec[ix].bv_page) == 0) {
  			if (scrub_fixup_check(sbio, ix) == 0)
- 				return 0;
+-				return;
++				return 0;
  		}
-+		if (__ratelimit(&_rs))
-+			scrub_print_warning("i/o error", sbio, ix);
-+	} else {
-+		if (__ratelimit(&_rs))
-+			scrub_print_warning("checksum error", sbio, ix);
  	}
  
- 	spin_lock(&sdev->stat_lock);
-@@ -326,9 +485,8 @@ static void scrub_fixup(struct scrub_bio *sbio, int ix)
- 	++sdev->stat.corrected_errors;
- 	spin_unlock(&sdev->stat_lock);
- 
--	if (printk_ratelimit())
--		printk(KERN_ERR "btrfs: fixed up at %llu\n",
--		       (unsigned long long)logical);
-+	printk_ratelimited(KERN_ERR "btrfs: fixed up error at logical %llu\n",
-+			       (unsigned long long)logical);
- 	return;
- 
- uncorrectable:
-@@ -337,9 +495,8 @@ uncorrectable:
- 	++sdev->stat.uncorrectable_errors;
- 	spin_unlock(&sdev->stat_lock);
- 
--	if (printk_ratelimit())
--		printk(KERN_ERR "btrfs: unable to fixup at %llu\n",
--			 (unsigned long long)logical);
-+	printk_ratelimited(KERN_ERR "btrfs: unable to fixup (regular) error at "
-+				"logical %llu\n", (unsigned long long)logical);
++	spin_lock(&sdev->stat_lock);
++	++sdev->stat.read_errors;
++	spin_unlock(&sdev->stat_lock);
++
+ 	scrub_fixup(sbio, ix);
++	return 1;
  }
  
- static int scrub_fixup_io(int rw, struct block_device *bdev, sector_t sector,
+ static int scrub_fixup_check(struct scrub_bio *sbio, int ix)
+@@ -382,8 +389,14 @@ static void scrub_checksum(struct btrfs_work *work)
+ 	int ret;
+ 
+ 	if (sbio->err) {
++		ret = 0;
+ 		for (i = 0; i < sbio->count; ++i)
+-			scrub_recheck_error(sbio, i);
++			ret |= scrub_recheck_error(sbio, i);
++		if (!ret) {
++			spin_lock(&sdev->stat_lock);
++			++sdev->stat.unverified_errors;
++			spin_unlock(&sdev->stat_lock);
++		}
+ 
+ 		sbio->bio->bi_flags &= ~(BIO_POOL_MASK - 1);
+ 		sbio->bio->bi_flags |= 1 << BIO_UPTODATE;
+@@ -396,10 +409,6 @@ static void scrub_checksum(struct btrfs_work *work)
+ 			bi->bv_offset = 0;
+ 			bi->bv_len = PAGE_SIZE;
+ 		}
+-
+-		spin_lock(&sdev->stat_lock);
+-		++sdev->stat.read_errors;
+-		spin_unlock(&sdev->stat_lock);
+ 		goto out;
+ 	}
+ 	for (i = 0; i < sbio->count; ++i) {
+@@ -420,8 +429,14 @@ static void scrub_checksum(struct btrfs_work *work)
+ 			WARN_ON(1);
+ 		}
+ 		kunmap_atomic(buffer, KM_USER0);
+-		if (ret)
+-			scrub_recheck_error(sbio, i);
++		if (ret) {
++			ret = scrub_recheck_error(sbio, i);
++			if (!ret) {
++				spin_lock(&sdev->stat_lock);
++				++sdev->stat.unverified_errors;
++				spin_unlock(&sdev->stat_lock);
++			}
++		}
+ 	}
+ 
+ out:
 -- 
 1.7.3.4
 

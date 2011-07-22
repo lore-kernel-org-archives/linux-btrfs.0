@@ -1,70 +1,77 @@
-From: Chris Mason <chris.mason@oracle.com>
-Subject: Re: new metadata reader/writer locks in integration-test
-Date: Thu, 21 Jul 2011 20:53:24 -0400
-Message-ID: <1311295973-sup-3312@shiny>
-References: <1311096438-sup-1263@shiny> <1311182478-sup-9986@shiny> <4E277757.9070504@jp.fujitsu.com> <4E27BD4F.6020900@gmx.net>
-Content-Type: text/plain; charset=UTF-8
-Cc: Tsutomu Itoh <t-itoh@jp.fujitsu.com>,
-	linux-btrfs <linux-btrfs@vger.kernel.org>
-To: Arne Jansen <sensille@gmx.net>
+From: Tsutomu Itoh <t-itoh@jp.fujitsu.com>
+Subject: Re: [PATCH 6/7] btrfs: Don't BUG_ON alloc_path errors in find_next_chunk
+Date: Fri, 22 Jul 2011 09:56:00 +0900
+Message-ID: <4E28CAA0.2070801@jp.fujitsu.com>
+References: <1311277713-7747-1-git-send-email-mfasheh@suse.com> <1311277713-7747-2-git-send-email-mfasheh@suse.com> <1311277713-7747-3-git-send-email-mfasheh@suse.com> <1311277713-7747-4-git-send-email-mfasheh@suse.com> <1311277713-7747-5-git-send-email-mfasheh@suse.com> <1311277713-7747-6-git-send-email-mfasheh@suse.com> <1311277713-7747-7-git-send-email-mfasheh@suse.com>
+Mime-Version: 1.0
+Content-Type: text/plain; charset=ISO-2022-JP
+Cc: linux-btrfs@vger.kernel.org, chris.mason@oracle.com
+To: Mark Fasheh <mfasheh@suse.com>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-reply-to: <4E27BD4F.6020900@gmx.net>
+In-Reply-To: <1311277713-7747-7-git-send-email-mfasheh@suse.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Excerpts from Arne Jansen's message of 2011-07-21 01:46:55 -0400:
-> On 21.07.2011 02:48, Tsutomu Itoh wrote:
-> > (2011/07/21 2:21), Chris Mason wrote:
-> >> Excerpts from Chris Mason's message of 2011-07-19 13:30:22 -0400:
-> >>> Hi everyone,
-> >>>
-> >>> I've pushed out a new integration-test branch, and it includes a new
-> >>> reader/writer locking scheme for the btree locks.
-> >>>
-> >>> We've seen a number of benchmarks dominated by contention on the root
-> >>> node lock.  This changes our locks into a simple reader/writer lock.
-> >>> They are based on mutexes so that we still take advantage of the mutex
-> >>> adaptive spins for write locks (rwsemaphores were much slower).
-> >>>
-> >>> I'm also sending the individual commits, please do take a look.
-> >>
-> >> Hi everyone,
-> >>
-> >> I just rebased Josef's enospc fixes into integration-test, it should fix
-> >> the warnings in extent-tree.c
-> >>
-> > 
-> > Unfortunately, I got the following messages.
-> > 
-> > 
-> > Jul 21 09:41:22 luna kernel: ------------[ cut here ]------------
-> > Jul 21 09:41:22 luna kernel: WARNING: at fs/btrfs/extent-tree.c:5564 btrfs_alloc_reserved_file_extent+0xf8/0x100 [btrfs]()
-> > Jul 21 09:41:22 luna kernel: Hardware name: PRIMERGY
-> > Jul 21 09:41:22 luna kernel: Modules linked in: btrfs zlib_deflate crc32c libcrc32c autofs4 sunrpc 8021q garp stp llc cpufreq_ondemand acpi_cpufreq freq_table mperf ipv6 ext3 jbd dm_mirror dm_region_hash dm_log dm_mod kvm uinput ppdev parport_pc parport sg pcspkr i2c_i801 i2c_core iTCO_wdt iTCO_vendor_support tg3 shpchp pci_hotplug i3000_edac edac_core ext4 mbcache jbd2 crc16 sd_mod crc_t10dif sr_mod cdrom megaraid_sas floppy pata_acpi ata_generic ata_piix libata scsi_mod [last unloaded: microcode]
-> > Jul 21 09:41:22 luna kernel: Pid: 5517, comm: btrfs-endio-wri Tainted: G        W   2.6.39btrfs-tc1+ #1
-> > Jul 21 09:41:22 luna kernel: Call Trace:
-> > Jul 21 09:41:22 luna kernel: [<ffffffff8106004f>] warn_slowpath_common+0x7f/0xc0
-> > Jul 21 09:41:22 luna kernel: [<ffffffff810600aa>] warn_slowpath_null+0x1a/0x20
-> > Jul 21 09:41:22 luna kernel: [<ffffffffa044a068>] btrfs_alloc_reserved_file_extent+0xf8/0x100 [btrfs]
-> > Jul 21 09:41:22 luna kernel: [<ffffffffa0464121>] insert_reserved_file_extent.clone.0+0x201/0x270 [btrfs]
-> > Jul 21 09:41:22 luna kernel: [<ffffffffa0468c0b>] btrfs_finish_ordered_io+0x2eb/0x360 [btrfs]
-> > Jul 21 09:41:22 luna kernel: [<ffffffff8106fe23>] ? try_to_del_timer_sync+0x83/0xe0
-> > Jul 21 09:41:22 luna kernel: [<ffffffffa0468cd0>] btrfs_writepage_end_io_hook+0x50/0xa0 [btrfs]
-> > Jul 21 09:41:22 luna kernel: [<ffffffffa049a3c6>] end_compressed_bio_write+0x86/0xf0 [btrfs]
-> > Jul 21 09:41:22 luna kernel: [<ffffffff8117f96d>] bio_endio+0x1d/0x40
-> > Jul 21 09:41:22 luna kernel: [<ffffffffa0459d84>] end_workqueue_fn+0xf4/0x130 [btrfs]
-> > Jul 21 09:41:22 luna kernel: [<ffffffffa048841e>] worker_loop+0x13e/0x540 [btrfs]
-> > Jul 21 09:41:22 luna kernel: [<ffffffffa04882e0>] ? btrfs_queue_worker+0x2d0/0x2d0 [btrfs]
-> > Jul 21 09:41:22 luna kernel: [<ffffffffa04882e0>] ? btrfs_queue_worker+0x2d0/0x2d0 [btrfs]
-> > Jul 21 09:41:22 luna kernel: [<ffffffff81081756>] kthread+0x96/0xa0
-> > Jul 21 09:41:22 luna kernel: [<ffffffff81486004>] kernel_thread_helper+0x4/0x10
-> > Jul 21 09:41:22 luna kernel: [<ffffffff810816c0>] ? kthread_worker_fn+0x1a0/0x1a0
-> > Jul 21 09:41:22 luna kernel: [<ffffffff81486000>] ? gs_change+0x13/0x13
-> > Jul 21 09:41:22 luna kernel: ---[ end trace 02c1fa3044677043 ]---
-> > 
+(2011/07/22 4:48), Mark Fasheh wrote:
+> I also removed the BUG_ON from error return of find_next_chunk in
+> init_first_rw_device(). It turns out that the only caller of
+> init_first_rw_device() also BUGS on any nonzero return so no actual behavior
+> change has occurred here.
 > 
-> a very similar warning here, but without compression involved:
+> do_chunk_alloc() also needed an update since it calls btrfs_alloc_chunk()
+> which can now return -ENOMEM. Instead of setting space_info->full on any
+> error from btrfs_alloc_chunk() I catch and return every error value _except_
+> -ENOSPC. Thanks goes to Tsutomu Itoh for pointing that issue out.
+> 
+> Signed-off-by: Mark Fasheh <mfasheh@suse.com>
+> ---
+>  fs/btrfs/extent-tree.c |    3 +++
+>  fs/btrfs/volumes.c     |    6 ++++--
+>  2 files changed, 7 insertions(+), 2 deletions(-)
+> 
+> diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
+> index aa91773..ff339b2 100644
+> --- a/fs/btrfs/extent-tree.c
+> +++ b/fs/btrfs/extent-tree.c
+> @@ -3277,6 +3277,9 @@ again:
+>  	}
+>  
+>  	ret = btrfs_alloc_chunk(trans, extent_root, flags);
+> +	if (ret < 0 && ret != -ENOSPC)
+> +		return ret;
+> +
 
-Ok, these are probably the enospc fixes.  Could you please try bisecting
-out some of Josef's patches?
+You need mutex_unlock() before return.
 
--chris
+Thanks,
+Tsutomu
+
+
+>  	spin_lock(&space_info->lock);
+>  	if (ret)
+>  		space_info->full = 1;
+> diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
+> index 530a2fc..90d956c 100644
+> --- a/fs/btrfs/volumes.c
+> +++ b/fs/btrfs/volumes.c
+> @@ -1037,7 +1037,8 @@ static noinline int find_next_chunk(struct btrfs_root *root,
+>  	struct btrfs_key found_key;
+>  
+>  	path = btrfs_alloc_path();
+> -	BUG_ON(!path);
+> +	if (!path)
+> +		return -ENOMEM;
+>  
+>  	key.objectid = objectid;
+>  	key.offset = (u64)-1;
+> @@ -2663,7 +2664,8 @@ static noinline int init_first_rw_device(struct btrfs_trans_handle *trans,
+>  
+>  	ret = find_next_chunk(fs_info->chunk_root,
+>  			      BTRFS_FIRST_CHUNK_TREE_OBJECTID, &chunk_offset);
+> -	BUG_ON(ret);
+> +	if (ret)
+> +		return ret;
+>  
+>  	alloc_profile = BTRFS_BLOCK_GROUP_METADATA |
+>  			(fs_info->metadata_alloc_profile &
+
+

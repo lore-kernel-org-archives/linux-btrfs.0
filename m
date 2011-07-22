@@ -1,153 +1,38 @@
-From: David Sterba <dave@jikos.cz>
-Subject: Re: [PATCH 11/16] Btrfs: clean up code for extent_map lookup
-Date: Fri, 22 Jul 2011 15:20:14 +0200
-Message-ID: <20110722132014.GC19273@twin.jikos.cz>
-References: <4E1E5F59.5030208@cn.fujitsu.com>
- <4E1E5FF7.7060202@cn.fujitsu.com>
-Reply-To: dave@jikos.cz
-Mime-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Cc: Chris Mason <chris.mason@oracle.com>,
-	"linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
-To: Li Zefan <lizf@cn.fujitsu.com>
+From: Jan Schmidt <list.btrfs@jan-o-sch.net>
+Subject: [RFC PATCH 3/4] btrfs: Put mirror_num in bi_bdev
+Date: Fri, 22 Jul 2011 16:58:07 +0200
+Message-ID: <b4cb072ad700b2c2940b15904dafc8bf2533d904.1311344751.git.list.btrfs@jan-o-sch.net>
+References: <cover.1311344751.git.list.btrfs@jan-o-sch.net>
+To: chris.mason@oracle.com, linux-btrfs@vger.kernel.org
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <4E1E5FF7.7060202@cn.fujitsu.com>
+In-Reply-To: <cover.1311344751.git.list.btrfs@jan-o-sch.net>
+In-Reply-To: <cover.1311344751.git.list.btrfs@jan-o-sch.net>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Thu, Jul 14, 2011 at 11:18:15AM +0800, Li Zefan wrote:
-> lookup_extent_map() and search_extent_map() can share most of code.
-> 
-> Signed-off-by: Li Zefan <lizf@cn.fujitsu.com>
-> ---
->  fs/btrfs/extent_map.c |   85 +++++++++++++++++--------------------------------
->  1 files changed, 29 insertions(+), 56 deletions(-)
-> 
-> diff --git a/fs/btrfs/extent_map.c b/fs/btrfs/extent_map.c
-> index 911a9db..df7a803 100644
-> --- a/fs/btrfs/extent_map.c
-> +++ b/fs/btrfs/extent_map.c
-> @@ -299,19 +299,8 @@ static u64 range_end(u64 start, u64 len)
->  	return start + len;
->  }
->  
-> -/**
-> - * lookup_extent_mapping - lookup extent_map
-> - * @tree:	tree to lookup in
-> - * @start:	byte offset to start the search
-> - * @len:	length of the lookup range
-> - *
-> - * Find and return the first extent_map struct in @tree that intersects the
-> - * [start, len] range.  There may be additional objects in the tree that
-> - * intersect, so check the object returned carefully to make sure that no
-> - * additional lookups are needed.
-> - */
-> -struct extent_map *lookup_extent_mapping(struct extent_map_tree *tree,
-> -					 u64 start, u64 len)
-> +struct extent_map *__lookup_extent_mapping(struct extent_map_tree *tree,
-> +					   u64 start, u64 len, int strict)
+The error correction code wants to make sure that only the bad mirror is
+rewritten. Thus, we need to know which mirror is the bad one. I did not
+find a more apropriate field than bi_bdev. But I think using this is fine,
+because it is modified by the block layer, anyway, and should not be read
+after the bio returned.
 
-just minor thing: can be defined static
+Signed-off-by: Jan Schmidt <list.btrfs@jan-o-sch.net>
+---
+ fs/btrfs/volumes.c |    2 ++
+ 1 files changed, 2 insertions(+), 0 deletions(-)
 
->  {
->  	struct extent_map *em;
->  	struct rb_node *rb_node;
-> @@ -320,38 +309,42 @@ struct extent_map *lookup_extent_mapping(struct extent_map_tree *tree,
->  	u64 end = range_end(start, len);
->  
->  	rb_node = __tree_search(&tree->map, start, &prev, &next);
-> -	if (!rb_node && prev) {
-> -		em = rb_entry(prev, struct extent_map, rb_node);
-> -		if (end > em->start && start < extent_map_end(em))
-> -			goto found;
-> -	}
-> -	if (!rb_node && next) {
-> -		em = rb_entry(next, struct extent_map, rb_node);
-> -		if (end > em->start && start < extent_map_end(em))
-> -			goto found;
-> -	}
->  	if (!rb_node) {
-> -		em = NULL;
-> -		goto out;
-> -	}
-> -	if (IS_ERR(rb_node)) {
-> -		em = ERR_CAST(rb_node);
-> -		goto out;
-> +		if (prev)
-> +			rb_node = prev;
-> +		else if (next)
-> +			rb_node = next;
-> +		else
-> +			return NULL;
->  	}
-> +
->  	em = rb_entry(rb_node, struct extent_map, rb_node);
-> -	if (end > em->start && start < extent_map_end(em))
-> -		goto found;
->  
-> -	em = NULL;
-> -	goto out;
-> +	if (strict && !(end > em->start && start < extent_map_end(em)))
-> +		return NULL;
->  
-> -found:
->  	atomic_inc(&em->refs);
-> -out:
->  	return em;
->  }
->  
->  /**
-> + * lookup_extent_mapping - lookup extent_map
-> + * @tree:	tree to lookup in
-> + * @start:	byte offset to start the search
-> + * @len:	length of the lookup range
-> + *
-> + * Find and return the first extent_map struct in @tree that intersects the
-> + * [start, len] range.  There may be additional objects in the tree that
-> + * intersect, so check the object returned carefully to make sure that no
-> + * additional lookups are needed.
-> + */
-> +struct extent_map *lookup_extent_mapping(struct extent_map_tree *tree,
-> +					 u64 start, u64 len)
-> +{
-> +	return __lookup_extent_mapping(tree, start, len, 1);
-> +}
-> +
-> +/**
->   * search_extent_mapping - find a nearby extent map
->   * @tree:	tree to lookup in
->   * @start:	byte offset to start the search
-> @@ -365,27 +358,7 @@ out:
->  struct extent_map *search_extent_mapping(struct extent_map_tree *tree,
->  					 u64 start, u64 len)
->  {
-> -	struct extent_map *em;
-> -	struct rb_node *rb_node;
-> -	struct rb_node *prev = NULL;
-> -	struct rb_node *next = NULL;
-> -
-> -	rb_node = __tree_search(&tree->map, start, &prev, &next);
-> -	if (!rb_node && prev) {
-> -		em = rb_entry(prev, struct extent_map, rb_node);
-> -		goto found;
-> -	}
-> -	if (!rb_node && next) {
-> -		em = rb_entry(next, struct extent_map, rb_node);
-> -		goto found;
-> -	}
-> -	if (!rb_node)
-> -		return NULL;
-> -
-> -	em = rb_entry(rb_node, struct extent_map, rb_node);
-> -found:
-> -	atomic_inc(&em->refs);
-> -	return em;
-> +	return __lookup_extent_mapping(tree, start, len, 0);
->  }
->  
->  /**
-> -- 
-> 1.7.3.1
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
+index e839b72..55fbd4d 100644
+--- a/fs/btrfs/volumes.c
++++ b/fs/btrfs/volumes.c
+@@ -3169,6 +3169,8 @@ static void btrfs_end_bio(struct bio *bio, int err)
+ 		}
+ 		bio->bi_private = bbio->private;
+ 		bio->bi_end_io = bbio->end_io;
++		bio->bi_bdev = (struct block_device *)
++					(unsigned long)bbio->mirror_num;
+ 		/* only send an error to the higher layers if it is
+ 		 * beyond the tolerance of the multi-bio
+ 		 */
+-- 
+1.7.3.4
+

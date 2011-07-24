@@ -1,46 +1,33 @@
-From: Jan Schmidt <list.btrfs@jan-o-sch.net>
+From: Andi Kleen <andi@firstfloor.org>
 Subject: Re: [RFC PATCH 4/4] btrfs: Moved repair code from inode.c to extent_io.c
-Date: Sun, 24 Jul 2011 19:28:08 +0200
-Message-ID: <4E2C5628.1020406@jan-o-sch.net>
-References: <cover.1311344751.git.list.btrfs@jan-o-sch.net>	<31a5f07325d66bd6691673eafee2c242afd8b833.1311344751.git.list.btrfs@jan-o-sch.net> <m21uxftzo7.fsf@firstfloor.org>
+Date: Mon, 25 Jul 2011 01:01:43 +0200
+Message-ID: <20110724230143.GY8006@one.firstfloor.org>
+References: <cover.1311344751.git.list.btrfs@jan-o-sch.net> <31a5f07325d66bd6691673eafee2c242afd8b833.1311344751.git.list.btrfs@jan-o-sch.net> <m21uxftzo7.fsf@firstfloor.org> <4E2C5628.1020406@jan-o-sch.net>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=ISO-8859-1
-Cc: chris.mason@oracle.com, linux-btrfs@vger.kernel.org
-To: Andi Kleen <andi@firstfloor.org>
+Content-Type: text/plain; charset=us-ascii
+Cc: Andi Kleen <andi@firstfloor.org>, chris.mason@oracle.com,
+	linux-btrfs@vger.kernel.org
+To: Jan Schmidt <list.btrfs@jan-o-sch.net>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <m21uxftzo7.fsf@firstfloor.org>
+In-Reply-To: <4E2C5628.1020406@jan-o-sch.net>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 24.07.2011 18:24, Andi Kleen wrote:
-> Jan Schmidt <list.btrfs@jan-o-sch.net> writes:
->>
->> Repair works that way: Whenever a read error occurs and we have more
->> mirrors to try, note the failed mirror, and retry another. If we find a
->> good one, check if we did note a failure earlier and if so, do not allow
->> the read to complete until after the bad sector was written with the good
->> data we just fetched. As we have the extent locked while reading, no one
->> can change the data in between.
-> 
-> This has the potential for error loops: when the write fails too
-> you get another error in the log and can flood the log etc. 
-> I assume this could get really noisy if that disk completely
-> went away.
+> I wasn't clear enough on that: We only track read errors, here. Ans
+> error correction can only happen on the read path. So if the write
+> attempt fails, we can't go into a loop.
 
-I wasn't clear enough on that: We only track read errors, here. Ans
-error correction can only happen on the read path. So if the write
-attempt fails, we can't go into a loop.
+Not in a loop, but you trigger more IO errors, which can be nasty 
+if the IO error logging triggers more IO (pretty common because
+syslogd calls fsync). And then your code does even more IO, floods
+more etc.etc. And the user will be unhappy if their
+console gets flooded.
 
-> Perhaps it needs a threshold to see if there aren't too many errors
-> on the mirror and then stop retrying at some point.
+We've have a similar problems in the past with readahead causing
+error flooding.
 
-This might make sense for completely broken disks that did not went
-away, yet. However, for the future I'd like to see some intelligence in
-btrfs monitoring disk errors and automatically replacing a disk after a
-certain (maybe configurable) number of errors. For the mean time, I'd
-accept a completely broken disk to flush the log.
+Any time where an error can cause more IO you have to be extremly
+careful.
 
-Anyway, I've got some sata error injectors and will test my patches with
-those in the following days. Maybe some obvious point turns up where we
-could throttle things.
+Right now this seems rather risky to me.
 
--Jan
+-Andi

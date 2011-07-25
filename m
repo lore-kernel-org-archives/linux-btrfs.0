@@ -1,24 +1,40 @@
-From: Jeremy Sanders <jeremy@jeremysanders.net>
-Subject: Re: Btrfs slowdown
-Date: Mon, 25 Jul 2011 15:37:51 +0100
-Message-ID: <j0jv3v$fa6$1@dough.gmane.org>
-References: <CAO47_-9BLKWUGDEuzaLqHSq9tZkAUaO8FMQEy1pPk9A2Hb+5AQ@mail.gmail.com>
+From: Christoph Hellwig <hch@infradead.org>
+Subject: Re: Issues with KVM
+Date: Mon, 25 Jul 2011 12:22:57 -0400
+Message-ID: <20110725162257.GA31516@infradead.org>
+References: <4E29D318.7050602@haypocalc.com>
+ <CAGAVQTGdEQdS+rE-D=fd4GXgaufpdR6J5xgNUjRa+N402Ge5-g@mail.gmail.com>
+ <4E2D7801.80207@haypocalc.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="ISO-8859-1"
-Cc: ceph-devel@vger.kernel.org
-To: linux-btrfs@vger.kernel.org
+Content-Type: text/plain; charset=us-ascii
+Cc: linux-btrfs@vger.kernel.org
+To: Victor Stinner <victor.stinner@haypocalc.com>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
+In-Reply-To: <4E2D7801.80207@haypocalc.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Christian Brunner wrote:
+On Mon, Jul 25, 2011 at 04:04:49PM +0200, Victor Stinner wrote:
+> According to agraf__ on IRC (#kvm on FreeNode), the cache mode has
+> the following effect:
+> 
+>  - cache=writethrough calls fsync() after every write()
 
-> we are running a ceph cluster with btrfs as it's base filesystem
-> (kernel 3.0). At the beginning everything worked very well, but after
-> a few days (2-3) things are getting very slow.
+It uses O_DSYNC, which an be appromiately described as an fdatasync
+after every write.  Not that it makes a different for most workloads on
+btrfs.
 
-We get quite a slowdown over time, doing rsyncs to different snapshots. 
-Btrfs seems to go from using several threads in parallel btrfs-endio-0,1,2, 
-shown in top, to just using a single thread btrfs-delalloc.
+>  - cache=none uses O_DIRECT
+>  - cache=writeback calls fsync() when the guest issues a barrier()
+> (don't use O_DIRECT)
 
-Jeremy
+Issue a cache flush.  Barriers were an Linux-internal concept that
+is now gone.  And there never was a barriere() call.
 
+> FreeBSD installation in VirtualBox is as fast (or maybe a little bit
+> slower) than the installation in kvm using cache=unsafe. I suppose
+> that VirtualBox uses something like cache=unsafe or cache=writeback.
+
+What filesystem do you use in FreeBSD?  FFS traditionally never issued
+cache flushes, so cache=writeback is equal to cache=unsafe for it.  ZFS
+can issue cache flushes on Solaris, but I'm not sure if this was ported
+correctly to FreeBSD.

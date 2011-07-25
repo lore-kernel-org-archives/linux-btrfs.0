@@ -1,63 +1,106 @@
 From: Mark Fasheh <mfasheh@suse.com>
-Subject: Re: [PATCH 7/7] btrfs: don't BUG_ON allocation errors in btrfs_drop_snapshot
-Date: Mon, 25 Jul 2011 14:10:40 -0700
-Message-ID: <20110725211040.GE6911@wotan.suse.de>
-References: <1311277713-7747-1-git-send-email-mfasheh@suse.com> <1311277713-7747-2-git-send-email-mfasheh@suse.com> <1311277713-7747-3-git-send-email-mfasheh@suse.com> <1311277713-7747-4-git-send-email-mfasheh@suse.com> <1311277713-7747-5-git-send-email-mfasheh@suse.com> <1311277713-7747-6-git-send-email-mfasheh@suse.com> <1311277713-7747-7-git-send-email-mfasheh@suse.com> <1311277713-7747-8-git-send-email-mfasheh@suse.com> <4E28C81F.8020200@jp.fujitsu.com>
+Subject: Re: [PATCH 6/7] btrfs: Don't BUG_ON alloc_path errors in find_next_chunk
+Date: Mon, 25 Jul 2011 14:37:51 -0700
+Message-ID: <20110725213751.GF6911@wotan.suse.de>
+References: <1311277713-7747-1-git-send-email-mfasheh@suse.com> <1311277713-7747-2-git-send-email-mfasheh@suse.com> <1311277713-7747-3-git-send-email-mfasheh@suse.com> <1311277713-7747-4-git-send-email-mfasheh@suse.com> <1311277713-7747-5-git-send-email-mfasheh@suse.com> <1311277713-7747-6-git-send-email-mfasheh@suse.com> <1311277713-7747-7-git-send-email-mfasheh@suse.com> <4E28CAA0.2070801@jp.fujitsu.com>
 Reply-To: Mark Fasheh <mfasheh@suse.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
 Cc: linux-btrfs@vger.kernel.org, chris.mason@oracle.com
 To: Tsutomu Itoh <t-itoh@jp.fujitsu.com>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <4E28C81F.8020200@jp.fujitsu.com>
+In-Reply-To: <4E28CAA0.2070801@jp.fujitsu.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Fri, Jul 22, 2011 at 09:45:19AM +0900, Tsutomu Itoh wrote:
-> (2011/07/22 4:48), Mark Fasheh wrote:
-> > In addition to properly handling allocation failure from btrfs_alloc_path, I
-> > also fixed up the kzalloc error handling code immediately below it.
-> > 
-> > Signed-off-by: Mark Fasheh <mfasheh@suse.com>
-> > ---
-> >  fs/btrfs/extent-tree.c |    8 ++++++--
-> >  1 files changed, 6 insertions(+), 2 deletions(-)
-> > 
+On Fri, Jul 22, 2011 at 09:56:00AM +0900, Tsutomu Itoh wrote:
 > > diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
-> > index ff339b2..4cf5257 100644
+> > index aa91773..ff339b2 100644
 > > --- a/fs/btrfs/extent-tree.c
 > > +++ b/fs/btrfs/extent-tree.c
-> > @@ -6271,10 +6271,14 @@ int btrfs_drop_snapshot(struct btrfs_root *root,
-> >  	int level;
+> > @@ -3277,6 +3277,9 @@ again:
+> >  	}
 > >  
-> >  	path = btrfs_alloc_path();
-> > -	BUG_ON(!path);
-> > +	if (!path)
-> > +		return -ENOMEM;
-> >  
-> >  	wc = kzalloc(sizeof(*wc), GFP_NOFS);
-> > -	BUG_ON(!wc);
-> > +	if (!wc) {
-> > +		btrfs_free_path(path);
-> > +		return -ENOMEM;
-> > +	}
-> >  
-> >  	trans = btrfs_start_transaction(tree_root, 0);
-> >  	BUG_ON(IS_ERR(trans));
+> >  	ret = btrfs_alloc_chunk(trans, extent_root, flags);
+> > +	if (ret < 0 && ret != -ENOSPC)
+> > +		return ret;
+> > +
 > 
-> Currently, callers of btrfs_drop_snapshot() ignore the return code.
-> But btrfs_drop_snapshot() detects the error by BUG_ON.
-> 
-> The caller still ignore the return code though your modification returns
-> the error code to the caller. 
-> So, we can not detect error. I don't think that it is good.
+> You need mutex_unlock() before return.
 
-IMHO, this is a seperate issue that btrfs_drop_snapshot() has even without
-my patch. You can see in the code that it might return any number of errors,
-all of which get ignored by callers. So my patch is cleaning up some of the
-BUG_ON() usage, but not really solving the 2nd problem of ignored return
-codes. Of course that was on purpose as I like to fix one problem per patch
-if possible and practicle.
+Of course... Here's an updated patch (git tree has also been updated).
+
+Thanks,
 	--Mark
 
 --
 Mark Fasheh
+
+From: Mark Fasheh <mfasheh@suse.com>
+
+[PATCH] btrfs: Don't BUG_ON alloc_path errors in find_next_chunk
+
+I also removed the BUG_ON from error return of find_next_chunk in
+init_first_rw_device(). It turns out that the only caller of
+init_first_rw_device() also BUGS on any nonzero return so no actual behavior
+change has occurred here.
+
+do_chunk_alloc() also needed an update since it calls btrfs_alloc_chunk()
+which can now return -ENOMEM. Instead of setting space_info->full on any
+error from btrfs_alloc_chunk() I catch and return every error value _except_
+-ENOSPC. Thanks goes to Tsutomu Itoh for pointing that issue out.
+
+Signed-off-by: Mark Fasheh <mfasheh@suse.com>
+---
+ fs/btrfs/extent-tree.c |    4 ++++
+ fs/btrfs/volumes.c     |    6 ++++--
+ 2 files changed, 8 insertions(+), 2 deletions(-)
+
+diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
+index aa91773..f6af423 100644
+--- a/fs/btrfs/extent-tree.c
++++ b/fs/btrfs/extent-tree.c
+@@ -3277,6 +3277,9 @@ again:
+ 	}
+ 
+ 	ret = btrfs_alloc_chunk(trans, extent_root, flags);
++	if (ret < 0 && ret != -ENOSPC)
++		goto out;
++
+ 	spin_lock(&space_info->lock);
+ 	if (ret)
+ 		space_info->full = 1;
+@@ -3286,6 +3289,7 @@ again:
+ 	space_info->force_alloc = CHUNK_ALLOC_NO_FORCE;
+ 	space_info->chunk_alloc = 0;
+ 	spin_unlock(&space_info->lock);
++out:
+ 	mutex_unlock(&extent_root->fs_info->chunk_mutex);
+ 	return ret;
+ }
+diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
+index 530a2fc..90d956c 100644
+--- a/fs/btrfs/volumes.c
++++ b/fs/btrfs/volumes.c
+@@ -1037,7 +1037,8 @@ static noinline int find_next_chunk(struct btrfs_root *root,
+ 	struct btrfs_key found_key;
+ 
+ 	path = btrfs_alloc_path();
+-	BUG_ON(!path);
++	if (!path)
++		return -ENOMEM;
+ 
+ 	key.objectid = objectid;
+ 	key.offset = (u64)-1;
+@@ -2663,7 +2664,8 @@ static noinline int init_first_rw_device(struct btrfs_trans_handle *trans,
+ 
+ 	ret = find_next_chunk(fs_info->chunk_root,
+ 			      BTRFS_FIRST_CHUNK_TREE_OBJECTID, &chunk_offset);
+-	BUG_ON(ret);
++	if (ret)
++		return ret;
+ 
+ 	alloc_profile = BTRFS_BLOCK_GROUP_METADATA |
+ 			(fs_info->metadata_alloc_profile &
+-- 
+1.7.6
+

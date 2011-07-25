@@ -1,195 +1,208 @@
-From: Jan Schmidt <list.btrfs@jan-o-sch.net>
-Subject: Re: [RFC PATCH 4/4] btrfs: Moved repair code from inode.c to extent_io.c
-Date: Mon, 25 Jul 2011 10:59:19 +0200
-Message-ID: <4E2D3067.70007@jan-o-sch.net>
-References: <cover.1311344751.git.list.btrfs@jan-o-sch.net>	 <31a5f07325d66bd6691673eafee2c242afd8b833.1311344751.git.list.btrfs@jan-o-sch.net> <1311566280.3401.15.camel@perseus.themaw.net>
+From: Andrej Podzimek <andrej@podzimek.org>
+Subject: Re: Btrfs slowdown
+Date: Mon, 25 Jul 2011 11:45:49 +0200
+Message-ID: <4E2D3B4D.8050301@podzimek.org>
+References: <CAO47_-9BLKWUGDEuzaLqHSq9tZkAUaO8FMQEy1pPk9A2Hb+5AQ@mail.gmail.com> <4E2D2E7D.3040303@podzimek.org>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=UTF-8
-Cc: chris.mason@oracle.com, linux-btrfs@vger.kernel.org
-To: Ian Kent <raven@themaw.net>
-Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <1311566280.3401.15.camel@perseus.themaw.net>
+Content-Type: multipart/signed; protocol="application/pkcs7-signature"; micalg=sha1; boundary="=_charon-32260-1311587150-0001-2"
+Cc: linux-btrfs@vger.kernel.org, ceph-devel@vger.kernel.org
+To: chb@muc.de
+Return-path: <ceph-devel-owner@vger.kernel.org>
+In-Reply-To: <4E2D2E7D.3040303@podzimek.org>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 25.07.2011 05:58, Ian Kent wrote:
-> On Fri, 2011-07-22 at 16:58 +0200, Jan Schmidt wrote:
->> +static int bio_readpage_error(struct bio *failed_bio, struct page *page,
->> +				u64 start, u64 end, int failed_mirror,
->> +				struct extent_state *state)
->> +{
->> +	struct io_failure_record *failrec = NULL;
->> +	u64 private;
->> +	struct extent_map *em;
->> +	struct inode *inode = page->mapping->host;
->> +	struct extent_io_tree *failure_tree = &BTRFS_I(inode)->io_failure_tree;
->> +	struct extent_io_tree *tree = &BTRFS_I(inode)->io_tree;
->> +	struct extent_map_tree *em_tree = &BTRFS_I(inode)->extent_tree;
->> +	struct bio *bio;
->> +	int num_copies;
->> +	int ret;
->> +	int read_mode;
->> +	u64 logical;
->> +
->> +	BUG_ON(failed_bio->bi_rw & REQ_WRITE);
->> +
->> +	ret = get_state_private(failure_tree, start, &private);
->> +	if (ret) {
->> +		failrec = kzalloc(sizeof(*failrec), GFP_NOFS);
->> +		if (!failrec)
->> +			return -ENOMEM;
->> +		failrec->start = start;
->> +		failrec->len = end - start + 1;
->> +		failrec->this_mirror = 0;
->> +		failrec->bio_flags = 0;
->> +		failrec->in_validation = 0;
->> +
->> +		read_lock(&em_tree->lock);
->> +		em = lookup_extent_mapping(em_tree, start, failrec->len);
->> +		if (!em) {
-> 
-> Looks like a missing "read_unlock(&em_tree->lock);" here to me?
+This is a MIME-formatted message.  If you see this text it means that your
+E-mail software does not support MIME-formatted messages.
 
-Thanks, will be fixed in next version.
+--=_charon-32260-1311587150-0001-2
+Content-Type: text/plain; charset=UTF-8; format=flowed
+Content-Transfer-Encoding: quoted-printable
 
--Jan
+Just a quick note: The issue seems to be gone in 3.0.0. But that's just a=
+ wild guess based on 1/2 hour without thrashing. :-)
 
->> +			kfree(failrec);
->> +			return -EIO;
->> +		}
->> +
->> +		if (em->start > start || em->start + em->len < start) {
->> +			free_extent_map(em);
->> +			em = NULL;
->> +		}
->> +		read_unlock(&em_tree->lock);
->> +
->> +		if (!em || IS_ERR(em)) {
->> +			kfree(failrec);
->> +			return -EIO;
->> +		}
->> +		logical = start - em->start;
->> +		logical = em->block_start + logical;
->> +		if (test_bit(EXTENT_FLAG_COMPRESSED, &em->flags)) {
->> +			logical = em->block_start;
->> +			failrec->bio_flags = EXTENT_BIO_COMPRESSED;
->> +			extent_set_compress_type(&failrec->bio_flags,
->> +						 em->compress_type);
->> +		}
->> +		pr_debug("bio_readpage_error: (new) logical=%llu, start=%llu, "
->> +			 "len=%llu\n", logical, start, failrec->len);
->> +		failrec->logical = logical;
->> +		free_extent_map(em);
->> +
->> +		/* set the bits in the private failure tree */
->> +		ret = set_extent_bits(failure_tree, start, end,
->> +					EXTENT_LOCKED | EXTENT_DIRTY, GFP_NOFS);
->> +		if (ret >= 0)
->> +			ret = set_state_private(failure_tree, start,
->> +						(u64)(unsigned long)failrec);
->> +		/* set the bits in the inode's tree */
->> +		if (ret >= 0)
->> +			ret = set_extent_bits(tree, start, end, EXTENT_DAMAGED,
->> +						GFP_NOFS);
->> +		if (ret < 0) {
->> +			kfree(failrec);
->> +			return ret;
->> +		}
->> +	} else {
->> +		failrec = (struct io_failure_record *)(unsigned long)private;
->> +		pr_debug("bio_readpage_error: (found) logical=%llu, "
->> +			 "start=%llu, len=%llu, validation=%d\n",
->> +			 failrec->logical, failrec->start, failrec->len,
->> +			 failrec->in_validation);
->> +		/*
->> +		 * when data can be on disk more than twice, add to failrec here
->> +		 * (e.g. with a list for failed_mirror) to make
->> +		 * clean_io_failure() clean all those errors at once.
->> +		 */
->> +	}
->> +	num_copies = btrfs_num_copies(
->> +			      &BTRFS_I(inode)->root->fs_info->mapping_tree,
->> +			      failrec->logical, failrec->len);
->> +	if (num_copies == 1) {
->> +		/*
->> +		 * we only have a single copy of the data, so don't bother with
->> +		 * all the retry and error correction code that follows. no
->> +		 * matter what the error is, it is very likely to persist.
->> +		 */
->> +		pr_debug("bio_readpage_error: cannot repair, num_copies == 1. "
->> +			 "state=%p, num_copies=%d, next_mirror %d, "
->> +			 "failed_mirror %d\n", state, num_copies,
->> +			 failrec->this_mirror, failed_mirror);
->> +		free_io_failure(inode, failrec, 0);
->> +		return -EIO;
->> +	}
->> +
->> +	if (!state) {
->> +		spin_lock(&tree->lock);
->> +		state = find_first_extent_bit_state(tree, failrec->start,
->> +						    EXTENT_LOCKED);
->> +		if (state && state->start != failrec->start)
->> +			state = NULL;
->> +		spin_unlock(&tree->lock);
->> +	}
->> +
->> +	/*
->> +	 * there are two premises:
->> +	 *	a) deliver good data to the caller
->> +	 *	b) correct the bad sectors on disk
->> +	 */
->> +	if (failed_bio->bi_vcnt > 1) {
->> +		/*
->> +		 * to fulfill b), we need to know the exact failing sectors, as
->> +		 * we don't want to rewrite any more than the failed ones. thus,
->> +		 * we need separate read requests for the failed bio
->> +		 *
->> +		 * if the following BUG_ON triggers, our validation request got
->> +		 * merged. we need separate requests for our algorithm to work.
->> +		 */
->> +		BUG_ON(failrec->in_validation);
->> +		failrec->in_validation = 1;
->> +		failrec->this_mirror = failed_mirror;
->> +		read_mode = READ_SYNC | REQ_FAILFAST_DEV;
->> +	} else {
->> +		/*
->> +		 * we're ready to fulfill a) and b) alongside. get a good copy
->> +		 * of the failed sector and if we succeed, we have setup
->> +		 * everything for repair_io_failure to do the rest for us.
->> +		 */
->> +		if (failrec->in_validation) {
->> +			BUG_ON(failrec->this_mirror != failed_mirror);
->> +			failrec->in_validation = 0;
->> +			failrec->this_mirror = 0;
->> +		}
->> +		failrec->failed_mirror = failed_mirror;
->> +		failrec->this_mirror++;
->> +		if (failrec->this_mirror == failed_mirror)
->> +			failrec->this_mirror++;
->> +		read_mode = READ_SYNC;
->> +	}
->> +
->> +	if (!state || failrec->this_mirror > num_copies) {
->> +		pr_debug("bio_readpage_error: (fail) state=%p, num_copies=%d, "
->> +			 "next_mirror %d, failed_mirror %d\n", state,
->> +			 num_copies, failrec->this_mirror, failed_mirror);
->> +		free_io_failure(inode, failrec, 0);
->> +		return -EIO;
->> +	}
->> +
->> +	bio = bio_alloc(GFP_NOFS, 1);
->> +	bio->bi_private = state;
->> +	bio->bi_end_io = failed_bio->bi_end_io;
->> +	bio->bi_sector = failrec->logical >> 9;
->> +	bio->bi_bdev = BTRFS_I(inode)->root->fs_info->fs_devices->latest_bdev;
->> +	bio->bi_size = 0;
->> +
->> +	bio_add_page(bio, page, failrec->len, start - page_offset(page));
->> +
->> +	pr_debug("bio_readpage_error: submitting new read[%#x] to "
->> +		 "this_mirror=%d, num_copies=%d, in_validation=%d\n", read_mode,
->> +		 failrec->this_mirror, num_copies, failrec->in_validation);
->> +
->> +	tree->ops->submit_bio_hook(inode, read_mode, bio, failrec->this_mirror,
->> +					failrec->bio_flags, 0);
->> +	return 0;
->> +}
+Andrej
+
+> Hello,
+>
+> I can see something similar on the machines I maintain, mostly single-d=
+isk setups with a 2.6.39 kernel:
+>
+> 1) Heavy and frequent disk thrashing, although less than 20% of RAM is =
+used and no swap usage is reported.
+> 2) During the disk thrashing, some processors (usually 2 or 3) spend 10=
+0% of their time busy waiting, according to htop.
+> 3) Some userspace applications freeze for tens of seconds during the th=
+rashing and busy waiting, sometimes even htop itself...
+>
+> The problem has only been observed on 64-bit multiprocessors (Core i7 l=
+aptop and Nehalem class server Xeons). A 32-bit multiprocessor (Intel Cor=
+e Duo) and a 64-bit uniprocessor (Intel Core 2 Duo class Celeron) do not =
+seem to have any issues.
+>
+> Furthermore, none of the machines had this problem with 2.6.38 and earl=
+ier kernels. Btrfs "just worked" before 2.6.39. I'll test 3.0 today to se=
+e whether some of these issues disappear.
+>
+> Neither ceph nor any other remote/distributed filesystem (not even NFS)=
+ runs on the machines.
+>
+> The second problem listed above looks like illegal blocking of a vital =
+spinlock during a long disk operation, which freezes some kernel subsyste=
+ms for an inordinate amount of time and causes a number of processors to =
+wait actively for tens of seconds. (Needless to say that this is not acce=
+ptable on a laptop...)
+>
+> Web browsers (Firefox and Chromium) seem to trigger this issue slightly=
+ more often than other applications, but I have no detailed statistics to=
+ prove this. ;-)
+>
+> Two Core i7 class multiprocessors work 100% flawlessly with ext4, altho=
+ugh their kernel configuration is otherwise identical to the machines tha=
+t use Btrfs.
+>
+> Andrej
+>
+>> Hi,
+>>
+>> we are running a ceph cluster with btrfs as it's base filesystem
+>> (kernel 3.0). At the beginning everything worked very well, but after
+>> a few days (2-3) things are getting very slow.
+>>
+>> When I look at the object store servers I see heavy disk-i/o on the
+>> btrfs filesystems (disk utilization is between 60% and 100%). I also
+>> did some tracing on the Cepp-Object-Store-Daemon, but I'm quite
+>> certain, that the majority of the disk I/O is not caused by ceph or
+>> any other userland process.
+>>
+>> When reboot the system(s) the problems go away for another 2-3 days,
+>> but after that, it starts again. I'm not sure if the problem is
+>> related to the kernel warning I've reported last week. At least there
+>> is no temporal relationship between the warning and the slowdown.
+>>
+>> Any hints on how to trace this would be welcome.
+>>
+>> Thanks,
+>> Christian
+>> --
+>> To unsubscribe from this list: send the line "unsubscribe linux-btrfs"=
+ in
+>> the body of a message to majordomo@vger.kernel.org
+>> More majordomo info at http://vger.kernel.org/majordomo-info.html
+
+
+--=_charon-32260-1311587150-0001-2
+Content-Type: application/pkcs7-signature; name="smime.p7s"
+Content-Transfer-Encoding: base64
+Content-Disposition: attachment; filename="smime.p7s"
+Content-Description: Elektronický podpis S/MIME
+
+MIAGCSqGSIb3DQEHAqCAMIACAQExCzAJBgUrDgMCGgUAMIAGCSqGSIb3DQEHAQAAoIISszCC
+BakwggSRoAMCAQICAT0wDQYJKoZIhvcNAQEFBQAwgYQxFDASBgNVBAMMC1BvZHppbWVrIENB
+MQswCQYDVQQGEwJDWjEOMAwGA1UEBwwFWmzDrW4xFTATBgNVBAoMDHBvZHppbWVrLm9yZzEV
+MBMGA1UECwwMcG9kemltZWsub3JnMSEwHwYJKoZIhvcNAQkBFhJhZG1pbkBwb2R6aW1lay5v
+cmcwHhcNMTEwMzMwMTYwNzM3WhcNMTIwMzI5MTYwNzM3WjCBiTELMAkGA1UEBhMCQ1oxDjAM
+BgNVBAcMBVpsw61uMRUwEwYDVQQKDAxwb2R6aW1lay5vcmcxFTATBgNVBAsMDHBvZHppbWVr
+Lm9yZzEYMBYGA1UEAwwPQW5kcmVqIFBvZHppbWVrMSIwIAYJKoZIhvcNAQkBFhNhbmRyZWpA
+cG9kemltZWsub3JnMIICIjANBgkqhkiG9w0BAQEFAAOCAg8AMIICCgKCAgEAqxdSN8GoC0Ny
+yPVoc9uZhuN+ezgtvKodMPunwlZCqaV4p7g3rgzDe3rrQ+Afkj05R+7WqLStjPn1lr9KINtn
+mxqjUF07U4CqGZgKCruKxWiTI1pvpTljTKssoa/sbEf0UgjQvO0UNhjYF1iHE1VBVWALKgI0
+Kbb+zCftvdwtnKVh9ncQushra5MZLEeMTcXisyzasFgDb8teLn8MtDQuJb0QzHkqhwRBzj7u
+pKTGKcZxGhxzZdmcqfvZdjLAcxQApLyMq7O8Y+0FHgZHW5peeuHSgeC+kScffJvGloHGPzVt
+CqODxDOHtjS8ZfkAKKt7PKdTfqiF8/+/zZ8pT98GlLXZtrz5IXlt8YQRh3ugE+o76vikx6ho
+SZQZsVFsc0KT/S7PA5fwkorUyhhuYcs53rTDO2IN4kPVoU2Tq6iyV6D8zF5/OiMxJ5lhYUGu
+RjAHM4hAFJ1ROp3LRn5VwYotogdj81xucd/hW7tc1HUN7lHnd51WK4xXjJ5o1gF0wUUYlxMc
+wpXqv9ZW1P+zD28Wj7BxmiAtll5oAButMBjLVWgJYlpOY3Ikh6rx+TVAwfDD5oVmOzc8NAYI
+pJCSmrX4MDahymq+ayjOhIw2OPXaFBbGP7YTgp68e86p+I2JTQ/tXCH08MZYFpRB11M3dI2L
+IkDlcWOm4Ptc3794p8yS0T8CAwEAAaOCAR0wggEZMAkGA1UdEwQCMAAwHQYDVR0OBBYEFBas
+PXfIN+SpJaWzrihb8DnOUJGZMIG5BgNVHSMEgbEwga6AFE6juEwI0K5X6Rv/eMJTk7Q8cg65
+oYGKpIGHMIGEMRQwEgYDVQQDDAtQb2R6aW1layBDQTELMAkGA1UEBhMCQ1oxDjAMBgNVBAcM
+BVpsw61uMRUwEwYDVQQKDAxwb2R6aW1lay5vcmcxFTATBgNVBAsMDHBvZHppbWVrLm9yZzEh
+MB8GCSqGSIb3DQEJARYSYWRtaW5AcG9kemltZWsub3JnggkAkctHSQfLqowwMQYJYIZIAYb4
+QgEEBCQWImh0dHBzOi8vY2EucG9kemltZWsub3JnL2NhLWNybC5wZW0wDQYJKoZIhvcNAQEF
+BQADggEBAH5XwT/0jYayTafRvAcJfRAm5E6z6wqX0x5OYNdO6JQ9JcCYQeFa1XD80Yu/VHy8
+NmaF+p2iAaCZWcTbIeAzidSozgbDJlVYcMdUjer0WHbBpyIBcVJZY4im/ygyVTACOIlLnfXM
+ZaNfdsCBP/minHHonm5e8DU8Go2/viAKPfXxsCOzl0bZFnU2b2D5Ii6Gk4n6kyduzQWYVUqA
+fNQjQIKZDSIMPzh119QsbR+6vNQ5t46qpHVMUkn1JLf+MIJQSBjxoXXt9ORnpTRstVw1ATPz
+RxDYYltHxaqKUY07bSo5czyWyUN5Rd35SP1mlQSHJhmNVUuOHQ58yDEADUEqkSkwggY0MIIE
+HKADAgECAgEgMA0GCSqGSIb3DQEBBQUAMH0xCzAJBgNVBAYTAklMMRYwFAYDVQQKEw1TdGFy
+dENvbSBMdGQuMSswKQYDVQQLEyJTZWN1cmUgRGlnaXRhbCBDZXJ0aWZpY2F0ZSBTaWduaW5n
+MSkwJwYDVQQDEyBTdGFydENvbSBDZXJ0aWZpY2F0aW9uIEF1dGhvcml0eTAeFw0wNzEwMjQy
+MTAyNTVaFw0xNzEwMjQyMTAyNTVaMIGMMQswCQYDVQQGEwJJTDEWMBQGA1UEChMNU3RhcnRD
+b20gTHRkLjErMCkGA1UECxMiU2VjdXJlIERpZ2l0YWwgQ2VydGlmaWNhdGUgU2lnbmluZzE4
+MDYGA1UEAxMvU3RhcnRDb20gQ2xhc3MgMiBQcmltYXJ5IEludGVybWVkaWF0ZSBDbGllbnQg
+Q0EwggEiMA0GCSqGSIb3DQEBAQUAA4IBDwAwggEKAoIBAQDLKIVFnAEs+xnyq6UzjCqgDcvQ
+Ve1dIoFnRsQPCFO+y92k8RK0Pn3MbQ2Gd+mehh9GBZ+36uUQA7Xj9AGM6wgPhEE34vKtfpAN
+5tJ8LcFxveDObCKrL7O5UT9WsnAZHv7OYPYSR68mdmnEnJ83M4wQgKO19b+Rt8sPDAz9ptkQ
+sntCn4GeJzg3q2SVc4QJTg/WHo7wF2ah5LMOeh8xJVSKGEmd6uPkSbj113yKMm8vmNptRPmM
+1+YgmVwcdOYJOjCgFtb2sOP79jji8uhWR91xx7TpM1K3hv/wrBZwffrmmEpUeuXHRs07JqCC
+vFh9coKF4UQZvfEg+x3/69xRCzb1AgMBAAGjggGtMIIBqTAPBgNVHRMBAf8EBTADAQH/MA4G
+A1UdDwEB/wQEAwIBBjAdBgNVHQ4EFgQUrlWDb+wxyrn3HfqvazHzyB3jrLswHwYDVR0jBBgw
+FoAUTgvvGqRAW6UXaYcwyjRoQ9BBrvIwZgYIKwYBBQUHAQEEWjBYMCcGCCsGAQUFBzABhhto
+dHRwOi8vb2NzcC5zdGFydHNzbC5jb20vY2EwLQYIKwYBBQUHMAKGIWh0dHA6Ly93d3cuc3Rh
+cnRzc2wuY29tL3Nmc2NhLmNydDBbBgNVHR8EVDBSMCegJaAjhiFodHRwOi8vd3d3LnN0YXJ0
+c3NsLmNvbS9zZnNjYS5jcmwwJ6AloCOGIWh0dHA6Ly9jcmwuc3RhcnRzc2wuY29tL3Nmc2Nh
+LmNybDCBgAYDVR0gBHkwdzB1BgsrBgEEAYG1NwECATBmMC4GCCsGAQUFBwIBFiJodHRwOi8v
+d3d3LnN0YXJ0c3NsLmNvbS9wb2xpY3kucGRmMDQGCCsGAQUFBwIBFihodHRwOi8vd3d3LnN0
+YXJ0c3NsLmNvbS9pbnRlcm1lZGlhdGUucGRmMA0GCSqGSIb3DQEBBQUAA4ICAQA6qScNyNO0
+FpHvaZTQacVMXH33O51KyEKSRw3IvdQxRu31YR0ZDGdSfgSoOVDVMSBSdmfQfdDInHPzV3LO
+5DwUXZ+lxjv7z3PO2OkfnFkvTXPfn6dxJ5rJveDsTsCPcJ/Kp6/+qN5g+J6D/SaYcFD018B6
+L42r0Z4VEBy36P4tjRtF14Ex10tl5tJFVKM16qWKQHbpjIgf73s49UB0CQ5lHT2DHKfq3oPf
+dNc5Mk93w1v4ryVb+qVrZIej8NsrWU+5r4O2IV91edDb/OtHFddZqHFFXKgS79IHE/hwQ2LW
+7r3sTX7cDUCg+dfdwO8zeLxuwk2JF8crUoyrl66RGrRIhT8VoG/OJ1Y9uUlOav69V4cG8upi
+4ZG2l7JZFbcBFk91Wp+Payo5SuF61CmGFrZ386umkmpObtFacXda2O/bVoQ9xHQrzoTc/0KZ
+TWvlZCLK3Ke/vGYT9ZdW9lOjGsSFbXrlTA919L84iMK+48WGnvRWY28ZaVHpql43AtEGhXze
+6iNCbEDACy+4hkQYOytAqDgcxAnQ937mYpeZFPyz/XK9QSt9VNFMuudWxZwDDDJKoQAoSG59
+Hou9lZ26UrK60nRdAQBmEPL8h2nuWgoPh++XVQld9yuhbsWa39Pck8/lcfz5HUVGJF5mc/zk
+38iV7FDlF68puiryNq2KXHEpOTCCBsowggWyoAMCAQICAgtGMA0GCSqGSIb3DQEBBQUAMIGM
+MQswCQYDVQQGEwJJTDEWMBQGA1UEChMNU3RhcnRDb20gTHRkLjErMCkGA1UECxMiU2VjdXJl
+IERpZ2l0YWwgQ2VydGlmaWNhdGUgU2lnbmluZzE4MDYGA1UEAxMvU3RhcnRDb20gQ2xhc3Mg
+MiBQcmltYXJ5IEludGVybWVkaWF0ZSBDbGllbnQgQ0EwHhcNMTAwOTI3MDA0ODU2WhcNMTIw
+OTI3MDk1NjI4WjCBwjEgMB4GA1UEDRMXMjY0MzU2LVV6cDI4MnFISHRiQ2I1ZDMxCzAJBgNV
+BAYTAkNaMRUwEwYDVQQIEwxabGluc2t5IEtyYWoxDTALBgNVBAcTBFpsaW4xLTArBgNVBAsT
+JFN0YXJ0Q29tIFZlcmlmaWVkIENlcnRpZmljYXRlIE1lbWJlcjEYMBYGA1UEAxMPQW5kcmVq
+IFBvZHppbWVrMSIwIAYJKoZIhvcNAQkBFhNhbmRyZWpAcG9kemltZWsub3JnMIIBIjANBgkq
+hkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEArldROEvlaSy4OX9PPg22Xl7GCivziuBcbrkH+St9
+vIAyefDb3kfdtHT/J1NRlQDYTrDFQ3cZM2J7vicm4/uu67KzdAF/14mdml1b1prWRiUT3IRw
+Cwbt8wuNhZfa6dGkQ374EuOWDVX+5YCEufr5GMHrkkZy5RYtO9r3avglOI1ZB2F9Z56Zb42k
+S7N2ebEE7Oj+pFeQwaj2pz/B4d3gu6wX+c7GwDiy26iN/33Cl+spa5uFWITb8XD6P6aob9Ep
+yDxn90KEr5+9ug1tmh833Kdll4mmjzAv5ZK0iVFnxsBq+V1TN/2NW6oiIvOLxTIHCfC1MdYi
+88HMC1PaQZF4ywIDAQABo4IC/DCCAvgwCQYDVR0TBAIwADALBgNVHQ8EBAMCBLAwHQYDVR0l
+BBYwFAYIKwYBBQUHAwIGCCsGAQUFBwMEMB0GA1UdDgQWBBT3GSEvnmmKZPBGzpElp7HtmoV7
+FzAfBgNVHSMEGDAWgBSuVYNv7DHKufcd+q9rMfPIHeOsuzAeBgNVHREEFzAVgRNhbmRyZWpA
+cG9kemltZWsub3JnMIIBQgYDVR0gBIIBOTCCATUwggExBgsrBgEEAYG1NwECAjCCASAwLgYI
+KwYBBQUHAgEWImh0dHA6Ly93d3cuc3RhcnRzc2wuY29tL3BvbGljeS5wZGYwNAYIKwYBBQUH
+AgEWKGh0dHA6Ly93d3cuc3RhcnRzc2wuY29tL2ludGVybWVkaWF0ZS5wZGYwgbcGCCsGAQUF
+BwICMIGqMBQWDVN0YXJ0Q29tIEx0ZC4wAwIBARqBkUxpbWl0ZWQgTGlhYmlsaXR5LCBzZWUg
+c2VjdGlvbiAqTGVnYWwgTGltaXRhdGlvbnMqIG9mIHRoZSBTdGFydENvbSBDZXJ0aWZpY2F0
+aW9uIEF1dGhvcml0eSBQb2xpY3kgYXZhaWxhYmxlIGF0IGh0dHA6Ly93d3cuc3RhcnRzc2wu
+Y29tL3BvbGljeS5wZGYwYwYDVR0fBFwwWjAroCmgJ4YlaHR0cDovL3d3dy5zdGFydHNzbC5j
+b20vY3J0dTItY3JsLmNybDAroCmgJ4YlaHR0cDovL2NybC5zdGFydHNzbC5jb20vY3J0dTIt
+Y3JsLmNybDCBjgYIKwYBBQUHAQEEgYEwfzA5BggrBgEFBQcwAYYtaHR0cDovL29jc3Auc3Rh
+cnRzc2wuY29tL3N1Yi9jbGFzczIvY2xpZW50L2NhMEIGCCsGAQUFBzAChjZodHRwOi8vd3d3
+LnN0YXJ0c3NsLmNvbS9jZXJ0cy9zdWIuY2xhc3MyLmNsaWVudC5jYS5jcnQwIwYDVR0SBBww
+GoYYaHR0cDovL3d3dy5zdGFydHNzbC5jb20vMA0GCSqGSIb3DQEBBQUAA4IBAQCEI21EOM71
+hKXRNFHbWFaemV86fxAs1yMl6SohZhNRea/Pc5hMpoFoUZBf0qJ3AvFy2PzsyspTsqZhBOwo
+I3rVJlgZapKi4x4k7FXM43xFmU/koQLdQPDS1Jfbr8zFTVBx+K6xD+L9y+M1M7JX+EcQgTIu
+CZn80YjSxEpAGND09NUPrgwJ/v9Nn5zqbEraf5MRSAun11fhkqIORlqkAi393N+kvXEsAtRJ
+A0CizQzFfmLFNY4xWtWtRYJGatOIzDO8s8gA8kfC99CcygpRQbrMBaBZ3fzMgoNXhP7A6801
+XYg+flS0kxPSubBbEfEUCVOHNcm4TAdyKwYehI9N8PD+MYIDuzCCA7cCAQEwgZMwgYwxCzAJ
+BgNVBAYTAklMMRYwFAYDVQQKEw1TdGFydENvbSBMdGQuMSswKQYDVQQLEyJTZWN1cmUgRGln
+aXRhbCBDZXJ0aWZpY2F0ZSBTaWduaW5nMTgwNgYDVQQDEy9TdGFydENvbSBDbGFzcyAyIFBy
+aW1hcnkgSW50ZXJtZWRpYXRlIENsaWVudCBDQQICC0YwCQYFKw4DAhoFAKCCAfwwGAYJKoZI
+hvcNAQkDMQsGCSqGSIb3DQEHATAcBgkqhkiG9w0BCQUxDxcNMTEwNzI1MDk0NTQ5WjAjBgkq
+hkiG9w0BCQQxFgQUTPn70GoscT18SOVzVzJzpme3RIIwXwYJKoZIhvcNAQkPMVIwUDALBglg
+hkgBZQMEAQIwCgYIKoZIhvcNAwcwDgYIKoZIhvcNAwICAgCAMA0GCCqGSIb3DQMCAgFAMAcG
+BSsOAwIHMA0GCCqGSIb3DQMCAgEoMIGbBgkrBgEEAYI3EAQxgY0wgYowgYQxFDASBgNVBAMM
+C1BvZHppbWVrIENBMQswCQYDVQQGEwJDWjEOMAwGA1UEBwwFWmzDrW4xFTATBgNVBAoMDHBv
+ZHppbWVrLm9yZzEVMBMGA1UECwwMcG9kemltZWsub3JnMSEwHwYJKoZIhvcNAQkBFhJhZG1p
+bkBwb2R6aW1lay5vcmcCAT0wgZ0GCyqGSIb3DQEJEAILMYGNoIGKMIGEMRQwEgYDVQQDDAtQ
+b2R6aW1layBDQTELMAkGA1UEBhMCQ1oxDjAMBgNVBAcMBVpsw61uMRUwEwYDVQQKDAxwb2R6
+aW1lay5vcmcxFTATBgNVBAsMDHBvZHppbWVrLm9yZzEhMB8GCSqGSIb3DQEJARYSYWRtaW5A
+cG9kemltZWsub3JnAgE9MA0GCSqGSIb3DQEBAQUABIIBABVrsAADhbWQuNSbqTsQCxsnQJ/5
+xIfbZwg0BOotfoyqU5NiwrAh7Sx/mAlHuwEPh1I6DRbULYUNysH/AjAiho1iO8WXtURmP8pp
+TOqVFnvmEK7aDNawEtf/7Y8Wf6yHo61IPgFh/R84qGvEdAkvRuci01L7Jh8i7lc6D16EspzR
+0zeJMlJ0gMcP0cUgS9pA8FTIDw4lo1pSeM1T48NRmDLOECRLH3ovexMS+el7LBrA/MraRaRB
+2iKZmD80Hw+1BUfuH8Qq148NgXQ8zQp2eGUkn+ysSD2S5sf494IQw7+DaAkGPAno6YxQzWoO
+GO9R6nY/OyNiQ99D9Uc9fipFC+MAAAAAAAA=
+--=_charon-32260-1311587150-0001-2--

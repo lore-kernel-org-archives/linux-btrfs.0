@@ -1,41 +1,50 @@
-From: "Kok, Auke-jan H" <auke-jan.h.kok@intel.com>
-Subject: Re: BTRFS Duplicated UUID on /home
-Date: Mon, 25 Jul 2011 11:35:16 -0700
-Message-ID: <CABsxX9KBhy=WzGMxN0ay28jmwkNPZa0ox1yBWoMD8TgVxPQyow@mail.gmail.com>
-References: <4A4056E2BAF08843A2EC20D92A2136321572C78FE4@exch01lex.ceradyne.com>
-Mime-Version: 1.0
-Content-Type: text/plain; charset=ISO-8859-1
-Cc: "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
-To: Bryce Myers <bmyers@ceradyne.com>
-Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <4A4056E2BAF08843A2EC20D92A2136321572C78FE4@exch01lex.ceradyne.com>
+From: Chris Mason <chris.mason@oracle.com>
+Subject: Re: Linux 3.0 release - btrfs possible locking deadlock
+Date: Mon, 25 Jul 2011 15:49:37 -0400
+Message-ID: <1311623259-sup-8037@shiny>
+References: <CA+55aFxakA2U+oMJ1T7awTYa+p6xp9N0aCbfrUqgkF7BJ8gnQw@mail.gmail.com> <201107221921.00798.edt@aei.ca>
+Content-Type: text/plain; charset=UTF-8
+Cc: Linux Kernel Mailing List <linux-kernel@vger.kernel.org>,
+	Linus Torvalds <torvalds@linux-foundation.org>,
+	linux-btrfs <linux-btrfs@vger.kernel.org>,
+	Josef Bacik <josef@redhat.com>
+To: Ed Tomlinson <edt@aei.ca>
+Return-path: <linux-kernel-owner@vger.kernel.org>
+In-reply-to: <201107221921.00798.edt@aei.ca>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Mon, Jul 25, 2011 at 5:10 AM, Bryce Myers <bmyers@ceradyne.com> wrot=
-e:
-> I have 4 partitions on my hard drive
-> 1 =3D /boot on ext2
-> 2 =3D Swap
-> 3 =3D / on brtfs
-> 4 =3D /home on btrfs
->
-> The uuid on partition 3 on my last boot was cloned to partition 4, so=
- when I try to mount either 3 or 4 they both mount the / partition.
->
-> We tried 7182011 git, and the current version in the ARCH 1062010, an=
-d neither had an option for resetting the UUID that we could find.=A0 B=
-oth partitions were btrfsck'd and returned no errors.
+Excerpts from Ed Tomlinson's message of 2011-07-22 19:21:00 -0400:
+> On Thursday 21 July 2011 22:59:53 Linus Torvalds wrote:
+> > So there it is. Gone are the 2.6.<bignum> days, and 3.0 is out.
+> > 
+> 
+> Hi,
+> 
+> Managed to get this with btrfs rsync(ing) from ext4 to a btrfs fs with three partitions using raid1.
+> 
+> [16018.211493] device fsid f7186eeb-60df-4b1a-890a-4a1eb42f81fe devid 1 transid 10 /dev/sdd4
+> [16018.230643] btrfs: use lzo compression
+> [16018.234619] btrfs: enabling disk space caching
+> [25949.414011] 
+> [25949.414011] =======================================================
+> [25949.416549] [ INFO: possible circular locking dependency detected ]
+> [25949.423187] 3.0.0-crc+ #348
+> [25949.423187] -------------------------------------------------------
+> [25949.423187] rsync/20237 is trying to acquire lock:
+> [25949.423187]  (btrfs-extent-01){+.+...}, at: [<ffffffffa047ce88>] btrfs_try_spin_lock+0x78/0xb0 [btrfs]
+> [25949.423187] 
+> [25949.423187] but task is already holding lock:
+> [25949.423187]  (&(&eb->lock)->rlock){+.+...}, at: [<ffffffffa047cee2>] btrfs_clear_lock_blocking+0x22/0x30 [btrfs]
+> [25949.423187] 
+> [25949.423187] which lock already depends on the new lock.
+> 
+> Kernel is 3.0.0 without any extras.
+> 
+> Ideas?
 
-Resetting the UUID on btrfs isn't a quick-and-easy thing - you have to
-walk the entire tree and change every object. We've got a bad-hack in
-meego that uses btrfs-debug-tree and changes the UUID while it runs
-the entire tree, but it's ugly as hell.
+Did this actually deadlock?  lockdep has issues with the btrfs
+clear_lock_blocking code, and I need to redo the annotations a bit.  The
+problem is that we have the same lock class representing unrelated locks from
+different trees.
 
-You shouldn't clone btrfs really, just make a new filesystem.
-
-Auke
---
-To unsubscribe from this list: send the line "unsubscribe linux-btrfs" =
-in
-the body of a message to majordomo@vger.kernel.org
-More majordomo info at  http://vger.kernel.org/majordomo-info.html
+-chris

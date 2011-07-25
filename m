@@ -1,50 +1,43 @@
 From: Chris Mason <chris.mason@oracle.com>
-Subject: Re: Linux 3.0 release - btrfs possible locking deadlock
-Date: Mon, 25 Jul 2011 15:49:37 -0400
-Message-ID: <1311623259-sup-8037@shiny>
-References: <CA+55aFxakA2U+oMJ1T7awTYa+p6xp9N0aCbfrUqgkF7BJ8gnQw@mail.gmail.com> <201107221921.00798.edt@aei.ca>
+Subject: Re: Btrfs slowdown
+Date: Mon, 25 Jul 2011 15:52:50 -0400
+Message-ID: <1311623446-sup-8105@shiny>
+References: <CAO47_-9BLKWUGDEuzaLqHSq9tZkAUaO8FMQEy1pPk9A2Hb+5AQ@mail.gmail.com>
 Content-Type: text/plain; charset=UTF-8
-Cc: Linux Kernel Mailing List <linux-kernel@vger.kernel.org>,
-	Linus Torvalds <torvalds@linux-foundation.org>,
-	linux-btrfs <linux-btrfs@vger.kernel.org>,
-	Josef Bacik <josef@redhat.com>
-To: Ed Tomlinson <edt@aei.ca>
-Return-path: <linux-kernel-owner@vger.kernel.org>
-In-reply-to: <201107221921.00798.edt@aei.ca>
+Cc: linux-btrfs <linux-btrfs@vger.kernel.org>,
+	ceph-devel <ceph-devel@vger.kernel.org>
+To: Christian Brunner <chb@muc.de>
+Return-path: <ceph-devel-owner@vger.kernel.org>
+In-reply-to: <CAO47_-9BLKWUGDEuzaLqHSq9tZkAUaO8FMQEy1pPk9A2Hb+5AQ@mail.gmail.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Excerpts from Ed Tomlinson's message of 2011-07-22 19:21:00 -0400:
-> On Thursday 21 July 2011 22:59:53 Linus Torvalds wrote:
-> > So there it is. Gone are the 2.6.<bignum> days, and 3.0 is out.
-> > 
-> 
+Excerpts from Christian Brunner's message of 2011-07-25 03:54:47 -0400:
 > Hi,
 > 
-> Managed to get this with btrfs rsync(ing) from ext4 to a btrfs fs with three partitions using raid1.
+> we are running a ceph cluster with btrfs as it's base filesystem
+> (kernel 3.0). At the beginning everything worked very well, but after
+> a few days (2-3) things are getting very slow.
 > 
-> [16018.211493] device fsid f7186eeb-60df-4b1a-890a-4a1eb42f81fe devid 1 transid 10 /dev/sdd4
-> [16018.230643] btrfs: use lzo compression
-> [16018.234619] btrfs: enabling disk space caching
-> [25949.414011] 
-> [25949.414011] =======================================================
-> [25949.416549] [ INFO: possible circular locking dependency detected ]
-> [25949.423187] 3.0.0-crc+ #348
-> [25949.423187] -------------------------------------------------------
-> [25949.423187] rsync/20237 is trying to acquire lock:
-> [25949.423187]  (btrfs-extent-01){+.+...}, at: [<ffffffffa047ce88>] btrfs_try_spin_lock+0x78/0xb0 [btrfs]
-> [25949.423187] 
-> [25949.423187] but task is already holding lock:
-> [25949.423187]  (&(&eb->lock)->rlock){+.+...}, at: [<ffffffffa047cee2>] btrfs_clear_lock_blocking+0x22/0x30 [btrfs]
-> [25949.423187] 
-> [25949.423187] which lock already depends on the new lock.
+> When I look at the object store servers I see heavy disk-i/o on the
+> btrfs filesystems (disk utilization is between 60% and 100%). I also
+> did some tracing on the Cepp-Object-Store-Daemon, but I'm quite
+> certain, that the majority of the disk I/O is not caused by ceph or
+> any other userland process.
 > 
-> Kernel is 3.0.0 without any extras.
+> When reboot the system(s) the problems go away for another 2-3 days,
+> but after that, it starts again. I'm not sure if the problem is
+> related to the kernel warning I've reported last week. At least there
+> is no temporal relationship between the warning and the slowdown.
 > 
-> Ideas?
+> Any hints on how to trace this would be welcome.
 
-Did this actually deadlock?  lockdep has issues with the btrfs
-clear_lock_blocking code, and I need to redo the annotations a bit.  The
-problem is that we have the same lock class representing unrelated locks from
-different trees.
+The easiest way to trace this is with latencytop.
+
+Apply this patch:
+
+http://oss.oracle.com/~mason/latencytop.patch
+
+And then use latencytop -c for a few minutes while the system is slow.
+Send the output here and hopefully we'll be able to figure it out.
 
 -chris

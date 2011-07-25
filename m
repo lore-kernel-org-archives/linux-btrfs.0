@@ -1,78 +1,203 @@
-From: Jan Schmidt <list.btrfs@jan-o-sch.net>
-Subject: Re: [PATCH v7 0/8] Btrfs scrub: print path to corrupted files and
- trigger nodatasum fixup
-Date: Mon, 25 Jul 2011 10:34:23 +0200
-Message-ID: <4E2D2A8F.1050206@jan-o-sch.net>
-References: <cover.1311333004.git.list.btrfs@jan-o-sch.net> <loom.20110724T002821-609@post.gmane.org> <4E2C03CD.1000004@jan-o-sch.net> <4E2C0E2C.4070606@GMX.li> <4E2C1E9D.1090403@jan-o-sch.net> <4E2C8425.9090601@GMX.li>
+From: Andrej Podzimek <andrej@podzimek.org>
+Subject: Re: Btrfs slowdown
+Date: Mon, 25 Jul 2011 10:51:09 +0200
+Message-ID: <4E2D2E7D.3040303@podzimek.org>
+References: <CAO47_-9BLKWUGDEuzaLqHSq9tZkAUaO8FMQEy1pPk9A2Hb+5AQ@mail.gmail.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=ISO-8859-1
-Cc: linux-btrfs <linux-btrfs@vger.kernel.org>
-To: Jan Schubert <Jan.Schubert@GMX.li>
+Content-Type: multipart/signed; protocol="application/pkcs7-signature"; micalg=sha1; boundary="=_charon-31312-1311583869-0001-2"
+Cc: linux-btrfs@vger.kernel.org, ceph-devel@vger.kernel.org
+To: chb@muc.de
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <4E2C8425.9090601@GMX.li>
+In-Reply-To: <CAO47_-9BLKWUGDEuzaLqHSq9tZkAUaO8FMQEy1pPk9A2Hb+5AQ@mail.gmail.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 24.07.2011 22:44, Jan Schubert wrote:
-> On 07/24/2011 03:31 PM, Jan Schmidt wrote:
->>
->> Yes, please check if that error solely depends on the state of your file
->> system (which is what I expect). Please try another scrub while the
->> system is as idle as you get it (also consider daemon processes, cron
->> jobs etc.).
-> 
-> 
-> Jan, doing a new scrub using a clean kernel (without your patchset) the
-> system did not crash. I'm back to my 2211 uncorrectable errors now and
-> dmesg shows also the (some?) corresponding inodes:
-> 
-> btrfs: use lzo compression
-> btrfs: enabling disk space caching
-> btrfs: use ssd allocation scheme
-> Adding 4194300k swap on /dev/sda3.  Priority:-1 extents:1 across:4194300k SS
-> btrfs: unable to fixup at 182245502976
-> btrfs: unable to fixup at 182245507072
-> btrfs: unable to fixup at 182245511168
-> btrfs: unable to fixup at 182245515264
-> btrfs: unable to fixup at 182245519360
-> btrfs: unable to fixup at 182245523456
-> btrfs: unable to fixup at 182245527552
-> btrfs: unable to fixup at 182245531648
-> btrfs: unable to fixup at 182245535744
-> btrfs: unable to fixup at 182245539840
-> 
-> scrub status for 03201fc0-7695-4468-9a10-f61ad79f23ca
->         scrub started at Sun Jul 24 22:13:09 2011 and finished after 787
-> seconds
->         total bytes scrubbed: 173.92GB with 2211 errors
->         error details: csum=2211
->         corrected errors: 0, uncorrectable errors: 2211
+This is a MIME-formatted message.  If you see this text it means that your
+E-mail software does not support MIME-formatted messages.
 
-Okay, it's good that it's persistent.
+--=_charon-31312-1311583869-0001-2
+Content-Type: text/plain; charset=UTF-8; format=flowed
+Content-Transfer-Encoding: quoted-printable
 
-> So there might be an issue with your patch concerning the kernel oops?
+Hello,
 
-Yes, that seems quite likely.
+I can see something similar on the machines I maintain, mostly single-dis=
+k setups with a 2.6.39 kernel:
 
-> Any chance to resolve the inodes to affected files manualy?
+	1) Heavy and frequent disk thrashing, although less than 20% of RAM is u=
+sed and no swap usage is reported.
+	2) During the disk thrashing, some processors (usually 2 or 3) spend 100=
+% of their time busy waiting, according to htop.
+	3) Some userspace applications freeze for tens of seconds during the thr=
+ashing and busy waiting, sometimes even htop itself...
 
-That's cumbersome, but you can do it using the information contained in
-the debug-tree output. But I'd rather find the bug I must have
-introduced :-)
+The problem has only been observed on 64-bit multiprocessors (Core i7 lap=
+top and Nehalem class server Xeons). A 32-bit multiprocessor (Intel Core =
+Duo) and a 64-bit uniprocessor (Intel Core 2 Duo class Celeron) do not se=
+em to have any issues.
 
-> Did I mention that I just did apply your patches 1 to 3 from your patch
-> set as suggested by you in the mailing list?
+Furthermore, none of the machines had this problem with 2.6.38 and earlie=
+r kernels. Btrfs "just worked" before 2.6.39. I'll test 3.0 today to see =
+whether some of these issues disappear.
 
-You did. And yes, that hasn't been tested as much as applying the whole
-patch set. I just double checked it's working for me, though. I don't
-expect it makes a difference if you apply all the patches.
+Neither ceph nor any other remote/distributed filesystem (not even NFS) r=
+uns on the machines.
 
-> Are you interested in btrfs-debug-tree anyway?
+The second problem listed above looks like illegal blocking of a vital sp=
+inlock during a long disk operation, which freezes some kernel subsystems=
+ for an inordinate amount of time and causes a number of processors to wa=
+it actively for tens of seconds. (Needless to say that this is not accept=
+able on a laptop...)
 
-Absolutely, yes.
+Web browsers (Firefox and Chromium) seem to trigger this issue slightly m=
+ore often than other applications, but I have no detailed statistics to p=
+rove this. ;-)
 
-Alternatively, if you have a lot of bandwidth and no private data in
-your file system, it would be even more helpful if you put the whole
-file system somewhere. But the btrfs-debug-tree output would help a lot,
-too.
+Two Core i7 class multiprocessors work 100% flawlessly with ext4, althoug=
+h their kernel configuration is otherwise identical to the machines that =
+use Btrfs.
 
--Jan
+Andrej
+
+> Hi,
+>
+> we are running a ceph cluster with btrfs as it's base filesystem
+> (kernel 3.0). At the beginning everything worked very well, but after
+> a few days (2-3) things are getting very slow.
+>
+> When I look at the object store servers I see heavy disk-i/o on the
+> btrfs filesystems (disk utilization is between 60% and 100%). I also
+> did some tracing on the Cepp-Object-Store-Daemon, but I'm quite
+> certain, that the majority of the disk I/O is not caused by ceph or
+> any other userland process.
+>
+> When reboot the system(s) the problems go away for another 2-3 days,
+> but after that, it starts again. I'm not sure if the problem is
+> related to the kernel warning I've reported last week. At least there
+> is no temporal relationship between the warning and the slowdown.
+>
+> Any hints on how to trace this would be welcome.
+>
+> Thanks,
+> Christian
+> --
+> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" =
+in
+> the body of a message to majordomo@vger.kernel.org
+> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+
+
+--=_charon-31312-1311583869-0001-2
+Content-Type: application/pkcs7-signature; name="smime.p7s"
+Content-Transfer-Encoding: base64
+Content-Disposition: attachment; filename="smime.p7s"
+Content-Description: Elektronický podpis S/MIME
+
+MIAGCSqGSIb3DQEHAqCAMIACAQExCzAJBgUrDgMCGgUAMIAGCSqGSIb3DQEHAQAAoIISszCC
+BakwggSRoAMCAQICAT0wDQYJKoZIhvcNAQEFBQAwgYQxFDASBgNVBAMMC1BvZHppbWVrIENB
+MQswCQYDVQQGEwJDWjEOMAwGA1UEBwwFWmzDrW4xFTATBgNVBAoMDHBvZHppbWVrLm9yZzEV
+MBMGA1UECwwMcG9kemltZWsub3JnMSEwHwYJKoZIhvcNAQkBFhJhZG1pbkBwb2R6aW1lay5v
+cmcwHhcNMTEwMzMwMTYwNzM3WhcNMTIwMzI5MTYwNzM3WjCBiTELMAkGA1UEBhMCQ1oxDjAM
+BgNVBAcMBVpsw61uMRUwEwYDVQQKDAxwb2R6aW1lay5vcmcxFTATBgNVBAsMDHBvZHppbWVr
+Lm9yZzEYMBYGA1UEAwwPQW5kcmVqIFBvZHppbWVrMSIwIAYJKoZIhvcNAQkBFhNhbmRyZWpA
+cG9kemltZWsub3JnMIICIjANBgkqhkiG9w0BAQEFAAOCAg8AMIICCgKCAgEAqxdSN8GoC0Ny
+yPVoc9uZhuN+ezgtvKodMPunwlZCqaV4p7g3rgzDe3rrQ+Afkj05R+7WqLStjPn1lr9KINtn
+mxqjUF07U4CqGZgKCruKxWiTI1pvpTljTKssoa/sbEf0UgjQvO0UNhjYF1iHE1VBVWALKgI0
+Kbb+zCftvdwtnKVh9ncQushra5MZLEeMTcXisyzasFgDb8teLn8MtDQuJb0QzHkqhwRBzj7u
+pKTGKcZxGhxzZdmcqfvZdjLAcxQApLyMq7O8Y+0FHgZHW5peeuHSgeC+kScffJvGloHGPzVt
+CqODxDOHtjS8ZfkAKKt7PKdTfqiF8/+/zZ8pT98GlLXZtrz5IXlt8YQRh3ugE+o76vikx6ho
+SZQZsVFsc0KT/S7PA5fwkorUyhhuYcs53rTDO2IN4kPVoU2Tq6iyV6D8zF5/OiMxJ5lhYUGu
+RjAHM4hAFJ1ROp3LRn5VwYotogdj81xucd/hW7tc1HUN7lHnd51WK4xXjJ5o1gF0wUUYlxMc
+wpXqv9ZW1P+zD28Wj7BxmiAtll5oAButMBjLVWgJYlpOY3Ikh6rx+TVAwfDD5oVmOzc8NAYI
+pJCSmrX4MDahymq+ayjOhIw2OPXaFBbGP7YTgp68e86p+I2JTQ/tXCH08MZYFpRB11M3dI2L
+IkDlcWOm4Ptc3794p8yS0T8CAwEAAaOCAR0wggEZMAkGA1UdEwQCMAAwHQYDVR0OBBYEFBas
+PXfIN+SpJaWzrihb8DnOUJGZMIG5BgNVHSMEgbEwga6AFE6juEwI0K5X6Rv/eMJTk7Q8cg65
+oYGKpIGHMIGEMRQwEgYDVQQDDAtQb2R6aW1layBDQTELMAkGA1UEBhMCQ1oxDjAMBgNVBAcM
+BVpsw61uMRUwEwYDVQQKDAxwb2R6aW1lay5vcmcxFTATBgNVBAsMDHBvZHppbWVrLm9yZzEh
+MB8GCSqGSIb3DQEJARYSYWRtaW5AcG9kemltZWsub3JnggkAkctHSQfLqowwMQYJYIZIAYb4
+QgEEBCQWImh0dHBzOi8vY2EucG9kemltZWsub3JnL2NhLWNybC5wZW0wDQYJKoZIhvcNAQEF
+BQADggEBAH5XwT/0jYayTafRvAcJfRAm5E6z6wqX0x5OYNdO6JQ9JcCYQeFa1XD80Yu/VHy8
+NmaF+p2iAaCZWcTbIeAzidSozgbDJlVYcMdUjer0WHbBpyIBcVJZY4im/ygyVTACOIlLnfXM
+ZaNfdsCBP/minHHonm5e8DU8Go2/viAKPfXxsCOzl0bZFnU2b2D5Ii6Gk4n6kyduzQWYVUqA
+fNQjQIKZDSIMPzh119QsbR+6vNQ5t46qpHVMUkn1JLf+MIJQSBjxoXXt9ORnpTRstVw1ATPz
+RxDYYltHxaqKUY07bSo5czyWyUN5Rd35SP1mlQSHJhmNVUuOHQ58yDEADUEqkSkwggY0MIIE
+HKADAgECAgEgMA0GCSqGSIb3DQEBBQUAMH0xCzAJBgNVBAYTAklMMRYwFAYDVQQKEw1TdGFy
+dENvbSBMdGQuMSswKQYDVQQLEyJTZWN1cmUgRGlnaXRhbCBDZXJ0aWZpY2F0ZSBTaWduaW5n
+MSkwJwYDVQQDEyBTdGFydENvbSBDZXJ0aWZpY2F0aW9uIEF1dGhvcml0eTAeFw0wNzEwMjQy
+MTAyNTVaFw0xNzEwMjQyMTAyNTVaMIGMMQswCQYDVQQGEwJJTDEWMBQGA1UEChMNU3RhcnRD
+b20gTHRkLjErMCkGA1UECxMiU2VjdXJlIERpZ2l0YWwgQ2VydGlmaWNhdGUgU2lnbmluZzE4
+MDYGA1UEAxMvU3RhcnRDb20gQ2xhc3MgMiBQcmltYXJ5IEludGVybWVkaWF0ZSBDbGllbnQg
+Q0EwggEiMA0GCSqGSIb3DQEBAQUAA4IBDwAwggEKAoIBAQDLKIVFnAEs+xnyq6UzjCqgDcvQ
+Ve1dIoFnRsQPCFO+y92k8RK0Pn3MbQ2Gd+mehh9GBZ+36uUQA7Xj9AGM6wgPhEE34vKtfpAN
+5tJ8LcFxveDObCKrL7O5UT9WsnAZHv7OYPYSR68mdmnEnJ83M4wQgKO19b+Rt8sPDAz9ptkQ
+sntCn4GeJzg3q2SVc4QJTg/WHo7wF2ah5LMOeh8xJVSKGEmd6uPkSbj113yKMm8vmNptRPmM
+1+YgmVwcdOYJOjCgFtb2sOP79jji8uhWR91xx7TpM1K3hv/wrBZwffrmmEpUeuXHRs07JqCC
+vFh9coKF4UQZvfEg+x3/69xRCzb1AgMBAAGjggGtMIIBqTAPBgNVHRMBAf8EBTADAQH/MA4G
+A1UdDwEB/wQEAwIBBjAdBgNVHQ4EFgQUrlWDb+wxyrn3HfqvazHzyB3jrLswHwYDVR0jBBgw
+FoAUTgvvGqRAW6UXaYcwyjRoQ9BBrvIwZgYIKwYBBQUHAQEEWjBYMCcGCCsGAQUFBzABhhto
+dHRwOi8vb2NzcC5zdGFydHNzbC5jb20vY2EwLQYIKwYBBQUHMAKGIWh0dHA6Ly93d3cuc3Rh
+cnRzc2wuY29tL3Nmc2NhLmNydDBbBgNVHR8EVDBSMCegJaAjhiFodHRwOi8vd3d3LnN0YXJ0
+c3NsLmNvbS9zZnNjYS5jcmwwJ6AloCOGIWh0dHA6Ly9jcmwuc3RhcnRzc2wuY29tL3Nmc2Nh
+LmNybDCBgAYDVR0gBHkwdzB1BgsrBgEEAYG1NwECATBmMC4GCCsGAQUFBwIBFiJodHRwOi8v
+d3d3LnN0YXJ0c3NsLmNvbS9wb2xpY3kucGRmMDQGCCsGAQUFBwIBFihodHRwOi8vd3d3LnN0
+YXJ0c3NsLmNvbS9pbnRlcm1lZGlhdGUucGRmMA0GCSqGSIb3DQEBBQUAA4ICAQA6qScNyNO0
+FpHvaZTQacVMXH33O51KyEKSRw3IvdQxRu31YR0ZDGdSfgSoOVDVMSBSdmfQfdDInHPzV3LO
+5DwUXZ+lxjv7z3PO2OkfnFkvTXPfn6dxJ5rJveDsTsCPcJ/Kp6/+qN5g+J6D/SaYcFD018B6
+L42r0Z4VEBy36P4tjRtF14Ex10tl5tJFVKM16qWKQHbpjIgf73s49UB0CQ5lHT2DHKfq3oPf
+dNc5Mk93w1v4ryVb+qVrZIej8NsrWU+5r4O2IV91edDb/OtHFddZqHFFXKgS79IHE/hwQ2LW
+7r3sTX7cDUCg+dfdwO8zeLxuwk2JF8crUoyrl66RGrRIhT8VoG/OJ1Y9uUlOav69V4cG8upi
+4ZG2l7JZFbcBFk91Wp+Payo5SuF61CmGFrZ386umkmpObtFacXda2O/bVoQ9xHQrzoTc/0KZ
+TWvlZCLK3Ke/vGYT9ZdW9lOjGsSFbXrlTA919L84iMK+48WGnvRWY28ZaVHpql43AtEGhXze
+6iNCbEDACy+4hkQYOytAqDgcxAnQ937mYpeZFPyz/XK9QSt9VNFMuudWxZwDDDJKoQAoSG59
+Hou9lZ26UrK60nRdAQBmEPL8h2nuWgoPh++XVQld9yuhbsWa39Pck8/lcfz5HUVGJF5mc/zk
+38iV7FDlF68puiryNq2KXHEpOTCCBsowggWyoAMCAQICAgtGMA0GCSqGSIb3DQEBBQUAMIGM
+MQswCQYDVQQGEwJJTDEWMBQGA1UEChMNU3RhcnRDb20gTHRkLjErMCkGA1UECxMiU2VjdXJl
+IERpZ2l0YWwgQ2VydGlmaWNhdGUgU2lnbmluZzE4MDYGA1UEAxMvU3RhcnRDb20gQ2xhc3Mg
+MiBQcmltYXJ5IEludGVybWVkaWF0ZSBDbGllbnQgQ0EwHhcNMTAwOTI3MDA0ODU2WhcNMTIw
+OTI3MDk1NjI4WjCBwjEgMB4GA1UEDRMXMjY0MzU2LVV6cDI4MnFISHRiQ2I1ZDMxCzAJBgNV
+BAYTAkNaMRUwEwYDVQQIEwxabGluc2t5IEtyYWoxDTALBgNVBAcTBFpsaW4xLTArBgNVBAsT
+JFN0YXJ0Q29tIFZlcmlmaWVkIENlcnRpZmljYXRlIE1lbWJlcjEYMBYGA1UEAxMPQW5kcmVq
+IFBvZHppbWVrMSIwIAYJKoZIhvcNAQkBFhNhbmRyZWpAcG9kemltZWsub3JnMIIBIjANBgkq
+hkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEArldROEvlaSy4OX9PPg22Xl7GCivziuBcbrkH+St9
+vIAyefDb3kfdtHT/J1NRlQDYTrDFQ3cZM2J7vicm4/uu67KzdAF/14mdml1b1prWRiUT3IRw
+Cwbt8wuNhZfa6dGkQ374EuOWDVX+5YCEufr5GMHrkkZy5RYtO9r3avglOI1ZB2F9Z56Zb42k
+S7N2ebEE7Oj+pFeQwaj2pz/B4d3gu6wX+c7GwDiy26iN/33Cl+spa5uFWITb8XD6P6aob9Ep
+yDxn90KEr5+9ug1tmh833Kdll4mmjzAv5ZK0iVFnxsBq+V1TN/2NW6oiIvOLxTIHCfC1MdYi
+88HMC1PaQZF4ywIDAQABo4IC/DCCAvgwCQYDVR0TBAIwADALBgNVHQ8EBAMCBLAwHQYDVR0l
+BBYwFAYIKwYBBQUHAwIGCCsGAQUFBwMEMB0GA1UdDgQWBBT3GSEvnmmKZPBGzpElp7HtmoV7
+FzAfBgNVHSMEGDAWgBSuVYNv7DHKufcd+q9rMfPIHeOsuzAeBgNVHREEFzAVgRNhbmRyZWpA
+cG9kemltZWsub3JnMIIBQgYDVR0gBIIBOTCCATUwggExBgsrBgEEAYG1NwECAjCCASAwLgYI
+KwYBBQUHAgEWImh0dHA6Ly93d3cuc3RhcnRzc2wuY29tL3BvbGljeS5wZGYwNAYIKwYBBQUH
+AgEWKGh0dHA6Ly93d3cuc3RhcnRzc2wuY29tL2ludGVybWVkaWF0ZS5wZGYwgbcGCCsGAQUF
+BwICMIGqMBQWDVN0YXJ0Q29tIEx0ZC4wAwIBARqBkUxpbWl0ZWQgTGlhYmlsaXR5LCBzZWUg
+c2VjdGlvbiAqTGVnYWwgTGltaXRhdGlvbnMqIG9mIHRoZSBTdGFydENvbSBDZXJ0aWZpY2F0
+aW9uIEF1dGhvcml0eSBQb2xpY3kgYXZhaWxhYmxlIGF0IGh0dHA6Ly93d3cuc3RhcnRzc2wu
+Y29tL3BvbGljeS5wZGYwYwYDVR0fBFwwWjAroCmgJ4YlaHR0cDovL3d3dy5zdGFydHNzbC5j
+b20vY3J0dTItY3JsLmNybDAroCmgJ4YlaHR0cDovL2NybC5zdGFydHNzbC5jb20vY3J0dTIt
+Y3JsLmNybDCBjgYIKwYBBQUHAQEEgYEwfzA5BggrBgEFBQcwAYYtaHR0cDovL29jc3Auc3Rh
+cnRzc2wuY29tL3N1Yi9jbGFzczIvY2xpZW50L2NhMEIGCCsGAQUFBzAChjZodHRwOi8vd3d3
+LnN0YXJ0c3NsLmNvbS9jZXJ0cy9zdWIuY2xhc3MyLmNsaWVudC5jYS5jcnQwIwYDVR0SBBww
+GoYYaHR0cDovL3d3dy5zdGFydHNzbC5jb20vMA0GCSqGSIb3DQEBBQUAA4IBAQCEI21EOM71
+hKXRNFHbWFaemV86fxAs1yMl6SohZhNRea/Pc5hMpoFoUZBf0qJ3AvFy2PzsyspTsqZhBOwo
+I3rVJlgZapKi4x4k7FXM43xFmU/koQLdQPDS1Jfbr8zFTVBx+K6xD+L9y+M1M7JX+EcQgTIu
+CZn80YjSxEpAGND09NUPrgwJ/v9Nn5zqbEraf5MRSAun11fhkqIORlqkAi393N+kvXEsAtRJ
+A0CizQzFfmLFNY4xWtWtRYJGatOIzDO8s8gA8kfC99CcygpRQbrMBaBZ3fzMgoNXhP7A6801
+XYg+flS0kxPSubBbEfEUCVOHNcm4TAdyKwYehI9N8PD+MYIDuzCCA7cCAQEwgZMwgYwxCzAJ
+BgNVBAYTAklMMRYwFAYDVQQKEw1TdGFydENvbSBMdGQuMSswKQYDVQQLEyJTZWN1cmUgRGln
+aXRhbCBDZXJ0aWZpY2F0ZSBTaWduaW5nMTgwNgYDVQQDEy9TdGFydENvbSBDbGFzcyAyIFBy
+aW1hcnkgSW50ZXJtZWRpYXRlIENsaWVudCBDQQICC0YwCQYFKw4DAhoFAKCCAfwwGAYJKoZI
+hvcNAQkDMQsGCSqGSIb3DQEHATAcBgkqhkiG9w0BCQUxDxcNMTEwNzI1MDg1MTA5WjAjBgkq
+hkiG9w0BCQQxFgQUPgv9aAWX+t84F59dPHHdSOmvEF0wXwYJKoZIhvcNAQkPMVIwUDALBglg
+hkgBZQMEAQIwCgYIKoZIhvcNAwcwDgYIKoZIhvcNAwICAgCAMA0GCCqGSIb3DQMCAgFAMAcG
+BSsOAwIHMA0GCCqGSIb3DQMCAgEoMIGbBgkrBgEEAYI3EAQxgY0wgYowgYQxFDASBgNVBAMM
+C1BvZHppbWVrIENBMQswCQYDVQQGEwJDWjEOMAwGA1UEBwwFWmzDrW4xFTATBgNVBAoMDHBv
+ZHppbWVrLm9yZzEVMBMGA1UECwwMcG9kemltZWsub3JnMSEwHwYJKoZIhvcNAQkBFhJhZG1p
+bkBwb2R6aW1lay5vcmcCAT0wgZ0GCyqGSIb3DQEJEAILMYGNoIGKMIGEMRQwEgYDVQQDDAtQ
+b2R6aW1layBDQTELMAkGA1UEBhMCQ1oxDjAMBgNVBAcMBVpsw61uMRUwEwYDVQQKDAxwb2R6
+aW1lay5vcmcxFTATBgNVBAsMDHBvZHppbWVrLm9yZzEhMB8GCSqGSIb3DQEJARYSYWRtaW5A
+cG9kemltZWsub3JnAgE9MA0GCSqGSIb3DQEBAQUABIIBABMaaDLV9BM3ffqpATcIoZWTYCwH
+Rj0h59AsOfxBmQ+yKyGo2vNNCLxKKE6Y2jl265hIr8tkliWmJ3NieZmqT6WkqxchLh7nUQ1F
+Fi54RLOjSKpAVLcYwRgQp1Nwdhs2yw3Lb98JR3gUe4zl/qo4fsItv+VLnQcxVEe5HJOdp6X0
+0Fby2/uL92hvbbfjPXL2lilnInsj6FT+MMSMEvpBdQUuwj9hTLztpLwGQFajhOree2fOia88
+k54yvZmhXq8lPtJDoOb1Yq8mYxIeoCUn+qifspkJq9BMbcTjQLvjL9yMXhiL7OIEnOOcPU6n
+USH3HaHqz8c6aYMRTr0BdXyK5wMAAAAAAAA=
+--=_charon-31312-1311583869-0001-2--

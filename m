@@ -1,106 +1,57 @@
-From: Mark Fasheh <mfasheh@suse.com>
-Subject: Re: [PATCH 6/7] btrfs: Don't BUG_ON alloc_path errors in find_next_chunk
-Date: Mon, 25 Jul 2011 14:37:51 -0700
-Message-ID: <20110725213751.GF6911@wotan.suse.de>
-References: <1311277713-7747-1-git-send-email-mfasheh@suse.com> <1311277713-7747-2-git-send-email-mfasheh@suse.com> <1311277713-7747-3-git-send-email-mfasheh@suse.com> <1311277713-7747-4-git-send-email-mfasheh@suse.com> <1311277713-7747-5-git-send-email-mfasheh@suse.com> <1311277713-7747-6-git-send-email-mfasheh@suse.com> <1311277713-7747-7-git-send-email-mfasheh@suse.com> <4E28CAA0.2070801@jp.fujitsu.com>
-Reply-To: Mark Fasheh <mfasheh@suse.com>
+From: Ed Tomlinson <edt@aei.ca>
+Subject: Re: Linux 3.0 release - btrfs possible locking deadlock
+Date: Mon, 25 Jul 2011 20:22:03 -0400
+Message-ID: <201107252022.03834.edt@aei.ca>
+References: <CA+55aFxakA2U+oMJ1T7awTYa+p6xp9N0aCbfrUqgkF7BJ8gnQw@mail.gmail.com> <201107221921.00798.edt@aei.ca> <1311623259-sup-8037@shiny>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Cc: linux-btrfs@vger.kernel.org, chris.mason@oracle.com
-To: Tsutomu Itoh <t-itoh@jp.fujitsu.com>
+Content-Type: Text/Plain;
+  charset="utf-8"
+Cc: Linux Kernel Mailing List <linux-kernel@vger.kernel.org>,
+	Linus Torvalds <torvalds@linux-foundation.org>,
+	"linux-btrfs" <linux-btrfs@vger.kernel.org>,
+	Josef Bacik <josef@redhat.com>
+To: Chris Mason <chris.mason@oracle.com>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <4E28CAA0.2070801@jp.fujitsu.com>
+In-Reply-To: <1311623259-sup-8037@shiny>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Fri, Jul 22, 2011 at 09:56:00AM +0900, Tsutomu Itoh wrote:
-> > diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
-> > index aa91773..ff339b2 100644
-> > --- a/fs/btrfs/extent-tree.c
-> > +++ b/fs/btrfs/extent-tree.c
-> > @@ -3277,6 +3277,9 @@ again:
-> >  	}
-> >  
-> >  	ret = btrfs_alloc_chunk(trans, extent_root, flags);
-> > +	if (ret < 0 && ret != -ENOSPC)
-> > +		return ret;
-> > +
+On Monday 25 July 2011 15:49:37 Chris Mason wrote:
+> Excerpts from Ed Tomlinson's message of 2011-07-22 19:21:00 -0400:
+> > On Thursday 21 July 2011 22:59:53 Linus Torvalds wrote:
+> > > So there it is. Gone are the 2.6.<bignum> days, and 3.0 is out.
+> > > 
+> > 
+> > Hi,
+> > 
+> > Managed to get this with btrfs rsync(ing) from ext4 to a btrfs fs with three partitions using raid1.
+> > 
+> > [16018.211493] device fsid f7186eeb-60df-4b1a-890a-4a1eb42f81fe devid 1 transid 10 /dev/sdd4
+> > [16018.230643] btrfs: use lzo compression
+> > [16018.234619] btrfs: enabling disk space caching
+> > [25949.414011] 
+> > [25949.414011] =======================================================
+> > [25949.416549] [ INFO: possible circular locking dependency detected ]
+> > [25949.423187] 3.0.0-crc+ #348
+> > [25949.423187] -------------------------------------------------------
+> > [25949.423187] rsync/20237 is trying to acquire lock:
+> > [25949.423187]  (btrfs-extent-01){+.+...}, at: [<ffffffffa047ce88>] btrfs_try_spin_lock+0x78/0xb0 [btrfs]
+> > [25949.423187] 
+> > [25949.423187] but task is already holding lock:
+> > [25949.423187]  (&(&eb->lock)->rlock){+.+...}, at: [<ffffffffa047cee2>] btrfs_clear_lock_blocking+0x22/0x30 [btrfs]
+> > [25949.423187] 
+> > [25949.423187] which lock already depends on the new lock.
+> > 
+> > Kernel is 3.0.0 without any extras.
+> > 
+> > Ideas?
 > 
-> You need mutex_unlock() before return.
+> Did this actually deadlock?  lockdep has issues with the btrfs
+> clear_lock_blocking code, and I need to redo the annotations a bit.  The
+> problem is that we have the same lock class representing unrelated locks from
+> different trees.
 
-Of course... Here's an updated patch (git tree has also been updated).
+It did not stop any processes that I could see and the rsync did complete ok.  Thats why I said possible.
+Figured it might be something you needed to see and/or fix though.
 
-Thanks,
-	--Mark
-
---
-Mark Fasheh
-
-From: Mark Fasheh <mfasheh@suse.com>
-
-[PATCH] btrfs: Don't BUG_ON alloc_path errors in find_next_chunk
-
-I also removed the BUG_ON from error return of find_next_chunk in
-init_first_rw_device(). It turns out that the only caller of
-init_first_rw_device() also BUGS on any nonzero return so no actual behavior
-change has occurred here.
-
-do_chunk_alloc() also needed an update since it calls btrfs_alloc_chunk()
-which can now return -ENOMEM. Instead of setting space_info->full on any
-error from btrfs_alloc_chunk() I catch and return every error value _except_
--ENOSPC. Thanks goes to Tsutomu Itoh for pointing that issue out.
-
-Signed-off-by: Mark Fasheh <mfasheh@suse.com>
----
- fs/btrfs/extent-tree.c |    4 ++++
- fs/btrfs/volumes.c     |    6 ++++--
- 2 files changed, 8 insertions(+), 2 deletions(-)
-
-diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
-index aa91773..f6af423 100644
---- a/fs/btrfs/extent-tree.c
-+++ b/fs/btrfs/extent-tree.c
-@@ -3277,6 +3277,9 @@ again:
- 	}
- 
- 	ret = btrfs_alloc_chunk(trans, extent_root, flags);
-+	if (ret < 0 && ret != -ENOSPC)
-+		goto out;
-+
- 	spin_lock(&space_info->lock);
- 	if (ret)
- 		space_info->full = 1;
-@@ -3286,6 +3289,7 @@ again:
- 	space_info->force_alloc = CHUNK_ALLOC_NO_FORCE;
- 	space_info->chunk_alloc = 0;
- 	spin_unlock(&space_info->lock);
-+out:
- 	mutex_unlock(&extent_root->fs_info->chunk_mutex);
- 	return ret;
- }
-diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
-index 530a2fc..90d956c 100644
---- a/fs/btrfs/volumes.c
-+++ b/fs/btrfs/volumes.c
-@@ -1037,7 +1037,8 @@ static noinline int find_next_chunk(struct btrfs_root *root,
- 	struct btrfs_key found_key;
- 
- 	path = btrfs_alloc_path();
--	BUG_ON(!path);
-+	if (!path)
-+		return -ENOMEM;
- 
- 	key.objectid = objectid;
- 	key.offset = (u64)-1;
-@@ -2663,7 +2664,8 @@ static noinline int init_first_rw_device(struct btrfs_trans_handle *trans,
- 
- 	ret = find_next_chunk(fs_info->chunk_root,
- 			      BTRFS_FIRST_CHUNK_TREE_OBJECTID, &chunk_offset);
--	BUG_ON(ret);
-+	if (ret)
-+		return ret;
- 
- 	alloc_profile = BTRFS_BLOCK_GROUP_METADATA |
- 			(fs_info->metadata_alloc_profile &
--- 
-1.7.6
-
+Thanks
+Ed

@@ -1,72 +1,43 @@
-From: Justin Ossevoort <justin@internetionals.nl>
-Subject: Re: [PATCH 7/7] btrfs: don't BUG_ON allocation errors in btrfs_drop_snapshot
-Date: Tue, 26 Jul 2011 15:14:59 +0200
-Message-ID: <4E2EBDD3.4020106@internetionals.nl>
-References: <1311277713-7747-1-git-send-email-mfasheh@suse.com> <1311277713-7747-2-git-send-email-mfasheh@suse.com> <1311277713-7747-3-git-send-email-mfasheh@suse.com> <1311277713-7747-4-git-send-email-mfasheh@suse.com> <1311277713-7747-5-git-send-email-mfasheh@suse.com> <1311277713-7747-6-git-send-email-mfasheh@suse.com> <1311277713-7747-7-git-send-email-mfasheh@suse.com> <1311277713-7747-8-git-send-email-mfasheh@suse.com> <4E28C81F.8020200@jp.fujitsu.com> <20110725211040.GE6911@wotan.suse.de>
+From: Jan Schmidt <list.btrfs@jan-o-sch.net>
+Subject: Re: [PATCH v7 0/8] Btrfs scrub: print path to corrupted files and
+ trigger nodatasum fixup
+Date: Tue, 26 Jul 2011 19:36:00 +0200
+Message-ID: <4E2EFB00.2000302@jan-o-sch.net>
+References: <cover.1311333004.git.list.btrfs@jan-o-sch.net> <loom.20110724T002821-609@post.gmane.org> <4E2C03CD.1000004@jan-o-sch.net> <4E2C0E2C.4070606@GMX.li> <4E2C1E9D.1090403@jan-o-sch.net> <4E2C8425.9090601@GMX.li> <4E2D2A8F.1050206@jan-o-sch.net> <4E2D5C36.306@GMX.li> <4E2D6C57.7020302@jan-o-sch.net> <4E2D9290.6020600@GMX.li> <4E2E912E.7040109@jan-o-sch.net> <4E2E92FA.4060008@GMX.li>
 Mime-Version: 1.0
 Content-Type: text/plain; charset=ISO-8859-1
-Cc: Tsutomu Itoh <t-itoh@jp.fujitsu.com>, linux-btrfs@vger.kernel.org,
-	chris.mason@oracle.com
-To: Mark Fasheh <mfasheh@suse.com>
+Cc: linux-btrfs <linux-btrfs@vger.kernel.org>,
+	Chris Mason <chris.mason@oracle.com>
+To: Jan Schubert <Jan.Schubert@GMX.li>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <20110725211040.GE6911@wotan.suse.de>
+In-Reply-To: <4E2E92FA.4060008@GMX.li>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 25/07/11 23:10, Mark Fasheh wrote:
-> On Fri, Jul 22, 2011 at 09:45:19AM +0900, Tsutomu Itoh wrote:
->> (2011/07/22 4:48), Mark Fasheh wrote:
->>> In addition to properly handling allocation failure from btrfs_alloc_path, I
->>> also fixed up the kzalloc error handling code immediately below it.
->>>
->>> Signed-off-by: Mark Fasheh <mfasheh@suse.com>
->>> ---
->>>  fs/btrfs/extent-tree.c |    8 ++++++--
->>>  1 files changed, 6 insertions(+), 2 deletions(-)
->>>
->>> diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
->>> index ff339b2..4cf5257 100644
->>> --- a/fs/btrfs/extent-tree.c
->>> +++ b/fs/btrfs/extent-tree.c
->>> @@ -6271,10 +6271,14 @@ int btrfs_drop_snapshot(struct btrfs_root *root,
->>>  	int level;
->>>  
->>>  	path = btrfs_alloc_path();
->>> -	BUG_ON(!path);
->>> +	if (!path)
->>> +		return -ENOMEM;
->>>  
->>>  	wc = kzalloc(sizeof(*wc), GFP_NOFS);
->>> -	BUG_ON(!wc);
->>> +	if (!wc) {
->>> +		btrfs_free_path(path);
->>> +		return -ENOMEM;
->>> +	}
->>>  
->>>  	trans = btrfs_start_transaction(tree_root, 0);
->>>  	BUG_ON(IS_ERR(trans));
->>
->> Currently, callers of btrfs_drop_snapshot() ignore the return code.
->> But btrfs_drop_snapshot() detects the error by BUG_ON.
->>
->> The caller still ignore the return code though your modification returns
->> the error code to the caller. 
->> So, we can not detect error. I don't think that it is good.
+
+
+On 26.07.2011 12:12, Jan Schubert wrote:
+> On 07/26/2011 12:04 PM, Jan Schmidt wrote:
+>> On 25.07.2011 17:58, Jan Schubert wrote:
+>>> btrfs: unable to fixup at 182245531648
+>>> btrfs: unable to fixup at 182245535744
+>>> btrfs: unable to fixup at 182245539840
+>> This is due to rate limitation of printk() to prevent flooding. I'd like
+>> to continue discussion of this problem on the list, but I didn't reply
+>> to the list this time due to the debug-tree link you gave me.
 > 
-> IMHO, this is a seperate issue that btrfs_drop_snapshot() has even without
-> my patch. You can see in the code that it might return any number of errors,
-> all of which get ignored by callers. So my patch is cleaning up some of the
-> BUG_ON() usage, but not really solving the 2nd problem of ignored return
-> codes. Of course that was on purpose as I like to fix one problem per patch
-> if possible and practicle.
-> 	--Mark
+> OK, go on Jan, no problem. Is there any chance to use the numbers above
+> to identify related files?
 
-I Think Tsutomu's point was more that you've changed the behavior from a
-BUG() on error to silently ignoring the error.
+Thanks for sending the debug-tree output. Turns out that there is a
+quite obvious bug in my code for extents that have refs but no inline
+ref at all.
 
-So you should at least add 'BUG_ON(ERR_PTR(...) == -ENOMEM)' in the
-callers to maintain the current behavior while still pushing the check
-up the call chain.
+I'll fix this up and send a new version (hooray).
 
-Regards,
+Jan: It would be nice if you could try the new patch set once I've sent
+it. I don't need any additional input from you at the moment.
 
-	justin....
+Chris: As you suggested, the new version will also include two separate
+size fields in struct btrfs_data_container, which then can both be unsigned.
+
+-Jan

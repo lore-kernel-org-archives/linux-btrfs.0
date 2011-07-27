@@ -1,41 +1,47 @@
-From: Dan Carpenter <error27@gmail.com>
-Subject: [patch] btrfs: unlock on error in btrfs_file_llseek()
-Date: Wed, 27 Jul 2011 12:50:33 +0300
-Message-ID: <20110727095033.GI3824@shale.localdomain>
-Mime-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Cc: Chris Mason <chris.mason@oracle.com>,
-	"open list:BTRFS FILE SYSTEM" <linux-btrfs@vger.kernel.org>,
-	kernel-janitors@vger.kernel.org
-To: Josef Bacik <josef@redhat.com>
+From: Andy Whitcroft <apw@canonical.com>
+Subject: [PATCH 1/1] btrfs: btrfs_calc_avail_data_space cope with no read/write devices
+Date: Wed, 27 Jul 2011 11:59:07 +0100
+Message-ID: <1311764347-5520-1-git-send-email-apw@canonical.com>
+Cc: linux-kernel@vger.kernel.org, Andy Whitcroft <apw@canonical.com>
+To: Chris Mason <chris.mason@oracle.com>, linux-btrfs@vger.kernel.org
 Return-path: <linux-btrfs-owner@vger.kernel.org>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-There were some unlocks on error missing in a recent patch to
-btrfs_file_llseek().
+When we mount a btrfs filesystem from read-only media there will be no
+read/write devices; for example mounting an SD card with its lock enabled.
+This triggers an immediate BUG during mount:
 
-Signed-off-by: Dan Carpenter <error27@gmail.com>
+  kernel BUG at .../fs/btrfs/super.c:984!
 
-diff --git a/fs/btrfs/file.c b/fs/btrfs/file.c
-index 59cbdb1..94d8342 100644
---- a/fs/btrfs/file.c
-+++ b/fs/btrfs/file.c
-@@ -1804,10 +1804,14 @@ static loff_t btrfs_file_llseek(struct file *file, loff_t offset, int origin)
- 		}
- 	}
+This is triggered by statfs when calculating the free space in the
+filesytem.  We bug if the number of read/write devices is 0.
+
+It seems more appropriate to indicate we have no writable space.  Note
+that this does make df return 0 free blocks on a read-only device.
+Whether that is reasonable is debatable.
+
+BugLink: http://bugs.launchpad.net/bugs/803815
+Signed-off-by: Andy Whitcroft <apw@canonical.com>
+---
+ fs/btrfs/super.c |    5 ++++-
+ 1 files changed, 4 insertions(+), 1 deletions(-)
+
+diff --git a/fs/btrfs/super.c b/fs/btrfs/super.c
+index 15634d4..8d3f9b0 100644
+--- a/fs/btrfs/super.c
++++ b/fs/btrfs/super.c
+@@ -981,7 +981,10 @@ static int btrfs_calc_avail_data_space(struct btrfs_root *root, u64 *free_bytes)
+ 	int ret;
  
--	if (offset < 0 && !(file->f_mode & FMODE_UNSIGNED_OFFSET))
--		return -EINVAL;
--	if (offset > inode->i_sb->s_maxbytes)
--		return -EINVAL;
-+	if (offset < 0 && !(file->f_mode & FMODE_UNSIGNED_OFFSET)) {
-+		ret = -EINVAL;
-+		goto out;
-+	}
-+	if (offset > inode->i_sb->s_maxbytes) {
-+		ret = -EINVAL;
-+		goto out;
+ 	nr_devices = fs_info->fs_devices->rw_devices;
+-	BUG_ON(!nr_devices);
++	if (!nr_devices) {
++		*free_bytes = 0;
++		return 0;
 +	}
  
- 	/* Special lock needed here? */
- 	if (offset != file->f_pos) {
+ 	devices_info = kmalloc(sizeof(*devices_info) * nr_devices,
+ 			       GFP_NOFS);
+-- 
+1.7.4.1
+

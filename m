@@ -1,34 +1,54 @@
 From: Josef Bacik <josef@redhat.com>
-Subject: Re: [PATCH 1/1] btrfs: btrfs_calc_avail_data_space cope with no read/write
- devices
-Date: Wed, 27 Jul 2011 10:25:17 -0400
-Message-ID: <4E301FCD.6060202@redhat.com>
-References: <1311764491-5687-1-git-send-email-apw@canonical.com>
+Subject: Re: [PATCH] Btrfs: fix oops while writing data to SSD partitions
+Date: Wed, 27 Jul 2011 10:26:12 -0400
+Message-ID: <4E302004.2030007@redhat.com>
+References: <4E2FDF1E.8080206@cn.fujitsu.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=ISO-8859-1
-Cc: Chris Mason <chris.mason@oracle.com>, linux-btrfs@vger.kernel.org,
-	linux-kernel@vger.kernel.org
-To: Andy Whitcroft <apw@canonical.com>
+Content-Type: text/plain; charset=UTF-8
+Cc: Linux Btrfs <linux-btrfs@vger.kernel.org>
+To: liubo <liubo2009@cn.fujitsu.com>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <1311764491-5687-1-git-send-email-apw@canonical.com>
+In-Reply-To: <4E2FDF1E.8080206@cn.fujitsu.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 07/27/2011 07:01 AM, Andy Whitcroft wrote:
-> When we mount a btrfs filesystem from read-only media there will be no
-> read/write devices; for example mounting an SD card with its lock enabled.
-> This triggers an immediate BUG during mount:
+On 07/27/2011 05:49 AM, liubo wrote:
+> Here I have a two SSD-partitions btrfs, and they are defaultly set to
+> "data=raid0, metadata=raid1", then I try to fill my btrfs partition
+> till "No space left on device", via "dd if=/dev/zero of=/mnt/btrfs/tmp".
 > 
->   kernel BUG at .../fs/btrfs/super.c:984!
+> I get an oops panic from kernel BUG at fs/btrfs/extent-tree.c:5199!, which
+> refers to find_free_extent's
+> BUG_ON(index != get_block_group_index(block_group));
 > 
-> This is triggered by statfs when calculating the free space in the
-> filesytem.  We bug if the number of read/write devices is 0.
+> In SSD mode, in order to find enough space to alloc, we may check the
+> block_group cache which has been checked sometime before, but the index is not
+> updated, where it hits the BUG_ON.
 > 
-> It seems more appropriate to indicate we have no writable space.  Note
-> that this does make df return 0 free blocks on a read-only device.
-> Whether that is reasonable is debatable.
+> Signed-off-by: Liu Bo <liubo2009@cn.fujitsu.com>
+> ---
+>  fs/btrfs/extent-tree.c |    4 +++-
+>  1 files changed, 3 insertions(+), 1 deletions(-)
+> 
+> diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
+> index 71cd456..3213c39 100644
+> --- a/fs/btrfs/extent-tree.c
+> +++ b/fs/btrfs/extent-tree.c
+> @@ -5065,7 +5065,9 @@ have_block_group:
+>  			 * group is does point to and try again
+>  			 */
+>  			if (!last_ptr_loop && last_ptr->block_group &&
+> -			    last_ptr->block_group != block_group) {
+> +			    last_ptr->block_group != block_group &&
+> +			    index <=
+> +				 get_block_group_index(last_ptr->block_group)) {
+>  
+>  				btrfs_put_block_group(block_group);
+>  				block_group = last_ptr->block_group;
 
-No it's not, it's wrong.  We should just look at the devices in general
-and not just the rw_devices.  We can still get the right info out, if
-you mount a ext* fs ro you still get the right output from df.  Thanks,
+Ugh I wish we could make this prettier but
+
+Acked-by: Josef Bacik <josef@redhat.com>
+
+Thanks,
 
 Josef

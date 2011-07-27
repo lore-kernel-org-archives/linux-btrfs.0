@@ -1,47 +1,41 @@
-From: liubo <liubo2009@cn.fujitsu.com>
-Subject: [PATCH] Btrfs: fix oops while writing data to SSD partitions
-Date: Wed, 27 Jul 2011 17:49:18 +0800
-Message-ID: <4E2FDF1E.8080206@cn.fujitsu.com>
+From: Dan Carpenter <error27@gmail.com>
+Subject: [patch] btrfs: unlock on error in btrfs_file_llseek()
+Date: Wed, 27 Jul 2011 12:50:33 +0300
+Message-ID: <20110727095033.GI3824@shale.localdomain>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=UTF-8
-Cc: Josef Bacik <josef@redhat.com>
-To: Linux Btrfs <linux-btrfs@vger.kernel.org>
+Content-Type: text/plain; charset=us-ascii
+Cc: Chris Mason <chris.mason@oracle.com>,
+	"open list:BTRFS FILE SYSTEM" <linux-btrfs@vger.kernel.org>,
+	kernel-janitors@vger.kernel.org
+To: Josef Bacik <josef@redhat.com>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Here I have a two SSD-partitions btrfs, and they are defaultly set to
-"data=raid0, metadata=raid1", then I try to fill my btrfs partition
-till "No space left on device", via "dd if=/dev/zero of=/mnt/btrfs/tmp".
+There were some unlocks on error missing in a recent patch to
+btrfs_file_llseek().
 
-I get an oops panic from kernel BUG at fs/btrfs/extent-tree.c:5199!, which
-refers to find_free_extent's
-BUG_ON(index != get_block_group_index(block_group));
+Signed-off-by: Dan Carpenter <error27@gmail.com>
 
-In SSD mode, in order to find enough space to alloc, we may check the
-block_group cache which has been checked sometime before, but the index is not
-updated, where it hits the BUG_ON.
-
-Signed-off-by: Liu Bo <liubo2009@cn.fujitsu.com>
----
- fs/btrfs/extent-tree.c |    4 +++-
- 1 files changed, 3 insertions(+), 1 deletions(-)
-
-diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
-index 71cd456..3213c39 100644
---- a/fs/btrfs/extent-tree.c
-+++ b/fs/btrfs/extent-tree.c
-@@ -5065,7 +5065,9 @@ have_block_group:
- 			 * group is does point to and try again
- 			 */
- 			if (!last_ptr_loop && last_ptr->block_group &&
--			    last_ptr->block_group != block_group) {
-+			    last_ptr->block_group != block_group &&
-+			    index <=
-+				 get_block_group_index(last_ptr->block_group)) {
+diff --git a/fs/btrfs/file.c b/fs/btrfs/file.c
+index 59cbdb1..94d8342 100644
+--- a/fs/btrfs/file.c
++++ b/fs/btrfs/file.c
+@@ -1804,10 +1804,14 @@ static loff_t btrfs_file_llseek(struct file *file, loff_t offset, int origin)
+ 		}
+ 	}
  
- 				btrfs_put_block_group(block_group);
- 				block_group = last_ptr->block_group;
--- 
-1.6.5.2
-
-
+-	if (offset < 0 && !(file->f_mode & FMODE_UNSIGNED_OFFSET))
+-		return -EINVAL;
+-	if (offset > inode->i_sb->s_maxbytes)
+-		return -EINVAL;
++	if (offset < 0 && !(file->f_mode & FMODE_UNSIGNED_OFFSET)) {
++		ret = -EINVAL;
++		goto out;
++	}
++	if (offset > inode->i_sb->s_maxbytes) {
++		ret = -EINVAL;
++		goto out;
++	}
+ 
+ 	/* Special lock needed here? */
+ 	if (offset != file->f_pos) {

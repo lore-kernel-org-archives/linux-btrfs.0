@@ -1,7 +1,7 @@
 From: Andy Whitcroft <apw@canonical.com>
 Subject: [PATCH 1/1] btrfs: btrfs_calc_avail_data_space cope with no read/write devices
-Date: Wed, 27 Jul 2011 11:59:07 +0100
-Message-ID: <1311764347-5520-1-git-send-email-apw@canonical.com>
+Date: Wed, 27 Jul 2011 12:01:31 +0100
+Message-ID: <1311764491-5687-1-git-send-email-apw@canonical.com>
 Cc: linux-kernel@vger.kernel.org, Andy Whitcroft <apw@canonical.com>
 To: Chris Mason <chris.mason@oracle.com>, linux-btrfs@vger.kernel.org
 Return-path: <linux-btrfs-owner@vger.kernel.org>
@@ -20,7 +20,7 @@ It seems more appropriate to indicate we have no writable space.  Note
 that this does make df return 0 free blocks on a read-only device.
 Whether that is reasonable is debatable.
 
-BugLink: http://bugs.launchpad.net/bugs/803815
+BugLink: http://bugs.launchpad.net/bugs/816770
 Signed-off-by: Andy Whitcroft <apw@canonical.com>
 ---
  fs/btrfs/super.c |    5 ++++-

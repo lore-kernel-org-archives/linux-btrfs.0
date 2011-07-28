@@ -1,52 +1,109 @@
-From: Tsutomu Itoh <t-itoh@jp.fujitsu.com>
-Subject: WARNING: at fs/btrfs/delayed-inode.c:1247
-Date: Thu, 28 Jul 2011 17:30:27 +0900
-Message-ID: <4E311E23.2070305@jp.fujitsu.com>
-Mime-Version: 1.0
-Content-Type: text/plain; charset=ISO-2022-JP
-Cc: Linux Btrfs <linux-btrfs@vger.kernel.org>
-To: Chris Mason <chris.mason@Oracle.COM>
-Return-path: <linux-btrfs-owner@vger.kernel.org>
+From: Stefan Behrens <sbehrens@giantdisaster.de>
+Subject: [PATCH 2/4] xfstests: Add support for btrfs in 083, 117, 120 and 192
+Date: Thu, 28 Jul 2011 10:27:59 +0200
+Message-ID: <5d99a1d3ca548176a2246dff06701277ee11e0d6.1311776403.git.sbehrens@giantdisaster.de>
+References: <cover.1311776403.git.sbehrens@giantdisaster.de>
+To: linux-fsdevel@vger.kernel.org, linux-btrfs@vger.kernel.org,
+	xfs@oss.sgi.com
+Return-path: <linux-fsdevel-owner@vger.kernel.org>
+In-Reply-To: <cover.1311776403.git.sbehrens@giantdisaster.de>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hi, Chris,
+Added btrfs to the list of supported filesystems for tests 083, 117,
+120 and 192. For test 083 also changed to use _scratch_mkfs_sized
+instead of _scratch_mks_xfs for all filesystem types except for XFS.
 
-In current for-linus kernel,
+Signed-off-by: Stefan Behrens <sbehrens@giantdisaster.de>
+---
+ 083 |   12 +++++++++---
+ 117 |    4 ++--
+ 120 |    4 ++--
+ 192 |    2 +-
+ 4 files changed, 14 insertions(+), 8 deletions(-)
 
-When I ran my test script such as a lot of file creation deletion and balance,
-the following warning messages were displayed only once.
-
-However, I cannot have it still reproduce...
-
-  -Tsutomu
-
-
-Jul 28 12:01:00 luna kernel: [ 5985.487143] btrfs: found 27992 extents
-Jul 28 12:01:36 luna kernel: [ 6021.867052] btrfs: found 28482 extents
-Jul 28 12:01:37 luna kernel: [ 6022.767589] ------------[ cut here ]------------
-Jul 28 12:01:37 luna kernel: [ 6022.767632] WARNING: at fs/btrfs/delayed-inode.c:1247 btrfs_assert_delayed_root_empty+0x32/0x34 [btrfs]()
-Jul 28 12:01:37 luna kernel: [ 6022.767636] Hardware name: PRIMERGY
-Jul 28 12:01:37 luna kernel: [ 6022.767638] Modules linked in: btrfs zlib_deflate crc32c libcrc32c autofs4 sunrpc 8021q garp stp llc cpufreq_ondemand acpi_cpufreq freq_table mperf ipv6 ext3 jbd dm_mirror dm_region_hash dm_log dm_mod kvm uinput ppdev parport_pc parport sg pcspkr i2c_i801 i2c_core iTCO_wdt iTCO_vendor_support tg3 shpchp pci_hotplug i3000_edac edac_core ext4 mbcache jbd2 crc16 sd_mod crc_t10dif megaraid_sas sr_mod cdrom floppy pata_acpi ata_generic ata_piix libata scsi_mod [last unloaded: microcode]
-Jul 28 12:01:37 luna kernel: [ 6022.767693] Pid: 24565, comm: flush-btrfs-11 Not tainted 3.0.0test+ #1
-Jul 28 12:01:37 luna kernel: [ 6022.767696] Call Trace:
-Jul 28 12:01:37 luna kernel: [ 6022.767704]  [<ffffffff81045426>] warn_slowpath_common+0x85/0x9d
-Jul 28 12:01:37 luna kernel: [ 6022.767708]  [<ffffffff81045458>] warn_slowpath_null+0x1a/0x1c
-Jul 28 12:01:37 luna kernel: [ 6022.767725]  [<ffffffffa03c3a81>] btrfs_assert_delayed_root_empty+0x32/0x34 [btrfs]
-Jul 28 12:01:37 luna kernel: [ 6022.767743]  [<ffffffffa038b579>] btrfs_commit_transaction+0x3cf/0x73a [btrfs]
-Jul 28 12:01:37 luna kernel: [ 6022.767761]  [<ffffffffa038b9a9>] ? join_transaction+0x24/0x213 [btrfs]
-Jul 28 12:01:37 luna kernel: [ 6022.767765]  [<ffffffff81060cfd>] ? wake_up_bit+0x2a/0x2a
-Jul 28 12:01:37 luna kernel: [ 6022.767783]  [<ffffffffa038ff9d>] btrfs_write_inode+0x8a/0x93 [btrfs]
-Jul 28 12:01:37 luna kernel: [ 6022.767789]  [<ffffffff8112e773>] writeback_single_inode+0x12a/0x1c3
-Jul 28 12:01:37 luna kernel: [ 6022.767793]  [<ffffffff8112ed85>] writeback_sb_inodes+0xcf/0x15b
-Jul 28 12:01:37 luna kernel: [ 6022.767796]  [<ffffffff8112f5ce>] wb_writeback+0x217/0x385
-Jul 28 12:01:37 luna kernel: [ 6022.767801]  [<ffffffff8112f7c5>] wb_do_writeback+0x89/0x20f
-Jul 28 12:01:37 luna kernel: [ 6022.767806]  [<ffffffff8105265d>] ? del_timer+0x82/0x82
-Jul 28 12:01:37 luna kernel: [ 6022.767810]  [<ffffffff8112fa06>] bdi_writeback_thread+0xbb/0x211
-Jul 28 12:01:37 luna kernel: [ 6022.767813]  [<ffffffff8112f94b>] ? wb_do_writeback+0x20f/0x20f
-Jul 28 12:01:37 luna kernel: [ 6022.767817]  [<ffffffff8112f94b>] ? wb_do_writeback+0x20f/0x20f
-Jul 28 12:01:37 luna kernel: [ 6022.767821]  [<ffffffff810608ac>] kthread+0x82/0x8a
-Jul 28 12:01:37 luna kernel: [ 6022.767826]  [<ffffffff813ac2a4>] kernel_thread_helper+0x4/0x10
-Jul 28 12:01:37 luna kernel: [ 6022.767830]  [<ffffffff8106082a>] ? kthread_worker_fn+0x14a/0x14a
-Jul 28 12:01:37 luna kernel: [ 6022.767833]  [<ffffffff813ac2a0>] ? gs_change+0x13/0x13
-Jul 28 12:01:37 luna kernel: [ 6022.767836] ---[ end trace aaac4f48a0d2b77b ]---
+diff --git a/083 b/083
+index 7342baa..898d202 100755
+--- a/083
++++ b/083
+@@ -54,7 +54,7 @@ trap "_cleanup; exit \$status" 0 1 2 3 15
+ . ./common.filter
+ 
+ # real QA test starts here
+-_supported_fs xfs
++_supported_fs xfs btrfs
+ _supported_os IRIX Linux
+ 
+ _require_scratch
+@@ -72,8 +72,14 @@ workout()
+ 	umount $SCRATCH_DEV >/dev/null 2>&1
+ 	echo "*** mkfs -dsize=$fsz,agcount=$ags"    >>$seq.full
+ 	echo ""                                     >>$seq.full
+-	_scratch_mkfs_xfs -dsize=$fsz,agcount=$ags  >>$seq.full 2>&1 \
+-		|| _fail "size=$fsz,agcount=$ags mkfs failed"
++	if [ $FSTYP = xfs ]
++	then
++		_scratch_mkfs_xfs -dsize=$fsz,agcount=$ags  >>$seq.full 2>&1 \
++			|| _fail "size=$fsz,agcount=$ags mkfs failed"
++	else
++		_scratch_mkfs_sized $fsz >>$seq.full 2>&1 \
++			|| _fail "size=$fsz mkfs failed"
++	fi
+ 	_scratch_mount                              >>$seq.full 2>&1 \
+ 		|| _fail "mount failed"
+ 
+diff --git a/117 b/117
+index dd880cb..92949d0 100755
+--- a/117
++++ b/117
+@@ -51,7 +51,7 @@ _cleanup()
+ . ./common.attr
+ 
+ # real QA test starts here
+-_supported_fs xfs
++_supported_fs xfs btrfs
+ _supported_os IRIX Linux
+ 
+ _setup_testdir
+@@ -62,7 +62,7 @@ rm -f $seq.full
+ umount $SCRATCH_DEV >/dev/null 2>&1
+ echo "*** MKFS ***"                         >>$seq.full
+ echo ""                                     >>$seq.full
+-_scratch_mkfs_xfs                           >>$seq.full 2>&1 \
++_scratch_mkfs                               >>$seq.full 2>&1 \
+     || _fail "mkfs failed"
+ _scratch_mount                              >>$seq.full 2>&1 \
+     || _fail "mount failed"
+diff --git a/120 b/120
+index bf1e617..f8d3aad 100755
+--- a/120
++++ b/120
+@@ -37,11 +37,11 @@ trap "rm -f $tmp.*; exit \$status" 0 1 2 3 15
+ . ./common.filter
+ 
+ # real QA test starts here
+-_supported_fs xfs
++_supported_fs xfs btrfs
+ _supported_os Linux IRIX
+ 
+ _require_scratch
+-_scratch_mkfs_xfs >/dev/null 2>&1
++_scratch_mkfs >/dev/null 2>&1 || _fail "mkfs failed"
+ 
+ _compare_access_times()
+ {
+diff --git a/192 b/192
+index d8301d5..0c488ef 100755
+--- a/192
++++ b/192
+@@ -45,7 +45,7 @@ _access_time()
+ 
+ # real QA test starts here
+ 
+-_supported_fs xfs udf nfs
++_supported_fs xfs udf nfs btrfs
+ _supported_os Linux
+ #delay=150
+ #delay=75
+-- 
+1.7.3.4
 

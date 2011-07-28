@@ -1,65 +1,35 @@
 From: liubo <liubo2009@cn.fujitsu.com>
-Subject: Re: [PATCH] Btrfs: fix oops while writing data to SSD partitions
-Date: Thu, 28 Jul 2011 09:11:56 +0800
-Message-ID: <4E30B75C.3070509@cn.fujitsu.com>
-References: <4E2FDF1E.8080206@cn.fujitsu.com> <4E302004.2030007@redhat.com>
+Subject: Re: kernel BUG at fs/btrfs/tree-log.c:1669!
+Date: Thu, 28 Jul 2011 09:21:35 +0800
+Message-ID: <4E30B99F.9000609@cn.fujitsu.com>
+References: <4E304221.5050004@yahoo.com> <20110727171339.GA23320@carfax.org.uk> <4E305C09.1020204@yahoo.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=UTF-8
-Cc: Linux Btrfs <linux-btrfs@vger.kernel.org>
-To: Josef Bacik <josef@redhat.com>
+Content-Type: text/plain; charset=ISO-8859-1
+Cc: Hugo Mills <hugo@carfax.org.uk>, linux-btrfs@vger.kernel.org
+To: Franck Martyn <franckmartyn@yahoo.com>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <4E302004.2030007@redhat.com>
+In-Reply-To: <4E305C09.1020204@yahoo.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 07/27/2011 10:26 PM, Josef Bacik wrote:
-> On 07/27/2011 05:49 AM, liubo wrote:
->> Here I have a two SSD-partitions btrfs, and they are defaultly set to
->> "data=raid0, metadata=raid1", then I try to fill my btrfs partition
->> till "No space left on device", via "dd if=/dev/zero of=/mnt/btrfs/tmp".
->>
->> I get an oops panic from kernel BUG at fs/btrfs/extent-tree.c:5199!, which
->> refers to find_free_extent's
->> BUG_ON(index != get_block_group_index(block_group));
->>
->> In SSD mode, in order to find enough space to alloc, we may check the
->> block_group cache which has been checked sometime before, but the index is not
->> updated, where it hits the BUG_ON.
->>
->> Signed-off-by: Liu Bo <liubo2009@cn.fujitsu.com>
->> ---
->>  fs/btrfs/extent-tree.c |    4 +++-
->>  1 files changed, 3 insertions(+), 1 deletions(-)
->>
->> diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
->> index 71cd456..3213c39 100644
->> --- a/fs/btrfs/extent-tree.c
->> +++ b/fs/btrfs/extent-tree.c
->> @@ -5065,7 +5065,9 @@ have_block_group:
->>  			 * group is does point to and try again
->>  			 */
->>  			if (!last_ptr_loop && last_ptr->block_group &&
->> -			    last_ptr->block_group != block_group) {
->> +			    last_ptr->block_group != block_group &&
->> +			    index <=
->> +				 get_block_group_index(last_ptr->block_group)) {
->>  
->>  				btrfs_put_block_group(block_group);
->>  				block_group = last_ptr->block_group;
+On 07/28/2011 02:42 AM, Franck Martyn wrote:
+>>>
+> I've try it without succes
+> Here are the log
 > 
-> Ugh I wish we could make this prettier but
+> btrfsck /dev/sdb1
+> couldn't open because of unsupported option features (8).
+> btrfsck: disk-io.c:682: open_ctree_fd: Assertion `!(1)' failed.
+> Abandon
 > 
-> Acked-by: Josef Bacik <josef@redhat.com>
-> 
+> btrfs-zero-log /dev/sdb1
+> couldn't open because of unsupported option features (8).
+> btrfs-zero-log: disk-io.c:682: open_ctree_fd: Assertion `!(1)' failed.
+> Abandon
 
-I wish that, too. ;)
-
-But lots of goto really make life harder...we can somehow improve it later.
+This is because btrfs-progs does not update BTRFS_FEATURE_INCOMPAT_SUPP for
+both lzo and mixed groups, you may go to btrfs-unstable source's ctree.h to
+get real BTRFS_FEATURE_INCOMPAT_SUPP and update btrfs-progs side, then work
+it out. :)
 
 thanks,
 liubo
-
-> Thanks,
-> 
-> Josef
-> 
-

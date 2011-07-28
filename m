@@ -1,52 +1,100 @@
-From: Jan Schubert <Jan.Schubert@GMX.li>
-Subject: Re: [PATCH v8 0/8] Btrfs scrub: print path to corrupted files and trigger nodatasum fixup
-Date: Thu, 28 Jul 2011 14:44:40 +0000 (UTC)
-Message-ID: <loom.20110728T163725-25@post.gmane.org>
-References: <cover.1311778307.git.list.btrfs@jan-o-sch.net> <loom.20110727T183833-109@post.gmane.org> <loom.20110728T003246-429@post.gmane.org>
+From: Christian Brunner <chb@muc.de>
+Subject: Re: Btrfs slowdown
+Date: Thu, 28 Jul 2011 17:10:27 +0200
+Message-ID: <CAO47_-9r86Bbfzh7VpmUCP8BQgE4ciPAgDapJmxMsoTWz4PE3w@mail.gmail.com>
+References: <CAO47_-9BLKWUGDEuzaLqHSq9tZkAUaO8FMQEy1pPk9A2Hb+5AQ@mail.gmail.com>
+	<1311623446-sup-8105@shiny>
+	<CAO47_--KOyMdS-OP06cLpD+qTQ+gqGcw_DCPUrLOeypt5j_G4g@mail.gmail.com>
+	<CALFpzo4aNPmypyHXbK9YnxuQxNcDXv7wf+KPxakkcJVuZN5eaw@mail.gmail.com>
+Reply-To: chb@muc.de
 Mime-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-To: linux-btrfs@vger.kernel.org
-Return-path: <linux-btrfs-owner@vger.kernel.org>
+Content-Type: text/plain; charset=ISO-8859-1
+Cc: Chris Mason <chris.mason@oracle.com>,
+	linux-btrfs <linux-btrfs@vger.kernel.org>,
+	ceph-devel <ceph-devel@vger.kernel.org>
+To: Marcus Sorensen <shadowsor@gmail.com>
+Return-path: <ceph-devel-owner@vger.kernel.org>
+In-Reply-To: <CALFpzo4aNPmypyHXbK9YnxuQxNcDXv7wf+KPxakkcJVuZN5eaw@mail.gmail.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Jan Schubert <Jan.Schubert <at> GMX.li> writes:
-> OK, Patch 1 to 3 did apply and run successfully on 3.0-git8. I've sent 
-> Jan some more details about the output of the affected files (which is
-> actually just one quite large one).
+2011/7/28 Marcus Sorensen <shadowsor@gmail.com>:
+> Christian,
+>
+> Have you checked up on the disks themselves and hardware? High
+> utilization can mean that the i/o load has increased, but it can also
+> mean that the i/o capacity has decreased. =A0Your traces seem to
+> indicate that a good portion of the time is being spent on commits,
+> that could be waiting on disk. That "wait_for_commit" looks to
+> basically just spin waiting for the commit to complete, and at least
+> one thing that calls it raises a BUG_ON, not sure if it's one you've
+> seen even on 2.6.38.
+>
+> There could be all sorts of performance related reasons that aren't
+> specific to btrfs or ceph, on our various systems we've seen things
+> like the raid card module being upgraded in newer kernels and suddenl=
+y
+> our disks start to go into sleep mode after a bit, dirty_ratio causin=
+g
+> multiple gigs of memory to sync because its not optimized for the
+> workload, external SAS enclosures stop communicating a few days after
+> reboot (but the disks keep working with sporadic issues), things like
+> patrol read hitting a bad sector on a disk, causing it to go into
+> enhanced error recovery and stop responding, etc.
 
-Hooray:
+I' fairly confident that the hardware is ok. We see the problem on
+four machines. It could be a problem with the hpsa driver/firmware,
+but we haven't seen the behavior with 2.6.38 and the changes in the
+hpsa driver are not that big.
 
-scrub status for 03201fc0-7695-4468-9a10-f61ad79f23ca
-   scrub started at Thu Jul 28 15:00:54 2011 and finished after 656 seconds
-   total bytes scrubbed: 143.40GB with 0 errors
+> Maybe you have already tried these things. It's where I would start
+> anyway. Looking at /proc/meminfo, dirty, writeback, swap, etc both
+> while the system is functioning desirably and when it's misbehaving.
+> Looking at anything else that might be in D state. Looking at not jus=
+t
+> disk util, but the workload causing it (e.g. Was I doing 300 iops
+> previously with an average size of 64k, and now I'm only managing 50
+> iops at 64k before the disk util reports 100%?) Testing the system in
+> a filesystem-agnostic manner, for example when performance is bad
+> through btrfs, is performance the same as you got on fresh boot when
+> testing iops on /dev/sdb or whatever? You're not by chance swapping
+> after a bit of uptime on any volume that's shared with the underlying
+> disks that make up your osd, obfuscated by a hardware raid? I didn't
+> see the kernel warning you're referring to, just the ixgbe malloc
+> failure you mentioned the other day.
 
-Clean filesystem after deleting the (last) affected file, thx a lot!
+I've looked at most of this. What makes me point to btrfs, is that the
+problem goes away when I reboot on server in our cluster, but persists
+on the other systems. So it can't be related to the number of requests
+that come in.
 
-Next issue: I have an other filesystem which is also reportet as error free
-by scrub:
+> I do not mean to presume that you have not looked at these things
+> already. I am not very knowledgeable in btrfs specifically, but I
+> would expect any degradation in performance over time to be due to
+> what's on disk (lots of small files, fragmented, etc). This is
+> obviously not the case in this situation since a reboot recovers the
+> performance. I suppose it could also be a memory leak or something
+> similar, but you should be able to detect something like that by
+> monitoring your memory situation, /proc/slabinfo etc.
 
-scrub status for 62bab779-3a5e-4ad0-8f67-9d727813e7ea
-   scrub started at Thu Jul 28 16:16:26 2011 and finished after 131 seconds
-   total bytes scrubbed: 28.91GB with 0 errors
+It could be related to a memory leak. The machine has a lot RAM (24
+GB), but we have seen page allocation failures in the ixgbe driver,
+when we are using jumbo frames.
 
-Doing a btrfsck on the same filesystem I get:
+> Just my thoughts, good luck on this. I am currently running 2.6.39.3
+> (btrfs) on the 7 node cluster I put together, but I just built it and
+> am comparing between various configs. It will be awhile before it is
+> under load for several days straight.
 
-root 5 inode 5067 errors 400
-root 5 inode 5098 errors 400
-root 5 inode 5123 errors 400
-root 5 inode 5125 errors 400
-root 5 inode 6082 errors 400
-found 30889312256 bytes used err is 1
-total csum bytes: 30113200
-total tree bytes: 51560448
-total fs tree bytes: 8212480
-btree space waste bytes: 11638215
-file data blocks allocated: 30991843328
- referenced 31323025408
-Btrfs v0.19-100-g4964d65
+Thanks!
 
-Is this something I should be concerned about (regarding the errors)?
+When I look at the latencytop results, there is a high latency when
+calling "btrfs_commit_transaction_async". Isn't "async" supposed to
+return immediately?
 
-Thx,
-Jan
-
+Regards,
+Christian
+--
+To unsubscribe from this list: send the line "unsubscribe ceph-devel" i=
+n
+the body of a message to majordomo@vger.kernel.org
+More majordomo info at  http://vger.kernel.org/majordomo-info.html

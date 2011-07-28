@@ -1,36 +1,68 @@
-From: Sage Weil <sage@newdream.net>
-Subject: Re: Btrfs slowdown
-Date: Thu, 28 Jul 2011 09:01:19 -0700 (PDT)
-Message-ID: <Pine.LNX.4.64.1107280853590.13306@cobra.newdream.net>
-References: <CAO47_-9BLKWUGDEuzaLqHSq9tZkAUaO8FMQEy1pPk9A2Hb+5AQ@mail.gmail.com>
- <1311623446-sup-8105@shiny> <CAO47_--KOyMdS-OP06cLpD+qTQ+gqGcw_DCPUrLOeypt5j_G4g@mail.gmail.com>
- <CALFpzo4aNPmypyHXbK9YnxuQxNcDXv7wf+KPxakkcJVuZN5eaw@mail.gmail.com>
- <CAO47_-9r86Bbfzh7VpmUCP8BQgE4ciPAgDapJmxMsoTWz4PE3w@mail.gmail.com>
+From: Jan Schmidt <list.btrfs@jan-o-sch.net>
+Subject: Re: [PATCH v8 0/8] Btrfs scrub: print path to corrupted files and
+ trigger nodatasum fixup
+Date: Thu, 28 Jul 2011 19:00:11 +0200
+Message-ID: <4E31959B.60907@jan-o-sch.net>
+References: <cover.1311778307.git.list.btrfs@jan-o-sch.net> <loom.20110727T183833-109@post.gmane.org> <loom.20110728T003246-429@post.gmane.org> <loom.20110728T163725-25@post.gmane.org>
 Mime-Version: 1.0
-Content-Type: TEXT/PLAIN; charset=US-ASCII
-Cc: Marcus Sorensen <shadowsor@gmail.com>,
-	Chris Mason <chris.mason@oracle.com>,
-	linux-btrfs <linux-btrfs@vger.kernel.org>,
-	ceph-devel <ceph-devel@vger.kernel.org>
-To: Christian Brunner <chb@muc.de>
-Return-path: <ceph-devel-owner@vger.kernel.org>
-In-Reply-To: <CAO47_-9r86Bbfzh7VpmUCP8BQgE4ciPAgDapJmxMsoTWz4PE3w@mail.gmail.com>
+Content-Type: text/plain; charset=ISO-8859-1
+Cc: linux-btrfs@vger.kernel.org
+To: Jan Schubert <Jan.Schubert@GMX.li>
+Return-path: <linux-btrfs-owner@vger.kernel.org>
+In-Reply-To: <loom.20110728T163725-25@post.gmane.org>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Thu, 28 Jul 2011, Christian Brunner wrote:
-> When I look at the latencytop results, there is a high latency when
-> calling "btrfs_commit_transaction_async". Isn't "async" supposed to
-> return immediately?
+On 28.07.2011 16:44, Jan Schubert wrote:
+> Jan Schubert <Jan.Schubert <at> GMX.li> writes:
+>> OK, Patch 1 to 3 did apply and run successfully on 3.0-git8. I've sent 
+>> Jan some more details about the output of the affected files (which is
+>> actually just one quite large one).
+> 
+> Hooray:
+> 
+> scrub status for 03201fc0-7695-4468-9a10-f61ad79f23ca
+>    scrub started at Thu Jul 28 15:00:54 2011 and finished after 656 seconds
+>    total bytes scrubbed: 143.40GB with 0 errors
+> 
+> Clean filesystem after deleting the (last) affected file, thx a lot!
 
-It depends.  That function has to block until the commit has started 
-before returning in the case where it creates a new btrfs root (i.e., 
-snapshot creation).  Otherwise a subsequent operation (after the ioctl 
-returns) can sneak in before the snapshot is taken.  (IIRC there was also 
-another problem with keeping internal structures consistent, tho I'm 
-forgetting the details.)  And there are a bunch of things 
-btrfs_commit_transaction() does before setting blocked = 1 that can be 
-slow.  There is a fair bit of transaction commit optimization work that 
-should eventually be done here that we sadly haven't had the resources to 
-look at yet.
+:-)
 
-sage
+> Next issue: I have an other filesystem which is also reportet as error free
+> by scrub:
+> 
+> scrub status for 62bab779-3a5e-4ad0-8f67-9d727813e7ea
+>    scrub started at Thu Jul 28 16:16:26 2011 and finished after 131 seconds
+>    total bytes scrubbed: 28.91GB with 0 errors
+> 
+> Doing a btrfsck on the same filesystem I get:
+> 
+> root 5 inode 5067 errors 400
+> root 5 inode 5098 errors 400
+> root 5 inode 5123 errors 400
+> root 5 inode 5125 errors 400
+> root 5 inode 6082 errors 400
+> found 30889312256 bytes used err is 1
+> total csum bytes: 30113200
+> total tree bytes: 51560448
+> total fs tree bytes: 8212480
+> btree space waste bytes: 11638215
+> file data blocks allocated: 30991843328
+>  referenced 31323025408
+> Btrfs v0.19-100-g4964d65
+> 
+> Is this something I should be concerned about (regarding the errors)?
+
+I think you shouldn't. The "errors 400" is reported constantly in
+#btrfs, it resolves to REF_ERR_NO_ROOT_BACKREF. There should be a
+backref, but I haven't heard of any negative impact.
+
+If you are curious, you can try to grab the "inspect-internal" patches
+for btrfs-progs and use "btrfs inspect-internal resolve-inode 5067" to
+see what files are referenced by those inodes (given you are still
+running the kernel you used for scrubbing).
+
+[... which reminds me I have to send a new version of the btrfs-progs
+patches since the api changed with v8. damn.]
+
+-Jan

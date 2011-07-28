@@ -1,68 +1,46 @@
 From: Jan Schmidt <list.btrfs@jan-o-sch.net>
-Subject: Re: [PATCH v8 0/8] Btrfs scrub: print path to corrupted files and
- trigger nodatasum fixup
-Date: Thu, 28 Jul 2011 19:00:11 +0200
-Message-ID: <4E31959B.60907@jan-o-sch.net>
-References: <cover.1311778307.git.list.btrfs@jan-o-sch.net> <loom.20110727T183833-109@post.gmane.org> <loom.20110728T003246-429@post.gmane.org> <loom.20110728T163725-25@post.gmane.org>
-Mime-Version: 1.0
-Content-Type: text/plain; charset=ISO-8859-1
-Cc: linux-btrfs@vger.kernel.org
-To: Jan Schubert <Jan.Schubert@GMX.li>
+Subject: [PATCH v3 0/3] Btrfs-progs: add the first "inspect-internal" commands
+Date: Thu, 28 Jul 2011 19:13:03 +0200
+Message-ID: <cover.1311872884.git.list.btrfs@jan-o-sch.net>
+To: chris.mason@oracle.com, linux-btrfs@vger.kernel.org
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <loom.20110728T163725-25@post.gmane.org>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 28.07.2011 16:44, Jan Schubert wrote:
-> Jan Schubert <Jan.Schubert <at> GMX.li> writes:
->> OK, Patch 1 to 3 did apply and run successfully on 3.0-git8. I've sent 
->> Jan some more details about the output of the affected files (which is
->> actually just one quite large one).
-> 
-> Hooray:
-> 
-> scrub status for 03201fc0-7695-4468-9a10-f61ad79f23ca
->    scrub started at Thu Jul 28 15:00:54 2011 and finished after 656 seconds
->    total bytes scrubbed: 143.40GB with 0 errors
-> 
-> Clean filesystem after deleting the (last) affected file, thx a lot!
+Changes v2->v3:
+- adapted to a change in the ioctl interface in the accompanying kernel patch
+  series v8. we now use bytes_missing and bytes_left (unsigned) instead of
+  size (signed)
+- explicit casts added when printing u32 to avoid compiler warnings
 
-:-)
+Changes v1->v2:
+- commands renamed as suggested by Goffredo Baroncelli
+- man pages added
 
-> Next issue: I have an other filesystem which is also reportet as error free
-> by scrub:
-> 
-> scrub status for 62bab779-3a5e-4ad0-8f67-9d727813e7ea
->    scrub started at Thu Jul 28 16:16:26 2011 and finished after 131 seconds
->    total bytes scrubbed: 28.91GB with 0 errors
-> 
-> Doing a btrfsck on the same filesystem I get:
-> 
-> root 5 inode 5067 errors 400
-> root 5 inode 5098 errors 400
-> root 5 inode 5123 errors 400
-> root 5 inode 5125 errors 400
-> root 5 inode 6082 errors 400
-> found 30889312256 bytes used err is 1
-> total csum bytes: 30113200
-> total tree bytes: 51560448
-> total fs tree bytes: 8212480
-> btree space waste bytes: 11638215
-> file data blocks allocated: 30991843328
->  referenced 31323025408
-> Btrfs v0.19-100-g4964d65
-> 
-> Is this something I should be concerned about (regarding the errors)?
+The kernel patch series just sent (Subject: "Btrfs: scrub: print path to
+corrupted files and trigger nodatasum fixup") introduces two new ioctls to
+do in-kernel filesystem path construction. This series provides the
+corresponding userspace changes, adding two new commands to the btrfs utility.
 
-I think you shouldn't. The "errors 400" is reported constantly in
-#btrfs, it resolves to REF_ERR_NO_ROOT_BACKREF. There should be a
-backref, but I haven't heard of any negative impact.
+These patches are based on Hugo's current integration branch.
 
-If you are curious, you can try to grab the "inspect-internal" patches
-for btrfs-progs and use "btrfs inspect-internal resolve-inode 5067" to
-see what files are referenced by those inodes (given you are still
-running the kernel you used for scrubbing).
-
-[... which reminds me I have to send a new version of the btrfs-progs
-patches since the api changed with v8. damn.]
+Please try them out and report bugs here.
 
 -Jan
+
+Jan Schmidt (3):
+  Btrfs-progs: btrfs-list: split list_subvols
+  Btrfs-progs: added ioctls and commands to resolve inodes and logical
+    addrs
+  Btrfs-progs: added resolve commands to man page
+
+ btrfs-list.c   |  139 ++++++++++++++++++++++++++++++++-----------
+ btrfs.c        |   10 +++
+ btrfs_cmds.c   |  183 ++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+ btrfs_cmds.h   |    3 +
+ ioctl.h        |   30 +++++++++
+ man/btrfs.8.in |   29 +++++++++
+ 6 files changed, 359 insertions(+), 35 deletions(-)
+
+-- 
+1.7.3.4
+

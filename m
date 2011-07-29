@@ -1,46 +1,45 @@
 From: Stefan Behrens <sbehrens@giantdisaster.de>
-Subject: [PATCH v2 3/4] xfstests: Changed test 015 to be generic for all filesystems
-Date: Fri, 29 Jul 2011 18:07:00 +0200
-Message-ID: <9fac26922ffbfbfb153818a3cbfb97d17ff42176.1311953979.git.sbehrens@giantdisaster.de>
-References: <cover.1311953979.git.sbehrens@giantdisaster.de>
+Subject: [PATCH v2 0/4] xfstests: Changed a couple of tests to be generic
+Date: Fri, 29 Jul 2011 18:06:57 +0200
+Message-ID: <cover.1311953979.git.sbehrens@giantdisaster.de>
 To: linux-fsdevel@vger.kernel.org, linux-btrfs@vger.kernel.org,
 	xfs@oss.sgi.com
 Return-path: <linux-fsdevel-owner@vger.kernel.org>
-In-Reply-To: <cover.1311953979.git.sbehrens@giantdisaster.de>
-In-Reply-To: <cover.1311953979.git.sbehrens@giantdisaster.de>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Changed the test 015 to be generic for all filesystems and to be
-executed for all filesystems.
-Replaced the call to _scratch_mkfs_xfs with the XFS specific size
-parameter by the generic one for sized filesystem creation which is
-_scratch_mkfs_sized.
+Changes v1->v2:
+- Instead of just adding btrfs to the list of supported filesystems,
+  the 7 tests that are touched by this patch series are now executed
+  for all filesystems (since the tests are generic ones).
+- The changes in src/t_immutable.c are revised to make the setting
+  of append-only and immutable flags generic instead of just adding
+  code for btrfs.
 
-Signed-off-by: Stefan Behrens <sbehrens@giantdisaster.de>
----
- 015 |    4 ++--
- 1 files changed, 2 insertions(+), 2 deletions(-)
+This patch series changes the tests 015, 062, 079, 083, 117, 120 and
+192 to be generic for all filesystems and to be executed for all
+filesystems.
+For test 079 to run, src/t_immutable.c was also modified to use the
+new generic FS_IOC_SETFLAGS/FS_IOC_GETFLAGS ioctl() if they are
+available.
 
-diff --git a/015 b/015
-index 8f2be7c..686a211 100755
---- a/015
-+++ b/015
-@@ -48,13 +48,13 @@ _free()
- }
- 
- # real QA test starts here
--_supported_fs xfs
-+_supported_fs generic
- _supported_os IRIX Linux
- 
- _require_scratch
- _require_nobigloopfs
- 
--_scratch_mkfs_xfs -d size=50m >/dev/null || _fail "mkfs failed"
-+_scratch_mkfs_sized `expr 50 \* 1024 \* 1024` >/dev/null 2>&1 || _fail "mkfs failed"
- _scratch_mount || _fail "mount failed"
- out=$SCRATCH_MNT/fillup.$$
- rm -f $seq.full
+Stefan Behrens (4):
+  xfstests: Changed test 062 to be generic for all filesystems
+  xfstests: Changed tests 083, 117, 120 and 192 to be generic for all
+    filesystems
+  xfstests: Changed test 015 to be generic for all filesystems
+  xfstests: Changed test 079 to be generic for all filesystems
+
+ 015               |    4 +-
+ 062               |    4 +-
+ 062.out           |    6 -----
+ 079               |   13 ++++++++--
+ 083               |   12 +++++++--
+ 117               |    4 +-
+ 120               |    4 +-
+ 192               |    2 +-
+ src/t_immutable.c |   66 +++++++++++++++++-----------------------------------
+ 9 files changed, 50 insertions(+), 65 deletions(-)
+
 -- 
 1.7.3.4
 

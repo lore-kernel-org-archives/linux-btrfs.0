@@ -1,63 +1,116 @@
-From: Stefan Behrens <sbehrens@giantdisaster.de>
-Subject: [PATCH v2 1/4] xfstests: Changed test 062 to be generic for all filesystems
-Date: Fri, 29 Jul 2011 18:06:58 +0200
-Message-ID: <95dfa968c48d2bd1095876a6db3369672e76db5f.1311953979.git.sbehrens@giantdisaster.de>
-References: <cover.1311953979.git.sbehrens@giantdisaster.de>
-To: linux-fsdevel@vger.kernel.org, linux-btrfs@vger.kernel.org,
-	xfs@oss.sgi.com
+From: "Zhong, Xin" <xin.zhong@intel.com>
+Subject: RE: [PATCH] btrfs: do not allow mounting non-subvolumes via subvol
+ option
+Date: Sat, 30 Jul 2011 00:16:44 +0800
+Message-ID: <1865303E0DED764181A9D882DEF65FB6B1A8DFC32F@shsmsx502.ccr.corp.intel.com>
+References: <1311934448-887-1-git-send-email-dsterba@suse.cz>
+Mime-Version: 1.0
+Content-Type: text/plain; charset="us-ascii"
+Cc: "chris.mason@oracle.com" <chris.mason@oracle.com>
+To: David Sterba <dsterba@suse.cz>,
+	"linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <cover.1311953979.git.sbehrens@giantdisaster.de>
-In-Reply-To: <cover.1311953979.git.sbehrens@giantdisaster.de>
+In-Reply-To: <1311934448-887-1-git-send-email-dsterba@suse.cz>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Changed the test 062 to be generic for all filesystems and to be
-executed for all filesystems.
-Remove output of mkfs since this is specific to mkfs.xfs and now
-filtered out.
+I believe I have submit a similar patch months ago:
+http://marc.info/?l=linux-btrfs&m=130208585106572&w=2
 
-Signed-off-by: Stefan Behrens <sbehrens@giantdisaster.de>
----
- 062     |    4 ++--
- 062.out |    6 ------
- 2 files changed, 2 insertions(+), 8 deletions(-)
+Hope it can be integrated this time, :-).
 
-diff --git a/062 b/062
-index 5cb6f92..a6e4bc8 100755
---- a/062
-+++ b/062
-@@ -71,7 +71,7 @@ _create_test_bed()
- }
- 
- # real QA test starts here
--_supported_fs xfs udf nfs
-+_supported_fs generic
- _supported_os Linux
- 
- _require_scratch
-@@ -80,7 +80,7 @@ _require_attrs
- rm -f $tmp.backup1 $tmp.backup2 $seq.full
- 
- # real QA test starts here
--_scratch_mkfs_xfs | _filter_mkfs 2>$tmp.mkfs
-+_scratch_mkfs > /dev/null 2>&1 || _fail "mkfs failed"
- _scratch_mount || _fail "mount failed"
- _create_test_bed
- 
-diff --git a/062.out b/062.out
-index 73fd628..1d5a094 100644
---- a/062.out
-+++ b/062.out
-@@ -1,10 +1,4 @@
- QA output created by 062
--meta-data=DDEV isize=XXX agcount=N, agsize=XXX blks
--data     = bsize=XXX blocks=XXX, imaxpct=PCT
--         = sunit=XXX swidth=XXX, unwritten=X
--naming   =VERN bsize=XXX
--log      =LDEV bsize=XXX blocks=XXX
--realtime =RDEV extsz=XXX blocks=XXX, rtextents=XXX
- *** create test bed
- SCRATCH_MNT
- SCRATCH_MNT/dev
--- 
-1.7.3.4
-
+> -----Original Message-----
+> From: linux-btrfs-owner@vger.kernel.org [mailto:linux-btrfs-
+> owner@vger.kernel.org] On Behalf Of David Sterba
+> Sent: Friday, July 29, 2011 6:14 PM
+> To: linux-btrfs@vger.kernel.org
+> Cc: chris.mason@oracle.com; David Sterba
+> Subject: [PATCH] btrfs: do not allow mounting non-subvolumes via subvol
+> option
+> 
+> There's a missing test whether the path passed to subvol=path option
+> during mount is a real subvolume, allowing any directory located in
+> default subovlume to be passed and accepted for mount.
+> 
+> (current btrfs progs prevent this early)
+> $ btrfs subvol snapshot . p1-snap
+> ERROR: '.' is not a subvolume
+> 
+> (with "is subvolume?" test bypassed)
+> $ btrfs subvol snapshot . p1-snap
+> Create a snapshot of '.' in './p1-snap'
+> 
+> $ btrfs subvol list -p .
+> ID 258 parent 5 top level 5 path subvol
+> ID 259 parent 5 top level 5 path subvol1
+> ID 260 parent 5 top level 5 path default-subvol1
+> ID 262 parent 5 top level 5 path p1/p1-snapshot
+> ID 263 parent 259 top level 5 path subvol1/subvol1-snap
+> 
+> The problem I see is that this makes a false impression of snapshotting
+> the
+> given subvolume but in fact snapshots the default one: a user expects
+> outcome
+> like ID 263 but in fact gets ID 262 .
+> 
+> This patch makes mount fail with EINVAL with a message in syslog.
+> 
+> Signed-off-by: David Sterba <dsterba@suse.cz>
+> ---
+> 
+> I did not find a better errno than EINVAL, probably adding someting
+> like
+> ENSUBVOL would be better so that other filesystems with such
+> functionality may
+> use it in future.
+> 
+>  fs/btrfs/super.c |   19 +++++++++++++++++++
+>  1 files changed, 19 insertions(+), 0 deletions(-)
+> 
+> diff --git a/fs/btrfs/super.c b/fs/btrfs/super.c
+> index 15634d4..0c2a1d1 100644
+> --- a/fs/btrfs/super.c
+> +++ b/fs/btrfs/super.c
+> @@ -753,6 +753,15 @@ static int btrfs_set_super(struct super_block *s,
+> void *data)
+>  	return set_anon_super(s, data);
+>  }
+> 
+> +/*
+> + * subvolumes are identified by ino 256
+> + */
+> +static inline int is_subvolume_inode(struct inode *inode)
+> +{
+> +	if (inode && inode->i_ino == BTRFS_FIRST_FREE_OBJECTID)
+> +		return 1;
+> +	return 0;
+> +}
+> 
+>  /*
+>   * Find a superblock for the given device / mount point.
+> @@ -873,6 +882,16 @@ static struct dentry *btrfs_mount(struct
+> file_system_type *fs_type, int flags,
+>  			error = -ENXIO;
+>  			goto error_free_subvol_name;
+>  		}
+> +
+> +		if (!is_subvolume_inode(new_root->d_inode)) {
+> +			dput(root);
+> +			dput(new_root);
+> +			deactivate_locked_super(s);
+> +			error = -EINVAL;
+> +			printk(KERN_ERR "btrfs: '%s' is not a valid
+> subvolume\n",
+> +					subvol_name);
+> +			goto error_free_subvol_name;
+> +		}
+>  		dput(root);
+>  		root = new_root;
+>  	} else {
+> --
+> 1.7.6
+> 
+> --
+> To unsubscribe from this list: send the line "unsubscribe linux-btrfs"
+> in
+> the body of a message to majordomo@vger.kernel.org
+> More majordomo info at  http://vger.kernel.org/majordomo-info.html

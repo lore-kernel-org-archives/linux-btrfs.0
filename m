@@ -1,35 +1,84 @@
-From: Marco Stornelli <marco.stornelli@gmail.com>
-Subject: Re: [PATCH 1/4] fs: add SEEK_HOLE and SEEK_DATA flags
-Date: Fri, 29 Jul 2011 11:58:47 +0200
-Message-ID: <4E328457.2000401@gmail.com>
-References: <1309275199-10801-1-git-send-email-josef@redhat.com>
-Mime-Version: 1.0
-Content-Type: text/plain; charset=ISO-8859-15; format=flowed
-Cc: linux-fsdevel@vger.kernel.org, linux-kernel@vger.kernel.org,
-	linux-btrfs@vger.kernel.org, xfs@oss.sgi.com,
-	viro@ZenIV.linux.org.uk
-To: Josef Bacik <josef@redhat.com>
-Return-path: <linux-kernel-owner@vger.kernel.org>
-In-Reply-To: <1309275199-10801-1-git-send-email-josef@redhat.com>
+From: David Sterba <dsterba@suse.cz>
+Subject: [PATCH] btrfs: do not allow mounting non-subvolumes via subvol option
+Date: Fri, 29 Jul 2011 12:14:08 +0200
+Message-ID: <1311934448-887-1-git-send-email-dsterba@suse.cz>
+Cc: chris.mason@oracle.com, David Sterba <dsterba@suse.cz>
+To: linux-btrfs@vger.kernel.org
+Return-path: <linux-btrfs-owner@vger.kernel.org>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Sorry maybe I'm a bit late? :)
+There's a missing test whether the path passed to subvol=path option
+during mount is a real subvolume, allowing any directory located in
+default subovlume to be passed and accepted for mount.
 
-Il 28/06/2011 17:33, Josef Bacik ha scritto:
->
->   loff_t default_llseek(struct file *file, loff_t offset, int origin)
->   {
-> +	struct inode *inode = file->f_path.dentry->d_inode;
->   	loff_t retval;
->
-> -	mutex_lock(&file->f_dentry->d_inode->i_mutex);
-> +	mutex_lock(&inode->i_mutex);
->   	switch (origin) {
->   		case SEEK_END:
-> -			offset += i_size_read(file->f_path.dentry->d_inode);
-> +			offset += i_size_read(inode);
+(current btrfs progs prevent this early)
+$ btrfs subvol snapshot . p1-snap
+ERROR: '.' is not a subvolume
 
-Here we are under mutex, so I think we can use directly i_size without 
-i_size_read.
+(with "is subvolume?" test bypassed)
+$ btrfs subvol snapshot . p1-snap
+Create a snapshot of '.' in './p1-snap'
 
-Marco
+$ btrfs subvol list -p .
+ID 258 parent 5 top level 5 path subvol
+ID 259 parent 5 top level 5 path subvol1
+ID 260 parent 5 top level 5 path default-subvol1
+ID 262 parent 5 top level 5 path p1/p1-snapshot
+ID 263 parent 259 top level 5 path subvol1/subvol1-snap
+
+The problem I see is that this makes a false impression of snapshotting the
+given subvolume but in fact snapshots the default one: a user expects outcome
+like ID 263 but in fact gets ID 262 .
+
+This patch makes mount fail with EINVAL with a message in syslog.
+
+Signed-off-by: David Sterba <dsterba@suse.cz>
+---
+
+I did not find a better errno than EINVAL, probably adding someting like
+ENSUBVOL would be better so that other filesystems with such functionality may
+use it in future.
+
+ fs/btrfs/super.c |   19 +++++++++++++++++++
+ 1 files changed, 19 insertions(+), 0 deletions(-)
+
+diff --git a/fs/btrfs/super.c b/fs/btrfs/super.c
+index 15634d4..0c2a1d1 100644
+--- a/fs/btrfs/super.c
++++ b/fs/btrfs/super.c
+@@ -753,6 +753,15 @@ static int btrfs_set_super(struct super_block *s, void *data)
+ 	return set_anon_super(s, data);
+ }
+ 
++/*
++ * subvolumes are identified by ino 256
++ */
++static inline int is_subvolume_inode(struct inode *inode)
++{
++	if (inode && inode->i_ino == BTRFS_FIRST_FREE_OBJECTID)
++		return 1;
++	return 0;
++}
+ 
+ /*
+  * Find a superblock for the given device / mount point.
+@@ -873,6 +882,16 @@ static struct dentry *btrfs_mount(struct file_system_type *fs_type, int flags,
+ 			error = -ENXIO;
+ 			goto error_free_subvol_name;
+ 		}
++
++		if (!is_subvolume_inode(new_root->d_inode)) {
++			dput(root);
++			dput(new_root);
++			deactivate_locked_super(s);
++			error = -EINVAL;
++			printk(KERN_ERR "btrfs: '%s' is not a valid subvolume\n",
++					subvol_name);
++			goto error_free_subvol_name;
++		}
+ 		dput(root);
+ 		root = new_root;
+ 	} else {
+-- 
+1.7.6
+

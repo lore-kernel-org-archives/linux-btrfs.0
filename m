@@ -1,84 +1,61 @@
-From: David Sterba <dsterba@suse.cz>
-Subject: [PATCH] btrfs: do not allow mounting non-subvolumes via subvol option
-Date: Fri, 29 Jul 2011 12:14:08 +0200
-Message-ID: <1311934448-887-1-git-send-email-dsterba@suse.cz>
-Cc: chris.mason@oracle.com, David Sterba <dsterba@suse.cz>
-To: linux-btrfs@vger.kernel.org
-Return-path: <linux-btrfs-owner@vger.kernel.org>
+From: Stefan Behrens <sbehrens@giantdisaster.de>
+Subject: Re: [PATCH 4/4] xfstests: Add support for btrfs in 079
+Date: Fri, 29 Jul 2011 14:24:30 +0200
+Message-ID: <4E32A67E.9070306@giantdisaster.de>
+References: <cover.1311776403.git.sbehrens@giantdisaster.de> <0cbb002def872039fd8c0bb90ceb5f6bf0e15b02.1311776403.git.sbehrens@giantdisaster.de> <20110728085158.GD3407@infradead.org>
+Mime-Version: 1.0
+Content-Type: text/plain; charset=ISO-8859-1
+Cc: linux-fsdevel@vger.kernel.org, linux-btrfs@vger.kernel.org,
+	xfs@oss.sgi.com
+To: Christoph Hellwig <hch@infradead.org>
+Return-path: <linux-fsdevel-owner@vger.kernel.org>
+In-Reply-To: <20110728085158.GD3407@infradead.org>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-There's a missing test whether the path passed to subvol=path option
-during mount is a real subvolume, allowing any directory located in
-default subovlume to be passed and accepted for mount.
+On 7/28/2011 10:51 AM, Christoph Hellwig wrote:
+[...]
+> I'd suggest to completely drop the stat check, and use the ext2 branch
+> unconditionally.  The ioctl is suppored by all major filesystems.
+> 
+> This also means we can make the test generic, maybe with a _notrun
+> instead of an error if FS_IOC_GETFLAGS/FS_IOC_SETFLAGS isn't supported.
 
-(current btrfs progs prevent this early)
-$ btrfs subvol snapshot . p1-snap
-ERROR: '.' is not a subvolume
+I changed it according to your suggestion:
+- Get rid of the check for the specific filesystem type.
+- Always use FS_IOC_GETFLAGS/FS_IOC_SETFLAGS. This code is inside an
+  '#ifdef FS_IOC_SETFLAGS" block in order to never fail compilation.
+- Without support for FS_IOC_SETFLAGS, the test completes with _notrun.
 
-(with "is subvolume?" test bypassed)
-$ btrfs subvol snapshot . p1-snap
-Create a snapshot of '.' in './p1-snap'
 
-$ btrfs subvol list -p .
-ID 258 parent 5 top level 5 path subvol
-ID 259 parent 5 top level 5 path subvol1
-ID 260 parent 5 top level 5 path default-subvol1
-ID 262 parent 5 top level 5 path p1/p1-snapshot
-ID 263 parent 259 top level 5 path subvol1/subvol1-snap
+What is your opinion about the issue that the test 079 fails on
+ext2, ext3, ext4 and btrfs filesystems. Only XFS filesystems succeed
+test 079.
 
-The problem I see is that this makes a false impression of snapshotting the
-given subvolume but in fact snapshots the default one: a user expects outcome
-like ID 263 but in fact gets ID 262 .
+mkdir("/mnt3/foo/append-only.d", 0777)  = 0
+open("/mnt3/foo/append-only.d", O_RDONLY) = 3
+ioctl(3, FS_IOC32_SETFLAGS or FS_IOC_SETFLAGS, 0x7fffaf60b07c) = 0
+(this ioctl enables FS_APPEND_FL for the directory)
+close(3)
+open("/mnt3/foo/append-only.d/newfile-0", O_RDWR|O_CREAT, 0666) = -1
+EPERM (Operation not permitted)
 
-This patch makes mount fail with EINVAL with a message in syslog.
+One issue is that the file is there (the creation did succeed but
+the open for writing did not) what IEEE 1003.1-2004 prohibits
+(open() must not create or modify any files if -1 is returned).
 
-Signed-off-by: David Sterba <dsterba@suse.cz>
----
+The difference between the filesystems is whether the append-only
+flag from the directory is inherited to the newly create file inside
+that directory. XFS does not inherit that append-only flag, ext2,
+ext3, ext4 and btrfs do inherit it.
+Test 079 fails when the open("/mnt3/foo/append-only.d/newfile-0",
+O_RDWR|O_CREAT, 0666) fails due to the O_RDWR flag. The O_RDWR
+flag lets the open() fail when the file has the append-only flag
+set. On one type of filesystem the flag is inherited from the
+directory, on the other type it is not. Test 079 expects that flag
+to not be inherited.
 
-I did not find a better errno than EINVAL, probably adding someting like
-ENSUBVOL would be better so that other filesystems with such functionality may
-use it in future.
-
- fs/btrfs/super.c |   19 +++++++++++++++++++
- 1 files changed, 19 insertions(+), 0 deletions(-)
-
-diff --git a/fs/btrfs/super.c b/fs/btrfs/super.c
-index 15634d4..0c2a1d1 100644
---- a/fs/btrfs/super.c
-+++ b/fs/btrfs/super.c
-@@ -753,6 +753,15 @@ static int btrfs_set_super(struct super_block *s, void *data)
- 	return set_anon_super(s, data);
- }
- 
-+/*
-+ * subvolumes are identified by ino 256
-+ */
-+static inline int is_subvolume_inode(struct inode *inode)
-+{
-+	if (inode && inode->i_ino == BTRFS_FIRST_FREE_OBJECTID)
-+		return 1;
-+	return 0;
-+}
- 
- /*
-  * Find a superblock for the given device / mount point.
-@@ -873,6 +882,16 @@ static struct dentry *btrfs_mount(struct file_system_type *fs_type, int flags,
- 			error = -ENXIO;
- 			goto error_free_subvol_name;
- 		}
-+
-+		if (!is_subvolume_inode(new_root->d_inode)) {
-+			dput(root);
-+			dput(new_root);
-+			deactivate_locked_super(s);
-+			error = -EINVAL;
-+			printk(KERN_ERR "btrfs: '%s' is not a valid subvolume\n",
-+					subvol_name);
-+			goto error_free_subvol_name;
-+		}
- 		dput(root);
- 		root = new_root;
- 	} else {
--- 
-1.7.6
-
+What is your opinion? I would prefer to either change the test to
+detect whether the append-only flag is inherited and then interpret
+the following system call result depending on the state of the flag,
+or to force the flag to a defined state to be independent of the
+inheritance behaviour.

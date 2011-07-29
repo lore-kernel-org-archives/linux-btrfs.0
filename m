@@ -1,45 +1,63 @@
 From: Stefan Behrens <sbehrens@giantdisaster.de>
-Subject: [PATCH v2 0/4] xfstests: Changed a couple of tests to be generic
-Date: Fri, 29 Jul 2011 18:06:57 +0200
-Message-ID: <cover.1311953979.git.sbehrens@giantdisaster.de>
+Subject: [PATCH v2 1/4] xfstests: Changed test 062 to be generic for all filesystems
+Date: Fri, 29 Jul 2011 18:06:58 +0200
+Message-ID: <95dfa968c48d2bd1095876a6db3369672e76db5f.1311953979.git.sbehrens@giantdisaster.de>
+References: <cover.1311953979.git.sbehrens@giantdisaster.de>
 To: linux-fsdevel@vger.kernel.org, linux-btrfs@vger.kernel.org,
 	xfs@oss.sgi.com
-Return-path: <linux-fsdevel-owner@vger.kernel.org>
+Return-path: <linux-btrfs-owner@vger.kernel.org>
+In-Reply-To: <cover.1311953979.git.sbehrens@giantdisaster.de>
+In-Reply-To: <cover.1311953979.git.sbehrens@giantdisaster.de>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Changes v1->v2:
-- Instead of just adding btrfs to the list of supported filesystems,
-  the 7 tests that are touched by this patch series are now executed
-  for all filesystems (since the tests are generic ones).
-- The changes in src/t_immutable.c are revised to make the setting
-  of append-only and immutable flags generic instead of just adding
-  code for btrfs.
+Changed the test 062 to be generic for all filesystems and to be
+executed for all filesystems.
+Remove output of mkfs since this is specific to mkfs.xfs and now
+filtered out.
 
-This patch series changes the tests 015, 062, 079, 083, 117, 120 and
-192 to be generic for all filesystems and to be executed for all
-filesystems.
-For test 079 to run, src/t_immutable.c was also modified to use the
-new generic FS_IOC_SETFLAGS/FS_IOC_GETFLAGS ioctl() if they are
-available.
+Signed-off-by: Stefan Behrens <sbehrens@giantdisaster.de>
+---
+ 062     |    4 ++--
+ 062.out |    6 ------
+ 2 files changed, 2 insertions(+), 8 deletions(-)
 
-Stefan Behrens (4):
-  xfstests: Changed test 062 to be generic for all filesystems
-  xfstests: Changed tests 083, 117, 120 and 192 to be generic for all
-    filesystems
-  xfstests: Changed test 015 to be generic for all filesystems
-  xfstests: Changed test 079 to be generic for all filesystems
-
- 015               |    4 +-
- 062               |    4 +-
- 062.out           |    6 -----
- 079               |   13 ++++++++--
- 083               |   12 +++++++--
- 117               |    4 +-
- 120               |    4 +-
- 192               |    2 +-
- src/t_immutable.c |   66 +++++++++++++++++-----------------------------------
- 9 files changed, 50 insertions(+), 65 deletions(-)
-
+diff --git a/062 b/062
+index 5cb6f92..a6e4bc8 100755
+--- a/062
++++ b/062
+@@ -71,7 +71,7 @@ _create_test_bed()
+ }
+ 
+ # real QA test starts here
+-_supported_fs xfs udf nfs
++_supported_fs generic
+ _supported_os Linux
+ 
+ _require_scratch
+@@ -80,7 +80,7 @@ _require_attrs
+ rm -f $tmp.backup1 $tmp.backup2 $seq.full
+ 
+ # real QA test starts here
+-_scratch_mkfs_xfs | _filter_mkfs 2>$tmp.mkfs
++_scratch_mkfs > /dev/null 2>&1 || _fail "mkfs failed"
+ _scratch_mount || _fail "mount failed"
+ _create_test_bed
+ 
+diff --git a/062.out b/062.out
+index 73fd628..1d5a094 100644
+--- a/062.out
++++ b/062.out
+@@ -1,10 +1,4 @@
+ QA output created by 062
+-meta-data=DDEV isize=XXX agcount=N, agsize=XXX blks
+-data     = bsize=XXX blocks=XXX, imaxpct=PCT
+-         = sunit=XXX swidth=XXX, unwritten=X
+-naming   =VERN bsize=XXX
+-log      =LDEV bsize=XXX blocks=XXX
+-realtime =RDEV extsz=XXX blocks=XXX, rtextents=XXX
+ *** create test bed
+ SCRATCH_MNT
+ SCRATCH_MNT/dev
 -- 
 1.7.3.4
 

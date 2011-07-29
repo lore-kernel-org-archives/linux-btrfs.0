@@ -1,57 +1,41 @@
-From: Chris Mason <chris.mason@oracle.com>
-Subject: Re: Slow snapshot deletion
-Date: Thu, 28 Jul 2011 16:51:24 -0400
-Message-ID: <1311886250-sup-5126@shiny>
-References: <20110728200444.GA30801@untroubled.org> <1311884805-sup-7662@shiny>
+From: Li Zefan <lizf@cn.fujitsu.com>
+Subject: [PATCH] Btrfs: reverse enough space for file clone
+Date: Fri, 29 Jul 2011 13:38:38 +0800
+Message-ID: <4E32475E.2080404@cn.fujitsu.com>
+Mime-Version: 1.0
 Content-Type: text/plain; charset=UTF-8
-Cc: Bruce Guenter <bruce@untroubled.org>,
-	linux-btrfs <linux-btrfs@vger.kernel.org>
-To: Chris Mason <chris.mason@oracle.com>
+To: "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-reply-to: <1311884805-sup-7662@shiny>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Excerpts from Chris Mason's message of 2011-07-28 16:28:04 -0400:
-> Excerpts from Bruce Guenter's message of 2011-07-28 16:04:45 -0400:
-> > 
-> > At work we have a backup server system running btrfs.  The main backup
-> > pool is a 1.3TB partition (on LVM).  Every night, a series of backups
-> > are done with rsync, with each backup onto a separate subvolume, and a
-> > snapshot made of each backup.  Compression is used to minimize disk
-> > space used.
-> > 
-> > When the system was first provisioned, all the operations ran
-> > impressively fast, but now it is almost unusably slow.  It has taken 2
-> > days to delete snapshots that recovered 30GB of space, and some of the
-> > backups are taking longer than 24 hours to complete.
-> > 
-> > Is there any way to monitor the progress of the snapshot deletions?
-> > 
-> > What could be causing it to run so slow?
-> > 
-> > What could we do to speed things up?
-> > 
-> > Kernel is 2.6.39-gentoo-r3.  It was last rebooted 2 days ago, and
-> > rebooting does not seem to improve the situation.  Mount options
-> > according to /proc are "rw,nosuid,noatime,nodiratime,compress=zlib,noacl"
-> > btrfs filesystem df shows:
-> > 
-> > Data: total=1.15TB, used=1.10TB
-> > System, DUP: total=8.00MB, used=184.00KB
-> > System: total=4.00MB, used=0.00
-> > Metadata, DUP: total=49.38GB, used=31.59GB
-> > Metadata: total=8.00MB, used=0.00
-> > 
-> 
-> The slow performance is probably coming from reading in the metadata
-> associated with the snapshot extents.  The new readahead extentions from
-> Arne should help once we've adapted them to it.  The easiest way to make
-> sure is to hit sysrq-w a few times while it is slow (or run a patched
-> latencytop).
+  # mount -t btrfs /dev/sda7 /mnt
+  # dd if=/dev/zero of=/mnt/src bs=10K count=1
+  # sync
+  # clone 4K from /mnt/src to /mnt/dst
 
-Sorry, hit send too soon.  Here is the latencytop patch, after you
-recompile run latencytop -c for a few minutes.  Send the output here.
+kernel BUG at fs/btrfs/delayed-inode.c:1693!
 
-http://oss.oracle.com/~mason/latencytop.patch
+We should reverse space for both file extent item insertion and
+inode update.
 
--chris
+Signed-off-by: Li Zefan <lizf@cn.fujitsu.com>
+---
+ fs/btrfs/ioctl.c |    2 +-
+ 1 files changed, 1 insertions(+), 1 deletions(-)
+
+diff --git a/fs/btrfs/ioctl.c b/fs/btrfs/ioctl.c
+index 0b980af..05af14c 100644
+--- a/fs/btrfs/ioctl.c
++++ b/fs/btrfs/ioctl.c
+@@ -2314,7 +2314,7 @@ static noinline long btrfs_ioctl_clone(struct file *file, unsigned long srcfd,
+ 			else
+ 				new_key.offset = destoff;
+ 
+-			trans = btrfs_start_transaction(root, 1);
++			trans = btrfs_start_transaction(root, 2);
+ 			if (IS_ERR(trans)) {
+ 				ret = PTR_ERR(trans);
+ 				goto out;
+-- 
+1.7.3.1
+

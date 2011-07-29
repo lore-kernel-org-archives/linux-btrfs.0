@@ -1,40 +1,34 @@
-From: Stefan Behrens <sbehrens@giantdisaster.de>
-Subject: Re: [PATCH 4/4] xfstests: Add support for btrfs in 079
-Date: Fri, 29 Jul 2011 16:30:12 +0200
-Message-ID: <4E32C3F4.8040505@giantdisaster.de>
-References: <cover.1311776403.git.sbehrens@giantdisaster.de> <0cbb002def872039fd8c0bb90ceb5f6bf0e15b02.1311776403.git.sbehrens@giantdisaster.de> <20110728085158.GD3407@infradead.org> <4E32A67E.9070306@giantdisaster.de> <20110729123028.GA4764@infradead.org>
+From: Jan Schubert <Jan.Schubert@GMX.li>
+Subject: Re: [PATCH v8 0/8] Btrfs scrub: print path to corrupted files and trigger nodatasum fixup
+Date: Fri, 29 Jul 2011 15:53:27 +0000 (UTC)
+Message-ID: <loom.20110729T174701-406@post.gmane.org>
+References: <cover.1311778307.git.list.btrfs@jan-o-sch.net> <loom.20110727T183833-109@post.gmane.org> <loom.20110728T003246-429@post.gmane.org> <loom.20110728T163725-25@post.gmane.org> <4E31959B.60907@jan-o-sch.net>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=ISO-8859-1
-Cc: linux-fsdevel@vger.kernel.org, linux-btrfs@vger.kernel.org,
-	xfs@oss.sgi.com
-To: Christoph Hellwig <hch@infradead.org>
-Return-path: <linux-fsdevel-owner@vger.kernel.org>
-In-Reply-To: <20110729123028.GA4764@infradead.org>
+Content-Type: text/plain; charset=us-ascii
+To: linux-btrfs@vger.kernel.org
+Return-path: <linux-btrfs-owner@vger.kernel.org>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 7/29/2011 2:30 PM, Christoph Hellwig wrote:
-> On Fri, Jul 29, 2011 at 02:24:30PM +0200, Stefan Behrens wrote:
+Jan Schmidt <list.btrfs <at> jan-o-sch.net> writes:
+> I think you shouldn't. The "errors 400" is reported constantly in
+> #btrfs, it resolves to REF_ERR_NO_ROOT_BACKREF. There should be a
+> backref, but I haven't heard of any negative impact.
+> 
+> If you are curious, you can try to grab the "inspect-internal" patches
+> for btrfs-progs and use "btrfs inspect-internal resolve-inode 5067" to
+> see what files are referenced by those inodes (given you are still
+> running the kernel you used for scrubbing).
 
->> The difference between the filesystems is whether the append-only
->> flag from the directory is inherited to the newly create file inside
->> that directory. XFS does not inherit that append-only flag, ext2,
->> ext3, ext4 and btrfs do inherit it.
+Thx Jan, I did not follow your advice but used the btrfs-debug-tree to
+determine the affected files. After deleting them it has been OK. 
+Interessting thing is, that in one case copying the file has been
+possible to resolve one of these errors (after deleting the original file
+of course). Other affected file throw an input/output error when trying
+to access them.
 
-> Having different behaviour for different filesystems is a bad thing,
-> and given that XFS is the lonely one out there I think we should
-> remove the inheritance.  I'll preparate a patch for it.
+Let me know when I can test some more things. I can offer to run the
+newest kernels and patches and report any issues!?
 
-In order to make it consistent, it would be needed to _add_ the
-inheritance to XFS, not to remove it from XFS. Or to remove it from
-ext2, ext3, ext4 and btrfs.
+Thx,
+Jan
 
-A different thread is whether it makes sense to inherit this flag
-from directories to files. I would prefer to not inherit the
-append-only flag from a directory to files created in that
-directory, because the use case for setting the append-only flag
-on directories is different to the use case for having the flag set
-on files. I cannot imagine use cases where the inheritance of this
-flag from the directory to the file is useful.
-But I cannot find real-world use cases for setting this flag on
-directories anyway, to all imaginable needs in this area the
-solution is the sticky bit on the directory or ACLs.

@@ -1,99 +1,27 @@
-From: Goffredo Baroncelli <kreijack@libero.it>
-Subject: Re: [PATCH] btrfs: do not allow mounting non-subvolumes via subvol
- option
-Date: Fri, 29 Jul 2011 19:11:28 +0200
-Message-ID: <4E32E9C0.9000804@libero.it>
-References: <1311934448-887-1-git-send-email-dsterba@suse.cz>
-Reply-To: kreijack@inwind.it
+From: cwillu <cwillu@cwillu.com>
+Subject: Re: kernel BUG at /home/kernel-ppa/COD/linux/fs/btrfs/extent-tree.c:5502!
+Date: Fri, 29 Jul 2011 11:40:27 -0600
+Message-ID: <CAE5mzvjmwJXm+1XwmAJz_84G2HP7P3Gwuxsm_3DGAq0m3y68AQ@mail.gmail.com>
+References: <CAE5mzvivm=0-=_r5ZbZ71T=_bZ=vfB-EbqbT-WwK8mSg7M-=_A@mail.gmail.com>
+	<CAE5mzvjESOwkH+njtQ5YTq+504AOqmgT90J2QU5NAke-O-zWOA@mail.gmail.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=ISO-8859-1; format=flowed
-Cc: linux-btrfs@vger.kernel.org, chris.mason@oracle.com
-To: David Sterba <dsterba@suse.cz>
+Content-Type: text/plain; charset=UTF-8
+To: linux-btrfs <linux-btrfs@vger.kernel.org>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <1311934448-887-1-git-send-email-dsterba@suse.cz>
+In-Reply-To: <CAE5mzvjESOwkH+njtQ5YTq+504AOqmgT90J2QU5NAke-O-zWOA@mail.gmail.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hi David,
+On Fri, Jul 29, 2011 at 10:57 AM, cwillu <cwillu@cwillu.com> wrote:
+> On Fri, Jul 29, 2011 at 10:50 AM, cwillu <cwillu@cwillu.com> wrote:
+>> Vanilla 3.0, mounted with compress=lzo, on a 40gb intel ssd.
+>> Triggered while poking around with getting chromium windows to appear
+>> where I wanted them (i.e., no heavy load).
+>
+> On reboot, I get a similar trace, posted at
+> http://cwillu.com/files/timber.dmesg in order to get around gmail's
+> breaking the lines.
+>
 
-On 07/29/2011 12:14 PM, David Sterba wrote:
-> There's a missing test whether the path passed to subvol=path option
-> during mount is a real subvolume, allowing any directory located in
-> default subovlume to be passed and accepted for mount.
->
-> (current btrfs progs prevent this early)
-> $ btrfs subvol snapshot . p1-snap
-> ERROR: '.' is not a subvolume
->
-> (with "is subvolume?" test bypassed)
-> $ btrfs subvol snapshot . p1-snap
-> Create a snapshot of '.' in './p1-snap'
->
-> $ btrfs subvol list -p .
-> ID 258 parent 5 top level 5 path subvol
-> ID 259 parent 5 top level 5 path subvol1
-> ID 260 parent 5 top level 5 path default-subvol1
-> ID 262 parent 5 top level 5 path p1/p1-snapshot
-> ID 263 parent 259 top level 5 path subvol1/subvol1-snap
->
-> The problem I see is that this makes a false impression of snapshotting the
-> given subvolume but in fact snapshots the default one: a user expects outcome
-
-Not that matter too much, but the old behavior was to snapshot not the 
-"default one" but the one which contains the directory.
-This behavior leaded to a lot of misunderstanding about the btrfs 
-capability of snapshot subvolume __only__.
-
-Only one question, what happens now if an user pass subvol=<dir> ?
-
-> like ID 263 but in fact gets ID 262 .
->
-> This patch makes mount fail with EINVAL with a message in syslog.
->
-> Signed-off-by: David Sterba<dsterba@suse.cz>
-> ---
->
-> I did not find a better errno than EINVAL, probably adding someting like
-> ENSUBVOL would be better so that other filesystems with such functionality may
-> use it in future.
->
->   fs/btrfs/super.c |   19 +++++++++++++++++++
->   1 files changed, 19 insertions(+), 0 deletions(-)
->
-> diff --git a/fs/btrfs/super.c b/fs/btrfs/super.c
-> index 15634d4..0c2a1d1 100644
-> --- a/fs/btrfs/super.c
-> +++ b/fs/btrfs/super.c
-> @@ -753,6 +753,15 @@ static int btrfs_set_super(struct super_block *s, void *data)
->   	return set_anon_super(s, data);
->   }
->
-> +/*
-> + * subvolumes are identified by ino 256
-> + */
-> +static inline int is_subvolume_inode(struct inode *inode)
-> +{
-> +	if (inode&&  inode->i_ino == BTRFS_FIRST_FREE_OBJECTID)
-> +		return 1;
-> +	return 0;
-> +}
->
->   /*
->    * Find a superblock for the given device / mount point.
-> @@ -873,6 +882,16 @@ static struct dentry *btrfs_mount(struct file_system_type *fs_type, int flags,
->   			error = -ENXIO;
->   			goto error_free_subvol_name;
->   		}
-> +
-> +		if (!is_subvolume_inode(new_root->d_inode)) {
-> +			dput(root);
-> +			dput(new_root);
-> +			deactivate_locked_super(s);
-> +			error = -EINVAL;
-> +			printk(KERN_ERR "btrfs: '%s' is not a valid subvolume\n",
-> +					subvol_name);
-> +			goto error_free_subvol_name;
-> +		}
->   		dput(root);
->   		root = new_root;
->   	} else {
-
+Possibly a useful btrfs-image at http://cwillu.com/files/timber.btrfs
+(13mb);  I patched around a transid error when making that, so it may
+not actually mean anything, but on the off chance it does...

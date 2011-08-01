@@ -1,60 +1,150 @@
-From: Bruce Guenter <bruce@untroubled.org>
-Subject: Re: Slow snapshot deletion
-Date: Mon, 1 Aug 2011 16:59:15 -0600
-Message-ID: <20110801225915.GA32470@untroubled.org>
-References: <20110728200444.GA30801@untroubled.org>
- <1311884805-sup-7662@shiny>
- <20110801222604.GA3529@untroubled.org>
- <CAE5mzvgNYHkq6ETKkbs7GDryN4LmU8uw_wwTCDhKseubjxRfMQ@mail.gmail.com>
+From: cwillu <cwillu@cwillu.com>
+Subject: Re: PLEASE TEST: Everybody who is seeing weird and long hangs
+Date: Mon, 1 Aug 2011 17:28:35 -0600
+Message-ID: <CAE5mzviteeoNF840ef8_zgVk5ZfX=tgt_k7EVOeEvD47jWeBug@mail.gmail.com>
+References: <4E36C47E.70309@redhat.com>
+	<1312213264-sup-9624@shiny>
+	<4E36CE56.1060206@redhat.com>
+	<1312220929-sup-8405@shiny>
+	<4E36E9FF.9050805@redhat.com>
+	<1312222583-sup-6514@shiny>
 Mime-Version: 1.0
-Content-Type: multipart/signed; micalg=pgp-sha1;
-	protocol="application/pgp-signature"; boundary="pWyiEgJYm5f9v55/"
-To: linux-btrfs <linux-btrfs@vger.kernel.org>
+Content-Type: text/plain; charset=UTF-8
+Cc: Josef Bacik <josef@redhat.com>,
+	linux-btrfs <linux-btrfs@vger.kernel.org>
+To: Chris Mason <chris.mason@oracle.com>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <CAE5mzvgNYHkq6ETKkbs7GDryN4LmU8uw_wwTCDhKseubjxRfMQ@mail.gmail.com>
+In-Reply-To: <1312222583-sup-6514@shiny>
 List-ID: <linux-btrfs.vger.kernel.org>
 
+On Mon, Aug 1, 2011 at 12:21 PM, Chris Mason <chris.mason@oracle.com> w=
+rote:
+> Excerpts from Josef Bacik's message of 2011-08-01 14:01:35 -0400:
+>> On 08/01/2011 01:54 PM, Chris Mason wrote:
+>> > Excerpts from Josef Bacik's message of 2011-08-01 12:03:34 -0400:
+>> >> On 08/01/2011 11:45 AM, Chris Mason wrote:
+>> >>> Excerpts from Josef Bacik's message of 2011-08-01 11:21:34 -0400=
+:
+>> >>>> Hello,
+>> >>>>
+>> >>>> We've seen a lot of reports of people having these constant lon=
+g pauses
+>> >>>> when doing things like sync or such. =C2=A0The stack traces usu=
+ally all look
+>> >>>> the same, one is btrfs-transaction stuck in btrfs_wait_marked_e=
+xtents
+>> >>>> and one is btrfs-submit-# stuck in get_request_wait. =C2=A0I ha=
+d originally
+>> >>>> thought this was due to the new plugging stuff, but I think it =
+just
+>> >>>> makes the problem happen more quickly as we've seen that 2.6.38=
+ which we
+>> >>>> thought was ok will still have the problem happen if given enou=
+gh time.
+>> >>>>
+>> >>>> I _think_ this is because of the way we write out metadata in t=
+he
+>> >>>> transaction commit phase. =C2=A0We're doing write_on_page for e=
+very dirty
+>> >>>> page in the btree during the commit. =C2=A0This sucks because b=
+asically we
+>> >>>> end up with one bio per page, which makes us blow out our nr_re=
+quests
+>> >>>> constantly, which is why btrfs-submit-# is always stuck in
+>> >>>> get_request_wait. =C2=A0What we need to do instead is use filem=
+ap_fdatawrite
+>> >>>> which will do a WB_SYNC_ALL but will do it via writepages, so h=
+opefully
+>> >>>> we will get less bios and this problem will go away. =C2=A0Plea=
+se try this
+>> >>>> very hastily put together patch if you are experiencing this pr=
+oblem and
+>> >>>> let me know if it fixes it for you. =C2=A0Thanks,
+>> >>>
+>> >>> I'm definitely curious to hear if this helps, but I think it mig=
+ht cause
+>> >>> a different set of problems. =C2=A0It writes everything that is =
+dirty on the
+>> >>> btree, which includes a lot of things we've cow'd in the current
+>> >>> transaction and marked dirty. =C2=A0They will have to go through=
+ COW again
+>> >>> if someone wants to modify them again.
+>> >>>
+>> >>
+>> >> But this is happening in the commit after we've done all of our w=
+ork, we
+>> >> shouldn't be dirtying anything else at this point right?
+>> >
+>> > The commit code is setup to unblock people before we start the IO:
+>> >
+>> > =C2=A0 =C2=A0 =C2=A0 =C2=A0trans->transaction->blocked =3D 0;
+>> > =C2=A0 =C2=A0 =C2=A0 =C2=A0 spin_lock(&root->fs_info->trans_lock);
+>> > =C2=A0 =C2=A0 =C2=A0 =C2=A0 root->fs_info->running_transaction =3D=
+ NULL;
+>> > =C2=A0 =C2=A0 =C2=A0 =C2=A0 root->fs_info->trans_no_join =3D 0;
+>> > =C2=A0 =C2=A0 =C2=A0 =C2=A0 spin_unlock(&root->fs_info->trans_lock=
+);
+>> > =C2=A0 =C2=A0 =C2=A0 =C2=A0 mutex_unlock(&root->fs_info->reloc_mut=
+ex);
+>> >
+>> > =C2=A0 =C2=A0 =C2=A0 =C2=A0 wake_up(&root->fs_info->transaction_wa=
+it);
+>> >
+>> > =C2=A0 =C2=A0 =C2=A0 =C2=A0 ret =3D btrfs_write_and_wait_transacti=
+on(trans, root);
+>> >
+>> > So, we should have concurrent FS mods for a new transaction while =
+we are
+>> > writing out this old transaction.
+>> >
+>>
+>> Ah right, but then this brings up another question, we shouldn't cow
+>> them again since we would have set the new transid. =C2=A0And isn't =
+this kind
+>> of bad, since somebody could come in and dirty a piece of metadata
+>> before we have a chance to write it out for this transaction, so we =
+end
+>> up writing out the new data instead of what we are trying to commit?
+>
+> I think we're mixing together different ideas here. =C2=A0If we're do=
+ing a
+> commit on transaction N, we allow N+1 to start while we're doing the
+> btrfs_write_and_wait_transaction(). =C2=A0N+1 might allocate and dirt=
+y a new
+> block, which btrfs_write_and_wait_transaction might start IO on.
+>
+> Strictly speaking this isn't a problem. =C2=A0It doesn't break any ru=
+les of
+> COW because we're allowed to write metadata at any time. =C2=A0But, o=
+nce we
+> do write it, we must COW it again if we want to change it. =C2=A0So, =
+anything
+> that btrfs_write_and_wait_transaction() catches from transaction N+1 =
+is
+> likely to make more work for us because future mods will have to
+> allocate a new block. =C2=A0Basically it's wasted IO.
+>
+> But, it's also free IO, assuming it was contiguous. =C2=A0The problem=
+ is that
+> write_cache_pages isn't actually making sure it was contiguous, so we
+> end up doing many more writes than we could have.
+>
+> -chris
+> --
+> To unsubscribe from this list: send the line "unsubscribe linux-btrfs=
+" in
+> the body of a message to majordomo@vger.kernel.org
+> More majordomo info at =C2=A0http://vger.kernel.org/majordomo-info.ht=
+ml
+>
 
---pWyiEgJYm5f9v55/
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
-Content-Transfer-Encoding: quoted-printable
+=46irst user ("youagree") reported back on irc:
 
-On Mon, Aug 01, 2011 at 04:41:10PM -0600, cwillu wrote:
-> The keystroke should be alt-sysrq-w.
-
-Right.  What I meant is that no backtraces are showing up.  I was
-actually using
-
-	echo w > /proc/sysrq-trigger
-
-and all I was seeing is:
-
-SysRq : Show Blocked State
-  task                        PC stack   pid father
-
---=20
-Bruce Guenter <bruce@untroubled.org>                http://untroubled.org/
-
---pWyiEgJYm5f9v55/
-Content-Type: application/pgp-signature
-
------BEGIN PGP SIGNATURE-----
-Version: GnuPG v2.0.17 (GNU/Linux)
-
-iQIcBAEBAgAGBQJONy/DAAoJEFFRvcnBTTxnFacQAI3he6rP1UY3GG3vu5XyGiKB
-t4SXF0nmIfdCEGQLPia7vZw1NTM0e84IBqw4pL93EqjepjyblaoL6Ms8p/9qVib2
-qnsIUa7CmGasE0kOsSyIhfQP/4uz8wbqGjJq8V5xd6irJi7330ar8cE6dyVRK40o
-0JlrwHti8NNxymvr2lW+HQrZweJ3pBJqA+RC1mhW6IqwKyN+tle73K/HZtrDzuzu
-gwS5KnIhiDYq3zDF7rE2mS7W34wIsGr8NGddXWnbkrJiLJjF09pnY4FjDKneCW5Z
-p8g/5Pw0YgLxJ2yfHDPibXYT0BY/+vc6zLLQfjovxtSwADHD5FnrZ1tEj9pIoVgk
-J1hqeQux1YRKwY1s3OL+JkYlhUZDQTLZeisOUbFXsdog70c+Uca3ei2vqUijwaKP
-mGAJlTfkZp1lTgFw84M34s68pvgpKyq4bUT01f3iMt1ptL2UG0mgSa2Blhmj3Ov7
-A/Hke0TF5W0+2vYxwQctgm8Gp+COFhh2UV400E2at7gQJV1cRlRYnOTrRFDei54H
-MZJoDapNyGa8G41PettBvhsYf78wQXyNJkXhpyYOvAAZWpnr8iO9JRuiGYlcjfam
-spNdkQcnY9xsm/pmSAo4mY7CafijqW7fbSku4K5HqKjX7t/plEYQj6KpqWC4o8KF
-+e6/LsB/spa/SEJfCIRr
-=rMbb
------END PGP SIGNATURE-----
-
---pWyiEgJYm5f9v55/--
+<youagree> guys, just came to report its much worse with josef's patch
+<youagree> now i can hardly start anything, it's slowed down most of th=
+e time
+--
+To unsubscribe from this list: send the line "unsubscribe linux-btrfs" =
+in
+the body of a message to majordomo@vger.kernel.org
+More majordomo info at  http://vger.kernel.org/majordomo-info.html

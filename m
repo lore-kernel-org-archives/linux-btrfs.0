@@ -1,38 +1,97 @@
-From: Josef Bacik <josef@redhat.com>
-Subject: Re: [PATCH 1/1] btrfs: btrfs_calc_avail_data_space cope with no read/write
- devices V2
-Date: Mon, 01 Aug 2011 11:24:32 -0400
-Message-ID: <4E36C530.5030003@redhat.com>
-References: <1312205910-13053-1-git-send-email-apw@canonical.com>
-Mime-Version: 1.0
-Content-Type: text/plain; charset=ISO-8859-1
-Cc: Chris Mason <chris.mason@oracle.com>, linux-btrfs@vger.kernel.org,
-	linux-kernel@vger.kernel.org
-To: Andy Whitcroft <apw@canonical.com>
-Return-path: <linux-kernel-owner@vger.kernel.org>
-In-Reply-To: <1312205910-13053-1-git-send-email-apw@canonical.com>
+From: Chris Mason <chris.mason@oracle.com>
+Subject: Re: PLEASE TEST: Everybody who is seeing weird and long hangs
+Date: Mon, 01 Aug 2011 11:45:43 -0400
+Message-ID: <1312213264-sup-9624@shiny>
+References: <4E36C47E.70309@redhat.com>
+Content-Type: text/plain; charset=UTF-8
+Cc: linux-btrfs <linux-btrfs@vger.kernel.org>
+To: Josef Bacik <josef@redhat.com>
+Return-path: <linux-btrfs-owner@vger.kernel.org>
+In-reply-to: <4E36C47E.70309@redhat.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 08/01/2011 09:38 AM, Andy Whitcroft wrote:
-> When we mount a btrfs filesystem from read-only media there will be no
-> read/write devices; for example mounting an SD card with its lock enabled.
-> This triggers an immediate BUG during mount:
+Excerpts from Josef Bacik's message of 2011-08-01 11:21:34 -0400:
+> Hello,
 > 
->   kernel BUG at .../fs/btrfs/super.c:984!
+> We've seen a lot of reports of people having these constant long pauses
+> when doing things like sync or such.  The stack traces usually all look
+> the same, one is btrfs-transaction stuck in btrfs_wait_marked_extents
+> and one is btrfs-submit-# stuck in get_request_wait.  I had originally
+> thought this was due to the new plugging stuff, but I think it just
+> makes the problem happen more quickly as we've seen that 2.6.38 which we
+> thought was ok will still have the problem happen if given enough time.
 > 
-> This is triggered by statfs when calculating the free space in the
-> filesytem.  We bug if the number of read/write devices is 0.
-> 
-> This check seems spurious as the information collected is valid regardless
-> of whether the devices are read-only or not.  As the count is used to
-> size the sort array it seems more correct to switch it to the number of
-> open devices.
-> 
-> BugLink: http://bugs.launchpad.net/bugs/816770
-> Signed-off-by: Andy Whitcroft <apw@canonical.com>
+> I _think_ this is because of the way we write out metadata in the
+> transaction commit phase.  We're doing write_on_page for every dirty
+> page in the btree during the commit.  This sucks because basically we
+> end up with one bio per page, which makes us blow out our nr_requests
+> constantly, which is why btrfs-submit-# is always stuck in
+> get_request_wait.  What we need to do instead is use filemap_fdatawrite
+> which will do a WB_SYNC_ALL but will do it via writepages, so hopefully
+> we will get less bios and this problem will go away.  Please try this
+> very hastily put together patch if you are experiencing this problem and
+> let me know if it fixes it for you.  Thanks,
 
-Acked-by: Josef Bacik <josef@redhat.com>
+I'm definitely curious to hear if this helps, but I think it might cause
+a different set of problems.  It writes everything that is dirty on the
+btree, which includes a lot of things we've cow'd in the current
+transaction and marked dirty.  They will have to go through COW again
+if someone wants to modify them again.
 
-Thanks,
+The btrfs writepage code does this:
 
-Josef
+        ret = __extent_writepage(page, wbc, &epd);
+
+        extent_write_cache_pages(tree, mapping, &wbc_writepages,
+                                 __extent_writepage, &epd, flush_write_bio);
+        flush_epd_write_bio(&epd);
+
+So during the commit phase we'll be grabbing adjacent pages already.  My
+bet is that our problem will go away if we remove this extra IO
+completely.
+
+-chris
+
+> 
+> Josef
+> 
+> diff --git a/fs/btrfs/transaction.c b/fs/btrfs/transaction.c
+> index eb55863..86217a4 100644
+> --- a/fs/btrfs/transaction.c
+> +++ b/fs/btrfs/transaction.c
+> @@ -577,15 +577,17 @@ int btrfs_end_transaction_dmeta(struct
+> btrfs_trans_handle *trans,
+>  int btrfs_write_marked_extents(struct btrfs_root *root,
+>                     struct extent_io_tree *dirty_pages, int mark)
+>  {
+> -    int ret;
+> -    int err = 0;
+> -    int werr = 0;
+> -    struct page *page;
+> +//    int ret;
+> +//    int err = 0;
+> +//    int werr = 0;
+> +//    struct page *page;
+>      struct inode *btree_inode = root->fs_info->btree_inode;
+> -    u64 start = 0;
+> -    u64 end;
+> -    unsigned long index;
+> +//    u64 start = 0;
+> +//    u64 end;
+> +//    unsigned long index;
+> 
+> +    return filemap_fdatawrite(btree_inode->i_mapping);
+> +    /*
+>      while (1) {
+>          ret = find_first_extent_bit(dirty_pages, start, &start, &end,
+>                          mark);
+> @@ -624,7 +626,8 @@ int btrfs_write_marked_extents(struct btrfs_root *root,
+>      }
+>      if (err)
+>          werr = err;
+> -    return werr;
+> +    */
+> +//    return werr;
+>  }
+> 
+>  /*

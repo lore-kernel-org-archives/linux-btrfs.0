@@ -1,86 +1,60 @@
-From: Goffredo Baroncelli <kreijack@libero.it>
-Subject: Re: [RFC] btrfs send and receive
-Date: Mon, 01 Aug 2011 20:51:36 +0200
-Message-ID: <4E36F5B8.5090803@libero.it>
-References: <4E369A80.9030307@jan-o-sch.net>
-Reply-To: kreijack@inwind.it
+From: Bruce Guenter <bruce@untroubled.org>
+Subject: Re: Slow snapshot deletion
+Date: Mon, 1 Aug 2011 16:26:04 -0600
+Message-ID: <20110801222604.GA3529@untroubled.org>
+References: <20110728200444.GA30801@untroubled.org>
+ <1311884805-sup-7662@shiny>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=ISO-8859-1
-Cc: linux-btrfs <linux-btrfs@vger.kernel.org>
-To: Jan Schmidt <list.btrfs@jan-o-sch.net>
+Content-Type: multipart/signed; micalg=pgp-sha1;
+	protocol="application/pgp-signature"; boundary="17pEHd4RhPHOinZp"
+To: linux-btrfs <linux-btrfs@vger.kernel.org>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <4E369A80.9030307@jan-o-sch.net>
+In-Reply-To: <1311884805-sup-7662@shiny>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hi Jan
 
-On 08/01/2011 02:22 PM, Jan Schmidt wrote:
+--17pEHd4RhPHOinZp
+Content-Type: text/plain; charset=us-ascii
+Content-Disposition: inline
+Content-Transfer-Encoding: quoted-printable
 
-> I furthermore realized that the term "subvolume" is omitted in favor >
-of the term "snapshot". This is because I tend to think of snapshots
-> being read-only (though I very much appreciate they are not). Just
-> replace the term wherever you feel appropriate.
+On Thu, Jul 28, 2011 at 04:28:04PM -0400, Chris Mason wrote:
+> The slow performance is probably coming from reading in the metadata
+> associated with the snapshot extents.  The new readahead extentions from
+> Arne should help once we've adapted them to it.  The easiest way to make
+> sure is to hit sysrq-w a few times while it is slow (or run a patched
+> latencytop).
 
-I think that we have to cope to both the terms. A snapshot is a
-subvolume with an ancestor. This is important if we want to be able to
-"transfer" between two filesystem a snapshot as subvolume + delta.
+We shut down the rsync backups for now, and are waiting for the
+snapshots to complete deletion so we can unmount the filesystem to
+reboot (missing kernel options for latencytop).  In the mean time I hit
+SysRq-W quite a number of times, and nothing is showing up in kernel
+messages.  However, btrfs-cleaner and/or btrfs-transaction (sometimes
+both, sometimes just one) have been running high in top, taking up all
+the CPU time.
 
+--=20
+Bruce Guenter <bruce@untroubled.org>                http://untroubled.org/
 
+--17pEHd4RhPHOinZp
+Content-Type: application/pgp-signature
 
-> 3) KEY PROPERTIES
-> 
-> I wrote down key features that are must haves for me, please add to the
-> list if you have anything on top:
-> 
-> - "send" must generate a stream that can either be "receive"d
->   immediately or stored in a file for asynchronous "receive"
-> - streams must obviously be byte order safe
-> - a stream must contain a complete fs (full stream) or an incremental
->   update to a file system
-> - a stream must not be restricted in size
-> - an incremental stream must contain the information which version it
->   is based on
-> - "receive" of an incremental stream must check whether the base is
->   the current state of the file system
->     - YES => "receive"
->     - NO, but is previous version
->       => abort; should offer --force for rollback and "receive"
->     - NO, does not match any previous version => abort
-> - a stream must be taken from a consistent state of the file system
-> - the source file system must remain read-writable during a "send"
-> - the destination file system must at least remain readable during a
->   "receive"
-> - btrfs as a destination file system should reflect all features of
->   the source file system
+-----BEGIN PGP SIGNATURE-----
+Version: GnuPG v2.0.17 (GNU/Linux)
 
-I think that we should define what means "all features".
+iQIcBAEBAgAGBQJONyf8AAoJEFFRvcnBTTxnZHQQAKPB1savWIPg1j1n23+2nnOW
+9OHIqkZz4hDmEIPGcpsln6GY9naZs/0OsSPQE1ffwxkoz7kEg8BSHmhgw/VV+296
+0uUHQ5C3KhLUxN+SkNJbt51F729v4t0jD4L2ZWOLqXYST3sdtTRCCvtKaG/968h1
+iLpqp0JxlFP2HR8H6Mn82qrXLSDf12I341Gp0xNg3qd6Dgk9NdP1Y1OSQ3Bp2WPG
+3dt5+x1l3WLbDQnWSfJO/DF3byn62kFWBItDUN4uBzdfx8oEB2uL9XarhbIvMemN
+GiV1jKXnEmM8dzzNpJ0DelHqPMR8kLjF2ZVDf99B0dtb76/b9sn3hj5g6q8N6C2u
+U31y/AG2cj4ijtTn0IWQA7O6FLBg0AmGQPeU1YB1mOAE1ukq/6tC1TkHW/LW7BRe
+PSG94BJaWTF8ofSByq8R6viJgplF5l2fXdeNwCDX1N29JJy2zVPc6SsMDaWZoGst
+QRnrXemfBhd6JnAMv0B2u9eZ6CmdtkPhQbhCowoVCMKynvIsno+Pd7kQIEKOTdoO
+ytP6x1WVtC0z3mCWUL0LzGEInRiUtpqXuFBYIgMb2K4k5kljLqywlLVcoZskYLi+
+xG5+8651RvufBqSVDeDZz5mcey02uA3w0wbN47hD6ltMs2TdkCkHUvEXEUnkoYzS
+xg3MrH7AqgCxZU7SSqS5
+=uDCm
+-----END PGP SIGNATURE-----
 
-1) If we are interested to transport only the file
-type/contents/timestamps/acls/owners/permissions, that could be obtained
-with a combination of "find-new" (with some extensions [1]) and an
-user-space tool. No extension to BTRFS are needed.
-
-1.1) as above plus preserve the inode number.
-
-2) If we want to have also to conserver the COW relation (between
-snapshots/subvolumes and  files), I think that we need some help from
-the kernel side to be able to injecting these information in the
-destination btrfs filesystem.
-Moreover we need to cope all the possible errors due to the fact that
-the snapshot/subvolume are out-sync between the source fs and the
-destination fs: what about if we want to transport a snapshot to an
-another filesystem where the snapshotted subvolume (previously
-successful transported) was removed or changed ? How we can check if a
-snapshot/subvolume was changed ?
-
-
-> - other destination file systems must be supported (although some
->   features will not map to all file systems)
-
-
-BR
-G.Baroncelli
-
-
-[1] http://comments.gmane.org/gmane.comp.file-systems.btrfs/8201
-
+--17pEHd4RhPHOinZp--

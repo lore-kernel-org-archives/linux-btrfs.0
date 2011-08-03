@@ -1,55 +1,103 @@
-From: Dave <dave@thekilempire.com>
-Subject: Re: disk-io.c:416: find_and_setup_root: Assertion `!(!root->node)'
- failed.
-Date: Wed, 3 Aug 2011 09:26:48 -0400
-Message-ID: <20110803132646.GA9784@hendrix.borisch.local>
-References: <20110802144452.GA15647@hendrix.borisch.local>
- <20110802181630.GA5026@hendrix.borisch.local>
+From: Jan Schmidt <list.btrfs@jan-o-sch.net>
+Subject: Re: [RFC] btrfs send and receive
+Date: Wed, 03 Aug 2011 17:04:40 +0200
+Message-ID: <4E396388.7040809@jan-o-sch.net>
+References: <4E369A80.9030307@jan-o-sch.net> <1312298057-sup-3959@shiny> <4E381F70.4080102@jan-o-sch.net> <2611416.qFuztk21pN@venice>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-To: linux-btrfs@vger.kernel.org
+Content-Type: text/plain; charset=ISO-8859-1
+Cc: linux-btrfs@vger.kernel.org, Chris Mason <chris.mason@oracle.com>
+To: Goffredo Baroncelli <kreijack@gmail.com>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <20110802181630.GA5026@hendrix.borisch.local>
+In-Reply-To: <2611416.qFuztk21pN@venice>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-OK so I have recovered all of my data.  This was sort of a nerve wrecking
-experience.  I'll share what I've done in case others are experiencing the same
-problem (I've seen other threads appear complaining of the same assertion which
-draw no response).
+On 02.08.2011 19:42, Goffredo Baroncelli wrote:
+>> Furthermore, receiving should not need kernel support at all (except for
+>> an optional interface to create a file with a certain inode, we'll see).
+>> Thus, replicating metadata corruptions should be very unlikely.
+> 
+> I think that for receiving we can have three level, which may represent three 
+> level in the develop:
+> 
+> 1) we store the information as a pax|tar|git|... file format. Then is the user 
+> that can expand this file when needed. I think that in case of backup this is 
+> more useful than having a full filesystem. No help from kernel required.
+> 
+> 2) we expand the stream in files; so the final results would be a filesystem.
 
-So, I filled open_ctree_fd with printf statements to find exactly where it was
-failing.  I found (per my previous mail to this list) that the assertion was
-happening in the following call:
+How would you test your stream from 1) if you can't unpack it?
 
-ret = find_and_setup_root(tree_root, fs_info, BTRFS_CSUM_TREE_OBJECTID, csum_root);
+> 2.1) as above but preserving the inode number (small help from kernel 
+> required, may be file-system independent also)
 
-I also found that the fs would mount read-only on an older kernel but 85% of the
-files read reported I/O errors.  It looks like the b-tree which stores checksums
-was broken.  The breakage is likely high up on the tree and thus affects most,
-but not all files.  Trying to determine how to get btrfs to ignore checksums
-lead me here:
+I would skip that and add it as an extention, later.
 
-http://kerneltrap.org/mailarchive/linux-btrfs/2010/2/25/6806053/thread#mid-6806053
+> 2.2) as above but preserving the COW properties: if we update an already 
+> snapshotted file, btrfs store the original one and the modified data. The same 
+> would be in the destination filesystem: if exists the previous file snapshot, 
+> in the filesystem is COW-ed the file updating only the "new data". (help from 
+> kernel side. I don't know if it is possible to adapt this strategy for other 
+> filesystem than BTRFS)
 
-So I grabbed a copy of 2.6.32.10 and patched compression.c and inode.c.  I'm now
-able to read ALL of the data when mounting read-only.
+Again, I'd rather gather those information (possibly with help from the
+kernel) when generating the stream. This is what I answered and tried to
+explain by example in my mail yesterday. Please tell me which part was
+unclear and I'll try to explain better.
 
-This whole process has left a bit of bad taste in my mouth.  A checksum tree
-seems like a great way to add fault tolerance but in this case it was another
-point of failure, rendering perfectly uncorrupted data unaccessible.  I suppose
-this would have to be something a proper fsck would have to contend with.  My
-questions for the developers are:
+With the algorithm outlined yesterday, you don't need any kernel support
+when receiving, so it should be adaptable by any filesystem that
+supports snapshots.
 
-1. Would repairing or rebuilding a broken checksum tree be a trivial task for a
-functional fsck?
+> 3) extracting from the source filesystem the btree structure, and injecting in 
+> the btrfs filesystem this structure. I think that this has the best 
+> performance, both in terms of CPU-power and in bandwidth. Full kernel support 
+> required.
 
-2. Does a mount option which ignores the checksum tree altogether make sense?
-Strictly for recovery purposes of course.  Not everyone is inclined to hack the
-kernel to get access to their data.
+This is like a diff-aware dd, or did I get you wrong? If it is: do you
+really think we need it? What for?
 
-Either way I've kept the dump of the broken filesystem.  If fsck ever makes it
-out of development purgatory I'll definitely be running it against this as a
-test case.  I saw an email to this list earlier today asking about the status of
-fsck.  It seems like an it would be reasonable to know approximately when
-something will be released to the public.  Not asking for a specific day, more
-like which quarter of which year.
+>> One more thing to add: We have to make sure our stream doesn't get
+>> corrupted. So if the file format we're choosing does not include it, we
+>> should keep in mind to add something ourselves.
+> 
+> The best would be using the BTRFS checksum.
+
+Sounds interesting. How would you add a btrfs checksum to a stream file
+(no matter what format we'll use)? And how would you verify it?
+
+>> I'll try to make a plan how it could be implemented with git, so that we
+>> have something we can compare.
+> 
+> I suggest to give a look to the fast-import/export format, which is "de facto" 
+> standard about sharing information between the new CVS system.
+
+Thanks for the hint, I will include that in my considerations.
+
+>>> In terms of transmitting snapshot details, I always assumed we would
+>>> need a snapshot tool that added extra metadata about parent
+>>> relationships on the snapshots.  I didn't want to enforce this in the
+>>> metadata on disk, but I have no problems with saying the send/receive
+>>> tool requires extra metadata to tell us about parents.
+>>
+>> Oh, right. That's something that might not only need kernel support for
+>> "send" to determine a parent, but also a new key representing a
+>> snapshot's parent relationship information.
+> 
+> I think that this information already exists. In fact every snapshot has a 
+> reference to the original data, on the basis of which it is possible to obtain 
+> the snapshot's parent relationship information.
+
+How can that be done? I don't see such a link.
+
+> However we need to be sure that when we send the "delta" between two snapshot 
+> to the receiver side, the receiver side:
+> 1) has a copy of the previous snapshot
+> 2) this copy is in sync to the original one
+> 
+> I think (please Chris confirm that) that we can check this with the subvolume 
+> id and the generation-no of every snapshot, which should be unique.
+
+uuid + generation was my suggestion as well, should be unique, yes.
+
+-Jan
+

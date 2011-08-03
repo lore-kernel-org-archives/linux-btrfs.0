@@ -1,81 +1,167 @@
-From: Tomasz Chmielewski <mangoo@wpkg.org>
-Subject: Re: No space left, with 80 GB space free
-Date: Wed, 10 Aug 2011 12:38:31 +0200
-Message-ID: <4E425FA7.7030201@wpkg.org>
-References: <4DD16817.9020302@wpkg.org> <4DD6985E.8040100@wpkg.org> <BANLkTimA_dJDNUqPUssV5ZbLTr=T7k+doA@mail.gmail.com>
+From: Goffredo Baroncelli <kreijack@gmail.com>
+Subject: Re: [RFC] btrfs send and receive
+Date: Wed, 03 Aug 2011 22:43:26 +0200
+Message-ID: <1335149.9cmILjyzSG@venice>
+References: <4E369A80.9030307@jan-o-sch.net> <2611416.qFuztk21pN@venice> <4E396388.7040809@jan-o-sch.net>
+Reply-To: kreijack@libero.it
 Mime-Version: 1.0
-Content-Type: text/plain; charset=UTF-8
-Cc: linux-btrfs <linux-btrfs@vger.kernel.org>
-To: Miguel Garrido <miguel@mjgar.com>
+Content-Type: text/plain; charset="us-ascii"
+Cc: Goffredo Baroncelli <kreijack@gmail.com>,
+	linux-btrfs@vger.kernel.org, Chris Mason <chris.mason@oracle.com>
+To: Jan Schmidt <list.btrfs@jan-o-sch.net>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <BANLkTimA_dJDNUqPUssV5ZbLTr=T7k+doA@mail.gmail.com>
+In-Reply-To: <4E396388.7040809@jan-o-sch.net>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 21.05.2011 01:05, Miguel Garrido wrote:
-> On Fri, May 20, 2011 at 12:35 PM, Tomasz Chmielewski<mangoo@wpkg.org>  wrote:
->>
->> Nobody has a clue what makes btrfs run out of space when used with PostgreSQL, even when there is plenty of free space left?
->>
->>
->> # df -h
->> Filesystem            Size  Used Avail Use% Mounted on
->> /dev/sdb4             336G  257G   78G  77% /mnt/btrfs
->>
->>
->> coredb=# DELETE FROM core_trevent where "date"<  E'2011-05-07 00:00';
->> ERROR:  could not write block 1014999 of relation base/16384/16521: No space left on device
->> CONTEXT:  writing block 1014999 of relation base/16384/16521
+On Wednesday, 03 August, 2011 17:04:40 Jan Schmidt wrote:
+> On 02.08.2011 19:42, Goffredo Baroncelli wrote:
+> >> Furthermore, receiving should not need kernel support at all (except for
+> >> an optional interface to create a file with a certain inode, we'll see).
+> >> Thus, replicating metadata corruptions should be very unlikely.
+> > 
+> > I think that for receiving we can have three level, which may represent
+> > three level in the develop:
+> > 
+> > 1) we store the information as a pax|tar|git|... file format. Then is the
+> > user that can expand this file when needed. I think that in case of
+> > backup this is more useful than having a full filesystem. No help from
+> > kernel required.
+> > 
+> > 2) we expand the stream in files; so the final results would be a
+> > filesystem.
+> How would you test your stream from 1) if you can't unpack it?
 
-Just a follow up - I'm able to reproduce the issue with 3.0.1 kernel, with plain rsync.
-I'm trying to write a ~ 4 GB file to btrfs.
+If we are able to store the information in a standard format (like tar), we 
+are able to unpack when we need.
 
-"Fast" writes will make btrfs output "No space left on device".
-On the other hand, if I write slowly, btrfs will be happy and write the whole file.
+The difference between the point 1 and 2 is  that for the point #1 is not 
+required to develop the "extraction side". This doesn't means that we *must 
+not* develop, this means that we *may* delay the develop of the extraction 
+side, and having something really useful. 
+
+The point 2) requires to develop an extraction tool (the "btrfs receive" 
+command),  which would be able to handle further metadata like the "parent 
+relationship" which you refer below.
+
+I think that the extraction would be like:
+
+sender> hello "receiver", which snapshot do you have ?
+receiver> hello "sender", I have snapshot A, B ,D
+sender> ok, I have the snapshot B and C, so I will send you the delta from 
+               snapshot B, which is the latest in common.
+sender> send data .....
+
+This is far away from a simple tar (or pax or git...) file format.
+
+> 
+> > 2.1) as above but preserving the inode number (small help from kernel
+> > required, may be file-system independent also)
+> 
+> I would skip that and add it as an extention, later.
+> 
+> > 2.2) as above but preserving the COW properties: if we update an already
+> > snapshotted file, btrfs store the original one and the modified data. The
+> > same would be in the destination filesystem: if exists the previous file
+> > snapshot, in the filesystem is COW-ed the file updating only the "new
+> > data". (help from kernel side. I don't know if it is possible to adapt
+> > this strategy for other filesystem than BTRFS)
+> 
+> Again, I'd rather gather those information (possibly with help from the
+> kernel) when generating the stream. This is what I answered and tried to
+> explain by example in my mail yesterday. Please tell me which part was
+> unclear and I'll try to explain better.
+
+I am talking *only* about the receiving. How we gather these information is 
+not (for the moment) in discussion
+
+> 
+> With the algorithm outlined yesterday, you don't need any kernel support
+> when receiving, so it should be adaptable by any filesystem that
+> supports snapshots.
+
+Right
+
+> 
+> > 3) extracting from the source filesystem the btree structure, and
+> > injecting in the btrfs filesystem this structure. I think that this has
+> > the best performance, both in terms of CPU-power and in bandwidth. Full
+> > kernel support required.
+> 
+> This is like a diff-aware dd, or did I get you wrong? If it is: do you
+> really think we need it? What for?
+
+I cited it only as "brainstorm" approach. The only gain is its space efficency.
+
+> 
+> >> One more thing to add: We have to make sure our stream doesn't get
+> >> corrupted. So if the file format we're choosing does not include it, we
+> >> should keep in mind to add something ourselves.
+> > 
+> > The best would be using the BTRFS checksum.
+> 
+> Sounds interesting. How would you add a btrfs checksum to a stream file
+> (no matter what format we'll use)? And how would you verify it?
+
+I think that btrfs already store a checksum per block basis. When we send the 
+stream we could get this information from btrfs and send together. This only 
+to avoid to recalculate a checksum. Pay attention that I think that btrfs 
+stores the checksum only for the data, and not for the full files. What I means 
+is that if a file is cow-ed, btrfs store the original data and only the data 
+updated, then store the checksum for the original file and the checksum for the 
+data updated. It don't store the checksum for the full file updated. This means 
+that if we try to rebuild the file applying a delta we don't have a checksum of 
+the full file to compare.
+
+> 
+> >> I'll try to make a plan how it could be implemented with git, so that we
+> >> have something we can compare.
+> > 
+> > I suggest to give a look to the fast-import/export format, which is "de
+> > facto" standard about sharing information between the new CVS system.
+> 
+> Thanks for the hint, I will include that in my considerations.
+> 
+> >>> In terms of transmitting snapshot details, I always assumed we would
+> >>> need a snapshot tool that added extra metadata about parent
+> >>> relationships on the snapshots.  I didn't want to enforce this in the
+> >>> metadata on disk, but I have no problems with saying the send/receive
+> >>> tool requires extra metadata to tell us about parents.
+> >> 
+> >> Oh, right. That's something that might not only need kernel support for
+> >> "send" to determine a parent, but also a new key representing a
+> >> snapshot's parent relationship information.
+> > 
+> > I think that this information already exists. In fact every snapshot has a
+> > reference to the original data, on the basis of which it is possible to
+> > obtain the snapshot's parent relationship information.
+> 
+> How can that be done? I don't see such a link.
+
+Give a look at
+
+https://btrfs.wiki.kernel.org/index.php/Project_ideas#Backref_walking_utilities
+
+but I have to admit that the real state is different from what I (wrlongly) 
+understood of the btrfs internal.
 
 
-cp ("full speed copy") fails after a few seconds, so let's try to write with ~5 MB/s - still fails:
-
-# rsync -a -v --progress --bwlimit=5000 . /mnt/btrfs/temp
-sending incremental file list
-./
-randomfile
-   645136384  13%    4.87MB/s    0:13:32  
-rsync: writefd_unbuffered failed to write 4 bytes to socket [sender]: Broken pipe (32)
-rsync: write failed on "/mnt/btrfs/temp/randomfile": No space left on device (28)
-rsync error: error in file IO (code 11) at receiver.c(302) [receiver=3.0.7]
-rsync: connection unexpectedly closed (31 bytes received so far) [sender]
-rsync error: error in rsync protocol data stream (code 12) at io.c(601) [sender=3.0.7]
-
-
-Let's write with ~1 MB/s then - succeeds:
-
-# rsync -a -v --progress --bwlimit=1000 . /mnt/btrfs/temp
-sending incremental file list
-./
-randomfile
-  4693411469 100%  988.30kB/s    1:17:17 (xfer#1, to-check=6/8)
-(...)
-sent 4758749321 bytes  received 112 bytes  1012176.84 bytes/sec
-total size is 4758167972  speedup is 1.00
-
-
-I don't think it's expected?
-
-
-I see these in dmesg while copying the files:
-
-[ 1703.978600] btrfs: free space inode generation (0) did not match free space cache generation (22496)
-[ 1703.978605] btrfs: failed to load free space cache for block group 92371156992
-[ 1704.026476] btrfs: free space inode generation (0) did not match free space cache generation (22502)
-[ 1704.026481] btrfs: failed to load free space cache for block group 114919735296
-[ 1704.035239] btrfs: free space inode generation (0) did not match free space cache generation (22503)
-[ 1704.035243] btrfs: failed to load free space cache for block group 118140960768
-[ 1704.035252] btrfs: free space inode generation (0) did not match free space cache generation (22481)
-[ 1704.035255] btrfs: failed to load free space cache for block group 119214702592
-[ 1704.294757] btrfs: free space inode generation (0) did not match free space cache generation (22503)
-[ 1704.294761] btrfs: failed to load free space cache for block group 243231883264
-
-
+> 
+> > However we need to be sure that when we send the "delta" between two
+> > snapshot to the receiver side, the receiver side:
+> > 1) has a copy of the previous snapshot
+> > 2) this copy is in sync to the original one
+> > 
+> > I think (please Chris confirm that) that we can check this with the
+> > subvolume id and the generation-no of every snapshot, which should be
+> > unique.
+> uuid + generation was my suggestion as well, should be unique, yes.
+> 
+> -Jan
+> 
+> --
+> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
+> the body of a message to majordomo@vger.kernel.org
+> More majordomo info at  http://vger.kernel.org/majordomo-info.html
 -- 
-Tomasz Chmielewski
-http://wpkg.org
+gpg key@ keyserver.linux.it: Goffredo Baroncelli (ghigo) <kreijack@inwind.it>
+Key fingerprint = 4769 7E51 5293 D36C 814E  C054 BF04 F161 3DC5 0512

@@ -1,70 +1,36 @@
-From: Li Zefan <lizf@cn.fujitsu.com>
-Subject: [PATCH] Btrfs: fix byte order issue in free space cache
-Date: Wed, 03 Aug 2011 16:12:12 +0800
-Message-ID: <4E3902DC.4010105@cn.fujitsu.com>
+From: Jan Schmidt <list.btrfs@jan-o-sch.net>
+Subject: Re: Honest timeline for btrfsck
+Date: Wed, 03 Aug 2011 11:09:28 +0200
+Message-ID: <4E391048.7040004@jan-o-sch.net>
+References: <CAGh96GFhVEfXt=xcb-uGEBA3Ss2fc8BwOpJ2g8tXbm+VimdH3Q@mail.gmail.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=UTF-8
-Cc: Josef Bacik <josef@redhat.com>
-To: "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
+Content-Type: text/plain; charset=ISO-8859-1
+Cc: linux-btrfs@vger.kernel.org
+To: Erik Jensen <eriksjunk@rkjnsn.net>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
+In-Reply-To: <CAGh96GFhVEfXt=xcb-uGEBA3Ss2fc8BwOpJ2g8tXbm+VimdH3Q@mail.gmail.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-We should convert the generation number to little endian before saving
-it to disk.
 
-We've just changed to use the normal checksumming infrastructure for
-free space cache, so it's the perfect time to fix this bug.
 
-Signed-off-by: Li Zefan <lizf@cn.fujitsu.com>
----
- fs/btrfs/free-space-cache.c |   12 ++++++------
- 1 files changed, 6 insertions(+), 6 deletions(-)
+On 03.08.2011 08:57, Erik Jensen wrote:
+> Had I known back in November 9 months would go by with no such tool, I
+> would have certainly wiped the array and started over, as it was
+> certainly not worth the wait. So here I am, several assurances of
+> imminent release later, still wondering whether it would be better to
+> wait or cut my losses.
 
-diff --git a/fs/btrfs/free-space-cache.c b/fs/btrfs/free-space-cache.c
-index 6377713..9277d65 100644
---- a/fs/btrfs/free-space-cache.c
-+++ b/fs/btrfs/free-space-cache.c
-@@ -325,7 +325,7 @@ int __load_free_space_cache(struct btrfs_root *root, struct inode *inode,
- 		addr = kmap(page);
- 
- 		if (index == 0) {
--			u64 *gen;
-+			u64 gen;
- 
- 			/*
- 			 * We put a bogus crc in the front of the first page in
-@@ -335,11 +335,11 @@ int __load_free_space_cache(struct btrfs_root *root, struct inode *inode,
- 			addr += sizeof(u64);
- 			offset += sizeof(u64);
- 
--			gen = addr;
--			if (*gen != BTRFS_I(inode)->generation) {
-+			gen = le64_to_cpu(*(__le64 *)addr);
-+			if (gen != BTRFS_I(inode)->generation) {
- 				printk(KERN_ERR "btrfs: space cache generation"
- 				       " (%llu) does not match inode (%llu)\n",
--				       (unsigned long long)*gen,
-+				       (unsigned long long)gen,
- 				       (unsigned long long)
- 				       BTRFS_I(inode)->generation);
- 				kunmap(page);
-@@ -636,7 +636,7 @@ int __btrfs_write_out_cache(struct btrfs_root *root, struct inode *inode,
- 
- 		orig = addr = kmap(page);
- 		if (index == 0) {
--			u64 *gen;
-+			__le64 *gen;
- 
- 			/*
- 			 * We're going to put in a bogus crc for this page to
-@@ -647,7 +647,7 @@ int __btrfs_write_out_cache(struct btrfs_root *root, struct inode *inode,
- 			offset += sizeof(u64);
- 
- 			gen = addr;
--			*gen = trans->transid;
-+			*gen = cpu_to_le64(trans->transid);
- 			addr += sizeof(u64);
- 			offset += sizeof(u64);
- 		}
--- 
-1.7.3.1
+If you want to try a patch that might give you read-only access to your
+data, have a look at that one:
+
+> Date:	Thu, 23 Jun 2011 15:54:09 -0400
+> From:	Josef Bacik <josef@redhat.com>
+> To:	Chris Mason <chris.mason@oracle.com>
+> Cc:	Andrej Podzimek <andrej@podzimek.org>,
+> 	Josef Bacik <josef@redhat.com>,
+> 	linux-btrfs <linux-btrfs@vger.kernel.org>
+> Subject: Re: parent transid verify failures on 2.6.39
+> Message-ID: <20110623195409.GA21007@dhcp231-156.rdu.redhat.com>
+
+-Jan
+

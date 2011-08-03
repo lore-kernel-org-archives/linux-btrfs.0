@@ -1,38 +1,53 @@
-From: C Anthony Risinger <anthony@xtfx.me>
-Subject: Re: [PATCH] btrfs: do not allow mounting non-subvolumes via subvol option
-Date: Wed, 3 Aug 2011 14:08:06 -0500
-Message-ID: <CAGAVQTGokKiSkcKR0+ibX+ZAdz3tQFfGxEVuAW=bobaAu4d9eA@mail.gmail.com>
-References: <1311934448-887-1-git-send-email-dsterba@suse.cz>
- <1865303E0DED764181A9D882DEF65FB6B1A8DFC32F@shsmsx502.ccr.corp.intel.com> <20110803184713.GE28122@twin.jikos.cz>
+From: Adam Newby <anewby@ceradyne.com>
+Subject: BTRFS partition won't mount
+Date: Wed, 3 Aug 2011 16:46:01 -0400
+Message-ID: <1F6ED4EA7957EB4FADAE461E036D456A25D75644F9@exch01lex.ceradyne.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=UTF-8
-To: dave@jikos.cz, "Zhong, Xin" <xin.zhong@intel.com>,
-	David Sterba <dsterba@suse.cz>,
-	"linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>,
-	"chris.mason@oracle.com" <chris.mason@o
+Content-Type: text/plain; charset="us-ascii"
+To: "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <20110803184713.GE28122@twin.jikos.cz>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Wed, Aug 3, 2011 at 1:47 PM, David Sterba <dave@jikos.cz> wrote:
-> On Sat, Jul 30, 2011 at 12:16:44AM +0800, Zhong, Xin wrote:
->> I believe I have submit a similar patch months ago:
->> http://marc.info/?l=linux-btrfs&m=130208585106572&w=2
->
-> You did! I was not aware of that. I believe adding a helper make things
-> more clear (if it were used all over the code).
->
->> Hope it can be integrated this time, :-).
->
-> mehopes too
+Hello all,
 
-i corrupted an FS after doing this back in Nov of last year (though i
-was also --bind mounting it after the fact)
+I recently had a power failure and can no longer mount my /home directory. The harddrive has two BTRFS partitions: sda7(/) and sda8(/home). The / partition loads up just fine, but /home does not. I've tried btrfsck as shown below and I've included dmesg pertaining to btrfs. This is on ArchLinux and the software versions are as follows:
+btrfs-progs-unstable 0.19.20101006-1
+linux 3.0
 
-http://marc.info/?l=linux-btrfs&m=129091436915724&w=2
+I actually have quite a bit of data on this partition that I would rather not lose. Please help!
 
-...and a patch proposed:
+Thanks,
+Adam
 
-http://marc.info/?l=linux-btrfs&m=129091815217860&w=2
+btrfsck /dev/sda8:
+found 152764059648 bytes used err is 1
+total csum bytes: 148756860
+total tree bytes: 436686848
+total fs tree bytes: 160870400
+btree space waste bytes: 110424811
+file data blocks allocated: 4925582483456
+ referenced 114231959552
+Btrfs Btrfs v0.19
+root 5 inode 738980 errors 400
+root 5 inode 771936 errors 400
+root 5 inode 771937 errors 400
+root 5 inode 771938 errors 400
+root 5 inode 771939 errors 400
+root 5 inode 771941 errors 400
+root 5 inode 771942 errors 400
 
-C Anthony
+dmesg |grep btrfs
+[   15.148281] btrfs: unlinked 13 orphans
+[   27.156006] kernel BUG at fs/btrfs/inode.c:4586!
+[   27.156124] Modules linked in: vboxnetflt vboxdrv snd_hda_codec_hdmi joydev usbhid hid snd_hda_codec_idt snd_hda_intel snd_hda_codec sdhci_pci sdhci psmouse snd_pcm snd_hwdep btusb firewire_ohci bluetooth crc16 dell_wmi sg nvidia(P) firewire_core arc4 snd_timer evdev serio_raw sparse_keymap i2c_i801 iwlagn mmc_core snd battery video soundcore intel_ips wmi ppdev dell_laptop parport_pc container button ac mac80211 cfg80211 pcspkr rfkill parport dcdbas iTCO_wdt i2c_core crc_itu_t iTCO_vendor_support intel_agp snd_page_alloc processor intel_gtt e1000e btrfs zlib_deflate crc32c libcrc32c ext2 mbcache ehci_hcd usbcore sr_mod cdrom sd_mod ahci libahci libata scsi_mod
+[   27.157096] RIP: 0010:[<ffffffffa010b781>]  [<ffffffffa010b781>] btrfs_add_link+0x161/0x1c0 [btrfs]
+[   27.158176]  [<ffffffffa013482f>] add_inode_ref+0x30f/0x3d0 [btrfs]
+[   27.158245]  [<ffffffffa013567b>] replay_one_buffer+0x2bb/0x3b0 [btrfs]
+[   27.158318]  [<ffffffffa0122f27>] ? alloc_extent_buffer+0x87/0x3d0 [btrfs]
+[   27.158391]  [<ffffffffa0132cd1>] walk_down_log_tree+0x391/0x540 [btrfs]
+[   27.160851]  [<ffffffffa0132f7d>] walk_log_tree+0xfd/0x270 [btrfs]
+[   27.165784]  [<ffffffffa0136d11>] btrfs_recover_log_trees+0x211/0x300 [btrfs]
+[   27.168297]  [<ffffffffa01353c0>] ? replay_one_dir_item+0xe0/0xe0 [btrfs]
+[   27.170832]  [<ffffffffa00fd907>] open_ctree+0x13e7/0x17a0 [btrfs]
+[   27.178506]  [<ffffffffa00d879e>] btrfs_mount+0x40e/0x5c0 [btrfs]
+[   27.212137] RIP  [<ffffffffa010b781>] btrfs_add_link+0x161/0x1c0 [btrfs]

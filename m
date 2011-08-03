@@ -1,194 +1,131 @@
 From: David Sterba <dave@jikos.cz>
-Subject: Re: [RFC, crash][PATCH] btrfs: allow cross-subvolume file clone
-Date: Wed, 3 Aug 2011 20:22:26 +0200
-Message-ID: <20110803182226.GD28122@twin.jikos.cz>
-References: <1312394862-28143-1-git-send-email-dsterba@suse.cz>
+Subject: Re: [PATCH] btrfs: do not allow mounting non-subvolumes via subvol
+ option
+Date: Wed, 3 Aug 2011 20:47:13 +0200
+Message-ID: <20110803184713.GE28122@twin.jikos.cz>
+References: <1311934448-887-1-git-send-email-dsterba@suse.cz>
+ <1865303E0DED764181A9D882DEF65FB6B1A8DFC32F@shsmsx502.ccr.corp.intel.com>
 Reply-To: dave@jikos.cz
 Mime-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
-Cc: linux-btrfs@vger.kernel.org, chris.mason@oracle.com,
-	josef@redhat.com, miaox@cn.fujitsu.com, list.btrfs@jan-o-sch.net
-To: David Sterba <dsterba@suse.cz>
+Cc: David Sterba <dsterba@suse.cz>,
+	"linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>,
+	"chris.mason@oracle.com" <chris.mason@oracle.com>
+To: "Zhong, Xin" <xin.zhong@intel.com>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <1312394862-28143-1-git-send-email-dsterba@suse.cz>
+In-Reply-To: <1865303E0DED764181A9D882DEF65FB6B1A8DFC32F@shsmsx502.ccr.corp.intel.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Wed, Aug 03, 2011 at 08:07:42PM +0200, David Sterba wrote:
-> I'm working on a patch to fix cross-volume cloning, worked for simple cases
-> like cloning a single file. When I cloned a full linux-2.6 tree there was a
-> immediate BUG_ON (after third cloned file) in btrfs_delayed_update_inode
-> with -ENOSPC :
+On Sat, Jul 30, 2011 at 12:16:44AM +0800, Zhong, Xin wrote:
+> I believe I have submit a similar patch months ago:
+> http://marc.info/?l=linux-btrfs&m=130208585106572&w=2
 
-oh, a similar issue was already reported on 5 Jul 2011:
+You did! I was not aware of that. I believe adding a helper make things
+more clear (if it were used all over the code).
 
-"[BUG] delayed inodes and reflinks"
-http://permalink.gmane.org/gmane.comp.file-systems.btrfs/11763 
+> Hope it can be integrated this time, :-).
 
-Jan Schmidt wrote:
-> If I get back to a situation where I can reproduce the bug, I'll send
-> a follow up.
-
-I do have a reproducer:
-
-$ mkfs.btrfs
-$ mount ...
-$ btrfs subvol create subvol1
-$ btrfs subvol create subvol2
-$ cp linux-2.6 subvol1
-$ (in subvol1) find linux-2.6 -type d -exec mkdir -p ../subvol2/'{}' \;
-$ (in subvol1) find linux-2.6 -type f -exec ./clone-file '{}' ../subvol2/'{}' \;
-
-and this backtrace follows ...
-
+mehopes too,
 david
 
-> [  925.546266] ------------[ cut here ]------------
-> [  925.549921] kernel BUG at fs/btrfs/delayed-inode.c:1693!
-> [  925.549921] invalid opcode: 0000 [#1] SMP
-> [  925.549921] CPU 0
-> [  925.549921] Modules linked in: btrfs
-> [  925.549921]
-> [  925.549921] Pid: 31167, comm: clone-file Not tainted 3.0.0-default+ #98 Intel Corporation Santa Rosa platform/Matanzas
-> [  925.549921] RIP: 0010:[<ffffffffa00790e0>]  [<ffffffffa00790e0>] btrfs_delayed_update_inode+0x2e0/0x2f0 [btrfs]
-> [  925.549921] RSP: 0018:ffff88004f229be8  EFLAGS: 00010286
-> [  925.549921] RAX: 00000000ffffffe4 RBX: ffff880048392c70 RCX: 0000000000018000
-> [  925.549921] RDX: 0000000000001b1a RSI: 0000000000000001 RDI: ffff88007a6f8420
-> [  925.549921] RBP: ffff88004f229c28 R08: 0000000000000004 R09: 0000000000000000
-> [  925.549921] R10: 0000000000000000 R11: 0000000000000000 R12: ffff880048393bf8
-> [  925.549921] R13: ffff880048392cb8 R14: ffff880050ff3540 R15: ffff880052940000
-> [  925.549921] FS:  00007fbf18b23700(0000) GS:ffff88007dc00000(0000) knlGS:0000000000000000
-> [  925.549921] CS:  0010 DS: 0000 ES: 0000 CR0: 000000008005003b
-> [  925.549921] CR2: 00007fbcc68ba000 CR3: 000000004b4a8000 CR4: 00000000000006f0
-> [  925.549921] DR0: 0000000000000000 DR1: 0000000000000000 DR2: 0000000000000000
-> [  925.549921] DR3: 0000000000000000 DR6: 00000000ffff0ff0 DR7: 0000000000000400
-> [  925.549921] Process clone-file (pid: 31167, threadinfo ffff88004f228000, task ffff88004b4e5140)
-> [  925.549921] Stack:
-> [  925.549921]  ffff880048f7ddc0 0000000000018000 ffff88004f229c38 ffff880048393bf8
-> [  925.549921]  ffff880050ff3540 ffff880048393bf8 ffff880051a900a0 ffff880052940000
-> [  925.549921]  ffff88004f229c78 ffffffffa0034633 ffff88004f229c58 ffffffffa005f08b
-> [  925.549921] Call Trace:
-> [  925.549921]  [<ffffffffa0034633>] btrfs_update_inode+0x53/0x160 [btrfs]
-> [  925.549921]  [<ffffffffa005f08b>] ? btrfs_tree_unlock+0x6b/0xa0 [btrfs]
-> [  925.549921]  [<ffffffffa005b0ba>] btrfs_ioctl_clone+0xa0a/0xcc0 [btrfs]
-> [  925.549921]  [<ffffffff81168c81>] ? __do_fault+0x4a1/0x590
-> [  925.549921]  [<ffffffff810daa1d>] ? lock_release_holdtime+0x3d/0x1c0
-> [  925.549921]  [<ffffffff81b8dc20>] ? do_page_fault+0x2d0/0x580
-> [  925.549921]  [<ffffffffa005dfcb>] btrfs_ioctl+0x2db/0xda0 [btrfs]
-> [  925.549921]  [<ffffffff81b8dc20>] ? do_page_fault+0x2d0/0x580
-> [  925.549921]  [<ffffffff810e1467>] ? debug_check_no_locks_freed+0x177/0x180
-> [  925.549921]  [<ffffffff811863c5>] ? kmem_cache_free+0xb5/0x1b0
-> [  925.549921]  [<ffffffff811a5db8>] do_vfs_ioctl+0x98/0x570
-> [  925.549921]  [<ffffffff8119476d>] ? fget_light+0x2fd/0x3c0
-> [  925.549921]  [<ffffffff811a62df>] sys_ioctl+0x4f/0x80
-> [  925.549921]  [<ffffffff81b92882>] system_call_fastpath+0x16/0x1b
-> [  925.549921] Code: e8 06 00 00 8d 0c 49 48 89 ca 48 89 4d c8 e8 c8 0f fa ff 85 c0 48 8b 4d c8 75 10 48 89 4b 08 e9 8e fd ff ff 0f 1f 80 00 00 00 00 <0f> 0b 66 66 66 66 66 2e 0f 1f 84 00 00 00 00 00 55 48 89 e5 53
-> [  925.549921] RIP  [<ffffffffa00790e0>] btrfs_delayed_update_inode+0x2e0/0x2f0 [btrfs]
-> [  925.549921]  RSP <ffff88004f229be8>
-> [  925.876182] ---[ end trace 8b4c2031e1394913 ]---
 > 
-> the patch has been applied on top of current linus which contains patches from
-> both pull requests (ed8f37370d83).
 > 
-> The filesystem consists of 5 devices 23G each, about 100G of usable space,
-> mkfs.btrfs with defaults. The kernel tree has about 6G:
-> 
-> $ btrfs fi df .
-> Data, RAID0: total=10.00GB, used=5.55GB
-> Data: total=8.00MB, used=0.00
-> System, RAID1: total=8.00MB, used=4.00KB
-> System: total=4.00MB, used=0.00
-> Metadata, RAID1: total=1.50GB, used=121.75MB
-> Metadata: total=8.00MB, used=0.00
-> 
-> $ df -h .
-> Filesystem            Size  Used Avail Use% Mounted on
-> /dev/sda5             110G  5.8G   82G   7% /mnt/sda5
-> 
-> ie. plenty of free space.
-> 
-> It's possible that I've omitted some important bits in the patch itself, or
-> this exposes a bug of ENOSPC or delayed-inode.
-> 
-> david
-> ---
-> 
-> From: David Sterba <dsterba@suse.cz>
-> 
-> Lift the EXDEV condition and allow different root trees for files being
-> cloned, then pass source inode's root when searching for extents.
-> 
-> Signed-off-by: David Sterba <dsterba@suse.cz>
-> ---
->  fs/btrfs/ioctl.c |    7 ++++---
->  1 files changed, 4 insertions(+), 3 deletions(-)
-> 
-> diff --git a/fs/btrfs/ioctl.c b/fs/btrfs/ioctl.c
-> index 0b980af..58eb0ef 100644
-> --- a/fs/btrfs/ioctl.c
-> +++ b/fs/btrfs/ioctl.c
-> @@ -2183,7 +2183,7 @@ static noinline long btrfs_ioctl_clone(struct file *file, unsigned long srcfd,
->  		goto out_fput;
->  
->  	ret = -EXDEV;
-> -	if (src->i_sb != inode->i_sb || BTRFS_I(src)->root != root)
-> +	if (src->i_sb != inode->i_sb)
->  		goto out_fput;
->  
->  	ret = -ENOMEM;
-> @@ -2247,13 +2247,14 @@ static noinline long btrfs_ioctl_clone(struct file *file, unsigned long srcfd,
->  		 * note the key will change type as we walk through the
->  		 * tree.
->  		 */
-> -		ret = btrfs_search_slot(NULL, root, &key, path, 0, 0);
-> +		ret = btrfs_search_slot(NULL, BTRFS_I(src)->root, &key, path,
-> +				0, 0);
->  		if (ret < 0)
->  			goto out;
->  
->  		nritems = btrfs_header_nritems(path->nodes[0]);
->  		if (path->slots[0] >= nritems) {
-> -			ret = btrfs_next_leaf(root, path);
-> +			ret = btrfs_next_leaf(BTRFS_I(src)->root, path);
->  			if (ret < 0)
->  				goto out;
->  			if (ret > 0)
-> -- 
-> 
-> $ cat clone-file.c
-> #include <stdio.h>
-> #include <sys/ioctl.h>
-> #include <sys/fcntl.h>
-> #include "ioctl.h"
-> 
-> /*
->  * usage: $0 input output
->  * input: existing
->  * output: newly created from input
->  */
-> int main(int argc, char **argv) {
->         int infd, outfd;
->         int ret;
-> 
->         printf("input: %s\n", argv[1]);
->         printf("output: %s\n", argv[2]);
-> 
->         infd=open(argv[1], O_RDONLY);
->         if(infd == -1) {
->                 perror("cannot open input file");
->                 return 1;
->         }
->         outfd=open(argv[2], O_RDWR | O_CREAT | O_EXCL, 0644);
->         if(outfd == -1) {
->                 perror("cannot open output file");
->                 return 2;
->         }
->         ret = ioctl(outfd, BTRFS_IOC_CLONE, infd);
->         if(ret == -1) {
->                 perror("ioctl(CLONE)");
->                 return 3;
->         }
->         return 0;
-> }
+> > -----Original Message-----
+> > From: linux-btrfs-owner@vger.kernel.org [mailto:linux-btrfs-
+> > owner@vger.kernel.org] On Behalf Of David Sterba
+> > Sent: Friday, July 29, 2011 6:14 PM
+> > To: linux-btrfs@vger.kernel.org
+> > Cc: chris.mason@oracle.com; David Sterba
+> > Subject: [PATCH] btrfs: do not allow mounting non-subvolumes via subvol
+> > option
+> > 
+> > There's a missing test whether the path passed to subvol=path option
+> > during mount is a real subvolume, allowing any directory located in
+> > default subovlume to be passed and accepted for mount.
+> > 
+> > (current btrfs progs prevent this early)
+> > $ btrfs subvol snapshot . p1-snap
+> > ERROR: '.' is not a subvolume
+> > 
+> > (with "is subvolume?" test bypassed)
+> > $ btrfs subvol snapshot . p1-snap
+> > Create a snapshot of '.' in './p1-snap'
+> > 
+> > $ btrfs subvol list -p .
+> > ID 258 parent 5 top level 5 path subvol
+> > ID 259 parent 5 top level 5 path subvol1
+> > ID 260 parent 5 top level 5 path default-subvol1
+> > ID 262 parent 5 top level 5 path p1/p1-snapshot
+> > ID 263 parent 259 top level 5 path subvol1/subvol1-snap
+> > 
+> > The problem I see is that this makes a false impression of snapshotting
+> > the
+> > given subvolume but in fact snapshots the default one: a user expects
+> > outcome
+> > like ID 263 but in fact gets ID 262 .
+> > 
+> > This patch makes mount fail with EINVAL with a message in syslog.
+> > 
+> > Signed-off-by: David Sterba <dsterba@suse.cz>
+> > ---
+> > 
+> > I did not find a better errno than EINVAL, probably adding someting
+> > like
+> > ENSUBVOL would be better so that other filesystems with such
+> > functionality may
+> > use it in future.
+> > 
+> >  fs/btrfs/super.c |   19 +++++++++++++++++++
+> >  1 files changed, 19 insertions(+), 0 deletions(-)
+> > 
+> > diff --git a/fs/btrfs/super.c b/fs/btrfs/super.c
+> > index 15634d4..0c2a1d1 100644
+> > --- a/fs/btrfs/super.c
+> > +++ b/fs/btrfs/super.c
+> > @@ -753,6 +753,15 @@ static int btrfs_set_super(struct super_block *s,
+> > void *data)
+> >  	return set_anon_super(s, data);
+> >  }
+> > 
+> > +/*
+> > + * subvolumes are identified by ino 256
+> > + */
+> > +static inline int is_subvolume_inode(struct inode *inode)
+> > +{
+> > +	if (inode && inode->i_ino == BTRFS_FIRST_FREE_OBJECTID)
+> > +		return 1;
+> > +	return 0;
+> > +}
+> > 
+> >  /*
+> >   * Find a superblock for the given device / mount point.
+> > @@ -873,6 +882,16 @@ static struct dentry *btrfs_mount(struct
+> > file_system_type *fs_type, int flags,
+> >  			error = -ENXIO;
+> >  			goto error_free_subvol_name;
+> >  		}
+> > +
+> > +		if (!is_subvolume_inode(new_root->d_inode)) {
+> > +			dput(root);
+> > +			dput(new_root);
+> > +			deactivate_locked_super(s);
+> > +			error = -EINVAL;
+> > +			printk(KERN_ERR "btrfs: '%s' is not a valid
+> > subvolume\n",
+> > +					subvol_name);
+> > +			goto error_free_subvol_name;
+> > +		}
+> >  		dput(root);
+> >  		root = new_root;
+> >  	} else {
+> > --
+> > 1.7.6
+> > 
+> > --
+> > To unsubscribe from this list: send the line "unsubscribe linux-btrfs"
+> > in
+> > the body of a message to majordomo@vger.kernel.org
+> > More majordomo info at  http://vger.kernel.org/majordomo-info.html
 > --
 > To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
 > the body of a message to majordomo@vger.kernel.org

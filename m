@@ -1,167 +1,116 @@
 From: Goffredo Baroncelli <kreijack@gmail.com>
 Subject: Re: [RFC] btrfs send and receive
-Date: Wed, 03 Aug 2011 22:43:26 +0200
-Message-ID: <1335149.9cmILjyzSG@venice>
-References: <4E369A80.9030307@jan-o-sch.net> <2611416.qFuztk21pN@venice> <4E396388.7040809@jan-o-sch.net>
+Date: Wed, 03 Aug 2011 20:52:48 +0200
+Message-ID: <23039341.GAZYc0s4Vv@venice>
+References: <4E369A80.9030307@jan-o-sch.net> <4E36F5B8.5090803@libero.it> <4E37C6CB.1030201@jan-o-sch.net>
 Reply-To: kreijack@libero.it
 Mime-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
-Cc: Goffredo Baroncelli <kreijack@gmail.com>,
-	linux-btrfs@vger.kernel.org, Chris Mason <chris.mason@oracle.com>
-To: Jan Schmidt <list.btrfs@jan-o-sch.net>
+Cc: Chris Mason <chris.mason@oracle.com>
+To: linux-btrfs@vger.kernel.org
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <4E396388.7040809@jan-o-sch.net>
+In-Reply-To: <4E37C6CB.1030201@jan-o-sch.net>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Wednesday, 03 August, 2011 17:04:40 Jan Schmidt wrote:
-> On 02.08.2011 19:42, Goffredo Baroncelli wrote:
-> >> Furthermore, receiving should not need kernel support at all (except for
-> >> an optional interface to create a file with a certain inode, we'll see).
-> >> Thus, replicating metadata corruptions should be very unlikely.
+On Tuesday, 02 August, 2011 11:43:39 you wrote:
+> On 01.08.2011 20:51, Goffredo Baroncelli wrote:
+[...]
+> > 1) If we are interested to transport only the file
+> > type/contents/timestamps/acls/owners/permissions, that could be obtained
+> > with a combination of "find-new" (with some extensions [1]) and an
+> > user-space tool. No extension to BTRFS are needed.
+> 
+> Right. This is not what I'm after.
+> 
+> > 1.1) as above plus preserve the inode number.
 > > 
-> > I think that for receiving we can have three level, which may represent
-> > three level in the develop:
-> > 
-> > 1) we store the information as a pax|tar|git|... file format. Then is the
-> > user that can expand this file when needed. I think that in case of
-> > backup this is more useful than having a full filesystem. No help from
-> > kernel required.
-> > 
-> > 2) we expand the stream in files; so the final results would be a
-> > filesystem.
-> How would you test your stream from 1) if you can't unpack it?
+> > 2) If we want to have also to conserver the COW relation (between
+> > snapshots/subvolumes and  files), I think that we need some help from
+> > the kernel side to be able to injecting these information in the
+> > destination btrfs filesystem.
+> 
+> I'd rather gather those information (possibly with help from the kernel)
+> when generating the stream. I realized that I should have used some
+> examples in my original mail. What I have in mind (as briefly described
+> in my section 5.D) is the following:
+> 
+> To not make it overly complex, let's assume snapshots are read only for
+> a moment.
+> 
+> We have a subvolume /home with one snapshot /home/snap1. When we want to
+> send the whole subvolume we could do the following (if you read section
+> 5 assume --minimal was the default):
+> 
+> btrfs subvol snapshot /home send-test
+> btrfs send /home send-test > /tmp/stream
+> 
+> Algorithm: First pick all files from the oldest snapshot (snap1) and put
+> them into the stream. Then, there is a block of meta information saying
+> "snap1 complete". The next in the stream are the diffs between snap1 and
+> send-test (reflecting the current state of /home), again with an end-marker.
+> 
+> Let's assume we have a freshly created empty /backup subvolume. To
+> receive our changes, we'd call the following:
+> 
+> btrfs receive /backup < /tmp/stream
+> 
+> Algorithm: Use data from the stream to create files to /backup/home.
+> Once we reach the meta information mentioned above, we create a snapshot
+> of /backup/home in /backup/home/snap1. Then we go on receiving the diffs
+> in the stream to /backup/home and create a snapshot send-test.
 
-If we are able to store the information in a standard format (like tar), we 
-are able to unpack when we need.
+Basically we need a tool to evaluate the difference (in terms of metadata and 
+file content) between two snapshot which have an ancestor in common. This is a 
+typical problem of the VCS software. 
 
-The difference between the point 1 and 2 is  that for the point #1 is not 
-required to develop the "extraction side". This doesn't means that we *must 
-not* develop, this means that we *may* delay the develop of the extraction 
-side, and having something really useful. 
+On the basis of that we can generate a stream, which may be a diff between two 
+snapshot or a full subvolume (no diff).
 
-The point 2) requires to develop an extraction tool (the "btrfs receive" 
-command),  which would be able to handle further metadata like the "parent 
-relationship" which you refer below.
-
-I think that the extraction would be like:
-
-sender> hello "receiver", which snapshot do you have ?
-receiver> hello "sender", I have snapshot A, B ,D
-sender> ok, I have the snapshot B and C, so I will send you the delta from 
-               snapshot B, which is the latest in common.
-sender> send data .....
-
-This is far away from a simple tar (or pax or git...) file format.
+On the receiver side in case of diff there is the necessity to check if both 
+the side have the "old" snapshot, and if these snapshots are aligned. I think 
+that tracking the subvolume-id and the generation-no we can check this easily.
 
 > 
-> > 2.1) as above but preserving the inode number (small help from kernel
-> > required, may be file-system independent also)
+> > Moreover we need to cope all the possible errors due to the fact that
+> > the snapshot/subvolume are out-sync between the source fs and the
+> > destination fs: what about if we want to transport a snapshot to an
+> > another filesystem where the snapshotted subvolume (previously
+> > successful transported) was removed or changed ? How we can check if a
+> > snapshot/subvolume was changed ?
 > 
-> I would skip that and add it as an extention, later.
+> Continuing the above example, lets assume we have a /backup subvolume
+> that did receive a /backup/home earlier. Receiving a full stream (as
+> generated above) would fail, then. You could remove the subvolume and
+> receive the new full stream, if you like.
 > 
-> > 2.2) as above but preserving the COW properties: if we update an already
-> > snapshotted file, btrfs store the original one and the modified data. The
-> > same would be in the destination filesystem: if exists the previous file
-> > snapshot, in the filesystem is COW-ed the file updating only the "new
-> > data". (help from kernel side. I don't know if it is possible to adapt
-> > this strategy for other filesystem than BTRFS)
+> Now let's assume we have /home with snap1, send-test, snap2 and snap3.
+> On the backup side, we have /backup/home with snap1 and send-test.
 > 
-> Again, I'd rather gather those information (possibly with help from the
-> kernel) when generating the stream. This is what I answered and tried to
-> explain by example in my mail yesterday. Please tell me which part was
-> unclear and I'll try to explain better.
-
-I am talking *only* about the receiving. How we gather these information is 
-not (for the moment) in discussion
-
+> We make another snapshot and generate an incremental stream on the sender:
 > 
-> With the algorithm outlined yesterday, you don't need any kernel support
-> when receiving, so it should be adaptable by any filesystem that
-> supports snapshots.
-
-Right
-
+> btrfs subvol snapshot /home incr-test
+> btrfs send /home send-test incr-test
 > 
-> > 3) extracting from the source filesystem the btree structure, and
-> > injecting in the btrfs filesystem this structure. I think that this has
-> > the best performance, both in terms of CPU-power and in bandwidth. Full
-> > kernel support required.
+> The stream contains the information that it's based on the snapshot
+> send-test (maybe by uuid rather than name). When we receive the stream,
+> we first check if the destination file system /backup/home has that
+> send-test snapshot.
 > 
-> This is like a diff-aware dd, or did I get you wrong? If it is: do you
-> really think we need it? What for?
-
-I cited it only as "brainstorm" approach. The only gain is its space efficency.
-
+> a) If it does and there are no diffs between /backup/home and
+>    /backup/home/send-test, noone modified the destination => receive
 > 
-> >> One more thing to add: We have to make sure our stream doesn't get
-> >> corrupted. So if the file format we're choosing does not include it, we
-> >> should keep in mind to add something ourselves.
-> > 
-> > The best would be using the BTRFS checksum.
+> b) If it does and there are diffs between the two, receive should fail
+>    unless --force is specified, which would eliminate all the changes
+>    made in /backup/home so that it's rolled back to send-test.
 > 
-> Sounds interesting. How would you add a btrfs checksum to a stream file
-> (no matter what format we'll use)? And how would you verify it?
-
-I think that btrfs already store a checksum per block basis. When we send the 
-stream we could get this information from btrfs and send together. This only 
-to avoid to recalculate a checksum. Pay attention that I think that btrfs 
-stores the checksum only for the data, and not for the full files. What I means 
-is that if a file is cow-ed, btrfs store the original data and only the data 
-updated, then store the checksum for the original file and the checksum for the 
-data updated. It don't store the checksum for the full file updated. This means 
-that if we try to rebuild the file applying a delta we don't have a checksum of 
-the full file to compare.
-
+> c) If if does not, receive just fails.
 > 
-> >> I'll try to make a plan how it could be implemented with git, so that we
-> >> have something we can compare.
-> > 
-> > I suggest to give a look to the fast-import/export format, which is "de
-> > facto" standard about sharing information between the new CVS system.
+> Although the current algorithm breaks when we release the read-only
+> precondition, I'm certain we can turn these fuzzy ideas into an actually
+> working solution
 > 
-> Thanks for the hint, I will include that in my considerations.
-> 
-> >>> In terms of transmitting snapshot details, I always assumed we would
-> >>> need a snapshot tool that added extra metadata about parent
-> >>> relationships on the snapshots.  I didn't want to enforce this in the
-> >>> metadata on disk, but I have no problems with saying the send/receive
-> >>> tool requires extra metadata to tell us about parents.
-> >> 
-> >> Oh, right. That's something that might not only need kernel support for
-> >> "send" to determine a parent, but also a new key representing a
-> >> snapshot's parent relationship information.
-> > 
-> > I think that this information already exists. In fact every snapshot has a
-> > reference to the original data, on the basis of which it is possible to
-> > obtain the snapshot's parent relationship information.
-> 
-> How can that be done? I don't see such a link.
-
-Give a look at
-
-https://btrfs.wiki.kernel.org/index.php/Project_ideas#Backref_walking_utilities
-
-but I have to admit that the real state is different from what I (wrlongly) 
-understood of the btrfs internal.
-
-
-> 
-> > However we need to be sure that when we send the "delta" between two
-> > snapshot to the receiver side, the receiver side:
-> > 1) has a copy of the previous snapshot
-> > 2) this copy is in sync to the original one
-> > 
-> > I think (please Chris confirm that) that we can check this with the
-> > subvolume id and the generation-no of every snapshot, which should be
-> > unique.
-> uuid + generation was my suggestion as well, should be unique, yes.
-> 
+> Thanks,
 > -Jan
-> 
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
 -- 
 gpg key@ keyserver.linux.it: Goffredo Baroncelli (ghigo) <kreijack@inwind.it>
 Key fingerprint = 4769 7E51 5293 D36C 814E  C054 BF04 F161 3DC5 0512

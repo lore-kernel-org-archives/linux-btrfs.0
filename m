@@ -1,106 +1,55 @@
-From: Liu Bo <liubo2009@cn.fujitsu.com>
-Subject: [PATCH] Btrfs: check if there is enough space for balancing smarter
-Date: Wed, 3 Aug 2011 18:15:25 +0800
-Message-ID: <1312366525-19677-1-git-send-email-liubo2009@cn.fujitsu.com>
-Cc: <josef@redhat.com>, <chris.mason@oracle.com>
-To: <linux-btrfs@vger.kernel.org>
+From: Dave <dave@thekilempire.com>
+Subject: Re: disk-io.c:416: find_and_setup_root: Assertion `!(!root->node)'
+ failed.
+Date: Wed, 3 Aug 2011 09:26:48 -0400
+Message-ID: <20110803132646.GA9784@hendrix.borisch.local>
+References: <20110802144452.GA15647@hendrix.borisch.local>
+ <20110802181630.GA5026@hendrix.borisch.local>
+Mime-Version: 1.0
+Content-Type: text/plain; charset=us-ascii
+To: linux-btrfs@vger.kernel.org
 Return-path: <linux-btrfs-owner@vger.kernel.org>
+In-Reply-To: <20110802181630.GA5026@hendrix.borisch.local>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-When checking if there is enough space for balancing a block group,
-since we do not take raid types into consideration, we do not account
-corrent amounts of space that we needed.  This makes us do some extra
-work before we get ENOSPC.
+OK so I have recovered all of my data.  This was sort of a nerve wrecking
+experience.  I'll share what I've done in case others are experiencing the same
+problem (I've seen other threads appear complaining of the same assertion which
+draw no response).
 
-Signed-off-by: Liu Bo <liubo2009@cn.fujitsu.com>
----
- fs/btrfs/extent-tree.c |   41 +++++++++++++++++++++++++++++++++++------
- 1 files changed, 35 insertions(+), 6 deletions(-)
+So, I filled open_ctree_fd with printf statements to find exactly where it was
+failing.  I found (per my previous mail to this list) that the assertion was
+happening in the following call:
 
-diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
-index 3213c39..02216cc 100644
---- a/fs/btrfs/extent-tree.c
-+++ b/fs/btrfs/extent-tree.c
-@@ -6682,6 +6682,10 @@ int btrfs_can_relocate(struct btrfs_root *root, u64 bytenr)
- 	struct btrfs_space_info *space_info;
- 	struct btrfs_fs_devices *fs_devices = root->fs_info->fs_devices;
- 	struct btrfs_device *device;
-+	u64 min_free;
-+	int index;
-+	int dev_nr = 0;
-+	int dev_min = 1;
- 	int full = 0;
- 	int ret = 0;
- 
-@@ -6691,8 +6695,10 @@ int btrfs_can_relocate(struct btrfs_root *root, u64 bytenr)
- 	if (!block_group)
- 		return -1;
- 
-+	min_free = btrfs_block_group_used(&block_group->item);
-+
- 	/* no bytes used, we're good */
--	if (!btrfs_block_group_used(&block_group->item))
-+	if (!min_free)
- 		goto out;
- 
- 	space_info = block_group->space_info;
-@@ -6708,10 +6714,9 @@ int btrfs_can_relocate(struct btrfs_root *root, u64 bytenr)
- 	 * all of the extents from this block group.  If we can, we're good
- 	 */
- 	if ((space_info->total_bytes != block_group->key.offset) &&
--	   (space_info->bytes_used + space_info->bytes_reserved +
--	    space_info->bytes_pinned + space_info->bytes_readonly +
--	    btrfs_block_group_used(&block_group->item) <
--	    space_info->total_bytes)) {
-+	    (space_info->bytes_used + space_info->bytes_reserved +
-+	     space_info->bytes_pinned + space_info->bytes_readonly +
-+	     min_free < space_info->total_bytes)) {
- 		spin_unlock(&space_info->lock);
- 		goto out;
- 	}
-@@ -6728,9 +6733,29 @@ int btrfs_can_relocate(struct btrfs_root *root, u64 bytenr)
- 	if (full)
- 		goto out;
- 
-+	/*
-+	 * index:
-+	 *      0: raid10
-+	 *      1: raid1
-+	 *      2: dup
-+	 *      3: raid0
-+	 *      4: single
-+	 */
-+	index = get_block_group_index(block_group);
-+	if (index == 0) {
-+		dev_min = 4;
-+		min_free /= 2;
-+	} else if (index == 1) {
-+		dev_min = 2;
-+	} else if (index == 2) {
-+		min_free *= 2;
-+	} else if (index == 3) {
-+		dev_min = fs_devices->rw_devices;
-+		min_free /= dev_min;
-+	}
-+
- 	mutex_lock(&root->fs_info->chunk_mutex);
- 	list_for_each_entry(device, &fs_devices->alloc_list, dev_alloc_list) {
--		u64 min_free = btrfs_block_group_used(&block_group->item);
- 		u64 dev_offset;
- 
- 		/*
-@@ -6741,7 +6766,11 @@ int btrfs_can_relocate(struct btrfs_root *root, u64 bytenr)
- 			ret = find_free_dev_extent(NULL, device, min_free,
- 						   &dev_offset, NULL);
- 			if (!ret)
-+				dev_nr++;
-+
-+			if (dev_nr >= dev_min)
- 				break;
-+
- 			ret = -1;
- 		}
- 	}
--- 
-1.6.5.2
+ret = find_and_setup_root(tree_root, fs_info, BTRFS_CSUM_TREE_OBJECTID, csum_root);
 
+I also found that the fs would mount read-only on an older kernel but 85% of the
+files read reported I/O errors.  It looks like the b-tree which stores checksums
+was broken.  The breakage is likely high up on the tree and thus affects most,
+but not all files.  Trying to determine how to get btrfs to ignore checksums
+lead me here:
+
+http://kerneltrap.org/mailarchive/linux-btrfs/2010/2/25/6806053/thread#mid-6806053
+
+So I grabbed a copy of 2.6.32.10 and patched compression.c and inode.c.  I'm now
+able to read ALL of the data when mounting read-only.
+
+This whole process has left a bit of bad taste in my mouth.  A checksum tree
+seems like a great way to add fault tolerance but in this case it was another
+point of failure, rendering perfectly uncorrupted data unaccessible.  I suppose
+this would have to be something a proper fsck would have to contend with.  My
+questions for the developers are:
+
+1. Would repairing or rebuilding a broken checksum tree be a trivial task for a
+functional fsck?
+
+2. Does a mount option which ignores the checksum tree altogether make sense?
+Strictly for recovery purposes of course.  Not everyone is inclined to hack the
+kernel to get access to their data.
+
+Either way I've kept the dump of the broken filesystem.  If fsck ever makes it
+out of development purgatory I'll definitely be running it against this as a
+test case.  I saw an email to this list earlier today asking about the status of
+fsck.  It seems like an it would be reasonable to know approximately when
+something will be released to the public.  Not asking for a specific day, more
+like which quarter of which year.

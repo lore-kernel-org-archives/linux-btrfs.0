@@ -1,62 +1,77 @@
-From: Hugo Mills <hugo@carfax.org.uk>
-Subject: Re: INSTALL hint: create device btrfs-control
-Date: Thu, 4 Aug 2011 18:35:48 +0100
-Message-ID: <20110804173548.GA8970@carfax.org.uk>
-References: <BrDeAL0D1uB@helmut.hullen.de>
-Mime-Version: 1.0
-Content-Type: multipart/signed; micalg=pgp-sha1;
-	protocol="application/pgp-signature"; boundary="VbJkn9YxBvnuCH5J"
-Cc: linux-btrfs@vger.kernel.org
-To: helmut@hullen.de
+From: Jan Schmidt <list.btrfs@jan-o-sch.net>
+Subject: [GIT PULL] Btrfs patches for scrub, backref walking and raid repair
+Date: Thu,  4 Aug 2011 19:51:09 +0200
+Message-ID: <cover.1312478019.git.list.btrfs@jan-o-sch.net>
+To: chris.mason@oracle.com, linux-btrfs@vger.kernel.org
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <BrDeAL0D1uB@helmut.hullen.de>
 List-ID: <linux-btrfs.vger.kernel.org>
 
+Hi Chris,
 
---VbJkn9YxBvnuCH5J
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
+as you requested, you can pull my latest patches from
 
-On Thu, Aug 04, 2011 at 12:10:00PM +0200, Helmut Hullen wrote:
-> Hallo,
-> 
-> you should please add a hint in
-> 
->    .../git/mason/btrfs-progs-unstable.git
-> 
-> in the file "INSTALL" with at least the contents (please excuse my  
-> gerlish)
-> 
-> "btrfs" needs the device "btrfs-control". Perhaps you have to create it:
-> 
->         mknod /dev/btrfs-control c 10 234
+git://git.jan-o-sch.net/btrfs-unstable
 
-   This should probably go in the problems FAQ [1] on the wiki
-instead, since (a) it's really a problem with your distribution, and
-(b) probably quite rare now that the majority of people are running
-distributions with udev.
+You'll find three branches to choose from: "scrub", containing the backref
+walking code and patches to fixup nodatasum errors. They have been sent to the
+mailing list lately as "[PATCH v8 0/8] Btrfs scrub: print path to corrupted
+files and trigger nodatasum fixup".
 
-   What are the symptoms of not having the device node? (i.e. how
-would I diagnose this particular problem?)
+Next, there is a "raid1-repair" branch, adding code to write back good data as
+we get it to failed disks in a raid setup. This was sent to the list as
+"[RFC PATCH 0/4] btrfs: Suggestion for raid auto-repair" earlier. I added a
+missing unlock (pointed out by Ian Kent), which should be the only difference
+from the previous patch set.
 
-   Hugo.
+Andi Kleen has looked over the raid1-repair series and suggested adding some
+threshold to avoid flooding the console with errors from the repair attempts,
+in case the drive is really bad. This is definitely important, but we can also
+add them later (that's my opinion, at least). I'm planning to do more tests with
+sata fault injectors. I should get some within the next days, hopefully. I'd
+like to see the impact of flooding, which will make it easier to come with a
+good solution for it.
+
+The combination of both branches mentioned is the for-chris branch. It has the
+scrub patches first, followed by the raid1-repair patches as contained in the
+separate branches. The last commit in this branch is an integration commit,
+improving nodatasum fixup for a corner case (detailed description is in the
+commit message).
+   
+Thanks,
+-Jan
+
+Jan Schmidt (13):
+  btrfs: added helper functions to iterate backrefs
+  btrfs scrub: added unverified_errors
+  btrfs scrub: print paths of corrupted files
+  btrfs scrub: bugfix: mirror_num off by one
+  btrfs: add mirror_num to extent_read_full_page
+  btrfs scrub: use int for mirror_num, not u64
+  btrfs scrub: add fixup code for errors on nodatasum files
+  btrfs: new ioctls to do logical->inode and inode->path resolving
+  btrfs: btrfs_multi_bio replaced with btrfs_bio
+  btrfs: Do not use bio->bi_bdev after submission
+  btrfs: Put mirror_num in bi_bdev
+  btrfs: Moved repair code from inode.c to extent_io.c
+  btrfs: integrating raid-repair and scrub-fixup-nodatasum
+
+ fs/btrfs/Makefile      |    3 +-
+ fs/btrfs/backref.c     |  764 ++++++++++++++++++++++++++++++++++++++++++++++++
+ fs/btrfs/backref.h     |   62 ++++
+ fs/btrfs/disk-io.c     |    2 +-
+ fs/btrfs/extent-tree.c |   10 +-
+ fs/btrfs/extent_io.c   |  393 ++++++++++++++++++++++++-
+ fs/btrfs/extent_io.h   |   13 +-
+ fs/btrfs/inode.c       |  157 +----------
+ fs/btrfs/ioctl.c       |  143 +++++++++
+ fs/btrfs/ioctl.h       |   30 ++
+ fs/btrfs/scrub.c       |  476 +++++++++++++++++++++++++++---
+ fs/btrfs/volumes.c     |  130 +++++----
+ fs/btrfs/volumes.h     |   10 +-
+ 13 files changed, 1916 insertions(+), 277 deletions(-)
+ create mode 100644 fs/btrfs/backref.c
+ create mode 100644 fs/btrfs/backref.h
 
 -- 
-=== Hugo Mills: hugo@... carfax.org.uk | darksatanic.net | lug.org.uk ===
-  PGP key: 515C238D from wwwkeys.eu.pgp.net or http://www.carfax.org.uk
-          --- What part of "gestalt" don't you understand? ---           
+1.7.3.4
 
---VbJkn9YxBvnuCH5J
-Content-Type: application/pgp-signature; name="signature.asc"
-Content-Description: Digital signature
-Content-Disposition: inline
-
------BEGIN PGP SIGNATURE-----
-Version: GnuPG v1.4.10 (GNU/Linux)
-
-iD8DBQFOOthzIKyzvlFcI40RAu7RAJ9ZmFgq+0LIq5XBv2nbuKwKKaVmHACgoq5b
-uNQBUbi5n8TUqKRS45iSS+w=
-=JbtO
------END PGP SIGNATURE-----
-
---VbJkn9YxBvnuCH5J--

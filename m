@@ -1,41 +1,154 @@
-From: David Sterba <dave@jikos.cz>
-Subject: Re: [PATCH V3] Btrfs-progs: add "btrfs subvolume get-default"
- subcommand
-Date: Thu, 4 Aug 2011 21:27:06 +0200
-Message-ID: <20110804192706.GF28122@twin.jikos.cz>
-References: <1310438917-23048-1-git-send-email-xin.zhong@intel.com>
-Reply-To: dave@jikos.cz
-Mime-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Cc: linux-btrfs@vger.kernel.org
-To: "Zhong, Xin" <xin.zhong@intel.com>
+From: Josef Bacik <josef@redhat.com>
+Subject: [PATCH] Btrfs: kill the orphan space calculation for snapshots
+Date: Thu,  4 Aug 2011 15:36:02 -0400
+Message-ID: <1312486562-18719-1-git-send-email-josef@redhat.com>
+To: linux-btrfs@vger.kernel.org
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <1310438917-23048-1-git-send-email-xin.zhong@intel.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hi,
+This patch kills off the calculation for the amount of space needed for the
+orphan operations during a snapshot.  The thing is we only do snapshots on
+commit, so any space that is in the block_rsv->freed[] isn't going to be in the
+new snapshot anyway, so there isn't any reason to require that space to be
+reserved for the snapshot to occur.  Thanks,
 
-please move the help text for 'get-default' right after 'set-default',
-it's logical and currently it's very easy to miss it (it took me a few
-seconds to locate it event if I knew it's there :)
+Signed-off-by: Josef Bacik <josef@redhat.com>
+---
+ fs/btrfs/ctree.h       |    5 ---
+ fs/btrfs/inode.c       |   83 ------------------------------------------------
+ fs/btrfs/transaction.c |    2 -
+ 3 files changed, 0 insertions(+), 90 deletions(-)
 
-thanks,
-david
+diff --git a/fs/btrfs/ctree.h b/fs/btrfs/ctree.h
+index f8fc34d..358d16b 100644
+--- a/fs/btrfs/ctree.h
++++ b/fs/btrfs/ctree.h
+@@ -2577,11 +2577,6 @@ int btrfs_update_inode(struct btrfs_trans_handle *trans,
+ int btrfs_orphan_add(struct btrfs_trans_handle *trans, struct inode *inode);
+ int btrfs_orphan_del(struct btrfs_trans_handle *trans, struct inode *inode);
+ int btrfs_orphan_cleanup(struct btrfs_root *root);
+-void btrfs_orphan_pre_snapshot(struct btrfs_trans_handle *trans,
+-				struct btrfs_pending_snapshot *pending,
+-				u64 *bytes_to_reserve);
+-void btrfs_orphan_post_snapshot(struct btrfs_trans_handle *trans,
+-				struct btrfs_pending_snapshot *pending);
+ void btrfs_orphan_commit_root(struct btrfs_trans_handle *trans,
+ 			      struct btrfs_root *root);
+ int btrfs_cont_expand(struct inode *inode, loff_t oldsize, loff_t size);
+diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
+index 30c430f..4c8342f 100644
+--- a/fs/btrfs/inode.c
++++ b/fs/btrfs/inode.c
+@@ -2077,89 +2077,6 @@ void btrfs_run_delayed_iputs(struct btrfs_root *root)
+ 	up_read(&root->fs_info->cleanup_work_sem);
+ }
+ 
+-/*
+- * calculate extra metadata reservation when snapshotting a subvolume
+- * contains orphan files.
+- */
+-void btrfs_orphan_pre_snapshot(struct btrfs_trans_handle *trans,
+-				struct btrfs_pending_snapshot *pending,
+-				u64 *bytes_to_reserve)
+-{
+-	struct btrfs_root *root;
+-	struct btrfs_block_rsv *block_rsv;
+-	u64 num_bytes;
+-	int index;
+-
+-	root = pending->root;
+-	if (!root->orphan_block_rsv || list_empty(&root->orphan_list))
+-		return;
+-
+-	block_rsv = root->orphan_block_rsv;
+-
+-	/* orphan block reservation for the snapshot */
+-	num_bytes = block_rsv->size;
+-
+-	/*
+-	 * after the snapshot is created, COWing tree blocks may use more
+-	 * space than it frees. So we should make sure there is enough
+-	 * reserved space.
+-	 */
+-	index = trans->transid & 0x1;
+-	if (block_rsv->reserved + block_rsv->freed[index] < block_rsv->size) {
+-		num_bytes += block_rsv->size -
+-			     (block_rsv->reserved + block_rsv->freed[index]);
+-	}
+-
+-	*bytes_to_reserve += num_bytes;
+-}
+-
+-void btrfs_orphan_post_snapshot(struct btrfs_trans_handle *trans,
+-				struct btrfs_pending_snapshot *pending)
+-{
+-	struct btrfs_root *root = pending->root;
+-	struct btrfs_root *snap = pending->snap;
+-	struct btrfs_block_rsv *block_rsv;
+-	u64 num_bytes;
+-	int index;
+-	int ret;
+-
+-	if (!root->orphan_block_rsv || list_empty(&root->orphan_list))
+-		return;
+-
+-	/* refill source subvolume's orphan block reservation */
+-	block_rsv = root->orphan_block_rsv;
+-	index = trans->transid & 0x1;
+-	if (block_rsv->reserved + block_rsv->freed[index] < block_rsv->size) {
+-		num_bytes = block_rsv->size -
+-			    (block_rsv->reserved + block_rsv->freed[index]);
+-		ret = btrfs_block_rsv_migrate(&pending->block_rsv,
+-					      root->orphan_block_rsv,
+-					      num_bytes);
+-		BUG_ON(ret);
+-	}
+-
+-	/* setup orphan block reservation for the snapshot */
+-	block_rsv = btrfs_alloc_block_rsv(snap);
+-	BUG_ON(!block_rsv);
+-
+-	btrfs_add_durable_block_rsv(root->fs_info, block_rsv);
+-	snap->orphan_block_rsv = block_rsv;
+-
+-	num_bytes = root->orphan_block_rsv->size;
+-	ret = btrfs_block_rsv_migrate(&pending->block_rsv,
+-				      block_rsv, num_bytes);
+-	BUG_ON(ret);
+-
+-#if 0
+-	/* insert orphan item for the snapshot */
+-	WARN_ON(!root->orphan_item_inserted);
+-	ret = btrfs_insert_orphan_item(trans, root->fs_info->tree_root,
+-				       snap->root_key.objectid);
+-	BUG_ON(ret);
+-	snap->orphan_item_inserted = 1;
+-#endif
+-}
+-
+ enum btrfs_orphan_cleanup_state {
+ 	ORPHAN_CLEANUP_STARTED	= 1,
+ 	ORPHAN_CLEANUP_DONE	= 2,
+diff --git a/fs/btrfs/transaction.c b/fs/btrfs/transaction.c
+index eb55863..7b3991b 100644
+--- a/fs/btrfs/transaction.c
++++ b/fs/btrfs/transaction.c
+@@ -923,7 +923,6 @@ static noinline int create_pending_snapshot(struct btrfs_trans_handle *trans,
+ 	}
+ 
+ 	btrfs_reloc_pre_snapshot(trans, pending, &to_reserve);
+-	btrfs_orphan_pre_snapshot(trans, pending, &to_reserve);
+ 
+ 	if (to_reserve > 0) {
+ 		ret = btrfs_block_rsv_add(trans, root, &pending->block_rsv,
+@@ -1014,7 +1013,6 @@ static noinline int create_pending_snapshot(struct btrfs_trans_handle *trans,
+ 	BUG_ON(IS_ERR(pending->snap));
+ 
+ 	btrfs_reloc_post_snapshot(trans, pending);
+-	btrfs_orphan_post_snapshot(trans, pending);
+ fail:
+ 	kfree(new_root_item);
+ 	btrfs_block_rsv_release(root, &pending->block_rsv, (u64)-1);
+-- 
+1.7.5.2
 
-On Tue, Jul 12, 2011 at 10:48:37AM +0800, Zhong, Xin wrote:
-> diff --git a/btrfs.c b/btrfs.c
-> index 67d6f6f..1af8360 100644
-> --- a/btrfs.c
-> +++ b/btrfs.c
-@@ -78,6 +78,9 @@ static struct Command commands[] = {
-                "as default.",
-          NULL
-        },
-> +	{ do_get_default_subvol, 1, "subvolume get-default", "<path>\n"
-> +		"Get the default subvolume of a filesystem."
-> +	},
-        { do_find_newer, 2, "subvolume find-new", "<path> <last_gen>\n"
-                "List the recently modified files in a filesystem.",
-          NULL
-> diff --git a/btrfs_cmds.c b/btrfs_cmds.c
-> ...

@@ -1,150 +1,259 @@
 From: Josef Bacik <josef@redhat.com>
-Subject: [PATCH] Btrfs: detect wether a device supports discard
-Date: Thu,  4 Aug 2011 10:52:27 -0400
-Message-ID: <1312469547-7816-1-git-send-email-josef@redhat.com>
+Subject: [PATCH] Btrfs: calculate checksum space correctly
+Date: Thu,  4 Aug 2011 12:02:11 -0400
+Message-ID: <1312473731-11452-1-git-send-email-josef@redhat.com>
 To: linux-btrfs@vger.kernel.org
 Return-path: <linux-btrfs-owner@vger.kernel.org>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-We have a problem where if a user specifies discard but doesn't actually support
-it we will return EOPNOTSUPP from btrfs_discard_extent.  This is a problem
-because this gets called (in a fashion) from the tree log recovery code, which
-has a nice little BUG_ON(ret) after it, which causes us to fail the tree log
-replay.  So instead detect wether our devices support discard when we're adding
-them and then don't issue discards if we know that the device doesn't support
-it.  And just for good measure set ret = 0 in btrfs_issue_discard just in case
-we still get EOPNOTSUPP so we don't screw anybody up like this again.  Thanks,
+We have not been reserving enough space for checksums.  We were just reserving
+bytes for the checksum items themselves, we were not taking into account having
+to cow the tree and such.  This patch adds a csum_bytes counter to the inode for
+keeping track of the number of bytes outstanding we have for checksums.  Then we
+calculate how many leaves would be required for the checksums we are given and
+use that to reserve space.  This adds a significant amount of bytes to our
+reservations, but we will handle this later.  Thanks,
 
 Signed-off-by: Josef Bacik <josef@redhat.com>
 ---
- fs/btrfs/extent-tree.c |   12 ++++++++++--
- fs/btrfs/volumes.c     |   17 +++++++++++++++++
- fs/btrfs/volumes.h     |    2 ++
- 3 files changed, 29 insertions(+), 2 deletions(-)
+ fs/btrfs/btrfs_inode.h |    6 +++
+ fs/btrfs/extent-tree.c |  117 ++++++++++++++++++++++++++++++++++++++++++++---
+ fs/btrfs/inode.c       |    3 +
+ 3 files changed, 118 insertions(+), 8 deletions(-)
 
+diff --git a/fs/btrfs/btrfs_inode.h b/fs/btrfs/btrfs_inode.h
+index 5e9a7a7..559da62 100644
+--- a/fs/btrfs/btrfs_inode.h
++++ b/fs/btrfs/btrfs_inode.h
+@@ -123,6 +123,12 @@ struct btrfs_inode {
+ 	 */
+ 	u64 last_unlink_trans;
+ 
++	/*
++	 * Number of bytes outstanding that are going to need csums.  This is
++	 * used in ENOSPC accounting.
++	 */
++	u64 csum_bytes;
++
+ 	/* flags field from the on disk inode */
+ 	u32 flags;
+ 
 diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
-index ca57fdc..3d3a4b3 100644
+index 6928d19..fc4a800 100644
 --- a/fs/btrfs/extent-tree.c
 +++ b/fs/btrfs/extent-tree.c
-@@ -1797,6 +1797,9 @@ int btrfs_discard_extent(struct btrfs_root *root, u64 bytenr, u64 num_bytes,
+@@ -3979,11 +3979,19 @@ int btrfs_snap_reserve_metadata(struct btrfs_trans_handle *trans,
+ 	return block_rsv_migrate_bytes(src_rsv, dst_rsv, num_bytes);
+ }
  
++/**
++ * drop_outstanding_extent - drop an outstanding extent
++ * @inode: the inode we're dropping the extent for
++ *
++ * This is called when we are freeing up an outstanding extent, either called
++ * after an error or after an extent is written.  This will return the number of
++ * reserved extents that need to be freed.  This must be called with
++ * BTRFS_I(inode)->lock held.
++ */
+ static unsigned drop_outstanding_extent(struct inode *inode)
+ {
+ 	unsigned dropped_extents = 0;
  
- 		for (i = 0; i < multi->num_stripes; i++, stripe++) {
-+			if (!stripe->dev->can_discard)
-+				continue;
+-	spin_lock(&BTRFS_I(inode)->lock);
+ 	BUG_ON(!BTRFS_I(inode)->outstanding_extents);
+ 	BTRFS_I(inode)->outstanding_extents--;
+ 
+@@ -3993,19 +4001,70 @@ static unsigned drop_outstanding_extent(struct inode *inode)
+ 	 */
+ 	if (BTRFS_I(inode)->outstanding_extents >=
+ 	    BTRFS_I(inode)->reserved_extents)
+-		goto out;
++		return 0;
+ 
+ 	dropped_extents = BTRFS_I(inode)->reserved_extents -
+ 		BTRFS_I(inode)->outstanding_extents;
+ 	BTRFS_I(inode)->reserved_extents -= dropped_extents;
+-out:
+-	spin_unlock(&BTRFS_I(inode)->lock);
+ 	return dropped_extents;
+ }
+ 
+-static u64 calc_csum_metadata_size(struct inode *inode, u64 num_bytes)
++/**
++ * calc_csum_metadata_size - return the amount of metada space that must be
++ *	reserved/free'd for the given bytes.
++ * @inode: the inode we're manipulating
++ * @num_bytes: the number of bytes in question
++ * @reserve: 1 if we are reserving space, 0 if we are freeing space
++ *
++ * This adjusts the number of csum_bytes in the inode and then returns the
++ * correct amount of metadata that must either be reserved or freed.  We
++ * calculate how many checksums we can fit into one leaf and then divide the
++ * number of bytes that will need to be checksumed by this value to figure out
++ * how many checksums will be required.  If we are adding bytes then the number
++ * may go up and we will return the number of additional bytes that must be
++ * reserved.  If it is going down we will return the number of bytes that must
++ * be freed.
++ *
++ * This must be called with BTRFS_I(inode)->lock held.
++ */
++static u64 calc_csum_metadata_size(struct inode *inode, u64 num_bytes,
++				   int reserve)
+ {
+-	return num_bytes >>= 3;
++	struct btrfs_root *root = BTRFS_I(inode)->root;
++	u64 csum_size;
++	int num_csums_per_leaf;
++	int num_csums;
++	int old_csums;
 +
- 			ret = btrfs_issue_discard(stripe->dev->bdev,
- 						  stripe->physical,
- 						  stripe->length);
-@@ -1804,11 +1807,16 @@ int btrfs_discard_extent(struct btrfs_root *root, u64 bytenr, u64 num_bytes,
- 				discarded_bytes += stripe->length;
- 			else if (ret != -EOPNOTSUPP)
- 				break;
++	if (BTRFS_I(inode)->flags & BTRFS_INODE_NODATASUM &&
++	    BTRFS_I(inode)->csum_bytes == 0)
++		return 0;
 +
-+			/*
-+			 * Just in case we get back EOPNOTSUPP for some reason,
-+			 * just ignore the return value so we don't screw up
-+			 * people calling discard_extent.
-+			 */
-+			ret = 0;
- 		}
- 		kfree(multi);
++	old_csums = (int)div64_u64(BTRFS_I(inode)->csum_bytes, root->sectorsize);
++	if (reserve)
++		BTRFS_I(inode)->csum_bytes += num_bytes;
++	else
++		BTRFS_I(inode)->csum_bytes -= num_bytes;
++	csum_size = BTRFS_LEAF_DATA_SIZE(root) - sizeof(struct btrfs_item);
++	num_csums_per_leaf = (int)div64_u64(csum_size,
++					    sizeof(struct btrfs_csum_item) +
++					    sizeof(struct btrfs_disk_key));
++	num_csums = (int)div64_u64(BTRFS_I(inode)->csum_bytes, root->sectorsize);
++	num_csums = num_csums + num_csums_per_leaf - 1;
++	num_csums = num_csums / num_csums_per_leaf;
++
++	old_csums = old_csums + num_csums_per_leaf - 1;
++	old_csums = old_csums / num_csums_per_leaf;
++
++	/* No change, no need to reserve more */
++	if (old_csums == num_csums)
++		return 0;
++
++	if (reserve)
++		return btrfs_calc_trans_metadata_size(root,
++						      num_csums - old_csums);
++
++	return btrfs_calc_trans_metadata_size(root, old_csums - num_csums);
+ }
+ 
+ int btrfs_delalloc_reserve_metadata(struct inode *inode, u64 num_bytes)
+@@ -4032,9 +4091,9 @@ int btrfs_delalloc_reserve_metadata(struct inode *inode, u64 num_bytes)
+ 
+ 		to_reserve = btrfs_calc_trans_metadata_size(root, nr_extents);
  	}
--	if (discarded_bytes && ret == -EOPNOTSUPP)
--		ret = 0;
++	to_reserve += calc_csum_metadata_size(inode, num_bytes, 1);
+ 	spin_unlock(&BTRFS_I(inode)->lock);
  
- 	if (actual_bytes)
- 		*actual_bytes = discarded_bytes;
-diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
-index b89e372..8af3bf9 100644
---- a/fs/btrfs/volumes.c
-+++ b/fs/btrfs/volumes.c
-@@ -500,6 +500,9 @@ static int __btrfs_close_devices(struct btrfs_fs_devices *fs_devices)
- 			fs_devices->rw_devices--;
- 		}
+-	to_reserve += calc_csum_metadata_size(inode, num_bytes);
+ 	ret = reserve_metadata_bytes(NULL, root, block_rsv, to_reserve, 1);
+ 	if (ret) {
+ 		unsigned dropped;
+@@ -4042,8 +4101,11 @@ int btrfs_delalloc_reserve_metadata(struct inode *inode, u64 num_bytes)
+ 		 * We don't need the return value since our reservation failed,
+ 		 * we just need to clean up our counter.
+ 		 */
++		spin_lock(&BTRFS_I(inode)->lock);
+ 		dropped = drop_outstanding_extent(inode);
+ 		WARN_ON(dropped > 1);
++		BTRFS_I(inode)->csum_bytes -= num_bytes;
++		spin_unlock(&BTRFS_I(inode)->lock);
+ 		return ret;
+ 	}
  
-+		if (device->can_discard)
-+			fs_devices->num_can_discard--;
-+
- 		new_device = kmalloc(sizeof(*new_device), GFP_NOFS);
- 		BUG_ON(!new_device);
- 		memcpy(new_device, device, sizeof(*new_device));
-@@ -508,6 +511,7 @@ static int __btrfs_close_devices(struct btrfs_fs_devices *fs_devices)
- 		new_device->bdev = NULL;
- 		new_device->writeable = 0;
- 		new_device->in_fs_metadata = 0;
-+		new_device->can_discard = 0;
- 		list_replace_rcu(&device->dev_list, &new_device->dev_list);
+@@ -4052,6 +4114,15 @@ int btrfs_delalloc_reserve_metadata(struct inode *inode, u64 num_bytes)
+ 	return 0;
+ }
  
- 		call_rcu(&device->rcu, free_device);
-@@ -547,6 +551,7 @@ int btrfs_close_devices(struct btrfs_fs_devices *fs_devices)
- static int __btrfs_open_devices(struct btrfs_fs_devices *fs_devices,
- 				fmode_t flags, void *holder)
++/**
++ * btrfs_delalloc_release_metadata - release a metadata reservation for an inode
++ * @inode: the inode to release the reservation for
++ * @num_bytes: the number of bytes we're releasing
++ *
++ * This will release the metadata reservation for an inode.  This can be called
++ * once we complete IO for a given set of bytes to release their metadata
++ * reservations.
++ */
+ void btrfs_delalloc_release_metadata(struct inode *inode, u64 num_bytes)
  {
-+	struct request_queue *q;
- 	struct block_device *bdev;
- 	struct list_head *head = &fs_devices->devices;
- 	struct btrfs_device *device;
-@@ -603,6 +608,12 @@ static int __btrfs_open_devices(struct btrfs_fs_devices *fs_devices,
- 			seeding = 0;
- 		}
+ 	struct btrfs_root *root = BTRFS_I(inode)->root;
+@@ -4059,9 +4130,11 @@ void btrfs_delalloc_release_metadata(struct inode *inode, u64 num_bytes)
+ 	unsigned dropped;
  
-+		q = bdev_get_queue(bdev);
-+		if (blk_queue_discard(q)) {
-+			device->can_discard = 1;
-+			fs_devices->num_can_discard++;
-+		}
-+
- 		device->bdev = bdev;
- 		device->in_fs_metadata = 0;
- 		device->mode = flags;
-@@ -1542,6 +1553,7 @@ error:
+ 	num_bytes = ALIGN(num_bytes, root->sectorsize);
++	spin_lock(&BTRFS_I(inode)->lock);
+ 	dropped = drop_outstanding_extent(inode);
  
- int btrfs_init_new_device(struct btrfs_root *root, char *device_path)
+-	to_free = calc_csum_metadata_size(inode, num_bytes);
++	to_free = calc_csum_metadata_size(inode, num_bytes, 0);
++	spin_unlock(&BTRFS_I(inode)->lock);
+ 	if (dropped > 0)
+ 		to_free += btrfs_calc_trans_metadata_size(root, dropped);
+ 
+@@ -4069,6 +4142,21 @@ void btrfs_delalloc_release_metadata(struct inode *inode, u64 num_bytes)
+ 				to_free);
+ }
+ 
++/**
++ * btrfs_delalloc_reserve_space - reserve data and metadata space for delalloc
++ * @inode: inode we're writing to
++ * @num_bytes: the number of bytes we want to allocate
++ *
++ * This will do the following things
++ *
++ * o reserve space in the data space info for num_bytes
++ * o reserve space in the metadata space info based on number of outstanding
++ *   extents and how much csums will be needed
++ * o add to the inodes ->delalloc_bytes
++ * o add it to the fs_info's delalloc inodes list.
++ *
++ * This will return 0 for success and -ENOSPC if there is no space left.
++ */
+ int btrfs_delalloc_reserve_space(struct inode *inode, u64 num_bytes)
  {
-+	struct request_queue *q;
- 	struct btrfs_trans_handle *trans;
- 	struct btrfs_device *device;
- 	struct block_device *bdev;
-@@ -1611,6 +1623,9 @@ int btrfs_init_new_device(struct btrfs_root *root, char *device_path)
+ 	int ret;
+@@ -4086,6 +4174,19 @@ int btrfs_delalloc_reserve_space(struct inode *inode, u64 num_bytes)
+ 	return 0;
+ }
  
- 	lock_chunks(root);
++/**
++ * btrfs_delalloc_release_space - release data and metadata space for delalloc
++ * @inode: inode we're releasing space for
++ * @num_bytes: the number of bytes we want to free up
++ *
++ * This must be matched with a call to btrfs_delalloc_reserve_space.  This is
++ * called in the case that we don't need the metadata AND data reservations
++ * anymore.  So if there is an error or we insert an inline extent.
++ *
++ * This function will release the metadata space that was not used and will
++ * decrement ->delalloc_bytes and remove it from the fs_info delalloc_inodes
++ * list if there are no delalloc bytes left.
++ */
+ void btrfs_delalloc_release_space(struct inode *inode, u64 num_bytes)
+ {
+ 	btrfs_delalloc_release_metadata(inode, num_bytes);
+diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
+index fd30177..30c430f 100644
+--- a/fs/btrfs/inode.c
++++ b/fs/btrfs/inode.c
+@@ -6739,6 +6739,7 @@ struct inode *btrfs_alloc_inode(struct super_block *sb)
+ 	ei->delalloc_bytes = 0;
+ 	ei->disk_i_size = 0;
+ 	ei->flags = 0;
++	ei->csum_bytes = 0;
+ 	ei->index_cnt = (u64)-1;
+ 	ei->last_unlink_trans = 0;
  
-+	q = bdev_get_queue(bdev);
-+	if (blk_queue_discard(q))
-+		device->can_discard = 1;
- 	device->writeable = 1;
- 	device->work.func = pending_bios_fn;
- 	generate_random_uuid(device->uuid);
-@@ -1646,6 +1661,8 @@ int btrfs_init_new_device(struct btrfs_root *root, char *device_path)
- 	root->fs_info->fs_devices->num_devices++;
- 	root->fs_info->fs_devices->open_devices++;
- 	root->fs_info->fs_devices->rw_devices++;
-+	if (device->can_discard)
-+		root->fs_info->fs_devices->num_can_discard++;
- 	root->fs_info->fs_devices->total_rw_bytes += device->total_bytes;
+@@ -6784,6 +6785,8 @@ void btrfs_destroy_inode(struct inode *inode)
+ 	WARN_ON(inode->i_data.nrpages);
+ 	WARN_ON(BTRFS_I(inode)->outstanding_extents);
+ 	WARN_ON(BTRFS_I(inode)->reserved_extents);
++	WARN_ON(BTRFS_I(inode)->delalloc_bytes);
++	WARN_ON(BTRFS_I(inode)->csum_bytes);
  
- 	if (!blk_queue_nonrot(bdev_get_queue(bdev)))
-diff --git a/fs/btrfs/volumes.h b/fs/btrfs/volumes.h
-index 7c12d61..6d866db 100644
---- a/fs/btrfs/volumes.h
-+++ b/fs/btrfs/volumes.h
-@@ -48,6 +48,7 @@ struct btrfs_device {
- 	int writeable;
- 	int in_fs_metadata;
- 	int missing;
-+	int can_discard;
- 
- 	spinlock_t io_lock;
- 
-@@ -104,6 +105,7 @@ struct btrfs_fs_devices {
- 	u64 rw_devices;
- 	u64 missing_devices;
- 	u64 total_rw_bytes;
-+	u64 num_can_discard;
- 	struct block_device *latest_bdev;
- 
- 	/* all of the devices in the FS, protected by a mutex
+ 	/*
+ 	 * This can happen where we create an inode, but somebody else also
 -- 
 1.7.5.2
 

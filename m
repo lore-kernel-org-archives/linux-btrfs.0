@@ -1,259 +1,135 @@
-From: Josef Bacik <josef@redhat.com>
-Subject: [PATCH] Btrfs: calculate checksum space correctly
-Date: Thu,  4 Aug 2011 12:02:11 -0400
-Message-ID: <1312473731-11452-1-git-send-email-josef@redhat.com>
-To: linux-btrfs@vger.kernel.org
+From: Bruce Guenter <bruce@untroubled.org>
+Subject: Re: Slow snapshot deletion
+Date: Thu, 4 Aug 2011 10:35:36 -0600
+Message-ID: <20110804163536.GA25185@untroubled.org>
+References: <20110728200444.GA30801@untroubled.org>
+ <1311884805-sup-7662@shiny>
+ <1311886250-sup-5126@shiny>
+Mime-Version: 1.0
+Content-Type: multipart/signed; micalg=pgp-sha1;
+	protocol="application/pgp-signature"; boundary="5mCyUwZo2JvN/JJP"
+To: linux-btrfs <linux-btrfs@vger.kernel.org>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
+In-Reply-To: <1311886250-sup-5126@shiny>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-We have not been reserving enough space for checksums.  We were just reserving
-bytes for the checksum items themselves, we were not taking into account having
-to cow the tree and such.  This patch adds a csum_bytes counter to the inode for
-keeping track of the number of bytes outstanding we have for checksums.  Then we
-calculate how many leaves would be required for the checksums we are given and
-use that to reserve space.  This adds a significant amount of bytes to our
-reservations, but we will handle this later.  Thanks,
 
-Signed-off-by: Josef Bacik <josef@redhat.com>
----
- fs/btrfs/btrfs_inode.h |    6 +++
- fs/btrfs/extent-tree.c |  117 ++++++++++++++++++++++++++++++++++++++++++++---
- fs/btrfs/inode.c       |    3 +
- 3 files changed, 118 insertions(+), 8 deletions(-)
+--5mCyUwZo2JvN/JJP
+Content-Type: text/plain; charset=us-ascii
+Content-Disposition: inline
+Content-Transfer-Encoding: quoted-printable
 
-diff --git a/fs/btrfs/btrfs_inode.h b/fs/btrfs/btrfs_inode.h
-index 5e9a7a7..559da62 100644
---- a/fs/btrfs/btrfs_inode.h
-+++ b/fs/btrfs/btrfs_inode.h
-@@ -123,6 +123,12 @@ struct btrfs_inode {
- 	 */
- 	u64 last_unlink_trans;
- 
-+	/*
-+	 * Number of bytes outstanding that are going to need csums.  This is
-+	 * used in ENOSPC accounting.
-+	 */
-+	u64 csum_bytes;
-+
- 	/* flags field from the on disk inode */
- 	u32 flags;
- 
-diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
-index 6928d19..fc4a800 100644
---- a/fs/btrfs/extent-tree.c
-+++ b/fs/btrfs/extent-tree.c
-@@ -3979,11 +3979,19 @@ int btrfs_snap_reserve_metadata(struct btrfs_trans_handle *trans,
- 	return block_rsv_migrate_bytes(src_rsv, dst_rsv, num_bytes);
- }
- 
-+/**
-+ * drop_outstanding_extent - drop an outstanding extent
-+ * @inode: the inode we're dropping the extent for
-+ *
-+ * This is called when we are freeing up an outstanding extent, either called
-+ * after an error or after an extent is written.  This will return the number of
-+ * reserved extents that need to be freed.  This must be called with
-+ * BTRFS_I(inode)->lock held.
-+ */
- static unsigned drop_outstanding_extent(struct inode *inode)
- {
- 	unsigned dropped_extents = 0;
- 
--	spin_lock(&BTRFS_I(inode)->lock);
- 	BUG_ON(!BTRFS_I(inode)->outstanding_extents);
- 	BTRFS_I(inode)->outstanding_extents--;
- 
-@@ -3993,19 +4001,70 @@ static unsigned drop_outstanding_extent(struct inode *inode)
- 	 */
- 	if (BTRFS_I(inode)->outstanding_extents >=
- 	    BTRFS_I(inode)->reserved_extents)
--		goto out;
-+		return 0;
- 
- 	dropped_extents = BTRFS_I(inode)->reserved_extents -
- 		BTRFS_I(inode)->outstanding_extents;
- 	BTRFS_I(inode)->reserved_extents -= dropped_extents;
--out:
--	spin_unlock(&BTRFS_I(inode)->lock);
- 	return dropped_extents;
- }
- 
--static u64 calc_csum_metadata_size(struct inode *inode, u64 num_bytes)
-+/**
-+ * calc_csum_metadata_size - return the amount of metada space that must be
-+ *	reserved/free'd for the given bytes.
-+ * @inode: the inode we're manipulating
-+ * @num_bytes: the number of bytes in question
-+ * @reserve: 1 if we are reserving space, 0 if we are freeing space
-+ *
-+ * This adjusts the number of csum_bytes in the inode and then returns the
-+ * correct amount of metadata that must either be reserved or freed.  We
-+ * calculate how many checksums we can fit into one leaf and then divide the
-+ * number of bytes that will need to be checksumed by this value to figure out
-+ * how many checksums will be required.  If we are adding bytes then the number
-+ * may go up and we will return the number of additional bytes that must be
-+ * reserved.  If it is going down we will return the number of bytes that must
-+ * be freed.
-+ *
-+ * This must be called with BTRFS_I(inode)->lock held.
-+ */
-+static u64 calc_csum_metadata_size(struct inode *inode, u64 num_bytes,
-+				   int reserve)
- {
--	return num_bytes >>= 3;
-+	struct btrfs_root *root = BTRFS_I(inode)->root;
-+	u64 csum_size;
-+	int num_csums_per_leaf;
-+	int num_csums;
-+	int old_csums;
-+
-+	if (BTRFS_I(inode)->flags & BTRFS_INODE_NODATASUM &&
-+	    BTRFS_I(inode)->csum_bytes == 0)
-+		return 0;
-+
-+	old_csums = (int)div64_u64(BTRFS_I(inode)->csum_bytes, root->sectorsize);
-+	if (reserve)
-+		BTRFS_I(inode)->csum_bytes += num_bytes;
-+	else
-+		BTRFS_I(inode)->csum_bytes -= num_bytes;
-+	csum_size = BTRFS_LEAF_DATA_SIZE(root) - sizeof(struct btrfs_item);
-+	num_csums_per_leaf = (int)div64_u64(csum_size,
-+					    sizeof(struct btrfs_csum_item) +
-+					    sizeof(struct btrfs_disk_key));
-+	num_csums = (int)div64_u64(BTRFS_I(inode)->csum_bytes, root->sectorsize);
-+	num_csums = num_csums + num_csums_per_leaf - 1;
-+	num_csums = num_csums / num_csums_per_leaf;
-+
-+	old_csums = old_csums + num_csums_per_leaf - 1;
-+	old_csums = old_csums / num_csums_per_leaf;
-+
-+	/* No change, no need to reserve more */
-+	if (old_csums == num_csums)
-+		return 0;
-+
-+	if (reserve)
-+		return btrfs_calc_trans_metadata_size(root,
-+						      num_csums - old_csums);
-+
-+	return btrfs_calc_trans_metadata_size(root, old_csums - num_csums);
- }
- 
- int btrfs_delalloc_reserve_metadata(struct inode *inode, u64 num_bytes)
-@@ -4032,9 +4091,9 @@ int btrfs_delalloc_reserve_metadata(struct inode *inode, u64 num_bytes)
- 
- 		to_reserve = btrfs_calc_trans_metadata_size(root, nr_extents);
- 	}
-+	to_reserve += calc_csum_metadata_size(inode, num_bytes, 1);
- 	spin_unlock(&BTRFS_I(inode)->lock);
- 
--	to_reserve += calc_csum_metadata_size(inode, num_bytes);
- 	ret = reserve_metadata_bytes(NULL, root, block_rsv, to_reserve, 1);
- 	if (ret) {
- 		unsigned dropped;
-@@ -4042,8 +4101,11 @@ int btrfs_delalloc_reserve_metadata(struct inode *inode, u64 num_bytes)
- 		 * We don't need the return value since our reservation failed,
- 		 * we just need to clean up our counter.
- 		 */
-+		spin_lock(&BTRFS_I(inode)->lock);
- 		dropped = drop_outstanding_extent(inode);
- 		WARN_ON(dropped > 1);
-+		BTRFS_I(inode)->csum_bytes -= num_bytes;
-+		spin_unlock(&BTRFS_I(inode)->lock);
- 		return ret;
- 	}
- 
-@@ -4052,6 +4114,15 @@ int btrfs_delalloc_reserve_metadata(struct inode *inode, u64 num_bytes)
- 	return 0;
- }
- 
-+/**
-+ * btrfs_delalloc_release_metadata - release a metadata reservation for an inode
-+ * @inode: the inode to release the reservation for
-+ * @num_bytes: the number of bytes we're releasing
-+ *
-+ * This will release the metadata reservation for an inode.  This can be called
-+ * once we complete IO for a given set of bytes to release their metadata
-+ * reservations.
-+ */
- void btrfs_delalloc_release_metadata(struct inode *inode, u64 num_bytes)
- {
- 	struct btrfs_root *root = BTRFS_I(inode)->root;
-@@ -4059,9 +4130,11 @@ void btrfs_delalloc_release_metadata(struct inode *inode, u64 num_bytes)
- 	unsigned dropped;
- 
- 	num_bytes = ALIGN(num_bytes, root->sectorsize);
-+	spin_lock(&BTRFS_I(inode)->lock);
- 	dropped = drop_outstanding_extent(inode);
- 
--	to_free = calc_csum_metadata_size(inode, num_bytes);
-+	to_free = calc_csum_metadata_size(inode, num_bytes, 0);
-+	spin_unlock(&BTRFS_I(inode)->lock);
- 	if (dropped > 0)
- 		to_free += btrfs_calc_trans_metadata_size(root, dropped);
- 
-@@ -4069,6 +4142,21 @@ void btrfs_delalloc_release_metadata(struct inode *inode, u64 num_bytes)
- 				to_free);
- }
- 
-+/**
-+ * btrfs_delalloc_reserve_space - reserve data and metadata space for delalloc
-+ * @inode: inode we're writing to
-+ * @num_bytes: the number of bytes we want to allocate
-+ *
-+ * This will do the following things
-+ *
-+ * o reserve space in the data space info for num_bytes
-+ * o reserve space in the metadata space info based on number of outstanding
-+ *   extents and how much csums will be needed
-+ * o add to the inodes ->delalloc_bytes
-+ * o add it to the fs_info's delalloc inodes list.
-+ *
-+ * This will return 0 for success and -ENOSPC if there is no space left.
-+ */
- int btrfs_delalloc_reserve_space(struct inode *inode, u64 num_bytes)
- {
- 	int ret;
-@@ -4086,6 +4174,19 @@ int btrfs_delalloc_reserve_space(struct inode *inode, u64 num_bytes)
- 	return 0;
- }
- 
-+/**
-+ * btrfs_delalloc_release_space - release data and metadata space for delalloc
-+ * @inode: inode we're releasing space for
-+ * @num_bytes: the number of bytes we want to free up
-+ *
-+ * This must be matched with a call to btrfs_delalloc_reserve_space.  This is
-+ * called in the case that we don't need the metadata AND data reservations
-+ * anymore.  So if there is an error or we insert an inline extent.
-+ *
-+ * This function will release the metadata space that was not used and will
-+ * decrement ->delalloc_bytes and remove it from the fs_info delalloc_inodes
-+ * list if there are no delalloc bytes left.
-+ */
- void btrfs_delalloc_release_space(struct inode *inode, u64 num_bytes)
- {
- 	btrfs_delalloc_release_metadata(inode, num_bytes);
-diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
-index fd30177..30c430f 100644
---- a/fs/btrfs/inode.c
-+++ b/fs/btrfs/inode.c
-@@ -6739,6 +6739,7 @@ struct inode *btrfs_alloc_inode(struct super_block *sb)
- 	ei->delalloc_bytes = 0;
- 	ei->disk_i_size = 0;
- 	ei->flags = 0;
-+	ei->csum_bytes = 0;
- 	ei->index_cnt = (u64)-1;
- 	ei->last_unlink_trans = 0;
- 
-@@ -6784,6 +6785,8 @@ void btrfs_destroy_inode(struct inode *inode)
- 	WARN_ON(inode->i_data.nrpages);
- 	WARN_ON(BTRFS_I(inode)->outstanding_extents);
- 	WARN_ON(BTRFS_I(inode)->reserved_extents);
-+	WARN_ON(BTRFS_I(inode)->delalloc_bytes);
-+	WARN_ON(BTRFS_I(inode)->csum_bytes);
- 
- 	/*
- 	 * This can happen where we create an inode, but somebody else also
--- 
-1.7.5.2
+On Thu, Jul 28, 2011 at 04:51:24PM -0400, Chris Mason wrote:
+> Sorry, hit send too soon.  Here is the latencytop patch, after you
+> recompile run latencytop -c for a few minutes.  Send the output here.
+>=20
+> http://oss.oracle.com/~mason/latencytop.patch
 
+Ok, I ran it for more than a few minutes.  Early on (shortly after boot), t=
+he output shows this for a long time:
+
+=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D Mon Aug  1 21:09:30 2011
+Globals: Cause Maximum Percentage
+Process details:
+Process ksoftirqd/0 (3) Total:   3.9 msec
+        [run_ksoftirqd]   3.9 msec        100.0 %
+                run_ksoftirqd kthread kernel_thread_helper=20
+Process kworker/1:1 (983) Total:  31.2 msec
+        .         3.9 msec        100.0 %
+                worker_thread kthread kernel_thread_helper=20
+Process sshd (3948) Total:   3.9 msec
+        Waiting for event (select)        3.9 msec        100.0 %
+                poll_schedule_timeout do_select core_sys_select sys_select=
+=20
+                system_call_fastpath=20
+Process btrfs-cleaner (4345) Total: 2433.6 msec
+        [sleep_on_page]  31.3 msec        100.0 %
+                sleep_on_page wait_on_page_bit read_extent_buffer_pages=20
+                btree_read_extent_buffer_pages read_tree_block=20
+                read_block_for_search btrfs_search_slot=20
+                lookup_inline_extent_backref __btrfs_free_extent=20
+                run_clustered_refs btrfs_run_delayed_refs __btrfs_end_trans=
+action=20
+Process btrfs-transacti (4346) Total: 2437.5 msec
+        [sleep_on_page]  27.3 msec        100.0 %
+                sleep_on_page wait_on_page_bit read_extent_buffer_pages=20
+                btree_read_extent_buffer_pages read_tree_block=20
+                read_block_for_search btrfs_search_slot=20
+                lookup_inline_extent_backref __btrfs_free_extent=20
+                run_clustered_refs btrfs_run_delayed_refs btrfs_commit_tran=
+saction=20
+
+This repeats identically (all numbers and backtrace is very stable) for
+a long time.  Much later, I see this:
+
+=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D Tue Aug  2 13:46:29 2011
+Globals: Cause Maximum Percentage
+Process details:
+Process btrfs-submit-0 (4332) Total: 199.2 msec
+        Creating block layer request     58.6 msec        100.0 %
+                get_request_wait __make_request generic_make_request=20
+                submit_bio run_scheduled_bios pending_bios_fn worker_loop=
+=20
+                kthread kernel_thread_helper=20
+Process btrfs-cleaner (4345) Total:   3.9 msec
+        Creating block layer request      3.9 msec        100.0 %
+                get_request_wait __make_request generic_make_request=20
+                submit_bio btrfs_map_bio btree_submit_bio_hook submit_one_b=
+io=20
+                read_extent_buffer_pages readahead_tree_block reada_walk_do=
+wn=20
+                do_walk_down walk_down_tree=20
+Process btrfs-endio-met (4700) Total:  35.2 msec
+        [worker_loop]     3.9 msec        100.0 %
+                worker_loop kthread kernel_thread_helper=20
+Process kworker/1:2 (26315) Total:  50.8 msec
+        .         3.9 msec        100.0 %
+                worker_thread kthread kernel_thread_helper=20
+[...snip...]
+=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D Thu Aug  4 12:34:08 2011
+Globals: Cause Maximum Percentage
+Process details:
+Process btrfs-submit-0 (4332) Total: 199.2 msec
+        Creating block layer request     58.6 msec        100.0 %
+                get_request_wait __make_request generic_make_request=20
+                submit_bio run_scheduled_bios pending_bios_fn worker_loop=
+=20
+                kthread kernel_thread_helper=20
+Process btrfs-cleaner (4345) Total:   3.9 msec
+        Creating block layer request      3.9 msec        100.0 %
+                get_request_wait __make_request generic_make_request=20
+                submit_bio btrfs_map_bio btree_submit_bio_hook submit_one_b=
+io=20
+                read_extent_buffer_pages readahead_tree_block reada_walk_do=
+wn=20
+                do_walk_down walk_down_tree=20
+Process btrfs-endio-met (4700) Total:  35.2 msec
+        [worker_loop]     3.9 msec        100.0 %
+                worker_loop kthread kernel_thread_helper=20
+
+
+--=20
+Bruce Guenter <bruce@untroubled.org>                http://untroubled.org/
+
+--5mCyUwZo2JvN/JJP
+Content-Type: application/pgp-signature
+
+-----BEGIN PGP SIGNATURE-----
+Version: GnuPG v2.0.17 (GNU/Linux)
+
+iQIcBAEBAgAGBQJOOspYAAoJEFFRvcnBTTxnU98P/j2ozIYNb+wyVNT+YdEuron/
+1jD8C9/ImKs3T5Gy1aqNRje2D1sUHUjq9ZaZWTTDWlNeH0xHsvyEA5nMRd/Ob6Ss
+QQC1u4ky85HVxmSsLRmWg/ZQNOcxdLABNCvkdnOwVNGmB8CHr6s0cTQoXQHMWHKB
+wXP8JlD5ctgPGIKTdVrpkyYQeBbLX+BIeXYxB2jmaa7K2dDXgc7i+YYgwtCgxrV3
+ujnMia63+U36cMQMOgkkeKlG+G3HDzBHt8lAJ1RkfV1u5VYo/rbUazE54eoxSUaR
+PzjSvLEOaAjShAJvDHQv3BcWtF0U07SQsA35FRxf5EfFOahq06wENfoVP1eKFTMB
+scmE0U2hA7K0yoB907nBOeB0EQOR4d0A9e6M2mXUqrIwLWVSuz/DIUg1VL7iMELr
+rmQrHnDie+Ukl7Ulwf4bM9P+DxrQj5e3WD3ckyg2GqW3YwsvTQ6k1TtcjTOrTLZN
+OZ6syhZinAzThORfvJLoe96M5cFxIQH6fWh7svx99lx+rJOa5JvEbKHMHr6ZVVOq
+DddGjVusuVFtEkpa7Abe+ODVgfA4ywpM1TU6oXJVfLOtIQ7+o2qO30mtoM7gu80R
+ccqsE80gauGrKEBrOJlHKy723us/K2KEwfyi/R3EWaF6zf25uhYHMQy7P0TCsNqO
+dNrA2JlwNcg70gQ/GTim
+=YCMJ
+-----END PGP SIGNATURE-----
+
+--5mCyUwZo2JvN/JJP--

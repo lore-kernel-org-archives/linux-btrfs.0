@@ -1,34 +1,33 @@
 From: "Helmut Hullen" <Hullen@t-online.de>
-Subject: device delete: more informations
-Date: 05 Aug 2011 07:30:00 +0200
-Message-ID: <BrHfkPBD1uB@helmut.hullen.de>
+Subject: Re: INSTALL hint: create device btrfs-control
+Date: 05 Aug 2011 07:43:00 +0200
+Message-ID: <BrHf++Ny1uB@helmut.hullen.de>
+References: <20110804214950.GC8970@carfax.org.uk>
 Reply-To: helmut@hullen.de
 Mime-Version: 1.0
 Content-Type: text/plain; charset=US-ASCII
 To: linux-btrfs@vger.kernel.org
 Return-path: <linux-btrfs-owner@vger.kernel.org>
+In-Reply-To: <20110804214950.GC8970@carfax.org.uk>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hallo,
+Hallo, Hugo,
 
-I've made a 2-partitions system with
+Du meintest am 04.08.11:
 
-        mkfs.btrfs -P Probe -m raid1 -d raid0 /dev/sdb1
+>>>    Thanks. We can add those as symptoms to the solution later.
 
-        mount LABEL=Probe /mnt/Probe
+>> I've just run the first test - finding reliable (for only this case)
+>> messages is a bad job ...
 
-        btrfs device add /dev/sdb2 /mnt/Probe
+>    Well, it's probably OK just to use this particular symptom for
+> now. You've generally got to run btrfs dev scan before you run
+> anything else, so that message should turn up.
 
-"btrfs-show" (and other tests) showed that all worked well.
-
-        btrfs device delete /dev/sdb2 /mnt/Probe
-
-only showed "error" (I haven't noticed the long text, something like  
-"can't delete"); but "dmesg" showed the reason:
-
-  btrfs: unable to go below two devices on raid1
-
-Could this message also shown in the "regular" error message?
+My usual way: "btrfs device scan" is part of a script under "/etc/ 
+init.d", it's run while booting the machine, and even when I watch the  
+machine while booting this special message isn't shown a long time. I'm  
+searching ...
 
 Viele Gruesse!
 Helmut

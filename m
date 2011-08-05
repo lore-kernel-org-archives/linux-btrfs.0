@@ -1,51 +1,34 @@
-From: Hugo Mills <hugo@carfax.org.uk>
-Subject: Re: [GIT PULL] btrfs-progs
-Date: Fri, 5 Aug 2011 00:01:06 +0100
-Message-ID: <20110804230106.GF8970@carfax.org.uk>
-References: <20110804230004.GE8970@carfax.org.uk>
+From: "Helmut Hullen" <Hullen@t-online.de>
+Subject: device delete: more informations
+Date: 05 Aug 2011 07:30:00 +0200
+Message-ID: <BrHfkPBD1uB@helmut.hullen.de>
+Reply-To: helmut@hullen.de
 Mime-Version: 1.0
-Content-Type: multipart/signed; micalg=pgp-sha1;
-	protocol="application/pgp-signature"; boundary="0hHDr/TIsw4o3iPK"
-To: Btrfs mailing list <linux-btrfs@vger.kernel.org>,
-	Chris Mason <chris.mason@oracle.com>
+Content-Type: text/plain; charset=US-ASCII
+To: linux-btrfs@vger.kernel.org
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <20110804230004.GE8970@carfax.org.uk>
 List-ID: <linux-btrfs.vger.kernel.org>
 
+Hallo,
 
---0hHDr/TIsw4o3iPK
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
+I've made a 2-partitions system with
 
-On Fri, Aug 05, 2011 at 12:00:04AM +0100, Hugo Mills wrote:
->    Hi, Chris,
-> 
->    I've finally reworked the integration branch, and integrated what
-> should be a good version of the scrub userspace. You can pull it from:
-> 
-> http://git.darksatanic.net/repo/btrfs-progs-unstable.git/ for-chris
+        mkfs.btrfs -P Probe -m raid1 -d raid0 /dev/sdb1
 
-   Oops, I forgot to mention -- it's against the tmp branch of your
-repo.
+        mount LABEL=Probe /mnt/Probe
 
-   Hugo.
+        btrfs device add /dev/sdb2 /mnt/Probe
 
--- 
-=== Hugo Mills: hugo@... carfax.org.uk | darksatanic.net | lug.org.uk ===
-  PGP key: 515C238D from wwwkeys.eu.pgp.net or http://www.carfax.org.uk
-                       --- Strive for apathy! ---                        
+"btrfs-show" (and other tests) showed that all worked well.
 
---0hHDr/TIsw4o3iPK
-Content-Type: application/pgp-signature; name="signature.asc"
-Content-Description: Digital signature
-Content-Disposition: inline
+        btrfs device delete /dev/sdb2 /mnt/Probe
 
------BEGIN PGP SIGNATURE-----
-Version: GnuPG v1.4.10 (GNU/Linux)
+only showed "error" (I haven't noticed the long text, something like  
+"can't delete"); but "dmesg" showed the reason:
 
-iD8DBQFOOySyIKyzvlFcI40RAmsMAJ90xpOA+2Ym9PdKEpJqcQDYXO2ahwCeNMhl
-JIzKZ48VPcJgNRpdHRxkn8c=
-=aUoM
------END PGP SIGNATURE-----
+  btrfs: unable to go below two devices on raid1
 
---0hHDr/TIsw4o3iPK--
+Could this message also shown in the "regular" error message?
+
+Viele Gruesse!
+Helmut

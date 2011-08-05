@@ -1,57 +1,56 @@
 From: Mark Fasheh <mfasheh@suse.de>
-Subject: [PATCH] btrfs: Handle NULL inode return from btrfs_lookup_dentry()
-Date: Fri, 5 Aug 2011 09:48:28 -0700
-Message-ID: <20110805164828.GB8482@wotan.suse.de>
+Subject: [PATCH] btrfs: Don't BUG_ON errors from btrfs_create_subvol_root()
+Date: Fri, 5 Aug 2011 09:59:15 -0700
+Message-ID: <20110805165915.GC8482@wotan.suse.de>
 Reply-To: Mark Fasheh <mfasheh@suse.de>
 Mime-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
-Cc: chris.mason@oracle.com
 To: linux-btrfs@vger.kernel.org
 Return-path: <linux-btrfs-owner@vger.kernel.org>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Right now in create_snapshot(), we'll BUG() if btrfs_lookup_dentry() returns
-a NULL inode (negative dentry). Getting a negative dentry here probably
-isn't ever expected to happen however two things lead me to believe that we
-should trap this anyway:
+This is called from only one place - create_subvol() which passes errors
+safely back out to it's caller, btrfs_mksubvol where they are handled.
 
-- I don't see any possiblity of serious fs corruption from handling the
-  error.  I do wonder though if we could have an "orphaned" snapshot?  Even
-  if we did that doesn't strike me as needing to crash the machine. (Q:
-  Perhaps going read-only is the eventual solution here?)
-
-- It's very trivial to pass an -ENOENT back to userspace as we're pretty
-  high up the call path at this point.
+Additionally, btrfs_create_subvol_root() itself bug's needlessly from error
+return of btrfs_update_inode(). Since create_subvol() was fixed to catch
+errors we can bubble this one up too.
 
 Signed-off-by: Mark Fasheh <mfasheh@suse.com>
 ---
- fs/btrfs/ioctl.c |    8 +++++---
- 1 files changed, 5 insertions(+), 3 deletions(-)
+ fs/btrfs/inode.c |    3 +--
+ fs/btrfs/ioctl.c |    2 ++
+ 2 files changed, 3 insertions(+), 2 deletions(-)
 
+diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
+index 15fceef..7028c0c 100644
+--- a/fs/btrfs/inode.c
++++ b/fs/btrfs/inode.c
+@@ -6722,10 +6722,9 @@ int btrfs_create_subvol_root(struct btrfs_trans_handle *trans,
+ 	btrfs_i_size_write(inode, 0);
+ 
+ 	err = btrfs_update_inode(trans, new_root, inode);
+-	BUG_ON(err);
+ 
+ 	iput(inode);
+-	return 0;
++	return err;
+ }
+ 
+ struct inode *btrfs_alloc_inode(struct super_block *sb)
 diff --git a/fs/btrfs/ioctl.c b/fs/btrfs/ioctl.c
-index 7cf0133..fc9525f 100644
+index 7cf0133..b3440f5 100644
 --- a/fs/btrfs/ioctl.c
 +++ b/fs/btrfs/ioctl.c
-@@ -498,14 +498,16 @@ static int create_snapshot(struct btrfs_root *root, struct dentry *dentry,
- 	if (ret)
- 		goto fail;
+@@ -411,6 +411,8 @@ static noinline int create_subvol(struct btrfs_root *root,
+ 	btrfs_record_root_in_trans(trans, new_root);
  
-+	ret = 0;
- 	inode = btrfs_lookup_dentry(dentry->d_parent->d_inode, dentry);
- 	if (IS_ERR(inode)) {
- 		ret = PTR_ERR(inode);
- 		goto fail;
--	}
--	BUG_ON(!inode);
-+	} else if (inode == NULL)
-+		ret = -ENOENT;
-+
- 	d_instantiate(dentry, inode);
--	ret = 0;
-+
- fail:
- 	kfree(pending_snapshot);
- 	return ret;
+ 	ret = btrfs_create_subvol_root(trans, new_root, new_dirid);
++	if (ret)
++		goto fail;
+ 	/*
+ 	 * insert the directory item
+ 	 */
 -- 
 1.7.6
 

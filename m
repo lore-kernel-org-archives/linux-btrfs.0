@@ -1,7 +1,7 @@
 From: Liu Bo <liubo2009@cn.fujitsu.com>
-Subject: [PATCH 07/12 v5] Btrfs: improve log with sub transaction
-Date: Sat, 6 Aug 2011 17:37:42 +0800
-Message-ID: <1312623467-31487-8-git-send-email-liubo2009@cn.fujitsu.com>
+Subject: [PATCH 02/12 v5] Btrfs: introduce sub transaction stuff
+Date: Sat, 6 Aug 2011 17:37:37 +0800
+Message-ID: <1312623467-31487-3-git-send-email-liubo2009@cn.fujitsu.com>
 References: <1312623467-31487-1-git-send-email-liubo2009@cn.fujitsu.com>
 Cc: <chris.mason@oracle.com>
 To: <linux-btrfs@vger.kernel.org>
@@ -9,309 +9,474 @@ Return-path: <linux-btrfs-owner@vger.kernel.org>
 In-Reply-To: <1312623467-31487-1-git-send-email-liubo2009@cn.fujitsu.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-When logging an inode _A_, current btrfs will
-a) clear all items belonged to _A_ in log,
-b) copy all items belonged to _A_ from fs/file tree to log tree,
-and this just wastes a lot of time, especially when logging big files.
+Introduce a new concept "sub transaction",
+the relation between transaction and sub transaction is
 
-So we want to use a smarter approach, i.e. "find and merge".
-The amount of file extent items is the largest, so we focus on it.
-Thanks to sub transaction, now we can find those file extent items which
-are changed after last _transaction commit_ or last _log commit_, and
-then merge them with the existed ones in log tree.
+transaction A       ---> transid = x
+   sub trans a(1)   ---> sub_transid = x+1
+   sub trans a(2)   ---> sub_transid = x+2
+     ... ...
+   sub trans a(n-1) ---> sub_transid = x+n-1
+   sub trans a(n)   ---> sub_transid = x+n
+transaction B       ---> transid = x+n+1
+     ... ...
 
-It will be great helpful on fsync performance, cause the common case is
-"make changes on a _part_ of inode".
+And the most important is
+a) a trans handler's transid now gets value from sub transid instead of transid.
+b) when a transaction commits, transid may not added by 1, but depend on the
+   biggest sub_transaction of the last neighbour transaction,
+   i.e.
+        B->transid = a(n)->transid + 1,
+        (B->transid - A->transid) >= 1
+c) we start a new sub transaction after a fsync.
+
+We also ship some 'trans->transid' to 'trans->transaction->transid' to
+ensure btrfs works well and to get rid of WARNings.
+
+These are used for the new log code.
 
 Signed-off-by: Liu Bo <liubo2009@cn.fujitsu.com>
 ---
- fs/btrfs/tree-log.c |  180 ++++++++++++++++++++++++++++++++++++---------------
- 1 files changed, 128 insertions(+), 52 deletions(-)
+ fs/btrfs/ctree.c       |   35 ++++++++++++++++++-----------------
+ fs/btrfs/ctree.h       |    1 +
+ fs/btrfs/disk-io.c     |    7 ++++---
+ fs/btrfs/extent-tree.c |   10 ++++++----
+ fs/btrfs/inode.c       |    4 ++--
+ fs/btrfs/ioctl.c       |    2 +-
+ fs/btrfs/relocation.c  |    6 +++---
+ fs/btrfs/transaction.c |   13 ++++++++-----
+ fs/btrfs/transaction.h |    1 +
+ fs/btrfs/tree-defrag.c |    2 +-
+ fs/btrfs/tree-log.c    |   16 ++++++++++++++--
+ 11 files changed, 59 insertions(+), 38 deletions(-)
 
-diff --git a/fs/btrfs/tree-log.c b/fs/btrfs/tree-log.c
-index a75990a..5394055 100644
---- a/fs/btrfs/tree-log.c
-+++ b/fs/btrfs/tree-log.c
-@@ -2587,61 +2587,107 @@ again:
- }
+diff --git a/fs/btrfs/ctree.c b/fs/btrfs/ctree.c
+index 011cab3..41d1d17 100644
+--- a/fs/btrfs/ctree.c
++++ b/fs/btrfs/ctree.c
+@@ -228,9 +228,9 @@ int btrfs_copy_root(struct btrfs_trans_handle *trans,
+ 	int level;
+ 	struct btrfs_disk_key disk_key;
  
- /*
-- * a helper function to drop items from the log before we relog an
-- * inode.  max_key_type indicates the highest item type to remove.
-- * This cannot be run for file data extents because it does not
-- * free the extents they point to.
-+ * a helper function to drop items from the log before we merge
-+ * the uptodate items into the log tree.
-  */
--static int drop_objectid_items(struct btrfs_trans_handle *trans,
--				  struct btrfs_root *log,
--				  struct btrfs_path *path,
--				  u64 objectid, int max_key_type)
-+static int prepare_for_merge_items(struct btrfs_trans_handle *trans,
-+				   struct inode *inode,
-+				   struct extent_buffer *eb,
-+				   int slot, int nr)
+-	WARN_ON(root->ref_cows && trans->transid !=
++	WARN_ON(root->ref_cows && trans->transaction->transid !=
+ 		root->fs_info->running_transaction->transid);
+-	WARN_ON(root->ref_cows && trans->transid != root->last_trans);
++	WARN_ON(root->ref_cows && trans->transid < root->last_trans);
+ 
+ 	level = btrfs_header_level(buf);
+ 	if (level == 0)
+@@ -425,9 +425,9 @@ static noinline int __btrfs_cow_block(struct btrfs_trans_handle *trans,
+ 
+ 	btrfs_assert_tree_locked(buf);
+ 
+-	WARN_ON(root->ref_cows && trans->transid !=
++	WARN_ON(root->ref_cows && trans->transaction->transid !=
+ 		root->fs_info->running_transaction->transid);
+-	WARN_ON(root->ref_cows && trans->transid != root->last_trans);
++	WARN_ON(root->ref_cows && trans->transid < root->last_trans);
+ 
+ 	level = btrfs_header_level(buf);
+ 
+@@ -493,7 +493,8 @@ static noinline int __btrfs_cow_block(struct btrfs_trans_handle *trans,
+ 		else
+ 			parent_start = 0;
+ 
+-		WARN_ON(trans->transid != btrfs_header_generation(parent));
++		WARN_ON(btrfs_header_generation(parent) <
++						trans->transaction->transid);
+ 		btrfs_set_node_blockptr(parent, parent_slot,
+ 					cow->start);
+ 		btrfs_set_node_ptr_generation(parent, parent_slot,
+@@ -514,7 +515,7 @@ static inline int should_cow_block(struct btrfs_trans_handle *trans,
+ 				   struct btrfs_root *root,
+ 				   struct extent_buffer *buf)
  {
--	int ret;
--	struct btrfs_key key;
-+	struct btrfs_root *log = BTRFS_I(inode)->root->log_root;
-+	struct btrfs_path *path;
- 	struct btrfs_key found_key;
-+	struct btrfs_key key;
-+	int i;
-+	int ret;
- 
--	key.objectid = objectid;
--	key.type = max_key_type;
--	key.offset = (u64)-1;
-+	/* There are no relative items of the inode in log. */
-+	if (BTRFS_I(inode)->logged_trans < trans->transaction->transid)
-+		return 0;
- 
--	while (1) {
-+	path = btrfs_alloc_path();
-+	if (!path)
-+		return -ENOMEM;
-+
-+	for (i = slot; i < slot + nr; i++) {
-+		btrfs_item_key_to_cpu(eb, &key, i);
-+
-+		if (btrfs_key_type(&key) == BTRFS_EXTENT_DATA_KEY) {
-+			struct btrfs_file_extent_item *fi;
-+			int found_type;
-+			u64 mask = BTRFS_I(inode)->root->sectorsize - 1;
-+			u64 start = key.offset;
-+			u64 extent_end;
-+			u64 hint;
-+			unsigned long size;
-+
-+			fi = btrfs_item_ptr(eb, i,
-+					    struct btrfs_file_extent_item);
-+			found_type = btrfs_file_extent_type(eb, fi);
-+
-+			if (found_type == BTRFS_FILE_EXTENT_REG ||
-+			    found_type == BTRFS_FILE_EXTENT_PREALLOC) {
-+				extent_end = start +
-+					    btrfs_file_extent_num_bytes(eb, fi);
-+			} else if (found_type == BTRFS_FILE_EXTENT_INLINE) {
-+				size = btrfs_file_extent_inline_len(eb, fi);
-+				extent_end = (start + size + mask) & ~mask;
-+			} else {
-+				BUG_ON(1);
-+			}
-+
-+			/* drop any overlapping extents */
-+			ret = btrfs_drop_extents(trans, inode, start,
-+						 extent_end, &hint, 0, 1);
-+			BUG_ON(ret);
-+
-+			continue;
-+		}
-+
-+		/* non file extent */
- 		ret = btrfs_search_slot(trans, log, &key, path, -1, 1);
--		BUG_ON(ret == 0);
- 		if (ret < 0)
- 			break;
- 
--		if (path->slots[0] == 0)
-+		/* empty log! */
-+		if (ret > 0 && path->slots[0] == 0)
- 			break;
- 
--		path->slots[0]--;
-+		if (ret > 0) {
-+			btrfs_release_path(path);
-+			continue;
-+		}
-+
- 		btrfs_item_key_to_cpu(path->nodes[0], &found_key,
- 				      path->slots[0]);
- 
--		if (found_key.objectid != objectid)
--			break;
-+		if (btrfs_comp_cpu_keys(&found_key, &key))
-+			BUG_ON(1);
- 
- 		ret = btrfs_del_item(trans, log, path);
--		if (ret)
--			break;
-+		BUG_ON(ret);
- 		btrfs_release_path(path);
+-	if (btrfs_header_generation(buf) == trans->transid &&
++	if (btrfs_header_generation(buf) >= trans->transaction->transid &&
+ 	    !btrfs_header_flag(buf, BTRFS_HEADER_FLAG_WRITTEN) &&
+ 	    !(root->root_key.objectid != BTRFS_TREE_RELOC_OBJECTID &&
+ 	      btrfs_header_flag(buf, BTRFS_HEADER_FLAG_RELOC)))
+@@ -542,7 +543,7 @@ noinline int btrfs_cow_block(struct btrfs_trans_handle *trans,
+ 		       root->fs_info->running_transaction->transid);
+ 		WARN_ON(1);
  	}
- 	btrfs_release_path(path);
--	return ret;
-+	btrfs_free_path(path);
-+
-+	return 0;
- }
+-	if (trans->transid != root->fs_info->generation) {
++	if (trans->transaction->transid != root->fs_info->generation) {
+ 		printk(KERN_CRIT "trans %llu running %llu\n",
+ 		       (unsigned long long)trans->transid,
+ 		       (unsigned long long)root->fs_info->generation);
+@@ -645,7 +646,7 @@ int btrfs_realloc_node(struct btrfs_trans_handle *trans,
  
- static noinline int copy_items(struct btrfs_trans_handle *trans,
--			       struct btrfs_root *log,
-+			       struct inode *inode,
- 			       struct btrfs_path *dst_path,
- 			       struct extent_buffer *src,
- 			       int start_slot, int nr, int inode_only)
+ 	if (trans->transaction != root->fs_info->running_transaction)
+ 		WARN_ON(1);
+-	if (trans->transid != root->fs_info->generation)
++	if (trans->transaction->transid != root->fs_info->generation)
+ 		WARN_ON(1);
+ 
+ 	parent_nritems = btrfs_header_nritems(parent);
+@@ -898,7 +899,7 @@ static noinline int balance_level(struct btrfs_trans_handle *trans,
+ 
+ 	WARN_ON(path->locks[level] != BTRFS_WRITE_LOCK &&
+ 		path->locks[level] != BTRFS_WRITE_LOCK_BLOCKING);
+-	WARN_ON(btrfs_header_generation(mid) != trans->transid);
++	WARN_ON(btrfs_header_generation(mid) < trans->transaction->transid);
+ 
+ 	orig_ptr = btrfs_node_blockptr(mid, orig_slot);
+ 
+@@ -1105,7 +1106,7 @@ static noinline int push_nodes_for_insert(struct btrfs_trans_handle *trans,
+ 		return 1;
+ 
+ 	mid = path->nodes[level];
+-	WARN_ON(btrfs_header_generation(mid) != trans->transid);
++	WARN_ON(btrfs_header_generation(mid) < trans->transaction->transid);
+ 
+ 	if (level < BTRFS_MAX_LEVEL - 1)
+ 		parent = path->nodes[level + 1];
+@@ -1942,8 +1943,8 @@ static int push_node_left(struct btrfs_trans_handle *trans,
+ 	src_nritems = btrfs_header_nritems(src);
+ 	dst_nritems = btrfs_header_nritems(dst);
+ 	push_items = BTRFS_NODEPTRS_PER_BLOCK(root) - dst_nritems;
+-	WARN_ON(btrfs_header_generation(src) != trans->transid);
+-	WARN_ON(btrfs_header_generation(dst) != trans->transid);
++	WARN_ON(btrfs_header_generation(src) < trans->transaction->transid);
++	WARN_ON(btrfs_header_generation(dst) < trans->transaction->transid);
+ 
+ 	if (!empty && src_nritems <= 8)
+ 		return 1;
+@@ -2005,8 +2006,8 @@ static int balance_node_right(struct btrfs_trans_handle *trans,
+ 	int dst_nritems;
+ 	int ret = 0;
+ 
+-	WARN_ON(btrfs_header_generation(src) != trans->transid);
+-	WARN_ON(btrfs_header_generation(dst) != trans->transid);
++	WARN_ON(btrfs_header_generation(src) < trans->transaction->transid);
++	WARN_ON(btrfs_header_generation(dst) < trans->transaction->transid);
+ 
+ 	src_nritems = btrfs_header_nritems(src);
+ 	dst_nritems = btrfs_header_nritems(dst);
+@@ -2097,7 +2098,7 @@ static noinline int insert_new_root(struct btrfs_trans_handle *trans,
+ 	btrfs_set_node_key(c, &lower_key, 0);
+ 	btrfs_set_node_blockptr(c, 0, lower->start);
+ 	lower_gen = btrfs_header_generation(lower);
+-	WARN_ON(lower_gen != trans->transid);
++	WARN_ON(lower_gen < trans->transaction->transid);
+ 
+ 	btrfs_set_node_ptr_generation(c, 0, lower_gen);
+ 
+@@ -2177,7 +2178,7 @@ static noinline int split_node(struct btrfs_trans_handle *trans,
+ 	u32 c_nritems;
+ 
+ 	c = path->nodes[level];
+-	WARN_ON(btrfs_header_generation(c) != trans->transid);
++	WARN_ON(btrfs_header_generation(c) < trans->transaction->transid);
+ 	if (c == root->node) {
+ 		/* trying to split the root, lets make a new one */
+ 		ret = insert_new_root(trans, root, path, level + 1);
+@@ -3751,7 +3752,7 @@ static noinline int btrfs_del_leaf(struct btrfs_trans_handle *trans,
  {
- 	unsigned long src_offset;
- 	unsigned long dst_offset;
-+	struct btrfs_root *log = BTRFS_I(inode)->root->log_root;
- 	struct btrfs_file_extent_item *extent;
- 	struct btrfs_inode_item *inode_item;
--	int ret;
- 	struct btrfs_key *ins_keys;
-+	int ret;
- 	u32 *ins_sizes;
- 	char *ins_data;
- 	int i;
-@@ -2649,6 +2695,10 @@ static noinline int copy_items(struct btrfs_trans_handle *trans,
+ 	int ret;
  
- 	INIT_LIST_HEAD(&ordered_sums);
+-	WARN_ON(btrfs_header_generation(leaf) != trans->transid);
++	WARN_ON(btrfs_header_generation(leaf) < trans->transaction->transid);
+ 	ret = del_ptr(trans, root, path, 1, path->slots[1]);
+ 	if (ret)
+ 		return ret;
+diff --git a/fs/btrfs/ctree.h b/fs/btrfs/ctree.h
+index a6263bd..310f586 100644
+--- a/fs/btrfs/ctree.h
++++ b/fs/btrfs/ctree.h
+@@ -925,6 +925,7 @@ struct btrfs_fs_info {
+ 	struct mutex durable_block_rsv_mutex;
  
-+	ret = prepare_for_merge_items(trans, inode, src, start_slot, nr);
-+	if (ret)
-+		return ret;
-+
- 	ins_data = kmalloc(nr * sizeof(struct btrfs_key) +
- 			   nr * sizeof(u32), GFP_NOFS);
- 	if (!ins_data)
-@@ -2752,6 +2802,34 @@ static noinline int copy_items(struct btrfs_trans_handle *trans,
+ 	u64 generation;
++	u64 sub_generation;
+ 	u64 last_trans_committed;
+ 
+ 	/*
+diff --git a/fs/btrfs/disk-io.c b/fs/btrfs/disk-io.c
+index 94ecac3..50e74b1 100644
+--- a/fs/btrfs/disk-io.c
++++ b/fs/btrfs/disk-io.c
+@@ -1035,7 +1035,7 @@ int clean_tree_block(struct btrfs_trans_handle *trans, struct btrfs_root *root,
+ 		     struct extent_buffer *buf)
+ {
+ 	struct inode *btree_inode = root->fs_info->btree_inode;
+-	if (btrfs_header_generation(buf) ==
++	if (btrfs_header_generation(buf) >=
+ 	    root->fs_info->running_transaction->transid) {
+ 		btrfs_assert_tree_locked(buf);
+ 
+@@ -1559,7 +1559,7 @@ static int transaction_kthread(void *arg)
+ 
+ 		trans = btrfs_join_transaction(root);
+ 		BUG_ON(IS_ERR(trans));
+-		if (transid == trans->transid) {
++		if (transid == trans->transaction->transid) {
+ 			ret = btrfs_commit_transaction(trans, root);
+ 			BUG_ON(ret);
+ 		} else {
+@@ -2001,6 +2001,7 @@ struct btrfs_root *open_ctree(struct super_block *sb,
+ 	csum_root->track_dirty = 1;
+ 
+ 	fs_info->generation = generation;
++	fs_info->sub_generation = generation;
+ 	fs_info->last_trans_committed = generation;
+ 	fs_info->data_alloc_profile = (u64)-1;
+ 	fs_info->metadata_alloc_profile = (u64)-1;
+@@ -2671,7 +2672,7 @@ void btrfs_mark_buffer_dirty(struct extent_buffer *buf)
+ 	int was_dirty;
+ 
+ 	btrfs_assert_tree_locked(buf);
+-	if (transid != root->fs_info->generation) {
++	if (transid < root->fs_info->generation) {
+ 		printk(KERN_CRIT "btrfs transid mismatch buffer %llu, "
+ 		       "found %llu running %llu\n",
+ 			(unsigned long long)buf->start,
+diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
+index 66bac22..fa101ab 100644
+--- a/fs/btrfs/extent-tree.c
++++ b/fs/btrfs/extent-tree.c
+@@ -4363,7 +4363,7 @@ int btrfs_finish_extent_commit(struct btrfs_trans_handle *trans,
+ 	list_for_each_entry_safe(block_rsv, next_rsv,
+ 				 &fs_info->durable_block_rsv_list, list) {
+ 
+-		idx = trans->transid & 0x1;
++		idx = trans->transaction->transid & 0x1;
+ 		if (block_rsv->freed[idx] > 0) {
+ 			block_rsv_add_bytes(block_rsv,
+ 					    block_rsv->freed[idx], 0);
+@@ -4680,7 +4680,7 @@ void btrfs_free_tree_block(struct btrfs_trans_handle *trans,
+ 	if (block_rsv->space_info != cache->space_info)
+ 		goto out;
+ 
+-	if (btrfs_header_generation(buf) == trans->transid) {
++	if (btrfs_header_generation(buf) >= trans->transaction->transid) {
+ 		if (root->root_key.objectid != BTRFS_TREE_LOG_OBJECTID) {
+ 			ret = check_ref_cleanup(trans, root, buf->start);
+ 			if (!ret)
+@@ -4730,7 +4730,8 @@ pin:
+ 
+ 		if (ret) {
+ 			spin_lock(&block_rsv->lock);
+-			block_rsv->freed[trans->transid & 0x1] += buf->len;
++			block_rsv->freed[trans->transaction->transid & 0x1] +=
++								       buf->len;
+ 			spin_unlock(&block_rsv->lock);
+ 		}
+ 	}
+@@ -6164,7 +6165,8 @@ static noinline int walk_up_proc(struct btrfs_trans_handle *trans,
+ 		}
+ 		/* make block locked assertion in clean_tree_block happy */
+ 		if (!path->locks[level] &&
+-		    btrfs_header_generation(eb) == trans->transid) {
++		    btrfs_header_generation(eb) >=
++						 trans->transaction->transid) {
+ 			btrfs_tree_lock(eb);
+ 			btrfs_set_lock_blocking(eb);
+ 			path->locks[level] = BTRFS_WRITE_LOCK_BLOCKING;
+diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
+index 34195f9..99eb0b3 100644
+--- a/fs/btrfs/inode.c
++++ b/fs/btrfs/inode.c
+@@ -2106,7 +2106,7 @@ void btrfs_orphan_pre_snapshot(struct btrfs_trans_handle *trans,
+ 	 * space than it frees. So we should make sure there is enough
+ 	 * reserved space.
+ 	 */
+-	index = trans->transid & 0x1;
++	index = trans->transaction->transid & 0x1;
+ 	if (block_rsv->reserved + block_rsv->freed[index] < block_rsv->size) {
+ 		num_bytes += block_rsv->size -
+ 			     (block_rsv->reserved + block_rsv->freed[index]);
+@@ -2130,7 +2130,7 @@ void btrfs_orphan_post_snapshot(struct btrfs_trans_handle *trans,
+ 
+ 	/* refill source subvolume's orphan block reservation */
+ 	block_rsv = root->orphan_block_rsv;
+-	index = trans->transid & 0x1;
++	index = trans->transaction->transid & 0x1;
+ 	if (block_rsv->reserved + block_rsv->freed[index] < block_rsv->size) {
+ 		num_bytes = block_rsv->size -
+ 			    (block_rsv->reserved + block_rsv->freed[index]);
+diff --git a/fs/btrfs/ioctl.c b/fs/btrfs/ioctl.c
+index 2bb0886..bc9a2ad 100644
+--- a/fs/btrfs/ioctl.c
++++ b/fs/btrfs/ioctl.c
+@@ -2758,7 +2758,7 @@ static noinline long btrfs_ioctl_start_sync(struct file *file, void __user *argp
+ 	trans = btrfs_start_transaction(root, 0);
+ 	if (IS_ERR(trans))
+ 		return PTR_ERR(trans);
+-	transid = trans->transid;
++	transid = trans->transaction->transid;
+ 	ret = btrfs_commit_transaction_async(trans, root, 0);
+ 	if (ret) {
+ 		btrfs_end_transaction(trans, root);
+diff --git a/fs/btrfs/relocation.c b/fs/btrfs/relocation.c
+index 59bb176..3063be1 100644
+--- a/fs/btrfs/relocation.c
++++ b/fs/btrfs/relocation.c
+@@ -469,7 +469,7 @@ static int update_backref_cache(struct btrfs_trans_handle *trans,
+ 		return 0;
+ 	}
+ 
+-	if (cache->last_trans == trans->transid)
++	if (cache->last_trans >= trans->transaction->transid)
+ 		return 0;
+ 
+ 	/*
+@@ -1281,7 +1281,7 @@ static struct btrfs_root *create_reloc_root(struct btrfs_trans_handle *trans,
+ 		BUG_ON(ret);
+ 
+ 		btrfs_set_root_last_snapshot(&root->root_item,
+-					     trans->transid - 1);
++					     trans->transaction->transid - 1);
+ 	} else {
+ 		/*
+ 		 * called by btrfs_reloc_post_snapshot_hook.
+@@ -2271,7 +2271,7 @@ static int record_reloc_root_in_trans(struct btrfs_trans_handle *trans,
+ {
+ 	struct btrfs_root *root;
+ 
+-	if (reloc_root->last_trans == trans->transid)
++	if (reloc_root->last_trans >= trans->transaction->transid)
+ 		return 0;
+ 
+ 	root = read_fs_root(reloc_root->fs_info, reloc_root->root_key.offset);
+diff --git a/fs/btrfs/transaction.c b/fs/btrfs/transaction.c
+index 7dc36fa..531b0dc 100644
+--- a/fs/btrfs/transaction.c
++++ b/fs/btrfs/transaction.c
+@@ -113,7 +113,9 @@ static noinline int join_transaction(struct btrfs_root *root, int nofail)
+ 	extent_io_tree_init(&cur_trans->dirty_pages,
+ 			     root->fs_info->btree_inode->i_mapping);
+ 	root->fs_info->generation++;
++	root->fs_info->sub_generation = root->fs_info->generation;
+ 	cur_trans->transid = root->fs_info->generation;
++	cur_trans->sub_transid = cur_trans->transid;
+ 	root->fs_info->running_transaction = cur_trans;
+ 	spin_unlock(&root->fs_info->trans_lock);
+ 
+@@ -129,7 +131,7 @@ static noinline int join_transaction(struct btrfs_root *root, int nofail)
+ static int record_root_in_trans(struct btrfs_trans_handle *trans,
+ 			       struct btrfs_root *root)
+ {
+-	if (root->ref_cows && root->last_trans < trans->transid) {
++	if (root->ref_cows && root->last_trans < trans->transaction->transid) {
+ 		WARN_ON(root == root->fs_info->extent_root);
+ 		WARN_ON(root->commit_root != root->node);
+ 
+@@ -146,7 +148,7 @@ static int record_root_in_trans(struct btrfs_trans_handle *trans,
+ 		smp_wmb();
+ 
+ 		spin_lock(&root->fs_info->fs_roots_radix_lock);
+-		if (root->last_trans == trans->transid) {
++		if (root->last_trans >= trans->transaction->transid) {
+ 			spin_unlock(&root->fs_info->fs_roots_radix_lock);
+ 			return 0;
+ 		}
+@@ -194,7 +196,7 @@ int btrfs_record_root_in_trans(struct btrfs_trans_handle *trans,
+ 	 * and barriers
+ 	 */
+ 	smp_rmb();
+-	if (root->last_trans == trans->transid &&
++	if (root->last_trans >= trans->transaction->transid &&
+ 	    !root->in_trans_setup)
+ 		return 0;
+ 
+@@ -302,7 +304,7 @@ again:
+ 
+ 	cur_trans = root->fs_info->running_transaction;
+ 
+-	h->transid = cur_trans->transid;
++	h->transid = cur_trans->sub_transid;
+ 	h->transaction = cur_trans;
+ 	h->blocks_used = 0;
+ 	h->bytes_reserved = 0;
+@@ -1346,6 +1348,7 @@ int btrfs_commit_transaction(struct btrfs_trans_handle *trans,
+ 
+ 	trans->transaction->blocked = 0;
+ 	spin_lock(&root->fs_info->trans_lock);
++	root->fs_info->generation = cur_trans->sub_transid;
+ 	root->fs_info->running_transaction = NULL;
+ 	root->fs_info->trans_no_join = 0;
+ 	spin_unlock(&root->fs_info->trans_lock);
+@@ -1367,7 +1370,7 @@ int btrfs_commit_transaction(struct btrfs_trans_handle *trans,
+ 
+ 	cur_trans->commit_done = 1;
+ 
+-	root->fs_info->last_trans_committed = cur_trans->transid;
++	root->fs_info->last_trans_committed = cur_trans->sub_transid;
+ 
+ 	wake_up(&cur_trans->commit_wait);
+ 
+diff --git a/fs/btrfs/transaction.h b/fs/btrfs/transaction.h
+index 02564e6..45876b0 100644
+--- a/fs/btrfs/transaction.h
++++ b/fs/btrfs/transaction.h
+@@ -23,6 +23,7 @@
+ 
+ struct btrfs_transaction {
+ 	u64 transid;
++	u64 sub_transid;
+ 	/*
+ 	 * total writers in this transaction, it must be zero before the
+ 	 * transaction can end
+diff --git a/fs/btrfs/tree-defrag.c b/fs/btrfs/tree-defrag.c
+index 3b580ee..a2569af 100644
+--- a/fs/btrfs/tree-defrag.c
++++ b/fs/btrfs/tree-defrag.c
+@@ -139,7 +139,7 @@ done:
+ 	if (ret != -EAGAIN) {
+ 		memset(&root->defrag_progress, 0,
+ 		       sizeof(root->defrag_progress));
+-		root->defrag_trans_start = trans->transid;
++		root->defrag_trans_start = trans->transaction->transid;
+ 	}
  	return ret;
  }
+diff --git a/fs/btrfs/tree-log.c b/fs/btrfs/tree-log.c
+index f320641..5a026d2 100644
+--- a/fs/btrfs/tree-log.c
++++ b/fs/btrfs/tree-log.c
+@@ -134,9 +134,19 @@ static noinline int replay_dir_deletes(struct btrfs_trans_handle *trans,
+ static int start_log_trans(struct btrfs_trans_handle *trans,
+ 			   struct btrfs_root *root)
+ {
++	struct btrfs_transaction *cur_trans;
+ 	int ret;
+ 	int err = 0;
  
-+/*
-+ * a helper function to filter the old file extent items by checking their
-+ * generation.
-+ */
-+static inline int is_extent_uptodate(struct btrfs_path *path, u64 min_trans)
-+{
-+	struct btrfs_file_extent_item *fi;
-+	struct btrfs_key key;
-+	struct extent_buffer *eb;
-+	int slot;
-+	u64 gen;
++	/* start a new sub transaction */
++	spin_lock(&root->fs_info->trans_lock);
 +
-+	eb = path->nodes[0];
-+	slot = path->slots[0];
++	cur_trans = root->fs_info->running_transaction;
++	cur_trans->sub_transid++;
++	root->fs_info->sub_generation = cur_trans->sub_transid;
 +
-+	btrfs_item_key_to_cpu(eb, &key, slot);
++	spin_unlock(&root->fs_info->trans_lock);
 +
-+	if (btrfs_key_type(&key) != BTRFS_EXTENT_DATA_KEY)
-+		return 1;
-+
-+	fi = btrfs_item_ptr(eb, slot, struct btrfs_file_extent_item);
-+	gen = btrfs_file_extent_generation(eb, fi);
-+	if (gen < min_trans)
-+		return 0;
-+
-+	return 1;
-+}
-+
- /* log a single inode in the tree log.
-  * At least one parent directory for this inode must exist in the tree
-  * or be logged already.
-@@ -2782,6 +2860,16 @@ static int btrfs_log_inode(struct btrfs_trans_handle *trans,
- 	int ins_start_slot = 0;
- 	int ins_nr;
- 	u64 ino = btrfs_ino(inode);
-+	u64 transid;
-+
-+	/*
-+	* We use transid in btrfs_search_forward() as a filter, in order to
-+	* find the uptodate block (node or leaf).
-+	*/
-+	if (BTRFS_I(inode)->first_sub_trans > trans->transaction->transid)
-+		transid = BTRFS_I(inode)->first_sub_trans;
-+	else
-+		transid = trans->transaction->transid;
- 
- 	log = root->log_root;
- 
-@@ -2819,29 +2907,12 @@ static int btrfs_log_inode(struct btrfs_trans_handle *trans,
- 
- 	mutex_lock(&BTRFS_I(inode)->log_mutex);
- 
--	/*
--	 * a brute force approach to making sure we get the most uptodate
--	 * copies of everything.
--	 */
--	if (S_ISDIR(inode->i_mode)) {
--		int max_key_type = BTRFS_DIR_LOG_INDEX_KEY;
--
--		if (inode_only == LOG_INODE_EXISTS)
--			max_key_type = BTRFS_XATTR_ITEM_KEY;
--		ret = drop_objectid_items(trans, log, path, ino, max_key_type);
--	} else {
--		ret = btrfs_truncate_inode_items(trans, log, inode, 0, 0);
--	}
--	if (ret) {
--		err = ret;
--		goto out_unlock;
--	}
- 	path->keep_locks = 1;
- 
- 	while (1) {
- 		ins_nr = 0;
- 		ret = btrfs_search_forward(root, &min_key, &max_key,
--					   path, 0, trans->transid);
-+					   path, 0, transid);
- 		if (ret != 0)
- 			break;
- again:
-@@ -2852,6 +2923,9 @@ again:
- 			break;
- 
- 		src = path->nodes[0];
-+		if (!is_extent_uptodate(path, transid))
-+			goto filter;
-+
- 		if (ins_nr && ins_start_slot + ins_nr == path->slots[0]) {
- 			ins_nr++;
- 			goto next_slot;
-@@ -2860,15 +2934,17 @@ again:
- 			ins_nr = 1;
- 			goto next_slot;
- 		}
--
--		ret = copy_items(trans, log, dst_path, src, ins_start_slot,
--				 ins_nr, inode_only);
--		if (ret) {
--			err = ret;
--			goto out_unlock;
-+filter:
-+		if (ins_nr) {
-+			ret = copy_items(trans, inode, dst_path, src,
-+					 ins_start_slot,
-+					 ins_nr, inode_only);
-+			if (ret) {
-+				err = ret;
-+				goto out_unlock;
-+			}
-+			ins_nr = 0;
- 		}
--		ins_nr = 1;
--		ins_start_slot = path->slots[0];
- next_slot:
- 
- 		nritems = btrfs_header_nritems(path->nodes[0]);
-@@ -2879,7 +2955,7 @@ next_slot:
- 			goto again;
- 		}
- 		if (ins_nr) {
--			ret = copy_items(trans, log, dst_path, src,
-+			ret = copy_items(trans, inode, dst_path, src,
- 					 ins_start_slot,
- 					 ins_nr, inode_only);
- 			if (ret) {
-@@ -2900,7 +2976,7 @@ next_slot:
- 			break;
+ 	mutex_lock(&root->log_mutex);
+ 	if (root->log_root) {
+ 		if (!root->log_start_pid) {
+@@ -2007,7 +2017,8 @@ int btrfs_sync_log(struct btrfs_trans_handle *trans,
  	}
- 	if (ins_nr) {
--		ret = copy_items(trans, log, dst_path, src,
-+		ret = copy_items(trans, inode, dst_path, src,
- 				 ins_start_slot,
- 				 ins_nr, inode_only);
- 		if (ret) {
+ 
+ 	/* bail out if we need to do a full commit */
+-	if (root->fs_info->last_trans_log_full_commit == trans->transid) {
++	if (root->fs_info->last_trans_log_full_commit >=
++						trans->transaction->transid) {
+ 		ret = -EAGAIN;
+ 		mutex_unlock(&root->log_mutex);
+ 		goto out;
+@@ -2084,7 +2095,8 @@ int btrfs_sync_log(struct btrfs_trans_handle *trans,
+ 	 * now that we've moved on to the tree of log tree roots,
+ 	 * check the full commit flag again
+ 	 */
+-	if (root->fs_info->last_trans_log_full_commit == trans->transid) {
++	if (root->fs_info->last_trans_log_full_commit >=
++						trans->transaction->transid) {
+ 		btrfs_wait_marked_extents(log, &log->dirty_log_pages, mark);
+ 		mutex_unlock(&log_root_tree->log_mutex);
+ 		ret = -EAGAIN;
 -- 
 1.6.5.2
 

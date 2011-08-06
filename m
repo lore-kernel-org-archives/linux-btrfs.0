@@ -1,52 +1,127 @@
-From: Mitch Harder <mitch.harder@sabayonlinux.org>
-Subject: WARNING: at fs/inode.c:1333 (with 'autodefrag' Enabled)
-Date: Sat, 6 Aug 2011 09:13:43 -0500
-Message-ID: <CAKcLGm_=Wp_dKtYpKD9TG8e3tZxHTwZczuG8nZCEm0-ReBLmRg@mail.gmail.com>
+From: Alexandre Oliva <oliva@lsd.ic.unicamp.br>
+Subject: help recover from unmountable btrfs
+Date: Sat, 06 Aug 2011 12:27:56 -0300
+Message-ID: <oripqad0g3.fsf@livre.localdomain>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=ISO-8859-1
-To: linux-btrfs <linux-btrfs@vger.kernel.org>
+Content-Type: text/plain; charset=utf-8
+Cc: linux-btrfs@vger.kernel.org
+To: mpiechotka <uzytkownik2@gmail.com>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-I am getting the following warnings intermittently with autodefrag enabled.
+After running one too many times into =E2=80=9Cparent transid verify fa=
+iled=E2=80=9D
+that prevents a filesystem from being mounted, I found out how to adjus=
+t
+some system blocks so that the kernel could get past that check and
+mount the filesystem.  In one case, I could get all the data I wanted
+from the filesystem; in another, many checksums failed and I ended up
+throwing it all away, so no guarrantees.  mpiechotka's running into the
+problem and bringing it up on IRC prompted me to post for wider
+consumption this patch for btrfsck, that will tell you what to do to
+make the filesystem mountable again.
 
-[70440.795530] ------------[ cut here ]------------
-[70440.795533] WARNING: at fs/inode.c:1333 iput+0x5e/0x14b()
-[70440.795535] Hardware name: P35-DS3L
-[70440.795536] Modules linked in: r8169 ipv6 snd_seq_midi
-snd_seq_dummy snd_seq_oss snd_seq_midi_event snd_seq snd_pcm_oss
-snd_mixer_oss lgdt330x cx88_dvb cx88_vp3054_i2c videobuf_dvb dvb_core
-rc_hauppauge tuner_simple tuner_types tda9887 tda8290 tuner
-ir_lirc_codec lirc_dev ir_sony_decoder ir_jvc_decoder ir_rc6_decoder
-ir_rc5_decoder ir_nec_decoder cx8800 cx88_alsa cx8802 cx88xx rc_core
-i2c_algo_bit tveeprom nvidia(P) snd_ens1371 gameport snd_rawmidi
-snd_seq_device sr_mod v4l2_common iTCO_wdt videodev snd_ac97_codec
-iTCO_vendor_support media v4l2_compat_ioctl32 videobuf_dma_sg i2c_i801
-videobuf_core btcx_risc intel_agp pcspkr intel_gtt ac97_bus snd_pcm
-snd_timer snd snd_page_alloc tpm_tis i2c_core tpm ppdev tpm_bios
-parport_pc parport iscsi_tcp libiscsi_tcp libiscsi fuse nfs nfs_acl
-auth_rpcgss lockd sunrpc sl811_hcd ohci_hcd uhci_hcd ehci_hcd [last
-unloaded: r8169]
-[70440.795599] Pid: 2257, comm: btrfs-cleaner Tainted: P        W
-3.0.0-git-local-v2+ #1
-[70440.795602] Call Trace:
-[70440.795605]  [<ffffffff81038445>] warn_slowpath_common+0x85/0x9d
-[70440.795608]  [<ffffffff81038477>] warn_slowpath_null+0x1a/0x1c
-[70440.795611]  [<ffffffff8110e1ad>] iput+0x5e/0x14b
-[70440.795615]  [<ffffffff812be854>] btrfs_iget+0x428/0x42a
-[70440.795618]  [<ffffffff812c2000>] ? btrfs_run_defrag_inodes+0xa7/0x1da
-[70440.795622]  [<ffffffff812c2072>] btrfs_run_defrag_inodes+0x119/0x1da
-[70440.795625]  [<ffffffff812ba0eb>] ? btrfs_run_delayed_iputs+0xe9/0x114
-[70440.795629]  [<ffffffff812afc43>] cleaner_kthread+0x10b/0x170
-[70440.795632]  [<ffffffff812afb38>] ? transaction_kthread+0x227/0x227
-[70440.795635]  [<ffffffff812afb38>] ? transaction_kthread+0x227/0x227
-[70440.795638]  [<ffffffff8105388a>] kthread+0x82/0x8a
-[70440.795642]  [<ffffffff8163e5d4>] kernel_thread_helper+0x4/0x10
-[70440.795645]  [<ffffffff81053808>] ? kthread_worker_fn+0x13a/0x13a
-[70440.795648]  [<ffffffff8163e5d0>] ? gs_change+0xb/0xb
-[70440.795651] ---[ end trace af1037390dedfdbc ]---
+Add verbosity to btrfsck so that we can manually recover from a failure
+to update the roots.
 
-It appears to be associated with a stale inode error in the
-btrfs_iget() function in fs/btrfs/inode.c
+Signed-off-by: Alexandre Oliva <oliva@lsd.ic.unicamp.br>
+---
+ disk-io.c |   41 +++++++++++++++++++++++++++++++++++++++++
+ volumes.c |    3 +++
+ 2 files changed, 44 insertions(+), 0 deletions(-)
 
-I'll try to pay closer attention to what is running when I get these warnings.
+diff --git a/disk-io.c b/disk-io.c
+index a6e1000..6860c26 100644
+--- a/disk-io.c
++++ b/disk-io.c
+@@ -87,6 +87,22 @@ int csum_tree_block_size(struct extent_buffer *buf, =
+u16 csum_size,
+ 			printk("checksum verify failed on %llu wanted %X "
+ 			       "found %X\n", (unsigned long long)buf->start,
+ 			       *((int *)result), *((char *)buf->data));
++			if (csum_size =3D=3D 4) {
++			  fprintf(stderr, "dd if=3D(fd %i) bs=3D1c skip=3D%llu count=3D4 | =
+od -t x1:\n%02x %02x %02x %02x\n",
++				  buf->fd,
++				  (unsigned long long)buf->dev_bytenr,
++				  (__u8)buf->data[0],
++				  (__u8)buf->data[1],
++				  (__u8)buf->data[2],
++				  (__u8)buf->data[3]);
++			  fprintf(stderr, "printf \"\\x%02x\\x%02x\\x%02x\\x%02x\" | dd of=3D=
+(fd %i) bs=3D1c seek=3D%llu conv=3Dnotrunc count=3D4\n",
++				  (__u8)result[0],
++				  (__u8)result[1],
++				  (__u8)result[2],
++				  (__u8)result[3],
++				  buf->fd,
++				  (unsigned long long)buf->dev_bytenr);
++			}
+ 			free(result);
+ 			return 1;
+ 		}
+@@ -165,6 +181,31 @@ static int verify_parent_transid(struct extent_io_=
+tree *io_tree,
+ 	       (unsigned long long)eb->start,
+ 	       (unsigned long long)parent_transid,
+ 	       (unsigned long long)btrfs_header_generation(eb));
++	fprintf(stderr, "dd if=3D(fd %i) bs=3D1c skip=3D%llu count=3D8 | od -=
+t x1:\n%02x %02x %02x %02x %02x %02x %02x %02x\n",
++		eb->fd,
++		(unsigned long long)eb->dev_bytenr
++		+ offsetof (struct btrfs_header, generation),
++		(__u8)eb->data[offsetof (struct btrfs_header, generation)],
++		(__u8)eb->data[offsetof (struct btrfs_header, generation) + 1],
++		(__u8)eb->data[offsetof (struct btrfs_header, generation) + 2],
++		(__u8)eb->data[offsetof (struct btrfs_header, generation) + 3],
++		(__u8)eb->data[offsetof (struct btrfs_header, generation) + 4],
++		(__u8)eb->data[offsetof (struct btrfs_header, generation) + 5],
++		(__u8)eb->data[offsetof (struct btrfs_header, generation) + 6],
++		(__u8)eb->data[offsetof (struct btrfs_header, generation) + 7]);
++	btrfs_set_header_generation(eb, parent_transid);
++	fprintf(stderr, "printf \"\\x%02x\\x%02x\\x%02x\\x%02x\\x%02x\\x%02x\=
+\x%02x\\x%02x\" | dd of=3D(fd %i) bs=3D1c seek=3D%llu conv=3Dnotrunc co=
+unt=3D8\n",
++		(__u8)eb->data[offsetof (struct btrfs_header, generation)],
++		(__u8)eb->data[offsetof (struct btrfs_header, generation) + 1],
++		(__u8)eb->data[offsetof (struct btrfs_header, generation) + 2],
++		(__u8)eb->data[offsetof (struct btrfs_header, generation) + 3],
++		(__u8)eb->data[offsetof (struct btrfs_header, generation) + 4],
++		(__u8)eb->data[offsetof (struct btrfs_header, generation) + 5],
++		(__u8)eb->data[offsetof (struct btrfs_header, generation) + 6],
++		(__u8)eb->data[offsetof (struct btrfs_header, generation) + 7],
++		eb->fd,
++		(unsigned long long)eb->dev_bytenr
++		+ offsetof (struct btrfs_header, generation));
+ 	ret =3D 1;
+ out:
+ 	clear_extent_buffer_uptodate(io_tree, eb);
+diff --git a/volumes.c b/volumes.c
+index 7671855..c30a3ba 100644
+--- a/volumes.c
++++ b/volumes.c
+@@ -188,6 +188,9 @@ int btrfs_open_devices(struct btrfs_fs_devices *fs_=
+devices, int flags)
+ 		device->fd =3D fd;
+ 		if (flags =3D=3D O_RDWR)
+ 			device->writeable =3D 1;
++		fprintf(stderr, "Device %llu (%s) opened in fd %i\n",
++			(unsigned long long)device->devid,
++			device->name, device->fd);
+ 	}
+ 	return 0;
+ fail:
+--=20
+1.7.4.4
+
+
+--=20
+Alexandre Oliva, freedom fighter    http://FSFLA.org/~lxoliva/
+You must be the change you wish to see in the world. -- Gandhi
+Be Free! -- http://FSFLA.org/   FSF Latin America board member
+=46ree Software Evangelist      Red Hat Brazil Compiler Engineer
+--
+To unsubscribe from this list: send the line "unsubscribe linux-btrfs" =
+in
+the body of a message to majordomo@vger.kernel.org
+More majordomo info at  http://vger.kernel.org/majordomo-info.html

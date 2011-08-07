@@ -1,20 +1,23 @@
-From: Michael Cronenworth <mike@cchtml.com>
-Subject: Re: fsck tool testing
-Date: Sun, 07 Aug 2011 18:14:51 -0500
-Message-ID: <4E3F1C6B.9060704@cchtml.com>
-References: <4E3F0E55.7030408@cchtml.com> <CAE5mzvhVV3OVB0EGobwSwN3r60xR-dpdny1NiSbcqPJSMbkfcA@mail.gmail.com>
+From: dclist@gmail.com
+Subject: Why does fsck returns "unresolved ref root"
+Date: Sun, 07 Aug 2011 19:38:47 -0400
+Message-ID: <877h6okd14.fsf@invalid.clx>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=UTF-8; format=flowed
-Cc: linux-btrfs@vger.kernel.org
-To: cwillu <cwillu@cwillu.com>
+Content-Type: text/plain
+To: linux-btrfs@vger.kernel.org
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <CAE5mzvhVV3OVB0EGobwSwN3r60xR-dpdny1NiSbcqPJSMbkfcA@mail.gmail.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 08/07/2011 05:48 PM, cwillu wrote:
-> What are the actual problems you see trying to mount?  There's a
-> couple other tricks that may get things running.
 
-I get messages such as:
-"/parent transid verify failed/ on # wanted # found #"
+On my system btrfsck runs periodically at boot. When it is run I get the
+error message "unresolved ref root" in reference to a snapshot I
+created. Consequently the fsck gets re-run during the following boot
+repeating a time consuming process. I can disable fsck but I would like
+to fix any issues with my filesystem.
+
+How do I diagnose the problem? The snapshot seems to function correctly
+when the filesystem is mounted. I do not remember the details of how I
+created the snapshot.
+
+I appreciate any advice.
 

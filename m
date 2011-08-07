@@ -1,23 +1,20 @@
-From: Michael Cronenworth <mike@cchtml.com>
-Subject: fsck tool testing
-Date: Sun, 07 Aug 2011 17:14:45 -0500
-Message-ID: <4E3F0E55.7030408@cchtml.com>
+From: cwillu <cwillu@cwillu.com>
+Subject: Re: fsck tool testing
+Date: Sun, 7 Aug 2011 16:48:44 -0600
+Message-ID: <CAE5mzvhVV3OVB0EGobwSwN3r60xR-dpdny1NiSbcqPJSMbkfcA@mail.gmail.com>
+References: <4E3F0E55.7030408@cchtml.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=ISO-8859-1; format=flowed
-To: linux-btrfs@vger.kernel.org
+Content-Type: text/plain; charset=UTF-8
+Cc: linux-btrfs@vger.kernel.org
+To: Michael Cronenworth <mike@cchtml.com>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
+In-Reply-To: <4E3F0E55.7030408@cchtml.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hello,
+On Sun, Aug 7, 2011 at 4:14 PM, Michael Cronenworth <mike@cchtml.com> wrote:
+> I have tried the super block tools to no success (all blocks are broken) and
+> the patch to mount read-only does not work for me. I have backups so I'm not
+> here to complain, but I would like to use the fsck tool when it is available
 
-I read in a previous thread that the fsck tool is due soon. I have a 
-machine with two btrfs partitons in a broken state that I would be 
-willing to test the fsck tool on as soon as it is ready.
-
-I have tried the super block tools to no success (all blocks are broken) 
-and the patch to mount read-only does not work for me. I have backups so 
-I'm not here to complain, but I would like to use the fsck tool when it 
-is available for testing.
-
-Thanks,
-Michael
+What are the actual problems you see trying to mount?  There's a
+couple other tricks that may get things running.

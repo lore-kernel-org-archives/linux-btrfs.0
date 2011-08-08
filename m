@@ -1,23 +1,30 @@
-From: Jan Schubert <Jan.Schubert@GMX.li>
-Subject: Re: Unmountable btrfs - part II
-Date: Mon, 8 Aug 2011 08:23:13 +0000 (UTC)
-Message-ID: <loom.20110808T102049-935@post.gmane.org>
-References: <CAMcAH6iyZSE+04USi91xZQ9g_yhPRwO5TX8QQsN_B3cVg-0Msg@mail.gmail.com>
+From: Josef Bacik <josef@redhat.com>
+Subject: Re: space cache generation (...) does not match inode (...)
+Date: Mon, 08 Aug 2011 08:14:42 -0400
+Message-ID: <4E3FD332.5020002@redhat.com>
+References: <CAObL_7Hc0AGOB8Jk-o_hseiqxEfDWFLSnMkhLLiu00GVbr729Q@mail.gmail.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-To: linux-btrfs@vger.kernel.org
+Content-Type: text/plain; charset=ISO-8859-1
+Cc: linux-btrfs <linux-btrfs@vger.kernel.org>
+To: Andrew Lutomirski <luto@mit.edu>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
+In-Reply-To: <CAObL_7Hc0AGOB8Jk-o_hseiqxEfDWFLSnMkhLLiu00GVbr729Q@mail.gmail.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Maciej Piechotka <uzytkownik2 <at> gmail.com> writes:
+On 08/06/2011 10:16 PM, Andrew Lutomirski wrote:
+> I've always gotten space cache generation warnings, but some time
+> after 3.0 they started going nuts.  I get:
+> 
+> space cache generation (14667727114112179905) does not match inode (154185)
+> 
+> and other similar messages (with a huge number and a smaller number)
+> at rates higher than one message per ms.  They don't happen
+> constantly, but they come in bursts big enough to fill my log buffer.
+> 
 
-> btrfsck: root-tree.c:46: btrfs_find_last_root: Assertion
-> `!(path->slots[0] == 0)' failed.
+Yeah sorry that's going to happen when you first switch to 3.0.  We
+switched the space cache stuff over to using the normal checksumming
+code so all old space cache is going to look invalid.  This is nothing
+to worry about, it will just end up discarded and re-generated.  Thanks,
 
-Maciej, I see such "Assertion failed" messages usually while playing around with 
-different kernels and different versions of btrfs-progs. Please make sure they 
-match, meaning btrfs-progs compiled using the currently running kernel.
-
-Just an idea,
-Jan
-
+Josef

@@ -1,63 +1,37 @@
-From: Sage Weil <sage@newdream.net>
-Subject: Re: Btrfs slowdown
-Date: Mon, 8 Aug 2011 14:58:29 -0700 (PDT)
-Message-ID: <Pine.LNX.4.64.1108081456290.6895@cobra.newdream.net>
-References: <CAO47_-9BLKWUGDEuzaLqHSq9tZkAUaO8FMQEy1pPk9A2Hb+5AQ@mail.gmail.com>
- <1311623446-sup-8105@shiny> <CAO47_--KOyMdS-OP06cLpD+qTQ+gqGcw_DCPUrLOeypt5j_G4g@mail.gmail.com>
+From: Alexandre Oliva <oliva@lsd.ic.unicamp.br>
+Subject: Re: =?utf-8?Q?=E2=80=9Cbio?= too =?utf-8?Q?big=E2=80=9D?=
+ regression and silent data corruption in 3.0
+Date: Mon, 08 Aug 2011 19:39:44 -0300
+Message-ID: <or1uwv7cjz.fsf@livre.localdomain>
+References: <orwreobtuf.fsf@livre.localdomain>
 Mime-Version: 1.0
-Content-Type: TEXT/PLAIN; charset=US-ASCII
-Cc: Chris Mason <chris.mason@oracle.com>,
-	linux-btrfs <linux-btrfs@vger.kernel.org>,
-	ceph-devel <ceph-devel@vger.kernel.org>
-To: Christian Brunner <chb@muc.de>
+Content-Type: text/plain; charset=utf-8
+To: linux-btrfs@vger.kernel.org
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <CAO47_--KOyMdS-OP06cLpD+qTQ+gqGcw_DCPUrLOeypt5j_G4g@mail.gmail.com>
+In-Reply-To: <orwreobtuf.fsf@livre.localdomain> (Alexandre Oliva's message of
+	"Sun, 07 Aug 2011 22:00:24 -0300")
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hi Christian,
+On Aug  7, 2011, Alexandre Oliva <oliva@lsd.ic.unicamp.br> wrote:
 
-Are you still seeing this slowness?
+> tl;dr version: 3.0 produces =E2=80=9Cbio too big=E2=80=9D dmesg entri=
+es and silently
+> corrupts data in =E2=80=9Cmeta-raid1/data-single=E2=80=9D configurati=
+ons on disks with
+> different max_hw_sectors, where 2.6.38 worked fine.
 
-sage
+=46WIW, I just got the same problem with 2.6.38.  No idea how I hadn't =
+hit
+it before, but it's not a 3.0 regression, just a regular (but IMHO very
+serious) bug.
 
-
-On Wed, 27 Jul 2011, Christian Brunner wrote:
-> 2011/7/25 Chris Mason <chris.mason@oracle.com>:
-> > Excerpts from Christian Brunner's message of 2011-07-25 03:54:47 -0400:
-> >> Hi,
-> >>
-> >> we are running a ceph cluster with btrfs as it's base filesystem
-> >> (kernel 3.0). At the beginning everything worked very well, but after
-> >> a few days (2-3) things are getting very slow.
-> >>
-> >> When I look at the object store servers I see heavy disk-i/o on the
-> >> btrfs filesystems (disk utilization is between 60% and 100%). I also
-> >> did some tracing on the Cepp-Object-Store-Daemon, but I'm quite
-> >> certain, that the majority of the disk I/O is not caused by ceph or
-> >> any other userland process.
-> >>
-> >> When reboot the system(s) the problems go away for another 2-3 days,
-> >> but after that, it starts again. I'm not sure if the problem is
-> >> related to the kernel warning I've reported last week. At least there
-> >> is no temporal relationship between the warning and the slowdown.
-> >>
-> >> Any hints on how to trace this would be welcome.
-> >
-> > The easiest way to trace this is with latencytop.
-> >
-> > Apply this patch:
-> >
-> > http://oss.oracle.com/~mason/latencytop.patch
-> >
-> > And then use latencytop -c for a few minutes while the system is slow.
-> > Send the output here and hopefully we'll be able to figure it out.
-> 
-> I've now installed latencytop. Attached are two output files: The
-> first is from yesterday and was created aproxematly half an hour after
-> the boot. The second on is from today, uptime is 19h. The load on the
-> system is already rising. Disk utilization is approximately at 50%.
-> 
-> Thanks for your help.
-> 
-> Christian
-> 
+--=20
+Alexandre Oliva, freedom fighter    http://FSFLA.org/~lxoliva/
+You must be the change you wish to see in the world. -- Gandhi
+Be Free! -- http://FSFLA.org/   FSF Latin America board member
+=46ree Software Evangelist      Red Hat Brazil Compiler Engineer
+--
+To unsubscribe from this list: send the line "unsubscribe linux-btrfs" =
+in
+the body of a message to majordomo@vger.kernel.org
+More majordomo info at  http://vger.kernel.org/majordomo-info.html

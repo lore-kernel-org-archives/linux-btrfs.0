@@ -1,109 +1,77 @@
 From: Josef Bacik <josef@redhat.com>
-Subject: [PATCH] Btrfs: kill unused parts of block_rsv
-Date: Mon,  8 Aug 2011 14:23:58 -0400
-Message-ID: <1312827838-16384-1-git-send-email-josef@redhat.com>
+Subject: [PATCH] Btrfs: don't try to commit in btrfs_block_rsv_check
+Date: Mon,  8 Aug 2011 14:24:21 -0400
+Message-ID: <1312827861-16472-1-git-send-email-josef@redhat.com>
 To: linux-btrfs@vger.kernel.org
 Return-path: <linux-btrfs-owner@vger.kernel.org>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-The priority and refill_used flags are not used anymore, and neither is the
-usage counter, so just remove them from btrfs_block_rsv.
+We will try and reserve metadata bytes in btrfs_block_rsv_check and if we cannot
+because we have a transaction open it will return EAGAIN, so we do not need to
+try and commit the transaction again.
 
 Signed-off-by: Josef Bacik <josef@redhat.com>
 ---
- fs/btrfs/ctree.h       |    3 ---
- fs/btrfs/extent-tree.c |   23 ++++++-----------------
- fs/btrfs/relocation.c  |    2 --
- 3 files changed, 6 insertions(+), 22 deletions(-)
+ fs/btrfs/extent-tree.c |   29 ++++-------------------------
+ 1 files changed, 4 insertions(+), 25 deletions(-)
 
-diff --git a/fs/btrfs/ctree.h b/fs/btrfs/ctree.h
-index 6071dab..edc1cf0 100644
---- a/fs/btrfs/ctree.h
-+++ b/fs/btrfs/ctree.h
-@@ -774,9 +774,6 @@ struct btrfs_block_rsv {
- 	u64 reserved;
- 	struct btrfs_space_info *space_info;
- 	spinlock_t lock;
--	atomic_t usage;
--	unsigned int priority:8;
--	unsigned int refill_used:1;
- 	unsigned int full:1;
- };
- 
 diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
-index fc2686c..e01cd8c 100644
+index e01cd8c..9e602d8 100644
 --- a/fs/btrfs/extent-tree.c
 +++ b/fs/btrfs/extent-tree.c
-@@ -3659,8 +3659,6 @@ void btrfs_init_block_rsv(struct btrfs_block_rsv *rsv)
+@@ -3708,7 +3708,6 @@ int btrfs_block_rsv_check(struct btrfs_trans_handle *trans,
+ 			  u64 min_reserved, int min_factor)
  {
- 	memset(rsv, 0, sizeof(*rsv));
- 	spin_lock_init(&rsv->lock);
--	atomic_set(&rsv->usage, 1);
--	rsv->priority = 6;
- }
+ 	u64 num_bytes = 0;
+-	int commit_trans = 0;
+ 	int ret = -ENOSPC;
  
- struct btrfs_block_rsv *btrfs_alloc_block_rsv(struct btrfs_root *root)
-@@ -3681,10 +3679,8 @@ struct btrfs_block_rsv *btrfs_alloc_block_rsv(struct btrfs_root *root)
- void btrfs_free_block_rsv(struct btrfs_root *root,
- 			  struct btrfs_block_rsv *rsv)
- {
--	if (rsv && atomic_dec_and_test(&rsv->usage)) {
--		btrfs_block_rsv_release(root, rsv, (u64)-1);
--		kfree(rsv);
+ 	if (!block_rsv)
+@@ -3720,13 +3719,12 @@ int btrfs_block_rsv_check(struct btrfs_trans_handle *trans,
+ 	if (min_reserved > num_bytes)
+ 		num_bytes = min_reserved;
+ 
+-	if (block_rsv->reserved >= num_bytes) {
++	if (block_rsv->reserved >= num_bytes)
+ 		ret = 0;
+-	} else {
++	else
+ 		num_bytes -= block_rsv->reserved;
+-		commit_trans = 1;
 -	}
-+	btrfs_block_rsv_release(root, rsv, (u64)-1);
-+	kfree(rsv);
- }
- 
- int btrfs_block_rsv_add(struct btrfs_trans_handle *trans,
-@@ -3734,13 +3730,10 @@ int btrfs_block_rsv_check(struct btrfs_trans_handle *trans,
+ 	spin_unlock(&block_rsv->lock);
++
  	if (!ret)
  		return 0;
  
--	if (block_rsv->refill_used) {
--		ret = reserve_metadata_bytes(trans, root, block_rsv,
--					     num_bytes, 0);
--		if (!ret) {
--			block_rsv_add_bytes(block_rsv, num_bytes, 0);
--			return 0;
--		}
-+	ret = reserve_metadata_bytes(trans, root, block_rsv, num_bytes, 0);
-+	if (!ret) {
-+		block_rsv_add_bytes(block_rsv, num_bytes, 0);
-+		return 0;
+@@ -3736,26 +3734,7 @@ int btrfs_block_rsv_check(struct btrfs_trans_handle *trans,
+ 		return 0;
  	}
  
- 	if (commit_trans) {
-@@ -3859,16 +3852,12 @@ static void init_global_block_rsv(struct btrfs_fs_info *fs_info)
- 
- 	space_info = __find_space_info(fs_info, BTRFS_BLOCK_GROUP_SYSTEM);
- 	fs_info->chunk_block_rsv.space_info = space_info;
--	fs_info->chunk_block_rsv.priority = 10;
- 
- 	space_info = __find_space_info(fs_info, BTRFS_BLOCK_GROUP_METADATA);
- 	fs_info->global_block_rsv.space_info = space_info;
--	fs_info->global_block_rsv.priority = 10;
--	fs_info->global_block_rsv.refill_used = 1;
- 	fs_info->delalloc_block_rsv.space_info = space_info;
- 	fs_info->trans_block_rsv.space_info = space_info;
- 	fs_info->empty_block_rsv.space_info = space_info;
--	fs_info->empty_block_rsv.priority = 10;
- 
- 	fs_info->extent_root->block_rsv = &fs_info->global_block_rsv;
- 	fs_info->csum_root->block_rsv = &fs_info->global_block_rsv;
-diff --git a/fs/btrfs/relocation.c b/fs/btrfs/relocation.c
-index 545b043..aeaed99 100644
---- a/fs/btrfs/relocation.c
-+++ b/fs/btrfs/relocation.c
-@@ -3650,8 +3650,6 @@ int prepare_to_relocate(struct reloc_control *rc)
- 	if (ret)
- 		return ret;
- 
--	rc->block_rsv->refill_used = 1;
+-	if (commit_trans) {
+-		struct btrfs_space_info *sinfo = block_rsv->space_info;
 -
- 	memset(&rc->cluster, 0, sizeof(rc->cluster));
- 	rc->search_start = rc->block_group->key.objectid;
- 	rc->extents_found = 0;
+-		if (trans)
+-			return -EAGAIN;
+-
+-		spin_lock(&sinfo->lock);
+-		if (sinfo->bytes_pinned < num_bytes) {
+-			spin_unlock(&sinfo->lock);
+-			return -ENOSPC;
+-		}
+-		spin_unlock(&sinfo->lock);
+-
+-		trans = btrfs_join_transaction(root);
+-		BUG_ON(IS_ERR(trans));
+-		ret = btrfs_commit_transaction(trans, root);
+-		return 0;
+-	}
+-
+-	return -ENOSPC;
++	return ret;
+ }
+ 
+ int btrfs_block_rsv_migrate(struct btrfs_block_rsv *src_rsv,
 -- 
 1.7.5.2
 

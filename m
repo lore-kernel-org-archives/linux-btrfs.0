@@ -1,130 +1,75 @@
 From: Josef Bacik <josef@redhat.com>
-Subject: [PATCH] Btrfs: optimize how we account for space in truncate
-Date: Mon,  8 Aug 2011 14:24:46 -0400
-Message-ID: <1312827886-16568-1-git-send-email-josef@redhat.com>
+Subject: [PATCH] Btrfs: kill btrfs_truncate_reserve_metadata
+Date: Mon,  8 Aug 2011 14:25:04 -0400
+Message-ID: <1312827904-16656-1-git-send-email-josef@redhat.com>
 To: linux-btrfs@vger.kernel.org
 Return-path: <linux-btrfs-owner@vger.kernel.org>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Currently we're starting and stopping a transaction for no real reason, so kill
-that and just reserve enough space as if we can truncate all in one transaction.
-Also use btrfs_block_rsv_check() for our reserve to minimize the amount of space
-we may have to allocate for our slack space.  Thanks,
+Since we've optimized the truncate path, we no longer require this function.
 
 Signed-off-by: Josef Bacik <josef@redhat.com>
 ---
- fs/btrfs/inode.c |   58 +++++++++++++++++++++++++++---------------------------
- 1 files changed, 29 insertions(+), 29 deletions(-)
+ fs/btrfs/ctree.h       |    3 ---
+ fs/btrfs/extent-tree.c |   31 -------------------------------
+ 2 files changed, 0 insertions(+), 34 deletions(-)
 
-diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
-index 4aa4ea9..808ad07 100644
---- a/fs/btrfs/inode.c
-+++ b/fs/btrfs/inode.c
-@@ -6452,6 +6452,7 @@ static int btrfs_truncate(struct inode *inode)
- 	struct btrfs_trans_handle *trans;
- 	unsigned long nr;
- 	u64 mask = root->sectorsize - 1;
-+	u64 min_size = btrfs_calc_trans_metadata_size(root, 2);
+diff --git a/fs/btrfs/ctree.h b/fs/btrfs/ctree.h
+index edc1cf0..a8d8762 100644
+--- a/fs/btrfs/ctree.h
++++ b/fs/btrfs/ctree.h
+@@ -2242,9 +2242,6 @@ int btrfs_block_rsv_migrate(struct btrfs_block_rsv *src_rsv,
+ void btrfs_block_rsv_release(struct btrfs_root *root,
+ 			     struct btrfs_block_rsv *block_rsv,
+ 			     u64 num_bytes);
+-int btrfs_truncate_reserve_metadata(struct btrfs_trans_handle *trans,
+-				    struct btrfs_root *root,
+-				    struct btrfs_block_rsv *rsv);
+ int btrfs_set_block_group_ro(struct btrfs_root *root,
+ 			     struct btrfs_block_group_cache *cache);
+ int btrfs_set_block_group_rw(struct btrfs_root *root,
+diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
+index 9e602d8..6557966 100644
+--- a/fs/btrfs/extent-tree.c
++++ b/fs/btrfs/extent-tree.c
+@@ -3858,37 +3858,6 @@ static void release_global_block_rsv(struct btrfs_fs_info *fs_info)
+ 	WARN_ON(fs_info->chunk_block_rsv.reserved > 0);
+ }
  
- 	ret = btrfs_truncate_page(inode->i_mapping, inode->i_size);
- 	if (ret)
-@@ -6500,17 +6501,21 @@ static int btrfs_truncate(struct inode *inode)
- 	if (!rsv)
- 		return -ENOMEM;
- 
--	trans = btrfs_start_transaction(root, 4);
-+	/*
-+	 * 2 for the truncate slack space
-+	 * 1 for the orphan item we're going to add
-+	 * 1 for the orphan item deletion
-+	 * 1 for updating the inode.
-+	 */
-+	trans = btrfs_start_transaction(root, 5);
- 	if (IS_ERR(trans)) {
- 		err = PTR_ERR(trans);
- 		goto out;
- 	}
- 
--	/*
--	 * Reserve space for the truncate process.  Truncate should be adding
--	 * space, but if there are snapshots it may end up using space.
--	 */
--	ret = btrfs_truncate_reserve_metadata(trans, root, rsv);
-+	/* Migrate the slack space for the truncate to our reserve */
-+	ret = btrfs_block_rsv_migrate(&root->fs_info->trans_block_rsv, rsv,
-+				      min_size);
- 	BUG_ON(ret);
- 
- 	ret = btrfs_orphan_add(trans, inode);
-@@ -6519,21 +6524,6 @@ static int btrfs_truncate(struct inode *inode)
- 		goto out;
- 	}
- 
--	nr = trans->blocks_used;
--	btrfs_end_transaction(trans, root);
--	btrfs_btree_balance_dirty(root, nr);
+-int btrfs_truncate_reserve_metadata(struct btrfs_trans_handle *trans,
+-				    struct btrfs_root *root,
+-				    struct btrfs_block_rsv *rsv)
+-{
+-	struct btrfs_block_rsv *trans_rsv = &root->fs_info->trans_block_rsv;
+-	u64 num_bytes;
+-	int ret;
 -
 -	/*
--	 * Ok so we've already migrated our bytes over for the truncate, so here
--	 * just reserve the one slot we need for updating the inode.
+-	 * Truncate should be freeing data, but give us 2 items just in case it
+-	 * needs to use some space.  We may want to be smarter about this in the
+-	 * future.
 -	 */
--	trans = btrfs_start_transaction(root, 1);
--	if (IS_ERR(trans)) {
--		err = PTR_ERR(trans);
--		goto out;
--	}
--	trans->block_rsv = rsv;
+-	num_bytes = btrfs_calc_trans_metadata_size(root, 2);
 -
- 	/*
- 	 * setattr is responsible for setting the ordered_data_close flag,
- 	 * but that is only tested during the last file release.  That
-@@ -6555,20 +6545,30 @@ static int btrfs_truncate(struct inode *inode)
- 		btrfs_add_ordered_operation(trans, root, inode);
- 
- 	while (1) {
-+		ret = btrfs_block_rsv_check(trans, root, rsv, min_size, 0);
-+		if (ret) {
-+			/*
-+			 * This can only happen with the original transaction we
-+			 * started above, every other time we shouldn't have a
-+			 * transaction started yet.
-+			 */
-+			if (ret == -EAGAIN)
-+				goto end_trans;
-+			err = ret;
-+			break;
-+		}
-+
- 		if (!trans) {
--			trans = btrfs_start_transaction(root, 3);
-+			/* Just need the 1 for updating the inode */
-+			trans = btrfs_start_transaction(root, 1);
- 			if (IS_ERR(trans)) {
- 				err = PTR_ERR(trans);
- 				goto out;
- 			}
+-	/* We already have enough bytes, just return */
+-	if (rsv->reserved >= num_bytes)
+-		return 0;
 -
--			ret = btrfs_truncate_reserve_metadata(trans, root,
--							      rsv);
--			BUG_ON(ret);
+-	num_bytes -= rsv->reserved;
 -
--			trans->block_rsv = rsv;
- 		}
- 
-+		trans->block_rsv = rsv;
-+
- 		ret = btrfs_truncate_inode_items(trans, root, inode,
- 						 inode->i_size,
- 						 BTRFS_EXTENT_DATA_KEY);
-@@ -6583,7 +6583,7 @@ static int btrfs_truncate(struct inode *inode)
- 			err = ret;
- 			break;
- 		}
+-	/*
+-	 * You should have reserved enough space before hand to do this, so this
+-	 * should not fail.
+-	 */
+-	ret = block_rsv_migrate_bytes(trans_rsv, rsv, num_bytes);
+-	BUG_ON(ret);
 -
-+end_trans:
- 		nr = trans->blocks_used;
- 		btrfs_end_transaction(trans, root);
- 		trans = NULL;
+-	return 0;
+-}
+-
+ void btrfs_trans_release_metadata(struct btrfs_trans_handle *trans,
+ 				  struct btrfs_root *root)
+ {
 -- 
 1.7.5.2
 

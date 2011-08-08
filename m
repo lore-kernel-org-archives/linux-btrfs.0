@@ -1,75 +1,63 @@
-From: Josef Bacik <josef@redhat.com>
-Subject: [PATCH] Btrfs: kill btrfs_truncate_reserve_metadata
-Date: Mon,  8 Aug 2011 14:25:04 -0400
-Message-ID: <1312827904-16656-1-git-send-email-josef@redhat.com>
-To: linux-btrfs@vger.kernel.org
+From: Sage Weil <sage@newdream.net>
+Subject: Re: Btrfs slowdown
+Date: Mon, 8 Aug 2011 14:58:29 -0700 (PDT)
+Message-ID: <Pine.LNX.4.64.1108081456290.6895@cobra.newdream.net>
+References: <CAO47_-9BLKWUGDEuzaLqHSq9tZkAUaO8FMQEy1pPk9A2Hb+5AQ@mail.gmail.com>
+ <1311623446-sup-8105@shiny> <CAO47_--KOyMdS-OP06cLpD+qTQ+gqGcw_DCPUrLOeypt5j_G4g@mail.gmail.com>
+Mime-Version: 1.0
+Content-Type: TEXT/PLAIN; charset=US-ASCII
+Cc: Chris Mason <chris.mason@oracle.com>,
+	linux-btrfs <linux-btrfs@vger.kernel.org>,
+	ceph-devel <ceph-devel@vger.kernel.org>
+To: Christian Brunner <chb@muc.de>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
+In-Reply-To: <CAO47_--KOyMdS-OP06cLpD+qTQ+gqGcw_DCPUrLOeypt5j_G4g@mail.gmail.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Since we've optimized the truncate path, we no longer require this function.
+Hi Christian,
 
-Signed-off-by: Josef Bacik <josef@redhat.com>
----
- fs/btrfs/ctree.h       |    3 ---
- fs/btrfs/extent-tree.c |   31 -------------------------------
- 2 files changed, 0 insertions(+), 34 deletions(-)
+Are you still seeing this slowness?
 
-diff --git a/fs/btrfs/ctree.h b/fs/btrfs/ctree.h
-index edc1cf0..a8d8762 100644
---- a/fs/btrfs/ctree.h
-+++ b/fs/btrfs/ctree.h
-@@ -2242,9 +2242,6 @@ int btrfs_block_rsv_migrate(struct btrfs_block_rsv *src_rsv,
- void btrfs_block_rsv_release(struct btrfs_root *root,
- 			     struct btrfs_block_rsv *block_rsv,
- 			     u64 num_bytes);
--int btrfs_truncate_reserve_metadata(struct btrfs_trans_handle *trans,
--				    struct btrfs_root *root,
--				    struct btrfs_block_rsv *rsv);
- int btrfs_set_block_group_ro(struct btrfs_root *root,
- 			     struct btrfs_block_group_cache *cache);
- int btrfs_set_block_group_rw(struct btrfs_root *root,
-diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
-index 9e602d8..6557966 100644
---- a/fs/btrfs/extent-tree.c
-+++ b/fs/btrfs/extent-tree.c
-@@ -3858,37 +3858,6 @@ static void release_global_block_rsv(struct btrfs_fs_info *fs_info)
- 	WARN_ON(fs_info->chunk_block_rsv.reserved > 0);
- }
- 
--int btrfs_truncate_reserve_metadata(struct btrfs_trans_handle *trans,
--				    struct btrfs_root *root,
--				    struct btrfs_block_rsv *rsv)
--{
--	struct btrfs_block_rsv *trans_rsv = &root->fs_info->trans_block_rsv;
--	u64 num_bytes;
--	int ret;
--
--	/*
--	 * Truncate should be freeing data, but give us 2 items just in case it
--	 * needs to use some space.  We may want to be smarter about this in the
--	 * future.
--	 */
--	num_bytes = btrfs_calc_trans_metadata_size(root, 2);
--
--	/* We already have enough bytes, just return */
--	if (rsv->reserved >= num_bytes)
--		return 0;
--
--	num_bytes -= rsv->reserved;
--
--	/*
--	 * You should have reserved enough space before hand to do this, so this
--	 * should not fail.
--	 */
--	ret = block_rsv_migrate_bytes(trans_rsv, rsv, num_bytes);
--	BUG_ON(ret);
--
--	return 0;
--}
--
- void btrfs_trans_release_metadata(struct btrfs_trans_handle *trans,
- 				  struct btrfs_root *root)
- {
--- 
-1.7.5.2
+sage
 
+
+On Wed, 27 Jul 2011, Christian Brunner wrote:
+> 2011/7/25 Chris Mason <chris.mason@oracle.com>:
+> > Excerpts from Christian Brunner's message of 2011-07-25 03:54:47 -0400:
+> >> Hi,
+> >>
+> >> we are running a ceph cluster with btrfs as it's base filesystem
+> >> (kernel 3.0). At the beginning everything worked very well, but after
+> >> a few days (2-3) things are getting very slow.
+> >>
+> >> When I look at the object store servers I see heavy disk-i/o on the
+> >> btrfs filesystems (disk utilization is between 60% and 100%). I also
+> >> did some tracing on the Cepp-Object-Store-Daemon, but I'm quite
+> >> certain, that the majority of the disk I/O is not caused by ceph or
+> >> any other userland process.
+> >>
+> >> When reboot the system(s) the problems go away for another 2-3 days,
+> >> but after that, it starts again. I'm not sure if the problem is
+> >> related to the kernel warning I've reported last week. At least there
+> >> is no temporal relationship between the warning and the slowdown.
+> >>
+> >> Any hints on how to trace this would be welcome.
+> >
+> > The easiest way to trace this is with latencytop.
+> >
+> > Apply this patch:
+> >
+> > http://oss.oracle.com/~mason/latencytop.patch
+> >
+> > And then use latencytop -c for a few minutes while the system is slow.
+> > Send the output here and hopefully we'll be able to figure it out.
+> 
+> I've now installed latencytop. Attached are two output files: The
+> first is from yesterday and was created aproxematly half an hour after
+> the boot. The second on is from today, uptime is 19h. The load on the
+> system is already rising. Disk utilization is approximately at 50%.
+> 
+> Thanks for your help.
+> 
+> Christian
+> 

@@ -1,46 +1,58 @@
-From: Andy Lutomirski <luto@MIT.EDU>
-Subject: Re: [PATCH] Btrfs: fix an oops of log replay
-Date: Mon, 08 Aug 2011 11:13:06 -0400
-Message-ID: <4E3FFD02.6010000@mit.edu>
-References: <1312619723-31094-1-git-send-email-liubo2009@cn.fujitsu.com>
-Mime-Version: 1.0
-Content-Type: text/plain; charset=ISO-8859-1; format=flowed
-Cc: linux-btrfs@vger.kernel.org, chris.mason@oracle.com
-To: Liu Bo <liubo2009@cn.fujitsu.com>
+From: Josef Bacik <josef@redhat.com>
+Subject: [PATCH] Btrfs: set i_size properly when fallocating and we already have an extent
+Date: Mon,  8 Aug 2011 12:24:03 -0400
+Message-ID: <1312820643-12478-1-git-send-email-josef@redhat.com>
+To: linux-btrfs@vger.kernel.org
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <1312619723-31094-1-git-send-email-liubo2009@cn.fujitsu.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 08/06/2011 04:35 AM, Liu Bo wrote:
-> When btrfs recovers from a crash, it may hit the oops below:
->
-> ------------[ cut here ]------------
-> kernel BUG at fs/btrfs/inode.c:4580!
-> [...]
-> RIP: 0010:[<ffffffffa03df251>]  [<ffffffffa03df251>] btrfs_add_link+0x161/0x1c0 [btrfs]
-> [...]
-> Call Trace:
->   [<ffffffffa03e7b31>] ? btrfs_inode_ref_index+0x31/0x80 [btrfs]
->   [<ffffffffa04054e9>] add_inode_ref+0x319/0x3f0 [btrfs]
->   [<ffffffffa0407087>] replay_one_buffer+0x2c7/0x390 [btrfs]
->   [<ffffffffa040444a>] walk_down_log_tree+0x32a/0x480 [btrfs]
->   [<ffffffffa0404695>] walk_log_tree+0xf5/0x240 [btrfs]
->   [<ffffffffa0406cc0>] btrfs_recover_log_trees+0x250/0x350 [btrfs]
->   [<ffffffffa0406dc0>] ? btrfs_recover_log_trees+0x350/0x350 [btrfs]
->   [<ffffffffa03d18b2>] open_ctree+0x1442/0x17d0 [btrfs]
-> [...]
->
-> This comes from that while replaying an inode ref item, we forget to
-> check those old conflicting DIR_ITEM and DIR_INDEX items in fs/file tree,
-> then we will come to conflict corners which lead to BUG_ON().
->
-> Signed-off-by: Liu Bo<liubo2009@cn.fujitsu.com>
-> ---
->   fs/btrfs/tree-log.c |   28 ++++++++++++++++++++++++----
->   1 files changed, 24 insertions(+), 4 deletions(-)
+xfstests exposed a problem with preallocate when it fallocates a range that
+already has an extent.  We don't set the new i_size properly because we see that
+we already have an extent.  This isn't right and we should update i_size if the
+space already exists.  With this patch we now pass xfstests 075.  Thanks,
 
-This fixes the oops for me.  The bug was a regression in 2.6.39, I believe.
+Signed-off-by: Josef Bacik <josef@redhat.com>
+---
+ fs/btrfs/file.c |   14 ++++++++++++++
+ 1 files changed, 14 insertions(+), 0 deletions(-)
 
-Tested-by: Andy Lutomirski <luto@mit.edu>
+diff --git a/fs/btrfs/file.c b/fs/btrfs/file.c
+index 658d669..5f8264a 100644
+--- a/fs/btrfs/file.c
++++ b/fs/btrfs/file.c
+@@ -1638,11 +1638,15 @@ static long btrfs_fallocate(struct file *file, int mode,
+ 
+ 	cur_offset = alloc_start;
+ 	while (1) {
++		u64 actual_end;
++
+ 		em = btrfs_get_extent(inode, NULL, 0, cur_offset,
+ 				      alloc_end - cur_offset, 0);
+ 		BUG_ON(IS_ERR_OR_NULL(em));
+ 		last_byte = min(extent_map_end(em), alloc_end);
++		actual_end = min_t(u64, extent_map_end(em), offset + len);
+ 		last_byte = (last_byte + mask) & ~mask;
++
+ 		if (em->block_start == EXTENT_MAP_HOLE ||
+ 		    (cur_offset >= inode->i_size &&
+ 		     !test_bit(EXTENT_FLAG_PREALLOC, &em->flags))) {
+@@ -1655,6 +1659,16 @@ static long btrfs_fallocate(struct file *file, int mode,
+ 				free_extent_map(em);
+ 				break;
+ 			}
++		} else if (actual_end > inode->i_size &&
++			   !(mode & FALLOC_FL_KEEP_SIZE)) {
++			/*
++			 * We didn't need to allocate any more space, but we
++			 * still extended the size of the file so we need to
++			 * update i_size.
++			 */
++			inode->i_ctime = CURRENT_TIME;
++			i_size_write(inode, actual_end);
++			btrfs_ordered_update_i_size(inode, actual_end, NULL);
+ 		}
+ 		free_extent_map(em);
+ 
+-- 
+1.7.5.2
 
---Andy

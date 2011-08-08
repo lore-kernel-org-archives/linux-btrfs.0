@@ -1,77 +1,109 @@
 From: Josef Bacik <josef@redhat.com>
-Subject: [PATCH] Btrfs: fix how we reserve space for deleting inodes
-Date: Mon,  8 Aug 2011 14:21:59 -0400
-Message-ID: <1312827719-16284-1-git-send-email-josef@redhat.com>
+Subject: [PATCH] Btrfs: kill unused parts of block_rsv
+Date: Mon,  8 Aug 2011 14:23:58 -0400
+Message-ID: <1312827838-16384-1-git-send-email-josef@redhat.com>
 To: linux-btrfs@vger.kernel.org
 Return-path: <linux-btrfs-owner@vger.kernel.org>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-I converted btrfs_truncate to do sane reservations for truncate, but didn't
-convert btrfs_evict_inode.  Basically we need to save the orphan_rsv for
-deleting the orphan item, and do normal reservations for our truncate.  Thanks,
+The priority and refill_used flags are not used anymore, and neither is the
+usage counter, so just remove them from btrfs_block_rsv.
 
 Signed-off-by: Josef Bacik <josef@redhat.com>
 ---
- fs/btrfs/inode.c |   31 +++++++++++++++++++------------
- 1 files changed, 19 insertions(+), 12 deletions(-)
+ fs/btrfs/ctree.h       |    3 ---
+ fs/btrfs/extent-tree.c |   23 ++++++-----------------
+ fs/btrfs/relocation.c  |    2 --
+ 3 files changed, 6 insertions(+), 22 deletions(-)
 
-diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
-index 54b11ad..4aa4ea9 100644
---- a/fs/btrfs/inode.c
-+++ b/fs/btrfs/inode.c
-@@ -3552,18 +3552,24 @@ void btrfs_evict_inode(struct inode *inode)
+diff --git a/fs/btrfs/ctree.h b/fs/btrfs/ctree.h
+index 6071dab..edc1cf0 100644
+--- a/fs/btrfs/ctree.h
++++ b/fs/btrfs/ctree.h
+@@ -774,9 +774,6 @@ struct btrfs_block_rsv {
+ 	u64 reserved;
+ 	struct btrfs_space_info *space_info;
+ 	spinlock_t lock;
+-	atomic_t usage;
+-	unsigned int priority:8;
+-	unsigned int refill_used:1;
+ 	unsigned int full:1;
+ };
  
- 	btrfs_i_size_write(inode, 0);
+diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
+index fc2686c..e01cd8c 100644
+--- a/fs/btrfs/extent-tree.c
++++ b/fs/btrfs/extent-tree.c
+@@ -3659,8 +3659,6 @@ void btrfs_init_block_rsv(struct btrfs_block_rsv *rsv)
+ {
+ 	memset(rsv, 0, sizeof(*rsv));
+ 	spin_lock_init(&rsv->lock);
+-	atomic_set(&rsv->usage, 1);
+-	rsv->priority = 6;
+ }
  
-+	/*
-+	 * This is a bit simpler than btrfs_truncate since
-+	 *
-+	 * 1) We've already reserved our space for our orphan item in the
-+	 *    unlink.
-+	 * 2) We're going to delete the inode item, so we don't need to update
-+	 *    it at all.
-+	 *
-+	 * So we just need to reserve some slack space in case we add bytes when
-+	 * doing the truncate.
-+	 */
- 	while (1) {
--		trans = btrfs_join_transaction(root);
--		BUG_ON(IS_ERR(trans));
--		trans->block_rsv = root->orphan_block_rsv;
--
--		ret = btrfs_block_rsv_check(trans, root,
--					    root->orphan_block_rsv, 0, 5);
--		if (ret) {
--			BUG_ON(ret != -EAGAIN);
--			ret = btrfs_commit_transaction(trans, root);
--			BUG_ON(ret);
--			continue;
-+		trans = btrfs_start_transaction(root, 2);
-+		if (IS_ERR(trans)) {
-+			printk(KERN_WARNING "Could not get space for a "
-+			       "delete, will truncate on mount\n");
-+			btrfs_orphan_del(NULL, inode);
-+			goto no_delete;
- 		}
+ struct btrfs_block_rsv *btrfs_alloc_block_rsv(struct btrfs_root *root)
+@@ -3681,10 +3679,8 @@ struct btrfs_block_rsv *btrfs_alloc_block_rsv(struct btrfs_root *root)
+ void btrfs_free_block_rsv(struct btrfs_root *root,
+ 			  struct btrfs_block_rsv *rsv)
+ {
+-	if (rsv && atomic_dec_and_test(&rsv->usage)) {
+-		btrfs_block_rsv_release(root, rsv, (u64)-1);
+-		kfree(rsv);
+-	}
++	btrfs_block_rsv_release(root, rsv, (u64)-1);
++	kfree(rsv);
+ }
  
- 		ret = btrfs_truncate_inode_items(trans, root, inode, 0, 0);
-@@ -3574,14 +3580,15 @@ void btrfs_evict_inode(struct inode *inode)
- 		btrfs_end_transaction(trans, root);
- 		trans = NULL;
- 		btrfs_btree_balance_dirty(root, nr);
--
+ int btrfs_block_rsv_add(struct btrfs_trans_handle *trans,
+@@ -3734,13 +3730,10 @@ int btrfs_block_rsv_check(struct btrfs_trans_handle *trans,
+ 	if (!ret)
+ 		return 0;
+ 
+-	if (block_rsv->refill_used) {
+-		ret = reserve_metadata_bytes(trans, root, block_rsv,
+-					     num_bytes, 0);
+-		if (!ret) {
+-			block_rsv_add_bytes(block_rsv, num_bytes, 0);
+-			return 0;
+-		}
++	ret = reserve_metadata_bytes(trans, root, block_rsv, num_bytes, 0);
++	if (!ret) {
++		block_rsv_add_bytes(block_rsv, num_bytes, 0);
++		return 0;
  	}
  
- 	if (ret == 0) {
-+		trans->block_rsv = root->orphan_block_rsv;
- 		ret = btrfs_orphan_del(trans, inode);
- 		BUG_ON(ret);
- 	}
+ 	if (commit_trans) {
+@@ -3859,16 +3852,12 @@ static void init_global_block_rsv(struct btrfs_fs_info *fs_info)
  
-+	trans->block_rsv = &root->fs_info->trans_block_rsv;
- 	if (!(root == root->fs_info->tree_root ||
- 	      root->root_key.objectid == BTRFS_TREE_RELOC_OBJECTID))
- 		btrfs_return_ino(root, btrfs_ino(inode));
+ 	space_info = __find_space_info(fs_info, BTRFS_BLOCK_GROUP_SYSTEM);
+ 	fs_info->chunk_block_rsv.space_info = space_info;
+-	fs_info->chunk_block_rsv.priority = 10;
+ 
+ 	space_info = __find_space_info(fs_info, BTRFS_BLOCK_GROUP_METADATA);
+ 	fs_info->global_block_rsv.space_info = space_info;
+-	fs_info->global_block_rsv.priority = 10;
+-	fs_info->global_block_rsv.refill_used = 1;
+ 	fs_info->delalloc_block_rsv.space_info = space_info;
+ 	fs_info->trans_block_rsv.space_info = space_info;
+ 	fs_info->empty_block_rsv.space_info = space_info;
+-	fs_info->empty_block_rsv.priority = 10;
+ 
+ 	fs_info->extent_root->block_rsv = &fs_info->global_block_rsv;
+ 	fs_info->csum_root->block_rsv = &fs_info->global_block_rsv;
+diff --git a/fs/btrfs/relocation.c b/fs/btrfs/relocation.c
+index 545b043..aeaed99 100644
+--- a/fs/btrfs/relocation.c
++++ b/fs/btrfs/relocation.c
+@@ -3650,8 +3650,6 @@ int prepare_to_relocate(struct reloc_control *rc)
+ 	if (ret)
+ 		return ret;
+ 
+-	rc->block_rsv->refill_used = 1;
+-
+ 	memset(&rc->cluster, 0, sizeof(rc->cluster));
+ 	rc->search_start = rc->block_group->key.objectid;
+ 	rc->extents_found = 0;
 -- 
 1.7.5.2
 

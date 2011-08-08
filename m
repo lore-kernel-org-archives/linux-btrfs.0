@@ -1,58 +1,80 @@
-From: Josef Bacik <josef@redhat.com>
-Subject: [PATCH] Btrfs: set i_size properly when fallocating and we already have an extent
-Date: Mon,  8 Aug 2011 12:24:03 -0400
-Message-ID: <1312820643-12478-1-git-send-email-josef@redhat.com>
+From: Mark Fasheh <mfasheh@suse.de>
+Subject: [PATCH] btrfs: Don't BUG_ON kzalloc error in btrfs_lookup_csums_range()
+Date: Mon, 8 Aug 2011 11:14:26 -0700
+Message-ID: <20110808181426.GD8482@wotan.suse.de>
+Reply-To: Mark Fasheh <mfasheh@suse.de>
+Mime-Version: 1.0
+Content-Type: text/plain; charset=us-ascii
+Cc: chris.mason@oracle.com
 To: linux-btrfs@vger.kernel.org
 Return-path: <linux-btrfs-owner@vger.kernel.org>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-xfstests exposed a problem with preallocate when it fallocates a range that
-already has an extent.  We don't set the new i_size properly because we see that
-we already have an extent.  This isn't right and we should update i_size if the
-space already exists.  With this patch we now pass xfstests 075.  Thanks,
+Unfortunately it isn't enough to just exit here - the kzalloc() happens in a
+loop and the allocated items are added to a linked list whose head is passed
+in from the caller.
 
-Signed-off-by: Josef Bacik <josef@redhat.com>
+To fix the BUG_ON() and also provide the semantic that the list passed in is
+only modified on success, I create function-local temporary list that we add
+items too. If no error is met, that list is spliced to the callers at the
+end of the function. Otherwise the list will be walked and all items freed
+before the error value is returned.
+
+I did a simple test on this patch by forcing an error at the kzalloc() point
+and verifying that when this hits (git clone seemed to exercise this), the
+function throws the proper error. Unfortunately but predictably, we later
+hit a BUG_ON(ret) type line that still hasn't been fixed up ;)
+
+Signed-off-by: Mark Fasheh <mfasheh@suse.com>
 ---
- fs/btrfs/file.c |   14 ++++++++++++++
- 1 files changed, 14 insertions(+), 0 deletions(-)
+ fs/btrfs/file-item.c |   15 +++++++++++++--
+ 1 files changed, 13 insertions(+), 2 deletions(-)
 
-diff --git a/fs/btrfs/file.c b/fs/btrfs/file.c
-index 658d669..5f8264a 100644
---- a/fs/btrfs/file.c
-+++ b/fs/btrfs/file.c
-@@ -1638,11 +1638,15 @@ static long btrfs_fallocate(struct file *file, int mode,
+diff --git a/fs/btrfs/file-item.c b/fs/btrfs/file-item.c
+index b910694..679fbff 100644
+--- a/fs/btrfs/file-item.c
++++ b/fs/btrfs/file-item.c
+@@ -284,6 +284,7 @@ int btrfs_lookup_csums_range(struct btrfs_root *root, u64 start, u64 end,
+ 	struct btrfs_ordered_sum *sums;
+ 	struct btrfs_sector_sum *sector_sum;
+ 	struct btrfs_csum_item *item;
++	LIST_HEAD(tmplist);
+ 	unsigned long offset;
+ 	int ret;
+ 	size_t size;
+@@ -358,7 +359,10 @@ int btrfs_lookup_csums_range(struct btrfs_root *root, u64 start, u64 end,
+ 					MAX_ORDERED_SUM_BYTES(root));
+ 			sums = kzalloc(btrfs_ordered_sum_size(root, size),
+ 					GFP_NOFS);
+-			BUG_ON(!sums);
++			if (!sums) {
++				ret = -ENOMEM;
++				goto fail;
++			}
  
- 	cur_offset = alloc_start;
- 	while (1) {
-+		u64 actual_end;
-+
- 		em = btrfs_get_extent(inode, NULL, 0, cur_offset,
- 				      alloc_end - cur_offset, 0);
- 		BUG_ON(IS_ERR_OR_NULL(em));
- 		last_byte = min(extent_map_end(em), alloc_end);
-+		actual_end = min_t(u64, extent_map_end(em), offset + len);
- 		last_byte = (last_byte + mask) & ~mask;
-+
- 		if (em->block_start == EXTENT_MAP_HOLE ||
- 		    (cur_offset >= inode->i_size &&
- 		     !test_bit(EXTENT_FLAG_PREALLOC, &em->flags))) {
-@@ -1655,6 +1659,16 @@ static long btrfs_fallocate(struct file *file, int mode,
- 				free_extent_map(em);
- 				break;
+ 			sector_sum = sums->sums;
+ 			sums->bytenr = start;
+@@ -380,12 +384,19 @@ int btrfs_lookup_csums_range(struct btrfs_root *root, u64 start, u64 end,
+ 				offset += csum_size;
+ 				sector_sum++;
  			}
-+		} else if (actual_end > inode->i_size &&
-+			   !(mode & FALLOC_FL_KEEP_SIZE)) {
-+			/*
-+			 * We didn't need to allocate any more space, but we
-+			 * still extended the size of the file so we need to
-+			 * update i_size.
-+			 */
-+			inode->i_ctime = CURRENT_TIME;
-+			i_size_write(inode, actual_end);
-+			btrfs_ordered_update_i_size(inode, actual_end, NULL);
+-			list_add_tail(&sums->list, list);
++			list_add_tail(&sums->list, &tmplist);
  		}
- 		free_extent_map(em);
- 
+ 		path->slots[0]++;
+ 	}
+ 	ret = 0;
+ fail:
++	while (ret < 0 && !list_empty(&tmplist)) {
++		sums = list_entry(&tmplist, struct btrfs_ordered_sum, list);
++		list_del(&sums->list);
++		kfree(sums);
++	}
++	list_splice_tail(&tmplist, list);
++
+ 	btrfs_free_path(path);
+ 	return ret;
+ }
 -- 
-1.7.5.2
+1.7.6
 

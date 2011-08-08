@@ -1,53 +1,46 @@
-From: Josef Bacik <josef@redhat.com>
-Subject: [PATCH] Btrfs: ratelimit the generation printk for the free space cache
-Date: Mon,  8 Aug 2011 08:27:46 -0400
-Message-ID: <1312806466-3142-1-git-send-email-josef@redhat.com>
-To: linux-btrfs@vger.kernel.org
+From: Andy Lutomirski <luto@MIT.EDU>
+Subject: Re: [PATCH] Btrfs: fix an oops of log replay
+Date: Mon, 08 Aug 2011 11:13:06 -0400
+Message-ID: <4E3FFD02.6010000@mit.edu>
+References: <1312619723-31094-1-git-send-email-liubo2009@cn.fujitsu.com>
+Mime-Version: 1.0
+Content-Type: text/plain; charset=ISO-8859-1; format=flowed
+Cc: linux-btrfs@vger.kernel.org, chris.mason@oracle.com
+To: Liu Bo <liubo2009@cn.fujitsu.com>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
+In-Reply-To: <1312619723-31094-1-git-send-email-liubo2009@cn.fujitsu.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-A user reported getting spammed when moving to 3.0 by this message.  Since we
-switched to the normal checksumming infrastructure all old free space caches
-will be wrong and need to be regenerated so people are likely to see this
-message a lot, so ratelimit it so it doesn't fill up their logs and freak them
-out.  Thanks,
+On 08/06/2011 04:35 AM, Liu Bo wrote:
+> When btrfs recovers from a crash, it may hit the oops below:
+>
+> ------------[ cut here ]------------
+> kernel BUG at fs/btrfs/inode.c:4580!
+> [...]
+> RIP: 0010:[<ffffffffa03df251>]  [<ffffffffa03df251>] btrfs_add_link+0x161/0x1c0 [btrfs]
+> [...]
+> Call Trace:
+>   [<ffffffffa03e7b31>] ? btrfs_inode_ref_index+0x31/0x80 [btrfs]
+>   [<ffffffffa04054e9>] add_inode_ref+0x319/0x3f0 [btrfs]
+>   [<ffffffffa0407087>] replay_one_buffer+0x2c7/0x390 [btrfs]
+>   [<ffffffffa040444a>] walk_down_log_tree+0x32a/0x480 [btrfs]
+>   [<ffffffffa0404695>] walk_log_tree+0xf5/0x240 [btrfs]
+>   [<ffffffffa0406cc0>] btrfs_recover_log_trees+0x250/0x350 [btrfs]
+>   [<ffffffffa0406dc0>] ? btrfs_recover_log_trees+0x350/0x350 [btrfs]
+>   [<ffffffffa03d18b2>] open_ctree+0x1442/0x17d0 [btrfs]
+> [...]
+>
+> This comes from that while replaying an inode ref item, we forget to
+> check those old conflicting DIR_ITEM and DIR_INDEX items in fs/file tree,
+> then we will come to conflict corners which lead to BUG_ON().
+>
+> Signed-off-by: Liu Bo<liubo2009@cn.fujitsu.com>
+> ---
+>   fs/btrfs/tree-log.c |   28 ++++++++++++++++++++++++----
+>   1 files changed, 24 insertions(+), 4 deletions(-)
 
-Reported-by: Andrew Lutomirski <luto@mit.edu>
-Signed-off-by: Josef Bacik <josef@redhat.com>
----
- fs/btrfs/free-space-cache.c |   12 +++++++-----
- 1 files changed, 7 insertions(+), 5 deletions(-)
+This fixes the oops for me.  The bug was a regression in 2.6.39, I believe.
 
-diff --git a/fs/btrfs/free-space-cache.c b/fs/btrfs/free-space-cache.c
-index 85bbac9..44a6323 100644
---- a/fs/btrfs/free-space-cache.c
-+++ b/fs/btrfs/free-space-cache.c
-@@ -20,6 +20,7 @@
- #include <linux/sched.h>
- #include <linux/slab.h>
- #include <linux/math64.h>
-+#include <linux/ratelimit.h>
- #include "ctree.h"
- #include "free-space-cache.h"
- #include "transaction.h"
-@@ -337,11 +338,12 @@ int __load_free_space_cache(struct btrfs_root *root, struct inode *inode,
- 
- 			gen = addr;
- 			if (*gen != BTRFS_I(inode)->generation) {
--				printk(KERN_ERR "btrfs: space cache generation"
--				       " (%llu) does not match inode (%llu)\n",
--				       (unsigned long long)*gen,
--				       (unsigned long long)
--				       BTRFS_I(inode)->generation);
-+				printk_ratelimited(KERN_ERR "btrfs: space cache"
-+					" generation (%llu) does not match "
-+					"inode (%llu)\n",
-+					(unsigned long long)*gen,
-+					(unsigned long long)
-+					BTRFS_I(inode)->generation);
- 				kunmap(page);
- 				unlock_page(page);
- 				page_cache_release(page);
--- 
-1.7.5.2
+Tested-by: Andy Lutomirski <luto@mit.edu>
 
+--Andy

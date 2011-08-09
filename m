@@ -1,44 +1,37 @@
 From: Sage Weil <sage@newdream.net>
-Subject: clone ioctl bug with inline extents
-Date: Tue, 9 Aug 2011 11:29:01 -0700 (PDT)
-Message-ID: <Pine.LNX.4.64.1108091102240.9871@cobra.newdream.net>
-Mime-Version: 1.0
-Content-Type: TEXT/PLAIN; charset=US-ASCII
+Subject: [PATCH] Btrfs: truncate pages from clone ioctl target range
+Date: Tue,  9 Aug 2011 12:00:41 -0700
+Message-ID: <1312916441-23662-1-git-send-email-sage@newdream.net>
+Cc: Sage Weil <sage@newdream.net>
 To: linux-btrfs@vger.kernel.org
 Return-path: <linux-btrfs-owner@vger.kernel.org>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hi all,
+We need to truncate page cache pages for the clone ioctl target range or
+else we'll confuse ourselves to no end.  If the old data was cached, we'll
+still see it (until remount).  If it was dirty we'll get a mix of old and
+new data if the page(s) are partially updated.
 
-I'm hitting a problem cloning inline extents that I haven't had much 
-success tracking down.  It's simple enough to reproduce:
+Signed-off-by: Sage Weil <sage@newdream.net>
+---
+ fs/btrfs/ioctl.c |    4 ++++
+ 1 files changed, 4 insertions(+), 0 deletions(-)
 
- echo 1111111111111111111111111111 > src
- echo 2 > dst
- clone_range src 0 29 dst 0
- cmp src dst       # fails! dst is size 29 but contains "2\n\0\0\0\0..."
+diff --git a/fs/btrfs/ioctl.c b/fs/btrfs/ioctl.c
+index a3c4751..cac9491 100644
+--- a/fs/btrfs/ioctl.c
++++ b/fs/btrfs/ioctl.c
+@@ -2243,6 +2243,10 @@ static noinline long btrfs_ioctl_clone(struct file *file, unsigned long srcfd,
+ 		btrfs_wait_ordered_range(src, off, len);
+ 	}
+ 
++	/* truncate page cache pages from target inode range */
++	truncate_inode_pages_range(&inode->i_data, off,
++			      ((off+len+PAGE_CACHE_SIZE-1)&PAGE_CACHE_MASK)-1);
++
+ 	/* clone data */
+ 	key.objectid = btrfs_ino(src);
+ 	key.type = BTRFS_EXTENT_DATA_KEY;
+-- 
+1.7.0
 
-where clone_range comes from 
-
- http://ceph.newdream.net/git/?p=ceph.git;a=blob;f=qa/btrfs/clone_range.c;h=0a88e16013104c27aa87e7cd0d75e4d292419a19;hb=HEAD
-
-The file size is adjusted for the target, and debug-tree shows an inline 
-data extent of length 29, but it has the old data in it.  I'm not sure why
-
-				ret = btrfs_insert_empty_item(trans, root, path,
-							      &new_key, size);
-				BUG_ON(ret);
-
-				[...]
-
-				leaf = path->nodes[0];
-				slot = path->slots[0];
-				write_extent_buffer(leaf, buf,
-					    btrfs_item_ptr_offset(leaf, slot),
-					    size);
-				inode_add_bytes(inode, datal);
-
-is working when cloning to a new file but not over an existing one.  
-Hopefully this is something silly I'm missing...
-
-sage

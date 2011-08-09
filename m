@@ -1,41 +1,96 @@
-From: Adam Newby <anewby@ceradyne.com>
-Subject: RE: BTRFS partition won't mount
-Date: Tue, 9 Aug 2011 08:29:06 -0400
-Message-ID: <1F6ED4EA7957EB4FADAE461E036D456A25D75E8EDB@exch01lex.ceradyne.com>
+From: Hugo Mills <hugo@carfax.org.uk>
+Subject: Re: BTRFS partition won't mount
+Date: Tue, 9 Aug 2011 13:54:39 +0100
+Message-ID: <20110809125439.GB28858@carfax.org.uk>
 References: <1F6ED4EA7957EB4FADAE461E036D456A25D75644F9@exch01lex.ceradyne.com>
  <20110803205031.GA18558@carfax.org.uk>
  <CAGAVQTE08--VM_uw2t0dDxSdqSEgZYAk52NTqgzJaXNr+OFoRA@mail.gmail.com>
+ <1F6ED4EA7957EB4FADAE461E036D456A25D75E8EDB@exch01lex.ceradyne.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="utf-8"
-To: C Anthony Risinger <anthony@xtfx.me>,
-	Hugo Mills <hugo@carfax.org.uk>,
+Content-Type: multipart/signed; micalg=pgp-sha1;
+	protocol="application/pgp-signature"; boundary="KFztAG8eRSV9hGtP"
+Cc: C Anthony Risinger <anthony@xtfx.me>,
 	"linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
+To: Adam Newby <anewby@ceradyne.com>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <CAGAVQTE08--VM_uw2t0dDxSdqSEgZYAk52NTqgzJaXNr+OFoRA@mail.gmail.com>
+In-Reply-To: <1F6ED4EA7957EB4FADAE461E036D456A25D75E8EDB@exch01lex.ceradyne.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-SSBoYXZlIHRvIHNheSB0aGlzIHNvbHV0aW9uIHNhdmVkIG1lLiBJJ3ZlIGxvc3QgYSBCVFJGUyBw
-YXJ0aXRpb24gYmVmb3JlIGFuZCB0aGlzIHRvb2wgd2FzIG5vdCBhdmFpbGFibGUgYXQgdGhhdCB0
-aW1lLiBJcyB0aGlzIGdvaW5nIHRvIGJlIG1ha2luZyBpdCBpbnRvIGEga2VybmVsIHB1bGwgYW55
-dGltZSBzb29uPyBUaGUgb25seSByZWFzb24gSSBtZW50aW9uIGl0IGlzIGJlY2F1c2UgcHJldHR5
-IG11Y2ggZXZlcnlvbmUgSSBrbm93IGhhcyBzb3VyZWQgb24gQlRSRlMgZHVlIHRvIGxvc2luZyBh
-IHBhcnRpdGlvbiBhdCBzb21lIHBvaW50IG9yIGFub3RoZXIgZHVlIHRvIGZyaXZvbG91cyBlcnJv
-ci4gVGhpcyBzZWVtcyBsaWtlIGEgZmluZSBhZGRpdGlvbiB0byB0aGUgZmlsZXN5c3RlbS4NCg0K
-LS0tLS1PcmlnaW5hbCBNZXNzYWdlLS0tLS0NCkZyb206IEMgQW50aG9ueSBSaXNpbmdlciBbbWFp
-bHRvOmFudGhvbnlAeHRmeC5tZV0gDQpTZW50OiBNb25kYXksIEF1Z3VzdCAwOCwgMjAxMSAxMTo1
-NCBQTQ0KVG86IEh1Z28gTWlsbHM7IEFkYW0gTmV3Ynk7IGxpbnV4LWJ0cmZzQHZnZXIua2VybmVs
-Lm9yZw0KU3ViamVjdDogUmU6IEJUUkZTIHBhcnRpdGlvbiB3b24ndCBtb3VudA0KDQpPbiBXZWQs
-IEF1ZyAzLCAyMDExIGF0IDM6NTAgUE0sIEh1Z28gTWlsbHMgPGh1Z29AY2FyZmF4Lm9yZy51az4g
-d3JvdGU6DQo+DQo+IMKgIFRyeSB0aGUgaW5zdHJ1Y3Rpb25zIG9uIHRoZSB3aWtpIGF0IFsxXS4g
-KEFuZCBwbGVhc2UgZmVlZCBiYWNrIA0KPiBhbmQvb3IgZml4IGFueSBpc3N1ZXMgeW91IGhhdmUg
-d2l0aCB0aGUgaW5zdHJ1Y3Rpb25zIC0tIHRoZXkncmUgc3RpbGwgDQo+IHF1aXRlIG5ldyBhbmQg
-cHJvYmFibHkgaGF2ZSBhd2t3YXJkIGNvcm5lcnMpLg0KPg0KPiBbMV0gDQo+IGh0dHBzOi8vYnRy
-ZnMud2lraS5rZXJuZWwub3JnL2luZGV4LnBocC9Qcm9ibGVtX0ZBUSNJX2Nhbi4yN3RfbW91bnRf
-bXkNCj4gX2ZpbGVzeXN0ZW0uMkNfYW5kX0lfZ2V0X2Ffa2VybmVsX29vcHMuMjENCg0KdGhpcyB3
-b3JrZWQgcGVyZmVjdGx5IGZvciBtZSAuLi4ganVzdCBzYXZlZCBteSBuaWdodCBmcm9tIHRlZGlv
-dXMgcmVzdG9yYXRpb24gOi0pDQoNCmltIG9uIGtlcm5lbCAzLjAuMSAtLSBoYXJkIHBvd2Vyb2Zm
-IGxlZCB0byB0aGF0IHByb2JsZW0uICBpIGhhdmVuJ3QgaGFkIGFueSBpc3N1ZXMgZm9yIHNvbWUg
-dGltZSAuLi4gaW0gbm90IHN1cmUgd2hhdCB0aGUgcHJvYmxlbSB3YXMgZXhhY3RseSwgYnV0IHNv
-bWV0aW1lcyBzeXN0ZW1kIGdldHMgYSBsaXR0bGUgdHdhY2t5IGFuZCB0YWtlcyBhIHllYXIgdG8g
-c2h1dGRvd24gLi4uIGd1ZXNzIGkgZ290IGEgbGl0dGxlIGltcGF0aWVudCA6LSkNCg0KYW55d2F5
-cywgdGhhbmtzIGZvciB0aGUgaW50ZWdyYXRpb24gd29yayENCg0KLS0gDQoNCkMgQW50aG9ueQ0K
+
+--KFztAG8eRSV9hGtP
+Content-Type: text/plain; charset=iso-8859-1
+Content-Disposition: inline
+Content-Transfer-Encoding: quoted-printable
+
+On Tue, Aug 09, 2011 at 08:29:06AM -0400, Adam Newby wrote:
+> I have to say this solution saved me. I've lost a BTRFS partition
+> before and this tool was not available at that time. Is this going
+> to be making it into a kernel pull anytime soon? The only reason I
+> mention it is because pretty much everyone I know has soured on
+> BTRFS due to losing a partition at some point or another due to
+> frivolous error. This seems like a fine addition to the filesystem.
+
+   My understanding is that the btrfs-zero-log tool is something of a
+blunt object, and shouldn't be applied automatically, so I think it's
+unlikely to go into the kernel in its current form.
+
+   From what Chris implied on IRC a few days ago, if we encounter
+corrupt items in the log, we should drop only those items (and their
+dependents?), not the entire log tree. I'd guess that as people work
+on reducing the number of BUG_ONs in the code and passing the errors
+back up the stack, this will become easier to do.
+
+   Until then, we do have btrfs-zero-log. (And the new recovery tool
+coming shortly, too).
+
+   Hugo.
+
+> -----Original Message-----
+> From: C Anthony Risinger [mailto:anthony@xtfx.me]=20
+> Sent: Monday, August 08, 2011 11:54 PM
+> To: Hugo Mills; Adam Newby; linux-btrfs@vger.kernel.org
+> Subject: Re: BTRFS partition won't mount
+>=20
+> On Wed, Aug 3, 2011 at 3:50 PM, Hugo Mills <hugo@carfax.org.uk> wrote:
+> >
+> > =A0 Try the instructions on the wiki at [1]. (And please feed back=20
+> > and/or fix any issues you have with the instructions -- they're still=
+=20
+> > quite new and probably have awkward corners).
+> >
+> > [1]=20
+> > https://btrfs.wiki.kernel.org/index.php/Problem_FAQ#I_can.27t_mount_my
+> > _filesystem.2C_and_I_get_a_kernel_oops.21
+>=20
+> this worked perfectly for me ... just saved my night from tedious restora=
+tion :-)
+>=20
+> im on kernel 3.0.1 -- hard poweroff led to that problem.  i haven't had a=
+ny issues for some time ... im not sure what the problem was exactly, but s=
+ometimes systemd gets a little twacky and takes a year to shutdown ... gues=
+s i got a little impatient :-)
+>=20
+> anyways, thanks for the integration work!
+>=20
+
+--=20
+=3D=3D=3D Hugo Mills: hugo@... carfax.org.uk | darksatanic.net | lug.org.uk=
+ =3D=3D=3D
+  PGP key: 515C238D from wwwkeys.eu.pgp.net or http://www.carfax.org.uk
+         --- 2 + 2 =3D 5,  for sufficiently large values of 2. ---        =
+=20
+
+--KFztAG8eRSV9hGtP
+Content-Type: application/pgp-signature; name="signature.asc"
+Content-Description: Digital signature
+Content-Disposition: inline
+
+-----BEGIN PGP SIGNATURE-----
+Version: GnuPG v1.4.10 (GNU/Linux)
+
+iD8DBQFOQS4PIKyzvlFcI40RAltPAKDQSMLQDWgEOPgPqsFcMyjinGKC/gCgrg4H
+6r4Pq0E3yvFA+XS7VS7Bu2A=
+=BKYL
+-----END PGP SIGNATURE-----
+
+--KFztAG8eRSV9hGtP--

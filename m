@@ -1,100 +1,41 @@
-From: Tsutomu Itoh <t-itoh@jp.fujitsu.com>
-Subject: [PATCH] Btrfs: forced readonly when btrfs_drop_snapshot() fails
-Date: Tue, 09 Aug 2011 16:11:13 +0900
-Message-ID: <201108090711.AA00032@T-ITOH1.jp.fujitsu.com>
+From: Adam Newby <anewby@ceradyne.com>
+Subject: RE: BTRFS partition won't mount
+Date: Tue, 9 Aug 2011 08:29:06 -0400
+Message-ID: <1F6ED4EA7957EB4FADAE461E036D456A25D75E8EDB@exch01lex.ceradyne.com>
+References: <1F6ED4EA7957EB4FADAE461E036D456A25D75644F9@exch01lex.ceradyne.com>
+ <20110803205031.GA18558@carfax.org.uk>
+ <CAGAVQTE08--VM_uw2t0dDxSdqSEgZYAk52NTqgzJaXNr+OFoRA@mail.gmail.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Cc: chris.mason@oracle.com
-To: linux-btrfs@vger.kernel.org
+Content-Type: text/plain; charset="utf-8"
+To: C Anthony Risinger <anthony@xtfx.me>,
+	Hugo Mills <hugo@carfax.org.uk>,
+	"linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
+In-Reply-To: <CAGAVQTE08--VM_uw2t0dDxSdqSEgZYAk52NTqgzJaXNr+OFoRA@mail.gmail.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-The filesystem turns readonly instead of returning the error to the
-caller when detected error in btrfs_drop_snapshot().
-and, because the caller doesn't check the error, the function type is
-changed to 'void'.
-
-Signed-off-by: Tsutomu Itoh <t-itoh@jp.fujitsu.com>
----
- fs/btrfs/ctree.h       |    4 ++--
- fs/btrfs/extent-tree.c |   22 ++++++++++++++--------
- 2 files changed, 16 insertions(+), 10 deletions(-)
-
-diff --git a/fs/btrfs/ctree.h b/fs/btrfs/ctree.h
-index a6263bd..8842936 100644
---- a/fs/btrfs/ctree.h
-+++ b/fs/btrfs/ctree.h
-@@ -2367,8 +2367,8 @@ static inline int btrfs_insert_empty_item(struct btrfs_trans_handle *trans,
- int btrfs_next_leaf(struct btrfs_root *root, struct btrfs_path *path);
- int btrfs_prev_leaf(struct btrfs_root *root, struct btrfs_path *path);
- int btrfs_leaf_free_space(struct btrfs_root *root, struct extent_buffer *leaf);
--int btrfs_drop_snapshot(struct btrfs_root *root,
--			struct btrfs_block_rsv *block_rsv, int update_ref);
-+void btrfs_drop_snapshot(struct btrfs_root *root,
-+			 struct btrfs_block_rsv *block_rsv, int update_ref);
- int btrfs_drop_subtree(struct btrfs_trans_handle *trans,
- 			struct btrfs_root *root,
- 			struct extent_buffer *node,
-diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
-index 66bac22..7f2aec6 100644
---- a/fs/btrfs/extent-tree.c
-+++ b/fs/btrfs/extent-tree.c
-@@ -6269,8 +6269,8 @@ static noinline int walk_up_tree(struct btrfs_trans_handle *trans,
-  * also make sure backrefs for the shared block and all lower level
-  * blocks are properly updated.
-  */
--int btrfs_drop_snapshot(struct btrfs_root *root,
--			struct btrfs_block_rsv *block_rsv, int update_ref)
-+void btrfs_drop_snapshot(struct btrfs_root *root,
-+			 struct btrfs_block_rsv *block_rsv, int update_ref)
- {
- 	struct btrfs_path *path;
- 	struct btrfs_trans_handle *trans;
-@@ -6283,13 +6283,16 @@ int btrfs_drop_snapshot(struct btrfs_root *root,
- 	int level;
- 
- 	path = btrfs_alloc_path();
--	if (!path)
--		return -ENOMEM;
-+	if (!path) {
-+		err = -ENOMEM;
-+		goto out;
-+	}
- 
- 	wc = kzalloc(sizeof(*wc), GFP_NOFS);
- 	if (!wc) {
- 		btrfs_free_path(path);
--		return -ENOMEM;
-+		err = -ENOMEM;
-+		goto out;
- 	}
- 
- 	trans = btrfs_start_transaction(tree_root, 0);
-@@ -6318,7 +6321,7 @@ int btrfs_drop_snapshot(struct btrfs_root *root,
- 		path->lowest_level = 0;
- 		if (ret < 0) {
- 			err = ret;
--			goto out;
-+			goto out_free;
- 		}
- 		WARN_ON(ret > 0);
- 
-@@ -6425,11 +6428,14 @@ int btrfs_drop_snapshot(struct btrfs_root *root,
- 		free_extent_buffer(root->commit_root);
- 		kfree(root);
- 	}
--out:
-+out_free:
- 	btrfs_end_transaction_throttle(trans, tree_root);
- 	kfree(wc);
- 	btrfs_free_path(path);
--	return err;
-+out:
-+	if (err)
-+		btrfs_std_error(root->fs_info, err);
-+	return;
- }
- 
- /*
-
-
+SSBoYXZlIHRvIHNheSB0aGlzIHNvbHV0aW9uIHNhdmVkIG1lLiBJJ3ZlIGxvc3QgYSBCVFJGUyBw
+YXJ0aXRpb24gYmVmb3JlIGFuZCB0aGlzIHRvb2wgd2FzIG5vdCBhdmFpbGFibGUgYXQgdGhhdCB0
+aW1lLiBJcyB0aGlzIGdvaW5nIHRvIGJlIG1ha2luZyBpdCBpbnRvIGEga2VybmVsIHB1bGwgYW55
+dGltZSBzb29uPyBUaGUgb25seSByZWFzb24gSSBtZW50aW9uIGl0IGlzIGJlY2F1c2UgcHJldHR5
+IG11Y2ggZXZlcnlvbmUgSSBrbm93IGhhcyBzb3VyZWQgb24gQlRSRlMgZHVlIHRvIGxvc2luZyBh
+IHBhcnRpdGlvbiBhdCBzb21lIHBvaW50IG9yIGFub3RoZXIgZHVlIHRvIGZyaXZvbG91cyBlcnJv
+ci4gVGhpcyBzZWVtcyBsaWtlIGEgZmluZSBhZGRpdGlvbiB0byB0aGUgZmlsZXN5c3RlbS4NCg0K
+LS0tLS1PcmlnaW5hbCBNZXNzYWdlLS0tLS0NCkZyb206IEMgQW50aG9ueSBSaXNpbmdlciBbbWFp
+bHRvOmFudGhvbnlAeHRmeC5tZV0gDQpTZW50OiBNb25kYXksIEF1Z3VzdCAwOCwgMjAxMSAxMTo1
+NCBQTQ0KVG86IEh1Z28gTWlsbHM7IEFkYW0gTmV3Ynk7IGxpbnV4LWJ0cmZzQHZnZXIua2VybmVs
+Lm9yZw0KU3ViamVjdDogUmU6IEJUUkZTIHBhcnRpdGlvbiB3b24ndCBtb3VudA0KDQpPbiBXZWQs
+IEF1ZyAzLCAyMDExIGF0IDM6NTAgUE0sIEh1Z28gTWlsbHMgPGh1Z29AY2FyZmF4Lm9yZy51az4g
+d3JvdGU6DQo+DQo+IMKgIFRyeSB0aGUgaW5zdHJ1Y3Rpb25zIG9uIHRoZSB3aWtpIGF0IFsxXS4g
+KEFuZCBwbGVhc2UgZmVlZCBiYWNrIA0KPiBhbmQvb3IgZml4IGFueSBpc3N1ZXMgeW91IGhhdmUg
+d2l0aCB0aGUgaW5zdHJ1Y3Rpb25zIC0tIHRoZXkncmUgc3RpbGwgDQo+IHF1aXRlIG5ldyBhbmQg
+cHJvYmFibHkgaGF2ZSBhd2t3YXJkIGNvcm5lcnMpLg0KPg0KPiBbMV0gDQo+IGh0dHBzOi8vYnRy
+ZnMud2lraS5rZXJuZWwub3JnL2luZGV4LnBocC9Qcm9ibGVtX0ZBUSNJX2Nhbi4yN3RfbW91bnRf
+bXkNCj4gX2ZpbGVzeXN0ZW0uMkNfYW5kX0lfZ2V0X2Ffa2VybmVsX29vcHMuMjENCg0KdGhpcyB3
+b3JrZWQgcGVyZmVjdGx5IGZvciBtZSAuLi4ganVzdCBzYXZlZCBteSBuaWdodCBmcm9tIHRlZGlv
+dXMgcmVzdG9yYXRpb24gOi0pDQoNCmltIG9uIGtlcm5lbCAzLjAuMSAtLSBoYXJkIHBvd2Vyb2Zm
+IGxlZCB0byB0aGF0IHByb2JsZW0uICBpIGhhdmVuJ3QgaGFkIGFueSBpc3N1ZXMgZm9yIHNvbWUg
+dGltZSAuLi4gaW0gbm90IHN1cmUgd2hhdCB0aGUgcHJvYmxlbSB3YXMgZXhhY3RseSwgYnV0IHNv
+bWV0aW1lcyBzeXN0ZW1kIGdldHMgYSBsaXR0bGUgdHdhY2t5IGFuZCB0YWtlcyBhIHllYXIgdG8g
+c2h1dGRvd24gLi4uIGd1ZXNzIGkgZ290IGEgbGl0dGxlIGltcGF0aWVudCA6LSkNCg0KYW55d2F5
+cywgdGhhbmtzIGZvciB0aGUgaW50ZWdyYXRpb24gd29yayENCg0KLS0gDQoNCkMgQW50aG9ueQ0K

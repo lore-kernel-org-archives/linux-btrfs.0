@@ -1,31 +1,27 @@
-From: Josef Bacik <josef@redhat.com>
-Subject: Re: =?UTF-8?B?4oCcYmlvIHRvbyBiaWfigJ0gcmVncmVzc2lvbiBhbmQgc2lsZW4=?=
- =?UTF-8?B?dCBkYXRhIGNvcnJ1cHRpb24gaW4gMy4w?=
-Date: Tue, 09 Aug 2011 15:05:56 -0400
-Message-ID: <4E418514.7050409@redhat.com>
-References: <orwreobtuf.fsf@livre.localdomain>
+From: Sage Weil <sage@newdream.net>
+Subject: Re: clone ioctl bug with inline extents
+Date: Tue, 9 Aug 2011 12:10:35 -0700 (PDT)
+Message-ID: <Pine.LNX.4.64.1108091209200.9871@cobra.newdream.net>
+References: <Pine.LNX.4.64.1108091102240.9871@cobra.newdream.net>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=UTF-8
-Cc: linux-btrfs@vger.kernel.org
-To: Alexandre Oliva <oliva@lsd.ic.unicamp.br>
+Content-Type: TEXT/PLAIN; charset=US-ASCII
+To: linux-btrfs@vger.kernel.org
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <orwreobtuf.fsf@livre.localdomain>
+In-Reply-To: <Pine.LNX.4.64.1108091102240.9871@cobra.newdream.net>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 08/07/2011 09:00 PM, Alexandre Oliva wrote:
-> tl;dr version: 3.0 produces =E2=80=9Cbio too big=E2=80=9D dmesg entri=
-es and silently
-> corrupts data in =E2=80=9Cmeta-raid1/data-single=E2=80=9D configurati=
-ons on disks with
-> different max_hw_sectors, where 2.6.38 worked fine.
->=20
+On Tue, 9 Aug 2011, Sage Weil wrote:
+> Hi all,
+> 
+> I'm hitting a problem cloning inline extents that I haven't had much 
+> success tracking down.  It's simple enough to reproduce:
+> 
+>  echo 1111111111111111111111111111 > src
+>  echo 2 > dst
+>  clone_range src 0 29 dst 0
+>  cmp src dst       # fails! dst is size 29 but contains "2\n\0\0\0\0..."
 
-I've reproduced this but I'm stuck on something else atm but I should
-get to it soon.  Thanks,
+<facepalm>, ok, this was just a matter of the ioctl code not dropping the 
+old page cache pages.  I'm not sure how we didn't notice that for so long!
 
-Josef
---
-To unsubscribe from this list: send the line "unsubscribe linux-btrfs" =
-in
-the body of a message to majordomo@vger.kernel.org
-More majordomo info at  http://vger.kernel.org/majordomo-info.html
+sage

@@ -1,41 +1,33 @@
-From: C Anthony Risinger <anthony@xtfx.me>
-Subject: Re: BTRFS partition won't mount
-Date: Mon, 8 Aug 2011 22:54:04 -0500
-Message-ID: <CAGAVQTE08--VM_uw2t0dDxSdqSEgZYAk52NTqgzJaXNr+OFoRA@mail.gmail.com>
-References: <1F6ED4EA7957EB4FADAE461E036D456A25D75644F9@exch01lex.ceradyne.com>
- <20110803205031.GA18558@carfax.org.uk>
+From: Alexandre Oliva <oliva@lsd.ic.unicamp.br>
+Subject: Re: =?utf-8?Q?=E2=80=9Cbio?= too =?utf-8?Q?big=E2=80=9D?=
+ regression and silent data corruption in 3.0
+Date: Tue, 09 Aug 2011 01:04:27 -0300
+Message-ID: <orobzz5iyc.fsf@livre.localdomain>
+References: <orwreobtuf.fsf@livre.localdomain>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=UTF-8
-To: Hugo Mills <hugo@carfax.org.uk>, Adam Newby <anewby@ceradyne.com>,
-	"linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
+Content-Type: text/plain; charset=us-ascii
+To: linux-btrfs@vger.kernel.org
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <20110803205031.GA18558@carfax.org.uk>
+In-Reply-To: <orwreobtuf.fsf@livre.localdomain> (Alexandre Oliva's message of
+	"Sun, 07 Aug 2011 22:00:24 -0300")
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Wed, Aug 3, 2011 at 3:50 PM, Hugo Mills <hugo@carfax.org.uk> wrote:
->
-> =C2=A0 Try the instructions on the wiki at [1]. (And please feed back
-> and/or fix any issues you have with the instructions -- they're still
-> quite new and probably have awkward corners).
->
-> [1] https://btrfs.wiki.kernel.org/index.php/Problem_FAQ#I_can.27t_mou=
-nt_my_filesystem.2C_and_I_get_a_kernel_oops.21
+On Aug  7, 2011, Alexandre Oliva <oliva@lsd.ic.unicamp.br> wrote:
 
-this worked perfectly for me ... just saved my night from tedious
-restoration :-)
+> in very much the same way that it appears to be impossible to go
+> back from RAID1 to DUP metadata once you temporarily add a second disk,
+> and any metadata block group happens to be allocated before you remove
+> it (why couldn't it go back to DUP, rather than refusing the removal
+> outright, which prevents even single block groups from being moved?)
 
-im on kernel 3.0.1 -- hard poweroff led to that problem.  i haven't
-had any issues for some time ... im not sure what the problem was
-exactly, but sometimes systemd gets a little twacky and takes a year
-to shutdown ... guess i got a little impatient :-)
+Which also appears to be intentional.  The code to suport this is right
+there in update_block_group_flags, but btrfs_rm_device refuses to let it
+do its job, denying the removal attempt right away, without any means to
+bypass the test.  Could at least an option to bypass the test be
+introduced, through say a mount option, some /sys setting, whatever?
 
-anyways, thanks for the integration work!
-
---=20
-
-C Anthony
---
-To unsubscribe from this list: send the line "unsubscribe linux-btrfs" =
-in
-the body of a message to majordomo@vger.kernel.org
-More majordomo info at  http://vger.kernel.org/majordomo-info.html
+-- 
+Alexandre Oliva, freedom fighter    http://FSFLA.org/~lxoliva/
+You must be the change you wish to see in the world. -- Gandhi
+Be Free! -- http://FSFLA.org/   FSF Latin America board member
+Free Software Evangelist      Red Hat Brazil Compiler Engineer

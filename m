@@ -1,27 +1,38 @@
-From: Sage Weil <sage@newdream.net>
-Subject: Re: clone ioctl bug with inline extents
-Date: Tue, 9 Aug 2011 12:10:35 -0700 (PDT)
-Message-ID: <Pine.LNX.4.64.1108091209200.9871@cobra.newdream.net>
-References: <Pine.LNX.4.64.1108091102240.9871@cobra.newdream.net>
+From: David Sterba <dave@jikos.cz>
+Subject: Re: [PATCH] Btrfs: truncate pages from clone ioctl target range
+Date: Tue, 9 Aug 2011 22:12:36 +0200
+Message-ID: <20110809201236.GC20461@twin.jikos.cz>
+References: <1312916441-23662-1-git-send-email-sage@newdream.net>
+Reply-To: dave@jikos.cz
 Mime-Version: 1.0
-Content-Type: TEXT/PLAIN; charset=US-ASCII
-To: linux-btrfs@vger.kernel.org
+Content-Type: text/plain; charset=us-ascii
+Cc: linux-btrfs@vger.kernel.org
+To: Sage Weil <sage@newdream.net>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <Pine.LNX.4.64.1108091102240.9871@cobra.newdream.net>
+In-Reply-To: <1312916441-23662-1-git-send-email-sage@newdream.net>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Tue, 9 Aug 2011, Sage Weil wrote:
-> Hi all,
-> 
-> I'm hitting a problem cloning inline extents that I haven't had much 
-> success tracking down.  It's simple enough to reproduce:
-> 
->  echo 1111111111111111111111111111 > src
->  echo 2 > dst
->  clone_range src 0 29 dst 0
->  cmp src dst       # fails! dst is size 29 but contains "2\n\0\0\0\0..."
+just a readability issue:
 
-<facepalm>, ok, this was just a matter of the ioctl code not dropping the 
-old page cache pages.  I'm not sure how we didn't notice that for so long!
+On Tue, Aug 09, 2011 at 12:00:41PM -0700, Sage Weil wrote:
+> --- a/fs/btrfs/ioctl.c
+> +++ b/fs/btrfs/ioctl.c
+> @@ -2243,6 +2243,10 @@ static noinline long btrfs_ioctl_clone(struct file *file, unsigned long srcfd,
+>  		btrfs_wait_ordered_range(src, off, len);
+>  	}
+>  
+> +	/* truncate page cache pages from target inode range */
+> +	truncate_inode_pages_range(&inode->i_data, off,
+> +			      ((off+len+PAGE_CACHE_SIZE-1)&PAGE_CACHE_MASK)-1);
 
-sage
+                               ALIGN(off + len, PAGE_CACHE_SIZE) - 1)
+
+I'll give it some testing too :) thanks for catching this!
+
+david
+
+> +
+>  	/* clone data */
+>  	key.objectid = btrfs_ino(src);
+>  	key.type = BTRFS_EXTENT_DATA_KEY;
+> -- 

@@ -1,96 +1,103 @@
-From: Hugo Mills <hugo@carfax.org.uk>
-Subject: Re: BTRFS partition won't mount
-Date: Tue, 9 Aug 2011 13:54:39 +0100
-Message-ID: <20110809125439.GB28858@carfax.org.uk>
-References: <1F6ED4EA7957EB4FADAE461E036D456A25D75644F9@exch01lex.ceradyne.com>
- <20110803205031.GA18558@carfax.org.uk>
- <CAGAVQTE08--VM_uw2t0dDxSdqSEgZYAk52NTqgzJaXNr+OFoRA@mail.gmail.com>
- <1F6ED4EA7957EB4FADAE461E036D456A25D75E8EDB@exch01lex.ceradyne.com>
+From: Christian Brunner <chb@muc.de>
+Subject: Re: Btrfs slowdown
+Date: Tue, 9 Aug 2011 15:33:10 +0200
+Message-ID: <CAO47_-8YSD_N5AMXhvFOvT6UBwdn355+qGZ+qqLZuNtXr870Lg@mail.gmail.com>
+References: <CAO47_-9BLKWUGDEuzaLqHSq9tZkAUaO8FMQEy1pPk9A2Hb+5AQ@mail.gmail.com>
+	<1311623446-sup-8105@shiny>
+	<CAO47_--KOyMdS-OP06cLpD+qTQ+gqGcw_DCPUrLOeypt5j_G4g@mail.gmail.com>
+	<Pine.LNX.4.64.1108081456290.6895@cobra.newdream.net>
+Reply-To: chb@muc.de
 Mime-Version: 1.0
-Content-Type: multipart/signed; micalg=pgp-sha1;
-	protocol="application/pgp-signature"; boundary="KFztAG8eRSV9hGtP"
-Cc: C Anthony Risinger <anthony@xtfx.me>,
-	"linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
-To: Adam Newby <anewby@ceradyne.com>
-Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <1F6ED4EA7957EB4FADAE461E036D456A25D75E8EDB@exch01lex.ceradyne.com>
+Content-Type: text/plain; charset=ISO-8859-1
+Cc: Chris Mason <chris.mason@oracle.com>,
+	linux-btrfs <linux-btrfs@vger.kernel.org>,
+	ceph-devel <ceph-devel@vger.kernel.org>
+To: Sage Weil <sage@newdream.net>
+Return-path: <ceph-devel-owner@vger.kernel.org>
+In-Reply-To: <Pine.LNX.4.64.1108081456290.6895@cobra.newdream.net>
 List-ID: <linux-btrfs.vger.kernel.org>
 
+Hi Sage,
 
---KFztAG8eRSV9hGtP
-Content-Type: text/plain; charset=iso-8859-1
-Content-Disposition: inline
-Content-Transfer-Encoding: quoted-printable
+I did some testing with btrfs-unstable yesterday. With the recent
+commit from Chris it looks quite good:
 
-On Tue, Aug 09, 2011 at 08:29:06AM -0400, Adam Newby wrote:
-> I have to say this solution saved me. I've lost a BTRFS partition
-> before and this tool was not available at that time. Is this going
-> to be making it into a kernel pull anytime soon? The only reason I
-> mention it is because pretty much everyone I know has soured on
-> BTRFS due to losing a partition at some point or another due to
-> frivolous error. This seems like a fine addition to the filesystem.
+"Btrfs: force unplugs when switching from high to regular priority bios=
+"
 
-   My understanding is that the btrfs-zero-log tool is something of a
-blunt object, and shouldn't be applied automatically, so I think it's
-unlikely to go into the kernel in its current form.
 
-   From what Chris implied on IRC a few days ago, if we encounter
-corrupt items in the log, we should drop only those items (and their
-dependents?), not the entire log tree. I'd guess that as people work
-on reducing the number of BUG_ONs in the code and passing the errors
-back up the stack, this will become easier to do.
+However I can't test it extensively, because our main environment is
+on ext4 at the moment.
 
-   Until then, we do have btrfs-zero-log. (And the new recovery tool
-coming shortly, too).
+Regards
+Christian
 
-   Hugo.
-
-> -----Original Message-----
-> From: C Anthony Risinger [mailto:anthony@xtfx.me]=20
-> Sent: Monday, August 08, 2011 11:54 PM
-> To: Hugo Mills; Adam Newby; linux-btrfs@vger.kernel.org
-> Subject: Re: BTRFS partition won't mount
->=20
-> On Wed, Aug 3, 2011 at 3:50 PM, Hugo Mills <hugo@carfax.org.uk> wrote:
-> >
-> > =A0 Try the instructions on the wiki at [1]. (And please feed back=20
-> > and/or fix any issues you have with the instructions -- they're still=
-=20
-> > quite new and probably have awkward corners).
-> >
-> > [1]=20
-> > https://btrfs.wiki.kernel.org/index.php/Problem_FAQ#I_can.27t_mount_my
-> > _filesystem.2C_and_I_get_a_kernel_oops.21
->=20
-> this worked perfectly for me ... just saved my night from tedious restora=
-tion :-)
->=20
-> im on kernel 3.0.1 -- hard poweroff led to that problem.  i haven't had a=
-ny issues for some time ... im not sure what the problem was exactly, but s=
-ometimes systemd gets a little twacky and takes a year to shutdown ... gues=
-s i got a little impatient :-)
->=20
-> anyways, thanks for the integration work!
->=20
-
---=20
-=3D=3D=3D Hugo Mills: hugo@... carfax.org.uk | darksatanic.net | lug.org.uk=
- =3D=3D=3D
-  PGP key: 515C238D from wwwkeys.eu.pgp.net or http://www.carfax.org.uk
-         --- 2 + 2 =3D 5,  for sufficiently large values of 2. ---        =
-=20
-
---KFztAG8eRSV9hGtP
-Content-Type: application/pgp-signature; name="signature.asc"
-Content-Description: Digital signature
-Content-Disposition: inline
-
------BEGIN PGP SIGNATURE-----
-Version: GnuPG v1.4.10 (GNU/Linux)
-
-iD8DBQFOQS4PIKyzvlFcI40RAltPAKDQSMLQDWgEOPgPqsFcMyjinGKC/gCgrg4H
-6r4Pq0E3yvFA+XS7VS7Bu2A=
-=BKYL
------END PGP SIGNATURE-----
-
---KFztAG8eRSV9hGtP--
+2011/8/8 Sage Weil <sage@newdream.net>:
+> Hi Christian,
+>
+> Are you still seeing this slowness?
+>
+> sage
+>
+>
+> On Wed, 27 Jul 2011, Christian Brunner wrote:
+>> 2011/7/25 Chris Mason <chris.mason@oracle.com>:
+>> > Excerpts from Christian Brunner's message of 2011-07-25 03:54:47 -=
+0400:
+>> >> Hi,
+>> >>
+>> >> we are running a ceph cluster with btrfs as it's base filesystem
+>> >> (kernel 3.0). At the beginning everything worked very well, but a=
+fter
+>> >> a few days (2-3) things are getting very slow.
+>> >>
+>> >> When I look at the object store servers I see heavy disk-i/o on t=
+he
+>> >> btrfs filesystems (disk utilization is between 60% and 100%). I a=
+lso
+>> >> did some tracing on the Cepp-Object-Store-Daemon, but I'm quite
+>> >> certain, that the majority of the disk I/O is not caused by ceph =
+or
+>> >> any other userland process.
+>> >>
+>> >> When reboot the system(s) the problems go away for another 2-3 da=
+ys,
+>> >> but after that, it starts again. I'm not sure if the problem is
+>> >> related to the kernel warning I've reported last week. At least t=
+here
+>> >> is no temporal relationship between the warning and the slowdown.
+>> >>
+>> >> Any hints on how to trace this would be welcome.
+>> >
+>> > The easiest way to trace this is with latencytop.
+>> >
+>> > Apply this patch:
+>> >
+>> > http://oss.oracle.com/~mason/latencytop.patch
+>> >
+>> > And then use latencytop -c for a few minutes while the system is s=
+low.
+>> > Send the output here and hopefully we'll be able to figure it out.
+>>
+>> I've now installed latencytop. Attached are two output files: The
+>> first is from yesterday and was created aproxematly half an hour aft=
+er
+>> the boot. The second on is from today, uptime is 19h. The load on th=
+e
+>> system is already rising. Disk utilization is approximately at 50%.
+>>
+>> Thanks for your help.
+>>
+>> Christian
+>>
+> --
+> To unsubscribe from this list: send the line "unsubscribe linux-btrfs=
+" in
+> the body of a message to majordomo@vger.kernel.org
+> More majordomo info at =A0http://vger.kernel.org/majordomo-info.html
+>
+--
+To unsubscribe from this list: send the line "unsubscribe ceph-devel" i=
+n
+the body of a message to majordomo@vger.kernel.org
+More majordomo info at  http://vger.kernel.org/majordomo-info.html

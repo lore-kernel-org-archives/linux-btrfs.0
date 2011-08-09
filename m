@@ -1,33 +1,68 @@
-From: Alexandre Oliva <oliva@lsd.ic.unicamp.br>
-Subject: Re: =?utf-8?Q?=E2=80=9Cbio?= too =?utf-8?Q?big=E2=80=9D?=
- regression and silent data corruption in 3.0
-Date: Tue, 09 Aug 2011 01:04:27 -0300
-Message-ID: <orobzz5iyc.fsf@livre.localdomain>
-References: <orwreobtuf.fsf@livre.localdomain>
+From: Tsutomu Itoh <t-itoh@jp.fujitsu.com>
+Subject: Re: [PATCH] btrfs: Handle NULL inode return from btrfs_lookup_dentry()
+Date: Tue, 09 Aug 2011 13:45:39 +0900
+Message-ID: <4E40BB73.3010809@jp.fujitsu.com>
+References: <20110805164828.GB8482@wotan.suse.de>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-To: linux-btrfs@vger.kernel.org
+Content-Type: text/plain; charset=UTF-8
+Cc: linux-btrfs@vger.kernel.org, chris.mason@oracle.com
+To: Mark Fasheh <mfasheh@suse.de>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <orwreobtuf.fsf@livre.localdomain> (Alexandre Oliva's message of
-	"Sun, 07 Aug 2011 22:00:24 -0300")
+In-Reply-To: <20110805164828.GB8482@wotan.suse.de>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Aug  7, 2011, Alexandre Oliva <oliva@lsd.ic.unicamp.br> wrote:
+Hi, Mark,
 
-> in very much the same way that it appears to be impossible to go
-> back from RAID1 to DUP metadata once you temporarily add a second disk,
-> and any metadata block group happens to be allocated before you remove
-> it (why couldn't it go back to DUP, rather than refusing the removal
-> outright, which prevents even single block groups from being moved?)
+(2011/08/06 1:48), Mark Fasheh wrote:
+> Right now in create_snapshot(), we'll BUG() if btrfs_lookup_dentry() returns
+> a NULL inode (negative dentry). Getting a negative dentry here probably
+> isn't ever expected to happen however two things lead me to believe that we
+> should trap this anyway:
+> 
+> - I don't see any possiblity of serious fs corruption from handling the
+>   error.  I do wonder though if we could have an "orphaned" snapshot?  Even
+>   if we did that doesn't strike me as needing to crash the machine. (Q:
+>   Perhaps going read-only is the eventual solution here?)
+> 
+> - It's very trivial to pass an -ENOENT back to userspace as we're pretty
+>   high up the call path at this point.
 
-Which also appears to be intentional.  The code to suport this is right
-there in update_block_group_flags, but btrfs_rm_device refuses to let it
-do its job, denying the removal attempt right away, without any means to
-bypass the test.  Could at least an option to bypass the test be
-introduced, through say a mount option, some /sys setting, whatever?
+I have already posted the same purpose patch. Please look at the following.
 
--- 
-Alexandre Oliva, freedom fighter    http://FSFLA.org/~lxoliva/
-You must be the change you wish to see in the world. -- Gandhi
-Be Free! -- http://FSFLA.org/   FSF Latin America board member
-Free Software Evangelist      Red Hat Brazil Compiler Engineer
+ http://marc.info/?l=linux-btrfs&m=130932339824237&w=2
+
+Thanks,
+Tsutomu
+
+> 
+> Signed-off-by: Mark Fasheh <mfasheh@suse.com>
+> ---
+>  fs/btrfs/ioctl.c |    8 +++++---
+>  1 files changed, 5 insertions(+), 3 deletions(-)
+> 
+> diff --git a/fs/btrfs/ioctl.c b/fs/btrfs/ioctl.c
+> index 7cf0133..fc9525f 100644
+> --- a/fs/btrfs/ioctl.c
+> +++ b/fs/btrfs/ioctl.c
+> @@ -498,14 +498,16 @@ static int create_snapshot(struct btrfs_root *root, struct dentry *dentry,
+>  	if (ret)
+>  		goto fail;
+>  
+> +	ret = 0;
+>  	inode = btrfs_lookup_dentry(dentry->d_parent->d_inode, dentry);
+>  	if (IS_ERR(inode)) {
+>  		ret = PTR_ERR(inode);
+>  		goto fail;
+> -	}
+> -	BUG_ON(!inode);
+> +	} else if (inode == NULL)
+> +		ret = -ENOENT;
+> +
+>  	d_instantiate(dentry, inode);
+> -	ret = 0;
+> +
+>  fail:
+>  	kfree(pending_snapshot);
+>  	return ret;
+
+

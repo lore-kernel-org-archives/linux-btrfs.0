@@ -1,56 +1,39 @@
-From: Alexandre Oliva <oliva@lsd.ic.unicamp.br>
-Subject: Re: =?utf-8?Q?=E2=80=9Cbio?= too =?utf-8?Q?big=E2=80=9D?=
- regression and silent data corruption in 3.0
-Date: Mon, 08 Aug 2011 23:53:43 -0300
-Message-ID: <orty9r5m88.fsf@livre.localdomain>
-References: <orwreobtuf.fsf@livre.localdomain>
+From: C Anthony Risinger <anthony@xtfx.me>
+Subject: Re: BTRFS partition won't mount
+Date: Mon, 8 Aug 2011 22:54:04 -0500
+Message-ID: <CAGAVQTE08--VM_uw2t0dDxSdqSEgZYAk52NTqgzJaXNr+OFoRA@mail.gmail.com>
+References: <1F6ED4EA7957EB4FADAE461E036D456A25D75644F9@exch01lex.ceradyne.com>
+ <20110803205031.GA18558@carfax.org.uk>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=utf-8
-To: linux-btrfs@vger.kernel.org
+Content-Type: text/plain; charset=UTF-8
+To: Hugo Mills <hugo@carfax.org.uk>, Adam Newby <anewby@ceradyne.com>,
+	"linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <orwreobtuf.fsf@livre.localdomain> (Alexandre Oliva's message of
-	"Sun, 07 Aug 2011 22:00:24 -0300")
+In-Reply-To: <20110803205031.GA18558@carfax.org.uk>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Aug  7, 2011, Alexandre Oliva <oliva@lsd.ic.unicamp.br> wrote:
+On Wed, Aug 3, 2011 at 3:50 PM, Hugo Mills <hugo@carfax.org.uk> wrote:
+>
+> =C2=A0 Try the instructions on the wiki at [1]. (And please feed back
+> and/or fix any issues you have with the instructions -- they're still
+> quite new and probably have awkward corners).
+>
+> [1] https://btrfs.wiki.kernel.org/index.php/Problem_FAQ#I_can.27t_mou=
+nt_my_filesystem.2C_and_I_get_a_kernel_oops.21
 
-> 2. Removing a partition from the filesystem (say, the external disk)
-> didn't relocate =E2=80=9Csingle=E2=80=9D block groups as such to othe=
-r disks, as
-> expected.
+this worked perfectly for me ... just saved my night from tedious
+restoration :-)
 
-/me reads some code and resets expectations about RAID0 in btrfs ;-)
+im on kernel 3.0.1 -- hard poweroff led to that problem.  i haven't
+had any issues for some time ... im not sure what the problem was
+exactly, but sometimes systemd gets a little twacky and takes a year
+to shutdown ... guess i got a little impatient :-)
 
-update_block_group_flags is what does this.  It doesn't care what was
-chosen when the filesystem was created, it just forces RAID0 if more
-than 1 disk remains:
-
-		/* turn single device chunks into raid0 */
-		return stripped | BTRFS_BLOCK_GROUP_RAID0;
-
-Is this really intended?  Given my current understanding that RAID0
-doesn't mean striping over all disks, but only over two disks, I guess =
-I
-might even be interested in it, but...  I still think the user's choice
-should be honored, but I don't see where the choice is stored (if it is
-at all).
-
-
-> I wonder, why can't btrfs mark at least mounted partitions as busy, i=
-n
-> much the same way that swap, md and various filesystems do, to avoid
-> such accidental reuses?
-
-Heh.  And *unmark* them when they're removed, too...  As in, it won't
-let me create a new filesystem in a partition that was just removed fro=
-m
-a filesystem, if that was the partition listed in /etc/mtab.
+anyways, thanks for the integration work!
 
 --=20
-Alexandre Oliva, freedom fighter    http://FSFLA.org/~lxoliva/
-You must be the change you wish to see in the world. -- Gandhi
-Be Free! -- http://FSFLA.org/   FSF Latin America board member
-=46ree Software Evangelist      Red Hat Brazil Compiler Engineer
+
+C Anthony
 --
 To unsubscribe from this list: send the line "unsubscribe linux-btrfs" =
 in

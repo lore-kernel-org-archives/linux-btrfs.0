@@ -1,136 +1,92 @@
-From: Jeff Mahoney <jeffm@suse.com>
-Subject: Re: [patch 9/9] btrfs: Push up non-looped btrfs_start_transaction
- failures
-Date: Wed, 10 Aug 2011 22:32:18 -0400
-Message-ID: <4E433F32.6060604@suse.com>
-References: <20110810232027.129702612@suse.com> <20110810232123.600894199@suse.com> <4E433013.3010600@jp.fujitsu.com> <4E433728.8060406@suse.com> <4E433BF1.4090203@jp.fujitsu.com>
+From: Tsutomu Itoh <t-itoh@jp.fujitsu.com>
+Subject: Re: [PATCH] Re: [btrfs-progs integration] incorrect argument	checking
+ for "btrfs sub snap -r"
+Date: Thu, 11 Aug 2011 13:30:48 +0900
+Message-ID: <4E435AF8.2010408@jp.fujitsu.com>
+References: <4E0BC7AA.7000709@cn.fujitsu.com> <chaz20110630084046.GC28702@seebyte.com> <4E0C3F72.5040508@gmail.com> <chaz20110630104340.GD28702@seebyte.com> <20110630105813.GD11170@carfax.org.uk> <chaz20110630123438.GE28702@seebyte.com> <4E0CE2B3.1080600@gmail.com> <chaz20110701082652.GF28702@seebyte.com> <4E0D9DCA.1090204@gmail.com> <20110701104223.GA7606@carfax.org.uk> <chaz20110701125536.GG28702@seebyte.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=ISO-2022-JP
-Cc: linux-btrfs@vger.kernel.org
-To: Tsutomu Itoh <t-itoh@jp.fujitsu.com>
+Content-Type: text/plain; charset=UTF-8
+Cc: Stephane Chazelas <stephane.chazelas@gmail.com>,
+	Andreas Philipp <philipp.andreas@gmail.com>,
+	linux-btrfs@vger.kernel.org
+To: Hugo Mills <hugo@carfax.org.uk>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <4E433BF1.4090203@jp.fujitsu.com>
+In-Reply-To: <chaz20110701125536.GG28702@seebyte.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 08/10/2011 10:18 PM, Tsutomu Itoh wrote:
-> (2011/08/11 10:58), Jeff Mahoney wrote:
->> On 08/10/2011 09:27 PM, Tsutomu Itoh wrote:
->>> Hi, Jeff,
->>>
->>> (2011/08/11 8:20), Jeff Mahoney wrote:
->>>>    This patch handles btrfs_start_transaction failures that don't occur
->>>>    in a loop and are obvious to simply push up. In all cases except the
->>>>    mark_garbage_root case, the error is already handled by BUG_ON in the
->>>>    caller.
+Hi, Hugo,
+
+I built your for-chris branch, and ran 'btrfs sub snap' command.
+Then, I encountered following error message.
+
+  # btrfs sub snap Dir-1 Dir-2
+  Invalid arguments for subvolume snapshot
+
+commit:8b4c2a22bff85f86af44587973c8da8c29a67ffc is wrong, I think.
+
+(2011/07/01 21:55), Stephane Chazelas wrote:
+> 2011-07-01 11:42:23 +0100, Hugo Mills:
+> [...]
+>>>> diff --git a/btrfs.c b/btrfs.c
+>>>> index e117172..b50c58a 100644
+>>>> --- a/btrfs.c
+>>>> +++ b/btrfs.c
+>>>> @@ -49,7 +49,7 @@ static struct Command commands[] = {
+>>>>  	/*
+>>>>  		avoid short commands different for the case only
+>>>>  	*/
+>>>> -	{ do_clone, 2,
+>>>> +	{ do_clone, -2,
+>>>>  	  "subvolume snapshot", "[-r] <source> [<dest>/]<name>\n"
+>>>>  		"Create a writable/readonly snapshot of the subvolume <source> with\n"
+>>>>  		"the name <name> in the <dest> directory.",
+>>>> diff --git a/btrfs_cmds.c b/btrfs_cmds.c
+>>>> index 1d18c59..3415afc 100644
+>>>> --- a/btrfs_cmds.c
+>>>> +++ b/btrfs_cmds.c
+>>>> @@ -355,7 +355,7 @@ int do_clone(int argc, char **argv)
+>>>>  			return 1;
+>>>>  		}
+>>>>  	}
+>>>> -	if (argc - optind < 2) {
+>>>> +	if (argc - optind != 2) {
+>>>>  		fprintf(stderr, "Invalid arguments for subvolume snapshot\n");
+>>>>  		free(argv);
+>>>>  		return 1;
 >>>>
->>>> Signed-off-by: Jeff Mahoney<jeffm@suse.com>
->>>> ---
->>>>    fs/btrfs/extent-tree.c |    6 +++++-
->>>>    fs/btrfs/relocation.c  |    6 ++++--
->>>>    fs/btrfs/tree-log.c    |    5 ++++-
->>>>    fs/btrfs/volumes.c     |    3 ++-
->>>>    4 files changed, 15 insertions(+), 5 deletions(-)
->>>>
->>>> --- a/fs/btrfs/extent-tree.c
->>>> +++ b/fs/btrfs/extent-tree.c
->>>> @@ -6319,7 +6319,11 @@ int btrfs_drop_snapshot(struct btrfs_roo
->>>>    	}
->>>>
->>>>    	trans = btrfs_start_transaction(tree_root, 0);
->>>> -	BUG_ON(IS_ERR(trans));
->>>> +	if (IS_ERR(trans)) {
->>>> +		kfree(wc);
->>>> +		btrfs_free_path(path);
->>>> +		return PTR_ERR(trans);
->>>> +	}
->>>
->>> The caller of btrfs_drop_snapshot() ignore the error. So, I don't think
->>> that it is significant even if the error is returned to the caller.
+>>> Thanks for having another look at this. You are perfectly right. Should
+>>> we patch my patch or should I rework a corrected version? What do you
+>>> think Hugo?
 >>
->>   I'd actually consider that a separate issue since btrfs_drop_snapshot
->> also returns -ENOMEM. The errors should be properly caught or BUG_ON'd
->> in the caller. My patchset usually catches cases like this but since
->> btrfs_drop_snapshot already returned an error, I mistakenly assumed it
->> was handled by the caller.
->>
->>> I think that it should make the filesystem readonly when becoming an error
->>> in btrfs_start_transaction().
->>
->> For -ENOMEM, I don't think that's the way to handle it. Some transaction
->> start failures can be caught and handled (e.g. just creating a file)
->> easily by returning errors to the user. Other cases, deep in the code,
->> may be too complex to unwind and recover from and then a ROFS is the
->> next-best answer. The callers should be responsible for determining the
->> correct course of action.
+>>    Could you send a follow-up patch with just the second hunk, please?
+>> I screwed up the process with this (processing patches too quickly to
+>> catch the review), and I've already published the patch with the first
+>> hunk, above, into the for-chris branch.
 > 
-> OK.
-> Could you please append BUG_ON() in the caller or correctly handle the error
-> of btrfs_start_transaction()?
-
-Yep. I'll add that in. Thanks for the review.
-
--Jef
-
->> -Jeff
->>
->>> Thanks,
->>> Tsutomu
->>>
->>>>
->>>>    	if (block_rsv)
->>>>    		trans->block_rsv = block_rsv;
->>>> --- a/fs/btrfs/relocation.c
->>>> +++ b/fs/btrfs/relocation.c
->>>> @@ -4096,7 +4096,8 @@ static noinline_for_stack int mark_garba
->>>>    	int ret;
->>>>
->>>>    	trans = btrfs_start_transaction(root->fs_info->tree_root, 0);
->>>> -	BUG_ON(IS_ERR(trans));
->>>> +	if (IS_ERR(trans))
->>>> +		return PTR_ERR(trans);
->>>>
->>>>    	memset(&root->root_item.drop_progress, 0,
->>>>    		sizeof(root->root_item.drop_progress));
->>>> @@ -4176,7 +4177,8 @@ int btrfs_recover_relocation(struct btrf
->>>>    					err = ret;
->>>>    					goto out;
->>>>    				}
->>>> -				mark_garbage_root(reloc_root);
->>>> +				ret = mark_garbage_root(reloc_root);
->>>> +				BUG_ON(ret);
->>>>    			}
->>>>    		}
->>>>
->>>> --- a/fs/btrfs/tree-log.c
->>>> +++ b/fs/btrfs/tree-log.c
->>>> @@ -3151,7 +3151,10 @@ int btrfs_recover_log_trees(struct btrfs
->>>>    	fs_info->log_root_recovering = 1;
->>>>
->>>>    	trans = btrfs_start_transaction(fs_info->tree_root, 0);
->>>> -	BUG_ON(IS_ERR(trans));
->>>> +	if (IS_ERR(trans)) {
->>>> +		btrfs_free_path(path);
->>>> +		return PTR_ERR(trans);
->>>> +	}
->>>>
->>>>    	wc.trans = trans;
->>>>    	wc.pin = 1;
->>>> --- a/fs/btrfs/volumes.c
->>>> +++ b/fs/btrfs/volumes.c
->>>> @@ -1876,7 +1876,8 @@ static int btrfs_relocate_chunk(struct b
->>>>    		return ret;
->>>>
->>>>    	trans = btrfs_start_transaction(root, 0);
->>>> -	BUG_ON(IS_ERR(trans));
->>>> +	if (IS_ERR(trans))
->>>> +		return PTR_ERR(trans);
->>>>
->>>>    	lock_chunks(root);
->>>>
->>>
+> Hugo, not sure what you mean nor whom you're talking to, but I
+> can certainly copy-paste the second hunk from above here:
 > 
+> diff --git a/btrfs_cmds.c b/btrfs_cmds.c
+> index 1d18c59..3415afc 100644
+> --- a/btrfs_cmds.c
+> +++ b/btrfs_cmds.c
+> @@ -355,7 +355,7 @@ int do_clone(int argc, char **argv)
+>  			return 1;
+>  		}
+>  	}
+> -	if (argc - optind < 2) {
 
+> +	if (argc - optind != 2) {
 
--- 
-Jeff Mahoney
-SuSE Labs
+I think that '3' is correct.
+
+Thanks,
+Tsutomu
+
+>  		fprintf(stderr, "Invalid arguments for subvolume snapshot\n");
+>  		free(argv);
+>  		return 1;
+> 
+> Cheers,
+> Stephane
+

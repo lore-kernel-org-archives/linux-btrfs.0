@@ -1,7 +1,7 @@
 From: Anand Jain <Anand.Jain@oracle.com>
-Subject: [PATCH 2/3] Added test case 258 for btrfs defragmentation
-Date: Fri, 12 Aug 2011 04:01:27 +0800
-Message-ID: <4E443517.5090105@oracle.com>
+Subject: [PATCH 3/3] Added test case 259 for the btrfs raid features
+Date: Fri, 12 Aug 2011 04:01:33 +0800
+Message-ID: <4E44351D.4020202@oracle.com>
 References: <4E3BA2F7.4080500@oracle.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset=ISO-8859-1; format=flowed
@@ -12,26 +12,30 @@ Return-path: <linux-fsdevel-owner@vger.kernel.org>
 In-Reply-To: <4E3BA2F7.4080500@oracle.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
+Added test case 259 for the btrfs raid features. SCRATCH_DEV_POOL must
+be set to 2 or more disks.
+
 Signed-off-by: Anand Jain <Anand.Jain@oracle.com>
 ---
-  258     |   60 
-++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-  258.out |    2 ++
-  group   |    1 +
-  3 files changed, 63 insertions(+), 0 deletions(-)
-  create mode 100755 258
-  create mode 100644 258.out
+  259       |  186 
++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+  259.out   |    2 +
+  common.rc |    6 ++
+  group     |    1 +
+  4 files changed, 195 insertions(+), 0 deletions(-)
+  create mode 100755 259
+  create mode 100644 259.out
 
-diff --git a/258 b/258
+diff --git a/259 b/259
 new file mode 100755
-index 0000000..798bbaf
+index 0000000..b4ba403
 --- /dev/null
-+++ b/258
-@@ -0,0 +1,60 @@
++++ b/259
+@@ -0,0 +1,186 @@
 +#! /bin/bash
-+# FS QA Test No. 258
++# FS QA Test No. 259
 +#
-+# btrfs defragmentation tests
++# btrfs vol tests
 +#
 +#-----------------------------------------------------------------------
 +# Copyright (c) 2011 Oracle.  All Rights Reserved.
@@ -75,36 +79,187 @@ index 0000000..798bbaf
 +_supported_fs btrfs
 +_supported_os Linux
 +_require_scratch
++_require_scratch_dev_pool
++_require_proc_scsi
 +
-+_scratch_mkfs $SCRATCH_DEV_POOL > /dev/null 2>&1 || _fail "mkfs failed"
-+_scratch_mount
++# arg 1 remove/add
++# arg 2 /dev/sdx or return of devmgt resply
++_devmgt()
++{
++	local x
++	local d
 +
-+_fillfs 1 10 100 4096 8192 $SCRATCH_MNT
++	if [ $1 == "remove" ]; then
++		d=`echo $2|cut -d"/" -f3`
++		x=`ls -l /sys/class/block/${d} | cut -d "/" -f12 | sed 's/:/ /g'`
++		echo "scsi remove-single-device ${x}" > /proc/scsi/scsi || _fail 
+"Remove disk failed"
++		DEVHTL=${x}
++	else
++		echo "scsi add-single-device ${2}" > /proc/scsi/scsi || _fail "Add 
+disk failed"
++	fi
++}
 +
-+btrfs filesystem defragment $SCRATCH_MNT
-+[ $? = 20 ] || _fail "Defragment failed"
++# Test cases related to raid in btrfs
++_test_raid0()
++{
++	export MKFS_OPTIONS="-m raid0 -d raid0"
++	_scratch_mkfs $SCRATCH_DEV_POOL > /dev/null 2>&1 || _fail "mkfs failed"
++	_scratch_mount
++	_fillfs 1 10 100 4096 8192 $SCRATCH_MNT
++	umount $SCRATCH_MNT
++}
 +
-+umount $SCRATCH_MNT || _fail "umount failed"
++_test_raid1()
++{
++	export MKFS_OPTIONS="-m raid1 -d raid1"
++	_scratch_mkfs $SCRATCH_DEV_POOL > /dev/null 2>&1 || _fail "mkfs failed"
++	_scratch_mount
++	_fillfs 1 10 100 4096 8192 $SCRATCH_MNT
++	umount $SCRATCH_MNT
++}
++
++_test_raid10()
++{
++	export MKFS_OPTIONS="-m raid10 -d raid10"
++	_scratch_mkfs $SCRATCH_DEV_POOL > /dev/null 2>&1 || _fail "mkfs failed"
++	_scratch_mount
++	_fillfs 1 10 100 4096 8192 $SCRATCH_MNT
++	umount $SCRATCH_MNT
++}
++
++_test_single()
++{
++	export MKFS_OPTIONS="-m single -d single"
++	_scratch_mkfs $SCRATCH_DEV_POOL > /dev/null 2>&1 || _fail "mkfs failed"
++	_scratch_mount
++	_fillfs 1 10 100 4096 8192 $SCRATCH_MNT
++	umount $SCRATCH_MNT
++}
++
++_test_add()
++{
++	local i
++	local devs[]="( $SCRATCH_DEV_POOL )"
++	local n=${#devs[@]}
++
++	n=$(($n-1))
++
++	export MKFS_OPTIONS=""
++	_scratch_mkfs > /dev/null 2>&1 || _fail "mkfs failed"
++	_scratch_mount
++	_fillfs 1 10 100 4096 8192 $SCRATCH_MNT
++	for i in `seq 1 $n`
++	do
++		btrfs device add ${devs[$i]} $SCRATCH_MNT > /dev/null 2>&1 || _fail 
+"device add failed"
++	done
++	btrfs filesystem balance $SCRATCH_MNT || _fail "balance failed"
++	#btrfs filesystem show $SCRATCH_DEV 2>&1 | egrep devid |awk '{
++	#	if ( $6 == "0.00" ) { exit 1 }
++	#}' || _fail "test6_add... failed"
++	umount $SCRATCH_MNT
++}
++
++_test_replace()
++{
++	local i
++	local x
++	local devs=( $SCRATCH_DEV_POOL )
++	local n=${#devs[@]}
++	local ds
++	local DEVHTL=""
++
++	# exclude the last disk in the disk pool
++	n=$(($n-1))
++	ds=${devs[@]:0:$n}
++
++	export MKFS_OPTIONS=""
++	_scratch_mkfs "$ds" > /dev/null 2>&1 || _fail "mkfs failed"
++	_scratch_mount
++	_fillfs 1 10 100 4096 8192 $SCRATCH_MNT
++
++	#pick the 2nd last disk
++	ds=${devs[@]:$(($n-1)):1}
++
++	#fail disk
++	_devmgt remove ${ds}
++
++	btrfs fi show $SCRATCH_DEV | grep "Some devices missing" > /dev/null 
+|| _fail \
++							"btrfs did not report device missing"
++
++	# add a new disk to btrfs
++	ds=${devs[@]:$(($n)):1}
++	btrfs device add ${ds} $SCRATCH_MNT > /dev/null 2>&1 || _fail "dev add 
+failed"
++
++	# cleaup. add the removed disk
++	umount $SCRATCH_MNT
++	_devmgt add "${DEVHTL}"
++}
++
++_test_remove()
++{
++	_scratch_mkfs "$SCRATCH_DEV_POOL" > /dev/null 2>&1 || _fail "mkfs failed"
++	_scratch_mount
++	_fillfs 1 10 100 4096 8192 $SCRATCH_MNT
++
++	# pick last dev in the list
++	dev_del=`echo ${SCRATCH_DEV_POOL} | awk '{print $NF}'`
++	btrfs device delete $dev_del $SCRATCH_MNT || _fail "btrfs device 
+delete failed"
++	btrfs fi show $SCRATCH_DEV 2>&1 | grep $dev_del > /dev/null && _fail 
+"btrfs still shows the deleted dev"
++	umount $SCRATCH_MNT
++}
++
++_test_raid0
++_test_raid1
++_test_raid10
++_test_single
++_test_add
++_test_replace
++_test_remove
 +
 +echo "Silence is golden"
 +status=0; exit
-diff --git a/258.out b/258.out
+diff --git a/259.out b/259.out
 new file mode 100644
-index 0000000..9d47016
+index 0000000..bfbd2de
 --- /dev/null
-+++ b/258.out
++++ b/259.out
 @@ -0,0 +1,2 @@
-+QA output created by 258
++QA output created by 259
 +Silence is golden
+diff --git a/common.rc b/common.rc
+index db7c2dd..aa45a7e 100644
+--- a/common.rc
++++ b/common.rc
+@@ -1646,6 +1646,12 @@ _require_scratch_dev_pool()
+  	;;
+  	esac
+  }
++
++# we need this to test removing a dev from the system
++_require_proc_scsi()
++{
++	[ -e /proc/scsi/scsi ]  || _notrun "/proc/scsi/scsi is not present"
++}
+ 
+################################################################################
+
+  if [ "$iam" != new -a "$iam" != bench ]
 diff --git a/group b/group
-index 84c45da..739f806 100644
+index 739f806..62eebfb 100644
 --- a/group
 +++ b/group
-@@ -371,3 +371,4 @@ deprecated
-  255 auto quick prealloc
+@@ -372,3 +372,4 @@ deprecated
   256 auto quick
   257 auto quick
-+258 auto quick
+  258 auto quick
++259 auto quick
 -- 
 1.7.1
 

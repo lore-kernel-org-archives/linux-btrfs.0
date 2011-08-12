@@ -1,265 +1,82 @@
-From: Anand Jain <Anand.Jain@oracle.com>
-Subject: [PATCH 3/3] Added test case 259 for the btrfs raid features
-Date: Fri, 12 Aug 2011 04:01:33 +0800
-Message-ID: <4E44351D.4020202@oracle.com>
-References: <4E3BA2F7.4080500@oracle.com>
+From: Simon Kirby <sim@hostway.ca>
+Subject: Re: Slow snapshot deletion
+Date: Thu, 11 Aug 2011 17:40:36 -0700
+Message-ID: <20110812004036.GA3960@hostway.ca>
+References: <20110728200444.GA30801@untroubled.org> <1311884805-sup-7662@shiny> <1311886250-sup-5126@shiny> <20110804163536.GA25185@untroubled.org> <20110811150456.GA558@untroubled.org>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=ISO-8859-1; format=flowed
-Cc: Chris Mason <chris.mason@oracle.com>
-To: linux-fsdevel@vger.kernel.org, linux-btrfs@vger.kernel.org,
-	xfs@oss.sgi.com
-Return-path: <linux-fsdevel-owner@vger.kernel.org>
-In-Reply-To: <4E3BA2F7.4080500@oracle.com>
+Content-Type: text/plain; charset=us-ascii
+To: linux-btrfs <linux-btrfs@vger.kernel.org>
+Return-path: <linux-btrfs-owner@vger.kernel.org>
+In-Reply-To: <20110811150456.GA558@untroubled.org>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Added test case 259 for the btrfs raid features. SCRATCH_DEV_POOL must
-be set to 2 or more disks.
+On Thu, Aug 11, 2011 at 09:04:56AM -0600, Bruce Guenter wrote:
 
-Signed-off-by: Anand Jain <Anand.Jain@oracle.com>
----
-  259       |  186 
-+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-  259.out   |    2 +
-  common.rc |    6 ++
-  group     |    1 +
-  4 files changed, 195 insertions(+), 0 deletions(-)
-  create mode 100755 259
-  create mode 100644 259.out
+> On Thu, Aug 04, 2011 at 10:35:36AM -0600, Bruce Guenter wrote:
+> > Ok, I ran it for more than a few minutes.  Early on (shortly after boot), the output shows this for a long time:
+> 
+> Does anybody have any ideas what might be going on?
 
-diff --git a/259 b/259
-new file mode 100755
-index 0000000..b4ba403
---- /dev/null
-+++ b/259
-@@ -0,0 +1,186 @@
-+#! /bin/bash
-+# FS QA Test No. 259
-+#
-+# btrfs vol tests
-+#
-+#-----------------------------------------------------------------------
-+# Copyright (c) 2011 Oracle.  All Rights Reserved.
-+#
-+# This program is free software; you can redistribute it and/or
-+# modify it under the terms of the GNU General Public License as
-+# published by the Free Software Foundation.
-+#
-+# This program is distributed in the hope that it would be useful,
-+# but WITHOUT ANY WARRANTY; without even the implied warranty of
-+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-+# GNU General Public License for more details.
-+#
-+# You should have received a copy of the GNU General Public License
-+# along with this program; if not, write the Free Software Foundation,
-+# Inc.,  51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
-+#-----------------------------------------------------------------------
-+#
-+# creator
-+owner=anand.jain@oracle.com
-+
-+seq=`basename $0`
-+echo "QA output created by $seq"
-+
-+here=`pwd`
-+tmp=/tmp/$$
-+status=1	# failure is the default!
-+trap "_cleanup; exit \$status" 0 1 2 3 15
-+
-+_cleanup()
-+{
-+    cd /
-+    rm -f $tmp.*
-+}
-+
-+# get standard environment, filters and checks
-+. ./common.rc
-+. ./common.filter
-+
-+_need_to_be_root
-+_supported_fs btrfs
-+_supported_os Linux
-+_require_scratch
-+_require_scratch_dev_pool
-+_require_proc_scsi
-+
-+# arg 1 remove/add
-+# arg 2 /dev/sdx or return of devmgt resply
-+_devmgt()
-+{
-+	local x
-+	local d
-+
-+	if [ $1 == "remove" ]; then
-+		d=`echo $2|cut -d"/" -f3`
-+		x=`ls -l /sys/class/block/${d} | cut -d "/" -f12 | sed 's/:/ /g'`
-+		echo "scsi remove-single-device ${x}" > /proc/scsi/scsi || _fail 
-"Remove disk failed"
-+		DEVHTL=${x}
-+	else
-+		echo "scsi add-single-device ${2}" > /proc/scsi/scsi || _fail "Add 
-disk failed"
-+	fi
-+}
-+
-+# Test cases related to raid in btrfs
-+_test_raid0()
-+{
-+	export MKFS_OPTIONS="-m raid0 -d raid0"
-+	_scratch_mkfs $SCRATCH_DEV_POOL > /dev/null 2>&1 || _fail "mkfs failed"
-+	_scratch_mount
-+	_fillfs 1 10 100 4096 8192 $SCRATCH_MNT
-+	umount $SCRATCH_MNT
-+}
-+
-+_test_raid1()
-+{
-+	export MKFS_OPTIONS="-m raid1 -d raid1"
-+	_scratch_mkfs $SCRATCH_DEV_POOL > /dev/null 2>&1 || _fail "mkfs failed"
-+	_scratch_mount
-+	_fillfs 1 10 100 4096 8192 $SCRATCH_MNT
-+	umount $SCRATCH_MNT
-+}
-+
-+_test_raid10()
-+{
-+	export MKFS_OPTIONS="-m raid10 -d raid10"
-+	_scratch_mkfs $SCRATCH_DEV_POOL > /dev/null 2>&1 || _fail "mkfs failed"
-+	_scratch_mount
-+	_fillfs 1 10 100 4096 8192 $SCRATCH_MNT
-+	umount $SCRATCH_MNT
-+}
-+
-+_test_single()
-+{
-+	export MKFS_OPTIONS="-m single -d single"
-+	_scratch_mkfs $SCRATCH_DEV_POOL > /dev/null 2>&1 || _fail "mkfs failed"
-+	_scratch_mount
-+	_fillfs 1 10 100 4096 8192 $SCRATCH_MNT
-+	umount $SCRATCH_MNT
-+}
-+
-+_test_add()
-+{
-+	local i
-+	local devs[]="( $SCRATCH_DEV_POOL )"
-+	local n=${#devs[@]}
-+
-+	n=$(($n-1))
-+
-+	export MKFS_OPTIONS=""
-+	_scratch_mkfs > /dev/null 2>&1 || _fail "mkfs failed"
-+	_scratch_mount
-+	_fillfs 1 10 100 4096 8192 $SCRATCH_MNT
-+	for i in `seq 1 $n`
-+	do
-+		btrfs device add ${devs[$i]} $SCRATCH_MNT > /dev/null 2>&1 || _fail 
-"device add failed"
-+	done
-+	btrfs filesystem balance $SCRATCH_MNT || _fail "balance failed"
-+	#btrfs filesystem show $SCRATCH_DEV 2>&1 | egrep devid |awk '{
-+	#	if ( $6 == "0.00" ) { exit 1 }
-+	#}' || _fail "test6_add... failed"
-+	umount $SCRATCH_MNT
-+}
-+
-+_test_replace()
-+{
-+	local i
-+	local x
-+	local devs=( $SCRATCH_DEV_POOL )
-+	local n=${#devs[@]}
-+	local ds
-+	local DEVHTL=""
-+
-+	# exclude the last disk in the disk pool
-+	n=$(($n-1))
-+	ds=${devs[@]:0:$n}
-+
-+	export MKFS_OPTIONS=""
-+	_scratch_mkfs "$ds" > /dev/null 2>&1 || _fail "mkfs failed"
-+	_scratch_mount
-+	_fillfs 1 10 100 4096 8192 $SCRATCH_MNT
-+
-+	#pick the 2nd last disk
-+	ds=${devs[@]:$(($n-1)):1}
-+
-+	#fail disk
-+	_devmgt remove ${ds}
-+
-+	btrfs fi show $SCRATCH_DEV | grep "Some devices missing" > /dev/null 
-|| _fail \
-+							"btrfs did not report device missing"
-+
-+	# add a new disk to btrfs
-+	ds=${devs[@]:$(($n)):1}
-+	btrfs device add ${ds} $SCRATCH_MNT > /dev/null 2>&1 || _fail "dev add 
-failed"
-+
-+	# cleaup. add the removed disk
-+	umount $SCRATCH_MNT
-+	_devmgt add "${DEVHTL}"
-+}
-+
-+_test_remove()
-+{
-+	_scratch_mkfs "$SCRATCH_DEV_POOL" > /dev/null 2>&1 || _fail "mkfs failed"
-+	_scratch_mount
-+	_fillfs 1 10 100 4096 8192 $SCRATCH_MNT
-+
-+	# pick last dev in the list
-+	dev_del=`echo ${SCRATCH_DEV_POOL} | awk '{print $NF}'`
-+	btrfs device delete $dev_del $SCRATCH_MNT || _fail "btrfs device 
-delete failed"
-+	btrfs fi show $SCRATCH_DEV 2>&1 | grep $dev_del > /dev/null && _fail 
-"btrfs still shows the deleted dev"
-+	umount $SCRATCH_MNT
-+}
-+
-+_test_raid0
-+_test_raid1
-+_test_raid10
-+_test_single
-+_test_add
-+_test_replace
-+_test_remove
-+
-+echo "Silence is golden"
-+status=0; exit
-diff --git a/259.out b/259.out
-new file mode 100644
-index 0000000..bfbd2de
---- /dev/null
-+++ b/259.out
-@@ -0,0 +1,2 @@
-+QA output created by 259
-+Silence is golden
-diff --git a/common.rc b/common.rc
-index db7c2dd..aa45a7e 100644
---- a/common.rc
-+++ b/common.rc
-@@ -1646,6 +1646,12 @@ _require_scratch_dev_pool()
-  	;;
-  	esac
-  }
-+
-+# we need this to test removing a dev from the system
-+_require_proc_scsi()
-+{
-+	[ -e /proc/scsi/scsi ]  || _notrun "/proc/scsi/scsi is not present"
-+}
- 
-################################################################################
+By chance, does "vmstat 1" or top show a high system cpu% while this is
+happening, and if so, does cat /proc/<pid>/stack of the PIDs in R state
+sometimes show things under btrfs_run_delayed_refs like
+setup_cluster_no_bitmap() and rb_next()?
 
-  if [ "$iam" != new -a "$iam" != bench ]
-diff --git a/group b/group
-index 739f806..62eebfb 100644
---- a/group
-+++ b/group
-@@ -372,3 +372,4 @@ deprecated
-  256 auto quick
-  257 auto quick
-  258 auto quick
-+259 auto quick
--- 
-1.7.1
+I haven't been able to build a 2.6.39 to verify yet, but 2.6.38.5 does
+not show the problem for some reason. This is on a backup server, too,
+with 20 3 TB btrfs volumes.
 
+You should also be able to see a stack trace in this case (NOT the
+uninterruptible sleep case) with echo l > /rpoc/sysrq-trigger, or use
+oprofile or "perf top", which is what I am using. I see output such as:
+
+     samples  pcnt function                           DSO
+     _______ _____ __________________________________ ______________
+
+    13537.00 59.2% rb_next                            [kernel]
+     3539.00 15.5% _raw_spin_lock                     [kernel]
+     1668.00  7.3% setup_cluster_no_bitmap            [kernel]
+      799.00  3.5% tree_search_offset                 [kernel]
+      476.00  2.1% fill_window                        [kernel]
+
+and and perf record -g; perf report --stdio, which gives me:
+
+47.60%  btrfs-transacti  [kernel.kallsyms]          [k] rb_next
+        |
+        --- rb_next
+           |
+           |--97.36%-- setup_cluster_no_bitmap
+           |          btrfs_find_space_cluster
+           |          find_free_extent
+           |          btrfs_reserve_extent
+           |          btrfs_alloc_free_block
+           |          __btrfs_cow_block
+           |          btrfs_cow_block
+           |          |
+           |          |--99.95%-- btrfs_search_slot
+           |          |          |
+           |          |          |--55.01%-- lookup_inline_extent_backref
+           |          |          |          |
+           |          |          |          |--97.17%-- __btrfs_free_extent
+           |          |          |          |          run_clustered_refs
+           |          |          |          |          btrfs_run_delayed_refs
+           |          |          |          |          |
+           |          |          |          |          |--88.72%-- btrfs_commit_transaction
+           |          |          |          |          |          transaction_kthread
+
+At one point, I rebooted the box without unmounting, and mounting of the
+60 TB of btrfs volumes never actually finished within 8 hours. It seemed
+to get stuck on one of them about half way through, constantly writing
+(slowly) and taking lots of CPU. This is just from mounting, not any use.
+Booting back into 2.6.38.5 was fine. The kernel giving problems was 3.0,
+and now 3.1-rc1.
+
+Before, when it actually was mounted, "sync" (with nothing else dirtying
+pages) also took 4 minutes to run and pegged the CPU with a profile
+similar to the above.
+
+I tried started trying to do a bisection but tons of other things have
+changed and it takes quite a while to verify each pass. It also doesn't
+help that I can't seem to reproduce it on any other non-production boxes.
+
+Simon-

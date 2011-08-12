@@ -1,7 +1,7 @@
 From: Jan Schmidt <list.btrfs@jan-o-sch.net>
 Subject: Re: Getting a lot of fs-generated information to user space
-Date: Fri, 12 Aug 2011 14:43:37 +0200
-Message-ID: <4E451FF9.6090003@jan-o-sch.net>
+Date: Fri, 12 Aug 2011 16:41:41 +0200
+Message-ID: <4E453BA5.4090403@jan-o-sch.net>
 References: <4E451917.6080306@jan-o-sch.net> <20110812123154.GA29309@parisc-linux.org>
 Mime-Version: 1.0
 Content-Type: text/plain; charset=ISO-8859-1
@@ -24,9 +24,7 @@ On 12.08.2011 14:31, Matthew Wilcox wrote:
 > struct file *filp = fget(fd);
 > ...
 > fput(filp);
-
-Thanks.
-
+>
 > That said, why not have the ioctl mutate the existing fd?
 > ie in userspace:
 > 
@@ -38,13 +36,30 @@ Thanks.
 > }
 > close(fd);
 
-Woo :-) That looks good. I assume from your suggestion at least you do
-not consider this too ugly.
+After thinking twice, this has a drawback: I'd have to track state
+between two read(2) calls, waiting for userspace to "pull" more data.
 
-One must keep in mind that user space would also be able to open
-"/mnt/btrfs/any/file" to achieve the same. An ioctl changing read on a
-file (apparently) might me less intuitive. But still, I really like that
-approach.
+In contrast, I'd rather use a "push" like approach, having the buffering
+done for me. Getting back to my suggestion (1, giving a fd to the kernel
+where the output is expected), that should look like this in userspace:
 
-Thanks!
+-
+int fd;
+int pipefd[2];
+struct io_args io_args;
+
+fd = open("/mnt/btrfs");
+pipe(pipefd);
+io_agrs.dest = pipefd[0];
+
+/* thread 1 */
+ioctl(fd, BTRFS_IOC_STREAM, &io_args);
+/* thread 2 */
+while (...) {
+	read(pipefd[1], buf, 4096);
+	...
+}
+-
+
+Any suggestions and opinions appreciated. Thanks,
 -Jan

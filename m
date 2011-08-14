@@ -1,66 +1,21 @@
-From: Yalonda Gishtaka <yalonda.gishtaka@gmail.com>
+From: Michael Cronenworth <mike@cchtml.com>
 Subject: Re: corrupted btrfs volume: parent transid verify failed
-Date: Mon, 15 Aug 2011 00:05:39 +0200
-Message-ID: <CABqt_RMTrFVb8MUds2U2FgbZx=oisL61Sv3moW66f8=jORkMnA@mail.gmail.com>
-References: <CABqt_RND8Bd8NJ5cniKP=ySBBh6+p_xyoJh9ZL2aJeR9Sb4qrQ@mail.gmail.com>
-	<CABqt_RNd55S6fLgm6nteGq7kvgF9D33m4a_7ahNasSug-_tGeA@mail.gmail.com>
-	<CAG1y0seN15Yz0O3Dt+oPs5Se4vuzwVWt74pxAGNx5h2yCLko6w@mail.gmail.com>
+Date: Sun, 14 Aug 2011 18:10:55 -0500
+Message-ID: <4E4855FF.2040806@cchtml.com>
+References: <CABqt_RND8Bd8NJ5cniKP=ySBBh6+p_xyoJh9ZL2aJeR9Sb4qrQ@mail.gmail.com> <CABqt_RNd55S6fLgm6nteGq7kvgF9D33m4a_7ahNasSug-_tGeA@mail.gmail.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=ISO-8859-1
-Cc: "Fajar A. Nugraha" <list@fajar.net>
-To: linux-btrfs@vger.kernel.org
+Content-Type: text/plain; charset=ISO-8859-1; format=flowed
+Cc: linux-btrfs@vger.kernel.org
+To: Yalonda Gishtaka <yalonda.gishtaka@gmail.com>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <CAG1y0seN15Yz0O3Dt+oPs5Se4vuzwVWt74pxAGNx5h2yCLko6w@mail.gmail.com>
+In-Reply-To: <CABqt_RNd55S6fLgm6nteGq7kvgF9D33m4a_7ahNasSug-_tGeA@mail.gmail.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-=46ajar,
+On 08/14/2011 04:13 PM, Yalonda Gishtaka wrote:
+> I'm quite desperate
+> to recover this volume.
 
-Thank you for the suggestion.  Unfortunately, running "sudo
-=2E/btrfs-zero-log /dev/mapper/home" results in the same "parent transi=
-d
-verify failed on 647363842048 wanted 210333 found 210302" errors,
-repeated 3 times.
+You should have had backups.
 
-I am running Arch Linux with the latest 3.0.1 kernel on a x86_64 machin=
-e.
-
-Regards,
--Yalonda
-
-On Sun, Aug 14, 2011 at 11:40 PM, Fajar A. Nugraha <list@fajar.net> wro=
-te:
-> On Mon, Aug 15, 2011 at 4:13 AM, Yalonda Gishtaka
-> <yalonda.gishtaka@gmail.com> wrote:
->> Halp!=A0 I was recently forced to power cycle my desktop PC, and upo=
-n
->> restart, the btrfs /home volume would no longer mount, citing the
->> error "BUG: scheduling while atomic: mount /5584/0x000000002".=A0 I
->> retrieved the latest btrfs-progs git repositories from
->> git://git.kernel.org/pub/scm/linux/kernel/git/mason/btrfs-progs-unst=
-able.git
->> and http://git.darksatanic.net/repo/btrfs-progs-unstable.git -b
->> integration-20110805, but when running "sudo ./btrfsck -s 1
->> /dev/mapper/home" from either repo builds, I receive the error "pare=
-nt
->> transid verify failed on 647363842048 wanted 210333 found 210302"
->> (repeated 3x).=A0 I've also tried the flags -s 0, -s 1, and -s 2, al=
-l
->> with the same results.
->
-> Is there something in the log about replaying log? If yes, try btrfs-=
-zero-log
-> https://btrfs.wiki.kernel.org/index.php/Problem_FAQ
->
-> --
-> Fajar
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-btrfs=
-" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at =A0http://vger.kernel.org/majordomo-info.html
->
---
-To unsubscribe from this list: send the line "unsubscribe linux-btrfs" =
-in
-the body of a message to majordomo@vger.kernel.org
-More majordomo info at  http://vger.kernel.org/majordomo-info.html
+Btrfs has no file system repair tool, but it is supposed to be out soon 
+(tm). You will have to wait.

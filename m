@@ -1,39 +1,38 @@
-From: Espen Trydal <espen.trydal@gmail.com>
-Subject: btrfs: failed to read chunk root
-Date: Sun, 14 Aug 2011 22:06:00 +0200
-Message-ID: <CAAaHQFWhDPjPWF_YA2Ag-DcmGXKiPt3_XY79nZrCNn+fB-AjdQ@mail.gmail.com>
-References: <CAAaHQFUUvwo=s2UbLz1ZNBNHb7MukFc8X4J+A0LRwka6KfBvng@mail.gmail.com>
+From: Yalonda Gishtaka <yalonda.gishtaka@gmail.com>
+Subject: Re: corrupted btrfs volume: parent transid verify failed
+Date: Sun, 14 Aug 2011 23:13:33 +0200
+Message-ID: <CABqt_RNd55S6fLgm6nteGq7kvgF9D33m4a_7ahNasSug-_tGeA@mail.gmail.com>
+References: <CABqt_RND8Bd8NJ5cniKP=ySBBh6+p_xyoJh9ZL2aJeR9Sb4qrQ@mail.gmail.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=UTF-8
+Content-Type: text/plain; charset=ISO-8859-1
 To: linux-btrfs@vger.kernel.org
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <CAAaHQFUUvwo=s2UbLz1ZNBNHb7MukFc8X4J+A0LRwka6KfBvng@mail.gmail.com>
+In-Reply-To: <CABqt_RND8Bd8NJ5cniKP=ySBBh6+p_xyoJh9ZL2aJeR9Sb4qrQ@mail.gmail.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hello,
+Halp!=A0 I was recently forced to power cycle my desktop PC, and upon
+restart, the btrfs /home volume would no longer mount, citing the
+error "BUG: scheduling while atomic: mount /5584/0x000000002".=A0 I
+retrieved the latest btrfs-progs git repositories from
+git://git.kernel.org/pub/scm/linux/kernel/git/mason/btrfs-progs-unstabl=
+e.git
+and http://git.darksatanic.net/repo/btrfs-progs-unstable.git -b
+integration-20110805, but when running "sudo ./btrfsck -s 1
+/dev/mapper/home" from either repo builds, I receive the error "parent
+transid verify failed on 647363842048 wanted 210333 found 210302"
+(repeated 3x).=A0 I've also tried the flags -s 0, -s 1, and -s 2, all
+with the same results.
 
-trying out btrfs on my linux installation. I am running Funtoo with
-Linux 3.0 kernel. After a reboot kernel panicked (no access to error
-log since it is my root volume that failed). I get this using a rescue
-cd (2.6.38, btrfs v 0.19) and then trying to mount :
+I take care to complete a full dd copy of my disk every 2 weeks, but
+my previous backup is nearly 2 weeks old and I've put in almost 2
+weeks of effort on my masters thesis since then.=A0 I'm quite desperate
+to recover this volume.=A0 Any help is appreciated, as I've exhausted
+the existing suggestions from the mailing list posts to date.=A0 I've
+tried to ask in #btrfs, but suspect that they're all sleepy bearded
+people :(
 
-[=C2=A0 752.129118] btrfs bad tree block start 0 131072
-[=C2=A0 752.129152] btrfs: failed to read chunk root on sda5
-[=C2=A0 752.132190] btrfs: open_ctree failed
-[ 1132.984600] device label deux devid 1 transid 86 /dev/sdb3
-[ 1171.796682] device fsid 9d42de57e2bebde7-4824b05acb3c538d devid 1
-transid 346 /dev/sda5
-
-Trying btrfsck:
-btrfsck: disk-io.c:721: open_ctree_fd: Assertion `!(!chunk_root->node)'=
- failed.
-
-It had worked alright during the last couple of reboots. Before
-rebooting I created a new btrfs volume which I am able to mount
-without problems in rescue mode.
-
-Thanks for any help,
-Espen
+Regards,
+-Yalonda
 --
 To unsubscribe from this list: send the line "unsubscribe linux-btrfs" =
 in

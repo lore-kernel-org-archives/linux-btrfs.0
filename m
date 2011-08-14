@@ -1,19 +1,22 @@
-From: "krzf83@gmail.com " <krzf83@gmail.com>
-Subject: unlink directory with files (rm -d)
-Date: Sat, 13 Aug 2011 23:59:34 +0200
-Message-ID: <CAJ1PRSnJHJ+fEgYRv3xN+3hzcvtreNZrnqJUszmoK8YjVCn4VA@mail.gmail.com>
-References: <CAJ1PRS=9obyg-FRq=V6pZ7J=tccYA_UXWvNzF-6SaywL6rBY9g@mail.gmail.com>
+From: Andi Kleen <andi@firstfloor.org>
+Subject: Re: Getting a lot of fs-generated information to user space
+Date: Sat, 13 Aug 2011 19:43:22 -0700
+Message-ID: <m2aabclnlh.fsf@firstfloor.org>
+References: <4E451917.6080306@jan-o-sch.net>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=ISO-8859-1
-To: linux-btrfs@vger.kernel.org
+Content-Type: text/plain; charset=us-ascii
+Cc: linux-btrfs <linux-btrfs@vger.kernel.org>,
+	linux-fsdevel@vger.kernel.org
+To: Jan Schmidt <list.btrfs@jan-o-sch.net>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <CAJ1PRS=9obyg-FRq=V6pZ7J=tccYA_UXWvNzF-6SaywL6rBY9g@mail.gmail.com>
+In-Reply-To: <4E451917.6080306@jan-o-sch.net> (Jan Schmidt's message of "Fri,
+	12 Aug 2011 14:14:15 +0200")
 List-ID: <linux-btrfs.vger.kernel.org>
 
-I wonder if it would be possible to implement instant unlinking
-directory with files in it. Since btrfs is based on b trees it could
-be possible. Filesystem would have to "loose" all information on
-directory and object in it, and allow overwriting this information.
-This would be great feature, because everyone knows that recursive
-deleting large directories, with milions of files require huge io
-traffic.
+
+An alternative to cooking up something custom would be to use relayfs.
+
+-Andi
+
+-- 
+ak@linux.intel.com -- Speaking for myself only

@@ -1,68 +1,55 @@
-From: C Anthony Risinger <anthony@xtfx.me>
+From: Roman Mamedov <rm@romanrm.ru>
 Subject: Re: licenses (for apple OSX and others)?
-Date: Mon, 15 Aug 2011 00:54:18 -0500
-Message-ID: <CAGAVQTHxUDst6rO8=y4yzY1aU3+xiZHgt36wqLm_Ra=cm2j1FQ@mail.gmail.com>
+Date: Mon, 15 Aug 2011 13:40:51 +0600
+Message-ID: <20110815134051.7781b52c@natsu>
 References: <CAPr7RtVfNtNno=7KTJvyvNFnkumHd3PiJSo8eoswBZT-0vwFQA@mail.gmail.com>
- <CANZ96zU5f_2cCZGstHsSnuWrC6y0tXh=3kPhkuO5Xs+goKxP+A@mail.gmail.com>
+	<CANZ96zU5f_2cCZGstHsSnuWrC6y0tXh=3kPhkuO5Xs+goKxP+A@mail.gmail.com>
+	<CAGAVQTHxUDst6rO8=y4yzY1aU3+xiZHgt36wqLm_Ra=cm2j1FQ@mail.gmail.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=UTF-8
-Cc: ivo welch <ivowel@gmail.com>, linux-btrfs@vger.kernel.org
-To: Billy Crook <billycrook@gmail.com>
+Content-Type: multipart/signed; micalg=PGP-SHA1;
+ boundary="Sig_/28fMITYtzk4MinUKZHwJbEs"; protocol="application/pgp-signature"
+Cc: Billy Crook <billycrook@gmail.com>, ivo welch <ivowel@gmail.com>,
+	linux-btrfs@vger.kernel.org
+To: C Anthony Risinger <anthony@xtfx.me>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <CANZ96zU5f_2cCZGstHsSnuWrC6y0tXh=3kPhkuO5Xs+goKxP+A@mail.gmail.com>
+In-Reply-To: <CAGAVQTHxUDst6rO8=y4yzY1aU3+xiZHgt36wqLm_Ra=cm2j1FQ@mail.gmail.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Sun, Aug 14, 2011 at 9:53 PM, Billy Crook <billycrook@gmail.com> wro=
-te:
-> On Sun, Aug 14, 2011 at 19:34, ivo welch <ivowel@gmail.com> wrote:
->> curiosity question---could btrfs be licensed in multiple ways to all=
-ow
->> Apple and other vendors to adopt it?
->
-> Great question, Ivo.
->
-> And it turns out, btrfs is already licensed to permit commercial use,
-> integration into other products, and resale.
->
-> The license of btrfs isn't stopping Apple or Microsoft from using
-> btrfs. =C2=A0All licenses have terms (You should read the terms on so=
-me of
-> Apple and Microsoft's software), but so long as they don't violate an=
-y
-> terms, they are welcome to use all parts of the btrfs code for their
-> corporation's profit, and their customer's benefit.
+--Sig_/28fMITYtzk4MinUKZHwJbEs
+Content-Type: text/plain; charset=US-ASCII
+Content-Transfer-Encoding: quoted-printable
 
-=2E.. and while some will certainly argue one way or another, this is a
-case where (IMO) the code for btrfs (as a module) is clearly distinct
-from the OSX kernel (as it was not even designed for it originally)
-and would not constitute far reaching public release of Apple IP ...
-though tbh i know nothing about OSX kernel and whether it support
-things like dynamic modules, so i could be mistaken ...
+On Mon, 15 Aug 2011 00:54:18 -0500
+C Anthony Risinger <anthony@xtfx.me> wrote:
 
-=2E.. but im confident there is a way Apple could wire it up so IP
-release could be very small or nonexistent.  or maintain a "port" if
-they so wished.
+> but meh, who really knows anyway; it certainly would be incredibly
+> cool to have a common denominator greater than FAT, especially since
+> commodity flash chips are 8-16GB now.
 
-the real question is whether or not they would even desire using it
-with infrastructure around HFS+/etc ... in my observations Apple and
-friends are incredibly ... ehm ... selective -- the hardware and
-everything above it *must* have the `Seal of Approval` -- maybe to
-reduce/isolate their problem pool or maintain it's clique-crazed
-"chic" aura :-), i dont know, but it's not for the end-user's
-flexibility -- that's for sure.  the glaring example to me is
-virtually the entire mobile/handheld/device industry deciding on
-micro-USB as the power+data xchange connection *except* one infamous
-product line ...
+Consider using UDF: http://homepage.mac.com/wenguangwang/myhome/udf.html#wh=
+y-udf
+Yes, it's not just for optical disks, it also works on flash media and even=
+ HDDs.
 
-but meh, who really knows anyway; it certainly would be incredibly
-cool to have a common denominator greater than FAT, especially since
-commodity flash chips are 8-16GB now.
+As for Apple, who gives a flying fsck about them and their proprietarist pr=
+oblems. They are more than free to implement a btrfs module for themselves =
+from scratch with any license they desire, after all it's not like btrfs fo=
+rmat is secretive or patented.
 
 --=20
+With respect,
+Roman
 
-C Anthony
---
-To unsubscribe from this list: send the line "unsubscribe linux-btrfs" =
-in
-the body of a message to majordomo@vger.kernel.org
-More majordomo info at  http://vger.kernel.org/majordomo-info.html
+--Sig_/28fMITYtzk4MinUKZHwJbEs
+Content-Type: application/pgp-signature; name=signature.asc
+Content-Disposition: attachment; filename=signature.asc
+
+-----BEGIN PGP SIGNATURE-----
+Version: GnuPG v1.4.11 (GNU/Linux)
+
+iEYEARECAAYFAk5IzYMACgkQTLKSvz+PZwijyACfbW7UbqkQWTl48YysW6/7p/Gw
+n6kAnAtsxgIpm5OXLyYK1F8qtnt5pdoj
+=RU3l
+-----END PGP SIGNATURE-----
+
+--Sig_/28fMITYtzk4MinUKZHwJbEs--

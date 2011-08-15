@@ -1,117 +1,84 @@
 From: Jeff Mahoney <jeffm@suse.com>
-Subject: [patch v2 2/9] btrfs: Catch locking failures in {set,clear}_extent_bit
-Date: Mon, 15 Aug 2011 15:50:44 -0400
-Message-ID: <20110815195232.162552691@suse.com>
+Subject: [patch v2 8/9] btrfs: Push up btrfs_pin_extent failures
+Date: Mon, 15 Aug 2011 15:50:50 -0400
+Message-ID: <20110815195233.066845613@suse.com>
 References: <20110815195042.559654068@suse.com>
 To: Btrfs Development List <linux-btrfs@vger.kernel.org>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
 List-ID: <linux-btrfs.vger.kernel.org>
 
- The *_state functions can only return 0 or -EEXIST. This patch addresses
- the cases where those functions return -EEXIST, representing a locking
- failure. It handles them by panicking with an appropriate error message.
+ btrfs_pin_extent looks up a block group and then calls pin_down_extent
+ with it. If the lookup fails, it should return -ENOENT to allow callers
+ to handle the error condition. For the three existing callers, it is
+ a logic error if the lookup fails and a panic will occur.
 
 Signed-off-by: Jeff Mahoney <jeffm@suse.com>
 ---
- fs/btrfs/extent_io.c |   36 +++++++++++++++++++++++++-----------
- fs/btrfs/extent_io.h |    6 ++++++
- 2 files changed, 31 insertions(+), 11 deletions(-)
+ fs/btrfs/extent-tree.c |   20 +++++++++++++++-----
+ fs/btrfs/tree-log.c    |   10 +++++++---
+ 2 files changed, 22 insertions(+), 8 deletions(-)
 
---- a/fs/btrfs/extent_io.c
-+++ b/fs/btrfs/extent_io.c
-@@ -531,7 +531,10 @@ hit_next:
- 		prealloc = alloc_extent_state_atomic(prealloc);
- 		BUG_ON(!prealloc);
- 		err = split_state(tree, state, prealloc, start);
--		BUG_ON(err == -EEXIST);
-+		if (err)
-+			btrfs_panic(tree_fs_info(tree), err, "Locking error: "
-+				    "Extent tree was modified by another "
-+				    "thread while locked.");
- 		prealloc = NULL;
- 		if (err)
- 			goto out;
-@@ -553,7 +556,10 @@ hit_next:
- 		prealloc = alloc_extent_state_atomic(prealloc);
- 		BUG_ON(!prealloc);
- 		err = split_state(tree, state, prealloc, end + 1);
--		BUG_ON(err == -EEXIST);
-+		if (err)
-+			btrfs_panic(tree_fs_info(tree), err, "Locking error: "
-+				    "Extent tree was modified by another "
-+				    "thread while locked.");
- 		if (wake)
- 			wake_up(&state->wq);
- 
-@@ -736,8 +742,11 @@ again:
- 		prealloc = alloc_extent_state_atomic(prealloc);
- 		BUG_ON(!prealloc);
- 		err = insert_state(tree, prealloc, start, end, &bits);
-+		if (err)
-+			btrfs_panic(tree_fs_info(tree), err, "Locking error: "
-+				    "Extent tree was modified by another "
-+				    "thread while locked.");
- 		prealloc = NULL;
--		BUG_ON(err == -EEXIST);
- 		goto out;
- 	}
- 	state = rb_entry(node, struct extent_state, rb_node);
-@@ -803,7 +812,10 @@ hit_next:
- 		prealloc = alloc_extent_state_atomic(prealloc);
- 		BUG_ON(!prealloc);
- 		err = split_state(tree, state, prealloc, start);
--		BUG_ON(err == -EEXIST);
-+		if (err)
-+			btrfs_panic(tree_fs_info(tree), err, "Locking error: "
-+				    "Extent tree was modified by another "
-+				    "thread while locked.");
- 		prealloc = NULL;
- 		if (err)
- 			goto out;
-@@ -840,12 +852,11 @@ hit_next:
- 		 */
- 		err = insert_state(tree, prealloc, start, this_end,
- 				   &bits);
--		BUG_ON(err == -EEXIST);
--		if (err) {
--			free_extent_state(prealloc);
--			prealloc = NULL;
--			goto out;
--		}
-+		if (err)
-+			btrfs_panic(tree_fs_info(tree), err, "Locking error: "
-+				    "Extent tree was modified by another "
-+				    "thread while locked.");
+--- a/fs/btrfs/extent-tree.c
++++ b/fs/btrfs/extent-tree.c
+@@ -2075,8 +2075,14 @@ static int run_one_delayed_ref(struct bt
+ 		BUG_ON(extent_op);
+ 		head = btrfs_delayed_node_to_head(node);
+ 		if (insert_reserved) {
+-			btrfs_pin_extent(root, node->bytenr,
+-					 node->num_bytes, 1);
++			ret = btrfs_pin_extent(root, node->bytenr,
++					       node->num_bytes, 1);
++			if (ret)
++				btrfs_panic(root->fs_info, ret,
++					    "Cannot pin extent in range "
++					    "%llu(%llu)\n",
++					    node->bytenr, node->num_bytes);
 +
- 		cache_state(prealloc, cached_state);
- 		prealloc = NULL;
- 		start = this_end + 1;
-@@ -867,7 +878,10 @@ hit_next:
- 		prealloc = alloc_extent_state_atomic(prealloc);
- 		BUG_ON(!prealloc);
- 		err = split_state(tree, state, prealloc, end + 1);
--		BUG_ON(err == -EEXIST);
-+		if (err)
-+			btrfs_panic(tree_fs_info(tree), err, "Locking error: "
-+				    "Extent tree was modified by another "
-+				    "thread while locked.");
+ 			if (head->is_data) {
+ 				ret = btrfs_del_csums(trans, root,
+ 						      node->bytenr,
+@@ -4205,7 +4211,8 @@ int btrfs_pin_extent(struct btrfs_root *
+ 	struct btrfs_block_group_cache *cache;
  
- 		set_state_bits(tree, prealloc, &bits);
- 		cache_state(prealloc, cached_state);
---- a/fs/btrfs/extent_io.h
-+++ b/fs/btrfs/extent_io.h
-@@ -159,6 +159,12 @@ static inline int extent_compress_type(u
- 	return bio_flags >> EXTENT_BIO_FLAG_SHIFT;
- }
+ 	cache = btrfs_lookup_block_group(root->fs_info, bytenr);
+-	BUG_ON(!cache);
++	if (cache == NULL)
++		return -ENOENT;
  
-+static inline struct btrfs_fs_info *
-+tree_fs_info(struct extent_io_tree *tree)
-+{
-+	return btrfs_sb(tree->mapping->host->i_sb)->fs_info;
-+}
-+
- struct extent_map_tree;
+ 	pin_down_extent(root, cache, bytenr, num_bytes, reserved);
  
- typedef struct extent_map *(get_extent_t)(struct inode *inode,
+@@ -4765,8 +4772,11 @@ int btrfs_free_extent(struct btrfs_trans
+ 	if (root_objectid == BTRFS_TREE_LOG_OBJECTID) {
+ 		WARN_ON(owner >= BTRFS_FIRST_FREE_OBJECTID);
+ 		/* unlocks the pinned mutex */
+-		btrfs_pin_extent(root, bytenr, num_bytes, 1);
+-		ret = 0;
++		ret = btrfs_pin_extent(root, bytenr, num_bytes, 1);
++		if (ret)
++			btrfs_panic(root->fs_info, ret, "Cannot pin "
++				    "extent in range %llu(%llu)\n",
++				    bytenr, num_bytes);
+ 	} else if (owner < BTRFS_FIRST_FREE_OBJECTID) {
+ 		ret = btrfs_add_delayed_tree_ref(trans, bytenr, num_bytes,
+ 					parent, root_objectid, (int)owner,
+--- a/fs/btrfs/tree-log.c
++++ b/fs/btrfs/tree-log.c
+@@ -275,9 +275,13 @@ static int process_one_buffer(struct btr
+ 			      struct extent_buffer *eb,
+ 			      struct walk_control *wc, u64 gen)
+ {
+-	if (wc->pin)
+-		btrfs_pin_extent(log->fs_info->extent_root,
+-				 eb->start, eb->len, 0);
++	if (wc->pin) {
++		int ret = btrfs_pin_extent(log->fs_info->extent_root,
++					   eb->start, eb->len, 0);
++		if (ret)
++			btrfs_panic(log->fs_info, ret, "Cannot pin extent in "
++				    "range %llu(%llu)\n", eb->start, eb->len);
++	}
+ 
+ 	if (btrfs_buffer_uptodate(eb, gen)) {
+ 		if (wc->write)
 
 

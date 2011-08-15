@@ -1,50 +1,69 @@
-From: Jeff Mahoney <jeffm@suse.de>
-Subject: [PATCH] btrfs: btrfs_permission's RO check shouldn't apply to device
- nodes
-Date: Mon, 15 Aug 2011 13:27:21 -0400
-Message-ID: <4E4956F9.3020009@suse.de>
+From: Billy Crook <billycrook@gmail.com>
+Subject: Re: licenses (for apple OSX and others)?
+Date: Mon, 15 Aug 2011 12:39:45 -0500
+Message-ID: <CANZ96zW1wW7uaKP2wkagH7avW-RDouoP-M6GtE6oFSYW=kUHfw@mail.gmail.com>
+References: <CAPr7RtVfNtNno=7KTJvyvNFnkumHd3PiJSo8eoswBZT-0vwFQA@mail.gmail.com>
+ <1313420602-sup-9846@shiny>
 Mime-Version: 1.0
 Content-Type: text/plain; charset=ISO-8859-1
-To: Btrfs Development List <linux-btrfs@vger.kernel.org>
+Cc: ivo welch <ivowel@gmail.com>,
+	linux-btrfs <linux-btrfs@vger.kernel.org>
+To: Chris Mason <chris.mason@oracle.com>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
+In-Reply-To: <1313420602-sup-9846@shiny>
 List-ID: <linux-btrfs.vger.kernel.org>
 
- This patch tightens the read-only access checks in btrfs_permission to
- match the constraints in inode_permission. Currently, even though the
- device node itself will be unmodified, read-write access to device nodes
- is denied to when the device node resides on a read-only subvolume or a
- is a file that has been marked read-only by the btrfs conversion utility.
+Maybe Apple and Microsoft can write a GPL FUSE-like wrapper for btrfs.
 
- With this patch applied, the check only affects regular files,
- directories, and symlinks. It also restructures the code a bit so that
- we don't duplicate the MAY_WRITE check for both tests.
-
-Signed-off-by: Jeff Mahoney <jeffm@suse.com>
----
- fs/btrfs/inode.c |   12 ++++++++----
- 1 file changed, 8 insertions(+), 4 deletions(-)
-
---- a/fs/btrfs/inode.c
-+++ b/fs/btrfs/inode.c
-@@ -7354,11 +7354,15 @@ static int btrfs_set_page_dirty(struct p
- static int btrfs_permission(struct inode *inode, int mask)
- {
- 	struct btrfs_root *root = BTRFS_I(inode)->root;
-+	umode_t mode = inode->i_mode;
- 
--	if (btrfs_root_readonly(root) && (mask & MAY_WRITE))
--		return -EROFS;
--	if ((BTRFS_I(inode)->flags & BTRFS_INODE_READONLY) && (mask & MAY_WRITE))
--		return -EACCES;
-+	if (mask & MAY_WRITE &&
-+	    (S_ISREG(mode) || S_ISDIR(mode) || S_ISLNK(mode))) {
-+		if (btrfs_root_readonly(root))
-+			return -EROFS;
-+		if (BTRFS_I(inode)->flags & BTRFS_INODE_READONLY)
-+			return -EACCES;
-+	}
- 	return generic_permission(inode, mask);
- }
- 
-Jeff Mahoney
-SUSE Labs
+On Mon, Aug 15, 2011 at 10:15, Chris Mason <chris.mason@oracle.com> wro=
+te:
+> Excerpts from ivo welch's message of 2011-08-14 20:34:14 -0400:
+>> curiosity question---could btrfs be licensed in multiple ways to all=
+ow
+>> Apple and other vendors to adopt it? =A0as end users, having one goo=
+d
+>> file system that works everywhere as a main root system would be
+>> heaven...
+>
+> One of the ways you can tell people like the project is when they wis=
+h
+> they could use it everywhere. =A0Thanks for this question ;)
+>
+> There are a few problems with relicensing btrfs under something other
+> than the GPL.
+>
+> Large parts of the btrfs code that deal with the VFS were copied from
+> ext2 and ext3. =A0These are GPL and would have to be reimplemented. =A0=
+The
+> code that deals with the page cache was also lifted and adapted from
+> different parts of the kernel, and it is surprising how far the roots=
+ of
+> the page cache spread into the rest of the code.
+>
+> More importantly, btrfs has major contributions from many companies a=
+nd
+> individuals. =A0I intentionally set things up so there wouldn't be a
+> single place you could go and say 'xyz' owns the btrfs code, we'll
+> ask them for permission.
+>
+> Just like most of the kernel, we have maintainers and contributors,
+> but not a single owner. =A0This is a big part of why others feel
+> comfortable contributing to btrfs, and to be honest it's one of my
+> favorite parts of the project.
+>
+> None of this prevents others from using btrfs outside of linux, but i=
+f
+> they do it'll be under the GPL.
+>
+> -chris
+> --
+> To unsubscribe from this list: send the line "unsubscribe linux-btrfs=
+" in
+> the body of a message to majordomo@vger.kernel.org
+> More majordomo info at =A0http://vger.kernel.org/majordomo-info.html
+>
+--
+To unsubscribe from this list: send the line "unsubscribe linux-btrfs" =
+in
+the body of a message to majordomo@vger.kernel.org
+More majordomo info at  http://vger.kernel.org/majordomo-info.html

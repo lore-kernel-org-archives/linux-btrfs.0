@@ -1,149 +1,123 @@
 From: Jeff Mahoney <jeffm@suse.com>
-Subject: [patch v2 1/9] btrfs: Add btrfs_panic()
-Date: Mon, 15 Aug 2011 15:50:43 -0400
-Message-ID: <20110815195232.022137466@suse.com>
+Subject: [patch v2 9/9] btrfs: Push up non-looped btrfs_start_transaction failures
+Date: Mon, 15 Aug 2011 15:50:51 -0400
+Message-ID: <20110815195233.207781853@suse.com>
 References: <20110815195042.559654068@suse.com>
 To: Btrfs Development List <linux-btrfs@vger.kernel.org>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
 List-ID: <linux-btrfs.vger.kernel.org>
 
- As part of the effort to eliminate BUG_ON as an error handling
- technique, we need to determine which errors are actual logic errors,
- which are on-disk corruption, and which are normal runtime errors
- e.g. -ENOMEM.
+ This patch handles btrfs_start_transaction failures that don't occur
+ in a loop and are obvious to simply push up. In all cases except the
+ mark_garbage_root case, the error is already handled by BUG_ON in the
+ caller.
 
- Annotating these error cases is helpful to understand and report them.
-
- This patch adds a btrfs_panic() routine that will either panic
- or BUG depending on the new -ofatal_errors={panic,bug} mount option.
- Since there are still so many BUG_ONs, it defaults to BUG for now but I
- expect that to change once the error handling effort has made
- significant progress.
-
+ Update v2: This version also checks the returns from btrfs_drop_snapshot.
 
 Signed-off-by: Jeff Mahoney <jeffm@suse.com>
 ---
- fs/btrfs/ctree.h |   11 +++++++++++
- fs/btrfs/super.c |   47 ++++++++++++++++++++++++++++++++++++++++++++++-
- 2 files changed, 57 insertions(+), 1 deletion(-)
+ fs/btrfs/extent-tree.c |    6 +++++-
+ fs/btrfs/relocation.c  |    9 ++++++---
+ fs/btrfs/transaction.c |    6 ++++--
+ fs/btrfs/tree-log.c    |    5 ++++-
+ fs/btrfs/volumes.c     |    3 ++-
+ 5 files changed, 21 insertions(+), 8 deletions(-)
 
---- a/fs/btrfs/ctree.h
-+++ b/fs/btrfs/ctree.h
-@@ -1363,6 +1363,7 @@ struct btrfs_ioctl_defrag_range_args {
- #define BTRFS_MOUNT_ENOSPC_DEBUG	 (1 << 15)
- #define BTRFS_MOUNT_AUTO_DEFRAG		(1 << 16)
- #define BTRFS_MOUNT_INODE_MAP_CACHE	(1 << 17)
-+#define BTRFS_MOUNT_PANIC_ON_FATAL_ERROR	(1 << 18)
+--- a/fs/btrfs/extent-tree.c
++++ b/fs/btrfs/extent-tree.c
+@@ -6319,7 +6319,11 @@ int btrfs_drop_snapshot(struct btrfs_roo
+ 	}
  
- #define btrfs_clear_opt(o, opt)		((o) &= ~BTRFS_MOUNT_##opt)
- #define btrfs_set_opt(o, opt)		((o) |= BTRFS_MOUNT_##opt)
-@@ -2650,6 +2651,16 @@ do {								\
- 		__btrfs_std_error((fs_info), __func__, __LINE__, (errno));\
- } while (0)
+ 	trans = btrfs_start_transaction(tree_root, 0);
+-	BUG_ON(IS_ERR(trans));
++	if (IS_ERR(trans)) {
++		kfree(wc);
++		btrfs_free_path(path);
++		return PTR_ERR(trans);
++	}
  
-+void __btrfs_panic(struct btrfs_fs_info *fs_info, const char *function,
-+		   unsigned int line, int errno, const char *fmt, ...);
-+
-+#define btrfs_panic(fs_info, errno, fmt, args...)			\
-+do {									\
-+	struct btrfs_fs_info *_i = (fs_info);				\
-+	__btrfs_panic(_i, __func__, __LINE__, errno, fmt, ##args);	\
-+	BUG_ON(!(_i->mount_opt & BTRFS_MOUNT_PANIC_ON_FATAL_ERROR));	\
-+} while (0)
-+
- /* acl.c */
- #ifdef CONFIG_BTRFS_FS_POSIX_ACL
- struct posix_acl *btrfs_get_acl(struct inode *inode, int type);
---- a/fs/btrfs/super.c
-+++ b/fs/btrfs/super.c
-@@ -74,6 +74,9 @@ static const char *btrfs_decode_error(st
- 	case -EROFS:
- 		errstr = "Readonly filesystem";
- 		break;
-+	case -EEXIST:
-+		errstr = "Object already exists";
-+		break;
- 	default:
- 		if (nbuf) {
- 			if (snprintf(nbuf, 16, "error %d", -errno) >= 0)
-@@ -143,6 +146,33 @@ void __btrfs_std_error(struct btrfs_fs_i
- 	btrfs_handle_error(fs_info);
- }
+ 	if (block_rsv)
+ 		trans->block_rsv = block_rsv;
+--- a/fs/btrfs/relocation.c
++++ b/fs/btrfs/relocation.c
+@@ -2251,7 +2251,8 @@ again:
+ 		} else {
+ 			list_del_init(&reloc_root->root_list);
+ 		}
+-		btrfs_drop_snapshot(reloc_root, rc->block_rsv, 0);
++		ret = btrfs_drop_snapshot(reloc_root, rc->block_rsv, 0);
++		BUG_ON(ret < 0);
+ 	}
  
-+/*
-+ * __btrfs_panic decodes unexpected, fatal errors from the caller,
-+ * issues an alert, and either panics or BUGs, depending on mount options.
-+ */
-+void __btrfs_panic(struct btrfs_fs_info *fs_info, const char *function,
-+		   unsigned int line, int errno, const char *fmt, ...)
-+{
-+	struct super_block *sb = fs_info->sb;
-+	char nbuf[16];
-+	const char *errstr;
-+	struct va_format vaf = { .fmt = fmt };
-+	va_list args;
-+
-+	va_start(args, fmt);
-+	vaf.va = &args;
-+
-+	errstr = btrfs_decode_error(fs_info, errno, nbuf);
-+	if (fs_info->mount_opt & BTRFS_MOUNT_PANIC_ON_FATAL_ERROR)
-+		panic(KERN_CRIT "BTRFS panic (device %s) in %s:%d: %pV (%s)\n",
-+			sb->s_id, function, line, &vaf, errstr);
-+
-+	printk(KERN_CRIT "BTRFS panic (device %s) in %s:%d: %pV (%s)\n",
-+	       sb->s_id, function, line, &vaf, errstr);
-+	va_end(args);
-+	/* Caller calls BUG() */
-+}
-+
- static void btrfs_put_super(struct super_block *sb)
+ 	if (found) {
+@@ -4096,7 +4097,8 @@ static noinline_for_stack int mark_garba
+ 	int ret;
+ 
+ 	trans = btrfs_start_transaction(root->fs_info->tree_root, 0);
+-	BUG_ON(IS_ERR(trans));
++	if (IS_ERR(trans))
++		return PTR_ERR(trans);
+ 
+ 	memset(&root->root_item.drop_progress, 0,
+ 		sizeof(root->root_item.drop_progress));
+@@ -4176,7 +4178,8 @@ int btrfs_recover_relocation(struct btrf
+ 					err = ret;
+ 					goto out;
+ 				}
+-				mark_garbage_root(reloc_root);
++				ret = mark_garbage_root(reloc_root);
++				BUG_ON(ret < 0);
+ 			}
+ 		}
+ 
+--- a/fs/btrfs/transaction.c
++++ b/fs/btrfs/transaction.c
+@@ -1400,6 +1400,7 @@ int btrfs_commit_transaction(struct btrf
+  */
+ int btrfs_clean_old_snapshots(struct btrfs_root *root)
  {
- 	struct btrfs_root *root = btrfs_sb(sb);
-@@ -162,7 +192,7 @@ enum {
- 	Opt_notreelog, Opt_ratio, Opt_flushoncommit, Opt_discard,
- 	Opt_space_cache, Opt_clear_cache, Opt_user_subvol_rm_allowed,
- 	Opt_enospc_debug, Opt_subvolrootid, Opt_defrag,
--	Opt_inode_cache, Opt_err,
-+	Opt_inode_cache, Opt_fatal_errors, Opt_err,
- };
++	int ret;
+ 	LIST_HEAD(list);
+ 	struct btrfs_fs_info *fs_info = root->fs_info;
  
- static match_table_t tokens = {
-@@ -195,6 +225,7 @@ static match_table_t tokens = {
- 	{Opt_subvolrootid, "subvolrootid=%d"},
- 	{Opt_defrag, "autodefrag"},
- 	{Opt_inode_cache, "inode_cache"},
-+	{Opt_fatal_errors, "fatal_errors=%s"},
- 	{Opt_err, NULL},
- };
+@@ -1415,9 +1416,10 @@ int btrfs_clean_old_snapshots(struct btr
  
-@@ -381,6 +412,18 @@ int btrfs_parse_options(struct btrfs_roo
- 			printk(KERN_INFO "btrfs: enabling auto defrag");
- 			btrfs_set_opt(info->mount_opt, AUTO_DEFRAG);
- 			break;
-+		case Opt_fatal_errors:
-+			if (strcmp(args[0].from, "panic") == 0)
-+				btrfs_set_opt(info->mount_opt,
-+					      PANIC_ON_FATAL_ERROR);
-+			else if (strcmp(args[0].from, "bug") == 0)
-+				btrfs_clear_opt(info->mount_opt,
-+					      PANIC_ON_FATAL_ERROR);
-+			else {
-+				ret = -EINVAL;
-+				goto out;
-+			}
-+			break;
- 		case Opt_err:
- 			printk(KERN_INFO "btrfs: unrecognized mount option "
- 			       "'%s'\n", p);
-@@ -729,6 +772,8 @@ static int btrfs_show_options(struct seq
- 		seq_puts(seq, ",autodefrag");
- 	if (btrfs_test_opt(root, INODE_MAP_CACHE))
- 		seq_puts(seq, ",inode_cache");
-+	if (btrfs_test_opt(root, PANIC_ON_FATAL_ERROR))
-+		seq_puts(seq, ",fatal_errors=panic");
+ 		if (btrfs_header_backref_rev(root->node) <
+ 		    BTRFS_MIXED_BACKREF_REV)
+-			btrfs_drop_snapshot(root, NULL, 0);
++			ret = btrfs_drop_snapshot(root, NULL, 0);
+ 		else
+-			btrfs_drop_snapshot(root, NULL, 1);
++			ret = btrfs_drop_snapshot(root, NULL, 1);
++		BUG_ON(ret < 0);
+ 	}
  	return 0;
  }
+--- a/fs/btrfs/tree-log.c
++++ b/fs/btrfs/tree-log.c
+@@ -3151,7 +3151,10 @@ int btrfs_recover_log_trees(struct btrfs
+ 	fs_info->log_root_recovering = 1;
+ 
+ 	trans = btrfs_start_transaction(fs_info->tree_root, 0);
+-	BUG_ON(IS_ERR(trans));
++	if (IS_ERR(trans)) {
++		btrfs_free_path(path);
++		return PTR_ERR(trans);
++	}
+ 
+ 	wc.trans = trans;
+ 	wc.pin = 1;
+--- a/fs/btrfs/volumes.c
++++ b/fs/btrfs/volumes.c
+@@ -1876,7 +1876,8 @@ static int btrfs_relocate_chunk(struct b
+ 		return ret;
+ 
+ 	trans = btrfs_start_transaction(root, 0);
+-	BUG_ON(IS_ERR(trans));
++	if (IS_ERR(trans))
++		return PTR_ERR(trans);
+ 
+ 	lock_chunks(root);
  
 
 

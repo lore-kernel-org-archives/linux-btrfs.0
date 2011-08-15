@@ -1,25 +1,30 @@
-From: Chris Mason <chris.mason@oracle.com>
-Subject: Re: unlink directory with files (rm -d)
-Date: Mon, 15 Aug 2011 11:58:50 -0400
-Message-ID: <1313423885-sup-4133@shiny>
-References: <CAJ1PRS=9obyg-FRq=V6pZ7J=tccYA_UXWvNzF-6SaywL6rBY9g@mail.gmail.com> <CAJ1PRSnJHJ+fEgYRv3xN+3hzcvtreNZrnqJUszmoK8YjVCn4VA@mail.gmail.com>
-Content-Type: text/plain; charset=UTF-8
-Cc: linux-btrfs <linux-btrfs@vger.kernel.org>
-To: "krzf83@gmail.com" <krzf83@gmail.com>
+From: Jeff Mahoney <jeffm@suse.de>
+Subject: Re: Device files on read-only file systems?
+Date: Mon, 15 Aug 2011 13:19:06 -0400
+Message-ID: <4E49550A.1040204@suse.de>
+References: <4E491AFC.5030403@suse.de> <1313420293-sup-2507@shiny>
+Mime-Version: 1.0
+Content-Type: text/plain; charset=UTF-8; format=flowed
+Cc: Btrfs Development List <linux-btrfs@vger.kernel.org>
+To: Chris Mason <chris.mason@oracle.com>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-reply-to: <CAJ1PRSnJHJ+fEgYRv3xN+3hzcvtreNZrnqJUszmoK8YjVCn4VA@mail.gmail.com>
+In-Reply-To: <1313420293-sup-2507@shiny>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Excerpts from krzf83@gmail.com's message of 2011-08-13 17:59:34 -0400:
-> I wonder if it would be possible to implement instant unlinking
-> directory with files in it. Since btrfs is based on b trees it could
-> be possible. Filesystem would have to "loose" all information on
-> directory and object in it, and allow overwriting this information.
-> This would be great feature, because everyone knows that recursive
-> deleting large directories, with milions of files require huge io
-> traffic.
+On 08/15/2011 10:58 AM, Chris Mason wrote:
+> Excerpts from Jeff Mahoney's message of 2011-08-15 09:11:24 -0400:
+>> Hi all -
+>>
+>> btrfs_permission currently returns -EROFS when the root is set read-only
+>> and the open is requested read-write. It doesn't make an exception for
+>> device files. Is this intentional?
+>
+> No, definitely not intentional.
 
-I'm afraid the huge IO traffic is required in order to find the files in
-the directory and free all the blocks reference by those files.
+Ok. I'll post a patch in a few minutes.
 
--chris
+-Jeff
+
+-- 
+Jeff Mahoney
+SUSE Labs

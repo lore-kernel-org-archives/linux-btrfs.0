@@ -1,148 +1,95 @@
 From: Jeff Mahoney <jeffm@suse.com>
-Subject: [patch v2 3/9] btrfs: Push up set_extent_bit errors to callers
-Date: Mon, 15 Aug 2011 15:50:45 -0400
-Message-ID: <20110815195232.308627168@suse.com>
+Subject: [patch v2 5/9] btrfs: Push up clear_extent_bit errors to callers
+Date: Mon, 15 Aug 2011 15:50:47 -0400
+Message-ID: <20110815195232.602164221@suse.com>
 References: <20110815195042.559654068@suse.com>
 To: Btrfs Development List <linux-btrfs@vger.kernel.org>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
 List-ID: <linux-btrfs.vger.kernel.org>
 
- In the locking case, set_extent_bit can return -EEXIST but callers
- already handle that.
+ clear_extent_bit can fail with -ENOMEM for a specific case but will BUG
+ on other memory allocation failures.
 
- In the non-locking case, it can't fail. Memory allocation failures are
- handled by BUG_ON.
-
- This patch pushes up the BUG_ONs from set_extent_bit to callers, except
- where -ENOMEM can't occur (e.g. __GFP_WAIT && __GFP_NOFAIL).
-
- Update v2: Changed cases of BUG_ON(ret) to BUG_ON(ret < 0)
+ This patch returns -ENOMEM for memory allocation failures and handles them
+ with BUG_ON in callers which don't handle it already.
 
 Signed-off-by: Jeff Mahoney <jeffm@suse.com>
----
- fs/btrfs/extent-tree.c |   37 +++++++++++++++++++++++-----------
- fs/btrfs/extent_io.c   |   52 ++++++++++++++++++++++++++++++++++++-------------
- fs/btrfs/file-item.c   |    3 +-
- fs/btrfs/inode.c       |   25 ++++++++++++++++-------
- fs/btrfs/ioctl.c       |    5 ++--
- fs/btrfs/relocation.c  |   21 ++++++++++++-------
- 6 files changed, 99 insertions(+), 44 deletions(-)
 
+---
+ fs/btrfs/disk-io.c          |    7 ++-
+ fs/btrfs/extent-tree.c      |   14 ++++--
+ fs/btrfs/extent_io.c        |   56 ++++++++++++++++++--------
+ fs/btrfs/file.c             |   10 ++--
+ fs/btrfs/free-space-cache.c |   20 +++++----
+ fs/btrfs/inode.c            |   92 +++++++++++++++++++++++++++-----------------
+ fs/btrfs/ioctl.c            |    9 ++--
+ fs/btrfs/relocation.c       |    5 +-
+ fs/btrfs/transaction.c      |    4 +
+ fs/btrfs/tree-log.c         |    5 +-
+ 10 files changed, 142 insertions(+), 80 deletions(-)
+
+--- a/fs/btrfs/disk-io.c
++++ b/fs/btrfs/disk-io.c
+@@ -2981,7 +2981,9 @@ static int btrfs_destroy_marked_extents(
+ 		if (ret)
+ 			break;
+ 
+-		clear_extent_bits(dirty_pages, start, end, mark, GFP_NOFS);
++		ret = clear_extent_bits(dirty_pages, start, end, mark,
++					GFP_NOFS);
++		BUG_ON(ret < 0);
+ 		while (start <= end) {
+ 			index = start >> PAGE_CACHE_SHIFT;
+ 			start = (u64)(index + 1) << PAGE_CACHE_SHIFT;
+@@ -3042,7 +3044,8 @@ static int btrfs_destroy_pinned_extent(s
+ 							 end + 1 - start,
+ 							 NULL);
+ 
+-		clear_extent_dirty(unpin, start, end, GFP_NOFS);
++		ret = clear_extent_dirty(unpin, start, end, GFP_NOFS);
++		BUG_ON(ret < 0);
+ 		btrfs_error_unpin_extent_range(root, start, end);
+ 		cond_resched();
+ 	}
 --- a/fs/btrfs/extent-tree.c
 +++ b/fs/btrfs/extent-tree.c
-@@ -192,11 +192,14 @@ block_group_cache_tree_search(struct btr
- static int add_excluded_extent(struct btrfs_root *root,
- 			       u64 start, u64 num_bytes)
+@@ -207,14 +207,17 @@ static void free_excluded_extents(struct
+ 				  struct btrfs_block_group_cache *cache)
  {
+ 	u64 start, end;
 +	int ret;
- 	u64 end = start + num_bytes - 1;
--	set_extent_bits(&root->fs_info->freed_extents[0],
--			start, end, EXTENT_UPTODATE, GFP_NOFS);
--	set_extent_bits(&root->fs_info->freed_extents[1],
--			start, end, EXTENT_UPTODATE, GFP_NOFS);
-+	ret = set_extent_bits(&root->fs_info->freed_extents[0],
-+			      start, end, EXTENT_UPTODATE, GFP_NOFS);
+ 
+ 	start = cache->key.objectid;
+ 	end = start + cache->key.offset - 1;
+ 
+-	clear_extent_bits(&root->fs_info->freed_extents[0],
+-			  start, end, EXTENT_UPTODATE, GFP_NOFS);
+-	clear_extent_bits(&root->fs_info->freed_extents[1],
+-			  start, end, EXTENT_UPTODATE, GFP_NOFS);
++	ret = clear_extent_bits(&root->fs_info->freed_extents[0],
++				start, end, EXTENT_UPTODATE, GFP_NOFS);
 +	BUG_ON(ret < 0);
-+	ret = set_extent_bits(&root->fs_info->freed_extents[1],
-+			      start, end, EXTENT_UPTODATE, GFP_NOFS);
++	ret = clear_extent_bits(&root->fs_info->freed_extents[1],
++				start, end, EXTENT_UPTODATE, GFP_NOFS);
 +	BUG_ON(ret < 0);
- 	return 0;
  }
  
-@@ -4142,8 +4145,9 @@ static int update_block_group(struct btr
- 			spin_unlock(&cache->lock);
- 			spin_unlock(&cache->space_info->lock);
+ static int exclude_super_stripes(struct btrfs_root *root,
+@@ -4359,7 +4362,8 @@ int btrfs_finish_extent_commit(struct bt
+ 			ret = btrfs_discard_extent(root, start,
+ 						   end + 1 - start, NULL);
  
--			set_extent_dirty(info->pinned_extents,
--					 bytenr, bytenr + num_bytes - 1,
-+			/* Can't return -ENOMEM */
-+			set_extent_dirty(info->pinned_extents, bytenr,
-+					 bytenr + num_bytes - 1,
- 					 GFP_NOFS | __GFP_NOFAIL);
- 		}
- 		btrfs_put_block_group(cache);
-@@ -4184,6 +4188,7 @@ static int pin_down_extent(struct btrfs_
- 	spin_unlock(&cache->lock);
- 	spin_unlock(&cache->space_info->lock);
- 
-+	/* __GFP_NOFAIL means it can't return -ENOMEM */
- 	set_extent_dirty(root->fs_info->pinned_extents, bytenr,
- 			 bytenr + num_bytes - 1, GFP_NOFS | __GFP_NOFAIL);
- 	return 0;
-@@ -5636,6 +5641,7 @@ struct extent_buffer *btrfs_init_new_buf
- 					    int level)
- {
- 	struct extent_buffer *buf;
-+	int ret;
- 
- 	buf = btrfs_find_create_tree_block(root, bytenr, blocksize);
- 	if (!buf)
-@@ -5654,14 +5660,21 @@ struct extent_buffer *btrfs_init_new_buf
- 		 * EXENT bit to differentiate dirty pages.
- 		 */
- 		if (root->log_transid % 2 == 0)
--			set_extent_dirty(&root->dirty_log_pages, buf->start,
--					buf->start + buf->len - 1, GFP_NOFS);
-+			ret = set_extent_dirty(&root->dirty_log_pages,
-+					       buf->start,
-+					       buf->start + buf->len - 1,
-+					       GFP_NOFS);
- 		else
--			set_extent_new(&root->dirty_log_pages, buf->start,
--					buf->start + buf->len - 1, GFP_NOFS);
-+			ret = set_extent_new(&root->dirty_log_pages,
-+					     buf->start,
-+					     buf->start + buf->len - 1,
-+					     GFP_NOFS);
+-		clear_extent_dirty(unpin, start, end, GFP_NOFS);
++		ret = clear_extent_dirty(unpin, start, end, GFP_NOFS);
 +		BUG_ON(ret < 0);
- 	} else {
--		set_extent_dirty(&trans->transaction->dirty_pages, buf->start,
--			 buf->start + buf->len - 1, GFP_NOFS);
-+		ret = set_extent_dirty(&trans->transaction->dirty_pages,
-+				       buf->start, buf->start + buf->len - 1,
-+				       GFP_NOFS);
-+		BUG_ON(ret < 0);
+ 		unpin_extent_range(root, start, end);
+ 		cond_resched();
  	}
- 	trans->blocks_used++;
- 	/* this returns a buffer locked for blocking */
 --- a/fs/btrfs/extent_io.c
 +++ b/fs/btrfs/extent_io.c
-@@ -703,6 +703,9 @@ static void uncache_state(struct extent_
-  * part of the range already has the desired bits set.  The start of the
-  * existing range is returned in failed_start in this case.
-  *
-+ * It may also fail with -ENOMEM if memory cannot be obtained for extent_state
-+ * structures.
-+ *
-  * [start, end] is inclusive This takes the tree lock.
-  */
+@@ -529,7 +529,11 @@ hit_next:
  
-@@ -721,7 +724,8 @@ int set_extent_bit(struct extent_io_tree
- again:
- 	if (!prealloc && (mask & __GFP_WAIT)) {
- 		prealloc = alloc_extent_state(mask);
--		BUG_ON(!prealloc);
-+		if (!prealloc)
-+			return -ENOMEM;
- 	}
- 
- 	spin_lock(&tree->lock);
-@@ -740,7 +744,11 @@ again:
- 	node = tree_search(tree, start);
- 	if (!node) {
- 		prealloc = alloc_extent_state_atomic(prealloc);
--		BUG_ON(!prealloc);
-+		if (!prealloc) {
-+			err = -ENOMEM;
-+			goto out;
-+		}
-+
- 		err = insert_state(tree, prealloc, start, end, &bits);
- 		if (err)
- 			btrfs_panic(tree_fs_info(tree), err, "Locking error: "
-@@ -810,7 +818,11 @@ hit_next:
- 		}
- 
+ 	if (state->start < start) {
  		prealloc = alloc_extent_state_atomic(prealloc);
 -		BUG_ON(!prealloc);
 +		if (!prealloc) {
@@ -153,21 +100,9 @@ Signed-off-by: Jeff Mahoney <jeffm@suse.com>
  		err = split_state(tree, state, prealloc, start);
  		if (err)
  			btrfs_panic(tree_fs_info(tree), err, "Locking error: "
-@@ -844,7 +856,10 @@ hit_next:
- 			this_end = last_start - 1;
- 
- 		prealloc = alloc_extent_state_atomic(prealloc);
--		BUG_ON(!prealloc);
-+		if (!prealloc) {
-+			err = -ENOMEM;
-+			goto out;
-+		}
- 
- 		/*
- 		 * Avoid to free 'prealloc' if it can be merged with
-@@ -876,7 +891,11 @@ hit_next:
- 		}
- 
+@@ -554,7 +558,11 @@ hit_next:
+ 	 */
+ 	if (state->start <= end && state->end > end) {
  		prealloc = alloc_extent_state_atomic(prealloc);
 -		BUG_ON(!prealloc);
 +		if (!prealloc) {
@@ -178,210 +113,399 @@ Signed-off-by: Jeff Mahoney <jeffm@suse.com>
  		err = split_state(tree, state, prealloc, end + 1);
  		if (err)
  			btrfs_panic(tree_fs_info(tree), err, "Locking error: "
-@@ -988,6 +1007,7 @@ int lock_extent_bits(struct extent_io_tr
- 		}
- 		WARN_ON(start > end);
- 	}
-+	BUG_ON(err < 0);
- 	return err;
- }
- 
-@@ -1010,6 +1030,7 @@ int try_lock_extent(struct extent_io_tre
- 					 EXTENT_LOCKED, 1, 0, NULL, mask);
+@@ -1024,9 +1032,12 @@ int try_lock_extent(struct extent_io_tre
+ 	err = set_extent_bit(tree, start, end, EXTENT_LOCKED, EXTENT_LOCKED,
+ 			     &failed_start, NULL, mask);
+ 	if (err == -EEXIST) {
+-		if (failed_start > start)
+-			clear_extent_bit(tree, start, failed_start - 1,
+-					 EXTENT_LOCKED, 1, 0, NULL, mask);
++		if (failed_start > start) {
++			err = clear_extent_bit(tree, start, failed_start - 1,
++					       EXTENT_LOCKED, 1, 0, NULL,
++					       mask);
++			BUG_ON(err < 0);
++		}
  		return 0;
- 	}
-+	BUG_ON(err < 0);
- 	return 1;
+ 	} else if (err < 0)
+ 		return err;
+@@ -1036,14 +1047,18 @@ int try_lock_extent(struct extent_io_tre
+ int unlock_extent_cached(struct extent_io_tree *tree, u64 start, u64 end,
+ 			 struct extent_state **cached, gfp_t mask)
+ {
+-	return clear_extent_bit(tree, start, end, EXTENT_LOCKED, 1, 0, cached,
+-				mask);
++	int ret = clear_extent_bit(tree, start, end, EXTENT_LOCKED, 1, 0,
++				   cached, mask);
++	BUG_ON(ret < 0);
++	return ret;
  }
  
-@@ -1757,8 +1778,9 @@ static void end_bio_extent_readpage(stru
+ int unlock_extent(struct extent_io_tree *tree, u64 start, u64 end, gfp_t mask)
+ {
+-	return clear_extent_bit(tree, start, end, EXTENT_LOCKED, 1, 0, NULL,
+-				mask);
++	int ret =  clear_extent_bit(tree, start, end, EXTENT_LOCKED, 1, 0, NULL,
++				    mask);
++	BUG_ON(ret < 0);
++	return ret;
+ }
+ 
+ /*
+@@ -1383,7 +1398,9 @@ int extent_clear_unlock_delalloc(struct
+ 	if (op & EXTENT_CLEAR_DELALLOC)
+ 		clear_bits |= EXTENT_DELALLOC;
+ 
+-	clear_extent_bit(tree, start, end, clear_bits, 1, 0, NULL, GFP_NOFS);
++	ret = clear_extent_bit(tree, start, end, clear_bits,
++			       1, 0, NULL, GFP_NOFS);
++	BUG_ON(ret < 0);
+ 	if (!(op & (EXTENT_CLEAR_UNLOCK_PAGE | EXTENT_CLEAR_DIRTY |
+ 		    EXTENT_SET_WRITEBACK | EXTENT_END_WRITEBACK |
+ 		    EXTENT_SET_PRIVATE2)))
+@@ -1688,7 +1705,9 @@ static void end_bio_extent_writepage(str
  		}
  
- 		if (uptodate) {
--			set_extent_uptodate(tree, start, end, &cached,
--					    GFP_ATOMIC);
-+			ret = set_extent_uptodate(tree, start, end, &cached,
-+						  GFP_ATOMIC);
+ 		if (!uptodate) {
+-			clear_extent_uptodate(tree, start, end, NULL, GFP_NOFS);
++			ret = clear_extent_uptodate(tree, start, end,
++						    NULL, GFP_NOFS);
 +			BUG_ON(ret < 0);
+ 			ClearPageUptodate(page);
+ 			SetPageError(page);
  		}
- 		unlock_extent_cached(tree, start, end, &cached, GFP_ATOMIC);
+@@ -2667,10 +2686,11 @@ int extent_invalidatepage(struct extent_
+ 	ret = lock_extent_bits(tree, start, end, 0, &cached_state, GFP_NOFS);
+ 	BUG_ON(ret < 0);
+ 	wait_on_page_writeback(page);
+-	clear_extent_bit(tree, start, end,
+-			 EXTENT_LOCKED | EXTENT_DIRTY | EXTENT_DELALLOC |
+-			 EXTENT_DO_ACCOUNTING,
+-			 1, 1, &cached_state, GFP_NOFS);
++	ret = clear_extent_bit(tree, start, end,
++			       EXTENT_LOCKED | EXTENT_DIRTY | EXTENT_DELALLOC |
++			       EXTENT_DO_ACCOUNTING,
++			       1, 1, &cached_state, GFP_NOFS);
++	BUG_ON(ret < 0);
+ 	return 0;
+ }
  
-@@ -1980,8 +2002,9 @@ static int __extent_read_full_page(struc
- 			memset(userpage + pg_offset, 0, iosize);
- 			flush_dcache_page(page);
- 			kunmap_atomic(userpage, KM_USER0);
--			set_extent_uptodate(tree, cur, cur + iosize - 1,
--					    &cached, GFP_NOFS);
-+			ret = set_extent_uptodate(tree, cur, cur + iosize - 1,
-+						  &cached, GFP_NOFS);
-+			BUG_ON(ret < 0);
- 			unlock_extent_cached(tree, cur, cur + iosize - 1,
- 					     &cached, GFP_NOFS);
- 			break;
-@@ -2030,8 +2053,9 @@ static int __extent_read_full_page(struc
- 			flush_dcache_page(page);
- 			kunmap_atomic(userpage, KM_USER0);
- 
--			set_extent_uptodate(tree, cur, cur + iosize - 1,
--					    &cached, GFP_NOFS);
-+			ret = set_extent_uptodate(tree, cur, cur + iosize - 1,
-+						  &cached, GFP_NOFS);
-+			BUG_ON(ret < 0);
- 			unlock_extent_cached(tree, cur, cur + iosize - 1,
- 			                     &cached, GFP_NOFS);
- 			cur = cur + iosize;
-@@ -3286,8 +3310,10 @@ int set_extent_buffer_uptodate(struct ex
- 	num_pages = num_extent_pages(eb->start, eb->len);
+@@ -3293,8 +3313,10 @@ int clear_extent_buffer_uptodate(struct
+ 	clear_bit(EXTENT_BUFFER_UPTODATE, &eb->bflags);
  
  	if (eb_straddles_pages(eb)) {
--		set_extent_uptodate(tree, eb->start, eb->start + eb->len - 1,
--				    NULL, GFP_NOFS);
-+		int ret = set_extent_uptodate(tree, eb->start,
-+					      eb->start + eb->len - 1,
-+					      NULL, GFP_NOFS);
+-		clear_extent_uptodate(tree, eb->start, eb->start + eb->len - 1,
+-				      cached_state, GFP_NOFS);
++		int ret = clear_extent_uptodate(tree, eb->start,
++						eb->start + eb->len - 1,
++						cached_state, GFP_NOFS);
 +		BUG_ON(ret < 0);
  	}
  	for (i = 0; i < num_pages; i++) {
  		page = extent_buffer_page(eb, i);
---- a/fs/btrfs/file-item.c
-+++ b/fs/btrfs/file-item.c
-@@ -212,9 +212,10 @@ static int __btrfs_lookup_bio_sums(struc
- 				sum = 0;
- 				if (BTRFS_I(inode)->root->root_key.objectid ==
- 				    BTRFS_DATA_RELOC_TREE_OBJECTID) {
--					set_extent_bits(io_tree, offset,
-+					ret = set_extent_bits(io_tree, offset,
- 						offset + bvec->bv_len - 1,
- 						EXTENT_NODATASUM, GFP_NOFS);
-+					BUG_ON(ret < 0);
- 				} else {
- 					printk(KERN_INFO "btrfs no csum found "
- 					       "for inode %llu start %llu\n",
+--- a/fs/btrfs/file.c
++++ b/fs/btrfs/file.c
+@@ -1128,10 +1128,12 @@ again:
+ 		if (ordered)
+ 			btrfs_put_ordered_extent(ordered);
+ 
+-		clear_extent_bit(&BTRFS_I(inode)->io_tree, start_pos,
+-				  last_pos - 1, EXTENT_DIRTY | EXTENT_DELALLOC |
+-				  EXTENT_DO_ACCOUNTING, 0, 0, &cached_state,
+-				  GFP_NOFS);
++		err = clear_extent_bit(&BTRFS_I(inode)->io_tree, start_pos,
++				      last_pos - 1,
++				      EXTENT_DIRTY | EXTENT_DELALLOC |
++				      EXTENT_DO_ACCOUNTING, 0, 0,
++				      &cached_state, GFP_NOFS);
++		BUG_ON(err < 0);
+ 		unlock_extent_cached(&BTRFS_I(inode)->io_tree,
+ 				     start_pos, last_pos - 1, &cached_state,
+ 				     GFP_NOFS);
+--- a/fs/btrfs/free-space-cache.c
++++ b/fs/btrfs/free-space-cache.c
+@@ -800,10 +800,12 @@ int __btrfs_write_out_cache(struct btrfs
+ 
+ 	ret = btrfs_search_slot(trans, root, &key, path, 1, 1);
+ 	if (ret < 0) {
++		ret = clear_extent_bit(&BTRFS_I(inode)->io_tree, 0, bytes - 1,
++				       EXTENT_DIRTY | EXTENT_DELALLOC |
++				       EXTENT_DO_ACCOUNTING, 0, 0, NULL,
++				       GFP_NOFS);
++		BUG_ON(ret < 0);
+ 		ret = -1;
+-		clear_extent_bit(&BTRFS_I(inode)->io_tree, 0, bytes - 1,
+-				 EXTENT_DIRTY | EXTENT_DELALLOC |
+-				 EXTENT_DO_ACCOUNTING, 0, 0, NULL, GFP_NOFS);
+ 		goto out;
+ 	}
+ 	leaf = path->nodes[0];
+@@ -814,12 +816,14 @@ int __btrfs_write_out_cache(struct btrfs
+ 		btrfs_item_key_to_cpu(leaf, &found_key, path->slots[0]);
+ 		if (found_key.objectid != BTRFS_FREE_SPACE_OBJECTID ||
+ 		    found_key.offset != offset) {
+-			ret = -1;
+-			clear_extent_bit(&BTRFS_I(inode)->io_tree, 0, bytes - 1,
+-					 EXTENT_DIRTY | EXTENT_DELALLOC |
+-					 EXTENT_DO_ACCOUNTING, 0, 0, NULL,
+-					 GFP_NOFS);
++			ret = clear_extent_bit(&BTRFS_I(inode)->io_tree, 0,
++					       bytes - 1,
++					       EXTENT_DIRTY | EXTENT_DELALLOC |
++					       EXTENT_DO_ACCOUNTING, 0, 0,
++					       NULL, GFP_NOFS);
++			BUG_ON(ret < 0);
+ 			btrfs_release_path(path);
++			ret = -1;
+ 			goto out;
+ 		}
+ 	}
 --- a/fs/btrfs/inode.c
 +++ b/fs/btrfs/inode.c
-@@ -1548,6 +1548,7 @@ static void btrfs_writepage_fixup_worker
- 	struct inode *inode;
- 	u64 page_start;
- 	u64 page_end;
+@@ -960,9 +960,11 @@ static int cow_file_range_async(struct i
+ 	unsigned long nr_pages;
+ 	u64 cur_end;
+ 	int limit = 10 * 1024 * 1042;
 +	int ret;
  
- 	fixup = container_of(work, struct btrfs_writepage_fixup, work);
- 	page = fixup->page;
-@@ -1579,7 +1580,9 @@ again:
+-	clear_extent_bit(&BTRFS_I(inode)->io_tree, start, end, EXTENT_LOCKED,
+-			 1, 0, NULL, GFP_NOFS);
++	ret = clear_extent_bit(&BTRFS_I(inode)->io_tree, start, end,
++			       EXTENT_LOCKED, 1, 0, NULL, GFP_NOFS);
++	BUG_ON(ret < 0);
+ 	while (start < end) {
+ 		async_cow = kmalloc(sizeof(*async_cow), GFP_NOFS);
+ 		BUG_ON(!async_cow);
+@@ -1917,9 +1919,11 @@ static int btrfs_io_failed_hook(struct b
+ 	}
+ 	if (!state || failrec->last_mirror > num_copies) {
+ 		set_state_private(failure_tree, failrec->start, 0);
+-		clear_extent_bits(failure_tree, failrec->start,
+-				  failrec->start + failrec->len - 1,
+-				  EXTENT_LOCKED | EXTENT_DIRTY, GFP_NOFS);
++		ret = clear_extent_bits(failure_tree, failrec->start,
++					failrec->start + failrec->len - 1,
++					EXTENT_LOCKED | EXTENT_DIRTY,
++					GFP_NOFS);
++		BUG_ON(ret < 0);
+ 		kfree(failrec);
+ 		return -EIO;
+ 	}
+@@ -1963,11 +1967,13 @@ static int btrfs_clean_io_failures(struc
+ 				   private_failure;
+ 			set_state_private(&BTRFS_I(inode)->io_failure_tree,
+ 					  failure->start, 0);
+-			clear_extent_bits(&BTRFS_I(inode)->io_failure_tree,
++			ret = clear_extent_bits(
++					  &BTRFS_I(inode)->io_failure_tree,
+ 					  failure->start,
+ 					  failure->start + failure->len - 1,
+ 					  EXTENT_DIRTY | EXTENT_LOCKED,
+ 					  GFP_NOFS);
++			BUG_ON(ret < 0);
+ 			kfree(failure);
+ 		}
+ 	}
+@@ -2001,8 +2007,9 @@ static int btrfs_readpage_end_io_hook(st
+ 
+ 	if (root->root_key.objectid == BTRFS_DATA_RELOC_TREE_OBJECTID &&
+ 	    test_range_bit(io_tree, start, end, EXTENT_NODATASUM, 1, NULL)) {
+-		clear_extent_bits(io_tree, start, end, EXTENT_NODATASUM,
+-				  GFP_NOFS);
++		ret = clear_extent_bits(io_tree, start, end, EXTENT_NODATASUM,
++					GFP_NOFS);
++		BUG_ON(ret < 0);
+ 		return 0;
  	}
  
- 	BUG();
--	btrfs_set_extent_delalloc(inode, page_start, page_end, &cached_state);
-+	ret = btrfs_set_extent_delalloc(inode, page_start, page_end,
-+					&cached_state);
+@@ -3432,9 +3439,11 @@ again:
+ 		goto again;
+ 	}
+ 
+-	clear_extent_bit(&BTRFS_I(inode)->io_tree, page_start, page_end,
+-			  EXTENT_DIRTY | EXTENT_DELALLOC | EXTENT_DO_ACCOUNTING,
+-			  0, 0, &cached_state, GFP_NOFS);
++	ret = clear_extent_bit(&BTRFS_I(inode)->io_tree, page_start, page_end,
++			       EXTENT_DIRTY | EXTENT_DELALLOC |
++			       EXTENT_DO_ACCOUNTING, 0, 0,
++			       &cached_state, GFP_NOFS);
 +	BUG_ON(ret < 0);
- 	ClearPageChecked(page);
- out:
- 	unlock_extent_cached(&BTRFS_I(inode)->io_tree, page_start, page_end,
-@@ -1883,8 +1886,11 @@ static int btrfs_io_failed_hook(struct b
- 		}
- 		failrec->logical = logical;
- 		free_extent_map(em);
--		set_extent_bits(failure_tree, start, end, EXTENT_LOCKED |
--				EXTENT_DIRTY, GFP_NOFS);
-+
-+		/* Doesn't this ignore locking failures? */
-+		ret = set_extent_bits(failure_tree, start, end, EXTENT_LOCKED |
-+				      EXTENT_DIRTY, GFP_NOFS);
-+		BUG_ON(ret < 0);
- 		set_state_private(failure_tree, start,
- 				 (u64)(unsigned long)failrec);
- 	} else {
-@@ -5167,8 +5173,10 @@ again:
- 			kunmap(page);
- 			btrfs_mark_buffer_dirty(leaf);
- 		}
--		set_extent_uptodate(io_tree, em->start,
--				    extent_map_end(em) - 1, NULL, GFP_NOFS);
-+		ret = set_extent_uptodate(io_tree, em->start,
-+					  extent_map_end(em) - 1,
-+					  NULL, GFP_NOFS);
-+		BUG_ON(ret < 0);
- 		goto insert;
- 	} else {
- 		printk(KERN_ERR "btrfs unknown found_type %d\n", found_type);
-@@ -6230,9 +6238,10 @@ static ssize_t btrfs_direct_IO(int rw, s
- 	 */
- 	if (writing) {
- 		write_bits = EXTENT_DELALLOC | EXTENT_DO_ACCOUNTING;
--		ret = set_extent_bit(&BTRFS_I(inode)->io_tree, lockstart, lockend,
--				     EXTENT_DELALLOC, 0, NULL, &cached_state,
--				     GFP_NOFS);
-+		ret = set_extent_bit(&BTRFS_I(inode)->io_tree, lockstart,
-+				     lockend, EXTENT_DELALLOC, 0, NULL,
-+				     &cached_state, GFP_NOFS);
-+		BUG_ON(ret < 0);
+ 
+ 	ret = btrfs_set_extent_delalloc(inode, page_start, page_end,
+ 					&cached_state);
+@@ -5584,6 +5593,7 @@ static int btrfs_get_blocks_direct(struc
+ 	u64 start = iblock << inode->i_blkbits;
+ 	u64 len = bh_result->b_size;
+ 	struct btrfs_trans_handle *trans;
++	int ret;
+ 
+ 	em = btrfs_get_extent(inode, NULL, 0, start, len, 0);
+ 	if (IS_ERR(em))
+@@ -5679,9 +5689,11 @@ must_cow:
+ 		return PTR_ERR(em);
+ 	len = min(len, em->len - (start - em->start));
+ unlock:
+-	clear_extent_bit(&BTRFS_I(inode)->io_tree, start, start + len - 1,
+-			  EXTENT_LOCKED | EXTENT_DELALLOC | EXTENT_DIRTY, 1,
+-			  0, NULL, GFP_NOFS);
++	ret = clear_extent_bit(&BTRFS_I(inode)->io_tree, start,
++			       start + len - 1,
++			       EXTENT_LOCKED | EXTENT_DELALLOC | EXTENT_DIRTY,
++			       1, 0, NULL, GFP_NOFS);
++	BUG_ON(ret < 0);
+ map:
+ 	bh_result->b_blocknr = (em->block_start + (start - em->start)) >>
+ 		inode->i_blkbits;
+@@ -6253,9 +6265,12 @@ static ssize_t btrfs_direct_IO(int rw, s
+ 				     &cached_state, GFP_NOFS);
+ 		BUG_ON(ret);
  		if (ret) {
- 			clear_extent_bit(&BTRFS_I(inode)->io_tree, lockstart,
- 					 lockend, EXTENT_LOCKED | write_bits,
+-			clear_extent_bit(&BTRFS_I(inode)->io_tree, lockstart,
+-					 lockend, EXTENT_LOCKED | write_bits,
+-					 1, 0, &cached_state, GFP_NOFS);
++			int ret2;
++			ret2 = clear_extent_bit(&BTRFS_I(inode)->io_tree,
++						lockstart, lockend,
++						EXTENT_LOCKED | write_bits,
++						1, 0, &cached_state, GFP_NOFS);
++			BUG_ON(ret2 < 0);
+ 			goto out;
+ 		}
+ 	}
+@@ -6269,19 +6284,21 @@ static ssize_t btrfs_direct_IO(int rw, s
+ 		   btrfs_submit_direct, 0);
+ 
+ 	if (ret < 0 && ret != -EIOCBQUEUED) {
+-		clear_extent_bit(&BTRFS_I(inode)->io_tree, offset,
+-			      offset + iov_length(iov, nr_segs) - 1,
+-			      EXTENT_LOCKED | write_bits, 1, 0,
+-			      &cached_state, GFP_NOFS);
++		ret = clear_extent_bit(&BTRFS_I(inode)->io_tree, offset,
++				       offset + iov_length(iov, nr_segs) - 1,
++				       EXTENT_LOCKED | write_bits, 1, 0,
++				       &cached_state, GFP_NOFS);
++		BUG_ON(ret < 0);
+ 	} else if (ret >= 0 && ret < iov_length(iov, nr_segs)) {
+ 		/*
+ 		 * We're falling back to buffered, unlock the section we didn't
+ 		 * do IO on.
+ 		 */
+-		clear_extent_bit(&BTRFS_I(inode)->io_tree, offset + ret,
+-			      offset + iov_length(iov, nr_segs) - 1,
+-			      EXTENT_LOCKED | write_bits, 1, 0,
+-			      &cached_state, GFP_NOFS);
++		ret = clear_extent_bit(&BTRFS_I(inode)->io_tree, offset + ret,
++				       offset + iov_length(iov, nr_segs) - 1,
++				       EXTENT_LOCKED | write_bits, 1, 0,
++				       &cached_state, GFP_NOFS);
++		BUG_ON(ret < 0);
+ 	}
+ out:
+ 	free_extent_state(cached_state);
+@@ -6391,10 +6408,11 @@ static void btrfs_invalidatepage(struct
+ 		 * IO on this page will never be started, so we need
+ 		 * to account for any ordered extents now
+ 		 */
+-		clear_extent_bit(tree, page_start, page_end,
+-				 EXTENT_DIRTY | EXTENT_DELALLOC |
+-				 EXTENT_LOCKED | EXTENT_DO_ACCOUNTING, 1, 0,
+-				 &cached_state, GFP_NOFS);
++		ret = clear_extent_bit(tree, page_start, page_end,
++				       EXTENT_DIRTY | EXTENT_DELALLOC |
++				       EXTENT_LOCKED | EXTENT_DO_ACCOUNTING,
++				       1, 0, &cached_state, GFP_NOFS);
++		BUG_ON(ret < 0);
+ 		/*
+ 		 * whoever cleared the private bit is responsible
+ 		 * for the finish_ordered_io
+@@ -6409,9 +6427,11 @@ static void btrfs_invalidatepage(struct
+ 				       0, &cached_state, GFP_NOFS);
+ 		BUG_ON(ret < 0);
+ 	}
+-	clear_extent_bit(tree, page_start, page_end,
+-		 EXTENT_LOCKED | EXTENT_DIRTY | EXTENT_DELALLOC |
+-		 EXTENT_DO_ACCOUNTING, 1, 1, &cached_state, GFP_NOFS);
++	ret = clear_extent_bit(tree, page_start, page_end,
++			       EXTENT_LOCKED | EXTENT_DIRTY | EXTENT_DELALLOC |
++			       EXTENT_DO_ACCOUNTING, 1, 1,
++			       &cached_state, GFP_NOFS);
++	BUG_ON(ret < 0);
+ 	__btrfs_releasepage(page, GFP_NOFS);
+ 
+ 	ClearPageChecked(page);
+@@ -6501,9 +6521,11 @@ again:
+ 	 * is probably a better way to do this, but for now keep consistent with
+ 	 * prepare_pages in the normal write path.
+ 	 */
+-	clear_extent_bit(&BTRFS_I(inode)->io_tree, page_start, page_end,
+-			  EXTENT_DIRTY | EXTENT_DELALLOC | EXTENT_DO_ACCOUNTING,
+-			  0, 0, &cached_state, GFP_NOFS);
++	ret = clear_extent_bit(&BTRFS_I(inode)->io_tree, page_start, page_end,
++			       EXTENT_DIRTY | EXTENT_DELALLOC |
++			       EXTENT_DO_ACCOUNTING, 0, 0,
++			       &cached_state, GFP_NOFS);
++	BUG_ON(ret < 0);
+ 
+ 	ret = btrfs_set_extent_delalloc(inode, page_start, page_end,
+ 					&cached_state);
 --- a/fs/btrfs/ioctl.c
 +++ b/fs/btrfs/ioctl.c
-@@ -938,8 +938,9 @@ again:
- 	}
+@@ -926,10 +926,11 @@ again:
+ 	if (ordered)
+ 		btrfs_put_ordered_extent(ordered);
  
- 
--	btrfs_set_extent_delalloc(inode, page_start, page_end - 1,
--				  &cached_state);
-+	ret = btrfs_set_extent_delalloc(inode, page_start, page_end - 1,
-+					&cached_state);
+-	clear_extent_bit(&BTRFS_I(inode)->io_tree, page_start,
+-			  page_end - 1, EXTENT_DIRTY | EXTENT_DELALLOC |
+-			  EXTENT_DO_ACCOUNTING, 0, 0, &cached_state,
+-			  GFP_NOFS);
++	ret = clear_extent_bit(&BTRFS_I(inode)->io_tree, page_start,
++			       page_end - 1, EXTENT_DIRTY | EXTENT_DELALLOC |
++			       EXTENT_DO_ACCOUNTING, 0, 0, &cached_state,
++			       GFP_NOFS);
 +	BUG_ON(ret < 0);
  
- 	unlock_extent_cached(&BTRFS_I(inode)->io_tree,
- 			     page_start, page_end - 1, &cached_state,
+ 	if (i_done != num_pages) {
+ 		spin_lock(&BTRFS_I(inode)->lock);
 --- a/fs/btrfs/relocation.c
 +++ b/fs/btrfs/relocation.c
-@@ -2623,11 +2623,11 @@ static int finish_pending_nodes(struct b
- 	return err;
- }
+@@ -3834,8 +3834,9 @@ restart:
+ 	}
  
--static void mark_block_processed(struct reloc_control *rc,
-+static int mark_block_processed(struct reloc_control *rc,
- 				 u64 bytenr, u32 blocksize)
- {
--	set_extent_bits(&rc->processed_blocks, bytenr, bytenr + blocksize - 1,
--			EXTENT_DIRTY, GFP_NOFS);
-+	return set_extent_bits(&rc->processed_blocks, bytenr,
-+			       bytenr + blocksize - 1, EXTENT_DIRTY, GFP_NOFS);
- }
+ 	btrfs_release_path(path);
+-	clear_extent_bits(&rc->processed_blocks, 0, (u64)-1, EXTENT_DIRTY,
+-			  GFP_NOFS);
++	ret = clear_extent_bits(&rc->processed_blocks, 0, (u64)-1,
++				EXTENT_DIRTY, GFP_NOFS);
++	BUG_ON(ret < 0);
  
- static void __mark_block_processed(struct reloc_control *rc,
-@@ -2636,8 +2636,10 @@ static void __mark_block_processed(struc
- 	u32 blocksize;
- 	if (node->level == 0 ||
- 	    in_block_group(node->bytenr, rc->block_group)) {
-+		int ret;
- 		blocksize = btrfs_level_size(rc->extent_root, node->level);
--		mark_block_processed(rc, node->bytenr, blocksize);
-+		ret = mark_block_processed(rc, node->bytenr, blocksize);
+ 	if (trans) {
+ 		nr = trans->blocks_used;
+--- a/fs/btrfs/transaction.c
++++ b/fs/btrfs/transaction.c
+@@ -636,7 +636,9 @@ int btrfs_wait_marked_extents(struct btr
+ 		if (ret)
+ 			break;
+ 
+-		clear_extent_bits(dirty_pages, start, end, mark, GFP_NOFS);
++		ret = clear_extent_bits(dirty_pages, start, end,
++					mark, GFP_NOFS);
++		BUG_ON(ret < 0);
+ 		while (start <= end) {
+ 			index = start >> PAGE_CACHE_SHIFT;
+ 			start = (u64)(index + 1) << PAGE_CACHE_SHIFT;
+--- a/fs/btrfs/tree-log.c
++++ b/fs/btrfs/tree-log.c
+@@ -2158,8 +2158,9 @@ static void free_log_tree(struct btrfs_t
+ 		if (ret)
+ 			break;
+ 
+-		clear_extent_bits(&log->dirty_log_pages, start, end,
+-				  EXTENT_DIRTY | EXTENT_NEW, GFP_NOFS);
++		ret = clear_extent_bits(&log->dirty_log_pages, start, end,
++					EXTENT_DIRTY | EXTENT_NEW, GFP_NOFS);
 +		BUG_ON(ret < 0);
  	}
- 	node->processed = 1;
- }
-@@ -2994,13 +2996,16 @@ static int relocate_file_extent_cluster(
  
- 		if (nr < cluster->nr &&
- 		    page_start + offset == cluster->boundary[nr]) {
--			set_extent_bits(&BTRFS_I(inode)->io_tree,
--					page_start, page_end,
--					EXTENT_BOUNDARY, GFP_NOFS);
-+			ret = set_extent_bits(&BTRFS_I(inode)->io_tree,
-+					      page_start, page_end,
-+					      EXTENT_BOUNDARY, GFP_NOFS);
-+			BUG_ON(ret < 0);
- 			nr++;
- 		}
- 
--		btrfs_set_extent_delalloc(inode, page_start, page_end, NULL);
-+		ret = btrfs_set_extent_delalloc(inode, page_start,
-+						page_end, NULL);
-+		BUG_ON(ret < 0);
- 		set_page_dirty(page);
- 
- 		unlock_extent(&BTRFS_I(inode)->io_tree,
+ 	free_extent_buffer(log->node);
 
 

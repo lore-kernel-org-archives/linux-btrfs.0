@@ -1,50 +1,54 @@
-From: Jeff Mahoney <jeffm@suse.com>
-Subject: [patch v2 7/9] btrfs: Make pin_down_extent return void
-Date: Mon, 15 Aug 2011 15:50:49 -0400
-Message-ID: <20110815195232.912795302@suse.com>
-References: <20110815195042.559654068@suse.com>
-To: Btrfs Development List <linux-btrfs@vger.kernel.org>
+From: Miao Xie <miaox@cn.fujitsu.com>
+Subject: Re: [PATCH] Btrfs: reserve sufficient space for ioctl clone
+Date: Tue, 16 Aug 2011 10:09:31 +0800
+Message-ID: <4E49D15B.8010209@cn.fujitsu.com>
+References: <1312911997-5075-1-git-send-email-sage@newdream.net>
+Reply-To: miaox@cn.fujitsu.com
+Mime-Version: 1.0
+Content-Type: text/plain; charset=GB2312
+Cc: linux-btrfs@vger.kernel.org
+To: Sage Weil <sage@newdream.net>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
+In-Reply-To: <1312911997-5075-1-git-send-email-sage@newdream.net>
 List-ID: <linux-btrfs.vger.kernel.org>
 
- pin_down_extent performs some operations which can't fail and then calls
- set_extent_dirty, which has two failure cases via set_extent_bit:
- 1) Return -EEXIST if exclusive bits are set
-    - Since it doesn't use any exclusive bits, this failure case can't
-       occur.
- 2) Return -ENOMEM if memory can't be allocated
-    - Since it's called with gfp_flags & __GFP_NOFAIL, this failure case
-      can't occur.
+On tue, 9 Aug 2011 10:46:37 -0700, Sage Weil wrote:
+> Fix a crash/BUG_ON in the clone ioctl due to insufficient reservation. We
+> need to reserve space for:
+> 
+>  - adjusting the old extent (possibly splitting it)
+>  - adding the new extent
+>  - updating the inode
+> 
+> Signed-off-by: Sage Weil <sage@newdream.net>
+> ---
+>  fs/btrfs/ioctl.c |    7 ++++++-
+>  1 files changed, 6 insertions(+), 1 deletions(-)
+> 
+> diff --git a/fs/btrfs/ioctl.c b/fs/btrfs/ioctl.c
+> index a3c4751..f038d4a 100644
+> --- a/fs/btrfs/ioctl.c
+> +++ b/fs/btrfs/ioctl.c
+> @@ -2320,7 +2320,12 @@ static noinline long btrfs_ioctl_clone(struct file *file, unsigned long srcfd,
+>  			else
+>  				new_key.offset = destoff;
+>  
+> -			trans = btrfs_start_transaction(root, 1);
+> +			/*
+> +			 * 1 - adjusting old extent (we may have to split it)
 
- With no failure cases, it can return void.
+I don't think it is enough. If we have lots of file extents and their extent items are stored
+in many contiguous leaves, the drop operation may cause those leaves to be COWed. So I think we
+must calculate the number of leaves which will be COWed at first.
 
-Signed-off-by: Jeff Mahoney <jeffm@suse.com>
----
- fs/btrfs/extent-tree.c |    7 +++----
- 1 file changed, 3 insertions(+), 4 deletions(-)
+Thanks
+Miao
 
---- a/fs/btrfs/extent-tree.c
-+++ b/fs/btrfs/extent-tree.c
-@@ -4175,9 +4175,9 @@ static u64 first_logical_byte(struct btr
- 	return bytenr;
- }
- 
--static int pin_down_extent(struct btrfs_root *root,
--			   struct btrfs_block_group_cache *cache,
--			   u64 bytenr, u64 num_bytes, int reserved)
-+static void pin_down_extent(struct btrfs_root *root,
-+			    struct btrfs_block_group_cache *cache,
-+			    u64 bytenr, u64 num_bytes, int reserved)
- {
- 	spin_lock(&cache->space_info->lock);
- 	spin_lock(&cache->lock);
-@@ -4194,7 +4194,6 @@ static int pin_down_extent(struct btrfs_
- 	/* __GFP_NOFAIL means it can't return -ENOMEM */
- 	set_extent_dirty(root->fs_info->pinned_extents, bytenr,
- 			 bytenr + num_bytes - 1, GFP_NOFS | __GFP_NOFAIL);
--	return 0;
- }
- 
- /*
-
+> +			 * 1 - add new extent
+> +			 * 1 - inode update
+> +			 */
+> +			trans = btrfs_start_transaction(root, 3);
+>  			if (IS_ERR(trans)) {
+>  				ret = PTR_ERR(trans);
+>  				goto out;
 

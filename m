@@ -1,91 +1,60 @@
-From: Niklas Schnelle <niklas@komani.de>
-Subject: Re: cant mount degraded (it worked in kernel 2.6.38.8)
-Date: Tue, 16 Aug 2011 09:47:28 +0200
-Message-ID: <1313480854.2029.2.camel@pluto>
-References: <CAJ1PRSnLKGkmbx3EY=DdSvont_3hUTmSzmmXpL4gi4Aw0KY4pQ@mail.gmail.com>
-	 <4E49E330.6060402@cn.fujitsu.com>
+From: liubo <liubo2009@cn.fujitsu.com>
+Subject: Re: [PATCH] Btrfs: fix an oops of log replay
+Date: Tue, 16 Aug 2011 19:53:28 +0800
+Message-ID: <4E4A5A38.7070607@cn.fujitsu.com>
+References: <1312619723-31094-1-git-send-email-liubo2009@cn.fujitsu.com> <4E3FFD02.6010000@mit.edu>
 Mime-Version: 1.0
-Content-Type: multipart/signed; micalg="pgp-sha256";
-	protocol="application/pgp-signature"; boundary="=-h5UPFOoCrbNVNG635KD6"
-Cc: "krzf83@gmail.com" <krzf83@gmail.com>, linux-btrfs@vger.kernel.org
-To: Li Zefan <lizf@cn.fujitsu.com>
+Content-Type: text/plain; charset=ISO-8859-1
+Cc: linux-btrfs@vger.kernel.org, chris.mason@oracle.com
+To: Andy Lutomirski <luto@MIT.EDU>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <4E49E330.6060402@cn.fujitsu.com>
+In-Reply-To: <4E3FFD02.6010000@mit.edu>
 List-ID: <linux-btrfs.vger.kernel.org>
 
+On 08/08/2011 11:13 PM, Andy Lutomirski wrote:
+> On 08/06/2011 04:35 AM, Liu Bo wrote:
+>> When btrfs recovers from a crash, it may hit the oops below:
+>>
+>> ------------[ cut here ]------------
+>> kernel BUG at fs/btrfs/inode.c:4580!
+>> [...]
+>> RIP: 0010:[<ffffffffa03df251>]  [<ffffffffa03df251>]
+>> btrfs_add_link+0x161/0x1c0 [btrfs]
+>> [...]
+>> Call Trace:
+>>   [<ffffffffa03e7b31>] ? btrfs_inode_ref_index+0x31/0x80 [btrfs]
+>>   [<ffffffffa04054e9>] add_inode_ref+0x319/0x3f0 [btrfs]
+>>   [<ffffffffa0407087>] replay_one_buffer+0x2c7/0x390 [btrfs]
+>>   [<ffffffffa040444a>] walk_down_log_tree+0x32a/0x480 [btrfs]
+>>   [<ffffffffa0404695>] walk_log_tree+0xf5/0x240 [btrfs]
+>>   [<ffffffffa0406cc0>] btrfs_recover_log_trees+0x250/0x350 [btrfs]
+>>   [<ffffffffa0406dc0>] ? btrfs_recover_log_trees+0x350/0x350 [btrfs]
+>>   [<ffffffffa03d18b2>] open_ctree+0x1442/0x17d0 [btrfs]
+>> [...]
+>>
+>> This comes from that while replaying an inode ref item, we forget to
+>> check those old conflicting DIR_ITEM and DIR_INDEX items in fs/file tree,
+>> then we will come to conflict corners which lead to BUG_ON().
+>>
+>> Signed-off-by: Liu Bo<liubo2009@cn.fujitsu.com>
+>> ---
+>>   fs/btrfs/tree-log.c |   28 ++++++++++++++++++++++++----
+>>   1 files changed, 24 insertions(+), 4 deletions(-)
+> 
+> This fixes the oops for me.  The bug was a regression in 2.6.39, I believe.
+> 
+> Tested-by: Andy Lutomirski <luto@mit.edu>
+> 
 
---=-h5UPFOoCrbNVNG635KD6
-Content-Type: text/plain; charset="UTF-8"
-Content-Transfer-Encoding: quoted-printable
+Thanks a lot for testing!
 
-On Tue, 2011-08-16 at 11:25 +0800, Li Zefan wrote:
-> krzf83@gmail.com wrote:
-> > # uname -a
-> > Linux dhcppc1 3.0.1-xxxx-std-ipv6-64 #1 SMP Sun Aug 14 17:06:21 CEST
-> > 2011 x86_64 x86_64 x86_64 GNU/Linux
-> >=20
-> > mkdir test5
-> > cd test5
-> > dd if=3D/dev/null of=3Dimg5 bs=3D1 seek=3D2G
-> > dd if=3D/dev/null of=3Dimg6 bs=3D1 seek=3D2G
-> > losetup /dev/loop2 img5
-> > losetup /dev/loop3 img6
-> > mkfs.btrfs -d raid1 -m raid1 /dev/loop2 /dev/loop3
-> > btrfs device scan
-> > btrfs filesystem show
-> >=20
-> > Label: none  uuid: d7ba6c4e-04ed-49f5-88cd-8432c948e822
-> >         Total devices 2 FS bytes used 28.00KB
-> >         devid    1 size 2.00GB used 437.50MB path /dev/loop4
-> >         devid    2 size 2.00GB used 417.50MB path /dev/loop5
-> >=20
-> > mkdir dir
-> > mount -t btrfs /dev/loop2 dir
-> > umount dir
-> > losetup -d /dev/loop3
-> > mount -t btrfs -o degraded /dev/loop2 dir
-> >=20
-> > mount: wrong fs type, bad option, bad superblock on /dev/loop2,
-> >        missing codepage or other error
-> >        In some cases useful info is found in syslog - try
-> >        dmesg | tail  or so
->=20
-> It works on latest kernel (3.1.0-rc2)
->=20
-> --
-> Li Zefan
+thanks,
+liubo
 
-Shouldn't we really really have some test case for this in the test
-suite? I mean it's kinda uaccepabtle even for an experimental system to
-brake this way in a release, also will there be backports?=20
-That would be helpful especially since some of the big distros will be
-stuck with 3.0 for months to come and this will (rightfully so) make
-btrfs look really bad!
-
-Greetings Nik
-
---=-h5UPFOoCrbNVNG635KD6
-Content-Type: application/pgp-signature; name="signature.asc"
-Content-Description: This is a digitally signed message part
-Content-Transfer-Encoding: 7bit
-
------BEGIN PGP SIGNATURE-----
-Version: GnuPG v1.4.11 (GNU/Linux)
-
-iQIcBAABCAAGBQJOSiCQAAoJEBlEkMMdTRx5+wsP/0N68Sk5dzKuz5borfpzuRxU
-CMtR7Iv63zCCHzW05+7AMBeeqPVseE7pEW8gix5Crl+NjU9Ud5jbpONk3HOJMA6V
-o5JgY9uTvo9cwsu0h8xJaQvZJ4rQi0EUi8aWJALEIE9z2FB4Az+YjN1ECdEzYMfj
-5Fq44N/9sWunonhjPp8bv1gJByqbQJ9tkdfGs7CVpZKkLRbRV3jM/dogvvmqTG6v
-NQ0NRUGgnyoE2rQNjxX2vyp+8yRY3ORBwsRF7TgjSqruyVqVAEjaiZTjkm8y/1P2
-ph4+Bk+cuXT9GEfIR88zGD7COt0crypyNGpOGyHd/e3Z8bOzmb9OdzM9RyzNjcWb
-n5o62/FdiUUAyyjqGNafS6PwIzee8ZGpd/jJyrr4jB5AJ2XIOSJv8+YYcFi/hmeP
-mkvPI9j2XsqAJBcJf4YxBgtBUWXHyI4G1B8yK9gaQl5gntjvRrAmxuNABBb0AUAu
-RYPy6mC1LIC4VYpB4DwMUfASgLwLrufE3hDa2dBe5mX0iI6dZLeAv+dnI6q9WpAV
-q8JRN3CYBIpfjMXoncpP1LsTcAPePqGF6+NPbs1GossLmXuTV94jA5NBECeB7mML
-NL7EsC/yS4LV9NZXAjl+8NqBEFBNnfzezcrXCx/f5G2Xf4hnMl/ikFzEC7bqaFSJ
-cEIAwDzp3f3QQR9I4wv2
-=Bqbd
------END PGP SIGNATURE-----
-
---=-h5UPFOoCrbNVNG635KD6--
+> --Andy
+> -- 
+> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
+> the body of a message to majordomo@vger.kernel.org
+> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+> 
 

@@ -1,29 +1,20 @@
-From: David Sterba <dsterba@suse.cz>
+From: Chris Mason <chris.mason@oracle.com>
 Subject: Re: processes stuck in llseek
-Date: Tue, 16 Aug 2011 14:36:14 +0200
-Message-ID: <20110816123614.GA14547@ds.suse.cz>
+Date: Tue, 16 Aug 2011 08:51:18 -0400
+Message-ID: <1313499055-sup-2296@shiny>
 References: <CAPL5yKdvMtCo8qqqJGM-FXk7CmhkY98QeDa8uH=ZDFLjus7Wng@mail.gmail.com>
-Reply-To: dsterba@suse.cz
-Mime-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
+Content-Type: text/plain; charset=UTF-8
 Cc: Linux Kernel Mailing List <linux-kernel@vger.kernel.org>,
 	BTRFS Mailing list <linux-btrfs@vger.kernel.org>
 To: Dan Merillat <dan.merillat@gmail.com>
-Return-path: <linux-kernel-owner@vger.kernel.org>
-In-Reply-To: <CAPL5yKdvMtCo8qqqJGM-FXk7CmhkY98QeDa8uH=ZDFLjus7Wng@mail.gmail.com>
+Return-path: <linux-btrfs-owner@vger.kernel.org>
+In-reply-to: <CAPL5yKdvMtCo8qqqJGM-FXk7CmhkY98QeDa8uH=ZDFLjus7Wng@mail.gmail.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Mon, Aug 15, 2011 at 11:59:50PM -0400, Dan Merillat wrote:
+Excerpts from Dan Merillat's message of 2011-08-15 23:59:50 -0400:
 > I noticed a series of hung_task notifications in dmesg, so I went
 > poking at it.   Process is 'dropbox', and it's stuck trying to llseek
 > it's library.zip file.
-
-looks like mutex lock is waiting, in btrfs_file_llseek. somebody else is
-holding it for that file. it could be a forgotten unlock (of
-inode->i_mutex) on some error path, but this does not look very
-promising to me, or the process holding the lock still exists and will
-be visible in process listings. locdep would tell more exactly.
-
 > 
 > strace of dropbox:
 > ...
@@ -68,75 +59,16 @@ be visible in process listings. locdep would tell more exactly.
 > [72960.716153]  [<ffffffff810e8f2c>] vfs_llseek+0x2e/0x30
 > [72960.716155]  [<ffffffff810e9311>] sys_lseek+0x3e/0x5d
 > [72960.716159]  [<ffffffff8155d4fb>] system_call_fastpath+0x16/0x1b
-
-just a guess, as it touches file pages, can you try Sage's fix
-
-"truncate pages from clone ioctl target range"
-https://patchwork.kernel.org/patch/1054552/
-
-under assumption that the file on which seek is run has been reflinked
-or at least written to during the running transaction (ie no sync in
-between).
-
+> 
 > Oddly enough, it's just llseek.  I can copy/read the file sequentially
-> just fine, but llseek fails on a copy as well.
-
-incorrect or unexpected contents of the same-aged files would point to
-the missing truncate.
-
-
-david
-
-> Once I get physically
+> just fine, but llseek fails on a copy as well.   Once I get physically
 > to the system I'll recompile to an unmodified kernel and try again.
 > Other files of the same approximate age llseek correctly.
 > 
 > Kernel is 3.1-rc1  with the fglrx module from AMD and the following
 > patch:  (I was playing with cross-subvolume reflinking, but not on
 > this file)
-> 
-> diff --git a/fs/btrfs/ioctl.c b/fs/btrfs/ioctl.c
-> index 7cf0133..a13b5e2 100644
-> --- a/fs/btrfs/ioctl.c
-> +++ b/fs/btrfs/ioctl.c
-> @@ -2182,7 +2182,7 @@ static noinline long btrfs_ioctl_clone(struct
-> file *file, unsigned long srcfd,
->  		goto out_fput;
-> 
->  	ret = -EXDEV;
-> -	if (src->i_sb != inode->i_sb || BTRFS_I(src)->root != root)
-> +	if (src->i_sb != inode->i_sb)
->  		goto out_fput;
-> 
->  	ret = -ENOMEM;
-> @@ -2246,13 +2246,13 @@ static noinline long btrfs_ioctl_clone(struct
-> file *file, unsigned long srcfd,
->  		 * note the key will change type as we walk through the
->  		 * tree.
->  		 */
-> -		ret = btrfs_search_slot(NULL, root, &key, path, 0, 0);
-> +		ret = btrfs_search_slot(NULL, BTRFS_I(src)->root, &key, path, 0, 0);
->  		if (ret < 0)
->  			goto out;
-> 
->  		nritems = btrfs_header_nritems(path->nodes[0]);
->  		if (path->slots[0] >= nritems) {
-> -			ret = btrfs_next_leaf(root, path);
-> +			ret = btrfs_next_leaf(BTRFS_I(src)->root, path);
->  			if (ret < 0)
->  				goto out;
->  			if (ret > 0)
-> @@ -2313,7 +2313,7 @@ static noinline long btrfs_ioctl_clone(struct
-> file *file, unsigned long srcfd,
->  			else
->  				new_key.offset = destoff;
-> 
-> -			trans = btrfs_start_transaction(root, 1);
-> +			trans = btrfs_start_transaction(root, 3);
->  			if (IS_ERR(trans)) {
->  				ret = PTR_ERR(trans);
->  				goto out;
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+
+Dan Carpenter sent a patch for this, I'll get it queued up for rc3.
+
+-chris

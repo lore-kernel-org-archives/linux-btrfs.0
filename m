@@ -1,49 +1,19 @@
-From: Dave <dave@thekilempire.com>
-Subject: Re: Honest timeline for btrfsck
-Date: Wed, 17 Aug 2011 11:19:08 -0400
-Message-ID: <20110817151908.GB23804@hendrix.borisch.local>
-References: <CAGh96GFhVEfXt=xcb-uGEBA3Ss2fc8BwOpJ2g8tXbm+VimdH3Q@mail.gmail.com>
- <1312404713-sup-6548@shiny>
+From: =?UTF-8?B?SsOpcsO0bWUgUG91bGlu?= <jeromepoulin@gmail.com>
+Subject: Re: snapshot ctime // Re: [RFC] btrfs auto snapshot
+Date: Wed, 17 Aug 2011 11:56:08 -0400
+Message-ID: <CALJXSJpVWHZEKp9uZ8SB-mdkr2U8kdU=-k1=2U3QsoWXsTHC2Q@mail.gmail.com>
+References: <4E4B2452.9070407@oracle.com> <20110817140433.GA32261@hendrix.borisch.local>
+ <20110817211316.0414bb5a@natsu>
 Mime-Version: 1.0
-Content-Type: multipart/signed; micalg=pgp-sha256;
-	protocol="application/pgp-signature"; boundary="s/l3CgOIzMHHjg/5"
-Cc: Erik Jensen <eriksjunk@rkjnsn.net>,
+Content-Type: text/plain; charset=UTF-8
+Cc: Dave <dave@thekilempire.com>, Anand Jain <Anand.Jain@oracle.com>,
 	linux-btrfs <linux-btrfs@vger.kernel.org>
-To: Chris Mason <chris.mason@oracle.com>
+To: Roman Mamedov <rm@romanrm.ru>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <1312404713-sup-6548@shiny>
+In-Reply-To: <20110817211316.0414bb5a@natsu>
 List-ID: <linux-btrfs.vger.kernel.org>
 
+On Wed, Aug 17, 2011 at 11:13 AM, Roman Mamedov <rm@romanrm.ru> wrote:
+> So until someone cares about snapshot ctime enough to fix this, btrfs will not be a convenient FS to work with timed snapshotting/cleanup.
 
---s/l3CgOIzMHHjg/5
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
-Content-Transfer-Encoding: quoted-printable
-
-On Wed, Aug 03, 2011 at 04:53:26PM -0400, Chris Mason wrote:
-> I do expect a release in the next two weeks that can recover your data (a=
-nd
-> many others).
-
-I actually set an appointment reminder in my Blackberry for the two week
-anniversary of this email.  I expect today will be a milestone in the btrfs
-ecosystem (lack of fsck being the most frequent reason for not trying btrfs=
-).  I
-know I've got two existing instances that I can test this tool on.
---=20
--=3D[dave]=3D-
-
-Entropy isn't what it used to be.
-
---s/l3CgOIzMHHjg/5
-Content-Type: application/pgp-signature
-
------BEGIN PGP SIGNATURE-----
-Version: GnuPG v1.4.11 (GNU/Linux)
-
-iF4EAREIAAYFAk5L2+sACgkQXM0u5ajNnCgi+AD9FMpSaobgwq5L1fpYeLw4hSaK
-bhg6yODlhNE1wQtpQcgA/iKXL0ypNhvGS2tyhkLeQOULE1isDx+zeUG/L1UuGSOT
-=jNkO
------END PGP SIGNATURE-----
-
---s/l3CgOIzMHHjg/5--
+Isn't the ctime the creation date of the original folder?

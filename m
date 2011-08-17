@@ -1,13 +1,16 @@
 From: Anand Jain <Anand.Jain@oracle.com>
-Subject: btrfs auto snapshot
-Date: Wed, 17 Aug 2011 10:13:11 +0800
-Message-ID: <4E4B23B7.5010508@oracle.com>
+Subject: [RFC] btrfs auto snapshot
+Date: Wed, 17 Aug 2011 10:15:46 +0800
+Message-ID: <4E4B2452.9070407@oracle.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset=ISO-8859-1; format=flowed
 Cc: Chris Mason <chris.mason@oracle.com>
 To: linux-btrfs <linux-btrfs@vger.kernel.org>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
 List-ID: <linux-btrfs.vger.kernel.org>
+
+
+sorry forgot to follow the protocol, now included RFC in the subject.
 
 
 Hi,

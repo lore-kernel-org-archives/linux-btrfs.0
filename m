@@ -1,66 +1,57 @@
-From: Dave <dave@thekilempire.com>
-Subject: Re: [RFC] btrfs auto snapshot
-Date: Wed, 17 Aug 2011 10:04:33 -0400
-Message-ID: <20110817140433.GA32261@hendrix.borisch.local>
-References: <4E4B2452.9070407@oracle.com>
+From: Andrew Guertin <andrew.guertin@uvm.edu>
+Subject: Re: Applications using fsync cause hangs for several seconds every
+ few minutes
+Date: Wed, 17 Aug 2011 10:24:12 -0400
+Message-ID: <4E4BCF0C.7060109@uvm.edu>
+References: <4E41A6A4.9070702@uvm.edu>
 Mime-Version: 1.0
-Content-Type: multipart/signed; micalg=pgp-sha256;
-	protocol="application/pgp-signature"; boundary="6c2NcOVqGQ03X4Wi"
-Cc: linux-btrfs <linux-btrfs@vger.kernel.org>
-To: Anand Jain <Anand.Jain@oracle.com>
+Content-Type: text/plain; charset=UTF-8
+To: linux-btrfs@vger.kernel.org
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <4E4B2452.9070407@oracle.com>
+In-Reply-To: <4E41A6A4.9070702@uvm.edu>
 List-ID: <linux-btrfs.vger.kernel.org>
 
+On 08/09/2011 05:29 PM, Andrew Guertin wrote:
+> On 06/21/2011 01:15 PM, Jan Stilow wrote:
+>> Hello,
+>>
+>> Nirbheek Chauhan <nirbheek <at> gentoo.org> writes:
+>>> [...]
+>>>
+>>> Every few minutes, (I guess) when applications do fsync (firefox,
+>>> xchat, vim, etc), all applications that use fsync() hang for several
+>>> seconds, and applications that use general IO suffer extreme
+>>> slowdowns. iotop shows various combinations of the processes listed
+>>> below doing writes, and the total write as 2-3MB/s.
+>>>
+>>> [btrfs-dealloc-]
+>>> [btrfs-submit-0]
+>>> [btrfs-transacti]
+>>> [btrfs-endio-wri]
+>>> [flush-btrfs-1]
+>>
+>> I'm using btrfs under a 2.6.39-ARCH kernel and run into the same issue.
+>>
+>> In my case the [btrfs-submit-0] and [btrfs-transacti] shows up in iotop
+>> and produce 99% of IO at the time a application is frozen. For something
+>> like 10 to 30 seconds.
+>>
+>> [...]
+> 
+> I see the same issue. I have bisected it to
+> 
+> 4e69b598f6cfb0940b75abf7e179d6020e94ad1e is the first bad commit
+> commit 4e69b598f6cfb0940b75abf7e179d6020e94ad1e
+> Author: Josef Bacik <josef@redhat.com>
+> Date:   Mon Mar 21 10:11:24 2011 -0400
+> 
+> Btrfs: cleanup how we setup free space clusters
+> 
+> ...which came in between 2.6.38 and 2.6.39.
 
---6c2NcOVqGQ03X4Wi
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
-Content-Transfer-Encoding: quoted-printable
+Any chance of someone looking at this? I (and presumably others) haven't
+been able to upgrade my kernel past 2.6.38 because of this.
 
-I've already done something similar.  I take hourly, daily, weekly, and mon=
-thly
-snapshots of my /home subvolume.  Here's the script I've created for this:
-
-#! /bin/bash
-
-if [ "$#" -ne 2 ]; then
-   echo Usage $0 SNAPSHOT_PREFIX NUM_SNAPSHOTS
-   exit 1
-fi
-
-SNAPS=3D/var/lib/btrfs-root/__snapshot/home
-
-btrfs subvolume snapshot -r /home $SNAPS/$1_$(date +%F_%T.%N)
-
-num_snaps=3D$(ls -1d $SNAPS/$1_* | sort | wc -l)
-
-if [ "$num_snaps" -gt "$2" ]; then
-   let over=3D$num_snaps-$2
-   ls -1d $SNAPS/$1_* | head -n $over | while read s; do
-      btrfs subvolume delete $s
-   done
-fi
+--Andrew
 
 
-Here's my crontab:
-0 * * * * /usr/local/bin/snapshot hourly 6
-0 0 * * * /usr/local/bin/snapshot daily 7
-0 0 * * 0 /usr/local/bin/snapshot weekly 4
---=20
--=3D[dave]=3D-
-
-Entropy isn't what it used to be.
-
---6c2NcOVqGQ03X4Wi
-Content-Type: application/pgp-signature
-
------BEGIN PGP SIGNATURE-----
-Version: GnuPG v1.4.11 (GNU/Linux)
-
-iF4EAREIAAYFAk5LynEACgkQXM0u5ajNnChXZAD7Bte+oFB8tN0N9vvJ/dAjnZKF
-GhD/drCjinLFQmD76AkA/1edfqnkzbVuFO+8yiMH3e+DF0cjw+cdBs2Z4bCXZDsK
-=oZvL
------END PGP SIGNATURE-----
-
---6c2NcOVqGQ03X4Wi--

@@ -1,39 +1,50 @@
-From: Lenz Grimmer <lenz@grimmer.com>
+From: "Matthias G. Eckermann" <mge@suse.com>
 Subject: Re: [RFC] btrfs auto snapshot
-Date: Wed, 17 Aug 2011 21:56:54 +0200
-Message-ID: <CAJAd_WGL1CEDVNgLKeNOOPhAdyWTFqmX9Un5zU0ydUU+PNC8aA@mail.gmail.com>
-References: <4E4B2452.9070407@oracle.com> <4E4B88BA.4030603@oracle.com>
+Date: Wed, 17 Aug 2011 23:56:17 +0200
+Message-ID: <20110817215617.GC30408@suse.com>
+References: <4E4B2452.9070407@oracle.com>
+ <20110817140433.GA32261@hendrix.borisch.local>
+ <4E4BD53A.7080708@pacific.net>
+ <20110817173837.GA29509@suse.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=UTF-8
-Cc: linux-btrfs <linux-btrfs@vger.kernel.org>,
-	Chris Mason <chris.mason@oracle.com>
-To: Anand Jain <Anand.Jain@oracle.com>
+Content-Type: text/plain; charset=utf-8
+To: Ken A <ka@pacific.net>, linux-btrfs <linux-btrfs@vger.kernel.org>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <4E4B88BA.4030603@oracle.com>
+In-Reply-To: <20110817173837.GA29509@suse.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hi Anand,
+Hello Ken and all,
 
-On Wed, Aug 17, 2011 at 11:24, Anand Jain <Anand.Jain@oracle.com> wrote=
-:
+On 2011-08-17 T 19:38 +0200 Matthias G. Eckermann wrote:
+=20
+> P.S.:	I also added "snapper" itself there. I am not sure
+> though, if it will build out of the box. ... Stay tuned.
+=20
+A dinner later, the packages (.rpm/.src.rpm) for blocxx and
+also snapper are available in the openSUSE Buildservice at:
+	http://download.opensuse.org/repositories/home:/mge1512:/snapper/
+for=20
+	Fedora_15 RHEL-6 SLE_11_SP1 openSUSE_Factory
 
-> And a rough implementation design is here below. (As of now this does
-> not include the GNOME integration since I have no idea how to do that=
-).
+The download directory is a YUM repository and should easily
+work with either of the distributions.
 
-Very cool idea! With regards to the Gnome integration, you might want t=
-o take
-a look at what the Solaris folks did for Nautilus - I really liked the
-UI and the
-integration with ZFS:
+Enjoy!
 
-http://src.opensolaris.org/source/xref/jds/spec-files/branches/gnome-2-=
-30/patches/nautilus-14-zfs-snapshot.diff
+so long -
+ 	MgE
 
-Bye,
-=C2=A0 =C2=A0 =C2=A0 =C2=A0 LenZ
---
-=C2=A0Lenz Grimmer <lenz@grimmer.com> -=C2=A0 http://www.lenzg.net/
+P.S.: 	Again, if someone sends the packaging files for
+	Debian/Ubuntu, I can also add those. Unfortunately
+	my .deb experience is limited, ...
+
+--=20
+Matthias G. Eckermann     Senior Product Manager   SUSE=C2=AE Linux Ent=
+erprise
+SUSE LINUX Products GmbH  Maxfeldstra=C3=9Fe 5          90409 N=C3=BCrn=
+berg Germany
+GF: Jeff Hawn, Jennifer Guild, Felix Imend=C3=B6rffer, HRB 16746 (AG N=C3=
+=BCrnberg)
 --
 To unsubscribe from this list: send the line "unsubscribe linux-btrfs" =
 in

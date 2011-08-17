@@ -1,79 +1,75 @@
-From: Hidetoshi Seto <seto.hidetoshi@jp.fujitsu.com>
-Subject: [PATCH] btrfs: fix d_off in the first dirent
-Date: Wed, 17 Aug 2011 18:23:25 +0900
-Message-ID: <4E4B888D.6070904@jp.fujitsu.com>
+From: "David Pottage" <david@electric-spoon.com>
+Subject: Re: [RFC] btrfs auto snapshot
+Date: Wed, 17 Aug 2011 14:23:32 +0100
+Message-ID: <2084d6628f888144198ac8450b470b7c.squirrel@www.chrestomanci.org>
+References: <4E4B2452.9070407@oracle.com> <4E4B88BA.4030603@oracle.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=ISO-2022-JP
-Cc: chris.mason@oracle.com
-To: linux-btrfs@vger.kernel.org
+Content-Type: text/plain; charset=US-ASCII
+Cc: "linux-btrfs" <linux-btrfs@vger.kernel.org>,
+	"Chris Mason" <chris.mason@oracle.com>
+To: "Anand Jain" <Anand.Jain@oracle.com>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
+In-Reply-To: <4E4B88BA.4030603@oracle.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Since the d_off in the first dirent for "." (that originates from
-the 4th argument "offset" of filldir() for the 2nd dirent for "..")
-is wrongly assigned in btrfs_real_readdir(), telldir returns same
-offset for different locations.
+> And a rough implementation design is here below. (As of now this does
+> not include the GNOME integration since I have no idea how to do that).
+>
+> Further, implementation will contain 2 new files
+> /etc/init.d/btrfs and /<path>/btrfs-auto-snapshot,
+>
+> any idea where does a file like btrfs-auto-snapshot should be placed
+> (with its purpose as mentioned below).
+[...]
+> 2.
+> Crontab: Upon start, crontab will be updated with something like the
+> following.
+>     every 15min `<path>/btrfs-auto-snapshot cleanup>`
+>     every 15min `/<path>/btrfs-auto-snapshot 15min`
+>     every hr   `/<path>/btrfs-auto-snapshot hr`
+>     every day  `/<path>/btrfs-auto-snapshot day`
+>     every month `/<path>/btrfs-auto-snapshot month`
+>     every year  `/<path>/btrfs-auto-snapshot year`
 
- | # mkfs.btrfs /dev/sdb1
- | # mount /dev/sdb1 fs0
- | # cd fs0
- | # touch file0 file1
- | # ../test
- | telldir: 0
- | readdir: d_off = 2, d_name = "."
- | telldir: 2
- | readdir: d_off = 2, d_name = ".."
- | telldir: 2
- | readdir: d_off = 3, d_name = "file0"
- | telldir: 3
- | readdir: d_off = 2147483647, d_name = "file1"
- | telldir: 2147483647
+I think that you need to be careful not to impose your idea of when to
+take snapshots and how long to keep them onto the design. For example
+why take snapshots every 15 minutes? Why not every 10 or every hour?
 
-To fix this problem, pass filp->f_pos (which is loff_t) instead of
-the wrong constant value.
+Why treat monthly snapshots as special when it does not fit into most
+working weeks? would weekly be more logical? What about 2 weekly (When
+I worked at Nokia, internal releases where done on Tuesday of each even
+numbered week, so we would have wanted the snapshot taken on that day
+to be retained longer than snapshots taken on other days, or Tuesdays
+in odd numbered weeks.)
 
- | # ../test
- | telldir: 0
- | readdir: d_off = 1, d_name = "."
- | telldir: 1
- | readdir: d_off = 2, d_name = ".."
- | telldir: 2
- | readdir: d_off = 3, d_name = "file0"
- :
+I think a more flexible design would be to allow the user to specify
+(via a config file for each subvolume) a label for each type of snapshot
+and how long to keep snapshots depending on when they are taken. This
+can be done using syntax similar to crontab:
 
-At the moment the "offset" for "." is unused because there is no
-preceding dirent, however it is better to pass filp->f_pos to follow
-grammatical usage.
+Example
 
-Signed-off-by: Hidetoshi Seto <seto.hidetoshi@jp.fujitsu.com>
----
- fs/btrfs/inode.c |    5 +++--
- 1 files changed, 3 insertions(+), 2 deletions(-)
+# Format: <label> <crontab like fields> <retention time>
 
-diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
-index 15fceef..9c1297b 100644
---- a/fs/btrfs/inode.c
-+++ b/fs/btrfs/inode.c
-@@ -4125,7 +4125,8 @@ static int btrfs_real_readdir(struct file *filp, void *dirent,
- 
- 	/* special case for "." */
- 	if (filp->f_pos == 0) {
--		over = filldir(dirent, ".", 1, 1, btrfs_ino(inode), DT_DIR);
-+		over = filldir(dirent, ".", 1,
-+			       filp->f_pos, inode->i_ino, DT_DIR);
- 		if (over)
- 			return 0;
- 		filp->f_pos = 1;
-@@ -4134,7 +4135,7 @@ static int btrfs_real_readdir(struct file *filp, void *dirent,
- 	if (filp->f_pos == 1) {
- 		u64 pino = parent_ino(filp->f_path.dentry);
- 		over = filldir(dirent, "..", 2,
--			       2, pino, DT_DIR);
-+			       filp->f_pos, pino, DT_DIR);
- 		if (over)
- 			return 0;
- 		filp->f_pos = 2;
+# Keep 15 min snapshots for 6 hours.
+15_minute	*/15 * * * *	6 hour
+
+# Keep hourly snapshots for 5 day
+hourly		0 * * * *	5 day
+
+# Keep daily snapshots for 21 days. Use the noon snapshot
+daily		0 12 * * *	21 day
+
+# Keep weekly snapshots for 6 months, Use the Tuesday snapshot
+# TODO: we would need a week number field to specify even
+#       numbered weeks only.
+weekly		0 12 * * 2	6 mon
+
+The btrfs-auto-snapshot script would need to make sure that the crontab
+entry that takes snapshots runs frequently enough.
+
 -- 
-1.7.6
+David Pottage
 
+Error compiling committee.c To many arguments to function.
 

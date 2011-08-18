@@ -1,52 +1,56 @@
-From: youagree <n3ocort3x@gmail.com>
-Subject: Re: Applications using fsync cause hangs for several seconds every
- few minutes
-Date: Thu, 18 Aug 2011 09:55:56 +0200
-Message-ID: <j2igev$9nk$1@dough.gmane.org>
-References: <4E41A6A4.9070702@uvm.edu> <4E4BCF0C.7060109@uvm.edu> <4E4BD05B.9070501@cchtml.com> <4E4BD272.8000704@uvm.edu> <20110817145509.GA23804@hendrix.borisch.local> <4E4C7BCD.6090004@oracle.com> <4E4CB4D9.4060509@gmail.com> <4E4CBF43.60207@uvm.edu>
+From: Miao Xie <miaox@cn.fujitsu.com>
+Subject: [PATCH 1/3] Btrfs: fix wrong nbytes information of the inode
+Date: Thu, 18 Aug 2011 16:11:31 +0800
+Message-ID: <4E4CC933.6060601@cn.fujitsu.com>
+Reply-To: miaox@cn.fujitsu.com
 Mime-Version: 1.0
-Content-Type: text/plain; charset=UTF-8
-To: linux-btrfs@vger.kernel.org
+Content-Type: text/plain; charset=GB2312
+To: Linux Btrfs <linux-btrfs@vger.kernel.org>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <4E4CBF43.60207@uvm.edu>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 08/18/2011 09:29 AM, Andrew Guertin wrote:
-> * Many processes occasionally hang for a short time
-> * When this happens, my cpu monitor shows a short burst of cpu activity
-> (100% of 1 core) followed by a longer period of IO
-> * When this happens, iotop shows [btrfs-submit-0] and [btrfs-transacti]
-> at the top of the list
-> * Behavior slowly increases in duration (and frequency?) over time, and
-> goes away with a reboot
-> * Heavy IO makes behavior appear faster
-> 
-> ... and the following behaviors before commit 4e69b59:
-> 
-> * Occasional spikes of IO on cpu monitor concurrent with
-> [btrfs-submit-0] and [btrfs-transacti] at top of iotop
-> * No hangs, even when that occurs
+If we write some data into the data hole of the file(no preallocation for this
+hole), Btrfs will allocate some disk space, and update nbytes of the inode, but
+the other element--disk_i_size needn't be updated. At this condition, we must
+update inode metadata though disk_i_size is not changed(btrfs_ordered_update_i_size()
+return 1).
 
-Yes, exactly that happened in my case too. Yours is a much more precise
-description! I did not diagnose 2.6.38 further because I just wanted to
-establish a known-good version and at first sight (2 days uptime) my HDD
-behavior showed that it cannot be good if _any_ HDD thrashing appears at
-all in the first place...
+ # mkfs.btrfs /dev/sdb1
+ # mount /dev/sdb1 /mnt
+ # touch /mnt/a
+ # truncate -s 856002 /mnt/a
+ # dd if=/dev/zero of=/mnt/a bs=4K count=1 conv=nocreat,notrunc
+ # umount /mnt
+ # btrfsck /dev/sdb1
+ root 5 inode 257 errors 400
+ found 32768 bytes used err is 1
 
-I was able to work with the computer during those IO spikes on 2.6.38
-too, although it was observable that the HDD is being thrased
-(meanwhile, LED was almost constant lit). But it didn't cause other
-programs to be unresponsive, I confirm...
+Signed-off-by: Miao Xie <miaox@cn.fujitsu.com>
+---
+ fs/btrfs/inode.c |    4 ++--
+ 1 files changed, 2 insertions(+), 2 deletions(-)
 
-
-> I wasn't taking notes or anything though, so I'm not 100% certain I was
-> observing or interpreting or remembering everything correctly.
-> 
-> --Andrew
-> -- 
-> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
-> 
-
-
+diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
+index 18d08f4..634dd797 100644
+--- a/fs/btrfs/inode.c
++++ b/fs/btrfs/inode.c
+@@ -1786,7 +1786,7 @@ static int btrfs_finish_ordered_io(struct inode *inode, u64 start, u64 end)
+ 			  &ordered_extent->list);
+ 
+ 	ret = btrfs_ordered_update_i_size(inode, 0, ordered_extent);
+-	if (!ret) {
++	if (!ret || !test_bit(BTRFS_ORDERED_PREALLOC, &ordered_extent->flags)) {
+ 		ret = btrfs_update_inode(trans, root, inode);
+ 		BUG_ON(ret);
+ 	}
+@@ -5788,7 +5788,7 @@ again:
+ 
+ 	add_pending_csums(trans, inode, ordered->file_offset, &ordered->list);
+ 	ret = btrfs_ordered_update_i_size(inode, 0, ordered);
+-	if (!ret)
++	if (!ret || !test_bit(BTRFS_ORDERED_PREALLOC, &ordered->flags))
+ 		btrfs_update_inode(trans, root, inode);
+ 	ret = 0;
+ out_unlock:
+-- 
+1.7.4

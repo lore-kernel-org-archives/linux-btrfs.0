@@ -1,45 +1,37 @@
 From: Anand Jain <Anand.Jain@oracle.com>
-Subject: Re: [RFC] btrfs auto snapshot
-Date: Thu, 18 Aug 2011 18:11:11 +0800
-Message-ID: <4E4CE53F.3060908@oracle.com>
-References: <4E4B2452.9070407@oracle.com> <4E4B88BA.4030603@oracle.com> <2084d6628f888144198ac8450b470b7c.squirrel@www.chrestomanci.org>
+Subject: Re: snapshot ctime // Re: [RFC] btrfs auto snapshot
+Date: Thu, 18 Aug 2011 18:14:20 +0800
+Message-ID: <4E4CE5FC.70600@oracle.com>
+References: <4E4B2452.9070407@oracle.com> <20110817140433.GA32261@hendrix.borisch.local> <20110817211316.0414bb5a@natsu> <CALJXSJpVWHZEKp9uZ8SB-mdkr2U8kdU=-k1=2U3QsoWXsTHC2Q@mail.gmail.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=ISO-8859-1; format=flowed
-Cc: linux-btrfs <linux-btrfs@vger.kernel.org>,
-	Chris Mason <chris.mason@oracle.com>
-To: David Pottage <david@electric-spoon.com>
+Content-Type: text/plain; charset=UTF-8;
+	format=flowed
+Cc: Roman Mamedov <rm@romanrm.ru>, Dave <dave@thekilempire.com>,
+	linux-btrfs <linux-btrfs@vger.kernel.org>
+To: =?UTF-8?B?SsOpcsO0bWUgUG91bGlu?= <jeromepoulin@gmail.com>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <2084d6628f888144198ac8450b470b7c.squirrel@www.chrestomanci.org>
+In-Reply-To: <CALJXSJpVWHZEKp9uZ8SB-mdkr2U8kdU=-k1=2U3QsoWXsTHC2Q@mail.gmail.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
 
 
-David,
+On 08/17/2011 11:56 PM, J=C3=A9r=C3=B4me Poulin wrote:
+> On Wed, Aug 17, 2011 at 11:13 AM, Roman Mamedov<rm@romanrm.ru>  wrote=
+:
+>> So until someone cares about snapshot ctime enough to fix this, btrf=
+s will not be a convenient FS to work with timed snapshotting/cleanup.
+>
+> Isn't the ctime the creation date of the original folder?
 
-> I think that you need to be careful not to impose your idea of when to
-> take snapshots and how long to keep them onto the design. For example
-> why take snapshots every 15 minutes? Why not every 10 or every hour?
+  It will be a nice thing to have the snapshot time returned by
+  btrfs-prog.
 
-  crontab is anyways changeable by the admin, I think we can have that
-  flexibility.
-
-> Why treat monthly snapshots as special when it does not fit into most
-> working weeks? would weekly be more logical? What about 2 weekly (When
-> I worked at Nokia, internal releases where done on Tuesday of each even
-> numbered week, so we would have wanted the snapshot taken on that day
-> to be retained longer than snapshots taken on other days, or Tuesdays
-> in odd numbered weeks.)
-
-  agreed. weekly is more important. (I had that in mind but missed it
-  when writing, sorry for that).
-
-> I think a more flexible design would be to allow the user to specify
-> (via a config file for each subvolume) a label for each type of snapshot
-> and how long to keep snapshots depending on when they are taken. This
-> can be done using syntax similar to crontab:
-
-  simple and nice idea. thanks for explaining, will try to get this
-  in the initial release.
+  something like
+   btrfs get stime <snapshot>
 
 Cheers, Anand
-
+--
+To unsubscribe from this list: send the line "unsubscribe linux-btrfs" =
+in
+the body of a message to majordomo@vger.kernel.org
+More majordomo info at  http://vger.kernel.org/majordomo-info.html

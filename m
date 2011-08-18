@@ -1,43 +1,52 @@
-From: Andrew Guertin <andrew.guertin@uvm.edu>
+From: youagree <n3ocort3x@gmail.com>
 Subject: Re: Applications using fsync cause hangs for several seconds every
  few minutes
-Date: Thu, 18 Aug 2011 03:41:58 -0400
-Message-ID: <4E4CC246.8030209@uvm.edu>
-References: <4E41A6A4.9070702@uvm.edu> <4E4BCF0C.7060109@uvm.edu> <4E4BD05B.9070501@cchtml.com> <4E4BD272.8000704@uvm.edu> <20110817145509.GA23804@hendrix.borisch.local> <4E4C7BCD.6090004@oracle.com>
+Date: Thu, 18 Aug 2011 09:55:56 +0200
+Message-ID: <j2igev$9nk$1@dough.gmane.org>
+References: <4E41A6A4.9070702@uvm.edu> <4E4BCF0C.7060109@uvm.edu> <4E4BD05B.9070501@cchtml.com> <4E4BD272.8000704@uvm.edu> <20110817145509.GA23804@hendrix.borisch.local> <4E4C7BCD.6090004@oracle.com> <4E4CB4D9.4060509@gmail.com> <4E4CBF43.60207@uvm.edu>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=UTF-8; format=flowed
-Cc: linux-btrfs@vger.kernel.org
-To: Anand Jain <Anand.Jain@oracle.com>
+Content-Type: text/plain; charset=UTF-8
+To: linux-btrfs@vger.kernel.org
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <4E4C7BCD.6090004@oracle.com>
+In-Reply-To: <4E4CBF43.60207@uvm.edu>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 08/17/2011 10:41 PM, Anand Jain wrote:
-> Dave,
->
-> good to have a test case on the 3.0 kernel. do you have btrfs as
-> root fs ? and
-> can you show how are you using the btrfs mainly I would need
-> 'btrfs fi show' let me try if I can reproduce.
->
-> Thanks, Anand
+On 08/18/2011 09:29 AM, Andrew Guertin wrote:
+> * Many processes occasionally hang for a short time
+> * When this happens, my cpu monitor shows a short burst of cpu activity
+> (100% of 1 core) followed by a longer period of IO
+> * When this happens, iotop shows [btrfs-submit-0] and [btrfs-transacti]
+> at the top of the list
+> * Behavior slowly increases in duration (and frequency?) over time, and
+> goes away with a reboot
+> * Heavy IO makes behavior appear faster
+> 
+> ... and the following behaviors before commit 4e69b59:
+> 
+> * Occasional spikes of IO on cpu monitor concurrent with
+> [btrfs-submit-0] and [btrfs-transacti] at top of iotop
+> * No hangs, even when that occurs
 
-Personally, I find that large compiles are very "useful" in making the issue 
-occur sooner. I'm on gentoo, so when I was bisecting, I'd often just emerge 
-openoffice and let it run for a while.
+Yes, exactly that happened in my case too. Yours is a much more precise
+description! I did not diagnose 2.6.38 further because I just wanted to
+establish a known-good version and at first sight (2 days uptime) my HDD
+behavior showed that it cannot be good if _any_ HDD thrashing appears at
+all in the first place...
 
-For observing, the best way I found was to run JOSM (Java OpenStreetMap editor). 
-Browsing around a map is very interactive, so it's immediately noticeable when 
-it hangs, and downloading map tiles all the time uses a lot of IO. In-browser 
-map applications would probably work too.
+I was able to work with the computer during those IO spikes on 2.6.38
+too, although it was observable that the HDD is being thrased
+(meanwhile, LED was almost constant lit). But it didn't cause other
+programs to be unresponsive, I confirm...
 
-My filesystem is partitioned with a small ext2 /boot as sda1, a 2GB swap as 
-sda2, and the remaining space as btrfs / on sda3.
-btrfs fi show gives:
-Label: none  uuid: 28559ad8-7db8-402b-a93d-27ec9c5e943b
-	Total devices 1 FS bytes used 102.83GB
-	devid    1 size 144.90GB used 144.90GB path /dev/sda3
 
-Btrfs v0.19-35-g1b444cd-dirty
+> I wasn't taking notes or anything though, so I'm not 100% certain I was
+> observing or interpreting or remembering everything correctly.
+> 
+> --Andrew
+> -- 
+> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
+> the body of a message to majordomo@vger.kernel.org
+> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+> 
 
---Andrew
+

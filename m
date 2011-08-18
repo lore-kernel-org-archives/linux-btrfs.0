@@ -1,9 +1,10 @@
 From: Mark Fasheh <mfasheh@suse.de>
-Subject: [PATCH 3/8] btrfs: Don't BUG_ON kzalloc error in btrfs_lookup_csums_range()
-Date: Thu, 18 Aug 2011 14:56:56 -0700
-Message-ID: <1313704621-15219-4-git-send-email-mfasheh@suse.de>
+Subject: [PATCH 2/8] btrfs: Don't BUG_ON() errors in update_ref_for_cow()
+Date: Thu, 18 Aug 2011 14:56:55 -0700
+Message-ID: <1313704621-15219-3-git-send-email-mfasheh@suse.de>
 References: <1313704621-15219-1-git-send-email-mfasheh@suse.de>
-Cc: chris.mason@oracle.com, Mark Fasheh <mfasheh@suse.com>
+Cc: chris.mason@oracle.com, Mark Fasheh <mfasheh@suse.com>,
+	Mark Fasheh <mfasheh@suse.de>
 To: linux-btrfs@vger.kernel.org
 Return-path: <linux-btrfs-owner@vger.kernel.org>
 In-Reply-To: <1313704621-15219-1-git-send-email-mfasheh@suse.de>
@@ -11,71 +12,113 @@ List-ID: <linux-btrfs.vger.kernel.org>
 
 From: Mark Fasheh <mfasheh@suse.com>
 
-Unfortunately it isn't enough to just exit here - the kzalloc() happens in a
-loop and the allocated items are added to a linked list whose head is passed
-in from the caller.
+The only caller of update_ref_for_cow() is __btrfs_cow_block() which was
+originally ignoring any return values. update_ref_for_cow() however doesn't
+look like a candidate to become a void function - there are a few places
+where errors can occur.
 
-To fix the BUG_ON() and also provide the semantic that the list passed in is
-only modified on success, I create function-local temporary list that we add
-items too. If no error is met, that list is spliced to the callers at the
-end of the function. Otherwise the list will be walked and all items freed
-before the error value is returned.
+So instead I changed update_ref_for_cow() to bubble all errors up (instead
+of BUG_ON). __btrfs_cow_block() was then updated to catch and BUG_ON() any
+errors from update_ref_for_cow(). The end effect is that we have no change
+in behavior, but about 8 different places where a BUG_ON(ret) was removed.
 
-I did a simple test on this patch by forcing an error at the kzalloc() point
-and verifying that when this hits (git clone seemed to exercise this), the
-function throws the proper error. Unfortunately but predictably, we later
-hit a BUG_ON(ret) type line that still hasn't been fixed up ;)
+Obviously a future patch will have to address the BUG_ON() in
+__btrfs_cow_block().
 
-Signed-off-by: Mark Fasheh <mfasheh@suse.com>
+Signed-off-by: Mark Fasheh <mfasheh@suse.de>
 ---
- fs/btrfs/file-item.c |   15 +++++++++++++--
- 1 files changed, 13 insertions(+), 2 deletions(-)
+ fs/btrfs/ctree.c |   31 +++++++++++++++++++++----------
+ 1 files changed, 21 insertions(+), 10 deletions(-)
 
-diff --git a/fs/btrfs/file-item.c b/fs/btrfs/file-item.c
-index b910694..679fbff 100644
---- a/fs/btrfs/file-item.c
-+++ b/fs/btrfs/file-item.c
-@@ -284,6 +284,7 @@ int btrfs_lookup_csums_range(struct btrfs_root *root, u64 start, u64 end,
- 	struct btrfs_ordered_sum *sums;
- 	struct btrfs_sector_sum *sector_sum;
- 	struct btrfs_csum_item *item;
-+	LIST_HEAD(tmplist);
- 	unsigned long offset;
- 	int ret;
- 	size_t size;
-@@ -358,7 +359,10 @@ int btrfs_lookup_csums_range(struct btrfs_root *root, u64 start, u64 end,
- 					MAX_ORDERED_SUM_BYTES(root));
- 			sums = kzalloc(btrfs_ordered_sum_size(root, size),
- 					GFP_NOFS);
--			BUG_ON(!sums);
-+			if (!sums) {
-+				ret = -ENOMEM;
-+				goto fail;
-+			}
+diff --git a/fs/btrfs/ctree.c b/fs/btrfs/ctree.c
+index 011cab3..5064930 100644
+--- a/fs/btrfs/ctree.c
++++ b/fs/btrfs/ctree.c
+@@ -331,7 +331,8 @@ static noinline int update_ref_for_cow(struct btrfs_trans_handle *trans,
+ 	if (btrfs_block_can_be_shared(root, buf)) {
+ 		ret = btrfs_lookup_extent_info(trans, root, buf->start,
+ 					       buf->len, &refs, &flags);
+-		BUG_ON(ret);
++		if (ret)
++			return ret;
+ 		BUG_ON(refs == 0);
+ 	} else {
+ 		refs = 1;
+@@ -351,14 +352,18 @@ static noinline int update_ref_for_cow(struct btrfs_trans_handle *trans,
+ 		     root->root_key.objectid == BTRFS_TREE_RELOC_OBJECTID) &&
+ 		    !(flags & BTRFS_BLOCK_FLAG_FULL_BACKREF)) {
+ 			ret = btrfs_inc_ref(trans, root, buf, 1);
+-			BUG_ON(ret);
++			if (ret)
++				return ret;
  
- 			sector_sum = sums->sums;
- 			sums->bytenr = start;
-@@ -380,12 +384,19 @@ int btrfs_lookup_csums_range(struct btrfs_root *root, u64 start, u64 end,
- 				offset += csum_size;
- 				sector_sum++;
- 			}
--			list_add_tail(&sums->list, list);
-+			list_add_tail(&sums->list, &tmplist);
- 		}
- 		path->slots[0]++;
- 	}
- 	ret = 0;
- fail:
-+	while (ret < 0 && !list_empty(&tmplist)) {
-+		sums = list_entry(&tmplist, struct btrfs_ordered_sum, list);
-+		list_del(&sums->list);
-+		kfree(sums);
-+	}
-+	list_splice_tail(&tmplist, list);
+ 			if (root->root_key.objectid ==
+ 			    BTRFS_TREE_RELOC_OBJECTID) {
+ 				ret = btrfs_dec_ref(trans, root, buf, 0);
+-				BUG_ON(ret);
++				if (ret)
++					return ret;
 +
- 	btrfs_free_path(path);
- 	return ret;
- }
+ 				ret = btrfs_inc_ref(trans, root, cow, 1);
+-				BUG_ON(ret);
++				if (ret)
++					return ret;
+ 			}
+ 			new_flags |= BTRFS_BLOCK_FLAG_FULL_BACKREF;
+ 		} else {
+@@ -368,14 +373,16 @@ static noinline int update_ref_for_cow(struct btrfs_trans_handle *trans,
+ 				ret = btrfs_inc_ref(trans, root, cow, 1);
+ 			else
+ 				ret = btrfs_inc_ref(trans, root, cow, 0);
+-			BUG_ON(ret);
++			if (ret)
++				return ret;
+ 		}
+ 		if (new_flags != 0) {
+ 			ret = btrfs_set_disk_extent_flags(trans, root,
+ 							  buf->start,
+ 							  buf->len,
+ 							  new_flags, 0);
+-			BUG_ON(ret);
++			if (ret)
++				return ret;
+ 		}
+ 	} else {
+ 		if (flags & BTRFS_BLOCK_FLAG_FULL_BACKREF) {
+@@ -384,9 +391,12 @@ static noinline int update_ref_for_cow(struct btrfs_trans_handle *trans,
+ 				ret = btrfs_inc_ref(trans, root, cow, 1);
+ 			else
+ 				ret = btrfs_inc_ref(trans, root, cow, 0);
+-			BUG_ON(ret);
++			if (ret)
++				return ret;
++
+ 			ret = btrfs_dec_ref(trans, root, buf, 1);
+-			BUG_ON(ret);
++			if (ret)
++				return ret;
+ 		}
+ 		clean_tree_block(trans, root, buf);
+ 		*last_ref = 1;
+@@ -415,7 +425,7 @@ static noinline int __btrfs_cow_block(struct btrfs_trans_handle *trans,
+ {
+ 	struct btrfs_disk_key disk_key;
+ 	struct extent_buffer *cow;
+-	int level;
++	int level, ret;
+ 	int last_ref = 0;
+ 	int unlock_orig = 0;
+ 	u64 parent_start;
+@@ -467,7 +477,8 @@ static noinline int __btrfs_cow_block(struct btrfs_trans_handle *trans,
+ 			    (unsigned long)btrfs_header_fsid(cow),
+ 			    BTRFS_FSID_SIZE);
+ 
+-	update_ref_for_cow(trans, root, buf, cow, &last_ref);
++	ret = update_ref_for_cow(trans, root, buf, cow, &last_ref);
++	BUG_ON(ret);
+ 
+ 	if (root->ref_cows)
+ 		btrfs_reloc_cow_block(trans, root, buf, cow);
 -- 
 1.7.6
 

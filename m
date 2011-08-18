@@ -1,104 +1,35 @@
-From: Hidetoshi Seto <seto.hidetoshi@jp.fujitsu.com>
-Subject: Re: [PATCH] btrfs: fix d_off in the first dirent
-Date: Thu, 18 Aug 2011 11:19:14 +0900
-Message-ID: <4E4C76A2.5080605@jp.fujitsu.com>
-References: <4E4B888D.6070904@jp.fujitsu.com> <4E4C74F1.1000701@cn.fujitsu.com>
+From: Anand Jain <Anand.Jain@oracle.com>
+Subject: Re: Applications using fsync cause hangs for several seconds every
+ few minutes
+Date: Thu, 18 Aug 2011 10:41:17 +0800
+Message-ID: <4E4C7BCD.6090004@oracle.com>
+References: <4E41A6A4.9070702@uvm.edu> <4E4BCF0C.7060109@uvm.edu> <4E4BD05B.9070501@cchtml.com> <4E4BD272.8000704@uvm.edu> <20110817145509.GA23804@hendrix.borisch.local>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=ISO-2022-JP
-Cc: linux-btrfs@vger.kernel.org, chris.mason@oracle.com
-To: Li Zefan <lizf@cn.fujitsu.com>
+Content-Type: text/plain; charset=ISO-8859-1; format=flowed
+Cc: Andrew Guertin <andrew.guertin@uvm.edu>,
+	Michael Cronenworth <mike@cchtml.com>,
+	linux-btrfs@vger.kernel.org
+To: Dave <dave@thekilempire.com>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <4E4C74F1.1000701@cn.fujitsu.com>
+In-Reply-To: <20110817145509.GA23804@hendrix.borisch.local>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-(2011/08/18 11:12), Li Zefan wrote:
->> diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
->> index 15fceef..9c1297b 100644
->> --- a/fs/btrfs/inode.c
->> +++ b/fs/btrfs/inode.c
->> @@ -4125,7 +4125,8 @@ static int btrfs_real_readdir(struct file *filp, void *dirent,
->>  
->>  	/* special case for "." */
->>  	if (filp->f_pos == 0) {
->> -		over = filldir(dirent, ".", 1, 1, btrfs_ino(inode), DT_DIR);
->> +		over = filldir(dirent, ".", 1,
->> +			       filp->f_pos, inode->i_ino, DT_DIR);
-> 
-> please stick to btrfs_ino().
 
-Wow, I made a misstep on rebase...
-Here is the updated one.
+Dave,
 
-Thanks,
-H.Seto
+  good to have a test case on the 3.0 kernel.  do you have btrfs as
+  root fs ? and
+  can you show how are you using the btrfs mainly I would need
+  'btrfs fi show' let me try if I can reproduce.
 
-=====
-
-Since the d_off in the first dirent for "." (that originates from
-the 4th argument "offset" of filldir() for the 2nd dirent for "..")
-is wrongly assigned in btrfs_real_readdir(), telldir returns same
-offset for different locations.
-
- | # mkfs.btrfs /dev/sdb1
- | # mount /dev/sdb1 fs0
- | # cd fs0
- | # touch file0 file1
- | # ../test
- | telldir: 0
- | readdir: d_off = 2, d_name = "."
- | telldir: 2
- | readdir: d_off = 2, d_name = ".."
- | telldir: 2
- | readdir: d_off = 3, d_name = "file0"
- | telldir: 3
- | readdir: d_off = 2147483647, d_name = "file1"
- | telldir: 2147483647
-
-To fix this problem, pass filp->f_pos (which is loff_t) instead.
-
- | # ../test
- | telldir: 0
- | readdir: d_off = 1, d_name = "."
- | telldir: 1
- | readdir: d_off = 2, d_name = ".."
- | telldir: 2
- | readdir: d_off = 3, d_name = "file0"
- :
-
-At the moment the "offset" for "." is unused because there is no
-preceding dirent, however it is better to pass filp->f_pos to follow
-grammatical usage.
-
-Signed-off-by: Hidetoshi Seto <seto.hidetoshi@jp.fujitsu.com>
----
- fs/btrfs/inode.c |    5 +++--
- 1 files changed, 3 insertions(+), 2 deletions(-)
-
-diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
-index 15fceef..addf025 100644
---- a/fs/btrfs/inode.c
-+++ b/fs/btrfs/inode.c
-@@ -4125,7 +4125,8 @@ static int btrfs_real_readdir(struct file *filp, void *dirent,
- 
- 	/* special case for "." */
- 	if (filp->f_pos == 0) {
--		over = filldir(dirent, ".", 1, 1, btrfs_ino(inode), DT_DIR);
-+		over = filldir(dirent, ".", 1,
-+			       filp->f_pos, btrfs_ino(inode), DT_DIR);
- 		if (over)
- 			return 0;
- 		filp->f_pos = 1;
-@@ -4134,7 +4135,7 @@ static int btrfs_real_readdir(struct file *filp, void *dirent,
- 	if (filp->f_pos == 1) {
- 		u64 pino = parent_ino(filp->f_path.dentry);
- 		over = filldir(dirent, "..", 2,
--			       2, pino, DT_DIR);
-+			       filp->f_pos, pino, DT_DIR);
- 		if (over)
- 			return 0;
- 		filp->f_pos = 2;
--- 
-1.7.6
+Thanks, Anand
 
 
-
+> I've been simply living with this issue.  I can reproduce it by rsyncing very
+> large files to a btrfs volume.  My entire desktop will freeze for up to three
+> minutes and no amount of nice/ionice can temper this.
+>
+> Once I've finished the rsync certain apps will periodically hang (Firefox in
+> particular).  This behavior goes away after a reboot.
+>
+> I'm running kernel version 3.0.

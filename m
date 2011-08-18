@@ -1,7 +1,7 @@
 From: Miao Xie <miaox@cn.fujitsu.com>
-Subject: [PATCH 1/3] Btrfs: fix wrong nbytes information of the inode
-Date: Thu, 18 Aug 2011 16:11:31 +0800
-Message-ID: <4E4CC933.6060601@cn.fujitsu.com>
+Subject: [PATCH 2/3] Btrfs: fix the file extent gap when doing direct IO
+Date: Thu, 18 Aug 2011 16:13:30 +0800
+Message-ID: <4E4CC9AA.6040402@cn.fujitsu.com>
 Reply-To: miaox@cn.fujitsu.com
 Mime-Version: 1.0
 Content-Type: text/plain; charset=GB2312
@@ -9,48 +9,67 @@ To: Linux Btrfs <linux-btrfs@vger.kernel.org>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-If we write some data into the data hole of the file(no preallocation for this
-hole), Btrfs will allocate some disk space, and update nbytes of the inode, but
-the other element--disk_i_size needn't be updated. At this condition, we must
-update inode metadata though disk_i_size is not changed(btrfs_ordered_update_i_size()
-return 1).
+When we write some data to the place that is beyond the end of the file
+in direct I/O mode, a data hole will be created. And Btrfs should insert
+a file extent item that point to this hole into the fs tree. But unfortunately
+Btrfs forgets doing it.
 
- # mkfs.btrfs /dev/sdb1
- # mount /dev/sdb1 /mnt
- # touch /mnt/a
- # truncate -s 856002 /mnt/a
- # dd if=/dev/zero of=/mnt/a bs=4K count=1 conv=nocreat,notrunc
- # umount /mnt
- # btrfsck /dev/sdb1
- root 5 inode 257 errors 400
- found 32768 bytes used err is 1
+The following is a simple way to reproduce it:
+ # mkfs.btrfs /dev/sdc2
+ # mount /dev/sdc2 /test4
+ # touch /test4/a
+ # dd if=/dev/zero of=/test4/a seek=8 count=1 bs=4K oflag=direct conv=nocreat,notrunc
+ # umount /test4
+ # btrfsck /dev/sdc2
+ root 5 inode 257 errors 100
 
+Reported-by: Tsutomu Itoh <t-itoh@jp.fujitsu.com>
 Signed-off-by: Miao Xie <miaox@cn.fujitsu.com>
+Tested-by: Tsutomu Itoh <t-itoh@jp.fujitsu.com>
 ---
- fs/btrfs/inode.c |    4 ++--
- 1 files changed, 2 insertions(+), 2 deletions(-)
+ fs/btrfs/file.c |   16 ++++++++++------
+ 1 files changed, 10 insertions(+), 6 deletions(-)
 
-diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
-index 18d08f4..634dd797 100644
---- a/fs/btrfs/inode.c
-+++ b/fs/btrfs/inode.c
-@@ -1786,7 +1786,7 @@ static int btrfs_finish_ordered_io(struct inode *inode, u64 start, u64 end)
- 			  &ordered_extent->list);
+diff --git a/fs/btrfs/file.c b/fs/btrfs/file.c
+index 010aec8..a9c4636 100644
+--- a/fs/btrfs/file.c
++++ b/fs/btrfs/file.c
+@@ -1073,12 +1073,6 @@ static noinline int prepare_pages(struct btrfs_root *root, struct file *file,
+ 	start_pos = pos & ~((u64)root->sectorsize - 1);
+ 	last_pos = ((u64)index + num_pages) << PAGE_CACHE_SHIFT;
  
- 	ret = btrfs_ordered_update_i_size(inode, 0, ordered_extent);
--	if (!ret) {
-+	if (!ret || !test_bit(BTRFS_ORDERED_PREALLOC, &ordered_extent->flags)) {
- 		ret = btrfs_update_inode(trans, root, inode);
- 		BUG_ON(ret);
- 	}
-@@ -5788,7 +5788,7 @@ again:
+-	if (start_pos > inode->i_size) {
+-		err = btrfs_cont_expand(inode, i_size_read(inode), start_pos);
+-		if (err)
+-			return err;
+-	}
+-
+ again:
+ 	for (i = 0; i < num_pages; i++) {
+ 		pages[i] = find_or_create_page(inode->i_mapping, index + i,
+@@ -1336,6 +1330,7 @@ static ssize_t btrfs_file_aio_write(struct kiocb *iocb,
+ 	struct inode *inode = fdentry(file)->d_inode;
+ 	struct btrfs_root *root = BTRFS_I(inode)->root;
+ 	loff_t *ppos = &iocb->ki_pos;
++	u64 start_pos;
+ 	ssize_t num_written = 0;
+ 	ssize_t err = 0;
+ 	size_t count, ocount;
+@@ -1384,6 +1379,15 @@ static ssize_t btrfs_file_aio_write(struct kiocb *iocb,
+ 	file_update_time(file);
+ 	BTRFS_I(inode)->sequence++;
  
- 	add_pending_csums(trans, inode, ordered->file_offset, &ordered->list);
- 	ret = btrfs_ordered_update_i_size(inode, 0, ordered);
--	if (!ret)
-+	if (!ret || !test_bit(BTRFS_ORDERED_PREALLOC, &ordered->flags))
- 		btrfs_update_inode(trans, root, inode);
- 	ret = 0;
- out_unlock:
++	start_pos = round_down(pos, root->sectorsize);
++	if (start_pos > i_size_read(inode)) {
++		err = btrfs_cont_expand(inode, i_size_read(inode), start_pos);
++		if (err) {
++			mutex_unlock(&inode->i_mutex);
++			goto out;
++		}
++	}
++
+ 	if (unlikely(file->f_flags & O_DIRECT)) {
+ 		num_written = __btrfs_direct_write(iocb, iov, nr_segs,
+ 						   pos, ppos, count, ocount);
 -- 
 1.7.4

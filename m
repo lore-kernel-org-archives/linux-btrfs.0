@@ -1,47 +1,62 @@
 From: Miao Xie <miaox@cn.fujitsu.com>
-Subject: [PATCH 3/3] Btrfs: fix unclosed transaction handle in btrfs_cont_expand()
-Date: Thu, 18 Aug 2011 16:14:58 +0800
-Message-ID: <4E4CCA02.3070402@cn.fujitsu.com>
+Subject: Re: [PATCH 1/3] Btrfs: fix wrong nbytes information of the inode
+Date: Thu, 18 Aug 2011 16:15:57 +0800
+Message-ID: <4E4CCA3D.2010107@cn.fujitsu.com>
+References: <4E4CC933.6060601@cn.fujitsu.com>
 Reply-To: miaox@cn.fujitsu.com
 Mime-Version: 1.0
 Content-Type: text/plain; charset=GB2312
 To: Linux Btrfs <linux-btrfs@vger.kernel.org>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
+In-Reply-To: <4E4CC933.6060601@cn.fujitsu.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-The function - btrfs_cont_expand() forgot to close the transaction handle before
-it jump out the while loop. Fix it.
+On thu, 18 Aug 2011 16:11:31 +0800, Miao Xie wrote:
+> If we write some data into the data hole of the file(no preallocation for this
+> hole), Btrfs will allocate some disk space, and update nbytes of the inode, but
+> the other element--disk_i_size needn't be updated. At this condition, we must
+> update inode metadata though disk_i_size is not changed(btrfs_ordered_update_i_size()
+> return 1).
+> 
+>  # mkfs.btrfs /dev/sdb1
+>  # mount /dev/sdb1 /mnt
+>  # touch /mnt/a
+>  # truncate -s 856002 /mnt/a
+>  # dd if=/dev/zero of=/mnt/a bs=4K count=1 conv=nocreat,notrunc
+>  # umount /mnt
+>  # btrfsck /dev/sdb1
+>  root 5 inode 257 errors 400
+>  found 32768 bytes used err is 1
+> 
+> Signed-off-by: Miao Xie <miaox@cn.fujitsu.com>
 
-Signed-off-by: Miao Xie <miaox@cn.fujitsu.com>
----
- fs/btrfs/inode.c |    8 ++++++--
- 1 files changed, 6 insertions(+), 2 deletions(-)
+Reported-by: Tsutomu Itoh <t-itoh@jp.fujitsu.com>
+Tested-by: Tsutomu Itoh <t-itoh@jp.fujitsu.com>
 
-diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
-index 634dd797..ee57b40 100644
---- a/fs/btrfs/inode.c
-+++ b/fs/btrfs/inode.c
-@@ -3510,15 +3510,19 @@ int btrfs_cont_expand(struct inode *inode, loff_t oldsize, loff_t size)
- 			err = btrfs_drop_extents(trans, inode, cur_offset,
- 						 cur_offset + hole_size,
- 						 &hint_byte, 1);
--			if (err)
-+			if (err) {
-+				btrfs_end_transaction(trans, root);
- 				break;
-+			}
- 
- 			err = btrfs_insert_file_extent(trans, root,
- 					btrfs_ino(inode), cur_offset, 0,
- 					0, hole_size, 0, hole_size,
- 					0, 0, 0);
--			if (err)
-+			if (err) {
-+				btrfs_end_transaction(trans, root);
- 				break;
-+			}
- 
- 			btrfs_drop_extent_cache(inode, hole_start,
- 					last_byte - 1, 0);
--- 
-1.7.4
+> ---
+>  fs/btrfs/inode.c |    4 ++--
+>  1 files changed, 2 insertions(+), 2 deletions(-)
+> 
+> diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
+> index 18d08f4..634dd797 100644
+> --- a/fs/btrfs/inode.c
+> +++ b/fs/btrfs/inode.c
+> @@ -1786,7 +1786,7 @@ static int btrfs_finish_ordered_io(struct inode *inode, u64 start, u64 end)
+>  			  &ordered_extent->list);
+>  
+>  	ret = btrfs_ordered_update_i_size(inode, 0, ordered_extent);
+> -	if (!ret) {
+> +	if (!ret || !test_bit(BTRFS_ORDERED_PREALLOC, &ordered_extent->flags)) {
+>  		ret = btrfs_update_inode(trans, root, inode);
+>  		BUG_ON(ret);
+>  	}
+> @@ -5788,7 +5788,7 @@ again:
+>  
+>  	add_pending_csums(trans, inode, ordered->file_offset, &ordered->list);
+>  	ret = btrfs_ordered_update_i_size(inode, 0, ordered);
+> -	if (!ret)
+> +	if (!ret || !test_bit(BTRFS_ORDERED_PREALLOC, &ordered->flags))
+>  		btrfs_update_inode(trans, root, inode);
+>  	ret = 0;
+>  out_unlock:
+

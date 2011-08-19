@@ -1,54 +1,29 @@
-From: Arne Jansen <sensille@gmx.net>
-Subject: Re: git resources
-Date: Fri, 19 Aug 2011 09:22:38 +0200
-Message-ID: <4E4E0F3E.2080504@gmx.net>
-References: <4E4E0C21.1010207@oracle.com>
+From: Chris Samuel <chris@csamuel.org>
+Subject: Re: Applications using fsync cause hangs for several seconds every
+ few minutes
+Date: Fri, 19 Aug 2011 17:34:08 +1000
+Message-ID: <4E4E11F0.8050201@csamuel.org>
+References: <4E41A6A4.9070702@uvm.edu> <4E4BCF0C.7060109@uvm.edu> <4E4BD05B.9070501@cchtml.com> <4E4CB59F.1070402@csamuel.org> <4E4CB807.8000602@gmail.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=ISO-8859-1
-To: Linux Btrfs <linux-btrfs@vger.kernel.org>
+Content-Type: text/plain; charset=UTF-8
+To: linux-btrfs@vger.kernel.org
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <4E4E0C21.1010207@oracle.com>
+In-Reply-To: <4E4CB807.8000602@gmail.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 19.08.2011 09:09, Anand Jain wrote:
-> 
-> Hello,
-> 
->  There are quite a number of contents on the internet talking
->  about git. (a problem in my case).
->  Since I just need one good providing steps for what we are
->  doing here..
+On 18/08/11 16:58, youagree wrote:
 
-You should take the time and learn git properly. I can recommend
-"Version Control with Git" by Jon Loeliger.
+> Are these processes principally btrfs-submit and btrfs-transacti
+> in particular?
+> 
+> Then it may be related to my very similar issue reported earlier.
 
->   ---
->    clone mainline
->    clone btrfs (or some other)
->    merge
->     (make menuconfig, make, make modules_install, make install)
->    make change(s)
->    generate patch(s)
->    setup for thunderbird send-email setup
->    send-mail with the patches in the body
->    make change(s) again
->    generate patch(s) again
->    send-mail
-> 
->    pull the newer official release when released.
-> 
->    apply the patch
->   ---
-> 
->  any idea what can help ?  Appreciate your time.
-> 
->  (When we have this I shall update the btrfs wiki)
-> 
-> Thanks, Anand
-> 
-> 
-> -- 
-> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+I spent a little bit of time last night looking at it and it
+seems that what I'm seeing also affects ext4 on my local SATA
+mirror too, so whatever is going on doesn't appear to be
+related to btrfs.  So ignore my comment.. ;-)
 
+cheers,
+Chris
+-- 
+ Chris Samuel  :  http://www.csamuel.org/  :  Melbourne, VIC

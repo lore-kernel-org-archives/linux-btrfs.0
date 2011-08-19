@@ -1,84 +1,139 @@
 From: Josef Bacik <josef@redhat.com>
-Subject: [PATCH] Btrfs: reduce the amount of space needed for truncates
-Date: Fri, 19 Aug 2011 16:28:01 -0400
-Message-ID: <1313785681-17362-1-git-send-email-josef@redhat.com>
+Subject: [PATCH] Btrfs: allow callers to specify if flushing can occur for btrfs_block_rsv_check
+Date: Fri, 19 Aug 2011 16:28:24 -0400
+Message-ID: <1313785704-17456-1-git-send-email-josef@redhat.com>
 To: linux-btrfs@vger.kernel.org
 Return-path: <linux-btrfs-owner@vger.kernel.org>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-With btrfs_truncate_inode_items we always return if we have to go to another
-leaf, which makes us do our reservation again.  This means we will only ever
-modify one leaf at a time, so we only need 1 items worth of slack space.  Also,
-since we are deleting we will not be creating nodes as we go down, if anything
-we'll be free'ing them as we merge them together, so make a different
-calculation for truncate which will only have the worst case useage of COW'ing
-the entire path down to the leaf.  Thanks,
+If you run xfstest 224 it you will get lots of messages about not being able to
+delete inodes and that they will be cleaned up next mount.  This is because
+btrfs_block_rsv_check was not calling reserve_metadata_bytes with the ability to
+flush, so if there was not enough space, it simply failed.  But in truncate and
+evict case we could easily flush space to try and get enough space to do our
+work, so make btrfs_block_rsv_check take a flush argument to pass down to
+reserve_metadata_bytes.  Now xfstests 224 runs fine without all those
+complaints.  Thanks,
 
 Signed-off-by: Josef Bacik <josef@redhat.com>
 ---
- fs/btrfs/ctree.h |   11 +++++++++++
- fs/btrfs/inode.c |    8 ++++----
- 2 files changed, 15 insertions(+), 4 deletions(-)
+ fs/btrfs/ctree.h            |    2 +-
+ fs/btrfs/extent-tree.c      |    4 ++--
+ fs/btrfs/free-space-cache.c |    2 +-
+ fs/btrfs/inode.c            |    6 +++---
+ fs/btrfs/relocation.c       |    4 ++--
+ fs/btrfs/transaction.c      |    2 +-
+ 6 files changed, 10 insertions(+), 10 deletions(-)
 
 diff --git a/fs/btrfs/ctree.h b/fs/btrfs/ctree.h
-index 22a9347..2e18b06 100644
+index 2e18b06..caa73cd 100644
 --- a/fs/btrfs/ctree.h
 +++ b/fs/btrfs/ctree.h
-@@ -2125,6 +2125,17 @@ static inline u64 btrfs_calc_trans_metadata_size(struct btrfs_root *root,
- 		3 * num_items;
- }
+@@ -2244,7 +2244,7 @@ int btrfs_block_rsv_add(struct btrfs_trans_handle *trans,
+ int btrfs_block_rsv_check(struct btrfs_trans_handle *trans,
+ 			  struct btrfs_root *root,
+ 			  struct btrfs_block_rsv *block_rsv,
+-			  u64 min_reserved, int min_factor);
++			  u64 min_reserved, int min_factor, int flush);
+ int btrfs_block_rsv_migrate(struct btrfs_block_rsv *src_rsv,
+ 			    struct btrfs_block_rsv *dst_rsv,
+ 			    u64 num_bytes);
+diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
+index e42f2b6..4075fd1 100644
+--- a/fs/btrfs/extent-tree.c
++++ b/fs/btrfs/extent-tree.c
+@@ -3705,7 +3705,7 @@ int btrfs_block_rsv_add(struct btrfs_trans_handle *trans,
+ int btrfs_block_rsv_check(struct btrfs_trans_handle *trans,
+ 			  struct btrfs_root *root,
+ 			  struct btrfs_block_rsv *block_rsv,
+-			  u64 min_reserved, int min_factor)
++			  u64 min_reserved, int min_factor, int flush)
+ {
+ 	u64 num_bytes = 0;
+ 	int ret = -ENOSPC;
+@@ -3728,7 +3728,7 @@ int btrfs_block_rsv_check(struct btrfs_trans_handle *trans,
+ 	if (!ret)
+ 		return 0;
  
-+/*
-+ * Doing a truncate won't result in new nodes or leaves, just what we need for
-+ * COW.
-+ */
-+static inline u64 btrfs_calc_trunc_metadata_size(struct btrfs_root *root,
-+						 unsigned num_items)
-+{
-+	return (root->leafsize + root->nodesize * (BTRFS_MAX_LEVEL - 1)) *
-+		num_items;
-+}
-+
- void btrfs_put_block_group(struct btrfs_block_group_cache *cache);
- int btrfs_run_delayed_refs(struct btrfs_trans_handle *trans,
- 			   struct btrfs_root *root, unsigned long count);
+-	ret = reserve_metadata_bytes(trans, root, block_rsv, num_bytes, 0);
++	ret = reserve_metadata_bytes(trans, root, block_rsv, num_bytes, flush);
+ 	if (!ret) {
+ 		block_rsv_add_bytes(block_rsv, num_bytes, 0);
+ 		return 0;
+diff --git a/fs/btrfs/free-space-cache.c b/fs/btrfs/free-space-cache.c
+index 8a391bd..d6c4dab 100644
+--- a/fs/btrfs/free-space-cache.c
++++ b/fs/btrfs/free-space-cache.c
+@@ -197,7 +197,7 @@ int btrfs_truncate_free_space_cache(struct btrfs_root *root,
+ 	trans->block_rsv = root->orphan_block_rsv;
+ 	ret = btrfs_block_rsv_check(trans, root,
+ 				    root->orphan_block_rsv,
+-				    0, 5);
++				    0, 5, 0);
+ 	if (ret)
+ 		return ret;
+ 
 diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
-index 217b669..e8d67db 100644
+index e8d67db..6e79a76 100644
 --- a/fs/btrfs/inode.c
 +++ b/fs/btrfs/inode.c
-@@ -3524,7 +3524,7 @@ void btrfs_evict_inode(struct inode *inode)
- 	struct btrfs_trans_handle *trans;
- 	struct btrfs_root *root = BTRFS_I(inode)->root;
- 	struct btrfs_block_rsv *rsv;
--	u64 min_size = btrfs_calc_trans_metadata_size(root, 2);
-+	u64 min_size = btrfs_calc_trunc_metadata_size(root, 1);
- 	unsigned long nr;
- 	int ret;
- 
-@@ -6471,7 +6471,7 @@ static int btrfs_truncate(struct inode *inode)
- 	struct btrfs_trans_handle *trans;
- 	unsigned long nr;
- 	u64 mask = root->sectorsize - 1;
--	u64 min_size = btrfs_calc_trans_metadata_size(root, 2);
-+	u64 min_size = btrfs_calc_trunc_metadata_size(root, 1);
- 
- 	ret = btrfs_truncate_page(inode->i_mapping, inode->i_size);
- 	if (ret)
-@@ -6521,12 +6521,12 @@ static int btrfs_truncate(struct inode *inode)
- 		return -ENOMEM;
- 
- 	/*
--	 * 2 for the truncate slack space
-+	 * 1 for the truncate slack space
- 	 * 1 for the orphan item we're going to add
- 	 * 1 for the orphan item deletion
- 	 * 1 for updating the inode.
+@@ -3572,10 +3572,10 @@ void btrfs_evict_inode(struct inode *inode)
+ 	 * doing the truncate.
  	 */
--	trans = btrfs_start_transaction(root, 5);
-+	trans = btrfs_start_transaction(root, 4);
- 	if (IS_ERR(trans)) {
- 		err = PTR_ERR(trans);
- 		goto out;
+ 	while (1) {
+-		ret = btrfs_block_rsv_check(NULL, root, rsv, min_size, 0);
++		ret = btrfs_block_rsv_check(NULL, root, rsv, min_size, 0, 1);
+ 		if (ret) {
+ 			printk(KERN_WARNING "Could not get space for a "
+-			       "delete, will truncate on mount\n");
++			       "delete, will truncate on mount %d\n", ret);
+ 			btrfs_orphan_del(NULL, inode);
+ 			btrfs_free_block_rsv(root, rsv);
+ 			goto no_delete;
+@@ -6564,7 +6564,7 @@ static int btrfs_truncate(struct inode *inode)
+ 		btrfs_add_ordered_operation(trans, root, inode);
+ 
+ 	while (1) {
+-		ret = btrfs_block_rsv_check(trans, root, rsv, min_size, 0);
++		ret = btrfs_block_rsv_check(trans, root, rsv, min_size, 0, 1);
+ 		if (ret) {
+ 			/*
+ 			 * This can only happen with the original transaction we
+diff --git a/fs/btrfs/relocation.c b/fs/btrfs/relocation.c
+index aeaed99..fd9ac66 100644
+--- a/fs/btrfs/relocation.c
++++ b/fs/btrfs/relocation.c
+@@ -2042,7 +2042,7 @@ static noinline_for_stack int merge_reloc_root(struct reloc_control *rc,
+ 		trans->block_rsv = rc->block_rsv;
+ 
+ 		ret = btrfs_block_rsv_check(trans, root, rc->block_rsv,
+-					    min_reserved, 0);
++					    min_reserved, 0, 0);
+ 		if (ret) {
+ 			BUG_ON(ret != -EAGAIN);
+ 			ret = btrfs_commit_transaction(trans, root);
+@@ -3775,7 +3775,7 @@ restart:
+ 		}
+ 
+ 		ret = btrfs_block_rsv_check(trans, rc->extent_root,
+-					    rc->block_rsv, 0, 5);
++					    rc->block_rsv, 0, 5, 0);
+ 		if (ret < 0) {
+ 			if (ret != -EAGAIN) {
+ 				err = ret;
+diff --git a/fs/btrfs/transaction.c b/fs/btrfs/transaction.c
+index fd8c234..3418acc 100644
+--- a/fs/btrfs/transaction.c
++++ b/fs/btrfs/transaction.c
+@@ -419,7 +419,7 @@ static int should_end_transaction(struct btrfs_trans_handle *trans,
+ {
+ 	int ret;
+ 	ret = btrfs_block_rsv_check(trans, root,
+-				    &root->fs_info->global_block_rsv, 0, 5);
++				    &root->fs_info->global_block_rsv, 0, 5, 0);
+ 	return ret ? 1 : 0;
+ }
+ 
 -- 
 1.7.5.2
 

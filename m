@@ -1,75 +1,84 @@
 From: Josef Bacik <josef@redhat.com>
-Subject: [PATCH] Btrfs: only reserve space in fallocate if we have to do a preallocate
-Date: Fri, 19 Aug 2011 16:27:05 -0400
-Message-ID: <1313785625-17265-1-git-send-email-josef@redhat.com>
+Subject: [PATCH] Btrfs: reduce the amount of space needed for truncates
+Date: Fri, 19 Aug 2011 16:28:01 -0400
+Message-ID: <1313785681-17362-1-git-send-email-josef@redhat.com>
 To: linux-btrfs@vger.kernel.org
 Return-path: <linux-btrfs-owner@vger.kernel.org>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Lukas found a problem where if he tries to fallocate over the same region twice
-and the first fallocate took up all the space we would fail with ENOSPC.  This
-is because we reserve the total space we want to use for fallocate, regardless
-of wether or not we will have to actually preallocate.  So instead move the
-check into the loop where we actually have to do the preallocate.  Thanks,
+With btrfs_truncate_inode_items we always return if we have to go to another
+leaf, which makes us do our reservation again.  This means we will only ever
+modify one leaf at a time, so we only need 1 items worth of slack space.  Also,
+since we are deleting we will not be creating nodes as we go down, if anything
+we'll be free'ing them as we merge them together, so make a different
+calculation for truncate which will only have the worst case useage of COW'ing
+the entire path down to the leaf.  Thanks,
 
-Tested-by: Lukas Czerner <lczerner@redhat.com>
 Signed-off-by: Josef Bacik <josef@redhat.com>
 ---
- fs/btrfs/file.c |   22 ++++++++++++++++------
- 1 files changed, 16 insertions(+), 6 deletions(-)
+ fs/btrfs/ctree.h |   11 +++++++++++
+ fs/btrfs/inode.c |    8 ++++----
+ 2 files changed, 15 insertions(+), 4 deletions(-)
 
-diff --git a/fs/btrfs/file.c b/fs/btrfs/file.c
-index e7872e4..4cd3329 100644
---- a/fs/btrfs/file.c
-+++ b/fs/btrfs/file.c
-@@ -1603,10 +1603,6 @@ static long btrfs_fallocate(struct file *file, int mode,
- 			goto out;
- 	}
+diff --git a/fs/btrfs/ctree.h b/fs/btrfs/ctree.h
+index 22a9347..2e18b06 100644
+--- a/fs/btrfs/ctree.h
++++ b/fs/btrfs/ctree.h
+@@ -2125,6 +2125,17 @@ static inline u64 btrfs_calc_trans_metadata_size(struct btrfs_root *root,
+ 		3 * num_items;
+ }
  
--	ret = btrfs_check_data_free_space(inode, alloc_end - alloc_start);
--	if (ret)
--		goto out;
--
- 	locked_end = alloc_end - 1;
- 	while (1) {
- 		struct btrfs_ordered_extent *ordered;
-@@ -1652,11 +1648,27 @@ static long btrfs_fallocate(struct file *file, int mode,
- 		if (em->block_start == EXTENT_MAP_HOLE ||
- 		    (cur_offset >= inode->i_size &&
- 		     !test_bit(EXTENT_FLAG_PREALLOC, &em->flags))) {
++/*
++ * Doing a truncate won't result in new nodes or leaves, just what we need for
++ * COW.
++ */
++static inline u64 btrfs_calc_trunc_metadata_size(struct btrfs_root *root,
++						 unsigned num_items)
++{
++	return (root->leafsize + root->nodesize * (BTRFS_MAX_LEVEL - 1)) *
++		num_items;
++}
 +
-+			/*
-+			 * Make sure we have enough space before we do the
-+			 * allocation.
-+			 */
-+			ret = btrfs_check_data_free_space(inode, last_byte -
-+							  cur_offset);
-+			if (ret) {
-+				free_extent_map(em);
-+				break;
-+			}
-+
- 			ret = btrfs_prealloc_file_range(inode, mode, cur_offset,
- 							last_byte - cur_offset,
- 							1 << inode->i_blkbits,
- 							offset + len,
- 							&alloc_hint);
-+
-+			/* Let go of our reservation. */
-+			btrfs_free_reserved_data_space(inode, last_byte -
-+						       cur_offset);
- 			if (ret < 0) {
- 				free_extent_map(em);
- 				break;
-@@ -1682,8 +1694,6 @@ static long btrfs_fallocate(struct file *file, int mode,
- 	}
- 	unlock_extent_cached(&BTRFS_I(inode)->io_tree, alloc_start, locked_end,
- 			     &cached_state, GFP_NOFS);
--
--	btrfs_free_reserved_data_space(inode, alloc_end - alloc_start);
- out:
- 	mutex_unlock(&inode->i_mutex);
- 	return ret;
+ void btrfs_put_block_group(struct btrfs_block_group_cache *cache);
+ int btrfs_run_delayed_refs(struct btrfs_trans_handle *trans,
+ 			   struct btrfs_root *root, unsigned long count);
+diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
+index 217b669..e8d67db 100644
+--- a/fs/btrfs/inode.c
++++ b/fs/btrfs/inode.c
+@@ -3524,7 +3524,7 @@ void btrfs_evict_inode(struct inode *inode)
+ 	struct btrfs_trans_handle *trans;
+ 	struct btrfs_root *root = BTRFS_I(inode)->root;
+ 	struct btrfs_block_rsv *rsv;
+-	u64 min_size = btrfs_calc_trans_metadata_size(root, 2);
++	u64 min_size = btrfs_calc_trunc_metadata_size(root, 1);
+ 	unsigned long nr;
+ 	int ret;
+ 
+@@ -6471,7 +6471,7 @@ static int btrfs_truncate(struct inode *inode)
+ 	struct btrfs_trans_handle *trans;
+ 	unsigned long nr;
+ 	u64 mask = root->sectorsize - 1;
+-	u64 min_size = btrfs_calc_trans_metadata_size(root, 2);
++	u64 min_size = btrfs_calc_trunc_metadata_size(root, 1);
+ 
+ 	ret = btrfs_truncate_page(inode->i_mapping, inode->i_size);
+ 	if (ret)
+@@ -6521,12 +6521,12 @@ static int btrfs_truncate(struct inode *inode)
+ 		return -ENOMEM;
+ 
+ 	/*
+-	 * 2 for the truncate slack space
++	 * 1 for the truncate slack space
+ 	 * 1 for the orphan item we're going to add
+ 	 * 1 for the orphan item deletion
+ 	 * 1 for updating the inode.
+ 	 */
+-	trans = btrfs_start_transaction(root, 5);
++	trans = btrfs_start_transaction(root, 4);
+ 	if (IS_ERR(trans)) {
+ 		err = PTR_ERR(trans);
+ 		goto out;
 -- 
 1.7.5.2
 

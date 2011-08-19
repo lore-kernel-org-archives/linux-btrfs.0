@@ -1,36 +1,59 @@
-From: Anand Jain <Anand.Jain@oracle.com>
-Subject: Re: Applications using fsync cause hangs for several seconds every
- few minutes
-Date: Fri, 19 Aug 2011 17:58:51 +0800
-Message-ID: <4E4E33DB.6010209@oracle.com>
-References: <4E41A6A4.9070702@uvm.edu> <4E4BCF0C.7060109@uvm.edu> <4E4BD05B.9070501@cchtml.com> <4E4BD272.8000704@uvm.edu> <20110817145509.GA23804@hendrix.borisch.local> <4E4C7BCD.6090004@oracle.com> <4E4CB4D9.4060509@gmail.com> <4E4CBF43.60207@uvm.edu> <4E4CFB53.1020208@uvm.edu>
+From: Hugo Mills <hugo@carfax.org.uk>
+Subject: Re: git resources
+Date: Fri, 19 Aug 2011 12:24:03 +0100
+Message-ID: <20110819112403.GA5400@carfax.org.uk>
+References: <4E4E0C21.1010207@oracle.com>
+ <4E4E0F3E.2080504@gmx.net>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=UTF-8; format=flowed
-Cc: linux-btrfs@vger.kernel.org
-To: Andrew Guertin <andrew.guertin@uvm.edu>
+Content-Type: multipart/signed; micalg=pgp-sha1;
+	protocol="application/pgp-signature"; boundary="HcAYCG3uE/tztfnV"
+Cc: Linux Btrfs <linux-btrfs@vger.kernel.org>
+To: Arne Jansen <sensille@gmx.net>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <4E4CFB53.1020208@uvm.edu>
+In-Reply-To: <4E4E0F3E.2080504@gmx.net>
 List-ID: <linux-btrfs.vger.kernel.org>
 
 
-Andrew,
+--HcAYCG3uE/tztfnV
+Content-Type: text/plain; charset=us-ascii
+Content-Disposition: inline
 
-  Facing some challenges to test this. If you have a chance to test
-  it again, the following output will be interesting to observe.
-    iostat -ctx -p sda 3 >  /tmp/iostat.out
+On Fri, Aug 19, 2011 at 09:22:38AM +0200, Arne Jansen wrote:
+> On 19.08.2011 09:09, Anand Jain wrote:
+> > 
+> > Hello,
+> > 
+> >  There are quite a number of contents on the internet talking
+> >  about git. (a problem in my case).
+> >  Since I just need one good providing steps for what we are
+> >  doing here..
+> 
+> You should take the time and learn git properly. I can recommend
+> "Version Control with Git" by Jon Loeliger.
 
-  Also note your system time when this problem occurs, (iostat has time
-  stamp, I wish see the waitQ and activeQ at that time, hopefully
-  captured in the file /tmp/iostat.out above).
+   "Pro Git" by Scott Chacon from APress was what I used. I found it
+very helpful. (I originally got it free as a review copy, but had to
+hand it on to someone else. So I bought it for myself.)
 
-  We need more clarity on the test-case which can reproduce this issue.
-  As I know you are writing into the btrfs. However is that a large
-  number of small files (you are creating new files) OR you are writing
-  a few large new files ?
+   Hugo.
 
-  If there is any script to test this that will make understanding
-  a lot easier.
+-- 
+=== Hugo Mills: hugo@... carfax.org.uk | darksatanic.net | lug.org.uk ===
+  PGP key: 515C238D from wwwkeys.eu.pgp.net or http://www.carfax.org.uk
+     --- The Tao that is seen / Is not the true Tao, until / You ---     
+                           bring fresh toner.                            
 
-  PS: Does anybody know Solaris lockstat(1M) equivalent in Linux ?
+--HcAYCG3uE/tztfnV
+Content-Type: application/pgp-signature; name="signature.asc"
+Content-Description: Digital signature
+Content-Disposition: inline
 
-Thanks, Anand
+-----BEGIN PGP SIGNATURE-----
+Version: GnuPG v1.4.10 (GNU/Linux)
+
+iD8DBQFOTkfTIKyzvlFcI40RAgr1AKC/Hg2+bKJHlpq8zGEncn4j+dqqlwCeKie0
+XHr5j2wPY5/8EsXlorayueY=
+=jRGc
+-----END PGP SIGNATURE-----
+
+--HcAYCG3uE/tztfnV--

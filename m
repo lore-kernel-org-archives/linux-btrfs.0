@@ -1,42 +1,75 @@
 From: Josef Bacik <josef@redhat.com>
-Subject: Re: bonnie triggers and endless numbers of stack traces
-Date: Fri, 19 Aug 2011 15:36:55 -0400
-Message-ID: <4E4EBB57.3040209@redhat.com>
-References: <j2m3ud$u8e$1@dough.gmane.org>
-Mime-Version: 1.0
-Content-Type: text/plain; charset=ISO-8859-1
-Cc: linux-btrfs@vger.kernel.org
-To: Bernd Schubert <bernd.schubert@itwm.fraunhofer.de>
+Subject: [PATCH] Btrfs: only reserve space in fallocate if we have to do a preallocate
+Date: Fri, 19 Aug 2011 16:27:05 -0400
+Message-ID: <1313785625-17265-1-git-send-email-josef@redhat.com>
+To: linux-btrfs@vger.kernel.org
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <j2m3ud$u8e$1@dough.gmane.org>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 08/19/2011 12:45 PM, Bernd Schubert wrote:
-> Just for performance tests I run:
-> 
-> ./bonnie++ -d /mnt/btrfs -s0 -n 1:256:256:1 -r 0
-> 
-> and this causes and endless number of stack traces. Those seem to 
-> come from:
-> 
-> use_block_rsv()
-> 
-> 	ret = block_rsv_use_bytes(block_rsv, blocksize);
-> 	if (!ret)
-> 		return block_rsv;
-> 	if (ret) {
-> 		WARN_ON(1);
-> 		ret = reserve_metadata_bytes(trans, root, block_rsv, blocksize,
-> 
-> 
-> Why is there a WARN_ON(1)? Running the bonnie benchmark is basically impossible
-> that.
+Lukas found a problem where if he tries to fallocate over the same region twice
+and the first fallocate took up all the space we would fail with ENOSPC.  This
+is because we reserve the total space we want to use for fallocate, regardless
+of wether or not we will have to actually preallocate.  So instead move the
+check into the loop where we actually have to do the preallocate.  Thanks,
 
-This is being worked on, if you really don't like it pull my git tree
-and test it out and see if the errors go away
+Tested-by: Lukas Czerner <lczerner@redhat.com>
+Signed-off-by: Josef Bacik <josef@redhat.com>
+---
+ fs/btrfs/file.c |   22 ++++++++++++++++------
+ 1 files changed, 16 insertions(+), 6 deletions(-)
 
-git://git.kernel.org/pub/scm/linux/kernel/git/josef/btrfs-work.git
+diff --git a/fs/btrfs/file.c b/fs/btrfs/file.c
+index e7872e4..4cd3329 100644
+--- a/fs/btrfs/file.c
++++ b/fs/btrfs/file.c
+@@ -1603,10 +1603,6 @@ static long btrfs_fallocate(struct file *file, int mode,
+ 			goto out;
+ 	}
+ 
+-	ret = btrfs_check_data_free_space(inode, alloc_end - alloc_start);
+-	if (ret)
+-		goto out;
+-
+ 	locked_end = alloc_end - 1;
+ 	while (1) {
+ 		struct btrfs_ordered_extent *ordered;
+@@ -1652,11 +1648,27 @@ static long btrfs_fallocate(struct file *file, int mode,
+ 		if (em->block_start == EXTENT_MAP_HOLE ||
+ 		    (cur_offset >= inode->i_size &&
+ 		     !test_bit(EXTENT_FLAG_PREALLOC, &em->flags))) {
++
++			/*
++			 * Make sure we have enough space before we do the
++			 * allocation.
++			 */
++			ret = btrfs_check_data_free_space(inode, last_byte -
++							  cur_offset);
++			if (ret) {
++				free_extent_map(em);
++				break;
++			}
++
+ 			ret = btrfs_prealloc_file_range(inode, mode, cur_offset,
+ 							last_byte - cur_offset,
+ 							1 << inode->i_blkbits,
+ 							offset + len,
+ 							&alloc_hint);
++
++			/* Let go of our reservation. */
++			btrfs_free_reserved_data_space(inode, last_byte -
++						       cur_offset);
+ 			if (ret < 0) {
+ 				free_extent_map(em);
+ 				break;
+@@ -1682,8 +1694,6 @@ static long btrfs_fallocate(struct file *file, int mode,
+ 	}
+ 	unlock_extent_cached(&BTRFS_I(inode)->io_tree, alloc_start, locked_end,
+ 			     &cached_state, GFP_NOFS);
+-
+-	btrfs_free_reserved_data_space(inode, alloc_end - alloc_start);
+ out:
+ 	mutex_unlock(&inode->i_mutex);
+ 	return ret;
+-- 
+1.7.5.2
 
-Thanks,
-
-Josef

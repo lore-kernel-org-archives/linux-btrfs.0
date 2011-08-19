@@ -1,44 +1,42 @@
-From: Bernd Schubert <bernd.schubert@itwm.fraunhofer.de>
+From: Josef Bacik <josef@redhat.com>
 Subject: Re: bonnie triggers and endless numbers of stack traces
-Date: Fri, 19 Aug 2011 19:28:37 +0200
-Message-ID: <j2m6g5$7f3$1@dough.gmane.org>
+Date: Fri, 19 Aug 2011 15:36:55 -0400
+Message-ID: <4E4EBB57.3040209@redhat.com>
 References: <j2m3ud$u8e$1@dough.gmane.org>
 Mime-Version: 1.0
 Content-Type: text/plain; charset=ISO-8859-1
-To: linux-btrfs@vger.kernel.org
+Cc: linux-btrfs@vger.kernel.org
+To: Bernd Schubert <bernd.schubert@itwm.fraunhofer.de>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
 In-Reply-To: <j2m3ud$u8e$1@dough.gmane.org>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-I think we either should remove it or replace by WARN_ON_ONCE()
+On 08/19/2011 12:45 PM, Bernd Schubert wrote:
+> Just for performance tests I run:
+> 
+> ./bonnie++ -d /mnt/btrfs -s0 -n 1:256:256:1 -r 0
+> 
+> and this causes and endless number of stack traces. Those seem to 
+> come from:
+> 
+> use_block_rsv()
+> 
+> 	ret = block_rsv_use_bytes(block_rsv, blocksize);
+> 	if (!ret)
+> 		return block_rsv;
+> 	if (ret) {
+> 		WARN_ON(1);
+> 		ret = reserve_metadata_bytes(trans, root, block_rsv, blocksize,
+> 
+> 
+> Why is there a WARN_ON(1)? Running the bonnie benchmark is basically impossible
+> that.
 
+This is being worked on, if you really don't like it pull my git tree
+and test it out and see if the errors go away
 
-Remove WARN_ON(1) in a common code path
+git://git.kernel.org/pub/scm/linux/kernel/git/josef/btrfs-work.git
 
-From: Bernd Schubert <bernd.schubert@itwm.fraunhofer.de>
+Thanks,
 
-Something like bonnie++ -d /mnt/btrfs -s0 -n 1:256:256:1 -r 0
-will trigger lots of those WARN_ON(1), so lets remove it.
-
-
-Signed-off-by: Bernd Schubert <bernd.schubert@itwm.fraunhofer.de>
----
- fs/btrfs/extent-tree.c |    1 -
- 1 files changed, 0 insertions(+), 1 deletions(-)
-
-diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
-index 80d6148..1d1a8d0 100644
---- a/fs/btrfs/extent-tree.c
-+++ b/fs/btrfs/extent-tree.c
-@@ -5708,7 +5708,6 @@ use_block_rsv(struct btrfs_trans_handle *trans,
-        if (!ret)
-                return block_rsv;
-        if (ret) {
--               WARN_ON(1);
-                ret = reserve_metadata_bytes(trans, root, block_rsv, blocksize,
-                                             0);
-                if (!ret) {
-
-
-
-
+Josef

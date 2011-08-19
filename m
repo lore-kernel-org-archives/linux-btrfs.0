@@ -1,59 +1,62 @@
-From: Hugo Mills <hugo@carfax.org.uk>
-Subject: Re: git resources
-Date: Fri, 19 Aug 2011 12:24:03 +0100
-Message-ID: <20110819112403.GA5400@carfax.org.uk>
-References: <4E4E0C21.1010207@oracle.com>
- <4E4E0F3E.2080504@gmx.net>
+From: Ingo Molnar <mingo@kernel.org>
+Subject: [build breakage] Re: [GIT PULL] Btrfs pull round two
+Date: Fri, 19 Aug 2011 15:06:15 +0200
+Message-ID: <20110819130615.GA6307@kernel.org>
+References: <1312315404-sup-6084@shiny>
 Mime-Version: 1.0
-Content-Type: multipart/signed; micalg=pgp-sha1;
-	protocol="application/pgp-signature"; boundary="HcAYCG3uE/tztfnV"
-Cc: Linux Btrfs <linux-btrfs@vger.kernel.org>
-To: Arne Jansen <sensille@gmx.net>
+Content-Type: text/plain; charset=us-ascii
+Cc: Linus Torvalds <torvalds@linux-foundation.org>,
+	linux-btrfs <linux-btrfs@vger.kernel.org>,
+	linux-kernel <linux-kernel@vger.kernel.org>
+To: Chris Mason <chris.mason@oracle.com>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <4E4E0F3E.2080504@gmx.net>
+In-Reply-To: <1312315404-sup-6084@shiny>
 List-ID: <linux-btrfs.vger.kernel.org>
 
 
---HcAYCG3uE/tztfnV
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
+* Chris Mason <chris.mason@oracle.com> wrote:
 
-On Fri, Aug 19, 2011 at 09:22:38AM +0200, Arne Jansen wrote:
-> On 19.08.2011 09:09, Anand Jain wrote:
-> > 
-> > Hello,
-> > 
-> >  There are quite a number of contents on the internet talking
-> >  about git. (a problem in my case).
-> >  Since I just need one good providing steps for what we are
-> >  doing here..
+> Hi everyone,
 > 
-> You should take the time and learn git properly. I can recommend
-> "Version Control with Git" by Jon Loeliger.
+> This has the rest of the btrfs cleanups for 3.1.  The bulk of this is
+> error handing fixes from SUSE and cleanups from Fujitsu.
 
-   "Pro Git" by Scott Chacon from APress was what I used. I found it
-very helpful. (I originally got it free as a review copy, but had to
-hand it on to someone else. So I bought it for myself.)
+I havent seen a lkml mail of this pull request:
 
-   Hugo.
+ 5c80c71b9a0e: Merge branch 'for-linus' of git://git.kernel.org/pub/scm/linux/kernel/git/mason/btrfs-unstable
 
--- 
-=== Hugo Mills: hugo@... carfax.org.uk | darksatanic.net | lug.org.uk ===
-  PGP key: 515C238D from wwwkeys.eu.pgp.net or http://www.carfax.org.uk
-     --- The Tao that is seen / Is not the true Tao, until / You ---     
-                           bring fresh toner.                            
+so i'm following up on this earlier pull request.
 
---HcAYCG3uE/tztfnV
-Content-Type: application/pgp-signature; name="signature.asc"
-Content-Description: Digital signature
-Content-Disposition: inline
+the aptly named btrfs-unstable branch indeed does not even build on 
+x86 defconfig (32-bit):
 
------BEGIN PGP SIGNATURE-----
-Version: GnuPG v1.4.10 (GNU/Linux)
+   LD      .tmp_vmlinux1
+ fs/built-in.o: In function `btrfs_can_relocate':
+ (.text+0x1d6605): undefined reference to `__udivdi3'
+ make: *** [.tmp_vmlinux1] Error 1
 
-iD8DBQFOTkfTIKyzvlFcI40RAgr1AKC/Hg2+bKJHlpq8zGEncn4j+dqqlwCeKie0
-XHr5j2wPY5/8EsXlorayueY=
-=jRGc
------END PGP SIGNATURE-----
+and given that most of the commits:
 
---HcAYCG3uE/tztfnV--
+81d86e1b7096: Merge branch 'btrfs-3.0' into for-linus
+f1e490a7ebe4: Btrfs: set i_size properly when fallocating and we already
+9a4327ca1f45: btrfs: unlock on error in btrfs_file_llseek()
+cb6db4e57632: btrfs: btrfs_permission's RO check shouldn't apply to device nodes
+f81c9cdc567c: Btrfs: truncate pages from clone ioctl target range
+0e588859618b: Btrfs: fix uninitialized sync_pending
+bb3ac5a4dfc8: Btrfs: fix wrong free space information
+f4ac904c411b: btrfs: memory leak in btrfs_add_inode_defrag()
+c97c2916e25c: Btrfs: use plain page_address() in header fields setget functions
+cb1b69f4508a: Btrfs: forced readonly when btrfs_drop_snapshot() fails
+cdcb725c05fe: Btrfs: check if there is enough space for balancing smarter
+38c01b960592: Btrfs: fix a bug of balance on full multi-disk partitions
+34f3e4f23ca3: Btrfs: fix an oops of log replay
+d5e2003c2bcd: Btrfs: detect wether a device supports discard
+93ee7a9340d6: Linux 3.1-rc2
+
+were committed after -rc2 and were at most a couple of hours old 
+before you sent them off to Linus, did you really expect any other 
+outcome than breaking upstream in trivial ways? :-)
+
+Thanks,
+
+	Ingo

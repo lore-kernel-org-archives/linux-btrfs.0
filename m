@@ -1,44 +1,36 @@
-From: Liu Bo <liubo2009@cn.fujitsu.com>
-Subject: [PATCH] Btrfs: use do_div to avoid compile errors on 32bit box
-Date: Fri, 19 Aug 2011 17:48:44 +0800
-Message-ID: <1313747324-27477-1-git-send-email-liubo2009@cn.fujitsu.com>
-Cc: <chris.mason@oracle.com>, <dave@jikos.cz>
-To: <linux-btrfs@vger.kernel.org>
+From: Anand Jain <Anand.Jain@oracle.com>
+Subject: Re: Applications using fsync cause hangs for several seconds every
+ few minutes
+Date: Fri, 19 Aug 2011 17:58:51 +0800
+Message-ID: <4E4E33DB.6010209@oracle.com>
+References: <4E41A6A4.9070702@uvm.edu> <4E4BCF0C.7060109@uvm.edu> <4E4BD05B.9070501@cchtml.com> <4E4BD272.8000704@uvm.edu> <20110817145509.GA23804@hendrix.borisch.local> <4E4C7BCD.6090004@oracle.com> <4E4CB4D9.4060509@gmail.com> <4E4CBF43.60207@uvm.edu> <4E4CFB53.1020208@uvm.edu>
+Mime-Version: 1.0
+Content-Type: text/plain; charset=UTF-8; format=flowed
+Cc: linux-btrfs@vger.kernel.org
+To: Andrew Guertin <andrew.guertin@uvm.edu>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
+In-Reply-To: <4E4CFB53.1020208@uvm.edu>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-When doing div operation of u64 type, we need to be careful and use do_div
-to avoid compile ERROR on 32bit box:
 
-"ERROR: "__udivdi3" [fs/btrfs/btrfs.ko] undefined!
-make[1]: *** [__modpost] Error 1
+Andrew,
 
-Signed-off-by: Liu Bo <liubo2009@cn.fujitsu.com>
----
- fs/btrfs/extent-tree.c |    4 ++--
- 1 files changed, 2 insertions(+), 2 deletions(-)
+  Facing some challenges to test this. If you have a chance to test
+  it again, the following output will be interesting to observe.
+    iostat -ctx -p sda 3 >  /tmp/iostat.out
 
-diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
-index 80d6148..9b495ce 100644
---- a/fs/btrfs/extent-tree.c
-+++ b/fs/btrfs/extent-tree.c
-@@ -6796,14 +6796,14 @@ int btrfs_can_relocate(struct btrfs_root *root, u64 bytenr)
- 	index = get_block_group_index(block_group);
- 	if (index == 0) {
- 		dev_min = 4;
--		min_free /= 2;
-+		do_div(min_free, 2);
- 	} else if (index == 1) {
- 		dev_min = 2;
- 	} else if (index == 2) {
- 		min_free *= 2;
- 	} else if (index == 3) {
- 		dev_min = fs_devices->rw_devices;
--		min_free /= dev_min;
-+		do_div(min_free, dev_min);
- 	}
- 
- 	mutex_lock(&root->fs_info->chunk_mutex);
--- 
-1.6.5.2
+  Also note your system time when this problem occurs, (iostat has time
+  stamp, I wish see the waitQ and activeQ at that time, hopefully
+  captured in the file /tmp/iostat.out above).
 
+  We need more clarity on the test-case which can reproduce this issue.
+  As I know you are writing into the btrfs. However is that a large
+  number of small files (you are creating new files) OR you are writing
+  a few large new files ?
+
+  If there is any script to test this that will make understanding
+  a lot easier.
+
+  PS: Does anybody know Solaris lockstat(1M) equivalent in Linux ?
+
+Thanks, Anand

@@ -1,64 +1,42 @@
-From: Liu Bo <liubo2009@cn.fujitsu.com>
-Subject: [PATCH v2] Btrfs: use do_div to avoid compile errors on 32bit box
-Date: Sat, 20 Aug 2011 10:17:47 +0800
-Message-ID: <1313806667-30495-1-git-send-email-liubo2009@cn.fujitsu.com>
-Cc: <torvalds@linux-foundation.org>, <mingo@kernel.org>,
-	<jwboyer@gmail.com>, <josef@redhat.com>,
-	<linux-btrfs@vger.kernel.org>, <chris.mason@oracle.com>,
-	<dave@jikos.cz>
-To: <linux-kernel@vger.kernel.org>
+From: Liam <liam.bulkley@gmail.com>
+Subject: Re: kernel oops -> no mount (different problem than others)
+Date: Sat, 20 Aug 2011 01:53:39 -0400
+Message-ID: <CAO2p3yFyDUAA9PjaGRdTfDia7G_RsxGf8F_BECpaDP1ibk3UTQ@mail.gmail.com>
+References: <CAO2p3yF57i2MeszoUHnFy3W-S_Dm-bMHJzY2GYULgxnFCS34Hg@mail.gmail.com>
+	<CAE5mzvg9Yd2qSrpSqKTNmu08z83JmgYtGZmuLg6aYGLMei26AQ@mail.gmail.com>
+Mime-Version: 1.0
+Content-Type: text/plain; charset=ISO-8859-1
+Cc: linux-btrfs@vger.kernel.org
+To: cwillu <cwillu@cwillu.com>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
+In-Reply-To: <CAE5mzvg9Yd2qSrpSqKTNmu08z83JmgYtGZmuLg6aYGLMei26AQ@mail.gmail.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-When doing div operation of u64 type, we need to be careful and use do_div
-to avoid compile ERROR on 32bit box:
+Thanks for your help, but unfortunately, it wouldn't mount read-only,
+either. If you can think of anything else I could try, it would be
+greatly appreciated! Thanks!
 
-"ERROR: "__udivdi3" [fs/btrfs/btrfs.ko] undefined!
-make[1]: *** [__modpost] Error 1
+- Liam
 
-v1->v2:
-- fix stupid do_div() with type "signed integer".
-
-Signed-off-by: Liu Bo <liubo2009@cn.fujitsu.com>
----
- fs/btrfs/extent-tree.c |   11 ++++++-----
- 1 files changed, 6 insertions(+), 5 deletions(-)
-
-diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
-index 80d6148..e43e4f1 100644
---- a/fs/btrfs/extent-tree.c
-+++ b/fs/btrfs/extent-tree.c
-@@ -6735,9 +6735,10 @@ int btrfs_can_relocate(struct btrfs_root *root, u64 bytenr)
- 	struct btrfs_fs_devices *fs_devices = root->fs_info->fs_devices;
- 	struct btrfs_device *device;
- 	u64 min_free;
-+	u32 dev_min = 1;
-+	u32 dev_nr = 0;
-+	u32 dup = 2;
- 	int index;
--	int dev_nr = 0;
--	int dev_min = 1;
- 	int full = 0;
- 	int ret = 0;
- 
-@@ -6796,14 +6797,14 @@ int btrfs_can_relocate(struct btrfs_root *root, u64 bytenr)
- 	index = get_block_group_index(block_group);
- 	if (index == 0) {
- 		dev_min = 4;
--		min_free /= 2;
-+		do_div(min_free, dup);
- 	} else if (index == 1) {
- 		dev_min = 2;
- 	} else if (index == 2) {
--		min_free *= 2;
-+		min_free *= dup;
- 	} else if (index == 3) {
- 		dev_min = fs_devices->rw_devices;
--		min_free /= dev_min;
-+		do_div(min_free, dev_min);
- 	}
- 
- 	mutex_lock(&root->fs_info->chunk_mutex);
--- 
-1.6.5.2
-
+On Thu, Aug 18, 2011 at 8:52 PM, cwillu <cwillu@cwillu.com> wrote:
+> You might try mounting it "-o ro" as a stopgap to regain readonly acc=
+ess.
+>
+> Judging from the bootlog, the error itself appears to be enospc. =A0I=
+n
+> which case there's no already-available quick fix; I expect a
+> developer to chime in any second now :p
+>
+>> From the logs it is listing a transid error but NOT that it is
+>> expecting a different one, simply
+>>
+>> device label 1TB devid 1 transid 248472 /dev/sdb
+>
+> That particular line is the normal listing of devices, which is
+> expected and completely normal.
+>
+--
+To unsubscribe from this list: send the line "unsubscribe linux-btrfs" =
+in
+the body of a message to majordomo@vger.kernel.org
+More majordomo info at  http://vger.kernel.org/majordomo-info.html

@@ -1,60 +1,44 @@
-From: Andi Kleen <andi@firstfloor.org>
-Subject: [PATCH] BTRFS: Free inode mutex on lseek error
-Date: Fri, 19 Aug 2011 17:07:38 -0700
-Message-ID: <1313798858-10938-1-git-send-email-andi@firstfloor.org>
-Cc: linux-kernel@vger.kernel.org, Andi Kleen <ak@linux.intel.com>,
-	josef@redhat.com, chris.mason@oracle.com
-To: linux-btrfs@vger.kernel.org
-Return-path: <linux-btrfs-owner@vger.kernel.org>
+From: Liu Bo <liubo2009@cn.fujitsu.com>
+Subject: [PATCH] Btrfs: use do_div to avoid compile errors on 32bit box
+Date: Sat, 20 Aug 2011 09:34:36 +0800
+Message-ID: <1313804076-30228-1-git-send-email-liubo2009@cn.fujitsu.com>
+Cc: <linux-btrfs@vger.kernel.org>, <chris.mason@oracle.com>,
+	<dave@jikos.cz>
+To: <linux-kernel@vger.kernel.org>, <torvalds@linux-foundation.org>
+Return-path: <linux-kernel-owner@vger.kernel.org>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-From: Andi Kleen <ak@linux.intel.com>
+When doing div operation of u64 type, we need to be careful and use do_div
+to avoid compile ERROR on 32bit box:
 
-Introduced with b26751575a9aa55fd6dbf3febde3ff06dfadc44f
+"ERROR: "__udivdi3" [fs/btrfs/btrfs.ko] undefined!
+make[1]: *** [__modpost] Error 1
 
-Cc: josef@redhat.com
-Cc: chris.mason@oracle.com
-Signed-off-by: Andi Kleen <ak@linux.intel.com>
+Signed-off-by: Liu Bo <liubo2009@cn.fujitsu.com>
 ---
- fs/btrfs/file.c |   14 ++++++++------
- 1 files changed, 8 insertions(+), 6 deletions(-)
+ fs/btrfs/extent-tree.c |    4 ++--
+ 1 files changed, 2 insertions(+), 2 deletions(-)
 
-diff --git a/fs/btrfs/file.c b/fs/btrfs/file.c
-index 658d669..8791613 100644
---- a/fs/btrfs/file.c
-+++ b/fs/btrfs/file.c
-@@ -1798,16 +1798,15 @@ static loff_t btrfs_file_llseek(struct file *file, loff_t offset, int origin)
- 	case SEEK_DATA:
- 	case SEEK_HOLE:
- 		ret = find_desired_extent(inode, &offset, origin);
--		if (ret) {
--			mutex_unlock(&inode->i_mutex);
--			return ret;
--		}
-+		if (ret)
-+			goto error;
+diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
+index 80d6148..9b495ce 100644
+--- a/fs/btrfs/extent-tree.c
++++ b/fs/btrfs/extent-tree.c
+@@ -6796,14 +6796,14 @@ int btrfs_can_relocate(struct btrfs_root *root, u64 bytenr)
+ 	index = get_block_group_index(block_group);
+ 	if (index == 0) {
+ 		dev_min = 4;
+-		min_free /= 2;
++		do_div(min_free, 2);
+ 	} else if (index == 1) {
+ 		dev_min = 2;
+ 	} else if (index == 2) {
+ 		min_free *= 2;
+ 	} else if (index == 3) {
+ 		dev_min = fs_devices->rw_devices;
+-		min_free /= dev_min;
++		do_div(min_free, dev_min);
  	}
  
-+	ret = -EINVAL;
- 	if (offset < 0 && !(file->f_mode & FMODE_UNSIGNED_OFFSET))
--		return -EINVAL;
-+		goto error;
- 	if (offset > inode->i_sb->s_maxbytes)
--		return -EINVAL;
-+		goto error;
- 
- 	/* Special lock needed here? */
- 	if (offset != file->f_pos) {
-@@ -1817,6 +1816,9 @@ static loff_t btrfs_file_llseek(struct file *file, loff_t offset, int origin)
- out:
- 	mutex_unlock(&inode->i_mutex);
- 	return offset;
-+error:
-+	mutex_unlock(&inode->i_mutex);
-+	return ret;
- }
- 
- const struct file_operations btrfs_file_operations = {
+ 	mutex_lock(&root->fs_info->chunk_mutex);
 -- 
-1.7.4.4
-
+1.6.5.2

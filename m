@@ -1,62 +1,79 @@
-From: Josef Bacik <josef@redhat.com>
-Subject: [PATCH] Btrfs: fix 64 bit divide problem
-Date: Sat, 20 Aug 2011 08:29:51 -0400
-Message-ID: <1313843391-3904-1-git-send-email-josef@redhat.com>
-To: linux-kernel@vger.kernel.org, linux-btrfs@vger.kernel.org,
-	torvalds@linux-foundation.org, mingo@kernel.org,
-	liubo2009@cn.fujitsu.com
+From: Andi Kleen <andi@firstfloor.org>
+Subject: Re: [PATCH] BTRFS: Free inode mutex on lseek error
+Date: Sat, 20 Aug 2011 14:53:17 +0200
+Message-ID: <20110820125317.GJ25996@one.firstfloor.org>
+References: <1313798858-10938-1-git-send-email-andi@firstfloor.org> <4E4FA3B9.6000203@redhat.com>
+Mime-Version: 1.0
+Content-Type: text/plain; charset=us-ascii
+Cc: Andi Kleen <andi@firstfloor.org>, linux-btrfs@vger.kernel.org,
+	linux-kernel@vger.kernel.org, Andi Kleen <ak@linux.intel.com>,
+	chris.mason@oracle.com
+To: Josef Bacik <josef@redhat.com>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
+In-Reply-To: <4E4FA3B9.6000203@redhat.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-This fixes a regression introduced by
+On Sat, Aug 20, 2011 at 08:08:25AM -0400, Josef Bacik wrote:
+> On 08/19/2011 08:07 PM, Andi Kleen wrote:
+> > From: Andi Kleen <ak@linux.intel.com>
+> > 
+> > Introduced with b26751575a9aa55fd6dbf3febde3ff06dfadc44f
+> > 
+> 
+> This has already been fixed by
+> 
+> 9a4327ca1f45f82edad7dc0a4e52ce9316e0950c
 
-cdcb725c05fe0cb71777c66ddc2445fedbbb3c59
+It's not. That patch returns the wrong return value.
 
-In cases where we need to divide/multiply by 2 we should just left/right shift
-respectively, and in cases where theres N number of devices use do_div.  Also
-make the counters u64 to match up with rw_devices.  Thanks,
+-Andi
 
-Signed-off-by: Josef Bacik <josef@redhat.com>
 ---
- fs/btrfs/extent-tree.c |   12 +++++++-----
- 1 files changed, 7 insertions(+), 5 deletions(-)
 
-diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
-index 44a3107..99ab571 100644
---- a/fs/btrfs/extent-tree.c
-+++ b/fs/btrfs/extent-tree.c
-@@ -6727,9 +6727,9 @@ int btrfs_can_relocate(struct btrfs_root *root, u64 bytenr)
- 	struct btrfs_fs_devices *fs_devices = root->fs_info->fs_devices;
- 	struct btrfs_device *device;
- 	u64 min_free;
-+	u64 dev_min = 1;
-+	u64 dev_nr = 0;
- 	int index;
--	int dev_nr = 0;
--	int dev_min = 1;
- 	int full = 0;
- 	int ret = 0;
- 
-@@ -6788,14 +6788,16 @@ int btrfs_can_relocate(struct btrfs_root *root, u64 bytenr)
- 	index = get_block_group_index(block_group);
- 	if (index == 0) {
- 		dev_min = 4;
--		min_free /= 2;
-+		/* Divide by 2 */
-+		min_free >>= 1;
- 	} else if (index == 1) {
- 		dev_min = 2;
- 	} else if (index == 2) {
--		min_free *= 2;
-+		/* Multiply by 2 */
-+		min_free <<= 1;
- 	} else if (index == 3) {
- 		dev_min = fs_devices->rw_devices;
--		min_free /= dev_min;
-+		do_div(min_free, dev_min);
+>From 3c3bb2aa661c2b3405c53ac72e23fc663aea794f Mon Sep 17 00:00:00 2001
+From: Andi Kleen <ak@linux.intel.com>
+Date: Sat, 20 Aug 2011 05:49:47 -0700
+Subject: [PATCH] BTRFS: Fix lseek return value for error
+
+Introduced by 9a4327ca1f45f82edad7dc0a4e52ce9316e0950c
+
+Signed-off-by: Andi Kleen <ak@linux.intel.com>
+
+diff --git a/fs/btrfs/file.c b/fs/btrfs/file.c
+index e7872e4..c6e493f 100644
+--- a/fs/btrfs/file.c
++++ b/fs/btrfs/file.c
+@@ -1814,19 +1814,17 @@ static loff_t btrfs_file_llseek(struct file *file, loff_t offset, int origin)
+ 	case SEEK_DATA:
+ 	case SEEK_HOLE:
+ 		ret = find_desired_extent(inode, &offset, origin);
+-		if (ret) {
+-			mutex_unlock(&inode->i_mutex);
+-			return ret;
+-		}
++		if (ret)
++			goto error;
  	}
  
- 	mutex_lock(&root->fs_info->chunk_mutex);
--- 
-1.7.5.2
-
+ 	if (offset < 0 && !(file->f_mode & FMODE_UNSIGNED_OFFSET)) {
+ 		ret = -EINVAL;
+-		goto out;
++		goto error;
+ 	}
+ 	if (offset > inode->i_sb->s_maxbytes) {
+ 		ret = -EINVAL;
+-		goto out;
++		goto error;
+ 	}
+ 
+ 	/* Special lock needed here? */
+@@ -1837,6 +1835,9 @@ static loff_t btrfs_file_llseek(struct file *file, loff_t offset, int origin)
+ out:
+ 	mutex_unlock(&inode->i_mutex);
+ 	return offset;
++error:
++	mutex_unlock(&inode->i_mutex);
++	return ret;
+ }
+ 
+ const struct file_operations btrfs_file_operations = {

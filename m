@@ -1,67 +1,31 @@
-From: Marco Stornelli <marco.stornelli@gmail.com>
-Subject: Re: [PATCH 1/4] fs: add SEEK_HOLE and SEEK_DATA flags
-Date: Sat, 20 Aug 2011 18:32:49 +0200
-Message-ID: <4E4FE1B1.7010601@gmail.com>
-References: <1309275199-10801-1-git-send-email-josef@redhat.com> <4E4F814B.5070202@gmail.com> <4E4F865B.2010608@gmail.com> <4E4FD48B.8030101@oracle.com>
+From: Andrew Guertin <andrew.guertin@uvm.edu>
+Subject: Re: Applications using fsync cause hangs for several seconds every
+ few minutes
+Date: Sat, 20 Aug 2011 13:18:29 -0400
+Message-ID: <4E4FEC65.2070903@uvm.edu>
+References: <4E41A6A4.9070702@uvm.edu> <4E447E2E.2070502@uvm.edu> <1313678278-sup-1155@shiny>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=ISO-8859-15; format=flowed
-Cc: Josef Bacik <josef@redhat.com>, linux-fsdevel@vger.kernel.org,
-	linux-kernel@vger.kernel.org, linux-btrfs@vger.kernel.org,
-	xfs@oss.sgi.com, viro@ZenIV.linux.org.uk
-To: Sunil Mushran <sunil.mushran@oracle.com>
+Content-Type: text/plain; charset=UTF-8; format=flowed
+Cc: linux-btrfs <linux-btrfs@vger.kernel.org>
+To: Chris Mason <chris.mason@oracle.com>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <4E4FD48B.8030101@oracle.com>
+In-Reply-To: <1313678278-sup-1155@shiny>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Il 20/08/2011 17:36, Sunil Mushran ha scritto:
-> On 08/20/2011 03:03 AM, Marco Stornelli wrote:
->> Il 20/08/2011 11:41, Marco Stornelli ha scritto:
->>> Hi,
->>>
->>> Il 28/06/2011 17:33, Josef Bacik ha scritto:
->>>> This just gets us ready to support the SEEK_HOLE and SEEK_DATA flags.
->>>> Turns out
->>>> using fiemap in things like cp cause more problems than it solves, so
->>>> lets try
->>>> and give userspace an interface that doesn't suck. We need to match
->>>> solaris
->>>> here, and the definitions are
->>>>
->>>> *o* If /whence/ is SEEK_HOLE, the offset of the start of the
->>>> next hole greater than or equal to the supplied offset
->>>> is returned. The definition of a hole is provided near
->>>> the end of the DESCRIPTION.
->>>>
->>>> *o* If /whence/ is SEEK_DATA, the file pointer is set to the
->>>> start of the next non-hole file region greater than or
->>>> equal to the supplied offset.
->>>>
->>>
->>> I'm implementing the SEEK_DATA/SEEK_HOLE management for pramfs and I've
->>> got some doubts about the right behavior:
->>>
->>> 1) when we use SEEK_DATA/SEEK_HOLE, the offset used in lseek means
->>> always the offset from the start of the file, right?
->>>
->>> 2) in case of a file with hole at the beginning and data at the end, if
->>> I do lseek(fd, 0, SEEK_HOLE) I should receive the end of the file
->>> because the idea is to search the *next* hole and we have always a
->>> virtual hole at the end of the file, right?
+On 08/18/2011 10:38 AM, Chris Mason wrote:
+> Excerpts from Andrew Guertin's message of 2011-08-11 21:13:18 -0400:
+>> On 08/09/2011 05:29 PM, Andrew Guertin wrote:
+>>> I have not tried 3.1-rc1, but plan to soon.
 >>
->> Just to be precise about this question: the alternative here, it's to
->> return the same position because we are already in a hole.
+>> I've tested now, this does still occur in 3.1-rc1.
 >
-> Yes, the offset is from the start of the file.
+> Ok, I had high hopes that the btrfs changes in rc1 would fix this.
 >
-> And yes, same offset is ok. I think the word next should be
-> dropped from the definition. It is misleading.
->
+> Could you please try with the deadline elevator instead of the cfq
+> default?
 
-Thank. Yes the word "next" is not very clear. I re-read the proposal for 
-the standard, actually it's seems to me that if we are in the last hole 
-we should return the file size, if we are not in the last hole than it's 
-ok the same offset - "....except that
-if offset falls beyond the last byte not within a hole, then the file
-offset may be set to the file size instead".
+The deadline elevator does not fix it (tested with 3.1-rc2)
 
-Marco
+Sorry for taking a long time with this.
+
+--Andrew

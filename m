@@ -1,21 +1,56 @@
-From: Chris Mason <chris.mason@oracle.com>
-Subject: Re: [GIT PULL] Btrfs updates
-Date: Sat, 20 Aug 2011 10:01:00 -0400
-Message-ID: <1313848842-sup-1622@shiny>
-References: <1313690367-sup-3240@shiny> <Pine.LNX.4.64.1108181146450.11873@cobra.newdream.net>
-Content-Type: text/plain; charset=UTF-8
-Cc: BTRFS Mailing list <linux-btrfs@vger.kernel.org>
-To: Sage Weil <sage@newdream.net>
+From: Sunil Mushran <sunil.mushran@oracle.com>
+Subject: Re: [PATCH 1/4] fs: add SEEK_HOLE and SEEK_DATA flags
+Date: Sat, 20 Aug 2011 08:36:43 -0700
+Message-ID: <4E4FD48B.8030101@oracle.com>
+References: <1309275199-10801-1-git-send-email-josef@redhat.com> <4E4F814B.5070202@gmail.com> <4E4F865B.2010608@gmail.com>
+Mime-Version: 1.0
+Content-Type: text/plain; charset=ISO-8859-15; format=flowed
+Cc: Josef Bacik <josef@redhat.com>, linux-fsdevel@vger.kernel.org,
+	linux-kernel@vger.kernel.org, linux-btrfs@vger.kernel.org,
+	xfs@oss.sgi.com, viro@ZenIV.linux.org.uk
+To: Marco Stornelli <marco.stornelli@gmail.com>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-reply-to: <Pine.LNX.4.64.1108181146450.11873@cobra.newdream.net>
+In-Reply-To: <4E4F865B.2010608@gmail.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Excerpts from Sage Weil's message of 2011-08-18 17:51:54 -0400:
-> Hi Chris, Josef,
-> 
-> Can some form of the clone ioctl transaction start reservation fix go in 
-> soon as well?  That hits a BUG_ON every time.
+On 08/20/2011 03:03 AM, Marco Stornelli wrote:
+> Il 20/08/2011 11:41, Marco Stornelli ha scritto:
+>> Hi,
+>>
+>> Il 28/06/2011 17:33, Josef Bacik ha scritto:
+>>> This just gets us ready to support the SEEK_HOLE and SEEK_DATA flags.
+>>> Turns out
+>>> using fiemap in things like cp cause more problems than it solves, so
+>>> lets try
+>>> and give userspace an interface that doesn't suck. We need to match
+>>> solaris
+>>> here, and the definitions are
+>>>
+>>> *o* If /whence/ is SEEK_HOLE, the offset of the start of the
+>>> next hole greater than or equal to the supplied offset
+>>> is returned. The definition of a hole is provided near
+>>> the end of the DESCRIPTION.
+>>>
+>>> *o* If /whence/ is SEEK_DATA, the file pointer is set to the
+>>> start of the next non-hole file region greater than or
+>>> equal to the supplied offset.
+>>>
+>>
+>> I'm implementing the SEEK_DATA/SEEK_HOLE management for pramfs and I've
+>> got some doubts about the right behavior:
+>>
+>> 1) when we use SEEK_DATA/SEEK_HOLE, the offset used in lseek means
+>> always the offset from the start of the file, right?
+>>
+>> 2) in case of a file with hole at the beginning and data at the end, if
+>> I do lseek(fd, 0, SEEK_HOLE) I should receive the end of the file
+>> because the idea is to search the *next* hole and we have always a
+>> virtual hole at the end of the file, right?
+>
+> Just to be precise about this question: the alternative here, it's to 
+> return the same position because we are already in a hole.
 
-Sorry Sage, I thought I had that one.  I'll get it in the next pull.
+Yes, the offset is from the start of the file.
 
--chris
+And yes, same offset is ok. I think the word next should be
+dropped from the definition. It is misleading.

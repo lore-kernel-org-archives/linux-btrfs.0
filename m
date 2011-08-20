@@ -1,42 +1,53 @@
-From: Liam <liam.bulkley@gmail.com>
-Subject: Re: kernel oops -> no mount (different problem than others)
-Date: Sat, 20 Aug 2011 01:53:39 -0400
-Message-ID: <CAO2p3yFyDUAA9PjaGRdTfDia7G_RsxGf8F_BECpaDP1ibk3UTQ@mail.gmail.com>
-References: <CAO2p3yF57i2MeszoUHnFy3W-S_Dm-bMHJzY2GYULgxnFCS34Hg@mail.gmail.com>
-	<CAE5mzvg9Yd2qSrpSqKTNmu08z83JmgYtGZmuLg6aYGLMei26AQ@mail.gmail.com>
+From: Marco Stornelli <marco.stornelli@gmail.com>
+Subject: Re: [PATCH 1/4] fs: add SEEK_HOLE and SEEK_DATA flags
+Date: Sat, 20 Aug 2011 11:41:31 +0200
+Message-ID: <4E4F814B.5070202@gmail.com>
+References: <1309275199-10801-1-git-send-email-josef@redhat.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=ISO-8859-1
-Cc: linux-btrfs@vger.kernel.org
-To: cwillu <cwillu@cwillu.com>
+Content-Type: text/plain; charset=ISO-8859-15; format=flowed
+Cc: linux-fsdevel@vger.kernel.org, linux-kernel@vger.kernel.org,
+	linux-btrfs@vger.kernel.org, xfs@oss.sgi.com,
+	viro@ZenIV.linux.org.uk
+To: Josef Bacik <josef@redhat.com>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <CAE5mzvg9Yd2qSrpSqKTNmu08z83JmgYtGZmuLg6aYGLMei26AQ@mail.gmail.com>
+In-Reply-To: <1309275199-10801-1-git-send-email-josef@redhat.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Thanks for your help, but unfortunately, it wouldn't mount read-only,
-either. If you can think of anything else I could try, it would be
-greatly appreciated! Thanks!
+Hi,
 
-- Liam
+Il 28/06/2011 17:33, Josef Bacik ha scritto:
+> This just gets us ready to support the SEEK_HOLE and SEEK_DATA flags.  Turns out
+> using fiemap in things like cp cause more problems than it solves, so lets try
+> and give userspace an interface that doesn't suck.  We need to match solaris
+> here, and the definitions are
+>
+> *o* If /whence/ is SEEK_HOLE, the offset of the start of the
+> next hole greater than or equal to the supplied offset
+> is returned. The definition of a hole is provided near
+> the end of the DESCRIPTION.
+>
+> *o* If /whence/ is SEEK_DATA, the file pointer is set to the
+> start of the next non-hole file region greater than or
+> equal to the supplied offset.
+>
 
-On Thu, Aug 18, 2011 at 8:52 PM, cwillu <cwillu@cwillu.com> wrote:
-> You might try mounting it "-o ro" as a stopgap to regain readonly acc=
-ess.
->
-> Judging from the bootlog, the error itself appears to be enospc. =A0I=
-n
-> which case there's no already-available quick fix; I expect a
-> developer to chime in any second now :p
->
->> From the logs it is listing a transid error but NOT that it is
->> expecting a different one, simply
->>
->> device label 1TB devid 1 transid 248472 /dev/sdb
->
-> That particular line is the normal listing of devices, which is
-> expected and completely normal.
->
---
-To unsubscribe from this list: send the line "unsubscribe linux-btrfs" =
-in
-the body of a message to majordomo@vger.kernel.org
-More majordomo info at  http://vger.kernel.org/majordomo-info.html
+I'm implementing the SEEK_DATA/SEEK_HOLE management for pramfs and I've 
+got some doubts about the right behavior:
+
+1) when we use SEEK_DATA/SEEK_HOLE, the offset used in lseek means 
+always the offset from the start of the file, right?
+
+2) in case of a file with hole at the beginning and data at the end, if 
+I do lseek(fd, 0, SEEK_HOLE) I should receive the end of the file 
+because the idea is to search the *next* hole and we have always a 
+virtual hole at the end of the file, right?
+
+3) about the last sentence of point 2), is it always true even if we 
+have a case of block allocation beyond the end of file (fallocate with 
+keep size option)?
+
+Thanks.
+
+Regards,
+
+Marco

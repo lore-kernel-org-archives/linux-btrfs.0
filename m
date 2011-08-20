@@ -1,33 +1,21 @@
-From: Josef Bacik <josef@redhat.com>
-Subject: Re: [PATCH] BTRFS: Free inode mutex on lseek error
-Date: Sat, 20 Aug 2011 09:43:01 -0400
-Message-ID: <20110820134301.GA8266@dhcp231-156.rdu.redhat.com>
-References: <1313798858-10938-1-git-send-email-andi@firstfloor.org> <4E4FA3B9.6000203@redhat.com> <20110820125317.GJ25996@one.firstfloor.org>
-Mime-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Cc: Josef Bacik <josef@redhat.com>, linux-btrfs@vger.kernel.org,
-	linux-kernel@vger.kernel.org, Andi Kleen <ak@linux.intel.com>,
-	chris.mason@oracle.com
-To: Andi Kleen <andi@firstfloor.org>
+From: Chris Mason <chris.mason@oracle.com>
+Subject: Re: [GIT PULL] Btrfs updates
+Date: Sat, 20 Aug 2011 10:01:00 -0400
+Message-ID: <1313848842-sup-1622@shiny>
+References: <1313690367-sup-3240@shiny> <Pine.LNX.4.64.1108181146450.11873@cobra.newdream.net>
+Content-Type: text/plain; charset=UTF-8
+Cc: BTRFS Mailing list <linux-btrfs@vger.kernel.org>
+To: Sage Weil <sage@newdream.net>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <20110820125317.GJ25996@one.firstfloor.org>
+In-reply-to: <Pine.LNX.4.64.1108181146450.11873@cobra.newdream.net>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Sat, Aug 20, 2011 at 02:53:17PM +0200, Andi Kleen wrote:
-> On Sat, Aug 20, 2011 at 08:08:25AM -0400, Josef Bacik wrote:
-> > On 08/19/2011 08:07 PM, Andi Kleen wrote:
-> > > From: Andi Kleen <ak@linux.intel.com>
-> > > 
-> > > Introduced with b26751575a9aa55fd6dbf3febde3ff06dfadc44f
-> > > 
-> > 
-> > This has already been fixed by
-> > 
-> > 9a4327ca1f45f82edad7dc0a4e52ce9316e0950c
+Excerpts from Sage Weil's message of 2011-08-18 17:51:54 -0400:
+> Hi Chris, Josef,
 > 
-> It's not. That patch returns the wrong return value.
->
+> Can some form of the clone ioctl transaction start reservation fix go in 
+> soon as well?  That hits a BUG_ON every time.
 
-Oh duh I see, sorry,
+Sorry Sage, I thought I had that one.  I'll get it in the next pull.
 
-Josef 
+-chris

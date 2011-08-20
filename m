@@ -1,52 +1,27 @@
-From: Marco Stornelli <marco.stornelli@gmail.com>
-Subject: Re: [PATCH 1/4] fs: add SEEK_HOLE and SEEK_DATA flags
-Date: Sat, 20 Aug 2011 12:03:07 +0200
-Message-ID: <4E4F865B.2010608@gmail.com>
-References: <1309275199-10801-1-git-send-email-josef@redhat.com> <4E4F814B.5070202@gmail.com>
+From: Josef Bacik <josef@redhat.com>
+Subject: Re: [PATCH] BTRFS: Free inode mutex on lseek error
+Date: Sat, 20 Aug 2011 08:08:25 -0400
+Message-ID: <4E4FA3B9.6000203@redhat.com>
+References: <1313798858-10938-1-git-send-email-andi@firstfloor.org>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=ISO-8859-15; format=flowed
-Cc: linux-fsdevel@vger.kernel.org, linux-kernel@vger.kernel.org,
-	linux-btrfs@vger.kernel.org, xfs@oss.sgi.com,
-	viro@ZenIV.linux.org.uk
-To: Josef Bacik <josef@redhat.com>
-Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <4E4F814B.5070202@gmail.com>
+Content-Type: text/plain; charset=ISO-8859-1
+Cc: linux-btrfs@vger.kernel.org, linux-kernel@vger.kernel.org,
+	Andi Kleen <ak@linux.intel.com>, chris.mason@oracle.com
+To: Andi Kleen <andi@firstfloor.org>
+Return-path: <linux-kernel-owner@vger.kernel.org>
+In-Reply-To: <1313798858-10938-1-git-send-email-andi@firstfloor.org>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Il 20/08/2011 11:41, Marco Stornelli ha scritto:
-> Hi,
->
-> Il 28/06/2011 17:33, Josef Bacik ha scritto:
->> This just gets us ready to support the SEEK_HOLE and SEEK_DATA flags.
->> Turns out
->> using fiemap in things like cp cause more problems than it solves, so
->> lets try
->> and give userspace an interface that doesn't suck. We need to match
->> solaris
->> here, and the definitions are
->>
->> *o* If /whence/ is SEEK_HOLE, the offset of the start of the
->> next hole greater than or equal to the supplied offset
->> is returned. The definition of a hole is provided near
->> the end of the DESCRIPTION.
->>
->> *o* If /whence/ is SEEK_DATA, the file pointer is set to the
->> start of the next non-hole file region greater than or
->> equal to the supplied offset.
->>
->
-> I'm implementing the SEEK_DATA/SEEK_HOLE management for pramfs and I've
-> got some doubts about the right behavior:
->
-> 1) when we use SEEK_DATA/SEEK_HOLE, the offset used in lseek means
-> always the offset from the start of the file, right?
->
-> 2) in case of a file with hole at the beginning and data at the end, if
-> I do lseek(fd, 0, SEEK_HOLE) I should receive the end of the file
-> because the idea is to search the *next* hole and we have always a
-> virtual hole at the end of the file, right?
+On 08/19/2011 08:07 PM, Andi Kleen wrote:
+> From: Andi Kleen <ak@linux.intel.com>
+> 
+> Introduced with b26751575a9aa55fd6dbf3febde3ff06dfadc44f
+> 
 
-Just to be precise about this question: the alternative here, it's to 
-return the same position because we are already in a hole.
+This has already been fixed by
 
-Marco
+9a4327ca1f45f82edad7dc0a4e52ce9316e0950c
+
+Thanks,
+
+Josef

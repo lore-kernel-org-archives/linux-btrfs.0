@@ -1,29 +1,60 @@
-From: David Sterba <dave@jikos.cz>
-Subject: Re: bonnie triggers and endless numbers of stack traces
-Date: Sat, 20 Aug 2011 01:45:19 +0200
-Message-ID: <20110819234519.GJ20461@twin.jikos.cz>
-References: <j2m3ud$u8e$1@dough.gmane.org>
- <4E4EBB57.3040209@redhat.com>
-Reply-To: dave@jikos.cz
-Mime-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Cc: Bernd Schubert <bernd.schubert@itwm.fraunhofer.de>,
-	linux-btrfs@vger.kernel.org
-To: Josef Bacik <josef@redhat.com>
+From: Andi Kleen <andi@firstfloor.org>
+Subject: [PATCH] BTRFS: Free inode mutex on lseek error
+Date: Fri, 19 Aug 2011 17:07:38 -0700
+Message-ID: <1313798858-10938-1-git-send-email-andi@firstfloor.org>
+Cc: linux-kernel@vger.kernel.org, Andi Kleen <ak@linux.intel.com>,
+	josef@redhat.com, chris.mason@oracle.com
+To: linux-btrfs@vger.kernel.org
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <4E4EBB57.3040209@redhat.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Fri, Aug 19, 2011 at 03:36:55PM -0400, Josef Bacik wrote:
-> This is being worked on, if you really don't like it pull my git tree
-> and test it out and see if the errors go away
-> 
-> git://git.kernel.org/pub/scm/linux/kernel/git/josef/btrfs-work.git
+From: Andi Kleen <ak@linux.intel.com>
 
-pulled on top of latest linus', with top commit:
-"Btrfs: fix space leak when we fail to make an allocation"
+Introduced with b26751575a9aa55fd6dbf3febde3ff06dfadc44f
 
-but I still see it, xfstests/013.
+Cc: josef@redhat.com
+Cc: chris.mason@oracle.com
+Signed-off-by: Andi Kleen <ak@linux.intel.com>
+---
+ fs/btrfs/file.c |   14 ++++++++------
+ 1 files changed, 8 insertions(+), 6 deletions(-)
 
+diff --git a/fs/btrfs/file.c b/fs/btrfs/file.c
+index 658d669..8791613 100644
+--- a/fs/btrfs/file.c
++++ b/fs/btrfs/file.c
+@@ -1798,16 +1798,15 @@ static loff_t btrfs_file_llseek(struct file *file, loff_t offset, int origin)
+ 	case SEEK_DATA:
+ 	case SEEK_HOLE:
+ 		ret = find_desired_extent(inode, &offset, origin);
+-		if (ret) {
+-			mutex_unlock(&inode->i_mutex);
+-			return ret;
+-		}
++		if (ret)
++			goto error;
+ 	}
+ 
++	ret = -EINVAL;
+ 	if (offset < 0 && !(file->f_mode & FMODE_UNSIGNED_OFFSET))
+-		return -EINVAL;
++		goto error;
+ 	if (offset > inode->i_sb->s_maxbytes)
+-		return -EINVAL;
++		goto error;
+ 
+ 	/* Special lock needed here? */
+ 	if (offset != file->f_pos) {
+@@ -1817,6 +1816,9 @@ static loff_t btrfs_file_llseek(struct file *file, loff_t offset, int origin)
+ out:
+ 	mutex_unlock(&inode->i_mutex);
+ 	return offset;
++error:
++	mutex_unlock(&inode->i_mutex);
++	return ret;
+ }
+ 
+ const struct file_operations btrfs_file_operations = {
+-- 
+1.7.4.4
 
-david

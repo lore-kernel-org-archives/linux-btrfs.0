@@ -1,28 +1,32 @@
-From: Linus Torvalds <torvalds@linux-foundation.org>
-Subject: Re: [PATCH v2] Btrfs: use do_div to avoid compile errors on 32bit box
-Date: Sat, 20 Aug 2011 18:04:51 -0700
-Message-ID: <CA+55aFzm67yfdnwu9ou6X6zf05DyiGvCD0ci8vZM97W+B_HMoQ@mail.gmail.com>
-References: <1313806667-30495-1-git-send-email-liubo2009@cn.fujitsu.com> <4E4FA6D8.7030407@redhat.com>
+From: Ingo Molnar <mingo@kernel.org>
+Subject: Re: [PATCH] Btrfs: fix 64 bit divide problem
+Date: Sun, 21 Aug 2011 09:19:55 +0200
+Message-ID: <20110821071951.GA4013@kernel.org>
+References: <1313843391-3904-1-git-send-email-josef@redhat.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=ISO-8859-1
-Cc: Liu Bo <liubo2009@cn.fujitsu.com>, linux-kernel@vger.kernel.org,
-	mingo@kernel.org, jwboyer@gmail.com, linux-btrfs@vger.kernel.org,
-	chris.mason@oracle.com, dave@jikos.cz
+Content-Type: text/plain; charset=us-ascii
+Cc: linux-kernel@vger.kernel.org, linux-btrfs@vger.kernel.org,
+	torvalds@linux-foundation.org, liubo2009@cn.fujitsu.com
 To: Josef Bacik <josef@redhat.com>
-Return-path: <linux-kernel-owner@vger.kernel.org>
-In-Reply-To: <4E4FA6D8.7030407@redhat.com>
+Return-path: <linux-btrfs-owner@vger.kernel.org>
+In-Reply-To: <1313843391-3904-1-git-send-email-josef@redhat.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Sat, Aug 20, 2011 at 5:21 AM, Josef Bacik <josef@redhat.com> wrote:
->
-> I think Linus was less complaining about how you're dividing here and
-> more about the fact that you are. =A0A divide by 2 is the same as a >=
-> 1.
-> =A0I'll send a patch to fix this. =A0Thanks,
 
-Indeed. A single-bit 64-bit "double shift" may be a few cycles, but
-it's still pretty damn cheap. Especially when compared to a 64x32 bit
-divide. We absolutely don't want to do "do_div()" in order to divide
-by the constant 2.
+* Josef Bacik <josef@redhat.com> wrote:
 
-                     Linus
+> This fixes a regression introduced by
+> 
+> cdcb725c05fe0cb71777c66ddc2445fedbbb3c59
+> 
+> In cases where we need to divide/multiply by 2 we should just left/right shift
+> respectively, and in cases where theres N number of devices use do_div.  Also
+> make the counters u64 to match up with rw_devices.  Thanks,
+> 
+> Signed-off-by: Josef Bacik <josef@redhat.com>
+
+Acked-and-tested-by: Ingo Molnar <mingo@elte.hu>
+
+Thanks,
+
+	Ingo

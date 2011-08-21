@@ -1,27 +1,25 @@
-From: John Fremlin <john@fremlin.org>
-Subject: BTRFS should increase the hard-link in the same directory limit
-Date: Sun, 21 Aug 2011 16:13:13 +0100
-Message-ID: <874o1aztkm.fsf-genuine-vii@john.fremlin.org>
+From: James Cloos <cloos@jhcloos.com>
+Subject: Re: BTRFS should increase the hard-link in the same directory limit
+Date: Sun, 21 Aug 2011 18:05:50 -0400
+Message-ID: <m3bovio1wp.fsf@jhcloos.com>
+References: <874o1aztkm.fsf-genuine-vii@john.fremlin.org>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
+Content-Type: text/plain
+Cc: John Fremlin <john@fremlin.org>
 To: linux-btrfs@vger.kernel.org
 Return-path: <linux-btrfs-owner@vger.kernel.org>
+In-Reply-To: <874o1aztkm.fsf-genuine-vii@john.fremlin.org> (John Fremlin's
+	message of "Sun, 21 Aug 2011 16:13:13 +0100")
 List-ID: <linux-btrfs.vger.kernel.org>
 
-It seems a priori that there should not be any need for more than 256
-names for the same file in the same directory. However, the GNUS
-mailreader's nnmaildir backend uses hardlinks to mark email messages
-read, and instead of creating a separate inode for each marked
-message, uses a hardlink to a single markfile. This means that there
-maybe thousands of hardlinks to the same inode in a single directory.
+>>>>> "JF" == John Fremlin <john@fremlin.org> writes:
 
-This is not unreasonable as the obvious workaround is to wastefully
-create more inodes. 
+JF> instead of creating a separate inode for each marked message, uses a
+JF> hardlink to a single markfile. This means that there maybe thousands
+JF> of hardlinks to the same inode in a single directory.
 
-This restriction causes btrfs-convert 0.19 to crash out with a segfault and
-no helpful message: something like btrfs-convert: segfault at
-ffffffffcfb25fb9 ip 000000000040f9f1 sp 00007fffddefb398 error 6 in
-btrfs-convert[400000+21000].
+And that behaviour is not limited to gnus.  Many workflows use that idiom.
 
-Is there any plan to alleviate this unfortunate limit (or at least make
-btrfs-convert give the location of the file which causes it to fail?).
+-JimC
+-- 
+James Cloos <cloos@jhcloos.com>         OpenPGP: 1024D/ED7DAEA6

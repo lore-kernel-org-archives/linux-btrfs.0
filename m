@@ -1,46 +1,121 @@
-From: Bernd Schubert <bernd.schubert@itwm.fraunhofer.de>
-Subject: Re: bonnie triggers and endless numbers of stack traces
-Date: Mon, 22 Aug 2011 10:17:30 +0200
-Message-ID: <4E52109A.3090403@itwm.fraunhofer.de>
-References: <j2m3ud$u8e$1@dough.gmane.org> <4E4EBB57.3040209@redhat.com>
+From: Marco Stornelli <marco.stornelli@gmail.com>
+Subject: Re: [PATCH 1/4] fs: add SEEK_HOLE and SEEK_DATA flags
+Date: Mon, 22 Aug 2011 12:56:54 +0200
+Message-ID: <CANGUGtCi85Sgrr5R0E8iuN75ubbMX9txZMwnsvp4Wv3Xh+938g@mail.gmail.com>
+References: <1309275199-10801-1-git-send-email-josef@redhat.com>
+	<4E4F814B.5070202@gmail.com>
+	<4E4F865B.2010608@gmail.com>
+	<4E4FD48B.8030101@oracle.com>
+	<4E4FE1B1.7010601@gmail.com>
+	<4E51F24F.1050503@oracle.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=ISO-8859-1; format=flowed
-Cc: linux-btrfs@vger.kernel.org
-To: Josef Bacik <josef@redhat.com>
+Content-Type: text/plain; charset=ISO-8859-1
+Cc: Josef Bacik <josef@redhat.com>, linux-fsdevel@vger.kernel.org,
+	linux-kernel@vger.kernel.org, linux-btrfs@vger.kernel.org,
+	xfs@oss.sgi.com, viro@zeniv.linux.org.uk
+To: Sunil Mushran <sunil.mushran@oracle.com>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <4E4EBB57.3040209@redhat.com>
+In-Reply-To: <4E51F24F.1050503@oracle.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 08/19/2011 09:36 PM, Josef Bacik wrote:
-> On 08/19/2011 12:45 PM, Bernd Schubert wrote:
->> Just for performance tests I run:
+2011/8/22 Sunil Mushran <sunil.mushran@oracle.com>:
+> On 08/20/2011 09:32 AM, Marco Stornelli wrote:
 >>
->> ./bonnie++ -d /mnt/btrfs -s0 -n 1:256:256:1 -r 0
+>> Il 20/08/2011 17:36, Sunil Mushran ha scritto:
+>>>
+>>> On 08/20/2011 03:03 AM, Marco Stornelli wrote:
+>>>>
+>>>> Il 20/08/2011 11:41, Marco Stornelli ha scritto:
+>>>>>
+>>>>> Hi,
+>>>>>
+>>>>> Il 28/06/2011 17:33, Josef Bacik ha scritto:
+>>>>>>
+>>>>>> This just gets us ready to support the SEEK_HOLE and SEEK_DATA f=
+lags.
+>>>>>> Turns out
+>>>>>> using fiemap in things like cp cause more problems than it solve=
+s, so
+>>>>>> lets try
+>>>>>> and give userspace an interface that doesn't suck. We need to ma=
+tch
+>>>>>> solaris
+>>>>>> here, and the definitions are
+>>>>>>
+>>>>>> *o* If /whence/ is SEEK_HOLE, the offset of the start of the
+>>>>>> next hole greater than or equal to the supplied offset
+>>>>>> is returned. The definition of a hole is provided near
+>>>>>> the end of the DESCRIPTION.
+>>>>>>
+>>>>>> *o* If /whence/ is SEEK_DATA, the file pointer is set to the
+>>>>>> start of the next non-hole file region greater than or
+>>>>>> equal to the supplied offset.
+>>>>>>
+>>>>>
+>>>>> I'm implementing the SEEK_DATA/SEEK_HOLE management for pramfs an=
+d I've
+>>>>> got some doubts about the right behavior:
+>>>>>
+>>>>> 1) when we use SEEK_DATA/SEEK_HOLE, the offset used in lseek mean=
+s
+>>>>> always the offset from the start of the file, right?
+>>>>>
+>>>>> 2) in case of a file with hole at the beginning and data at the e=
+nd, if
+>>>>> I do lseek(fd, 0, SEEK_HOLE) I should receive the end of the file
+>>>>> because the idea is to search the *next* hole and we have always =
+a
+>>>>> virtual hole at the end of the file, right?
+>>>>
+>>>> Just to be precise about this question: the alternative here, it's=
+ to
+>>>> return the same position because we are already in a hole.
+>>>
+>>> Yes, the offset is from the start of the file.
+>>>
+>>> And yes, same offset is ok. I think the word next should be
+>>> dropped from the definition. It is misleading.
+>>>
 >>
->> and this causes and endless number of stack traces. Those seem to
->> come from:
->>
->> use_block_rsv()
->>
->> 	ret = block_rsv_use_bytes(block_rsv, blocksize);
->> 	if (!ret)
->> 		return block_rsv;
->> 	if (ret) {
->> 		WARN_ON(1);
->> 		ret = reserve_metadata_bytes(trans, root, block_rsv, blocksize,
->>
->>
->> Why is there a WARN_ON(1)? Running the bonnie benchmark is basically impossible
->> that.
+>> Thank. Yes the word "next" is not very clear. I re-read the proposal=
+ for
+>> the standard, actually it's seems to me that if we are in the last h=
+ole we
+>> should return the file size, if we are not in the last hole than it'=
+s ok the
+>> same offset - "....except that
+>> if offset falls beyond the last byte not within a hole, then the fil=
+e
+>> offset may be set to the file size instead".
 >
-> This is being worked on, if you really don't like it pull my git tree
-> and test it out and see if the errors go away
+> Any proposal that differentiates between holes is wrong. It should no=
+t
+> matter where the hole is.
 >
-> git://git.kernel.org/pub/scm/linux/kernel/git/josef/btrfs-work.git
+> Think of it from the usage-pov.
+>
+> doff =3D 0;
+> while ((doff =3D lseek(SEEK_DATA, doff)) !=3D -ENXIO) {
+> =A0 =A0hoff =3D lseek(SEEK_HOLE, doff);
+> =A0 =A0read_offset =3D doff;
+> =A0 =A0read_len =3D hoff -doff;
+> =A0 =A0process();
+> =A0 =A0doff =3D hoff;
+> }
+>
+> The goal is to make this as efficient as follows. Treating the last
+> hole differently adds more code for no benefit.
+>
+>
 
-Do you plan to fix it for 3.1? If not, any chance to at least update it 
-to WARN_ON_ONCE?
+Mmmm.....It seems that Josef has to be clear in this point. However I
+looked for the seek hole test in xfs test suite, but I didn't find
+anything. Btrfs guys, how have you got tested the implementation? What
+do you think about this corner case? Al, what do you think about it?
 
-
-Thanks,
-Bernd
+Marco
+--
+To unsubscribe from this list: send the line "unsubscribe linux-btrfs" =
+in
+the body of a message to majordomo@vger.kernel.org
+More majordomo info at  http://vger.kernel.org/majordomo-info.html

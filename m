@@ -1,76 +1,49 @@
-From: Wanlong Gao <wanlong.gao@gmail.com>
-Subject: [PATCH] btrfs:make close_ctree() return void
-Date: Mon, 22 Aug 2011 23:18:11 +0800
-Message-ID: <1314026291-8873-1-git-send-email-wanlong.gao@gmail.com>
-Cc: chris.mason@oracle.com, Wanlong Gao <gaowanlong@cn.fujitsu.com>
-To: linux-btrfs@vger.kernel.org, linux-kernel@vger.kernel.org
-Return-path: <linux-kernel-owner@vger.kernel.org>
+From: Sunil Mushran <sunil.mushran@oracle.com>
+Subject: Re: [PATCH 1/4] fs: add SEEK_HOLE and SEEK_DATA flags
+Date: Mon, 22 Aug 2011 08:57:51 -0700
+Message-ID: <4E527C7F.9040807@oracle.com>
+References: <1309275199-10801-1-git-send-email-josef@redhat.com>	<4E4F814B.5070202@gmail.com>	<4E4F865B.2010608@gmail.com>	<4E4FD48B.8030101@oracle.com>	<4E4FE1B1.7010601@gmail.com>	<4E51F24F.1050503@oracle.com> <CANGUGtCi85Sgrr5R0E8iuN75ubbMX9txZMwnsvp4Wv3Xh+938g@mail.gmail.com>
+Mime-Version: 1.0
+Content-Type: text/plain; charset=ISO-8859-1; format=flowed
+Cc: Josef Bacik <josef@redhat.com>, linux-fsdevel@vger.kernel.org,
+	linux-kernel@vger.kernel.org, linux-btrfs@vger.kernel.org,
+	xfs@oss.sgi.com, viro@zeniv.linux.org.uk
+To: Marco Stornelli <marco.stornelli@gmail.com>
+Return-path: <linux-fsdevel-owner@vger.kernel.org>
+In-Reply-To: <CANGUGtCi85Sgrr5R0E8iuN75ubbMX9txZMwnsvp4Wv3Xh+938g@mail.gmail.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-From: Wanlong Gao <gaowanlong@cn.fujitsu.com>
+On 08/22/2011 03:56 AM, Marco Stornelli wrote:
+> 2011/8/22 Sunil Mushran<sunil.mushran@oracle.com>:
+>> On 08/20/2011 09:32 AM, Marco Stornelli wrote:
+>>> Thank. Yes the word "next" is not very clear. I re-read the proposal for
+>>> the standard, actually it's seems to me that if we are in the last hole we
+>>> should return the file size, if we are not in the last hole than it's ok the
+>>> same offset - "....except that
+>>> if offset falls beyond the last byte not within a hole, then the file
+>>> offset may be set to the file size instead".
+>> Any proposal that differentiates between holes is wrong. It should not
+>> matter where the hole is.
+>>
+>> Think of it from the usage-pov.
+>>
+>> doff = 0;
+>> while ((doff = lseek(SEEK_DATA, doff)) != -ENXIO) {
+>>     hoff = lseek(SEEK_HOLE, doff);
+>>     read_offset = doff;
+>>     read_len = hoff -doff;
+>>     process();
+>>     doff = hoff;
+>> }
+>>
+>> The goal is to make this as efficient as follows. Treating the last
+>> hole differently adds more code for no benefit.
+>>
+> Mmmm.....It seems that Josef has to be clear in this point. However I
+> looked for the seek hole test in xfs test suite, but I didn't find
+> anything. Btrfs guys, how have you got tested the implementation? What
+> do you think about this corner case? Al, what do you think about it?
 
-Make close_ctree() return void since it always return 0, and fix
-the return value of btrfs_put_super() to consistent with VFS.
 
-Signed-off-by: Wanlong Gao <gaowanlong@cn.fujitsu.com>
----
- fs/btrfs/disk-io.c |    4 +---
- fs/btrfs/disk-io.h |    2 +-
- fs/btrfs/super.c   |    5 +----
- 3 files changed, 3 insertions(+), 8 deletions(-)
-
-diff --git a/fs/btrfs/disk-io.c b/fs/btrfs/disk-io.c
-index 07b3ac6..b2c15d4 100644
---- a/fs/btrfs/disk-io.c
-+++ b/fs/btrfs/disk-io.c
-@@ -2528,7 +2528,7 @@ int btrfs_commit_super(struct btrfs_root *root)
- 	return ret;
- }
- 
--int close_ctree(struct btrfs_root *root)
-+void close_ctree(struct btrfs_root *root)
- {
- 	struct btrfs_fs_info *fs_info = root->fs_info;
- 	int ret;
-@@ -2630,8 +2630,6 @@ int close_ctree(struct btrfs_root *root)
- 	kfree(fs_info->dev_root);
- 	kfree(fs_info->csum_root);
- 	kfree(fs_info);
--
--	return 0;
- }
- 
- int btrfs_buffer_uptodate(struct extent_buffer *buf, u64 parent_transid)
-diff --git a/fs/btrfs/disk-io.h b/fs/btrfs/disk-io.h
-index bec3ea4..4a191b2 100644
---- a/fs/btrfs/disk-io.h
-+++ b/fs/btrfs/disk-io.h
-@@ -47,7 +47,7 @@ int clean_tree_block(struct btrfs_trans_handle *trans,
- struct btrfs_root *open_ctree(struct super_block *sb,
- 			      struct btrfs_fs_devices *fs_devices,
- 			      char *options);
--int close_ctree(struct btrfs_root *root);
-+void close_ctree(struct btrfs_root *root);
- int write_ctree_super(struct btrfs_trans_handle *trans,
- 		      struct btrfs_root *root, int max_mirrors);
- struct buffer_head *btrfs_read_dev_super(struct block_device *bdev);
-diff --git a/fs/btrfs/super.c b/fs/btrfs/super.c
-index 31e9654..e1d8d32 100644
---- a/fs/btrfs/super.c
-+++ b/fs/btrfs/super.c
-@@ -146,12 +146,9 @@ void __btrfs_std_error(struct btrfs_fs_info *fs_info, const char *function,
- static void btrfs_put_super(struct super_block *sb)
- {
- 	struct btrfs_root *root = btrfs_sb(sb);
--	int ret;
- 
--	ret = close_ctree(root);
-+	close_ctree(root);
- 	sb->s_fs_info = NULL;
--
--	(void)ret; /* FIXME: need to fix VFS to return error? */
- }
- 
- enum {
--- 
-1.7.4.1
+The following test was used to test the early implementations.
+http://oss.oracle.com/~smushran/seek_data/

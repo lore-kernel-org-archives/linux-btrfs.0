@@ -1,79 +1,93 @@
-From: Hugo Mills <hugo@carfax.org.uk>
-Subject: Re: btrfs over nfs
-Date: Mon, 22 Aug 2011 22:28:47 +0100
-Message-ID: <20110822212847.GA5412@carfax.org.uk>
-References: <CAGFoeJ8J4f2_r=bdWapr0CM+Oq+aSJ78-E4D2zP5atHXdovoFw@mail.gmail.com>
+From: Tsutomu Itoh <t-itoh@jp.fujitsu.com>
+Subject: Re: [PATCH] btrfs:make btrfs_init_compress() return void
+Date: Tue, 23 Aug 2011 08:43:02 +0900
+Message-ID: <4E52E986.8030405@jp.fujitsu.com>
+References: <1314022940-6717-1-git-send-email-wanlong.gao@gmail.com>
 Mime-Version: 1.0
-Content-Type: multipart/signed; micalg=pgp-sha1;
-	protocol="application/pgp-signature"; boundary="LZvS9be/3tNcYl/X"
-Cc: linux-btrfs@vger.kernel.org
-To: Jim Maloney <jim@webstarts.com>
+Content-Type: text/plain; charset=ISO-2022-JP
+Cc: linux-btrfs@vger.kernel.org, linux-kernel@vger.kernel.org,
+	chris.mason@oracle.com
+To: Wanlong Gao <wanlong.gao@gmail.com>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <CAGFoeJ8J4f2_r=bdWapr0CM+Oq+aSJ78-E4D2zP5atHXdovoFw@mail.gmail.com>
+In-Reply-To: <1314022940-6717-1-git-send-email-wanlong.gao@gmail.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-
---LZvS9be/3tNcYl/X
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
-
-On Mon, Aug 22, 2011 at 05:07:45PM -0400, Jim Maloney wrote:
-> I have been experimenting exporting btrfs subvolumes over nfs.  Main
-> subvolume is filesys1 mounted at /filesys1.  Below this is subvolume
-> base, user1 is in base and documents is in user1.   documents is
-> mounted at /documents.  /etc/exports is:
-> /filesys1/base/user1    172.16.0.0/24(rw,no_acl,no_root_squash,fsid=0)
-> /filesys1/user1-snapshot        172.16.0.0/24(rw,no_acl,no_root_squash,fsid=0)
-> /documents      172.16.0.0/24(rw,no_acl,no_root_squash,fsid=0)
-
-   I think you need to specify a different fsid for each export.
-That's what I've got here, and it seems to work.
-
-   Hugo.
-
+(2011/08/22 23:22), Wanlong Gao wrote:
+> From: Wanlong Gao <gaowanlong@cn.fujitsu.com>
 > 
-> On the client machine I mount user1 as /mnt/user and all data from
-> user is present.
-> I can also umount /mnt/usr and mount /documents as /mnt/documents and
-> all data is present.
-> However, if I mount user1 as /mnt/user and then mount /documents as
-> /mnt/documents
-> the data from the last subvolume mounted shows in both mounts.  Mount
-> also shows:
-> 172.16.0.28:/documents/ on /mnt/user type nfs
-> (rw,relatime,vers=3,rsize=262144,wsize=262144,namlen=255,hard,proto=tcp,timeo=600,retrans=2,sec=sys,mountaddr=172.16.0.28,mountvers=3,mountport=892,mountproto=udp,local_lock=none,addr=172.16.0.28)
-> 172.16.0.28:/documents/ on /mnt/documents type nfs
-> (rw,relatime,vers=3,rsize=262144,wsize=262144,namlen=255,hard,proto=tcp,timeo=600,retrans=2,sec=sys,mountaddr=172.16.0.28,mountvers=3,mountport=892,mountproto=udp,local_lock=none,addr=172.16.0.28)
+> Make btrfs_init_compress() return void, since it always return 0,
+> and no need to check return value.
 > 
-> The initial mount of user1 on /mnt/user showed correctly in mount.
-> Mount changes when I add the mount for /documents.
-> I don't know how to troubleshoot this.  I am happy to provide any info
-> which can help.
-> Btrfs is currently on a centOS6 machine running kernel 3.0.1 with
-> btrfs-progs from git unstable.
-> NFS is v3 on both server and client and the client is Fedora 15 kernel
-> 2.6.40-4.fc15.x86_64
-> Thanks
-> Jim Maloney
+> Signed-off-by: Wanlong Gao <gaowanlong@cn.fujitsu.com>
+> ---
+>  fs/btrfs/compression.c |    3 +--
+>  fs/btrfs/compression.h |    2 +-
+>  fs/btrfs/super.c       |    7 ++-----
+>  3 files changed, 4 insertions(+), 8 deletions(-)
 > 
-> 
+> diff --git a/fs/btrfs/compression.c b/fs/btrfs/compression.c
+> index 8ec5d86..b2dbefa 100644
+> --- a/fs/btrfs/compression.c
+> +++ b/fs/btrfs/compression.c
+> @@ -731,7 +731,7 @@ struct btrfs_compress_op *btrfs_compress_op[] = {
+>  	&btrfs_lzo_compress,
+>  };
+>  
+> -int __init btrfs_init_compress(void)
+> +void __init btrfs_init_compress(void)
+>  {
+>  	int i;
+>  
+> @@ -741,7 +741,6 @@ int __init btrfs_init_compress(void)
+>  		atomic_set(&comp_alloc_workspace[i], 0);
+>  		init_waitqueue_head(&comp_workspace_wait[i]);
+>  	}
+> -	return 0;
+>  }
+>  
+>  /*
+> diff --git a/fs/btrfs/compression.h b/fs/btrfs/compression.h
+> index a12059f..9afb0a6 100644
+> --- a/fs/btrfs/compression.h
+> +++ b/fs/btrfs/compression.h
+> @@ -19,7 +19,7 @@
+>  #ifndef __BTRFS_COMPRESSION_
+>  #define __BTRFS_COMPRESSION_
+>  
+> -int btrfs_init_compress(void);
+> +void btrfs_init_compress(void);
+>  void btrfs_exit_compress(void);
+>  
+>  int btrfs_compress_pages(int type, struct address_space *mapping,
+> diff --git a/fs/btrfs/super.c b/fs/btrfs/super.c
+> index 15634d4..31e9654 100644
+> --- a/fs/btrfs/super.c
+> +++ b/fs/btrfs/super.c
+> @@ -1238,9 +1238,7 @@ static int __init init_btrfs_fs(void)
+>  	if (err)
+>  		return err;
+>  
+> -	err = btrfs_init_compress();
+> -	if (err)
+> -		goto free_sysfs;
+> +	btrfs_init_compress();
+>  
+>  	err = btrfs_init_cachep();
+>  	if (err)
+> @@ -1281,8 +1279,7 @@ free_cachep:
+>  	btrfs_destroy_cachep();
+>  free_compress:
+>  	btrfs_exit_compress();
 
--- 
-=== Hugo Mills: hugo@... carfax.org.uk | darksatanic.net | lug.org.uk ===
-  PGP key: 515C238D from wwwkeys.eu.pgp.net or http://www.carfax.org.uk
-       --- Someone's been throwing dead sheep down my Fun Well ---       
+> -free_sysfs:
+> -	btrfs_exit_sysfs();
+> +
 
---LZvS9be/3tNcYl/X
-Content-Type: application/pgp-signature; name="signature.asc"
-Content-Description: Digital signature
-Content-Disposition: inline
+Why remove btrfs_exit_sysfs()?
 
------BEGIN PGP SIGNATURE-----
-Version: GnuPG v1.4.10 (GNU/Linux)
+ -Tsutomu
 
-iD8DBQFOUsoPIKyzvlFcI40RAkm1AJ4no85LpWeJEHDQKM+FYmGhyQOnrgCeOYlU
-hdRi30122c6NTzMYX9y2XvY=
-=nwXm
------END PGP SIGNATURE-----
+>  	return err;
+>  }
+>  
 
---LZvS9be/3tNcYl/X--

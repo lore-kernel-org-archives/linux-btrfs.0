@@ -1,62 +1,82 @@
-From: Maciej Marcin Piechotka <uzytkownik2@gmail.com>
-Subject: BTRFS corruption - the filesystem grows and the new files appears
- (at least)
-Date: Mon, 22 Aug 2011 14:06:45 +0100
-Message-ID: <1314018424.11180.7.camel@picard>
-Reply-To: uzytkownik2@gmail.com
-Mime-Version: 1.0
-Content-Type: multipart/signed; micalg="pgp-ripemd160";
-	protocol="application/pgp-signature"; boundary="=-A8X1ybIfUoL6idYeTcKp"
-To: linux-btrfs@vger.kernel.org
-Return-path: <linux-btrfs-owner@vger.kernel.org>
+From: Wanlong Gao <wanlong.gao@gmail.com>
+Subject: [PATCH] btrfs:make btrfs_init_compress() return void
+Date: Mon, 22 Aug 2011 22:22:20 +0800
+Message-ID: <1314022940-6717-1-git-send-email-wanlong.gao@gmail.com>
+Cc: chris.mason@oracle.com, Wanlong Gao <gaowanlong@cn.fujitsu.com>
+To: linux-btrfs@vger.kernel.org, linux-kernel@vger.kernel.org
+Return-path: <linux-kernel-owner@vger.kernel.org>
 List-ID: <linux-btrfs.vger.kernel.org>
 
+From: Wanlong Gao <gaowanlong@cn.fujitsu.com>
 
---=-A8X1ybIfUoL6idYeTcKp
-Content-Type: text/plain; charset="UTF-8"
-Content-Transfer-Encoding: quoted-printable
+Make btrfs_init_compress() return void, since it always return 0,
+and no need to check return value.
 
-Hello,
+Signed-off-by: Wanlong Gao <gaowanlong@cn.fujitsu.com>
+---
+ fs/btrfs/compression.c |    3 +--
+ fs/btrfs/compression.h |    2 +-
+ fs/btrfs/super.c       |    7 ++-----
+ 3 files changed, 4 insertions(+), 8 deletions(-)
 
-I got btrfs corruption and I'm not sure if it is known yet. i suspect
-that it happened after hard reset (I got freeze first so I'm not sure if
-it wasn't caused by something else).
-
-The symptoms are that the allocation grows at all time during
-read/writes (it reached 49 GB for 30 GB of data on disk in total).
-Btrfsck reported several errors (and wasted space) but the partition
-mounted nonetheless. I created the disk image and copy the data from
-image to the partition. I haven't compared the checksums of files but I
-haven't found any other then 1 new file with random (i.e. the nautilus
-complained that the name is not valid) name.
-
-Is is known error or should I include the debug data (the btrfsck output
-etc.)? My kernel is 3.0.3.
-
-Regards
-
---=-A8X1ybIfUoL6idYeTcKp
-Content-Type: application/pgp-signature; name="signature.asc"
-Content-Description: This is a digitally signed message part
-
------BEGIN PGP SIGNATURE-----
-Version: GnuPG v2.0.18 (GNU/Linux)
-
-iQIcBAABAwAGBQJOUlR3AAoJEJIdee2Vr4aPQ2wQAMuo6b1jm5NmE3fH3dN/DFW+
-wFS6WvzJzkDfS4t16gocr+m3sT8PagLklbNo9PieyTtnGBcIFl+XE4QwCOAaqyPF
-77j0Jkiy/beakToCCUc95njm0ay+6Hx7SwzcHX6/Im5IJcfKBlIObS9LNuYkh/TQ
-S5LitisYlupfergfGYoVrS4s+LQj7+c1jlD1AIOe7Hvd86+d2UrAZBqBRH0Pxhdi
-DoochxLC7bgWQFbYZaWQ70x3XGjjEDj5a42nfoPpRTt5cfExR+LarM4rphmV9Tor
-giuB+rx3PU/tp5UhBVB2X0W+lCMLFIuZ3K/6eq8qTGAaKZJR2CWySI/VjzXsLAaO
-tJ1miXSMPQoaSTUxn4+fRBZdeZg6vOvj2JuATE2Ly/nPdrKkmIp/7hv3HiGUnol1
-98N6+p8jHcNoMl5FmZJjxmdZ8rt1LkkDDVR3jg4iScg2oqr3zoF/0S1Ey7L+icHV
-ir/oISQ+CGXfhw/yPkS+HEqOLUiv889irCVh0RXGX2JrpHl1js+sAtupf3nixl+c
-sc/fVb3gQCyMq6pb311KOUNzPq0ITy1RZVkz2UHSqFFcBW+yXEtfJCorK1wx751F
-Aqx3QMG/nhm0mGfo1fGGWJr57GxNQvwvPLuRZuXlwoDeyUA8jTWBchKBSvbJReLO
-ax3xUhiLTYFunvuw6HdW
-=Ig5R
------END PGP SIGNATURE-----
-
---=-A8X1ybIfUoL6idYeTcKp--
-
-
+diff --git a/fs/btrfs/compression.c b/fs/btrfs/compression.c
+index 8ec5d86..b2dbefa 100644
+--- a/fs/btrfs/compression.c
++++ b/fs/btrfs/compression.c
+@@ -731,7 +731,7 @@ struct btrfs_compress_op *btrfs_compress_op[] = {
+ 	&btrfs_lzo_compress,
+ };
+ 
+-int __init btrfs_init_compress(void)
++void __init btrfs_init_compress(void)
+ {
+ 	int i;
+ 
+@@ -741,7 +741,6 @@ int __init btrfs_init_compress(void)
+ 		atomic_set(&comp_alloc_workspace[i], 0);
+ 		init_waitqueue_head(&comp_workspace_wait[i]);
+ 	}
+-	return 0;
+ }
+ 
+ /*
+diff --git a/fs/btrfs/compression.h b/fs/btrfs/compression.h
+index a12059f..9afb0a6 100644
+--- a/fs/btrfs/compression.h
++++ b/fs/btrfs/compression.h
+@@ -19,7 +19,7 @@
+ #ifndef __BTRFS_COMPRESSION_
+ #define __BTRFS_COMPRESSION_
+ 
+-int btrfs_init_compress(void);
++void btrfs_init_compress(void);
+ void btrfs_exit_compress(void);
+ 
+ int btrfs_compress_pages(int type, struct address_space *mapping,
+diff --git a/fs/btrfs/super.c b/fs/btrfs/super.c
+index 15634d4..31e9654 100644
+--- a/fs/btrfs/super.c
++++ b/fs/btrfs/super.c
+@@ -1238,9 +1238,7 @@ static int __init init_btrfs_fs(void)
+ 	if (err)
+ 		return err;
+ 
+-	err = btrfs_init_compress();
+-	if (err)
+-		goto free_sysfs;
++	btrfs_init_compress();
+ 
+ 	err = btrfs_init_cachep();
+ 	if (err)
+@@ -1281,8 +1279,7 @@ free_cachep:
+ 	btrfs_destroy_cachep();
+ free_compress:
+ 	btrfs_exit_compress();
+-free_sysfs:
+-	btrfs_exit_sysfs();
++
+ 	return err;
+ }
+ 
+-- 
+1.7.4.1

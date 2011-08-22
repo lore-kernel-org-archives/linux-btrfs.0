@@ -1,53 +1,39 @@
-From: Marco Stornelli <marco.stornelli@gmail.com>
-Subject: Re: [PATCH 1/4] fs: add SEEK_HOLE and SEEK_DATA flags
-Date: Mon, 22 Aug 2011 19:56:31 +0200
-Message-ID: <4E52984F.8050702@gmail.com>
-References: <1309275199-10801-1-git-send-email-josef@redhat.com>	<4E4F814B.5070202@gmail.com>	<4E4F865B.2010608@gmail.com>	<4E4FD48B.8030101@oracle.com>	<4E4FE1B1.7010601@gmail.com>	<4E51F24F.1050503@oracle.com> <CANGUGtCi85Sgrr5R0E8iuN75ubbMX9txZMwnsvp4Wv3Xh+938g@mail.gmail.com> <4E527C7F.9040807@oracle.com>
-Mime-Version: 1.0
-Content-Type: text/plain; charset=ISO-8859-1; format=flowed
-Cc: Josef Bacik <josef@redhat.com>, linux-fsdevel@vger.kernel.org,
-	linux-kernel@vger.kernel.org, linux-btrfs@vger.kernel.org,
-	xfs@oss.sgi.com, viro@zeniv.linux.org.uk
-To: Sunil Mushran <sunil.mushran@oracle.com>
+From: Josef Bacik <josef@redhat.com>
+Subject: [PATCH] Btrfs: don't increase the block_rsv's size when emergency allocating space
+Date: Mon, 22 Aug 2011 15:25:58 -0400
+Message-ID: <1314041158-20533-1-git-send-email-josef@redhat.com>
+To: linux-btrfs@vger.kernel.org
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <4E527C7F.9040807@oracle.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Il 22/08/2011 17:57, Sunil Mushran ha scritto:
->>> Any proposal that differentiates between holes is wrong. It should not
->>> matter where the hole is.
->>>
->>> Think of it from the usage-pov.
->>>
->>> doff = 0;
->>> while ((doff = lseek(SEEK_DATA, doff)) != -ENXIO) {
->>> hoff = lseek(SEEK_HOLE, doff);
->>> read_offset = doff;
->>> read_len = hoff -doff;
->>> process();
->>> doff = hoff;
->>> }
->>>
->>> The goal is to make this as efficient as follows. Treating the last
->>> hole differently adds more code for no benefit.
->>>
->> Mmmm.....It seems that Josef has to be clear in this point. However I
->> looked for the seek hole test in xfs test suite, but I didn't find
->> anything. Btrfs guys, how have you got tested the implementation? What
->> do you think about this corner case? Al, what do you think about it?
->
->
-> The following test was used to test the early implementations.
-> http://oss.oracle.com/~smushran/seek_data/
->
+If we have to emergency reserve space we need to not increase the block_rsv
+size, otherwise we'll leak space.  Take for instance delalloc, say we reserve
+4k, and we use that 4k, and then we have to emergency allocate another 4k, we
+bump the size up to 8k, however we've only accounted for 4k in reservations in
+all of our supporting logic, so we'll go to free the 4k and end up having a size
+of 4k, which will cause us to later not free as much space.  I saw this doing
+testing where I wasn't reserving enough space for something but was still
+leaking space, very frustrating.  Thanks,
 
-Thank you very much!! I found another point. Your test fails with my 
-implementation because here 
-(http://www.austingroupbugs.net/view.php?id=415) says: "If whence is 
-SEEK_DATA, the file offset shall be set to the smallest location of a 
-byte not within a hole and not less than offset. It shall be an error if 
-no such byte exists." So in this case I return ENXIO but the test 
-expects another value. I have to say that there is a bit of confusion 
-about the real behavior of this new feature :)
+Signed-off-by: Josef Bacik <josef@redhat.com>
+---
+ fs/btrfs/extent-tree.c |    3 ---
+ 1 files changed, 0 insertions(+), 3 deletions(-)
 
-Marco
+diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
+index 99ab571..1f1d3e8 100644
+--- a/fs/btrfs/extent-tree.c
++++ b/fs/btrfs/extent-tree.c
+@@ -5707,9 +5707,6 @@ use_block_rsv(struct btrfs_trans_handle *trans,
+ 		ret = reserve_metadata_bytes(trans, root, block_rsv, blocksize,
+ 					     0);
+ 		if (!ret) {
+-			spin_lock(&block_rsv->lock);
+-			block_rsv->size += blocksize;
+-			spin_unlock(&block_rsv->lock);
+ 			return block_rsv;
+ 		} else if (ret && block_rsv != global_rsv) {
+ 			ret = block_rsv_use_bytes(global_rsv, blocksize);
+-- 
+1.7.5.2
+

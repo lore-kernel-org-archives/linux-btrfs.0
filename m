@@ -1,82 +1,35 @@
-From: Wanlong Gao <wanlong.gao@gmail.com>
-Subject: [PATCH] btrfs:make btrfs_init_compress() return void
-Date: Mon, 22 Aug 2011 22:22:20 +0800
-Message-ID: <1314022940-6717-1-git-send-email-wanlong.gao@gmail.com>
-Cc: chris.mason@oracle.com, Wanlong Gao <gaowanlong@cn.fujitsu.com>
-To: linux-btrfs@vger.kernel.org, linux-kernel@vger.kernel.org
-Return-path: <linux-kernel-owner@vger.kernel.org>
+From: Josef Bacik <josef@redhat.com>
+Subject: Re: BTRFS should increase the hard-link in the same directory limit
+Date: Mon, 22 Aug 2011 10:54:21 -0400
+Message-ID: <4E526D9D.8010202@redhat.com>
+References: <874o1aztkm.fsf-genuine-vii@john.fremlin.org>
+Mime-Version: 1.0
+Content-Type: text/plain; charset=ISO-8859-1
+Cc: linux-btrfs@vger.kernel.org
+To: John Fremlin <john@fremlin.org>
+Return-path: <linux-btrfs-owner@vger.kernel.org>
+In-Reply-To: <874o1aztkm.fsf-genuine-vii@john.fremlin.org>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-From: Wanlong Gao <gaowanlong@cn.fujitsu.com>
+On 08/21/2011 11:13 AM, John Fremlin wrote:
+> It seems a priori that there should not be any need for more than 256
+> names for the same file in the same directory. However, the GNUS
+> mailreader's nnmaildir backend uses hardlinks to mark email messages
+> read, and instead of creating a separate inode for each marked
+> message, uses a hardlink to a single markfile. This means that there
+> maybe thousands of hardlinks to the same inode in a single directory.
+> 
+> This is not unreasonable as the obvious workaround is to wastefully
+> create more inodes. 
+> 
+> This restriction causes btrfs-convert 0.19 to crash out with a segfault and
+> no helpful message: something like btrfs-convert: segfault at
+> ffffffffcfb25fb9 ip 000000000040f9f1 sp 00007fffddefb398 error 6 in
+> btrfs-convert[400000+21000].
+> 
+> Is there any plan to alleviate this unfortunate limit (or at least make
+> btrfs-convert give the location of the file which causes it to fail?).
 
-Make btrfs_init_compress() return void, since it always return 0,
-and no need to check return value.
+It's a disk format change, something we don't do lightly.
 
-Signed-off-by: Wanlong Gao <gaowanlong@cn.fujitsu.com>
----
- fs/btrfs/compression.c |    3 +--
- fs/btrfs/compression.h |    2 +-
- fs/btrfs/super.c       |    7 ++-----
- 3 files changed, 4 insertions(+), 8 deletions(-)
-
-diff --git a/fs/btrfs/compression.c b/fs/btrfs/compression.c
-index 8ec5d86..b2dbefa 100644
---- a/fs/btrfs/compression.c
-+++ b/fs/btrfs/compression.c
-@@ -731,7 +731,7 @@ struct btrfs_compress_op *btrfs_compress_op[] = {
- 	&btrfs_lzo_compress,
- };
- 
--int __init btrfs_init_compress(void)
-+void __init btrfs_init_compress(void)
- {
- 	int i;
- 
-@@ -741,7 +741,6 @@ int __init btrfs_init_compress(void)
- 		atomic_set(&comp_alloc_workspace[i], 0);
- 		init_waitqueue_head(&comp_workspace_wait[i]);
- 	}
--	return 0;
- }
- 
- /*
-diff --git a/fs/btrfs/compression.h b/fs/btrfs/compression.h
-index a12059f..9afb0a6 100644
---- a/fs/btrfs/compression.h
-+++ b/fs/btrfs/compression.h
-@@ -19,7 +19,7 @@
- #ifndef __BTRFS_COMPRESSION_
- #define __BTRFS_COMPRESSION_
- 
--int btrfs_init_compress(void);
-+void btrfs_init_compress(void);
- void btrfs_exit_compress(void);
- 
- int btrfs_compress_pages(int type, struct address_space *mapping,
-diff --git a/fs/btrfs/super.c b/fs/btrfs/super.c
-index 15634d4..31e9654 100644
---- a/fs/btrfs/super.c
-+++ b/fs/btrfs/super.c
-@@ -1238,9 +1238,7 @@ static int __init init_btrfs_fs(void)
- 	if (err)
- 		return err;
- 
--	err = btrfs_init_compress();
--	if (err)
--		goto free_sysfs;
-+	btrfs_init_compress();
- 
- 	err = btrfs_init_cachep();
- 	if (err)
-@@ -1281,8 +1279,7 @@ free_cachep:
- 	btrfs_destroy_cachep();
- free_compress:
- 	btrfs_exit_compress();
--free_sysfs:
--	btrfs_exit_sysfs();
-+
- 	return err;
- }
- 
--- 
-1.7.4.1
+Josef

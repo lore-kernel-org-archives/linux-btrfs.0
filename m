@@ -1,93 +1,101 @@
 From: Ilya Dryomov <idryomov@gmail.com>
-Subject: [PATCH 00/21] [RFC] Btrfs: restriper
-Date: Tue, 23 Aug 2011 23:01:41 +0300
-Message-ID: <1314129722-31601-1-git-send-email-idryomov@gmail.com>
+Subject: [PATCH 01/21] Btrfs: get rid of *_alloc_profile fields
+Date: Tue, 23 Aug 2011 23:01:42 +0300
+Message-ID: <1314129722-31601-2-git-send-email-idryomov@gmail.com>
+References: <1314129722-31601-1-git-send-email-idryomov@gmail.com>
 Cc: Chris Mason <chris.mason@oracle.com>,
 	Hugo Mills <hugo@carfax.org.uk>, idryomov@gmail.com
 To: linux-btrfs@vger.kernel.org
 Return-path: <linux-btrfs-owner@vger.kernel.org>
+In-Reply-To: <1314129722-31601-1-git-send-email-idryomov@gmail.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hello,
+{data,metadata,system}_alloc_profile fields have been unused for a long
+time now.  Get rid of them.
 
-This patch series adds an initial implementation of restriper (it's a
-clever name for relocation framework that allows to do selective profile
-changing and selective balancing with some goodies like pausing/resuming
-and reporting progress to the user.
+Signed-off-by: Ilya Dryomov <idryomov@gmail.com>
+---
+ fs/btrfs/ctree.h       |    3 ---
+ fs/btrfs/disk-io.c     |    3 ---
+ fs/btrfs/extent-tree.c |   10 ++++------
+ fs/btrfs/volumes.c     |    6 ++----
+ 4 files changed, 6 insertions(+), 16 deletions(-)
+
+diff --git a/fs/btrfs/ctree.h b/fs/btrfs/ctree.h
+index 03912c5..dcf2fd7 100644
+--- a/fs/btrfs/ctree.h
++++ b/fs/btrfs/ctree.h
+@@ -1095,9 +1095,6 @@ struct btrfs_fs_info {
+ 	u64 avail_data_alloc_bits;
+ 	u64 avail_metadata_alloc_bits;
+ 	u64 avail_system_alloc_bits;
+-	u64 data_alloc_profile;
+-	u64 metadata_alloc_profile;
+-	u64 system_alloc_profile;
  
-Profile changing is global (per-FS) so far, per-subvolume profiles
-require some discussion and can be implemented in future.  This is a RFC
-so some features/problems are not yet implemented/resolved.  The current
-TODO list is as follows:
-
-1) do pause/cancel via trans commit instead of waiting for the current
-chunk to be fully relocated
-
-2) fix problems with left-over chunks (the ones we were being relocating
-to when the crash occured, this is going to become a bigger problem when
-item 1 is done
-
-3) fix remount problems (get rid of deadlocks that occur on remount
-while relocating, stop restriper on remounts)
-
-4) issue a discard on removed chunks - 1 GiB+ discards can be a big deal
-
-There is also a couple of problems related to profile changing and
-resuming that I'm working on right now.  But the basic infrastructure is
-all there and is ready for reviewing.
-
-This patchset deprecates Hugo's "Balance management" patch series.
-Originally this was supposed to be just a profile changing thing merged
-with those patches, but the merge turned out to be a complete rewrite.
-The filters part was rewritten to be per-chunk-type and the management
-part was thrown away because we now store an item to disk, there is the
-difference between pausing and cancelling, locking is different, etc.
-I'm happy to integrate any ideas that got dropped as a result of this.
-
-Thanks to Arne who did an early review and Chris for overall guidance.
-Any comments/suggestions are appreciated.  The series is on top of
-3.1-rc3, available at:
-
-git://github.com/idryomov/btrfs-unstable.git restriper-rfc
-
-Thanks,
-
-		Ilya
-
-
-Ilya Dryomov (21):
-  Btrfs: get rid of *_alloc_profile fields
-  Btrfs: introduce masks for chunk type and profile
-  Btrfs: add BTRFS_AVAIL_ALLOC_BIT_SINGLE bit
-  Btrfs: make avail_*_alloc_bits fields dynamic
-  Btrfs: add basic restriper infrastructure
-  Btrfs: implement online profile changing
-  Btrfs: add basic infrastructure for selective balancing
-  Btrfs: soft profile changing mode (aka soft convert)
-  Btrfs: profiles filter
-  Btrfs: usage filter
-  Btrfs: devid filter
-  Btrfs: devid subset filter
-  Btrfs: virtual address space subset filter
-  Btrfs: save restripe parameters to disk
-  Btrfs: recover restripe on mount
-  Btrfs: allow for cancelling restriper
-  Btrfs: allow for pausing restriper
-  Btrfs: allow for resuming restriper after it was paused
-  Btrfs: add skip_restripe mount option
-  Btrfs: get rid of btrfs_balance() function
-  Btrfs: add restripe progress reporting
-
- fs/btrfs/ctree.h       |  156 ++++++++++-
- fs/btrfs/disk-io.c     |   15 +-
- fs/btrfs/extent-tree.c |  118 ++++++--
- fs/btrfs/ioctl.c       |  214 ++++++++++++-
- fs/btrfs/ioctl.h       |   44 +++
- fs/btrfs/super.c       |    8 +-
- fs/btrfs/volumes.c     |  780 +++++++++++++++++++++++++++++++++++++++++++++---
- fs/btrfs/volumes.h     |   57 ++++-
- 8 files changed, 1304 insertions(+), 88 deletions(-)
-
+ 	unsigned data_chunk_allocations;
+ 	unsigned metadata_ratio;
+diff --git a/fs/btrfs/disk-io.c b/fs/btrfs/disk-io.c
+index 07b3ac6..46d0412 100644
+--- a/fs/btrfs/disk-io.c
++++ b/fs/btrfs/disk-io.c
+@@ -1997,9 +1997,6 @@ struct btrfs_root *open_ctree(struct super_block *sb,
+ 
+ 	fs_info->generation = generation;
+ 	fs_info->last_trans_committed = generation;
+-	fs_info->data_alloc_profile = (u64)-1;
+-	fs_info->metadata_alloc_profile = (u64)-1;
+-	fs_info->system_alloc_profile = fs_info->metadata_alloc_profile;
+ 
+ 	ret = btrfs_init_space_info(fs_info);
+ 	if (ret) {
+diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
+index f5be06a..4e1b763 100644
+--- a/fs/btrfs/extent-tree.c
++++ b/fs/btrfs/extent-tree.c
+@@ -2998,14 +2998,12 @@ u64 btrfs_reduce_alloc_profile(struct btrfs_root *root, u64 flags)
+ static u64 get_alloc_profile(struct btrfs_root *root, u64 flags)
+ {
+ 	if (flags & BTRFS_BLOCK_GROUP_DATA)
+-		flags |= root->fs_info->avail_data_alloc_bits &
+-			 root->fs_info->data_alloc_profile;
++		flags |= root->fs_info->avail_data_alloc_bits;
+ 	else if (flags & BTRFS_BLOCK_GROUP_SYSTEM)
+-		flags |= root->fs_info->avail_system_alloc_bits &
+-			 root->fs_info->system_alloc_profile;
++		flags |= root->fs_info->avail_system_alloc_bits;
+ 	else if (flags & BTRFS_BLOCK_GROUP_METADATA)
+-		flags |= root->fs_info->avail_metadata_alloc_bits &
+-			 root->fs_info->metadata_alloc_profile;
++		flags |= root->fs_info->avail_metadata_alloc_bits;
++
+ 	return btrfs_reduce_alloc_profile(root, flags);
+ }
+ 
+diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
+index f2a4cc7..ed96275 100644
+--- a/fs/btrfs/volumes.c
++++ b/fs/btrfs/volumes.c
+@@ -2711,8 +2711,7 @@ static noinline int init_first_rw_device(struct btrfs_trans_handle *trans,
+ 		return ret;
+ 
+ 	alloc_profile = BTRFS_BLOCK_GROUP_METADATA |
+-			(fs_info->metadata_alloc_profile &
+-			 fs_info->avail_metadata_alloc_bits);
++				fs_info->avail_metadata_alloc_bits;
+ 	alloc_profile = btrfs_reduce_alloc_profile(root, alloc_profile);
+ 
+ 	ret = __btrfs_alloc_chunk(trans, extent_root, &map, &chunk_size,
+@@ -2722,8 +2721,7 @@ static noinline int init_first_rw_device(struct btrfs_trans_handle *trans,
+ 	sys_chunk_offset = chunk_offset + chunk_size;
+ 
+ 	alloc_profile = BTRFS_BLOCK_GROUP_SYSTEM |
+-			(fs_info->system_alloc_profile &
+-			 fs_info->avail_system_alloc_bits);
++				fs_info->avail_system_alloc_bits;
+ 	alloc_profile = btrfs_reduce_alloc_profile(root, alloc_profile);
+ 
+ 	ret = __btrfs_alloc_chunk(trans, extent_root, &sys_map,
 -- 
 1.7.5.4
 

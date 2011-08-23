@@ -1,7 +1,7 @@
 From: Ilya Dryomov <idryomov@gmail.com>
-Subject: [PATCH 15/21] Btrfs: recover restripe on mount
-Date: Tue, 23 Aug 2011 23:01:56 +0300
-Message-ID: <1314129722-31601-16-git-send-email-idryomov@gmail.com>
+Subject: [PATCH 16/21] Btrfs: allow for cancelling restriper
+Date: Tue, 23 Aug 2011 23:01:57 +0300
+Message-ID: <1314129722-31601-17-git-send-email-idryomov@gmail.com>
 References: <1314129722-31601-1-git-send-email-idryomov@gmail.com>
 Cc: Chris Mason <chris.mason@oracle.com>,
 	Hugo Mills <hugo@carfax.org.uk>, idryomov@gmail.com
@@ -10,219 +10,196 @@ Return-path: <linux-btrfs-owner@vger.kernel.org>
 In-Reply-To: <1314129722-31601-1-git-send-email-idryomov@gmail.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On mount, if restripe item is found, resume restripe in a separate
-kernel thread.
-
-Try to be smart to continue roughly where previous balance (or convert)
-was interrupted.  For chunk types that were being converted to some
-profile we turn on soft convert, in case of a simple balance we turn on
-usage filter and relocate only less-than-90%-full chunks of that type.
-These are just heuristics but they help quite a bit, and can be improved
-in future.
+Implement an ioctl for cancelling restriper.  Currently we wait until
+relocation of the current block group is finished, in future this can be
+done by triggering a commit.  Restripe item is deleted and no memory
+about the interrupted restripe is kept.
 
 Signed-off-by: Ilya Dryomov <idryomov@gmail.com>
 ---
- fs/btrfs/disk-io.c |    3 +
- fs/btrfs/ioctl.c   |    2 +-
- fs/btrfs/volumes.c |  125 ++++++++++++++++++++++++++++++++++++++++++++++++++--
- fs/btrfs/volumes.h |    3 +-
- 4 files changed, 127 insertions(+), 6 deletions(-)
+ fs/btrfs/ctree.h   |    2 +
+ fs/btrfs/disk-io.c |    2 +
+ fs/btrfs/ioctl.c   |   20 +++++++++++++++++
+ fs/btrfs/ioctl.h   |    3 ++
+ fs/btrfs/volumes.c |   61 +++++++++++++++++++++++++++++++++++++++++++++++----
+ fs/btrfs/volumes.h |    7 ++++++
+ 6 files changed, 90 insertions(+), 5 deletions(-)
 
+diff --git a/fs/btrfs/ctree.h b/fs/btrfs/ctree.h
+index b524034..8e764d9 100644
+--- a/fs/btrfs/ctree.h
++++ b/fs/btrfs/ctree.h
+@@ -1165,6 +1165,8 @@ struct btrfs_fs_info {
+ 	spinlock_t restripe_lock;
+ 	struct mutex restripe_mutex;
+ 	struct restripe_control *restripe_ctl;
++	unsigned long restripe_state;
++	wait_queue_head_t restripe_wait;
+ 
+ 	unsigned data_chunk_allocations;
+ 	unsigned metadata_ratio;
 diff --git a/fs/btrfs/disk-io.c b/fs/btrfs/disk-io.c
-index fa2301b..b3950f2 100644
+index b3950f2..662a6e6 100644
 --- a/fs/btrfs/disk-io.c
 +++ b/fs/btrfs/disk-io.c
-@@ -2103,6 +2103,9 @@ struct btrfs_root *open_ctree(struct super_block *sb,
- 		if (!err)
- 			err = btrfs_orphan_cleanup(fs_info->tree_root);
- 		up_read(&fs_info->cleanup_work_sem);
-+
-+		err = btrfs_recover_restripe(fs_info->tree_root);
-+
- 		if (err) {
- 			close_ctree(tree_root);
- 			return ERR_PTR(err);
+@@ -1703,6 +1703,8 @@ struct btrfs_root *open_ctree(struct super_block *sb,
+ 	spin_lock_init(&fs_info->restripe_lock);
+ 	mutex_init(&fs_info->restripe_mutex);
+ 	fs_info->restripe_ctl = NULL;
++	fs_info->restripe_state = 0;
++	init_waitqueue_head(&fs_info->restripe_wait);
+ 
+ 	sb->s_blocksize = 4096;
+ 	sb->s_blocksize_bits = blksize_bits(4096);
 diff --git a/fs/btrfs/ioctl.c b/fs/btrfs/ioctl.c
-index 9dfc686..f371edd 100644
+index f371edd..d8bdb67 100644
 --- a/fs/btrfs/ioctl.c
 +++ b/fs/btrfs/ioctl.c
-@@ -2899,7 +2899,7 @@ static long btrfs_ioctl_restripe(struct btrfs_root *root, void __user *arg)
- 	memcpy(&rctl->meta, &rargs->meta, sizeof(rctl->meta));
- 	memcpy(&rctl->sys, &rargs->sys, sizeof(rctl->sys));
+@@ -2878,6 +2878,10 @@ static long btrfs_ioctl_restripe(struct btrfs_root *root, void __user *arg)
+ 		return -EROFS;
  
--	ret = btrfs_restripe(rctl);
-+	ret = btrfs_restripe(rctl, 0);
- 
- 	/* rctl freed in unset_restripe_control */
- 	kfree(rargs);
-diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
-index 1057ad3..4490124 100644
---- a/fs/btrfs/volumes.c
-+++ b/fs/btrfs/volumes.c
-@@ -23,6 +23,7 @@
- #include <linux/random.h>
- #include <linux/iocontext.h>
- #include <linux/capability.h>
-+#include <linux/kthread.h>
- #include <asm/div64.h>
- #include "compat.h"
- #include "ctree.h"
-@@ -2242,16 +2243,58 @@ out:
- }
- 
- /*
-+ * This is a heuristic used to reduce the number of chunks restriped on
-+ * resume after balance was interrupted.
-+ */
-+static void update_restripe_args(struct restripe_control *rctl)
-+{
-+	/*
-+	 * Turn on soft mode for chunk types that were being converted.
-+	 */
-+	if (rctl->data.flags & BTRFS_RESTRIPE_ARGS_CONVERT)
-+		rctl->data.flags |= BTRFS_RESTRIPE_ARGS_SOFT;
-+	if (rctl->sys.flags & BTRFS_RESTRIPE_ARGS_CONVERT)
-+		rctl->sys.flags |= BTRFS_RESTRIPE_ARGS_SOFT;
-+	if (rctl->meta.flags & BTRFS_RESTRIPE_ARGS_CONVERT)
-+		rctl->meta.flags |= BTRFS_RESTRIPE_ARGS_SOFT;
-+
-+	/*
-+	 * Turn on usage filter if is not already used.  The idea is
-+	 * that chunks that we have already balanced should be
-+	 * reasonably full.  Don't do it for chunks that are being
-+	 * converted - that will keep us from relocating unconverted
-+	 * (albeit full) chunks.
-+	 */
-+	if (!(rctl->data.flags & BTRFS_RESTRIPE_ARGS_USAGE) &&
-+	    !(rctl->data.flags & BTRFS_RESTRIPE_ARGS_CONVERT)) {
-+		rctl->data.flags |= BTRFS_RESTRIPE_ARGS_USAGE;
-+		rctl->data.usage = 90;
+ 	mutex_lock(&fs_info->restripe_mutex);
++	if (fs_info->restripe_ctl) {
++		ret = -EINPROGRESS;
++		goto out;
 +	}
-+	if (!(rctl->sys.flags & BTRFS_RESTRIPE_ARGS_USAGE) &&
-+	    !(rctl->sys.flags & BTRFS_RESTRIPE_ARGS_CONVERT)) {
-+		rctl->sys.flags |= BTRFS_RESTRIPE_ARGS_USAGE;
-+		rctl->sys.usage = 90;
-+	}
-+	if (!(rctl->meta.flags & BTRFS_RESTRIPE_ARGS_USAGE) &&
-+	    !(rctl->meta.flags & BTRFS_RESTRIPE_ARGS_CONVERT)) {
-+		rctl->meta.flags |= BTRFS_RESTRIPE_ARGS_USAGE;
-+		rctl->meta.usage = 90;
-+	}
-+}
-+
-+/*
-  * Should be called with both restripe and volume mutexes held to
-  * serialize other volume operations (add_dev/rm_dev/resize) wrt
-  * restriper.  Same goes for unset_restripe_control().
-  */
--static void set_restripe_control(struct restripe_control *rctl)
-+static void set_restripe_control(struct restripe_control *rctl, int update)
- {
- 	struct btrfs_fs_info *fs_info = rctl->fs_info;
  
- 	spin_lock(&fs_info->restripe_lock);
- 	fs_info->restripe_ctl = rctl;
-+	if (update)
-+		update_restripe_args(rctl);
- 	spin_unlock(&fs_info->restripe_lock);
- }
- 
-@@ -2572,7 +2615,7 @@ error:
- /*
-  * Should be called with restripe_mutex held
-  */
--int btrfs_restripe(struct restripe_control *rctl)
-+int btrfs_restripe(struct restripe_control *rctl, int resume)
- {
- 	struct btrfs_fs_info *fs_info = rctl->fs_info;
- 	u64 allowed;
-@@ -2667,9 +2710,9 @@ do_restripe:
- 	ret = insert_restripe_item(fs_info->tree_root, rctl);
- 	if (ret && ret != -EEXIST)
- 		goto out;
--	BUG_ON(ret == -EEXIST);
-+	BUG_ON(ret == -EEXIST && !resume);
- 
--	set_restripe_control(rctl);
-+	set_restripe_control(rctl, resume);
- 	mutex_unlock(&fs_info->volume_mutex);
- 
- 	err = __btrfs_restripe(fs_info->dev_root);
-@@ -2690,6 +2733,80 @@ out:
+ 	rargs = memdup_user(arg, sizeof(*rargs));
+ 	if (IS_ERR(rargs)) {
+@@ -2908,6 +2912,20 @@ out:
  	return ret;
  }
  
-+static int restriper_kthread(void *data)
++static long btrfs_ioctl_restripe_ctl(struct btrfs_root *root,
++				     int cmd)
 +{
-+	struct restripe_control *rctl = (struct restripe_control *)data;
-+	struct btrfs_fs_info *fs_info = rctl->fs_info;
-+	int ret;
++	if (!capable(CAP_SYS_ADMIN))
++		return -EPERM;
 +
-+	mutex_lock(&fs_info->restripe_mutex);
++	switch (cmd) {
++	case BTRFS_RESTRIPE_CTL_CANCEL:
++		return btrfs_cancel_restripe(root->fs_info);
++	}
 +
-+	printk(KERN_INFO "btrfs: continuing restripe\n");
-+	ret = btrfs_restripe(rctl, 1);
-+
-+	mutex_unlock(&fs_info->restripe_mutex);
-+	return ret;
++	return -EINVAL;
 +}
 +
-+int btrfs_recover_restripe(struct btrfs_root *tree_root)
+ long btrfs_ioctl(struct file *file, unsigned int
+ 		cmd, unsigned long arg)
+ {
+@@ -2982,6 +3000,8 @@ long btrfs_ioctl(struct file *file, unsigned int
+ 		return btrfs_ioctl_scrub_progress(root, argp);
+ 	case BTRFS_IOC_RESTRIPE:
+ 		return btrfs_ioctl_restripe(root, argp);
++	case BTRFS_IOC_RESTRIPE_CTL:
++		return btrfs_ioctl_restripe_ctl(root, arg);
+ 	}
+ 
+ 	return -ENOTTY;
+diff --git a/fs/btrfs/ioctl.h b/fs/btrfs/ioctl.h
+index 798f1d4..4f6ead5 100644
+--- a/fs/btrfs/ioctl.h
++++ b/fs/btrfs/ioctl.h
+@@ -109,6 +109,8 @@ struct btrfs_ioctl_fs_info_args {
+ 	__u64 reserved[124];			/* pad to 1k */
+ };
+ 
++#define BTRFS_RESTRIPE_CTL_CANCEL	1
++
+ struct btrfs_restripe_args {
+ 	__u64 profiles;
+ 	__u64 usage;
+@@ -285,4 +287,5 @@ struct btrfs_ioctl_space_args {
+ 			       struct btrfs_ioctl_fs_info_args)
+ #define BTRFS_IOC_RESTRIPE _IOW(BTRFS_IOCTL_MAGIC, 32, \
+ 				struct btrfs_ioctl_restripe_args)
++#define BTRFS_IOC_RESTRIPE_CTL _IOW(BTRFS_IOCTL_MAGIC, 33, int)
+ #endif
+diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
+index 4490124..cd43368 100644
+--- a/fs/btrfs/volumes.c
++++ b/fs/btrfs/volumes.c
+@@ -2553,6 +2553,13 @@ static int __btrfs_restripe(struct btrfs_root *dev_root)
+ 	key.type = BTRFS_CHUNK_ITEM_KEY;
+ 
+ 	while (1) {
++		struct btrfs_fs_info *fs_info = dev_root->fs_info;
++
++		if (test_bit(RESTRIPE_CANCEL_REQ, &fs_info->restripe_state)) {
++			ret = -ECANCELED;
++			goto error;
++		}
++
+ 		ret = btrfs_search_slot(NULL, chunk_root, &key, path, 0, 0);
+ 		if (ret < 0)
+ 			goto error;
+@@ -2715,16 +2722,25 @@ do_restripe:
+ 	set_restripe_control(rctl, resume);
+ 	mutex_unlock(&fs_info->volume_mutex);
+ 
++	set_bit(RESTRIPE_RUNNING, &fs_info->restripe_state);
++	mutex_unlock(&fs_info->restripe_mutex);
++
+ 	err = __btrfs_restripe(fs_info->dev_root);
+ 
+-	mutex_lock(&fs_info->volume_mutex);
++	mutex_lock(&fs_info->restripe_mutex);
++	clear_bit(RESTRIPE_RUNNING, &fs_info->restripe_state);
+ 
+-	unset_restripe_control(fs_info);
+-	ret = del_restripe_item(fs_info->tree_root);
+-	BUG_ON(ret);
++	if (test_bit(RESTRIPE_CANCEL_REQ, &fs_info->restripe_state)) {
++		mutex_lock(&fs_info->volume_mutex);
+ 
+-	mutex_unlock(&fs_info->volume_mutex);
++		unset_restripe_control(fs_info);
++		ret = del_restripe_item(fs_info->tree_root);
++		BUG_ON(ret);
++
++		mutex_unlock(&fs_info->volume_mutex);
++	}
+ 
++	wake_up(&fs_info->restripe_wait);
+ 	return err;
+ 
+ out:
+@@ -2807,6 +2823,41 @@ out:
+ 	return ret;
+ }
+ 
++int btrfs_cancel_restripe(struct btrfs_fs_info *fs_info)
 +{
-+	struct task_struct *tsk;
-+	struct restripe_control *rctl;
-+	struct btrfs_restripe_item *item;
-+	struct btrfs_disk_restripe_args disk_rargs;
-+	struct btrfs_path *path;
-+	struct extent_buffer *leaf;
-+	struct btrfs_key key;
-+	int ret;
++	int ret = 0;
 +
-+	path = btrfs_alloc_path();
-+	if (!path)
-+		return -ENOMEM;
-+
-+	rctl = kzalloc(sizeof(*rctl), GFP_NOFS);
-+	if (!rctl) {
-+		ret = -ENOMEM;
++	mutex_lock(&fs_info->restripe_mutex);
++	if (!fs_info->restripe_ctl) {
++		ret = -ENOTCONN;
 +		goto out;
 +	}
 +
-+	key.objectid = BTRFS_RESTRIPE_OBJECTID;
-+	key.type = 0;
-+	key.offset = 0;
++	if (test_bit(RESTRIPE_RUNNING, &fs_info->restripe_state)) {
++		set_bit(RESTRIPE_CANCEL_REQ, &fs_info->restripe_state);
++		while (test_bit(RESTRIPE_RUNNING, &fs_info->restripe_state)) {
++			mutex_unlock(&fs_info->restripe_mutex);
++			wait_event(fs_info->restripe_wait,
++				   !test_bit(RESTRIPE_RUNNING,
++					     &fs_info->restripe_state));
++			mutex_lock(&fs_info->restripe_mutex);
++		}
++		clear_bit(RESTRIPE_CANCEL_REQ, &fs_info->restripe_state);
++	} else {
++		mutex_lock(&fs_info->volume_mutex);
 +
-+	ret = btrfs_search_slot(NULL, tree_root, &key, path, 0, 0);
-+	if (ret < 0)
-+		goto out_free;
-+	if (ret > 0) { /* ret = -ENOENT; */
-+		ret = 0;
-+		goto out_free;
++		unset_restripe_control(fs_info);
++		ret = del_restripe_item(fs_info->tree_root);
++		BUG_ON(ret);
++
++		mutex_unlock(&fs_info->volume_mutex);
 +	}
 +
-+	leaf = path->nodes[0];
-+	item = btrfs_item_ptr(leaf, path->slots[0], struct btrfs_restripe_item);
-+
-+	rctl->fs_info = tree_root->fs_info;
-+	rctl->flags = btrfs_restripe_flags(leaf, item);
-+
-+	btrfs_restripe_data(leaf, item, &disk_rargs);
-+	btrfs_disk_restripe_args_to_cpu(&rctl->data, &disk_rargs);
-+	btrfs_restripe_meta(leaf, item, &disk_rargs);
-+	btrfs_disk_restripe_args_to_cpu(&rctl->meta, &disk_rargs);
-+	btrfs_restripe_sys(leaf, item, &disk_rargs);
-+	btrfs_disk_restripe_args_to_cpu(&rctl->sys, &disk_rargs);
-+
-+	tsk = kthread_run(restriper_kthread, rctl, "btrfs-restriper");
-+	if (IS_ERR(tsk))
-+		ret = PTR_ERR(tsk);
-+	else
-+		goto out;
-+
-+out_free:
-+	kfree(rctl);
 +out:
-+	btrfs_free_path(path);
++	mutex_unlock(&fs_info->restripe_mutex);
 +	return ret;
 +}
 +
@@ -230,16 +207,27 @@ index 1057ad3..4490124 100644
   * shrinking a device means finding all of the device extents past
   * the new size, and then following the back refs to the chunks.
 diff --git a/fs/btrfs/volumes.h b/fs/btrfs/volumes.h
-index 9726180..6fcb4a5 100644
+index 6fcb4a5..dd1fa7f 100644
 --- a/fs/btrfs/volumes.h
 +++ b/fs/btrfs/volumes.h
-@@ -252,7 +252,8 @@ struct btrfs_device *btrfs_find_device(struct btrfs_root *root, u64 devid,
- int btrfs_shrink_device(struct btrfs_device *device, u64 new_size);
- int btrfs_init_new_device(struct btrfs_root *root, char *path);
+@@ -199,6 +199,12 @@ struct map_lookup {
+ #define BTRFS_RESTRIPE_ARGS_CONVERT	(1ULL << 8)
+ #define BTRFS_RESTRIPE_ARGS_SOFT	(1ULL << 9)
+ 
++/*
++ * Restripe state bits
++ */
++#define RESTRIPE_RUNNING	0
++#define RESTRIPE_CANCEL_REQ	1
++
+ struct btrfs_restripe_args;
+ struct restripe_control {
+ 	struct btrfs_fs_info *fs_info;
+@@ -254,6 +260,7 @@ int btrfs_init_new_device(struct btrfs_root *root, char *path);
  int btrfs_balance(struct btrfs_root *dev_root);
--int btrfs_restripe(struct restripe_control *rctl);
-+int btrfs_restripe(struct restripe_control *rctl, int resume);
-+int btrfs_recover_restripe(struct btrfs_root *tree_root);
+ int btrfs_restripe(struct restripe_control *rctl, int resume);
+ int btrfs_recover_restripe(struct btrfs_root *tree_root);
++int btrfs_cancel_restripe(struct btrfs_fs_info *fs_info);
  int btrfs_chunk_readonly(struct btrfs_root *root, u64 chunk_offset);
  int find_free_dev_extent(struct btrfs_trans_handle *trans,
  			 struct btrfs_device *device, u64 num_bytes,

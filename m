@@ -1,41 +1,93 @@
-From: Marco Stornelli <marco.stornelli@gmail.com>
-Subject: Re: [PATCH 1/4] fs: add SEEK_HOLE and SEEK_DATA flags
-Date: Tue, 23 Aug 2011 19:44:20 +0200
-Message-ID: <4E53E6F4.1040006@gmail.com>
-References: <1309275199-10801-1-git-send-email-josef@redhat.com>	<4E4F814B.5070202@gmail.com>	<4E4F865B.2010608@gmail.com>	<4E4FD48B.8030101@oracle.com>	<4E4FE1B1.7010601@gmail.com>	<4E51F24F.1050503@oracle.com> <CANGUGtCi85Sgrr5R0E8iuN75ubbMX9txZMwnsvp4Wv3Xh+938g@mail.gmail.com> <4E527C7F.9040807@oracle.com> <4E52984F.8050702@gmail.com> <4E52C890.1060600@oracle.com>
-Mime-Version: 1.0
-Content-Type: text/plain; charset=ISO-8859-1; format=flowed
-Cc: Josef Bacik <josef@redhat.com>, linux-fsdevel@vger.kernel.org,
-	linux-kernel@vger.kernel.org, linux-btrfs@vger.kernel.org,
-	xfs@oss.sgi.com, viro@zeniv.linux.org.uk
-To: Sunil Mushran <sunil.mushran@oracle.com>
+From: Ilya Dryomov <idryomov@gmail.com>
+Subject: [PATCH 00/21] [RFC] Btrfs: restriper
+Date: Tue, 23 Aug 2011 23:01:41 +0300
+Message-ID: <1314129722-31601-1-git-send-email-idryomov@gmail.com>
+Cc: Chris Mason <chris.mason@oracle.com>,
+	Hugo Mills <hugo@carfax.org.uk>, idryomov@gmail.com
+To: linux-btrfs@vger.kernel.org
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <4E52C890.1060600@oracle.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Il 22/08/2011 23:22, Sunil Mushran ha scritto:
-> On 08/22/2011 10:56 AM, Marco Stornelli wrote:
->> Il 22/08/2011 17:57, Sunil Mushran ha scritto:
->>>
->>> The following test was used to test the early implementations.
->>> http://oss.oracle.com/~smushran/seek_data/
->>>
->>
->> Thank you very much!! I found another point. Your test fails with my
->> implementation because here
->> (http://www.austingroupbugs.net/view.php?id=415) says: "If whence is
->> SEEK_DATA, the file offset shall be set to the smallest location of a
->> byte not within a hole and not less than offset. It shall be an error
->> if no such byte exists." So in this case I return ENXIO but the test
->> expects another value. I have to say that there is a bit of confusion
->> about the real behavior of this new feature :)
->>
->
-> That's test 5.10, 5.12, 5.14. And it expects -ENXIO.
->
-> Which test is failing for you?
->
+Hello,
 
-Sorry, I was reading the results in a wrong way.
+This patch series adds an initial implementation of restriper (it's a
+clever name for relocation framework that allows to do selective profile
+changing and selective balancing with some goodies like pausing/resuming
+and reporting progress to the user.
+ 
+Profile changing is global (per-FS) so far, per-subvolume profiles
+require some discussion and can be implemented in future.  This is a RFC
+so some features/problems are not yet implemented/resolved.  The current
+TODO list is as follows:
 
-Marco
+1) do pause/cancel via trans commit instead of waiting for the current
+chunk to be fully relocated
+
+2) fix problems with left-over chunks (the ones we were being relocating
+to when the crash occured, this is going to become a bigger problem when
+item 1 is done
+
+3) fix remount problems (get rid of deadlocks that occur on remount
+while relocating, stop restriper on remounts)
+
+4) issue a discard on removed chunks - 1 GiB+ discards can be a big deal
+
+There is also a couple of problems related to profile changing and
+resuming that I'm working on right now.  But the basic infrastructure is
+all there and is ready for reviewing.
+
+This patchset deprecates Hugo's "Balance management" patch series.
+Originally this was supposed to be just a profile changing thing merged
+with those patches, but the merge turned out to be a complete rewrite.
+The filters part was rewritten to be per-chunk-type and the management
+part was thrown away because we now store an item to disk, there is the
+difference between pausing and cancelling, locking is different, etc.
+I'm happy to integrate any ideas that got dropped as a result of this.
+
+Thanks to Arne who did an early review and Chris for overall guidance.
+Any comments/suggestions are appreciated.  The series is on top of
+3.1-rc3, available at:
+
+git://github.com/idryomov/btrfs-unstable.git restriper-rfc
+
+Thanks,
+
+		Ilya
+
+
+Ilya Dryomov (21):
+  Btrfs: get rid of *_alloc_profile fields
+  Btrfs: introduce masks for chunk type and profile
+  Btrfs: add BTRFS_AVAIL_ALLOC_BIT_SINGLE bit
+  Btrfs: make avail_*_alloc_bits fields dynamic
+  Btrfs: add basic restriper infrastructure
+  Btrfs: implement online profile changing
+  Btrfs: add basic infrastructure for selective balancing
+  Btrfs: soft profile changing mode (aka soft convert)
+  Btrfs: profiles filter
+  Btrfs: usage filter
+  Btrfs: devid filter
+  Btrfs: devid subset filter
+  Btrfs: virtual address space subset filter
+  Btrfs: save restripe parameters to disk
+  Btrfs: recover restripe on mount
+  Btrfs: allow for cancelling restriper
+  Btrfs: allow for pausing restriper
+  Btrfs: allow for resuming restriper after it was paused
+  Btrfs: add skip_restripe mount option
+  Btrfs: get rid of btrfs_balance() function
+  Btrfs: add restripe progress reporting
+
+ fs/btrfs/ctree.h       |  156 ++++++++++-
+ fs/btrfs/disk-io.c     |   15 +-
+ fs/btrfs/extent-tree.c |  118 ++++++--
+ fs/btrfs/ioctl.c       |  214 ++++++++++++-
+ fs/btrfs/ioctl.h       |   44 +++
+ fs/btrfs/super.c       |    8 +-
+ fs/btrfs/volumes.c     |  780 +++++++++++++++++++++++++++++++++++++++++++++---
+ fs/btrfs/volumes.h     |   57 ++++-
+ 8 files changed, 1304 insertions(+), 88 deletions(-)
+
+-- 
+1.7.5.4
+

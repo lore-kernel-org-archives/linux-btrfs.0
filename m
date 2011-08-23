@@ -1,24 +1,29 @@
 From: Avi Kivity <avi.kivity@gmail.com>
 Subject: Re: Suddenly, a dead filesystem
-Date: Wed, 24 Aug 2011 00:08:21 +0300
-Message-ID: <CAEbWaipUPoO95kbmewfi1j=tBk5gv4Ui6yY8XSOpGHJH9KQpNQ@mail.gmail.com>
+Date: Wed, 24 Aug 2011 01:22:22 +0300
+Message-ID: <CAEbWaiqga+meYqW9zpv6vQUth0eGKGfgunhY+R5fnJ+miOkLmA@mail.gmail.com>
 References: <CAEbWaipxhyMf2VQRdfnpMcXwyf84YupLOm8hQRf4Q8wJu060ng@mail.gmail.com>
-	<4E53B7DC.7020807@redhat.com>
+	<20110823142727.GB4172@carfax.org.uk>
 Mime-Version: 1.0
 Content-Type: text/plain; charset=ISO-8859-1
-Cc: linux-btrfs@vger.kernel.org
-To: Josef Bacik <josef@redhat.com>
+To: Hugo Mills <hugo@carfax.org.uk>, Avi Kivity <avi.kivity@gmail.com>,
+	linux-btrfs@vger.kernel.org
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <4E53B7DC.7020807@redhat.com>
+In-Reply-To: <20110823142727.GB4172@carfax.org.uk>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-> This is fixed upstream, I've sent the patch to -stable so hopefully i=
-t
-> will show up in fedora soon, but in the meantime can you try Linus's
-> tree and verify that it fixes it? =A0Thanks,
+On Tue, Aug 23, 2011 at 5:27 PM, Hugo Mills <hugo@carfax.org.uk> wrote:
+>
+> =A0 Could you give a bit more information about what happened in the
+> crash immediately prior to the FS being unmountable,
 
-Thanks, it appears to be fixed (at least in a VM).  Will try native soo=
-n.
+I was talking on the phone (HTC Desire running Android 2.2).
+
+> and how your
+> storage is configured?
+
+/dev/sda2 -> physical volume -> logical volume -> luks encryption -> bt=
+rfs
 --
 To unsubscribe from this list: send the line "unsubscribe linux-btrfs" =
 in

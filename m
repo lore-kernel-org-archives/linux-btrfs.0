@@ -1,25 +1,41 @@
-From: David Nicol <davidnicol@gmail.com>
-Subject: Re: Swap file on btrfs fails ("swapfile has holes")
-Date: Tue, 23 Aug 2011 10:58:01 -0500
-Message-ID: <CAFwScO-8T=nTeDR=Waxnfc34rS38Ef=0dqO-39Jm6hSeUn0kHw@mail.gmail.com>
-References: <AANLkTimF8y+yBwcs3S0UQxDV=xWyTQRKxzKxR7ZHZnFL@mail.gmail.com>
- <201101091919.44129.diegocg@gmail.com> <20110823172925.491070ef@atmarama.net>
+From: Marco Stornelli <marco.stornelli@gmail.com>
+Subject: Re: [PATCH 1/4] fs: add SEEK_HOLE and SEEK_DATA flags
+Date: Tue, 23 Aug 2011 19:44:20 +0200
+Message-ID: <4E53E6F4.1040006@gmail.com>
+References: <1309275199-10801-1-git-send-email-josef@redhat.com>	<4E4F814B.5070202@gmail.com>	<4E4F865B.2010608@gmail.com>	<4E4FD48B.8030101@oracle.com>	<4E4FE1B1.7010601@gmail.com>	<4E51F24F.1050503@oracle.com> <CANGUGtCi85Sgrr5R0E8iuN75ubbMX9txZMwnsvp4Wv3Xh+938g@mail.gmail.com> <4E527C7F.9040807@oracle.com> <4E52984F.8050702@gmail.com> <4E52C890.1060600@oracle.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=UTF-8
-Cc: linux-btrfs@vger.kernel.org
-To: Gour-Gadadhara Dasa <gour@atmarama.net>
+Content-Type: text/plain; charset=ISO-8859-1; format=flowed
+Cc: Josef Bacik <josef@redhat.com>, linux-fsdevel@vger.kernel.org,
+	linux-kernel@vger.kernel.org, linux-btrfs@vger.kernel.org,
+	xfs@oss.sgi.com, viro@zeniv.linux.org.uk
+To: Sunil Mushran <sunil.mushran@oracle.com>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <20110823172925.491070ef@atmarama.net>
+In-Reply-To: <4E52C890.1060600@oracle.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-it seems to me that the swap file interface doesn't make sense; to
-"eliminate the middleman" and provide a direct swap tree type would be
-the way to go, so a btrfs can hold swapped pages. Doing this would
-AIUI require:
-1) direct interface to btrfs trees, not via file-system interface
-2) modifying swapping to use (1) instead of essentially the
-swap-to-a-partition mechanisms to the "swap file" presented as a loop
-device
+Il 22/08/2011 23:22, Sunil Mushran ha scritto:
+> On 08/22/2011 10:56 AM, Marco Stornelli wrote:
+>> Il 22/08/2011 17:57, Sunil Mushran ha scritto:
+>>>
+>>> The following test was used to test the early implementations.
+>>> http://oss.oracle.com/~smushran/seek_data/
+>>>
+>>
+>> Thank you very much!! I found another point. Your test fails with my
+>> implementation because here
+>> (http://www.austingroupbugs.net/view.php?id=415) says: "If whence is
+>> SEEK_DATA, the file offset shall be set to the smallest location of a
+>> byte not within a hole and not less than offset. It shall be an error
+>> if no such byte exists." So in this case I return ENXIO but the test
+>> expects another value. I have to say that there is a bit of confusion
+>> about the real behavior of this new feature :)
+>>
+>
+> That's test 5.10, 5.12, 5.14. And it expects -ENXIO.
+>
+> Which test is failing for you?
+>
 
-I also wonder if you explicitly create a loop device for your swap
-file and mount that as swap, will that work and if so how poorly.
+Sorry, I was reading the results in a wrong way.
+
+Marco

@@ -1,63 +1,104 @@
-From: Liu Bo <liubo2009@cn.fujitsu.com>
-Subject: [PATCH] Btrfs: fix an oops when deleting snapshots
-Date: Tue, 23 Aug 2011 17:01:27 +0800
-Message-ID: <1314090087-14731-1-git-send-email-liubo2009@cn.fujitsu.com>
-Cc: <chris.mason@oracle.com>
-To: <linux-btrfs@vger.kernel.org>
+From: Jim Maloney <jim@webstarts.com>
+Subject: Re: btrfs over nfs
+Date: Tue, 23 Aug 2011 09:27:59 -0400
+Message-ID: <CAGFoeJ_JxF+0WVaUNBmS20OeeYEgKFHqadj5H+c+BmXQAEbhcg@mail.gmail.com>
+References: <CAGFoeJ8J4f2_r=bdWapr0CM+Oq+aSJ78-E4D2zP5atHXdovoFw@mail.gmail.com>
+	<20110822212847.GA5412@carfax.org.uk>
+Mime-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+To: Hugo Mills <hugo@carfax.org.uk>, Jim Maloney <jim@webstarts.com>,
+	linux-btrfs@vger.kernel.org
 Return-path: <linux-btrfs-owner@vger.kernel.org>
+In-Reply-To: <20110822212847.GA5412@carfax.org.uk>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-We can reproduce this oops via the following steps:
+Thanks Hugo, I totally missed the fsid's.  That works perfectly.
+Jim
 
-$ mkfs.btrfs /dev/sdb7
-$ mount /dev/sdb7 /mnt/btrfs
-$ for ((i=0; i<3; i++)); do btrfs sub snap /mnt/btrfs /mnt/btrfs/s_$i; done
-$ rm -fr /mnt/btrfs/*
-$ rm -fr /mnt/btrfs/*
+On Mon, Aug 22, 2011 at 5:28 PM, Hugo Mills <hugo@carfax.org.uk> wrote:
+> On Mon, Aug 22, 2011 at 05:07:45PM -0400, Jim Maloney wrote:
+>> I have been experimenting exporting btrfs subvolumes over nfs. =C2=A0=
+Main
+>> subvolume is filesys1 mounted at /filesys1. =C2=A0Below this is subv=
+olume
+>> base, user1 is in base and documents is in user1. =C2=A0 documents i=
+s
+>> mounted at /documents. =C2=A0/etc/exports is:
+>> /filesys1/base/user1 =C2=A0 =C2=A0172.16.0.0/24(rw,no_acl,no_root_sq=
+uash,fsid=3D0)
+>> /filesys1/user1-snapshot =C2=A0 =C2=A0 =C2=A0 =C2=A0172.16.0.0/24(rw=
+,no_acl,no_root_squash,fsid=3D0)
+>> /documents =C2=A0 =C2=A0 =C2=A0172.16.0.0/24(rw,no_acl,no_root_squas=
+h,fsid=3D0)
+>
+> =C2=A0 I think you need to specify a different fsid for each export.
+> That's what I've got here, and it seems to work.
+>
+> =C2=A0 Hugo.
+>
+>>
+>> On the client machine I mount user1 as /mnt/user and all data from
+>> user is present.
+>> I can also umount /mnt/usr and mount /documents as /mnt/documents an=
+d
+>> all data is present.
+>> However, if I mount user1 as /mnt/user and then mount /documents as
+>> /mnt/documents
+>> the data from the last subvolume mounted shows in both mounts. =C2=A0=
+Mount
+>> also shows:
+>> 172.16.0.28:/documents/ on /mnt/user type nfs
+>> (rw,relatime,vers=3D3,rsize=3D262144,wsize=3D262144,namlen=3D255,har=
+d,proto=3Dtcp,timeo=3D600,retrans=3D2,sec=3Dsys,mountaddr=3D172.16.0.28=
+,mountvers=3D3,mountport=3D892,mountproto=3Dudp,local_lock=3Dnone,addr=3D=
+172.16.0.28)
+>> 172.16.0.28:/documents/ on /mnt/documents type nfs
+>> (rw,relatime,vers=3D3,rsize=3D262144,wsize=3D262144,namlen=3D255,har=
+d,proto=3Dtcp,timeo=3D600,retrans=3D2,sec=3Dsys,mountaddr=3D172.16.0.28=
+,mountvers=3D3,mountport=3D892,mountproto=3Dudp,local_lock=3Dnone,addr=3D=
+172.16.0.28)
+>>
+>> The initial mount of user1 on /mnt/user showed correctly in mount.
+>> Mount changes when I add the mount for /documents.
+>> I don't know how to troubleshoot this. =C2=A0I am happy to provide a=
+ny info
+>> which can help.
+>> Btrfs is currently on a centOS6 machine running kernel 3.0.1 with
+>> btrfs-progs from git unstable.
+>> NFS is v3 on both server and client and the client is Fedora 15 kern=
+el
+>> 2.6.40-4.fc15.x86_64
+>> Thanks
+>> Jim Maloney
+>>
+>>
+>
+> --
+> =3D=3D=3D Hugo Mills: hugo@... carfax.org.uk | darksatanic.net | lug.=
+org.uk =3D=3D=3D
+> =C2=A0PGP key: 515C238D from wwwkeys.eu.pgp.net or http://www.carfax.=
+org.uk
+> =C2=A0 =C2=A0 =C2=A0 --- Someone's been throwing dead sheep down my F=
+un Well ---
+>
+> -----BEGIN PGP SIGNATURE-----
+> Version: GnuPG v1.4.10 (GNU/Linux)
+>
+> iD8DBQFOUsoPIKyzvlFcI40RAkm1AJ4no85LpWeJEHDQKM+FYmGhyQOnrgCeOYlU
+> hdRi30122c6NTzMYX9y2XvY=3D
+> =3DnwXm
+> -----END PGP SIGNATURE-----
+>
+>
 
-then we'll get
-------------[ cut here ]------------
-kernel BUG at fs/btrfs/inode.c:2264!
-[...]
-Call Trace:
- [<ffffffffa05578c7>] btrfs_rmdir+0xf7/0x1b0 [btrfs]
- [<ffffffff81150b95>] vfs_rmdir+0xa5/0xf0
- [<ffffffff81153cc3>] do_rmdir+0x123/0x140
- [<ffffffff81145ac7>] ? fput+0x197/0x260
- [<ffffffff810aecff>] ? audit_syscall_entry+0x1bf/0x1f0
- [<ffffffff81153d0d>] sys_unlinkat+0x2d/0x40
- [<ffffffff8147896b>] system_call_fastpath+0x16/0x1b
-RIP  [<ffffffffa054f7b9>] btrfs_orphan_add+0x179/0x1a0 [btrfs]
 
-When it comes to btrfs_lookup_dentry, we may set a snapshot's inode->i_ino
-to BTRFS_EMPTY_SUBVOL_DIR_OBJECTID instead of BTRFS_FIRST_FREE_OBJECTID,
-while the snapshot's location.objectid remains unchanged.
 
-However, btrfs_ino() does not take this into account, and returns a wrong ino,
-and causes the oops.
+--=20
+Jim Maloney
 
-Signed-off-by: Liu Bo <liubo2009@cn.fujitsu.com>
----
- fs/btrfs/btrfs_inode.h |    6 +++++-
- 1 files changed, 5 insertions(+), 1 deletions(-)
-
-diff --git a/fs/btrfs/btrfs_inode.h b/fs/btrfs/btrfs_inode.h
-index 502b9e9..d9f99a1 100644
---- a/fs/btrfs/btrfs_inode.h
-+++ b/fs/btrfs/btrfs_inode.h
-@@ -176,7 +176,11 @@ static inline u64 btrfs_ino(struct inode *inode)
- {
- 	u64 ino = BTRFS_I(inode)->location.objectid;
- 
--	if (ino <= BTRFS_FIRST_FREE_OBJECTID)
-+	/*
-+	 * !ino: btree_inode
-+	 * type == BTRFS_ROOT_ITEM_KEY: subvol dir
-+	 */
-+	if (!ino || BTRFS_I(inode)->location.type == BTRFS_ROOT_ITEM_KEY)
- 		ino = inode->i_ino;
- 	return ino;
- }
--- 
-1.6.5.2
-
+email - jim@webstarts.com
+--
+To unsubscribe from this list: send the line "unsubscribe linux-btrfs" =
+in
+the body of a message to majordomo@vger.kernel.org
+More majordomo info at  http://vger.kernel.org/majordomo-info.html

@@ -1,62 +1,55 @@
 From: Li Zefan <lizf@cn.fujitsu.com>
-Subject: Re: [PATCH 2/3] Btrfs: fix the file extent gap when doing direct
- IO
-Date: Wed, 24 Aug 2011 13:14:32 +0800
-Message-ID: <4E5488B8.40602@cn.fujitsu.com>
-References: <4E4CC9AA.6040402@cn.fujitsu.com>
+Subject: [PATCH] Btrfs: add dummy extent if dst offset excceeds file end in
+ file clone
+Date: Wed, 24 Aug 2011 14:13:13 +0800
+Message-ID: <4E549679.3010807@cn.fujitsu.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=GB2312
-Cc: Linux Btrfs <linux-btrfs@vger.kernel.org>
-To: miaox@cn.fujitsu.com
+Content-Type: text/plain; charset=UTF-8
+Cc: Sage Weil <sage@newdream.net>
+To: "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <4E4CC9AA.6040402@cn.fujitsu.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-> diff --git a/fs/btrfs/file.c b/fs/btrfs/file.c
-> index 010aec8..a9c4636 100644
-> --- a/fs/btrfs/file.c
-> +++ b/fs/btrfs/file.c
-> @@ -1073,12 +1073,6 @@ static noinline int prepare_pages(struct btrfs_root *root, struct file *file,
->  	start_pos = pos & ~((u64)root->sectorsize - 1);
->  	last_pos = ((u64)index + num_pages) << PAGE_CACHE_SHIFT;
->  
-> -	if (start_pos > inode->i_size) {
-> -		err = btrfs_cont_expand(inode, i_size_read(inode), start_pos);
-> -		if (err)
-> -			return err;
-> -	}
-> -
->  again:
->  	for (i = 0; i < num_pages; i++) {
->  		pages[i] = find_or_create_page(inode->i_mapping, index + i,
-> @@ -1336,6 +1330,7 @@ static ssize_t btrfs_file_aio_write(struct kiocb *iocb,
->  	struct inode *inode = fdentry(file)->d_inode;
->  	struct btrfs_root *root = BTRFS_I(inode)->root;
->  	loff_t *ppos = &iocb->ki_pos;
-> +	u64 start_pos;
->  	ssize_t num_written = 0;
->  	ssize_t err = 0;
->  	size_t count, ocount;
-> @@ -1384,6 +1379,15 @@ static ssize_t btrfs_file_aio_write(struct kiocb *iocb,
->  	file_update_time(file);
->  	BTRFS_I(inode)->sequence++;
->  
-> +	start_pos = round_down(pos, root->sectorsize);
-> +	if (start_pos > i_size_read(inode)) {
+ # touch /mnt/dst
+ # clone_range -d 4096 /mnt/src /mnt/dst
+ # umount /mnt
+ # btrfs-debug-tree /dev/sda7
+ ...
+        item 10 key (258 INODE_REF 256) itemoff 3283 itemsize 13
+                inode ref index 3 namelen 3 name: tmp
+        item 11 key (258 EXTENT_DATA 4096) itemoff 3230 itemsize 53
+                extent data disk byte 12632064 nr 49152
+                extent data offset 0 nr 49152 ram 49152
+                extent compression 0
 
-You changed the code to use i_size_read() instead of inode->i_size, which
-is not necessary since we're holding i_mutex.
+You can see there's no file extent with range [0, 4096]. Check this by
+btrfsck:
 
-> +		err = btrfs_cont_expand(inode, i_size_read(inode), start_pos);
+ # btrfsck /dev/sda7
+ root 5 inode 258 errors 100
+ ...
 
-So here we can also use inode->i_size directly.
+Signed-off-by: Li Zefan <lizf@cn.fujitsu.com>
+---
+ fs/btrfs/ioctl.c |    6 ++++++
+ 1 files changed, 6 insertions(+), 0 deletions(-)
 
-> +		if (err) {
-> +			mutex_unlock(&inode->i_mutex);
-> +			goto out;
-> +		}
-> +	}
-> +
->  	if (unlikely(file->f_flags & O_DIRECT)) {
->  		num_written = __btrfs_direct_write(iocb, iov, nr_segs,
->  						   pos, ppos, count, ocount);
+diff --git a/fs/btrfs/ioctl.c b/fs/btrfs/ioctl.c
+index 970977a..660a6c8 100644
+--- a/fs/btrfs/ioctl.c
++++ b/fs/btrfs/ioctl.c
+@@ -2220,6 +2220,12 @@ static noinline long btrfs_ioctl_clone(struct file *file, unsigned long srcfd,
+ 	    !IS_ALIGNED(destoff, bs))
+ 		goto out_unlock;
+ 
++	if (destoff > inode->i_size) {
++		ret = btrfs_cont_expand(inode, inode->i_size, destoff);
++		if (ret)
++			goto out_unlock;
++	}
++
+ 	/* do any pending delalloc/csum calc on src, one way or
+ 	   another, and lock file content */
+ 	while (1) {
+-- 
+1.7.3.1

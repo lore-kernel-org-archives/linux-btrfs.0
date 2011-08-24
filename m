@@ -1,61 +1,50 @@
-From: Li Zefan <lizf@cn.fujitsu.com>
-Subject: [PATCH] Btrfs: calc file extent num_bytes correctly in file clone
-Date: Wed, 24 Aug 2011 14:13:16 +0800
-Message-ID: <4E54967C.5020205@cn.fujitsu.com>
+From: Yeh <ykwan0201@gmail.com>
+Subject: Re: [RFC] Subvolume Quota on-disk structures and configuration
+Date: Wed, 24 Aug 2011 07:26:15 +0000 (UTC)
+Message-ID: <loom.20110824T083328-979@post.gmane.org>
+References: <4E19611D.2090007@gmx.net>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=UTF-8
-Cc: Sage Weil <sage@newdream.net>
-To: "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
+Content-Type: text/plain; charset=us-ascii
+To: linux-btrfs@vger.kernel.org
 Return-path: <linux-btrfs-owner@vger.kernel.org>
 List-ID: <linux-btrfs.vger.kernel.org>
 
- # touch /mnt/dst
- # clone_range -s 8192 -l 4096 /mnt/src /mnt/dst
- # ls -l /mnt/dst
- -rw-r--r-- 1 root root  4096 dst
- # umount /mnt
- # btrfs-debug-tree /dev/sda7
- ...
-         item 11 key (258 EXTENT_DATA 0) itemoff 3230 itemsize 53
-                extent data disk byte 12582912 nr 49152
-                extent data offset 8192 nr 12288 ram 49152
-                extent compression 0
+Arne Jansen <sensille <at> gmx.net> writes:
 
-num_bytes should be 4096 not 12288.
+> 
+> These 4 commands are used to build hierarchical qgroups and are only
+> for advanced users. I'll explain more of the concepts in a later
+> paper.
+> 
+> The main point here is that in the simplest case, a user creates a
+> filesystem with initial quota support, creates his /var /usr /home
+> etc. subvolumes and limits them with commands like
+> 
+> btrfs qgroup limit 10g /usr
+> 
+> That should be simple enough for the common use case.
+> 
+> -Arne
+> --
+> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
+> the body of a message to majordomo <at> vger.kernel.org
+> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+> 
+> 
+Hello Arne,
 
-Signed-off-by: Li Zefan <lizf@cn.fujitsu.com>
----
- fs/btrfs/ioctl.c |   13 ++++++++++---
- 1 files changed, 10 insertions(+), 3 deletions(-)
+There are some discussion in mailling list topic "What to do about subvolumes".
+It is copy-on-write quota counting.
+One is charged the quota as physical blocks count.
+Another is charged as how much the user looks like.
+Both of them have different limitation.
+What solution would you use?
 
-diff --git a/fs/btrfs/ioctl.c b/fs/btrfs/ioctl.c
-index 660a6c8..3351b1b 100644
---- a/fs/btrfs/ioctl.c
-+++ b/fs/btrfs/ioctl.c
-@@ -2331,14 +2331,21 @@ static noinline long btrfs_ioctl_clone(struct file *file, unsigned long srcfd,
- 
- 			if (type == BTRFS_FILE_EXTENT_REG ||
- 			    type == BTRFS_FILE_EXTENT_PREALLOC) {
-+				/*
-+				 *    a  | --- range to clone ---|  b
-+				 * | ------------- extent ------------- |
-+				 */
-+
-+				/* substract range b */
-+				if (key.offset + datal > off + len)
-+					datal = off + len - key.offset;
-+
-+				/* substract range a */
- 				if (off > key.offset) {
- 					datao += off - key.offset;
- 					datal -= off - key.offset;
- 				}
- 
--				if (key.offset + datal > off + len)
--					datal = off + len - key.offset;
--
- 				ret = btrfs_drop_extents(trans, inode,
- 							 new_key.offset,
- 							 new_key.offset + datal,
--- 
-1.7.3.1
+The topic you mentioned is what I need. How is your btrfs quota implementation
+progress? You could release your patch for me if possible, I can join your idea,
+design and implementation. I have large disk array for testing.
+
+Best regards,
+Yeh.
+
+

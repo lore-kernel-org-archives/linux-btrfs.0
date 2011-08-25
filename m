@@ -1,98 +1,202 @@
-From: Andreas Dilger <adilger@dilger.ca>
-Subject: Re: [PATCH] xfstests 255: add a seek_data/seek_hole tester
-Date: Thu, 25 Aug 2011 00:51:56 -0600
-Message-ID: <0A267E55-7772-438D-B6A7-89B73020F311@dilger.ca>
-References: <1309275199-10801-1-git-send-email-josef@redhat.com> <1309275199-10801-5-git-send-email-josef@redhat.com> <20110825060632.GA9933@infradead.org> <20110825064039.GO3162@dastard>
-Mime-Version: 1.0 (Apple Message framework v1084)
-Content-Type: text/plain; charset=us-ascii
-Cc: Christoph Hellwig <hch@infradead.org>,
-	Josef Bacik <josef@redhat.com>, linux-fsdevel@vger.kernel.org,
-	linux-kernel@vger.kernel.org, linux-btrfs@vger.kernel.org,
-	xfs@oss.sgi.com, viro@ZenIV.linux.org.uk, dchinner@redhat.com
-To: Dave Chinner <david@fromorbit.com>
+From: Li Zefan <lizf@cn.fujitsu.com>
+Subject: [RFC] Btrfs design defect in extent backref ?
+Date: Thu, 25 Aug 2011 15:56:08 +0800
+Message-ID: <4E560018.9060005@cn.fujitsu.com>
+Mime-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Cc: Yan@tang.cn.fujitsu.com, Zheng <zheng.z.yan@intel.com>
+To: "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <20110825064039.GO3162@dastard>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 2011-08-25, at 12:40 AM, Dave Chinner wrote:
-> On Thu, Aug 25, 2011 at 02:06:32AM -0400, Christoph Hellwig wrote:
->> On Tue, Jun 28, 2011 at 11:33:19AM -0400, Josef Bacik wrote:
->>> This is a test to make sure seek_data/seek_hole is acting like it does on
->>> Solaris.  It will check to see if the fs supports finding a hole or not and will adjust as necessary.
->> 
->> Can you resend this with any updates that happened in the meantime?
->> 
->> Dave also still had some comments about semantics, so it might be worth
->> to incorporate that as well.
-> 
-> The main questions I had when looking at this was how we should
-> handle unwritten extents - the only answer I got was along the lines
-> of "we'll deal with that once filesystems have implemented
-> something". That's a bit of a chicken-and-egg situation, and doesn't
-> help me decide what is the best thing to do. I don't want to have to
-> re-implement this code when it's decided i did the wrong thing
-> initially.
+We have an offset in file extent to indicate its position in the
+corresponding extent item in extent tree. We also have an offset in
+extent item to indicate the start position of the file extent that
+uses this item.
 
-Let's first clarify what you mean by an unwritten extent?  Do you mean a
-preallocated extent that returns 0 when read, or do you mean a delayed
-allocation extent that was written by the application that is still in
-memory but not yet written to disk?
+The math is:
 
-Unfortunately, ZFS has no concept of preallocated extents, so we can't
-look to it for precedent, but it definitely has delayed allocation.
-Possibly if UFS on Solaris has SEEK_HOLE and also preallocated extents
-(I have no idea) it could be tested?
+    extent_item.extent_data_ref.offset = file_pos - file_extent.extent_offset.
 
-> The most basic question I really want answered is this:
-> 
-> 	- is preallocated space a HOLE, or is it DATA?
-> 
-> Whatever the answer, I think it should be consistently
-> presented by all filesystems that support preallocation, and it
-> should be encoded into the generic SEEK_HOLE/SEEK_DATA tests....
+                       e1
+disk extents:    |--------------|
+                 ^     
+                 |                  e2
+                 |          |-----------------|
+                 |          |   ^
+                 |          |   |
+                 v          v   |
+file extents:    |----- f1 -----|----- f2 -----|
 
-My thought would be that a preallocated extent is still a HOLE, because
-it doesn't contain data that an application actually cares about.  On
-the other hand, a delalloc extent is DATA because it has something that
-an application cares about.
+So it looks like e2.offset points to f1 not f2. Therefore given an extent item,
+we'll have to search through all the file extents in an inode to find the
+relative file extent in the worst case, which makes this field somewhat useless.
 
-The original reason SEEK_HOLE/SEEK_DATA were brought up over FIEMAP was
-"cp" being able to consistently access delalloc data that was only in
-the page cache, so if we don't get that right it will have been a pointless
-exercise.
+What makes things worse is the above fomula can make the offset a negative
+value (cast to u64):
 
-> Answering that question then helps answer the more complex questions
-> I had, like:
-> 
-> 	- what does SEEK_DATA return when you have a file layout
-> 	  like "hole-prealloc-data"?
+    # touch /mnt/dst
+    # clone_range -s 8192 -d 4096 /mnt/src /mnt/dst
+    # umount /mnt
+    # btrfs-debug-tree /dev/sda7
+    ...
+        item 2 key (12582912 EXTENT_ITEM 49152) itemoff 3865 itemsize 82
+                extent refs 2 gen 8 flags 1
+                extent data backref root 5 objectid 258 offset 18446744073709543424 count 1
+                extent data backref root 5 objectid 257 offset 0 count 1
+    ...
 
-I would think only the "data" part, since that is what the definition
-of "SEEK_DATA" is IMHO.
+and relocation won't work in this case:
 
-> Answers to that sort of question need to be known so we can write
-> corner-case tests to correctly verify the filesystem implementation.
-> 
-> I like to do better than present userspace with an interface that
-> behaves vastly different depending on the underlying filesystem, but
-> if the answer is "definition and implementation is entirely
-> filesystem specific" then I'll just go make something up....
-> 
-> Cheers,
-> 
-> Dave.
-> -- 
-> Dave Chinner
-> david@fromorbit.com
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-fsdevel" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+    # mount /dev/sda7 /mnt
+    # rm /mnt/src
+    # sync
+    # btrfs fi bal /mnt
+    (kernel warning !!)
+    (hung up !!)
 
+I don't see the necessity or benefit of the substraction in the fomula,
+and I think the correct one is:
 
-Cheers, Andreas
+    extent_item.extent_data_ref.offset = file_pos
 
+(As a side effect thereafter we don't need extent_data_ref.count)
 
+That's what this patch does. Unfornately it is an incompatable change
+in disk format.
 
+So I think we have to live with this defect, just fix relocation for
+the negative offset case ?
+
+Signed-off-by: Li Zefan <lizf@cn.fujitsu.com>
+---
+ fs/btrfs/extent-tree.c |    1 -
+ fs/btrfs/file.c        |   11 +++++------
+ fs/btrfs/inode.c       |    7 +++----
+ fs/btrfs/ioctl.c       |    2 +-
+ fs/btrfs/relocation.c  |    1 -
+ 5 files changed, 9 insertions(+), 13 deletions(-)
+
+diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
+index f5be06a..3924e03 100644
+--- a/fs/btrfs/extent-tree.c
++++ b/fs/btrfs/extent-tree.c
+@@ -2578,7 +2578,6 @@ static int __btrfs_mod_ref(struct btrfs_trans_handle *trans,
+ 				continue;
+ 
+ 			num_bytes = btrfs_file_extent_disk_num_bytes(buf, fi);
+-			key.offset -= btrfs_file_extent_offset(buf, fi);
+ 			ret = process_func(trans, root, bytenr, num_bytes,
+ 					   parent, ref_root, key.objectid,
+ 					   key.offset);
+diff --git a/fs/btrfs/file.c b/fs/btrfs/file.c
+index e7872e4..7f65a27 100644
+--- a/fs/btrfs/file.c
++++ b/fs/btrfs/file.c
+@@ -678,7 +678,7 @@ next_slot:
+ 						disk_bytenr, num_bytes, 0,
+ 						root->root_key.objectid,
+ 						new_key.objectid,
+-						start - extent_offset);
++						start);
+ 				BUG_ON(ret);
+ 				*hint_byte = disk_bytenr;
+ 			}
+@@ -752,8 +752,7 @@ next_slot:
+ 				ret = btrfs_free_extent(trans, root,
+ 						disk_bytenr, num_bytes, 0,
+ 						root->root_key.objectid,
+-						key.objectid, key.offset -
+-						extent_offset);
++						key.objectid, key.offset);
+ 				BUG_ON(ret);
+ 				inode_sub_bytes(inode,
+ 						extent_end - key.offset);
+@@ -962,7 +961,7 @@ again:
+ 
+ 		ret = btrfs_inc_extent_ref(trans, root, bytenr, num_bytes, 0,
+ 					   root->root_key.objectid,
+-					   ino, orig_offset);
++					   ino, split);
+ 		BUG_ON(ret);
+ 
+ 		if (split == start) {
+@@ -989,7 +988,7 @@ again:
+ 		del_nr++;
+ 		ret = btrfs_free_extent(trans, root, bytenr, num_bytes,
+ 					0, root->root_key.objectid,
+-					ino, orig_offset);
++					ino, other_start);
+ 		BUG_ON(ret);
+ 	}
+ 	other_start = 0;
+@@ -1006,7 +1005,7 @@ again:
+ 		del_nr++;
+ 		ret = btrfs_free_extent(trans, root, bytenr, num_bytes,
+ 					0, root->root_key.objectid,
+-					ino, orig_offset);
++					ino, other_end);
+ 		BUG_ON(ret);
+ 	}
+ 	if (del_nr == 0) {
+diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
+index 0ccc743..0158652 100644
+--- a/fs/btrfs/inode.c
++++ b/fs/btrfs/inode.c
+@@ -3135,7 +3135,7 @@ int btrfs_truncate_inode_items(struct btrfs_trans_handle *trans,
+ 	struct btrfs_key found_key;
+ 	u64 extent_start = 0;
+ 	u64 extent_num_bytes = 0;
+-	u64 extent_offset = 0;
++	u64 offset = 0;
+ 	u64 item_end = 0;
+ 	u64 mask = root->sectorsize - 1;
+ 	u32 found_type = (u8)-1;
+@@ -3256,8 +3256,7 @@ search_again:
+ 				extent_num_bytes =
+ 					btrfs_file_extent_disk_num_bytes(leaf,
+ 									 fi);
+-				extent_offset = found_key.offset -
+-					btrfs_file_extent_offset(leaf, fi);
++				offset = found_key.offset;
+ 
+ 				/* FIXME blocksize != 4096 */
+ 				num_dec = btrfs_file_extent_num_bytes(leaf, fi);
+@@ -3314,7 +3313,7 @@ delete:
+ 			ret = btrfs_free_extent(trans, root, extent_start,
+ 						extent_num_bytes, 0,
+ 						btrfs_header_owner(leaf),
+-						ino, extent_offset);
++						ino, offset);
+ 			BUG_ON(ret);
+ 		}
+ 
+diff --git a/fs/btrfs/ioctl.c b/fs/btrfs/ioctl.c
+index 3351b1b..87e126f 100644
+--- a/fs/btrfs/ioctl.c
++++ b/fs/btrfs/ioctl.c
+@@ -2379,7 +2379,7 @@ static noinline long btrfs_ioctl_clone(struct file *file, unsigned long srcfd,
+ 							disko, diskl, 0,
+ 							root->root_key.objectid,
+ 							btrfs_ino(inode),
+-							new_key.offset - datao);
++							new_key.offset);
+ 					BUG_ON(ret);
+ 				}
+ 			} else if (type == BTRFS_FILE_EXTENT_INLINE) {
+diff --git a/fs/btrfs/relocation.c b/fs/btrfs/relocation.c
+index 59bb176..a8d0089 100644
+--- a/fs/btrfs/relocation.c
++++ b/fs/btrfs/relocation.c
+@@ -1598,7 +1598,6 @@ int replace_file_extents(struct btrfs_trans_handle *trans,
+ 		btrfs_set_file_extent_disk_bytenr(leaf, fi, new_bytenr);
+ 		dirty = 1;
+ 
+-		key.offset -= btrfs_file_extent_offset(leaf, fi);
+ 		ret = btrfs_inc_extent_ref(trans, root, new_bytenr,
+ 					   num_bytes, parent,
+ 					   btrfs_header_owner(leaf),
+-- 
+1.7.3.1
 
 

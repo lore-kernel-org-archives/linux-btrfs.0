@@ -1,47 +1,94 @@
-From: Zach Brown <zab@zabbo.net>
-Subject: Re: [PATCH] xfstests 255: add a seek_data/seek_hole tester
-Date: Fri, 26 Aug 2011 07:41:24 -0700
-Message-ID: <20110826144124.GA17519@lulu.zabbo.net>
-References: <1309275199-10801-1-git-send-email-josef@redhat.com>
- <1309275199-10801-5-git-send-email-josef@redhat.com>
- <20110825060632.GA9933@infradead.org>
- <20110825064039.GO3162@dastard>
- <0A267E55-7772-438D-B6A7-89B73020F311@dilger.ca>
- <20110826013528.GW3162@dastard>
- <CANGUGtC1qk2Tkv42fvibUKiEJz_MnNiV-nQ7T-_woppVhjQK-Q@mail.gmail.com>
+From: Sergei Trofimovich <slyich@gmail.com>
+Subject: autodegrag: WARNING: at fs/inode.c:1315 iput+0x20b/0x210()
+Date: Fri, 26 Aug 2011 23:18:44 +0300
+Message-ID: <20110826231844.04016b8f@sf.home>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=iso-8859-1
-Cc: Dave Chinner <david@fromorbit.com>,
-	Andreas Dilger <adilger@dilger.ca>,
-	Christoph Hellwig <hch@infradead.org>,
-	Josef Bacik <josef@redhat.com>, linux-fsdevel@vger.kernel.org,
-	linux-kernel@vger.kernel.org, linux-btrfs@vger.kernel.org,
-	xfs@oss.sgi.com, viro@zeniv.linux.org.uk, dchinner@redhat.com
-To: Marco Stornelli <marco.stornelli@gmail.com>
+Content-Type: multipart/signed; micalg=PGP-SHA1;
+ boundary="Sig_/Z1W+m96klzjFgM7ohH4VnVx"; protocol="application/pgp-signature"
+To: linux-btrfs@vger.kernel.org
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <CANGUGtC1qk2Tkv42fvibUKiEJz_MnNiV-nQ7T-_woppVhjQK-Q@mail.gmail.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-> > Hole: a range of the file that contains no data or is made up
-> > entirely of =A0NULL (zero) data. Holes include preallocated ranges =
-of
-> > files that have not had actual data written to them.
+--Sig_/Z1W+m96klzjFgM7ohH4VnVx
+Content-Type: text/plain; charset=US-ASCII
+Content-Transfer-Encoding: quoted-printable
 
-> No for me. A hole is made up of zero data? It's a strange definition
-> for me.
+I used 3.1.0-rc2+ kernel for some weeks before without any dmesg warnings.
+I've decided to enable autodegrag feature for my btrfs / today and got
+warning in $SUBJ.
 
-It's a very natural definition for me.  It mirrors the behaviour of
-read() of sparse data inside i_size that file system authors already
-have to consider.
+It's an:
+> static void iput_final(struct inode *inode)
+> ...
+> 	WARN_ON(inode->i_state & I_NEW);
 
-It's also a reminder for people that this interface is about avoiding
-reading zeros.  Systems that track contents can do this for files that
-had tons of zeros written.  The data is there but the app is
-specifically asking us to skip it by using SEEK_DATA.
+Looks scary. Tried latest mainline kernel and got the same warning.
+The issue does not seem to appear at once.
 
-- z
---
-To unsubscribe from this list: send the line "unsubscribe linux-btrfs" =
-in
-the body of a message to majordomo@vger.kernel.org
-More majordomo info at  http://vger.kernel.org/majordomo-info.html
+How do I reproduce it:
+- boot to the kernel
+- start Xorg
+- run liferea and firefox at once (parallel or just heavy write load?)
+- get warnings in dmesg (a ton of them):
+
+Aug 26 23:07:21 sf kernel: [  204.268669] ------------[ cut here ]---------=
+---
+Aug 26 23:07:21 sf kernel: [  204.268685] WARNING: at fs/inode.c:1315 iput+=
+0x20b/0x210()
+Aug 26 23:07:21 sf kernel: [  204.268689] Hardware name: HP Compaq 2510p No=
+tebook PC
+Aug 26 23:07:21 sf kernel: [  204.268692] Modules linked in: ext2 loop kvm_=
+intel kvm fuse scsi_wait_scan usb_storage tun sdhci_
+pci yenta_socket sdhci pcmcia_core thermal mmc_core iwl4965 iwl_legacy mac8=
+0211 pcmcia_rsrc ac fan processor cfg80211 e1000e sn
+d_hda_codec_analog rfkill container battery i915 drm_kms_helper drm snd_hda=
+_intel i2c_algo_bit snd_hda_codec button snd_hwdep
+Aug 26 23:07:21 sf kernel: [  204.268753] Pid: 715, comm: btrfs-cleaner Tai=
+nted: G        W   3.1.0-rc3-00202-g96d185c #138
+Aug 26 23:07:21 sf kernel: [  204.268758] Call Trace:
+Aug 26 23:07:21 sf kernel: [  204.268769]  [<ffffffff8103e7ba>] warn_slowpa=
+th_common+0x7a/0xb0
+Aug 26 23:07:21 sf kernel: [  204.268776]  [<ffffffff8103e805>] warn_slowpa=
+th_null+0x15/0x20
+Aug 26 23:07:21 sf kernel: [  204.268781]  [<ffffffff810eafbb>] iput+0x20b/=
+0x210
+Aug 26 23:07:21 sf kernel: [  204.268789]  [<ffffffff811b990b>] btrfs_iget+=
+0x1eb/0x4a0
+Aug 26 23:07:21 sf kernel: [  204.268797]  [<ffffffff811c3ce6>] btrfs_run_d=
+efrag_inodes+0x136/0x210
+Aug 26 23:07:21 sf kernel: [  204.268803]  [<ffffffff811ad76f>] cleaner_kth=
+read+0x17f/0x1a0
+Aug 26 23:07:21 sf kernel: [  204.268810]  [<ffffffff81035b7d>] ? sub_preem=
+pt_count+0x9d/0xd0
+Aug 26 23:07:21 sf kernel: [  204.268816]  [<ffffffff811ad5f0>] ? transacti=
+on_kthread+0x280/0x280
+Aug 26 23:07:21 sf kernel: [  204.268822]  [<ffffffff8105b056>] kthread+0x9=
+6/0xa0
+Aug 26 23:07:21 sf kernel: [  204.268830]  [<ffffffff81433914>] kernel_thre=
+ad_helper+0x4/0x10
+Aug 26 23:07:21 sf kernel: [  204.268836]  [<ffffffff8105afc0>] ? kthread_w=
+orker_fn+0x190/0x190
+Aug 26 23:07:21 sf kernel: [  204.268842]  [<ffffffff81433910>] ? gs_change=
++0xb/0xb
+Aug 26 23:07:21 sf kernel: [  204.268846] ---[ end trace 495191005b4af701 ]=
+---
+
+Thanks!
+
+--=20
+
+  Sergei
+
+--Sig_/Z1W+m96klzjFgM7ohH4VnVx
+Content-Type: application/pgp-signature; name=signature.asc
+Content-Disposition: attachment; filename=signature.asc
+
+-----BEGIN PGP SIGNATURE-----
+Version: GnuPG v2.0.17 (GNU/Linux)
+
+iEYEARECAAYFAk5X/6cACgkQcaHudmEf86pKjQCfVF1uV+XCnlPK31f/bgZquufx
+5ooAn0WSoogeMZOZDCgj79sy0HU2FCvT
+=4YyL
+-----END PGP SIGNATURE-----
+
+--Sig_/Z1W+m96klzjFgM7ohH4VnVx--

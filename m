@@ -1,25 +1,44 @@
 From: Josef Bacik <josef@redhat.com>
-Subject: Re: [PATCH] Btrfs: don't use delalloc block rsv for free space inodes
-Date: Mon, 29 Aug 2011 12:17:10 -0400
-Message-ID: <4E5BBB86.7050501@redhat.com>
-References: <1314631147-13434-1-git-send-email-josef@redhat.com>
-Mime-Version: 1.0
-Content-Type: text/plain; charset=ISO-8859-1
+Subject: [PATCH] Btrfs: put the block group cache after we commit the super
+Date: Mon, 29 Aug 2011 14:06:53 -0400
+Message-ID: <1314641213-22327-1-git-send-email-josef@redhat.com>
 To: linux-btrfs@vger.kernel.org
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <1314631147-13434-1-git-send-email-josef@redhat.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 08/29/2011 11:19 AM, Josef Bacik wrote:
-> In tracking down this "not enough space" warning with checksums, it seems that
-> we were running out of space partly because we do not reserve space for our free
-> space inodes.  Since this is technically metadata anyway go ahead and use the
-> global_block_rsv for our free space inodes.  We shouldn't be modifying too much
-> other metadata since this will be a preallocated extent and that was already
-> accounted for earlier.  Thanks,
-> 
+In moving some enospc stuff around I noticed that when we unmount we are often
+evicting the free space cache inodes before we do our last commit.  This isn't
+bad, but it makes us constantly have to re-read the inodes back.  So instead
+don't evict the cache until after we do our last commit, this will make things a
+little less crappy and makes a future enospc change work properly.  Thanks,
 
-Ignore these, they cause other problems, I'll fix it a different way.
-Thanks,
+Signed-off-by: Josef Bacik <josef@redhat.com>
+---
+ fs/btrfs/disk-io.c |    4 ++--
+ 1 files changed, 2 insertions(+), 2 deletions(-)
 
-Josef
+diff --git a/fs/btrfs/disk-io.c b/fs/btrfs/disk-io.c
+index 0b5643a..4965a01 100644
+--- a/fs/btrfs/disk-io.c
++++ b/fs/btrfs/disk-io.c
+@@ -2543,8 +2543,6 @@ int close_ctree(struct btrfs_root *root)
+ 	/* clear out the rbtree of defraggable inodes */
+ 	btrfs_run_defrag_inodes(root->fs_info);
+ 
+-	btrfs_put_block_group_cache(fs_info);
+-
+ 	/*
+ 	 * Here come 2 situations when btrfs is broken to flip readonly:
+ 	 *
+@@ -2570,6 +2568,8 @@ int close_ctree(struct btrfs_root *root)
+ 			printk(KERN_ERR "btrfs: commit super ret %d\n", ret);
+ 	}
+ 
++	btrfs_put_block_group_cache(fs_info);
++
+ 	kthread_stop(root->fs_info->transaction_kthread);
+ 	kthread_stop(root->fs_info->cleaner_kthread);
+ 
+-- 
+1.7.5.2
+

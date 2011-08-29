@@ -1,9 +1,11 @@
 From: Josef Bacik <josef@redhat.com>
-Subject: [PATCH] Btrfs: don't use delalloc block rsv for free space inodes
-Date: Mon, 29 Aug 2011 11:19:07 -0400
-Message-ID: <1314631147-13434-1-git-send-email-josef@redhat.com>
+Subject: [PATCH] Btrfs: don't use delalloc block rsv for free space inodes V2
+Date: Mon, 29 Aug 2011 11:37:56 -0400
+Message-ID: <1314632276-14451-1-git-send-email-josef@redhat.com>
+References: <1314631147-13434-1-git-send-email-josef@redhat.com>
 To: linux-btrfs@vger.kernel.org
 Return-path: <linux-btrfs-owner@vger.kernel.org>
+In-Reply-To: <1314631147-13434-1-git-send-email-josef@redhat.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
 In tracking down this "not enough space" warning with checksums, it seems that
@@ -15,14 +17,63 @@ accounted for earlier.  Thanks,
 
 Signed-off-by: Josef Bacik <josef@redhat.com>
 ---
- fs/btrfs/inode.c |   32 ++++++++++++--------------------
- 1 files changed, 12 insertions(+), 20 deletions(-)
+V1->V2: forgot about one case
+ fs/btrfs/inode.c |   56 ++++++++++++++++++++++-------------------------------
+ 1 files changed, 23 insertions(+), 33 deletions(-)
 
 diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
-index 0ee0677..bb65b13 100644
+index 0ee0677..76fe4d9 100644
 --- a/fs/btrfs/inode.c
 +++ b/fs/btrfs/inode.c
-@@ -1717,7 +1717,6 @@ static int btrfs_finish_ordered_io(struct inode *inode, u64 start, u64 end)
+@@ -1057,22 +1057,21 @@ static noinline int run_delalloc_nocow(struct inode *inode,
+ 	int type;
+ 	int nocow;
+ 	int check_prev = 1;
+-	bool nolock;
+ 	u64 ino = btrfs_ino(inode);
+ 
+ 	path = btrfs_alloc_path();
+ 	if (!path)
+ 		return -ENOMEM;
+ 
+-	nolock = btrfs_is_free_space_inode(root, inode);
+-
+-	if (nolock)
++	if (btrfs_is_free_space_inode(root, inode)) {
+ 		trans = btrfs_join_transaction_nolock(root);
+-	else
++		BUG_ON(IS_ERR(trans));
++		trans->block_rsv = &root->fs_info->global_block_rsv;
++	} else {
+ 		trans = btrfs_join_transaction(root);
+-
+-	BUG_ON(IS_ERR(trans));
+-	trans->block_rsv = &root->fs_info->delalloc_block_rsv;
++		BUG_ON(IS_ERR(trans));
++		trans->block_rsv = &root->fs_info->delalloc_block_rsv;
++	}
+ 
+ 	cow_start = (u64)-1;
+ 	cur_offset = start;
+@@ -1245,13 +1244,12 @@ out_check:
+ 		BUG_ON(ret);
+ 	}
+ 
+-	if (nolock) {
++	if (btrfs_is_free_space_inode(root, inode))
+ 		ret = btrfs_end_transaction_nolock(trans, root);
+-		BUG_ON(ret);
+-	} else {
++	else
+ 		ret = btrfs_end_transaction(trans, root);
+-		BUG_ON(ret);
+-	}
++	BUG_ON(ret);
++
+ 	btrfs_free_path(path);
+ 	return 0;
+ }
+@@ -1717,7 +1715,6 @@ static int btrfs_finish_ordered_io(struct inode *inode, u64 start, u64 end)
  	struct extent_state *cached_state = NULL;
  	int compress_type = 0;
  	int ret;
@@ -30,7 +81,7 @@ index 0ee0677..bb65b13 100644
  
  	ret = btrfs_dec_test_ordered_pending(inode, &ordered_extent, start,
  					     end - start + 1);
-@@ -1725,18 +1724,20 @@ static int btrfs_finish_ordered_io(struct inode *inode, u64 start, u64 end)
+@@ -1725,18 +1722,20 @@ static int btrfs_finish_ordered_io(struct inode *inode, u64 start, u64 end)
  		return 0;
  	BUG_ON(!ordered_extent);
  
@@ -58,7 +109,7 @@ index 0ee0677..bb65b13 100644
  			ret = btrfs_update_inode(trans, root, inode);
  			BUG_ON(ret);
  		}
-@@ -1747,13 +1748,6 @@ static int btrfs_finish_ordered_io(struct inode *inode, u64 start, u64 end)
+@@ -1747,13 +1746,6 @@ static int btrfs_finish_ordered_io(struct inode *inode, u64 start, u64 end)
  			 ordered_extent->file_offset + ordered_extent->len - 1,
  			 0, &cached_state, GFP_NOFS);
  
@@ -72,7 +123,7 @@ index 0ee0677..bb65b13 100644
  	if (test_bit(BTRFS_ORDERED_COMPRESSED, &ordered_extent->flags))
  		compress_type = ordered_extent->compress_type;
  	if (test_bit(BTRFS_ORDERED_PREALLOC, &ordered_extent->flags)) {
-@@ -1792,13 +1786,11 @@ static int btrfs_finish_ordered_io(struct inode *inode, u64 start, u64 end)
+@@ -1792,13 +1784,11 @@ static int btrfs_finish_ordered_io(struct inode *inode, u64 start, u64 end)
  	}
  	ret = 0;
  out:

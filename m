@@ -1,61 +1,37 @@
 From: Jeff Liu <jeff.liu@oracle.com>
-Subject: Fix btrfs_file_llseek() to return -EINVAL directly
-Date: Mon, 29 Aug 2011 02:48:05 -0700 (PDT)
-Message-ID: <4E5B6055.1080807@oracle.com>
+Subject: trivial fix s/u64/u32/ for sb->s_blocksize
+Date: Mon, 29 Aug 2011 22:57:46 +0800
+Message-ID: <4E5BA8EA.8050407@oracle.com>
 Reply-To: jeff.liu@oracle.com
 Mime-Version: 1.0
-Content-Type: text/plain; charset=ISO-8859-1
-Cc: chris.mason@oracle.com
+Content-Type: text/plain; charset=ISO-8859-1; format=flowed
 To: linux-btrfs@vger.kernel.org
 Return-path: <linux-btrfs-owner@vger.kernel.org>
 List-ID: <linux-btrfs.vger.kernel.org>
 
 Hello,
 
-In btrfs_file_llseek(), if the offset < 0 or offset > 
-inode->i_sb->s_maxbytes, we should return -EINVAL rather than offset.
-Also,  if the offset >= inode->i_size for SEEK_DATA or SEEK_HOLE, return 
--ENXIO is ok IMHO.
-
+in btrfs_ioctl_clone(), using u32 for super_block->s_blocksize assignment.
 
 Signed-off-by: Jie Liu <jeff.liu@oracle.com>
 
-diff --git a/fs/btrfs/file.c b/fs/btrfs/file.c
-index e7872e4..2c126d0 100644
---- a/fs/btrfs/file.c
-+++ b/fs/btrfs/file.c
-@@ -1813,6 +1813,11 @@ static loff_t btrfs_file_llseek(struct file 
-*file, loff_t offset, int origin)
-          goto out;
-      case SEEK_DATA:
-      case SEEK_HOLE:
-+        if (offset >= inode->i_size) {
-+            mutex_unlock(&inode->i_mutex);
-+            return -ENXIO;
-+        }
-+
-          ret = find_desired_extent(inode, &offset, origin);
-          if (ret) {
-              mutex_unlock(&inode->i_mutex);
-@@ -1820,14 +1825,11 @@ static loff_t btrfs_file_llseek(struct file 
-*file, loff_t offset, int origin)
-          }
-      }
+diff --git a/fs/btrfs/ioctl.c b/fs/btrfs/ioctl.c
+index 970977a..03ab77a 100644
+--- a/fs/btrfs/ioctl.c
++++ b/fs/btrfs/ioctl.c
+@@ -2133,12 +2133,12 @@ static noinline long btrfs_ioctl_clone(struct 
+file *file, unsigned long srcfd,
+      struct extent_buffer *leaf;
+      char *buf;
+      struct btrfs_key key;
+-    u32 nritems;
+      int slot;
+      int ret;
+      u64 len = olen;
+-    u64 bs = root->fs_info->sb->s_blocksize;
+      u64 hint_byte;
++    u32 bs = root->fs_info->sb->s_blocksize;
++    u32 nritems;
 
--    if (offset < 0 && !(file->f_mode & FMODE_UNSIGNED_OFFSET)) {
--        ret = -EINVAL;
--        goto out;
--    }
--    if (offset > inode->i_sb->s_maxbytes) {
--        ret = -EINVAL;
--        goto out;
--    }
-+    if (offset < 0 && !(file->f_mode & FMODE_UNSIGNED_OFFSET))
-+        return -EINVAL;
-+
-+    if (offset > inode->i_sb->s_maxbytes)
-+        return -EINVAL;
-
-      /* Special lock needed here? */
-      if (offset != file->f_pos) {
-
+      /*
+       * TODO:

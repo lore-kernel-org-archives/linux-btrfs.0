@@ -1,44 +1,50 @@
-From: Josef Bacik <josef@redhat.com>
-Subject: [PATCH] Btrfs: put the block group cache after we commit the super
-Date: Mon, 29 Aug 2011 14:06:53 -0400
-Message-ID: <1314641213-22327-1-git-send-email-josef@redhat.com>
+From: David Sterba <dsterba@suse.cz>
+Subject: [PATCH debug] btrfs: ratelimit WARN_ON in use_block_rsv
+Date: Mon, 29 Aug 2011 20:42:32 +0200
+Message-ID: <1314643352-10195-1-git-send-email-dsterba@suse.cz>
+References: <4E52109A.3090403@itwm.fraunhofer.de>
+Cc: David Sterba <dsterba@suse.cz>
 To: linux-btrfs@vger.kernel.org
 Return-path: <linux-btrfs-owner@vger.kernel.org>
+In-Reply-To: <4E52109A.3090403@itwm.fraunhofer.de>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-In moving some enospc stuff around I noticed that when we unmount we are often
-evicting the free space cache inodes before we do our last commit.  This isn't
-bad, but it makes us constantly have to re-read the inodes back.  So instead
-don't evict the cache until after we do our last commit, this will make things a
-little less crappy and makes a future enospc change work properly.  Thanks,
+A debugging helper, not really intended for merge.
 
-Signed-off-by: Josef Bacik <josef@redhat.com>
+From: David Sterba <dsterba@suse.cz>
+
+Signed-off-by: David Sterba <dsterba@suse.cz>
 ---
- fs/btrfs/disk-io.c |    4 ++--
- 1 files changed, 2 insertions(+), 2 deletions(-)
+ fs/btrfs/extent-tree.c |    9 ++++++++-
+ 1 files changed, 8 insertions(+), 1 deletions(-)
 
-diff --git a/fs/btrfs/disk-io.c b/fs/btrfs/disk-io.c
-index 0b5643a..4965a01 100644
---- a/fs/btrfs/disk-io.c
-+++ b/fs/btrfs/disk-io.c
-@@ -2543,8 +2543,6 @@ int close_ctree(struct btrfs_root *root)
- 	/* clear out the rbtree of defraggable inodes */
- 	btrfs_run_defrag_inodes(root->fs_info);
- 
--	btrfs_put_block_group_cache(fs_info);
--
- 	/*
- 	 * Here come 2 situations when btrfs is broken to flip readonly:
- 	 *
-@@ -2570,6 +2568,8 @@ int close_ctree(struct btrfs_root *root)
- 			printk(KERN_ERR "btrfs: commit super ret %d\n", ret);
- 	}
- 
-+	btrfs_put_block_group_cache(fs_info);
-+
- 	kthread_stop(root->fs_info->transaction_kthread);
- 	kthread_stop(root->fs_info->cleaner_kthread);
- 
+diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
+index 44a3107..c5c1e7d 100644
+--- a/fs/btrfs/extent-tree.c
++++ b/fs/btrfs/extent-tree.c
+@@ -23,6 +23,7 @@
+ #include <linux/rcupdate.h>
+ #include <linux/kthread.h>
+ #include <linux/slab.h>
++#include <linux/ratelimit.h>
+ #include "compat.h"
+ #include "hash.h"
+ #include "ctree.h"
+@@ -5703,7 +5704,13 @@ use_block_rsv(struct btrfs_trans_handle *trans,
+ 	if (!ret)
+ 		return block_rsv;
+ 	if (ret) {
+-		WARN_ON(1);
++		static DEFINE_RATELIMIT_STATE(_rs,
++				DEFAULT_RATELIMIT_INTERVAL,
++				/*DEFAULT_RATELIMIT_BURST*/ 2);
++		if (__ratelimit(&_rs)) {
++			printk(KERN_DEBUG "btrfs: block rsv returned %d\n", ret);
++			WARN_ON(1);
++		}
+ 		ret = reserve_metadata_bytes(trans, root, block_rsv, blocksize,
+ 					     0);
+ 		if (!ret) {
 -- 
-1.7.5.2
+1.7.6
 

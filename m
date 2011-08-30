@@ -1,51 +1,49 @@
-From: Sergei Trofimovich <slyich@gmail.com>
-Subject: Re: [PATCH] btrfs: fix warning in iput for bad-inode
-Date: Tue, 30 Aug 2011 19:53:09 +0300
-Message-ID: <20110830195309.4882f478@sf>
-References: <20110817185619.4660.78543.stgit@localhost6>
-	<20110829063416.00f4652c@sf>
+From: Sunil Mushran <sunil.mushran@oracle.com>
+Subject: Re: [PATCH] xfstests 255: add a seek_data/seek_hole tester
+Date: Tue, 30 Aug 2011 10:42:37 -0700
+Message-ID: <4E5D210D.3040608@oracle.com>
+References: <1309275199-10801-1-git-send-email-josef@redhat.com> <1309275199-10801-5-git-send-email-josef@redhat.com> <20110825060632.GA9933@infradead.org> <20110825064039.GO3162@dastard> <0A267E55-7772-438D-B6A7-89B73020F311@dilger.ca> <20110826013528.GW3162@dastard> <CANGUGtC1qk2Tkv42fvibUKiEJz_MnNiV-nQ7T-_woppVhjQK-Q@mail.gmail.com> <20110826144124.GA17519@lulu.zabbo.net> <4E58AB28.1080009@gmail.com>
 Mime-Version: 1.0
-Content-Type: multipart/signed; micalg=PGP-SHA1;
- boundary="Sig_/cybFXZ6XxvMMPMfy+g0l.NA"; protocol="application/pgp-signature"
-Cc: linux-btrfs@vger.kernel.org, Chris Mason <chris.mason@oracle.com>
-To: Konstantin Khlebnikov <khlebnikov@openvz.org>
-Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <20110829063416.00f4652c@sf>
+Content-Type: text/plain; charset=ISO-8859-1; format=flowed
+Cc: Zach Brown <zab@zabbo.net>, Dave Chinner <david@fromorbit.com>,
+	Andreas Dilger <adilger@dilger.ca>,
+	Christoph Hellwig <hch@infradead.org>,
+	Josef Bacik <josef@redhat.com>, linux-fsdevel@vger.kernel.org,
+	linux-kernel@vger.kernel.org, linux-btrfs@vger.kernel.org,
+	xfs@oss.sgi.com, viro@zeniv.linux.org.uk, dchinner@redhat.com
+To: Marco Stornelli <marco.stornelli@gmail.com>
+Return-path: <linux-fsdevel-owner@vger.kernel.org>
+In-Reply-To: <4E58AB28.1080009@gmail.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
---Sig_/cybFXZ6XxvMMPMfy+g0l.NA
-Content-Type: text/plain; charset=US-ASCII
-Content-Transfer-Encoding: quoted-printable
+On 08/27/2011 01:30 AM, Marco Stornelli wrote:
+> Il 26/08/2011 16:41, Zach Brown ha scritto:
+>>>> Hole: a range of the file that contains no data or is made up
+>>>> entirely of  NULL (zero) data. Holes include preallocated ranges of
+>>>> files that have not had actual data written to them.
+>>
+>>> No for me. A hole is made up of zero data? It's a strange definition
+>>> for me.
+>>
+>> It's a very natural definition for me.  It mirrors the behaviour of
+>> read() of sparse data inside i_size that file system authors already
+>> have to consider.
+>>
+>> It's also a reminder for people that this interface is about avoiding
+>> reading zeros.  Systems that track contents can do this for files that
+>> had tons of zeros written.  The data is there but the app is
+>> specifically asking us to skip it by using SEEK_DATA.
+>>
+>> - z
+>>
+>
+> I think we need to consider a hole and "data not present/not written yet" as two different cases even they are related. For example, if I do an fallocate without keep size option, then I do a read, I have the same behavior of sparse data inside i_size, but the blocks are allocated so no sparse data in this case. Simply there are no difference from app point of view.
 
-> Running 'sync' program after the load does not finish and eats 100%CPU
-> busy-waiting for something in kernel.
->=20
-> It's easy to reproduce hang with patch for me. I just run liferea and sync
-> after it. Without patch I haven't managed to hang btrfs up.
+Exactly. That's why seek_hole should identify them alike, if possible.
+But that should not be a requirement because the sole aim here is
+to improve performance. Identifying a hole as data is not the end of
+the world. In some cases it may be more efficient. We just have to
+ensure that we don't identify data as a hole.
 
-And I think it's another btrfs bug. I've managed to reproduce it _without_
-your patch and _without_ autodefrag enabled by manually running the
-following commands:
-    $ btrfs fi defrag file-with-20_000-extents
-    $ sync
-
-I think your patch just shuffles things a bit and forces autodefrag races
-to pop-up sooner (which is good! :])
-
---=20
-
-  Sergei
-
---Sig_/cybFXZ6XxvMMPMfy+g0l.NA
-Content-Type: application/pgp-signature; name=signature.asc
-Content-Disposition: attachment; filename=signature.asc
-
------BEGIN PGP SIGNATURE-----
-Version: GnuPG v2.0.17 (GNU/Linux)
-
-iEYEARECAAYFAk5dFXgACgkQcaHudmEf86oeBQCfYGSisQwmGLyxqlrkgZyZ2B0d
-zbsAn1dbYgSEZSuO7exm5xqxedYL96Ny
-=1MpK
------END PGP SIGNATURE-----
-
---Sig_/cybFXZ6XxvMMPMfy+g0l.NA--
+BTW, we still have the fiemap interface that allows users to identify
+unwritten extents, etc. Use that if you want that kind of detail.

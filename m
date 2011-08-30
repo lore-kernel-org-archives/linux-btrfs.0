@@ -1,73 +1,42 @@
 From: Josef Bacik <josef@redhat.com>
-Subject: [PATCH] Btrfs: use the transactions block_rsv for the csum root
-Date: Tue, 30 Aug 2011 11:32:48 -0400
-Message-ID: <1314718368-11857-1-git-send-email-josef@redhat.com>
+Subject: [PATCH] Btrfs: don't get the block_rsv in btrfs_free_tree_block
+Date: Tue, 30 Aug 2011 11:41:51 -0400
+Message-ID: <1314718911-12345-1-git-send-email-josef@redhat.com>
 To: linux-btrfs@vger.kernel.org
 Return-path: <linux-btrfs-owner@vger.kernel.org>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-The alloc warnings everybody has been seeing is because we have been reserving
-space for csums, but we weren't actually using that space.  So make
-get_block_rsv() return the trans->block_rsv if we're modifying the csum root.
-Also set the trans->block_rsv to NULL so that if we modify the csum root when
-running delayed ref's that comes out of the global reserve like it's supposed
-to.  With this patch I'm not seeing those alloc warnings anymore.  Thanks,
+Since the durable block rsv stuff has been killed there is no need to get the
+block_rsv in btrfs_free_tree_block anymore.
 
 Signed-off-by: Josef Bacik <josef@redhat.com>
 ---
- fs/btrfs/extent-tree.c |   15 +++++++++------
- fs/btrfs/transaction.c |    1 +
- 2 files changed, 10 insertions(+), 6 deletions(-)
+ fs/btrfs/extent-tree.c |    4 ----
+ 1 files changed, 0 insertions(+), 4 deletions(-)
 
 diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
-index ccdc4d1..53f6dbd 100644
+index 53f6dbd..d236df7 100644
 --- a/fs/btrfs/extent-tree.c
 +++ b/fs/btrfs/extent-tree.c
-@@ -3565,10 +3565,12 @@ out:
- static struct btrfs_block_rsv *get_block_rsv(struct btrfs_trans_handle *trans,
- 					     struct btrfs_root *root)
+@@ -4707,7 +4707,6 @@ void btrfs_free_tree_block(struct btrfs_trans_handle *trans,
+ 			   struct extent_buffer *buf,
+ 			   u64 parent, int last_ref)
  {
 -	struct btrfs_block_rsv *block_rsv;
--	if (root->ref_cows)
-+	struct btrfs_block_rsv *block_rsv = NULL;
-+
-+	if (root->ref_cows || root == root->fs_info->csum_root)
- 		block_rsv = trans->block_rsv;
--	else
-+
-+	if (!block_rsv)
- 		block_rsv = root->block_rsv;
+ 	struct btrfs_block_group_cache *cache = NULL;
+ 	int ret;
  
- 	if (!block_rsv)
-@@ -3865,12 +3867,13 @@ static void release_global_block_rsv(struct btrfs_fs_info *fs_info)
- void btrfs_trans_release_metadata(struct btrfs_trans_handle *trans,
- 				  struct btrfs_root *root)
- {
-+	struct btrfs_block_rsv *block_rsv;
-+
- 	if (!trans->bytes_reserved)
+@@ -4722,10 +4721,7 @@ void btrfs_free_tree_block(struct btrfs_trans_handle *trans,
+ 	if (!last_ref)
  		return;
  
--	BUG_ON(trans->block_rsv != &root->fs_info->trans_block_rsv);
--	btrfs_block_rsv_release(root, trans->block_rsv,
--				trans->bytes_reserved);
-+	block_rsv = &root->fs_info->trans_block_rsv;
-+	btrfs_block_rsv_release(root, block_rsv, trans->bytes_reserved);
- 	trans->bytes_reserved = 0;
- }
+-	block_rsv = get_block_rsv(trans, root);
+ 	cache = btrfs_lookup_block_group(root->fs_info, buf->start);
+-	if (block_rsv->space_info != cache->space_info)
+-		goto out;
  
-diff --git a/fs/btrfs/transaction.c b/fs/btrfs/transaction.c
-index 3418acc..329e80a 100644
---- a/fs/btrfs/transaction.c
-+++ b/fs/btrfs/transaction.c
-@@ -453,6 +453,7 @@ static int __btrfs_end_transaction(struct btrfs_trans_handle *trans,
- 		return 0;
- 	}
- 
-+	trans->block_rsv = NULL;
- 	while (count < 4) {
- 		unsigned long cur = trans->delayed_ref_updates;
- 		trans->delayed_ref_updates = 0;
+ 	if (btrfs_header_generation(buf) == trans->transid) {
+ 		if (root->root_key.objectid != BTRFS_TREE_LOG_OBJECTID) {
 -- 
 1.7.5.2
 

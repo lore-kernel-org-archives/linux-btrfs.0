@@ -1,7 +1,7 @@
 From: Sergei Trofimovich <slyich@gmail.com>
 Subject: Re: [PATCH] btrfs: fix warning in iput for bad-inode
-Date: Tue, 30 Aug 2011 23:46:00 +0300
-Message-ID: <20110830234600.27db6565@sf>
+Date: Wed, 31 Aug 2011 00:17:24 +0300
+Message-ID: <20110831001724.1f6225c5@sf>
 References: <20110817185619.4660.78543.stgit@localhost6>
 	<20110829063416.00f4652c@sf>
 	<20110830195309.4882f478@sf>
@@ -9,160 +9,98 @@ References: <20110817185619.4660.78543.stgit@localhost6>
 	<20110830223116.5fc21074@sf>
 	<4E5D3CC1.2090505@redhat.com>
 	<4E5D3DDD.2090401@redhat.com>
+	<20110830234600.27db6565@sf>
 Mime-Version: 1.0
 Content-Type: multipart/signed; micalg=PGP-SHA1;
- boundary="Sig_/154M91hV2RByQW6vAsIYmul"; protocol="application/pgp-signature"
-Cc: Konstantin Khlebnikov <khlebnikov@openvz.org>,
-	linux-btrfs@vger.kernel.org, Chris Mason <chris.mason@oracle.com>
-To: Josef Bacik <josef@redhat.com>
+ boundary="Sig_/wQGGX/hnf6642IshwfU4Exl"; protocol="application/pgp-signature"
+Cc: linux-btrfs@vger.kernel.org, Chris Mason <chris.mason@oracle.com>
+To: Josef Bacik <josef@redhat.com>,
+	Konstantin Khlebnikov <khlebnikov@openvz.org>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <4E5D3DDD.2090401@redhat.com>
+In-Reply-To: <20110830234600.27db6565@sf>
 List-ID: <linux-btrfs.vger.kernel.org>
 
---Sig_/154M91hV2RByQW6vAsIYmul
+--Sig_/wQGGX/hnf6642IshwfU4Exl
 Content-Type: text/plain; charset=US-ASCII
 Content-Transfer-Encoding: quoted-printable
 
-> On 08/30/2011 03:40 PM, Josef Bacik wrote:
-> > On 08/30/2011 03:31 PM, Sergei Trofimovich wrote:
-> >> On Tue, 30 Aug 2011 14:02:37 -0400 Josef Bacik <josef@redhat.com>
-> >> wrote:
-> >>
-> >>> On 08/30/2011 12:53 PM, Sergei Trofimovich wrote:
-> >>>>> Running 'sync' program after the load does not finish and
-> >>>>> eats 100%CPU busy-waiting for something in kernel.
-> >>>>>
-> >>>>> It's easy to reproduce hang with patch for me. I just run=20
-> >>>>> liferea and sync after it. Without patch I haven't managed
-> >>>>> to hang btrfs up.
-> >>>>
-> >>>> And I think it's another btrfs bug. I've managed to reproduce
-> >>>> it _without_ your patch and _without_ autodefrag enabled by
-> >>>> manually running the following commands: $ btrfs fi defrag=20
-> >>>> file-with-20_000-extents $ sync
-> >>>>
-> >>>> I think your patch just shuffles things a bit and forces=20
-> >>>> autodefrag races to pop-up sooner (which is good! :])
-> >>>>
-> >>>
-> >>> Sergei, can you do sysrq+w when this is happening, and maybe turn
-> >>> on the softlockup detector so we can see where sync is getting
-> >>> stuck? Thanks,
-> >>
-> >> Sure. As I keep telling about 2 cases in IRC I will state both here
-> >> explicitely:
-> >>
-> >> =3D=3DThe First Issue (aka "The Hung sync()" case) =3D=3D
-> >>
-> >> - it's an unpatched linus's v3.1-rc4-80-g0f43dd5 - /dev/root on /
-> >> type btrfs (rw,noatime,compress=3Dlzo) - 50% full 30GB filesystem
-> >> (usual nonmixed mode)
-> >>
-> >> How I hung it: $ /usr/sbin/filefrag ~/.bogofilter/wordlist.db=20
-> >> /home/st/.bogofilter/wordlist.db: 19070 extents found the file is
-> >> 138MB sqlite database for bayesian SPAM filter, it's being read and
-> >> written every 20 minutes or so. Maybe, it was writtent even in
-> >> defrag/sync time! $~/dev/git/btrfs-progs-unstable/btrfs fi defrag
-> >> ~/.bogofilter/wordlist.db $ sync ^C<hung in D-state>
-> >>
-> >> I didn't try to reproduce it yet. As for lockdep I'll try but I'm
-> >> afraid I will fail to reproduce, but I'll try tomorrow. I suspect
-> >> I'll need to seriously fragment some file first down to such
-> >> horrible state.
-> >>
-> >> With help of David I've some (hopefully relevant) info: #!/bin/sh
-> >> -x
-> >>
-> >> for i in $(ps aux|grep " D[+ ]\?"|awk '{print $2}'); do ps $i sudo
-> >> cat /proc/$i/stack done
-> >>
-> >> PID TTY      STAT   TIME COMMAND 1291 ?        D      0:00
-> >> [btrfs-endio-wri] [<ffffffff8130055d>]
-> >> btrfs_tree_read_lock+0x6d/0x120 [<ffffffff812b8e88>]
-> >> btrfs_search_slot+0x698/0x8b0 [<ffffffff812c9e18>]
-> >> btrfs_lookup_csum+0x68/0x190 [<ffffffff812ca10f>]
-> >> __btrfs_lookup_bio_sums+0x1cf/0x3e0 [<ffffffff812ca371>]
-> >> btrfs_lookup_bio_sums+0x11/0x20 [<ffffffff812d6a50>]
-> >> btrfs_submit_bio_hook+0x140/0x170 [<ffffffff812ed594>]
-> >> submit_one_bio+0x64/0xa0 [<ffffffff812f14f5>]
-> >> extent_readpages+0xe5/0x100 [<ffffffff812d7aaa>]
-> >> btrfs_readpages+0x1a/0x20 [<ffffffff810a6a02>]
-> >> __do_page_cache_readahead+0x1d2/0x280 [<ffffffff810a6d8c>]
-> >> ra_submit+0x1c/0x20 [<ffffffff810a6ebd>]
-> >> ondemand_readahead+0x12d/0x270 [<ffffffff810a70cc>]
-> >> page_cache_sync_readahead+0x2c/0x40 [<ffffffff81309987>]
-> >> __load_free_space_cache+0x1a7/0x5b0 [<ffffffff81309e61>]
-> >> load_free_space_cache+0xd1/0x190 [<ffffffff812be07b>]
-> >> cache_block_group+0xab/0x290 [<ffffffff812c3def>]
-> >> find_free_extent.clone.71+0x39f/0xab0 [<ffffffff812c5160>]
-> >> btrfs_reserve_extent+0xe0/0x170 [<ffffffff812c56df>]
-> >> btrfs_alloc_free_block+0xcf/0x330 [<ffffffff812b498d>]
-> >> __btrfs_cow_block+0x11d/0x4a0 [<ffffffff812b4df8>]
-> >> btrfs_cow_block+0xe8/0x1a0 [<ffffffff812b8965>]
-> >> btrfs_search_slot+0x175/0x8b0 [<ffffffff812c9e18>]
-> >> btrfs_lookup_csum+0x68/0x190 [<ffffffff812caf6e>]
-> >> btrfs_csum_file_blocks+0xbe/0x670 [<ffffffff812d7d91>]
-> >> add_pending_csums.clone.39+0x41/0x60 [<ffffffff812da528>]
-> >> btrfs_finish_ordered_io+0x218/0x310 [<ffffffff812da635>]
-> >> btrfs_writepage_end_io_hook+0x15/0x20 [<ffffffff8130c71a>]
-> >> end_compressed_bio_write+0x7a/0xe0 [<ffffffff811146f8>]
-> >> bio_endio+0x18/0x30 [<ffffffff812cd8fc>]
-> >> end_workqueue_fn+0xec/0x120 [<ffffffff812fb0ac>]
-> >> worker_loop+0xac/0x520 [<ffffffff8105d486>] kthread+0x96/0xa0=20
-> >> [<ffffffff815f9214>] kernel_thread_helper+0x4/0x10=20
-> >> [<ffffffffffffffff>] 0xffffffffffffffff
-> >=20
-> > Ok this should have been fixed with
-> >=20
-> > Btrfs: use the commit_root for reading free_space_inode crcs
-> >=20
-> > which is commit # 2cf8572dac62cc2ff7e995173e95b6c694401b3f.  Does your
-> > kernel have this commit?  Because if it does then we did something
-> > wrong.  If not it should be in linus's latest tree, so update and it
-> > should go away (hopefully).  Thanks,
-
-Yeah, this one was in my local tree when hung.
-
-> Oops looks like that patch won't fix it completely, I just sent another
-> patch that will fix this problem totally, sorry about that
+> About the second one:
 >=20
-> [PATCH] Btrfs: skip locking if searching the commit root in lookup_csums
-
-I'll try to reproduce/test it tomorrow.
-
-About the second one:
-
-> =3D=3DThe Second Issue (aka "The Busy Looping sync()" case) =3D=3D
-> The box is different from first, so conditions are a bit different.
-> - /dev/root on / type btrfs (rw,noatime,autodefrag)
->   (note autodefrag!)
-> - 15% full 594GB filesystem (usual nonmixed mode)
+> > =3D=3DThe Second Issue (aka "The Busy Looping sync()" case) =3D=3D
+> > The box is different from first, so conditions are a bit different.
+> > - /dev/root on / type btrfs (rw,noatime,autodefrag)
+> >   (note autodefrag!)
+> > - 15% full 594GB filesystem (usual nonmixed mode)
+> >=20
+> >    $ liferea
+> >    <wait it to calm down. it does a lot of SQLite reads/writes>
+> >    $ sync
+> >    Got CPU is 100% loaded <hung>
 >=20
->    $ liferea
->    <wait it to calm down. it does a lot of SQLite reads/writes>
->    $ sync
->    Got CPU is 100% loaded <hung>
+> Still reproducible with 2 patches above + $SUBJ one. strace says it hangs=
+ in
+> strace() syscall. Stack trace is odd:
+> # cat /proc/`pidof sync`/stack
+> [<ffffffffffffffff>] 0xffffffffffffffff
 
-Still reproducible with 2 patches above + $SUBJ one. strace says it hangs in
-strace() syscall. Stack trace is odd:
-# cat /proc/`pidof sync`/stack
-[<ffffffffffffffff>] 0xffffffffffffffff
+"got" stack of the looper with such hack:
+    $ while :; do sudo echo "-"; cat /proc/2304/stack | fgrep -v '[<fffffff=
+fffffffff>] 0xffffffffffffffff'; done | uniq
 
+[<ffffffff8109d39d>] find_get_pages_tag+0x14d/0x1a0
+[<ffffffff81076981>] __lock_acquire+0x5a1/0xbd0
+[<ffffffff8109e7bd>] filemap_fdatawait_range+0x9d/0x1b0
+[<ffffffff8109e8f2>] filemap_fdatawait+0x22/0x30
+[<ffffffff81106a04>] sync_inodes_sb+0x1c4/0x250
+[<ffffffff8110b398>] __sync_filesystem+0x78/0x80
+[<ffffffff8110b3b7>] sync_one_sb+0x17/0x20
+[<ffffffff810e3fbe>] iterate_supers+0x7e/0xe0
+[<ffffffff8110b400>] sys_sync+0x40/0x60
+[<ffffffff81456afb>] system_call_fastpath+0x16/0x1b
+-
+[<ffffffff811069f1>] sync_inodes_sb+0x1b1/0x250
+[<ffffffff8110b398>] __sync_filesystem+0x78/0x80
+[<ffffffff8110b3b7>] sync_one_sb+0x17/0x20
+[<ffffffff810e3fbe>] iterate_supers+0x7e/0xe0
+[<ffffffff8110b400>] sys_sync+0x40/0x60
+[<ffffffff81456afb>] system_call_fastpath+0x16/0x1b
+-
+[<ffffffff811069f1>] sync_inodes_sb+0x1b1/0x250
+[<ffffffff8110b398>] __sync_filesystem+0x78/0x80
+[<ffffffff8110b3b7>] sync_one_sb+0x17/0x20
+[<ffffffff810e3fbe>] iterate_supers+0x7e/0xe0
+[<ffffffff8110b400>] sys_sync+0x40/0x60
+[<ffffffff81456afb>] system_call_fastpath+0x16/0x1b
+-
+[<ffffffff814564b6>] retint_kernel+0x26/0x30
+[<ffffffff8109d398>] find_get_pages_tag+0x148/0x1a0
+[<ffffffff810a7a60>] pagevec_lookup_tag+0x20/0x30
+[<ffffffff8109e7bd>] filemap_fdatawait_range+0x9d/0x1b0
+[<ffffffff8109e8f2>] filemap_fdatawait+0x22/0x30
+[<ffffffff81106a04>] sync_inodes_sb+0x1c4/0x250
+[<ffffffff8110b398>] __sync_filesystem+0x78/0x80
+[<ffffffff8110b3b7>] sync_one_sb+0x17/0x20
+[<ffffffff810e3fbe>] iterate_supers+0x7e/0xe0
+[<ffffffff8110b400>] sys_sync+0x40/0x60
+[<ffffffff81456afb>] system_call_fastpath+0x16/0x1b
+
+Looks like dirty inode count (or dirty page count) is affected by
+the $SUBJ patch.
 
 --=20
 
   Sergei
 
---Sig_/154M91hV2RByQW6vAsIYmul
+--Sig_/wQGGX/hnf6642IshwfU4Exl
 Content-Type: application/pgp-signature; name=signature.asc
 Content-Disposition: attachment; filename=signature.asc
 
 -----BEGIN PGP SIGNATURE-----
 Version: GnuPG v2.0.17 (GNU/Linux)
 
-iEYEARECAAYFAk5dTAwACgkQcaHudmEf86rl6wCfeI9pApEV7Pi0riq1udmieqz9
-ig8An2cYinvSx92A+0IHbHCC97s5stUx
-=kDeY
+iEYEARECAAYFAk5dU2QACgkQcaHudmEf86rDmgCeKNS3y3nf3eXvCCtcwSBfnwQ1
+YPMAn3VxD7l8EwBFFaT3FuAazX9D3gXv
+=QNnC
 -----END PGP SIGNATURE-----
 
---Sig_/154M91hV2RByQW6vAsIYmul--
+--Sig_/wQGGX/hnf6642IshwfU4Exl--

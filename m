@@ -1,287 +1,51 @@
-From: Josef Bacik <josef@redhat.com>
-Subject: [PATCH] Btrfs: stop passing a trans handle all around the reservation code
-Date: Tue, 30 Aug 2011 12:35:02 -0400
-Message-ID: <1314722102-15211-1-git-send-email-josef@redhat.com>
-To: linux-btrfs@vger.kernel.org
+From: Sergei Trofimovich <slyich@gmail.com>
+Subject: Re: [PATCH] btrfs: fix warning in iput for bad-inode
+Date: Tue, 30 Aug 2011 19:53:09 +0300
+Message-ID: <20110830195309.4882f478@sf>
+References: <20110817185619.4660.78543.stgit@localhost6>
+	<20110829063416.00f4652c@sf>
+Mime-Version: 1.0
+Content-Type: multipart/signed; micalg=PGP-SHA1;
+ boundary="Sig_/cybFXZ6XxvMMPMfy+g0l.NA"; protocol="application/pgp-signature"
+Cc: linux-btrfs@vger.kernel.org, Chris Mason <chris.mason@oracle.com>
+To: Konstantin Khlebnikov <khlebnikov@openvz.org>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
+In-Reply-To: <20110829063416.00f4652c@sf>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-The only thing that we need to have a trans handle for is in
-reserve_metadata_bytes and thats to know how much flushing we can do.  So
-instead of passing it around, just check current->journal_info for a
-trans_handle so we know if we can commit a transaction to try and free up space
-or not.  Thanks,
+--Sig_/cybFXZ6XxvMMPMfy+g0l.NA
+Content-Type: text/plain; charset=US-ASCII
+Content-Transfer-Encoding: quoted-printable
 
-Signed-off-by: Josef Bacik <josef@redhat.com>
----
- fs/btrfs/ctree.h            |    6 +---
- fs/btrfs/extent-tree.c      |   45 ++++++++++++++++++++++---------------------
- fs/btrfs/free-space-cache.c |    4 +--
- fs/btrfs/inode.c            |    4 +-
- fs/btrfs/relocation.c       |   15 ++++++-------
- fs/btrfs/transaction.c      |    8 +++---
- 6 files changed, 39 insertions(+), 43 deletions(-)
+> Running 'sync' program after the load does not finish and eats 100%CPU
+> busy-waiting for something in kernel.
+>=20
+> It's easy to reproduce hang with patch for me. I just run liferea and sync
+> after it. Without patch I haven't managed to hang btrfs up.
 
-diff --git a/fs/btrfs/ctree.h b/fs/btrfs/ctree.h
-index caa73cd..a5faf8e 100644
---- a/fs/btrfs/ctree.h
-+++ b/fs/btrfs/ctree.h
-@@ -2237,12 +2237,10 @@ void btrfs_init_block_rsv(struct btrfs_block_rsv *rsv);
- struct btrfs_block_rsv *btrfs_alloc_block_rsv(struct btrfs_root *root);
- void btrfs_free_block_rsv(struct btrfs_root *root,
- 			  struct btrfs_block_rsv *rsv);
--int btrfs_block_rsv_add(struct btrfs_trans_handle *trans,
--			struct btrfs_root *root,
-+int btrfs_block_rsv_add(struct btrfs_root *root,
- 			struct btrfs_block_rsv *block_rsv,
- 			u64 num_bytes);
--int btrfs_block_rsv_check(struct btrfs_trans_handle *trans,
--			  struct btrfs_root *root,
-+int btrfs_block_rsv_check(struct btrfs_root *root,
- 			  struct btrfs_block_rsv *block_rsv,
- 			  u64 min_reserved, int min_factor, int flush);
- int btrfs_block_rsv_migrate(struct btrfs_block_rsv *src_rsv,
-diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
-index d236df7..9bb7159 100644
---- a/fs/btrfs/extent-tree.c
-+++ b/fs/btrfs/extent-tree.c
-@@ -3404,29 +3404,34 @@ static int shrink_delalloc(struct btrfs_trans_handle *trans,
- 	return reclaimed >= to_reclaim;
- }
- 
--/*
-- * Retries tells us how many times we've called reserve_metadata_bytes.  The
-- * idea is if this is the first call (retries == 0) then we will add to our
-- * reserved count if we can't make the allocation in order to hold our place
-- * while we go and try and free up space.  That way for retries > 1 we don't try
-- * and add space, we just check to see if the amount of unused space is >= the
-- * total space, meaning that our reservation is valid.
-+/**
-+ * reserve_metadata_bytes - try to reserve bytes from the block_rsv's space
-+ * @root - the root we're allocating for
-+ * @block_rsv - the block_rsv we're allocating for
-+ * @orig_bytes - the number of bytes we want
-+ * @flush - wether or not we can flush to make our reservation
-  *
-- * However if we don't intend to retry this reservation, pass -1 as retries so
-- * that it short circuits this logic.
-+ * This will reserve orgi_bytes number of bytes from the space info associated
-+ * with the block_rsv.  If there is not enough space it will make an attempt to
-+ * flush out space to make room.  It will do this by flushing delalloc if
-+ * possible or committing the transaction.  If flush is 0 then no attempts to
-+ * regain reservations will be made and this will fail if there is not enough
-+ * space already.
-  */
--static int reserve_metadata_bytes(struct btrfs_trans_handle *trans,
--				  struct btrfs_root *root,
-+static int reserve_metadata_bytes(struct btrfs_root *root,
- 				  struct btrfs_block_rsv *block_rsv,
- 				  u64 orig_bytes, int flush)
- {
- 	struct btrfs_space_info *space_info = block_rsv->space_info;
-+	struct btrfs_trans_handle *trans;
- 	u64 unused;
- 	u64 num_bytes = orig_bytes;
- 	int retries = 0;
- 	int ret = 0;
- 	bool committed = false;
- 	bool flushing = false;
-+
-+	trans = (struct btrfs_trans_handle *)current->journal_info;
- again:
- 	ret = 0;
- 	spin_lock(&space_info->lock);
-@@ -3689,8 +3694,7 @@ void btrfs_free_block_rsv(struct btrfs_root *root,
- 	kfree(rsv);
- }
- 
--int btrfs_block_rsv_add(struct btrfs_trans_handle *trans,
--			struct btrfs_root *root,
-+int btrfs_block_rsv_add(struct btrfs_root *root,
- 			struct btrfs_block_rsv *block_rsv,
- 			u64 num_bytes)
- {
-@@ -3699,7 +3703,7 @@ int btrfs_block_rsv_add(struct btrfs_trans_handle *trans,
- 	if (num_bytes == 0)
- 		return 0;
- 
--	ret = reserve_metadata_bytes(trans, root, block_rsv, num_bytes, 1);
-+	ret = reserve_metadata_bytes(root, block_rsv, num_bytes, 1);
- 	if (!ret) {
- 		block_rsv_add_bytes(block_rsv, num_bytes, 1);
- 		return 0;
-@@ -3708,8 +3712,7 @@ int btrfs_block_rsv_add(struct btrfs_trans_handle *trans,
- 	return ret;
- }
- 
--int btrfs_block_rsv_check(struct btrfs_trans_handle *trans,
--			  struct btrfs_root *root,
-+int btrfs_block_rsv_check(struct btrfs_root *root,
- 			  struct btrfs_block_rsv *block_rsv,
- 			  u64 min_reserved, int min_factor, int flush)
- {
-@@ -3734,7 +3737,7 @@ int btrfs_block_rsv_check(struct btrfs_trans_handle *trans,
- 	if (!ret)
- 		return 0;
- 
--	ret = reserve_metadata_bytes(trans, root, block_rsv, num_bytes, flush);
-+	ret = reserve_metadata_bytes(root, block_rsv, num_bytes, flush);
- 	if (!ret) {
- 		block_rsv_add_bytes(block_rsv, num_bytes, 0);
- 		return 0;
-@@ -4034,7 +4037,7 @@ int btrfs_delalloc_reserve_metadata(struct inode *inode, u64 num_bytes)
- 	to_reserve += calc_csum_metadata_size(inode, num_bytes, 1);
- 	spin_unlock(&BTRFS_I(inode)->lock);
- 
--	ret = reserve_metadata_bytes(NULL, root, block_rsv, to_reserve, flush);
-+	ret = reserve_metadata_bytes(root, block_rsv, to_reserve, flush);
- 	if (ret) {
- 		u64 to_free = 0;
- 		unsigned dropped;
-@@ -5689,8 +5692,7 @@ use_block_rsv(struct btrfs_trans_handle *trans,
- 	block_rsv = get_block_rsv(trans, root);
- 
- 	if (block_rsv->size == 0) {
--		ret = reserve_metadata_bytes(trans, root, block_rsv,
--					     blocksize, 0);
-+		ret = reserve_metadata_bytes(root, block_rsv, blocksize, 0);
- 		/*
- 		 * If we couldn't reserve metadata bytes try and use some from
- 		 * the global reserve.
-@@ -5711,8 +5713,7 @@ use_block_rsv(struct btrfs_trans_handle *trans,
- 		return block_rsv;
- 	if (ret) {
- 		WARN_ON(1);
--		ret = reserve_metadata_bytes(trans, root, block_rsv, blocksize,
--					     0);
-+		ret = reserve_metadata_bytes(root, block_rsv, blocksize, 0);
- 		if (!ret) {
- 			return block_rsv;
- 		} else if (ret && block_rsv != global_rsv) {
-diff --git a/fs/btrfs/free-space-cache.c b/fs/btrfs/free-space-cache.c
-index 13c8fb3..e5ceaf4 100644
---- a/fs/btrfs/free-space-cache.c
-+++ b/fs/btrfs/free-space-cache.c
-@@ -195,9 +195,7 @@ int btrfs_truncate_free_space_cache(struct btrfs_root *root,
- 	int ret = 0;
- 
- 	trans->block_rsv = root->orphan_block_rsv;
--	ret = btrfs_block_rsv_check(trans, root,
--				    root->orphan_block_rsv,
--				    0, 5, 0);
-+	ret = btrfs_block_rsv_check(root, root->orphan_block_rsv, 0, 5, 0);
- 	if (ret)
- 		return ret;
- 
-diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
-index 2f1e5a5..018c0fd 100644
---- a/fs/btrfs/inode.c
-+++ b/fs/btrfs/inode.c
-@@ -3573,7 +3573,7 @@ void btrfs_evict_inode(struct inode *inode)
- 	 * doing the truncate.
- 	 */
- 	while (1) {
--		ret = btrfs_block_rsv_check(NULL, root, rsv, min_size, 0, 1);
-+		ret = btrfs_block_rsv_check(root, rsv, min_size, 0, 1);
- 		if (ret) {
- 			printk(KERN_WARNING "Could not get space for a "
- 			       "delete, will truncate on mount %d\n", ret);
-@@ -6566,7 +6566,7 @@ static int btrfs_truncate(struct inode *inode)
- 		btrfs_add_ordered_operation(trans, root, inode);
- 
- 	while (1) {
--		ret = btrfs_block_rsv_check(trans, root, rsv, min_size, 0, 1);
-+		ret = btrfs_block_rsv_check(root, rsv, min_size, 0, 1);
- 		if (ret) {
- 			/*
- 			 * This can only happen with the original transaction we
-diff --git a/fs/btrfs/relocation.c b/fs/btrfs/relocation.c
-index fd9ac66..3ab6740 100644
---- a/fs/btrfs/relocation.c
-+++ b/fs/btrfs/relocation.c
-@@ -2041,8 +2041,8 @@ static noinline_for_stack int merge_reloc_root(struct reloc_control *rc,
- 		BUG_ON(IS_ERR(trans));
- 		trans->block_rsv = rc->block_rsv;
- 
--		ret = btrfs_block_rsv_check(trans, root, rc->block_rsv,
--					    min_reserved, 0, 0);
-+		ret = btrfs_block_rsv_check(root, rc->block_rsv, min_reserved,
-+					    0, 0);
- 		if (ret) {
- 			BUG_ON(ret != -EAGAIN);
- 			ret = btrfs_commit_transaction(trans, root);
-@@ -2152,8 +2152,7 @@ int prepare_to_merge(struct reloc_control *rc, int err)
- again:
- 	if (!err) {
- 		num_bytes = rc->merging_rsv_size;
--		ret = btrfs_block_rsv_add(NULL, root, rc->block_rsv,
--					  num_bytes);
-+		ret = btrfs_block_rsv_add(root, rc->block_rsv, num_bytes);
- 		if (ret)
- 			err = ret;
- 	}
-@@ -2427,7 +2426,7 @@ static int reserve_metadata_space(struct btrfs_trans_handle *trans,
- 	num_bytes = calcu_metadata_size(rc, node, 1) * 2;
- 
- 	trans->block_rsv = rc->block_rsv;
--	ret = btrfs_block_rsv_add(trans, root, rc->block_rsv, num_bytes);
-+	ret = btrfs_block_rsv_add(root, rc->block_rsv, num_bytes);
- 	if (ret) {
- 		if (ret == -EAGAIN)
- 			rc->commit_transaction = 1;
-@@ -3645,7 +3644,7 @@ int prepare_to_relocate(struct reloc_control *rc)
- 	 * btrfs_init_reloc_root will use them when there
- 	 * is no reservation in transaction handle.
- 	 */
--	ret = btrfs_block_rsv_add(NULL, rc->extent_root, rc->block_rsv,
-+	ret = btrfs_block_rsv_add(rc->extent_root, rc->block_rsv,
- 				  rc->extent_root->nodesize * 256);
- 	if (ret)
- 		return ret;
-@@ -3774,8 +3773,8 @@ restart:
- 			}
- 		}
- 
--		ret = btrfs_block_rsv_check(trans, rc->extent_root,
--					    rc->block_rsv, 0, 5, 0);
-+		ret = btrfs_block_rsv_check(rc->extent_root, rc->block_rsv, 0,
-+					    5, 0);
- 		if (ret < 0) {
- 			if (ret != -EAGAIN) {
- 				err = ret;
-diff --git a/fs/btrfs/transaction.c b/fs/btrfs/transaction.c
-index 329e80a..54be080 100644
---- a/fs/btrfs/transaction.c
-+++ b/fs/btrfs/transaction.c
-@@ -275,7 +275,7 @@ static struct btrfs_trans_handle *start_transaction(struct btrfs_root *root,
- 	 */
- 	if (num_items > 0 && root != root->fs_info->chunk_root) {
- 		num_bytes = btrfs_calc_trans_metadata_size(root, num_items);
--		ret = btrfs_block_rsv_add(NULL, root,
-+		ret = btrfs_block_rsv_add(root,
- 					  &root->fs_info->trans_block_rsv,
- 					  num_bytes);
- 		if (ret)
-@@ -418,8 +418,8 @@ static int should_end_transaction(struct btrfs_trans_handle *trans,
- 				  struct btrfs_root *root)
- {
- 	int ret;
--	ret = btrfs_block_rsv_check(trans, root,
--				    &root->fs_info->global_block_rsv, 0, 5, 0);
-+	ret = btrfs_block_rsv_check(root, &root->fs_info->global_block_rsv, 0,
-+				    5, 0);
- 	return ret ? 1 : 0;
- }
- 
-@@ -911,7 +911,7 @@ static noinline int create_pending_snapshot(struct btrfs_trans_handle *trans,
- 	btrfs_reloc_pre_snapshot(trans, pending, &to_reserve);
- 
- 	if (to_reserve > 0) {
--		ret = btrfs_block_rsv_add(trans, root, &pending->block_rsv,
-+		ret = btrfs_block_rsv_add(root, &pending->block_rsv,
- 					  to_reserve);
- 		if (ret) {
- 			pending->error = ret;
--- 
-1.7.5.2
+And I think it's another btrfs bug. I've managed to reproduce it _without_
+your patch and _without_ autodefrag enabled by manually running the
+following commands:
+    $ btrfs fi defrag file-with-20_000-extents
+    $ sync
 
+I think your patch just shuffles things a bit and forces autodefrag races
+to pop-up sooner (which is good! :])
+
+--=20
+
+  Sergei
+
+--Sig_/cybFXZ6XxvMMPMfy+g0l.NA
+Content-Type: application/pgp-signature; name=signature.asc
+Content-Disposition: attachment; filename=signature.asc
+
+-----BEGIN PGP SIGNATURE-----
+Version: GnuPG v2.0.17 (GNU/Linux)
+
+iEYEARECAAYFAk5dFXgACgkQcaHudmEf86oeBQCfYGSisQwmGLyxqlrkgZyZ2B0d
+zbsAn1dbYgSEZSuO7exm5xqxedYL96Ny
+=1MpK
+-----END PGP SIGNATURE-----
+
+--Sig_/cybFXZ6XxvMMPMfy+g0l.NA--

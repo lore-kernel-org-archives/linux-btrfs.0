@@ -1,249 +1,73 @@
 From: Josef Bacik <josef@redhat.com>
-Subject: [PATCH] Btrfs: handle enospc accounting for free space inodes
-Date: Tue, 30 Aug 2011 10:45:33 -0400
-Message-ID: <1314715533-9927-1-git-send-email-josef@redhat.com>
+Subject: [PATCH] Btrfs: use the transactions block_rsv for the csum root
+Date: Tue, 30 Aug 2011 11:32:48 -0400
+Message-ID: <1314718368-11857-1-git-send-email-josef@redhat.com>
 To: linux-btrfs@vger.kernel.org
 Return-path: <linux-btrfs-owner@vger.kernel.org>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Since free space inodes now use normal checksumming we need to make sure to
-account for their metadata use.  So reserve metadata space, and then if we fail
-to write out the metadata we can just release it, otherwise it will be freed up
-when the io completes.  Thanks,
+The alloc warnings everybody has been seeing is because we have been reserving
+space for csums, but we weren't actually using that space.  So make
+get_block_rsv() return the trans->block_rsv if we're modifying the csum root.
+Also set the trans->block_rsv to NULL so that if we modify the csum root when
+running delayed ref's that comes out of the global reserve like it's supposed
+to.  With this patch I'm not seeing those alloc warnings anymore.  Thanks,
 
 Signed-off-by: Josef Bacik <josef@redhat.com>
 ---
- fs/btrfs/extent-tree.c      |   18 ++++++++++++----
- fs/btrfs/free-space-cache.c |   44 ++++++++++++++++++++++++++++--------------
- fs/btrfs/inode-map.c        |    6 +++-
- fs/btrfs/inode.c            |    2 +-
- 4 files changed, 47 insertions(+), 23 deletions(-)
+ fs/btrfs/extent-tree.c |   15 +++++++++------
+ fs/btrfs/transaction.c |    1 +
+ 2 files changed, 10 insertions(+), 6 deletions(-)
 
 diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
-index 1f1d3e8..ccdc4d1 100644
+index ccdc4d1..53f6dbd 100644
 --- a/fs/btrfs/extent-tree.c
 +++ b/fs/btrfs/extent-tree.c
-@@ -2755,16 +2755,20 @@ again:
- 	num_pages *= 16;
- 	num_pages *= PAGE_CACHE_SIZE;
- 
--	ret = btrfs_check_data_free_space(inode, num_pages);
-+	ret = btrfs_delalloc_reserve_space(inode, num_pages);
- 	if (ret)
- 		goto out_put;
- 
- 	ret = btrfs_prealloc_file_range_trans(inode, trans, 0, 0, num_pages,
- 					      num_pages, num_pages,
- 					      &alloc_hint);
--	if (!ret)
-+	if (!ret) {
- 		dcs = BTRFS_DC_SETUP;
--	btrfs_free_reserved_data_space(inode, num_pages);
-+		btrfs_free_reserved_data_space(inode, num_pages);
-+	} else {
-+		btrfs_delalloc_release_space(inode, num_pages);
-+	}
+@@ -3565,10 +3565,12 @@ out:
+ static struct btrfs_block_rsv *get_block_rsv(struct btrfs_trans_handle *trans,
+ 					     struct btrfs_root *root)
+ {
+-	struct btrfs_block_rsv *block_rsv;
+-	if (root->ref_cows)
++	struct btrfs_block_rsv *block_rsv = NULL;
 +
- out_put:
- 	iput(inode);
- out_free:
-@@ -4002,9 +4006,13 @@ int btrfs_delalloc_reserve_metadata(struct inode *inode, u64 num_bytes)
- 	struct btrfs_block_rsv *block_rsv = &root->fs_info->delalloc_block_rsv;
- 	u64 to_reserve = 0;
- 	unsigned nr_extents = 0;
-+	int flush = 1;
- 	int ret;
- 
--	if (btrfs_transaction_in_commit(root->fs_info))
-+	if (btrfs_is_free_space_inode(root, inode))
-+		flush = 0;
++	if (root->ref_cows || root == root->fs_info->csum_root)
+ 		block_rsv = trans->block_rsv;
+-	else
 +
-+	if (flush && btrfs_transaction_in_commit(root->fs_info))
- 		schedule_timeout(1);
++	if (!block_rsv)
+ 		block_rsv = root->block_rsv;
  
- 	num_bytes = ALIGN(num_bytes, root->sectorsize);
-@@ -4023,7 +4031,7 @@ int btrfs_delalloc_reserve_metadata(struct inode *inode, u64 num_bytes)
- 	to_reserve += calc_csum_metadata_size(inode, num_bytes, 1);
- 	spin_unlock(&BTRFS_I(inode)->lock);
+ 	if (!block_rsv)
+@@ -3865,12 +3867,13 @@ static void release_global_block_rsv(struct btrfs_fs_info *fs_info)
+ void btrfs_trans_release_metadata(struct btrfs_trans_handle *trans,
+ 				  struct btrfs_root *root)
+ {
++	struct btrfs_block_rsv *block_rsv;
++
+ 	if (!trans->bytes_reserved)
+ 		return;
  
--	ret = reserve_metadata_bytes(NULL, root, block_rsv, to_reserve, 1);
-+	ret = reserve_metadata_bytes(NULL, root, block_rsv, to_reserve, flush);
- 	if (ret) {
- 		u64 to_free = 0;
- 		unsigned dropped;
-diff --git a/fs/btrfs/free-space-cache.c b/fs/btrfs/free-space-cache.c
-index d56ba54..13c8fb3 100644
---- a/fs/btrfs/free-space-cache.c
-+++ b/fs/btrfs/free-space-cache.c
-@@ -528,6 +528,19 @@ out:
- 	return ret;
+-	BUG_ON(trans->block_rsv != &root->fs_info->trans_block_rsv);
+-	btrfs_block_rsv_release(root, trans->block_rsv,
+-				trans->bytes_reserved);
++	block_rsv = &root->fs_info->trans_block_rsv;
++	btrfs_block_rsv_release(root, block_rsv, trans->bytes_reserved);
+ 	trans->bytes_reserved = 0;
  }
  
-+/**
-+ * __btrfs_write_out_cache - write out cached info to an inode
-+ * @root - the root the inode belongs to
-+ * @ctl - the free space cache we are going to write out
-+ * @block_group - the block_group for this cache if it belongs to a block_group
-+ * @trans - the trans handle
-+ * @path - the path to use
-+ * @offset - the offset for the key we'll insert
-+ *
-+ * This function writes out a free space cache struct to disk for quick recovery
-+ * on mount.  This will return 0 if it was successfull in writing the cache out,
-+ * and -1 if it was not.
-+ */
- int __btrfs_write_out_cache(struct btrfs_root *root, struct inode *inode,
- 			    struct btrfs_free_space_ctl *ctl,
- 			    struct btrfs_block_group_cache *block_group,
-@@ -551,7 +564,8 @@ int __btrfs_write_out_cache(struct btrfs_root *root, struct inode *inode,
- 	int index = 0, num_pages = 0;
- 	int entries = 0;
- 	int bitmaps = 0;
--	int ret = -1;
-+	int ret;
-+	int err = -1;
- 	bool next_page = false;
- 	bool out_of_space = false;
- 
-@@ -559,7 +573,7 @@ int __btrfs_write_out_cache(struct btrfs_root *root, struct inode *inode,
- 
- 	node = rb_first(&ctl->free_space_offset);
- 	if (!node)
--		return 0;
-+		return -1;
- 
- 	if (!i_size_read(inode))
- 		return -1;
-@@ -763,7 +777,6 @@ int __btrfs_write_out_cache(struct btrfs_root *root, struct inode *inode,
- 		unlock_extent_cached(&BTRFS_I(inode)->io_tree, 0,
- 				     i_size_read(inode) - 1, &cached_state,
- 				     GFP_NOFS);
--		ret = 0;
- 		goto out;
- 	}
- 
-@@ -785,10 +798,8 @@ int __btrfs_write_out_cache(struct btrfs_root *root, struct inode *inode,
- 	unlock_extent_cached(&BTRFS_I(inode)->io_tree, 0,
- 			     i_size_read(inode) - 1, &cached_state, GFP_NOFS);
- 
--	if (ret) {
--		ret = 0;
-+	if (ret)
- 		goto out;
--	}
- 
- 	BTRFS_I(inode)->generation = trans->transid;
- 
-@@ -800,7 +811,6 @@ int __btrfs_write_out_cache(struct btrfs_root *root, struct inode *inode,
- 
- 	ret = btrfs_search_slot(trans, root, &key, path, 0, 1);
- 	if (ret < 0) {
--		ret = -1;
- 		clear_extent_bit(&BTRFS_I(inode)->io_tree, 0, bytes - 1,
- 				 EXTENT_DIRTY | EXTENT_DELALLOC |
- 				 EXTENT_DO_ACCOUNTING, 0, 0, NULL, GFP_NOFS);
-@@ -814,7 +824,6 @@ int __btrfs_write_out_cache(struct btrfs_root *root, struct inode *inode,
- 		btrfs_item_key_to_cpu(leaf, &found_key, path->slots[0]);
- 		if (found_key.objectid != BTRFS_FREE_SPACE_OBJECTID ||
- 		    found_key.offset != offset) {
--			ret = -1;
- 			clear_extent_bit(&BTRFS_I(inode)->io_tree, 0, bytes - 1,
- 					 EXTENT_DIRTY | EXTENT_DELALLOC |
- 					 EXTENT_DO_ACCOUNTING, 0, 0, NULL,
-@@ -831,16 +840,15 @@ int __btrfs_write_out_cache(struct btrfs_root *root, struct inode *inode,
- 	btrfs_mark_buffer_dirty(leaf);
- 	btrfs_release_path(path);
- 
--	ret = 1;
--
-+	err = 0;
- out:
- 	kfree(pages);
--	if (ret != 1) {
-+	if (err) {
- 		invalidate_inode_pages2_range(inode->i_mapping, 0, index);
- 		BTRFS_I(inode)->generation = 0;
- 	}
- 	btrfs_update_inode(trans, root, inode);
--	return ret;
-+	return err;
- }
- 
- int btrfs_write_out_cache(struct btrfs_root *root,
-@@ -867,14 +875,16 @@ int btrfs_write_out_cache(struct btrfs_root *root,
- 
- 	ret = __btrfs_write_out_cache(root, inode, ctl, block_group, trans,
- 				      path, block_group->key.objectid);
--	if (ret < 0) {
-+	if (ret) {
-+		btrfs_delalloc_release_metadata(inode, inode->i_size);
- 		spin_lock(&block_group->lock);
- 		block_group->disk_cache_state = BTRFS_DC_ERROR;
- 		spin_unlock(&block_group->lock);
- 		ret = 0;
--
-+#ifdef DEBUG
- 		printk(KERN_ERR "btrfs: failed to write free space cace "
- 		       "for block group %llu\n", block_group->key.objectid);
-+#endif
- 	}
- 
- 	iput(inode);
-@@ -2658,9 +2668,13 @@ int btrfs_write_out_ino_cache(struct btrfs_root *root,
+diff --git a/fs/btrfs/transaction.c b/fs/btrfs/transaction.c
+index 3418acc..329e80a 100644
+--- a/fs/btrfs/transaction.c
++++ b/fs/btrfs/transaction.c
+@@ -453,6 +453,7 @@ static int __btrfs_end_transaction(struct btrfs_trans_handle *trans,
  		return 0;
- 
- 	ret = __btrfs_write_out_cache(root, inode, ctl, NULL, trans, path, 0);
--	if (ret < 0)
-+	if (ret) {
-+		btrfs_delalloc_release_metadata(inode, inode->i_size);
-+#ifdef DEBUG
- 		printk(KERN_ERR "btrfs: failed to write free ino cache "
- 		       "for root %llu\n", root->root_key.objectid);
-+#endif
-+	}
- 
- 	iput(inode);
- 	return ret;
-diff --git a/fs/btrfs/inode-map.c b/fs/btrfs/inode-map.c
-index b4087e0..53dcbdf 100644
---- a/fs/btrfs/inode-map.c
-+++ b/fs/btrfs/inode-map.c
-@@ -465,14 +465,16 @@ again:
- 	/* Just to make sure we have enough space */
- 	prealloc += 8 * PAGE_CACHE_SIZE;
- 
--	ret = btrfs_check_data_free_space(inode, prealloc);
-+	ret = btrfs_delalloc_reserve_space(inode, prealloc);
- 	if (ret)
- 		goto out_put;
- 
- 	ret = btrfs_prealloc_file_range_trans(inode, trans, 0, 0, prealloc,
- 					      prealloc, prealloc, &alloc_hint);
--	if (ret)
-+	if (ret) {
-+		btrfs_delalloc_release_space(inode, prealloc);
- 		goto out_put;
-+	}
- 	btrfs_free_reserved_data_space(inode, prealloc);
- 
- out_put:
-diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
-index 0ee0677..2f1e5a5 100644
---- a/fs/btrfs/inode.c
-+++ b/fs/btrfs/inode.c
-@@ -1792,11 +1792,11 @@ static int btrfs_finish_ordered_io(struct inode *inode, u64 start, u64 end)
  	}
- 	ret = 0;
- out:
-+	btrfs_delalloc_release_metadata(inode, ordered_extent->len);
- 	if (nolock) {
- 		if (trans)
- 			btrfs_end_transaction_nolock(trans, root);
- 	} else {
--		btrfs_delalloc_release_metadata(inode, ordered_extent->len);
- 		if (trans)
- 			btrfs_end_transaction(trans, root);
- 	}
+ 
++	trans->block_rsv = NULL;
+ 	while (count < 4) {
+ 		unsigned long cur = trans->delayed_ref_updates;
+ 		trans->delayed_ref_updates = 0;
 -- 
 1.7.5.2
 

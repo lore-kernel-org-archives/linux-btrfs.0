@@ -1,60 +1,120 @@
-From: slyich@gmail.com
-Subject: [PATCH] btrfs: btrfs_print_leaf: don't OOps on NULL extent_buffer parameter
-Date: Mon, 29 Aug 2011 23:29:02 +0300
-Message-ID: <1314649742-10677-1-git-send-email-slyich@gmail.com>
-Cc: Josef Bacik <josef@redhat.com>,
-	Sergei Trofimovich <slyfox@gentoo.org>
+From: Jeff Liu <jeff.liu@oracle.com>
+Subject: Re: Fix btrfs_file_llseek() to return -EINVAL directly
+Date: Tue, 30 Aug 2011 11:59:05 +0800
+Message-ID: <4E5C6009.6020908@oracle.com>
+References: <4E5B6055.1080807@oracle.com>
+Reply-To: jeff.liu@oracle.com
+Mime-Version: 1.0
+Content-Type: text/plain; charset=ISO-8859-1; format=flowed
+Cc: chris.mason@oracle.com, tm@tao.ma
 To: linux-btrfs@vger.kernel.org
 Return-path: <linux-btrfs-owner@vger.kernel.org>
+In-Reply-To: <4E5B6055.1080807@oracle.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-From: Sergei Trofimovich <slyfox@gentoo.org>
+Sorry, I forgot unlocking inode before returning -EINVAL in the previous 
+patch, thanks Tao pointing this out!
 
-btrfs_print_leaf() is usually called in emergency situations.
-Don't die on SIGSEGV in such situations. Skip gracefully instead:
+ From 1825149c67cbfe7cbafcee4156e1f301dade7b0b Mon Sep 17 00:00:00 2001
+From: Jie Liu <jeff.liu@oracle.com>
+Date: Tue, 30 Aug 2011 11:51:00 +0800
+Subject: [PATCH 1/1] Return -EINVAL ranther than offset if offset < 0 or 
+offset >
+  inode->i_sb->s_maxbytes.
 
-> [   18.680000] parent transid verify failed on 227736236032 wanted 132659 found 123593
-> [   22.410000] btrfs: btrfs_print_leaf got NULL extent buffer. Skip printing.
-> [   22.410000] ------------[ cut here ]------------
-> [   22.410000] WARNING: at linux-2.6/fs/btrfs/extent-tree.c:4482 __btrfs_free_extent+0x650/0x7e0()
-> [   22.410000] Call Trace:
-> [   22.410000] 6f569a98:  [<600314a2>] warn_slowpath_common+0x62/0x90
-...
-> [   22.410000] btrfs unable to find ref byte nr 39186432 parent 0 root 5  owner 0 offset 0
-Instead of OOPsing in btrfs_print_leaf in get a little deeper and print useful info.
-
-Signed-off-by: Sergei Trofimovich <slyfox@gentoo.org>
+Reported-by: Tao Ma <tm@tao.ma>
+Signed-off-by: Jie Liu <jeff.liu@oracle.com>
 ---
- fs/btrfs/print-tree.c |   10 +++++++++-
- 1 files changed, 9 insertions(+), 1 deletions(-)
+  fs/btrfs/file.c |    9 +++++++--
+  1 files changed, 7 insertions(+), 2 deletions(-)
 
-diff --git a/fs/btrfs/print-tree.c b/fs/btrfs/print-tree.c
-index fb2605d..7089603 100644
---- a/fs/btrfs/print-tree.c
-+++ b/fs/btrfs/print-tree.c
-@@ -159,7 +159,7 @@ void btrfs_print_leaf(struct btrfs_root *root, struct extent_buffer *l)
- {
- 	int i;
- 	u32 type;
--	u32 nr = btrfs_header_nritems(l);
-+	u32 nr;
- 	struct btrfs_item *item;
- 	struct btrfs_root_item *ri;
- 	struct btrfs_dir_item *di;
-@@ -172,6 +172,13 @@ void btrfs_print_leaf(struct btrfs_root *root, struct extent_buffer *l)
- 	struct btrfs_key key;
- 	struct btrfs_key found_key;
- 
-+	if (!l) {
-+		printk(KERN_ERR "btrfs: btrfs_print_leaf got NULL extent buffer. Skip printing.\n");
-+		return;
-+	}
+diff --git a/fs/btrfs/file.c b/fs/btrfs/file.c
+index e7872e4..082ae91 100644
+--- a/fs/btrfs/file.c
++++ b/fs/btrfs/file.c
+@@ -1813,6 +1813,11 @@ static loff_t btrfs_file_llseek(struct file 
+*file, loff_t offset, int origin)
+          goto out;
+      case SEEK_DATA:
+      case SEEK_HOLE:
++        if (offset >= inode->i_size) {
++            mutex_unlock(&inode->i_mutex);
++            return -ENXIO;
++        }
 +
-+	nr = btrfs_header_nritems(l);
-+
- 	printk(KERN_INFO "leaf %llu total ptrs %d free space %d\n",
- 		(unsigned long long)btrfs_header_bytenr(l), nr,
- 		btrfs_leaf_free_space(root, l));
+          ret = find_desired_extent(inode, &offset, origin);
+          if (ret) {
+              mutex_unlock(&inode->i_mutex);
+@@ -1821,11 +1826,11 @@ static loff_t btrfs_file_llseek(struct file 
+*file, loff_t offset, int origin)
+      }
+
+      if (offset < 0 && !(file->f_mode & FMODE_UNSIGNED_OFFSET)) {
+-        ret = -EINVAL;
++        offset = -EINVAL;
+          goto out;
+      }
+      if (offset > inode->i_sb->s_maxbytes) {
+-        ret = -EINVAL;
++        offset = -EINVAL;
+          goto out;
+      }
+
 -- 
-1.7.3.4
+1.7.4.1
+
+On 08/29/2011 05:48 PM, Jeff Liu wrote:
+> Hello,
+>
+> In btrfs_file_llseek(), if the offset<  0 or offset>
+> inode->i_sb->s_maxbytes, we should return -EINVAL rather than offset.
+> Also,  if the offset>= inode->i_size for SEEK_DATA or SEEK_HOLE, return
+> -ENXIO is ok IMHO.
+>
+>
+> Signed-off-by: Jie Liu<jeff.liu@oracle.com>
+>
+> diff --git a/fs/btrfs/file.c b/fs/btrfs/file.c
+> index e7872e4..2c126d0 100644
+> --- a/fs/btrfs/file.c
+> +++ b/fs/btrfs/file.c
+> @@ -1813,6 +1813,11 @@ static loff_t btrfs_file_llseek(struct file
+> *file, loff_t offset, int origin)
+>            goto out;
+>        case SEEK_DATA:
+>        case SEEK_HOLE:
+> +        if (offset>= inode->i_size) {
+> +            mutex_unlock(&inode->i_mutex);
+> +            return -ENXIO;
+> +        }
+> +
+>            ret = find_desired_extent(inode,&offset, origin);
+>            if (ret) {
+>                mutex_unlock(&inode->i_mutex);
+> @@ -1820,14 +1825,11 @@ static loff_t btrfs_file_llseek(struct file
+> *file, loff_t offset, int origin)
+>            }
+>        }
+>
+> -    if (offset<  0&&  !(file->f_mode&  FMODE_UNSIGNED_OFFSET)) {
+> -        ret = -EINVAL;
+> -        goto out;
+> -    }
+> -    if (offset>  inode->i_sb->s_maxbytes) {
+> -        ret = -EINVAL;
+> -        goto out;
+> -    }
+> +    if (offset<  0&&  !(file->f_mode&  FMODE_UNSIGNED_OFFSET))
+> +        return -EINVAL;
+> +
+> +    if (offset>  inode->i_sb->s_maxbytes)
+> +        return -EINVAL;
+>
+>        /* Special lock needed here? */
+>        if (offset != file->f_pos) {
+>
+> --
+> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
+> the body of a message to majordomo@vger.kernel.org
+> More majordomo info at  http://vger.kernel.org/majordomo-info.html
 

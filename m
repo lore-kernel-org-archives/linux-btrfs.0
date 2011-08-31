@@ -1,93 +1,65 @@
-From: david@lang.hm
-Subject: Re: [PATCH] xfstests 255: add a seek_data/seek_hole tester
-Date: Tue, 30 Aug 2011 20:53:29 -0700 (PDT)
-Message-ID: <alpine.DEB.2.02.1108302049480.26762@asgard.lang.hm>
-References: <1309275199-10801-1-git-send-email-josef@redhat.com> <1309275199-10801-5-git-send-email-josef@redhat.com> <20110825060632.GA9933@infradead.org> <20110825064039.GO3162@dastard> <0A267E55-7772-438D-B6A7-89B73020F311@dilger.ca> <20110826013528.GW3162@dastard>
- <4E5D8B8E.8030401@oracle.com> <20110831032932.GI32358@dastard>
+From: Jeff Liu <jeff.liu@oracle.com>
+Subject: [PATCH] Btrfs-progs:  specify label length larger than 255 bytes
+ cause mkfs.btrfs buffer overflow
+Date: Wed, 31 Aug 2011 12:35:51 +0800
+Message-ID: <4E5DBA27.90002@oracle.com>
+Reply-To: jeff.liu@oracle.com
 Mime-Version: 1.0
-Content-Type: TEXT/PLAIN; charset=US-ASCII; format=flowed
-Cc: Sunil Mushran <sunil.mushran@oracle.com>,
-	Andreas Dilger <adilger@dilger.ca>,
-	Christoph Hellwig <hch@infradead.org>,
-	Josef Bacik <josef@redhat.com>, linux-fsdevel@vger.kernel.org,
-	linux-kernel@vger.kernel.org, linux-btrfs@vger.kernel.org,
-	xfs@oss.sgi.com, viro@ZenIV.linux.org.uk, dchinner@redhat.com
-To: Dave Chinner <david@fromorbit.com>
+Content-Type: text/plain; charset=ISO-8859-1; format=flowed
+Cc: chris.mason@oracle.com
+To: linux-btrfs@vger.kernel.org
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <20110831032932.GI32358@dastard>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Wed, 31 Aug 2011, Dave Chinner wrote:
+Hello,
 
-> On Tue, Aug 30, 2011 at 06:17:02PM -0700, Sunil Mushran wrote:
->> On 08/25/2011 06:35 PM, Dave Chinner wrote:
->>> Agreed, that's the way I'd interpret it, too. So perhaps we need to
->>> ensure that this interpretation is actually tested by this test?
->>>
->>> How about some definitions to work by:
->>>
->>> Data: a range of the file that contains valid data, regardless of
->>> whether it exists in memory or on disk. The valid data can be
->>> preceeded and/or followed by an arbitrary number of zero bytes
->>> dependent on the underlying implementation of hole detection.
->>>
->>> Hole: a range of the file that contains no data or is made up
->>> entirely of  NULL (zero) data. Holes include preallocated ranges of
->>> files that have not had actual data written to them.
->>>
->>> Does that make sense? It has sufficient flexibility in it for the
->>> existing generic "non-implementation", allows for filesystems to
->>> define their own hole detection boundaries (e.g. filesystem block
->>> size), and effectively defines how preallocated ranges from
->>> fallocate() should be treated (i.e. as holes). If we can agree on
->>> those definitions, I think that we should document them in both the
->>> kernel and the man page that defines SEEK_HOLE/SEEK_DATA so everyone
->>> is on the same page...
->>
->> We should not tie in the definition to existing fs technologies.
->
-> Such as? If we don't use well known, well defined terminology, we
-> end up with ambiguous, vague functionality and inconsistent
-> implementations.
->
->> Instead
->> we should let the fs weigh the cost of providing accurate information
->> with the possible gain in performance.
->>
->> Data:
->> A range in a file that could contain something other than nulls.
->> If in doubt, it is data.
->>
->> Hole:
->> A range in a file that only contains nulls.
->
-> And that's -exactly- the ambiguous, vague definition that has raised
-> all these questions in the first place. I was in doubt about whether
-> unwritten extents can be considered a hole, and by your definition
-> that means it should be data. But Andreas seems to be in no doubt it
-> should be considered a hole.
->
-> Hence if I implement XFS support and Andreas implements ext4 support
-> by your defintion, we end with vastly different behaviour even
-> though the two filesystems use the same underlying technology for
-> preallocated ranges. That's exactly the inconsistency in
-> implementation that I'd like us to avoid.
->
-> IOWs, the definition needs to be clear enough to prevent these
-> inconsistencies from occurring. Indeed, the phrase "preallocated
-> ranges that have not had data written to them" is as independent of
-> filesystem implementation or technologies as possible. However,
-> because Linux supports preallocation (unlike our reference
-> platform), and we encourage developers to use it where appropriate,
-> it is best that we define how we expect such ranges to behave
-> clearly. That makes life easier for everyone.
+While going through the mkfs.c, I noticed there is an issue for label 
+length checking, mkfs.btrfs will crashed if the label length exceeding 
+255 bytes, it's easy to triggered that out as below:
 
-Since a sparse file has the holes filled by nulls by definition, it seems 
-fairly clear that they chould count as holes. In fact, I would not be 
-surprised to see some filesystem _only_ report the unwritten pieces of 
-sparse files as holes (not any other ranges of nulls)
+jeff@pibroch:~/opensource/btrfs-progs$ sudo ./mkfs.btrfs -L `perl -e 
+'print "A"x256'` /usr/src/linux-3.0/img0
 
-the question I have is how large does the range of nulls need to be before 
-it's reported as a hole? disk sectors, filesystem blocks, other?
+WARNING! - Btrfs v0.19-35-g1b444cd IS EXPERIMENTAL
+WARNING! - see http://btrfs.wiki.kernel.org before using
 
-David Lang
+*** buffer overflow detected ***: ./mkfs.btrfs terminated
+======= Backtrace: =========
+/lib/i386-linux-gnu/libc.so.6(__fortify_fail+0x50)[0xb7774df0]
+/lib/i386-linux-gnu/libc.so.6(+0xe4cca)[0xb7773cca]
+/lib/i386-linux-gnu/libc.so.6(__strcpy_chk+0x3f)[0xb777305f]
+./mkfs.btrfs[0x805acc4]
+./mkfs.btrfs[0x805def6]
+/lib/i386-linux-gnu/libc.so.6(__libc_start_main+0xe7)[0xb76a5e37]
+./mkfs.btrfs[0x8048ef1]
+======= Memory map: ========
+......
+
+
+a tiny patch could fix it.
+
+Signed-off-by: Jie Liu <jeff.liu@oracle.com>
+
+---
+  mkfs.c |    4 ++--
+  1 files changed, 2 insertions(+), 2 deletions(-)
+
+diff --git a/mkfs.c b/mkfs.c
+index 2e99b95..1598aae 100644
+--- a/mkfs.c
++++ b/mkfs.c
+@@ -308,9 +308,9 @@ static char *parse_label(char *input)
+      int i;
+      int len = strlen(input);
+
+-    if (len > BTRFS_LABEL_SIZE) {
++    if (len >= BTRFS_LABEL_SIZE) {
+          fprintf(stderr, "Label %s is too long (max %d)\n", input,
+-            BTRFS_LABEL_SIZE);
++            BTRFS_LABEL_SIZE - 1);
+          exit(1);
+      }
+      for (i = 0; i < len; i++) {
+-- 
+1.7.4.1
+

@@ -1,65 +1,36 @@
-From: Jeff Liu <jeff.liu@oracle.com>
-Subject: [PATCH] Btrfs-progs:  specify label length larger than 255 bytes
- cause mkfs.btrfs buffer overflow
-Date: Wed, 31 Aug 2011 12:35:51 +0800
-Message-ID: <4E5DBA27.90002@oracle.com>
-Reply-To: jeff.liu@oracle.com
+From: Sunil Mushran <sunil.mushran@oracle.com>
+Subject: Re: [PATCH] xfstests 255: add a seek_data/seek_hole tester
+Date: Tue, 30 Aug 2011 21:43:41 -0700
+Message-ID: <4E5DBBFD.5020202@oracle.com>
+References: <1309275199-10801-1-git-send-email-josef@redhat.com> <1309275199-10801-5-git-send-email-josef@redhat.com> <20110825060632.GA9933@infradead.org> <20110825064039.GO3162@dastard> <0A267E55-7772-438D-B6A7-89B73020F311@dilger.ca> <20110826013528.GW3162@dastard> <4E5D8B8E.8030401@oracle.com> <20110831032932.GI32358@dastard>
 Mime-Version: 1.0
 Content-Type: text/plain; charset=ISO-8859-1; format=flowed
-Cc: chris.mason@oracle.com
-To: linux-btrfs@vger.kernel.org
+Cc: Andreas Dilger <adilger@dilger.ca>,
+	Christoph Hellwig <hch@infradead.org>,
+	Josef Bacik <josef@redhat.com>, linux-fsdevel@vger.kernel.org,
+	linux-kernel@vger.kernel.org, linux-btrfs@vger.kernel.org,
+	xfs@oss.sgi.com, viro@ZenIV.linux.org.uk, dchinner@redhat.com
+To: Dave Chinner <david@fromorbit.com>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
+In-Reply-To: <20110831032932.GI32358@dastard>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hello,
+On 8/30/2011 8:29 PM, Dave Chinner wrote:
+> And that's -exactly- the ambiguous, vague definition that has raised
+> all these questions in the first place. I was in doubt about whether
+> unwritten extents can be considered a hole, and by your definition
+> that means it should be data. But Andreas seems to be in no doubt it
+> should be considered a hole.
 
-While going through the mkfs.c, I noticed there is an issue for label 
-length checking, mkfs.btrfs will crashed if the label length exceeding 
-255 bytes, it's easy to triggered that out as below:
+Fair enough. Let me rephrase.
 
-jeff@pibroch:~/opensource/btrfs-progs$ sudo ./mkfs.btrfs -L `perl -e 
-'print "A"x256'` /usr/src/linux-3.0/img0
+Data:
+A range in a file when read could return something other than nulls.
 
-WARNING! - Btrfs v0.19-35-g1b444cd IS EXPERIMENTAL
-WARNING! - see http://btrfs.wiki.kernel.org before using
+Hole:
+A range in a file when read only returns nulls.
 
-*** buffer overflow detected ***: ./mkfs.btrfs terminated
-======= Backtrace: =========
-/lib/i386-linux-gnu/libc.so.6(__fortify_fail+0x50)[0xb7774df0]
-/lib/i386-linux-gnu/libc.so.6(+0xe4cca)[0xb7773cca]
-/lib/i386-linux-gnu/libc.so.6(__strcpy_chk+0x3f)[0xb777305f]
-./mkfs.btrfs[0x805acc4]
-./mkfs.btrfs[0x805def6]
-/lib/i386-linux-gnu/libc.so.6(__libc_start_main+0xe7)[0xb76a5e37]
-./mkfs.btrfs[0x8048ef1]
-======= Memory map: ========
-......
+Considering preallocated extents only return null, they should
+be considered holes.
 
-
-a tiny patch could fix it.
-
-Signed-off-by: Jie Liu <jeff.liu@oracle.com>
-
----
-  mkfs.c |    4 ++--
-  1 files changed, 2 insertions(+), 2 deletions(-)
-
-diff --git a/mkfs.c b/mkfs.c
-index 2e99b95..1598aae 100644
---- a/mkfs.c
-+++ b/mkfs.c
-@@ -308,9 +308,9 @@ static char *parse_label(char *input)
-      int i;
-      int len = strlen(input);
-
--    if (len > BTRFS_LABEL_SIZE) {
-+    if (len >= BTRFS_LABEL_SIZE) {
-          fprintf(stderr, "Label %s is too long (max %d)\n", input,
--            BTRFS_LABEL_SIZE);
-+            BTRFS_LABEL_SIZE - 1);
-          exit(1);
-      }
-      for (i = 0; i < len; i++) {
--- 
-1.7.4.1
 

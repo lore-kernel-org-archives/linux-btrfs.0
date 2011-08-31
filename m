@@ -1,110 +1,55 @@
-From: Liu Bo <liubo2009@cn.fujitsu.com>
-Subject: Re: [PATCH] Btrfs: fix an oops of log replay
-Date: Wed, 31 Aug 2011 16:36:04 +0800
-Message-ID: <4E5DF274.1010805@cn.fujitsu.com>
-References: <1312619723-31094-1-git-send-email-liubo2009@cn.fujitsu.com> <4E5DEDFF.9080909@gmx.net>
+From: =?ISO-8859-1?Q?P=E1draig_Brady?= <P@draigBrady.com>
+Subject: Re: [PATCH] xfstests 255: add a seek_data/seek_hole tester
+Date: Wed, 31 Aug 2011 10:05:21 +0100
+Message-ID: <4E5DF951.4010804@draigBrady.com>
+References: <1309275199-10801-1-git-send-email-josef@redhat.com> <1309275199-10801-5-git-send-email-josef@redhat.com> <20110825060632.GA9933@infradead.org> <20110825064039.GO3162@dastard> <0A267E55-7772-438D-B6A7-89B73020F311@dilger.ca> <20110826013528.GW3162@dastard> <4E5D8B8E.8030401@oracle.com> <20110831032932.GI32358@dastard> <4E5DBBFD.5020202@oracle.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset=ISO-8859-1
-Cc: linux-btrfs@vger.kernel.org
-To: Arne Jansen <sensille@gmx.net>
-Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <4E5DEDFF.9080909@gmx.net>
+Cc: Dave Chinner <david@fromorbit.com>,
+	Andreas Dilger <adilger@dilger.ca>,
+	Christoph Hellwig <hch@infradead.org>,
+	Josef Bacik <josef@redhat.com>, linux-fsdevel@vger.kernel.org,
+	linux-kernel@vger.kernel.org, linux-btrfs@vger.kernel.org,
+	xfs@oss.sgi.com, viro@ZenIV.linux.org.uk, dchinner@redhat.com
+To: Sunil Mushran <sunil.mushran@oracle.com>
+Return-path: <linux-kernel-owner@vger.kernel.org>
+In-Reply-To: <4E5DBBFD.5020202@oracle.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 08/31/2011 04:17 PM, Arne Jansen wrote:
-> On 06.08.2011 10:35, Liu Bo wrote:
->> When btrfs recovers from a crash, it may hit the oops below:
->>
->> ------------[ cut here ]------------
->> kernel BUG at fs/btrfs/inode.c:4580!
->> [...]
->> RIP: 0010:[<ffffffffa03df251>]  [<ffffffffa03df251>] btrfs_add_link+0x161/0x1c0 [btrfs]
->> [...]
->> Call Trace:
->>  [<ffffffffa03e7b31>] ? btrfs_inode_ref_index+0x31/0x80 [btrfs]
->>  [<ffffffffa04054e9>] add_inode_ref+0x319/0x3f0 [btrfs]
->>  [<ffffffffa0407087>] replay_one_buffer+0x2c7/0x390 [btrfs]
->>  [<ffffffffa040444a>] walk_down_log_tree+0x32a/0x480 [btrfs]
->>  [<ffffffffa0404695>] walk_log_tree+0xf5/0x240 [btrfs]
->>  [<ffffffffa0406cc0>] btrfs_recover_log_trees+0x250/0x350 [btrfs]
->>  [<ffffffffa0406dc0>] ? btrfs_recover_log_trees+0x350/0x350 [btrfs]
->>  [<ffffffffa03d18b2>] open_ctree+0x1442/0x17d0 [btrfs]
->> [...]
->>
->> This comes from that while replaying an inode ref item, we forget to
->> check those old conflicting DIR_ITEM and DIR_INDEX items in fs/file tree,
->> then we will come to conflict corners which lead to BUG_ON().
-> 
-> Is this a workaround for an on-disk corruption or a bug fix for the
-> log replay code? It sounds like the latter, but I ask to be sure :)
-> 
+On 08/31/2011 05:43 AM, Sunil Mushran wrote:
+> On 8/30/2011 8:29 PM, Dave Chinner wrote:
+>> And that's -exactly- the ambiguous, vague definition that has raised
+>> all these questions in the first place. I was in doubt about whether
+>> unwritten extents can be considered a hole, and by your definition
+>> that means it should be data. But Andreas seems to be in no doubt it
+>> should be considered a hole.
+>=20
+> Fair enough. Let me rephrase.
+>=20
+> Data:
+> A range in a file when read could return something other than nulls.
+>=20
+> Hole:
+> A range in a file when read only returns nulls.
+>=20
+> Considering preallocated extents only return null, they should
+> be considered holes.
 
-The latter one, for log replay when we recover from a btrfs crash.
+I would concur with this.
+Treating preallocated extents as holes will allow them to be
+processed quickly by `cp` etc.
 
-thanks,
-liubo
+What we lose is the ability to copy the allocation from src to dst.
+But that's less important in comparison, and could probably be done
+on a per file rather than per extent basis anyway.
+Note preallocation would be good for disk layout and timely ENOSPC.
 
-> -Arne
-> 
->> Signed-off-by: Liu Bo <liubo2009@cn.fujitsu.com>
->> ---
->>  fs/btrfs/tree-log.c |   28 ++++++++++++++++++++++++----
->>  1 files changed, 24 insertions(+), 4 deletions(-)
->>
->> diff --git a/fs/btrfs/tree-log.c b/fs/btrfs/tree-log.c
->> index babee65..786639f 100644
->> --- a/fs/btrfs/tree-log.c
->> +++ b/fs/btrfs/tree-log.c
->> @@ -799,14 +799,15 @@ static noinline int add_inode_ref(struct btrfs_trans_handle *trans,
->>  				  struct extent_buffer *eb, int slot,
->>  				  struct btrfs_key *key)
->>  {
->> -	struct inode *dir;
->> -	int ret;
->>  	struct btrfs_inode_ref *ref;
->> +	struct btrfs_dir_item *di;
->> +	struct inode *dir;
->>  	struct inode *inode;
->> -	char *name;
->> -	int namelen;
->>  	unsigned long ref_ptr;
->>  	unsigned long ref_end;
->> +	char *name;
->> +	int namelen;
->> +	int ret;
->>  	int search_done = 0;
->>  
->>  	/*
->> @@ -909,6 +910,25 @@ again:
->>  	}
->>  	btrfs_release_path(path);
->>  
->> +	/* look for a conflicting sequence number */
->> +	di = btrfs_lookup_dir_index_item(trans, root, path, btrfs_ino(dir),
->> +					 btrfs_inode_ref_index(eb, ref),
->> +					 name, namelen, 0);
->> +	if (di && !IS_ERR(di)) {
->> +		ret = drop_one_dir_item(trans, root, path, dir, di);
->> +		BUG_ON(ret);
->> +	}
->> +	btrfs_release_path(path);
->> +
->> +	/* look for a conflicing name */
->> +	di = btrfs_lookup_dir_item(trans, root, path, btrfs_ino(dir),
->> +				   name, namelen, 0);
->> +	if (di && !IS_ERR(di)) {
->> +		ret = drop_one_dir_item(trans, root, path, dir, di);
->> +		BUG_ON(ret);
->> +	}
->> +	btrfs_release_path(path);
->> +
->>  insert:
->>  	/* insert our name */
->>  	ret = btrfs_add_link(trans, dir, inode, name, namelen, 0,
-> 
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
-> 
+Note fiemap gives us greater control by distinguishing
+holes and empty extents, thus allowing us to both
+efficiently copy and maintain allocation.  But that
+interface currently requires a sync of the file on some
+file systems, which we couldn't enable for performance
+reasons in cp.
 
+cheers,
+P=E1draig.

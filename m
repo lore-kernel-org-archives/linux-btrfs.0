@@ -1,55 +1,85 @@
-From: =?ISO-8859-1?Q?P=E1draig_Brady?= <P@draigBrady.com>
-Subject: Re: [PATCH] xfstests 255: add a seek_data/seek_hole tester
-Date: Wed, 31 Aug 2011 10:05:21 +0100
-Message-ID: <4E5DF951.4010804@draigBrady.com>
-References: <1309275199-10801-1-git-send-email-josef@redhat.com> <1309275199-10801-5-git-send-email-josef@redhat.com> <20110825060632.GA9933@infradead.org> <20110825064039.GO3162@dastard> <0A267E55-7772-438D-B6A7-89B73020F311@dilger.ca> <20110826013528.GW3162@dastard> <4E5D8B8E.8030401@oracle.com> <20110831032932.GI32358@dastard> <4E5DBBFD.5020202@oracle.com>
+From: Maciej Rutecki <maciej.rutecki@gmail.com>
+Subject: Re: linux 3.0: kernel BUG at fs/btrfs/inode.c:1584!
+Date: Wed, 31 Aug 2011 21:31:36 +0200
+Message-ID: <201108312131.36670.maciej.rutecki@gmail.com>
+References: <20110825093242.GA8450@msgid.wurtel.net>
+Reply-To: maciej.rutecki@gmail.com
 Mime-Version: 1.0
-Content-Type: text/plain; charset=ISO-8859-1
-Cc: Dave Chinner <david@fromorbit.com>,
-	Andreas Dilger <adilger@dilger.ca>,
-	Christoph Hellwig <hch@infradead.org>,
-	Josef Bacik <josef@redhat.com>, linux-fsdevel@vger.kernel.org,
-	linux-kernel@vger.kernel.org, linux-btrfs@vger.kernel.org,
-	xfs@oss.sgi.com, viro@ZenIV.linux.org.uk, dchinner@redhat.com
-To: Sunil Mushran <sunil.mushran@oracle.com>
+Content-Type: Text/Plain;
+  charset="us-ascii"
+Cc: linux-kernel@vger.kernel.org
+To: Paul Slootman <paul@wurtel.net>, linux-btrfs@vger.kernel.org,
+	chris.mason@oracle.com
 Return-path: <linux-kernel-owner@vger.kernel.org>
-In-Reply-To: <4E5DBBFD.5020202@oracle.com>
+In-Reply-To: <20110825093242.GA8450@msgid.wurtel.net>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 08/31/2011 05:43 AM, Sunil Mushran wrote:
-> On 8/30/2011 8:29 PM, Dave Chinner wrote:
->> And that's -exactly- the ambiguous, vague definition that has raised
->> all these questions in the first place. I was in doubt about whether
->> unwritten extents can be considered a hole, and by your definition
->> that means it should be data. But Andreas seems to be in no doubt it
->> should be considered a hole.
->=20
-> Fair enough. Let me rephrase.
->=20
-> Data:
-> A range in a file when read could return something other than nulls.
->=20
-> Hole:
-> A range in a file when read only returns nulls.
->=20
-> Considering preallocated extents only return null, they should
-> be considered holes.
+On czwartek, 25 sierpnia 2011 o 11:32:42 Paul Slootman wrote:
+> I got the following message just now:
+> 
+> Aug 25 09:53:14 duimalot kernel: kernel BUG at fs/btrfs/inode.c:1584!
+> Aug 25 09:53:14 duimalot kernel: invalid opcode: 0000 [#1] SMP
+> Aug 25 09:53:14 duimalot kernel: CPU 1
+> Aug 25 09:53:14 duimalot kernel: Modules linked in: loop 8021q acpi_cpufreq
+> mperf e1000 sg sr_mod e1000e cdrom processor container button evdev
+> thermal_sys i3000_edac arcmsr edac_core Aug 25 09:53:14 duimalot kernel:
+> Aug 25 09:53:14 duimalot kernel: Pid: 12162, comm: btrfs-fixup-0 Tainted: G
+>        W   3.0.0-vs2.3.1-pre8 #2 Supermicro PDSM4+/PDSM4+ Aug 25 09:53:14
+> duimalot kernel: RIP: 0010:[<ffffffff812220e8>]  [<ffffffff812220e8>]
+> btrfs_writepage_fixup_worker+0x158/0x160 Aug 25 09:53:14 duimalot kernel:
+> RSP: 0018:ffff880117f13df0  EFLAGS: 00010246 Aug 25 09:53:14 duimalot
+> kernel: RAX: 0000000000000000 RBX: 000000000a45b000 RCX: 0000000000000000
+> Aug 25 09:53:14 duimalot kernel: RDX: 000000025a32b7f4 RSI:
+> 000000000a45b000 RDI: ffff880016ca90a0 Aug 25 09:53:14 duimalot kernel:
+> RBP: ffffea00038a4058 R08: ffffea00002c30a8 R09: ffffffff8124290f Aug 25
+> 09:53:14 duimalot kernel: R10: 0000000000000010 R11: 0000000000000000 R12:
+> 000000000a45bfff Aug 25 09:53:14 duimalot kernel: R13: ffff880016ca9178
+> R14: ffff880016ca9010 R15: 0000000000000000 Aug 25 09:53:14 duimalot
+> kernel: FS:  0000000000000000(0000) GS:ffff88011fd00000(0000)
+> knlGS:0000000000000000 Aug 25 09:53:14 duimalot kernel: CS:  0010 DS: 0000
+> ES: 0000 CR0: 000000008005003b Aug 25 09:53:14 duimalot kernel: CR2:
+> 000000001b0a62f8 CR3: 0000000025608000 CR4: 00000000000006e0 Aug 25
+> 09:53:14 duimalot kernel: DR0: 0000000000000000 DR1: 0000000000000000 DR2:
+> 0000000000000000 Aug 25 09:53:14 duimalot kernel: DR3: 0000000000000000
+> DR6: 00000000ffff0ff0 DR7: 0000000000000400 Aug 25 09:53:14 duimalot
+> kernel: Process btrfs-fixup-0 (pid: 12162, threadinfo ffff880117f12000,
+> task ffff880118920760) Aug 25 09:53:14 duimalot kernel: Stack:
+> Aug 25 09:53:14 duimalot kernel:  ffff880056cbb420 0000000000000000
+> ffff8800748aec00 ffff880056cbb428 Aug 25 09:53:14 duimalot kernel: 
+> ffff880056cbb450 ffff8801064aa840 ffff8801064aa890 ffff8801064aa858 Aug 25
+> 09:53:14 duimalot kernel:  ffff8801064aa848 ffffffff8124d419
+> ffff880117f13e90 ffff880117f13e80 Aug 25 09:53:14 duimalot kernel: Call
+> Trace:
+> Aug 25 09:53:14 duimalot kernel:  [<ffffffff8124d419>] ?
+> worker_loop+0x169/0x520 Aug 25 09:53:14 duimalot kernel: 
+> [<ffffffff8124d2b0>] ? btrfs_queue_worker+0x2f0/0x2f0 Aug 25 09:53:14
+> duimalot kernel:  [<ffffffff81065956>] ? kthread+0x96/0xb0 Aug 25 09:53:14
+> duimalot kernel:  [<ffffffff81495394>] ? kernel_thread_helper+0x4/0x10 Aug
+> 25 09:53:14 duimalot kernel:  [<ffffffff810658c0>] ?
+> kthread_worker_fn+0x180/0x180 Aug 25 09:53:14 duimalot kernel: 
+> [<ffffffff81495390>] ? gs_change+0xb/0xb Aug 25 09:53:14 duimalot kernel:
+> Code: 5c 41 5d 41 5e 41 5f c3 0f 1f 00 41 b8 50 00 00 00 48 8d 4c 24 10 4c
+> 89 e2 48 89 de 4c 89 f7 e8 7f 1e 02 00 eb ba 0f 1f 44 00 00 <0f> 0b eb fe
+> 0f 1f 40 00 41 56 49 89 fe 41 55 41 54 55 53 48 83 Aug 25 09:53:14
+> duimalot kernel: RIP  [<ffffffff812220e8>]
+> btrfs_writepage_fixup_worker+0x158/0x160 Aug 25 09:53:14 duimalot kernel: 
+> RSP <ffff880117f13df0>
+> Aug 25 09:53:14 duimalot kernel: ---[ end trace 948b88b1d8dd7dc8 ]---
+> 
+> The system has been running previously just fine for more than a year
+> before I upgraded it to linux 3.0 and added a btrfs filesystem.
+> This is a storage system, and the btrfs filesystem is 41TB in size.
+> Currently it's 17% full.
+> 
+> If any other info is needed, let me know.
+> 
+> 
 
-I would concur with this.
-Treating preallocated extents as holes will allow them to be
-processed quickly by `cp` etc.
+Cany you check that eg 2.6.39 works OK and/or try bisecton?
 
-What we lose is the ability to copy the allocation from src to dst.
-But that's less important in comparison, and could probably be done
-on a per file rather than per extent basis anyway.
-Note preallocation would be good for disk layout and timely ENOSPC.
+(add CCs)
 
-Note fiemap gives us greater control by distinguishing
-holes and empty extents, thus allowing us to both
-efficiently copy and maintain allocation.  But that
-interface currently requires a sync of the file on some
-file systems, which we couldn't enable for performance
-reasons in cp.
-
-cheers,
-P=E1draig.
+Regards
+-- 
+Maciej Rutecki
+http://www.maciek.unixy.pl

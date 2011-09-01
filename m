@@ -1,7 +1,8 @@
 From: Jeff Liu <jeff.liu@oracle.com>
-Subject: [PATCH] Btrfs: added new ioctl to set fs label
-Date: Thu, 01 Sep 2011 16:47:47 +0800
-Message-ID: <4E5F46B3.50607@oracle.com>
+Subject: [PATCH] Btrfs-progs: added btrfs filesystem label [label] [path]
+ support
+Date: Thu, 01 Sep 2011 16:52:23 +0800
+Message-ID: <4E5F47C7.3030803@oracle.com>
 Reply-To: jeff.liu@oracle.com
 Mime-Version: 1.0
 Content-Type: text/plain; charset=ISO-8859-1; format=flowed
@@ -12,25 +13,95 @@ List-ID: <linux-btrfs.vger.kernel.org>
 
 Hello,
 
-I'd like to introduce a new ioctl to set file system label.
-With this feature, we can execute `btrfs filesystem label [label] 
-[path]` through btrfs tools to set or change the label.
+This patch make use of the new ioctl(2) to set Btrfs label via `btrfs 
+filesystem label` command.
 
   Signed-off-by: Jie Liu <jeff.liu@oracle.com>
 
 ---
-  fs/btrfs/ctree.h |    6 ++++++
-  fs/btrfs/ioctl.c |   37 +++++++++++++++++++++++++++++++++++++
-  fs/btrfs/ioctl.h |    2 ++
-  3 files changed, 45 insertions(+), 0 deletions(-)
+  btrfs.c      |    7 +++----
+  btrfs_cmds.c |   27 +++++++++++++++++++++++++++
+  btrfs_cmds.h |    1 +
+  ctree.h      |    6 ++++++
+  ioctl.h      |    2 ++
+  mkfs.c       |   19 -------------------
+  utils.c      |   18 ++++++++++++++++++
+  utils.h      |    1 +
+  8 files changed, 58 insertions(+), 23 deletions(-)
 
-diff --git a/fs/btrfs/ctree.h b/fs/btrfs/ctree.h
-index 03912c5..2889b5e 100644
---- a/fs/btrfs/ctree.h
-+++ b/fs/btrfs/ctree.h
-@@ -1259,6 +1259,12 @@ struct btrfs_ioctl_defrag_range_args {
+diff --git a/btrfs.c b/btrfs.c
+index 46314cf..6d414f1 100644
+--- a/btrfs.c
++++ b/btrfs.c
+@@ -108,11 +108,10 @@ static struct Command commands[] = {
+        "device delete", "<dev> [<dev>..] <path>\n"
+          "Remove a device from a filesystem."
+      },
+-    /* coming soon
+-    { 2, "filesystem label", "<label> <path>\n"
++    { do_set_label, 2,
++      "filesystem label", "<label> <path>\n"
+          "Set the label of a filesystem"
+-    }
+-    */
++    },
+      { 0, 0 , 0 }
   };
 
+diff --git a/btrfs_cmds.c b/btrfs_cmds.c
+index 8031c58..8d2b8e1 100644
+--- a/btrfs_cmds.c
++++ b/btrfs_cmds.c
+@@ -834,6 +834,33 @@ int do_set_default_subvol(int nargs, char **argv)
+      return 0;
+  }
+
++int do_set_label(int nargs, char **argv)
++{
++    int    fd, ret = 0;
++    char    *path = argv[2];
++    char    *label = parse_label(argv[1]);
++    size_t    len = strlen(label);
++    struct    btrfs_ioctl_fs_label_args label_args;
++
++    fd = open_file_or_dir(path);
++    if (fd < 0) {
++        fprintf(stderr, "ERROR: can't access to '%s'\n", path);
++        return 12;
++    }
++
++    label_args.len = len;
++    snprintf(label_args.label, BTRFS_LABEL_SIZE, "%s", label);
++    ret = ioctl(fd, BTRFS_IOC_FS_SETLABEL, &label_args);
++    close(fd);
++    free(label);
++    if(ret < 0) {
++        fprintf(stderr, "ERROR: unable to set a new label\n");
++        return 30;
++    }
++
++    return 0;
++}
++
+  int do_df_filesystem(int nargs, char **argv)
+  {
+      struct btrfs_ioctl_space_args *sargs;
+diff --git a/btrfs_cmds.h b/btrfs_cmds.h
+index 7bde191..29ded22 100644
+--- a/btrfs_cmds.h
++++ b/btrfs_cmds.h
+@@ -32,3 +32,4 @@ int list_subvols(int fd);
+  int do_df_filesystem(int nargs, char **argv);
+  int find_updated_files(int fd, u64 root_id, u64 oldest_gen);
+  int do_find_newer(int argc, char **argv);
++int do_set_label(int argc, char **argv);
+diff --git a/ctree.h b/ctree.h
+index b79e238..4924b88 100644
+--- a/ctree.h
++++ b/ctree.h
+@@ -345,6 +345,12 @@ struct btrfs_super_block {
+      u8 sys_chunk_array[BTRFS_SYSTEM_CHUNK_ARRAY_SIZE];
+  } __attribute__ ((__packed__));
 
 +struct btrfs_ioctl_fs_label_args {
 +    /* label length in bytes */
@@ -39,77 +110,85 @@ index 03912c5..2889b5e 100644
 +};
 +
   /*
-   * inode items have the data typically returned from stat and store other
-   * info about object characteristics.  There is one for every file and 
-dir in
-diff --git a/fs/btrfs/ioctl.c b/fs/btrfs/ioctl.c
-index 970977a..9e01628 100644
---- a/fs/btrfs/ioctl.c
-+++ b/fs/btrfs/ioctl.c
-@@ -268,6 +268,41 @@ static int btrfs_ioctl_getversion(struct file 
-*file, int __user *arg)
-      return put_user(inode->i_generation, arg);
-  }
-
-+static int btrfs_ioctl_fs_setlabel(struct btrfs_root *root, void __user 
-*arg)
-+{
-+    struct btrfs_super_block *super_block = &(root->fs_info->super_copy);
-+    struct btrfs_ioctl_fs_label_args *label_args;
-+    struct btrfs_trans_handle *trans;
-+
-+    if (!capable(CAP_SYS_ADMIN))
-+        return -EPERM;
-+
-+    if (btrfs_root_readonly(root))
-+        return -EROFS;
-+
-+    label_args = memdup_user(arg, sizeof(*label_args));
-+    if (IS_ERR(label_args))
-+        return PTR_ERR(label_args);
-+
-+    if (label_args->len >= sizeof(label_args->label))
-+        return -EINVAL;
-+
-+    mutex_lock(&root->fs_info->volume_mutex);
-+    trans = btrfs_start_transaction(root, 0);
-+    if (IS_ERR(trans))
-+        return PTR_ERR(trans);
-+
-+    if (snprintf(super_block->label, BTRFS_LABEL_SIZE, "%s",
-+             label_args->label) != label_args->len)
-+        return -EFAULT;
-+
-+    btrfs_end_transaction(trans, root);
-+    mutex_unlock(&root->fs_info->volume_mutex);
-+
-+    kfree(label_args);
-+    return 0;
-+}
-+
-  static noinline int btrfs_ioctl_fitrim(struct file *file, void __user 
-*arg)
-  {
-      struct btrfs_root *root = fdentry(file)->d_sb->s_fs_info;
-@@ -2876,6 +2911,8 @@ long btrfs_ioctl(struct file *file, unsigned int
-          return btrfs_ioctl_fs_info(root, argp);
-      case BTRFS_IOC_DEV_INFO:
-          return btrfs_ioctl_dev_info(root, argp);
-+    case BTRFS_IOC_FS_SETLABEL:
-+        return btrfs_ioctl_fs_setlabel(root, argp);
-      case BTRFS_IOC_BALANCE:
-          return btrfs_balance(root->fs_info->dev_root);
-      case BTRFS_IOC_CLONE:
-diff --git a/fs/btrfs/ioctl.h b/fs/btrfs/ioctl.h
-index ad1ea78..1e0ca2a 100644
---- a/fs/btrfs/ioctl.h
-+++ b/fs/btrfs/ioctl.h
-@@ -248,4 +248,6 @@ struct btrfs_ioctl_space_args {
-                   struct btrfs_ioctl_dev_info_args)
-  #define BTRFS_IOC_FS_INFO _IOR(BTRFS_IOCTL_MAGIC, 31, \
-                     struct btrfs_ioctl_fs_info_args)
+   * Compat flags that we support.  If any incompat flags are set other 
+than the
+   * ones specified below then we will fail to mount
+diff --git a/ioctl.h b/ioctl.h
+index 776d7a9..5750f3a 100644
+--- a/ioctl.h
++++ b/ioctl.h
+@@ -169,4 +169,6 @@ struct btrfs_ioctl_space_args {
+  #define BTRFS_IOC_DEFAULT_SUBVOL _IOW(BTRFS_IOCTL_MAGIC, 19, u64)
+  #define BTRFS_IOC_SPACE_INFO _IOWR(BTRFS_IOCTL_MAGIC, 20, \
+                      struct btrfs_ioctl_space_args)
 +#define BTRFS_IOC_FS_SETLABEL _IOW(BTRFS_IOCTL_MAGIC, 32, \
 +                   struct btrfs_ioctl_fs_label_args)
+  #endif
+diff --git a/mkfs.c b/mkfs.c
+index 1598aae..93c1636 100644
+--- a/mkfs.c
++++ b/mkfs.c
+@@ -303,25 +303,6 @@ static u64 parse_profile(char *s)
+      return 0;
+  }
+
+-static char *parse_label(char *input)
+-{
+-    int i;
+-    int len = strlen(input);
+-
+-    if (len >= BTRFS_LABEL_SIZE) {
+-        fprintf(stderr, "Label %s is too long (max %d)\n", input,
+-            BTRFS_LABEL_SIZE - 1);
+-        exit(1);
+-    }
+-    for (i = 0; i < len; i++) {
+-        if (input[i] == '/' || input[i] == '\\') {
+-            fprintf(stderr, "invalid label %s\n", input);
+-            exit(1);
+-        }
+-    }
+-    return strdup(input);
+-}
+-
+  static struct option long_options[] = {
+      { "alloc-start", 1, NULL, 'A'},
+      { "byte-count", 1, NULL, 'b' },
+diff --git a/utils.c b/utils.c
+index fd894f3..5d77503 100644
+--- a/utils.c
++++ b/utils.c
+@@ -993,3 +993,21 @@ char *pretty_sizes(u64 size)
+      return pretty;
+  }
+
++char *parse_label(const char *input)
++{
++    int i;
++    int len = strlen(input);
++
++    if (len >= BTRFS_LABEL_SIZE) {
++        fprintf(stderr, "Label %s is too long (max %d)\n", input,
++            BTRFS_LABEL_SIZE - 1);
++        exit(1);
++    }
++    for (i = 0; i < len; i++) {
++        if (input[i] == '/' || input[i] == '\\') {
++            fprintf(stderr, "invalid label %s\n", input);
++            exit(1);
++        }
++    }
++    return strdup(input);
++}
+diff --git a/utils.h b/utils.h
+index 9dce5b0..9212a75 100644
+--- a/utils.h
++++ b/utils.h
+@@ -40,4 +40,5 @@ int check_mounted(const char *devicename);
+  int btrfs_device_already_in_root(struct btrfs_root *root, int fd,
+                   int super_offset);
+  char *pretty_sizes(u64 size);
++char *parse_label(const char *);
   #endif
 -- 
 1.7.4.1

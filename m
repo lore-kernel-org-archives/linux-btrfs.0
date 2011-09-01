@@ -1,57 +1,55 @@
 From: David Sterba <dsterba@suse.cz>
-Subject: Re: [PATCH] btrfs: fix warning in iput for bad-inode
-Date: Thu, 1 Sep 2011 04:45:19 +0200
-Message-ID: <20110901024519.GB11678@ds.suse.cz>
-References: <20110817185619.4660.78543.stgit@localhost6>
+Subject: Re: [PATCH v3 1/3] Btrfs-progs: btrfs-list: split list_subvols
+Date: Thu, 1 Sep 2011 06:11:24 +0200
+Message-ID: <20110901041124.GC11678@ds.suse.cz>
+References: <cover.1311872884.git.list.btrfs@jan-o-sch.net>
+ <8838579cff0333e7df836111fc5aa0f64423526c.1311872884.git.list.btrfs@jan-o-sch.net>
 Reply-To: dsterba@suse.cz
 Mime-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
-Cc: linux-btrfs@vger.kernel.org, Chris Mason <chris.mason@oracle.com>,
-	josef@redhat.com
-To: Konstantin Khlebnikov <khlebnikov@openvz.org>
+Cc: chris.mason@oracle.com, linux-btrfs@vger.kernel.org
+To: Jan Schmidt <list.btrfs@jan-o-sch.net>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <20110817185619.4660.78543.stgit@localhost6>
+In-Reply-To: <8838579cff0333e7df836111fc5aa0f64423526c.1311872884.git.list.btrfs@jan-o-sch.net>
 List-ID: <linux-btrfs.vger.kernel.org>
 
 Hi,
 
-I saw something different with your patch. After creating and deleting
-lots of subvolumes followed by an umount, there is one unpleasant
-interaction with orphans.
+On Thu, Jul 28, 2011 at 07:13:04PM +0200, Jan Schmidt wrote:
+> split list_subvols to separate functions and allow printing only in the
+> containing function. lets us make use of those functions when resolving
+> logical addresses.
+> 
+> Signed-off-by: Jan Schmidt <list.btrfs@jan-o-sch.net>
+> ---
+> @@ -250,20 +249,15 @@ static int resolve_root(struct root_lookup *rl, struct root_info *ri, int print_
+>  		 */
+>  		found = tree_search(&rl->root, next);
+>  		if (!found) {
+> -			top_id = next;
+> +			*top_id = next;
+>  			break;
+>  		}
+>  	}
+> -	if (print_parent) {
+> -		printf("ID %llu parent %llu top level %llu path %s\n",
+> -		       (unsigned long long)ri->root_id, (unsigned long long)parent_id, (unsigned long long)top_id,
+> -			full_path);
+> -	} else {
+> -		printf("ID %llu top level %llu path %s\n",
+> -		       (unsigned long long)ri->root_id, (unsigned long long)top_id,
+> -			full_path);
+> -	}
+> -	free(full_path);
+> +
+> +	*root_id = ri->root_id;
+> +	*parent_id = ri->root_id;
+        ^^^^^^^^^^^^^^^^^^^^^^^^^
 
-After first mount attempt, the mount fails with
+this is not correct, parent_id is already set during the loop above.
+else it prints same id for both volume and it's parent like
 
-# mount /dev/sdb5
-mount: Stale NFS file handle
-
-syslog:
-[  256.050787] btrfs: could not do orphan cleanup -116
-[  256.962781] btrfs: open_ctree failed
-
-
-the -116 is -ESTALE which your patch adds.
-
-Another mount attempt and success, no relevant message in syslog. Reproducible.
-
-
-btrfs_orphan_cleanup
-  btrfs_iget -> fails
-
-2373                 inode = btrfs_iget(root->fs_info->sb, &found_key, root, NULL);
-2374                 if (IS_ERR(inode)) {
-2375                         ret = PTR_ERR(inode);
-2376                         goto out;
-2377                 }
-...
-2440 out:
-2441         if (ret)
-2442                 printk(KERN_CRIT "btrfs: could not do orphan cleanup %d\n", ret);
-2443         btrfs_free_path(path);
-2444         return ret;
-2445 }
-
-
-I'm concerned about leaving some unprocessed orphans "somewhere".
+ID 493 parent 493 top level 5 path stress/9/...
 
 
 david

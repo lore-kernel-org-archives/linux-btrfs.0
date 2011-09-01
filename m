@@ -1,53 +1,70 @@
 From: Jan Schmidt <list.btrfs@jan-o-sch.net>
-Subject: [PATCH v4 0/3] Btrfs-progs: add the first "inspect-internal" commands
-Date: Thu,  1 Sep 2011 15:05:56 +0200
-Message-ID: <cover.1314878395.git.list.btrfs@jan-o-sch.net>
+Subject: [PATCH v4 3/3] Btrfs-progs: added resolve commands to man page
+Date: Thu,  1 Sep 2011 15:05:59 +0200
+Message-ID: <f3abafe95466e527cda3fbe2691719a2aba39932.1314878395.git.list.btrfs@jan-o-sch.net>
+References: <cover.1314878395.git.list.btrfs@jan-o-sch.net>
 Cc: hugo@carfax.org.uk
 To: chris.mason@oracle.com, linux-btrfs@vger.kernel.org
 Return-path: <linux-btrfs-owner@vger.kernel.org>
+In-Reply-To: <cover.1314878395.git.list.btrfs@jan-o-sch.net>
+In-Reply-To: <cover.1314878395.git.list.btrfs@jan-o-sch.net>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-This version is still based on Hugo's current integration branch and can also be
-pulled from git://git.jan-o-sch.net/btrfs-progs-unstable.
+Added "inspect-internal inode-resolve" and "inspect-internal
+logical-resolve" to the btrfs(8) man page.
 
-Changes v3->v4:
-- bugfix: don't overwrite parent_id after setting it correctly in resolve_root
-  (reported by David Sterba)
+Signed-off-by: Jan Schmidt <list.btrfs@jan-o-sch.net>
+---
+ man/btrfs.8.in |   29 +++++++++++++++++++++++++++++
+ 1 files changed, 29 insertions(+), 0 deletions(-)
 
-Changes v2->v3:
-- adapted to a change in the ioctl interface in the accompanying kernel patch
-  series v8. we now use bytes_missing and bytes_left (unsigned) instead of
-  size (signed)
-- explicit casts added when printing u32 to avoid compiler warnings
-
-Changes v1->v2:
-- commands renamed as suggested by Goffredo Baroncelli
-- man pages added
-
-The kernel patch series just sent (Subject: "Btrfs: scrub: print path to
-corrupted files and trigger nodatasum fixup") introduces two new ioctls to
-do in-kernel filesystem path construction. This series provides the
-corresponding userspace changes, adding two new commands to the btrfs utility.
-
-Please try them out and report bugs here.
-
--Jan
-
-
-Jan Schmidt (3):
-  Btrfs-progs: btrfs-list: split list_subvols
-  Btrfs-progs: added ioctls and commands to resolve inodes and logical
-    addrs
-  Btrfs-progs: added resolve commands to man page
-
- btrfs-list.c   |  138 +++++++++++++++++++++++++++++++-----------
- btrfs.c        |   10 +++
- btrfs_cmds.c   |  183 ++++++++++++++++++++++++++++++++++++++++++++++++++++++++
- btrfs_cmds.h   |    3 +
- ioctl.h        |   30 +++++++++
- man/btrfs.8.in |   29 +++++++++
- 6 files changed, 358 insertions(+), 35 deletions(-)
-
+diff --git a/man/btrfs.8.in b/man/btrfs.8.in
+index 84a60cd..6e0568b 100644
+--- a/man/btrfs.8.in
++++ b/man/btrfs.8.in
+@@ -51,6 +51,11 @@ btrfs \- control a btrfs filesystem
+ .PP
+ \fBbtrfs\fP \fBscrub status\fP [-d] {\fI<path>\fP|\fI<device>\fP}
+ .PP
++\fBbtrfs\fP \fBinspect-internal inode-resolve\fP [-v] \fI<inode>\fP \fI<path>\fP
++.PP
++\fBbtrfs\fP \fBinspect-internal logical-resolve\fP
++[-Pv] \fI<logical>\fP \fI<path>\fP
++.PP
+ \fBbtrfs\fP \fBhelp|\-\-help|\-h \fP\fI\fP
+ .PP
+ \fBbtrfs\fP \fB<command> \-\-help \fP\fI\fP
+@@ -286,6 +291,30 @@ for that filesystem or device.
+ .IP -d 5
+ Print separate statistics for each device of the filesystem.
+ .RE
++.TP
++
++\fBinspect-internal inode-resolve\fP [-v] \fI<inode>\fP \fI<path>\fP
++Resolves an <inode> in subvolume <path> to all filesystem paths.
++.RS
++
++\fIOptions\fR
++.IP -v 5
++verbose mode. print count of returned paths and ioctl() return value
++.RE
++.TP
++
++\fBinspect-internal logical-resolve\fP [-Pv] \fI<logical>\fP \fI<path>\fP
++Resolves a <logical> address in the filesystem mounted at <path> to all inodes.
++By default, each inode is then resolved to a file system path (similar to the
++\fBinode-resolve\fP subcommand).
++.RS
++
++\fIOptions\fR
++.IP -P 5
++skip the path resolving and print the inodes instead
++.IP -v 5
++verbose mode. print count of returned paths and all ioctl() return values
++.RE
+ 
+ .PP
+ 
 -- 
 1.7.3.4
 

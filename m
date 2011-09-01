@@ -1,219 +1,60 @@
-From: Jan Schmidt <list.btrfs@jan-o-sch.net>
-Subject: [PATCH v4 1/3] Btrfs-progs: btrfs-list: split list_subvols
-Date: Thu,  1 Sep 2011 15:05:57 +0200
-Message-ID: <a987cfb72a6faae6f3350dc1b5546cf9d6f33a58.1314878395.git.list.btrfs@jan-o-sch.net>
-References: <cover.1314878395.git.list.btrfs@jan-o-sch.net>
-Cc: hugo@carfax.org.uk
-To: chris.mason@oracle.com, linux-btrfs@vger.kernel.org
+From: Diego Calleja <diegocg@gmail.com>
+Subject: [PATCH] btrfs: fix memory leak in btrfs_defrag_file
+Date: Thu, 1 Sep 2011 16:33:57 +0200
+Message-ID: <201109011633.57877.diegocg@gmail.com>
+Reply-To: diegocg@gmail.com
+Mime-Version: 1.0
+Content-Type: text/plain;
+  charset="us-ascii"
+Cc: linux-btrfs@vger.kernel.org
+To: Chris Mason <chris.mason@oracle.com>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <cover.1314878395.git.list.btrfs@jan-o-sch.net>
-In-Reply-To: <cover.1314878395.git.list.btrfs@jan-o-sch.net>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-split list_subvols to separate functions and allow printing only in the
-containing function. lets us make use of those functions when resolving
-logical addresses.
+kmemleak found this:
+unreferenced object 0xffff8801b64af968 (size 512):
+  comm "btrfs-cleaner", pid 3317, jiffies 4306810886 (age 903.272s)
+  hex dump (first 32 bytes):
+    00 82 01 07 00 ea ff ff c0 83 01 07 00 ea ff ff  ................
+    80 82 01 07 00 ea ff ff c0 87 01 07 00 ea ff ff  ................
+  backtrace:
+    [<ffffffff816875cc>] kmemleak_alloc+0x5c/0xc0
+    [<ffffffff8114aec3>] kmem_cache_alloc_trace+0x163/0x240
+    [<ffffffff8127a290>] btrfs_defrag_file+0xf0/0xb20
+    [<ffffffff8125d9a5>] btrfs_run_defrag_inodes+0x165/0x210
+    [<ffffffff812479d7>] cleaner_kthread+0x177/0x190
+    [<ffffffff81075c7d>] kthread+0x8d/0xa0
+    [<ffffffff816af5f4>] kernel_thread_helper+0x4/0x10
+    [<ffffffffffffffff>] 0xffffffffffffffff
 
-Signed-off-by: Jan Schmidt <list.btrfs@jan-o-sch.net>
+"pages" is not always freed. Fix it removing the unnecesary additional return.
+
+Signed-off-by: Diego Calleja <diegocg@gmail.com>
+
 ---
- btrfs-list.c |  103 ++++++++++++++++++++++++++++++++++++++--------------------
- 1 files changed, 68 insertions(+), 35 deletions(-)
+ fs/btrfs/ioctl.c |    4 +---
+ 1 file changed, 1 insertion(+), 3 deletions(-)
 
-diff --git a/btrfs-list.c b/btrfs-list.c
-index 07b179a..5751f1d 100644
---- a/btrfs-list.c
-+++ b/btrfs-list.c
-@@ -199,10 +199,9 @@ static int add_root(struct root_lookup *root_lookup,
-  * This can't be called until all the root_info->path fields are filled
-  * in by lookup_ino_path
-  */
--static int resolve_root(struct root_lookup *rl, struct root_info *ri, int print_parent)
-+static int resolve_root(struct root_lookup *rl, struct root_info *ri,
-+			u64 *root_id, u64 *parent_id, u64 *top_id, char **path)
- {
--	u64 top_id;
--	u64 parent_id = 0;
- 	char *full_path = NULL;
- 	int len = 0;
- 	struct root_info *found;
-@@ -211,6 +210,7 @@ static int resolve_root(struct root_lookup *rl, struct root_info *ri, int print_
- 	 * we go backwards from the root_info object and add pathnames
- 	 * from parent directories as we go.
- 	 */
-+	*parent_id = 0;
- 	found = ri;
- 	while (1) {
- 		char *tmp;
-@@ -234,13 +234,12 @@ static int resolve_root(struct root_lookup *rl, struct root_info *ri, int print_
- 
- 		next = found->ref_tree;
- 		/* record the first parent */
--		if ( parent_id == 0 ) {
--			parent_id = next;
--		}
-+		if (*parent_id == 0)
-+			*parent_id = next;
- 
- 		/* if the ref_tree refers to ourselves, we're at the top */
- 		if (next == found->root_id) {
--			top_id = next;
-+			*top_id = next;
- 			break;
- 		}
- 
-@@ -250,20 +249,14 @@ static int resolve_root(struct root_lookup *rl, struct root_info *ri, int print_
- 		 */
- 		found = tree_search(&rl->root, next);
- 		if (!found) {
--			top_id = next;
-+			*top_id = next;
- 			break;
- 		}
+Index: linux/fs/btrfs/ioctl.c
+===================================================================
+--- linux.orig/fs/btrfs/ioctl.c
++++ linux/fs/btrfs/ioctl.c
+@@ -1130,17 +1130,15 @@ int btrfs_defrag_file(struct inode *inod
+ 	disk_super = &root->fs_info->super_copy;
+ 	features = btrfs_super_incompat_flags(disk_super);
+ 	if (range->compress_type == BTRFS_COMPRESS_LZO) {
+ 		features |= BTRFS_FEATURE_INCOMPAT_COMPRESS_LZO;
+ 		btrfs_set_super_incompat_flags(disk_super, features);
  	}
--	if (print_parent) {
--		printf("ID %llu parent %llu top level %llu path %s\n",
--		       (unsigned long long)ri->root_id, (unsigned long long)parent_id, (unsigned long long)top_id,
--			full_path);
--	} else {
--		printf("ID %llu top level %llu path %s\n",
--		       (unsigned long long)ri->root_id, (unsigned long long)top_id,
--			full_path);
--	}
--	free(full_path);
-+
-+	*root_id = ri->root_id;
-+	*path = full_path;
-+
- 	return 0;
+ 
+-	if (!file)
+-		kfree(ra);
+-	return defrag_count;
++	ret = defrag_count;
+ 
+ out_ra:
+ 	if (!file)
+ 		kfree(ra);
+ 	kfree(pages);
+ 	return ret;
  }
- 
-@@ -560,10 +553,8 @@ build:
- 	return full;
- }
- 
--int list_subvols(int fd, int print_parent)
-+static int __list_subvol_search(int fd, struct root_lookup *root_lookup)
- {
--	struct root_lookup root_lookup;
--	struct rb_node *n;
- 	int ret;
- 	struct btrfs_ioctl_search_args args;
- 	struct btrfs_ioctl_search_key *sk = &args.key;
-@@ -574,9 +565,11 @@ int list_subvols(int fd, int print_parent)
- 	char *name;
- 	u64 dir_id;
- 	int i;
--	int e;
- 
--	root_lookup_init(&root_lookup);
-+	root_lookup_init(root_lookup);
-+	memset(&args, 0, sizeof(args));
-+
-+	root_lookup_init(root_lookup);
- 
- 	memset(&args, 0, sizeof(args));
- 
-@@ -603,12 +596,8 @@ int list_subvols(int fd, int print_parent)
- 
- 	while(1) {
- 		ret = ioctl(fd, BTRFS_IOC_TREE_SEARCH, &args);
--		e = errno;
--		if (ret < 0) {
--			fprintf(stderr, "ERROR: can't perform the search - %s\n",
--				strerror(e));
-+		if (ret < 0)
- 			return ret;
--		}
- 		/* the ioctl returns the number of item it found in nr_items */
- 		if (sk->nr_items == 0)
- 			break;
-@@ -629,7 +618,7 @@ int list_subvols(int fd, int print_parent)
- 				name = (char *)(ref + 1);
- 				dir_id = btrfs_stack_root_ref_dirid(ref);
- 
--				add_root(&root_lookup, sh->objectid, sh->offset,
-+				add_root(root_lookup, sh->objectid, sh->offset,
- 					 dir_id, name, name_len);
- 			}
- 
-@@ -657,11 +646,15 @@ int list_subvols(int fd, int print_parent)
- 		} else
- 			break;
- 	}
--	/*
--	 * now we have an rbtree full of root_info objects, but we need to fill
--	 * in their path names within the subvol that is referencing each one.
--	 */
--	n = rb_first(&root_lookup.root);
-+
-+	return 0;
-+}
-+
-+static int __list_subvol_fill_paths(int fd, struct root_lookup *root_lookup)
-+{
-+	struct rb_node *n;
-+
-+	n = rb_first(&root_lookup->root);
- 	while (n) {
- 		struct root_info *entry;
- 		int ret;
-@@ -672,6 +665,30 @@ int list_subvols(int fd, int print_parent)
- 		n = rb_next(n);
- 	}
- 
-+	return 0;
-+}
-+
-+int list_subvols(int fd, int print_parent)
-+{
-+	struct root_lookup root_lookup;
-+	struct rb_node *n;
-+	int ret;
-+
-+	ret = __list_subvol_search(fd, &root_lookup);
-+	if (ret) {
-+		fprintf(stderr, "ERROR: can't perform the search - %s\n",
-+				strerror(errno));
-+		return ret;
-+	}
-+
-+	/*
-+	 * now we have an rbtree full of root_info objects, but we need to fill
-+	 * in their path names within the subvol that is referencing each one.
-+	 */
-+	ret = __list_subvol_fill_paths(fd, &root_lookup);
-+	if (ret < 0)
-+		return ret;
-+
- 	/* now that we have all the subvol-relative paths filled in,
- 	 * we have to string the subvols together so that we can get
- 	 * a path all the way back to the FS root
-@@ -679,8 +696,24 @@ int list_subvols(int fd, int print_parent)
- 	n = rb_last(&root_lookup.root);
- 	while (n) {
- 		struct root_info *entry;
-+		u64 root_id;
-+		u64 level;
-+		u64 parent_id;
-+		char *path;
- 		entry = rb_entry(n, struct root_info, rb_node);
--		resolve_root(&root_lookup, entry, print_parent);
-+		resolve_root(&root_lookup, entry, &root_id, &parent_id,
-+				&level, &path);
-+		if (print_parent) {
-+			printf("ID %llu parent %llu top level %llu path %s\n",
-+				(unsigned long long)root_id,
-+				(unsigned long long)parent_id,
-+				(unsigned long long)level, path);
-+		} else {
-+			printf("ID %llu top level %llu path %s\n",
-+				(unsigned long long)root_id,
-+				(unsigned long long)level, path);
-+		}
-+		free(path);
- 		n = rb_prev(n);
- 	}
- 
--- 
-1.7.3.4
-

@@ -1,66 +1,48 @@
-From: Hugo Mills <hugo@carfax.org.uk>
-Subject: Re: Honest timeline for btrfsck
-Date: Thu, 1 Sep 2011 21:34:42 +0100
-Message-ID: <20110901203442.GA17928@carfax.org.uk>
-References: <CAGh96GFhVEfXt=xcb-uGEBA3Ss2fc8BwOpJ2g8tXbm+VimdH3Q@mail.gmail.com>
- <1312404713-sup-6548@shiny>
- <loom.20110818T030824-742@post.gmane.org>
- <1313700115-sup-2457@shiny>
- <4E5664F8.9090802@cchtml.com>
- <4E5FD978.7030901@cchtml.com>
- <20110901202008.GA11655@carfax.org.uk>
- <4E5FE9FC.9040705@cchtml.com>
+From: Bruce Guenter <bruce@untroubled.org>
+Subject: Check snapshot delete progress?
+Date: Thu, 1 Sep 2011 15:32:30 -0600
+Message-ID: <20110901213230.GA456@untroubled.org>
 Mime-Version: 1.0
 Content-Type: multipart/signed; micalg=pgp-sha1;
-	protocol="application/pgp-signature"; boundary="bp/iNruPH9dso1Pn"
-Cc: linux-btrfs <linux-btrfs@vger.kernel.org>
-To: Michael Cronenworth <mike@cchtml.com>
+	protocol="application/pgp-signature"; boundary="NzB8fVQJ5HfG6fxh"
+To: linux-btrfs@vger.kernel.org
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <4E5FE9FC.9040705@cchtml.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
 
---bp/iNruPH9dso1Pn
+--NzB8fVQJ5HfG6fxh
 Content-Type: text/plain; charset=us-ascii
 Content-Disposition: inline
+Content-Transfer-Encoding: quoted-printable
 
-On Thu, Sep 01, 2011 at 03:24:28PM -0500, Michael Cronenworth wrote:
-> On 09/01/2011 03:20 PM, Hugo Mills wrote:
-> >    You may have missed the "on vacation" bit.
-> 
-> I did read the "on vacation" bit. Not that it is any of my business,
-> but how long is that vacation?
 
-   Your guess is as good as mine. It's only been two weeks...
+Is there any way to monitor the progress of outstanding 'btrfs subvolume
+delete' commands?  I realize that figuring out when they complete is
+somewhat non-linear in nature given the tree structures involved, but
+even some information about forward progress would be useful at times.
 
-> >    The canonical place to look for btrfsck updates is the relevant FAQ
-> >item on the btrfs wiki.
-> 
-> I know this. No need to repeat it. I'm not a complete idiot.
+--=20
+Bruce Guenter <bruce@untroubled.org>                http://untroubled.org/
 
-   I never claimed you were. Many people either don't realise that
-that is the right place, or don't realise that it really is updated
-pretty much as soon as possible with all the information that's been
-made public on the subject.
-
-   Hugo.
-
--- 
-=== Hugo Mills: hugo@... carfax.org.uk | darksatanic.net | lug.org.uk ===
-  PGP key: 515C238D from wwwkeys.eu.pgp.net or http://www.carfax.org.uk
-   --- "No!  My collection of rare, incurable diseases! Violated!" ---   
-
---bp/iNruPH9dso1Pn
-Content-Type: application/pgp-signature; name="signature.asc"
-Content-Description: Digital signature
-Content-Disposition: inline
+--NzB8fVQJ5HfG6fxh
+Content-Type: application/pgp-signature
 
 -----BEGIN PGP SIGNATURE-----
-Version: GnuPG v1.4.10 (GNU/Linux)
+Version: GnuPG v2.0.17 (GNU/Linux)
 
-iD8DBQFOX+xiIKyzvlFcI40RAoxtAKCvkoon9RF/5udkBCYY9zes/+o+VwCgtLZQ
-S64TF1XoBaL0FRnDWl9tP7U=
-=0Ejd
+iQIcBAEBAgAGBQJOX/nuAAoJEFFRvcnBTTxnsdAP/0G7m0eVB8JL9XnttMFYLxuk
+XGGvJplCdjGp/st3yL+NfmjKQL1p2Cv91JLqAyAjy9jBGGltCNZuWVHrzs89aRaP
+PoqK5R8lzmKjrQpHWAWtNgGbbAhm00W8TcChNGyITFWlpdx8uEsv3Mn8L/P6pTs4
+tdhgl9E3NPa283hHIuXoM5J4JtXbqyQy53q7JQBb8UanHWpCczLYdS/XcmKEcNC1
+ckWGnvMkoI3j2MVmXiN20I5lJg0Y9dQIOHicXAQCMoGWST7MfrIOteTrAOMwxFJB
+hV4QwMJ1pE618GxWbbVdRhaqV90XN/u4UhlMat2OIRXxG2rfvQ5qm6uXTG/hvDsw
+I/c+8o4uZ5ckokgVZQrJlLeZXZyW20z/CuTnGhvBtUB/gvzttdKmtieONgGZq0v6
+4cLsP1JU4YXldXmFmuaR4ocOTdr/zZlP58xS7H5qEb1FiCBLdhfj18UViD4310zu
+MLoQEmqk2t4v/8KssT4L6cCi/iFOjzrAp5dUiPI7hUDcgBibVpsozW7uNWD6Esag
+LduW9Kep1Aa4hS0x2t0cdqp7TUpIt/DTFM7GR4J7vlq2CO/Vg52V+NOEORcrBMPi
+iUUvWtV2bLwWRT9R8spvOeBbHl1UBGtChf9sTaA9Ae+aeWmqRPEMvjmX5Ce/61LR
+8kEam6qgI6SPqpseL8c/
+=5q0s
 -----END PGP SIGNATURE-----
 
---bp/iNruPH9dso1Pn--
+--NzB8fVQJ5HfG6fxh--

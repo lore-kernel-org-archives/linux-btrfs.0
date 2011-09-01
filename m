@@ -1,7 +1,7 @@
 From: Jan Schmidt <list.btrfs@jan-o-sch.net>
-Subject: [PATCH v9 8/8] btrfs: new ioctls to do logical->inode and inode->path resolving
-Date: Thu,  1 Sep 2011 16:52:38 +0200
-Message-ID: <df2aa0ed773a596aa08ba754956c7b01651e7931.1314887907.git.list.btrfs@jan-o-sch.net>
+Subject: [PATCH v9 5/8] btrfs: add mirror_num to extent_read_full_page
+Date: Thu,  1 Sep 2011 16:52:35 +0200
+Message-ID: <1fc31c11569494cf143d0e9fa15bc08c60312291.1314887907.git.list.btrfs@jan-o-sch.net>
 References: <cover.1314887907.git.list.btrfs@jan-o-sch.net>
 To: chris.mason@oracle.com, linux-btrfs@vger.kernel.org
 Return-path: <linux-btrfs-owner@vger.kernel.org>
@@ -9,219 +9,81 @@ In-Reply-To: <cover.1314887907.git.list.btrfs@jan-o-sch.net>
 In-Reply-To: <cover.1314887907.git.list.btrfs@jan-o-sch.net>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-these ioctls make use of the new functions initially added for scrub. they
-return all inodes belonging to a logical address (BTRFS_IOC_LOGICAL_INO) and
-all paths belonging to an inode (BTRFS_IOC_INO_PATHS).
+Currently, extent_read_full_page always assumes we are trying to read mirror
+0, which generally is the best we can do. To add flexibility, pass it as a
+parameter. This will be needed by scrub fixup code.
 
 Signed-off-by: Jan Schmidt <list.btrfs@jan-o-sch.net>
 ---
- fs/btrfs/ioctl.c |  143 ++++++++++++++++++++++++++++++++++++++++++++++++++++++
- fs/btrfs/ioctl.h |   19 +++++++
- 2 files changed, 162 insertions(+), 0 deletions(-)
+ fs/btrfs/disk-io.c   |    2 +-
+ fs/btrfs/extent_io.c |    6 +++---
+ fs/btrfs/extent_io.h |    2 +-
+ fs/btrfs/inode.c     |    2 +-
+ 4 files changed, 6 insertions(+), 6 deletions(-)
 
-diff --git a/fs/btrfs/ioctl.c b/fs/btrfs/ioctl.c
-index 2bb0886..cf67219 100644
---- a/fs/btrfs/ioctl.c
-+++ b/fs/btrfs/ioctl.c
-@@ -51,6 +51,7 @@
- #include "volumes.h"
- #include "locking.h"
- #include "inode-map.h"
-+#include "backref.h"
+diff --git a/fs/btrfs/disk-io.c b/fs/btrfs/disk-io.c
+index 94ecac3..89ad5ef 100644
+--- a/fs/btrfs/disk-io.c
++++ b/fs/btrfs/disk-io.c
+@@ -908,7 +908,7 @@ static int btree_readpage(struct file *file, struct page *page)
+ {
+ 	struct extent_io_tree *tree;
+ 	tree = &BTRFS_I(page->mapping->host)->io_tree;
+-	return extent_read_full_page(tree, page, btree_get_extent);
++	return extent_read_full_page(tree, page, btree_get_extent, 0);
+ }
  
- /* Mask out flags that are inappropriate for the given type of inode. */
- static inline __u32 btrfs_mask_flags(umode_t mode, __u32 flags)
-@@ -2837,6 +2838,144 @@ static long btrfs_ioctl_scrub_progress(struct btrfs_root *root,
+ static int btree_releasepage(struct page *page, gfp_t gfp_flags)
+diff --git a/fs/btrfs/extent_io.c b/fs/btrfs/extent_io.c
+index 8491712..edf1c29 100644
+--- a/fs/btrfs/extent_io.c
++++ b/fs/btrfs/extent_io.c
+@@ -2076,16 +2076,16 @@ out:
+ }
+ 
+ int extent_read_full_page(struct extent_io_tree *tree, struct page *page,
+-			    get_extent_t *get_extent)
++			    get_extent_t *get_extent, int mirror_num)
+ {
+ 	struct bio *bio = NULL;
+ 	unsigned long bio_flags = 0;
+ 	int ret;
+ 
+-	ret = __extent_read_full_page(tree, page, get_extent, &bio, 0,
++	ret = __extent_read_full_page(tree, page, get_extent, &bio, mirror_num,
+ 				      &bio_flags);
+ 	if (bio)
+-		ret = submit_one_bio(READ, bio, 0, bio_flags);
++		ret = submit_one_bio(READ, bio, mirror_num, bio_flags);
  	return ret;
  }
  
-+static long btrfs_ioctl_ino_to_path(struct btrfs_root *root, void __user *arg)
-+{
-+	int ret = 0;
-+	int i;
-+	unsigned long rel_ptr;
-+	int size;
-+	struct btrfs_ioctl_ino_path_args *ipa;
-+	struct inode_fs_paths *ipath = NULL;
-+	struct btrfs_path *path;
-+
-+	if (!capable(CAP_SYS_ADMIN))
-+		return -EPERM;
-+
-+	path = btrfs_alloc_path();
-+	if (!path) {
-+		ret = -ENOMEM;
-+		goto out;
-+	}
-+
-+	ipa = memdup_user(arg, sizeof(*ipa));
-+	if (IS_ERR(ipa)) {
-+		ret = PTR_ERR(ipa);
-+		ipa = NULL;
-+		goto out;
-+	}
-+
-+	size = min_t(u32, ipa->size, 4096);
-+	ipath = init_ipath(size, root, path);
-+	if (IS_ERR(ipath)) {
-+		ret = PTR_ERR(ipath);
-+		ipath = NULL;
-+		goto out;
-+	}
-+
-+	ret = paths_from_inode(ipa->inum, ipath);
-+	if (ret < 0)
-+		goto out;
-+
-+	for (i = 0; i < ipath->fspath->elem_cnt; ++i) {
-+		rel_ptr = ipath->fspath->str[i] - (char *)ipath->fspath->str;
-+		ipath->fspath->str[i] = (void *)rel_ptr;
-+	}
-+
-+	ret = copy_to_user(ipa->fspath, ipath->fspath, size);
-+	if (ret) {
-+		ret = -EFAULT;
-+		goto out;
-+	}
-+
-+out:
-+	btrfs_free_path(path);
-+	free_ipath(ipath);
-+	kfree(ipa);
-+
-+	return ret;
-+}
-+
-+static int build_ino_list(u64 inum, u64 offset, u64 root, void *ctx)
-+{
-+	struct btrfs_data_container *inodes = ctx;
-+	const size_t c = 3 * sizeof(u64);
-+
-+	if (inodes->bytes_left >= c) {
-+		inodes->bytes_left -= c;
-+		inodes->val[inodes->elem_cnt] = inum;
-+		inodes->val[inodes->elem_cnt + 1] = offset;
-+		inodes->val[inodes->elem_cnt + 2] = root;
-+		inodes->elem_cnt += 3;
-+	} else {
-+		inodes->bytes_missing += c - inodes->bytes_left;
-+		inodes->bytes_left = 0;
-+		inodes->elem_missed += 3;
-+	}
-+
-+	return 0;
-+}
-+
-+static long btrfs_ioctl_logical_to_ino(struct btrfs_root *root,
-+					void __user *arg)
-+{
-+	int ret = 0;
-+	int size;
-+	u64 extent_offset;
-+	struct btrfs_ioctl_logical_ino_args *loi;
-+	struct btrfs_data_container *inodes = NULL;
-+	struct btrfs_path *path = NULL;
-+	struct btrfs_key key;
-+
-+	if (!capable(CAP_SYS_ADMIN))
-+		return -EPERM;
-+
-+	loi = memdup_user(arg, sizeof(*loi));
-+	if (IS_ERR(loi)) {
-+		ret = PTR_ERR(loi);
-+		loi = NULL;
-+		goto out;
-+	}
-+
-+	path = btrfs_alloc_path();
-+	if (!path) {
-+		ret = -ENOMEM;
-+		goto out;
-+	}
-+
-+	size = min_t(u32, loi->size, 4096);
-+	inodes = init_data_container(size);
-+	if (IS_ERR(inodes)) {
-+		ret = PTR_ERR(inodes);
-+		inodes = NULL;
-+		goto out;
-+	}
-+
-+	ret = extent_from_logical(root->fs_info, loi->logical, path, &key);
-+
-+	if (ret & BTRFS_EXTENT_FLAG_TREE_BLOCK)
-+		ret = -ENOENT;
-+	if (ret < 0)
-+		goto out;
-+
-+	extent_offset = loi->logical - key.objectid;
-+	ret = iterate_extent_inodes(root->fs_info, path, key.objectid,
-+					extent_offset, build_ino_list, inodes);
-+
-+	if (ret < 0)
-+		goto out;
-+
-+	ret = copy_to_user(loi->inodes, inodes, size);
-+	if (ret)
-+		ret = -EFAULT;
-+
-+out:
-+	btrfs_free_path(path);
-+	kfree(inodes);
-+	kfree(loi);
-+
-+	return ret;
-+}
-+
- long btrfs_ioctl(struct file *file, unsigned int
- 		cmd, unsigned long arg)
- {
-@@ -2894,6 +3033,10 @@ long btrfs_ioctl(struct file *file, unsigned int
- 		return btrfs_ioctl_tree_search(file, argp);
- 	case BTRFS_IOC_INO_LOOKUP:
- 		return btrfs_ioctl_ino_lookup(file, argp);
-+	case BTRFS_IOC_INO_PATHS:
-+		return btrfs_ioctl_ino_to_path(root, argp);
-+	case BTRFS_IOC_LOGICAL_INO:
-+		return btrfs_ioctl_logical_to_ino(root, argp);
- 	case BTRFS_IOC_SPACE_INFO:
- 		return btrfs_ioctl_space_info(root, argp);
- 	case BTRFS_IOC_SYNC:
-diff --git a/fs/btrfs/ioctl.h b/fs/btrfs/ioctl.h
-index 1857e38..2da30d4 100644
---- a/fs/btrfs/ioctl.h
-+++ b/fs/btrfs/ioctl.h
-@@ -204,6 +204,20 @@ struct btrfs_data_container {
- 	};
- };
+diff --git a/fs/btrfs/extent_io.h b/fs/btrfs/extent_io.h
+index 7b2f0c3..a9dd994 100644
+--- a/fs/btrfs/extent_io.h
++++ b/fs/btrfs/extent_io.h
+@@ -185,7 +185,7 @@ int unlock_extent_cached(struct extent_io_tree *tree, u64 start, u64 end,
+ int try_lock_extent(struct extent_io_tree *tree, u64 start, u64 end,
+ 		    gfp_t mask);
+ int extent_read_full_page(struct extent_io_tree *tree, struct page *page,
+-			  get_extent_t *get_extent);
++			  get_extent_t *get_extent, int mirror_num);
+ int __init extent_io_init(void);
+ void extent_io_exit(void);
  
-+struct btrfs_ioctl_ino_path_args {
-+	__u64				inum;		/* in */
-+	__u32				size;		/* in */
-+	__u64				reserved[4];
-+	struct btrfs_data_container	*fspath;	/* out */
-+};
-+
-+struct btrfs_ioctl_logical_ino_args {
-+	__u64				logical;	/* in */
-+	__u32				size;		/* in */
-+	__u64				reserved[4];
-+	struct btrfs_data_container	*inodes;	/* out */
-+};
-+
- #define BTRFS_IOC_SNAP_CREATE _IOW(BTRFS_IOCTL_MAGIC, 1, \
- 				   struct btrfs_ioctl_vol_args)
- #define BTRFS_IOC_DEFRAG _IOW(BTRFS_IOCTL_MAGIC, 2, \
-@@ -259,4 +273,9 @@ struct btrfs_data_container {
- 				 struct btrfs_ioctl_dev_info_args)
- #define BTRFS_IOC_FS_INFO _IOR(BTRFS_IOCTL_MAGIC, 31, \
- 			       struct btrfs_ioctl_fs_info_args)
-+#define BTRFS_IOC_INO_PATHS _IOWR(BTRFS_IOCTL_MAGIC, 35, \
-+					struct btrfs_ioctl_ino_path_args)
-+#define BTRFS_IOC_LOGICAL_INO _IOWR(BTRFS_IOCTL_MAGIC, 36, \
-+					struct btrfs_ioctl_ino_path_args)
-+
- #endif
+diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
+index 34195f9..2a01e32 100644
+--- a/fs/btrfs/inode.c
++++ b/fs/btrfs/inode.c
+@@ -6244,7 +6244,7 @@ int btrfs_readpage(struct file *file, struct page *page)
+ {
+ 	struct extent_io_tree *tree;
+ 	tree = &BTRFS_I(page->mapping->host)->io_tree;
+-	return extent_read_full_page(tree, page, btrfs_get_extent);
++	return extent_read_full_page(tree, page, btrfs_get_extent, 0);
+ }
+ 
+ static int btrfs_writepage(struct page *page, struct writeback_control *wbc)
 -- 
 1.7.3.4
 

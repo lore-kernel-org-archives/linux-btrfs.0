@@ -1,7 +1,7 @@
 From: Jan Schmidt <list.btrfs@jan-o-sch.net>
-Subject: [PATCH v4 2/3] Btrfs-progs: added ioctls and commands to resolve inodes and logical addrs
-Date: Thu,  1 Sep 2011 15:05:58 +0200
-Message-ID: <e7ede3c67e6473bc1e552b32562b5983f7a5f80a.1314878395.git.list.btrfs@jan-o-sch.net>
+Subject: [PATCH v4 1/3] Btrfs-progs: btrfs-list: split list_subvols
+Date: Thu,  1 Sep 2011 15:05:57 +0200
+Message-ID: <a987cfb72a6faae6f3350dc1b5546cf9d6f33a58.1314878395.git.list.btrfs@jan-o-sch.net>
 References: <cover.1314878395.git.list.btrfs@jan-o-sch.net>
 Cc: hugo@carfax.org.uk
 To: chris.mason@oracle.com, linux-btrfs@vger.kernel.org
@@ -10,331 +10,210 @@ In-Reply-To: <cover.1314878395.git.list.btrfs@jan-o-sch.net>
 In-Reply-To: <cover.1314878395.git.list.btrfs@jan-o-sch.net>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-two new commands that make use of the new path resolving functions
-implemented for scrub, doing the resolving in-kernel. the result for both
-commands is a list of files belonging to that inode / logical address.
+split list_subvols to separate functions and allow printing only in the
+containing function. lets us make use of those functions when resolving
+logical addresses.
 
 Signed-off-by: Jan Schmidt <list.btrfs@jan-o-sch.net>
 ---
- btrfs-list.c |   35 +++++++++++
- btrfs.c      |   10 +++
- btrfs_cmds.c |  183 ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
- btrfs_cmds.h |    3 +
- ioctl.h      |   30 ++++++++++
- 5 files changed, 261 insertions(+), 0 deletions(-)
+ btrfs-list.c |  103 ++++++++++++++++++++++++++++++++++++++--------------------
+ 1 files changed, 68 insertions(+), 35 deletions(-)
 
 diff --git a/btrfs-list.c b/btrfs-list.c
-index 5751f1d..5f4a9be 100644
+index 07b179a..5751f1d 100644
 --- a/btrfs-list.c
 +++ b/btrfs-list.c
-@@ -899,3 +899,38 @@ int find_updated_files(int fd, u64 root_id, u64 oldest_gen)
- 	printf("transid marker was %llu\n", (unsigned long long)max_found);
- 	return ret;
- }
+@@ -199,10 +199,9 @@ static int add_root(struct root_lookup *root_lookup,
+  * This can't be called until all the root_info->path fields are filled
+  * in by lookup_ino_path
+  */
+-static int resolve_root(struct root_lookup *rl, struct root_info *ri, int print_parent)
++static int resolve_root(struct root_lookup *rl, struct root_info *ri,
++			u64 *root_id, u64 *parent_id, u64 *top_id, char **path)
+ {
+-	u64 top_id;
+-	u64 parent_id = 0;
+ 	char *full_path = NULL;
+ 	int len = 0;
+ 	struct root_info *found;
+@@ -211,6 +210,7 @@ static int resolve_root(struct root_lookup *rl, struct root_info *ri, int print_
+ 	 * we go backwards from the root_info object and add pathnames
+ 	 * from parent directories as we go.
+ 	 */
++	*parent_id = 0;
+ 	found = ri;
+ 	while (1) {
+ 		char *tmp;
+@@ -234,13 +234,12 @@ static int resolve_root(struct root_lookup *rl, struct root_info *ri, int print_
+ 
+ 		next = found->ref_tree;
+ 		/* record the first parent */
+-		if ( parent_id == 0 ) {
+-			parent_id = next;
+-		}
++		if (*parent_id == 0)
++			*parent_id = next;
+ 
+ 		/* if the ref_tree refers to ourselves, we're at the top */
+ 		if (next == found->root_id) {
+-			top_id = next;
++			*top_id = next;
+ 			break;
+ 		}
+ 
+@@ -250,20 +249,14 @@ static int resolve_root(struct root_lookup *rl, struct root_info *ri, int print_
+ 		 */
+ 		found = tree_search(&rl->root, next);
+ 		if (!found) {
+-			top_id = next;
++			*top_id = next;
+ 			break;
+ 		}
+ 	}
+-	if (print_parent) {
+-		printf("ID %llu parent %llu top level %llu path %s\n",
+-		       (unsigned long long)ri->root_id, (unsigned long long)parent_id, (unsigned long long)top_id,
+-			full_path);
+-	} else {
+-		printf("ID %llu top level %llu path %s\n",
+-		       (unsigned long long)ri->root_id, (unsigned long long)top_id,
+-			full_path);
+-	}
+-	free(full_path);
 +
-+char *path_for_root(int fd, u64 root)
++	*root_id = ri->root_id;
++	*path = full_path;
++
+ 	return 0;
+ }
+ 
+@@ -560,10 +553,8 @@ build:
+ 	return full;
+ }
+ 
+-int list_subvols(int fd, int print_parent)
++static int __list_subvol_search(int fd, struct root_lookup *root_lookup)
+ {
+-	struct root_lookup root_lookup;
+-	struct rb_node *n;
+ 	int ret;
+ 	struct btrfs_ioctl_search_args args;
+ 	struct btrfs_ioctl_search_key *sk = &args.key;
+@@ -574,9 +565,11 @@ int list_subvols(int fd, int print_parent)
+ 	char *name;
+ 	u64 dir_id;
+ 	int i;
+-	int e;
+ 
+-	root_lookup_init(&root_lookup);
++	root_lookup_init(root_lookup);
++	memset(&args, 0, sizeof(args));
++
++	root_lookup_init(root_lookup);
+ 
+ 	memset(&args, 0, sizeof(args));
+ 
+@@ -603,12 +596,8 @@ int list_subvols(int fd, int print_parent)
+ 
+ 	while(1) {
+ 		ret = ioctl(fd, BTRFS_IOC_TREE_SEARCH, &args);
+-		e = errno;
+-		if (ret < 0) {
+-			fprintf(stderr, "ERROR: can't perform the search - %s\n",
+-				strerror(e));
++		if (ret < 0)
+ 			return ret;
+-		}
+ 		/* the ioctl returns the number of item it found in nr_items */
+ 		if (sk->nr_items == 0)
+ 			break;
+@@ -629,7 +618,7 @@ int list_subvols(int fd, int print_parent)
+ 				name = (char *)(ref + 1);
+ 				dir_id = btrfs_stack_root_ref_dirid(ref);
+ 
+-				add_root(&root_lookup, sh->objectid, sh->offset,
++				add_root(root_lookup, sh->objectid, sh->offset,
+ 					 dir_id, name, name_len);
+ 			}
+ 
+@@ -657,11 +646,15 @@ int list_subvols(int fd, int print_parent)
+ 		} else
+ 			break;
+ 	}
+-	/*
+-	 * now we have an rbtree full of root_info objects, but we need to fill
+-	 * in their path names within the subvol that is referencing each one.
+-	 */
+-	n = rb_first(&root_lookup.root);
++
++	return 0;
++}
++
++static int __list_subvol_fill_paths(int fd, struct root_lookup *root_lookup)
++{
++	struct rb_node *n;
++
++	n = rb_first(&root_lookup->root);
+ 	while (n) {
+ 		struct root_info *entry;
+ 		int ret;
+@@ -672,6 +665,30 @@ int list_subvols(int fd, int print_parent)
+ 		n = rb_next(n);
+ 	}
+ 
++	return 0;
++}
++
++int list_subvols(int fd, int print_parent)
 +{
 +	struct root_lookup root_lookup;
 +	struct rb_node *n;
-+	char *ret_path = NULL;
 +	int ret;
 +
 +	ret = __list_subvol_search(fd, &root_lookup);
-+	if (ret < 0)
-+		return ERR_PTR(ret);
++	if (ret) {
++		fprintf(stderr, "ERROR: can't perform the search - %s\n",
++				strerror(errno));
++		return ret;
++	}
 +
++	/*
++	 * now we have an rbtree full of root_info objects, but we need to fill
++	 * in their path names within the subvol that is referencing each one.
++	 */
 +	ret = __list_subvol_fill_paths(fd, &root_lookup);
 +	if (ret < 0)
-+		return ERR_PTR(ret);
++		return ret;
 +
-+	n = rb_last(&root_lookup.root);
-+	while (n) {
-+		struct root_info *entry;
+ 	/* now that we have all the subvol-relative paths filled in,
+ 	 * we have to string the subvols together so that we can get
+ 	 * a path all the way back to the FS root
+@@ -679,8 +696,24 @@ int list_subvols(int fd, int print_parent)
+ 	n = rb_last(&root_lookup.root);
+ 	while (n) {
+ 		struct root_info *entry;
 +		u64 root_id;
-+		u64 parent_id;
 +		u64 level;
++		u64 parent_id;
 +		char *path;
-+		entry = rb_entry(n, struct root_info, rb_node);
-+		resolve_root(&root_lookup, entry, &root_id, &parent_id, &level,
-+				&path);
-+		if (root_id == root)
-+			ret_path = path;
-+		else
-+			free(path);
-+		n = rb_prev(n);
-+	}
-+
-+	return ret_path;
-+}
-diff --git a/btrfs.c b/btrfs.c
-index 67d6f6f..5d483ed 100644
---- a/btrfs.c
-+++ b/btrfs.c
-@@ -178,6 +178,16 @@ static struct Command commands[] = {
- 		"Remove a device from a filesystem.",
- 	  NULL
- 	},
-+	{ do_ino_to_path, -2,
-+	  "inspect-internal inode-resolve", "[-v] <inode> <path>\n"
-+		"get file system paths for the given inode.",
-+	  NULL
-+	},
-+	{ do_logical_to_ino, -2,
-+	  "inspect-internal logical-resolve", "[-v] [-P] <logical> <path>\n"
-+		"get file system paths for the given logical address.",
-+	  NULL
-+	},
- 	{ 0, 0, 0, 0 }
- };
- 
-diff --git a/btrfs_cmds.c b/btrfs_cmds.c
-index 0612f34..e4c9b10 100644
---- a/btrfs_cmds.c
-+++ b/btrfs_cmds.c
-@@ -1545,3 +1545,186 @@ int do_df_filesystem(int nargs, char **argv)
- 
- 	return 0;
- }
-+
-+static int __ino_to_path_fd(u64 inum, int fd, int verbose, const char *prepend)
-+{
-+	int ret;
-+	int i;
-+	struct btrfs_ioctl_ino_path_args ipa;
-+	struct btrfs_data_container *fspath;
-+
-+	fspath = malloc(4096);
-+	if (!fspath)
-+		return 1;
-+
-+	ipa.inum = inum;
-+	ipa.size = 4096;
-+	ipa.fspath = fspath;
-+
-+	ret = ioctl(fd, BTRFS_IOC_INO_PATHS, &ipa);
-+	if (ret) {
-+		printf("ioctl ret=%d, error: %s\n", ret, strerror(errno));
-+		goto out;
-+	}
-+
-+	if (verbose)
-+		printf("ioctl ret=%d, bytes_left=%lu, bytes_missing=%lu, "
-+			"cnt=%d, missed=%d\n", ret,
-+			(unsigned long)fspath->bytes_left,
-+			(unsigned long)fspath->bytes_missing,
-+			fspath->elem_cnt, fspath->elem_missed);
-+
-+	for (i = 0; i < fspath->elem_cnt; ++i) {
-+		fspath->str[i] += (unsigned long)fspath->str;
-+		if (prepend)
-+			printf("%s/%s\n", prepend, fspath->str[i]);
-+		else
-+			printf("%s\n", fspath->str[i]);
-+	}
-+
-+out:
-+	free(fspath);
-+	return ret;
-+}
-+
-+int do_ino_to_path(int nargs, char **argv)
-+{
-+	int fd;
-+	int verbose = 0;
-+
-+	optind = 1;
-+	while (1) {
-+		int c = getopt(nargs, argv, "v");
-+		if (c < 0)
-+			break;
-+		switch (c) {
-+		case 'v':
-+			verbose = 1;
-+			break;
-+		default:
-+			fprintf(stderr, "invalid arguments for ipath\n");
-+			return 1;
-+		}
-+	}
-+	if (nargs - optind != 2) {
-+		fprintf(stderr, "invalid arguments for ipath\n");
-+		return 1;
-+	}
-+
-+	fd = open_file_or_dir(argv[optind+1]);
-+	if (fd < 0) {
-+		fprintf(stderr, "ERROR: can't access '%s'\n", argv[optind+1]);
-+		return 12;
-+	}
-+
-+	return __ino_to_path_fd(atoll(argv[optind]), fd, verbose,
-+				argv[optind+1]);
-+}
-+
-+int do_logical_to_ino(int nargs, char **argv)
-+{
-+	int ret;
-+	int fd;
-+	int i;
-+	int verbose = 0;
-+	int getpath = 1;
-+	int bytes_left;
-+	struct btrfs_ioctl_logical_ino_args loi;
-+	struct btrfs_data_container *inodes;
-+	char full_path[4096];
-+	char *path_ptr;
-+
-+	optind = 1;
-+	while (1) {
-+		int c = getopt(nargs, argv, "Pv");
-+		if (c < 0)
-+			break;
-+		switch (c) {
-+		case 'P':
-+			getpath = 0;
-+			break;
-+		case 'v':
-+			verbose = 1;
-+			break;
-+		default:
-+			fprintf(stderr, "invalid arguments for ipath\n");
-+			return 1;
-+		}
-+	}
-+	if (nargs - optind != 2) {
-+		fprintf(stderr, "invalid arguments for ipath\n");
-+		return 1;
-+	}
-+
-+	inodes = malloc(4096);
-+	if (!inodes)
-+		return 1;
-+
-+	loi.logical = atoll(argv[optind]);
-+	loi.size = 4096;
-+	loi.inodes = inodes;
-+
-+	fd = open_file_or_dir(argv[optind+1]);
-+	if (fd < 0) {
-+		fprintf(stderr, "ERROR: can't access '%s'\n", argv[optind+1]);
-+		ret = 12;
-+		goto out;
-+	}
-+
-+	ret = ioctl(fd, BTRFS_IOC_LOGICAL_INO, &loi);
-+	if (ret) {
-+		printf("ioctl ret=%d, error: %s\n", ret, strerror(errno));
-+		goto out;
-+	}
-+
-+	if (verbose)
-+		printf("ioctl ret=%d, bytes_left=%lu, bytes_missing=%lu, "
-+			"cnt=%d, missed=%d\n", ret,
-+			(unsigned long)inodes->bytes_left,
-+			(unsigned long)inodes->bytes_missing,
-+			inodes->elem_cnt, inodes->elem_missed);
-+
-+	bytes_left = sizeof(full_path);
-+	ret = snprintf(full_path, bytes_left, "%s/", argv[optind+1]);
-+	path_ptr = full_path + ret;
-+	bytes_left -= ret + 1;
-+	BUG_ON(bytes_left < 0);
-+
-+	for (i = 0; i < inodes->elem_cnt; i += 3) {
-+		u64 inum = inodes->val[i];
-+		u64 offset = inodes->val[i+1];
-+		u64 root = inodes->val[i+2];
-+		int path_fd;
-+		char *name;
-+
-+		if (getpath) {
-+			name = path_for_root(fd, root);
-+			if (IS_ERR(name))
-+				return PTR_ERR(name);
-+			if (!name) {
-+				path_ptr[-1] = '\0';
-+				path_fd = fd;
-+			} else {
-+				path_ptr[-1] = '/';
-+				ret = snprintf(path_ptr, bytes_left, "%s",
-+						name);
-+				BUG_ON(ret >= bytes_left);
-+				free(name);
-+				path_fd = open_file_or_dir(full_path);
-+				if (path_fd < 0) {
-+					fprintf(stderr, "ERROR: can't access "
-+						"'%s'\n", full_path);
-+					goto out;
-+				}
-+			}
-+			__ino_to_path_fd(inum, path_fd, verbose, full_path);
+ 		entry = rb_entry(n, struct root_info, rb_node);
+-		resolve_root(&root_lookup, entry, print_parent);
++		resolve_root(&root_lookup, entry, &root_id, &parent_id,
++				&level, &path);
++		if (print_parent) {
++			printf("ID %llu parent %llu top level %llu path %s\n",
++				(unsigned long long)root_id,
++				(unsigned long long)parent_id,
++				(unsigned long long)level, path);
 +		} else {
-+			printf("inode %llu offset %llu root %llu\n", inum,
-+				offset, root);
++			printf("ID %llu top level %llu path %s\n",
++				(unsigned long long)root_id,
++				(unsigned long long)level, path);
 +		}
-+	}
-+
-+out:
-+	free(inodes);
-+	return ret;
-+}
-diff --git a/btrfs_cmds.h b/btrfs_cmds.h
-index 83faa5b..0a3f88f 100644
---- a/btrfs_cmds.h
-+++ b/btrfs_cmds.h
-@@ -40,3 +40,6 @@ int find_updated_files(int fd, u64 root_id, u64 oldest_gen);
- int do_find_newer(int argc, char **argv);
- int do_change_label(int argc, char **argv);
- int open_file_or_dir(const char *fname);
-+int do_ino_to_path(int nargs, char **argv);
-+int do_logical_to_ino(int nargs, char **argv);
-+char *path_for_root(int fd, u64 root);
-diff --git a/ioctl.h b/ioctl.h
-index 4accbfd..32592e7 100644
---- a/ioctl.h
-+++ b/ioctl.h
-@@ -240,6 +240,31 @@ struct btrfs_ioctl_balance_start {
- 					   * bytes for future expansion */
- };
++		free(path);
+ 		n = rb_prev(n);
+ 	}
  
-+struct btrfs_data_container {
-+	__u32	bytes_left;	/* out -- bytes not needed to deliver output */
-+	__u32	bytes_missing;	/* out -- additional bytes needed for result */
-+	__u32	elem_cnt;	/* out */
-+	__u32	elem_missed;	/* out */
-+	union {
-+		char	*str[0];	/* out */
-+		__u64	val[0];		/* out */
-+	};
-+};
-+
-+struct btrfs_ioctl_ino_path_args {
-+	__u64				inum;		/* in */
-+	__u32				size;		/* in */
-+	__u64				reserved[4];
-+	struct btrfs_data_container	*fspath;	/* out */
-+};
-+
-+struct btrfs_ioctl_logical_ino_args {
-+	__u64				logical;	/* in */
-+	__u32				size;		/* in */
-+	__u64				reserved[4];
-+	struct btrfs_data_container	*inodes;	/* out */
-+};
-+
- /* BTRFS_IOC_SNAP_CREATE is no longer used by the btrfs command */
- #define BTRFS_IOC_SNAP_CREATE _IOW(BTRFS_IOCTL_MAGIC, 1, \
- 				   struct btrfs_ioctl_vol_args)
-@@ -294,4 +319,9 @@ struct btrfs_ioctl_balance_start {
- #define BTRFS_IOC_BALANCE_CANCEL _IO(BTRFS_IOCTL_MAGIC, 33)
- #define BTRFS_IOC_BALANCE_FILTERED _IOWR(BTRFS_IOCTL_MAGIC, 34, \
- 				struct btrfs_ioctl_balance_start)
-+#define BTRFS_IOC_INO_PATHS _IOWR(BTRFS_IOCTL_MAGIC, 35, \
-+					struct btrfs_ioctl_ino_path_args)
-+#define BTRFS_IOC_LOGICAL_INO _IOWR(BTRFS_IOCTL_MAGIC, 36, \
-+					struct btrfs_ioctl_ino_path_args)
-+
- #endif
 -- 
 1.7.3.4
 

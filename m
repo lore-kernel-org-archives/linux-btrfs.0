@@ -1,60 +1,22 @@
-From: Marcus Sorensen <shadowsor@gmail.com>
-Subject: Re: Low volume list ?
-Date: Thu, 1 Sep 2011 12:42:55 -0600
-Message-ID: <CALFpzo4HOG-cVzS56Xh1rJWOfzj06tC9Noa62wQB1+jAsQDayQ@mail.gmail.com>
-References: <201109011701.53987@totor.bouissou.net>
+From: Michael Cronenworth <mike@cchtml.com>
+Subject: Re: Honest timeline for btrfsck
+Date: Thu, 01 Sep 2011 14:14:00 -0500
+Message-ID: <4E5FD978.7030901@cchtml.com>
+References: <CAGh96GFhVEfXt=xcb-uGEBA3Ss2fc8BwOpJ2g8tXbm+VimdH3Q@mail.gmail.com> <1312404713-sup-6548@shiny> <loom.20110818T030824-742@post.gmane.org> <1313700115-sup-2457@shiny> <4E5664F8.9090802@cchtml.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=ISO-8859-1
-Cc: linux-btrfs@vger.kernel.org
-To: =?ISO-8859-1?Q?Sw=E2mi_Petaramesh?= <swami@petaramesh.org>
+Content-Type: text/plain; charset=UTF-8; format=flowed
+To: linux-btrfs <linux-btrfs@vger.kernel.org>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <201109011701.53987@totor.bouissou.net>
+In-Reply-To: <4E5664F8.9090802@cchtml.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Aren't the subjects like "[PATCH" and "[GIT" specifically so people
-can filter the messages how they see fit?
+On 08/25/2011 10:06 AM, Michael Cronenworth wrote:
+>
+> Is there an update on this? I don't see any new code for 
+> btrfs-progs-unstable, but I might be looking in the wrong place.
+>
+> Will this fsck tool be able to handle problems such as:
+> "parent transid verify failed on # wanted # found #" ? 
 
-On Thu, Sep 1, 2011 at 9:01 AM, Sw=E2mi Petaramesh <swami@petaramesh.or=
-g> wrote:
-> Hi list,
->
-> Could it be considered to create a low-volume, "user-oriented" mailin=
-g-list
-> that wouldn't spit an email for each and every git pull or patch, whi=
-ch are of
-> interest to developpers only, and of no interest at all for users ?
->
-> I personally am in need of information about BTRFS, i.e. new features=
-,
-> pitfalls, bugs, important fixes or "when will btrfsck be available ?"=
-, but I've
-> already unsubscribed (and then re-subscribed...) twice to this list, =
-annoyed
-> by the point to which it was spamming my mailbox with information amo=
-ng which
-> 99% is of no interest to me, although 1% is very interesting :-}
->
-> --
-> Sw=E2mi Petaramesh <swami@petaramesh.org> http://petaramesh.org PGP 9=
-076E32E
->
-> Avant qu'une personne n'=E9tudie le Zen, les montagnes sont les monta=
-gnes,
-> les eaux sont les eaux. Apr=E8s un premier aper=E7u de la v=E9rit=E9 =
-du Zen, les
-> montagnes ne sont plus les montagnes, les eaux ne sont plus les eaux.
-> Apr=E8s l'=E9veil, les montagnes sont de nouveau les montagnes, les e=
-aux de
-> nouveau les eaux.
-> =A0 =A0 =A0 =A0-- K=F4an Zen
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-btrfs=
-" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at =A0http://vger.kernel.org/majordomo-info.html
->
---
-To unsubscribe from this list: send the line "unsubscribe linux-btrfs" =
-in
-the body of a message to majordomo@vger.kernel.org
-More majordomo info at  http://vger.kernel.org/majordomo-info.html
+Does anyone have an update on this? I haven't seen any news for several 
+weeks now.

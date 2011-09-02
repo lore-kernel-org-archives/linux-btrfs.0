@@ -1,151 +1,71 @@
-From: Li Zefan <lizf@cn.fujitsu.com>
-Subject: [PATCH 4/4] Btrfs: honor extent thresh during defragmentation
-Date: Fri, 02 Sep 2011 15:57:07 +0800
-Message-ID: <4E608C53.9040304@cn.fujitsu.com>
-References: <4E608C29.10307@cn.fujitsu.com>
+From: Tsutomu Itoh <t-itoh@jp.fujitsu.com>
+Subject: [BUG] umount command doesn't end forever
+Date: Fri, 02 Sep 2011 17:33:57 +0900
+Message-ID: <4E6094F5.8000506@jp.fujitsu.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=UTF-8
-To: "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
+Content-Type: text/plain; charset=ISO-2022-JP
+To: Linux Btrfs <linux-btrfs@vger.kernel.org>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <4E608C29.10307@cn.fujitsu.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-We won't defrag an extent, if it's bigger than the threshold we
-specified and there's no small extent before it, but actually
-the code doesn't work this way.
+In current for-linus branch, I encountered the problem that the
+umount command doesn't end forever.
 
-There are three bugs:
+=================================
 
-- When should_defrag_range() decides we should keep on defragmenting
-  an extent, last_len is not incremented. (old bug)
+# mount
+...
+/dev/sdc9 on /test9 type btrfs (rw,space_cache,compress=lzo,autodefrag)
+# umount /test9
 
-- The length that passes to should_defrag_range() is not the length
-  we're going to defrag. (new bug)
 
-- We always defrag 256K bytes data, and a big extent can be part of
-  this range. (new bug)
+crash> ps | grep umount
+  13107   6558   0  ffff8801257296c0  UN   0.0  105132    672  umount
+crash> bt 13107
+PID: 13107  TASK: ffff8801257296c0  CPU: 0   COMMAND: "umount"
+ #0 [ffff88016bb4fce8] schedule at ffffffff813a0c76
+ #1 [ffff88016bb4fd90] close_ctree at ffffffffa0386b3c [btrfs]
+ #2 [ffff88016bb4fe00] btrfs_put_super at ffffffffa036bc0c [btrfs]
+ #3 [ffff88016bb4fe20] generic_shutdown_super at ffffffff8111260e
+ #4 [ffff88016bb4fe50] kill_anon_super at ffffffff811126fb
+ #5 [ffff88016bb4fe70] deactivate_locked_super at ffffffff81112c9b
+ #6 [ffff88016bb4fe90] deactivate_super at ffffffff81113673
+ #7 [ffff88016bb4feb0] mntput_no_expire at ffffffff81128973
+ #8 [ffff88016bb4fee0] sys_umount at ffffffff811294ee
+ #9 [ffff88016bb4ff80] system_call_fastpath at ffffffff813a9182
+    RIP: 00007fd8f08cb5d7  RSP: 00007fffe85dea40  RFLAGS: 00010246
+    RAX: 00000000000000a6  RBX: ffffffff813a9182  RCX: 0000000000000006
+    RDX: 0000000000000000  RSI: 0000000000000000  RDI: 00007fd8f17a9b90
+    RBP: 00007fd8f17a9b70   R8: 0000000000000005   R9: 0000000000000000
+    R10: 00007fffe85df220  R11: 0000000000000246  R12: 0000000000000000
+    R13: 0000000000000000  R14: 00007fffe85df688  R15: 00007fd8f17a9c00
+    ORIG_RAX: 00000000000000a6  CS: 0033  SS: 002b
+crash> ps | grep clean
+...
+   6610      2   1  ffff8801945ac440  UN   0.0       0      0  [btrfs-cleaner]
+crash> bt  6610
+PID: 6610   TASK: ffff8801945ac440  CPU: 1   COMMAND: "btrfs-cleaner"
+ #0 [ffff880194565958] schedule at ffffffff813a0c76
+ #1 [ffff880194565a00] rwsem_down_failed_common at ffffffff813a2453
+ #2 [ffff880194565a60] rwsem_down_read_failed at ffffffff813a24ac
+ #3 [ffff880194565a70] call_rwsem_down_read_failed at ffffffff811c60d4
+ #4 [ffff880194565ad8] writeback_inodes_sb_nr_if_idle at ffffffff8112ee46
+ #5 [ffff880194565b08] reserve_metadata_bytes at ffffffffa03772d9 [btrfs]
+ #6 [ffff880194565c08] btrfs_delalloc_reserve_metadata at ffffffffa0378196 [btrfs]
+ #7 [ffff880194565c58] btrfs_delalloc_reserve_space at ffffffffa037c2ed [btrfs]
+ #8 [ffff880194565c88] btrfs_defrag_file at ffffffffa03ad400 [btrfs]
+ #9 [ffff880194565dc8] btrfs_run_defrag_inodes at ffffffffa0397125 [btrfs]
+#10 [ffff880194565e68] cleaner_kthread at ffffffffa0384844 [btrfs]
+#11 [ffff880194565ee8] kthread at ffffffff810608ac
+#12 [ffff880194565f48] kernel_thread_helper at ffffffff813aa2a4
 
-For a file with 4 extents:
+=================================
 
-        | 4K | 4K | 256K | 256K |
+umount acquires down_write(&s->s_umount) by deactivate_super() and
+waits for the end of btrfs-cleaner.
+But, btrfs-cleaner stops because of the acquisition waiting of
+down_read(&sb->s_umount) by writeback_inodes_sb_nr_if_idle().
+So, the deadlock has happened, I think.
 
-The result of defrag with (the default) 256K extent thresh should be:
+ -Tsutomu
 
-        | 264K | 256K |
-
-but with those bugs, we'll get:
-
-        | 520K |
-
-Signed-off-by: Li Zefan <lizf@cn.fujitsu.com>
----
- fs/btrfs/ioctl.c |   37 ++++++++++++++++++++++++++-----------
- 1 files changed, 26 insertions(+), 11 deletions(-)
-
-diff --git a/fs/btrfs/ioctl.c b/fs/btrfs/ioctl.c
-index 57aa5b7..90d7904 100644
---- a/fs/btrfs/ioctl.c
-+++ b/fs/btrfs/ioctl.c
-@@ -760,7 +760,7 @@ static int should_defrag_range(struct inode *inode, u64 start, u64 len,
- 	int ret = 1;
- 
- 	/*
--	 * make sure that once we start defragging and extent, we keep on
-+	 * make sure that once we start defragging an extent, we keep on
- 	 * defragging it
- 	 */
- 	if (start < *defrag_end)
-@@ -805,7 +805,6 @@ static int should_defrag_range(struct inode *inode, u64 start, u64 len,
- 	 * extent will force at least part of that big extent to be defragged.
- 	 */
- 	if (ret) {
--		*last_len += len;
- 		*defrag_end = extent_map_end(em);
- 	} else {
- 		*last_len = 0;
-@@ -978,13 +977,14 @@ int btrfs_defrag_file(struct inode *inode, struct file *file,
- 	u64 skip = 0;
- 	u64 defrag_end = 0;
- 	u64 newer_off = range->start;
--	int newer_left = 0;
- 	unsigned long i;
-+	unsigned long ra_index = 0;
- 	int ret;
- 	int defrag_count = 0;
- 	int compress_type = BTRFS_COMPRESS_ZLIB;
- 	int extent_thresh = range->extent_thresh;
--	int newer_cluster = (256 * 1024) >> PAGE_CACHE_SHIFT;
-+	int max_cluster = (256 * 1024) >> PAGE_CACHE_SHIFT;
-+	int cluster = max_cluster;
- 	u64 new_align = ~((u64)128 * 1024 - 1);
- 	struct page **pages = NULL;
- 
-@@ -1014,7 +1014,7 @@ int btrfs_defrag_file(struct inode *inode, struct file *file,
- 		ra = &file->f_ra;
- 	}
- 
--	pages = kmalloc(sizeof(struct page *) * newer_cluster,
-+	pages = kmalloc(sizeof(struct page *) * max_cluster,
- 			GFP_NOFS);
- 	if (!pages) {
- 		ret = -ENOMEM;
-@@ -1039,7 +1039,6 @@ int btrfs_defrag_file(struct inode *inode, struct file *file,
- 			 * the extents in the file evenly spaced
- 			 */
- 			i = (newer_off & new_align) >> PAGE_CACHE_SHIFT;
--			newer_left = newer_cluster;
- 		} else
- 			goto out_ra;
- 	} else {
-@@ -1071,12 +1070,26 @@ int btrfs_defrag_file(struct inode *inode, struct file *file,
- 			i = max(i + 1, next);
- 			continue;
- 		}
-+
-+		if (!newer_than) {
-+			cluster = (PAGE_CACHE_ALIGN(defrag_end) >>
-+				   PAGE_CACHE_SHIFT) - i;
-+			cluster = min(cluster, max_cluster);
-+		} else {
-+			cluster = max_cluster;
-+		}
-+
- 		if (range->flags & BTRFS_DEFRAG_RANGE_COMPRESS)
- 			BTRFS_I(inode)->force_compress = compress_type;
- 
--		btrfs_force_ra(inode->i_mapping, ra, file, i, newer_cluster);
-+		if (i + cluster > ra_index) {
-+			ra_index = max(i, ra_index);
-+			btrfs_force_ra(inode->i_mapping, ra, file, ra_index,
-+				       cluster);
-+			ra_index += max_cluster;
-+		}
- 
--		ret = cluster_pages_for_defrag(inode, pages, i, newer_cluster);
-+		ret = cluster_pages_for_defrag(inode, pages, i, cluster);
- 		if (ret < 0)
- 			goto out_ra;
- 
-@@ -1096,15 +1109,17 @@ int btrfs_defrag_file(struct inode *inode, struct file *file,
- 			if (!ret) {
- 				range->start = newer_off;
- 				i = (newer_off & new_align) >> PAGE_CACHE_SHIFT;
--				newer_left = newer_cluster;
- 			} else {
- 				break;
- 			}
- 		} else {
--			if (ret > 0)
-+			if (ret > 0) {
- 				i += ret;
--			else
-+				last_len += ret << PAGE_CACHE_SHIFT;
-+			} else {
- 				i++;
-+				last_len = 0;
-+			}
- 		}
- 	}
- 
--- 
-1.7.3.1

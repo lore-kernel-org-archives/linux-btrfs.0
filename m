@@ -1,36 +1,70 @@
 From: Li Zefan <lizf@cn.fujitsu.com>
-Subject: Re: [PATCH] btrfs: fix memory leak in btrfs_defrag_file
-Date: Fri, 02 Sep 2011 09:46:59 +0800
-Message-ID: <4E603593.4060503@cn.fujitsu.com>
-References: <201109011633.57877.diegocg@gmail.com>
+Subject: [PATCH 1/4] Btrfs: fix defragmentation regression
+Date: Fri, 02 Sep 2011 15:56:25 +0800
+Message-ID: <4E608C29.10307@cn.fujitsu.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=ISO-8859-1
-Cc: Chris Mason <chris.mason@oracle.com>, linux-btrfs@vger.kernel.org
-To: diegocg@gmail.com
+Content-Type: text/plain; charset=UTF-8
+To: "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <201109011633.57877.diegocg@gmail.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Diego Calleja wrote:
-> kmemleak found this:
-> unreferenced object 0xffff8801b64af968 (size 512):
->   comm "btrfs-cleaner", pid 3317, jiffies 4306810886 (age 903.272s)
->   hex dump (first 32 bytes):
->     00 82 01 07 00 ea ff ff c0 83 01 07 00 ea ff ff  ................
->     80 82 01 07 00 ea ff ff c0 87 01 07 00 ea ff ff  ................
->   backtrace:
->     [<ffffffff816875cc>] kmemleak_alloc+0x5c/0xc0
->     [<ffffffff8114aec3>] kmem_cache_alloc_trace+0x163/0x240
->     [<ffffffff8127a290>] btrfs_defrag_file+0xf0/0xb20
->     [<ffffffff8125d9a5>] btrfs_run_defrag_inodes+0x165/0x210
->     [<ffffffff812479d7>] cleaner_kthread+0x177/0x190
->     [<ffffffff81075c7d>] kthread+0x8d/0xa0
->     [<ffffffff816af5f4>] kernel_thread_helper+0x4/0x10
->     [<ffffffffffffffff>] 0xffffffffffffffff
-> 
-> "pages" is not always freed. Fix it removing the unnecesary additional return.
-> 
-> Signed-off-by: Diego Calleja <diegocg@gmail.com>
-> 
+There's an off-by-one bug:
 
-Reviewed-by: Li Zefan <lizf@cn.fujitsu.com>
+  # create a file with lots of 4K file extents
+  # btrfs fi defrag /mnt/file
+  # sync
+  # filefrag -v /mnt/file
+  Filesystem type is: 9123683e
+  File size of /mnt/file is 1228800 (300 blocks, blocksize 4096)
+   ext logical physical expected length flags
+     0       0     3372              64
+     1      64     3136     3435      1
+     2      65     3436     3136     64
+     3     129     3201     3499      1
+     4     130     3500     3201     64
+     5     194     3266     3563      1
+     6     195     3564     3266     64
+     7     259     3331     3627      1
+     8     260     3628     3331     40 eof
+
+After this patch:
+
+  ...
+  # filefrag -v /mnt/file
+  Filesystem type is: 9123683e
+  File size of /mnt/file is 1228800 (300 blocks, blocksize 4096)
+   ext logical physical expected length flags
+     0       0     3372             300 eof
+  /mnt/file: 1 extent found
+
+Signed-off-by: Li Zefan <lizf@cn.fujitsu.com>
+---
+ fs/btrfs/ioctl.c |    6 ++++--
+ 1 files changed, 4 insertions(+), 2 deletions(-)
+
+diff --git a/fs/btrfs/ioctl.c b/fs/btrfs/ioctl.c
+index 970977a..31fe6d4 100644
+--- a/fs/btrfs/ioctl.c
++++ b/fs/btrfs/ioctl.c
+@@ -1081,7 +1081,6 @@ int btrfs_defrag_file(struct inode *inode, struct file *file,
+ 
+ 		defrag_count += ret;
+ 		balance_dirty_pages_ratelimited_nr(inode->i_mapping, ret);
+-		i += ret;
+ 
+ 		if (newer_than) {
+ 			if (newer_off == (u64)-1)
+@@ -1101,7 +1100,10 @@ int btrfs_defrag_file(struct inode *inode, struct file *file,
+ 				break;
+ 			}
+ 		} else {
+-			i++;
++			if (ret > 0)
++				i += ret;
++			else
++				i++;
+ 		}
+ 	}
+ 
+-- 
+1.7.3.1

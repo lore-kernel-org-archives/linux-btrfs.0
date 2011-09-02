@@ -1,70 +1,58 @@
 From: Li Zefan <lizf@cn.fujitsu.com>
-Subject: [PATCH 1/4] Btrfs: fix defragmentation regression
-Date: Fri, 02 Sep 2011 15:56:25 +0800
-Message-ID: <4E608C29.10307@cn.fujitsu.com>
+Subject: [PATCH 2/4] Btrfs: use i_size_read() in btrfs_defrag_file()
+Date: Fri, 02 Sep 2011 15:56:39 +0800
+Message-ID: <4E608C37.90908@cn.fujitsu.com>
+References: <4E608C29.10307@cn.fujitsu.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset=UTF-8
 To: "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
+In-Reply-To: <4E608C29.10307@cn.fujitsu.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-There's an off-by-one bug:
+Don't use inode->i_size directly, since we're not holding i_mutex.
 
-  # create a file with lots of 4K file extents
-  # btrfs fi defrag /mnt/file
-  # sync
-  # filefrag -v /mnt/file
-  Filesystem type is: 9123683e
-  File size of /mnt/file is 1228800 (300 blocks, blocksize 4096)
-   ext logical physical expected length flags
-     0       0     3372              64
-     1      64     3136     3435      1
-     2      65     3436     3136     64
-     3     129     3201     3499      1
-     4     130     3500     3201     64
-     5     194     3266     3563      1
-     6     195     3564     3266     64
-     7     259     3331     3627      1
-     8     260     3628     3331     40 eof
-
-After this patch:
-
-  ...
-  # filefrag -v /mnt/file
-  Filesystem type is: 9123683e
-  File size of /mnt/file is 1228800 (300 blocks, blocksize 4096)
-   ext logical physical expected length flags
-     0       0     3372             300 eof
-  /mnt/file: 1 extent found
+This also fixes another bug, that i_size can change after it's checked
+against 0 and then (i_size - 1) can be negative.
 
 Signed-off-by: Li Zefan <lizf@cn.fujitsu.com>
 ---
- fs/btrfs/ioctl.c |    6 ++++--
- 1 files changed, 4 insertions(+), 2 deletions(-)
+ fs/btrfs/ioctl.c |    7 ++++---
+ 1 files changed, 4 insertions(+), 3 deletions(-)
 
 diff --git a/fs/btrfs/ioctl.c b/fs/btrfs/ioctl.c
-index 970977a..31fe6d4 100644
+index 31fe6d4..6f2b257 100644
 --- a/fs/btrfs/ioctl.c
 +++ b/fs/btrfs/ioctl.c
-@@ -1081,7 +1081,6 @@ int btrfs_defrag_file(struct inode *inode, struct file *file,
- 
- 		defrag_count += ret;
- 		balance_dirty_pages_ratelimited_nr(inode->i_mapping, ret);
--		i += ret;
- 
- 		if (newer_than) {
- 			if (newer_off == (u64)-1)
-@@ -1101,7 +1100,10 @@ int btrfs_defrag_file(struct inode *inode, struct file *file,
- 				break;
- 			}
- 		} else {
--			i++;
-+			if (ret > 0)
-+				i += ret;
-+			else
-+				i++;
- 		}
+@@ -972,6 +972,7 @@ int btrfs_defrag_file(struct inode *inode, struct file *file,
+ 	struct btrfs_super_block *disk_super;
+ 	struct file_ra_state *ra = NULL;
+ 	unsigned long last_index;
++	u64 isize = i_size_read(inode);
+ 	u64 features;
+ 	u64 last_len = 0;
+ 	u64 skip = 0;
+@@ -997,7 +998,7 @@ int btrfs_defrag_file(struct inode *inode, struct file *file,
+ 			compress_type = range->compress_type;
  	}
  
+-	if (inode->i_size == 0)
++	if (isize == 0)
+ 		return 0;
+ 
+ 	/*
+@@ -1022,10 +1023,10 @@ int btrfs_defrag_file(struct inode *inode, struct file *file,
+ 
+ 	/* find the last page to defrag */
+ 	if (range->start + range->len > range->start) {
+-		last_index = min_t(u64, inode->i_size - 1,
++		last_index = min_t(u64, isize - 1,
+ 			 range->start + range->len - 1) >> PAGE_CACHE_SHIFT;
+ 	} else {
+-		last_index = (inode->i_size - 1) >> PAGE_CACHE_SHIFT;
++		last_index = (isize - 1) >> PAGE_CACHE_SHIFT;
+ 	}
+ 
+ 	if (newer_than) {
 -- 
 1.7.3.1

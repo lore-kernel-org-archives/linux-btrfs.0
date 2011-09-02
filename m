@@ -1,41 +1,79 @@
-From: David Sterba <dsterba@suse.cz>
-Subject: Re: [PATCH] Btrfs-progs: added btrfs filesystem label [label] [path]
- support V2
-Date: Fri, 2 Sep 2011 17:48:10 +0200
-Message-ID: <20110902154810.GH11678@ds.suse.cz>
-References: <4E5F47C7.3030803@oracle.com>
- <4E5F7216.7040909@oracle.com>
- <20110902125208.GF11678@ds.suse.cz>
- <4E60D67E.2070903@oracle.com>
-Reply-To: dsterba@suse.cz
-Mime-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Cc: dsterba@suse.cz, linux-btrfs@vger.kernel.org,
-	Hugo Mills <hugo@carfax.org.uk>, chris.mason@oracle.com
-To: Jeff Liu <jeff.liu@oracle.com>
+From: slyich@gmail.com
+Subject: [PATCH] btrfs: fix warning in iput for bad-inode
+Date: Fri,  2 Sep 2011 20:01:21 +0300
+Message-ID: <1314982881-10754-1-git-send-email-slyich@gmail.com>
+References: <20110831001724.1f6225c5@sf>
+Cc: Chris Mason <chris.mason@oracle.com>,
+	Josef Bacik <josef@redhat.com>,
+	Sergei Trofimovich <slyfox@gentoo.org>,
+	Konstantin Khlebnikov <khlebnikov@openvz.org>
+To: linux-btrfs@vger.kernel.org
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <4E60D67E.2070903@oracle.com>
+In-Reply-To: <20110831001724.1f6225c5@sf>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Fri, Sep 02, 2011 at 09:13:34PM +0800, Jeff Liu wrote:
-> --- a/ioctl.h
-> +++ b/ioctl.h
-> @@ -140,6 +140,8 @@ struct btrfs_ioctl_space_args {
->                     struct btrfs_ioctl_vol_args)
->  #define BTRFS_IOC_SCAN_DEV _IOW(BTRFS_IOCTL_MAGIC, 4, \
->                     struct btrfs_ioctl_vol_args)
-> +#define BTRFS_IOC_FS_SETLABEL _IOW(BTRFS_IOCTL_MAGIC, 5, \
-> +                   struct btrfs_ioctl_fs_label_args)
->  /* trans start and trans end are dangerous, and only for
->   * use by applications that know how to avoid the
->   * resulting deadlocks
+From: Sergei Trofimovich <slyfox@gentoo.org>
 
-well, it is an unassigned number, but a newly added features should IMHO
-allocate greater than current max value, ie over 31 in coordination with
+iput() shouldn't be called for inodes in I_NEW state.
+We need to mark inode as constructed first.
 
-https://btrfs.wiki.kernel.org/index.php/Project_ideas#Development_notes.2C_please_read
+WARNING: at fs/inode.c:1309 iput+0x20b/0x210()
+Call Trace:
+ [<ffffffff8103e7ba>] warn_slowpath_common+0x7a/0xb0
+ [<ffffffff8103e805>] warn_slowpath_null+0x15/0x20
+ [<ffffffff810eaf0b>] iput+0x20b/0x210
+ [<ffffffff811b96fb>] btrfs_iget+0x1eb/0x4a0
+ [<ffffffff811c3ad6>] btrfs_run_defrag_inodes+0x136/0x210
+ [<ffffffff811ad55f>] cleaner_kthread+0x17f/0x1a0
+ [<ffffffff81035b7d>] ? sub_preempt_count+0x9d/0xd0
+ [<ffffffff811ad3e0>] ? transaction_kthread+0x280/0x280
+ [<ffffffff8105af86>] kthread+0x96/0xa0
+ [<ffffffff814336d4>] kernel_thread_helper+0x4/0x10
+ [<ffffffff8105aef0>] ? kthread_worker_fn+0x190/0x190
+ [<ffffffff814336d0>] ? gs_change+0xb/0xb
 
-table.
+Signed-off-by: Sergei Trofimovich <slyfox@gentoo.org>
+CC: Konstantin Khlebnikov <khlebnikov@openvz.org>
+---
+Change since Konstantin's patch:
+- avoid using explicit destructor for inode, as it can(?)
+  be shared among other threads. Use unlock_new_inode()/iput()
+  instead. It fixes 100% CPU load after 'sync()' popped-up in
+  Konstantin's patch
+ fs/btrfs/inode.c |   10 +++-------
+ 1 files changed, 3 insertions(+), 7 deletions(-)
 
+diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
+index 0ccc743..ec4b550 100644
+--- a/fs/btrfs/inode.c
++++ b/fs/btrfs/inode.c
+@@ -3952,7 +3952,6 @@ struct inode *btrfs_iget(struct super_block *s, struct btrfs_key *location,
+ 			 struct btrfs_root *root, int *new)
+ {
+ 	struct inode *inode;
+-	int bad_inode = 0;
+ 
+ 	inode = btrfs_iget_locked(s, location->objectid, root);
+ 	if (!inode)
+@@ -3968,15 +3967,12 @@ struct inode *btrfs_iget(struct super_block *s, struct btrfs_key *location,
+ 			if (new)
+ 				*new = 1;
+ 		} else {
+-			bad_inode = 1;
++			unlock_new_inode(inode);
++			iput(inode);
++			inode = ERR_PTR(-ESTALE);
+ 		}
+ 	}
+ 
+-	if (bad_inode) {
+-		iput(inode);
+-		inode = ERR_PTR(-ESTALE);
+-	}
+-
+ 	return inode;
+ }
+ 
+-- 
+1.7.3.4
 
-david

@@ -1,7 +1,7 @@
 From: Li Zefan <lizf@cn.fujitsu.com>
-Subject: [PATCH 3/4] Btrfs: fix wrong max_to_defrag in btrfs_defrag_file()
-Date: Fri, 02 Sep 2011 15:56:55 +0800
-Message-ID: <4E608C47.6060308@cn.fujitsu.com>
+Subject: [PATCH 4/4] Btrfs: honor extent thresh during defragmentation
+Date: Fri, 02 Sep 2011 15:57:07 +0800
+Message-ID: <4E608C53.9040304@cn.fujitsu.com>
 References: <4E608C29.10307@cn.fujitsu.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset=UTF-8
@@ -10,35 +10,142 @@ Return-path: <linux-btrfs-owner@vger.kernel.org>
 In-Reply-To: <4E608C29.10307@cn.fujitsu.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-It's off-by-one, and thus we may skip the last page while defragmenting.
+We won't defrag an extent, if it's bigger than the threshold we
+specified and there's no small extent before it, but actually
+the code doesn't work this way.
 
-An example case:
+There are three bugs:
 
-  # create /mnt/file with 2 4K file extents
-  # btrfs fi defrag /mnt/file
-  # sync
-  # filefrag /mnt/file
-  /mnt/file: 2 extents found
+- When should_defrag_range() decides we should keep on defragmenting
+  an extent, last_len is not incremented. (old bug)
 
-So it's not defragmented.
+- The length that passes to should_defrag_range() is not the length
+  we're going to defrag. (new bug)
+
+- We always defrag 256K bytes data, and a big extent can be part of
+  this range. (new bug)
+
+For a file with 4 extents:
+
+        | 4K | 4K | 256K | 256K |
+
+The result of defrag with (the default) 256K extent thresh should be:
+
+        | 264K | 256K |
+
+but with those bugs, we'll get:
+
+        | 520K |
 
 Signed-off-by: Li Zefan <lizf@cn.fujitsu.com>
 ---
- fs/btrfs/ioctl.c |    2 +-
- 1 files changed, 1 insertions(+), 1 deletions(-)
+ fs/btrfs/ioctl.c |   37 ++++++++++++++++++++++++++-----------
+ 1 files changed, 26 insertions(+), 11 deletions(-)
 
 diff --git a/fs/btrfs/ioctl.c b/fs/btrfs/ioctl.c
-index 6f2b257..57aa5b7 100644
+index 57aa5b7..90d7904 100644
 --- a/fs/btrfs/ioctl.c
 +++ b/fs/btrfs/ioctl.c
-@@ -1046,7 +1046,7 @@ int btrfs_defrag_file(struct inode *inode, struct file *file,
- 		i = range->start >> PAGE_CACHE_SHIFT;
- 	}
- 	if (!max_to_defrag)
--		max_to_defrag = last_index - 1;
-+		max_to_defrag = last_index;
+@@ -760,7 +760,7 @@ static int should_defrag_range(struct inode *inode, u64 start, u64 len,
+ 	int ret = 1;
  
- 	while (i <= last_index && defrag_count < max_to_defrag) {
- 		/*
+ 	/*
+-	 * make sure that once we start defragging and extent, we keep on
++	 * make sure that once we start defragging an extent, we keep on
+ 	 * defragging it
+ 	 */
+ 	if (start < *defrag_end)
+@@ -805,7 +805,6 @@ static int should_defrag_range(struct inode *inode, u64 start, u64 len,
+ 	 * extent will force at least part of that big extent to be defragged.
+ 	 */
+ 	if (ret) {
+-		*last_len += len;
+ 		*defrag_end = extent_map_end(em);
+ 	} else {
+ 		*last_len = 0;
+@@ -978,13 +977,14 @@ int btrfs_defrag_file(struct inode *inode, struct file *file,
+ 	u64 skip = 0;
+ 	u64 defrag_end = 0;
+ 	u64 newer_off = range->start;
+-	int newer_left = 0;
+ 	unsigned long i;
++	unsigned long ra_index = 0;
+ 	int ret;
+ 	int defrag_count = 0;
+ 	int compress_type = BTRFS_COMPRESS_ZLIB;
+ 	int extent_thresh = range->extent_thresh;
+-	int newer_cluster = (256 * 1024) >> PAGE_CACHE_SHIFT;
++	int max_cluster = (256 * 1024) >> PAGE_CACHE_SHIFT;
++	int cluster = max_cluster;
+ 	u64 new_align = ~((u64)128 * 1024 - 1);
+ 	struct page **pages = NULL;
+ 
+@@ -1014,7 +1014,7 @@ int btrfs_defrag_file(struct inode *inode, struct file *file,
+ 		ra = &file->f_ra;
+ 	}
+ 
+-	pages = kmalloc(sizeof(struct page *) * newer_cluster,
++	pages = kmalloc(sizeof(struct page *) * max_cluster,
+ 			GFP_NOFS);
+ 	if (!pages) {
+ 		ret = -ENOMEM;
+@@ -1039,7 +1039,6 @@ int btrfs_defrag_file(struct inode *inode, struct file *file,
+ 			 * the extents in the file evenly spaced
+ 			 */
+ 			i = (newer_off & new_align) >> PAGE_CACHE_SHIFT;
+-			newer_left = newer_cluster;
+ 		} else
+ 			goto out_ra;
+ 	} else {
+@@ -1071,12 +1070,26 @@ int btrfs_defrag_file(struct inode *inode, struct file *file,
+ 			i = max(i + 1, next);
+ 			continue;
+ 		}
++
++		if (!newer_than) {
++			cluster = (PAGE_CACHE_ALIGN(defrag_end) >>
++				   PAGE_CACHE_SHIFT) - i;
++			cluster = min(cluster, max_cluster);
++		} else {
++			cluster = max_cluster;
++		}
++
+ 		if (range->flags & BTRFS_DEFRAG_RANGE_COMPRESS)
+ 			BTRFS_I(inode)->force_compress = compress_type;
+ 
+-		btrfs_force_ra(inode->i_mapping, ra, file, i, newer_cluster);
++		if (i + cluster > ra_index) {
++			ra_index = max(i, ra_index);
++			btrfs_force_ra(inode->i_mapping, ra, file, ra_index,
++				       cluster);
++			ra_index += max_cluster;
++		}
+ 
+-		ret = cluster_pages_for_defrag(inode, pages, i, newer_cluster);
++		ret = cluster_pages_for_defrag(inode, pages, i, cluster);
+ 		if (ret < 0)
+ 			goto out_ra;
+ 
+@@ -1096,15 +1109,17 @@ int btrfs_defrag_file(struct inode *inode, struct file *file,
+ 			if (!ret) {
+ 				range->start = newer_off;
+ 				i = (newer_off & new_align) >> PAGE_CACHE_SHIFT;
+-				newer_left = newer_cluster;
+ 			} else {
+ 				break;
+ 			}
+ 		} else {
+-			if (ret > 0)
++			if (ret > 0) {
+ 				i += ret;
+-			else
++				last_len += ret << PAGE_CACHE_SHIFT;
++			} else {
+ 				i++;
++				last_len = 0;
++			}
+ 		}
+ 	}
+ 
 -- 
 1.7.3.1

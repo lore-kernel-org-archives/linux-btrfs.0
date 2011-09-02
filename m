@@ -1,112 +1,36 @@
-From: Liu Bo <liubo2009@cn.fujitsu.com>
-Subject: Re: [PATCH 00/12 v5] Btrfs: improve write ahead log with sub transaction
-Date: Fri, 02 Sep 2011 08:42:27 +0800
-Message-ID: <4E602673.8050409@cn.fujitsu.com>
-References: <1312623467-31487-1-git-send-email-liubo2009@cn.fujitsu.com> <CAKcLGm8Fgm+R3tAHcESc_VtQMcFgc48oiZ4W1gbemi6D3+B+Ug@mail.gmail.com>
+From: Li Zefan <lizf@cn.fujitsu.com>
+Subject: Re: [PATCH] btrfs: fix memory leak in btrfs_defrag_file
+Date: Fri, 02 Sep 2011 09:46:59 +0800
+Message-ID: <4E603593.4060503@cn.fujitsu.com>
+References: <201109011633.57877.diegocg@gmail.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset=ISO-8859-1
-Cc: linux-btrfs@vger.kernel.org, chris.mason@oracle.com
-To: Mitch Harder <mitch.harder@sabayonlinux.org>
+Cc: Chris Mason <chris.mason@oracle.com>, linux-btrfs@vger.kernel.org
+To: diegocg@gmail.com
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <CAKcLGm8Fgm+R3tAHcESc_VtQMcFgc48oiZ4W1gbemi6D3+B+Ug@mail.gmail.com>
+In-Reply-To: <201109011633.57877.diegocg@gmail.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 09/02/2011 01:38 AM, Mitch Harder wrote:
-> On Sat, Aug 6, 2011 at 4:37 AM, Liu Bo <liubo2009@cn.fujitsu.com> wrote:
->> I've fixed a bug and rebased this to the latest for-linus branch,
->> and with applying my previous posted patch:
->>
->>        [PATCH] Btrfs: fix an oops of log replay
->>
->> , I also test this sub transaction patchset with
->> a) sysbench 0.4.12 tool and
->> b) Chris's synctest tool in both _crash_ and _uncrash_ cases, and it works well.
->>
->> Please test this and feel free to notice me if there are any problems.
->> Hope that it can get through with no bugs and be ready for merge this time :)
->>
->> ===
->> I've been working to try to improve the write-ahead log's performance,
->> and I found that the bottleneck addresses in the checksum items,
->> especially when we want to make a random write on a large file, e.g a 4G file.
->>
->> Then a idea for this suggested by Chris is to use sub transaction ids and just
->> to log the part of inode that had changed since either the last log commit or
->> the last transaction commit.  And as we also push the sub transid into the btree
->> blocks, we'll get much faster tree walks.  As a result, we abandon the original
->> brute force approach, which is "to delete all items of the inode in log",
->> to making sure we get the most uptodate copies of everything, and instead
->> we manage to "find and merge", i.e. finding extents in the log tree and merging
->> in the new extents from the file.
->>
->> This patchset puts the above idea into code, and although the code is now more
->> complex, it brings us a great deal of performance improvement:
->>
->> in my sysbench "write + fsync" test:
->>
->>        451.01Kb/sec -> 4.3621Mb/sec
->>
->> In v2, thanks to Chris, we worked together to solve 2 bugs, and after that it
->> works as expected.
->> In v3, thanks to Josef, we simplify several code.
->> In v4, rebase to the latest for-linus branch, Chris hit two problems, and we
->> solve them.
->>
->> Since there are some vital changes in recent rc, like "kill trans_mutex" and
->> "use cur_trans", as David asked, I rebase the patchset to the latest for-linus
->> branch.
->>
->> More tests are welcome!
->>
->>
->> Liu Bo (12):
->>  Revert "Btrfs: do not flush csum items of unchanged file data during
->>    treelog"
->>  Btrfs: introduce sub transaction stuff
->>  Btrfs: update block generation if should_cow_block fails
->>  Btrfs: modify btrfs_drop_extents API
->>  Btrfs: introduce first sub trans
->>  Btrfs: still update inode trans stuff when size remains unchanged
->>  Btrfs: improve log with sub transaction
->>  Btrfs: add checksum check for log
->>  Btrfs: fix a bug of log check
->>  Btrfs: kick off useless code
->>  Btrfs: do not iput inode when inode is still in log
->>  Btrfs: use the right generation number to read log_root_tree
->>
->>  fs/btrfs/btrfs_inode.h |   12 ++-
->>  fs/btrfs/ctree.c       |   87 +++++++++++++------
->>  fs/btrfs/ctree.h       |    5 +-
->>  fs/btrfs/disk-io.c     |   23 ++++--
->>  fs/btrfs/extent-tree.c |   10 ++-
->>  fs/btrfs/file.c        |   22 ++---
->>  fs/btrfs/inode.c       |   39 ++++++---
->>  fs/btrfs/ioctl.c       |    6 +-
->>  fs/btrfs/relocation.c  |    6 +-
->>  fs/btrfs/transaction.c |   13 ++-
->>  fs/btrfs/transaction.h |   19 ++++-
->>  fs/btrfs/tree-defrag.c |    2 +-
->>  fs/btrfs/tree-log.c    |  225 ++++++++++++++++++++++++++++++++----------------
->>  13 files changed, 312 insertions(+), 157 deletions(-)
->>
+Diego Calleja wrote:
+> kmemleak found this:
+> unreferenced object 0xffff8801b64af968 (size 512):
+>   comm "btrfs-cleaner", pid 3317, jiffies 4306810886 (age 903.272s)
+>   hex dump (first 32 bytes):
+>     00 82 01 07 00 ea ff ff c0 83 01 07 00 ea ff ff  ................
+>     80 82 01 07 00 ea ff ff c0 87 01 07 00 ea ff ff  ................
+>   backtrace:
+>     [<ffffffff816875cc>] kmemleak_alloc+0x5c/0xc0
+>     [<ffffffff8114aec3>] kmem_cache_alloc_trace+0x163/0x240
+>     [<ffffffff8127a290>] btrfs_defrag_file+0xf0/0xb20
+>     [<ffffffff8125d9a5>] btrfs_run_defrag_inodes+0x165/0x210
+>     [<ffffffff812479d7>] cleaner_kthread+0x177/0x190
+>     [<ffffffff81075c7d>] kthread+0x8d/0xa0
+>     [<ffffffff816af5f4>] kernel_thread_helper+0x4/0x10
+>     [<ffffffffffffffff>] 0xffffffffffffffff
 > 
-> I've had the v5 stack of patches in my kernel for about 3 weeks now.
+> "pages" is not always freed. Fix it removing the unnecesary additional return.
 > 
-> I've just been testing for general stability in a 3.0 series kernel,
-> and I haven't run across any issues or obvious performance effects.
-> 
-> I've been testing on both x86 and x86_64 installations in Desktop
-> service without RAID.
-
-That's great.
-Mitch, thanks a lot for the testing work!
-
-thanks,
-liubo
-
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+> Signed-off-by: Diego Calleja <diegocg@gmail.com>
 > 
 
+Reviewed-by: Li Zefan <lizf@cn.fujitsu.com>

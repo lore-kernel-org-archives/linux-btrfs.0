@@ -1,66 +1,50 @@
-From: Jeff liu <jeff.liu@oracle.com>
-Subject: Re: [PATCH] Btrfs-progs: added btrfs filesystem label [label] [path] support V2
-Date: Sat, 3 Sep 2011 11:11:36 +0800
-Message-ID: <46CBCF59-89E1-4A80-B85D-17C65F695247@oracle.com>
-References: <4E5F47C7.3030803@oracle.com> <4E5F7216.7040909@oracle.com> <20110902125208.GF11678@ds.suse.cz> <4E60D67E.2070903@oracle.com> <20110902154810.GH11678@ds.suse.cz>
-Mime-Version: 1.0 (Apple Message framework v1082)
-Content-Type: text/plain; charset=GB2312
-Cc: linux-btrfs@vger.kernel.org, Hugo Mills <hugo@carfax.org.uk>,
-	Chris Mason <chris.mason@oracle.com>, lizf@cn.fujitsu.com
-To: dsterba@suse.cz
+From: Maciej Marcin Piechotka <uzytkownik2@gmail.com>
+Subject: Problems with tuxonice and btrfs
+Date: Sun, 04 Sep 2011 16:23:20 +0100
+Message-ID: <1315149806.23766.2.camel@picard>
+Reply-To: uzytkownik2@gmail.com
+Mime-Version: 1.0
+Content-Type: multipart/signed; micalg="pgp-ripemd160";
+	protocol="application/pgp-signature"; boundary="=-gSzVT+sutS8gtF5Z4tU/"
+To: linux-btrfs@vger.kernel.org
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <20110902154810.GH11678@ds.suse.cz>
 List-ID: <linux-btrfs.vger.kernel.org>
 
 
-=D4=DA 2011-9-2=A3=AC=CF=C2=CE=E711:48=A3=AC David Sterba =D0=B4=B5=C0=A3=
-=BA
+--=-gSzVT+sutS8gtF5Z4tU/
+Content-Type: text/plain; charset="UTF-8"
+Content-Transfer-Encoding: quoted-printable
 
-> On Fri, Sep 02, 2011 at 09:13:34PM +0800, Jeff Liu wrote:
->> --- a/ioctl.h
->> +++ b/ioctl.h
->> @@ -140,6 +140,8 @@ struct btrfs_ioctl_space_args {
->>                    struct btrfs_ioctl_vol_args)
->> #define BTRFS_IOC_SCAN_DEV _IOW(BTRFS_IOCTL_MAGIC, 4, \
->>                    struct btrfs_ioctl_vol_args)
->> +#define BTRFS_IOC_FS_SETLABEL _IOW(BTRFS_IOCTL_MAGIC, 5, \
->> +                   struct btrfs_ioctl_fs_label_args)
->> /* trans start and trans end are dangerous, and only for
->>  * use by applications that know how to avoid the
->>  * resulting deadlocks
->=20
-> well, it is an unassigned number, but a newly added features should I=
-MHO
-> allocate greater than current max value, ie over 31 in coordination w=
-ith
->=20
-> https://btrfs.wiki.kernel.org/index.php/Project_ideas#Development_not=
-es.2C_please_read
->=20
-> table.
+I get filesystem corruption when I unsuccessfully hibernate using
+tuxonice. I don't get this problem using standard suspend.
 
-It sounds reasonable to allocate a greater value, could anyone please c=
-onfirm it?
+While I understand TOI is not in mainline it requires no modification
+for non-FUSE filesystems. where should I report the problem?
 
-Hi Zefan,
+Best regards
 
-What's your ioctl range for online fsck?
+--=-gSzVT+sutS8gtF5Z4tU/
+Content-Type: application/pgp-signature; name="signature.asc"
+Content-Description: This is a digitally signed message part
+
+-----BEGIN PGP SIGNATURE-----
+Version: GnuPG v2.0.18 (GNU/Linux)
+
+iQIcBAABAwAGBQJOY5fuAAoJEJIdee2Vr4aP1G0QAK1wKsJiTk7FwPOeEcT46rmW
+N9NXqKdckaBXj73WPbuGsASi6rvhpA9bh8ThliTf2pNUdEznY4Hhdt7khSQWNTv8
+FpGwcJDFDQ/u0Jl++nVcWD/22CEhJFN8ZbUBQwg1vw454NsU0UAQ8QxcGP9RNfpS
+Uc1U/WmLuOkK3FkV0jfZ/k+7Zc05KuyOL2FXloS0jGTmgz9JLEvEdvd7roGvJHMr
+mvgNjjVBf/GARNkG8sNcuNhBktqnzX+Mcu0yMpPUk2h3p6QNSWwRuzyY5TKlf82w
+w59EKRbMDOqjwLyS2e3yTjnApiDlOgRIQSpF3ERgf7WqqJZQuIO5n49ByW5y8j9u
+uPSjy67l+eM5d2a8y5zcKZnAq9erUemvE214Yy7MQhZw0ovhQJ3Szcuk9jEPqeNN
+Ho3/g9KJFZW6Z4Zpza295pQ2vc9dRSZJuAX9+1MNrwA3mRvGQ4fE1hmIQXTKOewE
+BAnuVgPvM3IOHrDhdLOdXbWb4jriEkiOEPRXK5oEOKsGHDql7h6TJYnYh67tVbOT
+3fb7RxumpRk30+lJzkDE8WpG7SOYOfaoenWr/jHTDlIg8T0p/LC1l9NzomeX7DYw
+7HMDBLZ0S9Q/5xZ3zVVzPT75sjXXX9gqduD36F+uBX9liSmUx8Dh7DM+EAuzIrH4
+1WyjBk7/GmkFRbsB03L7
+=MgBE
+-----END PGP SIGNATURE-----
+
+--=-gSzVT+sutS8gtF5Z4tU/--
 
 
-Thanks,
--Jeff
-
->=20
->=20
-> david
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-btrfs=
-" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
-
---
-To unsubscribe from this list: send the line "unsubscribe linux-btrfs" =
-in
-the body of a message to majordomo@vger.kernel.org
-More majordomo info at  http://vger.kernel.org/majordomo-info.html

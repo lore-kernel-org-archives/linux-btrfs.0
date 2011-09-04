@@ -1,540 +1,244 @@
-From: Hugo Mills <hugo@carfax.org.uk>
-Subject: Re: [PATCH] Fix -Wunused-but-set-variable warnings from GCC 4.6
-Date: Sun, 4 Sep 2011 19:48:11 +0100
-Message-ID: <20110904184811.GH9907@carfax.org.uk>
-References: <20110822120755.GG15807@riva.dynamic.greenend.org.uk>
+From: Ilya Dryomov <idryomov@gmail.com>
+Subject: Re: Snapshot of root makes an undeletable folder
+Date: Mon, 5 Sep 2011 00:05:52 +0300
+Message-ID: <20110904210552.GA1403@zambezi.lan>
+References: <CALJXSJprxWVE3Ms1PLzWBgWa4MutRLeG0f7xx2Q58LW0nhbFrw@mail.gmail.com>
 Mime-Version: 1.0
-Content-Type: multipart/signed; micalg=pgp-sha1;
-	protocol="application/pgp-signature"; boundary="wayzTnRSUXKNfBqd"
-Cc: linux-btrfs@vger.kernel.org
-To: Colin Watson <cjwatson@ubuntu.com>
+Content-Type: text/plain; charset=utf-8
+Cc: linux-btrfs <linux-btrfs@vger.kernel.org>
+To: =?utf-8?B?SsOpcsO0bWU=?= Poulin <jeromepoulin@gmail.com>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <20110822120755.GG15807@riva.dynamic.greenend.org.uk>
+In-Reply-To: <CALJXSJprxWVE3Ms1PLzWBgWa4MutRLeG0f7xx2Q58LW0nhbFrw@mail.gmail.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
+On Sun, Sep 04, 2011 at 11:29:43AM -0400, J=C3=A9r=C3=B4me Poulin wrote=
+:
+> I recently converted a long-used ext4 filesystem after e2fsck to btrf=
+s
+> using btrfs-convert, everything went fine and all my files are there.
+> I then decided to make the filesystem more managable so I made a
+> snapshot of the root and removed the rest of the root like:
+>=20
+> Original listing:
+> ext2_saved folder1 folder2 folder3 folder4 lost+found
+>=20
+> btrfs sub snap . music
+> rm -rf folder1 folder2 folder3 folder4 lost+found music/lost+found
+>=20
+> So now I end up with only a music folder on root which I was able to
+> mount using subvol=3D to another folder and use the btrfs FS for othe=
+r
+> subvolumes.
+>=20
+> The next day I decided to remove the ext2_image snapshot and grow the
+> filesystem to accomodate for other files, this was still OK.
+>=20
+> Then I though about my folder organization again and renamed music to
+> downloads, this is still OK and then create music in downloads, I was
+> told "music" already exists, however I can't neither see it, list it,
+> cd to it or remove it.
 
---wayzTnRSUXKNfBqd
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
+This is because music directory actually exists.  When you executed
 
-On Mon, Aug 22, 2011 at 01:07:55PM +0100, Colin Watson wrote:
-> GCC 4.6 has a new -Wunused-but-set-variable warning category, enabled by
-> default by -Wall (http://gcc.gnu.org/gcc-4.6/changes.html), and since
-> btrfs-tools uses -Werror by default, this causes the build to fail.  The
-> following patch fixes that.  I believe all the code I removed is
-> provably a no-op, but of course it would be worth double-checking.
+btrfs sub snap . music=20
 
-   I think that all of this is fixed in the integration tree, I'm
-afraid. I've certainly merged several gcc-4.6 fixes into the
-integration branch over the last few months, and it seems to compile
-happily with gcc-4.6 here.
+btrfs created music directory item in your default subvolume and *then*
+took a snapshot of the default subvolume with that music directory item
+already in it.  Btrfs readdir skips references from the snapshot to
+itself, so you can't see it.  Even though you renamed your snapshot to
+"downloads", snapshot's contents still don't allow you to create a
+"music" directory in it.
 
-   Hugo.
+The correct way to do what you want is to create a subvolume "music",
+and move folders from default to music.  Then you can snapshot your
+newly created music subvolume in a clean way, rename it, etc.
 
-> Signed-off-by: Colin Watson <cjwatson@ubuntu.com>
-> ---
->  btrfs-map-logical.c |    2 --
->  btrfsck.c           |   16 +++++++---------
->  ctree.c             |   16 ----------------
->  debug-tree.c        |    2 ++
->  dir-item.c          |    7 +++----
->  disk-io.c           |    4 ----
->  extent-cache.c      |    5 +----
->  extent-tree.c       |    6 ++++++
->  extent_io.c         |    4 ----
->  mkfs.c              |    2 --
->  print-tree.c        |    3 ---
->  utils.c             |    3 +--
->  volumes.c           |    4 ----
->  13 files changed, 20 insertions(+), 54 deletions(-)
-> 
-> diff --git a/btrfs-map-logical.c b/btrfs-map-logical.c
-> index a109c6a..8a12074 100644
-> --- a/btrfs-map-logical.c
-> +++ b/btrfs-map-logical.c
-> @@ -41,7 +41,6 @@ struct extent_buffer *debug_read_block(struct btrfs_root *root, u64 bytenr,
->  				     u32 blocksize, int copy)
->  {
->  	int ret;
-> -	int dev_nr;
->  	struct extent_buffer *eb;
->  	u64 length;
->  	struct btrfs_multi_bio *multi = NULL;
-> @@ -53,7 +52,6 @@ struct extent_buffer *debug_read_block(struct btrfs_root *root, u64 bytenr,
->  	if (!eb)
->  		return NULL;
->  
-> -	dev_nr = 0;
->  	length = blocksize;
->  	while (1) {
->  		ret = btrfs_map_block(&root->fs_info->mapping_tree, READ,
-> diff --git a/btrfsck.c b/btrfsck.c
-> index 63e44d1..0c5f7fe 100644
-> --- a/btrfsck.c
-> +++ b/btrfsck.c
-> @@ -995,7 +995,6 @@ static int process_one_leaf(struct btrfs_root *root, struct extent_buffer *eb,
->  	struct btrfs_key key;
->  	u32 nritems;
->  	int i;
-> -	int ret;
->  	struct cache_tree *inode_cache;
->  	struct shared_node *active_node;
->  
-> @@ -1021,17 +1020,17 @@ static int process_one_leaf(struct btrfs_root *root, struct extent_buffer *eb,
->  		switch (key.type) {
->  		case BTRFS_DIR_ITEM_KEY:
->  		case BTRFS_DIR_INDEX_KEY:
-> -			ret = process_dir_item(eb, i, &key, active_node);
-> +			process_dir_item(eb, i, &key, active_node);
->  			break;
->  		case BTRFS_INODE_REF_KEY:
-> -			ret = process_inode_ref(eb, i, &key, active_node);
-> +			process_inode_ref(eb, i, &key, active_node);
->  			break;
->  		case BTRFS_INODE_ITEM_KEY:
-> -			ret = process_inode_item(eb, i, &key, active_node);
-> +			process_inode_item(eb, i, &key, active_node);
->  			break;
->  		case BTRFS_EXTENT_DATA_KEY:
-> -			ret = process_file_extent(root, eb, i, &key,
-> -						  active_node);
-> +			process_file_extent(root, eb, i, &key,
-> +					    active_node);
->  			break;
->  		default:
->  			break;
-> @@ -1917,7 +1916,6 @@ static int check_owner_ref(struct btrfs_root *root,
->  	struct btrfs_root *ref_root;
->  	struct btrfs_key key;
->  	struct btrfs_path path;
-> -	int ret;
->  	int level;
->  	int found = 0;
->  
-> @@ -1950,7 +1948,7 @@ static int check_owner_ref(struct btrfs_root *root,
->  	
->  	btrfs_init_path(&path);
->  	path.lowest_level = level + 1;
-> -	ret = btrfs_search_slot(NULL, ref_root, &key, &path, 0, 0);
-> +	btrfs_search_slot(NULL, ref_root, &key, &path, 0, 0);
->  
->  	if (buf->start == btrfs_node_blockptr(path.nodes[level + 1],
->  					      path.slots[level + 1]))
-> @@ -2539,10 +2537,10 @@ static int run_next_block(struct btrfs_root *root,
->  				continue;
->  			}
->  			if (key.type == BTRFS_BLOCK_GROUP_ITEM_KEY) {
-> +#if 0
->  				struct btrfs_block_group_item *bi;
->  				bi = btrfs_item_ptr(buf, i,
->  					    struct btrfs_block_group_item);
-> -#if 0
->  				fprintf(stderr,"block group %Lu %Lu used %Lu ",
->  					btrfs_disk_key_objectid(disk_key),
->  					btrfs_disk_key_offset(disk_key),
-> diff --git a/ctree.c b/ctree.c
-> index f70e10c..12f1a55 100644
-> --- a/ctree.c
-> +++ b/ctree.c
-> @@ -262,7 +262,6 @@ int __btrfs_cow_block(struct btrfs_trans_handle *trans,
->  			     struct extent_buffer **cow_ret,
->  			     u64 search_start, u64 empty_size)
->  {
-> -	u64 generation;
->  	struct extent_buffer *cow;
->  	struct btrfs_disk_key disk_key;
->  	int level;
-> @@ -272,7 +271,6 @@ int __btrfs_cow_block(struct btrfs_trans_handle *trans,
->  	WARN_ON(root->ref_cows && trans->transid != root->last_trans);
->  
->  	level = btrfs_header_level(buf);
-> -	generation = btrfs_header_generation(buf);
->  
->  	if (level == 0)
->  		btrfs_item_key(buf, &disk_key, 0);
-> @@ -795,7 +793,6 @@ static int balance_level(struct btrfs_trans_handle *trans,
->  	int wret;
->  	int pslot;
->  	int orig_slot = path->slots[level];
-> -	int err_on_enospc = 0;
->  	u64 orig_ptr;
->  
->  	if (level == 0)
-> @@ -845,9 +842,6 @@ static int balance_level(struct btrfs_trans_handle *trans,
->  	    BTRFS_NODEPTRS_PER_BLOCK(root) / 4)
->  		return 0;
->  
-> -	if (btrfs_header_nritems(mid) < 2)
-> -		err_on_enospc = 1;
-> -
->  	left = read_node_slot(root, parent, pslot - 1);
->  	if (left) {
->  		wret = btrfs_cow_block(trans, root, left,
-> @@ -873,8 +867,6 @@ static int balance_level(struct btrfs_trans_handle *trans,
->  		wret = push_node_left(trans, root, left, mid, 1);
->  		if (wret < 0)
->  			ret = wret;
-> -		if (btrfs_header_nritems(mid) < 2)
-> -			err_on_enospc = 1;
->  	}
->  
->  	/*
-> @@ -996,14 +988,12 @@ static int noinline push_nodes_for_insert(struct btrfs_trans_handle *trans,
->  	int wret;
->  	int pslot;
->  	int orig_slot = path->slots[level];
-> -	u64 orig_ptr;
->  
->  	if (level == 0)
->  		return 1;
->  
->  	mid = path->nodes[level];
->  	WARN_ON(btrfs_header_generation(mid) != trans->transid);
-> -	orig_ptr = btrfs_node_blockptr(mid, orig_slot);
->  
->  	if (level < BTRFS_MAX_LEVEL - 1)
->  		parent = path->nodes[level + 1];
-> @@ -2370,7 +2360,6 @@ int btrfs_truncate_item(struct btrfs_trans_handle *trans,
->  {
->  	int ret = 0;
->  	int slot;
-> -	int slot_orig;
->  	struct extent_buffer *leaf;
->  	struct btrfs_item *item;
->  	u32 nritems;
-> @@ -2380,7 +2369,6 @@ int btrfs_truncate_item(struct btrfs_trans_handle *trans,
->  	unsigned int size_diff;
->  	int i;
->  
-> -	slot_orig = path->slots[0];
->  	leaf = path->nodes[0];
->  	slot = path->slots[0];
->  
-> @@ -2468,7 +2456,6 @@ int btrfs_extend_item(struct btrfs_trans_handle *trans,
->  {
->  	int ret = 0;
->  	int slot;
-> -	int slot_orig;
->  	struct extent_buffer *leaf;
->  	struct btrfs_item *item;
->  	u32 nritems;
-> @@ -2477,7 +2464,6 @@ int btrfs_extend_item(struct btrfs_trans_handle *trans,
->  	unsigned int old_size;
->  	int i;
->  
-> -	slot_orig = path->slots[0];
->  	leaf = path->nodes[0];
->  
->  	nritems = btrfs_header_nritems(leaf);
-> @@ -2541,7 +2527,6 @@ int btrfs_insert_empty_items(struct btrfs_trans_handle *trans,
->  	struct btrfs_item *item;
->  	int ret = 0;
->  	int slot;
-> -	int slot_orig;
->  	int i;
->  	u32 nritems;
->  	u32 total_size = 0;
-> @@ -2565,7 +2550,6 @@ int btrfs_insert_empty_items(struct btrfs_trans_handle *trans,
->  	if (ret < 0)
->  		goto out;
->  
-> -	slot_orig = path->slots[0];
->  	leaf = path->nodes[0];
->  
->  	nritems = btrfs_header_nritems(leaf);
-> diff --git a/debug-tree.c b/debug-tree.c
-> index 0525354..b4d3170 100644
-> --- a/debug-tree.c
-> +++ b/debug-tree.c
-> @@ -37,6 +37,7 @@ static int print_usage(void)
->  
->  static void print_extent_leaf(struct btrfs_root *root, struct extent_buffer *l)
->  {
-> +#if 0
->  	int i;
->  	struct btrfs_item *item;
->  //	struct btrfs_extent_ref *ref;
-> @@ -71,6 +72,7 @@ static void print_extent_leaf(struct btrfs_root *root, struct extent_buffer *l)
->  		};
->  		fflush(stdout);
->  	}
-> +#endif
->  }
->  
->  static void print_extents(struct btrfs_root *root, struct extent_buffer *eb)
-> diff --git a/dir-item.c b/dir-item.c
-> index 71373b8..c699977 100644
-> --- a/dir-item.c
-> +++ b/dir-item.c
-> @@ -313,14 +313,13 @@ int btrfs_delete_one_dir_name(struct btrfs_trans_handle *trans,
->  	struct extent_buffer *leaf;
->  	u32 sub_item_len;
->  	u32 item_len;
-> -	int ret = 0;
->  
->  	leaf = path->nodes[0];
->  	sub_item_len = sizeof(*di) + btrfs_dir_name_len(leaf, di) +
->  		btrfs_dir_data_len(leaf, di);
->  	item_len = btrfs_item_size_nr(leaf, path->slots[0]);
->  	if (sub_item_len == item_len) {
-> -		ret = btrfs_del_item(trans, root, path);
-> +		btrfs_del_item(trans, root, path);
->  	} else {
->  		/* MARKER */
->  		unsigned long ptr = (unsigned long)di;
-> @@ -329,8 +328,8 @@ int btrfs_delete_one_dir_name(struct btrfs_trans_handle *trans,
->  		start = btrfs_item_ptr_offset(leaf, path->slots[0]);
->  		memmove_extent_buffer(leaf, ptr, ptr + sub_item_len,
->  			item_len - (ptr + sub_item_len - start));
-> -		ret = btrfs_truncate_item(trans, root, path,
-> -					  item_len - sub_item_len, 1);
-> +		btrfs_truncate_item(trans, root, path,
-> +				    item_len - sub_item_len, 1);
->  	}
->  	return 0;
->  }
-> diff --git a/disk-io.c b/disk-io.c
-> index a6e1000..2913150 100644
-> --- a/disk-io.c
-> +++ b/disk-io.c
-> @@ -123,7 +123,6 @@ int readahead_tree_block(struct btrfs_root *root, u64 bytenr, u32 blocksize,
->  			 u64 parent_transid)
->  {
->  	int ret;
-> -	int dev_nr;
->  	struct extent_buffer *eb;
->  	u64 length;
->  	struct btrfs_multi_bio *multi = NULL;
-> @@ -135,7 +134,6 @@ int readahead_tree_block(struct btrfs_root *root, u64 bytenr, u32 blocksize,
->  		return 0;
->  	}
->  
-> -	dev_nr = 0;
->  	length = blocksize;
->  	ret = btrfs_map_block(&root->fs_info->mapping_tree, READ,
->  			      bytenr, &length, &multi, 0);
-> @@ -177,7 +175,6 @@ struct extent_buffer *read_tree_block(struct btrfs_root *root, u64 bytenr,
->  				     u32 blocksize, u64 parent_transid)
->  {
->  	int ret;
-> -	int dev_nr;
->  	struct extent_buffer *eb;
->  	u64 length;
->  	struct btrfs_multi_bio *multi = NULL;
-> @@ -192,7 +189,6 @@ struct extent_buffer *read_tree_block(struct btrfs_root *root, u64 bytenr,
->  	if (btrfs_buffer_uptodate(eb, parent_transid))
->  		return eb;
->  
-> -	dev_nr = 0;
->  	length = blocksize;
->  	while (1) {
->  		ret = btrfs_map_block(&root->fs_info->mapping_tree, READ,
-> diff --git a/extent-cache.c b/extent-cache.c
-> index b871e18..4e6d1b2 100644
-> --- a/extent-cache.c
-> +++ b/extent-cache.c
-> @@ -96,13 +96,10 @@ int insert_existing_cache_extent(struct cache_tree *tree,
->  				 struct cache_extent *pe)
->  {
->  	struct rb_node *found;
-> -	struct cache_extent *entry;
->  
->  	found = tree_insert(&tree->root, pe->start, pe->size, &pe->rb_node);
-> -	if (found) {
-> -		entry = rb_entry(found, struct cache_extent, rb_node);
-> +	if (found)
->  		return -EEXIST;
-> -	}
->  	return 0;
->  }
->  
-> diff --git a/extent-tree.c b/extent-tree.c
-> index b2f9bb2..4033ad8 100644
-> --- a/extent-tree.c
-> +++ b/extent-tree.c
-> @@ -1549,7 +1549,9 @@ static int __btrfs_mod_ref(struct btrfs_trans_handle *trans,
->  	int i;
->  	int level;
->  	int ret = 0;
-> +#if 0
->  	int faili = 0;
-> +#endif
->  	int (*process_func)(struct btrfs_trans_handle *trans,
->  			    struct btrfs_root *root,
->  			    u64, u64, u64, u64, u64, u64);
-> @@ -1592,7 +1594,9 @@ static int __btrfs_mod_ref(struct btrfs_trans_handle *trans,
->  					   parent, ref_root, key.objectid,
->  					   key.offset);
->  			if (ret) {
-> +#if 0
->  				faili = i;
-> +#endif
->  				WARN_ON(1);
->  				goto fail;
->  			}
-> @@ -1602,7 +1606,9 @@ static int __btrfs_mod_ref(struct btrfs_trans_handle *trans,
->  			ret = process_func(trans, root, bytenr, num_bytes,
->  					   parent, ref_root, level - 1, 0);
->  			if (ret) {
-> +#if 0
->  				faili = i;
-> +#endif
->  				WARN_ON(1);
->  				goto fail;
->  			}
-> diff --git a/extent_io.c b/extent_io.c
-> index 069c199..70fecbb 100644
-> --- a/extent_io.c
-> +++ b/extent_io.c
-> @@ -296,7 +296,6 @@ int set_extent_bits(struct extent_io_tree *tree, u64 start,
->  	struct extent_state *prealloc = NULL;
->  	struct cache_extent *node;
->  	int err = 0;
-> -	int set;
->  	u64 last_start;
->  	u64 last_end;
->  again:
-> @@ -327,7 +326,6 @@ again:
->  	 * Just lock what we found and keep going
->  	 */
->  	if (state->start == start && state->end <= end) {
-> -		set = state->state & bits;
->  		state->state |= bits;
->  		merge_state(tree, state);
->  		if (last_end == (u64)-1)
-> @@ -352,7 +350,6 @@ again:
->  	 * desired bit on it.
->  	 */
->  	if (state->start < start) {
-> -		set = state->state & bits;
->  		err = split_state(tree, state, prealloc, start);
->  		BUG_ON(err == -EEXIST);
->  		prealloc = NULL;
-> @@ -398,7 +395,6 @@ again:
->  	 * We need to split the extent, and set the bit
->  	 * on the first half
->  	 */
-> -	set = state->state & bits;
->  	err = split_state(tree, state, prealloc, end + 1);
->  	BUG_ON(err == -EEXIST);
->  
-> diff --git a/mkfs.c b/mkfs.c
-> index 2e99b95..19c43c8 100644
-> --- a/mkfs.c
-> +++ b/mkfs.c
-> @@ -355,7 +355,6 @@ int main(int ac, char **av)
->  	int zero_end = 1;
->  	int option_index = 0;
->  	int fd;
-> -	int first_fd;
->  	int ret;
->  	int i;
->  
-> @@ -437,7 +436,6 @@ int main(int ac, char **av)
->  		fprintf(stderr, "unable to open %s\n", file);
->  		exit(1);
->  	}
-> -	first_fd = fd;
->  	first_file = file;
->  	ret = btrfs_prepare_device(fd, file, zero_end, &dev_block_count);
->  	if (block_count == 0)
-> diff --git a/print-tree.c b/print-tree.c
-> index ac575d5..ddcade1 100644
-> --- a/print-tree.c
-> +++ b/print-tree.c
-> @@ -444,7 +444,6 @@ void btrfs_print_leaf(struct btrfs_root *root, struct extent_buffer *l)
->  	struct btrfs_dir_item *di;
->  	struct btrfs_inode_item *ii;
->  	struct btrfs_file_extent_item *fi;
-> -	struct btrfs_csum_item *ci;
->  	struct btrfs_block_group_item *bi;
->  	struct btrfs_extent_data_ref *dref;
->  	struct btrfs_shared_data_ref *sref;
-> @@ -556,11 +555,9 @@ void btrfs_print_leaf(struct btrfs_root *root, struct extent_buffer *l)
->  #endif
->  			break;
->  		case BTRFS_CSUM_ITEM_KEY:
-> -			ci = btrfs_item_ptr(l, i, struct btrfs_csum_item);
->  			printf("\t\tcsum item\n");
->  			break;
->  		case BTRFS_EXTENT_CSUM_KEY:
-> -			ci = btrfs_item_ptr(l, i, struct btrfs_csum_item);
->  			printf("\t\textent csum item\n");
->  			break;
->  		case BTRFS_EXTENT_DATA_KEY:
-> diff --git a/utils.c b/utils.c
-> index fd894f3..399a662 100644
-> --- a/utils.c
-> +++ b/utils.c
-> @@ -820,7 +820,6 @@ void btrfs_register_one_device(char *fname)
->  {
->  	struct btrfs_ioctl_vol_args args;
->  	int fd;
-> -	int ret;
->  
->  	fd = open("/dev/btrfs-control", O_RDONLY);
->  	if (fd < 0) {
-> @@ -829,7 +828,7 @@ void btrfs_register_one_device(char *fname)
->  		return;
->  	}
->  	strcpy(args.name, fname);
-> -	ret = ioctl(fd, BTRFS_IOC_SCAN_DEV, &args);
-> +	ioctl(fd, BTRFS_IOC_SCAN_DEV, &args);
->  	close(fd);
->  }
->  
-> diff --git a/volumes.c b/volumes.c
-> index 7671855..de4a4d3 100644
-> --- a/volumes.c
-> +++ b/volumes.c
-> @@ -643,7 +643,6 @@ int btrfs_alloc_chunk(struct btrfs_trans_handle *trans,
->  	struct list_head *cur;
->  	struct map_lookup *map;
->  	int min_stripe_size = 1 * 1024 * 1024;
-> -	u64 physical;
->  	u64 calc_size = 8 * 1024 * 1024;
->  	u64 min_free;
->  	u64 max_chunk_size = 4 * calc_size;
-> @@ -811,7 +810,6 @@ again:
->  		btrfs_set_stack_stripe_devid(stripe, device->devid);
->  		btrfs_set_stack_stripe_offset(stripe, dev_offset);
->  		memcpy(stripe->dev_uuid, device->uuid, BTRFS_UUID_SIZE);
-> -		physical = dev_offset;
->  		index++;
->  	}
->  	BUG_ON(!list_empty(&private_devs));
-> @@ -867,14 +865,12 @@ int btrfs_num_copies(struct btrfs_mapping_tree *map_tree, u64 logical, u64 len)
->  	struct cache_extent *ce;
->  	struct map_lookup *map;
->  	int ret;
-> -	u64 offset;
->  
->  	ce = find_first_cache_extent(&map_tree->cache_tree, logical);
->  	BUG_ON(!ce);
->  	BUG_ON(ce->start > logical || ce->start + ce->size < logical);
->  	map = container_of(ce, struct map_lookup, ce);
->  
-> -	offset = logical - ce->start;
->  	if (map->type & (BTRFS_BLOCK_GROUP_DUP | BTRFS_BLOCK_GROUP_RAID1))
->  		ret = map->num_stripes;
->  	else if (map->type & BTRFS_BLOCK_GROUP_RAID10)
+> I then made a snapshot of downloads to music and now music is listed =
+as:
+> ls: cannot access /mnt/btrfs/downloads/music: No such file or directo=
+ry
+> d????????? ? ?      ?         ?            ? music
 
--- 
-=== Hugo Mills: hugo@... carfax.org.uk | darksatanic.net | lug.org.uk ===
-  PGP key: 515C238D from wwwkeys.eu.pgp.net or http://www.carfax.org.uk
-                 --- This year,  I'm giving up Lent. ---                 
+What command and in what directory did you run to make a snapshot of
+downloads to music ?  I can't reproduce this off-hand.
 
---wayzTnRSUXKNfBqd
-Content-Type: application/pgp-signature; name="signature.asc"
-Content-Description: Digital signature
-Content-Disposition: inline
+> btrfsck gives me:
+> root /mnt # btrfsck /dev/vgP4RAID5/btrfs
+> root 289 root dir 256 error
+> found 52167258112 bytes used err is 1
+> total csum bytes: 50868244
+> total tree bytes: 76210176
+> total fs tree bytes: 6860800
+> btree space waste bytes: 15322691
+> file data blocks allocated: 52091047936
+>  referenced 52091047936
+> Btrfs v0.19-35-g1b444cd-dirty
+>=20
+>=20
+> There is also a OOPS associated to it:
+> [82291.652513] new size for /dev/mapper/vgP4RAID5-btrfs is 7516192768=
+0
+> [83636.560865] btrfs failed to delete reference to music, inode 263 p=
+arent 256
+> [83679.232134] ------------[ cut here ]------------
+> [83679.232142] WARNING: at fs/dcache.c:1350 d_set_d_op+0x8e/0xc0()
+> [83679.232144] Hardware name: P55-USB3
+> [83679.232145] Modules linked in: snd_seq_dummy snd_seq snd_seq_devic=
+e
+> nvidia(P) squashfs xfs exportfs reiserfs ext3 jbd
+> snd_hda_codec_realtek usbhid snd_hda_intel snd_hda_codec hid usblp
+> snd_hwdep snd_pcm sg i2c_i801 intel_agp snd_timer snd evdev ppdev
+> parport_pc soundcore snd_page_alloc i2c_core r8169 intel_gtt parport
+> mii processor pcspkr iTCO_wdt iTCO_vendor_support button ipv6 sr_mod
+> sd_mod cdrom pata_acpi pata_jmicron ahci libahci libata uhci_hcd
+> xhci_hcd btrfs zlib_deflate crc32c libcrc32c ext4 mbcache jbd2 crc16
+> fuse usb_storage scsi_mod ehci_hcd usbcore raid456 async_raid6_recov
+> async_pq raid6_pq async_xor xor async_memcpy async_tx raid1 md_mod
+> dm_snapshot dm_mod loop
+> [83679.232186] Pid: 14614, comm: ls Tainted: P            3.0.4-Ti #2
+> [83679.232187] Call Trace:
+> [83679.232193]  [<ffffffff8105c7ef>] warn_slowpath_common+0x7f/0xc0
+> [83679.232195]  [<ffffffff8105c84a>] warn_slowpath_null+0x1a/0x20
+> [83679.232196]  [<ffffffff8116bdfe>] d_set_d_op+0x8e/0xc0
+> [83679.232199]  [<ffffffff8117c50f>] simple_lookup+0x3f/0x60
+> [83679.232201]  [<ffffffff811626f5>] d_alloc_and_lookup+0x45/0x90
+> [83679.232204]  [<ffffffff8116f765>] ? d_lookup+0x35/0x60
+> [83679.232206]  [<ffffffff81163f5e>] do_lookup+0x29e/0x310
+> [83679.232208]  [<ffffffff81164bdc>] path_lookupat+0x11c/0x700
+> [83679.232210]  [<ffffffff811651f1>] do_path_lookup+0x31/0xc0
+> [83679.232211]  [<ffffffff81166db9>] user_path_at+0x59/0xa0
+> [83679.232214]  [<ffffffff812b871b>] ? tty_ioctl+0x5cb/0xbc0
+> [83679.232217]  [<ffffffff810398f0>] ? do_page_fault+0x1c0/0x4d0
+> [83679.232220]  [<ffffffff8115c284>] vfs_fstatat+0x44/0x70
+> [83679.232224]  [<ffffffff81072f0d>] ? do_sigaction+0x12d/0x1f0
+> [83679.232226]  [<ffffffff8115c2eb>] vfs_stat+0x1b/0x20
+> [83679.232227]  [<ffffffff8115c42a>] sys_newstat+0x1a/0x40
+> [83679.232229]  [<ffffffff810732dd>] ? sys_rt_sigaction+0x8d/0xc0
+> [83679.232233]  [<ffffffff813f4485>] ? page_fault+0x25/0x30
+> [83679.232267]  [<ffffffff813f4a42>] system_call_fastpath+0x16/0x1b
+> [83679.232269] ---[ end trace 6bdc8b9bb849be1c ]---
+> [83679.232270] ------------[ cut here ]------------
+> [83679.232272] WARNING: at fs/dcache.c:1354 d_set_d_op+0xb1/0xc0()
+> [83679.232273] Hardware name: P55-USB3
+> [83679.232274] Modules linked in: snd_seq_dummy snd_seq snd_seq_devic=
+e
+> nvidia(P) squashfs xfs exportfs reiserfs ext3 jbd
+> snd_hda_codec_realtek usbhid snd_hda_intel snd_hda_codec hid usblp
+> snd_hwdep snd_pcm sg i2c_i801 intel_agp snd_timer snd evdev ppdev
+> parport_pc soundcore snd_page_alloc i2c_core r8169 intel_gtt parport
+> mii processor pcspkr iTCO_wdt iTCO_vendor_support button ipv6 sr_mod
+> sd_mod cdrom pata_acpi pata_jmicron ahci libahci libata uhci_hcd
+> xhci_hcd btrfs zlib_deflate crc32c libcrc32c ext4 mbcache jbd2 crc16
+> fuse usb_storage scsi_mod ehci_hcd usbcore raid456 async_raid6_recov
+> async_pq raid6_pq async_xor xor async_memcpy async_tx raid1 md_mod
+> dm_snapshot dm_mod loop
+> [83679.232309] Pid: 14614, comm: ls Tainted: P        W   3.0.4-Ti #2
+> [83679.232310] Call Trace:
+> [83679.232313]  [<ffffffff8105c7ef>] warn_slowpath_common+0x7f/0xc0
+> [83679.232316]  [<ffffffff8105c84a>] warn_slowpath_null+0x1a/0x20
+> [83679.232318]  [<ffffffff8116be21>] d_set_d_op+0xb1/0xc0
+> [83679.232321]  [<ffffffff8117c50f>] simple_lookup+0x3f/0x60
+> [83679.232323]  [<ffffffff811626f5>] d_alloc_and_lookup+0x45/0x90
+> [83679.232326]  [<ffffffff8116f765>] ? d_lookup+0x35/0x60
+> [83679.232328]  [<ffffffff81163f5e>] do_lookup+0x29e/0x310
+> [83679.232330]  [<ffffffff81164bdc>] path_lookupat+0x11c/0x700
+> [83679.232333]  [<ffffffff811651f1>] do_path_lookup+0x31/0xc0
+> [83679.232336]  [<ffffffff81166db9>] user_path_at+0x59/0xa0
+> [83679.232338]  [<ffffffff812b871b>] ? tty_ioctl+0x5cb/0xbc0
+> [83679.232341]  [<ffffffff810398f0>] ? do_page_fault+0x1c0/0x4d0
+> [83679.232344]  [<ffffffff8115c284>] vfs_fstatat+0x44/0x70
+> [83679.232346]  [<ffffffff81072f0d>] ? do_sigaction+0x12d/0x1f0
+> [83679.232349]  [<ffffffff8115c2eb>] vfs_stat+0x1b/0x20
+> [83679.232351]  [<ffffffff8115c42a>] sys_newstat+0x1a/0x40
+> [83679.232354]  [<ffffffff810732dd>] ? sys_rt_sigaction+0x8d/0xc0
+> [83679.232356]  [<ffffffff813f4485>] ? page_fault+0x25/0x30
+> [83679.232359]  [<ffffffff813f4a42>] system_call_fastpath+0x16/0x1b
+> [83679.232361] ---[ end trace 6bdc8b9bb849be1d ]---
+> [84677.658072] BTRFS: inode 263 still on the orphan list
+> [84678.463683] ------------[ cut here ]------------
+> [84678.463714] WARNING: at fs/btrfs/extent-tree.c:6891
+> btrfs_free_block_groups+0x226/0x310 [btrfs]()
+> [84678.463718] Hardware name: P55-USB3
+> [84678.463720] Modules linked in: snd_seq_dummy snd_seq snd_seq_devic=
+e
+> nvidia(P) squashfs xfs exportfs reiserfs ext3 jbd
+> snd_hda_codec_realtek usbhid snd_hda_intel snd_hda_codec hid usblp
+> snd_hwdep snd_pcm sg i2c_i801 intel_agp snd_timer snd evdev ppdev
+> parport_pc soundcore snd_page_alloc i2c_core r8169 intel_gtt parport
+> mii processor pcspkr iTCO_wdt iTCO_vendor_support button ipv6 sr_mod
+> sd_mod cdrom pata_acpi pata_jmicron ahci libahci libata uhci_hcd
+> xhci_hcd btrfs zlib_deflate crc32c libcrc32c ext4 mbcache jbd2 crc16
+> fuse usb_storage scsi_mod ehci_hcd usbcore raid456 async_raid6_recov
+> async_pq raid6_pq async_xor xor async_memcpy async_tx raid1 md_mod
+> dm_snapshot dm_mod loop
+> [84678.463782] Pid: 14783, comm: umount Tainted: P        W   3.0.4-T=
+i #2
+> [84678.463785] Call Trace:
+> [84678.463795]  [<ffffffff8105c7ef>] warn_slowpath_common+0x7f/0xc0
+> [84678.463802]  [<ffffffff8105c84a>] warn_slowpath_null+0x1a/0x20
+> [84678.463809]  [<ffffffffa01dde06>] btrfs_free_block_groups+0x226/0x=
+310 [btrfs]
+> [84678.463816]  [<ffffffffa01e938e>] close_ctree+0x1de/0x370 [btrfs]
+> [84678.463819]  [<ffffffff81171821>] ? dispose_list+0x41/0x50
+> [84678.463821]  [<ffffffff81172574>] ? evict_inodes+0x124/0x140
+> [84678.463825]  [<ffffffffa01c34bd>] btrfs_put_super+0x1d/0x30 [btrfs=
+]
+> [84678.463828]  [<ffffffff811598a2>] generic_shutdown_super+0x72/0x10=
+0
+> [84678.463830]  [<ffffffff811599c6>] kill_anon_super+0x16/0x60
+> [84678.463832]  [<ffffffff81159cdc>] deactivate_locked_super+0x3c/0x9=
+0
+> [84678.463834]  [<ffffffff8115a72e>] deactivate_super+0x4e/0x70
+> [84678.463836]  [<ffffffff81175fb8>] mntput_no_expire+0x98/0xe0
+> [84678.463838]  [<ffffffff81176c9c>] sys_umount+0x6c/0x380
+> [84678.463841]  [<ffffffff813f4a42>] system_call_fastpath+0x16/0x1b
+> [84678.463842] ---[ end trace 6bdc8b9bb849be1e ]---
+> [84678.463844] space_info has 2883506176 free, is not full
+> [84678.463845] space_info total=3D17863540736, used=3D14979870720,
+> pinned=3D0, reserved=3D98304, may_use=3D0, readonly=3D65536
+> [84999.733748] device label music devid 1 transid 77 /dev/mapper/vgP4=
+RAID5-btrfs
+> [84999.734781] btrfs: enabling disk space caching
+>=20
+>=20
+> So as a workaround I applied to my kernel 2 patches:
+> * Btrfs-reverse-enough-space-for-file-clone.patch   (I hope this patc=
+h
+> is in 3.1, as it could cause DoS else.)
+> * 2-2-btrfs-allow-cross-subvolume-BTRFS_IOC_CLONE.patch
+>=20
+> I snapshotted the btrfs volume using LVM to test, made a new
+> subvolume, cp -a --reflink=3Dalways the content of the downloads
+> subvolume except music, then deleted the other subvolume, and now
+> everything works, btrfsck is happy and no more problems.
+>=20
+> I will keep working with the old subvolume until I get an answer in
+> case you need more informations.
+> I can also tell that this is half-reproducible using a new btrfs
+> filesystem and snapshotting the root, except that after the second
+> snapshot the folder won't appear as unlistable, however it is not
+> removable unless you delete the original subvolume.
 
------BEGIN PGP SIGNATURE-----
-Version: GnuPG v1.4.10 (GNU/Linux)
+I'm not sure what do you mean by "it's not removable" part, but the par=
+t
+where after a second snapshot you can see the folder is expected
+behaviour due to the fact that Btrfs allows subvolumes (and snapshots)
+anywhere in the tree, but with only one access point (the dentry added
+on creation).  This is done to avoid various problems related to hard
+links, and the rest of those points appear as empty directories with a
+special inode number.
 
-iD8DBQFOY8frIKyzvlFcI40RAgNQAKDKGnhjgFh57gPfkd5yZdR58x8TOwCeKwcF
-MGrpTSb9rynpXrklbniOuok=
-=2EfS
------END PGP SIGNATURE-----
+Thanks,
 
---wayzTnRSUXKNfBqd--
+		Ilya
+
+> --
+> To unsubscribe from this list: send the line "unsubscribe linux-btrfs=
+" in
+> the body of a message to majordomo@vger.kernel.org
+> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+--
+To unsubscribe from this list: send the line "unsubscribe linux-btrfs" =
+in
+the body of a message to majordomo@vger.kernel.org
+More majordomo info at  http://vger.kernel.org/majordomo-info.html

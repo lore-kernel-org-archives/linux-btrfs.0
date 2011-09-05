@@ -1,86 +1,45 @@
-From: David Sterba <dsterba@suse.cz>
-Subject: Re: Problems with set-default, home subvolume and snapshot
-Date: Mon, 5 Sep 2011 15:51:29 +0200
-Message-ID: <20110905135129.GI11678@ds.suse.cz>
-References: <4E64A0C5.2060409@cyberphoria.org>
-Reply-To: dsterba@suse.cz
+From: =?ISO-8859-1?Q?Sw=E2mi_Petaramesh?= <swami@petaramesh.org>
+Subject: Rename BTRfs to MuchSlowerFS ?
+Date: Mon, 05 Sep 2011 15:51:17 +0200
+Message-ID: <4E64D3D5.7020407@petaramesh.org>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=iso-8859-1
-Cc: linux-btrfs@vger.kernel.org
-To: =?iso-8859-1?Q?Bj=F6rn?= Kalkbrenner <terminar@cyberphoria.org>
+Content-Type: text/plain; charset=ISO-8859-1; format=flowed
+To: linux-btrfs <linux-btrfs@vger.kernel.org>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <4E64A0C5.2060409@cyberphoria.org>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hi,
+Hi list,
 
-On Mon, Sep 05, 2011 at 12:13:25PM +0200, Bj=F6rn Kalkbrenner wrote:
-> Then i tried to
-> "mount -o subvolumeid=3D256 /dev/mapper/root /home" (id of home subvo=
-l)
-> and the content of my home is back...
+I don't trust theoretical benchmarks that much and prefer "real-life 
+benchs" on the occasion, so here's mine:
 
-this is a known limitation and a fix is pending in Josef's development
-tree
+Given 4 laptops, the most powerful of which was running BTRFS and the 
+others ext3 or ext4, all machines running Ubuntu 11.04 Natty 32-bit with 
+a stock Ubuntu 2.6.38-11 kernel, all machines were given the following 
+FS-intensive task :
 
-http://git.kernel.org/?p=3Dlinux/kernel/git/josef/btrfs-work.git;a=3Dco=
-mmit;h=3D4fbb149dfc7454d0f233fa8e5b9167f3645c8fcc
+- Upgrade O.S. from Ubuntu 11.04 Natty to 11.10 Oneiric (beta), using a 
+local packages apt-cacher.
 
+Machines :
 
-"Btrfs: fix how we mount subvol=3D<whatever>
+1/ Acer Aspire 3104 WLMi, AMD Sempron Mobile 3500+ @1.8 GHz, 1.5 GB RAM, 
+80 GB SATA HD, ext4 over standard partitions
 
- We've only been able to mount with subvol=3D<whatever> where whatever =
-was
- a subvol within whatever root we had as the default.  This allows us t=
-o
- mount -o subvol=3Dpath/to/subvol/you/want relative from the normal
- fs_tree root.  Thanks,"
+2/ Asus EeePC 1005PE, Intel Atom N450 @1.66 GHz, 2 GB RAM, 250 GB SATA 
+HD, ext3 over AES-128 encrypted LVM
 
-currently, the /home subvolume is searched inside the volume set by
-'set-default'. When you change it to an alternative root snapshot, the
-'/home' subvolume lookup fails as you've seen.
+3/ Compaq Mini CQ10-740SF, Intel Atom N455 @1.66 GHz, 1 GB RAM, 250 GB 
+SATA HD, ext4 over standard partitions
 
-The patch changes it so that the subvolumes are always looked up to the
-original default root subvolume (I don't know of a better name, interna=
-l
-id 5 or alse selectable by subvolid=3D0).
+4/ Dell XPS M1330, Intel Core 2 Duo T9300 @2.5 GHz, 2 GB RAM, 160 B SATA 
+HD, BTRFS over AES-128 encrypted LVM
 
+Results :
 
-david
+All 3 ext3 /  ext4 machines took between 60 and 90 minutes to complete 
+their upgrade.
 
->=20
->=20
-> My questions are:
->=20
-> 1. where is the "original" root from today morning before i did
-> set-default? Lost?
->=20
-> 2. why can't i do "mount -o subvolume=3Dhome /dev/mapper/root /home"
-> anymore? To be more exact, i can, but why is it empty and why is it
-> working when i enter the subvolume id?
->=20
-> 3. I am now using the snapshot /snapshots/20110902 but what is
-> /snapshots/20110902 now and why is it still listed? It's empty?
->=20
-> 4. can i now delete the snapshots/20110902 or will that drop my curre=
-nt
-> active working root?
->=20
-> 5. can i rename snapshots, e.g. the snapshots/20110902 or "home" to
-> "home-20110905"?
->=20
-> 6. is my btrfs filesystem broken now and should i recreate the whole
-> thing or is it safe to use it?
->=20
-> Bye
-> Bj=F6rn
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-btrfs=
-" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
---
-To unsubscribe from this list: send the line "unsubscribe linux-btrfs" =
-in
-the body of a message to majordomo@vger.kernel.org
-More majordomo info at  http://vger.kernel.org/majordomo-info.html
+BTRFS machine took 20 HOURS so far, still counting (ETA 15 minutes left).
+
+Wow. Impressive.

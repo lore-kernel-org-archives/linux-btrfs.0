@@ -1,61 +1,43 @@
-From: Hugo Mills <hugo@carfax.org.uk>
+From: Elric Milon <whirm@gmx.com>
 Subject: Re: Rename BTRfs to MuchSlowerFS ?
-Date: Mon, 5 Sep 2011 17:29:44 +0100
-Message-ID: <20110905162944.GQ9907@carfax.org.uk>
-References: <4E64F77B.1090401@wpkg.org>
- <20110905162521.GA29124@infradead.org>
+Date: Mon, 5 Sep 2011 19:10:21 +0200
+Message-ID: <201109051910.21912.whirm@gmx.com>
+References: <4E64D3D5.7020407@petaramesh.org> <20110905140023.GP9907@carfax.org.uk> <20110905202000.4c539297@natsu>
 Mime-Version: 1.0
-Content-Type: multipart/signed; micalg=pgp-sha1;
-	protocol="application/pgp-signature"; boundary="63aIh6YiuHX+oBFP"
-Cc: Tomasz Chmielewski <mangoo@wpkg.org>,
-	linux-btrfs <linux-btrfs@vger.kernel.org>
-To: Christoph Hellwig <hch@infradead.org>
+Content-Type: Text/Plain;
+  charset="iso-8859-15"
+To: "linux-btrfs" <linux-btrfs@vger.kernel.org>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <20110905162521.GA29124@infradead.org>
+In-Reply-To: <20110905202000.4c539297@natsu>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-
---63aIh6YiuHX+oBFP
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
-
-On Mon, Sep 05, 2011 at 12:25:21PM -0400, Christoph Hellwig wrote:
-> On Mon, Sep 05, 2011 at 06:23:23PM +0200, Tomasz Chmielewski wrote:
-> > >   That's because dpkg is known for using (f)sync very heavily.  btrfs
-> > >honours the sync request in all cases, so it's much much slower than
-> > >ext3, which doesn't.
-> > 
-> > Hmm, is it really the case with ext3/ext4 (ignoring fsync in some cases)?
-> > 
-> > Sounds like a bug in ext3/ext4 then.
-> > 
-> > Is it documented anywhere where ext3/ext4 would just silently ignore fsync?
+On Monday 05 September 2011 16:20:00 Roman Mamedov wrote:
+[...]
+> real	0m6.924s
+> user	0m0.000s
+> sys	0m0.464s
 > 
-> They don't.  Unteil recently ext3 and reiserfs would not flush the
-> disk caches unless enabled by a mount option, but even that has recently
-> been fixed.
+> To be fair, this was on the 2.6.39.2 kernel, and the performance seems to
+> be somewhat better on 3.0 (though I didn't do tests like this one or any
+> significant dpkg operations on it yet).
 
-   Apologies for disseminating my misunderstanding, then.
+Same here with 3.1-rc4 in my Debian SID amd64 laptop with Vertex II SSD disk.
 
-   Hugo.
+`--> time sync ; time sync; time sync; time sync;time sync ; time sync; time 
+sync; time sync;time sync ; time sync; time sync; time sync
+sync  0.00s user 0.09s system 3% cpu 2.509 total
+sync  0.00s user 0.09s system 3% cpu 2.690 total
+sync  0.00s user 0.09s system 4% cpu 2.219 total
+sync  0.00s user 0.09s system 3% cpu 2.270 total
+sync  0.00s user 0.08s system 3% cpu 2.120 total
+sync  0.00s user 0.09s system 4% cpu 2.170 total
+sync  0.00s user 0.09s system 4% cpu 2.120 total
+sync  0.00s user 0.09s system 3% cpu 2.189 total
+sync  0.00s user 0.08s system 3% cpu 2.341 total
+sync  0.00s user 0.09s system 3% cpu 2.262 total
+sync  0.00s user 0.10s system 2% cpu 3.967 total
+sync  0.00s user 0.09s system 4% cpu 2.271 total
 
 -- 
-=== Hugo Mills: hugo@... carfax.org.uk | darksatanic.net | lug.org.uk ===
-  PGP key: 515C238D from wwwkeys.eu.pgp.net or http://www.carfax.org.uk
-  --- You can get more with a kind word and a two-by-four than you ---   
-                       can with just a kind word.                        
 
---63aIh6YiuHX+oBFP
-Content-Type: application/pgp-signature; name="signature.asc"
-Content-Description: Digital signature
-Content-Disposition: inline
-
------BEGIN PGP SIGNATURE-----
-Version: GnuPG v1.4.10 (GNU/Linux)
-
-iD8DBQFOZPj4IKyzvlFcI40RArhvAJ9jxvHjxuCBHtgvWRNU2XrQEb3DjACg0ILC
-qsvb33MRCSXBdtXq7tDIIW8=
-=LbQB
------END PGP SIGNATURE-----
-
---63aIh6YiuHX+oBFP--
+Elric Milon

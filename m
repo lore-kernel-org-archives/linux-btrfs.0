@@ -1,54 +1,55 @@
-From: Lukas Czerner <lczerner@redhat.com>
-Subject: [PATCH] btrfs: return EINVAL if start > total_bytes in fitrim ioctl
-Date: Mon,  5 Sep 2011 16:34:54 +0200
-Message-ID: <1315233294-27240-1-git-send-email-lczerner@redhat.com>
-Cc: jbacik@redhat.com, Lukas Czerner <lczerner@redhat.com>
-To: linux-btrfs@vger.kernel.org
+From: =?UTF-8?B?QmrDtnJuIEthbGticmVubmVy?= <terminar@cyberphoria.org>
+Subject: Re: Problems with set-default, home subvolume and snapshot
+Date: Mon, 05 Sep 2011 16:43:50 +0200
+Message-ID: <4E64E026.4020009@cyberphoria.org>
+References: <20110905130742.GA4756@zambezi.lan>
+Mime-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Cc: linux-btrfs@vger.kernel.org
+To: unlisted-recipients:; (no To-header on input)
 Return-path: <linux-btrfs-owner@vger.kernel.org>
+In-Reply-To: <20110905130742.GA4756@zambezi.lan>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-We should retirn EINVAL if the start is beyond the end of the file
-system in the btrfs_ioctl_fitrim(). Fix that by adding the appropriate
-check for it.
+Hi Ilya,
 
-Also in the btrfs_trim_fs() it is possible that len+start might overflow
-if big values are passed. Fix it by decrementing the len so that start+len
-is equal to the file system size in the worst case.
+Am 05.09.2011 15:07, schrieb Ilya Dryomov:
+> Well, it's *sort of* expected if you think about it. When you mounted
+> after set-default, your /home is no longer a valid subvolume access
+> point (it was in the default subvolume, until you rebooted). Inside
+> your snapshot /home is just an empty directory (there's more to it,
+> that's why you can't delete it, but that's irrelevant here). However
+> if you mount with subvolid=3D<objectid>, you point to a subvolume
+> directly, skipping the lookup (which leads to an empty dir if you are
+> inside your snapshot). That's why it works when you use the subvolid.
+> We should probably tune the lookup to make subvol=3D work in this cas=
+e.=20
 
-Signed-off-by: Lukas Czerner <lczerner@redhat.com>
----
- fs/btrfs/ioctl.c |    6 +++++-
- 1 files changed, 5 insertions(+), 1 deletions(-)
+Ah, thank you very much, that sounds logical with the lookup table and
+the - not valid access point - BUT:
 
-diff --git a/fs/btrfs/ioctl.c b/fs/btrfs/ioctl.c
-index 970977a..ad890ee 100644
---- a/fs/btrfs/ioctl.c
-+++ b/fs/btrfs/ioctl.c
-@@ -277,6 +277,7 @@ static noinline int btrfs_ioctl_fitrim(struct file *file, void __user *arg)
- 	struct fstrim_range range;
- 	u64 minlen = ULLONG_MAX;
- 	u64 num_devices = 0;
-+	u64 total_bytes = btrfs_super_total_bytes(&root->fs_info->super_copy);
- 	int ret;
- 
- 	if (!capable(CAP_SYS_ADMIN))
-@@ -295,12 +296,15 @@ static noinline int btrfs_ioctl_fitrim(struct file *file, void __user *arg)
- 		}
- 	}
- 	rcu_read_unlock();
-+
- 	if (!num_devices)
- 		return -EOPNOTSUPP;
--
- 	if (copy_from_user(&range, arg, sizeof(range)))
- 		return -EFAULT;
-+	if (range.start > total_bytes)
-+		return -EINVAL;
- 
-+	range.len = min(range.len, total_bytes - range.start);
- 	range.minlen = max(range.minlen, minlen);
- 	ret = btrfs_trim_fs(root, &range);
- 	if (ret < 0)
--- 
-1.7.4.4
+Why could i still manually "mount -o subvol=3Dhome /dev/mapper/root /ho=
+me"
+and home was just empty but mounted (i looked at the mount table output=
+)?
+Shouldn't that give me an error that home can't be found in the lookup
+table?
 
+There was a difference between the content of subvol=3Dhome and
+subvolid=3D256 and i was able to mount both but only one (id 256)
+contained my data, the other seems to be empty.
+
+> You say it's reproducable, can you give us a backtrace to look at ?=20
+
+Yes, when the backup recovery job is done... And that's not really fast
+currently due to external usb hd on my notebook... may take some time. =
+;)
+
+
+Bye
+Bj=C3=B6rn
+--
+To unsubscribe from this list: send the line "unsubscribe linux-btrfs" =
+in
+the body of a message to majordomo@vger.kernel.org
+More majordomo info at  http://vger.kernel.org/majordomo-info.html

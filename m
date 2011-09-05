@@ -1,85 +1,100 @@
-From: Hugo Mills <hugo@carfax.org.uk>
+From: Roman Mamedov <rm@romanrm.ru>
 Subject: Re: Rename BTRfs to MuchSlowerFS ?
-Date: Mon, 5 Sep 2011 15:00:23 +0100
-Message-ID: <20110905140023.GP9907@carfax.org.uk>
+Date: Mon, 5 Sep 2011 20:20:00 +0600
+Message-ID: <20110905202000.4c539297@natsu>
 References: <4E64D3D5.7020407@petaramesh.org>
+	<20110905140023.GP9907@carfax.org.uk>
 Mime-Version: 1.0
-Content-Type: multipart/signed; micalg=pgp-sha1;
-	protocol="application/pgp-signature"; boundary="ftQmbtOmUf2cr8rB"
-Cc: linux-btrfs <linux-btrfs@vger.kernel.org>
-To: =?iso-8859-1?Q?Sw=E2mi?= Petaramesh <swami@petaramesh.org>
+Content-Type: multipart/signed; micalg=PGP-SHA1;
+ boundary="Sig_/Gcvx.H85=.nkDYQt_JVx+eq"; protocol="application/pgp-signature"
+Cc: =?UTF-8?B?U3fDom1p?= Petaramesh <swami@petaramesh.org>,
+	linux-btrfs <linux-btrfs@vger.kernel.org>
+To: Hugo Mills <hugo@carfax.org.uk>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <4E64D3D5.7020407@petaramesh.org>
+In-Reply-To: <20110905140023.GP9907@carfax.org.uk>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-
---ftQmbtOmUf2cr8rB
-Content-Type: text/plain; charset=iso-8859-1
-Content-Disposition: inline
+--Sig_/Gcvx.H85=.nkDYQt_JVx+eq
+Content-Type: text/plain; charset=US-ASCII
 Content-Transfer-Encoding: quoted-printable
 
-On Mon, Sep 05, 2011 at 03:51:17PM +0200, Sw=E2mi Petaramesh wrote:
-> Hi list,
+On Mon, 5 Sep 2011 15:00:23 +0100
+Hugo Mills <hugo@carfax.org.uk> wrote:
+> >=20
+> > BTRFS machine took 20 HOURS so far, still counting (ETA 15 minutes left=
+).
+> >=20
+> > Wow. Impressive.
 >=20
-> I don't trust theoretical benchmarks that much and prefer "real-life
-> benchs" on the occasion, so here's mine:
->=20
-> Given 4 laptops, the most powerful of which was running BTRFS and
-> the others ext3 or ext4, all machines running Ubuntu 11.04 Natty
-> 32-bit with a stock Ubuntu 2.6.38-11 kernel, all machines were given
-> the following FS-intensive task :
->=20
-> - Upgrade O.S. from Ubuntu 11.04 Natty to 11.10 Oneiric (beta),
-> using a local packages apt-cacher.
->=20
-> Machines :
->=20
-> 1/ Acer Aspire 3104 WLMi, AMD Sempron Mobile 3500+ @1.8 GHz, 1.5 GB
-> RAM, 80 GB SATA HD, ext4 over standard partitions
->=20
-> 2/ Asus EeePC 1005PE, Intel Atom N450 @1.66 GHz, 2 GB RAM, 250 GB
-> SATA HD, ext3 over AES-128 encrypted LVM
->=20
-> 3/ Compaq Mini CQ10-740SF, Intel Atom N455 @1.66 GHz, 1 GB RAM, 250
-> GB SATA HD, ext4 over standard partitions
->=20
-> 4/ Dell XPS M1330, Intel Core 2 Duo T9300 @2.5 GHz, 2 GB RAM, 160 B
-> SATA HD, BTRFS over AES-128 encrypted LVM
->=20
-> Results :
->=20
-> All 3 ext3 /  ext4 machines took between 60 and 90 minutes to
-> complete their upgrade.
->=20
-> BTRFS machine took 20 HOURS so far, still counting (ETA 15 minutes left).
->=20
-> Wow. Impressive.
+>    That's because dpkg is known for using (f)sync very heavily.  btrfs
+> honours the sync request in all cases
 
-   That's because dpkg is known for using (f)sync very heavily.  btrfs
-honours the sync request in all cases, so it's much much slower than
-ext3, which doesn't. There's an LD_PRELOAD library called "eatmydata"
-that you can use to paper over the issue by running it as a wrapper
-around dpkg.
+I don't think it's *just* that.
 
-   Hugo.
+I had the same problem, recently upgrading Debian from Stable to Testing, i=
+t was taking more than 24 hours. I stopped the upgrade, then resumed it thi=
+s time via eatmydata, and it proceeded perhaps two orders of magnitude fast=
+er than before, finishing the remaining packages in 5 minutes or so.
+
+Problem is, even when I stopped the upgrade and waited a considerable time,=
+ each 'sync' was still taking 5-7 seconds. No other disk activity in the sy=
+stem, no snapshot creation/deletion/cleanup going on either, just multiple =
+consecutive syncs:
+
+rm@rm:~$ time sync
+
+real	0m4.772s
+user	0m0.000s
+sys	0m0.480s
+rm@rm:~$ time sync
+
+real	0m6.831s
+user	0m0.000s
+sys	0m0.472s
+rm@rm:~$ time sync
+
+real	0m8.069s
+user	0m0.000s
+sys	0m0.468s
+rm@rm:~$ time sync
+
+real	0m6.675s
+user	0m0.000s
+sys	0m0.464s
+rm@rm:~$ time sync
+
+real	0m4.293s
+user	0m0.000s
+sys	0m0.464s
+rm@rm:~$ time sync
+
+real	0m4.230s
+user	0m0.000s
+sys	0m0.472s
+rm@rm:~$ time sync
+
+real	0m6.924s
+user	0m0.000s
+sys	0m0.464s
+
+To be fair, this was on the 2.6.39.2 kernel, and the performance seems to b=
+e somewhat better on 3.0 (though I didn't do tests like this one or any sig=
+nificant dpkg operations on it yet).
 
 --=20
-=3D=3D=3D Hugo Mills: hugo@... carfax.org.uk | darksatanic.net | lug.org.uk=
- =3D=3D=3D
-  PGP key: 515C238D from wwwkeys.eu.pgp.net or http://www.carfax.org.uk
-         --- Always be sincere,  whether you mean it or not. ---        =20
+With respect,
+Roman
 
---ftQmbtOmUf2cr8rB
-Content-Type: application/pgp-signature; name="signature.asc"
-Content-Description: Digital signature
-Content-Disposition: inline
+--Sig_/Gcvx.H85=.nkDYQt_JVx+eq
+Content-Type: application/pgp-signature; name=signature.asc
+Content-Disposition: attachment; filename=signature.asc
 
 -----BEGIN PGP SIGNATURE-----
-Version: GnuPG v1.4.10 (GNU/Linux)
+Version: GnuPG v1.4.11 (GNU/Linux)
 
-iD8DBQFOZNX3IKyzvlFcI40RAmTCAKDMCgXeCJInW0o3f21Wag438g+5zwCfSYgN
-oYDla2+jO+1haI6VigjzD0A=
-=j02e
+iEYEARECAAYFAk5k2pAACgkQTLKSvz+PZwj/hQCaAl8trEpePslkwUzAVQDCsAKP
+DLIAnRE9x+BcaDdgzF8Q/O/ATPDxhVuM
+=fKnd
 -----END PGP SIGNATURE-----
 
---ftQmbtOmUf2cr8rB--
+--Sig_/Gcvx.H85=.nkDYQt_JVx+eq--

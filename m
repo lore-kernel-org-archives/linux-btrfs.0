@@ -1,100 +1,49 @@
-From: Roman Mamedov <rm@romanrm.ru>
-Subject: Re: Rename BTRfs to MuchSlowerFS ?
-Date: Mon, 5 Sep 2011 20:20:00 +0600
-Message-ID: <20110905202000.4c539297@natsu>
-References: <4E64D3D5.7020407@petaramesh.org>
-	<20110905140023.GP9907@carfax.org.uk>
+From: =?ISO-8859-1?Q?Bj=F6rn_Kalkbrenner?= <terminar@cyberphoria.org>
+Subject: Re: Problems with set-default, home subvolume and snapshot
+Date: Mon, 05 Sep 2011 16:31:48 +0200
+Message-ID: <4E64DD54.5000507@cyberphoria.org>
+References: <4E64A0C5.2060409@cyberphoria.org> <20110905103033.GL9907@carfax.org.uk> <4E64BE74.7040000@cyberphoria.org> <20110905124544.GN9907@carfax.org.uk>
 Mime-Version: 1.0
-Content-Type: multipart/signed; micalg=PGP-SHA1;
- boundary="Sig_/Gcvx.H85=.nkDYQt_JVx+eq"; protocol="application/pgp-signature"
-Cc: =?UTF-8?B?U3fDom1p?= Petaramesh <swami@petaramesh.org>,
-	linux-btrfs <linux-btrfs@vger.kernel.org>
-To: Hugo Mills <hugo@carfax.org.uk>
+Content-Type: text/plain; charset=ISO-8859-1
+To: linux-btrfs@vger.kernel.org
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <20110905140023.GP9907@carfax.org.uk>
+In-Reply-To: <20110905124544.GN9907@carfax.org.uk>
 List-ID: <linux-btrfs.vger.kernel.org>
 
---Sig_/Gcvx.H85=.nkDYQt_JVx+eq
-Content-Type: text/plain; charset=US-ASCII
-Content-Transfer-Encoding: quoted-printable
 
-On Mon, 5 Sep 2011 15:00:23 +0100
-Hugo Mills <hugo@carfax.org.uk> wrote:
-> >=20
-> > BTRFS machine took 20 HOURS so far, still counting (ETA 15 minutes left=
-).
-> >=20
-> > Wow. Impressive.
->=20
->    That's because dpkg is known for using (f)sync very heavily.  btrfs
-> honours the sync request in all cases
+>    Did you manage to capture that output at all? (A photo would do).
+Not yet, i am still on recovery from backup, that may take some time. I=
+f
+i am done, i'll re-attach the broken btrfs system and dump some informa=
+tion.
+It shouldn't be a big problem to redirect the kernel messages to a file=
+=2E
 
-I don't think it's *just* that.
+>    What kernel version are you running? (anything earlier than 2.6.39
+> is probably considered too old for comfort)
 
-I had the same problem, recently upgrading Debian from Stable to Testing, i=
-t was taking more than 24 hours. I stopped the upgrade, then resumed it thi=
-s time via eatmydata, and it proceeded perhaps two orders of magnitude fast=
-er than before, finishing the remaining packages in 5 minutes or so.
+3.0.0 is my current running kernel. Due to the fact that i created the
+whole btrfs filesystem around two weeks before i think i also created i=
+t
+with 3.0.0 but i am not sure.
 
-Problem is, even when I stopped the upgrade and waited a considerable time,=
- each 'sync' was still taking 5-7 seconds. No other disk activity in the sy=
-stem, no snapshot creation/deletion/cleanup going on either, just multiple =
-consecutive syncs:
+> btrfsck doesn't generally achieve much at the moment. However, having
+> mount hang is quite odd. It usually either succeeds, or causes a
+> kernel oops (if the latter has already happened, then *subsequent*
+> mount attempts may hang, but the original oops is still of interest)=20
 
-rm@rm:~$ time sync
+>    It'd be good if you have the time to try to reproduce this,
+> particularly with the latest kernels (3.0 or 3.1-rcX)
 
-real	0m4.772s
-user	0m0.000s
-sys	0m0.480s
-rm@rm:~$ time sync
+I can, with 3.0.0.
 
-real	0m6.831s
-user	0m0.000s
-sys	0m0.472s
-rm@rm:~$ time sync
+Give me some hours of recovery :)
 
-real	0m8.069s
-user	0m0.000s
-sys	0m0.468s
-rm@rm:~$ time sync
 
-real	0m6.675s
-user	0m0.000s
-sys	0m0.464s
-rm@rm:~$ time sync
+Bj=F6rn
 
-real	0m4.293s
-user	0m0.000s
-sys	0m0.464s
-rm@rm:~$ time sync
-
-real	0m4.230s
-user	0m0.000s
-sys	0m0.472s
-rm@rm:~$ time sync
-
-real	0m6.924s
-user	0m0.000s
-sys	0m0.464s
-
-To be fair, this was on the 2.6.39.2 kernel, and the performance seems to b=
-e somewhat better on 3.0 (though I didn't do tests like this one or any sig=
-nificant dpkg operations on it yet).
-
---=20
-With respect,
-Roman
-
---Sig_/Gcvx.H85=.nkDYQt_JVx+eq
-Content-Type: application/pgp-signature; name=signature.asc
-Content-Disposition: attachment; filename=signature.asc
-
------BEGIN PGP SIGNATURE-----
-Version: GnuPG v1.4.11 (GNU/Linux)
-
-iEYEARECAAYFAk5k2pAACgkQTLKSvz+PZwj/hQCaAl8trEpePslkwUzAVQDCsAKP
-DLIAnRE9x+BcaDdgzF8Q/O/ATPDxhVuM
-=fKnd
------END PGP SIGNATURE-----
-
---Sig_/Gcvx.H85=.nkDYQt_JVx+eq--
+--
+To unsubscribe from this list: send the line "unsubscribe linux-btrfs" =
+in
+the body of a message to majordomo@vger.kernel.org
+More majordomo info at  http://vger.kernel.org/majordomo-info.html

@@ -1,80 +1,65 @@
-From: David McBride <dwm@doc.ic.ac.uk>
-Subject: Re: Rename BTRfs to MuchSlowerFS ?
-Date: Mon, 05 Sep 2011 15:17:23 +0100
-Message-ID: <4E64D9F3.9010201@doc.ic.ac.uk>
-References: <4E64D3D5.7020407@petaramesh.org>
+From: Milko Krachounov <sombre@gmail.com>
+Subject: Error on creating snapshots (btrfs: could not do orphan cleanup -116)
+Date: Mon, 5 Sep 2011 18:57:21 +0300
+Message-ID: <CAJ-vRAKSGSXa5kjJ6zwk8qos2LgoJq8m4CYFPz+zHmkaoiGGDw@mail.gmail.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset=UTF-8
-Cc: linux-btrfs <linux-btrfs@vger.kernel.org>
-To: =?UTF-8?B?U3fDom1pIFBldGFyYW1lc2g=?= <swami@petaramesh.org>
+To: linux-btrfs@vger.kernel.org
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <4E64D3D5.7020407@petaramesh.org>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 05/09/11 14:51, =EF=BF=BD wrote:
+This happens on a freshly created btrfs filesystem in a raid10 (4x1TB)
+configuration with three
+subvolumes and 1.5 TB data.
 
-> Given 4 laptops, the most powerful of which was running BTRFS and the=
- others
-> ext3 or ext4, all machines running Ubuntu 11.04 Natty 32-bit with a s=
-tock
-> Ubuntu 2.6.38-11 kernel, all machines were given the following FS-int=
-ensive
-> task :
+When I try to snapshot one of the subvolumes (with 100 GB of data), it
+says that the snapshot
+creation failed and I get the following error message:
 
-(dpkg-intensive workload)
+btrfs: could not do orphan cleanup -116
 
-> All 3 ext3 /  ext4 machines took between 60 and 90 minutes to complet=
-e their
-> upgrade.
->=20
-> BTRFS machine took 20 HOURS so far, still counting (ETA 15 minutes le=
-ft).
->=20
-> Wow. Impressive.
+After the failure:
+- The snapshot exists in `btrfs subvolume list'
+- The snapshot CAN'T be accessed from the mounted subvolume where I created the
+snapshot (but the directory entry exists and displays non-sense when
+you try to do `ls -la')
+- The snapshot CAN be accessed from any other mount of the same subvolume
+- The snapshot CAN be accessed after unmount/remount
 
-I see similar behaviour on a single-disk workstation. This is a consequ=
-ence of
-dpkg's heavy use of fsync() to ensure that changes to the filesystem ar=
-e done
-safely, to try to ensure that a sudden crash or power interruption does=
-n't
-leave the machine in an inconsistent or unrecoverable state.
+This was also coupled with a warning in dmesg that was fixed with
+slyich's patch from
+`[PATCH] btrfs: fix warning in iput for bad-inode.'
 
-(You can see that btrfs performs speedily if fsync is disabled via, for
-example, `eatmydata`.  Which is not a production-worthy workaround for =
-the
-majority of cases, but usefully highlights what's going wrong.)
+I did a little bit of research on the problem, and while I'm too
+unfamiliar with the code of btrfs to diagnose it,
+I'd like to share some of the observations as they appear to be of importance:
 
-See also:
-  https://bugs.launchpad.net/ubuntu/+source/dpkg/+bug/607632
-  http://bugs.debian.org/cgi-bin/bugreport.cgi?bug=3D635993
+The failure happens when btrfs_orphan_cleanup calls btrfs_iget to get
+the inode and it returns
+ERR_PTR(-ESTALE). This happens when is_bad_inode(inode) is true.
+However, after the call
+to btrfs_iget there is an explicit code path for the case when
+is_bad_inode(inode) is true (line 2393).
+This code path would *never ever* get executed unless something
+happening in another thread can
+affect the return value between the two calls. I believe that lines
+2394-2402 would never be executed.
 
-Now, I don't know why btrfs is particularly slow with a (relatively?)
-fsync-heavy workload, though I do note that a commit went into 3.0 that
-improved some fsync workloads; see commit:
-8e531cdfeb75269c6c5aae33651cca39707848da
+What's more I discovered the following patch:
 
-However, in my own testing, it doesn't seem to have improved matters
-significantly.
+[PATCH 5/6] btrfs: Add per subvolume cached inode tree #2
+http://www.mail-archive.com/linux-btrfs@vger.kernel.org/msg02435.html
 
-There were also a number of fsync-related improvements made in 2.6.32; =
-perhaps
-there have been regressions since then?
+The patch changes the behaviour of btrfs_orphan_cleanup -- without it
+there is no code that would lead
+to ERR_PTR(-ESTALE) and the bad inode code path will run. With it,
+suddenly this code path isn't called
+and instead an error is produced.
 
-It seems clear that the dpkg developers consider this to be reasonable
-behaviour on their part; is there any scope for improvements to be made=
- to
-btrfs to cope better with this kind of workload?  Or is this an unavoid=
-able
-property of the datastructures it's using?
+I think I should try and reverse this specific change in the following
+days and see if it fixes the problem, but
+I'm not confident enough to blindly change the code without asking for
+comments first, so any comment is
+appreciated.
 
-Cheers,
-David
---=20
-David McBride <dwm@doc.ic.ac.uk>
-Department of Computing, Imperial College, London
---
-To unsubscribe from this list: send the line "unsubscribe linux-btrfs" =
-in
-the body of a message to majordomo@vger.kernel.org
-More majordomo info at  http://vger.kernel.org/majordomo-info.html
+Thank you.

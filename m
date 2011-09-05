@@ -1,45 +1,75 @@
-From: =?ISO-8859-1?Q?Sw=E2mi_Petaramesh?= <swami@petaramesh.org>
-Subject: Rename BTRfs to MuchSlowerFS ?
-Date: Mon, 05 Sep 2011 15:51:17 +0200
-Message-ID: <4E64D3D5.7020407@petaramesh.org>
+From: Hugo Mills <hugo@carfax.org.uk>
+Subject: Re: Problems with set-default, home subvolume and snapshot
+Date: Mon, 5 Sep 2011 14:57:40 +0100
+Message-ID: <20110905135740.GO9907@carfax.org.uk>
+References: <4E64A0C5.2060409@cyberphoria.org>
+ <20110905135129.GI11678@ds.suse.cz>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=ISO-8859-1; format=flowed
-To: linux-btrfs <linux-btrfs@vger.kernel.org>
+Content-Type: multipart/signed; micalg=pgp-sha1;
+	protocol="application/pgp-signature"; boundary="gh4H09KImyIEQ1se"
+To: =?iso-8859-1?Q?Bj=F6rn?= Kalkbrenner <terminar@cyberphoria.org>,
+	linux-btrfs@vger.kernel.org
 Return-path: <linux-btrfs-owner@vger.kernel.org>
+In-Reply-To: <20110905135129.GI11678@ds.suse.cz>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hi list,
 
-I don't trust theoretical benchmarks that much and prefer "real-life 
-benchs" on the occasion, so here's mine:
+--gh4H09KImyIEQ1se
+Content-Type: text/plain; charset=iso-8859-1
+Content-Disposition: inline
+Content-Transfer-Encoding: quoted-printable
 
-Given 4 laptops, the most powerful of which was running BTRFS and the 
-others ext3 or ext4, all machines running Ubuntu 11.04 Natty 32-bit with 
-a stock Ubuntu 2.6.38-11 kernel, all machines were given the following 
-FS-intensive task :
+On Mon, Sep 05, 2011 at 03:51:29PM +0200, David Sterba wrote:
+> Hi,
+>=20
+> On Mon, Sep 05, 2011 at 12:13:25PM +0200, Bj=F6rn Kalkbrenner wrote:
+> > Then i tried to
+> > "mount -o subvolumeid=3D256 /dev/mapper/root /home" (id of home subvol)
+> > and the content of my home is back...
+>=20
+> this is a known limitation and a fix is pending in Josef's development
+> tree
+>=20
+> http://git.kernel.org/?p=3Dlinux/kernel/git/josef/btrfs-work.git;a=3Dcomm=
+it;h=3D4fbb149dfc7454d0f233fa8e5b9167f3645c8fcc
+>=20
+>=20
+> "Btrfs: fix how we mount subvol=3D<whatever>
+>=20
+>  We've only been able to mount with subvol=3D<whatever> where whatever was
+>  a subvol within whatever root we had as the default.  This allows us to
+>  mount -o subvol=3Dpath/to/subvol/you/want relative from the normal
+>  fs_tree root.  Thanks,"
+>=20
+> currently, the /home subvolume is searched inside the volume set by
+> 'set-default'. When you change it to an alternative root snapshot, the
+> '/home' subvolume lookup fails as you've seen.
+>=20
+> The patch changes it so that the subvolumes are always looked up to the
+> original default root subvolume (I don't know of a better name, internal
+> id 5 or alse selectable by subvolid=3D0).
 
-- Upgrade O.S. from Ubuntu 11.04 Natty to 11.10 Oneiric (beta), using a 
-local packages apt-cacher.
+   I've always tried to refer to it as the "top level" or "subvolid=3D0".
 
-Machines :
+   Hugo.
 
-1/ Acer Aspire 3104 WLMi, AMD Sempron Mobile 3500+ @1.8 GHz, 1.5 GB RAM, 
-80 GB SATA HD, ext4 over standard partitions
+--=20
+=3D=3D=3D Hugo Mills: hugo@... carfax.org.uk | darksatanic.net | lug.org.uk=
+ =3D=3D=3D
+  PGP key: 515C238D from wwwkeys.eu.pgp.net or http://www.carfax.org.uk
+         --- Always be sincere,  whether you mean it or not. ---        =20
 
-2/ Asus EeePC 1005PE, Intel Atom N450 @1.66 GHz, 2 GB RAM, 250 GB SATA 
-HD, ext3 over AES-128 encrypted LVM
+--gh4H09KImyIEQ1se
+Content-Type: application/pgp-signature; name="signature.asc"
+Content-Description: Digital signature
+Content-Disposition: inline
 
-3/ Compaq Mini CQ10-740SF, Intel Atom N455 @1.66 GHz, 1 GB RAM, 250 GB 
-SATA HD, ext4 over standard partitions
+-----BEGIN PGP SIGNATURE-----
+Version: GnuPG v1.4.10 (GNU/Linux)
 
-4/ Dell XPS M1330, Intel Core 2 Duo T9300 @2.5 GHz, 2 GB RAM, 160 B SATA 
-HD, BTRFS over AES-128 encrypted LVM
+iD8DBQFOZNVUIKyzvlFcI40RAkY3AJ9qdngtA6xtqoxITOL4Y4YOAvpwCgCfRJ/i
+KlyzR3Tc7LbeK0YJMhckCaQ=
+=Sa+/
+-----END PGP SIGNATURE-----
 
-Results :
-
-All 3 ext3 /  ext4 machines took between 60 and 90 minutes to complete 
-their upgrade.
-
-BTRFS machine took 20 HOURS so far, still counting (ETA 15 minutes left).
-
-Wow. Impressive.
+--gh4H09KImyIEQ1se--

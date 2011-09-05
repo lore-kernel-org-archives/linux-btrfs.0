@@ -1,38 +1,37 @@
-From: Leen Besselink <leen@consolejunkie.net>
-Subject: Re: df output wrong ?
-Date: Mon, 05 Sep 2011 12:58:22 +0200
-Message-ID: <4E64AB4E.60609@consolejunkie.net>
-References: <4E649B73.6060802@consolejunkie.net> <20110905101918.GK9907@carfax.org.uk>
+From: =?ISO-8859-1?Q?Bj=F6rn_Kalkbrenner?= <terminar@cyberphoria.org>
+Subject: Re: Problems with set-default, home subvolume and snapshot
+Date: Mon, 05 Sep 2011 14:20:04 +0200
+Message-ID: <4E64BE74.7040000@cyberphoria.org>
+References: <4E64A0C5.2060409@cyberphoria.org> <20110905103033.GL9907@carfax.org.uk>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=UTF-8
-To: Hugo Mills <hugo@carfax.org.uk>, linux-btrfs@vger.kernel.org
+Content-Type: text/plain; charset=ISO-8859-1
+To: linux-btrfs@vger.kernel.org
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <20110905101918.GK9907@carfax.org.uk>
+In-Reply-To: <20110905103033.GL9907@carfax.org.uk>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 09/05/2011 12:19 PM, Hugo Mills wrote:
->
->    Snapshot/subvolume deletion is asynchronous -- it can take a while
-> to happen. Try waiting a minute or two after the snapshot deletion and
-> before looking at df -h.
->
->    Hugo.
->
+Hi!
 
-As I didn't see any disc activity, I thought it was done.
+Thank you Hugo for your answers, but i have an update.
 
-I just tried it again, it does seem to work the way you mentioned.
+"It's dead Jim."
 
-Thanks.
+When i tried to mount subvolid=3D0 to a temporary folder i got a kernel
+segfault and a BUG line in btrfs kernel code somewhere (reproducable),
+after a reboot all volumes are broken, can't be mounted anymore...
+btrfsfsck gave me inode errors on subvol 256 (my home).
+mount does nothing but sleep/hang...
 
-Just a quick question: would 'btrfs filesystem sync /path' help speed
-that up ?
+Now i am trying to restore my system and home from a backup to a new
+harddrive, without btrfs at the moment...
 
-Like for example if a sys-admin sees that he's running out of space and
-needs
-to remove some old snapshots immediately.
+I think my question 6 is now answered: it's completely broken.
 
-Or when an automated backup first removes old snapshots to create room
-for a new backup just before starting that backup.
+Bye
+Bj=F6rn
 
-
+--
+To unsubscribe from this list: send the line "unsubscribe linux-btrfs" =
+in
+the body of a message to majordomo@vger.kernel.org
+More majordomo info at  http://vger.kernel.org/majordomo-info.html

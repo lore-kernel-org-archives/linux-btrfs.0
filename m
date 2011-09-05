@@ -1,120 +1,218 @@
-From: Arne Jansen <sensille@gmx.net>
-Subject: Lockdep rant on 3.1-rc4 with balance
-Date: Mon, 05 Sep 2011 15:21:03 +0200
-Message-ID: <4E64CCBF.40605@gmx.net>
+From: Maciej Marcin Piechotka <uzytkownik2@gmail.com>
+Subject: Re: kernel BUG at fs/btrfs/inode.c:2299
+Date: Mon, 05 Sep 2011 14:47:17 +0100
+Message-ID: <1315230442.2001.4.camel@picard>
+References: <1314582311.2724.4.camel@picard>
+	 <4E5C82E8.9090400@cn.fujitsu.com> <1314694069.29963.5.camel@picard>
+	 <1314962312.1858.2.camel@picard>
+Reply-To: uzytkownik2@gmail.com
 Mime-Version: 1.0
-Content-Type: text/plain; charset=ISO-8859-1; format=flowed
-To: linux-btrfs <linux-btrfs@vger.kernel.org>
+Content-Type: multipart/signed; micalg="pgp-ripemd160";
+	protocol="application/pgp-signature"; boundary="=-DipEOJUrLKY6Z19HkU5k"
+To: linux-btrfs@vger.kernel.org
 Return-path: <linux-btrfs-owner@vger.kernel.org>
+In-Reply-To: <1314962312.1858.2.camel@picard>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-While testing with balance I ran into the following lockdep issue.
-It occurs on the second run.
 
-[16678.879547] =======================================================
-[16678.972317] [ INFO: possible circular locking dependency detected ]
-[16679.047301] 3.1.0-rc4+ #61
-[16679.079644] -------------------------------------------------------
-[16679.154630] umount/22597 is trying to acquire lock:
-[16679.212972]  (&fs_info->cleaner_mutex){+.+.+.}, at: 
-[<ffffffffa0061041>] btrfs_commit_super+0x21/0xd0 [btrfs]
-[16679.331950]
-[16679.331950] but task is already holding lock:
-[16679.401836]  (&type->s_umount_key#34){++++..}, at: 
-[<ffffffff8118216d>] deactivate_super+0x3d/0x60
-[16679.509476]
-[16679.509477] which lock already depends on the new lock.
-[16679.509478]
-[16679.607548]
-[16679.607548] the existing dependency chain (in reverse order) is:
-[16679.697197]
-[16679.697198] -> #1 (&type->s_umount_key#34){++++..}:
-[16679.773741]        [<ffffffff810cc3d7>] lock_acquire+0x97/0x110
-[16679.844668]        [<ffffffff8188e609>] down_read+0x39/0x90
-[16679.911436]        [<ffffffff811a5845>] 
-writeback_inodes_sb_nr_if_idle+0x35/0x60
-[16680.000044]        [<ffffffffa004fe9a>] 
-reserve_metadata_bytes+0x34a/0x540 [btrfs]
-[16680.090734]        [<ffffffffa0050ff4>] 
-btrfs_delalloc_reserve_metadata+0xd4/0x150 [btrfs]
-[16680.189741]        [<ffffffffa00a4895>] 
-relocate_file_extent_cluster+0x145/0x350 [btrfs]
-[16680.286668]        [<ffffffffa00a4b53>] 
-relocate_data_extent+0xb3/0xd0 [btrfs]
-[16680.373197]        [<ffffffffa00a98db>] 
-relocate_block_group+0x33b/0x600 [btrfs]
-[16680.461909]        [<ffffffffa00a9d48>] 
-btrfs_relocate_block_group+0x1a8/0x2d0 [btrfs]
-[16680.556756]        [<ffffffffa00894e3>] 
-btrfs_relocate_chunk+0x83/0x680 [btrfs]
-[16680.644325]        [<ffffffffa008a898>] btrfs_balance+0x228/0x2a0 
-[btrfs]
-[16680.725652]        [<ffffffffa0093888>] btrfs_ioctl+0x848/0xd30 [btrfs]
-[16680.804901]        [<ffffffff8118fecc>] do_vfs_ioctl+0x9c/0x560
-[16680.875828]        [<ffffffff81190429>] sys_ioctl+0x99/0xa0
-[16680.942612]        [<ffffffff818975fb>] system_call_fastpath+0x16/0x1b
-[16681.020910]
-[16681.020911] -> #0 (&fs_info->cleaner_mutex){+.+.+.}:
-[16681.098389]        [<ffffffff810cbb23>] __lock_acquire+0x13a3/0x1610
-[16681.174516]        [<ffffffff810cc3d7>] lock_acquire+0x97/0x110
-[16681.245445]        [<ffffffff8188ded8>] __mutex_lock_common+0x48/0x3a0
-[16681.323652]        [<ffffffff8188e2a6>] mutex_lock_nested+0x16/0x20
-[16681.398740]        [<ffffffffa0061041>] btrfs_commit_super+0x21/0xd0 
-[btrfs]
-[16681.483189]        [<ffffffffa0062000>] close_ctree+0x310/0x380 [btrfs]
-[16681.562437]        [<ffffffffa00425e8>] btrfs_put_super+0x18/0x30 
-[btrfs]
-[16681.643765]        [<ffffffff8118094d>] generic_shutdown_super+0x5d/0xe0
-[16681.724054]        [<ffffffff81180a61>] kill_anon_super+0x11/0x20
-[16681.797060]        [<ffffffff81181475>] deactivate_locked_super+0x45/0x70
-[16681.878389]        [<ffffffff81182175>] deactivate_super+0x45/0x60
-[16681.952437]        [<ffffffff8119c4e7>] mntput_no_expire+0xe7/0x130
-[16682.027524]        [<ffffffff8119c9d3>] sys_umount+0x73/0x3a0
-[16682.096373]        [<ffffffff818975fb>] system_call_fastpath+0x16/0x1b
-[16682.174612]
-[16682.174613] other info that might help us debug this:
-[16682.174614]
-[16682.270676]  Possible unsafe locking scenario:
-[16682.270676]
-[16682.341611]        CPU0                    CPU1
-[16682.395789]        ----                    ----
-[16682.449972]   lock(&type->s_umount_key);
-[16682.497085]                                lock(&fs_info->cleaner_mutex);
-[16682.578516]                                lock(&type->s_umount_key);
-[16682.655892]   lock(&fs_info->cleaner_mutex);
-[16682.707165]
-[16682.707165]  *** DEADLOCK ***
-[16682.707166]
-[16682.778197] 1 lock held by umount/22597:
-[16682.825101]  #0:  (&type->s_umount_key#34){++++..}, at: 
-[<ffffffff8118216d>] deactivate_super+0x3d/0x60
-[16682.938046]  [16682.938046] stack backtrace:
-[16682.990254] Pid: 22597, comm: umount Not tainted 3.1.0-rc4+ #61
-[16683.061077] Call Trace:
-[16683.090302]  [<ffffffff810c8e0e>] print_circular_bug+0x20e/0x2f0
-[16683.162167]  [<ffffffff810cbb23>] __lock_acquire+0x13a3/0x1610
-[16683.231951]  [<ffffffff810c631d>] ? trace_hardirqs_off+0xd/0x10
-[16683.302780]  [<ffffffffa0061041>] ? btrfs_commit_super+0x21/0xd0 [btrfs]
-[16683.382958]  [<ffffffff810cc3d7>] lock_acquire+0x97/0x110
-[16683.447549]  [<ffffffffa0061041>] ? btrfs_commit_super+0x21/0xd0 [btrfs]
-[16683.527729]  [<ffffffff810b9775>] ? sched_clock_cpu+0xc5/0x100
-[16683.597509]  [<ffffffff8188ded8>] __mutex_lock_common+0x48/0x3a0
-[16683.669379]  [<ffffffffa0061041>] ? btrfs_commit_super+0x21/0xd0 [btrfs]
-[16683.749563]  [<ffffffffa004efdc>] ? next_block_group+0x6c/0x80 [btrfs]
-[16683.827772]  [<ffffffffa0061041>] ? btrfs_commit_super+0x21/0xd0 [btrfs]
-[16683.907951]  [<ffffffff8188fef6>] ? _raw_spin_unlock+0x26/0x30
-[16683.977733]  [<ffffffff8188e2a6>] mutex_lock_nested+0x16/0x20
-[16684.046485]  [<ffffffffa0061041>] btrfs_commit_super+0x21/0xd0 [btrfs]
-[16684.124616]  [<ffffffffa0062000>] close_ctree+0x310/0x380 [btrfs]
-[16684.197608]  [<ffffffff811986f7>] ? dispose_list+0x47/0x60
-[16684.263218]  [<ffffffffa00425e8>] btrfs_put_super+0x18/0x30 [btrfs]
-[16684.338199]  [<ffffffff8118094d>] generic_shutdown_super+0x5d/0xe0
-[16684.412142]  [<ffffffff81180a61>] kill_anon_super+0x11/0x20
-[16684.478806]  [<ffffffff8118216d>] ? deactivate_super+0x3d/0x60
-[16684.548609]  [<ffffffff81181475>] deactivate_locked_super+0x45/0x70
-[16684.623612]  [<ffffffff81182175>] deactivate_super+0x45/0x60
-[16684.691383]  [<ffffffff8119c4e7>] mntput_no_expire+0xe7/0x130
-[16684.760127]  [<ffffffff8119c9d3>] sys_umount+0x73/0x3a0
-[16684.822630]  [<ffffffff818975fb>] system_call_fastpath+0x16/0x1b
+--=-DipEOJUrLKY6Z19HkU5k
+Content-Type: text/plain; charset="UTF-8"
+Content-Transfer-Encoding: quoted-printable
 
--Arne
+On Fri, 2011-09-02 at 12:18 +0100, Maciej Marcin Piechotka wrote:
+> On Tue, 2011-08-30 at 09:47 +0100, Maciej Marcin Piechotka wrote:
+> > On Tue, 2011-08-30 at 14:27 +0800, Miao Xie wrote:
+> > > On mon, 29 Aug 2011 02:45:07 +0100, Maciej Marcin Piechotka wrote:
+> > > > I receive the bug when I try to snapshot from fcron:
+> > > >=20
+> > > > 2011-08-29T02:00:46.529238+01:00 picard kernel: [ 4155.444476]
+> > > > ------------[ cut here ]------------
+> > > > 2011-08-29T02:00:46.529253+01:00 picard kernel: [ 4155.444490] kern=
+el
+> > > > BUG at fs/btrfs/inode.c:2299!
+> > > > 2011-08-29T02:00:46.529256+01:00 picard kernel: [ 4155.444498] inva=
+lid
+> > > > opcode: 0000 [#1] PREEMPT SMP=20
+> > > > 2011-08-29T02:00:46.529259+01:00 picard kernel: [ 4155.444506] CPU =
+1=20
+> > > > 2011-08-29T02:00:46.529264+01:00 picard kernel: [ 4155.444508] Modu=
+les
+> > > > linked in: microcode reiserfs btrfs zlib_deflate libcrc32c arc4
+> > > > snd_hda_codec_conexant iwlagn mac80211 uvcvideo videodev
+> > > > v4l2_compat_ioctl32 cfg80211 snd_hda_intel snd_hda_codec snd_hwdep
+> > > > snd_pcm snd_timer snd thinkpad_acpi soundcore snd_page_alloc hwmon
+> > > > rfkill nvram e1000e zram(C) rtc_cmos tp_smapi thinkpad_ec psmouse
+> > > > fscache kvm_intel kvm configs ipv6 autofs4 usbhid uhci_hcd firewire=
+_ohci
+> > > > firewire_core sdhci_pci ehci_hcd crc_itu_t sdhci mmc_core sd_mod us=
+bcore
+> > > > sr_mod cdrom
+> > > > 2011-08-29T02:00:46.529267+01:00 picard kernel: [ 4155.444569]=20
+> > > > 2011-08-29T02:00:46.529270+01:00 picard kernel: [ 4155.444576] Pid:
+> > > > 3167, comm: btrfs Tainted: P         C  3.0.3-gentoo #1 LENOVO
+> > > > 2242CTO/2242CTO
+> > > > 2011-08-29T02:00:46.529274+01:00 picard kernel: [ 4155.444586] RIP:
+> > > > 0010:[<ffffffffa031339b>]  [<ffffffffa031339b>] btrfs_orphan_del
+> > > > +0x8d/0xa9 [btrfs]
+> > > > 2011-08-29T02:00:46.529276+01:00 picard kernel: [ 4155.444611] RSP:
+> > > > 0000:ffff880111c21b58  EFLAGS: 00010282
+> > > > 2011-08-29T02:00:46.529279+01:00 picard kernel: [ 4155.444619] RAX:
+> > > > 00000000fffffffe RBX: ffff88011141bd60 RCX: 0000000000001000
+> > > > 2011-08-29T02:00:46.529289+01:00 picard kernel: [ 4155.444626] RDX:
+> > > > 000000000000000f RSI: ffff880110c8d250 RDI: ffff880134092d80
+> > > > 2011-08-29T02:00:46.529292+01:00 picard kernel: [ 4155.444634] RBP:
+> > > > 0000000000000000 R08: ffff880111c21a30 R09: 0000000000000011
+> > > > 2011-08-29T02:00:46.529297+01:00 picard kernel: [ 4155.444642] R10:
+> > > > 00000000000001dc R11: 0000000000000286 R12: ffff880136866300
+> > > > 2011-08-29T02:00:46.529299+01:00 picard kernel: [ 4155.444650] R13:
+> > > > ffff880130cac800 R14: 0000000000000001 R15: ffff880130cacb88
+> > > > 2011-08-29T02:00:46.529302+01:00 picard kernel: [ 4155.444658] FS:
+> > > > 00007f126715a740(0000) GS:ffff88013bc80000(0000) knlGS:000000000000=
+0000
+> > > > 2011-08-29T02:00:46.529304+01:00 picard kernel: [ 4155.444666] CS: =
+ 0010
+> > > > DS: 0000 ES: 0000 CR0: 000000008005003b
+> > > > 2011-08-29T02:00:46.529307+01:00 picard kernel: [ 4155.444673] CR2:
+> > > > 00007f5149eb7008 CR3: 000000009caca000 CR4: 00000000000406e0
+> > > > 2011-08-29T02:00:46.529309+01:00 picard kernel: [ 4155.444681] DR0:
+> > > > 0000000000000000 DR1: 0000000000000000 DR2: 0000000000000000
+> > > > 2011-08-29T02:00:46.529311+01:00 picard kernel: [ 4155.444689] DR3:
+> > > > 0000000000000000 DR6: 00000000ffff0ff0 DR7: 0000000000000400
+> > > > 2011-08-29T02:00:46.529314+01:00 picard kernel: [ 4155.444697] Proc=
+ess
+> > > > btrfs (pid: 3167, threadinfo ffff880111c20000, task ffff88010b35a14=
+0)
+> > > > 2011-08-29T02:00:46.529316+01:00 picard kernel: [ 4155.444705] Stac=
+k:
+> > > > 2011-08-29T02:00:46.529318+01:00 picard kernel: [ 4155.444711]
+> > > > 0000000000c369c5 ffff880130cac800 ffff880110c8dbe0 0000000000c369c5
+> > > > 2011-08-29T02:00:46.529321+01:00 picard kernel: [ 4155.444720]
+> > > > 0000000000000000 ffff880130cacb88 ffff880130cacb90 ffffffffa03173c4
+> > > > 2011-08-29T02:00:46.562822+01:00 picard kernel: [ 4155.444730]
+> > > > ffff880136866300 ffff88011141bd60 ffff880110c8dbe0 fffb000000000000
+> > > > 2011-08-29T02:00:46.562959+01:00 picard kernel: [ 4155.444739] Call
+> > > > Trace:
+> > > > 2011-08-29T02:00:46.562964+01:00 picard kernel: [ 4155.444756]
+> > > > [<ffffffffa03173c4>] ? btrfs_orphan_cleanup+0x196/0x2d9 [btrfs]
+> > > > 2011-08-29T02:00:46.562966+01:00 picard kernel: [ 4155.444773]
+> > > > [<ffffffffa0317862>] ? btrfs_lookup_dentry+0x35b/0x392 [btrfs]
+> > > > 2011-08-29T02:00:46.562969+01:00 picard kernel: [ 4155.444790]
+> > > > [<ffffffffa03178a2>] ? btrfs_lookup+0x9/0x1f [btrfs]
+> > > > 2011-08-29T02:00:46.562971+01:00 picard kernel: [ 4155.444801]
+> > > > [<ffffffff810ccf63>] ? d_alloc_and_lookup+0x3a/0x60
+> > > > 2011-08-29T02:00:46.562973+01:00 picard kernel: [ 4155.444810]
+> > > > [<ffffffff810ce356>] ? walk_component+0x210/0x3b7
+> > > > 2011-08-29T02:00:46.562975+01:00 picard kernel: [ 4155.444818]
+> > > > [<ffffffff810cea4a>] ? path_lookupat+0x7c/0x29e
+> > > > 2011-08-29T02:00:46.562979+01:00 picard kernel: [ 4155.444827]
+> > > > [<ffffffff810cfc34>] ? do_path_lookup+0x1c/0x87
+> > > > 2011-08-29T02:00:46.562981+01:00 picard kernel: [ 4155.444835]
+> > > > [<ffffffff810cffe2>] ? user_path_at+0x49/0x7b
+> > > > 2011-08-29T02:00:46.562983+01:00 picard kernel: [ 4155.444843]
+> > > > [<ffffffff810c8781>] ? vfs_fstatat+0x3c/0x6a
+> > > > 2011-08-29T02:00:46.562986+01:00 picard kernel: [ 4155.444853]
+> > > > [<ffffffff8102d38e>] ? sub_preempt_count+0x83/0x94
+> > > > 2011-08-29T02:00:46.562988+01:00 picard kernel: [ 4155.444861]
+> > > > [<ffffffff810c88ab>] ? sys_newstat+0x12/0x2b
+> > > > 2011-08-29T02:00:46.562990+01:00 picard kernel: [ 4155.444870]
+> > > > [<ffffffff81346d4f>] ? page_fault+0x1f/0x30
+> > > > 2011-08-29T02:00:46.562992+01:00 picard kernel: [ 4155.444878]
+> > > > [<ffffffff8134713b>] ? system_call_fastpath+0x16/0x1b
+> > > > 2011-08-29T02:00:46.562995+01:00 picard kernel: [ 4155.444885] Code=
+: 4d
+> > > > 85 e4 74 28 48 8b 93 70 fe ff ff 48 81 fa 00 01 00 00 77 07 48 8b 9=
+3 b0
+> > > > 00 00 00 4c 89 ee 4c 89 e7 e8 af 28 02 00 85 c0 74 02 <0f> 0b 85 ed=
+ 74
+> > > > 08 48 89 df e8 e0 ca fe ff 5d 31 c0 5b 5d 41 5c=20
+> > > > 2011-08-29T02:00:46.563001+01:00 picard kernel: [ 4155.444926] RIP
+> > > > [<ffffffffa031339b>] btrfs_orphan_del+0x8d/0xa9 [btrfs]
+> > > > 2011-08-29T02:00:46.563004+01:00 picard kernel: [ 4155.444943]  RSP
+> > > > <ffff880111c21b58>
+> > > > 2011-08-29T02:00:46.563014+01:00 picard kernel: [ 4155.464057] ---[=
+ end
+> > > > trace 276655044a13c7af ]---
+> > > >=20
+> > > > Unfortunately it results in freeze of system and I cannot give more
+> > > > details. Sometimes it happens not from fcron but then it does not r=
+esult
+> > > > in freeze (???).
+> > >=20
+> > > Could you give me the method to reproduce it?
+> > >=20
+> > > Thanks
+> > > Miao
+> > >=20
+> >=20
+> > Unfortunatly no. Today, when I haven't worked at 2 am, it happened at 5
+> > am resulting in freeze of desktop except screensaver (which probably
+> > don't issue I/O to $HOME). It happens at least once per day but I
+> > neither know how to trigger it nor what is the underlying issue.
+> >=20
+> > HOWEVER, I did tried in the past to:
+> >  - Backup the image on external harddrive
+> >  - Loop-mount it
+> >  - mkfs.btrfs /dev/my/partition
+> >  - rsync -aHAXP back the contents
+> >=20
+> > and it didn't solved the problem.
+> >=20
+> > Additionally very often restarts result in known OOPS bug.
+> >=20
+> > I do have the old image but I've just tried 3.1 kernel when you sent
+> > this message.
+> >=20
+> > > >=20
+> > > > Regards
+> > >=20
+> >=20
+> > Regards
+>=20
+> I reproduced it on 3.1 rc4. The behaviour is similar except it is
+> trigger each time I log into account (NOT mount /home - log into
+> account).
+>=20
+> It might have something in common with suspend.
+>=20
+> Regards
+>=20
+
+To keep up-to-date:
+
+ - It happens at 2 am it results in freeze. To be more precise the
+snapshot is scheduled at 2 am and the lock was 2:07 am. The after each
+odd reboot the bug is triggered on boot and on each even boot the
+computer hangs shortly after logging in. I can still rsync to separate
+partition w/out problems in case of even boot.
+ - If it happens at other time (for certain reasons I haven't reproduced
+it with 3.1 - long story why not but I suspect it might correlate to
+uptime) the bug may or may not freeze computer.
+
+Regards
+
+
+--=-DipEOJUrLKY6Z19HkU5k
+Content-Type: application/pgp-signature; name="signature.asc"
+Content-Description: This is a digitally signed message part
+
+-----BEGIN PGP SIGNATURE-----
+Version: GnuPG v2.0.18 (GNU/Linux)
+
+iQIcBAABAwAGBQJOZNLqAAoJEJIdee2Vr4aPmj8P/3RCKE7RI0Kv1jg+ukFx7IcC
+qkGCPm80RzdP7hnG7Y7qwVc249/90YLAQwQWu7GnqtmAu5Yet60IRYX0BMvIOgHM
+K8C5CVN3v1qny7iiz72r/ChJo7wqoxVR8GXOetua5cXFKTyiYfJH8L1C5ziL+MZA
+gXuIjRH2uS1EWDC8xIcWxg00aElz3hyLQ0R7ZL6P/3B00U/NlW0DGin3TZ/GBTZp
+AyPuds+SjY9P9yf/Upy0PajFtBibEyBh43mObKm9NnVkXU/ZWBuMBVj+QREMoiJX
+h2rntpJBitb4D/CgWxLju9wNrRkWlN9FKfKeiuyQroeiEiPTYP5v9Hot6ryPz1ue
+a7rqvL5ldLH1X0s0cF96SWTFeLYVPr28XIAnXlzqls+/i8CXl1uCXePK+6I3iA5s
+K89bLUQ76oLyXi8DRPJor2vWe7/hVeCRslTw1rX7P92bL1dMv8I/pLDzLlCLMChw
+MdNR2UYXljfon8xRWzR9JTu2JBqxc99aR5SiC7xq8Bz0r3yWBqPOGakpURy2pKmD
+4mS5ROUM4PUxxT+evY5kXyTc/rKGsFMKxrPR72WW2OpUv26z+iA9xl4HHAxX4zRE
+/1S10en7FbE/wdmJ2d+hcjXoYNRqAEVB/VUe22ViFm9GMNYH/NASaBuNM3I8KINA
+n+Zr8T029AQeMMpXC+je
+=rono
+-----END PGP SIGNATURE-----
+
+--=-DipEOJUrLKY6Z19HkU5k--
+
+

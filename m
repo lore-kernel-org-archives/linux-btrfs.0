@@ -1,125 +1,92 @@
-From: =?UTF-8?B?SsOpcsO0bWUgUG91bGlu?= <jeromepoulin@gmail.com>
-Subject: Re: Snapshot of root makes an undeletable folder
-Date: Mon, 5 Sep 2011 13:29:50 -0400
-Message-ID: <CALJXSJq7O=9xddctdZtmiTvRk8u9wBtjr52pNQ0CJ_W5Sv-Avg@mail.gmail.com>
-References: <CALJXSJprxWVE3Ms1PLzWBgWa4MutRLeG0f7xx2Q58LW0nhbFrw@mail.gmail.com>
- <20110904210552.GA1403@zambezi.lan>
+From: Sergei Trofimovich <slyich@gmail.com>
+Subject: Re: Rename BTRfs to MuchSlowerFS ?
+Date: Mon, 5 Sep 2011 22:25:23 +0300
+Message-ID: <20110905222523.4531abe0@sf.home>
+References: <4E64D3D5.7020407@petaramesh.org>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=UTF-8
-To: Ilya Dryomov <idryomov@gmail.com>,
-	linux-btrfs <linux-btrfs@vger.kernel.org>
+Content-Type: multipart/signed; micalg=PGP-SHA1;
+ boundary="Sig_/.nLyE1A5k3chceS87LJ4Cmq"; protocol="application/pgp-signature"
+Cc: linux-btrfs <linux-btrfs@vger.kernel.org>
+To: =?UTF-8?B?U3fDom1p?= Petaramesh <swami@petaramesh.org>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <20110904210552.GA1403@zambezi.lan>
+In-Reply-To: <4E64D3D5.7020407@petaramesh.org>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Sun, Sep 4, 2011 at 5:05 PM, Ilya Dryomov <idryomov@gmail.com> wrote=
-:
-> On Sun, Sep 04, 2011 at 11:29:43AM -0400, J=C3=A9r=C3=B4me Poulin wro=
-te:
->> Then I though about my folder organization again and renamed music t=
-o
->> downloads, this is still OK and then create music in downloads, I wa=
-s
->> told "music" already exists, however I can't neither see it, list it=
-,
->> cd to it or remove it.
->
-> This is because music directory actually exists. =C2=A0When you execu=
-ted
->
-> btrfs sub snap . music
->
-> btrfs created music directory item in your default subvolume and *the=
-n*
-> took a snapshot of the default subvolume with that music directory it=
-em
-> already in it. =C2=A0Btrfs readdir skips references from the snapshot=
- to
-> itself, so you can't see it. =C2=A0Even though you renamed your snaps=
-hot to
-> "downloads", snapshot's contents still don't allow you to create a
-> "music" directory in it.
->
+--Sig_/.nLyE1A5k3chceS87LJ4Cmq
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: quoted-printable
 
-I understand that btrfs creates a snapshot containing the snapshot
-directory however in my tests on a clean FS, as soon as I create a
-second snapshot I am able to rmdir it.
+On Mon, 05 Sep 2011 15:51:17 +0200
+Sw=C3=A2mi Petaramesh <swami@petaramesh.org> wrote:
 
-> The correct way to do what you want is to create a subvolume "music",
-> and move folders from default to music. =C2=A0Then you can snapshot y=
-our
-> newly created music subvolume in a clean way, rename it, etc.
->
+> Hi list,
+>=20
+> I don't trust theoretical benchmarks that much and prefer "real-life=20
+> benchs" on the occasion, so here's mine:
+>=20
+> Given 4 laptops, the most powerful of which was running BTRFS and the=20
+> others ext3 or ext4, all machines running Ubuntu 11.04 Natty 32-bit with=
+=20
+> a stock Ubuntu 2.6.38-11 kernel, all machines were given the following=20
+> FS-intensive task :
+>=20
+> - Upgrade O.S. from Ubuntu 11.04 Natty to 11.10 Oneiric (beta), using a=20
+> local packages apt-cacher.
+>=20
+> Machines :
+>=20
+> 1/ Acer Aspire 3104 WLMi, AMD Sempron Mobile 3500+ @1.8 GHz, 1.5 GB RAM,=
+=20
+> 80 GB SATA HD, ext4 over standard partitions
+>=20
+> 2/ Asus EeePC 1005PE, Intel Atom N450 @1.66 GHz, 2 GB RAM, 250 GB SATA=20
+> HD, ext3 over AES-128 encrypted LVM
+>=20
+> 3/ Compaq Mini CQ10-740SF, Intel Atom N455 @1.66 GHz, 1 GB RAM, 250 GB=20
+> SATA HD, ext4 over standard partitions
+>=20
+> 4/ Dell XPS M1330, Intel Core 2 Duo T9300 @2.5 GHz, 2 GB RAM, 160 B SATA=
+=20
+> HD, BTRFS over AES-128 encrypted LVM
+>=20
+> Results :
+>=20
+> All 3 ext3 /  ext4 machines took between 60 and 90 minutes to complete=20
+> their upgrade.
+>=20
+> BTRFS machine took 20 HOURS so far, still counting (ETA 15 minutes left).
+>=20
+> Wow. Impressive.
 
-This is where cp --reflink=3Dalways is useful as move copies the files
-across subvolumes.
+I've seen similar problem on Ubuntu-11 + Aspire One (8GB of slow "SSD").
+More specifically half of ubuntu install went very fast and when
+disk was ~50% free things _suddenly_ gone slow.
 
->> I then made a snapshot of downloads to music and now music is listed=
- as:
->> ls: cannot access /mnt/btrfs/downloads/music: No such file or direct=
-ory
->> d????????? ? ? =C2=A0 =C2=A0 =C2=A0? =C2=A0 =C2=A0 =C2=A0 =C2=A0 ? =C2=
-=A0 =C2=A0 =C2=A0 =C2=A0 =C2=A0 =C2=A0? music
->
-> What command and in what directory did you run to make a snapshot of
-> downloads to music ? =C2=A0I can't reproduce this off-hand.
->
+According to strace fsync() started to take ~10 seconds(!) and upper.
+It's not common filesystem behaviour, but a plain (and hard to catch?) bug.
 
-I wasn't able to reproduce this unreadable directory using a clean FS
-or similar operations, this was just 'ls' trying to list the downloads
-directory.
+I don't have the box anymore. The root cause it to be found by some
+brave soul yet.
 
->> btrfsck gives me:
-=2E..
->>
->> There is also a OOPS associated to it:
-=2E..
->>
->>
->> So as a workaround I applied to my kernel 2 patches:
->> * Btrfs-reverse-enough-space-for-file-clone.patch
->> (I hope this patch is in 3.1, as it could cause DoS else.)
->> * 2-2-btrfs-allow-cross-subvolume-BTRFS_IOC_CLONE.patch
->>
+I wonder if latencytop would get the profile of the issue.
 
-Any idea why those patch aren't part of the main tree yet?
+Maybe, btrfs degrades only after certain (insanely large?) amount of fsync()
+calls?
 
->> I snapshotted the btrfs volume using LVM to test, made a new
->> subvolume, cp -a --reflink=3Dalways the content of the downloads
->> subvolume except music, then deleted the other subvolume, and now
->> everything works, btrfsck is happy and no more problems.
->>
+--=20
 
-And will the filesystem be stable if I use this method? Or should I
-re-make a new btrfs ?
+  Sergei
 
->> I will keep working with the old subvolume until I get an answer in
->> case you need more informations.
+--Sig_/.nLyE1A5k3chceS87LJ4Cmq
+Content-Type: application/pgp-signature; name=signature.asc
+Content-Disposition: attachment; filename=signature.asc
 
-Should I keep it?
+-----BEGIN PGP SIGNATURE-----
+Version: GnuPG v2.0.17 (GNU/Linux)
 
->> I can also tell that this is half-reproducible using a new btrfs
->> filesystem and snapshotting the root, except that after the second
->> snapshot the folder won't appear as unlistable, however it is not
->> removable unless you delete the original subvolume.
->
-> I'm not sure what do you mean by "it's not removable" part, but the p=
-art
-> where after a second snapshot you can see the folder is expected
-> behaviour due to the fact that Btrfs allows subvolumes (and snapshots=
-)
-> anywhere in the tree, but with only one access point (the dentry adde=
-d
-> on creation). =C2=A0This is done to avoid various problems related to=
- hard
-> links, and the rest of those points appear as empty directories with =
-a
-> special inode number.
->
+iEYEARECAAYFAk5lIigACgkQcaHudmEf86oXuwCeLRXbXyNamINqcYTDDlLqjqSY
+EpgAn1tk6mGiGuzeR5+9hnZm0mDGY2bg
+=Z9vu
+-----END PGP SIGNATURE-----
 
-This is to be expected after what you explained.
---
-To unsubscribe from this list: send the line "unsubscribe linux-btrfs" =
-in
-the body of a message to majordomo@vger.kernel.org
-More majordomo info at  http://vger.kernel.org/majordomo-info.html
+--Sig_/.nLyE1A5k3chceS87LJ4Cmq--

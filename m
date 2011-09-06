@@ -1,50 +1,67 @@
-From: Roman Kapusta <roman.kapusta@gmail.com>
-Subject: btrfs always writes something after sync
-Date: Tue, 6 Sep 2011 19:06:36 +0200
-Message-ID: <CABVOS09hntXYUsCJBg+byEGC5y53j4DeT6b49Rx1AaRpqFV54A@mail.gmail.com>
+From: "Fajar A. Nugraha" <list@fajar.net>
+Subject: Re: Rename BTRfs to MuchSlowerFS ?
+Date: Wed, 7 Sep 2011 00:11:25 +0700
+Message-ID: <CAG1y0sd=fYDT4Z4J=HqYXSsuZGjyMbUgpbLiguqdnibwt9qqOw@mail.gmail.com>
+References: <4E64D3D5.7020407@petaramesh.org>
+	<20110905222523.4531abe0@sf.home>
+	<15663472.1RTxtZJx8a@tethys>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=UTF-8
+Content-Type: text/plain; charset=ISO-8859-1
 To: linux-btrfs <linux-btrfs@vger.kernel.org>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
+In-Reply-To: <15663472.1RTxtZJx8a@tethys>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-When I check /proc/diskstats on mounted partitions before and after
-'sync' on idle system, I can tell from write activity which partitions
-are btrfs and which are ext3/ext4/swap.
+On Tue, Sep 6, 2011 at 10:30 PM, Sw=E2mi Petaramesh <swami@petaramesh.o=
+rg> wrote:
+> On Monday 5 September 2011 22:25:23 Sergei Trofimovich wrote:
+>> I've seen similar problem on Ubuntu-11 + Aspire One (8GB of slow "SS=
+D").
+>> More specifically half of ubuntu install went very fast and when
+>> disk was ~50% free things suddenly gone slow.
+>
+> I'm just about to give up and definitely quit using BTRFS. My system =
+has become
+> so slow after upgrade Ubuntu Natty =3D> Oneiric Beta, that's it's pur=
+ely and
+> simply unusable (although I'm the kind of old, white-haired, experien=
+ced, used
+> to prehistoric systems, thus very patient, IT guy...)
 
-On idle system after running sync, there is no activity on any
-ext3/ext4/swap except root filesystem. But there are writes on all
-btrfs filesystems.
+Compared to ext3/4, btrfs or zfs (on linux) in its current state would
+seem like snail. The only way I can get decent speed with btrfs on my
+laptop is after using sandforce-based SSD (which helps offset some of
+the slowness). But since I like lzo compression and snapshot feature,
+I'll keep on using btrfs on this one :)
 
-Without 'sync' command btrfs behave well, and there is no read/write
-activity on idle system to distinguish from ext4.
+>
+> It'a most probable that all of my usage patterns, i.e. read my mail, =
+browse
+> the web, etc, definitely do not correspond to what BTRFS was designed=
+ for.
+> (Sorry for the rant, but this really pisses me off...)
+>
+> So I'm only wonderign whether I reformat my system to ext4 or ZFS, an=
+d whether
+> I do it right now or on thursday...
 
-for example some btrfs and ext4 partition before and after sync:
+Reading your post, at this point I'd actually recommend you stick with
+ext4. Both btrfs and zfs are great, but IMHO btrfs is not ready for
+daily use by "ordinary" user yet, while zfs is a memory hog
+(especially for laptops, which is part of the reason why I'm using
+btrfs instead of zfs on this one).
 
-# grep -P "dm-10|dm-6" /proc/diskstats
- 253      10 dm-10 477158 0 26422280 33602927 2721495 0 26556408
-216043746 0 7504653 249648820
- 253       6 dm-6 11958 0 618266 431644 3315 0 26520 27535 0 147647 459184
-# sync
-# grep -P "dm-10|dm-6" /proc/diskstats
- 253      10 dm-10 477158 0 26422280 33602927 2721724 0 26558408
-216050353 0 7504999 249655428
- 253       6 dm-6 11958 0 618266 431644 3315 0 26520 27535 0 147647 459184
+=46WIW I have another laptop with 4GB ram and Ubuntu + zfs root on it,
+and it would seem "stall" on some operations with no apparent cpu or
+disk activity. zfs compression and snapshot feature works great though
+(and much more stable compared to btrfs, which stiil doesn't have a
+functioning fsck), so if you have the resource to spare you might want
+to give zfs another try later.
 
-in summary:
-Field  5 -- # of writes completed increased from 2721495 to 2721724
-(total 229 writes)
-Field  7 -- # of sectors written increased from 26556408 to 26558408
-(total 2000 sectors)
-Field  8 -- # of milliseconds spent writing increased from 216043746
-to 216050353 (total 6607 milliseconds)
-
-and this repeats after each 'sync' with similar totals
-
-My system is Fedora 15 kernel 2.6.40.3-2.fc15.i686.PAE (this is should
-be 3.0.3 with some Fedora patches)
-
-
-Thanks
-
-Roman Kapusta
+--=20
+=46ajar
+--
+To unsubscribe from this list: send the line "unsubscribe linux-btrfs" =
+in
+the body of a message to majordomo@vger.kernel.org
+More majordomo info at  http://vger.kernel.org/majordomo-info.html

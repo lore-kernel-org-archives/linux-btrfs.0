@@ -1,32 +1,55 @@
-From: Dante <danteinbrisbane@gmail.com>
+From: Tomasz Chmielewski <mangoo@wpkg.org>
 Subject: Re: Any chance to recovery btrfs raid-0 after accidental format of
  one volume?
-Date: Tue, 6 Sep 2011 07:56:02 +1000
-Message-ID: <CAKdoYmAsSa5Qdp_S_XrhVjHyDhGwmNcH=Vw0wFq0oRMvm0medA@mail.gmail.com>
-References: <CAKdoYmDNjBDgHjLNaf5HmrRxGkYPXjssZoGa3Tb4p3uc2DcOcg@mail.gmail.com>
+Date: Tue, 06 Sep 2011 08:24:32 +0200
+Message-ID: <4E65BCA0.40109@wpkg.org>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=windows-1252
-To: linux-btrfs@vger.kernel.org
+Content-Type: text/plain; charset=UTF-8
+To: linux-btrfs <linux-btrfs@vger.kernel.org>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <CAKdoYmDNjBDgHjLNaf5HmrRxGkYPXjssZoGa3Tb4p3uc2DcOcg@mail.gmail.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Bad case of user error here but I managed to reformat one half of a
-btrfs volume that was set up with metadata raid-1 and data raid-0.
+> Bad case of user error here but I managed to reformat one half of a
+> btrfs volume that was set up with metadata raid-1 and data raid-0.
 
-I can mount the remaining half degraded, and can see all of the files,
-but half their content is missing.
+It won't help you - but did you format it with mkfs.btrfs, while it was mounted?
 
-I=92m just wondering whether, since all the metadata is intact, and
-since (most of) the data on the partition that I reformatted has not
-actually been over-written, whether it is conceivable that I can
-recover most of my files by somehow reincorporating the second volume
-into the array?
+mkfs.btrfs behaves very dangerously here.
 
-The important stuff is all backed up (I hope) so this is more of
-academic interest...
---
-To unsubscribe from this list: send the line "unsubscribe linux-btrfs" =
-in
-the body of a message to majordomo@vger.kernel.org
-More majordomo info at  http://vger.kernel.org/majordomo-info.html
+
+For example, we have a block device in use:
+
+# cat /proc/swaps 
+Filename				Type		Size	Used	Priority
+/dev/md0                                partition	10233276	0	-1
+
+
+mkfs for other filesystems will refuse to touch it, because it's in use:
+
+# mkfs.ext4 /dev/md0
+mke2fs 1.41.14 (22-Dec-2010)
+/dev/md0 is mounted; will not make a filesystem here!
+
+# mkfs.xfs /dev/md0
+mkfs.xfs: cannot open /dev/md0: Device or resource busy
+
+
+
+
+mkfs.btrfs doesn't see a problem in creating a filesystem on a mounted block device:
+
+# mkfs.btrfs /dev/md0
+
+WARNING! - Btrfs Btrfs v0.19 IS EXPERIMENTAL
+WARNING! - see http://btrfs.wiki.kernel.org before using
+
+fs created label (null) on /dev/md0
+	nodesize 4096 leafsize 4096 sectorsize 4096 size 9.76GB
+Btrfs Btrfs v0.19
+
+
+
+-- 
+Tomasz Chmielewski
+http://wpkg.org
+

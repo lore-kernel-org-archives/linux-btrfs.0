@@ -1,28 +1,50 @@
-From: Andrew Carlson <naclosagc@gmail.com>
-Subject: btrfs-delalloc - threaded?
-Date: Tue, 6 Sep 2011 11:21:26 -0500
-Message-ID: <CALjZLS5iA1TVJCVWSpE+Xg5hG_E1c+LVrFz2EJK2b=Xc7MQw_Q@mail.gmail.com>
+From: Roman Kapusta <roman.kapusta@gmail.com>
+Subject: btrfs always writes something after sync
+Date: Tue, 6 Sep 2011 19:06:36 +0200
+Message-ID: <CABVOS09hntXYUsCJBg+byEGC5y53j4DeT6b49Rx1AaRpqFV54A@mail.gmail.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=ISO-8859-1
-To: linux-btrfs@vger.kernel.org
+Content-Type: text/plain; charset=UTF-8
+To: linux-btrfs <linux-btrfs@vger.kernel.org>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hi all.
+When I check /proc/diskstats on mounted partitions before and after
+'sync' on idle system, I can tell from write activity which partitions
+are btrfs and which are ext3/ext4/swap.
 
-I was doing some testing with writing out data to a BTFS filesystem
-with the compress-force option.  With 1 program running, I saw
-btfs-delalloc taking about 1 CPU worth of time, much as could be
-expected.  I then started up 2 programs at the same time, writing data
-to the BTRFS volume.  btrfs-delalloc still only used 1 CPU worth of
-time.  Is btrfs-delalloc threaded, to where it can use more than 1 CPU
-worth of time?  Is there a threshold where it would start using more
-CPU?
+On idle system after running sync, there is no activity on any
+ext3/ext4/swap except root filesystem. But there are writes on all
+btrfs filesystems.
 
-Thanks for any information you can provide.
+Without 'sync' command btrfs behave well, and there is no read/write
+activity on idle system to distinguish from ext4.
 
--- 
-Andy Carlson
----------------------------------------------------------------------------
-Gamecube:$150,PSO:$50,Broadband Adapter: $35, Hunters License: $8.95/month,
-The feeling of seeing the red box with the item you want in it:Priceless.
+for example some btrfs and ext4 partition before and after sync:
+
+# grep -P "dm-10|dm-6" /proc/diskstats
+ 253      10 dm-10 477158 0 26422280 33602927 2721495 0 26556408
+216043746 0 7504653 249648820
+ 253       6 dm-6 11958 0 618266 431644 3315 0 26520 27535 0 147647 459184
+# sync
+# grep -P "dm-10|dm-6" /proc/diskstats
+ 253      10 dm-10 477158 0 26422280 33602927 2721724 0 26558408
+216050353 0 7504999 249655428
+ 253       6 dm-6 11958 0 618266 431644 3315 0 26520 27535 0 147647 459184
+
+in summary:
+Field  5 -- # of writes completed increased from 2721495 to 2721724
+(total 229 writes)
+Field  7 -- # of sectors written increased from 26556408 to 26558408
+(total 2000 sectors)
+Field  8 -- # of milliseconds spent writing increased from 216043746
+to 216050353 (total 6607 milliseconds)
+
+and this repeats after each 'sync' with similar totals
+
+My system is Fedora 15 kernel 2.6.40.3-2.fc15.i686.PAE (this is should
+be 3.0.3 with some Fedora patches)
+
+
+Thanks
+
+Roman Kapusta

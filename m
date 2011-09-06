@@ -1,64 +1,47 @@
-From: Calvin Walton <calvin.walton@kepstin.ca>
-Subject: Re: Problems with set-default, home subvolume and snapshot
-Date: Tue, 06 Sep 2011 08:16:18 -0400
-Message-ID: <1315311380.2530.6.camel@ayu>
-References: <20110905130742.GA4756@zambezi.lan>
-	 <4E64E026.4020009@cyberphoria.org>
-Mime-Version: 1.0
-Content-Type: text/plain; charset=UTF-8
-Cc: linux-btrfs@vger.kernel.org
-To: =?ISO-8859-1?Q?Bj=F6rn?= Kalkbrenner <terminar@cyberphoria.org>
+From: David Sterba <dsterba@suse.cz>
+Subject: [PATCH -rc6] btrfs: xattr: fix attribute removal
+Date: Tue,  6 Sep 2011 15:33:45 +0200
+Message-ID: <1315316025-11138-1-git-send-email-dsterba@suse.cz>
+Cc: chris.mason@oracle.com, David Sterba <dsterba@suse.cz>
+To: linux-btrfs@vger.kernel.org
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <4E64E026.4020009@cyberphoria.org>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Mon, 2011-09-05 at 16:43 +0200, Bj=C3=B6rn Kalkbrenner wrote:
-> Hi Ilya,
->=20
-> Am 05.09.2011 15:07, schrieb Ilya Dryomov:
-> > Well, it's *sort of* expected if you think about it. When you mount=
-ed
-> > after set-default, your /home is no longer a valid subvolume access
-> > point (it was in the default subvolume, until you rebooted). Inside
-> > your snapshot /home is just an empty directory (there's more to it,
-> > that's why you can't delete it, but that's irrelevant here). Howeve=
-r
-> > if you mount with subvolid=3D<objectid>, you point to a subvolume
-> > directly, skipping the lookup (which leads to an empty dir if you a=
-re
-> > inside your snapshot). That's why it works when you use the subvoli=
-d.
-> > We should probably tune the lookup to make subvol=3D work in this c=
-ase.=20
->=20
-> Ah, thank you very much, that sounds logical with the lookup table an=
-d
-> the - not valid access point - BUT:
->=20
-> Why could i still manually "mount -o subvol=3Dhome /dev/mapper/root /=
-home"
-> and home was just empty but mounted (i looked at the mount table outp=
-ut)?
-> Shouldn't that give me an error that home can't be found in the looku=
-p
-> table?
+An attribute is not removed by 'setfattr -x attr file' and remains
+visible in attr list. This makes xfstests/062 pass again.
 
-This is actually because of how the subvolume mounting works internally=
-=2E
-It turns out that currently, the command
-	mount -o subvol=3Dhome /dev/mapper/root /home
-effectively does the same thing as
-	mount /dev/mapper/root /home	# Mount the "default" subvolume
-	mount --bind /home/home /home	# Switch to the "home" subvolume
-which of course succeeds if /home in your default subvolume is an empty
-directory.
-Hopefully this can be improved at some point :)
+Signed-off-by: David Sterba <dsterba@suse.cz>
+---
+ fs/btrfs/xattr.c |    9 +++++++++
+ 1 files changed, 9 insertions(+), 0 deletions(-)
 
---=20
-Calvin Walton <calvin.walton@kepstin.ca>
+diff --git a/fs/btrfs/xattr.c b/fs/btrfs/xattr.c
+index d733b9c..69565e5 100644
+--- a/fs/btrfs/xattr.c
++++ b/fs/btrfs/xattr.c
+@@ -116,6 +116,12 @@ static int do_setxattr(struct btrfs_trans_handle *trans,
+ 		if (ret)
+ 			goto out;
+ 		btrfs_release_path(path);
++
++		/*
++		 * remove the attribute
++		 */
++		if (!value)
++			goto out;
+ 	}
+ 
+ again:
+@@ -158,6 +164,9 @@ out:
+ 	return ret;
+ }
+ 
++/*
++ * @value: "" makes the attribute to empty, NULL removes it
++ */
+ int __btrfs_setxattr(struct btrfs_trans_handle *trans,
+ 		     struct inode *inode, const char *name,
+ 		     const void *value, size_t size, int flags)
+-- 
+1.7.6
 
---
-To unsubscribe from this list: send the line "unsubscribe linux-btrfs" =
-in
-the body of a message to majordomo@vger.kernel.org
-More majordomo info at  http://vger.kernel.org/majordomo-info.html

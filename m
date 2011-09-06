@@ -1,49 +1,64 @@
-From: Li Zefan <lizf@cn.fujitsu.com>
-Subject: [PATCH] Btrfs: fix array bound checking
-Date: Tue, 06 Sep 2011 16:55:34 +0800
-Message-ID: <4E65E006.8030707@cn.fujitsu.com>
+From: Calvin Walton <calvin.walton@kepstin.ca>
+Subject: Re: Problems with set-default, home subvolume and snapshot
+Date: Tue, 06 Sep 2011 08:16:18 -0400
+Message-ID: <1315311380.2530.6.camel@ayu>
+References: <20110905130742.GA4756@zambezi.lan>
+	 <4E64E026.4020009@cyberphoria.org>
 Mime-Version: 1.0
 Content-Type: text/plain; charset=UTF-8
-To: "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
+Cc: linux-btrfs@vger.kernel.org
+To: =?ISO-8859-1?Q?Bj=F6rn?= Kalkbrenner <terminar@cyberphoria.org>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
+In-Reply-To: <4E64E026.4020009@cyberphoria.org>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Otherwise we can execced the array bound of path->slots[].
+On Mon, 2011-09-05 at 16:43 +0200, Bj=C3=B6rn Kalkbrenner wrote:
+> Hi Ilya,
+>=20
+> Am 05.09.2011 15:07, schrieb Ilya Dryomov:
+> > Well, it's *sort of* expected if you think about it. When you mount=
+ed
+> > after set-default, your /home is no longer a valid subvolume access
+> > point (it was in the default subvolume, until you rebooted). Inside
+> > your snapshot /home is just an empty directory (there's more to it,
+> > that's why you can't delete it, but that's irrelevant here). Howeve=
+r
+> > if you mount with subvolid=3D<objectid>, you point to a subvolume
+> > directly, skipping the lookup (which leads to an empty dir if you a=
+re
+> > inside your snapshot). That's why it works when you use the subvoli=
+d.
+> > We should probably tune the lookup to make subvol=3D work in this c=
+ase.=20
+>=20
+> Ah, thank you very much, that sounds logical with the lookup table an=
+d
+> the - not valid access point - BUT:
+>=20
+> Why could i still manually "mount -o subvol=3Dhome /dev/mapper/root /=
+home"
+> and home was just empty but mounted (i looked at the mount table outp=
+ut)?
+> Shouldn't that give me an error that home can't be found in the looku=
+p
+> table?
 
-Signed-off-by: Li Zefan <lizf@cn.fujitsu.com>
----
- fs/btrfs/ctree.c |   10 ++++++----
- 1 files changed, 6 insertions(+), 4 deletions(-)
+This is actually because of how the subvolume mounting works internally=
+=2E
+It turns out that currently, the command
+	mount -o subvol=3Dhome /dev/mapper/root /home
+effectively does the same thing as
+	mount /dev/mapper/root /home	# Mount the "default" subvolume
+	mount --bind /home/home /home	# Switch to the "home" subvolume
+which of course succeeds if /home in your default subvolume is an empty
+directory.
+Hopefully this can be improved at some point :)
 
-diff --git a/fs/btrfs/ctree.c b/fs/btrfs/ctree.c
-index 011cab3..0fe615e 100644
---- a/fs/btrfs/ctree.c
-+++ b/fs/btrfs/ctree.c
-@@ -902,9 +902,10 @@ static noinline int balance_level(struct btrfs_trans_handle *trans,
- 
- 	orig_ptr = btrfs_node_blockptr(mid, orig_slot);
- 
--	if (level < BTRFS_MAX_LEVEL - 1)
-+	if (level < BTRFS_MAX_LEVEL - 1) {
- 		parent = path->nodes[level + 1];
--	pslot = path->slots[level + 1];
-+		pslot = path->slots[level + 1];
-+	}
- 
- 	/*
- 	 * deal with the case where there is only one pointer in the root
-@@ -1107,9 +1108,10 @@ static noinline int push_nodes_for_insert(struct btrfs_trans_handle *trans,
- 	mid = path->nodes[level];
- 	WARN_ON(btrfs_header_generation(mid) != trans->transid);
- 
--	if (level < BTRFS_MAX_LEVEL - 1)
-+	if (level < BTRFS_MAX_LEVEL - 1) {
- 		parent = path->nodes[level + 1];
--	pslot = path->slots[level + 1];
-+		pslot = path->slots[level + 1];
-+	}
- 
- 	if (!parent)
- 		return 1;
--- 
-1.7.3.1
+--=20
+Calvin Walton <calvin.walton@kepstin.ca>
+
+--
+To unsubscribe from this list: send the line "unsubscribe linux-btrfs" =
+in
+the body of a message to majordomo@vger.kernel.org
+More majordomo info at  http://vger.kernel.org/majordomo-info.html

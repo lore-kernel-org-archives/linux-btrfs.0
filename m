@@ -1,51 +1,55 @@
-From: Jeff Liu <jeff.liu@oracle.com>
-Subject: [PATCH V2] btrfs: trivial fix, a potential memory leak in btrfs_parse_early_options()
-Date: Thu, 15 Sep 2011 23:01:28 +0800
-Message-ID: <4E721348.5020504@oracle.com>
-References: <4E6EF2CD.3070302@oracle.com> <4E703E4D.3040101@cn.fujitsu.com> <4E704589.5020903@oracle.com> <20110915120549.GF22205@twin.jikos.cz>
-Reply-To: jeff.liu@oracle.com
+From: =?ISO-8859-1?Q?Sw=E2mi?= Petaramesh <swami@petaramesh.org>
+Subject: Re: Rename BTRfs to MuchSlowerFS ?
+Date: Wed, 07 Sep 2011 16:15:19 +0200
+Message-ID: <1411501.d4mgBNBG2i@tethys>
+References: <4E64D3D5.7020407@petaramesh.org> <15663472.1RTxtZJx8a@tethys> <CAG1y0sd=fYDT4Z4J=HqYXSsuZGjyMbUgpbLiguqdnibwt9qqOw@mail.gmail.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset=ISO-8859-1
-Cc: Li Zefan <lizf@cn.fujitsu.com>, dave@jikos.cz
-To: linux-btrfs@vger.kernel.org
+Cc: "Fajar A. Nugraha" <list@fajar.net>
+To: linux-btrfs <linux-btrfs@vger.kernel.org>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <20110915120549.GF22205@twin.jikos.cz>
+In-Reply-To: <CAG1y0sd=fYDT4Z4J=HqYXSsuZGjyMbUgpbLiguqdnibwt9qqOw@mail.gmail.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Signed-off-by: Jie Liu <jeff.liu@oracle.com>
+Le Mercredi 7 Septembre 2011 00:11:25 vous avez =E9crit :
+> Reading your post, at this point I'd actually recommend you stick wit=
+h
+> ext4.
 
----
- fs/btrfs/super.c |   10 ++++++++--
- 1 files changed, 8 insertions(+), 2 deletions(-)
+I actually shifted back from BTRFS to ext4 and fell like having offered=
+ myself=20
+a brand new computer,  about 20 times faster, me happy ;-)
 
-diff --git a/fs/btrfs/super.c b/fs/btrfs/super.c
-index 15634d4..16f31e1 100644
---- a/fs/btrfs/super.c
-+++ b/fs/btrfs/super.c
-@@ -406,7 +406,7 @@ static int btrfs_parse_early_options(const char *options, fmode_t flags,
- 		u64 *subvol_rootid, struct btrfs_fs_devices **fs_devices)
- {
- 	substring_t args[MAX_OPT_ARGS];
--	char *opts, *orig, *p;
-+	char *device_name, *opts, *orig, *p;
- 	int error = 0;
- 	int intarg;
- 
-@@ -457,8 +457,14 @@ static int btrfs_parse_early_options(const char *options, fmode_t flags,
- 			}
- 			break;
- 		case Opt_device:
--			error = btrfs_scan_one_device(match_strdup(&args[0]),
-+			device_name = match_strdup(&args[0]);
-+			if (!device_name) {
-+				error = -ENOMEM;
-+				goto out_free_opts;
-+			}
-+			error = btrfs_scan_one_device(device_name,
- 					flags, holder, fs_devices);
-+			kfree(device_name);
- 			if (error)
- 				goto out_free_opts;
- 			break;
--- 
-1.7.4.1
+> Both btrfs and zfs are great, but IMHO btrfs is not ready for
+> daily use by "ordinary" user yet, while zfs is a memory hog
+> (especially for laptops, which is part of the reason why I'm using
+> btrfs instead of zfs on this one).
+
+True, ZFS is excellent but a memory hog (and strongly advises using a 6=
+4-bit=20
+OS) but I was surprised to discover that BTRFS was such a memory eater =
+itself,=20
+with kernel 3.0. My system was swapping like mad !
+
+I use (kernel) ZFS on my 64-bit main machine and I'm plain happy with i=
+t, and=20
+tried ZFS on my 32-bit laptop in the hope to get more performance for l=
+ess=20
+memory ; alas I just got a memory-hungry system running damn slow... Fo=
+r the=20
+time being I will stick to ZFS for 64-bit machines with >=3D 4GB RAM, a=
+nd to=20
+ext4 for 32-bit systems with less RAM...
+
+I don't feel that BTRFS gives any advantage in its current state of=20
+development. Alas.
+
+--=20
+Sw=E2mi Petaramesh <swami@petaramesh.org> http://petaramesh.org PGP 907=
+6E32E
+
+--
+To unsubscribe from this list: send the line "unsubscribe linux-btrfs" =
+in
+the body of a message to majordomo@vger.kernel.org
+More majordomo info at  http://vger.kernel.org/majordomo-info.html

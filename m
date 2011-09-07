@@ -1,24 +1,32 @@
-From: Jeff Liu <jeff.liu@oracle.com>
-Subject: Re: mount a multi-device filesystem using a loopback device
-Date: Wed, 07 Sep 2011 14:42:12 +0800
-Message-ID: <4E671244.6030501@oracle.com>
-References: <4E66F090.4030507@oracle.com> <4E670FB8.4000705@cn.fujitsu.com>
-Reply-To: jeff.liu@oracle.com
+From: David Sterba <dave@jikos.cz>
+Subject: Re: Problems with tuxonice and btrfs
+Date: Wed, 7 Sep 2011 14:39:17 +0200
+Message-ID: <20110907123917.GC22205@twin.jikos.cz>
+References: <1315149806.23766.2.camel@picard>
+Reply-To: dave@jikos.cz
 Mime-Version: 1.0
-Content-Type: text/plain; charset=ISO-8859-1; format=flowed
+Content-Type: text/plain; charset=us-ascii
 Cc: linux-btrfs@vger.kernel.org
-To: Li Zefan <lizf@cn.fujitsu.com>
+To: Maciej Marcin Piechotka <uzytkownik2@gmail.com>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <4E670FB8.4000705@cn.fujitsu.com>
+In-Reply-To: <1315149806.23766.2.camel@picard>
 List-ID: <linux-btrfs.vger.kernel.org>
 
+On Sun, Sep 04, 2011 at 04:23:20PM +0100, Maciej Marcin Piechotka wrote:
+> I get filesystem corruption when I unsuccessfully hibernate using
+> tuxonice. I don't get this problem using standard suspend.
 
-On 09/07/2011 02:31 PM, Li Zefan wrote:
->> Is it a bug? or Am I missing something?
->>
-> You need to run this before mounting the devices:
->
->    # btrfs device scan
-Thank you, it works by executing device scan.
+Just a guess and general thought, I've never used TOI. There is probably
+some activity inside the filesystem going on and is not properly
+stopped, like in the standard suspend case. I'd start at TOI verifying
+that it follows the steps during freezing and unfreezing the filesystem,
+as does standard suspend.
 
--Jeff
+> While I understand TOI is not in mainline it requires no modification
+> for non-FUSE filesystems. where should I report the problem?
+
+This does not seem to be a genuine btrfs bug, rather some misinteraction
+with TOI.
+
+
+david

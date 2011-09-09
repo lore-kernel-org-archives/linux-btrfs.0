@@ -1,66 +1,108 @@
-From: Maciej Marcin Piechotka <uzytkownik2@gmail.com>
-Subject: Re: kernel BUG at fs/btrfs/inode.c:2299
-Date: Fri, 09 Sep 2011 04:29:15 +0100
-Message-ID: <1315538955.1957.7.camel@picard>
-References: <1314582311.2724.4.camel@picard>
-	 <4E5C82E8.9090400@cn.fujitsu.com> <1315530824.1957.4.camel@picard>
-	 <20110909090211.50c35c0f@natsu>
-Reply-To: uzytkownik2@gmail.com
+From: Li Zefan <lizf@cn.fujitsu.com>
+Subject: Re: Verifying TRIM support on SSDs when using BtrFS
+Date: Fri, 09 Sep 2011 13:04:36 +0800
+Message-ID: <4E699E64.4000204@cn.fujitsu.com>
 Mime-Version: 1.0
-Content-Type: multipart/signed; micalg="pgp-ripemd160";
-	protocol="application/pgp-signature"; boundary="=-plWHgAHkUVorQE1ouUnt"
-To: linux-btrfs@vger.kernel.org
+Content-Type: text/plain; charset=UTF-8
+Cc: "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
+To: Shane Meyers <shane@smugmug.com>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <20110909090211.50c35c0f@natsu>
 List-ID: <linux-btrfs.vger.kernel.org>
 
+(resend with linux-btrfs Cced)
 
---=-plWHgAHkUVorQE1ouUnt
-Content-Type: text/plain; charset="UTF-8"
-Content-Transfer-Encoding: quoted-printable
-
-On Fri, 2011-09-09 at 09:02 +0600, Roman Mamedov wrote:
-> On Fri, 09 Sep 2011 02:13:38 +0100
-> Maciej Marcin Piechotka <uzytkownik2@gmail.com> wrote:
+> Hi All,
 >=20
-> > c) It usually happens a few minutes past 3 UTC. I have no idea what is
-> > casuing this but it is consistent.
+> My company is considering using BtrFS for some of our production
+> systems, but before we can use it, I must positively verify that the
+> TRIM command is being issued to the SSDs. =E7=87=9F attempted to veri=
+fy TRIM
+> first using examples that work for Ext4
+> <http://andyduffell.com/techblog/?p=3D852>, but I had to make changes=
+ to
+> the procedure to work with BtrFS.
 >=20
-> Did you check if your /etc/crontab or /etc/cron.d/* have anything schedul=
-ed for that time?
+> The server is Ubuntu 11.04 server 64-bit release (mkfs.btrfs version
+> 0.19). I have installed the Linux 3.0.0 kernel as the BtrFS changelog
+> states that bulk TRIM is not available in the kernel shipped with
+> Ubuntu 11.04 (2.6.38).
+>=20
+> My testing methodology:
+>=20
+> * Manually TRIM the disks before starting: for i in {0..10} ; do let
+> A=3D"$i * 65536" ; hdparm --trim-sector-ranges $A:65535
+> --please-destroy-my-drive /dev/sda ; done
+> * Verify the drive was TRIM'd: ./sectors.pl |grep + | tee sectors-$(d=
+ate +%s)
+> * Partition the drive: fdisk /dev/sda
+> * Make the file system: mkfs.btrfs /dev/sda1
+> * Mount: sudo mount -t btrfs -o ssd /dev/sda1 /mnt
+> * Create a file: dd if=3D/dev/urandom of=3D/mnt/testfile bs=3D1k coun=
+t=3D50000
+> oflag=3Ddirect
+> * Verify the file is on the disk: ./sectors.pl | tee sectors-$(date +=
+%s)
+> * Delete the test file: rm /mnt/testfile
+> * See that the test file is TRIM'd from the disk: ./sectors.pl | tee
+> sectors-$(date +%s)
+> * Verify the TRIM'd blocks: diff the two most recent sectors-* files
+>=20
+> At this point, the pre-delete and post delete verifications still sho=
+w
+> the same disk blocks in use. I should instead see a reduction in the
+> number of in use blocks. Waiting an hour (in case it takes a while fo=
+r
+> the TRIM command to be issued) after the test file is deleted still
+> shows the same blocks in use.
+>=20
+> I have also tried mounting with the "-o ssd,discard" options, but tha=
+t
+> doesn't seem to help at all.
+>=20
+> I also posted this question at
+> <http://serverfault.com/questions/307397/verify-trim-support-with-btr=
+fs-on-ssd>
+> but a good answer has yet to surface.  If you are interested, you can
+> see my sectors.pl and a little more detail at that URL.
+>=20
+> Is my testing methodology flawed?  Am I missing something here?
+> Thanks for your help.
 >=20
 
-It does:
- - logrotate (configured to do it weekly in /etc/logrotate)
- - makewhatis -u
+Have you tried to use this methodology to test ext4? So you can verify =
+if
+it's flawed.
 
-Neither of which should touch /home. Before it snapshotted the volume
-and I thought it was the direct cause.
+I used a much simpler way to test this, and I found btrfs works fine:
 
-Best regards
+  # mount -t btrfs -o discard /dev/sdc5 /mnt
+  # dd if=3D/dev/urandom of=3D/mnt/tmp bs=3D1M count=3D5
+  # sync
+  # hexdump /mnt/tmp
+  0000000 064c ded5 c386 4721 060c 13e8 b090 b4a0
+  ...
+  # hexdump /dev/sdc5 | grep '064c ded5'
+  0c00000 064c ded5 c386 4721 060c 13e8 b090 b4a0
 
---=-plWHgAHkUVorQE1ouUnt
-Content-Type: application/pgp-signature; name="signature.asc"
-Content-Description: This is a digitally signed message part
+Now verify the discard feature:
 
------BEGIN PGP SIGNATURE-----
-Version: GnuPG v2.0.18 (GNU/Linux)
+  # rm /mnt/tmp
+  # sync
+  # echo 3 > /proc/sys/vm/drop_caches
+  # hexdump /dev/sdc5 | grep '064c ded5'
+  (grep returns nothing, as expected)
 
-iQIcBAABAwAGBQJOaYgLAAoJEJIdee2Vr4aP9pQP/3AZuNrk3CeHijaNXov/EPp9
-IRZxWkLURevhO+FNJDNBHz2iOB+nCUNZJu7wegU+r9onRoMmMTx9fgIGPa00HHyt
-s95qTdU00RC5zCPJUKioCO2NcCZ+Jjj+9X+g3IhRq7JUoFFSc3FL8C7G0XAGzDxP
-icC5Zm473iY+VVFV3fxa0Lg1+MK7aTiMCkpcedKU7TrQTnjAzh8t9Vs9Mi8DtQPO
-uhS8EjRaINSju4Tr568RQBrSE0Ii0CBk5cSXwNZczQh4A1+26ppXBYnXS3sb69IE
-XLfroNDBXDYM7O/gUxabEaEoKdV5YVVFckHL5ydH3pRtTPGdBrS/TAsCTGCFbNu+
-G46Ui+a5/ulqBVRt6g9ZGXROv2CzbE2thNv7OVfzYUT6K5FUjrbeCweYwVSxA38N
-koT/Sbm1yCwmO1sVdxl1qb+IzpdJsxgUnvUPPaav6P57ZJJH2zM8AeizJHbW/J8F
-5pZn/Y81WFlX29vCy3nF5tY8UUNA9/gxKlo3NmTbKNiSYO1rny2gf7fLvX/z8ep4
-qQo3WDIc89mqXvO2tg+3clxEm1BSw82rwMw0NBNBEK1RQG/iLhamOvbzU84mIcBZ
-J2FJ0fsJDdP/G7fFcQYESGkeA8E9TDNoMVn40fb9CXg9o9NGm4d+VJxslqFlIJKi
-A/XhZkPF8G2/d1j67wCm
-=ahyz
------END PGP SIGNATURE-----
+So there's nothing wrong in btrfs.
 
---=-plWHgAHkUVorQE1ouUnt--
+Try the above test but without discard option, and you'll see the secto=
+rs
+will not be zeroed.
 
+--
+Li Zefan
 
+--
+To unsubscribe from this list: send the line "unsubscribe linux-btrfs" =
+in
+the body of a message to majordomo@vger.kernel.org
+More majordomo info at  http://vger.kernel.org/majordomo-info.html

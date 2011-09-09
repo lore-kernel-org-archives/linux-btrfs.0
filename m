@@ -1,78 +1,115 @@
 From: jeffm@suse.com
-Subject: [patch v3 22/23] btrfs: Factor out tree->ops->merge_bio_hook call
-Date: Thu, 08 Sep 2011 20:23:02 -0400
-Message-ID: <20110909002734.074469887@suse.com>
+Subject: [patch v3 02/23] btrfs: Catch locking failures in {set,clear}_extent_bit
+Date: Thu, 08 Sep 2011 20:22:42 -0400
+Message-ID: <20110909002730.027216967@suse.com>
 References: <20110909002240.141223014@suse.com>
 Cc: Chris Mason <chris.mason@oracle.com>
 To: btrfs list <linux-btrfs@vger.kernel.org>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
 List-ID: <linux-btrfs.vger.kernel.org>
 
- In submit_extent_page, there's a visually noisy if statement that, in
- the midst of other conditions, does the tree dependency for tree->ops
- and tree->ops->merge_bio_hook before calling it, and then another
- condition afterwards. If an error is returned from merge_bio_hook,
- there's no way to catch it. It's considered a routine "1" return
- value instead of a failure.
-
- This patch factors out the dependency check into a new local merge_bio
- routine and BUG's on an error. The if statement is less noisy as a side-
- effect.
+ The *_state functions can only return 0 or -EEXIST. This patch addresses
+ the cases where those functions return -EEXIST, representing a locking
+ failure. It handles them by panicking with an appropriate error message.
 
 Signed-off-by: Jeff Mahoney <jeffm@suse.com>
 ---
- fs/btrfs/extent_io.c |   17 ++++++++++++++---
- fs/btrfs/inode.c     |    5 +++--
- 2 files changed, 17 insertions(+), 5 deletions(-)
+ fs/btrfs/extent_io.c |   42 +++++++++++++++++++++++++++++++-----------
+ 1 file changed, 31 insertions(+), 11 deletions(-)
 
 --- a/fs/btrfs/extent_io.c
 +++ b/fs/btrfs/extent_io.c
-@@ -1871,6 +1871,19 @@ static int submit_one_bio(int rw, struct
- 	return ret;
- }
+@@ -51,6 +51,12 @@ struct extent_page_data {
+ 	unsigned int sync_io:1;
+ };
  
-+static int merge_bio(struct extent_io_tree *tree, struct page *page,
-+		     unsigned long offset, size_t size, struct bio *bio,
-+		     unsigned long bio_flags)
++static inline struct btrfs_fs_info *
++tree_fs_info(struct extent_io_tree *tree)
 +{
-+	int ret = 0;
-+	if (tree->ops && tree->ops->merge_bio_hook)
-+		ret = tree->ops->merge_bio_hook(page, offset, size, bio,
-+						bio_flags);
-+	BUG_ON(ret < 0);
-+	return ret;
-+
++	return btrfs_sb(tree->mapping->host->i_sb)->fs_info;
 +}
 +
- static int submit_extent_page(int rw, struct extent_io_tree *tree,
- 			      struct page *page, sector_t sector,
- 			      size_t size, unsigned long offset,
-@@ -1899,9 +1912,7 @@ static int submit_extent_page(int rw, st
- 				sector;
+ int __init extent_io_init(void)
+ {
+ 	extent_state_cache = kmem_cache_create("extent_state",
+@@ -531,7 +537,10 @@ hit_next:
+ 		prealloc = alloc_extent_state_atomic(prealloc);
+ 		BUG_ON(!prealloc);
+ 		err = split_state(tree, state, prealloc, start);
+-		BUG_ON(err == -EEXIST);
++		if (err)
++			btrfs_panic(tree_fs_info(tree), err, "Locking error: "
++				    "Extent tree was modified by another "
++				    "thread while locked.");
+ 		prealloc = NULL;
+ 		if (err)
+ 			goto out;
+@@ -553,7 +562,10 @@ hit_next:
+ 		prealloc = alloc_extent_state_atomic(prealloc);
+ 		BUG_ON(!prealloc);
+ 		err = split_state(tree, state, prealloc, end + 1);
+-		BUG_ON(err == -EEXIST);
++		if (err)
++			btrfs_panic(tree_fs_info(tree), err, "Locking error: "
++				    "Extent tree was modified by another "
++				    "thread while locked.");
+ 		if (wake)
+ 			wake_up(&state->wq);
  
- 		if (prev_bio_flags != bio_flags || !contig ||
--		    (tree->ops && tree->ops->merge_bio_hook &&
--		     tree->ops->merge_bio_hook(page, offset, page_size, bio,
--					       bio_flags)) ||
-+		    merge_bio(tree, page, offset, page_size, bio, bio_flags) ||
- 		    bio_add_page(bio, page, page_size, offset) < page_size) {
- 			ret = submit_one_bio(rw, bio, mirror_num,
- 					     prev_bio_flags);
---- a/fs/btrfs/inode.c
-+++ b/fs/btrfs/inode.c
-@@ -1425,10 +1425,11 @@ int btrfs_merge_bio_hook(struct page *pa
- 	map_length = length;
- 	ret = btrfs_map_block(map_tree, READ, logical,
- 			      &map_length, NULL, 0);
--
-+	/* Will always return 0 or 1 with map_multi == NULL */
-+	BUG_ON(ret < 0);
- 	if (map_length < length + size)
- 		return 1;
--	return ret;
-+	return 0;
- }
+@@ -736,8 +748,11 @@ again:
+ 		prealloc = alloc_extent_state_atomic(prealloc);
+ 		BUG_ON(!prealloc);
+ 		err = insert_state(tree, prealloc, start, end, &bits);
++		if (err)
++			btrfs_panic(tree_fs_info(tree), err, "Locking error: "
++				    "Extent tree was modified by another "
++				    "thread while locked.");
+ 		prealloc = NULL;
+-		BUG_ON(err == -EEXIST);
+ 		goto out;
+ 	}
+ 	state = rb_entry(node, struct extent_state, rb_node);
+@@ -803,7 +818,10 @@ hit_next:
+ 		prealloc = alloc_extent_state_atomic(prealloc);
+ 		BUG_ON(!prealloc);
+ 		err = split_state(tree, state, prealloc, start);
+-		BUG_ON(err == -EEXIST);
++		if (err)
++			btrfs_panic(tree_fs_info(tree), err, "Locking error: "
++				    "Extent tree was modified by another "
++				    "thread while locked.");
+ 		prealloc = NULL;
+ 		if (err)
+ 			goto out;
+@@ -840,12 +858,11 @@ hit_next:
+ 		 */
+ 		err = insert_state(tree, prealloc, start, this_end,
+ 				   &bits);
+-		BUG_ON(err == -EEXIST);
+-		if (err) {
+-			free_extent_state(prealloc);
+-			prealloc = NULL;
+-			goto out;
+-		}
++		if (err)
++			btrfs_panic(tree_fs_info(tree), err, "Locking error: "
++				    "Extent tree was modified by another "
++				    "thread while locked.");
++
+ 		cache_state(prealloc, cached_state);
+ 		prealloc = NULL;
+ 		start = this_end + 1;
+@@ -867,7 +884,10 @@ hit_next:
+ 		prealloc = alloc_extent_state_atomic(prealloc);
+ 		BUG_ON(!prealloc);
+ 		err = split_state(tree, state, prealloc, end + 1);
+-		BUG_ON(err == -EEXIST);
++		if (err)
++			btrfs_panic(tree_fs_info(tree), err, "Locking error: "
++				    "Extent tree was modified by another "
++				    "thread while locked.");
  
- /*
+ 		set_state_bits(tree, prealloc, &bits);
+ 		cache_state(prealloc, cached_state);
 
 

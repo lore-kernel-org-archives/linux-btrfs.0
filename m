@@ -1,44 +1,50 @@
 From: jeffm@suse.com
-Subject: [patch v3 21/23] btrfs: simplify btrfs_submit_bio_hook
-Date: Thu, 08 Sep 2011 20:23:01 -0400
-Message-ID: <20110909002733.815019499@suse.com>
+Subject: [patch v3 17/23] btrfs: Make btrfs_invalidate_inodes return void
+Date: Thu, 08 Sep 2011 20:22:57 -0400
+Message-ID: <20110909002732.992663694@suse.com>
 References: <20110909002240.141223014@suse.com>
 Cc: Chris Mason <chris.mason@oracle.com>
 To: btrfs list <linux-btrfs@vger.kernel.org>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
 List-ID: <linux-btrfs.vger.kernel.org>
 
- btrfs_submit_bio_hook currently calls btrfs_bio_wq_end_io in either case
- of an if statement that determines one of the arguments.
-
- This patch moves the function call outside of the if statement and uses it
- to only determine the different argument. This allows us to catch an
- error in one place in a more visually obvious way.
+ btrfs_invalidate_inodes has no error conditions and should return void.
 
 Signed-off-by: Jeff Mahoney <jeffm@suse.com>
 ---
- fs/btrfs/inode.c |    7 ++++---
- 1 file changed, 4 insertions(+), 3 deletions(-)
+ fs/btrfs/ctree.h |    2 +-
+ fs/btrfs/inode.c |    3 +--
+ 2 files changed, 2 insertions(+), 3 deletions(-)
 
+--- a/fs/btrfs/ctree.h
++++ b/fs/btrfs/ctree.h
+@@ -2590,7 +2590,7 @@ void btrfs_orphan_post_snapshot(struct b
+ void btrfs_orphan_commit_root(struct btrfs_trans_handle *trans,
+ 			      struct btrfs_root *root);
+ int btrfs_cont_expand(struct inode *inode, loff_t oldsize, loff_t size);
+-int btrfs_invalidate_inodes(struct btrfs_root *root);
++void btrfs_invalidate_inodes(struct btrfs_root *root);
+ void btrfs_add_delayed_iput(struct inode *inode);
+ void btrfs_run_delayed_iputs(struct btrfs_root *root);
+ int btrfs_prealloc_file_range(struct inode *inode, int mode,
 --- a/fs/btrfs/inode.c
 +++ b/fs/btrfs/inode.c
-@@ -1479,13 +1479,14 @@ static int btrfs_submit_bio_hook(struct
- 	struct btrfs_root *root = BTRFS_I(inode)->root;
- 	int ret = 0;
- 	int skip_sum;
-+	int metadata = 0;
+@@ -3886,7 +3886,7 @@ static void inode_tree_del(struct inode
+ 	}
+ }
  
- 	skip_sum = BTRFS_I(inode)->flags & BTRFS_INODE_NODATASUM;
+-int btrfs_invalidate_inodes(struct btrfs_root *root)
++void btrfs_invalidate_inodes(struct btrfs_root *root)
+ {
+ 	struct rb_node *node;
+ 	struct rb_node *prev;
+@@ -3946,7 +3946,6 @@ again:
+ 		node = rb_next(node);
+ 	}
+ 	spin_unlock(&root->inode_lock);
+-	return 0;
+ }
  
- 	if (btrfs_is_free_space_inode(root, inode))
--		ret = btrfs_bio_wq_end_io(root->fs_info, bio, 2);
--	else
--		ret = btrfs_bio_wq_end_io(root->fs_info, bio, 0);
-+		metadata = 2;
-+
-+	ret = btrfs_bio_wq_end_io(root->fs_info, bio, metadata);
- 	BUG_ON(ret);
- 
- 	if (!(rw & REQ_WRITE)) {
+ static int btrfs_init_locked_inode(struct inode *inode, void *p)
 
 

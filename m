@@ -1,144 +1,73 @@
 From: jeffm@suse.com
-Subject: [patch v3 23/23] btrfs: Push up ->submit_bio_hook failures
-Date: Thu, 08 Sep 2011 20:23:03 -0400
-Message-ID: <20110909002734.290256661@suse.com>
+Subject: [patch v3 16/23] btrfs: Make btrfs_init_compress return void
+Date: Thu, 08 Sep 2011 20:22:56 -0400
+Message-ID: <20110909002732.798240610@suse.com>
 References: <20110909002240.141223014@suse.com>
 Cc: Chris Mason <chris.mason@oracle.com>
 To: btrfs list <linux-btrfs@vger.kernel.org>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
 List-ID: <linux-btrfs.vger.kernel.org>
 
- This pushes failures from the submit_bio_hook callbacks,
- btrfs_submit_bio_hook and btree_submit_bio_hook into the callers, including
- callers of submit_one_bio where it catches the failures with BUG_ON.
-
- It also pushes up through the ->readpage_io_failed_hook to
- end_bio_extent_writepage where the error is already caught with BUG_ON.
+ btrfs_init_compress doesn't have any failure conditions, so return void.
 
 Signed-off-by: Jeff Mahoney <jeffm@suse.com>
 ---
- fs/btrfs/disk-io.c   |    6 +++---
- fs/btrfs/extent_io.c |   29 +++++++++++++++++++++--------
- fs/btrfs/inode.c     |    3 ++-
- 3 files changed, 26 insertions(+), 12 deletions(-)
+ fs/btrfs/compression.h |    2 +-
+ fs/btrfs/super.c       |    5 +----
+ 2 files changed, 2 insertions(+), 5 deletions(-)
 
---- a/fs/btrfs/disk-io.c
-+++ b/fs/btrfs/disk-io.c
-@@ -811,9 +811,9 @@ static int btree_submit_bio_hook(struct
+--- a/fs/btrfs/compression.c
++++ b/fs/btrfs/compression.c
+@@ -732,7 +734,7 @@ struct btrfs_compress_op *btrfs_compress
+ 	&btrfs_lzo_compress,
+ };
+ 
+-int __init btrfs_init_compress(void)
++void __init btrfs_init_compress(void)
  {
- 	int ret;
+ 	int i;
  
--	ret = btrfs_bio_wq_end_io(BTRFS_I(inode)->root->fs_info,
--					  bio, 1);
--	BUG_ON(ret);
-+	ret = btrfs_bio_wq_end_io(BTRFS_I(inode)->root->fs_info, bio, 1);
-+	if (ret)
-+		return ret;
- 
- 	if (!(rw & REQ_WRITE)) {
- 		/*
---- a/fs/btrfs/extent_io.c
-+++ b/fs/btrfs/extent_io.c
-@@ -1693,6 +1693,7 @@ static void end_bio_extent_writepage(str
- 				uptodate = (err == 0);
- 				continue;
- 			}
-+			BUG_ON(ret < 0);
- 		}
- 
- 		if (!uptodate) {
-@@ -1785,6 +1786,7 @@ static void end_bio_extent_readpage(stru
- 				uncache_state(&cached);
- 				continue;
- 			}
-+			BUG_ON(ret < 0);
- 		}
- 
- 		if (uptodate) {
-@@ -1910,6 +1912,7 @@ static int submit_extent_page(int rw, st
- 		    bio_add_page(bio, page, page_size, offset) < page_size) {
- 			ret = submit_one_bio(rw, bio, mirror_num,
- 					     prev_bio_flags);
-+			BUG_ON(ret < 0);
- 			bio = NULL;
- 		} else {
- 			return 0;
-@@ -1930,8 +1933,10 @@ static int submit_extent_page(int rw, st
- 
- 	if (bio_ret)
- 		*bio_ret = bio;
--	else
-+	else {
- 		ret = submit_one_bio(rw, bio, mirror_num, bio_flags);
-+		BUG_ON(ret < 0);
-+	}
- 
- 	return ret;
- }
-@@ -2154,8 +2159,10 @@ int extent_read_full_page(struct extent_
- 
- 	ret = __extent_read_full_page(tree, page, get_extent, &bio, 0,
- 				      &bio_flags);
--	if (bio)
-+	if (bio) {
- 		ret = submit_one_bio(READ, bio, 0, bio_flags);
-+		BUG_ON(ret < 0);
-+	}
- 	return ret;
- }
- 
-@@ -2553,10 +2560,12 @@ retry:
- static void flush_epd_write_bio(struct extent_page_data *epd)
- {
- 	if (epd->bio) {
-+		int ret;
- 		if (epd->sync_io)
--			submit_one_bio(WRITE_SYNC, epd->bio, 0, 0);
-+			ret = submit_one_bio(WRITE_SYNC, epd->bio, 0, 0);
- 		else
--			submit_one_bio(WRITE, epd->bio, 0, 0);
-+			ret = submit_one_bio(WRITE, epd->bio, 0, 0);
-+		BUG_ON(ret < 0);
- 		epd->bio = NULL;
+@@ -742,7 +744,6 @@ int __init btrfs_init_compress(void)
+ 		atomic_set(&comp_alloc_workspace[i], 0);
+ 		init_waitqueue_head(&comp_workspace_wait[i]);
  	}
- }
-@@ -2672,8 +2681,10 @@ int extent_readpages(struct extent_io_tr
- 		page_cache_release(page);
- 	}
- 	BUG_ON(!list_empty(pages));
--	if (bio)
--		submit_one_bio(READ, bio, 0, bio_flags);
-+	if (bio) {
-+		int ret = submit_one_bio(READ, bio, 0, bio_flags);
-+		BUG_ON(ret < 0);
-+	}
- 	return 0;
+-	return 0;
  }
  
-@@ -3505,8 +3516,10 @@ int read_extent_buffer_pages(struct exte
- 		}
- 	}
+ /*
+
+--- a/fs/btrfs/compression.h
++++ b/fs/btrfs/compression.h
+@@ -19,7 +19,7 @@
+ #ifndef __BTRFS_COMPRESSION_
+ #define __BTRFS_COMPRESSION_
  
--	if (bio)
--		submit_one_bio(READ, bio, mirror_num, bio_flags);
-+	if (bio) {
-+		err = submit_one_bio(READ, bio, mirror_num, bio_flags);
-+		BUG_ON(err < 0);
-+	}
+-int btrfs_init_compress(void);
++void btrfs_init_compress(void);
+ void btrfs_exit_compress(void);
  
- 	if (ret || !wait)
- 		return ret;
---- a/fs/btrfs/inode.c
-+++ b/fs/btrfs/inode.c
-@@ -1488,7 +1488,8 @@ static int btrfs_submit_bio_hook(struct
- 		metadata = 2;
+ int btrfs_compress_pages(int type, struct address_space *mapping,
+--- a/fs/btrfs/super.c
++++ b/fs/btrfs/super.c
+@@ -1283,9 +1283,7 @@ static int __init init_btrfs_fs(void)
+ 	if (err)
+ 		return err;
  
- 	ret = btrfs_bio_wq_end_io(root->fs_info, bio, metadata);
--	BUG_ON(ret);
-+	if (ret)
-+		return ret;
+-	err = btrfs_init_compress();
+-	if (err)
+-		goto free_sysfs;
++	btrfs_init_compress();
  
- 	if (!(rw & REQ_WRITE)) {
- 		if (bio_flags & EXTENT_BIO_COMPRESSED) {
+ 	err = btrfs_init_cachep();
+ 	if (err)
+@@ -1326,7 +1324,6 @@ free_cachep:
+ 	btrfs_destroy_cachep();
+ free_compress:
+ 	btrfs_exit_compress();
+-free_sysfs:
+ 	btrfs_exit_sysfs();
+ 	return err;
+ }
+
 
 

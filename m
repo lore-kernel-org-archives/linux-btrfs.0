@@ -1,117 +1,82 @@
-From: Miao Xie <miaox@cn.fujitsu.com>
-Subject: [PATCH] Btrfs: fix race between multi-task space allocation and caching
- space
-Date: Fri, 09 Sep 2011 17:34:35 +0800
-Message-ID: <4E69DDAB.8030104@cn.fujitsu.com>
-Reply-To: miaox@cn.fujitsu.com
-Mime-Version: 1.0
-Content-Type: text/plain; charset=GB2312
+From: Sergei Trofimovich <slyich@gmail.com>
+Subject: [PATCH v2] btrfs: fix warning in iput for bad-inode
+Date: Fri,  9 Sep 2011 20:38:35 +0300
+Message-ID: <1315589915-4934-1-git-send-email-slyich@gmail.com>
+Cc: Sergei Trofimovich <slyfox@gentoo.org>,
+	Konstantin Khlebnikov <khlebnikov@openvz.org>,
+	Josef Bacik <josef@redhat.com>,
+	Chris Mason <chris.mason@oracle.com>
 To: Linux Btrfs <linux-btrfs@vger.kernel.org>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-The task may fail to get free space though it is enough when multi-task
-space allocation and caching space happen at the same time.
+From: Sergei Trofimovich <slyfox@gentoo.org>
 
-	Task1			Caching Thread		Task2
-	------------------------------------------------------------------------
-	find_free_extent
-	  The space has not
-	  be cached, and start
-	  caching thread. And
-	  wait for it.
-				cache space, if
-				the space is > 2MB
-				wake up Task1
-							find_free_extent
-							  get all the space that
-							  is cached.
-	  try to allocate space,
-	  but there is no space
-	  now.
-	trigger BUG_ON()
+iput() shouldn't be called for inodes in I_NEW state.
+We need to mark inode as constructed first.
 
-The message is following:
-btrfs allocation failed flags 1, wanted 4096
-space_info has 1040187392 free, is not full
-space_info total=1082130432, used=4096, pinned=41938944, reserved=0, may_use=40828928, readonly=0
-block group 12582912 has 8388608 bytes, 0 used 8388608 pinned 0 reserved
-block group has cluster?: no
-0 blocks of free space at or bigger than bytes is
-block group 1103101952 has 1073741824 bytes, 4096 used 33550336 pinned 0 reserved
-block group has cluster?: no
-0 blocks of free space at or bigger than bytes is
-------------[ cut here ]------------
-kernel BUG at fs/btrfs/inode.c:835!
- [<ffffffffa031261b>] __extent_writepage+0x1bf/0x5ce [btrfs]
- [<ffffffff810cbcb8>] ? __set_page_dirty_nobuffers+0xfe/0x108
- [<ffffffffa02f8ada>] ? wait_current_trans+0x23/0xec [btrfs]
- [<ffffffff810c3fbf>] ? find_get_pages_tag+0x73/0xe2
- [<ffffffffa0312d12>] extent_write_cache_pages.clone.0+0x176/0x29a [btrfs]
- [<ffffffffa0312e74>] extent_writepages+0x3e/0x53 [btrfs]
- [<ffffffff8110ad2c>] ? do_sync_write+0xc6/0x103
- [<ffffffffa0302d6e>] ? btrfs_submit_direct+0x414/0x414 [btrfs]
- [<ffffffff811380fa>] ? fsnotify+0x236/0x266
- [<ffffffffa02fc930>] btrfs_writepages+0x22/0x24 [btrfs]
- [<ffffffff810cc215>] do_writepages+0x1c/0x25
- [<ffffffff810c4958>] __filemap_fdatawrite_range+0x4e/0x50
- [<ffffffff810c4982>] filemap_write_and_wait_range+0x28/0x51
- [<ffffffffa0306b2e>] btrfs_sync_file+0x7d/0x198 [btrfs]
- [<ffffffff8110aa26>] ? fsnotify_modify+0x5d/0x65
- [<ffffffff8112d150>] vfs_fsync_range+0x18/0x21
- [<ffffffff8112d170>] vfs_fsync+0x17/0x19
- [<ffffffff8112d316>] do_fsync+0x29/0x3e
- [<ffffffff8112d348>] sys_fsync+0xb/0xf
- [<ffffffff81468352>] system_call_fastpath+0x16/0x1b
-[SNIP]
-RIP  [<ffffffffa02fe08c>] cow_file_range+0x1c4/0x32b [btrfs]
+WARNING: at fs/inode.c:1309 iput+0x20b/0x210()
+Call Trace:
+ [<ffffffff8103e7ba>] warn_slowpath_common+0x7a/0xb0
+ [<ffffffff8103e805>] warn_slowpath_null+0x15/0x20
+ [<ffffffff810eaf0b>] iput+0x20b/0x210
+ [<ffffffff811b96fb>] btrfs_iget+0x1eb/0x4a0
+ [<ffffffff811c3ad6>] btrfs_run_defrag_inodes+0x136/0x210
+ [<ffffffff811ad55f>] cleaner_kthread+0x17f/0x1a0
+ [<ffffffff81035b7d>] ? sub_preempt_count+0x9d/0xd0
+ [<ffffffff811ad3e0>] ? transaction_kthread+0x280/0x280
+ [<ffffffff8105af86>] kthread+0x96/0xa0
+ [<ffffffff814336d4>] kernel_thread_helper+0x4/0x10
+ [<ffffffff8105aef0>] ? kthread_worker_fn+0x190/0x190
+ [<ffffffff814336d0>] ? gs_change+0xb/0xb
 
-We fix this bug by trying to allocate the space again if there are block groups
-in caching.
-
-Signed-off-by: Miao Xie <miaox@cn.fujitsu.com>
+Signed-off-by: Sergei Trofimovich <slyfox@gentoo.org>
+CC: Konstantin Khlebnikov <khlebnikov@openvz.org>
+Tested-by: David Sterba <dsterba@suse.cz>
+CC: Josef Bacik <josef@redhat.com>
+CC: Chris Mason <chris.mason@oracle.com>
 ---
- fs/btrfs/extent-tree.c |    7 +++++++
- 1 files changed, 7 insertions(+), 0 deletions(-)
+Change since v1:
+- Added David's positive feedback
+Change since Konstantin's patch:
+- avoid using explicit destructor for inode, as it can(?)
+  be shared among other threads. Use unlock_new_inode()/iput()
+  instead. It fixes 100% CPU load after 'sync()' popped-up in
+  Konstantin's patch
+ fs/btrfs/inode.c |   10 +++-------
+ 1 files changed, 3 insertions(+), 7 deletions(-)
 
-diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
-index 80d6148..003547c 100644
---- a/fs/btrfs/extent-tree.c
-+++ b/fs/btrfs/extent-tree.c
-@@ -4887,6 +4887,7 @@ static noinline int find_free_extent(struct btrfs_trans_handle *trans,
- 	bool failed_cluster_refill = false;
- 	bool failed_alloc = false;
- 	bool use_cluster = true;
-+	bool have_caching_bg = false;
- 	u64 ideal_cache_percent = 0;
- 	u64 ideal_cache_offset = 0;
+diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
+index 0ccc743..ec4b550 100644
+--- a/fs/btrfs/inode.c
++++ b/fs/btrfs/inode.c
+@@ -3952,7 +3952,6 @@ struct inode *btrfs_iget(struct super_block *s, struct btrfs_key *location,
+ 			 struct btrfs_root *root, int *new)
+ {
+ 	struct inode *inode;
+-	int bad_inode = 0;
  
-@@ -4969,6 +4970,7 @@ ideal_cache:
+ 	inode = btrfs_iget_locked(s, location->objectid, root);
+ 	if (!inode)
+@@ -3968,15 +3967,12 @@ struct inode *btrfs_iget(struct super_block *s, struct btrfs_key *location,
+ 			if (new)
+ 				*new = 1;
+ 		} else {
+-			bad_inode = 1;
++			unlock_new_inode(inode);
++			iput(inode);
++			inode = ERR_PTR(-ESTALE);
  		}
  	}
- search:
-+	have_caching_bg = false;
- 	down_read(&space_info->groups_sem);
- 	list_for_each_entry(block_group, &space_info->block_groups[index],
- 			    list) {
-@@ -5177,6 +5179,8 @@ refill_cluster:
- 			failed_alloc = true;
- 			goto have_block_group;
- 		} else if (!offset) {
-+			if (!cached)
-+				have_caching_bg = true;
- 			goto loop;
- 		}
- checks:
-@@ -5227,6 +5231,9 @@ loop:
- 	}
- 	up_read(&space_info->groups_sem);
  
-+	if (!ins->objectid && loop >= LOOP_CACHING_WAIT && have_caching_bg)
-+		goto search;
-+
- 	if (!ins->objectid && ++index < BTRFS_NR_RAID_TYPES)
- 		goto search;
+-	if (bad_inode) {
+-		iput(inode);
+-		inode = ERR_PTR(-ESTALE);
+-	}
+-
+ 	return inode;
+ }
  
 -- 
-1.7.1
+1.7.3.4
+

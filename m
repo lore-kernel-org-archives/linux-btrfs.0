@@ -1,115 +1,150 @@
 From: jeffm@suse.com
-Subject: [patch v3 02/23] btrfs: Catch locking failures in {set,clear}_extent_bit
-Date: Thu, 08 Sep 2011 20:22:42 -0400
-Message-ID: <20110909002730.027216967@suse.com>
+Subject: [patch v3 01/23] btrfs: Add btrfs_panic()
+Date: Thu, 08 Sep 2011 20:22:41 -0400
+Message-ID: <20110909002729.815656506@suse.com>
 References: <20110909002240.141223014@suse.com>
 Cc: Chris Mason <chris.mason@oracle.com>
 To: btrfs list <linux-btrfs@vger.kernel.org>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
 List-ID: <linux-btrfs.vger.kernel.org>
 
- The *_state functions can only return 0 or -EEXIST. This patch addresses
- the cases where those functions return -EEXIST, representing a locking
- failure. It handles them by panicking with an appropriate error message.
+ As part of the effort to eliminate BUG_ON as an error handling
+ technique, we need to determine which errors are actual logic errors,
+ which are on-disk corruption, and which are normal runtime errors
+ e.g. -ENOMEM.
+
+ Annotating these error cases is helpful to understand and report them.
+
+ This patch adds a btrfs_panic() routine that will either panic
+ or BUG depending on the new -ofatal_errors={panic,bug} mount option.
+ Since there are still so many BUG_ONs, it defaults to BUG for now but I
+ expect that to change once the error handling effort has made
+ significant progress.
+
 
 Signed-off-by: Jeff Mahoney <jeffm@suse.com>
 ---
- fs/btrfs/extent_io.c |   42 +++++++++++++++++++++++++++++++-----------
- 1 file changed, 31 insertions(+), 11 deletions(-)
+ fs/btrfs/ctree.h |   11 +++++++++++
+ fs/btrfs/super.c |   47 ++++++++++++++++++++++++++++++++++++++++++++++-
+ 2 files changed, 57 insertions(+), 1 deletion(-)
 
---- a/fs/btrfs/extent_io.c
-+++ b/fs/btrfs/extent_io.c
-@@ -51,6 +51,12 @@ struct extent_page_data {
- 	unsigned int sync_io:1;
- };
+--- a/fs/btrfs/ctree.h
++++ b/fs/btrfs/ctree.h
+@@ -1363,6 +1363,7 @@ struct btrfs_ioctl_defrag_range_args {
+ #define BTRFS_MOUNT_ENOSPC_DEBUG	 (1 << 15)
+ #define BTRFS_MOUNT_AUTO_DEFRAG		(1 << 16)
+ #define BTRFS_MOUNT_INODE_MAP_CACHE	(1 << 17)
++#define BTRFS_MOUNT_PANIC_ON_FATAL_ERROR	(1 << 18)
  
-+static inline struct btrfs_fs_info *
-+tree_fs_info(struct extent_io_tree *tree)
+ #define btrfs_clear_opt(o, opt)		((o) &= ~BTRFS_MOUNT_##opt)
+ #define btrfs_set_opt(o, opt)		((o) |= BTRFS_MOUNT_##opt)
+@@ -2650,6 +2651,16 @@ do {								\
+ 		__btrfs_std_error((fs_info), __func__, __LINE__, (errno));\
+ } while (0)
+ 
++void __btrfs_panic(struct btrfs_fs_info *fs_info, const char *function,
++		   unsigned int line, int errno, const char *fmt, ...);
++
++#define btrfs_panic(fs_info, errno, fmt, args...)			\
++do {									\
++	struct btrfs_fs_info *_i = (fs_info);				\
++	__btrfs_panic(_i, __func__, __LINE__, errno, fmt, ##args);	\
++	BUG_ON(!(_i->mount_opt & BTRFS_MOUNT_PANIC_ON_FATAL_ERROR));	\
++} while (0)
++
+ /* acl.c */
+ #ifdef CONFIG_BTRFS_FS_POSIX_ACL
+ struct posix_acl *btrfs_get_acl(struct inode *inode, int type);
+--- a/fs/btrfs/super.c
++++ b/fs/btrfs/super.c
+@@ -74,6 +74,9 @@ static const char *btrfs_decode_error(st
+ 	case -EROFS:
+ 		errstr = "Readonly filesystem";
+ 		break;
++	case -EEXIST:
++		errstr = "Object already exists";
++		break;
+ 	default:
+ 		if (nbuf) {
+ 			if (snprintf(nbuf, 16, "error %d", -errno) >= 0)
+@@ -143,6 +146,33 @@ void __btrfs_std_error(struct btrfs_fs_i
+ 	btrfs_handle_error(fs_info);
+ }
+ 
++/*
++ * __btrfs_panic decodes unexpected, fatal errors from the caller,
++ * issues an alert, and either panics or BUGs, depending on mount options.
++ */
++void __btrfs_panic(struct btrfs_fs_info *fs_info, const char *function,
++		   unsigned int line, int errno, const char *fmt, ...)
 +{
-+	return btrfs_sb(tree->mapping->host->i_sb)->fs_info;
++	struct super_block *sb = fs_info->sb;
++	char nbuf[16];
++	const char *errstr;
++	struct va_format vaf = { .fmt = fmt };
++	va_list args;
++
++	va_start(args, fmt);
++	vaf.va = &args;
++
++	errstr = btrfs_decode_error(fs_info, errno, nbuf);
++	if (fs_info->mount_opt & BTRFS_MOUNT_PANIC_ON_FATAL_ERROR)
++		panic(KERN_CRIT "BTRFS panic (device %s) in %s:%d: %pV (%s)\n",
++			sb->s_id, function, line, &vaf, errstr);
++
++	printk(KERN_CRIT "BTRFS panic (device %s) in %s:%d: %pV (%s)\n",
++	       sb->s_id, function, line, &vaf, errstr);
++	va_end(args);
++	/* Caller calls BUG() */
 +}
 +
- int __init extent_io_init(void)
+ static void btrfs_put_super(struct super_block *sb)
  {
- 	extent_state_cache = kmem_cache_create("extent_state",
-@@ -531,7 +537,10 @@ hit_next:
- 		prealloc = alloc_extent_state_atomic(prealloc);
- 		BUG_ON(!prealloc);
- 		err = split_state(tree, state, prealloc, start);
--		BUG_ON(err == -EEXIST);
-+		if (err)
-+			btrfs_panic(tree_fs_info(tree), err, "Locking error: "
-+				    "Extent tree was modified by another "
-+				    "thread while locked.");
- 		prealloc = NULL;
- 		if (err)
- 			goto out;
-@@ -553,7 +562,10 @@ hit_next:
- 		prealloc = alloc_extent_state_atomic(prealloc);
- 		BUG_ON(!prealloc);
- 		err = split_state(tree, state, prealloc, end + 1);
--		BUG_ON(err == -EEXIST);
-+		if (err)
-+			btrfs_panic(tree_fs_info(tree), err, "Locking error: "
-+				    "Extent tree was modified by another "
-+				    "thread while locked.");
- 		if (wake)
- 			wake_up(&state->wq);
+ 	struct btrfs_root *root = btrfs_sb(sb);
+@@ -162,7 +192,7 @@ enum {
+ 	Opt_notreelog, Opt_ratio, Opt_flushoncommit, Opt_discard,
+ 	Opt_space_cache, Opt_clear_cache, Opt_user_subvol_rm_allowed,
+ 	Opt_enospc_debug, Opt_subvolrootid, Opt_defrag,
+-	Opt_inode_cache, Opt_err,
++	Opt_inode_cache, Opt_fatal_errors, Opt_err,
+ };
  
-@@ -736,8 +748,11 @@ again:
- 		prealloc = alloc_extent_state_atomic(prealloc);
- 		BUG_ON(!prealloc);
- 		err = insert_state(tree, prealloc, start, end, &bits);
-+		if (err)
-+			btrfs_panic(tree_fs_info(tree), err, "Locking error: "
-+				    "Extent tree was modified by another "
-+				    "thread while locked.");
- 		prealloc = NULL;
--		BUG_ON(err == -EEXIST);
- 		goto out;
- 	}
- 	state = rb_entry(node, struct extent_state, rb_node);
-@@ -803,7 +818,10 @@ hit_next:
- 		prealloc = alloc_extent_state_atomic(prealloc);
- 		BUG_ON(!prealloc);
- 		err = split_state(tree, state, prealloc, start);
--		BUG_ON(err == -EEXIST);
-+		if (err)
-+			btrfs_panic(tree_fs_info(tree), err, "Locking error: "
-+				    "Extent tree was modified by another "
-+				    "thread while locked.");
- 		prealloc = NULL;
- 		if (err)
- 			goto out;
-@@ -840,12 +858,11 @@ hit_next:
- 		 */
- 		err = insert_state(tree, prealloc, start, this_end,
- 				   &bits);
--		BUG_ON(err == -EEXIST);
--		if (err) {
--			free_extent_state(prealloc);
--			prealloc = NULL;
--			goto out;
--		}
-+		if (err)
-+			btrfs_panic(tree_fs_info(tree), err, "Locking error: "
-+				    "Extent tree was modified by another "
-+				    "thread while locked.");
-+
- 		cache_state(prealloc, cached_state);
- 		prealloc = NULL;
- 		start = this_end + 1;
-@@ -867,7 +884,10 @@ hit_next:
- 		prealloc = alloc_extent_state_atomic(prealloc);
- 		BUG_ON(!prealloc);
- 		err = split_state(tree, state, prealloc, end + 1);
--		BUG_ON(err == -EEXIST);
-+		if (err)
-+			btrfs_panic(tree_fs_info(tree), err, "Locking error: "
-+				    "Extent tree was modified by another "
-+				    "thread while locked.");
+ static match_table_t tokens = {
+@@ -195,6 +225,7 @@ static match_table_t tokens = {
+ 	{Opt_subvolrootid, "subvolrootid=%d"},
+ 	{Opt_defrag, "autodefrag"},
+ 	{Opt_inode_cache, "inode_cache"},
++	{Opt_fatal_errors, "fatal_errors=%s"},
+ 	{Opt_err, NULL},
+ };
  
- 		set_state_bits(tree, prealloc, &bits);
- 		cache_state(prealloc, cached_state);
+@@ -381,6 +412,18 @@ int btrfs_parse_options(struct btrfs_roo
+ 			printk(KERN_INFO "btrfs: enabling auto defrag");
+ 			btrfs_set_opt(info->mount_opt, AUTO_DEFRAG);
+ 			break;
++		case Opt_fatal_errors:
++			if (strcmp(args[0].from, "panic") == 0)
++				btrfs_set_opt(info->mount_opt,
++					      PANIC_ON_FATAL_ERROR);
++			else if (strcmp(args[0].from, "bug") == 0)
++				btrfs_clear_opt(info->mount_opt,
++					      PANIC_ON_FATAL_ERROR);
++			else {
++				ret = -EINVAL;
++				goto out;
++			}
++			break;
+ 		case Opt_err:
+ 			printk(KERN_INFO "btrfs: unrecognized mount option "
+ 			       "'%s'\n", p);
+@@ -729,6 +772,8 @@ static int btrfs_show_options(struct seq
+ 		seq_puts(seq, ",autodefrag");
+ 	if (btrfs_test_opt(root, INODE_MAP_CACHE))
+ 		seq_puts(seq, ",inode_cache");
++	if (btrfs_test_opt(root, PANIC_ON_FATAL_ERROR))
++		seq_puts(seq, ",fatal_errors=panic");
+ 	return 0;
+ }
+ 
 
 

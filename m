@@ -1,51 +1,85 @@
 From: jeffm@suse.com
-Subject: [patch v3 20/23] btrfs: file.c: Make functions with no error conditions return void
-Date: Thu, 08 Sep 2011 20:23:00 -0400
-Message-ID: <20110909002733.597043485@suse.com>
+Subject: [patch v3 08/23] btrfs: Push up btrfs_pin_extent failures
+Date: Thu, 08 Sep 2011 20:22:48 -0400
+Message-ID: <20110909002731.236409684@suse.com>
 References: <20110909002240.141223014@suse.com>
 Cc: Chris Mason <chris.mason@oracle.com>
 To: btrfs list <linux-btrfs@vger.kernel.org>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
 List-ID: <linux-btrfs.vger.kernel.org>
 
- btrfs_run_defrag_inodes contains no error conditions and should return
- void.
+ btrfs_pin_extent looks up a block group and then calls pin_down_extent
+ with it. If the lookup fails, it should return -ENOENT to allow callers
+ to handle the error condition. For the three existing callers, it is
+ a logic error if the lookup fails and a panic will occur.
 
 Signed-off-by: Jeff Mahoney <jeffm@suse.com>
 ---
- fs/btrfs/ctree.h |    2 +-
- fs/btrfs/file.c  |    3 +--
- 2 files changed, 2 insertions(+), 3 deletions(-)
+ fs/btrfs/extent-tree.c |   20 +++++++++++++++-----
+ fs/btrfs/tree-log.c    |   10 +++++++---
+ 2 files changed, 22 insertions(+), 8 deletions(-)
 
---- a/fs/btrfs/ctree.h
-+++ b/fs/btrfs/ctree.h
-@@ -2612,7 +2612,7 @@ int btrfs_defrag_file(struct inode *inod
- /* file.c */
- int btrfs_add_inode_defrag(struct btrfs_trans_handle *trans,
- 			   struct inode *inode);
--int btrfs_run_defrag_inodes(struct btrfs_fs_info *fs_info);
-+void btrfs_run_defrag_inodes(struct btrfs_fs_info *fs_info);
- int btrfs_sync_file(struct file *file, loff_t start, loff_t end, int datasync);
- int btrfs_drop_extent_cache(struct inode *inode, u64 start, u64 end,
- 			    int skip_pinned);
---- a/fs/btrfs/file.c
-+++ b/fs/btrfs/file.c
-@@ -191,7 +191,7 @@ struct inode_defrag *btrfs_find_defrag_i
-  * run through the list of inodes in the FS that need
-  * defragging
-  */
--int btrfs_run_defrag_inodes(struct btrfs_fs_info *fs_info)
-+void btrfs_run_defrag_inodes(struct btrfs_fs_info *fs_info)
- {
- 	struct inode_defrag *defrag;
- 	struct btrfs_root *inode_root;
-@@ -294,7 +294,6 @@ next_free:
- 	 * wait for the defragger to stop
- 	 */
- 	wake_up(&fs_info->transaction_wait);
--	return 0;
- }
+--- a/fs/btrfs/extent-tree.c
++++ b/fs/btrfs/extent-tree.c
+@@ -2075,8 +2075,14 @@ static int run_one_delayed_ref(struct bt
+ 		BUG_ON(extent_op);
+ 		head = btrfs_delayed_node_to_head(node);
+ 		if (insert_reserved) {
+-			btrfs_pin_extent(root, node->bytenr,
+-					 node->num_bytes, 1);
++			ret = btrfs_pin_extent(root, node->bytenr,
++					       node->num_bytes, 1);
++			if (ret)
++				btrfs_panic(root->fs_info, ret,
++					    "Cannot pin extent in range "
++					    "%llu(%llu)\n",
++					    node->bytenr, node->num_bytes);
++
+ 			if (head->is_data) {
+ 				ret = btrfs_del_csums(trans, root,
+ 						      node->bytenr,
+@@ -4205,7 +4211,8 @@ int btrfs_pin_extent(struct btrfs_root *
+ 	struct btrfs_block_group_cache *cache;
  
- /* simple helper to fault in pages and copy.  This should go away
+ 	cache = btrfs_lookup_block_group(root->fs_info, bytenr);
+-	BUG_ON(!cache);
++	if (cache == NULL)
++		return -ENOENT;
+ 
+ 	pin_down_extent(root, cache, bytenr, num_bytes, reserved);
+ 
+@@ -4765,8 +4772,11 @@ int btrfs_free_extent(struct btrfs_trans
+ 	if (root_objectid == BTRFS_TREE_LOG_OBJECTID) {
+ 		WARN_ON(owner >= BTRFS_FIRST_FREE_OBJECTID);
+ 		/* unlocks the pinned mutex */
+-		btrfs_pin_extent(root, bytenr, num_bytes, 1);
+-		ret = 0;
++		ret = btrfs_pin_extent(root, bytenr, num_bytes, 1);
++		if (ret)
++			btrfs_panic(root->fs_info, ret, "Cannot pin "
++				    "extent in range %llu(%llu)\n",
++				    bytenr, num_bytes);
+ 	} else if (owner < BTRFS_FIRST_FREE_OBJECTID) {
+ 		ret = btrfs_add_delayed_tree_ref(trans, bytenr, num_bytes,
+ 					parent, root_objectid, (int)owner,
+--- a/fs/btrfs/tree-log.c
++++ b/fs/btrfs/tree-log.c
+@@ -275,9 +275,13 @@ static int process_one_buffer(struct btr
+ 			      struct extent_buffer *eb,
+ 			      struct walk_control *wc, u64 gen)
+ {
+-	if (wc->pin)
+-		btrfs_pin_extent(log->fs_info->extent_root,
+-				 eb->start, eb->len, 0);
++	if (wc->pin) {
++		int ret = btrfs_pin_extent(log->fs_info->extent_root,
++					   eb->start, eb->len, 0);
++		if (ret)
++			btrfs_panic(log->fs_info, ret, "Cannot pin extent in "
++				    "range %llu(%llu)\n", eb->start, eb->len);
++	}
+ 
+ 	if (btrfs_buffer_uptodate(eb, gen)) {
+ 		if (wc->write)
 
 

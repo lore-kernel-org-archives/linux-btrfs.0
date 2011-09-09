@@ -1,69 +1,44 @@
-From: Shane Meyers <shane@smugmug.com>
-Subject: Verifying TRIM support on SSDs when using BtrFS
-Date: Thu, 8 Sep 2011 17:24:35 -0700
-Message-ID: <CANc=jovfdW5evaDGrtJaoGCEhLS8xrc7f93mwzEqxknisGetEA@mail.gmail.com>
-Mime-Version: 1.0
-Content-Type: text/plain; charset=ISO-8859-1
-To: linux-btrfs@vger.kernel.org
+From: jeffm@suse.com
+Subject: [patch v3 21/23] btrfs: simplify btrfs_submit_bio_hook
+Date: Thu, 08 Sep 2011 20:23:01 -0400
+Message-ID: <20110909002733.815019499@suse.com>
+References: <20110909002240.141223014@suse.com>
+Cc: Chris Mason <chris.mason@oracle.com>
+To: btrfs list <linux-btrfs@vger.kernel.org>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hi All,
+ btrfs_submit_bio_hook currently calls btrfs_bio_wq_end_io in either case
+ of an if statement that determines one of the arguments.
 
-My company is considering using BtrFS for some of our production
-systems, but before we can use it, I must positively verify that the
-TRIM command is being issued to the SSDs. =A0I attempted to verify TRIM
-first using examples that work for Ext4
-<http://andyduffell.com/techblog/?p=3D852>, but I had to make changes t=
-o
-the procedure to work with BtrFS.
+ This patch moves the function call outside of the if statement and uses it
+ to only determine the different argument. This allows us to catch an
+ error in one place in a more visually obvious way.
 
-The server is Ubuntu 11.04 server 64-bit release (mkfs.btrfs version
-0.19). I have installed the Linux 3.0.0 kernel as the BtrFS changelog
-states that bulk TRIM is not available in the kernel shipped with
-Ubuntu 11.04 (2.6.38).
+Signed-off-by: Jeff Mahoney <jeffm@suse.com>
+---
+ fs/btrfs/inode.c |    7 ++++---
+ 1 file changed, 4 insertions(+), 3 deletions(-)
 
-My testing methodology:
+--- a/fs/btrfs/inode.c
++++ b/fs/btrfs/inode.c
+@@ -1479,13 +1479,14 @@ static int btrfs_submit_bio_hook(struct
+ 	struct btrfs_root *root = BTRFS_I(inode)->root;
+ 	int ret = 0;
+ 	int skip_sum;
++	int metadata = 0;
+ 
+ 	skip_sum = BTRFS_I(inode)->flags & BTRFS_INODE_NODATASUM;
+ 
+ 	if (btrfs_is_free_space_inode(root, inode))
+-		ret = btrfs_bio_wq_end_io(root->fs_info, bio, 2);
+-	else
+-		ret = btrfs_bio_wq_end_io(root->fs_info, bio, 0);
++		metadata = 2;
++
++	ret = btrfs_bio_wq_end_io(root->fs_info, bio, metadata);
+ 	BUG_ON(ret);
+ 
+ 	if (!(rw & REQ_WRITE)) {
 
-* Manually TRIM the disks before starting: for i in {0..10} ; do let
-A=3D"$i * 65536" ; hdparm --trim-sector-ranges $A:65535
---please-destroy-my-drive /dev/sda ; done
-* Verify the drive was TRIM'd: ./sectors.pl |grep + | tee sectors-$(dat=
-e +%s)
-* Partition the drive: fdisk /dev/sda
-* Make the file system: mkfs.btrfs /dev/sda1
-* Mount: sudo mount -t btrfs -o ssd /dev/sda1 /mnt
-* Create a file: dd if=3D/dev/urandom of=3D/mnt/testfile bs=3D1k count=3D=
-50000
-oflag=3Ddirect
-* Verify the file is on the disk: ./sectors.pl | tee sectors-$(date +%s=
-)
-* Delete the test file: rm /mnt/testfile
-* See that the test file is TRIM'd from the disk: ./sectors.pl | tee
-sectors-$(date +%s)
-* Verify the TRIM'd blocks: diff the two most recent sectors-* files
 
-At this point, the pre-delete and post delete verifications still show
-the same disk blocks in use. I should instead see a reduction in the
-number of in use blocks. Waiting an hour (in case it takes a while for
-the TRIM command to be issued) after the test file is deleted still
-shows the same blocks in use.
-
-I have also tried mounting with the "-o ssd,discard" options, but that
-doesn't seem to help at all.
-
-I also posted this question at
-<http://serverfault.com/questions/307397/verify-trim-support-with-btrfs=
--on-ssd>
-but a good answer has yet to surface.  If you are interested, you can
-see my sectors.pl and a little more detail at that URL.
-
-Is my testing methodology flawed?  Am I missing something here?
-Thanks for your help.
-
--shane
---
-To unsubscribe from this list: send the line "unsubscribe linux-btrfs" =
-in
-the body of a message to majordomo@vger.kernel.org
-More majordomo info at  http://vger.kernel.org/majordomo-info.html

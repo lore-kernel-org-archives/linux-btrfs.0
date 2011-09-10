@@ -1,35 +1,58 @@
-From: H Hartley Sweeten <hartleys@visionengravers.com>
-Subject: [PATCH] btrfs/disk-io.c: quiet sparse noise; local functions should be static
-Date: Fri, 9 Sep 2011 17:21:36 -0700
-Message-ID: <201109091721.36577.hartleys@visionengravers.com>
+From: Martin Steigerwald <Martin@lichtvoll.de>
+Subject: Re: Honest timeline for btrfsck
+Date: Sat, 10 Sep 2011 12:09:40 +0200
+Message-ID: <201109101209.40759.Martin@lichtvoll.de>
+References: <CAGh96GFhVEfXt=xcb-uGEBA3Ss2fc8BwOpJ2g8tXbm+VimdH3Q@mail.gmail.com> <4E5FE9FC.9040705@cchtml.com> <20110901203442.GA17928@carfax.org.uk> (sfid-20110901_234748_655472_30ADB77C)
 Mime-Version: 1.0
-Content-Type: text/plain; charset="utf-8"
-Cc: <linux-btrfs@vger.kernel.org>, <chris.mason@oracle.com>
-To: Linux Kernel <linux-kernel@vger.kernel.org>
-Return-path: <linux-kernel-owner@vger.kernel.org>
+Content-Type: Text/Plain; charset=iso-8859-1
+To: Hugo Mills <hugo@carfax.org.uk>,
+	Michael Cronenworth <mike@cchtml.com>,
+	"linux-btrfs" <linux-btrfs@vger.kernel.org>
+Return-path: <linux-btrfs-owner@vger.kernel.org>
+In-Reply-To: <20110901203442.GA17928@carfax.org.uk>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Local functions should be marked static. This quiets the following
-sparse noise:
+Am Donnerstag, 1. September 2011 schrieb Hugo Mills:
+> On Thu, Sep 01, 2011 at 03:24:28PM -0500, Michael Cronenworth wrote:
+> > On 09/01/2011 03:20 PM, Hugo Mills wrote:
+> > >    You may have missed the "on vacation" bit.
+> >=20
+> > I did read the "on vacation" bit. Not that it is any of my business=
+,
+> > but how long is that vacation?
+>=20
+>    Your guess is as good as mine. It's only been two weeks...
+>=20
+> > >    The canonical place to look for btrfsck updates is the relevan=
+t
+> > >    FAQ
+> > >
+> > >item on the btrfs wiki.
+> >=20
+> > I know this. No need to repeat it. I'm not a complete idiot.
+>=20
+>    I never claimed you were. Many people either don't realise that
+> that is the right place, or don't realise that it really is updated
+> pretty much as soon as possible with all the information that's been
+> made public on the subject.
 
-warning: symbol 'write_all_supers' was not declared. Should it be static?
+Well, I do think that a release of the fsck for BTRFS is important enou=
+gh=20
+to announce it on this mailinglist, too ;).
 
-Signed-off-by: H Hartley Sweeten <hsweeten@visionengravers.com>
-Cc: Chris Mason <chris.mason@oracle.com>
-linux-btrfs@vger.kernel.org
+=46ortunately I didn=B4t have any major problems so far. I once had to =
+use=20
+btrfs-zero-log. And I am still not using BTRFS for my main machine=B4s =
+home=20
+directory. For this I intend to wait till it is marked stable in kernel=
+=20
+sources + fsck available.
 
----
-
-diff --git a/fs/btrfs/disk-io.c b/fs/btrfs/disk-io.c
-index 64b1c07..573669d 100644
---- a/fs/btrfs/disk-io.c
-+++ b/fs/btrfs/disk-io.c
-@@ -2322,7 +2322,7 @@ static int write_dev_supers(struct btrfs_device *device,
- 	return errors < i ? 0 : -1;
- }
- 
--int write_all_supers(struct btrfs_root *root, int max_mirrors)
-+static int write_all_supers(struct btrfs_root *root, int max_mirrors)
- {
- 	struct list_head *head;
- 	struct btrfs_device *dev;
+--=20
+Martin 'Helios' Steigerwald - http://www.Lichtvoll.de
+GPG: 03B0 0D6C 0040 0710 4AFA  B82F 991B EAAC A599 84C7
+--
+To unsubscribe from this list: send the line "unsubscribe linux-btrfs" =
+in
+the body of a message to majordomo@vger.kernel.org
+More majordomo info at  http://vger.kernel.org/majordomo-info.html

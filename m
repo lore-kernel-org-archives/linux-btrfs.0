@@ -1,22 +1,35 @@
-From: Yalonda Gishtaka <yalonda.gishtaka@gmail.com>
-Subject: Re: Honest timeline for btrfsck
-Date: Fri, 9 Sep 2011 23:01:37 +0000 (UTC)
-Message-ID: <loom.20110910T005915-281@post.gmane.org>
-References: <CAGh96GFhVEfXt=xcb-uGEBA3Ss2fc8BwOpJ2g8tXbm+VimdH3Q@mail.gmail.com> <1312404713-sup-6548@shiny> <loom.20110818T030824-742@post.gmane.org> <1313700115-sup-2457@shiny> <4E5664F8.9090802@cchtml.com> <4E5FD978.7030901@cchtml.com>
+From: H Hartley Sweeten <hartleys@visionengravers.com>
+Subject: [PATCH] btrfs/disk-io.c: quiet sparse noise; local functions should be static
+Date: Fri, 9 Sep 2011 17:21:36 -0700
+Message-ID: <201109091721.36577.hartleys@visionengravers.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-To: linux-btrfs@vger.kernel.org
-Return-path: <linux-btrfs-owner@vger.kernel.org>
+Content-Type: text/plain; charset="utf-8"
+Cc: <linux-btrfs@vger.kernel.org>, <chris.mason@oracle.com>
+To: Linux Kernel <linux-kernel@vger.kernel.org>
+Return-path: <linux-kernel-owner@vger.kernel.org>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Queue the Jeopardy music.  A couple of weeks, pfft!
+Local functions should be marked static. This quiets the following
+sparse noise:
 
-> Michael Cronenworth wrote:
-> 
-> Does anyone have an update on this? I haven't seen any news for several 
-> weeks now.
+warning: symbol 'write_all_supers' was not declared. Should it be static?
 
+Signed-off-by: H Hartley Sweeten <hsweeten@visionengravers.com>
+Cc: Chris Mason <chris.mason@oracle.com>
+linux-btrfs@vger.kernel.org
 
+---
 
-
-
+diff --git a/fs/btrfs/disk-io.c b/fs/btrfs/disk-io.c
+index 64b1c07..573669d 100644
+--- a/fs/btrfs/disk-io.c
++++ b/fs/btrfs/disk-io.c
+@@ -2322,7 +2322,7 @@ static int write_dev_supers(struct btrfs_device *device,
+ 	return errors < i ? 0 : -1;
+ }
+ 
+-int write_all_supers(struct btrfs_root *root, int max_mirrors)
++static int write_all_supers(struct btrfs_root *root, int max_mirrors)
+ {
+ 	struct list_head *head;
+ 	struct btrfs_device *dev;

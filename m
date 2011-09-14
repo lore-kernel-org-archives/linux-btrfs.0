@@ -1,98 +1,57 @@
-From: Jeff Putney <jeffrey.putney@gmail.com>
-Subject: Re: Honest timeline for btrfsck
-Date: Tue, 13 Sep 2011 13:01:00 -0500
-Message-ID: <CA+JuuGrvCTP=o8umQHQV968tMSfJzxAFOfnGO2RKV3RU4_Vshw@mail.gmail.com>
-References: <CAGh96GFhVEfXt=xcb-uGEBA3Ss2fc8BwOpJ2g8tXbm+VimdH3Q@mail.gmail.com>
-	<4E5FE9FC.9040705@cchtml.com>
-	<20110901203442.GA17928@carfax.org.uk>
-	<201109101209.40759.Martin@lichtvoll.de>
+From: Li Zefan <lizf@cn.fujitsu.com>
+Subject: [PATCH 1/2] Btrfs: don't make a file partly checksummed through file
+ clone
+Date: Wed, 14 Sep 2011 13:25:21 +0800
+Message-ID: <4E703AC1.5060205@cn.fujitsu.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=ISO-8859-1
-To: linux-btrfs <linux-btrfs@vger.kernel.org>
+Content-Type: text/plain; charset=UTF-8
+Cc: Sage Weil <sage@newdream.net>
+To: "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <201109101209.40759.Martin@lichtvoll.de>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Isn't it about time to make some hard decisions about btrfsck?  Three
-years is enough time to go without this type of functionality in a
-modern filesystem, especially given btrfs's fragility in the face of
-power failures.
+To reproduce the bug:
 
-Given the lack of progress, and the inability to provide remotely
-realistic time lines, I'd say it is inappropriate for development to
-remain in secret.  I am aware of the type of noise that could be
-created by releasing this code out to the public, but that noise will
-help drive fixes and development of the tool.  We have seen months
-worth of wasted effort spent on stop gap measures that could have been
-funneled into the real utility, if people just had access to the code.
+  # mount /dev/sda7 /mnt
+  # dd if=/dev/zero of=/mnt/src bs=4K count=1
+  # umount /mnt
 
-If we can't get btrfsck checked into btrfs-progs-unstable, should we
-just cut our losses and start a recovery tool from scratch.  There was
-a btrfs_rescue utility mentioned at
-http://article.gmane.org/gmane.comp.file-systems.btrfs/8309/match=3Dbtr=
-fs_rescue,
-but the source doesn't seem to be available anymore.
+  # mount -o nodatasum /dev/sda7 /mnt
+  # dd if=/dev/zero of=/mnt/dst bs=4K count=1
+  # clone_range -s 4K -l 4K /mnt/src /mnt/dst
 
-I had started to work on my own repair tool/script/hack.  I was
-looking into some of the current btrfs progs code, and the biggest
-issue I had was all of the data validation that disk_io.c and other
-code does that makes sure the FS is in a good state before you can do
-anything with it.  This makes those utility methods pretty much
-useless for exploring a broken FS.  So, understanding how to
-incrementally read the FS without doing all of the validations
-beforehand was the biggest hurdle I encountered.
+  # echo 3 > /proc/sys/vm/drop_caches
+  # cat /mnt/dst
+  # dmesg
+  ...
+  btrfs no csum found for inode 258 start 0
+  btrfs csum failed ino 258 off 0 csum 2566472073 private 0
 
+It's because part of the file is checksummed and the other part is not,
+and then btrfs will complain checksum is not found when we read the file.
 
-On Sat, Sep 10, 2011 at 5:09 AM, Martin Steigerwald <Martin@lichtvoll.d=
-e> wrote:
-> Am Donnerstag, 1. September 2011 schrieb Hugo Mills:
->> On Thu, Sep 01, 2011 at 03:24:28PM -0500, Michael Cronenworth wrote:
->> > On 09/01/2011 03:20 PM, Hugo Mills wrote:
->> > > =A0 =A0You may have missed the "on vacation" bit.
->> >
->> > I did read the "on vacation" bit. Not that it is any of my busines=
-s,
->> > but how long is that vacation?
->>
->> =A0 =A0Your guess is as good as mine. It's only been two weeks...
->>
->> > > =A0 =A0The canonical place to look for btrfsck updates is the re=
-levant
->> > > =A0 =A0FAQ
->> > >
->> > >item on the btrfs wiki.
->> >
->> > I know this. No need to repeat it. I'm not a complete idiot.
->>
->> =A0 =A0I never claimed you were. Many people either don't realise th=
-at
->> that is the right place, or don't realise that it really is updated
->> pretty much as soon as possible with all the information that's been
->> made public on the subject.
->
-> Well, I do think that a release of the fsck for BTRFS is important en=
-ough
-> to announce it on this mailinglist, too ;).
->
-> Fortunately I didn=B4t have any major problems so far. I once had to =
-use
-> btrfs-zero-log. And I am still not using BTRFS for my main machine=B4=
-s home
-> directory. For this I intend to wait till it is marked stable in kern=
-el
-> sources + fsck available.
->
-> --
-> Martin 'Helios' Steigerwald - http://www.Lichtvoll.de
-> GPG: 03B0 0D6C 0040 0710 4AFA =A0B82F 991B EAAC A599 84C7
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-btrfs=
-" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at =A0http://vger.kernel.org/majordomo-info.html
->
---
-To unsubscribe from this list: send the line "unsubscribe linux-btrfs" =
-in
-the body of a message to majordomo@vger.kernel.org
-More majordomo info at  http://vger.kernel.org/majordomo-info.html
+Disallow file clone if src and dst file have different checksum flag,
+so we ensure a file is completely checksummed or unchecksummed.
+
+Signed-off-by: Li Zefan <lizf@cn.fujitsu.com>
+---
+ fs/btrfs/ioctl.c |    5 +++++
+ 1 files changed, 5 insertions(+), 0 deletions(-)
+
+diff --git a/fs/btrfs/ioctl.c b/fs/btrfs/ioctl.c
+index 970977a..dc82bbb 100644
+--- a/fs/btrfs/ioctl.c
++++ b/fs/btrfs/ioctl.c
+@@ -2177,6 +2177,11 @@ static noinline long btrfs_ioctl_clone(struct file *file, unsigned long srcfd,
+ 	if (!(src_file->f_mode & FMODE_READ))
+ 		goto out_fput;
+ 
++	/* don't make the dst file partly checksummed */
++	if ((BTRFS_I(src)->flags & BTRFS_INODE_NODATASUM) !=
++	    (BTRFS_I(inode)->flags & BTRFS_INODE_NODATASUM))
++		goto out_fput;
++
+ 	ret = -EISDIR;
+ 	if (S_ISDIR(src->i_mode) || S_ISDIR(inode->i_mode))
+ 		goto out_fput;
+-- 1.7.3.1 

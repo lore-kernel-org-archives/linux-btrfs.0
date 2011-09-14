@@ -1,37 +1,54 @@
 From: Li Zefan <lizf@cn.fujitsu.com>
-Subject: [PATCH 2/2] Btrfs: don't change inode flag of the dest clone file
-Date: Wed, 14 Sep 2011 13:25:36 +0800
-Message-ID: <4E703AD0.2060202@cn.fujitsu.com>
-References: <4E703AC1.5060205@cn.fujitsu.com>
+Subject: Re: [PATCH] btrfs: trivial fix, a potential memory leak in btrfs_parse_early_options()
+Date: Wed, 14 Sep 2011 13:40:29 +0800
+Message-ID: <4E703E4D.3040101@cn.fujitsu.com>
+References: <4E6EF2CD.3070302@oracle.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=UTF-8
-Cc: Sage Weil <sage@newdream.net>
-To: "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
+Content-Type: text/plain; charset=ISO-8859-1
+Cc: linux-btrfs@vger.kernel.org
+To: jeff.liu@oracle.com
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <4E703AC1.5060205@cn.fujitsu.com>
+In-Reply-To: <4E6EF2CD.3070302@oracle.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-The dst file will have the same inode flags with dst file after
-file clone, and I think it's unexpected.
+14:06, Jeff Liu wrote:
+> Signed-off-by: Jie Liu <jeff.liu@oracle.com>
+> 
+> ---
+>  fs/btrfs/super.c |   10 ++++++++--
+>  1 files changed, 8 insertions(+), 2 deletions(-)
+> 
+> diff --git a/fs/btrfs/super.c b/fs/btrfs/super.c
+> index 15634d4..16f31e1 100644
+> --- a/fs/btrfs/super.c
+> +++ b/fs/btrfs/super.c
+> @@ -406,7 +406,7 @@ static int btrfs_parse_early_options(const char *options, fmode_t flags,
+>          u64 *subvol_rootid, struct btrfs_fs_devices **fs_devices)
+>  {
+>      substring_t args[MAX_OPT_ARGS];
+> -    char *opts, *orig, *p;
+> +    char *device_name, *opts, *orig, *p;
 
-For example, the dst file will suddenly become immutable after
-getting some share of data with src file, if the src is immutable.
+Seems your email client replaced tabs with spaces.
 
-Signed-off-by: Li Zefan <lizf@cn.fujitsu.com>
----
- fs/btrfs/ioctl.c |    1 -
- 1 files changed, 0 insertions(+), 1 deletions(-)
+Please read Documentation/email-clients.txt
 
-diff --git a/fs/btrfs/ioctl.c b/fs/btrfs/ioctl.c
-index dc82bbb..a401514 100644
---- a/fs/btrfs/ioctl.c
-+++ b/fs/btrfs/ioctl.c
-@@ -2434,7 +2434,6 @@ static noinline long btrfs_ioctl_clone(struct file *file, unsigned long srcfd,
- 			if (endoff > inode->i_size)
- 				btrfs_i_size_write(inode, endoff);
- 
--			BTRFS_I(inode)->flags = BTRFS_I(src)->flags;
- 			ret = btrfs_update_inode(trans, root, inode);
- 			BUG_ON(ret);
- 			btrfs_end_transaction(trans, root);
--- 1.7.3.1 
+>      int error = 0;
+>      int intarg;
+> 
+> @@ -457,8 +457,14 @@ static int btrfs_parse_early_options(const char *options, fmode_t flags,
+>              }
+>              break;
+>          case Opt_device:
+> -            error = btrfs_scan_one_device(match_strdup(&args[0]),
+> +            device_name = match_strdup(&args[0]);
+> +            if (!device_name) {
+> +                error = -ENOMEM;
+> +                goto out_free_opts;
+> +            }
+> +            error = btrfs_scan_one_device(device_name,
+>                      flags, holder, fs_devices);
+> +            kfree(device_name);
+>              if (error)
+>                  goto out_free_opts;
+>              break;

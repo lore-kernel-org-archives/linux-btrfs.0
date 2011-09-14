@@ -1,57 +1,37 @@
 From: Li Zefan <lizf@cn.fujitsu.com>
-Subject: [PATCH 1/2] Btrfs: don't make a file partly checksummed through file
- clone
-Date: Wed, 14 Sep 2011 13:25:21 +0800
-Message-ID: <4E703AC1.5060205@cn.fujitsu.com>
+Subject: [PATCH 2/2] Btrfs: don't change inode flag of the dest clone file
+Date: Wed, 14 Sep 2011 13:25:36 +0800
+Message-ID: <4E703AD0.2060202@cn.fujitsu.com>
+References: <4E703AC1.5060205@cn.fujitsu.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset=UTF-8
 Cc: Sage Weil <sage@newdream.net>
 To: "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
+In-Reply-To: <4E703AC1.5060205@cn.fujitsu.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-To reproduce the bug:
+The dst file will have the same inode flags with dst file after
+file clone, and I think it's unexpected.
 
-  # mount /dev/sda7 /mnt
-  # dd if=/dev/zero of=/mnt/src bs=4K count=1
-  # umount /mnt
-
-  # mount -o nodatasum /dev/sda7 /mnt
-  # dd if=/dev/zero of=/mnt/dst bs=4K count=1
-  # clone_range -s 4K -l 4K /mnt/src /mnt/dst
-
-  # echo 3 > /proc/sys/vm/drop_caches
-  # cat /mnt/dst
-  # dmesg
-  ...
-  btrfs no csum found for inode 258 start 0
-  btrfs csum failed ino 258 off 0 csum 2566472073 private 0
-
-It's because part of the file is checksummed and the other part is not,
-and then btrfs will complain checksum is not found when we read the file.
-
-Disallow file clone if src and dst file have different checksum flag,
-so we ensure a file is completely checksummed or unchecksummed.
+For example, the dst file will suddenly become immutable after
+getting some share of data with src file, if the src is immutable.
 
 Signed-off-by: Li Zefan <lizf@cn.fujitsu.com>
 ---
- fs/btrfs/ioctl.c |    5 +++++
- 1 files changed, 5 insertions(+), 0 deletions(-)
+ fs/btrfs/ioctl.c |    1 -
+ 1 files changed, 0 insertions(+), 1 deletions(-)
 
 diff --git a/fs/btrfs/ioctl.c b/fs/btrfs/ioctl.c
-index 970977a..dc82bbb 100644
+index dc82bbb..a401514 100644
 --- a/fs/btrfs/ioctl.c
 +++ b/fs/btrfs/ioctl.c
-@@ -2177,6 +2177,11 @@ static noinline long btrfs_ioctl_clone(struct file *file, unsigned long srcfd,
- 	if (!(src_file->f_mode & FMODE_READ))
- 		goto out_fput;
+@@ -2434,7 +2434,6 @@ static noinline long btrfs_ioctl_clone(struct file *file, unsigned long srcfd,
+ 			if (endoff > inode->i_size)
+ 				btrfs_i_size_write(inode, endoff);
  
-+	/* don't make the dst file partly checksummed */
-+	if ((BTRFS_I(src)->flags & BTRFS_INODE_NODATASUM) !=
-+	    (BTRFS_I(inode)->flags & BTRFS_INODE_NODATASUM))
-+		goto out_fput;
-+
- 	ret = -EISDIR;
- 	if (S_ISDIR(src->i_mode) || S_ISDIR(inode->i_mode))
- 		goto out_fput;
+-			BTRFS_I(inode)->flags = BTRFS_I(src)->flags;
+ 			ret = btrfs_update_inode(trans, root, inode);
+ 			BUG_ON(ret);
+ 			btrfs_end_transaction(trans, root);
 -- 1.7.3.1 

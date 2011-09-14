@@ -1,107 +1,68 @@
-From: Jeff Liu <jeff.liu@oracle.com>
-Subject: Re: [PATCH] btrfs: trivial fix, a potential memory leak in btrfs_parse_early_options()
-Date: Wed, 14 Sep 2011 14:11:21 +0800
-Message-ID: <4E704589.5020903@oracle.com>
-References: <4E6EF2CD.3070302@oracle.com> <4E703E4D.3040101@cn.fujitsu.com>
-Reply-To: jeff.liu@oracle.com
+From: Sage Weil <sage@newdream.net>
+Subject: Re: [PATCH 1/2] Btrfs: don't make a file partly checksummed through
+ file clone
+Date: Wed, 14 Sep 2011 05:17:53 -0700 (PDT)
+Message-ID: <Pine.LNX.4.64.1109140517120.24029@cobra.newdream.net>
+References: <4E703AC1.5060205@cn.fujitsu.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=ISO-8859-1
-Cc: linux-btrfs@vger.kernel.org
+Content-Type: TEXT/PLAIN; charset=US-ASCII
+Cc: "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
 To: Li Zefan <lizf@cn.fujitsu.com>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <4E703E4D.3040101@cn.fujitsu.com>
+In-Reply-To: <4E703AC1.5060205@cn.fujitsu.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 09/14/2011 01:40 PM, Li Zefan wrote:
+On Wed, 14 Sep 2011, Li Zefan wrote:
 
-> 14:06, Jeff Liu wrote:
->> Signed-off-by: Jie Liu <jeff.liu@oracle.com>
->>
->> ---
->>  fs/btrfs/super.c |   10 ++++++++--
->>  1 files changed, 8 insertions(+), 2 deletions(-)
->>
->> diff --git a/fs/btrfs/super.c b/fs/btrfs/super.c
->> index 15634d4..16f31e1 100644
->> --- a/fs/btrfs/super.c
->> +++ b/fs/btrfs/super.c
->> @@ -406,7 +406,7 @@ static int btrfs_parse_early_options(const char *options, fmode_t flags,
->>          u64 *subvol_rootid, struct btrfs_fs_devices **fs_devices)
->>  {
->>      substring_t args[MAX_OPT_ARGS];
->> -    char *opts, *orig, *p;
->> +    char *device_name, *opts, *orig, *p;
+> To reproduce the bug:
 > 
-> Seems your email client replaced tabs with spaces.
-
-Fixed, thank you.
-
-Signed-off-by: Jie Liu <jeff.liu@oracle.com>
-
----
- fs/btrfs/super.c |   10 ++++++++--
- 1 files changed, 8 insertions(+), 2 deletions(-)
-
-diff --git a/fs/btrfs/super.c b/fs/btrfs/super.c
-index 15634d4..16f31e1 100644
---- a/fs/btrfs/super.c
-+++ b/fs/btrfs/super.c
-@@ -406,7 +406,7 @@ static int btrfs_parse_early_options(const char
-*options, fmode_t flags,
- 		u64 *subvol_rootid, struct btrfs_fs_devices **fs_devices)
- {
- 	substring_t args[MAX_OPT_ARGS];
--	char *opts, *orig, *p;
-+	char *device_name, *opts, *orig, *p;
- 	int error = 0;
- 	int intarg;
-
-@@ -457,8 +457,14 @@ static int btrfs_parse_early_options(const char
-*options, fmode_t flags,
- 			}
- 			break;
- 		case Opt_device:
--			error = btrfs_scan_one_device(match_strdup(&args[0]),
-+			device_name = match_strdup(&args[0]);
-+			if (!device_name) {
-+				error = -ENOMEM;
-+				goto out_free_opts;
-+			}
-+			error = btrfs_scan_one_device(device_name,
- 					flags, holder, fs_devices);
-+			kfree(device_name);
- 			if (error)
- 				goto out_free_opts;
- 			break;
--- 
-1.7.4.1
-
-
+>   # mount /dev/sda7 /mnt
+>   # dd if=/dev/zero of=/mnt/src bs=4K count=1
+>   # umount /mnt
 > 
-> Please read Documentation/email-clients.txt
+>   # mount -o nodatasum /dev/sda7 /mnt
+>   # dd if=/dev/zero of=/mnt/dst bs=4K count=1
+>   # clone_range -s 4K -l 4K /mnt/src /mnt/dst
 > 
->>      int error = 0;
->>      int intarg;
->>
->> @@ -457,8 +457,14 @@ static int btrfs_parse_early_options(const char *options, fmode_t flags,
->>              }
->>              break;
->>          case Opt_device:
->> -            error = btrfs_scan_one_device(match_strdup(&args[0]),
->> +            device_name = match_strdup(&args[0]);
->> +            if (!device_name) {
->> +                error = -ENOMEM;
->> +                goto out_free_opts;
->> +            }
->> +            error = btrfs_scan_one_device(device_name,
->>                      flags, holder, fs_devices);
->> +            kfree(device_name);
->>              if (error)
->>                  goto out_free_opts;
->>              break;
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+>   # echo 3 > /proc/sys/vm/drop_caches
+>   # cat /mnt/dst
+>   # dmesg
+>   ...
+>   btrfs no csum found for inode 258 start 0
+>   btrfs csum failed ino 258 off 0 csum 2566472073 private 0
+> 
+> It's because part of the file is checksummed and the other part is not,
+> and then btrfs will complain checksum is not found when we read the file.
+> 
+> Disallow file clone if src and dst file have different checksum flag,
+> so we ensure a file is completely checksummed or unchecksummed.
+> 
+> Signed-off-by: Li Zefan <lizf@cn.fujitsu.com>
 
+Looks good to me.
 
+Reviewed-by: Sage Weil <sage@newdream.net>
+
+> ---
+>  fs/btrfs/ioctl.c |    5 +++++
+>  1 files changed, 5 insertions(+), 0 deletions(-)
+> 
+> diff --git a/fs/btrfs/ioctl.c b/fs/btrfs/ioctl.c
+> index 970977a..dc82bbb 100644
+> --- a/fs/btrfs/ioctl.c
+> +++ b/fs/btrfs/ioctl.c
+> @@ -2177,6 +2177,11 @@ static noinline long btrfs_ioctl_clone(struct file *file, unsigned long srcfd,
+>  	if (!(src_file->f_mode & FMODE_READ))
+>  		goto out_fput;
+>  
+> +	/* don't make the dst file partly checksummed */
+> +	if ((BTRFS_I(src)->flags & BTRFS_INODE_NODATASUM) !=
+> +	    (BTRFS_I(inode)->flags & BTRFS_INODE_NODATASUM))
+> +		goto out_fput;
+> +
+>  	ret = -EISDIR;
+>  	if (S_ISDIR(src->i_mode) || S_ISDIR(inode->i_mode))
+>  		goto out_fput;
+> -- 1.7.3.1 
+> 
+> 

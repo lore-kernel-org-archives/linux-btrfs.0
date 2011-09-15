@@ -1,39 +1,32 @@
-From: Mark Fasheh <mfasheh@suse.de>
-Subject: [PATCH 09/20] btrfs: Don't BUG_ON failures in find_and_setup_root()
-Date: Thu, 15 Sep 2011 10:34:48 -0700
-Message-ID: <1316108099-5099-10-git-send-email-mfasheh@suse.de>
+From: David Sterba <dave@jikos.cz>
+Subject: Re: [PATCH 0/20] btrfs: More error handling fixes
+Date: Thu, 15 Sep 2011 20:03:36 +0200
+Message-ID: <20110915180336.GG22205@twin.jikos.cz>
 References: <1316108099-5099-1-git-send-email-mfasheh@suse.de>
-Cc: Chris Mason <chris.mason@oracle.com>,
-	Mark Fasheh <mfasheh@suse.de>, Mark Fasheh <mfasheh@suse.com>
-To: linux-btrfs@vger.kernel.org
+Reply-To: dave@jikos.cz
+Mime-Version: 1.0
+Content-Type: text/plain; charset=us-ascii
+Cc: linux-btrfs@vger.kernel.org, Chris Mason <chris.mason@oracle.com>
+To: Mark Fasheh <mfasheh@suse.de>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
 In-Reply-To: <1316108099-5099-1-git-send-email-mfasheh@suse.de>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-From: Mark Fasheh <mfasheh@suse.com>
+Hi,
 
-This is very easy - we can just pass an error from btrfs_find_last_root()
-back out to the callers - all of them have proper error handling.
+On Thu, Sep 15, 2011 at 10:34:39AM -0700, Mark Fasheh wrote:
+> Some of the patches (the first 8) were previously sent to this list but got
+> no comments so I'm resending them with this set. Changes from last time are
+> that I also started setting the file system readonly on errors which look
+> like possible corruption.
 
-Signed-off-by: Mark Fasheh <mfasheh@suse.de>
----
- fs/btrfs/disk-io.c |    3 ++-
- 1 files changed, 2 insertions(+), 1 deletions(-)
+I've been testing your branch 'all_fixes' from your git.k.org repo for
+some time, among other patchsets and fixes in my development repository
+at http://repo.or.cz/w/linux-2.6/btrfs-unstable.git #integration/btrfs-next
+and I have not hit any single problem which would point back to your patches.
+I'm testing with xfstests and various hand-made stress tests for specific
+areas (usually from reports on irc).
 
-diff --git a/fs/btrfs/disk-io.c b/fs/btrfs/disk-io.c
-index 07b3ac6..e9c7afb 100644
---- a/fs/btrfs/disk-io.c
-+++ b/fs/btrfs/disk-io.c
-@@ -1131,7 +1131,8 @@ static int find_and_setup_root(struct btrfs_root *tree_root,
- 				   &root->root_item, &root->root_key);
- 	if (ret > 0)
- 		return -ENOENT;
--	BUG_ON(ret);
-+	if (ret < 0)
-+		return ret;
- 
- 	generation = btrfs_root_generation(&root->root_item);
- 	blocksize = btrfs_level_size(root, btrfs_root_level(&root->root_item));
--- 
-1.7.6
 
+HTH,
+david

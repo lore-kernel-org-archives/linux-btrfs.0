@@ -1,7 +1,7 @@
 From: Mark Fasheh <mfasheh@suse.de>
-Subject: [PATCH 04/20] btrfs: make insert_ptr() void
-Date: Thu, 15 Sep 2011 10:34:43 -0700
-Message-ID: <1316108099-5099-5-git-send-email-mfasheh@suse.de>
+Subject: [PATCH 02/20] btrfs: Don't BUG_ON() errors in update_ref_for_cow()
+Date: Thu, 15 Sep 2011 10:34:41 -0700
+Message-ID: <1316108099-5099-3-git-send-email-mfasheh@suse.de>
 References: <1316108099-5099-1-git-send-email-mfasheh@suse.de>
 Cc: Chris Mason <chris.mason@oracle.com>,
 	Mark Fasheh <mfasheh@suse.de>, Mark Fasheh <mfasheh@suse.com>
@@ -12,155 +12,113 @@ List-ID: <linux-btrfs.vger.kernel.org>
 
 From: Mark Fasheh <mfasheh@suse.com>
 
-insert_ptr() always returns zero, so all the exta error handling can go
-away.  This makes it trivial to also make copy_for_split() a void function
-as it's only return was from insert_ptr(). Finally, this all makes the
-BUG_ON(ret) in split_leaf() meaningless so I removed that.
+The only caller of update_ref_for_cow() is __btrfs_cow_block() which was
+originally ignoring any return values. update_ref_for_cow() however doesn't
+look like a candidate to become a void function - there are a few places
+where errors can occur.
+
+So instead I changed update_ref_for_cow() to bubble all errors up (instead
+of BUG_ON). __btrfs_cow_block() was then updated to catch and BUG_ON() any
+errors from update_ref_for_cow(). The end effect is that we have no change
+in behavior, but about 8 different places where a BUG_ON(ret) was removed.
+
+Obviously a future patch will have to address the BUG_ON() in
+__btrfs_cow_block().
 
 Signed-off-by: Mark Fasheh <mfasheh@suse.de>
 ---
- fs/btrfs/ctree.c |   59 ++++++++++++++++-------------------------------------
- 1 files changed, 18 insertions(+), 41 deletions(-)
+ fs/btrfs/ctree.c |   31 +++++++++++++++++++++----------
+ 1 files changed, 21 insertions(+), 10 deletions(-)
 
 diff --git a/fs/btrfs/ctree.c b/fs/btrfs/ctree.c
-index 011cab3..41605ac 100644
+index 011cab3..5064930 100644
 --- a/fs/btrfs/ctree.c
 +++ b/fs/btrfs/ctree.c
-@@ -2123,12 +2123,10 @@ static noinline int insert_new_root(struct btrfs_trans_handle *trans,
-  *
-  * slot and level indicate where you want the key to go, and
-  * blocknr is the block the key points to.
-- *
-- * returns zero on success and < 0 on any error
-  */
--static int insert_ptr(struct btrfs_trans_handle *trans, struct btrfs_root
--		      *root, struct btrfs_path *path, struct btrfs_disk_key
--		      *key, u64 bytenr, int slot, int level)
-+static void insert_ptr(struct btrfs_trans_handle *trans, struct btrfs_root
-+		       *root, struct btrfs_path *path, struct btrfs_disk_key
-+		       *key, u64 bytenr, int slot, int level)
- {
- 	struct extent_buffer *lower;
- 	int nritems;
-@@ -2152,7 +2150,6 @@ static int insert_ptr(struct btrfs_trans_handle *trans, struct btrfs_root
- 	btrfs_set_node_ptr_generation(lower, slot, trans->transid);
- 	btrfs_set_header_nritems(lower, nritems + 1);
- 	btrfs_mark_buffer_dirty(lower);
--	return 0;
- }
+@@ -331,7 +331,8 @@ static noinline int update_ref_for_cow(struct btrfs_trans_handle *trans,
+ 	if (btrfs_block_can_be_shared(root, buf)) {
+ 		ret = btrfs_lookup_extent_info(trans, root, buf->start,
+ 					       buf->len, &refs, &flags);
+-		BUG_ON(ret);
++		if (ret)
++			return ret;
+ 		BUG_ON(refs == 0);
+ 	} else {
+ 		refs = 1;
+@@ -351,14 +352,18 @@ static noinline int update_ref_for_cow(struct btrfs_trans_handle *trans,
+ 		     root->root_key.objectid == BTRFS_TREE_RELOC_OBJECTID) &&
+ 		    !(flags & BTRFS_BLOCK_FLAG_FULL_BACKREF)) {
+ 			ret = btrfs_inc_ref(trans, root, buf, 1);
+-			BUG_ON(ret);
++			if (ret)
++				return ret;
  
- /*
-@@ -2173,7 +2170,6 @@ static noinline int split_node(struct btrfs_trans_handle *trans,
- 	struct btrfs_disk_key disk_key;
- 	int mid;
- 	int ret;
--	int wret;
- 	u32 c_nritems;
- 
- 	c = path->nodes[level];
-@@ -2230,11 +2226,8 @@ static noinline int split_node(struct btrfs_trans_handle *trans,
- 	btrfs_mark_buffer_dirty(c);
- 	btrfs_mark_buffer_dirty(split);
- 
--	wret = insert_ptr(trans, root, path, &disk_key, split->start,
--			  path->slots[level + 1] + 1,
--			  level + 1);
--	if (wret)
--		ret = wret;
-+	insert_ptr(trans, root, path, &disk_key, split->start,
-+		   path->slots[level + 1] + 1, level + 1);
- 
- 	if (path->slots[level] >= mid) {
- 		path->slots[level] -= mid;
-@@ -2724,18 +2717,16 @@ out:
-  *
-  * returns 0 if all went well and < 0 on failure.
-  */
--static noinline int copy_for_split(struct btrfs_trans_handle *trans,
--			       struct btrfs_root *root,
--			       struct btrfs_path *path,
--			       struct extent_buffer *l,
--			       struct extent_buffer *right,
--			       int slot, int mid, int nritems)
-+static noinline void copy_for_split(struct btrfs_trans_handle *trans,
-+				    struct btrfs_root *root,
-+				    struct btrfs_path *path,
-+				    struct extent_buffer *l,
-+				    struct extent_buffer *right,
-+				    int slot, int mid, int nritems)
- {
- 	int data_copy_size;
- 	int rt_data_off;
- 	int i;
--	int ret = 0;
--	int wret;
- 	struct btrfs_disk_key disk_key;
- 
- 	nritems = nritems - mid;
-@@ -2763,12 +2754,9 @@ static noinline int copy_for_split(struct btrfs_trans_handle *trans,
- 	}
- 
- 	btrfs_set_header_nritems(l, mid);
--	ret = 0;
- 	btrfs_item_key(right, &disk_key, 0);
--	wret = insert_ptr(trans, root, path, &disk_key, right->start,
--			  path->slots[1] + 1, 1);
--	if (wret)
--		ret = wret;
-+	insert_ptr(trans, root, path, &disk_key, right->start,
-+		   path->slots[1] + 1, 1);
- 
- 	btrfs_mark_buffer_dirty(right);
- 	btrfs_mark_buffer_dirty(l);
-@@ -2786,8 +2774,6 @@ static noinline int copy_for_split(struct btrfs_trans_handle *trans,
- 	}
- 
- 	BUG_ON(path->slots[0] < 0);
--
--	return ret;
- }
- 
- /*
-@@ -2976,12 +2962,8 @@ again:
- 	if (split == 0) {
- 		if (mid <= slot) {
- 			btrfs_set_header_nritems(right, 0);
--			wret = insert_ptr(trans, root, path,
--					  &disk_key, right->start,
--					  path->slots[1] + 1, 1);
--			if (wret)
--				ret = wret;
--
-+			insert_ptr(trans, root, path, &disk_key, right->start,
-+				   path->slots[1] + 1, 1);
- 			btrfs_tree_unlock(path->nodes[0]);
- 			free_extent_buffer(path->nodes[0]);
- 			path->nodes[0] = right;
-@@ -2989,12 +2971,8 @@ again:
- 			path->slots[1] += 1;
+ 			if (root->root_key.objectid ==
+ 			    BTRFS_TREE_RELOC_OBJECTID) {
+ 				ret = btrfs_dec_ref(trans, root, buf, 0);
+-				BUG_ON(ret);
++				if (ret)
++					return ret;
++
+ 				ret = btrfs_inc_ref(trans, root, cow, 1);
+-				BUG_ON(ret);
++				if (ret)
++					return ret;
+ 			}
+ 			new_flags |= BTRFS_BLOCK_FLAG_FULL_BACKREF;
  		} else {
- 			btrfs_set_header_nritems(right, 0);
--			wret = insert_ptr(trans, root, path,
--					  &disk_key,
--					  right->start,
--					  path->slots[1], 1);
--			if (wret)
--				ret = wret;
-+			insert_ptr(trans, root, path, &disk_key, right->start,
-+				   path->slots[1], 1);
- 			btrfs_tree_unlock(path->nodes[0]);
- 			free_extent_buffer(path->nodes[0]);
- 			path->nodes[0] = right;
-@@ -3010,8 +2988,7 @@ again:
- 		return ret;
- 	}
+@@ -368,14 +373,16 @@ static noinline int update_ref_for_cow(struct btrfs_trans_handle *trans,
+ 				ret = btrfs_inc_ref(trans, root, cow, 1);
+ 			else
+ 				ret = btrfs_inc_ref(trans, root, cow, 0);
+-			BUG_ON(ret);
++			if (ret)
++				return ret;
+ 		}
+ 		if (new_flags != 0) {
+ 			ret = btrfs_set_disk_extent_flags(trans, root,
+ 							  buf->start,
+ 							  buf->len,
+ 							  new_flags, 0);
+-			BUG_ON(ret);
++			if (ret)
++				return ret;
+ 		}
+ 	} else {
+ 		if (flags & BTRFS_BLOCK_FLAG_FULL_BACKREF) {
+@@ -384,9 +391,12 @@ static noinline int update_ref_for_cow(struct btrfs_trans_handle *trans,
+ 				ret = btrfs_inc_ref(trans, root, cow, 1);
+ 			else
+ 				ret = btrfs_inc_ref(trans, root, cow, 0);
+-			BUG_ON(ret);
++			if (ret)
++				return ret;
++
+ 			ret = btrfs_dec_ref(trans, root, buf, 1);
+-			BUG_ON(ret);
++			if (ret)
++				return ret;
+ 		}
+ 		clean_tree_block(trans, root, buf);
+ 		*last_ref = 1;
+@@ -415,7 +425,7 @@ static noinline int __btrfs_cow_block(struct btrfs_trans_handle *trans,
+ {
+ 	struct btrfs_disk_key disk_key;
+ 	struct extent_buffer *cow;
+-	int level;
++	int level, ret;
+ 	int last_ref = 0;
+ 	int unlock_orig = 0;
+ 	u64 parent_start;
+@@ -467,7 +477,8 @@ static noinline int __btrfs_cow_block(struct btrfs_trans_handle *trans,
+ 			    (unsigned long)btrfs_header_fsid(cow),
+ 			    BTRFS_FSID_SIZE);
  
--	ret = copy_for_split(trans, root, path, l, right, slot, mid, nritems);
--	BUG_ON(ret);
-+	copy_for_split(trans, root, path, l, right, slot, mid, nritems);
+-	update_ref_for_cow(trans, root, buf, cow, &last_ref);
++	ret = update_ref_for_cow(trans, root, buf, cow, &last_ref);
++	BUG_ON(ret);
  
- 	if (split == 2) {
- 		BUG_ON(num_doubles != 0);
+ 	if (root->ref_cows)
+ 		btrfs_reloc_cow_block(trans, root, buf, cow);
 -- 
 1.7.6
 

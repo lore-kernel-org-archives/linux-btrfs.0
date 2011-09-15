@@ -1,41 +1,32 @@
 From: David Sterba <dave@jikos.cz>
 Subject: Re: WARNING: at fs/btrfs/inode.c:2193 btrfs_orphan_commit_root+0xb0/0xc0 [btrfs]()
-Date: Thu, 15 Sep 2011 21:55:56 +0200
-Message-ID: <20110915195556.GI22205@twin.jikos.cz>
-References: <4E6BDAEB.7020206@tuxadero.com> <4E6EABAF.9010903@cn.fujitsu.com> <Pine.LNX.4.64.1109151137420.17623@cobra.newdream.net>
+Date: Thu, 15 Sep 2011 22:12:42 +0200
+Message-ID: <20110915201242.GJ22205@twin.jikos.cz>
+References: <4E6BDAEB.7020206@tuxadero.com> <4E6EABAF.9010903@cn.fujitsu.com> <Pine.LNX.4.64.1109151137420.17623@cobra.newdream.net> <20110915195029.GD25179@dhcp231-156.rdu.redhat.com>
 Reply-To: dave@jikos.cz
 Mime-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
-Cc: Liu Bo <liubo2009@cn.fujitsu.com>, martin@tuxadero.com,
-	ceph-devel@vger.kernel.org, linux-btrfs@vger.kernel.org,
-	josef@redhat.com
-To: Sage Weil <sage@newdream.net>
+Cc: Sage Weil <sage@newdream.net>, Liu Bo <liubo2009@cn.fujitsu.com>,
+	martin@tuxadero.com, ceph-devel@vger.kernel.org,
+	linux-btrfs@vger.kernel.org
+To: Josef Bacik <josef@redhat.com>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <Pine.LNX.4.64.1109151137420.17623@cobra.newdream.net>
+In-Reply-To: <20110915195029.GD25179@dhcp231-156.rdu.redhat.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Thu, Sep 15, 2011 at 11:44:09AM -0700, Sage Weil wrote:
-> On Tue, 13 Sep 2011, Liu Bo wrote:
-> > On 09/11/2011 05:47 AM, Martin Mailand wrote:
-> > > Hi
-> > > I am hitting this Warning reproducible, the workload is a ceph osd,
-> > > kernel ist 3.1.0-rc5.
-> > > 
+On Thu, Sep 15, 2011 at 03:50:29PM -0400, Josef Bacik wrote:
+> > We're still seeing this with -rc6, which includes 98c9942 and 65450aa.
 > > 
-> > Have posted a patch for this:
+> > I haven't looked at the reservation code in much detail.  Is there 
+> > anything I can do to help track this down?
 > > 
-> > http://marc.info/?l=linux-btrfs&m=131547325515336&w=2
 > 
-> We're still seeing this with -rc6, which includes 98c9942 and 65450aa.
+> This should be taken care of with all my enospc changes.  You can pull them down
+> from my btrfs-work tree as soon as kernel.org comes back from the dead :).
 
-Me too, for the 
+should you need it earlier, here's a copy:
 
-WARNING: at fs/btrfs/extent-tree.c:5711 btrfs_alloc_free_block+0x180/0x350 [btrfs]()
-
-case mentioned in the changelog. I optimistically dropped the ratelimit
-patch for that WARN_ON, but had to add it quickly back. Unfortunatelly I
-do not have a reliable reproducer. It justs starts sometime during
-xfstests, maybe after a few rounds.
+git://repo.or.cz/linux-2.6/btrfs-unstable.git #git.kernel.org/josef/master
 
 
 david

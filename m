@@ -1,7 +1,7 @@
 From: Mark Fasheh <mfasheh@suse.de>
-Subject: [PATCH 13/20] btrfs: Go readonly on tree errors in balance_level
-Date: Thu, 15 Sep 2011 10:34:52 -0700
-Message-ID: <1316108099-5099-14-git-send-email-mfasheh@suse.de>
+Subject: [PATCH 05/20] btrfs: Don't BUG_ON errors in __finish_chunk_alloc()
+Date: Thu, 15 Sep 2011 10:34:44 -0700
+Message-ID: <1316108099-5099-6-git-send-email-mfasheh@suse.de>
 References: <1316108099-5099-1-git-send-email-mfasheh@suse.de>
 Cc: Chris Mason <chris.mason@oracle.com>,
 	Mark Fasheh <mfasheh@suse.de>, Mark Fasheh <mfasheh@suse.com>
@@ -12,46 +12,38 @@ List-ID: <linux-btrfs.vger.kernel.org>
 
 From: Mark Fasheh <mfasheh@suse.com>
 
-balace_level() seems to deal with missing tree nodes by BUG_ON(). Instead,
-we can easily just set the file system readonly and bubble -EROFS back up
-the stack.
+All callers of __finish_chunk_alloc() BUG_ON() return value, so it's trivial
+for us to always bubble up any errors caught in __finish_chunk_alloc() to be
+caught there.
 
-Signed-off-by: Mark Fasheh <mfasheh@suse.com>
+Signed-off-by: Mark Fasheh <mfasheh@suse.de>
 ---
- fs/btrfs/ctree.c |   13 +++++++++++--
- 1 files changed, 11 insertions(+), 2 deletions(-)
+ fs/btrfs/volumes.c |    7 ++-----
+ 1 files changed, 2 insertions(+), 5 deletions(-)
 
-diff --git a/fs/btrfs/ctree.c b/fs/btrfs/ctree.c
-index 011cab3..dfb061b 100644
---- a/fs/btrfs/ctree.c
-+++ b/fs/btrfs/ctree.c
-@@ -918,7 +918,12 @@ static noinline int balance_level(struct btrfs_trans_handle *trans,
+diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
+index 53875ae..5d166c2 100644
+--- a/fs/btrfs/volumes.c
++++ b/fs/btrfs/volumes.c
+@@ -2600,16 +2600,13 @@ static int __finish_chunk_alloc(struct btrfs_trans_handle *trans,
+ 	key.offset = chunk_offset;
  
- 		/* promote the child to a root */
- 		child = read_node_slot(root, mid, 0);
--		BUG_ON(!child);
-+		if (!child) {
-+			ret = -EROFS;
-+			btrfs_std_error(root->fs_info, ret);
-+			goto enospc;
-+		}
-+
- 		btrfs_tree_lock(child);
- 		btrfs_set_lock_blocking(child);
- 		ret = btrfs_cow_block(trans, root, child, mid, 0, &child);
-@@ -1019,7 +1024,11 @@ static noinline int balance_level(struct btrfs_trans_handle *trans,
- 		 * otherwise we would have pulled some pointers from the
- 		 * right
- 		 */
--		BUG_ON(!left);
-+		if (!left) {
-+			ret = -EROFS;
-+			btrfs_std_error(root->fs_info, ret);
-+			goto enospc;
-+		}
- 		wret = balance_node_right(trans, root, mid, left);
- 		if (wret < 0) {
- 			ret = wret;
+ 	ret = btrfs_insert_item(trans, chunk_root, &key, chunk, item_size);
+-	BUG_ON(ret);
+-
+-	if (map->type & BTRFS_BLOCK_GROUP_SYSTEM) {
++	if (ret == 0 && map->type & BTRFS_BLOCK_GROUP_SYSTEM) {
+ 		ret = btrfs_add_system_chunk(trans, chunk_root, &key, chunk,
+ 					     item_size);
+-		BUG_ON(ret);
+ 	}
+ 
+ 	kfree(chunk);
+-	return 0;
++	return ret;
+ }
+ 
+ /*
 -- 
 1.7.6
 

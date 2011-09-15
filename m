@@ -1,7 +1,7 @@
 From: Mark Fasheh <mfasheh@suse.de>
-Subject: [PATCH 08/20] btrfs: make del_ptr() and btrfs_del_leaf() void
-Date: Thu, 15 Sep 2011 10:34:47 -0700
-Message-ID: <1316108099-5099-9-git-send-email-mfasheh@suse.de>
+Subject: [PATCH 10/20] btrfs: go readonly on insert error in btrfs_add_root_ref()
+Date: Thu, 15 Sep 2011 10:34:49 -0700
+Message-ID: <1316108099-5099-11-git-send-email-mfasheh@suse.de>
 References: <1316108099-5099-1-git-send-email-mfasheh@suse.de>
 Cc: Chris Mason <chris.mason@oracle.com>,
 	Mark Fasheh <mfasheh@suse.de>, Mark Fasheh <mfasheh@suse.com>
@@ -12,129 +12,81 @@ List-ID: <linux-btrfs.vger.kernel.org>
 
 From: Mark Fasheh <mfasheh@suse.com>
 
-Since fixup_low_keys() has been made void, del_ptr() always returns zero. We
-can then make it void as well. This allows us in turn to make
-btrfs_del_leaf() void as the only return value it was previously catching
-was from del_ptr(). This winds up removing a couple of un-needed BUG_ON(ret)
-lines.
+In btrfs_add_root_ref() we BUG if an error is encountered during
+REF/BACKREF insertion. This does not look like a logic error, thus the BUG
+is not called for. However, I don't think there's a simple way to recover
+from such an error at that point, so we mark the fs readonly instead.
+
+At the same time, we can update the following caller of
+btrfs_add_root_ref() which BUG_ON from an error:
+
+- create_subvol: now passes the return code back to userspace
+
+- create_pending_snapshot: goes readonly on any error from
+  btrfs_add_root_ref().
 
 Signed-off-by: Mark Fasheh <mfasheh@suse.de>
 ---
- fs/btrfs/ctree.c |   40 +++++++++++++---------------------------
- 1 files changed, 13 insertions(+), 27 deletions(-)
+ fs/btrfs/ioctl.c       |    4 ++--
+ fs/btrfs/root-tree.c   |    8 ++++++--
+ fs/btrfs/transaction.c |    2 +-
+ 3 files changed, 9 insertions(+), 5 deletions(-)
 
-diff --git a/fs/btrfs/ctree.c b/fs/btrfs/ctree.c
-index b4a0801..2b2f8fd 100644
---- a/fs/btrfs/ctree.c
-+++ b/fs/btrfs/ctree.c
-@@ -36,8 +36,8 @@ static int balance_node_right(struct btrfs_trans_handle *trans,
- 			      struct btrfs_root *root,
- 			      struct extent_buffer *dst_buf,
- 			      struct extent_buffer *src_buf);
--static int del_ptr(struct btrfs_trans_handle *trans, struct btrfs_root *root,
--		   struct btrfs_path *path, int level, int slot);
-+static void del_ptr(struct btrfs_trans_handle *trans, struct btrfs_root *root,
-+		    struct btrfs_path *path, int level, int slot);
- 
- struct btrfs_path *btrfs_alloc_path(void)
- {
-@@ -994,10 +994,7 @@ static noinline int balance_level(struct btrfs_trans_handle *trans,
- 		if (btrfs_header_nritems(right) == 0) {
- 			clean_tree_block(trans, root, right);
- 			btrfs_tree_unlock(right);
--			wret = del_ptr(trans, root, path, level + 1, pslot +
--				       1);
--			if (wret)
--				ret = wret;
-+			del_ptr(trans, root, path, level + 1, pslot + 1);
- 			root_sub_used(root, right->len);
- 			btrfs_free_tree_block(trans, root, right, 0, 1);
- 			free_extent_buffer(right);
-@@ -1035,9 +1032,7 @@ static noinline int balance_level(struct btrfs_trans_handle *trans,
- 	if (btrfs_header_nritems(mid) == 0) {
- 		clean_tree_block(trans, root, mid);
- 		btrfs_tree_unlock(mid);
--		wret = del_ptr(trans, root, path, level + 1, pslot);
--		if (wret)
--			ret = wret;
-+		del_ptr(trans, root, path, level + 1, pslot);
- 		root_sub_used(root, mid->len);
- 		btrfs_free_tree_block(trans, root, mid, 0, 1);
- 		free_extent_buffer(mid);
-@@ -3685,12 +3680,11 @@ int btrfs_insert_item(struct btrfs_trans_handle *trans, struct btrfs_root
-  * the tree should have been previously balanced so the deletion does not
-  * empty a node.
-  */
--static int del_ptr(struct btrfs_trans_handle *trans, struct btrfs_root *root,
--		   struct btrfs_path *path, int level, int slot)
-+static void del_ptr(struct btrfs_trans_handle *trans, struct btrfs_root *root,
-+		    struct btrfs_path *path, int level, int slot)
- {
- 	struct extent_buffer *parent = path->nodes[level];
- 	u32 nritems;
--	int ret = 0;
- 
- 	nritems = btrfs_header_nritems(parent);
- 	if (slot != nritems - 1) {
-@@ -3713,7 +3707,6 @@ static int del_ptr(struct btrfs_trans_handle *trans, struct btrfs_root *root,
- 		fixup_low_keys(trans, root, path, &disk_key, level + 1);
- 	}
- 	btrfs_mark_buffer_dirty(parent);
--	return ret;
- }
- 
- /*
-@@ -3726,17 +3719,13 @@ static int del_ptr(struct btrfs_trans_handle *trans, struct btrfs_root *root,
-  * The path must have already been setup for deleting the leaf, including
-  * all the proper balancing.  path->nodes[1] must be locked.
-  */
--static noinline int btrfs_del_leaf(struct btrfs_trans_handle *trans,
--				   struct btrfs_root *root,
--				   struct btrfs_path *path,
--				   struct extent_buffer *leaf)
-+static noinline void btrfs_del_leaf(struct btrfs_trans_handle *trans,
-+				    struct btrfs_root *root,
-+				    struct btrfs_path *path,
-+				    struct extent_buffer *leaf)
- {
--	int ret;
+diff --git a/fs/btrfs/ioctl.c b/fs/btrfs/ioctl.c
+index 7cf0133..8adb220 100644
+--- a/fs/btrfs/ioctl.c
++++ b/fs/btrfs/ioctl.c
+@@ -430,8 +430,8 @@ static noinline int create_subvol(struct btrfs_root *root,
+ 	ret = btrfs_add_root_ref(trans, root->fs_info->tree_root,
+ 				 objectid, root->root_key.objectid,
+ 				 btrfs_ino(dir), index, name, namelen);
 -
- 	WARN_ON(btrfs_header_generation(leaf) != trans->transid);
--	ret = del_ptr(trans, root, path, 1, path->slots[1]);
--	if (ret)
--		return ret;
-+	del_ptr(trans, root, path, 1, path->slots[1]);
+-	BUG_ON(ret);
++	if (ret)
++		goto fail;
  
- 	/*
- 	 * btrfs_free_extent is expensive, we want to make sure we
-@@ -3747,7 +3736,6 @@ static noinline int btrfs_del_leaf(struct btrfs_trans_handle *trans,
- 	root_sub_used(root, leaf->len);
+ 	d_instantiate(dentry, btrfs_lookup_dentry(dir, dentry));
+ fail:
+diff --git a/fs/btrfs/root-tree.c b/fs/btrfs/root-tree.c
+index f409990..02f2bf3 100644
+--- a/fs/btrfs/root-tree.c
++++ b/fs/btrfs/root-tree.c
+@@ -407,7 +407,10 @@ int btrfs_add_root_ref(struct btrfs_trans_handle *trans,
+ again:
+ 	ret = btrfs_insert_empty_item(trans, tree_root, path, &key,
+ 				      sizeof(*ref) + name_len);
+-	BUG_ON(ret);
++	if (ret) {
++		btrfs_std_error(tree_root->fs_info, ret);
++		goto out_free;
++	}
  
- 	btrfs_free_tree_block(trans, root, leaf, 0, 1);
+ 	leaf = path->nodes[0];
+ 	ref = btrfs_item_ptr(leaf, path->slots[0], struct btrfs_root_ref);
+@@ -426,8 +429,9 @@ again:
+ 		goto again;
+ 	}
+ 
++out_free:
+ 	btrfs_free_path(path);
 -	return 0;
++	return ret;
  }
- /*
-  * delete the item at the leaf level in path.  If that empties
-@@ -3804,8 +3792,7 @@ int btrfs_del_items(struct btrfs_trans_handle *trans, struct btrfs_root *root,
- 		} else {
- 			btrfs_set_path_blocking(path);
- 			clean_tree_block(trans, root, leaf);
--			ret = btrfs_del_leaf(trans, root, path, leaf);
--			BUG_ON(ret);
-+			btrfs_del_leaf(trans, root, path, leaf);
- 		}
- 	} else {
- 		int used = leaf_space_used(leaf, 0, nritems);
-@@ -3841,8 +3828,7 @@ int btrfs_del_items(struct btrfs_trans_handle *trans, struct btrfs_root *root,
  
- 			if (btrfs_header_nritems(leaf) == 0) {
- 				path->slots[1] = slot;
--				ret = btrfs_del_leaf(trans, root, path, leaf);
--				BUG_ON(ret);
-+				btrfs_del_leaf(trans, root, path, leaf);
- 				free_extent_buffer(leaf);
- 			} else {
- 				/* if we're still in the path, make sure
+ /*
+diff --git a/fs/btrfs/transaction.c b/fs/btrfs/transaction.c
+index 7dc36fa..7c46ece 100644
+--- a/fs/btrfs/transaction.c
++++ b/fs/btrfs/transaction.c
+@@ -991,7 +991,7 @@ static noinline int create_pending_snapshot(struct btrfs_trans_handle *trans,
+ 				 parent_root->root_key.objectid,
+ 				 btrfs_ino(parent_inode), index,
+ 				 dentry->d_name.name, dentry->d_name.len);
+-	BUG_ON(ret);
++	btrfs_std_error(fs_info, ret);
+ 	dput(parent);
+ 
+ 	key.offset = (u64)-1;
 -- 
 1.7.6
 

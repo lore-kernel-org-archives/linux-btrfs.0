@@ -1,32 +1,59 @@
 From: Mark Fasheh <mfasheh@suse.de>
-Subject: [PATCH 0/20] btrfs: More error handling fixes
-Date: Thu, 15 Sep 2011 10:34:39 -0700
-Message-ID: <1316108099-5099-1-git-send-email-mfasheh@suse.de>
-Cc: Chris Mason <chris.mason@oracle.com>, Mark Fasheh <mfasheh@suse.de>
+Subject: [PATCH 01/20] btrfs: Don't BUG_ON errors from btrfs_create_subvol_root()
+Date: Thu, 15 Sep 2011 10:34:40 -0700
+Message-ID: <1316108099-5099-2-git-send-email-mfasheh@suse.de>
+References: <1316108099-5099-1-git-send-email-mfasheh@suse.de>
+Cc: Chris Mason <chris.mason@oracle.com>,
+	Mark Fasheh <mfasheh@suse.de>, Mark Fasheh <mfasheh@suse.com>
 To: linux-btrfs@vger.kernel.org
 Return-path: <linux-btrfs-owner@vger.kernel.org>
+In-Reply-To: <1316108099-5099-1-git-send-email-mfasheh@suse.de>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hi,
+From: Mark Fasheh <mfasheh@suse.com>
 
-The following are assorted fixes to error handling from all parts of the
-Btrfs code.  I included in this series an uncommited patch from Tsutomu Itoh
-which was a better version of a patch I had written.  He should be cc'd on
-that mail.
+This is called from only one place - create_subvol() which passes errors
+safely back out to it's caller, btrfs_mksubvol where they are handled.
 
-Some of the patches (the first 8) were previously sent to this list but got
-no comments so I'm resending them with this set. Changes from last time are
-that I also started setting the file system readonly on errors which look
-like possible corruption.
+Additionally, btrfs_create_subvol_root() itself bug's needlessly from error
+return of btrfs_update_inode(). Since create_subvol() was fixed to catch
+errors we can bubble this one up too.
 
-For the most part, I'm still concentrating on eliminating sites where we
-BUG_ON(ret) instead of bubbling errors up the stack. The patches were
-tested using some simple file system commands and a background kernel build.
+Signed-off-by: Mark Fasheh <mfasheh@suse.com>
+---
+ fs/btrfs/inode.c |    3 +--
+ fs/btrfs/ioctl.c |    2 ++
+ 2 files changed, 3 insertions(+), 2 deletions(-)
 
-Please review, all constructive feedback is appreciated :)
+diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
+index 15fceef..7028c0c 100644
+--- a/fs/btrfs/inode.c
++++ b/fs/btrfs/inode.c
+@@ -6722,10 +6722,9 @@ int btrfs_create_subvol_root(struct btrfs_trans_handle *trans,
+ 	btrfs_i_size_write(inode, 0);
+ 
+ 	err = btrfs_update_inode(trans, new_root, inode);
+-	BUG_ON(err);
+ 
+ 	iput(inode);
+-	return 0;
++	return err;
+ }
+ 
+ struct inode *btrfs_alloc_inode(struct super_block *sb)
+diff --git a/fs/btrfs/ioctl.c b/fs/btrfs/ioctl.c
+index 7cf0133..b3440f5 100644
+--- a/fs/btrfs/ioctl.c
++++ b/fs/btrfs/ioctl.c
+@@ -411,6 +411,8 @@ static noinline int create_subvol(struct btrfs_root *root,
+ 	btrfs_record_root_in_trans(trans, new_root);
+ 
+ 	ret = btrfs_create_subvol_root(trans, new_root, new_dirid);
++	if (ret)
++		goto fail;
+ 	/*
+ 	 * insert the directory item
+ 	 */
+-- 
+1.7.6
 
-Thanks,
-	--Mark
-
---
-Mark Fasheh

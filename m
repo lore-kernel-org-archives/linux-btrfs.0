@@ -1,86 +1,76 @@
-From: Sage Weil <sage@newdream.net>
-Subject: Re: WARNING: at fs/btrfs/inode.c:2193 btrfs_orphan_commit_root+0xb0/0xc0
- [btrfs]()
-Date: Thu, 15 Sep 2011 11:44:09 -0700 (PDT)
-Message-ID: <Pine.LNX.4.64.1109151137420.17623@cobra.newdream.net>
-References: <4E6BDAEB.7020206@tuxadero.com> <4E6EABAF.9010903@cn.fujitsu.com>
+From: Felix Blanke <felixblanke@gmail.com>
+Subject: Re: Rename BTRfs to MuchSlowerFS ?
+Date: Thu, 15 Sep 2011 21:37:24 +0200
+Message-ID: <4E7253F4.9020005@gmail.com>
+References: <4E64D3D5.7020407@petaramesh.org> <15663472.1RTxtZJx8a@tethys> <CAG1y0sd=fYDT4Z4J=HqYXSsuZGjyMbUgpbLiguqdnibwt9qqOw@mail.gmail.com> <1411501.d4mgBNBG2i@tethys>
 Mime-Version: 1.0
-Content-Type: TEXT/PLAIN; charset=US-ASCII
-Cc: martin@tuxadero.com, ceph-devel@vger.kernel.org,
-	linux-btrfs@vger.kernel.org, josef@redhat.com
-To: Liu Bo <liubo2009@cn.fujitsu.com>
-Return-path: <ceph-devel-owner@vger.kernel.org>
-In-Reply-To: <4E6EABAF.9010903@cn.fujitsu.com>
+Content-Type: text/plain; charset=ISO-8859-1;
+	format=flowed
+Cc: linux-btrfs <linux-btrfs@vger.kernel.org>,
+	"Fajar A. Nugraha" <list@fajar.net>
+To: =?ISO-8859-1?Q?Sw=E2mi_Petaramesh?= <swami@petaramesh.org>
+Return-path: <linux-btrfs-owner@vger.kernel.org>
+In-Reply-To: <1411501.d4mgBNBG2i@tethys>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Tue, 13 Sep 2011, Liu Bo wrote:
-> On 09/11/2011 05:47 AM, Martin Mailand wrote:
-> > Hi
-> > I am hitting this Warning reproducible, the workload is a ceph osd,
-> > kernel ist 3.1.0-rc5.
-> > 
-> 
-> Have posted a patch for this:
-> 
-> http://marc.info/?l=linux-btrfs&m=131547325515336&w=2
+I'm using btrfs since one year now and it's quite fast. I don't feel an=
+y=20
+differences to other filesystems. Never tried a benchmark but for my=20
+daily work it's nice. I also never had any issues with the memory. Imho=
+=20
+nowadays memory isn't a problem at all in desktop computers. I bought=20
+8gb of memory 2 years before because it was so damn cheap. Never used=20
+that mutch, but it was almost for free :)
 
-We're still seeing this with -rc6, which includes 98c9942 and 65450aa.
+The advantage to ext4 for me is the build in raid1 and the snapshots.=20
+I'm using the snapshot feature for my local backups. I like it because=20
+it's really easy and uses very few storage. A simple "Snapshot -> Rsync=
+=20
+to a different disk -> Snapshot" script is the perfect local backup met=
+hod.
 
-I haven't looked at the reservation code in much detail.  Is there 
-anything I can do to help track this down?
+I really appreciate the work of the developers! Btrfs is great and I'm=20
+110% sure it will become better and better over the next month.
 
-Thanks-
-sage
+Best regards,
+=46elix
 
-
-> 
-> thanks,
-> liubo
-> 
-> > Best Regards,
-> >  martin
-> > 
-> > [ 5472.099766] ------------[ cut here ]------------
-> > [ 5472.099833] WARNING: at fs/btrfs/inode.c:2193
-> > btrfs_orphan_commit_root+0xb0/0xc0 [btrfs]()
-> > [ 5472.099838] Hardware name: MS-96B3
-> > [ 5472.099842] Modules linked in: radeon ttm drm_kms_helper drm
-> > i2c_algo_bit psmouse sp5100_tco edac_core lp shpchp serio_raw k8temp
-> > i2c_piix4 edac_mce_amd parport ahci pata_atiixp e1000e libahci btrfs
-> > zlib_deflate libcrc32c
-> > [ 5472.099878] Pid: 2066, comm: kworker/1:1 Not tainted 3.1.0-rc5-custom #1
-> > [ 5472.099882] Call Trace:
-> > [ 5472.099898]  [<ffffffff81063c1f>] warn_slowpath_common+0x7f/0xc0
-> > [ 5472.099907]  [<ffffffff81063c7a>] warn_slowpath_null+0x1a/0x20
-> > [ 5472.099935]  [<ffffffffa003f420>] btrfs_orphan_commit_root+0xb0/0xc0
-> > [btrfs]
-> > [ 5472.099961]  [<ffffffffa00380aa>] commit_fs_roots.clone.21+0xba/0x1a0
-> > [btrfs]
-> > [ 5472.099971]  [<ffffffff815db96e>] ? _raw_spin_lock+0xe/0x20
-> > [ 5472.099997]  [<ffffffffa003966f>]
-> > btrfs_commit_transaction+0x3ef/0x870 [btrfs]
-> > [ 5472.100065]  [<ffffffff81012871>] ? __switch_to+0x261/0x2f0
-> > [ 5472.100084]  [<ffffffff81086bf0>] ? wake_up_bit+0x40/0x40
-> > [ 5472.100120]  [<ffffffffa0039af0>] ?
-> > btrfs_commit_transaction+0x870/0x870 [btrfs]
-> > [ 5472.100155]  [<ffffffffa0039b0f>] do_async_commit+0x1f/0x30 [btrfs]
-> > [ 5472.100171]  [<ffffffff8108110d>] process_one_work+0x11d/0x430
-> > [ 5472.100187]  [<ffffffff81081c69>] worker_thread+0x169/0x360
-> > [ 5472.100203]  [<ffffffff81081b00>] ? manage_workers.clone.21+0x240/0x240
-> > [ 5472.100220]  [<ffffffff81086496>] kthread+0x96/0xa0
-> > [ 5472.100236]  [<ffffffff815e5bb4>] kernel_thread_helper+0x4/0x10
-> > [ 5472.100253]  [<ffffffff81086400>] ? flush_kthread_worker+0xb0/0xb0
-> > [ 5472.100269]  [<ffffffff815e5bb0>] ? gs_change+0x13/0x13
-> > [ 5472.100279] ---[ end trace a8bae5767c2c3e55 ]---
-> > -- 
-> > To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
-> > the body of a message to majordomo@vger.kernel.org
-> > More majordomo info at  http://vger.kernel.org/majordomo-info.html
-> > 
-> 
-> --
-> To unsubscribe from this list: send the line "unsubscribe ceph-devel" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
-> 
-> 
+On 9/7/11 4:15 PM, Sw=E2mi Petaramesh wrote:
+> Le Mercredi 7 Septembre 2011 00:11:25 vous avez =E9crit :
+>> Reading your post, at this point I'd actually recommend you stick wi=
+th
+>> ext4.
+>
+> I actually shifted back from BTRFS to ext4 and fell like having offer=
+ed myself
+> a brand new computer,  about 20 times faster, me happy ;-)
+>
+>> Both btrfs and zfs are great, but IMHO btrfs is not ready for
+>> daily use by "ordinary" user yet, while zfs is a memory hog
+>> (especially for laptops, which is part of the reason why I'm using
+>> btrfs instead of zfs on this one).
+>
+> True, ZFS is excellent but a memory hog (and strongly advises using a=
+ 64-bit
+> OS) but I was surprised to discover that BTRFS was such a memory eate=
+r itself,
+> with kernel 3.0. My system was swapping like mad !
+>
+> I use (kernel) ZFS on my 64-bit main machine and I'm plain happy with=
+ it, and
+> tried ZFS on my 32-bit laptop in the hope to get more performance for=
+ less
+> memory ; alas I just got a memory-hungry system running damn slow... =
+=46or the
+> time being I will stick to ZFS for 64-bit machines with>=3D 4GB RAM, =
+and to
+> ext4 for 32-bit systems with less RAM...
+>
+> I don't feel that BTRFS gives any advantage in its current state of
+> development. Alas.
+>
+--
+To unsubscribe from this list: send the line "unsubscribe linux-btrfs" =
+in
+the body of a message to majordomo@vger.kernel.org
+More majordomo info at  http://vger.kernel.org/majordomo-info.html

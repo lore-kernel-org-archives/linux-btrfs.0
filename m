@@ -1,58 +1,41 @@
-From: Martin Mailand <martin@tuxadero.com>
-Subject: Re: WARNING: at fs/btrfs/inode.c:2193 btrfs_orphan_commit_root+0xb0/0xc0
- [btrfs]()
-Date: Fri, 16 Sep 2011 17:15:42 +0200
-Message-ID: <4E73681E.4030205@tuxadero.com>
-References: <4E6BDAEB.7020206@tuxadero.com> <4E6EABAF.9010903@cn.fujitsu.com> <Pine.LNX.4.64.1109151137420.17623@cobra.newdream.net> <20110915195029.GD25179@dhcp231-156.rdu.redhat.com> <4E735896.3000608@tuxadero.com> <4E735F16.7000303@redhat.com>
+From: Henti Smith <henti@geekware.co.za>
+Subject: Re: Raid0 and drive failure.
+Date: Fri, 16 Sep 2011 17:24:38 +0200
+Message-ID: <CAC_HdUrqiiajN9CfnnSUuTrtmYeDrkS+mp4AkMk75n+C5YLBkw@mail.gmail.com>
+References: <CAC_HdUrrEzUYp3K=ZAG9sQK=6totXmoy5FswGg=huTuxb6vtnw@mail.gmail.com>
+	<CAAeznTp1eX8m--Mw-RFNY8VmU8O08kRNQeOmHAZo=cGNxvV7Tg@mail.gmail.com>
+	<CAC_HdUrh+LhBfHTMKE8VTkuwEgJbcX2mBP3pJFYivk228-VctA@mail.gmail.com>
+	<20110916151044.GF11031@carfax.org.uk>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=ISO-8859-1; format=flowed
-Cc: Sage Weil <sage@newdream.net>, ceph-devel@vger.kernel.org,
+Content-Type: text/plain; charset=ISO-8859-1
+To: Hugo Mills <hugo@carfax.org.uk>,
+	Henti Smith <henti@geekware.co.za>,
+	Leonidas Spyropoulos <artafinde@gmail.com>,
 	linux-btrfs@vger.kernel.org
-To: Josef Bacik <josef@redhat.com>
-Return-path: <ceph-devel-owner@vger.kernel.org>
-In-Reply-To: <4E735F16.7000303@redhat.com>
+Return-path: <linux-btrfs-owner@vger.kernel.org>
+In-Reply-To: <20110916151044.GF11031@carfax.org.uk>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hi Josef,
-the commit is not in there, but the code looks like your post.
-
-if (--trans->use_count) {
-                 trans->block_rsv = trans->orig_rsv;
-                 return 0;
-         }
-
-         trans->block_rsv = NULL;
-         while (count < 4) {
-                 unsigned long cur = trans->delayed_ref_updates;
-                 trans->delayed_ref_updates = 0;
-
-But on the other hand I am quite new to git, how could I get your latest 
-commit?
-
-Best Regards,
-  Martin
-
-Am 16.09.2011 16:37, schrieb Josef Bacik:
-> On 09/16/2011 10:09 AM, Martin Mailand wrote:
->> Hi Josef,
->> after a quick test it seems that I do not hit this Warning any longer.
->> But I got a new one.
->>
+>> This is the more pertinent question, which it seem btrfs can't do cu=
+rrently.
 >
-> Hmm looks like that may not be my newest stuff, is commit
->
-> 57f499e1bb76ba3ebeb09cd12e9dac84baa5812b
->
-> in there?  Specifically look at __btrfs_end_transaction in transaction.c
-> and see if the line
->
-> trans->block_rsv = NULL;
->
-> is before the first while() loop.  Thanks,
->
-> Josef
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+> =A0 btrfs stripes its RAID-0 data across all available disks, so you'=
+d
+> lose approximately 1/3 of the data for each file. In some cases, you
+> might get lucky and have a small file that resides entirely on the tw=
+o
+> undamaged disks. In that case, it *might* be possible to recover your
+> data, but I think in general the amount of effort involved to get tha=
+t
+> degree of recovery is probably far outweighted by the use of your
+> backups to restore all of the missing data...
 
+That how I understood raid0 as well, so I do understand that, thank you=
+=2E
+
+Henti
+--
+To unsubscribe from this list: send the line "unsubscribe linux-btrfs" =
+in
+the body of a message to majordomo@vger.kernel.org
+More majordomo info at  http://vger.kernel.org/majordomo-info.html

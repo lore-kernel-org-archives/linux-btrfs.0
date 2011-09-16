@@ -1,56 +1,80 @@
-From: Li Zefan <lizf@cn.fujitsu.com>
-Subject: Re: [PATCH 1/2] Btrfs: don't make a file partly checksummed through
- file clone
-Date: Fri, 16 Sep 2011 11:01:08 +0800
-Message-ID: <4E72BBF4.7010705@cn.fujitsu.com>
-References: <4E703AC1.5060205@cn.fujitsu.com> <20110915111638.GD22205@twin.jikos.cz>
+From: Maciej Marcin Piechotka <uzytkownik2@gmail.com>
+Subject: Re: Rename BTRfs to MuchSlowerFS ?
+Date: Fri, 16 Sep 2011 08:21:24 +0200
+Message-ID: <1316154091.28427.3.camel@picard>
+References: <4E64D3D5.7020407@petaramesh.org> <15663472.1RTxtZJx8a@tethys>
+	 <CAG1y0sd=fYDT4Z4J=HqYXSsuZGjyMbUgpbLiguqdnibwt9qqOw@mail.gmail.com>
+	 <1411501.d4mgBNBG2i@tethys> <4E7253F4.9020005@gmail.com>
+	 <CAG1y0sdv=GwgRAd1suTGhzVB=A1dUsZ=fjiE67QsuGQCCQwSjw@mail.gmail.com>
+Reply-To: uzytkownik2@gmail.com
 Mime-Version: 1.0
-Content-Type: text/plain; charset=ISO-8859-1
-Cc: "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>,
-	Sage Weil <sage@newdream.net>
-To: David Sterba <dave@jikos.cz>
+Content-Type: multipart/signed; micalg="pgp-ripemd160";
+	protocol="application/pgp-signature"; boundary="=-rzrPWvvP43UiHSOBZ5ZC"
+To: linux-btrfs@vger.kernel.org
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <20110915111638.GD22205@twin.jikos.cz>
+In-Reply-To: <CAG1y0sdv=GwgRAd1suTGhzVB=A1dUsZ=fjiE67QsuGQCCQwSjw@mail.gmail.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-David Sterba wrote:
-> On Wed, Sep 14, 2011 at 01:25:21PM +0800, Li Zefan wrote:
->> It's because part of the file is checksummed and the other part is not,
->> and then btrfs will complain checksum is not found when we read the file.
->>
->> Disallow file clone if src and dst file have different checksum flag,
->> so we ensure a file is completely checksummed or unchecksummed.
-> 
-> Your fix prevents the bug, but I don't think it's good to let file clone
-> fail without any other message. ret is set to -EINVAL at the time of
-> 'goto out_fput', which is fine, but the user has no clue what happened
-> or how to fix it.
 
-While I agree with you on this comment..
+--=-rzrPWvvP43UiHSOBZ5ZC
+Content-Type: text/plain; charset="UTF-8"
+Content-Transfer-Encoding: quoted-printable
 
-> 
-> The nodatasum status is recorded in inode flags and remains like that
-> regardless of the 'mount -o nodatasum', persistent and de facto
-> unchangable (unless the file is created again with the opposite nodatasum
-> mount). Even more, the user has no way to find out nodatasum flag of
-> any inode/file (the corresponding FS_NODATASUM_FL is not there).
-> 
-> My suggestion how to fix this:
-> 1. add FS_NODATASUM_FL file flag and code to set/get via setflags ioctl
+On Fri, 2011-09-16 at 05:16 +0700, Fajar A. Nugraha wrote:
+> On Fri, Sep 16, 2011 at 2:37 AM, Felix Blanke <felixblanke@gmail.com> wro=
+te:
+> > I'm using btrfs since one year now and it's quite fast. I don't feel an=
+y
+> > differences to other filesystems. Never tried a benchmark but for my da=
+ily
+> > work it's nice.
+>=20
+> Your workload must be light :)
+>=20
 
-This means we can have a file partly checksummed, which is what we want
-to avoid in this patch.
+I recently repeatedly rsync whole partitions (>30GB) without ill
+effects. (ok - first sync took whole 1s).
 
-> 2. [this patch to skip cloning in case of nodatasum flag mismatch]
-> 3. ... add a printk why it failed
+> >
+> > The advantage to ext4 for me is the build in raid1 and the snapshots. I=
+'m
+> > using the snapshot feature for my local backups. I like it because it's
+> > really easy and uses very few storage. A simple "Snapshot -> Rsync to a
+> > different disk -> Snapshot" script is the perfect local backup method.
+> >
+>=20
+> you've never used zfs have you :)
+>=20
+> For that purpose, think "same feature as btrfs snapshot + rsync" but
+> without needing rsync. This can be very useful as the process of rsync
+> determining what data to transfer can be quite CPU/disk intensive.
 
-I don't think this is a good idea.
+Now I'm curious - how do zsf get data off the partition without rsync?
 
-> 
-> The user then has at least option to drop/add the nodatasum flag for one of
-> the. Unfortunatelly this makes file cloning less straightforward.
-> 
+Regards
 
-I don't know if Chris has plan on finer-grained checksum (not per file
-but per extent), if yes, we can eliminate this constraint in file cloning
-in the future.
+--=-rzrPWvvP43UiHSOBZ5ZC
+Content-Type: application/pgp-signature; name="signature.asc"
+Content-Description: This is a digitally signed message part
+
+-----BEGIN PGP SIGNATURE-----
+Version: GnuPG v2.0.18 (GNU/Linux)
+
+iQIcBAABAwAGBQJOcurrAAoJEJIdee2Vr4aPQM0P/2/myAX0lYpdyIo+EGLZgBaJ
+4/W8b30DroGez3Yu7t4vP5egIHweVlHSwpEGBKnIRYUacAwEUSORHiRiJaWTpUxs
+JMfxE8DRo4rR4wM3v7IO7Xwocpf1kOujXW4wzTcRmRTaI4NDKBdR9RLp/k0esarL
+h+GT7dVqhBrCSH8HUETEeZpIJw+JpWXaSjpVs8jzXpsHDxRFS73tUHaYotBOEjCI
+ydeBBMHDG8DzoXZLOkhAQ7SEmOtRrS4wW3hKW1bPtwJRWJfHY+gTPAXSXSNOphVV
+qkOszdUMjq/AHoFoK/hpagt3GnzMAPkk+A/32xos92P5R4+52jZYEobhxheariZ8
+275+8rOig44lsHyqdKIkpYGuoyjUWN3F2CBzPdNSQ3+93YkQK+2fw6aAzOerrTO4
+4Y+CKHR5+HTS7xWeGvXQw3q9OvO4khYLekkIKBUVpinW6wvunQJCnrRj01ultubK
+ci/zwe4o8nlYoItlu5DZToytf00jSas4izIzE8IM6elHkNt4p//ozPUyuYllFqW+
+vIq6ov/EFRYDNsrlxpBaDvN0VWk9s7rpaRSmAUae6Wbou6BdD5GORaCeTOh1Ki9x
+mTj6PtaMLCL2nl+A5M2foVRzbiycLGQPtdGZK0wH+Rcftrwm8o/azKwFlqR6PHD3
+ME3jz8iZDVpGJHd9fNi1
+=3FkX
+-----END PGP SIGNATURE-----
+
+--=-rzrPWvvP43UiHSOBZ5ZC--
+
+

@@ -1,41 +1,78 @@
-From: Henti Smith <henti@geekware.co.za>
-Subject: Re: Raid0 and drive failure.
-Date: Fri, 16 Sep 2011 17:24:38 +0200
-Message-ID: <CAC_HdUrqiiajN9CfnnSUuTrtmYeDrkS+mp4AkMk75n+C5YLBkw@mail.gmail.com>
-References: <CAC_HdUrrEzUYp3K=ZAG9sQK=6totXmoy5FswGg=huTuxb6vtnw@mail.gmail.com>
-	<CAAeznTp1eX8m--Mw-RFNY8VmU8O08kRNQeOmHAZo=cGNxvV7Tg@mail.gmail.com>
-	<CAC_HdUrh+LhBfHTMKE8VTkuwEgJbcX2mBP3pJFYivk228-VctA@mail.gmail.com>
-	<20110916151044.GF11031@carfax.org.uk>
+From: Christoph Hellwig <hch@infradead.org>
+Subject: Re: [PATCH 1/7] BTRFS: Fix lseek return value for error
+Date: Fri, 16 Sep 2011 11:48:15 -0400
+Message-ID: <20110916154815.GA27150@infradead.org>
+References: <1316128013-21980-1-git-send-email-andi@firstfloor.org>
+ <1316128013-21980-2-git-send-email-andi@firstfloor.org>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=ISO-8859-1
-To: Hugo Mills <hugo@carfax.org.uk>,
-	Henti Smith <henti@geekware.co.za>,
-	Leonidas Spyropoulos <artafinde@gmail.com>,
+Content-Type: text/plain; charset=us-ascii
+Cc: viro@zeniv.linux.org.uk, linux-fsdevel@vger.kernel.org,
+	linux-kernel@vger.kernel.org, Andi Kleen <ak@linux.intel.com>,
 	linux-btrfs@vger.kernel.org
+To: Andi Kleen <andi@firstfloor.org>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <20110916151044.GF11031@carfax.org.uk>
+In-Reply-To: <1316128013-21980-2-git-send-email-andi@firstfloor.org>
 List-ID: <linux-btrfs.vger.kernel.org>
 
->> This is the more pertinent question, which it seem btrfs can't do cu=
-rrently.
->
-> =A0 btrfs stripes its RAID-0 data across all available disks, so you'=
-d
-> lose approximately 1/3 of the data for each file. In some cases, you
-> might get lucky and have a small file that resides entirely on the tw=
-o
-> undamaged disks. In that case, it *might* be possible to recover your
-> data, but I think in general the amount of effort involved to get tha=
-t
-> degree of recovery is probably far outweighted by the use of your
-> backups to restore all of the missing data...
+On Thu, Sep 15, 2011 at 04:06:47PM -0700, Andi Kleen wrote:
+> From: Andi Kleen <ak@linux.intel.com>
+> 
+> Introduced by 9a4327ca1f45f82edad7dc0a4e52ce9316e0950c
 
-That how I understood raid0 as well, so I do understand that, thank you=
-=2E
+I think this should go to Chris/Linus ASAP.  But a slightly better
+patch description wouldn't hurt either.
 
-Henti
---
-To unsubscribe from this list: send the line "unsubscribe linux-btrfs" =
-in
-the body of a message to majordomo@vger.kernel.org
-More majordomo info at  http://vger.kernel.org/majordomo-info.html
+Also any reason you captialize BTRFS?
+
+> 
+> Signed-off-by: Andi Kleen <ak@linux.intel.com>
+> ---
+>  fs/btrfs/file.c |   13 +++++++------
+>  1 files changed, 7 insertions(+), 6 deletions(-)
+> 
+> diff --git a/fs/btrfs/file.c b/fs/btrfs/file.c
+> index 3c3abff..7ec0a24 100644
+> --- a/fs/btrfs/file.c
+> +++ b/fs/btrfs/file.c
+> @@ -1818,19 +1818,17 @@ static loff_t btrfs_file_llseek(struct file *file, loff_t offset, int origin)
+>  	case SEEK_DATA:
+>  	case SEEK_HOLE:
+>  		ret = find_desired_extent(inode, &offset, origin);
+> -		if (ret) {
+> -			mutex_unlock(&inode->i_mutex);
+> -			return ret;
+> -		}
+> +		if (ret)
+> +			goto error;
+>  	}
+>  
+>  	if (offset < 0 && !(file->f_mode & FMODE_UNSIGNED_OFFSET)) {
+>  		ret = -EINVAL;
+> -		goto out;
+> +		goto error;
+>  	}
+>  	if (offset > inode->i_sb->s_maxbytes) {
+>  		ret = -EINVAL;
+> -		goto out;
+> +		goto error;
+>  	}
+>  
+>  	/* Special lock needed here? */
+> @@ -1841,6 +1839,9 @@ static loff_t btrfs_file_llseek(struct file *file, loff_t offset, int origin)
+>  out:
+>  	mutex_unlock(&inode->i_mutex);
+>  	return offset;
+> +error:
+> +	mutex_unlock(&inode->i_mutex);
+> +	return ret;
+>  }
+>  
+>  const struct file_operations btrfs_file_operations = {
+> -- 
+> 1.7.4.4
+> 
+> --
+> To unsubscribe from this list: send the line "unsubscribe linux-fsdevel" in
+> the body of a message to majordomo@vger.kernel.org
+> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+---end quoted text---

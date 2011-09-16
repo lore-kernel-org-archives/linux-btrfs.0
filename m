@@ -1,52 +1,21 @@
-From: Li Zefan <lizf@cn.fujitsu.com>
-Subject: [PATCH] Btrfs: fix pages truncation in btrfs_ioctl_clone()
-Date: Fri, 16 Sep 2011 16:59:53 +0800
-Message-ID: <4E731009.2030202@cn.fujitsu.com>
+From: Henti Smith <henti@geekware.co.za>
+Subject: Raid0 and drive failure.
+Date: Fri, 16 Sep 2011 14:25:14 +0200
+Message-ID: <CAC_HdUrrEzUYp3K=ZAG9sQK=6totXmoy5FswGg=huTuxb6vtnw@mail.gmail.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=UTF-8
-Cc: Sage Weil <sage@newdream.net>
-To: "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
+Content-Type: text/plain; charset=ISO-8859-1
+To: linux-btrfs@vger.kernel.org
 Return-path: <linux-btrfs-owner@vger.kernel.org>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-It's a bug in commit f81c9cdc567cd3160ff9e64868d9a1a7ee226480
-(Btrfs: truncate pages from clone ioctl target range)
+Good day.
 
-We should pass the dest range to the truncate function, but not the
-src range.
+This is likely a newbie question, but I just need to confirm. If you
+have 3 x 100GB drives in RAID0 and one drive dies this will result in
+total data loss correct?
 
-Also move the function before locking extent state.
+Is there no way to loose only the data that resides (even partly) on
+the missing drive but retain the rest of the data ?
 
-Signed-off-by: Li Zefan <lizf@cn.fujitsu.com>
----
- fs/btrfs/ioctl.c |    8 ++++----
- 1 files changed, 4 insertions(+), 4 deletions(-)
-
-diff --git a/fs/btrfs/ioctl.c b/fs/btrfs/ioctl.c
-index 5492bb3..f6af8b0 100644
---- a/fs/btrfs/ioctl.c
-+++ b/fs/btrfs/ioctl.c
-@@ -2237,6 +2237,10 @@ static noinline long btrfs_ioctl_clone(struct file *file, unsigned long srcfd,
- 			goto out_unlock;
- 	}
- 
-+	/* truncate page cache pages from target inode range */
-+	truncate_inode_pages_range(&inode->i_data, destoff,
-+				   PAGE_CACHE_ALIGN(destoff + len) - 1);
-+
- 	/* do any pending delalloc/csum calc on src, one way or
- 	   another, and lock file content */
- 	while (1) {
-@@ -2253,10 +2257,6 @@ static noinline long btrfs_ioctl_clone(struct file *file, unsigned long srcfd,
- 		btrfs_wait_ordered_range(src, off, len);
- 	}
- 
--	/* truncate page cache pages from target inode range */
--	truncate_inode_pages_range(&inode->i_data, off,
--				   ALIGN(off + len, PAGE_CACHE_SIZE) - 1);
--
- 	/* clone data */
- 	key.objectid = btrfs_ino(src);
- 	key.type = BTRFS_EXTENT_DATA_KEY;
--- 
-1.7.3.1
+Regards
+Henti

@@ -1,33 +1,38 @@
-From: Josef Bacik <josef@redhat.com>
-Subject: Re: WARNING: at fs/btrfs/inode.c:2193 btrfs_orphan_commit_root+0xb0/0xc0
- [btrfs]()
-Date: Fri, 16 Sep 2011 10:37:10 -0400
-Message-ID: <4E735F16.7000303@redhat.com>
-References: <4E6BDAEB.7020206@tuxadero.com> <4E6EABAF.9010903@cn.fujitsu.com> <Pine.LNX.4.64.1109151137420.17623@cobra.newdream.net> <20110915195029.GD25179@dhcp231-156.rdu.redhat.com> <4E735896.3000608@tuxadero.com>
+From: Henti Smith <henti@geekware.co.za>
+Subject: Re: Raid0 and drive failure.
+Date: Fri, 16 Sep 2011 17:06:03 +0200
+Message-ID: <CAC_HdUrh+LhBfHTMKE8VTkuwEgJbcX2mBP3pJFYivk228-VctA@mail.gmail.com>
+References: <CAC_HdUrrEzUYp3K=ZAG9sQK=6totXmoy5FswGg=huTuxb6vtnw@mail.gmail.com>
+	<CAAeznTp1eX8m--Mw-RFNY8VmU8O08kRNQeOmHAZo=cGNxvV7Tg@mail.gmail.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset=ISO-8859-1
-Cc: Sage Weil <sage@newdream.net>, Liu Bo <liubo2009@cn.fujitsu.com>,
-	ceph-devel@vger.kernel.org, linux-btrfs@vger.kernel.org
-To: Martin Mailand <martin@tuxadero.com>
-Return-path: <ceph-devel-owner@vger.kernel.org>
-In-Reply-To: <4E735896.3000608@tuxadero.com>
+Cc: linux-btrfs@vger.kernel.org
+To: Leonidas Spyropoulos <artafinde@gmail.com>
+Return-path: <linux-btrfs-owner@vger.kernel.org>
+In-Reply-To: <CAAeznTp1eX8m--Mw-RFNY8VmU8O08kRNQeOmHAZo=cGNxvV7Tg@mail.gmail.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 09/16/2011 10:09 AM, Martin Mailand wrote:
-> Hi Josef,
-> after a quick test it seems that I do not hit this Warning any longer.
-> But I got a new one.
-> 
+On Fri, Sep 16, 2011 at 4:49 PM, Leonidas Spyropoulos
+<artafinde@gmail.com> wrote:
+> On Sep 16, 2011 1:25 PM, "Henti Smith" <henti@geekware.co.za> wrote:
+>> Good day.
+>>
+> Hello
 
-Hmm looks like that may not be my newest stuff, is commit
+Hi
 
-57f499e1bb76ba3ebeb09cd12e9dac84baa5812b
+>> This is likely a newbie question, but I just need to confirm. If you
+>> have 3 x 100GB drives in RAID0 and one drive dies this will result in
+>> total data loss correct?
+>>
+> Yes the data are lost. Read more on how raid 0 works.
 
-in there?  Specifically look at __btrfs_end_transaction in transaction.c
-and see if the line
+I have read on how raid 0 works, I was merely asking about the
+implementation of raid0 on btrfs.
 
-trans->block_rsv = NULL;
+>> Is there no way to loose only the data that resides (even partly) on
+>> the missing drive but retain the rest of the data ?
 
-is before the first while() loop.  Thanks,
+This is the more pertinent question, which it seem btrfs can't do currently.
 
-Josef
+Henti

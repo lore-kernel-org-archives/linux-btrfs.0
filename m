@@ -1,70 +1,30 @@
-From: Sage Weil <sage@newdream.net>
-Subject: Re: [PATCH] Btrfs: fix pages truncation in btrfs_ioctl_clone()
-Date: Fri, 16 Sep 2011 09:39:06 -0700 (PDT)
-Message-ID: <Pine.LNX.4.64.1109160934590.11043@cobra.newdream.net>
-References: <4E731009.2030202@cn.fujitsu.com>
+From: Andi Kleen <ak@linux.intel.com>
+Subject: Re: [PATCH 1/7] BTRFS: Fix lseek return value for error
+Date: Fri, 16 Sep 2011 09:38:31 -0700
+Message-ID: <20110916163831.GA24876@tassilo.jf.intel.com>
+References: <1316128013-21980-1-git-send-email-andi@firstfloor.org>
+ <1316128013-21980-2-git-send-email-andi@firstfloor.org>
+ <20110916154815.GA27150@infradead.org>
 Mime-Version: 1.0
-Content-Type: TEXT/PLAIN; charset=US-ASCII
-Cc: "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
-To: Li Zefan <lizf@cn.fujitsu.com>
-Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <4E731009.2030202@cn.fujitsu.com>
+Content-Type: text/plain; charset=us-ascii
+Cc: Andi Kleen <andi@firstfloor.org>, viro@zeniv.linux.org.uk,
+	linux-fsdevel@vger.kernel.org, linux-kernel@vger.kernel.org,
+	linux-btrfs@vger.kernel.org
+To: Christoph Hellwig <hch@infradead.org>
+Return-path: <linux-kernel-owner@vger.kernel.org>
+In-Reply-To: <20110916154815.GA27150@infradead.org>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Fri, 16 Sep 2011, Li Zefan wrote:
-> It's a bug in commit f81c9cdc567cd3160ff9e64868d9a1a7ee226480
-> (Btrfs: truncate pages from clone ioctl target range)
+On Fri, Sep 16, 2011 at 11:48:15AM -0400, Christoph Hellwig wrote:
+> On Thu, Sep 15, 2011 at 04:06:47PM -0700, Andi Kleen wrote:
+> > From: Andi Kleen <ak@linux.intel.com>
+> > 
+> > Introduced by 9a4327ca1f45f82edad7dc0a4e52ce9316e0950c
 > 
-> We should pass the dest range to the truncate function, but not the
-> src range.
+> I think this should go to Chris/Linus ASAP.  But a slightly better
+> patch description wouldn't hurt either.
 
-Sigh... yes.
+Josef acked it earlier, but with a missing Chris the btrfs merge
+pipeline seems to be disfunctional at the moment.
 
-> Also move the function before locking extent state.
-
-Hmm, any reason?  i_mutex protects us from a racing write(2), but what 
-about a racing mmap()?  e.g.
-
-cloner: truncates dest pages
-writer: mmap -> page_mkwrite locks extent, creates new dirty page, unlocks
-cloner: locks extent, clones, unlocks extent
-
-sage
-
-
-> 
-> Signed-off-by: Li Zefan <lizf@cn.fujitsu.com>
-> ---
->  fs/btrfs/ioctl.c |    8 ++++----
->  1 files changed, 4 insertions(+), 4 deletions(-)
-> 
-> diff --git a/fs/btrfs/ioctl.c b/fs/btrfs/ioctl.c
-> index 5492bb3..f6af8b0 100644
-> --- a/fs/btrfs/ioctl.c
-> +++ b/fs/btrfs/ioctl.c
-> @@ -2237,6 +2237,10 @@ static noinline long btrfs_ioctl_clone(struct file *file, unsigned long srcfd,
->  			goto out_unlock;
->  	}
->  
-> +	/* truncate page cache pages from target inode range */
-> +	truncate_inode_pages_range(&inode->i_data, destoff,
-> +				   PAGE_CACHE_ALIGN(destoff + len) - 1);
-> +
->  	/* do any pending delalloc/csum calc on src, one way or
->  	   another, and lock file content */
->  	while (1) {
-> @@ -2253,10 +2257,6 @@ static noinline long btrfs_ioctl_clone(struct file *file, unsigned long srcfd,
->  		btrfs_wait_ordered_range(src, off, len);
->  	}
->  
-> -	/* truncate page cache pages from target inode range */
-> -	truncate_inode_pages_range(&inode->i_data, off,
-> -				   ALIGN(off + len, PAGE_CACHE_SIZE) - 1);
-> -
->  	/* clone data */
->  	key.objectid = btrfs_ino(src);
->  	key.type = BTRFS_EXTENT_DATA_KEY;
-> -- 
-> 1.7.3.1
-> 
-> 
+-Andi

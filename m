@@ -1,98 +1,74 @@
-From: Jeff Liu <jeff.liu@oracle.com>
-Subject: Re: [PATCH 1/7] BTRFS: Fix lseek return value for error
-Date: Sat, 17 Sep 2011 14:10:51 +0800
-Message-ID: <4E7439EB.7080100@oracle.com>
-References: <1316128013-21980-1-git-send-email-andi@firstfloor.org> <1316128013-21980-2-git-send-email-andi@firstfloor.org> <20110916154815.GA27150@infradead.org>
-Reply-To: jeff.liu@oracle.com
+From: Henti Smith <henti@geekware.co.za>
+Subject: Re: Raid0 and drive failure.
+Date: Sat, 17 Sep 2011 09:20:28 +0200
+Message-ID: <CAC_HdUrxn__yW5o024iMZXdJaO0Kge6eav8fhZrTCrhicmTx2A@mail.gmail.com>
+References: <CAC_HdUrrEzUYp3K=ZAG9sQK=6totXmoy5FswGg=huTuxb6vtnw@mail.gmail.com>
+	<CAAeznTp1eX8m--Mw-RFNY8VmU8O08kRNQeOmHAZo=cGNxvV7Tg@mail.gmail.com>
+	<CAC_HdUrh+LhBfHTMKE8VTkuwEgJbcX2mBP3pJFYivk228-VctA@mail.gmail.com>
+	<20110916151044.GF11031@carfax.org.uk>
 Mime-Version: 1.0
 Content-Type: text/plain; charset=ISO-8859-1
-Cc: Andi Kleen <andi@firstfloor.org>, viro@zeniv.linux.org.uk,
-	linux-fsdevel@vger.kernel.org, linux-kernel@vger.kernel.org,
-	Andi Kleen <ak@linux.intel.com>, linux-btrfs@vger.kernel.org
-To: Christoph Hellwig <hch@infradead.org>
-Return-path: <linux-kernel-owner@vger.kernel.org>
-In-Reply-To: <20110916154815.GA27150@infradead.org>
+To: Hugo Mills <hugo@carfax.org.uk>,
+	Henti Smith <henti@geekware.co.za>,
+	Leonidas Spyropoulos <artafinde@gmail.com>,
+	linux-btrfs@vger.kernel.org
+Return-path: <linux-btrfs-owner@vger.kernel.org>
+In-Reply-To: <20110916151044.GF11031@carfax.org.uk>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-I once posted a similar patch for this issue which can be found at:
-http://www.spinics.net/lists/linux-btrfs/msg12169.html
-
-with an additional improvement if the offset is larger or equal to the
-file size, return -ENXIO in directly:
-
-if (offset >= inode->i_size) {
-                        mutex_unlock(&inode->i_mutex);
-                        return -ENXIO;
-                }
-
-
-Thanks,
--Jeff
-On 09/16/2011 11:48 PM, Christoph Hellwig wrote:
-
-> On Thu, Sep 15, 2011 at 04:06:47PM -0700, Andi Kleen wrote:
->> From: Andi Kleen <ak@linux.intel.com>
+On Fri, Sep 16, 2011 at 5:10 PM, Hugo Mills <hugo@carfax.org.uk> wrote:
+> On Fri, Sep 16, 2011 at 05:06:03PM +0200, Henti Smith wrote:
+>> On Fri, Sep 16, 2011 at 4:49 PM, Leonidas Spyropoulos
+>> <artafinde@gmail.com> wrote:
+>> > On Sep 16, 2011 1:25 PM, "Henti Smith" <henti@geekware.co.za> wrot=
+e:
+>> >> This is likely a newbie question, but I just need to confirm. If =
+you
+>> >> have 3 x 100GB drives in RAID0 and one drive dies this will resul=
+t in
+>> >> total data loss correct?
+>> >>
+>> > Yes the data are lost. Read more on how raid 0 works.
 >>
->> Introduced by 9a4327ca1f45f82edad7dc0a4e52ce9316e0950c
-> 
-> I think this should go to Chris/Linus ASAP.  But a slightly better
-> patch description wouldn't hurt either.
-> 
-> Also any reason you captialize BTRFS?
-> 
+>> I have read on how raid 0 works, I was merely asking about the
+>> implementation of raid0 on btrfs.
 >>
->> Signed-off-by: Andi Kleen <ak@linux.intel.com>
->> ---
->>  fs/btrfs/file.c |   13 +++++++------
->>  1 files changed, 7 insertions(+), 6 deletions(-)
+>> >> Is there no way to loose only the data that resides (even partly)=
+ on
+>> >> the missing drive but retain the rest of the data ?
 >>
->> diff --git a/fs/btrfs/file.c b/fs/btrfs/file.c
->> index 3c3abff..7ec0a24 100644
->> --- a/fs/btrfs/file.c
->> +++ b/fs/btrfs/file.c
->> @@ -1818,19 +1818,17 @@ static loff_t btrfs_file_llseek(struct file *file, loff_t offset, int origin)
->>  	case SEEK_DATA:
->>  	case SEEK_HOLE:
->>  		ret = find_desired_extent(inode, &offset, origin);
->> -		if (ret) {
->> -			mutex_unlock(&inode->i_mutex);
->> -			return ret;
->> -		}
->> +		if (ret)
->> +			goto error;
->>  	}
->>  
->>  	if (offset < 0 && !(file->f_mode & FMODE_UNSIGNED_OFFSET)) {
->>  		ret = -EINVAL;
->> -		goto out;
->> +		goto error;
->>  	}
->>  	if (offset > inode->i_sb->s_maxbytes) {
->>  		ret = -EINVAL;
->> -		goto out;
->> +		goto error;
->>  	}
->>  
->>  	/* Special lock needed here? */
->> @@ -1841,6 +1839,9 @@ static loff_t btrfs_file_llseek(struct file *file, loff_t offset, int origin)
->>  out:
->>  	mutex_unlock(&inode->i_mutex);
->>  	return offset;
->> +error:
->> +	mutex_unlock(&inode->i_mutex);
->> +	return ret;
->>  }
->>  
->>  const struct file_operations btrfs_file_operations = {
->> -- 
->> 1.7.4.4
->>
->> --
->> To unsubscribe from this list: send the line "unsubscribe linux-fsdevel" in
->> the body of a message to majordomo@vger.kernel.org
->> More majordomo info at  http://vger.kernel.org/majordomo-info.html
-> ---end quoted text---
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+>> This is the more pertinent question, which it seem btrfs can't do cu=
+rrently.
+>
+> =A0 btrfs stripes its RAID-0 data across all available disks, so you'=
+d
+> lose approximately 1/3 of the data for each file. In some cases, you
+> might get lucky and have a small file that resides entirely on the tw=
+o
+> undamaged disks. In that case, it *might* be possible to recover your
+> data, but I think in general the amount of effort involved to get tha=
+t
+> degree of recovery is probably far outweighted by the use of your
+> backups to restore all of the missing data...
+>
+> =A0 Hugo.
+
+Hi Hugo, Leonidas, everybody
+
+Sorry to keep this going.
+
+I've read some more on btrfs and one of the features listed as planned
+is "Object-level RAID"
+What will be the functional advantages of this as opposed to
+filesystem level RAID.
+
+Would this not be the place to possibly add features to allow recovery
+of raid0 on an object level when a disk in the pool is lost, rather
+than loosing all data ?
+
+Henti
+--
+To unsubscribe from this list: send the line "unsubscribe linux-btrfs" =
+in
+the body of a message to majordomo@vger.kernel.org
+More majordomo info at  http://vger.kernel.org/majordomo-info.html

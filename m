@@ -1,36 +1,27 @@
-From: Josef Bacik <josef@redhat.com>
-Subject: [PATCH] Btrfs: delay iput when deleting a block group
-Date: Mon, 19 Sep 2011 12:27:03 -0400
-Message-ID: <1316449623-10514-1-git-send-email-josef@redhat.com>
-To: linux-btrfs@vger.kernel.org
-Return-path: <linux-btrfs-owner@vger.kernel.org>
+From: Andi Kleen <andi@firstfloor.org>
+Subject: Re: [PATCH 1/7] BTRFS: Fix lseek return value for error
+Date: Mon, 19 Sep 2011 19:52:03 +0200
+Message-ID: <20110919175203.GK7761@one.firstfloor.org>
+References: <1316128013-21980-1-git-send-email-andi@firstfloor.org> <1316128013-21980-2-git-send-email-andi@firstfloor.org> <20110916154815.GA27150@infradead.org> <4E7439EB.7080100@oracle.com> <41C7FF67-8658-4E7F-BB50-E9AAEA1F755C@dilger.ca> <20110918014608.GA16198@alboin.amr.corp.intel.com> <4E759DE5.3020907@oracle.com> <4E75AEFD.105@gmail.com> <8444301C-856F-44FA-94A3-D3583DFA0FFB@oracle.com> <1316357705-sup-2667@shiny>
+Mime-Version: 1.0
+Content-Type: text/plain; charset=us-ascii
+Cc: Jeff liu <jeff.liu@oracle.com>,
+	Marco Stornelli <marco.stornelli@gmail.com>,
+	Andi Kleen <ak@linux.intel.com>,
+	Andreas Dilger <adilger@dilger.ca>,
+	Christoph Hellwig <hch@infradead.org>,
+	Andi Kleen <andi@firstfloor.org>,
+	"viro@zeniv.linux.org.uk" <viro@zeniv.linux.org.uk>,
+	"linux-fsdevel@vger.kernel.org" <linux-fsdevel@vger.kernel.org>,
+	"linux-kernel@vger.kernel.org" <linux-kernel@vger.kernel.org>,
+	"linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
+To: Chris Mason <chris.mason@oracle.com>
+Return-path: <linux-kernel-owner@vger.kernel.org>
+In-Reply-To: <1316357705-sup-2667@shiny>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-I kept getting warnings from evict because we were calling
-btrfs_start_transaction() with a transaction already started when doing a
-balance.  This is because we remove a block group which requires a transaction,
-and the put the last reference on the cache inode.  Instead of doing this we
-need to delay the iput so it is done not within a transaction having started.
-This gets rid of our warnings.  Thanks,
+> Thanks everyone, I've put Jeff's last version of this in my queue.
 
-Signed-off-by: Josef Bacik <josef@redhat.com>
----
- fs/btrfs/extent-tree.c |    2 +-
- 1 files changed, 1 insertions(+), 1 deletions(-)
+Can you post the version you merged? The previous ones all had issues.
 
-diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
-index 9bb7159..5498bda 100644
---- a/fs/btrfs/extent-tree.c
-+++ b/fs/btrfs/extent-tree.c
-@@ -7266,7 +7266,7 @@ int btrfs_remove_block_group(struct btrfs_trans_handle *trans,
- 			spin_unlock(&block_group->lock);
- 		}
- 		/* One for our lookup ref */
--		iput(inode);
-+		btrfs_add_delayed_iput(inode);
- 	}
- 
- 	key.objectid = BTRFS_FREE_SPACE_OBJECTID;
--- 
-1.7.5.2
-
+-Andi

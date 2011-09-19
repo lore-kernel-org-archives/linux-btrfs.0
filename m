@@ -1,59 +1,55 @@
 From: Maciej Marcin Piechotka <uzytkownik2@gmail.com>
-Subject: Inefficient storing of ISO images with compress=lzo
-Date: Mon, 19 Sep 2011 01:32:44 +0200
-Message-ID: <1316388769.2499.4.camel@picard>
-Reply-To: uzytkownik2@gmail.com
+Subject: Re: kernel BUG at fs/btrfs/inode.c:2299
+Date: Mon, 19 Sep 2011 02:44:41 +0200
+Message-ID: <1316393087.5713.1.camel@picard>
+References: <1314582311.2724.4.camel@picard>
+	 <4E5C82E8.9090400@cn.fujitsu.com>
 Mime-Version: 1.0
-Content-Type: multipart/signed; micalg="pgp-ripemd160";
-	protocol="application/pgp-signature"; boundary="=-KSX7Rz0DnTCGZBShav/I"
-To: linux-btrfs@vger.kernel.org
+Content-Type: text/plain; charset="UTF-8"
+Cc: linux-btrfs@vger.kernel.org
+To: miaox@cn.fujitsu.com
 Return-path: <linux-btrfs-owner@vger.kernel.org>
+In-Reply-To: <4E5C82E8.9090400@cn.fujitsu.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
+On Tue, 2011-08-30 at 14:27 +0800, Miao Xie wrote:
+> > 
+> > Unfortunately it results in freeze of system and I cannot give more
+> > details. Sometimes it happens not from fcron but then it does not result
+> > in freeze (???).
+> 
+> Could you give me the method to reproduce it?
+> 
+> Thanks
+> Miao
 
---=-KSX7Rz0DnTCGZBShav/I
-Content-Type: text/plain; charset="UTF-8"
-Content-Transfer-Encoding: quoted-printable
+Sorry for spamming in this thread but I'm trying to post my findings in
+hope that somebody will understand what's going on.
 
-I've noticed that:
+Recent crash gave some valuable information IMHO:
 
- - with x86-64 Fedora 15 DVD install images:
-   - du -sh <ROOT VOLUME> was 36 GB
-   - btrfs df | grep -i data have shown over 40 GB used
- - without
-   - du -sh <ROOT VOLUME> is 34 GB
-   - btrfs df | grep -i data have shown less then 34 GB used
+ 1. I started the autocompletion of path in zsh
+ 2. At some point the zsh hanged. In ps the process was listed as
+runnable
+ 3. Any access to root volume (the one that zsh was trying to readdir)
+finished in hang.
+ 4. I was able to access the child volume (/home)
+ 5. After some time the bug is hit. At this time strange things happens
+(screen freeze etc.). I guess that there is some strange interaction
+between KMS, X and now-hanged composite manager
 
-It seems that iso files are considered compressable while they may not be (=
-and penalty is severe - 3x).
+Next time it happend (also during listing root directory of volume 0) I
+observed the following thing - I can log out and unmount home but the
+volume 0 remains busy and cannot be unmounted.
+
+Things to consider:
+
+ - It is not enabled/disabled by any mount option
+ - Is it triggered when the parent volume (say volume 0) and child
+volume are both mounted?
+ - Which case is it failing (I've tried to add printk but I cannot find
+the option in printk to print u64)
+ - Why it happens only during night?
 
 Regards
-
-=20
-
-
---=-KSX7Rz0DnTCGZBShav/I
-Content-Type: application/pgp-signature; name="signature.asc"
-Content-Description: This is a digitally signed message part
-
------BEGIN PGP SIGNATURE-----
-Version: GnuPG v2.0.18 (GNU/Linux)
-
-iQIcBAABAwAGBQJOdn+hAAoJEJIdee2Vr4aPqxkP/27anNkTpd5IWMVqycFXEm2p
-pxpxTp3WlJ7czRS7YvLocC6oOlodNrlProxRl9ZOWIgAOP9an8aeznzW+Hfp5ola
-Ldvjefp95k+JZtFXLy+fu+dS3501uyDp09dMEXr62c0yc2tdmSY77BoaDtDhsevi
-y/geY/vnzvwS+3z4mHEt5DG29PttrDtWOkW/SFQmifZ4+Qz9thEft3+Pw5xxBnMm
-10tNNh1+RBu5HwE0VjYdLTkrUmGDeZN7N1ZYvF9htMUTCpQnJ0czu7pKeuhigZqM
-vcKHrEHt9GJNIy20LJRAO3KgVwBiknPgXQeyd7cxdNhD9k7je1z92G+sYg316wv1
-WQXmpIKTgk+D1LPYuDJOSmPYdLgouCvOPzMj1ca7gp58qDGLWoWzvKZC0uOsbmeS
-xjRnm2WNohl2+IyUcvlHF06xs3T0vrlQ7YnVqnOlX3JXzQJuI5DabpCMKXfQLtrx
-agM6/nrd0Jw78INkdAddJvqFMv2cLl/zo4cFLcJaEvq+8ZYo7ZKatt0//gS1CCbD
-I/fjlsoCsew7KLsiAYXEnN3ZpCAcIhDhjxxkKXinkO96F/qfmtV6jmwHO53uGvbo
-uRexKLaqpig8IVYB8y6GTqRcLCPw06laHGivPZ6gGOzmEf6sNUVEBAjHcd9kMWIL
-MI7UgJpGSrPZOFzRpW+f
-=RC1t
------END PGP SIGNATURE-----
-
---=-KSX7Rz0DnTCGZBShav/I--
-
 

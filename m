@@ -1,46 +1,67 @@
 From: Josef Bacik <josef@redhat.com>
-Subject: Re: WARNING: at fs/btrfs/inode.c:2193 btrfs_orphan_commit_root+0xb0/0xc0
- [btrfs]()
-Date: Mon, 19 Sep 2011 11:49:40 -0400
-Message-ID: <4E776494.6050706@redhat.com>
-References: <4E6BDAEB.7020206@tuxadero.com> <4E6EABAF.9010903@cn.fujitsu.com> <Pine.LNX.4.64.1109151137420.17623@cobra.newdream.net> <20110915195556.GI22205@twin.jikos.cz> <4E73788F.3060906@sandia.gov>
-Mime-Version: 1.0
-Content-Type: text/plain; charset=ISO-8859-1
-Cc: dave@jikos.cz, Sage Weil <sage@newdream.net>,
-	Liu Bo <liubo2009@cn.fujitsu.com>, martin@tuxadero.com,
-	ceph-devel@vger.kernel.org, linux-btrfs@vger.kernel.org
-To: Jim Schutt <jaschut@sandia.gov>
-Return-path: <ceph-devel-owner@vger.kernel.org>
-In-Reply-To: <4E73788F.3060906@sandia.gov>
+Subject: [PATCH] Btrfs: make sure to unset trans->block_rsv before running delayed refs
+Date: Mon, 19 Sep 2011 12:00:50 -0400
+Message-ID: <1316448050-8508-1-git-send-email-josef@redhat.com>
+To: linux-btrfs@vger.kernel.org
+Return-path: <linux-btrfs-owner@vger.kernel.org>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 09/16/2011 12:25 PM, Jim Schutt wrote:
-> David Sterba wrote:
->> On Thu, Sep 15, 2011 at 11:44:09AM -0700, Sage Weil wrote:
->>> On Tue, 13 Sep 2011, Liu Bo wrote:
->>>> On 09/11/2011 05:47 AM, Martin Mailand wrote:
->>>>> Hi
->>>>> I am hitting this Warning reproducible, the workload is a ceph osd,
->>>>> kernel ist 3.1.0-rc5.
->>>>>
->>>> Have posted a patch for this:
->>>>
->>>> http://marc.info/?l=linux-btrfs&m=131547325515336&w=2
->>> We're still seeing this with -rc6, which includes 98c9942 and 65450aa.
->>
->> Me too, for the
->> WARNING: at fs/btrfs/extent-tree.c:5711
->> btrfs_alloc_free_block+0x180/0x350 [btrfs]()
->>
-> 
-> FWIW, I'm seeing a slightly different case, while testing branch
-> integration/btrfs-next (commit 2828cbd9620e03) from
-> git://repo.or.cz/linux-2.6/btrfs-unstable.git merged into branch
-> master (commit c455ea4f122d21) from git://github.com/torvalds/linux.git
-> 
+Checksums are charged in 2 different ways.  The first case is when we're writing
+to the disk, we account for the new checksums with the delalloc block rsv.  In
+order for this to work we check if we're allocating a block for the csum root
+and if trans->block_rsv == the delalloc block rsv.  But when we're deleting the
+csums because of cow, this is charged to the global block rsv, and is done when
+we run the delayed refs.  So we need to make sure that trans->block_rsv == NULL
+when running the delayed refs.  So set it to NULL and reset it in
+should_end_transaction, and set it to NULL in commit_transaction.  This got rid
+of the ridiculous amount of warnings I was seeing when trying to do a balance.
+Thanks,
 
-Ah yeah sorry I see what's going on here, I just missed a few places we
-call run_delayed_refs() where we can still have trans->block_rsv set.  I
-will fix this and send a patch soon.  Thanks,
+Signed-off-by: Josef Bacik <josef@redhat.com>
+---
+ fs/btrfs/transaction.c |   11 +++++++++++
+ 1 files changed, 11 insertions(+), 0 deletions(-)
 
-Josef
+diff --git a/fs/btrfs/transaction.c b/fs/btrfs/transaction.c
+index 54be080..cadc3c8 100644
+--- a/fs/btrfs/transaction.c
++++ b/fs/btrfs/transaction.c
+@@ -427,17 +427,26 @@ int btrfs_should_end_transaction(struct btrfs_trans_handle *trans,
+ 				 struct btrfs_root *root)
+ {
+ 	struct btrfs_transaction *cur_trans = trans->transaction;
++	struct btrfs_block_rsv *rsv = trans->block_rsv;
+ 	int updates;
+ 
+ 	smp_mb();
+ 	if (cur_trans->blocked || cur_trans->delayed_refs.flushing)
+ 		return 1;
+ 
++	/*
++	 * We need to do this in case we're deleting csums so the global block
++	 * rsv get's used instead of the csum block rsv.
++	 */
++	trans->block_rsv = NULL;
++
+ 	updates = trans->delayed_ref_updates;
+ 	trans->delayed_ref_updates = 0;
+ 	if (updates)
+ 		btrfs_run_delayed_refs(trans, root, updates);
+ 
++	trans->block_rsv = rsv;
++
+ 	return should_end_transaction(trans, root);
+ }
+ 
+@@ -1163,6 +1172,8 @@ int btrfs_commit_transaction(struct btrfs_trans_handle *trans,
+ 
+ 	btrfs_run_ordered_operations(root, 0);
+ 
++	trans->block_rsv = NULL;
++
+ 	/* make a pass through all the delayed refs we have so far
+ 	 * any runnings procs may add more while we are here
+ 	 */
+-- 
+1.7.5.2
+

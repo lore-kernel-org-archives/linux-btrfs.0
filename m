@@ -1,35 +1,29 @@
 From: Li Zefan <lizf@cn.fujitsu.com>
-Subject: Re: Inefficient storing of ISO images with compress=lzo
-Date: Mon, 19 Sep 2011 10:53:45 +0800
-Message-ID: <4E76AEB9.4080109@cn.fujitsu.com>
-References: <1316388769.2499.4.camel@picard>
+Subject: Re: [PATCH] Btrfs: fix pages truncation in btrfs_ioctl_clone()
+Date: Mon, 19 Sep 2011 11:07:14 +0800
+Message-ID: <4E76B1E2.3070402@cn.fujitsu.com>
+References: <4E731009.2030202@cn.fujitsu.com> <Pine.LNX.4.64.1109160934590.11043@cobra.newdream.net>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=UTF-8
-Cc: linux-btrfs@vger.kernel.org
-To: uzytkownik2@gmail.com
+Content-Type: text/plain; charset=ISO-8859-1
+Cc: "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
+To: Sage Weil <sage@newdream.net>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <1316388769.2499.4.camel@picard>
+In-Reply-To: <Pine.LNX.4.64.1109160934590.11043@cobra.newdream.net>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Maciej Marcin Piechotka wrote:
-> I've noticed that:
+>> Also move the function before locking extent state.
 > 
->  - with x86-64 Fedora 15 DVD install images:
->    - du -sh <ROOT VOLUME> was 36 GB
->    - btrfs df | grep -i data have shown over 40 GB used
->  - without
->    - du -sh <ROOT VOLUME> is 34 GB
->    - btrfs df | grep -i data have shown less then 34 GB used
+> Hmm, any reason?  i_mutex protects us from a racing write(2), but what 
+> about a racing mmap()?  e.g.
 > 
-> It seems that iso files are considered compressable while they may not be (and penalty is severe - 3x).
+> cloner: truncates dest pages
+> writer: mmap -> page_mkwrite locks extent, creates new dirty page, unlocks
+> cloner: locks extent, clones, unlocks extent
 > 
 
-With compress option specified, btrfs will try to compress the file, at most
-128K at one time, and if the compressed result is not smaller, the file will
-be marked as uncompressable.
+(besides Chris' comments)
 
-I just tried with Fedora-14-i386-DVD.iso, and the first 896K is compressed,
-with a compress ratio about 71.7%, and the remaining data is not compressed.
+How can we avoid the race on dst file by locking src file extent state..
 
 --
 Li Zefan

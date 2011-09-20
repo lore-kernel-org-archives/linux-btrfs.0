@@ -1,51 +1,116 @@
-From: Li Zefan <lizf@cn.fujitsu.com>
-Subject: Re: Inefficient storing of ISO images with compress=lzo
-Date: Tue, 20 Sep 2011 10:19:20 +0800
-Message-ID: <4E77F828.5030401@cn.fujitsu.com>
-References: <1316388769.2499.4.camel@picard>	 <4E76AEB9.4080109@cn.fujitsu.com> <1316473579.31049.2.camel@picard>
-Mime-Version: 1.0
-Content-Type: text/plain; charset=UTF-8
-Cc: linux-btrfs@vger.kernel.org
-To: Maciej Marcin Piechotka <uzytkownik2@gmail.com>
-Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <1316473579.31049.2.camel@picard>
+From: Johannes Weiner <jweiner@redhat.com>
+Subject: [patch 1/4] mm: exclude reserved pages from dirtyable memory
+Date: Tue, 20 Sep 2011 15:45:12 +0200
+Message-ID: <1316526315-16801-2-git-send-email-jweiner@redhat.com>
+References: <1316526315-16801-1-git-send-email-jweiner@redhat.com>
+Cc: Mel Gorman <mgorman@suse.de>, Christoph Hellwig <hch@infradead.org>,
+        Dave Chinner <david@fromorbit.com>,
+        Wu Fengguang <fengguang.wu@intel.com>, Jan Kara <jack@suse.cz>,
+        Rik van Riel <riel@redhat.com>, Minchan Kim <minchan.kim@gmail.com>,
+        Chris Mason <chris.mason@oracle.com>, "Theodore Ts'o" <tytso@mit.edu>,
+        Andreas Dilger <adilger.kernel@dilger.ca>, xfs@oss.sgi.com,
+        linux-btrfs@vger.kernel.org, linux-ext4@vger.kernel.org,
+        linux-mm@kvack.org, linux-fsdevel@vger.kernel.org,
+        linux-kernel@vger.kernel.org
+To: Andrew Morton <akpm@linux-foundation.org>
+Return-path: <owner-linux-mm@kvack.org>
+In-Reply-To: <1316526315-16801-1-git-send-email-jweiner@redhat.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-07:06, Maciej Marcin Piechotka wrote:
-> On Mon, 2011-09-19 at 10:53 +0800, Li Zefan wrote:
->> Maciej Marcin Piechotka wrote:
->>> I've noticed that:
->>>
->>>  - with x86-64 Fedora 15 DVD install images:
->>>    - du -sh <ROOT VOLUME> was 36 GB
->>>    - btrfs df | grep -i data have shown over 40 GB used
->>>  - without
->>>    - du -sh <ROOT VOLUME> is 34 GB
->>>    - btrfs df | grep -i data have shown less then 34 GB used
->>>
->>> It seems that iso files are considered compressable while they may not be (and penalty is severe - 3x).
->>>
->>
->> With compress option specified, btrfs will try to compress the file, at most
->> 128K at one time, and if the compressed result is not smaller, the file will
->> be marked as uncompressable.
->>
->> I just tried with Fedora-14-i386-DVD.iso, and the first 896K is compressed,
->> with a compress ratio about 71.7%, and the remaining data is not compressed.
->>
->> --
->> Li Zefan
-> 
-> Just a question from person who don't know how btrfs operates - what if
-> the beginning of file is well compressable and the rest is not?
-> 
+The amount of dirtyable pages should not include the total number of
+free pages: there is a number of reserved pages that the page
+allocator and kswapd always try to keep free.
 
-It's explained in the previous mail - the beginning part will be compressed,
-and the rest will not.
+The closer (reclaimable pages - dirty pages) is to the number of
+reserved pages, the more likely it becomes for reclaim to run into
+dirty pages:
 
-> In any case the compression was my uneducated guess where is missing
-> 4GB.
-> 
+       +----------+ ---
+       |   anon   |  |
+       +----------+  |
+       |          |  |
+       |          |  -- dirty limit new    -- flusher new
+       |   file   |  |                     |
+       |          |  |                     |
+       |          |  -- dirty limit old    -- flusher old
+       |          |                        |
+       +----------+                       --- reclaim
+       | reserved |
+       +----------+
+       |  kernel  |
+       +----------+
 
-It probably has nothing to do with compression. You can try without compress=lzo,
-and see if the issue still exists.
+Not treating reserved pages as dirtyable on a global level is only a
+conceptual fix.  In reality, dirty pages are not distributed equally
+across zones and reclaim runs into dirty pages on a regular basis.
+
+But it is important to get this right before tackling the problem on a
+per-zone level, where the distance between reclaim and the dirty pages
+is mostly much smaller in absolute numbers.
+
+Signed-off-by: Johannes Weiner <jweiner@redhat.com>
+---
+ include/linux/mmzone.h |    1 +
+ mm/page-writeback.c    |    8 +++++---
+ mm/page_alloc.c        |    1 +
+ 3 files changed, 7 insertions(+), 3 deletions(-)
+
+diff --git a/include/linux/mmzone.h b/include/linux/mmzone.h
+index 1ed4116..e28f8e0 100644
+--- a/include/linux/mmzone.h
++++ b/include/linux/mmzone.h
+@@ -316,6 +316,7 @@ struct zone {
+ 	 * sysctl_lowmem_reserve_ratio sysctl changes.
+ 	 */
+ 	unsigned long		lowmem_reserve[MAX_NR_ZONES];
++	unsigned long		totalreserve_pages;
+ 
+ #ifdef CONFIG_NUMA
+ 	int node;
+diff --git a/mm/page-writeback.c b/mm/page-writeback.c
+index da6d263..9f896db 100644
+--- a/mm/page-writeback.c
++++ b/mm/page-writeback.c
+@@ -169,8 +169,9 @@ static unsigned long highmem_dirtyable_memory(unsigned long total)
+ 		struct zone *z =
+ 			&NODE_DATA(node)->node_zones[ZONE_HIGHMEM];
+ 
+-		x += zone_page_state(z, NR_FREE_PAGES) +
+-		     zone_reclaimable_pages(z);
++		x += zone_page_state(z, NR_FREE_PAGES) -
++			zone->totalreserve_pages;
++		x += zone_reclaimable_pages(z);
+ 	}
+ 	/*
+ 	 * Make sure that the number of highmem pages is never larger
+@@ -194,7 +195,8 @@ static unsigned long determine_dirtyable_memory(void)
+ {
+ 	unsigned long x;
+ 
+-	x = global_page_state(NR_FREE_PAGES) + global_reclaimable_pages();
++	x = global_page_state(NR_FREE_PAGES) - totalreserve_pages;
++	x += global_reclaimable_pages();
+ 
+ 	if (!vm_highmem_is_dirtyable)
+ 		x -= highmem_dirtyable_memory(x);
+diff --git a/mm/page_alloc.c b/mm/page_alloc.c
+index 1dba05e..7e8e2ee 100644
+--- a/mm/page_alloc.c
++++ b/mm/page_alloc.c
+@@ -5075,6 +5075,7 @@ static void calculate_totalreserve_pages(void)
+ 
+ 			if (max > zone->present_pages)
+ 				max = zone->present_pages;
++			zone->totalreserve_pages = max;
+ 			reserve_pages += max;
+ 		}
+ 	}
+-- 
+1.7.6
+
+--
+To unsubscribe, send a message with 'unsubscribe linux-mm' in
+the body to majordomo@kvack.org.  For more info on Linux MM,
+see: http://www.linux-mm.org/ .
+Fight unfair telecom internet charges in Canada: sign http://stopthemeter.ca/
+Don't email: <a href=mailto:"dont@kvack.org"> email@kvack.org </a>

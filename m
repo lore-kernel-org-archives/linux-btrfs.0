@@ -1,36 +1,35 @@
-From: Rik van Riel <riel@redhat.com>
-Subject: Re: [patch 4/4] Btrfs: pass __GFP_WRITE for buffered write page allocations
-Date: Tue, 20 Sep 2011 14:41:16 -0400
-Message-ID: <4E78DE4C.3040703@redhat.com>
-References: <1316526315-16801-1-git-send-email-jweiner@redhat.com> <1316526315-16801-5-git-send-email-jweiner@redhat.com>
-Mime-Version: 1.0
-Content-Type: text/plain; charset=ISO-8859-1; format=flowed
-Cc: Andrew Morton <akpm@linux-foundation.org>, Mel Gorman <mgorman@suse.de>,
-        Christoph Hellwig <hch@infradead.org>,
-        Dave Chinner <david@fromorbit.com>,
-        Wu Fengguang <fengguang.wu@intel.com>, Jan Kara <jack@suse.cz>,
-        Minchan Kim <minchan.kim@gmail.com>,
-        Chris Mason <chris.mason@oracle.com>, "Theodore Ts'o" <tytso@mit.edu>,
-        Andreas Dilger <adilger.kernel@dilger.ca>, xfs@oss.sgi.com,
-        linux-btrfs@vger.kernel.org, linux-ext4@vger.kernel.org,
-        linux-mm@kvack.org, linux-fsdevel@vger.kernel.org,
-        linux-kernel@vger.kernel.org
-To: Johannes Weiner <jweiner@redhat.com>
-Return-path: <owner-linux-mm@kvack.org>
-In-Reply-To: <1316526315-16801-5-git-send-email-jweiner@redhat.com>
+From: Chris Mason <chris.mason@oracle.com>
+Subject: [GIT PULL] missed btrfs fix
+Date: Tue, 20 Sep 2011 17:00:21 -0400
+Message-ID: <1316551659-sup-7171@shiny>
+Content-Type: text/plain; charset=UTF-8
+Cc: Linus Torvalds <torvalds@linux-foundation.org>,
+	"linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>,
+	"linux-kernel@vger.kernel.org" <linux-kernel@vger.kernel.org>
+To: Sage Weil <sage@newdream.net>
+Return-path: <linux-kernel-owner@vger.kernel.org>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 09/20/2011 09:45 AM, Johannes Weiner wrote:
-> Tell the page allocator that pages allocated for a buffered write are
-> expected to become dirty soon.
->
-> Signed-off-by: Johannes Weiner<jweiner@redhat.com>
+Sage mentioned I was missing a patch.  So I've retested and updated the
+git tree.  Since Linus did pull my tree yesterday, here's a new pull
+request with the single commit.
 
-Reviewed-by: Rik van Riel <riel@redhat.com>
+Linus I have this in two flavors.  One is merged on top of my for-linus
+branch, which was 3.1-rc6 + my last pull request:
 
---
-To unsubscribe, send a message with 'unsubscribe linux-mm' in
-the body to majordomo@kvack.org.  For more info on Linux MM,
-see: http://www.linux-mm.org/ .
-Fight unfair telecom internet charges in Canada: sign http://stopthemeter.ca/
-Don't email: <a href=mailto:"dont@kvack.org"> email@kvack.org </a>
+head: 0a7a0519d1789f3a222849421dbe91b6bddb88f5
+git://github.com/chrismason/linux.git for-linus
+
+Second is just against the btrfs-3.0 tree.  I have the two branches just
+so the N-1 world can update to the latest fixes without running the rest
+of the rc kernel.  I know in the git universe these are all the same,
+but I'm assuming you'll want to skip my merge commit:
+
+head: b6f3409b2197e8fcedb43e6600e37b7cfbe0715b
+git://github.com/chrismason/linux.git btrfs-3.0
+
+Sage Weil (1) commits (+6/-1):
+    Btrfs: reserve sufficient space for ioctl clone
+
+ fs/btrfs/ioctl.c |    7 ++++++-
+ 1 files changed, 6 insertions(+), 1 deletions(-)

@@ -1,68 +1,54 @@
-From: Sage Weil <sage@newdream.net>
-Subject: Re: [GIT PULL] Btrfs fixes
-Date: Tue, 20 Sep 2011 09:19:47 -0700 (PDT)
-Message-ID: <Pine.LNX.4.64.1109200917500.7760@cobra.newdream.net>
-References: <1316476217-sup-4802@shiny>
+From: Rik van Riel <riel@redhat.com>
+Subject: Re: [patch 2/4] mm: writeback: distribute write pages across allowable
+ zones
+Date: Tue, 20 Sep 2011 14:36:00 -0400
+Message-ID: <4E78DD10.4000900@redhat.com>
+References: <1316526315-16801-1-git-send-email-jweiner@redhat.com> <1316526315-16801-3-git-send-email-jweiner@redhat.com>
 Mime-Version: 1.0
-Content-Type: TEXT/PLAIN; charset=US-ASCII
-Cc: Linus Torvalds <torvalds@linux-foundation.org>,
-	"linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>,
-	"linux-kernel@vger.kernel.org" <linux-kernel@vger.kernel.org>
-To: Chris Mason <chris.mason@oracle.com>
-Return-path: <linux-kernel-owner@vger.kernel.org>
-In-Reply-To: <1316476217-sup-4802@shiny>
+Content-Type: text/plain; charset=ISO-8859-1; format=flowed
+Cc: Andrew Morton <akpm@linux-foundation.org>, Mel Gorman <mgorman@suse.de>,
+        Christoph Hellwig <hch@infradead.org>,
+        Dave Chinner <david@fromorbit.com>,
+        Wu Fengguang <fengguang.wu@intel.com>, Jan Kara <jack@suse.cz>,
+        Minchan Kim <minchan.kim@gmail.com>,
+        Chris Mason <chris.mason@oracle.com>, "Theodore Ts'o" <tytso@mit.edu>,
+        Andreas Dilger <adilger.kernel@dilger.ca>, xfs@oss.sgi.com,
+        linux-btrfs@vger.kernel.org, linux-ext4@vger.kernel.org,
+        linux-mm@kvack.org, linux-fsdevel@vger.kernel.org,
+        linux-kernel@vger.kernel.org
+To: Johannes Weiner <jweiner@redhat.com>
+Return-path: <owner-linux-mm@kvack.org>
+In-Reply-To: <1316526315-16801-3-git-send-email-jweiner@redhat.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hi Chris-
+On 09/20/2011 09:45 AM, Johannes Weiner wrote:
+> This patch allows allocators to pass __GFP_WRITE when they know in
+> advance that the allocated page will be written to and become dirty
+> soon.  The page allocator will then attempt to distribute those
+> allocations across zones, such that no single zone will end up full of
+> dirty, and thus more or less, unreclaimable pages.
+>
+> The global dirty limits are put in proportion to the respective zone's
+> amount of dirtyable memory and allocations diverted to other zones
+> when the limit is reached.
+>
+> For now, the problem remains for NUMA configurations where the zones
+> allowed for allocation are in sum not big enough to trigger the global
+> dirty limits, but a future approach to solve this can reuse the
+> per-zone dirty limit infrastructure laid out in this patch to have
+> dirty throttling and the flusher threads consider individual zones.
+>
+> Signed-off-by: Johannes Weiner<jweiner@redhat.com>
 
-This pull misses the clone reservation fix again... :)
+Reviewed-by: Rik van Riel <riel@redhat.com>
 
-	http://www.spinics.net/lists/linux-btrfs/msg11826.html
+The amount of work done in a __GFP_WRITE allocation looks
+a little daunting, but doing that a million times probably
+outweighs waiting on the disk even once, so...
 
-Thanks!
-sage
-
-
-
-On Mon, 19 Sep 2011, Chris Mason wrote:
-
-> Hi everyone,
-> 
-> The for-linus branch of the btrfs tree on github:
-> 
-> Head commit: a66e7cc626f42de6c745963fe0d807518fa49d39
-> git://github.com/chrismason/linux.git for-linus
-> 
-> Has the following fixes.  for-linus is against rc6, since some of these
-> are regression fixes for earlier 3.1 btrfs commits.  The most important
-> of the bunch is Josef's dentry fix, which avoids enoents if we race with
-> multiple procs hitting on the same inode.  This bug is btrfs-specific,
-> it came in with his optimization to cache the inode location during
-> readdir.
-> 
-> Li Zefan (3) commits (+9/-5):
->     Btrfs: don't make a file partly checksummed through file clone (+5/-0)
->     Btrfs: don't change inode flag of the dest clone file (+0/-1)
->     Btrfs: fix pages truncation in btrfs_ioctl_clone() (+4/-4)
-> 
-> Josef Bacik (1) commits (+11/-2):
->     Btrfs: only clear the need lookup flag after the dentry is setup
-> 
-> Jeff Liu (1) commits (+7/-2):
->     BTRFS: Fix lseek return value for error
-> 
-> Hidetoshi Seto (1) commits (+3/-2):
->     btrfs: fix d_off in the first dirent
-> 
-> Total: (6) commits (+30/-11)
-> 
->  fs/btrfs/file.c  |    9 +++++++--
->  fs/btrfs/inode.c |   18 ++++++++++++++----
->  fs/btrfs/ioctl.c |   14 +++++++++-----
->  3 files changed, 30 insertions(+), 11 deletions(-)
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
-> 
-> 
+--
+To unsubscribe, send a message with 'unsubscribe linux-mm' in
+the body to majordomo@kvack.org.  For more info on Linux MM,
+see: http://www.linux-mm.org/ .
+Fight unfair telecom internet charges in Canada: sign http://stopthemeter.ca/
+Don't email: <a href=mailto:"dont@kvack.org"> email@kvack.org </a>

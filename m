@@ -1,62 +1,173 @@
-From: Mathieu Chouquet-Stringer <mathieu@csetco.com>
-Subject: Btrfs bug with g38867a2 and a question
-Date: Wed, 21 Sep 2011 20:53:50 +0200
-Message-ID: <20110921185350.GA6618@kashmir>
-Mime-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
+From: Josef Bacik <josef@redhat.com>
+Subject: [PATCH] Btrfs: use the inode's mapping mask for allocating pages
+Date: Wed, 21 Sep 2011 15:21:10 -0400
+Message-ID: <1316632870-17051-1-git-send-email-josef@redhat.com>
 To: linux-btrfs@vger.kernel.org
 Return-path: <linux-btrfs-owner@vger.kernel.org>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-	Hello all,
+Johannes pointed out we were allocating only kernel pages for doing writes,
+which is kind of a big deal if you are on 32bit and have more than a gig of ram.
+So fix our allocations to use the mapping's gfp but still clear __GFP_FS so we
+don't re-enter.  Thanks,
 
-I've been using BTRFS for quite some time on this laptop and I just
-recompiled the latest kernel from git (3.1.0-rc6-00247-g38867a2).  After
-a couple minutes, I hit this bug twice (this a hand written transcript,
-pics here [1]) kernel BUG at fs/btrfs/inode.c:785!
+Reported-by: Johannes Weiner <jweiner@redhat.com>
+Signed-off-by: Josef Bacik <josef@redhat.com>
+---
+ fs/btrfs/ctree.h            |    6 ++++++
+ fs/btrfs/file.c             |    3 ++-
+ fs/btrfs/free-space-cache.c |    6 ++++--
+ fs/btrfs/inode.c            |    3 ++-
+ fs/btrfs/ioctl.c            |    3 ++-
+ fs/btrfs/relocation.c       |    3 ++-
+ 6 files changed, 18 insertions(+), 6 deletions(-)
 
-stack being:
-
-_raw_spin_unlock_irqrestore
-__wake_up
-btrfs_tree_read_unlock_blocking
-free_extent_buffer
-run_delalloc_nocow
-run_dellaloc_range
-free_extent_state
-find_lock_delalloc_range.constrpop
-__extent_writepage
-...
-
-Note the stack trace is exactly the same in these two crashes.  Since
-google found nothing, I'm asking for your help!
-
-Looking at the source, line 785 is function cow_file_range, code:
-BUG_ON(btrfs_is_free_space_inode(root, inode));
-
-My fs (a simple partition on a OCZ-VERTEX2 ssd) is mounted with the
-following options:
-ssd,discard,autodefrag
-
-with disk space caching as it had been added earlier:
-btrfs: disk space caching is enabled
-Btrfs detected SSD devices, enabling SSD mode
-
-Anything I could do to help debug this one?
-
-Moreover, I've been experiencing long lags when my computer seems to be
-just busy doing writes (right now I'm on 3.1.0-rc6-00067-gf1fcd9f): it's
-not hung or anything except all IOs are blocked (hence I can start
-anything to see what's going on but I have a gauge on my xfce panel that
-goes 100% with writes).  After some point, it just recovers and
-everything is back to normal.  I've tried capturing something with
-sysrq-t but I haven't been able to find anything striking.  Should I
-just submit something similar to this mailing list?
-
-[1] http://mathieu.csetco.com/btrfs-crash1.jpg
-    http://mathieu.csetco.com/btrfs-crash2.jpg
-
+diff --git a/fs/btrfs/ctree.h b/fs/btrfs/ctree.h
+index a5faf8e..47dea71 100644
+--- a/fs/btrfs/ctree.h
++++ b/fs/btrfs/ctree.h
+@@ -30,6 +30,7 @@
+ #include <linux/kobject.h>
+ #include <trace/events/btrfs.h>
+ #include <asm/kmap_types.h>
++#include <linux/pagemap.h>
+ #include "extent_io.h"
+ #include "extent_map.h"
+ #include "async-thread.h"
+@@ -2117,6 +2118,11 @@ static inline bool btrfs_mixed_space_info(struct btrfs_space_info *space_info)
+ 		(space_info->flags & BTRFS_BLOCK_GROUP_DATA));
+ }
+ 
++static inline gfp_t btrfs_alloc_write_mask(struct address_space *mapping)
++{
++	return mapping_gfp_mask(mapping) & ~__GFP_FS;
++}
++
+ /* extent-tree.c */
+ static inline u64 btrfs_calc_trans_metadata_size(struct btrfs_root *root,
+ 						 unsigned num_items)
+diff --git a/fs/btrfs/file.c b/fs/btrfs/file.c
+index 4cd3329..1beefc1 100644
+--- a/fs/btrfs/file.c
++++ b/fs/btrfs/file.c
+@@ -1067,6 +1067,7 @@ static noinline int prepare_pages(struct btrfs_root *root, struct file *file,
+ 	int i;
+ 	unsigned long index = pos >> PAGE_CACHE_SHIFT;
+ 	struct inode *inode = fdentry(file)->d_inode;
++	gfp_t mask = btrfs_alloc_write_mask(inode->i_mapping);
+ 	int err = 0;
+ 	int faili = 0;
+ 	u64 start_pos;
+@@ -1084,7 +1085,7 @@ static noinline int prepare_pages(struct btrfs_root *root, struct file *file,
+ again:
+ 	for (i = 0; i < num_pages; i++) {
+ 		pages[i] = find_or_create_page(inode->i_mapping, index + i,
+-					       GFP_NOFS);
++					       mask);
+ 		if (!pages[i]) {
+ 			faili = i - 1;
+ 			err = -ENOMEM;
+diff --git a/fs/btrfs/free-space-cache.c b/fs/btrfs/free-space-cache.c
+index e5ceaf4..18c03d3 100644
+--- a/fs/btrfs/free-space-cache.c
++++ b/fs/btrfs/free-space-cache.c
+@@ -250,6 +250,7 @@ int __load_free_space_cache(struct btrfs_root *root, struct inode *inode,
+ 	u64 num_bitmaps;
+ 	u64 generation;
+ 	pgoff_t index = 0;
++	gfp_t mask = btrfs_alloc_write_mask(inode->i_mapping);
+ 	int ret = 0;
+ 
+ 	INIT_LIST_HEAD(&bitmaps);
+@@ -306,7 +307,7 @@ int __load_free_space_cache(struct btrfs_root *root, struct inode *inode,
+ 		if (!num_entries && !num_bitmaps)
+ 			break;
+ 
+-		page = find_or_create_page(inode->i_mapping, index, GFP_NOFS);
++		page = find_or_create_page(inode->i_mapping, index, mask);
+ 		if (!page)
+ 			goto free_cache;
+ 
+@@ -559,6 +560,7 @@ int __btrfs_write_out_cache(struct btrfs_root *root, struct inode *inode,
+ 	u64 start, end, len;
+ 	u64 bytes = 0;
+ 	u32 crc = ~(u32)0;
++	gfp_t mask = btrfs_alloc_write_mask(inode->i_mapping);
+ 	int index = 0, num_pages = 0;
+ 	int entries = 0;
+ 	int bitmaps = 0;
+@@ -608,7 +610,7 @@ int __btrfs_write_out_cache(struct btrfs_root *root, struct inode *inode,
+ 	 * know and don't freak out.
+ 	 */
+ 	while (index < num_pages) {
+-		page = find_or_create_page(inode->i_mapping, index, GFP_NOFS);
++		page = find_or_create_page(inode->i_mapping, index, mask);
+ 		if (!page) {
+ 			int i;
+ 
+diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
+index 018c0fd..e80fcb5 100644
+--- a/fs/btrfs/inode.c
++++ b/fs/btrfs/inode.c
+@@ -3282,6 +3282,7 @@ static int btrfs_truncate_page(struct address_space *mapping, loff_t from)
+ 	pgoff_t index = from >> PAGE_CACHE_SHIFT;
+ 	unsigned offset = from & (PAGE_CACHE_SIZE-1);
+ 	struct page *page;
++	gfp_t mask = btrfs_alloc_write_mask(mapping);
+ 	int ret = 0;
+ 	u64 page_start;
+ 	u64 page_end;
+@@ -3294,7 +3295,7 @@ static int btrfs_truncate_page(struct address_space *mapping, loff_t from)
+ 
+ 	ret = -ENOMEM;
+ again:
+-	page = find_or_create_page(mapping, index, GFP_NOFS);
++	page = find_or_create_page(mapping, index, mask);
+ 	if (!page) {
+ 		btrfs_delalloc_release_space(inode, PAGE_CACHE_SIZE);
+ 		goto out;
+diff --git a/fs/btrfs/ioctl.c b/fs/btrfs/ioctl.c
+index 970977a..fe8f6a3 100644
+--- a/fs/btrfs/ioctl.c
++++ b/fs/btrfs/ioctl.c
+@@ -843,6 +843,7 @@ static int cluster_pages_for_defrag(struct inode *inode,
+ 	int i_done;
+ 	struct btrfs_ordered_extent *ordered;
+ 	struct extent_state *cached_state = NULL;
++	gfp_t mask = btrfs_alloc_write_mask(inode->i_mapping);
+ 
+ 	if (isize == 0)
+ 		return 0;
+@@ -860,7 +861,7 @@ again:
+ 	for (i = 0; i < num_pages; i++) {
+ 		struct page *page;
+ 		page = find_or_create_page(inode->i_mapping,
+-					    start_index + i, GFP_NOFS);
++					    start_index + i, mask);
+ 		if (!page)
+ 			break;
+ 
+diff --git a/fs/btrfs/relocation.c b/fs/btrfs/relocation.c
+index 3ab6740..7fa090f 100644
+--- a/fs/btrfs/relocation.c
++++ b/fs/btrfs/relocation.c
+@@ -2921,6 +2921,7 @@ static int relocate_file_extent_cluster(struct inode *inode,
+ 	unsigned long last_index;
+ 	struct page *page;
+ 	struct file_ra_state *ra;
++	gfp_t mask = btrfs_alloc_write_mask(inode->i_mapping);
+ 	int nr = 0;
+ 	int ret = 0;
+ 
+@@ -2955,7 +2956,7 @@ static int relocate_file_extent_cluster(struct inode *inode,
+ 						  ra, NULL, index,
+ 						  last_index + 1 - index);
+ 			page = find_or_create_page(inode->i_mapping, index,
+-						   GFP_NOFS);
++						   mask);
+ 			if (!page) {
+ 				btrfs_delalloc_release_metadata(inode,
+ 							PAGE_CACHE_SIZE);
 -- 
-Mathieu Chouquet-Stringer                         mathieu@csetco.com
-            The sun itself sees not till heaven clears.
-	             -- William Shakespeare --
+1.7.5.2
+

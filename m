@@ -1,125 +1,62 @@
-From: Mel Gorman <mgorman@suse.de>
-Subject: Re: [patch 1/4] mm: exclude reserved pages from dirtyable memory
-Date: Wed, 21 Sep 2011 16:03:28 +0100
-Message-ID: <20110921150328.GJ4849@suse.de>
-References: <1316526315-16801-1-git-send-email-jweiner@redhat.com>
- <1316526315-16801-2-git-send-email-jweiner@redhat.com>
- <20110921140423.GG4849@suse.de>
+From: Mathieu Chouquet-Stringer <mathieu@csetco.com>
+Subject: Btrfs bug with g38867a2 and a question
+Date: Wed, 21 Sep 2011 20:53:50 +0200
+Message-ID: <20110921185350.GA6618@kashmir>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=iso-8859-15
-Cc: Andrew Morton <akpm@linux-foundation.org>,
-	Christoph Hellwig <hch@infradead.org>,
-	Dave Chinner <david@fromorbit.com>,
-	Wu Fengguang <fengguang.wu@intel.com>, Jan Kara <jack@suse.cz>,
-	Rik van Riel <riel@redhat.com>, Minchan Kim <minchan.kim@gmail.com>,
-	Chris Mason <chris.mason@oracle.com>, Theodore Ts'o <tytso@mit.edu>,
-	Andreas Dilger <adilger.kernel@dilger.ca>, xfs@oss.sgi.com,
-	linux-btrfs@vger.kernel.org, linux-ext4@vger.kernel.org,
-	linux-mm@kvack.org, linux-fsdevel@vger.kernel.org,
-	linux-kernel@vger.kernel.org
-To: Johannes Weiner <jweiner@redhat.com>
-Return-path: <owner-linux-mm@kvack.org>
-In-Reply-To: <20110921140423.GG4849@suse.de>
+Content-Type: text/plain; charset=us-ascii
+To: linux-btrfs@vger.kernel.org
+Return-path: <linux-btrfs-owner@vger.kernel.org>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Wed, Sep 21, 2011 at 03:04:23PM +0100, Mel Gorman wrote:
-> On Tue, Sep 20, 2011 at 03:45:12PM +0200, Johannes Weiner wrote:
-> > The amount of dirtyable pages should not include the total number of
-> > free pages: there is a number of reserved pages that the page
-> > allocator and kswapd always try to keep free.
-> > 
-> > The closer (reclaimable pages - dirty pages) is to the number of
-> > reserved pages, the more likely it becomes for reclaim to run into
-> > dirty pages:
-> > 
-> >        +----------+ ---
-> >        |   anon   |  |
-> >        +----------+  |
-> >        |          |  |
-> >        |          |  -- dirty limit new    -- flusher new
-> >        |   file   |  |                     |
-> >        |          |  |                     |
-> >        |          |  -- dirty limit old    -- flusher old
-> >        |          |                        |
-> >        +----------+                       --- reclaim
-> >        | reserved |
-> >        +----------+
-> >        |  kernel  |
-> >        +----------+
-> > 
-> > Not treating reserved pages as dirtyable on a global level is only a
-> > conceptual fix.  In reality, dirty pages are not distributed equally
-> > across zones and reclaim runs into dirty pages on a regular basis.
-> > 
-> > But it is important to get this right before tackling the problem on a
-> > per-zone level, where the distance between reclaim and the dirty pages
-> > is mostly much smaller in absolute numbers.
-> > 
-> > Signed-off-by: Johannes Weiner <jweiner@redhat.com>
-> > ---
-> >  include/linux/mmzone.h |    1 +
-> >  mm/page-writeback.c    |    8 +++++---
-> >  mm/page_alloc.c        |    1 +
-> >  3 files changed, 7 insertions(+), 3 deletions(-)
-> > 
-> > diff --git a/include/linux/mmzone.h b/include/linux/mmzone.h
-> > index 1ed4116..e28f8e0 100644
-> > --- a/include/linux/mmzone.h
-> > +++ b/include/linux/mmzone.h
-> > @@ -316,6 +316,7 @@ struct zone {
-> >  	 * sysctl_lowmem_reserve_ratio sysctl changes.
-> >  	 */
-> >  	unsigned long		lowmem_reserve[MAX_NR_ZONES];
-> > +	unsigned long		totalreserve_pages;
-> >  
-> 
-> This is nit-picking but totalreserve_pages is a poor name because it's
-> a per-zone value that is one of the lowmem_reserve[] fields instead
-> of a total. After this patch, we have zone->totalreserve_pages and
-> totalreserve_pages but are not related to the same thing.
-> but they are not the same.
-> 
+	Hello all,
 
-As you correctly pointed out to be on IRC, zone->totalreserve_pages
-is not the lowmem_reserve because it takes the high_wmark into
-account. Sorry about that, I should have kept thinking.  The name is
-still poor though because it does not explain what the value is or
-what it means.
+I've been using BTRFS for quite some time on this laptop and I just
+recompiled the latest kernel from git (3.1.0-rc6-00247-g38867a2).  After
+a couple minutes, I hit this bug twice (this a hand written transcript,
+pics here [1]) kernel BUG at fs/btrfs/inode.c:785!
 
-zone->FOO value needs to be related to lowmem_reserve because this
-	is related to balancing zone usage.
+stack being:
 
-zone->FOO value should also be related to the high_wmark because
-	this is avoiding writeback from page reclaim
+_raw_spin_unlock_irqrestore
+__wake_up
+btrfs_tree_read_unlock_blocking
+free_extent_buffer
+run_delalloc_nocow
+run_dellaloc_range
+free_extent_state
+find_lock_delalloc_range.constrpop
+__extent_writepage
+...
 
-err....... umm... this?
+Note the stack trace is exactly the same in these two crashes.  Since
+google found nothing, I'm asking for your help!
 
-	/*
-	 * When allocating a new page that is expected to be
-	 * dirtied soon, the number of free pages and the
-	 * dirty_balance reserve are taken into account. The
-	 * objective is that the globally allowed number of dirty
-	 * pages should be distributed throughout the zones such
-	 * that it is very unlikely that page reclaim will call
-	 * ->writepage.
-	 *
-	 * dirty_balance_reserve takes both lowmem_reserve and
-	 * the high watermark into account. The lowmem_reserve
-	 * is taken into account because we don't want the
-	 * distribution of dirty pages to unnecessarily increase
-	 * lowmem pressure. The watermark is taken into account
-	 * because it's correlated with when kswapd wakes up
-	 * and how long it stays awake.
-	 */
-	unsigned long		dirty_balance_reserve.
+Looking at the source, line 785 is function cow_file_range, code:
+BUG_ON(btrfs_is_free_space_inode(root, inode));
+
+My fs (a simple partition on a OCZ-VERTEX2 ssd) is mounted with the
+following options:
+ssd,discard,autodefrag
+
+with disk space caching as it had been added earlier:
+btrfs: disk space caching is enabled
+Btrfs detected SSD devices, enabling SSD mode
+
+Anything I could do to help debug this one?
+
+Moreover, I've been experiencing long lags when my computer seems to be
+just busy doing writes (right now I'm on 3.1.0-rc6-00067-gf1fcd9f): it's
+not hung or anything except all IOs are blocked (hence I can start
+anything to see what's going on but I have a gauge on my xfce panel that
+goes 100% with writes).  After some point, it just recovers and
+everything is back to normal.  I've tried capturing something with
+sysrq-t but I haven't been able to find anything striking.  Should I
+just submit something similar to this mailing list?
+
+[1] http://mathieu.csetco.com/btrfs-crash1.jpg
+    http://mathieu.csetco.com/btrfs-crash2.jpg
 
 -- 
-Mel Gorman
-SUSE Labs
-
---
-To unsubscribe, send a message with 'unsubscribe linux-mm' in
-the body to majordomo@kvack.org.  For more info on Linux MM,
-see: http://www.linux-mm.org/ .
-Fight unfair telecom internet charges in Canada: sign http://stopthemeter.ca/
-Don't email: <a href=mailto:"dont@kvack.org"> email@kvack.org </a>
+Mathieu Chouquet-Stringer                         mathieu@csetco.com
+            The sun itself sees not till heaven clears.
+	             -- William Shakespeare --

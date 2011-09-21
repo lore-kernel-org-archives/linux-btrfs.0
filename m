@@ -1,19 +1,18 @@
 From: Liu Bo <liubo2009@cn.fujitsu.com>
 Subject: [BUG] kernel BUG at fs/btrfs/relocation.c:2502!
-Date: Wed, 21 Sep 2011 18:06:10 +0800
-Message-ID: <4E79B712.50901@cn.fujitsu.com>
+Date: Wed, 21 Sep 2011 18:07:08 +0800
+Message-ID: <4E79B74C.3090509@cn.fujitsu.com>
 Mime-Version: 1.0
 Content-Type: multipart/mixed;
- boundary="------------030007040703020903090900"
+ boundary="------------090404020702070109070907"
 Cc: Chris Mason <chris.mason@oracle.com>,
-	"Yan, Zheng" <zheng.z.yan@linux.intel.com>,
 	Josef Bacik <josef@redhat.com>, Li Zefan <lizf@cn.fujitsu.com>
 To: Linux Btrfs <linux-btrfs@vger.kernel.org>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
 List-ID: <linux-btrfs.vger.kernel.org>
 
 
---------------030007040703020903090900
+--------------090404020702070109070907
 Content-Transfer-Encoding: 7bit
 Content-Type: text/plain; charset=UTF-8
 
@@ -65,7 +64,8 @@ RIP  [<ffffffffa0430c26>] do_relocation+0x546/0x570 [btrfs]
 ---[ end trace 6a4328153ff7ff17 ]---
 
 
---------------030007040703020903090900
+
+--------------090404020702070109070907
 Content-Type: application/x-tar;
  name="TOOL.tar"
 Content-Disposition: attachment;
@@ -793,4 +793,4 @@ AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
 AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==
 
 
---------------030007040703020903090900--
+--------------090404020702070109070907--

@@ -1,28 +1,18 @@
-From: Mathieu Chouquet-Stringer <mathieu@csetco.com>
-Subject: Re: Btrfs bug with g38867a2 and a question
-Date: Wed, 21 Sep 2011 22:35:25 +0200
-Message-ID: <20110921203525.GA7660@kashmir>
-References: <20110921185350.GA6618@kashmir>
- <4E7A4695.9080106@redhat.com>
+From: Anadon <joshua.r.marshall.1991@gmail.com>
+Subject: Still can't access wiki for btrfs; anybody have a copy of the documentation
+ & source?
+Date: Wed, 21 Sep 2011 16:37:02 -0400
+Message-ID: <4E7A4AEE.6040903@gmail.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Cc: linux-btrfs@vger.kernel.org
-To: Josef Bacik <josef@redhat.com>
+Content-Type: text/plain; charset=ISO-8859-1; format=flowed
+To: linux-btrfs@vger.kernel.org
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <4E7A4695.9080106@redhat.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Wed, Sep 21, 2011 at 04:18:29PM -0400, Josef Bacik wrote:
-> Yup, can you apply this patch and reproduce?  It will print out some
-> debug info before the --- cut here --- line, which is what I need.  Thanks,
+Hello all,
 
-Compiling right now.  That said, I had the same exact trace under
-rc6-00067-gf1fcd9f (right after rebooting to this older kernel) so it
-doesn't seem to be related to the latest git...
-
-Not sure how to trigger the bug though, I'll keep you posted!
-
--- 
-Mathieu Chouquet-Stringer                         mathieu@csetco.com
-            The sun itself sees not till heaven clears.
-	             -- William Shakespeare --
+I'm trying to look into working on some few features for a filesystem, 
+and figured that if they were to be adopted, better work on the current 
+project. I'm looking for the standard documentaion, and a copy of the 
+source.  I have no idea where to look for these since everything still 
+points to kernel.org, and as of this mailing, is still not accessible.

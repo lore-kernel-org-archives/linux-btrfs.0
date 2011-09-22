@@ -1,50 +1,66 @@
-From: Mathieu Chouquet-Stringer <mathieu@csetco.com>
-Subject: Re: Btrfs bug with g38867a2 and a question
-Date: Thu, 22 Sep 2011 12:13:44 +0200
-Message-ID: <20110922101344.GA13667@kashmir>
-References: <20110921185350.GA6618@kashmir>
- <4E7A4695.9080106@redhat.com>
- <20110921231055.GN22205@twin.jikos.cz>
+From: David Sterba <dave@jikos.cz>
+Subject: Re: [PATCH] btrfs: return EINVAL if start > total_bytes in fitrim ioctl
+Date: Thu, 22 Sep 2011 12:15:49 +0200
+Message-ID: <20110922101549.GQ22205@twin.jikos.cz>
+References: <1315233294-27240-1-git-send-email-lczerner@redhat.com>
+Reply-To: dave@jikos.cz
 Mime-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
-Cc: David Sterba <dave@jikos.cz>
-To: Josef Bacik <josef@redhat.com>, linux-btrfs@vger.kernel.org
+Cc: linux-btrfs@vger.kernel.org, jbacik@redhat.com
+To: Lukas Czerner <lczerner@redhat.com>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <20110921231055.GN22205@twin.jikos.cz>
+In-Reply-To: <1315233294-27240-1-git-send-email-lczerner@redhat.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Thu, Sep 22, 2011 at 01:10:55AM +0200, David Sterba wrote:
-> please prefix printk messages with "btrfs: "
+On Mon, Sep 05, 2011 at 04:34:54PM +0200, Lukas Czerner wrote:
+> We should retirn EINVAL if the start is beyond the end of the file
+> system in the btrfs_ioctl_fitrim(). Fix that by adding the appropriate
+> check for it.
+> 
+> Also in the btrfs_trim_fs() it is possible that len+start might overflow
+> if big values are passed. Fix it by decrementing the len so that start+len
+> is equal to the file system size in the worst case.
+> 
+> Signed-off-by: Lukas Czerner <lczerner@redhat.com>
+Reviewed-by: David Sterba <dsterba@suse.cz>
 
-Well my computer crashed before I could reboot with the newly compiled
-kernel.  And now it bugs while it tries to mount the kernel meaning my
-computer is fscked! :-)
-
-Bug at fs/btrfs/free-space-cache.c:1327
-
-(I have a screenshot if needed)
-
-function remove_from_bitmap
-
-        /*
-         * XXX - this can go away after a few releases.
-         *
-         * since the only user of btrfs_remove_free_space is the tree logging
-         * stuff, and the only way to test that is under crash conditions, we
-         * want to have this debug stuff here just in case somethings not
-         * working.  Search the bitmap for the space we are trying to use to
-         * make sure its actually there.  If its not there then we need to stop
-         * because something has gone wrong.
-         */
-        search_start = *offset;
-        search_bytes = *bytes;
-        search_bytes = min(search_bytes, end - search_start + 1);
-        ret = search_bitmap(ctl, bitmap_info, &search_start, &search_bytes);
-===>    BUG_ON(ret < 0 || search_start != *offset);
-
-So question is now: how do I recover from this? :-)
-
--- 
-Mathieu Chouquet-Stringer                         mathieu@csetco.com
-            The sun itself sees not till heaven clears.
-	             -- William Shakespeare --
+> ---
+>  fs/btrfs/ioctl.c |    6 +++++-
+>  1 files changed, 5 insertions(+), 1 deletions(-)
+> 
+> diff --git a/fs/btrfs/ioctl.c b/fs/btrfs/ioctl.c
+> index 970977a..ad890ee 100644
+> --- a/fs/btrfs/ioctl.c
+> +++ b/fs/btrfs/ioctl.c
+> @@ -277,6 +277,7 @@ static noinline int btrfs_ioctl_fitrim(struct file *file, void __user *arg)
+>  	struct fstrim_range range;
+>  	u64 minlen = ULLONG_MAX;
+>  	u64 num_devices = 0;
+> +	u64 total_bytes = btrfs_super_total_bytes(&root->fs_info->super_copy);
+>  	int ret;
+>  
+>  	if (!capable(CAP_SYS_ADMIN))
+> @@ -295,12 +296,15 @@ static noinline int btrfs_ioctl_fitrim(struct file *file, void __user *arg)
+>  		}
+>  	}
+>  	rcu_read_unlock();
+> +
+>  	if (!num_devices)
+>  		return -EOPNOTSUPP;
+> -
+>  	if (copy_from_user(&range, arg, sizeof(range)))
+>  		return -EFAULT;
+> +	if (range.start > total_bytes)
+> +		return -EINVAL;
+>  
+> +	range.len = min(range.len, total_bytes - range.start);
+>  	range.minlen = max(range.minlen, minlen);
+>  	ret = btrfs_trim_fs(root, &range);
+>  	if (ret < 0)
+> -- 
+> 1.7.4.4
+> 
+> --
+> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
+> the body of a message to majordomo@vger.kernel.org
+> More majordomo info at  http://vger.kernel.org/majordomo-info.html

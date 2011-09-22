@@ -1,31 +1,80 @@
-From: Mathieu Chouquet-Stringer <mathieu@csetco.com>
-Subject: Re: Btrfs bug with g38867a2 and a question
-Date: Thu, 22 Sep 2011 21:30:08 +0200
-Message-ID: <20110922193007.GA19088@kashmir>
-References: <20110921185350.GA6618@kashmir>
- <4E7A4695.9080106@redhat.com>
- <20110921231055.GN22205@twin.jikos.cz>
- <CALiWzOg8CQJF7OfMex1uJTa+doDZ8oufV1nAbos99Z4ev-+xKg@mail.gmail.com>
- <4E7B423C.2080007@redhat.com>
- <20110922182222.GA18449@kashmir>
- <4E7B85B3.6080106@redhat.com>
+From: Alex Elder <aelder@sgi.com>
+Subject: Re: [PATCH] xfstests: add new getdents test
+Date: Thu, 22 Sep 2011 15:18:22 -0500
+Message-ID: <1316722702.2009.59.camel@doink>
+References: <1315786747-12109-1-git-send-email-notasas@gmail.com>
+Reply-To: <aelder@sgi.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Cc: dave@jikos.cz, linux-btrfs@vger.kernel.org
-To: Josef Bacik <josef@redhat.com>
+Content-Type: text/plain; charset="UTF-8"
+Cc: <xfs@oss.sgi.com>, <linux-btrfs@vger.kernel.org>
+To: Grazvydas Ignotas <notasas@gmail.com>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <4E7B85B3.6080106@redhat.com>
+In-Reply-To: <1315786747-12109-1-git-send-email-notasas@gmail.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Thu, Sep 22, 2011 at 03:00:03PM -0400, Josef Bacik wrote:
-> Oh wow sorry I sent you the completely wrong patch, I wish I had caught
-> your reply earlier.  Can you run with this patch, which is the one I
-> meant to give you :).  Thanks,
+On Mon, 2011-09-12 at 03:19 +0300, Grazvydas Ignotas wrote:
+> The test checks if no duplicate d_off values are returned and that
+> those values are seekable to the right inodes.
+> 
+> Signed-off-by: Grazvydas Ignotas <notasas@gmail.com>
 
-No worries, I've applied your patch (seems your thunderbird mangled line
-returns) and I'm rebooting...
+I have two minor comments on the C program below,
+but even if you don't want to address them this
+looks good.
 
--- 
-Mathieu Chouquet-Stringer                         mathieu@csetco.com
-            The sun itself sees not till heaven clears.
-	             -- William Shakespeare --
+Reviewed-by: Alex Elder <aelder@sgi.com>
+
+. . .
+
+> +#include <sys/syscall.h>
+> +
+> +struct linux_dirent64 {
+> +	uint64_t	d_ino;
+> +	uint64_t	d_off;
+> +	unsigned short	d_reclen;
+> +	unsigned char	d_type;
+> +	char		d_name[0];
+> +};
+> +
+> +#define BUF_SIZE 4096
+> +#define HISTORY_LEN 1024
+> +
+> +static uint64_t d_off_histoty[HISTORY_LEN];
+> +static uint64_t d_ino_histoty[HISTORY_LEN];
+
+Is "histoty" intentional or a typo?
+
+> +int
+> +main(int argc, char *argv[])
+> +{
+> +	int fd, nread;
+> +	char buf[BUF_SIZE];
+
+. . .
+
+> +
+> +	/* check if seek works correctly */
+> +	d = (struct linux_dirent64 *)buf;
+> +	for (i = total - 1; i >= 0; i--)
+> +	{
+> +		lret = lseek(fd, i > 0 ? d_off_histoty[i - 1] : 0, SEEK_SET);
+> +		if (lret == -1) {
+> +			perror("lseek");
+> +			exit(EXIT_FAILURE);
+> +		}
+> +
+> +		nread = syscall(SYS_getdents64, fd, buf, BUF_SIZE);
+
+You could just use sizeof (struct linux_dirent_64) rather than
+BUF_SIZE here.  I suppose it doesn't hurt but there's no real
+sense in reading more than the one you're going to look at.
+
+> +		if (nread == -1) {
+> +			perror("getdents");
+> +			exit(EXIT_FAILURE);
+> +		}
+> +
+
+. . .
+
+

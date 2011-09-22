@@ -1,127 +1,50 @@
-From: Johannes Weiner <jweiner@redhat.com>
-Subject: Re: [patch 1/4] mm: exclude reserved pages from dirtyable memory
-Date: Thu, 22 Sep 2011 11:03:26 +0200
-Message-ID: <20110922090326.GB29046@redhat.com>
-References: <1316526315-16801-1-git-send-email-jweiner@redhat.com>
- <1316526315-16801-2-git-send-email-jweiner@redhat.com>
- <20110921140423.GG4849@suse.de>
- <20110921150328.GJ4849@suse.de>
+From: Mathieu Chouquet-Stringer <mathieu@csetco.com>
+Subject: Re: Btrfs bug with g38867a2 and a question
+Date: Thu, 22 Sep 2011 12:13:44 +0200
+Message-ID: <20110922101344.GA13667@kashmir>
+References: <20110921185350.GA6618@kashmir>
+ <4E7A4695.9080106@redhat.com>
+ <20110921231055.GN22205@twin.jikos.cz>
 Mime-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
-Cc: Andrew Morton <akpm@linux-foundation.org>,
-        Christoph Hellwig <hch@infradead.org>,
-        Dave Chinner <david@fromorbit.com>,
-        Wu Fengguang <fengguang.wu@intel.com>, Jan Kara <jack@suse.cz>,
-        Rik van Riel <riel@redhat.com>, Minchan Kim <minchan.kim@gmail.com>,
-        Chris Mason <chris.mason@oracle.com>, "Theodore Ts'o" <tytso@mit.edu>,
-        Andreas Dilger <adilger.kernel@dilger.ca>, xfs@oss.sgi.com,
-        linux-btrfs@vger.kernel.org, linux-ext4@vger.kernel.org,
-        linux-mm@kvack.org, linux-fsdevel@vger.kernel.org,
-        linux-kernel@vger.kernel.org
-To: Mel Gorman <mgorman@suse.de>
-Return-path: <owner-linux-mm@kvack.org>
-In-Reply-To: <20110921150328.GJ4849@suse.de>
+Cc: David Sterba <dave@jikos.cz>
+To: Josef Bacik <josef@redhat.com>, linux-btrfs@vger.kernel.org
+Return-path: <linux-btrfs-owner@vger.kernel.org>
+In-Reply-To: <20110921231055.GN22205@twin.jikos.cz>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Wed, Sep 21, 2011 at 04:03:28PM +0100, Mel Gorman wrote:
-> On Wed, Sep 21, 2011 at 03:04:23PM +0100, Mel Gorman wrote:
-> > On Tue, Sep 20, 2011 at 03:45:12PM +0200, Johannes Weiner wrote:
-> > > The amount of dirtyable pages should not include the total number of
-> > > free pages: there is a number of reserved pages that the page
-> > > allocator and kswapd always try to keep free.
-> > > 
-> > > The closer (reclaimable pages - dirty pages) is to the number of
-> > > reserved pages, the more likely it becomes for reclaim to run into
-> > > dirty pages:
-> > > 
-> > >        +----------+ ---
-> > >        |   anon   |  |
-> > >        +----------+  |
-> > >        |          |  |
-> > >        |          |  -- dirty limit new    -- flusher new
-> > >        |   file   |  |                     |
-> > >        |          |  |                     |
-> > >        |          |  -- dirty limit old    -- flusher old
-> > >        |          |                        |
-> > >        +----------+                       --- reclaim
-> > >        | reserved |
-> > >        +----------+
-> > >        |  kernel  |
-> > >        +----------+
-> > > 
-> > > Not treating reserved pages as dirtyable on a global level is only a
-> > > conceptual fix.  In reality, dirty pages are not distributed equally
-> > > across zones and reclaim runs into dirty pages on a regular basis.
-> > > 
-> > > But it is important to get this right before tackling the problem on a
-> > > per-zone level, where the distance between reclaim and the dirty pages
-> > > is mostly much smaller in absolute numbers.
-> > > 
-> > > Signed-off-by: Johannes Weiner <jweiner@redhat.com>
-> > > ---
-> > >  include/linux/mmzone.h |    1 +
-> > >  mm/page-writeback.c    |    8 +++++---
-> > >  mm/page_alloc.c        |    1 +
-> > >  3 files changed, 7 insertions(+), 3 deletions(-)
-> > > 
-> > > diff --git a/include/linux/mmzone.h b/include/linux/mmzone.h
-> > > index 1ed4116..e28f8e0 100644
-> > > --- a/include/linux/mmzone.h
-> > > +++ b/include/linux/mmzone.h
-> > > @@ -316,6 +316,7 @@ struct zone {
-> > >  	 * sysctl_lowmem_reserve_ratio sysctl changes.
-> > >  	 */
-> > >  	unsigned long		lowmem_reserve[MAX_NR_ZONES];
-> > > +	unsigned long		totalreserve_pages;
-> > >  
-> > 
-> > This is nit-picking but totalreserve_pages is a poor name because it's
-> > a per-zone value that is one of the lowmem_reserve[] fields instead
-> > of a total. After this patch, we have zone->totalreserve_pages and
-> > totalreserve_pages but are not related to the same thing.
-> > but they are not the same.
-> 
-> As you correctly pointed out to be on IRC, zone->totalreserve_pages
-> is not the lowmem_reserve because it takes the high_wmark into
-> account. Sorry about that, I should have kept thinking.  The name is
-> still poor though because it does not explain what the value is or
-> what it means.
-> 
-> zone->FOO value needs to be related to lowmem_reserve because this
-> 	is related to balancing zone usage.
-> 
-> zone->FOO value should also be related to the high_wmark because
-> 	this is avoiding writeback from page reclaim
-> 
-> err....... umm... this?
-> 
-> 	/*
-> 	 * When allocating a new page that is expected to be
-> 	 * dirtied soon, the number of free pages and the
-> 	 * dirty_balance reserve are taken into account. The
-> 	 * objective is that the globally allowed number of dirty
-> 	 * pages should be distributed throughout the zones such
-> 	 * that it is very unlikely that page reclaim will call
-> 	 * ->writepage.
-> 	 *
-> 	 * dirty_balance_reserve takes both lowmem_reserve and
-> 	 * the high watermark into account. The lowmem_reserve
-> 	 * is taken into account because we don't want the
-> 	 * distribution of dirty pages to unnecessarily increase
-> 	 * lowmem pressure. The watermark is taken into account
-> 	 * because it's correlated with when kswapd wakes up
-> 	 * and how long it stays awake.
-> 	 */
-> 	unsigned long		dirty_balance_reserve.
+On Thu, Sep 22, 2011 at 01:10:55AM +0200, David Sterba wrote:
+> please prefix printk messages with "btrfs: "
 
-Yes, that's much better, thanks.
+Well my computer crashed before I could reboot with the newly compiled
+kernel.  And now it bugs while it tries to mount the kernel meaning my
+computer is fscked! :-)
 
-I assume this is meant the same for both the zone and the global level
-and we should not mess with totalreserve_pages in either case?
+Bug at fs/btrfs/free-space-cache.c:1327
 
---
-To unsubscribe, send a message with 'unsubscribe linux-mm' in
-the body to majordomo@kvack.org.  For more info on Linux MM,
-see: http://www.linux-mm.org/ .
-Fight unfair telecom internet charges in Canada: sign http://stopthemeter.ca/
-Don't email: <a href=mailto:"dont@kvack.org"> email@kvack.org </a>
+(I have a screenshot if needed)
+
+function remove_from_bitmap
+
+        /*
+         * XXX - this can go away after a few releases.
+         *
+         * since the only user of btrfs_remove_free_space is the tree logging
+         * stuff, and the only way to test that is under crash conditions, we
+         * want to have this debug stuff here just in case somethings not
+         * working.  Search the bitmap for the space we are trying to use to
+         * make sure its actually there.  If its not there then we need to stop
+         * because something has gone wrong.
+         */
+        search_start = *offset;
+        search_bytes = *bytes;
+        search_bytes = min(search_bytes, end - search_start + 1);
+        ret = search_bitmap(ctl, bitmap_info, &search_start, &search_bytes);
+===>    BUG_ON(ret < 0 || search_start != *offset);
+
+So question is now: how do I recover from this? :-)
+
+-- 
+Mathieu Chouquet-Stringer                         mathieu@csetco.com
+            The sun itself sees not till heaven clears.
+	             -- William Shakespeare --

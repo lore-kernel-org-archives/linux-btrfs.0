@@ -1,55 +1,67 @@
 From: David Sterba <dave@jikos.cz>
-Subject: Re: [PATCH] Btrfs: fix direct-io vs nodatacow
-Date: Thu, 22 Sep 2011 12:31:30 +0200
-Message-ID: <20110922103130.GT22205@twin.jikos.cz>
-References: <4E6827EB.2030907@cn.fujitsu.com>
+Subject: Re: [PATCH] btrfs: fix memory leak in btrfs_defrag_file
+Date: Thu, 22 Sep 2011 12:36:48 +0200
+Message-ID: <20110922103648.GU22205@twin.jikos.cz>
+References: <201109011633.57877.diegocg@gmail.com>
 Reply-To: dave@jikos.cz
 Mime-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
-Cc: "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
-To: Li Zefan <lizf@cn.fujitsu.com>
+Cc: Chris Mason <chris.mason@oracle.com>, linux-btrfs@vger.kernel.org
+To: Diego Calleja <diegocg@gmail.com>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <4E6827EB.2030907@cn.fujitsu.com>
+In-Reply-To: <201109011633.57877.diegocg@gmail.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Thu, Sep 08, 2011 at 10:26:51AM +0800, Li Zefan wrote:
-> To reproduce the bug:
+On Thu, Sep 01, 2011 at 04:33:57PM +0200, Diego Calleja wrote:
+> kmemleak found this:
+> unreferenced object 0xffff8801b64af968 (size 512):
+>   comm "btrfs-cleaner", pid 3317, jiffies 4306810886 (age 903.272s)
+>   hex dump (first 32 bytes):
+>     00 82 01 07 00 ea ff ff c0 83 01 07 00 ea ff ff  ................
+>     80 82 01 07 00 ea ff ff c0 87 01 07 00 ea ff ff  ................
+>   backtrace:
+>     [<ffffffff816875cc>] kmemleak_alloc+0x5c/0xc0
+>     [<ffffffff8114aec3>] kmem_cache_alloc_trace+0x163/0x240
+>     [<ffffffff8127a290>] btrfs_defrag_file+0xf0/0xb20
+>     [<ffffffff8125d9a5>] btrfs_run_defrag_inodes+0x165/0x210
+>     [<ffffffff812479d7>] cleaner_kthread+0x177/0x190
+>     [<ffffffff81075c7d>] kthread+0x8d/0xa0
+>     [<ffffffff816af5f4>] kernel_thread_helper+0x4/0x10
+>     [<ffffffffffffffff>] 0xffffffffffffffff
 > 
->   # mount -o nodatacow /dev/sda7 /mnt/
->   # dd if=/dev/zero of=/mnt/tmp bs=4K count=1
->   1+0 records in
->   1+0 records out
->   4096 bytes (4.1 kB) copied, 0.000136115 s, 30.1 MB/s
->   # dd if=/dev/zero of=/mnt/tmp bs=4K count=1 conv=notrunc oflag=direct
->   dd: writing `/mnt/tmp': Input/output error
->   1+0 records in
->   0+0 records out
+> "pages" is not always freed. Fix it removing the unnecesary additional return.
 > 
-> btrfs_ordered_update_i_size() may return 1, but btrfs_endio_direct_write()
-> mistakenly takes it as an error.
-> 
-> Signed-off-by: Li Zefan <lizf@cn.fujitsu.com>
+> Signed-off-by: Diego Calleja <diegocg@gmail.com>
 Reviewed-by: David Sterba <dsterba@suse.cz>
 
-> ---
->  fs/btrfs/inode.c |    3 +--
->  1 files changed, 1 insertions(+), 2 deletions(-)
 > 
-> diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
-> index 0ccc743..3bd35fe 100644
-> --- a/fs/btrfs/inode.c
-> +++ b/fs/btrfs/inode.c
-> @@ -5785,8 +5785,7 @@ again:
->  	if (test_bit(BTRFS_ORDERED_NOCOW, &ordered->flags)) {
->  		ret = btrfs_ordered_update_i_size(inode, 0, ordered);
->  		if (!ret)
-> -			ret = btrfs_update_inode(trans, root, inode);
-> -		err = ret;
-> +			err = btrfs_update_inode(trans, root, inode);
->  		goto out;
+> ---
+>  fs/btrfs/ioctl.c |    4 +---
+>  1 file changed, 1 insertion(+), 3 deletions(-)
+> 
+> Index: linux/fs/btrfs/ioctl.c
+> ===================================================================
+> --- linux.orig/fs/btrfs/ioctl.c
+> +++ linux/fs/btrfs/ioctl.c
+> @@ -1130,17 +1130,15 @@ int btrfs_defrag_file(struct inode *inod
+>  	disk_super = &root->fs_info->super_copy;
+>  	features = btrfs_super_incompat_flags(disk_super);
+>  	if (range->compress_type == BTRFS_COMPRESS_LZO) {
+>  		features |= BTRFS_FEATURE_INCOMPAT_COMPRESS_LZO;
+>  		btrfs_set_super_incompat_flags(disk_super, features);
 >  	}
 >  
-> -- 1.7.3.1 
+> -	if (!file)
+> -		kfree(ra);
+> -	return defrag_count;
+> +	ret = defrag_count;
+>  
+>  out_ra:
+>  	if (!file)
+>  		kfree(ra);
+>  	kfree(pages);
+>  	return ret;
+>  }
 > --
 > To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
 > the body of a message to majordomo@vger.kernel.org

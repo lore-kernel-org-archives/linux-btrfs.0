@@ -1,75 +1,54 @@
-From: Josef Bacik <josef@redhat.com>
+From: Mathieu Chouquet-Stringer <mathieu@csetco.com>
 Subject: Re: Btrfs bug with g38867a2 and a question
-Date: Thu, 22 Sep 2011 10:12:12 -0400
-Message-ID: <4E7B423C.2080007@redhat.com>
-References: <20110921185350.GA6618@kashmir> <4E7A4695.9080106@redhat.com> <20110921231055.GN22205@twin.jikos.cz> <CALiWzOg8CQJF7OfMex1uJTa+doDZ8oufV1nAbos99Z4ev-+xKg@mail.gmail.com>
+Date: Thu, 22 Sep 2011 17:16:33 +0200
+Message-ID: <20110922151633.GA16391@kashmir>
+References: <20110921185350.GA6618@kashmir>
+ <4E7A4695.9080106@redhat.com>
+ <20110921231055.GN22205@twin.jikos.cz>
+ <CALiWzOg8CQJF7OfMex1uJTa+doDZ8oufV1nAbos99Z4ev-+xKg@mail.gmail.com>
+ <4E7B423C.2080007@redhat.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=ISO-8859-1
-Cc: Mathieu Chouquet-Stringer <mathieu@csetco.com>, dave@jikos.cz,
-	linux-btrfs@vger.kernel.org
-To: Mathieu Chouquet-Stringer <mathieucs@gmail.com>
+Content-Type: text/plain; charset=us-ascii
+Cc: dave@jikos.cz, linux-btrfs@vger.kernel.org
+To: Josef Bacik <josef@redhat.com>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <CALiWzOg8CQJF7OfMex1uJTa+doDZ8oufV1nAbos99Z4ev-+xKg@mail.gmail.com>
+In-Reply-To: <4E7B423C.2080007@redhat.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 09/22/2011 02:05 AM, Mathieu Chouquet-Stringer wrote:
-> 
-> On Sep 22, 2011 1:11 AM, "David Sterba" <dave@jikos.cz
-> <mailto:dave@jikos.cz>> wrote:
->>
->> On Wed, Sep 21, 2011 at 04:18:29PM -0400, Josef Bacik wrote:
->> > diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
->> > index b128fa0..66ba0a7 100644
->> > --- a/fs/btrfs/inode.c
->> > +++ b/fs/btrfs/inode.c
->> > @@ -782,7 +782,12 @@ static noinline int cow_file_range(struct inode
-> *inode,
->> >       struct extent_map_tree *em_tree = &BTRFS_I(inode)->extent_tree;
->> >       int ret = 0;
->> >
->> > -     BUG_ON(btrfs_is_free_space_inode(root, inode));
->> > +     if (btrfs_is_free_space_inode(root, inode)) {
->> > +             printk(KERN_ERR "trying to write to free space inode, "
->> > +                    "isize=%Lu, start=%Lu, end=%Lu\n",
-> i_size_read(inode),
->> > +                    start, end);
->>
->> please prefix printk messages with "btrfs: "
-> 
-> Well this time it doesn't boot anymore...
-> Bug at fs/btrfs/free-space-cache.c:1327
-> 
-> I had another crash before being able to reboot...
-> 
-> Is there a way to recover from that? How do I disable space cache?
-> 
+On Thu, Sep 22, 2011 at 10:12:12AM -0400, Josef Bacik wrote:
+> Well that is from the tree logging code, so give this a whirl.  It's
+> going to dump a lot of info so make sure you capture everything before
+> the --- cut here --- line.  Thanks,
 
-Well that is from the tree logging code, so give this a whirl.  It's
-going to dump a lot of info so make sure you capture everything before
-the --- cut here --- line.  Thanks,
+The patch doesn't apply cleanly to the latest git (since my laptop
+doesn't boot anymore, I'm using a different host to compile this) but it
+was simple enough to patch manually.  Right now I'm on v3.1-rc7-d93dc5c.
 
-Josef
+I'm compiling at the moment, so bear with me! :-)
 
-
-diff --git a/fs/btrfs/free-space-cache.c b/fs/btrfs/free-space-cache.c
-index 1bcbe76..236a938 100644
---- a/fs/btrfs/free-space-cache.c
-+++ b/fs/btrfs/free-space-cache.c
-@@ -417,6 +417,8 @@ int load_free_space_cache(struct btrfs_fs_info *fs_info,
+My patch looks like this:
+--- fs/btrfs/free-space-cache.c.orig	2011-09-22 11:51:46.442129324 +0200
++++ fs/btrfs/free-space-cache.c	2011-09-22 17:11:46.715162968 +0200
+@@ -381,6 +381,8 @@ int __load_free_space_cache(struct btrfs
  			}
-
+ 
  			if (entry->type == BTRFS_FREE_SPACE_EXTENT) {
 +				printk(KERN_ERR "adding extent [%llu-%llu]\n",
-+				       e->offset, e->bytes);
- 				spin_lock(&block_group->tree_lock);
- 				ret = link_free_space(block_group, e);
- 				spin_unlock(&block_group->tree_lock);
-@@ -431,6 +433,8 @@ int load_free_space_cache(struct btrfs_fs_info *fs_info,
++					e->offset, e->bytes);
+ 				spin_lock(&ctl->tree_lock);
+ 				ret = link_free_space(ctl, e);
+ 				spin_unlock(&ctl->tree_lock);
+@@ -402,6 +404,8 @@ int __load_free_space_cache(struct btrfs
  					page_cache_release(page);
  					goto free_cache;
  				}
 +				printk(KERN_ERR "adding bitmap [%llu-%llu]\n",
-+				       e->offset, e->bytes);
- 				spin_lock(&block_group->tree_lock);
- 				ret = link_free_space(block_group, e);
- 				block_group->total_bitmaps++;
++					e->offset, e->bytes);
+ 				spin_lock(&ctl->tree_lock);
+ 				ret = link_free_space(ctl, e);
+ 				ctl->total_bitmaps++;
+
+-- 
+Mathieu Chouquet-Stringer                         mathieu@csetco.com
+            The sun itself sees not till heaven clears.
+	             -- William Shakespeare --

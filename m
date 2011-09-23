@@ -1,109 +1,73 @@
-From: Erik Jensen <eriksjunk@rkjnsn.net>
-Subject: Re: Honest timeline for btrfsck
-Date: Fri, 23 Sep 2011 06:51:35 -0700
-Message-ID: <CAGh96GHNcKZ50Z3q4SP3NrrT=bsNeW3L72AUanD=u317mSXtKQ@mail.gmail.com>
-References: <CAGh96GFhVEfXt=xcb-uGEBA3Ss2fc8BwOpJ2g8tXbm+VimdH3Q@mail.gmail.com>
- <1312404713-sup-6548@shiny> <loom.20110818T030824-742@post.gmane.org> <1313700115-sup-2457@shiny>
+From: Alex Elder <aelder@sgi.com>
+Subject: Re: [PATCH] xfstests: add new getdents test
+Date: Fri, 23 Sep 2011 08:56:22 -0500
+Message-ID: <1316786182.2879.8.camel@doink>
+References: <1315786747-12109-1-git-send-email-notasas@gmail.com>
+	 <1316722702.2009.59.camel@doink>
+	 <CANOLnOPm+BEQ0QOYnYRkJqpGPwyUD9D+23dJe2OwgrHXqYFyVA@mail.gmail.com>
+Reply-To: <aelder@sgi.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=ISO-8859-1
-Cc: linux-btrfs <linux-btrfs@vger.kernel.org>
-To: Chris Mason <chris.mason@oracle.com>
+Content-Type: text/plain; charset="UTF-8"
+Cc: <xfs@oss.sgi.com>, <linux-btrfs@vger.kernel.org>
+To: Grazvydas Ignotas <notasas@gmail.com>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <1313700115-sup-2457@shiny>
+In-Reply-To: <CANOLnOPm+BEQ0QOYnYRkJqpGPwyUD9D+23dJe2OwgrHXqYFyVA@mail.gmail.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Chris,
+On Fri, 2011-09-23 at 16:03 +0300, Grazvydas Ignotas wrote:
+> On Thu, Sep 22, 2011 at 11:18 PM, Alex Elder <aelder@sgi.com> wrote:
+> > On Mon, 2011-09-12 at 03:19 +0300, Grazvydas Ignotas wrote:
+> >> The test checks if no duplicate d_off values are returned and that
+> >> those values are seekable to the right inodes.
+> >>
+> >> Signed-off-by: Grazvydas Ignotas <notasas@gmail.com>
+> >
+> > I have two minor comments on the C program below,
+> > but even if you don't want to address them this
+> > looks good.
+> >
+> > Reviewed-by: Alex Elder <aelder@sgi.com>
+> >
 
-Now that you're back from vacation, I was wondering if you would be
-able to provide a revised estimate on how long this will take. Also,
-of the four parts, which will be necessary to correct a 'parent
-transid verify failed' error?
+. . .
 
-Thank you for your time,
---Erik
+> >> +static uint64_t d_off_histoty[HISTORY_LEN];
+> >> +static uint64_t d_ino_histoty[HISTORY_LEN];
+> >
+> > Is "histoty" intentional or a typo?
+> 
+> whoops, it's a typo. I might send a patch for this later.
 
-On Thu, Aug 18, 2011 at 1:50 PM, Chris Mason <chris.mason@oracle.com> w=
-rote:
-> Excerpts from Yalonda Gishtaka's message of 2011-08-17 21:09:37 -0400=
-:
->> Chris Mason <chris.mason <at> oracle.com> writes:
->>
->> >
->> > Aside from making sure the kernel code is stable, btrfsck is all I=
-'m
->> > working on right now. =A0I do expect a release in the next two wee=
-ks that
->> > can recover your data (and many others).
->> >
->> > Thanks,
->> > Chris
->> > --
->>
->>
->> Chris,
->>
->> We're all on the edge of our seats. =A0Can you provide an updated ET=
-A on the
->> release of the first functional btrfsck tool? =A0No pressure or anyt=
-hing ;)
->
-> Hi everyone,
->
-> I've been working non-stop on this. =A0Currently fsck has four parts:
->
-> 1) mount -o recovery mode. =A0I've posted smaller forms of these patc=
-hes
-> in the past that bypass log tree replay. =A0The new versions have cod=
-e to
-> create stub roots for trees that can't be read (like the extent
-> allocation tree) and will allow the mount to proceed.
->
-> 2) fsck that scans for older roots. =A0This takes advantage of older
-> copies of metadata to look for consistent tree roots on disk. =A0The
-> downside is that it is currently very slow. =A0I'm trying to speed it=
- up
-> by limiting the search to only the metadata block groups and a few ot=
-her
-> tricks.
->
-> 3) fsck that fixes the extent allocation tree and the chunk tree. =A0=
-This
-> is where I've been spending most of my time. =A0The problem is that i=
-t
-> tends to recover some filesystems and badly break others. =A0While I'=
-m
-> fixing up the corner cases that work poorly, I'm adding an undo log t=
-o
-> the fsck code so that you can get the FS back into its original state=
- if
-> you don't like the result of the fsck.
->
-> 4) The rest of the corruptions can be dealt with fairly well from the
-> kernel. =A0I have a series of patches to make the extent allocation t=
-ree
-> less strict about reference counts and other rules, basically allowin=
-g
-> the FS to limp along instead of crash.
->
-> These four things together are basically my minimal set of features
-> required for fedora and our own internal projects at Oracle to start
-> treating us as production filesystem.
->
-> There are always bugs to fix, and I have #1 and #2 mostly ready. =A0I=
- had
-> hoped to get #1 out the door before I left on vacation and I still mi=
-ght
-> post it tonight.
->
-> -chris
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-btrfs=
-" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at =A0http://vger.kernel.org/majordomo-info.html
->
---
-To unsubscribe from this list: send the line "unsubscribe linux-btrfs" =
-in
-the body of a message to majordomo@vger.kernel.org
-More majordomo info at  http://vger.kernel.org/majordomo-info.html
+I will change this for you before committing.
+
+> >
+> >> +int
+> >> +main(int argc, char *argv[])
+
+. . .
+
+> >> +             nread = syscall(SYS_getdents64, fd, buf, BUF_SIZE);
+> >
+> > You could just use sizeof (struct linux_dirent_64) rather than
+> > BUF_SIZE here.  I suppose it doesn't hurt but there's no real
+> > sense in reading more than the one you're going to look at.
+> 
+> I'm not sure if reading partial entry is allowed, manpage says it may
+> fail with EINVAL if buffer size is too small..
+
+I will keep this as-is.  I was wrong about the size you should
+pass, but my point still stands...  For a single entry you need
+to pass a buffer big enough to hold a linux_dirent64 structure
+*plus* the maximum-sized name that entry could contain.  That
+appears to be 256 bytes, though POSIX allows more.
+
+Anyway, if you or anyone else wants to try to change this
+in the future to read in a smaller amount here, that's fine
+but it's not necessary now.
+
+Bottom line, I'll make the change I mentioned above and
+will commit the result.
+
+					-Alex
+
+

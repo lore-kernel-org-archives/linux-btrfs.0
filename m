@@ -1,40 +1,63 @@
-From: Valdis.Kletnieks@vt.edu
-Subject: Re: [PATCH] btrfs/extent_map.c: quiet sparse noise
-Date: Fri, 23 Sep 2011 14:58:37 -0400
-Message-ID: <25617.1316804317@turing-police.cc.vt.edu>
-References: <201109221845.56204.hartleys@visionengravers.com>
+From: H Hartley Sweeten <hartleys@visionengravers.com>
+Subject: RE: [PATCH] btrfs/ioctl.c: quiet sparse warnings
+Date: Fri, 23 Sep 2011 14:02:27 -0500
+Message-ID: <ADE657CA350FB648AAC2C43247A983F001F39DBB8425@AUSP01VMBX24.collaborationhost.net>
+References: <201109231107.54227.hartleys@visionengravers.com>
+ <1316801760.28330.5.camel@Joe-Laptop>
 Mime-Version: 1.0
-Content-Type: multipart/signed; boundary="==_Exmh_1316804317_4577P";
-	 micalg=pgp-sha1; protocol="application/pgp-signature"
+Content-Type: text/plain; charset="utf-8"
 Cc: Linux Kernel <linux-kernel@vger.kernel.org>,
-	linux-btrfs@vger.kernel.org, chris.mason@oracle.com
-To: H Hartley Sweeten <hartleys@visionengravers.com>
+	"linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>,
+	"chris.mason@oracle.com" <chris.mason@oracle.com>
+To: Joe Perches <joe@perches.com>
 Return-path: <linux-kernel-owner@vger.kernel.org>
-In-Reply-To: Your message of "Thu, 22 Sep 2011 18:45:56 PDT."
-             <201109221845.56204.hartleys@visionengravers.com>
+In-Reply-To: <1316801760.28330.5.camel@Joe-Laptop>
 List-ID: <linux-btrfs.vger.kernel.org>
 
---==_Exmh_1316804317_4577P
-Content-Type: text/plain; charset=us-ascii
-
-On Thu, 22 Sep 2011 18:45:56 PDT, H Hartley Sweeten said:
-> Quiet the sparse noise:
-> 
-> warning: symbol '__lookup_extent_mapping' was not declared. Should it be static?
-
-Patch itself is correct, changelog is bad.  You're not quieting sparse noise,
-you're making a declaration static because it doesn't need external visibility.
-
---==_Exmh_1316804317_4577P
-Content-Type: application/pgp-signature
-
------BEGIN PGP SIGNATURE-----
-Version: GnuPG v1.4.11 (GNU/Linux)
-Comment: Exmh version 2.5 07/13/2001
-
-iD8DBQFOfNbdcC3lWbTT17ARAvynAKCqgZ+D+5TdpgvcXB8jfkcAvQkUyACffzq4
-4GLdG6v+VgGVHHKUQiSUcno=
-=Vijq
------END PGP SIGNATURE-----
-
---==_Exmh_1316804317_4577P--
+T24gRnJpZGF5LCBTZXB0ZW1iZXIgMjMsIDIwMTEgMTE6MTYgQU0sIEpvZSBQZXJjaGVzIHdyb3Rl
+Og0KPiBPbiBGcmksIDIwMTEtMDktMjMgYXQgMTE6MDcgLTA3MDAsIEggSGFydGxleSBTd2VldGVu
+IHdyb3RlOg0KPj4gUXVpZXQgdGhlIGZvbGxvd2luZyBzcGFyc2Ugd2FybmluZ3M6DQo+IFtdDQo+
+PiBkaWZmIC0tZ2l0IGEvZnMvYnRyZnMvaW9jdGwuYyBiL2ZzL2J0cmZzL2lvY3RsLmMNCj4gW10N
+Cj4+IEBAIC0yNzA1LDcgKzI3MDUsNyBAQCBsb25nIGJ0cmZzX2lvY3RsX3NwYWNlX2luZm8oc3Ry
+dWN0IGJ0cmZzX3Jvb3QgKnJvb3QsIHZvaWQgX191c2VyICphcmcpDQo+PiAgCQl1cF9yZWFkKCZp
+bmZvLT5ncm91cHNfc2VtKTsNCj4+ICAJfQ0KPj4gIA0KPj4gLQl1c2VyX2Rlc3QgPSAoc3RydWN0
+IGJ0cmZzX2lvY3RsX3NwYWNlX2luZm8gKikNCj4+ICsJdXNlcl9kZXN0ID0gKHN0cnVjdCBidHJm
+c19pb2N0bF9zcGFjZV9pbmZvIF9fdXNlciAqKQ0KPj4gICAgICAgICAgICAgICAgIChhcmcgKyBz
+aXplb2Yoc3RydWN0IGJ0cmZzX2lvY3RsX3NwYWNlX2FyZ3MpKTsNCj4NCj4JdXNlcl9kZXN0ID0g
+YXJnOw0KPgl1c2VyX2Rlc3QrKzsNCj4NCj4gPw0KDQpUaGF0IHByb2R1Y2VzIGEgbmV3IHNwYXJz
+ZSB3YXJuaW5nOg0KDQpmcy9idHJmcy9pb2N0bC5jOiBJbiBmdW5jdGlvbiDigJhidHJmc19pb2N0
+bF9zcGFjZV9pbmZv4oCZOg0KZnMvYnRyZnMvaW9jdGwuYzoyNzA4OiB3YXJuaW5nOiDigJh1c2Vy
+X2Rlc3TigJkgbWF5IGJlIHVzZWQgdW5pbml0aWFsaXplZCBpbiB0aGlzIGZ1bmN0aW9uDQoNCkkg
+Z3Vlc3MgdXNlcl9kZXN0IGNvdWxkIGJlIHNldCBhdCB0aGUgc3RhcnQgb2YgdGhlIGZ1bmN0aW9u
+LiAgVGhpcyB3b3VsZA0KYWxzbyByZW1vdmUgdGhlIGNhc3Qgb2YgYXJnIGluIHRoZSBmaXJzdCBj
+b3B5X2Zyb21fdXNlci4NCg0KU29tZXRoaW5nIGxpa2UgdGhpczoNCg0KLS0tLS0tDQoNCmRpZmYg
+LS1naXQgYS9mcy9idHJmcy9pb2N0bC5jIGIvZnMvYnRyZnMvaW9jdGwuYw0KaW5kZXggOTcwOTc3
+YS4uOWU3ZTVkYyAxMDA2NDQNCi0tLSBhL2ZzL2J0cmZzL2lvY3RsLmMNCisrKyBiL2ZzL2J0cmZz
+L2lvY3RsLmMNCkBAIC0yNTk5LDEzICsyNTk5LDEzIEBAIHN0YXRpYyB2b2lkIGdldF9ibG9ja19n
+cm91cF9pbmZvKHN0cnVjdCBsaXN0X2hlYWQgKmdyb3Vwc19saXN0LA0KICAgICAgICB9DQogfQ0K
+IA0KLWxvbmcgYnRyZnNfaW9jdGxfc3BhY2VfaW5mbyhzdHJ1Y3QgYnRyZnNfcm9vdCAqcm9vdCwg
+dm9pZCBfX3VzZXIgKmFyZykNCitzdGF0aWMgbG9uZyBidHJmc19pb2N0bF9zcGFjZV9pbmZvKHN0
+cnVjdCBidHJmc19yb290ICpyb290LCB2b2lkIF9fdXNlciAqYXJnKQ0KIHsNCiAgICAgICAgc3Ry
+dWN0IGJ0cmZzX2lvY3RsX3NwYWNlX2FyZ3Mgc3BhY2VfYXJnczsNCiAgICAgICAgc3RydWN0IGJ0
+cmZzX2lvY3RsX3NwYWNlX2luZm8gc3BhY2U7DQogICAgICAgIHN0cnVjdCBidHJmc19pb2N0bF9z
+cGFjZV9pbmZvICpkZXN0Ow0KICAgICAgICBzdHJ1Y3QgYnRyZnNfaW9jdGxfc3BhY2VfaW5mbyAq
+ZGVzdF9vcmlnOw0KLSAgICAgICBzdHJ1Y3QgYnRyZnNfaW9jdGxfc3BhY2VfaW5mbyBfX3VzZXIg
+KnVzZXJfZGVzdDsNCisgICAgICAgc3RydWN0IGJ0cmZzX2lvY3RsX3NwYWNlX2luZm8gX191c2Vy
+ICp1c2VyX2Rlc3QgPSBhcmc7DQogICAgICAgIHN0cnVjdCBidHJmc19zcGFjZV9pbmZvICppbmZv
+Ow0KICAgICAgICB1NjQgdHlwZXNbXSA9IHtCVFJGU19CTE9DS19HUk9VUF9EQVRBLA0KICAgICAg
+ICAgICAgICAgICAgICAgICBCVFJGU19CTE9DS19HUk9VUF9TWVNURU0sDQpAQCAtMjYxNyw5ICsy
+NjE3LDcgQEAgbG9uZyBidHJmc19pb2N0bF9zcGFjZV9pbmZvKHN0cnVjdCBidHJmc19yb290ICpy
+b290LCB2b2lkIF9fdXNlciAqYXJnKQ0KICAgICAgICB1NjQgc2xvdF9jb3VudCA9IDA7DQogICAg
+ICAgIGludCBpLCBjOw0KIA0KLSAgICAgICBpZiAoY29weV9mcm9tX3VzZXIoJnNwYWNlX2FyZ3Ms
+DQotICAgICAgICAgICAgICAgICAgICAgICAgICAoc3RydWN0IGJ0cmZzX2lvY3RsX3NwYWNlX2Fy
+Z3MgX191c2VyICopYXJnLA0KLSAgICAgICAgICAgICAgICAgICAgICAgICAgc2l6ZW9mKHNwYWNl
+X2FyZ3MpKSkNCisgICAgICAgaWYgKGNvcHlfZnJvbV91c2VyKCZzcGFjZV9hcmdzLCB1c2VyX2Rl
+c3QsIHNpemVvZihzcGFjZV9hcmdzKSkpDQogICAgICAgICAgICAgICAgcmV0dXJuIC1FRkFVTFQ7
+DQogDQogICAgICAgIGZvciAoaSA9IDA7IGkgPCBudW1fdHlwZXM7IGkrKykgew0KQEAgLTI3MDUs
+OCArMjcwMyw3IEBAIGxvbmcgYnRyZnNfaW9jdGxfc3BhY2VfaW5mbyhzdHJ1Y3QgYnRyZnNfcm9v
+dCAqcm9vdCwgdm9pZCBfX3VzZXIgKmFyZykNCiAgICAgICAgICAgICAgICB1cF9yZWFkKCZpbmZv
+LT5ncm91cHNfc2VtKTsNCiAgICAgICAgfQ0KIA0KLSAgICAgICB1c2VyX2Rlc3QgPSAoc3RydWN0
+IGJ0cmZzX2lvY3RsX3NwYWNlX2luZm8gKikNCi0gICAgICAgICAgICAgICAoYXJnICsgc2l6ZW9m
+KHN0cnVjdCBidHJmc19pb2N0bF9zcGFjZV9hcmdzKSk7DQorICAgICAgIHVzZXJfZGVzdCsrOw0K
+IA0KICAgICAgICBpZiAoY29weV90b191c2VyKHVzZXJfZGVzdCwgZGVzdF9vcmlnLCBhbGxvY19z
+aXplKSkNCiAgICAgICAgICAgICAgICByZXQgPSAtRUZBVUxUOw0KDQo=

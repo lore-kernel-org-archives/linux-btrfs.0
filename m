@@ -1,33 +1,46 @@
-From: Mathieu Chouquet-Stringer <mathieu@csetco.com>
-Subject: Re: Btrfs bug with g38867a2 and a question
-Date: Fri, 23 Sep 2011 19:16:47 +0200
-Message-ID: <20110923171647.GA29400@kashmir>
-References: <CALiWzOg8CQJF7OfMex1uJTa+doDZ8oufV1nAbos99Z4ev-+xKg@mail.gmail.com>
- <4E7B423C.2080007@redhat.com>
- <20110922182222.GA18449@kashmir>
- <4E7B85B3.6080106@redhat.com>
- <20110922193007.GA19088@kashmir>
- <20110922203213.GA19890@kashmir>
- <20110923125530.GA27417@kashmir>
- <4E7C9C72.4020109@redhat.com>
- <20110923153144.GA28744@kashmir>
- <4E7CA710.1060606@redhat.com>
+From: H Hartley Sweeten <hartleys@visionengravers.com>
+Subject: [PATCH] btrfs/ioctl.c: quiet sparse warnings
+Date: Fri, 23 Sep 2011 11:07:53 -0700
+Message-ID: <201109231107.54227.hartleys@visionengravers.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Cc: dave@jikos.cz, linux-btrfs@vger.kernel.org
-To: Josef Bacik <josef@redhat.com>
+Content-Type: text/plain; charset="utf-8"
+Cc: <linux-btrfs@vger.kernel.org>, <chris.mason@oracle.com>
+To: Linux Kernel <linux-kernel@vger.kernel.org>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <4E7CA710.1060606@redhat.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Fri, Sep 23, 2011 at 11:34:40AM -0400, Josef Bacik wrote:
-> Yeah this is a different problem that's fixed upstream, so reboot into
-> your other newer kernel with -o clear_cache.  Thanks,
+Quiet the following sparse warnings:
 
-Ok I'm back in business now, thanks...
+warning: cast removes address space of expression
+warning: incorrect type in assignment (different address spaces)
+   expected struct btrfs_ioctl_space_info [noderef] <asn:1>*user_dest
+   got struct btrfs_ioctl_space_info *<noident>
+warning: symbol 'btrfs_ioctl_space_info' was not declared. Should it be static?
 
-Now I'll try to understand why my pc sometimes hangs doing write IOs...
--- 
-Mathieu Chouquet-Stringer                         mathieu@csetco.com
-            The sun itself sees not till heaven clears.
-	             -- William Shakespeare --
+Signed-off-by: H Hartley Sweeten <hsweeten@visionengravers.com>
+Cc: Chris Mason <chris.mason@oracle.com>
+
+---
+
+diff --git a/fs/btrfs/ioctl.c b/fs/btrfs/ioctl.c
+index 970977a..a001af4 100644
+--- a/fs/btrfs/ioctl.c
++++ b/fs/btrfs/ioctl.c
+@@ -2599,7 +2599,7 @@ static void get_block_group_info(struct list_head *groups_list,
+ 	}
+ }
+ 
+-long btrfs_ioctl_space_info(struct btrfs_root *root, void __user *arg)
++static long btrfs_ioctl_space_info(struct btrfs_root *root, void __user *arg)
+ {
+ 	struct btrfs_ioctl_space_args space_args;
+ 	struct btrfs_ioctl_space_info space;
+@@ -2705,7 +2705,7 @@ long btrfs_ioctl_space_info(struct btrfs_root *root, void __user *arg)
+ 		up_read(&info->groups_sem);
+ 	}
+ 
+-	user_dest = (struct btrfs_ioctl_space_info *)
++	user_dest = (struct btrfs_ioctl_space_info __user *)
+ 		(arg + sizeof(struct btrfs_ioctl_space_args));
+ 
+ 	if (copy_to_user(user_dest, dest_orig, alloc_size))

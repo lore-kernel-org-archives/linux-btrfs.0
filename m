@@ -1,63 +1,39 @@
-From: H Hartley Sweeten <hartleys@visionengravers.com>
-Subject: RE: [PATCH] btrfs/ioctl.c: quiet sparse warnings
-Date: Fri, 23 Sep 2011 14:02:27 -0500
-Message-ID: <ADE657CA350FB648AAC2C43247A983F001F39DBB8425@AUSP01VMBX24.collaborationhost.net>
-References: <201109231107.54227.hartleys@visionengravers.com>
- <1316801760.28330.5.camel@Joe-Laptop>
+From: "Ken D'Ambrosio" <ken@jots.org>
+Subject: RAID not RAIDing? Or at least not showing correct usage?
+Date: Sat, 24 Sep 2011 14:51:12 -0400
+Message-ID: <96eceb54b5f19f36507deb29d049fbaf@www.jots.org>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="utf-8"
-Cc: Linux Kernel <linux-kernel@vger.kernel.org>,
-	"linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>,
-	"chris.mason@oracle.com" <chris.mason@oracle.com>
-To: Joe Perches <joe@perches.com>
-Return-path: <linux-kernel-owner@vger.kernel.org>
-In-Reply-To: <1316801760.28330.5.camel@Joe-Laptop>
+Content-Type: text/plain; charset=UTF-8; format=fixed
+To: <linux-btrfs@vger.kernel.org>
+Return-path: <linux-btrfs-owner@vger.kernel.org>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-T24gRnJpZGF5LCBTZXB0ZW1iZXIgMjMsIDIwMTEgMTE6MTYgQU0sIEpvZSBQZXJjaGVzIHdyb3Rl
-Og0KPiBPbiBGcmksIDIwMTEtMDktMjMgYXQgMTE6MDcgLTA3MDAsIEggSGFydGxleSBTd2VldGVu
-IHdyb3RlOg0KPj4gUXVpZXQgdGhlIGZvbGxvd2luZyBzcGFyc2Ugd2FybmluZ3M6DQo+IFtdDQo+
-PiBkaWZmIC0tZ2l0IGEvZnMvYnRyZnMvaW9jdGwuYyBiL2ZzL2J0cmZzL2lvY3RsLmMNCj4gW10N
-Cj4+IEBAIC0yNzA1LDcgKzI3MDUsNyBAQCBsb25nIGJ0cmZzX2lvY3RsX3NwYWNlX2luZm8oc3Ry
-dWN0IGJ0cmZzX3Jvb3QgKnJvb3QsIHZvaWQgX191c2VyICphcmcpDQo+PiAgCQl1cF9yZWFkKCZp
-bmZvLT5ncm91cHNfc2VtKTsNCj4+ICAJfQ0KPj4gIA0KPj4gLQl1c2VyX2Rlc3QgPSAoc3RydWN0
-IGJ0cmZzX2lvY3RsX3NwYWNlX2luZm8gKikNCj4+ICsJdXNlcl9kZXN0ID0gKHN0cnVjdCBidHJm
-c19pb2N0bF9zcGFjZV9pbmZvIF9fdXNlciAqKQ0KPj4gICAgICAgICAgICAgICAgIChhcmcgKyBz
-aXplb2Yoc3RydWN0IGJ0cmZzX2lvY3RsX3NwYWNlX2FyZ3MpKTsNCj4NCj4JdXNlcl9kZXN0ID0g
-YXJnOw0KPgl1c2VyX2Rlc3QrKzsNCj4NCj4gPw0KDQpUaGF0IHByb2R1Y2VzIGEgbmV3IHNwYXJz
-ZSB3YXJuaW5nOg0KDQpmcy9idHJmcy9pb2N0bC5jOiBJbiBmdW5jdGlvbiDigJhidHJmc19pb2N0
-bF9zcGFjZV9pbmZv4oCZOg0KZnMvYnRyZnMvaW9jdGwuYzoyNzA4OiB3YXJuaW5nOiDigJh1c2Vy
-X2Rlc3TigJkgbWF5IGJlIHVzZWQgdW5pbml0aWFsaXplZCBpbiB0aGlzIGZ1bmN0aW9uDQoNCkkg
-Z3Vlc3MgdXNlcl9kZXN0IGNvdWxkIGJlIHNldCBhdCB0aGUgc3RhcnQgb2YgdGhlIGZ1bmN0aW9u
-LiAgVGhpcyB3b3VsZA0KYWxzbyByZW1vdmUgdGhlIGNhc3Qgb2YgYXJnIGluIHRoZSBmaXJzdCBj
-b3B5X2Zyb21fdXNlci4NCg0KU29tZXRoaW5nIGxpa2UgdGhpczoNCg0KLS0tLS0tDQoNCmRpZmYg
-LS1naXQgYS9mcy9idHJmcy9pb2N0bC5jIGIvZnMvYnRyZnMvaW9jdGwuYw0KaW5kZXggOTcwOTc3
-YS4uOWU3ZTVkYyAxMDA2NDQNCi0tLSBhL2ZzL2J0cmZzL2lvY3RsLmMNCisrKyBiL2ZzL2J0cmZz
-L2lvY3RsLmMNCkBAIC0yNTk5LDEzICsyNTk5LDEzIEBAIHN0YXRpYyB2b2lkIGdldF9ibG9ja19n
-cm91cF9pbmZvKHN0cnVjdCBsaXN0X2hlYWQgKmdyb3Vwc19saXN0LA0KICAgICAgICB9DQogfQ0K
-IA0KLWxvbmcgYnRyZnNfaW9jdGxfc3BhY2VfaW5mbyhzdHJ1Y3QgYnRyZnNfcm9vdCAqcm9vdCwg
-dm9pZCBfX3VzZXIgKmFyZykNCitzdGF0aWMgbG9uZyBidHJmc19pb2N0bF9zcGFjZV9pbmZvKHN0
-cnVjdCBidHJmc19yb290ICpyb290LCB2b2lkIF9fdXNlciAqYXJnKQ0KIHsNCiAgICAgICAgc3Ry
-dWN0IGJ0cmZzX2lvY3RsX3NwYWNlX2FyZ3Mgc3BhY2VfYXJnczsNCiAgICAgICAgc3RydWN0IGJ0
-cmZzX2lvY3RsX3NwYWNlX2luZm8gc3BhY2U7DQogICAgICAgIHN0cnVjdCBidHJmc19pb2N0bF9z
-cGFjZV9pbmZvICpkZXN0Ow0KICAgICAgICBzdHJ1Y3QgYnRyZnNfaW9jdGxfc3BhY2VfaW5mbyAq
-ZGVzdF9vcmlnOw0KLSAgICAgICBzdHJ1Y3QgYnRyZnNfaW9jdGxfc3BhY2VfaW5mbyBfX3VzZXIg
-KnVzZXJfZGVzdDsNCisgICAgICAgc3RydWN0IGJ0cmZzX2lvY3RsX3NwYWNlX2luZm8gX191c2Vy
-ICp1c2VyX2Rlc3QgPSBhcmc7DQogICAgICAgIHN0cnVjdCBidHJmc19zcGFjZV9pbmZvICppbmZv
-Ow0KICAgICAgICB1NjQgdHlwZXNbXSA9IHtCVFJGU19CTE9DS19HUk9VUF9EQVRBLA0KICAgICAg
-ICAgICAgICAgICAgICAgICBCVFJGU19CTE9DS19HUk9VUF9TWVNURU0sDQpAQCAtMjYxNyw5ICsy
-NjE3LDcgQEAgbG9uZyBidHJmc19pb2N0bF9zcGFjZV9pbmZvKHN0cnVjdCBidHJmc19yb290ICpy
-b290LCB2b2lkIF9fdXNlciAqYXJnKQ0KICAgICAgICB1NjQgc2xvdF9jb3VudCA9IDA7DQogICAg
-ICAgIGludCBpLCBjOw0KIA0KLSAgICAgICBpZiAoY29weV9mcm9tX3VzZXIoJnNwYWNlX2FyZ3Ms
-DQotICAgICAgICAgICAgICAgICAgICAgICAgICAoc3RydWN0IGJ0cmZzX2lvY3RsX3NwYWNlX2Fy
-Z3MgX191c2VyICopYXJnLA0KLSAgICAgICAgICAgICAgICAgICAgICAgICAgc2l6ZW9mKHNwYWNl
-X2FyZ3MpKSkNCisgICAgICAgaWYgKGNvcHlfZnJvbV91c2VyKCZzcGFjZV9hcmdzLCB1c2VyX2Rl
-c3QsIHNpemVvZihzcGFjZV9hcmdzKSkpDQogICAgICAgICAgICAgICAgcmV0dXJuIC1FRkFVTFQ7
-DQogDQogICAgICAgIGZvciAoaSA9IDA7IGkgPCBudW1fdHlwZXM7IGkrKykgew0KQEAgLTI3MDUs
-OCArMjcwMyw3IEBAIGxvbmcgYnRyZnNfaW9jdGxfc3BhY2VfaW5mbyhzdHJ1Y3QgYnRyZnNfcm9v
-dCAqcm9vdCwgdm9pZCBfX3VzZXIgKmFyZykNCiAgICAgICAgICAgICAgICB1cF9yZWFkKCZpbmZv
-LT5ncm91cHNfc2VtKTsNCiAgICAgICAgfQ0KIA0KLSAgICAgICB1c2VyX2Rlc3QgPSAoc3RydWN0
-IGJ0cmZzX2lvY3RsX3NwYWNlX2luZm8gKikNCi0gICAgICAgICAgICAgICAoYXJnICsgc2l6ZW9m
-KHN0cnVjdCBidHJmc19pb2N0bF9zcGFjZV9hcmdzKSk7DQorICAgICAgIHVzZXJfZGVzdCsrOw0K
-IA0KICAgICAgICBpZiAoY29weV90b191c2VyKHVzZXJfZGVzdCwgZGVzdF9vcmlnLCBhbGxvY19z
-aXplKSkNCiAgICAgICAgICAgICAgICByZXQgPSAtRUZBVUxUOw0KDQo=
+Hi, all.  I'd never done RAID on btrfs before, so bear with me if I'm missing
+something obvious.  I just created a RAIDed btrfs partition with 
+
+mkfs.btrfs -m raid10 -d raid10 -L bigguy /dev/sdb /dev/sdc
+
+(I also did the same, but with RAID-1, getting the same results I'm about to
+outline.)  That's two 3-TB disks; since they're RAIDed, I expected to wind up
+with ~3 TB of free space.  But df reports 5858378624 available.  Knowing that
+df and btrfs don't always see eye-to-eye, I copied over a 350 MB .avi, and
+fired up btrfs-show, which came back with:
+
+Label: bigguy  uuid: 5e062e02-f55e-4d7f-866c-3b851b3c6e02
+	Total devices 2 FS bytes used 350.57MB
+	devid    1 size 2.73TB used 1.27GB path /dev/sdb
+	devid    2 size 2.73TB used 0.00 path /dev/sdc
+
+That don't look very mirrored to me.  All the instructions I found said I
+should just mount /dev/sd(b|c) singly; is there, instead, a logical RAID
+partition I should be mounting?  Or... is there something else I'm just
+missing?
+
+Thanks, and apologies if my ignorance is showing,
+
+-Ken
+
+
+
+
+

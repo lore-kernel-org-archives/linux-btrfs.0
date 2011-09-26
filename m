@@ -1,235 +1,169 @@
 From: Josef Bacik <josef@redhat.com>
-Subject: [PATCH] Btrfs: introduce convert_extent_bit
-Date: Mon, 26 Sep 2011 13:56:18 -0400
-Message-ID: <1317059778-17364-1-git-send-email-josef@redhat.com>
+Subject: [PATCH] Btrfs: stop using write_one_page
+Date: Mon, 26 Sep 2011 14:03:24 -0400
+Message-ID: <1317060204-17601-1-git-send-email-josef@redhat.com>
 To: linux-btrfs@vger.kernel.org
 Return-path: <linux-btrfs-owner@vger.kernel.org>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-If I have a range where I know a certain bit is and I want to set it to another
-bit the only option I have is to call set and then clear bit, which will result
-in 2 tree searches.  This is inefficient, so introduce convert_extent_bit which
-will go through and set the bit I want and clear the old bit I don't want.
-Thanks,
+While looking for a performance regression a user was complaining about, I
+noticed that we had a regression with the varmail test of filebench.  This was
+introduced by
+
+0d10ee2e6deb5c8409ae65b970846344897d5e4e
+
+which keeps us from calling writepages in writepage.  This is a correct change,
+however it happens to help the varmail test because we write out in larger
+chunks.  This is largly to do with how we write out dirty pages for each
+transaction.  If you run filebench with
+
+load varmail
+set $dir=/mnt/btrfs-test
+run 60
+
+prior to this patch you would get ~1420 ops/second, but with the patch you get
+~1200 ops/second.  This is a 16% decrease.  So since we know the range of dirty
+pages we want to write out, don't write out in one page chunks, write out in
+ranges.  So to do this we call filemap_fdatawrite_range() on the range of bytes.
+Then we convert the DIRTY extents to NEED_WAIT extents.  When we then call
+btrfs_wait_marked_extents() we only have to filemap_fdatawait_range() on that
+range and clear the NEED_WAIT extents.  This doesn't get us back to our original
+speeds, but I've been seeing ~1380 ops/second, which is a <5% regression as
+opposed to a >15% regression.  That is acceptable given that the original commit
+greatly reduces our latency to begin with.  Thanks,
 
 Signed-off-by: Josef Bacik <josef@redhat.com>
 ---
- fs/btrfs/extent_io.c |  188 ++++++++++++++++++++++++++++++++++++++++++++++++++
- fs/btrfs/extent_io.h |    2 +
- 2 files changed, 190 insertions(+), 0 deletions(-)
+ fs/btrfs/extent_io.h   |    1 +
+ fs/btrfs/transaction.c |   86 ++++++++++-------------------------------------
+ 2 files changed, 20 insertions(+), 67 deletions(-)
 
-diff --git a/fs/btrfs/extent_io.c b/fs/btrfs/extent_io.c
-index 7d5e556..0ada0b7 100644
---- a/fs/btrfs/extent_io.c
-+++ b/fs/btrfs/extent_io.c
-@@ -894,6 +894,194 @@ search_again:
- 	goto again;
- }
- 
-+/**
-+ * convert_extent - convert all bits in a given range from one bit to another
-+ * @tree:	the io tree to search
-+ * @start:	the start offset in bytes
-+ * @end:	the end offset in bytes (inclusive)
-+ * @bits:	the bits to set in this range
-+ * @clear_bits:	the bits to clear in this range
-+ * @mask:	the allocation mask
-+ *
-+ * This will go through and set bits for the given range.  If any states exist
-+ * already in this range they are set with the given bit and cleared of the
-+ * clear_bits.  This is only meant to be used by things that are mergeable, ie
-+ * converting from say DELALLOC to DIRTY.  This is not meant to be used with
-+ * boundary bits like LOCK.
-+ */
-+int convert_extent_bit(struct extent_io_tree *tree, u64 start, u64 end,
-+		       int bits, int clear_bits, gfp_t mask)
-+{
-+	struct extent_state *state;
-+	struct extent_state *prealloc = NULL;
-+	struct rb_node *node;
-+	int err = 0;
-+	u64 last_start;
-+	u64 last_end;
-+
-+again:
-+	if (!prealloc && (mask & __GFP_WAIT)) {
-+		prealloc = alloc_extent_state(mask);
-+		if (!prealloc)
-+			return -ENOMEM;
-+	}
-+
-+	spin_lock(&tree->lock);
-+	/*
-+	 * this search will find all the extents that end after
-+	 * our range starts.
-+	 */
-+	node = tree_search(tree, start);
-+	if (!node) {
-+		prealloc = alloc_extent_state_atomic(prealloc);
-+		if (!prealloc)
-+			return -ENOMEM;
-+		err = insert_state(tree, prealloc, start, end, &bits);
-+		prealloc = NULL;
-+		BUG_ON(err == -EEXIST);
-+		goto out;
-+	}
-+	state = rb_entry(node, struct extent_state, rb_node);
-+hit_next:
-+	last_start = state->start;
-+	last_end = state->end;
-+
-+	/*
-+	 * | ---- desired range ---- |
-+	 * | state |
-+	 *
-+	 * Just lock what we found and keep going
-+	 */
-+	if (state->start == start && state->end <= end) {
-+		struct rb_node *next_node;
-+
-+		set_state_bits(tree, state, &bits);
-+		clear_state_bit(tree, state, &clear_bits, 0);
-+
-+		merge_state(tree, state);
-+		if (last_end == (u64)-1)
-+			goto out;
-+
-+		start = last_end + 1;
-+		next_node = rb_next(&state->rb_node);
-+		if (next_node && start < end && prealloc && !need_resched()) {
-+			state = rb_entry(next_node, struct extent_state,
-+					 rb_node);
-+			if (state->start == start)
-+				goto hit_next;
-+		}
-+		goto search_again;
-+	}
-+
-+	/*
-+	 *     | ---- desired range ---- |
-+	 * | state |
-+	 *   or
-+	 * | ------------- state -------------- |
-+	 *
-+	 * We need to split the extent we found, and may flip bits on
-+	 * second half.
-+	 *
-+	 * If the extent we found extends past our
-+	 * range, we just split and search again.  It'll get split
-+	 * again the next time though.
-+	 *
-+	 * If the extent we found is inside our range, we set the
-+	 * desired bit on it.
-+	 */
-+	if (state->start < start) {
-+		prealloc = alloc_extent_state_atomic(prealloc);
-+		if (!prealloc)
-+			return -ENOMEM;
-+		err = split_state(tree, state, prealloc, start);
-+		BUG_ON(err == -EEXIST);
-+		prealloc = NULL;
-+		if (err)
-+			goto out;
-+		if (state->end <= end) {
-+			set_state_bits(tree, state, &bits);
-+			clear_state_bit(tree, state, &clear_bits, 0);
-+			merge_state(tree, state);
-+			if (last_end == (u64)-1)
-+				goto out;
-+			start = last_end + 1;
-+		}
-+		goto search_again;
-+	}
-+	/*
-+	 * | ---- desired range ---- |
-+	 *     | state | or               | state |
-+	 *
-+	 * There's a hole, we need to insert something in it and
-+	 * ignore the extent we found.
-+	 */
-+	if (state->start > start) {
-+		u64 this_end;
-+		if (end < last_start)
-+			this_end = end;
-+		else
-+			this_end = last_start - 1;
-+
-+		prealloc = alloc_extent_state_atomic(prealloc);
-+		if (!prealloc)
-+			return -ENOMEM;
-+
-+		/*
-+		 * Avoid to free 'prealloc' if it can be merged with
-+		 * the later extent.
-+		 */
-+		err = insert_state(tree, prealloc, start, this_end,
-+				   &bits);
-+		BUG_ON(err == -EEXIST);
-+		if (err) {
-+			free_extent_state(prealloc);
-+			prealloc = NULL;
-+			goto out;
-+		}
-+		prealloc = NULL;
-+		start = this_end + 1;
-+		goto search_again;
-+	}
-+	/*
-+	 * | ---- desired range ---- |
-+	 *                        | state |
-+	 * We need to split the extent, and set the bit
-+	 * on the first half
-+	 */
-+	if (state->start <= end && state->end > end) {
-+		prealloc = alloc_extent_state_atomic(prealloc);
-+		if (!prealloc)
-+			return -ENOMEM;
-+
-+		err = split_state(tree, state, prealloc, end + 1);
-+		BUG_ON(err == -EEXIST);
-+
-+		set_state_bits(tree, prealloc, &bits);
-+		clear_state_bit(tree, prealloc, &clear_bits, 0);
-+
-+		merge_state(tree, prealloc);
-+		prealloc = NULL;
-+		goto out;
-+	}
-+
-+	goto search_again;
-+
-+out:
-+	spin_unlock(&tree->lock);
-+	if (prealloc)
-+		free_extent_state(prealloc);
-+
-+	return err;
-+
-+search_again:
-+	if (start > end)
-+		goto out;
-+	spin_unlock(&tree->lock);
-+	if (mask & __GFP_WAIT)
-+		cond_resched();
-+	goto again;
-+}
-+
- /* wrappers around set/clear extent bit */
- int set_extent_dirty(struct extent_io_tree *tree, u64 start, u64 end,
- 		     gfp_t mask)
 diff --git a/fs/btrfs/extent_io.h b/fs/btrfs/extent_io.h
-index 7b2f0c3..cea445d 100644
+index cea445d..325a346 100644
 --- a/fs/btrfs/extent_io.h
 +++ b/fs/btrfs/extent_io.h
-@@ -214,6 +214,8 @@ int set_extent_dirty(struct extent_io_tree *tree, u64 start, u64 end,
- 		     gfp_t mask);
- int clear_extent_dirty(struct extent_io_tree *tree, u64 start, u64 end,
- 		       gfp_t mask);
-+int convert_extent_bit(struct extent_io_tree *tree, u64 start, u64 end,
-+		       int bits, int clear_bits, gfp_t mask);
- int set_extent_delalloc(struct extent_io_tree *tree, u64 start, u64 end,
- 			struct extent_state **cached_state, gfp_t mask);
- int find_first_extent_bit(struct extent_io_tree *tree, u64 start,
+@@ -17,6 +17,7 @@
+ #define EXTENT_NODATASUM (1 << 10)
+ #define EXTENT_DO_ACCOUNTING (1 << 11)
+ #define EXTENT_FIRST_DELALLOC (1 << 12)
++#define EXTENT_NEED_WAIT (1 << 13)
+ #define EXTENT_IOBITS (EXTENT_LOCKED | EXTENT_WRITEBACK)
+ #define EXTENT_CTLBITS (EXTENT_DO_ACCOUNTING | EXTENT_FIRST_DELALLOC)
+ 
+diff --git a/fs/btrfs/transaction.c b/fs/btrfs/transaction.c
+index 7debbf3..4565579 100644
+--- a/fs/btrfs/transaction.c
++++ b/fs/btrfs/transaction.c
+@@ -572,50 +572,21 @@ int btrfs_end_transaction_dmeta(struct btrfs_trans_handle *trans,
+ int btrfs_write_marked_extents(struct btrfs_root *root,
+ 			       struct extent_io_tree *dirty_pages, int mark)
+ {
+-	int ret;
+ 	int err = 0;
+ 	int werr = 0;
+-	struct page *page;
+-	struct inode *btree_inode = root->fs_info->btree_inode;
++	struct address_space *mapping = root->fs_info->btree_inode->i_mapping;
+ 	u64 start = 0;
+ 	u64 end;
+-	unsigned long index;
+ 
+-	while (1) {
+-		ret = find_first_extent_bit(dirty_pages, start, &start, &end,
+-					    mark);
+-		if (ret)
+-			break;
+-		while (start <= end) {
+-			cond_resched();
+-
+-			index = start >> PAGE_CACHE_SHIFT;
+-			start = (u64)(index + 1) << PAGE_CACHE_SHIFT;
+-			page = find_get_page(btree_inode->i_mapping, index);
+-			if (!page)
+-				continue;
+-
+-			btree_lock_page_hook(page);
+-			if (!page->mapping) {
+-				unlock_page(page);
+-				page_cache_release(page);
+-				continue;
+-			}
+-
+-			if (PageWriteback(page)) {
+-				if (PageDirty(page))
+-					wait_on_page_writeback(page);
+-				else {
+-					unlock_page(page);
+-					page_cache_release(page);
+-					continue;
+-				}
+-			}
+-			err = write_one_page(page, 0);
+-			if (err)
+-				werr = err;
+-			page_cache_release(page);
+-		}
++	while (!find_first_extent_bit(dirty_pages, start, &start, &end,
++				      mark)) {
++		convert_extent_bit(dirty_pages, start, end, EXTENT_NEED_WAIT, mark,
++				   GFP_NOFS);
++		err = filemap_fdatawrite_range(mapping, start, end);
++		if (err)
++			werr = err;
++		cond_resched();
++		start = end + 1;
+ 	}
+ 	if (err)
+ 		werr = err;
+@@ -631,39 +602,20 @@ int btrfs_write_marked_extents(struct btrfs_root *root,
+ int btrfs_wait_marked_extents(struct btrfs_root *root,
+ 			      struct extent_io_tree *dirty_pages, int mark)
+ {
+-	int ret;
+ 	int err = 0;
+ 	int werr = 0;
+-	struct page *page;
+-	struct inode *btree_inode = root->fs_info->btree_inode;
++	struct address_space *mapping = root->fs_info->btree_inode->i_mapping;
+ 	u64 start = 0;
+ 	u64 end;
+-	unsigned long index;
+ 
+-	while (1) {
+-		ret = find_first_extent_bit(dirty_pages, start, &start, &end,
+-					    mark);
+-		if (ret)
+-			break;
+-
+-		clear_extent_bits(dirty_pages, start, end, mark, GFP_NOFS);
+-		while (start <= end) {
+-			index = start >> PAGE_CACHE_SHIFT;
+-			start = (u64)(index + 1) << PAGE_CACHE_SHIFT;
+-			page = find_get_page(btree_inode->i_mapping, index);
+-			if (!page)
+-				continue;
+-			if (PageDirty(page)) {
+-				btree_lock_page_hook(page);
+-				wait_on_page_writeback(page);
+-				err = write_one_page(page, 0);
+-				if (err)
+-					werr = err;
+-			}
+-			wait_on_page_writeback(page);
+-			page_cache_release(page);
+-			cond_resched();
+-		}
++	while (!find_first_extent_bit(dirty_pages, start, &start, &end,
++				      EXTENT_NEED_WAIT)) {
++		clear_extent_bits(dirty_pages, start, end, EXTENT_NEED_WAIT, GFP_NOFS);
++		err = filemap_fdatawait_range(mapping, start, end);
++		if (err)
++			werr = err;
++		cond_resched();
++		start = end + 1;
+ 	}
+ 	if (err)
+ 		werr = err;
 -- 
 1.7.5.2
 

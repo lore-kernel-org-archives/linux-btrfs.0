@@ -1,62 +1,57 @@
 From: Josef Bacik <josef@redhat.com>
-Subject: [PATCH] Btrfs: use the global reserve as a backup for deleting inodes
-Date: Mon, 26 Sep 2011 15:49:09 -0400
-Message-ID: <1317066549-22358-1-git-send-email-josef@redhat.com>
+Subject: [PATCH] Btrfs: break out of orphan cleanup if we can't make progress
+Date: Mon, 26 Sep 2011 15:56:29 -0400
+Message-ID: <1317066989-22566-1-git-send-email-josef@redhat.com>
 To: linux-btrfs@vger.kernel.org
 Return-path: <linux-btrfs-owner@vger.kernel.org>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Xfstests 83 really stresses our ENOSPC since it uses a 100mb fs which ends up
-with the mixed block group stuff.  Because of this we can run into a situation
-where we don't have enough space to delete inodes, or even worse we can't free
-the inodes when we next mount the fs which causes the orphan code to lose its
-mind.  So if we fail to make our reservation, steal from the global reserve.
-The global reserve will end up taking up the entire rest of the free space on
-the fs in this worst case so there really is no other option.  With this patch
-test 83 doesn't freak out.  Thanks,
+I noticed while running xfstests 83 that if we didn't have enough space to
+delete our inode the orphan cleanup would just loop.  This is because it keeps
+finding the same orphan item and keeps trying to kill it but can't because we
+don't get an error back from iput for deleting the inode.  So keep track of the
+last guy we tried to kill, if it's the same as the one we're trying to kill
+currently we know we are having problems and can just error out.  I don't have a
+way to test this so look hard and make sure it's right.  Thanks,
 
 Signed-off-by: Josef Bacik <josef@redhat.com>
 ---
- fs/btrfs/inode.c |   12 +++++++++++-
- 1 files changed, 11 insertions(+), 1 deletions(-)
+ fs/btrfs/inode.c |   12 ++++++++++++
+ 1 files changed, 12 insertions(+), 0 deletions(-)
 
 diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
-index d8bd665..446531a 100644
+index 446531a..bcd7463 100644
 --- a/fs/btrfs/inode.c
 +++ b/fs/btrfs/inode.c
-@@ -3526,7 +3526,7 @@ void btrfs_evict_inode(struct inode *inode)
- {
+@@ -2230,6 +2230,7 @@ int btrfs_orphan_cleanup(struct btrfs_root *root)
+ 	struct btrfs_key key, found_key;
  	struct btrfs_trans_handle *trans;
- 	struct btrfs_root *root = BTRFS_I(inode)->root;
--	struct btrfs_block_rsv *rsv;
-+	struct btrfs_block_rsv *rsv, *global_rsv;
- 	u64 min_size = btrfs_calc_trunc_metadata_size(root, 1);
- 	unsigned long nr;
- 	int ret;
-@@ -3561,6 +3561,7 @@ void btrfs_evict_inode(struct inode *inode)
- 		goto no_delete;
- 	}
- 	rsv->size = min_size;
-+	global_rsv = &root->fs_info->global_block_rsv;
+ 	struct inode *inode;
++	u64 last_objectid = 0;
+ 	int ret = 0, nr_unlink = 0, nr_truncate = 0;
  
- 	btrfs_i_size_write(inode, 0);
- 
-@@ -3577,6 +3578,15 @@ void btrfs_evict_inode(struct inode *inode)
- 	 */
- 	while (1) {
- 		ret = btrfs_block_rsv_check(root, rsv, min_size, 0, 1);
+ 	if (cmpxchg(&root->orphan_cleanup_state, 0, ORPHAN_CLEANUP_STARTED))
+@@ -2281,9 +2282,20 @@ int btrfs_orphan_cleanup(struct btrfs_root *root)
+ 		 * crossing root thing.  we store the inode number in the
+ 		 * offset of the orphan item.
+ 		 */
 +
-+		/*
-+		 * Try and steal from the global reserve since we will
-+		 * likely not use this space anyway, we want to try as
-+		 * hard as possible to get this to work.
-+		 */
-+		if (ret)
-+			ret = btrfs_block_rsv_migrate(global_rsv, rsv, min_size);
++		if (found_key.offset == last_objectid) {
++			printk(KERN_ERR "btrfs: Error removing orphan entry, "
++			       "stopping orphan cleanup\n");
++			ret = -EINVAL;
++			goto out;
++		}
 +
- 		if (ret) {
- 			printk(KERN_WARNING "Could not get space for a "
- 			       "delete, will truncate on mount %d\n", ret);
+ 		found_key.objectid = found_key.offset;
+ 		found_key.type = BTRFS_INODE_ITEM_KEY;
+ 		found_key.offset = 0;
++
++		last_objectid = found_key.offset;
++
+ 		inode = btrfs_iget(root->fs_info->sb, &found_key, root, NULL);
+ 		ret = PTR_RET(inode);
+ 		if (ret && ret != -ESTALE)
 -- 
 1.7.5.2
 

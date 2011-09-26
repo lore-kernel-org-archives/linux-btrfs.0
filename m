@@ -1,314 +1,83 @@
 From: Josef Bacik <josef@redhat.com>
-Subject: [PATCH] Btrfs: allow us to overcommit our enospc reservations TEST THIS PLEASE!!!
-Date: Mon, 26 Sep 2011 17:22:35 -0400
-Message-ID: <1317072155-26792-1-git-send-email-josef@redhat.com>
+Subject: [GIT PULL] ENOSPC rework and random fixes for next merge window
+Date: Mon, 26 Sep 2011 17:36:32 -0400
+Message-ID: <1317072992-28375-1-git-send-email-josef@redhat.com>
 To: linux-btrfs@vger.kernel.org
 Return-path: <linux-btrfs-owner@vger.kernel.org>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-One of the things that kills us is the fact that our ENOSPC reservations are
-horribly over the top in most normal cases.  There isn't too much that can be
-done about this because when we are completely full we really need them to work
-like this so we don't under reserve.  However if there is plenty of unallocated
-chunks on the disk we can use that to gauge how much we can overcommit.  So this
-patch adds chunk free space accounting so we always know how much unallocated
-space we have.  Then if we fail to make a reservation within our allocated
-space, check to see if we can overcommit.  In the normal flushing case (like
-with delalloc metadata reservations) we'll take the free space and divide it by
-2 if our metadata profile is setup for DUP or any of those, and then divide it
-by 8 to make sure we don't overcommit too much.  Then if we're in a non-flushing
-case (we really need this reservation now!) we only limit ourselves to half of
-the free space.  This makes this fio test
+Hello,
 
-[torrent]
-filename=torrent-test
-rw=randwrite
-size=4g
-ioengine=sync
-directory=/mnt/btrfs-test
+Chris can you pull from
 
-go from taking around 45 minutes to 10 seconds on my freshly formatted 3 TiB
-file system.  This doesn't seem to break my other enospc tests, but could really
-use some more testing as this is a super scary change.  Thanks,
+git://github.com/josefbacik/linux.git for-chris
 
-Signed-off-by: Josef Bacik <josef@redhat.com>
----
- fs/btrfs/ctree.h       |    4 +++
- fs/btrfs/disk-io.c     |    2 +
- fs/btrfs/extent-tree.c |   61 +++++++++++++++++++++++++++++++++++++-----------
- fs/btrfs/volumes.c     |   39 +++++++++++++++++++++++++++---
- 4 files changed, 88 insertions(+), 18 deletions(-)
+it is based on your btrfs-3.0 branch.  The diffstat and shortlog are below.
+This is all of my enospc rework stuff.  It is amazing and will cure all of our
+enospc woes and possibly cancer.  We get better chunk allocation behavior with
+this, doing fs_mark on a 7gig fs we now only allocate 264mb for metadata instead
+of 520mb, which allows for much more data to be used and less metadata waste.
+I've fixed how we reserve space for checksumming so we shouldn't be getting
+those nasty WARN_ON()'s anymore.  And I've fixed that long standing problem
+where super random write workloads _sucked_.  Other notable things are a fix on
+how we mount subvolumes and such.  This has all been hammered on pretty well
+with the exception of the overcommit stuff which really needs to be banged
+around a bit, but it's so awesome I really want to get it out there :).  Thanks,
 
-diff --git a/fs/btrfs/ctree.h b/fs/btrfs/ctree.h
-index 47dea71..1eafccb 100644
---- a/fs/btrfs/ctree.h
-+++ b/fs/btrfs/ctree.h
-@@ -893,6 +893,10 @@ struct btrfs_fs_info {
- 	spinlock_t block_group_cache_lock;
- 	struct rb_root block_group_cache_tree;
- 
-+	/* keep track of unallocated space */
-+	spinlock_t free_chunk_lock;
-+	u64 free_chunk_space;
-+
- 	struct extent_io_tree freed_extents[2];
- 	struct extent_io_tree *pinned_extents;
- 
-diff --git a/fs/btrfs/disk-io.c b/fs/btrfs/disk-io.c
-index 4965a01..51372a5 100644
---- a/fs/btrfs/disk-io.c
-+++ b/fs/btrfs/disk-io.c
-@@ -1648,6 +1648,7 @@ struct btrfs_root *open_ctree(struct super_block *sb,
- 	spin_lock_init(&fs_info->fs_roots_radix_lock);
- 	spin_lock_init(&fs_info->delayed_iput_lock);
- 	spin_lock_init(&fs_info->defrag_inodes_lock);
-+	spin_lock_init(&fs_info->free_chunk_lock);
- 	mutex_init(&fs_info->reloc_mutex);
- 
- 	init_completion(&fs_info->kobj_unregister);
-@@ -1675,6 +1676,7 @@ struct btrfs_root *open_ctree(struct super_block *sb,
- 	fs_info->metadata_ratio = 0;
- 	fs_info->defrag_inodes = RB_ROOT;
- 	fs_info->trans_no_join = 0;
-+	fs_info->free_chunk_space = 0;
- 
- 	fs_info->thread_pool_size = min_t(unsigned long,
- 					  num_online_cpus() + 2, 8);
-diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
-index fd65f6b..25b69d0 100644
---- a/fs/btrfs/extent-tree.c
-+++ b/fs/btrfs/extent-tree.c
-@@ -3410,6 +3410,7 @@ static int shrink_delalloc(struct btrfs_trans_handle *trans,
-  * @block_rsv - the block_rsv we're allocating for
-  * @orig_bytes - the number of bytes we want
-  * @flush - wether or not we can flush to make our reservation
-+ * @check - wether this is just to check if we have enough space or not
-  *
-  * This will reserve orgi_bytes number of bytes from the space info associated
-  * with the block_rsv.  If there is not enough space it will make an attempt to
-@@ -3420,11 +3421,11 @@ static int shrink_delalloc(struct btrfs_trans_handle *trans,
-  */
- static int reserve_metadata_bytes(struct btrfs_root *root,
- 				  struct btrfs_block_rsv *block_rsv,
--				  u64 orig_bytes, int flush)
-+				  u64 orig_bytes, int flush, int check)
- {
- 	struct btrfs_space_info *space_info = block_rsv->space_info;
- 	struct btrfs_trans_handle *trans;
--	u64 unused;
-+	u64 used;
- 	u64 num_bytes = orig_bytes;
- 	int retries = 0;
- 	int ret = 0;
-@@ -3459,9 +3460,9 @@ again:
- 	}
- 
- 	ret = -ENOSPC;
--	unused = space_info->bytes_used + space_info->bytes_reserved +
--		 space_info->bytes_pinned + space_info->bytes_readonly +
--		 space_info->bytes_may_use;
-+	used = space_info->bytes_used + space_info->bytes_reserved +
-+		space_info->bytes_pinned + space_info->bytes_readonly +
-+		space_info->bytes_may_use;
- 
- 	/*
- 	 * The idea here is that we've not already over-reserved the block group
-@@ -3470,9 +3471,8 @@ again:
- 	 * lets start flushing stuff first and then come back and try to make
- 	 * our reservation.
- 	 */
--	if (unused <= space_info->total_bytes) {
--		unused = space_info->total_bytes - unused;
--		if (unused >= orig_bytes) {
-+	if (used <= space_info->total_bytes) {
-+		if (used + orig_bytes <= space_info->total_bytes) {
- 			space_info->bytes_may_use += orig_bytes;
- 			ret = 0;
- 		} else {
-@@ -3489,10 +3489,43 @@ again:
- 		 * amount plus the amount of bytes that we need for this
- 		 * reservation.
- 		 */
--		num_bytes = unused - space_info->total_bytes +
-+		num_bytes = used - space_info->total_bytes +
- 			(orig_bytes * (retries + 1));
- 	}
- 
-+	if (ret && !check) {
-+		u64 profile = btrfs_get_alloc_profile(root, 0);
-+		u64 avail;
-+
-+		spin_lock(&root->fs_info->free_chunk_lock);
-+		avail = root->fs_info->free_chunk_space;
-+
-+		/*
-+		 * If we have dup, raid1 or raid10 then only half of the free
-+		 * space is actually useable.
-+		 */
-+		if (profile & (BTRFS_BLOCK_GROUP_DUP |
-+			       BTRFS_BLOCK_GROUP_RAID1 |
-+			       BTRFS_BLOCK_GROUP_RAID10))
-+			avail >>= 1;
-+
-+		/*
-+		 * If we aren't flushing don't let us overcommit too much, say
-+		 * 1/8th of the space.  If we can flush, let it overcommit up to
-+		 * 1/2 of the space.
-+		 */
-+		if (flush)
-+			avail >>= 3;
-+		else
-+			avail >>= 1;
-+		 spin_unlock(&root->fs_info->free_chunk_lock);
-+
-+		if (used + orig_bytes < space_info->total_bytes + avail) {
-+			space_info->bytes_may_use += orig_bytes;
-+			ret = 0;
-+		}
-+	}
-+
- 	/*
- 	 * Couldn't make our reservation, save our place so while we're trying
- 	 * to reclaim space we can actually use it instead of somebody else
-@@ -3703,7 +3736,7 @@ int btrfs_block_rsv_add(struct btrfs_root *root,
- 	if (num_bytes == 0)
- 		return 0;
- 
--	ret = reserve_metadata_bytes(root, block_rsv, num_bytes, 1);
-+	ret = reserve_metadata_bytes(root, block_rsv, num_bytes, 1, 0);
- 	if (!ret) {
- 		block_rsv_add_bytes(block_rsv, num_bytes, 1);
- 		return 0;
-@@ -3737,7 +3770,7 @@ int btrfs_block_rsv_check(struct btrfs_root *root,
- 	if (!ret)
- 		return 0;
- 
--	ret = reserve_metadata_bytes(root, block_rsv, num_bytes, flush);
-+	ret = reserve_metadata_bytes(root, block_rsv, num_bytes, flush, !flush);
- 	if (!ret) {
- 		block_rsv_add_bytes(block_rsv, num_bytes, 0);
- 		return 0;
-@@ -4037,7 +4070,7 @@ int btrfs_delalloc_reserve_metadata(struct inode *inode, u64 num_bytes)
- 	to_reserve += calc_csum_metadata_size(inode, num_bytes, 1);
- 	spin_unlock(&BTRFS_I(inode)->lock);
- 
--	ret = reserve_metadata_bytes(root, block_rsv, to_reserve, flush);
-+	ret = reserve_metadata_bytes(root, block_rsv, to_reserve, flush, 0);
- 	if (ret) {
- 		u64 to_free = 0;
- 		unsigned dropped;
-@@ -5692,7 +5725,7 @@ use_block_rsv(struct btrfs_trans_handle *trans,
- 	block_rsv = get_block_rsv(trans, root);
- 
- 	if (block_rsv->size == 0) {
--		ret = reserve_metadata_bytes(root, block_rsv, blocksize, 0);
-+		ret = reserve_metadata_bytes(root, block_rsv, blocksize, 0, 0);
- 		/*
- 		 * If we couldn't reserve metadata bytes try and use some from
- 		 * the global reserve.
-@@ -5713,7 +5746,7 @@ use_block_rsv(struct btrfs_trans_handle *trans,
- 		return block_rsv;
- 	if (ret) {
- 		WARN_ON(1);
--		ret = reserve_metadata_bytes(root, block_rsv, blocksize, 0);
-+		ret = reserve_metadata_bytes(root, block_rsv, blocksize, 0, 0);
- 		if (!ret) {
- 			return block_rsv;
- 		} else if (ret && block_rsv != global_rsv) {
-diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
-index f2a4cc7..e138af7 100644
---- a/fs/btrfs/volumes.c
-+++ b/fs/btrfs/volumes.c
-@@ -1013,8 +1013,13 @@ static int btrfs_free_dev_extent(struct btrfs_trans_handle *trans,
- 	}
- 	BUG_ON(ret);
- 
--	if (device->bytes_used > 0)
--		device->bytes_used -= btrfs_dev_extent_length(leaf, extent);
-+	if (device->bytes_used > 0) {
-+		u64 len = btrfs_dev_extent_length(leaf, extent);
-+		device->bytes_used -= len;
-+		spin_lock(&root->fs_info->free_chunk_lock);
-+		root->fs_info->free_chunk_space += len;
-+		spin_unlock(&root->fs_info->free_chunk_lock);
-+	}
- 	ret = btrfs_del_item(trans, root, path);
- 
- out:
-@@ -1356,6 +1361,11 @@ int btrfs_rm_device(struct btrfs_root *root, char *device_path)
- 	if (ret)
- 		goto error_undo;
- 
-+	spin_lock(&root->fs_info->free_chunk_lock);
-+	root->fs_info->free_chunk_space = device->total_bytes -
-+		device->bytes_used;
-+	spin_unlock(&root->fs_info->free_chunk_lock);
-+
- 	device->in_fs_metadata = 0;
- 	btrfs_scrub_cancel_dev(root, device);
- 
-@@ -1691,6 +1701,10 @@ int btrfs_init_new_device(struct btrfs_root *root, char *device_path)
- 		root->fs_info->fs_devices->num_can_discard++;
- 	root->fs_info->fs_devices->total_rw_bytes += device->total_bytes;
- 
-+	spin_lock(&root->fs_info->free_chunk_lock);
-+	root->fs_info->free_chunk_space += device->total_bytes;
-+	spin_unlock(&root->fs_info->free_chunk_lock);
-+
- 	if (!blk_queue_nonrot(bdev_get_queue(bdev)))
- 		root->fs_info->fs_devices->rotating = 1;
- 
-@@ -2192,8 +2206,12 @@ int btrfs_shrink_device(struct btrfs_device *device, u64 new_size)
- 	lock_chunks(root);
- 
- 	device->total_bytes = new_size;
--	if (device->writeable)
-+	if (device->writeable) {
- 		device->fs_devices->total_rw_bytes -= diff;
-+		spin_lock(&root->fs_info->free_chunk_lock);
-+		root->fs_info->free_chunk_space -= diff;
-+		spin_unlock(&root->fs_info->free_chunk_lock);
-+	}
- 	unlock_chunks(root);
- 
- again:
-@@ -2257,6 +2275,9 @@ again:
- 		device->total_bytes = old_size;
- 		if (device->writeable)
- 			device->fs_devices->total_rw_bytes += diff;
-+		spin_lock(&root->fs_info->free_chunk_lock);
-+		root->fs_info->free_chunk_space += diff;
-+		spin_unlock(&root->fs_info->free_chunk_lock);
- 		unlock_chunks(root);
- 		goto done;
- 	}
-@@ -2615,6 +2636,11 @@ static int __finish_chunk_alloc(struct btrfs_trans_handle *trans,
- 		index++;
- 	}
- 
-+	spin_lock(&extent_root->fs_info->free_chunk_lock);
-+	extent_root->fs_info->free_chunk_space -= (stripe_size *
-+						   map->num_stripes);
-+	spin_unlock(&extent_root->fs_info->free_chunk_lock);
-+
- 	index = 0;
- 	stripe = &chunk->stripe;
- 	while (index < map->num_stripes) {
-@@ -3616,8 +3642,13 @@ static int read_one_dev(struct btrfs_root *root,
- 	fill_device_from_item(leaf, dev_item, device);
- 	device->dev_root = root->fs_info->dev_root;
- 	device->in_fs_metadata = 1;
--	if (device->writeable)
-+	if (device->writeable) {
- 		device->fs_devices->total_rw_bytes += device->total_bytes;
-+		spin_lock(&root->fs_info->free_chunk_lock);
-+		root->fs_info->free_chunk_space += device->total_bytes -
-+			device->bytes_used;
-+		spin_unlock(&root->fs_info->free_chunk_lock);
-+	}
- 	ret = 0;
- 	return ret;
- }
--- 
-1.7.5.2
+Josef
+
+ fs/btrfs/btrfs_inode.h      |   11 +-
+ fs/btrfs/ctree.h            |   53 ++---
+ fs/btrfs/disk-io.c          |    8 +-
+ fs/btrfs/extent-tree.c      |  585 +++++++++++++++++++++++--------------------
+ fs/btrfs/extent_io.c        |  194 ++++++++++++++-
+ fs/btrfs/extent_io.h        |    3 +
+ fs/btrfs/file.c             |   25 ++-
+ fs/btrfs/free-space-cache.c |   99 +++++---
+ fs/btrfs/inode-map.c        |    6 +-
+ fs/btrfs/inode.c            |  259 ++++++++-----------
+ fs/btrfs/ioctl.c            |    3 +-
+ fs/btrfs/relocation.c       |   21 +-
+ fs/btrfs/super.c            |  224 ++++++++++-------
+ fs/btrfs/transaction.c      |  108 +++------
+ fs/btrfs/volumes.c          |   39 +++-
+ 15 files changed, 955 insertions(+), 683 deletions(-)
+
+Josef Bacik (36):
+      Btrfs: kill reserved_bytes in inode
+      Btrfs: use d_obtain_alias when mounting subvol/subvolid
+      Btrfs: fix how we mount subvol=<whatever>
+      Btrfs: use bytes_may_use for all ENOSPC reservations
+      Btrfs: skip looking for delalloc if we don't have ->fill_delalloc
+      Btrfs: calculate checksum space correctly
+      Btrfs: kill the orphan space calculation for snapshots
+      Btrfs: kill the durable block rsv stuff
+      Btrfs: fix how we reserve space for deleting inodes
+      Btrfs: ratelimit the generation printk for the free space cache
+      Btrfs: kill unused parts of block_rsv
+      Btrfs: don't try to commit in btrfs_block_rsv_check
+      Btrfs: optimize how we account for space in truncate
+      Btrfs: kill btrfs_truncate_reserve_metadata
+      Btrfs: only reserve space in fallocate if we have to do a preallocate
+      Btrfs: reduce the amount of space needed for truncates
+      Btrfs: allow callers to specify if flushing can occur for btrfs_block_rsv_check
+      Btrfs: fix call to btrfs_search_slot in free space cache
+      Btrfs: fix space leak when we fail to make an allocation
+      Btrfs: don't increase the block_rsv's size when emergency allocating space
+      Btrfs: set truncate block rsv's size
+      Btrfs: put the block group cache after we commit the super
+      Btrfs: handle enospc accounting for free space inodes
+      Btrfs: use the transactions block_rsv for the csum root
+      Btrfs: don't get the block_rsv in btrfs_free_tree_block
+      Btrfs: stop passing a trans handle all around the reservation code
+      Btrfs: make sure to unset trans->block_rsv before running delayed refs
+      Btrfs: delay iput when deleting a block group
+      Btrfs: use the inode's mapping mask for allocating pages
+      Btrfs: fix orphan cleanup regression
+      Btrfs: check unused against how much space we actually want
+      Btrfs: introduce convert_extent_bit
+      Btrfs: stop using write_one_page
+      Btrfs: use the global reserve as a backup for deleting inodes
+      Btrfs: break out of orphan cleanup if we can't make progress
+      Btrfs: allow us to overcommit our enospc reservations
 

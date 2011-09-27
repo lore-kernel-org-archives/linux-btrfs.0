@@ -1,257 +1,32 @@
-From: David Sterba <dave@jikos.cz>
-Subject: Re: [PATCH] Btrfs: introduce convert_extent_bit
-Date: Tue, 27 Sep 2011 16:27:40 +0200
-Message-ID: <20110927142740.GD22205@twin.jikos.cz>
-References: <1317059778-17364-1-git-send-email-josef@redhat.com>
-Reply-To: dave@jikos.cz
+From: Jeff Putney <jeffrey.putney@gmail.com>
+Subject: Re: Honest timeline for btrfsck
+Date: Tue, 27 Sep 2011 09:42:16 -0500
+Message-ID: <CA+JuuGpMc2mLFL2kc17HpVKQiNCUgBWf+y2CROQaOTD5cdZg=Q@mail.gmail.com>
+References: <CAGh96GFhVEfXt=xcb-uGEBA3Ss2fc8BwOpJ2g8tXbm+VimdH3Q@mail.gmail.com>
+	<1312404713-sup-6548@shiny>
+	<loom.20110818T030824-742@post.gmane.org>
+	<1313700115-sup-2457@shiny>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Cc: linux-btrfs@vger.kernel.org
-To: Josef Bacik <josef@redhat.com>
+Content-Type: text/plain; charset=ISO-8859-1
+Cc: linux-btrfs <linux-btrfs@vger.kernel.org>
+To: Chris Mason <chris.mason@oracle.com>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <1317059778-17364-1-git-send-email-josef@redhat.com>
+In-Reply-To: <1313700115-sup-2457@shiny>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Mon, Sep 26, 2011 at 01:56:18PM -0400, Josef Bacik wrote:
-> If I have a range where I know a certain bit is and I want to set it to another
-> bit the only option I have is to call set and then clear bit, which will result
-> in 2 tree searches.  This is inefficient, so introduce convert_extent_bit which
-> will go through and set the bit I want and clear the old bit I don't want.
-> Thanks,
-> 
-> Signed-off-by: Josef Bacik <josef@redhat.com>
-> ---
->  fs/btrfs/extent_io.c |  188 ++++++++++++++++++++++++++++++++++++++++++++++++++
->  fs/btrfs/extent_io.h |    2 +
->  2 files changed, 190 insertions(+), 0 deletions(-)
-> 
-> diff --git a/fs/btrfs/extent_io.c b/fs/btrfs/extent_io.c
-> index 7d5e556..0ada0b7 100644
-> --- a/fs/btrfs/extent_io.c
-> +++ b/fs/btrfs/extent_io.c
-> @@ -894,6 +894,194 @@ search_again:
->  	goto again;
->  }
->  
-> +/**
-> + * convert_extent - convert all bits in a given range from one bit to another
-      ^^^^^^^^^^^^^^_bit
+On Thu, Aug 18, 2011 at 3:50 PM, Chris Mason <chris.mason@oracle.com> w=
+rote:
+>=A0I had hoped to get #1 out the door before I left on vacation and I =
+still might
+> post it tonight.
+>
+> -chris
 
-> + * @tree:	the io tree to search
-> + * @start:	the start offset in bytes
-> + * @end:	the end offset in bytes (inclusive)
-> + * @bits:	the bits to set in this range
-> + * @clear_bits:	the bits to clear in this range
-> + * @mask:	the allocation mask
-> + *
-> + * This will go through and set bits for the given range.  If any states exist
-> + * already in this range they are set with the given bit and cleared of the
-> + * clear_bits.  This is only meant to be used by things that are mergeable, ie
-> + * converting from say DELALLOC to DIRTY.  This is not meant to be used with
-> + * boundary bits like LOCK.
-> + */
-> +int convert_extent_bit(struct extent_io_tree *tree, u64 start, u64 end,
-> +		       int bits, int clear_bits, gfp_t mask)
-
-do you really intend to pass anything else than GFP_NOFS as mask? the
-similar holds for lock_extent_bits/unlock_extent/clear_extent/set_extent & co.
-
-there are two calls to set_extent_uptodate() and unlock_extent_cached()
-in end_bio_extent_readpage() with GFP_ATOMIC which is fine with
-GFP_NOFS as well. This would allow the whole set of bit handling
-functions to be relieved from unnecessary passing the GFP_NOFS around.
-
-> +{
-> +	struct extent_state *state;
-> +	struct extent_state *prealloc = NULL;
-> +	struct rb_node *node;
-> +	int err = 0;
-> +	u64 last_start;
-> +	u64 last_end;
-> +
-> +again:
-> +	if (!prealloc && (mask & __GFP_WAIT)) {
-> +		prealloc = alloc_extent_state(mask);
-> +		if (!prealloc)
-> +			return -ENOMEM;
-> +	}
-> +
-> +	spin_lock(&tree->lock);
-> +	/*
-> +	 * this search will find all the extents that end after
-> +	 * our range starts.
-> +	 */
-> +	node = tree_search(tree, start);
-> +	if (!node) {
-> +		prealloc = alloc_extent_state_atomic(prealloc);
-> +		if (!prealloc)
-> +			return -ENOMEM;
-> +		err = insert_state(tree, prealloc, start, end, &bits);
-> +		prealloc = NULL;
-> +		BUG_ON(err == -EEXIST);
-> +		goto out;
-> +	}
-> +	state = rb_entry(node, struct extent_state, rb_node);
-> +hit_next:
-> +	last_start = state->start;
-> +	last_end = state->end;
-> +
-> +	/*
-> +	 * | ---- desired range ---- |
-> +	 * | state |
-> +	 *
-> +	 * Just lock what we found and keep going
-> +	 */
-> +	if (state->start == start && state->end <= end) {
-> +		struct rb_node *next_node;
-> +
-> +		set_state_bits(tree, state, &bits);
-> +		clear_state_bit(tree, state, &clear_bits, 0);
-> +
-> +		merge_state(tree, state);
-> +		if (last_end == (u64)-1)
-> +			goto out;
-> +
-> +		start = last_end + 1;
-> +		next_node = rb_next(&state->rb_node);
-> +		if (next_node && start < end && prealloc && !need_resched()) {
-> +			state = rb_entry(next_node, struct extent_state,
-> +					 rb_node);
-> +			if (state->start == start)
-> +				goto hit_next;
-> +		}
-> +		goto search_again;
-> +	}
-> +
-> +	/*
-> +	 *     | ---- desired range ---- |
-> +	 * | state |
-> +	 *   or
-> +	 * | ------------- state -------------- |
-> +	 *
-> +	 * We need to split the extent we found, and may flip bits on
-> +	 * second half.
-> +	 *
-> +	 * If the extent we found extends past our
-> +	 * range, we just split and search again.  It'll get split
-> +	 * again the next time though.
-> +	 *
-> +	 * If the extent we found is inside our range, we set the
-> +	 * desired bit on it.
-> +	 */
-> +	if (state->start < start) {
-> +		prealloc = alloc_extent_state_atomic(prealloc);
-> +		if (!prealloc)
-> +			return -ENOMEM;
-> +		err = split_state(tree, state, prealloc, start);
-> +		BUG_ON(err == -EEXIST);
-> +		prealloc = NULL;
-> +		if (err)
-> +			goto out;
-> +		if (state->end <= end) {
-> +			set_state_bits(tree, state, &bits);
-> +			clear_state_bit(tree, state, &clear_bits, 0);
-> +			merge_state(tree, state);
-> +			if (last_end == (u64)-1)
-> +				goto out;
-> +			start = last_end + 1;
-> +		}
-> +		goto search_again;
-> +	}
-> +	/*
-> +	 * | ---- desired range ---- |
-> +	 *     | state | or               | state |
-> +	 *
-> +	 * There's a hole, we need to insert something in it and
-> +	 * ignore the extent we found.
-> +	 */
-> +	if (state->start > start) {
-> +		u64 this_end;
-> +		if (end < last_start)
-> +			this_end = end;
-> +		else
-> +			this_end = last_start - 1;
-> +
-> +		prealloc = alloc_extent_state_atomic(prealloc);
-> +		if (!prealloc)
-> +			return -ENOMEM;
-> +
-> +		/*
-> +		 * Avoid to free 'prealloc' if it can be merged with
-> +		 * the later extent.
-> +		 */
-> +		err = insert_state(tree, prealloc, start, this_end,
-> +				   &bits);
-> +		BUG_ON(err == -EEXIST);
-> +		if (err) {
-> +			free_extent_state(prealloc);
-> +			prealloc = NULL;
-> +			goto out;
-> +		}
-> +		prealloc = NULL;
-> +		start = this_end + 1;
-> +		goto search_again;
-> +	}
-> +	/*
-> +	 * | ---- desired range ---- |
-> +	 *                        | state |
-> +	 * We need to split the extent, and set the bit
-> +	 * on the first half
-> +	 */
-> +	if (state->start <= end && state->end > end) {
-> +		prealloc = alloc_extent_state_atomic(prealloc);
-> +		if (!prealloc)
-> +			return -ENOMEM;
-> +
-> +		err = split_state(tree, state, prealloc, end + 1);
-> +		BUG_ON(err == -EEXIST);
-> +
-> +		set_state_bits(tree, prealloc, &bits);
-> +		clear_state_bit(tree, prealloc, &clear_bits, 0);
-> +
-> +		merge_state(tree, prealloc);
-> +		prealloc = NULL;
-> +		goto out;
-> +	}
-> +
-> +	goto search_again;
-> +
-> +out:
-> +	spin_unlock(&tree->lock);
-> +	if (prealloc)
-> +		free_extent_state(prealloc);
-> +
-> +	return err;
-> +
-> +search_again:
-> +	if (start > end)
-> +		goto out;
-> +	spin_unlock(&tree->lock);
-> +	if (mask & __GFP_WAIT)
-> +		cond_resched();
-> +	goto again;
-> +}
-> +
->  /* wrappers around set/clear extent bit */
->  int set_extent_dirty(struct extent_io_tree *tree, u64 start, u64 end,
->  		     gfp_t mask)
-> diff --git a/fs/btrfs/extent_io.h b/fs/btrfs/extent_io.h
-> index 7b2f0c3..cea445d 100644
-> --- a/fs/btrfs/extent_io.h
-> +++ b/fs/btrfs/extent_io.h
-> @@ -214,6 +214,8 @@ int set_extent_dirty(struct extent_io_tree *tree, u64 start, u64 end,
->  		     gfp_t mask);
->  int clear_extent_dirty(struct extent_io_tree *tree, u64 start, u64 end,
->  		       gfp_t mask);
-> +int convert_extent_bit(struct extent_io_tree *tree, u64 start, u64 end,
-> +		       int bits, int clear_bits, gfp_t mask);
->  int set_extent_delalloc(struct extent_io_tree *tree, u64 start, u64 end,
->  			struct extent_state **cached_state, gfp_t mask);
->  int find_first_extent_bit(struct extent_io_tree *tree, u64 start,
-> -- 
-> 1.7.5.2
-> 
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+I don't think this is the honest time line that people were looking
+for.  Instead of playing more guessing games, how about we just get
+that source checked in so we can get more eyeballs on it.
+--
+To unsubscribe from this list: send the line "unsubscribe linux-btrfs" =
+in
+the body of a message to majordomo@vger.kernel.org
+More majordomo info at  http://vger.kernel.org/majordomo-info.html

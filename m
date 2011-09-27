@@ -1,31 +1,33 @@
-From: Josef Bacik <josef@redhat.com>
-Subject: Re: [GIT PULL] ENOSPC rework and random fixes for next merge window
-Date: Tue, 27 Sep 2011 11:11:56 -0400
-Message-ID: <4E81E7BC.40006@redhat.com>
-References: <1317072992-28375-1-git-send-email-josef@redhat.com> <20110927150117.GF22205@twin.jikos.cz>
+From: Artem <artemciy@gmail.com>
+Subject: File compression control, again.
+Date: Tue, 27 Sep 2011 17:17:18 +0000 (UTC)
+Message-ID: <loom.20110927T185853-434@post.gmane.org>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=ISO-8859-1
+Content-Type: text/plain; charset=us-ascii
 To: linux-btrfs@vger.kernel.org
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <20110927150117.GF22205@twin.jikos.cz>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 09/27/2011 11:01 AM, David Sterba wrote:
-> On Mon, Sep 26, 2011 at 05:36:32PM -0400, Josef Bacik wrote:
->>       Btrfs: fix how we mount subvol=<whatever>
-> 
-> this patch was not sent to the mailiglist, although this is an
-> intersting change from the user's POV:
-> 
-> subvolumes are now mountable via
-> 
-> -o subvol=any/path/always/relative/to/toplevel
-> 
-> which makes subvolrootid obsolete and fixes the mess with set-default
-> and subvol= mounts.
-> 
+Hi!
 
-Oops crap sorry I thought I had sent it to the list already, my bad.
-Thanks,
+So, it makes sense to keep the compression on by default
+and with LZO many people are going there.
 
-Josef
+But, I want to create a database on a compressed btrfs filesystem
+which is seek-heavy rather than throughput-heavy
+and I really want to turn the compression off just for that database
+(smaller I/O reads, more precise cache usage).
+
+Maintenance nightmare that Miguel mentioned
+( http://thread.gmane.org/gmane.comp.file-systems.btrfs/1665/focus=1669 )
+isn't really a problem as I'm going to automatically set the flags
+from the program, just before opening the database.
+
+Looking at "fs/btrfs/ioctl.h" I don't see any way to to this.
+Subvolume compression control isn't working either from what I heard
+(cf. https://bbs.archlinux.org/viewtopic.php?id=126635
+     http://thread.gmane.org/gmane.comp.file-systems.btrfs/6237/ ).
+
+Am I right that fine-grained compression control is no longer supported by btrfs?
+If so, I would like to vote for it to be added.
+

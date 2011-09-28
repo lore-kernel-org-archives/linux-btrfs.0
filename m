@@ -1,28 +1,29 @@
-From: Chris Mason <chris.mason@oracle.com>
-Subject: Re: [PATCH] Btrfs: fix missing clear_extent_bit
-Date: Wed, 28 Sep 2011 09:44:34 -0400
-Message-ID: <1317216807-sup-5328@shiny>
-References: <1317204034-11239-1-git-send-email-liubo2009@cn.fujitsu.com> <4E83143B.3050907@redhat.com>
-Content-Type: text/plain; charset=UTF-8
-Cc: Liu Bo <liubo2009@cn.fujitsu.com>,
-	linux-btrfs <linux-btrfs@vger.kernel.org>
+From: Christoph Hellwig <hch@infradead.org>
+Subject: Re: [PATCH] Btrfs: only inherit btrfs specific flags when creating
+ files
+Date: Wed, 28 Sep 2011 10:45:03 -0400
+Message-ID: <20110928144502.GA4018@infradead.org>
+References: <1317135747-8198-1-git-send-email-josef@redhat.com>
+ <4E82717D.6080008@cn.fujitsu.com>
+ <4E831261.9010100@redhat.com>
+Mime-Version: 1.0
+Content-Type: text/plain; charset=us-ascii
+Cc: Liu Bo <liubo2009@cn.fujitsu.com>, linux-btrfs@vger.kernel.org
 To: Josef Bacik <josef@redhat.com>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-reply-to: <4E83143B.3050907@redhat.com>
+In-Reply-To: <4E831261.9010100@redhat.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Excerpts from Josef Bacik's message of 2011-09-28 08:34:03 -0400:
-> On 09/28/2011 06:00 AM, Liu Bo wrote:
-> > We forget to clear inode's dirty_bytes and EXTENT_DIRTY at the end of write.
+On Wed, Sep 28, 2011 at 08:26:09AM -0400, Josef Bacik wrote:
+> > 
+> > It shows EXT[3,4]_APPEND_FL should be inherited from their parent, is this the standard?
 > > 
 > 
-> We don't set EXTENT_DIRTY unless we failed to read a block and that's to
-> keep track of the area we are re-reading, unless I'm missing something?
->  Thanks,
+> I have no idea actually, it was just failing on xfstest 79 and when I
+> took out the inheritance thing it passed so I took the test to be the
+> standard, maybe we should open this up to a wider audience.  Thanks,
 
-Josef and I have been talking about this one on IRC.
-We do set EXTENT_DIRTY during set_extent_delalloc, but as far as I can
-tell we no longer need to.  Can you please experiment with just not
-setting the dirty bit during delalloc instead?
+We had a little discussion on this when Stefan Behrens made this
+test generic, and the conclusion was that the other filesystems should
+adopt the xfs behaviour.
 
--chris

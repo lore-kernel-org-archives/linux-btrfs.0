@@ -1,22 +1,48 @@
-From: Josef Bacik <josef@redhat.com>
-Subject: Re: [PATCH] Btrfs: fix missing clear_extent_bit
-Date: Wed, 28 Sep 2011 08:34:03 -0400
-Message-ID: <4E83143B.3050907@redhat.com>
-References: <1317204034-11239-1-git-send-email-liubo2009@cn.fujitsu.com>
+From: Arne Jansen <sensille@gmx.net>
+Subject: [GIT PULL] scrub updates for 3.2
+Date: Wed, 28 Sep 2011 15:17:47 +0200
+Message-ID: <4E831E7B.9090300@gmx.net>
 Mime-Version: 1.0
 Content-Type: text/plain; charset=ISO-8859-1
-Cc: linux-btrfs@vger.kernel.org, chris.mason@oracle.com
-To: Liu Bo <liubo2009@cn.fujitsu.com>
+Cc: Linux Btrfs <linux-btrfs@vger.kernel.org>
+To: Chris Mason <chris.mason@oracle.com>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <1317204034-11239-1-git-send-email-liubo2009@cn.fujitsu.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 09/28/2011 06:00 AM, Liu Bo wrote:
-> We forget to clear inode's dirty_bytes and EXTENT_DIRTY at the end of write.
-> 
+Hi Chris,
 
-We don't set EXTENT_DIRTY unless we failed to read a block and that's to
-keep track of the area we are re-reading, unless I'm missing something?
- Thanks,
+I rebased my readahead-patches for scrub to your current
+integration-test branch (83f4e90fd11) and pushed it to:
 
-Josef
+git@github.com:sensille/linux.git for-chris
+
+It just contains the readahead patch, which gives a significant
+performance improvement for scrub. Currently scrub is the only
+consumer.
+
+Thanks,
+Arne
+
+Arne Jansen (7):
+      btrfs: add an extra wait mode to read_extent_buffer_pages
+      btrfs: add READAHEAD extent buffer flag
+      btrfs: state information for readahead
+      btrfs: initial readahead code and prototypes
+      btrfs: hooks for readahead
+      btrfs: test ioctl for readahead
+      btrfs: use readahead API for scrub
+
+ fs/btrfs/Makefile    |    3 +-
+ fs/btrfs/ctree.h     |   21 ++
+ fs/btrfs/disk-io.c   |   85 +++++-
+ fs/btrfs/disk-io.h   |    2 +
+ fs/btrfs/extent_io.c |    9 +-
+ fs/btrfs/extent_io.h |    4 +
+ fs/btrfs/ioctl.c     |   93 +++++-
+ fs/btrfs/ioctl.h     |   16 +
+ fs/btrfs/reada.c     |  949 ++++++++++++++++++++++++++++++++++++++++++++++++++
+ fs/btrfs/scrub.c     |  116 +++----
+ fs/btrfs/volumes.c   |    8 +
+ fs/btrfs/volumes.h   |    8 +
+ 12 files changed, 1239 insertions(+), 75 deletions(-)
+ create mode 100644 fs/btrfs/reada.c

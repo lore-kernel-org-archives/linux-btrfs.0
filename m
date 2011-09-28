@@ -1,207 +1,59 @@
-From: Minchan Kim <minchan.kim@gmail.com>
-Subject: Re: [patch 1/4 v2] mm: exclude reserved pages from dirtyable memory
-Date: Thu, 29 Sep 2011 03:35:20 +0900
-Message-ID: <20110928183520.GE1696@barrios-desktop>
-References: <1316526315-16801-1-git-send-email-jweiner@redhat.com>
- <1316526315-16801-2-git-send-email-jweiner@redhat.com>
- <20110921140423.GG4849@suse.de>
- <20110921150328.GJ4849@suse.de>
- <20110922090326.GB29046@redhat.com>
- <20110922105400.GL4849@suse.de>
- <20110923143816.GA2606@redhat.com>
- <20110928045551.GA14561@barrios-desktop>
- <20110928075054.GB23535@redhat.com>
+From: =?utf-8?B?5LuFMTDlhYPmr4/lpKk=?= <admin@mail.china-tax.org>
+Subject: =?utf-8?B?576k5Y+R6L2v5Lu2K+S5sOWutuaQnOe0ouacuivmnIDmlrDlub/kuqTkvJrkubDlrrbjgIHmtbc=?=
+	=?utf-8?B?5YWz5pWw5o2uLEIyQuivouebmOS5sOWutjUwMOS4h+OAgg==?=
+Date: Wed, 28 Sep 2011 20:42:37 +0000 (UTC)
+Message-ID: <20120929043652254816@mail.china-tax.org>
+Reply-To: <1339625218@qq.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Cc: Mel Gorman <mgorman@suse.de>,
-	Andrew Morton <akpm@linux-foundation.org>,
-	Christoph Hellwig <hch@infradead.org>,
-	Dave Chinner <david@fromorbit.com>,
-	Wu Fengguang <fengguang.wu@intel.com>, Jan Kara <jack@suse.cz>,
-	Rik van Riel <riel@redhat.com>,
-	Chris Mason <chris.mason@oracle.com>,
-	Theodore Ts'o <tytso@mit.edu>,
-	Andreas Dilger <adilger.kernel@dilger.ca>, xfs@oss.sgi.com,
-	linux-btrfs@vger.kernel.org, linux-ext4@vger.kernel.org,
-	linux-mm@kvack.org, linux-fsdevel@vger.kernel.org,
-	linux-kernel@vger.kernel.org
-To: Johannes Weiner <jweiner@redhat.com>
-Return-path: <linux-ext4-owner@vger.kernel.org>
-In-Reply-To: <20110928075054.GB23535@redhat.com>
+Content-Type: text/plain;
+	charset="utf-8"
+To: <linux-btrfs@vger.kernel.org>, <linuxworld@itworld.com>,
+	<linx@hotmail.com>, <linxixi78@126.com>, <linyi78977@126.com>,
+	<linyuejingmao@518ad.com>, <linzhenjun3@sohu.com>,
+	<lio@netviga
+Return-path: <linux-btrfs-owner@vger.kernel.org>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Wed, Sep 28, 2011 at 09:50:54AM +0200, Johannes Weiner wrote:
-> On Wed, Sep 28, 2011 at 01:55:51PM +0900, Minchan Kim wrote:
-> > Hi Hannes,
-> > 
-> > On Fri, Sep 23, 2011 at 04:38:17PM +0200, Johannes Weiner wrote:
-> > > The amount of dirtyable pages should not include the full number of
-> > > free pages: there is a number of reserved pages that the page
-> > > allocator and kswapd always try to keep free.
-> > > 
-> > > The closer (reclaimable pages - dirty pages) is to the number of
-> > > reserved pages, the more likely it becomes for reclaim to run into
-> > > dirty pages:
-> > > 
-> > >        +----------+ ---
-> > >        |   anon   |  |
-> > >        +----------+  |
-> > >        |          |  |
-> > >        |          |  -- dirty limit new    -- flusher new
-> > >        |   file   |  |                     |
-> > >        |          |  |                     |
-> > >        |          |  -- dirty limit old    -- flusher old
-> > >        |          |                        |
-> > >        +----------+                       --- reclaim
-> > >        | reserved |
-> > >        +----------+
-> > >        |  kernel  |
-> > >        +----------+
-> > > 
-> > > This patch introduces a per-zone dirty reserve that takes both the
-> > > lowmem reserve as well as the high watermark of the zone into account,
-> > > and a global sum of those per-zone values that is subtracted from the
-> > > global amount of dirtyable pages.  The lowmem reserve is unavailable
-> > > to page cache allocations and kswapd tries to keep the high watermark
-> > > free.  We don't want to end up in a situation where reclaim has to
-> > > clean pages in order to balance zones.
-> > > 
-> > > Not treating reserved pages as dirtyable on a global level is only a
-> > > conceptual fix.  In reality, dirty pages are not distributed equally
-> > > across zones and reclaim runs into dirty pages on a regular basis.
-> > > 
-> > > But it is important to get this right before tackling the problem on a
-> > > per-zone level, where the distance between reclaim and the dirty pages
-> > > is mostly much smaller in absolute numbers.
-> > > 
-> > > Signed-off-by: Johannes Weiner <jweiner@redhat.com>
-> > > ---
-> > >  include/linux/mmzone.h |    6 ++++++
-> > >  include/linux/swap.h   |    1 +
-> > >  mm/page-writeback.c    |    6 ++++--
-> > >  mm/page_alloc.c        |   19 +++++++++++++++++++
-> > >  4 files changed, 30 insertions(+), 2 deletions(-)
-> > > 
-> > > diff --git a/include/linux/mmzone.h b/include/linux/mmzone.h
-> > > index 1ed4116..37a61e7 100644
-> > > --- a/include/linux/mmzone.h
-> > > +++ b/include/linux/mmzone.h
-> > > @@ -317,6 +317,12 @@ struct zone {
-> > >  	 */
-> > >  	unsigned long		lowmem_reserve[MAX_NR_ZONES];
-> > >  
-> > > +	/*
-> > > +	 * This is a per-zone reserve of pages that should not be
-> > > +	 * considered dirtyable memory.
-> > > +	 */
-> > > +	unsigned long		dirty_balance_reserve;
-> > > +
-> > >  #ifdef CONFIG_NUMA
-> > >  	int node;
-> > >  	/*
-> > > diff --git a/include/linux/swap.h b/include/linux/swap.h
-> > > index b156e80..9021453 100644
-> > > --- a/include/linux/swap.h
-> > > +++ b/include/linux/swap.h
-> > > @@ -209,6 +209,7 @@ struct swap_list_t {
-> > >  /* linux/mm/page_alloc.c */
-> > >  extern unsigned long totalram_pages;
-> > >  extern unsigned long totalreserve_pages;
-> > > +extern unsigned long dirty_balance_reserve;
-> > >  extern unsigned int nr_free_buffer_pages(void);
-> > >  extern unsigned int nr_free_pagecache_pages(void);
-> > >  
-> > > diff --git a/mm/page-writeback.c b/mm/page-writeback.c
-> > > index da6d263..c8acf8a 100644
-> > > --- a/mm/page-writeback.c
-> > > +++ b/mm/page-writeback.c
-> > > @@ -170,7 +170,8 @@ static unsigned long highmem_dirtyable_memory(unsigned long total)
-> > >  			&NODE_DATA(node)->node_zones[ZONE_HIGHMEM];
-> > >  
-> > >  		x += zone_page_state(z, NR_FREE_PAGES) +
-> > > -		     zone_reclaimable_pages(z);
-> > > +		     zone_reclaimable_pages(z) -
-> > > +		     zone->dirty_balance_reserve;
-> > >  	}
-> > >  	/*
-> > >  	 * Make sure that the number of highmem pages is never larger
-> > > @@ -194,7 +195,8 @@ static unsigned long determine_dirtyable_memory(void)
-> > >  {
-> > >  	unsigned long x;
-> > >  
-> > > -	x = global_page_state(NR_FREE_PAGES) + global_reclaimable_pages();
-> > > +	x = global_page_state(NR_FREE_PAGES) + global_reclaimable_pages() -
-> > > +	    dirty_balance_reserve;
-> > >  
-> > >  	if (!vm_highmem_is_dirtyable)
-> > >  		x -= highmem_dirtyable_memory(x);
-> > > diff --git a/mm/page_alloc.c b/mm/page_alloc.c
-> > > index 1dba05e..f8cba89 100644
-> > > --- a/mm/page_alloc.c
-> > > +++ b/mm/page_alloc.c
-> > > @@ -96,6 +96,14 @@ EXPORT_SYMBOL(node_states);
-> > >  
-> > >  unsigned long totalram_pages __read_mostly;
-> > >  unsigned long totalreserve_pages __read_mostly;
-> > > +/*
-> > > + * When calculating the number of globally allowed dirty pages, there
-> > > + * is a certain number of per-zone reserves that should not be
-> > > + * considered dirtyable memory.  This is the sum of those reserves
-> > > + * over all existing zones that contribute dirtyable memory.
-> > > + */
-> > > +unsigned long dirty_balance_reserve __read_mostly;
-> > > +
-> > >  int percpu_pagelist_fraction;
-> > >  gfp_t gfp_allowed_mask __read_mostly = GFP_BOOT_MASK;
-> > >  
-> > > @@ -5076,8 +5084,19 @@ static void calculate_totalreserve_pages(void)
-> > >  			if (max > zone->present_pages)
-> > >  				max = zone->present_pages;
-> > >  			reserve_pages += max;
-> > > +			/*
-> > > +			 * Lowmem reserves are not available to
-> > > +			 * GFP_HIGHUSER page cache allocations and
-> > > +			 * kswapd tries to balance zones to their high
-> > > +			 * watermark.  As a result, neither should be
-> > > +			 * regarded as dirtyable memory, to prevent a
-> > > +			 * situation where reclaim has to clean pages
-> > > +			 * in order to balance the zones.
-> > > +			 */
-> > 
-> > Could you put Mel's description instead of it if you don't mind?
-> > If I didn't see Mel's thing, maybe I wouldn't suggest but it looks
-> > more easier to understand.
-> 
-> I changed it because it was already referring to allocation placement,
-> but at the point in time where this comment is introduced there is no
-> allocation placement based on dirty pages yet.
+576k5Y+R6L2v5Lu2K+S5sOWutuaQnOe0ouacuisxMDnlsYrlub/kuqTkvJrkubDlrrbjgIHlsZXk
+vJrkubDlrrbjgIHmtbflhbPmlbDmja4sQjJC6K+i55uY5Lmw5a62NTAw5LiH44CCDQoNCuS4gOWF
+sTjkuKrljIUo5pWw5o2u5piv5YWo6KGM5Lia55qE77yM5oyJ54Wn6KGM5Lia5YiG5aW957G777yM
+5bm25LiU5Y+v5Lul5oyJ54Wn5YWz6ZSu6K+N5p+l6K+i55qEKe+8miANCjHvvIwyMDEx5pil5a2j
+MTA55bGK5bm/5Lqk5Lya5Lmw5a625pWw5o2u5bqT5paw6bKc5Ye654KJ77yM6LaF57qn5paw6bKc
+5Lmw5a6277yM5paw6bKc5pWw5o2u77yM5a655piT5oiQ5Y2V77yBIA0KMu+8jOacgOaWsOWFqOeQ
+g+S5sOWutuW6kyzlhbE0NTE2NjDmnaHmlbDmja7jgIIgDQoz77yMMjAwOOW5tCwyMDA55bm0LDIw
+MTDlubQg5pil5a2jK+eni+Wto+W5v+S6pOS8muS5sOWutuWQjeW9le+8jDEwMyAxMDQgMTA1IDEw
+NiAxMDcgMTA4IOWFseWFreWxiiDlhbExMjAuNuS4h+aVsOaNruOAgg0KNO+8jDIwMTDlubTlm73p
+mYXkv4PplIDljY/kvJrvvIhQUEFJ77yJ5oiQ5ZGY5ZCN5Y2VIFBQQUkgTWVtYmVycyBEaXJlY3Rv
+cnnvvIzpnZ7luLjph43opoHnmoTlpKfkubDlrrbjgIINCjXvvIwyMDEw5bm05Yiw6aaZ5riv6YeH
+6LSt55qE5Zu95aSW5a6i5Lq65ZCN5b2VKOmmmea4r+i0uOWPkeWxgOaPkOS+mynvvIzlhbE3LjLk
+uIfmlbDmja7vvIzotoXnuqfph43opoHnmoTkubDlrrbjgIINCjbvvIw2MC445LiH5p2h5pyA5paw
+5Zu95aSWQjJC5Lmw5a626K+i55uY44CCDQo377yMMjAwOeW5tOa1t+WFs+aPkOWNleaVsOaNrnBp
+ZXJz54mI5pWw5o2uIDHljYPkuIfjgIINCjjvvIznvqTlj5Hova/ku7bvvIznvqTlj5Hova/ku7bn
+moTpg6jnvbLkuI7lronoo4XjgIINCg0K5YWxIDUwMOS4h+S4quS5sOWutu+8jOavj+S4quWdh+ac
+iUVtYWlsLiANCg0K5L+d6K+B5q+P5aSp6YO95pyJ5Lmw5a625Zue5aSN44CCDQrkv53or4Hmr4/l
+pKnpg73mnInkubDlrrblm57lpI3jgIINCg0K6KaB55qE5oqT57Sn6IGU57O7UVE6IDEzMzk2MjUy
+MTggICDmiJbogIXnq4vljbPlm57lpI3pgq7nrrE6IDEzMzk2MjUyMThAcXEuY29tDQropoHnmoTm
+ipPntKfogZTns7tRUTogMTMzOTYyNTIxOCAgIOaIluiAheeri+WNs+WbnuWkjemCrueusTogMTMz
+OTYyNTIxOEBxcS5jb20NCuimgeeahOaKk+e0p+iBlOezu1FROiAxMzM5NjI1MjE4ICAg5oiW6ICF
+56uL5Y2z5Zue5aSN6YKu566xOiAxMzM5NjI1MjE4QHFxLmNvbQ0KIA0KDQror5rkv6HkuLrmnKzv
+vIzlpoLmnpzkuI3kv6Hku7vmnKzkuros5Y+v5Lul6LWw5reY5a6d5Lqk5piTLOaUtui0p+mqjOiv
+geWQjuWGjeS7mOasvizov5nmmK/lr7nmgqjmnIDlpb3nmoTkv53pmpzkuobjgIIgDQoNCuS/neiv
+geavj+WkqemDveacieS5sOWutuWbnuWkjeOAgg0K5L+d6K+B5q+P5aSp6YO95pyJ5Lmw5a625Zue
+5aSN44CCDQrkv53or4Hmr4/lpKnpg73mnInkubDlrrblm57lpI3jgIINCg0KDQoNCg0K5bm/5Lqk
+5Lya5Lmw5a625oyJ5Lqn5ZOB57G75Yir5YiG57G777yM5YiG5Li65Lul5LiL5Yeg57G777yaDQox
+IOWKnuWFrOiuvuWkhw0KMiDnvJbnu4flj4rol6Tpk4Hlt6Xoibrlk4ENCjMg546755KDDQo0IOmk
+kOWOqOeUqOWFtw0KNSDovabovoYNCjYg5aSn5Z6L5py65qKw5Y+K6K6+5aSHDQo3IOeUteWtkOeU
+teawlA0KOCDnlLXlrZDmtojotLnlk4ENCjkg57q657uHDQoxMCDmnI3oo4UNCjExIOS4quS6uuaK
+pOeQhg0KMTIg5bel56iL5py65qKwDQoxMyDlt6XlhbcNCjE0IOWMluW3pQ0KMTUg6K6h566X5py6
+5Y+K6YCa6K6vDQoxNiDlrrblsYXnlKjlk4ENCjE3IOWutuWxheijhemlsA0KMTgg5a625YW3DQox
+OSDlrrbnlKjnlLXlmagNCjIwIOW7uuetkeWPiuijhemlsOadkOaWmQ0KMjEg6IqC5pel55So5ZOB
+DQoyMiDnpLzlk4Hlj4rotaDlk4ENCjIzIOaRqeaJmOi9pg0KMjQg5rG96L2m6YWN5Lu2DQoyNSDp
+o5/lk4ENCjI2IOmZtueTtw0KMjcg6ZOB55+zDQoyOCDnjqnlhbcNCjI5IOWNq+a1tA0KMzAg5LqU
+6YeRDQozMSDlsI/lnovmnLrmorANCjMyIOmeiw0KMzMg5LyR6Zey55So5ZOBDQozNCDljLvnlpcN
+CjM1IOa1tOWupOS6p+WTgQ0KMzYg5Zut5p6XDQozNyDnhafmmI7kuqflk4ENCjM4IOmSn+ihqOec
+vOmVnA0KMzkg6Ieq6KGM6L2mDQo0MCDljIUNCg0KDQrkv53or4Hmr4/lpKnpg73mnInkubDlrrbl
+m57lpI3jgIINCuS/neivgeavj+WkqemDveacieS5sOWutuWbnuWkjeOAgg0K5L+d6K+B5q+P5aSp
+6YO95pyJ5Lmw5a625Zue5aSN44CCDQrkv53or4Hmr4/lpKnpg73mnInkubDlrrblm57lpI3jgIIN
+CuS/neivgeavj+WkqemDveacieS5sOWutuWbnuWkjeOAgg==
 
-Right. at this point, you don't introduce allocation placement yet but
-I knew about that and it seems I was too hasty.
-But I hope you add a comment about allocation placement when you introduce it.
-Of course, you added it in page_alloc.c but I like adding short summary comment
-on field as Mel does. Adding short summary comment on field helps understanding
-why the field is introduced without jumping in and out.
 
-> 
-> The other thing is that it said lowmem_reserves were respected to
-> prevent increasing lowmem pressure, but lowmem is protected by the
-> watermark checks during the allocation.  I took it into account to not
-> end up with a number of dirtyable pages that is bigger than the amount
-> of technically available page cache pages.  Otherwise, you could end
-> up with all page cache pages in a zone dirtied at the time reclaim
-> kicks in and we are back to square one.
-> 
-> Maybe you can fingerpoint to the part that is harder to understand so
-> I can fix it?
-
-I don't mean yours is hard to understand. It seems to be a preference.
-Mel's explanation is more straightforward, I think.
-He explained objective,  method and why we select the method in introduction briefly.
-I like such summary on the field.
-
-But as I said, it might be a preference so if you mind it, I don't insist on it.
-
--- 
-Kind regards,
-Minchan Kim

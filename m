@@ -1,29 +1,28 @@
-From: "Kasatkin, Dmitry" <dmitry.kasatkin@intel.com>
-Subject: BTRFS data structures integrity
-Date: Wed, 28 Sep 2011 16:41:03 +0300
-Message-ID: <CALLzPKbpP+_txNF61EEDS+nDnm+OC50z_+Gmtb5JcgqvrQ0gGw@mail.gmail.com>
-Mime-Version: 1.0
+From: Chris Mason <chris.mason@oracle.com>
+Subject: Re: [PATCH] Btrfs: fix missing clear_extent_bit
+Date: Wed, 28 Sep 2011 09:44:34 -0400
+Message-ID: <1317216807-sup-5328@shiny>
+References: <1317204034-11239-1-git-send-email-liubo2009@cn.fujitsu.com> <4E83143B.3050907@redhat.com>
 Content-Type: text/plain; charset=UTF-8
-Cc: Mimi Zohar <zohar@linux.vnet.ibm.com>
-To: linux-btrfs@vger.kernel.org, linux-fsdevel@vgre.kernel.org
+Cc: Liu Bo <liubo2009@cn.fujitsu.com>,
+	linux-btrfs <linux-btrfs@vger.kernel.org>
+To: Josef Bacik <josef@redhat.com>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
+In-reply-to: <4E83143B.3050907@redhat.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hello,
+Excerpts from Josef Bacik's message of 2011-09-28 08:34:03 -0400:
+> On 09/28/2011 06:00 AM, Liu Bo wrote:
+> > We forget to clear inode's dirty_bytes and EXTENT_DIRTY at the end of write.
+> > 
+> 
+> We don't set EXTENT_DIRTY unless we failed to read a block and that's to
+> keep track of the area we are re-reading, unless I'm missing something?
+>  Thanks,
 
-I have a question about BTRFS data structure integrity.
+Josef and I have been talking about this one on IRC.
+We do set EXTENT_DIRTY during set_extent_delalloc, but as far as I can
+tell we no longer need to.  Can you please experiment with just not
+setting the dirty bit during delalloc instead?
 
-On Ext3 file system I was able to modify offline inode block mapping
-in such a way,
-that 2 inodes did point to the same data blocks, so when modifying one
-file, did affect another file..
-FSCK detects such problems and create duplicated blocks, so that inode
-content will not overlap...
-
-Does Ext4 suffers from the same problem?
-
-Can anyone please tell if BTRFS is persistent to such attacks and
-running fsck is not needed?
-
-Thanks,
-Dmitry
+-chris

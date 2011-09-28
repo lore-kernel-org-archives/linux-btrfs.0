@@ -1,29 +1,21 @@
-From: Christoph Hellwig <hch@infradead.org>
-Subject: Re: [PATCH] Btrfs: only inherit btrfs specific flags when creating
- files
-Date: Wed, 28 Sep 2011 10:45:03 -0400
-Message-ID: <20110928144502.GA4018@infradead.org>
-References: <1317135747-8198-1-git-send-email-josef@redhat.com>
- <4E82717D.6080008@cn.fujitsu.com>
- <4E831261.9010100@redhat.com>
+From: Artem <artemciy@gmail.com>
+Subject: Re: File compression control, again.
+Date: Wed, 28 Sep 2011 14:50:13 +0000 (UTC)
+Message-ID: <loom.20110928T162942-40@post.gmane.org>
+References: <loom.20110927T185853-434@post.gmane.org> <4E827C41.1000805@cn.fujitsu.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
-Cc: Liu Bo <liubo2009@cn.fujitsu.com>, linux-btrfs@vger.kernel.org
-To: Josef Bacik <josef@redhat.com>
+To: linux-btrfs@vger.kernel.org
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <4E831261.9010100@redhat.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Wed, Sep 28, 2011 at 08:26:09AM -0400, Josef Bacik wrote:
-> > 
-> > It shows EXT[3,4]_APPEND_FL should be inherited from their parent, is this the standard?
-> > 
+Li Zefan <lizf <at> cn.fujitsu.com> writes:
+> See this "Per file/directory controls for COW and compression":
 > 
-> I have no idea actually, it was just failing on xfstest 79 and when I
-> took out the inheritance thing it passed so I took the test to be the
-> standard, maybe we should open this up to a wider audience.  Thanks,
+> 	http://marc.info/?l=linux-btrfs&m=130078867208491&w=2
 
-We had a little discussion on this when Stefan Behrens made this
-test generic, and the conclusion was that the other filesystems should
-adopt the xfs behaviour.
+Thanks again!
+I wrote a program to see if ioctl compression control works
+( https://gist.github.com/1248085 )
+and it does!  : )
 

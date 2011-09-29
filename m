@@ -1,41 +1,109 @@
 From: Liu Bo <liubo2009@cn.fujitsu.com>
-Subject: Re: [PATCH] Btrfs: fix missing clear_extent_bit
-Date: Thu, 29 Sep 2011 08:51:36 +0800
-Message-ID: <4E83C118.2050805@cn.fujitsu.com>
-References: <1317204034-11239-1-git-send-email-liubo2009@cn.fujitsu.com> <4E83143B.3050907@redhat.com> <1317216807-sup-5328@shiny>
-Mime-Version: 1.0
-Content-Type: text/plain; charset=UTF-8
-Cc: Josef Bacik <josef@redhat.com>,
-	linux-btrfs <linux-btrfs@vger.kernel.org>
-To: Chris Mason <chris.mason@oracle.com>
+Subject: [PATCH] Btrfs: fix tree corruption after multi-thread snapshots and inode cache flush
+Date: Thu, 29 Sep 2011 10:00:27 +0800
+Message-ID: <1317261627-17265-1-git-send-email-liubo2009@cn.fujitsu.com>
+Cc: <josef@redhat.com>, <chris.mason@oracle.com>,
+	<lizf@cn.fujitsu.com>, <miaox@cn.fujitsu.com>,
+	<zheng.z.yan@linux.intel.com>, <dave@jikos.cz>
+To: <linux-btrfs@vger.kernel.org>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <1317216807-sup-5328@shiny>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 09/28/2011 09:44 PM, Chris Mason wrote:
-> Excerpts from Josef Bacik's message of 2011-09-28 08:34:03 -0400:
->> On 09/28/2011 06:00 AM, Liu Bo wrote:
->>> We forget to clear inode's dirty_bytes and EXTENT_DIRTY at the end of write.
->>>
->> We don't set EXTENT_DIRTY unless we failed to read a block and that's to
->> keep track of the area we are re-reading, unless I'm missing something?
->>  Thanks,
-> 
-> Josef and I have been talking about this one on IRC.
-> We do set EXTENT_DIRTY during set_extent_delalloc, but as far as I can
-> tell we no longer need to.  Can you please experiment with just not
-> setting the dirty bit during delalloc instead?
-> 
+The btrfs snapshotting code requires that once a root has been
+snapshotted, we don't change it during a commit.
 
-Sure.  So this EXTENT_DIRTY is only for METADATA use.
+But there are two cases to lead to tree corruptions:
 
-thanks,
-liubo
+1) multi-thread snapshots can commit serveral snapshots in a transaction,
+   and this may change the src root when processing the following pending
+   snapshots, which lead to the former snapshots corruptions;
 
-> -chris
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
-> 
+2) the free inode cache was changing the roots when it root the cache,
+   which lead to corruptions.
+
+This fixes things by making sure we force COW the block after we create a
+snapshot during commiting a transaction, then any changes to the roots
+will result in COW, and we get all the fs roots and snapshot roots to be
+consistent.
+
+Signed-off-by: Liu Bo <liubo2009@cn.fujitsu.com>
+Signed-off-by: Miao Xie <miaox@cn.fujitsu.com>
+---
+ fs/btrfs/ctree.c       |   17 ++++++++++++++++-
+ fs/btrfs/ctree.h       |    2 ++
+ fs/btrfs/transaction.c |    8 ++++++++
+ 3 files changed, 26 insertions(+), 1 deletions(-)
+
+diff --git a/fs/btrfs/ctree.c b/fs/btrfs/ctree.c
+index 011cab3..49dad7d 100644
+--- a/fs/btrfs/ctree.c
++++ b/fs/btrfs/ctree.c
+@@ -514,10 +514,25 @@ static inline int should_cow_block(struct btrfs_trans_handle *trans,
+ 				   struct btrfs_root *root,
+ 				   struct extent_buffer *buf)
+ {
++	/* ensure we can see the force_cow */
++	smp_rmb();
++
++	/*
++	 * We do not need to cow a block if
++	 * 1) this block is not created or changed in this transaction;
++	 * 2) this block does not belong to TREE_RELOC tree;
++	 * 3) the root is not forced COW.
++	 *
++	 * What is forced COW:
++	 *    when we create snapshot during commiting the transaction,
++	 *    after we've finished coping src root, we must COW the shared
++	 *    block to ensure the metadata consistency.
++	 */
+ 	if (btrfs_header_generation(buf) == trans->transid &&
+ 	    !btrfs_header_flag(buf, BTRFS_HEADER_FLAG_WRITTEN) &&
+ 	    !(root->root_key.objectid != BTRFS_TREE_RELOC_OBJECTID &&
+-	      btrfs_header_flag(buf, BTRFS_HEADER_FLAG_RELOC)))
++	      btrfs_header_flag(buf, BTRFS_HEADER_FLAG_RELOC)) &&
++	    !root->force_cow)
+ 		return 0;
+ 	return 1;
+ }
+diff --git a/fs/btrfs/ctree.h b/fs/btrfs/ctree.h
+index 03912c5..bece0df 100644
+--- a/fs/btrfs/ctree.h
++++ b/fs/btrfs/ctree.h
+@@ -1225,6 +1225,8 @@ struct btrfs_root {
+ 	 * for stat.  It may be used for more later
+ 	 */
+ 	dev_t anon_dev;
++
++	int force_cow;
+ };
+ 
+ struct btrfs_ioctl_defrag_range_args {
+diff --git a/fs/btrfs/transaction.c b/fs/btrfs/transaction.c
+index 7dc36fa..bf6e2b3 100644
+--- a/fs/btrfs/transaction.c
++++ b/fs/btrfs/transaction.c
+@@ -816,6 +816,10 @@ static noinline int commit_fs_roots(struct btrfs_trans_handle *trans,
+ 
+ 			btrfs_save_ino_cache(root, trans);
+ 
++			/* see comments in should_cow_block() */
++			root->force_cow = 0;
++			smp_wmb();
++
+ 			if (root->commit_root != root->node) {
+ 				mutex_lock(&root->fs_commit_mutex);
+ 				switch_commit_root(root);
+@@ -976,6 +980,10 @@ static noinline int create_pending_snapshot(struct btrfs_trans_handle *trans,
+ 	btrfs_tree_unlock(old);
+ 	free_extent_buffer(old);
+ 
++	/* see comments in should_cow_block() */
++	root->force_cow = 1;
++	smp_wmb();
++
+ 	btrfs_set_root_node(new_root_item, tmp);
+ 	/* record when the snapshot was created in key.offset */
+ 	key.offset = trans->transid;
+-- 
+1.6.5.2
 

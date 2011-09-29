@@ -1,35 +1,41 @@
-From: David Sterba <dave@jikos.cz>
-Subject: Re: File compression control, again.
-Date: Wed, 28 Sep 2011 23:09:20 +0200
-Message-ID: <20110928210920.GG22205@twin.jikos.cz>
-References: <loom.20110927T185853-434@post.gmane.org> <4E827C41.1000805@cn.fujitsu.com> <loom.20110928T162942-40@post.gmane.org>
-Reply-To: dave@jikos.cz
+From: Liu Bo <liubo2009@cn.fujitsu.com>
+Subject: Re: [PATCH] Btrfs: fix missing clear_extent_bit
+Date: Thu, 29 Sep 2011 08:51:36 +0800
+Message-ID: <4E83C118.2050805@cn.fujitsu.com>
+References: <1317204034-11239-1-git-send-email-liubo2009@cn.fujitsu.com> <4E83143B.3050907@redhat.com> <1317216807-sup-5328@shiny>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Cc: linux-btrfs@vger.kernel.org
-To: Artem <artemciy@gmail.com>
+Content-Type: text/plain; charset=UTF-8
+Cc: Josef Bacik <josef@redhat.com>,
+	linux-btrfs <linux-btrfs@vger.kernel.org>
+To: Chris Mason <chris.mason@oracle.com>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <loom.20110928T162942-40@post.gmane.org>
+In-Reply-To: <1317216807-sup-5328@shiny>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Wed, Sep 28, 2011 at 02:50:13PM +0000, Artem wrote:
-> Li Zefan <lizf <at> cn.fujitsu.com> writes:
-> > See this "Per file/directory controls for COW and compression":
-> > 
-> > 	http://marc.info/?l=linux-btrfs&m=130078867208491&w=2
+On 09/28/2011 09:44 PM, Chris Mason wrote:
+> Excerpts from Josef Bacik's message of 2011-09-28 08:34:03 -0400:
+>> On 09/28/2011 06:00 AM, Liu Bo wrote:
+>>> We forget to clear inode's dirty_bytes and EXTENT_DIRTY at the end of write.
+>>>
+>> We don't set EXTENT_DIRTY unless we failed to read a block and that's to
+>> keep track of the area we are re-reading, unless I'm missing something?
+>>  Thanks,
 > 
-> Thanks again!
-> I wrote a program to see if ioctl compression control works
-> ( https://gist.github.com/1248085 )
+> Josef and I have been talking about this one on IRC.
+> We do set EXTENT_DIRTY during set_extent_delalloc, but as far as I can
+> tell we no longer need to.  Can you please experiment with just not
+> setting the dirty bit during delalloc instead?
+> 
 
-you have to call IOC_GETFLAGS first, then
+Sure.  So this EXTENT_DIRTY is only for METADATA use.
 
-flags |= FS_NOCOMP_FL;
+thanks,
+liubo
 
-27  int flags = compression ? FS_COMPR_FL : FS_NOCOMP_FL;
-28  int ret = ioctl (fd, FS_IOC_SETFLAGS, &flags);
+> -chris
+> --
+> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
+> the body of a message to majordomo@vger.kernel.org
+> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+> 
 
-else all other flags will be dropped.
-
-
-david

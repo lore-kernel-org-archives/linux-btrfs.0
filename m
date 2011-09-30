@@ -1,85 +1,26 @@
-From: Michal Hocko <mhocko@suse.cz>
-Subject: Re: [patch 4/5] mm: filemap: pass __GFP_WRITE from
- grab_cache_page_write_begin()
-Date: Fri, 30 Sep 2011 16:41:22 +0200
-Message-ID: <20110930144122.GD869@tiehlicka.suse.cz>
-References: <1317367044-475-1-git-send-email-jweiner@redhat.com>
- <1317367044-475-5-git-send-email-jweiner@redhat.com>
-Mime-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Cc: Andrew Morton <akpm@linux-foundation.org>,
-	Mel Gorman <mgorman@suse.de>,
-	Christoph Hellwig <hch@infradead.org>,
-	Dave Chinner <david@fromorbit.com>,
-	Wu Fengguang <fengguang.wu@intel.com>, Jan Kara <jack@suse.cz>,
-	Rik van Riel <riel@redhat.com>,
-	Minchan Kim <minchan.kim@gmail.com>,
-	Chris Mason <chris.mason@oracle.com>,
-	Theodore Ts'o <tytso@mit.edu>,
-	Andreas Dilger <adilger.kernel@dilger.ca>,
-	Shaohua Li <shaohua.li@intel.com>, xfs@oss.sgi.com,
-	linux-btrfs@vger.kernel.org, linux-ext4@vger.kernel.org,
-	linux-mm@kvack.org, linux-fsdevel@vger.kernel.org,
-	linux-kernel@vger.kernel.org
-To: Johannes Weiner <jweiner@redhat.com>
-Return-path: <linux-ext4-owner@vger.kernel.org>
-In-Reply-To: <1317367044-475-5-git-send-email-jweiner@redhat.com>
+From: Chris Mason <chris.mason@oracle.com>
+Subject: Re: [BUG, integration-test] fs/btrfs/inode.c:835
+Date: Fri, 30 Sep 2011 16:10:40 -0400
+Message-ID: <1317413433-sup-5145@shiny>
+References: <20110929220513.GH22205@twin.jikos.cz> <4E85081A.9030900@jp.fujitsu.com> <20110930105200.GI22205@twin.jikos.cz>
+Content-Type: text/plain; charset=UTF-8
+Cc: Tsutomu Itoh <t-itoh@jp.fujitsu.com>,
+	Linux Btrfs <linux-btrfs@vger.kernel.org>
+To: David Sterba <dave@jikos.cz>
+Return-path: <linux-btrfs-owner@vger.kernel.org>
+In-reply-to: <20110930105200.GI22205@twin.jikos.cz>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Fri 30-09-11 09:17:23, Johannes Weiner wrote:
-> Tell the page allocator that pages allocated through
-> grab_cache_page_write_begin() are expected to become dirty soon.
+Excerpts from David Sterba's message of 2011-09-30 06:52:00 -0400:
+> On Fri, Sep 30, 2011 at 09:06:50AM +0900, Tsutomu Itoh wrote:
+> > The problem might be solved by the following patch.
+> > 
+> >  http://marc.info/?l=linux-btrfs&m=131556023601191&w=2
 > 
-> Signed-off-by: Johannes Weiner <jweiner@redhat.com>
-> Reviewed-by: Rik van Riel <riel@redhat.com>
-> Acked-by: Mel Gorman <mgorman@suse.de>
-> Reviewed-by: Minchan Kim <minchan.kim@gmail.com>
+> Thanks! It's the same BUG_ON line. I rerun the test yesterday for the
+> scond time and it triggered again. Now I'm testing integration with
+> Miao's fix and so far no crash after a few rounds.
 
-Reviewed-by: Michal Hocko <mhocko@suse.cz>
+Nice, thanks guys.
 
-> ---
->  mm/filemap.c |    5 ++++-
->  1 files changed, 4 insertions(+), 1 deletions(-)
-> 
-> diff --git a/mm/filemap.c b/mm/filemap.c
-> index 645a080..cf0352d 100644
-> --- a/mm/filemap.c
-> +++ b/mm/filemap.c
-> @@ -2349,8 +2349,11 @@ struct page *grab_cache_page_write_begin(struct address_space *mapping,
->  					pgoff_t index, unsigned flags)
->  {
->  	int status;
-> +	gfp_t gfp_mask;
->  	struct page *page;
->  	gfp_t gfp_notmask = 0;
-> +
-> +	gfp_mask = mapping_gfp_mask(mapping) | __GFP_WRITE;
->  	if (flags & AOP_FLAG_NOFS)
->  		gfp_notmask = __GFP_FS;
->  repeat:
-> @@ -2358,7 +2361,7 @@ repeat:
->  	if (page)
->  		goto found;
->  
-> -	page = __page_cache_alloc(mapping_gfp_mask(mapping) & ~gfp_notmask);
-> +	page = __page_cache_alloc(gfp_mask & ~gfp_notmask);
->  	if (!page)
->  		return NULL;
->  	status = add_to_page_cache_lru(page, mapping, index,
-> -- 
-> 1.7.6.2
-> 
-> --
-> To unsubscribe, send a message with 'unsubscribe linux-mm' in
-> the body to majordomo@kvack.org.  For more info on Linux MM,
-> see: http://www.linux-mm.org/ .
-> Fight unfair telecom internet charges in Canada: sign http://stopthemeter.ca/
-> Don't email: <a href=mailto:"dont@kvack.org"> email@kvack.org </a>
-
--- 
-Michal Hocko
-SUSE Labs
-SUSE LINUX s.r.o.
-Lihovarska 1060/12
-190 00 Praha 9    
-Czech Republic
+-chris

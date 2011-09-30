@@ -1,48 +1,93 @@
-From: Stephane Chazelas <stephane_chazelas@yahoo.fr>
-Subject: Re: high CPU usage and low perf
-Date: Fri, 30 Sep 2011 09:46:44 +0100
-Message-ID: <20110930084644.GB4234@yahoo.fr>
-References: <20110927091509.GA4149@yahoo.fr>
+From: Johannes Weiner <jweiner@redhat.com>
+Subject: Re: [patch 3/5] mm: try to distribute dirty pages fairly across zones
+Date: Fri, 30 Sep 2011 10:55:39 +0200
+Message-ID: <20110930085539.GD30857@redhat.com>
+References: <1317367044-475-1-git-send-email-jweiner@redhat.com>
+ <1317367044-475-4-git-send-email-jweiner@redhat.com>
+ <CAOJsxLFWfH5zDG8ui=yQyOcZY_nXhK6r+ziapLg9Zhmb3ibuWQ@mail.gmail.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-To: linux-btrfs@vger.kernel.org
-Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <20110927091509.GA4149@yahoo.fr>
+Content-Type: text/plain; charset=iso-8859-1
+Cc: Andrew Morton <akpm@linux-foundation.org>, Mel Gorman <mgorman@suse.de>,
+        Christoph Hellwig <hch@infradead.org>,
+        Dave Chinner <david@fromorbit.com>,
+        Wu Fengguang <fengguang.wu@intel.com>, Jan Kara <jack@suse.cz>,
+        Rik van Riel <riel@redhat.com>, Minchan Kim <minchan.kim@gmail.com>,
+        Chris Mason <chris.mason@oracle.com>, "Theodore Ts'o" <tytso@mit.edu>,
+        Andreas Dilger <adilger.kernel@dilger.ca>,
+        Shaohua Li <shaohua.li@intel.com>, xfs@oss.sgi.com,
+        linux-btrfs@vger.kernel.org, linux-ext4@vger.kernel.org,
+        linux-mm@kvack.org, linux-fsdevel@vger.kernel.org,
+        linux-kernel@vger.kernel.org
+To: Pekka Enberg <penberg@cs.helsinki.fi>
+Return-path: <owner-linux-mm@kvack.org>
+In-Reply-To: <CAOJsxLFWfH5zDG8ui=yQyOcZY_nXhK6r+ziapLg9Zhmb3ibuWQ@mail.gmail.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-2011-09-27 10:15:09 +0100, Stephane Chazelas:
-[...]
-> btrfs-transacti R  running task        0   963      2 0x00000000
->  ffff880143af7730 ffffffff00000001 ffffffffffffff10 ffff880143af77b0
->  ffff8801456da420 ffffffffffffffff 00000000e86aa840 0000000000001000
->  00000000ffffffe4 ffff8801462ba800 ffff880109f9b540 000088002a95eba8
-> Call Trace:
->  [<ffffffffa032765e>] ? tree_search_offset+0x18f/0x1b8 [btrfs]
->  [<ffffffffa02eb745>] ? btrfs_reserve_extent+0xb0/0x190 [btrfs]
->  [<ffffffffa02ebdfc>] ? btrfs_alloc_free_block+0x22e/0x349 [btrfs]
->  [<ffffffffa02dea3d>] ? __btrfs_cow_block+0x102/0x31e [btrfs]
->  [<ffffffffa02ebdfc>] ? btrfs_alloc_free_block+0x22e/0x349 [btrfs]
->  [<ffffffffa02dea3d>] ? __btrfs_cow_block+0x102/0x31e [btrfs]
->  [<ffffffffa02dd400>] ? btrfs_set_node_key+0x1a/0x20 [btrfs]
->  [<ffffffffa02ded5d>] ? btrfs_cow_block+0x104/0x14e [btrfs]
->  [<ffffffffa02e1c34>] ? btrfs_search_slot+0x162/0x4cb [btrfs]
->  [<ffffffffa02e2ea3>] ? btrfs_insert_empty_items+0x6a/0xba [btrfs]
->  [<ffffffffa02e9bf3>] ? run_clustered_refs+0x370/0x682 [btrfs]
->  [<ffffffffa032d201>] ? btrfs_find_ref_cluster+0xd/0x13c [btrfs]
->  [<ffffffffa02e9fd6>] ? btrfs_run_delayed_refs+0xd1/0x17c [btrfs]
->  [<ffffffffa02f8467>] ? btrfs_commit_transaction+0x38f/0x709 [btrfs]
->  [<ffffffff8136f6e6>] ? _raw_spin_lock+0xe/0x10
->  [<ffffffffa02f79fe>] ? join_transaction.clone.23+0xc1/0x200 [btrfs]
-[...]
+On Fri, Sep 30, 2011 at 10:35:25AM +0300, Pekka Enberg wrote:
+> Hi Johannes!
+>=20
+> On Fri, Sep 30, 2011 at 10:17 AM, Johannes Weiner <jweiner@redhat.com> =
+wrote:
+> > But there is a flaw in that we have a zoned page allocator which does
+> > not care about the global state but rather the state of individual
+> > memory zones. =A0And right now there is nothing that prevents one zon=
+e
+> > from filling up with dirty pages while other zones are spared, which
+> > frequently leads to situations where kswapd, in order to restore the
+> > watermark of free pages, does indeed have to write pages from that
+> > zone's LRU list. =A0This can interfere so badly with IO from the flus=
+her
+> > threads that major filesystems (btrfs, xfs, ext4) mostly ignore write
+> > requests from reclaim already, taking away the VM's only possibility
+> > to keep such a zone balanced, aside from hoping the flushers will soo=
+n
+> > clean pages from that zone.
+>=20
+> The obvious question is: how did you test this? Can you share the resul=
+ts?
 
-Any idea anyone? The above suggests btrfs struggles to allocate
-space, even though the FS is only 66% full.
+Meh, sorry about that, they were in the series introduction the last
+time and I forgot to copy them over.
 
-For now, my work around is to reboot the system once a day. Not
-ideal...
+I did single-threaded, linear writing to an USB stick as the effect is
+most pronounced with slow backing devices.
 
-I'm also suspecting some data corruption which I'm investigating
-now (one a file written via mmap()).
+[ The write deferring on ext4 because of delalloc is so extreme that I
+  could trigger it even with simple linear writers on a mediocre
+  rotating disk, though.  I can not access the logfiles right now, but
+  the nr_vmscan_writes went practically away here as well and runtime
+  was unaffected with the patched kernel. ]
 
-Thanks,
-Stephane
+			Test results
+
+15M DMA + 3246M DMA32 + 504M Normal =3D 3765M memory
+40% dirty ratio, 10% background ratio
+16G USB thumb drive
+10 runs of dd if=3D/dev/zero of=3Ddisk/zeroes bs=3D32k count=3D$((10 << 1=
+5))
+
+		seconds			nr_vmscan_write
+		        (stddev)	       min|     median|        max
+xfs
+vanilla:	 549.747( 3.492)	     0.000|      0.000|      0.000
+patched:	 550.996( 3.802)	     0.000|      0.000|      0.000
+
+fuse-ntfs
+vanilla:	1183.094(53.178)	 54349.000|  59341.000|  65163.000
+patched:	 558.049(17.914)	     0.000|      0.000|     43.000
+
+btrfs
+vanilla:	 573.679(14.015)	156657.000| 460178.000| 606926.000
+patched:	 563.365(11.368)	     0.000|      0.000|   1362.000
+
+ext4
+vanilla:	 561.197(15.782)	     0.000|2725438.000|4143837.000
+patched:	 568.806(17.496)	     0.000|      0.000|      0.000
+
+--
+To unsubscribe, send a message with 'unsubscribe linux-mm' in
+the body to majordomo@kvack.org.  For more info on Linux MM,
+see: http://www.linux-mm.org/ .
+Fight unfair telecom internet charges in Canada: sign http://stopthemeter=
+.ca/
+Don't email: <a href=3Dmailto:"dont@kvack.org"> email@kvack.org </a>

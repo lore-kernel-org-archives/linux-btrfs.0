@@ -1,77 +1,74 @@
-From: Anand Jain <anand.jain@oracle.com>
-Subject: Re: [PATCH 3/3] Added test case 259 for the btrfs raid features
-Date: Mon, 03 Oct 2011 16:55:59 +0530
-Message-ID: <4E899BC7.6070607@oracle.com>
-References: <4E3BA2F7.4080500@oracle.com> <4E44351D.4020202@oracle.com> <20110902084941.GB29054@infradead.org>
+From: Mel Gorman <mgorman@suse.de>
+Subject: Re: [patch 1/5] mm: exclude reserved pages from dirtyable memory
+Date: Mon, 3 Oct 2011 12:22:05 +0100
+Message-ID: <20111003112205.GA5011@suse.de>
+References: <1317367044-475-1-git-send-email-jweiner@redhat.com>
+ <1317367044-475-2-git-send-email-jweiner@redhat.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=ISO-8859-1; format=flowed
-Cc: linux-fsdevel@vger.kernel.org, linux-btrfs@vger.kernel.org,
-	xfs@oss.sgi.com, Chris Mason <chris.mason@oracle.com>
-To: Christoph Hellwig <hch@infradead.org>
-Return-path: <linux-fsdevel-owner@vger.kernel.org>
-In-Reply-To: <20110902084941.GB29054@infradead.org>
+Content-Type: text/plain; charset=iso-8859-15
+Cc: Andrew Morton <akpm@linux-foundation.org>,
+	Christoph Hellwig <hch@infradead.org>,
+	Dave Chinner <david@fromorbit.com>,
+	Wu Fengguang <fengguang.wu@intel.com>, Jan Kara <jack@suse.cz>,
+	Rik van Riel <riel@redhat.com>,
+	Minchan Kim <minchan.kim@gmail.com>,
+	Chris Mason <chris.mason@oracle.com>,
+	Theodore Ts'o <tytso@mit.edu>,
+	Andreas Dilger <adilger.kernel@dilger.ca>,
+	Shaohua Li <shaohua.li@intel.com>, xfs@oss.sgi.com,
+	linux-btrfs@vger.kernel.org, linux-ext4@vger.kernel.org,
+	linux-mm@kvack.org, linux-fsdevel@vger.kernel.org,
+	linux-kernel@vger.kernel.org
+To: Johannes Weiner <jweiner@redhat.com>
+Return-path: <linux-ext4-owner@vger.kernel.org>
+In-Reply-To: <1317367044-475-2-git-send-email-jweiner@redhat.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-
-Christoph,
-
-  apologies for the delay I was on a long leave.
-
-
-> Also is there a chance you could allow setting
-> only SCRATCH_DEV_POOL for btrfs, and derive SCRATCH_DEV for that as an
-> additional step?
-
-  There is some challenge to set SCRATCH_DEV based on FSTYP since
-  SCRATCH_DEV is used even before FSTYP is set.
-
-  common.config uses SCRATCH_DEV and we set FSTYP in common.
-  check calls these two script files in the following logic.
-  --------------------------
-  # we need common.config
-  if ! . ./common.config
-  then
-     echo "$iam: failed to source common.config"
-     exit 1
-  fi
-
-  # we need common
-  . ./common
-  ---------------------------
-
-  to avoid major changes what we could do is to find-out FSTYP on our
-  own in the file common.config and set SCRATCH_DEV based on
-  SCRATCH_DEV_POOL, but thats a bit ugly way. I am open to any
-  suggestions. thanks.
-
-
-
-> Please use the sysfs interface instead of the deprecated /proc/scsi/scsi
-> interface.  I would also suggest to split this routine into two for
-> removing and adding, and move them to the common helper library, so it
-> could be used for other tests.
-
-yes. will get something like below code. in the common
-
------
-remove:
-echo 1 > 
-/sys/class/scsi_device/${host}:${channel}:${id}:${lun}/device/delete
-
-add:
-echo "$channel $id $lun" > /sys/class/scsi_host/host${host}/scan
------
-
-
->> +# we need this to test removing a dev from the system
->> +_require_proc_scsi()
->> +{
->> +	[ -e /proc/scsi/scsi ]  || _notrun "/proc/scsi/scsi is not present"
->> +}
+On Fri, Sep 30, 2011 at 09:17:20AM +0200, Johannes Weiner wrote:
+> The amount of dirtyable pages should not include the full number of
+> free pages: there is a number of reserved pages that the page
+> allocator and kswapd always try to keep free.
 > 
-> The _require need really is that the device you want to work on is a
-> SCSI device.
+> The closer (reclaimable pages - dirty pages) is to the number of
+> reserved pages, the more likely it becomes for reclaim to run into
+> dirty pages:
+> 
+>        +----------+ ---
+>        |   anon   |  |
+>        +----------+  |
+>        |          |  |
+>        |          |  -- dirty limit new    -- flusher new
+>        |   file   |  |                     |
+>        |          |  |                     |
+>        |          |  -- dirty limit old    -- flusher old
+>        |          |                        |
+>        +----------+                       --- reclaim
+>        | reserved |
+>        +----------+
+>        |  kernel  |
+>        +----------+
+> 
+> This patch introduces a per-zone dirty reserve that takes both the
+> lowmem reserve as well as the high watermark of the zone into account,
+> and a global sum of those per-zone values that is subtracted from the
+> global amount of dirtyable pages.  The lowmem reserve is unavailable
+> to page cache allocations and kswapd tries to keep the high watermark
+> free.  We don't want to end up in a situation where reclaim has to
+> clean pages in order to balance zones.
+> 
+> Not treating reserved pages as dirtyable on a global level is only a
+> conceptual fix.  In reality, dirty pages are not distributed equally
+> across zones and reclaim runs into dirty pages on a regular basis.
+> 
+> But it is important to get this right before tackling the problem on a
+> per-zone level, where the distance between reclaim and the dirty pages
+> is mostly much smaller in absolute numbers.
+> 
+> Signed-off-by: Johannes Weiner <jweiner@redhat.com>
+> Reviewed-by: Rik van Riel <riel@redhat.com>
 
-will get this.
+Acked-by: Mel Gorman <mgorman@suse.de>
 
-Thanks -Anand
+-- 
+Mel Gorman
+SUSE Labs

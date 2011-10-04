@@ -1,60 +1,41 @@
 From: Jeff Mahoney <jeffm@suse.com>
-Subject: [patch 31/65] btrfs: btrfs_requeue_work should return void
-Date: Mon, 03 Oct 2011 23:23:01 -0400
-Message-ID: <20111004032303.475379818@suse.com>
+Subject: [patch 33/65] btrfs: tree-log: wait_for_writer should return void
+Date: Mon, 03 Oct 2011 23:23:03 -0400
+Message-ID: <20111004032303.703877593@suse.com>
 References: <20111004032230.458853274@suse.com>
 Cc: Chris Mason <chris.mason@oracle.com>
 To: BtrFS List <linux-btrfs@vger.kernel.org>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
 List-ID: <linux-btrfs.vger.kernel.org>
 
- btrfs_requeue_work has no error conditions and should return void.
- Its callers ignore the error code anyway.
+ wait_for_writer has no error conditions and should return void. Its
+ callers already ignore the error codes anyway.
 
 Signed-off-by: Jeff Mahoney <jeffm@suse.com>
 ---
- fs/btrfs/async-thread.c |    7 ++-----
- fs/btrfs/async-thread.h |    2 +-
- 2 files changed, 3 insertions(+), 6 deletions(-)
+ fs/btrfs/tree-log.c |    5 ++---
+ 1 file changed, 2 insertions(+), 3 deletions(-)
 
---- a/fs/btrfs/async-thread.c
-+++ b/fs/btrfs/async-thread.c
-@@ -613,14 +613,14 @@ found:
-  * it was taken from.  It is intended for use with long running work functions
-  * that make some progress and want to give the cpu up for others.
-  */
--int btrfs_requeue_work(struct btrfs_work *work)
-+void btrfs_requeue_work(struct btrfs_work *work)
+--- a/fs/btrfs/tree-log.c
++++ b/fs/btrfs/tree-log.c
+@@ -1964,8 +1964,8 @@ static int wait_log_commit(struct btrfs_
+ 	return 0;
+ }
+ 
+-static int wait_for_writer(struct btrfs_trans_handle *trans,
+-			   struct btrfs_root *root)
++static void wait_for_writer(struct btrfs_trans_handle *trans,
++			    struct btrfs_root *root)
  {
- 	struct btrfs_worker_thread *worker = work->worker;
- 	unsigned long flags;
- 	int wake = 0;
- 
- 	if (test_and_set_bit(WORK_QUEUED_BIT, &work->flags))
--		goto out;
-+		return;
- 
- 	spin_lock_irqsave(&worker->lock, flags);
- 	if (test_bit(WORK_HIGH_PRIO_BIT, &work->flags))
-@@ -647,9 +647,6 @@ int btrfs_requeue_work(struct btrfs_work
- 	if (wake)
- 		wake_up_process(worker->task);
- 	spin_unlock_irqrestore(&worker->lock, flags);
--out:
--
+ 	DEFINE_WAIT(wait);
+ 	while (atomic_read(&root->log_writers)) {
+@@ -1978,7 +1978,6 @@ static int wait_for_writer(struct btrfs_
+ 		mutex_lock(&root->log_mutex);
+ 		finish_wait(&root->log_writer_wait, &wait);
+ 	}
 -	return 0;
  }
  
- void btrfs_set_work_high_prio(struct btrfs_work *work)
---- a/fs/btrfs/async-thread.h
-+++ b/fs/btrfs/async-thread.h
-@@ -114,6 +114,6 @@ int btrfs_start_workers(struct btrfs_wor
- void btrfs_stop_workers(struct btrfs_workers *workers);
- void btrfs_init_workers(struct btrfs_workers *workers, char *name, int max,
- 			struct btrfs_workers *async_starter);
--int btrfs_requeue_work(struct btrfs_work *work);
-+void btrfs_requeue_work(struct btrfs_work *work);
- void btrfs_set_work_high_prio(struct btrfs_work *work);
- #endif
+ /*
 
 

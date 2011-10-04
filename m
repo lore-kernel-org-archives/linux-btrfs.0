@@ -1,122 +1,51 @@
 From: Jeff Mahoney <jeffm@suse.com>
-Subject: [patch 02/65] btrfs: Catch locking failures in {set,clear}_extent_bit
-Date: Mon, 03 Oct 2011 23:22:32 -0400
-Message-ID: <20111004032300.147032341@suse.com>
+Subject: [patch 35/65] btrfs: btrfs_invalidate_inodes should return void
+Date: Mon, 03 Oct 2011 23:23:05 -0400
+Message-ID: <20111004032303.933738679@suse.com>
 References: <20111004032230.458853274@suse.com>
 Cc: Chris Mason <chris.mason@oracle.com>
 To: BtrFS List <linux-btrfs@vger.kernel.org>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
 List-ID: <linux-btrfs.vger.kernel.org>
 
- The *_state functions can only return 0 or -EEXIST. This patch addresses
- the cases where those functions return -EEXIST, representing a locking
- failure. It handles them by panicking with an appropriate error message.
+ btrfs_invalidate_inodes has no error conditions and should return void.
 
 Signed-off-by: Jeff Mahoney <jeffm@suse.com>
 ---
- fs/btrfs/extent_io.c |   41 ++++++++++++++++++++++++++++++-----------
- 1 file changed, 30 insertions(+), 11 deletions(-)
+ fs/btrfs/ctree.h |    2 +-
+ fs/btrfs/inode.c |    3 +--
+ 2 files changed, 2 insertions(+), 3 deletions(-)
 
---- a/fs/btrfs/extent_io.c
-+++ b/fs/btrfs/extent_io.c
-@@ -51,6 +51,12 @@ struct extent_page_data {
- 	unsigned int sync_io:1;
- };
- 
-+static inline struct btrfs_fs_info *
-+tree_fs_info(struct extent_io_tree *tree)
-+{
-+	return btrfs_sb(tree->mapping->host->i_sb)->fs_info;
-+}
-+
- int __init extent_io_init(void)
- {
- 	extent_state_cache = kmem_cache_create("extent_state",
-@@ -437,6 +443,13 @@ alloc_extent_state_atomic(struct extent_
- 	return prealloc;
+--- a/fs/btrfs/ctree.h
++++ b/fs/btrfs/ctree.h
+@@ -2590,7 +2590,7 @@ void btrfs_orphan_post_snapshot(struct b
+ void btrfs_orphan_commit_root(struct btrfs_trans_handle *trans,
+ 			      struct btrfs_root *root);
+ int btrfs_cont_expand(struct inode *inode, loff_t oldsize, loff_t size);
+-int btrfs_invalidate_inodes(struct btrfs_root *root);
++void btrfs_invalidate_inodes(struct btrfs_root *root);
+ void btrfs_add_delayed_iput(struct inode *inode);
+ void btrfs_run_delayed_iputs(struct btrfs_root *root);
+ int btrfs_prealloc_file_range(struct inode *inode, int mode,
+--- a/fs/btrfs/inode.c
++++ b/fs/btrfs/inode.c
+@@ -3886,7 +3886,7 @@ static void inode_tree_del(struct inode
+ 	}
  }
  
-+NORET_TYPE void extent_io_tree_panic(struct extent_io_tree *tree, int err)
-+{
-+	btrfs_panic(tree_fs_info(tree), err, "Locking error: "
-+		    "Extent tree was modified by another "
-+		    "thread while locked.");
-+}
-+
- /*
-  * clear some bits on a range in the tree.  This may require splitting
-  * or inserting elements in the tree, so the gfp mask is used to
-@@ -531,7 +544,9 @@ hit_next:
- 		prealloc = alloc_extent_state_atomic(prealloc);
- 		BUG_ON(!prealloc);
- 		err = split_state(tree, state, prealloc, start);
--		BUG_ON(err == -EEXIST);
-+		if (err)
-+			extent_io_tree_panic(tree, err);
-+
- 		prealloc = NULL;
- 		if (err)
- 			goto out;
-@@ -553,7 +568,9 @@ hit_next:
- 		prealloc = alloc_extent_state_atomic(prealloc);
- 		BUG_ON(!prealloc);
- 		err = split_state(tree, state, prealloc, end + 1);
--		BUG_ON(err == -EEXIST);
-+		if (err)
-+			extent_io_tree_panic(tree, err);
-+
- 		if (wake)
- 			wake_up(&state->wq);
- 
-@@ -736,8 +753,10 @@ again:
- 		prealloc = alloc_extent_state_atomic(prealloc);
- 		BUG_ON(!prealloc);
- 		err = insert_state(tree, prealloc, start, end, &bits);
-+		if (err)
-+			extent_io_tree_panic(tree, err);
-+
- 		prealloc = NULL;
--		BUG_ON(err == -EEXIST);
- 		goto out;
+-int btrfs_invalidate_inodes(struct btrfs_root *root)
++void btrfs_invalidate_inodes(struct btrfs_root *root)
+ {
+ 	struct rb_node *node;
+ 	struct rb_node *prev;
+@@ -3946,7 +3946,6 @@ again:
+ 		node = rb_next(node);
  	}
- 	state = rb_entry(node, struct extent_state, rb_node);
-@@ -803,7 +822,9 @@ hit_next:
- 		prealloc = alloc_extent_state_atomic(prealloc);
- 		BUG_ON(!prealloc);
- 		err = split_state(tree, state, prealloc, start);
--		BUG_ON(err == -EEXIST);
-+		if (err)
-+			extent_io_tree_panic(tree, err);
-+
- 		prealloc = NULL;
- 		if (err)
- 			goto out;
-@@ -840,12 +861,9 @@ hit_next:
- 		 */
- 		err = insert_state(tree, prealloc, start, this_end,
- 				   &bits);
--		BUG_ON(err == -EEXIST);
--		if (err) {
--			free_extent_state(prealloc);
--			prealloc = NULL;
--			goto out;
--		}
-+		if (err)
-+			extent_io_tree_panic(tree, err);
-+
- 		cache_state(prealloc, cached_state);
- 		prealloc = NULL;
- 		start = this_end + 1;
-@@ -867,7 +885,8 @@ hit_next:
- 		prealloc = alloc_extent_state_atomic(prealloc);
- 		BUG_ON(!prealloc);
- 		err = split_state(tree, state, prealloc, end + 1);
--		BUG_ON(err == -EEXIST);
-+		if (err)
-+			extent_io_tree_panic(tree, err);
+ 	spin_unlock(&root->inode_lock);
+-	return 0;
+ }
  
- 		set_state_bits(tree, prealloc, &bits);
- 		cache_state(prealloc, cached_state);
+ static int btrfs_init_locked_inode(struct inode *inode, void *p)
 
 
 

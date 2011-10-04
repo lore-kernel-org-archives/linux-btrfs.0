@@ -1,63 +1,49 @@
-From: Jeff Mahoney <jeffm@suse.com>
-Subject: [patch 11/65] btrfs: btrfs_drop_snapshot should return int
-Date: Mon, 03 Oct 2011 23:22:41 -0400
-Message-ID: <20111004032301.184852976@suse.com>
-References: <20111004032230.458853274@suse.com>
-Cc: Chris Mason <chris.mason@oracle.com>
-To: BtrFS List <linux-btrfs@vger.kernel.org>
+From: Avi Kivity <avi.kivity@gmail.com>
+Subject: Re: Suddenly, a dead filesystem
+Date: Tue, 4 Oct 2011 21:40:10 +0200
+Message-ID: <CAEbWaioOMeVeACT4wMceP=obyjwrNGd7H8Rs77QrC1d=iCSgqA@mail.gmail.com>
+References: <CAEbWaipxhyMf2VQRdfnpMcXwyf84YupLOm8hQRf4Q8wJu060ng@mail.gmail.com>
+	<4E53B7DC.7020807@redhat.com>
+	<CAEbWaipUPoO95kbmewfi1j=tBk5gv4Ui6yY8XSOpGHJH9KQpNQ@mail.gmail.com>
+	<CAEbWairrpVkcnDb37O2dF+sQxnmmP7+N2sBd=-pdCNVOH9n8eg@mail.gmail.com>
+	<4E89C80B.40601@redhat.com>
+	<CAEbWair966=m=4Fe_ipZNJk5PB381t_1gJ+TYPZ_naP8s=eJsw@mail.gmail.com>
+	<CAEbWaio2+c9iNjkQYnQv+=UKdR5=zpMne40RCa2X2wBObfJnxw@mail.gmail.com>
+	<CAEbWaiqrcDQUN+7-Yg3QJwJPUcxFK5br08rKkwuuRQy_x9_k6A@mail.gmail.com>
+Mime-Version: 1.0
+Content-Type: text/plain; charset=ISO-8859-1
+Cc: linux-btrfs@vger.kernel.org
+To: Josef Bacik <josef@redhat.com>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
+In-Reply-To: <CAEbWaiqrcDQUN+7-Yg3QJwJPUcxFK5br08rKkwuuRQy_x9_k6A@mail.gmail.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Commit cb1b69f4 (Btrfs: forced readonly when btrfs_drop_snapshot() fails)
-made btrfs_drop_snapshot return void because there were no callers checking
-the return value. That is the wrong order to handle error propogation since
-the caller will have no idea that an error has occured and continue on
-as if nothing went wrong.
+On Tue, Oct 4, 2011 at 4:39 PM, Avi Kivity <avi.kivity@gmail.com> wrote=
+:
+> On Mon, Oct 3, 2011 at 8:07 PM, Avi Kivity <avi.kivity@gmail.com> wro=
+te:
+>>>>
+>>>> Thats -EIO, is there any messages before the bug? =A0Thanks,
+>>>>
+>>>
+>>> Not that I recall. =A0I'll check again when I'm near the poor thing=
+ again.
+>>>
+>>
+>> Confirmed - that's the first relevant message.
+>>
+>> As to -EIO, I dd'ed the entire volume and no errors were found.
+>>
+>
+> btw, is there a new version of fsck.btrfs I can try? =A0The one I hav=
+e
+> segfaults immediately.
+>
 
-The next patch checks the btrfs_drop_snapshot return values, so re-add it
-here.
-
-Signed-off-by: Jeff Mahoney <jeffm@suse.com>
----
- fs/btrfs/ctree.h       |    4 ++--
- fs/btrfs/extent-tree.c |    6 +++---
- 2 files changed, 5 insertions(+), 5 deletions(-)
-
---- a/fs/btrfs/ctree.h
-+++ b/fs/btrfs/ctree.h
-@@ -2366,8 +2366,8 @@ static inline int btrfs_insert_empty_ite
- int btrfs_next_leaf(struct btrfs_root *root, struct btrfs_path *path);
- int btrfs_prev_leaf(struct btrfs_root *root, struct btrfs_path *path);
- int btrfs_leaf_free_space(struct btrfs_root *root, struct extent_buffer *leaf);
--void btrfs_drop_snapshot(struct btrfs_root *root,
--			 struct btrfs_block_rsv *block_rsv, int update_ref);
-+int btrfs_drop_snapshot(struct btrfs_root *root,
-+			struct btrfs_block_rsv *block_rsv, int update_ref);
- int btrfs_drop_subtree(struct btrfs_trans_handle *trans,
- 			struct btrfs_root *root,
- 			struct extent_buffer *node,
---- a/fs/btrfs/extent-tree.c
-+++ b/fs/btrfs/extent-tree.c
-@@ -6303,8 +6303,8 @@ static noinline int walk_up_tree(struct
-  * also make sure backrefs for the shared block and all lower level
-  * blocks are properly updated.
-  */
--void btrfs_drop_snapshot(struct btrfs_root *root,
--			 struct btrfs_block_rsv *block_rsv, int update_ref)
-+int btrfs_drop_snapshot(struct btrfs_root *root,
-+			struct btrfs_block_rsv *block_rsv, int update_ref)
- {
- 	struct btrfs_path *path;
- 	struct btrfs_trans_handle *trans;
-@@ -6469,7 +6469,7 @@ out_free:
- out:
- 	if (err)
- 		btrfs_std_error(root->fs_info, err);
--	return;
-+	return err;
- }
- 
- /*
-
-
-
+Meanwhile, I used btrfs-zero-log and was able to remount.  I have a
+snapshot of the dead filesystem, if someone wants to investigate.
+--
+To unsubscribe from this list: send the line "unsubscribe linux-btrfs" =
+in
+the body of a message to majordomo@vger.kernel.org
+More majordomo info at  http://vger.kernel.org/majordomo-info.html

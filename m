@@ -1,153 +1,154 @@
 From: Jeff Mahoney <jeffm@suse.com>
-Subject: [patch 61/65] btrfs: btrfs_truncate_item should return void
-Date: Mon, 03 Oct 2011 23:23:31 -0400
-Message-ID: <20111004032306.905859941@suse.com>
+Subject: [patch 56/65] btrfs: btrfs_inc_extent_ref void return prep
+Date: Mon, 03 Oct 2011 23:23:26 -0400
+Message-ID: <20111004032306.333658589@suse.com>
 References: <20111004032230.458853274@suse.com>
 Cc: Chris Mason <chris.mason@oracle.com>
 To: BtrFS List <linux-btrfs@vger.kernel.org>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
 List-ID: <linux-btrfs.vger.kernel.org>
 
- btrfs_truncate_item has no error conditions and should return void.
+ btrfs_inc_extent_ref has no error conditions, but is used via
+ process_func in __btrfs_mod_ref which requires it to return an int.
+
+ This patch cleans up the callers to eliminate error handling that will
+ never be used. A later patch in this series makes both
+ btrfs_inc_extent_ref and the other function used via process_func,
+ btrfs_inc_extent_ref, return void.
 
 Signed-off-by: Jeff Mahoney <jeffm@suse.com>
 ---
- fs/btrfs/ctree.c       |   11 +++++------
- fs/btrfs/ctree.h       |    8 ++++----
- fs/btrfs/dir-item.c    |    4 ++--
- fs/btrfs/extent-tree.c |    3 +--
- fs/btrfs/file-item.c   |    4 ++--
- fs/btrfs/inode-item.c  |    3 +--
- fs/btrfs/inode.c       |    4 ++--
- 7 files changed, 17 insertions(+), 20 deletions(-)
+ fs/btrfs/file.c       |   18 ++++++++----------
+ fs/btrfs/ioctl.c      |    3 +--
+ fs/btrfs/relocation.c |   34 ++++++++++++++--------------------
+ fs/btrfs/tree-log.c   |    9 ++++-----
+ 4 files changed, 27 insertions(+), 37 deletions(-)
 
---- a/fs/btrfs/ctree.c
-+++ b/fs/btrfs/ctree.c
-@@ -3193,10 +3193,10 @@ int btrfs_duplicate_item(struct btrfs_tr
-  * off the end of the item or if we shift the item to chop bytes off
-  * the front.
-  */
--int btrfs_truncate_item(struct btrfs_trans_handle *trans,
--			struct btrfs_root *root,
--			struct btrfs_path *path,
--			u32 new_size, int from_end)
-+void btrfs_truncate_item(struct btrfs_trans_handle *trans,
-+			 struct btrfs_root *root,
-+			 struct btrfs_path *path,
-+			 u32 new_size, int from_end)
- {
- 	int slot;
- 	struct extent_buffer *leaf;
-@@ -3213,7 +3213,7 @@ int btrfs_truncate_item(struct btrfs_tra
+--- a/fs/btrfs/file.c
++++ b/fs/btrfs/file.c
+@@ -673,12 +673,11 @@ next_slot:
+ 			btrfs_mark_buffer_dirty(leaf);
  
- 	old_size = btrfs_item_size_nr(leaf, slot);
- 	if (old_size == new_size)
--		return 0;
-+		return;
+ 			if (disk_bytenr > 0) {
+-				ret = btrfs_inc_extent_ref(trans, root,
+-						disk_bytenr, num_bytes, 0,
+-						root->root_key.objectid,
+-						new_key.objectid,
+-						start - extent_offset);
+-				BUG_ON(ret);
++				btrfs_inc_extent_ref(trans, root,
++						     disk_bytenr, num_bytes, 0,
++						     root->root_key.objectid,
++						     new_key.objectid,
++						     start - extent_offset);
+ 				*hint_byte = disk_bytenr;
+ 			}
+ 			key.offset = start;
+@@ -959,10 +958,9 @@ again:
+ 						extent_end - split);
+ 		btrfs_mark_buffer_dirty(leaf);
  
- 	nritems = btrfs_header_nritems(leaf);
- 	data_end = leaf_data_end(root, leaf);
-@@ -3286,7 +3286,6 @@ int btrfs_truncate_item(struct btrfs_tra
- 		btrfs_print_leaf(root, leaf);
- 		BUG();
- 	}
--	return 0;
- }
+-		ret = btrfs_inc_extent_ref(trans, root, bytenr, num_bytes, 0,
+-					   root->root_key.objectid,
+-					   ino, orig_offset);
+-		BUG_ON(ret);
++		btrfs_inc_extent_ref(trans, root, bytenr, num_bytes, 0,
++				     root->root_key.objectid,
++				     ino, orig_offset);
  
- /*
---- a/fs/btrfs/ctree.h
-+++ b/fs/btrfs/ctree.h
-@@ -2306,10 +2306,10 @@ int btrfs_block_can_be_shared(struct btr
- 			      struct extent_buffer *buf);
- int btrfs_extend_item(struct btrfs_trans_handle *trans, struct btrfs_root
- 		      *root, struct btrfs_path *path, u32 data_size);
--int btrfs_truncate_item(struct btrfs_trans_handle *trans,
--			struct btrfs_root *root,
--			struct btrfs_path *path,
--			u32 new_size, int from_end);
-+void btrfs_truncate_item(struct btrfs_trans_handle *trans,
-+			 struct btrfs_root *root,
-+			 struct btrfs_path *path,
-+			 u32 new_size, int from_end);
- int btrfs_split_item(struct btrfs_trans_handle *trans,
- 		     struct btrfs_root *root,
- 		     struct btrfs_path *path,
---- a/fs/btrfs/dir-item.c
-+++ b/fs/btrfs/dir-item.c
-@@ -383,8 +383,8 @@ int btrfs_delete_one_dir_name(struct btr
- 		start = btrfs_item_ptr_offset(leaf, path->slots[0]);
- 		memmove_extent_buffer(leaf, ptr, ptr + sub_item_len,
- 			item_len - (ptr + sub_item_len - start));
--		ret = btrfs_truncate_item(trans, root, path,
--					  item_len - sub_item_len, 1);
-+		btrfs_truncate_item(trans, root, path,
-+				    item_len - sub_item_len, 1);
- 	}
- 	return ret;
- }
---- a/fs/btrfs/extent-tree.c
-+++ b/fs/btrfs/extent-tree.c
-@@ -1649,7 +1649,6 @@ int update_inline_extent_backref(struct
- 	u32 item_size;
- 	int size;
- 	int type;
--	int ret;
- 	u64 refs;
- 
- 	leaf = path->nodes[0];
-@@ -1691,7 +1690,7 @@ int update_inline_extent_backref(struct
- 			memmove_extent_buffer(leaf, ptr, ptr + size,
- 					      end - ptr - size);
- 		item_size -= size;
--		ret = btrfs_truncate_item(trans, root, path, item_size, 1);
-+		btrfs_truncate_item(trans, root, path, item_size, 1);
- 	}
- 	btrfs_mark_buffer_dirty(leaf);
- 	return 0;
---- a/fs/btrfs/file-item.c
-+++ b/fs/btrfs/file-item.c
-@@ -514,7 +514,7 @@ static noinline int truncate_one_csum(st
- 		 */
- 		u32 new_size = (bytenr - key->offset) >> blocksize_bits;
- 		new_size *= csum_size;
--		ret = btrfs_truncate_item(trans, root, path, new_size, 1);
-+		btrfs_truncate_item(trans, root, path, new_size, 1);
- 	} else if (key->offset >= bytenr && csum_end > end_byte &&
- 		   end_byte > key->offset) {
- 		/*
-@@ -526,7 +526,7 @@ static noinline int truncate_one_csum(st
- 		u32 new_size = (csum_end - end_byte) >> blocksize_bits;
- 		new_size *= csum_size;
- 
--		ret = btrfs_truncate_item(trans, root, path, new_size, 0);
-+		btrfs_truncate_item(trans, root, path, new_size, 0);
- 
- 		key->offset = end_byte;
- 		ret = btrfs_set_item_key_safe(trans, root, path, key);
---- a/fs/btrfs/inode-item.c
-+++ b/fs/btrfs/inode-item.c
-@@ -128,8 +128,7 @@ int btrfs_del_inode_ref(struct btrfs_tra
- 	item_start = btrfs_item_ptr_offset(leaf, path->slots[0]);
- 	memmove_extent_buffer(leaf, ptr, ptr + sub_item_len,
- 			      item_size - (ptr + sub_item_len - item_start));
--	ret = btrfs_truncate_item(trans, root, path,
--				  item_size - sub_item_len, 1);
-+	btrfs_truncate_item(trans, root, path, item_size - sub_item_len, 1);
- out:
- 	btrfs_free_path(path);
- 	return ret;
---- a/fs/btrfs/inode.c
-+++ b/fs/btrfs/inode.c
-@@ -3311,8 +3311,8 @@ search_again:
+ 		if (split == start) {
+ 			key.offset = start;
+--- a/fs/btrfs/ioctl.c
++++ b/fs/btrfs/ioctl.c
+@@ -2396,12 +2396,11 @@ static noinline long btrfs_ioctl_clone(s
+ 								datal);
+ 				if (disko) {
+ 					inode_add_bytes(inode, datal);
+-					ret = btrfs_inc_extent_ref(trans, root,
++					btrfs_inc_extent_ref(trans, root,
+ 							disko, diskl, 0,
+ 							root->root_key.objectid,
+ 							btrfs_ino(inode),
+ 							new_key.offset - datao);
+-					BUG_ON(ret);
  				}
- 				size =
- 				    btrfs_file_extent_calc_inline_size(size);
--				ret = btrfs_truncate_item(trans, root, path,
--							  size, 1);
-+				btrfs_truncate_item(trans, root, path,
-+						    size, 1);
- 			} else if (root->ref_cows) {
- 				inode_sub_bytes(inode, item_end + 1 -
- 						found_key.offset);
+ 			} else if (type == BTRFS_FILE_EXTENT_INLINE) {
+ 				u64 skip = 0;
+--- a/fs/btrfs/relocation.c
++++ b/fs/btrfs/relocation.c
+@@ -1607,11 +1607,10 @@ int replace_file_extents(struct btrfs_tr
+ 		dirty = 1;
+ 
+ 		key.offset -= btrfs_file_extent_offset(leaf, fi);
+-		ret = btrfs_inc_extent_ref(trans, root, new_bytenr,
+-					   num_bytes, parent,
+-					   btrfs_header_owner(leaf),
+-					   key.objectid, key.offset);
+-		BUG_ON(ret);
++		btrfs_inc_extent_ref(trans, root, new_bytenr,
++				     num_bytes, parent,
++				     btrfs_header_owner(leaf),
++				     key.objectid, key.offset);
+ 
+ 		ret = btrfs_free_extent(trans, root, bytenr, num_bytes,
+ 					parent, btrfs_header_owner(leaf),
+@@ -1782,15 +1781,11 @@ again:
+ 					      path->slots[level], old_ptr_gen);
+ 		btrfs_mark_buffer_dirty(path->nodes[level]);
+ 
+-		ret = btrfs_inc_extent_ref(trans, src, old_bytenr, blocksize,
+-					path->nodes[level]->start,
+-					src->root_key.objectid, level - 1, 0);
+-		BUG_ON(ret);
+-		ret = btrfs_inc_extent_ref(trans, dest, new_bytenr, blocksize,
+-					0, dest->root_key.objectid, level - 1,
+-					0);
+-		BUG_ON(ret);
+-
++		btrfs_inc_extent_ref(trans, src, old_bytenr, blocksize,
++				     path->nodes[level]->start,
++				     src->root_key.objectid, level - 1, 0);
++		btrfs_inc_extent_ref(trans, dest, new_bytenr, blocksize,
++				     0, dest->root_key.objectid, level - 1, 0);
+ 		ret = btrfs_free_extent(trans, src, new_bytenr, blocksize,
+ 					path->nodes[level]->start,
+ 					src->root_key.objectid, level - 1, 0);
+@@ -2568,12 +2563,11 @@ static int do_relocation(struct btrfs_tr
+ 						      trans->transid);
+ 			btrfs_mark_buffer_dirty(upper->eb);
+ 
+-			ret = btrfs_inc_extent_ref(trans, root,
+-						node->eb->start, blocksize,
+-						upper->eb->start,
+-						btrfs_header_owner(upper->eb),
+-						node->level, 0);
+-			BUG_ON(ret);
++			btrfs_inc_extent_ref(trans, root,
++					     node->eb->start, blocksize,
++					     upper->eb->start,
++					     btrfs_header_owner(upper->eb),
++					     node->level, 0);
+ 
+ 			ret = btrfs_drop_subtree(trans, root, eb, upper->eb);
+ 			BUG_ON(ret);
+--- a/fs/btrfs/tree-log.c
++++ b/fs/btrfs/tree-log.c
+@@ -588,11 +588,10 @@ static noinline int replay_one_extent(st
+ 			ret = btrfs_lookup_extent(root, ins.objectid,
+ 						ins.offset);
+ 			if (ret == 0) {
+-				ret = btrfs_inc_extent_ref(trans, root,
+-						ins.objectid, ins.offset,
+-						0, root->root_key.objectid,
+-						key->objectid, offset);
+-				BUG_ON(ret);
++				btrfs_inc_extent_ref(trans, root, ins.objectid,
++						     ins.offset, 0,
++						     root->root_key.objectid,
++						     key->objectid, offset);
+ 			} else {
+ 				/*
+ 				 * insert the extent pointer in the extent
+
 
 

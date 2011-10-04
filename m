@@ -1,67 +1,50 @@
 From: Jeff Mahoney <jeffm@suse.com>
-Subject: [patch 40/65] btrfs: setup_inline_extent_backref should return void
-Date: Mon, 03 Oct 2011 23:23:10 -0400
-Message-ID: <20111004032304.503951959@suse.com>
+Subject: [patch 32/65] btrfs: tree-log: btrfs_end_log_trans should return void
+Date: Mon, 03 Oct 2011 23:23:02 -0400
+Message-ID: <20111004032303.589463194@suse.com>
 References: <20111004032230.458853274@suse.com>
 Cc: Chris Mason <chris.mason@oracle.com>
 To: BtrFS List <linux-btrfs@vger.kernel.org>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
 List-ID: <linux-btrfs.vger.kernel.org>
 
- setup_inline_extent_backref has no error conditions and should return
- void. We set ret = 0 explicitly in insert_inline_extent_backref since
- it would have been set using the return value, which would have been 0.
+ btrfs_end_log_trans has no error conditions and should return void.
+ Its callers ignore the error code anyway.
 
 Signed-off-by: Jeff Mahoney <jeffm@suse.com>
 ---
- fs/btrfs/extent-tree.c |   23 +++++++++++------------
- 1 file changed, 11 insertions(+), 12 deletions(-)
+ fs/btrfs/tree-log.c |    3 +--
+ fs/btrfs/tree-log.h |    2 +-
+ 2 files changed, 2 insertions(+), 3 deletions(-)
 
---- a/fs/btrfs/extent-tree.c
-+++ b/fs/btrfs/extent-tree.c
-@@ -1539,13 +1539,13 @@ out:
-  * helper to add new inline back ref
+--- a/fs/btrfs/tree-log.c
++++ b/fs/btrfs/tree-log.c
+@@ -212,14 +212,13 @@ int btrfs_pin_log_trans(struct btrfs_roo
+  * indicate we're done making changes to the log tree
+  * and wake up anyone waiting to do a sync
   */
- static noinline_for_stack
--int setup_inline_extent_backref(struct btrfs_trans_handle *trans,
--				struct btrfs_root *root,
--				struct btrfs_path *path,
--				struct btrfs_extent_inline_ref *iref,
--				u64 parent, u64 root_objectid,
--				u64 owner, u64 offset, int refs_to_add,
--				struct btrfs_delayed_extent_op *extent_op)
-+void setup_inline_extent_backref(struct btrfs_trans_handle *trans,
-+				 struct btrfs_root *root,
-+				 struct btrfs_path *path,
-+				 struct btrfs_extent_inline_ref *iref,
-+				 u64 parent, u64 root_objectid,
-+				 u64 owner, u64 offset, int refs_to_add,
-+				 struct btrfs_delayed_extent_op *extent_op)
+-int btrfs_end_log_trans(struct btrfs_root *root)
++void btrfs_end_log_trans(struct btrfs_root *root)
  {
- 	struct extent_buffer *leaf;
- 	struct btrfs_extent_item *ei;
-@@ -1599,7 +1599,6 @@ int setup_inline_extent_backref(struct b
- 		btrfs_set_extent_inline_ref_offset(leaf, iref, root_objectid);
+ 	if (atomic_dec_and_test(&root->log_writers)) {
+ 		smp_mb();
+ 		if (waitqueue_active(&root->log_writer_wait))
+ 			wake_up(&root->log_writer_wait);
  	}
- 	btrfs_mark_buffer_dirty(leaf);
 -	return 0;
  }
  
- static int lookup_extent_backref(struct btrfs_trans_handle *trans,
-@@ -1718,10 +1717,10 @@ int insert_inline_extent_backref(struct
- 		ret = update_inline_extent_backref(trans, root, path, iref,
- 						   refs_to_add, extent_op);
- 	} else if (ret == -ENOENT) {
--		ret = setup_inline_extent_backref(trans, root, path, iref,
--						  parent, root_objectid,
--						  owner, offset, refs_to_add,
--						  extent_op);
-+		setup_inline_extent_backref(trans, root, path, iref, parent,
-+					    root_objectid, owner, offset,
-+					    refs_to_add, extent_op);
-+		ret = 0;
- 	}
- 	return ret;
- }
+ 
+--- a/fs/btrfs/tree-log.h
++++ b/fs/btrfs/tree-log.h
+@@ -38,7 +38,7 @@ int btrfs_del_inode_ref_in_log(struct bt
+ 			       struct btrfs_root *root,
+ 			       const char *name, int name_len,
+ 			       struct inode *inode, u64 dirid);
+-int btrfs_end_log_trans(struct btrfs_root *root);
++void btrfs_end_log_trans(struct btrfs_root *root);
+ int btrfs_pin_log_trans(struct btrfs_root *root);
+ int btrfs_log_inode_parent(struct btrfs_trans_handle *trans,
+ 		    struct btrfs_root *root, struct inode *inode,
 
 

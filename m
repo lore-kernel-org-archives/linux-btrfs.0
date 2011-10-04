@@ -1,52 +1,38 @@
 From: Jeff Mahoney <jeffm@suse.com>
-Subject: [patch 15/65] btrfs: set_range_writeback should return void
-Date: Mon, 03 Oct 2011 23:22:45 -0400
-Message-ID: <20111004032301.643053456@suse.com>
+Subject: [patch 20/65] btrfs: check_page_locked should return void
+Date: Mon, 03 Oct 2011 23:22:50 -0400
+Message-ID: <20111004032302.217031446@suse.com>
 References: <20111004032230.458853274@suse.com>
 Cc: Chris Mason <chris.mason@oracle.com>
 To: BtrFS List <linux-btrfs@vger.kernel.org>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
 List-ID: <linux-btrfs.vger.kernel.org>
 
- set_range_writeback has no error conditions and should return void.
+ check_page_locked has no error conditions and should return void.
  Its callers already ignore the error code anyway.
-
- There are internal error conditions but they are fatal and will cause
- a panic.
 
 Signed-off-by: Jeff Mahoney <jeffm@suse.com>
 ---
- fs/btrfs/extent_io.c |    8 +++++---
- 1 file changed, 5 insertions(+), 3 deletions(-)
+ fs/btrfs/extent_io.c |    4 +---
+ 1 file changed, 1 insertion(+), 3 deletions(-)
 
 --- a/fs/btrfs/extent_io.c
 +++ b/fs/btrfs/extent_io.c
-@@ -1060,7 +1060,7 @@ int unlock_extent(struct extent_io_tree
- /*
-  * helper function to set both pages and extents in the tree writeback
+@@ -1630,14 +1630,12 @@ static void check_page_uptodate(struct e
+  * helper function to unlock a page if all the extents in the tree
+  * for that page are unlocked
   */
--static int set_range_writeback(struct extent_io_tree *tree, u64 start, u64 end)
-+static void set_range_writeback(struct extent_io_tree *tree, u64 start, u64 end)
+-static int check_page_locked(struct extent_io_tree *tree,
+-			     struct page *page)
++static void check_page_locked(struct extent_io_tree *tree, struct page *page)
  {
- 	unsigned long index = start >> PAGE_CACHE_SHIFT;
- 	unsigned long end_index = end >> PAGE_CACHE_SHIFT;
-@@ -1068,12 +1068,14 @@ static int set_range_writeback(struct ex
- 
- 	while (index <= end_index) {
- 		page = find_get_page(tree->mapping, index);
--		BUG_ON(!page);
-+		if (!page)
-+			btrfs_panic(tree_fs_info(tree), -ENOENT,
-+				    "Page not found in extent io tree at "
-+				    "offset %llu", index << PAGE_CACHE_SHIFT);
- 		set_page_writeback(page);
- 		page_cache_release(page);
- 		index++;
- 	}
+ 	u64 start = (u64)page->index << PAGE_CACHE_SHIFT;
+ 	u64 end = start + PAGE_CACHE_SIZE - 1;
+ 	if (!test_range_bit(tree, start, end, EXTENT_LOCKED, 0, NULL))
+ 		unlock_page(page);
 -	return 0;
  }
  
- /* find the first state struct with 'bits' set after 'start', and
-
+ /*
 
 

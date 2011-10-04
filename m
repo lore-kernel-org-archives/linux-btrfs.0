@@ -1,154 +1,298 @@
 From: Jeff Mahoney <jeffm@suse.com>
-Subject: [patch 56/65] btrfs: btrfs_inc_extent_ref void return prep
-Date: Mon, 03 Oct 2011 23:23:26 -0400
-Message-ID: <20111004032306.333658589@suse.com>
+Subject: [patch 55/65] btrfs: Delayed ref mempool functions should return void
+Date: Mon, 03 Oct 2011 23:23:25 -0400
+Message-ID: <20111004032306.219698154@suse.com>
 References: <20111004032230.458853274@suse.com>
 Cc: Chris Mason <chris.mason@oracle.com>
 To: BtrFS List <linux-btrfs@vger.kernel.org>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
 List-ID: <linux-btrfs.vger.kernel.org>
 
- btrfs_inc_extent_ref has no error conditions, but is used via
- process_func in __btrfs_mod_ref which requires it to return an int.
+ Now that the delayed ref code uses mempools, allocations can't fail,
+ and there are no more error conditions to report.
 
- This patch cleans up the callers to eliminate error handling that will
- never be used. A later patch in this series makes both
- btrfs_inc_extent_ref and the other function used via process_func,
- btrfs_inc_extent_ref, return void.
+ This patch makes the following functions return void:
+ - btrfs_alloc_reserved_file_extent
+ - btrfs_add_delayed_tree_ref
+ - btrfs_add_delayed_data_ref
+ - btrfs_add_delayed_extent_op
 
 Signed-off-by: Jeff Mahoney <jeffm@suse.com>
 ---
- fs/btrfs/file.c       |   18 ++++++++----------
- fs/btrfs/ioctl.c      |    3 +--
- fs/btrfs/relocation.c |   34 ++++++++++++++--------------------
- fs/btrfs/tree-log.c   |    9 ++++-----
- 4 files changed, 27 insertions(+), 37 deletions(-)
+ fs/btrfs/ctree.h       |    8 ++---
+ fs/btrfs/delayed-ref.c |   27 +++++++---------
+ fs/btrfs/delayed-ref.h |   24 +++++++--------
+ fs/btrfs/extent-tree.c |   78 ++++++++++++++++++++-----------------------------
+ fs/btrfs/inode.c       |    6 +--
+ 5 files changed, 63 insertions(+), 80 deletions(-)
 
---- a/fs/btrfs/file.c
-+++ b/fs/btrfs/file.c
-@@ -673,12 +673,11 @@ next_slot:
- 			btrfs_mark_buffer_dirty(leaf);
+--- a/fs/btrfs/ctree.h
++++ b/fs/btrfs/ctree.h
+@@ -2169,10 +2169,10 @@ struct extent_buffer *btrfs_init_new_buf
+ 					    struct btrfs_root *root,
+ 					    u64 bytenr, u32 blocksize,
+ 					    int level);
+-int btrfs_alloc_reserved_file_extent(struct btrfs_trans_handle *trans,
+-				     struct btrfs_root *root,
+-				     u64 root_objectid, u64 owner,
+-				     u64 offset, struct btrfs_key *ins);
++void btrfs_alloc_reserved_file_extent(struct btrfs_trans_handle *trans,
++				      struct btrfs_root *root,
++				      u64 root_objectid, u64 owner,
++				      u64 offset, struct btrfs_key *ins);
+ int btrfs_alloc_logged_file_extent(struct btrfs_trans_handle *trans,
+ 				   struct btrfs_root *root,
+ 				   u64 root_objectid, u64 owner, u64 offset,
+--- a/fs/btrfs/delayed-ref.c
++++ b/fs/btrfs/delayed-ref.c
+@@ -586,10 +586,10 @@ static noinline void add_delayed_data_re
+  * to make sure the delayed ref is eventually processed before this
+  * transaction commits.
+  */
+-int btrfs_add_delayed_tree_ref(struct btrfs_trans_handle *trans,
+-			       u64 bytenr, u64 num_bytes, u64 parent,
+-			       u64 ref_root,  int level, int action,
+-			       struct btrfs_delayed_extent_op *extent_op)
++void btrfs_add_delayed_tree_ref(struct btrfs_trans_handle *trans,
++			        u64 bytenr, u64 num_bytes, u64 parent,
++			        u64 ref_root,  int level, int action,
++			        struct btrfs_delayed_extent_op *extent_op)
+ {
+ 	struct btrfs_delayed_tree_ref *ref;
+ 	struct btrfs_delayed_ref_head *head_ref;
+@@ -613,17 +613,16 @@ int btrfs_add_delayed_tree_ref(struct bt
+ 	add_delayed_tree_ref(trans, &ref->node, bytenr, num_bytes, parent,
+ 			     ref_root, level, action);
+ 	spin_unlock(&delayed_refs->lock);
+-	return 0;
+ }
  
- 			if (disk_bytenr > 0) {
--				ret = btrfs_inc_extent_ref(trans, root,
--						disk_bytenr, num_bytes, 0,
--						root->root_key.objectid,
--						new_key.objectid,
--						start - extent_offset);
--				BUG_ON(ret);
-+				btrfs_inc_extent_ref(trans, root,
-+						     disk_bytenr, num_bytes, 0,
-+						     root->root_key.objectid,
-+						     new_key.objectid,
-+						     start - extent_offset);
- 				*hint_byte = disk_bytenr;
- 			}
- 			key.offset = start;
-@@ -959,10 +958,9 @@ again:
- 						extent_end - split);
- 		btrfs_mark_buffer_dirty(leaf);
+ /*
+  * add a delayed data ref. it's similar to btrfs_add_delayed_tree_ref.
+  */
+-int btrfs_add_delayed_data_ref(struct btrfs_trans_handle *trans,
+-			       u64 bytenr, u64 num_bytes,
+-			       u64 parent, u64 ref_root,
+-			       u64 owner, u64 offset, int action,
+-			       struct btrfs_delayed_extent_op *extent_op)
++void btrfs_add_delayed_data_ref(struct btrfs_trans_handle *trans,
++			        u64 bytenr, u64 num_bytes,
++			        u64 parent, u64 ref_root,
++			        u64 owner, u64 offset, int action,
++			        struct btrfs_delayed_extent_op *extent_op)
+ {
+ 	struct btrfs_delayed_data_ref *ref;
+ 	struct btrfs_delayed_ref_head *head_ref;
+@@ -647,12 +646,11 @@ int btrfs_add_delayed_data_ref(struct bt
+ 	add_delayed_data_ref(trans, &ref->node, bytenr, num_bytes, parent,
+ 			     ref_root, owner, offset, action);
+ 	spin_unlock(&delayed_refs->lock);
+-	return 0;
+ }
  
--		ret = btrfs_inc_extent_ref(trans, root, bytenr, num_bytes, 0,
--					   root->root_key.objectid,
--					   ino, orig_offset);
+-int btrfs_add_delayed_extent_op(struct btrfs_trans_handle *trans,
+-				u64 bytenr, u64 num_bytes,
+-				struct btrfs_delayed_extent_op *extent_op)
++void btrfs_add_delayed_extent_op(struct btrfs_trans_handle *trans,
++				 u64 bytenr, u64 num_bytes,
++				 struct btrfs_delayed_extent_op *extent_op)
+ {
+ 	struct btrfs_delayed_ref_head *head_ref;
+ 	struct btrfs_delayed_ref_root *delayed_refs;
+@@ -666,7 +664,6 @@ int btrfs_add_delayed_extent_op(struct b
+ 	add_delayed_ref_head(trans, &head_ref->node, bytenr, num_bytes,
+ 			     BTRFS_UPDATE_DELAYED_HEAD, extent_op->is_data);
+ 	spin_unlock(&delayed_refs->lock);
+-	return 0;
+ }
+ 
+ /*
+--- a/fs/btrfs/delayed-ref.h
++++ b/fs/btrfs/delayed-ref.h
+@@ -152,18 +152,18 @@ static inline void btrfs_put_delayed_ref
+ 	}
+ }
+ 
+-int btrfs_add_delayed_tree_ref(struct btrfs_trans_handle *trans,
+-			       u64 bytenr, u64 num_bytes, u64 parent,
+-			       u64 ref_root, int level, int action,
+-			       struct btrfs_delayed_extent_op *extent_op);
+-int btrfs_add_delayed_data_ref(struct btrfs_trans_handle *trans,
+-			       u64 bytenr, u64 num_bytes,
+-			       u64 parent, u64 ref_root,
+-			       u64 owner, u64 offset, int action,
+-			       struct btrfs_delayed_extent_op *extent_op);
+-int btrfs_add_delayed_extent_op(struct btrfs_trans_handle *trans,
+-				u64 bytenr, u64 num_bytes,
+-				struct btrfs_delayed_extent_op *extent_op);
++void btrfs_add_delayed_tree_ref(struct btrfs_trans_handle *trans,
++			        u64 bytenr, u64 num_bytes, u64 parent,
++			        u64 ref_root, int level, int action,
++			        struct btrfs_delayed_extent_op *extent_op);
++void btrfs_add_delayed_data_ref(struct btrfs_trans_handle *trans,
++			        u64 bytenr, u64 num_bytes,
++			        u64 parent, u64 ref_root,
++			        u64 owner, u64 offset, int action,
++			        struct btrfs_delayed_extent_op *extent_op);
++void btrfs_add_delayed_extent_op(struct btrfs_trans_handle *trans,
++			         u64 bytenr, u64 num_bytes,
++				 struct btrfs_delayed_extent_op *extent_op);
+ 
+ struct btrfs_delayed_ref_head *
+ btrfs_find_delayed_ref_head(struct btrfs_trans_handle *trans, u64 bytenr);
+--- a/fs/btrfs/extent-tree.c
++++ b/fs/btrfs/extent-tree.c
+@@ -1821,20 +1821,19 @@ int btrfs_inc_extent_ref(struct btrfs_tr
+ 			 u64 bytenr, u64 num_bytes, u64 parent,
+ 			 u64 root_objectid, u64 owner, u64 offset)
+ {
+-	int ret;
+ 	BUG_ON(owner < BTRFS_FIRST_FREE_OBJECTID &&
+ 	       root_objectid == BTRFS_TREE_LOG_OBJECTID);
+ 
+ 	if (owner < BTRFS_FIRST_FREE_OBJECTID) {
+-		ret = btrfs_add_delayed_tree_ref(trans, bytenr, num_bytes,
+-					parent, root_objectid, (int)owner,
+-					BTRFS_ADD_DELAYED_REF, NULL);
++		btrfs_add_delayed_tree_ref(trans, bytenr, num_bytes, parent,
++					   root_objectid, (int)owner,
++					   BTRFS_ADD_DELAYED_REF, NULL);
+ 	} else {
+-		ret = btrfs_add_delayed_data_ref(trans, bytenr, num_bytes,
+-					parent, root_objectid, owner, offset,
+-					BTRFS_ADD_DELAYED_REF, NULL);
++		btrfs_add_delayed_data_ref(trans, bytenr, num_bytes, parent,
++					   root_objectid, owner, offset,
++					   BTRFS_ADD_DELAYED_REF, NULL);
+ 	}
+-	return ret;
++	return 0;
+ }
+ 
+ static int __btrfs_inc_extent_ref(struct btrfs_trans_handle *trans,
+@@ -2347,7 +2346,6 @@ int btrfs_set_disk_extent_flags(struct b
+ 				int is_data)
+ {
+ 	struct btrfs_delayed_extent_op *extent_op;
+-	int ret;
+ 
+ 	extent_op = kmalloc(sizeof(*extent_op), GFP_NOFS);
+ 	if (!extent_op)
+@@ -2358,10 +2356,8 @@ int btrfs_set_disk_extent_flags(struct b
+ 	extent_op->update_key = 0;
+ 	extent_op->is_data = is_data ? 1 : 0;
+ 
+-	ret = btrfs_add_delayed_extent_op(trans, bytenr, num_bytes, extent_op);
+-	if (ret)
+-		kfree(extent_op);
+-	return ret;
++	btrfs_add_delayed_extent_op(trans, bytenr, num_bytes, extent_op);
++	return 0;
+ }
+ 
+ static noinline int check_delayed_ref(struct btrfs_trans_handle *trans,
+@@ -4687,11 +4683,10 @@ void btrfs_free_tree_block(struct btrfs_
+ 	int ret;
+ 
+ 	if (root->root_key.objectid != BTRFS_TREE_LOG_OBJECTID) {
+-		ret = btrfs_add_delayed_tree_ref(trans, buf->start, buf->len,
+-						parent, root->root_key.objectid,
+-						btrfs_header_level(buf),
+-						BTRFS_DROP_DELAYED_REF, NULL);
 -		BUG_ON(ret);
-+		btrfs_inc_extent_ref(trans, root, bytenr, num_bytes, 0,
-+				     root->root_key.objectid,
-+				     ino, orig_offset);
++		btrfs_add_delayed_tree_ref(trans, buf->start, buf->len,
++					   parent, root->root_key.objectid,
++					   btrfs_header_level(buf),
++					   BTRFS_DROP_DELAYED_REF, NULL);
+ 	}
  
- 		if (split == start) {
- 			key.offset = start;
---- a/fs/btrfs/ioctl.c
-+++ b/fs/btrfs/ioctl.c
-@@ -2396,12 +2396,11 @@ static noinline long btrfs_ioctl_clone(s
- 								datal);
- 				if (disko) {
- 					inode_add_bytes(inode, datal);
--					ret = btrfs_inc_extent_ref(trans, root,
-+					btrfs_inc_extent_ref(trans, root,
- 							disko, diskl, 0,
- 							root->root_key.objectid,
- 							btrfs_ino(inode),
- 							new_key.offset - datao);
--					BUG_ON(ret);
- 				}
- 			} else if (type == BTRFS_FILE_EXTENT_INLINE) {
- 				u64 skip = 0;
---- a/fs/btrfs/relocation.c
-+++ b/fs/btrfs/relocation.c
-@@ -1607,11 +1607,10 @@ int replace_file_extents(struct btrfs_tr
- 		dirty = 1;
- 
- 		key.offset -= btrfs_file_extent_offset(leaf, fi);
--		ret = btrfs_inc_extent_ref(trans, root, new_bytenr,
--					   num_bytes, parent,
--					   btrfs_header_owner(leaf),
--					   key.objectid, key.offset);
+ 	if (!last_ref)
+@@ -4784,18 +4779,15 @@ int btrfs_free_extent(struct btrfs_trans
+ 			btrfs_panic(root->fs_info, ret, "Cannot pin "
+ 				    "extent in range %llu(%llu)\n",
+ 				    bytenr, num_bytes);
+-	} else if (owner < BTRFS_FIRST_FREE_OBJECTID) {
+-		ret = btrfs_add_delayed_tree_ref(trans, bytenr, num_bytes,
+-					parent, root_objectid, (int)owner,
+-					BTRFS_DROP_DELAYED_REF, NULL);
 -		BUG_ON(ret);
-+		btrfs_inc_extent_ref(trans, root, new_bytenr,
-+				     num_bytes, parent,
-+				     btrfs_header_owner(leaf),
-+				     key.objectid, key.offset);
- 
- 		ret = btrfs_free_extent(trans, root, bytenr, num_bytes,
- 					parent, btrfs_header_owner(leaf),
-@@ -1782,15 +1781,11 @@ again:
- 					      path->slots[level], old_ptr_gen);
- 		btrfs_mark_buffer_dirty(path->nodes[level]);
- 
--		ret = btrfs_inc_extent_ref(trans, src, old_bytenr, blocksize,
--					path->nodes[level]->start,
--					src->root_key.objectid, level - 1, 0);
+-	} else {
+-		ret = btrfs_add_delayed_data_ref(trans, bytenr, num_bytes,
+-					parent, root_objectid, owner,
+-					offset, BTRFS_DROP_DELAYED_REF, NULL);
 -		BUG_ON(ret);
--		ret = btrfs_inc_extent_ref(trans, dest, new_bytenr, blocksize,
--					0, dest->root_key.objectid, level - 1,
--					0);
--		BUG_ON(ret);
+-	}
+-	return ret;
++	} else if (owner < BTRFS_FIRST_FREE_OBJECTID)
++		btrfs_add_delayed_tree_ref(trans, bytenr, num_bytes, parent,
++					   root_objectid, (int)owner,
++					   BTRFS_DROP_DELAYED_REF, NULL);
++	else
++		btrfs_add_delayed_data_ref(trans, bytenr, num_bytes, parent,
++					   root_objectid, owner, offset,
++					   BTRFS_DROP_DELAYED_REF, NULL);
++	return 0;
+ }
+ 
+ static u64 stripe_align(struct btrfs_root *root, u64 val)
+@@ -5581,19 +5573,16 @@ static int alloc_reserved_tree_block(str
+ 	return ret;
+ }
+ 
+-int btrfs_alloc_reserved_file_extent(struct btrfs_trans_handle *trans,
+-				     struct btrfs_root *root,
+-				     u64 root_objectid, u64 owner,
+-				     u64 offset, struct btrfs_key *ins)
++void btrfs_alloc_reserved_file_extent(struct btrfs_trans_handle *trans,
++				      struct btrfs_root *root,
++				      u64 root_objectid, u64 owner,
++				      u64 offset, struct btrfs_key *ins)
+ {
+-	int ret;
 -
-+		btrfs_inc_extent_ref(trans, src, old_bytenr, blocksize,
-+				     path->nodes[level]->start,
-+				     src->root_key.objectid, level - 1, 0);
-+		btrfs_inc_extent_ref(trans, dest, new_bytenr, blocksize,
-+				     0, dest->root_key.objectid, level - 1, 0);
- 		ret = btrfs_free_extent(trans, src, new_bytenr, blocksize,
- 					path->nodes[level]->start,
- 					src->root_key.objectid, level - 1, 0);
-@@ -2568,12 +2563,11 @@ static int do_relocation(struct btrfs_tr
- 						      trans->transid);
- 			btrfs_mark_buffer_dirty(upper->eb);
+ 	BUG_ON(root_objectid == BTRFS_TREE_LOG_OBJECTID);
  
--			ret = btrfs_inc_extent_ref(trans, root,
--						node->eb->start, blocksize,
--						upper->eb->start,
--						btrfs_header_owner(upper->eb),
--						node->level, 0);
--			BUG_ON(ret);
-+			btrfs_inc_extent_ref(trans, root,
-+					     node->eb->start, blocksize,
-+					     upper->eb->start,
-+					     btrfs_header_owner(upper->eb),
-+					     node->level, 0);
+-	ret = btrfs_add_delayed_data_ref(trans, ins->objectid, ins->offset,
+-					 0, root_objectid, owner, offset,
+-					 BTRFS_ADD_DELAYED_EXTENT, NULL);
+-	return ret;
++	btrfs_add_delayed_data_ref(trans, ins->objectid, ins->offset,
++				   0, root_objectid, owner, offset,
++				   BTRFS_ADD_DELAYED_EXTENT, NULL);
+ }
  
- 			ret = btrfs_drop_subtree(trans, root, eb, upper->eb);
- 			BUG_ON(ret);
---- a/fs/btrfs/tree-log.c
-+++ b/fs/btrfs/tree-log.c
-@@ -588,11 +588,10 @@ static noinline int replay_one_extent(st
- 			ret = btrfs_lookup_extent(root, ins.objectid,
- 						ins.offset);
- 			if (ret == 0) {
--				ret = btrfs_inc_extent_ref(trans, root,
--						ins.objectid, ins.offset,
--						0, root->root_key.objectid,
--						key->objectid, offset);
--				BUG_ON(ret);
-+				btrfs_inc_extent_ref(trans, root, ins.objectid,
-+						     ins.offset, 0,
-+						     root->root_key.objectid,
-+						     key->objectid, offset);
- 			} else {
- 				/*
- 				 * insert the extent pointer in the extent
+ /*
+@@ -5812,11 +5801,10 @@ struct extent_buffer *btrfs_alloc_free_b
+ 		extent_op->update_flags = 1;
+ 		extent_op->is_data = 0;
+ 
+-		ret = btrfs_add_delayed_tree_ref(trans, ins.objectid,
+-					ins.offset, parent, root_objectid,
+-					level, BTRFS_ADD_DELAYED_EXTENT,
+-					extent_op);
+-		BUG_ON(ret);
++		btrfs_add_delayed_tree_ref(trans, ins.objectid,
++					   ins.offset, parent, root_objectid,
++					   level, BTRFS_ADD_DELAYED_EXTENT,
++					   extent_op);
+ 	}
+ 	return buf;
+ }
+--- a/fs/btrfs/inode.c
++++ b/fs/btrfs/inode.c
+@@ -1706,10 +1706,8 @@ static int insert_reserved_file_extent(s
+ 	ins.objectid = disk_bytenr;
+ 	ins.offset = disk_num_bytes;
+ 	ins.type = BTRFS_EXTENT_ITEM_KEY;
+-	ret = btrfs_alloc_reserved_file_extent(trans, root,
+-					root->root_key.objectid,
+-					btrfs_ino(inode), file_pos, &ins);
+-	BUG_ON(ret);
++	btrfs_alloc_reserved_file_extent(trans, root, root->root_key.objectid,
++					 btrfs_ino(inode), file_pos, &ins);
+ 	btrfs_free_path(path);
+ 
+ 	return 0;
 
 
 

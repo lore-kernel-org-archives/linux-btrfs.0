@@ -1,74 +1,53 @@
 From: Jeff Mahoney <jeffm@suse.com>
-Subject: [patch 34/65] btrfs: btrfs_init_compress should return void
-Date: Mon, 03 Oct 2011 23:23:04 -0400
-Message-ID: <20111004032303.818166320@suse.com>
+Subject: [patch 38/65] btrfs: btrfs_prepare_extent_commit should return void
+Date: Mon, 03 Oct 2011 23:23:08 -0400
+Message-ID: <20111004032304.274869899@suse.com>
 References: <20111004032230.458853274@suse.com>
 Cc: Chris Mason <chris.mason@oracle.com>
 To: BtrFS List <linux-btrfs@vger.kernel.org>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
 List-ID: <linux-btrfs.vger.kernel.org>
 
- btrfs_init_compress doesn't have any failure conditions, so return void.
+ btrfs_prepare_extent_commit has no error conditions and should return
+ void. Its callers already ignore the error codes anyway.
 
 Signed-off-by: Jeff Mahoney <jeffm@suse.com>
 ---
- fs/btrfs/compression.h |    2 +-
- fs/btrfs/super.c       |    5 +----
- 2 files changed, 2 insertions(+), 5 deletions(-)
+ fs/btrfs/ctree.h       |    4 ++--
+ fs/btrfs/extent-tree.c |    3 +--
+ 2 files changed, 3 insertions(+), 4 deletions(-)
 
---- a/fs/btrfs/compression.c
-+++ b/fs/btrfs/compression.c
-@@ -732,7 +734,7 @@ struct btrfs_compress_op *btrfs_compress
- 	&btrfs_lzo_compress,
- };
+--- a/fs/btrfs/ctree.h
++++ b/fs/btrfs/ctree.h
+@@ -2199,8 +2199,8 @@ int btrfs_free_extent(struct btrfs_trans
+ int btrfs_free_reserved_extent(struct btrfs_root *root, u64 start, u64 len);
+ int btrfs_update_reserved_bytes(struct btrfs_block_group_cache *cache,
+ 				u64 num_bytes, int reserve, int sinfo);
+-int btrfs_prepare_extent_commit(struct btrfs_trans_handle *trans,
+-				struct btrfs_root *root);
++void btrfs_prepare_extent_commit(struct btrfs_trans_handle *trans,
++				 struct btrfs_root *root);
+ int btrfs_finish_extent_commit(struct btrfs_trans_handle *trans,
+ 			       struct btrfs_root *root);
+ int btrfs_inc_extent_ref(struct btrfs_trans_handle *trans,
+--- a/fs/btrfs/extent-tree.c
++++ b/fs/btrfs/extent-tree.c
+@@ -4271,7 +4271,7 @@ int btrfs_update_reserved_bytes(struct b
+ 	return ret;
+ }
  
--int __init btrfs_init_compress(void)
-+void __init btrfs_init_compress(void)
+-int btrfs_prepare_extent_commit(struct btrfs_trans_handle *trans,
++void btrfs_prepare_extent_commit(struct btrfs_trans_handle *trans,
+ 				struct btrfs_root *root)
  {
- 	int i;
+ 	struct btrfs_fs_info *fs_info = root->fs_info;
+@@ -4301,7 +4301,6 @@ int btrfs_prepare_extent_commit(struct b
+ 	up_write(&fs_info->extent_commit_sem);
  
-@@ -742,7 +744,6 @@ int __init btrfs_init_compress(void)
- 		atomic_set(&comp_alloc_workspace[i], 0);
- 		init_waitqueue_head(&comp_workspace_wait[i]);
- 	}
+ 	update_global_block_rsv(fs_info);
 -	return 0;
  }
  
- /*
-
---- a/fs/btrfs/compression.h
-+++ b/fs/btrfs/compression.h
-@@ -19,7 +19,7 @@
- #ifndef __BTRFS_COMPRESSION_
- #define __BTRFS_COMPRESSION_
- 
--int btrfs_init_compress(void);
-+void btrfs_init_compress(void);
- void btrfs_exit_compress(void);
- 
- int btrfs_compress_pages(int type, struct address_space *mapping,
---- a/fs/btrfs/super.c
-+++ b/fs/btrfs/super.c
-@@ -1283,9 +1283,7 @@ static int __init init_btrfs_fs(void)
- 	if (err)
- 		return err;
- 
--	err = btrfs_init_compress();
--	if (err)
--		goto free_sysfs;
-+	btrfs_init_compress();
- 
- 	err = btrfs_init_cachep();
- 	if (err)
-@@ -1326,7 +1324,6 @@ free_cachep:
- 	btrfs_destroy_cachep();
- free_compress:
- 	btrfs_exit_compress();
--free_sysfs:
- 	btrfs_exit_sysfs();
- 	return err;
- }
-
-
+ static int unpin_extent_range(struct btrfs_root *root, u64 start, u64 end)
 
 

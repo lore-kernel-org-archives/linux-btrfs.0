@@ -1,79 +1,45 @@
 From: Jeff Mahoney <jeffm@suse.com>
-Subject: [patch 43/65] btrfs: Factor out tree->ops->merge_bio_hook call
-Date: Mon, 03 Oct 2011 23:23:13 -0400
-Message-ID: <20111004032304.846127738@suse.com>
+Subject: [patch 42/65] btrfs: Simplify btrfs_submit_bio_hook
+Date: Mon, 03 Oct 2011 23:23:12 -0400
+Message-ID: <20111004032304.732146417@suse.com>
 References: <20111004032230.458853274@suse.com>
 Cc: Chris Mason <chris.mason@oracle.com>
 To: BtrFS List <linux-btrfs@vger.kernel.org>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
 List-ID: <linux-btrfs.vger.kernel.org>
 
- In submit_extent_page, there's a visually noisy if statement that, in
- the midst of other conditions, does the tree dependency for tree->ops
- and tree->ops->merge_bio_hook before calling it, and then another
- condition afterwards. If an error is returned from merge_bio_hook,
- there's no way to catch it. It's considered a routine "1" return
- value instead of a failure.
+ btrfs_submit_bio_hook currently calls btrfs_bio_wq_end_io in either case
+ of an if statement that determines one of the arguments.
 
- This patch factors out the dependency check into a new local merge_bio
- routine and BUG's on an error. The if statement is less noisy as a side-
- effect.
+ This patch moves the function call outside of the if statement and uses it
+ to only determine the different argument. This allows us to catch an
+ error in one place in a more visually obvious way.
 
 Signed-off-by: Jeff Mahoney <jeffm@suse.com>
 ---
- fs/btrfs/extent_io.c |   17 ++++++++++++++---
- fs/btrfs/inode.c     |    5 +++--
- 2 files changed, 17 insertions(+), 5 deletions(-)
+ fs/btrfs/inode.c |    7 ++++---
+ 1 file changed, 4 insertions(+), 3 deletions(-)
 
---- a/fs/btrfs/extent_io.c
-+++ b/fs/btrfs/extent_io.c
-@@ -1871,6 +1871,19 @@ static int submit_one_bio(int rw, struct
- 	return ret;
- }
- 
-+static int merge_bio(struct extent_io_tree *tree, struct page *page,
-+		     unsigned long offset, size_t size, struct bio *bio,
-+		     unsigned long bio_flags)
-+{
-+	int ret = 0;
-+	if (tree->ops && tree->ops->merge_bio_hook)
-+		ret = tree->ops->merge_bio_hook(page, offset, size, bio,
-+						bio_flags);
-+	BUG_ON(ret < 0);
-+	return ret;
-+
-+}
-+
- static int submit_extent_page(int rw, struct extent_io_tree *tree,
- 			      struct page *page, sector_t sector,
- 			      size_t size, unsigned long offset,
-@@ -1899,9 +1912,7 @@ static int submit_extent_page(int rw, st
- 				sector;
- 
- 		if (prev_bio_flags != bio_flags || !contig ||
--		    (tree->ops && tree->ops->merge_bio_hook &&
--		     tree->ops->merge_bio_hook(page, offset, page_size, bio,
--					       bio_flags)) ||
-+		    merge_bio(tree, page, offset, page_size, bio, bio_flags) ||
- 		    bio_add_page(bio, page, page_size, offset) < page_size) {
- 			ret = submit_one_bio(rw, bio, mirror_num,
- 					     prev_bio_flags);
 --- a/fs/btrfs/inode.c
 +++ b/fs/btrfs/inode.c
-@@ -1425,10 +1425,11 @@ int btrfs_merge_bio_hook(struct page *pa
- 	map_length = length;
- 	ret = btrfs_map_block(map_tree, READ, logical,
- 			      &map_length, NULL, 0);
--
-+	/* Will always return 0 or 1 with map_multi == NULL */
-+	BUG_ON(ret < 0);
- 	if (map_length < length + size)
- 		return 1;
--	return ret;
-+	return 0;
- }
+@@ -1479,13 +1479,14 @@ static int btrfs_submit_bio_hook(struct
+ 	struct btrfs_root *root = BTRFS_I(inode)->root;
+ 	int ret = 0;
+ 	int skip_sum;
++	int metadata = 0;
  
- /*
+ 	skip_sum = BTRFS_I(inode)->flags & BTRFS_INODE_NODATASUM;
+ 
+ 	if (btrfs_is_free_space_inode(root, inode))
+-		ret = btrfs_bio_wq_end_io(root->fs_info, bio, 2);
+-	else
+-		ret = btrfs_bio_wq_end_io(root->fs_info, bio, 0);
++		metadata = 2;
++
++	ret = btrfs_bio_wq_end_io(root->fs_info, bio, metadata);
+ 	BUG_ON(ret);
+ 
+ 	if (!(rw & REQ_WRITE)) {
 
 
 

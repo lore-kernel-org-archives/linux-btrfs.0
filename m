@@ -1,87 +1,70 @@
 From: Jeff Mahoney <jeffm@suse.com>
-Subject: [patch 45/65] btrfs: __add_reloc_root error push-up
-Date: Mon, 03 Oct 2011 23:23:15 -0400
-Message-ID: <20111004032305.072287029@suse.com>
+Subject: [patch 64/65] btrfs: copy_for_split should return void
+Date: Mon, 03 Oct 2011 23:23:34 -0400
+Message-ID: <20111004032307.249944442@suse.com>
 References: <20111004032230.458853274@suse.com>
 Cc: Chris Mason <chris.mason@oracle.com>
 To: BtrFS List <linux-btrfs@vger.kernel.org>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
 List-ID: <linux-btrfs.vger.kernel.org>
 
- This patch pushes kmalloc errors up to the caller and BUGs in the caller.
-
- The BUG_ON for duplicate reloc tree root insertion is replaced with a
- panic explaining the issue.
+ copy_for_split has no error conditions and should return void. We
+ return 0 from split_leaf instead of ret since ret would have been
+ set using the return value from copy_for_split which would have been 0.
 
 Signed-off-by: Jeff Mahoney <jeffm@suse.com>
 ---
- fs/btrfs/relocation.c |   20 +++++++++++++++-----
- 1 file changed, 15 insertions(+), 5 deletions(-)
+ fs/btrfs/ctree.c |   19 ++++++++-----------
+ 1 file changed, 8 insertions(+), 11 deletions(-)
 
---- a/fs/btrfs/relocation.c
-+++ b/fs/btrfs/relocation.c
-@@ -1208,7 +1208,8 @@ static int __add_reloc_root(struct btrfs
- 	struct reloc_control *rc = root->fs_info->reloc_ctl;
- 
- 	node = kmalloc(sizeof(*node), GFP_NOFS);
--	BUG_ON(!node);
-+	if (!node)
-+		return -ENOMEM;
- 
- 	node->bytenr = root->node->start;
- 	node->data = root;
-@@ -1217,7 +1218,12 @@ static int __add_reloc_root(struct btrfs
- 	rb_node = tree_insert(&rc->reloc_root_tree.rb_root,
- 			      node->bytenr, &node->rb_node);
- 	spin_unlock(&rc->reloc_root_tree.lock);
--	BUG_ON(rb_node);
-+	if (rb_node) {
-+		kfree(node);
-+		btrfs_panic(root->fs_info, -EEXIST, "Duplicate root found "
-+			    "for start=%llu while inserting into relocation "
-+			    "tree\n");
-+	}
- 
- 	list_add_tail(&root->root_list, &rc->reloc_roots);
- 	return 0;
-@@ -1332,6 +1338,7 @@ int btrfs_init_reloc_root(struct btrfs_t
- 	struct btrfs_root *reloc_root;
- 	struct reloc_control *rc = root->fs_info->reloc_ctl;
- 	int clear_rsv = 0;
-+	int ret;
- 
- 	if (root->reloc_root) {
- 		reloc_root = root->reloc_root;
-@@ -1351,7 +1358,8 @@ int btrfs_init_reloc_root(struct btrfs_t
- 	if (clear_rsv)
- 		trans->block_rsv = NULL;
- 
--	__add_reloc_root(reloc_root);
-+	ret = __add_reloc_root(reloc_root);
-+	BUG_ON(ret < 0);
- 	root->reloc_root = reloc_root;
- 	return 0;
- }
-@@ -4227,7 +4235,8 @@ int btrfs_recover_relocation(struct btrf
- 				       reloc_root->root_key.offset);
- 		BUG_ON(IS_ERR(fs_root));
- 
--		__add_reloc_root(reloc_root);
-+		err = __add_reloc_root(reloc_root);
-+		BUG_ON(err < 0);
- 		fs_root->reloc_root = reloc_root;
+--- a/fs/btrfs/ctree.c
++++ b/fs/btrfs/ctree.c
+@@ -2695,12 +2695,12 @@ out:
+  *
+  * returns 0 if all went well and < 0 on failure.
+  */
+-static noinline int copy_for_split(struct btrfs_trans_handle *trans,
+-			       struct btrfs_root *root,
+-			       struct btrfs_path *path,
+-			       struct extent_buffer *l,
+-			       struct extent_buffer *right,
+-			       int slot, int mid, int nritems)
++static noinline void copy_for_split(struct btrfs_trans_handle *trans,
++				    struct btrfs_root *root,
++				    struct btrfs_path *path,
++				    struct extent_buffer *l,
++				    struct extent_buffer *right,
++				    int slot, int mid, int nritems)
+ {
+ 	int data_copy_size;
+ 	int rt_data_off;
+@@ -2752,8 +2752,6 @@ static noinline int copy_for_split(struc
  	}
  
-@@ -4429,7 +4438,8 @@ void btrfs_reloc_post_snapshot(struct bt
- 	reloc_root = create_reloc_root(trans, root->reloc_root,
- 				       new_root->root_key.objectid);
+ 	BUG_ON(path->slots[0] < 0);
+-
+-	return 0;
+ }
  
--	__add_reloc_root(reloc_root);
-+	ret = __add_reloc_root(reloc_root);
-+	BUG_ON(ret < 0);
- 	new_root->reloc_root = reloc_root;
+ /*
+@@ -2965,8 +2963,7 @@ again:
+ 		return ret;
+ 	}
  
- 	if (rc->create_reloc_tree) {
-
+-	ret = copy_for_split(trans, root, path, l, right, slot, mid, nritems);
+-	BUG_ON(ret);
++	copy_for_split(trans, root, path, l, right, slot, mid, nritems);
+ 
+ 	if (split == 2) {
+ 		BUG_ON(num_doubles != 0);
+@@ -2974,7 +2971,7 @@ again:
+ 		goto again;
+ 	}
+ 
+-	return ret;
++	return 0;
+ 
+ push_for_double:
+ 	push_for_double_split(trans, root, path, data_size);
 
 

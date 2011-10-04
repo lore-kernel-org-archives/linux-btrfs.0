@@ -1,145 +1,45 @@
 From: Jeff Mahoney <jeffm@suse.com>
-Subject: [patch 58/65] btrfs: __btrfs_mod_refs process_func should return void
-Date: Mon, 03 Oct 2011 23:23:28 -0400
-Message-ID: <20111004032306.562385708@suse.com>
+Subject: [patch 36/65] btrfs: __setup_root should return void
+Date: Mon, 03 Oct 2011 23:23:06 -0400
+Message-ID: <20111004032304.047166982@suse.com>
 References: <20111004032230.458853274@suse.com>
 Cc: Chris Mason <chris.mason@oracle.com>
 To: BtrFS List <linux-btrfs@vger.kernel.org>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
 List-ID: <linux-btrfs.vger.kernel.org>
 
- __btrfs_mod_ref's process_func function pointer calls btrfs_free_extent
- and btrfs_inc_extent_ref, which now both return only 0. This patches
- makes them return void and eliminates the error condition in
- __btrfs_mod_ref.
+ __setup_root has no error conditions and should return void. Its callers
+ already ignore the error codes anyway.
 
 Signed-off-by: Jeff Mahoney <jeffm@suse.com>
 ---
- fs/btrfs/ctree.h       |   16 ++++++++--------
- fs/btrfs/extent-tree.c |   39 ++++++++++++++-------------------------
- 2 files changed, 22 insertions(+), 33 deletions(-)
+ fs/btrfs/disk-io.c |    9 ++++-----
+ 1 file changed, 4 insertions(+), 5 deletions(-)
 
---- a/fs/btrfs/ctree.h
-+++ b/fs/btrfs/ctree.h
-@@ -2191,10 +2191,10 @@ int btrfs_set_disk_extent_flags(struct b
- 				struct btrfs_root *root,
- 				u64 bytenr, u64 num_bytes, u64 flags,
- 				int is_data);
--int btrfs_free_extent(struct btrfs_trans_handle *trans,
--		      struct btrfs_root *root,
--		      u64 bytenr, u64 num_bytes, u64 parent,
--		      u64 root_objectid, u64 owner, u64 offset);
-+void btrfs_free_extent(struct btrfs_trans_handle *trans,
-+		       struct btrfs_root *root,
-+		       u64 bytenr, u64 num_bytes, u64 parent,
-+		       u64 root_objectid, u64 owner, u64 offset);
- 
- int btrfs_free_reserved_extent(struct btrfs_root *root, u64 start, u64 len);
- int btrfs_update_reserved_bytes(struct btrfs_block_group_cache *cache,
-@@ -2203,10 +2203,10 @@ void btrfs_prepare_extent_commit(struct
- 				 struct btrfs_root *root);
- int btrfs_finish_extent_commit(struct btrfs_trans_handle *trans,
- 			       struct btrfs_root *root);
--int btrfs_inc_extent_ref(struct btrfs_trans_handle *trans,
--			 struct btrfs_root *root,
--			 u64 bytenr, u64 num_bytes, u64 parent,
--			 u64 root_objectid, u64 owner, u64 offset);
-+void btrfs_inc_extent_ref(struct btrfs_trans_handle *trans,
-+			  struct btrfs_root *root,
-+			  u64 bytenr, u64 num_bytes, u64 parent,
-+			  u64 root_objectid, u64 owner, u64 offset);
- 
- int btrfs_write_dirty_block_groups(struct btrfs_trans_handle *trans,
- 				    struct btrfs_root *root);
---- a/fs/btrfs/extent-tree.c
-+++ b/fs/btrfs/extent-tree.c
-@@ -1816,10 +1816,10 @@ static int btrfs_discard_extent(struct b
- 	return ret;
- }
- 
--int btrfs_inc_extent_ref(struct btrfs_trans_handle *trans,
--			 struct btrfs_root *root,
--			 u64 bytenr, u64 num_bytes, u64 parent,
--			 u64 root_objectid, u64 owner, u64 offset)
-+void btrfs_inc_extent_ref(struct btrfs_trans_handle *trans,
-+			  struct btrfs_root *root,
-+			  u64 bytenr, u64 num_bytes, u64 parent,
-+			  u64 root_objectid, u64 owner, u64 offset)
- {
- 	BUG_ON(owner < BTRFS_FIRST_FREE_OBJECTID &&
- 	       root_objectid == BTRFS_TREE_LOG_OBJECTID);
-@@ -1833,7 +1833,6 @@ int btrfs_inc_extent_ref(struct btrfs_tr
- 					   root_objectid, owner, offset,
- 					   BTRFS_ADD_DELAYED_REF, NULL);
- 	}
--	return 0;
- }
- 
- static int __btrfs_inc_extent_ref(struct btrfs_trans_handle *trans,
-@@ -2550,9 +2549,8 @@ static int __btrfs_mod_ref(struct btrfs_
- 	struct btrfs_file_extent_item *fi;
- 	int i;
- 	int level;
--	int ret = 0;
--	int (*process_func)(struct btrfs_trans_handle *, struct btrfs_root *,
--			    u64, u64, u64, u64, u64, u64);
-+	void (*process_func)(struct btrfs_trans_handle *, struct btrfs_root *,
-+			     u64, u64, u64, u64, u64, u64);
- 
- 	ref_root = btrfs_header_owner(buf);
- 	nritems = btrfs_header_nritems(buf);
-@@ -2587,24 +2585,16 @@ static int __btrfs_mod_ref(struct btrfs_
- 
- 			num_bytes = btrfs_file_extent_disk_num_bytes(buf, fi);
- 			key.offset -= btrfs_file_extent_offset(buf, fi);
--			ret = process_func(trans, root, bytenr, num_bytes,
--					   parent, ref_root, key.objectid,
--					   key.offset);
--			if (ret)
--				goto fail;
-+			process_func(trans, root, bytenr, num_bytes, parent,
-+				     ref_root, key.objectid, key.offset);
- 		} else {
- 			bytenr = btrfs_node_blockptr(buf, i);
- 			num_bytes = btrfs_level_size(root, level - 1);
--			ret = process_func(trans, root, bytenr, num_bytes,
--					   parent, ref_root, level - 1, 0);
--			if (ret)
--				goto fail;
-+			process_func(trans, root, bytenr, num_bytes, parent,
-+				     ref_root, level - 1, 0);
- 		}
- 	}
+--- a/fs/btrfs/disk-io.c
++++ b/fs/btrfs/disk-io.c
+@@ -1058,10 +1058,10 @@ int clean_tree_block(struct btrfs_trans_
  	return 0;
--fail:
--	BUG();
--	return ret;
  }
  
- int btrfs_inc_ref(struct btrfs_trans_handle *trans, struct btrfs_root *root,
-@@ -4760,10 +4750,10 @@ out:
- 	btrfs_put_block_group(cache);
- }
- 
--int btrfs_free_extent(struct btrfs_trans_handle *trans,
--		      struct btrfs_root *root,
--		      u64 bytenr, u64 num_bytes, u64 parent,
--		      u64 root_objectid, u64 owner, u64 offset)
-+void btrfs_free_extent(struct btrfs_trans_handle *trans,
-+		       struct btrfs_root *root,
-+		       u64 bytenr, u64 num_bytes, u64 parent,
-+		       u64 root_objectid, u64 owner, u64 offset)
+-static int __setup_root(u32 nodesize, u32 leafsize, u32 sectorsize,
+-			u32 stripesize, struct btrfs_root *root,
+-			struct btrfs_fs_info *fs_info,
+-			u64 objectid)
++static void __setup_root(u32 nodesize, u32 leafsize, u32 sectorsize,
++			 u32 stripesize, struct btrfs_root *root,
++			 struct btrfs_fs_info *fs_info,
++			 u64 objectid)
  {
- 	/*
- 	 * tree log blocks never actually go into the extent allocation
-@@ -4786,7 +4776,6 @@ int btrfs_free_extent(struct btrfs_trans
- 		btrfs_add_delayed_data_ref(trans, bytenr, num_bytes, parent,
- 					   root_objectid, owner, offset,
- 					   BTRFS_DROP_DELAYED_REF, NULL);
+ 	root->node = NULL;
+ 	root->commit_root = NULL;
+@@ -1114,7 +1114,6 @@ static int __setup_root(u32 nodesize, u3
+ 	root->defrag_running = 0;
+ 	root->root_key.objectid = objectid;
+ 	root->anon_dev = 0;
 -	return 0;
  }
  
- static u64 stripe_align(struct btrfs_root *root, u64 val)
-
+ static int find_and_setup_root(struct btrfs_root *tree_root,
 
 

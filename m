@@ -1,51 +1,74 @@
 From: Jeff Mahoney <jeffm@suse.com>
-Subject: [patch 35/65] btrfs: btrfs_invalidate_inodes should return void
-Date: Mon, 03 Oct 2011 23:23:05 -0400
-Message-ID: <20111004032303.933738679@suse.com>
+Subject: [patch 34/65] btrfs: btrfs_init_compress should return void
+Date: Mon, 03 Oct 2011 23:23:04 -0400
+Message-ID: <20111004032303.818166320@suse.com>
 References: <20111004032230.458853274@suse.com>
 Cc: Chris Mason <chris.mason@oracle.com>
 To: BtrFS List <linux-btrfs@vger.kernel.org>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
 List-ID: <linux-btrfs.vger.kernel.org>
 
- btrfs_invalidate_inodes has no error conditions and should return void.
+ btrfs_init_compress doesn't have any failure conditions, so return void.
 
 Signed-off-by: Jeff Mahoney <jeffm@suse.com>
 ---
- fs/btrfs/ctree.h |    2 +-
- fs/btrfs/inode.c |    3 +--
- 2 files changed, 2 insertions(+), 3 deletions(-)
+ fs/btrfs/compression.h |    2 +-
+ fs/btrfs/super.c       |    5 +----
+ 2 files changed, 2 insertions(+), 5 deletions(-)
 
---- a/fs/btrfs/ctree.h
-+++ b/fs/btrfs/ctree.h
-@@ -2590,7 +2590,7 @@ void btrfs_orphan_post_snapshot(struct b
- void btrfs_orphan_commit_root(struct btrfs_trans_handle *trans,
- 			      struct btrfs_root *root);
- int btrfs_cont_expand(struct inode *inode, loff_t oldsize, loff_t size);
--int btrfs_invalidate_inodes(struct btrfs_root *root);
-+void btrfs_invalidate_inodes(struct btrfs_root *root);
- void btrfs_add_delayed_iput(struct inode *inode);
- void btrfs_run_delayed_iputs(struct btrfs_root *root);
- int btrfs_prealloc_file_range(struct inode *inode, int mode,
---- a/fs/btrfs/inode.c
-+++ b/fs/btrfs/inode.c
-@@ -3886,7 +3886,7 @@ static void inode_tree_del(struct inode
- 	}
- }
+--- a/fs/btrfs/compression.c
++++ b/fs/btrfs/compression.c
+@@ -732,7 +734,7 @@ struct btrfs_compress_op *btrfs_compress
+ 	&btrfs_lzo_compress,
+ };
  
--int btrfs_invalidate_inodes(struct btrfs_root *root)
-+void btrfs_invalidate_inodes(struct btrfs_root *root)
+-int __init btrfs_init_compress(void)
++void __init btrfs_init_compress(void)
  {
- 	struct rb_node *node;
- 	struct rb_node *prev;
-@@ -3946,7 +3946,6 @@ again:
- 		node = rb_next(node);
+ 	int i;
+ 
+@@ -742,7 +744,6 @@ int __init btrfs_init_compress(void)
+ 		atomic_set(&comp_alloc_workspace[i], 0);
+ 		init_waitqueue_head(&comp_workspace_wait[i]);
  	}
- 	spin_unlock(&root->inode_lock);
 -	return 0;
  }
  
- static int btrfs_init_locked_inode(struct inode *inode, void *p)
+ /*
+
+--- a/fs/btrfs/compression.h
++++ b/fs/btrfs/compression.h
+@@ -19,7 +19,7 @@
+ #ifndef __BTRFS_COMPRESSION_
+ #define __BTRFS_COMPRESSION_
+ 
+-int btrfs_init_compress(void);
++void btrfs_init_compress(void);
+ void btrfs_exit_compress(void);
+ 
+ int btrfs_compress_pages(int type, struct address_space *mapping,
+--- a/fs/btrfs/super.c
++++ b/fs/btrfs/super.c
+@@ -1283,9 +1283,7 @@ static int __init init_btrfs_fs(void)
+ 	if (err)
+ 		return err;
+ 
+-	err = btrfs_init_compress();
+-	if (err)
+-		goto free_sysfs;
++	btrfs_init_compress();
+ 
+ 	err = btrfs_init_cachep();
+ 	if (err)
+@@ -1326,7 +1324,6 @@ free_cachep:
+ 	btrfs_destroy_cachep();
+ free_compress:
+ 	btrfs_exit_compress();
+-free_sysfs:
+ 	btrfs_exit_sysfs();
+ 	return err;
+ }
+
 
 
 

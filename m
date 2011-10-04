@@ -1,49 +1,76 @@
 From: Jeff Mahoney <jeffm@suse.com>
-Subject: [patch 37/65] btrfs: btrfs_destroy_delalloc_inodes should return void
-Date: Mon, 03 Oct 2011 23:23:07 -0400
-Message-ID: <20111004032304.160365802@suse.com>
+Subject: [patch 65/65] btrfs: update_inline_extent_backref should return void
+Date: Mon, 03 Oct 2011 23:23:35 -0400
+Message-ID: <20111004032307.364032867@suse.com>
 References: <20111004032230.458853274@suse.com>
 Cc: Chris Mason <chris.mason@oracle.com>
 To: BtrFS List <linux-btrfs@vger.kernel.org>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
 List-ID: <linux-btrfs.vger.kernel.org>
 
- btrfs_destroy_delalloc_inodes has no error conditions and should return
- void. Its callers already ignore the error codes anyway.
+ Now that btrfs_truncate_item returns void, there are no more error
+ conditions in update_inline_extent_backref and it should return void.
 
 Signed-off-by: Jeff Mahoney <jeffm@suse.com>
 ---
- fs/btrfs/disk-io.c |    6 ++----
- 1 file changed, 2 insertions(+), 4 deletions(-)
+ fs/btrfs/extent-tree.c |   23 +++++++++++------------
+ 1 file changed, 11 insertions(+), 12 deletions(-)
 
---- a/fs/btrfs/disk-io.c
-+++ b/fs/btrfs/disk-io.c
-@@ -54,7 +54,7 @@ static int btrfs_destroy_ordered_extents
- static int btrfs_destroy_delayed_refs(struct btrfs_transaction *trans,
- 				      struct btrfs_root *root);
- static int btrfs_destroy_pending_snapshots(struct btrfs_transaction *t);
--static int btrfs_destroy_delalloc_inodes(struct btrfs_root *root);
-+static void btrfs_destroy_delalloc_inodes(struct btrfs_root *root);
- static int btrfs_destroy_marked_extents(struct btrfs_root *root,
- 					struct extent_io_tree *dirty_pages,
- 					int mark);
-@@ -2938,7 +2938,7 @@ static int btrfs_destroy_pending_snapsho
- 	return 0;
- }
- 
--static int btrfs_destroy_delalloc_inodes(struct btrfs_root *root)
-+static void btrfs_destroy_delalloc_inodes(struct btrfs_root *root)
+--- a/fs/btrfs/extent-tree.c
++++ b/fs/btrfs/extent-tree.c
+@@ -1632,12 +1632,12 @@ static int lookup_extent_backref(struct
+  * helper to update/remove inline back ref
+  */
+ static noinline_for_stack
+-int update_inline_extent_backref(struct btrfs_trans_handle *trans,
+-				 struct btrfs_root *root,
+-				 struct btrfs_path *path,
+-				 struct btrfs_extent_inline_ref *iref,
+-				 int refs_to_mod,
+-				 struct btrfs_delayed_extent_op *extent_op)
++void update_inline_extent_backref(struct btrfs_trans_handle *trans,
++				  struct btrfs_root *root,
++				  struct btrfs_path *path,
++				  struct btrfs_extent_inline_ref *iref,
++				  int refs_to_mod,
++				  struct btrfs_delayed_extent_op *extent_op)
  {
- 	struct btrfs_inode *btrfs_inode;
- 	struct list_head splice;
-@@ -2958,8 +2958,6 @@ static int btrfs_destroy_delalloc_inodes
+ 	struct extent_buffer *leaf;
+ 	struct btrfs_extent_item *ei;
+@@ -1692,7 +1692,6 @@ int update_inline_extent_backref(struct
+ 		btrfs_truncate_item(trans, root, path, item_size, 1);
  	}
- 
- 	spin_unlock(&root->fs_info->delalloc_lock);
--
+ 	btrfs_mark_buffer_dirty(leaf);
 -	return 0;
  }
  
- static int btrfs_destroy_marked_extents(struct btrfs_root *root,
+ static noinline_for_stack
+@@ -1712,8 +1711,8 @@ int insert_inline_extent_backref(struct
+ 					   root_objectid, owner, offset, 1);
+ 	if (ret == 0) {
+ 		BUG_ON(owner < BTRFS_FIRST_FREE_OBJECTID);
+-		ret = update_inline_extent_backref(trans, root, path, iref,
+-						   refs_to_add, extent_op);
++		update_inline_extent_backref(trans, root, path, iref,
++					     refs_to_add, extent_op);
+ 	} else if (ret == -ENOENT) {
+ 		setup_inline_extent_backref(trans, root, path, iref, parent,
+ 					    root_objectid, owner, offset,
+@@ -1747,12 +1746,12 @@ static int remove_extent_backref(struct
+ 				 struct btrfs_extent_inline_ref *iref,
+ 				 int refs_to_drop, int is_data)
+ {
+-	int ret;
++	int ret = 0;
+ 
+ 	BUG_ON(!is_data && refs_to_drop != 1);
+ 	if (iref) {
+-		ret = update_inline_extent_backref(trans, root, path, iref,
+-						   -refs_to_drop, NULL);
++		update_inline_extent_backref(trans, root, path, iref,
++					     -refs_to_drop, NULL);
+ 	} else if (is_data) {
+ 		ret = remove_extent_data_ref(trans, root, path, refs_to_drop);
+ 	} else {
 
 

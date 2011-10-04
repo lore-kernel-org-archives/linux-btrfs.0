@@ -1,39 +1,52 @@
 From: Jeff Mahoney <jeffm@suse.com>
-Subject: [patch 00/65] Error handling patchset v3
-Date: Mon, 03 Oct 2011 23:22:30 -0400
-Message-ID: <20111004032230.458853274@suse.com>
+Subject: [patch 09/65] btrfs: pin_down_extent should return void
+Date: Mon, 03 Oct 2011 23:22:39 -0400
+Message-ID: <20111004032300.955928783@suse.com>
+References: <20111004032230.458853274@suse.com>
 Cc: Chris Mason <chris.mason@oracle.com>
 To: BtrFS List <linux-btrfs@vger.kernel.org>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hi all -
+ pin_down_extent performs some operations which can't fail and then calls
+ set_extent_dirty, which has two failure cases via set_extent_bit:
+ 1) Return -EEXIST if exclusive bits are set
+    - Since it doesn't use any exclusive bits, this failure case can't
+       occur.
+ 2) Return -ENOMEM if memory can't be allocated
+    - Since it's called with gfp_flags & __GFP_NOFAIL, this failure case
+      can't occur.
 
-Here's my current error handling patchset, against 3.1-rc8. Almost all of
-this patchset is preparing for actual error handling. Before we start in
-on that work, I'm trying to reduce the surface we need to worry about. It
-turns out that there is a ton of code that returns an error code but never
-actually reports an error.
+ With no failure cases, it should return void.
 
-The patchset has grown to 65 patches. 46 of them change functions that
-currently return int to return void. Many of them didn't even have the
-error codes checked in the caller to begin with. 10 of the patches push
-error codes up into the caller.
+Signed-off-by: Jeff Mahoney <jeffm@suse.com>
+---
+ fs/btrfs/extent-tree.c |    7 +++----
+ 1 file changed, 3 insertions(+), 4 deletions(-)
 
-The remaining 9 patches do:
-- Add a btrfs_panic facility, with a mount option to select BUG or panic
-- Catch tree operation failures
-- Simplify/add some wrapper functions
+--- a/fs/btrfs/extent-tree.c
++++ b/fs/btrfs/extent-tree.c
+@@ -4175,9 +4175,9 @@ static u64 first_logical_byte(struct btr
+ 	return bytenr;
+ }
+ 
+-static int pin_down_extent(struct btrfs_root *root,
+-			   struct btrfs_block_group_cache *cache,
+-			   u64 bytenr, u64 num_bytes, int reserved)
++static void pin_down_extent(struct btrfs_root *root,
++			    struct btrfs_block_group_cache *cache,
++			    u64 bytenr, u64 num_bytes, int reserved)
+ {
+ 	spin_lock(&cache->space_info->lock);
+ 	spin_lock(&cache->lock);
+@@ -4194,7 +4194,6 @@ static int pin_down_extent(struct btrfs_
+ 	/* __GFP_NOFAIL means it can't return -ENOMEM */
+ 	set_extent_dirty(root->fs_info->pinned_extents, bytenr,
+ 			 bytenr + num_bytes - 1, GFP_NOFS | __GFP_NOFAIL);
+-	return 0;
+ }
+ 
+ /*
 
-The biggest change, which will probably merit some discussion, is the
-introduction of slab-backed mempools in the delayed ref code. I expect
-to use this technique in other areas of the code to deal with deep
-failures that are impossible to recover gracefully from. Rather than
-returning -ENOMEM, we keep a page's worth of objects around for each
-node type. That allows the callers to be drastically simplified. There's
-no reason in particular to start with the delayed ref code, it's just
-where I happened to do it.
-
--Jeff
 
 

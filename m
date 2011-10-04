@@ -1,136 +1,121 @@
 From: Jeff Mahoney <jeffm@suse.com>
-Subject: [patch 46/65] btrfs: fixup_low_keys should return void
-Date: Mon, 03 Oct 2011 23:23:16 -0400
-Message-ID: <20111004032305.187918112@suse.com>
+Subject: [patch 47/65] btrfs: setup_items_for_insert should return void
+Date: Mon, 03 Oct 2011 23:23:17 -0400
+Message-ID: <20111004032305.302601982@suse.com>
 References: <20111004032230.458853274@suse.com>
 Cc: Chris Mason <chris.mason@oracle.com>
 To: BtrFS List <linux-btrfs@vger.kernel.org>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
 List-ID: <linux-btrfs.vger.kernel.org>
 
- fixup_low_keys has no error conditions and should return void.
+ setup_items_for_insert now has no error conditions and should return void.
 
 Signed-off-by: Jeff Mahoney <jeffm@suse.com>
 ---
- fs/btrfs/ctree.c |   39 +++++++++++----------------------------
- 1 file changed, 11 insertions(+), 28 deletions(-)
+ fs/btrfs/ctree.c         |   26 ++++++++++----------------
+ fs/btrfs/ctree.h         |    8 ++++----
+ fs/btrfs/delayed-inode.c |    6 ++----
+ 3 files changed, 16 insertions(+), 24 deletions(-)
 
 --- a/fs/btrfs/ctree.c
 +++ b/fs/btrfs/ctree.c
-@@ -1864,15 +1864,12 @@ done:
-  * fixing up pointers when a given leaf/node is not in slot 0 of the
-  * higher levels
-  *
-- * If this fails to write a tree block, it returns -1, but continues
-- * fixing up the blocks in ram so the tree is consistent.
-  */
--static int fixup_low_keys(struct btrfs_trans_handle *trans,
--			  struct btrfs_root *root, struct btrfs_path *path,
--			  struct btrfs_disk_key *key, int level)
-+static void fixup_low_keys(struct btrfs_trans_handle *trans,
-+			   struct btrfs_root *root, struct btrfs_path *path,
-+			   struct btrfs_disk_key *key, int level)
- {
- 	int i;
--	int ret = 0;
- 	struct extent_buffer *t;
+@@ -2516,7 +2516,6 @@ static noinline int __push_leaf_left(str
+ 	u32 old_left_nritems;
+ 	u32 nr;
+ 	int ret = 0;
+-	int wret;
+ 	u32 this_item_size;
+ 	u32 old_left_item_size;
  
- 	for (i = level; i < BTRFS_MAX_LEVEL; i++) {
-@@ -1885,7 +1882,6 @@ static int fixup_low_keys(struct btrfs_t
- 		if (tslot != 0)
- 			break;
+@@ -3212,11 +3211,9 @@ int btrfs_duplicate_item(struct btrfs_tr
+ 		return ret;
+ 
+ 	path->slots[0]++;
+-	ret = setup_items_for_insert(trans, root, path, new_key, &item_size,
+-				     item_size, item_size +
+-				     sizeof(struct btrfs_item), 1);
+-	BUG_ON(ret);
+-
++	setup_items_for_insert(trans, root, path, new_key, &item_size,
++			       item_size, item_size +
++			       sizeof(struct btrfs_item), 1);
+ 	leaf = path->nodes[0];
+ 	memcpy_extent_buffer(leaf,
+ 			     btrfs_item_ptr_offset(leaf, path->slots[0]),
+@@ -3536,10 +3533,10 @@ out:
+  * to save stack depth by doing the bulk of the work in a function
+  * that doesn't call btrfs_search_slot
+  */
+-int setup_items_for_insert(struct btrfs_trans_handle *trans,
+-			   struct btrfs_root *root, struct btrfs_path *path,
+-			   struct btrfs_key *cpu_key, u32 *data_size,
+-			   u32 total_data, u32 total_size, int nr)
++void setup_items_for_insert(struct btrfs_trans_handle *trans,
++			    struct btrfs_root *root, struct btrfs_path *path,
++			    struct btrfs_key *cpu_key, u32 *data_size,
++			    u32 total_data, u32 total_size, int nr)
+ {
+ 	struct btrfs_item *item;
+ 	int i;
+@@ -3617,7 +3614,6 @@ int setup_items_for_insert(struct btrfs_
+ 		btrfs_print_leaf(root, leaf);
+ 		BUG();
  	}
 -	return ret;
  }
  
  /*
-@@ -2626,9 +2622,7 @@ static noinline int __push_leaf_left(str
- 		clean_tree_block(trans, root, right);
+@@ -3644,16 +3640,14 @@ int btrfs_insert_empty_items(struct btrf
+ 	if (ret == 0)
+ 		return -EEXIST;
+ 	if (ret < 0)
+-		goto out;
++		return ret;
  
- 	btrfs_item_key(right, &disk_key, 0);
--	wret = fixup_low_keys(trans, root, path, &disk_key, 1);
--	if (wret)
--		ret = wret;
-+	fixup_low_keys(trans, root, path, &disk_key, 1);
+ 	slot = path->slots[0];
+ 	BUG_ON(slot < 0);
  
- 	/* then fixup the leaf pointer in the path */
- 	if (path->slots[0] < push_items) {
-@@ -2999,12 +2993,9 @@ again:
- 			free_extent_buffer(path->nodes[0]);
- 			path->nodes[0] = right;
- 			path->slots[0] = 0;
--			if (path->slots[1] == 0) {
--				wret = fixup_low_keys(trans, root,
--						path, &disk_key, 1);
--				if (wret)
--					ret = wret;
--			}
-+			if (path->slots[1] == 0)
-+				fixup_low_keys(trans, root, path,
-+					       &disk_key, 1);
- 		}
- 		btrfs_mark_buffer_dirty(right);
- 		return ret;
-@@ -3527,7 +3518,7 @@ int btrfs_insert_some_items(struct btrfs
- 	ret = 0;
- 	if (slot == 0) {
- 		btrfs_cpu_key_to_disk(&disk_key, cpu_key);
--		ret = fixup_low_keys(trans, root, path, &disk_key, 1);
-+		fixup_low_keys(trans, root, path, &disk_key, 1);
- 	}
+-	ret = setup_items_for_insert(trans, root, path, cpu_key, data_size,
++	setup_items_for_insert(trans, root, path, cpu_key, data_size,
+ 			       total_data, total_size, nr);
+-
+-out:
+-	return ret;
++	return 0;
+ }
  
- 	if (btrfs_leaf_free_space(root, leaf) < 0) {
-@@ -3555,7 +3546,6 @@ int setup_items_for_insert(struct btrfs_
- 	u32 nritems;
- 	unsigned int data_end;
- 	struct btrfs_disk_key disk_key;
--	int ret;
- 	struct extent_buffer *leaf;
- 	int slot;
+ /*
+--- a/fs/btrfs/ctree.h
++++ b/fs/btrfs/ctree.h
+@@ -2343,10 +2343,10 @@ static inline int btrfs_del_item(struct
+ 	return btrfs_del_items(trans, root, path, path->slots[0], 1);
+ }
  
-@@ -3616,10 +3606,9 @@ int setup_items_for_insert(struct btrfs_
+-int setup_items_for_insert(struct btrfs_trans_handle *trans,
+-			   struct btrfs_root *root, struct btrfs_path *path,
+-			   struct btrfs_key *cpu_key, u32 *data_size,
+-			   u32 total_data, u32 total_size, int nr);
++void setup_items_for_insert(struct btrfs_trans_handle *trans,
++			    struct btrfs_root *root, struct btrfs_path *path,
++			    struct btrfs_key *cpu_key, u32 *data_size,
++			    u32 total_data, u32 total_size, int nr);
+ int btrfs_insert_item(struct btrfs_trans_handle *trans, struct btrfs_root
+ 		      *root, struct btrfs_key *key, void *data, u32 data_size);
+ int btrfs_insert_empty_items(struct btrfs_trans_handle *trans,
+--- a/fs/btrfs/delayed-inode.c
++++ b/fs/btrfs/delayed-inode.c
+@@ -738,10 +738,8 @@ static int btrfs_batch_insert_items(stru
+ 	btrfs_clear_path_blocking(path, NULL, 0);
  
- 	btrfs_set_header_nritems(leaf, nritems + nr);
+ 	/* insert the keys of the items */
+-	ret = setup_items_for_insert(trans, root, path, keys, data_size,
+-				     total_data_size, total_size, nitems);
+-	if (ret)
+-		goto error;
++	setup_items_for_insert(trans, root, path, keys, data_size,
++			       total_data_size, total_size, nitems);
  
--	ret = 0;
- 	if (slot == 0) {
- 		btrfs_cpu_key_to_disk(&disk_key, cpu_key);
--		ret = fixup_low_keys(trans, root, path, &disk_key, 1);
-+		fixup_low_keys(trans, root, path, &disk_key, 1);
- 	}
- 	btrfs_unlock_up_safe(path, 1);
- 	btrfs_mark_buffer_dirty(leaf);
-@@ -3706,7 +3695,6 @@ static int del_ptr(struct btrfs_trans_ha
- 	struct extent_buffer *parent = path->nodes[level];
- 	u32 nritems;
- 	int ret = 0;
--	int wret;
- 
- 	nritems = btrfs_header_nritems(parent);
- 	if (slot != nritems - 1) {
-@@ -3726,9 +3714,7 @@ static int del_ptr(struct btrfs_trans_ha
- 		struct btrfs_disk_key disk_key;
- 
- 		btrfs_node_key(parent, &disk_key, 0);
--		wret = fixup_low_keys(trans, root, path, &disk_key, level + 1);
--		if (wret)
--			ret = wret;
-+		fixup_low_keys(trans, root, path, &disk_key, level + 1);
- 	}
- 	btrfs_mark_buffer_dirty(parent);
- 	return ret;
-@@ -3831,10 +3817,7 @@ int btrfs_del_items(struct btrfs_trans_h
- 			struct btrfs_disk_key disk_key;
- 
- 			btrfs_item_key(leaf, &disk_key, 0);
--			wret = fixup_low_keys(trans, root, path,
--					      &disk_key, 1);
--			if (wret)
--				ret = wret;
-+			fixup_low_keys(trans, root, path, &disk_key, 1);
- 		}
- 
- 		/* delete the leaf if it is mostly empty */
-
+ 	/* insert the dir index items */
+ 	slot = path->slots[0];
 
 

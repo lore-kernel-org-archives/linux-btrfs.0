@@ -1,51 +1,59 @@
-From: Avi Kivity <avi.kivity@gmail.com>
-Subject: Re: Suddenly, a dead filesystem
-Date: Tue, 4 Oct 2011 22:06:37 +0200
-Message-ID: <CAEbWaip0GU2sPu9he+-4TzSg9PZtEMav4895OjYz_jqq+ZYRmw@mail.gmail.com>
-References: <CAEbWaipxhyMf2VQRdfnpMcXwyf84YupLOm8hQRf4Q8wJu060ng@mail.gmail.com>
-	<4E53B7DC.7020807@redhat.com>
-	<CAEbWaipUPoO95kbmewfi1j=tBk5gv4Ui6yY8XSOpGHJH9KQpNQ@mail.gmail.com>
-	<CAEbWairrpVkcnDb37O2dF+sQxnmmP7+N2sBd=-pdCNVOH9n8eg@mail.gmail.com>
-	<4E89C80B.40601@redhat.com>
-	<CAEbWair966=m=4Fe_ipZNJk5PB381t_1gJ+TYPZ_naP8s=eJsw@mail.gmail.com>
-	<CAEbWaio2+c9iNjkQYnQv+=UKdR5=zpMne40RCa2X2wBObfJnxw@mail.gmail.com>
-	<CAEbWaiqrcDQUN+7-Yg3QJwJPUcxFK5br08rKkwuuRQy_x9_k6A@mail.gmail.com>
-	<CAEbWaioOMeVeACT4wMceP=obyjwrNGd7H8Rs77QrC1d=iCSgqA@mail.gmail.com>
-	<4E8B616C.1030103@redhat.com>
-	<CAEbWairdtBX9Rf4XyOreO4BVXp4B0fswKcGw69osj8R6ZGbgsA@mail.gmail.com>
-	<4E8B6602.8000005@redhat.com>
+From: Jeff Putney <jeffrey.putney@gmail.com>
+Subject: Re: Honest timeline for btrfsck
+Date: Tue, 4 Oct 2011 16:20:25 -0500
+Message-ID: <CA+JuuGp_z+-KRj3idduWmHg04KBprABg7v7ojjVXz8VfijJb8Q@mail.gmail.com>
+References: <CAGh96GFhVEfXt=xcb-uGEBA3Ss2fc8BwOpJ2g8tXbm+VimdH3Q@mail.gmail.com>
+	<1312404713-sup-6548@shiny>
+	<loom.20110818T030824-742@post.gmane.org>
+	<1313700115-sup-2457@shiny>
+	<CA+JuuGpMc2mLFL2kc17HpVKQiNCUgBWf+y2CROQaOTD5cdZg=Q@mail.gmail.com>
+	<CAFvQSYQ0K9agXtr7MxOD9KymYhH1SN7ypaWT8HaHPahg17Rosg@mail.gmail.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset=ISO-8859-1
 Cc: linux-btrfs@vger.kernel.org
-To: Josef Bacik <josef@redhat.com>
+To: Chris Mason <chris.mason@oracle.com>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <4E8B6602.8000005@redhat.com>
+In-Reply-To: <CAFvQSYQ0K9agXtr7MxOD9KymYhH1SN7ypaWT8HaHPahg17Rosg@mail.gmail.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Tue, Oct 4, 2011 at 10:01 PM, Josef Bacik <josef@redhat.com> wrote:
-> On 10/04/2011 03:50 PM, Avi Kivity wrote:
->>> Yup I would love to investigate this, what kind of snapshot?
->>
->> LVM snapshot.
->>
->>> Did you dd
->>> the drive or soemthing? =A0Let me know where to pull it down.
->>
->> Um, it's my /home. =A0It's not leaving home. =A0But if you have test
->> kernels or btrfscks you want to throw at it, I'm happy to help.
->
-> Hah well you can run btrfs-image -c <0-9> -t <number of threads> on y=
-our
-> device it will create a image of the broken fs for me to look at and
-> doesn't copy any of the data and zero's out any inline extents, the o=
-nly
-> thing I'll potentially would be able to see is the file names. =A0If
-> that's acceptable just upload it somewhere for me to pull down. =A0If=
- not
-> I'll put together a debug patch for you to try out. =A0Thanks,
->
+  That 2 week time line has now reached the 9 week mark.  The only
+update anyone has seen was 7 weeks ago, with a 'maybe today'.
+  Isn't it time to get that code checked in so someone else can take
+over, and not have to start from scratch?  Even if there isn't any
+actual working code, having any failed attempts in source control
+would still be instructive to whoever takes over delivering an actual
+fsck tool.
 
-Debug patches only, please.
+
+On Tue, Sep 27, 2011 at 1:00 PM, Clemens Eisserer <linuxhippy@gmail.com=
+> wrote:
+> +1
+>
+> 2011/9/27 Jeff Putney <jeffrey.putney@gmail.com>:
+>> On Thu, Aug 18, 2011 at 3:50 PM, Chris Mason <chris.mason@oracle.com=
+> wrote:
+>>>=A0I had hoped to get #1 out the door before I left on vacation and =
+I still might
+>>> post it tonight.
+>>>
+>>> -chris
+>>
+>> I don't think this is the honest time line that people were looking
+>> for. =A0Instead of playing more guessing games, how about we just ge=
+t
+>> that source checked in so we can get more eyeballs on it.
+>> --
+>> To unsubscribe from this list: send the line "unsubscribe linux-btrf=
+s" in
+>> the body of a message to majordomo@vger.kernel.org
+>> More majordomo info at =A0http://vger.kernel.org/majordomo-info.html
+>>
+> --
+> To unsubscribe from this list: send the line "unsubscribe linux-btrfs=
+" in
+> the body of a message to majordomo@vger.kernel.org
+> More majordomo info at =A0http://vger.kernel.org/majordomo-info.html
+>
 --
 To unsubscribe from this list: send the line "unsubscribe linux-btrfs" =
 in

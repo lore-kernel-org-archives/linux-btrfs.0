@@ -1,45 +1,67 @@
 From: Jeff Mahoney <jeffm@suse.com>
-Subject: [patch 42/65] btrfs: Simplify btrfs_submit_bio_hook
-Date: Mon, 03 Oct 2011 23:23:12 -0400
-Message-ID: <20111004032304.732146417@suse.com>
+Subject: [patch 40/65] btrfs: setup_inline_extent_backref should return void
+Date: Mon, 03 Oct 2011 23:23:10 -0400
+Message-ID: <20111004032304.503951959@suse.com>
 References: <20111004032230.458853274@suse.com>
 Cc: Chris Mason <chris.mason@oracle.com>
 To: BtrFS List <linux-btrfs@vger.kernel.org>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
 List-ID: <linux-btrfs.vger.kernel.org>
 
- btrfs_submit_bio_hook currently calls btrfs_bio_wq_end_io in either case
- of an if statement that determines one of the arguments.
-
- This patch moves the function call outside of the if statement and uses it
- to only determine the different argument. This allows us to catch an
- error in one place in a more visually obvious way.
+ setup_inline_extent_backref has no error conditions and should return
+ void. We set ret = 0 explicitly in insert_inline_extent_backref since
+ it would have been set using the return value, which would have been 0.
 
 Signed-off-by: Jeff Mahoney <jeffm@suse.com>
 ---
- fs/btrfs/inode.c |    7 ++++---
- 1 file changed, 4 insertions(+), 3 deletions(-)
+ fs/btrfs/extent-tree.c |   23 +++++++++++------------
+ 1 file changed, 11 insertions(+), 12 deletions(-)
 
---- a/fs/btrfs/inode.c
-+++ b/fs/btrfs/inode.c
-@@ -1479,13 +1479,14 @@ static int btrfs_submit_bio_hook(struct
- 	struct btrfs_root *root = BTRFS_I(inode)->root;
- 	int ret = 0;
- 	int skip_sum;
-+	int metadata = 0;
+--- a/fs/btrfs/extent-tree.c
++++ b/fs/btrfs/extent-tree.c
+@@ -1539,13 +1539,13 @@ out:
+  * helper to add new inline back ref
+  */
+ static noinline_for_stack
+-int setup_inline_extent_backref(struct btrfs_trans_handle *trans,
+-				struct btrfs_root *root,
+-				struct btrfs_path *path,
+-				struct btrfs_extent_inline_ref *iref,
+-				u64 parent, u64 root_objectid,
+-				u64 owner, u64 offset, int refs_to_add,
+-				struct btrfs_delayed_extent_op *extent_op)
++void setup_inline_extent_backref(struct btrfs_trans_handle *trans,
++				 struct btrfs_root *root,
++				 struct btrfs_path *path,
++				 struct btrfs_extent_inline_ref *iref,
++				 u64 parent, u64 root_objectid,
++				 u64 owner, u64 offset, int refs_to_add,
++				 struct btrfs_delayed_extent_op *extent_op)
+ {
+ 	struct extent_buffer *leaf;
+ 	struct btrfs_extent_item *ei;
+@@ -1599,7 +1599,6 @@ int setup_inline_extent_backref(struct b
+ 		btrfs_set_extent_inline_ref_offset(leaf, iref, root_objectid);
+ 	}
+ 	btrfs_mark_buffer_dirty(leaf);
+-	return 0;
+ }
  
- 	skip_sum = BTRFS_I(inode)->flags & BTRFS_INODE_NODATASUM;
- 
- 	if (btrfs_is_free_space_inode(root, inode))
--		ret = btrfs_bio_wq_end_io(root->fs_info, bio, 2);
--	else
--		ret = btrfs_bio_wq_end_io(root->fs_info, bio, 0);
-+		metadata = 2;
-+
-+	ret = btrfs_bio_wq_end_io(root->fs_info, bio, metadata);
- 	BUG_ON(ret);
- 
- 	if (!(rw & REQ_WRITE)) {
-
+ static int lookup_extent_backref(struct btrfs_trans_handle *trans,
+@@ -1718,10 +1717,10 @@ int insert_inline_extent_backref(struct
+ 		ret = update_inline_extent_backref(trans, root, path, iref,
+ 						   refs_to_add, extent_op);
+ 	} else if (ret == -ENOENT) {
+-		ret = setup_inline_extent_backref(trans, root, path, iref,
+-						  parent, root_objectid,
+-						  owner, offset, refs_to_add,
+-						  extent_op);
++		setup_inline_extent_backref(trans, root, path, iref, parent,
++					    root_objectid, owner, offset,
++					    refs_to_add, extent_op);
++		ret = 0;
+ 	}
+ 	return ret;
+ }
 
 

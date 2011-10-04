@@ -1,44 +1,60 @@
 From: Jeff Mahoney <jeffm@suse.com>
-Subject: [patch 29/65] btrfs: run_ordered_completions should return void
-Date: Mon, 03 Oct 2011 23:22:59 -0400
-Message-ID: <20111004032303.246364891@suse.com>
+Subject: [patch 31/65] btrfs: btrfs_requeue_work should return void
+Date: Mon, 03 Oct 2011 23:23:01 -0400
+Message-ID: <20111004032303.475379818@suse.com>
 References: <20111004032230.458853274@suse.com>
 Cc: Chris Mason <chris.mason@oracle.com>
 To: BtrFS List <linux-btrfs@vger.kernel.org>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
 List-ID: <linux-btrfs.vger.kernel.org>
 
- run_ordered_completions has no error conditions and should return void.
- Its callers already ignore the error code anyway.
+ btrfs_requeue_work has no error conditions and should return void.
+ Its callers ignore the error code anyway.
 
 Signed-off-by: Jeff Mahoney <jeffm@suse.com>
 ---
- fs/btrfs/async-thread.c |    5 ++---
- 1 file changed, 2 insertions(+), 3 deletions(-)
+ fs/btrfs/async-thread.c |    7 ++-----
+ fs/btrfs/async-thread.h |    2 +-
+ 2 files changed, 3 insertions(+), 6 deletions(-)
 
 --- a/fs/btrfs/async-thread.c
 +++ b/fs/btrfs/async-thread.c
-@@ -174,11 +174,11 @@ out:
- 	spin_unlock_irqrestore(&workers->lock, flags);
- }
- 
--static noinline int run_ordered_completions(struct btrfs_workers *workers,
-+static noinline void run_ordered_completions(struct btrfs_workers *workers,
- 					    struct btrfs_work *work)
+@@ -613,14 +613,14 @@ found:
+  * it was taken from.  It is intended for use with long running work functions
+  * that make some progress and want to give the cpu up for others.
+  */
+-int btrfs_requeue_work(struct btrfs_work *work)
++void btrfs_requeue_work(struct btrfs_work *work)
  {
- 	if (!workers->ordered)
--		return 0;
+ 	struct btrfs_worker_thread *worker = work->worker;
+ 	unsigned long flags;
+ 	int wake = 0;
+ 
+ 	if (test_and_set_bit(WORK_QUEUED_BIT, &work->flags))
+-		goto out;
 +		return;
  
- 	set_bit(WORK_DONE_BIT, &work->flags);
- 
-@@ -216,7 +216,6 @@ static noinline int run_ordered_completi
- 	}
- 
- 	spin_unlock(&workers->order_lock);
+ 	spin_lock_irqsave(&worker->lock, flags);
+ 	if (test_bit(WORK_HIGH_PRIO_BIT, &work->flags))
+@@ -647,9 +647,6 @@ int btrfs_requeue_work(struct btrfs_work
+ 	if (wake)
+ 		wake_up_process(worker->task);
+ 	spin_unlock_irqrestore(&worker->lock, flags);
+-out:
+-
 -	return 0;
  }
  
- static void put_worker(struct btrfs_worker_thread *worker)
+ void btrfs_set_work_high_prio(struct btrfs_work *work)
+--- a/fs/btrfs/async-thread.h
++++ b/fs/btrfs/async-thread.h
+@@ -114,6 +114,6 @@ int btrfs_start_workers(struct btrfs_wor
+ void btrfs_stop_workers(struct btrfs_workers *workers);
+ void btrfs_init_workers(struct btrfs_workers *workers, char *name, int max,
+ 			struct btrfs_workers *async_starter);
+-int btrfs_requeue_work(struct btrfs_work *work);
++void btrfs_requeue_work(struct btrfs_work *work);
+ void btrfs_set_work_high_prio(struct btrfs_work *work);
+ #endif
 
 

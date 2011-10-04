@@ -1,70 +1,51 @@
 From: Jeff Mahoney <jeffm@suse.com>
-Subject: [patch 64/65] btrfs: copy_for_split should return void
-Date: Mon, 03 Oct 2011 23:23:34 -0400
-Message-ID: <20111004032307.249944442@suse.com>
+Subject: [patch 41/65] btrfs: btrfs_run_defrag_inodes should return void
+Date: Mon, 03 Oct 2011 23:23:11 -0400
+Message-ID: <20111004032304.618072614@suse.com>
 References: <20111004032230.458853274@suse.com>
 Cc: Chris Mason <chris.mason@oracle.com>
 To: BtrFS List <linux-btrfs@vger.kernel.org>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
 List-ID: <linux-btrfs.vger.kernel.org>
 
- copy_for_split has no error conditions and should return void. We
- return 0 from split_leaf instead of ret since ret would have been
- set using the return value from copy_for_split which would have been 0.
+ btrfs_run_defrag_inodes has no error conditions and should return
+ void. Its callers already ignore the error codes anyway.
 
 Signed-off-by: Jeff Mahoney <jeffm@suse.com>
 ---
- fs/btrfs/ctree.c |   19 ++++++++-----------
- 1 file changed, 8 insertions(+), 11 deletions(-)
+ fs/btrfs/ctree.h |    2 +-
+ fs/btrfs/file.c  |    3 +--
+ 2 files changed, 2 insertions(+), 3 deletions(-)
 
---- a/fs/btrfs/ctree.c
-+++ b/fs/btrfs/ctree.c
-@@ -2695,12 +2695,12 @@ out:
-  *
-  * returns 0 if all went well and < 0 on failure.
+--- a/fs/btrfs/ctree.h
++++ b/fs/btrfs/ctree.h
+@@ -2610,7 +2610,7 @@ int btrfs_defrag_file(struct inode *inod
+ /* file.c */
+ int btrfs_add_inode_defrag(struct btrfs_trans_handle *trans,
+ 			   struct inode *inode);
+-int btrfs_run_defrag_inodes(struct btrfs_fs_info *fs_info);
++void btrfs_run_defrag_inodes(struct btrfs_fs_info *fs_info);
+ int btrfs_sync_file(struct file *file, loff_t start, loff_t end, int datasync);
+ int btrfs_drop_extent_cache(struct inode *inode, u64 start, u64 end,
+ 			    int skip_pinned);
+--- a/fs/btrfs/file.c
++++ b/fs/btrfs/file.c
+@@ -193,7 +193,7 @@ struct inode_defrag *btrfs_find_defrag_i
+  * run through the list of inodes in the FS that need
+  * defragging
   */
--static noinline int copy_for_split(struct btrfs_trans_handle *trans,
--			       struct btrfs_root *root,
--			       struct btrfs_path *path,
--			       struct extent_buffer *l,
--			       struct extent_buffer *right,
--			       int slot, int mid, int nritems)
-+static noinline void copy_for_split(struct btrfs_trans_handle *trans,
-+				    struct btrfs_root *root,
-+				    struct btrfs_path *path,
-+				    struct extent_buffer *l,
-+				    struct extent_buffer *right,
-+				    int slot, int mid, int nritems)
+-int btrfs_run_defrag_inodes(struct btrfs_fs_info *fs_info)
++void btrfs_run_defrag_inodes(struct btrfs_fs_info *fs_info)
  {
- 	int data_copy_size;
- 	int rt_data_off;
-@@ -2752,8 +2752,6 @@ static noinline int copy_for_split(struc
- 	}
- 
- 	BUG_ON(path->slots[0] < 0);
--
+ 	struct inode_defrag *defrag;
+ 	struct btrfs_root *inode_root;
+@@ -296,7 +296,6 @@ next_free:
+ 	 * wait for the defragger to stop
+ 	 */
+ 	wake_up(&fs_info->transaction_wait);
 -	return 0;
  }
  
- /*
-@@ -2965,8 +2963,7 @@ again:
- 		return ret;
- 	}
- 
--	ret = copy_for_split(trans, root, path, l, right, slot, mid, nritems);
--	BUG_ON(ret);
-+	copy_for_split(trans, root, path, l, right, slot, mid, nritems);
- 
- 	if (split == 2) {
- 		BUG_ON(num_doubles != 0);
-@@ -2974,7 +2971,7 @@ again:
- 		goto again;
- 	}
- 
--	return ret;
-+	return 0;
- 
- push_for_double:
- 	push_for_double_split(trans, root, path, data_size);
+ /* simple helper to fault in pages and copy.  This should go away
 
 

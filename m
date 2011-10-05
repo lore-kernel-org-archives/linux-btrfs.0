@@ -1,46 +1,34 @@
 From: Josef Bacik <josef@redhat.com>
-Subject: [PATCH] Btrfs: check the return value of filemap_write_and_wait in the space cache
-Date: Wed,  5 Oct 2011 16:33:33 -0400
-Message-ID: <1317846813-19115-1-git-send-email-josef@redhat.com>
+Subject: [PATCH] Btrfs: take overflow into account in reserving space
+Date: Wed,  5 Oct 2011 16:35:51 -0400
+Message-ID: <1317846951-19323-1-git-send-email-josef@redhat.com>
 To: linux-btrfs@vger.kernel.org
 Return-path: <linux-btrfs-owner@vger.kernel.org>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-We need to check the return value of filemap_write_and_wait in the space cache
-writeout code.  Also don't set the inode's generation until we're sure nothing
-else is going to fail.  Thanks,
+My overcommit stuff can be a little racy when we're filling up the disk with
+fs_mark and we overcommit into things that quickly get used up for data.  So use
+num_bytes to see if we have enough available space so we're less likely to
+overcommit ourselves out of the ability to make reservations.  Thanks,
 
 Signed-off-by: Josef Bacik <josef@redhat.com>
 ---
- fs/btrfs/free-space-cache.c |    7 +++++--
- 1 files changed, 5 insertions(+), 2 deletions(-)
+ fs/btrfs/extent-tree.c |    2 +-
+ 1 files changed, 1 insertions(+), 1 deletions(-)
 
-diff --git a/fs/btrfs/free-space-cache.c b/fs/btrfs/free-space-cache.c
-index 35bfc13..abc924c 100644
---- a/fs/btrfs/free-space-cache.c
-+++ b/fs/btrfs/free-space-cache.c
-@@ -852,9 +852,10 @@ int __btrfs_write_out_cache(struct btrfs_root *root, struct inode *inode,
- 	if (ret)
- 		goto out;
+diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
+index f9711a8..f95e550 100644
+--- a/fs/btrfs/extent-tree.c
++++ b/fs/btrfs/extent-tree.c
+@@ -3521,7 +3521,7 @@ again:
+ 			avail >>= 1;
+ 		 spin_unlock(&root->fs_info->free_chunk_lock);
  
--	BTRFS_I(inode)->generation = trans->transid;
- 
--	filemap_write_and_wait(inode->i_mapping);
-+	ret = filemap_write_and_wait(inode->i_mapping);
-+	if (ret)
-+		goto out;
- 
- 	key.objectid = BTRFS_FREE_SPACE_OBJECTID;
- 	key.offset = offset;
-@@ -884,6 +885,8 @@ int __btrfs_write_out_cache(struct btrfs_root *root, struct inode *inode,
- 			goto out;
+-		if (used + orig_bytes < space_info->total_bytes + avail) {
++		if (used + num_bytes < space_info->total_bytes + avail) {
+ 			space_info->bytes_may_use += orig_bytes;
+ 			ret = 0;
  		}
- 	}
-+
-+	BTRFS_I(inode)->generation = trans->transid;
- 	header = btrfs_item_ptr(leaf, path->slots[0],
- 				struct btrfs_free_space_header);
- 	btrfs_set_free_space_entries(leaf, header, entries);
 -- 
 1.7.5.2
 

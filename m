@@ -1,91 +1,15 @@
-From: Jim <jim@webstarts.com>
-Subject: Re: too many files open
-Date: Wed, 05 Oct 2011 13:18:35 -0400
-Message-ID: <4E8C916B.3090004@webstarts.com>
-References: <4E8C76AB.6080401@webstarts.com> <20111005213119.3672fdd9@natsu>        <4E8C7885.50205@webstarts.com>, <4E8C7DBB.20901@webstarts.com> <5dc5c2e75fcd85e5da1ae83fcc7eba05@www.jots.org>
+From: Chester <somethingsome2000@gmail.com>
+Subject: Re: Errors thrown up by btrfsck
+Date: Wed, 5 Oct 2011 13:15:55 -0500
+Message-ID: <CAAE6i0g18R2brtHQZt8KpgtP92RMn-wyrCXGVqTwML_qOmDmBg@mail.gmail.com>
+References: <CAAE6i0i81hPNMKphUCN-GwK-CzYhxnpC4JCbUndNecy4ZG5Tgg@mail.gmail.com>
+	<CAAE6i0h8Y8EgPE27=LouQao0Lo0-pFW2S2E-MMQkWYRbr1Uw7Q@mail.gmail.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=UTF-8; format=flowed
-To: Ken D'Ambrosio <ken@jots.org>,
-	linux-btrfs <linux-btrfs@vger.kernel.org>
+Content-Type: text/plain; charset=ISO-8859-1
+To: linux-btrfs <linux-btrfs@vger.kernel.org>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <5dc5c2e75fcd85e5da1ae83fcc7eba05@www.jots.org>
+In-Reply-To: <CAAE6i0h8Y8EgPE27=LouQao0Lo0-pFW2S2E-MMQkWYRbr1Uw7Q@mail.gmail.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Ok. I have been studying-up, and I am as confused as ever.  As much as 
-google has totally conflicting descriptions and the latest article found 
-was 2007 (enough google rant), I believe that I am looking at file 
-descriptors not files.  Lsof shows about 4000 files open.  If I read 
-/proc/sys/fs/file-nr correctly I am using 832 handles of 3M available 
-but 0 free.  With so many available, does the kernel allocate 
-dynamically.  The articles I read were mostly talking about 2.4 kernels. 
-  I have compiled 3.1.0-rc4 on a centos 6 base. I assume things have 
-changed since 2.4 :).  Bottom line am I out of descriptors?  I don't 
-understand this.
-Jim
-
-Ken,
-That was a great $.02, more like a nickle.  max files are 3255380 but 
-file handles are 0.  Current files are 832.
-I am unfamiliar with how this part of the fs works so how can I increase 
-file handles?
-Thanks
-Jim
-
-On 10/05/2011 12:07 PM, Ken D'Ambrosio wrote:
-> Well, I hate to grasp for a flyswatter when a hammer might be better, but
-> what's /proc/sys/fs/file-nr show?  The first number is your currently opened
-> files, the last one is your maximum files (as dictated by
-> /proc/sys/fs/file-max), and the middle one's allocated-but-unused file handles.
->   If it's showing a number anything near your max files, it's probably a fine
-> time to check out lsof.  Looking for where the disparity lies will probably
-> offer some insights, I imagine.
->
-> $.02,
->
-> -Ken
->
->
-> On Wed, 05 Oct 2011 11:54:35 -0400 Jim<jim@webstarts.com>  wrote
->
->> Checked ulimit and processes are not the issue here.  Rsync never has
->> more than 15 instances running and even accounting for children and
->> other processes they wouldnt approach the process limit.  The error
->> ddoes seem to be with btrfs as I cant ls the file system while this
->> condition exists.  Ls also returns "too many files open".  Btrfs sub
->> list also shows the same too many files open condition.  Actually, there
->> should be no files open after the script has failed (the script runs,
->> just reports the errors).  Something either reports files as being open
->> or is holding them open, and a remount flushes this and the fs is back
->> to normal.  Very confusing.
->> Jim
->>
->> On 10/05/2011 11:32 AM, Jim wrote:
->>> Thanks very much for the idea.  I will check and get back.
->>> Jim
->>>
->>>
->>> On 10/05/2011 11:31 AM, Roman Mamedov wrote:
->>>> On Wed, 05 Oct 2011 11:24:27 -0400
->>>> Jim<jim@webstarts.com>   wrote:
->>>>
->>>>> Good morning Btrfs list,
->>>>> I have been loading a btrfs file system via a script rsyncing data
->>>>> files
->>>>> from an nfs mounted directory.  The script runs well but after several
->>>>> days (moving about 10TB) rsync reports that it is sending the file list
->>>>> but stops moving data because btrfs balks saying too many files
->>>>> open.  A
->>>>> simple umount/mount fixes the problem.  What am I flushing when I
->>>>> remount that would affect this, and is there a way to do this without a
->>>>> remount.  Once again thanks for any assistance.
->>>> Are you sure it's a btrfs problem? Check "ulimit -n", see "help
->>>> ulimit" (assuming you use bash).
->>>>
->> --
->> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
->> the body of a message to majordomo@vger.kernel.org
->> More majordomo info at  http://vger.kernel.org/majordomo-info.html
->
->
->
->
+I just dd every file on the filesystem and I got no error message in
+dmesg, so I don't even know if I should be worried or not.

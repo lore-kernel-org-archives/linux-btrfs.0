@@ -1,7 +1,7 @@
 From: Jim <jim@webstarts.com>
 Subject: Re: too many files open
-Date: Wed, 05 Oct 2011 12:15:05 -0400
-Message-ID: <4E8C8289.6050100@webstarts.com>
+Date: Wed, 05 Oct 2011 13:18:35 -0400
+Message-ID: <4E8C916B.3090004@webstarts.com>
 References: <4E8C76AB.6080401@webstarts.com> <20111005213119.3672fdd9@natsu>        <4E8C7885.50205@webstarts.com>, <4E8C7DBB.20901@webstarts.com> <5dc5c2e75fcd85e5da1ae83fcc7eba05@www.jots.org>
 Mime-Version: 1.0
 Content-Type: text/plain; charset=UTF-8; format=flowed
@@ -10,6 +10,18 @@ To: Ken D'Ambrosio <ken@jots.org>,
 Return-path: <linux-btrfs-owner@vger.kernel.org>
 In-Reply-To: <5dc5c2e75fcd85e5da1ae83fcc7eba05@www.jots.org>
 List-ID: <linux-btrfs.vger.kernel.org>
+
+Ok. I have been studying-up, and I am as confused as ever.  As much as 
+google has totally conflicting descriptions and the latest article found 
+was 2007 (enough google rant), I believe that I am looking at file 
+descriptors not files.  Lsof shows about 4000 files open.  If I read 
+/proc/sys/fs/file-nr correctly I am using 832 handles of 3M available 
+but 0 free.  With so many available, does the kernel allocate 
+dynamically.  The articles I read were mostly talking about 2.4 kernels. 
+  I have compiled 3.1.0-rc4 on a centos 6 base. I assume things have 
+changed since 2.4 :).  Bottom line am I out of descriptors?  I don't 
+understand this.
+Jim
 
 Ken,
 That was a great $.02, more like a nickle.  max files are 3255380 but 

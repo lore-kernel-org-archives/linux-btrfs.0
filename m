@@ -1,7 +1,7 @@
 From: Arne Jansen <sensille@gmx.net>
-Subject: [PATCH v0 16/18] btrfs: hooks to reserve qgroup space
-Date: Thu,  6 Oct 2011 17:54:26 +0200
-Message-ID: <bd8344937ae679fb7462cbe02ce4ebfd99caf079.1317915011.git.sensille@gmx.net>
+Subject: [PATCH v0 17/18] btrfs: add qgroup ioctls
+Date: Thu,  6 Oct 2011 17:54:27 +0200
+Message-ID: <0344fa710f60981488cd3b6583a88c81d507acfd.1317915011.git.sensille@gmx.net>
 References: <cover.1317915010.git.sensille@gmx.net>
 To: chris.mason@oracle.com, linux-btrfs@vger.kernel.org
 Return-path: <linux-btrfs-owner@vger.kernel.org>
@@ -9,110 +9,261 @@ In-Reply-To: <cover.1317915010.git.sensille@gmx.net>
 In-Reply-To: <cover.1317915010.git.sensille@gmx.net>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Like block reserves, reserve a small piece of space on each
-transaction start and for delalloc. These are the hooks that
-can actually return EDQUOT to the user.
-The amount of space reserved is tracked in the transaction
-handle.
+Ioctls to control the qgroup feature like adding and
+removing qgroups and assigning qgroups.
 
 Signed-off-by: Arne Jansen <sensille@gmx.net>
 ---
- fs/btrfs/extent-tree.c |   13 +++++++++++++
- fs/btrfs/transaction.c |   16 ++++++++++++++++
- fs/btrfs/transaction.h |    1 +
- 3 files changed, 30 insertions(+), 0 deletions(-)
+ fs/btrfs/ioctl.c |  185 ++++++++++++++++++++++++++++++++++++++++++++++++++++++
+ fs/btrfs/ioctl.h |   27 ++++++++
+ 2 files changed, 212 insertions(+), 0 deletions(-)
 
-diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
-index 7fb9650..a2400c4 100644
---- a/fs/btrfs/extent-tree.c
-+++ b/fs/btrfs/extent-tree.c
-@@ -4093,6 +4093,14 @@ int btrfs_delalloc_reserve_metadata(struct inode *inode, u64 num_bytes)
- 	spin_unlock(&BTRFS_I(inode)->lock);
- 
- 	to_reserve += calc_csum_metadata_size(inode, num_bytes);
-+
-+	if (root->fs_info->quota_enabled) {
-+		ret = btrfs_qgroup_reserve(root, num_bytes +
-+					   nr_extents * root->leafsize);
-+		if (ret)
-+			return ret;
-+	}
-+
- 	ret = reserve_metadata_bytes(NULL, root, block_rsv, to_reserve, 1);
- 	if (ret) {
- 		unsigned dropped;
-@@ -4123,6 +4131,11 @@ void btrfs_delalloc_release_metadata(struct inode *inode, u64 num_bytes)
- 	if (dropped > 0)
- 		to_free += btrfs_calc_trans_metadata_size(root, dropped);
- 
-+	if (root->fs_info->quota_enabled) {
-+		btrfs_qgroup_free(root, num_bytes +
-+					dropped * root->leafsize);
-+	}
-+
- 	btrfs_block_rsv_release(root, &root->fs_info->delalloc_block_rsv,
- 				to_free);
+diff --git a/fs/btrfs/ioctl.c b/fs/btrfs/ioctl.c
+index fade500..f46bc35 100644
+--- a/fs/btrfs/ioctl.c
++++ b/fs/btrfs/ioctl.c
+@@ -2834,6 +2834,183 @@ static long btrfs_ioctl_scrub_progress(struct btrfs_root *root,
+ 	return ret;
  }
-diff --git a/fs/btrfs/transaction.c b/fs/btrfs/transaction.c
-index 1ae856e..a8b7668 100644
---- a/fs/btrfs/transaction.c
-+++ b/fs/btrfs/transaction.c
-@@ -260,6 +260,7 @@ static struct btrfs_trans_handle *start_transaction(struct btrfs_root *root,
- 	struct btrfs_transaction *cur_trans;
- 	u64 num_bytes = 0;
- 	int ret;
-+	u64 qgroup_reserved = 0;
  
- 	if (root->fs_info->fs_state & BTRFS_SUPER_FLAG_ERROR)
- 		return ERR_PTR(-EROFS);
-@@ -278,6 +279,14 @@ static struct btrfs_trans_handle *start_transaction(struct btrfs_root *root,
- 	 * the appropriate flushing if need be.
- 	 */
- 	if (num_items > 0 && root != root->fs_info->chunk_root) {
-+		if (root->fs_info->quota_enabled &&
-+		    is_fstree(root->root_key.objectid)) {
-+			qgroup_reserved = num_items * root->leafsize;
-+			ret = btrfs_qgroup_reserve(root, qgroup_reserved);
-+			if (ret)
-+				return ERR_PTR(ret);
++static long btrfs_ioctl_quota_ctl(struct btrfs_root *root, void __user *arg)
++{
++	struct btrfs_ioctl_quota_ctl_args *sa;
++	struct btrfs_trans_handle *trans = NULL;
++	int ret;
++	int err;
++
++	if (!capable(CAP_SYS_ADMIN))
++		return -EPERM;
++
++	if (root->fs_info->sb->s_flags & MS_RDONLY)
++		return -EROFS;
++
++	sa = memdup_user(arg, sizeof(*sa));
++	if (IS_ERR(sa))
++		return PTR_ERR(sa);
++
++	if (sa->cmd != BTRFS_QUOTA_CTL_RESCAN) {
++		trans = btrfs_start_transaction(root, 2);
++		if (IS_ERR(trans)) {
++			ret = PTR_ERR(trans);
++			goto out;
 +		}
-+
- 		num_bytes = btrfs_calc_trans_metadata_size(root, num_items);
- 		ret = btrfs_block_rsv_add(NULL, root,
- 					  &root->fs_info->trans_block_rsv,
-@@ -315,6 +324,7 @@ again:
- 	h->use_count = 1;
- 	h->block_rsv = NULL;
- 	h->orig_rsv = NULL;
-+	h->qgroup_reserved = qgroup_reserved;
- 
- 	smp_mb();
- 	if (cur_trans->blocked && may_wait_transaction(root, type)) {
-@@ -463,6 +473,12 @@ static int __btrfs_end_transaction(struct btrfs_trans_handle *trans,
- 	 * end_transaction. Subvolume quota depends on this.
- 	 */
- 	WARN_ON(trans->root != root);
-+
-+	if (trans->qgroup_reserved) {
-+		btrfs_qgroup_free(root, trans->qgroup_reserved);
-+		trans->qgroup_reserved = 0;
 +	}
 +
- 	while (count < 4) {
- 		unsigned long cur = trans->delayed_ref_updates;
- 		trans->delayed_ref_updates = 0;
-diff --git a/fs/btrfs/transaction.h b/fs/btrfs/transaction.h
-index b120126..5f5d216 100644
---- a/fs/btrfs/transaction.h
-+++ b/fs/btrfs/transaction.h
-@@ -48,6 +48,7 @@ struct btrfs_transaction {
- struct btrfs_trans_handle {
- 	u64 transid;
- 	u64 bytes_reserved;
-+	u64 qgroup_reserved;
- 	unsigned long use_count;
- 	unsigned long blocks_reserved;
- 	unsigned long blocks_used;
++	switch (sa->cmd) {
++	case BTRFS_QUOTA_CTL_ENABLE:
++		ret = btrfs_quota_enable(trans, root->fs_info);
++		break;
++	case BTRFS_QUOTA_CTL_DISABLE:
++		ret = btrfs_quota_disable(trans, root->fs_info);
++		break;
++	case BTRFS_QUOTA_CTL_RESCAN:
++		ret = btrfs_quota_rescan(root->fs_info);
++		break;
++	default:
++		ret = -EINVAL;
++		break;
++	}
++
++	if (copy_to_user(arg, sa, sizeof(*sa)))
++		ret = -EFAULT;
++
++	if (trans) {
++		err = btrfs_commit_transaction(trans, root);
++		if (err && !ret)
++			ret = err;
++	}
++
++out:
++	kfree(sa);
++	return ret;
++}
++
++static long btrfs_ioctl_qgroup_assign(struct btrfs_root *root, void __user *arg)
++{
++	struct btrfs_ioctl_qgroup_assign_args *sa;
++	struct btrfs_trans_handle *trans;
++	int ret;
++	int err;
++
++	if (!capable(CAP_SYS_ADMIN))
++		return -EPERM;
++
++	if (root->fs_info->sb->s_flags & MS_RDONLY)
++		return -EROFS;
++
++	sa = memdup_user(arg, sizeof(*sa));
++	if (IS_ERR(sa))
++		return PTR_ERR(sa);
++
++	trans = btrfs_join_transaction(root);
++	if (IS_ERR(trans)) {
++		ret = PTR_ERR(trans);
++		goto out;
++	}
++
++	/* FIXME: check if the IDs really exist */
++	if (sa->assign) {
++		ret = btrfs_add_qgroup_relation(trans, root->fs_info,
++						sa->src, sa->dst);
++	} else {
++		ret = btrfs_del_qgroup_relation(trans, root->fs_info,
++						sa->src, sa->dst);
++	}
++
++	err = btrfs_end_transaction(trans, root);
++	if (err && !ret)
++		ret = err;
++
++out:
++	kfree(sa);
++	return ret;
++}
++
++static long btrfs_ioctl_qgroup_create(struct btrfs_root *root, void __user *arg)
++{
++	struct btrfs_ioctl_qgroup_create_args *sa;
++	struct btrfs_trans_handle *trans;
++	int ret;
++	int err;
++
++	if (!capable(CAP_SYS_ADMIN))
++		return -EPERM;
++
++	if (root->fs_info->sb->s_flags & MS_RDONLY)
++		return -EROFS;
++
++	sa = memdup_user(arg, sizeof(*sa));
++	if (IS_ERR(sa))
++		return PTR_ERR(sa);
++
++	trans = btrfs_join_transaction(root);
++	if (IS_ERR(trans)) {
++		ret = PTR_ERR(trans);
++		goto out;
++	}
++
++	/* FIXME: check if the IDs really exist */
++	if (sa->create) {
++		ret = btrfs_create_qgroup(trans, root->fs_info, sa->qgroupid,
++					  NULL);
++	} else {
++		ret = btrfs_remove_qgroup(trans, root->fs_info, sa->qgroupid);
++	}
++
++	err = btrfs_end_transaction(trans, root);
++	if (err && !ret)
++		ret = err;
++
++out:
++	kfree(sa);
++	return ret;
++}
++
++static long btrfs_ioctl_qgroup_limit(struct btrfs_root *root, void __user *arg)
++{
++	struct btrfs_ioctl_qgroup_limit_args *sa;
++	struct btrfs_trans_handle *trans;
++	int ret;
++	int err;
++	u64 qgroupid;
++
++	if (!capable(CAP_SYS_ADMIN))
++		return -EPERM;
++
++	if (root->fs_info->sb->s_flags & MS_RDONLY)
++		return -EROFS;
++
++	sa = memdup_user(arg, sizeof(*sa));
++	if (IS_ERR(sa))
++		return PTR_ERR(sa);
++
++	trans = btrfs_join_transaction(root);
++	if (IS_ERR(trans)) {
++		ret = PTR_ERR(trans);
++		goto out;
++	}
++
++	qgroupid = sa->qgroupid;
++	if (!qgroupid) {
++		/* take the current subvol as qgroup */
++		qgroupid = root->root_key.objectid;
++	}
++
++	/* FIXME: check if the IDs really exist */
++	ret = btrfs_limit_qgroup(trans, root->fs_info, qgroupid, &sa->lim);
++
++	err = btrfs_end_transaction(trans, root);
++	if (err && !ret)
++		ret = err;
++
++out:
++	kfree(sa);
++	return ret;
++}
++
+ long btrfs_ioctl(struct file *file, unsigned int
+ 		cmd, unsigned long arg)
+ {
+@@ -2906,6 +3083,14 @@ long btrfs_ioctl(struct file *file, unsigned int
+ 		return btrfs_ioctl_scrub_cancel(root, argp);
+ 	case BTRFS_IOC_SCRUB_PROGRESS:
+ 		return btrfs_ioctl_scrub_progress(root, argp);
++	case BTRFS_IOC_QUOTA_CTL:
++		return btrfs_ioctl_quota_ctl(root, argp);
++	case BTRFS_IOC_QGROUP_ASSIGN:
++		return btrfs_ioctl_qgroup_assign(root, argp);
++	case BTRFS_IOC_QGROUP_CREATE:
++		return btrfs_ioctl_qgroup_create(root, argp);
++	case BTRFS_IOC_QGROUP_LIMIT:
++		return btrfs_ioctl_qgroup_limit(root, argp);
+ 	}
+ 
+ 	return -ENOTTY;
+diff --git a/fs/btrfs/ioctl.h b/fs/btrfs/ioctl.h
+index 36d14a4..51c6cc4 100644
+--- a/fs/btrfs/ioctl.h
++++ b/fs/btrfs/ioctl.h
+@@ -217,6 +217,25 @@ struct btrfs_ioctl_space_args {
+ 	struct btrfs_ioctl_space_info spaces[0];
+ };
+ 
++#define BTRFS_QUOTA_CTL_ENABLE	1
++#define BTRFS_QUOTA_CTL_DISABLE	2
++#define BTRFS_QUOTA_CTL_RESCAN	3
++struct btrfs_ioctl_quota_ctl_args {
++	__u64 cmd;
++	__u64 status;
++};
++
++struct btrfs_ioctl_qgroup_assign_args {
++	__u64 assign;
++	__u64 src;
++	__u64 dst;
++};
++
++struct btrfs_ioctl_qgroup_create_args {
++	__u64 create;
++	__u64 qgroupid;
++};
++
+ #define BTRFS_IOC_SNAP_CREATE _IOW(BTRFS_IOCTL_MAGIC, 1, \
+ 				   struct btrfs_ioctl_vol_args)
+ #define BTRFS_IOC_DEFRAG _IOW(BTRFS_IOCTL_MAGIC, 2, \
+@@ -272,4 +291,12 @@ struct btrfs_ioctl_space_args {
+ 				 struct btrfs_ioctl_dev_info_args)
+ #define BTRFS_IOC_FS_INFO _IOR(BTRFS_IOCTL_MAGIC, 31, \
+ 			       struct btrfs_ioctl_fs_info_args)
++#define BTRFS_IOC_QUOTA_CTL _IOWR(BTRFS_IOCTL_MAGIC, 40, \
++			       struct btrfs_ioctl_quota_ctl_args)
++#define BTRFS_IOC_QGROUP_ASSIGN _IOW(BTRFS_IOCTL_MAGIC, 41, \
++			       struct btrfs_ioctl_qgroup_assign_args)
++#define BTRFS_IOC_QGROUP_CREATE _IOW(BTRFS_IOCTL_MAGIC, 42, \
++			       struct btrfs_ioctl_qgroup_create_args)
++#define BTRFS_IOC_QGROUP_LIMIT _IOR(BTRFS_IOCTL_MAGIC, 43, \
++			       struct btrfs_ioctl_qgroup_limit_args)
+ #endif
 -- 
 1.7.3.4
 

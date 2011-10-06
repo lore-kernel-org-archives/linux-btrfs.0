@@ -1,7 +1,7 @@
 From: Arne Jansen <sensille@gmx.net>
-Subject: [PATCH v0 18/18] btrfs: add qgroup inheritance
-Date: Thu,  6 Oct 2011 17:54:28 +0200
-Message-ID: <628f23212c524dd77460d67a7a59a9f9314b947c.1317915011.git.sensille@gmx.net>
+Subject: [PATCH v0 11/18] btrfs: add sequence numbers to delayed refs
+Date: Thu,  6 Oct 2011 17:54:21 +0200
+Message-ID: <a8a7ee0e9054a13296d532fb543891275292a4c7.1317915011.git.sensille@gmx.net>
 References: <cover.1317915010.git.sensille@gmx.net>
 To: chris.mason@oracle.com, linux-btrfs@vger.kernel.org
 Return-path: <linux-btrfs-owner@vger.kernel.org>
@@ -9,259 +9,265 @@ In-Reply-To: <cover.1317915010.git.sensille@gmx.net>
 In-Reply-To: <cover.1317915010.git.sensille@gmx.net>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-When creating a subvolume or snapshot, it is necessary
-to initialize the qgroup account with a copy of some
-other (tracking) qgroup. This patch adds parameters
-to the ioctls to pass the information from which qgroup
-to inherit.
+Sequence numbers are needed to reconstruct the backrefs
+of a given extent to a certain point in time. The total
+set of backrefs consist of the set of backrefs recorded
+on disk plus the enqueued delayed refs for it that existed
+at that moment.
+This patch also add a list that records all delayed refs
+that are currently in the process of being added. With
+qgroups enabled add a delayed ref involves walking the
+backrefs of the extent. During this time, no delayed ref
+that is newer must be processed.
 
 Signed-off-by: Arne Jansen <sensille@gmx.net>
 ---
- fs/btrfs/ioctl.c       |   59 ++++++++++++++++++++++++++++++++++-------------
- fs/btrfs/ioctl.h       |   11 ++++++++-
- fs/btrfs/transaction.c |    8 ++++++
- fs/btrfs/transaction.h |    1 +
- 4 files changed, 61 insertions(+), 18 deletions(-)
+ fs/btrfs/delayed-ref.c |   71 +++++++++++++++++++++++++++++++++++++++++++++---
+ fs/btrfs/delayed-ref.h |   21 ++++++++++++++
+ fs/btrfs/transaction.c |    4 +++
+ 3 files changed, 92 insertions(+), 4 deletions(-)
 
-diff --git a/fs/btrfs/ioctl.c b/fs/btrfs/ioctl.c
-index f46bc35..54fefef 100644
---- a/fs/btrfs/ioctl.c
-+++ b/fs/btrfs/ioctl.c
-@@ -315,7 +315,8 @@ static noinline int btrfs_ioctl_fitrim(struct file *file, void __user *arg)
- static noinline int create_subvol(struct btrfs_root *root,
- 				  struct dentry *dentry,
- 				  char *name, int namelen,
--				  u64 *async_transid)
-+				  u64 *async_transid,
-+				  struct btrfs_qgroup_inherit **inherit)
- {
- 	struct btrfs_trans_handle *trans;
- 	struct btrfs_key key;
-@@ -347,6 +348,11 @@ static noinline int create_subvol(struct btrfs_root *root,
- 	if (IS_ERR(trans))
- 		return PTR_ERR(trans);
+diff --git a/fs/btrfs/delayed-ref.c b/fs/btrfs/delayed-ref.c
+index babd37b..2c8544b 100644
+--- a/fs/btrfs/delayed-ref.c
++++ b/fs/btrfs/delayed-ref.c
+@@ -23,6 +23,11 @@
+ #include "delayed-ref.h"
+ #include "transaction.h"
  
-+	ret = btrfs_qgroup_inherit(trans, root->fs_info, 0, objectid,
-+				   inherit ? *inherit : NULL);
-+	if (ret)
-+		goto fail;
++struct seq_list {
++	struct list_head list;
++	u64 seq;
++};
 +
- 	leaf = btrfs_alloc_free_block(trans, root, root->leafsize,
- 				      0, objectid, NULL, 0, 0, 0);
- 	if (IS_ERR(leaf)) {
-@@ -448,7 +454,7 @@ fail:
- 
- static int create_snapshot(struct btrfs_root *root, struct dentry *dentry,
- 			   char *name, int namelen, u64 *async_transid,
--			   bool readonly)
-+			   bool readonly, struct btrfs_qgroup_inherit **inherit)
- {
- 	struct inode *inode;
- 	struct btrfs_pending_snapshot *pending_snapshot;
-@@ -466,6 +472,10 @@ static int create_snapshot(struct btrfs_root *root, struct dentry *dentry,
- 	pending_snapshot->dentry = dentry;
- 	pending_snapshot->root = root;
- 	pending_snapshot->readonly = readonly;
-+	if (inherit) {
-+		pending_snapshot->inherit = *inherit;
-+		*inherit = NULL;	/* take responsibility to free it */
-+	}
- 
- 	trans = btrfs_start_transaction(root->fs_info->extent_root, 5);
- 	if (IS_ERR(trans)) {
-@@ -599,7 +609,8 @@ static inline int btrfs_may_create(struct inode *dir, struct dentry *child)
- static noinline int btrfs_mksubvol(struct path *parent,
- 				   char *name, int namelen,
- 				   struct btrfs_root *snap_src,
--				   u64 *async_transid, bool readonly)
-+				   u64 *async_transid, bool readonly,
-+				   struct btrfs_qgroup_inherit **inherit)
- {
- 	struct inode *dir  = parent->dentry->d_inode;
- 	struct dentry *dentry;
-@@ -630,11 +641,11 @@ static noinline int btrfs_mksubvol(struct path *parent,
- 		goto out_up_read;
- 
- 	if (snap_src) {
--		error = create_snapshot(snap_src, dentry,
--					name, namelen, async_transid, readonly);
-+		error = create_snapshot(snap_src, dentry, name, namelen,
-+					async_transid, readonly, inherit);
- 	} else {
- 		error = create_subvol(BTRFS_I(dir)->root, dentry,
--				      name, namelen, async_transid);
-+				      name, namelen, async_transid, inherit);
- 	}
- 	if (!error)
- 		fsnotify_mkdir(dir, dentry);
-@@ -1253,11 +1264,9 @@ out_unlock:
+ /*
+  * delayed back reference update tracking.  For subvolume trees
+  * we queue up extent allocations and backref maintenance for
+@@ -101,6 +106,11 @@ static int comp_entry(struct btrfs_delayed_ref_node *ref2,
+ 		return -1;
+ 	if (ref1->type > ref2->type)
+ 		return 1;
++	/* with quota enable, merging of refs is not allowed */
++	if (ref1->seq < ref2->seq)
++		return -1;
++	if (ref1->seq > ref2->seq)
++		return 1;
+ 	if (ref1->type == BTRFS_TREE_BLOCK_REF_KEY ||
+ 	    ref1->type == BTRFS_SHARED_BLOCK_REF_KEY) {
+ 		return comp_tree_refs(btrfs_delayed_node_to_tree_ref(ref2),
+@@ -209,6 +219,39 @@ int btrfs_delayed_ref_lock(struct btrfs_trans_handle *trans,
+ 	return 0;
  }
  
- static noinline int btrfs_ioctl_snap_create_transid(struct file *file,
--						    char *name,
--						    unsigned long fd,
--						    int subvol,
--						    u64 *transid,
--						    bool readonly)
-+				char *name, unsigned long fd, int subvol,
-+				u64 *transid, bool readonly,
-+				struct btrfs_qgroup_inherit **inherit)
++static u64 get_delayed_seq(struct btrfs_delayed_ref_root *delayed_refs,
++			   struct seq_list *elem)
++{
++	assert_spin_locked(&delayed_refs->lock);
++	elem->seq = ++delayed_refs->seq;
++	list_add_tail(&elem->list, &delayed_refs->seq_head);
++
++	return elem->seq;
++}
++
++static void put_delayed_seq(struct btrfs_delayed_ref_root *delayed_refs,
++			    struct seq_list *elem)
++{
++	spin_lock(&delayed_refs->lock);
++	list_del(&elem->list);
++	spin_unlock(&delayed_refs->lock);
++}
++
++int btrfs_check_delayed_seq(struct btrfs_delayed_ref_root *delayed_refs,
++			    u64 seq)
++{
++	struct seq_list *elem;
++
++	assert_spin_locked(&delayed_refs->lock);
++	if (list_empty(&delayed_refs->seq_head))
++		return 0;
++
++	elem = list_first_entry(&delayed_refs->seq_head, struct seq_list, list);
++	if (seq >= elem->seq)
++		return 1;
++	return 0;
++}
++
+ int btrfs_find_ref_cluster(struct btrfs_trans_handle *trans,
+ 			   struct list_head *cluster, u64 start)
  {
- 	struct btrfs_root *root = BTRFS_I(fdentry(file)->d_inode)->root;
- 	struct file *src_file;
-@@ -1275,7 +1284,7 @@ static noinline int btrfs_ioctl_snap_create_transid(struct file *file,
+@@ -438,6 +481,7 @@ static noinline int add_delayed_ref_head(struct btrfs_fs_info *fs_info,
+ 	ref->action  = 0;
+ 	ref->is_head = 1;
+ 	ref->in_tree = 1;
++	ref->seq = 0;
  
- 	if (subvol) {
- 		ret = btrfs_mksubvol(&file->f_path, name, namelen,
--				     NULL, transid, readonly);
-+				     NULL, transid, readonly, inherit);
- 	} else {
- 		struct inode *src_inode;
- 		src_file = fget(fd);
-@@ -1294,7 +1303,7 @@ static noinline int btrfs_ioctl_snap_create_transid(struct file *file,
- 		}
- 		ret = btrfs_mksubvol(&file->f_path, name, namelen,
- 				     BTRFS_I(src_inode)->root,
--				     transid, readonly);
-+				     transid, readonly, inherit);
- 		fput(src_file);
- 	}
- out:
-@@ -1314,7 +1323,7 @@ static noinline int btrfs_ioctl_snap_create(struct file *file,
+ 	head_ref = btrfs_delayed_node_to_head(ref);
+ 	head_ref->must_insert_reserved = must_insert_reserved;
+@@ -474,11 +518,12 @@ static noinline int add_delayed_tree_ref(struct btrfs_fs_info *fs_info,
+ 					 struct btrfs_delayed_ref_node *ref,
+ 					 u64 bytenr, u64 num_bytes, u64 parent,
+ 					 u64 ref_root, int level, int action,
+-					 int for_cow)
++					 int for_cow, struct seq_list *seq_elem)
+ {
+ 	struct btrfs_delayed_ref_node *existing;
+ 	struct btrfs_delayed_tree_ref *full_ref;
+ 	struct btrfs_delayed_ref_root *delayed_refs;
++	u64 seq = 0;
  
- 	ret = btrfs_ioctl_snap_create_transid(file, vol_args->name,
- 					      vol_args->fd, subvol,
--					      NULL, false);
-+					      NULL, false, NULL);
+ 	if (action == BTRFS_ADD_DELAYED_EXTENT)
+ 		action = BTRFS_ADD_DELAYED_REF;
+@@ -494,6 +539,10 @@ static noinline int add_delayed_tree_ref(struct btrfs_fs_info *fs_info,
+ 	ref->is_head = 0;
+ 	ref->in_tree = 1;
  
- 	kfree(vol_args);
- 	return ret;
-@@ -1328,6 +1337,7 @@ static noinline int btrfs_ioctl_snap_create_v2(struct file *file,
- 	u64 transid = 0;
- 	u64 *ptr = NULL;
- 	bool readonly = false;
-+	struct btrfs_qgroup_inherit *inherit = NULL;
++	if (fs_info->quota_enabled && !for_cow && is_fstree(ref_root))
++		seq = get_delayed_seq(delayed_refs, seq_elem);
++	ref->seq = seq;
++
+ 	full_ref = btrfs_delayed_node_to_tree_ref(ref);
+ 	full_ref->parent = parent;
+ 	full_ref->root = ref_root;
+@@ -529,11 +578,13 @@ static noinline int add_delayed_data_ref(struct btrfs_fs_info *fs_info,
+ 					 struct btrfs_delayed_ref_node *ref,
+ 					 u64 bytenr, u64 num_bytes, u64 parent,
+ 					 u64 ref_root, u64 owner, u64 offset,
+-					 int action, int for_cow)
++					 int action, int for_cow,
++					 struct seq_list *seq_elem)
+ {
+ 	struct btrfs_delayed_ref_node *existing;
+ 	struct btrfs_delayed_data_ref *full_ref;
+ 	struct btrfs_delayed_ref_root *delayed_refs;
++	u64 seq = 0;
  
- 	vol_args = memdup_user(arg, sizeof(*vol_args));
- 	if (IS_ERR(vol_args))
-@@ -1335,7 +1345,8 @@ static noinline int btrfs_ioctl_snap_create_v2(struct file *file,
- 	vol_args->name[BTRFS_SUBVOL_NAME_MAX] = '\0';
+ 	if (action == BTRFS_ADD_DELAYED_EXTENT)
+ 		action = BTRFS_ADD_DELAYED_REF;
+@@ -549,6 +600,10 @@ static noinline int add_delayed_data_ref(struct btrfs_fs_info *fs_info,
+ 	ref->is_head = 0;
+ 	ref->in_tree = 1;
  
- 	if (vol_args->flags &
--	    ~(BTRFS_SUBVOL_CREATE_ASYNC | BTRFS_SUBVOL_RDONLY)) {
-+	    ~(BTRFS_SUBVOL_CREATE_ASYNC | BTRFS_SUBVOL_RDONLY |
-+	      BTRFS_SUBVOL_QGROUP_INHERIT)) {
- 		ret = -EOPNOTSUPP;
- 		goto out;
- 	}
-@@ -1344,10 +1355,21 @@ static noinline int btrfs_ioctl_snap_create_v2(struct file *file,
- 		ptr = &transid;
- 	if (vol_args->flags & BTRFS_SUBVOL_RDONLY)
- 		readonly = true;
-+	if (vol_args->flags & BTRFS_SUBVOL_QGROUP_INHERIT) {
-+		if (vol_args->size > PAGE_CACHE_SIZE) {
-+			ret = -EINVAL;
-+			goto out;
-+		}
-+		inherit = memdup_user(vol_args->qgroup_inherit, vol_args->size);
-+		if (IS_ERR(inherit)) {
-+			ret = PTR_ERR(inherit);
-+			goto out;
-+		}
-+	}
++	if (fs_info->quota_enabled && !for_cow && is_fstree(ref_root))
++		seq = get_delayed_seq(delayed_refs, seq_elem);
++	ref->seq = seq;
++
+ 	full_ref = btrfs_delayed_node_to_data_ref(ref);
+ 	full_ref->parent = parent;
+ 	full_ref->root = ref_root;
+@@ -594,6 +649,7 @@ int btrfs_add_delayed_tree_ref(struct btrfs_fs_info *fs_info,
+ 	struct btrfs_delayed_ref_head *head_ref;
+ 	struct btrfs_delayed_ref_root *delayed_refs;
+ 	int ret;
++	struct seq_list seq_elem;
  
- 	ret = btrfs_ioctl_snap_create_transid(file, vol_args->name,
--					      vol_args->fd, subvol,
--					      ptr, readonly);
-+					      vol_args->fd, subvol, ptr,
-+					      readonly, &inherit);
+ 	BUG_ON(extent_op && extent_op->is_data);
+ 	ref = kmalloc(sizeof(*ref), GFP_NOFS);
+@@ -621,9 +677,12 @@ int btrfs_add_delayed_tree_ref(struct btrfs_fs_info *fs_info,
  
- 	if (ret == 0 && ptr &&
- 	    copy_to_user(arg +
-@@ -1356,6 +1378,7 @@ static noinline int btrfs_ioctl_snap_create_v2(struct file *file,
- 		ret = -EFAULT;
- out:
- 	kfree(vol_args);
-+	kfree(inherit);
- 	return ret;
+ 	ret = add_delayed_tree_ref(fs_info, trans, &ref->node, bytenr,
+ 				   num_bytes, parent, ref_root, level, action,
+-				   for_cow);
++				   for_cow, &seq_elem);
+ 	BUG_ON(ret);
+ 	spin_unlock(&delayed_refs->lock);
++	if (fs_info->quota_enabled && !for_cow && is_fstree(ref_root))
++		put_delayed_seq(delayed_refs, &seq_elem);
++
+ 	return 0;
  }
  
-@@ -3032,6 +3055,8 @@ long btrfs_ioctl(struct file *file, unsigned int
- 		return btrfs_ioctl_snap_create_v2(file, argp, 0);
- 	case BTRFS_IOC_SUBVOL_CREATE:
- 		return btrfs_ioctl_snap_create(file, argp, 1);
-+	case BTRFS_IOC_SUBVOL_CREATE_V2:
-+		return btrfs_ioctl_snap_create_v2(file, argp, 1);
- 	case BTRFS_IOC_SNAP_DESTROY:
- 		return btrfs_ioctl_snap_destroy(file, argp);
- 	case BTRFS_IOC_SUBVOL_GETFLAGS:
-diff --git a/fs/btrfs/ioctl.h b/fs/btrfs/ioctl.h
-index 51c6cc4..c47bca0 100644
---- a/fs/btrfs/ioctl.h
-+++ b/fs/btrfs/ioctl.h
-@@ -32,6 +32,7 @@ struct btrfs_ioctl_vol_args {
+@@ -642,6 +701,7 @@ int btrfs_add_delayed_data_ref(struct btrfs_fs_info *fs_info,
+ 	struct btrfs_delayed_ref_head *head_ref;
+ 	struct btrfs_delayed_ref_root *delayed_refs;
+ 	int ret;
++	struct seq_list seq_elem;
  
- #define BTRFS_SUBVOL_CREATE_ASYNC	(1ULL << 0)
- #define BTRFS_SUBVOL_RDONLY		(1ULL << 1)
-+#define BTRFS_SUBVOL_QGROUP_INHERIT	(1ULL << 2)
- #define BTRFS_FSID_SIZE 16
- #define BTRFS_UUID_SIZE 16
+ 	BUG_ON(extent_op && !extent_op->is_data);
+ 	ref = kmalloc(sizeof(*ref), GFP_NOFS);
+@@ -669,9 +729,12 @@ int btrfs_add_delayed_data_ref(struct btrfs_fs_info *fs_info,
  
-@@ -64,7 +65,13 @@ struct btrfs_ioctl_vol_args_v2 {
- 	__s64 fd;
- 	__u64 transid;
- 	__u64 flags;
--	__u64 unused[4];
-+	union {
-+		struct {
-+			__u64 size;
-+			struct btrfs_qgroup_inherit __user *qgroup_inherit;
-+		};
-+		__u64 unused[4];
-+	};
- 	char name[BTRFS_SUBVOL_NAME_MAX + 1];
+ 	ret = add_delayed_data_ref(fs_info, trans, &ref->node, bytenr,
+ 				   num_bytes, parent, ref_root, owner, offset,
+-				   action, for_cow);
++				   action, for_cow, &seq_elem);
+ 	BUG_ON(ret);
+ 	spin_unlock(&delayed_refs->lock);
++	if (fs_info->quota_enabled && !for_cow && is_fstree(ref_root))
++		put_delayed_seq(delayed_refs, &seq_elem);
++
+ 	return 0;
+ }
+ 
+diff --git a/fs/btrfs/delayed-ref.h b/fs/btrfs/delayed-ref.h
+index a5fb2bc..80e6f1c 100644
+--- a/fs/btrfs/delayed-ref.h
++++ b/fs/btrfs/delayed-ref.h
+@@ -33,6 +33,9 @@ struct btrfs_delayed_ref_node {
+ 	/* the size of the extent */
+ 	u64 num_bytes;
+ 
++	/* seq number to keep track of insertion order */
++	u64 seq;
++
+ 	/* ref count on this data structure */
+ 	atomic_t refs;
+ 
+@@ -136,6 +139,21 @@ struct btrfs_delayed_ref_root {
+ 	int flushing;
+ 
+ 	u64 run_delayed_start;
++
++	/*
++	 * seq number of delayed refs. For qgroups we need to know if a backref
++	 * was being added before the currently processed ref or afterwards.
++	 */
++	u64 seq;
++
++	/*
++	 * seq_list holds a list of all seq numbers that are currently being
++	 * added to the list. When qgroups are active, the addition of a delayed
++	 * ref requires a walking of the backrefs which might take some time.
++	 * During this time, no newer ref must be processed, as it might
++	 * influence the outcome of the walk.
++	 */
++	struct list_head seq_head;
  };
  
-@@ -280,6 +287,8 @@ struct btrfs_ioctl_qgroup_create_args {
- #define BTRFS_IOC_WAIT_SYNC  _IOW(BTRFS_IOCTL_MAGIC, 22, __u64)
- #define BTRFS_IOC_SNAP_CREATE_V2 _IOW(BTRFS_IOCTL_MAGIC, 23, \
- 				   struct btrfs_ioctl_vol_args_v2)
-+#define BTRFS_IOC_SUBVOL_CREATE_V2 _IOW(BTRFS_IOCTL_MAGIC, 24, \
-+				   struct btrfs_ioctl_vol_args_v2)
- #define BTRFS_IOC_SUBVOL_GETFLAGS _IOW(BTRFS_IOCTL_MAGIC, 25, __u64)
- #define BTRFS_IOC_SUBVOL_SETFLAGS _IOW(BTRFS_IOCTL_MAGIC, 26, __u64)
- #define BTRFS_IOC_SCRUB _IOWR(BTRFS_IOCTL_MAGIC, 27, \
+ static inline void btrfs_put_delayed_ref(struct btrfs_delayed_ref_node *ref)
+@@ -171,6 +189,9 @@ int btrfs_delayed_ref_lock(struct btrfs_trans_handle *trans,
+ 			   struct btrfs_delayed_ref_head *head);
+ int btrfs_find_ref_cluster(struct btrfs_trans_handle *trans,
+ 			   struct list_head *cluster, u64 search_start);
++int btrfs_check_delayed_seq(struct btrfs_delayed_ref_root *delayed_refs,
++			    u64 seq);
++
+ /*
+  * a node might live in a head or a regular ref, this lets you
+  * test for the proper type to use.
 diff --git a/fs/btrfs/transaction.c b/fs/btrfs/transaction.c
-index a8b7668..faaf87d 100644
+index d7f32da..c8642a7 100644
 --- a/fs/btrfs/transaction.c
 +++ b/fs/btrfs/transaction.c
-@@ -952,6 +952,14 @@ static noinline int create_pending_snapshot(struct btrfs_trans_handle *trans,
- 		}
+@@ -36,6 +36,8 @@ static noinline void put_transaction(struct btrfs_transaction *transaction)
+ 	WARN_ON(atomic_read(&transaction->use_count) == 0);
+ 	if (atomic_dec_and_test(&transaction->use_count)) {
+ 		BUG_ON(!list_empty(&transaction->list));
++		WARN_ON(transaction->delayed_refs.root.rb_node);
++		WARN_ON(!list_empty(&transaction->delayed_refs.seq_head));
+ 		memset(transaction, 0, sizeof(*transaction));
+ 		kmem_cache_free(btrfs_transaction_cachep, transaction);
  	}
+@@ -105,8 +107,10 @@ static noinline int join_transaction(struct btrfs_root *root, int nofail)
+ 	cur_trans->delayed_refs.num_heads = 0;
+ 	cur_trans->delayed_refs.flushing = 0;
+ 	cur_trans->delayed_refs.run_delayed_start = 0;
++	cur_trans->delayed_refs.seq = 0;
+ 	spin_lock_init(&cur_trans->commit_lock);
+ 	spin_lock_init(&cur_trans->delayed_refs.lock);
++	INIT_LIST_HEAD(&cur_trans->delayed_refs.seq_head);
  
-+	ret = btrfs_qgroup_inherit(trans, fs_info, root->root_key.objectid,
-+				   objectid, pending->inherit);
-+	kfree(pending->inherit);
-+	if (ret) {
-+		pending->error = ret;
-+		goto fail;
-+	}
-+
- 	key.objectid = objectid;
- 	key.offset = (u64)-1;
- 	key.type = BTRFS_ROOT_ITEM_KEY;
-diff --git a/fs/btrfs/transaction.h b/fs/btrfs/transaction.h
-index 5f5d216..aeb095e 100644
---- a/fs/btrfs/transaction.h
-+++ b/fs/btrfs/transaction.h
-@@ -68,6 +68,7 @@ struct btrfs_pending_snapshot {
- 	struct dentry *dentry;
- 	struct btrfs_root *root;
- 	struct btrfs_root *snap;
-+	struct btrfs_qgroup_inherit *inherit;
- 	/* block reservation for the operation */
- 	struct btrfs_block_rsv block_rsv;
- 	/* extra metadata reseration for relocation */
+ 	INIT_LIST_HEAD(&cur_trans->pending_snapshots);
+ 	list_add_tail(&cur_trans->list, &root->fs_info->trans_list);
 -- 
 1.7.3.4
 

@@ -1,35 +1,46 @@
-From: Andi Kleen <andi@firstfloor.org>
-Subject: Re: [PATCH v0 07/18] btrfs: generic data structure to build unique lists
-Date: Thu, 06 Oct 2011 13:33:00 -0700
-Message-ID: <m2y5wx3loj.fsf@firstfloor.org>
-References: <cover.1317915010.git.sensille@gmx.net>
-	<3a697c3e44dd5955c167f2f548ee4ced1e3dabef.1317915010.git.sensille@gmx.net>
+From: Jeff Mahoney <jeffm@suse.de>
+Subject: Re: Honest timeline for btrfsck
+Date: Thu, 06 Oct 2011 16:33:51 -0400
+Message-ID: <4E8E10AF.7070008@suse.de>
+References: <CAGh96GFhVEfXt=xcb-uGEBA3Ss2fc8BwOpJ2g8tXbm+VimdH3Q@mail.gmail.com> <4E5FE9FC.9040705@cchtml.com> <20110901203442.GA17928@carfax.org.uk> <201109101209.40759.Martin@lichtvoll.de> <CA+JuuGrvCTP=o8umQHQV968tMSfJzxAFOfnGO2RKV3RU4_Vshw@mail.gmail.com> <20111005061628.GA3702@shiny.elevennetworks.com> <CA+JuuGoG1rhQ9S+vfa17BKdekp-A1UeNHqeYEwxfg=Co3Ts_pQ@mail.gmail.com> <20111005145843.GA4770@shiny.elevennetworks.com> <CA+JuuGq8ODcFDh_KEy3YL_pVJ1=zKDX1SD_9Ou_tHpR4XGhwgQ@mail.gmail.com> <m239f550cp.fsf@firstfloor.org>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Cc: chris.mason@oracle.com, linux-btrfs@vger.kernel.org
-To: Arne Jansen <sensille@gmx.net>
+Content-Type: text/plain; charset=ISO-8859-1
+Cc: Jeff Putney <jeffrey.putney@gmail.com>,
+	Chris Mason <chris.mason@oracle.com>,
+	linux-btrfs <linux-btrfs@vger.kernel.org>
+To: Andi Kleen <andi@firstfloor.org>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <3a697c3e44dd5955c167f2f548ee4ced1e3dabef.1317915010.git.sensille@gmx.net>
-	(Arne Jansen's message of "Thu, 6 Oct 2011 17:54:17 +0200")
+In-Reply-To: <m239f550cp.fsf@firstfloor.org>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Arne Jansen <sensille@gmx.net> writes:
+-----BEGIN PGP SIGNED MESSAGE-----
+Hash: SHA1
 
-> ulist is a generic data structures to hold a collection of unique u64
-> values. The only operations it supports is adding to the list and
-> enumerating it.
-> It is possible to store an auxiliary value along with the key.
-> The implementation is preliminary and can probably be sped up
-> significantly.
-> It is used by subvolume quota to translate recursions into iterative
-> loops.
+On 10/06/2011 04:30 PM, Andi Kleen wrote:
+> Jeff Putney <jeffrey.putney@gmail.com> writes:
+>> 
+>> http://en.wikipedia.org/wiki/Release_early,_release_often
+> 
+> Well the other principle in free software you're forgetting is:
+> 
+> "It will be released when it's ready"
+> 
+> If you don't like Chris' ways to do releases you're free to write 
+> something on your own or pay someone to do so. Otherwise you just
+> have to deal with his time frames, as shifty as they may be.
 
-Hmm, sounds like a job for lib/idr.c 
+Thanks, I was about to say the same thing.
 
-What do your ulists do that idr doesn't?
-Ok idr doesn't have merge, but that should be simple
-enough to add.
+- -Jeff
 
--Andi
--- 
-ak@linux.intel.com -- Speaking for myself only
+- -- 
+Jeff Mahoney
+SUSE Labs
+-----BEGIN PGP SIGNATURE-----
+Version: GnuPG v2.0.18 (GNU/Linux)
+Comment: Using GnuPG with Mozilla - http://enigmail.mozdev.org/
+
+iEYEARECAAYFAk6OEK8ACgkQLPWxlyuTD7JgKwCfYqyslTkbq/sYUz/rcXj4M1lf
+mTAAoIbIKNIZlyVFZjzrCH/ss9W3UQuh
+=6vdd
+-----END PGP SIGNATURE-----

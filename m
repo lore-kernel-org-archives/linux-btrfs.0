@@ -1,7 +1,7 @@
 From: Arne Jansen <sensille@gmx.net>
-Subject: [PATCH v0 03/18] btrfs: add nested locking mode for paths
-Date: Thu,  6 Oct 2011 17:54:13 +0200
-Message-ID: <55d5758142bf964aefbbaadc2188f66ca178f876.1317915010.git.sensille@gmx.net>
+Subject: [PATCH v0 14/18] btrfs: quota tree support and startup
+Date: Thu,  6 Oct 2011 17:54:24 +0200
+Message-ID: <ad25b2e624425f2468bc585be70d9bb625641bda.1317915011.git.sensille@gmx.net>
 References: <cover.1317915010.git.sensille@gmx.net>
 To: chris.mason@oracle.com, linux-btrfs@vger.kernel.org
 Return-path: <linux-btrfs-owner@vger.kernel.org>
@@ -9,282 +9,173 @@ In-Reply-To: <cover.1317915010.git.sensille@gmx.net>
 In-Reply-To: <cover.1317915010.git.sensille@gmx.net>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-This patch adds the possibilty to read-lock an extent
-even if it is already write-locked from the same thread.
-Subvolume quota needs this capability.
+Init the quota tree along with the others on open_ctree
+and close_ctree. Add the quota tree to the list of well
+known trees in btrfs_read_fs_root_no_name.
 
 Signed-off-by: Arne Jansen <sensille@gmx.net>
 ---
- fs/btrfs/ctree.c     |   22 ++++++++++++--------
- fs/btrfs/ctree.h     |    1 +
- fs/btrfs/extent_io.c |    1 +
- fs/btrfs/extent_io.h |    2 +
- fs/btrfs/locking.c   |   51 +++++++++++++++++++++++++++++++++++++++++++++++--
- fs/btrfs/locking.h   |    2 +-
- 6 files changed, 66 insertions(+), 13 deletions(-)
+ fs/btrfs/disk-io.c |   47 +++++++++++++++++++++++++++++++++++++++++------
+ 1 files changed, 41 insertions(+), 6 deletions(-)
 
-diff --git a/fs/btrfs/ctree.c b/fs/btrfs/ctree.c
-index 51b387b..964ac9a 100644
---- a/fs/btrfs/ctree.c
-+++ b/fs/btrfs/ctree.c
-@@ -186,13 +186,14 @@ struct extent_buffer *btrfs_lock_root_node(struct btrfs_root *root)
-  * tree until you end up with a lock on the root.  A locked buffer
-  * is returned, with a reference held.
-  */
--struct extent_buffer *btrfs_read_lock_root_node(struct btrfs_root *root)
-+struct extent_buffer *btrfs_read_lock_root_node(struct btrfs_root *root,
-+						int nested)
- {
- 	struct extent_buffer *eb;
- 
- 	while (1) {
- 		eb = btrfs_root_node(root);
--		btrfs_tree_read_lock(eb);
-+		btrfs_tree_read_lock(eb, nested);
- 		if (eb == root->node)
- 			break;
- 		btrfs_tree_read_unlock(eb);
-@@ -1620,6 +1621,7 @@ int btrfs_search_slot(struct btrfs_trans_handle *trans, struct btrfs_root
- 	/* everything at write_lock_level or lower must be write locked */
- 	int write_lock_level = 0;
- 	u8 lowest_level = 0;
-+	int nested = p->nested;
- 
- 	lowest_level = p->lowest_level;
- 	WARN_ON(lowest_level && ins_len > 0);
-@@ -1661,8 +1663,9 @@ again:
- 		b = root->commit_root;
- 		extent_buffer_get(b);
- 		level = btrfs_header_level(b);
-+		BUG_ON(p->skip_locking && nested);
- 		if (!p->skip_locking)
--			btrfs_tree_read_lock(b);
-+			btrfs_tree_read_lock(b, 0);
- 	} else {
- 		if (p->skip_locking) {
- 			b = btrfs_root_node(root);
-@@ -1671,7 +1674,7 @@ again:
- 			/* we don't know the level of the root node
- 			 * until we actually have it read locked
- 			 */
--			b = btrfs_read_lock_root_node(root);
-+			b = btrfs_read_lock_root_node(root, nested);
- 			level = btrfs_header_level(b);
- 			if (level <= write_lock_level) {
- 				/* whoops, must trade for write lock */
-@@ -1810,7 +1813,8 @@ cow_done:
- 					err = btrfs_try_tree_read_lock(b);
- 					if (!err) {
- 						btrfs_set_path_blocking(p);
--						btrfs_tree_read_lock(b);
-+						btrfs_tree_read_lock(b,
-+								     nested);
- 						btrfs_clear_path_blocking(p, b,
- 								  BTRFS_READ_LOCK);
- 					}
-@@ -3955,7 +3959,7 @@ int btrfs_search_forward(struct btrfs_root *root, struct btrfs_key *min_key,
- 
- 	WARN_ON(!path->keep_locks);
+diff --git a/fs/btrfs/disk-io.c b/fs/btrfs/disk-io.c
+index cb25017..06576ed 100644
+--- a/fs/btrfs/disk-io.c
++++ b/fs/btrfs/disk-io.c
+@@ -1391,6 +1391,9 @@ struct btrfs_root *btrfs_read_fs_root_no_name(struct btrfs_fs_info *fs_info,
+ 		return fs_info->dev_root;
+ 	if (location->objectid == BTRFS_CSUM_TREE_OBJECTID)
+ 		return fs_info->csum_root;
++	if (location->objectid == BTRFS_QUOTA_TREE_OBJECTID)
++		return fs_info->quota_root ? fs_info->quota_root :
++					     ERR_PTR(-ENOENT);
  again:
--	cur = btrfs_read_lock_root_node(root);
-+	cur = btrfs_read_lock_root_node(root, 0);
- 	level = btrfs_header_level(cur);
- 	WARN_ON(path->nodes[level]);
- 	path->nodes[level] = cur;
-@@ -4049,7 +4053,7 @@ find_next_key:
- 		cur = read_node_slot(root, cur, slot);
- 		BUG_ON(!cur);
+ 	spin_lock(&fs_info->fs_roots_radix_lock);
+ 	root = radix_tree_lookup(&fs_info->fs_roots_radix,
+@@ -1676,6 +1679,8 @@ struct btrfs_root *open_ctree(struct super_block *sb,
+ 						GFP_NOFS);
+ 	struct btrfs_root *dev_root = kzalloc(sizeof(struct btrfs_root),
+ 					      GFP_NOFS);
++	struct btrfs_root *quota_root = kzalloc(sizeof(struct btrfs_root),
++					      GFP_NOFS);
+ 	struct btrfs_root *log_tree_root;
  
--		btrfs_tree_read_lock(cur);
-+		btrfs_tree_read_lock(cur, 0);
+ 	int ret;
+@@ -1684,7 +1689,7 @@ struct btrfs_root *open_ctree(struct super_block *sb,
+ 	struct btrfs_super_block *disk_super;
  
- 		path->locks[level - 1] = BTRFS_READ_LOCK;
- 		path->nodes[level - 1] = cur;
-@@ -4243,7 +4247,7 @@ again:
- 			ret = btrfs_try_tree_read_lock(next);
- 			if (!ret) {
- 				btrfs_set_path_blocking(path);
--				btrfs_tree_read_lock(next);
-+				btrfs_tree_read_lock(next, 0);
- 				btrfs_clear_path_blocking(path, next,
- 							  BTRFS_READ_LOCK);
- 			}
-@@ -4280,7 +4284,7 @@ again:
- 			ret = btrfs_try_tree_read_lock(next);
- 			if (!ret) {
- 				btrfs_set_path_blocking(path);
--				btrfs_tree_read_lock(next);
-+				btrfs_tree_read_lock(next, 0);
- 				btrfs_clear_path_blocking(path, next,
- 							  BTRFS_READ_LOCK);
- 			}
-diff --git a/fs/btrfs/ctree.h b/fs/btrfs/ctree.h
-index 68f2315..2765b8d 100644
---- a/fs/btrfs/ctree.h
-+++ b/fs/btrfs/ctree.h
-@@ -487,6 +487,7 @@ struct btrfs_path {
- 	unsigned int skip_locking:1;
- 	unsigned int leave_spinning:1;
- 	unsigned int search_commit_root:1;
-+	unsigned int nested:1;
- };
- 
- /*
-diff --git a/fs/btrfs/extent_io.c b/fs/btrfs/extent_io.c
-index d418164..0bb29da 100644
---- a/fs/btrfs/extent_io.c
-+++ b/fs/btrfs/extent_io.c
-@@ -2979,6 +2979,7 @@ static struct extent_buffer *__alloc_extent_buffer(struct extent_io_tree *tree,
- 	atomic_set(&eb->blocking_writers, 0);
- 	atomic_set(&eb->spinning_readers, 0);
- 	atomic_set(&eb->spinning_writers, 0);
-+	eb->lock_nested = 0;
- 	init_waitqueue_head(&eb->write_lock_wq);
- 	init_waitqueue_head(&eb->read_lock_wq);
- 
-diff --git a/fs/btrfs/extent_io.h b/fs/btrfs/extent_io.h
-index 7b2f0c3..3a2d1f9 100644
---- a/fs/btrfs/extent_io.h
-+++ b/fs/btrfs/extent_io.h
-@@ -125,6 +125,7 @@ struct extent_buffer {
- 	struct list_head leak_list;
- 	struct rcu_head rcu_head;
- 	atomic_t refs;
-+	pid_t lock_owner;
- 
- 	/* count of read lock holders on the extent buffer */
- 	atomic_t write_locks;
-@@ -133,6 +134,7 @@ struct extent_buffer {
- 	atomic_t blocking_readers;
- 	atomic_t spinning_readers;
- 	atomic_t spinning_writers;
-+	int lock_nested;
- 
- 	/* protects write locks */
- 	rwlock_t lock;
-diff --git a/fs/btrfs/locking.c b/fs/btrfs/locking.c
-index d77b67c..3cd604f 100644
---- a/fs/btrfs/locking.c
-+++ b/fs/btrfs/locking.c
-@@ -33,6 +33,14 @@ void btrfs_assert_tree_read_locked(struct extent_buffer *eb);
-  */
- void btrfs_set_lock_blocking_rw(struct extent_buffer *eb, int rw)
- {
-+	if (eb->lock_nested) {
-+		read_lock(&eb->lock);
-+		if (eb->lock_nested && current->pid == eb->lock_owner) {
-+			read_unlock(&eb->lock);
-+			return;
-+		}
-+		read_unlock(&eb->lock);
-+	}
- 	if (rw == BTRFS_WRITE_LOCK) {
- 		if (atomic_read(&eb->blocking_writers) == 0) {
- 			WARN_ON(atomic_read(&eb->spinning_writers) != 1);
-@@ -57,6 +65,14 @@ void btrfs_set_lock_blocking_rw(struct extent_buffer *eb, int rw)
-  */
- void btrfs_clear_lock_blocking_rw(struct extent_buffer *eb, int rw)
- {
-+	if (eb->lock_nested) {
-+		read_lock(&eb->lock);
-+		if (&eb->lock_nested && current->pid == eb->lock_owner) {
-+			read_unlock(&eb->lock);
-+			return;
-+		}
-+		read_unlock(&eb->lock);
-+	}
- 	if (rw == BTRFS_WRITE_LOCK_BLOCKING) {
- 		BUG_ON(atomic_read(&eb->blocking_writers) != 1);
- 		write_lock(&eb->lock);
-@@ -78,15 +94,24 @@ void btrfs_clear_lock_blocking_rw(struct extent_buffer *eb, int rw)
-  * take a spinning read lock.  This will wait for any blocking
-  * writers
-  */
--void btrfs_tree_read_lock(struct extent_buffer *eb)
-+void btrfs_tree_read_lock(struct extent_buffer *eb, int nested)
- {
- again:
-+	if (nested) {
-+		read_lock(&eb->lock);
-+		if (atomic_read(&eb->blocking_writers) &&
-+		    current->pid == eb->lock_owner) {
-+			BUG_ON(eb->lock_nested);
-+			eb->lock_nested = 1;
-+			read_unlock(&eb->lock);
-+			return;
-+		}
-+		read_unlock(&eb->lock);
-+	}
- 	wait_event(eb->write_lock_wq, atomic_read(&eb->blocking_writers) == 0);
- 	read_lock(&eb->lock);
- 	if (atomic_read(&eb->blocking_writers)) {
- 		read_unlock(&eb->lock);
--		wait_event(eb->write_lock_wq,
--			   atomic_read(&eb->blocking_writers) == 0);
- 		goto again;
+ 	if (!extent_root || !tree_root || !tree_root->fs_info ||
+-	    !chunk_root || !dev_root || !csum_root) {
++	    !chunk_root || !dev_root || !csum_root || !quota_root) {
+ 		err = -ENOMEM;
+ 		goto fail;
  	}
- 	atomic_inc(&eb->read_locks);
-@@ -129,6 +154,7 @@ int btrfs_try_tree_write_lock(struct extent_buffer *eb)
+@@ -2078,6 +2083,18 @@ struct btrfs_root *open_ctree(struct super_block *sb,
+ 
+ 	csum_root->track_dirty = 1;
+ 
++	ret = find_and_setup_root(tree_root, fs_info,
++				  BTRFS_QUOTA_TREE_OBJECTID, quota_root);
++	if (ret) {
++		kfree(quota_root);
++		quota_root = NULL;
++	} else {
++		quota_root->track_dirty = 1;
++		fs_info->quota_enabled = 1;
++		fs_info->pending_quota_state = 1;
++	}
++	fs_info->quota_root = quota_root;
++
+ 	fs_info->generation = generation;
+ 	fs_info->last_trans_committed = generation;
+ 	fs_info->data_alloc_profile = (u64)-1;
+@@ -2115,6 +2132,10 @@ struct btrfs_root *open_ctree(struct super_block *sb,
+ 		btrfs_set_opt(fs_info->mount_opt, SSD);
  	}
- 	atomic_inc(&eb->write_locks);
- 	atomic_inc(&eb->spinning_writers);
-+	eb->lock_owner = current->pid;
- 	return 1;
+ 
++	ret = btrfs_read_qgroup_config(fs_info);
++	if (ret)
++		goto fail_trans_kthread;
++
+ 	/* do not make disk changes in broken FS */
+ 	if (btrfs_super_log_root(disk_super) != 0 &&
+ 	    !(fs_info->fs_state & BTRFS_SUPER_FLAG_ERROR)) {
+@@ -2124,7 +2145,7 @@ struct btrfs_root *open_ctree(struct super_block *sb,
+ 			printk(KERN_WARNING "Btrfs log replay required "
+ 			       "on RO media\n");
+ 			err = -EIO;
+-			goto fail_trans_kthread;
++			goto fail_qgroup;
+ 		}
+ 		blocksize =
+ 		     btrfs_level_size(tree_root,
+@@ -2133,7 +2154,7 @@ struct btrfs_root *open_ctree(struct super_block *sb,
+ 		log_tree_root = kzalloc(sizeof(struct btrfs_root), GFP_NOFS);
+ 		if (!log_tree_root) {
+ 			err = -ENOMEM;
+-			goto fail_trans_kthread;
++			goto fail_qgroup;
+ 		}
+ 
+ 		__setup_root(nodesize, leafsize, sectorsize, stripesize,
+@@ -2163,7 +2184,7 @@ struct btrfs_root *open_ctree(struct super_block *sb,
+ 			printk(KERN_WARNING
+ 			       "btrfs: failed to recover relocation\n");
+ 			err = -EINVAL;
+-			goto fail_trans_kthread;
++			goto fail_qgroup;
+ 		}
+ 	}
+ 
+@@ -2173,10 +2194,10 @@ struct btrfs_root *open_ctree(struct super_block *sb,
+ 
+ 	fs_info->fs_root = btrfs_read_fs_root_no_name(fs_info, &location);
+ 	if (!fs_info->fs_root)
+-		goto fail_trans_kthread;
++		goto fail_qgroup;
+ 	if (IS_ERR(fs_info->fs_root)) {
+ 		err = PTR_ERR(fs_info->fs_root);
+-		goto fail_trans_kthread;
++		goto fail_qgroup;
+ 	}
+ 
+ 	if (!(sb->s_flags & MS_RDONLY)) {
+@@ -2193,6 +2214,8 @@ struct btrfs_root *open_ctree(struct super_block *sb,
+ 
+ 	return tree_root;
+ 
++fail_qgroup:
++	btrfs_free_qgroup_config(fs_info);
+ fail_trans_kthread:
+ 	kthread_stop(fs_info->transaction_kthread);
+ fail_cleaner:
+@@ -2209,6 +2232,10 @@ fail_block_groups:
+ 	btrfs_free_block_groups(fs_info);
+ 	free_extent_buffer(csum_root->node);
+ 	free_extent_buffer(csum_root->commit_root);
++	if (quota_root) {
++		free_extent_buffer(quota_root->node);
++		free_extent_buffer(quota_root->commit_root);
++	}
+ fail_dev_root:
+ 	free_extent_buffer(dev_root->node);
+ 	free_extent_buffer(dev_root->commit_root);
+@@ -2253,6 +2280,7 @@ fail:
+ 	kfree(chunk_root);
+ 	kfree(dev_root);
+ 	kfree(csum_root);
++	kfree(quota_root);
+ 	return ERR_PTR(err);
  }
  
-@@ -137,6 +163,15 @@ int btrfs_try_tree_write_lock(struct extent_buffer *eb)
-  */
- void btrfs_tree_read_unlock(struct extent_buffer *eb)
- {
-+	if (eb->lock_nested) {
-+		read_lock(&eb->lock);
-+		if (eb->lock_nested && current->pid == eb->lock_owner) {
-+			eb->lock_nested = 0;
-+			read_unlock(&eb->lock);
-+			return;
-+		}
-+		read_unlock(&eb->lock);
+@@ -2666,6 +2694,8 @@ int close_ctree(struct btrfs_root *root)
+ 	fs_info->closing = 2;
+ 	smp_mb();
+ 
++	btrfs_free_qgroup_config(root->fs_info);
++
+ 	if (fs_info->delalloc_bytes) {
+ 		printk(KERN_INFO "btrfs: at unmount delalloc count %llu\n",
+ 		       (unsigned long long)fs_info->delalloc_bytes);
+@@ -2685,6 +2715,10 @@ int close_ctree(struct btrfs_root *root)
+ 	free_extent_buffer(root->fs_info->dev_root->commit_root);
+ 	free_extent_buffer(root->fs_info->csum_root->node);
+ 	free_extent_buffer(root->fs_info->csum_root->commit_root);
++	if (root->fs_info->quota_root) {
++		free_extent_buffer(root->fs_info->quota_root->node);
++		free_extent_buffer(root->fs_info->quota_root->commit_root);
 +	}
- 	btrfs_assert_tree_read_locked(eb);
- 	WARN_ON(atomic_read(&eb->spinning_readers) == 0);
- 	atomic_dec(&eb->spinning_readers);
-@@ -149,6 +184,15 @@ void btrfs_tree_read_unlock(struct extent_buffer *eb)
-  */
- void btrfs_tree_read_unlock_blocking(struct extent_buffer *eb)
- {
-+	if (eb->lock_nested) {
-+		read_lock(&eb->lock);
-+		if (eb->lock_nested && current->pid == eb->lock_owner) {
-+			eb->lock_nested = 0;
-+			read_unlock(&eb->lock);
-+			return;
-+		}
-+		read_unlock(&eb->lock);
-+	}
- 	btrfs_assert_tree_read_locked(eb);
- 	WARN_ON(atomic_read(&eb->blocking_readers) == 0);
- 	if (atomic_dec_and_test(&eb->blocking_readers))
-@@ -181,6 +225,7 @@ again:
- 	WARN_ON(atomic_read(&eb->spinning_writers));
- 	atomic_inc(&eb->spinning_writers);
- 	atomic_inc(&eb->write_locks);
-+	eb->lock_owner = current->pid;
+ 
+ 	btrfs_free_block_groups(root->fs_info);
+ 
+@@ -2717,6 +2751,7 @@ int close_ctree(struct btrfs_root *root)
+ 	kfree(fs_info->chunk_root);
+ 	kfree(fs_info->dev_root);
+ 	kfree(fs_info->csum_root);
++	kfree(fs_info->quota_root);
+ 	kfree(fs_info);
+ 
  	return 0;
- }
- 
-diff --git a/fs/btrfs/locking.h b/fs/btrfs/locking.h
-index 17247dd..c6d69e5 100644
---- a/fs/btrfs/locking.h
-+++ b/fs/btrfs/locking.h
-@@ -28,7 +28,7 @@ int btrfs_tree_lock(struct extent_buffer *eb);
- int btrfs_tree_unlock(struct extent_buffer *eb);
- int btrfs_try_spin_lock(struct extent_buffer *eb);
- 
--void btrfs_tree_read_lock(struct extent_buffer *eb);
-+void btrfs_tree_read_lock(struct extent_buffer *eb, int nested);
- void btrfs_tree_read_unlock(struct extent_buffer *eb);
- void btrfs_tree_read_unlock_blocking(struct extent_buffer *eb);
- void btrfs_set_lock_blocking_rw(struct extent_buffer *eb, int rw);
 -- 
 1.7.3.4
 

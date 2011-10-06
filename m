@@ -1,55 +1,60 @@
-From: Tsutomu Itoh <t-itoh@jp.fujitsu.com>
-Subject: [PATCH] Btrfs: fix return value of btrfs_get_acl()
-Date: Thu, 06 Oct 2011 13:37:08 +0900
-Message-ID: <201110060437.AA00035@T-ITOH1.jp.fujitsu.com>
+From: David Sterba <dave@jikos.cz>
+Subject: Re: [PATCH] Btrfs: fix recursive auto-defrag
+Date: Thu, 6 Oct 2011 16:14:56 +0200
+Message-ID: <20111006141456.GB17912@twin.jikos.cz>
+References: <4E8D230A.4040801@cn.fujitsu.com>
+Reply-To: dave@jikos.cz
 Mime-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
-Cc: chris.mason@oracle.com
-To: linux-btrfs@vger.kernel.org
+Cc: "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
+To: Li Zefan <lizf@cn.fujitsu.com>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
+In-Reply-To: <4E8D230A.4040801@cn.fujitsu.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-In btrfs_get_acl(), when the second __btrfs_getxattr() call fails,
-acl is not correctly set.
-Therefore, a wrong value might return to the caller.
+On Thu, Oct 06, 2011 at 11:39:54AM +0800, Li Zefan wrote:
+> Follow those steps:
+> 
+>   # mount -o autodefrag /dev/sda7 /mnt
+>   # dd if=/dev/urandom of=/mnt/tmp bs=200K count=1
+>   # sync
+>   # dd if=/dev/urandom of=/mnt/tmp bs=8K count=1 conv=notrunc
+> 
+> and then it'll go into a loop: writeback -> defrag -> writeback ...
+> 
+> It's because writeback writes [8K, 200K] and then writes [0, 8K].
+> 
+> I tried to make writeback know if the pages are dirtied by defrag,
+> but the patch was a bit intrusive. Here I simply set writeback_index
+> when we defrag a file.
+> 
+> Signed-off-by: Li Zefan <lizf@cn.fujitsu.com>
+Tested-by: David Sterba <dsterba@suse.cz>
 
-Signed-off-by: Tsutomu Itoh <t-itoh@jp.fujitsu.com>
----
- fs/btrfs/acl.c |   17 +++++++----------
- 1 files changed, 7 insertions(+), 10 deletions(-)
-
-diff --git a/fs/btrfs/acl.c b/fs/btrfs/acl.c
-index eb159aa..89b156d 100644
---- a/fs/btrfs/acl.c
-+++ b/fs/btrfs/acl.c
-@@ -59,22 +59,19 @@ struct posix_acl *btrfs_get_acl(struct inode *inode, int type)
- 		if (!value)
- 			return ERR_PTR(-ENOMEM);
- 		size = __btrfs_getxattr(inode, name, value, size);
--		if (size > 0) {
--			acl = posix_acl_from_xattr(value, size);
--			if (IS_ERR(acl)) {
--				kfree(value);
--				return acl;
--			}
--			set_cached_acl(inode, type, acl);
--		}
--		kfree(value);
-+	}
-+	if (size > 0) {
-+		acl = posix_acl_from_xattr(value, size);
- 	} else if (size == -ENOENT || size == -ENODATA || size == 0) {
- 		/* FIXME, who returns -ENOENT?  I think nobody */
- 		acl = NULL;
--		set_cached_acl(inode, type, acl);
- 	} else {
- 		acl = ERR_PTR(-EIO);
- 	}
-+	kfree(value);
-+
-+	if (!IS_ERR(acl))
-+		set_cached_acl(inode, type, acl);
- 
- 	return acl;
- }
-
+> ---
+>  fs/btrfs/ioctl.c |    7 +++++++
+>  1 files changed, 7 insertions(+), 0 deletions(-)
+> 
+> diff --git a/fs/btrfs/ioctl.c b/fs/btrfs/ioctl.c
+> index 970977a..7a10f94 100644
+> --- a/fs/btrfs/ioctl.c
+> +++ b/fs/btrfs/ioctl.c
+> @@ -1047,6 +1047,13 @@ int btrfs_defrag_file(struct inode *inode, struct file *file,
+>  	if (!max_to_defrag)
+>  		max_to_defrag = last_index - 1;
+>  
+> +	/*
+> +	 * make writeback starts from i, so the defrag range can be
+> +	 * written sequentially.
+> +	 */
+> +	if (i < inode->i_mapping->writeback_index)
+> +		inode->i_mapping->writeback_index = i;
+> +
+>  	while (i <= last_index && defrag_count < max_to_defrag) {
+>  		/*
+>  		 * make sure we stop running if someone unmounts
+> -- 1.7.3.1 
+> --
+> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
+> the body of a message to majordomo@vger.kernel.org
+> More majordomo info at  http://vger.kernel.org/majordomo-info.html

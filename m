@@ -1,46 +1,32 @@
-From: Jeff Mahoney <jeffm@suse.de>
-Subject: Re: Honest timeline for btrfsck
-Date: Thu, 06 Oct 2011 16:33:51 -0400
-Message-ID: <4E8E10AF.7070008@suse.de>
-References: <CAGh96GFhVEfXt=xcb-uGEBA3Ss2fc8BwOpJ2g8tXbm+VimdH3Q@mail.gmail.com> <4E5FE9FC.9040705@cchtml.com> <20110901203442.GA17928@carfax.org.uk> <201109101209.40759.Martin@lichtvoll.de> <CA+JuuGrvCTP=o8umQHQV968tMSfJzxAFOfnGO2RKV3RU4_Vshw@mail.gmail.com> <20111005061628.GA3702@shiny.elevennetworks.com> <CA+JuuGoG1rhQ9S+vfa17BKdekp-A1UeNHqeYEwxfg=Co3Ts_pQ@mail.gmail.com> <20111005145843.GA4770@shiny.elevennetworks.com> <CA+JuuGq8ODcFDh_KEy3YL_pVJ1=zKDX1SD_9Ou_tHpR4XGhwgQ@mail.gmail.com> <m239f550cp.fsf@firstfloor.org>
+From: Andi Kleen <andi@firstfloor.org>
+Subject: Re: [PATCH v0 03/18] btrfs: add nested locking mode for paths
+Date: Thu, 06 Oct 2011 13:36:01 -0700
+Message-ID: <m2ty7l3lji.fsf@firstfloor.org>
+References: <cover.1317915010.git.sensille@gmx.net>
+	<55d5758142bf964aefbbaadc2188f66ca178f876.1317915010.git.sensille@gmx.net>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=ISO-8859-1
-Cc: Jeff Putney <jeffrey.putney@gmail.com>,
-	Chris Mason <chris.mason@oracle.com>,
-	linux-btrfs <linux-btrfs@vger.kernel.org>
-To: Andi Kleen <andi@firstfloor.org>
+Content-Type: text/plain; charset=us-ascii
+Cc: chris.mason@oracle.com, linux-btrfs@vger.kernel.org
+To: Arne Jansen <sensille@gmx.net>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <m239f550cp.fsf@firstfloor.org>
+In-Reply-To: <55d5758142bf964aefbbaadc2188f66ca178f876.1317915010.git.sensille@gmx.net>
+	(Arne Jansen's message of "Thu, 6 Oct 2011 17:54:13 +0200")
 List-ID: <linux-btrfs.vger.kernel.org>
 
------BEGIN PGP SIGNED MESSAGE-----
-Hash: SHA1
+Arne Jansen <sensille@gmx.net> writes:
 
-On 10/06/2011 04:30 PM, Andi Kleen wrote:
-> Jeff Putney <jeffrey.putney@gmail.com> writes:
->> 
->> http://en.wikipedia.org/wiki/Release_early,_release_often
-> 
-> Well the other principle in free software you're forgetting is:
-> 
-> "It will be released when it's ready"
-> 
-> If you don't like Chris' ways to do releases you're free to write 
-> something on your own or pay someone to do so. Otherwise you just
-> have to deal with his time frames, as shifty as they may be.
+> This patch adds the possibilty to read-lock an extent
+> even if it is already write-locked from the same thread.
+> Subvolume quota needs this capability.
 
-Thanks, I was about to say the same thing.
+Recursive locking is generally strongly discouraged, it causes all kinds
+of problems and tends to eventuall ylead to locking hierarchies nobody
+can understand anymore.
 
-- -Jeff
+If you can find any other way to solve this problem I would
+encourage you to do so.
 
-- -- 
-Jeff Mahoney
-SUSE Labs
------BEGIN PGP SIGNATURE-----
-Version: GnuPG v2.0.18 (GNU/Linux)
-Comment: Using GnuPG with Mozilla - http://enigmail.mozdev.org/
+-Andi
 
-iEYEARECAAYFAk6OEK8ACgkQLPWxlyuTD7JgKwCfYqyslTkbq/sYUz/rcXj4M1lf
-mTAAoIbIKNIZlyVFZjzrCH/ss9W3UQuh
-=6vdd
------END PGP SIGNATURE-----
+-- 
+ak@linux.intel.com -- Speaking for myself only

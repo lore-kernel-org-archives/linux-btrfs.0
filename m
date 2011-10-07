@@ -1,59 +1,71 @@
-From: Arne Jansen <sensille@gmx.net>
-Subject: Re: [PATCH v0 03/18] btrfs: add nested locking mode for paths
-Date: Fri, 07 Oct 2011 10:39:25 +0200
-Message-ID: <4E8EBABD.1050501@gmx.net>
-References: <cover.1317915010.git.sensille@gmx.net>	<55d5758142bf964aefbbaadc2188f66ca178f876.1317915010.git.sensille@gmx.net>	<m2ty7l3lji.fsf@firstfloor.org>	<CANvN+ems8D+wB_YPzoNpsqxZ8on-z7xCEXQuQ0LgoF_T=gw+Yw@mail.gmail.com>	<CANvN+emRvTQD-epGJrELs_WAF06zuuBb0ELpSFrGazzAbo29gg@mail.gmail.com>	<20111006205045.GU14482@one.firstfloor.org> <CANvN+e=GtjwG9+G1BggsbQOwe+iP4DzqQUvjDP=rw_+FuPZM7w@mail.gmail.com>
+From: Jeff Putney <jeffrey.putney@gmail.com>
+Subject: Re: Honest timeline for btrfsck
+Date: Fri, 7 Oct 2011 08:40:03 -0500
+Message-ID: <CA+JuuGo-iREXO4cZKT61tHZMTAr_edBv=O51-uSA7Bgynbgu6w@mail.gmail.com>
+References: <CAGh96GFhVEfXt=xcb-uGEBA3Ss2fc8BwOpJ2g8tXbm+VimdH3Q@mail.gmail.com>
+	<4E5FE9FC.9040705@cchtml.com>
+	<20110901203442.GA17928@carfax.org.uk>
+	<201109101209.40759.Martin@lichtvoll.de>
+	<CA+JuuGrvCTP=o8umQHQV968tMSfJzxAFOfnGO2RKV3RU4_Vshw@mail.gmail.com>
+	<20111005061628.GA3702@shiny.elevennetworks.com>
+	<CA+JuuGoG1rhQ9S+vfa17BKdekp-A1UeNHqeYEwxfg=Co3Ts_pQ@mail.gmail.com>
+	<20111005145843.GA4770@shiny.elevennetworks.com>
+	<CA+JuuGq8ODcFDh_KEy3YL_pVJ1=zKDX1SD_9Ou_tHpR4XGhwgQ@mail.gmail.com>
+	<20111007025050.GA4767@shiny.Netlink.Wireless>
 Mime-Version: 1.0
 Content-Type: text/plain; charset=ISO-8859-1
-Cc: Andi Kleen <andi@firstfloor.org>,
-	"chris.mason@oracle.com" <chris.mason@oracle.com>,
-	"linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
-To: Andrey Kuzmin <andrey.v.kuzmin@gmail.com>
+To: Chris Mason <chris.mason@oracle.com>,
+	Jeff Putney <jeffrey.putney@gmail.com>,
+	linux-btrfs <linux-btrfs@vger.kernel.org>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <CANvN+e=GtjwG9+G1BggsbQOwe+iP4DzqQUvjDP=rw_+FuPZM7w@mail.gmail.com>
+In-Reply-To: <20111007025050.GA4767@shiny.Netlink.Wireless>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 06.10.2011 22:54, Andrey Kuzmin wrote:
-> 
-> 
-> On Friday, October 7, 2011, Andi Kleen <andi@firstfloor.org
-> <mailto:andi@firstfloor.org>> wrote:
->> On Fri, Oct 07, 2011 at 12:44:30AM +0400, Andrey Kuzmin wrote:
->>> Perhaps you could just elaborate on "needs this feature"? In general, write
->>> lock gives one exclusive access, so the need for additional read
->>> (non-exclusive) lock does not appear easily understandable.
->>
->> Usually it's because the low level code can be called both with and
->> without locking and it doesn't know.
->>
->> But that usually can be avoided with some restructuring.
-> Exactly.
+> For fsck, even the stuff I have here does have a way to go before it =
+is
+> at the level of an e2fsck or xfs_repair. =A0But I do want to make sur=
+e
+> that I'm surprised by any bugs before I send it out, and that's just =
+not
+> the case today. =A0The release has been delayed because I've alternat=
+ed
+> between a few different ways of repairing, and because I got distract=
+ed
+> by some important features in the kernel.
 
-One premise was to change the existing paths as little as possible to
-make it easier for Chris to judge the impact when qgroups are turned
-off. For this I hook into the generic "add a backref" path, which is
-called from diverse places all around the code. Some of these places
-already hold a lock on the fs tree I'm going to read, others don't,
-but in any case it is ok to just go ahead and read it.
-I think by restructuring you mean serializing both operations and only
-calling into my code after the previous operation is done. But that
-would on one hand mean queuing up all that needs to be done afterwards,
-and on the other hand at least keeping a read lock on all these extents,
-as no changes are allowed in between.
-This restructuring would be a major operation, but maybe I'm just not
-seeing the obvious way to go. Maybe Chris has a good idea...
+I think there is a major difference between touching up a few bugs
+before you release the code, and experimenting with a bunch of
+different ways of repairing before you release the code.  I know I for
+one would get as much value out of reading the code for the strategies
+you abandoned as I would get from reading the final code, but I don't
+know if having those branches in the main repo would have any value
+for the project as a whole.
 
-All my code is now doing is when it encounters a write lock, check if the
-upper layers are holding it and allowing read access if that's the case.
-Only one additional reader is allowed. This is not full recursive locking,
-but at least part of it.
+As the current solution goes, I'd just like to see a stake in the
+ground for some sort of process to move away from the one man army
+approach, should distractions etc continue.  Given the latest 2 week
+estimate, something along the lines of, in 4 or 6 weeks, if it still
+isn't 'ready', code will start to be released.
 
--Arne
 
->>
->> -Andi
->>
-> 
-> -- 
-> Sent from Gmail Mobile
+> That's how software goes sometimes, and I'll take the criticism becau=
+se
+> it hasn't gone as well as it should have. =A0But, I can't stress enou=
+gh how
+> much I appreciate everyone's contributions and interest in btrfs.
+>
+> -chris
 
+I'm only criticizing the decision to not release the source, in
+particular given the delays.  We all have our priorities and
+distractions, and s**t happens.  (Part of why I'd argue against the
+flying solo strategy.)  But, I really do appreciate all the stuff
+you've built, which is part of why I am so keen on reading it. :-) .
+
+Thanks for all the effort
+--jeff
+--
+To unsubscribe from this list: send the line "unsubscribe linux-btrfs" =
+in
+the body of a message to majordomo@vger.kernel.org
+More majordomo info at  http://vger.kernel.org/majordomo-info.html

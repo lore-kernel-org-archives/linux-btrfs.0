@@ -1,27 +1,25 @@
-From: Diego Calleja <diegocg@gmail.com>
+From: "Helmut Hullen" <Hullen@t-online.de>
 Subject: Re: Honest timeline for btrfsck
-Date: Fri, 7 Oct 2011 22:19:52 +0200
-Message-ID: <201110072219.52773.diegocg@gmail.com>
-References: <CAGh96GFhVEfXt=xcb-uGEBA3Ss2fc8BwOpJ2g8tXbm+VimdH3Q@mail.gmail.com> <CAAE6i0i-AsH7TkupkrFDdv26gN_-pshFFwvuH1nOuuSmKWbZdQ@mail.gmail.com> <4E8F4EA9.4090108@shiftmail.org>
+Date: 07 Oct 2011 22:50:00 +0200
+Message-ID: <BvO8Vxmy1uB@helmut.hullen.de>
+References: <4E8F4EA9.4090108@shiftmail.org>
+Reply-To: helmut@hullen.de
 Mime-Version: 1.0
-Content-Type: Text/Plain; charset=iso-8859-1
-Cc: Chester <somethingsome2000@gmail.com>,
-	Chris Mason <chris.mason@oracle.com>,
-	Jeff Putney <jeffrey.putney@gmail.com>,
-	"linux-btrfs" <linux-btrfs@vger.kernel.org>
-To: Asdo <asdo@shiftmail.org>
+Content-Type: text/plain; charset=US-ASCII
+To: linux-btrfs@vger.kernel.org
 Return-path: <linux-btrfs-owner@vger.kernel.org>
 In-Reply-To: <4E8F4EA9.4090108@shiftmail.org>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Viernes, 7 de Octubre de 2011 21:10:33 Asdo escribi=F3:
-> failures, but you can always mount by rolling back to a previous=20
-> uberblock, showing an earlier view of the filesystem, which would be=20
-> consistent.
+Hallo, Asdo,
 
-This is already available in Btrfs, command btrfsck -s.
---
-To unsubscribe from this list: send the line "unsubscribe linux-btrfs" =
-in
-the body of a message to majordomo@vger.kernel.org
-More majordomo info at  http://vger.kernel.org/majordomo-info.html
+Du meintest am 07.10.11:
+
+> What I would like to know instead, is WHY we need an btrfsck when ZFS
+> does not.
+
+I need at least some tool which can "hide" defect sectors - I just have  
+such a problem.
+
+Viele Gruesse!
+Helmut

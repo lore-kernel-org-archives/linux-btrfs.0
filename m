@@ -1,67 +1,55 @@
-From: Dave <dave@thekilempire.com>
+From: Mike <ipso@snappymail.ca>
 Subject: Re: Honest timeline for btrfsck
-Date: Fri, 7 Oct 2011 11:22:29 -0400
-Message-ID: <20111007152229.GA2787@hendrix.borisch.local>
-References: <20110901203442.GA17928@carfax.org.uk>
- <201109101209.40759.Martin@lichtvoll.de>
- <CA+JuuGrvCTP=o8umQHQV968tMSfJzxAFOfnGO2RKV3RU4_Vshw@mail.gmail.com>
- <20111005061628.GA3702@shiny.elevennetworks.com>
- <CA+JuuGoG1rhQ9S+vfa17BKdekp-A1UeNHqeYEwxfg=Co3Ts_pQ@mail.gmail.com>
- <20111005145843.GA4770@shiny.elevennetworks.com>
- <CA+JuuGq8ODcFDh_KEy3YL_pVJ1=zKDX1SD_9Ou_tHpR4XGhwgQ@mail.gmail.com>
- <m239f550cp.fsf@firstfloor.org>
- <CAD6zcDxvXTZPOO-bXRfuMVWqOGbz8QdfHk=p0LT6Dequb9pmAg@mail.gmail.com>
- <4E8F119C.70006@redhat.com>
+Date: Fri, 07 Oct 2011 08:39:36 -0700
+Message-ID: <4E8F1D38.7030202@snappymail.ca>
+References: <CAGh96GFhVEfXt=xcb-uGEBA3Ss2fc8BwOpJ2g8tXbm+VimdH3Q@mail.gmail.com> <4E5FE9FC.9040705@cchtml.com> <20110901203442.GA17928@carfax.org.uk> <201109101209.40759.Martin@lichtvoll.de> <CA+JuuGrvCTP=o8umQHQV968tMSfJzxAFOfnGO2RKV3RU4_Vshw@mail.gmail.com> <20111005061628.GA3702@shiny.elevennetworks.com> <CA+JuuGoG1rhQ9S+vfa17BKdekp-A1UeNHqeYEwxfg=Co3Ts_pQ@mail.gmail.com> <20111005145843.GA4770@shiny.elevennetworks.com> <CA+JuuGq8ODcFDh_KEy3YL_pVJ1=zKDX1SD_9Ou_tHpR4XGhwgQ@mail.gmail.com> <20111007025050.GA4767@shiny.Netlink.Wireless>
+Reply-To: ipso@snappymail.ca
 Mime-Version: 1.0
-Content-Type: text/plain; charset=us-ascii; x-action=pgp-signed
-Cc: Francesco Riosa <vivo75@gmail.com>,
+Content-Type: text/plain; charset=ISO-8859-1; format=flowed
+To: Chris Mason <chris.mason@oracle.com>,
 	Jeff Putney <jeffrey.putney@gmail.com>,
-	Chris Mason <chris.mason@oracle.com>,
 	linux-btrfs <linux-btrfs@vger.kernel.org>
-To: Josef Bacik <josef@redhat.com>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <4E8F119C.70006@redhat.com>
+In-Reply-To: <20111007025050.GA4767@shiny.Netlink.Wireless>
 List-ID: <linux-btrfs.vger.kernel.org>
 
------BEGIN PGP SIGNED MESSAGE-----
-Hash: SHA256
+On 11-10-06 07:50 PM, Chris Mason wrote:
+> That's how software goes sometimes, and I'll take the criticism because
+> it hasn't gone as well as it should have.  But, I can't stress enough how
+> much I appreciate everyone's contributions and interest in btrfs.
 
-On Fri, Oct 07, 2011 at 10:50:04AM -0400, Josef Bacik wrote:
-> If you still need that data, clone this repo
-> 
-> git://github.com/josefbacik/btrfs-progs.git
-> 
-> run make, and then run
-> 
-> ./restore /dev/whatever /some/dir
-> 
-> and it will try and suck all of your data off the disk and dump it in
-> that directory.  If you have snapshots it will skip them by default, so
-> if you have snapshots that have useful data in them you'll want to use
-> the -s option.  If you run into random errors that you think are
-> recoverable, or if you don't care about the file that's being recovered,
-> you can run with -i which will ignore errors and keep trying to recover
-> your files.  Thanks,
+With all due respect Chris, your actions and your words seem to 
+contradict each other. It would appear that people are wanting to help 
+contribute, but without showing them the code, you're preventing any 
+contributions from happening. As you know, contributing is more than 
+just code, just as important is proper testing, especially with a fsck tool.
 
-I'm actually MUCH more comfortable with this solution.  Rather than having an
-untested fsck making changes to the filesystem, a way to get data off a broken
-btrfs volume would be sufficient for the time being.  I've had three cases in
-the past two months where I've had to resort to hacking the kernel to get at
-data on broken btrfs volumes.  Since no one is using btrfs in production,
-recovering a volume quickly is not a concern.  For people who haven't backed up
-since yesterday, but want to recover the 8 hours of work they did today, the
-above solution is great.
+I also don't think you are giving people enough credit. e2fsck will 
+cause corruption pretty much everytime its run on a mounted file system, 
+but a nice big nasty warning message seems to handle that quite well and 
+anyone who ignores it, well thats their own fault, not the developers:
 
-(Mind you I've never actually tried the solution above)
+e2fsck 1.41.14 (22-Dec-2010)
+/dev/sdb1 is mounted.
 
-- -- 
-- -=[dave]=-
+WARNING!!!  The filesystem is mounted.   If you continue you ***WILL***
+cause ***SEVERE*** filesystem damage.
 
-Entropy isn't what it used to be.
------BEGIN PGP SIGNATURE-----
-Version: GnuPG v1.4.11 (GNU/Linux)
+Do you really want to continue (y/n)? cancelled!
 
-iF4EAREIAAYFAk6PGTUACgkQXM0u5ajNnChDJQD7BqDiiMk0KZL0HBaveFIolYc4
-VFaQpiyZoPkkmL9i/e4A/2c+t+w/xrmOMu5+245DoRhKMOsQ0bNPps9GSiDNJwW5
-=0lnT
------END PGP SIGNATURE-----
+You could easily place the same warning in btrfs fsck even for normal 
+use and recommend/require that it be run on a loopback image rather than 
+the actual data itself or something. Heck, even have it run in "make no 
+changes" mode by default and require recompiling to enable "fix my 
+filesystem" mode.
+
+In fact, when its first released that would probably be a good idea to 
+do this anyways. The reality is, it doesn't matter how long you work on 
+the fsck tool, its pretty much guaranteed to be a few bugs that corrupt 
+some peoples data even more than it was before, thats the price you pay 
+for being on the bleeding edge.
+
+Don't get me wrong, I definitely appreciate all your work, I just wish I 
+could appreciate it even more with a fsck tool. ;)
+
+-- Mike

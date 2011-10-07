@@ -1,48 +1,53 @@
-From: Mark Fasheh <mfasheh@suse.de>
-Subject: Re: [RFC][PATCH 1/2] vfs: allow /proc/pid/maps to return a custom device
-Date: Fri, 7 Oct 2011 11:32:21 -0700
-Message-ID: <20111007183221.GA23779@wotan.suse.de>
-References: <1305328729-9995-1-git-send-email-mfasheh@suse.com> <1305328729-9995-2-git-send-email-mfasheh@suse.com> <m1tycwk6hv.fsf@fess.ebiederm.org> <20110519201826.GN17822@wotan.suse.de>
-Reply-To: Mark Fasheh <mfasheh@suse.de>
+From: Asdo <asdo@shiftmail.org>
+Subject: Re: Honest timeline for btrfsck
+Date: Fri, 07 Oct 2011 21:10:33 +0200
+Message-ID: <4E8F4EA9.4090108@shiftmail.org>
+References: <CAGh96GFhVEfXt=xcb-uGEBA3Ss2fc8BwOpJ2g8tXbm+VimdH3Q@mail.gmail.com>
+ <4E5FE9FC.9040705@cchtml.com> <20110901203442.GA17928@carfax.org.uk>
+ <201109101209.40759.Martin@lichtvoll.de>
+ <CA+JuuGrvCTP=o8umQHQV968tMSfJzxAFOfnGO2RKV3RU4_Vshw@mail.gmail.com>
+ <20111005061628.GA3702@shiny.elevennetworks.com>
+ <CA+JuuGoG1rhQ9S+vfa17BKdekp-A1UeNHqeYEwxfg=Co3Ts_pQ@mail.gmail.com>
+ <20111005145843.GA4770@shiny.elevennetworks.com>
+ <CA+JuuGq8ODcFDh_KEy3YL_pVJ1=zKDX1SD_9Ou_tHpR4XGhwgQ@mail.gmail.com>
+ <CAAE6i0i-AsH7TkupkrFDdv26gN_-pshFFwvuH1nOuuSmKWbZdQ@mail.gmail.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Cc: linux-btrfs <linux-btrfs@vger.kernel.org>,
-	linux-fsdevel <linux-fsdevel@vger.kernel.org>,
-	"Eric W. Biederman" <ebiederm@xmission.com>
-To: Chris Mason <chris.mason@oracle.com>
+Content-Type: text/plain; format=flowed; charset=ISO-8859-1
+Cc: Jeff Putney <jeffrey.putney@gmail.com>,
+	linux-btrfs <linux-btrfs@vger.kernel.org>
+To: Chester <somethingsome2000@gmail.com>,
+	Chris Mason <chris.mason@oracle.com>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <20110519201826.GN17822@wotan.suse.de>
+In-reply-to: <CAAE6i0i-AsH7TkupkrFDdv26gN_-pshFFwvuH1nOuuSmKWbZdQ@mail.gmail.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Ressurecting an old thread, sorry. Here's the conversation thus far:
+On 10/07/11 04:25, Chester wrote:
+> The problem with this is that people naturally look for a fsck tool
+> when something bad goes wrong. Something as important as a fsck
+> utility shouldn't be released (unofficially or officially) half baked.
+> It can irreparably destroy a filesystem which could've otherwise been
+> repaired with a fully functional fsck.
+>
+> I think Chris is trying to prevent that from happening.
 
-http://www.spinics.net/lists/linux-btrfs/msg10099.html
+What I would like to know instead, is WHY we need an btrfsck when ZFS 
+does not. Zfs also has this kind of problems especially on power 
+failures, but you can always mount by rolling back to a previous 
+uberblock, showing an earlier view of the filesystem, which would be 
+consistent.
 
-This is still hitting folks wishing to use btrfs on suse based systems.
-Using getattr() (unconditionally I might add) is possible, but will affect
-performance to a far greater degree than just allowing an optional deref of
-whatever structure btrfs (and similar file systems) have to point to the
-right block device. Is this really the way we would like to proceed? Chris,
-maybe you can chime in here?
-	--Mark
+It wasn't always like this with ZFS, but this "feature" has been added 
+after ther numerous requests of users who lost their complete 
+filesystems after a power failure or similar events. And there was no 
+zfsck (there still isn't, and it's apparently not needed).
 
-On Thu, May 19, 2011 at 01:18:26PM -0700, Mark Fasheh wrote:
-> On Sat, May 14, 2011 at 08:06:04PM -0700, Eric W. Biederman wrote:
-> > Mark Fasheh <mfasheh@suse.com> writes:
-> > 
-> > > This patch introduces a callback in the super_operations structure,
-> > > 'get_maps_dev' which is then used by procfs to query which device to return
-> > > for reporting in /proc/[PID]/maps.
-> > 
-> > No.
-> > 
-> > It may make sense to call the vfs stat method.  But introducing an extra
-> > vfs operations for this seems like a maintenance nightmare.
-> 
-> Yeah I'm not thrilled with the extra method either. My concern with using
-> ->getattr is whether it's too heavy since that implies potential disk /
-> network i/o.
-> 	--Mark
+This should be the fix I'm talking about (my original link to Sun site 
+doesn't work any more)
+http://wesunsolve.net/bugid/id/6667683
+You can look up the internet with something like "zfs roll back txg" or 
+"zfs mount old uberblock"...
 
---
-Mark Fasheh
+I don't recall any other  "I have hosed my FS" request for help after 
+the date this feature was implemented/provided.
+
+Why isn't this approach dead-easy to implement with btrfs?

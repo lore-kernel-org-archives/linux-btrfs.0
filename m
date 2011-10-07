@@ -1,7 +1,7 @@
-From: Gour-Gadadhara Dasa <gour@atmarama.net>
+From: cwillu <cwillu@cwillu.com>
 Subject: Re: Honest timeline for btrfsck
-Date: Fri, 7 Oct 2011 19:27:28 +0200
-Message-ID: <20111007192728.5e79f1e0@atmarama.noip.me>
+Date: Fri, 7 Oct 2011 12:23:07 -0600
+Message-ID: <CAE5mzvj4ek8sf9J6XF1cHiUKPM7b-gPL0hOGNrfaod9saawdJQ@mail.gmail.com>
 References: <CAGh96GFhVEfXt=xcb-uGEBA3Ss2fc8BwOpJ2g8tXbm+VimdH3Q@mail.gmail.com>
 	<4E5FE9FC.9040705@cchtml.com>
 	<20110901203442.GA17928@carfax.org.uk>
@@ -12,60 +12,63 @@ References: <CAGh96GFhVEfXt=xcb-uGEBA3Ss2fc8BwOpJ2g8tXbm+VimdH3Q@mail.gmail.com>
 	<20111005145843.GA4770@shiny.elevennetworks.com>
 	<CA+JuuGq8ODcFDh_KEy3YL_pVJ1=zKDX1SD_9Ou_tHpR4XGhwgQ@mail.gmail.com>
 	<20111007025050.GA4767@shiny.Netlink.Wireless>
-	<4E8F1D38.7030202@snappymail.ca>
+	<CA+JuuGo-iREXO4cZKT61tHZMTAr_edBv=O51-uSA7Bgynbgu6w@mail.gmail.com>
+	<4E8F1128.4000508@redhat.com>
+	<CA+JuuGopTsEWpeW5GnwjR-NuJgUwte6HGvhSTUfm_Wh0itVpdg@mail.gmail.com>
+	<4E8F2418.10603@redhat.com>
+	<CA+JuuGrtBF-afDmCbRQbEMicbxdumZPS_-+NE8mDcf0Rrdmatw@mail.gmail.com>
 Mime-Version: 1.0
-Content-Type: multipart/signed; micalg=PGP-SHA1;
- boundary="Sig_/DZwZV/8=2wEp.2.Mk2XwHEl"; protocol="application/pgp-signature"
-To: linux-btrfs@vger.kernel.org
+Content-Type: text/plain; charset=UTF-8
+Cc: Josef Bacik <josef@redhat.com>,
+	Chris Mason <chris.mason@oracle.com>,
+	linux-btrfs <linux-btrfs@vger.kernel.org>
+To: Jeff Putney <jeffrey.putney@gmail.com>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
+In-Reply-To: <CA+JuuGrtBF-afDmCbRQbEMicbxdumZPS_-+NE8mDcf0Rrdmatw@mail.gmail.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
---Sig_/DZwZV/8=2wEp.2.Mk2XwHEl
-Content-Type: text/plain; charset=UTF-8
-Content-Transfer-Encoding: quoted-printable
+On Fri, Oct 7, 2011 at 11:07 AM, Jeff Putney <jeffrey.putney@gmail.com>=
+ wrote:
+> You jest, but in fact that is the result you've achieved, through
+> conspiring or not.
+>
+> Do you honestly believe that had the source been public from the
+> start, that after a year there would still be no quality fsck tool?
+> Contributions are, de facto, blocked.
+> Had there not been repeated promise of an fsck utility for the last
+> year, do you honestly believe no one else would have begun
+> development? =C2=A0Call it under your thumb if you'd like, but you'll=
+ argue
+> these declarations didn't have a stifling effect in vain.
 
-On Fri, 07 Oct 2011 08:39:36 -0700
-Mike <ipso@snappymail.ca> wrote:
+Heh, what sort of "quality" are you thinking would develop?  A
+recovery tool by its nature is picking up the pieces where those
+pieces are inconsistent.  The nature of those inconsistencies will
+change with every patch that's more than a cleanup.
 
-> I also don't think you are giving people enough credit. e2fsck will=20
-> cause corruption pretty much everytime its run on a mounted file
-> system, but a nice big nasty warning message seems to handle that
-> quite well and anyone who ignores it, well thats their own fault, not
-> the developers:
+Combined with the well-known tendencies of users to not report errors
+that are trivial to work around, and I find myself quite content with
+the status quo:  a few general recovery techniques that can be found
+with some digging, inconvenient enough that the reports don't get
+lost, with enough context that the appropriate warnings and
+alternatives can be given.
 
-+1
+Yes, a deliberately broken-by-makefile version of what he's looking at
+would be interesting, but I suspect it's not much past what any
+competent programmer would put together given a couple weeks going
+over the disk format, and we already have a couple of those.  What we
+want is still in Chris' head, otherwise we _would_ have something.
 
+--cwillu
 
---=20
-=E2=80=9CIn the material world, conceptions of good and bad are
-all mental speculations=E2=80=A6=E2=80=9D (Sri Caitanya Mahaprabhu)
-
-http://atmarama.net | Hlapicina (Croatia) | GPG: 52B5C810
-
-
-
---Sig_/DZwZV/8=2wEp.2.Mk2XwHEl
-Content-Type: application/pgp-signature; name=signature.asc
-Content-Disposition: attachment; filename=signature.asc
-
------BEGIN PGP SIGNATURE-----
-Version: GnuPG v1.4.11 (GNU/Linux)
-
-iQIcBAEBAgAGBQJOjzaAAAoJELhxXPVStcgQFZYP/2qcuNBzhEikFrFJ6P9PxqPX
-kP8q61YHtTydys9IpoIYbZ3dJlaOm5sTKMlfpxHqKIe2zTXShfWw1c3LoZ8QPI/7
-K9oR0MZjhxnGE+gA7XzTtZml+kef/kLWV96rJLDnzYK8UkHkWRYNmlvzjqYsC9ha
-gwzDAKRGoEi+Z0kcravmWUowhgcd8ZGLNnvWRcsEUYmcFZxUvOCRzqus3AQLxst7
-knWouQOlhCjQ8Bl+ifXBCy5xza9luVWHAC0gZbY2WJgN25hfNi8m2LvRBEN+0bPp
-Kuwh6eMhj50Cm7GmUjELe2VC9eKdgpdXB2fh11u75mJFMrp+hKdkiEils1iKLJXx
-HaiuBIJlSyWpQrC9MLKHasXDrGFcaLNu4YFsU2hoJCMxn4RsKmCcaRUpagUfVcEj
-xmEc0DwWyRJNYhY79uIAUDSTnZVn0h50I0Jj8BOnyIHlEky4dagqexzX4HQeNZ93
-Bnth+qFgCxOCz7h1e2CQPihMRWaBCJ+0+t2Au9aMiYy1MFW79FWTOxiyyomiIfk6
-PMnoDXNPavuFcrMghAGr8Ofh74c57kyHPMIixd/beV+1GwmLXoQNc62vLeLidVQS
-qPMFI49epnQKi8wKPlOUIJbpWOZecwRcy+aJS/P41dAcHDl/rLns/Y/0ws148SQx
-rEUqFd8+pBZKCvKSblOn
-=g9Yg
------END PGP SIGNATURE-----
-
---Sig_/DZwZV/8=2wEp.2.Mk2XwHEl--
-
-
+Warning: while cwillu is never "wrong", he may not correspond to
+reality.  cwillu should not be taken with caffeine or alcohol.
+Contact a doctor immediately if cwillu submits patches, rants, or
+directives.  Do not leave cwillu within reach of children or
+ubuntuforums users.  Always make sufficient backups before taking
+cwillu.
+--
+To unsubscribe from this list: send the line "unsubscribe linux-btrfs" =
+in
+the body of a message to majordomo@vger.kernel.org
+More majordomo info at  http://vger.kernel.org/majordomo-info.html

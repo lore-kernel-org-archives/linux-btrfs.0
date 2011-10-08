@@ -1,11 +1,13 @@
-From: Kai Krakow <hurikhan77@gmail.com>
+From: Kai Krakow <hurikhan77+btrfs@gmail.com>
 Subject: btrfs corruption after cp --reflink
-Date: Sat, 8 Oct 2011 11:26:48 +0200
-Message-ID: <CAMthOuMwb-ibGGzve_ntoqBcdK73UgjFP92AgCyGDu9jyX0bog@mail.gmail.com>
+Date: Sat, 8 Oct 2011 11:48:26 +0200
+Message-ID: <CAMthOuNb=EO5QiXUzK5DN3oc5JTrv=NUwRbSQsy0fSa0QAxQLw@mail.gmail.com>
+References: <CAMthOuMwb-ibGGzve_ntoqBcdK73UgjFP92AgCyGDu9jyX0bog@mail.gmail.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset=UTF-8
 To: linux-btrfs@vger.kernel.org
 Return-path: <linux-btrfs-owner@vger.kernel.org>
+In-Reply-To: <CAMthOuMwb-ibGGzve_ntoqBcdK73UgjFP92AgCyGDu9jyX0bog@mail.gmail.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
 Hello!
@@ -31,19 +33,22 @@ scrub, this is what I get:
 scr start -B /mnt/btrfs
 ERROR: scrubbing /mnt/btrfs failed for device id 1 (Input/output error)
 scrub canceled for 493dacb5-0397-4b47-bd18-c2b2349c9958
-        scrub started at Sat Oct  8 00:41:59 2011 and was aborted
+=C2=A0 =C2=A0 =C2=A0 =C2=A0scrub started at Sat Oct =C2=A08 00:41:59 20=
+11 and was aborted
 after 6113 seconds
-        total bytes scrubbed: 586.67GB with 40 errors
-        error details: verify=40
-        corrected errors: 0, uncorrectable errors: 20, unverified errors: 0
+=C2=A0 =C2=A0 =C2=A0 =C2=A0total bytes scrubbed: 586.67GB with 40 error=
+s
+=C2=A0 =C2=A0 =C2=A0 =C2=A0error details: verify=3D40
+=C2=A0 =C2=A0 =C2=A0 =C2=A0corrected errors: 0, uncorrectable errors: 2=
+0, unverified errors: 0
 
 jupiter ~ # while true; do dmesg -c; sleep 1; done
-[13686.476028] zcache: destroyed pool id=0
+[13686.476028] zcache: destroyed pool id=3D0
 [13844.990091] device fsid 493dacb5-0397-4b47-bd18-c2b2349c9958 devid
 1 transid 45326 /dev/sdd3
 [13844.990374] btrfs: use lzo compression
 [13845.074088] btrfs: disk space caching is enabled
-[13852.481822] zcache: created ephemeral tmem pool, id=0
+[13852.481822] zcache: created ephemeral tmem pool, id=3D0
 [19577.056022] btrfs: unable to fixup at 641086156800
 [19577.056211] btrfs: unable to fixup at 641086160896
 [19577.056383] btrfs: unable to fixup at 641086164992
@@ -137,16 +142,20 @@ have to delete some files which I can probably recover easily. But I
 can simply find no way to identify these files. Is there a way to map
 the above error messages to file system pathes?
 
-Just for completeness, here's my fstab with mount options (the relevant part):
+Just for completeness, here's my fstab with mount options (the relevant=
+ part):
 
-/dev/sdd3 / btrfs compress=lzo,autodefrag,subvol=root 0 1
-/dev/sdd3 /home btrfs compress=lzo,autodefrag,subvol=home 0 2
-/dev/sdd3 /usr/portage btrfs compress=lzo,autodefrag,subvol=portage 0 2
-/dev/sdd3 /usr/src btrfs compress=lzo,autodefrag,subvol=usr-src 0 2
-/dev/sdd3 /tmp btrfs compress=lzo,autodefrag,subvol=tmp,nodev,nosuid 0 2
-/dev/sdd3 /var/tmp btrfs compress=lzo,autodefrag,subvol=var-tmp,nodev,nosuid 0 2
+/dev/sdd3 / btrfs compress=3Dlzo,autodefrag,subvol=3Droot 0 1
+/dev/sdd3 /home btrfs compress=3Dlzo,autodefrag,subvol=3Dhome 0 2
+/dev/sdd3 /usr/portage btrfs compress=3Dlzo,autodefrag,subvol=3Dportage=
+ 0 2
+/dev/sdd3 /usr/src btrfs compress=3Dlzo,autodefrag,subvol=3Dusr-src 0 2
+/dev/sdd3 /tmp btrfs compress=3Dlzo,autodefrag,subvol=3Dtmp,nodev,nosui=
+d 0 2
+/dev/sdd3 /var/tmp btrfs compress=3Dlzo,autodefrag,subvol=3Dvar-tmp,nod=
+ev,nosuid 0 2
 /dev/sdd3 /mnt/btrfs-subvol-0 btrfs
-compress=lzo,subvolid=0,autodefrag,noauto 0 2
+compress=3Dlzo,subvolid=3D0,autodefrag,noauto 0 2
 
 I got rid of the free space caching issues by mounting with
 clear_cache. Memory of the system is stable (memtest86 does not report
@@ -160,3 +169,8 @@ for me.
 
 Thanks in advance,
 Kai
+--
+To unsubscribe from this list: send the line "unsubscribe linux-btrfs" =
+in
+the body of a message to majordomo@vger.kernel.org
+More majordomo info at  http://vger.kernel.org/majordomo-info.html

@@ -1,85 +1,87 @@
-From: Christian Brunner <chb@muc.de>
-Subject: Re: WARNING: at fs/btrfs/inode.c:2114
-Date: Sun, 9 Oct 2011 18:41:54 +0200
-Message-ID: <CAO47_-9rk-4muJ0+qMcyd_wmGyToFRp7VN5G1hfhZmmCGLNWDg@mail.gmail.com>
-References: <CAO47_--qdKE0z6maQCpD2xh+RY+ZvyRVKxDF0c3iqBA6pafkZQ@mail.gmail.com>
-Reply-To: chb@muc.de
+From: Mitch Harder <mitch.harder@sabayonlinux.org>
+Subject: Re: [PATCH] Btrfs: break out of orphan cleanup if we can't make
+ progress V2
+Date: Sun, 9 Oct 2011 14:14:19 -0500
+Message-ID: <CAKcLGm-XbksMab=qbzN5O15T42OdDg6zERSDfhskuTgueKnA3Q@mail.gmail.com>
+References: <1317743692-10794-1-git-send-email-josef@redhat.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset=ISO-8859-1
-To: linux-btrfs@vger.kernel.org
+Cc: linux-btrfs@vger.kernel.org
+To: Josef Bacik <josef@redhat.com>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <CAO47_--qdKE0z6maQCpD2xh+RY+ZvyRVKxDF0c3iqBA6pafkZQ@mail.gmail.com>
+In-Reply-To: <1317743692-10794-1-git-send-email-josef@redhat.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-I just realized that this is still the same warning I reported some mon=
-th ago.
-
-I thought that this had been fixed with
-
-25d37af374263243214be9d912cbb46a8e469bc7
-
-which is included in the kernel I'm using. So I think there must be
-another Problem.
-
-Regards,
-Christian
-
-2011/10/9 Christian Brunner <chb@muc.de>:
-> I gave btrfs "for-chris" from josef's github repo a try in our ceph
-> cluster. During the rebuild I git the following warning.
+On Tue, Oct 4, 2011 at 10:54 AM, Josef Bacik <josef@redhat.com> wrote:
+> I noticed while running xfstests 83 that if we didn't have enough spa=
+ce to
+> delete our inode the orphan cleanup would just loop. =A0This is becau=
+se it keeps
+> finding the same orphan item and keeps trying to kill it but can't be=
+cause we
+> don't get an error back from iput for deleting the inode. =A0So keep =
+track of the
+> last guy we tried to kill, if it's the same as the one we're trying t=
+o kill
+> currently we know we are having problems and can just error out. =A0I=
+ don't have a
+> way to test this so look hard and make sure it's right. =A0Thanks,
 >
-> Everything still seems to work... Should I be concerned?
+> Signed-off-by: Josef Bacik <josef@redhat.com>
+> ---
+> V1->V2: set last_objectid properly
 >
-> Thanks,
-> Christian
+> =A0fs/btrfs/inode.c | =A0 11 +++++++++++
+> =A01 files changed, 11 insertions(+), 0 deletions(-)
 >
-> [12554.886362] ------------[ cut here ]------------
-> [12554.891693] WARNING: at fs/btrfs/inode.c:2114
-> btrfs_orphan_commit_root+0xb0/0xc0 [btrfs]()
-> [12554.901210] Hardware name: ProLiant DL180 G6
-> [12554.906338] Modules linked in: btrfs zlib_deflate libcrc32c bondin=
-g
-> ipv6 pcspkr serio_raw ghes hed iTCO_wdt iTCO_vendor_support
-> i7core_edac edac_core ixgbe dca mdio iomemory_vsl(P) hpsa squashfs
-> [last unloaded: scsi_wait_scan]
-> [12554.930791] Pid: 4686, comm: flush-btrfs-1 Tainted: P
-> 3.0.6-1.fits.1.el6.x86_64 #1
-> [12554.940483] Call Trace:
-> [12554.943400] =A0[<ffffffff8106344f>] warn_slowpath_common+0x7f/0xc0
-> [12554.950378] =A0[<ffffffff810634aa>] warn_slowpath_null+0x1a/0x20
-> [12554.957070] =A0[<ffffffffa022be60>] btrfs_orphan_commit_root+0xb0/=
-0xc0 [btrfs]
-> [12554.965301] =A0[<ffffffffa0226c45>] commit_fs_roots+0xc5/0x1b0 [bt=
-rfs]
-> [12554.972571] =A0[<ffffffff815593d1>] ? mutex_lock+0x31/0x60
-> [12554.978652] =A0[<ffffffffa0207a5a>] ? btrfs_free_path+0x2a/0x40 [b=
-trfs]
-> [12554.986017] =A0[<ffffffffa0227b96>]
-> btrfs_commit_transaction+0x3c6/0x830 [btrfs]
-> [12554.994256] =A0[<ffffffffa0228115>] ? join_transaction+0x25/0x250 =
-[btrfs]
-> [12555.001814] =A0[<ffffffff81086410>] ? wake_up_bit+0x40/0x40
-> [12555.008061] =A0[<ffffffffa022b35b>] btrfs_write_inode+0xbb/0xc0 [b=
-trfs]
-> [12555.015490] =A0[<ffffffff81184c71>] writeback_single_inode+0x201/0=
-x260
-> [12555.022879] =A0[<ffffffff81184f6b>] writeback_sb_inodes+0xeb/0x1c0
-> [12555.029721] =A0[<ffffffff8118532f>] wb_writeback+0x18f/0x480
-> [12555.036031] =A0[<ffffffff81558105>] ? __schedule+0x3f5/0x8b0
-> [12555.042295] =A0[<ffffffff81072f3c>] ? lock_timer_base+0x3c/0x70
-> [12555.048860] =A0[<ffffffff811856bd>] wb_do_writeback+0x9d/0x270
-> [12555.055384] =A0[<ffffffff81073060>] ? del_timer+0xf0/0xf0
-> [12555.061375] =A0[<ffffffff81185932>] bdi_writeback_thread+0xa2/0x28=
-0
-> [12555.068375] =A0[<ffffffff81185890>] ? wb_do_writeback+0x270/0x270
-> [12555.075203] =A0[<ffffffff81185890>] ? wb_do_writeback+0x270/0x270
-> [12555.081971] =A0[<ffffffff81085d96>] kthread+0x96/0xa0
-> [12555.087582] =A0[<ffffffff815639c4>] kernel_thread_helper+0x4/0x10
-> [12555.094338] =A0[<ffffffff81085d00>] ? kthread_worker_fn+0x1a0/0x1a=
-0
-> [12555.101296] =A0[<ffffffff815639c0>] ? gs_change+0x13/0x13
-> [12555.107290] ---[ end trace 57ec2e8544131a12 ]---
+> diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
+> index 446531a..595a807 100644
+> --- a/fs/btrfs/inode.c
+> +++ b/fs/btrfs/inode.c
+> @@ -2230,6 +2230,7 @@ int btrfs_orphan_cleanup(struct btrfs_root *roo=
+t)
+> =A0 =A0 =A0 =A0struct btrfs_key key, found_key;
+> =A0 =A0 =A0 =A0struct btrfs_trans_handle *trans;
+> =A0 =A0 =A0 =A0struct inode *inode;
+> + =A0 =A0 =A0 u64 last_objectid =3D 0;
+> =A0 =A0 =A0 =A0int ret =3D 0, nr_unlink =3D 0, nr_truncate =3D 0;
 >
+> =A0 =A0 =A0 =A0if (cmpxchg(&root->orphan_cleanup_state, 0, ORPHAN_CLE=
+ANUP_STARTED))
+> @@ -2281,6 +2282,16 @@ int btrfs_orphan_cleanup(struct btrfs_root *ro=
+ot)
+> =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 * crossing root thing. =A0we store th=
+e inode number in the
+> =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 * offset of the orphan item.
+> =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 */
+> +
+> + =A0 =A0 =A0 =A0 =A0 =A0 =A0 if (found_key.offset =3D=3D last_object=
+id) {
+> + =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 printk(KERN_ERR "btrfs:=
+ Error removing orphan entry, "
+> + =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0"stoppin=
+g orphan cleanup\n");
+> + =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 ret =3D -EINVAL;
+> + =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 goto out;
+> + =A0 =A0 =A0 =A0 =A0 =A0 =A0 }
+> +
+> + =A0 =A0 =A0 =A0 =A0 =A0 =A0 last_objectid =3D found_key.offset;
+> +
+> =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0found_key.objectid =3D found_key.offse=
+t;
+> =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0found_key.type =3D BTRFS_INODE_ITEM_KE=
+Y;
+> =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0found_key.offset =3D 0;
+> --
+> 1.7.5.2
+>
+
+Just in case it gets lost in the shuffle between github and
+git.kernel.org, and also for the benefit of those testing Chris
+Mason's integration-test branch on github, please note that version 1
+of this patch is still in Chris' integration-test branch, as well as
+in Josef's github kernel repos (master and for-chris branch only, the
+unstable branch has this version of the patch).
 --
 To unsubscribe from this list: send the line "unsubscribe linux-btrfs" =
 in

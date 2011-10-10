@@ -1,47 +1,32 @@
-From: Chris Mason <chris.mason@oracle.com>
-Subject: Re: Honest timeline for btrfsck
-Date: Mon, 10 Oct 2011 08:59:02 -0400
-Message-ID: <1318251388-sup-3431@shiny>
-References: <CAGh96GFhVEfXt=xcb-uGEBA3Ss2fc8BwOpJ2g8tXbm+VimdH3Q@mail.gmail.com> <4E5FE9FC.9040705@cchtml.com> <20110901203442.GA17928@carfax.org.uk> <201109101209.40759.Martin@lichtvoll.de> <CA+JuuGrvCTP=o8umQHQV968tMSfJzxAFOfnGO2RKV3RU4_Vshw@mail.gmail.com> <20111005061628.GA3702@shiny.elevennetworks.com> <CA+JuuGoG1rhQ9S+vfa17BKdekp-A1UeNHqeYEwxfg=Co3Ts_pQ@mail.gmail.com> <20111005145843.GA4770@shiny.elevennetworks.com> <CA+JuuGq8ODcFDh_KEy3YL_pVJ1=zKDX1SD_9Ou_tHpR4XGhwgQ@mail.gmail.com> <CAAE6i0i-AsH7TkupkrFDdv26gN_-pshFFwvuH1nOuuSmKWbZdQ@mail.gmail.com> <4E8F4EA9.4090108@shiftmail.org>
-Content-Type: text/plain; charset=UTF-8
-Cc: Chester <somethingsome2000@gmail.com>,
-	Jeff Putney <jeffrey.putney@gmail.com>,
-	linux-btrfs <linux-btrfs@vger.kernel.org>
-To: Asdo <asdo@shiftmail.org>
-Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-reply-to: <4E8F4EA9.4090108@shiftmail.org>
+From: Theodore Tso <tytso@MIT.EDU>
+Subject: Re: A Plumber???s Wish List for Linux
+Date: Mon, 10 Oct 2011 09:09:37 -0400
+Message-ID: <4C18E3B8-FA7E-4BC1-BE5D-B517004321A2@mit.edu>
+References: <1317943022.1095.25.camel@mop> <20111007111231.6e11d18e@lxorguk.ukuu.org.uk> <CAPXgP12nDB2NX6hZabmkUZA9n0PZadi6Yv70LNms8fz9+MnVoA@mail.gmail.com> <20111007113820.3b8424a8@lxorguk.ukuu.org.uk> <CAPXgP11K4_eVn4_emEYVzCVUsm-BXDyStk7DnDmFpMTL=404Gg@mail.gmail.com> <20111007152137.GE28351@carfax.org.uk> <20111010111813.GF17912@twin.jikos.cz>
+Mime-Version: 1.0 (Apple Message framework v1244.3)
+Content-Type: text/plain; charset=us-ascii
+Cc: Theodore Tso <tytso@mit.edu>, Hugo Mills <hugo-lkml@carfax.org.uk>,
+	Kay Sievers <kay.sievers@vrfy.org>,
+	Alan Cox <alan@lxorguk.ukuu.org.uk>,
+	linux-kernel@vger.kernel.org, lennart@poettering.net,
+	harald@redhat.com, david@fubar.dk, greg@kroah.com,
+	Chris Mason <chris.mason@oracle.com>,
+	Btrfs mailing list <linux-btrfs@vger.kernel.org>
+To: dave@jikos.cz
+Return-path: <linux-kernel-owner@vger.kernel.org>
+In-Reply-To: <20111010111813.GF17912@twin.jikos.cz>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Excerpts from Asdo's message of 2011-10-07 15:10:33 -0400:
-> On 10/07/11 04:25, Chester wrote:
-> > The problem with this is that people naturally look for a fsck tool
-> > when something bad goes wrong. Something as important as a fsck
-> > utility shouldn't be released (unofficially or officially) half baked.
-> > It can irreparably destroy a filesystem which could've otherwise been
-> > repaired with a fully functional fsck.
-> >
-> > I think Chris is trying to prevent that from happening.
-> 
-> What I would like to know instead, is WHY we need an btrfsck when ZFS 
-> does not. Zfs also has this kind of problems especially on power 
-> failures, but you can always mount by rolling back to a previous 
-> uberblock, showing an earlier view of the filesystem, which would be 
-> consistent.
-> 
-> It wasn't always like this with ZFS, but this "feature" has been added 
-> after ther numerous requests of users who lost their complete 
-> filesystems after a power failure or similar events. And there was no 
-> zfsck (there still isn't, and it's apparently not needed).
 
-One of my patches here adds a circular ring of past roots for a similar
-feature.  The problem is that blocks get reused after a commit, so we
-have to either slow that down (making enospc even more complex) or we'd
-have to just use the past super and hope.
+On Oct 10, 2011, at 7:18 AM, David Sterba wrote:
 
-It gets even worse because things past supers aren't always enough.  The
-drive can just plain corrupt an important block, or write-back cache
-problems can make corruptions that last much longer than the last 5 or
-10 commits.  Bad things do happen to good data, so you just plain need a
-real fsck.
+> "Resetting the UUID on btrfs isn't a quick-and-easy thing - you have to
+> walk the entire tree and change every object. We've got a bad-hack in
+> meego that uses btrfs-debug-tree and changes the UUID while it runs
+> the entire tree, but it's ugly as hell."
 
--chris
+Changing the UUID is going to be harder for ext4 as well, once we integrate metadata checksums.   So while it makes sense to have on-line ways of updating labels for mounted file systems it probably makes muchness sense to support it for UUIDs.
+
+I suspect what it means in practice is that it will be useful for file systems to provide fs image copying tools that also generate a new UUID while you're at it, for use by IT administrators and embedded systems manufacturers.
+
+-- Ted

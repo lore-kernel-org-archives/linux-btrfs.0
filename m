@@ -1,37 +1,47 @@
 From: Chris Mason <chris.mason@oracle.com>
 Subject: Re: Honest timeline for btrfsck
-Date: Mon, 10 Oct 2011 08:55:14 -0400
-Message-ID: <1318251055-sup-8003@shiny>
-References: <CAGh96GFhVEfXt=xcb-uGEBA3Ss2fc8BwOpJ2g8tXbm+VimdH3Q@mail.gmail.com> <4E5FE9FC.9040705@cchtml.com> <20110901203442.GA17928@carfax.org.uk> <201109101209.40759.Martin@lichtvoll.de> <CA+JuuGrvCTP=o8umQHQV968tMSfJzxAFOfnGO2RKV3RU4_Vshw@mail.gmail.com> <20111005061628.GA3702@shiny.elevennetworks.com> <CA+JuuGoG1rhQ9S+vfa17BKdekp-A1UeNHqeYEwxfg=Co3Ts_pQ@mail.gmail.com> <20111005145843.GA4770@shiny.elevennetworks.com> <CA+JuuGq8ODcFDh_KEy3YL_pVJ1=zKDX1SD_9Ou_tHpR4XGhwgQ@mail.gmail.com> <20111007025050.GA4767@shiny.Netlink.Wireless> <CA+JuuGo-iREXO4cZKT61tHZMTAr_edBv=O51-uSA7Bgynbgu6w@mail.gmail.com> <4E8F1128.4000508@redhat.com> <CA+JuuGopTsEWpeW5GnwjR-NuJgUwte6HGvhSTUfm_Wh0itVpdg@mail.gmail.com>
+Date: Mon, 10 Oct 2011 08:59:02 -0400
+Message-ID: <1318251388-sup-3431@shiny>
+References: <CAGh96GFhVEfXt=xcb-uGEBA3Ss2fc8BwOpJ2g8tXbm+VimdH3Q@mail.gmail.com> <4E5FE9FC.9040705@cchtml.com> <20110901203442.GA17928@carfax.org.uk> <201109101209.40759.Martin@lichtvoll.de> <CA+JuuGrvCTP=o8umQHQV968tMSfJzxAFOfnGO2RKV3RU4_Vshw@mail.gmail.com> <20111005061628.GA3702@shiny.elevennetworks.com> <CA+JuuGoG1rhQ9S+vfa17BKdekp-A1UeNHqeYEwxfg=Co3Ts_pQ@mail.gmail.com> <20111005145843.GA4770@shiny.elevennetworks.com> <CA+JuuGq8ODcFDh_KEy3YL_pVJ1=zKDX1SD_9Ou_tHpR4XGhwgQ@mail.gmail.com> <CAAE6i0i-AsH7TkupkrFDdv26gN_-pshFFwvuH1nOuuSmKWbZdQ@mail.gmail.com> <4E8F4EA9.4090108@shiftmail.org>
 Content-Type: text/plain; charset=UTF-8
-Cc: Josef Bacik <josef@redhat.com>,
+Cc: Chester <somethingsome2000@gmail.com>,
+	Jeff Putney <jeffrey.putney@gmail.com>,
 	linux-btrfs <linux-btrfs@vger.kernel.org>
-To: Jeff Putney <jeffrey.putney@gmail.com>
+To: Asdo <asdo@shiftmail.org>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-reply-to: <CA+JuuGopTsEWpeW5GnwjR-NuJgUwte6HGvhSTUfm_Wh0itVpdg@mail.gmail.com>
+In-reply-to: <4E8F4EA9.4090108@shiftmail.org>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Excerpts from Jeff Putney's message of 2011-10-07 11:58:55 -0400:
+Excerpts from Asdo's message of 2011-10-07 15:10:33 -0400:
+> On 10/07/11 04:25, Chester wrote:
+> > The problem with this is that people naturally look for a fsck tool
+> > when something bad goes wrong. Something as important as a fsck
+> > utility shouldn't be released (unofficially or officially) half baked.
+> > It can irreparably destroy a filesystem which could've otherwise been
+> > repaired with a fully functional fsck.
+> >
+> > I think Chris is trying to prevent that from happening.
 > 
-> The 'specialness' of an fsck tool is highly suspect.  Current
-> development versions of all the other fsck tools are available in
-> their respective repositories, and yet headlines of their eating
-> babies are still pretty scarce.
-> I'm glad that Linus didn't use your logic when it came to releasing
-> the linux kernel.  Do you think the entire linux kernel is more like a
-> web browser, or a desktop environment?
+> What I would like to know instead, is WHY we need an btrfsck when ZFS 
+> does not. Zfs also has this kind of problems especially on power 
+> failures, but you can always mount by rolling back to a previous 
+> uberblock, showing an earlier view of the filesystem, which would be 
+> consistent.
 > 
-> This smells more like post hoc justification of being territorial over
-> a pet project than it does actual reasons for keeping the source a
-> state secret of oracle.  Unless their is no intention of releasing the
-> source, and Oracle intends to keep it a closed source product for
-> their own linux distributions alone.
+> It wasn't always like this with ZFS, but this "feature" has been added 
+> after ther numerous requests of users who lost their complete 
+> filesystems after a power failure or similar events. And there was no 
+> zfsck (there still isn't, and it's apparently not needed).
 
-I wish there were bigger forces at play here than me just not having it
-finished yet, but that's all there is to it.
+One of my patches here adds a circular ring of past roots for a similar
+feature.  The problem is that blocks get reused after a commit, so we
+have to either slow that down (making enospc even more complex) or we'd
+have to just use the past super and hope.
 
-Btrfs is GPL, and Oracle is not holding back a massive set of tools around
-btrfs.  The project has always stood on contributions from a number of
-companies and closed tools aren't going to happen.
+It gets even worse because things past supers aren't always enough.  The
+drive can just plain corrupt an important block, or write-back cache
+problems can make corruptions that last much longer than the last 5 or
+10 commits.  Bad things do happen to good data, so you just plain need a
+real fsck.
 
 -chris

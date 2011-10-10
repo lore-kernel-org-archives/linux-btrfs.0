@@ -1,52 +1,221 @@
-From: "Fajar A. Nugraha" <list@fajar.net>
-Subject: btrfs root + mount subvolid=0 problem
-Date: Mon, 10 Oct 2011 14:30:30 +0700
-Message-ID: <CAG1y0scXmy=DAGisOh9_6=LzueBhM5VMxpPWGeNPc+iOEc3scA@mail.gmail.com>
+From: Anand Jain <Anand.Jain@oracle.com>
+Subject: [PATCH] Changes to received review comments
+Date: Mon, 10 Oct 2011 17:58:47 +0800
+Message-ID: <4E92C1D7.2010301@oracle.com>
+References: <4E3BA2F7.4080500@oracle.com> <4E44351D.4020202@oracle.com> <20110902084941.GB29054@infradead.org>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=ISO-8859-1
-To: linux-btrfs <linux-btrfs@vger.kernel.org>
+Content-Type: text/plain; charset=ISO-8859-1; format=flowed
+Cc: linux-fsdevel@vger.kernel.org, linux-btrfs@vger.kernel.org,
+	xfs@oss.sgi.com, Chris Mason <chris.mason@oracle.com>
+To: Christoph Hellwig <hch@infradead.org>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
+In-Reply-To: <20110902084941.GB29054@infradead.org>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hi
+  Now SCRATCH_DEV is derived from SCRATCH_DEV_POOL.
+  Moved code to delete and scan block device to common.rc and
+  updated README.
 
-I have a system with Ubuntu natty i386 which uses btrfs root. It has
-worked mostly well, but I have a problem when I want to create new
-snapshot.
-Current layout looks something like this
 
-$ mount | grep btrfs
-/dev/sda6 on / type btrfs (rw,noatime,subvolid=258,compress-force=lzo)
-/dev/sda6 on /home type btrfs (rw,noatime,subvolid=259,compress-force=lzo)
-/dev/sda6 on /data type btrfs (rw,noatime,subvolid=260,compress-force=lzo)
-/dev/sda6 on /data/vm type btrfs (rw,noatime,subvolid=261,compress-force=lzo)
-/dev/sda6 on /boot type btrfs (rw,noatime,subvolid=289,compress-force=lzo)
+Signed-off-by: Anand Jain <Anand.Jain@oracle.com>
+---
+  259           |   29 ++++++++---------------------
+  README        |    9 +++++++--
+  common.config |   14 ++++++++++++++
+  common.rc     |   34 ++++++++++++++++++++++++++++++++--
+  4 files changed, 61 insertions(+), 25 deletions(-)
 
-$ sudo btrfs su li /
-[sudo] password for user:
-ID 258 top level 5 path subvol/root
-ID 259 top level 5 path subvol/home
-ID 260 top level 5 path subvol/data
-ID 261 top level 5 path subvol/vm
-ID 289 top level 5 path boot
-ID 318 top level 5 path subvol/oneiric
+diff --git a/259 b/259
+index 522191d..fe90147 100755
+--- a/259
++++ b/259
+@@ -46,24 +46,7 @@ _supported_fs btrfs
+  _supported_os Linux
+  _require_scratch
+  _require_scratch_dev_pool
+-_require_proc_scsi
+-
+-# arg 1 remove/add
+-# arg 2 /dev/sdx or return of devmgt resply
+-_devmgt()
+-{
+-	local x
+-	local d
+-
+-	if [ $1 == "remove" ]; then
+-		d=`echo $2|cut -d"/" -f3`
+-		x=`ls -l /sys/class/block/${d} | cut -d "/" -f12 | sed 's/:/ /g'`
+-		echo "scsi remove-single-device ${x}" > /proc/scsi/scsi || _fail 
+"Remove disk failed"
+-		DEVHTL=${x}
+-	else
+-		echo "scsi add-single-device ${2}" > /proc/scsi/scsi || _fail "Add 
+disk failed"
+-	fi
+-}
++_require_deletable_scratch_dev_pool
 
-A few days ago I was able to mount subvolid=0 to a temporary path
-(e.g. /mnt/tmp), and on that create a snapshot of subvol/root as
-subvol/oneiric (for test upgrade purposes). That worked well. The
-problem is now I can't repeat the process
+  # Test cases related to raid in btrfs
+  _test_raid0()
+@@ -128,10 +111,10 @@ _test_add()
+  _test_replace()
+  {
+  	local i
+-	local x
+  	local devs=( $SCRATCH_DEV_POOL )
+  	local n=${#devs[@]}
+  	local ds
++	local d
+  	local DEVHTL=""
 
-$ sudo mount /dev/sda6 -o subvolid=0 /mnt/tmp
-$ ls /mnt/tmp
-boot  subvol
-$ ls /mnt/tmp/subvol
+  	# exclude the last disk in the disk pool
+@@ -146,8 +129,12 @@ _test_replace()
+  	#pick the 2nd last disk
+  	ds=${devs[@]:$(($n-1)):1}
 
-(hangs at this point, I have to perform hard reset or "reboot -f").
++	# retrive the HTL for this scsi disk
++	d=`echo $ds|cut -d"/" -f3`
++	DEVHTL=`ls -l /sys/class/block/${d} | rev | cut -d "/" -f 3 | rev`
++
+  	#fail disk
+-	_devmgt remove ${ds}
++	_devmgt_remove ${DEVHTL}
 
-This happens both with natty's 2.6.38-11-generic and kernel 3.0.4
-(backported from oneiric). Does anyone know if this is a know problem,
-or how to get further information to fix this?
+  	btrfs fi show $SCRATCH_DEV | grep "Some devices missing" > /dev/null 
+|| _fail \
+  							"btrfs did not report device missing"
+@@ -162,7 +149,7 @@ _test_replace()
 
-Thanks,
+  	# cleaup. add the removed disk
+  	umount $SCRATCH_MNT
+-	_devmgt add "${DEVHTL}"
++	_devmgt_add "${DEVHTL}"
+  }
 
-Fajar
+  _test_remove()
+diff --git a/README b/README
+index 5367be6..407888a 100644
+--- a/README
++++ b/README
+@@ -34,14 +34,19 @@ Preparing system for tests (IRIX and Linux):
+              - leave empty and expect this partition to be clobbered
+                by some tests.  If this is not provided, many tests will
+                not be run.
+-
++
+          (these must be two DIFFERENT partitions)
++
++    - for btrfs only: some tests would need 3 or more independent 
+SCRATCH disks,
++      which should be setenv SCRATCH_DEV_POOL instead of SCRATCH_DEV
++
+
+      - setup your environment
+          - setenv TEST_DEV "device containing TEST PARTITION"
+          - setenv TEST_DIR "mount point of TEST PARTITION"
+         	- optionally:
+               - setenv SCRATCH_DEV "device containing SCRATCH PARTITION"
++             - setenv SCRATCH_DEV_POOL "pool of SCRATCH disks for 
+testing btrfs"
+               - setenv SCRATCH_MNT "mount point for SCRATCH PARTITION"
+               - setenv TAPE_DEV "tape device for testing xfsdump"
+               - setenv RMT_TAPE_DEV "remote tape device for testing 
+xfsdump"
+@@ -63,7 +68,7 @@ Preparing system for tests (IRIX and Linux):
+        tape which can be overwritten.
+
+      - make sure $TEST_DEV is a mounted XFS partition
+-    - make sure that $SCRATCH_DEV contains nothing useful
++    - make sure that $SCRATCH_DEV or $SCRATCH_DEV_POOL contains nothing 
+useful
+
+  Running tests:
+
+diff --git a/common.config b/common.config
+index 3642139..7ee255e 100644
+--- a/common.config
++++ b/common.config
+@@ -228,6 +228,20 @@ if [ ! -d "$TEST_DIR" ]; then
+      exit 1
+  fi
+
++# a btrfs tester will set only SCRATCH_DEV_POOL, we will put first of 
+its dev
++# to SCRATCH_DEV and rest to SCRATCH_DEV_POOL to maintain the backward 
+compatibility
++if [ "$HOSTOS" == "Linux" ]; then
++    FSTYP_tmp=`blkid -c /dev/null -s TYPE -o value $TEST_DEV`
++else
++    FSTYP_tmp=xfs
++fi
++if [ "$FSTYP_tmp" == "btrfs" ]; then
++    if [ ! -z "$SCRATCH_DEV_POOL" ]; then
++	SCRATCH_DEV=`echo $SCRATCH_DEV_POOL | cut -d" " -f 1`
++	SCRATCH_DEV_POOL=`echo $SCRATCH_DEV_POOL | cut -d" " -f 2-`
++    fi
++fi
++	
+  echo $SCRATCH_DEV | grep -q ":" > /dev/null 2>&1
+  if [ ! -z "$SCRATCH_DEV" -a ! -b "$SCRATCH_DEV" -a "$?" != "0" ]; then
+      echo "common.config: Error: \$SCRATCH_DEV ($SCRATCH_DEV) is not a 
+block device or a NFS filesystem"
+diff --git a/common.rc b/common.rc
+index 02dde11..a614090 100644
+--- a/common.rc
++++ b/common.rc
+@@ -1609,9 +1609,19 @@ _require_scratch_dev_pool()
+  	esac
+  }
+
+-_require_proc_scsi()
++# We will check if the device is virtual (eg: loop device) since it 
+does not
++# have the delete entry-point. Otherwise SCSI and USB devices are fine.
++_require_deletable_scratch_dev_pool()
+  {
+-	[ -e /proc/scsi/scsi ]  || _notrun "/proc/scsi/scsi is not present"
++	local i
++	local x
++	for i in $SCRATCH_DEV_POOL; do
++		x=`echo $i | cut -d"/" -f 3`
++		ls -l /sys/class/block/${x} | grep -q "virtual"
++		if [ $? == "0" ]; then
++			_notrun "$i is a virtual device which is not deletable"
++		fi
++	done
+  }
+
+  # Generate Random number in a range
+@@ -1659,6 +1669,26 @@ _fillfs()
+  	wait $!
+  }
+
++# arg 1 is dev to remove and is output of the below eg.
++# ls -l /sys/class/block/sdd | rev | cut -d "/" -f 3 | rev
++_devmgt_remove()
++{
++	echo 1 > /sys/class/scsi_device/${1}/device/delete || _fail "Remove 
+disk failed"
++}
++
++# arg 1 is dev to add and is output of the below eg.
++# ls -l /sys/class/block/sdd | rev | cut -d "/" -f 3 | rev
++_devmgt_add()
++{
++	local h
++	local tdl
++	# arg 1 will be in h:t:d:l format now in the h and "t d l" format
++	h=`echo ${1} | cut -d":" -f 1`
++	tdl=`echo ${1} | cut -d":" -f 2-|sed 's/:/ /g'`
++
++	echo ${tdl} >  /sys/class/scsi_host/host${h}/scan || _fail "Add disk 
+failed"
++}
++
+ 
+################################################################################
+  if [ "$iam" != new -a "$iam" != bench ]
+  then
+-- 
+1.7.1
+

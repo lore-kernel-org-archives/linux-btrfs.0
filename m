@@ -1,70 +1,526 @@
-From: "Jeff Mahoney" <jeffm@suse.com>
-Subject: Re: [patch 01/65] btrfs: Add btrfs_panic()
-Date: Mon, 10 Oct 2011 10:54:57 -0600
-Message-ID: <4E92CF170200007E000BC770@novprvoes0310.provo.novell.com>
-References: <20111004032230.458853274@suse.com>
- <20111004032300.032619517@suse.com> <20111010164244.GJ17912@twin.jikos.cz>
-Mime-Version: 1.0
-Content-Type: text/plain; charset=US-ASCII
-Cc: <chris.mason@oracle.com>, <linux-btrfs@vger.kernel.org>
-To: <dave@jikos.cz>
+From: Josef Bacik <josef@redhat.com>
+Subject: [PATCH] Btrfs: inline checksums into the disk free space cache V2
+Date: Mon, 10 Oct 2011 16:59:42 -0400
+Message-ID: <1318280382-25162-1-git-send-email-josef@redhat.com>
+To: linux-btrfs@vger.kernel.org
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <20111010164244.GJ17912@twin.jikos.cz>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Uppercase BTRFS follows the convention of __btrfs_std_error. It's also the same convention other linux filesystems use. I'd view the printks that are already there as ad-hoc, to be replaced by a standard fs call that will perform formatting.
+Yeah yeah I know this is how we used to do it and then I changed it, but damnit
+I'm changing it back.  The fact is that writing out checksums will modify
+metadata, which could cause us to dirty a block group we've already written out,
+so we have to truncate it and all of it's checksums and re-write it which will
+write new checksums which could dirty a blockg roup that has already been
+written and you see where I'm going with this?  This can cause unmount or really
+anything that depends on a transaction to commit to take it's sweet damned time
+to happen.  So go back to the way it was, only this time we're specifically
+setting NODATACOW because we can't go through the COW pathway anyway and we're
+doing our own built-in cow'ing by truncating the free space cache.  The other
+new thing is once we truncate the old cache and preallocate the new space, we
+don't need to do that song and dance at all for the rest of the transaction, we
+can just overwrite the existing space with the new cache if the block group
+changes for whatever reason, and the NODATACOW will let us do this fine.  So
+keep track of which transaction we last cleared our cache in and if we cleared
+it in this transaction just say we're all setup and carry on.  This survives
+xfstests and stress.sh.
 
--Jeff
+The inode cache will continue to use the normal csum infrastructure since it
+only gets written once and there will be no more modifications to the fs tree in
+a transaction commit.
 
---
-Jeff Mahoney
-(apologies for the top post -- from my mobile)
+Signed-off-by: Josef Bacik <josef@redhat.com>
+---
+V1->V2: Only do inline extents for the disk space cache
+ fs/btrfs/ctree.h            |    1 +
+ fs/btrfs/extent-tree.c      |   18 +++--
+ fs/btrfs/free-space-cache.c |  211 +++++++++++++++++++++++++++++++------------
+ fs/btrfs/inode.c            |   10 +-
+ 4 files changed, 172 insertions(+), 68 deletions(-)
 
-On Oct 10, 2011, at 12:43 PM, "David Sterba <dave@jikos.cz>" <dave@jikos.cz> wrote:
-
-> On Mon, Oct 03, 2011 at 11:22:31PM -0400, Jeff Mahoney wrote:
->> @@ -143,6 +146,36 @@ void __btrfs_std_error(struct btrfs_fs_i
->>    btrfs_handle_error(fs_info);
->> }
->> 
->> +/*
->> + * __btrfs_panic decodes unexpected, fatal errors from the caller,
->> + * issues an alert, and either panics or BUGs, depending on mount options.
->> + */
->> +void __btrfs_panic(struct btrfs_fs_info *fs_info, const char *function,
->> +           unsigned int line, int errno, const char *fmt, ...)
->> +{
->> +    char nbuf[16];
->> +    char *s_id = "<unknown>";
->> +    const char *errstr;
->> +    struct va_format vaf = { .fmt = fmt };
->> +    va_list args;
->> +
->> +    if (fs_info)
->> +        s_id = fs_info->sb->s_id;
->> +
->> +    va_start(args, fmt);
->> +    vaf.va = &args;
->> +
->> +    errstr = btrfs_decode_error(fs_info, errno, nbuf);
->> +    if (fs_info->mount_opt & BTRFS_MOUNT_PANIC_ON_FATAL_ERROR)
->> +        panic(KERN_CRIT "BTRFS panic (device %s) in %s:%d: %pV (%s)\n",
->                                 ^^^^^
-> "btrfs"
-> Most messages use lowercase btrfs, let's keep it like that (apart from
-> missing btrfs prefixes at all or 3x Btrfs)
-> 
->> +            s_id, function, line, &vaf, errstr);
->> +
->> +    printk(KERN_CRIT "BTRFS panic (device %s) in %s:%d: %pV (%s)\n",
->                          ^^^^^
-> 
->> +           s_id, function, line, &vaf, errstr);
->> +    va_end(args);
->> +    /* Caller calls BUG() */
->> +}
->> +
->> static void btrfs_put_super(struct super_block *sb)
->> {
->>    struct btrfs_root *root = btrfs_sb(sb);
+diff --git a/fs/btrfs/ctree.h b/fs/btrfs/ctree.h
+index 1eafccb..ea60897 100644
+--- a/fs/btrfs/ctree.h
++++ b/fs/btrfs/ctree.h
+@@ -838,6 +838,7 @@ struct btrfs_block_group_cache {
+ 	u64 bytes_super;
+ 	u64 flags;
+ 	u64 sectorsize;
++	u64 cache_generation;
+ 	unsigned int ro:1;
+ 	unsigned int dirty:1;
+ 	unsigned int iref:1;
+diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
+index f95e550..0abf70c 100644
+--- a/fs/btrfs/extent-tree.c
++++ b/fs/btrfs/extent-tree.c
+@@ -2717,6 +2717,13 @@ again:
+ 		goto again;
+ 	}
+ 
++	/* We've already setup this transaction, go ahead and exit */
++	if (block_group->cache_generation == trans->transid &&
++	    i_size_read(inode)) {
++		dcs = BTRFS_DC_SETUP;
++		goto out_put;
++	}
++
+ 	/*
+ 	 * We want to set the generation to 0, that way if anything goes wrong
+ 	 * from here on out we know not to trust this cache when we load up next
+@@ -2756,19 +2763,16 @@ again:
+ 	num_pages *= 16;
+ 	num_pages *= PAGE_CACHE_SIZE;
+ 
+-	ret = btrfs_delalloc_reserve_space(inode, num_pages);
++	ret = btrfs_check_data_free_space(inode, num_pages);
+ 	if (ret)
+ 		goto out_put;
+ 
+ 	ret = btrfs_prealloc_file_range_trans(inode, trans, 0, 0, num_pages,
+ 					      num_pages, num_pages,
+ 					      &alloc_hint);
+-	if (!ret) {
++	if (!ret)
+ 		dcs = BTRFS_DC_SETUP;
+-		btrfs_free_reserved_data_space(inode, num_pages);
+-	} else {
+-		btrfs_delalloc_release_space(inode, num_pages);
+-	}
++	btrfs_free_reserved_data_space(inode, num_pages);
+ 
+ out_put:
+ 	iput(inode);
+@@ -2776,6 +2780,8 @@ out_free:
+ 	btrfs_release_path(path);
+ out:
+ 	spin_lock(&block_group->lock);
++	if (!ret)
++		block_group->cache_generation = trans->transid;
+ 	block_group->disk_cache_state = dcs;
+ 	spin_unlock(&block_group->lock);
+ 
+diff --git a/fs/btrfs/free-space-cache.c b/fs/btrfs/free-space-cache.c
+index abc924c..2112ba1 100644
+--- a/fs/btrfs/free-space-cache.c
++++ b/fs/btrfs/free-space-cache.c
+@@ -99,9 +99,11 @@ struct inode *lookup_free_space_inode(struct btrfs_root *root,
+ 		return inode;
+ 
+ 	spin_lock(&block_group->lock);
+-	if (BTRFS_I(inode)->flags & BTRFS_INODE_NODATASUM) {
++	if (!(BTRFS_I(inode)->flags & (BTRFS_INODE_NODATASUM |
++				       BTRFS_INODE_NODATACOW))) {
+ 		printk(KERN_INFO "Old style space inode found, converting.\n");
+-		BTRFS_I(inode)->flags &= ~BTRFS_INODE_NODATASUM;
++		BTRFS_I(inode)->flags |= BTRFS_INODE_NODATASUM |
++			BTRFS_INODE_NODATACOW;
+ 		block_group->disk_cache_state = BTRFS_DC_CLEAR;
+ 	}
+ 
+@@ -123,12 +125,17 @@ int __create_free_space_inode(struct btrfs_root *root,
+ 	struct btrfs_free_space_header *header;
+ 	struct btrfs_inode_item *inode_item;
+ 	struct extent_buffer *leaf;
++	u64 flags = BTRFS_INODE_NOCOMPRESS | BTRFS_INODE_PREALLOC;
+ 	int ret;
+ 
+ 	ret = btrfs_insert_empty_inode(trans, root, path, ino);
+ 	if (ret)
+ 		return ret;
+ 
++	/* We inline crc's for the free disk space cache */
++	if (ino != BTRFS_FREE_INO_OBJECTID)
++		flags |= BTRFS_INODE_NODATASUM | BTRFS_INODE_NODATACOW;
++
+ 	leaf = path->nodes[0];
+ 	inode_item = btrfs_item_ptr(leaf, path->slots[0],
+ 				    struct btrfs_inode_item);
+@@ -141,8 +148,7 @@ int __create_free_space_inode(struct btrfs_root *root,
+ 	btrfs_set_inode_uid(leaf, inode_item, 0);
+ 	btrfs_set_inode_gid(leaf, inode_item, 0);
+ 	btrfs_set_inode_mode(leaf, inode_item, S_IFREG | 0600);
+-	btrfs_set_inode_flags(leaf, inode_item, BTRFS_INODE_NOCOMPRESS |
+-			      BTRFS_INODE_PREALLOC);
++	btrfs_set_inode_flags(leaf, inode_item, flags);
+ 	btrfs_set_inode_nlink(leaf, inode_item, 1);
+ 	btrfs_set_inode_transid(leaf, inode_item, trans->transid);
+ 	btrfs_set_inode_block_group(leaf, inode_item, offset);
+@@ -249,6 +255,7 @@ struct io_ctl {
+ 	unsigned long size;
+ 	int index;
+ 	int num_pages;
++	unsigned check_crcs:1;
+ };
+ 
+ static int io_ctl_init(struct io_ctl *io_ctl, struct inode *inode,
+@@ -262,6 +269,8 @@ static int io_ctl_init(struct io_ctl *io_ctl, struct inode *inode,
+ 	if (!io_ctl->pages)
+ 		return -ENOMEM;
+ 	io_ctl->root = root;
++	if (btrfs_ino(inode) != BTRFS_FREE_INO_OBJECTID)
++		io_ctl->check_crcs = 1;
+ 	return 0;
+ }
+ 
+@@ -340,25 +349,39 @@ static void io_ctl_set_generation(struct io_ctl *io_ctl, u64 generation)
+ 	io_ctl_map_page(io_ctl, 1);
+ 
+ 	/*
+-	 * Skip the first 64bits to make sure theres a bogus crc for old
+-	 * kernels
++	 * Skip the csum areas.  If we don't check crcs then we just have a
++	 * 64bit chunk at the front of the first page.
+ 	 */
+-	io_ctl->cur += sizeof(u64);
++	if (io_ctl->check_crcs) {
++		io_ctl->cur += (sizeof(u32) * io_ctl->num_pages);
++		io_ctl->size -= sizeof(u64) + (sizeof(u32) * io_ctl->num_pages);
++	} else {
++		io_ctl->cur += sizeof(u64);
++		io_ctl->size -= sizeof(u64) * 2;
++	}
+ 
+ 	val = io_ctl->cur;
+ 	*val = cpu_to_le64(generation);
+ 	io_ctl->cur += sizeof(u64);
+-	io_ctl->size -= sizeof(u64) * 2;
+ }
+ 
+ static int io_ctl_check_generation(struct io_ctl *io_ctl, u64 generation)
+ {
+ 	u64 *gen;
+ 
+-	io_ctl_map_page(io_ctl, 0);
++	/*
++	 * Skip the crc area.  If we don't check crcs then we just have a 64bit
++	 * chunk at the front of the first page.
++	 */
++	if (io_ctl->check_crcs) {
++		io_ctl->cur += sizeof(u32) * io_ctl->num_pages;
++		io_ctl->size -= sizeof(u64) +
++			(sizeof(u32) * io_ctl->num_pages);
++	} else {
++		io_ctl->cur += sizeof(u64);
++		io_ctl->size -= sizeof(u64) * 2;
++	}
+ 
+-	/* Skip the bogus crc area */
+-	io_ctl->cur += sizeof(u64);
+ 	gen = io_ctl->cur;
+ 	if (le64_to_cpu(*gen) != generation) {
+ 		printk_ratelimited(KERN_ERR "btrfs: space cache generation "
+@@ -368,7 +391,63 @@ static int io_ctl_check_generation(struct io_ctl *io_ctl, u64 generation)
+ 		return -EIO;
+ 	}
+ 	io_ctl->cur += sizeof(u64);
+-	io_ctl->size -= sizeof(u64) * 2;
++	return 0;
++}
++
++static void io_ctl_set_crc(struct io_ctl *io_ctl, int index)
++{
++	u32 *tmp;
++	u32 crc = ~(u32)0;
++	unsigned offset = 0;
++
++	if (!io_ctl->check_crcs) {
++		io_ctl_unmap_page(io_ctl);
++		return;
++	}
++
++	if (index == 0)
++		offset = sizeof(u32) * io_ctl->num_pages;;
++
++	crc = btrfs_csum_data(io_ctl->root, io_ctl->orig + offset, crc,
++			      PAGE_CACHE_SIZE - offset);
++	btrfs_csum_final(crc, (char *)&crc);
++	io_ctl_unmap_page(io_ctl);
++	tmp = kmap(io_ctl->pages[0]);
++	tmp += index;
++	*tmp = crc;
++	kunmap(io_ctl->pages[0]);
++}
++
++static int io_ctl_check_crc(struct io_ctl *io_ctl, int index)
++{
++	u32 *tmp, val;
++	u32 crc = ~(u32)0;
++	unsigned offset = 0;
++
++	if (!io_ctl->check_crcs) {
++		io_ctl_map_page(io_ctl, 0);
++		return 0;
++	}
++
++	if (index == 0)
++		offset = sizeof(u32) * io_ctl->num_pages;
++
++	tmp = kmap(io_ctl->pages[0]);
++	tmp += index;
++	val = *tmp;
++	kunmap(io_ctl->pages[0]);
++
++	io_ctl_map_page(io_ctl, 0);
++	crc = btrfs_csum_data(io_ctl->root, io_ctl->orig + offset, crc,
++			      PAGE_CACHE_SIZE - offset);
++	btrfs_csum_final(crc, (char *)&crc);
++	if (val != crc) {
++		printk_ratelimited(KERN_ERR "btrfs: csum mismatch on free "
++				   "space cache\n");
++		io_ctl_unmap_page(io_ctl);
++		return -EIO;
++	}
++
+ 	return 0;
+ }
+ 
+@@ -391,22 +470,7 @@ static int io_ctl_add_entry(struct io_ctl *io_ctl, u64 offset, u64 bytes,
+ 	if (io_ctl->size >= sizeof(struct btrfs_free_space_entry))
+ 		return 0;
+ 
+-	/*
+-	 * index == 1 means the current page is 0, we need to generate a bogus
+-	 * crc for older kernels.
+-	 */
+-	if (io_ctl->index == 1) {
+-		u32 *tmp;
+-		u32 crc = ~(u32)0;
+-
+-		crc = btrfs_csum_data(io_ctl->root, io_ctl->orig + sizeof(u64),
+-				      crc, PAGE_CACHE_SIZE - sizeof(u64));
+-		btrfs_csum_final(crc, (char *)&crc);
+-		crc++;
+-		tmp = io_ctl->orig;
+-		*tmp = crc;
+-	}
+-	io_ctl_unmap_page(io_ctl);
++	io_ctl_set_crc(io_ctl, io_ctl->index - 1);
+ 
+ 	/* No more pages to map */
+ 	if (io_ctl->index >= io_ctl->num_pages)
+@@ -427,14 +491,14 @@ static int io_ctl_add_bitmap(struct io_ctl *io_ctl, void *bitmap)
+ 	 * map the next one if there is any left.
+ 	 */
+ 	if (io_ctl->cur != io_ctl->orig) {
+-		io_ctl_unmap_page(io_ctl);
++		io_ctl_set_crc(io_ctl, io_ctl->index - 1);
+ 		if (io_ctl->index >= io_ctl->num_pages)
+ 			return -ENOSPC;
+ 		io_ctl_map_page(io_ctl, 0);
+ 	}
+ 
+ 	memcpy(io_ctl->cur, bitmap, PAGE_CACHE_SIZE);
+-	io_ctl_unmap_page(io_ctl);
++	io_ctl_set_crc(io_ctl, io_ctl->index - 1);
+ 	if (io_ctl->index < io_ctl->num_pages)
+ 		io_ctl_map_page(io_ctl, 0);
+ 	return 0;
+@@ -442,51 +506,60 @@ static int io_ctl_add_bitmap(struct io_ctl *io_ctl, void *bitmap)
+ 
+ static void io_ctl_zero_remaining_pages(struct io_ctl *io_ctl)
+ {
+-	io_ctl_unmap_page(io_ctl);
++	/*
++	 * If we're not on the boundary we know we've modified the page and we
++	 * need to crc the page.
++	 */
++	if (io_ctl->cur != io_ctl->orig)
++		io_ctl_set_crc(io_ctl, io_ctl->index - 1);
++	else
++		io_ctl_unmap_page(io_ctl);
+ 
+ 	while (io_ctl->index < io_ctl->num_pages) {
+ 		io_ctl_map_page(io_ctl, 1);
+-		io_ctl_unmap_page(io_ctl);
++		io_ctl_set_crc(io_ctl, io_ctl->index - 1);
+ 	}
+ }
+ 
+-static u8 io_ctl_read_entry(struct io_ctl *io_ctl,
+-			    struct btrfs_free_space *entry)
++static int io_ctl_read_entry(struct io_ctl *io_ctl,
++			    struct btrfs_free_space *entry, u8 *type)
+ {
+ 	struct btrfs_free_space_entry *e;
+-	u8 type;
+ 
+ 	e = io_ctl->cur;
+ 	entry->offset = le64_to_cpu(e->offset);
+ 	entry->bytes = le64_to_cpu(e->bytes);
+-	type = e->type;
++	*type = e->type;
+ 	io_ctl->cur += sizeof(struct btrfs_free_space_entry);
+ 	io_ctl->size -= sizeof(struct btrfs_free_space_entry);
+ 
+ 	if (io_ctl->size >= sizeof(struct btrfs_free_space_entry))
+-		return type;
++		return 0;
+ 
+ 	io_ctl_unmap_page(io_ctl);
+ 
+ 	if (io_ctl->index >= io_ctl->num_pages)
+-		return type;
++		return 0;
+ 
+-	io_ctl_map_page(io_ctl, 0);
+-	return type;
++	return io_ctl_check_crc(io_ctl, io_ctl->index);
+ }
+ 
+-static void io_ctl_read_bitmap(struct io_ctl *io_ctl,
+-			       struct btrfs_free_space *entry)
++static int io_ctl_read_bitmap(struct io_ctl *io_ctl,
++			      struct btrfs_free_space *entry)
+ {
+-	BUG_ON(!io_ctl->cur);
+-	if (io_ctl->cur != io_ctl->orig) {
++	int ret;
++
++	if (io_ctl->cur && io_ctl->cur != io_ctl->orig)
+ 		io_ctl_unmap_page(io_ctl);
+-		io_ctl_map_page(io_ctl, 0);
+-	}
++
++	ret = io_ctl_check_crc(io_ctl, io_ctl->index);
++	if (ret)
++		return ret;
++
+ 	memcpy(entry->bitmap, io_ctl->cur, PAGE_CACHE_SIZE);
+ 	io_ctl_unmap_page(io_ctl);
+-	if (io_ctl->index < io_ctl->num_pages)
+-		io_ctl_map_page(io_ctl, 0);
++
++	return 0;
+ }
+ 
+ int __load_free_space_cache(struct btrfs_root *root, struct inode *inode,
+@@ -553,6 +626,10 @@ int __load_free_space_cache(struct btrfs_root *root, struct inode *inode,
+ 	if (ret)
+ 		goto out;
+ 
++	ret = io_ctl_check_crc(&io_ctl, 0);
++	if (ret)
++		goto free_cache;
++
+ 	ret = io_ctl_check_generation(&io_ctl, generation);
+ 	if (ret)
+ 		goto free_cache;
+@@ -563,7 +640,12 @@ int __load_free_space_cache(struct btrfs_root *root, struct inode *inode,
+ 		if (!e)
+ 			goto free_cache;
+ 
+-		type = io_ctl_read_entry(&io_ctl, e);
++		ret = io_ctl_read_entry(&io_ctl, e, &type);
++		if (ret) {
++			kmem_cache_free(btrfs_free_space_cachep, e);
++			goto free_cache;
++		}
++
+ 		if (!e->bytes) {
+ 			kmem_cache_free(btrfs_free_space_cachep, e);
+ 			goto free_cache;
+@@ -611,7 +693,9 @@ int __load_free_space_cache(struct btrfs_root *root, struct inode *inode,
+ 	 */
+ 	list_for_each_entry_safe(e, n, &bitmaps, list) {
+ 		list_del_init(&e->list);
+-		io_ctl_read_bitmap(&io_ctl, e);
++		ret = io_ctl_read_bitmap(&io_ctl, e);
++		if (ret)
++			goto free_cache;
+ 	}
+ 
+ 	io_ctl_drop_pages(&io_ctl);
+@@ -632,7 +716,7 @@ int load_free_space_cache(struct btrfs_fs_info *fs_info,
+ 	struct btrfs_root *root = fs_info->tree_root;
+ 	struct inode *inode;
+ 	struct btrfs_path *path;
+-	int ret;
++	int ret = 0;
+ 	bool matched;
+ 	u64 used = btrfs_block_group_used(&block_group->item);
+ 
+@@ -664,6 +748,14 @@ int load_free_space_cache(struct btrfs_fs_info *fs_info,
+ 		return 0;
+ 	}
+ 
++	/* We may have converted the inode and made the cache invalid. */
++	spin_lock(&block_group->lock);
++	if (block_group->disk_cache_state != BTRFS_DC_WRITTEN) {
++		spin_unlock(&block_group->lock);
++		goto out;
++	}
++	spin_unlock(&block_group->lock);
++
+ 	ret = __load_free_space_cache(fs_info->tree_root, inode, ctl,
+ 				      path, block_group->key.objectid);
+ 	btrfs_free_path(path);
+@@ -774,6 +866,13 @@ int __btrfs_write_out_cache(struct btrfs_root *root, struct inode *inode,
+ 		cluster = NULL;
+ 	}
+ 
++	/* Make sure we can fit our crcs into the first page */
++	if (io_ctl.check_crcs &&
++	    (io_ctl.num_pages * sizeof(u32)) >= PAGE_CACHE_SIZE) {
++		WARN_ON(1);
++		goto out_nospc;
++	}
++
+ 	io_ctl_set_generation(&io_ctl, trans->transid);
+ 
+ 	/* Write out the extent entries */
+@@ -864,8 +963,8 @@ int __btrfs_write_out_cache(struct btrfs_root *root, struct inode *inode,
+ 	ret = btrfs_search_slot(trans, root, &key, path, 0, 1);
+ 	if (ret < 0) {
+ 		clear_extent_bit(&BTRFS_I(inode)->io_tree, 0, inode->i_size - 1,
+-				 EXTENT_DIRTY | EXTENT_DELALLOC |
+-				 EXTENT_DO_ACCOUNTING, 0, 0, NULL, GFP_NOFS);
++				 EXTENT_DIRTY | EXTENT_DELALLOC, 0, 0, NULL,
++				 GFP_NOFS);
+ 		goto out;
+ 	}
+ 	leaf = path->nodes[0];
+@@ -878,9 +977,8 @@ int __btrfs_write_out_cache(struct btrfs_root *root, struct inode *inode,
+ 		    found_key.offset != offset) {
+ 			clear_extent_bit(&BTRFS_I(inode)->io_tree, 0,
+ 					 inode->i_size - 1,
+-					 EXTENT_DIRTY | EXTENT_DELALLOC |
+-					 EXTENT_DO_ACCOUNTING, 0, 0, NULL,
+-					 GFP_NOFS);
++					 EXTENT_DIRTY | EXTENT_DELALLOC, 0, 0,
++					 NULL, GFP_NOFS);
+ 			btrfs_release_path(path);
+ 			goto out;
+ 		}
+@@ -942,7 +1040,6 @@ int btrfs_write_out_cache(struct btrfs_root *root,
+ 	ret = __btrfs_write_out_cache(root, inode, ctl, block_group, trans,
+ 				      path, block_group->key.objectid);
+ 	if (ret) {
+-		btrfs_delalloc_release_metadata(inode, inode->i_size);
+ 		spin_lock(&block_group->lock);
+ 		block_group->disk_cache_state = BTRFS_DC_ERROR;
+ 		spin_unlock(&block_group->lock);
+diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
+index 595a807..1153731 100644
+--- a/fs/btrfs/inode.c
++++ b/fs/btrfs/inode.c
+@@ -1792,12 +1792,12 @@ static int btrfs_finish_ordered_io(struct inode *inode, u64 start, u64 end)
+ 	}
+ 	ret = 0;
+ out:
+-	btrfs_delalloc_release_metadata(inode, ordered_extent->len);
+-	if (nolock) {
+-		if (trans)
++	if (root != root->fs_info->tree_root)
++		btrfs_delalloc_release_metadata(inode, ordered_extent->len);
++	if (trans) {
++		if (nolock)
+ 			btrfs_end_transaction_nolock(trans, root);
+-	} else {
+-		if (trans)
++		else
+ 			btrfs_end_transaction(trans, root);
+ 	}
+ 
+-- 
+1.7.5.2
 

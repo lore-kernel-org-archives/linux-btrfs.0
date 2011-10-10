@@ -1,45 +1,41 @@
 From: David Sterba <dave@jikos.cz>
-Subject: Re: Corrupt file in subvolume
-Date: Mon, 10 Oct 2011 13:29:17 +0200
-Message-ID: <20111010112917.GG17912@twin.jikos.cz>
-References: <loom.20111010T040355-185@post.gmane.org> <20111010103723.GE17912@twin.jikos.cz> <loom.20111010T124733-121@post.gmane.org>
+Subject: Re: read error: how to fix?
+Date: Mon, 10 Oct 2011 13:48:09 +0200
+Message-ID: <20111010114809.GH17912@twin.jikos.cz>
+References: <BvO7vnJy1uB@helmut.hullen.de>
 Reply-To: dave@jikos.cz
 Mime-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
 Cc: linux-btrfs@vger.kernel.org
-To: dima <dolenin@parallels.com>
+To: helmut@hullen.de
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <loom.20111010T124733-121@post.gmane.org>
+In-Reply-To: <BvO7vnJy1uB@helmut.hullen.de>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Mon, Oct 10, 2011 at 11:03:34AM +0000, dima wrote:
-> The last shutdown was clean, but I had to powercycle several times this month.
-> I am also mounting a swapfile via loop device, so maybe this also adds up to
-> instability.
+On Fri, Oct 07, 2011 at 06:51:00PM +0200, Helmut Hullen wrote:
+> Oct  7 18:16:55 Arktur kernel: ata5.00: exception Emask 0x0 SAct 0x0  
+> SErr 0x0 action 0x0
+> Oct  7 18:16:55 Arktur kernel: ata5.00: BMDMA2 stat 0x80d2009
+> Oct  7 18:16:55 Arktur kernel: ata5.00: failed command: READ DMA
+> Oct  7 18:16:55 Arktur kernel: ata5.00: cmd c8/00:40:57:d0:34/00:00:00:00:00/ee tag 0 dma 32768 in
+> Oct  7 18:16:55 Arktur kernel:          res 51/40:40:57:d0:34/00:03:0e:00:00/fe Emask 0x9 (media error)
+> Oct  7 18:16:55 Arktur kernel: ata5.00: status: { DRDY ERR }
+> Oct  7 18:16:55 Arktur kernel: ata5.00: error: { UNC }
+> Oct  7 18:16:55 Arktur kernel: ata5.00: configured for UDMA/100
+> Oct  7 18:16:55 Arktur kernel: ata5: EH complete
 > 
-> The corrupt file is a firefox source file
-> (mozilla-central/js/src/tests/e4x/XML/13.4.4.40.js). Interesting thing that I
-> did not touch this file or rebuild firefox for about 3-4 days, so I do not have
-> any idea why it got corrupted suddenly.
+> (repeating every 3 seconds)
 > 
-> When trying to remove the directory containing this file I am getting:
+> The files contain no valuable data (*.mpeg files, reproducable). But how  
+> can I tell the disk not to use the damaged sector(s)?
 > 
-> Oct 10 14:03:13 yukikaze kernel: [ 9836.993172] ------------[ cut here
-> ]------------                                           
-> Oct 10 14:03:13 yukikaze kernel: [ 9836.993261] kernel BUG at
-> fs/btrfs/inode.c:3024!                                           
+> On an ext2/3 system I used "badblocks" - is there some comparable tool  
+> for btrfs?
 
-fixed by:
+No there isn't, but it's a good topic for a btrfs project :)
 
-commit b532402e4d147e4f409c4e7f50d4413e8450101d
-Author: Tsutomu Itoh <t-itoh@jp.fujitsu.com>
-Date:   Tue Jul 19 07:27:20 2011 +0000
-
-    Btrfs: return error to caller when btrfs_unlink() failes
-
-    When btrfs_unlink_inode() and btrfs_orphan_add() in btrfs_unlink()
-    are error, the error code is returned to the caller instead of
-    BUG_ON().
+(I see lots of interesting problems like relocating superblocks, damaged
+allocator structures, ...)
 
 
 david

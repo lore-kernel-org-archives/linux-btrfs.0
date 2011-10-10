@@ -1,60 +1,32 @@
-From: "Helmut Hullen" <Hullen@t-online.de>
-Subject: Re: read error: how to fix?
-Date: 10 Oct 2011 15:28:00 +0200
-Message-ID: <Bv$Fe34y1uB@helmut.hullen.de>
-References: <20111010114809.GH17912@twin.jikos.cz>
-Reply-To: helmut@hullen.de
+From: Kai Krakow <hurikhan77+btrfs@gmail.com>
+Subject: Re: Corrupt file in subvolume
+Date: Mon, 10 Oct 2011 13:55:12 +0200
+Message-ID: <8j2bm8-ob9.ln1@hurikhan.ath.cx>
+References: <loom.20111010T040355-185@post.gmane.org> <20111010103723.GE17912@twin.jikos.cz>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=US-ASCII
+Content-Type: text/plain; charset="ISO-8859-1"
 To: linux-btrfs@vger.kernel.org
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <20111010114809.GH17912@twin.jikos.cz>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hallo, David,
+David Sterba wrote:
 
-Du meintest am 10.10.11:
-
->> Oct  7 18:16:55 Arktur kernel: ata5.00: exception Emask 0x0 SAct 0x0
->> SErr 0x0 action 0x0
->> Oct  7 18:16:55 Arktur kernel: ata5.00: BMDMA2 stat 0x80d2009
->> Oct  7 18:16:55 Arktur kernel: ata5.00: failed command: READ DMA
->> Oct  7 18:16:55 Arktur kernel: ata5.00: cmd
->> c8/00:40:57:d0:34/00:00:00:00:00/ee tag 0 dma 32768 in Oct  7
->> 18:16:55 Arktur kernel:          res
->> 51/40:40:57:d0:34/00:03:0e:00:00/fe Emask 0x9 (media error) Oct  7
->> 18:16:55 Arktur kernel: ata5.00: status: { DRDY ERR } Oct  7
->> 18:16:55 Arktur kernel: ata5.00: error: { UNC } Oct  7 18:16:55
->> Arktur kernel: ata5.00: configured for UDMA/100 Oct  7 18:16:55
->> Arktur kernel: ata5: EH complete
+>> Then I could mount the /home subvolume.
 >>
->> (repeating every 3 seconds)
->>
->> The files contain no valuable data (*.mpeg files, reproducable). But
->> how can I tell the disk not to use the damaged sector(s)?
->>
->> On an ext2/3 system I used "badblocks" - is there some comparable
->> tool for btrfs?
+>> I also found the corrupted file
+>>? -????????? ? ?   ?        ?            ? 13.4.4.40.js
+> 
+> Chromium cache? Somebody recently reported a problem there. I wonder
+> what this browser does to the filesystem ... :)
 
-> No there isn't, but it's a good topic for a btrfs project :)
+If you meant me by "someone": No, my problem was not related to chromium 
+usage - the problems only raised there because of a previous "cp --reflink" 
+issue while I continued browsing. ;-)
 
-> (I see lots of interesting problems like relocating superblocks,
-> damaged allocator structures, ...)
+So it is pure coincidence because browser caches are a probable destination 
+for write access while my system came to a complete halt due to a browsing-
+unrelated file operation (cp --reflink).
 
-I've just worked again with the 2 unreadable files.
+Regards,
+Kai
 
-Copying them to another partition stopped somewhere, one time/file at  
-about 98%, the other time at about 2%.
-
-I had to kill the "cp" order with "killall cp".
-
-The same problem with deleting: I had to use "killall rm". "I'm not  
-amused" ...
-
-And I'm curious what the system will do with the 2 unreadable sectors.  
-In about 1 year I have to add the next 2 TByte disk, with "add" and  
-"balance". Maybe I have to copy the 3-disks cluster to a 4-disks-cluster  
-...
-
-Viele Gruesse!
-Helmut

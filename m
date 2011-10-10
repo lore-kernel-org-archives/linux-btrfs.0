@@ -1,32 +1,60 @@
-From: Theodore Tso <tytso@MIT.EDU>
-Subject: Re: A Plumber???s Wish List for Linux
-Date: Mon, 10 Oct 2011 09:09:37 -0400
-Message-ID: <4C18E3B8-FA7E-4BC1-BE5D-B517004321A2@mit.edu>
-References: <1317943022.1095.25.camel@mop> <20111007111231.6e11d18e@lxorguk.ukuu.org.uk> <CAPXgP12nDB2NX6hZabmkUZA9n0PZadi6Yv70LNms8fz9+MnVoA@mail.gmail.com> <20111007113820.3b8424a8@lxorguk.ukuu.org.uk> <CAPXgP11K4_eVn4_emEYVzCVUsm-BXDyStk7DnDmFpMTL=404Gg@mail.gmail.com> <20111007152137.GE28351@carfax.org.uk> <20111010111813.GF17912@twin.jikos.cz>
-Mime-Version: 1.0 (Apple Message framework v1244.3)
-Content-Type: text/plain; charset=us-ascii
-Cc: Theodore Tso <tytso@mit.edu>, Hugo Mills <hugo-lkml@carfax.org.uk>,
-	Kay Sievers <kay.sievers@vrfy.org>,
-	Alan Cox <alan@lxorguk.ukuu.org.uk>,
-	linux-kernel@vger.kernel.org, lennart@poettering.net,
-	harald@redhat.com, david@fubar.dk, greg@kroah.com,
-	Chris Mason <chris.mason@oracle.com>,
-	Btrfs mailing list <linux-btrfs@vger.kernel.org>
-To: dave@jikos.cz
-Return-path: <linux-kernel-owner@vger.kernel.org>
-In-Reply-To: <20111010111813.GF17912@twin.jikos.cz>
+From: "Helmut Hullen" <Hullen@t-online.de>
+Subject: Re: read error: how to fix?
+Date: 10 Oct 2011 15:28:00 +0200
+Message-ID: <Bv$Fe34y1uB@helmut.hullen.de>
+References: <20111010114809.GH17912@twin.jikos.cz>
+Reply-To: helmut@hullen.de
+Mime-Version: 1.0
+Content-Type: text/plain; charset=US-ASCII
+To: linux-btrfs@vger.kernel.org
+Return-path: <linux-btrfs-owner@vger.kernel.org>
+In-Reply-To: <20111010114809.GH17912@twin.jikos.cz>
 List-ID: <linux-btrfs.vger.kernel.org>
 
+Hallo, David,
 
-On Oct 10, 2011, at 7:18 AM, David Sterba wrote:
+Du meintest am 10.10.11:
 
-> "Resetting the UUID on btrfs isn't a quick-and-easy thing - you have to
-> walk the entire tree and change every object. We've got a bad-hack in
-> meego that uses btrfs-debug-tree and changes the UUID while it runs
-> the entire tree, but it's ugly as hell."
+>> Oct  7 18:16:55 Arktur kernel: ata5.00: exception Emask 0x0 SAct 0x0
+>> SErr 0x0 action 0x0
+>> Oct  7 18:16:55 Arktur kernel: ata5.00: BMDMA2 stat 0x80d2009
+>> Oct  7 18:16:55 Arktur kernel: ata5.00: failed command: READ DMA
+>> Oct  7 18:16:55 Arktur kernel: ata5.00: cmd
+>> c8/00:40:57:d0:34/00:00:00:00:00/ee tag 0 dma 32768 in Oct  7
+>> 18:16:55 Arktur kernel:          res
+>> 51/40:40:57:d0:34/00:03:0e:00:00/fe Emask 0x9 (media error) Oct  7
+>> 18:16:55 Arktur kernel: ata5.00: status: { DRDY ERR } Oct  7
+>> 18:16:55 Arktur kernel: ata5.00: error: { UNC } Oct  7 18:16:55
+>> Arktur kernel: ata5.00: configured for UDMA/100 Oct  7 18:16:55
+>> Arktur kernel: ata5: EH complete
+>>
+>> (repeating every 3 seconds)
+>>
+>> The files contain no valuable data (*.mpeg files, reproducable). But
+>> how can I tell the disk not to use the damaged sector(s)?
+>>
+>> On an ext2/3 system I used "badblocks" - is there some comparable
+>> tool for btrfs?
 
-Changing the UUID is going to be harder for ext4 as well, once we integrate metadata checksums.   So while it makes sense to have on-line ways of updating labels for mounted file systems it probably makes muchness sense to support it for UUIDs.
+> No there isn't, but it's a good topic for a btrfs project :)
 
-I suspect what it means in practice is that it will be useful for file systems to provide fs image copying tools that also generate a new UUID while you're at it, for use by IT administrators and embedded systems manufacturers.
+> (I see lots of interesting problems like relocating superblocks,
+> damaged allocator structures, ...)
 
--- Ted
+I've just worked again with the 2 unreadable files.
+
+Copying them to another partition stopped somewhere, one time/file at  
+about 98%, the other time at about 2%.
+
+I had to kill the "cp" order with "killall cp".
+
+The same problem with deleting: I had to use "killall rm". "I'm not  
+amused" ...
+
+And I'm curious what the system will do with the 2 unreadable sectors.  
+In about 1 year I have to add the next 2 TByte disk, with "add" and  
+"balance". Maybe I have to copy the 3-disks cluster to a 4-disks-cluster  
+...
+
+Viele Gruesse!
+Helmut

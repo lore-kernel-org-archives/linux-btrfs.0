@@ -1,82 +1,110 @@
-From: Jeff Mahoney <jeffm@suse.de>
-Subject: Re: read error: how to fix?
-Date: Mon, 10 Oct 2011 10:07:49 -0400
-Message-ID: <4E92FC35.1040608@suse.de>
-References: <Bv$Fe34y1uB@helmut.hullen.de>
+From: Mitch Harder <mitch.harder@sabayonlinux.org>
+Subject: Re: [PATCH] Btrfs: break out of orphan cleanup if we can't make
+ progress V2
+Date: Mon, 10 Oct 2011 10:08:30 -0500
+Message-ID: <CAKcLGm_Ro1GS0Nkh+Km_AH=2kAwFHbMjO9gS2C9Mq7jpUMrT-Q@mail.gmail.com>
+References: <1317743692-10794-1-git-send-email-josef@redhat.com>
+	<CAKcLGm-XbksMab=qbzN5O15T42OdDg6zERSDfhskuTgueKnA3Q@mail.gmail.com>
+	<20111010002813.GB25337@dhcp231-156.rdu.redhat.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset=ISO-8859-1
-Cc: Helmut Hullen <Hullen@t-online.de>, linux-btrfs@vger.kernel.org
-To: helmut@hullen.de
+Cc: linux-btrfs@vger.kernel.org
+To: Josef Bacik <josef@redhat.com>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <Bv$Fe34y1uB@helmut.hullen.de>
+In-Reply-To: <20111010002813.GB25337@dhcp231-156.rdu.redhat.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
------BEGIN PGP SIGNED MESSAGE-----
-Hash: SHA1
+On Sun, Oct 9, 2011 at 7:28 PM, Josef Bacik <josef@redhat.com> wrote:
+> On Sun, Oct 09, 2011 at 02:14:19PM -0500, Mitch Harder wrote:
+>> On Tue, Oct 4, 2011 at 10:54 AM, Josef Bacik <josef@redhat.com> wrot=
+e:
+>> > I noticed while running xfstests 83 that if we didn't have enough =
+space to
+>> > delete our inode the orphan cleanup would just loop. =A0This is be=
+cause it keeps
+>> > finding the same orphan item and keeps trying to kill it but can't=
+ because we
+>> > don't get an error back from iput for deleting the inode. =A0So ke=
+ep track of the
+>> > last guy we tried to kill, if it's the same as the one we're tryin=
+g to kill
+>> > currently we know we are having problems and can just error out. =A0=
+I don't have a
+>> > way to test this so look hard and make sure it's right. =A0Thanks,
+>> >
+>> > Signed-off-by: Josef Bacik <josef@redhat.com>
+>> > ---
+>> > V1->V2: set last_objectid properly
+>> >
+>> > =A0fs/btrfs/inode.c | =A0 11 +++++++++++
+>> > =A01 files changed, 11 insertions(+), 0 deletions(-)
+>> >
+>> > diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
+>> > index 446531a..595a807 100644
+>> > --- a/fs/btrfs/inode.c
+>> > +++ b/fs/btrfs/inode.c
+>> > @@ -2230,6 +2230,7 @@ int btrfs_orphan_cleanup(struct btrfs_root *=
+root)
+>> > =A0 =A0 =A0 =A0struct btrfs_key key, found_key;
+>> > =A0 =A0 =A0 =A0struct btrfs_trans_handle *trans;
+>> > =A0 =A0 =A0 =A0struct inode *inode;
+>> > + =A0 =A0 =A0 u64 last_objectid =3D 0;
+>> > =A0 =A0 =A0 =A0int ret =3D 0, nr_unlink =3D 0, nr_truncate =3D 0;
+>> >
+>> > =A0 =A0 =A0 =A0if (cmpxchg(&root->orphan_cleanup_state, 0, ORPHAN_=
+CLEANUP_STARTED))
+>> > @@ -2281,6 +2282,16 @@ int btrfs_orphan_cleanup(struct btrfs_root =
+*root)
+>> > =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 * crossing root thing. =A0we store=
+ the inode number in the
+>> > =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 * offset of the orphan item.
+>> > =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 */
+>> > +
+>> > + =A0 =A0 =A0 =A0 =A0 =A0 =A0 if (found_key.offset =3D=3D last_obj=
+ectid) {
+>> > + =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 printk(KERN_ERR "btr=
+fs: Error removing orphan entry, "
+>> > + =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0"stop=
+ping orphan cleanup\n");
+>> > + =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 ret =3D -EINVAL;
+>> > + =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 goto out;
+>> > + =A0 =A0 =A0 =A0 =A0 =A0 =A0 }
+>> > +
+>> > + =A0 =A0 =A0 =A0 =A0 =A0 =A0 last_objectid =3D found_key.offset;
+>> > +
+>> > =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0found_key.objectid =3D found_key.of=
+fset;
+>> > =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0found_key.type =3D BTRFS_INODE_ITEM=
+_KEY;
+>> > =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0found_key.offset =3D 0;
+>> > --
+>> > 1.7.5.2
+>> >
+>>
+>> Just in case it gets lost in the shuffle between github and
+>> git.kernel.org, and also for the benefit of those testing Chris
+>> Mason's integration-test branch on github, please note that version =
+1
+>> of this patch is still in Chris' integration-test branch, as well as
+>> in Josef's github kernel repos (master and for-chris branch only, th=
+e
+>> unstable branch has this version of the patch).
+>
+> I've migrated back to git.kernel.org btw so the right version should =
+be in
+> git.kernel.org. =A0Would it be usefull if I keep up the github tree a=
+s well?
+> Thanks,
+>
+> Josef
+>
 
-On 10/10/2011 09:28 AM, Helmut Hullen wrote:
-> Hallo, David,
-> 
-> Du meintest am 10.10.11:
-> 
->>> Oct  7 18:16:55 Arktur kernel: ata5.00: exception Emask 0x0
->>> SAct 0x0 SErr 0x0 action 0x0 Oct  7 18:16:55 Arktur kernel:
->>> ata5.00: BMDMA2 stat 0x80d2009 Oct  7 18:16:55 Arktur kernel:
->>> ata5.00: failed command: READ DMA Oct  7 18:16:55 Arktur
->>> kernel: ata5.00: cmd c8/00:40:57:d0:34/00:00:00:00:00/ee tag 0
->>> dma 32768 in Oct  7 18:16:55 Arktur kernel:          res 
->>> 51/40:40:57:d0:34/00:03:0e:00:00/fe Emask 0x9 (media error) Oct
->>> 7 18:16:55 Arktur kernel: ata5.00: status: { DRDY ERR } Oct  7 
->>> 18:16:55 Arktur kernel: ata5.00: error: { UNC } Oct  7
->>> 18:16:55 Arktur kernel: ata5.00: configured for UDMA/100 Oct  7
->>> 18:16:55 Arktur kernel: ata5: EH complete
->>> 
->>> (repeating every 3 seconds)
->>> 
->>> The files contain no valuable data (*.mpeg files,
->>> reproducable). But how can I tell the disk not to use the
->>> damaged sector(s)?
->>> 
->>> On an ext2/3 system I used "badblocks" - is there some
->>> comparable tool for btrfs?
-> 
->> No there isn't, but it's a good topic for a btrfs project :)
-> 
->> (I see lots of interesting problems like relocating superblocks, 
->> damaged allocator structures, ...)
-> 
-> I've just worked again with the 2 unreadable files.
-> 
-> Copying them to another partition stopped somewhere, one time/file
-> at about 98%, the other time at about 2%.
-> 
-> I had to kill the "cp" order with "killall cp".
-> 
-> The same problem with deleting: I had to use "killall rm". "I'm not
->  amused" ...
-> 
-> And I'm curious what the system will do with the 2 unreadable
-> sectors. In about 1 year I have to add the next 2 TByte disk, with
-> "add" and "balance". Maybe I have to copy the 3-disks cluster to a
-> 4-disks-cluster ...
+As far as I'm concerned, maintaining multiple public trees isn't necess=
+ary.
 
-I'd try replacing the SATA cable and if that doesn't fix it up, you
-may be out of luck. The thing is that marking sectors bad is a (pretty
-poor) band-aid for a much bigger problem: If you're hitting persistent
-read errors and re-writing the blocks doesn't fix it, your disk is
-already close to being completely kaput and no amount of software is
-going to help with that.
-
-- -Jeff
-
-- -- 
-Jeff Mahoney
-SUSE Labs
------BEGIN PGP SIGNATURE-----
-Version: GnuPG v2.0.18 (GNU/Linux)
-Comment: Using GnuPG with Mozilla - http://enigmail.mozdev.org/
-
-iEYEARECAAYFAk6S/DUACgkQLPWxlyuTD7LSXgCfZDTgMjg4mc/cbRBZeYLbmlKS
-A08An0DoPONviCz64sYq9H9HL3Xt0ywZ
-=p/lR
------END PGP SIGNATURE-----
+I just wanted to make sure this patch wasn't lost in the shuffle.
+--
+To unsubscribe from this list: send the line "unsubscribe linux-btrfs" =
+in
+the body of a message to majordomo@vger.kernel.org
+More majordomo info at  http://vger.kernel.org/majordomo-info.html

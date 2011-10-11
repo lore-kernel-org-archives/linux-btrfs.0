@@ -1,40 +1,119 @@
-From: Jeff Liu <jeff.liu@oracle.com>
-Subject: Re: Test Trim
-Date: Tue, 11 Oct 2011 16:06:15 +0800
-Message-ID: <4E93F8F7.4090704@oracle.com>
-References: <CAAeznTpywAkHPc5kqnS7nqxf24Bg1OXohsDfVoWo=aBDvOcK6A@mail.gmail.com>
-Reply-To: jeff.liu@oracle.com
+From: Christian Brunner <chb@muc.de>
+Subject: Re: WARNING: at fs/btrfs/inode.c:2114
+Date: Tue, 11 Oct 2011 11:21:34 +0200
+Message-ID: <CAO47_--SRZK752VK-qJPXiCgcY-MrEfD-5zkT2PHF1RNt5iv1Q@mail.gmail.com>
+References: <CAO47_--qdKE0z6maQCpD2xh+RY+ZvyRVKxDF0c3iqBA6pafkZQ@mail.gmail.com>
+	<CAO47_-9rk-4muJ0+qMcyd_wmGyToFRp7VN5G1hfhZmmCGLNWDg@mail.gmail.com>
+	<4E93A417.9040001@cn.fujitsu.com>
+Reply-To: chb@muc.de
 Mime-Version: 1.0
 Content-Type: text/plain; charset=ISO-8859-1
 Cc: linux-btrfs@vger.kernel.org
-To: Leonidas Spyropoulos <artafinde@gmail.com>
+To: Liu Bo <liubo2009@cn.fujitsu.com>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <CAAeznTpywAkHPc5kqnS7nqxf24Bg1OXohsDfVoWo=aBDvOcK6A@mail.gmail.com>
+In-Reply-To: <4E93A417.9040001@cn.fujitsu.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hi Leonidas,
+2011/10/11 Liu Bo <liubo2009@cn.fujitsu.com>:
+> On 10/10/2011 12:41 AM, Christian Brunner wrote:
+>> I just realized that this is still the same warning I reported some =
+month ago.
+>>
+>> I thought that this had been fixed with
+>>
+>> 25d37af374263243214be9d912cbb46a8e469bc7
+>>
+>> which is included in the kernel I'm using. So I think there must be
+>> another Problem.
+>>
+>
+> Would you try with this patch:
+>
+> http://marc.info/?l=3Dlinux-btrfs&m=3D131547325515336&w=3D2
+>
 
-On 10/11/2011 03:35 PM, Leonidas Spyropoulos wrote:
+This one is already included in my tree.
 
-> Hello list,
-> 
-> Is there a small script to test if TRIM is working on my system?
-
-Zefan has replied a similar question at below link, hope it could be
-useful to you.
-http://permalink.gmane.org/gmane.comp.file-systems.btrfs/13018
-
-Thanks,
--Jeff
-
-> 
-> Also what about defrag? Is it recommended and how importatnt? Can I
-> check if I need it?
-> 
-> I am on a linux Arch distribution with linux 3 and btrfs root fs
-> 
-> Thanks in advance
-> Leonidas
-> 
+Regards,
+Christian
 
 
+>> 2011/10/9 Christian Brunner <chb@muc.de>:
+>>> I gave btrfs "for-chris" from josef's github repo a try in our ceph
+>>> cluster. During the rebuild I git the following warning.
+>>>
+>>> Everything still seems to work... Should I be concerned?
+>>>
+>>> Thanks,
+>>> Christian
+>>>
+>>> [12554.886362] ------------[ cut here ]------------
+>>> [12554.891693] WARNING: at fs/btrfs/inode.c:2114
+>>> btrfs_orphan_commit_root+0xb0/0xc0 [btrfs]()
+>>> [12554.901210] Hardware name: ProLiant DL180 G6
+>>> [12554.906338] Modules linked in: btrfs zlib_deflate libcrc32c bond=
+ing
+>>> ipv6 pcspkr serio_raw ghes hed iTCO_wdt iTCO_vendor_support
+>>> i7core_edac edac_core ixgbe dca mdio iomemory_vsl(P) hpsa squashfs
+>>> [last unloaded: scsi_wait_scan]
+>>> [12554.930791] Pid: 4686, comm: flush-btrfs-1 Tainted: P
+>>> 3.0.6-1.fits.1.el6.x86_64 #1
+>>> [12554.940483] Call Trace:
+>>> [12554.943400] =A0[<ffffffff8106344f>] warn_slowpath_common+0x7f/0x=
+c0
+>>> [12554.950378] =A0[<ffffffff810634aa>] warn_slowpath_null+0x1a/0x20
+>>> [12554.957070] =A0[<ffffffffa022be60>] btrfs_orphan_commit_root+0xb=
+0/0xc0 [btrfs]
+>>> [12554.965301] =A0[<ffffffffa0226c45>] commit_fs_roots+0xc5/0x1b0 [=
+btrfs]
+>>> [12554.972571] =A0[<ffffffff815593d1>] ? mutex_lock+0x31/0x60
+>>> [12554.978652] =A0[<ffffffffa0207a5a>] ? btrfs_free_path+0x2a/0x40 =
+[btrfs]
+>>> [12554.986017] =A0[<ffffffffa0227b96>]
+>>> btrfs_commit_transaction+0x3c6/0x830 [btrfs]
+>>> [12554.994256] =A0[<ffffffffa0228115>] ? join_transaction+0x25/0x25=
+0 [btrfs]
+>>> [12555.001814] =A0[<ffffffff81086410>] ? wake_up_bit+0x40/0x40
+>>> [12555.008061] =A0[<ffffffffa022b35b>] btrfs_write_inode+0xbb/0xc0 =
+[btrfs]
+>>> [12555.015490] =A0[<ffffffff81184c71>] writeback_single_inode+0x201=
+/0x260
+>>> [12555.022879] =A0[<ffffffff81184f6b>] writeback_sb_inodes+0xeb/0x1=
+c0
+>>> [12555.029721] =A0[<ffffffff8118532f>] wb_writeback+0x18f/0x480
+>>> [12555.036031] =A0[<ffffffff81558105>] ? __schedule+0x3f5/0x8b0
+>>> [12555.042295] =A0[<ffffffff81072f3c>] ? lock_timer_base+0x3c/0x70
+>>> [12555.048860] =A0[<ffffffff811856bd>] wb_do_writeback+0x9d/0x270
+>>> [12555.055384] =A0[<ffffffff81073060>] ? del_timer+0xf0/0xf0
+>>> [12555.061375] =A0[<ffffffff81185932>] bdi_writeback_thread+0xa2/0x=
+280
+>>> [12555.068375] =A0[<ffffffff81185890>] ? wb_do_writeback+0x270/0x27=
+0
+>>> [12555.075203] =A0[<ffffffff81185890>] ? wb_do_writeback+0x270/0x27=
+0
+>>> [12555.081971] =A0[<ffffffff81085d96>] kthread+0x96/0xa0
+>>> [12555.087582] =A0[<ffffffff815639c4>] kernel_thread_helper+0x4/0x1=
+0
+>>> [12555.094338] =A0[<ffffffff81085d00>] ? kthread_worker_fn+0x1a0/0x=
+1a0
+>>> [12555.101296] =A0[<ffffffff815639c0>] ? gs_change+0x13/0x13
+>>> [12555.107290] ---[ end trace 57ec2e8544131a12 ]---
+>>>
+>> --
+>> To unsubscribe from this list: send the line "unsubscribe linux-btrf=
+s" in
+>> the body of a message to majordomo@vger.kernel.org
+>> More majordomo info at =A0http://vger.kernel.org/majordomo-info.html
+>>
+>
+> --
+> To unsubscribe from this list: send the line "unsubscribe linux-btrfs=
+" in
+> the body of a message to majordomo@vger.kernel.org
+> More majordomo info at =A0http://vger.kernel.org/majordomo-info.html
+>
+--
+To unsubscribe from this list: send the line "unsubscribe linux-btrfs" =
+in
+the body of a message to majordomo@vger.kernel.org
+More majordomo info at  http://vger.kernel.org/majordomo-info.html

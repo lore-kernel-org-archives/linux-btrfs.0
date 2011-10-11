@@ -1,63 +1,38 @@
-From: Mitch Harder <mitch.harder@sabayonlinux.org>
-Subject: Re: [PATCH] Btrfs: allow us to overcommit our enospc reservations
- TEST THIS PLEASE!!!
-Date: Tue, 11 Oct 2011 15:45:45 -0500
-Message-ID: <CAKcLGm-y5on_dWjaNdSARd5_K5nri0G9zuMZAsV19ecuYmXH9g@mail.gmail.com>
-References: <1317072155-26792-1-git-send-email-josef@redhat.com>
-	<CAKcLGm_oFQOCCeFs69ohGfskkCj1FSbdxL18653ANoTX75n4SQ@mail.gmail.com>
-	<20111011190049.GG2293@localhost.localdomain>
-	<CAKcLGm-JU1e4ssv9FQTieX-OmHgbc6hef8Rnsy_R7Jy3RwsznA@mail.gmail.com>
-	<20111011200131.GH2293@localhost.localdomain>
+From: Chester <somethingsome2000@gmail.com>
+Subject: Re: defrag makes fragmentation worse
+Date: Tue, 11 Oct 2011 15:47:31 -0500
+Message-ID: <CAAE6i0h6QZGmLoFUPgouHTeC0FYvHPgbODXHEthaL5p4mLruVQ@mail.gmail.com>
+References: <CAAE6i0gReLmmqvi3HXAAzjR6jgTScuqRwmdnUsEk0bY9yaCPHQ@mail.gmail.com>
+ <4E93E000.1000700@cn.fujitsu.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset=ISO-8859-1
-Cc: linux-btrfs@vger.kernel.org
-To: Josef Bacik <josef@redhat.com>
+Cc: linux-btrfs <linux-btrfs@vger.kernel.org>
+To: Li Zefan <lizf@cn.fujitsu.com>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <20111011200131.GH2293@localhost.localdomain>
+In-Reply-To: <4E93E000.1000700@cn.fujitsu.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Tue, Oct 11, 2011 at 3:01 PM, Josef Bacik <josef@redhat.com> wrote:
-> On Tue, Oct 11, 2011 at 02:44:09PM -0500, Mitch Harder wrote:
->> On Tue, Oct 11, 2011 at 2:00 PM, Josef Bacik <josef@redhat.com> wrot=
-e:
->> > On Tue, Oct 11, 2011 at 12:33:48PM -0500, Mitch Harder wrote:
->> >> On Mon, Sep 26, 2011 at 4:22 PM, Josef Bacik <josef@redhat.com> w=
-rote:
->> >> >
->> >> > go from taking around 45 minutes to 10 seconds on my freshly fo=
-rmatted 3 TiB
->> >> > file system. =A0This doesn't seem to break my other enospc test=
-s, but could really
->> >> > use some more testing as this is a super scary change. =A0Thank=
-s,
->> >> >
->> >>
->> >> I've been testing Josef's git.kernel.org testing tree, and I've
->> >> bisected an error down to this commit.
->> >>
->> >> I'm triggering the error using a removedirs benchmark in filebenc=
-h
->> >> with the following profile:
->> >> load removedirs
->> >> set $dir=3D/mnt/benchmark/filebench
->> >> set $ndirs=3D400000
->> >> run
->> >>
->> >
->> > Ok try this one, it will write out more and harder, see if that he=
-lps. =A0Thanks,
->> >
->>
->> Still running into BUG at fs/btrfs/inode.c:2176!
+On Tue, Oct 11, 2011 at 1:19 AM, Li Zefan <lizf@cn.fujitsu.com> wrote:
+> Was any process doing heavy I/O work while you were defragging the file?
 >
-> How about this one?
+> Could you try to remount the fs without autodefrag, and defrag
+> the file again? Firstly let's see if autodefrag makes things worse.
 >
 
-Sorry, still getting the same bug.
+As far as I can tell, autodefrag seems to be making it worse.
 
-[  175.956273] kernel BUG at fs/btrfs/inode.c:2176!
---
-To unsubscribe from this list: send the line "unsubscribe linux-btrfs" =
-in
-the body of a message to majordomo@vger.kernel.org
-More majordomo info at  http://vger.kernel.org/majordomo-info.html
+I turned off autodefrag but btrfs fi defrag is still having some
+trouble defragmenting highly fragmented files. For example, when I
+defragment a ~400mb file with 3 extents, it does a nice job and turns
+it into 1 extent.
+
+However, for more fragmented files (of the same size) say with 1k-2k
+extents, the defrag utility has a hard time. It either reduces the
+number of extents by a very small amount or it doesn't change at all.
+I decided to run btrfs fi defrag on the same file again just to make
+sure nothing else can be done, but after running it again, the number
+of extents in that file actually DOUBLED! But this isn't as bad as
+when autodefrag is on, where extents can increase by 20x
+
+tl;dr: with autodefrag off, btrfs fi defrag isn't nearly as
+counter-productive as it is with autodefrag on.

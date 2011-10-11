@@ -1,47 +1,30 @@
-From: Josef Bacik <josef@redhat.com>
-Subject: Re: fixing slow sync(2)
-Date: Tue, 11 Oct 2011 09:38:35 -0400
-Message-ID: <20111011133834.GA2293@localhost.localdomain>
-References: <4E906B1F.6010609@dbservice.com>
- <20111008153553.GA25337@dhcp231-156.rdu.redhat.com>
- <CAE=-PDhvddavk9DyyF07gi0uq=a+WfGbXN89r28SRK9SYPaZfA@mail.gmail.com>
-Mime-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Cc: Josef Bacik <josef@redhat.com>, Tomas Carnecky <tom@dbservice.com>,
-	linux-btrfs@vger.kernel.org
-To: John <jello@waste.org>
-Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <CAE=-PDhvddavk9DyyF07gi0uq=a+WfGbXN89r28SRK9SYPaZfA@mail.gmail.com>
+From: Chris Mason <chris.mason@oracle.com>
+Subject: [GIT PULL] Two small btrfs fixes
+Date: Tue, 11 Oct 2011 13:27:43 -0400
+Message-ID: <1318353941-sup-6080@shiny>
+Content-Type: text/plain; charset=UTF-8
+To: "Linus Torvalds" <torvalds@linux-foundation.org>,
+	"linux-btrfs" <linux-btrfs@vger.kernel.org>,
+	"LKML" <linux-kernel@vger.kernel.org>
+Return-path: <linux-kernel-owner@vger.kernel.org>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Mon, Oct 10, 2011 at 09:34:12PM -0500, John wrote:
-> On Sat, Oct 8, 2011 at 10:35 AM, Josef Bacik <josef@redhat.com> wrote:
-> 
-> >
-> > I think I fixed this, try my git tree
-> >
-> > git://git.kernel.org/pub/scm/linux/kernel/git/josef/btrfs-work.git
-> >
-> > Let me know if it helps.  And what are you doing when you call sync?  I've
-> > not
-> > been able to reproduce this problem so I'm having a hard time nailing down
-> > what
-> > it is, so if I can get a reliable way to reproduce it I'll try and figure
-> > it
-> > out.  Thanks,
-> >
-> 
-> I've been seeing very slow syncs (and unmounts) and this helps. Under 3.0.0
-> if I mounted the FS (which is 200G, about 97G used with ~720 snapshots) it
-> took about 3 minutes 40 seconds. If I did another sync right away it took
-> the same amount of time. With a kernel compiled from your repo the first
-> time I sync it takes about 1 minute, as soon as I sync a btrfs-endio-met
-> and btrfs-cache-0 process show up in top and a lot of IO happens. Once those
-> go away (which takes a couple minutes) then it takes well under a second. If
-> I unmount and remount it acts exactly the same. Will those changes be up in
-> 3.1 or 3.2? If you want me to test anything else, I'm happy to do so.
-> 
+Hi Linus,
 
-They'll show up in 3.2.  Thanks for testing,
+Li Zefan hit some problems with looping in the btrfs autodefrag mode.
 
-Josef
+These two commits are in the btrfs-3.0 branch:
+
+git://github.com/chrismason/linux.git btrfs-3.0
+
+
+Chris Mason (1) commits (+3/-1):
+    Btrfs: make sure not to defrag extents past i_size
+
+Li Zefan (1) commits (+7/-0):
+    Btrfs: fix recursive auto-defrag
+
+Total: (2) commits (+10/-1)
+
+ fs/btrfs/ioctl.c |   11 ++++++++++-
+ 1 files changed, 10 insertions(+), 1 deletions(-)

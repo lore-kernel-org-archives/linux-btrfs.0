@@ -1,55 +1,36 @@
-From: Martin Steigerwald <Martin@lichtvoll.de>
-Subject: Re: Honest timeline for btrfsck
-Date: Wed, 12 Oct 2011 16:41:55 +0200
-Message-ID: <201110121641.55974.Martin@lichtvoll.de>
-References: <CAGh96GFhVEfXt=xcb-uGEBA3Ss2fc8BwOpJ2g8tXbm+VimdH3Q@mail.gmail.com> <4E8F1D38.7030202@snappymail.ca> <20111007192728.5e79f1e0@atmarama.noip.me> (sfid-20111007_195513_485840_ACEC3426)
-Mime-Version: 1.0
-Content-Type: Text/Plain; charset=iso-8859-1
-To: linux-btrfs@vger.kernel.org
+From: Chris Mason <chris.mason@oracle.com>
+Subject: Re: defrag makes fragmentation worse
+Date: Wed, 12 Oct 2011 11:14:31 -0400
+Message-ID: <1318432450-sup-2940@shiny>
+References: <CAAE6i0gReLmmqvi3HXAAzjR6jgTScuqRwmdnUsEk0bY9yaCPHQ@mail.gmail.com> <4E93E000.1000700@cn.fujitsu.com> <CAAE6i0h6QZGmLoFUPgouHTeC0FYvHPgbODXHEthaL5p4mLruVQ@mail.gmail.com> <CAAE6i0j=7ZoYnXsmNdWewmszSpaq4HLcy+M7--3s2hiy2p4TBA@mail.gmail.com> <4E94FD75.6040307@cn.fujitsu.com> <CAAE6i0jdDn8i+yKEu5ytaGGkxbrg74PZU4LJRQjeTmBoFVKvpw@mail.gmail.com>
+Content-Type: text/plain; charset=UTF-8
+Cc: Li Zefan <lizf@cn.fujitsu.com>,
+	linux-btrfs <linux-btrfs@vger.kernel.org>
+To: Chester <somethingsome2000@gmail.com>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <20111007192728.5e79f1e0@atmarama.noip.me>
+In-reply-to: <CAAE6i0jdDn8i+yKEu5ytaGGkxbrg74PZU4LJRQjeTmBoFVKvpw@mail.gmail.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Am Freitag, 7. Oktober 2011 schrieb Gour-Gadadhara Dasa:
-> On Fri, 07 Oct 2011 08:39:36 -0700
->=20
-> Mike <ipso@snappymail.ca> wrote:
-> > I also don't think you are giving people enough credit. e2fsck will
-> > cause corruption pretty much everytime its run on a mounted file
-> > system, but a nice big nasty warning message seems to handle that
-> > quite well and anyone who ignores it, well thats their own fault, n=
-ot
->=20
-> > the developers:
-> +1
+Excerpts from Chester's message of 2011-10-12 00:14:21 -0400:
+> On Tue, Oct 11, 2011 at 9:37 PM, Li Zefan <lizf@cn.fujitsu.com> wrote:
+> >
+> >
+> > This confirmed my speculation. I've fixed this bug a month ago, but
+> > the patch hasn't hitted mainline.
+> >
+> > You can try it out:
+> >
+> > http://marc.info/?l=linux-btrfs&m=131495014823121&w=2
+> >
+> > With this bug fixed, I think autodefrag won't be problematic.
+> >
+> > --
+> > Li Zefan
+> 
+> Yup. That patch fixes it for me. Thanks.
 
-Even if its a thousand +1 following, it seems to me that its perfectly=20
-Chris Masons decision...
+Thanks guys,
 
-Chris seems to have some ideas on when to release the fsck. So what do =
-you=20
-think you achieve by asking for its release again and again? It won=B4t=
-=20
-happen anytime sooner unless you happen to find the holy mantra that=20
-convinces Chris to release it now. I bet thats unlikely.
+This patch is queued up now for the next release (3.2)
 
-So its either do an fsck for yourself or wait...
-
-BTRFS is still experimental software...
-
-I do not argue that having a nice fsck sooner than later is fine, but I=
-=20
-question the usefulness of repeating reminders. Chris Mason and other=20
-developers possibly working on the fsck should know by now, that you wa=
-nt=20
-it. So its unlikely that "I want it too" is going to change anything.
-
-Ciao,
---=20
-Martin 'Helios' Steigerwald - http://www.Lichtvoll.de
-GPG: 03B0 0D6C 0040 0710 4AFA  B82F 991B EAAC A599 84C7
---
-To unsubscribe from this list: send the line "unsubscribe linux-btrfs" =
-in
-the body of a message to majordomo@vger.kernel.org
-More majordomo info at  http://vger.kernel.org/majordomo-info.html
+-chris

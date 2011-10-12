@@ -1,36 +1,55 @@
-From: Chris Mason <chris.mason@oracle.com>
-Subject: Re: defrag makes fragmentation worse
-Date: Wed, 12 Oct 2011 11:14:31 -0400
-Message-ID: <1318432450-sup-2940@shiny>
-References: <CAAE6i0gReLmmqvi3HXAAzjR6jgTScuqRwmdnUsEk0bY9yaCPHQ@mail.gmail.com> <4E93E000.1000700@cn.fujitsu.com> <CAAE6i0h6QZGmLoFUPgouHTeC0FYvHPgbODXHEthaL5p4mLruVQ@mail.gmail.com> <CAAE6i0j=7ZoYnXsmNdWewmszSpaq4HLcy+M7--3s2hiy2p4TBA@mail.gmail.com> <4E94FD75.6040307@cn.fujitsu.com> <CAAE6i0jdDn8i+yKEu5ytaGGkxbrg74PZU4LJRQjeTmBoFVKvpw@mail.gmail.com>
-Content-Type: text/plain; charset=UTF-8
-Cc: Li Zefan <lizf@cn.fujitsu.com>,
-	linux-btrfs <linux-btrfs@vger.kernel.org>
-To: Chester <somethingsome2000@gmail.com>
+From: "Fajar A. Nugraha" <list@fajar.net>
+Subject: Re: btrfs-progs: new integration branch out
+Date: Wed, 12 Oct 2011 22:22:45 +0700
+Message-ID: <CAG1y0sdm17RGcqVRakE6355iicsSmQ9vF23Kw9h5jm+7C22Fyw@mail.gmail.com>
+References: <20111012123411.GC21931@carfax.org.uk>
+Mime-Version: 1.0
+Content-Type: text/plain; charset=ISO-8859-1
+To: Hugo Mills <hugo@carfax.org.uk>,
+	Btrfs mailing list <linux-btrfs@vger.kernel.org>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-reply-to: <CAAE6i0jdDn8i+yKEu5ytaGGkxbrg74PZU4LJRQjeTmBoFVKvpw@mail.gmail.com>
+In-Reply-To: <20111012123411.GC21931@carfax.org.uk>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Excerpts from Chester's message of 2011-10-12 00:14:21 -0400:
-> On Tue, Oct 11, 2011 at 9:37 PM, Li Zefan <lizf@cn.fujitsu.com> wrote:
-> >
-> >
-> > This confirmed my speculation. I've fixed this bug a month ago, but
-> > the patch hasn't hitted mainline.
-> >
-> > You can try it out:
-> >
-> > http://marc.info/?l=linux-btrfs&m=131495014823121&w=2
-> >
-> > With this bug fixed, I think autodefrag won't be problematic.
-> >
-> > --
-> > Li Zefan
-> 
-> Yup. That patch fixes it for me. Thanks.
+On Wed, Oct 12, 2011 at 7:34 PM, Hugo Mills <hugo@carfax.org.uk> wrote:
+> =A0 Fixes or updated patches for any problems you may find are
+> welcomed, of course.
 
-Thanks guys,
+I noticed that "btrfs subvolume snapshot" is now broken. It keeps on
+saying "Invalid arguments for subvolume snapshot".
 
-This patch is queued up now for the next release (3.2)
+=46urther checking shows it's caused by
 
--chris
+commit f71210f87e0c684d8c76dfa2e19ea86256fc3d1f
+Author: Andreas Philipp <philipp.andreas@gmail.com>
+Date:   Thu Aug 11 08:45:40 2011 +0200
+
+    check number of args for btrfs sub snap correctly
+
+    Check whether there are the right number of arguments (exatly 2 wit=
+hout
+    the flag -r) in the subcommand handler for the btrfs subvolume snap=
+shot
+    command.
+
+
+
+changing
+
+       if (argc - optind !=3D 3) {
+
+back to
+
+       if (argc - optind !=3D 2) {
+
+makes the snapshot creation works again, tested both with and without
+"-r" on Ubuntu Natty + kernel 3.1.0-rc9. I reverted that commit for my
+system for now.
+
+--=20
+=46ajar
+--
+To unsubscribe from this list: send the line "unsubscribe linux-btrfs" =
+in
+the body of a message to majordomo@vger.kernel.org
+More majordomo info at  http://vger.kernel.org/majordomo-info.html

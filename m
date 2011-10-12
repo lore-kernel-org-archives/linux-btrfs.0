@@ -1,40 +1,37 @@
 From: Ilya Dryomov <idryomov@gmail.com>
-Subject: [PATCH] Btrfs: fix a bug when opening seed devices
-Date: Thu, 13 Oct 2011 00:20:43 +0300
-Message-ID: <1318454443-24685-1-git-send-email-idryomov@gmail.com>
+Subject: [PATCH] Btrfs: remove dead code block
+Date: Thu, 13 Oct 2011 00:21:37 +0300
+Message-ID: <1318454497-25244-1-git-send-email-idryomov@gmail.com>
 Cc: Chris Mason <chris.mason@oracle.com>, idryomov@gmail.com
 To: linux-btrfs@vger.kernel.org
 Return-path: <linux-btrfs-owner@vger.kernel.org>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Initialize fs_info->bdev_holder a bit earlier to be able to pass a
-correct holder id to blkdev_get() when opening seed devices with O_EXCL.
+This has been effectively unreachable for years, btrfs_read_dev_super()
+implements this check earlier in the mount sequence.
 
 Signed-off-by: Ilya Dryomov <idryomov@gmail.com>
 ---
- fs/btrfs/super.c |    2 +-
- 1 files changed, 1 insertions(+), 1 deletions(-)
+ fs/btrfs/disk-io.c |    6 ------
+ 1 files changed, 0 insertions(+), 6 deletions(-)
 
-diff --git a/fs/btrfs/super.c b/fs/btrfs/super.c
-index 15634d4..d965b85 100644
---- a/fs/btrfs/super.c
-+++ b/fs/btrfs/super.c
-@@ -833,6 +833,7 @@ static struct dentry *btrfs_mount(struct file_system_type *fs_type, int flags,
+diff --git a/fs/btrfs/disk-io.c b/fs/btrfs/disk-io.c
+index 07b3ac6..ebf99ee 100644
+--- a/fs/btrfs/disk-io.c
++++ b/fs/btrfs/disk-io.c
+@@ -1910,12 +1910,6 @@ struct btrfs_root *open_ctree(struct super_block *sb,
+ 	sb->s_blocksize = sectorsize;
+ 	sb->s_blocksize_bits = blksize_bits(sectorsize);
  
- 		s->s_flags = flags | MS_NOSEC;
- 		strlcpy(s->s_id, bdevname(bdev, b), sizeof(s->s_id));
-+		btrfs_sb(s)->fs_info->bdev_holder = fs_type;
- 		error = btrfs_fill_super(s, fs_devices, data,
- 					 flags & MS_SILENT ? 1 : 0);
- 		if (error) {
-@@ -840,7 +841,6 @@ static struct dentry *btrfs_mount(struct file_system_type *fs_type, int flags,
- 			goto error_free_subvol_name;
- 		}
- 
--		btrfs_sb(s)->fs_info->bdev_holder = fs_type;
- 		s->s_flags |= MS_ACTIVE;
- 	}
- 
+-	if (strncmp((char *)(&disk_super->magic), BTRFS_MAGIC,
+-		    sizeof(disk_super->magic))) {
+-		printk(KERN_INFO "btrfs: valid FS not found on %s\n", sb->s_id);
+-		goto fail_sb_buffer;
+-	}
+-
+ 	mutex_lock(&fs_info->chunk_mutex);
+ 	ret = btrfs_read_sys_array(tree_root);
+ 	mutex_unlock(&fs_info->chunk_mutex);
 -- 
 1.7.5.4
 

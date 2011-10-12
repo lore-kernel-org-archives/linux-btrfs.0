@@ -1,53 +1,32 @@
 From: "Fajar A. Nugraha" <list@fajar.net>
-Subject: Re: btrfs-progs: new integration branch out
-Date: Wed, 12 Oct 2011 23:52:35 +0700
-Message-ID: <CAG1y0scXYR65qUVN1wkRYpUMV1E7DC=Kbf31L2hA-uWGN+BqaQ@mail.gmail.com>
-References: <20111012123411.GC21931@carfax.org.uk>
-	<CAG1y0sdm17RGcqVRakE6355iicsSmQ9vF23Kw9h5jm+7C22Fyw@mail.gmail.com>
-	<CAKcLGm_KAaumCLY+aO4suh=J6tcY85ktSMhAxq+av0G1gDw6+w@mail.gmail.com>
+Subject: Re: Could I create volumes on one device ?
+Date: Thu, 13 Oct 2011 00:00:43 +0700
+Message-ID: <CAG1y0sfETeaYKAUsdwPLE4Lb=egQs3FvDsxD3JrHf7Nr+ZGFhA@mail.gmail.com>
+References: <1318438269.56248.YahooMailNeo@web74112.mail.tp2.yahoo.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset=ISO-8859-1
-To: Btrfs mailing list <linux-btrfs@vger.kernel.org>
+To: "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <CAKcLGm_KAaumCLY+aO4suh=J6tcY85ktSMhAxq+av0G1gDw6+w@mail.gmail.com>
+In-Reply-To: <1318438269.56248.YahooMailNeo@web74112.mail.tp2.yahoo.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Wed, Oct 12, 2011 at 11:50 PM, Mitch Harder
-<mitch.harder@sabayonlinux.org> wrote:
-> On Wed, Oct 12, 2011 at 10:22 AM, Fajar A. Nugraha <list@fajar.net> w=
-rote:
+On Wed, Oct 12, 2011 at 11:51 PM, bbsposters <bbsposters@yahoo.com.tw> wrote:
+> Hi list,
+> I want to create volumes (not subvolumes) on one device.
+> Could it work?
+> If it works, how can I do by btrfs tools ?
+> If it can't, is there any way to create subvolumes which have their independent space?
+> For example, I want to create 100MB for /home and 50 MB for /root.
+> thanks,
 
->> I noticed that "btrfs subvolume snapshot" is now broken. It keeps on
->> saying "Invalid arguments for subvolume snapshot".
->>
->> Further checking shows it's caused by
->>
->> commit f71210f87e0c684d8c76dfa2e19ea86256fc3d1f
->> Author: Andreas Philipp <philipp.andreas@gmail.com>
->> Date: =A0 Thu Aug 11 08:45:40 2011 +0200
->>
->> =A0 =A0check number of args for btrfs sub snap correctly
+Short version: No. For that particular purpose, currently you'd better
+stick with wither LVM+ext4 or zfs.
 
->
-> It looks like there have been two patches that touched on this issue,
-> and they conflicted with one-another.
->
-> Arne Jansen's "btrfs-progs: add qgroup commands" patch added a "optin=
-d
-> =3D 1;" line, where optind was defaulting to zero before.
->
-> This conflicted with Hugo Mills"fix incorrect argument checking for
-> "btrfs sub snap -r"" patch.
->
-> So it looks like "(argc - optind !=3D 2)" is now correct.
->
+Long version: IIRC Arne Jansen posted patches for subvolume/qgroup
+quota support, so it can be used for what you need, up to a certain
+degree. It's not as complete as zfs (which also supports reservation
+in addition to quota), and it hasn't reached upstream kernel yet (at
+least it's not in 3.1-rc9).
 
-Ah, that explains it then. Thanks.
-
---=20
-=46ajar
---
-To unsubscribe from this list: send the line "unsubscribe linux-btrfs" =
-in
-the body of a message to majordomo@vger.kernel.org
-More majordomo info at  http://vger.kernel.org/majordomo-info.html
+-- 
+Fajar

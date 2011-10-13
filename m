@@ -1,349 +1,232 @@
-From: Francesco Riosa <vivo75@gmail.com>
-Subject: Re: Honest timeline for btrfsck
-Date: Thu, 13 Oct 2011 14:57:01 +0200
-Message-ID: <CAD6zcDwMPOg=T5mPLZhSC6us-c_YLne1TfJog=taCSzdMtzqsQ@mail.gmail.com>
-References: <201109101209.40759.Martin@lichtvoll.de>
-	<CA+JuuGrvCTP=o8umQHQV968tMSfJzxAFOfnGO2RKV3RU4_Vshw@mail.gmail.com>
-	<20111005061628.GA3702@shiny.elevennetworks.com>
-	<CA+JuuGoG1rhQ9S+vfa17BKdekp-A1UeNHqeYEwxfg=Co3Ts_pQ@mail.gmail.com>
-	<20111005145843.GA4770@shiny.elevennetworks.com>
-	<CA+JuuGq8ODcFDh_KEy3YL_pVJ1=zKDX1SD_9Ou_tHpR4XGhwgQ@mail.gmail.com>
-	<m239f550cp.fsf@firstfloor.org>
-	<CAD6zcDxvXTZPOO-bXRfuMVWqOGbz8QdfHk=p0LT6Dequb9pmAg@mail.gmail.com>
-	<4E8F119C.70006@redhat.com>
-	<CAD6zcDyyQH0h34SO8724d07GXr+4=LqZga4NNDr8Zokk7eHNjA@mail.gmail.com>
-	<20111012135323.GA2302@localhost.localdomain>
+From: Josef Bacik <josef@redhat.com>
+Subject: Re: [PATCH] Btrfs: allow us to overcommit our enospc reservations
+ TEST THIS PLEASE!!!
+Date: Thu, 13 Oct 2011 08:57:47 -0400
+Message-ID: <20111013125746.GA2310@localhost.localdomain>
+References: <1317072155-26792-1-git-send-email-josef@redhat.com>
+ <CAKcLGm_oFQOCCeFs69ohGfskkCj1FSbdxL18653ANoTX75n4SQ@mail.gmail.com>
+ <20111011190049.GG2293@localhost.localdomain>
+ <CAKcLGm-JU1e4ssv9FQTieX-OmHgbc6hef8Rnsy_R7Jy3RwsznA@mail.gmail.com>
+ <20111011200131.GH2293@localhost.localdomain>
+ <CAKcLGm-y5on_dWjaNdSARd5_K5nri0G9zuMZAsV19ecuYmXH9g@mail.gmail.com>
+ <20111012175047.GA14280@localhost.localdomain>
+ <CAKcLGm_MMzv0rK169pZJyHu4r2=6xXBE0OjxcoLZVzLMkf3evg@mail.gmail.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=ISO-8859-1
-Cc: Jeff Putney <jeffrey.putney@gmail.com>,
-	Chris Mason <chris.mason@oracle.com>,
-	linux-btrfs <linux-btrfs@vger.kernel.org>
-To: Josef Bacik <josef@redhat.com>
+Content-Type: text/plain; charset=iso-8859-1
+Cc: Josef Bacik <josef@redhat.com>, linux-btrfs@vger.kernel.org
+To: Mitch Harder <mitch.harder@sabayonlinux.org>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <20111012135323.GA2302@localhost.localdomain>
+In-Reply-To: <CAKcLGm_MMzv0rK169pZJyHu4r2=6xXBE0OjxcoLZVzLMkf3evg@mail.gmail.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-2011/10/12 Josef Bacik <josef@redhat.com>:
-> On Tue, Oct 11, 2011 at 11:21:45PM +0200, Francesco Riosa wrote:
->> 2011/10/7 Josef Bacik <josef@redhat.com>:
->> > On 10/06/2011 04:56 PM, Francesco Riosa wrote:
->> >> 2011/10/6 Andi Kleen <andi@firstfloor.org>:
->> >>> Jeff Putney <jeffrey.putney@gmail.com> writes:
->> >>>>
->> >>>> http://en.wikipedia.org/wiki/Release_early,_release_often
->> >>>
->> >>> Well the other principle in free software you're forgetting
->> >>> is:
->> >>>
->> >>> "It will be released when it's ready"
->> >>>
->> >>> If you don't like Chris' ways to do releases you're free to writ=
-e
->> >>> something on your own or pay someone to do so. Otherwise
->> >>> you just have to deal with his time frames, as shifty
->> >>> as they may be.
->> >>
->> >> I did a different thing, I've offered Chris money to help rescue =
-an
->> >> hosed btrfs or to point to someone who could do, we ended in doin=
-g
->> >> some tests (for free) but nothing else materialized.
->> >> While the time passed has diminished the value of the data to be
->> >> rescued I'm more on the "show us some code we can start from" tha=
-n "it
->> >> will be released when ready" vagon.
->> >>
->> >
->> > If you still need that data, clone this repo
->> >
->> > git://github.com/josefbacik/btrfs-progs.git
->> >
->> > run make, and then run
->> >
->> > ./restore /dev/whatever /some/dir
->> >
->> > and it will try and suck all of your data off the disk and dump it=
- in
->> > that directory. =A0If you have snapshots it will skip them by defa=
-ult, so
->> > if you have snapshots that have useful data in them you'll want to=
- use
->> > the -s option. =A0If you run into random errors that you think are
->> > recoverable, or if you don't care about the file that's being reco=
-vered,
->> > you can run with -i which will ignore errors and keep trying to re=
-cover
->> > your files. =A0Thanks,
->> >
->> > Josef
->> >
->>
->> I've tried, w/o luck
->>
->> explanation come from 2011-06-21 thread;
->> http://thread.gmane.org/gmane.comp.file-systems.btrfs/11435
->> the following refer to a copy of that system
->>
->> Label: space02 =A0uuid: f752def1-1abc-48c7-8ebb-47ba37b8ffa6
->> =A0 =A0 =A0 =A0 Total devices 7 FS bytes used 173.12GB
->> =A0 =A0 =A0 =A0 devid =A0 =A06 size 488.94GB used 60.25GB path /dev/=
-sdd7
->> =A0 =A0 =A0 =A0 devid =A0 =A02 size 487.65GB used 58.76GB path /dev/=
-sdd8
->> =A0 =A0 =A0 =A0 devid =A0 =A07 size 487.65GB used 0.00 path =A0 =A0/=
-dev/sdf7
->> =A0 =A0 =A0 =A0 devid =A0 =A03 size 487.65GB used 60.26GB path /dev/=
-sdf8
->> =A0 =A0 =A0 =A0 devid =A0 =A07 size 487.65GB used 1.50GB path =A0/de=
-v/sdg7
->> =A0 =A0 =A0 =A0 devid =A0 =A05 size 488.94GB used 58.75GB path /dev/=
-sdb7
->> =A0 =A0 =A0 =A0 devid =A0 =A04 size 487.65GB used 60.26GB path /dev/=
-sdb8
->>
->> # ./restore /dev/sdd7 /tmp/restore
->> failed to read /dev/sr0
->> failed to read /dev/sr0
->> restore: volumes.c:1367: btrfs_read_sys_array: Assertion `!(ret)' fa=
-iled.
->> Aborted
->>
->
-> So this is kind of a problem since you have multiple disks. =A0We may=
-be could get
-> away with ignoring a failure, but the problem is if you have data on =
-a disk
-> where we couldn't read the chunk then the chances are we won't be abl=
-e to map
-> that file and read the data off. =A0That being said, theres no harm i=
-n trying ;).
-> Can you make btrfs_read_sys_array complain about failing, but not act=
-ually BUG?
-> See if that helps you. =A0Thanks,
->
-> Josef
->
+On Wed, Oct 12, 2011 at 03:45:04PM -0500, Mitch Harder wrote:
+> On Wed, Oct 12, 2011 at 12:50 PM, Josef Bacik <josef@redhat.com> wrot=
+e:
+> > On Tue, Oct 11, 2011 at 03:45:45PM -0500, Mitch Harder wrote:
+> >> On Tue, Oct 11, 2011 at 3:01 PM, Josef Bacik <josef@redhat.com> wr=
+ote:
+> >> > On Tue, Oct 11, 2011 at 02:44:09PM -0500, Mitch Harder wrote:
+> >> >> On Tue, Oct 11, 2011 at 2:00 PM, Josef Bacik <josef@redhat.com>=
+ wrote:
+> >> >> > On Tue, Oct 11, 2011 at 12:33:48PM -0500, Mitch Harder wrote:
+> >> >> >> On Mon, Sep 26, 2011 at 4:22 PM, Josef Bacik <josef@redhat.c=
+om> wrote:
+> >> >> >> >
+> >> >> >> > go from taking around 45 minutes to 10 seconds on my fresh=
+ly formatted 3 TiB
+> >> >> >> > file system. =A0This doesn't seem to break my other enospc=
+ tests, but could really
+> >> >> >> > use some more testing as this is a super scary change. =A0=
+Thanks,
+> >> >> >> >
+> >> >> >>
+> >> >> >> I've been testing Josef's git.kernel.org testing tree, and I=
+'ve
+> >> >> >> bisected an error down to this commit.
+> >> >> >>
+> >> >> >> I'm triggering the error using a removedirs benchmark in fil=
+ebench
+> >> >> >> with the following profile:
+> >> >> >> load removedirs
+> >> >> >> set $dir=3D/mnt/benchmark/filebench
+> >> >> >> set $ndirs=3D400000
+> >> >> >> run
+> >> >> >>
+> >> >> >
+> >> >> > Ok try this one, it will write out more and harder, see if th=
+at helps. =A0Thanks,
+> >> >> >
+> >> >>
+> >> >> Still running into BUG at fs/btrfs/inode.c:2176!
+> >> >
+> >> > How about this one?
+> >> >
+> >>
+> >> Sorry, still getting the same bug.
+> >>
+> >> [ =A0175.956273] kernel BUG at fs/btrfs/inode.c:2176!
+> >
+> > Ok I think I see what's happening, this patch replaces the previous=
+ one, let me
+> > know how it goes. =A0Thanks,
+> >
+>=20
+> Getting a slightly different BUG this time:
+>=20
 
-I've tried replacing the "BUG_ON(ret);" to printk("FAILED!!! %d\n", ret=
-);
-the diff of the result is reported at the bottom.
+Ok looks like I've fixed the original problem and now we're hitting a p=
+roblem
+with the free space cache.  This patch will replace the last one, its a=
+ll the
+fixes up to now and a new set of BUG_ON()'s to figure out which free sp=
+ace cache
+inode is screwing us up.  Thanks,
 
-diff -u5  btrfs-progs.log btrfs-progs2.log
---- btrfs-progs.log =A0 =A0 2011-10-11 23:01:56.985577874 +0200+++
-btrfs-progs2.log =A0 =A02011-10-13 14:29:48.498033330 +0200@@ -115,11
-+98,11 @@
-=A0int btrfs_scan_one_device(int fd=3D4, *path=3D/dev/loop5, struct
-btrfs_fs_devices **fs_devices_ret, u64 *total_devs=3D2, u64
-super_offset=3D65536)=A0int btrfs_scan_one_device(int fd=3D4,
-*path=3D/dev/loop0, struct btrfs_fs_devices **fs_devices_ret, u64
-*total_devs=3D2, u64 super_offset=3D65536)=A0int btrfs_scan_one_device(=
-int
-fd=3D4, *path=3D/dev/loop3, struct btrfs_fs_devices **fs_devices_ret, u=
-64
-*total_devs=3D2, u64 super_offset=3D65536)=A0int btrfs_scan_one_device(=
-int
-fd=3D4, *path=3D/dev/loop2, struct btrfs_fs_devices **fs_devices_ret, u=
-64
-*total_devs=3D2, u64 super_offset=3D65536)=A0int btrfs_scan_one_device(=
-int
-fd=3D4, *path=3D/dev/loop1, struct btrfs_fs_devices **fs_devices_ret, u=
-64
-*total_devs=3D2, u64 super_offset=3D65536)-int btrfs_scan_one_device(in=
-t
-fd=3D3, *path=3D/dev/sdd8, struct btrfs_fs_devices **fs_devices_ret, u6=
-4
-*total_devs=3D139870728973573, u64 super_offset=3D65536)
+Josef
 
- =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0=
- =A0 =A0 =A0 =A0 =A0 =A0 =A0+int
-btrfs_scan_one_device(int fd=3D3, *path=3D/dev/sdd8, struct
-btrfs_fs_devices **fs_devices_ret, u64 *total_devs=3D139871521856773,
-u64 super_offset=3D65536)
 
-=A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0=A0static int device_list_ad=
-d(const char *path,
-struct btrfs_super_block *disk_super, u64 devid, struct
-btrfs_fs_devices **fs_devices_ret)=A0static struct btrfs_fs_devices
-*find_fsid(u8 *fsid)=A0static struct btrfs_device *__find_device(struct
-list_head *head, u64 devid, u8 *uuid=A0int btrfs_scan_one_device(int
-fd=3D5, *path=3D/dev/sdb8, struct btrfs_fs_devices **fs_devices_ret, u6=
-4
-*total_devs=3D15306741171905079, u64 super_offset=3D65536)=A0static int
-device_list_add(const char *path, struct btrfs_super_block
-*disk_super, u64 devid, struct btrfs_fs_devices **fs_devices_ret)@@
--222,11 +205,40 @@=A0int btrfs_scan_one_device(int fd=3D5,
-*path=3D/dev/loop2, struct btrfs_fs_devices **fs_devices_ret, u64
-*total_devs=3D2, u64 super_offset=3D65536)=A0int btrfs_scan_one_device(=
-int
-fd=3D5, *path=3D/dev/loop1, struct btrfs_fs_devices **fs_devices_ret, u=
-64
-*total_devs=3D2, u64 super_offset=3D65536)=A0int btrfs_open_devices(str=
-uct
-btrfs_fs_devices *fs_devices, int flags)=A0int
-btrfs_read_sys_array(struct btrfs_root *root)=A0static int
-read_one_chunk(struct btrfs_root *root, struct btrfs_key *key,...-
-leaf 65536 items 0 free space 3995 generation 604315930624 owner
-20979712- =A0fs uuid f752def1-1abc-48c7-8ebb-47ba37b8ffa6- =A0chunk uui=
-d
-5f424852-6653-5f4d-318e-0b0000000000+--- btrfs_print_tree(root, leaf,
-0);+leaf 65536 items 0 free space 3995 generation 604315930624 owner
-20979712+fs uuid f752def1-1abc-48c7-8ebb-47ba37b8ffa6+chunk uuid
-5f424852-6653-5f4d-318e-0b0000000000+struct btrfs_device
-*btrfs_find_device(struct btrfs_root *root, u64 devid,+static struct
-btrfs_device *__find_device(struct list_head *head, u64 devid, u8
-*uuid+FAILED!!! -5+static int read_one_chunk(struct btrfs_root *root,
-struct btrfs_key *key,...+--- btrfs_print_tree(root, leaf, 0);+leaf
-65536 items 0 free space 3995 generation 604315930624 owner
-20979712+fs uuid f752def1-1abc-48c7-8ebb-47ba37b8ffa6+chunk uuid
-5f424852-6653-5f4d-318e-0b0000000000+struct btrfs_device
-*btrfs_find_device(struct btrfs_root *root, u64 devid,+static struct
-btrfs_device *__find_device(struct list_head *head, u64 devid, u8
-*uuid+struct btrfs_device *btrfs_find_device(struct btrfs_root *root,
-u64 devid,+static struct btrfs_device *__find_device(struct list_head
-*head, u64 devid, u8 *uuid+struct btrfs_device
-*btrfs_find_device(struct btrfs_root *root, u64 devid,+static struct
-btrfs_device *__find_device(struct list_head *head, u64 devid, u8
-*uuid+struct btrfs_device *btrfs_find_device(struct btrfs_root *root,
-u64 devid,+static struct btrfs_device *__find_device(struct list_head
-*head, u64 devid, u8 *uuid+FAILED!!! -5+static int
-read_one_chunk(struct btrfs_root *root, struct btrfs_key *key,...+---
-btrfs_print_tree(root, leaf, 0);+leaf 65536 items 0 free space 3995
-generation 604315930624 owner 20979712+fs uuid
-f752def1-1abc-48c7-8ebb-47ba37b8ffa6+chunk uuid
-5f424852-6653-5f4d-318e-0b0000000000+struct btrfs_device
-*btrfs_find_device(struct btrfs_root *root, u64 devid,+static struct
-btrfs_device *__find_device(struct list_head *head, u64 devid, u8
-*uuid+struct btrfs_device *btrfs_find_device(struct btrfs_root *root,
-u64 devid,+static struct btrfs_device *__find_device(struct list_head
-*head, u64 devid, u8 *uuid=A0struct btrfs_device
-*btrfs_find_device(struct btrfs_root *root, u64 devid,=A0static struct
-btrfs_device *__find_device(struct list_head *head, u64 devid, u8
-*uuid-restore: volumes.c:1397: btrfs_read_sys_array: Assertion
-`!(ret)' failed.+FAILED!!! -5+int btrfs_map_block(struct
-btrfs_mapping_tree *map_tree, int rw,...+restore: volumes.c:988:
-btrfs_map_block: Assertion `!(!ce)' failed.>hom>viv>tmp colordiff -u5
-btrfs-progs.log btrfs-progs2.log--- btrfs-progs.log =A0 =A0 2011-10-11
-23:01:56.985577874 +0200+++ btrfs-progs2.log =A0 =A02011-10-13
-14:29:48.498033330 +0200@@ -1,22 +1,5 @@-Label: space02 =A0uuid:
-f752def1-1abc-48c7-8ebb-47ba37b8ffa6- =A0 =A0 =A0 =A0Total devices 7 FS=
- bytes
-used 173.12GB- =A0 =A0 =A0 =A0devid =A0 =A06 size 488.94GB used 60.25GB=
- path
-/dev/sdd7- =A0 =A0 =A0 =A0devid =A0 =A02 size 487.65GB used 58.76GB pat=
-h
-/dev/sdd8- =A0 =A0 =A0 =A0devid =A0 =A07 size 487.65GB used 0.00 path
-/dev/sdf7- =A0 =A0 =A0 =A0devid =A0 =A03 size 487.65GB used 60.26GB pat=
-h
-/dev/sdf8- =A0 =A0 =A0 =A0devid =A0 =A07 size 487.65GB used 1.50GB path
-/dev/sdg7- =A0 =A0 =A0 =A0devid =A0 =A05 size 488.94GB used 58.75GB pat=
-h
-/dev/sdb7- =A0 =A0 =A0 =A0devid =A0 =A04 size 487.65GB used 60.26GB pat=
-h
-/dev/sdb8--# ./restore /dev/sdd7 /tmp/restore-failed to read
-/dev/sr0-failed to read /dev/sr0-restore: volumes.c:1367:
-btrfs_read_sys_array: Assertion `!(ret)' failed.-Aborted--=A0int
-btrfs_scan_one_device(int fd=3D3, *path=3D/dev/sdd8, struct
-btrfs_fs_devices **fs_devices_ret, u64 *total_devs=3D1, u64
-super_offset=3D65536)=A0static int device_list_add(const char *path,
-struct btrfs_super_block *disk_super, u64 devid, struct
-btrfs_fs_devices **fs_devices_ret)=A0static struct btrfs_fs_devices
-*find_fsid(u8 *fsid)=A0int btrfs_scan_one_device(int fd=3D4,
-*path=3D/dev/sdb8, struct btrfs_fs_devices **fs_devices_ret, u64
-*total_devs=3D134816, u64 super_offset=3D65536)=A0static int
-device_list_add(const char *path, struct btrfs_super_block
-*disk_super, u64 devid, struct btrfs_fs_devices **fs_devices_ret)@@
--115,11 +98,11 @@=A0int btrfs_scan_one_device(int fd=3D4,
-*path=3D/dev/loop5, struct btrfs_fs_devices **fs_devices_ret, u64
-*total_devs=3D2, u64 super_offset=3D65536)=A0int btrfs_scan_one_device(=
-int
-fd=3D4, *path=3D/dev/loop0, struct btrfs_fs_devices **fs_devices_ret, u=
-64
-*total_devs=3D2, u64 super_offset=3D65536)=A0int btrfs_scan_one_device(=
-int
-fd=3D4, *path=3D/dev/loop3, struct btrfs_fs_devices **fs_devices_ret, u=
-64
-*total_devs=3D2, u64 super_offset=3D65536)=A0int btrfs_scan_one_device(=
-int
-fd=3D4, *path=3D/dev/loop2, struct btrfs_fs_devices **fs_devices_ret, u=
-64
-*total_devs=3D2, u64 super_offset=3D65536)=A0int btrfs_scan_one_device(=
-int
-fd=3D4, *path=3D/dev/loop1, struct btrfs_fs_devices **fs_devices_ret, u=
-64
-*total_devs=3D2, u64 super_offset=3D65536)-int btrfs_scan_one_device(in=
-t
-fd=3D3, *path=3D/dev/sdd8, struct btrfs_fs_devices **fs_devices_ret, u6=
-4
-*total_devs=3D139870728973573, u64 super_offset=3D65536)
-
- =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0=
- =A0 =A0 =A0 =A0 =A0 =A0 =A0+int
-btrfs_scan_one_device(int fd=3D3, *path=3D/dev/sdd8, struct
-btrfs_fs_devices **fs_devices_ret, u64 *total_devs=3D139871521856773,
-u64 super_offset=3D65536)
-
-=A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0=A0static int device_list_ad=
-d(const char *path,
-struct btrfs_super_block *disk_super, u64 devid, struct
-btrfs_fs_devices **fs_devices_ret)=A0static struct btrfs_fs_devices
-*find_fsid(u8 *fsid)=A0static struct btrfs_device *__find_device(struct
-list_head *head, u64 devid, u8 *uuid=A0int btrfs_scan_one_device(int
-fd=3D5, *path=3D/dev/sdb8, struct btrfs_fs_devices **fs_devices_ret, u6=
-4
-*total_devs=3D15306741171905079, u64 super_offset=3D65536)=A0static int
-device_list_add(const char *path, struct btrfs_super_block
-*disk_super, u64 devid, struct btrfs_fs_devices **fs_devices_ret)@@
--222,11 +205,40 @@=A0int btrfs_scan_one_device(int fd=3D5,
-*path=3D/dev/loop2, struct btrfs_fs_devices **fs_devices_ret, u64
-*total_devs=3D2, u64 super_offset=3D65536)=A0int btrfs_scan_one_device(=
-int
-fd=3D5, *path=3D/dev/loop1, struct btrfs_fs_devices **fs_devices_ret, u=
-64
-*total_devs=3D2, u64 super_offset=3D65536)=A0int btrfs_open_devices(str=
-uct
-btrfs_fs_devices *fs_devices, int flags)=A0int
-btrfs_read_sys_array(struct btrfs_root *root)=A0static int
-read_one_chunk(struct btrfs_root *root, struct btrfs_key *key,...-
-leaf 65536 items 0 free space 3995 generation 604315930624 owner
-20979712- =A0fs uuid f752def1-1abc-48c7-8ebb-47ba37b8ffa6- =A0chunk uui=
-d
-5f424852-6653-5f4d-318e-0b0000000000+--- btrfs_print_tree(root, leaf,
-0);+leaf 65536 items 0 free space 3995 generation 604315930624 owner
-20979712+fs uuid f752def1-1abc-48c7-8ebb-47ba37b8ffa6+chunk uuid
-5f424852-6653-5f4d-318e-0b0000000000+struct btrfs_device
-*btrfs_find_device(struct btrfs_root *root, u64 devid,+static struct
-btrfs_device *__find_device(struct list_head *head, u64 devid, u8
-*uuid+FAILED!!! -5+static int read_one_chunk(struct btrfs_root *root,
-struct btrfs_key *key,...+--- btrfs_print_tree(root, leaf, 0);+leaf
-65536 items 0 free space 3995 generation 604315930624 owner
-20979712+fs uuid f752def1-1abc-48c7-8ebb-47ba37b8ffa6+chunk uuid
-5f424852-6653-5f4d-318e-0b0000000000+struct btrfs_device
-*btrfs_find_device(struct btrfs_root *root, u64 devid,+static struct
-btrfs_device *__find_device(struct list_head *head, u64 devid, u8
-*uuid+struct btrfs_device *btrfs_find_device(struct btrfs_root *root,
-u64 devid,+static struct btrfs_device *__find_device(struct list_head
-*head, u64 devid, u8 *uuid+struct btrfs_device
-*btrfs_find_device(struct btrfs_root *root, u64 devid,+static struct
-btrfs_device *__find_device(struct list_head *head, u64 devid, u8
-*uuid+struct btrfs_device *btrfs_find_device(struct btrfs_root *root,
-u64 devid,+static struct btrfs_device *__find_device(struct list_head
-*head, u64 devid, u8 *uuid+FAILED!!! -5+static int
-read_one_chunk(struct btrfs_root *root, struct btrfs_key *key,...+---
-btrfs_print_tree(root, leaf, 0);+leaf 65536 items 0 free space 3995
-generation 604315930624 owner 20979712+fs uuid
-f752def1-1abc-48c7-8ebb-47ba37b8ffa6+chunk uuid
-5f424852-6653-5f4d-318e-0b0000000000+struct btrfs_device
-*btrfs_find_device(struct btrfs_root *root, u64 devid,+static struct
-btrfs_device *__find_device(struct list_head *head, u64 devid, u8
-*uuid+struct btrfs_device *btrfs_find_device(struct btrfs_root *root,
-u64 devid,+static struct btrfs_device *__find_device(struct list_head
-*head, u64 devid, u8 *uuid=A0struct btrfs_device
-*btrfs_find_device(struct btrfs_root *root, u64 devid,=A0static struct
-btrfs_device *__find_device(struct list_head *head, u64 devid, u8
-*uuid-restore: volumes.c:1397: btrfs_read_sys_array: Assertion
-`!(ret)' failed.+FAILED!!! -5+int btrfs_map_block(struct
-btrfs_mapping_tree *map_tree, int rw,...+restore: volumes.c:988:
-btrfs_map_block: Assertion `!(!ce)' failed.
+diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
+index fc0de68..e595372 100644
+--- a/fs/btrfs/extent-tree.c
++++ b/fs/btrfs/extent-tree.c
+@@ -3334,7 +3334,7 @@ out:
+  * shrink metadata reservation for delalloc
+  */
+ static int shrink_delalloc(struct btrfs_trans_handle *trans,
+-			   struct btrfs_root *root, u64 to_reclaim, int sync)
++			   struct btrfs_root *root, u64 to_reclaim, int retries)
+ {
+ 	struct btrfs_block_rsv *block_rsv;
+ 	struct btrfs_space_info *space_info;
+@@ -3365,12 +3365,10 @@ static int shrink_delalloc(struct btrfs_trans_h=
+andle *trans,
+ 	}
+=20
+ 	max_reclaim =3D min(reserved, to_reclaim);
++	if (max_reclaim > (2 * 1024 * 1024))
++		nr_pages =3D max_reclaim >> PAGE_CACHE_SHIFT;
+=20
+ 	while (loops < 1024) {
+-		/* have the flusher threads jump in and do some IO */
+-		smp_mb();
+-		nr_pages =3D min_t(unsigned long, nr_pages,
+-		       root->fs_info->delalloc_bytes >> PAGE_CACHE_SHIFT);
+ 		writeback_inodes_sb_nr_if_idle(root->fs_info->sb, nr_pages);
+=20
+ 		spin_lock(&space_info->lock);
+@@ -3384,14 +3382,22 @@ static int shrink_delalloc(struct btrfs_trans_h=
+andle *trans,
+ 		if (reserved =3D=3D 0 || reclaimed >=3D max_reclaim)
+ 			break;
+=20
+-		if (trans && trans->transaction->blocked)
++		if (trans)
+ 			return -EAGAIN;
+=20
+-		time_left =3D schedule_timeout_interruptible(1);
++		if (!retries) {
++			time_left =3D schedule_timeout_interruptible(1);
+=20
+-		/* We were interrupted, exit */
+-		if (time_left)
+-			break;
++			/* We were interrupted, exit */
++			if (time_left)
++				break;
++		} else {
++			/*
++			 * We've already done this song and dance once, let's
++			 * really wait for some work to get done.
++			 */
++			btrfs_wait_ordered_extents(root, 0, 0);
++		}
+=20
+ 		/* we've kicked the IO a few times, if anything has been freed,
+ 		 * exit.  There is no sense in looping here for a long time
+@@ -3399,15 +3405,13 @@ static int shrink_delalloc(struct btrfs_trans_h=
+andle *trans,
+ 		 * just too many writers without enough free space
+ 		 */
+=20
+-		if (loops > 3) {
++		if (!retries && loops > 3) {
+ 			smp_mb();
+ 			if (progress !=3D space_info->reservation_progress)
+ 				break;
+ 		}
+=20
+ 	}
+-	if (reclaimed < to_reclaim && !trans)
+-		btrfs_wait_ordered_extents(root, 0, 0);
+ 	return reclaimed >=3D to_reclaim;
+ }
+=20
+@@ -3552,7 +3556,7 @@ again:
+ 	 * We do synchronous shrinking since we don't actually unreserve
+ 	 * metadata until after the IO is completed.
+ 	 */
+-	ret =3D shrink_delalloc(trans, root, num_bytes, 1);
++	ret =3D shrink_delalloc(trans, root, num_bytes, retries);
+ 	if (ret < 0)
+ 		goto out;
+=20
+@@ -3568,17 +3572,6 @@ again:
+ 		goto again;
+ 	}
+=20
+-	/*
+-	 * Not enough space to be reclaimed, don't bother committing the
+-	 * transaction.
+-	 */
+-	spin_lock(&space_info->lock);
+-	if (space_info->bytes_pinned < orig_bytes)
+-		ret =3D -ENOSPC;
+-	spin_unlock(&space_info->lock);
+-	if (ret)
+-		goto out;
+-
+ 	ret =3D -EAGAIN;
+ 	if (trans)
+ 		goto out;
+diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
+index d6ba353..cb63904 100644
+--- a/fs/btrfs/inode.c
++++ b/fs/btrfs/inode.c
+@@ -782,7 +782,8 @@ static noinline int cow_file_range(struct inode *in=
+ode,
+ 	struct extent_map_tree *em_tree =3D &BTRFS_I(inode)->extent_tree;
+ 	int ret =3D 0;
+=20
+-	BUG_ON(btrfs_is_free_space_inode(root, inode));
++	BUG_ON(root =3D=3D root->fs_info->tree_root);
++	BUG_ON(BTRFS_I(inode)->location.objectid =3D=3D BTRFS_FREE_INO_OBJECT=
+ID);
+ 	trans =3D btrfs_join_transaction(root);
+ 	BUG_ON(IS_ERR(trans));
+ 	trans->block_rsv =3D &root->fs_info->delalloc_block_rsv;
+@@ -2790,7 +2791,8 @@ static struct btrfs_trans_handle *__unlink_start_=
+trans(struct inode *dir,
+ 		return ERR_PTR(-ENOMEM);
+ 	}
+=20
+-	trans =3D btrfs_start_transaction(root, 0);
++	/* 1 for the orphan item */
++	trans =3D btrfs_start_transaction(root, 1);
+ 	if (IS_ERR(trans)) {
+ 		btrfs_free_path(path);
+ 		root->fs_info->enospc_unlink =3D 0;
+@@ -2901,6 +2903,11 @@ out:
+ 		return ERR_PTR(err);
+ 	}
+=20
++	ret =3D btrfs_block_rsv_migrate(trans->block_rsv,
++				      &root->fs_info->global_block_rsv,
++				      btrfs_calc_trans_metadata_size(root, 1));
++	BUG_ON(ret);
++
+ 	trans->block_rsv =3D &root->fs_info->global_block_rsv;
+ 	return trans;
+ }
 --
 To unsubscribe from this list: send the line "unsubscribe linux-btrfs" =
 in

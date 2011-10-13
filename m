@@ -1,56 +1,54 @@
-From: Hugo Mills <hugo@carfax.org.uk>
+From: Roman Mamedov <rm@romanrm.ru>
 Subject: Re: is space really freed after deleting large subvolume?
-Date: Thu, 13 Oct 2011 17:21:04 +0100
-Message-ID: <20111013162104.GG21931@carfax.org.uk>
+Date: Thu, 13 Oct 2011 22:29:44 +0600
+Message-ID: <20111013222944.16efb3f3@natsu>
 References: <CAJ1PRSmDmd4mrUaQAhjCt1SMtVaBVxq3dCVjCuT20Y4Wf+Ch+Q@mail.gmail.com>
 Mime-Version: 1.0
-Content-Type: multipart/signed; micalg=pgp-sha1;
-	protocol="application/pgp-signature"; boundary="6BvahUXLYAruDZOj"
+Content-Type: multipart/signed; micalg=PGP-SHA1;
+ boundary="Sig_/C=mYzFShFA8vpUssd=s4hUn"; protocol="application/pgp-signature"
 Cc: linux-btrfs@vger.kernel.org
 To: "krzf83@gmail.com " <krzf83@gmail.com>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
 In-Reply-To: <CAJ1PRSmDmd4mrUaQAhjCt1SMtVaBVxq3dCVjCuT20Y4Wf+Ch+Q@mail.gmail.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
+--Sig_/C=mYzFShFA8vpUssd=s4hUn
+Content-Type: text/plain; charset=US-ASCII
+Content-Transfer-Encoding: quoted-printable
 
---6BvahUXLYAruDZOj
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
+On Thu, 13 Oct 2011 18:14:03 +0200
+"krzf83@gmail.com " <krzf83@gmail.com> wrote:
 
-On Thu, Oct 13, 2011 at 06:14:03PM +0200, krzf83@gmail.com  wrote:
 > I'm wondering is space really freed after deleting large subvolume?
-
-   Yes, although if you have snapshots, you may not recover very much
-space, as [some of] the data on the subvolume may still be in use by
-other snapshots.
-
 > Will space be immediately available to other data like other
 > subvolumes?
 
-   No, subvolume deletion is done in the background, and the space
-recovered will be returned for use relatively slowly. This is because
-the FS has to go through the metadata, updating reference counts for
-each extent in the subvolume to work out whether the space can be
-recovered or not.
+Currently there seems to be no way to ensure it is instantly available, or =
+to be precise, the only way to get that is to unmount the FS and mount it a=
+gain. Not sync, not "btrfs fi sync" ensure that all cleanup is complete bef=
+ore they return. Only umount does, and it can take a very long time if you =
+have deleted a large (differing a lot) subvolume just before that.
 
-   Hugo.
+--=20
+With respect,
+Roman
 
--- 
-=== Hugo Mills: hugo@... carfax.org.uk | darksatanic.net | lug.org.uk ===
-  PGP key: 515C238D from wwwkeys.eu.pgp.net or http://www.carfax.org.uk
-    --- Klytus! Are your men on the right pills? Maybe you should ---    
-                         execute their trainer!                          
+~~~~~~~~~~~~~~~~~~~~~~~~~~~
+"Stallman had a printer,
+with code he could not see.
+So he began to tinker,
+and set the software free."
 
---6BvahUXLYAruDZOj
-Content-Type: application/pgp-signature; name="signature.asc"
-Content-Description: Digital signature
+--Sig_/C=mYzFShFA8vpUssd=s4hUn
+Content-Type: application/pgp-signature; name=signature.asc
+Content-Disposition: attachment; filename=signature.asc
 
 -----BEGIN PGP SIGNATURE-----
 Version: GnuPG v1.4.11 (GNU/Linux)
 
-iD8DBQFOlw/wIKyzvlFcI40RAtvXAJ9UWkykEguJDof8XQmqVSa3CIIsrwCgzYlp
-lRIkpja4qa8fJipEwAafZIY=
-=/zSd
+iEYEARECAAYFAk6XEfgACgkQTLKSvz+PZwhSvQCdHyTwdYYzkYX6P23o/0FbRF68
+/TUAn3BqQul8W7MIg9+J45eqCM8vDIcd
+=l3GW
 -----END PGP SIGNATURE-----
 
---6BvahUXLYAruDZOj--
+--Sig_/C=mYzFShFA8vpUssd=s4hUn--

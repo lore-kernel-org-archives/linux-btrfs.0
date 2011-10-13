@@ -1,37 +1,68 @@
-From: Calvin Walton <calvin.walton@kepstin.ca>
-Subject: Re: Test Trim
-Date: Wed, 12 Oct 2011 20:47:10 -0400
-Message-ID: <1318466830.2208.4.camel@nayuki.kepstin.ca>
-References: <CAAeznTpywAkHPc5kqnS7nqxf24Bg1OXohsDfVoWo=aBDvOcK6A@mail.gmail.com>
+From: Dave Chinner <david@fromorbit.com>
+Subject: Re: [PATCH 1/3] 263: Functional test case for the btrfs snapshot
+Date: Thu, 13 Oct 2011 11:56:52 +1100
+Message-ID: <20111013005652.GM3159@dastard>
+References: <4E3BA2F7.4080500@oracle.com>
+ <1318395174-4075-1-git-send-email-Anand.Jain@oracle.com>
+ <1318395174-4075-2-git-send-email-Anand.Jain@oracle.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="UTF-8"
-Cc: linux-btrfs@vger.kernel.org
-To: Leonidas Spyropoulos <artafinde@gmail.com>
-Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <CAAeznTpywAkHPc5kqnS7nqxf24Bg1OXohsDfVoWo=aBDvOcK6A@mail.gmail.com>
+Content-Type: text/plain; charset=us-ascii
+Cc: hch@infradead.org, linux-fsdevel@vger.kernel.org,
+	linux-btrfs@vger.kernel.org, xfs@oss.sgi.com,
+	chris.mason@oracle.com
+To: Anand Jain <Anand.Jain@oracle.com>
+Return-path: <linux-fsdevel-owner@vger.kernel.org>
+In-Reply-To: <1318395174-4075-2-git-send-email-Anand.Jain@oracle.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Tue, 2011-10-11 at 08:35 +0100, Leonidas Spyropoulos wrote:
-> Hello list,
-> 
-> Is there a small script to test if TRIM is working on my system?
-> 
-> Also what about defrag? Is it recommended and how importatnt? Can I
-> check if I need it?
+On Wed, Oct 12, 2011 at 12:52:52PM +0800, Anand Jain wrote:
+> Create snapshots in various ways, modify the data around the block and
+> file boundaries and verify the data integrity.
+....
 
-If you're asking about TRIM, then you're probably using btrfs on an SSD.
-On an SSD, the defrag may help somewhat - due to reducing the number of
-extents that a file is stored in, causing fewer, larger reads. But the
-random read speed of a good SSD is high enough that unless a file is
-really, severely fragmented, you probably won't notice.
+> +
+> +# Create Dir tree and files in it.
+> +# arg1 basedir
+> +# arg2 dir depth
+> +# arg3 nfile_min
+> +# arg4 nfile_max
+> +# arg5 fsize_min
+> +# arg6 fsize_max
+> +_fillfs()
+> +{
+> +	umask 000
+> +	local j
+> +	local i
+> +	local DIRP
+> +	local FCNT
+> +	local FILEP
+> +	local SCNT
+> +	local BCNT
+> +	DIRP=$6
+> +	for ((j=0; j<$1; j++)); do
+> +		DIRP=`mktemp -dq $DIRP/dir.XXXXXX`
+> +		FCNT=$(_rand_range $2 $3)
+> +		for ((i=0; i<$FCNT; i++)); do
+> +			FILEP=`mktemp -q $DIRP/file.XXXXXX`
+> +			SCNT=$(_rand_range $4 $5)
+> +			dd if=/dev/urandom of=$FILEP bs=$SCNT count=1 status=noxfer 2>/dev/null &
+> +		done
+> +	done
+> +	wait $!
+> +}
 
-On the other hand, enabling defrag will cause files to be rewritten
-occasionally, which will use additional write cycles on your flash
-memory cells.
+Please, no, not -another- new and just a bit different "fill
+filesystem" function.
 
-Unless you're experiencing performance problems, I would recommend you
-leave the autodefrag option disabled on an SSD.
+There's already been one added recently in test 256 which I
+commented at the time could use _populate_fs, and I said the same
+thing in my original review of this series, too.
 
+So please modify the _populate_fs function to do what you need.
+
+Cheers,
+
+Dave.
 -- 
-Calvin Walton <calvin.walton@kepstin.ca>
-
+Dave Chinner
+david@fromorbit.com

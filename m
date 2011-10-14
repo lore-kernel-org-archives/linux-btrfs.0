@@ -1,51 +1,41 @@
-From: "Helmut Hullen" <Hullen@t-online.de>
-Subject: Re: btrfs still looks for not existing devices
-Date: 14 Oct 2011 17:43:00 +0200
-Message-ID: <BvpRYk9D1uB@helmut.hullen.de>
-References: <20111014150824.GK21931@carfax.org.uk>
-Reply-To: helmut@hullen.de
+From: Ted Ts'o <tytso@mit.edu>
+Subject: Re: A Plumber???s Wish List for Linux
+Date: Fri, 14 Oct 2011 11:47:25 -0400
+Message-ID: <20111014154725.GB13119@thunk.org>
+References: <1317943022.1095.25.camel@mop>
+ <20111007111231.6e11d18e@lxorguk.ukuu.org.uk>
+ <CAPXgP12nDB2NX6hZabmkUZA9n0PZadi6Yv70LNms8fz9+MnVoA@mail.gmail.com>
+ <20111007113820.3b8424a8@lxorguk.ukuu.org.uk>
+ <CAPXgP11K4_eVn4_emEYVzCVUsm-BXDyStk7DnDmFpMTL=404Gg@mail.gmail.com>
+ <20111007152137.GE28351@carfax.org.uk>
+ <20111010111813.GF17912@twin.jikos.cz>
+ <4C18E3B8-FA7E-4BC1-BE5D-B517004321A2@mit.edu>
+ <20111013002839.GL3159@dastard>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=US-ASCII
-To: linux-btrfs@vger.kernel.org
-Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <20111014150824.GK21931@carfax.org.uk>
+Content-Type: text/plain; charset=us-ascii
+Cc: dave@jikos.cz, Hugo Mills <hugo-lkml@carfax.org.uk>,
+	Kay Sievers <kay.sievers@vrfy.org>,
+	Alan Cox <alan@lxorguk.ukuu.org.uk>,
+	linux-kernel@vger.kernel.org, lennart@poettering.net,
+	harald@redhat.com, david@fubar.dk, greg@kroah.com,
+	Chris Mason <chris.mason@oracle.com>,
+	Btrfs mailing list <linux-btrfs@vger.kernel.org>
+To: Dave Chinner <david@fromorbit.com>
+Return-path: <linux-kernel-owner@vger.kernel.org>
+In-Reply-To: <20111013002839.GL3159@dastard>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hallo, Hugo,
+On Thu, Oct 13, 2011 at 11:28:39AM +1100, Dave Chinner wrote:
+> Yup. xfs_admin already provides an interface for offline
+> modification of the UUID for XFS filesytems. I.e. clone the
+> filesytem using xfs_copy, then run xfs_admin -U generate <clone> to
+> generate a new uuid in the cloned copy before you mount the
+> clone....
 
-Du meintest am 14.10.11:
+This is probably another thing which perhaps Ric Wheeler's proposed
+"generic LVM / file system management front end" should abstract away,
+since every single file system has a different way of setting the UUID
+in an off-line way.  It's a relatively specialized feature, so I
+wouldn't call it high priority to implement first.
 
->> I've just tried
->>
->>    git clone git://git.darksatanic.net/repo/btrfs-progs-unstable.git
->>
->> and got the answer
->>
->> + git clone git://git.darksatanic.net/repo/btrfs-progs-unstable.git
->> git.darksatanic.net[0: 212.13.194.111]: errno=Connection refused
->> git.darksatanic.net[0: 2001:ba8:1f1:f1d9:216:3eff:fe14:aef9]:
->> errno=Network is unreachable fatal: unable to connect a socket
->> (Network is unreachable)
->>
->> -----------------------------
->>
->> Have I got just another typo (or user mistake), or is there another
->> problem?
-
->    It seems to be OK for me from here (the server is in a totally
-> different network to where I am), so I think it must be a problem
-> local to you. The IP addresses (both v4 and v6) look like the right
-> ones, and I'm not aware of having any blocking in place from my
-> service provider. Do you have a "transparent" proxy in the way?
-
-Changing from "git://" to "http://" solved the problem!
-
-Compiling worked, see
-
-  <http://arktur.shuttle.de/CD/Testpakete/btrfs-progs-20111014-i486-1Mills_hln.txz>
-
-But "btrfs filesystem show" still shows lots of nonexistent devices -  
-sorry.
-
-Viele Gruesse!
-Helmut
+	      	      	       	  - Ted

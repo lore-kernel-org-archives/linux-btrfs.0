@@ -1,110 +1,45 @@
 From: Josef Bacik <josef@redhat.com>
-Subject: [PATCH] Btrfs: wait for ordered extents if we're in trouble when shrinking delalloc
-Date: Fri, 14 Oct 2011 13:57:25 -0400
-Message-ID: <1318615045-16634-1-git-send-email-josef@redhat.com>
+Subject: [PATCH] Btrfs: allow shrink_delalloc flush the needed reclaimed pages
+Date: Fri, 14 Oct 2011 14:02:34 -0400
+Message-ID: <1318615354-16774-1-git-send-email-josef@redhat.com>
 To: linux-btrfs@vger.kernel.org
 Return-path: <linux-btrfs-owner@vger.kernel.org>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-The only way we actually reclaim delalloc space is waiting for the IO to
-completely finish.  Usually we kick off a bunch of IO and wait for a little bit
-and hope we can make our reservation, and usually this works out pretty well.
-With overcommit however we can get seriously underwater if we're filling up the
-disk quickly, so we need to be able to force the delalloc shrinker to wait for
-the ordered IO to finish to give us a better chance of actually reclaiming
-enough space to get our reservation.  Thanks,
+Currently we only allow a maximum of 2 megabytes of pages to be flushed at a
+time.  This was ok before, but now we have overcommit which will screw us in a
+heartbeat if we are quickly filling the disk.  So instead pick either 2
+megabytes or the number of pages we need to reclaim to be safe again, which ever
+is larger.  Thanks,
 
 Signed-off-by: Josef Bacik <josef@redhat.com>
 ---
- fs/btrfs/extent-tree.c |   25 +++++++++++++++++--------
- 1 files changed, 17 insertions(+), 8 deletions(-)
+ fs/btrfs/extent-tree.c |    5 +++--
+ 1 files changed, 3 insertions(+), 2 deletions(-)
 
 diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
-index 79365a4..96cbc51 100644
+index 96cbc51..424ae82 100644
 --- a/fs/btrfs/extent-tree.c
 +++ b/fs/btrfs/extent-tree.c
-@@ -3334,7 +3334,8 @@ out:
-  * shrink metadata reservation for delalloc
-  */
- static int shrink_delalloc(struct btrfs_trans_handle *trans,
--			   struct btrfs_root *root, u64 to_reclaim, int sync)
-+			   struct btrfs_root *root, u64 to_reclaim,
-+			   bool wait_ordered)
- {
- 	struct btrfs_block_rsv *block_rsv;
- 	struct btrfs_space_info *space_info;
-@@ -3387,11 +3388,15 @@ static int shrink_delalloc(struct btrfs_trans_handle *trans,
- 		if (trans && trans->transaction->blocked)
- 			return -EAGAIN;
+@@ -3343,7 +3343,7 @@ static int shrink_delalloc(struct btrfs_trans_handle *trans,
+ 	u64 max_reclaim;
+ 	u64 reclaimed = 0;
+ 	long time_left;
+-	int nr_pages = (2 * 1024 * 1024) >> PAGE_CACHE_SHIFT;
++	unsigned long nr_pages = (2 * 1024 * 1024) >> PAGE_CACHE_SHIFT;
+ 	int loops = 0;
+ 	unsigned long progress;
  
--		time_left = schedule_timeout_interruptible(1);
-+		if (wait_ordered && !trans) {
-+			btrfs_wait_ordered_extents(root, 0, 0);
-+		} else {
-+			time_left = schedule_timeout_interruptible(1);
- 
--		/* We were interrupted, exit */
--		if (time_left)
--			break;
-+			/* We were interrupted, exit */
-+			if (time_left)
-+				break;
-+		}
- 
- 		/* we've kicked the IO a few times, if anything has been freed,
- 		 * exit.  There is no sense in looping here for a long time
-@@ -3406,8 +3411,7 @@ static int shrink_delalloc(struct btrfs_trans_handle *trans,
- 		}
- 
- 	}
--	if (reclaimed < to_reclaim && !trans)
--		btrfs_wait_ordered_extents(root, 0, 0);
-+
- 	return reclaimed >= to_reclaim;
- }
- 
-@@ -3438,6 +3442,7 @@ static int reserve_metadata_bytes(struct btrfs_root *root,
- 	int ret = 0;
- 	bool committed = false;
- 	bool flushing = false;
-+	bool wait_ordered = false;
- 
- 	trans = (struct btrfs_trans_handle *)current->journal_info;
- again:
-@@ -3496,6 +3501,7 @@ again:
- 		 * amount plus the amount of bytes that we need for this
- 		 * reservation.
- 		 */
-+		wait_ordered = true;
- 		num_bytes = used - space_info->total_bytes +
- 			(orig_bytes * (retries + 1));
- 	}
-@@ -3530,6 +3536,8 @@ again:
- 		if (used + num_bytes < space_info->total_bytes + avail) {
- 			space_info->bytes_may_use += orig_bytes;
- 			ret = 0;
-+		} else {
-+			wait_ordered = true;
- 		}
+@@ -3366,7 +3366,8 @@ static int shrink_delalloc(struct btrfs_trans_handle *trans,
  	}
  
-@@ -3552,7 +3560,7 @@ again:
- 	 * We do synchronous shrinking since we don't actually unreserve
- 	 * metadata until after the IO is completed.
- 	 */
--	ret = shrink_delalloc(trans, root, num_bytes, 1);
-+	ret = shrink_delalloc(trans, root, num_bytes, wait_ordered);
- 	if (ret < 0)
- 		goto out;
- 
-@@ -3564,6 +3572,7 @@ again:
- 	 * so go back around and try again.
- 	 */
- 	if (retries < 2) {
-+		wait_ordered = true;
- 		retries++;
- 		goto again;
- 	}
+ 	max_reclaim = min(reserved, to_reclaim);
+-
++	nr_pages = max_t(unsigned long, nr_pages,
++			 max_reclaim >> PAGE_CACHE_SHIFT);
+ 	while (loops < 1024) {
+ 		/* have the flusher threads jump in and do some IO */
+ 		smp_mb();
 -- 
 1.7.5.2
 

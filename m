@@ -1,67 +1,82 @@
-From: Jim <jim@webstarts.com>
-Subject: Re: snapshot issues
-Date: Fri, 14 Oct 2011 14:33:48 -0400
-Message-ID: <4E98808C.7020502@webstarts.com>
-References: <4E986DBB.4080100@webstarts.com> <4E987CAB.2000007@xtfx.me>
-Mime-Version: 1.0
-Content-Type: text/plain; charset=ISO-8859-1; format=flowed
-Cc: linux-btrfs <linux-btrfs@vger.kernel.org>
-To: C Anthony Risinger <anthony@xtfx.me>
+From: Josef Bacik <josef@redhat.com>
+Subject: [PATCH] Btrfs: release trans metadata bytes before flushing delayed refs
+Date: Fri, 14 Oct 2011 14:41:48 -0400
+Message-ID: <1318617708-17995-1-git-send-email-josef@redhat.com>
+To: linux-btrfs@vger.kernel.org
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <4E987CAB.2000007@xtfx.me>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Thank you for that info Anthony, I just wanted to know the expected 
-behavior.  In that same vein, when I use btrfs sub list it lists all 
-subvols regardless of whether or not it is given a path argument.  Is 
-this current behavior as well.  Thanks again.
-Jim
+We started setting trans->block_rsv = NULL to allow the delayed refs flushing
+stuff to use the right block_rsv and then just made
+btrfs_trans_release_metadata() unconditionally use the trans block rsv.  The
+problem with this is we need to reserve some space in the transaction and then
+migrate it to the global block rsv, so we need to be able to free that out
+properly.  So instead just move btrfs_trans_release_metadata() before the
+delayed ref flushing and use trans->block_rsv for the freeing.  Thanks,
 
-On 10/14/2011 02:17 PM, C Anthony Risinger wrote:
-> On 10/14/2011 12:13 PM, Jim wrote:
->> Good afternoon btrfs,
->> I have been having issues with snapshots not reading the whole file 
->> tree below them.  I have installed new btrfs-progs from
->>
->> git://git.darksatanic.net/repo/btrfs-progs-unstable.git
->>
->> made and installed them.  My tree is:  /Btrfs |
->>                                               |__ nfs1 |
->>                                                        |__ data |
->>                                                                 |__ 
->> sites |
->>                                                                           
->> |__ 00xx |
->>                                                                                    
->> |__ email@address
->>
->> If I use btrfsctl -s (btrfs sub snapshot isn't working) snappath-name 
->> /btrfs/nfs1  I get a mountable snapshot of nfs1
->> but data is all that I can see below it.  If I btrfsctl -s 
->> snappath-name /btrfs/nfs1/data/sites/0000 I can mount /0000 and
->> get a full list of email@address accounts but none of the files below 
->> them.  I should have stated earlier, everything down
->> to and including /email@address are subvolumes.  Below /email@address 
->> directories and files were rsync'd into the subvol from
->> an nfs mount.  Finally if I snapshot /email@address I have access to 
->> all directories and files below them.  Because of this I
->> believe that the issue is with snapshots of subvolumes.  I thought I 
->> just couldn't see subvols above the snapshot level and was able to 
->> see subvols below.  Am I confused or is this a real problem.  I am 
->> using kernel 3.1.0-rc4 and will be happy to trace anything you need 
->> if you can tell me how to get what you need.  Thanks for your help.
->> Jim
->>
->> -- 
->> To unsubscribe from this list: send the line "unsubscribe 
->> linux-btrfs" in
->> the body of a message to majordomo@vger.kernel.org
->> More majordomo info at  http://vger.kernel.org/majordomo-info.html
->
-> yaarg -- resend w/list included -- changed clients recently (tbird) 
-> and cant figure out how to default to replay-all ...
->
-> i believe this is expected behavior as of now -- there are a couple 
-> threads mentioning `recursive snapshotting`, check those out.  AFAIK a 
-> snapshot will not traverse beyond it's own boundaries.
->
+Signed-off-by: Josef Bacik <josef@redhat.com>
+---
+ fs/btrfs/extent-tree.c |    5 +----
+ fs/btrfs/transaction.c |    6 ++----
+ 2 files changed, 3 insertions(+), 8 deletions(-)
+
+diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
+index 424ae82..eb4fe56 100644
+--- a/fs/btrfs/extent-tree.c
++++ b/fs/btrfs/extent-tree.c
+@@ -3909,13 +3909,10 @@ static void release_global_block_rsv(struct btrfs_fs_info *fs_info)
+ void btrfs_trans_release_metadata(struct btrfs_trans_handle *trans,
+ 				  struct btrfs_root *root)
+ {
+-	struct btrfs_block_rsv *block_rsv;
+-
+ 	if (!trans->bytes_reserved)
+ 		return;
+ 
+-	block_rsv = &root->fs_info->trans_block_rsv;
+-	btrfs_block_rsv_release(root, block_rsv, trans->bytes_reserved);
++	btrfs_block_rsv_release(root, trans->block_rsv, trans->bytes_reserved);
+ 	trans->bytes_reserved = 0;
+ }
+ 
+diff --git a/fs/btrfs/transaction.c b/fs/btrfs/transaction.c
+index 1e1a481..d064fa0 100644
+--- a/fs/btrfs/transaction.c
++++ b/fs/btrfs/transaction.c
+@@ -462,6 +462,7 @@ static int __btrfs_end_transaction(struct btrfs_trans_handle *trans,
+ 		return 0;
+ 	}
+ 
++	btrfs_trans_release_metadata(trans, root);
+ 	trans->block_rsv = NULL;
+ 	while (count < 4) {
+ 		unsigned long cur = trans->delayed_ref_updates;
+@@ -483,8 +484,6 @@ static int __btrfs_end_transaction(struct btrfs_trans_handle *trans,
+ 		count++;
+ 	}
+ 
+-	btrfs_trans_release_metadata(trans, root);
+-
+ 	if (lock && !atomic_read(&root->fs_info->open_ioctl_trans) &&
+ 	    should_end_transaction(trans, root)) {
+ 		trans->transaction->blocked = 1;
+@@ -1128,6 +1127,7 @@ int btrfs_commit_transaction(struct btrfs_trans_handle *trans,
+ 
+ 	btrfs_run_ordered_operations(root, 0);
+ 
++	btrfs_trans_release_metadata(trans, root);
+ 	trans->block_rsv = NULL;
+ 
+ 	/* make a pass through all the delayed refs we have so far
+@@ -1136,8 +1136,6 @@ int btrfs_commit_transaction(struct btrfs_trans_handle *trans,
+ 	ret = btrfs_run_delayed_refs(trans, root, 0);
+ 	BUG_ON(ret);
+ 
+-	btrfs_trans_release_metadata(trans, root);
+-
+ 	cur_trans = trans->transaction;
+ 	/*
+ 	 * set the flushing flag so procs in this transaction have to
+-- 
+1.7.5.2
+

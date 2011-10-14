@@ -1,52 +1,51 @@
 From: Hugo Mills <hugo@carfax.org.uk>
 Subject: Re: btrfs still looks for not existing devices
-Date: Fri, 14 Oct 2011 16:08:24 +0100
-Message-ID: <20111014150824.GK21931@carfax.org.uk>
+Date: Fri, 14 Oct 2011 16:21:16 +0100
+Message-ID: <20111014152116.GL21931@carfax.org.uk>
 References: <20111014140516.GJ21931@carfax.org.uk>
  <BvpRQTCy1uB@helmut.hullen.de>
+ <20111014150824.GK21931@carfax.org.uk>
+ <20111014151432.GA19381@mother.jarsat.pl>
 Mime-Version: 1.0
 Content-Type: multipart/signed; micalg=pgp-sha1;
-	protocol="application/pgp-signature"; boundary="wIc/V6YLA2QdyfT4"
-Cc: linux-btrfs@vger.kernel.org
-To: helmut@hullen.de
+	protocol="application/pgp-signature"; boundary="dpynvXbW/eW9Tpc3"
+To: Tomasz Torcz <tomek@pipebreaker.pl>, helmut@hullen.de,
+	Btrfs mailing list <linux-btrfs@vger.kernel.org>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <BvpRQTCy1uB@helmut.hullen.de>
+In-Reply-To: <20111014151432.GA19381@mother.jarsat.pl>
 List-ID: <linux-btrfs.vger.kernel.org>
 
 
---wIc/V6YLA2QdyfT4
+--dpynvXbW/eW9Tpc3
 Content-Type: text/plain; charset=us-ascii
 Content-Disposition: inline
 
-On Fri, Oct 14, 2011 at 04:59:00PM +0200, Helmut Hullen wrote:
-> Hallo, Hugo,
-> Du meintest am 14.10.11:
-> 
-> >    This is not a kernel issue, it's a purely userspace issue. Try the
-> > latest integration branch from git.darksatanic.net, which should have
-> > a fix for it.
-> 
-> I've just tried
-> 
->    git clone git://git.darksatanic.net/repo/btrfs-progs-unstable.git
-> 
-> and got the answer
-> 
-> + git clone git://git.darksatanic.net/repo/btrfs-progs-unstable.git
-> git.darksatanic.net[0: 212.13.194.111]: errno=Connection refused
-> git.darksatanic.net[0: 2001:ba8:1f1:f1d9:216:3eff:fe14:aef9]: errno=Network is unreachable
-> fatal: unable to connect a socket (Network is unreachable)
-> 
-> -----------------------------
-> 
-> Have I got just another typo (or user mistake), or is there another  
-> problem?
+On Fri, Oct 14, 2011 at 05:14:32PM +0200, Tomasz Torcz wrote:
+> On Fri, Oct 14, 2011 at 04:08:24PM +0100, Hugo Mills wrote:
+> > On Fri, Oct 14, 2011 at 04:59:00PM +0200, Helmut Hullen wrote:
+> > > Du meintest am 14.10.11:
+> > > I've just tried
+> > > 
+> > >    git clone git://git.darksatanic.net/repo/btrfs-progs-unstable.git
+> > > 
+> > > and got the answer
+> > > 
+> > > + git clone git://git.darksatanic.net/repo/btrfs-progs-unstable.git
+> > > git.darksatanic.net[0: 212.13.194.111]: errno=Connection refused
+> > > git.darksatanic.net[0: 2001:ba8:1f1:f1d9:216:3eff:fe14:aef9]: errno=Network is unreachable
+> > > fatal: unable to connect a socket (Network is unreachable)
+> > > 
+> > > -----------------------------
+> > > 
+> > > Have I got just another typo (or user mistake), or is there another  
+> > > problem?
+>
+>   I see the same problem from totally different network, tcptraceroute
+> to git port ends with:
+     ^^^^^^^^
 
-   It seems to be OK for me from here (the server is in a totally
-different network to where I am), so I think it must be a problem
-local to you. The IP addresses (both v4 and v6) look like the right
-ones, and I'm not aware of having any blocking in place from my
-service provider. Do you have a "transparent" proxy in the way?
+   D'oh. Sorry, I only just noticed this. I don't run a git server -- you
+need http:// not git://
 
    Hugo.
 
@@ -55,16 +54,16 @@ service provider. Do you have a "transparent" proxy in the way?
   PGP key: 515C238D from wwwkeys.eu.pgp.net or http://www.carfax.org.uk
             --- UNIX:  Japanese brand of food containers. ---            
 
---wIc/V6YLA2QdyfT4
+--dpynvXbW/eW9Tpc3
 Content-Type: application/pgp-signature; name="signature.asc"
 Content-Description: Digital signature
 
 -----BEGIN PGP SIGNATURE-----
 Version: GnuPG v1.4.11 (GNU/Linux)
 
-iD8DBQFOmFBoIKyzvlFcI40RAun9AKDU2CMbGk51JhUR95UhdRe3nunCwACfRZn4
-ccZ7C4R2RuH6llfvkJzOeao=
-=99IS
+iD8DBQFOmFNsIKyzvlFcI40RAjbzAJ9tAFlzSTLxnk9yMj5n7HZbPF36RgCgky54
+aqCH1XdnN0KtyDtvnqcye8E=
+=xDj/
 -----END PGP SIGNATURE-----
 
---wIc/V6YLA2QdyfT4--
+--dpynvXbW/eW9Tpc3--

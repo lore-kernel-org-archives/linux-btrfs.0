@@ -1,78 +1,63 @@
-From: Hugo Mills <hugo@carfax.org.uk>
-Subject: Re: is space really freed after deleting large subvolume?
-Date: Fri, 14 Oct 2011 09:45:05 +0100
-Message-ID: <20111014084504.GI21931@carfax.org.uk>
-References: <CAJ1PRSmDmd4mrUaQAhjCt1SMtVaBVxq3dCVjCuT20Y4Wf+Ch+Q@mail.gmail.com>
- <CAJ1PRSk0BVoYw89C0RYejbRF-4QdrKkA_J94Kf+Y7r-u=w+aHA@mail.gmail.com>
+From: Josef Bacik <josef@redhat.com>
+Subject: Re: [PATCH] Btrfs: fix regression in re-setting a large xattr
+Date: Fri, 14 Oct 2011 08:55:52 -0400
+Message-ID: <20111014125551.GA2343@localhost.localdomain>
+References: <1318525894-14548-1-git-send-email-josef@redhat.com>
+ <4E977C8C.9000809@jp.fujitsu.com>
 Mime-Version: 1.0
-Content-Type: multipart/signed; micalg=pgp-sha1;
-	protocol="application/pgp-signature"; boundary="mXDO3udm/xYWQeMQ"
-Cc: linux-btrfs@vger.kernel.org
-To: "krzf83@gmail.com " <krzf83@gmail.com>
+Content-Type: text/plain; charset=us-ascii
+Cc: Josef Bacik <josef@redhat.com>, linux-btrfs@vger.kernel.org
+To: Tsutomu Itoh <t-itoh@jp.fujitsu.com>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <CAJ1PRSk0BVoYw89C0RYejbRF-4QdrKkA_J94Kf+Y7r-u=w+aHA@mail.gmail.com>
+In-Reply-To: <4E977C8C.9000809@jp.fujitsu.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-
---mXDO3udm/xYWQeMQ
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
-
-On Fri, Oct 14, 2011 at 07:17:44AM +0200, krzf83@gmail.com  wrote:
-> Just a idea: I don't know if btrfs works like that or not but idea
-> would be that b-tree filesystem should be able to "loose" or "discard"
-> branches be removing a node. Cut a tree node and branches will fall
-> off - and get overwrited as empty space sometime in future (just like
-> during data deletion).
+On Fri, Oct 14, 2011 at 09:04:28AM +0900, Tsutomu Itoh wrote:
+> (2011/10/14 2:11), Josef Bacik wrote:
+> > Recently I changed the xattr stuff to unconditionally set the xattr first in
+> > case the xattr didn't exist yet.  This has introduced a regression when setting
+> > an xattr that already exists with a large value.  If we find the key we are
+> > looking for split_leaf will assume that we're extending that item.  The problem
+> > is the size we pass down to btrfs_search_slot includes the size of the item
+> > already, so if we have the largest xattr we can possibly have plus the size of
+> > the xattr item plus the xattr item that btrfs_search_slot we'd overflow the
+> > leaf.  Thankfully this is not what we're doing, but split_leaf doesn't know this
+> > so it just returns EOVERFLOW.  So in the xattr code we need to check and see if
+> > we got back EOVERFLOW and treat it like EEXIST since that's really what
+> > happened.  Thanks,
+> > 
+> > Signed-off-by: Josef Bacik <josef@redhat.com>
+> > ---
+> >  fs/btrfs/xattr.c |   13 ++++++++++++-
+> >  1 files changed, 12 insertions(+), 1 deletions(-)
+> > 
+> > diff --git a/fs/btrfs/xattr.c b/fs/btrfs/xattr.c
+> > index 69565e5..5bd7877 100644
+> > --- a/fs/btrfs/xattr.c
+> > +++ b/fs/btrfs/xattr.c
+> > @@ -127,7 +127,18 @@ static int do_setxattr(struct btrfs_trans_handle *trans,
+> >  again:
+> >  	ret = btrfs_insert_xattr_item(trans, root, path, btrfs_ino(inode),
+> >  				      name, name_len, value, size);
+> > -	if (ret == -EEXIST) {
+> > +	/*
+> > +	 * If we're setting an xattr to a new value but the new value is say
+> > +	 * exactly BTRFS_MAX_XATTR_SIZE, we could end up with EOVERFLOW getting
+> > +	 * back from split_leaf.  This is because it thinks we'll be extending
+> > +	 * the existing item size, but we're asking for enough space to add the
+> > +	 * item itself.  So if we get EOVERFLOW just set ret to EEXIST and let
+> > +	 * the rest of the function figure it out.
+> > +	 */
+> > +	if (ret == -EOVERFLOW)
+> > +		ret = -EEXIST;
+> > +
+> > +	if (ret == -EEXIST || ret == -EOVERFLOW) {
 > 
-> If subvolume is filesystem in filesystem (don't know to what extend
-> this is true in btrfs) then sub-filesystem could be re-formated but
-> severing it links to its branches.
+> Why tested again EOVERFLOW?
+> 
 
-   Subvolumes each have their own FS-tree, so if it were just a matter
-of the FS tree, then yes, you'd be right. Sadly, it isn't. Even on
-other filesystems, you still have to perform at least one operation
-per extent to mark that extent as unused, so that it can be reclaimed.
+Oops thats my fault, I had thought to check for eoverflow but then thought
+better to just set it to eexist and didn't fix the first thought.  I'll send out
+a fix.  Thanks,
 
-    On btrfs, there's a little more work than that involved (but not
-much more). Since btrfs can make CoW copies of files, you can end up
-with the same blocks on disk being used by several different parts of
-the filesystem. This applies both to data extents and to metadata
-blocks. In order to make it possible to know when a block (or set of
-blocks) can be reclaimed to be overwritten at some later date, the
-blocks are all reference-counted, so each block knows how many things
-point to it. Updating and checking the reference count is the thing
-that takes time, and can't really be short-circuited.
-
-   What btrfs can do is, as you suggest, unlink the FS-tree for the
-subvolume immediately so that it's no longer visible. It can then
-clean up all the references from that tree in the background -- which
-is exactly what it does do.
-
-> Reason for this if of course fast and not io costly deletion of large
-> number of files.
-
-   It just ain't that simple, I'm afraid. Getting rid of files is a
-complicated business.
-
-   Hugo.
-
--- 
-=== Hugo Mills: hugo@... carfax.org.uk | darksatanic.net | lug.org.uk ===
-  PGP key: 515C238D from wwwkeys.eu.pgp.net or http://www.carfax.org.uk
-         --- Nothing right in my left brain. Nothing left in ---         
-                             my right brain.                             
-
---mXDO3udm/xYWQeMQ
-Content-Type: application/pgp-signature; name="signature.asc"
-Content-Description: Digital signature
-
------BEGIN PGP SIGNATURE-----
-Version: GnuPG v1.4.11 (GNU/Linux)
-
-iD8DBQFOl/aQIKyzvlFcI40RAvOcAJ0Yeih1RIMjoD0VFqyR0Bns02s/CwCfVu2b
-+L8cwB0siQ0QZIjlKhQ3yl8=
-=ifFO
------END PGP SIGNATURE-----
-
---mXDO3udm/xYWQeMQ--
+Josef

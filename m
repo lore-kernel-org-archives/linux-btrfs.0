@@ -1,69 +1,51 @@
-From: Hugo Mills <hugo@carfax.org.uk>
+From: "Helmut Hullen" <Hullen@t-online.de>
 Subject: Re: btrfs still looks for not existing devices
-Date: Fri, 14 Oct 2011 16:21:16 +0100
-Message-ID: <20111014152116.GL21931@carfax.org.uk>
-References: <20111014140516.GJ21931@carfax.org.uk>
- <BvpRQTCy1uB@helmut.hullen.de>
- <20111014150824.GK21931@carfax.org.uk>
- <20111014151432.GA19381@mother.jarsat.pl>
+Date: 14 Oct 2011 17:43:00 +0200
+Message-ID: <BvpRYk9D1uB@helmut.hullen.de>
+References: <20111014150824.GK21931@carfax.org.uk>
+Reply-To: helmut@hullen.de
 Mime-Version: 1.0
-Content-Type: multipart/signed; micalg=pgp-sha1;
-	protocol="application/pgp-signature"; boundary="dpynvXbW/eW9Tpc3"
-To: Tomasz Torcz <tomek@pipebreaker.pl>, helmut@hullen.de,
-	Btrfs mailing list <linux-btrfs@vger.kernel.org>
+Content-Type: text/plain; charset=US-ASCII
+To: linux-btrfs@vger.kernel.org
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <20111014151432.GA19381@mother.jarsat.pl>
+In-Reply-To: <20111014150824.GK21931@carfax.org.uk>
 List-ID: <linux-btrfs.vger.kernel.org>
 
+Hallo, Hugo,
 
---dpynvXbW/eW9Tpc3
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
+Du meintest am 14.10.11:
 
-On Fri, Oct 14, 2011 at 05:14:32PM +0200, Tomasz Torcz wrote:
-> On Fri, Oct 14, 2011 at 04:08:24PM +0100, Hugo Mills wrote:
-> > On Fri, Oct 14, 2011 at 04:59:00PM +0200, Helmut Hullen wrote:
-> > > Du meintest am 14.10.11:
-> > > I've just tried
-> > > 
-> > >    git clone git://git.darksatanic.net/repo/btrfs-progs-unstable.git
-> > > 
-> > > and got the answer
-> > > 
-> > > + git clone git://git.darksatanic.net/repo/btrfs-progs-unstable.git
-> > > git.darksatanic.net[0: 212.13.194.111]: errno=Connection refused
-> > > git.darksatanic.net[0: 2001:ba8:1f1:f1d9:216:3eff:fe14:aef9]: errno=Network is unreachable
-> > > fatal: unable to connect a socket (Network is unreachable)
-> > > 
-> > > -----------------------------
-> > > 
-> > > Have I got just another typo (or user mistake), or is there another  
-> > > problem?
->
->   I see the same problem from totally different network, tcptraceroute
-> to git port ends with:
-     ^^^^^^^^
+>> I've just tried
+>>
+>>    git clone git://git.darksatanic.net/repo/btrfs-progs-unstable.git
+>>
+>> and got the answer
+>>
+>> + git clone git://git.darksatanic.net/repo/btrfs-progs-unstable.git
+>> git.darksatanic.net[0: 212.13.194.111]: errno=Connection refused
+>> git.darksatanic.net[0: 2001:ba8:1f1:f1d9:216:3eff:fe14:aef9]:
+>> errno=Network is unreachable fatal: unable to connect a socket
+>> (Network is unreachable)
+>>
+>> -----------------------------
+>>
+>> Have I got just another typo (or user mistake), or is there another
+>> problem?
 
-   D'oh. Sorry, I only just noticed this. I don't run a git server -- you
-need http:// not git://
+>    It seems to be OK for me from here (the server is in a totally
+> different network to where I am), so I think it must be a problem
+> local to you. The IP addresses (both v4 and v6) look like the right
+> ones, and I'm not aware of having any blocking in place from my
+> service provider. Do you have a "transparent" proxy in the way?
 
-   Hugo.
+Changing from "git://" to "http://" solved the problem!
 
--- 
-=== Hugo Mills: hugo@... carfax.org.uk | darksatanic.net | lug.org.uk ===
-  PGP key: 515C238D from wwwkeys.eu.pgp.net or http://www.carfax.org.uk
-            --- UNIX:  Japanese brand of food containers. ---            
+Compiling worked, see
 
---dpynvXbW/eW9Tpc3
-Content-Type: application/pgp-signature; name="signature.asc"
-Content-Description: Digital signature
+  <http://arktur.shuttle.de/CD/Testpakete/btrfs-progs-20111014-i486-1Mills_hln.txz>
 
------BEGIN PGP SIGNATURE-----
-Version: GnuPG v1.4.11 (GNU/Linux)
+But "btrfs filesystem show" still shows lots of nonexistent devices -  
+sorry.
 
-iD8DBQFOmFNsIKyzvlFcI40RAjbzAJ9tAFlzSTLxnk9yMj5n7HZbPF36RgCgky54
-aqCH1XdnN0KtyDtvnqcye8E=
-=xDj/
------END PGP SIGNATURE-----
-
---dpynvXbW/eW9Tpc3--
+Viele Gruesse!
+Helmut

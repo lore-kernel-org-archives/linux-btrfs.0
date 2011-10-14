@@ -1,45 +1,62 @@
-From: Josef Bacik <josef@redhat.com>
-Subject: [PATCH] Btrfs: allow shrink_delalloc flush the needed reclaimed pages
-Date: Fri, 14 Oct 2011 14:02:34 -0400
-Message-ID: <1318615354-16774-1-git-send-email-josef@redhat.com>
-To: linux-btrfs@vger.kernel.org
+From: C Anthony Risinger <anthony@xtfx.me>
+Subject: Re: snapshot issues
+Date: Fri, 14 Oct 2011 13:17:15 -0500
+Message-ID: <4E987CAB.2000007@xtfx.me>
+References: <4E986DBB.4080100@webstarts.com>
+Mime-Version: 1.0
+Content-Type: text/plain; charset=ISO-8859-1; format=flowed
+Cc: linux-btrfs <linux-btrfs@vger.kernel.org>
+To: Jim <jim@webstarts.com>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
+In-Reply-To: <4E986DBB.4080100@webstarts.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Currently we only allow a maximum of 2 megabytes of pages to be flushed at a
-time.  This was ok before, but now we have overcommit which will screw us in a
-heartbeat if we are quickly filling the disk.  So instead pick either 2
-megabytes or the number of pages we need to reclaim to be safe again, which ever
-is larger.  Thanks,
+On 10/14/2011 12:13 PM, Jim wrote:
+> Good afternoon btrfs,
+> I have been having issues with snapshots not reading the whole file 
+> tree below them.  I have installed new btrfs-progs from
+>
+> git://git.darksatanic.net/repo/btrfs-progs-unstable.git
+>
+> made and installed them.  My tree is:  /Btrfs |
+>                                               |__ nfs1 |
+>                                                        |__ data |
+>                                                                 |__ 
+> sites |
+>                                                                           
+> |__ 00xx |
+>                                                                                    
+> |__ email@address
+>
+> If I use btrfsctl -s (btrfs sub snapshot isn't working) snappath-name 
+> /btrfs/nfs1  I get a mountable snapshot of nfs1
+> but data is all that I can see below it.  If I btrfsctl -s 
+> snappath-name /btrfs/nfs1/data/sites/0000 I can mount /0000 and
+> get a full list of email@address accounts but none of the files below 
+> them.  I should have stated earlier, everything down
+> to and including /email@address are subvolumes.  Below /email@address 
+> directories and files were rsync'd into the subvol from
+> an nfs mount.  Finally if I snapshot /email@address I have access to 
+> all directories and files below them.  Because of this I
+> believe that the issue is with snapshots of subvolumes.  I thought I 
+> just couldn't see subvols above the snapshot level and was able to see 
+> subvols below.  Am I confused or is this a real problem.  I am using 
+> kernel 3.1.0-rc4 and will be happy to trace anything you need if you 
+> can tell me how to get what you need.  Thanks for your help.
+> Jim
+>
+> -- 
+> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
+> the body of a message to majordomo@vger.kernel.org
+> More majordomo info at  http://vger.kernel.org/majordomo-info.html
 
-Signed-off-by: Josef Bacik <josef@redhat.com>
----
- fs/btrfs/extent-tree.c |    5 +++--
- 1 files changed, 3 insertions(+), 2 deletions(-)
+yaarg -- resend w/list included -- changed clients recently (tbird) and 
+cant figure out how to default to replay-all ...
 
-diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
-index 96cbc51..424ae82 100644
---- a/fs/btrfs/extent-tree.c
-+++ b/fs/btrfs/extent-tree.c
-@@ -3343,7 +3343,7 @@ static int shrink_delalloc(struct btrfs_trans_handle *trans,
- 	u64 max_reclaim;
- 	u64 reclaimed = 0;
- 	long time_left;
--	int nr_pages = (2 * 1024 * 1024) >> PAGE_CACHE_SHIFT;
-+	unsigned long nr_pages = (2 * 1024 * 1024) >> PAGE_CACHE_SHIFT;
- 	int loops = 0;
- 	unsigned long progress;
- 
-@@ -3366,7 +3366,8 @@ static int shrink_delalloc(struct btrfs_trans_handle *trans,
- 	}
- 
- 	max_reclaim = min(reserved, to_reclaim);
--
-+	nr_pages = max_t(unsigned long, nr_pages,
-+			 max_reclaim >> PAGE_CACHE_SHIFT);
- 	while (loops < 1024) {
- 		/* have the flusher threads jump in and do some IO */
- 		smp_mb();
+i believe this is expected behavior as of now -- there are a couple 
+threads mentioning `recursive snapshotting`, check those out.  AFAIK a 
+snapshot will not traverse beyond it's own boundaries.
+
 -- 
-1.7.5.2
+C Anthony Risinger
 

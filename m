@@ -1,31 +1,62 @@
-From: Jim <jim@webstarts.com>
-Subject: snapshot issues
-Date: Fri, 14 Oct 2011 13:13:31 -0400
-Message-ID: <4E986DBB.4080100@webstarts.com>
+From: Bruce Guenter <bruce@untroubled.org>
+Subject: Re: is space really freed after deleting large subvolume?
+Date: Fri, 14 Oct 2011 11:12:29 -0600
+Message-ID: <20111014171229.GA7528@untroubled.org>
+References: <CAJ1PRSmDmd4mrUaQAhjCt1SMtVaBVxq3dCVjCuT20Y4Wf+Ch+Q@mail.gmail.com>
+ <CAJ1PRSk0BVoYw89C0RYejbRF-4QdrKkA_J94Kf+Y7r-u=w+aHA@mail.gmail.com>
+ <20111014084504.GI21931@carfax.org.uk>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=ISO-8859-1; format=flowed
-To: linux-btrfs <linux-btrfs@vger.kernel.org>
+Content-Type: multipart/signed; micalg=pgp-sha1;
+	protocol="application/pgp-signature"; boundary="xHFwDpU9dbj6ez1V"
+To: linux-btrfs@vger.kernel.org
 Return-path: <linux-btrfs-owner@vger.kernel.org>
+In-Reply-To: <20111014084504.GI21931@carfax.org.uk>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Good afternoon btrfs,
-I have been having issues with snapshots not reading the whole file tree 
-below them.  I have installed new btrfs-progs from
 
-git://git.darksatanic.net/repo/btrfs-progs-unstable.git
+--xHFwDpU9dbj6ez1V
+Content-Type: text/plain; charset=us-ascii
+Content-Disposition: inline
+Content-Transfer-Encoding: quoted-printable
 
-made and installed them.  My tree is:  /Btrfs |
-                                               |__ nfs1 |
-                                                        |__ data |
-                                                                 |__ sites |
-                                                                           |__ 00xx |
-                                                                                    |__ email@address
+On Fri, Oct 14, 2011 at 09:45:05AM +0100, Hugo Mills wrote:
+>  Updating and checking the reference count is the thing
+> that takes time, and can't really be short-circuited.
 
-If I use btrfsctl -s (btrfs sub snapshot isn't working) snappath-name /btrfs/nfs1  I get a mountable snapshot of nfs1
-but data is all that I can see below it.  If I btrfsctl -s snappath-name /btrfs/nfs1/data/sites/0000 I can mount /0000 and
-get a full list of email@address accounts but none of the files below them.  I should have stated earlier, everything down
-to and including /email@address are subvolumes.  Below /email@address directories and files were rsync'd into the subvol from
-an nfs mount.  Finally if I snapshot /email@address I have access to all directories and files below them.  Because of this I
-believe that the issue is with snapshots of subvolumes.  I thought I just couldn't see subvols above the snapshot level and was able to see subvols below.  Am I confused or is this a real problem.  I am using kernel 3.1.0-rc4 and will be happy to trace anything you need if you can tell me how to get what you need.  Thanks for your help.
-Jim
+I'm curious if you know how ZFS does this.  My boss has used a set of
+ZFS systems for backup, and indicates that deleting a snapshot is
+instant, and free space is updated immediately with no apparent
+background I/O.  I know ZFS only has read-only snapshots, but I would
+think it would have some of the same reference counting challenges.
 
+I see reading one of the ZFS presentations that it uses a "birth time"
+in each block pointer.  This lets it optimizes the deletion by walking
+only a partial set of the nodes.  Still, for any non-trivial deletion it
+would have to walk enough nodes to keep the delete from being as quick
+as is claimed.
+
+--=20
+Bruce Guenter <bruce@untroubled.org>                http://untroubled.org/
+
+--xHFwDpU9dbj6ez1V
+Content-Type: application/pgp-signature
+
+-----BEGIN PGP SIGNATURE-----
+Version: GnuPG v2.0.17 (GNU/Linux)
+
+iQIcBAEBAgAGBQJOmG19AAoJEFFRvcnBTTxnic8P/2S45H9mi7egxBB/NRVLZ2X/
+xUEJs0gYueiQfw+SMohl+fSd9285/njL8m/JN1moLS7Mn6Nc1VUVehC7zxFHkL1+
+1Be79H59hCu8aG3IoTjSjUsyjFD6iIhxnbdn73FXIr5tkHVzux6MQUisxA0x6TNV
+BJnCHNQ/sJVzIs5XghRGk6tJEoZU51pp+VYL1fvzvAc/Zqk62nTYPrH2N2yCeQdF
+GaCQyTAdUAqmsgw4Omxt2byFPrXv8wRl6zKN4oFwX1gokIwxpTWuEiCrrjkQ2vRU
+xM7wRlu+OgTwkKjqd1x5LPD2L6azeZOWC/QJTPpcHjzpI5meCof1GVpnZAweMrm6
+WKXYb9jvxkqJc6X7s6+E50alDQQdvxVfcEFDEyZp3zs821sOVRv6zqfkIK/mvFrp
+q5oMgZLlYjqfOFt184z4W5V0sSg8j+0l20i8RgK6wVRkpurneyADPHDd05tPRHf3
+U0aYPHUzbWdZzd9Aj8k4c2QXd0vWPNOm3h9VWtQTPmhCUQKZBTXF4n+bkNGIGfCq
+VKeVAw4a/bAOs1U3I07Q2Z+HrSh9tH++64stZOB+XzXUaLckRHUXfZSdY9S7Y0bu
+3G185FGrAXnXwlOQP3s+qrxojOVTFDUQEqHHyFCVXxRj6UVTrpDL7J2ntOHByFhB
+rAkjuJgXJR9tEAFfRhly
+=IkUo
+-----END PGP SIGNATURE-----
+
+--xHFwDpU9dbj6ez1V--

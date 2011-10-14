@@ -1,82 +1,49 @@
 From: Josef Bacik <josef@redhat.com>
-Subject: [PATCH] Btrfs: release trans metadata bytes before flushing delayed refs
-Date: Fri, 14 Oct 2011 14:41:48 -0400
-Message-ID: <1318617708-17995-1-git-send-email-josef@redhat.com>
+Subject: [PATCH] Btrfs: reserve some space for an orphan item when unlinking
+Date: Fri, 14 Oct 2011 14:47:07 -0400
+Message-ID: <1318618027-18169-1-git-send-email-josef@redhat.com>
 To: linux-btrfs@vger.kernel.org
 Return-path: <linux-btrfs-owner@vger.kernel.org>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-We started setting trans->block_rsv = NULL to allow the delayed refs flushing
-stuff to use the right block_rsv and then just made
-btrfs_trans_release_metadata() unconditionally use the trans block rsv.  The
-problem with this is we need to reserve some space in the transaction and then
-migrate it to the global block rsv, so we need to be able to free that out
-properly.  So instead just move btrfs_trans_release_metadata() before the
-delayed ref flushing and use trans->block_rsv for the freeing.  Thanks,
+In __unlink_start_trans() if we don't have enough room for a reservation we will
+check to see if the unlink will free up space.  If it does that's great, but we
+will still could add an orphan item, so we need to reserve enough space to add
+the orphan item.  Do this and migrate the space the global reserve so it all
+works out right.  Thanks,
 
 Signed-off-by: Josef Bacik <josef@redhat.com>
 ---
- fs/btrfs/extent-tree.c |    5 +----
- fs/btrfs/transaction.c |    6 ++----
- 2 files changed, 3 insertions(+), 8 deletions(-)
+ fs/btrfs/inode.c |    9 ++++++++-
+ 1 files changed, 8 insertions(+), 1 deletions(-)
 
-diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
-index 424ae82..eb4fe56 100644
---- a/fs/btrfs/extent-tree.c
-+++ b/fs/btrfs/extent-tree.c
-@@ -3909,13 +3909,10 @@ static void release_global_block_rsv(struct btrfs_fs_info *fs_info)
- void btrfs_trans_release_metadata(struct btrfs_trans_handle *trans,
- 				  struct btrfs_root *root)
- {
--	struct btrfs_block_rsv *block_rsv;
--
- 	if (!trans->bytes_reserved)
- 		return;
- 
--	block_rsv = &root->fs_info->trans_block_rsv;
--	btrfs_block_rsv_release(root, block_rsv, trans->bytes_reserved);
-+	btrfs_block_rsv_release(root, trans->block_rsv, trans->bytes_reserved);
- 	trans->bytes_reserved = 0;
- }
- 
-diff --git a/fs/btrfs/transaction.c b/fs/btrfs/transaction.c
-index 1e1a481..d064fa0 100644
---- a/fs/btrfs/transaction.c
-+++ b/fs/btrfs/transaction.c
-@@ -462,6 +462,7 @@ static int __btrfs_end_transaction(struct btrfs_trans_handle *trans,
- 		return 0;
+diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
+index d6ba353..76c9693 100644
+--- a/fs/btrfs/inode.c
++++ b/fs/btrfs/inode.c
+@@ -2790,7 +2790,8 @@ static struct btrfs_trans_handle *__unlink_start_trans(struct inode *dir,
+ 		return ERR_PTR(-ENOMEM);
  	}
  
-+	btrfs_trans_release_metadata(trans, root);
- 	trans->block_rsv = NULL;
- 	while (count < 4) {
- 		unsigned long cur = trans->delayed_ref_updates;
-@@ -483,8 +484,6 @@ static int __btrfs_end_transaction(struct btrfs_trans_handle *trans,
- 		count++;
- 	}
- 
--	btrfs_trans_release_metadata(trans, root);
--
- 	if (lock && !atomic_read(&root->fs_info->open_ioctl_trans) &&
- 	    should_end_transaction(trans, root)) {
- 		trans->transaction->blocked = 1;
-@@ -1128,6 +1127,7 @@ int btrfs_commit_transaction(struct btrfs_trans_handle *trans,
- 
- 	btrfs_run_ordered_operations(root, 0);
- 
-+	btrfs_trans_release_metadata(trans, root);
- 	trans->block_rsv = NULL;
- 
- 	/* make a pass through all the delayed refs we have so far
-@@ -1136,8 +1136,6 @@ int btrfs_commit_transaction(struct btrfs_trans_handle *trans,
- 	ret = btrfs_run_delayed_refs(trans, root, 0);
- 	BUG_ON(ret);
- 
--	btrfs_trans_release_metadata(trans, root);
--
- 	cur_trans = trans->transaction;
- 	/*
- 	 * set the flushing flag so procs in this transaction have to
+-	trans = btrfs_start_transaction(root, 0);
++	/* 1 for the orphan item */
++	trans = btrfs_start_transaction(root, 1);
+ 	if (IS_ERR(trans)) {
+ 		btrfs_free_path(path);
+ 		root->fs_info->enospc_unlink = 0;
+@@ -2895,6 +2896,12 @@ static struct btrfs_trans_handle *__unlink_start_trans(struct inode *dir,
+ 	err = 0;
+ out:
+ 	btrfs_free_path(path);
++	/* Migrate the orphan reservation over */
++	if (!err)
++		err = btrfs_block_rsv_migrate(trans->block_rsv,
++				&root->fs_info->global_block_rsv,
++				btrfs_calc_trans_metadata_size(root, 1));
++
+ 	if (err) {
+ 		btrfs_end_transaction(trans, root);
+ 		root->fs_info->enospc_unlink = 0;
 -- 
 1.7.5.2
 

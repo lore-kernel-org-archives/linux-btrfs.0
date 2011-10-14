@@ -1,41 +1,31 @@
-From: Ted Ts'o <tytso@mit.edu>
-Subject: Re: A Plumber???s Wish List for Linux
-Date: Fri, 14 Oct 2011 11:47:25 -0400
-Message-ID: <20111014154725.GB13119@thunk.org>
-References: <1317943022.1095.25.camel@mop>
- <20111007111231.6e11d18e@lxorguk.ukuu.org.uk>
- <CAPXgP12nDB2NX6hZabmkUZA9n0PZadi6Yv70LNms8fz9+MnVoA@mail.gmail.com>
- <20111007113820.3b8424a8@lxorguk.ukuu.org.uk>
- <CAPXgP11K4_eVn4_emEYVzCVUsm-BXDyStk7DnDmFpMTL=404Gg@mail.gmail.com>
- <20111007152137.GE28351@carfax.org.uk>
- <20111010111813.GF17912@twin.jikos.cz>
- <4C18E3B8-FA7E-4BC1-BE5D-B517004321A2@mit.edu>
- <20111013002839.GL3159@dastard>
+From: Jim <jim@webstarts.com>
+Subject: snapshot issues
+Date: Fri, 14 Oct 2011 13:13:31 -0400
+Message-ID: <4E986DBB.4080100@webstarts.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Cc: dave@jikos.cz, Hugo Mills <hugo-lkml@carfax.org.uk>,
-	Kay Sievers <kay.sievers@vrfy.org>,
-	Alan Cox <alan@lxorguk.ukuu.org.uk>,
-	linux-kernel@vger.kernel.org, lennart@poettering.net,
-	harald@redhat.com, david@fubar.dk, greg@kroah.com,
-	Chris Mason <chris.mason@oracle.com>,
-	Btrfs mailing list <linux-btrfs@vger.kernel.org>
-To: Dave Chinner <david@fromorbit.com>
-Return-path: <linux-kernel-owner@vger.kernel.org>
-In-Reply-To: <20111013002839.GL3159@dastard>
+Content-Type: text/plain; charset=ISO-8859-1; format=flowed
+To: linux-btrfs <linux-btrfs@vger.kernel.org>
+Return-path: <linux-btrfs-owner@vger.kernel.org>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Thu, Oct 13, 2011 at 11:28:39AM +1100, Dave Chinner wrote:
-> Yup. xfs_admin already provides an interface for offline
-> modification of the UUID for XFS filesytems. I.e. clone the
-> filesytem using xfs_copy, then run xfs_admin -U generate <clone> to
-> generate a new uuid in the cloned copy before you mount the
-> clone....
+Good afternoon btrfs,
+I have been having issues with snapshots not reading the whole file tree 
+below them.  I have installed new btrfs-progs from
 
-This is probably another thing which perhaps Ric Wheeler's proposed
-"generic LVM / file system management front end" should abstract away,
-since every single file system has a different way of setting the UUID
-in an off-line way.  It's a relatively specialized feature, so I
-wouldn't call it high priority to implement first.
+git://git.darksatanic.net/repo/btrfs-progs-unstable.git
 
-	      	      	       	  - Ted
+made and installed them.  My tree is:  /Btrfs |
+                                               |__ nfs1 |
+                                                        |__ data |
+                                                                 |__ sites |
+                                                                           |__ 00xx |
+                                                                                    |__ email@address
+
+If I use btrfsctl -s (btrfs sub snapshot isn't working) snappath-name /btrfs/nfs1  I get a mountable snapshot of nfs1
+but data is all that I can see below it.  If I btrfsctl -s snappath-name /btrfs/nfs1/data/sites/0000 I can mount /0000 and
+get a full list of email@address accounts but none of the files below them.  I should have stated earlier, everything down
+to and including /email@address are subvolumes.  Below /email@address directories and files were rsync'd into the subvol from
+an nfs mount.  Finally if I snapshot /email@address I have access to all directories and files below them.  Because of this I
+believe that the issue is with snapshots of subvolumes.  I thought I just couldn't see subvols above the snapshot level and was able to see subvols below.  Am I confused or is this a real problem.  I am using kernel 3.1.0-rc4 and will be happy to trace anything you need if you can tell me how to get what you need.  Thanks for your help.
+Jim
+

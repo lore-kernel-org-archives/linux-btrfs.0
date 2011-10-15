@@ -1,45 +1,34 @@
-From: Goffredo Baroncelli <kreijack@libero.it>
+From: "Helmut Hullen" <Hullen@t-online.de>
 Subject: Re: btrfs still looks for not existing devices
-Date: Fri, 14 Oct 2011 23:26:03 +0200
-Message-ID: <2220463.scuNVMpFWy@venice>
-References: <BvpRYk9D1uB@helmut.hullen.de>
-Reply-To: kreijack@libero.it
+Date: 15 Oct 2011 04:57:00 +0200
+Message-ID: <BvtShQ8i1uB@helmut.hullen.de>
+References: <2220463.scuNVMpFWy@venice>
+Reply-To: helmut@hullen.de
 Mime-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Cc: linux-btrfs@vger.kernel.org
-To: helmut@hullen.de
+Content-Type: text/plain; charset=US-ASCII
+To: linux-btrfs@vger.kernel.org
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <BvpRYk9D1uB@helmut.hullen.de>
+In-Reply-To: <2220463.scuNVMpFWy@venice>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Friday, 14 October, 2011 17:43:00 you wrote:
-[...]
-> 
-> But "btrfs filesystem show" still shows lots of nonexistent devices -
-> sorry.
+Hallo, Goffredo,
 
-You have to checkout the latest branch; so after
+Du meintest am 14.10.11:
 
-	$ git clone http://git.darksatanic.net/repo/btrfs-progs-unstable.git
+> You have to checkout the latest branch; so after
 
-you have to perform
+> 	$ git clone http://git.darksatanic.net/repo/btrfs-progs-unstable.git
 
-	$ cd btrfs-progs-unstable
-	$ git checkout integration-20111012
+> you have to perform
 
-Hoping that that help
-BR
-G.Baroncelli
+> 	$ cd btrfs-progs-unstable
+> 	$ git checkout integration-20111012
 
+> Hoping that that help
 
+Bingo!
 
-> 
-> Viele Gruesse!
-> Helmut
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
--- 
-gpg key@ keyserver.linux.it: Goffredo Baroncelli (ghigo) <kreijack@inwind.it>
-Key fingerprint = 4769 7E51 5293 D36C 814E  C054 BF04 F161 3DC5 0512
+Now "btrfs filesystem show" works as desired - many thanks to Hugo!
+
+Viele Gruesse!
+Helmut

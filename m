@@ -1,70 +1,237 @@
-From: Goffredo Baroncelli <kreijack@libero.it>
-Subject: Re: [PATCH 1/2][BTRFS-PROGS] add the "--force" switch to the mkfs.btrfs command
-Date: Tue, 18 Oct 2011 18:56:23 +0200
-Message-ID: <1414589.dmrVp4WbBA@venice>
-References: <CAKcLGm8nBmFZOgs4cxAz7qBfyWZne-VX7rhSxA6c0yd4eDTERA@mail.gmail.com> <7496499.QeRia36pgE@venice>
-Reply-To: kreijack@libero.it
-Mime-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Cc: Mitch Harder <mitch.harder@sabayonlinux.org>,
-	Hugo Mills <hugo@carfax.org.uk>
+From: Josef Bacik <josef@redhat.com>
+Subject: [PATCH] Btrfs: seperate out btrfs_block_rsv_check out into 2 different functions
+Date: Tue, 18 Oct 2011 13:10:04 -0400
+Message-ID: <1318957804-16120-1-git-send-email-josef@redhat.com>
 To: linux-btrfs@vger.kernel.org
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <7496499.QeRia36pgE@venice>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-I forgot to mention that you can pull these changes from the following 
-repository:
+Currently btrfs_block_rsv_check does 2 things, it will either refill a block
+reserve like in the truncate or refill case, or it will check to see if there is
+enough space in the global reserve and possibly refill it.  However because of
+overcommit we could be well overcommitting ourselves just to try and refill the
+global reserve, when really we should just be committing the transaction.  So
+breack this out into btrfs_block_rsv_refill and btrfs_block_rsv_check.  Refill
+will try to reserve more metadata if it can and btrfs_block_rsv_check will not,
+it will only tell you if the factor of the total space is still reserved.
+Thanks,
 
-	http://cassiopea.homelinux.net/git/btrfs-progs-unstable.git
+Signed-off-by: Josef Bacik <josef@redhat.com>
+---
+ fs/btrfs/ctree.h            |    4 +++-
+ fs/btrfs/extent-tree.c      |   41 +++++++++++++++++++++++++++--------------
+ fs/btrfs/free-space-cache.c |    2 +-
+ fs/btrfs/inode.c            |    4 ++--
+ fs/btrfs/relocation.c       |    6 ++----
+ fs/btrfs/transaction.c      |    4 ++--
+ 6 files changed, 37 insertions(+), 24 deletions(-)
 
-branch
-
-	force-mkfs
-
-Of course these patches are re-based on the latest Hugo's integration 
-(integration-20111012)
-
-
-BR
-
-On Tuesday, 18 October, 2011 18:45:13 Goffredo Baroncelli wrote:
-> As requested by Mitch, I resend the patch related to the "--force" option
-> for the mkfs.btrfs command.
-> 
-> This patch allow to bypass the check which ensure that you are formatting a
-> not mounted partition/disk.
-> Sometime (eg in a chrooted environment where the /proc filesystem is not
-> mounted ) you don't have all the information, and the check fails even if
-> the device is not mounted.
-> 
-> Passing the --force|-f flag to the mkfs.btrfs command you bypass this check.
-> 
-> This patch update the mkfs.c program.
-> 
-> On Monday, 17 October, 2011 15:11:15 you wrote:
-> > Goffredo:
-> > 
-> > I was wanting to see if your mkfs.btrfs --force patches could get
-> > picked up in the Btrfs-progs testing tree that Hugo Mills is trying to
-> > maintain.
-> > 
-> > He was OK with the patches, but was hoping for a 'signed-off-by' and
-> > more description in the commit comment.
-> > 
-> > Could you resend your patches to the list with a 'signed-off-by' and
-> > some additional description?
-> > 
-> > Some suggested text for the comment:
-> > 
-> > Certain operating environments (such as a chroot environment) can lead
-> > to mkfs.btrfs failure while checking devices (particularly when all
-> > devices are not fully described in /dev).
-> > 
-> > The --force option skips device checking, and forces formating on the
-> > specified target.
-> > 
-> > Thanks.
+diff --git a/fs/btrfs/ctree.h b/fs/btrfs/ctree.h
+index ea60897..2276209 100644
+--- a/fs/btrfs/ctree.h
++++ b/fs/btrfs/ctree.h
+@@ -2252,8 +2252,10 @@ int btrfs_block_rsv_add(struct btrfs_root *root,
+ 			struct btrfs_block_rsv *block_rsv,
+ 			u64 num_bytes);
+ int btrfs_block_rsv_check(struct btrfs_root *root,
++			  struct btrfs_block_rsv *block_rsv, int min_factor);
++int btrfs_block_rsv_refill(struct btrfs_root *root,
+ 			  struct btrfs_block_rsv *block_rsv,
+-			  u64 min_reserved, int min_factor, int flush);
++			  u64 min_reserved);
+ int btrfs_block_rsv_migrate(struct btrfs_block_rsv *src_rsv,
+ 			    struct btrfs_block_rsv *dst_rsv,
+ 			    u64 num_bytes);
+diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
+index eb4fe56..a5f1421 100644
+--- a/fs/btrfs/extent-tree.c
++++ b/fs/btrfs/extent-tree.c
+@@ -3422,7 +3422,6 @@ static int shrink_delalloc(struct btrfs_trans_handle *trans,
+  * @block_rsv - the block_rsv we're allocating for
+  * @orig_bytes - the number of bytes we want
+  * @flush - wether or not we can flush to make our reservation
+- * @check - wether this is just to check if we have enough space or not
+  *
+  * This will reserve orgi_bytes number of bytes from the space info associated
+  * with the block_rsv.  If there is not enough space it will make an attempt to
+@@ -3433,7 +3432,7 @@ static int shrink_delalloc(struct btrfs_trans_handle *trans,
+  */
+ static int reserve_metadata_bytes(struct btrfs_root *root,
+ 				  struct btrfs_block_rsv *block_rsv,
+-				  u64 orig_bytes, int flush, int check)
++				  u64 orig_bytes, int flush)
+ {
+ 	struct btrfs_space_info *space_info = block_rsv->space_info;
+ 	struct btrfs_trans_handle *trans;
+@@ -3507,7 +3506,7 @@ again:
+ 			(orig_bytes * (retries + 1));
+ 	}
+ 
+-	if (ret && !check) {
++	if (ret) {
+ 		u64 profile = btrfs_get_alloc_profile(root, 0);
+ 		u64 avail;
+ 
+@@ -3742,7 +3741,7 @@ int btrfs_block_rsv_add(struct btrfs_root *root,
+ 	if (num_bytes == 0)
+ 		return 0;
+ 
+-	ret = reserve_metadata_bytes(root, block_rsv, num_bytes, 1, 0);
++	ret = reserve_metadata_bytes(root, block_rsv, num_bytes, 1);
+ 	if (!ret) {
+ 		block_rsv_add_bytes(block_rsv, num_bytes, 1);
+ 		return 0;
+@@ -3752,8 +3751,7 @@ int btrfs_block_rsv_add(struct btrfs_root *root,
+ }
+ 
+ int btrfs_block_rsv_check(struct btrfs_root *root,
+-			  struct btrfs_block_rsv *block_rsv,
+-			  u64 min_reserved, int min_factor, int flush)
++			  struct btrfs_block_rsv *block_rsv, int min_factor)
+ {
+ 	u64 num_bytes = 0;
+ 	int ret = -ENOSPC;
+@@ -3762,11 +3760,26 @@ int btrfs_block_rsv_check(struct btrfs_root *root,
+ 		return 0;
+ 
+ 	spin_lock(&block_rsv->lock);
+-	if (min_factor > 0)
+-		num_bytes = div_factor(block_rsv->size, min_factor);
+-	if (min_reserved > num_bytes)
+-		num_bytes = min_reserved;
++	num_bytes = div_factor(block_rsv->size, min_factor);
++	if (block_rsv->reserved >= num_bytes)
++		ret = 0;
++	spin_unlock(&block_rsv->lock);
+ 
++	return ret;
++}
++
++int btrfs_block_rsv_refill(struct btrfs_root *root,
++			  struct btrfs_block_rsv *block_rsv,
++			  u64 min_reserved)
++{
++	u64 num_bytes = 0;
++	int ret = -ENOSPC;
++
++	if (!block_rsv)
++		return 0;
++
++	spin_lock(&block_rsv->lock);
++	num_bytes = min_reserved;
+ 	if (block_rsv->reserved >= num_bytes)
+ 		ret = 0;
+ 	else
+@@ -3776,7 +3789,7 @@ int btrfs_block_rsv_check(struct btrfs_root *root,
+ 	if (!ret)
+ 		return 0;
+ 
+-	ret = reserve_metadata_bytes(root, block_rsv, num_bytes, flush, !flush);
++	ret = reserve_metadata_bytes(root, block_rsv, num_bytes, 1);
+ 	if (!ret) {
+ 		block_rsv_add_bytes(block_rsv, num_bytes, 0);
+ 		return 0;
+@@ -4073,7 +4086,7 @@ int btrfs_delalloc_reserve_metadata(struct inode *inode, u64 num_bytes)
+ 	to_reserve += calc_csum_metadata_size(inode, num_bytes, 1);
+ 	spin_unlock(&BTRFS_I(inode)->lock);
+ 
+-	ret = reserve_metadata_bytes(root, block_rsv, to_reserve, flush, 0);
++	ret = reserve_metadata_bytes(root, block_rsv, to_reserve, flush);
+ 	if (ret) {
+ 		u64 to_free = 0;
+ 		unsigned dropped;
+@@ -5728,7 +5741,7 @@ use_block_rsv(struct btrfs_trans_handle *trans,
+ 	block_rsv = get_block_rsv(trans, root);
+ 
+ 	if (block_rsv->size == 0) {
+-		ret = reserve_metadata_bytes(root, block_rsv, blocksize, 0, 0);
++		ret = reserve_metadata_bytes(root, block_rsv, blocksize, 0);
+ 		/*
+ 		 * If we couldn't reserve metadata bytes try and use some from
+ 		 * the global reserve.
+@@ -5749,7 +5762,7 @@ use_block_rsv(struct btrfs_trans_handle *trans,
+ 		return block_rsv;
+ 	if (ret) {
+ 		WARN_ON(1);
+-		ret = reserve_metadata_bytes(root, block_rsv, blocksize, 0, 0);
++		ret = reserve_metadata_bytes(root, block_rsv, blocksize, 0);
+ 		if (!ret) {
+ 			return block_rsv;
+ 		} else if (ret && block_rsv != global_rsv) {
+diff --git a/fs/btrfs/free-space-cache.c b/fs/btrfs/free-space-cache.c
+index 5d40c1e..2fecfc3 100644
+--- a/fs/btrfs/free-space-cache.c
++++ b/fs/btrfs/free-space-cache.c
+@@ -203,7 +203,7 @@ int btrfs_truncate_free_space_cache(struct btrfs_root *root,
+ 
+ 	rsv = trans->block_rsv;
+ 	trans->block_rsv = root->orphan_block_rsv;
+-	ret = btrfs_block_rsv_check(root, root->orphan_block_rsv, 0, 5, 0);
++	ret = btrfs_block_rsv_check(root, root->orphan_block_rsv, 5);
+ 	if (ret)
+ 		return ret;
+ 
+diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
+index 76c9693..bcf1974 100644
+--- a/fs/btrfs/inode.c
++++ b/fs/btrfs/inode.c
+@@ -3604,7 +3604,7 @@ void btrfs_evict_inode(struct inode *inode)
+ 	 * doing the truncate.
+ 	 */
+ 	while (1) {
+-		ret = btrfs_block_rsv_check(root, rsv, min_size, 0, 1);
++		ret = btrfs_block_rsv_refill(root, rsv, min_size);
+ 
+ 		/*
+ 		 * Try and steal from the global reserve since we will
+@@ -6603,7 +6603,7 @@ static int btrfs_truncate(struct inode *inode)
+ 		btrfs_add_ordered_operation(trans, root, inode);
+ 
+ 	while (1) {
+-		ret = btrfs_block_rsv_check(root, rsv, min_size, 0, 1);
++		ret = btrfs_block_rsv_refill(root, rsv, min_size);
+ 		if (ret) {
+ 			/*
+ 			 * This can only happen with the original transaction we
+diff --git a/fs/btrfs/relocation.c b/fs/btrfs/relocation.c
+index 7fa090f..10af6a0 100644
+--- a/fs/btrfs/relocation.c
++++ b/fs/btrfs/relocation.c
+@@ -2041,8 +2041,7 @@ static noinline_for_stack int merge_reloc_root(struct reloc_control *rc,
+ 		BUG_ON(IS_ERR(trans));
+ 		trans->block_rsv = rc->block_rsv;
+ 
+-		ret = btrfs_block_rsv_check(root, rc->block_rsv, min_reserved,
+-					    0, 0);
++		ret = btrfs_block_rsv_refill(root, rc->block_rsv, min_reserved);
+ 		if (ret) {
+ 			BUG_ON(ret != -EAGAIN);
+ 			ret = btrfs_commit_transaction(trans, root);
+@@ -3774,8 +3773,7 @@ restart:
+ 			}
+ 		}
+ 
+-		ret = btrfs_block_rsv_check(rc->extent_root, rc->block_rsv, 0,
+-					    5, 0);
++		ret = btrfs_block_rsv_check(rc->extent_root, rc->block_rsv, 5);
+ 		if (ret < 0) {
+ 			if (ret != -EAGAIN) {
+ 				err = ret;
+diff --git a/fs/btrfs/transaction.c b/fs/btrfs/transaction.c
+index d064fa0..29bef63 100644
+--- a/fs/btrfs/transaction.c
++++ b/fs/btrfs/transaction.c
+@@ -418,8 +418,8 @@ static int should_end_transaction(struct btrfs_trans_handle *trans,
+ 				  struct btrfs_root *root)
+ {
+ 	int ret;
+-	ret = btrfs_block_rsv_check(root, &root->fs_info->global_block_rsv, 0,
+-				    5, 0);
++
++	ret = btrfs_block_rsv_check(root, &root->fs_info->global_block_rsv, 5);
+ 	return ret ? 1 : 0;
+ }
+ 
 -- 
-gpg key@ keyserver.linux.it: Goffredo Baroncelli (ghigo) <kreijack@inwind.it>
-Key fingerprint = 4769 7E51 5293 D36C 814E  C054 BF04 F161 3DC5 0512
+1.7.5.2
+

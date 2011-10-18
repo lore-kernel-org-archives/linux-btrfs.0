@@ -1,87 +1,70 @@
-From: Goffredo Baroncelli <kreijack@inwind.it>
-Subject: [PATCH 2/2][BTRFS-PROGS] add the "--force" switch to the mkfs.btrfs command
-Date: Tue, 18 Oct 2011 18:45:22 +0200
-Message-ID: <12563918.0zZUdZd8Dg@venice>
-Reply-To: kreijack@inwind.it
+From: Goffredo Baroncelli <kreijack@libero.it>
+Subject: Re: [PATCH 1/2][BTRFS-PROGS] add the "--force" switch to the mkfs.btrfs command
+Date: Tue, 18 Oct 2011 18:56:23 +0200
+Message-ID: <1414589.dmrVp4WbBA@venice>
+References: <CAKcLGm8nBmFZOgs4cxAz7qBfyWZne-VX7rhSxA6c0yd4eDTERA@mail.gmail.com> <7496499.QeRia36pgE@venice>
+Reply-To: kreijack@libero.it
 Mime-Version: 1.0
-Content-Type: multipart/signed; boundary="nextPart4189592.Vv4KKB2IH3"; micalg="pgp-sha1"; protocol="application/pgp-signature"
+Content-Type: text/plain; charset="us-ascii"
 Cc: Mitch Harder <mitch.harder@sabayonlinux.org>,
 	Hugo Mills <hugo@carfax.org.uk>
 To: linux-btrfs@vger.kernel.org
 Return-path: <linux-btrfs-owner@vger.kernel.org>
+In-Reply-To: <7496499.QeRia36pgE@venice>
 List-ID: <linux-btrfs.vger.kernel.org>
 
+I forgot to mention that you can pull these changes from the following 
+repository:
 
---nextPart4189592.Vv4KKB2IH3
-Content-Type: multipart/mixed; boundary="nextPart1373486.OA7rgBfZJP"
-Content-Transfer-Encoding: 7Bit
+	http://cassiopea.homelinux.net/git/btrfs-progs-unstable.git
+
+branch
+
+	force-mkfs
+
+Of course these patches are re-based on the latest Hugo's integration 
+(integration-20111012)
 
 
---nextPart1373486.OA7rgBfZJP
-Content-Transfer-Encoding: 7Bit
-Content-Type: text/plain; charset="us-ascii"
+BR
 
-This patch update the man page
-
+On Tuesday, 18 October, 2011 18:45:13 Goffredo Baroncelli wrote:
+> As requested by Mitch, I resend the patch related to the "--force" option
+> for the mkfs.btrfs command.
+> 
+> This patch allow to bypass the check which ensure that you are formatting a
+> not mounted partition/disk.
+> Sometime (eg in a chrooted environment where the /proc filesystem is not
+> mounted ) you don't have all the information, and the check fails even if
+> the device is not mounted.
+> 
+> Passing the --force|-f flag to the mkfs.btrfs command you bypass this check.
+> 
+> This patch update the mkfs.c program.
+> 
+> On Monday, 17 October, 2011 15:11:15 you wrote:
+> > Goffredo:
+> > 
+> > I was wanting to see if your mkfs.btrfs --force patches could get
+> > picked up in the Btrfs-progs testing tree that Hugo Mills is trying to
+> > maintain.
+> > 
+> > He was OK with the patches, but was hoping for a 'signed-off-by' and
+> > more description in the commit comment.
+> > 
+> > Could you resend your patches to the list with a 'signed-off-by' and
+> > some additional description?
+> > 
+> > Some suggested text for the comment:
+> > 
+> > Certain operating environments (such as a chroot environment) can lead
+> > to mkfs.btrfs failure while checking devices (particularly when all
+> > devices are not fully described in /dev).
+> > 
+> > The --force option skips device checking, and forces formating on the
+> > specified target.
+> > 
+> > Thanks.
 -- 
 gpg key@ keyserver.linux.it: Goffredo Baroncelli (ghigo) <kreijack@inwind.it>
 Key fingerprint = 4769 7E51 5293 D36C 814E  C054 BF04 F161 3DC5 0512
---nextPart1373486.OA7rgBfZJP
-Content-Disposition: inline; filename="0002-mkfs.btrfs-man-page-document-the-force-option.patch"
-Content-Transfer-Encoding: 7Bit
-Content-Type: text/x-patch; charset="UTF-8"; name="0002-mkfs.btrfs-man-page-document-the-force-option.patch"
-
->From 82c11672909e5cc784d08d9361c69f0efb122ef1 Mon Sep 17 00:00:00 2001
-From: Goffredo Baroncelli <kreijack@inwind.it>
-Date: Mon, 3 Jan 2011 19:53:05 +0100
-Subject: [PATCH 2/2] mkfs.btrfs man page: document the --force option.
-
-Add the --force option to not check if a device is already mounted.
-
-Signed-off-by: Goffredo Baroncelli <kreijack@inwind.it>
----
- man/mkfs.btrfs.8.in |    4 ++++
- 1 files changed, 4 insertions(+), 0 deletions(-)
-
-diff --git a/man/mkfs.btrfs.8.in b/man/mkfs.btrfs.8.in
-index 432db1b..2610e9d 100644
---- a/man/mkfs.btrfs.8.in
-+++ b/man/mkfs.btrfs.8.in
-@@ -6,6 +6,7 @@ mkfs.btrfs \- create an btrfs filesystem
- [ \fB\-A\fP\fI alloc-start\fP ]
- [ \fB\-b\fP\fI byte-count\fP ]
- [ \fB \-d\fP\fI data-profile\fP ]
-+[ \fB \-f\fP ]
- [ \fB \-l\fP\fI leafsize\fP ]
- [ \fB \-L\fP\fI label\fP ]
- [ \fB \-m\fP\fI metadata profile\fP ]
-@@ -35,6 +36,9 @@ mkfs.btrfs uses all the available storage for the filesystem.
- Specify how the data must be spanned across the devices specified. Valid
- values are raid0, raid1, raid10 or single.
- .TP
-+\fB\-f\fR, \fB\-\-force \fR
-+Don't check if the device is already mounted.
-+.TP
- \fB\-l\fR, \fB\-\-leafsize \fIsize\fR
- Specify the leaf size, the least data item in which btrfs stores data. The
- default value is the page size.
--- 
-1.7.7
-
-
---nextPart1373486.OA7rgBfZJP--
-
---nextPart4189592.Vv4KKB2IH3
-Content-Type: application/pgp-signature; name="signature.asc"
-Content-Description: This is a digitally signed message part.
-
------BEGIN PGP SIGNATURE-----
-Version: GnuPG v1.4.11 (GNU/Linux)
-
-iD8DBQBOna0ivwTxYT3FBRIRAhr9AJ9CDgMz1/HE8EF7MGEfYSRO/gIqGwCcCeNJ
-rm1nzqeaeEd8ix1b9/5EWgU=
-=zcil
------END PGP SIGNATURE-----
-
---nextPart4189592.Vv4KKB2IH3--
-

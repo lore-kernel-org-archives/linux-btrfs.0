@@ -1,159 +1,87 @@
-From: Ilya Dryomov <idryomov@gmail.com>
-Subject: Re: Creation of pseudo items leads to (seemingly) duplicate inodes
- (BUG inside)
-Date: Tue, 18 Oct 2011 22:04:01 +0300
-Message-ID: <20111018190401.GB31908@zambezi.lan>
-References: <4E9DA301.5050907@jan-o-sch.net>
+From: Martin Mailand <martin@tuxadero.com>
+Subject: kernel BUG at fs/btrfs/inode.c:1163
+Date: Tue, 18 Oct 2011 22:04:01 +0200
+Message-ID: <4E9DDBB1.2050007@tuxadero.com>
+Reply-To: martin@tuxadero.com
 Mime-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Cc: linux-btrfs <linux-btrfs@vger.kernel.org>
-To: Jan Schmidt <list.btrfs@jan-o-sch.net>
-Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <4E9DA301.5050907@jan-o-sch.net>
+Content-Type: text/plain; charset=ISO-8859-15; format=flowed
+Cc: ceph-devel@vger.kernel.org
+To: linux-btrfs@vger.kernel.org
+Return-path: <ceph-devel-owner@vger.kernel.org>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Tue, Oct 18, 2011 at 06:02:09PM +0200, Jan Schmidt wrote:
-> Hi there,
-> 
-> while playing with snapshots for btrfs send, I also encountered
-> seemingly duplicate inodes, which are multiple
-> BTRFS_EMPTY_SUBVOL_DIR_OBJECTID objects within the same directory. I can
-> imagine software that feels uncomfortable, here.
-> 
-> Such objects are created by btrfs_lookup_dentry() in fs/btrfs/inode.c
-> when ENOENT is encountered.
+Hi
+today I hit this Bug, kernel is v3.1-rc10 + josef from today, workload 
+is a ceph osd.
 
-Such inodes are created by btrfs_lookup_dentry() when a directry item
-which is not a first reference to a subvolume is encountered.
-Subvolumes (and snapshots) can be created anywhere, but only one access
-point (the first one) is allowed to prevent the same problems that would
-arise if directory hardlinks were allowed.
+Best Regards,
+  Martin
 
-> The main purpose for this email is to ask: Is this going to stay like that?
-> 
-> David Sterba sent a related issue some days ago with effects seen on
-> dcache level (subject: "WARNING: at fs/dcache.c:1256
-> d_set_d_op+0xaa/0xc0() , nested snapshots").
+[28997.273289] ------------[ cut here ]------------
+[28997.282916] kernel BUG at fs/btrfs/inode.c:1163!
+[28997.290863] invalid opcode: 0000 [#1] SMP
+[28997.290863] CPU 0
+[28997.290863] Modules linked in: radeon ttm drm_kms_helper drm psmouse 
+sp5100_tco i2c_piix4 i2c_algo_bit serio_raw edac_core k8temp 
+edac_mce_amd shpchp lp parport pata_atiixp btrfs zlib_deflate e1000e 
+libcrc32c ahci libahci
+[28997.290863]
+[28997.290863] Pid: 1220, comm: ceph-osd Tainted: G        W 
+3.1.0-rc10+ #2 MICRO-STAR INTERNATIONAL CO., LTD MS-96B3/MS-96B3
+[28997.290863] RIP: 0010:[<ffffffffa0094f17>]  [<ffffffffa0094f17>] 
+run_delalloc_nocow+0x7a7/0x7c0 [btrfs]
+[28997.290863] RSP: 0018:ffff880117357a78  EFLAGS: 00010206
+[28997.290863] RAX: 000000000000002f RBX: ffff880116b12a20 RCX: 
+ffff880117357a38
+[28997.290863] RDX: ffff880000000000 RSI: 0000000000000496 RDI: 
+ffff8801003851e0
+[28997.290863] RBP: ffff880117357b78 R08: 0000000000000497 R09: 
+ffff880117357a28
+[28997.290863] R10: 0000000000000030 R11: 0000000000000000 R12: 
+0000000000011d3b
+[28997.290863] R13: 0000000000011d3b R14: ffff8801003851e0 R15: 
+0000000000300000
+[28997.290863] FS:  00007ff45ae7b700(0000) GS:ffff88011fc00000(0000) 
+knlGS:0000000000000000
+[28997.507960] CS:  0010 DS: 0000 ES: 0000 CR0: 000000008005003b
+[28997.507960] CR2: 00007ff450a20000 CR3: 0000000114b75000 CR4: 
+00000000000006f0
+[28997.507960] DR0: 0000000000000000 DR1: 0000000000000000 DR2: 
+0000000000000000
+[28997.507960] DR3: 0000000000000000 DR6: 00000000ffff0ff0 DR7: 
+0000000000000400
+[28997.507960] Process ceph-osd (pid: 1220, threadinfo ffff880117356000, 
+task ffff880115260000)
+[28997.507960] Stack:
+[28997.507960]  ffff880117357aa8 ffffffff81156e90 ffff880104413af0 
+ffff880104413af0
+[28997.507960]  ffff880117550030 ffff880117357bf0 ffff880117550028 
+ffff880117550020
+[28997.507960]  0000000000400000 0000000100400000 ffff880117357d14 
+00ffffffa00a973e
+[28997.507960] Call Trace:
+[28997.507960]  [<ffffffff81156e90>] ? kmem_cache_free+0x20/0x100
+[28997.507960]  [<ffffffffa0095264>] run_delalloc_range+0x334/0x380 [btrfs]
+[28997.507960]  [<ffffffffa00abc85>] __extent_writepage+0x5b5/0x6f0 [btrfs]
+[28997.507960]  [<ffffffff812e526d>] ? 
+radix_tree_gang_lookup_tag_slot+0x8d/0xd0
+[28997.507960]  [<ffffffffa00abfea>] 
+extent_write_cache_pages.clone.19.clone.26+0x22a/0x3a0 [btrfs]
+[28997.507960]  [<ffffffffa00ac3a5>] extent_writepages+0x45/0x60 [btrfs]
+[28997.507960]  [<ffffffffa00903e0>] ? acls_after_inode_item+0xc0/0xc0 
+[btrfs]
+[28997.507960]  [<ffffffff81182ade>] ? vfsmount_lock_local_unlock+0x1e/0x30
+[28997.507960]  [<ffffffffa008fa27>] btrfs_writepages+0x27/0x30 [btrfs]
+[28997.507960]  [<ffffffff81118161>] do_writepages+0x21/0x40
+[28997.507960]  [<ffffffff8110e2cb>] __filemap_fdatawrite_range+0x5b/0x60
+[28997.507960]  [<ffffffff8110f1d3>] filemap_fdatawrite_range+0x13/0x20
+[28997.507960]  [<ffffffff81192c99>] sys_sync_file_range+0x149/0x180
+[28997.835220]  [<ffffffff815f05c2>] system_call_fastpath+0x16/0x1b
+[28997.835220] Code: 8b 7d 80 e8 dc 9e 00 00 41 b9 04 00 00 00 e9 3d fe 
+ff ff 4d 89 ef 41 bc 01 00 00 00 48 c7 45 a8 ff ff ff ff e9 5c fb ff ff 
+0f 0b <0f> 0b 0f 0b 0f 0b 0f 0b 0f 0b 0f 0b 0f 0b 0f 0b 66 0f 1f 84 00
+[28997.835220] RIP  [<ffffffffa0094f17>] run_delalloc_nocow+0x7a7/0x7c0 
+[btrfs]
+[28997.835220]  RSP <ffff880117357a78>
+[28997.927402] ---[ end trace a0a1c4a13d975229 ]---
 
-I've been meaning to take a look at since then..
-
-> I hit a bug when trying to rename(2) one of those objects, and I'm still
-> hitting it reproducably on 3.1-rc5. However, I cannot reproduce it with
-> the current for-linus branch (3.1-rc6). I don't see a commit I'd expect
-> to fix this, but it may be fixed:
-> 
-> --
-> Oct 17 13:28:26 oglaroon kernel: [266945.208573] btrfs failed to delete
-> reference to snap2, inode 257 parent 256
-> Oct 17 13:28:26 oglaroon kernel: [266945.208586] ------------[ cut here
-> ]------------
-> Oct 17 13:28:26 oglaroon kernel: [266945.264688] kernel BUG at
-> fs/btrfs/inode.c:6907!
-> Oct 17 13:28:26 oglaroon kernel: [266945.320807] invalid opcode: 0000
-> [#1] SMP
-> Oct 17 13:28:26 oglaroon kernel: [266945.370907] CPU 2
-> Oct 17 13:28:26 oglaroon kernel: [266945.393831] Modules linked in:
-> btrfs mpt2sas scsi_transport_sas raid_class [last unloaded: btrfs]
-> Oct 17 13:28:26 oglaroon kernel: [266945.503578]
-> Oct 17 13:28:26 oglaroon kernel: [266945.522353] Pid: 29567, comm: mv
-> Not tainted 3.1.0-rc4+ #5 Supermicro X8SIL/X8SIL
-> Oct 17 13:28:26 oglaroon kernel: [266945.613011] RIP:
-> 0010:[<ffffffffa06d906a>]  [<ffffffffa06d906a>] btrfs_rename+0x42a/0x770
-> [btrfs]
-> Oct 17 13:28:26 oglaroon kernel: [266945.720059] RSP:
-> 0018:ffff88022f933c78  EFLAGS: 00010282
-> Oct 17 13:28:26 oglaroon kernel: [266945.784476] RAX: 00000000fffffffe
-> RBX: 000000003b2456a4 RCX: 0000000000000054
-> Oct 17 13:28:26 oglaroon kernel: [266945.870675] RDX: 0000000000000053
-> RSI: 000060fdc00042c0 RDI: ffff880234330000
-> Oct 17 13:28:26 oglaroon kernel: [266945.956874] RBP: ffff88022f933d48
-> R08: 0000000000000000 R09: 0000000000000001
-> Oct 17 13:28:26 oglaroon kernel: [266946.043072] R10: 0000000000000006
-> R11: 0000000000000000 R12: 000000004e9c1157
-> Oct 17 13:28:26 oglaroon kernel: [266946.129270] R13: ffff880234468368
-> R14: 0000000000000000 R15: ffff880234446d58
-> Oct 17 13:28:26 oglaroon kernel: [266946.215471] FS:
-> 00007f3bf0b96700(0000) GS:ffff88023fc80000(0000) knlGS:0000000000000000
-> Oct 17 13:28:26 oglaroon kernel: [266946.313080] CS:  0010 DS: 0000 ES:
-> 0000 CR0: 0000000080050033
-> Oct 17 13:28:26 oglaroon kernel: [266946.382681] CR2: 00007f3bf0072110
-> CR3: 000000015c05f000 CR4: 00000000000006e0
-> Oct 17 13:28:26 oglaroon kernel: [266946.468880] DR0: 0000000000000000
-> DR1: 0000000000000000 DR2: 0000000000000000
-> Oct 17 13:28:26 oglaroon kernel: [266946.555079] DR3: 0000000000000000
-> DR6: 00000000ffff0ff0 DR7: 0000000000000400
-> Oct 17 13:28:26 oglaroon kernel: [266946.641278] Process mv (pid: 29567,
-> threadinfo ffff88022f932000, task ffff880234330000)
-> Oct 17 13:28:26 oglaroon kernel: [266946.737849] Stack:
-> Oct 17 13:28:26 oglaroon kernel: [266946.762849]  000000000000000a
-> 0000000000000006 00000000000000d0 0000000000000000
-> Oct 17 13:28:26 oglaroon kernel: [266946.852574]  ffff88022f933c01
-> 0000000000000101 00ff8802346b4158 ffff8802349b81b8
-> Oct 17 13:28:26 oglaroon kernel: [266946.942299]  0000000000000000
-> ffff88022f9e7000 ffff88022f9e7000 ffff88019d4b6aa8
-> Oct 17 13:28:26 oglaroon kernel: [266947.032025] Call Trace:
-> Oct 17 13:28:26 oglaroon kernel: [266947.062215]  [<ffffffff81189ea2>]
-> vfs_rename+0x162/0x3e0
-> Oct 17 13:28:26 oglaroon kernel: [266947.126629]  [<ffffffff8118bfb9>]
-> sys_renameat+0x239/0x270
-> Oct 17 13:28:26 oglaroon kernel: [266947.193120]  [<ffffffff8187568c>] ?
-> do_page_fault+0x20c/0x450
-> Oct 17 13:28:26 oglaroon kernel: [266947.262722]  [<ffffffff818723ca>] ?
-> retint_swapgs+0xe/0x13
-> Oct 17 13:28:26 oglaroon kernel: [266947.329214]  [<ffffffff810c84dd>] ?
-> trace_hardirqs_on_caller+0xfd/0x190
-> Oct 17 13:28:26 oglaroon kernel: [266947.409185]  [<ffffffff8118c006>]
-> sys_rename+0x16/0x20
-> Oct 17 13:28:26 oglaroon kernel: [266947.471527]  [<ffffffff8187983b>]
-> system_call_fastpath+0x16/0x1b
-> Oct 17 13:28:26 oglaroon kernel: [266947.544240] Code: 68 ff ff ff 48 8b
-> 4a 30 44 8b 4a 24 4c 8b 42 28 48 8b 55 90 4c 89 95 58 ff ff ff 44 88 9d
-> 50 ff ff ff e8 ba c0 ff ff 85 c0 74 4a <0f> 0b eb fe 48 8b 45 80 48 8b
-> b8 20 01 00 00 88 95 48 ff ff ff
-> Oct 17 13:28:26 oglaroon kernel: [266947.777216] RIP
-> [<ffffffffa06d906a>] btrfs_rename+0x42a/0x770 [btrfs]
-> Oct 17 13:28:26 oglaroon kernel: [266947.856259]  RSP <ffff88022f933c78>
-> Oct 17 13:28:26 oglaroon kernel: [266947.899234] ---[ end trace
-> fd19520e3af48c17 ]---
-> --
-> 
-> Reproducer for the curious:
-> 
-> # mkfs.btrfs /dev/sdv2
-> # mount /dev/sdv2 /mnt
-> # btrfs subvol snap /mnt /mnt/snap1
-> # btrfs subvol snap /mnt /mnt/snap2
-> # btrfs subvol snap /mnt /mnt/snap3
-> 
-> When snap2 was created, there was a dir item for snap1, so this is no
-> surprise:
-> 
-> # ls -lai /mnt/snap2
-> total 8
-> 256 dr-xr-xr-x 1 root root 20 Jan  1  1970 .
-> 256 dr-xr-xr-x 1 root root 30 Jan  1  1970 ..
->   2 drwxr-xr-x 1 root root  0 Oct 18 16:25 snap1
-> 
-> Inode 2 seems a bit strange, but stay tuned. When snap3 was created,
-> there were dir items for snap1 and snap2, so ... *drumroll*
-> 
-> # ls -lai /mnt/snap3
-> total 8
-> 256 dr-xr-xr-x 1 root root 30 Jan  1  1970 .
-> 256 dr-xr-xr-x 1 root root 30 Jan  1  1970 ..
->   2 drwxr-xr-x 1 root root  0 Oct 18 16:26 snap1
->   2 drwxr-xr-x 1 root root  0 Oct 18 16:26 snap2
-
-The way I see it it's expected, at least conceptually.  There might be
-something wrong in the implementation that confuses dcache, etc.  I'll
-take a look and try to fix it if nobody beats me.
-
-Thanks,
-
-		Ilya
-> 
-> -Jan
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html

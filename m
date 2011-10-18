@@ -1,135 +1,199 @@
-From: Jan Schmidt <list.btrfs@jan-o-sch.net>
-Subject: Creation of pseudo items leads to (seemingly) duplicate inodes (BUG
- inside)
-Date: Tue, 18 Oct 2011 18:02:09 +0200
-Message-ID: <4E9DA301.5050907@jan-o-sch.net>
+From: Goffredo Baroncelli <kreijack@libero.it>
+Subject: [PATCH 1/2][BTRFS-PROGS] add the "--force" switch to the mkfs.btrfs command
+Date: Tue, 18 Oct 2011 18:45:13 +0200
+Message-ID: <7496499.QeRia36pgE@venice>
+References: <CAKcLGm8nBmFZOgs4cxAz7qBfyWZne-VX7rhSxA6c0yd4eDTERA@mail.gmail.com>
+Reply-To: kreijack@libero.it
 Mime-Version: 1.0
-Content-Type: text/plain; charset=ISO-8859-1
-To: linux-btrfs <linux-btrfs@vger.kernel.org>
+Content-Type: multipart/signed; boundary="nextPart1717587.C26rEzKsJA"; micalg="pgp-sha1"; protocol="application/pgp-signature"
+Cc: Mitch Harder <mitch.harder@sabayonlinux.org>,
+	Hugo Mills <hugo@carfax.org.uk>
+To: linux-btrfs@vger.kernel.org
 Return-path: <linux-btrfs-owner@vger.kernel.org>
+In-Reply-To: <CAKcLGm8nBmFZOgs4cxAz7qBfyWZne-VX7rhSxA6c0yd4eDTERA@mail.gmail.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hi there,
 
-while playing with snapshots for btrfs send, I also encountered
-seemingly duplicate inodes, which are multiple
-BTRFS_EMPTY_SUBVOL_DIR_OBJECTID objects within the same directory. I can
-imagine software that feels uncomfortable, here.
+--nextPart1717587.C26rEzKsJA
+Content-Type: multipart/mixed; boundary="nextPart1794490.Txgkrmja1G"
+Content-Transfer-Encoding: 7Bit
 
-Such objects are created by btrfs_lookup_dentry() in fs/btrfs/inode.c
-when ENOENT is encountered.
 
-The main purpose for this email is to ask: Is this going to stay like that?
+--nextPart1794490.Txgkrmja1G
+Content-Transfer-Encoding: 7Bit
+Content-Type: text/plain; charset="us-ascii"
 
-David Sterba sent a related issue some days ago with effects seen on
-dcache level (subject: "WARNING: at fs/dcache.c:1256
-d_set_d_op+0xaa/0xc0() , nested snapshots").
+As requested by Mitch, I resend the patch related to the "--force" option for 
+the mkfs.btrfs command.
 
-I hit a bug when trying to rename(2) one of those objects, and I'm still
-hitting it reproducably on 3.1-rc5. However, I cannot reproduce it with
-the current for-linus branch (3.1-rc6). I don't see a commit I'd expect
-to fix this, but it may be fixed:
+This patch allow to bypass the check which ensure that you are formatting a 
+not mounted partition/disk.
+Sometime (eg in a chrooted environment where the /proc filesystem is not 
+mounted ) you don't have all the information, and the check fails even if the 
+device is not mounted.
 
---
-Oct 17 13:28:26 oglaroon kernel: [266945.208573] btrfs failed to delete
-reference to snap2, inode 257 parent 256
-Oct 17 13:28:26 oglaroon kernel: [266945.208586] ------------[ cut here
-]------------
-Oct 17 13:28:26 oglaroon kernel: [266945.264688] kernel BUG at
-fs/btrfs/inode.c:6907!
-Oct 17 13:28:26 oglaroon kernel: [266945.320807] invalid opcode: 0000
-[#1] SMP
-Oct 17 13:28:26 oglaroon kernel: [266945.370907] CPU 2
-Oct 17 13:28:26 oglaroon kernel: [266945.393831] Modules linked in:
-btrfs mpt2sas scsi_transport_sas raid_class [last unloaded: btrfs]
-Oct 17 13:28:26 oglaroon kernel: [266945.503578]
-Oct 17 13:28:26 oglaroon kernel: [266945.522353] Pid: 29567, comm: mv
-Not tainted 3.1.0-rc4+ #5 Supermicro X8SIL/X8SIL
-Oct 17 13:28:26 oglaroon kernel: [266945.613011] RIP:
-0010:[<ffffffffa06d906a>]  [<ffffffffa06d906a>] btrfs_rename+0x42a/0x770
-[btrfs]
-Oct 17 13:28:26 oglaroon kernel: [266945.720059] RSP:
-0018:ffff88022f933c78  EFLAGS: 00010282
-Oct 17 13:28:26 oglaroon kernel: [266945.784476] RAX: 00000000fffffffe
-RBX: 000000003b2456a4 RCX: 0000000000000054
-Oct 17 13:28:26 oglaroon kernel: [266945.870675] RDX: 0000000000000053
-RSI: 000060fdc00042c0 RDI: ffff880234330000
-Oct 17 13:28:26 oglaroon kernel: [266945.956874] RBP: ffff88022f933d48
-R08: 0000000000000000 R09: 0000000000000001
-Oct 17 13:28:26 oglaroon kernel: [266946.043072] R10: 0000000000000006
-R11: 0000000000000000 R12: 000000004e9c1157
-Oct 17 13:28:26 oglaroon kernel: [266946.129270] R13: ffff880234468368
-R14: 0000000000000000 R15: ffff880234446d58
-Oct 17 13:28:26 oglaroon kernel: [266946.215471] FS:
-00007f3bf0b96700(0000) GS:ffff88023fc80000(0000) knlGS:0000000000000000
-Oct 17 13:28:26 oglaroon kernel: [266946.313080] CS:  0010 DS: 0000 ES:
-0000 CR0: 0000000080050033
-Oct 17 13:28:26 oglaroon kernel: [266946.382681] CR2: 00007f3bf0072110
-CR3: 000000015c05f000 CR4: 00000000000006e0
-Oct 17 13:28:26 oglaroon kernel: [266946.468880] DR0: 0000000000000000
-DR1: 0000000000000000 DR2: 0000000000000000
-Oct 17 13:28:26 oglaroon kernel: [266946.555079] DR3: 0000000000000000
-DR6: 00000000ffff0ff0 DR7: 0000000000000400
-Oct 17 13:28:26 oglaroon kernel: [266946.641278] Process mv (pid: 29567,
-threadinfo ffff88022f932000, task ffff880234330000)
-Oct 17 13:28:26 oglaroon kernel: [266946.737849] Stack:
-Oct 17 13:28:26 oglaroon kernel: [266946.762849]  000000000000000a
-0000000000000006 00000000000000d0 0000000000000000
-Oct 17 13:28:26 oglaroon kernel: [266946.852574]  ffff88022f933c01
-0000000000000101 00ff8802346b4158 ffff8802349b81b8
-Oct 17 13:28:26 oglaroon kernel: [266946.942299]  0000000000000000
-ffff88022f9e7000 ffff88022f9e7000 ffff88019d4b6aa8
-Oct 17 13:28:26 oglaroon kernel: [266947.032025] Call Trace:
-Oct 17 13:28:26 oglaroon kernel: [266947.062215]  [<ffffffff81189ea2>]
-vfs_rename+0x162/0x3e0
-Oct 17 13:28:26 oglaroon kernel: [266947.126629]  [<ffffffff8118bfb9>]
-sys_renameat+0x239/0x270
-Oct 17 13:28:26 oglaroon kernel: [266947.193120]  [<ffffffff8187568c>] ?
-do_page_fault+0x20c/0x450
-Oct 17 13:28:26 oglaroon kernel: [266947.262722]  [<ffffffff818723ca>] ?
-retint_swapgs+0xe/0x13
-Oct 17 13:28:26 oglaroon kernel: [266947.329214]  [<ffffffff810c84dd>] ?
-trace_hardirqs_on_caller+0xfd/0x190
-Oct 17 13:28:26 oglaroon kernel: [266947.409185]  [<ffffffff8118c006>]
-sys_rename+0x16/0x20
-Oct 17 13:28:26 oglaroon kernel: [266947.471527]  [<ffffffff8187983b>]
-system_call_fastpath+0x16/0x1b
-Oct 17 13:28:26 oglaroon kernel: [266947.544240] Code: 68 ff ff ff 48 8b
-4a 30 44 8b 4a 24 4c 8b 42 28 48 8b 55 90 4c 89 95 58 ff ff ff 44 88 9d
-50 ff ff ff e8 ba c0 ff ff 85 c0 74 4a <0f> 0b eb fe 48 8b 45 80 48 8b
-b8 20 01 00 00 88 95 48 ff ff ff
-Oct 17 13:28:26 oglaroon kernel: [266947.777216] RIP
-[<ffffffffa06d906a>] btrfs_rename+0x42a/0x770 [btrfs]
-Oct 17 13:28:26 oglaroon kernel: [266947.856259]  RSP <ffff88022f933c78>
-Oct 17 13:28:26 oglaroon kernel: [266947.899234] ---[ end trace
-fd19520e3af48c17 ]---
---
+Passing the --force|-f flag to the mkfs.btrfs command you bypass this check.
 
-Reproducer for the curious:
+This patch update the mkfs.c program.
 
-# mkfs.btrfs /dev/sdv2
-# mount /dev/sdv2 /mnt
-# btrfs subvol snap /mnt /mnt/snap1
-# btrfs subvol snap /mnt /mnt/snap2
-# btrfs subvol snap /mnt /mnt/snap3
 
-When snap2 was created, there was a dir item for snap1, so this is no
-surprise:
 
-# ls -lai /mnt/snap2
-total 8
-256 dr-xr-xr-x 1 root root 20 Jan  1  1970 .
-256 dr-xr-xr-x 1 root root 30 Jan  1  1970 ..
-  2 drwxr-xr-x 1 root root  0 Oct 18 16:25 snap1
 
-Inode 2 seems a bit strange, but stay tuned. When snap3 was created,
-there were dir items for snap1 and snap2, so ... *drumroll*
+On Monday, 17 October, 2011 15:11:15 you wrote:
+> Goffredo:
+> 
+> I was wanting to see if your mkfs.btrfs --force patches could get
+> picked up in the Btrfs-progs testing tree that Hugo Mills is trying to
+> maintain.
+> 
+> He was OK with the patches, but was hoping for a 'signed-off-by' and
+> more description in the commit comment.
+> 
+> Could you resend your patches to the list with a 'signed-off-by' and
+> some additional description?
+> 
+> Some suggested text for the comment:
+> 
+> Certain operating environments (such as a chroot environment) can lead
+> to mkfs.btrfs failure while checking devices (particularly when all
+> devices are not fully described in /dev).
+> 
+> The --force option skips device checking, and forces formating on the
+> specified target.
+> 
+> Thanks.
+-- 
+gpg key@ keyserver.linux.it: Goffredo Baroncelli (ghigo) <kreijack@inwind.it>
+Key fingerprint = 4769 7E51 5293 D36C 814E  C054 BF04 F161 3DC5 0512
+--nextPart1794490.Txgkrmja1G
+Content-Disposition: inline; filename="0001-Add-the-force-option.patch"
+Content-Transfer-Encoding: 7Bit
+Content-Type: text/x-patch; charset="UTF-8"; name="0001-Add-the-force-option.patch"
 
-# ls -lai /mnt/snap3
-total 8
-256 dr-xr-xr-x 1 root root 30 Jan  1  1970 .
-256 dr-xr-xr-x 1 root root 30 Jan  1  1970 ..
-  2 drwxr-xr-x 1 root root  0 Oct 18 16:26 snap1
-  2 drwxr-xr-x 1 root root  0 Oct 18 16:26 snap2
+>From 037b3d6f01da086dc7d308001289cb79bc08e0bd Mon Sep 17 00:00:00 2001
+From: Goffredo Baroncelli <kreijack@inwind.it>
+Date: Mon, 3 Jan 2011 19:51:46 +0100
+Subject: [PATCH 1/2] Add the --force option.
 
--Jan
+Add the --force option to not check if a device is already mounted.
+
+Signed-off-by: Goffredo Baroncelli <kreijack@inwind.it>
+---
+ mkfs.c |   46 ++++++++++++++++++++++++++++------------------
+ 1 files changed, 28 insertions(+), 18 deletions(-)
+
+diff --git a/mkfs.c b/mkfs.c
+index e3ced19..be236d0 100644
+--- a/mkfs.c
++++ b/mkfs.c
+@@ -303,6 +303,7 @@ static void print_usage(void)
+ 	fprintf(stderr, "\t -A --alloc-start the offset to start the FS\n");
+ 	fprintf(stderr, "\t -b --byte-count total number of bytes in the FS\n");
+ 	fprintf(stderr, "\t -d --data data profile, raid0, raid1, raid10 or single\n");
++	fprintf(stderr, "\t -f --force don't check if a device is already mounted\n");
+ 	fprintf(stderr, "\t -l --leafsize size of btree leaves\n");
+ 	fprintf(stderr, "\t -L --label set a label\n");
+ 	fprintf(stderr, "\t -m --metadata metadata profile, values like data profile\n");
+@@ -368,6 +369,7 @@ static struct option long_options[] = {
+ 	{ "data", 1, NULL, 'd' },
+ 	{ "version", 0, NULL, 'V' },
+ 	{ "rootdir", 1, NULL, 'r' },
++	{ "force", 0, NULL, 'f' },
+ 	{ 0, 0, 0, 0}
+ };
+ 
+@@ -1191,10 +1193,11 @@ int main(int ac, char **av)
+ 	u64 size_of_data = 0;
+ 	u64 source_dir_size = 0;
+ 	char *pretty_buf;
++	int force=0;
+ 
+ 	while(1) {
+ 		int c;
+-		c = getopt_long(ac, av, "A:b:l:n:s:m:d:L:r:VM", long_options,
++		c = getopt_long(ac, av, "A:b:l:n:s:m:d:L:r:VMf", long_options,
+ 				&option_index);
+ 		if (c < 0)
+ 			break;
+@@ -1240,6 +1243,8 @@ int main(int ac, char **av)
+ 			case 'r':
+ 				source_dir = optarg;
+ 				source_dir_set = 1;
++			case 'f':
++				force=1;
+ 				break;
+ 			default:
+ 				print_usage();
+@@ -1263,14 +1268,17 @@ int main(int ac, char **av)
+ 
+ 	if (source_dir == 0) {
+ 		file = av[optind++];
+-		ret = check_mounted(file);
+-		if (ret < 0) {
+-			fprintf(stderr, "error checking %s mount status\n", file);
+-			exit(1);
+-		}
+-		if (ret == 1) {
+-			fprintf(stderr, "%s is mounted\n", file);
+-			exit(1);
++		if(!force){
++			ret = check_mounted(file);
++			if (ret < 0) {
++				fprintf(stderr, 
++				    "error checking %s mount status\n", file);
++				exit(1);
++			}
++			if (ret == 1) {
++				fprintf(stderr, "%s is mounted\n", file);
++				exit(1);
++			}
+ 		}
+ 		ac--;
+ 		fd = open(file, O_RDWR);
+@@ -1353,15 +1361,17 @@ int main(int ac, char **av)
+ 		int old_mixed = mixed;
+ 
+ 		file = av[optind++];
+-		ret = check_mounted(file);
+-		if (ret < 0) {
+-			fprintf(stderr, "error checking %s mount status\n",
+-				file);
+-			exit(1);
+-		}
+-		if (ret == 1) {
+-			fprintf(stderr, "%s is mounted\n", file);
+-			exit(1);
++		if(!force){
++			ret = check_mounted(file);
++			if (ret < 0) {
++				fprintf(stderr, "error checking %s"
++					" mount status\n",file);
++				exit(1);
++			}
++			if (ret == 1) {
++				fprintf(stderr, "%s is mounted\n", file);
++				exit(1);
++			}
+ 		}
+ 		fd = open(file, O_RDWR);
+ 		if (fd < 0) {
+-- 
+1.7.7
+
+
+--nextPart1794490.Txgkrmja1G--
+
+--nextPart1717587.C26rEzKsJA
+Content-Type: application/pgp-signature; name="signature.asc"
+Content-Description: This is a digitally signed message part.
+
+-----BEGIN PGP SIGNATURE-----
+Version: GnuPG v1.4.11 (GNU/Linux)
+
+iD8DBQBOna0ZvwTxYT3FBRIRAlwzAJ9I2rh1wNT5RIjvowLa6ZnmuPXWvQCfcQo6
+gjzfhNwxA4WgtY30GXeiy8o=
+=MWm1
+-----END PGP SIGNATURE-----
+
+--nextPart1717587.C26rEzKsJA--
+

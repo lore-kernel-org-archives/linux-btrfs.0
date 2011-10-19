@@ -1,56 +1,96 @@
 From: Jan Schmidt <list.btrfs@jan-o-sch.net>
-Subject: Re: Creation of pseudo items leads to (seemingly) duplicate inodes
- (BUG inside)
-Date: Wed, 19 Oct 2011 12:11:44 +0200
-Message-ID: <4E9EA260.9010107@jan-o-sch.net>
-References: <4E9DA301.5050907@jan-o-sch.net> <20111018190401.GB31908@zambezi.lan>
+Subject: Re: Broken DIR_ITEMs on snapshot
+Date: Wed, 19 Oct 2011 12:17:28 +0200
+Message-ID: <4E9EA3B8.2020000@jan-o-sch.net>
+References: <4E9DA2C7.90309@jan-o-sch.net> <20111018185134.GA31908@zambezi.lan>
 Mime-Version: 1.0
 Content-Type: text/plain; charset=ISO-8859-1
-To: Ilya Dryomov <idryomov@gmail.com>,
+Cc: Jan Schmidt <list.btrfs@jan-o-sch.net>,
 	linux-btrfs <linux-btrfs@vger.kernel.org>
+To: Ilya Dryomov <idryomov@gmail.com>,
+	Chris Mason <chris.mason@oracle.com>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <20111018190401.GB31908@zambezi.lan>
+In-Reply-To: <20111018185134.GA31908@zambezi.lan>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 18.10.2011 21:04, Ilya Dryomov wrote:
-> On Tue, Oct 18, 2011 at 06:02:09PM +0200, Jan Schmidt wrote:
->> Reproducer for the curious:
+On 18.10.2011 20:51, Ilya Dryomov wrote:
+> On Tue, Oct 18, 2011 at 06:01:11PM +0200, Jan Schmidt wrote:
+>> Hi,
+>>
+>> while still busy with btrfs send, I came across some strange DIR_ITEMs.
+>> I looked into that briefly, but I'd rather return to implementing btrfs
+>> send, hoping someone is willing to make up his mind on this one :-)
+>>
+>> To reproduce, do the following:
 >>
 >> # mkfs.btrfs /dev/sdv2
 >> # mount /dev/sdv2 /mnt
 >> # btrfs subvol snap /mnt /mnt/snap1
->> # btrfs subvol snap /mnt /mnt/snap2
->> # btrfs subvol snap /mnt /mnt/snap3
 >>
->> When snap2 was created, there was a dir item for snap1, so this is no
->> surprise:
+>> You've a freshly created snapshot. However, file tree 256 (the
+>> snap1-tree) will contain two strange items:
 >>
->> # ls -lai /mnt/snap2
->> total 8
->> 256 dr-xr-xr-x 1 root root 20 Jan  1  1970 .
->> 256 dr-xr-xr-x 1 root root 30 Jan  1  1970 ..
->>   2 drwxr-xr-x 1 root root  0 Oct 18 16:25 snap1
+>>         item 2 key (256 DIR_ITEM 3645318598) itemoff 3788 itemsize 35
+>>                 location key (256 ROOT_ITEM 18446744073709551615) type 2
+>>                 namelen 5 datalen 0 name: snap1
+>>         item 3 key (256 DIR_INDEX 2) itemoff 3753 itemsize 35
+>>                 location key (256 ROOT_ITEM 18446744073709551615) type 2
+>>                 namelen 5 datalen 0 name: snap1
 >>
->> Inode 2 seems a bit strange, but stay tuned. When snap3 was created,
->> there were dir items for snap1 and snap2, so ... *drumroll*
+>> These items are needed in tree 5 (fs tree) to reference snap1. However,
+>> within snap1, I'd not expect the entries. A brief look into
+>> create_pending_snapshot reveals
 >>
->> # ls -lai /mnt/snap3
->> total 8
->> 256 dr-xr-xr-x 1 root root 30 Jan  1  1970 .
->> 256 dr-xr-xr-x 1 root root 30 Jan  1  1970 ..
->>   2 drwxr-xr-x 1 root root  0 Oct 18 16:26 snap1
->>   2 drwxr-xr-x 1 root root  0 Oct 18 16:26 snap2
+>>    ...
+>>    btrfs_insert_dir_item()
+>>    ...
+>>    /* some delayed stuff with scary comments */
+>>    ...
+>>    btrfs_cow_block()
+>>    ...
+>>
+>> I'm not sure whether cowing earlier would help, I'm particularly
+>> uncertain because of the run_delayed_* code in between. So I haven't
+>> tried to fix this, I'm convinced it should be fixed, though.
 > 
-> The way I see it it's expected, at least conceptually.  There might be
-
-I'm sure this violates some specification, and yes, I agree, it's
-conceptually. Let's wait for some real complaints :-)
-
-Jan
-
-> something wrong in the implementation that confuses dcache, etc.  I'll
-> take a look and try to fix it if nobody beats me.
+> I don't think it's a bug.  Directory item snap1 (the access point) is
+> inserted into /mnt (defaut subvolume) and THEN a snapshot is taken.  So
+> snap1 fs-tree contains that directory item, which in Btrfs terms means
+> DIR_ITEM and DIR_INDEX items in the fs-tree.
+>  
+>> These items lead to some strange effects:
+>>
+>> # cd /mnt/snap1
+>> # ls -l
+>> dr-xr-xr-x 1 root root 10 Jan  1  1970 .
+>> dr-xr-xr-x 1 root root 16 Oct 18 15:56 ..
+>> # mkdir snap1
+>> mkdir: cannot create directory `snap1': File exists
+>> # stat snap1
+>>   File: `snap1'
+>>   Size: 0               Blocks: 0          IO Block: 4096   directory
+>> Device: 11h/17d Inode: 2           Links: 1
+>> # rmdir snap1
+>> # stat snap1
+>> stat: cannot stat `snap1': No such file or directory
+>>
+>> Inode number 2 seems to be BTRFS_EMPTY_SUBVOL_DIR_OBJECTID, the pseudo
+>> object is created by btrfs_lookup_dentry() in inode.c when ENOENT is
+>> encountered.
 > 
-> Thanks,
-> 
-> 		Ilya
+> Because from the user's point of view that snap1 item shouldn't be
+> there, readdir() skips it and consequently ls doesn't show it.  However
+> when you stat() it you force a lookup on it and end up with a special
+> inode which is there to ensure there is only one valid access point to a
+> particular subvolume.
+
+You are describing the obvious. The only point I want to insist on is
+that this is a bug.
+
+Either we must give the full namespace to the user, or we must make it
+obvious that the name of the snapshot is taken within the snapshot in
+this case (e.g. by creating an INODE_ITEM).
+
+Chris: Or do you really absolutely want to have it like this?
+
+-Jan

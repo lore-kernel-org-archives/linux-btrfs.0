@@ -1,166 +1,169 @@
-From: Liu Bo <liubo2009@cn.fujitsu.com>
-Subject: Re: Creation of pseudo items leads to (seemingly) duplicate inodes
- (BUG inside)
-Date: Wed, 19 Oct 2011 09:18:08 +0800
-Message-ID: <4E9E2550.1050503@cn.fujitsu.com>
-References: <4E9DA301.5050907@jan-o-sch.net> <4E9E2177.6050405@cn.fujitsu.com>
+From: Christoph Hellwig <hch@infradead.org>
+Subject: Re: [PATCH 1/3] 264: Functional test case for the btrfs snapshot
+Date: Wed, 19 Oct 2011 05:42:09 -0400
+Message-ID: <20111019094209.GB3083@infradead.org>
+References: <20111013005652.GM3159@dastard>
+ <1318919336-32206-1-git-send-email-Anand.Jain@oracle.com>
+ <1318919336-32206-2-git-send-email-Anand.Jain@oracle.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=ISO-8859-1
-Cc: linux-btrfs <linux-btrfs@vger.kernel.org>
-To: Jan Schmidt <list.btrfs@jan-o-sch.net>
-Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <4E9E2177.6050405@cn.fujitsu.com>
+Content-Type: text/plain; charset=us-ascii
+Cc: hch@infradead.org, linux-fsdevel@vger.kernel.org,
+	linux-btrfs@vger.kernel.org, xfs@oss.sgi.com, david@fromorbit.com
+To: Anand Jain <Anand.Jain@oracle.com>
+Return-path: <linux-fsdevel-owner@vger.kernel.org>
+In-Reply-To: <1318919336-32206-2-git-send-email-Anand.Jain@oracle.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 10/19/2011 09:01 AM, Liu Bo wrote:
-> On 10/19/2011 12:02 AM, Jan Schmidt wrote:
->> Hi there,
->>
->> while playing with snapshots for btrfs send, I also encountered
->> seemingly duplicate inodes, which are multiple
->> BTRFS_EMPTY_SUBVOL_DIR_OBJECTID objects within the same directory. I can
->> imagine software that feels uncomfortable, here.
->>
->> Such objects are created by btrfs_lookup_dentry() in fs/btrfs/inode.c
->> when ENOENT is encountered.
->>
-> 
-> Hi,
-> 
-> A similar bug has been fixed by one of my patches(still queued):
-> 
+On Tue, Oct 18, 2011 at 02:28:54PM +0800, Anand Jain wrote:
+> Create snapshots in various ways, modify the data around the block and
+> file boundaries and verify the data integrity.
 
-sorry, I missed something, this one has been merged in Chris's github tree(for rc6).
+The test itselt looks good enough, but I have some comments on the
+pool infrastructure changes.  I also think they should probably be
+a separate preparatory patch, or at least documented in the changelog
+as well.
 
+> index 5367be6..7c135c7 100644
+> --- a/README
+> +++ b/README
+> @@ -36,12 +36,17 @@ Preparing system for tests (IRIX and Linux):
+>                not be run.
+>                
+>          (these must be two DIFFERENT partitions)
+> +
+> +    - for btrfs only: some tests would need 3 or more independent SCRATCH disks,
+> +      which should be setenv SCRATCH_DEV_POOL instead of SCRATCH_DEV
+> +              
+>                
+>      - setup your environment
+>          - setenv TEST_DEV "device containing TEST PARTITION"
+>          - setenv TEST_DIR "mount point of TEST PARTITION"   
+>         	- optionally:
+>               - setenv SCRATCH_DEV "device containing SCRATCH PARTITION"
+> +             - setenv SCRATCH_DEV_POOL "pool of SCRATCH disks for testing btrfs"
 
-> http://marc.info/?l=linux-btrfs&m=131409014207238&w=2
-> 
-> thanks,
-> liubo
-> 
->> The main purpose for this email is to ask: Is this going to stay like that?
->>
->> David Sterba sent a related issue some days ago with effects seen on
->> dcache level (subject: "WARNING: at fs/dcache.c:1256
->> d_set_d_op+0xaa/0xc0() , nested snapshots").
->>
->> I hit a bug when trying to rename(2) one of those objects, and I'm still
->> hitting it reproducably on 3.1-rc5. However, I cannot reproduce it with
->> the current for-linus branch (3.1-rc6). I don't see a commit I'd expect
->> to fix this, but it may be fixed:
->>
->> --
->> Oct 17 13:28:26 oglaroon kernel: [266945.208573] btrfs failed to delete
->> reference to snap2, inode 257 parent 256
->> Oct 17 13:28:26 oglaroon kernel: [266945.208586] ------------[ cut here
->> ]------------
->> Oct 17 13:28:26 oglaroon kernel: [266945.264688] kernel BUG at
->> fs/btrfs/inode.c:6907!
->> Oct 17 13:28:26 oglaroon kernel: [266945.320807] invalid opcode: 0000
->> [#1] SMP
->> Oct 17 13:28:26 oglaroon kernel: [266945.370907] CPU 2
->> Oct 17 13:28:26 oglaroon kernel: [266945.393831] Modules linked in:
->> btrfs mpt2sas scsi_transport_sas raid_class [last unloaded: btrfs]
->> Oct 17 13:28:26 oglaroon kernel: [266945.503578]
->> Oct 17 13:28:26 oglaroon kernel: [266945.522353] Pid: 29567, comm: mv
->> Not tainted 3.1.0-rc4+ #5 Supermicro X8SIL/X8SIL
->> Oct 17 13:28:26 oglaroon kernel: [266945.613011] RIP:
->> 0010:[<ffffffffa06d906a>]  [<ffffffffa06d906a>] btrfs_rename+0x42a/0x770
->> [btrfs]
->> Oct 17 13:28:26 oglaroon kernel: [266945.720059] RSP:
->> 0018:ffff88022f933c78  EFLAGS: 00010282
->> Oct 17 13:28:26 oglaroon kernel: [266945.784476] RAX: 00000000fffffffe
->> RBX: 000000003b2456a4 RCX: 0000000000000054
->> Oct 17 13:28:26 oglaroon kernel: [266945.870675] RDX: 0000000000000053
->> RSI: 000060fdc00042c0 RDI: ffff880234330000
->> Oct 17 13:28:26 oglaroon kernel: [266945.956874] RBP: ffff88022f933d48
->> R08: 0000000000000000 R09: 0000000000000001
->> Oct 17 13:28:26 oglaroon kernel: [266946.043072] R10: 0000000000000006
->> R11: 0000000000000000 R12: 000000004e9c1157
->> Oct 17 13:28:26 oglaroon kernel: [266946.129270] R13: ffff880234468368
->> R14: 0000000000000000 R15: ffff880234446d58
->> Oct 17 13:28:26 oglaroon kernel: [266946.215471] FS:
->> 00007f3bf0b96700(0000) GS:ffff88023fc80000(0000) knlGS:0000000000000000
->> Oct 17 13:28:26 oglaroon kernel: [266946.313080] CS:  0010 DS: 0000 ES:
->> 0000 CR0: 0000000080050033
->> Oct 17 13:28:26 oglaroon kernel: [266946.382681] CR2: 00007f3bf0072110
->> CR3: 000000015c05f000 CR4: 00000000000006e0
->> Oct 17 13:28:26 oglaroon kernel: [266946.468880] DR0: 0000000000000000
->> DR1: 0000000000000000 DR2: 0000000000000000
->> Oct 17 13:28:26 oglaroon kernel: [266946.555079] DR3: 0000000000000000
->> DR6: 00000000ffff0ff0 DR7: 0000000000000400
->> Oct 17 13:28:26 oglaroon kernel: [266946.641278] Process mv (pid: 29567,
->> threadinfo ffff88022f932000, task ffff880234330000)
->> Oct 17 13:28:26 oglaroon kernel: [266946.737849] Stack:
->> Oct 17 13:28:26 oglaroon kernel: [266946.762849]  000000000000000a
->> 0000000000000006 00000000000000d0 0000000000000000
->> Oct 17 13:28:26 oglaroon kernel: [266946.852574]  ffff88022f933c01
->> 0000000000000101 00ff8802346b4158 ffff8802349b81b8
->> Oct 17 13:28:26 oglaroon kernel: [266946.942299]  0000000000000000
->> ffff88022f9e7000 ffff88022f9e7000 ffff88019d4b6aa8
->> Oct 17 13:28:26 oglaroon kernel: [266947.032025] Call Trace:
->> Oct 17 13:28:26 oglaroon kernel: [266947.062215]  [<ffffffff81189ea2>]
->> vfs_rename+0x162/0x3e0
->> Oct 17 13:28:26 oglaroon kernel: [266947.126629]  [<ffffffff8118bfb9>]
->> sys_renameat+0x239/0x270
->> Oct 17 13:28:26 oglaroon kernel: [266947.193120]  [<ffffffff8187568c>] ?
->> do_page_fault+0x20c/0x450
->> Oct 17 13:28:26 oglaroon kernel: [266947.262722]  [<ffffffff818723ca>] ?
->> retint_swapgs+0xe/0x13
->> Oct 17 13:28:26 oglaroon kernel: [266947.329214]  [<ffffffff810c84dd>] ?
->> trace_hardirqs_on_caller+0xfd/0x190
->> Oct 17 13:28:26 oglaroon kernel: [266947.409185]  [<ffffffff8118c006>]
->> sys_rename+0x16/0x20
->> Oct 17 13:28:26 oglaroon kernel: [266947.471527]  [<ffffffff8187983b>]
->> system_call_fastpath+0x16/0x1b
->> Oct 17 13:28:26 oglaroon kernel: [266947.544240] Code: 68 ff ff ff 48 8b
->> 4a 30 44 8b 4a 24 4c 8b 42 28 48 8b 55 90 4c 89 95 58 ff ff ff 44 88 9d
->> 50 ff ff ff e8 ba c0 ff ff 85 c0 74 4a <0f> 0b eb fe 48 8b 45 80 48 8b
->> b8 20 01 00 00 88 95 48 ff ff ff
->> Oct 17 13:28:26 oglaroon kernel: [266947.777216] RIP
->> [<ffffffffa06d906a>] btrfs_rename+0x42a/0x770 [btrfs]
->> Oct 17 13:28:26 oglaroon kernel: [266947.856259]  RSP <ffff88022f933c78>
->> Oct 17 13:28:26 oglaroon kernel: [266947.899234] ---[ end trace
->> fd19520e3af48c17 ]---
->> --
->>
->> Reproducer for the curious:
->>
->> # mkfs.btrfs /dev/sdv2
->> # mount /dev/sdv2 /mnt
->> # btrfs subvol snap /mnt /mnt/snap1
->> # btrfs subvol snap /mnt /mnt/snap2
->> # btrfs subvol snap /mnt /mnt/snap3
->>
->> When snap2 was created, there was a dir item for snap1, so this is no
->> surprise:
->>
->> # ls -lai /mnt/snap2
->> total 8
->> 256 dr-xr-xr-x 1 root root 20 Jan  1  1970 .
->> 256 dr-xr-xr-x 1 root root 30 Jan  1  1970 ..
->>   2 drwxr-xr-x 1 root root  0 Oct 18 16:25 snap1
->>
->> Inode 2 seems a bit strange, but stay tuned. When snap3 was created,
->> there were dir items for snap1 and snap2, so ... *drumroll*
->>
->> # ls -lai /mnt/snap3
->> total 8
->> 256 dr-xr-xr-x 1 root root 30 Jan  1  1970 .
->> 256 dr-xr-xr-x 1 root root 30 Jan  1  1970 ..
->>   2 drwxr-xr-x 1 root root  0 Oct 18 16:26 snap1
->>   2 drwxr-xr-x 1 root root  0 Oct 18 16:26 snap2
->>
->> -Jan
->> --
->> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
->> the body of a message to majordomo@vger.kernel.org
->> More majordomo info at  http://vger.kernel.org/majordomo-info.html
->>
-> 
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
-> 
+How does one find out what the pool name is?  You'll also need to
+document how to create the pool from disks.
+
+> @@ -229,6 +229,20 @@ if [ ! -d "$TEST_DIR" ]; then
+>      exit 1
+>  fi
+>  
+> +# a btrfs tester will set only SCRATCH_DEV_POOL, we will put first of its dev
+> +# to SCRATCH_DEV and rest to SCRATCH_DEV_POOL to maintain the backward compatibility
+> +if [ "$HOSTOS" == "Linux" ]; then
+> +    FSTYP_tmp=`blkid -c /dev/null -s TYPE -o value $TEST_DEV`
+> +else
+> +    FSTYP_tmp=xfs
+> +fi
+
+Why do we need a second FSTYP detection?  If the existing one isn't
+early enough make sure it's done early enough instead of duplicating
+it.
+
+> --- a/common.rc
+> +++ b/common.rc
+> @@ -1498,7 +1498,11 @@ _nfiles()
+>                  file=f$f
+>                  echo > $file
+>                  if [ $size -gt 0 ]; then
+> -                    dd if=/dev/zero of=$file bs=1024 count=$size
+> +		    if [ $randomdata == false ]; then
+> +	                dd if=/dev/zero of=$file bs=1024 count=$size 2>&1 | _filter_dd
+> +		    else
+> +                    	dd if=/dev/urandom of=$file bs=1024 count=$size 2>&1 | _filter_dd
+> +		    fi
+
+I'd rather see the randomdata flag passed down explicitly to _descend and
+_nfiles rather than setting a magic environment variable.
+
+> @@ -1508,7 +1512,11 @@ _nfiles()
+>  _descend()
+>  {
+>          dirname=$1; depth=$2
+> -        mkdir $dirname  || die "mkdir $dirname failed"
+> +	if [ -d $dirname ]; then
+> +		dirname=`mktemp -dq $dirname/dir.XXXXXX`
+> +	else
+> +	        mkdir $dirname  || die "mkdir $dirname failed"
+> +	fi
+
+Why would the directory here already exist?  This at least needs
+very good documentation.  Also the indentation seems off compared
+to the surrounding code.
+
+> @@ -1550,6 +1559,7 @@ _populate_fs()
+>          s)      size=$OPTARG;;
+>          v)      verbose=true;;
+>          r)      root=$OPTARG;;
+> +	x)	randomdata=true;;
+
+indendation is off again.
+
+> +# scratch_dev_pool should contain the disks pool for the btrfs raid
+> +_require_scratch_dev_pool()
+> +{
+> +	local i
+> +	case "$FSTYP" in
+> +	btrfs)
+> +		if [ -z "$SCRATCH_DEV_POOL" ]
+> +		then
+
+For new code I'd generally prefer the more readable
+
+		if [ ... ]; then
+
+although the above form unfortunately still is fairly common in
+xfsprogs.
+
+> +# We will check if the device is virtual (eg: loop device) since it does not
+> +# have the delete entry-point. Otherwise SCSI and USB devices are fine. 
+> +_require_deletable_scratch_dev_pool()
+> +{
+> +	local i
+> +	local x
+> +	for i in $SCRATCH_DEV_POOL; do
+> +		x=`echo $i | cut -d"/" -f 3`
+> +		ls -l /sys/class/block/${x} | grep -q "virtual" 
+> +		if [ $? == "0" ]; then
+> +			_notrun "$i is a virtual device which is not deletable"
+> +		fi
+> +	done
+> +}
+> +
+> +# arg 1 is dev to remove and is output of the below eg.
+> +# ls -l /sys/class/block/sdd | rev | cut -d "/" -f 3 | rev
+> +_devmgt_remove()
+> +{
+> +	echo 1 > /sys/class/scsi_device/${1}/device/delete || _fail "Remove disk failed"
+> +}
+> +
+> +# arg 1 is dev to add and is output of the below eg.
+> +# ls -l /sys/class/block/sdd | rev | cut -d "/" -f 3 | rev
+> +_devmgt_add()
+> +{
+> +	local h
+> +	local tdl
+> +	# arg 1 will be in h:t:d:l format now in the h and "t d l" format
+> +	h=`echo ${1} | cut -d":" -f 1`
+> +	tdl=`echo ${1} | cut -d":" -f 2-|sed 's/:/ /g'`
+> +
+> +	echo ${tdl} >  /sys/class/scsi_host/host${h}/scan || _fail "Add disk failed"
+> +}
+
+This code looks a bit fragile to me, but I think we can fix it on the go
+if we encouter issues.
+
+> diff --git a/group b/group
+> index 2a8970c..cfbae8c 100644
+> --- a/group
+> +++ b/group
+> @@ -377,3 +377,4 @@ deprecated
+>  261 auto quick quota
+>  262 auto quick quota
+>  263 rw auto quick
+> +264 auto quick
+
+It might be worth to add pool or snaphot groups if you add more
+tests like this.
 

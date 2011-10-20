@@ -1,73 +1,214 @@
-From: Christian Brunner <chb@muc.de>
-Subject: Re: WARNING: at fs/btrfs/inode.c:2114
-Date: Thu, 20 Oct 2011 17:31:03 +0200
-Message-ID: <CAO47_-_fLgLaGVjLdcmx133Qt2a+S=H5oa=1w++S1LjveOGmKA@mail.gmail.com>
-References: <CAO47_--qdKE0z6maQCpD2xh+RY+ZvyRVKxDF0c3iqBA6pafkZQ@mail.gmail.com>
-	<CAO47_-9rk-4muJ0+qMcyd_wmGyToFRp7VN5G1hfhZmmCGLNWDg@mail.gmail.com>
-	<4E93A417.9040001@cn.fujitsu.com>
-	<CAO47_--SRZK752VK-qJPXiCgcY-MrEfD-5zkT2PHF1RNt5iv1Q@mail.gmail.com>
-	<CAO47_-8RdWoS-1s-KJtbaZoQNLMgOnk=XvAFCNOY+iX+CEiyMg@mail.gmail.com>
-	<4E9FF16D.70105@cn.fujitsu.com>
-Reply-To: chb@muc.de
+From: Anand Jain <anand.jain@oracle.com>
+Subject: Re: [PATCH 1/3] 264: Functional test case for the btrfs snapshot
+Date: Thu, 20 Oct 2011 23:31:55 +0800
+Message-ID: <4EA03EEB.3020403@oracle.com>
+References: <20111013005652.GM3159@dastard> <1318919336-32206-1-git-send-email-Anand.Jain@oracle.com> <1318919336-32206-2-git-send-email-Anand.Jain@oracle.com> <20111019094209.GB3083@infradead.org>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=ISO-8859-1
-Cc: linux-btrfs@vger.kernel.org
-To: Liu Bo <liubo2009@cn.fujitsu.com>
-Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <4E9FF16D.70105@cn.fujitsu.com>
+Content-Type: text/plain; charset=ISO-8859-1; format=flowed
+Cc: linux-fsdevel@vger.kernel.org, linux-btrfs@vger.kernel.org,
+	xfs@oss.sgi.com, david@fromorbit.com
+To: Christoph Hellwig <hch@infradead.org>
+Return-path: <linux-fsdevel-owner@vger.kernel.org>
+In-Reply-To: <20111019094209.GB3083@infradead.org>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-2011/10/20 Liu Bo <liubo2009@cn.fujitsu.com>:
-> On 10/17/2011 11:23 PM, Christian Brunner wrote:
->> 2011/10/11 Christian Brunner <chb@muc.de>:
->>
->> I have updated to a 3.0.6 kernel, with all the btrfs patches from
->> josef's git repo this weekend. But I'm still seeing the following
->> warning:
->>
->
-> Hi,
->
-> Would you try with this patch:
->
-> http://permalink.gmane.org/gmane.comp.file-systems.btrfs/13728
->
 
-I have now applied the patch josef sent to the list (Btrfs: use the
-global reserve when truncating the free space cache inode), but the
-warning is still there:
+comments in line.
 
-[   69.153400] ------------[ cut here ]------------
-[   69.158669] WARNING: at fs/btrfs/inode.c:2114
-btrfs_orphan_commit_root+0xb0/0xc0 [btrfs]()
-[   69.167984] Hardware name: ProLiant DL180 G6
-[   69.173037] Modules linked in: btrfs zlib_deflate libcrc32c sunrpc
-bonding ipv6 sg serio_raw pcspkr ghes hed iTCO_wdt iTCO_vendor_support
-ixgbe dca mdio i7core_edac edac_core iomemory_vsl(P) hpsa squashfs
-[last unloaded: scsi_wait_scan]
-[   69.197502] Pid: 3426, comm: ceph-osd Tainted: P
-3.0.6-1.fits.8.el6.x86_64 #1
-[   69.206591] Call Trace:
-[   69.209389]  [<ffffffff8106344f>] warn_slowpath_common+0x7f/0xc0
-[   69.216144]  [<ffffffff810634aa>] warn_slowpath_null+0x1a/0x20
-[   69.222647]  [<ffffffffa028c080>] btrfs_orphan_commit_root+0xb0/0xc0 [btrfs]
-[   69.230550]  [<ffffffffa0286e15>] commit_fs_roots+0xc5/0x1b0 [btrfs]
-[   69.237698]  [<ffffffff8154c231>] ? mutex_lock+0x31/0x60
-[   69.243707]  [<ffffffffa0267a8a>] ? btrfs_free_path+0x2a/0x40 [btrfs]
-[   69.250966]  [<ffffffffa0287d56>]
-btrfs_commit_transaction+0x3c6/0x820 [btrfs]
-[   69.259087]  [<ffffffffa0287178>] ? wait_current_trans+0x28/0x110 [btrfs]
-[   69.266720]  [<ffffffffa02882c5>] ? join_transaction+0x25/0x250 [btrfs]
-[   69.274136]  [<ffffffff81086410>] ? wake_up_bit+0x40/0x40
-[   69.280210]  [<ffffffffa0264329>] btrfs_sync_fs+0x59/0xd0 [btrfs]
-[   69.287072]  [<ffffffffa02b5b95>] btrfs_ioctl+0x495/0xd50 [btrfs]
-[   69.293922]  [<ffffffff8125ed20>] ? inode_has_perm+0x30/0x40
-[   69.300286]  [<ffffffff81261a2c>] ? file_has_perm+0xdc/0xf0
-[   69.306558]  [<ffffffff8117086a>] do_vfs_ioctl+0x9a/0x5a0
-[   69.312657]  [<ffffffff81170e11>] sys_ioctl+0xa1/0xb0
-[   69.318352]  [<ffffffff81555702>] system_call_fastpath+0x16/0x1b
-[   69.325107] ---[ end trace 2fd1a5665203d8e3 ]---
+On 19/10/2011 17:42, Christoph Hellwig wrote:
+> On Tue, Oct 18, 2011 at 02:28:54PM +0800, Anand Jain wrote:
+>> Create snapshots in various ways, modify the data around the block and
+>> file boundaries and verify the data integrity.
+> 
+> The test itselt looks good enough, but I have some comments on the
+> pool infrastructure changes.  I also think they should probably be
+> a separate preparatory patch, or at least documented in the changelog
+> as well.
+> 
+>> index 5367be6..7c135c7 100644
+>> --- a/README
+>> +++ b/README
+>> @@ -36,12 +36,17 @@ Preparing system for tests (IRIX and Linux):
+>>                not be run.
+>>                
+>>          (these must be two DIFFERENT partitions)
+>> +
+>> +    - for btrfs only: some tests would need 3 or more independent SCRATCH disks,
+>> +      which should be setenv SCRATCH_DEV_POOL instead of SCRATCH_DEV
+>> +              
+>>                
+>>      - setup your environment
+>>          - setenv TEST_DEV "device containing TEST PARTITION"
+>>          - setenv TEST_DIR "mount point of TEST PARTITION"   
+>>         	- optionally:
+>>               - setenv SCRATCH_DEV "device containing SCRATCH PARTITION"
+>> +             - setenv SCRATCH_DEV_POOL "pool of SCRATCH disks for testing btrfs"
+> 
+> How does one find out what the pool name is?  You'll also need to
+> document how to create the pool from disks.
+> 
+
+  agreed.
+
+>> @@ -229,6 +229,20 @@ if [ ! -d "$TEST_DIR" ]; then
+>>      exit 1
+>>  fi
+>>  
+>> +# a btrfs tester will set only SCRATCH_DEV_POOL, we will put first of its dev
+>> +# to SCRATCH_DEV and rest to SCRATCH_DEV_POOL to maintain the backward compatibility
+>> +if [ "$HOSTOS" == "Linux" ]; then
+>> +    FSTYP_tmp=`blkid -c /dev/null -s TYPE -o value $TEST_DEV`
+>> +else
+>> +    FSTYP_tmp=xfs
+>> +fi
+> 
+> Why do we need a second FSTYP detection?  If the existing one isn't
+> early enough make sure it's done early enough instead of duplicating
+> it.
+
+  looks like its ok not to have FSTYP checked here, it will follow the
+  following logic..
+
+   btrfs FS OR any FS
+     SCRATCH_DEV_POOL is unset and SCRATCH_DEV is set
+      . test-case with _require_scratch_dev_pool will not run
+      . test-case without _require_scratch_dev_pool will run
+
+     SCRATCH_DEV_POOL is set and SCRATCH_DEV is unset
+      . test-case with _require_scratch_dev_pool
+          - runs only if FSTYP=btrfs
+      . test-case without _require_scratch_dev_pool will run using first
+        dev in the SCRATCH_DEV_POOL as a SCRATCH_DEV
+          - if FSTYP=btrfs it includes SCRATCH_DEV_POOL disks to the FS
+          - if FSTYP=non-btrfs SCRATCH_DEV_POOL is ignored
+
+     SCRATCH_DEV_POOL is set and SCRATCH_DEV is set
+      . reports error in the config
+
+     SCRATCH_DEV_POOL is unset and SCRATCH_DEV is unset
+      . no change
 
 
-Thanks,
-Christian
+>> --- a/common.rc
+>> +++ b/common.rc
+>> @@ -1498,7 +1498,11 @@ _nfiles()
+>>                  file=f$f
+>>                  echo > $file
+>>                  if [ $size -gt 0 ]; then
+>> -                    dd if=/dev/zero of=$file bs=1024 count=$size
+>> +		    if [ $randomdata == false ]; then
+>> +	                dd if=/dev/zero of=$file bs=1024 count=$size 2>&1 | _filter_dd
+>> +		    else
+>> +                    	dd if=/dev/urandom of=$file bs=1024 count=$size 2>&1 | _filter_dd
+>> +		    fi
+> 
+> I'd rather see the randomdata flag passed down explicitly to _descend and
+> _nfiles rather than setting a magic environment variable.
+
+makes sense. added.
+
+
+>> @@ -1508,7 +1512,11 @@ _nfiles()
+>>  _descend()
+>>  {
+>>          dirname=$1; depth=$2
+>> -        mkdir $dirname  || die "mkdir $dirname failed"
+>> +	if [ -d $dirname ]; then
+>> +		dirname=`mktemp -dq $dirname/dir.XXXXXX`
+>> +	else
+>> +	        mkdir $dirname  || die "mkdir $dirname failed"
+>> +	fi
+> 
+> Why would the directory here already exist?  This at least needs
+> very good documentation.  Also the indentation seems off compared
+> to the surrounding code.
+
+  Hmm. Changing this back to the original design - where calling
+  function has to ensure a new directory name which does not exists.
+
+>> @@ -1550,6 +1559,7 @@ _populate_fs()
+>>          s)      size=$OPTARG;;
+>>          v)      verbose=true;;
+>>          r)      root=$OPTARG;;
+>> +	x)	randomdata=true;;
+> 
+> indendation is off again.
+
+oh! thks for pointing.
+
+>> +# scratch_dev_pool should contain the disks pool for the btrfs raid
+>> +_require_scratch_dev_pool()
+>> +{
+>> +	local i
+>> +	case "$FSTYP" in
+>> +	btrfs)
+>> +		if [ -z "$SCRATCH_DEV_POOL" ]
+>> +		then
+> 
+> For new code I'd generally prefer the more readable
+> 
+> 		if [ ... ]; then
+> 
+> although the above form unfortunately still is fairly common in
+> xfsprogs.
+
+got it.
+
+>> +# We will check if the device is virtual (eg: loop device) since it does not
+>> +# have the delete entry-point. Otherwise SCSI and USB devices are fine. 
+>> +_require_deletable_scratch_dev_pool()
+>> +{
+>> +	local i
+>> +	local x
+>> +	for i in $SCRATCH_DEV_POOL; do
+>> +		x=`echo $i | cut -d"/" -f 3`
+>> +		ls -l /sys/class/block/${x} | grep -q "virtual" 
+>> +		if [ $? == "0" ]; then
+>> +			_notrun "$i is a virtual device which is not deletable"
+>> +		fi
+>> +	done
+>> +}
+>> +
+>> +# arg 1 is dev to remove and is output of the below eg.
+>> +# ls -l /sys/class/block/sdd | rev | cut -d "/" -f 3 | rev
+>> +_devmgt_remove()
+>> +{
+>> +	echo 1 > /sys/class/scsi_device/${1}/device/delete || _fail "Remove disk failed"
+>> +}
+>> +
+>> +# arg 1 is dev to add and is output of the below eg.
+>> +# ls -l /sys/class/block/sdd | rev | cut -d "/" -f 3 | rev
+>> +_devmgt_add()
+>> +{
+>> +	local h
+>> +	local tdl
+>> +	# arg 1 will be in h:t:d:l format now in the h and "t d l" format
+>> +	h=`echo ${1} | cut -d":" -f 1`
+>> +	tdl=`echo ${1} | cut -d":" -f 2-|sed 's/:/ /g'`
+>> +
+>> +	echo ${tdl} >  /sys/class/scsi_host/host${h}/scan || _fail "Add disk failed"
+>> +}
+> 
+> This code looks a bit fragile to me, but I think we can fix it on the go
+> if we encouter issues.
+
+  ok.
+
+>> diff --git a/group b/group
+>> index 2a8970c..cfbae8c 100644
+>> --- a/group
+>> +++ b/group
+>> @@ -377,3 +377,4 @@ deprecated
+>>  261 auto quick quota
+>>  262 auto quick quota
+>>  263 rw auto quick
+>> +264 auto quick
+> 
+> It might be worth to add pool or snaphot groups if you add more
+> tests like this.
+
+  this can be considered when appropriate I think, as of now there is
+  one test case in each of them.
+Thanks
+
+Anand

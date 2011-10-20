@@ -1,26 +1,33 @@
-From: Josef Bacik <josef@redhat.com>
-Subject: Re: [PATCH] Btrfs: add a missing block_rsv reset
-Date: Thu, 20 Oct 2011 08:49:05 -0400
-Message-ID: <20111020124904.GA2353@localhost.localdomain>
-References: <1319102718-17767-1-git-send-email-liubo2009@cn.fujitsu.com>
+From: Martin Mailand <martin@tuxadero.com>
+Subject: Re: kernel BUG at fs/btrfs/inode.c:1163
+Date: Thu, 20 Oct 2011 15:04:31 +0200
+Message-ID: <4EA01C5F.9040506@tuxadero.com>
+References: <4E9DDBB1.2050007@tuxadero.com> <4E9EE687.4020202@oracle.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Cc: linux-btrfs@vger.kernel.org, chris.mason@oracle.com,
-	josef@redhat.com, chb@muc.de
-To: Liu Bo <liubo2009@cn.fujitsu.com>
-Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <1319102718-17767-1-git-send-email-liubo2009@cn.fujitsu.com>
+Content-Type: text/plain; charset=ISO-8859-15; format=flowed
+Cc: linux-btrfs@vger.kernel.org, ceph-devel@vger.kernel.org
+To: Anand Jain <anand.jain@oracle.com>
+Return-path: <ceph-devel-owner@vger.kernel.org>
+In-Reply-To: <4E9EE687.4020202@oracle.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Thu, Oct 20, 2011 at 05:25:18PM +0800, Liu Bo wrote:
-> In commit ab1ca99b51df63901617b9f10f9a36d5d4972d78
-> (Btrfs: reset to appropriate block rsv after orphan operations),
-> we miss a block_rsv reset and this sometimes leads us to
-> the WARNING of btrfs_orphan_commit_root().
-> 
-> Signed-off-by: Liu Bo <liubo2009@cn.fujitsu.com>
+Hi Anand,
+I changed the replication level of the rbd pool, from one to two.
+ceph osd pool set rbd size 2
 
-Actually this needs to be converted over to the proper way to truncate things.
-I'll write that up and send a patch.  Thanks,
+And then during the sync the bug happened, but today I could not 
+reproduce it.
 
-Josef
+So I do not have a testcase for you.
+
+Best Regards,
+  martin
+
+Am 19.10.2011 17:02, schrieb Anand Jain:
+> I tried to play with ceph here and not a complete success yet.
+>
+>   any idea what was done on the system at the time of the problem ?
+>   and any specific command that could trigger this again ?
+>   Thanks.
+> anand
+

@@ -1,244 +1,100 @@
-From: Anand Jain <Anand.Jain@oracle.com>
-Subject: [PATCH 3/5] 264: Functional test case for the btrfs snapshot
-Date: Thu, 20 Oct 2011 23:41:20 +0800
-Message-ID: <1319125282-17062-4-git-send-email-Anand.Jain@oracle.com>
-References: <1318919336-32206-1-git-send-email-Anand.Jain@oracle.com>
- <1319125282-17062-1-git-send-email-Anand.Jain@oracle.com>
-Cc: Anand Jain <Anand.Jain@oracle.com>
-To: hch@infradead.org, linux-fsdevel@vger.kernel.org,
-	linux-btrfs@vger.kernel.org, xfs@oss.sgi.com
-Return-path: <linux-fsdevel-owner@vger.kernel.org>
-In-Reply-To: <1319125282-17062-1-git-send-email-Anand.Jain@oracle.com>
+From: "Nikos Voutsinas" <nvoutsin@noc.edunet.gr>
+Subject: BTRFS thinks that a device is mounted
+Date: Fri, 21 Oct 2011 00:39:05 +0300
+Message-ID: <a46ac41f14ba1581cb554a0f26463859.squirrel@webmail01.edunet.gr>
+Mime-Version: 1.0
+Content-Type: text/plain;charset=utf-8
+To: linux-btrfs@vger.kernel.org
+Return-path: <linux-btrfs-owner@vger.kernel.org>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Create snapshots in various ways, modify the data around the block and
-file boundaries and verify the data integrity.
+Hello all,
 
-Signed-off-by: Anand Jain <Anand.Jain@oracle.com>
----
- 264     |  193 +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
- 264.out |    2 +
- group   |    1 +
- 3 files changed, 196 insertions(+), 0 deletions(-)
- create mode 100755 264
- create mode 100644 264.out
+What went wrong in the following scenario? BTRFS thinks that a device is
+mounted while it is not.
 
-diff --git a/264 b/264
-new file mode 100755
-index 0000000..d655d1e
---- /dev/null
-+++ b/264
-@@ -0,0 +1,193 @@
-+#!/bin/bash
-+# FS QA Test No. 264
-+#
-+# Extented btrfs snapshot test cases
-+#
-+#-----------------------------------------------------------------------
-+# Copyright (c) 2011 Oracle  All Rights Reserved.
-+#
-+# This program is free software; you can redistribute it and/or
-+# modify it under the terms of the GNU General Public License as
-+# published by the Free Software Foundation.
-+#
-+# This program is distributed in the hope that it would be useful,
-+# but WITHOUT ANY WARRANTY; without even the implied warranty of
-+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-+# GNU General Public License for more details.
-+#
-+# You should have received a copy of the GNU General Public License
-+# along with this program; if not, write the Free Software Foundation,
-+# Inc.,  51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
-+#
-+#-----------------------------------------------------------------------
-+#
-+# creator
-+owner=anand.jain@oracle.com
-+
-+seq=`basename $0`
-+echo "QA output created by $seq"
-+
-+here=`pwd`
-+tmp=/tmp/$$
-+status=1	# failure is the default!
-+
-+_cleanup()
-+{
-+    rm -f $tmp.*
-+}
-+
-+trap "_cleanup ; exit \$status" 0 1 2 3 15
-+
-+# get standard environment, filters and checks
-+. ./common.rc
-+. ./common.filter
-+
-+_need_to_be_root
-+_supported_fs btrfs
-+_supported_os Linux
-+_require_scratch
-+
-+_scratch_mkfs $SCRATCH_DEV_POOL > /dev/null 2>&1 || _fail "mkfs failed"
-+_scratch_mount
-+
-+# Create and save sha256sum
-+# arg1 FS to generate sha256
-+# arg2 File name to save the sha256 output
-+_save_checksum()
-+{
-+	local i=0
-+	>$2
-+	cd $1
-+	for i in `find . -type f`; do sha256sum $i >> $2; done
-+	cd $OLDPWD
-+}
-+
-+# Verify the sha256sum for a FS
-+# arg1 FS to be tested
-+# arg2 sha256 file
-+_verify_checksum()
-+{
-+	cd $1
-+	[ -f $2 ] || _fail "checksum file $2 not found"
-+	sha256sum -c $2 | grep "FAILED"
-+	cd $OLDPWD
-+}
-+
-+# Create a snapshot
-+# arg1 dest dir
-+# Return snapshot name in the SNAPNAME
-+_create_snap()
-+{
-+	local x
-+	[ -d $1 ] || _fail "Destination dir $1 not present"
-+	SNAPNAME=`mktemp -u $SCRATCH_MNT/snap.XXXXXX`
-+	btrfs subvolume snapshot $1 $SNAPNAME > /dev/null || _fail "snapshot create failed"
-+}
-+
-+# Reads and writes new data but does not allocate new blocks
-+# arg1 FS to be modified
-+_read_modify_write()
-+{
-+	local i
-+	local FSIZE
-+	for i in `find $1 -type f`
-+	do
-+		FSIZE=`stat -t $i | cut -d" " -f2`
-+		dd if=$i of=/dev/null obs=$FSIZE count=1 status=noxfer 2>/dev/null &
-+		dd if=/dev/urandom of=$i obs=$FSIZE count=1 status=noxfer 2>/dev/null &
-+	done
-+	wait $!
-+}
-+
-+# Fills the allocated blocks
-+# arg1 FS in question
-+_fill_blk()
-+{
-+	local FSIZE
-+	local BLKS
-+	local NBLK
-+	local FALLOC
-+	local WS
-+
-+	for i in `find /$1 -type f`
-+	do
-+		FSIZE=`stat -t $i | cut -d" " -f2`
-+		BLKS=`stat -c "%B" $i`
-+		NBLK=`stat -c "%b" $i`
-+		FALLOC=$(($BLKS * $NBLK))
-+		WS=$(($FALLOC - $FSIZE))
-+		dd if=/dev/urandom of=$i oseek=$FSIZE obs=$WS count=1 status=noxfer 2>/dev/null &
-+	done
-+	wait $!
-+}
-+
-+
-+# Append a random size to the files
-+# arg1 : FS in question
-+_append_file()
-+{
-+	local FSIZE
-+	local X
-+	local N
-+	local i
-+	N=0
-+	for i in `find $1 -type f`
-+	do
-+		if [ $N == 0 ]; then
-+			X=$i
-+			FSIZE=`stat -t $X | cut -d" " -f2`
-+			dd if=$X of=$X seek=1 bs=$FSIZE obs=$FSIZE count=1 status=noxfer 2>/dev/null &
-+			N=$(($N+1))
-+			continue
-+		fi
-+		FSIZE=`stat -t $i | cut -d" " -f2`
-+		dd if=$X of=$i seek=1 bs=$FSIZE obs=$FSIZE count=1 status=noxfer 2>/dev/null &
-+		X=$i
-+	done
-+	wait $!
-+}
-+
-+##################### real QA test starts here###################################
-+# sv1 - is just a name nothing spl
-+firstvol="$SCRATCH_MNT/sv1"
-+btrfs subvolume create $firstvol > /dev/null || _fail "btrfs subvolume create $firstvol failed"
-+dirp=`mktemp -duq $firstvol/dir.XXXXXX`
-+_populate_fs -n 1 -f 20 -d 10 -r $dirp -s 10 -x
-+SNAPNAME=0
-+_create_snap $firstvol
-+_save_checksum $firstvol $tmp.sv1.sum
-+_verify_checksum $SNAPNAME $tmp.sv1.sum
-+
-+#Append1 the files
-+_fill_blk $SNAPNAME
-+_verify_checksum $firstvol $tmp.sv1.sum
-+
-+#Append2 the files
-+_append_file $SNAPNAME
-+_verify_checksum $firstvol $tmp.sv1.sum
-+
-+#read modify write
-+_read_modify_write $SNAPNAME
-+_verify_checksum $firstvol $tmp.sv1.sum
-+
-+#nested snapshot test
-+src_vol=$firstvol
-+for i in `seq 1 7`; do
-+	SNAPNAME=0
-+	_create_snap $src_vol
-+	_verify_checksum $SNAPNAME $tmp.sv1.sum
-+	src_vol=$SNAPNAME
-+done
-+
-+# file delete test
-+SNAPNAME=0
-+_create_snap $firstvol
-+tname=`echo $SNAPNAME | rev | cut -d"/" -f1 | rev`
-+_save_checksum $SNAPNAME $tmp.$tname.sum
-+\rm -rf $firstvol/*
-+_verify_checksum $SNAPNAME $tmp.$tname.sum
-+
-+umount $SCRATCH_DEV || _fail "unmount failed"
-+
-+echo "Silence is golden"
-+status=0; exit
-diff --git a/264.out b/264.out
-new file mode 100644
-index 0000000..eca790b
---- /dev/null
-+++ b/264.out
-@@ -0,0 +1,2 @@
-+QA output created by 264
-+Silence is golden
-diff --git a/group b/group
-index 2a8970c..d2abe42 100644
---- a/group
-+++ b/group
-@@ -377,3 +377,4 @@ deprecated
- 261 auto quick quota
- 262 auto quick quota
- 263 rw auto quick
-+264 auto
--- 
-1.7.7
+BTRFS tools ver: Btrfs v0.19-101-g3891d2d
+Uname: 3.1.0-rc7-686-pae
+
+
+## Comment: Initially we had only root (/) mounted as btrfs
+mount |grep btrfs
+/dev/sdc2 on / type btrfs (rw,autodefrag)
+
+## Comment: Create a new btrfs fs on /dev/sdg /dev/sdh /dev/sdl
+mkfs.btrfs -m raid1 -d raid1 /dev/sdg /dev/sdh /dev/sdl
+
+btrfs filesystem show
+Label: none  uuid: f0425f63-e486-4c10-adab-47a23085c8db
+        Total devices 3 FS bytes used 28.00KB
+        devid    3 size 2.00GB used 200.00MB path /dev/sdl
+        devid    2 size 1.00GB used 200.00MB path /dev/sdh
+        devid    1 size 768.00MB used 404.00MB path /dev/sdg
+
+Label: none  uuid: cc8211ba-6f62-46d6-ba17-49250f06a941
+        Total devices 1 FS bytes used 512.98MB
+        devid    1 size 6.09GB used 1.75GB path /dev/sdc2
+
+## Comment: unorthodox, but looks possible, add one of the devices from
+the newly created fs to root (/)
+btrfs device add /dev/sdh /
+
+## Comment: Remove it back.
+btrfs device delete /dev/sdh /
+
+
+## Comment: We ended up with "*** Some devices missing" on both devices
+btrfs filesystem show
+Label: none  uuid: 5910f378-0784-4e7f-b918-de35067252e9
+        Total devices 3 FS bytes used 28.00KB
+        devid    3 size 2.00GB used 200.00MB path /dev/sdl
+        devid    1 size 768.00MB used 404.00MB path /dev/sdg
+        *** Some devices missing
+
+Label: none  uuid: cc8211ba-6f62-46d6-ba17-49250f06a941
+        Total devices 2 FS bytes used 512.59MB
+        devid    1 size 6.09GB used 1.50GB path /dev/sdc2
+        *** Some devices missing
+
+## Comment: Use btrfs balance to fix root (/)
+btrfs filesystem balance /
+
+btrfs filesystem show
+Label: none  uuid: 5910f378-0784-4e7f-b918-de35067252e9
+        Total devices 3 FS bytes used 28.00KB
+        devid    3 size 2.00GB used 200.00MB path /dev/sdl
+        devid    1 size 768.00MB used 404.00MB path /dev/sdg
+        *** Some devices missing
+
+Label: none  uuid: cc8211ba-6f62-46d6-ba17-49250f06a941
+        Total devices 1 FS bytes used 513.40MB
+        devid    1 size 6.09GB used 1.75GB path /dev/sdc2
+
+## Comment: try to mount the initially created fs on /mnt. It fails
+mount -t btrfs /dev/sdg /mnt
+mount: wrong fs type, bad option, bad superblock on /dev/sdg,
+       missing codepage or helper program, or other error
+       In some cases useful info is found in syslog - try
+       dmesg | tail  or so
+
+## Comment: See if device scan can do the trick. Nope...
+btrfs device scan /dev/sdh
+Scanning for Btrfs filesystems in '/dev/sdh'
+ERROR: unable to scan the device '/dev/sdh' - Invalid argument
+
+## Comment: OK, we give up. Try to recreate btrfs from scratch
+mkfs.btrfs -m raid1 -d raid1 /dev/sdg /dev/sdh /dev/sdl
+
+WARNING! - Btrfs Btrfs v0.19 IS EXPERIMENTAL
+WARNING! - see http://btrfs.wiki.kernel.org before using
+
+/dev/sdh is mounted
+
+## Comment: Of course /dev/sdh is not mounted.
+mount |grep /dev/sdh
+root@lxc:~#
+
+
+Thanks,
+Nikos
 

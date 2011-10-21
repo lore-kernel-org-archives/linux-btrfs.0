@@ -1,173 +1,52 @@
-From: Andi Kleen <andi@firstfloor.org>
-Subject: [PATCH 3/3] Add snappy interface to crypto API
-Date: Thu, 20 Oct 2011 16:39:01 -0700
-Message-ID: <1319153941-26234-3-git-send-email-andi@firstfloor.org>
-References: <1319153941-26234-1-git-send-email-andi@firstfloor.org>
-Cc: linux-btrfs@vger.kernel.org, chris.mason@oracle.com,
-	linux-crypto@vger.kernel.org, Andi Kleen <ak@linux.intel.com>,
-	herbert@gondor.apana.org.au, dedekind1@gmail.com,
-	adrian.hunter@intel.com
-To: linux-kernel@vger.kernel.org
+From: "Helmut Hullen" <Hullen@t-online.de>
+Subject: Re: BTRFS thinks that a device is mounted
+Date: 21 Oct 2011 03:33:00 +0200
+Message-ID: <BwGkwFbT1uB@helmut.hullen.de>
+References: <a46ac41f14ba1581cb554a0f26463859.squirrel@webmail01.edunet.gr>
+Reply-To: helmut@hullen.de
+Mime-Version: 1.0
+Content-Type: text/plain; charset=US-ASCII
+To: linux-btrfs@vger.kernel.org
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <1319153941-26234-1-git-send-email-andi@firstfloor.org>
+In-Reply-To: <a46ac41f14ba1581cb554a0f26463859.squirrel@webmail01.edunet.gr>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-From: Andi Kleen <ak@linux.intel.com>
+Hallo, Nikos,
 
-Mainly so that ubifs can use it.
+Du meintest am 21.10.11:
 
-Snappy is a better compressor in the same niche as LZO.
+> What went wrong in the following scenario? BTRFS thinks that a device
+> is mounted while it is not.
 
-Only lightly tested so far. Experiences welcome.
+[...]
 
-Cc: herbert@gondor.apana.org.au
-Cc: dedekind1@gmail.com
-Cc: adrian.hunter@intel.com
-Signed-off-by: Andi Kleen <ak@linux.intel.com>
----
- crypto/Kconfig  |    9 +++++
- crypto/Makefile |    1 +
- crypto/snappy.c |   99 +++++++++++++++++++++++++++++++++++++++++++++++++++++++
- 3 files changed, 109 insertions(+), 0 deletions(-)
- create mode 100644 crypto/snappy.c
+> btrfs device scan /dev/sdh
+> Scanning for Btrfs filesystems in '/dev/sdh'
+> ERROR: unable to scan the device '/dev/sdh' - Invalid argument
 
-diff --git a/crypto/Kconfig b/crypto/Kconfig
-index ae27b753..2c85991 100644
---- a/crypto/Kconfig
-+++ b/crypto/Kconfig
-@@ -823,6 +823,15 @@ config CRYPTO_LZO
- 	help
- 	  This is the LZO algorithm.
- 
-+config CRYPTO_SNAPPY
-+	tristate "Snappy compression algorithm"
-+	select CRYPTO_ALGAPI
-+	select SNAPPY
-+	help
-+	  snappy is a faster alternative to the lzo compression algorithm
-+	  with comparable compression. It is very fast on 64bit systems, but also
-+	  good on 32bit systems. It especially excels at already compressed data.
-+
- comment "Random Number Generation"
- 
- config CRYPTO_ANSI_CPRNG
-diff --git a/crypto/Makefile b/crypto/Makefile
-index ce5a813..cf92f6f 100644
---- a/crypto/Makefile
-+++ b/crypto/Makefile
-@@ -80,6 +80,7 @@ obj-$(CONFIG_CRYPTO_MICHAEL_MIC) += michael_mic.o
- obj-$(CONFIG_CRYPTO_CRC32C) += crc32c.o
- obj-$(CONFIG_CRYPTO_AUTHENC) += authenc.o authencesn.o
- obj-$(CONFIG_CRYPTO_LZO) += lzo.o
-+obj-$(CONFIG_CRYPTO_SNAPPY) += snappy.o
- obj-$(CONFIG_CRYPTO_RNG2) += rng.o
- obj-$(CONFIG_CRYPTO_RNG2) += krng.o
- obj-$(CONFIG_CRYPTO_ANSI_CPRNG) += ansi_cprng.o
-diff --git a/crypto/snappy.c b/crypto/snappy.c
-new file mode 100644
-index 0000000..2f44d30
---- /dev/null
-+++ b/crypto/snappy.c
-@@ -0,0 +1,99 @@
-+/*
-+ * Cryptographic API.
-+ *
-+ * This program is free software; you can redistribute it and/or modify it
-+ * under the terms of the GNU General Public License version 2 as published by
-+ * the Free Software Foundation.
-+ *
-+ * This program is distributed in the hope that it will be useful, but WITHOUT
-+ * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
-+ * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License for
-+ * more details.
-+ *
-+ * You should have received a copy of the GNU General Public License along with
-+ * this program; if not, write to the Free Software Foundation, Inc., 51
-+ * Franklin St, Fifth Floor, Boston, MA 02110-1301 USA
-+ *
-+ */
-+
-+#include <linux/init.h>
-+#include <linux/module.h>
-+#include <linux/crypto.h>
-+#include <linux/vmalloc.h>
-+#include <linux/snappy.h>
-+
-+struct snappy_ctx {
-+	struct snappy_env env;
-+};
-+
-+/* Only needed for compression actually */
-+static int snappy_init(struct crypto_tfm *tfm)
-+{
-+	struct snappy_ctx *ctx = crypto_tfm_ctx(tfm);
-+
-+	return snappy_init_env(&ctx->env);
-+}
-+
-+static void snappy_exit(struct crypto_tfm *tfm)
-+{
-+	struct snappy_ctx *ctx = crypto_tfm_ctx(tfm);
-+
-+	snappy_free_env(&ctx->env);
-+}
-+
-+static int snp_compress(struct crypto_tfm *tfm, const u8 *src,
-+			    unsigned int slen, u8 *dst, unsigned int *dlen)
-+{
-+	struct snappy_ctx *ctx = crypto_tfm_ctx(tfm);
-+	size_t olen;
-+	int err;
-+
-+	/* XXXX very pessimistic. check in snappy? */
-+	if (*dlen < snappy_max_compressed_length(*dlen))
-+		return -EINVAL;
-+	err = snappy_compress(&ctx->env, src, slen, dst, &olen);
-+	*dlen = olen;
-+	return err;
-+}
-+
-+static int snp_decompress(struct crypto_tfm *tfm, const u8 *src,
-+			      unsigned int slen, u8 *dst, unsigned int *dlen)
-+{
-+	size_t ulen;
-+
-+	if (!snappy_uncompressed_length(src, slen, &ulen))
-+		return -EIO;
-+	if (*dlen < ulen)
-+		return -EINVAL;
-+	*dlen = ulen;
-+	return snappy_uncompress(src, slen, dst) ? 0 : -EIO;
-+}
-+
-+static struct crypto_alg alg = {
-+	.cra_name		= "snappy",
-+	.cra_flags		= CRYPTO_ALG_TYPE_COMPRESS,
-+	.cra_ctxsize		= sizeof(struct snappy_ctx),
-+	.cra_module		= THIS_MODULE,
-+	.cra_list		= LIST_HEAD_INIT(alg.cra_list),
-+	.cra_init		= snappy_init,
-+	.cra_exit		= snappy_exit,
-+	.cra_u			= { .compress = {
-+	.coa_compress		= snp_compress,
-+	.coa_decompress		= snp_decompress } }
-+};
-+
-+static int __init snappy_mod_init(void)
-+{
-+	return crypto_register_alg(&alg);
-+}
-+
-+static void __exit snappy_mod_fini(void)
-+{
-+	crypto_unregister_alg(&alg);
-+}
-+
-+module_init(snappy_mod_init);
-+module_exit(snappy_mod_fini);
-+
-+MODULE_LICENSE("GPL");
-+MODULE_DESCRIPTION("Snappy Compression Algorithm");
--- 
-1.7.4.4
+> ## Comment: OK, we give up. Try to recreate btrfs from scratch
+> mkfs.btrfs -m raid1 -d raid1 /dev/sdg /dev/sdh /dev/sdl
 
+> WARNING! - Btrfs Btrfs v0.19 IS EXPERIMENTAL
+> WARNING! - see http://btrfs.wiki.kernel.org before using
+
+> /dev/sdh is mounted
+
+> ## Comment: Of course /dev/sdh is not mounted.
+> mount |grep /dev/sdh
+> root@lxc:~#
+
+Two days ago I've seen a perhaps similar problem with an ext3 disk:
+
+Connected via USB
+running fsck (with some options)
+
+   mount /dev/$disk $mountpoint
+
+also told that the disk was mounted (it wasn't really).
+
+Maybe some other operation (like - in this case - fsck) on/with the disk  
+leads to this wrong message.
+
+Viele Gruesse!
+Helmut

@@ -1,25 +1,28 @@
-From: Stephane CHAZELAS <stephane_chazelas@yahoo.fr>
-Subject: Re: BTRFS thinks that a device is mounted
-Date: Fri, 21 Oct 2011 10:10:12 +0000 (UTC)
-Message-ID: <slrnja2h84.5ku.stephane.chazelas@spam.is.invalid>
-References: <a46ac41f14ba1581cb554a0f26463859.squirrel@webmail01.edunet.gr>
-To: linux-btrfs@vger.kernel.org
+From: Jan Schmidt <list.btrfs@jan-o-sch.net>
+Subject: Re: How to know the origin of a snapshot
+Date: Fri, 21 Oct 2011 13:54:46 +0200
+Message-ID: <4EA15D86.6060601@jan-o-sch.net>
+References: <CAKrYomhcMnaaBjhuATGbiMGTQ+uFBiuzwY2HgubeEeY0PA=sHw@mail.gmail.com>
+Mime-Version: 1.0
+Content-Type: text/plain; charset=ISO-8859-1
+Cc: linux-btrfs@vger.kernel.org
+To: Ryota Ozaki <ozaki.ryota@gmail.com>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
+In-Reply-To: <CAKrYomhcMnaaBjhuATGbiMGTQ+uFBiuzwY2HgubeEeY0PA=sHw@mail.gmail.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-2011-10-21, 00:39(+03), Nikos Voutsinas:
-[...]
-> ## Comment: Of course /dev/sdh is not mounted.
-> mount |grep /dev/sdh
-> root@lxc:~#
-[...]
+Hi,
 
-Note that mount(8) uses /etc/mtab to find out what is mounted.
-And if that file is not a symlink to /proc/mounts, the
-information is not necessarily correct.
+On 21.10.2011 13:02, Ryota Ozaki wrote:
+> Is there a way to know relations between subvolume and snapshot?
+> For example, can we know a subvolume from a given snapshot which
+> stems from it? For another example, can we get a list of snapshots
+> from a subvolume?
 
-You can also have a look at /proc/mounts directly.
+Currently, there's no such relationship. I plan adding a stems-from
+relation in order to support incremental btrfs sends, but that's not
+thought to an end, yet.
 
--- 
-Stephane
+You can get along with a simple name scheme for the meantime.
 
+-Jan

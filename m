@@ -1,19 +1,25 @@
-From: Ryota Ozaki <ozaki.ryota@gmail.com>
-Subject: How to know the origin of a snapshot
-Date: Fri, 21 Oct 2011 20:02:11 +0900
-Message-ID: <CAKrYomhcMnaaBjhuATGbiMGTQ+uFBiuzwY2HgubeEeY0PA=sHw@mail.gmail.com>
-Mime-Version: 1.0
-Content-Type: text/plain; charset=ISO-8859-1
+From: Stephane CHAZELAS <stephane_chazelas@yahoo.fr>
+Subject: Re: BTRFS thinks that a device is mounted
+Date: Fri, 21 Oct 2011 10:10:12 +0000 (UTC)
+Message-ID: <slrnja2h84.5ku.stephane.chazelas@spam.is.invalid>
+References: <a46ac41f14ba1581cb554a0f26463859.squirrel@webmail01.edunet.gr>
 To: linux-btrfs@vger.kernel.org
 Return-path: <linux-btrfs-owner@vger.kernel.org>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hi.
+2011-10-21, 00:39(+03), Nikos Voutsinas:
+[...]
+> ## Comment: Of course /dev/sdh is not mounted.
+> mount |grep /dev/sdh
+> root@lxc:~#
+[...]
 
-Is there a way to know relations between subvolume and snapshot?
-For example, can we know a subvolume from a given snapshot which
-stems from it? For another example, can we get a list of snapshots
-from a subvolume?
+Note that mount(8) uses /etc/mtab to find out what is mounted.
+And if that file is not a symlink to /proc/mounts, the
+information is not necessarily correct.
 
-Thanks in advance.
-  ozaki-r
+You can also have a look at /proc/mounts directly.
+
+-- 
+Stephane
+

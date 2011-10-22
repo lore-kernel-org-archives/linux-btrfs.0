@@ -1,7 +1,7 @@
 From: "Helmut Hullen" <Hullen@t-online.de>
-Subject: bad tree block start
-Date: 22 Oct 2011 09:05:00 +0200
-Message-ID: <BwKoID8T1uB@helmut.hullen.de>
+Subject: system hangs after deleting bad file
+Date: 22 Oct 2011 11:52:00 +0200
+Message-ID: <BwKod0ky1uB@helmut.hullen.de>
 Reply-To: helmut@hullen.de
 Mime-Version: 1.0
 Content-Type: text/plain; charset=US-ASCII
@@ -11,23 +11,32 @@ List-ID: <linux-btrfs.vger.kernel.org>
 
 Hallo,
 
-my system now shows in "dmesg"
+next problem (sorry):
 
-btrfs bad tree block start 0 5064615628800
-btrfs bad tree block start 0 5064615632896
-btrfs bad tree block start 0 5064615665664
-btrfs bad tree block start 0 5064615624704
-btrfs bad tree block start 0 5064615628800
-btrfs bad tree block start 0 5064615632896
-btrfs bad tree block start 0 5064615665664
-btrfs bad tree block start 0 5064615624704
+my cluster of 3 2-TByte-disks has some damaged files. When I try to  
+delete the directory entries with the "midnight commander" (via "putty",  
+over the LAN) then "mc" hangs. Killing the putty session and opening  
+(via "putty") a new "mc" window shows that the directory entry doesn't  
+exist - looks good.
 
-Can I repair it? If yes: how?
+Mountpoint is "/mnt/btr".
 
-Kernel 2.6.39.4
-btrfs from the "Hugo Mills" tree.
-Cluster of 3 Disks, data raid0, metadata raid 1.
-Disks: 3* 2TByte, filled with more than 4 TByte.
+        lsof /mnt/btr
+
+still shows a "mc" entry which I can't remove with "killall -9 mc" or  
+"kill -9 <mc-PID>".
+
+And more bad:
+
+        reboot
+
+doesn't work,
+
+        Ctrl Alt Delete
+
+(on the machine, not over LAN) doesn't work too.
+
+I have to restart the machine via main power switch - no good job.
 
 Viele Gruesse!
 Helmut

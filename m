@@ -1,51 +1,25 @@
-From: Leonidas Spyropoulos <artafinde@gmail.com>
-Subject: Re: Kernel BUG unable to handle kernel NULL pointer dereference
-Date: Sun, 23 Oct 2011 19:24:42 +0100
-Message-ID: <CAAeznTpDmT7NgZdAHh7uVPBnKtitr=SmLRvfFKrd_exG6XLE9w@mail.gmail.com>
-References: <CAAeznTqh1W0W743WxTO+iUfajgsMw-A6abwr1fAZ6hWOJOnw2Q@mail.gmail.com>
-	<CAKcLGm-+g9xy_aL2Z_F2VYG8qFsXonB7nutM1VSs5sqLZz2PGA@mail.gmail.com>
+From: Phillip Susi <psusi@cfl.rr.com>
+Subject: Subvolume level allocation policy
+Date: Sun, 23 Oct 2011 14:50:50 -0400
+Message-ID: <4EA4620A.3060702@cfl.rr.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset=ISO-8859-1
-Cc: linux-btrfs@vger.kernel.org
-To: Mitch Harder <mitch.harder@sabayonlinux.org>
+To: linux-btrfs <linux-btrfs@vger.kernel.org>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <CAKcLGm-+g9xy_aL2Z_F2VYG8qFsXonB7nutM1VSs5sqLZz2PGA@mail.gmail.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Sun, Oct 23, 2011 at 4:37 PM, Mitch Harder
-<mitch.harder@sabayonlinux.org> wrote:
-> On Sat, Oct 22, 2011 at 3:23 PM, Leonidas Spyropoulos
-> <artafinde@gmail.com> wrote:
->> Hello, I got a kernel bug error, my guess from BTRFS.
->>
->> Here is the report,
->> Oct 22 20:44:43 localhost kernel: [25554.947970] BUG: unable to hand=
-le
->> kernel NULL pointer dereference at 0000000000000030
->> Oct 22 20:44:43 localhost kernel: [25554.948002] IP:
->> [<ffffffffa01ab027>] btrfs_print_leaf+0x37/0x880 [btrfs]
->
-> A patch was submitted by Sergei Trofimovich to address the issue with
-> handling a NULL pointer in btrfs_print_leaf.
->
-> http://www.mail-archive.com/linux-btrfs@vger.kernel.org/msg12021.html
->
-> Unfortunately, this usually only crops up when btrfs runs into
-> corruptions that it can't handle. =A0So you very likely still have
-> problems even if the btrfs_print_leaf issue isn't addressed.
->
+-----BEGIN PGP SIGNED MESSAGE-----
+Hash: SHA1
 
-So from what I understand btrfs_print_leaf function is called only
-when something is wrong and want to print out debug information,
-correct?
+Is it ( yet? ) possible to manipulate the allocation policy on a
+subvolume level instead of the fs level?  For example, to make / use
+raid1, and /home use raid0?  Or to have / allocated from an ssd and
+/home allocated from the giant 2tb hd.
+-----BEGIN PGP SIGNATURE-----
+Version: GnuPG v1.4.11 (GNU/Linux)
+Comment: Using GnuPG with Mozilla - http://enigmail.mozdev.org/
 
-How can I track down the real problem? Any suggestions?
-
-
---=20
-Caution: breathing may be hazardous to your health.
---
-To unsubscribe from this list: send the line "unsubscribe linux-btrfs" =
-in
-the body of a message to majordomo@vger.kernel.org
-More majordomo info at  http://vger.kernel.org/majordomo-info.html
+iEYEARECAAYFAk6kYgYACgkQJ4UciIs+XuISPQCglUtPmg4GMrrY53Fkafk2fkcA
+E84AoMAZXBha/fDrk6moMKPzbMYEtLci
+=BIdX
+-----END PGP SIGNATURE-----

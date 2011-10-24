@@ -1,41 +1,40 @@
 From: dima <dolenin@parallels.com>
-Subject: Re: system hangs after deleting bad file
-Date: Mon, 24 Oct 2011 03:48:14 +0000 (UTC)
-Message-ID: <loom.20111024T054315-615@post.gmane.org>
-References: <BwKod0ky1uB@helmut.hullen.de>
+Subject: Re: Snapshot rollback
+Date: Mon, 24 Oct 2011 05:45:06 +0000 (UTC)
+Message-ID: <loom.20111024T071806-3@post.gmane.org>
+References: <4EA46E3A.9090307@cfl.rr.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
 To: linux-btrfs@vger.kernel.org
 Return-path: <linux-btrfs-owner@vger.kernel.org>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hello,
-I had a similar problem.
+Phillip Susi <psusi <at> cfl.rr.com> writes:
 
-Some files (2-3) got corrupted in my /home subvolume for no apparent reason.
-Trying to access the files gives kernel oops. Sometimes it freezes the machine,
-sometimes I am back to my console without any problems.
+> I created a snapshot of my root subvol, then used btrfs-subvolume
+> set-default to make the snapshot the default subvol and rebooted.  This
+> seems to have correctly gotten the system to boot from the snapshot
+> instead of the original subvol, but now /home ( @home subvol ) refuses
+> to mount claiming that /dev/sda1 is not a valid block device.  What gives?
 
-Then I switched to the latest 3.1rc and freezes were gone (though I still had
-the kernel oops).
 
-(I did not try the repair program fearing that it would do more bad than good.
-After all, my / subvolume was fine and i still could mount /home)
+Hello Phillip,
+It is hard to judge without seeing your fstab and bootloader config. Maybe your
+/ was directly in subvolid=0 without creating a separate subvolume for it (like
+__active in Goffredo's reply)? In my very humble opinion, if you have your @home
+subvolume under subvolid=0 and then change the default subvolume, it just cannot
+access your @home any more.
 
-But to tackle the problems with corrupted files I had to create a new subvolume
-for /home, tranfer the files from the old one (minus the corrupted files) and
-delete the old subvolume.
+Personally I do not store anything in subvolid=0 directly and never bothered
+with 'set-default' option - just used a new subvolume/snapshot name
+- create a named snapshot
+- edit bootloader config to include the new
+rootflags=subvol=<your_new_snapshot_name>
+- reboot
 
-Though still btrfsck would give me errors trying to access some inode. But I
-could mount and use all my subvolumes with no problems.
+Here is a very good article that explains the working of subvolumes. I used it
+as reference a lot.
+http://www.funtoo.org/wiki/BTRFS_Fun#Using_snapshots_for_system_recovery_.28aka_Back_to_the_Future.29
 
-Then... I re-created btrfs with the latest btrfs-tools and installed the latest
-3.1rc from the very beginning.
-
-So far, it is working fine and the situation with disk I/O has greatly improved.
-I think you may want to try to upgrade to the latest 3.1rc and at the very least
-you (hopefully) should not be getting hard freezes any more.
-
-best
 ~dima
 

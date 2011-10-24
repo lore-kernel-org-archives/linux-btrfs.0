@@ -1,134 +1,79 @@
-From: Leonidas Spyropoulos <artafinde@gmail.com>
-Subject: Re: Kernel BUG unable to handle kernel NULL pointer dereference
-Date: Mon, 24 Oct 2011 12:33:05 +0100
-Message-ID: <CAAeznTpSsKSMe7udHH1kZmFNg6ROf4czxriNpPh_Trb_PHbtzg@mail.gmail.com>
-References: <CAAeznTqh1W0W743WxTO+iUfajgsMw-A6abwr1fAZ6hWOJOnw2Q@mail.gmail.com>
-	<CAKcLGm-+g9xy_aL2Z_F2VYG8qFsXonB7nutM1VSs5sqLZz2PGA@mail.gmail.com>
-	<CAAeznTpDmT7NgZdAHh7uVPBnKtitr=SmLRvfFKrd_exG6XLE9w@mail.gmail.com>
-	<20111024112259.GE26547@ds.suse.cz>
+From: David Sterba <dsterba@suse.cz>
+Subject: Re: kernel BUG at fs/btrfs/inode.c:1163
+Date: Mon, 24 Oct 2011 13:39:30 +0200
+Message-ID: <20111024113930.GF26547@ds.suse.cz>
+References: <4E9DDBB1.2050007@tuxadero.com>
+ <20111019094925.GA29468@ds.suse.cz>
+ <4E9EC9C1.4030901@tuxadero.com>
+Reply-To: dsterba@suse.cz
 Mime-Version: 1.0
-Content-Type: text/plain; charset=ISO-8859-1
-Cc: Mitch Harder <mitch.harder@sabayonlinux.org>,
-	linux-btrfs@vger.kernel.org
-To: dsterba@suse.cz
-Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <20111024112259.GE26547@ds.suse.cz>
+Content-Type: text/plain; charset=us-ascii
+Cc: dsterba@suse.cz, linux-btrfs@vger.kernel.org,
+	ceph-devel@vger.kernel.org
+To: Martin Mailand <martin@tuxadero.com>
+Return-path: <ceph-devel-owner@vger.kernel.org>
+In-Reply-To: <4E9EC9C1.4030901@tuxadero.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Mon, Oct 24, 2011 at 12:22 PM, David Sterba <dsterba@suse.cz> wrote:
-> On Sun, Oct 23, 2011 at 07:24:42PM +0100, Leonidas Spyropoulos wrote:
->> On Sun, Oct 23, 2011 at 4:37 PM, Mitch Harder
->> <mitch.harder@sabayonlinux.org> wrote:
->> > A patch was submitted by Sergei Trofimovich to address the issue w=
-ith
->> > handling a NULL pointer in btrfs_print_leaf.
->> >
->> > http://www.mail-archive.com/linux-btrfs@vger.kernel.org/msg12021.h=
-tml
->
-> afaik the patch should be enqueued for 3.2
->
->> How can I track down the real problem? Any suggestions?
->
-> The preceding function in the stack was __btrfs_free_extent, there ar=
-e 3
-> instances of btrfs_print_leaf() in that function, 2 of them relevant:
->
-> 4470 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =
-printk(KERN_ERR "umm, got %d back from search"
-> 4471 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =
-=A0 =A0 =A0 =A0", was looking for %llu\n", ret,
-> 4472 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =
-=A0 =A0 =A0 =A0(unsigned long long)bytenr);
->
->
-> 4494 #ifdef BTRFS_COMPAT_EXTENT_TREE_V0
-> ...
-> 4511 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 printk(KERN_ERR =
-"umm, got %d back from search"
-> 4512 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0"=
-, was looking for %llu\n", ret,
-> 4513 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0(=
-unsigned long long)bytenr);
-> 4514 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 btrfs_print_leaf=
-(extent_root, path->nodes[0]);
-> ...
-> =A0 =A0 #endif
->
-> and the third one without a pre-message
->
-> 4481 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 btrfs_print_leaf(extent_root, pa=
-th->nodes[0]);
-> 4482 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 WARN_ON(1);
-> 4483 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 printk(KERN_ERR "btrfs unable to=
- find ref byte nr %llu "
-> 4484 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0"parent %llu root=
- %llu =A0owner %llu offset %llu\n",
-> 4485 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0(unsigned long lo=
-ng)bytenr,
-> 4486 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0(unsigned long lo=
-ng)parent,
-> 4487 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0(unsigned long lo=
-ng)root_objectid,
-> 4488 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0(unsigned long lo=
-ng)owner_objectid,
-> 4489 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0(unsigned long lo=
-ng)owner_offset);
->
->
-> your original report does not contain any messages before the BUG
-> listing, so I'm not sure which one it is.
+On Wed, Oct 19, 2011 at 02:59:45PM +0200, Martin Mailand wrote:
+> Am 19.10.2011 11:49, schrieb David Sterba:
+> >It would be interesting what's the value of 'extent_type' at the time of
+> >crash, if it's eg -1 that could point to a real bug, some unhandled
+> >corner case in truncate, for example.
+> >
+> 
+> How can I do that?
 
-I got the whole log somwehre lying arround, let me find it and give a
-pastbin link
+something like that would print the type information during runtime
 
-Here is it, it's big and contains usless information..
+--- a/fs/btrfs/inode.c
++++ b/fs/btrfs/inode.c
+@@ -1160,6 +1160,11 @@ next_slot:
+                                btrfs_file_extent_inline_len(leaf, fi);
+                        extent_end = ALIGN(extent_end, root->sectorsize);
+                } else {
++                       printk(KERN_CRIT "btrfs: unhandled extent type %d, key=[%llu,%u,%llu]",
++                                       (unsigned long long)found_key.objecitd,
++                                       (unsigned)found_key.tyep,
++                                       (unsigned long long)found_key.offset,
++                                       extent_type);
+                        BUG_ON(1);
+                }
+ out_check:
+---
 
-http://paste.pocoo.org/show/497299/
+the key seems to be a relevant iformation to print as well, but the rest
+stored in the leaf item could be just garbage.
 
->
-> Supposed it's the 3rd, it's resulting from an error returned by
->
-> 4429 =A0 =A0 =A0 =A0 ret =3D lookup_extent_backref(trans, extent_root=
-, path, &iref,
-> 4430 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =
-=A0 =A0 bytenr, num_bytes, parent,
-> 4431 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =
-=A0 =A0 root_objectid, owner_objectid,
-> 4432 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =
-=A0 =A0 owner_offset);
->
-> ret !=3D 0 -> print leaf etc, a missing backref could be the problem =
-here.
->
-> Are you able to trigger the BUG() repeatedly?
+The btrfs-debug-tree utility prints the whole tree items, but as I saw just now
+in the case of extent, it skips an unknown type (the same where kernel
+BUGs), which means that other extent data are glued to previous output
+and thus cannot be spotted easily. To fix that, apply these changes to
+progs' print-tree.c:
 
-No I cannot reproduce it intentionally, it was quite random, while
-playing something in the SMPlayer - think it was a movie. The movie
-kept playing, and I can start programs (that was on the memory I
-assume), couldn't access the FS at all. ls failed for example.
-So I just hard-reboot and hoped all was alright.
+--- a/print-tree.c
++++ b/print-tree.c
+@@ -138,7 +138,7 @@ static void print_file_extent_item(struct extent_buffer *eb,
+                  btrfs_file_extent_inline_len(eb, fi),
+                  btrfs_file_extent_compression(eb, fi));
+                return;
+-       }
++       } else
+        if (extent_type == BTRFS_FILE_EXTENT_PREALLOC) {
+                printf("\t\tprealloc data disk byte %llu nr %llu\n",
+                  (unsigned long long)btrfs_file_extent_disk_bytenr(eb, fi),
+@@ -147,6 +147,8 @@ static void print_file_extent_item(struct extent_buffer *eb,
+                  (unsigned long long)btrfs_file_extent_offset(eb, fi),
+                  (unsigned long long)btrfs_file_extent_num_bytes(eb, fi));
+                return;
++       } else {
++               printf("*** ERROR unknown extent type %d\n", extent_type);
+        }
+        printf("\t\textent data disk byte %llu nr %llu\n",
+                (unsigned long long)btrfs_file_extent_disk_bytenr(eb, fi),
+---
 
-So far I didn't see any problems after that.
+and run the utility on your fs.
 
 
-
->
->
-> david
->
-
-
-Thanks for checking it
-
-Regards
-Leonidas
-
-
---=20
-Caution: breathing may be hazardous to your health.
---
-To unsubscribe from this list: send the line "unsubscribe linux-btrfs" =
-in
-the body of a message to majordomo@vger.kernel.org
-More majordomo info at  http://vger.kernel.org/majordomo-info.html
+david

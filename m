@@ -1,43 +1,41 @@
-From: Goffredo Baroncelli <kreijack@libero.it>
-Subject: Re: Snapshot rollback
-Date: Sun, 23 Oct 2011 22:35:20 +0200
-Message-ID: <1420234.7VTvYPTVqo@venice>
-References: <4EA46E3A.9090307@cfl.rr.com>
-Reply-To: kreijack@libero.it
+From: dima <dolenin@parallels.com>
+Subject: Re: system hangs after deleting bad file
+Date: Mon, 24 Oct 2011 03:48:14 +0000 (UTC)
+Message-ID: <loom.20111024T054315-615@post.gmane.org>
+References: <BwKod0ky1uB@helmut.hullen.de>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Cc: linux-btrfs@vger.kernel.org
-To: Phillip Susi <psusi@cfl.rr.com>
+Content-Type: text/plain; charset=us-ascii
+To: linux-btrfs@vger.kernel.org
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <4EA46E3A.9090307@cfl.rr.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Sunday, 23 October, 2011 15:42:50 you wrote:
->  there no way to move or hard link subvolumes to somewhere other
-> than their original location?
+Hello,
+I had a similar problem.
 
-You can use the 'mv' command.
+Some files (2-3) got corrupted in my /home subvolume for no apparent reason.
+Trying to access the files gives kernel oops. Sometimes it freezes the machine,
+sometimes I am back to my console without any problems.
 
-[__active is the subvolume which I use as root]
+Then I switched to the latest 3.1rc and freezes were gone (though I still had
+the kernel oops).
 
-ghigo@venice:/tmp$ btrfs sub crea a
-Create subvolume './a'
-ghigo@venice:/tmp$ btrfs sub crea c
-Create subvolume './c'
-ghigo@venice:/tmp$ btrfs sub crea a/b
-Create subvolume 'a/b'
-ghigo@venice:/tmp$ sudo btrfs sub list /var/btrfs/
-ID 258 top level 5 path __active
-ID 259 top level 5 path __active/tmp/a
-ID 260 top level 5 path __active/tmp/c
-ID 261 top level 5 path __active/tmp/a/b
-ghigo@venice:/tmp$ mv a/b c
-ghigo@venice:/tmp$ sudo btrfs sub list /var/btrfs/
-ID 258 top level 5 path __active
-ID 259 top level 5 path __active/tmp/a
-ID 260 top level 5 path __active/tmp/c
-ID 261 top level 5 path __active/tmp/c/b
+(I did not try the repair program fearing that it would do more bad than good.
+After all, my / subvolume was fine and i still could mount /home)
 
--- 
-gpg key@ keyserver.linux.it: Goffredo Baroncelli (ghigo) <kreijack@inwind.it>
-Key fingerprint = 4769 7E51 5293 D36C 814E  C054 BF04 F161 3DC5 0512
+But to tackle the problems with corrupted files I had to create a new subvolume
+for /home, tranfer the files from the old one (minus the corrupted files) and
+delete the old subvolume.
+
+Though still btrfsck would give me errors trying to access some inode. But I
+could mount and use all my subvolumes with no problems.
+
+Then... I re-created btrfs with the latest btrfs-tools and installed the latest
+3.1rc from the very beginning.
+
+So far, it is working fine and the situation with disk I/O has greatly improved.
+I think you may want to try to upgrade to the latest 3.1rc and at the very least
+you (hopefully) should not be getting hard freezes any more.
+
+best
+~dima
+

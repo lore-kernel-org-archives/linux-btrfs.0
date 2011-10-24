@@ -1,33 +1,56 @@
-From: "Helmut Hullen" <Hullen@t-online.de>
-Subject: Re: system hangs after deleting bad file
-Date: 24 Oct 2011 17:04:00 +0200
-Message-ID: <BwSutgPy1uB@helmut.hullen.de>
-References: <loom.20111024T054315-615@post.gmane.org>
-Reply-To: helmut@hullen.de
-Mime-Version: 1.0
-Content-Type: text/plain; charset=US-ASCII
+From: Stephane CHAZELAS <stephane_chazelas@yahoo.fr>
+Subject: Re: how stable are snapshots at the block level?
+Date: Mon, 24 Oct 2011 15:08:30 +0000 (UTC)
+Message-ID: <slrnjaavrd.ml8.stephane.chazelas@spam.is.invalid>
+References: <CAKvOHKABup6D2pwbiZpCfxoHt7Obv6sHAZqcPp=ce9ZcJ8-vuw@mail.gmail.com>
+ <000101cc918d$3ffb45b0$bff1d110$@nedharvey.com>
+ <CAKvOHKCjxxKTahivOuRBPBB89JBrTwndQ6cCEuFaPbJr8PYtpA@mail.gmail.com>
+ <000001cc9255$2b34fc70$819ef550$@nedharvey.com>
 To: linux-btrfs@vger.kernel.org
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <loom.20111024T054315-615@post.gmane.org>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hallo, dima,
+2011-10-24, 09:59(-04), Edward Ned Harvey:
+[...]
+> If you are reading the raw device underneath btrfs, you are
+> not getting the benefit of the filesystem checksumming.  If
+> you encounter an undetected read/write error, it will silently
+> pass.  Your data will be corrupted, you'll never know about it
+> until you see the side-effects (whatever they may be).
+[...]
 
-Du meintest am 24.10.11:
+I don't follow you here. If you're cloning a device holding a
+btrfs FS, you'll clone the checksums as well. If there were
+errors, they will be detected on the cloned FS as well?
 
-[system hangs]
+> There is never a situation where block level copies have any
+> advantage over something like btrfs send.  Except perhaps
+> forensics or espionage.  But in terms of fast efficient
+> reliable backups, btrfs send has every advantage and no
+> disadvantage compared to block level copy.
 
-> I had a similar problem.
+$ btrfs send
+ERROR: unknown command 'send'
+Usage:
+[...]
 
-> Some files (2-3) got corrupted in my /home subvolume for no apparent
-> reason. Trying to access the files gives kernel oops. Sometimes it
-> freezes the machine, sometimes I am back to my console without any
-> problems.
+(from 2011-10-12 integration branch). Am I missing something?
 
-> Then I switched to the latest 3.1rc and freezes were gone (though I
-> still had the kernel oops).
+> There are many situations where btrfs send has an advantage
+> over both block level and file level copies.  It instantly
+> knows all the relevant disk blocks to send, it preserves every
+> property, it's agnostic about filesystem size or layout on
+> either sending or receiving end, you have the option to create
+> different configurations on each side, including compression
+> etc.  And so on.
+[...]
 
-I'll try in some hours ... I've just seen kernel 3.1 has been released.
+That sounds like "zfs send", I didn't know btrfs had it yet.
 
-Viele Gruesse!
-Helmut
+My understanding was that to clone/backup a btrfs FS, you could
+only clone the block devices or use the "device add" + "device
+del" trick with some extra copy-on-write (LVM, nbd) layer.
+
+-- 
+Stephane
+

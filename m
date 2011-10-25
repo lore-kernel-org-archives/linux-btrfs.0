@@ -1,7 +1,7 @@
 From: Jeff Mahoney <jeffm@suse.com>
-Subject: [patch 16/66] btrfs: set_range_writeback should return void
-Date: Mon, 24 Oct 2011 21:02:52 -0400
-Message-ID: <20111025010852.405216465@suse.com>
+Subject: [patch 15/66] btrfs: btrfs_update_root error push-up
+Date: Mon, 24 Oct 2011 21:02:51 -0400
+Message-ID: <20111025010852.290470912@suse.com>
 References: <20111025010236.322699279@suse.com>
 Cc: Linux Btrfs <linux-btrfs@vger.kernel.org>
 To: Chris Mason <chris.mason@oracle.com>,
@@ -9,44 +9,42 @@ To: Chris Mason <chris.mason@oracle.com>,
 Return-path: <linux-btrfs-owner@vger.kernel.org>
 List-ID: <linux-btrfs.vger.kernel.org>
 
- set_range_writeback has no error conditions and should return void.
- Its callers already ignore the error code anyway.
-
- There are internal error conditions but they are fatal and will cause
- a panic.
+ btrfs_update_root BUG's when it can't alloc a path, yet it can recover
+ from a search error. This patch returns -ENOMEM instead.
 
 Signed-off-by: Jeff Mahoney <jeffm@suse.com>
 ---
- fs/btrfs/extent_io.c |    8 +++++---
- 1 file changed, 5 insertions(+), 3 deletions(-)
+ fs/btrfs/ctree.h     |    6 +++---
+ fs/btrfs/root-tree.c |    4 +++-
+ 2 files changed, 6 insertions(+), 4 deletions(-)
 
---- a/fs/btrfs/extent_io.c
-+++ b/fs/btrfs/extent_io.c
-@@ -1253,7 +1253,7 @@ int unlock_extent(struct extent_io_tree
- /*
-  * helper function to set both pages and extents in the tree writeback
-  */
--static int set_range_writeback(struct extent_io_tree *tree, u64 start, u64 end)
-+static void set_range_writeback(struct extent_io_tree *tree, u64 start, u64 end)
- {
- 	unsigned long index = start >> PAGE_CACHE_SHIFT;
- 	unsigned long end_index = end >> PAGE_CACHE_SHIFT;
-@@ -1261,12 +1261,14 @@ static int set_range_writeback(struct ex
+--- a/fs/btrfs/ctree.h
++++ b/fs/btrfs/ctree.h
+@@ -2400,9 +2400,9 @@ int btrfs_del_root(struct btrfs_trans_ha
+ int btrfs_insert_root(struct btrfs_trans_handle *trans, struct btrfs_root
+ 		      *root, struct btrfs_key *key, struct btrfs_root_item
+ 		      *item);
+-int btrfs_update_root(struct btrfs_trans_handle *trans, struct btrfs_root
+-		      *root, struct btrfs_key *key, struct btrfs_root_item
+-		      *item);
++int btrfs_update_root(struct btrfs_trans_handle *trans,
++		      struct btrfs_root *root, struct btrfs_key *key,
++		      struct btrfs_root_item *item) __must_check;
+ int btrfs_find_last_root(struct btrfs_root *root, u64 objectid, struct
+ 			 btrfs_root_item *item, struct btrfs_key *key);
+ int btrfs_find_dead_roots(struct btrfs_root *root, u64 objectid);
+--- a/fs/btrfs/root-tree.c
++++ b/fs/btrfs/root-tree.c
+@@ -93,7 +93,9 @@ int btrfs_update_root(struct btrfs_trans
+ 	unsigned long ptr;
  
- 	while (index <= end_index) {
- 		page = find_get_page(tree->mapping, index);
--		BUG_ON(!page);
-+		if (!page)
-+			btrfs_panic(tree_fs_info(tree), -ENOENT,
-+				    "Page not found in extent io tree at "
-+				    "offset %llu", index << PAGE_CACHE_SHIFT);
- 		set_page_writeback(page);
- 		page_cache_release(page);
- 		index++;
- 	}
--	return 0;
- }
- 
- /* find the first state struct with 'bits' set after 'start', and
+ 	path = btrfs_alloc_path();
+-	BUG_ON(!path);
++	if (!path)
++		return -ENOMEM;
++
+ 	ret = btrfs_search_slot(trans, root, key, path, 0, 1);
+ 	if (ret < 0)
+ 		goto out;
 
 

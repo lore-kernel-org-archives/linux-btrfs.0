@@ -1,7 +1,7 @@
 From: Jeff Mahoney <jeffm@suse.com>
-Subject: [patch 61/66] btrfs: clean_tree_block should return void
-Date: Mon, 24 Oct 2011 21:03:37 -0400
-Message-ID: <20111025010857.563682029@suse.com>
+Subject: [patch 65/66] btrfs: copy_for_split should return void
+Date: Mon, 24 Oct 2011 21:03:41 -0400
+Message-ID: <20111025010858.020317597@suse.com>
 References: <20111025010236.322699279@suse.com>
 Cc: Linux Btrfs <linux-btrfs@vger.kernel.org>
 To: Chris Mason <chris.mason@oracle.com>,
@@ -9,53 +9,66 @@ To: Chris Mason <chris.mason@oracle.com>,
 Return-path: <linux-btrfs-owner@vger.kernel.org>
 List-ID: <linux-btrfs.vger.kernel.org>
 
- clean_tree_block has no error conditions and should return void. Its
- callers already ignore the error codes.
+ copy_for_split has no error conditions and should return void. We
+ return 0 from split_leaf instead of ret since ret would have been
+ set using the return value from copy_for_split which would have been 0.
 
 Signed-off-by: Jeff Mahoney <jeffm@suse.com>
 ---
- fs/btrfs/disk-io.c |    5 ++---
- fs/btrfs/disk-io.h |    4 ++--
- 2 files changed, 4 insertions(+), 5 deletions(-)
+ fs/btrfs/ctree.c |   19 ++++++++-----------
+ 1 files changed, 8 insertions(+), 11 deletions(-)
 
-diff --git a/fs/btrfs/disk-io.c b/fs/btrfs/disk-io.c
-index fcb0f7f..e16a3e9 100644
---- a/fs/btrfs/disk-io.c
-+++ b/fs/btrfs/disk-io.c
-@@ -1033,8 +1033,8 @@ struct extent_buffer *read_tree_block(struct btrfs_root *root, u64 bytenr,
- 
- }
- 
--int clean_tree_block(struct btrfs_trans_handle *trans, struct btrfs_root *root,
--		     struct extent_buffer *buf)
-+void clean_tree_block(struct btrfs_trans_handle *trans, struct btrfs_root *root,
-+		      struct extent_buffer *buf)
+diff --git a/fs/btrfs/ctree.c b/fs/btrfs/ctree.c
+index 4c9dc73..263abce 100644
+--- a/fs/btrfs/ctree.c
++++ b/fs/btrfs/ctree.c
+@@ -2695,12 +2695,12 @@ out:
+  *
+  * returns 0 if all went well and < 0 on failure.
+  */
+-static noinline int copy_for_split(struct btrfs_trans_handle *trans,
+-			       struct btrfs_root *root,
+-			       struct btrfs_path *path,
+-			       struct extent_buffer *l,
+-			       struct extent_buffer *right,
+-			       int slot, int mid, int nritems)
++static noinline void copy_for_split(struct btrfs_trans_handle *trans,
++				    struct btrfs_root *root,
++				    struct btrfs_path *path,
++				    struct extent_buffer *l,
++				    struct extent_buffer *right,
++				    int slot, int mid, int nritems)
  {
- 	struct inode *btree_inode = root->fs_info->btree_inode;
- 	if (btrfs_header_generation(buf) ==
-@@ -1055,7 +1055,6 @@ int clean_tree_block(struct btrfs_trans_handle *trans, struct btrfs_root *root,
- 		clear_extent_buffer_dirty(&BTRFS_I(btree_inode)->io_tree,
- 					  buf);
+ 	int data_copy_size;
+ 	int rt_data_off;
+@@ -2752,8 +2752,6 @@ static noinline int copy_for_split(struct btrfs_trans_handle *trans,
  	}
+ 
+ 	BUG_ON(path->slots[0] < 0);
+-
 -	return 0;
  }
  
- static void __setup_root(u32 nodesize, u32 leafsize, u32 sectorsize,
-diff --git a/fs/btrfs/disk-io.h b/fs/btrfs/disk-io.h
-index bec3ea4..5a2604a 100644
---- a/fs/btrfs/disk-io.h
-+++ b/fs/btrfs/disk-io.h
-@@ -42,8 +42,8 @@ int readahead_tree_block(struct btrfs_root *root, u64 bytenr, u32 blocksize,
- 			 u64 parent_transid);
- struct extent_buffer *btrfs_find_create_tree_block(struct btrfs_root *root,
- 						   u64 bytenr, u32 blocksize);
--int clean_tree_block(struct btrfs_trans_handle *trans,
--		     struct btrfs_root *root, struct extent_buffer *buf);
-+void clean_tree_block(struct btrfs_trans_handle *trans,
-+		      struct btrfs_root *root, struct extent_buffer *buf);
- struct btrfs_root *open_ctree(struct super_block *sb,
- 			      struct btrfs_fs_devices *fs_devices,
- 			      char *options);
+ /*
+@@ -2965,8 +2963,7 @@ again:
+ 		return ret;
+ 	}
+ 
+-	ret = copy_for_split(trans, root, path, l, right, slot, mid, nritems);
+-	BUG_ON(ret);
++	copy_for_split(trans, root, path, l, right, slot, mid, nritems);
+ 
+ 	if (split == 2) {
+ 		BUG_ON(num_doubles != 0);
+@@ -2974,7 +2971,7 @@ again:
+ 		goto again;
+ 	}
+ 
+-	return ret;
++	return 0;
+ 
+ push_for_double:
+ 	push_for_double_split(trans, root, path, data_size);
 
 
 

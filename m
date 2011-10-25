@@ -1,7 +1,7 @@
 From: Jeff Mahoney <jeffm@suse.com>
-Subject: [patch 54/66] btrfs: Fix kfree of member instead of structure
-Date: Mon, 24 Oct 2011 21:03:30 -0400
-Message-ID: <20111025010856.762017596@suse.com>
+Subject: [patch 64/66] btrfs: end_compressed_writeback should return void
+Date: Mon, 24 Oct 2011 21:03:40 -0400
+Message-ID: <20111025010857.906343914@suse.com>
 References: <20111025010236.322699279@suse.com>
 Cc: Linux Btrfs <linux-btrfs@vger.kernel.org>
 To: Chris Mason <chris.mason@oracle.com>,
@@ -9,48 +9,37 @@ To: Chris Mason <chris.mason@oracle.com>,
 Return-path: <linux-btrfs-owner@vger.kernel.org>
 List-ID: <linux-btrfs.vger.kernel.org>
 
- Correctness fix: The kfree calls in the add_delayed_* functions free
- the node that's passed into it, but the node is a member of another
- structure. It works because it's always the first member of the
- containing structure, but it should really be using the containing
- structure itself.
+ end_compressed_writeback has no error conditions and should return
+ void. Its callers already ignore the error code anyway.
 
 Signed-off-by: Jeff Mahoney <jeffm@suse.com>
 ---
- fs/btrfs/delayed-ref.c |    6 +++---
- 1 files changed, 3 insertions(+), 3 deletions(-)
+ fs/btrfs/compression.c |    5 ++---
+ 1 files changed, 2 insertions(+), 3 deletions(-)
 
-diff --git a/fs/btrfs/delayed-ref.c b/fs/btrfs/delayed-ref.c
-index b004960..e388ca3 100644
---- a/fs/btrfs/delayed-ref.c
-+++ b/fs/btrfs/delayed-ref.c
-@@ -455,7 +455,7 @@ static noinline void add_delayed_ref_head(struct btrfs_trans_handle *trans,
- 		 * we've updated the existing ref, free the newly
- 		 * allocated ref
- 		 */
--		kfree(ref);
-+		kfree(head_ref);
- 	} else {
- 		delayed_refs->num_heads++;
- 		delayed_refs->num_heads_ready++;
-@@ -510,7 +510,7 @@ static noinline void add_delayed_tree_ref(struct btrfs_trans_handle *trans,
- 		 * we've updated the existing ref, free the newly
- 		 * allocated ref
- 		 */
--		kfree(ref);
-+		kfree(full_ref);
- 	} else {
- 		delayed_refs->num_entries++;
- 		trans->delayed_ref_updates++;
-@@ -565,7 +565,7 @@ static noinline void add_delayed_data_ref(struct btrfs_trans_handle *trans,
- 		 * we've updated the existing ref, free the newly
- 		 * allocated ref
- 		 */
--		kfree(ref);
-+		kfree(full_ref);
- 	} else {
- 		delayed_refs->num_entries++;
- 		trans->delayed_ref_updates++;
+diff --git a/fs/btrfs/compression.c b/fs/btrfs/compression.c
+index 0c0e842..6c4d228 100644
+--- a/fs/btrfs/compression.c
++++ b/fs/btrfs/compression.c
+@@ -225,8 +225,8 @@ out:
+  * Clear the writeback bits on all of the file
+  * pages for a compressed write
+  */
+-static noinline int end_compressed_writeback(struct inode *inode, u64 start,
+-					     unsigned long ram_size)
++static noinline void end_compressed_writeback(struct inode *inode, u64 start,
++					      unsigned long ram_size)
+ {
+ 	unsigned long index = start >> PAGE_CACHE_SHIFT;
+ 	unsigned long end_index = (start + ram_size - 1) >> PAGE_CACHE_SHIFT;
+@@ -252,7 +252,6 @@ static noinline int end_compressed_writeback(struct inode *inode, u64 start,
+ 		index += ret;
+ 	}
+ 	/* the inode may be gone now */
+-	return 0;
+ }
+ 
+ /*
 
 
 

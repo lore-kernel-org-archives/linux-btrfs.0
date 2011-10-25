@@ -1,7 +1,7 @@
 From: Jeff Mahoney <jeffm@suse.com>
-Subject: [patch 47/66] btrfs: fixup_low_keys should return void
-Date: Mon, 24 Oct 2011 21:03:23 -0400
-Message-ID: <20111025010855.959650189@suse.com>
+Subject: [patch 45/66] btrfs: ->submit_bio_hook error push-up
+Date: Mon, 24 Oct 2011 21:03:21 -0400
+Message-ID: <20111025010855.729047125@suse.com>
 References: <20111025010236.322699279@suse.com>
 Cc: Linux Btrfs <linux-btrfs@vger.kernel.org>
 To: Chris Mason <chris.mason@oracle.com>,
@@ -9,131 +9,148 @@ To: Chris Mason <chris.mason@oracle.com>,
 Return-path: <linux-btrfs-owner@vger.kernel.org>
 List-ID: <linux-btrfs.vger.kernel.org>
 
- fixup_low_keys has no error conditions and should return void.
+ This pushes failures from the submit_bio_hook callbacks,
+ btrfs_submit_bio_hook and btree_submit_bio_hook into the callers, including
+ callers of submit_one_bio where it catches the failures with BUG_ON.
+
+ It also pushes up through the ->readpage_io_failed_hook to
+ end_bio_extent_writepage where the error is already caught with BUG_ON.
 
 Signed-off-by: Jeff Mahoney <jeffm@suse.com>
 ---
- fs/btrfs/ctree.c |   39 +++++++++++----------------------------
- 1 files changed, 11 insertions(+), 28 deletions(-)
+ fs/btrfs/disk-io.c   |    6 +++---
+ fs/btrfs/extent_io.c |   33 +++++++++++++++++++++++----------
+ fs/btrfs/inode.c     |    3 ++-
+ 3 files changed, 28 insertions(+), 14 deletions(-)
 
-diff --git a/fs/btrfs/ctree.c b/fs/btrfs/ctree.c
-index 011cab3..dedd3a1 100644
---- a/fs/btrfs/ctree.c
-+++ b/fs/btrfs/ctree.c
-@@ -1864,15 +1864,12 @@ done:
-  * fixing up pointers when a given leaf/node is not in slot 0 of the
-  * higher levels
-  *
-- * If this fails to write a tree block, it returns -1, but continues
-- * fixing up the blocks in ram so the tree is consistent.
-  */
--static int fixup_low_keys(struct btrfs_trans_handle *trans,
--			  struct btrfs_root *root, struct btrfs_path *path,
--			  struct btrfs_disk_key *key, int level)
-+static void fixup_low_keys(struct btrfs_trans_handle *trans,
-+			   struct btrfs_root *root, struct btrfs_path *path,
-+			   struct btrfs_disk_key *key, int level)
+--- a/fs/btrfs/disk-io.c
++++ b/fs/btrfs/disk-io.c
+@@ -811,9 +811,9 @@ static int btree_submit_bio_hook(struct
  {
- 	int i;
--	int ret = 0;
- 	struct extent_buffer *t;
+ 	int ret;
  
- 	for (i = level; i < BTRFS_MAX_LEVEL; i++) {
-@@ -1885,7 +1882,6 @@ static int fixup_low_keys(struct btrfs_trans_handle *trans,
- 		if (tslot != 0)
- 			break;
- 	}
--	return ret;
+-	ret = btrfs_bio_wq_end_io(BTRFS_I(inode)->root->fs_info,
+-					  bio, 1);
+-	BUG_ON(ret);
++	ret = btrfs_bio_wq_end_io(BTRFS_I(inode)->root->fs_info, bio, 1);
++	if (ret)
++		return ret;
+ 
+ 	if (!(rw & REQ_WRITE)) {
+ 		/*
+--- a/fs/btrfs/extent_io.c
++++ b/fs/btrfs/extent_io.c
+@@ -1888,6 +1888,7 @@ static void end_bio_extent_writepage(str
+ 				uptodate = (err == 0);
+ 				continue;
+ 			}
++			BUG_ON(ret < 0);
+ 		}
+ 
+ 		if (!uptodate) {
+@@ -1980,6 +1981,7 @@ static void end_bio_extent_readpage(stru
+ 				uncache_state(&cached);
+ 				continue;
+ 			}
++			BUG_ON(ret < 0);
+ 		}
+ 
+ 		if (uptodate) {
+@@ -2034,8 +2036,8 @@ btrfs_bio_alloc(struct block_device *bde
+ 	return bio;
  }
  
- /*
-@@ -2626,9 +2622,7 @@ static noinline int __push_leaf_left(struct btrfs_trans_handle *trans,
- 		clean_tree_block(trans, root, right);
- 
- 	btrfs_item_key(right, &disk_key, 0);
--	wret = fixup_low_keys(trans, root, path, &disk_key, 1);
--	if (wret)
--		ret = wret;
-+	fixup_low_keys(trans, root, path, &disk_key, 1);
- 
- 	/* then fixup the leaf pointer in the path */
- 	if (path->slots[0] < push_items) {
-@@ -2999,12 +2993,9 @@ again:
- 			free_extent_buffer(path->nodes[0]);
- 			path->nodes[0] = right;
- 			path->slots[0] = 0;
--			if (path->slots[1] == 0) {
--				wret = fixup_low_keys(trans, root,
--						path, &disk_key, 1);
--				if (wret)
--					ret = wret;
--			}
-+			if (path->slots[1] == 0)
-+				fixup_low_keys(trans, root, path,
-+					       &disk_key, 1);
- 		}
- 		btrfs_mark_buffer_dirty(right);
- 		return ret;
-@@ -3527,7 +3518,7 @@ int btrfs_insert_some_items(struct btrfs_trans_handle *trans,
- 	ret = 0;
- 	if (slot == 0) {
- 		btrfs_cpu_key_to_disk(&disk_key, cpu_key);
--		ret = fixup_low_keys(trans, root, path, &disk_key, 1);
-+		fixup_low_keys(trans, root, path, &disk_key, 1);
- 	}
- 
- 	if (btrfs_leaf_free_space(root, leaf) < 0) {
-@@ -3555,7 +3546,6 @@ int setup_items_for_insert(struct btrfs_trans_handle *trans,
- 	u32 nritems;
- 	unsigned int data_end;
- 	struct btrfs_disk_key disk_key;
--	int ret;
- 	struct extent_buffer *leaf;
- 	int slot;
- 
-@@ -3616,10 +3606,9 @@ int setup_items_for_insert(struct btrfs_trans_handle *trans,
- 
- 	btrfs_set_header_nritems(leaf, nritems + nr);
- 
--	ret = 0;
- 	if (slot == 0) {
- 		btrfs_cpu_key_to_disk(&disk_key, cpu_key);
--		ret = fixup_low_keys(trans, root, path, &disk_key, 1);
-+		fixup_low_keys(trans, root, path, &disk_key, 1);
- 	}
- 	btrfs_unlock_up_safe(path, 1);
- 	btrfs_mark_buffer_dirty(leaf);
-@@ -3706,7 +3695,6 @@ static int del_ptr(struct btrfs_trans_handle *trans, struct btrfs_root *root,
- 	struct extent_buffer *parent = path->nodes[level];
- 	u32 nritems;
+-static int submit_one_bio(int rw, struct bio *bio, int mirror_num,
+-			  unsigned long bio_flags)
++static int __must_check submit_one_bio(int rw, struct bio *bio,
++				       int mirror_num, unsigned long bio_flags)
+ {
  	int ret = 0;
--	int wret;
+ 	struct bio_vec *bvec = bio->bi_io_vec + bio->bi_vcnt - 1;
+@@ -2105,6 +2107,7 @@ static int submit_extent_page(int rw, st
+ 		    bio_add_page(bio, page, page_size, offset) < page_size) {
+ 			ret = submit_one_bio(rw, bio, mirror_num,
+ 					     prev_bio_flags);
++			BUG_ON(ret < 0);
+ 			bio = NULL;
+ 		} else {
+ 			return 0;
+@@ -2125,8 +2128,10 @@ static int submit_extent_page(int rw, st
  
- 	nritems = btrfs_header_nritems(parent);
- 	if (slot != nritems - 1) {
-@@ -3726,9 +3714,7 @@ static int del_ptr(struct btrfs_trans_handle *trans, struct btrfs_root *root,
- 		struct btrfs_disk_key disk_key;
+ 	if (bio_ret)
+ 		*bio_ret = bio;
+-	else
++	else {
+ 		ret = submit_one_bio(rw, bio, mirror_num, bio_flags);
++		BUG_ON(ret < 0);
++	}
  
- 		btrfs_node_key(parent, &disk_key, 0);
--		wret = fixup_low_keys(trans, root, path, &disk_key, level + 1);
--		if (wret)
--			ret = wret;
-+		fixup_low_keys(trans, root, path, &disk_key, level + 1);
- 	}
- 	btrfs_mark_buffer_dirty(parent);
  	return ret;
-@@ -3831,10 +3817,7 @@ int btrfs_del_items(struct btrfs_trans_handle *trans, struct btrfs_root *root,
- 			struct btrfs_disk_key disk_key;
+ }
+@@ -2349,8 +2354,10 @@ int extent_read_full_page(struct extent_
  
- 			btrfs_item_key(leaf, &disk_key, 0);
--			wret = fixup_low_keys(trans, root, path,
--					      &disk_key, 1);
--			if (wret)
--				ret = wret;
-+			fixup_low_keys(trans, root, path, &disk_key, 1);
+ 	ret = __extent_read_full_page(tree, page, get_extent, &bio, 0,
+ 				      &bio_flags);
+-	if (bio)
++	if (bio) {
+ 		ret = submit_one_bio(READ, bio, 0, bio_flags);
++		BUG_ON(ret < 0);
++	}
+ 	return ret;
+ }
+ 
+@@ -2752,10 +2759,12 @@ retry:
+ static void flush_epd_write_bio(struct extent_page_data *epd)
+ {
+ 	if (epd->bio) {
++		int ret;
+ 		if (epd->sync_io)
+-			submit_one_bio(WRITE_SYNC, epd->bio, 0, 0);
++			ret = submit_one_bio(WRITE_SYNC, epd->bio, 0, 0);
+ 		else
+-			submit_one_bio(WRITE, epd->bio, 0, 0);
++			ret = submit_one_bio(WRITE, epd->bio, 0, 0);
++		BUG_ON(ret < 0);
+ 		epd->bio = NULL;
+ 	}
+ }
+@@ -2871,8 +2880,10 @@ int extent_readpages(struct extent_io_tr
+ 		page_cache_release(page);
+ 	}
+ 	BUG_ON(!list_empty(pages));
+-	if (bio)
+-		submit_one_bio(READ, bio, 0, bio_flags);
++	if (bio) {
++		int ret = submit_one_bio(READ, bio, 0, bio_flags);
++		BUG_ON(ret < 0);
++	}
+ 	return 0;
+ }
+ 
+@@ -3704,8 +3715,10 @@ int read_extent_buffer_pages(struct exte
  		}
+ 	}
  
- 		/* delete the leaf if it is mostly empty */
-
+-	if (bio)
+-		submit_one_bio(READ, bio, mirror_num, bio_flags);
++	if (bio) {
++		err = submit_one_bio(READ, bio, mirror_num, bio_flags);
++		BUG_ON(err < 0);
++	}
+ 
+ 	if (ret || !wait)
+ 		return ret;
+--- a/fs/btrfs/inode.c
++++ b/fs/btrfs/inode.c
+@@ -1488,7 +1488,8 @@ static int btrfs_submit_bio_hook(struct
+ 		metadata = 2;
+ 
+ 	ret = btrfs_bio_wq_end_io(root->fs_info, bio, metadata);
+-	BUG_ON(ret);
++	if (ret)
++		return ret;
+ 
+ 	if (!(rw & REQ_WRITE)) {
+ 		if (bio_flags & EXTENT_BIO_COMPRESSED) {
 
 

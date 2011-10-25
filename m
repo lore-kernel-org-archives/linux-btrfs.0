@@ -1,7 +1,7 @@
 From: Jeff Mahoney <jeffm@suse.com>
-Subject: [patch 14/66] btrfs: find_and_setup_root error push-up
-Date: Mon, 24 Oct 2011 21:02:50 -0400
-Message-ID: <20111025010852.175360336@suse.com>
+Subject: [patch 12/66] btrfs: btrfs_drop_snapshot should return int
+Date: Mon, 24 Oct 2011 21:02:48 -0400
+Message-ID: <20111025010851.944851843@suse.com>
 References: <20111025010236.322699279@suse.com>
 Cc: Linux Btrfs <linux-btrfs@vger.kernel.org>
 To: Chris Mason <chris.mason@oracle.com>,
@@ -9,42 +9,91 @@ To: Chris Mason <chris.mason@oracle.com>,
 Return-path: <linux-btrfs-owner@vger.kernel.org>
 List-ID: <linux-btrfs.vger.kernel.org>
 
- find_and_setup_root BUGs when it encounters an error from
- btrfs_find_last_root, which can occur if a path can't be allocated.
-
- This patch pushes it up to its callers where it is already handled.
+Commit cb1b69f4 (Btrfs: forced readonly when btrfs_drop_snapshot() fails)
+made btrfs_drop_snapshot return void because there were no callers checking
+the return value. That is the wrong order to handle error propogation since
+the caller will have no idea that an error has occured and continue on
+as if nothing went wrong.
 
 Signed-off-by: Jeff Mahoney <jeffm@suse.com>
 ---
- fs/btrfs/disk-io.c |   11 ++++++-----
- 1 file changed, 6 insertions(+), 5 deletions(-)
+ fs/btrfs/ctree.h       |    5 +++--
+ fs/btrfs/extent-tree.c |    6 +++---
+ fs/btrfs/relocation.c  |    3 ++-
+ fs/btrfs/transaction.c |    7 +++++--
+ 4 files changed, 13 insertions(+), 8 deletions(-)
 
---- a/fs/btrfs/disk-io.c
-+++ b/fs/btrfs/disk-io.c
-@@ -1117,10 +1117,10 @@ static int __setup_root(u32 nodesize, u3
- 	return 0;
+--- a/fs/btrfs/ctree.h
++++ b/fs/btrfs/ctree.h
+@@ -2367,8 +2367,9 @@ static inline int btrfs_insert_empty_ite
+ int btrfs_next_leaf(struct btrfs_root *root, struct btrfs_path *path);
+ int btrfs_prev_leaf(struct btrfs_root *root, struct btrfs_path *path);
+ int btrfs_leaf_free_space(struct btrfs_root *root, struct extent_buffer *leaf);
+-void btrfs_drop_snapshot(struct btrfs_root *root,
+-			 struct btrfs_block_rsv *block_rsv, int update_ref);
++int btrfs_drop_snapshot(struct btrfs_root *root,
++			struct btrfs_block_rsv *block_rsv, int update_ref)
++			__must_check;
+ int btrfs_drop_subtree(struct btrfs_trans_handle *trans,
+ 			struct btrfs_root *root,
+ 			struct extent_buffer *node,
+--- a/fs/btrfs/extent-tree.c
++++ b/fs/btrfs/extent-tree.c
+@@ -6347,8 +6347,8 @@ static noinline int walk_up_tree(struct
+  * also make sure backrefs for the shared block and all lower level
+  * blocks are properly updated.
+  */
+-void btrfs_drop_snapshot(struct btrfs_root *root,
+-			 struct btrfs_block_rsv *block_rsv, int update_ref)
++int btrfs_drop_snapshot(struct btrfs_root *root,
++			struct btrfs_block_rsv *block_rsv, int update_ref)
+ {
+ 	struct btrfs_path *path;
+ 	struct btrfs_trans_handle *trans;
+@@ -6513,7 +6513,7 @@ out_free:
+ out:
+ 	if (err)
+ 		btrfs_std_error(root->fs_info, err);
+-	return;
++	return err;
  }
  
--static int find_and_setup_root(struct btrfs_root *tree_root,
--			       struct btrfs_fs_info *fs_info,
--			       u64 objectid,
--			       struct btrfs_root *root)
-+static int __must_check find_and_setup_root(struct btrfs_root *tree_root,
-+					    struct btrfs_fs_info *fs_info,
-+					    u64 objectid,
-+					    struct btrfs_root *root)
- {
- 	int ret;
- 	u32 blocksize;
-@@ -1133,7 +1133,8 @@ static int find_and_setup_root(struct bt
- 				   &root->root_item, &root->root_key);
- 	if (ret > 0)
- 		return -ENOENT;
--	BUG_ON(ret);
-+	else if (ret < 0)
-+		return ret;
+ /*
+--- a/fs/btrfs/relocation.c
++++ b/fs/btrfs/relocation.c
+@@ -2269,7 +2269,8 @@ again:
+ 		} else {
+ 			list_del_init(&reloc_root->root_list);
+ 		}
+-		btrfs_drop_snapshot(reloc_root, rc->block_rsv, 0);
++		ret = btrfs_drop_snapshot(reloc_root, rc->block_rsv, 0);
++		BUG_ON(ret < 0);
+ 	}
  
- 	generation = btrfs_root_generation(&root->root_item);
- 	blocksize = btrfs_level_size(root, btrfs_root_level(&root->root_item));
+ 	if (found) {
+--- a/fs/btrfs/transaction.c
++++ b/fs/btrfs/transaction.c
+@@ -1375,6 +1375,8 @@ int btrfs_clean_old_snapshots(struct btr
+ 	spin_unlock(&fs_info->trans_lock);
+ 
+ 	while (!list_empty(&list)) {
++		int ret;
++
+ 		root = list_entry(list.next, struct btrfs_root, root_list);
+ 		list_del(&root->root_list);
+ 
+@@ -1382,9 +1384,10 @@ int btrfs_clean_old_snapshots(struct btr
+ 
+ 		if (btrfs_header_backref_rev(root->node) <
+ 		    BTRFS_MIXED_BACKREF_REV)
+-			btrfs_drop_snapshot(root, NULL, 0);
++			ret = btrfs_drop_snapshot(root, NULL, 0);
+ 		else
+-			btrfs_drop_snapshot(root, NULL, 1);
++			ret = btrfs_drop_snapshot(root, NULL, 1);
++		BUG_ON(ret < 0);
+ 	}
+ 	return 0;
+ }
 
 

@@ -1,7 +1,7 @@
 From: Jeff Mahoney <jeffm@suse.com>
-Subject: [patch 08/66] btrfs: convert_extent_bit error push-up
-Date: Mon, 24 Oct 2011 21:02:44 -0400
-Message-ID: <20111025010851.484227255@suse.com>
+Subject: [patch 10/66] btrfs: pin_down_extent should return void
+Date: Mon, 24 Oct 2011 21:02:46 -0400
+Message-ID: <20111025010851.715007810@suse.com>
 References: <20111025010236.322699279@suse.com>
 Cc: Linux Btrfs <linux-btrfs@vger.kernel.org>
 To: Chris Mason <chris.mason@oracle.com>,
@@ -9,41 +9,45 @@ To: Chris Mason <chris.mason@oracle.com>,
 Return-path: <linux-btrfs-owner@vger.kernel.org>
 List-ID: <linux-btrfs.vger.kernel.org>
 
- convert_extent_bit can fail with -ENOMEM but nothing actually catches the
- errors.
+ pin_down_extent performs some operations which can't fail and then calls
+ set_extent_dirty, which has two failure cases via set_extent_bit:
+ 1) Return -EEXIST if exclusive bits are set
+    - Since it doesn't use any exclusive bits, this failure case can't
+       occur.
+ 2) Return -ENOMEM if memory can't be allocated
+    - Since it's called with gfp_flags & __GFP_NOFAIL, this failure case
+      can't occur.
 
- This patch catches the error with BUG_ON in the caller.
+ With no failure cases, it should return void.
 
 Signed-off-by: Jeff Mahoney <jeffm@suse.com>
 ---
- fs/btrfs/extent_io.h   |    2 +-
- fs/btrfs/transaction.c |    5 +++--
- 2 files changed, 4 insertions(+), 3 deletions(-)
+ fs/btrfs/extent-tree.c |    8 +++-----
+ 1 file changed, 3 insertions(+), 5 deletions(-)
 
---- a/fs/btrfs/extent_io.h
-+++ b/fs/btrfs/extent_io.h
-@@ -220,7 +220,7 @@ int set_extent_dirty(struct extent_io_tr
- int clear_extent_dirty(struct extent_io_tree *tree, u64 start, u64 end,
- 		       gfp_t mask) __must_check;
- int convert_extent_bit(struct extent_io_tree *tree, u64 start, u64 end,
--		       int bits, int clear_bits, gfp_t mask);
-+		       int bits, int clear_bits, gfp_t mask) __must_check;
- int set_extent_delalloc(struct extent_io_tree *tree, u64 start, u64 end,
- 			struct extent_state **cached_state, gfp_t mask);
- int find_first_extent_bit(struct extent_io_tree *tree, u64 start,
---- a/fs/btrfs/transaction.c
-+++ b/fs/btrfs/transaction.c
-@@ -580,8 +580,9 @@ int btrfs_write_marked_extents(struct bt
+--- a/fs/btrfs/extent-tree.c
++++ b/fs/btrfs/extent-tree.c
+@@ -4290,9 +4290,9 @@ static u64 first_logical_byte(struct btr
+ 	return bytenr;
+ }
  
- 	while (!find_first_extent_bit(dirty_pages, start, &start, &end,
- 				      mark)) {
--		convert_extent_bit(dirty_pages, start, end, EXTENT_NEED_WAIT, mark,
--				   GFP_NOFS);
-+		err = convert_extent_bit(dirty_pages, start, end,
-+					 EXTENT_NEED_WAIT, mark, GFP_NOFS);
-+		BUG_ON(err < 0);
- 		err = filemap_fdatawrite_range(mapping, start, end);
- 		if (err)
- 			werr = err;
+-static int pin_down_extent(struct btrfs_root *root,
+-			   struct btrfs_block_group_cache *cache,
+-			   u64 bytenr, u64 num_bytes, int reserved)
++static void pin_down_extent(struct btrfs_root *root,
++			    struct btrfs_block_group_cache *cache,
++			    u64 bytenr, u64 num_bytes, int reserved)
+ {
+ 	int ret;
+ 
+@@ -4311,8 +4311,6 @@ static int pin_down_extent(struct btrfs_
+ 			       bytenr + num_bytes - 1,
+ 			       GFP_NOFS | __GFP_NOFAIL);
+ 	BUG_ON(ret < 0); /* __GFP_NOFAIL means it can't return -ENOMEM */
+-
+-	return 0;
+ }
+ 
+ /*
 
 

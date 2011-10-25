@@ -1,7 +1,7 @@
 From: Jeff Mahoney <jeffm@suse.com>
-Subject: [patch 42/66] btrfs: btrfs_run_defrag_inodes should return void
-Date: Mon, 24 Oct 2011 21:03:18 -0400
-Message-ID: <20111025010855.386283687@suse.com>
+Subject: [patch 44/66] btrfs: Factor out tree->ops->merge_bio_hook call
+Date: Mon, 24 Oct 2011 21:03:20 -0400
+Message-ID: <20111025010855.615589518@suse.com>
 References: <20111025010236.322699279@suse.com>
 Cc: Linux Btrfs <linux-btrfs@vger.kernel.org>
 To: Chris Mason <chris.mason@oracle.com>,
@@ -9,44 +9,76 @@ To: Chris Mason <chris.mason@oracle.com>,
 Return-path: <linux-btrfs-owner@vger.kernel.org>
 List-ID: <linux-btrfs.vger.kernel.org>
 
- btrfs_run_defrag_inodes has no error conditions and should return
- void. Its callers already ignore the error codes anyway.
+ In submit_extent_page, there's a visually noisy if statement that, in
+ the midst of other conditions, does the tree dependency for tree->ops
+ and tree->ops->merge_bio_hook before calling it, and then another
+ condition afterwards. If an error is returned from merge_bio_hook,
+ there's no way to catch it. It's considered a routine "1" return
+ value instead of a failure.
+
+ This patch factors out the dependency check into a new local merge_bio
+ routine and BUG's on an error. The if statement is less noisy as a side-
+ effect.
 
 Signed-off-by: Jeff Mahoney <jeffm@suse.com>
 ---
- fs/btrfs/ctree.h |    2 +-
- fs/btrfs/file.c  |    3 +--
- 2 files changed, 2 insertions(+), 3 deletions(-)
+ fs/btrfs/extent_io.c |   17 ++++++++++++++---
+ fs/btrfs/inode.c     |    5 +++--
+ 2 files changed, 17 insertions(+), 5 deletions(-)
 
---- a/fs/btrfs/ctree.h
-+++ b/fs/btrfs/ctree.h
-@@ -2606,7 +2606,7 @@ int btrfs_defrag_file(struct inode *inod
- /* file.c */
- int btrfs_add_inode_defrag(struct btrfs_trans_handle *trans,
- 			   struct inode *inode);
--int btrfs_run_defrag_inodes(struct btrfs_fs_info *fs_info);
-+void btrfs_run_defrag_inodes(struct btrfs_fs_info *fs_info);
- int btrfs_sync_file(struct file *file, loff_t start, loff_t end, int datasync);
- int btrfs_drop_extent_cache(struct inode *inode, u64 start, u64 end,
- 			    int skip_pinned);
---- a/fs/btrfs/file.c
-+++ b/fs/btrfs/file.c
-@@ -193,7 +193,7 @@ struct inode_defrag *btrfs_find_defrag_i
-  * run through the list of inodes in the FS that need
-  * defragging
-  */
--int btrfs_run_defrag_inodes(struct btrfs_fs_info *fs_info)
-+void btrfs_run_defrag_inodes(struct btrfs_fs_info *fs_info)
- {
- 	struct inode_defrag *defrag;
- 	struct btrfs_root *inode_root;
-@@ -296,7 +296,6 @@ next_free:
- 	 * wait for the defragger to stop
- 	 */
- 	wake_up(&fs_info->transaction_wait);
--	return 0;
+diff --git a/fs/btrfs/extent_io.c b/fs/btrfs/extent_io.c
+index 0575792..09095b8 100644
+--- a/fs/btrfs/extent_io.c
++++ b/fs/btrfs/extent_io.c
+@@ -2058,6 +2058,19 @@ static int submit_one_bio(int rw, struct bio *bio, int mirror_num,
+ 	return ret;
  }
  
- /* simple helper to fault in pages and copy.  This should go away
++static int merge_bio(struct extent_io_tree *tree, struct page *page,
++		     unsigned long offset, size_t size, struct bio *bio,
++		     unsigned long bio_flags)
++{
++	int ret = 0;
++	if (tree->ops && tree->ops->merge_bio_hook)
++		ret = tree->ops->merge_bio_hook(page, offset, size, bio,
++						bio_flags);
++	BUG_ON(ret < 0);
++	return ret;
++
++}
++
+ static int submit_extent_page(int rw, struct extent_io_tree *tree,
+ 			      struct page *page, sector_t sector,
+ 			      size_t size, unsigned long offset,
+@@ -2086,9 +2099,7 @@ static int submit_extent_page(int rw, struct extent_io_tree *tree,
+ 				sector;
+ 
+ 		if (prev_bio_flags != bio_flags || !contig ||
+-		    (tree->ops && tree->ops->merge_bio_hook &&
+-		     tree->ops->merge_bio_hook(page, offset, page_size, bio,
+-					       bio_flags)) ||
++		    merge_bio(tree, page, offset, page_size, bio, bio_flags) ||
+ 		    bio_add_page(bio, page, page_size, offset) < page_size) {
+ 			ret = submit_one_bio(rw, bio, mirror_num,
+ 					     prev_bio_flags);
+diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
+index c0dc599..a06cb64 100644
+--- a/fs/btrfs/inode.c
++++ b/fs/btrfs/inode.c
+@@ -1425,10 +1425,11 @@ int btrfs_merge_bio_hook(struct page *page, unsigned long offset,
+ 	map_length = length;
+ 	ret = btrfs_map_block(map_tree, READ, logical,
+ 			      &map_length, NULL, 0);
+-
++	/* Will always return 0 or 1 with map_multi == NULL */
++	BUG_ON(ret < 0);
+ 	if (map_length < length + size)
+ 		return 1;
+-	return ret;
++	return 0;
+ }
+ 
+ /*
+
 
 

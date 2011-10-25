@@ -1,7 +1,7 @@
 From: Jeff Mahoney <jeffm@suse.com>
-Subject: [patch 46/66] btrfs: __add_reloc_root error push-up
-Date: Mon, 24 Oct 2011 21:03:22 -0400
-Message-ID: <20111025010855.843900242@suse.com>
+Subject: [patch 47/66] btrfs: fixup_low_keys should return void
+Date: Mon, 24 Oct 2011 21:03:23 -0400
+Message-ID: <20111025010855.959650189@suse.com>
 References: <20111025010236.322699279@suse.com>
 Cc: Linux Btrfs <linux-btrfs@vger.kernel.org>
 To: Chris Mason <chris.mason@oracle.com>,
@@ -9,87 +9,131 @@ To: Chris Mason <chris.mason@oracle.com>,
 Return-path: <linux-btrfs-owner@vger.kernel.org>
 List-ID: <linux-btrfs.vger.kernel.org>
 
- This patch pushes kmalloc errors up to the caller and BUGs in the caller.
-
- The BUG_ON for duplicate reloc tree root insertion is replaced with a
- panic explaining the issue.
+ fixup_low_keys has no error conditions and should return void.
 
 Signed-off-by: Jeff Mahoney <jeffm@suse.com>
 ---
- fs/btrfs/relocation.c |   22 ++++++++++++++++------
- 1 file changed, 16 insertions(+), 6 deletions(-)
+ fs/btrfs/ctree.c |   39 +++++++++++----------------------------
+ 1 files changed, 11 insertions(+), 28 deletions(-)
 
---- a/fs/btrfs/relocation.c
-+++ b/fs/btrfs/relocation.c
-@@ -1219,14 +1219,15 @@ fail:
- /*
-  * helper to add 'address of tree root -> reloc tree' mapping
+diff --git a/fs/btrfs/ctree.c b/fs/btrfs/ctree.c
+index 011cab3..dedd3a1 100644
+--- a/fs/btrfs/ctree.c
++++ b/fs/btrfs/ctree.c
+@@ -1864,15 +1864,12 @@ done:
+  * fixing up pointers when a given leaf/node is not in slot 0 of the
+  * higher levels
+  *
+- * If this fails to write a tree block, it returns -1, but continues
+- * fixing up the blocks in ram so the tree is consistent.
   */
--static int __add_reloc_root(struct btrfs_root *root)
-+static int __must_check __add_reloc_root(struct btrfs_root *root)
+-static int fixup_low_keys(struct btrfs_trans_handle *trans,
+-			  struct btrfs_root *root, struct btrfs_path *path,
+-			  struct btrfs_disk_key *key, int level)
++static void fixup_low_keys(struct btrfs_trans_handle *trans,
++			   struct btrfs_root *root, struct btrfs_path *path,
++			   struct btrfs_disk_key *key, int level)
  {
- 	struct rb_node *rb_node;
- 	struct mapping_node *node;
- 	struct reloc_control *rc = root->fs_info->reloc_ctl;
+ 	int i;
+-	int ret = 0;
+ 	struct extent_buffer *t;
  
- 	node = kmalloc(sizeof(*node), GFP_NOFS);
--	BUG_ON(!node);
-+	if (!node)
-+		return -ENOMEM;
- 
- 	node->bytenr = root->node->start;
- 	node->data = root;
-@@ -1235,7 +1236,12 @@ static int __add_reloc_root(struct btrfs
- 	rb_node = tree_insert(&rc->reloc_root_tree.rb_root,
- 			      node->bytenr, &node->rb_node);
- 	spin_unlock(&rc->reloc_root_tree.lock);
--	BUG_ON(rb_node);
-+	if (rb_node) {
-+		kfree(node);
-+		btrfs_panic(root->fs_info, -EEXIST, "Duplicate root found "
-+			    "for start=%llu while inserting into relocation "
-+			    "tree\n");
-+	}
- 
- 	list_add_tail(&root->root_list, &rc->reloc_roots);
- 	return 0;
-@@ -1351,6 +1357,7 @@ int btrfs_init_reloc_root(struct btrfs_t
- 	struct btrfs_root *reloc_root;
- 	struct reloc_control *rc = root->fs_info->reloc_ctl;
- 	int clear_rsv = 0;
-+	int ret;
- 
- 	if (root->reloc_root) {
- 		reloc_root = root->reloc_root;
-@@ -1370,7 +1377,8 @@ int btrfs_init_reloc_root(struct btrfs_t
- 	if (clear_rsv)
- 		trans->block_rsv = NULL;
- 
--	__add_reloc_root(reloc_root);
-+	ret = __add_reloc_root(reloc_root);
-+	BUG_ON(ret < 0);
- 	root->reloc_root = reloc_root;
- 	return 0;
+ 	for (i = level; i < BTRFS_MAX_LEVEL; i++) {
+@@ -1885,7 +1882,6 @@ static int fixup_low_keys(struct btrfs_trans_handle *trans,
+ 		if (tslot != 0)
+ 			break;
+ 	}
+-	return ret;
  }
-@@ -4248,7 +4256,8 @@ int btrfs_recover_relocation(struct btrf
- 				       reloc_root->root_key.offset);
- 		BUG_ON(IS_ERR(fs_root));
  
--		__add_reloc_root(reloc_root);
-+		err = __add_reloc_root(reloc_root);
-+		BUG_ON(err < 0);
- 		fs_root->reloc_root = reloc_root;
+ /*
+@@ -2626,9 +2622,7 @@ static noinline int __push_leaf_left(struct btrfs_trans_handle *trans,
+ 		clean_tree_block(trans, root, right);
+ 
+ 	btrfs_item_key(right, &disk_key, 0);
+-	wret = fixup_low_keys(trans, root, path, &disk_key, 1);
+-	if (wret)
+-		ret = wret;
++	fixup_low_keys(trans, root, path, &disk_key, 1);
+ 
+ 	/* then fixup the leaf pointer in the path */
+ 	if (path->slots[0] < push_items) {
+@@ -2999,12 +2993,9 @@ again:
+ 			free_extent_buffer(path->nodes[0]);
+ 			path->nodes[0] = right;
+ 			path->slots[0] = 0;
+-			if (path->slots[1] == 0) {
+-				wret = fixup_low_keys(trans, root,
+-						path, &disk_key, 1);
+-				if (wret)
+-					ret = wret;
+-			}
++			if (path->slots[1] == 0)
++				fixup_low_keys(trans, root, path,
++					       &disk_key, 1);
+ 		}
+ 		btrfs_mark_buffer_dirty(right);
+ 		return ret;
+@@ -3527,7 +3518,7 @@ int btrfs_insert_some_items(struct btrfs_trans_handle *trans,
+ 	ret = 0;
+ 	if (slot == 0) {
+ 		btrfs_cpu_key_to_disk(&disk_key, cpu_key);
+-		ret = fixup_low_keys(trans, root, path, &disk_key, 1);
++		fixup_low_keys(trans, root, path, &disk_key, 1);
  	}
  
-@@ -4450,7 +4459,8 @@ void btrfs_reloc_post_snapshot(struct bt
- 	reloc_root = create_reloc_root(trans, root->reloc_root,
- 				       new_root->root_key.objectid);
+ 	if (btrfs_leaf_free_space(root, leaf) < 0) {
+@@ -3555,7 +3546,6 @@ int setup_items_for_insert(struct btrfs_trans_handle *trans,
+ 	u32 nritems;
+ 	unsigned int data_end;
+ 	struct btrfs_disk_key disk_key;
+-	int ret;
+ 	struct extent_buffer *leaf;
+ 	int slot;
  
--	__add_reloc_root(reloc_root);
-+	ret = __add_reloc_root(reloc_root);
-+	BUG_ON(ret < 0);
- 	new_root->reloc_root = reloc_root;
+@@ -3616,10 +3606,9 @@ int setup_items_for_insert(struct btrfs_trans_handle *trans,
  
- 	if (rc->create_reloc_tree) {
+ 	btrfs_set_header_nritems(leaf, nritems + nr);
+ 
+-	ret = 0;
+ 	if (slot == 0) {
+ 		btrfs_cpu_key_to_disk(&disk_key, cpu_key);
+-		ret = fixup_low_keys(trans, root, path, &disk_key, 1);
++		fixup_low_keys(trans, root, path, &disk_key, 1);
+ 	}
+ 	btrfs_unlock_up_safe(path, 1);
+ 	btrfs_mark_buffer_dirty(leaf);
+@@ -3706,7 +3695,6 @@ static int del_ptr(struct btrfs_trans_handle *trans, struct btrfs_root *root,
+ 	struct extent_buffer *parent = path->nodes[level];
+ 	u32 nritems;
+ 	int ret = 0;
+-	int wret;
+ 
+ 	nritems = btrfs_header_nritems(parent);
+ 	if (slot != nritems - 1) {
+@@ -3726,9 +3714,7 @@ static int del_ptr(struct btrfs_trans_handle *trans, struct btrfs_root *root,
+ 		struct btrfs_disk_key disk_key;
+ 
+ 		btrfs_node_key(parent, &disk_key, 0);
+-		wret = fixup_low_keys(trans, root, path, &disk_key, level + 1);
+-		if (wret)
+-			ret = wret;
++		fixup_low_keys(trans, root, path, &disk_key, level + 1);
+ 	}
+ 	btrfs_mark_buffer_dirty(parent);
+ 	return ret;
+@@ -3831,10 +3817,7 @@ int btrfs_del_items(struct btrfs_trans_handle *trans, struct btrfs_root *root,
+ 			struct btrfs_disk_key disk_key;
+ 
+ 			btrfs_item_key(leaf, &disk_key, 0);
+-			wret = fixup_low_keys(trans, root, path,
+-					      &disk_key, 1);
+-			if (wret)
+-				ret = wret;
++			fixup_low_keys(trans, root, path, &disk_key, 1);
+ 		}
+ 
+ 		/* delete the leaf if it is mostly empty */
+
 
 

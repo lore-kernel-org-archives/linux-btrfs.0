@@ -1,7 +1,7 @@
 From: Jeff Mahoney <jeffm@suse.com>
-Subject: [patch 27/66] btrfs: schedule_bio should return void
-Date: Mon, 24 Oct 2011 21:03:03 -0400
-Message-ID: <20111025010853.667370437@suse.com>
+Subject: [patch 25/66] btrfs: run_scheduled_bios should return void
+Date: Mon, 24 Oct 2011 21:03:01 -0400
+Message-ID: <20111025010853.438884734@suse.com>
 References: <20111025010236.322699279@suse.com>
 Cc: Linux Btrfs <linux-btrfs@vger.kernel.org>
 To: Chris Mason <chris.mason@oracle.com>,
@@ -9,40 +9,32 @@ To: Chris Mason <chris.mason@oracle.com>,
 Return-path: <linux-btrfs-owner@vger.kernel.org>
 List-ID: <linux-btrfs.vger.kernel.org>
 
- schedule_bio has no error conditions and should return void. Its callers
- already ignore the error code anyway.
+ run_scheduled_bios has no error conditions and should return void.
+ Its callers already ignore the error code anyway.
 
 Signed-off-by: Jeff Mahoney <jeffm@suse.com>
 ---
- fs/btrfs/volumes.c |    4 +---
- 1 file changed, 1 insertion(+), 3 deletions(-)
+ fs/btrfs/volumes.c |    3 +--
+ 1 file changed, 1 insertion(+), 2 deletions(-)
 
 --- a/fs/btrfs/volumes.c
 +++ b/fs/btrfs/volumes.c
-@@ -3268,7 +3268,7 @@ struct async_sched {
-  * This will add one bio to the pending list for a device and make sure
-  * the work struct is scheduled.
+@@ -127,7 +127,7 @@ static void requeue_list(struct btrfs_pe
+  * the list if the block device is congested.  This way, multiple devices
+  * can make progress from a single worker thread.
   */
--static noinline int schedule_bio(struct btrfs_root *root,
-+static noinline void schedule_bio(struct btrfs_root *root,
- 				 struct btrfs_device *device,
- 				 int rw, struct bio *bio)
+-static noinline int run_scheduled_bios(struct btrfs_device *device)
++static noinline void run_scheduled_bios(struct btrfs_device *device)
  {
-@@ -3280,7 +3280,6 @@ static noinline int schedule_bio(struct
- 		bio_get(bio);
- 		submit_bio(rw, bio);
- 		bio_put(bio);
--		return 0;
- 	}
+ 	struct bio *pending;
+ 	struct backing_dev_info *bdi;
+@@ -307,7 +307,6 @@ loop_lock:
  
- 	/*
-@@ -3314,7 +3313,6 @@ static noinline int schedule_bio(struct
- 	if (should_queue)
- 		btrfs_queue_worker(&root->fs_info->submit_workers,
- 				   &device->work);
+ done:
+ 	blk_finish_plug(&plug);
 -	return 0;
  }
  
- int btrfs_map_bio(struct btrfs_root *root, int rw, struct bio *bio,
+ static void pending_bios_fn(struct btrfs_work *work)
 
 

@@ -1,7 +1,7 @@
 From: Jeff Mahoney <jeffm@suse.com>
-Subject: [patch 21/66] btrfs: check_page_locked should return void
-Date: Mon, 24 Oct 2011 21:02:57 -0400
-Message-ID: <20111025010852.978408704@suse.com>
+Subject: [patch 14/66] btrfs: find_and_setup_root error push-up
+Date: Mon, 24 Oct 2011 21:02:50 -0400
+Message-ID: <20111025010852.175360336@suse.com>
 References: <20111025010236.322699279@suse.com>
 Cc: Linux Btrfs <linux-btrfs@vger.kernel.org>
 To: Chris Mason <chris.mason@oracle.com>,
@@ -9,31 +9,42 @@ To: Chris Mason <chris.mason@oracle.com>,
 Return-path: <linux-btrfs-owner@vger.kernel.org>
 List-ID: <linux-btrfs.vger.kernel.org>
 
- check_page_locked has no error conditions and should return void.
- Its callers already ignore the error code anyway.
+ find_and_setup_root BUGs when it encounters an error from
+ btrfs_find_last_root, which can occur if a path can't be allocated.
+
+ This patch pushes it up to its callers where it is already handled.
 
 Signed-off-by: Jeff Mahoney <jeffm@suse.com>
 ---
- fs/btrfs/extent_io.c |    4 +---
- 1 file changed, 1 insertion(+), 3 deletions(-)
+ fs/btrfs/disk-io.c |   11 ++++++-----
+ 1 file changed, 6 insertions(+), 5 deletions(-)
 
---- a/fs/btrfs/extent_io.c
-+++ b/fs/btrfs/extent_io.c
-@@ -1817,14 +1817,12 @@ static void check_page_uptodate(struct e
-  * helper function to unlock a page if all the extents in the tree
-  * for that page are unlocked
-  */
--static int check_page_locked(struct extent_io_tree *tree,
--			     struct page *page)
-+static void check_page_locked(struct extent_io_tree *tree, struct page *page)
- {
- 	u64 start = (u64)page->index << PAGE_CACHE_SHIFT;
- 	u64 end = start + PAGE_CACHE_SIZE - 1;
- 	if (!test_range_bit(tree, start, end, EXTENT_LOCKED, 0, NULL))
- 		unlock_page(page);
--	return 0;
+--- a/fs/btrfs/disk-io.c
++++ b/fs/btrfs/disk-io.c
+@@ -1117,10 +1117,10 @@ static int __setup_root(u32 nodesize, u3
+ 	return 0;
  }
  
- /*
+-static int find_and_setup_root(struct btrfs_root *tree_root,
+-			       struct btrfs_fs_info *fs_info,
+-			       u64 objectid,
+-			       struct btrfs_root *root)
++static int __must_check find_and_setup_root(struct btrfs_root *tree_root,
++					    struct btrfs_fs_info *fs_info,
++					    u64 objectid,
++					    struct btrfs_root *root)
+ {
+ 	int ret;
+ 	u32 blocksize;
+@@ -1133,7 +1133,8 @@ static int find_and_setup_root(struct bt
+ 				   &root->root_item, &root->root_key);
+ 	if (ret > 0)
+ 		return -ENOENT;
+-	BUG_ON(ret);
++	else if (ret < 0)
++		return ret;
+ 
+ 	generation = btrfs_root_generation(&root->root_item);
+ 	blocksize = btrfs_level_size(root, btrfs_root_level(&root->root_item));
 
 

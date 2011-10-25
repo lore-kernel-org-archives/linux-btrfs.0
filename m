@@ -1,37 +1,89 @@
-From: dima <dolenin@parallels.com>
+From: Arand Nash <ienorand@gmail.com>
 Subject: Re: Snapshot rollback
-Date: Tue, 25 Oct 2011 02:00:43 +0000 (UTC)
-Message-ID: <loom.20111025T034412-244@post.gmane.org>
-References: <4EA46E3A.9090307@cfl.rr.com> <loom.20111024T071806-3@post.gmane.org> <CAG1y0sfmnD8W7an-7HicwfH0HuzJA4wnOLq90qn5iTJmEs4v0w@mail.gmail.com> <loom.20111024T101858-236@post.gmane.org> <CAG1y0sc_2+NZm0o8Ng_kyjWgZLZZ3SaJ3=5-0SG2_4r1tKjwoQ@mail.gmail.com>
+Date: Tue, 25 Oct 2011 04:04:43 +0200
+Message-ID: <4EA6193B.30104@gmail.com>
+References: <4EA46E3A.9090307@cfl.rr.com> <loom.20111024T071806-3@post.gmane.org> <4EA60690.7080401@cfl.rr.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
+Content-Type: text/plain; charset=ISO-8859-1; format=flowed
 To: linux-btrfs@vger.kernel.org
 Return-path: <linux-btrfs-owner@vger.kernel.org>
+In-Reply-To: <4EA60690.7080401@cfl.rr.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Fajar A. Nugraha <list <at> fajar.net> writes:
+On 25/10/11 02:45, Phillip Susi wrote:
+ > (...)
+>
+> On 10/24/2011 01:45 AM, dima wrote:
+>> Hello Phillip,
+>> It is hard to judge without seeing your fstab and bootloader config. Maybe your
+>> / was directly in subvolid=0 without creating a separate subvolume for it (like
+>> __active in Goffredo's reply)? In my very humble opinion, if you have your @home
+>> subvolume under subvolid=0 and then change the default subvolume, it just cannot
+>> access your @home any more.
+>
+> Why can't it?
+>
+> It appears that Ubuntu sets up two subvols, one named @ and one named
+> @home, and mounts them at / and /home respectively.  The boot loader was
+> set to pass rootflags=subvol=@.  After changing the default volume, the
+> system would not boot until I removed that rootflags argument, then it
+> mounted the snapshot correctly as the root, but refused to mount /home,
+> giving this nonsense error that /dev/sda1 is not a valid block device.
+ >
+ > (...)
 
-> AFAIK you have three possible ways to use /boot on btrfs:
-> 
-> (1) put /boot on subvolid=0, don't change the default subvolume. That
-> works, but all your snapshot/subvols will be visible under /boot. Some
-> people might not want that for estetic reason.
+Btrfs is unfortunately unable to look for snapshots by name above the 
+currently set default root (I do not know why exectly), it can however 
+find them by id anywhere.
 
-Hi Fajar,
-I think I am doing just this, but my subvolumes are not visible under /boot. I
-have all my subvolumes set up like this:
-/path/to/subvolid_0/boot       < a simple directory bind-mounted to /
-/path/to/subvolid_0/__active   < my / subvolume
-/path/to/subvolid_0/__home     < my /home subvolume
+In the case of (Debian?) Ubuntu, you should pretty much stay away from 
+set-default.
+
+What happens is Ubuntu mounts the _default_ subvolume, which in the 
+normal case refers to the top of the btrfs tree (alias subvolid=5), then 
+it looks below this for the subvolumes ("directories") named "@/" (given 
+by the boot option) and "@home/" (given in fstab).
+
+Now, when you use set-default here, it will instead mount that subvolume 
+as the default, and then look _below_ that for "@/" and "@home/", 
+obviously, this won't work, since these exist higher up in the tree.
+
+When you disable the rootflags argument, btrfs assumes the default 
+subvolume is the root, which works, as noted.
+
+In order to find "@home/", you could rewrite the fstab to instead of 
+"subvol=@home" read "subvolid=###", since by specifying id instead of 
+name, it can find it anywhere in the tree, the subvolid can be found via
+~# btrfs subvolume list /
 
 
-> (3) put /boot on a subvolume, do not change the default subvolume, and
-> manage grub.cfg manually. This is what I currently do.
+HOWEVER, this is not the way btrfs is intended to be used on Ubuntu.
+As mentioned earlier, you likely will not want to touch set-default, 
+instead, when you want to muck around with your mounting sobvolumes, you 
+just use mv:
 
-Could you elaborate about this option pls., and if possible post your grub.cfg?
-I don't quite understand how it works. Though I am doing syslinux at the moment,
-I think the process is the same.
+To backup
+~# mount /dev/sda1 /mnt
+~# ls /mnt
+@ @home
+~@ btrfs sub snap /mnt/@ /mnt/@rootsnap
+~# ls /mnt
+@ @home @rootsnap
 
-thanks
-~dima
+And to rollback:
+~# mv /mnt/@ /mnt/@rootmessy
+~# mv /mnt/@rootsnap /mnt/@
+And just reboot, since it just mounts whatever is named "@/".
 
+
+Now in your case, if you want to go back to the Ubuntu default btrfs 
+setup, you would:
+~# btrfs subvolume set-default 5 /
+(since id 5 is always the top of the tree)
+And reinstate the rootflags boot option.
+
+
+Hope that explains some of it.
+
+--
+Martin Werner ("arand")

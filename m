@@ -1,7 +1,7 @@
 From: Jeff Mahoney <jeffm@suse.com>
-Subject: [patch 40/66] btrfs: btrfs_set_block_group_rw should return void
-Date: Mon, 24 Oct 2011 21:03:16 -0400
-Message-ID: <20111025010855.157062665@suse.com>
+Subject: [patch 37/66] btrfs: __setup_root should return void
+Date: Mon, 24 Oct 2011 21:03:13 -0400
+Message-ID: <20111025010854.813068296@suse.com>
 References: <20111025010236.322699279@suse.com>
 Cc: Linux Btrfs <linux-btrfs@vger.kernel.org>
 To: Chris Mason <chris.mason@oracle.com>,
@@ -9,46 +9,38 @@ To: Chris Mason <chris.mason@oracle.com>,
 Return-path: <linux-btrfs-owner@vger.kernel.org>
 List-ID: <linux-btrfs.vger.kernel.org>
 
- btrfs_set_block_group_rw has no error conditions and should return
- void. Its callers already ignore the error codes anyway.
+ __setup_root has no error conditions and should return void. Its callers
+ already ignore the error codes anyway.
 
 Signed-off-by: Jeff Mahoney <jeffm@suse.com>
 ---
- fs/btrfs/ctree.h       |    4 ++--
- fs/btrfs/extent-tree.c |    3 +--
- 2 files changed, 3 insertions(+), 4 deletions(-)
+ fs/btrfs/disk-io.c |    9 ++++-----
+ 1 file changed, 4 insertions(+), 5 deletions(-)
 
---- a/fs/btrfs/ctree.h
-+++ b/fs/btrfs/ctree.h
-@@ -2263,8 +2263,8 @@ void btrfs_block_rsv_release(struct btrf
- 			     u64 num_bytes);
- int btrfs_set_block_group_ro(struct btrfs_root *root,
- 			     struct btrfs_block_group_cache *cache);
--int btrfs_set_block_group_rw(struct btrfs_root *root,
--			     struct btrfs_block_group_cache *cache);
-+void btrfs_set_block_group_rw(struct btrfs_root *root,
-+			      struct btrfs_block_group_cache *cache);
- void btrfs_put_block_group_cache(struct btrfs_fs_info *info);
- u64 btrfs_account_ro_block_groups_free_space(struct btrfs_space_info *sinfo);
- int btrfs_error_unpin_extent_range(struct btrfs_root *root,
---- a/fs/btrfs/extent-tree.c
-+++ b/fs/btrfs/extent-tree.c
-@@ -6769,7 +6769,7 @@ u64 btrfs_account_ro_block_groups_free_s
- 	return free_bytes;
+--- a/fs/btrfs/disk-io.c
++++ b/fs/btrfs/disk-io.c
+@@ -1058,10 +1058,10 @@ int clean_tree_block(struct btrfs_trans_
+ 	return 0;
  }
  
--int btrfs_set_block_group_rw(struct btrfs_root *root,
-+void btrfs_set_block_group_rw(struct btrfs_root *root,
- 			      struct btrfs_block_group_cache *cache)
+-static int __setup_root(u32 nodesize, u32 leafsize, u32 sectorsize,
+-			u32 stripesize, struct btrfs_root *root,
+-			struct btrfs_fs_info *fs_info,
+-			u64 objectid)
++static void __setup_root(u32 nodesize, u32 leafsize, u32 sectorsize,
++			 u32 stripesize, struct btrfs_root *root,
++			 struct btrfs_fs_info *fs_info,
++			 u64 objectid)
  {
- 	struct btrfs_space_info *sinfo = cache->space_info;
-@@ -6785,7 +6785,6 @@ int btrfs_set_block_group_rw(struct btrf
- 	cache->ro = 0;
- 	spin_unlock(&cache->lock);
- 	spin_unlock(&sinfo->lock);
+ 	root->node = NULL;
+ 	root->commit_root = NULL;
+@@ -1114,7 +1114,6 @@ static int __setup_root(u32 nodesize, u3
+ 	root->defrag_running = 0;
+ 	root->root_key.objectid = objectid;
+ 	root->anon_dev = 0;
 -	return 0;
  }
  
- /*
+ static int __must_check find_and_setup_root(struct btrfs_root *tree_root,
 
 

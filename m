@@ -1,7 +1,7 @@
 From: Jeff Mahoney <jeffm@suse.com>
-Subject: [patch 32/66] btrfs: btrfs_requeue_work should return void
-Date: Mon, 24 Oct 2011 21:03:08 -0400
-Message-ID: <20111025010854.240360390@suse.com>
+Subject: [patch 23/66] btrfs: clear_extent_buffer_dirty should return void
+Date: Mon, 24 Oct 2011 21:02:59 -0400
+Message-ID: <20111025010853.208060748@suse.com>
 References: <20111025010236.322699279@suse.com>
 Cc: Linux Btrfs <linux-btrfs@vger.kernel.org>
 To: Chris Mason <chris.mason@oracle.com>,
@@ -9,53 +9,44 @@ To: Chris Mason <chris.mason@oracle.com>,
 Return-path: <linux-btrfs-owner@vger.kernel.org>
 List-ID: <linux-btrfs.vger.kernel.org>
 
- btrfs_requeue_work has no error conditions and should return void.
- Its callers ignore the error code anyway.
+ clear_extent_buffer_dirty has no error conditions and should return void.
+ Its callers already ignore the error code anyway.
 
 Signed-off-by: Jeff Mahoney <jeffm@suse.com>
 ---
- fs/btrfs/async-thread.c |    7 ++-----
- fs/btrfs/async-thread.h |    2 +-
- 2 files changed, 3 insertions(+), 6 deletions(-)
+ fs/btrfs/extent_io.c |    3 +--
+ fs/btrfs/extent_io.h |    2 +-
+ 2 files changed, 2 insertions(+), 3 deletions(-)
 
---- a/fs/btrfs/async-thread.c
-+++ b/fs/btrfs/async-thread.c
-@@ -613,14 +613,14 @@ found:
-  * it was taken from.  It is intended for use with long running work functions
-  * that make some progress and want to give the cpu up for others.
-  */
--int btrfs_requeue_work(struct btrfs_work *work)
-+void btrfs_requeue_work(struct btrfs_work *work)
+--- a/fs/btrfs/extent_io.c
++++ b/fs/btrfs/extent_io.c
+@@ -3436,7 +3436,7 @@ void free_extent_buffer(struct extent_bu
+ 	WARN_ON(1);
+ }
+ 
+-int clear_extent_buffer_dirty(struct extent_io_tree *tree,
++void clear_extent_buffer_dirty(struct extent_io_tree *tree,
+ 			      struct extent_buffer *eb)
  {
- 	struct btrfs_worker_thread *worker = work->worker;
- 	unsigned long flags;
- 	int wake = 0;
- 
- 	if (test_and_set_bit(WORK_QUEUED_BIT, &work->flags))
--		goto out;
-+		return;
- 
- 	spin_lock_irqsave(&worker->lock, flags);
- 	if (test_bit(WORK_HIGH_PRIO_BIT, &work->flags))
-@@ -647,9 +647,6 @@ int btrfs_requeue_work(struct btrfs_work
- 	if (wake)
- 		wake_up_process(worker->task);
- 	spin_unlock_irqrestore(&worker->lock, flags);
--out:
--
+ 	unsigned long i;
+@@ -3467,7 +3467,6 @@ int clear_extent_buffer_dirty(struct ext
+ 		spin_unlock_irq(&page->mapping->tree_lock);
+ 		unlock_page(page);
+ 	}
 -	return 0;
  }
  
- void btrfs_set_work_high_prio(struct btrfs_work *work)
---- a/fs/btrfs/async-thread.h
-+++ b/fs/btrfs/async-thread.h
-@@ -114,6 +114,6 @@ int btrfs_start_workers(struct btrfs_wor
- void btrfs_stop_workers(struct btrfs_workers *workers);
- void btrfs_init_workers(struct btrfs_workers *workers, char *name, int max,
- 			struct btrfs_workers *async_starter);
--int btrfs_requeue_work(struct btrfs_work *work);
-+void btrfs_requeue_work(struct btrfs_work *work);
- void btrfs_set_work_high_prio(struct btrfs_work *work);
- #endif
+ int set_extent_buffer_dirty(struct extent_io_tree *tree,
+--- a/fs/btrfs/extent_io.h
++++ b/fs/btrfs/extent_io.h
+@@ -278,7 +278,7 @@ void memmove_extent_buffer(struct extent
+ void memset_extent_buffer(struct extent_buffer *eb, char c,
+ 			  unsigned long start, unsigned long len);
+ void wait_extent_bit(struct extent_io_tree *tree, u64 start, u64 end, int bits);
+-int clear_extent_buffer_dirty(struct extent_io_tree *tree,
++void clear_extent_buffer_dirty(struct extent_io_tree *tree,
+ 			      struct extent_buffer *eb);
+ int set_extent_buffer_dirty(struct extent_io_tree *tree,
+ 			     struct extent_buffer *eb);
 
 

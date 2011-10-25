@@ -1,7 +1,7 @@
 From: Jeff Mahoney <jeffm@suse.com>
-Subject: [patch 39/66] btrfs: btrfs_prepare_extent_commit should return void
-Date: Mon, 24 Oct 2011 21:03:15 -0400
-Message-ID: <20111025010855.042699283@suse.com>
+Subject: [patch 41/66] btrfs: setup_inline_extent_backref should return void
+Date: Mon, 24 Oct 2011 21:03:17 -0400
+Message-ID: <20111025010855.271752136@suse.com>
 References: <20111025010236.322699279@suse.com>
 Cc: Linux Btrfs <linux-btrfs@vger.kernel.org>
 To: Chris Mason <chris.mason@oracle.com>,
@@ -9,46 +9,60 @@ To: Chris Mason <chris.mason@oracle.com>,
 Return-path: <linux-btrfs-owner@vger.kernel.org>
 List-ID: <linux-btrfs.vger.kernel.org>
 
- btrfs_prepare_extent_commit has no error conditions and should return
- void. Its callers already ignore the error codes anyway.
+ setup_inline_extent_backref has no error conditions and should return
+ void. We set ret = 0 explicitly in insert_inline_extent_backref since
+ it would have been set using the return value, which would have been 0.
 
 Signed-off-by: Jeff Mahoney <jeffm@suse.com>
 ---
- fs/btrfs/ctree.h       |    4 ++--
- fs/btrfs/extent-tree.c |    3 +--
- 2 files changed, 3 insertions(+), 4 deletions(-)
+ fs/btrfs/extent-tree.c |   23 +++++++++++------------
+ 1 file changed, 11 insertions(+), 12 deletions(-)
 
---- a/fs/btrfs/ctree.h
-+++ b/fs/btrfs/ctree.h
-@@ -2207,8 +2207,8 @@ int btrfs_free_extent(struct btrfs_trans
- 		      u64 root_objectid, u64 owner, u64 offset);
- 
- int btrfs_free_reserved_extent(struct btrfs_root *root, u64 start, u64 len);
--int btrfs_prepare_extent_commit(struct btrfs_trans_handle *trans,
--				struct btrfs_root *root);
-+void btrfs_prepare_extent_commit(struct btrfs_trans_handle *trans,
-+				 struct btrfs_root *root);
- int btrfs_finish_extent_commit(struct btrfs_trans_handle *trans,
- 			       struct btrfs_root *root);
- int btrfs_inc_extent_ref(struct btrfs_trans_handle *trans,
 --- a/fs/btrfs/extent-tree.c
 +++ b/fs/btrfs/extent-tree.c
-@@ -4385,7 +4385,7 @@ static int btrfs_update_reserved_bytes(s
- 	return ret;
- }
- 
--int btrfs_prepare_extent_commit(struct btrfs_trans_handle *trans,
-+void btrfs_prepare_extent_commit(struct btrfs_trans_handle *trans,
- 				struct btrfs_root *root)
+@@ -1556,13 +1556,13 @@ out:
+  * helper to add new inline back ref
+  */
+ static noinline_for_stack
+-int setup_inline_extent_backref(struct btrfs_trans_handle *trans,
+-				struct btrfs_root *root,
+-				struct btrfs_path *path,
+-				struct btrfs_extent_inline_ref *iref,
+-				u64 parent, u64 root_objectid,
+-				u64 owner, u64 offset, int refs_to_add,
+-				struct btrfs_delayed_extent_op *extent_op)
++void setup_inline_extent_backref(struct btrfs_trans_handle *trans,
++				 struct btrfs_root *root,
++				 struct btrfs_path *path,
++				 struct btrfs_extent_inline_ref *iref,
++				 u64 parent, u64 root_objectid,
++				 u64 owner, u64 offset, int refs_to_add,
++				 struct btrfs_delayed_extent_op *extent_op)
  {
- 	struct btrfs_fs_info *fs_info = root->fs_info;
-@@ -4415,7 +4415,6 @@ int btrfs_prepare_extent_commit(struct b
- 	up_write(&fs_info->extent_commit_sem);
- 
- 	update_global_block_rsv(fs_info);
+ 	struct extent_buffer *leaf;
+ 	struct btrfs_extent_item *ei;
+@@ -1616,7 +1616,6 @@ int setup_inline_extent_backref(struct b
+ 		btrfs_set_extent_inline_ref_offset(leaf, iref, root_objectid);
+ 	}
+ 	btrfs_mark_buffer_dirty(leaf);
 -	return 0;
  }
  
- static int unpin_extent_range(struct btrfs_root *root, u64 start, u64 end)
+ static int lookup_extent_backref(struct btrfs_trans_handle *trans,
+@@ -1735,10 +1734,10 @@ int insert_inline_extent_backref(struct
+ 		ret = update_inline_extent_backref(trans, root, path, iref,
+ 						   refs_to_add, extent_op);
+ 	} else if (ret == -ENOENT) {
+-		ret = setup_inline_extent_backref(trans, root, path, iref,
+-						  parent, root_objectid,
+-						  owner, offset, refs_to_add,
+-						  extent_op);
++		setup_inline_extent_backref(trans, root, path, iref, parent,
++					    root_objectid, owner, offset,
++					    refs_to_add, extent_op);
++		ret = 0;
+ 	}
+ 	return ret;
+ }
 
 

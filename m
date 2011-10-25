@@ -1,7 +1,7 @@
 From: Jeff Mahoney <jeffm@suse.com>
-Subject: [patch 38/66] btrfs: btrfs_destroy_delalloc_inodes should return void
-Date: Mon, 24 Oct 2011 21:03:14 -0400
-Message-ID: <20111025010854.927494999@suse.com>
+Subject: [patch 33/66] btrfs: tree-log: btrfs_end_log_trans should return void
+Date: Mon, 24 Oct 2011 21:03:09 -0400
+Message-ID: <20111025010854.355180984@suse.com>
 References: <20111025010236.322699279@suse.com>
 Cc: Linux Btrfs <linux-btrfs@vger.kernel.org>
 To: Chris Mason <chris.mason@oracle.com>,
@@ -9,42 +9,48 @@ To: Chris Mason <chris.mason@oracle.com>,
 Return-path: <linux-btrfs-owner@vger.kernel.org>
 List-ID: <linux-btrfs.vger.kernel.org>
 
- btrfs_destroy_delalloc_inodes has no error conditions and should return
- void. Its callers already ignore the error codes anyway.
+ btrfs_end_log_trans has no error conditions and should return void.
+ Its callers ignore the error code anyway.
 
 Signed-off-by: Jeff Mahoney <jeffm@suse.com>
 ---
- fs/btrfs/disk-io.c |    6 ++----
- 1 file changed, 2 insertions(+), 4 deletions(-)
+ fs/btrfs/tree-log.c |    3 +--
+ fs/btrfs/tree-log.h |    2 +-
+ 2 files changed, 2 insertions(+), 3 deletions(-)
 
---- a/fs/btrfs/disk-io.c
-+++ b/fs/btrfs/disk-io.c
-@@ -54,7 +54,7 @@ static int btrfs_destroy_ordered_extents
- static int btrfs_destroy_delayed_refs(struct btrfs_transaction *trans,
- 				      struct btrfs_root *root);
- static int btrfs_destroy_pending_snapshots(struct btrfs_transaction *t);
--static int btrfs_destroy_delalloc_inodes(struct btrfs_root *root);
-+static void btrfs_destroy_delalloc_inodes(struct btrfs_root *root);
- static int btrfs_destroy_marked_extents(struct btrfs_root *root,
- 					struct extent_io_tree *dirty_pages,
- 					int mark);
-@@ -2939,7 +2939,7 @@ static int btrfs_destroy_pending_snapsho
- 	return 0;
- }
- 
--static int btrfs_destroy_delalloc_inodes(struct btrfs_root *root)
-+static void btrfs_destroy_delalloc_inodes(struct btrfs_root *root)
+diff --git a/fs/btrfs/tree-log.c b/fs/btrfs/tree-log.c
+index 483e280..2c45b3d 100644
+--- a/fs/btrfs/tree-log.c
++++ b/fs/btrfs/tree-log.c
+@@ -212,14 +212,13 @@ int btrfs_pin_log_trans(struct btrfs_root *root)
+  * indicate we're done making changes to the log tree
+  * and wake up anyone waiting to do a sync
+  */
+-int btrfs_end_log_trans(struct btrfs_root *root)
++void btrfs_end_log_trans(struct btrfs_root *root)
  {
- 	struct btrfs_inode *btrfs_inode;
- 	struct list_head splice;
-@@ -2959,8 +2959,6 @@ static int btrfs_destroy_delalloc_inodes
+ 	if (atomic_dec_and_test(&root->log_writers)) {
+ 		smp_mb();
+ 		if (waitqueue_active(&root->log_writer_wait))
+ 			wake_up(&root->log_writer_wait);
  	}
- 
- 	spin_unlock(&root->fs_info->delalloc_lock);
--
 -	return 0;
  }
  
- static int btrfs_destroy_marked_extents(struct btrfs_root *root,
+ 
+diff --git a/fs/btrfs/tree-log.h b/fs/btrfs/tree-log.h
+index 2270ac5..862ac81 100644
+--- a/fs/btrfs/tree-log.h
++++ b/fs/btrfs/tree-log.h
+@@ -38,7 +38,7 @@ int btrfs_del_inode_ref_in_log(struct btrfs_trans_handle *trans,
+ 			       struct btrfs_root *root,
+ 			       const char *name, int name_len,
+ 			       struct inode *inode, u64 dirid);
+-int btrfs_end_log_trans(struct btrfs_root *root);
++void btrfs_end_log_trans(struct btrfs_root *root);
+ int btrfs_pin_log_trans(struct btrfs_root *root);
+ int btrfs_log_inode_parent(struct btrfs_trans_handle *trans,
+ 		    struct btrfs_root *root, struct inode *inode,
+
 
 

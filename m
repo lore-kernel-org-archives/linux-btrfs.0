@@ -1,7 +1,7 @@
 From: Jeff Mahoney <jeffm@suse.com>
-Subject: [patch 03/66] btrfs: Panic on bad rbtree operations
-Date: Mon, 24 Oct 2011 21:02:39 -0400
-Message-ID: <20111025010850.905911035@suse.com>
+Subject: [patch 01/66] btrfs: Add btrfs_panic()
+Date: Mon, 24 Oct 2011 21:02:37 -0400
+Message-ID: <20111025010850.677278786@suse.com>
 References: <20111025010236.322699279@suse.com>
 Cc: Linux Btrfs <linux-btrfs@vger.kernel.org>
 To: Chris Mason <chris.mason@oracle.com>,
@@ -9,150 +9,145 @@ To: Chris Mason <chris.mason@oracle.com>,
 Return-path: <linux-btrfs-owner@vger.kernel.org>
 List-ID: <linux-btrfs.vger.kernel.org>
 
- The ordered data and relocation trees have BUG_ONs to protect against
- bad tree operations.
+ As part of the effort to eliminate BUG_ON as an error handling
+ technique, we need to determine which errors are actual logic errors,
+ which are on-disk corruption, and which are normal runtime errors
+ e.g. -ENOMEM.
 
- This patch replaces them with a panic that will report the problem.
+ Annotating these error cases is helpful to understand and report them.
+
+ This patch adds a btrfs_panic() routine that will either panic
+ or BUG depending on the new -ofatal_errors={panic,bug} mount option.
+ Since there are still so many BUG_ONs, it defaults to BUG for now but I
+ expect that to change once the error handling effort has made
+ significant progress.
 
 Signed-off-by: Jeff Mahoney <jeffm@suse.com>
 ---
- fs/btrfs/ordered-data.c |   12 ++++++++++--
- fs/btrfs/relocation.c   |   36 +++++++++++++++++++++++++++++-------
- 2 files changed, 39 insertions(+), 9 deletions(-)
+ fs/btrfs/ctree.h |   11 +++++++++++
+ fs/btrfs/super.c |   50 +++++++++++++++++++++++++++++++++++++++++++++++++-
+ 2 files changed, 60 insertions(+), 1 deletion(-)
 
-diff --git a/fs/btrfs/ordered-data.c b/fs/btrfs/ordered-data.c
-index a1c9404..5a53d94 100644
---- a/fs/btrfs/ordered-data.c
-+++ b/fs/btrfs/ordered-data.c
-@@ -59,6 +59,14 @@ static struct rb_node *tree_insert(struct rb_root *root, u64 file_offset,
- 	return NULL;
+--- a/fs/btrfs/ctree.h
++++ b/fs/btrfs/ctree.h
+@@ -1357,6 +1357,7 @@ struct btrfs_ioctl_defrag_range_args {
+ #define BTRFS_MOUNT_ENOSPC_DEBUG	 (1 << 15)
+ #define BTRFS_MOUNT_AUTO_DEFRAG		(1 << 16)
+ #define BTRFS_MOUNT_INODE_MAP_CACHE	(1 << 17)
++#define BTRFS_MOUNT_PANIC_ON_FATAL_ERROR	(1 << 18)
+ 
+ #define btrfs_clear_opt(o, opt)		((o) &= ~BTRFS_MOUNT_##opt)
+ #define btrfs_set_opt(o, opt)		((o) |= BTRFS_MOUNT_##opt)
+@@ -2644,6 +2645,16 @@ do {								\
+ 		__btrfs_std_error((fs_info), __func__, __LINE__, (errno));\
+ } while (0)
+ 
++void __btrfs_panic(struct btrfs_fs_info *fs_info, const char *function,
++		   unsigned int line, int errno, const char *fmt, ...);
++
++#define btrfs_panic(fs_info, errno, fmt, args...)			\
++do {									\
++	struct btrfs_fs_info *_i = (fs_info);				\
++	__btrfs_panic(_i, __func__, __LINE__, errno, fmt, ##args);	\
++	BUG_ON(!(_i->mount_opt & BTRFS_MOUNT_PANIC_ON_FATAL_ERROR));	\
++} while (0)
++
+ /* acl.c */
+ #ifdef CONFIG_BTRFS_FS_POSIX_ACL
+ struct posix_acl *btrfs_get_acl(struct inode *inode, int type);
+--- a/fs/btrfs/super.c
++++ b/fs/btrfs/super.c
+@@ -76,6 +76,9 @@ static const char *btrfs_decode_error(st
+ 	case -EROFS:
+ 		errstr = "Readonly filesystem";
+ 		break;
++	case -EEXIST:
++		errstr = "Object already exists";
++		break;
+ 	default:
+ 		if (nbuf) {
+ 			if (snprintf(nbuf, 16, "error %d", -errno) >= 0)
+@@ -145,6 +148,36 @@ void __btrfs_std_error(struct btrfs_fs_i
+ 	btrfs_handle_error(fs_info);
  }
  
-+NORET_TYPE static void ordered_data_tree_panic(struct inode *inode, int errno,
-+					       u64 offset)
++/*
++ * __btrfs_panic decodes unexpected, fatal errors from the caller,
++ * issues an alert, and either panics or BUGs, depending on mount options.
++ */
++void __btrfs_panic(struct btrfs_fs_info *fs_info, const char *function,
++		   unsigned int line, int errno, const char *fmt, ...)
 +{
-+	struct btrfs_fs_info *fs_info = btrfs_sb(inode->i_sb)->fs_info;
-+	btrfs_panic(fs_info, errno, "Inconsistency in ordered tree at offset "
-+		    "%llu\n", offset);
++	char nbuf[16];
++	char *s_id = "<unknown>";
++	const char *errstr;
++	struct va_format vaf = { .fmt = fmt };
++	va_list args;
++
++	if (fs_info)
++		s_id = fs_info->sb->s_id;
++
++	va_start(args, fmt);
++	vaf.va = &args;
++
++	errstr = btrfs_decode_error(fs_info, errno, nbuf);
++	if (fs_info->mount_opt & BTRFS_MOUNT_PANIC_ON_FATAL_ERROR)
++		panic(KERN_CRIT "BTRFS panic (device %s) in %s:%d: %pV (%s)\n",
++			s_id, function, line, &vaf, errstr);
++
++	printk(KERN_CRIT "BTRFS panic (device %s) in %s:%d: %pV (%s)\n",
++	       s_id, function, line, &vaf, errstr);
++	va_end(args);
++	/* Caller calls BUG() */
 +}
 +
- /*
-  * look for a given offset in the tree, and if it can't be found return the
-  * first lesser offset
-@@ -207,7 +215,8 @@ static int __btrfs_add_ordered_extent(struct inode *inode, u64 file_offset,
- 	spin_lock(&tree->lock);
- 	node = tree_insert(&tree->tree, file_offset,
- 			   &entry->rb_node);
--	BUG_ON(node);
-+	if (node)
-+		ordered_data_tree_panic(inode, -EEXIST, file_offset);
- 	spin_unlock(&tree->lock);
+ static void btrfs_put_super(struct super_block *sb)
+ {
+ 	struct btrfs_root *root = btrfs_sb(sb);
+@@ -164,7 +197,7 @@ enum {
+ 	Opt_notreelog, Opt_ratio, Opt_flushoncommit, Opt_discard,
+ 	Opt_space_cache, Opt_clear_cache, Opt_user_subvol_rm_allowed,
+ 	Opt_enospc_debug, Opt_subvolrootid, Opt_defrag,
+-	Opt_inode_cache, Opt_no_space_cache, Opt_err,
++	Opt_inode_cache, Opt_no_space_cache, Opt_fatal_errors, Opt_err,
+ };
  
- 	spin_lock(&BTRFS_I(inode)->root->fs_info->ordered_extent_lock);
-@@ -215,7 +224,6 @@ static int __btrfs_add_ordered_extent(struct inode *inode, u64 file_offset,
- 		      &BTRFS_I(inode)->root->fs_info->ordered_extents);
- 	spin_unlock(&BTRFS_I(inode)->root->fs_info->ordered_extent_lock);
+ static match_table_t tokens = {
+@@ -198,6 +231,7 @@ static match_table_t tokens = {
+ 	{Opt_defrag, "autodefrag"},
+ 	{Opt_inode_cache, "inode_cache"},
+ 	{Opt_no_space_cache, "no_space_cache"},
++	{Opt_fatal_errors, "fatal_errors=%s"},
+ 	{Opt_err, NULL},
+ };
  
--	BUG_ON(node);
+@@ -392,6 +426,18 @@ int btrfs_parse_options(struct btrfs_roo
+ 			printk(KERN_INFO "btrfs: enabling auto defrag");
+ 			btrfs_set_opt(info->mount_opt, AUTO_DEFRAG);
+ 			break;
++		case Opt_fatal_errors:
++			if (strcmp(args[0].from, "panic") == 0)
++				btrfs_set_opt(info->mount_opt,
++					      PANIC_ON_FATAL_ERROR);
++			else if (strcmp(args[0].from, "bug") == 0)
++				btrfs_clear_opt(info->mount_opt,
++					      PANIC_ON_FATAL_ERROR);
++			else {
++				ret = -EINVAL;
++				goto out;
++			}
++			break;
+ 		case Opt_err:
+ 			printk(KERN_INFO "btrfs: unrecognized mount option "
+ 			       "'%s'\n", p);
+@@ -710,6 +756,8 @@ static int btrfs_show_options(struct seq
+ 		seq_puts(seq, ",autodefrag");
+ 	if (btrfs_test_opt(root, INODE_MAP_CACHE))
+ 		seq_puts(seq, ",inode_cache");
++	if (btrfs_test_opt(root, PANIC_ON_FATAL_ERROR))
++		seq_puts(seq, ",fatal_errors=panic");
  	return 0;
  }
  
-diff --git a/fs/btrfs/relocation.c b/fs/btrfs/relocation.c
-index 7fa090f..a222957 100644
---- a/fs/btrfs/relocation.c
-+++ b/fs/btrfs/relocation.c
-@@ -326,6 +326,19 @@ static struct rb_node *tree_search(struct rb_root *root, u64 bytenr)
- 	return NULL;
- }
- 
-+NORET_TYPE static void backref_tree_panic(struct rb_node *rb_node, int errno,
-+					  u64 bytenr)
-+{
-+
-+	struct btrfs_fs_info *fs_info = NULL;
-+	struct backref_node *bnode = rb_entry(rb_node, struct backref_node,
-+					      rb_node);
-+	if (bnode->root)
-+		fs_info = bnode->root->fs_info;
-+	btrfs_panic(fs_info, errno, "Inconsistency in backref cache "
-+		    "found at offset %llu\n", bytenr);
-+}
-+
- /*
-  * walk up backref nodes until reach node presents tree root
-  */
-@@ -452,7 +465,8 @@ static void update_backref_node(struct backref_cache *cache,
- 	rb_erase(&node->rb_node, &cache->rb_root);
- 	node->bytenr = bytenr;
- 	rb_node = tree_insert(&cache->rb_root, node->bytenr, &node->rb_node);
--	BUG_ON(rb_node);
-+	if (rb_node)
-+		backref_tree_panic(rb_node, -EEXIST, bytenr);
- }
- 
- /*
-@@ -999,7 +1013,8 @@ next:
- 	if (!cowonly) {
- 		rb_node = tree_insert(&cache->rb_root, node->bytenr,
- 				      &node->rb_node);
--		BUG_ON(rb_node);
-+		if (rb_node)
-+			backref_tree_panic(rb_node, -EEXIST, node->bytenr);
- 		list_add_tail(&node->lower, &cache->leaves);
- 	}
- 
-@@ -1034,7 +1049,9 @@ next:
- 		if (!cowonly) {
- 			rb_node = tree_insert(&cache->rb_root, upper->bytenr,
- 					      &upper->rb_node);
--			BUG_ON(rb_node);
-+			if (rb_node)
-+				backref_tree_panic(rb_node, -EEXIST,
-+						   upper->bytenr);
- 		}
- 
- 		list_add_tail(&edge->list[UPPER], &upper->lower);
-@@ -1178,7 +1195,8 @@ static int clone_backref_node(struct btrfs_trans_handle *trans,
- 
- 	rb_node = tree_insert(&cache->rb_root, new_node->bytenr,
- 			      &new_node->rb_node);
--	BUG_ON(rb_node);
-+	if (rb_node)
-+		backref_tree_panic(rb_node, -EEXIST, new_node->bytenr);
- 
- 	if (!new_node->lowest) {
- 		list_for_each_entry(new_edge, &new_node->lower, list[UPPER]) {
-@@ -1250,7 +1268,8 @@ static int __update_reloc_root(struct btrfs_root *root, int del)
- 		rb_node = tree_insert(&rc->reloc_root_tree.rb_root,
- 				      node->bytenr, &node->rb_node);
- 		spin_unlock(&rc->reloc_root_tree.lock);
--		BUG_ON(rb_node);
-+		if (rb_node)
-+			backref_tree_panic(rb_node, -EEXIST, node->bytenr);
- 	} else {
- 		list_del_init(&root->root_list);
- 		kfree(node);
-@@ -3151,7 +3170,8 @@ static int add_tree_block(struct reloc_control *rc,
- 	block->key_ready = 0;
- 
- 	rb_node = tree_insert(blocks, block->bytenr, &block->rb_node);
--	BUG_ON(rb_node);
-+	if (rb_node)
-+		backref_tree_panic(rb_node, -EEXIST, block->bytenr);
- 
- 	return 0;
- }
-@@ -3420,7 +3440,9 @@ static int find_data_references(struct reloc_control *rc,
- 			block->key_ready = 1;
- 			rb_node = tree_insert(blocks, block->bytenr,
- 					      &block->rb_node);
--			BUG_ON(rb_node);
-+			if (rb_node)
-+				backref_tree_panic(rb_node, -EEXIST,
-+						   block->bytenr);
- 		}
- 		if (counted)
- 			added = 1;
-
 
 

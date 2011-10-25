@@ -1,7 +1,7 @@
 From: Jeff Mahoney <jeffm@suse.com>
-Subject: [patch 25/66] btrfs: run_scheduled_bios should return void
-Date: Mon, 24 Oct 2011 21:03:01 -0400
-Message-ID: <20111025010853.438884734@suse.com>
+Subject: [patch 28/66] btrfs: fill_device_from_item should return void
+Date: Mon, 24 Oct 2011 21:03:04 -0400
+Message-ID: <20111025010853.782137864@suse.com>
 References: <20111025010236.322699279@suse.com>
 Cc: Linux Btrfs <linux-btrfs@vger.kernel.org>
 To: Chris Mason <chris.mason@oracle.com>,
@@ -9,32 +9,33 @@ To: Chris Mason <chris.mason@oracle.com>,
 Return-path: <linux-btrfs-owner@vger.kernel.org>
 List-ID: <linux-btrfs.vger.kernel.org>
 
- run_scheduled_bios has no error conditions and should return void.
+ fill_device_from_item has no error conditions and should return void.
  Its callers already ignore the error code anyway.
 
 Signed-off-by: Jeff Mahoney <jeffm@suse.com>
 ---
- fs/btrfs/volumes.c |    3 +--
- 1 file changed, 1 insertion(+), 2 deletions(-)
+ fs/btrfs/volumes.c |    4 +---
+ 1 file changed, 1 insertion(+), 3 deletions(-)
 
 --- a/fs/btrfs/volumes.c
 +++ b/fs/btrfs/volumes.c
-@@ -127,7 +127,7 @@ static void requeue_list(struct btrfs_pe
-  * the list if the block device is congested.  This way, multiple devices
-  * can make progress from a single worker thread.
-  */
--static noinline int run_scheduled_bios(struct btrfs_device *device)
-+static noinline void run_scheduled_bios(struct btrfs_device *device)
- {
- 	struct bio *pending;
- 	struct backing_dev_info *bdi;
-@@ -307,7 +307,6 @@ loop_lock:
+@@ -3513,7 +3513,7 @@ static int read_one_chunk(struct btrfs_r
+ 	return 0;
+ }
  
- done:
- 	blk_finish_plug(&plug);
+-static int fill_device_from_item(struct extent_buffer *leaf,
++static void fill_device_from_item(struct extent_buffer *leaf,
+ 				 struct btrfs_dev_item *dev_item,
+ 				 struct btrfs_device *device)
+ {
+@@ -3530,8 +3530,6 @@ static int fill_device_from_item(struct
+ 
+ 	ptr = (unsigned long)btrfs_device_uuid(dev_item);
+ 	read_extent_buffer(leaf, device->uuid, ptr, BTRFS_UUID_SIZE);
+-
 -	return 0;
  }
  
- static void pending_bios_fn(struct btrfs_work *work)
+ static int open_seed_devices(struct btrfs_root *root, u8 *fsid)
 
 

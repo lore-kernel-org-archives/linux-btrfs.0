@@ -1,7 +1,7 @@
 From: Josef Bacik <josef@redhat.com>
 Subject: Re: ceph on btrfs [was Re: ceph on non-btrfs file systems]
-Date: Tue, 25 Oct 2011 11:00:45 -0400
-Message-ID: <20111025150045.GB3703@dhcp231-156.rdu.redhat.com>
+Date: Tue, 25 Oct 2011 11:05:12 -0400
+Message-ID: <20111025150512.GC3703@dhcp231-156.rdu.redhat.com>
 References: <Pine.LNX.4.64.1110231739380.25255@cobra.newdream.net> <CAO47_-9jp===DT=scpe=U8BnPnUCAVz7xUWVCC9AMVmx67CdaA@mail.gmail.com> <Pine.LNX.4.64.1110240941500.15349@cobra.newdream.net> <20111024195147.GB31264@dhcp231-156.rdu.redhat.com> <CAO47_-_=1uLV34WAAHFhv6z7fDmtY8L-+HUzfu=WcHNatbvxJQ@mail.gmail.com> <20111025122320.GA3703@dhcp231-156.rdu.redhat.com> <CAO47_--rkkKw7AJVRHdhwVXEq736ijhVWKYhRDQdgUxix3P-0w@mail.gmail.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset=iso-8859-1
@@ -142,11 +142,11 @@ ph-osd is
 > btrfs-endio-wri.
 >
 
-Oh shit we're inserting xattrs in endio, thats not good.  I'll look mor=
-e into
-this when I get back home but this is definitely a problem, we're doing=
- a lot
-more work in endio than we should.  Thanks,
+We also shouldn't be running run_ordered_operations, man this is screwe=
+d up,
+thanks so much for this, I should be able to nail this down pretty easi=
+ly.
+Thanks,
 
 Josef=20
 --

@@ -1,7 +1,7 @@
 From: Jeff Mahoney <jeffm@suse.com>
-Subject: [patch 36/66] btrfs: btrfs_invalidate_inodes should return void
-Date: Mon, 24 Oct 2011 21:03:12 -0400
-Message-ID: <20111025010854.699505611@suse.com>
+Subject: [patch 31/66] btrfs: btrfs_stop_workers should return void
+Date: Mon, 24 Oct 2011 21:03:07 -0400
+Message-ID: <20111025010854.125851710@suse.com>
 References: <20111025010236.322699279@suse.com>
 Cc: Linux Btrfs <linux-btrfs@vger.kernel.org>
 To: Chris Mason <chris.mason@oracle.com>,
@@ -9,48 +9,44 @@ To: Chris Mason <chris.mason@oracle.com>,
 Return-path: <linux-btrfs-owner@vger.kernel.org>
 List-ID: <linux-btrfs.vger.kernel.org>
 
- btrfs_invalidate_inodes has no error conditions and should return void.
+ btrfs_stop_workers has no error conditions and should return void.
+ Its callers already ignore the error code anyway.
 
 Signed-off-by: Jeff Mahoney <jeffm@suse.com>
 ---
- fs/btrfs/ctree.h |    2 +-
- fs/btrfs/inode.c |    3 +--
+ fs/btrfs/async-thread.c |    3 +--
+ fs/btrfs/async-thread.h |    2 +-
  2 files changed, 2 insertions(+), 3 deletions(-)
 
-diff --git a/fs/btrfs/ctree.h b/fs/btrfs/ctree.h
-index 7d90a9c..e8f0689 100644
---- a/fs/btrfs/ctree.h
-+++ b/fs/btrfs/ctree.h
-@@ -2584,7 +2584,7 @@ int btrfs_orphan_cleanup(struct btrfs_root *root);
- void btrfs_orphan_commit_root(struct btrfs_trans_handle *trans,
- 			      struct btrfs_root *root);
- int btrfs_cont_expand(struct inode *inode, loff_t oldsize, loff_t size);
--int btrfs_invalidate_inodes(struct btrfs_root *root);
-+void btrfs_invalidate_inodes(struct btrfs_root *root);
- void btrfs_add_delayed_iput(struct inode *inode);
- void btrfs_run_delayed_iputs(struct btrfs_root *root);
- int btrfs_prealloc_file_range(struct inode *inode, int mode,
-diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
-index 321c9cf..59c681b 100644
---- a/fs/btrfs/inode.c
-+++ b/fs/btrfs/inode.c
-@@ -3861,7 +3861,7 @@ static void inode_tree_del(struct inode *inode)
- 	}
- }
- 
--int btrfs_invalidate_inodes(struct btrfs_root *root)
-+void btrfs_invalidate_inodes(struct btrfs_root *root)
+--- a/fs/btrfs/async-thread.c
++++ b/fs/btrfs/async-thread.c
+@@ -401,7 +401,7 @@ again:
+ /*
+  * this will wait for all the worker threads to shutdown
+  */
+-int btrfs_stop_workers(struct btrfs_workers *workers)
++void btrfs_stop_workers(struct btrfs_workers *workers)
  {
- 	struct rb_node *node;
- 	struct rb_node *prev;
-@@ -3921,7 +3921,6 @@ again:
- 		node = rb_next(node);
+ 	struct list_head *cur;
+ 	struct btrfs_worker_thread *worker;
+@@ -429,7 +429,6 @@ int btrfs_stop_workers(struct btrfs_work
+ 		put_worker(worker);
  	}
- 	spin_unlock(&root->inode_lock);
+ 	spin_unlock_irq(&workers->lock);
 -	return 0;
  }
  
- static int btrfs_init_locked_inode(struct inode *inode, void *p)
-
+ /*
+--- a/fs/btrfs/async-thread.h
++++ b/fs/btrfs/async-thread.h
+@@ -111,7 +111,7 @@ struct btrfs_workers {
+ 
+ void btrfs_queue_worker(struct btrfs_workers *workers, struct btrfs_work *work);
+ int btrfs_start_workers(struct btrfs_workers *workers, int num_workers);
+-int btrfs_stop_workers(struct btrfs_workers *workers);
++void btrfs_stop_workers(struct btrfs_workers *workers);
+ void btrfs_init_workers(struct btrfs_workers *workers, char *name, int max,
+ 			struct btrfs_workers *async_starter);
+ int btrfs_requeue_work(struct btrfs_work *work);
 
 

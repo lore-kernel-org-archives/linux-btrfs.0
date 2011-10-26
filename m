@@ -1,155 +1,77 @@
-From: Leonidas Spyropoulos <artafinde@gmail.com>
-Subject: Re: Kernel BUG unable to handle kernel NULL pointer dereference
-Date: Wed, 26 Oct 2011 13:22:41 +0100
-Message-ID: <CAAeznTruaUPH3=SwR_U0COuQX7xOBedGo8vBi06WxkbPD8Q-xg@mail.gmail.com>
-References: <CAAeznTqh1W0W743WxTO+iUfajgsMw-A6abwr1fAZ6hWOJOnw2Q@mail.gmail.com>
-	<CAKcLGm-+g9xy_aL2Z_F2VYG8qFsXonB7nutM1VSs5sqLZz2PGA@mail.gmail.com>
-	<CAAeznTpDmT7NgZdAHh7uVPBnKtitr=SmLRvfFKrd_exG6XLE9w@mail.gmail.com>
-	<20111024112259.GE26547@ds.suse.cz>
-	<CAAeznTpSsKSMe7udHH1kZmFNg6ROf4czxriNpPh_Trb_PHbtzg@mail.gmail.com>
-	<20111024115110.GG26547@ds.suse.cz>
-	<CAAeznTrWWD97De=dtbBNRTpwMZ5mipp_E31Yx-h52vr-zcj6+A@mail.gmail.com>
+From: Chris Mason <chris.mason@oracle.com>
+Subject: Re: ceph on btrfs [was Re: ceph on non-btrfs file systems]
+Date: Wed, 26 Oct 2011 09:23:54 -0400
+Message-ID: <20111026132354.GC4588@shiny.Mikenopa.local>
+References: <Pine.LNX.4.64.1110231739380.25255@cobra.newdream.net>
+ <CAO47_-9jp===DT=scpe=U8BnPnUCAVz7xUWVCC9AMVmx67CdaA@mail.gmail.com>
+ <Pine.LNX.4.64.1110240941500.15349@cobra.newdream.net>
+ <20111024195147.GB31264@dhcp231-156.rdu.redhat.com>
+ <CAO47_-_=1uLV34WAAHFhv6z7fDmtY8L-+HUzfu=WcHNatbvxJQ@mail.gmail.com>
+ <20111025122320.GA3703@dhcp231-156.rdu.redhat.com>
+ <CAO47_--rkkKw7AJVRHdhwVXEq736ijhVWKYhRDQdgUxix3P-0w@mail.gmail.com>
+ <20111025150512.GC3703@dhcp231-156.rdu.redhat.com>
+ <20111025201545.GA4082@shiny.Mikenopa.local>
+ <20111025202248.GE3703@dhcp231-156.rdu.redhat.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=ISO-8859-1
-Cc: Mitch Harder <mitch.harder@sabayonlinux.org>,
-	linux-btrfs@vger.kernel.org
-To: dsterba@suse.cz
-Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <CAAeznTrWWD97De=dtbBNRTpwMZ5mipp_E31Yx-h52vr-zcj6+A@mail.gmail.com>
+Content-Type: text/plain; charset=us-ascii
+Cc: Christian Brunner <chb@muc.de>, Sage Weil <sage@newdream.net>,
+	ceph-devel@vger.kernel.org, linux-btrfs@vger.kernel.org
+To: Josef Bacik <josef@redhat.com>
+Return-path: <ceph-devel-owner@vger.kernel.org>
+In-Reply-To: <20111025202248.GE3703@dhcp231-156.rdu.redhat.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Mon, Oct 24, 2011 at 1:10 PM, Leonidas Spyropoulos
-<artafinde@gmail.com> wrote:
-> On Mon, Oct 24, 2011 at 12:51 PM, David Sterba <dsterba@suse.cz> wrot=
-e:
->> On Mon, Oct 24, 2011 at 12:33:05PM +0100, Leonidas Spyropoulos wrote=
-:
->>> Here is it, it's big and contains usless information..
->>>
->>> http://paste.pocoo.org/show/497299/
->>
->> not all that useless ... I saw another BUG earlier than the one you'=
-ve
->> reported:
->>
->> [31653.267742] ------------[ cut here ]------------
->> [31653.267764] kernel BUG at fs/btrfs/extent-tree.c:5510!
->> [31653.267773] invalid opcode: 0000 [#1] PREEMPT SMP
->> [31653.267785] CPU 1
->> [31653.267790] Modules linked in: vboxdrv ipv6 loop fuse adt7475 hwm=
-on_vid nouveau evdev uvcvideo hid_apple ttm videodev drm_kms_helper med=
-ia v4l2_compat_ioctl32 drm snd_emu10k1 i2c_algo_bit mxm_wmi wmi pcspkr =
-snd_rawmidi snd_seq_device firewire_ohci emu10k1_gp edac_core psmouse s=
-nd_util_mem edac_mce_amd k8temp firewire_core gameport snd_hwdep video =
-serio_raw crc_itu_t sg snd_intel8x0 snd_ac97_codec usbhid ac97_bus snd_=
-pcm snd_timer hid snd floppy i2c_nforce2 thermal processor fan button s=
-oundcore i2c_core snd_page_alloc forcedeth btrfs zlib_deflate crc32c li=
-bcrc32c ext4 jbd2 crc16 ext3 jbd mbcache ohci_hcd ehci_hcd usbcore sr_m=
-od sd_mod cdrom sata_nv pata_amd libata scsi_mod
->> [31653.267989]
->> [31653.267995] Pid: 726, comm: btrfs-transacti Not tainted 3.0-ARCH =
-#1 =A0 =A0/LP UT NF4 Expert
->> [31653.268011] RIP: 0010:[<ffffffffa01a6263>] =A0[<ffffffffa01a6263>=
-] run_clustered_refs+0x813/0x830 [btrfs]
->> [31653.268045] RSP: 0018:ffff88013469bc70 =A0EFLAGS: 00010286
->> [31653.268286] RAX: 00000000ffffffe4 RBX: ffff88012e406900 RCX: ffff=
-8801378a6100
->> [31653.268296] RDX: ffff88011513a0f0 RSI: 0000000000000000 RDI: 0000=
-000000000000
->> [31653.268306] RBP: ffff88013469bd50 R08: ffffffffffffffff R09: 0000=
-000000000000
->> [31653.268315] R10: ffff8801346f9800 R11: ffff88013735d3f0 R12: ffff=
-8800a9bc7f00
->> [31653.268325] R13: ffff88007b1d7e40 R14: ffff88011bd1e4b0 R15: 0000=
-000000000000
->> [31653.268341] FS: =A000007f8dcc527880(0000) GS:ffff88013fd00000(000=
-0) knlGS:00000000f67567f0
->> [31653.268367] CS: =A00010 DS: 0000 ES: 0000 CR0: 000000008005003b
->> [31653.268380] CR2: 00007f9059631550 CR3: 00000000a499c000 CR4: 0000=
-0000000006e0
->> [31653.268394] DR0: 0000000000000000 DR1: 0000000000000000 DR2: 0000=
-000000000000
->> [31653.268409] DR3: 0000000000000000 DR6: 00000000ffff0ff0 DR7: 0000=
-000000000400
->> [31653.268424] Process btrfs-transacti (pid: 726, threadinfo ffff880=
-13469a000, task ffff880136c140b0)
->> [31653.268443] Stack:
->> [31653.268449] =A00000000000000000 0000000000000000 ffff880100000001=
- 0000000000000000
->> [31653.268473] =A00000000000000c2e 00000000a01dc529 0000000000000000=
- 0000000000000002
->> [31653.268495] =A00000000000000b9f 0000000000000c04 0000000000000000=
- ffff88013469bd90
->> [31653.268515] Call Trace:
->> [31653.268531] =A0[<ffffffffa01a6348>] btrfs_run_delayed_refs+0xc8/0=
-x220 [btrfs]
->> [31653.268549] =A0[<ffffffffa019421a>] ? btrfs_free_path+0x2a/0x40 [=
-btrfs]
->> [31653.268568] =A0[<ffffffffa01b86c3>] btrfs_commit_transaction+0x3c=
-3/0x8a0 [btrfs]
->> [31653.268581] =A0[<ffffffff8107f790>] ? abort_exclusive_wait+0xb0/0=
-xb0
->> [31653.268598] =A0[<ffffffffa01b13ed>] transaction_kthread+0x26d/0x2=
-90 [btrfs]
->> [31653.268617] =A0[<ffffffffa01b1180>] ? btrfs_congested_fn+0xd0/0xd=
-0 [btrfs]
->> [31653.268627] =A0[<ffffffff8107ee3c>] kthread+0x8c/0xa0
->> [31653.268638] =A0[<ffffffff813f5d64>] kernel_thread_helper+0x4/0x10
->> [31653.268647] =A0[<ffffffff8107edb0>] ? kthread_worker_fn+0x190/0x1=
-90
->> [31653.268657] =A0[<ffffffff813f5d60>] ? gs_change+0x13/0x13
->> [31653.268673] Code: e0 e9 12 f9 ff ff 0f 0b 80 fa b2 0f 84 bc f9 ff=
- ff 0f 0b be 95 00 00 00 48 c7 c7 37 d0 20 a0 e8 54 65 eb e0 e9 04 f9 f=
-f ff 0f 0b <0f> 0b 0f 0b 0f 0b 0f 0b 0f 0b 0f 0b 0f 0b 66 66 66 66 66 6=
-6 2e
->> [31653.268928] RIP =A0[<ffffffffa01a6263>] run_clustered_refs+0x813/=
-0x830 [btrfs]
->> [31653.268956] =A0RSP <ffff88013469bc70>
->> [31653.284196] ---[ end trace d5d8ee7634d1c36e ]---
->>
->> and it looks related to the print_leaf bug later (eg. mentiones same=
- functions
->> in the stacktrace and happens during commit).
->>
->> And judging from the rest of BUG's in the paste, the filesystem is i=
-n a bad
->> shape. Some BUG_ON's seem to be triggered by ENOSPC (RAX containing =
-0xfff..e4).
->>
->>
->> david
->>
->
-> I am doing a backup of my current data as I write this mail (hopefull=
-y
-> it will finish without IO errors).
-> Will it help if I print the btrfs tree and post it somewhere?
->
-> I mean, since the system is funcionable, it could be useful to track
-> down the bug, no?
->
-> Regards
-> Leonidas
->
->
->
-> --
-> Caution: breathing may be hazardous to your health.
->
+On Tue, Oct 25, 2011 at 04:22:48PM -0400, Josef Bacik wrote:
+> On Tue, Oct 25, 2011 at 04:15:45PM -0400, Chris Mason wrote:
+> > On Tue, Oct 25, 2011 at 11:05:12AM -0400, Josef Bacik wrote:
+> > > On Tue, Oct 25, 2011 at 04:25:02PM +0200, Christian Brunner wrote:
+> > > > 
+> > > > Attached is a perf-report. I have included the whole report, so that
+> > > > you can see the difference between the good and the bad
+> > > > btrfs-endio-wri.
+> > > >
+> > > 
+> > > We also shouldn't be running run_ordered_operations, man this is screwed up,
+> > > thanks so much for this, I should be able to nail this down pretty easily.
+> > > Thanks,
+> > 
+> > Looks like we're getting there from reserve_metadata_bytes when we join
+> > the transaction?
+> >
+> 
+> We don't do reservations in the endio stuff, we assume you've reserved all the
+> space you need in delalloc, plus we would have seen reserve_metadata_bytes in
+> the trace.  Though it does look like perf is lying to us in at least one case
+> sicne btrfs_alloc_logged_file_extent is only called from log replay and not
+> during normal runtime, so it definitely shouldn't be showing up.  Thanks,
 
-Update:
-I umount the /home partition and rin the btrfsck tool on the device
-The output is: http://paste.pocoo.org/show/498415/
+Whoops, I should have read that num_items > 0 check harder.
 
-Using btrfs-tools from darksatanic git repo branch integration-20111012
+btrfs_end_transaction is doing it by setting ->blocked = 1
 
-I think I will be going for recreation of the partition.
-Hopefully my / is ok. Need to do the check with a LiveCD.
+        if (lock && !atomic_read(&root->fs_info->open_ioctl_trans) &&
+            should_end_transaction(trans, root)) {
+                trans->transaction->blocked = 1;
+		^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+                smp_wmb();
+        }
 
---=20
-Caution: breathing may be hazardous to your health.
---
-To unsubscribe from this list: send the line "unsubscribe linux-btrfs" =
-in
-the body of a message to majordomo@vger.kernel.org
-More majordomo info at  http://vger.kernel.org/majordomo-info.html
+       if (lock && cur_trans->blocked && !cur_trans->in_commit) {
+                   ^^^^^^^^^^^^^^^^^^^
+                if (throttle) {
+                        /*
+                         * We may race with somebody else here so end up having
+                         * to call end_transaction on ourselves again, so inc
+                         * our use_count.
+                         */
+                        trans->use_count++;
+                        return btrfs_commit_transaction(trans, root);
+                } else {
+                        wake_up_process(info->transaction_kthread);
+                }
+        }
+
+perf is definitely lying a little bit about the trace ;)
+
+-chris
+

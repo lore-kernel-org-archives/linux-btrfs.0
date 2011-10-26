@@ -1,53 +1,68 @@
-From: Phillip Susi <psusi@cfl.rr.com>
-Subject: Re: Snapshot rollback
-Date: Tue, 25 Oct 2011 21:30:58 -0400
-Message-ID: <4EA762D2.2020605@cfl.rr.com>
-References: <4EA46E3A.9090307@cfl.rr.com> <loom.20111024T071806-3@post.gmane.org> <4EA60690.7080401@cfl.rr.com> <4EA6193B.30104@gmail.com>
+From: Christian Brunner <chb@muc.de>
+Subject: Re: ceph on btrfs [was Re: ceph on non-btrfs file systems]
+Date: Wed, 26 Oct 2011 10:12:41 +0200
+Message-ID: <CAO47_--RTCNYP1s6O-jjjd_spT2=RrDJjBegd1S3YKz=on2YnQ@mail.gmail.com>
+References: <CAO47_-9L7SdQwhJ27B6yzrqG8xvj+CeZHeSutgeCixcv7kUidg@mail.gmail.com>
+	<Pine.LNX.4.64.1110252221510.6574@cobra.newdream.net>
+Reply-To: chb@muc.de
 Mime-Version: 1.0
 Content-Type: text/plain; charset=ISO-8859-1
-Cc: linux-btrfs@vger.kernel.org
-To: Arand Nash <ienorand@gmail.com>
-Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <4EA6193B.30104@gmail.com>
+Cc: ceph-devel@vger.kernel.org, linux-btrfs@vger.kernel.org
+To: Sage Weil <sage@newdream.net>
+Return-path: <ceph-devel-owner@vger.kernel.org>
+In-Reply-To: <Pine.LNX.4.64.1110252221510.6574@cobra.newdream.net>
 List-ID: <linux-btrfs.vger.kernel.org>
 
------BEGIN PGP SIGNED MESSAGE-----
-Hash: SHA1
+2011/10/26 Sage Weil <sage@newdream.net>:
+> On Wed, 26 Oct 2011, Christian Brunner wrote:
+>> >> > Christian, have you tweaked those settings in your ceph.conf? =A0=
+It would be
+>> >> > something like 'journal dio =3D false'. =A0If not, can you veri=
+fy that
+>> >> > directio shows true when the journal is initialized from your o=
+sd log?
+>> >> > E.g.,
+>> >> >
+>> >> > =A02011-10-21 15:21:02.026789 7ff7e5c54720 journal _open dev/os=
+d0.journal fd 14: 104857600 bytes, block size 4096 bytes, directio =3D =
+1
+>> >> >
+>> >> > If directio =3D 1 for you, something else funky is causing thos=
+e
+>> >> > blkdev_fsync's...
+>> >>
+>> >> I've looked it up in the logs - directio is 1:
+>> >>
+>> >> Oct 25 17:20:16 os00 osd.000[1696]: 7f0016841740 journal _open
+>> >> /dev/vg01/lv_osd_journal_0 fd 15: 17179869184 bytes, block size 4=
+096
+>> >> bytes, directio =3D 1
+>> >
+>> > Do you mind capturing an strace? =A0I'd like to see where that blk=
+dev_fsync
+>> > is coming from.
+>>
+>> Here is an strace. I can see a lot of sync_file_range operations.
+>
+> Yeah, these all look like the flusher thread, and shouldn't be hittin=
+g
+> blkdev_fsync. =A0Can you confirm that with
+>
+> =A0 =A0 =A0 =A0filestore flusher =3D false
+> =A0 =A0 =A0 =A0filestore sync flush =3D false
+>
+> you get no sync_file_range at all? =A0I wonder if this is also perf l=
+ying
+> about the call chain.
 
-On 10/24/2011 10:04 PM, Arand Nash wrote:
-> Btrfs is unfortunately unable to look for snapshots by name above the
-> currently set default root (I do not know why exectly), it can however
-> find them by id anywhere.
+Yes, setting this makes the sync_file_range calls go away.
 
-Ok, so looking up subvols by name uses the default subvol to resolve the
-name, and so when I change the default subvol to the snapshot of @,
-there is no @home name there pointing to the subvol?  Things make much
-more sense knowing that.  I thought that the subvolumes had their own
-namespace outside of any one subvolume.
+Is it safe to use these settings with "filestore btrfs snap =3D 0"?
 
-Is there a way to create another name entry in @snap that points to
-@home, or can you only have the original @home entry in the default subvol?
-
-> To backup
-> ~# mount /dev/sda1 /mnt
-> ~# ls /mnt
-> @ @home
-> ~@ btrfs sub snap /mnt/@ /mnt/@rootsnap
-> ~# ls /mnt
-> @ @home @rootsnap
-> 
-> And to rollback:
-> ~# mv /mnt/@ /mnt/@rootmessy
-> ~# mv /mnt/@rootsnap /mnt/@
-> And just reboot, since it just mounts whatever is named "@/".
-
-Perfect... I think I'll keep the default subvol mounted under /.subvols
-to make managing them easy.
------BEGIN PGP SIGNATURE-----
-Version: GnuPG v1.4.11 (GNU/Linux)
-Comment: Using GnuPG with Mozilla - http://enigmail.mozdev.org/
-
-iEYEARECAAYFAk6nYtIACgkQJ4UciIs+XuJ/CQCgsbMLAY/h9opq/T7qBJKKrSz2
-v0cAnRq8PKp1jx9r4Q6X4J6Ixjv3KpeS
-=GSCn
------END PGP SIGNATURE-----
+Thanks,
+Christian
+--
+To unsubscribe from this list: send the line "unsubscribe ceph-devel" i=
+n
+the body of a message to majordomo@vger.kernel.org
+More majordomo info at  http://vger.kernel.org/majordomo-info.html

@@ -1,77 +1,45 @@
-From: Chris Mason <chris.mason@oracle.com>
-Subject: Re: ceph on btrfs [was Re: ceph on non-btrfs file systems]
-Date: Wed, 26 Oct 2011 09:23:54 -0400
-Message-ID: <20111026132354.GC4588@shiny.Mikenopa.local>
-References: <Pine.LNX.4.64.1110231739380.25255@cobra.newdream.net>
- <CAO47_-9jp===DT=scpe=U8BnPnUCAVz7xUWVCC9AMVmx67CdaA@mail.gmail.com>
- <Pine.LNX.4.64.1110240941500.15349@cobra.newdream.net>
- <20111024195147.GB31264@dhcp231-156.rdu.redhat.com>
- <CAO47_-_=1uLV34WAAHFhv6z7fDmtY8L-+HUzfu=WcHNatbvxJQ@mail.gmail.com>
- <20111025122320.GA3703@dhcp231-156.rdu.redhat.com>
- <CAO47_--rkkKw7AJVRHdhwVXEq736ijhVWKYhRDQdgUxix3P-0w@mail.gmail.com>
- <20111025150512.GC3703@dhcp231-156.rdu.redhat.com>
- <20111025201545.GA4082@shiny.Mikenopa.local>
- <20111025202248.GE3703@dhcp231-156.rdu.redhat.com>
+From: David Sterba <dave@jikos.cz>
+Subject: Re: [patch] Move nodesize/leafsize/sectorsize to fs_info
+Date: Wed, 26 Oct 2011 15:34:09 +0200
+Message-ID: <20111026133409.GA5914@twin.jikos.cz>
+References: <CAKyAS7s1Xm3L_1QwptAKs61e0bc4s4z7k8jWo4SiujQFMSss0g@mail.gmail.com>
+Reply-To: dave@jikos.cz
 Mime-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
-Cc: Christian Brunner <chb@muc.de>, Sage Weil <sage@newdream.net>,
-	ceph-devel@vger.kernel.org, linux-btrfs@vger.kernel.org
-To: Josef Bacik <josef@redhat.com>
-Return-path: <ceph-devel-owner@vger.kernel.org>
-In-Reply-To: <20111025202248.GE3703@dhcp231-156.rdu.redhat.com>
+Cc: linux-btrfs@vger.kernel.org
+To: Peeters Simon <peeters.simon@gmail.com>
+Return-path: <linux-btrfs-owner@vger.kernel.org>
+In-Reply-To: <CAKyAS7s1Xm3L_1QwptAKs61e0bc4s4z7k8jWo4SiujQFMSss0g@mail.gmail.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Tue, Oct 25, 2011 at 04:22:48PM -0400, Josef Bacik wrote:
-> On Tue, Oct 25, 2011 at 04:15:45PM -0400, Chris Mason wrote:
-> > On Tue, Oct 25, 2011 at 11:05:12AM -0400, Josef Bacik wrote:
-> > > On Tue, Oct 25, 2011 at 04:25:02PM +0200, Christian Brunner wrote:
-> > > > 
-> > > > Attached is a perf-report. I have included the whole report, so that
-> > > > you can see the difference between the good and the bad
-> > > > btrfs-endio-wri.
-> > > >
-> > > 
-> > > We also shouldn't be running run_ordered_operations, man this is screwed up,
-> > > thanks so much for this, I should be able to nail this down pretty easily.
-> > > Thanks,
-> > 
-> > Looks like we're getting there from reserve_metadata_bytes when we join
-> > the transaction?
-> >
-> 
-> We don't do reservations in the endio stuff, we assume you've reserved all the
-> space you need in delalloc, plus we would have seen reserve_metadata_bytes in
-> the trace.  Though it does look like perf is lying to us in at least one case
-> sicne btrfs_alloc_logged_file_extent is only called from log replay and not
-> during normal runtime, so it definitely shouldn't be showing up.  Thanks,
+Hi,
 
-Whoops, I should have read that num_items > 0 check harder.
+sorry for late reply. This patch tries to unify node-/leaf-/... sizes
+nad put it just into fs_info, but this assumes all trees share the same
+sizes. Unfortunatelly this is not true (once we allow big blocks; soon?).
 
-btrfs_end_transaction is doing it by setting ->blocked = 1
+The root tree has a hardcoded size of 4k, see the __setup_root called
+with 4k in open_ctree:
 
-        if (lock && !atomic_read(&root->fs_info->open_ioctl_trans) &&
-            should_end_transaction(trans, root)) {
-                trans->transaction->blocked = 1;
-		^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-                smp_wmb();
-        }
+1760         __setup_root(4096, 4096, 4096, 4096, tree_root,
+1761                      fs_info, BTRFS_ROOT_TREE_OBJECTID);
 
-       if (lock && cur_trans->blocked && !cur_trans->in_commit) {
-                   ^^^^^^^^^^^^^^^^^^^
-                if (throttle) {
-                        /*
-                         * We may race with somebody else here so end up having
-                         * to call end_transaction on ourselves again, so inc
-                         * our use_count.
-                         */
-                        trans->use_count++;
-                        return btrfs_commit_transaction(trans, root);
-                } else {
-                        wake_up_process(info->transaction_kthread);
-                }
-        }
+the other trees have size defined during mkfs. And only these trees
+share the size. You'd have to add exception to use 4k or ->leafsize
+depending on the tree being used. It's less error prone to always just
+the structure item as it will hold always the correct value, although
+there is some memory wasted.
 
-perf is definitely lying a little bit about the trace ;)
+>From the peformace POV, the ->leafsize etc items can cause cacheline
+bouncing when any of the code wants to access the item (and it's not
+that rare) for a different tree / cpu. But anyway with current
+performance status, this effect will be hardly measurable.
 
--chris
+On Sun, Aug 07, 2011 at 11:54:31PM +0200, Peeters Simon wrote:
+> [1] https://btrfs.wiki.kernel.org/index.php/Cleanup_ideas
 
+I'd like to see how this idea was expected to be implemented, but
+there's no wiki to check.
+
+
+david

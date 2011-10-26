@@ -1,41 +1,48 @@
-From: Arne Jansen <sensille@gmx.net>
-Subject: Re: [patch] Move nodesize/leafsize/sectorsize to fs_info
-Date: Wed, 26 Oct 2011 22:54:10 +0200
-Message-ID: <4EA87372.5050006@gmx.net>
-References: <CAKyAS7s1Xm3L_1QwptAKs61e0bc4s4z7k8jWo4SiujQFMSss0g@mail.gmail.com> <20111026133409.GA5914@twin.jikos.cz> <4EA81D73.8090005@gmx.net> <20111026162338.GD5914@twin.jikos.cz> <20111026162719.GC5177@shiny.Mikenopa.local>
+From: Phillip Susi <psusi@cfl.rr.com>
+Subject: Where's the superblock allocation?
+Date: Wed, 26 Oct 2011 18:30:48 -0400
+Message-ID: <4EA88A18.3040508@cfl.rr.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=ISO-8859-1; format=flowed
-To: Chris Mason <chris.mason@oracle.com>,
-	Peeters Simon <peeters.simon@gmail.com>,
-	linux-btrfs@vger.kernel.org
+Content-Type: text/plain; charset=ISO-8859-1
+To: linux-btrfs <linux-btrfs@vger.kernel.org>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <20111026162719.GC5177@shiny.Mikenopa.local>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 10/26/2011 06:27 PM, Chris Mason wrote:
-> On Wed, Oct 26, 2011 at 06:23:38PM +0200, David Sterba wrote:
->> On Wed, Oct 26, 2011 at 04:47:15PM +0200, Arne Jansen wrote:
->>> The sizes get initialized to 4096, but after the super block is read,
->>> these are replaced by those from the SB.
->>
->> [reads sources again] right, and the initial values are not used up to
->> that point, so 4096 could be any number.
->>
->>> It was indeed meant to get rid of the possibility to have different
->>> sizes for different trees, as it just adds complexity. Chris mentioned
->>> once that he does not intend to allow different sizes between trees,
->>> thus the idea for this cleanup.
->>
->> Ok then. I'll gather it to cleanup patch queue.
->
-> Thanks, I actually don't intend to allow different leaf and node sizes
-> anymore either, but we might as well keep both numbers.
+-----BEGIN PGP SIGNED MESSAGE-----
+Hash: SHA1
 
-So that would be another good cleanup, as it is not always easy to tell
-if a block is a node or a leaf. It would actually simplify things.
+After a fresh mkfs.btrfs, I'm trying to understand the data structures,
+and I'm a little confused about what keeps the boot sector from being
+allocated to a file.
 
--Arne
+According to the device tree, the first 4mb of the disk are mapped
+directly to the first 4mb of the chunk space:
 
->
-> -chris
->
+item 0 key (1 DEV_EXTENT 0) itemoff 3947 itemsize 48
+	dev extent chunk_tree 3
+	chunk objectid 256 chunk offset 0 length 4194304
+
+And the chunk tree seems to agree:
+
+item 1 key (FIRST_CHUNK_TREE CHUNK_ITEM 0) itemoff 3817 itemsize 80
+	chunk length 4194304 owner 2 type 2 num_stripes 1
+		stripe 0 devid 1 offset 0
+
+But the only entry I find in the extent tree for offset 0 is:
+
+item 0 key (0 BLOCK_GROUP_ITEM 4194304) itemoff 3971 itemsize 24
+	block group used 0 chunk_objectid 256 flags 2
+
+So it appears that the first 4mb of the disk are part of a block group,
+and up for allocation whenever needed.  Why isn't there an entry in the
+extent tree marking the first few kb as reserved for the superblock, or
+alternatively, the chunk map starting at a non zero disk offset?
+
+-----BEGIN PGP SIGNATURE-----
+Version: GnuPG v1.4.11 (GNU/Linux)
+Comment: Using GnuPG with Mozilla - http://enigmail.mozdev.org/
+
+iEYEARECAAYFAk6oihUACgkQJ4UciIs+XuJ0EwCfYrWbAQRy7BP2Ogmvrn/pBW0y
+D/wAnibm4TqPV1PyqLi2H0Vain1ftW5Q
+=miI9
+-----END PGP SIGNATURE-----

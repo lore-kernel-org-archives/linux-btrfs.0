@@ -1,51 +1,66 @@
-From: Myroslav Opyr <myroslav@quintagroup.com>
-Subject: Re: [RFC PATCH] Btrfs: do not flush csum items of unchanged file data during treelog
-Date: Tue, 25 Oct 2011 23:18:49 +0000 (UTC)
-Message-ID: <loom.20111026T010743-539@post.gmane.org>
-References: <4DAFE39D.4040309@cn.fujitsu.com> <1303391634-sup-1145@think> <4DB0D20C.9060407@cn.fujitsu.com> <1303435579-sup-6101@think> <4DB545AD.5050908@cn.fujitsu.com>
+From: Christian Brunner <chb@muc.de>
+Subject: Re: ceph on btrfs [was Re: ceph on non-btrfs file systems]
+Date: Wed, 26 Oct 2011 02:16:19 +0200
+Message-ID: <CAO47_-9vgo=pVQ1aq_cAArYJWAmTapWnxxugiGWsBJW3rNjBbA@mail.gmail.com>
+References: <Pine.LNX.4.64.1110231739380.25255@cobra.newdream.net>
+	<CAO47_-9jp===DT=scpe=U8BnPnUCAVz7xUWVCC9AMVmx67CdaA@mail.gmail.com>
+	<Pine.LNX.4.64.1110240941500.15349@cobra.newdream.net>
+	<20111024195147.GB31264@dhcp231-156.rdu.redhat.com>
+	<CAO47_-_=1uLV34WAAHFhv6z7fDmtY8L-+HUzfu=WcHNatbvxJQ@mail.gmail.com>
+	<20111025122320.GA3703@dhcp231-156.rdu.redhat.com>
+	<CAO47_--rkkKw7AJVRHdhwVXEq736ijhVWKYhRDQdgUxix3P-0w@mail.gmail.com>
+	<20111025150512.GC3703@dhcp231-156.rdu.redhat.com>
+	<20111025201545.GA4082@shiny.Mikenopa.local>
+	<20111025202248.GE3703@dhcp231-156.rdu.redhat.com>
+Reply-To: chb@muc.de
 Mime-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-To: linux-btrfs@vger.kernel.org
-Return-path: <linux-btrfs-owner@vger.kernel.org>
+Content-Type: text/plain; charset=ISO-8859-1
+Cc: Chris Mason <chris.mason@oracle.com>,
+	Sage Weil <sage@newdream.net>, ceph-devel@vger.kernel.org,
+	linux-btrfs@vger.kernel.org
+To: Josef Bacik <josef@redhat.com>
+Return-path: <ceph-devel-owner@vger.kernel.org>
+In-Reply-To: <20111025202248.GE3703@dhcp231-156.rdu.redhat.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
+2011/10/25 Josef Bacik <josef@redhat.com>:
+> On Tue, Oct 25, 2011 at 04:15:45PM -0400, Chris Mason wrote:
+>> On Tue, Oct 25, 2011 at 11:05:12AM -0400, Josef Bacik wrote:
+>> > On Tue, Oct 25, 2011 at 04:25:02PM +0200, Christian Brunner wrote:
+>> > >
+>> > > Attached is a perf-report. I have included the whole report, so =
+that
+>> > > you can see the difference between the good and the bad
+>> > > btrfs-endio-wri.
+>> > >
+>> >
+>> > We also shouldn't be running run_ordered_operations, man this is s=
+crewed up,
+>> > thanks so much for this, I should be able to nail this down pretty=
+ easily.
+>> > Thanks,
+>>
+>> Looks like we're getting there from reserve_metadata_bytes when we j=
+oin
+>> the transaction?
+>>
+>
+> We don't do reservations in the endio stuff, we assume you've reserve=
+d all the
+> space you need in delalloc, plus we would have seen reserve_metadata_=
+bytes in
+> the trace. =A0Though it does look like perf is lying to us in at leas=
+t one case
+> sicne btrfs_alloc_logged_file_extent is only called from log replay a=
+nd not
+> during normal runtime, so it definitely shouldn't be showing up. =A0T=
+hanks,
 
-liubo <liubo2009 <at> cn.fujitsu.com> writes:
+Strange! - I'll check if symbols got messed up in the report tomorrow.
 
-> 
-> On 04/22/2011 09:28 AM, Chris Mason wrote:
-> > Right, at the very least we want to just use one bit of that field
-> > instead of all 8.  But keeping a sub-transid and putting that in the
-> > generation field of the file extent instead can get us the same benefits
-> > without stealing the bits.
-> > 
-> 
-> Nice.  This is the first step of my plan.
-> 
-> > As we push the sub transid into the btree blocks as well, we'll get much
-> > faster tree walks too.  The penalty is in complexity in the logging
-> > code, since it will have to deal with finding extents in the log tree
-> > and merging in the new extents from the file.
-> 
-> I've been thinking of this extent buffer with sub transid stuff for a while,
-> and will give it a try. :)
-
-Hi,
-
-any progress upon this patch? We started experimenting with btrfs and were 
-immediately hit by the large file fsync issue.
-
-Each fsync operation to 3.3Gb file that is having several dozens of bytes  
-appended is being visualized as 55-58sec long freeze of all filesystem 
-operations altogether with 99.9% CPU utilization in the process that caused the 
-fsync. Removing fsync calls made several magnitudes difference in operations 
-speed.
-
-FYI, we are running 2.6.38.8-32.fc15.i686.PAE with Btrfs v0.19 as XEN DomU and 
-btrfs considers virtual xvd device (backed by HDD file on Dom0) to be SSD 
-(according to dmesg) if that matters.
-
-Regards,
-
-m.
-
+Christian
+--
+To unsubscribe from this list: send the line "unsubscribe ceph-devel" i=
+n
+the body of a message to majordomo@vger.kernel.org
+More majordomo info at  http://vger.kernel.org/majordomo-info.html

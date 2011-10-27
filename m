@@ -1,40 +1,66 @@
-From: dima <dolenin@parallels.com>
-Subject: Re: linux v3.1 with btrfs-work: oops when deleting files
-Date: Thu, 27 Oct 2011 10:15:54 +0900
-Message-ID: <4EA8B0CA.4020206@parallels.com>
-References: <6mrhn8-b6u.ln1@hurikhan.ath.cx> <4EA7D478.8030106@parallels.com> <CAMthOuNq2E+sQxmkTBHUbiPyPCthVKsSaZTo1hVV1rgOb9NJqQ@mail.gmail.com>
+From: Liu Bo <liubo2009@cn.fujitsu.com>
+Subject: Re: [PATCH] Btrfs: fix tree corruption after multi-thread snapshots
+ and inode cache flush
+Date: Thu, 27 Oct 2011 11:09:18 +0800
+Message-ID: <4EA8CB5E.50308@cn.fujitsu.com>
+References: <1317261627-17265-1-git-send-email-liubo2009@cn.fujitsu.com> <4E83F354.3030102@linux.intel.com> <4E8429DE.1030501@cn.fujitsu.com> <4E842E0A.60808@linux.intel.com> <4E842EFE.40205@gmx.net> <1317308349-sup-2231@shiny>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="UTF-8"; format=flowed
-Cc: <linux-btrfs@vger.kernel.org>
-To: Kai Krakow <hurikhan77+btrfs@gmail.com>
+Content-Type: text/plain; charset=UTF-8
+Cc: Arne Jansen <sensille@gmx.net>,
+	"Yan, Zheng" <zheng.z.yan@linux.intel.com>,
+	linux-btrfs <linux-btrfs@vger.kernel.org>,
+	josef <josef@redhat.com>, lizf <lizf@cn.fujitsu.com>,
+	miaox <miaox@cn.fujitsu.com>, dave <dave@jikos.cz>
+To: Chris Mason <chris.mason@oracle.com>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <CAMthOuNq2E+sQxmkTBHUbiPyPCthVKsSaZTo1hVV1rgOb9NJqQ@mail.gmail.com>
+In-Reply-To: <1317308349-sup-2231@shiny>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 10/27/2011 02:40 AM, Kai Krakow wrote:
->>> I'm trying to rm some files, this is what I get in dmesg:
-> [snip]
->>
->> Can you ls the directory where the problem files are located? What would the
->> the output? I had a very similar problem but on 3.0.x kernel when several
->> files suddenly got corrupted.
->
-> I can run "find -type f" for directories I suspect corrupted files in,
-> and I see errors in dmesg if it happens to contain bad files. But no
-> oopses and the system remains stable. If I mount the filesystem
-> read-only I can even read these files without oopses, this way I
-> produced an rsync backup to my original partition I created the btrfs
-> subvolume from.
+On 09/29/2011 10:59 PM, Chris Mason wrote:
+> Excerpts from Arne Jansen's message of 2011-09-29 04:40:30 -0400:
+>> On 29.09.2011 10:36, Yan, Zheng wrote:
+>>> On 09/29/2011 04:18 PM, Liu Bo wrote:
+>>>> On 09/29/2011 12:25 PM, Yan, Zheng wrote:
+>>>>> On 09/29/2011 10:00 AM, Liu Bo wrote:
+>>>>>> The btrfs snapshotting code requires that once a root has been
+>>>>>> snapshotted, we don't change it during a commit.
+>>>>>>
+>>>>>> But there are two cases to lead to tree corruptions:
+>>>>>>
+>>>>>> 1) multi-thread snapshots can commit serveral snapshots in a transaction,
+>>>>>>    and this may change the src root when processing the following pending
+>>>>>>    snapshots, which lead to the former snapshots corruptions;
+>>>>>>
+>>>>>> 2) the free inode cache was changing the roots when it root the cache,
+>>>>>>    which lead to corruptions.
+>>>>>>
+>>>>> For the case 2, the free inode cache of newly created snapshot is invalid.
+>>>>> So it's better to avoid modifying snapshotted trees.
+>>>>>
+>>>> For case 2, with flushing dirty inode cache during create_pending_snapshot,
+>>>> we can avoid modifying snapshotted trees as your advice.
+>>>>
+>>>> But for case 1, I have no idea how to do the same thing, since we are not
+>>>> allowed to commit per snapshot, which will make the performance terrible.
+>> One snapshot per subvol per transaction is ok, but it must be possible to create
+>> hundreds or thousands of snapshots for different subvols within one transaction.
+>> Imagine a setup with 10000 subvols and creating one snapshot per hour.
+> 
+> Agreed, we need to be able to do more than one snapshot per commit.  Our
+> current commits are pretty heavy, we do need to be able to batch them.
+> 
 
-I see. Just to share my experience. I think I had a different case 
-because I could not even read some 20-30 files (photos) on my /home 
-subvolume and any attempt to access them via rm or ls would give me 
-kernel oopses, though the system would not crash with 3.1 kernel.
-Unless I tried to access the corrupted files the filesystem was stable 
-and my / subvolume was fine. So I backed up everything not-corrupted (I 
-did have the backups for the corrupted files anyway) and created my 
-/home subvolume anew. I deleted the old subvolume and most of the space 
-was reclaimed.
+Hi, Chris,
 
-But btrfsck would still give me errors about inability to access some 
-inode (
+Does this "force cow" way fit your expectation?  Or we need to pick another solution,
+such as building a a dependency graph among snapshots?
+
+IMO, apart from COWing more while committing a transaction, "force cow" keeps the original
+snapshot batching.
+
+thanks,
+liubo
+
+> -chris
+> 
+

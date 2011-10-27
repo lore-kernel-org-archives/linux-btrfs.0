@@ -1,126 +1,275 @@
-From: Stephane CHAZELAS <stephane_chazelas@yahoo.fr>
-Subject: lseek hanging
-Date: Thu, 27 Oct 2011 09:36:38 +0000 (UTC)
-Message-ID: <slrnjai9h6.4hg.stephane.chazelas@spam.is.invalid>
-To: linux-btrfs@vger.kernel.org
-Return-path: <linux-btrfs-owner@vger.kernel.org>
+From: Martin Mailand <martin@tuxadero.com>
+Subject: Re: ceph on btrfs [was Re: ceph on non-btrfs file systems]
+Date: Thu, 27 Oct 2011 12:53:56 +0200
+Message-ID: <4EA93844.3010601@tuxadero.com>
+References: <4EA86FD7.4030407@tuxadero.com>
+Mime-Version: 1.0
+Content-Type: multipart/mixed;
+ boundary="------------000108080707000205040306"
+Cc: linux-btrfs@vger.kernel.org, Sage Weil <sage@newdream.net>,
+	chb@muc.de, Josef Bacik <josef@redhat.com>, chris.mason@oracle.com
+To: ceph-devel@vger.kernel.org
+Return-path: <ceph-devel-owner@vger.kernel.org>
+In-Reply-To: <4EA86FD7.4030407@tuxadero.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-This morning, I have a strange behavior when doing a "tail -f"
-on a log file.
+This is a multi-part message in MIME format.
+--------------000108080707000205040306
+Content-Type: text/plain; charset=ISO-8859-1; format=flowed
+Content-Transfer-Encoding: 7bit
 
-"cat log" runs successfully, but
-"tail -f log" hangs.
+Hi
+resend without the perf attachment, which could be found here:
+http://tuxadero.com/multistorage/perf.report.txt.bz2
 
-Running a strace shows it hanging on lseek(3, 0, SEEK_CUR...
-3 being the fd for that log file.
+Best Regards,
+  martin
 
-In dmesg:
+-------- Original-Nachricht --------
+Betreff: Re: ceph on btrfs [was Re: ceph on non-btrfs file systems]
+Datum: Wed, 26 Oct 2011 22:38:47 +0200
+Von: Martin Mailand <martin@tuxadero.com>
+Antwort an: martin@tuxadero.com
+An: Sage Weil <sage@newdream.net>
+Kopie (CC): Christian Brunner <chb@muc.de>, ceph-devel@vger.kernel.org, 
+  linux-btrfs@vger.kernel.org
 
-[59881.520030] INFO: task btrfs-delalloc-:763 blocked for more than 120 seconds.
-[59881.527205] "echo 0 > /proc/sys/kernel/hung_task_timeout_secs" disables this message.
-[59881.535068] btrfs-delalloc- D 0000000100e2892b     0   763      2 0x00000000
-[59881.542161]  ffff88014738bc20 0000000000000046 0000000000004000 0000000000000000
-[59881.549673]  0000000000012840 0000000000012840 0000000000012840 ffff8801478c2580
-[59881.557147]  0000000000012840 ffff88014738bfd8 0000000000012840 0000000000012840
-[59881.568736] Call Trace:
-[59881.571219]  [<ffffffffa02ff90c>] wait_current_trans.clone.22+0xab/0xdc [btrfs]
-[59881.578589]  [<ffffffff81068ffb>] ? wake_up_bit+0x2a/0x2a
-[59881.584012]  [<ffffffff8136f6e6>] ? _raw_spin_lock+0xe/0x10
-[59881.589613]  [<ffffffffa0300b3f>] start_transaction+0xe3/0x231 [btrfs]
-[59881.596176]  [<ffffffffa0300cd0>] btrfs_join_transaction+0x15/0x17 [btrfs]
-[59881.603103]  [<ffffffffa03074bb>] compress_file_range+0x297/0x515 [btrfs]
-[59881.609926]  [<ffffffffa030776e>] async_cow_start+0x35/0x4a [btrfs]
-[59881.616237]  [<ffffffff8136f736>] ? _raw_spin_lock_irq+0x1f/0x21
-[59881.622277]  [<ffffffffa0324f0a>] worker_loop+0x19d/0x4cb [btrfs]
-[59881.628433]  [<ffffffffa0324d6d>] ? btrfs_queue_worker+0x27a/0x27a [btrfs]
-[59881.635330]  [<ffffffff81068b2c>] kthread+0x82/0x8a
-[59881.640227]  [<ffffffff81376124>] kernel_thread_helper+0x4/0x10
-[59881.646160]  [<ffffffff81068aaa>] ? kthread_worker_fn+0x14c/0x14c
-[59881.652293]  [<ffffffff81376120>] ? gs_change+0x13/0x13
-[59881.657555] INFO: task flush-btrfs-1:2675 blocked for more than 120 seconds.
-[59881.664617] "echo 0 > /proc/sys/kernel/hung_task_timeout_secs" disables this message.
-[59881.672477] flush-btrfs-1   D 0000000100e28931     0  2675      2 0x00000000
-[59881.679628]  ffff88013c559990 0000000000000046 0000000000000000 ffff880100000000
-[59881.687118]  0000000000012840 0000000000012840 0000000000012840 ffff88013cf76140
-[59881.694591]  0000000000012840 ffff88013c559fd8 0000000000012840 0000000000012840
-[59881.702064] Call Trace:
-[59881.704536]  [<ffffffff810c9843>] ? lock_page+0x2f/0x2f
-[59881.709800]  [<ffffffff8136e084>] io_schedule+0x63/0x7e
-[59881.715042]  [<ffffffff810c9851>] sleep_on_page+0xe/0x12
-[59881.720376]  [<ffffffff8136e663>] __wait_on_bit_lock+0x46/0x8f
-[59881.726241]  [<ffffffff810d3463>] ? pagevec_lru_move_fn+0xaa/0xc0
-[59881.732372]  [<ffffffff810c980d>] __lock_page+0x66/0x6d
-[59881.737628]  [<ffffffff81069034>] ? autoremove_wake_function+0x39/0x39
-[59881.744173]  [<ffffffff8103cea6>] ? should_resched+0xe/0x2e
-[59881.749779]  [<ffffffffa0319fa7>] lock_page+0x2a/0x2e [btrfs]
-[59881.755631]  [<ffffffffa031cf63>] extent_write_cache_pages.clone.10.clone.17+0xba/0x28e [btrfs]
-[59881.764382]  [<ffffffffa031d3a7>] extent_writepages+0x47/0x5c [btrfs]
-[59881.770877]  [<ffffffffa0303e3e>] ? uncompress_inline.clone.32+0x119/0x119 [btrfs]
-[59881.778494]  [<ffffffffa0302f0e>] btrfs_writepages+0x27/0x29 [btrfs]
-[59881.784867]  [<ffffffff810d22d9>] do_writepages+0x21/0x2a
-[59881.790302]  [<ffffffff81131aba>] writeback_single_inode+0xb5/0x1c6
-[59881.796588]  [<ffffffff81131ddd>] writeback_sb_inodes+0xbc/0x138
-[59881.802683]  [<ffffffff8113279e>] writeback_inodes_wb+0x172/0x184
-[59881.808795]  [<ffffffff81132a1c>] wb_writeback+0x26c/0x3aa
-[59881.814297]  [<ffffffff81132ca1>] wb_do_writeback+0x147/0x1a0
-[59881.820081]  [<ffffffff8136e58d>] ? schedule_timeout+0xb3/0xe3
-[59881.825947]  [<ffffffff81132d86>] bdi_writeback_thread+0x8c/0x20f
-[59881.832056]  [<ffffffff81132cfa>] ? wb_do_writeback+0x1a0/0x1a0
-[59881.838062]  [<ffffffff81068b2c>] kthread+0x82/0x8a
-[59881.842959]  [<ffffffff81376124>] kernel_thread_helper+0x4/0x10
-[59881.848896]  [<ffffffff81068aaa>] ? kthread_worker_fn+0x14c/0x14c
-[59881.855005]  [<ffffffff81376120>] ? gs_change+0x13/0x13
-[59881.860267] INFO: task ntfsclone:2787 blocked for more than 120 seconds.
-[59881.866981] "echo 0 > /proc/sys/kernel/hung_task_timeout_secs" disables this message.
-[59881.874842] ntfsclone       D 0000000100e28625     0  2787   2767 0x00000000
-[59881.881929]  ffff88013b421b88 0000000000000082 ffffffff814044e0 0000000000000000
-[59881.889399]  0000000000012840 0000000000012840 0000000000012840 ffff88013bcba5c0
-[59881.896895]  0000000000012840 ffff88013b421fd8 0000000000012840 0000000000012840
-[59881.904388] Call Trace:
-[59881.906848]  [<ffffffff81069259>] ? prepare_to_wait+0x76/0x81
-[59881.912630]  [<ffffffffa02ff90c>] wait_current_trans.clone.22+0xab/0xdc [btrfs]
-[59881.919970]  [<ffffffff81068ffb>] ? wake_up_bit+0x2a/0x2a
-[59881.925410]  [<ffffffff8136f6e6>] ? _raw_spin_lock+0xe/0x10
-[59881.931014]  [<ffffffffa0300b3f>] start_transaction+0xe3/0x231 [btrfs]
-[59881.937572]  [<ffffffffa0300cd0>] btrfs_join_transaction+0x15/0x17 [btrfs]
-[59881.944479]  [<ffffffffa0309bc4>] btrfs_dirty_inode+0x2c/0x117 [btrfs]
-[59881.951051]  [<ffffffff81131f6a>] __mark_inode_dirty+0x31/0x19e
-[59881.957069]  [<ffffffff81129e2b>] ? mnt_clone_write+0x12/0x2a
-[59881.962867]  [<ffffffff8112710b>] file_update_time+0xed/0x111
-[59881.968725]  [<ffffffffa030d0ed>] btrfs_file_aio_write+0x1a6/0x495 [btrfs]
-[59881.975657]  [<ffffffff8111327b>] do_sync_write+0xcb/0x108
-[59881.981172]  [<ffffffff811838dc>] ? security_file_permission+0x2e/0x33
-[59881.987743]  [<ffffffff811138fa>] vfs_write+0xac/0xff
-[59881.992814]  [<ffffffff81113b01>] sys_write+0x4a/0x6e
-[59881.997955]  [<ffffffff81375002>] system_call_fastpath+0x16/0x1b
-[59882.003978] INFO: task tail:2789 blocked for more than 120 seconds.
-[59882.010257] "echo 0 > /proc/sys/kernel/hung_task_timeout_secs" disables this message.
-[59882.018137] tail            D 0000000100e2ca63     0  2789   2604 0x00000004
-[59882.025225]  ffff8801337c5e48 0000000000000082 ffff8801337c5e28 ffff880100000000
-[59882.032698]  0000000000012840 0000000000012840 0000000000012840 ffff8801337c2700
-[59882.040166]  0000000000012840 ffff8801337c5fd8 0000000000012840 0000000000012840
-[59882.047648] Call Trace:
-[59882.050124]  [<ffffffff8136ea6c>] __mutex_lock_common.clone.5+0x122/0x183
-[59882.056928]  [<ffffffff8136eae0>] __mutex_lock_slowpath+0x13/0x15
-[59882.063052]  [<ffffffff8136e936>] mutex_lock+0x23/0x37
-[59882.068212]  [<ffffffff81113487>] generic_file_llseek+0x29/0x58
-[59882.074144]  [<ffffffff81112ffd>] vfs_llseek+0x33/0x35
-[59882.079296]  [<ffffffff811134f9>] sys_lseek+0x43/0x5f
-[59882.084367]  [<ffffffff81375002>] system_call_fastpath+0x16/0x1b
+Hi,
+I have more or less the same setup as Christian and I suffer the same
+problems.
+But as far as I can see the output of latencytop and perf differs form
+Christian one, both are attached.
+I was wondering about the high latency from btrfs-submit.
 
-(ntfsclone writes to that log file).
+Process btrfs-submit-0 (970) Total: 2123.5 msec
 
-That's on 3.0 amd64. That FS suffers from a number of other
-issues like occasionaly, very slow write (as in a few bytes per
-minute), and need a reboot.
+I have as well the high IO rate and high IO wait.
 
-In all the other instances where an action "hangs" on that
-FS, there's a btrfs kernel task or two that use all the CPU
-time. But not in this case.
+avg-cpu:  %user   %nice %system %iowait  %steal   %idle
+             0.60    0.00    2.20   82.40    0.00   14.80
 
-Note that it managed to unlock itself after a few minutes.
+Device:         rrqm/s   wrqm/s     r/s     w/s    rkB/s    wkB/s
+avgrq-sz avgqu-sz   await r_await w_await  svctm  %util
+sda               0.00     0.00    0.00    8.40     0.00    74.40
+17.71     0.03    3.81    0.00    3.81   3.81   3.20
+sdb               0.00     7.00    0.00  269.80     0.00  1224.80
+9.08   107.19  398.69    0.00  398.69   3.15  85.00
 
--- 
-Stephane
+top - 21:57:41 up  8:41,  1 user,  load average: 0.65, 0.79, 0.76
+Tasks: 179 total,   1 running, 178 sleeping,   0 stopped,   0 zombie
+Cpu(s):  0.6%us,  2.4%sy,  0.0%ni, 70.8%id, 25.8%wa,  0.0%hi,  0.3%si,
+0.0%st
+Mem:   4018276k total,  1577728k used,  2440548k free,    10496k buffers
+Swap:  1998844k total,        0k used,  1998844k free,  1316696k cached
 
+    PID USER      PR  NI  VIRT  RES  SHR S %CPU %MEM    TIME+  COMMAND
+
+   1399 root      20   0  548m 103m 3428 S  0.0  2.6   2:01.85 ceph-osd
+
+   1401 root      20   0  548m 103m 3428 S  0.0  2.6   1:51.71 ceph-osd
+
+   1400 root      20   0  548m 103m 3428 S  0.0  2.6   1:50.30 ceph-osd
+
+   1391 root      20   0     0    0    0 S  0.0  0.0   1:18.39
+btrfs-endio-wri
+
+    976 root      20   0     0    0    0 S  0.0  0.0   1:18.11
+btrfs-endio-wri
+
+   1367 root      20   0     0    0    0 S  0.0  0.0   1:05.60
+btrfs-worker-1
+
+    968 root      20   0     0    0    0 S  0.0  0.0   1:05.45
+btrfs-worker-0
+
+   1163 root      20   0  141m 1636 1100 S  0.0  0.0   1:00.56 collectd
+
+    970 root      20   0     0    0    0 S  0.0  0.0   0:47.73
+btrfs-submit-0
+
+   1402 root      20   0  548m 103m 3428 S  0.0  2.6   0:34.86 ceph-osd
+
+   1392 root      20   0     0    0    0 S  0.0  0.0   0:33.70
+btrfs-endio-met
+
+    975 root      20   0     0    0    0 S  0.0  0.0   0:32.70
+btrfs-endio-met
+
+   1415 root      20   0  548m 103m 3428 S  0.0  2.6   0:28.29 ceph-osd
+
+   1414 root      20   0  548m 103m 3428 S  0.0  2.6   0:28.24 ceph-osd
+
+   1397 root      20   0  548m 103m 3428 S  0.0  2.6   0:24.60 ceph-osd
+
+   1436 root      20   0  548m 103m 3428 S  0.0  2.6   0:13.31 ceph-osd
+
+
+Here ist my setup.
+Kernel v3.1 + Josef
+
+The config for this osd (ceph version 0.37
+(commit:a6f3bbb744a6faea95ae48317f0b838edb16a896)) is:
+[osd.1]
+          host = s-brick-003
+          osd journal = /dev/sda7
+          btrfs devs = /dev/sdb
+	btrfs options = noatime
+	filestore_btrfs_snap = false
+
+I hope this helps to pin point the problem.
+
+Best Regards,
+martin
+
+
+Sage Weil schrieb:
+> On Wed, 26 Oct 2011, Christian Brunner wrote:
+>> 2011/10/26 Sage Weil <sage@newdream.net>:
+>>> On Wed, 26 Oct 2011, Christian Brunner wrote:
+>>>>>>> Christian, have you tweaked those settings in your ceph.conf?  It would be
+>>>>>>> something like 'journal dio = false'.  If not, can you verify that
+>>>>>>> directio shows true when the journal is initialized from your osd log?
+>>>>>>> E.g.,
+>>>>>>>
+>>>>>>>  2011-10-21 15:21:02.026789 7ff7e5c54720 journal _open dev/osd0.journal fd 14: 104857600 bytes, block size 4096 bytes, directio = 1
+>>>>>>>
+>>>>>>> If directio = 1 for you, something else funky is causing those
+>>>>>>> blkdev_fsync's...
+>>>>>> I've looked it up in the logs - directio is 1:
+>>>>>>
+>>>>>> Oct 25 17:20:16 os00 osd.000[1696]: 7f0016841740 journal _open
+>>>>>> /dev/vg01/lv_osd_journal_0 fd 15: 17179869184 bytes, block size 4096
+>>>>>> bytes, directio = 1
+>>>>> Do you mind capturing an strace?  I'd like to see where that blkdev_fsync
+>>>>> is coming from.
+>>>> Here is an strace. I can see a lot of sync_file_range operations.
+>>> Yeah, these all look like the flusher thread, and shouldn't be hitting
+>>> blkdev_fsync.  Can you confirm that with
+>>>
+>>>        filestore flusher = false
+>>>        filestore sync flush = false
+>>>
+>>> you get no sync_file_range at all?  I wonder if this is also perf lying
+>>> about the call chain.
+>> Yes, setting this makes the sync_file_range calls go away.
+>
+> Okay.  That means either sync_file_range on a regular btrfs file is
+> triggering blkdev_fsync somewhere in btrfs, there is an extremely sneaky
+> bug that is mixing up file descriptors, or latencytop is lying.  I'm
+> guessing the latter, given the other weirdness Josef and Chris were
+> seeing.  :)
+>
+>> Is it safe to use these settings with "filestore btrfs snap = 0"?
+>
+> Yeah.  They're purely a performance thing to push as much dirty data to
+> disk as quickly as possible to minimize the snapshot create latency.
+> You'll notice the write throughput tends to tank when them off.
+>
+> sage
+
+
+--------------000108080707000205040306
+Content-Type: application/x-bzip;
+ name="latencytop.txt.bz2"
+Content-Transfer-Encoding: base64
+Content-Disposition: attachment;
+ filename="latencytop.txt.bz2"
+
+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
+1JdaWyPHIj/xdyRThQkPOs4fEA==
+--------------000108080707000205040306--

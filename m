@@ -1,8 +1,7 @@
 From: Hidetoshi Seto <seto.hidetoshi@jp.fujitsu.com>
-Subject: [PATCH 1/3] btrfs-progs: Update/clean up btrfs help and man page
- V2 (cont.)
-Date: Thu, 27 Oct 2011 13:39:55 +0900
-Message-ID: <4EA8E09B.8000607@jp.fujitsu.com>
+Subject: [PATCH 2/3] btrfs-progs: Misc fix for btrfs man page
+Date: Thu, 27 Oct 2011 13:40:51 +0900
+Message-ID: <4EA8E0D3.1040502@jp.fujitsu.com>
 References: <4EA8DFF5.1060400@jp.fujitsu.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset=ISO-2022-JP
@@ -12,49 +11,98 @@ Return-path: <linux-btrfs-owner@vger.kernel.org>
 In-Reply-To: <4EA8DFF5.1060400@jp.fujitsu.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-The commit 6f81e1197015ab2dc41beec92c347919feb26967 in for-chris
-branch is strange; somehow it does not apply a part of fixes and
-contains the dropped hunk in its patch description.
-
-This patch is to apply the dropped hunk.
+Remove duplicated entry for filesystem defrag, finish renaming
+device show to filesystem show, fix some minor misdescriptions
+and fix some format tokens.
 
 Signed-off-by: Hidetoshi Seto <seto.hidetoshi@jp.fujitsu.com>
 ---
- man/btrfs.8.in |   12 ++++++------
- 1 files changed, 6 insertions(+), 6 deletions(-)
+ man/btrfs.8.in |   22 +++++++++++-----------
+ 1 files changed, 11 insertions(+), 11 deletions(-)
 
 diff --git a/man/btrfs.8.in b/man/btrfs.8.in
-index faa7bf8..24bd933 100644
+index 24bd933..e40de6f 100644
 --- a/man/btrfs.8.in
 +++ b/man/btrfs.8.in
-@@ -195,21 +195,21 @@ NOTE: Currently there are the following limitations:
+@@ -21,17 +21,15 @@ btrfs \- control a btrfs filesystem
+ .PP
+ \fBbtrfs\fP \fBfilesystem label\fP\fI <dev> [newlabel]\fP
+ .PP
+-\fBbtrfs\fP \fBfilesystem defrag\fP\fI [options] <file>|<dir> [<file>|<dir>...]\fP
++\fBbtrfs\fP \fBfilesystem defragment\fP\fI [options] <file>|<dir> [<file>|<dir>...]\fP
+ .PP
+ \fBbtrfs\fP \fBsubvolume find-new\fP\fI <subvolume> <last_gen>\fP
+ .PP
+ \fBbtrfs\fP \fBfilesystem balance\fP\fI <path> \fP
+ .PP
+-\fBbtrfs\fP \fBfilesystem defragment\fP\fI <file>|<dir> [<file>|<dir>...]\fP
+-.PP
+ \fBbtrfs\fP \fBdevice scan\fP\fI [<device>...]\fP
+ .PP
+-\fBbtrfs\fP \fBdevice show\fP\fI [<device>|<uuid>|<label>]\fP
++\fBbtrfs\fP \fBfilesystem show\fP\fI [<device>|<uuid>|<label>]\fP
+ .PP
+ \fBbtrfs\fP \fBdevice add\fP\fI <device> [<device>...] <path> \fP
+ .PP
+@@ -71,7 +69,7 @@ and as
+ .I filesystem sync.
+ In this case
+ .I btrfs
+-returnsfilesystem sync
++returns an error.
+ If a command is terminated by
+ .I --help
+ , the detailed help is showed. If the passed command matches more commands,
+@@ -120,7 +118,7 @@ Set the subvolume of the filesystem \fI<path>\fR which is mounted as
+ is returned by the \fBsubvolume list\fR command.
+ .TP
+ 
+-\fBfilesystem defragment\fP -c[zlib|lzo] [-l \fIlen\fR] [-s \fIstart\fR] [-t \fIsize\fR] -[vf] <\fIfile\fR>|<\fIdir\fR> [<\fIfile\fR>|<\fIdir\fR>...]
++\fBfilesystem defragment\fP [-vf] [-c[zlib|lzo]] [-l \fIlen\fR] [-s \fIstart\fR] [-t \fIsize\fR] <\fIfile\fR>|<\fIdir\fR> [<\fIfile\fR>|<\fIdir\fR>...]
+ 
+ Defragment file data and/or directory metadata. To defragment all files in a
+ directory you have to specify each one on its own or use your shell wildcards.
+@@ -141,9 +139,11 @@ The start position and the number of bytes to deframention can be specified by \
+ 
+ NOTE: defragmenting with kernels up to 2.6.37 will unlink COW-ed copies of data, don't 
+ use it if you use snapshots, have de-duplicated your data or made copies with 
+-\fBcp --reflink\fP.
++\fBcp --reflink\fR.
++.TP
++
+ \fBsubvolume find-new\fR\fI <subvolume> <last_gen>\fR
+-List the recently modified files in a subvolume, after \fI<last_gen>\fR ID.
++List the recently modified files in a \fI<subvolume>\fR, after \fI<last_gen>\fR ID.
+ .TP
+ 
+ \fBdevice scan\fR \fI[<device>...]\fR
+@@ -178,7 +178,7 @@ can expand the partition before enlarging the filesystem and shrink the
+ partition after reducing the size of the filesystem.
+ .TP
+ 
+-\fBbtrfs\fP \fBfilesystem label\fP\fI <dev> [newlabel]\fP
++\fBfilesystem label\fP\fI <dev> [newlabel]\fP
+ Show or update the label of a filesystem. \fI<dev>\fR is used to identify the
+ filesystem. 
+ If a \fInewlabel\fR optional argument is passed, the label is changed. The
+@@ -195,7 +195,7 @@ NOTE: Currently there are the following limitations:
  - the filesystem should not have more than one device.
  .TP
  
--\fBfilesystem show\fR [<uuid>|<label>]\fR
--Show the btrfs filesystem with some additional info. If no UUID or label is
--passed, \fBbtrfs\fR show info of all the btrfs filesystem.
-+\fBfilesystem show\fR [<device>|<uuid>|<label>]\fR
-+Show the btrfs filesystem with some additional info. If no argument is
-+passed, \fBbtrfs\fR shows info of all the btrfs filesystems.
+-\fBfilesystem show\fR [<device>|<uuid>|<label>]\fR
++\fBfilesystem show\fR\fI [<device>|<uuid>|<label>]\fR
+ Show the btrfs filesystem with some additional info. If no argument is
+ passed, \fBbtrfs\fR shows info of all the btrfs filesystems.
  .TP
+@@ -211,7 +211,7 @@ Add device(s) to the filesystem identified by \fI<path>\fR.
  
--\fBdevice balance\fR \fI<path>\fR
-+\fBfilesystem balance\fR \fI<path>\fR
- Balance the chunks of the filesystem identified by \fI<path>\fR
- across the devices.
- .TP
- 
--\fBdevice add\fR\fI <dev> [<dev>..] <path>\fR
-+\fBdevice add\fR\fI <device> [<device>..] <path>\fR
- Add device(s) to the filesystem identified by \fI<path>\fR.
- .TP
- 
--\fBdevice delete\fR\fI <dev> [<dev>..] <path>\fR
-+\fBdevice delete\fR\fI <device> [<device>..] <path>\fR
+ \fBdevice delete\fR\fI <device> [<device>..] <path>\fR
  Remove device(s) from a filesystem identified by \fI<path>\fR.
- .PP
+-.PP
++.TP
  
+ \fBscrub start\fP [-Bdqru] {\fI<path>\fP|\fI<device>\fP}
+ Start a scrub on all devices of the filesystem identified by \fI<path>\fR or on
 -- 
 1.7.6.4
 

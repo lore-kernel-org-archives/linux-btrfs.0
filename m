@@ -1,48 +1,60 @@
-From: Phillip Susi <psusi@cfl.rr.com>
-Subject: Where's the superblock allocation?
-Date: Wed, 26 Oct 2011 18:30:48 -0400
-Message-ID: <4EA88A18.3040508@cfl.rr.com>
+From: Tsutomu Itoh <t-itoh@jp.fujitsu.com>
+Subject: Re: btrfs-tools source code
+Date: Thu, 27 Oct 2011 09:43:26 +0900
+Message-ID: <4EA8A92E.7090003@jp.fujitsu.com>
+References: <4EA848A3.70108@cfl.rr.com> <20111026182653.GI29548@carfax.org.uk>
 Mime-Version: 1.0
 Content-Type: text/plain; charset=ISO-8859-1
-To: linux-btrfs <linux-btrfs@vger.kernel.org>
+Cc: linux-btrfs <linux-btrfs@vger.kernel.org>
+To: Hugo Mills <hugo@carfax.org.uk>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
+In-Reply-To: <20111026182653.GI29548@carfax.org.uk>
 List-ID: <linux-btrfs.vger.kernel.org>
 
------BEGIN PGP SIGNED MESSAGE-----
-Hash: SHA1
+(2011/10/27 3:26), Hugo Mills wrote:
+> On Wed, Oct 26, 2011 at 01:51:31PM -0400, Phillip Susi wrote:
+>> It still doesn't appear to have returned to kernel.org.  Should that
+>> happen sometime soon, or is it available somewhere else now?
+> 
+>    If the wiki was up (which should be coming back to kernel.org in
+> the next few weeks, I'm told), you'd be able to see that the latest
+> version of the tools is actually available from
+> 
+>     http://git.darksatanic.net/repo/btrfs-progs-unstable.git/
 
-After a fresh mkfs.btrfs, I'm trying to understand the data structures,
-and I'm a little confused about what keeps the boot sector from being
-allocated to a file.
+Though the check on the number of args has been changed with the
+following patch,
 
-According to the device tree, the first 4mb of the disk are mapped
-directly to the first 4mb of the chunk space:
+  commit:f71210f87e0c684d8c76dfa2e19ea86256fc3d1f
+  check number of args for btrfs sub snap correctly
 
-item 0 key (1 DEV_EXTENT 0) itemoff 3947 itemsize 48
-	dev extent chunk_tree 3
-	chunk objectid 256 chunk offset 0 length 4194304
+however, in integration-20111012, I think that returning it to an
+original value is correct. 
 
-And the chunk tree seems to agree:
+Thanks,
+Tsutomu
 
-item 1 key (FIRST_CHUNK_TREE CHUNK_ITEM 0) itemoff 3817 itemsize 80
-	chunk length 4194304 owner 2 type 2 num_stripes 1
-		stripe 0 devid 1 offset 0
 
-But the only entry I find in the extent tree for offset 0 is:
+diff -urNp a/btrfs_cmds.c b/btrfs_cmds.c
+--- a/btrfs_cmds.c	2011-10-12 19:54:48.000000000 +0900
++++ b/btrfs_cmds.c	2011-10-27 09:07:56.000000000 +0900
+@@ -394,7 +394,7 @@ int do_clone(int argc, char **argv)
+ 			return 1;
+ 		}
+ 	}
+-	if (argc - optind != 3) {
++	if (argc - optind != 2) {
+ 		fprintf(stderr, "Invalid arguments for subvolume snapshot\n");
+ 		free(argv);
+ 		return 1;
 
-item 0 key (0 BLOCK_GROUP_ITEM 4194304) itemoff 3971 itemsize 24
-	block group used 0 chunk_objectid 256 flags 2
+> 
+> If you want something more recent than 6 months old, you will need
+> either the for-chris branch (considered pretty stable), or the latest
+> integration branch (which is the very latest bits). Gitweb access for
+> browsing is at
+> 
+> http://git.darksatanic.net/cgi/gitweb.cgi?p=btrfs-progs-unstable.git;a=summary
+> 
+>    Hugo.
 
-So it appears that the first 4mb of the disk are part of a block group,
-and up for allocation whenever needed.  Why isn't there an entry in the
-extent tree marking the first few kb as reserved for the superblock, or
-alternatively, the chunk map starting at a non zero disk offset?
-
------BEGIN PGP SIGNATURE-----
-Version: GnuPG v1.4.11 (GNU/Linux)
-Comment: Using GnuPG with Mozilla - http://enigmail.mozdev.org/
-
-iEYEARECAAYFAk6oihUACgkQJ4UciIs+XuJ0EwCfYrWbAQRy7BP2Ogmvrn/pBW0y
-D/wAnibm4TqPV1PyqLi2H0Vain1ftW5Q
-=miI9
------END PGP SIGNATURE-----

@@ -1,97 +1,87 @@
-From: Hidetoshi Seto <seto.hidetoshi@jp.fujitsu.com>
-Subject: [PATCH 3/3] btrfs-progs: Sort commands/descriptions in btrfs man
- page
-Date: Thu, 27 Oct 2011 13:41:54 +0900
-Message-ID: <4EA8E112.8070903@jp.fujitsu.com>
-References: <4EA8DFF5.1060400@jp.fujitsu.com>
+From: dima <dolenin@parallels.com>
+Subject: Re: linux v3.1 with btrfs-work: oops when deleting files
+Date: Thu, 27 Oct 2011 16:09:46 +0900
+Message-ID: <4EA903BA.6090405@parallels.com>
+References: <Bw$+jLhT1uB@helmut.hullen.de>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=ISO-2022-JP
-Cc: Hugo Mills <hugo@carfax.org.uk>
-To: linux-btrfs@vger.kernel.org
+Content-Type: text/plain; charset="UTF-8"; format=flowed
+Cc: Helmut Hullen <Hullen@t-online.de>, <linux-btrfs@vger.kernel.org>
+To: <helmut@hullen.de>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <4EA8DFF5.1060400@jp.fujitsu.com>
+In-Reply-To: <Bw$+jLhT1uB@helmut.hullen.de>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Sort items in man page, to put together items in the same group,
-and to put sequences of SYSNOPSIS and COMMANDS in same order.
-
-Signed-off-by: Hidetoshi Seto <seto.hidetoshi@jp.fujitsu.com>
----
- man/btrfs.8.in |   28 ++++++++++++++--------------
- 1 files changed, 14 insertions(+), 14 deletions(-)
-
-diff --git a/man/btrfs.8.in b/man/btrfs.8.in
-index e40de6f..0cb51ca 100644
---- a/man/btrfs.8.in
-+++ b/man/btrfs.8.in
-@@ -15,22 +15,22 @@ btrfs \- control a btrfs filesystem
- .PP
- \fBbtrfs\fP \fBsubvolume set-default\fP\fI <id> <path>\fP
- .PP
-+\fBbtrfs\fP \fBsubvolume find-new\fP\fI <subvolume> <last_gen>\fP
-+.PP
-+\fBbtrfs\fP \fBfilesystem defragment\fP\fI [options] <file>|<dir> [<file>|<dir>...]\fP
-+.PP
- \fBbtrfs\fP \fBfilesystem sync\fP\fI <path> \fP
- .PP
- \fBbtrfs\fP \fBfilesystem resize\fP\fI [+/\-]<size>[gkm]|max <filesystem>\fP
- .PP
- \fBbtrfs\fP \fBfilesystem label\fP\fI <dev> [newlabel]\fP
- .PP
--\fBbtrfs\fP \fBfilesystem defragment\fP\fI [options] <file>|<dir> [<file>|<dir>...]\fP
--.PP
--\fBbtrfs\fP \fBsubvolume find-new\fP\fI <subvolume> <last_gen>\fP
-+\fBbtrfs\fP \fBfilesystem show\fP\fI [<device>|<uuid>|<label>]\fP
- .PP
- \fBbtrfs\fP \fBfilesystem balance\fP\fI <path> \fP
- .PP
- \fBbtrfs\fP \fBdevice scan\fP\fI [<device>...]\fP
- .PP
--\fBbtrfs\fP \fBfilesystem show\fP\fI [<device>|<uuid>|<label>]\fP
--.PP
- \fBbtrfs\fP \fBdevice add\fP\fI <device> [<device>...] <path> \fP
- .PP
- \fBbtrfs\fP \fBdevice delete\fP\fI <device> [<device>...] <path> \fP
-@@ -118,6 +118,10 @@ Set the subvolume of the filesystem \fI<path>\fR which is mounted as
- is returned by the \fBsubvolume list\fR command.
- .TP
- 
-+\fBsubvolume find-new\fR\fI <subvolume> <last_gen>\fR
-+List the recently modified files in a \fI<subvolume>\fR, after \fI<last_gen>\fR ID.
-+.TP
-+
- \fBfilesystem defragment\fP [-vf] [-c[zlib|lzo]] [-l \fIlen\fR] [-s \fIstart\fR] [-t \fIsize\fR] <\fIfile\fR>|<\fIdir\fR> [<\fIfile\fR>|<\fIdir\fR>...]
- 
- Defragment file data and/or directory metadata. To defragment all files in a
-@@ -142,15 +146,6 @@ use it if you use snapshots, have de-duplicated your data or made copies with
- \fBcp --reflink\fR.
- .TP
- 
--\fBsubvolume find-new\fR\fI <subvolume> <last_gen>\fR
--List the recently modified files in a \fI<subvolume>\fR, after \fI<last_gen>\fR ID.
--.TP
--
--\fBdevice scan\fR \fI[<device>...]\fR
--Scan devices for a btrfs filesystem. If no devices are passed, \fBbtrfs\fR scans
--all the block devices.
--.TP
--
- \fBfilesystem sync\fR\fI <path> \fR
- Force a sync for the filesystem identified by \fI<path>\fR.
- .TP
-@@ -205,6 +200,11 @@ Balance the chunks of the filesystem identified by \fI<path>\fR
- across the devices.
- .TP
- 
-+\fBdevice scan\fR \fI[<device>...]\fR
-+Scan devices for a btrfs filesystem. If no devices are passed, \fBbtrfs\fR scans
-+all the block devices.
-+.TP
-+
- \fBdevice add\fR\fI <device> [<device>..] <path>\fR
- Add device(s) to the filesystem identified by \fI<path>\fR.
- .TP
--- 
-1.7.6.4
+On 10/26/2011 07:25 PM, Helmut Hullen wrote:
+> Hallo, dima,
+>
+> Du meintest am 26.10.11:
+>
+>>> I'm trying to rm some files, this is what I get in dmesg:
+>>>
+>>> [30975.249519] ------------[ cut here ]------------
+>>> [30975.249529] WARNING: at fs/btrfs/extent-tree.c:4588
+>>> __btrfs_free_extent+0x3b7/0x7ed()
+>
+> [...]
+>
+>>> [30975.249604] Pid: 12291, comm: rm Tainted: G       A C
+>>> 3.1.0-00057- gc82b96b-dirty #6
+>
+>> Can you ls the directory where the problem files are located? What
+>> would the the output? I had a very similar problem but on 3.0.x
+>> kernel when several files suddenly got corrupted.
+>
+> This morning I've tried kernel 3.1; you remembder my problems with 1
+> disk.
+>
+>     dd if=/dev/baddisk of=/dev/zero bs=8M conv=noerror
+>
+> showed some bad sectors.
+>
+>     hdparm ... --write-sector /dev/baddisk
+>
+> seems to repair them (I use a loop which not only tests the sector which
+> is shown via "dd" but also some sectors around this one)
+>
+> Rebooting the machine with kernel 3.1: I could delete the old entries
+> which seemed to contain bad sectors. Fine.
+>
+> Running btrfsck from the "Hugo Mills" git branch: still some errors -
+> see attachment "btrfsck.txt", especially the last lines; there seems to
+> be a bug.
+>
+> Copying some *.mpg files from another place to the btrfs cluster:
+> suddenly the system hangs, "dmesg" shows similar messages as above (from
+> Kai Krakow). See second attachment "dmesg-1.txt".
+> "halt" doesn't work, "reboot" doesn't work, "ctrl alt delete" doesn't
+> work.
+>
+> Reboot via power switch.
+>
+> Again copying: there was (within 1 file) a long pause, but then copying
+> worked. There's still hope ...
+> Maybe the pause caused kernel oops #3 and #4 - see attachment "dmesg-
+> 2.txt".
+>
+> ------------
+>
+> Just to show the only big difference: now I've seen some problem(s) not
+> related to "rm" but to "cp".
+>
+> Viele Gruesse!
+> Helmut
 
 
+Hi Helmut,
+
+For me any command I tried to use on the corrupted files would give me 
+the errors in dmesg, like in your case. And I could not get rid of the 
+files in any way. So eventually I had to recreate the subvolume.
+I checked my disk at that time, but it did not show any bad sector 
+errors, so I concluded it is the FS problem.
+
+In your case it may be just the errors caused by bad sectors on disk. 
+But perhaps recreating subvolume would be a good step to find out what 
+is wrong.
+
+~d

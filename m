@@ -1,208 +1,154 @@
-From: Martin Mailand <martin@tuxadero.com>
-Subject: Re: ceph on btrfs [was Re: ceph on non-btrfs file systems]
-Date: Thu, 27 Oct 2011 13:17:57 +0200
-Message-ID: <4EA93DE5.8060506@tuxadero.com>
-References: <4EA86FD7.4030407@tuxadero.com> <4EA93844.3010601@tuxadero.com> <CADdPHGtimucFn5k8A-RWDGYa-C3u7wB-bajxgT0LtiNH4HZ7=A@mail.gmail.com>
+From: David Sterba <dave@jikos.cz>
+Subject: Re: [patch 07/66] btrfs: clear_extent_bit error push-up
+Date: Thu, 27 Oct 2011 14:00:49 +0200
+Message-ID: <20111027120049.GA19328@twin.jikos.cz>
+References: <20111025010236.322699279@suse.com> <20111025010851.368992601@suse.com> <20111026151024.GB5914@twin.jikos.cz> <4EA824D2.6070801@suse.com>
+Reply-To: dave@jikos.cz
 Mime-Version: 1.0
-Content-Type: text/plain; charset=ISO-8859-1; format=flowed
-Cc: ceph-devel@vger.kernel.org, linux-btrfs@vger.kernel.org,
-	Sage Weil <sage@newdream.net>, chb@muc.de,
-	Josef Bacik <josef@redhat.com>, chris.mason@oracle.com
-To: Stefan Majer <stefan.majer@gmail.com>
-Return-path: <ceph-devel-owner@vger.kernel.org>
-In-Reply-To: <CADdPHGtimucFn5k8A-RWDGYa-C3u7wB-bajxgT0LtiNH4HZ7=A@mail.gmail.com>
+Content-Type: text/plain; charset=us-ascii
+Cc: Chris Mason <chris.mason@oracle.com>,
+	David Sterba <dsterba@suse.com>,
+	Linux Btrfs <linux-btrfs@vger.kernel.org>
+To: Jeff Mahoney <jeffm@suse.com>
+Return-path: <linux-btrfs-owner@vger.kernel.org>
+In-Reply-To: <4EA824D2.6070801@suse.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hi Stefan,
-I think the machine has enough ram.
+On Wed, Oct 26, 2011 at 11:18:42AM -0400, Jeff Mahoney wrote:
+> > and this clobber the original ret value which is returned a few
+> > lines below and used in the caller.
+> > 
+> >> } out: free_extent_state(cached_state);
+> > 
+> > return ret; }
+> 
+> *smack*
+> 
+> Ugh. You're right. It avoids the corruption but signals a short write.
 
-root@s-brick-003:~# free -m
-              total       used       free     shared    buffers     cached
-Mem:          3924       2401       1522          0         42       2115
--/+ buffers/cache:        243       3680
-Swap:         1951          0       1951
+still crashes in xfstests/113 with the following fixup. so there may be more
+occurences of the ret value clobbering, I closely reviewed only this patch.
+I'll verify with just that on top.
 
-There is no swap usage at all.
+--- a/fs/btrfs/inode.c
++++ b/fs/btrfs/inode.c
+@@ -6223,6 +6223,7 @@ static ssize_t btrfs_direct_IO(int rw, struct kiocb *iocb,
+        struct extent_state *cached_state = NULL;
+        u64 lockstart, lockend;
+        ssize_t ret;
++       int ret2;
+        int writing = rw & WRITE;
+        int write_bits = 0;
+        size_t count = iov_length(iov, nr_segs);
+@@ -6273,7 +6274,6 @@ static ssize_t btrfs_direct_IO(int rw, struct kiocb *iocb,
+                                     &cached_state, GFP_NOFS);
+                BUG_ON(ret < 0);
+                if (ret) {
+-                       int ret2;
+                        ret2 = clear_extent_bit(&BTRFS_I(inode)->io_tree,
+                                                lockstart, lockend,
+                                                EXTENT_LOCKED | write_bits,
+@@ -6292,23 +6292,21 @@ static ssize_t btrfs_direct_IO(int rw, struct kiocb *iocb,
+                   btrfs_submit_direct, 0);
 
--martin
+        if (ret < 0 && ret != -EIOCBQUEUED) {
+-               ret = clear_extent_bit(&BTRFS_I(inode)->io_tree, offset,
++               ret2 = clear_extent_bit(&BTRFS_I(inode)->io_tree, offset,
+                                       offset + iov_length(iov, nr_segs) - 1,
+                                       EXTENT_LOCKED | write_bits, 1, 0,
+                                       &cached_state, GFP_NOFS);
+-               BUG_ON(ret < 0);
+-               ret = 0;
++               BUG_ON(ret2 < 0);
+        } else if (ret >= 0 && ret < iov_length(iov, nr_segs)) {
+                /*
+                 * We're falling back to buffered, unlock the section we didn't
+                 * do IO on.
+                 */
+-               ret = clear_extent_bit(&BTRFS_I(inode)->io_tree, offset + ret,
++               ret2 = clear_extent_bit(&BTRFS_I(inode)->io_tree, offset + ret,
+                                       offset + iov_length(iov, nr_segs) - 1,
+                                       EXTENT_LOCKED | write_bits, 1, 0,
+                                       &cached_state, GFP_NOFS);
+-               BUG_ON(ret < 0);
+-               ret = 0;
++               BUG_ON(ret2 < 0);
+        }
+ out:
+        free_extent_state(cached_state);
+---
 
+stacktrace, same as every crash before:
 
-Am 27.10.2011 12:59, schrieb Stefan Majer:
-> Hi Martin,
->
-> a quick dig into your perf report show a large amount of swapper work.
-> If this is the case, i would suspect latency. So do you have not
-> enough physical ram in your machine ?
->
-> Greetings
->
-> Stefan Majer
->
-> On Thu, Oct 27, 2011 at 12:53 PM, Martin Mailand<martin@tuxadero.com>  wrote:
->> Hi
->> resend without the perf attachment, which could be found here:
->> http://tuxadero.com/multistorage/perf.report.txt.bz2
->>
->> Best Regards,
->>   martin
->>
->> -------- Original-Nachricht --------
->> Betreff: Re: ceph on btrfs [was Re: ceph on non-btrfs file systems]
->> Datum: Wed, 26 Oct 2011 22:38:47 +0200
->> Von: Martin Mailand<martin@tuxadero.com>
->> Antwort an: martin@tuxadero.com
->> An: Sage Weil<sage@newdream.net>
->> Kopie (CC): Christian Brunner<chb@muc.de>, ceph-devel@vger.kernel.org,
->>   linux-btrfs@vger.kernel.org
->>
->> Hi,
->> I have more or less the same setup as Christian and I suffer the same
->> problems.
->> But as far as I can see the output of latencytop and perf differs form
->> Christian one, both are attached.
->> I was wondering about the high latency from btrfs-submit.
->>
->> Process btrfs-submit-0 (970) Total: 2123.5 msec
->>
->> I have as well the high IO rate and high IO wait.
->>
->> avg-cpu:  %user   %nice %system %iowait  %steal   %idle
->>             0.60    0.00    2.20   82.40    0.00   14.80
->>
->> Device:         rrqm/s   wrqm/s     r/s     w/s    rkB/s    wkB/s
->> avgrq-sz avgqu-sz   await r_await w_await  svctm  %util
->> sda               0.00     0.00    0.00    8.40     0.00    74.40
->> 17.71     0.03    3.81    0.00    3.81   3.81   3.20
->> sdb               0.00     7.00    0.00  269.80     0.00  1224.80
->> 9.08   107.19  398.69    0.00  398.69   3.15  85.00
->>
->> top - 21:57:41 up  8:41,  1 user,  load average: 0.65, 0.79, 0.76
->> Tasks: 179 total,   1 running, 178 sleeping,   0 stopped,   0 zombie
->> Cpu(s):  0.6%us,  2.4%sy,  0.0%ni, 70.8%id, 25.8%wa,  0.0%hi,  0.3%si,
->> 0.0%st
->> Mem:   4018276k total,  1577728k used,  2440548k free,    10496k buffers
->> Swap:  1998844k total,        0k used,  1998844k free,  1316696k cached
->>
->>    PID USER      PR  NI  VIRT  RES  SHR S %CPU %MEM    TIME+  COMMAND
->>
->>   1399 root      20   0  548m 103m 3428 S  0.0  2.6   2:01.85 ceph-osd
->>
->>   1401 root      20   0  548m 103m 3428 S  0.0  2.6   1:51.71 ceph-osd
->>
->>   1400 root      20   0  548m 103m 3428 S  0.0  2.6   1:50.30 ceph-osd
->>
->>   1391 root      20   0     0    0    0 S  0.0  0.0   1:18.39
->> btrfs-endio-wri
->>
->>    976 root      20   0     0    0    0 S  0.0  0.0   1:18.11
->> btrfs-endio-wri
->>
->>   1367 root      20   0     0    0    0 S  0.0  0.0   1:05.60
->> btrfs-worker-1
->>
->>    968 root      20   0     0    0    0 S  0.0  0.0   1:05.45
->> btrfs-worker-0
->>
->>   1163 root      20   0  141m 1636 1100 S  0.0  0.0   1:00.56 collectd
->>
->>    970 root      20   0     0    0    0 S  0.0  0.0   0:47.73
->> btrfs-submit-0
->>
->>   1402 root      20   0  548m 103m 3428 S  0.0  2.6   0:34.86 ceph-osd
->>
->>   1392 root      20   0     0    0    0 S  0.0  0.0   0:33.70
->> btrfs-endio-met
->>
->>    975 root      20   0     0    0    0 S  0.0  0.0   0:32.70
->> btrfs-endio-met
->>
->>   1415 root      20   0  548m 103m 3428 S  0.0  2.6   0:28.29 ceph-osd
->>
->>   1414 root      20   0  548m 103m 3428 S  0.0  2.6   0:28.24 ceph-osd
->>
->>   1397 root      20   0  548m 103m 3428 S  0.0  2.6   0:24.60 ceph-osd
->>
->>   1436 root      20   0  548m 103m 3428 S  0.0  2.6   0:13.31 ceph-osd
->>
->>
->> Here ist my setup.
->> Kernel v3.1 + Josef
->>
->> The config for this osd (ceph version 0.37
->> (commit:a6f3bbb744a6faea95ae48317f0b838edb16a896)) is:
->> [osd.1]
->>          host = s-brick-003
->>          osd journal = /dev/sda7
->>          btrfs devs = /dev/sdb
->>         btrfs options = noatime
->>         filestore_btrfs_snap = false
->>
->> I hope this helps to pin point the problem.
->>
->> Best Regards,
->> martin
->>
->>
->> Sage Weil schrieb:
->>>
->>> On Wed, 26 Oct 2011, Christian Brunner wrote:
->>>>
->>>> 2011/10/26 Sage Weil<sage@newdream.net>:
->>>>>
->>>>> On Wed, 26 Oct 2011, Christian Brunner wrote:
->>>>>>>>>
->>>>>>>>> Christian, have you tweaked those settings in your ceph.conf?  It
->>>>>>>>> would be
->>>>>>>>> something like 'journal dio = false'.  If not, can you verify that
->>>>>>>>> directio shows true when the journal is initialized from your osd
->>>>>>>>> log?
->>>>>>>>> E.g.,
->>>>>>>>>
->>>>>>>>>   2011-10-21 15:21:02.026789 7ff7e5c54720 journal _open
->>>>>>>>> dev/osd0.journal fd 14: 104857600 bytes, block size 4096 bytes, directio = 1
->>>>>>>>>
->>>>>>>>> If directio = 1 for you, something else funky is causing those
->>>>>>>>> blkdev_fsync's...
->>>>>>>>
->>>>>>>> I've looked it up in the logs - directio is 1:
->>>>>>>>
->>>>>>>> Oct 25 17:20:16 os00 osd.000[1696]: 7f0016841740 journal _open
->>>>>>>> /dev/vg01/lv_osd_journal_0 fd 15: 17179869184 bytes, block size 4096
->>>>>>>> bytes, directio = 1
->>>>>>>
->>>>>>> Do you mind capturing an strace?  I'd like to see where that
->>>>>>> blkdev_fsync
->>>>>>> is coming from.
->>>>>>
->>>>>> Here is an strace. I can see a lot of sync_file_range operations.
->>>>>
->>>>> Yeah, these all look like the flusher thread, and shouldn't be hitting
->>>>> blkdev_fsync.  Can you confirm that with
->>>>>
->>>>>        filestore flusher = false
->>>>>        filestore sync flush = false
->>>>>
->>>>> you get no sync_file_range at all?  I wonder if this is also perf lying
->>>>> about the call chain.
->>>>
->>>> Yes, setting this makes the sync_file_range calls go away.
->>>
->>> Okay.  That means either sync_file_range on a regular btrfs file is
->>> triggering blkdev_fsync somewhere in btrfs, there is an extremely sneaky
->>> bug that is mixing up file descriptors, or latencytop is lying.  I'm
->>> guessing the latter, given the other weirdness Josef and Chris were
->>> seeing.  :)
->>>
->>>> Is it safe to use these settings with "filestore btrfs snap = 0"?
->>>
->>> Yeah.  They're purely a performance thing to push as much dirty data to
->>> disk as quickly as possible to minimize the snapshot create latency.
->>> You'll notice the write throughput tends to tank when them off.
->>>
->>> sage
->>
->>
->
->
->
+[ 1741.840468] ------------[ cut here ]------------
+[ 1741.844015] kernel BUG at drivers/scsi/scsi_lib.c:988!
+[ 1741.844015] invalid opcode: 0000 [#1] SMP
+[ 1741.844015] CPU 0
+[ 1741.844015] Modules linked in: loop btrfs aoe
+[ 1741.844015]
+[ 1741.844015] Pid: 9220, comm: aio-stress Tainted: G        W   3.1.0-rc9-default+ #63 Intel Corporation Santa Rosa platform/Matanzas
+[ 1741.844015] RIP: 0010:[<ffffffff815f25ef>]  [<ffffffff815f25ef>] scsi_init_sgtable+0x5f/0x70
+[ 1741.844015] RSP: 0018:ffff880078cd7c18  EFLAGS: 00010006
+[ 1741.844015] RAX: 0000000000000004 RBX: ffff88005d9a97d8 RCX: 00000000ffffffff
+[ 1741.844015] RDX: 0000000000000008 RSI: 0000000000008000 RDI: ffff8800545eba20
+[ 1741.844015] RBP: ffff880078cd7c28 R08: ffff880037a7ab38 R09: 6db6db6db6db6db7
+[ 1741.844015] R10: 00000000ffffffff R11: ffff880079e1f480 R12: ffff880079e1f480
+[ 1741.844015] R13: ffff880037a7ab38 R14: 0000000000000020 R15: ffff8800379d6000
+[ 1741.844015] FS:  00007fc8b64cb700(0000) GS:ffff88007e400000(0000) knlGS:0000000000000000
+[ 1741.844015] CS:  0010 DS: 0000 ES: 0000 CR0: 000000008005003b
+[ 1741.844015] CR2: 00007fc8c45a0cf0 CR3: 00000000517af000 CR4: 00000000000006f0
+[ 1741.844015] DR0: 0000000000000000 DR1: 0000000000000000 DR2: 0000000000000000
+[ 1741.844015] DR3: 0000000000000000 DR6: 00000000ffff0ff0 DR7: 0000000000000400
+[ 1741.844015] Process aio-stress (pid: 9220, threadinfo ffff880078cd6000, task ffff880066c24c40)
+[ 1741.844015] Stack:
+[ 1741.844015]  ffff88005d9a9780 ffff880079e1f480 ffff880078cd7c78 ffffffff815f284d
+[ 1741.844015]  ffff88005d9a9780 ffff8800379db080 ffff880078cd7c78 ffff880079e1f480
+[ 1741.844015]  ffff8800379db000 ffff880037a7ab38 ffff8800379db000 ffff8800379d6000
+[ 1741.844015] Call Trace:
+[ 1741.844015]  [<ffffffff815f284d>] scsi_init_io+0x3d/0x150
+[ 1741.844015]  [<ffffffff815f29d9>] scsi_setup_fs_cmnd+0x79/0xe0
+[ 1741.844015]  [<ffffffff81600947>] sd_prep_fn+0x157/0xe40
+[ 1741.844015]  [<ffffffff8133aedc>] blk_peek_request+0xbc/0x240
+[ 1741.844015]  [<ffffffff815f1f7b>] scsi_request_fn+0x5b/0x4e0
+[ 1741.844015]  [<ffffffff813370bb>] queue_unplugged+0x4b/0xd0
+[ 1741.844015]  [<ffffffff8133b4b5>] blk_flush_plug_list+0x1f5/0x280
+[ 1741.844015]  [<ffffffff8133b558>] blk_finish_plug+0x18/0x50
+[ 1741.844015]  [<ffffffff8118afe3>] do_io_submit+0x253/0x760
+[ 1741.844015]  [<ffffffff8118b500>] sys_io_submit+0x10/0x20
+[ 1741.844015]  [<ffffffff81a1d302>] system_call_fastpath+0x16/0x1b
+[ 1741.844015] Code: 24 38 4c 89 e6 48 8b 13 e8 cf d0 d4 ff 3b 43 08 77 19 89 43 08 41 8b 44 24 54 89 43 10 31 c0 5b 41 5c c9 c3 b8 02 00 00 00 eb f4 <0f> 0b 66 66 66 66 66 66 2e 0f 1f 84 00 00 00 00 00 55 48 89 e5
+[ 1741.844015] RIP  [<ffffffff815f25ef>] scsi_init_sgtable+0x5f/0x70
+[ 1741.844015]  RSP <ffff880078cd7c18>
+[ 1742.146710] BUG: spinlock lockup on CPU#1, aio-stress/9205, ffff880037a7b1e0
+[ 1742.146710] Pid: 9205, comm: aio-stress Tainted: G        W   3.1.0-rc9-default+ #63
+[ 1742.146710] Call Trace:
+[ 1742.146710]  [<ffffffff81362736>] do_raw_spin_lock+0xf6/0x150
+[ 1742.146710]  [<ffffffff81a14106>] _raw_spin_lock+0x56/0x70
+[ 1742.146710]  [<ffffffff8133b477>] ? blk_flush_plug_list+0x1b7/0x280
+[ 1742.146710]  [<ffffffff8133b477>] blk_flush_plug_list+0x1b7/0x280
+[ 1742.146710]  [<ffffffff8133b558>] blk_finish_plug+0x18/0x50
+[ 1742.146710]  [<ffffffff8118afe3>] do_io_submit+0x253/0x760
+[ 1742.146710]  [<ffffffff8118b500>] sys_io_submit+0x10/0x20
+[ 1742.146710]  [<ffffffff81a1d302>] system_call_fastpath+0x16/0x1b
+[ 1742.149745] BUG: spinlock lockup on CPU#0, btrfs-submit-0/9187, ffff880037a7b1e0
+[ 1742.149745] Pid: 9187, comm: btrfs-submit-0 Tainted: G        W   3.1.0-rc9-default+ #63
+[ 1742.149745] Call Trace:
+[ 1742.149745]  [<ffffffff81362736>] do_raw_spin_lock+0xf6/0x150
+[ 1742.149745]  [<ffffffff81a1486f>] ? _raw_spin_lock_irq+0x1f/0x80
+[ 1742.149745]  [<ffffffff81a148b2>] _raw_spin_lock_irq+0x62/0x80
+[ 1742.149745]  [<ffffffff8133b784>] ? __make_request+0x1f4/0x330
+[ 1742.149745]  [<ffffffff8133b784>] __make_request+0x1f4/0x330
+[ 1742.149745]  [<ffffffff8133778d>] generic_make_request+0x1cd/0x520
+[ 1742.149745]  [<ffffffff81092952>] ? print_lock_contention_bug+0x22/0xf0
+[ 1742.149745]  [<ffffffff81337b5a>] submit_bio+0x7a/0xf0
+[ 1742.149745]  [<ffffffff8136283e>] ? do_raw_spin_unlock+0x5e/0xb0
+[ 1742.149745]  [<ffffffffa005cc84>] run_scheduled_bios+0x264/0x550 [btrfs]
+[ 1742.149745]  [<ffffffffa005cf85>] pending_bios_fn+0x15/0x20 [btrfs]
+[ 1742.149745]  [<ffffffffa0063f54>] worker_loop+0xb4/0x500 [btrfs]
+[ 1742.149745]  [<ffffffffa0063ea0>] ? btrfs_queue_worker+0x340/0x340 [btrfs]
+[ 1742.149745]  [<ffffffff8107cf26>] kthread+0xa6/0xb0
+[ 1742.149745]  [<ffffffff81a1e584>] kernel_thread_helper+0x4/0x10
+[ 1742.149745]  [<ffffffff81a14eb4>] ? retint_restore_args+0x13/0x13
+[ 1742.149745]  [<ffffffff8107ce80>] ? __init_kthread_worker+0x70/0x70
+[ 1742.149745]  [<ffffffff81a1e580>] ? gs_change+0x13/0x13
 

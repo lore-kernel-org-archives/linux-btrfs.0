@@ -1,60 +1,40 @@
-From: Tsutomu Itoh <t-itoh@jp.fujitsu.com>
-Subject: Re: btrfs-tools source code
-Date: Thu, 27 Oct 2011 09:43:26 +0900
-Message-ID: <4EA8A92E.7090003@jp.fujitsu.com>
-References: <4EA848A3.70108@cfl.rr.com> <20111026182653.GI29548@carfax.org.uk>
+From: dima <dolenin@parallels.com>
+Subject: Re: linux v3.1 with btrfs-work: oops when deleting files
+Date: Thu, 27 Oct 2011 10:15:54 +0900
+Message-ID: <4EA8B0CA.4020206@parallels.com>
+References: <6mrhn8-b6u.ln1@hurikhan.ath.cx> <4EA7D478.8030106@parallels.com> <CAMthOuNq2E+sQxmkTBHUbiPyPCthVKsSaZTo1hVV1rgOb9NJqQ@mail.gmail.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=ISO-8859-1
-Cc: linux-btrfs <linux-btrfs@vger.kernel.org>
-To: Hugo Mills <hugo@carfax.org.uk>
+Content-Type: text/plain; charset="UTF-8"; format=flowed
+Cc: <linux-btrfs@vger.kernel.org>
+To: Kai Krakow <hurikhan77+btrfs@gmail.com>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <20111026182653.GI29548@carfax.org.uk>
+In-Reply-To: <CAMthOuNq2E+sQxmkTBHUbiPyPCthVKsSaZTo1hVV1rgOb9NJqQ@mail.gmail.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-(2011/10/27 3:26), Hugo Mills wrote:
-> On Wed, Oct 26, 2011 at 01:51:31PM -0400, Phillip Susi wrote:
->> It still doesn't appear to have returned to kernel.org.  Should that
->> happen sometime soon, or is it available somewhere else now?
-> 
->    If the wiki was up (which should be coming back to kernel.org in
-> the next few weeks, I'm told), you'd be able to see that the latest
-> version of the tools is actually available from
-> 
->     http://git.darksatanic.net/repo/btrfs-progs-unstable.git/
+On 10/27/2011 02:40 AM, Kai Krakow wrote:
+>>> I'm trying to rm some files, this is what I get in dmesg:
+> [snip]
+>>
+>> Can you ls the directory where the problem files are located? What would the
+>> the output? I had a very similar problem but on 3.0.x kernel when several
+>> files suddenly got corrupted.
+>
+> I can run "find -type f" for directories I suspect corrupted files in,
+> and I see errors in dmesg if it happens to contain bad files. But no
+> oopses and the system remains stable. If I mount the filesystem
+> read-only I can even read these files without oopses, this way I
+> produced an rsync backup to my original partition I created the btrfs
+> subvolume from.
 
-Though the check on the number of args has been changed with the
-following patch,
+I see. Just to share my experience. I think I had a different case 
+because I could not even read some 20-30 files (photos) on my /home 
+subvolume and any attempt to access them via rm or ls would give me 
+kernel oopses, though the system would not crash with 3.1 kernel.
+Unless I tried to access the corrupted files the filesystem was stable 
+and my / subvolume was fine. So I backed up everything not-corrupted (I 
+did have the backups for the corrupted files anyway) and created my 
+/home subvolume anew. I deleted the old subvolume and most of the space 
+was reclaimed.
 
-  commit:f71210f87e0c684d8c76dfa2e19ea86256fc3d1f
-  check number of args for btrfs sub snap correctly
-
-however, in integration-20111012, I think that returning it to an
-original value is correct. 
-
-Thanks,
-Tsutomu
-
-
-diff -urNp a/btrfs_cmds.c b/btrfs_cmds.c
---- a/btrfs_cmds.c	2011-10-12 19:54:48.000000000 +0900
-+++ b/btrfs_cmds.c	2011-10-27 09:07:56.000000000 +0900
-@@ -394,7 +394,7 @@ int do_clone(int argc, char **argv)
- 			return 1;
- 		}
- 	}
--	if (argc - optind != 3) {
-+	if (argc - optind != 2) {
- 		fprintf(stderr, "Invalid arguments for subvolume snapshot\n");
- 		free(argv);
- 		return 1;
-
-> 
-> If you want something more recent than 6 months old, you will need
-> either the for-chris branch (considered pretty stable), or the latest
-> integration branch (which is the very latest bits). Gitweb access for
-> browsing is at
-> 
-> http://git.darksatanic.net/cgi/gitweb.cgi?p=btrfs-progs-unstable.git;a=summary
-> 
->    Hugo.
-
+But btrfsck would still give me errors about inability to access some 
+inode (

@@ -1,66 +1,29 @@
-From: Liu Bo <liubo2009@cn.fujitsu.com>
-Subject: Re: [PATCH] Btrfs: fix tree corruption after multi-thread snapshots
- and inode cache flush
-Date: Thu, 27 Oct 2011 11:09:18 +0800
-Message-ID: <4EA8CB5E.50308@cn.fujitsu.com>
-References: <1317261627-17265-1-git-send-email-liubo2009@cn.fujitsu.com> <4E83F354.3030102@linux.intel.com> <4E8429DE.1030501@cn.fujitsu.com> <4E842E0A.60808@linux.intel.com> <4E842EFE.40205@gmx.net> <1317308349-sup-2231@shiny>
+From: Hidetoshi Seto <seto.hidetoshi@jp.fujitsu.com>
+Subject: [PATCH 0/3] btrfs-progs: fix btrfs man page
+Date: Thu, 27 Oct 2011 13:37:09 +0900
+Message-ID: <4EA8DFF5.1060400@jp.fujitsu.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=UTF-8
-Cc: Arne Jansen <sensille@gmx.net>,
-	"Yan, Zheng" <zheng.z.yan@linux.intel.com>,
-	linux-btrfs <linux-btrfs@vger.kernel.org>,
-	josef <josef@redhat.com>, lizf <lizf@cn.fujitsu.com>,
-	miaox <miaox@cn.fujitsu.com>, dave <dave@jikos.cz>
-To: Chris Mason <chris.mason@oracle.com>
+Content-Type: text/plain; charset=ISO-2022-JP
+Cc: Hugo Mills <hugo@carfax.org.uk>
+To: linux-btrfs@vger.kernel.org
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <1317308349-sup-2231@shiny>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 09/29/2011 10:59 PM, Chris Mason wrote:
-> Excerpts from Arne Jansen's message of 2011-09-29 04:40:30 -0400:
->> On 29.09.2011 10:36, Yan, Zheng wrote:
->>> On 09/29/2011 04:18 PM, Liu Bo wrote:
->>>> On 09/29/2011 12:25 PM, Yan, Zheng wrote:
->>>>> On 09/29/2011 10:00 AM, Liu Bo wrote:
->>>>>> The btrfs snapshotting code requires that once a root has been
->>>>>> snapshotted, we don't change it during a commit.
->>>>>>
->>>>>> But there are two cases to lead to tree corruptions:
->>>>>>
->>>>>> 1) multi-thread snapshots can commit serveral snapshots in a transaction,
->>>>>>    and this may change the src root when processing the following pending
->>>>>>    snapshots, which lead to the former snapshots corruptions;
->>>>>>
->>>>>> 2) the free inode cache was changing the roots when it root the cache,
->>>>>>    which lead to corruptions.
->>>>>>
->>>>> For the case 2, the free inode cache of newly created snapshot is invalid.
->>>>> So it's better to avoid modifying snapshotted trees.
->>>>>
->>>> For case 2, with flushing dirty inode cache during create_pending_snapshot,
->>>> we can avoid modifying snapshotted trees as your advice.
->>>>
->>>> But for case 1, I have no idea how to do the same thing, since we are not
->>>> allowed to commit per snapshot, which will make the performance terrible.
->> One snapshot per subvol per transaction is ok, but it must be possible to create
->> hundreds or thousands of snapshots for different subvols within one transaction.
->> Imagine a setup with 10000 subvols and creating one snapshot per hour.
-> 
-> Agreed, we need to be able to do more than one snapshot per commit.  Our
-> current commits are pretty heavy, we do need to be able to batch them.
-> 
+Hi,
 
-Hi, Chris,
+Following patch set fixes/cleanups the man page of btrfs command.
+Based on for-chris branch.
 
-Does this "force cow" way fit your expectation?  Or we need to pick another solution,
-such as building a a dependency graph among snapshots?
+Thanks,
+H.Seto
 
-IMO, apart from COWing more while committing a transaction, "force cow" keeps the original
-snapshot batching.
 
-thanks,
-liubo
+Hidetoshi Seto (3):
+      btrfs-progs: Update/clean up btrfs help and man page V2 (cont.)
+      btrfs-progs: Misc fix for btrfs man page
+      btrfs-progs: Sort commands/descriptions in btrfs man page
 
-> -chris
-> 
+ man/btrfs.8.in |   50 +++++++++++++++++++++++++-------------------------
+ 1 files changed, 25 insertions(+), 25 deletions(-)
+
 

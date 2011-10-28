@@ -1,39 +1,68 @@
-From: Anand Jain <Anand.Jain@oracle.com>
-Subject: Re: Btrfs progs git repo on kernel.org
-Date: Fri, 28 Oct 2011 10:23:19 +0800
-Message-ID: <4EAA1217.50904@oracle.com>
-References: <20111027152707.GA11028@shiny.Mikenopa.local> <20111027155854.GK29548@carfax.org.uk> <20111027213258.GA25582@shiny.Mikenopa.local> <20111027214811.GL29548@carfax.org.uk>
+From: Li Zefan <lizf@cn.fujitsu.com>
+Subject: Re: btrfs fi defrag -c
+Date: Fri, 28 Oct 2011 10:25:54 +0800
+Message-ID: <4EAA12B2.8070007@cn.fujitsu.com>
+References: <20111027192022.GD4389@yahoo.fr>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=ISO-8859-1; format=flowed
-To: Hugo Mills <hugo@carfax.org.uk>,
-	Chris Mason <chris.mason@oracle.com>,
-	linux-btrfs <linux-btrfs@vger.kernel.org>,
-	Arne Jansen <sensille@gmx.net>
+Content-Type: text/plain; charset=ISO-8859-1
+Cc: linux-btrfs <linux-btrfs@vger.kernel.org>
+To: Stephane Chazelas <stephane_chazelas@yahoo.fr>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <20111027214811.GL29548@carfax.org.uk>
+In-Reply-To: <20111027192022.GD4389@yahoo.fr>
 List-ID: <linux-btrfs.vger.kernel.org>
 
+Stephane Chazelas wrote:
+> I don't quite understand the behavior of "btrfs fi defrag"
+> 
+> ~# truncate -s2G ~/a
+> ~# mkfs.btrfs ~/a
+>         nodesize 4096 leafsize 4096 sectorsize 4096 size 2.00GB
+> ~# mount -o loop ~/a /mnt/1
+> /mnt/1# cd x
+> /mnt/1# df -h .
+> Filesystem      Size  Used Avail Use% Mounted on
+> /dev/loop1      2.0G   64K  1.8G   1% /mnt/1
+> /mnt/1# yes | head -c400M > a
+> /mnt/1# df -h .
+> Filesystem      Size  Used Avail Use% Mounted on
+> /dev/loop1      2.0G   64K  1.8G   1% /mnt/1
+> /mnt/1# sync
+> /mnt/1# df -h .
+> Filesystem      Size  Used Avail Use% Mounted on
+> /dev/loop1      2.0G  402M  1.4G  23% /mnt/1
+> /mnt/1# btrfs fi defrag -c a
+> 
+> (exit status == 20 BTW).
+> 
 
->>>     I've also got the basis of a set of regression tests for -progs,
->>> which I'll send out patches for in the next couple of days. At the
->>> moment, it only tests building and snapshots, but should be relatively
->>> easily extensible to the other bits of ./btrfs (although I'm not sure
->>> how we can easily and repeatably test the recovery tools).
->>
->> Please talk with Anand Jain on the test programs, he has been making
->> scripts for xfs-tests.
->
->     Will do, although I think we're aiming at different things. I'm
-> very definitely *not* attempting to test the filesystem itself with my
-> test harness. I just want to exercise all the bits of the userspace
-> tools that I can. (This was primarily triggered by the mess
-> surrounding the parsing of "btrfs sub snap" parameters).
+int do_defrag(int ac, char **av)
+{
+	...
+        return errors + 20;
+}
 
-  Testing the (btrfs) CLI wasn't aimed in the xfs-tests instead the
-  FS itself.
-  Appears that btrfs CLI syntax-change is upcoming what we might also
-  need is a CLI to check the version of both btrfs and btrfs-progs
-  to ensure tools surrounding them will report -incompatible instead
-  of syntax error.
+This doesn't make sense to me.
 
-thanks. -Anand
+> (20)/mnt/1# sync
+> /mnt/1# df -h .
+> Filesystem      Size  Used Avail Use% Mounted on
+> /dev/loop1      2.0G  415M  994M  30% /mnt/1
+> 
+> No space gain, even lost 15M or 400M depending on how you look at it.
+> 
+
+Here's mine:
+
+# df . -h
+Filesystem            Size  Used Avail Use% Mounted on
+/home/lizf/tmp/a      2.0G  409M  1.4G  23% /mnt
+
+And I was not suprised, as there's a regression.
+
+With this fix:
+
+http://marc.info/?l=linux-btrfs&m=131495014823121&w=2
+
+# df . -h
+Filesystem            Size  Used Avail Use% Mounted on
+/home/lizf/tmp/a      2.0G   14M  1.8G   1% /mnt

@@ -1,47 +1,46 @@
-From: dima <dolenin@parallels.com>
+From: "Fajar A. Nugraha" <list@fajar.net>
 Subject: Re: Unable to mount (or, why not to work late at night).
-Date: Fri, 28 Oct 2011 09:49:19 +0900
-Message-ID: <4EA9FC0F.8060406@parallels.com>
+Date: Fri, 28 Oct 2011 07:57:41 +0700
+Message-ID: <CAG1y0sfBkczDLRgq=c42_nKwtG3M2UTRB2NHjnZz3L1-jta90w@mail.gmail.com>
 References: <7d421a89143f5c4811d64e08c6820c29@www.jots.org>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="UTF-8"; format=flowed
-Cc: <linux-btrfs@vger.kernel.org>
-To: Ken D'Ambrosio <ken@jots.org>
+Content-Type: text/plain; charset=ISO-8859-1
+Cc: linux-btrfs@vger.kernel.org
+To: "Ken D'Ambrosio" <ken@jots.org>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
 In-Reply-To: <7d421a89143f5c4811d64e08c6820c29@www.jots.org>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 10/28/2011 09:32 AM, Ken D'Ambrosio wrote:
->> some of us make use of snapshot/clone, whether it's using btrfs or zfs :)
+On Fri, Oct 28, 2011 at 7:32 AM, Ken D'Ambrosio <ken@jots.org> wrote:
+>> some of us make use of snapshot/clone, whether it's using btrfs or z=
+fs :)
 >
-> No, this is just flat my fault: it doesn't matter what backup method you use if
-> you do it wrong.  (I actually have three snapshots of each of my two
+> No, this is just flat my fault: it doesn't matter what backup method =
+you use if
+> you do it wrong. =A0(I actually have three snapshots of each of my tw=
+o
 > partitions.)
->
->> What do you mean don't let you do anything? Can you mount it read-only
->> and copy the data off the disk?
->
-> You can mount it on the older kernels, but, once you try any form of access,
-> you can watch your load spike as it spews errors into dmesg.
->
->> I'd try 3.1. If you use 11.10 try
->> http://kernel.ubuntu.com/~kernel-ppa/mainline/v3.1-oneiric/
->
-> 3.1 is what the system had been running; it simply panics when trying to mount
-> the FS.
 
-Hello Ken,
+What I meant was, if you use snapshot you can easily rollback, and not
+having to dd-back. But you're right though, it doesn't matter what you
+use if you do it wrong.
 
-Personally I would be very afraid to go from 3.1 to 2.6.x. There should 
-be no incompatible changes, but still I would expect all sorts of 
-trouble and instability at the very least. There are a few mount options 
-that were added in 3.x and that will not work with older kernels. Might 
-be you are hitting those as well if you used them (just wild guessing 
-without any real grounds).
+>> Try getting source of btrfs-progs, do "make btrfs-zero-log", and use=
+ it.
+>
+> Already got 'em. =A0Everything that tries to even think about modifyi=
+ng stuff
+> (btrfs-zero-log, btrfsck, and btrfs-debug-tree) all dump core:
 
-I would try getting the latest live CD with 3.1 from somewhere and try 
-to mount your various snapshots from there. You might as well be lucky 
-and be able to mount some of your snapshots.
-The repair program from this list would be your last resort I think (
+Your last resort (for now, anyway) might be using "restore" from
+Josef's btrfs-progs: https://github.com/josefbacik/btrfs-progs
 
-~d
+It might be able to copy some data.
+
+--=20
+=46ajar
+--
+To unsubscribe from this list: send the line "unsubscribe linux-btrfs" =
+in
+the body of a message to majordomo@vger.kernel.org
+More majordomo info at  http://vger.kernel.org/majordomo-info.html

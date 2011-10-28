@@ -1,12 +1,43 @@
-From: lisa hedstrand <lisa_hedstrand@indiatimes.com>
-Subject: Hi
-Date: Fri, 28 Oct 2011 16:36:36 +0530 (IST)
-Message-ID: <41574193.933511319799996347.JavaMail.root__2900.08153901926$1319800008$gmane$org@tilmb17.indiatimes.com>
-Reply-To: lisa hedstrand <lisahedstrand@yahoo.com>
+From: Stephane CHAZELAS <stephane_chazelas@yahoo.fr>
+Subject: Re: Unable to mount (or, why not to work late at night).
+Date: Fri, 28 Oct 2011 11:57:47 +0000 (UTC)
+Message-ID: <slrnjal65r.86j.stephane.chazelas@spam.is.invalid>
+References: <7d421a89143f5c4811d64e08c6820c29@www.jots.org>
+ <CAG1y0sfBkczDLRgq=c42_nKwtG3M2UTRB2NHjnZz3L1-jta90w@mail.gmail.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset=utf-8
-To: undisclosed-recipients:;
+To: linux-btrfs@vger.kernel.org
 Return-path: <linux-btrfs-owner@vger.kernel.org>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-My name is Miss Lisa Please accept my apology if my mode of contacting you will in any way offend you. I am compelled to contact you via this medium because i needed a friend from that part of the world. We will get to know each other in details if my proposition accepted. l am a student in UK but originally from USA.
+2011-10-28, 07:57(+07), Fajar A. Nugraha:
+[...]
+>> Already got 'em. =C2=A0Everything that tries to even think about mod=
+ifying stuff
+>> (btrfs-zero-log, btrfsck, and btrfs-debug-tree) all dump core:
+>
+> Your last resort (for now, anyway) might be using "restore" from
+> Josef's btrfs-progs: https://github.com/josefbacik/btrfs-progs
+>
+> It might be able to copy some data.
+
+I also have got one FS in that same situation. I tried
+everything on it including that "restore" (which bailed out with
+those same error messages IIRC).
+
+The only thing that got me a bit further was to use an alternate
+superblock, though that screwed the FS even further as I need to
+reboot the machine after trying to mount it (mount hangs and
+there are some btrfs tasks using all the CPU time).
+
+=46ortunately, for that one, I had a not too old backup at the
+block device level.
+
+--=20
+Stephane
+
+--
+To unsubscribe from this list: send the line "unsubscribe linux-btrfs" =
+in
+the body of a message to majordomo@vger.kernel.org
+More majordomo info at  http://vger.kernel.org/majordomo-info.html

@@ -1,43 +1,59 @@
-From: Stephane CHAZELAS <stephane_chazelas@yahoo.fr>
-Subject: Re: Unable to mount (or, why not to work late at night).
-Date: Fri, 28 Oct 2011 11:57:47 +0000 (UTC)
-Message-ID: <slrnjal65r.86j.stephane.chazelas@spam.is.invalid>
-References: <7d421a89143f5c4811d64e08c6820c29@www.jots.org>
- <CAG1y0sfBkczDLRgq=c42_nKwtG3M2UTRB2NHjnZz3L1-jta90w@mail.gmail.com>
+From: Sergei Trofimovich <slyich@gmail.com>
+Subject: Re: Btrfs progs git repo on kernel.org
+Date: Fri, 28 Oct 2011 19:27:56 +0300
+Message-ID: <20111028192756.5f93bb9f@sf.home>
+References: <20111027152707.GA11028@shiny.Mikenopa.local>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=utf-8
-To: linux-btrfs@vger.kernel.org
+Content-Type: multipart/signed; micalg=PGP-SHA1;
+ boundary="Sig_/wioiZJZFH2191EffBmy3mKT"; protocol="application/pgp-signature"
+Cc: linux-btrfs <linux-btrfs@vger.kernel.org>
+To: Chris Mason <chris.mason@oracle.com>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
+In-Reply-To: <20111027152707.GA11028@shiny.Mikenopa.local>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-2011-10-28, 07:57(+07), Fajar A. Nugraha:
-[...]
->> Already got 'em. =C2=A0Everything that tries to even think about mod=
-ifying stuff
->> (btrfs-zero-log, btrfsck, and btrfs-debug-tree) all dump core:
->
-> Your last resort (for now, anyway) might be using "restore" from
-> Josef's btrfs-progs: https://github.com/josefbacik/btrfs-progs
->
-> It might be able to copy some data.
+--Sig_/wioiZJZFH2191EffBmy3mKT
+Content-Type: text/plain; charset=US-ASCII
+Content-Transfer-Encoding: quoted-printable
 
-I also have got one FS in that same situation. I tried
-everything on it including that "restore" (which bailed out with
-those same error messages IIRC).
+> Hi everyone,
+>=20
+> I've pulled in Hugo's integration tree, minus the features that were not
+> yet in the kernel.  This also has a few small commits that I had queued
+> up outside of the fsck work.
+>=20
+> Hugo, many thanks for keeping up the integration tree!  Taking out the
+> features not in the kernel meant I had to rebase it the commits, I'm
+> sorry about that.
+>=20
+> The code from the integration tree is here:
+>=20
+> git://git.kernel.org/pub/scm/linux/kernel/git/mason/btrfs-progs.git
 
-The only thing that got me a bit further was to use an alternate
-superblock, though that screwed the FS even further as I need to
-reboot the machine after trying to mount it (mount hangs and
-there are some btrfs tasks using all the CPU time).
+Sounds great! Should we treat is as new home of a thing called "-unstable" =
+before?
 
-=46ortunately, for that one, I had a not too old backup at the
-block device level.
+    git://git.kernel.org/pub/scm/linux/kernel/git/mason/btrfs-progs-unstabl=
+e.git
+
+Or you are planning to restore that repo as well?
+
+Thanks!
 
 --=20
-Stephane
 
---
-To unsubscribe from this list: send the line "unsubscribe linux-btrfs" =
-in
-the body of a message to majordomo@vger.kernel.org
-More majordomo info at  http://vger.kernel.org/majordomo-info.html
+  Sergei
+
+--Sig_/wioiZJZFH2191EffBmy3mKT
+Content-Type: application/pgp-signature; name=signature.asc
+Content-Disposition: attachment; filename=signature.asc
+
+-----BEGIN PGP SIGNATURE-----
+Version: GnuPG v2.0.17 (GNU/Linux)
+
+iEYEARECAAYFAk6q2BEACgkQcaHudmEf86qcswCfVbFJONGWbWvKhSjzG8q+kqg8
+8T8AnAuze0oZnWOaiQasNJgXxFryUDds
+=dtUz
+-----END PGP SIGNATURE-----
+
+--Sig_/wioiZJZFH2191EffBmy3mKT--

@@ -1,46 +1,39 @@
-From: "Fajar A. Nugraha" <list@fajar.net>
-Subject: Re: Unable to mount (or, why not to work late at night).
-Date: Fri, 28 Oct 2011 07:57:41 +0700
-Message-ID: <CAG1y0sfBkczDLRgq=c42_nKwtG3M2UTRB2NHjnZz3L1-jta90w@mail.gmail.com>
-References: <7d421a89143f5c4811d64e08c6820c29@www.jots.org>
+From: Anand Jain <Anand.Jain@oracle.com>
+Subject: Re: Btrfs progs git repo on kernel.org
+Date: Fri, 28 Oct 2011 10:23:19 +0800
+Message-ID: <4EAA1217.50904@oracle.com>
+References: <20111027152707.GA11028@shiny.Mikenopa.local> <20111027155854.GK29548@carfax.org.uk> <20111027213258.GA25582@shiny.Mikenopa.local> <20111027214811.GL29548@carfax.org.uk>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=ISO-8859-1
-Cc: linux-btrfs@vger.kernel.org
-To: "Ken D'Ambrosio" <ken@jots.org>
+Content-Type: text/plain; charset=ISO-8859-1; format=flowed
+To: Hugo Mills <hugo@carfax.org.uk>,
+	Chris Mason <chris.mason@oracle.com>,
+	linux-btrfs <linux-btrfs@vger.kernel.org>,
+	Arne Jansen <sensille@gmx.net>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <7d421a89143f5c4811d64e08c6820c29@www.jots.org>
+In-Reply-To: <20111027214811.GL29548@carfax.org.uk>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Fri, Oct 28, 2011 at 7:32 AM, Ken D'Ambrosio <ken@jots.org> wrote:
->> some of us make use of snapshot/clone, whether it's using btrfs or z=
-fs :)
+
+>>>     I've also got the basis of a set of regression tests for -progs,
+>>> which I'll send out patches for in the next couple of days. At the
+>>> moment, it only tests building and snapshots, but should be relatively
+>>> easily extensible to the other bits of ./btrfs (although I'm not sure
+>>> how we can easily and repeatably test the recovery tools).
+>>
+>> Please talk with Anand Jain on the test programs, he has been making
+>> scripts for xfs-tests.
 >
-> No, this is just flat my fault: it doesn't matter what backup method =
-you use if
-> you do it wrong. =A0(I actually have three snapshots of each of my tw=
-o
-> partitions.)
+>     Will do, although I think we're aiming at different things. I'm
+> very definitely *not* attempting to test the filesystem itself with my
+> test harness. I just want to exercise all the bits of the userspace
+> tools that I can. (This was primarily triggered by the mess
+> surrounding the parsing of "btrfs sub snap" parameters).
 
-What I meant was, if you use snapshot you can easily rollback, and not
-having to dd-back. But you're right though, it doesn't matter what you
-use if you do it wrong.
+  Testing the (btrfs) CLI wasn't aimed in the xfs-tests instead the
+  FS itself.
+  Appears that btrfs CLI syntax-change is upcoming what we might also
+  need is a CLI to check the version of both btrfs and btrfs-progs
+  to ensure tools surrounding them will report -incompatible instead
+  of syntax error.
 
->> Try getting source of btrfs-progs, do "make btrfs-zero-log", and use=
- it.
->
-> Already got 'em. =A0Everything that tries to even think about modifyi=
-ng stuff
-> (btrfs-zero-log, btrfsck, and btrfs-debug-tree) all dump core:
-
-Your last resort (for now, anyway) might be using "restore" from
-Josef's btrfs-progs: https://github.com/josefbacik/btrfs-progs
-
-It might be able to copy some data.
-
---=20
-=46ajar
---
-To unsubscribe from this list: send the line "unsubscribe linux-btrfs" =
-in
-the body of a message to majordomo@vger.kernel.org
-More majordomo info at  http://vger.kernel.org/majordomo-info.html
+thanks. -Anand

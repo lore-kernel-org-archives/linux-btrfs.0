@@ -1,42 +1,29 @@
 From: Chris Mason <chris.mason@oracle.com>
-Subject: Re: Btrfs progs git repo on kernel.org
-Date: Sat, 29 Oct 2011 01:07:03 -0400
-Message-ID: <20111029050703.GA4054@shiny.Mikenopa.local>
-References: <20111027152707.GA11028@shiny.Mikenopa.local>
- <20111028192756.5f93bb9f@sf.home>
+Subject: Re: Patches for BTRFS (mail-server slow down in 3.0 and more)
+Date: Sat, 29 Oct 2011 01:12:06 -0400
+Message-ID: <20111029051206.GB4054@shiny.Mikenopa.local>
+References: <4EAB270C.60406@malowa.de>
+ <orehxw1kl7.fsf@livre.localdomain>
 Mime-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
-Cc: linux-btrfs <linux-btrfs@vger.kernel.org>
-To: Sergei Trofimovich <slyich@gmail.com>
+Cc: Marcel Lohmann <marcel@malowa.de>, linux-btrfs@vger.kernel.org
+To: Alexandre Oliva <oliva@lsd.ic.unicamp.br>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <20111028192756.5f93bb9f@sf.home>
+In-Reply-To: <orehxw1kl7.fsf@livre.localdomain>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Fri, Oct 28, 2011 at 07:27:56PM +0300, Sergei Trofimovich wrote:
-> > Hi everyone,
-> > 
-> > I've pulled in Hugo's integration tree, minus the features that were not
-> > yet in the kernel.  This also has a few small commits that I had queued
-> > up outside of the fsck work.
-> > 
-> > Hugo, many thanks for keeping up the integration tree!  Taking out the
-> > features not in the kernel meant I had to rebase it the commits, I'm
-> > sorry about that.
-> > 
-> > The code from the integration tree is here:
-> > 
-> > git://git.kernel.org/pub/scm/linux/kernel/git/mason/btrfs-progs.git
+On Sat, Oct 29, 2011 at 02:35:16AM -0200, Alexandre Oliva wrote:
+> On Oct 28, 2011, Marcel Lohmann <marcel@malowa.de> wrote:
 > 
-> Sounds great! Should we treat is as new home of a thing called "-unstable" before?
+> > I would really appreciate if you could send me the patches.
 > 
->     git://git.kernel.org/pub/scm/linux/kernel/git/mason/btrfs-progs-unstable.git
-> 
-> Or you are planning to restore that repo as well?
+> Here are the patches I mentioned on IRC.  I've sent two of them to Josef
+> for him to push upstream, but I'm not sure he posted them here for I'm
+> not on the list (yet?).  The other two are newer, and the last one is
+> definitely not for inclusion (just for testing or as a temporary
+> work-around).
 
-That's a good point, I'll see if I can make the -unstable a link.  Still
-figuring out the new git interface.
-
-But yes, this is the new home of the progs.
+The last one isn't a bad idea, but please do make a real mount option
+for it ;)
 
 -chris
-

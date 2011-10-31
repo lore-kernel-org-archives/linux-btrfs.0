@@ -1,90 +1,81 @@
 From: Hugo Mills <hugo@carfax.org.uk>
-Subject: Re: Unable to mount btrfs partition
-Date: Mon, 31 Oct 2011 08:30:07 +0000
-Message-ID: <20111031083007.GT29548@carfax.org.uk>
-References: <4941f692b926ed2b19ccde5c3a791cdf@joachim-neu.de>
- <20111028210947.GM29548@carfax.org.uk>
- <df08964cfb0f7e20f039e7fdbb970f35@joachim-neu.de>
+Subject: New integration branch for btrfs-progs
+Date: Mon, 31 Oct 2011 08:40:11 +0000
+Message-ID: <20111031084011.GU29548@carfax.org.uk>
 Mime-Version: 1.0
 Content-Type: multipart/signed; micalg=pgp-sha1;
-	protocol="application/pgp-signature"; boundary="yBTw3iMQSKDA2CaE"
-Cc: linux-btrfs@vger.kernel.org
-To: email@joachim-neu.de
+	protocol="application/pgp-signature"; boundary="Lh1tzOZp3jg2TtWy"
+Cc: Chris Mason <chris.mason@oracle.com>
+To: Btrfs mailing list <linux-btrfs@vger.kernel.org>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <df08964cfb0f7e20f039e7fdbb970f35@joachim-neu.de>
 List-ID: <linux-btrfs.vger.kernel.org>
 
 
---yBTw3iMQSKDA2CaE
+--Lh1tzOZp3jg2TtWy
 Content-Type: text/plain; charset=us-ascii
 Content-Disposition: inline
 
-On Sat, Oct 29, 2011 at 01:45:32AM +0200, email@joachim-neu.de wrote:
-> 
-> On Fri, 28 Oct 2011 22:09:47 +0100, Hugo Mills <hugo@carfax.org.uk>
-> wrote:
-> >On Fri, Oct 28, 2011 at 08:36:28PM +0000, email@joachim-neu.de wrote:
-> >>Now I'm not able to mount my btrfs / and /home (both on the same
-> >>partition) anymore:
-> >>
-> >>device fsid SOME-UUID devid 1 transid 84229 /dev/dm-0
-> >>parent transid verify failed on 77078528 wanted 83774 found 84226
-> >>parent transid verify failed on 77078528 wanted 83774 found 84226
-> >>parent transid verify failed on 77078528 wanted 83774 found 84226
-> >>parent transid verify failed on 77078528 wanted 83774 found 84226
-> >>btrfs: open_ctree failed
-> >>
-> >>The boot process drops to the initramfs shell with no btrfsck
-> >>available.
-> >
-> >   It wouldn't make any difference if it were -- btrfsck doesn't
-> >actually fix anything, I'm afraid. This error message is regrettably
-> >generic, and covers a whole range of evils. It's possible that 3.1
-> >may
-> >be able to deal swith the breakage ufficiently well to allow you to
-> >boot and copy your files.
-> 
-> I'll give the 3.1 kernel a try right after "restore" finished which
-> is running right now and doing quite a good job so far (as far as my
-> / is concerned, lets wait for the /home).
-> 
-> What do the above error messages indicate? Is there an incrementing
-> number for every transaction and the number of the most recent
-> transaction is stored somewhere and those messages occur once those
-> numbers are out of sync somehow?
+   All - 
 
-   Yes, that's more or less right.
+   I've put together a new integration branch based on Chris's new
+master. This includes the userspace patches for qgroups, restriper,
+and Josef's restore utility, plus a bunch of other things with mostly
+minor impact. The shortlog is attached at the end of this email.
 
-> Is it possible to "just" discard
-> the last transactions? I would not mind, better loose a day than a
-> month... Why is the message there three times?
+   As always, it's available from:
 
-   The transid is stored in every single metadata block. When reading
-anything from the filesystem, there are typically many metadata blocks
-read, and in this case several of them have transids later than the
-expected value (which will come from the superblock).
+http://git.darksatanic.net/repo/btrfs-progs-unstable.git/  integration-20111030
 
-> Is this information stored in a couple of backups? If so: can't I
-> use any of the other backups temporarily?
+and the gitweb address is 
 
-   There's no explicit backups. btrfs is a copy-on-write filesystem,
-which means, amongst other things, that when new metadata (or data) is
-written to the FS, the old metadata is not overwritten immediately.
-However, it _is_ marked as free space, and so could be overwritten at
-any time. This isn't a backup in any sense of the word, and it's not
-directly reachable through the FS's normal interfaces. It's entirely
-down to luck whether the older blocks are still there.
+http://git.darksatanic.net/cgi/gitweb.cgi?p=btrfs-progs-unstable.git;a=summary
 
-> "restore" opens the fs in a ro recovery mode somehow where it
-> ignores those errors. Is it possible to "force" the btrfs driver to
-> load the fs in this recovery mode as readonly, too?
+   Could I ask that if anyone is writing patches to go in btrfs-progs,
+that you base them on Chris's master (or on my for-chris branch, when
+it exists). Basing patches on the integration-* branches is a bad
+idea, because they get thrown away each time I make a new one, and
+it's just more work for me to rebase the patches.
 
-   No, I think the reasoning is that once your FS has got to this
-state, it's sufficiently badly broken that we don't want to try
-recovering anything from kernel space because it's too hard, and too
-many odd things could show up and crash the FS driver.
+   Chris -- Don't pull from this directly, I'll be sending you a pull
+request for a subset of the patches in a few days.
 
    Hugo.
+
+Arne Jansen (1):
+      btrfs-progs: add qgroup commands
+
+Chris Mason (5):
+      btrfs-progs: fixup is_mounted checks
+      restore: deal with holes and set i_size correctly
+      btrfs-debug-tree: add -r option to print only the roots
+      btrfs-progs: add a utility to corrupt a single block
+      btrfs-progs: remove old debugging statement
+
+David Sterba (3):
+      btrfs-progs: ignore -a option in mkfs
+      btrfs-progs: ignore deleted loop devices
+      btrfs-progs: pass correct build option for pthreads
+
+Goffredo Baroncelli (9):
+      Add the --force option.
+      mkfs.btrfs man page: document the --force option.
+      Ignore the error ENXIO and ENOMEDIUM during a devs scan
+      Add info for the commands.
+      Add the header/footer/introduction of the man page.
+      helpextract: tool to extract the info for the help from the source.
+      Update the makefile for generating the man page.
+      Show the help messages from the info in the comment.
+      Update the makefile for generating the help messages.
+
+Hugo Mills (2):
+      Regression tests
+      Fix sub snap parameter handling
+
+Ilya Dryomov (1):
+      Btrfs-progs: add restriper commands
+
+Josef Bacik (1):
+      btrfs-progs: add a recovery utility to pull files from damanged filesystems
 
 -- 
 === Hugo Mills: hugo@... carfax.org.uk | darksatanic.net | lug.org.uk ===
@@ -92,16 +83,16 @@ many odd things could show up and crash the FS driver.
    --- We are all lying in the gutter,  but some of us are looking ---   
                               at the stars.                              
 
---yBTw3iMQSKDA2CaE
+--Lh1tzOZp3jg2TtWy
 Content-Type: application/pgp-signature; name="signature.asc"
 Content-Description: Digital signature
 
 -----BEGIN PGP SIGNATURE-----
 Version: GnuPG v1.4.11 (GNU/Linux)
 
-iD8DBQFOrlyPIKyzvlFcI40RAjfJAJ9DJT89ARs1DYg44ZD7m3uYpD3gUQCaAtbL
-cXPlxxlkApaapGzj+Kloiyc=
-=JQ8n
+iD8DBQFOrl7rIKyzvlFcI40RAuuvAJ9m4zNmr5aX47auIOfOOIIsiLKwNgCg0K0Z
+Ve4AYAYcTMjguz97J23C3s0=
+=TVdF
 -----END PGP SIGNATURE-----
 
---yBTw3iMQSKDA2CaE--
+--Lh1tzOZp3jg2TtWy--

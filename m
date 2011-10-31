@@ -1,22 +1,86 @@
-From: David Summers <btrfs@summers5913.freeserve.co.uk>
-Subject: Re: Honest timeline for btrfsck
-Date: Mon, 31 Oct 2011 10:53:15 +0000
-Message-ID: <j8lumr$cds$1@dough.gmane.org>
-References: <CAGh96GFhVEfXt=xcb-uGEBA3Ss2fc8BwOpJ2g8tXbm+VimdH3Q@mail.gmail.com> <4E5FE9FC.9040705@cchtml.com> <20110901203442.GA17928@carfax.org.uk> <201109101209.40759.Martin@lichtvoll.de> <CA+JuuGrvCTP=o8umQHQV968tMSfJzxAFOfnGO2RKV3RU4_Vshw@mail.gmail.com> <20111005061628.GA3702@shiny.elevennetworks.com>
+From: Wu Fengguang <fengguang.wu@intel.com>
+Subject: Re: [patch 3/5] mm: try to distribute dirty pages fairly across
+ zones
+Date: Mon, 31 Oct 2011 19:33:21 +0800
+Message-ID: <20111031113321.GA30890@localhost>
+References: <1317367044-475-1-git-send-email-jweiner@redhat.com>
+ <1317367044-475-4-git-send-email-jweiner@redhat.com>
+ <20110930142805.GC869@tiehlicka.suse.cz>
+ <20111028201829.GA20607@localhost>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=ISO-8859-1; format=flowed
-To: linux-btrfs@vger.kernel.org
-Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <20111005061628.GA3702@shiny.elevennetworks.com>
+Content-Type: text/plain; charset=us-ascii
+Cc: Michal Hocko <mhocko@suse.cz>,
+	Andrew Morton <akpm@linux-foundation.org>,
+	Mel Gorman <mgorman@suse.de>, Christoph Hellwig <hch@infradead.org>,
+	Dave Chinner <david@fromorbit.com>, Jan Kara <jack@suse.cz>,
+	Rik van Riel <riel@redhat.com>, Minchan Kim <minchan.kim@gmail.com>,
+	Chris Mason <chris.mason@oracle.com>, Theodore Ts'o <tytso@mit.edu>,
+	Andreas Dilger <adilger.kernel@dilger.ca>,
+	"Li, Shaohua" <shaohua.li@intel.com>,
+	"xfs@oss.sgi.com" <xfs@oss.sgi.com>,
+	"linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>,
+	"linux-ext4@vger.kernel.org" <linux-ext4@vger.kernel.org>,
+	"linux-mm@kvack.org" <linux-mm@kvack.org>,
+	"linux-fsdevel@vger.kernel.org" <linux-fsdevel@vger.kernel.org>,
+	"linux-kernel@vger.kernel.org" <linux-kernel@vger.kernel.org>
+To: Johannes Weiner <jweiner@redhat.com>
+Return-path: <owner-linux-mm@kvack.org>
+In-Reply-To: <20111028201829.GA20607@localhost>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 05/10/11 07:16, Chris Mason wrote:
->
-> So over the next two weeks I'm juggling the merge window and the fsck
-> release.  My goal is to demo fsck at linuxcon europe.  Thanks again for
-> all of your patience and help with Btrfs!
->
-Any chance of a copy of your talk at linuxcon? ;)
+> //regression
+> 3) much increased cpu %user and %system for btrfs
 
-David.
+Sorry I find out that the CPU time regressions for btrfs are caused by
+some additional trace events enabled on btrfs (for debugging an
+unrelated btrfs hang bug) which results in 7 times more trace event
+lines:
 
+ 2701238 /export/writeback/thresh=1000M/btrfs-1dd-4k-8p-2941M-1000M:10-3.1.0-rc9-ioless-full-nfs-wq5-next-20111014+
+19054054 /export/writeback/thresh=1000M/btrfs-1dd-4k-8p-2941M-1000M:10-3.1.0-rc9-ioless-full-per-zone-dirty-next-20111014+
+
+So no real regressions.
+
+Besides, the patchset also performs good on random writes:
+
+3.1.0-rc9-ioless-full-nfs-wq5-next-20111014+  3.1.0-rc9-ioless-full-per-zone-dirty-next-20111014+  
+------------------------  ------------------------  
+                    1.65        -5.1%         1.57  MMAP-RANDWRITE-4K/btrfs-fio_fat_mmap_randwrite_4k-4k-8p-4096M-20:10-X
+                   18.65        -6.4%        17.46  MMAP-RANDWRITE-4K/ext3-fio_fat_mmap_randwrite_4k-4k-8p-4096M-20:10-X
+                    2.09        +1.2%         2.12  MMAP-RANDWRITE-4K/ext4-fio_fat_mmap_randwrite_4k-4k-8p-4096M-20:10-X
+                    2.49        -0.3%         2.48  MMAP-RANDWRITE-4K/xfs-fio_fat_mmap_randwrite_4k-4k-8p-4096M-20:10-X
+                   51.35        +0.0%        51.36  MMAP-RANDWRITE-64K/btrfs-fio_fat_mmap_randwrite_64k-64k-8p-4096M-20:10-X
+                   45.20        +0.5%        45.43  MMAP-RANDWRITE-64K/ext3-fio_fat_mmap_randwrite_64k-64k-8p-4096M-20:10-X
+                   44.77        +0.7%        45.10  MMAP-RANDWRITE-64K/ext4-fio_fat_mmap_randwrite_64k-64k-8p-4096M-20:10-X
+                   45.11        +2.5%        46.23  MMAP-RANDWRITE-64K/xfs-fio_fat_mmap_randwrite_64k-64k-8p-4096M-20:10-X
+                  211.31        +0.2%       211.74  TOTAL write_bw
+
+And writes to USB key:
+
+3.1.0-rc9-ioless-full-nfs-wq5-next-20111014+  3.1.0-rc9-ioless-full-per-zone-dirty-next-20111014+  
+------------------------  ------------------------  
+                    5.94        +0.8%         5.99  UKEY-thresh=1G/btrfs-1dd-4k-8p-4096M-1024M:10-X
+                    2.64        -0.8%         2.62  UKEY-thresh=1G/ext3-10dd-4k-8p-4096M-1024M:10-X
+                    5.10        +0.3%         5.12  UKEY-thresh=1G/ext3-1dd-4k-8p-4096M-1024M:10-X
+                    3.26        -0.8%         3.24  UKEY-thresh=1G/ext3-2dd-4k-8p-4096M-1024M:10-X
+                    5.63        -0.5%         5.60  UKEY-thresh=1G/ext4-10dd-4k-8p-4096M-1024M:10-X
+                    6.04        -0.1%         6.04  UKEY-thresh=1G/ext4-1dd-4k-8p-4096M-1024M:10-X
+                    5.90        -0.2%         5.88  UKEY-thresh=1G/ext4-2dd-4k-8p-4096M-1024M:10-X
+                    2.45       +22.6%         3.00  UKEY-thresh=1G/xfs-10dd-4k-8p-4096M-1024M:10-X
+                    6.18        -0.4%         6.16  UKEY-thresh=1G/xfs-1dd-4k-8p-4096M-1024M:10-X
+                    4.81        +0.0%         4.81  UKEY-thresh=1G/xfs-2dd-4k-8p-4096M-1024M:10-X
+                   47.94        +1.1%        48.45  TOTAL write_bw
+
+In summary, I see no problem at all in these trivial writeback tests.
+
+Tested-by: Wu Fengguang <fengguang.wu@intel.com>
+
+Thanks,
+Fengguang
+
+--
+To unsubscribe, send a message with 'unsubscribe linux-mm' in
+the body to majordomo@kvack.org.  For more info on Linux MM,
+see: http://www.linux-mm.org/ .
+Fight unfair telecom internet charges in Canada: sign http://stopthemeter.ca/
+Don't email: <a href=mailto:"dont@kvack.org"> email@kvack.org </a>

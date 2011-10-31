@@ -1,38 +1,26 @@
 From: David Sterba <dave@jikos.cz>
-Subject: Re: Patches for BTRFS (mail-server slow down in 3.0 and more)
-Date: Mon, 31 Oct 2011 15:30:27 +0100
-Message-ID: <20111031143027.GD19328@twin.jikos.cz>
-References: <4EAB270C.60406@malowa.de> <orehxw1kl7.fsf@livre.localdomain> <20111029051206.GB4054@shiny.Mikenopa.local> <or7h3lztbt.fsf@livre.localdomain>
+Subject: Re: [patch 07/66] btrfs: clear_extent_bit error push-up
+Date: Mon, 31 Oct 2011 16:07:54 +0100
+Message-ID: <20111031150754.GE19328@twin.jikos.cz>
+References: <20111025010236.322699279@suse.com> <20111025010851.368992601@suse.com> <20111026151024.GB5914@twin.jikos.cz> <4EA824D2.6070801@suse.com> <20111027120049.GA19328@twin.jikos.cz>
 Reply-To: dave@jikos.cz
 Mime-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
-Cc: Chris Mason <chris.mason@oracle.com>,
-	Marcel Lohmann <marcel@malowa.de>, linux-btrfs@vger.kernel.org
-To: Alexandre Oliva <oliva@lsd.ic.unicamp.br>
+To: Jeff Mahoney <jeffm@suse.com>,
+	Chris Mason <chris.mason@oracle.com>,
+	David Sterba <dsterba@suse.com>,
+	Linux Btrfs <linux-btrfs@vger.kernel.org>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <or7h3lztbt.fsf@livre.localdomain>
+In-Reply-To: <20111027120049.GA19328@twin.jikos.cz>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Mon, Oct 31, 2011 at 02:19:18AM -0200, Alexandre Oliva wrote:
-> On Oct 29, 2011, Chris Mason <chris.mason@oracle.com> wrote:
-> 
-> > The last one isn't a bad idea, but please do make a real mount option
-> > for it ;)
-> 
-> Like this?
+On Thu, Oct 27, 2011 at 02:00:49PM +0200, David Sterba wrote:
+> still crashes in xfstests/113 with the following fixup. so there may be more
+> occurences of the ret value clobbering, I closely reviewed only this patch.
+> I'll verify with just that on top.
 
-@@ -195,6 +195,7 @@ static match_table_t tokens = {
-        {Opt_subvolrootid, "subvolrootid=%d"},
-        {Opt_defrag, "autodefrag"},
-        {Opt_inode_cache, "inode_cache"},
-+       {Opt_nocluster, "nocluster"},
-        {Opt_err, NULL},
-
-
-How about 'no_alloc_cluster' ? Or something suggesting it's related to
-allocation. At least we're not in situation of ocfs2 where are clusters in
-block-gouping- but also host-grouping sense, so I'm fine with nocluster. Just
-in case somebody has a better idea for the option name.
+So it did not crash (though I've hit the NULL-deref in
+btrfs_print_leaf), but no errors related to clear_extent_bit.
 
 
 david

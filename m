@@ -1,64 +1,82 @@
-From: Gustavo Sverzut Barbieri <barbieri@gmail.com>
-Subject: corrupted btrfs after suspend2ram uncorrectable with scrub
-Date: Tue, 1 Nov 2011 16:38:29 -0200
-Message-ID: <CANkykrA7uxc51rFTbTXar8v_3vE2Gn9LKYrApOfvqWNf5B_adw@mail.gmail.com>
+From: "Helmut Hullen" <Hullen@t-online.de>
+Subject: scrub: Inappropriate ioctl for device
+Date: 01 Nov 2011 20:36:00 +0100
+Message-ID: <Bx1FpyLi1uB@helmut.hullen.de>
+Reply-To: helmut@hullen.de
 Mime-Version: 1.0
-Content-Type: text/plain; charset=ISO-8859-1
+Content-Type: text/plain; charset=US-ASCII
 To: linux-btrfs@vger.kernel.org
 Return-path: <linux-btrfs-owner@vger.kernel.org>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hello,
+Hallo,
 
-I'm using kernel 3.1.0 and I have both / and /home as btrfs. I used
-suspend to ram quite often and never had a problem, but yesterday I've
-suspended to get into a plane and when I resumed my /home was all
-about input/output errors. Reboot did not help either.  My root (/)
-did not suffer any problems.
+I'm just playing with "btrfs scrub".
 
-Today I've upgraded btrfs-progs to latest GIT and tried scrub without success:
+Kernel 3.1 (self made)
+btrfs integration-20111030 (Hugo Mills)
 
-  # btrfs scrub start -B -d /home/
-  scrub device /dev/sda6 (id 1) done
-  	scrub started at Sun Dec 31 23:13:19 2000 and finished after 273 seconds
-  	total bytes scrubbed: 548.90MB with 1 errors
-  	error details: verify=1
-  	corrected errors: 0, uncorrectable errors: 1, unverified errors: 0
+I have a bundle of 3 2-TByte-disks (data raid0, metadata raid1).
 
-  # dmesg after "cat /home/gustavo/file":
-  btrfs no csum found for inode 2957021 start 0
-  btrfs no csum found for inode 2957021 start 0
-  btrfs csum failed ino 2957021 extent 85041815552 csum 667310679
-wanted 0 mirror 0
-  btrfs no csum found for inode 2957021 start 0
-  btrfs no csum found for inode 2957021 start 0
-  btrfs csum failed ino 2957021 extent 85041815552 csum 667310679
-wanted 0 mirror 1
+Since some (few) weeks one of the disks makes errors (I've reported the  
+problems in this mailing list).
 
-  # dmesg during scrub:
-  btrfs: unable to fixup at 402384056320
+The bundle uses the devices /dev/sdb1, /dev/sdc1 and /dev/sdg1, "btrfs  
+filesystem show" shows these informations.
 
-  # grep btrfs /etc/fstab
-  /dev/sda4  /	 btrfs noatime,noacl,compress,nodatacow,nobarrier,ssd	0 0
-  /dev/sda6  /home btrfs
-noatime,noacl,compress,ssd,comment=systemd.automount 0 0
+Mounting doesn't work immediately; most times I have to run the "mount"  
+command three times - strange.
 
-I can still list directories and all, but no file contents can be
-read. Not even those that I'm sure were not changed recently, like
-~/.emacs or some read-only files.
+When I run
 
-Before the suspend I was writing some code under
-/home/gustavo/Development, but just 2 files were written recently. Of
-course something like ~/.xsession-errors or some browser cache may
-have changed recently. But nothing big like a compile.
+       btrfs scrub start -r /dev/sdb1
 
-It is an Apple MacBook Pro with their SSD. badblocks (read-only) shows
-no errors.
+(or another of the three disks) then I only get the error message
 
-Is there any way to recover it?  :-S
+  ERROR: getting dev info for scrub failed: Inappropriate ioctl for
+    device
 
--- 
-Gustavo Sverzut Barbieri
---------------------------------------
-Mobile: +55 (19) 9225-2202
-Contact: http://www.gustavobarbieri.com.br/contact
+I don't use "udev", "ls -l /dev/sdb1" shows
+
+  brw-r----- 1 root disk 8, 17 29. Apr 1995  /dev/sdb1
+
+Running the command via "strace" shows the last lines
+
+set_thread_area({entry_number:-1 -> 6, base_addr:0x401b6b80,  
+limit:1048575, seg_32bit:1, contents:0, read_exec_only:0,  
+limit_in_pages:1, seg_not_present:0, useable:1}) = 0
+mprotect(0x401b0000, 8192, PROT_READ)   = 0
+mprotect(0x4004c000, 4096, PROT_READ)   = 0
+mprotect(0x4001d000, 4096, PROT_READ)   = 0
+munmap(0x40021000, 89277)               = 0
+set_tid_address(0x401b6be8)             = 10400
+set_robust_list(0x401b6bf0, 0xc)        = 0
+futex(0xbffe4c00, FUTEX_WAKE_PRIVATE, 1) = 0
+futex(0xbffe4c00, FUTEX_WAIT_BITSET_PRIVATE|FUTEX_CLOCK_REALTIME, 1, NULL, bffe4c10) = -1 EAGAIN (Resource temporarily unavailable)
+rt_sigaction(SIGRTMIN, {0x4003b520, [], SA_SIGINFO}, NULL, 8) = 0
+rt_sigaction(SIGRT_1, {0x4003b5a0, [], SA_RESTART|SA_SIGINFO}, NULL, 8) = 0
+rt_sigprocmask(SIG_UNBLOCK, [RTMIN RT_1], NULL, 8) = 0
+getrlimit(RLIMIT_STACK, {rlim_cur=RLIM_INFINITY, rlim_max=RLIM_INFINITY}) = 0
+uname({sys="Linux", node="Arktur.wm8.hullen.de", ...}) = 0
+brk(0)                                  = 0x806d000
+brk(0x808e000)                          = 0x808e000
+mkdir("/var", 0777)                     = -1 EEXIST (File exists)
+mkdir("/var/lib", 0777)                 = -1 EEXIST (File exists)
+mkdir("/var/lib/btrfs", 0777)           = -1 EEXIST (File exists)
+stat64("/dev/sdb1", {st_mode=S_IFBLK|0640, st_rdev=makedev(8, 17), ...}) = 0
+open("/dev/sdb1", O_RDWR|O_LARGEFILE)   = 3
+ioctl(3, 0x8400941f, 0xbffe4554)        = -1 ENOTTY (Inappropriate ioctl for device)
+write(2, "ERROR: getting dev info for scru"..., 73ERROR: getting dev info for scrub failed: Inappropriate ioctl for device
+) = 73
+close(3)                                = 0
+exit_group(1)                           = ?
+
+--------------------------------------------------
+
+Changing the rights of "/dev/sdb1" to 660 doesn't help - same nasty  
+behaviour.
+
+What goes wrong?
+
+Viele Gruesse!
+Helmut

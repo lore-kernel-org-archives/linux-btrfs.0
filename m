@@ -1,338 +1,101 @@
-From: Arne Jansen <sensille@gmx.net>
-Subject: Re: [PATCH 14/21] Btrfs: save restripe parameters to disk
-Date: Tue, 01 Nov 2011 11:29:08 +0100
-Message-ID: <4EAFC9F4.8080806@gmx.net>
-References: <1314129722-31601-1-git-send-email-idryomov@gmail.com> <1314129722-31601-15-git-send-email-idryomov@gmail.com>
+From: David Sterba <dave@jikos.cz>
+Subject: BUG at fs/btrfs/tree-log.c:3106 (Re: new integration-danger branch pushed out (kernel))
+Date: Tue, 1 Nov 2011 11:36:37 +0100
+Message-ID: <20111101103637.GD12759@twin.jikos.cz>
+References: <20111101024957.GH4468@shiny>
+Reply-To: dave@jikos.cz
 Mime-Version: 1.0
-Content-Type: text/plain; charset=ISO-8859-1
-Cc: linux-btrfs@vger.kernel.org, Chris Mason <chris.mason@oracle.com>,
-	Hugo Mills <hugo@carfax.org.uk>
-To: Ilya Dryomov <idryomov@gmail.com>
+Content-Type: text/plain; charset=us-ascii
+To: liubo2009@cn.fujitsu.com, Chris Mason <chris.mason@oracle.com>,
+	linux-btrfs@vger.kernel.org
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <1314129722-31601-15-git-send-email-idryomov@gmail.com>
+In-Reply-To: <20111101024957.GH4468@shiny>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 23.08.2011 22:01, Ilya Dryomov wrote:
-> Introduce a new btree objectid for storing restripe item.  The reason is
-> to be able to resume restriper after a crash with the same parameters.
-> Restripe item has a very high objectid and goes into tree of tree roots.
-> 
-> The key for the new item is as follows:
-> 
->     [ BTRFS_RESTRIPE_OBJECTID ; 0 ; 0 ]
-> 
-> Older kernels simply ignore it so it's safe to mount with an older
-> kernel and then go back to the newer one.
-> 
-> Signed-off-by: Ilya Dryomov <idryomov@gmail.com>
-> ---
->  fs/btrfs/ctree.h   |  127 +++++++++++++++++++++++++++++++++++++++++++++++++++-
->  fs/btrfs/volumes.c |  105 ++++++++++++++++++++++++++++++++++++++++++-
->  2 files changed, 228 insertions(+), 4 deletions(-)
-> 
-> diff --git a/fs/btrfs/ctree.h b/fs/btrfs/ctree.h
-> index 65d7562..b524034 100644
-> --- a/fs/btrfs/ctree.h
-> +++ b/fs/btrfs/ctree.h
-> @@ -85,6 +85,9 @@ struct btrfs_ordered_sum;
->  /* holds checksums of all the data extents */
->  #define BTRFS_CSUM_TREE_OBJECTID 7ULL
->  
-> +/* for storing restripe params in the root tree */
-> +#define BTRFS_RESTRIPE_OBJECTID -4ULL
-> +
->  /* orhpan objectid for tracking unlinked/truncated files */
->  #define BTRFS_ORPHAN_OBJECTID -5ULL
->  
-> @@ -649,6 +652,47 @@ struct btrfs_root_ref {
->  	__le16 name_len;
->  } __attribute__ ((__packed__));
->  
-> +/*
-> + * Restriper stuff
-> + */
-> +struct btrfs_disk_restripe_args {
-> +	/* profiles to touch, in-memory format */
-> +	__le64 profiles;
-> +
-> +	/* usage filter */
-> +	__le64 usage;
-> +
-> +	/* devid filter */
-> +	__le64 devid;
-> +
-> +	/* devid subset filter [pstart..pend) */
-> +	__le64 pstart;
-> +	__le64 pend;
-> +
-> +	/* btrfs virtual address space subset filter [vstart..vend) */
-> +	__le64 vstart;
-> +	__le64 vend;
-> +
-> +	/* profile to convert to, in-memory format */
-> +	__le64 target;
-> +
-> +	/* BTRFS_RESTRIPE_ARGS_* */
-> +	__le64 flags;
-> +
-> +	__le64 unused[8];
-> +} __attribute__ ((__packed__));
-> +
-> +struct btrfs_restripe_item {
-> +	/* BTRFS_RESTRIPE_* */
-> +	__le64 flags;
-> +
-> +	struct btrfs_disk_restripe_args data;
-> +	struct btrfs_disk_restripe_args sys;
-> +	struct btrfs_disk_restripe_args meta;
-> +
-> +	__le64 unused[4];
-> +} __attribute__ ((__packed__));
+xfstests/214
 
-what are those unused fields for? As I understand it, the restripe_item
-is only temporary and gets removed after restripe finished, so I don't
-see much point in leaving space for future expansions. You have the size
-of the struct anyway, or can determine which fields to access through the
-flags field.
+[ 3142.654774] ------------[ cut here ]------------
+[ 3142.656017] kernel BUG at fs/btrfs/tree-log.c:3106!
+[ 3142.656017] invalid opcode: 0000 [#1] SMP
+[ 3142.656017] CPU 0
+[ 3142.656017] Modules linked in: loop btrfs aoe
+[ 3142.656017]
+[ 3142.656017] Pid: 27328, comm: xfs_io Tainted: G        W   3.1.0-default+ #64 Intel Corporation Santa Rosa platform/Matanzas
+[ 3142.656017] RIP: 0010:[<ffffffffa006fe74>]  [<ffffffffa006fe74>] btrfs_log_inode+0x554/0x600 [btrfs]
+[ 3142.656017] RSP: 0018:ffff88005c801d58  EFLAGS: 00010282
+[ 3142.656017] RAX: 00000000ffffffef RBX: ffff88003ef39e20 RCX: 0000000000000006
+[ 3142.656017] RDX: 0000000000000001 RSI: ffff8800643aa170 RDI: 0000000000000286
+[ 3142.656017] RBP: ffff88005c801e48 R08: 0000000000000001 R09: 0000000000000001
+[ 3142.656017] R10: 0000000000000001 R11: 0000000000000002 R12: ffff88003405fe70
+[ 3142.656017] R13: ffff88005c801db8 R14: 0000000000000003 R15: ffff8800340604b0
+[ 3142.656017] FS:  00007f7034667700(0000) GS:ffff88007dc00000(0000) knlGS:0000000000000000
+[ 3142.656017] CS:  0010 DS: 0000 ES: 0000 CR0: 0000000080050033
+[ 3142.656017] CR2: 00000000006b1fb0 CR3: 00000000778df000 CR4: 00000000000006f0
+[ 3142.656017] DR0: 0000000000000000 DR1: 0000000000000000 DR2: 0000000000000000
+[ 3142.656017] DR3: 0000000000000000 DR6: 00000000ffff0ff0 DR7: 0000000000000400
+[ 3142.656017] Process xfs_io (pid: 27328, threadinfo ffff88005c800000, task ffff8800643a9ac0)
+[ 3142.656017] Stack:
+[ 3142.656017]  0000000000000000 0000000000000000 ffff8800340602b0 ffff880072efe000
+[ 3142.656017]  0000000000000000 00000000000004c8 000000005c801dd8 ffff8800340604b0
+[ 3142.656017]  ffff88003ef39eb0 ffff88000dfb4420 0000000000000019 0000000000000308
+[ 3142.656017] Call Trace:
+[ 3142.656017]  [<ffffffffa0070d28>] btrfs_log_inode_parent+0x198/0x480 [btrfs]
+[ 3142.656017]  [<ffffffff8115941c>] ? dget_parent+0x1c/0xd0
+[ 3142.656017]  [<ffffffffa0071059>] btrfs_log_dentry_safe+0x49/0x70 [btrfs]
+[ 3142.656017]  [<ffffffffa0049406>] btrfs_sync_file+0x146/0x1d0 [btrfs]
+[ 3142.656017]  [<ffffffff81143e80>] ? fget_raw+0x210/0x210
+[ 3142.656017]  [<ffffffff81171029>] do_fsync+0x59/0x80
+[ 3142.656017]  [<ffffffff81171340>] sys_fsync+0x10/0x20
+[ 3142.656017]  [<ffffffff81a1d782>] system_call_fastpath+0x16/0x1b
+[ 3142.656017] Code: 60 ff ff ff 45 89 f1 48 8b bd 58 ff ff ff 4c 89 e1 4c 89 fe 89 14 24 48 8b 95 50 ff ff ff e8 44 cf ff ff 85 c0 0f 84 04 fe ff ff <0f> 0b 48 89 df e8 f2 62 fa ff 48 8b bd 50 ff ff ff e8 e6 62 fa
+[ 3142.656017] RIP  [<ffffffffa006fe74>] btrfs_log_inode+0x554/0x600 [btrfs]
+[ 3142.656017]  RSP <ffff88005c801d58>
+[ 3142.995743] ---[ end trace 81d2bc6c70d7ca63 ]---
 
-> +
->  #define BTRFS_FILE_EXTENT_INLINE 0
->  #define BTRFS_FILE_EXTENT_REG 1
->  #define BTRFS_FILE_EXTENT_PREALLOC 2
-> @@ -727,7 +771,8 @@ struct btrfs_csum_item {
->  					 BTRFS_BLOCK_GROUP_RAID10)
->  /*
->   * We need a bit for restriper to be able to tell when chunks of type
-> - * SINGLE are available.  It is used in avail_*_alloc_bits.
-> + * SINGLE are available.  It is used in avail_*_alloc_bits and restripe
-> + * item fields.
->   */
->  #define BTRFS_AVAIL_ALLOC_BIT_SINGLE (1 << 7)
->  
-> @@ -2000,8 +2045,86 @@ static inline bool btrfs_root_readonly(struct btrfs_root *root)
->  	return root->root_item.flags & BTRFS_ROOT_SUBVOL_RDONLY;
->  }
->  
-> -/* struct btrfs_super_block */
-> +/* struct btrfs_restripe_item */
-> +BTRFS_SETGET_FUNCS(restripe_flags, struct btrfs_restripe_item, flags, 64);
-> +
-> +static inline void btrfs_restripe_data(struct extent_buffer *eb,
-> +				       struct btrfs_restripe_item *ri,
-> +				       struct btrfs_disk_restripe_args *ra)
-> +{
-> +	read_eb_member(eb, ri, struct btrfs_restripe_item, data, ra);
-> +}
->  
-> +static inline void btrfs_set_restripe_data(struct extent_buffer *eb,
-> +					   struct btrfs_restripe_item *ri,
-> +					   struct btrfs_disk_restripe_args *ra)
-> +{
-> +	write_eb_member(eb, ri, struct btrfs_restripe_item, data, ra);
-> +}
-> +
-> +static inline void btrfs_restripe_meta(struct extent_buffer *eb,
-> +				       struct btrfs_restripe_item *ri,
-> +				       struct btrfs_disk_restripe_args *ra)
-> +{
-> +	read_eb_member(eb, ri, struct btrfs_restripe_item, meta, ra);
-> +}
-> +
-> +static inline void btrfs_set_restripe_meta(struct extent_buffer *eb,
-> +					   struct btrfs_restripe_item *ri,
-> +					   struct btrfs_disk_restripe_args *ra)
-> +{
-> +	write_eb_member(eb, ri, struct btrfs_restripe_item, meta, ra);
-> +}
-> +
-> +static inline void btrfs_restripe_sys(struct extent_buffer *eb,
-> +				      struct btrfs_restripe_item *ri,
-> +				      struct btrfs_disk_restripe_args *ra)
-> +{
-> +	read_eb_member(eb, ri, struct btrfs_restripe_item, sys, ra);
-> +}
-> +
-> +static inline void btrfs_set_restripe_sys(struct extent_buffer *eb,
-> +					  struct btrfs_restripe_item *ri,
-> +					  struct btrfs_disk_restripe_args *ra)
-> +{
-> +	write_eb_member(eb, ri, struct btrfs_restripe_item, sys, ra);
-> +}
-> +
-> +static inline void
-> +btrfs_disk_restripe_args_to_cpu(struct btrfs_restripe_args *cpu,
-> +				struct btrfs_disk_restripe_args *disk)
-> +{
-> +	memset(cpu, 0, sizeof(*cpu));
-> +
-> +	cpu->profiles = le64_to_cpu(disk->profiles);
-> +	cpu->usage = le64_to_cpu(disk->usage);
-> +	cpu->devid = le64_to_cpu(disk->devid);
-> +	cpu->pstart = le64_to_cpu(disk->pstart);
-> +	cpu->pend = le64_to_cpu(disk->pend);
-> +	cpu->vstart = le64_to_cpu(disk->vstart);
-> +	cpu->vend = le64_to_cpu(disk->vend);
-> +	cpu->target = le64_to_cpu(disk->target);
-> +	cpu->flags = le64_to_cpu(disk->flags);
-> +}
-> +
-> +static inline void
-> +btrfs_cpu_restripe_args_to_disk(struct btrfs_disk_restripe_args *disk,
-> +				struct btrfs_restripe_args *cpu)
-> +{
-> +	memset(disk, 0, sizeof(*disk));
-> +
-> +	disk->profiles = cpu_to_le64(cpu->profiles);
-> +	disk->usage = cpu_to_le64(cpu->usage);
-> +	disk->devid = cpu_to_le64(cpu->devid);
-> +	disk->pstart = cpu_to_le64(cpu->pstart);
-> +	disk->pend = cpu_to_le64(cpu->pend);
-> +	disk->vstart = cpu_to_le64(cpu->vstart);
-> +	disk->vend = cpu_to_le64(cpu->vend);
-> +	disk->target = cpu_to_le64(cpu->target);
-> +	disk->flags = cpu_to_le64(cpu->flags);
-> +}
-> +
-> +/* struct btrfs_super_block */
->  BTRFS_SETGET_STACK_FUNCS(super_bytenr, struct btrfs_super_block, bytenr, 64);
->  BTRFS_SETGET_STACK_FUNCS(super_flags, struct btrfs_super_block, flags, 64);
->  BTRFS_SETGET_STACK_FUNCS(super_generation, struct btrfs_super_block,
-> diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
-> index eccd458..1057ad3 100644
-> --- a/fs/btrfs/volumes.c
-> +++ b/fs/btrfs/volumes.c
-> @@ -2150,6 +2150,97 @@ error:
->  	return ret;
->  }
->  
-> +static int insert_restripe_item(struct btrfs_root *root,
-> +				struct restripe_control *rctl)
-> +{
-> +	struct btrfs_trans_handle *trans;
-> +	struct btrfs_restripe_item *item;
-> +	struct btrfs_disk_restripe_args disk_rargs;
-> +	struct btrfs_path *path;
-> +	struct extent_buffer *leaf;
-> +	struct btrfs_key key;
-> +	int ret, err;
-> +
-> +	path = btrfs_alloc_path();
-> +	if (!path)
-> +		return -ENOMEM;
-> +
-> +	trans = btrfs_start_transaction(root, 0);
-> +	if (IS_ERR(trans)) {
-> +		btrfs_free_path(path);
-> +		return PTR_ERR(trans);
-> +	}
-> +
-> +	key.objectid = BTRFS_RESTRIPE_OBJECTID;
-> +	key.type = 0;
-> +	key.offset = 0;
-> +
-> +	ret = btrfs_insert_empty_item(trans, root, path, &key,
-> +				      sizeof(*item));
-> +	if (ret)
-> +		goto out;
-> +
-> +	leaf = path->nodes[0];
-> +	item = btrfs_item_ptr(leaf, path->slots[0], struct btrfs_restripe_item);
-> +
-> +	memset_extent_buffer(leaf, 0, (unsigned long)item, sizeof(*item));
-> +
-> +	btrfs_cpu_restripe_args_to_disk(&disk_rargs, &rctl->data);
-> +	btrfs_set_restripe_data(leaf, item, &disk_rargs);
-> +	btrfs_cpu_restripe_args_to_disk(&disk_rargs, &rctl->meta);
-> +	btrfs_set_restripe_meta(leaf, item, &disk_rargs);
-> +	btrfs_cpu_restripe_args_to_disk(&disk_rargs, &rctl->sys);
-> +	btrfs_set_restripe_sys(leaf, item, &disk_rargs);
-> +
-> +	btrfs_set_restripe_flags(leaf, item, rctl->flags);
-> +
-> +	btrfs_mark_buffer_dirty(leaf);
-> +out:
-> +	btrfs_free_path(path);
-> +	err = btrfs_commit_transaction(trans, root);
-> +	if (err && !ret)
-> +		ret = err;
-> +	return ret;
-> +}
-> +
-> +static int del_restripe_item(struct btrfs_root *root)
-> +{
-> +	struct btrfs_trans_handle *trans;
-> +	struct btrfs_path *path;
-> +	struct btrfs_key key;
-> +	int ret, err;
-> +
-> +	path = btrfs_alloc_path();
-> +	if (!path)
-> +		return -ENOMEM;
-> +
-> +	trans = btrfs_start_transaction(root, 0);
-> +	if (IS_ERR(trans)) {
-> +		btrfs_free_path(path);
-> +		return PTR_ERR(trans);
-> +	}
-> +
-> +	key.objectid = BTRFS_RESTRIPE_OBJECTID;
-> +	key.type = 0;
-> +	key.offset = 0;
-> +
-> +	ret = btrfs_search_slot(trans, root, &key, path, -1, 1);
-> +	if (ret < 0)
-> +		goto out;
-> +	if (ret > 0) {
-> +		ret = -ENOENT;
-> +		goto out;
-> +	}
-> +
-> +	ret = btrfs_del_item(trans, root, path);
-> +out:
-> +	btrfs_free_path(path);
-> +	err = btrfs_commit_transaction(trans, root);
-> +	if (err && !ret)
-> +		ret = err;
-> +	return ret;
-> +}
-> +
->  /*
->   * Should be called with both restripe and volume mutexes held to
->   * serialize other volume operations (add_dev/rm_dev/resize) wrt
-> @@ -2485,6 +2576,7 @@ int btrfs_restripe(struct restripe_control *rctl)
->  {
->  	struct btrfs_fs_info *fs_info = rctl->fs_info;
->  	u64 allowed;
-> +	int err;
->  	int ret;
->  
->  	mutex_lock(&fs_info->volume_mutex);
-> @@ -2572,16 +2664,25 @@ int btrfs_restripe(struct restripe_control *rctl)
->  	}
->  
->  do_restripe:
-> +	ret = insert_restripe_item(fs_info->tree_root, rctl);
-> +	if (ret && ret != -EEXIST)
-> +		goto out;
-> +	BUG_ON(ret == -EEXIST);
-> +
->  	set_restripe_control(rctl);
->  	mutex_unlock(&fs_info->volume_mutex);
->  
-> -	ret = __btrfs_restripe(fs_info->dev_root);
-> +	err = __btrfs_restripe(fs_info->dev_root);
->  
->  	mutex_lock(&fs_info->volume_mutex);
-> +
->  	unset_restripe_control(fs_info);
-> +	ret = del_restripe_item(fs_info->tree_root);
-> +	BUG_ON(ret);
-> +
->  	mutex_unlock(&fs_info->volume_mutex);
->  
-> -	return ret;
-> +	return err;
->  
->  out:
->  	mutex_unlock(&fs_info->volume_mutex);
+2923 static int btrfs_log_inode(struct btrfs_trans_handle *trans,
+2924                              struct btrfs_root *root, struct inode *inode,
+2925                              int inode_only)
+2926 {
+...
+3105 out_unlock:
+3106         BUG_ON(err);
 
+3107         mutex_unlock(&BTRFS_I(inode)->log_mutex);
+3108
+3109         btrfs_free_path(path);
+3110         btrfs_free_path(dst_path);
+3111         return err;
+3112 }
+
+from the value of RAX, -17 it's EEXIST
+
+the code originates from:
+
+commit 3ff4357398886f277c278fd039ba65abf5e3a113
+Author: Liu Bo <liubo2009@cn.fujitsu.com>
+Date:   Wed Oct 12 20:01:24 2011 -0400
+
+    Btrfs: improve log with sub transaction
+
+    When logging an inode _A_, current btrfs will
+    a) clear all items belonged to _A_ in log,
+    b) copy all items belonged to _A_ from fs/file tree to log tree,
+    and this just wastes a lot of time, especially when logging big files.
+
+    So we want to use a smarter approach, i.e. "find and merge".
+    The amount of file extent items is the largest, so we focus on it.
+    Thanks to sub transaction, now we can find those file extent items which
+    are changed after last _transaction commit_ or last _log commit_, and
+    then merge them with the existed ones in log tree.
+
+    It will be great helpful on fsync performance, cause the common case is
+    "make changes on a _part_ of inode".
+
+    Chris Mason did some reworking of this code, any bugs left are his.
+
+    Signed-off-by: Liu Bo <liubo2009@cn.fujitsu.com>
+    Signed-off-by: Chris Mason <chris.mason@oracle.com>
+---
+
+
+david

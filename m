@@ -1,54 +1,64 @@
-From: Josef Bacik <josef@redhat.com>
-Subject: [PATCH] Btrfs: release metadata from global reserve if we have to fallback for unlink
-Date: Tue,  1 Nov 2011 13:52:16 -0400
-Message-ID: <1320169936-5074-1-git-send-email-josef@redhat.com>
+From: Gustavo Sverzut Barbieri <barbieri@gmail.com>
+Subject: corrupted btrfs after suspend2ram uncorrectable with scrub
+Date: Tue, 1 Nov 2011 16:38:29 -0200
+Message-ID: <CANkykrA7uxc51rFTbTXar8v_3vE2Gn9LKYrApOfvqWNf5B_adw@mail.gmail.com>
+Mime-Version: 1.0
+Content-Type: text/plain; charset=ISO-8859-1
 To: linux-btrfs@vger.kernel.org
 Return-path: <linux-btrfs-owner@vger.kernel.org>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-I fixed a problem where we weren't reserving space for an orphan item when we
-had to fallback to using the global reserve for an unlink, but I introduced
-another problem.  I was migrating the bytes from the transaction reserve to the
-global reserve and then releasing from the global reserve in
-btrfs_end_transaction().  The problem with this is that a migrate will jack up
-the size for the destination, but leave the size alone for the source, with the
-idea that you can do a release normally on the source and it all washes out, and
-then you can do a release again on the destination and it works out right.  My
-way was skipping the release on the trans_block_rsv which still had the jacked
-up size from our original reservation.  So instead release manually from the
-global reserve if this transaction was using it, and then set the
-trans->block_rsv back to the trans_block_rsv so that btrfs_end_transaction
-cleans everything up properly.  With this patch xfstest 83 doesn't emit warnings
-about leaking space.  Thanks,
+Hello,
 
-Signed-off-by: Josef Bacik <josef@redhat.com>
----
- fs/btrfs/inode.c |    5 ++++-
- 1 files changed, 4 insertions(+), 1 deletions(-)
+I'm using kernel 3.1.0 and I have both / and /home as btrfs. I used
+suspend to ram quite often and never had a problem, but yesterday I've
+suspended to get into a plane and when I resumed my /home was all
+about input/output errors. Reboot did not help either.  My root (/)
+did not suffer any problems.
 
-diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
-index f12747c..3dd2d5d 100644
---- a/fs/btrfs/inode.c
-+++ b/fs/btrfs/inode.c
-@@ -2900,7 +2900,7 @@ out:
- 	if (!err)
- 		err = btrfs_block_rsv_migrate(trans->block_rsv,
- 				&root->fs_info->global_block_rsv,
--				btrfs_calc_trans_metadata_size(root, 1));
-+				trans->bytes_reserved);
- 
- 	if (err) {
- 		btrfs_end_transaction(trans, root);
-@@ -2916,6 +2916,9 @@ static void __unlink_end_trans(struct btrfs_trans_handle *trans,
- 			       struct btrfs_root *root)
- {
- 	if (trans->block_rsv == &root->fs_info->global_block_rsv) {
-+		btrfs_block_rsv_release(root, trans->block_rsv,
-+					trans->bytes_reserved);
-+		trans->block_rsv = &root->fs_info->trans_block_rsv;
- 		BUG_ON(!root->fs_info->enospc_unlink);
- 		root->fs_info->enospc_unlink = 0;
- 	}
+Today I've upgraded btrfs-progs to latest GIT and tried scrub without success:
+
+  # btrfs scrub start -B -d /home/
+  scrub device /dev/sda6 (id 1) done
+  	scrub started at Sun Dec 31 23:13:19 2000 and finished after 273 seconds
+  	total bytes scrubbed: 548.90MB with 1 errors
+  	error details: verify=1
+  	corrected errors: 0, uncorrectable errors: 1, unverified errors: 0
+
+  # dmesg after "cat /home/gustavo/file":
+  btrfs no csum found for inode 2957021 start 0
+  btrfs no csum found for inode 2957021 start 0
+  btrfs csum failed ino 2957021 extent 85041815552 csum 667310679
+wanted 0 mirror 0
+  btrfs no csum found for inode 2957021 start 0
+  btrfs no csum found for inode 2957021 start 0
+  btrfs csum failed ino 2957021 extent 85041815552 csum 667310679
+wanted 0 mirror 1
+
+  # dmesg during scrub:
+  btrfs: unable to fixup at 402384056320
+
+  # grep btrfs /etc/fstab
+  /dev/sda4  /	 btrfs noatime,noacl,compress,nodatacow,nobarrier,ssd	0 0
+  /dev/sda6  /home btrfs
+noatime,noacl,compress,ssd,comment=systemd.automount 0 0
+
+I can still list directories and all, but no file contents can be
+read. Not even those that I'm sure were not changed recently, like
+~/.emacs or some read-only files.
+
+Before the suspend I was writing some code under
+/home/gustavo/Development, but just 2 files were written recently. Of
+course something like ~/.xsession-errors or some browser cache may
+have changed recently. But nothing big like a compile.
+
+It is an Apple MacBook Pro with their SSD. badblocks (read-only) shows
+no errors.
+
+Is there any way to recover it?  :-S
+
 -- 
-1.7.5.2
-
+Gustavo Sverzut Barbieri
+--------------------------------------
+Mobile: +55 (19) 9225-2202
+Contact: http://www.gustavobarbieri.com.br/contact

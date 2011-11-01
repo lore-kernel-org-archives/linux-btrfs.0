@@ -1,41 +1,37 @@
-From: David Sterba <dave@jikos.cz>
-Subject: Re: [PATCH] Btrfs: introduce mount option no_space_cache
-Date: Tue, 1 Nov 2011 00:42:55 +0100
-Message-ID: <20111031234255.GA12759@twin.jikos.cz>
-References: <1317665561-8114-1-git-send-email-josef@redhat.com> <20111003215130.GN22205@twin.jikos.cz>
-Reply-To: dave@jikos.cz
+From: Tsutomu Itoh <t-itoh@jp.fujitsu.com>
+Subject: [PATCH] Btrfs-progs: fix compiler warning of extent-tree.c
+Date: Tue, 01 Nov 2011 12:20:42 +0900
+Message-ID: <201111010320.AA00036@T-ITOH1.jp.fujitsu.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
 Cc: chris.mason@oracle.com
-To: Josef Bacik <josef@redhat.com>, linux-btrfs@vger.kernel.org
+To: linux-btrfs@vger.kernel.org
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <20111003215130.GN22205@twin.jikos.cz>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hi Josef,
+In recovery-beta, following compiler warning was displayed.
 
-On Mon, Oct 03, 2011 at 11:51:30PM +0200, David Sterba wrote:
-> > --- a/fs/btrfs/super.c
-> > +++ b/fs/btrfs/super.c
-> > @@ -164,7 +164,7 @@ enum {
-> >  	Opt_notreelog, Opt_ratio, Opt_flushoncommit, Opt_discard,
-> >  	Opt_space_cache, Opt_clear_cache, Opt_user_subvol_rm_allowed,
-> >  	Opt_enospc_debug, Opt_subvolrootid, Opt_defrag,
-> > -	Opt_inode_cache, Opt_err,
-> > +	Opt_inode_cache, Opt_no_space_cache, Opt_err,
-> 
-> how about _not_ adding a new optoin and just extend the existing one:
-> 
-> space_cache=off
+ gcc -Wp,-MMD,./.extent-tree.o.d,-MT,extent-tree.o -Wall -D_FILE_OFFSET_BITS=64 -D_FORTIFY_SOURCE=2 -g -O0 -c extent-tree.c
+ extent-tree.c: In function 'lookup_inline_extent_backref':
+ extent-tree.c:1071: warning: format '%u' expects type 'unsigned int', but argument 3 has type 'long unsigned int'
 
-Thanks for fixing the patch in your tree, however adding the 'no' prefix
-seems more in line with other options and their disabling counterparts
-(like ssd/nossd, more to come).
+Signed-off-by: Tsutomu Itoh <t-itoh@jp.fujitsu.com>
+---
+ extent-tree.c |    2 +-
+ 1 files changed, 1 insertions(+), 1 deletions(-)
 
-I would have asked you to consider changing it to 'nospace_cache' and
-refreshing the patch, but it's deep inside your for-chris branch so I'll
-rather send patch if there aren't objections voiced.
+diff --git a/extent-tree.c b/extent-tree.c
+index 5bed3c2..5144d57 100644
+--- a/extent-tree.c
++++ b/extent-tree.c
+@@ -1068,7 +1068,7 @@ static int lookup_inline_extent_backref(struct btrfs_trans_handle *trans,
+ #endif
+ 	if (item_size < sizeof(*ei)) {
+ 		printf("Size is %u, needs to be %u, slot %d\n", item_size,
+-		       sizeof(*ei), path->slots[0]);
++		       (u32)sizeof(*ei), path->slots[0]);
+ 		btrfs_print_leaf(root, leaf);
+ 		return -EINVAL;
+ 	}
 
 
-thanks,
-david

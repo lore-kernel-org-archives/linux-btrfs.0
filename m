@@ -1,130 +1,92 @@
-From: David Sterba <dave@jikos.cz>
-Subject: Warnings (was: Re: new integration-danger branch pushed out (kernel))
-Date: Tue, 1 Nov 2011 11:11:10 +0100
-Message-ID: <20111101101110.GB12759@twin.jikos.cz>
-References: <20111101024957.GH4468@shiny>
-Reply-To: dave@jikos.cz
+From: Arne Jansen <sensille@gmx.net>
+Subject: Re: [PATCH 10/21] Btrfs: usage filter
+Date: Tue, 01 Nov 2011 11:18:34 +0100
+Message-ID: <4EAFC77A.3040707@gmx.net>
+References: <1314129722-31601-1-git-send-email-idryomov@gmail.com> <1314129722-31601-11-git-send-email-idryomov@gmail.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Cc: josef@redhat.com
-To: Chris Mason <chris.mason@oracle.com>, linux-btrfs@vger.kernel.org
+Content-Type: text/plain; charset=ISO-8859-1
+Cc: linux-btrfs@vger.kernel.org, Chris Mason <chris.mason@oracle.com>,
+	Hugo Mills <hugo@carfax.org.uk>
+To: Ilya Dryomov <idryomov@gmail.com>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <20111101024957.GH4468@shiny>
+In-Reply-To: <1314129722-31601-11-git-send-email-idryomov@gmail.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hi,
+On 23.08.2011 22:01, Ilya Dryomov wrote:
+> Select chunks that are less than X percent full.
+> 
+> Signed-off-by: Ilya Dryomov <idryomov@gmail.com>
+> ---
+>  fs/btrfs/volumes.c |   33 +++++++++++++++++++++++++++++++++
+>  fs/btrfs/volumes.h |    1 +
+>  2 files changed, 34 insertions(+), 0 deletions(-)
+> 
+> diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
+> index f045615..b49ecfa 100644
+> --- a/fs/btrfs/volumes.c
+> +++ b/fs/btrfs/volumes.c
+> @@ -2193,6 +2193,33 @@ static int chunk_profiles_filter(u64 chunk_profile,
+>  	return 1;
+>  }
+>  
+> +static u64 div_factor_fine(u64 num, int factor)
+> +{
+> +	if (factor == 100)
+> +		return num;
 
-On Mon, Oct 31, 2011 at 10:49:57PM -0400, Chris Mason wrote:
-> I've pushed out a new integration branch, but it is not for general use.
+You already have changed this to a range check that always returns
+num when <0 or >= 100, but I'd find it more consistent to return 0
+when factor < 0.
 
-Thank you!
+> +	num *= factor;
+> +	do_div(num, 100);
+> +	return num;
+> +}
+> +
+> +static int chunk_usage_filter(struct btrfs_fs_info *fs_info, u64 chunk_offset,
+> +			      struct btrfs_restripe_args *rargs)
+> +{
+> +	struct btrfs_block_group_cache *cache;
+> +	u64 chunk_used, user_thresh;
+> +	int ret = 1;
+> +
+> +	cache = btrfs_lookup_block_group(fs_info, chunk_offset);
+> +	chunk_used = btrfs_block_group_used(&cache->item);
+> +
+> +	user_thresh = div_factor_fine(cache->key.offset, rargs->usage);
+> +	if (chunk_used < user_thresh)
+> +		ret = 0;
+> +
+> +	btrfs_put_block_group(cache);
+> +	return ret;
+> +}
+> +
+>  static int chunk_soft_convert_filter(u64 chunk_profile,
+>  				     struct btrfs_restripe_args *rargs)
+>  {
+> @@ -2236,6 +2263,12 @@ static int should_restripe_chunk(struct btrfs_root *root,
+>  		return 0;
+>  	}
+>  
+> +	/* usage filter */
+> +	if ((rargs->flags & BTRFS_RESTRIPE_ARGS_USAGE) &&
+> +	    chunk_usage_filter(rctl->fs_info, chunk_offset, rargs)) {
+> +		return 0;
+> +	}
+> +
+>  	/* soft profile changing mode */
+>  	if ((rargs->flags & BTRFS_RESTRIPE_ARGS_SOFT) &&
+>  	    chunk_soft_convert_filter(chunk_type, rargs)) {
+> diff --git a/fs/btrfs/volumes.h b/fs/btrfs/volumes.h
+> index 9f96ad8..c6baf4b 100644
+> --- a/fs/btrfs/volumes.h
+> +++ b/fs/btrfs/volumes.h
+> @@ -186,6 +186,7 @@ struct map_lookup {
+>   * Restripe filters
+>   */
+>  #define BTRFS_RESTRIPE_ARGS_PROFILES	(1ULL << 0)
+> +#define BTRFS_RESTRIPE_ARGS_USAGE	(1ULL << 1)
+>  
+>  /*
+>   * Profile changing flags.  When SOFT is set we won't relocate chunk if
 
-xfstests/083 and 089 cause the following warnings. I've seen them before when
-testing josef/for-chris and josef/master branches (reported on irc).
-
-[ 1149.108088] ------------[ cut here ]------------
-[ 1149.114384] WARNING: at fs/btrfs/extent-tree.c:3932 btrfs_free_block_groups+0x304/0x320 [btrfs]()
-[ 1149.124928] Hardware name: Santa Rosa platform
-[ 1149.124931] Modules linked in: loop btrfs aoe
-[ 1149.124938] Pid: 23991, comm: umount Not tainted 3.1.0-default+ #64
-[ 1149.124941] Call Trace:
-[ 1149.124950]  [<ffffffff81057fdf>] warn_slowpath_common+0x7f/0xc0
-[ 1149.124953]  [<ffffffff8105803a>] warn_slowpath_null+0x1a/0x20
-[ 1149.124973]  [<ffffffffa002bba4>] btrfs_free_block_groups+0x304/0x320 [btrfs]
-[ 1149.124985]  [<ffffffffa0036ab9>] close_ctree+0x1e9/0x390 [btrfs]
-[ 1149.124991]  [<ffffffff8115e2df>] ? dispose_list+0x4f/0x60
-[ 1149.124999]  [<ffffffffa00108dd>] btrfs_put_super+0x1d/0x30 [btrfs]
-[ 1149.125003]  [<ffffffff81145202>] generic_shutdown_super+0x62/0xe0
-[ 1149.125006]  [<ffffffff81145316>] kill_anon_super+0x16/0x30
-[ 1149.125009]  [<ffffffff811461a2>] ? deactivate_super+0x42/0x70
-[ 1149.125012]  [<ffffffff811456dd>] deactivate_locked_super+0x3d/0xa0
-[ 1149.125015]  [<ffffffff811461aa>] deactivate_super+0x4a/0x70
-[ 1149.125019]  [<ffffffff81162972>] mntput_no_expire+0xa2/0xf0
-[ 1149.125022]  [<ffffffff811636df>] sys_umount+0x6f/0x390
-[ 1149.125027]  [<ffffffff81a1d782>] system_call_fastpath+0x16/0x1b
-[ 1149.125030] ---[ end trace 81d2bc6c70d7ca56 ]---
-[ 1149.125032] ------------[ cut here ]------------
-[ 1149.125041] WARNING: at fs/btrfs/extent-tree.c:3933 btrfs_free_block_groups+0x2ee/0x320 [btrfs]()
-[ 1149.125044] Hardware name: Santa Rosa platform
-[ 1149.125045] Modules linked in: loop btrfs aoe
-[ 1149.125049] Pid: 23991, comm: umount Tainted: G        W   3.1.0-default+ #64
-[ 1149.125051] Call Trace:
-[ 1149.125054]  [<ffffffff81057fdf>] warn_slowpath_common+0x7f/0xc0
-[ 1149.125057]  [<ffffffff8105803a>] warn_slowpath_null+0x1a/0x20
-[ 1149.125067]  [<ffffffffa002bb8e>] btrfs_free_block_groups+0x2ee/0x320 [btrfs]
-[ 1149.125078]  [<ffffffffa0036ab9>] close_ctree+0x1e9/0x390 [btrfs]
-[ 1149.125081]  [<ffffffff8115e2df>] ? dispose_list+0x4f/0x60
-[ 1149.125089]  [<ffffffffa00108dd>] btrfs_put_super+0x1d/0x30 [btrfs]
-[ 1149.125092]  [<ffffffff81145202>] generic_shutdown_super+0x62/0xe0
-[ 1149.125096]  [<ffffffff81145316>] kill_anon_super+0x16/0x30
-[ 1149.125099]  [<ffffffff811461a2>] ? deactivate_super+0x42/0x70
-[ 1149.125102]  [<ffffffff811456dd>] deactivate_locked_super+0x3d/0xa0
-[ 1149.125105]  [<ffffffff811461aa>] deactivate_super+0x4a/0x70
-[ 1149.125108]  [<ffffffff81162972>] mntput_no_expire+0xa2/0xf0
-[ 1149.125111]  [<ffffffff811636df>] sys_umount+0x6f/0x390
-[ 1149.125115]  [<ffffffff81a1d782>] system_call_fastpath+0x16/0x1b
-[ 1149.125117] ---[ end trace 81d2bc6c70d7ca57 ]---
-
-The code in question:
-
-3927 static void release_global_block_rsv(struct btrfs_fs_info *fs_info)
-3928 {
-3929         block_rsv_release_bytes(&fs_info->global_block_rsv, NULL, (u64)-1);
-3930         WARN_ON(fs_info->delalloc_block_rsv.size > 0);
-3931         WARN_ON(fs_info->delalloc_block_rsv.reserved > 0);
-
-3932         WARN_ON(fs_info->trans_block_rsv.size > 0);
-3933         WARN_ON(fs_info->trans_block_rsv.reserved > 0);
-
-3934         WARN_ON(fs_info->chunk_block_rsv.size > 0);
-3935         WARN_ON(fs_info->chunk_block_rsv.reserved > 0);
-3936 }
-
-
-[ 1149.125119] ------------[ cut here ]------------
-[ 1149.125128] WARNING: at fs/btrfs/extent-tree.c:7090 btrfs_free_block_groups+0x23b/0x320 [btrfs]()
-[ 1149.125130] Hardware name: Santa Rosa platform
-[ 1149.125131] Modules linked in: loop btrfs aoe
-[ 1149.125135] Pid: 23991, comm: umount Tainted: G        W   3.1.0-default+ #64
-[ 1149.125137] Call Trace:
-[ 1149.125140]  [<ffffffff81057fdf>] warn_slowpath_common+0x7f/0xc0
-[ 1149.125143]  [<ffffffff8105803a>] warn_slowpath_null+0x1a/0x20
-[ 1149.125153]  [<ffffffffa002badb>] btrfs_free_block_groups+0x23b/0x320 [btrfs]
-[ 1149.125164]  [<ffffffffa0036ab9>] close_ctree+0x1e9/0x390 [btrfs]
-[ 1149.125167]  [<ffffffff8115e2df>] ? dispose_list+0x4f/0x60
-[ 1149.125175]  [<ffffffffa00108dd>] btrfs_put_super+0x1d/0x30 [btrfs]
-[ 1149.125178]  [<ffffffff81145202>] generic_shutdown_super+0x62/0xe0
-[ 1149.125181]  [<ffffffff81145316>] kill_anon_super+0x16/0x30
-[ 1149.125184]  [<ffffffff811461a2>] ? deactivate_super+0x42/0x70
-[ 1149.125187]  [<ffffffff811456dd>] deactivate_locked_super+0x3d/0xa0
-[ 1149.125191]  [<ffffffff811461aa>] deactivate_super+0x4a/0x70
-[ 1149.125194]  [<ffffffff81162972>] mntput_no_expire+0xa2/0xf0
-[ 1149.125197]  [<ffffffff811636df>] sys_umount+0x6f/0x390
-[ 1149.125200]  [<ffffffff81a1d782>] system_call_fastpath+0x16/0x1b
-[ 1149.125202] ---[ end trace 81d2bc6c70d7ca58 ]---
-[ 1149.125206] space_info 5 has 4931584 free, is full
-[ 1149.125208] space_info total=48234496, used=43302912, pinned=0, reserved=0, may_use=294912, readonly=0
-
-
-7028 int btrfs_free_block_groups(struct btrfs_fs_info *info)
-...
-7083         while(!list_empty(&info->space_info)) {
-7084                 space_info = list_entry(info->space_info.next,
-7085                                         struct btrfs_space_info,
-7086                                         list);
-7087                 if (space_info->bytes_pinned > 0 ||
-7088                     space_info->bytes_reserved > 0 ||
-7089                     space_info->bytes_may_use > 0) {
-
-7090                         WARN_ON(1);
-
-7091                         dump_space_info(space_info, 0, 0);
-7092                 }
-7093                 list_del(&space_info->list);
-7094                 kfree(space_info);
-7095         }
-7096         return 0;
-7097 }
-
-
-david

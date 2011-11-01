@@ -1,49 +1,31 @@
-From: Ilya Dryomov <idryomov@gmail.com>
-Subject: [PATCH] Btrfs-progs: fail gracefully on error from open_ctree()
-Date: Tue,  1 Nov 2011 23:47:22 +0200
-Message-ID: <1320184042-5188-1-git-send-email-idryomov@gmail.com>
-Cc: Chris Mason <chris.mason@oracle.com>,
-	Hugo Mills <hugo@carfax.org.uk>, idryomov@gmail.com
-To: linux-btrfs@vger.kernel.org
+From: Alexandre Oliva <oliva@lsd.ic.unicamp.br>
+Subject: Re: corrupted btrfs after suspend2ram uncorrectable with scrub
+Date: Tue, 01 Nov 2011 19:57:13 -0200
+Message-ID: <orzkgfwlom.fsf@livre.localdomain>
+References: <CANkykrA7uxc51rFTbTXar8v_3vE2Gn9LKYrApOfvqWNf5B_adw@mail.gmail.com>
+Mime-Version: 1.0
+Content-Type: text/plain; charset=us-ascii
+Cc: linux-btrfs@vger.kernel.org
+To: Gustavo Sverzut Barbieri <barbieri@gmail.com>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
+In-Reply-To: <CANkykrA7uxc51rFTbTXar8v_3vE2Gn9LKYrApOfvqWNf5B_adw@mail.gmail.com>
+	(Gustavo Sverzut Barbieri's message of "Tue, 1 Nov 2011 16:38:29
+	-0200")
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Error checking block got moved mistakenly exposing us to a potential
-segmentation fault.
+Hi, Gustavo,
 
-Signed-off-by: Ilya Dryomov <idryomov@gmail.com>
----
- mkfs.c |    9 +++++----
- 1 files changed, 5 insertions(+), 4 deletions(-)
+On Nov  1, 2011, Gustavo Sverzut Barbieri <barbieri@gmail.com> wrote:
 
-diff --git a/mkfs.c b/mkfs.c
-index e3ced19..a6f6b1f 100644
---- a/mkfs.c
-+++ b/mkfs.c
-@@ -1328,7 +1328,12 @@ int main(int ac, char **av)
- 		fprintf(stderr, "error during mkfs %d\n", ret);
- 		exit(1);
- 	}
-+
- 	root = open_ctree(file, 0, O_RDWR);
-+	if (!root) {
-+		fprintf(stderr, "ctree init failed\n");
-+		return -1;
-+	}
- 	root->fs_info->alloc_start = alloc_start;
- 
- 	ret = make_root_dir(root, mixed);
-@@ -1343,10 +1348,6 @@ int main(int ac, char **av)
- 		goto raid_groups;
- 
- 	btrfs_register_one_device(file);
--	if (!root) {
--		fprintf(stderr, "ctree init failed\n");
--		return -1;
--	}
- 
- 	zero_end = 1;
- 	while(ac-- > 0) {
+>   btrfs csum failed ino 2957021 extent 85041815552 csum 667310679
+> wanted 0 mirror 0
+
+> Is there any way to recover it?  :-S
+
+Did you try mounting without data checksums?
+
 -- 
-1.7.6.3
-
+Alexandre Oliva, freedom fighter    http://FSFLA.org/~lxoliva/
+You must be the change you wish to see in the world. -- Gandhi
+Be Free! -- http://FSFLA.org/   FSF Latin America board member
+Free Software Evangelist      Red Hat Brazil Compiler Engineer

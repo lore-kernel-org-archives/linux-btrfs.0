@@ -1,35 +1,38 @@
 From: David Sterba <dave@jikos.cz>
-Subject: Re: scrub: Inappropriate ioctl for device
-Date: Wed, 2 Nov 2011 13:55:59 +0100
-Message-ID: <20111102125559.GJ12759@twin.jikos.cz>
-References: <Bx1FpyLi1uB@helmut.hullen.de>
+Subject: Re: Warnings (was: Re: new integration-danger branch pushed out (kernel))
+Date: Wed, 2 Nov 2011 14:06:37 +0100
+Message-ID: <20111102130637.GK12759@twin.jikos.cz>
+References: <20111101024957.GH4468@shiny> <20111101101110.GB12759@twin.jikos.cz> <20111102005615.GF15027@shiny>
 Reply-To: dave@jikos.cz
 Mime-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
-Cc: linux-btrfs@vger.kernel.org
-To: helmut@hullen.de
+To: Chris Mason <chris.mason@oracle.com>, David Sterba <dave@jikos.cz>,
+	linux-btrfs@vger.kernel.org, josef@redhat.com
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <Bx1FpyLi1uB@helmut.hullen.de>
+In-Reply-To: <20111102005615.GF15027@shiny>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Tue, Nov 01, 2011 at 08:36:00PM +0100, Helmut Hullen wrote:
-> The bundle uses the devices /dev/sdb1, /dev/sdc1 and /dev/sdg1, "btrfs  
-> filesystem show" shows these informations.
+On Tue, Nov 01, 2011 at 08:56:15PM -0400, Chris Mason wrote:
+> > xfstests/083 and 089 cause the following warnings. I've seen them before when
+> > testing josef/for-chris and josef/master branches (reported on irc).
 > 
-> Mounting doesn't work immediately; most times I have to run the "mount"  
-> command three times - strange.
+> Ok, just a status update on my end.  Josef and I have the block group
+> warnings fixed.
 
-I observed failed mounts between 2 consecutive xfstests (random two, no
-pattern) while the umount/mount went just fine when I tried it manually.
-IIRC it was in 3.1-rc9 and one of Josef's branches, but I haven't seen
-it since and was not able to reproduce it reliably.
+I confirm the warnings do not show anymore with the "Btrfs: release
+metadata from global reserve if we have to fallback for unlink" patch.
 
-> Changing the rights of "/dev/sdb1" to 660 doesn't help - same nasty  
-> behaviour.
+> The tree log crash is also explained, the eexist oops
+> comes when you're using the inode_cache code (hopefully you are?).
 
-I think it's not a problem from the userspace side (like access rights)
-but some unfinished device cleanup from the previous umount which blocks
-new mount.
+yes,
+
+MOUNT_OPTIONS='-o compress=lzo,discard,inode_cache,space_cache,autodefrag'
+
+> I have one test fix for this but it still has a few wrinkles that I'll
+> have to sort out in the morning.
+
+Great, I'm ready to test it.
 
 
 david

@@ -1,81 +1,54 @@
-From: Christoph Hellwig <hch@infradead.org>
-Subject: Re: [PATCH 1/2] LSEEK: BTRFS: Avoid i_mutex for SEEK_{CUR,SET,END}
-Date: Wed, 2 Nov 2011 04:29:15 -0400
-Message-ID: <20111102082915.GA28153@infradead.org>
-References: <1316128013-21980-1-git-send-email-andi@firstfloor.org>
- <201110012246.13801.andres@anarazel.de>
- <201110012249.27834.andres@anarazel.de>
+From: Leonidas Spyropoulos <artafinde@gmail.com>
+Subject: Re: https://btrfs.wiki.kernel.org/index.php/Main_Page
+Date: Wed, 2 Nov 2011 10:00:19 +0000
+Message-ID: <CAAeznTotnofQh5SGA76zdms5Mjz4W0QwnZE6u1FQYwbv3qg0Jw@mail.gmail.com>
+References: <4E9C28A9.3070008@oracle.com>
+	<20111017131753.GB4333@carfax.org.uk>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Cc: Andi Kleen <andi@firstfloor.org>, robertmhaas@gmail.com,
-	viro@zeniv.linux.org.uk, linux-fsdevel@vger.kernel.org,
-	linux-kernel@vger.kernel.org, chris.mason@oracle.com,
-	linux-btrfs@vger.kernel.org
-To: Andres Freund <andres@anarazel.de>
+Content-Type: text/plain; charset=ISO-8859-1
+To: Hugo Mills <hugo@carfax.org.uk>,
+	Anand Jain <anand.jain@oracle.com>, linux-btrfs@vger.kernel.org
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <201110012249.27834.andres@anarazel.de>
+In-Reply-To: <20111017131753.GB4333@carfax.org.uk>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Andres, can you check with Chris that the btrfs changes made it to
-his tree?  The core lseek changes from Andi are in mainline now, but
-I think these bits are better off going through Chrises btrfs tree.
+On Mon, Oct 17, 2011 at 2:17 PM, Hugo Mills <hugo@carfax.org.uk> wrote:
+> On Mon, Oct 17, 2011 at 09:07:53PM +0800, Anand Jain wrote:
+>>
+>> =A0Does not load. Wondering if this should work or has been moved ?
+>
+> =A0 It's a victim of the kernel.org hack. Nobody seems to have a spar=
+e
+> copy, but the database on kernel.org should still be there. I think
+> we're just waiting for the dust to settle on kernel.org (they're stil=
+l
+> getting git access back for the main kernel developers) before we can
+> find out about continued wiki support, or getting the wiki data back.
 
-On Sat, Oct 01, 2011 at 10:49:27PM +0200, Andres Freund wrote:
-> 
-> Don't need the i_mutex for those cases, only for SEEK_HOLE/DATA.
-> 
-> Really-From: Andi Kleen <ak@linux.intel.com>
-> Signed-off-by: Andi Kleen <ak@linux.intel.com>
-> Signed-off-by: Andres Freund <andres@anarazel.de>
-> ---
->  fs/btrfs/file.c |   27 +++++++++++----------------
->  1 files changed, 11 insertions(+), 16 deletions(-)
-> 
-> diff --git a/fs/btrfs/file.c b/fs/btrfs/file.c
-> index 7a13337..5bc7116 100644
-> --- a/fs/btrfs/file.c
-> +++ b/fs/btrfs/file.c
-> @@ -1809,24 +1809,19 @@ static loff_t btrfs_file_llseek(struct file *file, loff_t offset, int origin)
->  	struct inode *inode = file->f_mapping->host;
->  	int ret;
->  
-> +	if (origin != SEEK_DATA && origin != SEEK_HOLE)
-> +		return generic_file_llseek(file, offset, origin);
-> +
->  	mutex_lock(&inode->i_mutex);
-> -	switch (origin) {
-> -	case SEEK_END:
-> -	case SEEK_CUR:
-> -		offset = generic_file_llseek(file, offset, origin);
-> -		goto out;
-> -	case SEEK_DATA:
-> -	case SEEK_HOLE:
-> -		if (offset >= i_size_read(inode)) {
-> -			mutex_unlock(&inode->i_mutex);
-> -			return -ENXIO;
-> -		}
-> +	if (offset >= i_size_read(inode)) {
-> +		mutex_unlock(&inode->i_mutex);
-> +		return -ENXIO;
-> +	}
->  
-> -		ret = find_desired_extent(inode, &offset, origin);
-> -		if (ret) {
-> -			mutex_unlock(&inode->i_mutex);
-> -			return ret;
-> -		}
-> +	ret = find_desired_extent(inode, &offset, origin);
-> +	if (ret) {
-> +		mutex_unlock(&inode->i_mutex);
-> +		return ret;
->  	}
->  
->  	if (offset < 0 && !(file->f_mode & FMODE_UNSIGNED_OFFSET)) {
-> -- 
-> 1.7.6.409.ge7a85.dirty
-> 
+Do we have an update to this? If not is it possible to ask a db dump
+and make a temporary wiki live somewhere else until the kernel.org is
+fully operational again?
+
+>
+> =A0 Hugo.
+>
 > --
-> To unsubscribe from this list: send the line "unsubscribe linux-fsdevel" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
----end quoted text---
+> =3D=3D=3D Hugo Mills: hugo@... carfax.org.uk | darksatanic.net | lug.=
+org.uk =3D=3D=3D
+> =A0PGP key: 515C238D from wwwkeys.eu.pgp.net or http://www.carfax.org=
+=2Euk
+> =A0--- You can get more with a kind word and a two-by-four than you -=
+--
+> =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 can with just a kind word=
+=2E
+>
+
+
+
+--=20
+Caution: breathing may be hazardous to your health.
+--
+To unsubscribe from this list: send the line "unsubscribe linux-btrfs" =
+in
+the body of a message to majordomo@vger.kernel.org
+More majordomo info at  http://vger.kernel.org/majordomo-info.html

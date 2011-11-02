@@ -1,60 +1,85 @@
 From: Leonidas Spyropoulos <artafinde@gmail.com>
-Subject: Re: https://btrfs.wiki.kernel.org/index.php/Main_Page
-Date: Wed, 2 Nov 2011 14:16:28 +0000
-Message-ID: <CAAeznTq=mYwnR62hvQ4AWg=ckCNtnyHQonELuKK0yGTcG78xEQ@mail.gmail.com>
-References: <4E9C28A9.3070008@oracle.com>
-	<20111017131753.GB4333@carfax.org.uk>
-	<CAAeznTotnofQh5SGA76zdms5Mjz4W0QwnZE6u1FQYwbv3qg0Jw@mail.gmail.com>
-	<20111102102234.GA27394@carfax.org.uk>
+Subject: Re: btrfs-progs
+Date: Wed, 2 Nov 2011 14:45:18 +0000
+Message-ID: <CAAeznTob3MSuFksLRf0=urH0KwyZmdKzyD-=DJ+hXHpdo92yaQ@mail.gmail.com>
+References: <20111101163414.b1b46d9c.b3nton@gmail.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset=ISO-8859-1
-To: Hugo Mills <hugo@carfax.org.uk>,
-	Leonidas Spyropoulos <artafinde@gmail.com>,
-	Anand Jain <anand.jain@oracle.com>, linux-btrfs@vger.kernel.org
+Cc: linux-btrfs@vger.kernel.org
+To: Andrew Benton <b3nton@gmail.com>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <20111102102234.GA27394@carfax.org.uk>
+In-Reply-To: <20111101163414.b1b46d9c.b3nton@gmail.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Wed, Nov 2, 2011 at 10:22 AM, Hugo Mills <hugo@carfax.org.uk> wrote:
-> On Wed, Nov 02, 2011 at 10:00:19AM +0000, Leonidas Spyropoulos wrote:
->> On Mon, Oct 17, 2011 at 2:17 PM, Hugo Mills <hugo@carfax.org.uk> wro=
-te:
->> > On Mon, Oct 17, 2011 at 09:07:53PM +0800, Anand Jain wrote:
->> >>
->> >> =A0Does not load. Wondering if this should work or has been moved=
- ?
->> >
->> > =A0 It's a victim of the kernel.org hack. Nobody seems to have a s=
-pare
->> > copy, but the database on kernel.org should still be there. I thin=
-k
->> > we're just waiting for the dust to settle on kernel.org (they're s=
-till
->> > getting git access back for the main kernel developers) before we =
-can
->> > find out about continued wiki support, or getting the wiki data ba=
-ck.
->>
->> Do we have an update to this? If not is it possible to ask a db dump
->> and make a temporary wiki live somewhere else until the kernel.org i=
-s
->> fully operational again?
->
-> =A0 It's expected to be back online at the end of this week. If they
-> can't get it back by then, we've been promised a DB dump.
+Hi,
 
-Ok good to know that. Let's hope it comes up on Friday.
+On Tue, Nov 1, 2011 at 4:34 PM, Andrew Benton <b3nton@gmail.com> wrote:
+> Hello,
+>
+> I've just pulled btrfs-progs from the new git repo
+> git://git.kernel.org/pub/scm/linux/kernel/git/mason/btrfs-progs.git
+> However, when I come to make it fails like so:
+>
+> gcc -Wp,-MMD,./.btrfsctl.o.d,-MT,btrfsctl.o -Wall -D_FILE_OFFSET_BITS=
+=3D64 -D_FORTIFY_SOURCE=3D2 -g -Werror -Os -c btrfsctl.c
+> gcc -g -Werror -Os -o btrfsctl btrfsctl.o ctree.o disk-io.o radix-tre=
+e.o extent-tree.o print-tree.o root-tree.o dir-item.o file-item.o inode=
+-item.o inode-map.o crc32c.o rbtree.o extent-cache.o extent_io.o volume=
+s.o utils.o btrfs-list.o btrfslabel.o =A0-luuid
+> ls mkfs.c
+> mkfs.c
+> gcc -Wp,-MMD,./.mkfs.o.d,-MT,mkfs.o -Wall -D_FILE_OFFSET_BITS=3D64 -D=
+_FORTIFY_SOURCE=3D2 -g -Werror -Os -c mkfs.c
+> mkfs.c:39:24: fatal error: attr/xattr.h: No such file or directory
+> compilation terminated.
+> make: *** [mkfs.o] Error 1
+> andy@eccles:~/btrfs-progs$
+>
+> Is attr a required dependency of btrfs-progs now?
+> If I sed -i 's#attr/#sys/#' mkfs.c then it compiles and installs (I'v=
+e
+> not tried to use any of the tools yet). Is it wise to do this? I don'=
+t
+> use any extended attributes, I don't have extended attributes enabled
+> in my kernel config, I have no wish to install libattr.
+>
+> Please CC me as I'm not subscribed,
 
+I just cloned the repo and compiled it without problems on an
+up-to-date Archlinux x86-64 system
+
+As far as dependencies the only one needed is: libuuid
+Quoting the INSTALL file:
+=2E..
+The Btrfs utility programs require libuuid to build.  This can be
+found in the e2fsprogs sources, and is usually available as libuuid or
+e2fsprogs-devel from various distros.
+=2E..
+
+As for the xattr.h file I searched my system and I am guessing my
+compilation it's using the file located in /usr/include/attr/xattr.h
+(because I got multiple ones in different locations)
+This seems to be coming from attr package.
+pkgfile /usr/include/attr/xattr.h
+core/attr
+
+But searching for this file outside that path it seems like the
+linux-headers contain it as well.
+So it could be a solution to use the one from the headers?
+
+Maybe someone else can light a bit more some corners of my procedure. :=
+)
+
+Hope I helped.
+
+Leonidas
 >
-> =A0 Hugo.
->
+> Andy
 > --
-> =3D=3D=3D Hugo Mills: hugo@... carfax.org.uk | darksatanic.net | lug.=
-org.uk =3D=3D=3D
-> =A0PGP key: 515C238D from wwwkeys.eu.pgp.net or http://www.carfax.org=
-=2Euk
-> =A0 =A0 =A0 =A0 --- 2 + 2 =3D 5, =A0for sufficiently large values of =
-2. ---
+> To unsubscribe from this list: send the line "unsubscribe linux-btrfs=
+" in
+> the body of a message to majordomo@vger.kernel.org
+> More majordomo info at =A0http://vger.kernel.org/majordomo-info.html
 >
 
 

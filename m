@@ -1,44 +1,118 @@
-From: Miao Xie <miaox@cn.fujitsu.com>
-Subject: Re: [RFC PATCH 2/2] Btrfs: introduce free space cluster for each
- node
-Date: Wed, 02 Nov 2011 10:16:31 +0800
-Message-ID: <4EB0A7FF.8060602@cn.fujitsu.com>
-References: <4E687A41.8080101@cn.fujitsu.com> <4EAFA21F.5010200@cn.fujitsu.com> <20111101160440.GA13340@shiny>
-Reply-To: miaox@cn.fujitsu.com
+From: Liu Bo <liubo2009@cn.fujitsu.com>
+Subject: Re: new integration-danger branch pushed out (kernel)
+Date: Wed, 02 Nov 2011 10:22:36 +0800
+Message-ID: <4EB0A96C.6080403@cn.fujitsu.com>
+References: <20111101024957.GH4468@shiny> <4EAFBA4C.1080201@cn.fujitsu.com> <20111101105532.GA9554@shiny>
 Mime-Version: 1.0
 Content-Type: text/plain; charset=ISO-8859-1
-To: Chris Mason <chris.mason@oracle.com>,
-	Linux Btrfs <linux-btrfs@vger.kernel.org>
+To: Chris Mason <chris.mason@oracle.com>, linux-btrfs@vger.kernel.org
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <20111101160440.GA13340@shiny>
+In-Reply-To: <20111101105532.GA9554@shiny>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On tue, 1 Nov 2011 12:04:40 -0400, Chris Mason wrote:
-> On Tue, Nov 01, 2011 at 03:39:11PM +0800, Miao Xie wrote:
->> Any Comment?
+On 11/01/2011 06:55 PM, Chris Mason wrote:
+> On Tue, Nov 01, 2011 at 05:22:20PM +0800, Liu Bo wrote:
+>> Hi, 
+>>
+>> On 11/01/2011 10:49 AM, Chris Mason wrote:
+>>> Hi everyone,
+>>>
+>>> I've pushed out a new integration branch, but it is not for general use.
+>>>
+>>> I'm still going through and hammering on the new logging code code to
+>>> make sure it is properly backwards compatible with older kernels and
+>>> that it hasn't introduced any new bugs.
+>>>
+>>> *** Please do not use this code on anything other than test filesystems that
+>>> can easily be reformatted. ***
+>>>
+>>> In testing the new sub-transid logging code, I've spent a lot of time
+>>> hunting logging bugs, and writing new tests to try and make sure the
+>>> logging code is working correctly in general.  Between that and some new
+>>> tests from Arne, I've had to make some pretty big changes to the code.
+>>>
+>> I'm giving a hard read on the new code, and I notice a slight change:
 > 
-> This is definitely interesting, in terms of trying to avoid btree
-> fragmentation and improve the performance of the allocator.
+> Thanks a lot for reading it carefully.
 > 
-> But I'm worried about what happens to performance as the FS fills up?
-> What kind of benchmarks have you done on larger filesystems that are
-> almost full?
+>> @@ -3006,14 +3179,11 @@ out:
+>>  static int inode_in_log(struct btrfs_trans_handle *trans,
+>>                  struct inode *inode)
+>>  {
+>> -       struct btrfs_root *root = BTRFS_I(inode)->root;
+>>         int ret = 0;
+>>  
+>> -       mutex_lock(&root->log_mutex);
+>> -       if (BTRFS_I(inode)->logged_trans == trans->transid &&
+>> -           BTRFS_I(inode)->last_sub_trans <= root->last_log_commit)
+>> +       if (BTRFS_I(inode)->logged_trans >= trans->transaction->transid &&
+>> +           BTRFS_I(inode)->last_trans < BTRFS_I(inode)->logged_trans)
+>>            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+>>                 ret = 1;
+>> -       mutex_unlock(&root->log_mutex);
+>>         return ret;
+>>  }
+>>
+>> since we've moved the "sub_transid++" update to btrfs_sync_log(), the ending of log,
+>> say there is a case like this:
+>>
+>> transaction ------------------------------------------ start
+>>                  |
+>>     sub_trans A  | --- start
+>>                  |
+>>                  | --- modify inode X, and set X's last_trans to sub_transid
+>>  |               |
+>>  |               | --- fsync inode X, and set X's logged_trans to sub_transid
+>>  |               |
+>>  |               | --- in btrfs_sync_log(), sub_transid++
+>>  |               |
+>> \|/              | --- end
+>>                  |
+>>    sub_trans A+1 | --- start
+>>                  |
+>>                  | --- no change to inode X
+>>                  |
+>>                  | --- fsync inode X
+>>                  |
+>>                  | --- in inode_in_log(), X's last_trans is equal to X's logged_trans,
+>>                        unchanged X is just in the log, but we need to log X again.
+>>
+>>     ......             ......
+>>
+>> transaction ------------------------------------------ end
+>>
+>> we do not want this, does we?  Or am I missing something?
+> 
+> Correct, this is less optimal.  I was finding races where the transid
+> increasing at the start of the log trans would lead to one process
+> missing file and directory updates done by another process.
+> 
+> So I made the patch slightly more conservative.  We're still logging
+> about 75% less than we used to in every workload I've tried, but we can
+> definitely refine this in future commits.
+> 
 
-Sorry, I have not done test in this condition.
-I think you are right, on the filesystems that are almost full, the performance
-will go down. My next work may fix this problem, that is:
-I. the buddy system of the free space (just like the buddy system of the memory management)
-II. pre-node cluster degradation on almost full filesystems (If the free space is not enough,
-    use the global cluster)
-    Or maybe we can use the cluster of other nodes to allocate free space instead of pre-node
-    cluster degradation
+Ok, got it, thanks for the explanation.
 
-Thanks
-Miao Xie
+> Along the way I fixed an old bug in directory logging that meant we
+> almost always force a full commit for directory fsyncs.  The fix means
+> we use the directory log more often now, which is faster in some cases
+> and slower in others.
+> 
 
+I know them, one from drop_objectid_items() and the other from check_parent_dirs_for_sync(),
+both have been fixed in the new code.
 
+thanks,
+liubo
+
+> It also means a bug with delayed metadata insertion triggers more easily
+> during log replay (we need to flush the delayed ops during log replay).
+> The bug was hidden before because the directory log wasn't being used
+> much.
 > 
 > -chris
+> 
 > --
 > To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
 > the body of a message to majordomo@vger.kernel.org

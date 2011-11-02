@@ -1,112 +1,96 @@
-From: Hugo Mills <hugo@carfax.org.uk>
-Subject: Re: [BTRFS-PROG][PATCH 1/7] Correct xstrip() function
-Date: Wed, 2 Nov 2011 21:39:40 +0000
-Message-ID: <20111102213940.GA28749@carfax.org.uk>
-References: <1341299.kzfvzJ2fHp@venice>
+From: Andrew Benton <b3nton@gmail.com>
+Subject: Re: Fwd: [PATCH] Btrfs-progs: mention libattr dependency in INSTALL
+ file
+Date: Wed, 2 Nov 2011 22:58:59 +0000
+Message-ID: <20111102225859.a303adad.b3nton@gmail.com>
+References: <1320246873-25457-1-git-send-email-idryomov@gmail.com>
+	<20111102204243.GA23532@zambezi.lan>
+	<CAAeznTp=oSUK_rv2jsHwNzQzncqyLSoyEnYPTcuBRMqyPo56zg@mail.gmail.com>
 Mime-Version: 1.0
-Content-Type: multipart/signed; micalg=pgp-sha1;
-	protocol="application/pgp-signature"; boundary="liOOAslEiF7prFVr"
-Cc: linux-btrfs@vger.kernel.org, chris.mason@oracle.com,
-	Arne Jansen <sensille@gmx.net>,
-	Ilya Dryomov <idryomov@gmail.com>
-To: Goffredo Baroncelli <kreijack@inwind.it>
+Content-Type: text/plain; charset=UTF-8
+Cc: linux-btrfs@vger.kernel.org
+To: Leonidas Spyropoulos <artafinde@gmail.com>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <1341299.kzfvzJ2fHp@venice>
+In-Reply-To: <CAAeznTp=oSUK_rv2jsHwNzQzncqyLSoyEnYPTcuBRMqyPo56zg@mail.gmail.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
+On Wed, 2 Nov 2011 20:52:28 +0000
+Leonidas Spyropoulos <artafinde@gmail.com> wrote:
 
---liOOAslEiF7prFVr
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
+> This might interest you.
 
-On Wed, Nov 02, 2011 at 10:22:41PM +0100, Goffredo Baroncelli wrote:
-> this is the first of 7 patches, which improve the man page of the btrfs 
-> command.
-> I added some basic text fro the man page for the "filesystem restriper *" and 
-> the "quota/qgroup *" commands. I put in CC the writer hoping that they will 
-> care to maintain aligned the documentation with the code.
-> 
-> These patches are base on the latest "Hugo Mills" integration branch.
+Thanks
 
-   Please don't do this -- it makes it harder for me to integrate,
-because I throw away each integration branch before making the next
-one, so I have to rebase your patches back to master before I can
-integrate them...
+> ---------- Forwarded message ----------
+> From: Ilya Dryomov <idryomov@gmail.com>
+> Date: Wed, Nov 2, 2011 at 8:42 PM
+> Subject: Re: [PATCH] Btrfs-progs: mention libattr dependency in INSTA=
+LL file
+> To: linux-btrfs@vger.kernel.org
+> Cc: Chris Mason <chris.mason@oracle.com>, Hugo Mills <hugo@carfax.org=
+=2Euk>
+>=20
+>=20
+> On Wed, Nov 02, 2011 at 05:14:33PM +0200, Ilya Dryomov wrote:
+> > Signed-off-by: Ilya Dryomov <idryomov@gmail.com>
+> > ---
+> > =C2=A0INSTALL | =C2=A0 =C2=A03 ++-
+> > =C2=A01 files changed, 2 insertions(+), 1 deletions(-)
+> >
+> > diff --git a/INSTALL b/INSTALL
+> > index 6afbd90..11c388b 100644
+> > --- a/INSTALL
+> > +++ b/INSTALL
+> > @@ -19,7 +19,8 @@ insmod btrfs.ko
+> >
+> > =C2=A0The Btrfs utility programs require libuuid to build. =C2=A0Th=
+is can be found
+> > =C2=A0in the e2fsprogs sources, and is usually available as libuuid=
+ or
+> > -e2fsprogs-devel from various distros.
+> > +e2fsprogs-devel from various distros. =C2=A0The other dependency i=
+s libattr
+> > +(libattr1-dev in Debian-based distros).
+> >
+> > =C2=A0Building the utilities is just make ; make install. =C2=A0The=
+ programs go
+> > =C2=A0into /usr/local/bin. =C2=A0The mains commands available are:
+> > --
+> > 1.7.6.3
 
-   Basing patches on Chris's master (or my for-chris branch, if I've
-got one) is greatly preferred from my point of view.
+I see. I did check the INSTALL file when I first had the error but it
+didn't mention any dependencies. Incidentally, I get libuuid from
+util-linux.
 
-   Hugo.
+>=20
+> Scratch that, it seems it's indeed not needed. =C2=A0The thing is tha=
+t every
+> time a set up a new test machine I have to install libattr1-dev, but =
+I
+> never looked into it in detail.
+>=20
+> So libattr1-dev is needed because mkfs includes attr/xattr.h to be ab=
+le
+> to create FS from image with extended attributes. =C2=A0I think it's =
+safe to
+> change attr/xattr.h include to sys/xattr.h and thus get rid of this
+> build dependency. =C2=A0(attr/xattr.h seems to be there for compatibi=
+lity
+> with SGI IRIX)
+>=20
+> I built mkfs with sys/xattr.h and created FS from directory containin=
+g
+> files with xattrs, it worked.
 
-> This patch correct a bug in the xstrip() function, which prevented to erase the
->  unneeded spaces.
-> 
-> Comments are welcome.
-> 
-> BR
-> G.Baroncelli
-> 
-> Signed-off-by: Goffredo Baroncelli <kreijack@inwind.it>
-> 
-> ---
->  helpextract.c |    9 +++++----
->  1 files changed, 5 insertions(+), 4 deletions(-)
-> 
-> diff --git a/helpextract.c b/helpextract.c
-> index 9489ea0..a729074 100644
-> --- a/helpextract.c
-> +++ b/helpextract.c
-> @@ -38,20 +38,21 @@ static char *xstrip(char *s){
->  
->  	char *last=NULL;
->  	char *first;
-> +	char prev;
->  
->  	while(*s && isspace(*s) ) s++;
->  
->  	first=s;
-> -
-> +	prev=*s;
->  	while(*s){
-> -		if(isspace(*s)) last=s;
-> +		if(!isspace(prev) && isspace(*s)) last=s;
-> +		prev=*s;
->  		s++;
->  	}
->  
->  	if(last) *last=0;
->  	return first;
->  
-> -
->  }
->  
->  static void addtuple(char *key, char *cmdline, char *short_help, 
-> @@ -184,7 +185,7 @@ static int search_in_file(char *nf){
->  	return 0;
->  }
->  
-> -/* remove all the escape sequence excepet \\ */
-> +/* remove all the escape sequence except \\ */
->  static char * my_escape(char *src, char *filters[] ){
->  
->  	static char buffer[LINEBUF*5];
-> 
+It does work, I used it to format the root partition I'm booted into at
+the moment. But as I said before, I don't use any extended attributes.
+It would be nice to have the choice and not be expected to install
+libattr.
 
--- 
-=== Hugo Mills: hugo@... carfax.org.uk | darksatanic.net | lug.org.uk ===
-  PGP key: 515C238D from wwwkeys.eu.pgp.net or http://www.carfax.org.uk
-  --- Startle, startle, little twink.  How I wonder what you think. ---  
-
---liOOAslEiF7prFVr
-Content-Type: application/pgp-signature; name="signature.asc"
-Content-Description: Digital signature
-
------BEGIN PGP SIGNATURE-----
-Version: GnuPG v1.4.11 (GNU/Linux)
-
-iD8DBQFOsbicIKyzvlFcI40RAjEvAKCbSIlaZ+G/DPRVQMaMdEtQssFQewCghx1g
-SsQb27yjP3oLXwt0VJQueCQ=
-=x7vl
------END PGP SIGNATURE-----
-
---liOOAslEiF7prFVr--
+Thanks,
+Andy
+--
+To unsubscribe from this list: send the line "unsubscribe linux-btrfs" =
+in
+the body of a message to majordomo@vger.kernel.org
+More majordomo info at  http://vger.kernel.org/majordomo-info.html

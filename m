@@ -1,93 +1,106 @@
 From: Goffredo Baroncelli <kreijack@inwind.it>
-Subject: [BTRFS-PROG][PATCH 3/7] The man/btrfs.8.in man page is auto-generated
-Date: Wed, 02 Nov 2011 22:23:35 +0100
-Message-ID: <16314013.f7H6TtqO7M@venice>
+Subject: [PATCH 4/7] get-default man page
+Date: Wed, 02 Nov 2011 22:23:42 +0100
+Message-ID: <3488788.FXyDJRn6Dj@venice>
 Reply-To: Goffredo Baroncelli <kreijack@inwind.it>
 Mime-Version: 1.0
-Content-Type: multipart/signed; boundary="nextPart1426448.OjHhO8ukdK"; micalg="pgp-sha1"; protocol="application/pgp-signature"
+Content-Type: multipart/signed; boundary="nextPart4415292.jTHB4dE5Bi"; micalg="pgp-sha1"; protocol="application/pgp-signature"
 To: linux-btrfs@vger.kernel.org
 Return-path: <linux-btrfs-owner@vger.kernel.org>
 List-ID: <linux-btrfs.vger.kernel.org>
 
 
---nextPart1426448.OjHhO8ukdK
-Content-Type: multipart/mixed; boundary="nextPart1562190.RBWaYMjKmL"
+--nextPart4415292.jTHB4dE5Bi
+Content-Type: multipart/mixed; boundary="nextPart1438634.X0dL9I6nsy"
 Content-Transfer-Encoding: 7Bit
 
 
---nextPart1562190.RBWaYMjKmL
+--nextPart1438634.X0dL9I6nsy
 Content-Transfer-Encoding: 7Bit
 Content-Type: text/plain; charset="us-ascii"
 
-Warn that the man/btrfs.8.in man page is auto-generated
+Add the man page info for the "btrfs subvolume get-default" command. This command 
+was not mentioned in the man page before.
 
 Comments are welcome.
+
 
 BR
 G.Baroncelli
 
 Signed-off-by: Goffredo Baroncelli <kreijack@inwind.it>
 
----
- btrfs.c |    5 +++++
- 1 files changed, 5 insertions(+), 0 deletions(-)
 
-diff --git a/btrfs.c b/btrfs.c
-index 4235d54..d7ece5b 100644
---- a/btrfs.c
-+++ b/btrfs.c
-@@ -88,6 +88,11 @@
-  * .\"
-  * .\" Man page for the "btrfs" tool 
-  * .\"
-+ * .\" WARNING
-+ * .\" WARNING This file is generated automatically. Don't edit, your change
-+ * .\" WARNING will be lost. See the file btrfs.c for further information
-+ * .\" WARNING 
-+ * .\"
-  * .SH NAME
-  * btrfs \- control a btrfs filesystem
-  ****/
+---
+ btrfs_cmds.c |   10 ++++++++++
+ 1 files changed, 10 insertions(+), 0 deletions(-)
+
+diff --git a/btrfs_cmds.c b/btrfs_cmds.c
+index 01e08fb..265d2cd 100644
+--- a/btrfs_cmds.c
++++ b/btrfs_cmds.c
+@@ -1810,6 +1810,16 @@ int do_change_label(int nargs, char **argv)
+ }
+ 
+ 
++/**** man: btrfs subvolume get-default
++ * 
++ * \Bbtrfs\b \Bsubvolume get-default\b\I <path>\i
++ * 
++ * Query which subvolume of the filesystem <path> will be mounted
++ * as default.
++ * 
++ * Get the \Idefault\i subvolume of the filesystem \I<path>\i. 
++ ****/
++
+ int do_get_default_subvol(int nargs, char **argv)
+ {
+ 	int fd;
 
 -- 
 gpg key@ keyserver.linux.it: Goffredo Baroncelli (ghigo) <kreijack@inwind.it>
 Key fingerprint = 4769 7E51 5293 D36C 814E  C054 BF04 F161 3DC5 0512
---nextPart1562190.RBWaYMjKmL
-Content-Disposition: inline; filename="send-via-kmail-attach-31164-1320267556-26954.msg"
+--nextPart1438634.X0dL9I6nsy
+Content-Disposition: inline; filename="send-via-kmail-attach-14132-1320267561-26993.msg"
 Content-Transfer-Encoding: 7Bit
-Content-Type: text/x-patch; charset="utf-8"; name="send-via-kmail-attach-31164-1320267556-26954.msg"
+Content-Type: text/x-patch; charset="utf-8"; name="send-via-kmail-attach-14132-1320267561-26993.msg"
 
-diff --git a/btrfs.c b/btrfs.c
-index 4235d54..d7ece5b 100644
---- a/btrfs.c
-+++ b/btrfs.c
-@@ -88,6 +88,11 @@
-  * .\"
-  * .\" Man page for the "btrfs" tool 
-  * .\"
-+ * .\" WARNING
-+ * .\" WARNING This file is generated automatically. Don't edit, your change
-+ * .\" WARNING will be lost. See the file btrfs.c for further information
-+ * .\" WARNING 
-+ * .\"
-  * .SH NAME
-  * btrfs \- control a btrfs filesystem
-  ****/
+diff --git a/btrfs_cmds.c b/btrfs_cmds.c
+index 01e08fb..265d2cd 100644
+--- a/btrfs_cmds.c
++++ b/btrfs_cmds.c
+@@ -1810,6 +1810,16 @@ int do_change_label(int nargs, char **argv)
+ }
+ 
+ 
++/**** man: btrfs subvolume get-default
++ * 
++ * \Bbtrfs\b \Bsubvolume get-default\b\I <path>\i
++ * 
++ * Query which subvolume of the filesystem <path> will be mounted
++ * as default.
++ * 
++ * Get the \Idefault\i subvolume of the filesystem \I<path>\i. 
++ ****/
++
+ int do_get_default_subvol(int nargs, char **argv)
+ {
+ 	int fd;
 
 
---nextPart1562190.RBWaYMjKmL--
+--nextPart1438634.X0dL9I6nsy--
 
---nextPart1426448.OjHhO8ukdK
+--nextPart4415292.jTHB4dE5Bi
 Content-Type: application/pgp-signature; name="signature.asc"
 Content-Description: This is a digitally signed message part.
 
 -----BEGIN PGP SIGNATURE-----
 Version: GnuPG v1.4.11 (GNU/Linux)
 
-iD8DBQBOsbTXvwTxYT3FBRIRAlRDAJ994hhbetDg9ksOUhyYHTLSKGZ88gCcD73I
-Uvqxoc9IkXEPTaaKiTPiPqo=
-=1PSJ
+iD8DBQBOsbTevwTxYT3FBRIRAjyHAJ9uFh5rIitePcaSUd+qTnGULhA2FQCfcGgx
+xZ22zEDNXQfe7haQ2aPbvXg=
+=uZO1
 -----END PGP SIGNATURE-----
 
---nextPart1426448.OjHhO8ukdK--
+--nextPart4415292.jTHB4dE5Bi--
 

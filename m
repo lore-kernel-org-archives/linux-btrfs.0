@@ -1,121 +1,81 @@
-From: Liu Bo <liubo2009@cn.fujitsu.com>
-Subject: Re: new integration-danger branch pushed out (kernel)
-Date: Wed, 02 Nov 2011 10:22:36 +0800
-Message-ID: <4EB0A96C.6080403@cn.fujitsu.com>
-References: <20111101024957.GH4468@shiny> <4EAFBA4C.1080201@cn.fujitsu.com> <20111101105532.GA9554@shiny>
+From: Christoph Hellwig <hch@infradead.org>
+Subject: Re: [PATCH 1/2] LSEEK: BTRFS: Avoid i_mutex for SEEK_{CUR,SET,END}
+Date: Wed, 2 Nov 2011 04:29:15 -0400
+Message-ID: <20111102082915.GA28153@infradead.org>
+References: <1316128013-21980-1-git-send-email-andi@firstfloor.org>
+ <201110012246.13801.andres@anarazel.de>
+ <201110012249.27834.andres@anarazel.de>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=ISO-8859-1
-To: Chris Mason <chris.mason@oracle.com>, linux-btrfs@vger.kernel.org
+Content-Type: text/plain; charset=us-ascii
+Cc: Andi Kleen <andi@firstfloor.org>, robertmhaas@gmail.com,
+	viro@zeniv.linux.org.uk, linux-fsdevel@vger.kernel.org,
+	linux-kernel@vger.kernel.org, chris.mason@oracle.com,
+	linux-btrfs@vger.kernel.org
+To: Andres Freund <andres@anarazel.de>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <20111101105532.GA9554@shiny>
+In-Reply-To: <201110012249.27834.andres@anarazel.de>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 11/01/2011 06:55 PM, Chris Mason wrote:
-> On Tue, Nov 01, 2011 at 05:22:20PM +0800, Liu Bo wrote:
->> Hi, 
->>
->> On 11/01/2011 10:49 AM, Chris Mason wrote:
->>> Hi everyone,
->>>
->>> I've pushed out a new integration branch, but it is not for general use.
->>>
->>> I'm still going through and hammering on the new logging code code to
->>> make sure it is properly backwards compatible with older kernels and
->>> that it hasn't introduced any new bugs.
->>>
->>> *** Please do not use this code on anything other than test filesystems that
->>> can easily be reformatted. ***
->>>
->>> In testing the new sub-transid logging code, I've spent a lot of time
->>> hunting logging bugs, and writing new tests to try and make sure the
->>> logging code is working correctly in general.  Between that and some new
->>> tests from Arne, I've had to make some pretty big changes to the code.
->>>
->> I'm giving a hard read on the new code, and I notice a slight change:
-> 
-> Thanks a lot for reading it carefully.
-> 
->> @@ -3006,14 +3179,11 @@ out:
->>  static int inode_in_log(struct btrfs_trans_handle *trans,
->>                  struct inode *inode)
->>  {
->> -       struct btrfs_root *root = BTRFS_I(inode)->root;
->>         int ret = 0;
->>  
->> -       mutex_lock(&root->log_mutex);
->> -       if (BTRFS_I(inode)->logged_trans == trans->transid &&
->> -           BTRFS_I(inode)->last_sub_trans <= root->last_log_commit)
->> +       if (BTRFS_I(inode)->logged_trans >= trans->transaction->transid &&
->> +           BTRFS_I(inode)->last_trans < BTRFS_I(inode)->logged_trans)
->>            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
->>                 ret = 1;
->> -       mutex_unlock(&root->log_mutex);
->>         return ret;
->>  }
->>
->> since we've moved the "sub_transid++" update to btrfs_sync_log(), the ending of log,
->> say there is a case like this:
->>
->> transaction ------------------------------------------ start
->>                  |
->>     sub_trans A  | --- start
->>                  |
->>                  | --- modify inode X, and set X's last_trans to sub_transid
->>  |               |
->>  |               | --- fsync inode X, and set X's logged_trans to sub_transid
->>  |               |
->>  |               | --- in btrfs_sync_log(), sub_transid++
->>  |               |
->> \|/              | --- end
->>                  |
->>    sub_trans A+1 | --- start
->>                  |
->>                  | --- no change to inode X
->>                  |
->>                  | --- fsync inode X
->>                  |
->>                  | --- in inode_in_log(), X's last_trans is equal to X's logged_trans,
->>                        unchanged X is just in the log, but we need to log X again.
->>
->>     ......             ......
->>
->> transaction ------------------------------------------ end
->>
->> we do not want this, does we?  Or am I missing something?
-> 
-> Correct, this is less optimal.  I was finding races where the transid
-> increasing at the start of the log trans would lead to one process
-> missing file and directory updates done by another process.
-> 
-> So I made the patch slightly more conservative.  We're still logging
-> about 75% less than we used to in every workload I've tried, but we can
-> definitely refine this in future commits.
-> 
+Andres, can you check with Chris that the btrfs changes made it to
+his tree?  The core lseek changes from Andi are in mainline now, but
+I think these bits are better off going through Chrises btrfs tree.
 
-Ok, got it, thanks for the explanation.
-
-> Along the way I fixed an old bug in directory logging that meant we
-> almost always force a full commit for directory fsyncs.  The fix means
-> we use the directory log more often now, which is faster in some cases
-> and slower in others.
+On Sat, Oct 01, 2011 at 10:49:27PM +0200, Andres Freund wrote:
 > 
-
-I know them, one from drop_objectid_items() and the other from check_parent_dirs_for_sync(),
-both have been fixed in the new code.
-
-thanks,
-liubo
-
-> It also means a bug with delayed metadata insertion triggers more easily
-> during log replay (we need to flush the delayed ops during log replay).
-> The bug was hidden before because the directory log wasn't being used
-> much.
+> Don't need the i_mutex for those cases, only for SEEK_HOLE/DATA.
 > 
-> -chris
+> Really-From: Andi Kleen <ak@linux.intel.com>
+> Signed-off-by: Andi Kleen <ak@linux.intel.com>
+> Signed-off-by: Andres Freund <andres@anarazel.de>
+> ---
+>  fs/btrfs/file.c |   27 +++++++++++----------------
+>  1 files changed, 11 insertions(+), 16 deletions(-)
+> 
+> diff --git a/fs/btrfs/file.c b/fs/btrfs/file.c
+> index 7a13337..5bc7116 100644
+> --- a/fs/btrfs/file.c
+> +++ b/fs/btrfs/file.c
+> @@ -1809,24 +1809,19 @@ static loff_t btrfs_file_llseek(struct file *file, loff_t offset, int origin)
+>  	struct inode *inode = file->f_mapping->host;
+>  	int ret;
+>  
+> +	if (origin != SEEK_DATA && origin != SEEK_HOLE)
+> +		return generic_file_llseek(file, offset, origin);
+> +
+>  	mutex_lock(&inode->i_mutex);
+> -	switch (origin) {
+> -	case SEEK_END:
+> -	case SEEK_CUR:
+> -		offset = generic_file_llseek(file, offset, origin);
+> -		goto out;
+> -	case SEEK_DATA:
+> -	case SEEK_HOLE:
+> -		if (offset >= i_size_read(inode)) {
+> -			mutex_unlock(&inode->i_mutex);
+> -			return -ENXIO;
+> -		}
+> +	if (offset >= i_size_read(inode)) {
+> +		mutex_unlock(&inode->i_mutex);
+> +		return -ENXIO;
+> +	}
+>  
+> -		ret = find_desired_extent(inode, &offset, origin);
+> -		if (ret) {
+> -			mutex_unlock(&inode->i_mutex);
+> -			return ret;
+> -		}
+> +	ret = find_desired_extent(inode, &offset, origin);
+> +	if (ret) {
+> +		mutex_unlock(&inode->i_mutex);
+> +		return ret;
+>  	}
+>  
+>  	if (offset < 0 && !(file->f_mode & FMODE_UNSIGNED_OFFSET)) {
+> -- 
+> 1.7.6.409.ge7a85.dirty
 > 
 > --
-> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
+> To unsubscribe from this list: send the line "unsubscribe linux-fsdevel" in
 > the body of a message to majordomo@vger.kernel.org
 > More majordomo info at  http://vger.kernel.org/majordomo-info.html
-> 
-
+---end quoted text---

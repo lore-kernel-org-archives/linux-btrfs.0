@@ -1,140 +1,133 @@
-From: Josef Bacik <josef@redhat.com>
-Subject: [PATCH] Btrfs: make a delayed_block_rsv for the delayed item insertion
-Date: Wed,  2 Nov 2011 15:25:00 -0400
-Message-ID: <1320261900-3019-1-git-send-email-josef@redhat.com>
-To: linux-btrfs@vger.kernel.org
+From: Goffredo Baroncelli <kreijack@inwind.it>
+Subject: Re: [RFC] [PROGS] Regression tests
+Date: Wed, 02 Nov 2011 20:31 +0100
+Message-ID: <41272591.1IrILq7W5C@venice>
+References: <b17197c7428fa5b75a2d9ac95806fdd41be60424.1320010556.git.hugo@carfax.org.uk>
+Reply-To: Goffredo Baroncelli <kreijack@inwind.it>
+Mime-Version: 1.0
+Content-Type: text/plain; charset="us-ascii"
+Cc: linux-btrfs@vger.kernel.org
+To: Hugo Mills <hugo@carfax.org.uk>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
+In-Reply-To: <b17197c7428fa5b75a2d9ac95806fdd41be60424.1320010556.git.hugo@carfax.org.uk>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-I've been hitting warnings in use_block_rsv when running the delayed insertion
-stuff.  It's because we will readjust global block rsv based on what is in use,
-which means we could end up discarding reservations that are for the delayed
-insertion stuff.  So instead create a seperate block rsv for the delayed
-insertion stuff.  This will also make it easier to debug problems with the
-delayed insertion reservations since we will know that only the delayed
-insertion code touches this block_rsv.  Thanks,
+Hi hugo
 
-Signed-off-by: Josef Bacik <josef@redhat.com>
----
- fs/btrfs/ctree.h         |    2 ++
- fs/btrfs/delayed-inode.c |   14 +++++++-------
- fs/btrfs/disk-io.c       |    1 +
- fs/btrfs/extent-tree.c   |    3 +++
- 4 files changed, 13 insertions(+), 7 deletions(-)
+On Sunday, 30 October, 2011 21:44:56 Hugo Mills wrote:
+> Add a shell-script based test harness for performing regression tests
+> on btrfs tools. This is not intended as a test system for kernel
+> issues, but instead to put the userspace tools through their paces.
+> 
+> Currently implemented tests are compilation of all tools, and checking
+> argument counting on "btrfs sub snap". Other tests will follow.
 
-diff --git a/fs/btrfs/ctree.h b/fs/btrfs/ctree.h
-index 7104092..b73719e 100644
---- a/fs/btrfs/ctree.h
-+++ b/fs/btrfs/ctree.h
-@@ -915,6 +915,8 @@ struct btrfs_fs_info {
- 	struct btrfs_block_rsv trans_block_rsv;
- 	/* block reservation for chunk tree */
- 	struct btrfs_block_rsv chunk_block_rsv;
-+	/* block reservation for delayed operations */
-+	struct btrfs_block_rsv delayed_block_rsv;
- 
- 	struct btrfs_block_rsv empty_block_rsv;
- 
-diff --git a/fs/btrfs/delayed-inode.c b/fs/btrfs/delayed-inode.c
-index b52c672..fc4026a 100644
---- a/fs/btrfs/delayed-inode.c
-+++ b/fs/btrfs/delayed-inode.c
-@@ -591,7 +591,7 @@ static int btrfs_delayed_item_reserve_metadata(struct btrfs_trans_handle *trans,
- 		return 0;
- 
- 	src_rsv = trans->block_rsv;
--	dst_rsv = &root->fs_info->global_block_rsv;
-+	dst_rsv = &root->fs_info->delayed_block_rsv;
- 
- 	num_bytes = btrfs_calc_trans_metadata_size(root, 1);
- 	ret = btrfs_block_rsv_migrate(src_rsv, dst_rsv, num_bytes);
-@@ -609,7 +609,7 @@ static void btrfs_delayed_item_release_metadata(struct btrfs_root *root,
- 	if (!item->bytes_reserved)
- 		return;
- 
--	rsv = &root->fs_info->global_block_rsv;
-+	rsv = &root->fs_info->delayed_block_rsv;
- 	btrfs_block_rsv_release(root, rsv,
- 				item->bytes_reserved);
- }
-@@ -628,7 +628,7 @@ static int btrfs_delayed_inode_reserve_metadata(
- 		return 0;
- 
- 	src_rsv = trans->block_rsv;
--	dst_rsv = &root->fs_info->global_block_rsv;
-+	dst_rsv = &root->fs_info->delayed_block_rsv;
- 
- 	num_bytes = btrfs_calc_trans_metadata_size(root, 1);
- 	ret = btrfs_block_rsv_migrate(src_rsv, dst_rsv, num_bytes);
-@@ -646,7 +646,7 @@ static void btrfs_delayed_inode_release_metadata(struct btrfs_root *root,
- 	if (!node->bytes_reserved)
- 		return;
- 
--	rsv = &root->fs_info->global_block_rsv;
-+	rsv = &root->fs_info->delayed_block_rsv;
- 	btrfs_block_rsv_release(root, rsv,
- 				node->bytes_reserved);
- 	node->bytes_reserved = 0;
-@@ -1026,7 +1026,7 @@ int btrfs_run_delayed_items(struct btrfs_trans_handle *trans,
- 	path->leave_spinning = 1;
- 
- 	block_rsv = trans->block_rsv;
--	trans->block_rsv = &root->fs_info->global_block_rsv;
-+	trans->block_rsv = &root->fs_info->delayed_block_rsv;
- 
- 	delayed_root = btrfs_get_delayed_root(root);
- 
-@@ -1069,7 +1069,7 @@ static int __btrfs_commit_inode_delayed_items(struct btrfs_trans_handle *trans,
- 	path->leave_spinning = 1;
- 
- 	block_rsv = trans->block_rsv;
--	trans->block_rsv = &node->root->fs_info->global_block_rsv;
-+	trans->block_rsv = &node->root->fs_info->delayed_block_rsv;
- 
- 	ret = btrfs_insert_delayed_items(trans, path, node->root, node);
- 	if (!ret)
-@@ -1149,7 +1149,7 @@ static void btrfs_async_run_delayed_node_done(struct btrfs_work *work)
- 		goto free_path;
- 
- 	block_rsv = trans->block_rsv;
--	trans->block_rsv = &root->fs_info->global_block_rsv;
-+	trans->block_rsv = &root->fs_info->delayed_block_rsv;
- 
- 	ret = btrfs_insert_delayed_items(trans, path, root, delayed_node);
- 	if (!ret)
-diff --git a/fs/btrfs/disk-io.c b/fs/btrfs/disk-io.c
-index e5f96c9..f317195 100644
---- a/fs/btrfs/disk-io.c
-+++ b/fs/btrfs/disk-io.c
-@@ -1664,6 +1664,7 @@ struct btrfs_root *open_ctree(struct super_block *sb,
- 	btrfs_init_block_rsv(&fs_info->trans_block_rsv);
- 	btrfs_init_block_rsv(&fs_info->chunk_block_rsv);
- 	btrfs_init_block_rsv(&fs_info->empty_block_rsv);
-+	btrfs_init_block_rsv(&fs_info->delayed_block_rsv);
- 	atomic_set(&fs_info->nr_async_submits, 0);
- 	atomic_set(&fs_info->async_delalloc_pages, 0);
- 	atomic_set(&fs_info->async_submit_draining, 0);
-diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
-index ca6f558..66d0911 100644
---- a/fs/btrfs/extent-tree.c
-+++ b/fs/btrfs/extent-tree.c
-@@ -3914,6 +3914,7 @@ static void init_global_block_rsv(struct btrfs_fs_info *fs_info)
- 	fs_info->delalloc_block_rsv.space_info = space_info;
- 	fs_info->trans_block_rsv.space_info = space_info;
- 	fs_info->empty_block_rsv.space_info = space_info;
-+	fs_info->delayed_block_rsv.space_info = space_info;
- 
- 	fs_info->extent_root->block_rsv = &fs_info->global_block_rsv;
- 	fs_info->csum_root->block_rsv = &fs_info->global_block_rsv;
-@@ -3933,6 +3934,8 @@ static void release_global_block_rsv(struct btrfs_fs_info *fs_info)
- 	WARN_ON(fs_info->trans_block_rsv.reserved > 0);
- 	WARN_ON(fs_info->chunk_block_rsv.size > 0);
- 	WARN_ON(fs_info->chunk_block_rsv.reserved > 0);
-+	WARN_ON(fs_info->delayed_block_rsv.size > 0);
-+	WARN_ON(fs_info->delayed_block_rsv.reserved > 0);
- }
- 
- void btrfs_trans_release_metadata(struct btrfs_trans_handle *trans,
+
+> 
+> Signed-off-by: Hugo Mills <hugo@carfax.org.uk>
+> ---
+> 
+>    If nobody has any major comments or objections, I'll feed this up
+> to Chris from the integration branch when I next send him a stack of
+> patches.
+> 
+>    Hugo.
+> 
+> 
+>  Makefile          |    8 +++
+>  test/001u.sh      |   23 ++++++++++
+>  test/002s.sh      |   42 +++++++++++++++++
+>  test/functions.sh |  128
+> +++++++++++++++++++++++++++++++++++++++++++++++++++++ test/run-tests    |  
+> 13 +++++
+>  5 files changed, 214 insertions(+), 0 deletions(-)
+>  create mode 100755 test/001u.sh
+>  create mode 100755 test/002s.sh
+>  create mode 100644 test/functions.sh
+>  create mode 100755 test/run-tests
+> 
+> diff --git a/Makefile b/Makefile
+> index edee1a0..24e1ce1 100644
+> --- a/Makefile
+> +++ b/Makefile
+> @@ -100,4 +100,12 @@ install: $(progs) install-man
+>  	$(INSTALL) $(progs) $(DESTDIR)$(bindir)
+>  	if [ -e btrfs-convert ]; then $(INSTALL) btrfs-convert
+> $(DESTDIR)$(bindir); fi
+> 
+> +test: test-userspace test-root
+> +
+> +test-userspace:
+> +	./test/run-tests
+> +
+> +test-root:
+> +	sudo ./test/run-tests
+> +
+>  -include .*.d
+> diff --git a/test/001u.sh b/test/001u.sh
+> new file mode 100755
+> index 0000000..d2cadff
+> --- /dev/null
+> +++ b/test/001u.sh
+> @@ -0,0 +1,23 @@
+> +#!/bin/bash
+> +
+> +. test/functions.sh
+> +
+> +unset BTRFS_TESTS_VOLUMES
+> +
+> +announce compilation
+> +
+> +export CC=gcc-4.6
+                ^^^^^^
+What does mean ? If the user has a different compiler, the test will fail ?
+
+[....]
+
+> diff --git a/test/run-tests b/test/run-tests
+> new file mode 100755
+> index 0000000..981fc22
+> --- /dev/null
+> +++ b/test/run-tests
+> @@ -0,0 +1,13 @@
+> +#!/bin/bash
+> +
+> +testdir=$(dirname $0)
+> +
+> +if [ $UID -eq 0 ]; then
+> +	type=s
+> +else
+> +	type=u
+> +fi
+> +
+> +for test in ${testdir}/[0-9][0-9][0-9]${type}.sh; do
+
+it is possible to replace 
+
+	${testdir}/[0-9][0-9][0-9]${type}.sh
+
+with (note the '*')
+
+	${testdir}/[0-9][0-9][0-9]${type}*.sh
+
+so we could create test with a more verbose name, and we could avoid test name 
+collision. 
+
+
+Then we can group the number in range like:
+000-100    -> tested the mkfs command
+100-200	-> tested the basic commands (like subvol *)
+[...]
+
+The idea is that a test xxx could use a command already tested in a test yyy 
+(where xxx > yyy), knowing that he could not care if the command fail (of 
+course this command is different from the object to test !!)
+
+
+
+
+> +	${test}
+> +done
 -- 
-1.7.5.2
-
+gpg key@ keyserver.linux.it: Goffredo Baroncelli (ghigo) <kreijack@inwind.it>
+Key fingerprint = 4769 7E51 5293 D36C 814E  C054 BF04 F161 3DC5 0512

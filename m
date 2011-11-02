@@ -1,133 +1,191 @@
-From: Goffredo Baroncelli <kreijack@inwind.it>
-Subject: Re: [RFC] [PROGS] Regression tests
-Date: Wed, 02 Nov 2011 20:31 +0100
-Message-ID: <41272591.1IrILq7W5C@venice>
-References: <b17197c7428fa5b75a2d9ac95806fdd41be60424.1320010556.git.hugo@carfax.org.uk>
-Reply-To: Goffredo Baroncelli <kreijack@inwind.it>
-Mime-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Cc: linux-btrfs@vger.kernel.org
-To: Hugo Mills <hugo@carfax.org.uk>
+From: Josef Bacik <josef@redhat.com>
+Subject: [PATCH] Btrfs: be smarter about committing the transaction in reserve_metadata_bytes
+Date: Wed,  2 Nov 2011 16:18:34 -0400
+Message-ID: <1320265114-3301-1-git-send-email-josef@redhat.com>
+To: linux-btrfs@vger.kernel.org
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <b17197c7428fa5b75a2d9ac95806fdd41be60424.1320010556.git.hugo@carfax.org.uk>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hi hugo
+Because of the overcommit stuff I had to make it so that we committed the
+transaction all the time in reserve_metadata_bytes in case we had overcommitted
+because of delayed items.  This was because previously we had no way of knowing
+how much space was reserved for delayed items.  Now that we have the
+delayed_block_rsv we can check it to see if committing the transaction would get
+us anywhere.  This patch breaks out the committing logic into a helper function
+that will check to see if committing the transaction would free enough space for
+us to get anything done.  With this patch xfstests 83 goes from taking 445
+seconds to taking 28 seconds on my box.  Thanks,
 
-On Sunday, 30 October, 2011 21:44:56 Hugo Mills wrote:
-> Add a shell-script based test harness for performing regression tests
-> on btrfs tools. This is not intended as a test system for kernel
-> issues, but instead to put the userspace tools through their paces.
-> 
-> Currently implemented tests are compilation of all tools, and checking
-> argument counting on "btrfs sub snap". Other tests will follow.
+Signed-off-by: Josef Bacik <josef@redhat.com>
+---
+ fs/btrfs/extent-tree.c |   86 +++++++++++++++++++++++++++++++++++++----------
+ 1 files changed, 67 insertions(+), 19 deletions(-)
 
-
-> 
-> Signed-off-by: Hugo Mills <hugo@carfax.org.uk>
-> ---
-> 
->    If nobody has any major comments or objections, I'll feed this up
-> to Chris from the integration branch when I next send him a stack of
-> patches.
-> 
->    Hugo.
-> 
-> 
->  Makefile          |    8 +++
->  test/001u.sh      |   23 ++++++++++
->  test/002s.sh      |   42 +++++++++++++++++
->  test/functions.sh |  128
-> +++++++++++++++++++++++++++++++++++++++++++++++++++++ test/run-tests    |  
-> 13 +++++
->  5 files changed, 214 insertions(+), 0 deletions(-)
->  create mode 100755 test/001u.sh
->  create mode 100755 test/002s.sh
->  create mode 100644 test/functions.sh
->  create mode 100755 test/run-tests
-> 
-> diff --git a/Makefile b/Makefile
-> index edee1a0..24e1ce1 100644
-> --- a/Makefile
-> +++ b/Makefile
-> @@ -100,4 +100,12 @@ install: $(progs) install-man
->  	$(INSTALL) $(progs) $(DESTDIR)$(bindir)
->  	if [ -e btrfs-convert ]; then $(INSTALL) btrfs-convert
-> $(DESTDIR)$(bindir); fi
-> 
-> +test: test-userspace test-root
-> +
-> +test-userspace:
-> +	./test/run-tests
-> +
-> +test-root:
-> +	sudo ./test/run-tests
-> +
->  -include .*.d
-> diff --git a/test/001u.sh b/test/001u.sh
-> new file mode 100755
-> index 0000000..d2cadff
-> --- /dev/null
-> +++ b/test/001u.sh
-> @@ -0,0 +1,23 @@
-> +#!/bin/bash
-> +
-> +. test/functions.sh
-> +
-> +unset BTRFS_TESTS_VOLUMES
-> +
-> +announce compilation
-> +
-> +export CC=gcc-4.6
-                ^^^^^^
-What does mean ? If the user has a different compiler, the test will fail ?
-
-[....]
-
-> diff --git a/test/run-tests b/test/run-tests
-> new file mode 100755
-> index 0000000..981fc22
-> --- /dev/null
-> +++ b/test/run-tests
-> @@ -0,0 +1,13 @@
-> +#!/bin/bash
-> +
-> +testdir=$(dirname $0)
-> +
-> +if [ $UID -eq 0 ]; then
-> +	type=s
-> +else
-> +	type=u
-> +fi
-> +
-> +for test in ${testdir}/[0-9][0-9][0-9]${type}.sh; do
-
-it is possible to replace 
-
-	${testdir}/[0-9][0-9][0-9]${type}.sh
-
-with (note the '*')
-
-	${testdir}/[0-9][0-9][0-9]${type}*.sh
-
-so we could create test with a more verbose name, and we could avoid test name 
-collision. 
-
-
-Then we can group the number in range like:
-000-100    -> tested the mkfs command
-100-200	-> tested the basic commands (like subvol *)
-[...]
-
-The idea is that a test xxx could use a command already tested in a test yyy 
-(where xxx > yyy), knowing that he could not care if the command fail (of 
-course this command is different from the object to test !!)
-
-
-
-
-> +	${test}
-> +done
+diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
+index 66d0911..74ffc48 100644
+--- a/fs/btrfs/extent-tree.c
++++ b/fs/btrfs/extent-tree.c
+@@ -3334,12 +3334,12 @@ out:
+ /*
+  * shrink metadata reservation for delalloc
+  */
+-static int shrink_delalloc(struct btrfs_trans_handle *trans,
+-			   struct btrfs_root *root, u64 to_reclaim,
++static int shrink_delalloc(struct btrfs_root *root, u64 to_reclaim,
+ 			   bool wait_ordered)
+ {
+ 	struct btrfs_block_rsv *block_rsv;
+ 	struct btrfs_space_info *space_info;
++	struct btrfs_trans_handle *trans;
+ 	u64 reserved;
+ 	u64 max_reclaim;
+ 	u64 reclaimed = 0;
+@@ -3348,6 +3348,7 @@ static int shrink_delalloc(struct btrfs_trans_handle *trans,
+ 	int loops = 0;
+ 	unsigned long progress;
+ 
++	trans = (struct btrfs_trans_handle *)current->journal_info;
+ 	block_rsv = &root->fs_info->delalloc_block_rsv;
+ 	space_info = block_rsv->space_info;
+ 
+@@ -3418,6 +3419,60 @@ static int shrink_delalloc(struct btrfs_trans_handle *trans,
+ }
+ 
+ /**
++ * maybe_commit_transaction - possibly commit the transaction if its ok to
++ * @root - the root we're allocating for
++ * @bytes - the number of bytes we want to reserve
++ * @force - force the commit
++ *
++ * This will check to make sure that committing the transaction will actually
++ * get us somewhere and then commit the transaction if it does.  Otherwise it
++ * will return -ENOSPC.
++ */
++static int may_commit_transaction(struct btrfs_root *root,
++				  struct btrfs_space_info *space_info,
++				  u64 bytes, int force)
++{
++	struct btrfs_block_rsv *delayed_rsv = &root->fs_info->delayed_block_rsv;
++	struct btrfs_trans_handle *trans;
++
++	trans = (struct btrfs_trans_handle *)current->journal_info;
++	if (trans)
++		return -EAGAIN;
++
++	if (force)
++		goto commit;
++
++	/* See if there is enough pinned space to make this reservation */
++	spin_lock(&space_info->lock);
++	if (space_info->bytes_pinned >= bytes) {
++		spin_unlock(&space_info->lock);
++		goto commit;
++	}
++	spin_unlock(&space_info->lock);
++
++	/*
++	 * See if there is some space in the delayed insertion reservation for
++	 * this reservation.
++	 */
++	if (space_info != delayed_rsv->space_info)
++		return -ENOSPC;
++
++	spin_lock(&delayed_rsv->lock);
++	if (delayed_rsv->size < bytes) {
++		spin_unlock(&delayed_rsv->lock);
++		return -ENOSPC;
++	}
++	spin_unlock(&delayed_rsv->lock);
++
++commit:
++	trans = btrfs_join_transaction(root);
++	if (IS_ERR(trans))
++		return -ENOSPC;
++
++	return btrfs_commit_transaction(trans, root);
++}
++
++/**
+  * reserve_metadata_bytes - try to reserve bytes from the block_rsv's space
+  * @root - the root we're allocating for
+  * @block_rsv - the block_rsv we're allocating for
+@@ -3436,7 +3491,6 @@ static int reserve_metadata_bytes(struct btrfs_root *root,
+ 				  u64 orig_bytes, int flush)
+ {
+ 	struct btrfs_space_info *space_info = block_rsv->space_info;
+-	struct btrfs_trans_handle *trans;
+ 	u64 used;
+ 	u64 num_bytes = orig_bytes;
+ 	int retries = 0;
+@@ -3445,7 +3499,6 @@ static int reserve_metadata_bytes(struct btrfs_root *root,
+ 	bool flushing = false;
+ 	bool wait_ordered = false;
+ 
+-	trans = (struct btrfs_trans_handle *)current->journal_info;
+ again:
+ 	ret = 0;
+ 	spin_lock(&space_info->lock);
+@@ -3461,7 +3514,7 @@ again:
+ 		 * deadlock since we are waiting for the flusher to finish, but
+ 		 * hold the current transaction open.
+ 		 */
+-		if (trans)
++		if (current->journal_info)
+ 			return -EAGAIN;
+ 		ret = wait_event_interruptible(space_info->wait,
+ 					       !space_info->flush);
+@@ -3517,12 +3570,16 @@ again:
+ 		 */
+ 		avail = (space_info->total_bytes - space_info->bytes_used) * 8;
+ 		do_div(avail, 10);
+-		if (space_info->bytes_pinned >= avail && flush && !trans &&
+-		    !committed) {
++		if (space_info->bytes_pinned >= avail && flush && !committed) {
+ 			space_info->flush = 1;
+ 			flushing = true;
+ 			spin_unlock(&space_info->lock);
+-			goto commit;
++			ret = may_commit_transaction(root, space_info,
++						     orig_bytes, 1);
++			if (ret)
++				goto out;
++			committed = true;
++			goto again;
+ 		}
+ 
+ 		spin_lock(&root->fs_info->free_chunk_lock);
+@@ -3575,7 +3632,7 @@ again:
+ 	 * We do synchronous shrinking since we don't actually unreserve
+ 	 * metadata until after the IO is completed.
+ 	 */
+-	ret = shrink_delalloc(trans, root, num_bytes, wait_ordered);
++	ret = shrink_delalloc(root, num_bytes, wait_ordered);
+ 	if (ret < 0)
+ 		goto out;
+ 
+@@ -3592,21 +3649,12 @@ again:
+ 		goto again;
+ 	}
+ 
+-	ret = -EAGAIN;
+-	if (trans)
+-		goto out;
+-
+-commit:
+ 	ret = -ENOSPC;
+ 	if (committed)
+ 		goto out;
+ 
+-	trans = btrfs_join_transaction(root);
+-	if (IS_ERR(trans))
+-		goto out;
+-	ret = btrfs_commit_transaction(trans, root);
++	ret = may_commit_transaction(root, space_info, orig_bytes, 0);
+ 	if (!ret) {
+-		trans = NULL;
+ 		committed = true;
+ 		goto again;
+ 	}
 -- 
-gpg key@ keyserver.linux.it: Goffredo Baroncelli (ghigo) <kreijack@inwind.it>
-Key fingerprint = 4769 7E51 5293 D36C 814E  C054 BF04 F161 3DC5 0512
+1.7.5.2
+

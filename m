@@ -1,40 +1,45 @@
-From: Li Zefan <lizf@cn.fujitsu.com>
-Subject: Re: [PATCH v8 1/8] btrfs: added helper functions to iterate backrefs
-Date: Thu, 03 Nov 2011 09:41:16 +0800
-Message-ID: <4EB1F13C.3070801@cn.fujitsu.com>
-References: <cover.1311778307.git.list.btrfs@jan-o-sch.net> <915659509a8ca58ec0bbf89001bac5afd4fa81b4.1311778307.git.list.btrfs@jan-o-sch.net>
+From: WuBo <wu.bo@cn.fujitsu.com>
+Subject: [PATCH 0/3] xfstests: Add a group of reservation space test
+Date: Thu, 03 Nov 2011 11:05:41 +0800
+Message-ID: <4EB20505.7070005@cn.fujitsu.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=UTF-8
-Cc: chris.mason@oracle.com, linux-btrfs@vger.kernel.org
-To: Jan Schmidt <list.btrfs@jan-o-sch.net>
-Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <915659509a8ca58ec0bbf89001bac5afd4fa81b4.1311778307.git.list.btrfs@jan-o-sch.net>
+Content-Type: text/plain; charset=ISO-8859-1
+To: linux-fsdevel@vger.kernel.org,
+	Linux Btrfs <linux-btrfs@vger.kernel.org>, xfs@oss.sgi.com
+Return-path: <linux-fsdevel-owner@vger.kernel.org>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-(as this is going to be merged into mainline..)
+This patch set add a group of reservation space test. Especailly for btrfs.
+It includes three parts: copy workload, prealloc and write posix.
 
-> +/*
-> + * calls iterate() for every inode that references the extent identified by
-> + * the given parameters. will use the path given as a parameter and return it
-> + * released.
-> + * when the iterator function returns a non-zero value, iteration stops.
-> + */
-> +int iterate_extent_inodes(struct btrfs_fs_info *fs_info,
-> +				struct btrfs_path *path,
-> +				u64 extent_item_objectid,
-> +				u64 extent_offset,
-> +				iterate_extent_inodes_t *iterate, void *ctx)
+For test 264, I hope it's usefull for Josef's reserve improve work.
+For test 265 and 266, the current btrfs is not pass yet.
 
-While trying to use this API, I found there's a big defect in this function.
+TO avoid fill the huge disk, I just resize the filesystem size which NOT 
+all filesystems supportted. Here I just make these tests support btrfs only,
+but it's can ream to ext3/4 if needed.
 
-   fs_tree 1       fs_tree 2
-       \              /
-        \            /
-         \          /
-          \        /
-             node
-              |
-              |
-             leaf  (EXTENT_DATA item)
+Wu Bo (3):
+  xfstests 264: add a copy and reserve test
+  xfstests 265: add a prealloc and reserve test
+  xfstests 266: add a write and reserve test
 
-In the above case, the function will find only 1 reference.
+ 264     |  158 +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+ 264.out |    6 ++
+ 265     |  107 ++++++++++++++++++++++++++++++++++++++++++
+ 265.out |    5 ++
+ 266     |  104 +++++++++++++++++++++++++++++++++++++++++
+ 266.out |    5 ++
+ group   |    3 +
+ 7 files changed, 388 insertions(+), 0 deletions(-)
+ create mode 100755 264
+ create mode 100644 264.out
+ create mode 100755 265
+ create mode 100644 265.out
+ create mode 100755 266
+ create mode 100644 266.out
+
+-- 
+1.7.3.1
+
+

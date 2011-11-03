@@ -1,37 +1,62 @@
-From: WuBo <wu.bo@cn.fujitsu.com>
-Subject: Re: [PATCH 1/3] xfstests 264: add a copy and reserve test
-Date: Thu, 03 Nov 2011 16:04:43 +0800
-Message-ID: <4EB24B1B.2030304@cn.fujitsu.com>
-References: <4EB20505.7070005@cn.fujitsu.com> <4EB205C7.6010906@cn.fujitsu.com> <20111103065525.GA6800@infradead.org>
+From: Jan Schmidt <list.btrfs@jan-o-sch.net>
+Subject: Re: [PATCH v8 1/8] btrfs: added helper functions to iterate backrefs
+Date: Thu, 03 Nov 2011 11:32:35 +0100
+Message-ID: <4EB26DC3.5080409@jan-o-sch.net>
+References: <cover.1311778307.git.list.btrfs@jan-o-sch.net> <915659509a8ca58ec0bbf89001bac5afd4fa81b4.1311778307.git.list.btrfs@jan-o-sch.net> <4EB1F13C.3070801@cn.fujitsu.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=ISO-8859-1
-Cc: linux-fsdevel@vger.kernel.org,
-	Linux Btrfs <linux-btrfs@vger.kernel.org>, xfs@oss.sgi.com
-To: Christoph Hellwig <hch@infradead.org>
-Return-path: <linux-fsdevel-owner@vger.kernel.org>
-In-Reply-To: <20111103065525.GA6800@infradead.org>
+Content-Type: text/plain; charset=UTF-8
+Cc: Jan Schmidt <list.btrfs@jan-o-sch.net>, chris.mason@oracle.com
+To: Li Zefan <lizf@cn.fujitsu.com>, linux-btrfs@vger.kernel.org
+Return-path: <linux-btrfs-owner@vger.kernel.org>
+In-Reply-To: <4EB1F13C.3070801@cn.fujitsu.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 11/03/2011 02:55 PM, Christoph Hellwig wrote:
-> On Thu, Nov 03, 2011 at 11:08:55AM +0800, WuBo wrote:
->> This test is a stress test. It creates a set of threads for coping small files 
->> into disk. I use a 2G disk for test, the ENOSPC arises usually but the disk is 
->> not full under kenerl 3.0 with intel64.
+On 03.11.2011 02:41, Li Zefan wrote:
+> (as this is going to be merged into mainline..)
 > 
-> It seems like you really want to use _scratch_mkfs_sized instead of the
-> btrfs-specific resize option and make the test generic.  Also we already
-OK, thanks for _scratch_mkfs_sized, It's will make these tests generic.
-
-> have used up these test numbers in the xfstests-dev repository, and I
-> will commit another batch of tests today.
-I will change my test numbers in next version.
-
-thanks,
-wubo
-
+>> +/*
+>> + * calls iterate() for every inode that references the extent identified by
+>> + * the given parameters. will use the path given as a parameter and return it
+>> + * released.
+>> + * when the iterator function returns a non-zero value, iteration stops.
+>> + */
+>> +int iterate_extent_inodes(struct btrfs_fs_info *fs_info,
+>> +				struct btrfs_path *path,
+>> +				u64 extent_item_objectid,
+>> +				u64 extent_offset,
+>> +				iterate_extent_inodes_t *iterate, void *ctx)
 > 
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+> While trying to use this API, I found there's a big defect in this function.
 > 
+>    fs_tree 1       fs_tree 2
+>        \              /
+>         \            /
+>          \          /
+>           \        /
+>              node
+>               |
+>               |
+>              leaf  (EXTENT_DATA item)
+> 
+> In the above case, the function will find only 1 reference.
+
+Hum. You are right.
+
+I'm convinced that I've been at this point months ago, only I cannot
+find code dealing with counts > 1 on nodes. I'll look for a fix in my
+branches or make a new one.
+
+I also recognized that some "btrfs_" prefixes are missing for the
+exported functions. I'm going to change this on the next iteration as well.
+
+Currently, this is more of a best-effort resolver. Support for delayed
+extents is missing, it should be used on commit roots to get a
+consistent state.
+
+For the userspace part, at least the simple scenario outlined isn't
+crucial as "btrfs inspect-internal logical-resolve" will find each of
+the two paths, depending on the subvolume path you specify. It never
+finds both, though, which I agree it should.
+
+Sigh,
+-Jan

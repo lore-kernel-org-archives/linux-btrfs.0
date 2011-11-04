@@ -1,153 +1,32 @@
-From: Josef Bacik <josef@redhat.com>
-Subject: [PATCH] Btrfs: fix delayed insertion reservations V2
-Date: Fri, 4 Nov 2011 17:18:54 -0400
-Message-ID: <20111104211853.GB13434@dhcp231-156.rdu.redhat.com>
+From: "Yo'av Moshe" <bjesus@gmail.com>
+Subject: btrfsck status?
+Date: Sat, 5 Nov 2011 01:52:21 +0200
+Message-ID: <CAPAyKozB6-CJp6Z3YAMzOv4vgxVkC4h6fBmQ7zgPuw9Ks5LL3Q@mail.gmail.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
+Content-Type: text/plain; charset=UTF-8
 To: linux-btrfs@vger.kernel.org
 Return-path: <linux-btrfs-owner@vger.kernel.org>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-We all keep getting those stupid warnings from use_block_rsv when running
-stress.sh, and it's because the delayed insertion stuff is being stupid.  It's
-not the delayed insertion stuffs fault, it's all just stupid.  When marking an
-inode dirty for oh say updating the time on it, we just do a
-btrfs_join_transaction, which doesn't reserve any space.  This is stupid because
-we're going to have to have space reserve to make this change, but we do it
-because it's fast because chances are we're going to call it over and over again
-and it doesn't matter.  Well thanks to the delayed insertion stuff this is
-mostly the case, so we do actually need to make this reservation.  So if
-trans->bytes_reserved is 0 then try to do a normal reservation.  If not return
-ENOSPC which will make the btrfs_dirty_inode start a proper transaction which
-will let it do the whole ENOSPC dance and reserve enough space for the delayed
-insertion to steal the reservation from the transaction.
+Hello!
 
-The other stupid thing we do is not reserve space for the inode when writing to
-the thing.  Usually this is ok since we have to update the time so we'd have
-already done all this work before we get to the endio stuff, so it doesn't
-matter.  But this is stupid because we could write the data after the
-transaction commits where we changed the mtime of the inode so we have to cow
-all the way down to the inode anyway.  This used to be masked by the delalloc
-reservation stuff, but because we delay the update it doesn't get masked in this
-case.  So again the delayed insertion stuff bites us in the ass.  So if our
-trans->block_rsv is delalloc, just steal the reservation from the delalloc
-reserve.  Hopefully this won't bite us in the ass, but I've said that before.
+I read Chris was supposed to=C2=A0demonstrate=C2=A0btrfsck on LinuxCon[=
+0]. Does
+anybody knows if that ever happen?
+Also, does btrfsck development moved to the new GIT=C2=A0repository, or=
+ is
+it still not released?
 
-With this patch stress.sh no longer spits out those stupid warnings (famous last
-words).  Thanks,
+I'm holding to my broken btrfs partition[0] for more than a year now :-=
+/
 
-Signed-off-by: Josef Bacik <josef@redhat.com>
----
-V1->V2: I stupidly thought I could get away with some flushing if we needed
-space but I was wrong, we could deadlock, so add a btrfs_add_bytes_noflush
-variant that will not do any flushing and will just return ENOSPC which will let
-us fallback and do our full flushing.
- fs/btrfs/ctree.h         |    3 +++
- fs/btrfs/delayed-inode.c |   36 ++++++++++++++++++++++++++++--------
- fs/btrfs/extent-tree.c   |   18 ++++++++++++++++++
- 3 files changed, 49 insertions(+), 8 deletions(-)
+Thanks.
 
-diff --git a/fs/btrfs/ctree.h b/fs/btrfs/ctree.h
-index 3b5c04f..f956bbf 100644
---- a/fs/btrfs/ctree.h
-+++ b/fs/btrfs/ctree.h
-@@ -2258,6 +2258,9 @@ void btrfs_free_block_rsv(struct btrfs_root *root,
- int btrfs_block_rsv_add(struct btrfs_root *root,
- 			struct btrfs_block_rsv *block_rsv,
- 			u64 num_bytes);
-+int btrfs_block_rsv_add_noflush(struct btrfs_root *root,
-+				struct btrfs_block_rsv *block_rsv,
-+				u64 num_bytes);
- int btrfs_block_rsv_check(struct btrfs_root *root,
- 			  struct btrfs_block_rsv *block_rsv, int min_factor);
- int btrfs_block_rsv_refill(struct btrfs_root *root,
-diff --git a/fs/btrfs/delayed-inode.c b/fs/btrfs/delayed-inode.c
-index fc4026a..bbe8496 100644
---- a/fs/btrfs/delayed-inode.c
-+++ b/fs/btrfs/delayed-inode.c
-@@ -624,13 +624,36 @@ static int btrfs_delayed_inode_reserve_metadata(
- 	u64 num_bytes;
- 	int ret;
- 
--	if (!trans->bytes_reserved)
--		return 0;
--
- 	src_rsv = trans->block_rsv;
- 	dst_rsv = &root->fs_info->delayed_block_rsv;
- 
- 	num_bytes = btrfs_calc_trans_metadata_size(root, 1);
-+
-+	/*
-+	 * btrfs_dirty_inode will update the inode under btrfs_join_transaction
-+	 * which doesn't reserve space for speed.  This is a problem since we
-+	 * still need to reserve space for this update, so try to reserve the
-+	 * space.
-+	 *
-+	 * Now if src_rsv == delalloc_block_rsv we'll let it just steal since
-+	 * we're accounted for.
-+	 */
-+	if (!trans->bytes_reserved &&
-+	    src_rsv != &root->fs_info->delalloc_block_rsv) {
-+		ret = btrfs_block_rsv_add_noflush(root, dst_rsv, num_bytes);
-+		/*
-+		 * Since we're under a transaction reserve_metadata_bytes could
-+		 * try to commit the transaction which will make it return
-+		 * EAGAIN to make us stop the transaction we have, so return
-+		 * ENOSPC instead so that btrfs_dirty_inode knows what to do.
-+		 */
-+		if (ret == -EAGAIN)
-+			ret = -ENOSPC;
-+		if (!ret)
-+			node->bytes_reserved = num_bytes;
-+		return ret;
-+	}
-+
- 	ret = btrfs_block_rsv_migrate(src_rsv, dst_rsv, num_bytes);
- 	if (!ret)
- 		node->bytes_reserved = num_bytes;
-@@ -1686,11 +1709,8 @@ int btrfs_delayed_update_inode(struct btrfs_trans_handle *trans,
- 	}
- 
- 	ret = btrfs_delayed_inode_reserve_metadata(trans, root, delayed_node);
--	/*
--	 * we must reserve enough space when we start a new transaction,
--	 * so reserving metadata failure is impossible
--	 */
--	BUG_ON(ret);
-+	if (ret)
-+		goto release_node;
- 
- 	fill_stack_inode_item(trans, &delayed_node->inode_item, inode);
- 	delayed_node->inode_dirty = 1;
-diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
-index 19c2d48..8dfe2e0 100644
---- a/fs/btrfs/extent-tree.c
-+++ b/fs/btrfs/extent-tree.c
-@@ -3814,6 +3814,24 @@ int btrfs_block_rsv_add(struct btrfs_root *root,
- 	return ret;
- }
- 
-+int btrfs_block_rsv_add_noflush(struct btrfs_root *root,
-+				struct btrfs_block_rsv *block_rsv,
-+				u64 num_bytes)
-+{
-+	int ret;
-+
-+	if (num_bytes == 0)
-+		return 0;
-+
-+	ret = reserve_metadata_bytes(root, block_rsv, num_bytes, 0);
-+	if (!ret) {
-+		block_rsv_add_bytes(block_rsv, num_bytes, 1);
-+		return 0;
-+	}
-+
-+	return ret;
-+}
-+
- int btrfs_block_rsv_check(struct btrfs_root *root,
- 			  struct btrfs_block_rsv *block_rsv, int min_factor)
- {
--- 
-1.7.5.2
-
+[1]=C2=A0http://article.gmane.org/gmane.comp.file-systems.btrfs/9423
+--
+Yo'av Moshe
+--
+To unsubscribe from this list: send the line "unsubscribe linux-btrfs" =
+in
+the body of a message to majordomo@vger.kernel.org
+More majordomo info at  http://vger.kernel.org/majordomo-info.html

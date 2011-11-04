@@ -1,7 +1,9 @@
 From: Josef Bacik <josef@redhat.com>
-Subject: [PATCH] Btrfs: fix delayed insertion reservations
-Date: Fri,  4 Nov 2011 14:52:18 -0400
-Message-ID: <1320432738-4065-1-git-send-email-josef@redhat.com>
+Subject: [PATCH] Btrfs: fix delayed insertion reservations V2
+Date: Fri, 4 Nov 2011 17:18:54 -0400
+Message-ID: <20111104211853.GB13434@dhcp231-156.rdu.redhat.com>
+Mime-Version: 1.0
+Content-Type: text/plain; charset=us-ascii
 To: linux-btrfs@vger.kernel.org
 Return-path: <linux-btrfs-owner@vger.kernel.org>
 List-ID: <linux-btrfs.vger.kernel.org>
@@ -36,11 +38,31 @@ words).  Thanks,
 
 Signed-off-by: Josef Bacik <josef@redhat.com>
 ---
+V1->V2: I stupidly thought I could get away with some flushing if we needed
+space but I was wrong, we could deadlock, so add a btrfs_add_bytes_noflush
+variant that will not do any flushing and will just return ENOSPC which will let
+us fallback and do our full flushing.
+ fs/btrfs/ctree.h         |    3 +++
  fs/btrfs/delayed-inode.c |   36 ++++++++++++++++++++++++++++--------
- 1 files changed, 28 insertions(+), 8 deletions(-)
+ fs/btrfs/extent-tree.c   |   18 ++++++++++++++++++
+ 3 files changed, 49 insertions(+), 8 deletions(-)
 
+diff --git a/fs/btrfs/ctree.h b/fs/btrfs/ctree.h
+index 3b5c04f..f956bbf 100644
+--- a/fs/btrfs/ctree.h
++++ b/fs/btrfs/ctree.h
+@@ -2258,6 +2258,9 @@ void btrfs_free_block_rsv(struct btrfs_root *root,
+ int btrfs_block_rsv_add(struct btrfs_root *root,
+ 			struct btrfs_block_rsv *block_rsv,
+ 			u64 num_bytes);
++int btrfs_block_rsv_add_noflush(struct btrfs_root *root,
++				struct btrfs_block_rsv *block_rsv,
++				u64 num_bytes);
+ int btrfs_block_rsv_check(struct btrfs_root *root,
+ 			  struct btrfs_block_rsv *block_rsv, int min_factor);
+ int btrfs_block_rsv_refill(struct btrfs_root *root,
 diff --git a/fs/btrfs/delayed-inode.c b/fs/btrfs/delayed-inode.c
-index fc4026a..ef6efe7 100644
+index fc4026a..bbe8496 100644
 --- a/fs/btrfs/delayed-inode.c
 +++ b/fs/btrfs/delayed-inode.c
 @@ -624,13 +624,36 @@ static int btrfs_delayed_inode_reserve_metadata(
@@ -66,7 +88,7 @@ index fc4026a..ef6efe7 100644
 +	 */
 +	if (!trans->bytes_reserved &&
 +	    src_rsv != &root->fs_info->delalloc_block_rsv) {
-+		ret = btrfs_block_rsv_add(root, dst_rsv, num_bytes);
++		ret = btrfs_block_rsv_add_noflush(root, dst_rsv, num_bytes);
 +		/*
 +		 * Since we're under a transaction reserve_metadata_bytes could
 +		 * try to commit the transaction which will make it return
@@ -97,6 +119,35 @@ index fc4026a..ef6efe7 100644
  
  	fill_stack_inode_item(trans, &delayed_node->inode_item, inode);
  	delayed_node->inode_dirty = 1;
+diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
+index 19c2d48..8dfe2e0 100644
+--- a/fs/btrfs/extent-tree.c
++++ b/fs/btrfs/extent-tree.c
+@@ -3814,6 +3814,24 @@ int btrfs_block_rsv_add(struct btrfs_root *root,
+ 	return ret;
+ }
+ 
++int btrfs_block_rsv_add_noflush(struct btrfs_root *root,
++				struct btrfs_block_rsv *block_rsv,
++				u64 num_bytes)
++{
++	int ret;
++
++	if (num_bytes == 0)
++		return 0;
++
++	ret = reserve_metadata_bytes(root, block_rsv, num_bytes, 0);
++	if (!ret) {
++		block_rsv_add_bytes(block_rsv, num_bytes, 1);
++		return 0;
++	}
++
++	return ret;
++}
++
+ int btrfs_block_rsv_check(struct btrfs_root *root,
+ 			  struct btrfs_block_rsv *block_rsv, int min_factor)
+ {
 -- 
 1.7.5.2
 

@@ -1,37 +1,25 @@
-From: Jordan Windsor <jordanw2@gmail.com>
-Subject: Unable to resize btrfs filesystem
-Date: Fri, 4 Nov 2011 13:43:31 +1030
-Message-ID: <CACCfv7oMocXjkioTyyz8uZR05swswbfRuGQjeyaCuP=dcZAu+g@mail.gmail.com>
+From: Phillip Susi <psusi@cfl.rr.com>
+Subject: understanding the tree-log
+Date: Thu, 03 Nov 2011 23:21:16 -0400
+Message-ID: <4EB35A2C.8060708@cfl.rr.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset=ISO-8859-1
 To: linux-btrfs@vger.kernel.org
 Return-path: <linux-btrfs-owner@vger.kernel.org>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hello,
-I'm currently running Linux 3.0.7 (release "-1" under Arch 64bit) and
-btrfs-progs-unstable 0.19.20101006-1, I'm trying to resize my btrfs
-filesystem on /dev/sdb6, the partition has the room to allow expansion
-here's the output of "btrfs fi sh":
+-----BEGIN PGP SIGNED MESSAGE-----
+Hash: SHA1
 
+Given how a transaction is committed, why is there a tree-log?  When
+modifying the tree, either the super block is still pointing to the
+old tree root, or the new generation has been fully committed, so how
+can there ever be an intermediate state that needs a log to recover?
+-----BEGIN PGP SIGNATURE-----
+Version: GnuPG v1.4.11 (GNU/Linux)
+Comment: Using GnuPG with Mozilla - http://enigmail.mozdev.org/
 
-failed to read /dev/sr0
-Label: none  uuid: db1a36b3-5047-4c14-8f67-262c2d63fcb8
-	Total devices 1 FS bytes used 388.51GB
-	devid    1 size 477.29GB used 416.29GB path /dev/sda6
-
-Label: none  uuid: d8685e5e-c9ba-4ba5-a147-0c2caf8f4b2d
-	Total devices 1 FS bytes used 101.81GB
-	devid    1 size 552.08GB used 109.54GB path /dev/md127
-
-Label: 'Storage2'  uuid: 34115fbe-e9e3-4691-a3c6-715f5d30b4e5
-	Total devices 1 FS bytes used 196.73GB
-	devid    1 size 336.00GB used 336.00GB path /dev/sdb6
-
-The command I'm running to resize the filesystem is "su -c "btrfs fi
-re 1:max /home/jordan/Storage/Storage2/"" and here's the output:
-
-Resize '/home/jordan/Storage/Storage2/' of '1:max'
-ERROR: unable to resize '/home/jordan/Storage/Storage2/
-
-Thanks.
+iEYEARECAAYFAk6zWiwACgkQJ4UciIs+XuK+FQCfTnTIu8iYgW38Qk3YoZ4KjA/9
+uhwAnjOH36EkQ1EhoUdWg7OJr+0L0lbA
+=7DUz
+-----END PGP SIGNATURE-----

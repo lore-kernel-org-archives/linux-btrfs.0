@@ -1,56 +1,88 @@
-From: Mitch Harder <mitch.harder@sabayonlinux.org>
-Subject: Re: [PATCH] Btrfs: fix delayed insertion reservations V2
-Date: Sat, 5 Nov 2011 07:23:43 -0500
-Message-ID: <CAKcLGm-iBOx2DsSeMznaqO6zUMOPWfCHWS9mz_KOSib8wBgn5g@mail.gmail.com>
-References: <20111104211853.GB13434@dhcp231-156.rdu.redhat.com>
-	<20111105004756.GA4253@shiny>
-	<20111105114635.GB4253@shiny>
+From: Chris Mason <chris.mason@oracle.com>
+Subject: Re: [PATCH 1/2] LSEEK: BTRFS: Avoid i_mutex for SEEK_{CUR,SET,END}
+Date: Sat, 5 Nov 2011 11:27:49 -0400
+Message-ID: <20111105152749.GA5576@shiny>
+References: <1316128013-21980-1-git-send-email-andi@firstfloor.org>
+ <201110012246.13801.andres@anarazel.de>
+ <201110012249.27834.andres@anarazel.de>
+ <20111102082915.GA28153@infradead.org>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=ISO-8859-1
-To: Chris Mason <chris.mason@oracle.com>,
-	Josef Bacik <josef@redhat.com>, linux-btrfs@vger.kernel.org
-Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <20111105114635.GB4253@shiny>
+Content-Type: text/plain; charset=us-ascii
+Cc: Andres Freund <andres@anarazel.de>,
+	Andi Kleen <andi@firstfloor.org>, robertmhaas@gmail.com,
+	viro@zeniv.linux.org.uk, linux-fsdevel@vger.kernel.org,
+	linux-kernel@vger.kernel.org, linux-btrfs@vger.kernel.org
+To: Christoph Hellwig <hch@infradead.org>
+Return-path: <linux-kernel-owner@vger.kernel.org>
+In-Reply-To: <20111102082915.GA28153@infradead.org>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Sat, Nov 5, 2011 at 6:46 AM, Chris Mason <chris.mason@oracle.com> wr=
-ote:
-> On Fri, Nov 04, 2011 at 08:47:56PM -0400, Chris Mason wrote:
->> On Fri, Nov 04, 2011 at 05:18:54PM -0400, Josef Bacik wrote:
->> > V1->V2: I stupidly thought I could get away with some flushing if =
-we needed
->> > space but I was wrong, we could deadlock, so add a btrfs_add_bytes=
-_noflush
->> > variant that will not do any flushing and will just return ENOSPC =
-which will let
->> > us fallback and do our full flushing.
->> > =A0fs/btrfs/ctree.h =A0 =A0 =A0 =A0 | =A0 =A03 +++
->> > =A0fs/btrfs/delayed-inode.c | =A0 36 ++++++++++++++++++++++++++++-=
--------
->> > =A0fs/btrfs/extent-tree.c =A0 | =A0 18 ++++++++++++++++++
->> > =A03 files changed, 49 insertions(+), 8 deletions(-)
->>
->> This helps but it I've got a bunch of these in the log now:
->>
->> btrfs_dirty_inode: 205 callbacks suppressed
->> btrfs: fail to dirty =A0inode 1294 error -28
->> btrfs: fail to dirty =A0inode 1208 error -28
->> btrfs: fail to dirty =A0inode 714 error -28
->> btrfs: fail to dirty =A0inode 1772 error -28
->> btrfs: fail to dirty =A0inode 1389 error -28
->> btrfs: fail to dirty =A0inode 770 error -28
->> btrfs: fail to dirty =A0inode 345 error -28
->> btrfs: fail to dirty =A0inode 1533 error -28
->> btrfs: fail to dirty =A0inode 624 error -28
->> btrfs: fail to dirty =A0inode 1085 error -28
->
-> I should add this only seems to happen during xfstest 083.
->
+On Wed, Nov 02, 2011 at 04:29:15AM -0400, Christoph Hellwig wrote:
+> Andres, can you check with Chris that the btrfs changes made it to
+> his tree?  The core lseek changes from Andi are in mainline now, but
+> I think these bits are better off going through Chrises btrfs tree.
 
-This version of the patch clears the deadlock issue I was seeing with
-version 1 of this patch.
---
-To unsubscribe from this list: send the line "unsubscribe linux-btrfs" =
-in
-the body of a message to majordomo@vger.kernel.org
-More majordomo info at  http://vger.kernel.org/majordomo-info.html
+I'm pulling these in, thanks!
+
+-chris
+
+> 
+> On Sat, Oct 01, 2011 at 10:49:27PM +0200, Andres Freund wrote:
+> > 
+> > Don't need the i_mutex for those cases, only for SEEK_HOLE/DATA.
+> > 
+> > Really-From: Andi Kleen <ak@linux.intel.com>
+> > Signed-off-by: Andi Kleen <ak@linux.intel.com>
+> > Signed-off-by: Andres Freund <andres@anarazel.de>
+> > ---
+> >  fs/btrfs/file.c |   27 +++++++++++----------------
+> >  1 files changed, 11 insertions(+), 16 deletions(-)
+> > 
+> > diff --git a/fs/btrfs/file.c b/fs/btrfs/file.c
+> > index 7a13337..5bc7116 100644
+> > --- a/fs/btrfs/file.c
+> > +++ b/fs/btrfs/file.c
+> > @@ -1809,24 +1809,19 @@ static loff_t btrfs_file_llseek(struct file *file, loff_t offset, int origin)
+> >  	struct inode *inode = file->f_mapping->host;
+> >  	int ret;
+> >  
+> > +	if (origin != SEEK_DATA && origin != SEEK_HOLE)
+> > +		return generic_file_llseek(file, offset, origin);
+> > +
+> >  	mutex_lock(&inode->i_mutex);
+> > -	switch (origin) {
+> > -	case SEEK_END:
+> > -	case SEEK_CUR:
+> > -		offset = generic_file_llseek(file, offset, origin);
+> > -		goto out;
+> > -	case SEEK_DATA:
+> > -	case SEEK_HOLE:
+> > -		if (offset >= i_size_read(inode)) {
+> > -			mutex_unlock(&inode->i_mutex);
+> > -			return -ENXIO;
+> > -		}
+> > +	if (offset >= i_size_read(inode)) {
+> > +		mutex_unlock(&inode->i_mutex);
+> > +		return -ENXIO;
+> > +	}
+> >  
+> > -		ret = find_desired_extent(inode, &offset, origin);
+> > -		if (ret) {
+> > -			mutex_unlock(&inode->i_mutex);
+> > -			return ret;
+> > -		}
+> > +	ret = find_desired_extent(inode, &offset, origin);
+> > +	if (ret) {
+> > +		mutex_unlock(&inode->i_mutex);
+> > +		return ret;
+> >  	}
+> >  
+> >  	if (offset < 0 && !(file->f_mode & FMODE_UNSIGNED_OFFSET)) {
+> > -- 
+> > 1.7.6.409.ge7a85.dirty
+> > 
+> > --
+> > To unsubscribe from this list: send the line "unsubscribe linux-fsdevel" in
+> > the body of a message to majordomo@vger.kernel.org
+> > More majordomo info at  http://vger.kernel.org/majordomo-info.html
+> ---end quoted text---

@@ -1,32 +1,38 @@
-From: "Yo'av Moshe" <bjesus@gmail.com>
-Subject: btrfsck status?
-Date: Sat, 5 Nov 2011 01:52:21 +0200
-Message-ID: <CAPAyKozB6-CJp6Z3YAMzOv4vgxVkC4h6fBmQ7zgPuw9Ks5LL3Q@mail.gmail.com>
+From: Chris Mason <chris.mason@oracle.com>
+Subject: Re: [PATCH] Btrfs: fix delayed insertion reservations V2
+Date: Fri, 4 Nov 2011 20:47:56 -0400
+Message-ID: <20111105004756.GA4253@shiny>
+References: <20111104211853.GB13434@dhcp231-156.rdu.redhat.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=UTF-8
-To: linux-btrfs@vger.kernel.org
+Content-Type: text/plain; charset=us-ascii
+Cc: linux-btrfs@vger.kernel.org
+To: Josef Bacik <josef@redhat.com>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
+In-Reply-To: <20111104211853.GB13434@dhcp231-156.rdu.redhat.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hello!
+On Fri, Nov 04, 2011 at 05:18:54PM -0400, Josef Bacik wrote:
+> V1->V2: I stupidly thought I could get away with some flushing if we needed
+> space but I was wrong, we could deadlock, so add a btrfs_add_bytes_noflush
+> variant that will not do any flushing and will just return ENOSPC which will let
+> us fallback and do our full flushing.
+>  fs/btrfs/ctree.h         |    3 +++
+>  fs/btrfs/delayed-inode.c |   36 ++++++++++++++++++++++++++++--------
+>  fs/btrfs/extent-tree.c   |   18 ++++++++++++++++++
+>  3 files changed, 49 insertions(+), 8 deletions(-)
 
-I read Chris was supposed to=C2=A0demonstrate=C2=A0btrfsck on LinuxCon[=
-0]. Does
-anybody knows if that ever happen?
-Also, does btrfsck development moved to the new GIT=C2=A0repository, or=
- is
-it still not released?
+This helps but it I've got a bunch of these in the log now:
 
-I'm holding to my broken btrfs partition[0] for more than a year now :-=
-/
+btrfs_dirty_inode: 205 callbacks suppressed
+btrfs: fail to dirty  inode 1294 error -28
+btrfs: fail to dirty  inode 1208 error -28
+btrfs: fail to dirty  inode 714 error -28
+btrfs: fail to dirty  inode 1772 error -28
+btrfs: fail to dirty  inode 1389 error -28
+btrfs: fail to dirty  inode 770 error -28
+btrfs: fail to dirty  inode 345 error -28
+btrfs: fail to dirty  inode 1533 error -28
+btrfs: fail to dirty  inode 624 error -28
+btrfs: fail to dirty  inode 1085 error -28
 
-Thanks.
-
-[1]=C2=A0http://article.gmane.org/gmane.comp.file-systems.btrfs/9423
---
-Yo'av Moshe
---
-To unsubscribe from this list: send the line "unsubscribe linux-btrfs" =
-in
-the body of a message to majordomo@vger.kernel.org
-More majordomo info at  http://vger.kernel.org/majordomo-info.html
+-chris

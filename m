@@ -1,88 +1,64 @@
-From: Chris Mason <chris.mason@oracle.com>
-Subject: Re: [PATCH 1/2] LSEEK: BTRFS: Avoid i_mutex for SEEK_{CUR,SET,END}
-Date: Sat, 5 Nov 2011 11:27:49 -0400
-Message-ID: <20111105152749.GA5576@shiny>
-References: <1316128013-21980-1-git-send-email-andi@firstfloor.org>
- <201110012246.13801.andres@anarazel.de>
- <201110012249.27834.andres@anarazel.de>
- <20111102082915.GA28153@infradead.org>
+From: Chuck Burns <break19@gmail.com>
+Subject: grub-1.99 and btrfs-only
+Date: Sat, 05 Nov 2011 21:02:53 -0500
+Message-ID: <1485076.Kk29g2Lexo@funbeast>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Cc: Andres Freund <andres@anarazel.de>,
-	Andi Kleen <andi@firstfloor.org>, robertmhaas@gmail.com,
-	viro@zeniv.linux.org.uk, linux-fsdevel@vger.kernel.org,
-	linux-kernel@vger.kernel.org, linux-btrfs@vger.kernel.org
-To: Christoph Hellwig <hch@infradead.org>
-Return-path: <linux-kernel-owner@vger.kernel.org>
-In-Reply-To: <20111102082915.GA28153@infradead.org>
+Content-Type: text/plain; charset="us-ascii"
+To: linux-btrfs@vger.kernel.org
+Return-path: <linux-btrfs-owner@vger.kernel.org>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Wed, Nov 02, 2011 at 04:29:15AM -0400, Christoph Hellwig wrote:
-> Andres, can you check with Chris that the btrfs changes made it to
-> his tree?  The core lseek changes from Andi are in mainline now, but
-> I think these bits are better off going through Chrises btrfs tree.
+I have a btrfs-only system, using grub2 (1.99), and have /boot on btrfs as 
+well...
 
-I'm pulling these in, thanks!
+When I first boot, grub first complains it cannot find files, then apparently 
+successfully finds them, loading the menu..
 
--chris
+After I select the option I want, grub again complains of unable to find a file, 
+and seconds later begins to properly boot..
 
-> 
-> On Sat, Oct 01, 2011 at 10:49:27PM +0200, Andres Freund wrote:
-> > 
-> > Don't need the i_mutex for those cases, only for SEEK_HOLE/DATA.
-> > 
-> > Really-From: Andi Kleen <ak@linux.intel.com>
-> > Signed-off-by: Andi Kleen <ak@linux.intel.com>
-> > Signed-off-by: Andres Freund <andres@anarazel.de>
-> > ---
-> >  fs/btrfs/file.c |   27 +++++++++++----------------
-> >  1 files changed, 11 insertions(+), 16 deletions(-)
-> > 
-> > diff --git a/fs/btrfs/file.c b/fs/btrfs/file.c
-> > index 7a13337..5bc7116 100644
-> > --- a/fs/btrfs/file.c
-> > +++ b/fs/btrfs/file.c
-> > @@ -1809,24 +1809,19 @@ static loff_t btrfs_file_llseek(struct file *file, loff_t offset, int origin)
-> >  	struct inode *inode = file->f_mapping->host;
-> >  	int ret;
-> >  
-> > +	if (origin != SEEK_DATA && origin != SEEK_HOLE)
-> > +		return generic_file_llseek(file, offset, origin);
-> > +
-> >  	mutex_lock(&inode->i_mutex);
-> > -	switch (origin) {
-> > -	case SEEK_END:
-> > -	case SEEK_CUR:
-> > -		offset = generic_file_llseek(file, offset, origin);
-> > -		goto out;
-> > -	case SEEK_DATA:
-> > -	case SEEK_HOLE:
-> > -		if (offset >= i_size_read(inode)) {
-> > -			mutex_unlock(&inode->i_mutex);
-> > -			return -ENXIO;
-> > -		}
-> > +	if (offset >= i_size_read(inode)) {
-> > +		mutex_unlock(&inode->i_mutex);
-> > +		return -ENXIO;
-> > +	}
-> >  
-> > -		ret = find_desired_extent(inode, &offset, origin);
-> > -		if (ret) {
-> > -			mutex_unlock(&inode->i_mutex);
-> > -			return ret;
-> > -		}
-> > +	ret = find_desired_extent(inode, &offset, origin);
-> > +	if (ret) {
-> > +		mutex_unlock(&inode->i_mutex);
-> > +		return ret;
-> >  	}
-> >  
-> >  	if (offset < 0 && !(file->f_mode & FMODE_UNSIGNED_OFFSET)) {
-> > -- 
-> > 1.7.6.409.ge7a85.dirty
-> > 
-> > --
-> > To unsubscribe from this list: send the line "unsubscribe linux-fsdevel" in
-> > the body of a message to majordomo@vger.kernel.org
-> > More majordomo info at  http://vger.kernel.org/majordomo-info.html
-> ---end quoted text---
+This is my boot.cfg
+---
+set timeout=5
+
+  insmod gpt
+  insmod btrfs
+  set root=(hd0,gpt3)
+  search --no-floppy --fs-uuid --set a549b032-017c-4a96-ae28-5dffe61cff1d
+if loadfont /boot/grub/unifont.pf2; then
+   set gfxmode=1680x1050
+   insmod gfxterm
+   insmod vbe
+   terminal_output gfxterm
+fi
+
+set menu_color_normal=cyan/black
+set menu_color_highlight=black/cyan
+
+menuentry "Linux 3.1.0" {
+  insmod gpt
+  insmod btrfs
+  set root=(hd0,gpt3)
+  search --no-floppy --fs-uuid --set a549b032-017c-4a96-ae28-5dffe61cff1d
+  linux /boot/bzImage-3.1.0 root=/dev/sda3 rootfstype=btrfs
+  initrd /boot/initframfs-3.1.0
+  set gfxpayload=keep
+}
+set default=0
+---
+
+These are my current subvolumes:
+# btrfs sub list /
+ID 256 top level 5 path mainroot
+ID 257 top level 5 path home
+
+I have sub 256 set as default, and then home is mounted onto mainroot.
+
+I'm assuming that since I have my boot inside that subvolume, that is why 
+grub, at first, has issues locating the files, but then manages to find it.
+
+My question is this: Is anyone aware of any grub.cfg magic I can use to 
+specify a specific subvolume to look for /boot/grub ? my plan is to eventually 
+move boot into it's -own- subvolume, and create more subvolumes for different 
+distros.
+

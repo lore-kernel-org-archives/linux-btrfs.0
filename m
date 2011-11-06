@@ -1,64 +1,71 @@
-From: Chuck Burns <break19@gmail.com>
-Subject: grub-1.99 and btrfs-only
-Date: Sat, 05 Nov 2011 21:02:53 -0500
-Message-ID: <1485076.Kk29g2Lexo@funbeast>
+From: Eric Griffith <egriffith92@gmail.com>
+Subject: Btrfs default subvolume, /home
+Date: Sat, 5 Nov 2011 22:22:39 -0400
+Message-ID: <CALHG4fEBDSNOVZhHRJdRzZzaLcvYc5dAPtig03ic4ZE9Ex40sQ@mail.gmail.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
+Content-Type: text/plain; charset=ISO-8859-1
 To: linux-btrfs@vger.kernel.org
 Return-path: <linux-btrfs-owner@vger.kernel.org>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-I have a btrfs-only system, using grub2 (1.99), and have /boot on btrfs as 
-well...
+Hey guys, I've been trying out BTRFS the last couple days, just to
+kind of see what to expect and what I can do with it once its
+finalized and we have a working fsck. I do have a couple question that
+neither the Arch Wiki, The Fedora WIki, Ubuntu wiki or the kernel.org
+wiki could answer. So here goes;
 
-When I first boot, grub first complains it cannot find files, then apparently 
-successfully finds them, loading the menu..
 
-After I select the option I want, grub again complains of unable to find a file, 
-and seconds later begins to properly boot..
+When I installed fedora (F16 Beta) I made root be an ext4 partition,
+with /home as BTRFS. Ubuntu wiki states that any BTRFS partition has a
+default subvolume called "default," I cant find it for /home.
 
-This is my boot.cfg
----
-set timeout=5
+/etc/fstab:
 
-  insmod gpt
-  insmod btrfs
-  set root=(hd0,gpt3)
-  search --no-floppy --fs-uuid --set a549b032-017c-4a96-ae28-5dffe61cff1d
-if loadfont /boot/grub/unifont.pf2; then
-   set gfxmode=1680x1050
-   insmod gfxterm
-   insmod vbe
-   terminal_output gfxterm
-fi
+#
+# /etc/fstab
+# Created by anaconda on Thu Nov 3 15:24:14 2011
+#
+# Accessible filesystems, by reference, are maintained under '/dev/disk'
+# See man pages fstab(5), findfs(8), mount(8) and/or blkid(8) for more info
+#
+UUID=e5021a48-c961-4e73-98a5-beee06355f46 / ext4 defaults 1 1
+UUID=97ac420f-2818-4833-b7b6-4ac497716e3b /home btrfs
+defaults,autodefrag,compress 1 2
+UUID=0d275462-1ad3-46af-a1b8-637ca5efeca6 swap swap defaults 0 0
 
-set menu_color_normal=cyan/black
-set menu_color_highlight=black/cyan
 
-menuentry "Linux 3.1.0" {
-  insmod gpt
-  insmod btrfs
-  set root=(hd0,gpt3)
-  search --no-floppy --fs-uuid --set a549b032-017c-4a96-ae28-5dffe61cff1d
-  linux /boot/bzImage-3.1.0 root=/dev/sda3 rootfstype=btrfs
-  initrd /boot/initframfs-3.1.0
-  set gfxpayload=keep
-}
-set default=0
----
+btrfs --help says. "btrfs subvolume list <path> : List the
+snapshot/subvolume of a filesystem." I'd expect it to spit out
+"default" at some point.
 
-These are my current subvolumes:
-# btrfs sub list /
-ID 256 top level 5 path mainroot
-ID 257 top level 5 path home
+Couple outputs
 
-I have sub 256 set as default, and then home is mounted onto mainroot.
+[eric@eric-laptop ~]$ sudo btrfs subvolume list /
+ERROR: '/' is not a subvolume
+[eric@eric-laptop ~]$ sudo btrfs subvolume list /home
+[eric@eric-laptop ~]$
 
-I'm assuming that since I have my boot inside that subvolume, that is why 
-grub, at first, has issues locating the files, but then manages to find it.
+What i wanted was an easy; reliable way to keep a backup of my home
+using btrfs instead of just rsync. Unfortunately, in order to use
+snapshot, it needs to be on, or be a, subvolume.
 
-My question is this: Is anyone aware of any grub.cfg magic I can use to 
-specify a specific subvolume to look for /boot/grub ? my plan is to eventually 
-move boot into it's -own- subvolume, and create more subvolumes for different 
-distros.
+proof:
 
+[eric@eric-laptop ~]$ sudo btrfs subvolume snapshot /home/eric /home/eric/test
+ERROR: '/home/eric' is not a subvolume
+[eric@eric-laptop ~]$
+
+
+So; I rebooted into single user, mv'ed /home/eric to /home/eric-btrfs,
+made a subvolume in /home/ named 'eric' to take the place of my home,
+and cp'ed all of my files from eric-btrfs to eric, a quick chown, and
+chmod to get the file permissions right.
+
+Rebooted, tried to login... error messages, lots of error messages.
+"Cant switch out from /" "/home/eric/.kde/share/config/knotifyrc is
+not writable" despite having read and write permission, and ownership.
+
+Can anyone figure out what the heck is going on? I know BTRFS is still
+experimental, but I thought the layout and implementation was
+finalized. OR; what do I have to do to make Btrfs work as a /home as
+it should? (see ZFS / LVM )

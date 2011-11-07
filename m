@@ -1,75 +1,31 @@
-From: Josef Bacik <josef@redhat.com>
-Subject: Re: btrfs: could not do orphan cleanup -116
-Date: Mon, 7 Nov 2011 14:01:52 -0500
-Message-ID: <20111107190152.GB2151@localhost.localdomain>
-References: <1320671824.2445.8.camel@picard>
- <20111107152940.GA2151@localhost.localdomain>
- <1320691304.2445.11.camel@picard>
+From: Phillip Susi <psusi@cfl.rr.com>
+Subject: Re: grub-1.99 and btrfs-only
+Date: Mon, 07 Nov 2011 16:07:55 -0500
+Message-ID: <4EB848AB.1000006@cfl.rr.com>
+References: <1485076.Kk29g2Lexo@funbeast>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Cc: Josef Bacik <josef@redhat.com>, linux-btrfs@vger.kernel.org
-To: Maciej Marcin Piechotka <uzytkownik2@gmail.com>
+Content-Type: text/plain; charset=ISO-8859-1; format=flowed
+Cc: linux-btrfs@vger.kernel.org
+To: Chuck Burns <break19@gmail.com>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <1320691304.2445.11.camel@picard>
+In-Reply-To: <1485076.Kk29g2Lexo@funbeast>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Mon, Nov 07, 2011 at 06:41:44PM +0000, Maciej Marcin Piechotka wrote:
-> On Mon, 2011-11-07 at 10:29 -0500, Josef Bacik wrote:
-> > On Mon, Nov 07, 2011 at 01:17:04PM +0000, Maciej Marcin Piechotka wrote:
-> > > Hello,
-> > > 
-> > > When I booted my machine (after clean powerdown) the following message
-> > > appeared:
-> > > [   32.757913] device fsid XXXXXXXX-XXXX-XXXX-XXXX-XXXXXXXXXXXX devid 1
-> > > transid 40864 /dev/mapper/XXXXX-XXXXX
-> > > [   32.758466] btrfs: use lzo compression
-> > > [   32.758475] btrfs: enabling disk space caching
-> > > [   32.758483] btrfs: enabling inode map caching
-> > > [   32.758490] btrfs: enabling auto defrag
-> > > [   32.758497] btrfs: thread pool 2
-> > > [   34.024359] btrfs: could not do orphan cleanup -116
-> > > [   63.173382] btrfs: open_ctree failed
-> > > 
-> > > btrfsck has shown no errors.
-> > > 
-> > > Afterwards when I tried to mount filesystem it have shown:
-> > > 
-> > > [  116.012528] btrfs: enabling inode map caching
-> > > [  116.012534] btrfs: enabling auto defrag
-> > > [  116.012542] btrfs: thread pool 2
-> > > 
-> > > It looked like everything is working but to be sure I've run scrub:
-> > > 
-> > > scrub status for fsid XXXXXXXX-XXXX-XXXX-XXXX-XXXXXXXXXXXX
-> > >         scrub started at Mon Nov  7 13:05:50 2011 and finished after 606
-> > > seconds
-> > >         total bytes scrubbed: 32.37GB with 0 errors
-> > > 
-> > > PS. 
-> > > # find include | xargs grep 116
-> > > (...)
-> > > include/asm-generic/errno.h:#define     ESTALE          116     /* Stale
-> > > NFS file handle */
-> > > (...)
-> > > 
-> > > I don't use NFS - I use LVM on LUKS. In any case - it have been done
-> > > concurrently with mounting of other fs which had no such problems.
-> > 
-> > Yeah that's a bug with an earlier kernel, if you upgrade to 3.1 it should go
-> > away.  Thanks,
-> > 
-> > Josef
-> 
-> 
-> I'm using 'newer' kernel then 3.1 - I'm following Linus' tree (this
-> kernel is few days old).
-> 
+On 11/5/2011 10:02 PM, Chuck Burns wrote:
+> These are my current subvolumes:
+> # btrfs sub list /
+> ID 256 top level 5 path mainroot
+> ID 257 top level 5 path home
+>
+> I have sub 256 set as default, and then home is mounted onto mainroot.
 
-Do you have the commit
+I advise against using set-default at all.  The setup Ubuntu seems to be 
+going for ( and is working well for me so far ) creates two subvolumes 
+under the default root, named @ and @home, and intended to be mounted in 
+/ and /home respectively.  The /@ subvolume is then mounted as the root 
+via rootflags=subvol=@ argument, and grub is configured to use 
+/@/boot/grub as its prefix directory.
 
-a8c9e5769718d47e87cce40c9b84cab421804797
-Btrfs: fix orphan cleanup regression
+I'm still getting a "sparse file not allowed" error during boot, and 
+have to press enter to continue though.  Still not tracked that one down.
 
-If not then the kernel isn't new enough.  Thanks,
-
-Josef

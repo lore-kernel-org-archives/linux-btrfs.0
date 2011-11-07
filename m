@@ -1,45 +1,75 @@
-From: Martin Steigerwald <Martin@lichtvoll.de>
-Subject: Re: space cache generation (...) does not match inode (...)
-Date: Mon, 7 Nov 2011 10:37:54 +0100
-Message-ID: <201111071037.54434.Martin@lichtvoll.de>
-References: <CAObL_7Hc0AGOB8Jk-o_hseiqxEfDWFLSnMkhLLiu00GVbr729Q@mail.gmail.com> <4E3FD332.5020002@redhat.com> (sfid-20110808_160940_762241_B4222AF9)
+From: Roman Mamedov <rm@romanrm.ru>
+Subject: Re: [GIT PULL] Btrfs pull request
+Date: Mon, 7 Nov 2011 15:49:36 +0600
+Message-ID: <20111107154936.7c60be38@natsu>
+References: <20111106183851.GA4339@shiny>
+	<CAK-xaQau04whLQm0Fz-fkCZ1AumLs84UiqGi0Rc=GZUzRvV7Gg@mail.gmail.com>
+	<4EB7A6CC.5030502@gmx.net>
 Mime-Version: 1.0
-Content-Type: Text/Plain;
-  charset="iso-8859-1"
-Cc: Josef Bacik <josef@redhat.com>, Andrew Lutomirski <luto@mit.edu>
-To: linux-btrfs@vger.kernel.org
+Content-Type: multipart/signed; micalg=PGP-SHA1;
+ boundary="Sig_/qny5ElJ8_RS1iDUlV+0T7IK"; protocol="application/pgp-signature"
+Cc: Andrea Gelmini <andrea.gelmini@gmail.com>,
+	Chris Mason <chris.mason@oracle.com>,
+	linux-btrfs <linux-btrfs@vger.kernel.org>,
+	LKML <linux-kernel@vger.kernel.org>
+To: Arne Jansen <sensille@gmx.net>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <4E3FD332.5020002@redhat.com>
+In-Reply-To: <4EB7A6CC.5030502@gmx.net>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hi Josef,
+--Sig_/qny5ElJ8_RS1iDUlV+0T7IK
+Content-Type: text/plain; charset=US-ASCII
+Content-Transfer-Encoding: quoted-printable
 
-Am Montag, 8. August 2011 schrieb Josef Bacik:
-> On 08/06/2011 10:16 PM, Andrew Lutomirski wrote:
-> > I've always gotten space cache generation warnings, but some time
-> > after 3.0 they started going nuts.  I get:
-> > 
-> > space cache generation (14667727114112179905) does not match inode
-> > (154185)
-> > 
-> > and other similar messages (with a huge number and a smaller number)
-> > at rates higher than one message per ms.  They don't happen
-> > constantly, but they come in bursts big enough to fill my log buffer.
-> 
-> Yeah sorry that's going to happen when you first switch to 3.0.  We
-> switched the space cache stuff over to using the normal checksumming
-> code so all old space cache is going to look invalid.  This is nothing
-> to worry about, it will just end up discarded and re-generated. 
+On Mon, 07 Nov 2011 10:37:16 +0100
+Arne Jansen <sensille@gmx.net> wrote:
 
-I found these too and found this thread about it.
+> >    I've got this:
+> >=20
+> > root@Q45:/home/gelma/dev/prg/btrfs# ./btrfs scrub start -Br /dev/md126
+> > ERROR: scrubbing /dev/md126 failed for device id 1 (Cannot allocate mem=
+ory)
+> > scrub canceled for 11827b37-1ba0-4b3e-883d-2746987724ca
+> > 	scrub started at Sun Nov  6 20:23:46 2011 and was aborted after 0 seco=
+nds
+> > 	total bytes scrubbed: 0.00 with 0 errors
+> > root@Q45:/home/gelma/dev/prg/btrfs# ./btrfs scrub start -Br /home/
+> > ERROR: scrubbing /home/ failed for device id 1 (Cannot allocate memory)
+> > scrub canceled for 11827b37-1ba0-4b3e-883d-2746987724ca
+> > 	scrub started at Sun Nov  6 20:25:01 2011 and was aborted after 0 seco=
+nds
+> > 	total bytes scrubbed: 0.00 with 0 errors
+>=20
+> On what platform are you running this? Can you please try this after
+> a fresh boot? Maybe there's an allocation that can't be served with
+> a badly fragmented memory.
 
-Now I restarted 3.1 another time but I still get these. Less than before, 
-but they still appear. Is that okay?
+If so, shouldn't there also be a corresponding dmesg warning about "Unable =
+to allocate....", which would confirm or rule this out?
+So before following the "did you try turning it off and on again" advice (a=
+nd throwing away useful debug info), I'd suggest checking/saving dmesg firs=
+t.
 
-I thought BTRFS would update the space cache once and then be done with 
-it. When exactly should BTRFS be done with it?
+--=20
+With respect,
+Roman
 
-Ciao,
--- 
-Martin 'Helios' Steigerwald - http://www.Lichtvoll.de
-GPG: 03B0 0D6C 0040 0710 4AFA  B82F 991B EAAC A599 84C7
+~~~~~~~~~~~~~~~~~~~~~~~~~~~
+"Stallman had a printer,
+with code he could not see.
+So he began to tinker,
+and set the software free."
+
+--Sig_/qny5ElJ8_RS1iDUlV+0T7IK
+Content-Type: application/pgp-signature; name=signature.asc
+Content-Disposition: attachment; filename=signature.asc
+
+-----BEGIN PGP SIGNATURE-----
+Version: GnuPG v1.4.11 (GNU/Linux)
+
+iEYEARECAAYFAk63qbAACgkQTLKSvz+PZwjl2gCfWCKNKJ4mNUz3BDNL3qSDIM9M
+Od8AnA6wg8G4aNE/bD+ERsp9mVZHhXY3
+=ljW8
+-----END PGP SIGNATURE-----
+
+--Sig_/qny5ElJ8_RS1iDUlV+0T7IK--

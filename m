@@ -1,26 +1,31 @@
-From: David Sterba <dave@jikos.cz>
-Subject: Re: [btrfs-progs: PATCH] scrub: fix build failure by restoring proper library ordering
-Date: Mon, 7 Nov 2011 13:45:23 +0100
-Message-ID: <20111107124523.GN12759@twin.jikos.cz>
-References: <1320650373-15054-1-git-send-email-slyich@gmail.com>
-Reply-To: dave@jikos.cz
+From: Andrea Gelmini <andrea.gelmini@gmail.com>
+Subject: Re: [GIT PULL] Btrfs pull request
+Date: Mon, 7 Nov 2011 13:49:21 +0100
+Message-ID: <CAK-xaQbT+hrO-DOoiTDrU_4KfQuc+xvc4D_F0JFnWNHdGOTkQA@mail.gmail.com>
+References: <20111106183851.GA4339@shiny> <CAK-xaQau04whLQm0Fz-fkCZ1AumLs84UiqGi0Rc=GZUzRvV7Gg@mail.gmail.com>
+ <4EB7A6CC.5030502@gmx.net> <20111107154936.7c60be38@natsu>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Cc: linux-btrfs@vger.kernel.org, chris.mason@oracle.com,
-	Sergei Trofimovich <slyfox@gentoo.org>
-To: slyich@gmail.com
-Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <1320650373-15054-1-git-send-email-slyich@gmail.com>
+Content-Type: text/plain; charset=UTF-8
+Cc: Arne Jansen <sensille@gmx.net>,
+	Chris Mason <chris.mason@oracle.com>,
+	linux-btrfs <linux-btrfs@vger.kernel.org>,
+	LKML <linux-kernel@vger.kernel.org>
+To: Roman Mamedov <rm@romanrm.ru>
+Return-path: <linux-kernel-owner@vger.kernel.org>
+In-Reply-To: <20111107154936.7c60be38@natsu>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Mon, Nov 07, 2011 at 10:19:33AM +0300, slyich@gmail.com wrote:
->  btrfs: $(objects) btrfs.o btrfs_cmds.o scrub.o
-> -	$(CC) -lpthread $(CFLAGS) -o btrfs btrfs.o btrfs_cmds.o scrub.o \
-> -		$(objects) $(LDFLAGS) $(LIBS)
-> +	$(CC) $(CFLAGS) -o btrfs btrfs.o btrfs_cmds.o scrub.o \
-> +		$(objects) $(LDFLAGS) $(LIBS) -lpthread
+2011/11/7 Roman Mamedov <rm@romanrm.ru>:
+> If so, shouldn't there also be a corresponding dmesg warning about "Unable to allocate....", which would confirm or rule this out?
+> So before following the "did you try turning it off and on again" advice (and throwing away useful debug info), I'd suggest checking/saving dmesg first.
 
-No, it's "-pthread", adds both preprocessor and linker flags.
+Hi Roman,
+   and thanks a lot for your reply.
+   I did check dmesg and /var/log also, but I didn't find complain about it.
 
+   So, I tried with a loopback device and it works well.
+   Maybe the problem is about my device stack?
+   Bottom up my home is on a: md + luks + lvm + md + btrfs.
 
-david
+Thanks a lot for your time,
+Andrea

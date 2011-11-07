@@ -1,31 +1,46 @@
-From: Christoph Hellwig <hch@infradead.org>
-Subject: Re: [PATCH] btrfs: fix double-free 'tree_root' in 'btrfs_mount()'
-Date: Mon, 7 Nov 2011 04:10:05 -0500
-Message-ID: <20111107091005.GA17056@infradead.org>
-References: <1320657127-3561-1-git-send-email-slyich@gmail.com>
+From: Arne Jansen <sensille@gmx.net>
+Subject: Re: [PATCH] btrfs: Don't leak mem in scrub_fixup().
+Date: Mon, 07 Nov 2011 10:24:50 +0100
+Message-ID: <4EB7A3E2.2060400@gmx.net>
+References: <alpine.LNX.2.00.1111062331350.5763@swampdragon.chaosbits.net>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Cc: linux-btrfs@vger.kernel.org,
-	Sergei Trofimovich <slyfox@gentoo.org>,
-	Arne Jansen <sensille@gmx.net>,
-	Chris Mason <chris.mason@oracle.com>,
-	David Sterba <dsterba@suse.cz>
-To: slyich@gmail.com
-Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <1320657127-3561-1-git-send-email-slyich@gmail.com>
+Content-Type: text/plain; charset=ISO-8859-1
+Cc: Chris Mason <chris.mason@oracle.com>, linux-btrfs@vger.kernel.org,
+	linux-kernel@vger.kernel.org
+To: Jesper Juhl <jj@chaosbits.net>
+Return-path: <linux-kernel-owner@vger.kernel.org>
+In-Reply-To: <alpine.LNX.2.00.1111062331350.5763@swampdragon.chaosbits.net>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Mon, Nov 07, 2011 at 12:12:07PM +0300, slyich@gmail.com wrote:
->     bdev=/dev/ubda
->     btr_root=/btr
->     /mkfs.btrfs $bdev
->     mount $bdev $btr_root
->     mkdir $btr_root/subvols/
->     cd $btr_root/subvols/
->     /btrfs su cr foo
->     /btrfs su cr bar
->     mount $bdev -osubvol=subvols/foo $btr_root/subvols/bar
->     umount $btr_root/subvols/bar
+On 06.11.2011 23:33, Jesper Juhl wrote:
+> It seems to me that we may leak the memory allocated to 'multi' in
+> scrub_fixup() if, for example, 'length' turns out to be less than
+> PAGE_SIZE after we call btrfs_map_block(). This patch should take care
+> of the leak by always kfree'ing 'multi' before we return in that error
+> case.
 
-Can you please send this as a new testcase for xfstests?
+Thanks for looking into this. The current pull request already contains
+a fix for this, from Ilya Dryomov.
 
+-Arne
+
+> 
+> Signed-off-by: Jesper Juhl <jj@chaosbits.net>
+> ---
+>  fs/btrfs/scrub.c |    1 +
+>  1 files changed, 1 insertions(+), 0 deletions(-)
+> 
+>  Compile tested only since I don't have any btrfs filesystems to test on.
+> 
+> diff --git a/fs/btrfs/scrub.c b/fs/btrfs/scrub.c
+> index a8d03d5..b53433e 100644
+> --- a/fs/btrfs/scrub.c
+> +++ b/fs/btrfs/scrub.c
+> @@ -271,6 +271,7 @@ static void scrub_fixup(struct scrub_bio *sbio, int ix)
+>  	ret = btrfs_map_block(map_tree, REQ_WRITE, logical, &length,
+>  			      &multi, 0);
+>  	if (ret || !multi || length < PAGE_SIZE) {
+> +		kfree(multi);
+>  		printk(KERN_ERR
+>  		       "scrub_fixup: btrfs_map_block failed us for %llu\n",
+>  		       (unsigned long long)logical);

@@ -1,61 +1,66 @@
-From: Arne Jansen <sensille@gmx.net>
-Subject: Re: [PATCH v8 1/8] btrfs: added helper functions to iterate backrefs
-Date: Mon, 07 Nov 2011 17:46:49 +0100
-Message-ID: <4EB80B79.3020400@gmx.net>
-References: <cover.1311778307.git.list.btrfs@jan-o-sch.net> <915659509a8ca58ec0bbf89001bac5afd4fa81b4.1311778307.git.list.btrfs@jan-o-sch.net> <4EB1F13C.3070801@cn.fujitsu.com> <4EB26DC3.5080409@jan-o-sch.net>
+From: Maciej Marcin Piechotka <uzytkownik2@gmail.com>
+Subject: Re: btrfs: could not do orphan cleanup -116
+Date: Mon, 07 Nov 2011 18:41:44 +0000
+Message-ID: <1320691304.2445.11.camel@picard>
+References: <1320671824.2445.8.camel@picard>
+	 <20111107152940.GA2151@localhost.localdomain>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=ISO-8859-1
-Cc: Li Zefan <lizf@cn.fujitsu.com>, linux-btrfs@vger.kernel.org,
-	chris.mason@oracle.com
-To: Jan Schmidt <list.btrfs@jan-o-sch.net>
+Content-Type: text/plain; charset="UTF-8"
+Cc: linux-btrfs@vger.kernel.org
+To: Josef Bacik <josef@redhat.com>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <4EB26DC3.5080409@jan-o-sch.net>
+In-Reply-To: <20111107152940.GA2151@localhost.localdomain>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 03.11.2011 11:32, Jan Schmidt wrote:
-> On 03.11.2011 02:41, Li Zefan wrote:
->> (as this is going to be merged into mainline..)
->>
->>> +/*
->>> + * calls iterate() for every inode that references the extent identified by
->>> + * the given parameters. will use the path given as a parameter and return it
->>> + * released.
->>> + * when the iterator function returns a non-zero value, iteration stops.
->>> + */
->>> +int iterate_extent_inodes(struct btrfs_fs_info *fs_info,
->>> +				struct btrfs_path *path,
->>> +				u64 extent_item_objectid,
->>> +				u64 extent_offset,
->>> +				iterate_extent_inodes_t *iterate, void *ctx)
->>
->> While trying to use this API, I found there's a big defect in this function.
->>
->>    fs_tree 1       fs_tree 2
->>        \              /
->>         \            /
->>          \          /
->>           \        /
->>              node
->>               |
->>               |
->>              leaf  (EXTENT_DATA item)
->>
->> In the above case, the function will find only 1 reference.
+On Mon, 2011-11-07 at 10:29 -0500, Josef Bacik wrote:
+> On Mon, Nov 07, 2011 at 01:17:04PM +0000, Maciej Marcin Piechotka wrote:
+> > Hello,
+> > 
+> > When I booted my machine (after clean powerdown) the following message
+> > appeared:
+> > [   32.757913] device fsid XXXXXXXX-XXXX-XXXX-XXXX-XXXXXXXXXXXX devid 1
+> > transid 40864 /dev/mapper/XXXXX-XXXXX
+> > [   32.758466] btrfs: use lzo compression
+> > [   32.758475] btrfs: enabling disk space caching
+> > [   32.758483] btrfs: enabling inode map caching
+> > [   32.758490] btrfs: enabling auto defrag
+> > [   32.758497] btrfs: thread pool 2
+> > [   34.024359] btrfs: could not do orphan cleanup -116
+> > [   63.173382] btrfs: open_ctree failed
+> > 
+> > btrfsck has shown no errors.
+> > 
+> > Afterwards when I tried to mount filesystem it have shown:
+> > 
+> > [  116.012528] btrfs: enabling inode map caching
+> > [  116.012534] btrfs: enabling auto defrag
+> > [  116.012542] btrfs: thread pool 2
+> > 
+> > It looked like everything is working but to be sure I've run scrub:
+> > 
+> > scrub status for fsid XXXXXXXX-XXXX-XXXX-XXXX-XXXXXXXXXXXX
+> >         scrub started at Mon Nov  7 13:05:50 2011 and finished after 606
+> > seconds
+> >         total bytes scrubbed: 32.37GB with 0 errors
+> > 
+> > PS. 
+> > # find include | xargs grep 116
+> > (...)
+> > include/asm-generic/errno.h:#define     ESTALE          116     /* Stale
+> > NFS file handle */
+> > (...)
+> > 
+> > I don't use NFS - I use LVM on LUKS. In any case - it have been done
+> > concurrently with mounting of other fs which had no such problems.
 > 
-> Hum. You are right.
+> Yeah that's a bug with an earlier kernel, if you upgrade to 3.1 it should go
+> away.  Thanks,
 > 
-> I'm convinced that I've been at this point months ago, only I cannot
-> find code dealing with counts > 1 on nodes. I'll look for a fix in my
-> branches or make a new one.
-> 
-> Currently, this is more of a best-effort resolver. Support for delayed
-> extents is missing, it should be used on commit roots to get a
-> consistent state.
-> 
+> Josef
 
-The qgroups patch contains an implementation to find all roots for a
-given extent. A quite extensive part of qgroups is needed for that, so
-it might be easiest to build a new version on top of qgroups.
-Otherwise I could split qgroups in 2 parts to factor out that half.
 
--Arne
+I'm using 'newer' kernel then 3.1 - I'm following Linus' tree (this
+kernel is few days old).
+
+Regards
+

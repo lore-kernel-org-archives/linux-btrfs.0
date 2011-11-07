@@ -1,53 +1,45 @@
-From: Arne Jansen <sensille@gmx.net>
-Subject: Re: [GIT PULL] Btrfs pull request
-Date: Mon, 07 Nov 2011 10:37:16 +0100
-Message-ID: <4EB7A6CC.5030502@gmx.net>
-References: <20111106183851.GA4339@shiny> <CAK-xaQau04whLQm0Fz-fkCZ1AumLs84UiqGi0Rc=GZUzRvV7Gg@mail.gmail.com>
+From: Martin Steigerwald <Martin@lichtvoll.de>
+Subject: Re: space cache generation (...) does not match inode (...)
+Date: Mon, 7 Nov 2011 10:37:54 +0100
+Message-ID: <201111071037.54434.Martin@lichtvoll.de>
+References: <CAObL_7Hc0AGOB8Jk-o_hseiqxEfDWFLSnMkhLLiu00GVbr729Q@mail.gmail.com> <4E3FD332.5020002@redhat.com> (sfid-20110808_160940_762241_B4222AF9)
 Mime-Version: 1.0
-Content-Type: text/plain; charset=ISO-8859-1
-Cc: Chris Mason <chris.mason@oracle.com>,
-	linux-btrfs <linux-btrfs@vger.kernel.org>,
-	LKML <linux-kernel@vger.kernel.org>
-To: Andrea Gelmini <andrea.gelmini@gmail.com>
-Return-path: <linux-kernel-owner@vger.kernel.org>
-In-Reply-To: <CAK-xaQau04whLQm0Fz-fkCZ1AumLs84UiqGi0Rc=GZUzRvV7Gg@mail.gmail.com>
+Content-Type: Text/Plain;
+  charset="iso-8859-1"
+Cc: Josef Bacik <josef@redhat.com>, Andrew Lutomirski <luto@mit.edu>
+To: linux-btrfs@vger.kernel.org
+Return-path: <linux-btrfs-owner@vger.kernel.org>
+In-Reply-To: <4E3FD332.5020002@redhat.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 06.11.2011 20:29, Andrea Gelmini wrote:
-> 2011/11/6 Chris Mason <chris.mason@oracle.com>:
-> 
-> Hi Chris,
->    and thanks a lot for your work.
-> 
->> Arne Jansen and Jan Schmidt have improved the scrubber and provided
->> utilities to walk btrfs' many backrefs.  The scrubber is much faster
->> thanks to extensive btree readahead and instead of just telling you a
->> specific block is bad, it tells you which btree or which file was
->> impacted by that bad block.
-> 
->    Using your for-linus branch, on latest Linus' git tree, with latest
-> git tools,
->    I've got this:
-> 
-> root@Q45:/home/gelma/dev/prg/btrfs# ./btrfs scrub start -Br /dev/md126
-> ERROR: scrubbing /dev/md126 failed for device id 1 (Cannot allocate memory)
-> scrub canceled for 11827b37-1ba0-4b3e-883d-2746987724ca
-> 	scrub started at Sun Nov  6 20:23:46 2011 and was aborted after 0 seconds
-> 	total bytes scrubbed: 0.00 with 0 errors
-> root@Q45:/home/gelma/dev/prg/btrfs# ./btrfs scrub start -Br /home/
-> ERROR: scrubbing /home/ failed for device id 1 (Cannot allocate memory)
-> scrub canceled for 11827b37-1ba0-4b3e-883d-2746987724ca
-> 	scrub started at Sun Nov  6 20:25:01 2011 and was aborted after 0 seconds
-> 	total bytes scrubbed: 0.00 with 0 errors
+Hi Josef,
 
-On what platform are you running this? Can you please try this after
-a fresh boot? Maybe there's an allocation that can't be served with
-a badly fragmented memory.
-
-Thanks,
-Arne
-
+Am Montag, 8. August 2011 schrieb Josef Bacik:
+> On 08/06/2011 10:16 PM, Andrew Lutomirski wrote:
+> > I've always gotten space cache generation warnings, but some time
+> > after 3.0 they started going nuts.  I get:
+> > 
+> > space cache generation (14667727114112179905) does not match inode
+> > (154185)
+> > 
+> > and other similar messages (with a huge number and a smaller number)
+> > at rates higher than one message per ms.  They don't happen
+> > constantly, but they come in bursts big enough to fill my log buffer.
 > 
-> Thanks a lot for your time,
-> Andrea
->>
+> Yeah sorry that's going to happen when you first switch to 3.0.  We
+> switched the space cache stuff over to using the normal checksumming
+> code so all old space cache is going to look invalid.  This is nothing
+> to worry about, it will just end up discarded and re-generated. 
+
+I found these too and found this thread about it.
+
+Now I restarted 3.1 another time but I still get these. Less than before, 
+but they still appear. Is that okay?
+
+I thought BTRFS would update the space cache once and then be done with 
+it. When exactly should BTRFS be done with it?
+
+Ciao,
+-- 
+Martin 'Helios' Steigerwald - http://www.Lichtvoll.de
+GPG: 03B0 0D6C 0040 0710 4AFA  B82F 991B EAAC A599 84C7

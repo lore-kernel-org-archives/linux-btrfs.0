@@ -1,95 +1,31 @@
-From: slyich@gmail.com
-Subject: [PATCH] btrfs: fix double-free 'tree_root' in 'btrfs_mount()'
-Date: Mon,  7 Nov 2011 12:12:07 +0300
-Message-ID: <1320657127-3561-1-git-send-email-slyich@gmail.com>
-Cc: Sergei Trofimovich <slyfox@gentoo.org>,
+From: Christoph Hellwig <hch@infradead.org>
+Subject: Re: [PATCH] btrfs: fix double-free 'tree_root' in 'btrfs_mount()'
+Date: Mon, 7 Nov 2011 04:10:05 -0500
+Message-ID: <20111107091005.GA17056@infradead.org>
+References: <1320657127-3561-1-git-send-email-slyich@gmail.com>
+Mime-Version: 1.0
+Content-Type: text/plain; charset=us-ascii
+Cc: linux-btrfs@vger.kernel.org,
+	Sergei Trofimovich <slyfox@gentoo.org>,
 	Arne Jansen <sensille@gmx.net>,
 	Chris Mason <chris.mason@oracle.com>,
 	David Sterba <dsterba@suse.cz>
-To: linux-btrfs@vger.kernel.org
+To: slyich@gmail.com
 Return-path: <linux-btrfs-owner@vger.kernel.org>
+In-Reply-To: <1320657127-3561-1-git-send-email-slyich@gmail.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-From: Sergei Trofimovich <slyfox@gentoo.org>
+On Mon, Nov 07, 2011 at 12:12:07PM +0300, slyich@gmail.com wrote:
+>     bdev=/dev/ubda
+>     btr_root=/btr
+>     /mkfs.btrfs $bdev
+>     mount $bdev $btr_root
+>     mkdir $btr_root/subvols/
+>     cd $btr_root/subvols/
+>     /btrfs su cr foo
+>     /btrfs su cr bar
+>     mount $bdev -osubvol=subvols/foo $btr_root/subvols/bar
+>     umount $btr_root/subvols/bar
 
-On error path 'tree_root' is treed in 'free_fs_info()'.
-No need to free it explicitely. Noticed by SLUB in debug mode:
-
-Complete reproducer under usermode linux (discovered on real
-machine):
-
-    bdev=/dev/ubda
-    btr_root=/btr
-    /mkfs.btrfs $bdev
-    mount $bdev $btr_root
-    mkdir $btr_root/subvols/
-    cd $btr_root/subvols/
-    /btrfs su cr foo
-    /btrfs su cr bar
-    mount $bdev -osubvol=subvols/foo $btr_root/subvols/bar
-    umount $btr_root/subvols/bar
-
-which gives
-
-device fsid 4d55aa28-45b1-474b-b4ec-da912322195e devid 1 transid 7 /dev/ubda
-=============================================================================
-BUG kmalloc-2048: Object already free
------------------------------------------------------------------------------
-
-INFO: Allocated in btrfs_mount+0x389/0x7f0 age=0 cpu=0 pid=277
-INFO: Freed in btrfs_mount+0x51c/0x7f0 age=0 cpu=0 pid=277
-INFO: Slab 0x0000000062886200 objects=15 used=9 fp=0x0000000070b4d2d0 flags=0x4081
-INFO: Object 0x0000000070b4d2d0 @offset=21200 fp=0x0000000070b4a968
-...
-Call Trace:
-70b31948:  [<6008c522>] print_trailer+0xe2/0x130
-70b31978:  [<6008c5aa>] object_err+0x3a/0x50
-70b319a8:  [<6008e242>] free_debug_processing+0x142/0x2a0
-70b319e0:  [<600ebf6f>] btrfs_mount+0x55f/0x7f0
-70b319f8:  [<6008e5c1>] __slab_free+0x221/0x2d0
-
-Signed-off-by: Sergei Trofimovich <slyfox@gentoo.org>
-Cc: Arne Jansen <sensille@gmx.net>
-Cc: Chris Mason <chris.mason@oracle.com>
-Cc: David Sterba <dsterba@suse.cz>
----
- fs/btrfs/super.c |    8 +++++---
- 1 files changed, 5 insertions(+), 3 deletions(-)
-
-diff --git a/fs/btrfs/super.c b/fs/btrfs/super.c
-index 57080df..dcd5aef 100644
---- a/fs/btrfs/super.c
-+++ b/fs/btrfs/super.c
-@@ -933,8 +933,12 @@ static struct dentry *btrfs_mount(struct file_system_type *fs_type, int flags,
- 	 * then open_ctree will properly initialize everything later.
- 	 */
- 	fs_info = kzalloc(sizeof(struct btrfs_fs_info), GFP_NOFS);
-+	if (!fs_info) {
-+		error = -ENOMEM;
-+		goto error_close_devices;
-+	}
- 	tree_root = kzalloc(sizeof(struct btrfs_root), GFP_NOFS);
--	if (!fs_info || !tree_root) {
-+	if (!tree_root) {
- 		error = -ENOMEM;
- 		goto error_close_devices;
- 	}
-@@ -964,7 +968,6 @@ static struct dentry *btrfs_mount(struct file_system_type *fs_type, int flags,
- 
- 		btrfs_close_devices(fs_devices);
- 		free_fs_info(fs_info);
--		kfree(tree_root);
- 	} else {
- 		char b[BDEVNAME_SIZE];
- 
-@@ -992,7 +995,6 @@ static struct dentry *btrfs_mount(struct file_system_type *fs_type, int flags,
- error_close_devices:
- 	btrfs_close_devices(fs_devices);
- 	free_fs_info(fs_info);
--	kfree(tree_root);
- 	return ERR_PTR(error);
- }
- 
--- 
-1.7.3.4
+Can you please send this as a new testcase for xfstests?
 

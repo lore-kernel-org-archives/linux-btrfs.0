@@ -1,57 +1,24 @@
-From: Josef Bacik <josef@redhat.com>
-Subject: Re: btrfs: could not do orphan cleanup -116
-Date: Mon, 7 Nov 2011 10:29:40 -0500
-Message-ID: <20111107152940.GA2151@localhost.localdomain>
-References: <1320671824.2445.8.camel@picard>
+From: Chris Mason <chris.mason@oracle.com>
+Subject: Re: [PATCH] btrfs: fix double-free 'tree_root' in 'btrfs_mount()'
+Date: Mon, 7 Nov 2011 10:57:20 -0500
+Message-ID: <20111107155720.GB4265@shiny>
+References: <1320657127-3561-1-git-send-email-slyich@gmail.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
-Cc: linux-btrfs@vger.kernel.org
-To: Maciej Marcin Piechotka <uzytkownik2@gmail.com>
+Cc: linux-btrfs@vger.kernel.org,
+	Sergei Trofimovich <slyfox@gentoo.org>,
+	Arne Jansen <sensille@gmx.net>, David Sterba <dsterba@suse.cz>
+To: slyich@gmail.com
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <1320671824.2445.8.camel@picard>
+In-Reply-To: <1320657127-3561-1-git-send-email-slyich@gmail.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Mon, Nov 07, 2011 at 01:17:04PM +0000, Maciej Marcin Piechotka wrote:
-> Hello,
+On Mon, Nov 07, 2011 at 12:12:07PM +0300, slyich@gmail.com wrote:
+> From: Sergei Trofimovich <slyfox@gentoo.org>
 > 
-> When I booted my machine (after clean powerdown) the following message
-> appeared:
-> [   32.757913] device fsid XXXXXXXX-XXXX-XXXX-XXXX-XXXXXXXXXXXX devid 1
-> transid 40864 /dev/mapper/XXXXX-XXXXX
-> [   32.758466] btrfs: use lzo compression
-> [   32.758475] btrfs: enabling disk space caching
-> [   32.758483] btrfs: enabling inode map caching
-> [   32.758490] btrfs: enabling auto defrag
-> [   32.758497] btrfs: thread pool 2
-> [   34.024359] btrfs: could not do orphan cleanup -116
-> [   63.173382] btrfs: open_ctree failed
-> 
-> btrfsck has shown no errors.
-> 
-> Afterwards when I tried to mount filesystem it have shown:
-> 
-> [  116.012528] btrfs: enabling inode map caching
-> [  116.012534] btrfs: enabling auto defrag
-> [  116.012542] btrfs: thread pool 2
-> 
-> It looked like everything is working but to be sure I've run scrub:
-> 
-> scrub status for fsid XXXXXXXX-XXXX-XXXX-XXXX-XXXXXXXXXXXX
->         scrub started at Mon Nov  7 13:05:50 2011 and finished after 606
-> seconds
->         total bytes scrubbed: 32.37GB with 0 errors
-> 
-> PS. 
-> # find include | xargs grep 116
-> (...)
-> include/asm-generic/errno.h:#define     ESTALE          116     /* Stale
-> NFS file handle */
-> (...)
-> 
-> I don't use NFS - I use LVM on LUKS. In any case - it have been done
-> concurrently with mounting of other fs which had no such problems.
+> On error path 'tree_root' is treed in 'free_fs_info()'.
+> No need to free it explicitely. Noticed by SLUB in debug mode:
 
-Yeah that's a bug with an earlier kernel, if you upgrade to 3.1 it should go
-away.  Thanks,
+Nice, thanks for the patch.
 
-Josef
+-chris

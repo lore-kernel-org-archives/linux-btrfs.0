@@ -1,38 +1,43 @@
-From: dima <dolenin@parallels.com>
-Subject: Re: How to remount btrfs without compression?
-Date: Tue, 8 Nov 2011 11:00:42 +0900
-Message-ID: <4EB88D4A.5050908@parallels.com>
-References: <4EB72C1B.1030702@parallels.com> <201111071319.14493.Martin@lichtvoll.de> <4EB87E01.1040704@parallels.com> <4EB880A0.1030304@gmail.com> <CAG1y0seMUUNwXCY6-=JehE+rrd4PRF55MZoHEUB_9+jDm6N_rA@mail.gmail.com> <4EB88BC9.7020509@gmail.com>
+From: WuBo <wu.bo@cn.fujitsu.com>
+Subject: [PATCH v2 0/3] xfstests: Add a group of reservation space test
+Date: Tue, 08 Nov 2011 11:38:41 +0800
+Message-ID: <4EB8A441.7090506@cn.fujitsu.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="UTF-8"; format=flowed
-To: <linux-btrfs@vger.kernel.org>
+Content-Type: text/plain; charset=ISO-8859-1
+To: linux-fsdevel@vger.kernel.org,
+	Linux Btrfs <linux-btrfs@vger.kernel.org>, xfs@oss.sgi.com,
+	Christoph Hellwig <hch@infradead.org>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <4EB88BC9.7020509@gmail.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 11/08/2011 10:54 AM, Eric Griffith wrote:
-> On 11/7/2011 8:52 PM, Fajar A. Nugraha wrote:
->> On Tue, Nov 8, 2011 at 8:06 AM, Eric Griffith<egriffith92@gmail.com>
->> wrote:
->>> Edit your
->>> fstab, remove the compress flag, reboot. Tell btrfs to rebalance the
->>> system,
->>> reboot again. And I -THINK- that'll decompress all the files
->>
->> I think the original question was how to force uncompressed mode,
->> whether specific to a file or to a whole filesystem, without having to
->> reboot :)
->>
->> AFAIK there's no way to do that.
->>
->
-> Whoops! Misunderstood the question haha. Yeah, as far as decompressing
-> just a single file; from what I've read, thats impossible.
+Changes v1->v2:
+- Make test-set support generic
 
+This patch set add a group of reservation space test. Especailly for btrfs.
+It includes three parts: copy workload, prealloc and write posix.
 
-Eric, Fajar,
-Thanks. Understood.
+For test 273, I hope it's usefull for Josef's reserve improve work.
+For test 274 and 275, the current btrfs is not pass yet.
 
-Yes, it is possible to remove the compress flag from fstab, reboot and 
-even do not do any defragmentation/rebalancing - just re-save the file 
-and it will be saved uncompressed. This works. But only with reboot...
+Wu Bo (3):
+  xfstests 273: add a copy and reserve test
+  xfstests 274: add a prealloc and reserve test
+  xfstests 275: add a write and reserve test
+
+ 273     |  145 +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+ 273.out |    4 ++
+ 274     |   91 +++++++++++++++++++++++++++++++++++++++
+ 274.out |    5 ++
+ 275     |   89 ++++++++++++++++++++++++++++++++++++++
+ 275.out |    5 ++
+ group   |    3 +
+ 7 files changed, 342 insertions(+), 0 deletions(-)
+ create mode 100755 273
+ create mode 100644 273.out
+ create mode 100755 274
+ create mode 100644 274.out
+ create mode 100755 275
+ create mode 100644 275.out
+
+-- 
+1.7.3.1

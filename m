@@ -1,61 +1,42 @@
-From: Chris Mason <chris.mason@oracle.com>
-Subject: Re: How to remount btrfs without compression?
-Date: Tue, 8 Nov 2011 10:12:08 -0500
-Message-ID: <20111108151208.GB4954@shiny>
-References: <4EB72C1B.1030702@parallels.com>
- <201111071319.14493.Martin@lichtvoll.de>
- <4EB87E01.1040704@parallels.com>
- <4EB880A0.1030304@gmail.com>
- <CAG1y0seMUUNwXCY6-=JehE+rrd4PRF55MZoHEUB_9+jDm6N_rA@mail.gmail.com>
- <4EB88BC9.7020509@gmail.com>
- <4EB88D4A.5050908@parallels.com>
- <20111108150151.GA4954@shiny>
+From: Ilya Dryomov <idryomov@gmail.com>
+Subject: Re: smatch stuff: potential NULL dereference in btrfs_rm_device()
+Date: Tue, 8 Nov 2011 17:16:00 +0200
+Message-ID: <20111108151600.GA1339@zambezi.lan>
+References: <20111108145944.GA30841@elgon.mountain>
 Mime-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
 Cc: linux-btrfs@vger.kernel.org
-To: dima <dolenin@parallels.com>
+To: Dan Carpenter <dan.carpenter@oracle.com>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <20111108150151.GA4954@shiny>
+In-Reply-To: <20111108145944.GA30841@elgon.mountain>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Tue, Nov 08, 2011 at 10:01:51AM -0500, Chris Mason wrote:
-> On Tue, Nov 08, 2011 at 11:00:42AM +0900, dima wrote:
-> > On 11/08/2011 10:54 AM, Eric Griffith wrote:
-> > >On 11/7/2011 8:52 PM, Fajar A. Nugraha wrote:
-> > >>On Tue, Nov 8, 2011 at 8:06 AM, Eric Griffith<egriffith92@gmail.com>
-> > >>wrote:
-> > >>>Edit your
-> > >>>fstab, remove the compress flag, reboot. Tell btrfs to rebalance the
-> > >>>system,
-> > >>>reboot again. And I -THINK- that'll decompress all the files
-> > >>
-> > >>I think the original question was how to force uncompressed mode,
-> > >>whether specific to a file or to a whole filesystem, without having to
-> > >>reboot :)
-> > >>
-> > >>AFAIK there's no way to do that.
-> > >>
-> > >
-> > >Whoops! Misunderstood the question haha. Yeah, as far as decompressing
-> > >just a single file; from what I've read, thats impossible.
-> > 
-> > 
-> > Eric, Fajar,
-> > Thanks. Understood.
-> > 
-> > Yes, it is possible to remove the compress flag from fstab, reboot
-> > and even do not do any defragmentation/rebalancing - just re-save
-> > the file and it will be saved uncompressed. This works. But only
-> > with reboot...
+On Tue, Nov 08, 2011 at 05:59:45PM +0300, Dan Carpenter wrote:
+> Hi Yan,
 > 
-> chattr -c on the file should work (followed by defrag or rewriting the
-> file).  I just retested and it seems to be broken right now.
+> Smatch complains about this code from 2008.
 > 
-> I'll track it down.
+> fs/btrfs/volumes.c +1417 btrfs_rm_device(157)
+> 	error: we previously assumed 'fs_devices' could be null (see line 1412)
+> 
+>   1412                  while (fs_devices) {
+>                                ^^^^^^^^^^
+> checked here.
+> 
+>   1413                          if (fs_devices->seed == cur_devices)
+>   1414                                  break;
+>   1415                          fs_devices = fs_devices->seed;
+>   1416                  }
+>   1417                  fs_devices->seed = cur_devices->seed;
+>                         ^^^^^^^^^^^^
+> dereferenced here.
+> 
+> If we don't hit the break statement, then at the end of the loop we'd
+> oops.
 
-Ok, I had forgotten.  chattr -c clears the compression flag bug doesn't
-set the no compress flag.  We looks like we need to patch chattr for
-this.
+I don't think Zheng works for Oracle (and on Btrfs) any more.  I'll look
+into it.
 
--chris
+Thanks,
 
+		Ilya

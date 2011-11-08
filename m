@@ -1,7 +1,7 @@
 From: WuBo <wu.bo@cn.fujitsu.com>
-Subject: [PATCH v2 2/3] xfstests 274: add a prealloc and reserve test
-Date: Tue, 08 Nov 2011 11:41:08 +0800
-Message-ID: <4EB8A4D4.4000000@cn.fujitsu.com>
+Subject: [PATCH v2 3/3] xfstests 275: add a write and reserve test
+Date: Tue, 08 Nov 2011 11:41:45 +0800
+Message-ID: <4EB8A4F9.8060006@cn.fujitsu.com>
 References: <4EB8A441.7090506@cn.fujitsu.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset=ISO-8859-1
@@ -12,29 +12,38 @@ Return-path: <linux-fsdevel-owner@vger.kernel.org>
 In-Reply-To: <4EB8A441.7090506@cn.fujitsu.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-This test is for preallocation test. If the disk is full, just with a prealloc
-file has some free space that prealloc early. We need to check whether the write
-to the free space is success or not.
+This test is for write-posix test. If writing a file when the disk is almost
+full, the posix wants the call to write as much as possible but not none.
+
+quote the POSIX:
+If a write() requests that more bytes be written than there is room for
+(for example, [XSI] [Option Start] the process' file size limit or
+[Option End] the physical end of a medium), only as many bytes as there
+is room for shall be written. For example, suppose there is space for 20
+bytes more in a file before reaching a limit. A write of 512 bytes will
+return 20. The next write of a non-zero number of bytes would give a
+failure return (except as noted below).
 
 Signed-off-by: Wu Bo <Wu.Bo@cn.fujitsu.com>
 ---
- 274     |   91 +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
- 274.out |    5 +++
+ 275     |   89 +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+ 275.out |    5 +++
  group   |    1 +
- 3 files changed, 97 insertions(+), 0 deletions(-)
- create mode 100755 274
- create mode 100644 274.out
+ 3 files changed, 95 insertions(+), 0 deletions(-)
+ create mode 100755 275
+ create mode 100644 275.out
 
-diff --git a/274 b/274
+diff --git a/275 b/275
 new file mode 100755
-index 0000000..b658004
+index 0000000..214262e
 --- /dev/null
-+++ b/274
-@@ -0,0 +1,91 @@
++++ b/275
+@@ -0,0 +1,89 @@
 +#! /bin/bash
-+# FS QA Test No. 274
++# FS QA Test No. 275
 +#
-+# preallocation test
++# The posix write test. when write size is larger than disk free size,
++# should write as more as possible
 +#
 +#-----------------------------------------------------------------------
 +# Copyright (c) 2011-2012 Fujitsu, Inc.  All Rights Reserved.
@@ -81,7 +90,7 @@ index 0000000..b658004
 +_require_scratch
 +
 +echo "------------------------------"
-+echo "preallocation test"
++echo "write lack test"
 +echo "------------------------------"
 +
 +rm -f $seq.full
@@ -92,7 +101,8 @@ index 0000000..b658004
 +
 +rm -rf $SCRATCH_MNT/*
 +cd $SCRATCH_MNT
-+dd if=/dev/zero of=test bs=4K count=1 >/dev/null 2>&1
++
++dd if=/dev/zero of=tmp1 bs=4K count=1 >/dev/null 2>&1
 +if [ $? -ne 0 ]
 +then
 +	echo "create file err"
@@ -100,47 +110,43 @@ index 0000000..b658004
 +	exit
 +fi
 +
-+fallocate -n -o 4K -l 1M test >/dev/null 2>&1
-+if [ $? -ne 0 ]
-+then
-+	echo "fallocate file err"
-+	status=1
-+	exit
-+fi
-+
-+dd if=/dev/zero of=tmp1 bs=1M >/dev/null 2>&1
-+dd if=/dev/zero of=tmp2 bs=4K >/dev/null 2>&1
++dd if=/dev/zero of=tmp2 bs=1M >/dev/null 2>&1
++dd if=/dev/zero of=tmp3 bs=4K >/dev/null 2>&1
 +sync
 +
-+dd if=/dev/zero of=test seek=1 bs=4K count=2 conv=notrunc >/dev/null 2>&1
-+if [ $? -ne 0 ]
++rm -f tmp1
++sync
++
++dd if=/dev/zero of=tmp1 bs=8K count=1 >/dev/null 2>&1
++_filesize=`du tmp1 | awk '{print $1}'`
++if [ $_filesize -ne 4 ]
 +then
-+	echo "fill prealloc range err"
++	echo "write file err"
 +	status=1
 +	exit
 +fi
 +
 +echo "done"
 +exit
-diff --git a/274.out b/274.out
+diff --git a/275.out b/275.out
 new file mode 100644
-index 0000000..edbf3cc
+index 0000000..30af43c
 --- /dev/null
-+++ b/274.out
++++ b/275.out
 @@ -0,0 +1,5 @@
-+QA output created by 274
++QA output created by 275
 +------------------------------
-+preallocation test
++write lack test
 +------------------------------
 +done
 diff --git a/group b/group
-index b8245bf..44a9999 100644
+index 44a9999..8cdddd6 100644
 --- a/group
 +++ b/group
-@@ -387,3 +387,4 @@ deprecated
- 271 auto rw quick
+@@ -388,3 +388,4 @@ deprecated
  272 auto enospc rw
  273 auto rw
-+274 auto rw
+ 274 auto rw
++275 auto rw
 -- 
 1.7.3.1

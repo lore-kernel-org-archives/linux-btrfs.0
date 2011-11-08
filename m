@@ -1,240 +1,60 @@
-From: Josef Bacik <josef@redhat.com>
-Subject: [PATCH] Btrfs: fix our reservations for updating an inode when completing io V2
-Date: Tue,  8 Nov 2011 15:54:31 -0500
-Message-ID: <1320785671-6321-1-git-send-email-josef@redhat.com>
-To: linux-btrfs@vger.kernel.org
+From: Sami Liedes <sami.liedes@aalto.fi>
+Subject: Re: Number of hard links limit
+Date: Tue, 8 Nov 2011 23:23:43 +0200
+Message-ID: <20111108212342.GE28900@sli.dy.fi>
+References: <20100802114046.GA29926@lh.kyla.fi>
+ <20100806113039.GA18858@lh.kyla.fi>
+ <20100806134607.GB19942@think>
+ <201110121934.07105.Martin@lichtvoll.de>
+Mime-Version: 1.0
+Content-Type: multipart/signed; micalg=pgp-sha512;
+	protocol="application/pgp-signature"; boundary="jousvV0MzM2p6OtC"
+To: linux-btrfs@vger.kernel.org,
+	Martin Steigerwald <Martin@lichtvoll.de>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
+In-Reply-To: <201110121934.07105.Martin@lichtvoll.de>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-People have been reporting ENOSPC crashes in finish_ordered_io.  This is because
-we try to steal from the delalloc block rsv to satisfy a reservation to update
-the inode.  The problem with this is we don't explicitly save space for updating
-the inode when doing delalloc.  This is kind of a problem and we've gotten away
-with this because way back when we just stole from the delalloc reserve without
-any questions, and this worked out fine because generally speaking the leaf had
-been modified either by the mtime update when we did the original write or
-because we just updated the leaf when we inserted the file extent item, only on
-rare occasions had the leaf not actually been modified, and that was still ok
-because we'd just use a block or two out of the over-reservation that is
-delalloc.
 
-Then came the delayed inode stuff.  This is amazing, except it wants a full
-reservation for updating the inode since it may do it at some point down the
-road after we've written the blocks and we have to recow everything again.  This
-worked out because the delayed inode stuff just stole from the global reserve,
-that is until recently when I changed that because it caused other problems.
+--jousvV0MzM2p6OtC
+Content-Type: text/plain; charset=us-ascii
+Content-Disposition: inline
+Content-Transfer-Encoding: quoted-printable
 
-So here we are, we're doing everything right and being screwed for it.  So take
-an extra reservation for the inode at delalloc reservation time and carry it
-through the life of the delalloc reservation.  If we need it we can steal it in
-the delayed inode stuff.  If we have already stolen it try and do a normal
-metadata reservation.  If that fails try to steal from the delalloc reservation.
-If _that_ fails we'll get a WARN_ON() so I can start thinking of a better way to
-solve this and in the meantime we'll steal from the global reserve.
+On Wed, Oct 12, 2011 at 07:34:06PM +0200, Martin Steigerwald wrote:
+> What is the status of fixing the limits of hardlinks in BTRFS?
+>=20
+> It is now easy to hit on Debian systems that have git package installed:
 
-With this patch I ran xfstests 13 in a loop for a couple of hours and didn't see
-any problems.  Thanks,
+I too wonder if there still is an intention to fix this... I'd expect
+to see much more breakage like this once some distribution adopts
+btrfs as the default filesystem. If this is not going to be fixed in
+btrfs, perhaps we should start considering it a possible bug in
+programs that trigger it (that's apparently the way it was fixed in
+Debian for git)?
 
-Signed-off-by: Josef Bacik <josef@redhat.com>
----
-V1->V2: took out the last_trans test since we could write the leaf before the
-transaction commits and have to recow all over again.  Also fix the commit
-message to reflext how things now work.
+	Sami
 
- fs/btrfs/btrfs_inode.h   |    4 +--
- fs/btrfs/delayed-inode.c |   65 +++++++++++++++++++++++++++++++++++++++++++--
- fs/btrfs/extent-tree.c   |   22 +++++++++++++--
- fs/btrfs/inode.c         |    1 +
- 4 files changed, 83 insertions(+), 9 deletions(-)
+--jousvV0MzM2p6OtC
+Content-Type: application/pgp-signature; name="signature.asc"
+Content-Description: Digital signature
 
-diff --git a/fs/btrfs/btrfs_inode.h b/fs/btrfs/btrfs_inode.h
-index 5a5d325..634608d 100644
---- a/fs/btrfs/btrfs_inode.h
-+++ b/fs/btrfs/btrfs_inode.h
-@@ -147,14 +147,12 @@ struct btrfs_inode {
- 	 * the btrfs file release call will add this inode to the
- 	 * ordered operations list so that we make sure to flush out any
- 	 * new data the application may have written before commit.
--	 *
--	 * yes, its silly to have a single bitflag, but we might grow more
--	 * of these.
- 	 */
- 	unsigned ordered_data_close:1;
- 	unsigned orphan_meta_reserved:1;
- 	unsigned dummy_inode:1;
- 	unsigned in_defrag:1;
-+	unsigned delalloc_meta_reserved:1;
- 
- 	/*
- 	 * always compress this one file
-diff --git a/fs/btrfs/delayed-inode.c b/fs/btrfs/delayed-inode.c
-index bbe8496..313ee14 100644
---- a/fs/btrfs/delayed-inode.c
-+++ b/fs/btrfs/delayed-inode.c
-@@ -617,12 +617,14 @@ static void btrfs_delayed_item_release_metadata(struct btrfs_root *root,
- static int btrfs_delayed_inode_reserve_metadata(
- 					struct btrfs_trans_handle *trans,
- 					struct btrfs_root *root,
-+					struct inode *inode,
- 					struct btrfs_delayed_node *node)
- {
- 	struct btrfs_block_rsv *src_rsv;
- 	struct btrfs_block_rsv *dst_rsv;
- 	u64 num_bytes;
- 	int ret;
-+	int release = false;
- 
- 	src_rsv = trans->block_rsv;
- 	dst_rsv = &root->fs_info->delayed_block_rsv;
-@@ -652,11 +654,67 @@ static int btrfs_delayed_inode_reserve_metadata(
- 		if (!ret)
- 			node->bytes_reserved = num_bytes;
- 		return ret;
-+	} else if (src_rsv == &root->fs_info->delalloc_block_rsv) {
-+		spin_lock(&BTRFS_I(inode)->lock);
-+		if (BTRFS_I(inode)->delalloc_meta_reserved) {
-+			BTRFS_I(inode)->delalloc_meta_reserved = 0;
-+			spin_unlock(&BTRFS_I(inode)->lock);
-+			release = true;
-+			goto migrate;
-+		}
-+		spin_unlock(&BTRFS_I(inode)->lock);
-+
-+		/* Ok we didn't have space pre-reserved.  This shouldn't happen
-+		 * too often but it can happen if we do delalloc to an existing
-+		 * inode which gets dirtied because of the time update, and then
-+		 * isn't touched again until after the transaction commits and
-+		 * then we try to write out the data.  First try to be nice and
-+		 * reserve something strictly for us.  If not be a pain and try
-+		 * to steal from the delalloc block rsv.
-+		 */
-+		ret = btrfs_block_rsv_add_noflush(root, dst_rsv, num_bytes);
-+		if (!ret)
-+			goto out;
-+
-+		ret = btrfs_block_rsv_migrate(src_rsv, dst_rsv, num_bytes);
-+		if (!ret)
-+			goto out;
-+
-+		/*
-+		 * Ok this is a problem, let's just steal from the global rsv
-+		 * since this really shouldn't happen that often.
-+		 */
-+		WARN_ON(1);
-+		ret = btrfs_block_rsv_migrate(&root->fs_info->global_block_rsv,
-+					      dst_rsv, num_bytes);
-+		goto out;
- 	}
- 
-+migrate:
- 	ret = btrfs_block_rsv_migrate(src_rsv, dst_rsv, num_bytes);
--	if (!ret)
--		node->bytes_reserved = num_bytes;
-+	if (unlikely(ret)) {
-+		/* This shouldn't happen */
-+		BUG_ON(release);
-+		return ret;
-+	}
-+
-+out:
-+	/*
-+	 * Migrate only takes a reservation, it doesn't touch the size of the
-+	 * block_rsv.  This is to simplify people who don't normally have things
-+	 * migrated from their block rsv.  If they go to release their
-+	 * reservation, that will decrease the size as well, so if migrate
-+	 * reduced size we'd end up with a negative size.  But for the
-+	 * delalloc_meta_reserved stuff we will only know to drop 1 reservation,
-+	 * but we could in fact do this reserve/migrate dance several times
-+	 * between the time we did the original reservation and we'd clean it
-+	 * up.  So to take care of this, release the space for the meta
-+	 * reservation here.  I think it may be time for a documentation page on
-+	 * how block rsvs. work.
-+	 */
-+	if (release)
-+		btrfs_block_rsv_release(root, src_rsv, num_bytes);
-+	node->bytes_reserved = num_bytes;
- 
- 	return ret;
- }
-@@ -1708,7 +1766,8 @@ int btrfs_delayed_update_inode(struct btrfs_trans_handle *trans,
- 		goto release_node;
- 	}
- 
--	ret = btrfs_delayed_inode_reserve_metadata(trans, root, delayed_node);
-+	ret = btrfs_delayed_inode_reserve_metadata(trans, root, inode,
-+						   delayed_node);
- 	if (ret)
- 		goto release_node;
- 
-diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
-index 18ea90c..0b044e5 100644
---- a/fs/btrfs/extent-tree.c
-+++ b/fs/btrfs/extent-tree.c
-@@ -4063,23 +4063,30 @@ int btrfs_snap_reserve_metadata(struct btrfs_trans_handle *trans,
-  */
- static unsigned drop_outstanding_extent(struct inode *inode)
- {
-+	unsigned drop_inode_space = 0;
- 	unsigned dropped_extents = 0;
- 
- 	BUG_ON(!BTRFS_I(inode)->outstanding_extents);
- 	BTRFS_I(inode)->outstanding_extents--;
- 
-+	if (BTRFS_I(inode)->outstanding_extents == 0 &&
-+	    BTRFS_I(inode)->delalloc_meta_reserved) {
-+		drop_inode_space = 1;
-+		BTRFS_I(inode)->delalloc_meta_reserved = 0;
-+	}
-+
- 	/*
- 	 * If we have more or the same amount of outsanding extents than we have
- 	 * reserved then we need to leave the reserved extents count alone.
- 	 */
- 	if (BTRFS_I(inode)->outstanding_extents >=
- 	    BTRFS_I(inode)->reserved_extents)
--		return 0;
-+		return drop_inode_space;
- 
- 	dropped_extents = BTRFS_I(inode)->reserved_extents -
- 		BTRFS_I(inode)->outstanding_extents;
- 	BTRFS_I(inode)->reserved_extents -= dropped_extents;
--	return dropped_extents;
-+	return dropped_extents + drop_inode_space;
- }
- 
- /**
-@@ -4165,9 +4172,18 @@ int btrfs_delalloc_reserve_metadata(struct inode *inode, u64 num_bytes)
- 		nr_extents = BTRFS_I(inode)->outstanding_extents -
- 			BTRFS_I(inode)->reserved_extents;
- 		BTRFS_I(inode)->reserved_extents += nr_extents;
-+	}
- 
--		to_reserve = btrfs_calc_trans_metadata_size(root, nr_extents);
-+	/*
-+	 * Add an item to reserve for updating the inode when we complete the
-+	 * delalloc io.
-+	 */
-+	if (!BTRFS_I(inode)->delalloc_meta_reserved) {
-+		nr_extents++;
-+		BTRFS_I(inode)->delalloc_meta_reserved = 1;
- 	}
-+
-+	to_reserve = btrfs_calc_trans_metadata_size(root, nr_extents);
- 	to_reserve += calc_csum_metadata_size(inode, num_bytes, 1);
- 	spin_unlock(&BTRFS_I(inode)->lock);
- 
-diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
-index 9d0eaa5..faf8a60 100644
---- a/fs/btrfs/inode.c
-+++ b/fs/btrfs/inode.c
-@@ -6605,6 +6605,7 @@ struct inode *btrfs_alloc_inode(struct super_block *sb)
- 	ei->orphan_meta_reserved = 0;
- 	ei->dummy_inode = 0;
- 	ei->in_defrag = 0;
-+	ei->delalloc_meta_reserved = 0;
- 	ei->force_compress = BTRFS_COMPRESS_NONE;
- 
- 	ei->delayed_node = NULL;
--- 
-1.7.5.2
+-----BEGIN PGP SIGNATURE-----
+Version: GnuPG v1.4.11 (GNU/Linux)
 
+iQIcBAEBCgAGBQJOuZ3eAAoJEKLT589SE0a0RoEP/j3F0WwDnN3ChhOW89Ga9/lx
+oG47hinB2Q2sZZjhxqrsQPUgZ/MM6hPNECfaJ0Izjxz5DbiY2DgOUuWOv28CiNGf
+qWE91pevUrkQk0KdQgzs95Sp4M3XCFoEjXKtg3DxSujUaostWaczbXSkhnCFz+lS
+Koggk7qkafywG8S/kkVEaOOJlTLf8W2qasNhXySNfT0vHIujEJqO676wGtrqmy05
+ZLW1TfoS3BJdFYVo9NtbQkVSDxqAoKNgk+UtpCfWr1on2gnanIBNwlBq9+zjvtxo
+tKyW13mNOSUQS256FK9LgQPBD4NLx4U1knrxtQpuFio/C/Sq3RxC99JGWZyLSzvV
+Kq8NPmrWLC8r9zu6Q7gwhn7QF05+xjv2RnPBC1HqrYI6YWYNANW00m76AkOaWEF6
+N1SiqLDcK0D6nMOiz+VmVPUyIgQLvQqIReAan9pV2Zn9If179aycutlwN9UdJUpP
+sWctqLn75iqav0s1oWyM434leokS5OF5a7uoY6QlGtUYlwKZgOC2lAM4DNDUbI8f
+NfpGUPAExwZkHsHf+BAMOX5NxderjjHLXOXpf9OwjqfPgigjdsqBUhfnFs3NPDJ/
+DpLzm6223x0F5fEhBkWIRZX/3u03Khd1qI0am/BddOZIJZYqGGd/UrJKB5oJ/mTi
+fw3ED9+laDFtZb8UCqHn
+=tgfv
+-----END PGP SIGNATURE-----
+
+--jousvV0MzM2p6OtC--

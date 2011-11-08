@@ -1,60 +1,206 @@
-From: Sami Liedes <sami.liedes@aalto.fi>
-Subject: Re: Number of hard links limit
-Date: Tue, 8 Nov 2011 23:23:43 +0200
-Message-ID: <20111108212342.GE28900@sli.dy.fi>
-References: <20100802114046.GA29926@lh.kyla.fi>
- <20100806113039.GA18858@lh.kyla.fi>
- <20100806134607.GB19942@think>
- <201110121934.07105.Martin@lichtvoll.de>
+From: Goffredo Baroncelli <kreijack@inwind.it>
+Subject: [PATCH 1/7][V2] btrfs-progs:  Show the help messages from the info in the comment.
+Date: Tue, 08 Nov 2011 23:12:02 +0100
+Message-ID: <12465892.zMVxNaAe1e@venice>
+Reply-To: Goffredo Baroncelli <kreijack@inwind.it>
 Mime-Version: 1.0
-Content-Type: multipart/signed; micalg=pgp-sha512;
-	protocol="application/pgp-signature"; boundary="jousvV0MzM2p6OtC"
-To: linux-btrfs@vger.kernel.org,
-	Martin Steigerwald <Martin@lichtvoll.de>
+Content-Type: multipart/mixed; boundary="nextPart4575814.BGFcrGf32K"
+Cc: Hugo Mills <hugo-lkml@carfax.org.uk>,
+	Chris Mason <chris.mason@oracle.com>,
+	Hugo Mills <hugo-lkml@carfax.org.uk>,
+	Chris Mason <chris.mason@oracle.com>
+To: linux-btrfs@vger.kernel.org, linux-btrfs@vger.kernel.org
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <201110121934.07105.Martin@lichtvoll.de>
 List-ID: <linux-btrfs.vger.kernel.org>
 
 
---jousvV0MzM2p6OtC
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
-Content-Transfer-Encoding: quoted-printable
+--nextPart4575814.BGFcrGf32K
+Content-Transfer-Encoding: 7Bit
+Content-Type: text/plain; charset="us-ascii"
 
-On Wed, Oct 12, 2011 at 07:34:06PM +0200, Martin Steigerwald wrote:
-> What is the status of fixing the limits of hardlinks in BTRFS?
->=20
-> It is now easy to hit on Debian systems that have git package installed:
+Hi all,
 
-I too wonder if there still is an intention to fix this... I'd expect
-to see much more breakage like this once some distribution adopts
-btrfs as the default filesystem. If this is not going to be fixed in
-btrfs, perhaps we should start considering it a possible bug in
-programs that trigger it (that's apparently the way it was fixed in
-Debian for git)?
+the following set of patches implement a way to generate the help messages and  
+the btrfs man page from the sources comments for the "btrfs" command.
 
-	Sami
+The syntax and the detailed help of every subcommand should be stored in
+the comments before the function which implements the subcommand. See patch #4 
+for an explanation on how document a command.
 
---jousvV0MzM2p6OtC
-Content-Type: application/pgp-signature; name="signature.asc"
-Content-Description: Digital signature
+The fact that the help messages and the man page are generated from the 
+same source should help to avoid in-coherencies and mistakes.
+Moreover the fact that the source and the help are strictly linked
+helps to avoid man page/help outdated.
 
------BEGIN PGP SIGNATURE-----
-Version: GnuPG v1.4.11 (GNU/Linux)
+These set of patches area base on the latest Chris's btrfs-progs repository.
 
-iQIcBAEBCgAGBQJOuZ3eAAoJEKLT589SE0a0RoEP/j3F0WwDnN3ChhOW89Ga9/lx
-oG47hinB2Q2sZZjhxqrsQPUgZ/MM6hPNECfaJ0Izjxz5DbiY2DgOUuWOv28CiNGf
-qWE91pevUrkQk0KdQgzs95Sp4M3XCFoEjXKtg3DxSujUaostWaczbXSkhnCFz+lS
-Koggk7qkafywG8S/kkVEaOOJlTLf8W2qasNhXySNfT0vHIujEJqO676wGtrqmy05
-ZLW1TfoS3BJdFYVo9NtbQkVSDxqAoKNgk+UtpCfWr1on2gnanIBNwlBq9+zjvtxo
-tKyW13mNOSUQS256FK9LgQPBD4NLx4U1knrxtQpuFio/C/Sq3RxC99JGWZyLSzvV
-Kq8NPmrWLC8r9zu6Q7gwhn7QF05+xjv2RnPBC1HqrYI6YWYNANW00m76AkOaWEF6
-N1SiqLDcK0D6nMOiz+VmVPUyIgQLvQqIReAan9pV2Zn9If179aycutlwN9UdJUpP
-sWctqLn75iqav0s1oWyM434leokS5OF5a7uoY6QlGtUYlwKZgOC2lAM4DNDUbI8f
-NfpGUPAExwZkHsHf+BAMOX5NxderjjHLXOXpf9OwjqfPgigjdsqBUhfnFs3NPDJ/
-DpLzm6223x0F5fEhBkWIRZX/3u03Khd1qI0am/BddOZIJZYqGGd/UrJKB5oJ/mTi
-fw3ED9+laDFtZb8UCqHn
-=tgfv
------END PGP SIGNATURE-----
+Comparing my last set of patch (see my emails dated 2/November) , I had 
+removed some text because the Chris's repository don't have all the commands 
+present in the Hugo repository.
 
---jousvV0MzM2p6OtC--
+You can pull the changes from 
+
+You can download the source from
+        http://cassiopea.homelinux.net/git/btrfs-progs-unstable.git
+
+        branch man-page-from-source
+
+and/or browse the code at
+        http://cassiopea.homelinux.net/git/?p=btrfs-progs-unstable.git
+
+Comments are welcome.
+
+BR
+G.Baroncelli
+
+
+
+-----
+The function "print_help" prints the help message extracted from the source.
+
+Signed off by: Goffredo Baroncelli <kreijack@inwind.it>
+
+---
+ btrfs.c |   34 +++++++++++++++++++++++++++++-----
+ 1 files changed, 29 insertions(+), 5 deletions(-)
+
+diff --git a/btrfs.c b/btrfs.c
+index 1def354..cc2f7ca 100644
+--- a/btrfs.c
++++ b/btrfs.c
+@@ -182,6 +182,8 @@ static struct Command commands[] = {
+ 	{ 0, 0, 0, 0 }
+ };
+ 
++extern char * help_messages[];
++
+ static char *get_prgname(char *programname)
+ {
+ 	char	*np;
+@@ -197,21 +199,43 @@ static char *get_prgname(char *programname)
+ static void print_help(char *programname, struct Command *cmd, int helptype)
+ {
+ 	char	*pc;
++	int	i;
++	char	*adv_help;
++	char	*std_help;
++
++	/* printf("\t%s %s ", programname, cmd->verb ); */
++
++	adv_help = cmd->adv_help;
++	std_help = cmd->help;
++
++	for(i = 0; help_messages[i]; i+= 4 ){
++		if(!strncmp(help_messages[i],"btrfs ",6) &&
++		   !strcmp(help_messages[i]+6,cmd->verb) ){
++			if(help_messages[i+2])
++				std_help = help_messages[i+2];
++			if(help_messages[i+3])
++				adv_help = help_messages[i+3];
++			printf("\t%s\t\t",help_messages[i+1]);
++			break;
++		}
++	}
+ 
+-	printf("\t%s %s ", programname, cmd->verb );
++	if( !help_messages[i])
++		printf("\t%s %s ", programname, cmd->verb );
+ 
+-	if (helptype == ADVANCED_HELP && cmd->adv_help)
+-		for(pc = cmd->adv_help; *pc; pc++){
++	if (helptype == ADVANCED_HELP && adv_help){
++		for(pc = adv_help; *pc; pc++){
+ 			putchar(*pc);
+ 			if(*pc == '\n')
+ 				printf("\t\t");
+ 		}
+-	else
+-		for(pc = cmd->help; *pc; pc++){
++	}else{
++		for(pc = std_help; *pc; pc++){
+ 			putchar(*pc);
+ 			if(*pc == '\n')
+ 				printf("\t\t");
+ 		}
++	}
+ 
+ 	putchar('\n');
+ }
+-- 
+1.7.7.2
+
+-- 
+gpg key@ keyserver.linux.it: Goffredo Baroncelli (ghigo) <kreijack@inwind.it>
+Key fingerprint = 4769 7E51 5293 D36C 814E  C054 BF04 F161 3DC5 0512
+--nextPart4575814.BGFcrGf32K
+Content-Disposition: inline; filename="send-via-kmail-attach-28575-1320789394-5060.msg"
+Content-Transfer-Encoding: 7Bit
+Content-Type: text/x-patch; charset="utf-8"; name="send-via-kmail-attach-28575-1320789394-5060.msg"
+
+diff --git a/btrfs.c b/btrfs.c
+index 1def354..cc2f7ca 100644
+--- a/btrfs.c
++++ b/btrfs.c
+@@ -182,6 +182,8 @@ static struct Command commands[] = {
+ 	{ 0, 0, 0, 0 }
+ };
+ 
++extern char * help_messages[];
++
+ static char *get_prgname(char *programname)
+ {
+ 	char	*np;
+@@ -197,21 +199,43 @@ static char *get_prgname(char *programname)
+ static void print_help(char *programname, struct Command *cmd, int helptype)
+ {
+ 	char	*pc;
++	int	i;
++	char	*adv_help;
++	char	*std_help;
++
++	/* printf("\t%s %s ", programname, cmd->verb ); */
++
++	adv_help = cmd->adv_help;
++	std_help = cmd->help;
++
++	for(i = 0; help_messages[i]; i+= 4 ){
++		if(!strncmp(help_messages[i],"btrfs ",6) &&
++		   !strcmp(help_messages[i]+6,cmd->verb) ){
++			if(help_messages[i+2])
++				std_help = help_messages[i+2];
++			if(help_messages[i+3])
++				adv_help = help_messages[i+3];
++			printf("\t%s\t\t",help_messages[i+1]);
++			break;
++		}
++	}
+ 
+-	printf("\t%s %s ", programname, cmd->verb );
++	if( !help_messages[i])
++		printf("\t%s %s ", programname, cmd->verb );
+ 
+-	if (helptype == ADVANCED_HELP && cmd->adv_help)
+-		for(pc = cmd->adv_help; *pc; pc++){
++	if (helptype == ADVANCED_HELP && adv_help){
++		for(pc = adv_help; *pc; pc++){
+ 			putchar(*pc);
+ 			if(*pc == '\n')
+ 				printf("\t\t");
+ 		}
+-	else
+-		for(pc = cmd->help; *pc; pc++){
++	}else{
++		for(pc = std_help; *pc; pc++){
+ 			putchar(*pc);
+ 			if(*pc == '\n')
+ 				printf("\t\t");
+ 		}
++	}
+ 
+ 	putchar('\n');
+ }
+-- 
+1.7.7.2
+
+--nextPart4575814.BGFcrGf32K--
+

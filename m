@@ -1,42 +1,45 @@
-From: Ilya Dryomov <idryomov@gmail.com>
-Subject: Re: smatch stuff: potential NULL dereference in btrfs_rm_device()
-Date: Tue, 8 Nov 2011 17:16:00 +0200
-Message-ID: <20111108151600.GA1339@zambezi.lan>
-References: <20111108145944.GA30841@elgon.mountain>
+From: Gustavo Sverzut Barbieri <barbieri@gmail.com>
+Subject: Re: corrupted btrfs after suspend2ram uncorrectable with scrub
+Date: Tue, 8 Nov 2011 15:08:41 -0200
+Message-ID: <CANkykrCfvFH_fg+5vJVkoWgcPuFp6euzVxZPTRDf=U+qrYUipA@mail.gmail.com>
+References: <CANkykrA7uxc51rFTbTXar8v_3vE2Gn9LKYrApOfvqWNf5B_adw@mail.gmail.com>
+	<orzkgfwlom.fsf@livre.localdomain>
+	<CANkykrBn0Ed6B25UzRkvs6cKebTvhpqOW79F1UEc_2uMumqCQA@mail.gmail.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
+Content-Type: text/plain; charset=ISO-8859-1
 Cc: linux-btrfs@vger.kernel.org
-To: Dan Carpenter <dan.carpenter@oracle.com>
+To: Alexandre Oliva <oliva@lsd.ic.unicamp.br>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <20111108145944.GA30841@elgon.mountain>
+In-Reply-To: <CANkykrBn0Ed6B25UzRkvs6cKebTvhpqOW79F1UEc_2uMumqCQA@mail.gmail.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Tue, Nov 08, 2011 at 05:59:45PM +0300, Dan Carpenter wrote:
-> Hi Yan,
-> 
-> Smatch complains about this code from 2008.
-> 
-> fs/btrfs/volumes.c +1417 btrfs_rm_device(157)
-> 	error: we previously assumed 'fs_devices' could be null (see line 1412)
-> 
->   1412                  while (fs_devices) {
->                                ^^^^^^^^^^
-> checked here.
-> 
->   1413                          if (fs_devices->seed == cur_devices)
->   1414                                  break;
->   1415                          fs_devices = fs_devices->seed;
->   1416                  }
->   1417                  fs_devices->seed = cur_devices->seed;
->                         ^^^^^^^^^^^^
-> dereferenced here.
-> 
-> If we don't hit the break statement, then at the end of the loop we'd
-> oops.
+On Tue, Nov 1, 2011 at 9:20 PM, Gustavo Sverzut Barbieri
+<barbieri@gmail.com> wrote:
+> On Tue, Nov 1, 2011 at 7:57 PM, Alexandre Oliva <oliva@lsd.ic.unicamp=
+=2Ebr> wrote:
+>> Hi, Gustavo,
+>>
+>> On Nov =A01, 2011, Gustavo Sverzut Barbieri <barbieri@gmail.com> wro=
+te:
+>>
+>>> =A0 btrfs csum failed ino 2957021 extent 85041815552 csum 667310679
+>>> wanted 0 mirror 0
+>>
+>>> Is there any way to recover it? =A0:-S
+>>
+>> Did you try mounting without data checksums?
+>
+> Just tried to mount with -o nodatasum, no luck. Is that enough?
 
-I don't think Zheng works for Oracle (and on Btrfs) any more.  I'll look
-into it.
+Ideas? Should I give up and consider data lost? :-(
 
-Thanks,
-
-		Ilya
+--=20
+Gustavo Sverzut Barbieri
+--------------------------------------
+Mobile: +55 (19) 9225-2202
+Contact: http://www.gustavobarbieri.com.br/contact
+--
+To unsubscribe from this list: send the line "unsubscribe linux-btrfs" =
+in
+the body of a message to majordomo@vger.kernel.org
+More majordomo info at  http://vger.kernel.org/majordomo-info.html

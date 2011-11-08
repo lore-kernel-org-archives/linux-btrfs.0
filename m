@@ -1,40 +1,51 @@
 From: Josef Bacik <josef@redhat.com>
-Subject: [PATCH] Btrfs: fix our reservations for updating an inode when completing io
-Date: Tue,  8 Nov 2011 15:32:25 -0500
-Message-ID: <1320784345-6128-1-git-send-email-josef@redhat.com>
+Subject: [PATCH] Btrfs: fix our reservations for updating an inode when completing io V2
+Date: Tue,  8 Nov 2011 15:54:31 -0500
+Message-ID: <1320785671-6321-1-git-send-email-josef@redhat.com>
 To: linux-btrfs@vger.kernel.org
 Return-path: <linux-btrfs-owner@vger.kernel.org>
 List-ID: <linux-btrfs.vger.kernel.org>
 
 People have been reporting ENOSPC crashes in finish_ordered_io.  This is because
 we try to steal from the delalloc block rsv to satisfy a reservation to update
-the inode.  There are a few problems with this
+the inode.  The problem with this is we don't explicitly save space for updating
+the inode when doing delalloc.  This is kind of a problem and we've gotten away
+with this because way back when we just stole from the delalloc reserve without
+any questions, and this worked out fine because generally speaking the leaf had
+been modified either by the mtime update when we did the original write or
+because we just updated the leaf when we inserted the file extent item, only on
+rare occasions had the leaf not actually been modified, and that was still ok
+because we'd just use a block or two out of the over-reservation that is
+delalloc.
 
-1) We don't explicitly save space for updating the inode when doing delalloc.
-This is kind of a problem, and we've gotten away with this because usually an
-inode is updated by the mtime update and then when we write out the data it's
-already been touched so we don't use any space trying to update the inode.  And
-then when the delayed inode stuff came along it just stole from the global
-reserve, which wasn't right either.  So to fix this we reserve space if this is
-the first delalloc extent we're writing, and release it if we need to update due
-to an i_size change or we don't have anymore delalloc extents.
+Then came the delayed inode stuff.  This is amazing, except it wants a full
+reservation for updating the inode since it may do it at some point down the
+road after we've written the blocks and we have to recow everything again.  This
+worked out because the delayed inode stuff just stole from the global reserve,
+that is until recently when I changed that because it caused other problems.
 
-2) We don't usually use space when updating the inode in finish_ordered_io.
-This is because we either updated the same leaf when inserting our extent for
-the io we just completed, or we had updated the leaf when we updated the inode
-when we changed the mtime.  So in the delayed inode stuff, just return 0 if
-we've updated the inode since the last transaction was committed.
+So here we are, we're doing everything right and being screwed for it.  So take
+an extra reservation for the inode at delalloc reservation time and carry it
+through the life of the delalloc reservation.  If we need it we can steal it in
+the delayed inode stuff.  If we have already stolen it try and do a normal
+metadata reservation.  If that fails try to steal from the delalloc reservation.
+If _that_ fails we'll get a WARN_ON() so I can start thinking of a better way to
+solve this and in the meantime we'll steal from the global reserve.
 
 With this patch I ran xfstests 13 in a loop for a couple of hours and didn't see
 any problems.  Thanks,
 
 Signed-off-by: Josef Bacik <josef@redhat.com>
 ---
+V1->V2: took out the last_trans test since we could write the leaf before the
+transaction commits and have to recow all over again.  Also fix the commit
+message to reflext how things now work.
+
  fs/btrfs/btrfs_inode.h   |    4 +--
- fs/btrfs/delayed-inode.c |   74 ++++++++++++++++++++++++++++++++++++++++++++--
- fs/btrfs/extent-tree.c   |   22 ++++++++++++--
+ fs/btrfs/delayed-inode.c |   65 +++++++++++++++++++++++++++++++++++++++++++--
+ fs/btrfs/extent-tree.c   |   22 +++++++++++++--
  fs/btrfs/inode.c         |    1 +
- 4 files changed, 92 insertions(+), 9 deletions(-)
+ 4 files changed, 83 insertions(+), 9 deletions(-)
 
 diff --git a/fs/btrfs/btrfs_inode.h b/fs/btrfs/btrfs_inode.h
 index 5a5d325..634608d 100644
@@ -57,10 +68,10 @@ index 5a5d325..634608d 100644
  	/*
  	 * always compress this one file
 diff --git a/fs/btrfs/delayed-inode.c b/fs/btrfs/delayed-inode.c
-index bbe8496..956f5a6 100644
+index bbe8496..313ee14 100644
 --- a/fs/btrfs/delayed-inode.c
 +++ b/fs/btrfs/delayed-inode.c
-@@ -617,12 +617,23 @@ static void btrfs_delayed_item_release_metadata(struct btrfs_root *root,
+@@ -617,12 +617,14 @@ static void btrfs_delayed_item_release_metadata(struct btrfs_root *root,
  static int btrfs_delayed_inode_reserve_metadata(
  					struct btrfs_trans_handle *trans,
  					struct btrfs_root *root,
@@ -72,19 +83,10 @@ index bbe8496..956f5a6 100644
  	u64 num_bytes;
  	int ret;
 +	int release = false;
-+
-+	/*
-+	 * If last trans is greater than the last trans committed then we know
-+	 * we've already modified this inode in this transaction and so we won't
-+	 * use any space on any subsequent updates to this inode in this
-+	 * transaction.
-+	 */
-+	if (BTRFS_I(inode)->last_trans > root->fs_info->last_trans_committed)
-+		return 0;
  
  	src_rsv = trans->block_rsv;
  	dst_rsv = &root->fs_info->delayed_block_rsv;
-@@ -652,11 +663,67 @@ static int btrfs_delayed_inode_reserve_metadata(
+@@ -652,11 +654,67 @@ static int btrfs_delayed_inode_reserve_metadata(
  		if (!ret)
  			node->bytes_reserved = num_bytes;
  		return ret;
@@ -154,7 +156,7 @@ index bbe8496..956f5a6 100644
  
  	return ret;
  }
-@@ -1708,7 +1775,8 @@ int btrfs_delayed_update_inode(struct btrfs_trans_handle *trans,
+@@ -1708,7 +1766,8 @@ int btrfs_delayed_update_inode(struct btrfs_trans_handle *trans,
  		goto release_node;
  	}
  

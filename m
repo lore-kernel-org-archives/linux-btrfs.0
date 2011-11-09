@@ -1,47 +1,82 @@
-From: Josef Bacik <josef@redhat.com>
-Subject: Re: WARNING: at fs/btrfs/inode.c:2198
- btrfs_orphan_commit_root+0xa8/0xc0
-Date: Wed, 9 Nov 2011 10:35:53 -0500
-Message-ID: <20111109153552.GB1810@localhost.localdomain>
-References: <4EBA54F2.3030801@unilogicnetworks.net>
+From: Maciej Marcin Piechotka <uzytkownik2@gmail.com>
+Subject: Re: btrfs: could not do orphan cleanup -116
+Date: Wed, 09 Nov 2011 15:43:37 +0000
+Message-ID: <1320853417.2051.1.camel@picard>
+References: <1320671824.2445.8.camel@picard>
+	 <20111107152940.GA2151@localhost.localdomain>
+	 <1320691304.2445.11.camel@picard>
+	 <20111107190152.GB2151@localhost.localdomain>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
+Content-Type: text/plain; charset="UTF-8"
 Cc: linux-btrfs@vger.kernel.org
-To: Stefan Kleijkers <stefan@unilogicnetworks.net>
+To: Josef Bacik <josef@redhat.com>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <4EBA54F2.3030801@unilogicnetworks.net>
+In-Reply-To: <20111107190152.GB2151@localhost.localdomain>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Wed, Nov 09, 2011 at 11:24:50AM +0100, Stefan Kleijkers wrote:
-> Hello,
+On Mon, 2011-11-07 at 14:01 -0500, Josef Bacik wrote:
+> On Mon, Nov 07, 2011 at 06:41:44PM +0000, Maciej Marcin Piechotka wrote:
+> > On Mon, 2011-11-07 at 10:29 -0500, Josef Bacik wrote:
+> > > On Mon, Nov 07, 2011 at 01:17:04PM +0000, Maciej Marcin Piechotka wrote:
+> > > > Hello,
+> > > > 
+> > > > When I booted my machine (after clean powerdown) the following message
+> > > > appeared:
+> > > > [   32.757913] device fsid XXXXXXXX-XXXX-XXXX-XXXX-XXXXXXXXXXXX devid 1
+> > > > transid 40864 /dev/mapper/XXXXX-XXXXX
+> > > > [   32.758466] btrfs: use lzo compression
+> > > > [   32.758475] btrfs: enabling disk space caching
+> > > > [   32.758483] btrfs: enabling inode map caching
+> > > > [   32.758490] btrfs: enabling auto defrag
+> > > > [   32.758497] btrfs: thread pool 2
+> > > > [   34.024359] btrfs: could not do orphan cleanup -116
+> > > > [   63.173382] btrfs: open_ctree failed
+> > > > 
+> > > > btrfsck has shown no errors.
+> > > > 
+> > > > Afterwards when I tried to mount filesystem it have shown:
+> > > > 
+> > > > [  116.012528] btrfs: enabling inode map caching
+> > > > [  116.012534] btrfs: enabling auto defrag
+> > > > [  116.012542] btrfs: thread pool 2
+> > > > 
+> > > > It looked like everything is working but to be sure I've run scrub:
+> > > > 
+> > > > scrub status for fsid XXXXXXXX-XXXX-XXXX-XXXX-XXXXXXXXXXXX
+> > > >         scrub started at Mon Nov  7 13:05:50 2011 and finished after 606
+> > > > seconds
+> > > >         total bytes scrubbed: 32.37GB with 0 errors
+> > > > 
+> > > > PS. 
+> > > > # find include | xargs grep 116
+> > > > (...)
+> > > > include/asm-generic/errno.h:#define     ESTALE          116     /* Stale
+> > > > NFS file handle */
+> > > > (...)
+> > > > 
+> > > > I don't use NFS - I use LVM on LUKS. In any case - it have been done
+> > > > concurrently with mounting of other fs which had no such problems.
+> > > 
+> > > Yeah that's a bug with an earlier kernel, if you upgrade to 3.1 it should go
+> > > away.  Thanks,
+> > > 
+> > > Josef
+> > 
+> > 
+> > I'm using 'newer' kernel then 3.1 - I'm following Linus' tree (this
+> > kernel is few days old).
+> > 
 > 
-> I'm seeing a lot of warnings in dmesg with a BTRFS filesystem. I'm
-> using the 3.1 kernel, I found a patch for these warnings (
-> http://marc.info/?l=linux-btrfs&m=131547325515336&w=2)
-> <http://marc.info/?l=linux-btrfs&m=131547325515336&w=2>, but that
-> patch has already been included in 3.1. Are there any other patches
-> I can try?
+> Do you have the commit
 > 
-> I'm using BTRFS in combination with Ceph and it looks like after a
-> while with a high rsync workload that the IO stalls for some time,
-> could the warnings result in IO stall?
+> a8c9e5769718d47e87cce40c9b84cab421804797
+> Btrfs: fix orphan cleanup regression
 > 
+> If not then the kernel isn't new enough.  Thanks,
+> 
+> Josef
 
-Can you run with this patch and see if you get warnings from extent-tree.c?
-Thanks,
+It have been merged in master for 3.2-rc1 (shortly before tag).
 
-Josef
+Regards
 
-
-diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
-index 0b044e5..144cd8e 100644
---- a/fs/btrfs/extent-tree.c
-+++ b/fs/btrfs/extent-tree.c
-@@ -3721,6 +3721,7 @@ static void block_rsv_release_bytes(struct btrfs_block_rsv *block_rsv,
- 	spin_lock(&block_rsv->lock);
- 	if (num_bytes == (u64)-1)
- 		num_bytes = block_rsv->size;
-+	WARN_ON(block_rsv->size < num_bytes);
- 	block_rsv->size -= num_bytes;
- 	if (block_rsv->reserved >= block_rsv->size) {
- 		num_bytes = block_rsv->reserved - block_rsv->size;

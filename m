@@ -1,38 +1,160 @@
-From: Christian Brunner <chb@muc.de>
-Subject: Re: WARNING: at fs/btrfs/inode.c:2198 btrfs_orphan_commit_root+0xa8/0xc0
-Date: Wed, 9 Nov 2011 15:01:14 +0100
-Message-ID: <CAO47_-_7PH=NXqW8EGPR4nEk347N+tqJPsgYgFjhr2tVVX8arw@mail.gmail.com>
-References: <4EBA54F2.3030801@unilogicnetworks.net>
-Reply-To: chb@muc.de
+From: Gustavo Sverzut Barbieri <barbieri@gmail.com>
+Subject: Re: corrupted btrfs after suspend2ram uncorrectable with scrub
+Date: Wed, 9 Nov 2011 12:19:58 -0200
+Message-ID: <CANkykrDtHRDe0ve53dkxeNcCeTuWY0i1-8m1SR6BN8Md7F4qGQ@mail.gmail.com>
+References: <CANkykrA7uxc51rFTbTXar8v_3vE2Gn9LKYrApOfvqWNf5B_adw@mail.gmail.com>
+	<orzkgfwlom.fsf@livre.localdomain>
+	<CANkykrBn0Ed6B25UzRkvs6cKebTvhpqOW79F1UEc_2uMumqCQA@mail.gmail.com>
+	<CANkykrCfvFH_fg+5vJVkoWgcPuFp6euzVxZPTRDf=U+qrYUipA@mail.gmail.com>
+	<20111108172043.GH4954@shiny>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=ISO-8859-1
-Cc: linux-btrfs@vger.kernel.org
-To: Stefan Kleijkers <stefan@unilogicnetworks.net>
+Content-Type: multipart/mixed; boundary=001485f6cb9a9dfd6904b14dfbd9
+To: Chris Mason <chris.mason@oracle.com>,
+	Gustavo Sverzut Barbieri <barbieri@gmail.com>,
+	Alexandre Oliva <oliva@lsd.ic.unicamp.br>,
+	linux-btrfs@vger.kernel.org
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <4EBA54F2.3030801@unilogicnetworks.net>
+In-Reply-To: <20111108172043.GH4954@shiny>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-2011/11/9 Stefan Kleijkers <stefan@unilogicnetworks.net>:
-> Hello,
+--001485f6cb9a9dfd6904b14dfbd9
+Content-Type: text/plain; charset=ISO-8859-1
+Content-Transfer-Encoding: quoted-printable
+
+On Tue, Nov 8, 2011 at 3:20 PM, Chris Mason <chris.mason@oracle.com> wrote:
+> On Tue, Nov 08, 2011 at 03:08:41PM -0200, Gustavo Sverzut Barbieri wrote:
+>> On Tue, Nov 1, 2011 at 9:20 PM, Gustavo Sverzut Barbieri
+>> <barbieri@gmail.com> wrote:
+>> > On Tue, Nov 1, 2011 at 7:57 PM, Alexandre Oliva <oliva@lsd.ic.unicamp.=
+br> wrote:
+>> >> Hi, Gustavo,
+>> >>
+>> >> On Nov =A01, 2011, Gustavo Sverzut Barbieri <barbieri@gmail.com> wrot=
+e:
+>> >>
+>> >>> =A0 btrfs csum failed ino 2957021 extent 85041815552 csum 667310679
+>> >>> wanted 0 mirror 0
+>> >>
+>> >>> Is there any way to recover it? =A0:-S
+>> >>
+>> >> Did you try mounting without data checksums?
+>> >
+>> > Just tried to mount with -o nodatasum, no luck. Is that enough?
+>>
+>> Ideas? Should I give up and consider data lost? :-(
 >
-> I'm seeing a lot of warnings in dmesg with a BTRFS filesystem. I'm using the
-> 3.1 kernel, I found a patch for these warnings (
-> http://marc.info/?l=linux-btrfs&m=131547325515336&w=2)
-> <http://marc.info/?l=linux-btrfs&m=131547325515336&w=2>, but that patch has
-> already been included in 3.1. Are there any other patches I can try?
->
-> I'm using BTRFS in combination with Ceph and it looks like after a while
-> with a high rsync workload that the IO stalls for some time, could the
-> warnings result in IO stall?
+> We actually check the crcs even when mounted with nodatasum. =A0Can you
+> give the restore tool a shot from my current btrfs-progs git repo? =A0If
+> it can read it we can find a way to get the files off.
 
-This seem to be the same issue, I've seen in our ceph cluster. We had
-a lengthy discussion on the btrfs list about this:
+Hi Chris,
 
-http://marc.info/?l=linux-btrfs&m=132007001119383&w=2
+Fortunately it worked and I've restored, it misses symbolic links and
+executable permissions (or I did a mistake somewhere, like mounting)
+but overall it's all fine.
 
-As far as I know josef is still working on it. Some of the latest
-patches he sent seem to related to this, but I don't know if these fix
-the problem.
+The attached patch was helpful to let me ignore stuff like development
+files and caches. Speeds up the recovery :-)
 
-Regards,
-Christian
+Thanks!
+
+--=20
+Gustavo Sverzut Barbieri
+--------------------------------------
+Mobile: +55 (19) 9225-2202
+Contact: http://www.gustavobarbieri.com.br/contact
+
+--001485f6cb9a9dfd6904b14dfbd9
+Content-Type: text/x-patch; charset=US-ASCII;
+	name="0001-restore-allow-ignoring-file-name-patterns-and-paths.patch"
+Content-Disposition: attachment;
+	filename="0001-restore-allow-ignoring-file-name-patterns-and-paths.patch"
+Content-Transfer-Encoding: base64
+X-Attachment-Id: f_gusezrws0
+
+RnJvbSBkYzU3YjczYjA4ZmVmYjIxMDk5Y2M2YjE3MTY4M2RhYWZmYTA0NTAxIE1vbiBTZXAgMTcg
+MDA6MDA6MDAgMjAwMQpGcm9tOiBHdXN0YXZvIFN2ZXJ6dXQgQmFyYmllcmkgPGJhcmJpZXJpQHBy
+b2Z1c2lvbi5tb2JpPgpEYXRlOiBNb24sIDggSmFuIDIwMDEgMDA6Mzc6MzkgLTAyMDAKU3ViamVj
+dDogW1BBVENIXSByZXN0b3JlOiBhbGxvdyBpZ25vcmluZyBmaWxlIG5hbWUgcGF0dGVybnMgYW5k
+IHBhdGhzLgoKSW50cm9kdWNlIHR3byBuZXcgY29tbWFuZCBsaW5lIHN3aXRjaGVzIHRoYXQgY2Fu
+IGJlIHNwZWNpZmllZCBtdWx0aXBsZQp0aW1lczoKCiAgIC1lIHBhdGgtcGF0dGVybgogICAtRSBm
+aWxlLW5hbWUtcGF0dGVybgoKVGhleSBhcmUgcHJvY2Vzc2VkIHdpdGggZm5tYXRjaCgpLCB0aGUg
+Zmlyc3QgKC1lKSB1c2luZyBGTk1fUEFUSE5BTUUKZmxhZyBvbiB0aGUgd2hvbGUgcGF0aCBzdHJp
+bmcsIHRoZSBzZWNvbmQgdXNlcyBubyBmbGFnIGFuZCBpcyBhcHBsaWVkCm9ubHkgb3ZlciB0aGUg
+ZmlsZSBvciBkaXJlY3RvcnkgbmFtZS4KCkV4YW1wbGU6CgogICByZXN0b3JlIC12IFwKICAgICAg
+LWUgJyovLmNhY2hlJyAtZSAnKi8udGh1bWJuYWlscycgXAogICAgICAtZSAnKi9EZXNrdG9wL1Bp
+Y3R1cmVzJyBcCiAgICAgIC1FICcqficgXAogICAgICAvZGV2L3NkYjEgL3RtcC9ob21lLXJlc3Rv
+cmUKCndpbGwgcmVzdG9yZSBldmVyeXRoaW5nIGJ1dCBmaWxlcyB1bmRlciB+Ly5jYWNoZSwgfi8u
+dGh1bWJuYWlscyBhbmQKfi9EZXNrdG9wL1BpY3R1cmVzIGZvciBldmVyeSB1c2VyIChhc3N1bWUg
+aXQncyB0aGUgbW91bnRwb2ludCBvZgovaG9tZSksIGFsc28gaWdub3JpbmcgZXZlcnkgYmFja3Vw
+IGZpbGUgKCp+KS4KLS0tCiByZXN0b3JlLmMgfCAgIDU1ICsrKysrKysrKysrKysrKysrKysrKysr
+KysrKysrKysrKysrKysrKysrKysrKysrKysrKysrLS0KIDEgZmlsZXMgY2hhbmdlZCwgNTMgaW5z
+ZXJ0aW9ucygrKSwgMiBkZWxldGlvbnMoLSkKCmRpZmYgLS1naXQgYS9yZXN0b3JlLmMgYi9yZXN0
+b3JlLmMKaW5kZXggMjUwYzlkMy4uYmRiMGM3ZiAxMDA2NDQKLS0tIGEvcmVzdG9yZS5jCisrKyBi
+L3Jlc3RvcmUuYwpAQCAtMjUsNiArMjUsNyBAQAogI2luY2x1ZGUgPGZjbnRsLmg+CiAjaW5jbHVk
+ZSA8c3lzL3N0YXQuaD4KICNpbmNsdWRlIDx6bGliLmg+CisjaW5jbHVkZSA8Zm5tYXRjaC5oPgog
+I2luY2x1ZGUgImtlcm5jb21wYXQuaCIKICNpbmNsdWRlICJjdHJlZS5oIgogI2luY2x1ZGUgImRp
+c2staW8uaCIKQEAgLTQwLDYgKzQxLDkgQEAgc3RhdGljIGludCBnZXRfc25hcHMgPSAwOwogc3Rh
+dGljIGludCB2ZXJib3NlID0gMDsKIHN0YXRpYyBpbnQgaWdub3JlX2Vycm9ycyA9IDA7CiBzdGF0
+aWMgaW50IG92ZXJ3cml0ZSA9IDA7CitzdGF0aWMgY2hhciAqKmV4Y2x1ZGVfcGF0aHMgPSBOVUxM
+Oworc3RhdGljIGNoYXIgKipleGNsdWRlX3BhdHRlcm5zID0gTlVMTDsKK3N0YXRpYyBpbnQgZGly
+X25hbWVfbGVuID0gMDsKIAogc3RhdGljIGludCBkZWNvbXByZXNzKGNoYXIgKmluYnVmLCBjaGFy
+ICpvdXRidWYsIHU2NCBjb21wcmVzc19sZW4sCiAJCSAgICAgIHU2NCBkZWNvbXByZXNzX2xlbikK
+QEAgLTQzNiw2ICs0NDAsMjcgQEAgc2V0X3NpemU6CiAJcmV0dXJuIDA7CiB9CiAKK3N0YXRpYyBp
+bnQgaXNfZXhjbHVkZWQoY29uc3QgY2hhciAqcGF0aCwgY29uc3QgY2hhciAqbmFtZSkKK3sKKyAg
+ICAgICAgY2hhciAqKml0cjsKKyAgICAgICAgaWYgKGV4Y2x1ZGVfcGF0aHMpIHsKKyAgICAgICAg
+ICAgICAgICBwYXRoICs9IGRpcl9uYW1lX2xlbjsKKyAgICAgICAgICAgICAgICBmb3IgKGl0ciA9
+IGV4Y2x1ZGVfcGF0aHM7ICppdHIgIT0gTlVMTDsgaXRyKyspIHsKKyAgICAgICAgICAgICAgICAg
+ICAgICAgIGlmIChmbm1hdGNoKCppdHIsIHBhdGgsIEZOTV9QQVRITkFNRSkgPT0gMCkgeworICAg
+ICAgICAgICAgICAgICAgICAgICAgICAgICAgICByZXR1cm4gMTsKKyAgICAgICAgICAgICAgICAg
+ICAgICAgIH0KKyAgICAgICAgICAgICAgICB9CisgICAgICAgIH0KKyAgICAgICAgaWYgKGV4Y2x1
+ZGVfcGF0dGVybnMpIHsKKyAgICAgICAgICAgICAgICBmb3IgKGl0ciA9IGV4Y2x1ZGVfcGF0dGVy
+bnM7ICppdHIgIT0gTlVMTDsgaXRyKyspIHsKKyAgICAgICAgICAgICAgICAgICAgICAgIGlmIChm
+bm1hdGNoKCppdHIsIHBhdGgsIDApID09IDApIHsKKyAgICAgICAgICAgICAgICAgICAgICAgICAg
+ICAgICAgcmV0dXJuIDE7CisgICAgICAgICAgICAgICAgICAgICAgICB9CisgICAgICAgICAgICAg
+ICAgfQorICAgICAgICB9CisgICAgICAgIHJldHVybiAwOworfQorCiBzdGF0aWMgaW50IHNlYXJj
+aF9kaXIoc3RydWN0IGJ0cmZzX3Jvb3QgKnJvb3QsIHN0cnVjdCBidHJmc19rZXkgKmtleSwKIAkJ
+ICAgICAgY29uc3QgY2hhciAqZGlyKQogewpAQCAtNTY4LDYgKzU5MywxMSBAQCBzdGF0aWMgaW50
+IHNlYXJjaF9kaXIoc3RydWN0IGJ0cmZzX3Jvb3QgKnJvb3QsIHN0cnVjdCBidHJmc19rZXkgKmtl
+eSwKIAkJCQl9CiAJCQkJcmV0ID0gMDsKIAkJCX0KKyAgICAgICAgICAgICAgICAgICAgICAgIGlm
+IChpc19leGNsdWRlZChwYXRoX25hbWUsIGZpbGVuYW1lKSkgeworICAgICAgICAgICAgICAgICAg
+ICAgICAgICAgICAgICBpZiAodmVyYm9zZSkKKyAgICAgICAgICAgICAgICAgICAgICAgICAgICAg
+ICAgICAgICAgICBwcmludGYoIklnbm9yZWQgJXNcbiIsIHBhdGhfbmFtZSk7CisgICAgICAgICAg
+ICAgICAgICAgICAgICAgICAgICAgIGdvdG8gbmV4dDsKKyAgICAgICAgICAgICAgICAgICAgICAg
+IH0KIAkJCWlmICh2ZXJib3NlKQogCQkJCXByaW50ZigiUmVzdG9yaW5nICVzXG4iLCBwYXRoX25h
+bWUpOwogCQkJZmQgPSBvcGVuKHBhdGhfbmFtZSwgT19DUkVBVHxPX1dST05MWSwgMDY0NCk7CkBA
+IC02MzYsNiArNjY2LDExIEBAIHN0YXRpYyBpbnQgc2VhcmNoX2RpcihzdHJ1Y3QgYnRyZnNfcm9v
+dCAqcm9vdCwgc3RydWN0IGJ0cmZzX2tleSAqa2V5LAogCQkJCWxvY2F0aW9uLm9iamVjdGlkID0g
+QlRSRlNfRklSU1RfRlJFRV9PQkpFQ1RJRDsKIAkJCX0KIAorICAgICAgICAgICAgICAgICAgICAg
+ICAgaWYgKGlzX2V4Y2x1ZGVkKHBhdGhfbmFtZSwgZmlsZW5hbWUpKSB7CisgICAgICAgICAgICAg
+ICAgICAgICAgICAgICAgICAgIGlmICh2ZXJib3NlKQorICAgICAgICAgICAgICAgICAgICAgICAg
+ICAgICAgICAgICAgICAgIHByaW50ZigiSWdub3JlZCAlc1xuIiwgcGF0aF9uYW1lKTsKKyAgICAg
+ICAgICAgICAgICAgICAgICAgICAgICAgICAgZ290byBuZXh0OworICAgICAgICAgICAgICAgICAg
+ICAgICAgfQogCQkJaWYgKHZlcmJvc2UpCiAJCQkJcHJpbnRmKCJSZXN0b3JpbmcgJXNcbiIsIHBh
+dGhfbmFtZSk7CiAKQEAgLTY3Miw3ICs3MDcsNyBAQCBuZXh0OgogCiBzdGF0aWMgdm9pZCB1c2Fn
+ZSgpCiB7Ci0JZnByaW50ZihzdGRlcnIsICJVc2FnZTogcmVzdG9yZSBbLXN2aW9dIFstdCBkaXNr
+IG9mZnNldF0gPGRldmljZT4gIgorCWZwcmludGYoc3RkZXJyLCAiVXNhZ2U6IHJlc3RvcmUgWy1z
+dmlvXSBbLWUgZXhjbHVkZS1wYXRoc10gWy1FIGV4Y2x1ZGUtbmFtZS1wYXR0ZXJuc10gWy10IGRp
+c2sgb2Zmc2V0XSA8ZGV2aWNlPiAiCiAJCSI8ZGlyZWN0b3J5PlxuIik7CiB9CiAKQEAgLTc2NSw4
+ICs4MDAsMTUgQEAgaW50IG1haW4oaW50IGFyZ2MsIGNoYXIgKiphcmd2KQogCWludCBvcHQ7CiAJ
+aW50IHN1cGVyX21pcnJvciA9IDA7CiAJaW50IGZpbmRfZGlyID0gMDsKKyAgICAgICAgaW50IGV4
+Y2x1ZGVfcGF0aHNfaWR4ID0gMDsKKyAgICAgICAgaW50IGV4Y2x1ZGVfcGF0dGVybnNfaWR4ID0g
+MDsKIAotCXdoaWxlICgob3B0ID0gZ2V0b3B0KGFyZ2MsIGFyZ3YsICJzdmlvdDp1OmRmOiIpKSAh
+PSAtMSkgeworICAgICAgICBpZiAoYXJnYyA+IDEpIHsKKyAgICAgICAgICAgICAgICBleGNsdWRl
+X3BhdGhzID0gY2FsbG9jKGFyZ2MgLSAxLCBzaXplb2YoY2hhciAqKSk7CisgICAgICAgICAgICAg
+ICAgZXhjbHVkZV9wYXR0ZXJucyA9IGNhbGxvYyhhcmdjIC0gMSwgc2l6ZW9mKGNoYXIgKikpOwor
+ICAgICAgICB9CisKKwl3aGlsZSAoKG9wdCA9IGdldG9wdChhcmdjLCBhcmd2LCAic3Zpb3Q6dTpk
+ZjplOkU6IikpICE9IC0xKSB7CiAJCXN3aXRjaCAob3B0KSB7CiAJCQljYXNlICdzJzoKIAkJCQln
+ZXRfc25hcHMgPSAxOwpAQCAtODA2LDYgKzg0OCwxNCBAQCBpbnQgbWFpbihpbnQgYXJnYywgY2hh
+ciAqKmFyZ3YpCiAJCQkJCWV4aXQoMSk7CiAJCQkJfQogCQkJCWJyZWFrOworCQkJY2FzZSAnZSc6
+CisJCQkJZXhjbHVkZV9wYXRoc1tleGNsdWRlX3BhdGhzX2lkeF0gPSBzdHJkdXAob3B0YXJnKTsK
+KyAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgZXhjbHVkZV9wYXRoc19pZHgrKzsKKwkJ
+CQlicmVhazsKKwkJCWNhc2UgJ0UnOgorCQkJCWV4Y2x1ZGVfcGF0dGVybnNbZXhjbHVkZV9wYXR0
+ZXJuc19pZHhdID0gc3RyZHVwKG9wdGFyZyk7CisgICAgICAgICAgICAgICAgICAgICAgICAgICAg
+ICAgIGV4Y2x1ZGVfcGF0dGVybnNfaWR4Kys7CisJCQkJYnJlYWs7CiAJCQljYXNlICdkJzoKIAkJ
+CQlmaW5kX2RpciA9IDE7CiAJCQkJYnJlYWs7CkBAIC04NTUsNiArOTA1LDcgQEAgaW50IG1haW4o
+aW50IGFyZ2MsIGNoYXIgKiphcmd2KQogCQkJYnJlYWs7CiAJCWRpcl9uYW1lW2xlbiAtIDFdID0g
+J1wwJzsKIAl9CisgICAgICAgIGRpcl9uYW1lX2xlbiA9IHN0cmxlbihkaXJfbmFtZSk7CiAKIAlp
+ZiAoZmluZF9kaXIpIHsKIAkJcmV0ID0gZmluZF9maXJzdF9kaXIocm9vdCwgJmtleS5vYmplY3Rp
+ZCk7Ci0tIAoxLjcuNy4xCgo=
+--001485f6cb9a9dfd6904b14dfbd9--

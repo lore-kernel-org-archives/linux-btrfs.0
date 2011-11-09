@@ -1,120 +1,72 @@
-From: Ilya Dryomov <idryomov@gmail.com>
-Subject: [PATCH 5/5] Btrfs: rework error handling in btrfs_mount()
-Date: Wed,  9 Nov 2011 16:38:37 +0200
-Message-ID: <1320849517-13172-6-git-send-email-idryomov@gmail.com>
-References: <1320849517-13172-1-git-send-email-idryomov@gmail.com>
-Cc: Chris Mason <chris.mason@oracle.com>, idryomov@gmail.com
+From: Josef Bacik <josef@redhat.com>
+Subject: [PATCH] Btrfs: only map pages if we know we need them when reading the space cache
+Date: Wed,  9 Nov 2011 10:16:17 -0500
+Message-ID: <1320851777-2057-1-git-send-email-josef@redhat.com>
 To: linux-btrfs@vger.kernel.org
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <1320849517-13172-1-git-send-email-idryomov@gmail.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Commits 6c41761f and 45ea6095 introduced the possibility of NULL pointer
-dereference on error paths, also we would leave all devices busy and
-leak fs_info with all sub-structures on error when trying to mount an
-already mounted fs to a different directory.
+People have been running into a warning when loading space cache because the
+page is already mapped when trying to read in a bitmap.  The way we read in
+entries and pages is kind of convoluted, so fix it so that io_ctl_read_entry
+maps the entries if it needs to, and if it hits the end of the page it simply
+unmaps the page.  That way we can unconditionally unmap the io_ctl before
+reading in the bitmap and we should stop hitting these warnings.  Thanks,
 
-Fix this by doing all allocations before trying to open any of the
-devices, adjust error path for mount-already-mounted-fs case.
-
-Signed-off-by: Ilya Dryomov <idryomov@gmail.com>
+Signed-off-by: Josef Bacik <josef@redhat.com>
 ---
- fs/btrfs/super.c |   42 +++++++++++++++++++++---------------------
- 1 files changed, 21 insertions(+), 21 deletions(-)
+ fs/btrfs/free-space-cache.c |   17 ++++++++++-------
+ 1 files changed, 10 insertions(+), 7 deletions(-)
 
-diff --git a/fs/btrfs/super.c b/fs/btrfs/super.c
-index 58e9492..629281c 100644
---- a/fs/btrfs/super.c
-+++ b/fs/btrfs/super.c
-@@ -891,7 +891,6 @@ static struct dentry *btrfs_mount(struct file_system_type *fs_type, int flags,
- 	struct super_block *s;
- 	struct dentry *root;
- 	struct btrfs_fs_devices *fs_devices = NULL;
--	struct btrfs_root *tree_root = NULL;
- 	struct btrfs_fs_info *fs_info = NULL;
- 	fmode_t mode = FMODE_READ;
- 	char *subvol_name = NULL;
-@@ -920,15 +919,6 @@ static struct dentry *btrfs_mount(struct file_system_type *fs_type, int flags,
- 	if (error)
- 		return ERR_PTR(error);
- 
--	error = btrfs_open_devices(fs_devices, mode, fs_type);
--	if (error)
--		return ERR_PTR(error);
--
--	if (!(flags & MS_RDONLY) && fs_devices->rw_devices == 0) {
--		error = -EACCES;
--		goto error_close_devices;
--	}
--
- 	/*
- 	 * Setup a dummy root and fs_info for test/set super.  This is because
- 	 * we don't actually fill this stuff out until open_ctree, but we need
-@@ -936,28 +926,36 @@ static struct dentry *btrfs_mount(struct file_system_type *fs_type, int flags,
- 	 * then open_ctree will properly initialize everything later.
- 	 */
- 	fs_info = kzalloc(sizeof(struct btrfs_fs_info), GFP_NOFS);
--	if (!fs_info) {
--		error = -ENOMEM;
--		goto error_close_devices;
--	}
--	tree_root = kzalloc(sizeof(struct btrfs_root), GFP_NOFS);
--	if (!tree_root) {
-+	if (!fs_info)
-+		return ERR_PTR(-ENOMEM);
+diff --git a/fs/btrfs/free-space-cache.c b/fs/btrfs/free-space-cache.c
+index 7a15fcf..181760f 100644
+--- a/fs/btrfs/free-space-cache.c
++++ b/fs/btrfs/free-space-cache.c
+@@ -537,6 +537,13 @@ static int io_ctl_read_entry(struct io_ctl *io_ctl,
+ 			    struct btrfs_free_space *entry, u8 *type)
+ {
+ 	struct btrfs_free_space_entry *e;
++	int ret;
 +
-+	fs_info->tree_root = kzalloc(sizeof(struct btrfs_root), GFP_NOFS);
-+	if (!fs_info->tree_root) {
- 		error = -ENOMEM;
--		goto error_close_devices;
-+		goto error_fs_info;
- 	}
--	fs_info->tree_root = tree_root;
-+	fs_info->tree_root->fs_info = fs_info;
- 	fs_info->fs_devices = fs_devices;
--	tree_root->fs_info = fs_info;
- 
- 	fs_info->super_copy = kzalloc(BTRFS_SUPER_INFO_SIZE, GFP_NOFS);
- 	fs_info->super_for_commit = kzalloc(BTRFS_SUPER_INFO_SIZE, GFP_NOFS);
- 	if (!fs_info->super_copy || !fs_info->super_for_commit) {
- 		error = -ENOMEM;
-+		goto error_fs_info;
++	if (!io_ctl->cur) {
++		ret = io_ctl_check_crc(io_ctl, io_ctl->index);
++		if (ret)
++			return ret;
 +	}
-+
-+	error = btrfs_open_devices(fs_devices, mode, fs_type);
-+	if (error)
-+		goto error_fs_info;
-+
-+	if (!(flags & MS_RDONLY) && fs_devices->rw_devices == 0) {
-+		error = -EACCES;
- 		goto error_close_devices;
+ 
+ 	e = io_ctl->cur;
+ 	entry->offset = le64_to_cpu(e->offset);
+@@ -550,10 +557,7 @@ static int io_ctl_read_entry(struct io_ctl *io_ctl,
+ 
+ 	io_ctl_unmap_page(io_ctl);
+ 
+-	if (io_ctl->index >= io_ctl->num_pages)
+-		return 0;
+-
+-	return io_ctl_check_crc(io_ctl, io_ctl->index);
++	return 0;
+ }
+ 
+ static int io_ctl_read_bitmap(struct io_ctl *io_ctl,
+@@ -561,9 +565,6 @@ static int io_ctl_read_bitmap(struct io_ctl *io_ctl,
+ {
+ 	int ret;
+ 
+-	if (io_ctl->cur && io_ctl->cur != io_ctl->orig)
+-		io_ctl_unmap_page(io_ctl);
+-
+ 	ret = io_ctl_check_crc(io_ctl, io_ctl->index);
+ 	if (ret)
+ 		return ret;
+@@ -699,6 +700,8 @@ int __load_free_space_cache(struct btrfs_root *root, struct inode *inode,
+ 		num_entries--;
  	}
  
- 	bdev = fs_devices->latest_bdev;
--	s = sget(fs_type, btrfs_test_super, btrfs_set_super, tree_root);
-+	s = sget(fs_type, btrfs_test_super, btrfs_set_super,
-+		 fs_info->tree_root);
- 	if (IS_ERR(s)) {
- 		error = PTR_ERR(s);
- 		goto error_close_devices;
-@@ -966,7 +964,8 @@ static struct dentry *btrfs_mount(struct file_system_type *fs_type, int flags,
- 	if (s->s_root) {
- 		if ((flags ^ s->s_flags) & MS_RDONLY) {
- 			deactivate_locked_super(s);
--			return ERR_PTR(-EBUSY);
-+			error = -EBUSY;
-+			goto error_close_devices;
- 		}
- 
- 		btrfs_close_devices(fs_devices);
-@@ -997,6 +996,7 @@ static struct dentry *btrfs_mount(struct file_system_type *fs_type, int flags,
- 
- error_close_devices:
- 	btrfs_close_devices(fs_devices);
-+error_fs_info:
- 	free_fs_info(fs_info);
- 	return ERR_PTR(error);
- }
++	io_ctl_unmap_page(&io_ctl);
++
+ 	/*
+ 	 * We add the bitmaps at the end of the entries in order that
+ 	 * the bitmap entries are added to the cache.
 -- 
-1.7.6.3
+1.7.5.2
 

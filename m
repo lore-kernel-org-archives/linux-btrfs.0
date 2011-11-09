@@ -1,160 +1,255 @@
-From: Gustavo Sverzut Barbieri <barbieri@gmail.com>
+From: Chris Mason <chris.mason@oracle.com>
 Subject: Re: corrupted btrfs after suspend2ram uncorrectable with scrub
-Date: Wed, 9 Nov 2011 12:19:58 -0200
-Message-ID: <CANkykrDtHRDe0ve53dkxeNcCeTuWY0i1-8m1SR6BN8Md7F4qGQ@mail.gmail.com>
+Date: Wed, 9 Nov 2011 09:27:39 -0500
+Message-ID: <20111109142739.GP4149@shiny>
 References: <CANkykrA7uxc51rFTbTXar8v_3vE2Gn9LKYrApOfvqWNf5B_adw@mail.gmail.com>
-	<orzkgfwlom.fsf@livre.localdomain>
-	<CANkykrBn0Ed6B25UzRkvs6cKebTvhpqOW79F1UEc_2uMumqCQA@mail.gmail.com>
-	<CANkykrCfvFH_fg+5vJVkoWgcPuFp6euzVxZPTRDf=U+qrYUipA@mail.gmail.com>
-	<20111108172043.GH4954@shiny>
+ <orzkgfwlom.fsf@livre.localdomain>
+ <CANkykrBn0Ed6B25UzRkvs6cKebTvhpqOW79F1UEc_2uMumqCQA@mail.gmail.com>
+ <CANkykrCfvFH_fg+5vJVkoWgcPuFp6euzVxZPTRDf=U+qrYUipA@mail.gmail.com>
+ <20111108172043.GH4954@shiny>
+ <CANkykrDtHRDe0ve53dkxeNcCeTuWY0i1-8m1SR6BN8Md7F4qGQ@mail.gmail.com>
 Mime-Version: 1.0
-Content-Type: multipart/mixed; boundary=001485f6cb9a9dfd6904b14dfbd9
-To: Chris Mason <chris.mason@oracle.com>,
-	Gustavo Sverzut Barbieri <barbieri@gmail.com>,
-	Alexandre Oliva <oliva@lsd.ic.unicamp.br>,
+Content-Type: text/plain; charset=iso-8859-1
+Cc: Alexandre Oliva <oliva@lsd.ic.unicamp.br>,
 	linux-btrfs@vger.kernel.org
+To: Gustavo Sverzut Barbieri <barbieri@gmail.com>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <20111108172043.GH4954@shiny>
+In-Reply-To: <CANkykrDtHRDe0ve53dkxeNcCeTuWY0i1-8m1SR6BN8Md7F4qGQ@mail.gmail.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
---001485f6cb9a9dfd6904b14dfbd9
-Content-Type: text/plain; charset=ISO-8859-1
-Content-Transfer-Encoding: quoted-printable
-
-On Tue, Nov 8, 2011 at 3:20 PM, Chris Mason <chris.mason@oracle.com> wrote:
-> On Tue, Nov 08, 2011 at 03:08:41PM -0200, Gustavo Sverzut Barbieri wrote:
->> On Tue, Nov 1, 2011 at 9:20 PM, Gustavo Sverzut Barbieri
->> <barbieri@gmail.com> wrote:
->> > On Tue, Nov 1, 2011 at 7:57 PM, Alexandre Oliva <oliva@lsd.ic.unicamp.=
-br> wrote:
->> >> Hi, Gustavo,
->> >>
->> >> On Nov =A01, 2011, Gustavo Sverzut Barbieri <barbieri@gmail.com> wrot=
+On Wed, Nov 09, 2011 at 12:19:58PM -0200, Gustavo Sverzut Barbieri wrot=
 e:
->> >>
->> >>> =A0 btrfs csum failed ino 2957021 extent 85041815552 csum 667310679
->> >>> wanted 0 mirror 0
->> >>
->> >>> Is there any way to recover it? =A0:-S
->> >>
->> >> Did you try mounting without data checksums?
->> >
->> > Just tried to mount with -o nodatasum, no luck. Is that enough?
->>
->> Ideas? Should I give up and consider data lost? :-(
->
-> We actually check the crcs even when mounted with nodatasum. =A0Can you
-> give the restore tool a shot from my current btrfs-progs git repo? =A0If
-> it can read it we can find a way to get the files off.
+> On Tue, Nov 8, 2011 at 3:20 PM, Chris Mason <chris.mason@oracle.com> =
+wrote:
+> > On Tue, Nov 08, 2011 at 03:08:41PM -0200, Gustavo Sverzut Barbieri =
+wrote:
+> >> On Tue, Nov 1, 2011 at 9:20 PM, Gustavo Sverzut Barbieri
+> >> <barbieri@gmail.com> wrote:
+> >> > On Tue, Nov 1, 2011 at 7:57 PM, Alexandre Oliva <oliva@lsd.ic.un=
+icamp.br> wrote:
+> >> >> Hi, Gustavo,
+> >> >>
+> >> >> On Nov =A01, 2011, Gustavo Sverzut Barbieri <barbieri@gmail.com=
+> wrote:
+> >> >>
+> >> >>> =A0 btrfs csum failed ino 2957021 extent 85041815552 csum 6673=
+10679
+> >> >>> wanted 0 mirror 0
+> >> >>
+> >> >>> Is there any way to recover it? =A0:-S
+> >> >>
+> >> >> Did you try mounting without data checksums?
+> >> >
+> >> > Just tried to mount with -o nodatasum, no luck. Is that enough?
+> >>
+> >> Ideas? Should I give up and consider data lost? :-(
+> >
+> > We actually check the crcs even when mounted with nodatasum. =A0Can=
+ you
+> > give the restore tool a shot from my current btrfs-progs git repo? =
+=A0If
+> > it can read it we can find a way to get the files off.
+>=20
+> Hi Chris,
+>=20
+> Fortunately it worked and I've restored, it misses symbolic links and
+> executable permissions (or I did a mistake somewhere, like mounting)
+> but overall it's all fine.
 
-Hi Chris,
+Great to hear you've pulled the files.  Do you need the kernel patch fo=
+r
+symlinks etc?
 
-Fortunately it worked and I've restored, it misses symbolic links and
-executable permissions (or I did a mistake somewhere, like mounting)
-but overall it's all fine.
+>=20
+> The attached patch was helpful to let me ignore stuff like developmen=
+t
+> files and caches. Speeds up the recovery :-)
 
-The attached patch was helpful to let me ignore stuff like development
-files and caches. Speeds up the recovery :-)
+Very nice, thanks.
 
-Thanks!
+-chris
 
---=20
-Gustavo Sverzut Barbieri
---------------------------------------
-Mobile: +55 (19) 9225-2202
-Contact: http://www.gustavobarbieri.com.br/contact
+>=20
+> Thanks!
+>=20
+> --=20
+> Gustavo Sverzut Barbieri
+> --------------------------------------
+> Mobile: +55 (19) 9225-2202
+> Contact: http://www.gustavobarbieri.com.br/contact
 
---001485f6cb9a9dfd6904b14dfbd9
-Content-Type: text/x-patch; charset=US-ASCII;
-	name="0001-restore-allow-ignoring-file-name-patterns-and-paths.patch"
-Content-Disposition: attachment;
-	filename="0001-restore-allow-ignoring-file-name-patterns-and-paths.patch"
-Content-Transfer-Encoding: base64
-X-Attachment-Id: f_gusezrws0
+> From dc57b73b08fefb21099cc6b171683daaffa04501 Mon Sep 17 00:00:00 200=
+1
+> From: Gustavo Sverzut Barbieri <barbieri@profusion.mobi>
+> Date: Mon, 8 Jan 2001 00:37:39 -0200
+> Subject: [PATCH] restore: allow ignoring file name patterns and paths=
+=2E
+>=20
+> Introduce two new command line switches that can be specified multipl=
+e
+> times:
+>=20
+>    -e path-pattern
+>    -E file-name-pattern
+>=20
+> They are processed with fnmatch(), the first (-e) using FNM_PATHNAME
+> flag on the whole path string, the second uses no flag and is applied
+> only over the file or directory name.
+>=20
+> Example:
+>=20
+>    restore -v \
+>       -e '*/.cache' -e '*/.thumbnails' \
+>       -e '*/Desktop/Pictures' \
+>       -E '*~' \
+>       /dev/sdb1 /tmp/home-restore
+>=20
+> will restore everything but files under ~/.cache, ~/.thumbnails and
+> ~/Desktop/Pictures for every user (assume it's the mountpoint of
+> /home), also ignoring every backup file (*~).
+> ---
+>  restore.c |   55 +++++++++++++++++++++++++++++++++++++++++++++++++++=
+++--
+>  1 files changed, 53 insertions(+), 2 deletions(-)
+>=20
+> diff --git a/restore.c b/restore.c
+> index 250c9d3..bdb0c7f 100644
+> --- a/restore.c
+> +++ b/restore.c
+> @@ -25,6 +25,7 @@
+>  #include <fcntl.h>
+>  #include <sys/stat.h>
+>  #include <zlib.h>
+> +#include <fnmatch.h>
+>  #include "kerncompat.h"
+>  #include "ctree.h"
+>  #include "disk-io.h"
+> @@ -40,6 +41,9 @@ static int get_snaps =3D 0;
+>  static int verbose =3D 0;
+>  static int ignore_errors =3D 0;
+>  static int overwrite =3D 0;
+> +static char **exclude_paths =3D NULL;
+> +static char **exclude_patterns =3D NULL;
+> +static int dir_name_len =3D 0;
+> =20
+>  static int decompress(char *inbuf, char *outbuf, u64 compress_len,
+>  		      u64 decompress_len)
+> @@ -436,6 +440,27 @@ set_size:
+>  	return 0;
+>  }
+> =20
+> +static int is_excluded(const char *path, const char *name)
+> +{
+> +        char **itr;
+> +        if (exclude_paths) {
+> +                path +=3D dir_name_len;
+> +                for (itr =3D exclude_paths; *itr !=3D NULL; itr++) {
+> +                        if (fnmatch(*itr, path, FNM_PATHNAME) =3D=3D=
+ 0) {
+> +                                return 1;
+> +                        }
+> +                }
+> +        }
+> +        if (exclude_patterns) {
+> +                for (itr =3D exclude_patterns; *itr !=3D NULL; itr++=
+) {
+> +                        if (fnmatch(*itr, path, 0) =3D=3D 0) {
+> +                                return 1;
+> +                        }
+> +                }
+> +        }
+> +        return 0;
+> +}
+> +
+>  static int search_dir(struct btrfs_root *root, struct btrfs_key *key=
+,
+>  		      const char *dir)
+>  {
+> @@ -568,6 +593,11 @@ static int search_dir(struct btrfs_root *root, s=
+truct btrfs_key *key,
+>  				}
+>  				ret =3D 0;
+>  			}
+> +                        if (is_excluded(path_name, filename)) {
+> +                                if (verbose)
+> +                                        printf("Ignored %s\n", path_=
+name);
+> +                                goto next;
+> +                        }
+>  			if (verbose)
+>  				printf("Restoring %s\n", path_name);
+>  			fd =3D open(path_name, O_CREAT|O_WRONLY, 0644);
+> @@ -636,6 +666,11 @@ static int search_dir(struct btrfs_root *root, s=
+truct btrfs_key *key,
+>  				location.objectid =3D BTRFS_FIRST_FREE_OBJECTID;
+>  			}
+> =20
+> +                        if (is_excluded(path_name, filename)) {
+> +                                if (verbose)
+> +                                        printf("Ignored %s\n", path_=
+name);
+> +                                goto next;
+> +                        }
+>  			if (verbose)
+>  				printf("Restoring %s\n", path_name);
+> =20
+> @@ -672,7 +707,7 @@ next:
+> =20
+>  static void usage()
+>  {
+> -	fprintf(stderr, "Usage: restore [-svio] [-t disk offset] <device> "
+> +	fprintf(stderr, "Usage: restore [-svio] [-e exclude-paths] [-E excl=
+ude-name-patterns] [-t disk offset] <device> "
+>  		"<directory>\n");
+>  }
+> =20
+> @@ -765,8 +800,15 @@ int main(int argc, char **argv)
+>  	int opt;
+>  	int super_mirror =3D 0;
+>  	int find_dir =3D 0;
+> +        int exclude_paths_idx =3D 0;
+> +        int exclude_patterns_idx =3D 0;
+> =20
+> -	while ((opt =3D getopt(argc, argv, "sviot:u:df:")) !=3D -1) {
+> +        if (argc > 1) {
+> +                exclude_paths =3D calloc(argc - 1, sizeof(char *));
+> +                exclude_patterns =3D calloc(argc - 1, sizeof(char *)=
+);
+> +        }
+> +
+> +	while ((opt =3D getopt(argc, argv, "sviot:u:df:e:E:")) !=3D -1) {
+>  		switch (opt) {
+>  			case 's':
+>  				get_snaps =3D 1;
+> @@ -806,6 +848,14 @@ int main(int argc, char **argv)
+>  					exit(1);
+>  				}
+>  				break;
+> +			case 'e':
+> +				exclude_paths[exclude_paths_idx] =3D strdup(optarg);
+> +                                exclude_paths_idx++;
+> +				break;
+> +			case 'E':
+> +				exclude_patterns[exclude_patterns_idx] =3D strdup(optarg);
+> +                                exclude_patterns_idx++;
+> +				break;
+>  			case 'd':
+>  				find_dir =3D 1;
+>  				break;
+> @@ -855,6 +905,7 @@ int main(int argc, char **argv)
+>  			break;
+>  		dir_name[len - 1] =3D '\0';
+>  	}
+> +        dir_name_len =3D strlen(dir_name);
+> =20
+>  	if (find_dir) {
+>  		ret =3D find_first_dir(root, &key.objectid);
+> --=20
+> 1.7.7.1
+>=20
 
-RnJvbSBkYzU3YjczYjA4ZmVmYjIxMDk5Y2M2YjE3MTY4M2RhYWZmYTA0NTAxIE1vbiBTZXAgMTcg
-MDA6MDA6MDAgMjAwMQpGcm9tOiBHdXN0YXZvIFN2ZXJ6dXQgQmFyYmllcmkgPGJhcmJpZXJpQHBy
-b2Z1c2lvbi5tb2JpPgpEYXRlOiBNb24sIDggSmFuIDIwMDEgMDA6Mzc6MzkgLTAyMDAKU3ViamVj
-dDogW1BBVENIXSByZXN0b3JlOiBhbGxvdyBpZ25vcmluZyBmaWxlIG5hbWUgcGF0dGVybnMgYW5k
-IHBhdGhzLgoKSW50cm9kdWNlIHR3byBuZXcgY29tbWFuZCBsaW5lIHN3aXRjaGVzIHRoYXQgY2Fu
-IGJlIHNwZWNpZmllZCBtdWx0aXBsZQp0aW1lczoKCiAgIC1lIHBhdGgtcGF0dGVybgogICAtRSBm
-aWxlLW5hbWUtcGF0dGVybgoKVGhleSBhcmUgcHJvY2Vzc2VkIHdpdGggZm5tYXRjaCgpLCB0aGUg
-Zmlyc3QgKC1lKSB1c2luZyBGTk1fUEFUSE5BTUUKZmxhZyBvbiB0aGUgd2hvbGUgcGF0aCBzdHJp
-bmcsIHRoZSBzZWNvbmQgdXNlcyBubyBmbGFnIGFuZCBpcyBhcHBsaWVkCm9ubHkgb3ZlciB0aGUg
-ZmlsZSBvciBkaXJlY3RvcnkgbmFtZS4KCkV4YW1wbGU6CgogICByZXN0b3JlIC12IFwKICAgICAg
-LWUgJyovLmNhY2hlJyAtZSAnKi8udGh1bWJuYWlscycgXAogICAgICAtZSAnKi9EZXNrdG9wL1Bp
-Y3R1cmVzJyBcCiAgICAgIC1FICcqficgXAogICAgICAvZGV2L3NkYjEgL3RtcC9ob21lLXJlc3Rv
-cmUKCndpbGwgcmVzdG9yZSBldmVyeXRoaW5nIGJ1dCBmaWxlcyB1bmRlciB+Ly5jYWNoZSwgfi8u
-dGh1bWJuYWlscyBhbmQKfi9EZXNrdG9wL1BpY3R1cmVzIGZvciBldmVyeSB1c2VyIChhc3N1bWUg
-aXQncyB0aGUgbW91bnRwb2ludCBvZgovaG9tZSksIGFsc28gaWdub3JpbmcgZXZlcnkgYmFja3Vw
-IGZpbGUgKCp+KS4KLS0tCiByZXN0b3JlLmMgfCAgIDU1ICsrKysrKysrKysrKysrKysrKysrKysr
-KysrKysrKysrKysrKysrKysrKysrKysrKysrKysrLS0KIDEgZmlsZXMgY2hhbmdlZCwgNTMgaW5z
-ZXJ0aW9ucygrKSwgMiBkZWxldGlvbnMoLSkKCmRpZmYgLS1naXQgYS9yZXN0b3JlLmMgYi9yZXN0
-b3JlLmMKaW5kZXggMjUwYzlkMy4uYmRiMGM3ZiAxMDA2NDQKLS0tIGEvcmVzdG9yZS5jCisrKyBi
-L3Jlc3RvcmUuYwpAQCAtMjUsNiArMjUsNyBAQAogI2luY2x1ZGUgPGZjbnRsLmg+CiAjaW5jbHVk
-ZSA8c3lzL3N0YXQuaD4KICNpbmNsdWRlIDx6bGliLmg+CisjaW5jbHVkZSA8Zm5tYXRjaC5oPgog
-I2luY2x1ZGUgImtlcm5jb21wYXQuaCIKICNpbmNsdWRlICJjdHJlZS5oIgogI2luY2x1ZGUgImRp
-c2staW8uaCIKQEAgLTQwLDYgKzQxLDkgQEAgc3RhdGljIGludCBnZXRfc25hcHMgPSAwOwogc3Rh
-dGljIGludCB2ZXJib3NlID0gMDsKIHN0YXRpYyBpbnQgaWdub3JlX2Vycm9ycyA9IDA7CiBzdGF0
-aWMgaW50IG92ZXJ3cml0ZSA9IDA7CitzdGF0aWMgY2hhciAqKmV4Y2x1ZGVfcGF0aHMgPSBOVUxM
-Oworc3RhdGljIGNoYXIgKipleGNsdWRlX3BhdHRlcm5zID0gTlVMTDsKK3N0YXRpYyBpbnQgZGly
-X25hbWVfbGVuID0gMDsKIAogc3RhdGljIGludCBkZWNvbXByZXNzKGNoYXIgKmluYnVmLCBjaGFy
-ICpvdXRidWYsIHU2NCBjb21wcmVzc19sZW4sCiAJCSAgICAgIHU2NCBkZWNvbXByZXNzX2xlbikK
-QEAgLTQzNiw2ICs0NDAsMjcgQEAgc2V0X3NpemU6CiAJcmV0dXJuIDA7CiB9CiAKK3N0YXRpYyBp
-bnQgaXNfZXhjbHVkZWQoY29uc3QgY2hhciAqcGF0aCwgY29uc3QgY2hhciAqbmFtZSkKK3sKKyAg
-ICAgICAgY2hhciAqKml0cjsKKyAgICAgICAgaWYgKGV4Y2x1ZGVfcGF0aHMpIHsKKyAgICAgICAg
-ICAgICAgICBwYXRoICs9IGRpcl9uYW1lX2xlbjsKKyAgICAgICAgICAgICAgICBmb3IgKGl0ciA9
-IGV4Y2x1ZGVfcGF0aHM7ICppdHIgIT0gTlVMTDsgaXRyKyspIHsKKyAgICAgICAgICAgICAgICAg
-ICAgICAgIGlmIChmbm1hdGNoKCppdHIsIHBhdGgsIEZOTV9QQVRITkFNRSkgPT0gMCkgeworICAg
-ICAgICAgICAgICAgICAgICAgICAgICAgICAgICByZXR1cm4gMTsKKyAgICAgICAgICAgICAgICAg
-ICAgICAgIH0KKyAgICAgICAgICAgICAgICB9CisgICAgICAgIH0KKyAgICAgICAgaWYgKGV4Y2x1
-ZGVfcGF0dGVybnMpIHsKKyAgICAgICAgICAgICAgICBmb3IgKGl0ciA9IGV4Y2x1ZGVfcGF0dGVy
-bnM7ICppdHIgIT0gTlVMTDsgaXRyKyspIHsKKyAgICAgICAgICAgICAgICAgICAgICAgIGlmIChm
-bm1hdGNoKCppdHIsIHBhdGgsIDApID09IDApIHsKKyAgICAgICAgICAgICAgICAgICAgICAgICAg
-ICAgICAgcmV0dXJuIDE7CisgICAgICAgICAgICAgICAgICAgICAgICB9CisgICAgICAgICAgICAg
-ICAgfQorICAgICAgICB9CisgICAgICAgIHJldHVybiAwOworfQorCiBzdGF0aWMgaW50IHNlYXJj
-aF9kaXIoc3RydWN0IGJ0cmZzX3Jvb3QgKnJvb3QsIHN0cnVjdCBidHJmc19rZXkgKmtleSwKIAkJ
-ICAgICAgY29uc3QgY2hhciAqZGlyKQogewpAQCAtNTY4LDYgKzU5MywxMSBAQCBzdGF0aWMgaW50
-IHNlYXJjaF9kaXIoc3RydWN0IGJ0cmZzX3Jvb3QgKnJvb3QsIHN0cnVjdCBidHJmc19rZXkgKmtl
-eSwKIAkJCQl9CiAJCQkJcmV0ID0gMDsKIAkJCX0KKyAgICAgICAgICAgICAgICAgICAgICAgIGlm
-IChpc19leGNsdWRlZChwYXRoX25hbWUsIGZpbGVuYW1lKSkgeworICAgICAgICAgICAgICAgICAg
-ICAgICAgICAgICAgICBpZiAodmVyYm9zZSkKKyAgICAgICAgICAgICAgICAgICAgICAgICAgICAg
-ICAgICAgICAgICBwcmludGYoIklnbm9yZWQgJXNcbiIsIHBhdGhfbmFtZSk7CisgICAgICAgICAg
-ICAgICAgICAgICAgICAgICAgICAgIGdvdG8gbmV4dDsKKyAgICAgICAgICAgICAgICAgICAgICAg
-IH0KIAkJCWlmICh2ZXJib3NlKQogCQkJCXByaW50ZigiUmVzdG9yaW5nICVzXG4iLCBwYXRoX25h
-bWUpOwogCQkJZmQgPSBvcGVuKHBhdGhfbmFtZSwgT19DUkVBVHxPX1dST05MWSwgMDY0NCk7CkBA
-IC02MzYsNiArNjY2LDExIEBAIHN0YXRpYyBpbnQgc2VhcmNoX2RpcihzdHJ1Y3QgYnRyZnNfcm9v
-dCAqcm9vdCwgc3RydWN0IGJ0cmZzX2tleSAqa2V5LAogCQkJCWxvY2F0aW9uLm9iamVjdGlkID0g
-QlRSRlNfRklSU1RfRlJFRV9PQkpFQ1RJRDsKIAkJCX0KIAorICAgICAgICAgICAgICAgICAgICAg
-ICAgaWYgKGlzX2V4Y2x1ZGVkKHBhdGhfbmFtZSwgZmlsZW5hbWUpKSB7CisgICAgICAgICAgICAg
-ICAgICAgICAgICAgICAgICAgIGlmICh2ZXJib3NlKQorICAgICAgICAgICAgICAgICAgICAgICAg
-ICAgICAgICAgICAgICAgIHByaW50ZigiSWdub3JlZCAlc1xuIiwgcGF0aF9uYW1lKTsKKyAgICAg
-ICAgICAgICAgICAgICAgICAgICAgICAgICAgZ290byBuZXh0OworICAgICAgICAgICAgICAgICAg
-ICAgICAgfQogCQkJaWYgKHZlcmJvc2UpCiAJCQkJcHJpbnRmKCJSZXN0b3JpbmcgJXNcbiIsIHBh
-dGhfbmFtZSk7CiAKQEAgLTY3Miw3ICs3MDcsNyBAQCBuZXh0OgogCiBzdGF0aWMgdm9pZCB1c2Fn
-ZSgpCiB7Ci0JZnByaW50ZihzdGRlcnIsICJVc2FnZTogcmVzdG9yZSBbLXN2aW9dIFstdCBkaXNr
-IG9mZnNldF0gPGRldmljZT4gIgorCWZwcmludGYoc3RkZXJyLCAiVXNhZ2U6IHJlc3RvcmUgWy1z
-dmlvXSBbLWUgZXhjbHVkZS1wYXRoc10gWy1FIGV4Y2x1ZGUtbmFtZS1wYXR0ZXJuc10gWy10IGRp
-c2sgb2Zmc2V0XSA8ZGV2aWNlPiAiCiAJCSI8ZGlyZWN0b3J5PlxuIik7CiB9CiAKQEAgLTc2NSw4
-ICs4MDAsMTUgQEAgaW50IG1haW4oaW50IGFyZ2MsIGNoYXIgKiphcmd2KQogCWludCBvcHQ7CiAJ
-aW50IHN1cGVyX21pcnJvciA9IDA7CiAJaW50IGZpbmRfZGlyID0gMDsKKyAgICAgICAgaW50IGV4
-Y2x1ZGVfcGF0aHNfaWR4ID0gMDsKKyAgICAgICAgaW50IGV4Y2x1ZGVfcGF0dGVybnNfaWR4ID0g
-MDsKIAotCXdoaWxlICgob3B0ID0gZ2V0b3B0KGFyZ2MsIGFyZ3YsICJzdmlvdDp1OmRmOiIpKSAh
-PSAtMSkgeworICAgICAgICBpZiAoYXJnYyA+IDEpIHsKKyAgICAgICAgICAgICAgICBleGNsdWRl
-X3BhdGhzID0gY2FsbG9jKGFyZ2MgLSAxLCBzaXplb2YoY2hhciAqKSk7CisgICAgICAgICAgICAg
-ICAgZXhjbHVkZV9wYXR0ZXJucyA9IGNhbGxvYyhhcmdjIC0gMSwgc2l6ZW9mKGNoYXIgKikpOwor
-ICAgICAgICB9CisKKwl3aGlsZSAoKG9wdCA9IGdldG9wdChhcmdjLCBhcmd2LCAic3Zpb3Q6dTpk
-ZjplOkU6IikpICE9IC0xKSB7CiAJCXN3aXRjaCAob3B0KSB7CiAJCQljYXNlICdzJzoKIAkJCQln
-ZXRfc25hcHMgPSAxOwpAQCAtODA2LDYgKzg0OCwxNCBAQCBpbnQgbWFpbihpbnQgYXJnYywgY2hh
-ciAqKmFyZ3YpCiAJCQkJCWV4aXQoMSk7CiAJCQkJfQogCQkJCWJyZWFrOworCQkJY2FzZSAnZSc6
-CisJCQkJZXhjbHVkZV9wYXRoc1tleGNsdWRlX3BhdGhzX2lkeF0gPSBzdHJkdXAob3B0YXJnKTsK
-KyAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgZXhjbHVkZV9wYXRoc19pZHgrKzsKKwkJ
-CQlicmVhazsKKwkJCWNhc2UgJ0UnOgorCQkJCWV4Y2x1ZGVfcGF0dGVybnNbZXhjbHVkZV9wYXR0
-ZXJuc19pZHhdID0gc3RyZHVwKG9wdGFyZyk7CisgICAgICAgICAgICAgICAgICAgICAgICAgICAg
-ICAgIGV4Y2x1ZGVfcGF0dGVybnNfaWR4Kys7CisJCQkJYnJlYWs7CiAJCQljYXNlICdkJzoKIAkJ
-CQlmaW5kX2RpciA9IDE7CiAJCQkJYnJlYWs7CkBAIC04NTUsNiArOTA1LDcgQEAgaW50IG1haW4o
-aW50IGFyZ2MsIGNoYXIgKiphcmd2KQogCQkJYnJlYWs7CiAJCWRpcl9uYW1lW2xlbiAtIDFdID0g
-J1wwJzsKIAl9CisgICAgICAgIGRpcl9uYW1lX2xlbiA9IHN0cmxlbihkaXJfbmFtZSk7CiAKIAlp
-ZiAoZmluZF9kaXIpIHsKIAkJcmV0ID0gZmluZF9maXJzdF9kaXIocm9vdCwgJmtleS5vYmplY3Rp
-ZCk7Ci0tIAoxLjcuNy4xCgo=
---001485f6cb9a9dfd6904b14dfbd9--
+--
+To unsubscribe from this list: send the line "unsubscribe linux-btrfs" =
+in
+the body of a message to majordomo@vger.kernel.org
+More majordomo info at  http://vger.kernel.org/majordomo-info.html

@@ -1,39 +1,30 @@
-From: Josef Bacik <josef@redhat.com>
-Subject: Re: WARNING: at fs/btrfs/free-space-cache.c:305
-Date: Wed, 9 Nov 2011 10:17:45 -0500
-Message-ID: <20111109151745.GA1810@localhost.localdomain>
-References: <4EB1ED83.8010301@jp.fujitsu.com>
-Mime-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Cc: Linux Btrfs <linux-btrfs@vger.kernel.org>,
-	Chris Mason <chris.mason@Oracle.COM>
-To: Tsutomu Itoh <t-itoh@jp.fujitsu.com>
+From: Stefan Behrens <sbehrens@giantdisaster.de>
+Subject: [PATCH 3/4] Btrfs: Makefile changes to optionally include btrfs integrity check
+Date: Wed,  9 Nov 2011 16:18:00 +0100
+Message-ID: <65ab16ff6c981903749d9445c1b9f3fd118d3fe3.1320850526.git.sbehrens@giantdisaster.de>
+References: <cover.1320849129.git.sbehrens@giantdisaster.de>
+To: linux-btrfs@vger.kernel.org
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <4EB1ED83.8010301@jp.fujitsu.com>
+In-Reply-To: <cover.1320849129.git.sbehrens@giantdisaster.de>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Thu, Nov 03, 2011 at 10:25:23AM +0900, Tsutomu Itoh wrote:
-> In integration-scrub branch, following warning messages were displayed by
-> running xfstests.
-> 
-> # btrfs fi sh /dev/sdd4
-> Label: none  uuid: 8f28d85c-e37c-4c1b-adef-2627ca59be78
->         Total devices 2 FS bytes used 31.49MB
->         devid    1 size 9.31GB used 9.31GB path /dev/sdd4
->         devid    2 size 15.01GB used 9.29GB path /dev/sdc1
-> 
-> Btrfs Btrfs v0.19
-> # mount
-> ...
-> /dev/sdd4 on /test7 type btrfs (rw,compress=lzo)
-> #
-> 
+If the btrfs integrity check is enabled, the files required to
+implement the checks are included in the build.
 
-Can you try this patch I just posted?
+Signed-off-by: Stefan Behrens <sbehrens@giantdisaster.de>
+---
+ fs/btrfs/Makefile |    1 +
+ 1 files changed, 1 insertions(+), 0 deletions(-)
 
-[PATCH] Btrfs: only map pages if we know we need them when reading the space
-cache
+diff --git a/fs/btrfs/Makefile b/fs/btrfs/Makefile
+index c0ddfd2..bc5b355 100644
+--- a/fs/btrfs/Makefile
++++ b/fs/btrfs/Makefile
+@@ -11,3 +11,4 @@ btrfs-y += super.o ctree.o extent-tree.o print-tree.o root-tree.o dir-item.o \
+ 	   reada.o backref.o
+ 
+ btrfs-$(CONFIG_BTRFS_FS_POSIX_ACL) += acl.o
++btrfs-$(CONFIG_BTRFS_FS_CHECK_INTEGRITY) += check-integrity.o
+-- 
+1.7.3.4
 
-Thanks,
-
-Josef

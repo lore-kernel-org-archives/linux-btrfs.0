@@ -1,45 +1,34 @@
-From: Stefan Behrens <sbehrens@giantdisaster.de>
-Subject: Re: BTRFS and power loss ~= corruption?
-Date: Wed, 09 Nov 2011 18:33:16 +0100
-Message-ID: <4EBAB95C.3080607@giantdisaster.de>
-References: <4E54F884.9090004@cyberwizzard.nl> <CAAS2fgRfW3J441Xv8x6cnKWyKGao-ZGi4_Od=iB-fLX3YixV5g@mail.gmail.com>
+From: Chris Mason <chris.mason@oracle.com>
+Subject: Re: [PATCH 0/4] Btrfs: runtime integrity check tool
+Date: Wed, 9 Nov 2011 12:50:10 -0500
+Message-ID: <20111109175010.GQ9368@shiny>
+References: <cover.1320849129.git.sbehrens@giantdisaster.de>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=UTF-8
-Cc: Berend Dekens <btrfs@cyberwizzard.nl>, linux-btrfs@vger.kernel.org
-To: Gregory Maxwell <gmaxwell@gmail.com>
+Content-Type: text/plain; charset=us-ascii
+Cc: linux-btrfs@vger.kernel.org
+To: Stefan Behrens <sbehrens@giantdisaster.de>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <CAAS2fgRfW3J441Xv8x6cnKWyKGao-ZGi4_Od=iB-fLX3YixV5g@mail.gmail.com>
+In-Reply-To: <cover.1320849129.git.sbehrens@giantdisaster.de>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 8/26/2011 1:01 AM, Gregory Maxwell wrote:
-> On Wed, Aug 24, 2011 at 9:11 AM, Berend Dekens <btrfs@cyberwizzard.nl> wrote:
-> [snip]
->> I thought the idea of COW was that whatever happens, you can always mount in
->> a semi-consistent state?
-> [snip]
+On Wed, Nov 09, 2011 at 04:17:57PM +0100, Stefan Behrens wrote:
+> This patch series adds a new module to the btrfs kernel mode
+> code. This new module can be used to catch cases when the
+> btrfs kernel code executes write requests to the disk that
+> bring the file system in an inconsistent state. In such a
+> state, a power-loss or kernel panic event would cause that
+> the data on disk is lost or at least damaged.
 > 
-> 
-> It seems to me that if someone created a block device which recorded
-> all write operations a rather excellent test could be constructed
-> where a btrfs filesystem is recorded under load and then every partial
-> replay is mounted and checked for corruption/data loss.
-> 
-> This would result in high confidence that no power loss event could
-> destroy data given the offered load assuming well behaved
-> (non-reordering hardware).  If it recorded barrier operations the a
-> tool could also try many (but probably not all) permissible
-> reorderings at every truncation offset.
-> 
-> It seems to me that the existence of this kind of testing is something
-> that should be expected of a modern filesystem before it sees
-> widescale production use.
+> Code is added that examines all block write requests during
+> runtime (including writes of the super block). Three rules
+> are verified and an error is printed on violation of the
+> rules:
 
-Gregory, Thank you for the idea to implement a tool that verifies the
-file system consistency.
-Following your idea, I have just written a runtime tool for this
-purpose, refer to the message-id
-<cover.1320849129.git.sbehrens@giantdisaster.de> in the btrfs mailing
-list. The tool examines all btrfs disk write operations at runtime. It
-verifies that the on-disk data is always in a consistent state, in order
-to create confidence that power loss (or kernel panics) cannot cause
-corrupted file systems.
+This patch is clearly useful because it has already found two big bugs.
+
+I'll definitely review it in detail and somehow or another I'd love to
+include this functionality in 3.3.
+
+Thanks again!
+
+-chris

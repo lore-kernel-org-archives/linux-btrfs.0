@@ -1,72 +1,39 @@
 From: Josef Bacik <josef@redhat.com>
-Subject: [PATCH] Btrfs: only map pages if we know we need them when reading the space cache
-Date: Wed,  9 Nov 2011 10:16:17 -0500
-Message-ID: <1320851777-2057-1-git-send-email-josef@redhat.com>
-To: linux-btrfs@vger.kernel.org
+Subject: Re: WARNING: at fs/btrfs/free-space-cache.c:305
+Date: Wed, 9 Nov 2011 10:17:45 -0500
+Message-ID: <20111109151745.GA1810@localhost.localdomain>
+References: <4EB1ED83.8010301@jp.fujitsu.com>
+Mime-Version: 1.0
+Content-Type: text/plain; charset=us-ascii
+Cc: Linux Btrfs <linux-btrfs@vger.kernel.org>,
+	Chris Mason <chris.mason@Oracle.COM>
+To: Tsutomu Itoh <t-itoh@jp.fujitsu.com>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
+In-Reply-To: <4EB1ED83.8010301@jp.fujitsu.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-People have been running into a warning when loading space cache because the
-page is already mapped when trying to read in a bitmap.  The way we read in
-entries and pages is kind of convoluted, so fix it so that io_ctl_read_entry
-maps the entries if it needs to, and if it hits the end of the page it simply
-unmaps the page.  That way we can unconditionally unmap the io_ctl before
-reading in the bitmap and we should stop hitting these warnings.  Thanks,
+On Thu, Nov 03, 2011 at 10:25:23AM +0900, Tsutomu Itoh wrote:
+> In integration-scrub branch, following warning messages were displayed by
+> running xfstests.
+> 
+> # btrfs fi sh /dev/sdd4
+> Label: none  uuid: 8f28d85c-e37c-4c1b-adef-2627ca59be78
+>         Total devices 2 FS bytes used 31.49MB
+>         devid    1 size 9.31GB used 9.31GB path /dev/sdd4
+>         devid    2 size 15.01GB used 9.29GB path /dev/sdc1
+> 
+> Btrfs Btrfs v0.19
+> # mount
+> ...
+> /dev/sdd4 on /test7 type btrfs (rw,compress=lzo)
+> #
+> 
 
-Signed-off-by: Josef Bacik <josef@redhat.com>
----
- fs/btrfs/free-space-cache.c |   17 ++++++++++-------
- 1 files changed, 10 insertions(+), 7 deletions(-)
+Can you try this patch I just posted?
 
-diff --git a/fs/btrfs/free-space-cache.c b/fs/btrfs/free-space-cache.c
-index 7a15fcf..181760f 100644
---- a/fs/btrfs/free-space-cache.c
-+++ b/fs/btrfs/free-space-cache.c
-@@ -537,6 +537,13 @@ static int io_ctl_read_entry(struct io_ctl *io_ctl,
- 			    struct btrfs_free_space *entry, u8 *type)
- {
- 	struct btrfs_free_space_entry *e;
-+	int ret;
-+
-+	if (!io_ctl->cur) {
-+		ret = io_ctl_check_crc(io_ctl, io_ctl->index);
-+		if (ret)
-+			return ret;
-+	}
- 
- 	e = io_ctl->cur;
- 	entry->offset = le64_to_cpu(e->offset);
-@@ -550,10 +557,7 @@ static int io_ctl_read_entry(struct io_ctl *io_ctl,
- 
- 	io_ctl_unmap_page(io_ctl);
- 
--	if (io_ctl->index >= io_ctl->num_pages)
--		return 0;
--
--	return io_ctl_check_crc(io_ctl, io_ctl->index);
-+	return 0;
- }
- 
- static int io_ctl_read_bitmap(struct io_ctl *io_ctl,
-@@ -561,9 +565,6 @@ static int io_ctl_read_bitmap(struct io_ctl *io_ctl,
- {
- 	int ret;
- 
--	if (io_ctl->cur && io_ctl->cur != io_ctl->orig)
--		io_ctl_unmap_page(io_ctl);
--
- 	ret = io_ctl_check_crc(io_ctl, io_ctl->index);
- 	if (ret)
- 		return ret;
-@@ -699,6 +700,8 @@ int __load_free_space_cache(struct btrfs_root *root, struct inode *inode,
- 		num_entries--;
- 	}
- 
-+	io_ctl_unmap_page(&io_ctl);
-+
- 	/*
- 	 * We add the bitmaps at the end of the entries in order that
- 	 * the bitmap entries are added to the cache.
--- 
-1.7.5.2
+[PATCH] Btrfs: only map pages if we know we need them when reading the space
+cache
 
+Thanks,
+
+Josef

@@ -1,7 +1,7 @@
 From: Ilya Dryomov <idryomov@gmail.com>
-Subject: [PATCH 4/5] Btrfs: close devices on all error paths in open_ctree()
-Date: Wed,  9 Nov 2011 16:38:36 +0200
-Message-ID: <1320849517-13172-5-git-send-email-idryomov@gmail.com>
+Subject: [PATCH 5/5] Btrfs: rework error handling in btrfs_mount()
+Date: Wed,  9 Nov 2011 16:38:37 +0200
+Message-ID: <1320849517-13172-6-git-send-email-idryomov@gmail.com>
 References: <1320849517-13172-1-git-send-email-idryomov@gmail.com>
 Cc: Chris Mason <chris.mason@oracle.com>, idryomov@gmail.com
 To: linux-btrfs@vger.kernel.org
@@ -9,44 +9,112 @@ Return-path: <linux-btrfs-owner@vger.kernel.org>
 In-Reply-To: <1320849517-13172-1-git-send-email-idryomov@gmail.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Fix a bug introduced by 7e662854 where we would leave devices busy on
-certain error paths in open_ctree().  fs_info is guaranteed to be
-non-NULL now so it's safe to dereference it on all error paths.
+Commits 6c41761f and 45ea6095 introduced the possibility of NULL pointer
+dereference on error paths, also we would leave all devices busy and
+leak fs_info with all sub-structures on error when trying to mount an
+already mounted fs to a different directory.
+
+Fix this by doing all allocations before trying to open any of the
+devices, adjust error path for mount-already-mounted-fs case.
 
 Signed-off-by: Ilya Dryomov <idryomov@gmail.com>
 ---
- fs/btrfs/disk-io.c |    7 +++----
- 1 files changed, 3 insertions(+), 4 deletions(-)
+ fs/btrfs/super.c |   42 +++++++++++++++++++++---------------------
+ 1 files changed, 21 insertions(+), 21 deletions(-)
 
-diff --git a/fs/btrfs/disk-io.c b/fs/btrfs/disk-io.c
-index 91db90b..b6a5c0d 100644
---- a/fs/btrfs/disk-io.c
-+++ b/fs/btrfs/disk-io.c
-@@ -2460,21 +2460,20 @@ fail_sb_buffer:
- 	btrfs_stop_workers(&fs_info->caching_workers);
- fail_alloc:
- fail_iput:
-+	btrfs_mapping_tree_free(&fs_info->mapping_tree);
+diff --git a/fs/btrfs/super.c b/fs/btrfs/super.c
+index 58e9492..629281c 100644
+--- a/fs/btrfs/super.c
++++ b/fs/btrfs/super.c
+@@ -891,7 +891,6 @@ static struct dentry *btrfs_mount(struct file_system_type *fs_type, int flags,
+ 	struct super_block *s;
+ 	struct dentry *root;
+ 	struct btrfs_fs_devices *fs_devices = NULL;
+-	struct btrfs_root *tree_root = NULL;
+ 	struct btrfs_fs_info *fs_info = NULL;
+ 	fmode_t mode = FMODE_READ;
+ 	char *subvol_name = NULL;
+@@ -920,15 +919,6 @@ static struct dentry *btrfs_mount(struct file_system_type *fs_type, int flags,
+ 	if (error)
+ 		return ERR_PTR(error);
+ 
+-	error = btrfs_open_devices(fs_devices, mode, fs_type);
+-	if (error)
+-		return ERR_PTR(error);
+-
+-	if (!(flags & MS_RDONLY) && fs_devices->rw_devices == 0) {
+-		error = -EACCES;
+-		goto error_close_devices;
+-	}
+-
+ 	/*
+ 	 * Setup a dummy root and fs_info for test/set super.  This is because
+ 	 * we don't actually fill this stuff out until open_ctree, but we need
+@@ -936,28 +926,36 @@ static struct dentry *btrfs_mount(struct file_system_type *fs_type, int flags,
+ 	 * then open_ctree will properly initialize everything later.
+ 	 */
+ 	fs_info = kzalloc(sizeof(struct btrfs_fs_info), GFP_NOFS);
+-	if (!fs_info) {
+-		error = -ENOMEM;
+-		goto error_close_devices;
+-	}
+-	tree_root = kzalloc(sizeof(struct btrfs_root), GFP_NOFS);
+-	if (!tree_root) {
++	if (!fs_info)
++		return ERR_PTR(-ENOMEM);
 +
- 	invalidate_inode_pages2(fs_info->btree_inode->i_mapping);
- 	iput(fs_info->btree_inode);
--
--	btrfs_close_devices(fs_info->fs_devices);
--	btrfs_mapping_tree_free(&fs_info->mapping_tree);
- fail_bdi:
- 	bdi_destroy(&fs_info->bdi);
- fail_srcu:
- 	cleanup_srcu_struct(&fs_info->subvol_srcu);
- fail:
-+	btrfs_close_devices(fs_info->fs_devices);
++	fs_info->tree_root = kzalloc(sizeof(struct btrfs_root), GFP_NOFS);
++	if (!fs_info->tree_root) {
+ 		error = -ENOMEM;
+-		goto error_close_devices;
++		goto error_fs_info;
+ 	}
+-	fs_info->tree_root = tree_root;
++	fs_info->tree_root->fs_info = fs_info;
+ 	fs_info->fs_devices = fs_devices;
+-	tree_root->fs_info = fs_info;
+ 
+ 	fs_info->super_copy = kzalloc(BTRFS_SUPER_INFO_SIZE, GFP_NOFS);
+ 	fs_info->super_for_commit = kzalloc(BTRFS_SUPER_INFO_SIZE, GFP_NOFS);
+ 	if (!fs_info->super_copy || !fs_info->super_for_commit) {
+ 		error = -ENOMEM;
++		goto error_fs_info;
++	}
++
++	error = btrfs_open_devices(fs_devices, mode, fs_type);
++	if (error)
++		goto error_fs_info;
++
++	if (!(flags & MS_RDONLY) && fs_devices->rw_devices == 0) {
++		error = -EACCES;
+ 		goto error_close_devices;
+ 	}
+ 
+ 	bdev = fs_devices->latest_bdev;
+-	s = sget(fs_type, btrfs_test_super, btrfs_set_super, tree_root);
++	s = sget(fs_type, btrfs_test_super, btrfs_set_super,
++		 fs_info->tree_root);
+ 	if (IS_ERR(s)) {
+ 		error = PTR_ERR(s);
+ 		goto error_close_devices;
+@@ -966,7 +964,8 @@ static struct dentry *btrfs_mount(struct file_system_type *fs_type, int flags,
+ 	if (s->s_root) {
+ 		if ((flags ^ s->s_flags) & MS_RDONLY) {
+ 			deactivate_locked_super(s);
+-			return ERR_PTR(-EBUSY);
++			error = -EBUSY;
++			goto error_close_devices;
+ 		}
+ 
+ 		btrfs_close_devices(fs_devices);
+@@ -997,6 +996,7 @@ static struct dentry *btrfs_mount(struct file_system_type *fs_type, int flags,
+ 
+ error_close_devices:
+ 	btrfs_close_devices(fs_devices);
++error_fs_info:
  	free_fs_info(fs_info);
- 	return ERR_PTR(err);
- 
- recovery_tree_root:
--
- 	if (!btrfs_test_opt(tree_root, RECOVERY))
- 		goto fail_tree_roots;
- 
+ 	return ERR_PTR(error);
+ }
 -- 
 1.7.6.3
 

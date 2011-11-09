@@ -1,41 +1,33 @@
-From: "Fajar A. Nugraha" <list@fajar.net>
-Subject: Re: How to remount btrfs without compression?
-Date: Wed, 9 Nov 2011 15:04:01 +0700
-Message-ID: <CAG1y0scE__f0BDyZz82z97jCX7DvzhDgXeh7Kh5pm31eXB=Wpg@mail.gmail.com>
-References: <4EB72C1B.1030702@parallels.com>
-	<201111071319.14493.Martin@lichtvoll.de>
-	<4EB87E01.1040704@parallels.com>
-	<4EB880A0.1030304@gmail.com>
-	<CAG1y0seMUUNwXCY6-=JehE+rrd4PRF55MZoHEUB_9+jDm6N_rA@mail.gmail.com>
-	<4EB88BC9.7020509@gmail.com>
-	<4EB88D4A.5050908@parallels.com>
-	<20111108150151.GA4954@shiny>
-	<20111108151208.GB4954@shiny>
-	<4EB9D0D9.1000009@parallels.com>
-	<j9db98$gbt$1@dough.gmane.org>
+From: Christoph Hellwig <hch@infradead.org>
+Subject: Re: [PATCH v2 0/3] xfstests: Add a group of reservation space test
+Date: Wed, 9 Nov 2011 03:38:11 -0500
+Message-ID: <20111109083811.GA23248@infradead.org>
+References: <4EB8A441.7090506@cn.fujitsu.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=ISO-8859-1
-Cc: linux-btrfs@vger.kernel.org
-To: Lubos Kolouch <lubos.kolouch@gmail.com>
-Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <j9db98$gbt$1@dough.gmane.org>
+Content-Type: text/plain; charset=us-ascii
+Cc: linux-fsdevel@vger.kernel.org,
+	Linux Btrfs <linux-btrfs@vger.kernel.org>, xfs@oss.sgi.com,
+	Christoph Hellwig <hch@infradead.org>
+To: WuBo <wu.bo@cn.fujitsu.com>
+Return-path: <linux-fsdevel-owner@vger.kernel.org>
+In-Reply-To: <4EB8A441.7090506@cn.fujitsu.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Wed, Nov 9, 2011 at 2:48 PM, Lubos Kolouch <lubos.kolouch@gmail.com> wrote:
-> Sorry for possibly OT question - when I have historical btrfs system
-> mounted with zlib compression,
->
-> can I remount it with lzo ?
+On Tue, Nov 08, 2011 at 11:38:41AM +0800, WuBo wrote:
+> Changes v1->v2:
+> - Make test-set support generic
+> 
+> This patch set add a group of reservation space test. Especailly for btrfs.
+> It includes three parts: copy workload, prealloc and write posix.
+> 
+> For test 273, I hope it's usefull for Josef's reserve improve work.
+> For test 274 and 275, the current btrfs is not pass yet.
+> 
+> Wu Bo (3):
+>   xfstests 273: add a copy and reserve test
+>   xfstests 274: add a prealloc and reserve test
+>   xfstests 275: add a write and reserve test
 
-yes
+The patches look good to me.  Unless someone else complains until
+tomorrow I'll put them in.
 
-> What will happen? Will the COW be broken
-> and the files taking duplicate space? Or will the Universe explode and
-> be replaced with something even more bizzare?
-
-New written block/extents will use lzo compression (if it's
-compressible, or if it's mounted with compress-force). Old, unmodified
-block/extents will remain unchanged, using zlib or uncompressed.
-
--- 
-Fajar

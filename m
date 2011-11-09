@@ -1,46 +1,73 @@
 From: Chris Mason <chris.mason@oracle.com>
-Subject: Re: How to remount btrfs without compression?
-Date: Wed, 9 Nov 2011 08:01:34 -0500
-Message-ID: <20111109130134.GL4149@shiny>
-References: <4EB87E01.1040704@parallels.com>
- <4EB880A0.1030304@gmail.com>
- <CAG1y0seMUUNwXCY6-=JehE+rrd4PRF55MZoHEUB_9+jDm6N_rA@mail.gmail.com>
- <4EB88BC9.7020509@gmail.com>
- <4EB88D4A.5050908@parallels.com>
- <20111108150151.GA4954@shiny>
- <20111108151208.GB4954@shiny>
- <4EB9D0D9.1000009@parallels.com>
- <j9db98$gbt$1@dough.gmane.org>
- <CAG1y0scE__f0BDyZz82z97jCX7DvzhDgXeh7Kh5pm31eXB=Wpg@mail.gmail.com>
+Subject: Re: Grow btrfs partition & filesystem backwards
+Date: Wed, 9 Nov 2011 08:36:24 -0500
+Message-ID: <20111109133624.GO4149@shiny>
+References: <CACCfv7obU+-13+Z7-S-N_y8etdJZxyw_csZBD5Ran62xW6tgWA@mail.gmail.com>
+ <CAD=4a=V0L_QXW=BNxvQVk5MEZn2quCif=Wy1RioGydBP4oK-9w@mail.gmail.com>
+ <CANZ96zWM-AuOc9OddyHPrVyQdOpGHqXC3twyGhsZFA=EZpDjUQ@mail.gmail.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Cc: Lubos Kolouch <lubos.kolouch@gmail.com>,
+Content-Type: text/plain; charset=iso-8859-1
+Cc: Ernst =?iso-8859-1?Q?Sj=F6strand?= <ernstp@gmail.com>,
+	Jordan Windsor <jordanw2@gmail.com>,
 	linux-btrfs@vger.kernel.org
-To: "Fajar A. Nugraha" <list@fajar.net>
+To: Billy Crook <billycrook@gmail.com>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <CAG1y0scE__f0BDyZz82z97jCX7DvzhDgXeh7Kh5pm31eXB=Wpg@mail.gmail.com>
+In-Reply-To: <CANZ96zWM-AuOc9OddyHPrVyQdOpGHqXC3twyGhsZFA=EZpDjUQ@mail.gmail.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Wed, Nov 09, 2011 at 03:04:01PM +0700, Fajar A. Nugraha wrote:
-> On Wed, Nov 9, 2011 at 2:48 PM, Lubos Kolouch <lubos.kolouch@gmail.com> wrote:
-> > Sorry for possibly OT question - when I have historical btrfs system
-> > mounted with zlib compression,
-> >
-> > can I remount it with lzo ?
-> 
-> yes
-> 
-> > What will happen? Will the COW be broken
-> > and the files taking duplicate space? Or will the Universe explode and
-> > be replaced with something even more bizzare?
-> 
-> New written block/extents will use lzo compression (if it's
-> compressible, or if it's mounted with compress-force). Old, unmodified
-> block/extents will remain unchanged, using zlib or uncompressed.
+The only choice for an online operation is to make a new partition in
+front of the old one and just add that as a second disk in btrfs.
 
-This is correct, your old stuff will be zlib and your new stuff lzo.
-The compression type is recorded on a per-extent basis and the global
-switch just decides what type of compression to use for new writes.
+The slow method of shifting the bytes down is probably a better long
+term choice.
 
 -chris
 
+On Wed, Nov 09, 2011 at 06:40:06AM -0600, Billy Crook wrote:
+> I think the biggest point of contention is that with all the stuff
+> going on in the background in btrfs, its difficult to be sure that th=
+e
+> resize operation has completed.  With grows, you don't have to worry.
+> With shrinks, if you truncate the block device too soon, you will
+> corrupt the filesystem.
+>=20
+> 2011/11/9 Ernst Sj=F6strand <ernstp@gmail.com>:
+> > Gparted can do that, it just takes a very long time because it move=
+s
+> > everything back first.
+> >
+> > Regards
+> > //Ernst
+> >
+> > On Wed, Nov 9, 2011 at 05:23, Jordan Windsor <jordanw2@gmail.com> w=
+rote:
+> >> Hello,
+> >> I was wondering how I would go about growing a btrfs filesystem
+> >> backwards, I don't have any space to store the files temporally, I=
+'d
+> >> need to do it in place.
+> >> Thanks.
+> >> --
+> >> To unsubscribe from this list: send the line "unsubscribe linux-bt=
+rfs" in
+> >> the body of a message to majordomo@vger.kernel.org
+> >> More majordomo info at =A0http://vger.kernel.org/majordomo-info.ht=
+ml
+> >>
+> > --
+> > To unsubscribe from this list: send the line "unsubscribe linux-btr=
+fs" in
+> > the body of a message to majordomo@vger.kernel.org
+> > More majordomo info at =A0http://vger.kernel.org/majordomo-info.htm=
+l
+> >
+> --
+> To unsubscribe from this list: send the line "unsubscribe linux-btrfs=
+" in
+> the body of a message to majordomo@vger.kernel.org
+> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+--
+To unsubscribe from this list: send the line "unsubscribe linux-btrfs" =
+in
+the body of a message to majordomo@vger.kernel.org
+More majordomo info at  http://vger.kernel.org/majordomo-info.html

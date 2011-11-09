@@ -1,62 +1,47 @@
-From: Stefan Behrens <sbehrens@giantdisaster.de>
-Subject: [PATCH 2/4] Btrfs: add config option to enable btrfs integrity check
-Date: Wed,  9 Nov 2011 16:17:59 +0100
-Message-ID: <3ddcf54087d1d8d146ee7e6f93ba10825dffb9dc.1320850526.git.sbehrens@giantdisaster.de>
-References: <cover.1320849129.git.sbehrens@giantdisaster.de>
-To: linux-btrfs@vger.kernel.org
+From: Josef Bacik <josef@redhat.com>
+Subject: Re: WARNING: at fs/btrfs/inode.c:2198
+ btrfs_orphan_commit_root+0xa8/0xc0
+Date: Wed, 9 Nov 2011 10:35:53 -0500
+Message-ID: <20111109153552.GB1810@localhost.localdomain>
+References: <4EBA54F2.3030801@unilogicnetworks.net>
+Mime-Version: 1.0
+Content-Type: text/plain; charset=us-ascii
+Cc: linux-btrfs@vger.kernel.org
+To: Stefan Kleijkers <stefan@unilogicnetworks.net>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <cover.1320849129.git.sbehrens@giantdisaster.de>
+In-Reply-To: <4EBA54F2.3030801@unilogicnetworks.net>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Added the BTRFS_FS_CHECK_INTEGRITY option to Kconfig. It depends on
-BTRFS_FS.
+On Wed, Nov 09, 2011 at 11:24:50AM +0100, Stefan Kleijkers wrote:
+> Hello,
+> 
+> I'm seeing a lot of warnings in dmesg with a BTRFS filesystem. I'm
+> using the 3.1 kernel, I found a patch for these warnings (
+> http://marc.info/?l=linux-btrfs&m=131547325515336&w=2)
+> <http://marc.info/?l=linux-btrfs&m=131547325515336&w=2>, but that
+> patch has already been included in 3.1. Are there any other patches
+> I can try?
+> 
+> I'm using BTRFS in combination with Ceph and it looks like after a
+> while with a high rsync workload that the IO stalls for some time,
+> could the warnings result in IO stall?
+> 
 
-Signed-off-by: Stefan Behrens <sbehrens@giantdisaster.de>
----
- fs/btrfs/Kconfig |   33 +++++++++++++++++++++++++++++++++
- 1 files changed, 33 insertions(+), 0 deletions(-)
+Can you run with this patch and see if you get warnings from extent-tree.c?
+Thanks,
 
-diff --git a/fs/btrfs/Kconfig b/fs/btrfs/Kconfig
-index ecb9fd3..2bb8ba7 100644
---- a/fs/btrfs/Kconfig
-+++ b/fs/btrfs/Kconfig
-@@ -31,3 +31,36 @@ config BTRFS_FS_POSIX_ACL
- 	  Linux website <http://acl.bestbits.at/>.
- 
- 	  If you don't know what Access Control Lists are, say N
-+
-+config BTRFS_FS_CHECK_INTEGRITY
-+	bool "Btrfs with integrity check tool compiled in (DANGEROUS)"
-+	depends on BTRFS_FS
-+	help
-+	  Adds code that examines all block write requests (including
-+	  writes of the super block). The goal is to verify that the
-+	  state of the filesystem on disk is always consistent, i.e.,
-+	  after a power-loss or kernel panic event the filesystem is
-+	  in a consistent state. In order to check this, three rules
-+	  are verified:
-+	  1. It is not allowed to write a disk block which is
-+	     currently referenced by the super block (either directly
-+	     or indirectly).
-+	  2. When a super block is written, it is verified that all
-+	     referenced (directly or indirectly) blocks fulfill the
-+	     following requirements:
-+	     2a. All referenced blocks have either been present when
-+		 the file system was mounted, (i.e., they have been
-+		 referenced by the super block) or they have been
-+		 written since then and the write completion callback
-+		 was called.
-+	     2b. All referenced blocks need to have a generation
-+		 number which is equal to the parent's number.
-+
-+	  If the integrity check tool is included and activated in
-+	  the mount options, plenty of kernel memory is used, and
-+	  plenty of additional CPU cycles are spent. Enabling this
-+	  functionality is not intended for normal use.
-+
-+	  In most cases, unless you are a btrfs developer who needs
-+	  to verify the integrity of (super)-block write requests
-+	  during the run of a regression test, say N
--- 
-1.7.3.4
+Josef
 
+
+diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
+index 0b044e5..144cd8e 100644
+--- a/fs/btrfs/extent-tree.c
++++ b/fs/btrfs/extent-tree.c
+@@ -3721,6 +3721,7 @@ static void block_rsv_release_bytes(struct btrfs_block_rsv *block_rsv,
+ 	spin_lock(&block_rsv->lock);
+ 	if (num_bytes == (u64)-1)
+ 		num_bytes = block_rsv->size;
++	WARN_ON(block_rsv->size < num_bytes);
+ 	block_rsv->size -= num_bytes;
+ 	if (block_rsv->reserved >= block_rsv->size) {
+ 		num_bytes = block_rsv->reserved - block_rsv->size;

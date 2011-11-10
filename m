@@ -1,59 +1,33 @@
-From: Hugo Mills <hugo@carfax.org.uk>
-Subject: Re: Stupid newb tricks: making a subvolume of root.
-Date: Thu, 10 Nov 2011 14:59:44 +0000
-Message-ID: <20111110145944.GK28749@carfax.org.uk>
-References: <6c5dc86169d45cbc1001d0daa2d51a08@www.jots.org>
+From: David Sterba <dave@jikos.cz>
+Subject: [ANN] Editable clone of btrfs.wiki.k.org
+Date: Thu, 10 Nov 2011 16:15:11 +0100
+Message-ID: <20111110151511.GW12759@twin.jikos.cz>
+Reply-To: dave@jikos.cz
 Mime-Version: 1.0
-Content-Type: multipart/signed; micalg=pgp-sha1;
-	protocol="application/pgp-signature"; boundary="73fGQZLCrFzENemP"
-Cc: linux-btrfs@vger.kernel.org
-To: Ken D'Ambrosio <ken@jots.org>
+Content-Type: text/plain; charset=us-ascii
+To: linux-btrfs@vger.kernel.org
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <6c5dc86169d45cbc1001d0daa2d51a08@www.jots.org>
 List-ID: <linux-btrfs.vger.kernel.org>
 
+Hi,
 
---73fGQZLCrFzENemP
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
+as you probably noticed the btrfs.wiki.kernel.org came back on-line this
+Monday. Thanks go to k.org staff!
 
-On Thu, Nov 10, 2011 at 09:50:00AM -0500, Ken D'Ambrosio wrote:
-> Hey, all.  I did a "convert" on my ext-3 system, and now I've got a monolithic
-> btrfs volume.  I'd like to break / and /home into subvolumes.  /home is easy (I
-> think): I just create a subvolume, and move stuff into it, and mount it.  Done.
->  But how do I do that for root?  (Don't worry about the actual mounting, grub,
-> etc.,; I have a different system that works the way I want it to.)
+ From the practical side, the wiki is not editable, and we don't know
+if / when it'll be again. So, here's the writable clone:
 
-   The top level of the filesystem is itself a subvolume, so you could
-just leave it like that.
+  http://btrfs.ipv5.de
 
-   Alternatively, if you want the top level to be simply a container
-for subvolumes (and to use a default subvolume to mount / ), then you
-could do the switch-over by making a snapshot of your current /,
-remounting with the snapshot as / (possibly using "btrfs sub
-set-default"), and then mounting subvolid=0 on /media/btrfs-management
-to delete the old contents of /
+The site is hosted by sensille / Arne Jansen.
 
-   (I hope that made sense)
+Feel free to edit, the new contents will be merged back to k.org wiki
+when the time comes.
 
-   Hugo.
+Notes:
+- images are missing
+- some pages may be missing, we can add them on demand
 
--- 
-=== Hugo Mills: hugo@... carfax.org.uk | darksatanic.net | lug.org.uk ===
-  PGP key: 515C238D from wwwkeys.eu.pgp.net or http://www.carfax.org.uk
-  --- "He's a nutcase, you know. There's no getting away from it -- ---  
-                     he'll end up with a knighthood"                     
 
---73fGQZLCrFzENemP
-Content-Type: application/pgp-signature; name="signature.asc"
-Content-Description: Digital signature
-
------BEGIN PGP SIGNATURE-----
-Version: GnuPG v1.4.11 (GNU/Linux)
-
-iD8DBQFOu+bfIKyzvlFcI40RAnOWAJ9xQ6o2kiD9hn56lLznD20QxXxU3ACgmMER
-Wc6Va0WiG8VGkwClkbZ0BwM=
-=vNUn
------END PGP SIGNATURE-----
-
---73fGQZLCrFzENemP--
+cheers,
+david

@@ -1,48 +1,110 @@
-From: Dmitry Olenin <dolenin@parallels.com>
-Subject: Re: How to remount btrfs without compression?
-Date: Thu, 10 Nov 2011 16:04:33 +0900
-Message-ID: <4EBB7781.7040907@parallels.com>
-References: <4EB72C1B.1030702@parallels.com> <201111071319.14493.Martin@lichtvoll.de> <4EB87E01.1040704@parallels.com> <4EB880A0.1030304@gmail.com> <CAG1y0seMUUNwXCY6-=JehE+rrd4PRF55MZoHEUB_9+jDm6N_rA@mail.gmail.com> <4EB88BC9.7020509@gmail.com> <4EB88D4A.5050908@parallels.com> <20111108150151.GA4954@shiny> <20111108151208.GB4954@shiny> <4EB9D0D9.1000009@parallels.com> <j9db98$gbt$1@dough.gmane.org> <4EBA33DB.2070409@parallels.com> <j9fsk3$f00$1@dough.gmane.org>
+From: Miao Xie <miaox@cn.fujitsu.com>
+Subject: Re: [PATCH 1/6] Btrfs: Abstract similar code for btrfs_block_rsv_add{,
+ _noflush}()
+Date: Thu, 10 Nov 2011 15:31:08 +0800
+Message-ID: <4EBB7DBC.8060701@cn.fujitsu.com>
+References: <4EBB6F07.6000009@cn.fujitsu.com>
+Reply-To: miaox@cn.fujitsu.com
 Mime-Version: 1.0
-Content-Type: text/plain; charset="UTF-8"; format=flowed
-To: <linux-btrfs@vger.kernel.org>
+Content-Type: text/plain; charset=GB2312
+To: Linux Btrfs <linux-btrfs@vger.kernel.org>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <j9fsk3$f00$1@dough.gmane.org>
+In-Reply-To: <4EBB6F07.6000009@cn.fujitsu.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 11/10/2011 03:57 PM, Lubos Kolouch wrote:
-> Dmitry Olenin, Wed, 09 Nov 2011 17:03:39 +0900:
->
->> On 11/09/2011 04:48 PM, Lubos Kolouch wrote:
->>> Sorry for possibly OT question - when I have historical btrfs system
->>> mounted with zlib compression,
->>>
->>> can I remount it with lzo ? What will happen? Will the COW be broken
->>> and the files taking duplicate space? Or will the Universe explode and
->>> be replaced with something even more bizzare?
->>
->> Hello Lubos If you have a kernel that supports lzo (don't quite remember
->> when it got in), why can't you?
->> Absolutely nothing will happen, and only the new/updated files will be
->> with lzo compression. You can remount on the fly switching b/w the two
->> compression options without any problems.
->
-> Hello Dmitry,
->
-> By the way, this is interesting question to me - I mounted the filesystem
-> with -o compress=lzo, in dmesg showed btrfs: use lzo compression,
->
-> but - the lzo module was not loaded (not shown in lsmod - and yes, I have
-> it as a module).
->
-> When I do modprobe lzo, it shows there.
->
-> Isn't it a bit strange? So btrfs is using lzo module that was not loaded?
-> (and says so in the dmesg output)?
+The mail of PATCH 0 was always rejected, so I try to send it as the
+reply of PATCH 1.
+====================
+Title: [PATCH 0/6] Random fix of the space relocation
 
-Hello Lubos
-Yes, I was wondering about this too when I started doing lzo.
-The lzo module you load most likely has nothing to do with btrfs. This 
-is the only explanation. I would think that lzo for btrfs is built into 
-kernel. Unfortunately I don't have my .config with me at the moment to 
-check it.
+This patchset fixes 5 bugs of the space relocation, one fixes the problem
+that we forgot to reserve space for writing out i-node cache, one fixes
+that the path is not released, this problem may cause the deadlock.
+one fixes the no-cow problem, this problem will break the meta-data.
+one fixes the deadlock that caused by the race between the relocation
+and the snapshot creation, the last one fixes BUG_ON() which is triggered
+by the orphan back-ref nodes.
+
+NOTE: This patchset is based on the danger branch.
+
+Miao Xie (6):
+  Btrfs: Abstract similar code for btrfs_block_rsv_add{, _noflush}()
+  Btrfs: fix no reserved space for writing out inode cache
+  Btrfs: fix unreleased path in btrfs_orphan_cleanup()
+  Btrfs: fix nocow when deleting the item
+  Btrfs: fix deadlock caused by the race between relocation and snapshot creation
+  Btrfs: fix orphan backref nodes
+
+ fs/btrfs/extent-tree.c |   28 ++++++++++++----------------
+ fs/btrfs/inode-map.c   |   28 ++++++++++++++++++++++++----
+ fs/btrfs/inode.c       |    3 +++
+ fs/btrfs/relocation.c  |    2 ++
+ fs/btrfs/transaction.c |    4 ++--
+ fs/btrfs/volumes.c     |    5 ++++-
+ 6 files changed, 47 insertions(+), 23 deletions(-)
+
+On thu, 10 Nov 2011 14:28:23 +0800, Miao Xie wrote:
+> btrfs_block_rsv_add{, _noflush}() have similar code, so abstract that code.
+> 
+> Signed-off-by: Miao Xie <miaox@cn.fujitsu.com>
+> ---
+>  fs/btrfs/extent-tree.c |   28 ++++++++++++----------------
+>  1 files changed, 12 insertions(+), 16 deletions(-)
+> 
+> diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
+> index 1311beb..6703a43 100644
+> --- a/fs/btrfs/extent-tree.c
+> +++ b/fs/btrfs/extent-tree.c
+> @@ -3796,16 +3796,16 @@ void btrfs_free_block_rsv(struct btrfs_root *root,
+>  	kfree(rsv);
+>  }
+>  
+> -int btrfs_block_rsv_add(struct btrfs_root *root,
+> -			struct btrfs_block_rsv *block_rsv,
+> -			u64 num_bytes)
+> +static inline int __block_rsv_add(struct btrfs_root *root,
+> +				  struct btrfs_block_rsv *block_rsv,
+> +				  u64 num_bytes, int flush)
+>  {
+>  	int ret;
+>  
+>  	if (num_bytes == 0)
+>  		return 0;
+>  
+> -	ret = reserve_metadata_bytes(root, block_rsv, num_bytes, 1);
+> +	ret = reserve_metadata_bytes(root, block_rsv, num_bytes, flush);
+>  	if (!ret) {
+>  		block_rsv_add_bytes(block_rsv, num_bytes, 1);
+>  		return 0;
+> @@ -3814,22 +3814,18 @@ int btrfs_block_rsv_add(struct btrfs_root *root,
+>  	return ret;
+>  }
+>  
+> +int btrfs_block_rsv_add(struct btrfs_root *root,
+> +			struct btrfs_block_rsv *block_rsv,
+> +			u64 num_bytes)
+> +{
+> +	return __block_rsv_add(root, block_rsv, num_bytes, 1);
+> +}
+> +
+>  int btrfs_block_rsv_add_noflush(struct btrfs_root *root,
+>  				struct btrfs_block_rsv *block_rsv,
+>  				u64 num_bytes)
+>  {
+> -	int ret;
+> -
+> -	if (num_bytes == 0)
+> -		return 0;
+> -
+> -	ret = reserve_metadata_bytes(root, block_rsv, num_bytes, 0);
+> -	if (!ret) {
+> -		block_rsv_add_bytes(block_rsv, num_bytes, 1);
+> -		return 0;
+> -	}
+> -
+> -	return ret;
+> +	return __block_rsv_add(root, block_rsv, num_bytes, 0);
+>  }
+>  
+>  int btrfs_block_rsv_check(struct btrfs_root *root,
+

@@ -1,30 +1,35 @@
-From: Rieder Michael <mr@student.ethz.ch>
-Subject: Re: TRIM discard testing
-Date: Thu, 10 Nov 2011 22:11:58 +0000 (UTC)
-Message-ID: <loom.20111110T230153-346@post.gmane.org>
-References: <1EFA45DCD932BC42AB701E5073CC52D41CE5F1@MBX12.d.ethz.ch>
+From: Chris Mason <chris.mason@oracle.com>
+Subject: Re: [PATCH 1/6] Btrfs: Abstract similar code for
+ btrfs_block_rsv_add{, _noflush}()
+Date: Thu, 10 Nov 2011 19:12:49 -0500
+Message-ID: <20111111001249.GA4435@shiny>
+References: <4EBB6F07.6000009@cn.fujitsu.com>
+ <4EBB7DBC.8060701@cn.fujitsu.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
-To: linux-btrfs@vger.kernel.org
+Cc: Linux Btrfs <linux-btrfs@vger.kernel.org>
+To: Miao Xie <miaox@cn.fujitsu.com>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
+In-Reply-To: <4EBB7DBC.8060701@cn.fujitsu.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Rieder  Michael <mr <at> student.ethz.ch> writes:
-
-> hdparm -I says the drive supports TRIM and does "Deterministic read after
-TRIM" which I interpret to mean
-> that if the data was really discarded, the drive should return zeros (or
-something else) but not the
-> previous data.
+On Thu, Nov 10, 2011 at 03:31:08PM +0800, Miao Xie wrote:
+> The mail of PATCH 0 was always rejected, so I try to send it as the
+> reply of PATCH 1.
+> ====================
+> Title: [PATCH 0/6] Random fix of the space relocation
 > 
+> This patchset fixes 5 bugs of the space relocation, one fixes the problem
+> that we forgot to reserve space for writing out i-node cache, one fixes
+> that the path is not released, this problem may cause the deadlock.
+> one fixes the no-cow problem, this problem will break the meta-data.
+> one fixes the deadlock that caused by the race between the relocation
+> and the snapshot creation, the last one fixes BUG_ON() which is triggered
+> by the orphan back-ref nodes.
+> 
+> NOTE: This patchset is based on the danger branch.
 
-OK I found out what's wrong. There's a difference between
-"Deterministic read data after TRIM" (word 69 bit 14)
-and "Deterministic read ZEROs after TRIM" (bit 5).
-My drive (OCZ Agility 3) uses only deterministic read, but
-that only means a trimmed block always returns the same
-result until the next write command.
+Thanks!  For future patches, please use the for-linus branch instead.
+danger still has the subtransid code, which we need to fix
 
-So the testing procedure described on many Linux resources
-on the web is not valid for all SSD drives actually...
-
+-chris

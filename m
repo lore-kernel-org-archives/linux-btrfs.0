@@ -1,70 +1,83 @@
-From: Hugo Mills <hugo@carfax.org.uk>
-Subject: Re: Stupid newb tricks: making a subvolume of root.
-Date: Fri, 11 Nov 2011 21:58:50 +0000
-Message-ID: <20111111215849.GN28749@carfax.org.uk>
-References: <6c5dc86169d45cbc1001d0daa2d51a08@www.jots.org>
- <20111110145944.GK28749@carfax.org.uk>
- <68365841c0d5cfbc86aff3e90dc407eb@www.jots.org>
- <20111111191309.GM28749@carfax.org.uk>
- <31df0a0994b64649a627f735105f1511@www.jots.org>
+From: Amedee Van Gasse <amedee@vangasse.eu>
+Subject: Re: Announcing btrfs-gui
+Date: Sat, 12 Nov 2011 01:24:57 +0100
+Message-ID: <4EBDBCD9.8060009@vangasse.eu>
+References: <20110601232058.GA22619@carfax.org.uk>
 Mime-Version: 1.0
-Content-Type: multipart/signed; micalg=pgp-sha1;
-	protocol="application/pgp-signature"; boundary="Pjk796cY0SfIo9Z2"
-Cc: linux-btrfs@vger.kernel.org
-To: Ken D'Ambrosio <ken@jots.org>
+Content-Type: text/plain; charset=ISO-8859-1; format=flowed
+Cc: hugo@carfax.org.uk
+To: linux-btrfs@vger.kernel.org
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <31df0a0994b64649a627f735105f1511@www.jots.org>
+In-Reply-To: <20110601232058.GA22619@carfax.org.uk>
 List-ID: <linux-btrfs.vger.kernel.org>
 
+On 02-06-11 01:20, Hugo Mills wrote:
 
---Pjk796cY0SfIo9Z2
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
+*snip*
 
-On Fri, Nov 11, 2011 at 04:47:17PM -0500, Ken D'Ambrosio wrote:
-> On Fri, 11 Nov 2011 19:13:09 +0000 Hugo Mills <hugo@carfax.org.uk> wrote
-> 
-> >    I'd suggest reporting (on this mailing list) the panic message(s)
-> > you got, and how you got to them. I know there's been quite a few
-> > additional patches worked on since Chris pushed out the stack for
-> > -rc1, so it's quite plausible that your particular problem has already
-> > been fixed in someone's tree.
-> 
-> Hmmm.  I just pulled Chris's tree, and it seems to have done the trick.  It's
-> mounting, now.  I'm being leery of outright deleting, because grub-mkconfig
-> seems confused about being mounted off a different subvolume:
-> grub-probe: error: cannot find a device for / (is /dev/mounted?).
-> 
-> (Needless to say, /dev/ *is* mounted.  Likely, I've somehow confused it with
-> fstab or something.)
+>     Like all silly ideas, this one got a bit out of hand, and seems to
+> have turned into something vaguely useful. I'm therefore pleased to
+> announce the first major public release of btrfs-gui[1]: a point-and-
+> click tool for managing btrfs filesystems.
+>
+>     The tool currently can scan for and list btrfs filesystems and the
+> volumes they live on. It can show the allocation and usage of data in
+> a selected filesystem, categorised by use, replication, and device. It
+> can show and manipulate subvolumes and snapshots: creation, deletion,
+> and setting the default. For those with servers to manage, it also has
+> the ability to ssh into a remote machine, and manage its filesystems
+> remotely (so you don't have to have X installed on your servers just
+> to use btrfs-gui on them).
 
-   I think grub has some problems with some of the btrfs features. I
-don't know if we've got a decent list of issues written down yet.
+*snip*
 
-> But I'm able to look at directories, cat/cp files, etc., so I now at least
-> *could* blow things away.  Which is handy.
+>     Unless the traffic gets too high-volume, or unless someone
+> important objects, I'm going to suggest that bug reports should go to
+> this list for now (cc'd me, if you like). Note that this isn't an
+> "offical" btrfs project -- it's just something I knocked together on
+> my own.
 
-   Glad the upgrade's helped. Just make sure you've got off-machine
-backups, and the will to use them, and you'll be fine. :)
 
-   Hugo.
+I seem to have stumbled upon a bug.
+During install, Ubuntu gives the user the option to use btrfs as the 
+root filesystem. It automatically creates two subvolumes, @ (for /) and 
+@home (for /home, only if no other partition is used for /home), like this:
 
--- 
-=== Hugo Mills: hugo@... carfax.org.uk | darksatanic.net | lug.org.uk ===
-  PGP key: 515C238D from wwwkeys.eu.pgp.net or http://www.carfax.org.uk
-             --- I always felt that as a C programmer, I ---             
-                         was becoming typecast.                          
+mount | grep btrfs
+/dev/sda6 on / type btrfs (rw,subvol=@)
+/dev/sda6 on /home type btrfs (rw,subvol=@home)
+/dev/sda6 on 
+/tmp/btrfs-gui-kl6zx1/12624/eba4f1e9-5b55-4e14-abb8-5a3cf3625c56 type 
+btrfs (rw,subvolid=0)
 
---Pjk796cY0SfIo9Z2
-Content-Type: application/pgp-signature; name="signature.asc"
-Content-Description: Digital signature
+When gtrfs-gui scans for filesystems, it gives the error
+Root helper exception: b'@' is not JSON serializable
 
------BEGIN PGP SIGNATURE-----
-Version: GnuPG v1.4.11 (GNU/Linux)
+This is the relevant console output:
 
-iD8DBQFOvZqZIKyzvlFcI40RAkhmAJ9YcQZvm+pZ95Tr9L/6ggQ9LMG8IgCfQIv3
-+Fs5gkAjO9Dc/U8FVq4bHL0=
-=KsTc
------END PGP SIGNATURE-----
+Helper: found label None, UUID eba4f1e9-5b55-4e14-abb8-5a3cf3625c56
+Helper: found dev 1 = /dev/sda6
+Helper: Created private directory /tmp/btrfs-gui-kl6zx1
+Helper: Mounted filesystem UUID=eba4f1e9-5b55-4e14-abb8-5a3cf3625c56 at 
+/tmp/btrfs-gui-kl6zx1/12624/eba4f1e9-5b55-4e14-abb8-5a3cf3625c56
+Traceback (most recent call last):
+   File "/usr/local/lib/python3.2/dist-packages/btrfsgui/hlp/helper.py", 
+line 40, in main
+     COMMANDS[command](parameters)
+   File "/usr/local/lib/python3.2/dist-packages/btrfsgui/hlp/subvol.py", 
+line 126, in sv_list
+     sys.stdout.write(json.dumps(res))
+   File "/usr/lib/python3.2/json/__init__.py", line 224, in dumps
+     return _default_encoder.encode(obj)
+   File "/usr/lib/python3.2/json/encoder.py", line 188, in encode
+     chunks = self.iterencode(o, _one_shot=True)
+   File "/usr/lib/python3.2/json/encoder.py", line 246, in iterencode
+     return _iterencode(o, 0)
+   File "/usr/lib/python3.2/json/encoder.py", line 170, in default
+     raise TypeError(repr(o) + " is not JSON serializable")
+TypeError: b'@' is not JSON serializable
 
---Pjk796cY0SfIo9Z2--
+
+Kind regards,
+Amedee Van Gasse
+amedee@vangasse.eu

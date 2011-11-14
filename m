@@ -1,71 +1,35 @@
-From: Hugo Mills <hugo@carfax.org.uk>
-Subject: Re: can't access diagrams on wiki
-Date: Mon, 14 Nov 2011 07:56:48 +0000
-Message-ID: <20111114075648.GP28749@carfax.org.uk>
-References: <4EC09171.8030609@getsu.com>
+From: Arnd Hannemann <arnd@arndnet.de>
+Subject: compressed btrfs "No space left on device"
+Date: Mon, 14 Nov 2011 15:57:30 +0100
+Message-ID: <4EC12C5A.2070304@arndnet.de>
 Mime-Version: 1.0
-Content-Type: multipart/signed; micalg=pgp-sha1;
-	protocol="application/pgp-signature"; boundary="Vhqu5qQ3bjg0ZI9i"
-Cc: linux-btrfs@vger.kernel.org
-To: "J. David Beutel" <list@getsu.com>
+Content-Type: text/plain; charset=ISO-8859-15
+To: linux-btrfs@vger.kernel.org
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <4EC09171.8030609@getsu.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
+Hi,
 
---Vhqu5qQ3bjg0ZI9i
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
+I'm using btrfs for my /usr/share/ partition and keep getting the following error
+while installing a debian package which should take no more than 228 MB:
 
-On Sun, Nov 13, 2011 at 05:56:33PM -1000, J. David Beutel wrote:
-> I get 403 Forbidden errors when I try to see the following diagrams.
-> Assuming they're supposed to be public, can anyone fix this or
-> provide copies?  Their thumbnails in Google look interesting, but
-> too small to make out anything.
-> 
-> https://btrfs.wiki.kernel.org/images/9/90/Fs-tree.svg
-> https://btrfs.wiki.kernel.org/images/b/bd/Disk-data-structures.svg
-> 
-> They're linked from the following pages, which I can see:
-> 
-> https://btrfs.wiki.kernel.org/articles/t/r/e/Trees.html
-> https://btrfs.wiki.kernel.org/articles/d/a/t/Data_Structures_3b4e.html
-> 
-> I don't have any account on this wiki.  It seems messed up, by the
-> way, because I get a 404 Not Found error when I click on the "Log in
-> / create account" link:
-> 
-> https://btrfs.wiki.kernel.org/articles/u/s/e/Special~UserLogin_94cd.html
+Unpacking texlive-fonts-extra (from .../texlive-fonts-extra_2009-10ubuntu1_all.deb) ...
+ dpkg: error processing /var/cache/apt/archives/texlive-fonts-extra_2009-10ubuntu1_all.deb (--unpack):
+ unable to install new version of `/usr/share/texmf-texlive/fonts/type1/public/allrunes/frutlt.pfb': No space left on device
 
-   The wiki on kernel.org is in read-only mode, because the kernel.org
-services are still being recovered from the hacking incident. Most of
-the diagrams have been lost en route.
 
-   There's an editable copy of the wiki at [1]. The two diagrams you
-mention are here on my hard disk -- I just haven't had the time to
-upload them yet.
+However df reports plenty of available space:
 
-   Hugo.
+/dev/mapper/vg0-usr_share
+                      5.0G  1.5G  2.5G  37% /usr/share
 
-[1] http://btrfs.ipv5.de/
 
--- 
-=== Hugo Mills: hugo@... carfax.org.uk | darksatanic.net | lug.org.uk ===
-  PGP key: 515C238D from wwwkeys.eu.pgp.net or http://www.carfax.org.uk
-    --- How do you become King?  You stand in the marketplace and ---    
-          announce you're going to tax everyone. If you get out          
-                           alive, you're King.                           
+I already extended /dev/mapper/vg0-usr_share from 4G to 5G and ran defrag and balance on it with no luck.
+I'm using ubuntu 11.10 on amd64 with the ubuntu 3.0.0 kernel.
 
---Vhqu5qQ3bjg0ZI9i
-Content-Type: application/pgp-signature; name="signature.asc"
-Content-Description: Digital signature
+btrfs reports to use "zlib compression".
 
------BEGIN PGP SIGNATURE-----
-Version: GnuPG v1.4.11 (GNU/Linux)
+Is this a known problem with compressed btrfs?
 
-iD8DBQFOwMnAIKyzvlFcI40RApMkAJ4p4sqrzP7WkwwoEiYCtKr4oYn7tACaAtDk
-NhY1nlwQRSvWPMijDAgiyis=
-=GQeQ
------END PGP SIGNATURE-----
-
---Vhqu5qQ3bjg0ZI9i--
+Best regards
+Arnd

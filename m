@@ -1,37 +1,30 @@
-From: Josef Bacik <josef@redhat.com>
-Subject: [PATCH] Btrfs: clear pages dirty for io and set them extent mapped
-Date: Tue, 15 Nov 2011 09:32:56 -0500
-Message-ID: <1321367576-2539-1-git-send-email-josef@redhat.com>
-To: linux-btrfs@vger.kernel.org
+From: Phillip Susi <psusi@cfl.rr.com>
+Subject: Re: [PATCH 00/21] [RFC] Btrfs: restriper
+Date: Tue, 15 Nov 2011 09:33:14 -0500
+Message-ID: <4EC2782A.3050005@cfl.rr.com>
+References: <1314129722-31601-1-git-send-email-idryomov@gmail.com> <4EC1AB52.2070805@cfl.rr.com> <20111115092224.GA8597@zambezi.lan>
+Mime-Version: 1.0
+Content-Type: text/plain; charset=ISO-8859-1; format=flowed
+Cc: linux-btrfs@vger.kernel.org
+To: Ilya Dryomov <idryomov@gmail.com>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
+In-Reply-To: <20111115092224.GA8597@zambezi.lan>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-When doing the io_ctl helpers to clean up the free space cache stuff I stopped
-using our normal prepare_pages stuff, which means I of course forgot to do
-things like set the pages extent mapped, which will cause us all sorts of
-wonderful propblems.  Thanks,
+On 11/15/2011 4:22 AM, Ilya Dryomov wrote:
+> Restriper won't let you do raid1 ->  dup transition because dup is only
+> allowed for a single-spindle FS, so you'll end up with error "btrfs:
+> unable to start restripe ...".
+>
+> There is no way to prioritize disks during restripe.  To get dup back
+> you'll have to convert everything to single, remove the second drive and
+> then convert metadata from single to dup.
 
-Signed-off-by: Josef Bacik <josef@redhat.com>
----
- fs/btrfs/free-space-cache.c |    5 +++++
- 1 files changed, 5 insertions(+), 0 deletions(-)
+So there is no way to put a disk into read only mode and prevent 
+allocations of new chunks there?
 
-diff --git a/fs/btrfs/free-space-cache.c b/fs/btrfs/free-space-cache.c
-index 96cb54d..30e045d 100644
---- a/fs/btrfs/free-space-cache.c
-+++ b/fs/btrfs/free-space-cache.c
-@@ -351,6 +351,11 @@ static int io_ctl_prepare_pages(struct io_ctl *io_ctl, struct inode *inode,
- 		}
- 	}
- 
-+	for (i = 0; i < io_ctl->num_pages; i++) {
-+		clear_page_dirty_for_io(io_ctl->pages[i]);
-+		set_page_extent_mapped(io_ctl->pages[i]);
-+	}
-+
- 	return 0;
- }
- 
--- 
-1.7.5.2
-
+It seems like both of these limitations are highly undesirable when 
+trying to recover from a failing disk.  You don't want any more data 
+being written to the failing disk while you are trying to remove it, and 
+you certainly don't want to drop back to a single copy of data that is 
+then written to the failing disk.

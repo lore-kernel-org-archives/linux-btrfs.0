@@ -1,52 +1,32 @@
-From: Ilya Dryomov <idryomov@gmail.com>
-Subject: Re: [PATCH 00/21] [RFC] Btrfs: restriper
-Date: Tue, 15 Nov 2011 17:06:55 +0200
-Message-ID: <20111115150655.GA24302@zambezi.lan>
-References: <1314129722-31601-1-git-send-email-idryomov@gmail.com>
- <4EC1AB52.2070805@cfl.rr.com>
- <20111115092224.GA8597@zambezi.lan>
- <4EC2782A.3050005@cfl.rr.com>
+From: Phillip Susi <psusi@cfl.rr.com>
+Subject: Re: Btrfs progs git repo on kernel.org
+Date: Tue, 15 Nov 2011 10:12:39 -0500
+Message-ID: <4EC28167.8050701@cfl.rr.com>
+References: <20111027152707.GA11028@shiny.Mikenopa.local>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Cc: linux-btrfs@vger.kernel.org
-To: Phillip Susi <psusi@cfl.rr.com>
+Content-Type: text/plain; charset=ISO-8859-1; format=flowed
+To: Chris Mason <chris.mason@oracle.com>,
+	linux-btrfs <linux-btrfs@vger.kernel.org>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <4EC2782A.3050005@cfl.rr.com>
+In-Reply-To: <20111027152707.GA11028@shiny.Mikenopa.local>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Tue, Nov 15, 2011 at 09:33:14AM -0500, Phillip Susi wrote:
-> On 11/15/2011 4:22 AM, Ilya Dryomov wrote:
-> >Restriper won't let you do raid1 ->  dup transition because dup is only
-> >allowed for a single-spindle FS, so you'll end up with error "btrfs:
-> >unable to start restripe ...".
-> >
-> >There is no way to prioritize disks during restripe.  To get dup back
-> >you'll have to convert everything to single, remove the second drive and
-> >then convert metadata from single to dup.
-> 
-> So there is no way to put a disk into read only mode and prevent
-> allocations of new chunks there?
-> 
-> It seems like both of these limitations are highly undesirable when
-> trying to recover from a failing disk.  You don't want any more data
-> being written to the failing disk while you are trying to remove it,
-> and you certainly don't want to drop back to a single copy of data
-> that is then written to the failing disk.
+On 10/27/2011 11:27 AM, Chris Mason wrote:
+> Hi everyone,
+>
+> I've pulled in Hugo's integration tree, minus the features that were not
+> yet in the kernel.  This also has a few small commits that I had queued
+> up outside of the fsck work.
+>
+> Hugo, many thanks for keeping up the integration tree!  Taking out the
+> features not in the kernel meant I had to rebase it the commits, I'm
+> sorry about that.
+>
+> The code from the integration tree is here:
+>
+> git://git.kernel.org/pub/scm/linux/kernel/git/mason/btrfs-progs.git
 
-If you have a failing disk in a raid setup, you don't need to downgrade
-your raid, you can add a third drive and remove the failing one.  But
-that's inconvenient and most of the time you'll have to do a full
-balance.
+I notice that there are no tags in the repo.  Did you just forget to 
+push them, or have they been lost?  Also the repository description 
+still needs filled out.
 
-So another thing I'm working on is drive swap, when it's done it will
-take care of the failing disk scenario.  If you have a raid setup and
-one of the disks gone bad you'll be able to say
-
-btrfs device replace FAILED NEW <mountpoint>
-
-and it will put valid copy onto the fresh drive, basically doing a raid
-rebuild.
-
-Thanks,
-
-		Ilya

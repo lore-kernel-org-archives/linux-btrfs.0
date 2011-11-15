@@ -1,32 +1,34 @@
-From: Phillip Susi <psusi@cfl.rr.com>
-Subject: Re: Btrfs progs git repo on kernel.org
-Date: Tue, 15 Nov 2011 10:12:39 -0500
-Message-ID: <4EC28167.8050701@cfl.rr.com>
-References: <20111027152707.GA11028@shiny.Mikenopa.local>
+From: Ben Myers <bpm@sgi.com>
+Subject: Re: [PATCH 2/3] xfstests 265: add a prealloc and reserve test
+Date: Tue, 15 Nov 2011 12:21:13 -0600
+Message-ID: <20111115182113.GD29840@sgi.com>
+References: <4EB20505.7070005@cn.fujitsu.com> <4EB205CC.6010509@cn.fujitsu.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=ISO-8859-1; format=flowed
-To: Chris Mason <chris.mason@oracle.com>,
-	linux-btrfs <linux-btrfs@vger.kernel.org>
-Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <20111027152707.GA11028@shiny.Mikenopa.local>
+Content-Type: text/plain; charset=us-ascii
+Cc: linux-fsdevel@vger.kernel.org,
+	Linux Btrfs <linux-btrfs@vger.kernel.org>, xfs@oss.sgi.com
+To: WuBo <wu.bo@cn.fujitsu.com>
+Return-path: <linux-fsdevel-owner@vger.kernel.org>
+In-Reply-To: <4EB205CC.6010509@cn.fujitsu.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 10/27/2011 11:27 AM, Chris Mason wrote:
-> Hi everyone,
->
-> I've pulled in Hugo's integration tree, minus the features that were not
-> yet in the kernel.  This also has a few small commits that I had queued
-> up outside of the fsck work.
->
-> Hugo, many thanks for keeping up the integration tree!  Taking out the
-> features not in the kernel meant I had to rebase it the commits, I'm
-> sorry about that.
->
-> The code from the integration tree is here:
->
-> git://git.kernel.org/pub/scm/linux/kernel/git/mason/btrfs-progs.git
+Hi Wu Bo,
 
-I notice that there are no tags in the repo.  Did you just forget to 
-push them, or have they been lost?  Also the repository description 
-still needs filled out.
+On Thu, Nov 03, 2011 at 11:09:00AM +0800, WuBo wrote:
+> This test is for preallocation test. If the disk is full, just with a prealloc
+> file has some free space that prealloc early. We need to check whether the write
+> to the free space is success or not.
+> 
+> Signed-off-by: Wu Bo <Wu.Bo@cn.fujitsu.com>
+
+This test is failing for me because I don't have fallocate installed.  I
+suggest the test could to be changed to check for binaries it uses,
+possibly the version of those binaries, and then not run unless the
+right ones are installed.  But the best I can do right now is make a
+note of it.
+
+Just a heads up.  ;)
+
+Regards,
+Ben
 

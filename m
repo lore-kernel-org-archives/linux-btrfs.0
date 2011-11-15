@@ -1,43 +1,35 @@
 From: Ilya Dryomov <idryomov@gmail.com>
-Subject: Re: Don't prevent removal of devices that break raid reqs
-Date: Tue, 15 Nov 2011 11:37:13 +0200
-Message-ID: <20111115093713.GB8597@zambezi.lan>
-References: <orvcqrpycf.fsf@livre.localdomain>
- <20111111022100.GD4435@shiny>
+Subject: Re: Introduce option to rebalance only metadata
+Date: Tue, 15 Nov 2011 11:40:04 +0200
+Message-ID: <20111115094004.GC8597@zambezi.lan>
+References: <orr51fpxyv.fsf@livre.localdomain>
+ <20111110194307.GL28749@carfax.org.uk>
 Mime-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
-To: Chris Mason <chris.mason@oracle.com>,
+To: Hugo Mills <hugo@carfax.org.uk>,
 	Alexandre Oliva <oliva@lsd.ic.unicamp.br>,
 	linux-btrfs@vger.kernel.org
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <20111111022100.GD4435@shiny>
+In-Reply-To: <20111110194307.GL28749@carfax.org.uk>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Thu, Nov 10, 2011 at 09:21:00PM -0500, Chris Mason wrote:
-> On Thu, Nov 10, 2011 at 05:32:48PM -0200, Alexandre Oliva wrote:
-> > Instead of preventing the removal of devices that would render existing
-> > raid10 or raid1 impossible, warn but go ahead with it; the rebalancing
-> > code is smart enough to use different block group types.
+On Thu, Nov 10, 2011 at 07:43:07PM +0000, Hugo Mills wrote:
+> On Thu, Nov 10, 2011 at 05:40:56PM -0200, Alexandre Oliva wrote:
+> > Experimental patch to be able to compact only the metadata after
+> > clustered allocation allocated lots of unnecessary metadata block
+> > groups.  It's also useful to measure performance differences between
+> > -o cluster and -o nocluster.
 > > 
-> > Should the refusal remain, so that we'd only proceed with a
-> > newly-introduced --force option or so?
+> > I guess it should be implemented as a balance option rather than a
+> > separate ioctl, but this was good enough for me to try it.
 > 
-> Hmm, going to three devices on raid10 doesn't turn it into
-> raid1.  It turns it into a degraded raid10.
-> 
-> We'll need a --force or some kind.  There are definitely cases users
-> have wanted to do this but it is rarely a good idea ;)
+>    This should be covered by the restriper work. (And was also covered
+> by my balance-management patches, which were superseded by restriper).
 
-I'm not sure about use cases Chris talks about, but sans those I think
-we should prevent breaking raids.  If user wants to downgrade his FS he
-can do that explicitly with restriper.  As for the relocation code
-'smartness', we already have a confusing case where balancing silently
-upgrades single to raid0.
+Hugo is right, this is covered by restriper (both kernel and userspace
+sides).  The exact command would be
 
-Chris, can you describe those cases in detail so I can integrate and
-align this whole thing with restriper before it's merged ?  (I added a
---force option for some of the transitions, probably best not to add
-another closely related one)
+btrfs fi restripe start -mconvert=PROFILE <mount point>
 
 Thanks,
 

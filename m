@@ -1,41 +1,43 @@
-From: Arnd Hannemann <arnd@arndnet.de>
-Subject: Re: compressed btrfs "No space left on device"
-Date: Wed, 16 Nov 2011 18:59:01 +0100
-Message-ID: <4EC3F9E5.60500@arndnet.de>
-References: <4EC12C5A.2070304@arndnet.de> <4EC15CDB.90103@arndnet.de>
+From: Mark Fasheh <mfasheh@suse.de>
+Subject: Re: [Cluster-devel] fallocate vs O_(D)SYNC
+Date: Wed, 16 Nov 2011 11:35:40 -0800
+Message-ID: <20111116193540.GL23779@wotan.suse.de>
+References: <20111116084256.GA22963@infradead.org> <1321436588.2713.5.camel@menhir> <20111116105413.GA2916@quack.suse.cz> <20111116124550.GA11650@infradead.org> <20111116133915.GD8195@quack.suse.cz> <20111116134234.GA24258@infradead.org> <20111116155755.GA22284@quack.suse.cz> <20111116161806.GP29279@shiny>
+Reply-To: Mark Fasheh <mfasheh@suse.de>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=ISO-8859-15
-To: linux-btrfs@vger.kernel.org
-Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <4EC15CDB.90103@arndnet.de>
+Content-Type: text/plain; charset=us-ascii
+To: Chris Mason <chris.mason@oracle.com>, Jan Kara <jack@suse.cz>,
+	Christoph Hellwig <hch@infradead.org>,
+	Steven Whitehouse <swhiteho@redhat.com>,
+	linux-btrfs@vger.kernel.org, linux-ext4@
+Return-path: <linux-ext4-owner@vger.kernel.org>
+In-Reply-To: <20111116161806.GP29279@shiny>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Am 14.11.2011 19:24, schrieb Arnd Hannemann:
-> Am 14.11.2011 15:57, schrieb Arnd Hannemann:
+On Wed, Nov 16, 2011 at 11:18:06AM -0500, Chris Mason wrote:
+> On Wed, Nov 16, 2011 at 04:57:55PM +0100, Jan Kara wrote:
+> > On Wed 16-11-11 08:42:34, Christoph Hellwig wrote:
+> > > On Wed, Nov 16, 2011 at 02:39:15PM +0100, Jan Kara wrote:
+> > > > > This would work fine with XFS and be equivalent to what it does for
+> > > > > O_DSYNC now.  But I'd rather see every filesystem do the right thing
+> > > > > and make sure the update actually is on disk when doing O_(D)SYNC
+> > > > > operations.
+> > > >   OK, I don't really have a strong opinion here. Are you afraid that just
+> > > > calling fsync() need not be enough to push all updates fallocate did to
+> > > > disk?
+> > > 
+> > > No, the point is that you should not have to call fsync when doing
+> > > O_SYNC I/O.  That's the whole point of it.
+> >   I agree with you that userspace shouldn't have to call fsync. What I
+> > meant is that sys_fallocate() or do_fallocate() can call
+> > generic_write_sync(file, pos, len), and that would be completely
+> > transparent to userspace.
 > 
->> I'm using btrfs for my /usr/share/ partition and keep getting the following error
->> while installing a debian package which should take no more than 228 MB:
->>
->> Unpacking texlive-fonts-extra (from .../texlive-fonts-extra_2009-10ubuntu1_all.deb) ...
->>  dpkg: error processing /var/cache/apt/archives/texlive-fonts-extra_2009-10ubuntu1_all.deb (--unpack):
->>  unable to install new version of `/usr/share/texmf-texlive/fonts/type1/public/allrunes/frutlt.pfb': No space left on device
->>
->>
->> However df reports plenty of available space:
->>
->> /dev/mapper/vg0-usr_share
->>                       5.0G  1.5G  2.5G  37% /usr/share
->>
->>
->> I already extended /dev/mapper/vg0-usr_share from 4G to 5G and ran defrag and balance on it with no luck.
->> I'm using ubuntu 11.10 on amd64 with the ubuntu 3.0.0 kernel.
-> 
-> FYI: The problem is the same with mainline kernel v3.1.1.
+> We should do it per FS though, I'll patch up btrfs.
 
-JFYI: the problem went away in 3.2-rc2  so someone must
-have fixed something.
+I agree about doing it per FS. Ocfs2 just needs a one-liner to mark the
+journal transaction as synchronous.
+	--Mark
 
-Thanks!
-
-Best regards
-Arnd
+--
+Mark Fasheh

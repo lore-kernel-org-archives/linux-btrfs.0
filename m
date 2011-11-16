@@ -1,106 +1,31 @@
-From: Li Zefan <lizf@cn.fujitsu.com>
-Subject: [PATCH 2/2] Btrfs: avoid unnecessary bitmap search for cluster setup
-Date: Wed, 16 Nov 2011 13:17:56 +0800
-Message-ID: <4EC34784.4000605@cn.fujitsu.com>
-References: <4EC34767.4010009@cn.fujitsu.com>
+From: Dan Carpenter <dan.carpenter@oracle.com>
+Subject: [patch] btrfs scrub: handle -ENOMEM from init_ipath()
+Date: Wed, 16 Nov 2011 11:28:01 +0300
+Message-ID: <20111116082801.GE10264@elgon.mountain>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=UTF-8
-To: "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
+Content-Type: text/plain; charset=us-ascii
+Cc: linux-btrfs@vger.kernel.org, kernel-janitors@vger.kernel.org
+To: Chris Mason <chris.mason@oracle.com>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <4EC34767.4010009@cn.fujitsu.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-setup_cluster_no_bitmap() searches all the extents and bitmaps starting
-from offset. Therefore if it returns -ENOSPC, all the bitmaps starting
-from offset are in the bitmaps list, so it's sufficient to search from
-this list in setup_cluser_bitmap().
+init_ipath() can return an ERR_PTR(-ENOMEM).
 
-Signed-off-by: Li Zefan <lizf@cn.fujitsu.com>
----
- fs/btrfs/free-space-cache.c |   42 ++++--------------------------------------
- 1 files changed, 4 insertions(+), 38 deletions(-)
+Signed-off-by: Dan Carpenter <dan.carpenter@oracle.com>
 
-diff --git a/fs/btrfs/free-space-cache.c b/fs/btrfs/free-space-cache.c
-index df3bc22..584ef14 100644
---- a/fs/btrfs/free-space-cache.c
-+++ b/fs/btrfs/free-space-cache.c
-@@ -2451,7 +2451,6 @@ setup_cluster_bitmap(struct btrfs_block_group_cache *block_group,
- {
- 	struct btrfs_free_space_ctl *ctl = block_group->free_space_ctl;
- 	struct btrfs_free_space *entry;
--	struct rb_node *node;
- 	int ret = -ENOSPC;
- 	u64 bitmap_offset = offset_to_bitmap(ctl, offset);
+diff --git a/fs/btrfs/scrub.c b/fs/btrfs/scrub.c
+index ed11d38..b72ee47 100644
+--- a/fs/btrfs/scrub.c
++++ b/fs/btrfs/scrub.c
+@@ -256,6 +256,11 @@ static int scrub_print_warning_inode(u64 inum, u64 offset, u64 root, void *ctx)
+ 	btrfs_release_path(swarn->path);
  
-@@ -2469,10 +2468,6 @@ setup_cluster_bitmap(struct btrfs_block_group_cache *block_group,
- 			list_add(&entry->list, bitmaps);
- 	}
+ 	ipath = init_ipath(4096, local_root, swarn->path);
++	if (IS_ERR(ipath)) {
++		ret = PTR_ERR(ipath);
++		ipath = NULL;
++		goto err;
++	}
+ 	ret = paths_from_inode(inum, ipath);
  
--	/*
--	 * First check our cached list of bitmaps and see if there is an entry
--	 * here that will work.
--	 */
- 	list_for_each_entry(entry, bitmaps, list) {
- 		if (entry->bytes < min_bytes)
- 			continue;
-@@ -2483,38 +2478,10 @@ setup_cluster_bitmap(struct btrfs_block_group_cache *block_group,
- 	}
- 
- 	/*
--	 * If we do have entries on our list and we are here then we didn't find
--	 * anything, so go ahead and get the next entry after the last entry in
--	 * this list and start the search from there.
-+	 * The bitmaps list has all the bitmaps that record free space
-+	 * starting after offset, so no more search is required.
- 	 */
--	if (!list_empty(bitmaps)) {
--		entry = list_entry(bitmaps->prev, struct btrfs_free_space,
--				   list);
--		node = rb_next(&entry->offset_index);
--		if (!node)
--			return -ENOSPC;
--		entry = rb_entry(node, struct btrfs_free_space, offset_index);
--		goto search;
--	}
--
--	entry = tree_search_offset(ctl, offset_to_bitmap(ctl, offset), 0, 1);
--	if (!entry)
--		return -ENOSPC;
--
--search:
--	node = &entry->offset_index;
--	do {
--		entry = rb_entry(node, struct btrfs_free_space, offset_index);
--		node = rb_next(&entry->offset_index);
--		if (!entry->bitmap)
--			continue;
--		if (entry->bytes < min_bytes)
--			continue;
--		ret = btrfs_bitmap_cluster(block_group, entry, cluster, offset,
--					   bytes, min_bytes);
--	} while (ret && node);
--
--	return ret;
-+	return -ENOSPC;
- }
- 
- /*
-@@ -2532,8 +2499,8 @@ int btrfs_find_space_cluster(struct btrfs_trans_handle *trans,
- 			     u64 offset, u64 bytes, u64 empty_size)
- {
- 	struct btrfs_free_space_ctl *ctl = block_group->free_space_ctl;
--	struct list_head bitmaps;
- 	struct btrfs_free_space *entry, *tmp;
-+	LIST_HEAD(bitmaps);
- 	u64 min_bytes;
- 	int ret;
- 
-@@ -2572,7 +2539,6 @@ int btrfs_find_space_cluster(struct btrfs_trans_handle *trans,
- 		goto out;
- 	}
- 
--	INIT_LIST_HEAD(&bitmaps);
- 	ret = setup_cluster_no_bitmap(block_group, cluster, &bitmaps, offset,
- 				      bytes, min_bytes);
- 	if (ret)
--- 1.7.3.1 
+ 	if (ret < 0)

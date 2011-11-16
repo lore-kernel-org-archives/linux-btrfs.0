@@ -1,52 +1,41 @@
 From: Arnd Hannemann <arnd@arndnet.de>
-Subject: [PATCH] Btrfs: Prefix resize related printks with btrfs:
-Date: Wed, 16 Nov 2011 18:47:30 +0100
-Message-ID: <1321465650-11680-1-git-send-email-arnd@arndnet.de>
-Cc: chris.mason@oracle.com, Arnd Hannemann <arnd@arndnet.de>
+Subject: Re: compressed btrfs "No space left on device"
+Date: Wed, 16 Nov 2011 18:59:01 +0100
+Message-ID: <4EC3F9E5.60500@arndnet.de>
+References: <4EC12C5A.2070304@arndnet.de> <4EC15CDB.90103@arndnet.de>
+Mime-Version: 1.0
+Content-Type: text/plain; charset=ISO-8859-15
 To: linux-btrfs@vger.kernel.org
 Return-path: <linux-btrfs-owner@vger.kernel.org>
+In-Reply-To: <4EC15CDB.90103@arndnet.de>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-For the user it is confusing to find something like:
-[10197.627710] new size for /dev/mapper/vg0-usr_share is 3221225472
-in kernel log, because it doesn't point directly to btrfs.
+Am 14.11.2011 19:24, schrieb Arnd Hannemann:
+> Am 14.11.2011 15:57, schrieb Arnd Hannemann:
+> 
+>> I'm using btrfs for my /usr/share/ partition and keep getting the following error
+>> while installing a debian package which should take no more than 228 MB:
+>>
+>> Unpacking texlive-fonts-extra (from .../texlive-fonts-extra_2009-10ubuntu1_all.deb) ...
+>>  dpkg: error processing /var/cache/apt/archives/texlive-fonts-extra_2009-10ubuntu1_all.deb (--unpack):
+>>  unable to install new version of `/usr/share/texmf-texlive/fonts/type1/public/allrunes/frutlt.pfb': No space left on device
+>>
+>>
+>> However df reports plenty of available space:
+>>
+>> /dev/mapper/vg0-usr_share
+>>                       5.0G  1.5G  2.5G  37% /usr/share
+>>
+>>
+>> I already extended /dev/mapper/vg0-usr_share from 4G to 5G and ran defrag and balance on it with no luck.
+>> I'm using ubuntu 11.10 on amd64 with the ubuntu 3.0.0 kernel.
+> 
+> FYI: The problem is the same with mainline kernel v3.1.1.
 
-This patch prefixes those messages with "btrfs:" like other btrfs
-related printks.
+JFYI: the problem went away in 3.2-rc2  so someone must
+have fixed something.
 
-Signed-off-by: Arnd Hannemann <arnd@arndnet.de>
----
- fs/btrfs/ioctl.c |    6 +++---
- 1 files changed, 3 insertions(+), 3 deletions(-)
+Thanks!
 
-diff --git a/fs/btrfs/ioctl.c b/fs/btrfs/ioctl.c
-index 4a34c47..b6d2a1a 100644
---- a/fs/btrfs/ioctl.c
-+++ b/fs/btrfs/ioctl.c
-@@ -1216,12 +1216,12 @@ static noinline int btrfs_ioctl_resize(struct btrfs_root *root,
- 		*devstr = '\0';
- 		devstr = vol_args->name;
- 		devid = simple_strtoull(devstr, &end, 10);
--		printk(KERN_INFO "resizing devid %llu\n",
-+		printk(KERN_INFO "btrfs: resizing devid %llu\n",
- 		       (unsigned long long)devid);
- 	}
- 	device = btrfs_find_device(root, devid, NULL, NULL);
- 	if (!device) {
--		printk(KERN_INFO "resizer unable to find device %llu\n",
-+		printk(KERN_INFO "btrfs: resizer unable to find device %llu\n",
- 		       (unsigned long long)devid);
- 		ret = -EINVAL;
- 		goto out_unlock;
-@@ -1267,7 +1267,7 @@ static noinline int btrfs_ioctl_resize(struct btrfs_root *root,
- 	do_div(new_size, root->sectorsize);
- 	new_size *= root->sectorsize;
- 
--	printk(KERN_INFO "new size for %s is %llu\n",
-+	printk(KERN_INFO "btrfs: new size for %s is %llu\n",
- 		device->name, (unsigned long long)new_size);
- 
- 	if (new_size > old_size) {
--- 
-1.7.5.4
-
+Best regards
+Arnd

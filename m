@@ -1,43 +1,35 @@
-From: Chris Mason <chris.mason@oracle.com>
-Subject: Re: [Cluster-devel] fallocate vs O_(D)SYNC
-Date: Wed, 16 Nov 2011 11:18:06 -0500
-Message-ID: <20111116161806.GP29279@shiny>
-References: <20111116084256.GA22963@infradead.org>
- <1321436588.2713.5.camel@menhir>
- <20111116105413.GA2916@quack.suse.cz>
- <20111116124550.GA11650@infradead.org>
- <20111116133915.GD8195@quack.suse.cz>
- <20111116134234.GA24258@infradead.org>
- <20111116155755.GA22284@quack.suse.cz>
-Mime-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Cc: Christoph Hellwig <hch@infradead.org>,
-	Steven Whitehouse <swhiteho@redhat.com>,
-	linux-btrfs@vger.kernel.org, linux-ext4@vger.kernel.org,
-	mfasheh@suse.com, jlbec@evilplan.org, cluster-devel@redhat.com
-To: Jan Kara <jack@suse.cz>
-Return-path: <linux-ext4-owner@vger.kernel.org>
-In-Reply-To: <20111116155755.GA22284@quack.suse.cz>
+From: Arnd Hannemann <arnd@arndnet.de>
+Subject: [PATCH] Fix URL of btrfs-progs git repository in docs
+Date: Wed, 16 Nov 2011 17:35:37 +0100
+Message-ID: <1321461337-9812-1-git-send-email-arnd@arndnet.de>
+Cc: chris.mason@oracle.com, Arnd Hannemann <arnd@arndnet.de>
+To: linux-btrfs@vger.kernel.org
+Return-path: <linux-btrfs-owner@vger.kernel.org>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Wed, Nov 16, 2011 at 04:57:55PM +0100, Jan Kara wrote:
-> On Wed 16-11-11 08:42:34, Christoph Hellwig wrote:
-> > On Wed, Nov 16, 2011 at 02:39:15PM +0100, Jan Kara wrote:
-> > > > This would work fine with XFS and be equivalent to what it does for
-> > > > O_DSYNC now.  But I'd rather see every filesystem do the right thing
-> > > > and make sure the update actually is on disk when doing O_(D)SYNC
-> > > > operations.
-> > >   OK, I don't really have a strong opinion here. Are you afraid that just
-> > > calling fsync() need not be enough to push all updates fallocate did to
-> > > disk?
-> > 
-> > No, the point is that you should not have to call fsync when doing
-> > O_SYNC I/O.  That's the whole point of it.
->   I agree with you that userspace shouldn't have to call fsync. What I
-> meant is that sys_fallocate() or do_fallocate() can call
-> generic_write_sync(file, pos, len), and that would be completely
-> transparent to userspace.
+	The location of the btrfs-progs repository has been changed.
+	This patch updates the documentation accordingly.
 
-We should do it per FS though, I'll patch up btrfs.
+Signed-off-by: Arnd Hannemann <arnd@arndnet.de>
+---
+ Documentation/filesystems/btrfs.txt |    4 ++--
+ 1 files changed, 2 insertions(+), 2 deletions(-)
 
--chris
+diff --git a/Documentation/filesystems/btrfs.txt b/Documentation/filesystems/btrfs.txt
+index 64087c3..7671352 100644
+--- a/Documentation/filesystems/btrfs.txt
++++ b/Documentation/filesystems/btrfs.txt
+@@ -63,8 +63,8 @@ IRC network.
+ Userspace tools for creating and manipulating Btrfs file systems are
+ available from the git repository at the following location:
+ 
+- http://git.kernel.org/?p=linux/kernel/git/mason/btrfs-progs-unstable.git
+- git://git.kernel.org/pub/scm/linux/kernel/git/mason/btrfs-progs-unstable.git
++ http://git.kernel.org/?p=linux/kernel/git/mason/btrfs-progs.git
++ git://git.kernel.org/pub/scm/linux/kernel/git/mason/btrfs-progs.git
+ 
+ These include the following tools:
+ 
+-- 
+1.7.5.4
+

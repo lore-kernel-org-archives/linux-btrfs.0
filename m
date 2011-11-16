@@ -1,64 +1,44 @@
-From: Tim Crone <tjcrone@gmail.com>
-Subject: Segmentation Faults
-Date: Wed, 16 Nov 2011 16:39:21 +0000 (UTC)
-Message-ID: <loom.20111116T171334-175@post.gmane.org>
+From: Jan Schmidt <list.btrfs@jan-o-sch.net>
+Subject: Re: [patch] btrfs scrub: handle -ENOMEM from init_ipath()
+Date: Wed, 16 Nov 2011 17:56:29 +0100
+Message-ID: <4EC3EB3D.4030601@jan-o-sch.net>
+References: <20111116082801.GE10264@elgon.mountain>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-To: linux-btrfs@vger.kernel.org
+Content-Type: text/plain; charset=ISO-8859-1
+Cc: linux-btrfs <linux-btrfs@vger.kernel.org>,
+	Chris Mason <chris.mason@oracle.com>,
+	kernel-janitors@vger.kernel.org
+To: Dan Carpenter <dan.carpenter@oracle.com>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
+In-Reply-To: <20111116082801.GE10264@elgon.mountain>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-I have some kind of corruption in my btrfs file system that causes kernel
-segmentation faults when I try to delete files in my browser cache. Let me
-know if you are interested in having any additional information besides what
-is below. Thanks.
+On 16.11.2011 09:28, Dan Carpenter wrote:
+> init_ipath() can return an ERR_PTR(-ENOMEM).
+> 
+> Signed-off-by: Dan Carpenter <dan.carpenter@oracle.com>
+Signed-off-by: Jan Schmidt <list.btrfs@jan-o-sch.net>
 
-root@berna:~# uname -a
-Linux berna 2.6.38-bpo.2-amd64 #1 SMP Mon Jun 6 15:24:02 UTC 2011
-x86_64 GNU/Linux
+Thanks,
+-Jan
 
-
-root@berna:/usr/local/src/btrfs-progs# ./btrfsck -s 1 /dev/sda
-using SB copy 1, bytenr 67108864
-failed to read /dev/sr0: No medium found
-ERROR: unable to scan the device '/dev/sdd' - Device or resource busy
-failed to read /dev/sr0: No medium found
-ERROR: unable to scan the device '/dev/sdd' - Device or resource busy
-leaf parent key incorrect 1782596403200
-bad block 1782596403200
-incorrect offsets 3942 17510
-bad block 1782603522048
-warning, start mismatch 1778178670592 1778178764800
-Aborted
-
-
-root@berna:/home/tjc# rm -rf .cache/chromium
-Segmentation fault
-root@berna:/home/tjc#
-Message from syslogd@localhost at Nov 16 11:19:35 ...
- kernel:[   66.877568] ------------[ cut here ]------------
-
-Message from syslogd@localhost at Nov 16 11:19:35 ...
- kernel:[   66.877572] invalid opcode: 0000 [#1] SMP
-
-Message from syslogd@localhost at Nov 16 11:19:35 ...
- kernel:[   66.877573] last sysfs file: /sys/devices/virtual/block/md0/uevent
-
-Message from syslogd@localhost at Nov 16 11:19:35 ...
- kernel:[   66.877633] Stack:
-
-Message from syslogd@localhost at Nov 16 11:19:35 ...
- kernel:[   66.877640] Call Trace:
-
-Message from syslogd@localhost at Nov 16 11:19:35 ...
- kernel:[   66.877703] Code: 24 24 48 8b 74 24 28 48 8d 54 24 50 41 b9 01 00 
-00 00 48 89 d9 4c 89 e7 e8 80 6e ff ff 83 f8 00 41 89 c5 0f 8c c5 02 00 00 74
-04 <0f> 0b eb fe 4c 8b 2b 8b 73 40 4c 89 ef e8 a3 e5 ff ff 41 89 c6
-
-(I was going to include some log entries, but the lines are longer than
-80 characters and your system will not accept them.)
-
-
-
-
-
+> diff --git a/fs/btrfs/scrub.c b/fs/btrfs/scrub.c
+> index ed11d38..b72ee47 100644
+> --- a/fs/btrfs/scrub.c
+> +++ b/fs/btrfs/scrub.c
+> @@ -256,6 +256,11 @@ static int scrub_print_warning_inode(u64 inum, u64 offset, u64 root, void *ctx)
+>  	btrfs_release_path(swarn->path);
+>  
+>  	ipath = init_ipath(4096, local_root, swarn->path);
+> +	if (IS_ERR(ipath)) {
+> +		ret = PTR_ERR(ipath);
+> +		ipath = NULL;
+> +		goto err;
+> +	}
+>  	ret = paths_from_inode(inum, ipath);
+>  
+>  	if (ret < 0)
+> --
+> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
+> the body of a message to majordomo@vger.kernel.org
+> More majordomo info at  http://vger.kernel.org/majordomo-info.html

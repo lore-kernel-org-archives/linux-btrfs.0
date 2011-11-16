@@ -1,44 +1,52 @@
-From: Jan Schmidt <list.btrfs@jan-o-sch.net>
-Subject: Re: [patch] btrfs scrub: handle -ENOMEM from init_ipath()
-Date: Wed, 16 Nov 2011 17:56:29 +0100
-Message-ID: <4EC3EB3D.4030601@jan-o-sch.net>
-References: <20111116082801.GE10264@elgon.mountain>
-Mime-Version: 1.0
-Content-Type: text/plain; charset=ISO-8859-1
-Cc: linux-btrfs <linux-btrfs@vger.kernel.org>,
-	Chris Mason <chris.mason@oracle.com>,
-	kernel-janitors@vger.kernel.org
-To: Dan Carpenter <dan.carpenter@oracle.com>
+From: Arnd Hannemann <arnd@arndnet.de>
+Subject: [PATCH] Btrfs: Prefix resize related printks with btrfs:
+Date: Wed, 16 Nov 2011 18:47:30 +0100
+Message-ID: <1321465650-11680-1-git-send-email-arnd@arndnet.de>
+Cc: chris.mason@oracle.com, Arnd Hannemann <arnd@arndnet.de>
+To: linux-btrfs@vger.kernel.org
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <20111116082801.GE10264@elgon.mountain>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 16.11.2011 09:28, Dan Carpenter wrote:
-> init_ipath() can return an ERR_PTR(-ENOMEM).
-> 
-> Signed-off-by: Dan Carpenter <dan.carpenter@oracle.com>
-Signed-off-by: Jan Schmidt <list.btrfs@jan-o-sch.net>
+For the user it is confusing to find something like:
+[10197.627710] new size for /dev/mapper/vg0-usr_share is 3221225472
+in kernel log, because it doesn't point directly to btrfs.
 
-Thanks,
--Jan
+This patch prefixes those messages with "btrfs:" like other btrfs
+related printks.
 
-> diff --git a/fs/btrfs/scrub.c b/fs/btrfs/scrub.c
-> index ed11d38..b72ee47 100644
-> --- a/fs/btrfs/scrub.c
-> +++ b/fs/btrfs/scrub.c
-> @@ -256,6 +256,11 @@ static int scrub_print_warning_inode(u64 inum, u64 offset, u64 root, void *ctx)
->  	btrfs_release_path(swarn->path);
->  
->  	ipath = init_ipath(4096, local_root, swarn->path);
-> +	if (IS_ERR(ipath)) {
-> +		ret = PTR_ERR(ipath);
-> +		ipath = NULL;
-> +		goto err;
-> +	}
->  	ret = paths_from_inode(inum, ipath);
->  
->  	if (ret < 0)
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+Signed-off-by: Arnd Hannemann <arnd@arndnet.de>
+---
+ fs/btrfs/ioctl.c |    6 +++---
+ 1 files changed, 3 insertions(+), 3 deletions(-)
+
+diff --git a/fs/btrfs/ioctl.c b/fs/btrfs/ioctl.c
+index 4a34c47..b6d2a1a 100644
+--- a/fs/btrfs/ioctl.c
++++ b/fs/btrfs/ioctl.c
+@@ -1216,12 +1216,12 @@ static noinline int btrfs_ioctl_resize(struct btrfs_root *root,
+ 		*devstr = '\0';
+ 		devstr = vol_args->name;
+ 		devid = simple_strtoull(devstr, &end, 10);
+-		printk(KERN_INFO "resizing devid %llu\n",
++		printk(KERN_INFO "btrfs: resizing devid %llu\n",
+ 		       (unsigned long long)devid);
+ 	}
+ 	device = btrfs_find_device(root, devid, NULL, NULL);
+ 	if (!device) {
+-		printk(KERN_INFO "resizer unable to find device %llu\n",
++		printk(KERN_INFO "btrfs: resizer unable to find device %llu\n",
+ 		       (unsigned long long)devid);
+ 		ret = -EINVAL;
+ 		goto out_unlock;
+@@ -1267,7 +1267,7 @@ static noinline int btrfs_ioctl_resize(struct btrfs_root *root,
+ 	do_div(new_size, root->sectorsize);
+ 	new_size *= root->sectorsize;
+ 
+-	printk(KERN_INFO "new size for %s is %llu\n",
++	printk(KERN_INFO "btrfs: new size for %s is %llu\n",
+ 		device->name, (unsigned long long)new_size);
+ 
+ 	if (new_size > old_size) {
+-- 
+1.7.5.4
+

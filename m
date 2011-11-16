@@ -1,41 +1,38 @@
-From: David Sterba <dsterba@suse.cz>
-Subject: [PATCH] btrfs: fix stat blocks accounting
-Date: Wed, 16 Nov 2011 16:35:08 +0100
-Message-ID: <1321457708-14582-1-git-send-email-dsterba@suse.cz>
-Cc: chris.mason@oracle.com, David Sterba <dsterba@suse.cz>
-To: linux-btrfs@vger.kernel.org
-Return-path: <linux-btrfs-owner@vger.kernel.org>
+From: Jan Kara <jack@suse.cz>
+Subject: Re: [Cluster-devel] fallocate vs O_(D)SYNC
+Date: Wed, 16 Nov 2011 16:57:55 +0100
+Message-ID: <20111116155755.GA22284@quack.suse.cz>
+References: <20111116084256.GA22963@infradead.org>
+ <1321436588.2713.5.camel@menhir>
+ <20111116105413.GA2916@quack.suse.cz>
+ <20111116124550.GA11650@infradead.org>
+ <20111116133915.GD8195@quack.suse.cz>
+ <20111116134234.GA24258@infradead.org>
+Mime-Version: 1.0
+Content-Type: text/plain; charset=us-ascii
+Cc: Jan Kara <jack@suse.cz>, Steven Whitehouse <swhiteho@redhat.com>,
+	linux-btrfs@vger.kernel.org, linux-ext4@vger.kernel.org,
+	mfasheh@suse.com, jlbec@evilplan.org, cluster-devel@redhat.com
+To: Christoph Hellwig <hch@infradead.org>
+Return-path: <linux-ext4-owner@vger.kernel.org>
+In-Reply-To: <20111116134234.GA24258@infradead.org>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Round inode bytes and delalloc bytes up to real blocksize before
-converting to sector size. Otherwise eg. files smaller than 512
-are reported with zero blocks due to incorrect rounding.
+On Wed 16-11-11 08:42:34, Christoph Hellwig wrote:
+> On Wed, Nov 16, 2011 at 02:39:15PM +0100, Jan Kara wrote:
+> > > This would work fine with XFS and be equivalent to what it does for
+> > > O_DSYNC now.  But I'd rather see every filesystem do the right thing
+> > > and make sure the update actually is on disk when doing O_(D)SYNC
+> > > operations.
+> >   OK, I don't really have a strong opinion here. Are you afraid that just
+> > calling fsync() need not be enough to push all updates fallocate did to
+> > disk?
+> 
+> No, the point is that you should not have to call fsync when doing
+> O_SYNC I/O.  That's the whole point of it.
+  I agree with you that userspace shouldn't have to call fsync. What I
+meant is that sys_fallocate() or do_fallocate() can call
+generic_write_sync(file, pos, len), and that would be completely
+transparent to userspace.
 
-Signed-off-by: David Sterba <dsterba@suse.cz>
----
- fs/btrfs/inode.c |    6 ++++--
- 1 files changed, 4 insertions(+), 2 deletions(-)
-
-diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
-index e16215f..8ad26b1 100644
---- a/fs/btrfs/inode.c
-+++ b/fs/btrfs/inode.c
-@@ -6794,11 +6794,13 @@ static int btrfs_getattr(struct vfsmount *mnt,
- 			 struct dentry *dentry, struct kstat *stat)
- {
- 	struct inode *inode = dentry->d_inode;
-+	u32 blocksize = inode->i_sb->s_blocksize;
-+
- 	generic_fillattr(inode, stat);
- 	stat->dev = BTRFS_I(inode)->root->anon_dev;
- 	stat->blksize = PAGE_CACHE_SIZE;
--	stat->blocks = (inode_get_bytes(inode) +
--			BTRFS_I(inode)->delalloc_bytes) >> 9;
-+	stat->blocks = (ALIGN(inode_get_bytes(inode), blocksize) +
-+		ALIGN(BTRFS_I(inode)->delalloc_bytes, blocksize)) >> 9;
- 	return 0;
- }
- 
--- 
-1.7.6
-
+									Honza

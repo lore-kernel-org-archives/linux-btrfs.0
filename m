@@ -1,52 +1,45 @@
-From: Chris Mason <chris.mason@oracle.com>
-Subject: Re: Don't prevent removal of devices that break raid reqs
-Date: Tue, 15 Nov 2011 20:10:25 -0500
-Message-ID: <20111116011025.GJ29279@shiny>
-References: <orvcqrpycf.fsf@livre.localdomain>
- <20111111022100.GD4435@shiny>
- <20111115093713.GB8597@zambezi.lan>
+From: WuBo <wu.bo@cn.fujitsu.com>
+Subject: Re: [PATCH 2/3] xfstests 265: add a prealloc and reserve test
+Date: Wed, 16 Nov 2011 09:30:32 +0800
+Message-ID: <4EC31238.3080102@cn.fujitsu.com>
+References: <4EB20505.7070005@cn.fujitsu.com> <4EB205CC.6010509@cn.fujitsu.com> <20111115182113.GD29840@sgi.com> <20111115190821.GA15331@infradead.org>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Cc: Alexandre Oliva <oliva@lsd.ic.unicamp.br>,
-	linux-btrfs@vger.kernel.org
-To: Ilya Dryomov <idryomov@gmail.com>
-Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <20111115093713.GB8597@zambezi.lan>
+Content-Type: text/plain; charset=ISO-8859-1
+Cc: Ben Myers <bpm@sgi.com>, linux-fsdevel@vger.kernel.org,
+	Linux Btrfs <linux-btrfs@vger.kernel.org>, xfs@oss.sgi.com
+To: Christoph Hellwig <hch@infradead.org>
+Return-path: <linux-fsdevel-owner@vger.kernel.org>
+In-Reply-To: <20111115190821.GA15331@infradead.org>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Tue, Nov 15, 2011 at 11:37:13AM +0200, Ilya Dryomov wrote:
-> On Thu, Nov 10, 2011 at 09:21:00PM -0500, Chris Mason wrote:
-> > On Thu, Nov 10, 2011 at 05:32:48PM -0200, Alexandre Oliva wrote:
-> > > Instead of preventing the removal of devices that would render existing
-> > > raid10 or raid1 impossible, warn but go ahead with it; the rebalancing
-> > > code is smart enough to use different block group types.
-> > > 
-> > > Should the refusal remain, so that we'd only proceed with a
-> > > newly-introduced --force option or so?
-> > 
-> > Hmm, going to three devices on raid10 doesn't turn it into
-> > raid1.  It turns it into a degraded raid10.
-> > 
-> > We'll need a --force or some kind.  There are definitely cases users
-> > have wanted to do this but it is rarely a good idea ;)
+On 11/16/2011 03:08 AM, Christoph Hellwig wrote:
+> On Tue, Nov 15, 2011 at 12:21:13PM -0600, Ben Myers wrote:
+>> Hi Wu Bo,
+>>
+>> On Thu, Nov 03, 2011 at 11:09:00AM +0800, WuBo wrote:
+>>> This test is for preallocation test. If the disk is full, just with a prealloc
+>>> file has some free space that prealloc early. We need to check whether the write
+>>> to the free space is success or not.
+>>>
+>>> Signed-off-by: Wu Bo <Wu.Bo@cn.fujitsu.com>
+>>
+>> This test is failing for me because I don't have fallocate installed.  I
+>> suggest the test could to be changed to check for binaries it uses,
+>> possibly the version of those binaries, and then not run unless the
+>> right ones are installed.  But the best I can do right now is make a
+>> note of it.
 > 
-> I'm not sure about use cases Chris talks about, but sans those I think
-> we should prevent breaking raids.  If user wants to downgrade his FS he
-> can do that explicitly with restriper.  As for the relocation code
-> 'smartness', we already have a confusing case where balancing silently
-> upgrades single to raid0.
+> It might be even better to just use the xfs_io falloc command as we
+> generally expect an uptodate xfs_io for use with xfstests.
+
+Got it.
+
+thanks,
+wubo
+
 > 
-> Chris, can you describe those cases in detail so I can integrate and
-> align this whole thing with restriper before it's merged ?  (I added a
-> --force option for some of the transitions, probably best not to add
-> another closely related one)
-
-There are a few valid use cases where people want to be able to "break"
-a raid1.  I'd put it at the very bottom of the list of interesting
-things, just because I see a long list of bug reports that start with:
-
-my FS was broken, so I told it to remove device xxyzzz, and that didn't
-work so I ran --force, and then (sad story follows).
-
--chris
-
+> --
+> To unsubscribe from this list: send the line "unsubscribe linux-fsdevel" in
+> the body of a message to majordomo@vger.kernel.org
+> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+> 

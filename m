@@ -1,32 +1,28 @@
-From: Christoph Hellwig <hch@infradead.org>
-Subject: Re: [Cluster-devel] fallocate vs O_(D)SYNC
-Date: Wed, 16 Nov 2011 08:42:34 -0500
-Message-ID: <20111116134234.GA24258@infradead.org>
-References: <20111116084256.GA22963@infradead.org>
- <1321436588.2713.5.camel@menhir>
- <20111116105413.GA2916@quack.suse.cz>
- <20111116124550.GA11650@infradead.org>
- <20111116133915.GD8195@quack.suse.cz>
+From: Chris Mason <chris.mason@oracle.com>
+Subject: Re: BUG at fs/btrfs/inode.c:1587
+Date: Wed, 16 Nov 2011 09:16:03 -0500
+Message-ID: <20111116141603.GO29279@shiny>
+References: <CAO47_--H0+6bu4qQ2QA9gZcHvGVWO4QUGCAb3+9a5Kg3+23UiQ@mail.gmail.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
-Cc: Christoph Hellwig <hch@infradead.org>,
-	Steven Whitehouse <swhiteho@redhat.com>,
-	linux-btrfs@vger.kernel.org, linux-ext4@vger.kernel.org,
-	mfasheh@suse.com, jlbec@evilplan.org, cluster-devel@redhat.com
-To: Jan Kara <jack@suse.cz>
-Return-path: <linux-ext4-owner@vger.kernel.org>
-In-Reply-To: <20111116133915.GD8195@quack.suse.cz>
+Cc: linux-btrfs@vger.kernel.org
+To: Christian Brunner <chb@muc.de>
+Return-path: <linux-btrfs-owner@vger.kernel.org>
+In-Reply-To: <CAO47_--H0+6bu4qQ2QA9gZcHvGVWO4QUGCAb3+9a5Kg3+23UiQ@mail.gmail.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Wed, Nov 16, 2011 at 02:39:15PM +0100, Jan Kara wrote:
-> > This would work fine with XFS and be equivalent to what it does for
-> > O_DSYNC now.  But I'd rather see every filesystem do the right thing
-> > and make sure the update actually is on disk when doing O_(D)SYNC
-> > operations.
->   OK, I don't really have a strong opinion here. Are you afraid that just
-> calling fsync() need not be enough to push all updates fallocate did to
-> disk?
+On Tue, Nov 15, 2011 at 09:19:53AM +0100, Christian Brunner wrote:
+> Hi,
+> 
+> this time I've hit a new bug. This happened while ceph was rebuilding
+> his filestore (heavy io).
+> 
+> The btrfs version is from 3.2-rc1, applied to a 3.0 kernel.
 
-No, the point is that you should not have to call fsync when doing
-O_SYNC I/O.  That's the whole point of it.
+This one means some part of the kernel has set a btrfs data page dirty
+without going through the proper setup.  A few of us have hit it, but we
+haven't been able to nail down a solid way to reproduce it.
 
+Have you hit it more than once?
+
+-chris

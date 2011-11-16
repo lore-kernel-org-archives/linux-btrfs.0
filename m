@@ -1,49 +1,61 @@
-From: Alexandre Oliva <oliva@lsd.ic.unicamp.br>
-Subject: Re: Don't prevent removal of devices that break raid reqs
-Date: Wed, 16 Nov 2011 01:21:40 -0200
-Message-ID: <orty64pxa3.fsf@livre.localdomain>
-References: <orvcqrpycf.fsf@livre.localdomain> <20111111022100.GD4435@shiny>
-	<20111115093713.GB8597@zambezi.lan>
+From: Li Zefan <lizf@cn.fujitsu.com>
+Subject: [PATCH 1/2] Btrfs: fix to search one more bitmap for cluster setup
+Date: Wed, 16 Nov 2011 13:17:27 +0800
+Message-ID: <4EC34767.4010009@cn.fujitsu.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Cc: Chris Mason <chris.mason@oracle.com>, linux-btrfs@vger.kernel.org
-To: Ilya Dryomov <idryomov@gmail.com>
+Content-Type: text/plain; charset=UTF-8
+To: "linux-b >> \"linux-btrfs@vger.kernel.org\""
+	<linux-btrfs@vger.kernel.org>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <20111115093713.GB8597@zambezi.lan> (Ilya Dryomov's message of
-	"Tue, 15 Nov 2011 11:37:13 +0200")
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Nov 15, 2011, Ilya Dryomov <idryomov@gmail.com> wrote:
+Suppose there are two bitmaps [0, 256], [256, 512] and one extent
+[100, 120] in the free space cache, and we want to setup a cluster
+with offset=50, bytes=50.
 
-> On Thu, Nov 10, 2011 at 09:21:00PM -0500, Chris Mason wrote:
->> On Thu, Nov 10, 2011 at 05:32:48PM -0200, Alexandre Oliva wrote:
->> > Instead of preventing the removal of devices that would render existing
->> > raid10 or raid1 impossible, warn but go ahead with it; the rebalancing
->> > code is smart enough to use different block group types.
->> > 
->> > Should the refusal remain, so that we'd only proceed with a
->> > newly-introduced --force option or so?
->> 
->> Hmm, going to three devices on raid10 doesn't turn it into
->> raid1.  It turns it into a degraded raid10.
+In this case, there will be only one bitmap [256, 512] in the temporary
+bitmaps list, and then setup_cluster_bitmap() won't search bitmap [0, 256].
 
-Oops.  I *knew* there was some case I had failed to test.  I thought I'd
-the two relevant cases, but I must have tested only raid0 to single and
-raid1 to dup.
+The cause is, the list is constructed in setup_cluster_no_bitmap(),
+and only bitmaps with bitmap_entry->offset >= offset will be added
+into the list, and the very bitmap that convers offset has
+bitmap_entry->offset <= offset.
 
-> If user wants to downgrade his FS he
-> can do that explicitly with restriper.
+This is currently fine, since the caller always set offset=0 when calling
+btrfs_find_space_cluster(), but it may change in the future, for example
+to improve for SSD_SPREAD.
 
-Didn't I just read in another thread that restriper won't let one switch
-from raid1 to dup without going through single in between?  That's what
-I actually needed to do that drove me to write the patch a while ago
-after accidentally adding a device to the wrong filesystem, and if
-restriper won't do it without going through a riskier stage in between
-(metadata loss due to e.g. a bad block), I wish it was improved so that
-this is possible.
+Signed-off-by: Li Zefan <lizf@cn.fujitsu.com>
+---
+ fs/btrfs/free-space-cache.c |   12 ++++++++++++
+ 1 files changed, 12 insertions(+), 0 deletions(-)
 
--- 
-Alexandre Oliva, freedom fighter    http://FSFLA.org/~lxoliva/
-You must be the change you wish to see in the world. -- Gandhi
-Be Free! -- http://FSFLA.org/   FSF Latin America board member
-Free Software Evangelist      Red Hat Brazil Compiler Engineer
+diff --git a/fs/btrfs/free-space-cache.c b/fs/btrfs/free-space-cache.c
+index 181760f..df3bc22 100644
+--- a/fs/btrfs/free-space-cache.c
++++ b/fs/btrfs/free-space-cache.c
+@@ -2453,11 +2453,23 @@ setup_cluster_bitmap(struct btrfs_block_group_cache *block_group,
+ 	struct btrfs_free_space *entry;
+ 	struct rb_node *node;
+ 	int ret = -ENOSPC;
++	u64 bitmap_offset = offset_to_bitmap(ctl, offset);
+ 
+ 	if (ctl->total_bitmaps == 0)
+ 		return -ENOSPC;
+ 
+ 	/*
++	 * The bitmap that covers offset won't be in the list unless offset
++	 * is just its start offset.
++	 */
++	entry = list_first_entry(bitmaps, struct btrfs_free_space, list);
++	if (entry->offset != bitmap_offset) {
++		entry = tree_search_offset(ctl, bitmap_offset, 1, 0);
++		if (list_empty(&entry->list))
++			list_add(&entry->list, bitmaps);
++	}
++
++	/*
+ 	 * First check our cached list of bitmaps and see if there is an entry
+ 	 * here that will work.
+ 	 */
+-- 1.7.3.1 

@@ -1,62 +1,48 @@
-From: Jan Schmidt <list.btrfs@jan-o-sch.net>
-Subject: [PATCH] btrfs: mirror_num should be int, not u64
-Date: Thu, 17 Nov 2011 15:31:45 +0100
-Message-ID: <1321540305-16545-1-git-send-email-list.btrfs@jan-o-sch.net>
-To: chris.mason@oracle.com, linux-btrfs@vger.kernel.org
+From: Josef Bacik <josef@redhat.com>
+Subject: [PATCH] Btrfs: sectorsize align offsets in fiemap
+Date: Thu, 17 Nov 2011 11:37:32 -0500
+Message-ID: <1321547852-2233-1-git-send-email-josef@redhat.com>
+To: linux-btrfs@vger.kernel.org
 Return-path: <linux-btrfs-owner@vger.kernel.org>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-My previous patch introduced some u64 for failed_mirror variables, this one
-makes it consistent again.
+We've been hitting BUG()'s in btrfs_cont_expand and btrfs_fallocate and anywhere
+else that calls btrfs_get_extent while running xfstests 13 in a loop.  This is
+because fiemap is calling btrfs_get_extent with non-sectorsize aligned offsets,
+which will end up adding mappings that are not sectorsize aligned, which will
+cause problems in some cases for subsequent calls to btrfs_get_extent for
+similar areas that are sectorsize aligned.  With this patch I ran xfstests 13 in
+a loop for a couple of hours and didn't hit the problem that I could previously
+hit in at most 20 minutes.  Thanks,
 
-Signed-off-by: Jan Schmidt <list.btrfs@jan-o-sch.net>
+Signed-off-by: Josef Bacik <josef@redhat.com>
 ---
- fs/btrfs/disk-io.c   |    2 +-
- fs/btrfs/extent_io.c |    4 ++--
- fs/btrfs/extent_io.h |    2 +-
- 3 files changed, 4 insertions(+), 4 deletions(-)
+ fs/btrfs/extent_io.c |    5 ++++-
+ 1 files changed, 4 insertions(+), 1 deletions(-)
 
-diff --git a/fs/btrfs/disk-io.c b/fs/btrfs/disk-io.c
-index b6a5c0d..48b1b00 100644
---- a/fs/btrfs/disk-io.c
-+++ b/fs/btrfs/disk-io.c
-@@ -620,7 +620,7 @@ out:
- 
- static int btree_io_failed_hook(struct bio *failed_bio,
- 			 struct page *page, u64 start, u64 end,
--			 u64 mirror_num, struct extent_state *state)
-+			 int mirror_num, struct extent_state *state)
- {
- 	struct extent_io_tree *tree;
- 	unsigned long len;
 diff --git a/fs/btrfs/extent_io.c b/fs/btrfs/extent_io.c
-index 1f87c4d..3a729de 100644
+index 1f87c4d..3891186 100644
 --- a/fs/btrfs/extent_io.c
 +++ b/fs/btrfs/extent_io.c
-@@ -2285,8 +2285,8 @@ static void end_bio_extent_readpage(struct bio *bio, int err)
- 				clean_io_failure(start, page);
- 		}
- 		if (!uptodate) {
--			u64 failed_mirror;
--			failed_mirror = (u64)bio->bi_bdev;
-+			int failed_mirror;
-+			failed_mirror = (int)(long int)bio->bi_bdev;
- 			if (tree->ops && tree->ops->readpage_io_failed_hook)
- 				ret = tree->ops->readpage_io_failed_hook(
- 						bio, page, start, end,
-diff --git a/fs/btrfs/extent_io.h b/fs/btrfs/extent_io.h
-index feb9be0..7604c30 100644
---- a/fs/btrfs/extent_io.h
-+++ b/fs/btrfs/extent_io.h
-@@ -70,7 +70,7 @@ struct extent_io_ops {
- 			      unsigned long bio_flags);
- 	int (*readpage_io_hook)(struct page *page, u64 start, u64 end);
- 	int (*readpage_io_failed_hook)(struct bio *bio, struct page *page,
--				       u64 start, u64 end, u64 failed_mirror,
-+				       u64 start, u64 end, int failed_mirror,
- 				       struct extent_state *state);
- 	int (*writepage_io_failed_hook)(struct bio *bio, struct page *page,
- 					u64 start, u64 end,
+@@ -3366,6 +3366,9 @@ int extent_fiemap(struct inode *inode, struct fiemap_extent_info *fieinfo,
+ 		return -ENOMEM;
+ 	path->leave_spinning = 1;
+ 
++	start = ALIGN(start, BTRFS_I(inode)->root->sectorsize);
++	len = ALIGN(len, BTRFS_I(inode)->root->sectorsize);
++
+ 	/*
+ 	 * lookup the last file extent.  We're not using i_size here
+ 	 * because there might be preallocation past i_size
+@@ -3413,7 +3416,7 @@ int extent_fiemap(struct inode *inode, struct fiemap_extent_info *fieinfo,
+ 	lock_extent_bits(&BTRFS_I(inode)->io_tree, start, start + len, 0,
+ 			 &cached_state, GFP_NOFS);
+ 
+-	em = get_extent_skip_holes(inode, off, last_for_get_extent,
++	em = get_extent_skip_holes(inode, start, last_for_get_extent,
+ 				   get_extent);
+ 	if (!em)
+ 		goto out;
 -- 
-1.7.3.4
+1.7.5.2
 

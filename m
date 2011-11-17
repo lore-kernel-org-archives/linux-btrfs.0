@@ -1,23 +1,47 @@
-From: Phillip Susi <psusi@cfl.rr.com>
-Subject: Re: [RFC] improve space utilization on off-sized raid devices
-Date: Thu, 17 Nov 2011 13:27:41 -0500
-Message-ID: <4EC5521D.1020209@cfl.rr.com>
-References: <20111117002734.70530@gmx.net> <4EC4BAF8.1000407@gmx.net> <20111117115323.262060@gmx.net> <4EC5052E.4040709@gmx.net>
+From: Mike Fleetwood <mike.fleetwood@googlemail.com>
+Subject: [PATCH] Btrfs: Don't error on resizing FS to same size
+Date: Thu, 17 Nov 2011 21:04:34 +0000
+Message-ID: <20111117210433.GA1817@gmail.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=ISO-8859-1; format=flowed
-Cc: Thomas Schmidt <Schmidt-T@gmx.de>, linux-btrfs@vger.kernel.org
-To: Arne Jansen <sensille@gmx.net>
+Content-Type: text/plain; charset=us-ascii
+To: linux-btrfs@vger.kernel.org
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <4EC5052E.4040709@gmx.net>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 11/17/2011 7:59 AM, Arne Jansen wrote:
-> Right you are. So you want to sacrifice stripe size for space efficiency.
-> Why don't you just use RAID1?
-> Instead of reducing the stripe size for the majority of writes, I'd prefer
-> to allow RAID10 to go down to 2 disks. This should also solve it.
+It seems overly harsh to fail a resize of a btrfs file system to the
+same size when a shrink or grow would succeed.  User app GParted trips
+over this error.  Allow it by bypassing the shrink or grow operation.
 
-Yes, it appears that btrfs's current idea of raid10 is actually raid0+1, 
-not raid10.  If it were proper raid10, it could use the remaining space 
-on the 3 larger disks for a raid10 metadata chunk.
+Signed-off-by: Mike Fleetwood <mike.fleetwood@googlemail.com>
+---
+
+Example failed resize:
+    # strace -e trace=ioctl btrfs filesystem resize max /mnt/0
+    Resize '/mnt/0' of 'max'
+    ioctl(3, 0x50009403, 0xbfa5029c)        = -1 EINVAL (Invalid argument)
+    ERROR: unable to resize '/mnt/0' - Invalid argument
+    # echo $?
+    30
+    # dmesg | tail -1
+    [426094.235018] new size for /dev/loop1 is 1073741824
+
+---
+ fs/btrfs/ioctl.c |    2 +-
+ 1 files changed, 1 insertions(+), 1 deletions(-)
+
+diff --git a/fs/btrfs/ioctl.c b/fs/btrfs/ioctl.c
+index dae5dfe..00b7024 100644
+--- a/fs/btrfs/ioctl.c
++++ b/fs/btrfs/ioctl.c
+@@ -1251,7 +1251,7 @@ static noinline int btrfs_ioctl_resize(struct btrfs_root *root,
+ 		}
+ 		ret = btrfs_grow_device(trans, device, new_size);
+ 		btrfs_commit_transaction(trans, root);
+-	} else {
++	} else if (new_size > old_size) {
+ 		ret = btrfs_shrink_device(device, new_size);
+ 	}
+ 
+-- 
+1.7.4.4
 

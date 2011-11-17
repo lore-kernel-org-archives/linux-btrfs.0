@@ -1,48 +1,63 @@
-From: Phillip Susi <psusi@cfl.rr.com>
-Subject: Re: [PATCH 00/21] [RFC] Btrfs: restriper
-Date: Wed, 16 Nov 2011 22:13:53 -0500
-Message-ID: <4EC47BF1.7070308@cfl.rr.com>
-References: <1314129722-31601-1-git-send-email-idryomov@gmail.com>
+From: Li Zefan <lizf@cn.fujitsu.com>
+Subject: [PATCH v2 1/2] Btrfs: fix to search one more bitmap for cluster setup
+Date: Thu, 17 Nov 2011 15:04:32 +0800
+Message-ID: <4EC4B200.7070709@cn.fujitsu.com>
+References: <4EC34767.4010009@cn.fujitsu.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=ISO-8859-1
-Cc: linux-btrfs@vger.kernel.org, Chris Mason <chris.mason@oracle.com>,
-	Hugo Mills <hugo@carfax.org.uk>
-To: Ilya Dryomov <idryomov@gmail.com>
+Content-Type: text/plain; charset=UTF-8
+To: "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <1314129722-31601-1-git-send-email-idryomov@gmail.com>
+In-Reply-To: <4EC34767.4010009@cn.fujitsu.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
------BEGIN PGP SIGNED MESSAGE-----
-Hash: SHA1
+Suppose there are two bitmaps [0, 256], [256, 512] and one extent
+[100, 120] in the free space cache, and we want to setup a cluster
+with offset=100, bytes=50.
 
-On 08/23/2011 04:01 PM, Ilya Dryomov wrote:
-> Hello,
-> 
-> This patch series adds an initial implementation of restriper (it's
-> a clever name for relocation framework that allows to do selective
-> profile changing and selective balancing with some goodies like
-> pausing/resuming and reporting progress to the user.
-> 
-> Profile changing is global (per-FS) so far, per-subvolume profiles 
-> require some discussion and can be implemented in future.  This is
-> a RFC so some features/problems are not yet implemented/resolved.
-> The current TODO list is as follows:
+In this case, there will be only one bitmap [256, 512] in the temporary
+bitmaps list, and then setup_cluster_bitmap() won't search bitmap [0, 256].
 
-I managed to use these patches to convert the raid1 system and
-metadata chunks back to single and drop the second disk from a two
-disk array.  In doing so I noticed that the restriper required a force
-switch to downgrade raid1 to single.  This seems completely
-unnecessary to me.  A force switch to btrfs device delete might make
-sense since delete may or may not force a downgrade, but with
-restripe, the request to convert from raid1 to single is already quite
-explicit with no room for ambiguity, so there should be no need for an
-additional confirmation switch.
+The cause is, the list is constructed in setup_cluster_no_bitmap(),
+and only bitmaps with bitmap_entry->offset >= offset will be added
+into the list, and the very bitmap that convers offset has
+bitmap_entry->offset <= offset.
 
------BEGIN PGP SIGNATURE-----
-Version: GnuPG v1.4.11 (GNU/Linux)
-Comment: Using GnuPG with Mozilla - http://enigmail.mozdev.org/
+Signed-off-by: Li Zefan <lizf@cn.fujitsu.com>
+---
 
-iEYEARECAAYFAk7Ee+oACgkQJ4UciIs+XuIGIQCdFx9cP7cPQPslE9IcFNDg/6Ns
-LQYAn2l2ykGwiJt/yZNvuqePyMj3sxYH
-=P+HR
------END PGP SIGNATURE-----
+v2: fix a NULL pointer deref.
+
+---
+ fs/btrfs/free-space-cache.c |   12 ++++++++++++
+ 1 files changed, 12 insertions(+), 0 deletions(-)
+
+diff --git a/fs/btrfs/free-space-cache.c b/fs/btrfs/free-space-cache.c
+index 181760f..8f792f4 100644
+--- a/fs/btrfs/free-space-cache.c
++++ b/fs/btrfs/free-space-cache.c
+@@ -2453,11 +2453,23 @@ setup_cluster_bitmap(struct btrfs_block_group_cache *block_group,
+ 	struct btrfs_free_space *entry;
+ 	struct rb_node *node;
+ 	int ret = -ENOSPC;
++	u64 bitmap_offset = offset_to_bitmap(ctl, offset);
+ 
+ 	if (ctl->total_bitmaps == 0)
+ 		return -ENOSPC;
+ 
+ 	/*
++	 * The bitmap that covers offset won't be in the list unless offset
++	 * is just its start offset.
++	 */
++	entry = list_first_entry(bitmaps, struct btrfs_free_space, list);
++	if (entry->offset != bitmap_offset) {
++		entry = tree_search_offset(ctl, bitmap_offset, 1, 0);
++		if (entry && list_empty(&entry->list))
++			list_add(&entry->list, bitmaps);
++	}
++
++	/*
+ 	 * First check our cached list of bitmaps and see if there is an entry
+ 	 * here that will work.
+ 	 */
+-- 
+1.7.3.1

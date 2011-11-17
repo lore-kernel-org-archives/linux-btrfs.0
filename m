@@ -1,61 +1,98 @@
-From: David Sterba <dave@jikos.cz>
-Subject: Re: Segmentation Faults
-Date: Thu, 17 Nov 2011 00:00:45 +0100
-Message-ID: <20111116230045.GY12759@twin.jikos.cz>
-References: <loom.20111116T171334-175@post.gmane.org>
-Reply-To: dave@jikos.cz
+From: "Thomas Schmidt" <Schmidt-T@gmx.de>
+Subject: [RFC] improve space utilization on off-sized raid devices
+Date: Thu, 17 Nov 2011 01:27:34 +0100
+Message-ID: <20111117002734.70530@gmx.net>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Cc: linux-btrfs@vger.kernel.org
-To: Tim Crone <tjcrone@gmail.com>
+Content-Type: text/plain; charset=utf-8
+To: linux-btrfs@vger.kernel.org
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <loom.20111116T171334-175@post.gmane.org>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hi,
+I wrote a small patch to improve allocation on differently sized raid d=
+evices.
 
-On Wed, Nov 16, 2011 at 04:39:21PM +0000, Tim Crone wrote:
-> root@berna:~# uname -a
-> Linux berna 2.6.38-bpo.2-amd64 #1 SMP Mon Jun 6 15:24:02 UTC 2011
-> x86_64 GNU/Linux
+With 2.6.38 I frequently ran into a no space left error that I attribut=
+e to
+this. But I'm not entierly sure. The fs was an 8 device -d raid0 -m rai=
+d10.
+The used space was the same across all devices. 5 were full and 3 bigge=
+r ones still had plenty of space.
+I was unable to use the remaning space and a balance did not fix it for
+long.
 
-2.6.38 is quite old from btrfs perspective and it's highly possible that
-the bug you've hit is already fixed. Try newer (like 3.1) kernel and if
-you still hit some sort of crash, please send the report.
+Now I tried to avoid getting there again.
 
-> root@berna:/home/tjc# rm -rf .cache/chromium
-> Segmentation fault
-> root@berna:/home/tjc#
-> Message from syslogd@localhost at Nov 16 11:19:35 ...
->  kernel:[   66.877568] ------------[ cut here ]------------
-> 
-> Message from syslogd@localhost at Nov 16 11:19:35 ...
->  kernel:[   66.877572] invalid opcode: 0000 [#1] SMP
-> 
-> Message from syslogd@localhost at Nov 16 11:19:35 ...
->  kernel:[   66.877573] last sysfs file: /sys/devices/virtual/block/md0/uevent
-> 
-> Message from syslogd@localhost at Nov 16 11:19:35 ...
->  kernel:[   66.877633] Stack:
-> 
-> Message from syslogd@localhost at Nov 16 11:19:35 ...
->  kernel:[   66.877640] Call Trace:
-> 
-> Message from syslogd@localhost at Nov 16 11:19:35 ...
->  kernel:[   66.877703] Code: 24 24 48 8b 74 24 28 48 8d 54 24 50 41 b9 01 00 
-> 00 00 48 89 d9 4c 89 e7 e8 80 6e ff ff 83 f8 00 41 89 c5 0f 8c c5 02 00 00 74
-> 04 <0f> 0b eb fe 4c 8b 2b 8b 73 40 4c 89 ef e8 a3 e5 ff ff 41 89 c6
+The basic idea to not allocate space on the devices with the least free
+space. The amount of devices to leave out is calculated on each allocat=
+ion
+to ajust to changing circumstances. It leaves the minimum number that s=
+till
+can achieve full space usage.
 
-btw such output is printed to every console when the crash occurs, but
-lacks important information like stacktrace and names of functions.
-without that it's very hard to get a clue what happened.
+Additionally I tought leaving at least one out might be of use in devic=
+e removal.
 
-> (I was going to include some log entries, but the lines are longer than
-> 80 characters and your system will not accept them.)
-
-As for stacktrace and line length, I personally want to see the lines
-not wrapped at 80 (except the eg. byte dump of instructions), it helps
-readability.
+Please take extra care with this. I'm new to btrfs, kernel and C in gen=
+eral.
+It was written and tested with 3.0.0.
 
 
-david
+--- volumes.c.orig      2011-10-07 16:50:04.000000000 +0200
++++ volumes.c   2011-11-16 23:49:08.097085568 +0100
+@@ -2329,6 +2329,8 @@ static int __btrfs_alloc_chunk(struct bt
+        u64 stripe_size;
+        u64 num_bytes;
+        int ndevs;
++       u64 fs_total_avail;
++       int opt_ndevs;
+        int i;
+        int j;
+=20
+@@ -2404,6 +2406,7 @@ static int __btrfs_alloc_chunk(struct bt
+         * about the available holes on each device.
+         */
+        ndevs =3D 0;
++       fs_total_avail =3D 0;
+        while (cur !=3D &fs_devices->alloc_list) {
+                struct btrfs_device *device;
+                u64 max_avail;
+@@ -2448,6 +2451,7 @@ static int __btrfs_alloc_chunk(struct bt
+                devices_info[ndevs].total_avail =3D total_avail;
+                devices_info[ndevs].dev =3D device;
+                ++ndevs;
++               fs_total_avail +=3D total_avail;
+        }
+=20
+        /*
+@@ -2456,6 +2460,20 @@ static int __btrfs_alloc_chunk(struct bt
+        sort(devices_info, ndevs, sizeof(struct btrfs_device_info),
+             btrfs_cmp_device_info, NULL);
+=20
++       /*
++        * do not allocate space on all devices
++        * instead balance free space to maximise space utilization
++        * (this needs tweaking if parity raid gets implemented
++        * for n parity ignore the n first (after sort) devs in the sum=
+ and division)
++        */
++       opt_ndevs =3D fs_total_avail / devices_info[0].total_avail;
++       if (opt_ndevs >=3D ndevs)
++               opt_ndevs =3D ndevs - 1; //optional, might be used for =
+faster dev remove?
++       if (opt_ndevs < devs_min)
++               opt_ndevs =3D devs_min;
++       if (ndevs > opt_ndevs)
++               ndevs =3D opt_ndevs;
++
+        /* round down to number of usable stripes */
+        ndevs -=3D ndevs % devs_increment;
+
+--=20
+NEU: FreePhone - 0ct/min Handyspartarif mit Geld-zur=C3=BCck-Garantie!	=
+=09
+Jetzt informieren: http://www.gmx.net/de/go/freephone
+--
+To unsubscribe from this list: send the line "unsubscribe linux-btrfs" =
+in
+the body of a message to majordomo@vger.kernel.org
+More majordomo info at  http://vger.kernel.org/majordomo-info.html

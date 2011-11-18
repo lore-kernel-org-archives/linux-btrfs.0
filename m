@@ -1,49 +1,40 @@
-From: Mike Fleetwood <mike.fleetwood@googlemail.com>
-Subject: [PATCH v2] Btrfs: Don't error on resizing FS to same size
-Date: Fri, 18 Nov 2011 18:55:01 +0000
-Message-ID: <20111118185500.GA20551@gmail.com>
+From: Stefan Kleijkers <stefan@unilogicnetworks.net>
+Subject: Re: WARNING: at fs/btrfs/inode.c:2198 btrfs_orphan_commit_root+0xa8/0xc0
+Date: Fri, 18 Nov 2011 20:30:51 +0100
+Message-ID: <4EC6B26B.1020000@unilogicnetworks.net>
+References: <4EBA54F2.3030801@unilogicnetworks.net> <20111109153552.GB1810@localhost.localdomain> <4EBBBFFA.5090000@unilogicnetworks.net> <20111114160342.GB1947@localhost.localdomain> <4EC2B9E7.7020609@unilogicnetworks.net> <20111115192926.GB1944@localhost.localdomain>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-To: linux-btrfs@vger.kernel.org
+Content-Type: text/plain; charset=ISO-8859-1; format=flowed
+Cc: linux-btrfs@vger.kernel.org
+To: Josef Bacik <josef@redhat.com>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
+In-Reply-To: <20111115192926.GB1944@localhost.localdomain>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-It seems overly harsh to fail a resize of a btrfs file system to the
-same size when a shrink or grow would succeed.  User app GParted trips
-over this error.  Allow it by bypassing the shrink or grow operation.
+Hello Josef,
 
-Signed-off-by: Mike Fleetwood <mike.fleetwood@googlemail.com>
----
+I've two new dmesg's (ceph osd 0 and 1). Both filesystems wheren't 
+responding anymore. Please let me know if you need more information or 
+another run. Both are made with the 3.1.1 kernel and your patches 
+applied (the patches with the extra warning messages).
 
-v2: Fix FS shrink prevention error spotted by Chris Samuel
+Paste:
+OSD.0: http://pastebin.com/tPjMk0kH
+OSD.1: http://pastebin.com/ef7A16g2
 
-Example failed resize:
-    # strace -e trace=ioctl btrfs filesystem resize max /mnt/0
-    Resize '/mnt/0' of 'max'
-    ioctl(3, 0x50009403, 0xbfa5029c)        = -1 EINVAL (Invalid argument)
-    ERROR: unable to resize '/mnt/0' - Invalid argument
-    # echo $?
-    30
-    # dmesg | tail -1
-    [426094.235018] new size for /dev/loop1 is 1073741824
+Stefan
 
----
- fs/btrfs/ioctl.c |    2 +-
- 1 files changed, 1 insertions(+), 1 deletions(-)
-
-diff --git a/fs/btrfs/ioctl.c b/fs/btrfs/ioctl.c
-index dae5dfe..bd32cce 100644
---- a/fs/btrfs/ioctl.c
-+++ b/fs/btrfs/ioctl.c
-@@ -1251,7 +1251,7 @@ static noinline int btrfs_ioctl_resize(struct btrfs_root *root,
- 		}
- 		ret = btrfs_grow_device(trans, device, new_size);
- 		btrfs_commit_transaction(trans, root);
--	} else {
-+	} else if (new_size < old_size) {
- 		ret = btrfs_shrink_device(device, new_size);
- 	}
- 
--- 
-1.7.4.4
+On 11/15/2011 08:29 PM, Josef Bacik wrote:
+> On Tue, Nov 15, 2011 at 08:13:43PM +0100, Stefan Kleijkers wrote:
+>> Hello Josef,
+>>
+>> We have patched the 3.1.1 kernel with your patch and after a short
+>> time one of the ceph osds crashed (core dumped) and I found this in
+>> the dmesg, please let me know if that's enough information or if you
+>> need more.
+>>
+> Yeah I was hoping for a WARN_ON() that should have shown up before that, do you
+> have the entire dmesg?  Thanks,
+>
+> Josef
 

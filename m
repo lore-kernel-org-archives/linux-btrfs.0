@@ -1,115 +1,70 @@
-From: Miao Xie <miaox@cn.fujitsu.com>
-Subject: [PATCH] Btrfs: fix deadlock on metadata reservation when evicting
- a inode
-Date: Fri, 18 Nov 2011 17:43:00 +0800
-Message-ID: <4EC628A4.10000@cn.fujitsu.com>
-Reply-To: miaox@cn.fujitsu.com
+From: Steven Whitehouse <swhiteho@redhat.com>
+Subject: Re: fallocate vs O_(D)SYNC
+Date: Fri, 18 Nov 2011 12:09:36 +0000
+Message-ID: <1321618176.2729.33.camel@menhir>
+References: <20111116084256.GA22963@infradead.org>
+	<1321436588.2713.5.camel@menhir> <20111116105413.GA2916@quack.suse.cz>
+	<20111116124550.GA11650@infradead.org>
+	<20111116133915.GD8195@quack.suse.cz>
+	<20111116134234.GA24258@infradead.org>
+	<20111116155755.GA22284@quack.suse.cz>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=GB2312
-To: Linux Btrfs <linux-btrfs@vger.kernel.org>
-Return-path: <linux-btrfs-owner@vger.kernel.org>
+Content-Type: text/plain; charset="UTF-8"
+Cc: cluster-devel@redhat.com, linux-ext4@vger.kernel.org,
+        linux-btrfs@vger.kernel.org
+To: Jan Kara <jack@suse.cz>
+Return-path: <cluster-devel-bounces@redhat.com>
+In-Reply-To: <20111116155755.GA22284@quack.suse.cz>
+List-Unsubscribe: <https://www.redhat.com/mailman/options/cluster-devel>,
+	<mailto:cluster-devel-request@redhat.com?subject=unsubscribe>
+List-Archive: <https://www.redhat.com/archives/cluster-devel>
+List-Post: <mailto:cluster-devel@redhat.com>
+List-Help: <mailto:cluster-devel-request@redhat.com?subject=help>
+List-Subscribe: <https://www.redhat.com/mailman/listinfo/cluster-devel>,
+	<mailto:cluster-devel-request@redhat.com?subject=subscribe>
+Errors-To: cluster-devel-bounces@redhat.com
 List-ID: <linux-btrfs.vger.kernel.org>
 
-When I ran the xfstests, I found the test tasks was blocked on meta-data
-reservation.
+Hi,
 
-By debugging, I found the reason of this bug:
-   start transaction
-        |
-	v
-   reserve meta-data space
-	|
-	v
-   flush delay allocation -> iput inode -> evict inode
-	^					|
-	|					v
-   wait for delay allocation flush <- reserve meta-data space
+Here is what I'm planning for GFS2:
 
-And besides that, the flush on evicting inode will block the thread, which
-is reclaiming the memory, and make oom happen easily.
 
-Fix this bug by skipping the flush step when evicting inode.
+Add sync of metadata after fallocate for O_SYNC files to ensure that we
+meet expectations for everything being on disk in this case.
+Unfortunately, the offset and len parameters are modified during the
+course of the fallocate function, so I've had to add a couple of new
+variables to call generic_write_sync() at the end.
 
-Signed-off-by: Miao Xie <miaox@cn.fujitsu.com>
----
- fs/btrfs/ctree.h       |    3 +++
- fs/btrfs/extent-tree.c |   22 ++++++++++++++++++----
- fs/btrfs/inode.c       |    2 +-
- 3 files changed, 22 insertions(+), 5 deletions(-)
+I know that potentially this will sync data as well within the range,
+but I think that is a fairly harmless side-effect overall, since we
+would not normally expect there to be any dirty data within the range in
+question.
 
-diff --git a/fs/btrfs/ctree.h b/fs/btrfs/ctree.h
-index b1cb3c0..04631af 100644
---- a/fs/btrfs/ctree.h
-+++ b/fs/btrfs/ctree.h
-@@ -2368,6 +2368,9 @@ int btrfs_block_rsv_check(struct btrfs_root *root,
- int btrfs_block_rsv_refill(struct btrfs_root *root,
- 			  struct btrfs_block_rsv *block_rsv,
- 			  u64 min_reserved);
-+int btrfs_block_rsv_refill_noflush(struct btrfs_root *root,
-+				   struct btrfs_block_rsv *block_rsv,
-+				   u64 min_reserved);
- int btrfs_block_rsv_migrate(struct btrfs_block_rsv *src_rsv,
- 			    struct btrfs_block_rsv *dst_rsv,
- 			    u64 num_bytes);
-diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
-index 0f47b3e..33f4b0b 100644
---- a/fs/btrfs/extent-tree.c
-+++ b/fs/btrfs/extent-tree.c
-@@ -3846,9 +3846,9 @@ int btrfs_block_rsv_check(struct btrfs_root *root,
- 	return ret;
- }
- 
--int btrfs_block_rsv_refill(struct btrfs_root *root,
--			  struct btrfs_block_rsv *block_rsv,
--			  u64 min_reserved)
-+static inline int __btrfs_block_rsv_refill(struct btrfs_root *root,
-+					   struct btrfs_block_rsv *block_rsv,
-+					   u64 min_reserved, int flush)
- {
- 	u64 num_bytes = 0;
- 	int ret = -ENOSPC;
-@@ -3867,7 +3867,7 @@ int btrfs_block_rsv_refill(struct btrfs_root *root,
- 	if (!ret)
- 		return 0;
- 
--	ret = reserve_metadata_bytes(root, block_rsv, num_bytes, 1);
-+	ret = reserve_metadata_bytes(root, block_rsv, num_bytes, flush);
- 	if (!ret) {
- 		block_rsv_add_bytes(block_rsv, num_bytes, 0);
- 		return 0;
-@@ -3876,6 +3876,20 @@ int btrfs_block_rsv_refill(struct btrfs_root *root,
- 	return ret;
- }
- 
-+int btrfs_block_rsv_refill(struct btrfs_root *root,
-+			   struct btrfs_block_rsv *block_rsv,
-+			   u64 min_reserved)
-+{
-+	return __btrfs_block_rsv_refill(root, block_rsv, min_reserved, 1);
-+}
+Signed-off-by: Steven Whitehouse <swhiteho@redhat.com>
+Cc: Christoph Hellwig <hch@infradead.org>
+Cc: Benjamin Marzinski <bmarzins@redhat.com>
+
+diff --git a/fs/gfs2/file.c b/fs/gfs2/file.c
+index 6336bc6..9b6c6ac 100644
+--- a/fs/gfs2/file.c
++++ b/fs/gfs2/file.c
+@@ -752,6 +752,8 @@ static long gfs2_fallocate(struct file *file, int mode, loff_t offset,
+ 	loff_t bytes, max_bytes;
+ 	struct gfs2_alloc *al;
+ 	int error;
++	const loff_t pos = offset;
++	const loff_t count = len;
+ 	loff_t bsize_mask = ~((loff_t)sdp->sd_sb.sb_bsize - 1);
+ 	loff_t next = (offset + len - 1) >> sdp->sd_sb.sb_bsize_shift;
+ 	loff_t max_chunk_size = UINT_MAX & bsize_mask;
+@@ -834,6 +836,9 @@ retry:
+ 		gfs2_quota_unlock(ip);
+ 		gfs2_alloc_put(ip);
+ 	}
 +
-+int btrfs_block_rsv_refill_noflush(struct btrfs_root *root,
-+				   struct btrfs_block_rsv *block_rsv,
-+				   u64 min_reserved)
-+{
-+	return __btrfs_block_rsv_refill(root, block_rsv, min_reserved, 0);
-+}
-+
- int btrfs_block_rsv_migrate(struct btrfs_block_rsv *src_rsv,
- 			    struct btrfs_block_rsv *dst_rsv,
- 			    u64 num_bytes)
-diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
-index e16215f..d026666 100644
---- a/fs/btrfs/inode.c
-+++ b/fs/btrfs/inode.c
-@@ -3490,7 +3490,7 @@ void btrfs_evict_inode(struct inode *inode)
- 	 * doing the truncate.
- 	 */
- 	while (1) {
--		ret = btrfs_block_rsv_refill(root, rsv, min_size);
-+		ret = btrfs_block_rsv_refill_noflush(root, rsv, min_size);
++	if (error == 0)
++		error = generic_write_sync(file, pos, count);
+ 	goto out_unlock;
  
- 		/*
- 		 * Try and steal from the global reserve since we will
--- 
-1.7.1
+ out_trans_fail:

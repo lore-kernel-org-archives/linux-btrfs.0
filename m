@@ -1,47 +1,53 @@
-From: Li Zefan <lizf@cn.fujitsu.com>
-Subject: [PATCH] 254: fix to pass subvolid=0 to set default btrfs subvolme
-Date: Fri, 18 Nov 2011 11:26:18 +0800
-Message-ID: <4EC5D05A.4000503@cn.fujitsu.com>
+From: Chris Samuel <chris@csamuel.org>
+Subject: Re: [PATCH] Btrfs: Don't error on resizing FS to same size
+Date: Fri, 18 Nov 2011 15:52:00 +1100
+Message-ID: <4EC5E470.4030605@csamuel.org>
+References: <20111117210433.GA1817@gmail.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=UTF-8
-Cc: xfs@oss.sgi.com,
-	"linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
-To: Christoph Hellwig <hch@infradead.org>
+Content-Type: text/plain; charset=ISO-8859-1
+Cc: linux-btrfs@vger.kernel.org
+To: Mike Fleetwood <mike.fleetwood@googlemail.com>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
+In-Reply-To: <20111117210433.GA1817@gmail.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-The usage is 'btrfs subvolume set-default <id> <path>', not
-'<path> <path>'.
+On 18/11/11 08:04, Mike Fleetwood wrote:
 
-The code happens to work because strotoull(path) returns 0, but it
-will fail if in the future we check the argument more strict in
-btrfs-progs.
+> It seems overly harsh to fail a resize of a btrfs file system to the
+> same size when a shrink or grow would succeed.  User app GParted trips
+> over this error.  Allow it by bypassing the shrink or grow operation.
 
-Signed-off-by: Li Zefan <lizf@cn.fujitsu.com>
----
- 254 |    4 ++--
- 1 files changed, 2 insertions(+), 2 deletions(-)
+OK - I'm a newbie with the code (and I'm looking at Linus's current git
+rather than any dev tree of Chris's), but...
 
-diff --git a/254 b/254
-index 6320291..5216120 100755
---- a/254
-+++ b/254
-@@ -78,7 +78,7 @@ ls $SCRATCH_MNT/subvol
- echo "Creating file bar in subvol"
- dd if=/dev/zero of=$SCRATCH_MNT/subvol/bar bs=1M count=1 &> /dev/null
- echo "Setting subvol to the default"
--btrfs subvolume set-default $SCRATCH_MNT/subvol $SCRATCH_MNT/subvol | _filter_scratch
-+btrfs subvolume set-default 0 $SCRATCH_MNT/subvol | _filter_scratch
- _scratch_remount
- echo "List root dir which is now subvol"
- ls $SCRATCH_MNT
-@@ -88,7 +88,7 @@ _scratch_mount "-o subvolid=0"
- echo "List root dir"
- ls $SCRATCH_MNT
- echo "Setting the root dir as the default again"
--btrfs subvolume set-default $SCRATCH_MNT $SCRATCH_MNT | _filter_scratch
-+btrfs subvolume set-default 0 $SCRATCH_MNT | _filter_scratch
- _scratch_remount
- echo "List root dir"
- ls $SCRATCH_MNT
--- 1.7.3.1 
+> Signed-off-by: Mike Fleetwood <mike.fleetwood@googlemail.com>
+> ---
+[...]
+> ---
+>  fs/btrfs/ioctl.c |    2 +-
+>  1 files changed, 1 insertions(+), 1 deletions(-)
+> 
+> diff --git a/fs/btrfs/ioctl.c b/fs/btrfs/ioctl.c
+> index dae5dfe..00b7024 100644
+> --- a/fs/btrfs/ioctl.c
+> +++ b/fs/btrfs/ioctl.c
+> @@ -1251,7 +1251,7 @@ static noinline int btrfs_ioctl_resize(struct btrfs_root *root,
+>  		}
+>  		ret = btrfs_grow_device(trans, device, new_size);
+>  		btrfs_commit_transaction(trans, root);
+> -	} else {
+> +	} else if (new_size > old_size) {
+
+shouldn't that be:
+
++	} else if (new_size < old_size) {
+
+otherwise you'll never try and shrink if new_size is < old_size..
+
+>  		ret = btrfs_shrink_device(device, new_size);
+>  	}
+>  
+
+
+-- 
+ Chris Samuel  :  http://www.csamuel.org/  :  Melbourne, VIC

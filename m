@@ -1,42 +1,61 @@
-From: "Justin P. Mattock" <justinmattock@gmail.com>
-Subject: [PATCH 3/3]fs:btrfs:free-space-cache.c Remove extra semicolon.
-Date: Mon, 21 Nov 2011 08:43:28 -0800
-Message-ID: <1321893808-3721-3-git-send-email-justinmattock@gmail.com>
-References: <1321893808-3721-1-git-send-email-justinmattock@gmail.com>
-Cc: linux-kernel@vger.kernel.org,
-	"Justin P. Mattock" <justinmattock@gmail.com>,
-	Chris Mason <chris.mason@oracle.com>,
-	linux-btrfs@vger.kernel.org
-To: trivial@kernel.org
-Return-path: <linux-kernel-owner@vger.kernel.org>
-In-Reply-To: <1321893808-3721-1-git-send-email-justinmattock@gmail.com>
+From: Arne Jansen <sensille@gmx.net>
+Subject: Re: [RFC] Subvolume Quota on-disk structures and configuration
+Date: Mon, 21 Nov 2011 18:20:07 +0100
+Message-ID: <4ECA8847.2080905@gmx.net>
+References: <4E19611D.2090007@gmx.net> <4ECA7721.3040607@cfl.rr.com>
+Mime-Version: 1.0
+Content-Type: text/plain; charset=ISO-8859-1
+Cc: linux-btrfs <linux-btrfs@vger.kernel.org>
+To: Phillip Susi <psusi@cfl.rr.com>
+Return-path: <linux-btrfs-owner@vger.kernel.org>
+In-Reply-To: <4ECA7721.3040607@cfl.rr.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-From: "Justin P. Mattock" <justinmattock@gmail.com>
+On 11/21/2011 05:06 PM, Phillip Susi wrote:
+> On 7/10/2011 4:21 AM, Arne Jansen wrote:
+>> btrfs qgroup limit [--exclusive] <size>|none <qgroupid> <path>
+>>
+>>
+>> btrfs qgroup limit 10g /usr
+>>
+>> That should be simple enough for the common use case.
+> 
+> Wouldn't that make the syntax above actually be:
+> 
+> btrfs qgroup limit [--exclusive] <size|none> [qgroupid] <path>
 
-The patch below removes an extra semicolon. 
-Note: I have not compile tested this patch, so am unsure if this breaks things.
+You don't mean to actually changing the syntax, but adding a better
+explanation or a more precise usage?
 
-Signed-off-by: Justin P. Mattock <justinmattock@gmail.com>
-CC: Chris Mason <chris.mason@oracle.com>
-CC: linux-btrfs@vger.kernel.org
+> 
+> Since the qgroupid is optional?  And the meaning of path depends on
+> whether or not qgroupid is specified.  With qgroupid, path is anywhere
+> on the fs, but without it, it specifies the path of the implicit
+> qgroupid, right?
+> 
+> I also have a question about the interactions with groups of groups. Say
+> I have 4 subvolumes: 1, 2, 3, and Z.  I group the first 3 volumes and
+> set a limit on them.  Now if all 3 volumes share a chunk of space, that
+> space should only count towards the group once, rather than 3 times.
 
----
- fs/btrfs/free-space-cache.c |    2 +-
- 1 files changed, 1 insertions(+), 1 deletions(-)
+It's just what groups are made for. In your scenario the chunk of space
+would count only once. Some hopefully better explanation can be found at
 
-diff --git a/fs/btrfs/free-space-cache.c b/fs/btrfs/free-space-cache.c
-index 181760f..75a7b11 100644
---- a/fs/btrfs/free-space-cache.c
-+++ b/fs/btrfs/free-space-cache.c
-@@ -418,7 +418,7 @@ static void io_ctl_set_crc(struct io_ctl *io_ctl, int index)
- 	}
- 
- 	if (index == 0)
--		offset = sizeof(u32) * io_ctl->num_pages;;
-+		offset = sizeof(u32) * io_ctl->num_pages;
- 
- 	crc = btrfs_csum_data(io_ctl->root, io_ctl->orig + offset, crc,
- 			      PAGE_CACHE_SIZE - offset);
--- 
-1.7.5.4
+http://sensille.com/qgroups.pdf
+
+Have you already played with the patchset?
+
+-Arne
+
+> You might think the solution to that is to use the exclusive limits, but
+> that would mean that any space volume 3 and volume Z share would not be
+> counted in the group at all.  I don't care about volume Z since it is
+> not part of the group, yet it can influence the used space of the
+> group.  Likewise, if I set an exclusive limit on the group, and then
+> create snapshot Y from subvol 2, that would significantly reduce the
+> exclusive charge for the group, and we don't want that.
+> -- 
+> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
+> the body of a message to majordomo@vger.kernel.org
+> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+

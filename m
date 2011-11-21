@@ -1,22 +1,43 @@
-From: Christoph Hellwig <hch@infradead.org>
-Subject: Re: [PATCH] 254: disable space cache
-Date: Mon, 21 Nov 2011 01:43:00 -0500
-Message-ID: <20111121064300.GA10644@infradead.org>
-References: <4EC61AC3.6010806@cn.fujitsu.com>
- <4EC9AD92.6020000@jp.fujitsu.com>
- <4EC9BA7C.20907@cn.fujitsu.com>
-Mime-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Cc: Hidetoshi Seto <seto.hidetoshi@jp.fujitsu.com>,
-	Christoph Hellwig <hch@infradead.org>, xfs@oss.sgi.com,
-	"linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
-To: Li Zefan <lizf@cn.fujitsu.com>
+From: Liu Bo <liubo2009@cn.fujitsu.com>
+Subject: [PATCH 0/5] fix bugs of sub transid
+Date: Mon, 21 Nov 2011 18:10:19 +0800
+Message-ID: <1321870224-20241-1-git-send-email-liubo2009@cn.fujitsu.com>
+Cc: <chris.mason@oracle.com>, <sensille@gmx.net>
+To: <linux-btrfs@vger.kernel.org>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <4EC9BA7C.20907@cn.fujitsu.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Mon, Nov 21, 2011 at 10:42:04AM +0800, Li Zefan wrote:
-> This is an alternative fix:
+NOTE:
+This patchset is based on "danger" branch.
 
-I have already applied your previous one.  Can you rediff it ontop of
-the current xfstests-dev tree?
+We've been sufferring two big bugs with sub transid:
+one is a bug related to root's last_snapshot, the other is a bug related to
+disk extent refs' generation.
+
+1) The first patch fixes a warning,
+2) the second one fixes the last_snapshot bug,
+3) the third one has already been in for-linus branch, but not in "danger"
+   branch, so I add it here for the integrity,
+4) the fourth one fixes a transid mismatch bug,
+5) the fifth one fixes the disk extent refs' generation bug.
+
+Any advices and tests are welcome!
+
+
+Liu Bo (5):
+  Btrfs: fix btrfs_copy_root warning
+  Btrfs: fix bug with heavy snapshot and heavy fsync
+  Btrfs: fix inconsistent tree
+  Btrfs: filter shared blocks in should_cow_block
+  Btrfs: update disk extent ref generation
+
+ fs/btrfs/ctree.c       |   69 +++++++++++++++++++++++++++++++++------------
+ fs/btrfs/ctree.h       |    8 ++++-
+ fs/btrfs/delayed-ref.c |    7 ++++-
+ fs/btrfs/delayed-ref.h |    2 +
+ fs/btrfs/disk-io.c     |    3 +-
+ fs/btrfs/extent-tree.c |   72 ++++++++++++++++++++++++++++++++++++++++--------
+ fs/btrfs/ioctl.c       |    2 +-
+ fs/btrfs/transaction.c |   10 ++++++-
+ 8 files changed, 137 insertions(+), 36 deletions(-)
+

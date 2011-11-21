@@ -1,43 +1,37 @@
 From: Liu Bo <liubo2009@cn.fujitsu.com>
-Subject: [PATCH 0/5] fix bugs of sub transid
-Date: Mon, 21 Nov 2011 18:10:19 +0800
-Message-ID: <1321870224-20241-1-git-send-email-liubo2009@cn.fujitsu.com>
+Subject: [PATCH 2/5] Btrfs: fix bug with heavy snapshot and heavy fsync
+Date: Mon, 21 Nov 2011 18:10:21 +0800
+Message-ID: <1321870224-20241-3-git-send-email-liubo2009@cn.fujitsu.com>
+References: <1321870224-20241-1-git-send-email-liubo2009@cn.fujitsu.com>
 Cc: <chris.mason@oracle.com>, <sensille@gmx.net>
 To: <linux-btrfs@vger.kernel.org>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
+In-Reply-To: <1321870224-20241-1-git-send-email-liubo2009@cn.fujitsu.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-NOTE:
-This patchset is based on "danger" branch.
+We've forgotten to update root's last_snapshot gen to the latest sub transid,
+so that we will free some extent buffers unexpectedly.  And this will cause
+a inconsistent tree crash.
 
-We've been sufferring two big bugs with sub transid:
-one is a bug related to root's last_snapshot, the other is a bug related to
-disk extent refs' generation.
+Signed-off-by: Liu Bo <liubo2009@cn.fujitsu.com>
+---
+ fs/btrfs/transaction.c |    3 ++-
+ 1 files changed, 2 insertions(+), 1 deletions(-)
 
-1) The first patch fixes a warning,
-2) the second one fixes the last_snapshot bug,
-3) the third one has already been in for-linus branch, but not in "danger"
-   branch, so I add it here for the integrity,
-4) the fourth one fixes a transid mismatch bug,
-5) the fifth one fixes the disk extent refs' generation bug.
-
-Any advices and tests are welcome!
-
-
-Liu Bo (5):
-  Btrfs: fix btrfs_copy_root warning
-  Btrfs: fix bug with heavy snapshot and heavy fsync
-  Btrfs: fix inconsistent tree
-  Btrfs: filter shared blocks in should_cow_block
-  Btrfs: update disk extent ref generation
-
- fs/btrfs/ctree.c       |   69 +++++++++++++++++++++++++++++++++------------
- fs/btrfs/ctree.h       |    8 ++++-
- fs/btrfs/delayed-ref.c |    7 ++++-
- fs/btrfs/delayed-ref.h |    2 +
- fs/btrfs/disk-io.c     |    3 +-
- fs/btrfs/extent-tree.c |   72 ++++++++++++++++++++++++++++++++++++++++--------
- fs/btrfs/ioctl.c       |    2 +-
- fs/btrfs/transaction.c |   10 ++++++-
- 8 files changed, 137 insertions(+), 36 deletions(-)
+diff --git a/fs/btrfs/transaction.c b/fs/btrfs/transaction.c
+index e3d2970..e31cdef 100644
+--- a/fs/btrfs/transaction.c
++++ b/fs/btrfs/transaction.c
+@@ -927,7 +927,8 @@ static noinline int create_pending_snapshot(struct btrfs_trans_handle *trans,
+ 	BUG_ON(ret);
+ 
+ 	record_root_in_trans(trans, root);
+-	btrfs_set_root_last_snapshot(&root->root_item, trans->transid);
++	btrfs_set_root_last_snapshot(&root->root_item,
++				     trans->transaction->sub_transid);
+ 	memcpy(new_root_item, &root->root_item, sizeof(*new_root_item));
+ 	btrfs_check_and_init_root_item(new_root_item);
+ 
+-- 
+1.6.5.2
 

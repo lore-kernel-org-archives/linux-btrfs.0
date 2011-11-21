@@ -1,58 +1,334 @@
-From: Phillip Susi <psusi@cfl.rr.com>
-Subject: Re: [RFC] Subvolume Quota on-disk structures and configuration
-Date: Mon, 21 Nov 2011 13:29:38 -0500
-Message-ID: <4ECA9892.9070801@cfl.rr.com>
-References: <4E19611D.2090007@gmx.net> <4ECA7721.3040607@cfl.rr.com> <4ECA8847.2080905@gmx.net>
-Mime-Version: 1.0
-Content-Type: text/plain; charset=ISO-8859-1; format=flowed
-Cc: linux-btrfs <linux-btrfs@vger.kernel.org>
-To: Arne Jansen <sensille@gmx.net>
+From: Josef Bacik <josef@redhat.com>
+Subject: [PATCH] Btrfs: fix num_workers_starting bug and other bugs in async thread
+Date: Mon, 21 Nov 2011 15:06:31 -0500
+Message-ID: <1321905991-4572-1-git-send-email-josef@redhat.com>
+To: linux-btrfs@vger.kernel.org, viro@ZenIV.linux.org.uk
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <4ECA8847.2080905@gmx.net>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 11/21/2011 12:20 PM, Arne Jansen wrote:
-> On 11/21/2011 05:06 PM, Phillip Susi wrote:
->> On 7/10/2011 4:21 AM, Arne Jansen wrote:
->>> btrfs qgroup limit [--exclusive]<size>|none<qgroupid>  <path>
->>>
->>>
->>> btrfs qgroup limit 10g /usr
->>>
->>> That should be simple enough for the common use case.
->>
->> Wouldn't that make the syntax above actually be:
->>
->> btrfs qgroup limit [--exclusive]<size|none>  [qgroupid]<path>
->
-> You don't mean to actually changing the syntax, but adding a better
-> explanation or a more precise usage?
+Al pointed out we have some random problems with the way we account for
+num_workers_starting in the async thread stuff.  First of all we need to make
+sure to decrement num_workers_starting if we fail to start the worker, so make
+__btrfs_start_workers do this.  Also fix __btrfs_start_workers so that it
+doesn't call btrfs_stop_workers(), there is no point in stopping everybody if we
+failed to create a worker.  Also check_pending_worker_creates needs to call
+__btrfs_start_work in it's work function since it already increments
+num_workers_starting.
 
-What I mean is that your syntax listed <groupid> in angle brackets, 
-indicating that it is a required argument, but your description seems to 
-indicate that it is optional, so it should be in square brackets.  Also 
-the size bit I assume was meant to be a required parameter that should 
-be either a number or the word none, so the angle brackets should 
-enclose the |none part too.
+People only start one worker at a time, so get rid of the num_workers argument
+everywhere, and make btrfs_queue_worker a void since it will always succeed.
+Thanks,
 
->> I also have a question about the interactions with groups of groups. Say
->> I have 4 subvolumes: 1, 2, 3, and Z.  I group the first 3 volumes and
->> set a limit on them.  Now if all 3 volumes share a chunk of space, that
->> space should only count towards the group once, rather than 3 times.
->
-> It's just what groups are made for. In your scenario the chunk of space
-> would count only once. Some hopefully better explanation can be found at
+Signed-off-by: Josef Bacik <josef@redhat.com>
+---
+ fs/btrfs/async-thread.c |  115 ++++++++++++++++++++++-------------------------
+ fs/btrfs/async-thread.h |    4 +-
+ fs/btrfs/disk-io.c      |   34 +++++++++-----
+ fs/btrfs/scrub.c        |    8 +++-
+ 4 files changed, 83 insertions(+), 78 deletions(-)
 
-Ohh, so the group is a union of the chunks in the members, not a sum? 
-So if you set an exclusive limit on the group, that would count 
-everything shared between 1, 2, 3 once, and not count any shared with Z? 
-  In other words, --exclusive excludes space shared with things outside 
-the group, not within it?
+diff --git a/fs/btrfs/async-thread.c b/fs/btrfs/async-thread.c
+index 7ec1409..af8e117 100644
+--- a/fs/btrfs/async-thread.c
++++ b/fs/btrfs/async-thread.c
+@@ -64,6 +64,8 @@ struct btrfs_worker_thread {
+ 	int idle;
+ };
+ 
++static int __btrfs_start_workers(struct btrfs_workers *workers);
++
+ /*
+  * btrfs_start_workers uses kthread_run, which can block waiting for memory
+  * for a very long time.  It will actually throttle on page writeback,
+@@ -88,27 +90,10 @@ static void start_new_worker_func(struct btrfs_work *work)
+ {
+ 	struct worker_start *start;
+ 	start = container_of(work, struct worker_start, work);
+-	btrfs_start_workers(start->queue, 1);
++	__btrfs_start_workers(start->queue);
+ 	kfree(start);
+ }
+ 
+-static int start_new_worker(struct btrfs_workers *queue)
+-{
+-	struct worker_start *start;
+-	int ret;
+-
+-	start = kzalloc(sizeof(*start), GFP_NOFS);
+-	if (!start)
+-		return -ENOMEM;
+-
+-	start->work.func = start_new_worker_func;
+-	start->queue = queue;
+-	ret = btrfs_queue_worker(queue->atomic_worker_start, &start->work);
+-	if (ret)
+-		kfree(start);
+-	return ret;
+-}
+-
+ /*
+  * helper function to move a thread onto the idle list after it
+  * has finished some requests.
+@@ -153,12 +138,20 @@ static void check_busy_worker(struct btrfs_worker_thread *worker)
+ static void check_pending_worker_creates(struct btrfs_worker_thread *worker)
+ {
+ 	struct btrfs_workers *workers = worker->workers;
++	struct worker_start *start;
+ 	unsigned long flags;
+ 
+ 	rmb();
+ 	if (!workers->atomic_start_pending)
+ 		return;
+ 
++	start = kzalloc(sizeof(*start), GFP_NOFS);
++	if (!start)
++		return;
++
++	start->work.func = start_new_worker_func;
++	start->queue = workers;
++
+ 	spin_lock_irqsave(&workers->lock, flags);
+ 	if (!workers->atomic_start_pending)
+ 		goto out;
+@@ -170,10 +163,11 @@ static void check_pending_worker_creates(struct btrfs_worker_thread *worker)
+ 
+ 	workers->num_workers_starting += 1;
+ 	spin_unlock_irqrestore(&workers->lock, flags);
+-	start_new_worker(workers);
++	btrfs_queue_worker(workers->atomic_worker_start, &start->work);
+ 	return;
+ 
+ out:
++	kfree(start);
+ 	spin_unlock_irqrestore(&workers->lock, flags);
+ }
+ 
+@@ -462,56 +456,55 @@ void btrfs_init_workers(struct btrfs_workers *workers, char *name, int max,
+  * starts new worker threads.  This does not enforce the max worker
+  * count in case you need to temporarily go past it.
+  */
+-static int __btrfs_start_workers(struct btrfs_workers *workers,
+-				 int num_workers)
++static int __btrfs_start_workers(struct btrfs_workers *workers)
+ {
+ 	struct btrfs_worker_thread *worker;
+ 	int ret = 0;
+-	int i;
+ 
+-	for (i = 0; i < num_workers; i++) {
+-		worker = kzalloc(sizeof(*worker), GFP_NOFS);
+-		if (!worker) {
+-			ret = -ENOMEM;
+-			goto fail;
+-		}
++	worker = kzalloc(sizeof(*worker), GFP_NOFS);
++	if (!worker) {
++		ret = -ENOMEM;
++		goto fail;
++	}
+ 
+-		INIT_LIST_HEAD(&worker->pending);
+-		INIT_LIST_HEAD(&worker->prio_pending);
+-		INIT_LIST_HEAD(&worker->worker_list);
+-		spin_lock_init(&worker->lock);
+-
+-		atomic_set(&worker->num_pending, 0);
+-		atomic_set(&worker->refs, 1);
+-		worker->workers = workers;
+-		worker->task = kthread_run(worker_loop, worker,
+-					   "btrfs-%s-%d", workers->name,
+-					   workers->num_workers + i);
+-		if (IS_ERR(worker->task)) {
+-			ret = PTR_ERR(worker->task);
+-			kfree(worker);
+-			goto fail;
+-		}
+-		spin_lock_irq(&workers->lock);
+-		list_add_tail(&worker->worker_list, &workers->idle_list);
+-		worker->idle = 1;
+-		workers->num_workers++;
+-		workers->num_workers_starting--;
+-		WARN_ON(workers->num_workers_starting < 0);
+-		spin_unlock_irq(&workers->lock);
++	INIT_LIST_HEAD(&worker->pending);
++	INIT_LIST_HEAD(&worker->prio_pending);
++	INIT_LIST_HEAD(&worker->worker_list);
++	spin_lock_init(&worker->lock);
++
++	atomic_set(&worker->num_pending, 0);
++	atomic_set(&worker->refs, 1);
++	worker->workers = workers;
++	worker->task = kthread_run(worker_loop, worker,
++				   "btrfs-%s-%d", workers->name,
++				   workers->num_workers + 1);
++	if (IS_ERR(worker->task)) {
++		ret = PTR_ERR(worker->task);
++		kfree(worker);
++		goto fail;
+ 	}
++	spin_lock_irq(&workers->lock);
++	list_add_tail(&worker->worker_list, &workers->idle_list);
++	worker->idle = 1;
++	workers->num_workers++;
++	workers->num_workers_starting--;
++	WARN_ON(workers->num_workers_starting < 0);
++	spin_unlock_irq(&workers->lock);
++
+ 	return 0;
+ fail:
+-	btrfs_stop_workers(workers);
++	spin_lock_irq(&workers->lock);
++	workers->num_workers_starting--;
++	spin_unlock_irq(&workers->lock);
+ 	return ret;
+ }
+ 
+-int btrfs_start_workers(struct btrfs_workers *workers, int num_workers)
++int btrfs_start_workers(struct btrfs_workers *workers)
+ {
+ 	spin_lock_irq(&workers->lock);
+-	workers->num_workers_starting += num_workers;
++	workers->num_workers_starting++;
+ 	spin_unlock_irq(&workers->lock);
+-	return __btrfs_start_workers(workers, num_workers);
++	return __btrfs_start_workers(workers);
+ }
+ 
+ /*
+@@ -568,6 +561,7 @@ static struct btrfs_worker_thread *find_worker(struct btrfs_workers *workers)
+ 	struct btrfs_worker_thread *worker;
+ 	unsigned long flags;
+ 	struct list_head *fallback;
++	int ret;
+ 
+ again:
+ 	spin_lock_irqsave(&workers->lock, flags);
+@@ -584,7 +578,9 @@ again:
+ 			workers->num_workers_starting++;
+ 			spin_unlock_irqrestore(&workers->lock, flags);
+ 			/* we're below the limit, start another worker */
+-			__btrfs_start_workers(workers, 1);
++			ret = __btrfs_start_workers(workers);
++			if (ret)
++				goto fallback;
+ 			goto again;
+ 		}
+ 	}
+@@ -665,7 +661,7 @@ void btrfs_set_work_high_prio(struct btrfs_work *work)
+ /*
+  * places a struct btrfs_work into the pending queue of one of the kthreads
+  */
+-int btrfs_queue_worker(struct btrfs_workers *workers, struct btrfs_work *work)
++void btrfs_queue_worker(struct btrfs_workers *workers, struct btrfs_work *work)
+ {
+ 	struct btrfs_worker_thread *worker;
+ 	unsigned long flags;
+@@ -673,7 +669,7 @@ int btrfs_queue_worker(struct btrfs_workers *workers, struct btrfs_work *work)
+ 
+ 	/* don't requeue something already on a list */
+ 	if (test_and_set_bit(WORK_QUEUED_BIT, &work->flags))
+-		goto out;
++		return;
+ 
+ 	worker = find_worker(workers);
+ 	if (workers->ordered) {
+@@ -712,7 +708,4 @@ int btrfs_queue_worker(struct btrfs_workers *workers, struct btrfs_work *work)
+ 	if (wake)
+ 		wake_up_process(worker->task);
+ 	spin_unlock_irqrestore(&worker->lock, flags);
+-
+-out:
+-	return 0;
+ }
+diff --git a/fs/btrfs/async-thread.h b/fs/btrfs/async-thread.h
+index 5077746..f34cc31 100644
+--- a/fs/btrfs/async-thread.h
++++ b/fs/btrfs/async-thread.h
+@@ -109,8 +109,8 @@ struct btrfs_workers {
+ 	char *name;
+ };
+ 
+-int btrfs_queue_worker(struct btrfs_workers *workers, struct btrfs_work *work);
+-int btrfs_start_workers(struct btrfs_workers *workers, int num_workers);
++void btrfs_queue_worker(struct btrfs_workers *workers, struct btrfs_work *work);
++int btrfs_start_workers(struct btrfs_workers *workers);
+ int btrfs_stop_workers(struct btrfs_workers *workers);
+ void btrfs_init_workers(struct btrfs_workers *workers, char *name, int max,
+ 			struct btrfs_workers *async_starter);
+diff --git a/fs/btrfs/disk-io.c b/fs/btrfs/disk-io.c
+index b6a5c0d..7b2146b 100644
+--- a/fs/btrfs/disk-io.c
++++ b/fs/btrfs/disk-io.c
+@@ -2194,19 +2194,27 @@ struct btrfs_root *open_ctree(struct super_block *sb,
+ 	fs_info->endio_meta_write_workers.idle_thresh = 2;
+ 	fs_info->readahead_workers.idle_thresh = 2;
+ 
+-	btrfs_start_workers(&fs_info->workers, 1);
+-	btrfs_start_workers(&fs_info->generic_worker, 1);
+-	btrfs_start_workers(&fs_info->submit_workers, 1);
+-	btrfs_start_workers(&fs_info->delalloc_workers, 1);
+-	btrfs_start_workers(&fs_info->fixup_workers, 1);
+-	btrfs_start_workers(&fs_info->endio_workers, 1);
+-	btrfs_start_workers(&fs_info->endio_meta_workers, 1);
+-	btrfs_start_workers(&fs_info->endio_meta_write_workers, 1);
+-	btrfs_start_workers(&fs_info->endio_write_workers, 1);
+-	btrfs_start_workers(&fs_info->endio_freespace_worker, 1);
+-	btrfs_start_workers(&fs_info->delayed_workers, 1);
+-	btrfs_start_workers(&fs_info->caching_workers, 1);
+-	btrfs_start_workers(&fs_info->readahead_workers, 1);
++	/*
++	 * btrfs_start_workers can really only fail because of ENOMEM so just
++	 * return -ENOMEM if any of these fail.
++	 */
++	ret = btrfs_start_workers(&fs_info->workers);
++	ret |= btrfs_start_workers(&fs_info->generic_worker);
++	ret |= btrfs_start_workers(&fs_info->submit_workers);
++	ret |= btrfs_start_workers(&fs_info->delalloc_workers);
++	ret |= btrfs_start_workers(&fs_info->fixup_workers);
++	ret |= btrfs_start_workers(&fs_info->endio_workers);
++	ret |= btrfs_start_workers(&fs_info->endio_meta_workers);
++	ret |= btrfs_start_workers(&fs_info->endio_meta_write_workers);
++	ret |= btrfs_start_workers(&fs_info->endio_write_workers);
++	ret |= btrfs_start_workers(&fs_info->endio_freespace_worker);
++	ret |= btrfs_start_workers(&fs_info->delayed_workers);
++	ret |= btrfs_start_workers(&fs_info->caching_workers);
++	ret |= btrfs_start_workers(&fs_info->readahead_workers);
++	if (ret) {
++		ret = -ENOMEM;
++		goto fail_sb_buffer;
++	}
+ 
+ 	fs_info->bdi.ra_pages *= btrfs_super_num_devices(disk_super);
+ 	fs_info->bdi.ra_pages = max(fs_info->bdi.ra_pages,
+diff --git a/fs/btrfs/scrub.c b/fs/btrfs/scrub.c
+index f4190f2..fd95bcf 100644
+--- a/fs/btrfs/scrub.c
++++ b/fs/btrfs/scrub.c
+@@ -1530,18 +1530,22 @@ static noinline_for_stack int scrub_supers(struct scrub_dev *sdev)
+ static noinline_for_stack int scrub_workers_get(struct btrfs_root *root)
+ {
+ 	struct btrfs_fs_info *fs_info = root->fs_info;
++	int ret = 0;
+ 
+ 	mutex_lock(&fs_info->scrub_lock);
+ 	if (fs_info->scrub_workers_refcnt == 0) {
+ 		btrfs_init_workers(&fs_info->scrub_workers, "scrub",
+ 			   fs_info->thread_pool_size, &fs_info->generic_worker);
+ 		fs_info->scrub_workers.idle_thresh = 4;
+-		btrfs_start_workers(&fs_info->scrub_workers, 1);
++		ret = btrfs_start_workers(&fs_info->scrub_workers);
++		if (ret)
++			goto out;
+ 	}
+ 	++fs_info->scrub_workers_refcnt;
++out:
+ 	mutex_unlock(&fs_info->scrub_lock);
+ 
+-	return 0;
++	return ret;
+ }
+ 
+ static noinline_for_stack void scrub_workers_put(struct btrfs_root *root)
+-- 
+1.7.5.2
 
-> http://sensille.com/qgroups.pdf
->
-> Have you already played with the patchset?
-
-Not yet; I just found it today from the new thread on the subject, and 
-look forward to playing with it tonight.  I was wondering what revision 
-the patches are based on, and are they in a public git repo?

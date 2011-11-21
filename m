@@ -1,59 +1,54 @@
-From: Phillip Susi <psusi@cfl.rr.com>
-Subject: Re: [RFC] Subvolume Quota on-disk structures and configuration
-Date: Mon, 21 Nov 2011 11:06:57 -0500
-Message-ID: <4ECA7721.3040607@cfl.rr.com>
-References: <4E19611D.2090007@gmx.net>
+From: "Ken D'Ambrosio" <ken@jots.org>
+Subject: Re: mount errors
+Date: Mon, 21 Nov 2011 11:27:24 -0500
+Message-ID: <ad43919226351cd8f695a0dfc44adc81@www.jots.org>
+References: <CAPWZyXa84avAjPfsv0FS8L67+uWSk0LKj7pUvLT3JM+bE4wwag@mail.gmail.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=ISO-8859-1; format=flowed
-Cc: linux-btrfs <linux-btrfs@vger.kernel.org>
-To: Arne Jansen <sensille@gmx.net>
+Content-Type: text/plain; charset=UTF-8;
+	format=fixed
+To: linux-btrfs@vger.kernel.org,
+	"=?UTF-8?B?UmVuw6k=?= Vangsgaard" <rene.vangsgaard@gmail.com>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <4E19611D.2090007@gmx.net>
+In-Reply-To: <CAPWZyXa84avAjPfsv0FS8L67+uWSk0LKj7pUvLT3JM+bE4wwag@mail.gmail.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 7/10/2011 4:21 AM, Arne Jansen wrote:
-> btrfs qgroup limit [--exclusive] <size>|none <qgroupid> <path>
->
-> This sets actual limits on a qgroup. If --exclusive is given, the
-> exclusive usage is limited instead of the referenced. I don't know
-> if there are use cases where both values need a (possibly different)
-> limit. <path> means the path to the root. Instead of "<qgroupid>
-> <path>", a path to a subvolume can be given instead.
->
-> btrfs qgroup create <qgroupid> <path>
-> btrfs qgroup destroy <qgroupid> <path>
-> btrfs qgroup assign <childid> <parentid> <path>
-> btrfs qgroup remove <childid> <parentid> <path>
->
-> These 4 commands are used to build hierarchical qgroups and are only
-> for advanced users. I'll explain more of the concepts in a later
-> paper.
->
-> The main point here is that in the simplest case, a user creates a
-> filesystem with initial quota support, creates his /var /usr /home
-> etc. subvolumes and limits them with commands like
->
-> btrfs qgroup limit 10g /usr
->
-> That should be simple enough for the common use case.
+1) As of right now, btrfs's fsck is "done when it's done."  So don't ho=
+ld your
+breath, I'm afraid.
 
-Wouldn't that make the syntax above actually be:
+2) What errors do you get on mount?  It may be as simple as changing yo=
+ur fstab
+entry such that fsck isn't attempted to be run.  (Change the last colum=
+n to
+"0".) =20
 
-btrfs qgroup limit [--exclusive] <size|none> [qgroupid] <path>
+-Ken
 
-Since the qgroupid is optional?  And the meaning of path depends on 
-whether or not qgroupid is specified.  With qgroupid, path is anywhere 
-on the fs, but without it, it specifies the path of the implicit 
-qgroupid, right?
 
-I also have a question about the interactions with groups of groups. 
-Say I have 4 subvolumes: 1, 2, 3, and Z.  I group the first 3 volumes 
-and set a limit on them.  Now if all 3 volumes share a chunk of space, 
-that space should only count towards the group once, rather than 3 
-times.  You might think the solution to that is to use the exclusive 
-limits, but that would mean that any space volume 3 and volume Z share 
-would not be counted in the group at all.  I don't care about volume Z 
-since it is not part of the group, yet it can influence the used space 
-of the group.  Likewise, if I set an exclusive limit on the group, and 
-then create snapshot Y from subvol 2, that would significantly reduce 
-the exclusive charge for the group, and we don't want that.
+On Sat, 19 Nov 2011 14:01:41 +0100 Ren=C3=A9 Vangsgaard <rene.vangsgaar=
+d@gmail.com>
+wrote
+
+> Hi - I have been using btrfs on /home for 2 weeks, and now it mounts
+> with errors. I know that no fsck is available yet. I ignore the error
+> and it still works, for now. Can I do anything to help you debug this
+> problem with btrfs?
+> Any news on fsck for btrfs?
+>=20
+> I am running Ubuntu 11.10.
+> Thank you, Ren=C3=A9
+> --
+> To unsubscribe from this list: send the line "unsubscribe linux-btrfs=
+" in
+> the body of a message to majordomo@vger.kernel.org
+> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+
+
+
+
+
+--
+To unsubscribe from this list: send the line "unsubscribe linux-btrfs" =
+in
+the body of a message to majordomo@vger.kernel.org
+More majordomo info at  http://vger.kernel.org/majordomo-info.html

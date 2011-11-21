@@ -1,7 +1,7 @@
 From: =?UTF-8?Q?Ren=C3=A9_Vangsgaard?= <rene.vangsgaard@gmail.com>
 Subject: Re: mount errors
-Date: Tue, 22 Nov 2011 00:29:53 +0100
-Message-ID: <CAPWZyXZPVXVxGo3XwTc0j6o3exk7+HnNtsaAoa0JsyrAML_CVQ@mail.gmail.com>
+Date: Tue, 22 Nov 2011 00:32:12 +0100
+Message-ID: <CAPWZyXaZLEzFqe_3LBA4qLgED3c5mgxvbg+9WfqRJ9KydKvfGQ@mail.gmail.com>
 References: <CAPWZyXa84avAjPfsv0FS8L67+uWSk0LKj7pUvLT3JM+bE4wwag@mail.gmail.com>
 	<ad43919226351cd8f695a0dfc44adc81@www.jots.org>
 Mime-Version: 1.0
@@ -12,17 +12,8 @@ Return-path: <linux-btrfs-owner@vger.kernel.org>
 In-Reply-To: <ad43919226351cd8f695a0dfc44adc81@www.jots.org>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Thank you for answering.
-
-2) I get this error when mounting:
-couldn't open because of unsupported option features (8).
-fsck.btrfs: disk-io.c:679: open_ctree_fd: Assertion `!(1)' failed.
-
-My current mount options are
-defaults,compress=3Dlzo,subvol=3D@home
-I have tried removing the compress=3Dlzo with no difference.
-
--Ren=C3=A9
+If I change the last column to 0 (aka ignore the warning), my file
+system will silently corrupt - is this true?
 
 On 21 November 2011 17:27, Ken D'Ambrosio <ken@jots.org> wrote:
 > 1) As of right now, btrfs's fsck is "done when it's done." =C2=A0So d=

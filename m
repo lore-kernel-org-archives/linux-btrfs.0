@@ -1,63 +1,80 @@
-From: =?ISO-8859-2?Q?Karol_=A9ebesta?= <sebesta.karol@gmail.com>
-Subject: BTRFS subvolume quota limits
-Date: Sun, 20 Nov 2011 22:50:17 +0100
-Message-ID: <CA+pWcCZoHcq4Ansh1MRQuuUfun_85vGj04G_KWLm61kk_hmtGQ@mail.gmail.com>
-References: <CA+pWcCZ9qtMNDpzEhmTjvJFJ9WnjbxZcvYxnJUJjdratQYNCow@mail.gmail.com>
+From: Hidetoshi Seto <seto.hidetoshi@jp.fujitsu.com>
+Subject: Re: [PATCH] 254: disable space cache
+Date: Mon, 21 Nov 2011 10:46:58 +0900
+Message-ID: <4EC9AD92.6020000@jp.fujitsu.com>
+References: <4EC61AC3.6010806@cn.fujitsu.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=ISO-8859-1
-To: linux-btrfs@vger.kernel.org
+Content-Type: text/plain; charset=UTF-8
+Cc: Christoph Hellwig <hch@infradead.org>, xfs@oss.sgi.com,
+	"linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
+To: Li Zefan <lizf@cn.fujitsu.com>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <CA+pWcCZ9qtMNDpzEhmTjvJFJ9WnjbxZcvYxnJUJjdratQYNCow@mail.gmail.com>
+In-Reply-To: <4EC61AC3.6010806@cn.fujitsu.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hello,
+(2011/11/18 17:43), Li Zefan wrote:
+> I can't pass 254, and below is the output:
+> 
+> 254 3s ... - output mismatch (see 254.out.bad)
+> ...
+>  ID 256 top level 5 path snap
+> -ID 257 top level 5 path subvol
+> +ID 258 top level 5 path subvol
+> 
+> When space cache is enabled (and now mkfs.btrfs always enables it),
+> there will be some space cache inodes in the root tree, and they
+> consume some IDs, and that's why "subvol" has the ID 258 but not 257.
+> 
+> Just disable space cache for this test case.
+> 
+> Signed-off-by: Li Zefan <lizf@cn.fujitsu.com>
+> ---
+>  254 |    2 +-
+>  1 files changed, 1 insertions(+), 1 deletions(-)
+> 
+> diff --git a/254 b/254
+> index 5216120..1cd4832 100755
+> --- a/254
+> +++ b/254
+> @@ -48,7 +48,7 @@ _supported_os Linux
+>  _require_scratch
+>  
+>  _scratch_mkfs > /dev/null 2>&1
+> -_scratch_mount
+> +_scratch_mount -o nospace_cache
+>  
+>  # First test basic snapshotting
+>  echo "Creating file foo in root dir"
 
-Is there any possibility to set quota limit for subvolume created in
-BTRFS pool as in Solaris ZFS?
+I got following error on fedora 16 with your patch:
 
-I'm currently testing btrfs and I have a pool /home with two
-partitions (disks) and three subvolumes on it:
+@@ -1,40 +1,36 @@
+ QA output created by 254
++mount: wrong fs type, bad option, bad superblock on /dev/sdc2,
++       missing codepage or helper program, or other error
++       In some cases useful info is found in syslog - try
++       dmesg | tail  or so
++
+ Creating file foo in root dir
+ List root dir
+ foo
+ Creating snapshot of root dir
+-Create a snapshot of 'SCRATCH_MNT' in 'SCRATCH_MNT/snap'
++ERROR: '/mnt2' is not a subvolume
+ List root dir after snapshot
+ foo
+-snap
+ List snapshot dir
+-foo
++ls: cannot access /mnt2/snap: No such file or directory
+ :
+ :
 
-Label: none =A0uuid: b742c9c7-162b-40d1-9186-f1c84418ff53
-=A0 =A0 =A0 =A0Total devices 2 FS bytes used 513.02MB
-=A0 =A0 =A0 =A0devid =A0 =A02 size 20.00GB used 1.26GB path /dev/sdb
-=A0 =A0 =A0 =A0devid =A0 =A01 size 5.00GB used 1.26GB path /dev/sda6
+And in dmesg:
+
+[246554.739092] btrfs: unrecognized mount option 'nospace_cache'
 
 
-BTRFS:/ # btrfs subvolume list /home
-ID 257 top level 5 path Download
-ID 258 top level 5 path Test
-ID 261 top level 5 path Test2
-BTRFS:/ #
+Thanks,
+H.Seto
 
-These subvolumes are mounted as /apps, /Test and /Test2
-
-/dev/sda6 =A0 =A0 =A0 =A025G =A0514M =A09.0G =A0 6% /home
-/dev/sdb =A0 =A0 =A0 =A0 25G =A0514M =A09.0G =A0 6% /apps
-/dev/sdb =A0 =A0 =A0 =A0 25G =A0514M =A09.0G =A0 6% /Test
-/dev/sdb =A0 =A0 =A0 =A0 25G =A0514M =A09.0G =A0 6% /Test2
-
-In Solaris ZFS I can use:
-
-Example:
-
-zfs set quota=3D1G home/Download =A0 --> and /apps will be have 1GB siz=
-e
-zfs set quota=3D5G home/Test =A0 --> and /Test will be have 5GB size
-zfs set quota=3D10G home/Test2 =A0 --> and /Test2 will be have 10GB siz=
-e
-
-And in pool /home will be still 9GB free space for future extends.
-
-It is possible in BTRFS? I know there is "btrfs filesystem resize" but
-this only resize/reduce the whole /home pool and not set quota on
-subvolumes as I need.
-
-Any help is appreciated.
-
-Thank you.
---
-To unsubscribe from this list: send the line "unsubscribe linux-btrfs" =
-in
-the body of a message to majordomo@vger.kernel.org
-More majordomo info at  http://vger.kernel.org/majordomo-info.html

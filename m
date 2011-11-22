@@ -1,64 +1,54 @@
-From: Li Zefan <lizf@cn.fujitsu.com>
-Subject: [PATCH v2] 254: avoid output mismatch due to space cache
-Date: Tue, 22 Nov 2011 13:19:39 +0800
-Message-ID: <4ECB30EB.7010109@cn.fujitsu.com>
+From: Arne Jansen <sensille@gmx.net>
+Subject: Re: Recovering data from old corrupted file system
+Date: Tue, 22 Nov 2011 09:23:55 +0100
+Message-ID: <4ECB5C1B.5000505@gmx.net>
+References: <CAGh96GFUS-1X-o8n+N_fCRc=6nViru+tM9obJMgSYuLf7D-MpQ@mail.gmail.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=UTF-8
-Cc: xfs@oss.sgi.com,
-	"linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
-To: Christoph Hellwig <hch@infradead.org>
+Content-Type: text/plain; charset=ISO-8859-1
+Cc: linux-btrfs <linux-btrfs@vger.kernel.org>
+To: Erik Jensen <eriksjunk@rkjnsn.net>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
+In-Reply-To: <CAGh96GFUS-1X-o8n+N_fCRc=6nViru+tM9obJMgSYuLf7D-MpQ@mail.gmail.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-This reverts commit a0c92a5871082c0aa6a7caae496e67a6e57bb0b6 (disable
-space cache), as option nospace_cache was newly introduced in linux-3.2,
-so we'll fail to mount btrfs in older kernels.
+On 22.11.2011 04:19, Erik Jensen wrote:
+> I have a corrupted multi-device file system that got corrupted ages
+> ago (as I recall, one of the drives stopped responding, causing btrfs
+> to panic). I am hoping to recover some of the data. For what it's
+> worth, here is the dmesg output from trying to mount the file system
+> on a 3.0 kernel:
+> 
+> device label Media devid 6 transid 816153 /dev/sdq
+> device label Media devid 7 transid 816153 /dev/sdl
+> device label Media devid 11 transid 816153 /dev/sdj
+> device label Media devid 9 transid 816153 /dev/sdk
+> device label Media devid 10 transid 816153 /dev/sdi
+> device label Media devid 3 transid 816152 /dev/sdh
+> device label Media devid 4 transid 816152 /dev/sdf
+> device label Media devid 1 transid 816152 /dev/sdg
+> device label Media devid 2 transid 816152 /dev/sde
+> device label Media devid 8 transid 816153 /dev/sdb
+> parent transid verify failed on 47051597279232 wanted 816153 found 816151
+> parent transid verify failed on 47051597279232 wanted 816153 found 816151
+> parent transid verify failed on 47051597279232 wanted 816153 found 816151
+> 
+> Most of the data is unimportant at this point, and I don't have enough
+> extra space elsewhere to store it all anyway. Is there any way I could
+> get a read-only view of the file system to pull off the bits I need?
 
-As an alternative fix, we just list subvolme names, don't assume
-what ID numbers those subvolumes will have.
+There are some patches in preparation that should help you
+recover from this situation. The solution is to mount with
+a superblock of generation 816152, but the current set of
+tools won't allow for that.
 
-Signed-off-by: Li Zefan <lizf@cn.fujitsu.com>
----
- 254     |    4 ++--
- 254.out |    4 ++--
- 2 files changed, 4 insertions(+), 4 deletions(-)
+> 
+> Any help would be greatly appreciated.
+> 
+> Thanks.
+> 
+> -- Erik Jensen
+> --
+> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
+> the body of a message to majordomo@vger.kernel.org
+> More majordomo info at  http://vger.kernel.org/majordomo-info.html
 
-diff --git a/254 b/254
-index 1cd4832..7b74a02 100755
---- a/254
-+++ b/254
-@@ -48,7 +48,7 @@ _supported_os Linux
- _require_scratch
- 
- _scratch_mkfs > /dev/null 2>&1
--_scratch_mount -o nospace_cache
-+_scratch_mount
- 
- # First test basic snapshotting
- echo "Creating file foo in root dir"
-@@ -95,7 +95,7 @@ ls $SCRATCH_MNT
- 
- # Test listing the subvolumes
- echo "Listing subvolumes"
--btrfs subvolume list $SCRATCH_MNT | _filter_scratch
-+btrfs subvolume list $SCRATCH_MNT | awk '{ print $NF }'
- 
- # Delete the snapshot
- btrfs subvolume delete $SCRATCH_MNT/snap | _filter_scratch
-diff --git a/254.out b/254.out
-index 582357a..d4b5346 100644
---- a/254.out
-+++ b/254.out
-@@ -31,8 +31,8 @@ List root dir
- snap
- subvol
- Listing subvolumes
--ID 256 top level 5 path snap
--ID 257 top level 5 path subvol
-+snap
-+subvol
- Delete subvolume 'SCRATCH_MNT/snap'
- List root dir
- subvol
--- 
-1.7.3.1

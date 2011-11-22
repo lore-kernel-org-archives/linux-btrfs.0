@@ -1,62 +1,86 @@
-From: =?UTF-8?Q?Ren=C3=A9_Vangsgaard?= <rene.vangsgaard@gmail.com>
-Subject: Re: mount errors
-Date: Tue, 22 Nov 2011 00:32:12 +0100
-Message-ID: <CAPWZyXaZLEzFqe_3LBA4qLgED3c5mgxvbg+9WfqRJ9KydKvfGQ@mail.gmail.com>
-References: <CAPWZyXa84avAjPfsv0FS8L67+uWSk0LKj7pUvLT3JM+bE4wwag@mail.gmail.com>
-	<ad43919226351cd8f695a0dfc44adc81@www.jots.org>
+From: Chris Mason <chris.mason@oracle.com>
+Subject: [GIT PULL] Btrfs fixes
+Date: Mon, 21 Nov 2011 20:30:31 -0500
+Message-ID: <20111122013031.GG28259@shiny>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=UTF-8
-Cc: linux-btrfs@vger.kernel.org
-To: "Ken D'Ambrosio" <ken@jots.org>
-Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <ad43919226351cd8f695a0dfc44adc81@www.jots.org>
+Content-Type: text/plain; charset=us-ascii
+To: Linus Torvalds <torvalds@linux-foundation.org>,
+	linux-btrfs <linux-btrfs@vger.kernel.org>,
+	LKML <linux-kernel@vger.kernel.org>
+Return-path: <linux-kernel-owner@vger.kernel.org>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-If I change the last column to 0 (aka ignore the warning), my file
-system will silently corrupt - is this true?
+Hi everyone,
 
-On 21 November 2011 17:27, Ken D'Ambrosio <ken@jots.org> wrote:
-> 1) As of right now, btrfs's fsck is "done when it's done." =C2=A0So d=
-on't hold your
-> breath, I'm afraid.
->
-> 2) What errors do you get on mount? =C2=A0It may be as simple as chan=
-ging your fstab
-> entry such that fsck isn't attempted to be run. =C2=A0(Change the las=
-t column to
-> "0".)
->
-> -Ken
->
->
-> On Sat, 19 Nov 2011 14:01:41 +0100 Ren=C3=A9 Vangsgaard <rene.vangsga=
-ard@gmail.com>
-> wrote
->
->> Hi - I have been using btrfs on /home for 2 weeks, and now it mounts
->> with errors. I know that no fsck is available yet. I ignore the erro=
-r
->> and it still works, for now. Can I do anything to help you debug thi=
-s
->> problem with btrfs?
->> Any news on fsck for btrfs?
->>
->> I am running Ubuntu 11.10.
->> Thank you, Ren=C3=A9
->> --
->> To unsubscribe from this list: send the line "unsubscribe linux-btrf=
-s" in
->> the body of a message to majordomo@vger.kernel.org
->> More majordomo info at =C2=A0http://vger.kernel.org/majordomo-info.h=
-tml
->
->
->
->
->
->
---
-To unsubscribe from this list: send the line "unsubscribe linux-btrfs" =
-in
-the body of a message to majordomo@vger.kernel.org
-More majordomo info at  http://vger.kernel.org/majordomo-info.html
+The for-linus branch of the linux-btrfs repo has some important fixes:
+
+git://git.kernel.org/pub/scm/linux/kernel/git/mason/linux-btrfs.git for-linus
+
+The most important in the bunch fixes the btrfs cache flushing.  This
+one probably explains many of the corruptions that have been reported,
+especially on multi-device filesystems.  I had a hard time hitting it
+locally, partially because it is much less likely to happen for fsync
+based commits and most of my tests used fsyncs to exercise the commit
+code.  Ceph users running with -o notreelog were dramatically more
+likely to trigger the corruptions.
+
+The problem was that btrfs was triggering cache flushes before the last
+copy of the super block, instead of doing them before the first copy.
+We also needed to be more careful about getting flushes done to all the
+devices in a multi-device FS before writing any of the supers.  To help
+verify the new code, I wrote up a writeback-caching elevator, which I
+sent posted earlier today for comments/review.
+
+Many thanks to Alexandre Oliva and Arne Jansen for helping nail this
+down.
+
+Outside of the cache flushes, we also have a fix from Liu Bo for
+corruptions when snapshotting with mount -o inode_cache enabled.
+
+My for-linus branch is still against 3.1, but these were tested on Linus
+git as well.
+
+Josef Bacik (3) commits (+90/-42):
+    Btrfs: wait on caching if we're loading the free space cache (+81/-41)
+    Btrfs: clear pages dirty for io and set them extent mapped (+5/-0)
+    Btrfs: sectorsize align offsets in fiemap (+4/-1)
+
+Chris Mason (2) commits (+141/-18):
+    Btrfs: remove free-space-cache.c WARN during log replay (+7/-1)
+    Btrfs: fix barrier flushes (+134/-17)
+
+Li Zefan (2) commits (+16/-38):
+    Btrfs: avoid unnecessary bitmap search for cluster setup (+4/-38)
+    Btrfs: fix to search one more bitmap for cluster setup (+12/-0)
+
+Jan Schmidt (1) commits (+4/-4):
+    btrfs: mirror_num should be int, not u64
+
+Jeff Mahoney (1) commits (+9/-6):
+    btrfs: Fix up 32/64-bit compatibility for new ioctls
+
+Liu Bo (1) commits (+26/-1):
+    Btrfs: fix tree corruption after multi-thread snapshots and inode_cache flush
+
+Arnd Hannemann (1) commits (+3/-3):
+    Btrfs: prefix resize related printks with btrfs:
+
+David Sterba (1) commits (+4/-2):
+    btrfs: fix stat blocks accounting
+
+Total: (12) commits (+290/-111)
+
+ fs/btrfs/backref.c          |    2 +-
+ fs/btrfs/ctree.c            |   17 +++++-
+ fs/btrfs/ctree.h            |    5 +-
+ fs/btrfs/disk-io.c          |  147 +++++++++++++++++++++++++++++++++++++-----
+ fs/btrfs/extent-tree.c      |  119 +++++++++++++++++++++++------------
+ fs/btrfs/extent_io.c        |    9 ++-
+ fs/btrfs/extent_io.h        |    2 +-
+ fs/btrfs/free-space-cache.c |   63 ++++++++-----------
+ fs/btrfs/inode.c            |    6 +-
+ fs/btrfs/ioctl.c            |   15 +++--
+ fs/btrfs/scrub.c            |    2 +-
+ fs/btrfs/transaction.c      |    8 +++
+ fs/btrfs/volumes.h          |    6 ++
+ 13 files changed, 290 insertions(+), 111 deletions(-)

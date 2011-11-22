@@ -1,39 +1,39 @@
-From: Erik Jensen <eriksjunk@rkjnsn.net>
-Subject: Recovering data from old corrupted file system
-Date: Mon, 21 Nov 2011 19:19:44 -0800
-Message-ID: <CAGh96GFUS-1X-o8n+N_fCRc=6nViru+tM9obJMgSYuLf7D-MpQ@mail.gmail.com>
+From: cwillu <cwillu@cwillu.com>
+Subject: Re: mount errors
+Date: Mon, 21 Nov 2011 22:55:51 -0600
+Message-ID: <CAE5mzvhbfo=LsAv8OZNjX9o=jaP0-cE4f8cTYn4EGWhxtgtsEQ@mail.gmail.com>
+References: <CAPWZyXa84avAjPfsv0FS8L67+uWSk0LKj7pUvLT3JM+bE4wwag@mail.gmail.com>
+	<ad43919226351cd8f695a0dfc44adc81@www.jots.org>
+	<CAPWZyXZPVXVxGo3XwTc0j6o3exk7+HnNtsaAoa0JsyrAML_CVQ@mail.gmail.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=ISO-8859-1
-To: linux-btrfs <linux-btrfs@vger.kernel.org>
+Content-Type: text/plain; charset=UTF-8
+Cc: "Ken D'Ambrosio" <ken@jots.org>, linux-btrfs@vger.kernel.org
+To: =?UTF-8?Q?Ren=C3=A9_Vangsgaard?= <rene.vangsgaard@gmail.com>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
+In-Reply-To: <CAPWZyXZPVXVxGo3XwTc0j6o3exk7+HnNtsaAoa0JsyrAML_CVQ@mail.gmail.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-I have a corrupted multi-device file system that got corrupted ages
-ago (as I recall, one of the drives stopped responding, causing btrfs
-to panic). I am hoping to recover some of the data. For what it's
-worth, here is the dmesg output from trying to mount the file system
-on a 3.0 kernel:
+On Mon, Nov 21, 2011 at 5:29 PM, Ren=C3=A9 Vangsgaard
+<rene.vangsgaard@gmail.com> wrote:
+> Thank you for answering.
+>
+> 2) I get this error when mounting:
+> couldn't open because of unsupported option features (8).
+> fsck.btrfs: disk-io.c:679: open_ctree_fd: Assertion `!(1)' failed.
 
-device label Media devid 6 transid 816153 /dev/sdq
-device label Media devid 7 transid 816153 /dev/sdl
-device label Media devid 11 transid 816153 /dev/sdj
-device label Media devid 9 transid 816153 /dev/sdk
-device label Media devid 10 transid 816153 /dev/sdi
-device label Media devid 3 transid 816152 /dev/sdh
-device label Media devid 4 transid 816152 /dev/sdf
-device label Media devid 1 transid 816152 /dev/sdg
-device label Media devid 2 transid 816152 /dev/sde
-device label Media devid 8 transid 816153 /dev/sdb
-parent transid verify failed on 47051597279232 wanted 816153 found 816151
-parent transid verify failed on 47051597279232 wanted 816153 found 816151
-parent transid verify failed on 47051597279232 wanted 816153 found 816151
+You're running an out-of-date version of btrfs-progs, which doesn't
+understand lzo.
 
-Most of the data is unimportant at this point, and I don't have enough
-extra space elsewhere to store it all anyway. Is there any way I could
-get a read-only view of the file system to pull off the bits I need?
+> My current mount options are
+> defaults,compress=3Dlzo,subvol=3D@home
+> I have tried removing the compress=3Dlzo with no difference.
 
-Any help would be greatly appreciated.
+Removing compress=3Dlzo doesn't remove compression from existing blocks=
+=2E
 
-Thanks.
-
--- Erik Jensen
+Just disable fsck from running on boot (or update your progs from git).
+--
+To unsubscribe from this list: send the line "unsubscribe linux-btrfs" =
+in
+the body of a message to majordomo@vger.kernel.org
+More majordomo info at  http://vger.kernel.org/majordomo-info.html

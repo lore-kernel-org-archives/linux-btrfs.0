@@ -1,39 +1,64 @@
-From: cwillu <cwillu@cwillu.com>
-Subject: Re: mount errors
-Date: Mon, 21 Nov 2011 22:55:51 -0600
-Message-ID: <CAE5mzvhbfo=LsAv8OZNjX9o=jaP0-cE4f8cTYn4EGWhxtgtsEQ@mail.gmail.com>
-References: <CAPWZyXa84avAjPfsv0FS8L67+uWSk0LKj7pUvLT3JM+bE4wwag@mail.gmail.com>
-	<ad43919226351cd8f695a0dfc44adc81@www.jots.org>
-	<CAPWZyXZPVXVxGo3XwTc0j6o3exk7+HnNtsaAoa0JsyrAML_CVQ@mail.gmail.com>
+From: Li Zefan <lizf@cn.fujitsu.com>
+Subject: [PATCH v2] 254: avoid output mismatch due to space cache
+Date: Tue, 22 Nov 2011 13:19:39 +0800
+Message-ID: <4ECB30EB.7010109@cn.fujitsu.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset=UTF-8
-Cc: "Ken D'Ambrosio" <ken@jots.org>, linux-btrfs@vger.kernel.org
-To: =?UTF-8?Q?Ren=C3=A9_Vangsgaard?= <rene.vangsgaard@gmail.com>
+Cc: xfs@oss.sgi.com,
+	"linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
+To: Christoph Hellwig <hch@infradead.org>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <CAPWZyXZPVXVxGo3XwTc0j6o3exk7+HnNtsaAoa0JsyrAML_CVQ@mail.gmail.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Mon, Nov 21, 2011 at 5:29 PM, Ren=C3=A9 Vangsgaard
-<rene.vangsgaard@gmail.com> wrote:
-> Thank you for answering.
->
-> 2) I get this error when mounting:
-> couldn't open because of unsupported option features (8).
-> fsck.btrfs: disk-io.c:679: open_ctree_fd: Assertion `!(1)' failed.
+This reverts commit a0c92a5871082c0aa6a7caae496e67a6e57bb0b6 (disable
+space cache), as option nospace_cache was newly introduced in linux-3.2,
+so we'll fail to mount btrfs in older kernels.
 
-You're running an out-of-date version of btrfs-progs, which doesn't
-understand lzo.
+As an alternative fix, we just list subvolme names, don't assume
+what ID numbers those subvolumes will have.
 
-> My current mount options are
-> defaults,compress=3Dlzo,subvol=3D@home
-> I have tried removing the compress=3Dlzo with no difference.
+Signed-off-by: Li Zefan <lizf@cn.fujitsu.com>
+---
+ 254     |    4 ++--
+ 254.out |    4 ++--
+ 2 files changed, 4 insertions(+), 4 deletions(-)
 
-Removing compress=3Dlzo doesn't remove compression from existing blocks=
-=2E
-
-Just disable fsck from running on boot (or update your progs from git).
---
-To unsubscribe from this list: send the line "unsubscribe linux-btrfs" =
-in
-the body of a message to majordomo@vger.kernel.org
-More majordomo info at  http://vger.kernel.org/majordomo-info.html
+diff --git a/254 b/254
+index 1cd4832..7b74a02 100755
+--- a/254
++++ b/254
+@@ -48,7 +48,7 @@ _supported_os Linux
+ _require_scratch
+ 
+ _scratch_mkfs > /dev/null 2>&1
+-_scratch_mount -o nospace_cache
++_scratch_mount
+ 
+ # First test basic snapshotting
+ echo "Creating file foo in root dir"
+@@ -95,7 +95,7 @@ ls $SCRATCH_MNT
+ 
+ # Test listing the subvolumes
+ echo "Listing subvolumes"
+-btrfs subvolume list $SCRATCH_MNT | _filter_scratch
++btrfs subvolume list $SCRATCH_MNT | awk '{ print $NF }'
+ 
+ # Delete the snapshot
+ btrfs subvolume delete $SCRATCH_MNT/snap | _filter_scratch
+diff --git a/254.out b/254.out
+index 582357a..d4b5346 100644
+--- a/254.out
++++ b/254.out
+@@ -31,8 +31,8 @@ List root dir
+ snap
+ subvol
+ Listing subvolumes
+-ID 256 top level 5 path snap
+-ID 257 top level 5 path subvol
++snap
++subvol
+ Delete subvolume 'SCRATCH_MNT/snap'
+ List root dir
+ subvol
+-- 
+1.7.3.1

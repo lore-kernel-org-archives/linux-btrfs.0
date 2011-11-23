@@ -1,41 +1,37 @@
-From: Stephane CHAZELAS <stephane_chazelas@yahoo.fr>
-Subject: Re: stripe alignment consideration for btrfs on RAID5
-Date: Wed, 23 Nov 2011 17:55:19 +0000 (UTC)
-Message-ID: <slrnjcqcs7.b3r.stephane.chazelas@spam.is.invalid>
-References: <slrnjcq9sh.b3r.stephane.chazelas@spam.is.invalid>
- <94D5143C-1E94-4F12-995B-BCCDEC7108C1@orcaware.com>
+From: "Helmut Hullen" <Hullen@t-online.de>
+Subject: Re: fsck with "err is 1"
+Date: 23 Nov 2011 19:32:00 +0100
+Message-ID: <ByQ7hQli1uB@helmut.hullen.de>
+References: <4ECD3104.3050205@jan-o-sch.net>
+Reply-To: helmut@hullen.de
+Mime-Version: 1.0
+Content-Type: text/plain; charset=US-ASCII
 To: linux-btrfs@vger.kernel.org
 Return-path: <linux-btrfs-owner@vger.kernel.org>
+In-Reply-To: <4ECD3104.3050205@jan-o-sch.net>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-2011-11-23, 09:08(-08), Blair Zajac:
->
-> On Nov 23, 2011, at 9:04 AM, Stephane CHAZELAS wrote:
->
->> Hiya,
->> 
->> is there any recommendation out there to setup a btrfs FS on top
->> of hardware or software raid5 or raid6 wrt stripe/stride alignment?
->
-> Isn't the advantage of having btrfs do all the raiding itself
-> so one gets the checksums?  If one puts btrfs on top of
-> software or hardware raid, then if there is a checksum error,
-> you don't have another copy of the data to fall back to.  If
-> one uses btrfs' raid1 or above for data and metadata, then you
-> can suffer a checksum failure and get a good copy from another
-> drive?
-[...]
+Hallo, Jan,
 
-Yes, but btrfs doesn't support raid5 yet and I have a limited
-number of drives I can connect to that system, and storage
-capacity is more important for me than the odd chance of
-corruptions of odd sectors (which can be mitigated by running
-regular RAID checks).
+Du meintest am 23.11.11:
 
-Also, my tests of btrfs raid10 didn't indicate it was reliable
-enough yet (when a drive disappears and reappears, btrfs seems
-to get quite confused).
+>> One big problem of btrfs seems to be: you can't see on which
+>> partition/ disk the defect sector (or something else) may be
 
--- 
-Stephane
+> A recent kernel (3.2, still rc) will tell you the byte number when an
+> error occurs, and also give the the opportunity to resolve this
+> address to all files affected.
 
+May be. I had used the brand new kernel 3.1.
+
+btrfs may be fine when it works as proposed. It's still under heavy  
+construction.
+
+I had to rebuild my 4-TByte archive the second time within 1 year -  
+that's no reliable system.
+
+May be the situation for really big bundles of disk gets better when  
+something like raid 5 does work. I'll wait.
+
+Viele Gruesse!
+Helmut

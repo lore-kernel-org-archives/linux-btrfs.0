@@ -1,39 +1,23 @@
-From: Phillip Susi <psusi@cfl.rr.com>
-Subject: [PATCH 2/2] Document --rootdir mkfs switch
-Date: Wed, 23 Nov 2011 16:26:36 -0500
-Message-ID: <4ECD650C.1030207@cfl.rr.com>
+From: David Sterba <dave@jikos.cz>
+Subject: Re: [PATCH 1/2] Removed extraneous whitespace from mkfs man page
+Date: Thu, 24 Nov 2011 00:08:36 +0100
+Message-ID: <20111123230836.GE12759@twin.jikos.cz>
+References: <4ECD64CA.6030507@cfl.rr.com>
+Reply-To: dave@jikos.cz
 Mime-Version: 1.0
-Content-Type: text/plain; charset=ISO-8859-1; format=flowed
-To: linux-btrfs <linux-btrfs@vger.kernel.org>
+Content-Type: text/plain; charset=us-ascii
+Cc: linux-btrfs <linux-btrfs@vger.kernel.org>
+To: Phillip Susi <psusi@cfl.rr.com>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
+In-Reply-To: <4ECD64CA.6030507@cfl.rr.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
----
-  man/mkfs.btrfs.8.in |    4 ++++
-  1 files changed, 4 insertions(+), 0 deletions(-)
+On Wed, Nov 23, 2011 at 04:25:30PM -0500, Phillip Susi wrote:
+> There were extra spaces around some of the arguments in the man
+> page for mkfs.
 
-diff --git a/man/mkfs.btrfs.8.in b/man/mkfs.btrfs.8.in
-index 542e6cf..25e817b 100644
---- a/man/mkfs.btrfs.8.in
-+++ b/man/mkfs.btrfs.8.in
-@@ -12,6 +12,7 @@ mkfs.btrfs \- create an btrfs filesystem
-  [ \fB\-M\fP\fI mixed data+metadata\fP ]
-  [ \fB\-n\fP\fI nodesize\fP ]
-  [ \fB\-s\fP\fI sectorsize\fP ]
-+[ \fB\-r\fP\fI rootdir\fP ]
-  [ \fB\-h\fP ]
-  [ \fB\-V\fP ]
-  \fI device\fP [ \fIdevice ...\fP ]
-@@ -59,6 +60,9 @@ Specify the nodesize. By default the value is set to the pagesize.
-  \fB\-s\fR, \fB\-\-sectorsize \fIsize\fR
-  Specify the sectorsize, the minimum block allocation.
-  .TP
-+\fB\-r\fR, \fB\-\-rootdir \fIrootdir\fR
-+Specify a directory to copy into the newly created fs.
-+.TP
-  \fB\-V\fR, \fB\-\-version\fR
-  Print the \fBmkfs.btrfs\fP version and exit.
-  .SH AVAILABILITY
--- 
-1.7.5.4
+Please resend with Signed-off-by: tag, and it would be helpful to
+prepend the subject with eg. btrfs-progs.
 
+thanks,
+david

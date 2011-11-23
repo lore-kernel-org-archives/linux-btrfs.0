@@ -1,7 +1,8 @@
 From: Phillip Susi <psusi@cfl.rr.com>
-Subject: [PATCH 1/3] Changed volume_df() to return all chunks with their offsets
-Date: Tue, 22 Nov 2011 20:12:51 -0500
-Message-ID: <4ECC4893.80506@cfl.rr.com>
+Subject: [PATCH 2/3] Update UsageDisplay to be capable of displaying all chunks
+ by position
+Date: Tue, 22 Nov 2011 20:12:58 -0500
+Message-ID: <4ECC489A.8000602@cfl.rr.com>
 References: <4EC67EAE.2090602@cfl.rr.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset=ISO-8859-1
@@ -13,98 +14,129 @@ List-ID: <linux-btrfs.vger.kernel.org>
 -----BEGIN PGP SIGNED MESSAGE-----
 Hash: SHA1
 
-volume_df() used to return a structure containing a dictionary named
-"usage" that contained 3 chunks, keyed by their usage type ( sys, meta,
-data ).  I changed this to an array named "chunks" that contains one entry
-for every chunk found on the disk.  Each chunk still is a dictionary that
-contains flags, size, and used, but now also contains voffset and poffset
-entries giving their starting offset relative to the filesystem and disk
-respectively.  The poffset is intended to be used to show the chunk at
-the correct position in the disk graph, and the voffset is intended to
-allow correlation with the filesystem graph.
+Previously the input_data to create_usage_box was assumed to be a list of
+3 chunks, one of each type: data, meta, sys.  Now the list can contain any
+number of entries and they will each be displayed.  If the entries contain
+the key "offset", then they will be shown at the appropriate location based
+on that offset, with any gaps filled in by unused space ( they are thus
+assumed to be in order ).  Without the offset key, they will be displayed
+in order, with no gaps.
 - ---
- btrfsgui/gui/usagedisplay.py |   14 ++++++++++----
- btrfsgui/hlp/size.py         |   18 ++++++++----------
- 2 files changed, 18 insertions(+), 14 deletions(-)
+ btrfsgui/gui/usagedisplay.py |   65 ++++++++++++++++++++++-------------------
+ 1 files changed, 35 insertions(+), 30 deletions(-)
 
 diff --git a/btrfsgui/gui/usagedisplay.py b/btrfsgui/gui/usagedisplay.py
-index ccfc148..e6ae9b4 100644
+index e6ae9b4..aff24da 100644
 - --- a/btrfsgui/gui/usagedisplay.py
 +++ b/btrfsgui/gui/usagedisplay.py
-@@ -347,13 +347,19 @@ class UsageDisplay(Frame, Requester):
- 		max_space = 0
- 		for dev in self.fs["vols"]:
- 			rv, text, obj = self.request("vol_df", self.fs["uuid"], dev["id"])
-- -			dev["usage"] = obj
-+			dev["vol_df"] = obj
- 			if obj["size"] > max_space:
- 				max_space = obj["size"]
+@@ -243,52 +243,48 @@ class UsageDisplay(Frame, Requester):
+ 		'size' or 'free' should be provided. If 'size' is set, the
+ 		amount of free space computed is returned; otherwise the
+ 		return value is arbitrary."""
+- -
+ 		# Calculate the overall width of the box we are going to draw
+ 		width = DF_BOX_WIDTH
+ 		if max_size is not None:
+ 			width = width * size / max_size
+- -
++		box = SplitBox(orient=SplitBox.HORIZONTAL)
++		nextpos = 0
+ 		# Categorise the data
+- -		data = SplitBox(orient=SplitBox.VERTICAL)
+- -		meta = SplitBox(orient=SplitBox.VERTICAL)
+- -		sys = SplitBox(orient=SplitBox.VERTICAL)
+- -		freebox = SplitBox(orient=SplitBox.VERTICAL)
+- -		for bg_type in input_data:
+- -			repl = btrfs.replication_type(bg_type["flags"])
+- -			usage = btrfs.usage_type(bg_type["flags"])
++		for chunk in input_data:
++			if not "offset" in chunk:
++				chunk["offset"] = nextpos
++			if nextpos <= chunk["offset"]:
++				freesize = chunk["offset"] - nextpos
++				freebox = SplitBox(orient=SplitBox.VERTICAL)
++				freebox.append((freesize, { "fill": COLOUR_UNUSED }))
++			nextpos = chunk["offset"] + chunk["size"]
++			if size is not None:
++				size -= chunk["size"]
++			chunkbox = SplitBox(orient=SplitBox.VERTICAL)
++
++			repl = btrfs.replication_type(chunk["flags"])
++			usage = btrfs.usage_type(chunk["flags"])
  
- 		y = 4
- 		for i, dev in enumerate(self.fs["vols"]):
-- -			obj = dev["usage"]
-+			# Combine chunks with same flags
-+			chunks = {}
-+			for chunk in dev["vol_df"]["chunks"]:
-+				if chunk["flags"] in chunks:
-+					chunks[chunk["flags"]]["size"] += chunk["size"]
-+					chunks[chunk["flags"]]["used"] += chunk["used"]
-+				else: chunks[chunk["flags"]] = chunk
- 			frame = LabelFrame(self.per_disk,
- 							   text=dev["path"])
- 			frame.grid(sticky=N+S+E+W)
-@@ -371,8 +377,8 @@ class UsageDisplay(Frame, Requester):
+ 			if usage == "data":
+- -				destination = data
+ 				col = COLOURS[repl][0]
+ 			if usage == "meta":
+- -				destination = meta
+ 				col = COLOURS[repl][1]
+ 			if usage == "sys":
+- -				destination = sys
+ 				col = COLOURS[repl][2]
+ 
+ 			usedfree = SplitBox(orient=SplitBox.HORIZONTAL)
+- -			usedfree.append((bg_type["used"],
++			usedfree.append((chunk["used"],
+ 							 { "fill": col }))
+- -			usedfree.append((bg_type["size"]-bg_type["used"],
++			usedfree.append((chunk["size"]-chunk["used"],
+ 							 { "fill": col, "stripe": fade(col) }))
+- -			destination.append((usedfree.total, usedfree))
+- -			if size is not None:
+- -				size -= bg_type["size"]
++			chunkbox.append((usedfree.total, usedfree))
++			box.append((chunkbox.total, chunkbox))
+ 
+- -		if size is not None:
+- -			freebox.append((size, { "fill": COLOUR_UNUSED }))
+- -		elif free is not None:
++		if size is not None and nextpos < size:
++			free = size - nextpos
++		if free is not None:
++			freebox = SplitBox(orient=SplitBox.VERTICAL)
+ 			freebox.append((free, { "fill": COLOUR_UNUSED }))
+- -
+- -		# total is our whole block
+- -		# *_total are the three main divisions
+- -		box = SplitBox(orient=SplitBox.HORIZONTAL)
+- -		box.append((sys.total, sys))
+- -		box.append((meta.total, meta))
+- -		box.append((data.total, data))
+- -		if size is not None or free is not None:
+ 			box.append((freebox.total, freebox))
+ 
+ 		box.set_position(DF_BOX_PADDING, DF_BOX_PADDING,
+@@ -329,6 +325,15 @@ class UsageDisplay(Frame, Requester):
+ 
+ 	@ex_handler
+ 	def update_display(self):
++		def usage_sort(chunk):
++			usage = btrfs.usage_type(chunk["flags"])
++			if usage == "sys":
++				return 0
++			if usage == "meta":
++				return 1
++			if usage == "data":
++				return 2
++
+ 		if not self.stale:
+ 			return
+ 
+@@ -377,7 +382,7 @@ class UsageDisplay(Frame, Requester):
  			bbox = self.per_disk.bbox(container)
  			y = bbox[3] + 4
  			raw_free += self.create_usage_box(canvas,
-- -											  obj["usage"].values(),
-- -											  size=obj["size"],
-+											  chunks.values(),
-+											  size=dev["vol_df"]["size"],
+- -											  chunks.values(),
++											  sorted(chunks.values(), key=usage_sort),
+ 											  size=dev["vol_df"]["size"],
  											  max_size=max_space)
  		self.per_disk.configure(
- 			scrollregion=(0, 0,
-diff --git a/btrfsgui/hlp/size.py b/btrfsgui/hlp/size.py
-index 0ec98c3..5ac89f4 100644
-- --- a/btrfsgui/hlp/size.py
-+++ b/btrfsgui/hlp/size.py
-@@ -69,7 +69,7 @@ def volume_df(params):
- 		res["size"] = data[1]
- 		res["used"] = data[2]
- 		res["uuid"] = btrfs.format_uuid(data[12])
-- -		res["usage"] = {}
-+		res["chunks"] = []
- 
- 		# Now, collect data on the block group types in use
- 		last_offset = 0
-@@ -124,20 +124,18 @@ def volume_df(params):
- 				if header[2] != chunk_length:
- 					raise HelperException("Chunk length inconsistent: chunk tree says {0} bytes, extent tree says {1} bytes".format(chunk_length, header[2]))
- 				chunk_used = extent_info[0]
-- -													  
-- -				if chunk_type not in res["usage"]:
-- -					res["usage"][chunk_type] = {
-- -						"flags": chunk_type,
-- -						"size": 0,
-- -						"used": 0,
-- -						}
-- -				res["usage"][chunk_type]["size"] += ext_length
- 				# We have a total of chunk_used space used, out of
- 				# chunk_length in this block group. So
- 				# chunk_used/chunk_length is the proportion of the BG
- 				# used. We multiply that by the length of the dev_extent
- 				# to get the amount of space used in the dev_extent.
-- -				res["usage"][chunk_type]["used"] += chunk_used * ext_length / chunk_length
-+				res["chunks"].append({
-+								"flags": chunk_type,
-+								"size": ext_length,
-+								"used": chunk_used * ext_length / chunk_length,
-+								"voffset": chunk_offset,
-+								"poffset": ext_offset,
-+								})
- 
- 	sys.stdout.write(json.dumps(res))
- 	sys.stdout.write("\n")
+@@ -389,4 +394,4 @@ class UsageDisplay(Frame, Requester):
+ 		kwargs = {}
+ 		if self.df_selection.get() == "raw":
+ 			kwargs["free"] = raw_free
+- -		self.create_usage_box(self.df_display, obj, **kwargs)
++		self.create_usage_box(self.df_display, sorted(obj, key=usage_sort), **kwargs)
 - -- 
 1.7.5.4
 
@@ -112,7 +144,7 @@ index 0ec98c3..5ac89f4 100644
 Version: GnuPG v1.4.11 (GNU/Linux)
 Comment: Using GnuPG with Mozilla - http://enigmail.mozdev.org/
 
-iEYEARECAAYFAk7MSJMACgkQJ4UciIs+XuK8wwCghzZA+5DZGxSd3mnm5gY7pCs1
-WncAn3nTtOsUswDaz2SC+Hxmp702/aQ2
-=OpKV
+iEYEARECAAYFAk7MSJoACgkQJ4UciIs+XuInWQCgunltRDcrr+wVzlSUzVXiXEjw
+/nIAn2la0tdjlZdkSYcChg87Tw/JS0Ek
+=8XRk
 -----END PGP SIGNATURE-----

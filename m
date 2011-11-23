@@ -1,40 +1,71 @@
-From: Sander <sander@humilis.net>
-Subject: Re: btrfs encryption problems
-Date: Wed, 23 Nov 2011 12:09:57 +0100
-Message-ID: <20111123110956.GB31800@attic.humilis.net>
-References: <CAAVfQj=O5nDAcgsiNHz3dNXHDerNrq2Jw01WFLJr5q563oZToA@mail.gmail.com>
-Reply-To: sander@humilis.net
+From: Hugo Mills <hugo@carfax.org.uk>
+Subject: Re: Announcing btrfs-gui
+Date: Wed, 23 Nov 2011 12:33:34 +0000
+Message-ID: <20111123123333.GE28749@carfax.org.uk>
+References: <20110601232058.GA22619@carfax.org.uk>
+ <4EBDBCD9.8060009@vangasse.eu>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
+Content-Type: multipart/signed; micalg=pgp-sha1;
+	protocol="application/pgp-signature"; boundary="Th5JPit8I3Q6/gDv"
 Cc: linux-btrfs@vger.kernel.org
-To: 810d4rk <810d4rk@gmail.com>
+To: Amedee Van Gasse <amedee@vangasse.eu>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <CAAVfQj=O5nDAcgsiNHz3dNXHDerNrq2Jw01WFLJr5q563oZToA@mail.gmail.com>
+In-Reply-To: <4EBDBCD9.8060009@vangasse.eu>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-810d4rk wrote (ao):
-> Hi to all, I have a hard drive encrypted using the gnome disk utility
-> and it is formated with with btrfs and GUID, the problem started when
-> moving a 4gb file to other disk it stooped saying input output error I
-> think, then when I tried to access it I entered the password to
-> decrypt and it now says that I must specify filesystem type so it
-> doesn't recognize the filesystem, I used 3.0 kernel, meanwhile I
-> upgraded to 3.1, I have a backup of important files in other disk the
-> problem is that it is also encrypted and it has btrfs so I don't touch
-> it for now, can anyone help here?
 
-dd that backup disk to another disk, so you have a backup of your
-backup, and work with that.
+--Th5JPit8I3Q6/gDv
+Content-Type: text/plain; charset=us-ascii
+Content-Disposition: inline
 
-You can also post the dmesg output you get when you mount the broken
-filesystem, and ask the experts if it might be worth to try experimental
-btrfs.fsck on it.
+On Sat, Nov 12, 2011 at 01:24:57AM +0100, Amedee Van Gasse wrote:
+> On 02-06-11 01:20, Hugo Mills wrote:
+> >    Unless the traffic gets too high-volume, or unless someone
+> >important objects, I'm going to suggest that bug reports should go to
+> >this list for now (cc'd me, if you like). Note that this isn't an
+> >"offical" btrfs project -- it's just something I knocked together on
+> >my own.
+> 
+> 
+> I seem to have stumbled upon a bug.
+> During install, Ubuntu gives the user the option to use btrfs as the
+> root filesystem. It automatically creates two subvolumes, @ (for /)
+> and @home (for /home, only if no other partition is used for /home),
+> like this:
+> 
+> mount | grep btrfs
+> /dev/sda6 on / type btrfs (rw,subvol=@)
+> /dev/sda6 on /home type btrfs (rw,subvol=@home)
+> /dev/sda6 on
+> /tmp/btrfs-gui-kl6zx1/12624/eba4f1e9-5b55-4e14-abb8-5a3cf3625c56
+> type btrfs (rw,subvolid=0)
+> 
+> When gtrfs-gui scans for filesystems, it gives the error
+> Root helper exception: b'@' is not JSON serializable
+[snip]
 
-	Sander
+   Mmm... That could be fun. :)
 
-fwiw, I backup to gpg encrypted files stored on ext4 to cope with
-regressions in both btrfs and disk encryption.
+   Thanks for the bug report. I hope I'll have time to look into this
+next week.
+
+   Hugo.
 
 -- 
-Humilis IT Services and Solutions
-http://www.humilis.net
+=== Hugo Mills: hugo@... carfax.org.uk | darksatanic.net | lug.org.uk ===
+  PGP key: 515C238D from wwwkeys.eu.pgp.net or http://www.carfax.org.uk
+   --- The English language has the mot juste for every occasion. ---    
+
+--Th5JPit8I3Q6/gDv
+Content-Type: application/pgp-signature; name="signature.asc"
+Content-Description: Digital signature
+
+-----BEGIN PGP SIGNATURE-----
+Version: GnuPG v1.4.11 (GNU/Linux)
+
+iD8DBQFOzOgdIKyzvlFcI40RAlvpAJ0QIvDK62XcFb+BTAIi/IQ9qxAo7ACcCVhz
+Kwhbt61ykPr9auxDQTu4jJQ=
+=GTFQ
+-----END PGP SIGNATURE-----
+
+--Th5JPit8I3Q6/gDv--

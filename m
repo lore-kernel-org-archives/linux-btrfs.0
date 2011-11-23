@@ -1,25 +1,44 @@
-From: Blair Zajac <blair@orcaware.com>
-Subject: Re: stripe alignment consideration for btrfs on RAID5
-Date: Wed, 23 Nov 2011 09:08:33 -0800
-Message-ID: <94D5143C-1E94-4F12-995B-BCCDEC7108C1@orcaware.com>
-References: <slrnjcq9sh.b3r.stephane.chazelas@spam.is.invalid>
-Mime-Version: 1.0 (Apple Message framework v1251.1)
-Content-Type: text/plain; charset=us-ascii
-Cc: linux-btrfs@vger.kernel.org
-To: Stephane CHAZELAS <stephane_chazelas@yahoo.fr>
+From: "Helmut Hullen" <Hullen@t-online.de>
+Subject: Re: fsck with "err is 1"
+Date: 23 Nov 2011 18:32:00 +0100
+Message-ID: <ByQ7Wl$y1uB@helmut.hullen.de>
+References: <5ED58F1E-368C-414F-BA60-9C8E240338F6@orcaware.com>
+Reply-To: helmut@hullen.de
+Mime-Version: 1.0
+Content-Type: text/plain; charset=US-ASCII
+To: linux-btrfs@vger.kernel.org
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <slrnjcq9sh.b3r.stephane.chazelas@spam.is.invalid>
+In-Reply-To: <5ED58F1E-368C-414F-BA60-9C8E240338F6@orcaware.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
+Hallo, Blair,
 
-On Nov 23, 2011, at 9:04 AM, Stephane CHAZELAS wrote:
+Du meintest am 23.11.11:
 
-> Hiya,
-> 
-> is there any recommendation out there to setup a btrfs FS on top
-> of hardware or software raid5 or raid6 wrt stripe/stride alignment?
+>> I can't answer that, but I can tell you that fsck for btrfs right
+>> now is almost useless. It can't fix anyting.
 
-Isn't the advantage of having btrfs do all the raiding itself so one gets the checksums?  If one puts btrfs on top of software or hardware raid, then if there is a checksum error, you don't have another copy of the data to fall back to.  If one uses btrfs' raid1 or above for data and metadata, then you can suffer a checksum failure and get a good copy from another drive?
+> Thank you, I've read that fsck doesn't fix anything.  I was curious
+> if doing the scrub would resolve it.
 
-Blair
+I had tried ... about 4 Tbyte data have gone.
 
+3 disks bundled with data=raid0, metadata=raid1.
+
+One disk had problems, before I run "scrub" I could read most files,  
+Running "scrub": all had gone.
+
+One big problem of btrfs seems to be: you can't see on which partition/ 
+disk the defect sector (or something else) may be, if there is 1 error  
+in 1 partition you have to restore the complete bundle of disks/ 
+partitions.
+
+Yes - I know: btrfs is still under construction.
+
+In my special case: the 4 TByte are a kind of video archive. No  
+"valuable" data, only "nice to have". And old people still know the  
+behaviour of old 35 mm film and/or VHS cassettes: they have errors. But  
+these errors don't damage the whole archive.
+
+Viele Gruesse!
+Helmut

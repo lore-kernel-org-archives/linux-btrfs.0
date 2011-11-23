@@ -1,36 +1,75 @@
-From: "Fajar A. Nugraha" <list@fajar.net>
-Subject: Re: fsck with "err is 1"
-Date: Wed, 23 Nov 2011 13:02:13 +0700
-Message-ID: <CAG1y0sc3w1wWdTYNLgTFEtmF3x+sooZX6dpjJWMoKxV==Bce4A@mail.gmail.com>
-References: <EB38FBF9-9284-4902-ABC6-B6FB6B6D4E50@orcaware.com>
-Mime-Version: 1.0
-Content-Type: text/plain; charset=ISO-8859-1
-Cc: linux-btrfs@vger.kernel.org
-To: Blair Zajac <blair@orcaware.com>
+From: Liu Bo <liubo2009@cn.fujitsu.com>
+Subject: [PATCH] Btrfs: drop spin lock when memory alloc fails
+Date: Wed, 23 Nov 2011 15:21:49 +0800
+Message-ID: <1322032909-28758-1-git-send-email-liubo2009@cn.fujitsu.com>
+To: <linux-btrfs@vger.kernel.org>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <EB38FBF9-9284-4902-ABC6-B6FB6B6D4E50@orcaware.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Wed, Nov 23, 2011 at 12:33 PM, Blair Zajac <blair@orcaware.com> wrot=
-e:
-> Hello,
->
-> I'm trying btrfs in a VirtualBox VM running Ubuntu 11.10 with kernel =
-3.0.0. =A0Running fsck I get a message with "err is 1".
+Drop spin lock in convert_extent_bit() when memory alloc fails,
+otherwise, it will be a deadlock.
 
-> Does this mean there's an error? =A0Is err either always 0 or 1, or d=
-oes err increment beyond 1?
+Signed-off-by: Liu Bo <liubo2009@cn.fujitsu.com>
+---
+ fs/btrfs/extent_io.c |   24 ++++++++++++++++--------
+ 1 files changed, 16 insertions(+), 8 deletions(-)
 
-I can't answer that, but I can tell you that fsck for btrfs right now
-is almost useless. It can't fix anyting.
+diff --git a/fs/btrfs/extent_io.c b/fs/btrfs/extent_io.c
+index 9472d3d..445db2e 100644
+--- a/fs/btrfs/extent_io.c
++++ b/fs/btrfs/extent_io.c
+@@ -935,8 +935,10 @@ again:
+ 	node = tree_search(tree, start);
+ 	if (!node) {
+ 		prealloc = alloc_extent_state_atomic(prealloc);
+-		if (!prealloc)
+-			return -ENOMEM;
++		if (!prealloc) {
++			err = -ENOMEM;
++			goto out;
++		}
+ 		err = insert_state(tree, prealloc, start, end, &bits);
+ 		prealloc = NULL;
+ 		BUG_ON(err == -EEXIST);
+@@ -992,8 +994,10 @@ hit_next:
+ 	 */
+ 	if (state->start < start) {
+ 		prealloc = alloc_extent_state_atomic(prealloc);
+-		if (!prealloc)
+-			return -ENOMEM;
++		if (!prealloc) {
++			err = -ENOMEM;
++			goto out;
++		}
+ 		err = split_state(tree, state, prealloc, start);
+ 		BUG_ON(err == -EEXIST);
+ 		prealloc = NULL;
+@@ -1024,8 +1028,10 @@ hit_next:
+ 			this_end = last_start - 1;
+ 
+ 		prealloc = alloc_extent_state_atomic(prealloc);
+-		if (!prealloc)
+-			return -ENOMEM;
++		if (!prealloc) {
++			err = -ENOMEM;
++			goto out;
++		}
+ 
+ 		/*
+ 		 * Avoid to free 'prealloc' if it can be merged with
+@@ -1051,8 +1057,10 @@ hit_next:
+ 	 */
+ 	if (state->start <= end && state->end > end) {
+ 		prealloc = alloc_extent_state_atomic(prealloc);
+-		if (!prealloc)
+-			return -ENOMEM;
++		if (!prealloc) {
++			err = -ENOMEM;
++			goto out;
++		}
+ 
+ 		err = split_state(tree, state, prealloc, end + 1);
+ 		BUG_ON(err == -EEXIST);
+-- 
+1.6.5.2
 
-Short summary, if you can mount the fs, and can access the data, and
-don't have any weird messages on syslog, then it's most likely OK.
-
---=20
-=46ajar
---
-To unsubscribe from this list: send the line "unsubscribe linux-btrfs" =
-in
-the body of a message to majordomo@vger.kernel.org
-More majordomo info at  http://vger.kernel.org/majordomo-info.html

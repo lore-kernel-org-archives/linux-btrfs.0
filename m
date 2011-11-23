@@ -1,30 +1,36 @@
-From: "krzf83@gmail.com " <krzf83@gmail.com>
-Subject: Re: btrfs and load (sys)
-Date: Wed, 23 Nov 2011 16:17:08 +0100
-Message-ID: <CAJ1PRS=McLBAqwkgJe10uF3706a-YncrpwOaUZ6+KQjOSCACCA@mail.gmail.com>
-References: <CAJ1PRSnhqo3yU4b0sbcYLfByb_pTDuAOL2xo4fryiEoacr8iYg@mail.gmail.com>
-	<20111123205616.73b4d0a7@natsu>
-	<CAJ1PRSk4cker8WbSL5t9sKYde=f4XRAkQGQVYVC=8wnJKT8EwQ@mail.gmail.com>
+From: David Sterba <dave@jikos.cz>
+Subject: Re: [PATCH] Btrfs: rewrite btrfs_trim_block_group()
+Date: Wed, 23 Nov 2011 16:46:57 +0100
+Message-ID: <20111123154657.GD12759@twin.jikos.cz>
+References: <4EC4B719.30007@cn.fujitsu.com>
+Reply-To: dave@jikos.cz
 Mime-Version: 1.0
-Content-Type: text/plain; charset=UTF-8
-Cc: linux-btrfs@vger.kernel.org
-To: Roman Mamedov <rm@romanrm.ru>
+Content-Type: text/plain; charset=us-ascii
+Cc: "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
+To: Li Zefan <lizf@cn.fujitsu.com>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <CAJ1PRSk4cker8WbSL5t9sKYde=f4XRAkQGQVYVC=8wnJKT8EwQ@mail.gmail.com>
+In-Reply-To: <4EC4B719.30007@cn.fujitsu.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-I see that this high sys load and loadavg did not appear gradualy. It
-appeared first time about 7 days ago and were present every backup,
-every night since then.
+On Thu, Nov 17, 2011 at 03:26:17PM +0800, Li Zefan wrote:
+> diff --git a/fs/btrfs/free-space-cache.c b/fs/btrfs/free-space-cache.c
+> index 8c32434..89cc54e 100644
+> --- a/fs/btrfs/free-space-cache.c
+> +++ b/fs/btrfs/free-space-cache.c
+> +static int trim_no_bitmap(struct btrfs_block_group_cache *block_group,
+> +			  u64 *total_trimmed, u64 start, u64 end, u64 minlen)
+> +{
+> +	struct btrfs_free_space_ctl *ctl = block_group->free_space_ctl;
+> +	struct btrfs_free_space *entry;
+> +	struct rb_node *node;
+> +	int ret;
+        int ret = 0;
 
-During backup top shows higher cpu load on
+  CC [M]  fs/btrfs/free-space-cache.o
+fs/btrfs/free-space-cache.c: In function trim_no_bitmap:
+fs/btrfs/free-space-cache.c:2636: warning: ret may be used uninitialized in this function
 
- 4216 root      20   0     0    0    0 R 20.3  0.0 284:25.83 btrfs-delayed-m
- 4222 root      20   0     0    0    0 D 19.6  0.0 203:23.89 btrfs-transacti
+Although it seems the uninitialized value could never be returned.
 
-however one cannot really debug sys load so it does not tell much.
-Scenario here is quite simple (rsync to working dir and then snapshot,
-next night rsync (in place) to working dir and again snapshot). Rsync
-is killed at 08:00.
-I will try rebooting server this night but I doubt it will change
-anything on those high loads during backup to btrfs partition.
+
+david

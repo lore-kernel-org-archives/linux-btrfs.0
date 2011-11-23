@@ -1,22 +1,41 @@
-From: Jan Schmidt <list.btrfs@jan-o-sch.net>
-Subject: Re: fsck with "err is 1"
-Date: Wed, 23 Nov 2011 18:44:36 +0100
-Message-ID: <4ECD3104.3050205@jan-o-sch.net>
-References: <ByQ7Wl$y1uB@helmut.hullen.de>
-Mime-Version: 1.0
-Content-Type: text/plain; charset=ISO-8859-1
-Cc: Helmut Hullen <Hullen@t-online.de>, linux-btrfs@vger.kernel.org
-To: helmut@hullen.de
+From: Stephane CHAZELAS <stephane_chazelas@yahoo.fr>
+Subject: Re: stripe alignment consideration for btrfs on RAID5
+Date: Wed, 23 Nov 2011 17:55:19 +0000 (UTC)
+Message-ID: <slrnjcqcs7.b3r.stephane.chazelas@spam.is.invalid>
+References: <slrnjcq9sh.b3r.stephane.chazelas@spam.is.invalid>
+ <94D5143C-1E94-4F12-995B-BCCDEC7108C1@orcaware.com>
+To: linux-btrfs@vger.kernel.org
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <ByQ7Wl$y1uB@helmut.hullen.de>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 23.11.2011 18:32, Helmut Hullen wrote:
-> One big problem of btrfs seems to be: you can't see on which partition/ 
-> disk the defect sector (or something else) may be
+2011-11-23, 09:08(-08), Blair Zajac:
+>
+> On Nov 23, 2011, at 9:04 AM, Stephane CHAZELAS wrote:
+>
+>> Hiya,
+>> 
+>> is there any recommendation out there to setup a btrfs FS on top
+>> of hardware or software raid5 or raid6 wrt stripe/stride alignment?
+>
+> Isn't the advantage of having btrfs do all the raiding itself
+> so one gets the checksums?  If one puts btrfs on top of
+> software or hardware raid, then if there is a checksum error,
+> you don't have another copy of the data to fall back to.  If
+> one uses btrfs' raid1 or above for data and metadata, then you
+> can suffer a checksum failure and get a good copy from another
+> drive?
+[...]
 
-A recent kernel (3.2, still rc) will tell you the byte number when an
-error occurs, and also give the the opportunity to resolve this address
-to all files affected.
+Yes, but btrfs doesn't support raid5 yet and I have a limited
+number of drives I can connect to that system, and storage
+capacity is more important for me than the odd chance of
+corruptions of odd sectors (which can be mitigated by running
+regular RAID checks).
 
--Jan
+Also, my tests of btrfs raid10 didn't indicate it was reliable
+enough yet (when a drive disappears and reappears, btrfs seems
+to get quite confused).
+
+-- 
+Stephane
+

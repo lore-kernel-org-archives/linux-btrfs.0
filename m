@@ -1,53 +1,67 @@
 From: Jeff Mahoney <jeffm@suse.com>
-Subject: [patch 60/99] btrfs: btrfs_set_block_group_rw should return void
-Date: Wed, 23 Nov 2011 19:36:33 -0500
-Message-ID: <20111124004226.762957655@suse.com>
+Subject: [patch 61/99] btrfs: setup_inline_extent_backref should return void
+Date: Wed, 23 Nov 2011 19:36:34 -0500
+Message-ID: <20111124004226.878946659@suse.com>
 References: <20111124003533.395674389@suse.com>
 To: Btrfs List <linux-btrfs@vger.kernel.org>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
 List-ID: <linux-btrfs.vger.kernel.org>
 
- btrfs_set_block_group_rw has no error conditions and should return
- void. Its callers already ignore the error codes anyway.
+ setup_inline_extent_backref has no error conditions and should return
+ void. We set ret = 0 explicitly in insert_inline_extent_backref since
+ it would have been set using the return value, which would have been 0.
 
 Signed-off-by: Jeff Mahoney <jeffm@suse.com>
 ---
- fs/btrfs/ctree.h       |    4 ++--
- fs/btrfs/extent-tree.c |    3 +--
- 2 files changed, 3 insertions(+), 4 deletions(-)
+ fs/btrfs/extent-tree.c |   23 +++++++++++------------
+ 1 file changed, 11 insertions(+), 12 deletions(-)
 
---- a/fs/btrfs/ctree.h
-+++ b/fs/btrfs/ctree.h
-@@ -2263,8 +2263,8 @@ void btrfs_block_rsv_release(struct btrf
-			     u64 num_bytes);
- int btrfs_set_block_group_ro(struct btrfs_root *root,
- 			     struct btrfs_block_group_cache *cache);
--int btrfs_set_block_group_rw(struct btrfs_root *root,
--			     struct btrfs_block_group_cache *cache);
-+void btrfs_set_block_group_rw(struct btrfs_root *root,
-+			      struct btrfs_block_group_cache *cache);
- void btrfs_put_block_group_cache(struct btrfs_fs_info *info);
- u64 btrfs_account_ro_block_groups_free_space(struct btrfs_space_info *sinfo);
- int btrfs_error_unpin_extent_range(struct btrfs_root *root,
 --- a/fs/btrfs/extent-tree.c
 +++ b/fs/btrfs/extent-tree.c
-@@ -6769,7 +6769,7 @@ u64 btrfs_account_ro_block_groups_free_s
- 	return free_bytes;
- }
- 
--int btrfs_set_block_group_rw(struct btrfs_root *root,
-+void btrfs_set_block_group_rw(struct btrfs_root *root,
- 			      struct btrfs_block_group_cache *cache)
+@@ -1556,13 +1556,13 @@ out:
+  * helper to add new inline back ref
+  */
+ static noinline_for_stack
+-int setup_inline_extent_backref(struct btrfs_trans_handle *trans,
+-				struct btrfs_root *root,
+-				struct btrfs_path *path,
+-				struct btrfs_extent_inline_ref *iref,
+-				u64 parent, u64 root_objectid,
+-				u64 owner, u64 offset, int refs_to_add,
+-				struct btrfs_delayed_extent_op *extent_op)
++void setup_inline_extent_backref(struct btrfs_trans_handle *trans,
++				 struct btrfs_root *root,
++				 struct btrfs_path *path,
++				 struct btrfs_extent_inline_ref *iref,
++				 u64 parent, u64 root_objectid,
++				 u64 owner, u64 offset, int refs_to_add,
++				 struct btrfs_delayed_extent_op *extent_op)
  {
- 	struct btrfs_space_info *sinfo = cache->space_info;
-@@ -6785,7 +6785,6 @@ int btrfs_set_block_group_rw(struct btrf
- 	cache->ro = 0;
- 	spin_unlock(&cache->lock);
- 	spin_unlock(&sinfo->lock);
+ 	struct extent_buffer *leaf;
+ 	struct btrfs_extent_item *ei;
+@@ -1616,7 +1616,6 @@ int setup_inline_extent_backref(struct b
+ 		btrfs_set_extent_inline_ref_offset(leaf, iref, root_objectid);
+ 	}
+ 	btrfs_mark_buffer_dirty(leaf);
 -	return 0;
  }
  
- /*
+ static int lookup_extent_backref(struct btrfs_trans_handle *trans,
+@@ -1735,10 +1734,10 @@ int insert_inline_extent_backref(struct
+ 		ret = update_inline_extent_backref(trans, root, path, iref,
+ 						   refs_to_add, extent_op);
+ 	} else if (ret == -ENOENT) {
+-		ret = setup_inline_extent_backref(trans, root, path, iref,
+-						  parent, root_objectid,
+-						  owner, offset, refs_to_add,
+-						  extent_op);
++		setup_inline_extent_backref(trans, root, path, iref, parent,
++					    root_objectid, owner, offset,
++					    refs_to_add, extent_op);
++		ret = 0;
+ 	}
+ 	return ret;
+ }
 
 
 

@@ -1,37 +1,76 @@
 From: Jeff Mahoney <jeffm@suse.com>
-Subject: [patch 95/99] btrfs: del_fs_roots should return void
-Date: Wed, 23 Nov 2011 19:37:08 -0500
-Message-ID: <20111124004230.813659524@suse.com>
+Subject: [patch 88/99] btrfs: __btrfs_remove_ordered_extent should return void
+Date: Wed, 23 Nov 2011 19:37:01 -0500
+Message-ID: <20111124004230.004437858@suse.com>
 References: <20111124003533.395674389@suse.com>
 To: Btrfs List <linux-btrfs@vger.kernel.org>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
 List-ID: <linux-btrfs.vger.kernel.org>
 
- del_fs_roots has no error conditions and should return void
+ __btrfs_remove_ordered_extent has no error conditions and should return
+ void. Once that happens, btrfs_remove_ordered_extent has no error
+ conditions can can also return void.
 
 Signed-off-by: Jeff Mahoney <jeffm@suse.com>
 ---
- fs/btrfs/disk-io.c |    3 +--
- 1 file changed, 1 insertion(+), 2 deletions(-)
+ fs/btrfs/ordered-data.c |   15 +++++----------
+ fs/btrfs/ordered-data.h |    2 +-
+ 2 files changed, 6 insertions(+), 11 deletions(-)
 
---- a/fs/btrfs/disk-io.c
-+++ b/fs/btrfs/disk-io.c
-@@ -2764,7 +2764,7 @@ static void free_fs_root(struct btrfs_ro
- 	kfree(root);
- }
- 
--static int del_fs_roots(struct btrfs_fs_info *fs_info)
-+static void del_fs_roots(struct btrfs_fs_info *fs_info)
+--- a/fs/btrfs/ordered-data.c
++++ b/fs/btrfs/ordered-data.c
+@@ -415,8 +415,8 @@ void btrfs_put_ordered_extent(struct btr
+  * and you must wake_up entry->wait.  You must hold the tree lock
+  * while you call this function.
+  */
+-static int __btrfs_remove_ordered_extent(struct inode *inode,
+-				struct btrfs_ordered_extent *entry)
++static void __btrfs_remove_ordered_extent(struct inode *inode,
++					  struct btrfs_ordered_extent *entry)
  {
- 	int ret;
- 	struct btrfs_root *gang[8];
-@@ -2793,7 +2793,6 @@ static int del_fs_roots(struct btrfs_fs_
- 		for (i = 0; i < ret; i++)
- 			btrfs_free_fs_root(fs_info, gang[i]);
+ 	struct btrfs_ordered_inode_tree *tree;
+ 	struct btrfs_root *root = BTRFS_I(inode)->root;
+@@ -443,27 +443,22 @@ static int __btrfs_remove_ordered_extent
+ 		list_del_init(&BTRFS_I(inode)->ordered_operations);
  	}
+ 	spin_unlock(&root->fs_info->ordered_extent_lock);
+-
 -	return 0;
  }
  
- int btrfs_cleanup_fs_roots(struct btrfs_fs_info *fs_info)
+ /*
+  * remove an ordered extent from the tree.  No references are dropped
+  * but any waiters are woken.
+  */
+-int btrfs_remove_ordered_extent(struct inode *inode,
+-				struct btrfs_ordered_extent *entry)
++void btrfs_remove_ordered_extent(struct inode *inode,
++				 struct btrfs_ordered_extent *entry)
+ {
+ 	struct btrfs_ordered_inode_tree *tree;
+-	int ret;
+ 
+ 	tree = &BTRFS_I(inode)->ordered_tree;
+ 	spin_lock(&tree->lock);
+-	ret = __btrfs_remove_ordered_extent(inode, entry);
++	__btrfs_remove_ordered_extent(inode, entry);
+ 	spin_unlock(&tree->lock);
+ 	wake_up(&entry->wait);
+-
+-	return ret;
+ }
+ 
+ /*
+--- a/fs/btrfs/ordered-data.h
++++ b/fs/btrfs/ordered-data.h
+@@ -139,7 +139,7 @@ btrfs_ordered_inode_tree_init(struct btr
+ }
+ 
+ void btrfs_put_ordered_extent(struct btrfs_ordered_extent *entry);
+-int btrfs_remove_ordered_extent(struct inode *inode,
++void btrfs_remove_ordered_extent(struct inode *inode,
+ 				struct btrfs_ordered_extent *entry);
+ int btrfs_dec_test_ordered_pending(struct inode *inode,
+ 				   struct btrfs_ordered_extent **cached,
 
 

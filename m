@@ -1,52 +1,54 @@
 From: Jeff Mahoney <jeffm@suse.com>
-Subject: [patch 39/99] btrfs: __unlock_for_delalloc should return void
-Date: Wed, 23 Nov 2011 19:36:12 -0500
-Message-ID: <20111124004224.333913220@suse.com>
+Subject: [patch 56/99] btrfs: btrfs_invalidate_inodes should return void
+Date: Wed, 23 Nov 2011 19:36:29 -0500
+Message-ID: <20111124004226.300418067@suse.com>
 References: <20111124003533.395674389@suse.com>
 To: Btrfs List <linux-btrfs@vger.kernel.org>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
 List-ID: <linux-btrfs.vger.kernel.org>
 
- __unlock_for_delalloc has no error conditions and should return void.
- Its callers already ignore the error code anyway.
+ btrfs_invalidate_inodes has no error conditions and should return void.
 
 Signed-off-by: Jeff Mahoney <jeffm@suse.com>
 ---
- fs/btrfs/extent_io.c |    9 ++++-----
- 1 file changed, 4 insertions(+), 5 deletions(-)
+ fs/btrfs/ctree.h |    2 +-
+ fs/btrfs/inode.c |    3 +--
+ 2 files changed, 2 insertions(+), 3 deletions(-)
 
---- a/fs/btrfs/extent_io.c
-+++ b/fs/btrfs/extent_io.c
-@@ -1384,9 +1384,9 @@ out:
- 	return found;
+diff --git a/fs/btrfs/ctree.h b/fs/btrfs/ctree.h
+index 7d90a9c..e8f0689 100644
+--- a/fs/btrfs/ctree.h
++++ b/fs/btrfs/ctree.h
+@@ -2584,7 +2584,7 @@ int btrfs_orphan_cleanup(struct btrfs_root *root);
+ void btrfs_orphan_commit_root(struct btrfs_trans_handle *trans,
+ 			      struct btrfs_root *root);
+ int btrfs_cont_expand(struct inode *inode, loff_t oldsize, loff_t size);
+-int btrfs_invalidate_inodes(struct btrfs_root *root);
++void btrfs_invalidate_inodes(struct btrfs_root *root);
+ void btrfs_add_delayed_iput(struct inode *inode);
+ void btrfs_run_delayed_iputs(struct btrfs_root *root);
+ int btrfs_prealloc_file_range(struct inode *inode, int mode,
+diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
+index 321c9cf..59c681b 100644
+--- a/fs/btrfs/inode.c
++++ b/fs/btrfs/inode.c
+@@ -3861,7 +3861,7 @@ static void inode_tree_del(struct inode *inode)
+ 	}
  }
  
--static noinline int __unlock_for_delalloc(struct inode *inode,
--					  struct page *locked_page,
--					  u64 start, u64 end)
-+static noinline void __unlock_for_delalloc(struct inode *inode,
-+					   struct page *locked_page,
-+					   u64 start, u64 end)
+-int btrfs_invalidate_inodes(struct btrfs_root *root)
++void btrfs_invalidate_inodes(struct btrfs_root *root)
  {
- 	int ret;
- 	struct page *pages[16];
-@@ -1396,7 +1396,7 @@ static noinline int __unlock_for_delallo
- 	int i;
- 
- 	if (index == locked_page->index && end_index == index)
--		return 0;
-+		return;
- 
- 	while (nr_pages > 0) {
- 		ret = find_get_pages_contig(inode->i_mapping, index,
-@@ -1411,7 +1411,6 @@ static noinline int __unlock_for_delallo
- 		index += ret;
- 		cond_resched();
+ 	struct rb_node *node;
+ 	struct rb_node *prev;
+@@ -3921,7 +3921,6 @@ again:
+ 		node = rb_next(node);
  	}
+ 	spin_unlock(&root->inode_lock);
 -	return 0;
  }
  
- static noinline int lock_delalloc_pages(struct inode *inode,
+ static int btrfs_init_locked_inode(struct inode *inode, void *p)
 
 
 

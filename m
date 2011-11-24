@@ -1,51 +1,98 @@
 From: Jeff Mahoney <jeffm@suse.com>
-Subject: [patch 36/99] btrfs: set_range_writeback should return void
-Date: Wed, 23 Nov 2011 19:36:09 -0500
-Message-ID: <20111124004223.986519243@suse.com>
+Subject: [patch 32/99] btrfs: btrfs_drop_snapshot should return int
+Date: Wed, 23 Nov 2011 19:36:05 -0500
+Message-ID: <20111124004223.523653285@suse.com>
 References: <20111124003533.395674389@suse.com>
 To: Btrfs List <linux-btrfs@vger.kernel.org>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
 List-ID: <linux-btrfs.vger.kernel.org>
 
- set_range_writeback has no error conditions and should return void.
- Its callers already ignore the error code anyway.
-
- There are internal error conditions but they are fatal and will cause
- a panic.
+Commit cb1b69f4 (Btrfs: forced readonly when btrfs_drop_snapshot() fails)
+made btrfs_drop_snapshot return void because there were no callers checking
+the return value. That is the wrong order to handle error propogation since
+the caller will have no idea that an error has occured and continue on
+as if nothing went wrong.
 
 Signed-off-by: Jeff Mahoney <jeffm@suse.com>
 ---
- fs/btrfs/extent_io.c |    8 +++++---
- 1 file changed, 5 insertions(+), 3 deletions(-)
+ fs/btrfs/ctree.h       |    5 +++--
+ fs/btrfs/extent-tree.c |    6 +++---
+ fs/btrfs/relocation.c  |    3 ++-
+ fs/btrfs/transaction.c |    7 +++++--
+ 4 files changed, 13 insertions(+), 8 deletions(-)
 
---- a/fs/btrfs/extent_io.c
-+++ b/fs/btrfs/extent_io.c
-@@ -1253,7 +1253,7 @@ int unlock_extent(struct extent_io_tree
- /*
-  * helper function to set both pages and extents in the tree writeback
+--- a/fs/btrfs/ctree.h
++++ b/fs/btrfs/ctree.h
+@@ -2367,8 +2367,9 @@ static inline int btrfs_insert_empty_ite
+ int btrfs_next_leaf(struct btrfs_root *root, struct btrfs_path *path);
+ int btrfs_prev_leaf(struct btrfs_root *root, struct btrfs_path *path);
+ int btrfs_leaf_free_space(struct btrfs_root *root, struct extent_buffer *leaf);
+-void btrfs_drop_snapshot(struct btrfs_root *root,
+-			 struct btrfs_block_rsv *block_rsv, int update_ref);
++int __must_check btrfs_drop_snapshot(struct btrfs_root *root,
++				     struct btrfs_block_rsv *block_rsv,
++				     int update_ref);
+ int btrfs_drop_subtree(struct btrfs_trans_handle *trans,
+ 			struct btrfs_root *root,
+ 			struct extent_buffer *node,
+--- a/fs/btrfs/extent-tree.c
++++ b/fs/btrfs/extent-tree.c
+@@ -6347,8 +6347,8 @@ static noinline int walk_up_tree(struct
+  * also make sure backrefs for the shared block and all lower level
+  * blocks are properly updated.
   */
--static int set_range_writeback(struct extent_io_tree *tree, u64 start, u64 end)
-+static void set_range_writeback(struct extent_io_tree *tree, u64 start, u64 end)
+-void btrfs_drop_snapshot(struct btrfs_root *root,
+-			 struct btrfs_block_rsv *block_rsv, int update_ref)
++int btrfs_drop_snapshot(struct btrfs_root *root,
++			struct btrfs_block_rsv *block_rsv, int update_ref)
  {
- 	unsigned long index = start >> PAGE_CACHE_SHIFT;
- 	unsigned long end_index = end >> PAGE_CACHE_SHIFT;
-@@ -1261,12 +1261,14 @@ static int set_range_writeback(struct ex
- 
- 	while (index <= end_index) {
- 		page = find_get_page(tree->mapping, index);
--		BUG_ON(!page);
-+		if (!page)
-+			btrfs_panic(tree_fs_info(tree), -ENOENT,
-+				    "Page not found in extent io tree at "
-+				    "offset %llu", index << PAGE_CACHE_SHIFT);
- 		set_page_writeback(page);
- 		page_cache_release(page);
- 		index++;
- 	}
--	return 0;
+ 	struct btrfs_path *path;
+ 	struct btrfs_trans_handle *trans;
+@@ -6513,7 +6513,7 @@ out_free:
+ out:
+ 	if (err)
+ 		btrfs_std_error(root->fs_info, err);
+-	return;
++	return err;
  }
  
- /* find the first state struct with 'bits' set after 'start', and
+ /*
+--- a/fs/btrfs/relocation.c
++++ b/fs/btrfs/relocation.c
+@@ -2269,7 +2269,8 @@ again:
+ 		} else {
+ 			list_del_init(&reloc_root->root_list);
+ 		}
+-		btrfs_drop_snapshot(reloc_root, rc->block_rsv, 0);
++		ret = btrfs_drop_snapshot(reloc_root, rc->block_rsv, 0);
++		BUG_ON(ret < 0);
+ 	}
+ 
+ 	if (found) {
+--- a/fs/btrfs/transaction.c
++++ b/fs/btrfs/transaction.c
+@@ -1375,6 +1375,8 @@ int btrfs_clean_old_snapshots(struct btr
+ 	spin_unlock(&fs_info->trans_lock);
+ 
+ 	while (!list_empty(&list)) {
++		int ret;
++
+ 		root = list_entry(list.next, struct btrfs_root, root_list);
+ 		list_del(&root->root_list);
+ 
+@@ -1382,9 +1384,10 @@ int btrfs_clean_old_snapshots(struct btr
+ 
+ 		if (btrfs_header_backref_rev(root->node) <
+ 		    BTRFS_MIXED_BACKREF_REV)
+-			btrfs_drop_snapshot(root, NULL, 0);
++			ret = btrfs_drop_snapshot(root, NULL, 0);
+ 		else
+-			btrfs_drop_snapshot(root, NULL, 1);
++			ret = btrfs_drop_snapshot(root, NULL, 1);
++		BUG_ON(ret < 0);
+ 	}
+ 	return 0;
+ }
 
 
 

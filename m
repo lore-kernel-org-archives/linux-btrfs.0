@@ -1,43 +1,54 @@
 From: Jeff Mahoney <jeffm@suse.com>
-Subject: [patch 83/99] btrfs: btrfs_extend_item should return void
-Date: Wed, 23 Nov 2011 19:36:56 -0500
-Message-ID: <20111124004229.425677109@suse.com>
+Subject: [patch 82/99] btrfs: btrfs_truncate_item should return void
+Date: Wed, 23 Nov 2011 19:36:55 -0500
+Message-ID: <20111124004229.309786403@suse.com>
 References: <20111124003533.395674389@suse.com>
 To: Btrfs List <linux-btrfs@vger.kernel.org>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
 List-ID: <linux-btrfs.vger.kernel.org>
 
- btrfs_extend_item has no error conditions and should return void.
+ btrfs_truncate_item has no error conditions and should return void.
 
 Signed-off-by: Jeff Mahoney <jeffm@suse.com>
 ---
- fs/btrfs/ctree.c       |    7 +++----
- fs/btrfs/ctree.h       |    5 +++--
- fs/btrfs/dir-item.c    |    5 ++---
- fs/btrfs/extent-tree.c |    5 ++---
- fs/btrfs/file-item.c   |    2 +-
- fs/btrfs/inode-item.c  |    2 +-
- fs/btrfs/tree-log.c    |    9 ++++-----
- 7 files changed, 16 insertions(+), 19 deletions(-)
+ fs/btrfs/ctree.c       |   11 +++++------
+ fs/btrfs/ctree.h       |    8 ++++----
+ fs/btrfs/dir-item.c    |    4 ++--
+ fs/btrfs/extent-tree.c |    3 +--
+ fs/btrfs/file-item.c   |    4 ++--
+ fs/btrfs/inode-item.c  |    3 +--
+ fs/btrfs/inode.c       |    4 ++--
+ 7 files changed, 17 insertions(+), 20 deletions(-)
 
 diff --git a/fs/btrfs/ctree.c b/fs/btrfs/ctree.c
-index 12c66ea..4c9dc73 100644
+index bdaf3ad..12c66ea 100644
 --- a/fs/btrfs/ctree.c
 +++ b/fs/btrfs/ctree.c
-@@ -3291,9 +3291,9 @@ void btrfs_truncate_item(struct btrfs_trans_handle *trans,
- /*
-  * make the item pointed to by the path bigger, data_size is the new size.
+@@ -3193,10 +3193,10 @@ int btrfs_duplicate_item(struct btrfs_trans_handle *trans,
+  * off the end of the item or if we shift the item to chop bytes off
+  * the front.
   */
--int btrfs_extend_item(struct btrfs_trans_handle *trans,
--		      struct btrfs_root *root, struct btrfs_path *path,
--		      u32 data_size)
-+void btrfs_extend_item(struct btrfs_trans_handle *trans,
-+		       struct btrfs_root *root, struct btrfs_path *path,
-+		       u32 data_size)
+-int btrfs_truncate_item(struct btrfs_trans_handle *trans,
+-			struct btrfs_root *root,
+-			struct btrfs_path *path,
+-			u32 new_size, int from_end)
++void btrfs_truncate_item(struct btrfs_trans_handle *trans,
++			 struct btrfs_root *root,
++			 struct btrfs_path *path,
++			 u32 new_size, int from_end)
  {
  	int slot;
  	struct extent_buffer *leaf;
-@@ -3351,7 +3351,6 @@ int btrfs_extend_item(struct btrfs_trans_handle *trans,
+@@ -3213,7 +3213,7 @@ int btrfs_truncate_item(struct btrfs_trans_handle *trans,
+ 
+ 	old_size = btrfs_item_size_nr(leaf, slot);
+ 	if (old_size == new_size)
+-		return 0;
++		return;
+ 
+ 	nritems = btrfs_header_nritems(leaf);
+ 	data_end = leaf_data_end(root, leaf);
+@@ -3286,7 +3286,6 @@ int btrfs_truncate_item(struct btrfs_trans_handle *trans,
  		btrfs_print_leaf(root, leaf);
  		BUG();
  	}
@@ -46,114 +57,111 @@ index 12c66ea..4c9dc73 100644
  
  /*
 diff --git a/fs/btrfs/ctree.h b/fs/btrfs/ctree.h
-index 5d1e06c..5dee97f 100644
+index 51f2840..5d1e06c 100644
 --- a/fs/btrfs/ctree.h
 +++ b/fs/btrfs/ctree.h
-@@ -2305,8 +2305,9 @@ int btrfs_copy_root(struct btrfs_trans_handle *trans,
- 		      struct extent_buffer **cow_ret, u64 new_root_objectid);
- int btrfs_block_can_be_shared(struct btrfs_root *root,
+@@ -2307,10 +2307,10 @@ int btrfs_block_can_be_shared(struct btrfs_root *root,
  			      struct extent_buffer *buf);
--int btrfs_extend_item(struct btrfs_trans_handle *trans, struct btrfs_root
--		      *root, struct btrfs_path *path, u32 data_size);
-+void btrfs_extend_item(struct btrfs_trans_handle *trans,
-+		       struct btrfs_root *root, struct btrfs_path *path,
-+		       u32 data_size);
- void btrfs_truncate_item(struct btrfs_trans_handle *trans,
- 			 struct btrfs_root *root,
- 			 struct btrfs_path *path,
+ int btrfs_extend_item(struct btrfs_trans_handle *trans, struct btrfs_root
+ 		      *root, struct btrfs_path *path, u32 data_size);
+-int btrfs_truncate_item(struct btrfs_trans_handle *trans,
+-			struct btrfs_root *root,
+-			struct btrfs_path *path,
+-			u32 new_size, int from_end);
++void btrfs_truncate_item(struct btrfs_trans_handle *trans,
++			 struct btrfs_root *root,
++			 struct btrfs_path *path,
++			 u32 new_size, int from_end);
+ int btrfs_split_item(struct btrfs_trans_handle *trans,
+ 		     struct btrfs_root *root,
+ 		     struct btrfs_path *path,
 diff --git a/fs/btrfs/dir-item.c b/fs/btrfs/dir-item.c
-index c95fc70..7674330 100644
+index 31d84e7..c95fc70 100644
 --- a/fs/btrfs/dir-item.c
 +++ b/fs/btrfs/dir-item.c
-@@ -49,9 +49,8 @@ static struct btrfs_dir_item *insert_with_overflow(struct btrfs_trans_handle
- 		di = btrfs_match_dir_item_name(root, path, name, name_len);
- 		if (di)
- 			return ERR_PTR(-EEXIST);
--		ret = btrfs_extend_item(trans, root, path, data_size);
--	}
--	if (ret < 0)
-+		btrfs_extend_item(trans, root, path, data_size);
-+	} else if (ret < 0)
- 		return ERR_PTR(ret);
- 	WARN_ON(ret > 0);
- 	leaf = path->nodes[0];
+@@ -383,8 +383,8 @@ int btrfs_delete_one_dir_name(struct btrfs_trans_handle *trans,
+ 		start = btrfs_item_ptr_offset(leaf, path->slots[0]);
+ 		memmove_extent_buffer(leaf, ptr, ptr + sub_item_len,
+ 			item_len - (ptr + sub_item_len - start));
+-		ret = btrfs_truncate_item(trans, root, path,
+-					  item_len - sub_item_len, 1);
++		btrfs_truncate_item(trans, root, path,
++				    item_len - sub_item_len, 1);
+ 	}
+ 	return ret;
+ }
 diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
-index 4ab965d..201822d 100644
+index fac996d..4ab965d 100644
 --- a/fs/btrfs/extent-tree.c
 +++ b/fs/btrfs/extent-tree.c
-@@ -974,7 +974,7 @@ static int convert_extent_item_v0(struct btrfs_trans_handle *trans,
- 		return ret;
- 	BUG_ON(ret);
- 
--	ret = btrfs_extend_item(trans, root, path, new_size);
-+	btrfs_extend_item(trans, root, path, new_size);
- 
- 	leaf = path->nodes[0];
- 	item = btrfs_item_ptr(leaf, path->slots[0], struct btrfs_extent_item);
-@@ -1572,7 +1572,6 @@ void setup_inline_extent_backref(struct btrfs_trans_handle *trans,
- 	u64 refs;
+@@ -1666,7 +1666,6 @@ int update_inline_extent_backref(struct btrfs_trans_handle *trans,
+ 	u32 item_size;
  	int size;
  	int type;
 -	int ret;
+ 	u64 refs;
  
  	leaf = path->nodes[0];
- 	ei = btrfs_item_ptr(leaf, path->slots[0], struct btrfs_extent_item);
-@@ -1581,7 +1580,7 @@ void setup_inline_extent_backref(struct btrfs_trans_handle *trans,
- 	type = extent_ref_type(parent, owner);
- 	size = btrfs_extent_inline_ref_size(type);
- 
--	ret = btrfs_extend_item(trans, root, path, size);
-+	btrfs_extend_item(trans, root, path, size);
- 
- 	ei = btrfs_item_ptr(leaf, path->slots[0], struct btrfs_extent_item);
- 	refs = btrfs_extent_refs(leaf, ei);
+@@ -1708,7 +1707,7 @@ int update_inline_extent_backref(struct btrfs_trans_handle *trans,
+ 			memmove_extent_buffer(leaf, ptr, ptr + size,
+ 					      end - ptr - size);
+ 		item_size -= size;
+-		ret = btrfs_truncate_item(trans, root, path, item_size, 1);
++		btrfs_truncate_item(trans, root, path, item_size, 1);
+ 	}
+ 	btrfs_mark_buffer_dirty(leaf);
+ 	return 0;
 diff --git a/fs/btrfs/file-item.c b/fs/btrfs/file-item.c
-index 319129e..4a73745 100644
+index 8d5272d..319129e 100644
 --- a/fs/btrfs/file-item.c
 +++ b/fs/btrfs/file-item.c
-@@ -778,7 +778,7 @@ again:
- 		if (diff != csum_size)
- 			goto insert;
+@@ -514,7 +514,7 @@ static noinline int truncate_one_csum(struct btrfs_trans_handle *trans,
+ 		 */
+ 		u32 new_size = (bytenr - key->offset) >> blocksize_bits;
+ 		new_size *= csum_size;
+-		ret = btrfs_truncate_item(trans, root, path, new_size, 1);
++		btrfs_truncate_item(trans, root, path, new_size, 1);
+ 	} else if (key->offset >= bytenr && csum_end > end_byte &&
+ 		   end_byte > key->offset) {
+ 		/*
+@@ -526,7 +526,7 @@ static noinline int truncate_one_csum(struct btrfs_trans_handle *trans,
+ 		u32 new_size = (csum_end - end_byte) >> blocksize_bits;
+ 		new_size *= csum_size;
  
--		ret = btrfs_extend_item(trans, root, path, diff);
-+		btrfs_extend_item(trans, root, path, diff);
- 		goto csum;
- 	}
+-		ret = btrfs_truncate_item(trans, root, path, new_size, 0);
++		btrfs_truncate_item(trans, root, path, new_size, 0);
  
+ 		key->offset = end_byte;
+ 		ret = btrfs_set_item_key_safe(trans, root, path, key);
 diff --git a/fs/btrfs/inode-item.c b/fs/btrfs/inode-item.c
-index c04018c..9f0d038 100644
+index baa74f3..c04018c 100644
 --- a/fs/btrfs/inode-item.c
 +++ b/fs/btrfs/inode-item.c
-@@ -164,7 +164,7 @@ int btrfs_insert_inode_ref(struct btrfs_trans_handle *trans,
- 			goto out;
- 
- 		old_size = btrfs_item_size_nr(path->nodes[0], path->slots[0]);
--		ret = btrfs_extend_item(trans, root, path, ins_len);
-+		btrfs_extend_item(trans, root, path, ins_len);
- 		ref = btrfs_item_ptr(path->nodes[0], path->slots[0],
- 				     struct btrfs_inode_ref);
- 		ref = (struct btrfs_inode_ref *)((unsigned long)ref + old_size);
-diff --git a/fs/btrfs/tree-log.c b/fs/btrfs/tree-log.c
-index feb4575..22e7da6 100644
---- a/fs/btrfs/tree-log.c
-+++ b/fs/btrfs/tree-log.c
-@@ -380,12 +380,11 @@ insert:
- 		u32 found_size;
- 		found_size = btrfs_item_size_nr(path->nodes[0],
- 						path->slots[0]);
--		if (found_size > item_size) {
-+		if (found_size > item_size)
- 			btrfs_truncate_item(trans, root, path, item_size, 1);
--		} else if (found_size < item_size) {
--			ret = btrfs_extend_item(trans, root, path,
--						item_size - found_size);
--		}
-+		else if (found_size < item_size)
-+			btrfs_extend_item(trans, root, path,
-+					  item_size - found_size);
- 	} else if (ret) {
- 		return ret;
- 	}
+@@ -128,8 +128,7 @@ int btrfs_del_inode_ref(struct btrfs_trans_handle *trans,
+ 	item_start = btrfs_item_ptr_offset(leaf, path->slots[0]);
+ 	memmove_extent_buffer(leaf, ptr, ptr + sub_item_len,
+ 			      item_size - (ptr + sub_item_len - item_start));
+-	ret = btrfs_truncate_item(trans, root, path,
+-				  item_size - sub_item_len, 1);
++	btrfs_truncate_item(trans, root, path, item_size - sub_item_len, 1);
+ out:
+ 	btrfs_free_path(path);
+ 	return ret;
+diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
+index d8bb54e..96a0fbd 100644
+--- a/fs/btrfs/inode.c
++++ b/fs/btrfs/inode.c
+@@ -3243,8 +3243,8 @@ search_again:
+ 				}
+ 				size =
+ 				    btrfs_file_extent_calc_inline_size(size);
+-				ret = btrfs_truncate_item(trans, root, path,
+-							  size, 1);
++				btrfs_truncate_item(trans, root, path,
++						    size, 1);
+ 			} else if (root->ref_cows) {
+ 				inode_sub_bytes(inode, item_end + 1 -
+ 						found_key.offset);
 
 
 

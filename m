@@ -1,57 +1,50 @@
 From: Jeff Mahoney <jeffm@suse.com>
-Subject: [patch 93/99] btrfs: btrfs_add_ordered_sum should return void
-Date: Wed, 23 Nov 2011 19:37:06 -0500
-Message-ID: <20111124004230.582559834@suse.com>
+Subject: [patch 91/99] btrfs: btrfs_run_ordered_operations should return void
+Date: Wed, 23 Nov 2011 19:37:04 -0500
+Message-ID: <20111124004230.351304172@suse.com>
 References: <20111124003533.395674389@suse.com>
 To: Btrfs List <linux-btrfs@vger.kernel.org>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
 List-ID: <linux-btrfs.vger.kernel.org>
 
- btrfs_add_ordered_sum has no error conditions and should return void
+ btrfs_run_ordered_operations has no error conditions and should return void.
 
 Signed-off-by: Jeff Mahoney <jeffm@suse.com>
 ---
- fs/btrfs/ordered-data.c |    7 +++----
- fs/btrfs/ordered-data.h |    6 +++---
- 2 files changed, 6 insertions(+), 7 deletions(-)
+ fs/btrfs/ordered-data.c |    4 +---
+ fs/btrfs/ordered-data.h |    2 +-
+ 2 files changed, 2 insertions(+), 4 deletions(-)
 
 --- a/fs/btrfs/ordered-data.c
 +++ b/fs/btrfs/ordered-data.c
-@@ -257,9 +257,9 @@ int btrfs_add_ordered_extent_compress(st
-  * when an ordered extent is finished.  If the list covers more than one
-  * ordered extent, it is split across multiples.
+@@ -526,7 +526,7 @@ void btrfs_wait_ordered_extents(struct b
+  * extra check to make sure the ordered operation list really is empty
+  * before we return
   */
--int btrfs_add_ordered_sum(struct inode *inode,
--			  struct btrfs_ordered_extent *entry,
--			  struct btrfs_ordered_sum *sum)
-+void btrfs_add_ordered_sum(struct inode *inode,
-+			   struct btrfs_ordered_extent *entry,
-+			   struct btrfs_ordered_sum *sum)
+-int btrfs_run_ordered_operations(struct btrfs_root *root, int wait)
++void btrfs_run_ordered_operations(struct btrfs_root *root, int wait)
  {
- 	struct btrfs_ordered_inode_tree *tree;
+ 	struct btrfs_inode *btrfs_inode;
+ 	struct inode *inode;
+@@ -574,8 +574,6 @@ again:
  
-@@ -267,7 +267,6 @@ int btrfs_add_ordered_sum(struct inode *
- 	spin_lock(&tree->lock);
- 	list_add_tail(&sum->list, &entry->list);
- 	spin_unlock(&tree->lock);
+ 	spin_unlock(&root->fs_info->ordered_extent_lock);
+ 	mutex_unlock(&root->fs_info->ordered_operations_mutex);
+-
 -	return 0;
  }
  
  /*
 --- a/fs/btrfs/ordered-data.h
 +++ b/fs/btrfs/ordered-data.h
-@@ -154,9 +154,9 @@ int btrfs_add_ordered_extent_dio(struct
- int btrfs_add_ordered_extent_compress(struct inode *inode, u64 file_offset,
- 				      u64 start, u64 len, u64 disk_len,
- 				      int type, int compress_type);
--int btrfs_add_ordered_sum(struct inode *inode,
--			  struct btrfs_ordered_extent *entry,
--			  struct btrfs_ordered_sum *sum);
-+void btrfs_add_ordered_sum(struct inode *inode,
-+			   struct btrfs_ordered_extent *entry,
-+			   struct btrfs_ordered_sum *sum);
- struct btrfs_ordered_extent *btrfs_lookup_ordered_extent(struct inode *inode,
- 							 u64 file_offset);
- void btrfs_start_ordered_extent(struct inode *inode,
+@@ -170,7 +170,7 @@ struct btrfs_ordered_extent *btrfs_looku
+ int btrfs_ordered_update_i_size(struct inode *inode, u64 offset,
+ 				struct btrfs_ordered_extent *ordered);
+ int btrfs_find_ordered_sum(struct inode *inode, u64 offset, u64 disk_bytenr, u32 *sum);
+-int btrfs_run_ordered_operations(struct btrfs_root *root, int wait);
++void btrfs_run_ordered_operations(struct btrfs_root *root, int wait);
+ int btrfs_add_ordered_operation(struct btrfs_trans_handle *trans,
+ 				struct btrfs_root *root,
+ 				struct inode *inode);
 
 

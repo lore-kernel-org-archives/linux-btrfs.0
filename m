@@ -1,67 +1,52 @@
 From: Jeff Mahoney <jeffm@suse.com>
-Subject: [patch 61/99] btrfs: setup_inline_extent_backref should return void
-Date: Wed, 23 Nov 2011 19:36:34 -0500
-Message-ID: <20111124004226.878946659@suse.com>
+Subject: [patch 39/99] btrfs: __unlock_for_delalloc should return void
+Date: Wed, 23 Nov 2011 19:36:12 -0500
+Message-ID: <20111124004224.333913220@suse.com>
 References: <20111124003533.395674389@suse.com>
 To: Btrfs List <linux-btrfs@vger.kernel.org>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
 List-ID: <linux-btrfs.vger.kernel.org>
 
- setup_inline_extent_backref has no error conditions and should return
- void. We set ret = 0 explicitly in insert_inline_extent_backref since
- it would have been set using the return value, which would have been 0.
+ __unlock_for_delalloc has no error conditions and should return void.
+ Its callers already ignore the error code anyway.
 
 Signed-off-by: Jeff Mahoney <jeffm@suse.com>
 ---
- fs/btrfs/extent-tree.c |   23 +++++++++++------------
- 1 file changed, 11 insertions(+), 12 deletions(-)
+ fs/btrfs/extent_io.c |    9 ++++-----
+ 1 file changed, 4 insertions(+), 5 deletions(-)
 
---- a/fs/btrfs/extent-tree.c
-+++ b/fs/btrfs/extent-tree.c
-@@ -1556,13 +1556,13 @@ out:
-  * helper to add new inline back ref
-  */
- static noinline_for_stack
--int setup_inline_extent_backref(struct btrfs_trans_handle *trans,
--				struct btrfs_root *root,
--				struct btrfs_path *path,
--				struct btrfs_extent_inline_ref *iref,
--				u64 parent, u64 root_objectid,
--				u64 owner, u64 offset, int refs_to_add,
--				struct btrfs_delayed_extent_op *extent_op)
-+void setup_inline_extent_backref(struct btrfs_trans_handle *trans,
-+				 struct btrfs_root *root,
-+				 struct btrfs_path *path,
-+				 struct btrfs_extent_inline_ref *iref,
-+				 u64 parent, u64 root_objectid,
-+				 u64 owner, u64 offset, int refs_to_add,
-+				 struct btrfs_delayed_extent_op *extent_op)
+--- a/fs/btrfs/extent_io.c
++++ b/fs/btrfs/extent_io.c
+@@ -1384,9 +1384,9 @@ out:
+ 	return found;
+ }
+ 
+-static noinline int __unlock_for_delalloc(struct inode *inode,
+-					  struct page *locked_page,
+-					  u64 start, u64 end)
++static noinline void __unlock_for_delalloc(struct inode *inode,
++					   struct page *locked_page,
++					   u64 start, u64 end)
  {
- 	struct extent_buffer *leaf;
- 	struct btrfs_extent_item *ei;
-@@ -1616,7 +1616,6 @@ int setup_inline_extent_backref(struct b
- 		btrfs_set_extent_inline_ref_offset(leaf, iref, root_objectid);
+ 	int ret;
+ 	struct page *pages[16];
+@@ -1396,7 +1396,7 @@ static noinline int __unlock_for_delallo
+ 	int i;
+ 
+ 	if (index == locked_page->index && end_index == index)
+-		return 0;
++		return;
+ 
+ 	while (nr_pages > 0) {
+ 		ret = find_get_pages_contig(inode->i_mapping, index,
+@@ -1411,7 +1411,6 @@ static noinline int __unlock_for_delallo
+ 		index += ret;
+ 		cond_resched();
  	}
- 	btrfs_mark_buffer_dirty(leaf);
 -	return 0;
  }
  
- static int lookup_extent_backref(struct btrfs_trans_handle *trans,
-@@ -1735,10 +1734,10 @@ int insert_inline_extent_backref(struct
- 		ret = update_inline_extent_backref(trans, root, path, iref,
- 						   refs_to_add, extent_op);
- 	} else if (ret == -ENOENT) {
--		ret = setup_inline_extent_backref(trans, root, path, iref,
--						  parent, root_objectid,
--						  owner, offset, refs_to_add,
--						  extent_op);
-+		setup_inline_extent_backref(trans, root, path, iref, parent,
-+					    root_objectid, owner, offset,
-+					    refs_to_add, extent_op);
-+		ret = 0;
- 	}
- 	return ret;
- }
+ static noinline int lock_delalloc_pages(struct inode *inode,
 
 
 

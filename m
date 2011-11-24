@@ -1,46 +1,53 @@
 From: Jeff Mahoney <jeffm@suse.com>
-Subject: [patch 63/99] btrfs: Simplify btrfs_submit_bio_hook
-Date: Wed, 23 Nov 2011 19:36:36 -0500
-Message-ID: <20111124004227.110874523@suse.com>
+Subject: [patch 60/99] btrfs: btrfs_set_block_group_rw should return void
+Date: Wed, 23 Nov 2011 19:36:33 -0500
+Message-ID: <20111124004226.762957655@suse.com>
 References: <20111124003533.395674389@suse.com>
 To: Btrfs List <linux-btrfs@vger.kernel.org>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
 List-ID: <linux-btrfs.vger.kernel.org>
 
- btrfs_submit_bio_hook currently calls btrfs_bio_wq_end_io in either case
- of an if statement that determines one of the arguments.
-
- This patch moves the function call outside of the if statement and uses it
- to only determine the different argument. This allows us to catch an
- error in one place in a more visually obvious way.
+ btrfs_set_block_group_rw has no error conditions and should return
+ void. Its callers already ignore the error codes anyway.
 
 Signed-off-by: Jeff Mahoney <jeffm@suse.com>
 ---
- fs/btrfs/inode.c |    7 ++++---
- 1 files changed, 4 insertions(+), 3 deletions(-)
+ fs/btrfs/ctree.h       |    4 ++--
+ fs/btrfs/extent-tree.c |    3 +--
+ 2 files changed, 3 insertions(+), 4 deletions(-)
 
-diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
-index 59c681b..c0dc599 100644
---- a/fs/btrfs/inode.c
-+++ b/fs/btrfs/inode.c
-@@ -1479,13 +1479,14 @@ static int btrfs_submit_bio_hook(struct inode *inode, int rw, struct bio *bio,
- 	struct btrfs_root *root = BTRFS_I(inode)->root;
- 	int ret = 0;
- 	int skip_sum;
-+	int metadata = 0;
+--- a/fs/btrfs/ctree.h
++++ b/fs/btrfs/ctree.h
+@@ -2263,8 +2263,8 @@ void btrfs_block_rsv_release(struct btrf
+			     u64 num_bytes);
+ int btrfs_set_block_group_ro(struct btrfs_root *root,
+ 			     struct btrfs_block_group_cache *cache);
+-int btrfs_set_block_group_rw(struct btrfs_root *root,
+-			     struct btrfs_block_group_cache *cache);
++void btrfs_set_block_group_rw(struct btrfs_root *root,
++			      struct btrfs_block_group_cache *cache);
+ void btrfs_put_block_group_cache(struct btrfs_fs_info *info);
+ u64 btrfs_account_ro_block_groups_free_space(struct btrfs_space_info *sinfo);
+ int btrfs_error_unpin_extent_range(struct btrfs_root *root,
+--- a/fs/btrfs/extent-tree.c
++++ b/fs/btrfs/extent-tree.c
+@@ -6769,7 +6769,7 @@ u64 btrfs_account_ro_block_groups_free_s
+ 	return free_bytes;
+ }
  
- 	skip_sum = BTRFS_I(inode)->flags & BTRFS_INODE_NODATASUM;
+-int btrfs_set_block_group_rw(struct btrfs_root *root,
++void btrfs_set_block_group_rw(struct btrfs_root *root,
+ 			      struct btrfs_block_group_cache *cache)
+ {
+ 	struct btrfs_space_info *sinfo = cache->space_info;
+@@ -6785,7 +6785,6 @@ int btrfs_set_block_group_rw(struct btrf
+ 	cache->ro = 0;
+ 	spin_unlock(&cache->lock);
+ 	spin_unlock(&sinfo->lock);
+-	return 0;
+ }
  
- 	if (btrfs_is_free_space_inode(root, inode))
--		ret = btrfs_bio_wq_end_io(root->fs_info, bio, 2);
--	else
--		ret = btrfs_bio_wq_end_io(root->fs_info, bio, 0);
-+		metadata = 2;
-+
-+	ret = btrfs_bio_wq_end_io(root->fs_info, bio, metadata);
- 	BUG_ON(ret);
- 
- 	if (!(rw & REQ_WRITE)) {
+ /*
 
 
 

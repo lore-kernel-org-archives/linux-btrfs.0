@@ -1,68 +1,129 @@
 From: Jeff Mahoney <jeffm@suse.com>
-Subject: [patch 28/99] btrfs: clear_extent_bit error push-up
-Date: Wed, 23 Nov 2011 19:36:01 -0500
-Message-ID: <20111124004223.061443403@suse.com>
+Subject: [patch 21/99] btrfs: set_extent_bits can drop gfp_t argument
+Date: Wed, 23 Nov 2011 19:35:54 -0500
+Message-ID: <20111124004222.250620092@suse.com>
 References: <20111124003533.395674389@suse.com>
 To: Btrfs List <linux-btrfs@vger.kernel.org>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
 List-ID: <linux-btrfs.vger.kernel.org>
 
- clear_extent_bit can fail with -ENOMEM for a specific case but will BUG
- on other memory allocation failures.
+ Now that all of the callers of set_extent_bits use GFP_NOFS, we can
+ drop the gfp_t argument entirely and allow set_extent_bits to always
+ pass GFP_NOFS.
 
- This patch returns -ENOMEM for memory allocation failures and handles them
- with BUG_ON in callers which don't handle it already.
+ Since the extent io code will probably never be used outside of a file
+ system, this is generally ok. If there are new callers, they can add
+ their own version or re-genericize it.
 
 Signed-off-by: Jeff Mahoney <jeffm@suse.com>
 ---
- fs/btrfs/extent_io.c |   14 ++++++++++----
- 1 file changed, 10 insertions(+), 4 deletions(-)
+ fs/btrfs/extent-tree.c |    4 ++--
+ fs/btrfs/extent_io.c   |    9 ++++-----
+ fs/btrfs/extent_io.h   |    2 +-
+ fs/btrfs/file-item.c   |    2 +-
+ fs/btrfs/relocation.c  |    4 ++--
+ fs/btrfs/scrub.c       |    2 +-
+ 6 files changed, 11 insertions(+), 12 deletions(-)
 
-Index: source/fs/btrfs/extent_io.c
-===================================================================
---- source.orig/fs/btrfs/extent_io.c	2011-11-21 14:40:44.000000000 -0500
-+++ source/fs/btrfs/extent_io.c	2011-11-21 14:40:45.000000000 -0500
-@@ -503,7 +503,7 @@ static int __clear_extent_bit(struct ext
- 	struct rb_node *next_node;
- 	struct rb_node *node;
- 	u64 last_end;
--	int err;
-+	int err = 0;
- 	int clear = 0;
+--- a/fs/btrfs/extent-tree.c
++++ b/fs/btrfs/extent-tree.c
+@@ -211,9 +211,9 @@ static int add_excluded_extent(struct bt
+ {
+ 	u64 end = start + num_bytes - 1;
+ 	set_extent_bits(&root->fs_info->freed_extents[0],
+-			start, end, EXTENT_UPTODATE, GFP_NOFS);
++			start, end, EXTENT_UPTODATE);
+ 	set_extent_bits(&root->fs_info->freed_extents[1],
+-			start, end, EXTENT_UPTODATE, GFP_NOFS);
++			start, end, EXTENT_UPTODATE);
+ 	return 0;
+ }
  
- 	if (delete)
-@@ -568,7 +568,10 @@ hit_next:
- 	if (state->start < start) {
- 		assert_atomic_alloc(prealloc, mask);
- 		prealloc = alloc_extent_state_atomic(prealloc);
--		BUG_ON(!prealloc);
-+		if (!prealloc) {
-+			err = -ENOMEM;
-+			goto out;
-+		}
- 		err = split_state(tree, state, prealloc, start);
- 		if (err)
- 			extent_io_tree_panic(tree, err);
-@@ -593,7 +596,10 @@ hit_next:
- 	if (state->start <= end && state->end > end) {
- 		assert_atomic_alloc(prealloc, mask);
- 		prealloc = alloc_extent_state_atomic(prealloc);
--		BUG_ON(!prealloc);
-+		if (!prealloc) {
-+			err = -ENOMEM;
-+			goto out;
-+		}
- 		err = split_state(tree, state, prealloc, end + 1);
- 		if (err)
- 			extent_io_tree_panic(tree, err);
-@@ -629,7 +635,7 @@ out:
- 	if (prealloc)
- 		free_extent_state(prealloc);
+--- a/fs/btrfs/extent_io.c
++++ b/fs/btrfs/extent_io.c
+@@ -1172,10 +1172,9 @@ void set_extent_dirty(struct extent_io_t
+ 	set_extent_bit(tree, start, end, EXTENT_DIRTY, NULL, NULL, GFP_NOFS);
+ }
  
--	return 0;
-+	return err;
+-void set_extent_bits(struct extent_io_tree *tree, u64 start, u64 end,
+-		     int bits, gfp_t mask)
++void set_extent_bits(struct extent_io_tree *tree, u64 start, u64 end, int bits)
+ {
+-	set_extent_bit(tree, start, end, bits, NULL, NULL, mask);
++	set_extent_bit(tree, start, end, bits, NULL, NULL, GFP_NOFS);
+ }
  
- search_again:
- 	if (start > end)
+ void clear_extent_bits(struct extent_io_tree *tree, u64 start, u64 end,
+@@ -2125,7 +2124,7 @@ static int bio_readpage_error(struct bio
+ 
+ 		/* set the bits in the private failure tree */
+ 		set_extent_bits(failure_tree, start, end,
+-				EXTENT_LOCKED | EXTENT_DIRTY, GFP_NOFS);
++				EXTENT_LOCKED | EXTENT_DIRTY);
+ 		ret = set_state_private(failure_tree, start,
+ 					(u64)(unsigned long)failrec);
+ 		if (ret < 0) {
+@@ -2133,7 +2132,7 @@ static int bio_readpage_error(struct bio
+ 			return ret;
+ 		}
+ 		/* set the bits in the inode's tree */
+-		set_extent_bits(tree, start, end, EXTENT_DAMAGED, GFP_NOFS);
++		set_extent_bits(tree, start, end, EXTENT_DAMAGED);
+ 	} else {
+ 		failrec = (struct io_failure_record *)(unsigned long)private;
+ 		pr_debug("bio_readpage_error: (found) logical=%llu, "
+--- a/fs/btrfs/extent_io.h
++++ b/fs/btrfs/extent_io.h
+@@ -216,7 +216,7 @@ void clear_extent_bit(struct extent_io_t
+ 		      int bits, int wake, int delete,
+ 		      struct extent_state **cached);
+ void set_extent_bits(struct extent_io_tree *tree, u64 start, u64 end,
+-		     int bits, gfp_t mask);
++		     int bits);
+ int __must_check set_extent_bit_excl(struct extent_io_tree *tree, u64 start,
+ 				     u64 end, int bits, int exclusive_bits,
+ 				     u64 *failed_start,
+--- a/fs/btrfs/file-item.c
++++ b/fs/btrfs/file-item.c
+@@ -214,7 +214,7 @@ static int __btrfs_lookup_bio_sums(struc
+ 				    BTRFS_DATA_RELOC_TREE_OBJECTID) {
+ 					set_extent_bits(io_tree, offset,
+ 						offset + bvec->bv_len - 1,
+-						EXTENT_NODATASUM, GFP_NOFS);
++						EXTENT_NODATASUM);
+ 				} else {
+ 					printk(KERN_INFO "btrfs no csum found "
+ 					       "for inode %llu start %llu\n",
+--- a/fs/btrfs/relocation.c
++++ b/fs/btrfs/relocation.c
+@@ -2645,7 +2645,7 @@ static void mark_block_processed(struct
+ 				 u64 bytenr, u32 blocksize)
+ {
+ 	set_extent_bits(&rc->processed_blocks, bytenr, bytenr + blocksize - 1,
+-			EXTENT_DIRTY, GFP_NOFS);
++			EXTENT_DIRTY);
+ }
+ 
+ static void __mark_block_processed(struct reloc_control *rc,
+@@ -3015,7 +3015,7 @@ static int relocate_file_extent_cluster(
+ 		    page_start + offset == cluster->boundary[nr]) {
+ 			set_extent_bits(&BTRFS_I(inode)->io_tree,
+ 					page_start, page_end,
+-					EXTENT_BOUNDARY, GFP_NOFS);
++					EXTENT_BOUNDARY);
+ 			nr++;
+ 		}
+ 
+--- a/fs/btrfs/scrub.c
++++ b/fs/btrfs/scrub.c
+@@ -425,7 +425,7 @@ static int scrub_fixup_readpage(u64 inum
+ 		 * sure we read the bad mirror.
+ 		 */
+ 		set_extent_bits(&BTRFS_I(inode)->io_tree, offset, end,
+-				EXTENT_DAMAGED, GFP_NOFS);
++				EXTENT_DAMAGED);
+ 
+ 		ret = extent_read_full_page(&BTRFS_I(inode)->io_tree, page,
+ 						btrfs_get_extent,
 
 

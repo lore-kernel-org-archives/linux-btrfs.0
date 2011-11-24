@@ -1,61 +1,41 @@
-From: Jeff Mahoney <jeffm@suse.com>
-Subject: Re: [patch 01/99] btrfs: Add btrfs_panic()
-Date: Wed, 23 Nov 2011 21:22:06 -0500
-Message-ID: <4ECDAA4E.9000201@suse.com>
-References: <20111124003533.395674389@suse.com> <20111124004219.933819241@suse.com> <20111124020533.GA14982@davidb.org>
+From: Li Zefan <lizf@cn.fujitsu.com>
+Subject: Re: [PATCH] Btrfs: rewrite btrfs_trim_block_group()
+Date: Thu, 24 Nov 2011 10:49:51 +0800
+Message-ID: <4ECDB0CF.6020507@cn.fujitsu.com>
+References: <4EC4B719.30007@cn.fujitsu.com> <20111123154657.GD12759@twin.jikos.cz>
 Mime-Version: 1.0
 Content-Type: text/plain; charset=ISO-8859-1
-Cc: Btrfs List <linux-btrfs@vger.kernel.org>
-To: David Brown <davidb@davidb.org>
+Cc: "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
+To: David Sterba <dave@jikos.cz>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <20111124020533.GA14982@davidb.org>
+In-Reply-To: <20111123154657.GD12759@twin.jikos.cz>
 List-ID: <linux-btrfs.vger.kernel.org>
 
------BEGIN PGP SIGNED MESSAGE-----
-Hash: SHA1
-
-On 11/23/2011 09:05 PM, David Brown wrote:
-> On Wed, Nov 23, 2011 at 07:35:34PM -0500, Jeff Mahoney wrote:
->> As part of the effort to eliminate BUG_ON as an error handling 
->> technique, we need to determine which errors are actual logic
->> errors, which are on-disk corruption, and which are normal
->> runtime errors e.g. -ENOMEM.
->> 
->> Annotating these error cases is helpful to understand and report
->> them.
->> 
->> This patch adds a btrfs_panic() routine that will either panic or
->> BUG depending on the new -ofatal_errors={panic,bug} mount
->> option. Since there are still so many BUG_ONs, it defaults to BUG
->> for now but I expect that to change once the error handling
->> effort has made significant progress.
+David Sterba wrote:
+> On Thu, Nov 17, 2011 at 03:26:17PM +0800, Li Zefan wrote:
+>> diff --git a/fs/btrfs/free-space-cache.c b/fs/btrfs/free-space-cache.c
+>> index 8c32434..89cc54e 100644
+>> --- a/fs/btrfs/free-space-cache.c
+>> +++ b/fs/btrfs/free-space-cache.c
+>> +static int trim_no_bitmap(struct btrfs_block_group_cache *block_group,
+>> +			  u64 *total_trimmed, u64 start, u64 end, u64 minlen)
+>> +{
+>> +	struct btrfs_free_space_ctl *ctl = block_group->free_space_ctl;
+>> +	struct btrfs_free_space *entry;
+>> +	struct rb_node *node;
+>> +	int ret;
+>         int ret = 0;
 > 
-> Any reason all of the commit text is indented in this series?
+>   CC [M]  fs/btrfs/free-space-cache.o
+> fs/btrfs/free-space-cache.c: In function trim_no_bitmap:
+> fs/btrfs/free-space-cache.c:2636: warning: ret may be used uninitialized in this function
+> 
+> Although it seems the uninitialized value could never be returned.
+> 
 
-Our internal patches have a bunch of RFC822-style headers associated
-with them. For me, indenting the body is a style thing. I like having
-the body appear separate from the headers.
+Actually it's possible. The odd thing is my gcc doesn't complain about this.
 
-- -Jeff
+Will fix. Thanks!
 
-- -- 
-Jeff Mahoney
-SUSE Labs
------BEGIN PGP SIGNATURE-----
-Version: GnuPG v2.0.18 (GNU/Linux)
-Comment: Using GnuPG with Mozilla - http://enigmail.mozdev.org/
-
-iQIcBAEBAgAGBQJOzapOAAoJEB57S2MheeWyiwcQAKEBdb94MUHYxGBWvRcOLrfI
-exj387YgPsNuXTRS8FjOW/3q4lIlt4F/35o8AqH8xJZFK4XcCX9/Mmz6HPlK9CfX
-uQqtL0rGLW0t3rziArddVJmdab7/5xjG7ZgiVkLNePhZS7mKitLf7MeZh7CAQ3UL
-ZyeG2NdkcY5jDkseY+kZbF9UKcpv4aGIetzSbej9GH/bvF6g3QB3d3BNqJ3opp+J
-rciqtN2ZKVS5uA82KkXGkjnPcAkQfyfOJgZKKTCc68oMjJZNbPp5Ovcum0XF9mZZ
-ZEfOc1kTogsBfB5wR/1lR4Q5HR8JT7YF61ZUceaF6pd420FZmn2HIX6Lphj2pU/a
-CR4lrie9Nb/F4Sc+iB1pHyc9r9VhvWb9pQiW1W7hdQl9XoVi2zp5reUEbEsQ7oX6
-8SUQHxtm7eceqs8WO+d6XIKCyI3iXBVQ74QSsPjDHH0LvAa7zQcaNuQurvvpoqH3
-5p5vTXjUQ2knwJpyccuzNuDKqg5+8kXKHo+tdojT6+8rtLnp7A6N0z7ctvqkaMmR
-5L8a+GK15Sd910l1bJbTVagXbolYYCSaYC/ykByXNGEHeOwX2fcCmO4AK/40N4S6
-/jdoliJb+Ku19SsSQnDPH1Xb3Mzf+6BDeEUZ9kl2OewtqNxfWpwOkNW/f5iDfBTw
-BCncwA37zJPDrhFE5cGg
-=A5RF
------END PGP SIGNATURE-----
+--
+Li Zefan

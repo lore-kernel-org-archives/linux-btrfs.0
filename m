@@ -1,163 +1,51 @@
 From: Jeff Mahoney <jeffm@suse.com>
-Subject: [patch 25/99] btrfs: set_extent_bit can drop gfp_t argument
-Date: Wed, 23 Nov 2011 19:35:58 -0500
-Message-ID: <20111124004222.714080404@suse.com>
+Subject: [patch 30/99] btrfs: pin_down_extent should return void
+Date: Wed, 23 Nov 2011 19:36:03 -0500
+Message-ID: <20111124004223.292916877@suse.com>
 References: <20111124003533.395674389@suse.com>
 To: Btrfs List <linux-btrfs@vger.kernel.org>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
 List-ID: <linux-btrfs.vger.kernel.org>
 
- Now that all of the callers of set_extent_bit use GFP_NOFS and
- all callers of set_extent_bit_atomic use GFP_ATOMIC, we can
- drop the gfp_t argument to both.
+ pin_down_extent performs some operations which can't fail and then calls
+ set_extent_dirty, which has two failure cases via set_extent_bit:
+ 1) Return -EEXIST if exclusive bits are set
+    - Since it doesn't use any exclusive bits, this failure case can't
+       occur.
+ 2) Return -ENOMEM if memory can't be allocated
+    - Since it's called with gfp_flags & __GFP_NOFAIL, this failure case
+      can't occur.
+
+ With no failure cases, it should return void.
 
 Signed-off-by: Jeff Mahoney <jeffm@suse.com>
 ---
- fs/btrfs/extent_io.c |   35 +++++++++++++++--------------------
- fs/btrfs/extent_io.h |    9 +++------
- fs/btrfs/inode.c     |    2 +-
- 3 files changed, 19 insertions(+), 27 deletions(-)
+ fs/btrfs/extent-tree.c |    8 +++-----
+ 1 file changed, 3 insertions(+), 5 deletions(-)
 
---- a/fs/btrfs/extent_io.c
-+++ b/fs/btrfs/extent_io.c
-@@ -960,30 +960,28 @@ search_again:
- 
- int set_extent_bit_atomic(struct extent_io_tree *tree, u64 start, u64 end,
- 			  int bits, u64 *failed_start,
--			  struct extent_state **cached_state, gfp_t mask)
-+			  struct extent_state **cached_state)
- {
--	WARN_ON(mask & __GFP_WAIT);
- 	return __set_extent_bit(tree, start, end, bits, 0, failed_start,
--				cached_state, mask);
-+				cached_state, GFP_ATOMIC);
+--- a/fs/btrfs/extent-tree.c
++++ b/fs/btrfs/extent-tree.c
+@@ -4290,9 +4290,9 @@ static u64 first_logical_byte(struct btr
+ 	return bytenr;
  }
  
- void set_extent_bit(struct extent_io_tree *tree, u64 start, u64 end, int bits,
--		    u64 *failed_start, struct extent_state **cached_state,
--		    gfp_t mask)
-+		    u64 *failed_start, struct extent_state **cached_state)
+-static int pin_down_extent(struct btrfs_root *root,
+-			   struct btrfs_block_group_cache *cache,
+-			   u64 bytenr, u64 num_bytes, int reserved)
++static void pin_down_extent(struct btrfs_root *root,
++			    struct btrfs_block_group_cache *cache,
++			    u64 bytenr, u64 num_bytes, int reserved)
  {
- 	int ret;
--	WARN_ON(!(mask & __GFP_WAIT));
-+	might_sleep();
- 	ret = __set_extent_bit(tree, start, end, bits, 0,
--			       failed_start, cached_state, mask);
-+			       failed_start, cached_state, GFP_NOFS);
- 	BUG_ON(ret < 0);
+	spin_lock(&cache->space_info->lock);
+	spin_lock(&cache->lock);
+@@ -4311,7 +4311,6 @@ static int pin_down_extent(struct btrfs_
+
+	set_extent_dirty(root->fs_info->pinned_extents, bytenr,
+ 			 bytenr + num_bytes - 1);
+-	return 0;
  }
  
- int set_extent_bit_excl(struct extent_io_tree *tree, u64 start, u64 end,
- 			int bits, int exclusive_bits, u64 *failed_start,
--			struct extent_state **cached_state, gfp_t mask)
-+			struct extent_state **cached_state)
- {
- 	return __set_extent_bit(tree, start, end, bits, exclusive_bits,
--				failed_start, cached_state, mask);
-+				failed_start, cached_state, GFP_NOFS);
- }
- 
- /**
-@@ -1174,12 +1172,12 @@ search_again:
- /* wrappers around set/clear extent bit */
- void set_extent_dirty(struct extent_io_tree *tree, u64 start, u64 end)
- {
--	set_extent_bit(tree, start, end, EXTENT_DIRTY, NULL, NULL, GFP_NOFS);
-+	set_extent_bit(tree, start, end, EXTENT_DIRTY, NULL, NULL);
- }
- 
- void set_extent_bits(struct extent_io_tree *tree, u64 start, u64 end, int bits)
- {
--	set_extent_bit(tree, start, end, bits, NULL, NULL, GFP_NOFS);
-+	set_extent_bit(tree, start, end, bits, NULL, NULL);
- }
- 
- void clear_extent_bits(struct extent_io_tree *tree, u64 start, u64 end,
-@@ -1199,7 +1197,7 @@ void set_extent_delalloc(struct extent_i
- 			 struct extent_state **cached_state)
- {
- 	set_extent_bit(tree, start, end, EXTENT_DELALLOC | EXTENT_UPTODATE,
--		       NULL, cached_state, GFP_NOFS);
-+		       NULL, cached_state);
- }
- 
- void clear_extent_dirty(struct extent_io_tree *tree, u64 start, u64 end)
-@@ -1210,21 +1208,20 @@ void clear_extent_dirty(struct extent_io
- 
- void set_extent_new(struct extent_io_tree *tree, u64 start, u64 end)
- {
--	set_extent_bit(tree, start, end, EXTENT_NEW, NULL, NULL, GFP_NOFS);
-+	set_extent_bit(tree, start, end, EXTENT_NEW, NULL, NULL);
- }
- 
- int set_extent_uptodate_atomic(struct extent_io_tree *tree, u64 start, u64 end,
- 			       struct extent_state **cached_state)
- {
- 	return set_extent_bit_atomic(tree, start, end, EXTENT_UPTODATE, NULL,
--				     cached_state, GFP_ATOMIC);
-+				     cached_state);
- }
- 
- void set_extent_uptodate(struct extent_io_tree *tree, u64 start, u64 end,
- 			 struct extent_state **cached_state)
- {
--	set_extent_bit(tree, start, end, EXTENT_UPTODATE, NULL, cached_state,
--		       GFP_NOFS);
-+	set_extent_bit(tree, start, end, EXTENT_UPTODATE, NULL, cached_state);
- }
- 
- static void clear_extent_uptodate(struct extent_io_tree *tree, u64 start,
-@@ -1246,8 +1243,7 @@ int lock_extent_bits(struct extent_io_tr
- 	while (1) {
- 		err = set_extent_bit_excl(tree, start, end,
- 					  EXTENT_LOCKED | bits, EXTENT_LOCKED,
--					  &failed_start, cached_state,
--					  GFP_NOFS);
-+					  &failed_start, cached_state);
- 		if (err == -EEXIST) {
- 			wait_extent_bit(tree, failed_start, end, EXTENT_LOCKED);
- 			start = failed_start;
-@@ -1270,8 +1266,7 @@ int try_lock_extent(struct extent_io_tre
- 	u64 failed_start;
- 
- 	err = set_extent_bit_excl(tree, start, end, EXTENT_LOCKED,
--				  EXTENT_LOCKED, &failed_start, NULL,
--				  GFP_NOFS);
-+				  EXTENT_LOCKED, &failed_start, NULL);
- 	if (err == -EEXIST) {
- 		if (failed_start > start)
- 			clear_extent_bit(tree, start, failed_start - 1,
---- a/fs/btrfs/extent_io.h
-+++ b/fs/btrfs/extent_io.h
-@@ -220,15 +220,12 @@ void set_extent_bits(struct extent_io_tr
- int __must_check set_extent_bit_excl(struct extent_io_tree *tree, u64 start,
- 				     u64 end, int bits, int exclusive_bits,
- 				     u64 *failed_start,
--				     struct extent_state **cached_state,
--				     gfp_t mask);
-+				     struct extent_state **cached_state);
- int __must_check set_extent_bit_atomic(struct extent_io_tree *tree, u64 start,
- 				       u64 end, int bits, u64 *failed_start,
--				       struct extent_state **cached_state,
--				       gfp_t mask);
-+				       struct extent_state **cached_state);
- void set_extent_bit(struct extent_io_tree *tree, u64 start, u64 end, int bits,
--		    u64 *failed_start, struct extent_state **cached_state,
--		    gfp_t mask);
-+		    u64 *failed_start, struct extent_state **cached_state);
- int __must_check set_extent_uptodate_atomic(struct extent_io_tree *tree,
- 					    u64 start, u64 end,
- 					    struct extent_state **cached_state);
---- a/fs/btrfs/inode.c
-+++ b/fs/btrfs/inode.c
-@@ -6083,7 +6083,7 @@ static ssize_t btrfs_direct_IO(int rw, s
- 	if (writing) {
- 		write_bits = EXTENT_DELALLOC | EXTENT_DO_ACCOUNTING;
- 		set_extent_bit(&BTRFS_I(inode)->io_tree, lockstart, lockend,
--			       EXTENT_DELALLOC, NULL, &cached_state, GFP_NOFS);
-+			       EXTENT_DELALLOC, NULL, &cached_state);
- 	}
- 
- 	free_extent_state(cached_state);
+ /*
+
 
 

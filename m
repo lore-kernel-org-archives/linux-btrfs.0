@@ -1,72 +1,64 @@
 From: Jeff Mahoney <jeffm@suse.com>
-Subject: [patch 85/99] btrfs: copy_for_split should return void
-Date: Wed, 23 Nov 2011 19:36:58 -0500
-Message-ID: <20111124004229.656821438@suse.com>
+Subject: [patch 89/99] btrfs: btrfs_wait_ordered_extents should return void
+Date: Wed, 23 Nov 2011 19:37:02 -0500
+Message-ID: <20111124004230.119966059@suse.com>
 References: <20111124003533.395674389@suse.com>
 To: Btrfs List <linux-btrfs@vger.kernel.org>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
 List-ID: <linux-btrfs.vger.kernel.org>
 
- copy_for_split has no error conditions and should return void. We
- return 0 from split_leaf instead of ret since ret would have been
- set using the return value from copy_for_split which would have been 0.
+ btrfs_wait_ordered_extents has no error conditions and should return void.
 
 Signed-off-by: Jeff Mahoney <jeffm@suse.com>
 ---
- fs/btrfs/ctree.c |   19 ++++++++-----------
- 1 files changed, 8 insertions(+), 11 deletions(-)
+ fs/btrfs/ordered-data.c |    5 ++---
+ fs/btrfs/ordered-data.h |    4 ++--
+ fs/btrfs/transaction.c  |    3 +--
+ 3 files changed, 5 insertions(+), 7 deletions(-)
 
-diff --git a/fs/btrfs/ctree.c b/fs/btrfs/ctree.c
-index 4c9dc73..263abce 100644
---- a/fs/btrfs/ctree.c
-+++ b/fs/btrfs/ctree.c
-@@ -2695,12 +2695,12 @@ out:
-  *
-  * returns 0 if all went well and < 0 on failure.
+--- a/fs/btrfs/ordered-data.c
++++ b/fs/btrfs/ordered-data.c
+@@ -465,8 +465,8 @@ void btrfs_remove_ordered_extent(struct
+  * wait for all the ordered extents in a root.  This is done when balancing
+  * space between drives.
   */
--static noinline int copy_for_split(struct btrfs_trans_handle *trans,
--			       struct btrfs_root *root,
--			       struct btrfs_path *path,
--			       struct extent_buffer *l,
--			       struct extent_buffer *right,
--			       int slot, int mid, int nritems)
-+static noinline void copy_for_split(struct btrfs_trans_handle *trans,
-+				    struct btrfs_root *root,
-+				    struct btrfs_path *path,
-+				    struct extent_buffer *l,
-+				    struct extent_buffer *right,
-+				    int slot, int mid, int nritems)
+-int btrfs_wait_ordered_extents(struct btrfs_root *root,
+-			       int nocow_only, int delay_iput)
++void btrfs_wait_ordered_extents(struct btrfs_root *root,
++				int nocow_only, int delay_iput)
  {
- 	int data_copy_size;
- 	int rt_data_off;
-@@ -2752,8 +2752,6 @@ static noinline int copy_for_split(struct btrfs_trans_handle *trans,
+ 	struct list_head splice;
+ 	struct list_head *cur;
+@@ -514,7 +514,6 @@ int btrfs_wait_ordered_extents(struct bt
+ 		spin_lock(&root->fs_info->ordered_extent_lock);
  	}
- 
- 	BUG_ON(path->slots[0] < 0);
--
+ 	spin_unlock(&root->fs_info->ordered_extent_lock);
 -	return 0;
  }
  
  /*
-@@ -2965,8 +2963,7 @@ again:
- 		return ret;
- 	}
+--- a/fs/btrfs/ordered-data.h
++++ b/fs/btrfs/ordered-data.h
+@@ -174,6 +174,6 @@ int btrfs_run_ordered_operations(struct
+ int btrfs_add_ordered_operation(struct btrfs_trans_handle *trans,
+ 				struct btrfs_root *root,
+ 				struct inode *inode);
+-int btrfs_wait_ordered_extents(struct btrfs_root *root,
+-			       int nocow_only, int delay_iput);
++void btrfs_wait_ordered_extents(struct btrfs_root *root,
++				int nocow_only, int delay_iput);
+ #endif
+--- a/fs/btrfs/transaction.c
++++ b/fs/btrfs/transaction.c
+@@ -1207,8 +1207,7 @@ int btrfs_commit_transaction(struct btrf
  
--	ret = copy_for_split(trans, root, path, l, right, slot, mid, nritems);
--	BUG_ON(ret);
-+	copy_for_split(trans, root, path, l, right, slot, mid, nritems);
+ 		if (flush_on_commit || snap_pending) {
+ 			btrfs_start_delalloc_inodes(root, 1);
+-			ret = btrfs_wait_ordered_extents(root, 0, 1);
+-			BUG_ON(ret);
++			btrfs_wait_ordered_extents(root, 0, 1);
+ 		}
  
- 	if (split == 2) {
- 		BUG_ON(num_doubles != 0);
-@@ -2974,7 +2971,7 @@ again:
- 		goto again;
- 	}
- 
--	return ret;
-+	return 0;
- 
- push_for_double:
- 	push_for_double_split(trans, root, path, data_size);
-
+ 		ret = btrfs_run_delayed_items(trans, root);
 
 

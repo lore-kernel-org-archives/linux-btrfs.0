@@ -1,311 +1,113 @@
-From: Li Zefan <lizf@cn.fujitsu.com>
-Subject: [PATCH v2] Btrfs: rewrite btrfs_trim_block_group()
-Date: Thu, 24 Nov 2011 17:02:29 +0800
-Message-ID: <4ECE0825.2090306@cn.fujitsu.com>
-Mime-Version: 1.0
-Content-Type: text/plain; charset=UTF-8
-Cc: David Sterba <dave@jikos.cz>
-To: "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
+From: David Sterba <dsterba@suse.cz>
+Subject: [PATCH] btrfs: polish names of kmem caches
+Date: Thu, 24 Nov 2011 17:56:08 +0100
+Message-ID: <1322153768-28912-1-git-send-email-dsterba@suse.cz>
+Cc: chris.mason@oracle.com, David Sterba <dsterba@suse.cz>
+To: linux-btrfs@vger.kernel.org
 Return-path: <linux-btrfs-owner@vger.kernel.org>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-There are various bugs in block group trimming:
+Usecase:
 
-- It may trim from offset smaller than user-specified offset.
-- It may trim beyond user-specified range.
-- It may leak free space for extents smaller than specified minlen.
-- It may truncate the last trimmed extent thus leak free space.
-- With mixed extents+bitmaps, some extents may not be trimmed.
-- With mixed extents+bitmaps, some bitmaps may not be trimmed (even
-none will be trimmed). Even for those trimmed, not all the free space
-in the bitmaps will be trimmed.
+  watch 'grep btrfs < /proc/slabinfo'
 
-I rewrite btrfs_trim_block_group() and break it into two functions.
-One is to trim extents only, and the other is to trim bitmaps only.
+easy to watch all caches in one go.
 
-Signed-off-by: Li Zefan <lizf@cn.fujitsu.com>
+Signed-off-by: David Sterba <dsterba@suse.cz>
 ---
+ fs/btrfs/delayed-inode.c |    2 +-
+ fs/btrfs/extent_io.c     |    4 ++--
+ fs/btrfs/extent_map.c    |    2 +-
+ fs/btrfs/inode.c         |   10 +++++-----
+ 4 files changed, 9 insertions(+), 9 deletions(-)
 
-v2: fix possible uninitialized return value
-
----
- fs/btrfs/free-space-cache.c |  235 ++++++++++++++++++++++++++++++-------------
- 1 files changed, 164 insertions(+), 71 deletions(-)
-
-diff --git a/fs/btrfs/free-space-cache.c b/fs/btrfs/free-space-cache.c
-index 6e5b7e4..bd2a3cd 100644
---- a/fs/btrfs/free-space-cache.c
-+++ b/fs/btrfs/free-space-cache.c
-@@ -2586,17 +2586,57 @@ void btrfs_init_free_cluster(struct btrfs_free_cluster *cluster)
- 	cluster->block_group = NULL;
- }
+diff --git a/fs/btrfs/delayed-inode.c b/fs/btrfs/delayed-inode.c
+index b52c672..5ed6162 100644
+--- a/fs/btrfs/delayed-inode.c
++++ b/fs/btrfs/delayed-inode.c
+@@ -29,7 +29,7 @@ static struct kmem_cache *delayed_node_cache;
  
--int btrfs_trim_block_group(struct btrfs_block_group_cache *block_group,
--			   u64 *trimmed, u64 start, u64 end, u64 minlen)
-+static int do_trimming(struct btrfs_block_group_cache *block_group,
-+		       u64 *total_trimmed, u64 start, u64 bytes,
-+		       u64 reserved_start, u64 reserved_bytes)
+ int __init btrfs_delayed_inode_init(void)
  {
--	struct btrfs_free_space_ctl *ctl = block_group->free_space_ctl;
--	struct btrfs_free_space *entry = NULL;
-+	struct btrfs_space_info *space_info = block_group->space_info;
- 	struct btrfs_fs_info *fs_info = block_group->fs_info;
--	u64 bytes = 0;
--	u64 actually_trimmed;
--	int ret = 0;
-+	int ret;
-+	int update = 0;
-+	u64 trimmed = 0;
+-	delayed_node_cache = kmem_cache_create("delayed_node",
++	delayed_node_cache = kmem_cache_create("btrfs_delayed_node",
+ 					sizeof(struct btrfs_delayed_node),
+ 					0,
+ 					SLAB_RECLAIM_ACCOUNT | SLAB_MEM_SPREAD,
+diff --git a/fs/btrfs/extent_io.c b/fs/btrfs/extent_io.c
+index a255136..4d57aaa 100644
+--- a/fs/btrfs/extent_io.c
++++ b/fs/btrfs/extent_io.c
+@@ -53,13 +53,13 @@ struct extent_page_data {
  
--	*trimmed = 0;
-+	spin_lock(&space_info->lock);
-+	spin_lock(&block_group->lock);
-+	if (!block_group->ro) {
-+		block_group->reserved += reserved_bytes;
-+		space_info->bytes_reserved += reserved_bytes;
-+		update = 1;
-+	}
-+	spin_unlock(&block_group->lock);
-+	spin_unlock(&space_info->lock);
-+
-+	ret = btrfs_error_discard_extent(fs_info->extent_root,
-+					 start, bytes, &trimmed);
-+	if (!ret)
-+		*total_trimmed += trimmed;
-+
-+	btrfs_add_free_space(block_group, reserved_start, reserved_bytes);
-+
-+	if (update) {
-+		spin_lock(&space_info->lock);
-+		spin_lock(&block_group->lock);
-+		if (block_group->ro)
-+			space_info->bytes_readonly += reserved_bytes;
-+		block_group->reserved -= reserved_bytes;
-+		space_info->bytes_reserved -= reserved_bytes;
-+		spin_unlock(&space_info->lock);
-+		spin_unlock(&block_group->lock);
-+	}
-+
-+	return ret;
-+}
-+
-+static int trim_no_bitmap(struct btrfs_block_group_cache *block_group,
-+			  u64 *total_trimmed, u64 start, u64 end, u64 minlen)
-+{
-+	struct btrfs_free_space_ctl *ctl = block_group->free_space_ctl;
-+	struct btrfs_free_space *entry;
-+	struct rb_node *node;
-+	int ret = 0;
-+	u64 extent_start;
-+	u64 extent_bytes;
-+	u64 bytes;
+ int __init extent_io_init(void)
+ {
+-	extent_state_cache = kmem_cache_create("extent_state",
++	extent_state_cache = kmem_cache_create("btrfs_extent_state",
+ 			sizeof(struct extent_state), 0,
+ 			SLAB_RECLAIM_ACCOUNT | SLAB_MEM_SPREAD, NULL);
+ 	if (!extent_state_cache)
+ 		return -ENOMEM;
  
- 	while (start < end) {
- 		spin_lock(&ctl->tree_lock);
-@@ -2607,81 +2647,118 @@ int btrfs_trim_block_group(struct btrfs_block_group_cache *block_group,
- 		}
+-	extent_buffer_cache = kmem_cache_create("extent_buffers",
++	extent_buffer_cache = kmem_cache_create("btrfs_extent_buffer",
+ 			sizeof(struct extent_buffer), 0,
+ 			SLAB_RECLAIM_ACCOUNT | SLAB_MEM_SPREAD, NULL);
+ 	if (!extent_buffer_cache)
+diff --git a/fs/btrfs/extent_map.c b/fs/btrfs/extent_map.c
+index 7c97b33..08a8c40 100644
+--- a/fs/btrfs/extent_map.c
++++ b/fs/btrfs/extent_map.c
+@@ -11,7 +11,7 @@ static struct kmem_cache *extent_map_cache;
  
- 		entry = tree_search_offset(ctl, start, 0, 1);
--		if (!entry)
--			entry = tree_search_offset(ctl,
--						   offset_to_bitmap(ctl, start),
--						   1, 1);
--
--		if (!entry || entry->offset >= end) {
-+		if (!entry) {
- 			spin_unlock(&ctl->tree_lock);
- 			break;
- 		}
+ int __init extent_map_init(void)
+ {
+-	extent_map_cache = kmem_cache_create("extent_map",
++	extent_map_cache = kmem_cache_create("btrfs_extent_map",
+ 			sizeof(struct extent_map), 0,
+ 			SLAB_RECLAIM_ACCOUNT | SLAB_MEM_SPREAD, NULL);
+ 	if (!extent_map_cache)
+diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
+index be589cc..d091166 100644
+--- a/fs/btrfs/inode.c
++++ b/fs/btrfs/inode.c
+@@ -6866,31 +6866,31 @@ void btrfs_destroy_cachep(void)
  
--		if (entry->bitmap) {
--			ret = search_bitmap(ctl, entry, &start, &bytes);
--			if (!ret) {
--				if (start >= end) {
--					spin_unlock(&ctl->tree_lock);
--					break;
--				}
--				bytes = min(bytes, end - start);
--				bitmap_clear_bits(ctl, entry, start, bytes);
--				if (entry->bytes == 0)
--					free_bitmap(ctl, entry);
--			} else {
--				start = entry->offset + BITS_PER_BITMAP *
--					block_group->sectorsize;
-+		/* skip bitmaps */
-+		while (entry->bitmap) {
-+			node = rb_next(&entry->offset_index);
-+			if (!node) {
- 				spin_unlock(&ctl->tree_lock);
--				ret = 0;
--				continue;
-+				goto out;
- 			}
--		} else {
--			start = entry->offset;
--			bytes = min(entry->bytes, end - start);
--			unlink_free_space(ctl, entry);
--			kmem_cache_free(btrfs_free_space_cachep, entry);
-+			entry = rb_entry(node, struct btrfs_free_space,
-+					 offset_index);
-+		}
-+
-+		if (entry->offset >= end) {
-+			spin_unlock(&ctl->tree_lock);
-+			break;
-+		}
-+
-+		extent_start = entry->offset;
-+		extent_bytes = entry->bytes;
-+		start = max(start, extent_start);
-+		bytes = min(extent_start + extent_bytes, end) - start;
-+		if (bytes < minlen) {
-+			spin_unlock(&ctl->tree_lock);
-+			goto next;
- 		}
+ int btrfs_init_cachep(void)
+ {
+-	btrfs_inode_cachep = kmem_cache_create("btrfs_inode_cache",
++	btrfs_inode_cachep = kmem_cache_create("btrfs_inode",
+ 			sizeof(struct btrfs_inode), 0,
+ 			SLAB_RECLAIM_ACCOUNT | SLAB_MEM_SPREAD, init_once);
+ 	if (!btrfs_inode_cachep)
+ 		goto fail;
  
-+		unlink_free_space(ctl, entry);
-+		kmem_cache_free(btrfs_free_space_cachep, entry);
-+
- 		spin_unlock(&ctl->tree_lock);
+-	btrfs_trans_handle_cachep = kmem_cache_create("btrfs_trans_handle_cache",
++	btrfs_trans_handle_cachep = kmem_cache_create("btrfs_trans_handle",
+ 			sizeof(struct btrfs_trans_handle), 0,
+ 			SLAB_RECLAIM_ACCOUNT | SLAB_MEM_SPREAD, NULL);
+ 	if (!btrfs_trans_handle_cachep)
+ 		goto fail;
  
--		if (bytes >= minlen) {
--			struct btrfs_space_info *space_info;
--			int update = 0;
--
--			space_info = block_group->space_info;
--			spin_lock(&space_info->lock);
--			spin_lock(&block_group->lock);
--			if (!block_group->ro) {
--				block_group->reserved += bytes;
--				space_info->bytes_reserved += bytes;
--				update = 1;
--			}
--			spin_unlock(&block_group->lock);
--			spin_unlock(&space_info->lock);
--
--			ret = btrfs_error_discard_extent(fs_info->extent_root,
--							 start,
--							 bytes,
--							 &actually_trimmed);
--
--			btrfs_add_free_space(block_group, start, bytes);
--			if (update) {
--				spin_lock(&space_info->lock);
--				spin_lock(&block_group->lock);
--				if (block_group->ro)
--					space_info->bytes_readonly += bytes;
--				block_group->reserved -= bytes;
--				space_info->bytes_reserved -= bytes;
--				spin_unlock(&space_info->lock);
--				spin_unlock(&block_group->lock);
--			}
-+		ret = do_trimming(block_group, total_trimmed, start, bytes,
-+				  extent_start, extent_bytes);
-+		if (ret)
-+			break;
-+next:
-+		start += bytes;
+-	btrfs_transaction_cachep = kmem_cache_create("btrfs_transaction_cache",
++	btrfs_transaction_cachep = kmem_cache_create("btrfs_transaction",
+ 			sizeof(struct btrfs_transaction), 0,
+ 			SLAB_RECLAIM_ACCOUNT | SLAB_MEM_SPREAD, NULL);
+ 	if (!btrfs_transaction_cachep)
+ 		goto fail;
  
--			if (ret)
--				break;
--			*trimmed += actually_trimmed;
-+		if (fatal_signal_pending(current)) {
-+			ret = -ERESTARTSYS;
-+			break;
-+		}
-+
-+		cond_resched();
-+	}
-+out:
-+	return ret;
-+}
-+
-+static int trim_bitmaps(struct btrfs_block_group_cache *block_group,
-+			u64 *total_trimmed, u64 start, u64 end, u64 minlen)
-+{
-+	struct btrfs_free_space_ctl *ctl = block_group->free_space_ctl;
-+	struct btrfs_free_space *entry;
-+	int ret = 0;
-+	int ret2;
-+	u64 bytes;
-+	u64 offset = offset_to_bitmap(ctl, start);
-+
-+	while (offset < end) {
-+		bool next_bitmap = false;
-+
-+		spin_lock(&ctl->tree_lock);
-+
-+		if (ctl->free_space < minlen) {
-+			spin_unlock(&ctl->tree_lock);
-+			break;
-+		}
-+
-+		entry = tree_search_offset(ctl, offset, 1, 0);
-+		if (!entry) {
-+			spin_unlock(&ctl->tree_lock);
-+			next_bitmap = true;
-+			goto next;
-+		}
-+
-+		bytes = minlen;
-+		ret2 = search_bitmap(ctl, entry, &start, &bytes);
-+		if (ret2 || start >= end) {
-+			spin_unlock(&ctl->tree_lock);
-+			next_bitmap = true;
-+			goto next;
-+		}
-+
-+		bytes = min(bytes, end - start);
-+		if (bytes < minlen) {
-+			spin_unlock(&ctl->tree_lock);
-+			goto next;
-+		}
-+
-+		bitmap_clear_bits(ctl, entry, start, bytes);
-+		if (entry->bytes == 0)
-+			free_bitmap(ctl, entry);
-+
-+		spin_unlock(&ctl->tree_lock);
-+
-+		ret = do_trimming(block_group, total_trimmed, start, bytes,
-+				  start, bytes);
-+		if (ret)
-+			break;
-+next:
-+		if (next_bitmap) {
-+			offset += BITS_PER_BITMAP * ctl->unit;
-+		} else {
-+			start += bytes;
-+			if (start >= offset + BITS_PER_BITMAP * ctl->unit)
-+				offset += BITS_PER_BITMAP * ctl->unit;
- 		}
--		start += bytes;
--		bytes = 0;
+-	btrfs_path_cachep = kmem_cache_create("btrfs_path_cache",
++	btrfs_path_cachep = kmem_cache_create("btrfs_path",
+ 			sizeof(struct btrfs_path), 0,
+ 			SLAB_RECLAIM_ACCOUNT | SLAB_MEM_SPREAD, NULL);
+ 	if (!btrfs_path_cachep)
+ 		goto fail;
  
- 		if (fatal_signal_pending(current)) {
- 			ret = -ERESTARTSYS;
-@@ -2694,6 +2771,22 @@ int btrfs_trim_block_group(struct btrfs_block_group_cache *block_group,
- 	return ret;
- }
- 
-+int btrfs_trim_block_group(struct btrfs_block_group_cache *block_group,
-+			   u64 *trimmed, u64 start, u64 end, u64 minlen)
-+{
-+	int ret;
-+
-+	*trimmed = 0;
-+
-+	ret = trim_no_bitmap(block_group, trimmed, start, end, minlen);
-+	if (ret)
-+		return ret;
-+
-+	ret = trim_bitmaps(block_group, trimmed, start, end, minlen);
-+
-+	return ret;
-+}
-+
- /*
-  * Find the left-most item in the cache tree, and then return the
-  * smallest inode number in the item.
+-	btrfs_free_space_cachep = kmem_cache_create("btrfs_free_space_cache",
++	btrfs_free_space_cachep = kmem_cache_create("btrfs_free_space",
+ 			sizeof(struct btrfs_free_space), 0,
+ 			SLAB_RECLAIM_ACCOUNT | SLAB_MEM_SPREAD, NULL);
+ 	if (!btrfs_free_space_cachep)
 -- 
-1.7.3.1
+1.7.6
+

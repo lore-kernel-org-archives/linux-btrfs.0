@@ -1,82 +1,155 @@
 From: Jeff Mahoney <jeffm@suse.com>
-Subject: [patch 64/99] btrfs: Factor out tree->ops->merge_bio_hook call
-Date: Wed, 23 Nov 2011 19:36:37 -0500
-Message-ID: <20111124004227.226096530@suse.com>
+Subject: [patch 65/99] btrfs: ->submit_bio_hook error push-up
+Date: Wed, 23 Nov 2011 19:36:38 -0500
+Message-ID: <20111124004227.342118564@suse.com>
 References: <20111124003533.395674389@suse.com>
 To: Btrfs List <linux-btrfs@vger.kernel.org>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
 List-ID: <linux-btrfs.vger.kernel.org>
 
- In submit_extent_page, there's a visually noisy if statement that, in
- the midst of other conditions, does the tree dependency for tree->ops
- and tree->ops->merge_bio_hook before calling it, and then another
- condition afterwards. If an error is returned from merge_bio_hook,
- there's no way to catch it. It's considered a routine "1" return
- value instead of a failure.
+ This pushes failures from the submit_bio_hook callbacks,
+ btrfs_submit_bio_hook and btree_submit_bio_hook into the callers, including
+ callers of submit_one_bio where it catches the failures with BUG_ON.
 
- This patch factors out the dependency check into a new local merge_bio
- routine and BUG's on an error. The if statement is less noisy as a side-
- effect.
+ It also pushes up through the ->readpage_io_failed_hook to
+ end_bio_extent_writepage where the error is already caught with BUG_ON.
 
 Signed-off-by: Jeff Mahoney <jeffm@suse.com>
 ---
- fs/btrfs/extent_io.c |   17 ++++++++++++++---
- fs/btrfs/inode.c     |    5 +++--
- 2 files changed, 17 insertions(+), 5 deletions(-)
+ fs/btrfs/disk-io.c   |    6 +++---
+ fs/btrfs/extent_io.c |   33 +++++++++++++++++++++++----------
+ fs/btrfs/inode.c     |    3 ++-
+ 3 files changed, 28 insertions(+), 14 deletions(-)
 
-diff --git a/fs/btrfs/extent_io.c b/fs/btrfs/extent_io.c
-index 0575792..09095b8 100644
+--- a/fs/btrfs/disk-io.c
++++ b/fs/btrfs/disk-io.c
+@@ -811,9 +811,9 @@ static int btree_submit_bio_hook(struct
+ {
+ 	int ret;
+ 
+-	ret = btrfs_bio_wq_end_io(BTRFS_I(inode)->root->fs_info,
+-					  bio, 1);
+-	BUG_ON(ret);
++	ret = btrfs_bio_wq_end_io(BTRFS_I(inode)->root->fs_info, bio, 1);
++	if (ret)
++		return ret;
+ 
+ 	if (!(rw & REQ_WRITE)) {
+ 		/*
 --- a/fs/btrfs/extent_io.c
 +++ b/fs/btrfs/extent_io.c
-@@ -2058,6 +2058,19 @@ static int submit_one_bio(int rw, struct bio *bio, int mirror_num,
- 	return ret;
+@@ -1888,6 +1888,7 @@ static void end_bio_extent_writepage(str
+ 				uptodate = (err == 0);
+ 				continue;
+ 			}
++			BUG_ON(ret < 0);
+ 		}
+ 
+ 		if (!uptodate) {
+@@ -1980,6 +1981,7 @@ static void end_bio_extent_readpage(stru
+ 				uncache_state(&cached);
+ 				continue;
+ 			}
++			BUG_ON(ret < 0);
+ 		}
+ 
+ 		if (uptodate) {
+@@ -2034,8 +2036,8 @@ btrfs_bio_alloc(struct block_device *bde
+ 	return bio;
  }
  
-+static int merge_bio(struct extent_io_tree *tree, struct page *page,
-+		     unsigned long offset, size_t size, struct bio *bio,
-+		     unsigned long bio_flags)
-+{
-+	int ret = 0;
-+	if (tree->ops && tree->ops->merge_bio_hook)
-+		ret = tree->ops->merge_bio_hook(page, offset, size, bio,
-+						bio_flags);
-+	BUG_ON(ret < 0);
-+	return ret;
-+
-+}
-+
- static int submit_extent_page(int rw, struct extent_io_tree *tree,
- 			      struct page *page, sector_t sector,
- 			      size_t size, unsigned long offset,
-@@ -2086,9 +2099,7 @@ static int submit_extent_page(int rw, struct extent_io_tree *tree,
- 				sector;
- 
- 		if (prev_bio_flags != bio_flags || !contig ||
--		    (tree->ops && tree->ops->merge_bio_hook &&
--		     tree->ops->merge_bio_hook(page, offset, page_size, bio,
--					       bio_flags)) ||
-+		    merge_bio(tree, page, offset, page_size, bio, bio_flags) ||
+-static int submit_one_bio(int rw, struct bio *bio, int mirror_num,
+-			  unsigned long bio_flags)
++static int __must_check submit_one_bio(int rw, struct bio *bio,
++				       int mirror_num, unsigned long bio_flags)
+ {
+ 	int ret = 0;
+ 	struct bio_vec *bvec = bio->bi_io_vec + bio->bi_vcnt - 1;
+@@ -2105,6 +2107,7 @@ static int submit_extent_page(int rw, st
  		    bio_add_page(bio, page, page_size, offset) < page_size) {
  			ret = submit_one_bio(rw, bio, mirror_num,
  					     prev_bio_flags);
-diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
-index c0dc599..a06cb64 100644
---- a/fs/btrfs/inode.c
-+++ b/fs/btrfs/inode.c
-@@ -1425,10 +1425,11 @@ int btrfs_merge_bio_hook(struct page *page, unsigned long offset,
- 	map_length = length;
- 	ret = btrfs_map_block(map_tree, READ, logical,
- 			      &map_length, NULL, 0);
--
-+	/* Will always return 0 or 1 with map_multi == NULL */
-+	BUG_ON(ret < 0);
- 	if (map_length < length + size)
- 		return 1;
--	return ret;
-+	return 0;
++			BUG_ON(ret < 0);
+ 			bio = NULL;
+ 		} else {
+ 			return 0;
+@@ -2125,8 +2128,10 @@ static int submit_extent_page(int rw, st
+ 
+ 	if (bio_ret)
+ 		*bio_ret = bio;
+-	else
++	else {
+ 		ret = submit_one_bio(rw, bio, mirror_num, bio_flags);
++		BUG_ON(ret < 0);
++	}
+ 
+ 	return ret;
+ }
+@@ -2349,8 +2354,10 @@ int extent_read_full_page(struct extent_
+ 
+ 	ret = __extent_read_full_page(tree, page, get_extent, &bio, mirror_num,
+ 				      &bio_flags);
+-	if (bio)
++	if (bio) {
+ 		ret = submit_one_bio(READ, bio, mirror_num, bio_flags);
++		BUG_ON(ret < 0);
++	}
+ 	return ret;
  }
  
- /*
+@@ -2752,10 +2759,12 @@ retry:
+ static void flush_epd_write_bio(struct extent_page_data *epd)
+ {
+ 	if (epd->bio) {
++		int ret;
+ 		if (epd->sync_io)
+-			submit_one_bio(WRITE_SYNC, epd->bio, 0, 0);
++			ret = submit_one_bio(WRITE_SYNC, epd->bio, 0, 0);
+ 		else
+-			submit_one_bio(WRITE, epd->bio, 0, 0);
++			ret = submit_one_bio(WRITE, epd->bio, 0, 0);
++		BUG_ON(ret < 0);
+ 		epd->bio = NULL;
+ 	}
+ }
+@@ -2871,8 +2880,10 @@ int extent_readpages(struct extent_io_tr
+ 		page_cache_release(page);
+ 	}
+ 	BUG_ON(!list_empty(pages));
+-	if (bio)
+-		submit_one_bio(READ, bio, 0, bio_flags);
++	if (bio) {
++		int ret = submit_one_bio(READ, bio, 0, bio_flags);
++		BUG_ON(ret < 0);
++	}
+ 	return 0;
+ }
+ 
+@@ -3704,8 +3715,10 @@ int read_extent_buffer_pages(struct exte
+ 		}
+ 	}
+ 
+-	if (bio)
+-		submit_one_bio(READ, bio, mirror_num, bio_flags);
++	if (bio) {
++		err = submit_one_bio(READ, bio, mirror_num, bio_flags);
++		BUG_ON(err < 0);
++	}
+ 
+ 	if (ret || wait != WAIT_COMPLETE)
+ 		return ret;
+--- a/fs/btrfs/inode.c
++++ b/fs/btrfs/inode.c
+@@ -1488,7 +1488,8 @@ static int btrfs_submit_bio_hook(struct
+ 		metadata = 2;
+ 
+ 	ret = btrfs_bio_wq_end_io(root->fs_info, bio, metadata);
+-	BUG_ON(ret);
++	if (ret)
++		return ret;
+ 
+ 	if (!(rw & REQ_WRITE)) {
+ 		if (bio_flags & EXTENT_BIO_COMPRESSED) {
 
 
 

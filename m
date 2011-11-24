@@ -1,23 +1,18 @@
-From: David Sterba <dave@jikos.cz>
-Subject: Re: [PATCH 1/2] Removed extraneous whitespace from mkfs man page
-Date: Thu, 24 Nov 2011 00:08:36 +0100
-Message-ID: <20111123230836.GE12759@twin.jikos.cz>
-References: <4ECD64CA.6030507@cfl.rr.com>
-Reply-To: dave@jikos.cz
+From: "krzf83@gmail.com " <krzf83@gmail.com>
+Subject: Re: btrfs and load (sys)
+Date: Thu, 24 Nov 2011 01:42:05 +0100
+Message-ID: <CAJ1PRSmntaV+L5aWT6_JnURcvprHyxrP3qPSFaGDN=rC6Kj1Xg@mail.gmail.com>
+References: <CAJ1PRSnhqo3yU4b0sbcYLfByb_pTDuAOL2xo4fryiEoacr8iYg@mail.gmail.com>
+	<4ECD26F0.501@cfl.rr.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Cc: linux-btrfs <linux-btrfs@vger.kernel.org>
+Content-Type: text/plain; charset=UTF-8
+Cc: linux-btrfs@vger.kernel.org
 To: Phillip Susi <psusi@cfl.rr.com>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <4ECD64CA.6030507@cfl.rr.com>
+In-Reply-To: <4ECD26F0.501@cfl.rr.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Wed, Nov 23, 2011 at 04:25:30PM -0500, Phillip Susi wrote:
-> There were extra spaces around some of the arguments in the man
-> page for mkfs.
-
-Please resend with Signed-off-by: tag, and it would be helpful to
-prepend the subject with eg. btrfs-progs.
-
-thanks,
-david
+I've rebooted server and run backup to btrfs partition again. It seems
+that problem is gone, high sys load does not occur now. So it is some
+bug in btrfs... Before reboot server had 30 days uptime so its really
+not much.

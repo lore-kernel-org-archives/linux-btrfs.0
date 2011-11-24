@@ -1,49 +1,60 @@
 From: Jeff Mahoney <jeffm@suse.com>
-Subject: [patch 58/99] btrfs: btrfs_destroy_delalloc_inodes should return void
-Date: Wed, 23 Nov 2011 19:36:31 -0500
-Message-ID: <20111124004226.531407593@suse.com>
+Subject: [patch 52/99] btrfs: btrfs_requeue_work should return void
+Date: Wed, 23 Nov 2011 19:36:25 -0500
+Message-ID: <20111124004225.836679625@suse.com>
 References: <20111124003533.395674389@suse.com>
 To: Btrfs List <linux-btrfs@vger.kernel.org>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
 List-ID: <linux-btrfs.vger.kernel.org>
 
- btrfs_destroy_delalloc_inodes has no error conditions and should return
- void. Its callers already ignore the error codes anyway.
+ btrfs_requeue_work has no error conditions and should return void.
+ Its callers ignore the error code anyway.
 
 Signed-off-by: Jeff Mahoney <jeffm@suse.com>
 ---
- fs/btrfs/disk-io.c |    6 ++----
- 1 file changed, 2 insertions(+), 4 deletions(-)
+ fs/btrfs/async-thread.c |    7 ++-----
+ fs/btrfs/async-thread.h |    2 +-
+ 2 files changed, 3 insertions(+), 6 deletions(-)
 
---- a/fs/btrfs/disk-io.c
-+++ b/fs/btrfs/disk-io.c
-@@ -54,7 +54,7 @@ static int btrfs_destroy_ordered_extents
- static int btrfs_destroy_delayed_refs(struct btrfs_transaction *trans,
- 				      struct btrfs_root *root);
- static int btrfs_destroy_pending_snapshots(struct btrfs_transaction *t);
--static int btrfs_destroy_delalloc_inodes(struct btrfs_root *root);
-+static void btrfs_destroy_delalloc_inodes(struct btrfs_root *root);
- static int btrfs_destroy_marked_extents(struct btrfs_root *root,
- 					struct extent_io_tree *dirty_pages,
- 					int mark);
-@@ -2939,7 +2939,7 @@ static int btrfs_destroy_pending_snapsho
- 	return 0;
- }
- 
--static int btrfs_destroy_delalloc_inodes(struct btrfs_root *root)
-+static void btrfs_destroy_delalloc_inodes(struct btrfs_root *root)
+--- a/fs/btrfs/async-thread.c
++++ b/fs/btrfs/async-thread.c
+@@ -613,14 +613,14 @@ found:
+  * it was taken from.  It is intended for use with long running work functions
+  * that make some progress and want to give the cpu up for others.
+  */
+-int btrfs_requeue_work(struct btrfs_work *work)
++void btrfs_requeue_work(struct btrfs_work *work)
  {
- 	struct btrfs_inode *btrfs_inode;
- 	struct list_head splice;
-@@ -2959,8 +2959,6 @@ static int btrfs_destroy_delalloc_inodes
- 	}
+ 	struct btrfs_worker_thread *worker = work->worker;
+ 	unsigned long flags;
+ 	int wake = 0;
  
- 	spin_unlock(&root->fs_info->delalloc_lock);
+ 	if (test_and_set_bit(WORK_QUEUED_BIT, &work->flags))
+-		goto out;
++		return;
+ 
+ 	spin_lock_irqsave(&worker->lock, flags);
+ 	if (test_bit(WORK_HIGH_PRIO_BIT, &work->flags))
+@@ -647,9 +647,6 @@ int btrfs_requeue_work(struct btrfs_work
+ 	if (wake)
+ 		wake_up_process(worker->task);
+ 	spin_unlock_irqrestore(&worker->lock, flags);
+-out:
 -
 -	return 0;
  }
  
- static int btrfs_destroy_marked_extents(struct btrfs_root *root,
+ void btrfs_set_work_high_prio(struct btrfs_work *work)
+--- a/fs/btrfs/async-thread.h
++++ b/fs/btrfs/async-thread.h
+@@ -114,6 +114,6 @@ int btrfs_start_workers(struct btrfs_wor
+ void btrfs_stop_workers(struct btrfs_workers *workers);
+ void btrfs_init_workers(struct btrfs_workers *workers, char *name, int max,
+ 			struct btrfs_workers *async_starter);
+-int btrfs_requeue_work(struct btrfs_work *work);
++void btrfs_requeue_work(struct btrfs_work *work);
+ void btrfs_set_work_high_prio(struct btrfs_work *work);
+ #endif
 
 
 

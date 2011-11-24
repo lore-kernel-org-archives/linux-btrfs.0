@@ -1,32 +1,41 @@
 From: Jeff Mahoney <jeffm@suse.com>
-Subject: [patch 91/99] btrfs: btrfs_run_ordered_operations should return void
-Date: Wed, 23 Nov 2011 19:37:04 -0500
-Message-ID: <20111124004230.351304172@suse.com>
+Subject: [patch 96/99] btrfs: btrfs_destroy_ordered_operations should return void
+Date: Wed, 23 Nov 2011 19:37:09 -0500
+Message-ID: <20111124004230.928973500@suse.com>
 References: <20111124003533.395674389@suse.com>
 To: Btrfs List <linux-btrfs@vger.kernel.org>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
 List-ID: <linux-btrfs.vger.kernel.org>
 
- btrfs_run_ordered_operations has no error conditions and should return void.
+ btrfs_destroy_ordered_operations has no error conditions and should
+ return void.
 
 Signed-off-by: Jeff Mahoney <jeffm@suse.com>
 ---
- fs/btrfs/ordered-data.c |    4 +---
- fs/btrfs/ordered-data.h |    2 +-
- 2 files changed, 2 insertions(+), 4 deletions(-)
+ fs/btrfs/disk-io.c |    6 ++----
+ 1 file changed, 2 insertions(+), 4 deletions(-)
 
---- a/fs/btrfs/ordered-data.c
-+++ b/fs/btrfs/ordered-data.c
-@@ -526,7 +526,7 @@ void btrfs_wait_ordered_extents(struct b
-  * extra check to make sure the ordered operation list really is empty
-  * before we return
-  */
--int btrfs_run_ordered_operations(struct btrfs_root *root, int wait)
-+void btrfs_run_ordered_operations(struct btrfs_root *root, int wait)
+--- a/fs/btrfs/disk-io.c
++++ b/fs/btrfs/disk-io.c
+@@ -49,7 +49,7 @@ static void end_workqueue_fn(struct btrf
+ static void free_fs_root(struct btrfs_root *root);
+ static void btrfs_check_super_valid(struct btrfs_fs_info *fs_info,
+ 				    int read_only);
+-static int btrfs_destroy_ordered_operations(struct btrfs_root *root);
++static void btrfs_destroy_ordered_operations(struct btrfs_root *root);
+ static int btrfs_destroy_ordered_extents(struct btrfs_root *root);
+ static int btrfs_destroy_delayed_refs(struct btrfs_transaction *trans,
+ 				      struct btrfs_root *root);
+@@ -3129,7 +3129,7 @@ int btrfs_error_commit_super(struct btrf
+ 	return ret;
+ }
+ 
+-static int btrfs_destroy_ordered_operations(struct btrfs_root *root)
++static void btrfs_destroy_ordered_operations(struct btrfs_root *root)
  {
  	struct btrfs_inode *btrfs_inode;
- 	struct inode *inode;
-@@ -574,8 +574,6 @@ again:
+ 	struct list_head splice;
+@@ -3151,8 +3151,6 @@ static int btrfs_destroy_ordered_operati
  
  	spin_unlock(&root->fs_info->ordered_extent_lock);
  	mutex_unlock(&root->fs_info->ordered_operations_mutex);
@@ -34,17 +43,6 @@ Signed-off-by: Jeff Mahoney <jeffm@suse.com>
 -	return 0;
  }
  
- /*
---- a/fs/btrfs/ordered-data.h
-+++ b/fs/btrfs/ordered-data.h
-@@ -170,7 +170,7 @@ struct btrfs_ordered_extent *btrfs_looku
- int btrfs_ordered_update_i_size(struct inode *inode, u64 offset,
- 				struct btrfs_ordered_extent *ordered);
- int btrfs_find_ordered_sum(struct inode *inode, u64 offset, u64 disk_bytenr, u32 *sum);
--int btrfs_run_ordered_operations(struct btrfs_root *root, int wait);
-+void btrfs_run_ordered_operations(struct btrfs_root *root, int wait);
- int btrfs_add_ordered_operation(struct btrfs_trans_handle *trans,
- 				struct btrfs_root *root,
- 				struct inode *inode);
+ static int btrfs_destroy_ordered_extents(struct btrfs_root *root)
 
 

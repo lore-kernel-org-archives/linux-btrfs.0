@@ -1,94 +1,82 @@
 From: Jeff Mahoney <jeffm@suse.com>
-Subject: [patch 66/99] btrfs: __add_reloc_root error push-up
-Date: Wed, 23 Nov 2011 19:36:39 -0500
-Message-ID: <20111124004227.458024495@suse.com>
+Subject: [patch 64/99] btrfs: Factor out tree->ops->merge_bio_hook call
+Date: Wed, 23 Nov 2011 19:36:37 -0500
+Message-ID: <20111124004227.226096530@suse.com>
 References: <20111124003533.395674389@suse.com>
 To: Btrfs List <linux-btrfs@vger.kernel.org>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
 List-ID: <linux-btrfs.vger.kernel.org>
 
- This patch pushes kmalloc errors up to the caller and BUGs in the caller.
+ In submit_extent_page, there's a visually noisy if statement that, in
+ the midst of other conditions, does the tree dependency for tree->ops
+ and tree->ops->merge_bio_hook before calling it, and then another
+ condition afterwards. If an error is returned from merge_bio_hook,
+ there's no way to catch it. It's considered a routine "1" return
+ value instead of a failure.
 
- The BUG_ON for duplicate reloc tree root insertion is replaced with a
- panic explaining the issue.
+ This patch factors out the dependency check into a new local merge_bio
+ routine and BUG's on an error. The if statement is less noisy as a side-
+ effect.
 
 Signed-off-by: Jeff Mahoney <jeffm@suse.com>
 ---
- fs/btrfs/relocation.c |   22 ++++++++++++++++------
- 1 file changed, 16 insertions(+), 6 deletions(-)
+ fs/btrfs/extent_io.c |   17 ++++++++++++++---
+ fs/btrfs/inode.c     |    5 +++--
+ 2 files changed, 17 insertions(+), 5 deletions(-)
 
---- a/fs/btrfs/relocation.c
-+++ b/fs/btrfs/relocation.c
-@@ -1219,14 +1219,15 @@ fail:
- /*
-  * helper to add 'address of tree root -> reloc tree' mapping
-  */
--static int __add_reloc_root(struct btrfs_root *root)
-+static int __must_check __add_reloc_root(struct btrfs_root *root)
- {
- 	struct rb_node *rb_node;
- 	struct mapping_node *node;
- 	struct reloc_control *rc = root->fs_info->reloc_ctl;
- 
- 	node = kmalloc(sizeof(*node), GFP_NOFS);
--	BUG_ON(!node);
-+	if (!node)
-+		return -ENOMEM;
- 
- 	node->bytenr = root->node->start;
- 	node->data = root;
-@@ -1235,7 +1236,12 @@ static int __add_reloc_root(struct btrfs
- 	rb_node = tree_insert(&rc->reloc_root_tree.rb_root,
- 			      node->bytenr, &node->rb_node);
- 	spin_unlock(&rc->reloc_root_tree.lock);
--	BUG_ON(rb_node);
-+	if (rb_node) {
-+		kfree(node);
-+		btrfs_panic(root->fs_info, -EEXIST, "Duplicate root found "
-+			    "for start=%llu while inserting into relocation "
-+			    "tree\n");
-+	}
- 
- 	list_add_tail(&root->root_list, &rc->reloc_roots);
- 	return 0;
-@@ -1351,6 +1357,7 @@ int btrfs_init_reloc_root(struct btrfs_t
- 	struct btrfs_root *reloc_root;
- 	struct reloc_control *rc = root->fs_info->reloc_ctl;
- 	int clear_rsv = 0;
-+	int ret;
- 
- 	if (root->reloc_root) {
- 		reloc_root = root->reloc_root;
-@@ -1370,7 +1377,8 @@ int btrfs_init_reloc_root(struct btrfs_t
- 	if (clear_rsv)
- 		trans->block_rsv = NULL;
- 
--	__add_reloc_root(reloc_root);
-+	ret = __add_reloc_root(reloc_root);
-+	BUG_ON(ret < 0);
- 	root->reloc_root = reloc_root;
- 	return 0;
+diff --git a/fs/btrfs/extent_io.c b/fs/btrfs/extent_io.c
+index 0575792..09095b8 100644
+--- a/fs/btrfs/extent_io.c
++++ b/fs/btrfs/extent_io.c
+@@ -2058,6 +2058,19 @@ static int submit_one_bio(int rw, struct bio *bio, int mirror_num,
+ 	return ret;
  }
-@@ -4248,7 +4256,8 @@ int btrfs_recover_relocation(struct btrf
- 				       reloc_root->root_key.offset);
- 		BUG_ON(IS_ERR(fs_root));
  
--		__add_reloc_root(reloc_root);
-+		err = __add_reloc_root(reloc_root);
-+		BUG_ON(err < 0);
- 		fs_root->reloc_root = reloc_root;
- 	}
- 
-@@ -4450,7 +4459,8 @@ void btrfs_reloc_post_snapshot(struct bt
- 	reloc_root = create_reloc_root(trans, root->reloc_root,
- 				       new_root->root_key.objectid);
- 
--	__add_reloc_root(reloc_root);
-+	ret = __add_reloc_root(reloc_root);
++static int merge_bio(struct extent_io_tree *tree, struct page *page,
++		     unsigned long offset, size_t size, struct bio *bio,
++		     unsigned long bio_flags)
++{
++	int ret = 0;
++	if (tree->ops && tree->ops->merge_bio_hook)
++		ret = tree->ops->merge_bio_hook(page, offset, size, bio,
++						bio_flags);
 +	BUG_ON(ret < 0);
- 	new_root->reloc_root = reloc_root;
++	return ret;
++
++}
++
+ static int submit_extent_page(int rw, struct extent_io_tree *tree,
+ 			      struct page *page, sector_t sector,
+ 			      size_t size, unsigned long offset,
+@@ -2086,9 +2099,7 @@ static int submit_extent_page(int rw, struct extent_io_tree *tree,
+ 				sector;
  
- 	if (rc->create_reloc_tree) {
+ 		if (prev_bio_flags != bio_flags || !contig ||
+-		    (tree->ops && tree->ops->merge_bio_hook &&
+-		     tree->ops->merge_bio_hook(page, offset, page_size, bio,
+-					       bio_flags)) ||
++		    merge_bio(tree, page, offset, page_size, bio, bio_flags) ||
+ 		    bio_add_page(bio, page, page_size, offset) < page_size) {
+ 			ret = submit_one_bio(rw, bio, mirror_num,
+ 					     prev_bio_flags);
+diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
+index c0dc599..a06cb64 100644
+--- a/fs/btrfs/inode.c
++++ b/fs/btrfs/inode.c
+@@ -1425,10 +1425,11 @@ int btrfs_merge_bio_hook(struct page *page, unsigned long offset,
+ 	map_length = length;
+ 	ret = btrfs_map_block(map_tree, READ, logical,
+ 			      &map_length, NULL, 0);
+-
++	/* Will always return 0 or 1 with map_multi == NULL */
++	BUG_ON(ret < 0);
+ 	if (map_length < length + size)
+ 		return 1;
+-	return ret;
++	return 0;
+ }
+ 
+ /*
 
 
 

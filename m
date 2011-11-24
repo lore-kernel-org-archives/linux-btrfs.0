@@ -1,80 +1,47 @@
 From: Jeff Mahoney <jeffm@suse.com>
-Subject: [patch 49/99] btrfs: btrfs_queue_worker should return void
-Date: Wed, 23 Nov 2011 19:36:22 -0500
-Message-ID: <20111124004225.490003088@suse.com>
+Subject: [patch 47/99] btrfs: schedule_bio should return void
+Date: Wed, 23 Nov 2011 19:36:20 -0500
+Message-ID: <20111124004225.258451745@suse.com>
 References: <20111124003533.395674389@suse.com>
 To: Btrfs List <linux-btrfs@vger.kernel.org>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
 List-ID: <linux-btrfs.vger.kernel.org>
 
- btrfs_queue_worker has no error conditions and should return void.
+ schedule_bio has no error conditions and should return void. Its callers
+ already ignore the error code anyway.
 
 Signed-off-by: Jeff Mahoney <jeffm@suse.com>
 ---
- fs/btrfs/async-thread.c |   14 ++++----------
- fs/btrfs/async-thread.h |    2 +-
- 2 files changed, 5 insertions(+), 11 deletions(-)
+ fs/btrfs/volumes.c |    4 +---
+ 1 file changed, 1 insertion(+), 3 deletions(-)
 
---- a/fs/btrfs/async-thread.c
-+++ b/fs/btrfs/async-thread.c
-@@ -95,7 +95,6 @@ static void start_new_worker_func(struct
- static int start_new_worker(struct btrfs_workers *queue)
- {
- 	struct worker_start *start;
--	int ret;
- 
- 	start = kzalloc(sizeof(*start), GFP_NOFS);
- 	if (!start)
-@@ -103,10 +102,8 @@ static int start_new_worker(struct btrfs
- 
- 	start->work.func = start_new_worker_func;
- 	start->queue = queue;
--	ret = btrfs_queue_worker(queue->atomic_worker_start, &start->work);
--	if (ret)
--		kfree(start);
--	return ret;
-+	btrfs_queue_worker(queue->atomic_worker_start, &start->work);
-+	return 0;
- }
- 
- /*
-@@ -665,7 +662,7 @@ void btrfs_set_work_high_prio(struct btr
- /*
-  * places a struct btrfs_work into the pending queue of one of the kthreads
+--- a/fs/btrfs/volumes.c
++++ b/fs/btrfs/volumes.c
+@@ -3268,7 +3268,7 @@ struct async_sched {
+  * This will add one bio to the pending list for a device and make sure
+  * the work struct is scheduled.
   */
--int btrfs_queue_worker(struct btrfs_workers *workers, struct btrfs_work *work)
-+void btrfs_queue_worker(struct btrfs_workers *workers, struct btrfs_work *work)
+-static noinline int schedule_bio(struct btrfs_root *root,
++static noinline void schedule_bio(struct btrfs_root *root,
+ 				 struct btrfs_device *device,
+ 				 int rw, struct bio *bio)
  {
- 	struct btrfs_worker_thread *worker;
- 	unsigned long flags;
-@@ -673,7 +670,7 @@ int btrfs_queue_worker(struct btrfs_work
+@@ -3280,7 +3280,6 @@ static noinline int schedule_bio(struct
+ 		bio_get(bio);
+ 		submit_bio(rw, bio);
+ 		bio_put(bio);
+-		return 0;
+ 	}
  
- 	/* don't requeue something already on a list */
- 	if (test_and_set_bit(WORK_QUEUED_BIT, &work->flags))
--		goto out;
-+		return;
- 
- 	worker = find_worker(workers);
- 	if (workers->ordered) {
-@@ -712,7 +709,4 @@ int btrfs_queue_worker(struct btrfs_work
- 	if (wake)
- 		wake_up_process(worker->task);
- 	spin_unlock_irqrestore(&worker->lock, flags);
--
--out:
+ 	/*
+@@ -3314,7 +3313,6 @@ static noinline int schedule_bio(struct
+ 	if (should_queue)
+ 		btrfs_queue_worker(&root->fs_info->submit_workers,
+ 				   &device->work);
 -	return 0;
  }
---- a/fs/btrfs/async-thread.h
-+++ b/fs/btrfs/async-thread.h
-@@ -109,7 +109,7 @@ struct btrfs_workers {
- 	char *name;
- };
  
--int btrfs_queue_worker(struct btrfs_workers *workers, struct btrfs_work *work);
-+void btrfs_queue_worker(struct btrfs_workers *workers, struct btrfs_work *work);
- int btrfs_start_workers(struct btrfs_workers *workers, int num_workers);
- int btrfs_stop_workers(struct btrfs_workers *workers);
- void btrfs_init_workers(struct btrfs_workers *workers, char *name, int max,
+ int btrfs_map_bio(struct btrfs_root *root, int rw, struct bio *bio,
 
 
 

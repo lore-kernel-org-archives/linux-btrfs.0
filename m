@@ -1,78 +1,102 @@
 From: Jeff Mahoney <jeffm@suse.com>
-Subject: [patch 05/99] btrfs: Remove set bits return from clear_extent_bit
-Date: Wed, 23 Nov 2011 19:35:38 -0500
-Message-ID: <20111124004220.396576561@suse.com>
+Subject: [patch 06/99] btrfs: Add extent_state alloc/free tracing
+Date: Wed, 23 Nov 2011 19:35:39 -0500
+Message-ID: <20111124004220.512320610@suse.com>
 References: <20111124003533.395674389@suse.com>
 To: Btrfs List <linux-btrfs@vger.kernel.org>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
 List-ID: <linux-btrfs.vger.kernel.org>
 
- There is only one caller of clear_extent_bit that checks the return value
- and it only checks if it's negative. Since there are no users of the
- returned bits functionality of clear_extent_bit, stop returning it
- and avoid complicating error handling.
+ While debugging the error handling patches, I found it useful to trace
+ the allocation and freeing of extent_state structures. As a side note,
+ a huge number of allocations have lifetimes in the < 10 us range.
+
+ This patch adds the trace, including caller and object address.
 
 Signed-off-by: Jeff Mahoney <jeffm@suse.com>
 ---
- fs/btrfs/extent_io.c |   12 +++++-------
- 1 file changed, 5 insertions(+), 7 deletions(-)
+ fs/btrfs/extent_io.c         |    2 +
+ include/trace/events/btrfs.h |   44 +++++++++++++++++++++++++++++++++++++++++++
+ 2 files changed, 46 insertions(+)
 
 --- a/fs/btrfs/extent_io.c
 +++ b/fs/btrfs/extent_io.c
-@@ -460,8 +460,7 @@ NORET_TYPE void extent_io_tree_panic(str
-  *
-  * the range [start, end] is inclusive.
-  *
-- * This takes the tree lock, and returns < 0 on error, > 0 if any of the
-- * bits were already set, or zero if none of the bits were already set.
-+ * This takes the tree lock, and returns 0 on success and < 0 on error.
-  */
- int clear_extent_bit(struct extent_io_tree *tree, u64 start, u64 end,
- 		     int bits, int wake, int delete,
-@@ -475,7 +474,6 @@ int clear_extent_bit(struct extent_io_tr
- 	struct rb_node *node;
- 	u64 last_end;
- 	int err;
--	int set = 0;
- 	int clear = 0;
+@@ -141,6 +141,7 @@ static struct extent_state *alloc_extent
+ #endif
+ 	atomic_set(&state->refs, 1);
+ 	init_waitqueue_head(&state->wq);
++	trace_alloc_extent_state(state, mask, _RET_IP_);
+ 	return state;
+ }
  
- 	if (delete)
-@@ -551,7 +549,7 @@ hit_next:
- 		if (err)
- 			goto out;
- 		if (state->end <= end) {
--			set |= clear_state_bit(tree, state, &bits, wake);
-+			clear_state_bit(tree, state, &bits, wake);
- 			if (last_end == (u64)-1)
- 				goto out;
- 			start = last_end + 1;
-@@ -574,7 +572,7 @@ hit_next:
- 		if (wake)
- 			wake_up(&state->wq);
+@@ -158,6 +159,7 @@ void free_extent_state(struct extent_sta
+ 		list_del(&state->leak_list);
+ 		spin_unlock_irqrestore(&leak_lock, flags);
+ #endif
++		trace_free_extent_state(state, _RET_IP_);
+ 		kmem_cache_free(extent_state_cache, state);
+ 	}
+ }
+--- a/include/trace/events/btrfs.h
++++ b/include/trace/events/btrfs.h
+@@ -6,6 +6,7 @@
  
--		set |= clear_state_bit(tree, prealloc, &bits, wake);
-+		clear_state_bit(tree, prealloc, &bits, wake);
+ #include <linux/writeback.h>
+ #include <linux/tracepoint.h>
++#include <trace/events/gfpflags.h>
  
- 		prealloc = NULL;
- 		goto out;
-@@ -585,7 +583,7 @@ hit_next:
- 	else
- 		next_node = NULL;
+ struct btrfs_root;
+ struct btrfs_fs_info;
+@@ -661,6 +662,49 @@ DEFINE_EVENT(btrfs__reserved_extent,  bt
+ 	TP_ARGS(root, start, len)
+ );
  
--	set |= clear_state_bit(tree, state, &bits, wake);
-+	clear_state_bit(tree, state, &bits, wake);
- 	if (last_end == (u64)-1)
- 		goto out;
- 	start = last_end + 1;
-@@ -602,7 +600,7 @@ out:
- 	if (prealloc)
- 		free_extent_state(prealloc);
++struct extent_state;
++TRACE_EVENT(alloc_extent_state,
++
++	TP_PROTO(struct extent_state *state, gfp_t mask, unsigned long IP),
++
++	TP_ARGS(state, mask, IP),
++
++	TP_STRUCT__entry(
++		__field(struct extent_state *, state)
++		__field(gfp_t, mask)
++		__field(unsigned long, ip)
++	),
++
++	TP_fast_assign(
++		__entry->state	= state,
++		__entry->mask	= mask,
++		__entry->ip	= IP
++	),
++
++	TP_printk("state=%p; mask = %s; caller = %pF", __entry->state,
++		  show_gfp_flags(__entry->mask), (void *)__entry->ip)
++);
++
++TRACE_EVENT(free_extent_state,
++
++	TP_PROTO(struct extent_state *state, unsigned long IP),
++
++	TP_ARGS(state, IP),
++
++	TP_STRUCT__entry(
++		__field(struct extent_state *, state)
++		__field(unsigned long, ip)
++	),
++
++	TP_fast_assign(
++		__entry->state	= state,
++		__entry->ip = IP
++	),
++
++	TP_printk(" state=%p; caller = %pF", __entry->state,
++		  (void *)__entry->ip)
++);
++
+ #endif /* _TRACE_BTRFS_H */
  
--	return set;
-+	return 0;
- 
- search_again:
- 	if (start > end)
+ /* This part must be outside protection */
 
 
 

@@ -1,47 +1,51 @@
 From: Jeff Mahoney <jeffm@suse.com>
-Subject: [patch 47/99] btrfs: schedule_bio should return void
-Date: Wed, 23 Nov 2011 19:36:20 -0500
-Message-ID: <20111124004225.258451745@suse.com>
+Subject: [patch 51/99] btrfs: btrfs_stop_workers should return void
+Date: Wed, 23 Nov 2011 19:36:24 -0500
+Message-ID: <20111124004225.721179729@suse.com>
 References: <20111124003533.395674389@suse.com>
 To: Btrfs List <linux-btrfs@vger.kernel.org>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
 List-ID: <linux-btrfs.vger.kernel.org>
 
- schedule_bio has no error conditions and should return void. Its callers
- already ignore the error code anyway.
+ btrfs_stop_workers has no error conditions and should return void.
+ Its callers already ignore the error code anyway.
 
 Signed-off-by: Jeff Mahoney <jeffm@suse.com>
 ---
- fs/btrfs/volumes.c |    4 +---
- 1 file changed, 1 insertion(+), 3 deletions(-)
+ fs/btrfs/async-thread.c |    3 +--
+ fs/btrfs/async-thread.h |    2 +-
+ 2 files changed, 2 insertions(+), 3 deletions(-)
 
---- a/fs/btrfs/volumes.c
-+++ b/fs/btrfs/volumes.c
-@@ -3268,7 +3268,7 @@ struct async_sched {
-  * This will add one bio to the pending list for a device and make sure
-  * the work struct is scheduled.
+--- a/fs/btrfs/async-thread.c
++++ b/fs/btrfs/async-thread.c
+@@ -401,7 +401,7 @@ again:
+ /*
+  * this will wait for all the worker threads to shutdown
   */
--static noinline int schedule_bio(struct btrfs_root *root,
-+static noinline void schedule_bio(struct btrfs_root *root,
- 				 struct btrfs_device *device,
- 				 int rw, struct bio *bio)
+-int btrfs_stop_workers(struct btrfs_workers *workers)
++void btrfs_stop_workers(struct btrfs_workers *workers)
  {
-@@ -3280,7 +3280,6 @@ static noinline int schedule_bio(struct
- 		bio_get(bio);
- 		submit_bio(rw, bio);
- 		bio_put(bio);
--		return 0;
+ 	struct list_head *cur;
+ 	struct btrfs_worker_thread *worker;
+@@ -429,7 +429,6 @@ int btrfs_stop_workers(struct btrfs_work
+ 		put_worker(worker);
  	}
- 
- 	/*
-@@ -3314,7 +3313,6 @@ static noinline int schedule_bio(struct
- 	if (should_queue)
- 		btrfs_queue_worker(&root->fs_info->submit_workers,
- 				   &device->work);
+ 	spin_unlock_irq(&workers->lock);
 -	return 0;
  }
  
- int btrfs_map_bio(struct btrfs_root *root, int rw, struct bio *bio,
+ /*
+--- a/fs/btrfs/async-thread.h
++++ b/fs/btrfs/async-thread.h
+@@ -111,7 +111,7 @@ struct btrfs_workers {
+ 
+ void btrfs_queue_worker(struct btrfs_workers *workers, struct btrfs_work *work);
+ int btrfs_start_workers(struct btrfs_workers *workers, int num_workers);
+-int btrfs_stop_workers(struct btrfs_workers *workers);
++void btrfs_stop_workers(struct btrfs_workers *workers);
+ void btrfs_init_workers(struct btrfs_workers *workers, char *name, int max,
+ 			struct btrfs_workers *async_starter);
+ int btrfs_requeue_work(struct btrfs_work *work);
 
 
 

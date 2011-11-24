@@ -1,49 +1,76 @@
 From: Jeff Mahoney <jeffm@suse.com>
-Subject: [patch 90/99] btrfs: btrfs_wait_ordered_range should return void
-Date: Wed, 23 Nov 2011 19:37:03 -0500
-Message-ID: <20111124004230.235629038@suse.com>
+Subject: [patch 86/99] btrfs: update_inline_extent_backref should return void
+Date: Wed, 23 Nov 2011 19:36:59 -0500
+Message-ID: <20111124004229.772731255@suse.com>
 References: <20111124003533.395674389@suse.com>
 To: Btrfs List <linux-btrfs@vger.kernel.org>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
 List-ID: <linux-btrfs.vger.kernel.org>
 
- btrfs_wait_ordered_range has no error conditions and should return void.
+ Now that btrfs_truncate_item returns void, there are no more error
+ conditions in update_inline_extent_backref and it should return void.
 
 Signed-off-by: Jeff Mahoney <jeffm@suse.com>
 ---
- fs/btrfs/ordered-data.c |    3 +--
- fs/btrfs/ordered-data.h |    2 +-
- 2 files changed, 2 insertions(+), 3 deletions(-)
+ fs/btrfs/extent-tree.c |   23 +++++++++++------------
+ 1 file changed, 11 insertions(+), 12 deletions(-)
 
---- a/fs/btrfs/ordered-data.c
-+++ b/fs/btrfs/ordered-data.c
-@@ -610,7 +610,7 @@ void btrfs_start_ordered_extent(struct i
- /*
-  * Used to wait on ordered extents across a large range of bytes.
+--- a/fs/btrfs/extent-tree.c
++++ b/fs/btrfs/extent-tree.c
+@@ -1649,12 +1649,12 @@ static int lookup_extent_backref(struct
+  * helper to update/remove inline back ref
   */
--int btrfs_wait_ordered_range(struct inode *inode, u64 start, u64 len)
-+void btrfs_wait_ordered_range(struct inode *inode, u64 start, u64 len)
+ static noinline_for_stack
+-int update_inline_extent_backref(struct btrfs_trans_handle *trans,
+-				 struct btrfs_root *root,
+-				 struct btrfs_path *path,
+-				 struct btrfs_extent_inline_ref *iref,
+-				 int refs_to_mod,
+-				 struct btrfs_delayed_extent_op *extent_op)
++void update_inline_extent_backref(struct btrfs_trans_handle *trans,
++				  struct btrfs_root *root,
++				  struct btrfs_path *path,
++				  struct btrfs_extent_inline_ref *iref,
++				  int refs_to_mod,
++				  struct btrfs_delayed_extent_op *extent_op)
  {
- 	u64 end;
- 	u64 orig_end;
-@@ -665,7 +665,6 @@ again:
- 		schedule_timeout(1);
- 		goto again;
+ 	struct extent_buffer *leaf;
+ 	struct btrfs_extent_item *ei;
+@@ -1709,7 +1709,6 @@ int update_inline_extent_backref(struct
+ 		btrfs_truncate_item(trans, root, path, item_size, 1);
  	}
+ 	btrfs_mark_buffer_dirty(leaf);
 -	return 0;
  }
  
- /*
---- a/fs/btrfs/ordered-data.h
-+++ b/fs/btrfs/ordered-data.h
-@@ -161,7 +161,7 @@ struct btrfs_ordered_extent *btrfs_looku
- 							 u64 file_offset);
- void btrfs_start_ordered_extent(struct inode *inode,
- 				struct btrfs_ordered_extent *entry, int wait);
--int btrfs_wait_ordered_range(struct inode *inode, u64 start, u64 len);
-+void btrfs_wait_ordered_range(struct inode *inode, u64 start, u64 len);
- struct btrfs_ordered_extent *
- btrfs_lookup_first_ordered_extent(struct inode * inode, u64 file_offset);
- struct btrfs_ordered_extent *btrfs_lookup_ordered_range(struct inode *inode,
+ static noinline_for_stack
+@@ -1729,8 +1728,8 @@ int insert_inline_extent_backref(struct
+ 					   root_objectid, owner, offset, 1);
+ 	if (ret == 0) {
+ 		BUG_ON(owner < BTRFS_FIRST_FREE_OBJECTID);
+-		ret = update_inline_extent_backref(trans, root, path, iref,
+-						   refs_to_add, extent_op);
++		update_inline_extent_backref(trans, root, path, iref,
++					     refs_to_add, extent_op);
+ 	} else if (ret == -ENOENT) {
+ 		setup_inline_extent_backref(trans, root, path, iref, parent,
+ 					    root_objectid, owner, offset,
+@@ -1765,12 +1764,12 @@ static int remove_extent_backref(struct
+ 				 struct btrfs_extent_inline_ref *iref,
+ 				 int refs_to_drop, int is_data)
+ {
+-	int ret;
++	int ret = 0;
+ 
+ 	BUG_ON(!is_data && refs_to_drop != 1);
+ 	if (iref) {
+-		ret = update_inline_extent_backref(trans, root, path, iref,
+-						   -refs_to_drop, NULL);
++		update_inline_extent_backref(trans, root, path, iref,
++					     -refs_to_drop, NULL);
+ 	} else if (is_data) {
+ 		ret = remove_extent_data_ref(trans, root, path, refs_to_drop);
+ 	} else {
+
 
 

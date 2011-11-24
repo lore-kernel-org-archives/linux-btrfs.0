@@ -1,44 +1,43 @@
 From: Jeff Mahoney <jeffm@suse.com>
-Subject: [patch 50/99] btrfs: run_ordered_completions should return void
-Date: Wed, 23 Nov 2011 19:36:23 -0500
-Message-ID: <20111124004225.605630464@suse.com>
+Subject: [patch 54/99] btrfs: wait_for_writer should return void
+Date: Wed, 23 Nov 2011 19:36:27 -0500
+Message-ID: <20111124004226.068631771@suse.com>
 References: <20111124003533.395674389@suse.com>
 To: Btrfs List <linux-btrfs@vger.kernel.org>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
 List-ID: <linux-btrfs.vger.kernel.org>
 
- run_ordered_completions has no error conditions and should return void.
- Its callers already ignore the error code anyway.
+ wait_for_writer has no error conditions and should return void. Its
+ callers already ignore the error codes anyway.
 
 Signed-off-by: Jeff Mahoney <jeffm@suse.com>
 ---
- fs/btrfs/async-thread.c |    5 ++---
- 1 file changed, 2 insertions(+), 3 deletions(-)
+ fs/btrfs/tree-log.c |    5 ++---
+ 1 files changed, 2 insertions(+), 3 deletions(-)
 
---- a/fs/btrfs/async-thread.c
-+++ b/fs/btrfs/async-thread.c
-@@ -174,11 +174,11 @@ out:
- 	spin_unlock_irqrestore(&workers->lock, flags);
+diff --git a/fs/btrfs/tree-log.c b/fs/btrfs/tree-log.c
+index 2c45b3d..aac743b 100644
+--- a/fs/btrfs/tree-log.c
++++ b/fs/btrfs/tree-log.c
+@@ -1964,8 +1964,8 @@ static int wait_log_commit(struct btrfs_trans_handle *trans,
+ 	return 0;
  }
  
--static noinline int run_ordered_completions(struct btrfs_workers *workers,
-+static noinline void run_ordered_completions(struct btrfs_workers *workers,
- 					    struct btrfs_work *work)
+-static int wait_for_writer(struct btrfs_trans_handle *trans,
+-			   struct btrfs_root *root)
++static void wait_for_writer(struct btrfs_trans_handle *trans,
++			    struct btrfs_root *root)
  {
- 	if (!workers->ordered)
--		return 0;
-+		return;
- 
- 	set_bit(WORK_DONE_BIT, &work->flags);
- 
-@@ -216,7 +216,6 @@ static noinline int run_ordered_completi
+ 	DEFINE_WAIT(wait);
+ 	while (atomic_read(&root->log_writers)) {
+@@ -1978,7 +1978,6 @@ static int wait_for_writer(struct btrfs_trans_handle *trans,
+ 		mutex_lock(&root->log_mutex);
+ 		finish_wait(&root->log_writer_wait, &wait);
  	}
- 
- 	spin_unlock(&workers->order_lock);
 -	return 0;
  }
  
- static void put_worker(struct btrfs_worker_thread *worker)
+ /*
 
 
 

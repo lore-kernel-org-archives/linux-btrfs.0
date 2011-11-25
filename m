@@ -1,40 +1,52 @@
 From: Jeff Mahoney <jeffm@suse.com>
-Subject: Re: [patch 65/99] btrfs: ->submit_bio_hook error push-up
-Date: Thu, 24 Nov 2011 21:17:45 -0500
-Message-ID: <4ECEFAC9.1090901@suse.com>
-References: <20111124003533.395674389@suse.com> <20111124004227.342118564@suse.com> <20111125004604.GI12759@twin.jikos.cz>
+Subject: Re: [patch 01/99] btrfs: Add btrfs_panic()
+Date: Thu, 24 Nov 2011 21:36:55 -0500
+Message-ID: <4ECEFF47.9090006@suse.com>
+References: <20111124003533.395674389@suse.com> <20111124004219.933819241@suse.com> <20111124020533.GA14982@davidb.org> <4ECDAA4E.9000201@suse.com> <20111124063722.GB15023@davidb.org>
 Mime-Version: 1.0
 Content-Type: text/plain; charset=ISO-8859-1
-To: Btrfs List <linux-btrfs@vger.kernel.org>
+Cc: Btrfs List <linux-btrfs@vger.kernel.org>
+To: David Brown <davidb@davidb.org>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <20111125004604.GI12759@twin.jikos.cz>
+In-Reply-To: <20111124063722.GB15023@davidb.org>
 List-ID: <linux-btrfs.vger.kernel.org>
 
 -----BEGIN PGP SIGNED MESSAGE-----
 Hash: SHA1
 
-On 11/24/2011 07:46 PM, David Sterba wrote:
-> On Wed, Nov 23, 2011 at 07:36:38PM -0500, Jeff Mahoney wrote:
->> --- a/fs/btrfs/extent_io.c +++ b/fs/btrfs/extent_io.c @@ -2752,10
->> +2759,12 @@ retry: static void flush_epd_write_bio(struct
->> extent_page_data *epd) { if (epd->bio) { +		int ret; if
->> (epd->sync_io) -			submit_one_bio(WRITE_SYNC, epd->bio, 0, 0); +
->> ret = submit_one_bio(WRITE_SYNC, epd->bio, 0, 0); else -
->> submit_one_bio(WRITE, epd->bio, 0, 0); +			ret =
->> submit_one_bio(WRITE, epd->bio, 0, 0); +		BUG_ON(ret < 0);
+On 11/24/2011 01:37 AM, David Brown wrote:
+> On Wed, Nov 23, 2011 at 09:22:06PM -0500, Jeff Mahoney wrote:
+>> -----BEGIN PGP SIGNED MESSAGE----- Hash: SHA1
+>> 
+>> On 11/23/2011 09:05 PM, David Brown wrote:
+>>> On Wed, Nov 23, 2011 at 07:35:34PM -0500, Jeff Mahoney wrote:
+>>>> As part of the effort to eliminate BUG_ON as an error
+>>>> handling technique, we need to determine which errors are
+>>>> actual logic errors, which are on-disk corruption, and which
+>>>> are normal runtime errors e.g. -ENOMEM.
+>>>> 
+>>>> Annotating these error cases is helpful to understand and
+>>>> report them.
+>>>> 
+>>>> This patch adds a btrfs_panic() routine that will either
+>>>> panic or BUG depending on the new -ofatal_errors={panic,bug}
+>>>> mount option. Since there are still so many BUG_ONs, it
+>>>> defaults to BUG for now but I expect that to change once the
+>>>> error handling effort has made significant progress.
+>>> 
+>>> Any reason all of the commit text is indented in this series?
+>> 
+>> Our internal patches have a bunch of RFC822-style headers
+>> associated with them. For me, indenting the body is a style
+>> thing. I like having the body appear separate from the headers.
 > 
-> this if/else could be transfomed in the same way as in
-> 
-> "63/99 btrfs: Simplify btrfs_submit_bio_hook"
-> 
-> int rw = WRITE;
-> 
-> if (epd->sync_io) rw = WRITE_SYNC;
-> 
-> ret = submit_one_bio(rw, ...);
-> 
+> Probably best not to, it makes them inconsistent with the rest of
+> the kernel's history when imported into git.  The body becomes the
+> commit text directly.
 
-Yep. Thanks.
+I'll change them to do this since you're obviously correct. You're the
+first person in 10+ years to notice (or at least comment on) it,
+though. ;)
 
 - -Jeff
 
@@ -45,17 +57,17 @@ SUSE Labs
 Version: GnuPG v2.0.18 (GNU/Linux)
 Comment: Using GnuPG with Mozilla - http://enigmail.mozdev.org/
 
-iQIcBAEBAgAGBQJOzvrJAAoJEB57S2MheeWykzkP/R1hl05O57yxOTQXtYuJhvUF
-RtL6RDD9nw/9QMWFHUXKFvaWtkuygi5BlcLKdXK0Zmsyk+hd7tzv8YfD1uLS2XS0
-gioapvFNEmR6aRh1mMk6fJ429LiFgUrGGrCYQ28VTAgbe/RvMGedLAD6oqps5OJj
-dsCkyUCBxl7ta6cFRlR37gj+rzKwDTEjRz3E2gx8oBjJWA/zXIoInBA+gEC1P3qn
-YfmWyt31JwyOD3Oa2NQoCZGS7+MzotSe0RvAHbt5jc/DUDgJe+avv8Q5o4Bd2A7N
-DAlAty/G8k9rUtEUOp53BclZdq2pDQ5hV/EEDMp743+Y5BoKTmpmXV1p4k7oVhvu
-yOLTdYFtAo45c1pEeEzHm2GiowbdOemkmW3ySoFV8afRIVqkdgOfKMoUg6/c4B+o
-StaAtihxBwSjZbmWSOtlwr8vHkqDK332nh5I6WF9OBcgEI4ZuH6GnmP2NEC5G9aj
-03MFyyJuq53FBmM1CRHE94zc299ZwRxOxIkcSffR9Fm8ANXHlrELfXbVbkmWQf3e
-bKs2skbAQmqbZE7yPbEHuN5vTElgP+MC56FBuVvJ+Lz4NO7HVV4KdfJKiM7J2QzA
-qRsITdnnesKCfpkQTz4ShHZh+O3Y5ZgeP/wBNa9pK2+SZxA0HL3t8RaC/q/yjpYm
-PBOaqH8nwVot+RBwI/Pv
-=/8rB
+iQIcBAEBAgAGBQJOzv9HAAoJEB57S2MheeWyTgsP+wUEW1gJkxyvuVymaL2qTXkz
+ZFDzEIjzmb5x3/jt48yx+iD6ElshVUGYAimoeNkurBVPpi4lJ0n9ydpNm67To/cx
+K9u2/5ld0/Ua+s8uTXjBxDQG/WSOPRk8pc3Y4gIIWyDn+dYQAUb5SvDc6/qWS0BS
+aQT0faX1FO3g+Hp6ZbLbYgXa/5rqrm0L9Ek13f7bq6T8l3wzDlsgWnS8KtYhwnpr
+4rPAU5eythJYj9OGMB34/YoOeDs61tJbbvvNW6TysdiEEdzqf6UQ1EF61r9G41aW
+wXsA4f8oSYsM2t97eH5fGrk+0j2sXPf6CoxIG73DU51L3X4htY4fPc1SQyz0SwSR
+t7CKt+ffT/oa9nCXuHsfwXZBCpDdIRFiVXgibL/rBX9akWXt61W9jZnZXISOU3QZ
+kTOl9VaNAKCWfOMDbKq40cKbYANE16zQ37aXaWMilagsVHCkJH47HJJ17h0IlFqy
+n+zu7++/iPYwclVxCEs/bUr4XyCxSDrqRsUM8s68u7BoZP3EWrmhtMmH11XXkg8e
+iznttk4/lU8Chg0+yoS03tOQquOa3+y7rYgbq9r2h35f2tv1N+s4me8iO+hSJXwO
+0vS7Akvf9n8583jd/y8F3UTl1G7obKAN7ooNURewHo0AzsmNVkK9FyK9SY07I1eS
+w/Zu4uB9dQPxCqM5I5fm
+=ZhyI
 -----END PGP SIGNATURE-----

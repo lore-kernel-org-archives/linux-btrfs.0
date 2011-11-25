@@ -1,26 +1,32 @@
-From: Chris Samuel <chris@csamuel.org>
-Subject: Re: btrfs and load (sys)
-Date: Fri, 25 Nov 2011 15:40:59 +1100
-Message-ID: <4ECF1C5B.4090908@csamuel.org>
-References: <CAJ1PRSnhqo3yU4b0sbcYLfByb_pTDuAOL2xo4fryiEoacr8iYg@mail.gmail.com>	<20111123205616.73b4d0a7@natsu> <CAJ1PRSk4cker8WbSL5t9sKYde=f4XRAkQGQVYVC=8wnJKT8EwQ@mail.gmail.com> <4ECD971A.2050808@csamuel.org>
+From: David Brown <davidb@davidb.org>
+Subject: Re: [patch 01/99] btrfs: Add btrfs_panic()
+Date: Thu, 24 Nov 2011 21:42:18 -0800
+Message-ID: <20111125054218.GA15522@davidb.org>
+References: <20111124003533.395674389@suse.com>
+ <20111124004219.933819241@suse.com>
+ <20111124020533.GA14982@davidb.org>
+ <4ECDAA4E.9000201@suse.com>
+ <20111124063722.GB15023@davidb.org>
+ <4ECEFF47.9090006@suse.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=UTF-8
-To: linux-btrfs@vger.kernel.org
+Content-Type: text/plain; charset=us-ascii; format=flowed
+Cc: Btrfs List <linux-btrfs@vger.kernel.org>
+To: Jeff Mahoney <jeffm@suse.com>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <4ECD971A.2050808@csamuel.org>
+In-Reply-To: <4ECEFF47.9090006@suse.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 24/11/11 12:00, Chris Samuel wrote:
+On Thu, Nov 24, 2011 at 09:36:55PM -0500, Jeff Mahoney wrote:
 
-> You're running quite an old kernel btrfs wise - it would be
-> very interesting to see if you have the same issue with Linus's
-> current git version (which has the latest btrfs code) or
-> wait for 3.2-rc3.
+>> Probably best not to, it makes them inconsistent with the rest of
+>> the kernel's history when imported into git.  The body becomes the
+>> commit text directly.
+>
+>I'll change them to do this since you're obviously correct. You're the
+>first person in 10+ years to notice (or at least comment on) it,
+>though. ;)
 
-3.2-rc3 is now out, Linus is after testers around the world
-because of some holiday in the US.
+Some maintainers (and Linus as well) appears to have just fixed them
+up when applying the patches.
 
-cheers!
-Chris
--- 
- Chris Samuel  :  http://www.csamuel.org/  :  Melbourne, VIC
+David

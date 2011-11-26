@@ -1,50 +1,128 @@
-From: Phillip Susi <psusi@cfl.rr.com>
-Subject: Re: [RFC] Subvolume Quota on-disk structures and configuration
-Date: Fri, 25 Nov 2011 23:14:32 -0500
-Message-ID: <4ED067A8.1010208@cfl.rr.com>
-References: <4E19611D.2090007@gmx.net>
+From: Stefan Kleijkers <stefan@unilogicnetworks.net>
+Subject: Re: WARNING: at fs/btrfs/inode.c:2198 btrfs_orphan_commit_root+0xa8/0xc0
+Date: Sat, 26 Nov 2011 15:14:37 +0100
+Message-ID: <4ED0F44D.3070001@unilogicnetworks.net>
+References: <4EBA54F2.3030801@unilogicnetworks.net> <20111109153552.GB1810@localhost.localdomain> <4EBBBFFA.5090000@unilogicnetworks.net> <20111114160342.GB1947@localhost.localdomain> <4EC2B9E7.7020609@unilogicnetworks.net> <20111115192926.GB1944@localhost.localdomain> <4EC2C940.40605@unilogicnetworks.net> <20111118195226.GB1811@localhost.localdomain>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=ISO-8859-1
-Cc: linux-btrfs <linux-btrfs@vger.kernel.org>
-To: Arne Jansen <sensille@gmx.net>
+Content-Type: text/plain; charset=ISO-8859-1; format=flowed
+Cc: linux-btrfs@vger.kernel.org
+To: Josef Bacik <josef@redhat.com>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <4E19611D.2090007@gmx.net>
+In-Reply-To: <20111118195226.GB1811@localhost.localdomain>
 List-ID: <linux-btrfs.vger.kernel.org>
 
------BEGIN PGP SIGNED MESSAGE-----
-Hash: SHA1
+Hello Josef,
 
-On 07/10/2011 04:21 AM, Arne Jansen wrote:
-> Now that I've got a working prototype of subvolume quota, I'd like
-> to get some feedback on the on-disk structure and the commands I
-> intend to use.
+I've new results, is this the trace you are looking for?
 
-I think I've noticed a bug so far, and have one comment on the qgroup show command.  The command seems to show the current usage of the qgroup, but I can't see how to view the limits ( if any ).  It seems like the show command should show both.
+Trace of OSD0: http://pastebin.com/gddLBXE4
+Dmesg of OSD0: http://pastebin.com/Uebzgkjv
 
-The bug I seem to have noticed is that rm fails with EQUOTA.  I set a 1g limit on a new subvol, and ran dd if=/dev/zero of=/mnt/foo, which created a file approx 1g in size before erroring out with EQUOTA.  After that, I did an echo bar /mnt/bar, and to my surprise, this did not fail with EQUOTA.  Now when I try to rm /mnt/bar or /mnt/foo, THAT fails with EQUOTA.  I also got this in dmesg:
+OSD1 crashed a while later with the same messages.
 
-[  992.078275] WARNING: at fs/btrfs/inode.c:6670 btrfs_destroy_inode+0x31d/0x360 [btrfs]()
-[  992.078276] Hardware name: System Product Name
-[  992.078277] Modules linked in: nls_utf8 isofs bnep rfcomm kvm_intel kvm parport_pc ppdev dm_crypt binfmt_misc nls_iso8859_1 nls_cp437 vfat fat snd_hda_codec_hdmi snd_hda_codec_realtek snd_hda_intel snd_hda_codec snd_hwdep snd_pcm snd_seq_midi snd_rawmidi snd_seq_midi_event joydev snd_seq psmouse eeepc_wmi asus_wmi snd_timer snd_seq_device btusb bluetooth serio_raw snd sparse_keymap soundcore mei(C) snd_page_alloc w83627ehf hwmon_vid coretemp lp parport raid10 raid456 async_pq async_xor async_memcpy async_raid6_recov raid6_pq async_tx raid1 raid0 multipath linear dm_raid45 xor dm_mirror dm_region_hash dm_log btrfs zlib_deflate libcrc32c hid_microsoft usbhid hid mxm_wmi wmi radeon ahci libahci ttm drm_kms_helper e1000e xhci_hcd drm i2c_algo_bit zram(C)
-[  992.078305] Pid: 2342, comm: rm Tainted: G         C   3.2.0-rc2+ #7
-[  992.078306] Call Trace:
-[  992.078311]  [<ffffffff81062acf>] warn_slowpath_common+0x7f/0xc0
-[  992.078313]  [<ffffffff81062b2a>] warn_slowpath_null+0x1a/0x20
-[  992.078320]  [<ffffffffa020de9d>] btrfs_destroy_inode+0x31d/0x360 [btrfs]
-[  992.078324]  [<ffffffff811895cc>] destroy_inode+0x3c/0x70
-[  992.078326]  [<ffffffff8118972a>] evict+0x12a/0x1c0
-[  992.078328]  [<ffffffff811898c9>] iput+0x109/0x220
-[  992.078331]  [<ffffffff8117e7b3>] do_unlinkat+0x153/0x1d0
-[  992.078333]  [<ffffffff811740ea>] ? sys_newfstatat+0x2a/0x40
-[  992.078334]  [<ffffffff8117f352>] sys_unlinkat+0x22/0x40
-[  992.078337]  [<ffffffff8160d0c2>] system_call_fastpath+0x16/0x1b
-[  992.078338] ---[ end trace 770bc93001697fbc ]---
+Stefan
 
------BEGIN PGP SIGNATURE-----
-Version: GnuPG v1.4.11 (GNU/Linux)
-Comment: Using GnuPG with Mozilla - http://enigmail.mozdev.org/
+On 11/18/2011 08:52 PM, Josef Bacik wrote:
+> On Tue, Nov 15, 2011 at 09:19:12PM +0100, Stefan Kleijkers wrote:
+>> Hello Josef,
+>>
+>> You can find the complete dmesg paste on: http://pastebin.com/R4dFfSdQ
+>>
+>> But I doubt it will add more information.
+>>
+> Sorry I forgot about you :).  Here is a new debug patch, it will print something
+> out right before it panics so make sure to get that info, and it will also be
+> spitting stuff out to the trace buffer.  So make sure you have tracing enabled,
+> usually distros mount debugfs so you can cd /sys/kernel/debug/tracing and cat
+> trace and you should see something.  When it panics cat trace>  somefile and
+> send me the file and the dmesg so I can figure out what went wrong.  Thanks,
+>
+> Josef
+>
+>
+> diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
+> index 24cfd10..d887608 100644
+> --- a/fs/btrfs/extent-tree.c
+> +++ b/fs/btrfs/extent-tree.c
+> @@ -3762,6 +3762,11 @@ static void block_rsv_release_bytes(struct btrfs_block_rsv *block_rsv,
+>   	spin_lock(&block_rsv->lock);
+>   	if (num_bytes == (u64)-1)
+>   		num_bytes = block_rsv->size;
+> +	if (unlikely(block_rsv->size<  num_bytes)) {
+> +		printk(KERN_ERR "block rsv %p has size %Lu, want to take "
+> +		       "away %Lu\n", block_rsv, block_rsv->size, num_bytes);
+> +		BUG();
+> +	}
+>   	block_rsv->size -= num_bytes;
+>   	if (block_rsv->reserved>= block_rsv->size) {
+>   		num_bytes = block_rsv->reserved - block_rsv->size;
+> @@ -4064,6 +4069,8 @@ int btrfs_orphan_reserve_metadata(struct btrfs_trans_handle *trans,
+>   	 * when we are truly done with the orphan item.
+>   	 */
+>   	u64 num_bytes = btrfs_calc_trans_metadata_size(root, 1);
+> +	trace_printk("Reserved %Lu bytes for inode %Lu on rsv %p\n",
+> +		     num_bytes, btrfs_ino(inode), dst_rsv);
+>   	return block_rsv_migrate_bytes(src_rsv, dst_rsv, num_bytes);
+>   }
+>
+> @@ -4071,6 +4078,8 @@ void btrfs_orphan_release_metadata(struct inode *inode)
+>   {
+>   	struct btrfs_root *root = BTRFS_I(inode)->root;
+>   	u64 num_bytes = btrfs_calc_trans_metadata_size(root, 1);
+> +	trace_printk("Releaseing %Lu bytes for inode %Lu on rsv %p\n",
+> +		     num_bytes, btrfs_ino(inode), root->orphan_block_rsv);
+>   	btrfs_block_rsv_release(root, root->orphan_block_rsv, num_bytes);
+>   }
+>
+> diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
+> index e16215f..38a4efb 100644
+> --- a/fs/btrfs/inode.c
+> +++ b/fs/btrfs/inode.c
+> @@ -1994,6 +1994,8 @@ int btrfs_orphan_add(struct btrfs_trans_handle *trans, struct inode *inode)
+>
+>   	spin_lock(&root->orphan_lock);
+>   	if (!root->orphan_block_rsv) {
+> +		trace_printk("Added new orphan rsv %p for root %Lu\n",
+> +			     block_rsv, root->objectid);
+>   		root->orphan_block_rsv = block_rsv;
+>   	} else if (block_rsv) {
+>   		btrfs_free_block_rsv(root, block_rsv);
+> @@ -2002,6 +2004,8 @@ int btrfs_orphan_add(struct btrfs_trans_handle *trans, struct inode *inode)
+>
+>   	if (list_empty(&BTRFS_I(inode)->i_orphan)) {
+>   		list_add(&BTRFS_I(inode)->i_orphan,&root->orphan_list);
+> +		trace_printk("Added inode %Lu to orphan list for %Lu\n",
+> +			     btrfs_ino(inode), root->objectid);
+>   #if 0
+>   		/*
+>   		 * For proper ENOSPC handling, we should do orphan
+> @@ -2019,6 +2023,9 @@ int btrfs_orphan_add(struct btrfs_trans_handle *trans, struct inode *inode)
+>   	if (!BTRFS_I(inode)->orphan_meta_reserved) {
+>   		BTRFS_I(inode)->orphan_meta_reserved = 1;
+>   		reserve = 1;
+> +	} else {
+> +		trace_printk("Didn't do reservation for inode %Lu on %Lu\n",
+> +			     btrfs_ino(inode), root->objectid);
+>   	}
+>   	spin_unlock(&root->orphan_lock);
+>
+> @@ -2056,6 +2063,8 @@ int btrfs_orphan_del(struct btrfs_trans_handle *trans, struct inode *inode)
+>
+>   	spin_lock(&root->orphan_lock);
+>   	if (!list_empty(&BTRFS_I(inode)->i_orphan)) {
+> +		trace_printk("Removed inode %Lu from orphan list for %Lu\n",
+> +			     btrfs_ino(inode), root->objectid);
+>   		list_del_init(&BTRFS_I(inode)->i_orphan);
+>   		delete_item = 1;
+>   	}
+> @@ -2063,6 +2072,9 @@ int btrfs_orphan_del(struct btrfs_trans_handle *trans, struct inode *inode)
+>   	if (BTRFS_I(inode)->orphan_meta_reserved) {
+>   		BTRFS_I(inode)->orphan_meta_reserved = 0;
+>   		release_rsv = 1;
+> +	} else {
+> +		trace_printk("Inode %Lu didn't release metadata\n",
+> +			     btrfs_ino(inode));
+>   	}
+>   	spin_unlock(&root->orphan_lock);
+>
 
-iEYEARECAAYFAk7QZ6AACgkQJ4UciIs+XuL8PwCfQH+oKQ+AJNu5+mKXPdT4byX2
-6BcAoKrAgii/ljRs/0lbk4AExbolurXA
-=1lN4
------END PGP SIGNATURE-----

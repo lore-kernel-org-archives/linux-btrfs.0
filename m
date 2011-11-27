@@ -1,59 +1,14 @@
-From: source <source@disable-microsoft.net>
-Subject: wrong / too less space on raid
-Date: Sun, 27 Nov 2011 13:45:22 +0100
-Message-ID: <1322397922.11404.15.camel@master.beowulf.me>
+From: <deborah.rivera@clayton.k12.ga.us>
+Subject: System Administrator
+Date: Sun, 27 Nov 2011 09:58:23 -0500
+Message-ID: <A2AD669951ED244AA1E22C584201F3AC120BBACBD1@SMBX01.clayton.k12.ga.us>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="UTF-8"
-To: linux-btrfs@vger.kernel.org
+Content-Type: text/plain; charset=US-ASCII
+To: unlisted-recipients:; (no To-header on input)
 Return-path: <linux-btrfs-owner@vger.kernel.org>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-hello buglist,
 
-before sending this mail, i tried to track down previous messages from
-the archive and found no similar entry. so either something went wrong
-on my machine only or maybe there are too less testers around.
+Your Mailbox Has Exceeded It Storage Limit As Set By Your Administrator, And You Will Not Be Able To Receive New Mails Until You Re-Validate It. To Re-Validate - > Click Here<https://docs.google.com/spreadsheet/viewform?formkey=dEFGR1oxdTU0b0tyZTVpMkRDTl8wcEE6MQ>: System Administrator
 
-about the real problem/bug :
-
-i tried to create several btrfs filesystems with success and tests about
-performance and reliability but the free amount given to the system is
-far too small, one example :
-
-#mkfs.btrfs -m raid0 -d raid0 /dev/sda8 /dev/sdb8 /dev/sdc8
-
-WARNING! - Btrfs Btrfs v0.19 IS EXPERIMENTAL
-WARNING! - see http://btrfs.wiki.kernel.org before using
-
-adding device /dev/sdb8 id 2
-adding device /dev/sdc8 id 3
-fs created label (null) on /dev/sda8
-	nodesize 4096 leafsize 4096 sectorsize 4096 size 131.44GB
-Btrfs Btrfs v0.19
-
-# mkdir /test && mount /dev/sda8 /test
-# df
-Filesystem     1K-blocks      Used Available Use% Mounted on
-/dev/md0       292911488 174222808 118688680  60% /
-tmpfs               5120         4      5116   1% /lib/init/rw
-tmpfs             611976       544    611432   1% /run
-udev               10240         0     10240   0% /dev
-tmpfs            1223952        76   1223876   1% /run/shm
-/dev/md2       292833568     33312 292800256   1% /or
-/dev/md1       292833568 202533276  90300292  70% /root/workplace
-/dev/sdc1          90297     52782     32698  62% /boot
-myon400:/      976694528 485310720 491383808  50% /srv
-/dev/sda8      137821156        28  90827392   1% /test
-
-in this case, you can see a raid0 setup for meta and data, also
-acknowledged by "sdb8 id2" and "sdc8 id3", the overall amount
-of 1k blocks in df = 137821156 but the available amount is 
-only 90827392 1-k blocks while 28 are in use. this looks like
-the calculation of raid0 outputs something i would assume 
-for raid5 or in other words just 2 of 3 raid-members usable.
-
-maybe i misinterpreted something or made a mistake by creation
-however any documentation around gave me no idea.
-
-this test was made on a debian sid, using btrfs v0.19.
 

@@ -1,37 +1,29 @@
-From: Li Zefan <lizf@cn.fujitsu.com>
-Subject: [PATCH] Btrfs: check if the to-be-added device is writable
-Date: Mon, 28 Nov 2011 16:43:46 +0800
-Message-ID: <4ED349C2.1030705@cn.fujitsu.com>
+From: Chris Samuel <chris@csamuel.org>
+Subject: Re: Blcoked for more than 120 seconds
+Date: Mon, 28 Nov 2011 20:29:09 +1100
+Message-ID: <1322472549.1962.2.camel@Nokia-N900>
+References: <4ED34359.6010305@robotech.de>
+Reply-To: Chris Samuel <chris@csamuel.org>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=UTF-8
-To: "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
+Content-Type: text/plain; charset=utf-8
+To: linux-btrfs@vger.kernel.org
 Return-path: <linux-btrfs-owner@vger.kernel.org>
+In-Reply-To: <4ED34359.6010305@robotech.de>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-If we call ioctl(BTRFS_IOC_ADD_DEV) directly, we'll succeed in adding
-a readonly device to a btrfs filesystem, and btrfs will write to
-that device, emitting kernel errors:
+Hi Tobias,
 
-[ 3109.833692] lost page write due to I/O error on loop2
-[ 3109.833720] lost page write due to I/O error on loop2
-...
+On Mon, 28 Nov 2011, 19:16:25 EST, Tobias <tracer@robotech.de> wrote:
 
-Signed-off-by: Li Zefan <lizf@cn.fujitsu.com>
----
- fs/btrfs/volumes.c |    2 +-
- 1 files changed, 1 insertions(+), 1 deletions(-)
+> The problem occurs on the stock ubuntu kernel 2.6.38-8, 3.0.0-12, 
+> 3.0.0-13 and on my self-compiled 3.1.2.
 
-diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
-index c37433d..0a8c8f8 100644
---- a/fs/btrfs/volumes.c
-+++ b/fs/btrfs/volumes.c
-@@ -1611,7 +1611,7 @@ int btrfs_init_new_device(struct btrfs_root *root, char *device_path)
- 	if ((sb->s_flags & MS_RDONLY) && !root->fs_info->fs_devices->seeding)
- 		return -EINVAL;
- 
--	bdev = blkdev_get_by_path(device_path, FMODE_EXCL,
-+	bdev = blkdev_get_by_path(device_path, FMODE_WRITE | FMODE_EXCL,
- 				  root->fs_info->bdev_holder);
- 	if (IS_ERR(bdev))
- 		return PTR_ERR(bdev);
--- 1.7.3.1 
+There's a lot of work gone into btrfs in 3.2,
+it would be interesting to know (speaking as
+just another user) whether it still occurs
+with 3.2-rc3.
+
+cheers,
+Chris
+-- 
+Chris Samuel - http://www.csamuel.org/

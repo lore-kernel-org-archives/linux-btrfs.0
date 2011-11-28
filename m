@@ -1,31 +1,36 @@
-From: Phillip Susi <psusi@cfl.rr.com>
-Subject: Re: wrong / too less space on raid
-Date: Sun, 27 Nov 2011 23:01:07 -0500
-Message-ID: <4ED30783.7080204@cfl.rr.com>
-References: <1322397922.11404.15.camel@master.beowulf.me> <4ED2E596.7010309@cn.fujitsu.com>
+From: Jeff Liu <jeff.liu@oracle.com>
+Subject: [PATCH 1/2] Btrfs: adjust the variables indentation to TAB
+Date: Mon, 28 Nov 2011 15:45:33 +0800
+Message-ID: <4ED33C1D.3060804@oracle.com>
+Reply-To: jeff.liu@oracle.com
 Mime-Version: 1.0
-Content-Type: text/plain; charset=UTF-8
-Cc: source <source@disable-microsoft.net>, linux-btrfs@vger.kernel.org
-To: miaox@cn.fujitsu.com
+Content-Type: text/plain; charset=ISO-8859-1
+To: "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <4ED2E596.7010309@cn.fujitsu.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
------BEGIN PGP SIGNED MESSAGE-----
-Hash: SHA1
+Signed-off-by: Jie Liu <jeff.liu@oracle.com>
 
-On 11/27/2011 08:36 PM, Miao Xie wrote:
-> This number is just a appraised number, not rigorous. It tells us
-> how much space we can use to make up raid0 block groups which are
-> used to store the file data.
+---
+ fs/btrfs/ioctl.c |    6 +++---
+ 1 files changed, 3 insertions(+), 3 deletions(-)
 
-More specifically, the available space that df reports is the amount of space available to store file data, which means it doesn't count the space reserved for metadata block groups, even though a not insignificant amount of that space may be free for metadata allocations.
+diff --git a/fs/btrfs/ioctl.c b/fs/btrfs/ioctl.c
+index 4a34c47..795c415 100644
+--- a/fs/btrfs/ioctl.c
++++ b/fs/btrfs/ioctl.c
+@@ -1689,9 +1689,9 @@ err:
+ static noinline int btrfs_ioctl_tree_search(struct file *file,
+ 					   void __user *argp)
+ {
+-	 struct btrfs_ioctl_search_args *args;
+-	 struct inode *inode;
+-	 int ret;
++	struct btrfs_ioctl_search_args *args;
++	struct inode *inode;
++	int ret;
 
------BEGIN PGP SIGNATURE-----
-Version: GnuPG v1.4.11 (GNU/Linux)
-Comment: Using GnuPG with Mozilla - http://enigmail.mozdev.org/
-
-iEYEARECAAYFAk7TB4AACgkQJ4UciIs+XuLdOACaA3hrErj82plyPOxXEoM+kHd3
-5XkAnR3vR+0bhGlewjKTSEsVNZgc0mka
-=UNVc
------END PGP SIGNATURE-----
+ 	if (!capable(CAP_SYS_ADMIN))
+ 		return -EPERM;
+-- 
+1.7.4.1

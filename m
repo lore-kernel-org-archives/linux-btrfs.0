@@ -1,49 +1,51 @@
-From: Andy Whitcroft <apw@canonical.com>
-Subject: Re: [PATCH 1/1] btrfs: btrfs_calc_avail_data_space cope with no
- read/write devices V2
-Date: Mon, 28 Nov 2011 12:24:16 +0000
-Message-ID: <20111128122416.GA25996@localhost>
-References: <1312205910-13053-1-git-send-email-apw@canonical.com>
- <20111128121041.GA19498@elie.hsd1.il.comcast.net>
+From: Alexandre Oliva <oliva@lsd.ic.unicamp.br>
+Subject: [PATCH] Btrfs: initialize new bitmaps' list
+Date: Mon, 28 Nov 2011 12:04:43 -0200
+Message-ID: <orlir0s5qc.fsf@livre.localdomain>
 Mime-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
-Cc: Chris Mason <chris.mason@oracle.com>,
-	Josef Bacik <josef@redhat.com>,
-	Miao Xie <miaox@cn.fujitsu.com>,
-	Ivan Vilata i Balaguer <ivan@selidor.net>,
-	linux-btrfs@vger.kernel.org, linux-kernel@vger.kernel.org
-To: Jonathan Nieder <jrnieder@gmail.com>
-Return-path: <linux-kernel-owner@vger.kernel.org>
-In-Reply-To: <20111128121041.GA19498@elie.hsd1.il.comcast.net>
+To: linux-btrfs@vger.kernel.org
+Return-path: <linux-btrfs-owner@vger.kernel.org>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Mon, Nov 28, 2011 at 06:11:06AM -0600, Jonathan Nieder wrote:
-> Hi,
-> 
-> Andy Whitcroft wrote:
-> 
-> > When we mount a btrfs filesystem from read-only media there will be no
-> > read/write devices; for example mounting an SD card with its lock enabled.
-> > This triggers an immediate BUG during mount:
-> >
-> >   kernel BUG at .../fs/btrfs/super.c:984!
-> [...]
-> > BugLink: http://bugs.launchpad.net/bugs/816770
-> > Signed-off-by: Andy Whitcroft <apw@canonical.com>
-> > ---
-> 
-> Fixes http://bugs.debian.org/649847
-> Tested-by: Ivan Vilata i Balaguer <ivan@selidor.net>
-> 
-> This patch fixes a regression introduced by 6d07bcec969a ("btrfs: fix
-> wrong free space information of btrfs"), which hit mainline in
-> v2.6.38-rc1.  Josef Bacik acked the patch, but I can't seem to find it
-> in linux-next, linux-btrfs, or Josef's btrfs-work tree.  Maybe it was
-> just forgotten.
-> 
-> What can I do to help this patch get unstuck?
+We're failing to create clusters with bitmaps because
+setup_cluster_no_bitmap checks that the list is empty before inserting
+the bitmap entry in the list for setup_cluster_bitmap, but the list
+field is only initialized when it is restored from the on-disk free
+space cache, or when it is written out to disk.
 
-I had completely forgotten about this one.  I wonder where it did get
-to.  I seem to remember testing this in house successfully.
+Besides a potential race condition due to the multiple use of the list
+field, filesystem performance severely degrades over time: as we use
+up all non-bitmap free extents, the try-to-set-up-cluster dance is
+done at every metadata block allocation.  For every block group, we
+fail to set up a cluster, and after failing on them all up to twice,
+we fall back to the much slower unclustered allocation.
 
--apw
+To make matters worse, before the unclustered allocation, we try to
+create new block groups until we reach the 1% threshold, which
+introduces additional bitmaps and thus block groups that we'll iterate
+over at each metadata block request.
+---
+ fs/btrfs/free-space-cache.c |    1 +
+ 1 files changed, 1 insertions(+), 0 deletions(-)
+
+diff --git a/fs/btrfs/free-space-cache.c b/fs/btrfs/free-space-cache.c
+index 33fa4bb..4642c42 100644
+--- a/fs/btrfs/free-space-cache.c
++++ b/fs/btrfs/free-space-cache.c
+@@ -1470,6 +1470,7 @@ static void add_new_bitmap(struct btrfs_free_space_ctl *ctl,
+ {
+ 	info->offset = offset_to_bitmap(ctl, offset);
+ 	info->bytes = 0;
++	INIT_LIST_HEAD(&info->list);
+ 	link_free_space(ctl, info);
+ 	ctl->total_bitmaps++;
+ 
+-- 
+1.7.4.4
+
+-- 
+Alexandre Oliva, freedom fighter    http://FSFLA.org/~lxoliva/
+You must be the change you wish to see in the world. -- Gandhi
+Be Free! -- http://FSFLA.org/   FSF Latin America board member
+Free Software Evangelist      Red Hat Brazil Compiler Engineer

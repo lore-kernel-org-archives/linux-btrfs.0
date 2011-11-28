@@ -1,57 +1,37 @@
 From: Li Zefan <lizf@cn.fujitsu.com>
-Subject: [PATCH] Btrfs: fix oops when calling statfs on readonly device
-Date: Mon, 28 Nov 2011 16:43:00 +0800
-Message-ID: <4ED34994.6020006@cn.fujitsu.com>
+Subject: [PATCH] Btrfs: check if the to-be-added device is writable
+Date: Mon, 28 Nov 2011 16:43:46 +0800
+Message-ID: <4ED349C2.1030705@cn.fujitsu.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset=UTF-8
 To: "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-To reproduce this bug:
+If we call ioctl(BTRFS_IOC_ADD_DEV) directly, we'll succeed in adding
+a readonly device to a btrfs filesystem, and btrfs will write to
+that device, emitting kernel errors:
 
-  # dd if=/dev/zero of=img bs=1M count=256
-  # mkfs.btrfs img
-  # losetup -r /dev/loop1 img
-  # mount /dev/loop1 /mnt
-  OOPS!!
-
-It triggered BUG_ON(!nr_devices) in btrfs_calc_avail_data_space().
-
-To fix this, instead of checking write-only devices, we check all open
-deivces:
-
-  # df -h /dev/loop1
-  Filesystem            Size  Used Avail Use% Mounted on
-  /dev/loop1            250M   28K  238M   1% /mnt
+[ 3109.833692] lost page write due to I/O error on loop2
+[ 3109.833720] lost page write due to I/O error on loop2
+...
 
 Signed-off-by: Li Zefan <lizf@cn.fujitsu.com>
 ---
- fs/btrfs/super.c |    6 +++---
- 1 files changed, 3 insertions(+), 3 deletions(-)
+ fs/btrfs/volumes.c |    2 +-
+ 1 files changed, 1 insertions(+), 1 deletions(-)
 
-diff --git a/fs/btrfs/super.c b/fs/btrfs/super.c
-index 8bd9d6d..1a3ce9e 100644
---- a/fs/btrfs/super.c
-+++ b/fs/btrfs/super.c
-@@ -1083,7 +1083,7 @@ static int btrfs_calc_avail_data_space(struct btrfs_root *root, u64 *free_bytes)
- 	int i = 0, nr_devices;
- 	int ret;
+diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
+index c37433d..0a8c8f8 100644
+--- a/fs/btrfs/volumes.c
++++ b/fs/btrfs/volumes.c
+@@ -1611,7 +1611,7 @@ int btrfs_init_new_device(struct btrfs_root *root, char *device_path)
+ 	if ((sb->s_flags & MS_RDONLY) && !root->fs_info->fs_devices->seeding)
+ 		return -EINVAL;
  
--	nr_devices = fs_info->fs_devices->rw_devices;
-+	nr_devices = fs_info->fs_devices->open_devices;
- 	BUG_ON(!nr_devices);
- 
- 	devices_info = kmalloc(sizeof(*devices_info) * nr_devices,
-@@ -1105,8 +1105,8 @@ static int btrfs_calc_avail_data_space(struct btrfs_root *root, u64 *free_bytes)
- 	else
- 		min_stripe_size = BTRFS_STRIPE_LEN;
- 
--	list_for_each_entry(device, &fs_devices->alloc_list, dev_alloc_list) {
--		if (!device->in_fs_metadata)
-+	list_for_each_entry(device, &fs_devices->devices, dev_list) {
-+		if (!device->in_fs_metadata || !device->bdev)
- 			continue;
- 
- 		avail_space = device->total_bytes - device->bytes_used;
+-	bdev = blkdev_get_by_path(device_path, FMODE_EXCL,
++	bdev = blkdev_get_by_path(device_path, FMODE_WRITE | FMODE_EXCL,
+ 				  root->fs_info->bdev_holder);
+ 	if (IS_ERR(bdev))
+ 		return PTR_ERR(bdev);
 -- 1.7.3.1 

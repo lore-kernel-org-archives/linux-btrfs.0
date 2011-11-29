@@ -1,31 +1,43 @@
-From: Jonathan Nieder <jrnieder@gmail.com>
-Subject: Re: [PATCH 1/1] btrfs: btrfs_calc_avail_data_space cope with no
- read/write devices V2
-Date: Tue, 29 Nov 2011 00:01:35 -0600
-Message-ID: <20111129060135.GC31312@elie.hsd1.il.comcast.net>
-References: <1312205910-13053-1-git-send-email-apw@canonical.com>
- <20111128121041.GA19498@elie.hsd1.il.comcast.net>
- <20111128122416.GA25996@localhost>
- <4ED434A9.8020809@cn.fujitsu.com>
+From: Jeff Liu <jeff.liu@oracle.com>
+Subject: Re: [PATCH 2/2] Btrfs: set the i_nlink to 2 for an initial dir inode
+Date: Tue, 29 Nov 2011 14:04:37 +0800
+Message-ID: <4ED475F5.1090500@oracle.com>
+References: <4ED33C88.8060501@oracle.com>
+Reply-To: jeff.liu@oracle.com
 Mime-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Cc: Andy Whitcroft <apw@canonical.com>,
-	Chris Mason <chris.mason@oracle.com>,
-	Josef Bacik <josef@redhat.com>,
-	Miao Xie <miaox@cn.fujitsu.com>,
-	Ivan Vilata i Balaguer <ivan@selidor.net>,
-	linux-btrfs@vger.kernel.org, linux-kernel@vger.kernel.org
-To: Li Zefan <lizf@cn.fujitsu.com>
+Content-Type: text/plain; charset=ISO-8859-1
+To: "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <4ED434A9.8020809@cn.fujitsu.com>
+In-Reply-To: <4ED33C88.8060501@oracle.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Li Zefan wrote:
+Please ignore this patch for now, it can cause the file system corrupted
+and failed to mount again, sorry for the noise!
 
-> This patch has the same problem with your previous one, that it will set
-> f_bavail to 0. I've sent out a new patch yesterday.
+-Jeff
+On 11/28/2011 03:47 PM, Jeff Liu wrote:
 
-Thanks for the quick feedback.  That makes sense.  (The new patch
-is at [1], for reference.)
+> For an initial dir inode, stat(1) show it links as 1, IMHO it should be
+> 2 by default.
+> 
+> Signed-off-by: Jie Liu <jeff.liu@oracle.com>
+> 
+> ---
+>  fs/btrfs/inode.c |    1 +
+>  1 files changed, 1 insertions(+), 0 deletions(-)
+> 
+> diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
+> index 116ab67..92b3cb9 100644
+> --- a/fs/btrfs/inode.c
+> +++ b/fs/btrfs/inode.c
+> @@ -4734,6 +4734,7 @@ static int btrfs_mkdir(struct inode *dir, struct
+> dentry *dentry, int mode)
+>  	inode->i_op = &btrfs_dir_inode_operations;
+>  	inode->i_fop = &btrfs_dir_file_operations;
+> 
+> +	set_nlink(inode, 2);
+>  	btrfs_i_size_write(inode, 0);
+>  	err = btrfs_update_inode(trans, root, inode);
+>  	if (err)
 
-[1] http://thread.gmane.org/gmane.comp.file-systems.btrfs/14584
+

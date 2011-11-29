@@ -1,45 +1,31 @@
-From: "Fajar A. Nugraha" <list@fajar.net>
-Subject: Re: btrfs/git question.
-Date: Tue, 29 Nov 2011 09:33:37 +0700
-Message-ID: <CAG1y0scuoKwH_MbQPGQKr5sYAXP_kB=j6FOMHgm2=EzPwAVL=Q@mail.gmail.com>
-References: <af6c5f5cb5a1778a8d811e8293dfdd73@www.jots.org>
-	<4ED43C30.50502@cfl.rr.com>
+From: Jonathan Nieder <jrnieder@gmail.com>
+Subject: Re: [PATCH 1/1] btrfs: btrfs_calc_avail_data_space cope with no
+ read/write devices V2
+Date: Tue, 29 Nov 2011 00:01:35 -0600
+Message-ID: <20111129060135.GC31312@elie.hsd1.il.comcast.net>
+References: <1312205910-13053-1-git-send-email-apw@canonical.com>
+ <20111128121041.GA19498@elie.hsd1.il.comcast.net>
+ <20111128122416.GA25996@localhost>
+ <4ED434A9.8020809@cn.fujitsu.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=ISO-8859-1
-To: "Ken D'Ambrosio" <ken@jots.org>, linux-btrfs@vger.kernel.org
+Content-Type: text/plain; charset=us-ascii
+Cc: Andy Whitcroft <apw@canonical.com>,
+	Chris Mason <chris.mason@oracle.com>,
+	Josef Bacik <josef@redhat.com>,
+	Miao Xie <miaox@cn.fujitsu.com>,
+	Ivan Vilata i Balaguer <ivan@selidor.net>,
+	linux-btrfs@vger.kernel.org, linux-kernel@vger.kernel.org
+To: Li Zefan <lizf@cn.fujitsu.com>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <4ED43C30.50502@cfl.rr.com>
+In-Reply-To: <4ED434A9.8020809@cn.fujitsu.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Tue, Nov 29, 2011 at 8:58 AM, Phillip Susi <psusi@cfl.rr.com> wrote:
-> On 11/28/2011 12:53 PM, Ken D'Ambrosio wrote:
->> Seems I've picked up a wireless regression, and randomly drop my WiF=
-i
->> connection with more recent kernels. =A0While I'd love to try to tra=
-ck down the
->> issue, the sporadic nature makes it difficult. =A0But I don't want t=
-o revert to a
->> flat-out old kernel because of all the btrfs modifications. =A0Is it=
- possible
->> using git to add *just* btrfs patches to an older kernel?
->
-> Sure: use git rebase to apply the patches to the older kernel.
+Li Zefan wrote:
 
-=2E.. or use 3.1.2, and get ONLY fs/btrfs from Chris' for-linus tree,
-compile it out-of-tree, and use it to replace the original btrfs.ko.
+> This patch has the same problem with your previous one, that it will set
+> f_bavail to 0. I've sent out a new patch yesterday.
 
-There used to be this:
-https://btrfs.wiki.kernel.org/articles/b/t/r/Btrfs_source_repositories.=
-html#Building_latest_btrfs_against_a_recent_kernel_with_DKMS
+Thanks for the quick feedback.  That makes sense.  (The new patch
+is at [1], for reference.)
 
-But personally it's much easier to just compile it manually without dkm=
-s:
-make -C /llib/modules/`uname -r`/build M=3D$(pwd) modules
-
---=20
-=46ajar
---
-To unsubscribe from this list: send the line "unsubscribe linux-btrfs" =
-in
-the body of a message to majordomo@vger.kernel.org
-More majordomo info at  http://vger.kernel.org/majordomo-info.html
+[1] http://thread.gmane.org/gmane.comp.file-systems.btrfs/14584

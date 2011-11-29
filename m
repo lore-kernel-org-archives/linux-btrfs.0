@@ -1,79 +1,52 @@
-From: Liu Bo <liubo2009@cn.fujitsu.com>
-Subject: Re: [PATCH 0/5] fix bugs of sub transid
-Date: Tue, 29 Nov 2011 09:18:35 +0800
-Message-ID: <4ED432EB.2070706@cn.fujitsu.com>
-References: <1321870224-20241-1-git-send-email-liubo2009@cn.fujitsu.com> <20111128151030.GK12759@twin.jikos.cz>
+From: Li Zefan <lizf@cn.fujitsu.com>
+Subject: Re: [PATCH 1/1] btrfs: btrfs_calc_avail_data_space cope with no read/write
+ devices V2
+Date: Tue, 29 Nov 2011 09:26:01 +0800
+Message-ID: <4ED434A9.8020809@cn.fujitsu.com>
+References: <1312205910-13053-1-git-send-email-apw@canonical.com> <20111128121041.GA19498@elie.hsd1.il.comcast.net> <20111128122416.GA25996@localhost>
 Mime-Version: 1.0
 Content-Type: text/plain; charset=ISO-8859-1
-Cc: linux-btrfs@vger.kernel.org, chris.mason@oracle.com,
-	sensille@gmx.net
-To: David Sterba <dave@jikos.cz>
-Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <20111128151030.GK12759@twin.jikos.cz>
+Cc: Jonathan Nieder <jrnieder@gmail.com>,
+	Chris Mason <chris.mason@oracle.com>,
+	Josef Bacik <josef@redhat.com>,
+	Miao Xie <miaox@cn.fujitsu.com>,
+	Ivan Vilata i Balaguer <ivan@selidor.net>,
+	linux-btrfs@vger.kernel.org, linux-kernel@vger.kernel.org
+To: Andy Whitcroft <apw@canonical.com>
+Return-path: <linux-kernel-owner@vger.kernel.org>
+In-Reply-To: <20111128122416.GA25996@localhost>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 11/28/2011 11:10 PM, David Sterba wrote:
-> On Mon, Nov 21, 2011 at 06:10:19PM +0800, Liu Bo wrote:
->> We've been sufferring two big bugs with sub transid:
->> one is a bug related to root's last_snapshot, the other is a bug related to
->> disk extent refs' generation.
-> 
-> Do you have a testcase to trigger and check these bugs?
-> 
-
-Hi, David, 
-
-a) For the first one (last_snapshot bug),
-
-The test involves three processes (derived from Chris):
-
-mkfs.btrfs /dev/xxx
-mount /dev/xxx /mnt
-
-1) run compilebench -i 30 --makej -D /mnt
-
-Let compilebench run until it starts the create phase.
-
-2) run synctest -f -u -n 200 -t 3 /mnt
-3) for x in `seq 1 200` ; do btrfs subvol snap /mnt /mnt/snap$x ; sleep 0.5 ; done
-
-
-b) For the second one, 
-
-1) build a btrfs partition, and
-
-2) fill something, and then
-
-3) run balance on it.
-
-
->> 1) The first patch fixes a warning,
->> 2) the second one fixes the last_snapshot bug,
->> 3) the third one has already been in for-linus branch, but not in "danger"
->>    branch, so I add it here for the integrity,
->> 4) the fourth one fixes a transid mismatch bug,
->> 5) the fifth one fixes the disk extent refs' generation bug.
+Andy Whitcroft wrote:
+> On Mon, Nov 28, 2011 at 06:11:06AM -0600, Jonathan Nieder wrote:
+>> Hi,
 >>
->> Any advices and tests are welcome!
+>> Andy Whitcroft wrote:
+>>
+>>> When we mount a btrfs filesystem from read-only media there will be no
+>>> read/write devices; for example mounting an SD card with its lock enabled.
+>>> This triggers an immediate BUG during mount:
+>>>
+>>>   kernel BUG at .../fs/btrfs/super.c:984!
+>> [...]
+>>> BugLink: http://bugs.launchpad.net/bugs/816770
+>>> Signed-off-by: Andy Whitcroft <apw@canonical.com>
+>>> ---
+>>
+>> Fixes http://bugs.debian.org/649847
+>> Tested-by: Ivan Vilata i Balaguer <ivan@selidor.net>
+>>
+>> This patch fixes a regression introduced by 6d07bcec969a ("btrfs: fix
+>> wrong free space information of btrfs"), which hit mainline in
+>> v2.6.38-rc1.  Josef Bacik acked the patch, but I can't seem to find it
+>> in linux-next, linux-btrfs, or Josef's btrfs-work tree.  Maybe it was
+>> just forgotten.
+>>
+>> What can I do to help this patch get unstuck?
 > 
-> I have rebased this series on top of current cmason/for-linus (24a70313969),
-> should anybody want to test.
-> 
-> (repo address: http://repo.or.cz/w/linux-2.6/btrfs-unstable.git )
+> I had completely forgotten about this one.  I wonder where it did get
+> to.  I seem to remember testing this in house successfully.
 > 
 
-
-Great!  Thanks for what you've done!
-
-thanks,
-liubo
-
-
-> 
-> david
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
-> 
-
+This patch has the same problem with your previous one, that it will set
+f_bavail to 0. I've sent out a new patch yesterday.

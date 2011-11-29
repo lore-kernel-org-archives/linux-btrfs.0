@@ -1,43 +1,35 @@
-From: Jeff Liu <jeff.liu@oracle.com>
-Subject: Re: [PATCH 2/2] Btrfs: set the i_nlink to 2 for an initial dir inode
-Date: Tue, 29 Nov 2011 14:04:37 +0800
-Message-ID: <4ED475F5.1090500@oracle.com>
-References: <4ED33C88.8060501@oracle.com>
-Reply-To: jeff.liu@oracle.com
-Mime-Version: 1.0
-Content-Type: text/plain; charset=ISO-8859-1
-To: "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
+From: Arne Jansen <sensille@gmx.net>
+Subject: [PATCH] Btrfs-progs: bugfix for scrubbing single devices
+Date: Tue, 29 Nov 2011 08:40:28 +0100
+Message-ID: <1322552428-6976-1-git-send-email-sensille@gmx.net>
+To: linux-btrfs@vger.kernel.org
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <4ED33C88.8060501@oracle.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Please ignore this patch for now, it can cause the file system corrupted
-and failed to mount again, sorry for the noise!
+Scrub can be invoked to scrub only a single device of a (mounted) filesystem.
+The code determines whether the given path is a mountpoint of a filesystem
+by issueing a btrfs-specific ioctl to it. Only in case of EINVAL it assumed
+it may be a device, all other errnos just caused it fail, but some devices
+(correctly) return ENOTTY. This patch adds this to the error check.
 
--Jeff
-On 11/28/2011 03:47 PM, Jeff Liu wrote:
+Signed-off-by: Arne Jansen <sensille@gmx.net>
+---
+ scrub.c |    2 +-
+ 1 files changed, 1 insertions(+), 1 deletions(-)
 
-> For an initial dir inode, stat(1) show it links as 1, IMHO it should be
-> 2 by default.
-> 
-> Signed-off-by: Jie Liu <jeff.liu@oracle.com>
-> 
-> ---
->  fs/btrfs/inode.c |    1 +
->  1 files changed, 1 insertions(+), 0 deletions(-)
-> 
-> diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
-> index 116ab67..92b3cb9 100644
-> --- a/fs/btrfs/inode.c
-> +++ b/fs/btrfs/inode.c
-> @@ -4734,6 +4734,7 @@ static int btrfs_mkdir(struct inode *dir, struct
-> dentry *dentry, int mode)
->  	inode->i_op = &btrfs_dir_inode_operations;
->  	inode->i_fop = &btrfs_dir_file_operations;
-> 
-> +	set_nlink(inode, 2);
->  	btrfs_i_size_write(inode, 0);
->  	err = btrfs_update_inode(trans, root, inode);
->  	if (err)
-
+diff --git a/scrub.c b/scrub.c
+index 9dca5f6..ca7cce7 100644
+--- a/scrub.c
++++ b/scrub.c
+@@ -987,7 +987,7 @@ static int scrub_fs_info(int fd, char *path,
+ 	memset(fi_args, 0, sizeof(*fi_args));
+ 
+ 	ret = ioctl(fd, BTRFS_IOC_FS_INFO, fi_args);
+-	if (ret && errno == EINVAL) {
++	if (ret && (errno == EINVAL || errno == ENOTTY)) {
+ 		/* path is no mounted btrfs. try if it's a device */
+ 		ret = check_mounted_where(fd, path, mp, sizeof(mp),
+ 						&fs_devices_mnt);
+-- 
+1.7.3.4
 

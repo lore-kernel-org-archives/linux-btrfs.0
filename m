@@ -1,44 +1,45 @@
 From: Chris Mason <chris.mason@oracle.com>
-Subject: Re: kernel BUG at
- /build/buildd/linux-3.2.0/fs/btrfs/extent-tree.c:4816!
-Date: Tue, 29 Nov 2011 10:12:56 -0500
-Message-ID: <20111129151256.GJ24338@shiny>
-References: <4ED437CE.3060909@kittilsen.org>
+Subject: Re: btrfs/git question.
+Date: Tue, 29 Nov 2011 10:22:06 -0500
+Message-ID: <20111129152206.GL24338@shiny>
+References: <af6c5f5cb5a1778a8d811e8293dfdd73@www.jots.org>
+ <4ED43C30.50502@cfl.rr.com>
+ <CAG1y0scuoKwH_MbQPGQKr5sYAXP_kB=j6FOMHgm2=EzPwAVL=Q@mail.gmail.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Cc: linux-btrfs@vger.kernel.org
-To: Karl Mardoff Kittilsen <karl@kittilsen.org>
+Content-Type: text/plain; charset=iso-8859-1
+Cc: "Ken D'Ambrosio" <ken@jots.org>, linux-btrfs@vger.kernel.org
+To: "Fajar A. Nugraha" <list@fajar.net>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <4ED437CE.3060909@kittilsen.org>
+In-Reply-To: <CAG1y0scuoKwH_MbQPGQKr5sYAXP_kB=j6FOMHgm2=EzPwAVL=Q@mail.gmail.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Tue, Nov 29, 2011 at 02:39:26AM +0100, Karl Mardoff Kittilsen wrote:
-> Hi!
-> 
-> Sending a mail on this issue, as advised on IRC.
-> 
-> My /home file system fails to mount and the kernel seem to freeze
-> and I need to do the Alt+SysRq RSNEIUB routine to boot it safely.
-> The corruption happened on a 3.2-rc<something> kernel and Ubuntu
-> 11.10, but I am now running on Ubuntu 12.04 with the 3.2.0-2-generic
-> kernel to see if that helped, it did not.
-> btrfsck from the latest btrfs-tools returns:
-> 
-> karl@karl-precise:~/git/btrfs-progs$ sudo ./btrfsck /dev/md0
-> ref mismatch on [2176962560 8192] extent item 480, found 1
-> Incorrect local backref count on 2176970752 root 5 owner 2101705
-> offset 368640 found 1 wanted 3925868545
-> backpointer mismatch on [2176970752 4096]
+On Tue, Nov 29, 2011 at 09:33:37AM +0700, Fajar A. Nugraha wrote:
+> On Tue, Nov 29, 2011 at 8:58 AM, Phillip Susi <psusi@cfl.rr.com> wrot=
+e:
+> > On 11/28/2011 12:53 PM, Ken D'Ambrosio wrote:
+> >> Seems I've picked up a wireless regression, and randomly drop my W=
+iFi
+> >> connection with more recent kernels. =A0While I'd love to try to t=
+rack down the
+> >> issue, the sporadic nature makes it difficult. =A0But I don't want=
+ to revert to a
+> >> flat-out old kernel because of all the btrfs modifications. =A0Is =
+it possible
+> >> using git to add *just* btrfs patches to an older kernel?
+> >
+> > Sure: use git rebase to apply the patches to the older kernel.
+>=20
+> ... or use 3.1.2, and get ONLY fs/btrfs from Chris' for-linus tree,
+> compile it out-of-tree, and use it to replace the original btrfs.ko.
 
-So the crashes below were because we tried to free one of these extents.
-You have two extents whose reference counts are way off.
-
-Unfortunately this is stored on disk, so different kernels aren't going
-to fix it (yet).  One of the extents is in a file with inode number
-2101705, and the other is in a btree block (2176962560).
-
-I'll be able to fix this soon, but we can also make a patch that changes
-those BUG_ONs to just deal with the mismatch.  The worst case here would
-be leaking those two extents, about 12K of data.
+If you're on a 3.1 kernel, you can pull my for-linus directly on top of
+it with git pull.  I always keep a btrfs tree against the previous
+kernel so that people can use the latest btrfs goodness without having
+to use an rc kernel.
 
 -chris
+--
+To unsubscribe from this list: send the line "unsubscribe linux-btrfs" =
+in
+the body of a message to majordomo@vger.kernel.org
+More majordomo info at  http://vger.kernel.org/majordomo-info.html

@@ -1,60 +1,33 @@
-From: Chris Mason <chris.mason@oracle.com>
-Subject: Re: kernel BUG at
- /build/buildd/linux-3.2.0/fs/btrfs/extent-tree.c:4816!
-Date: Tue, 29 Nov 2011 10:49:13 -0500
-Message-ID: <20111129154913.GN24338@shiny>
-References: <4ED437CE.3060909@kittilsen.org>
- <20111129151256.GJ24338@shiny>
- <4ED4FA72.5050804@kittilsen.org>
+From: Josef Bacik <josef@redhat.com>
+Subject: Re: [PATCH] fs: push file_update_time into ->page_mkwrite
+Date: Tue, 29 Nov 2011 11:08:39 -0500
+Message-ID: <20111129160838.GA14560@localhost.localdomain>
+References: <1322581259-14409-1-git-send-email-josef@redhat.com>
+ <20111129155020.GQ5635@quack.suse.cz>
 Mime-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
-Cc: linux-btrfs@vger.kernel.org
-To: Karl Mardoff Kittilsen <karl@kittilsen.org>
-Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <4ED4FA72.5050804@kittilsen.org>
+Cc: Josef Bacik <josef@redhat.com>, linux-fsdevel@vger.kernel.org,
+	linux-btrfs@vger.kernel.org, viro@ZenIV.linux.org.uk,
+	hch@infradead.org
+To: Jan Kara <jack@suse.cz>
+Return-path: <linux-fsdevel-owner@vger.kernel.org>
+In-Reply-To: <20111129155020.GQ5635@quack.suse.cz>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Tue, Nov 29, 2011 at 04:29:54PM +0100, Karl Mardoff Kittilsen wrote:
-> Den 29. nov. 2011 16:12, skrev Chris Mason:
-> >On Tue, Nov 29, 2011 at 02:39:26AM +0100, Karl Mardoff Kittilsen wrote:
-> >>Hi!
-> >>
-> >>Sending a mail on this issue, as advised on IRC.
-> >>
-> >>My /home file system fails to mount and the kernel seem to freeze
-> >>and I need to do the Alt+SysRq RSNEIUB routine to boot it safely.
-> >>The corruption happened on a 3.2-rc<something>  kernel and Ubuntu
-> >>11.10, but I am now running on Ubuntu 12.04 with the 3.2.0-2-generic
-> >>kernel to see if that helped, it did not.
-> >>btrfsck from the latest btrfs-tools returns:
-> >>
-> >>karl@karl-precise:~/git/btrfs-progs$ sudo ./btrfsck /dev/md0
-> >>ref mismatch on [2176962560 8192] extent item 480, found 1
-> >>Incorrect local backref count on 2176970752 root 5 owner 2101705
-> >>offset 368640 found 1 wanted 3925868545
-> >>backpointer mismatch on [2176970752 4096]
-> >
-> >So the crashes below were because we tried to free one of these extents.
-> >You have two extents whose reference counts are way off.
-> >
-> >Unfortunately this is stored on disk, so different kernels aren't going
-> >to fix it (yet).  One of the extents is in a file with inode number
-> >2101705, and the other is in a btree block (2176962560).
-> >
-> >I'll be able to fix this soon, but we can also make a patch that changes
-> >those BUG_ONs to just deal with the mismatch.  The worst case here would
-> >be leaking those two extents, about 12K of data.
-> >
-> >-chris
-> 
-> Thank you for looking into it, and that does sounds really
-> promising. I am available to test any patches you want tested. Is
-> there anything else that I can do to help getting this issue fixed?
+On Tue, Nov 29, 2011 at 04:50:20PM +0100, Jan Kara wrote:
+> On Tue 29-11-11 10:40:59, Josef Bacik wrote:
+> > The fault code has been calling file_update_time after ->page_mkwrite after it
+> > drops the page lock, but this is annoying because this calls mark_inode_dirty
+> > which can fail in Btrfs, so we want to be able to do these updates in
+> > ->page_mkwrite so we can get an error back to the user.  So get rid of the
+> > file_update_time calls in the fault code and push it into everybody who has a
+> > ->page_mkwrite.  I didn't do this for ubifs because it appears that ubifs
+> > already updates the time itself in ->page_mkwrite, presumebly for the same
+> > reasons as btrfs, so I left it as is.  Thanks,
+>   But this effectively disables atime updates on mmaped writes for ext2,
+> ext3, and similar filesystems which is a no-go IMHO.
+>
 
-The good news about this one is that it is very clear cut.  The hard
-part is figuring out where these bogus link counts came from.
+Heh doh you're right, I have vacation brain.  Thanks,
 
-I'd suggest that you spend some time running memtest on the machine.
-
--chris
-
+Josef 

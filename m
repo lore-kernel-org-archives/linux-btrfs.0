@@ -1,35 +1,44 @@
-From: Arne Jansen <sensille@gmx.net>
-Subject: [PATCH] Btrfs-progs: bugfix for scrubbing single devices
-Date: Tue, 29 Nov 2011 08:40:28 +0100
-Message-ID: <1322552428-6976-1-git-send-email-sensille@gmx.net>
-To: linux-btrfs@vger.kernel.org
+From: Chris Mason <chris.mason@oracle.com>
+Subject: Re: kernel BUG at
+ /build/buildd/linux-3.2.0/fs/btrfs/extent-tree.c:4816!
+Date: Tue, 29 Nov 2011 10:12:56 -0500
+Message-ID: <20111129151256.GJ24338@shiny>
+References: <4ED437CE.3060909@kittilsen.org>
+Mime-Version: 1.0
+Content-Type: text/plain; charset=us-ascii
+Cc: linux-btrfs@vger.kernel.org
+To: Karl Mardoff Kittilsen <karl@kittilsen.org>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
+In-Reply-To: <4ED437CE.3060909@kittilsen.org>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Scrub can be invoked to scrub only a single device of a (mounted) filesystem.
-The code determines whether the given path is a mountpoint of a filesystem
-by issueing a btrfs-specific ioctl to it. Only in case of EINVAL it assumed
-it may be a device, all other errnos just caused it fail, but some devices
-(correctly) return ENOTTY. This patch adds this to the error check.
+On Tue, Nov 29, 2011 at 02:39:26AM +0100, Karl Mardoff Kittilsen wrote:
+> Hi!
+> 
+> Sending a mail on this issue, as advised on IRC.
+> 
+> My /home file system fails to mount and the kernel seem to freeze
+> and I need to do the Alt+SysRq RSNEIUB routine to boot it safely.
+> The corruption happened on a 3.2-rc<something> kernel and Ubuntu
+> 11.10, but I am now running on Ubuntu 12.04 with the 3.2.0-2-generic
+> kernel to see if that helped, it did not.
+> btrfsck from the latest btrfs-tools returns:
+> 
+> karl@karl-precise:~/git/btrfs-progs$ sudo ./btrfsck /dev/md0
+> ref mismatch on [2176962560 8192] extent item 480, found 1
+> Incorrect local backref count on 2176970752 root 5 owner 2101705
+> offset 368640 found 1 wanted 3925868545
+> backpointer mismatch on [2176970752 4096]
 
-Signed-off-by: Arne Jansen <sensille@gmx.net>
----
- scrub.c |    2 +-
- 1 files changed, 1 insertions(+), 1 deletions(-)
+So the crashes below were because we tried to free one of these extents.
+You have two extents whose reference counts are way off.
 
-diff --git a/scrub.c b/scrub.c
-index 9dca5f6..ca7cce7 100644
---- a/scrub.c
-+++ b/scrub.c
-@@ -987,7 +987,7 @@ static int scrub_fs_info(int fd, char *path,
- 	memset(fi_args, 0, sizeof(*fi_args));
- 
- 	ret = ioctl(fd, BTRFS_IOC_FS_INFO, fi_args);
--	if (ret && errno == EINVAL) {
-+	if (ret && (errno == EINVAL || errno == ENOTTY)) {
- 		/* path is no mounted btrfs. try if it's a device */
- 		ret = check_mounted_where(fd, path, mp, sizeof(mp),
- 						&fs_devices_mnt);
--- 
-1.7.3.4
+Unfortunately this is stored on disk, so different kernels aren't going
+to fix it (yet).  One of the extents is in a file with inode number
+2101705, and the other is in a btree block (2176962560).
 
+I'll be able to fix this soon, but we can also make a patch that changes
+those BUG_ONs to just deal with the mismatch.  The worst case here would
+be leaking those two extents, about 12K of data.
+
+-chris

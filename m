@@ -1,33 +1,28 @@
-From: Josef Bacik <josef@redhat.com>
-Subject: Re: [PATCH] fs: push file_update_time into ->page_mkwrite
-Date: Tue, 29 Nov 2011 11:08:39 -0500
-Message-ID: <20111129160838.GA14560@localhost.localdomain>
-References: <1322581259-14409-1-git-send-email-josef@redhat.com>
- <20111129155020.GQ5635@quack.suse.cz>
+From: Jan Schmidt <list.btrfs@jan-o-sch.net>
+Subject: Re: [PATCH 2/2] Btrfs: set the i_nlink to 2 for an initial dir inode
+Date: Tue, 29 Nov 2011 17:10:34 +0100
+Message-ID: <4ED503FA.9070301@jan-o-sch.net>
+References: <4ED33C88.8060501@oracle.com> <4ED475F5.1090500@oracle.com> <20111129154804.GM24338@shiny>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Cc: Josef Bacik <josef@redhat.com>, linux-fsdevel@vger.kernel.org,
-	linux-btrfs@vger.kernel.org, viro@ZenIV.linux.org.uk,
-	hch@infradead.org
-To: Jan Kara <jack@suse.cz>
-Return-path: <linux-fsdevel-owner@vger.kernel.org>
-In-Reply-To: <20111129155020.GQ5635@quack.suse.cz>
+Content-Type: text/plain; charset=ISO-8859-1
+To: Chris Mason <chris.mason@oracle.com>,
+	Jeff Liu <jeff.liu@oracle.com>,
+	"linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
+Return-path: <linux-btrfs-owner@vger.kernel.org>
+In-Reply-To: <20111129154804.GM24338@shiny>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Tue, Nov 29, 2011 at 04:50:20PM +0100, Jan Kara wrote:
-> On Tue 29-11-11 10:40:59, Josef Bacik wrote:
-> > The fault code has been calling file_update_time after ->page_mkwrite after it
-> > drops the page lock, but this is annoying because this calls mark_inode_dirty
-> > which can fail in Btrfs, so we want to be able to do these updates in
-> > ->page_mkwrite so we can get an error back to the user.  So get rid of the
-> > file_update_time calls in the fault code and push it into everybody who has a
-> > ->page_mkwrite.  I didn't do this for ubifs because it appears that ubifs
-> > already updates the time itself in ->page_mkwrite, presumebly for the same
-> > reasons as btrfs, so I left it as is.  Thanks,
->   But this effectively disables atime updates on mmaped writes for ext2,
-> ext3, and similar filesystems which is a no-go IMHO.
->
+On 29.11.2011 16:48, Chris Mason wrote:
+> On Tue, Nov 29, 2011 at 02:04:37PM +0800, Jeff Liu wrote:
+>> Please ignore this patch for now, it can cause the file system corrupted
+>> and failed to mount again, sorry for the noise!
+> 
+> Directories always have a link count of 1 in btrfs.  This tells find not
+> to use the link count as the count of subdirectories in the directory.
 
-Heh doh you're right, I have vacation brain.  Thanks,
+I'm surprised.
 
-Josef 
+Now I see why my thread "Creation of pseudo items leads to (seemingly)
+duplicate inodes (BUG inside)" suffered from little attention :-)
+
+-Jan

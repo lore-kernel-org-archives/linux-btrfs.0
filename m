@@ -1,52 +1,30 @@
-From: Chris Samuel <chris@csamuel.org>
-Subject: [RESEND] [PATCH] Prefix mount messages with btrfs: for clarity
-Date: Wed, 30 Nov 2011 22:28:37 +1100
-Message-ID: <201111302228.38074.chris@csamuel.org>
+From: 810d4rk <810d4rk@gmail.com>
+Subject: Re: btrfs encryption problems
+Date: Wed, 30 Nov 2011 11:36:59 +0000
+Message-ID: <CAAVfQjkMt+_F5TarxXdjU2kirPQqm+wkD=Zb5XHRBD7G7o=u2w@mail.gmail.com>
+References: <CAAVfQj=O5nDAcgsiNHz3dNXHDerNrq2Jw01WFLJr5q563oZToA@mail.gmail.com>
+ <20111123110956.GB31800@attic.humilis.net> <CAAVfQj=r-Op2ZUrq8YOchVV=0_LzNmdxjYd03nDHn+t=120YQw@mail.gmail.com>
+ <20111124160617.680b676f@zougloub.eu> <CAAVfQj=gM7ikTzdFmi=yNpo9guukQwFyKfdu7jD=z-J2PwrZEg@mail.gmail.com>
+ <20111124165429.10496040@Bidule> <CAAVfQjmmXnyCmXerCyymEQm-DhDxi0YSSo9sVSvkHE1WvJ4wYA@mail.gmail.com>
 Mime-Version: 1.0
-Content-Type: text/plain;
-  charset="us-ascii"
-To: linux-btrfs@vger.kernel.org, Chris Mason <chris.mason@oracle.com>
+Content-Type: text/plain; charset=UTF-8
+Cc: sander@humilis.net, linux-btrfs@vger.kernel.org
+To: =?UTF-8?B?SsOpcsO0bWUgQ2FycmV0ZXJv?= <cJ-ko@zougloub.eu>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
+In-Reply-To: <CAAVfQjmmXnyCmXerCyymEQm-DhDxi0YSSo9sVSvkHE1WvJ4wYA@mail.gmail.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Currently when mounting a btrfs filesystem a user searching dmesg
-has no obvious string to search for as currently we report something
-cryptic like:
+Is anyone able to reproduce the problems that I described? I can help
+if anyone is interested.
 
-[ 5775.216078] device label DR devid 1 transid 15757 /dev/sdh1
+> The hard drive is brand new, I also plugged it directly via eSATA and
+> checked the SMART data and run some tests and it succeeded in all, if
+> I format the drive again I have a working file-system for sure but
+> some of my data that is not on the backup disk will be gone.. I had
+> some time ago on opensuse tumbleweed a encrypted btrfs system and it
+> was gone some time ago like this external hard drive, I also had
+> various btrfs hard drives without encryption and they never failed,
 
-It would be much nicer if there was some mention of btrfs to find
-(as other filesystems generally provide), so this change prefixes
-that message with btrfs: to make it appear as:
-
-[ 5775.216078] btrfs: device label DR devid 1 transid 15757 /dev/sdh1
-
-Signed-off-by: Chris Samuel <chris@csamuel.org>
----
- fs/btrfs/volumes.c |    4 ++--
- 1 files changed, 2 insertions(+), 2 deletions(-)
-
-diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
-index c37433d..bc08087 100644
---- a/fs/btrfs/volumes.c
-+++ b/fs/btrfs/volumes.c
-@@ -722,9 +722,9 @@ int btrfs_scan_one_device(const char *path, fmode_t flags, void *holder,
- 	devid = btrfs_stack_device_id(&disk_super->dev_item);
- 	transid = btrfs_super_generation(disk_super);
- 	if (disk_super->label[0])
--		printk(KERN_INFO "device label %s ", disk_super->label);
-+		printk(KERN_INFO "btrfs: device label %s ", disk_super->label);
- 	else
--		printk(KERN_INFO "device fsid %pU ", disk_super->fsid);
-+		printk(KERN_INFO "btrfs: device fsid %pU ", disk_super->fsid);
- 	printk(KERN_CONT "devid %llu transid %llu %s\n",
- 	       (unsigned long long)devid, (unsigned long long)transid, path);
- 	ret = device_list_add(path, disk_super, devid, fs_devices_ret);
--- 
-1.7.4.1
 
 -- 
- Chris Samuel  :  http://www.csamuel.org/  :  Melbourne, VIC
-
-This email may come with a PGP signature as a file. Do not panic.
-For more info see: http://en.wikipedia.org/wiki/OpenPGP
+Thanks

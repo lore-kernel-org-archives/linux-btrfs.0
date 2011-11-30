@@ -1,47 +1,44 @@
-From: Chris Mason <chris.mason@oracle.com>
-Subject: Re: [PATCH] Btrfs: fix submit_worker congestion
-Date: Tue, 29 Nov 2011 16:47:07 -0500
-Message-ID: <20111129214707.GT24338@shiny>
-References: <1322599256-15621-1-git-send-email-sensille@gmx.net>
+From: Keith Mannthey <kmannth@us.ibm.com>
+Subject: [RFC][PATCH] Sector Size check during Mount
+Date: Tue, 29 Nov 2011 17:44:12 -0800
+Message-ID: <1322617452.10304.15.camel@keith-laptop>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Cc: linux-btrfs@vger.kernel.org
-To: Arne Jansen <sensille@gmx.net>
+Content-Type: text/plain
+To: linux-btrfs@vger.kernel.org
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <1322599256-15621-1-git-send-email-sensille@gmx.net>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Tue, Nov 29, 2011 at 09:40:56PM +0100, Arne Jansen wrote:
-> Write bios are submitted from the submit_worker. The worker pumps down
-> bios into the block layer until it signals a congestion. At least this
-> is the theory. In pratice submit_bio just blocks before any signalling
-> happens. As the bios are queued per device, this can lead to a situation
-> where only one device is served until all bios are submitted, and only
-> then the next device is served. This is obviously suboptimal.
-> This patch just throws out the congestion detection and reschedules the
-> worker every 8 requests. This way, all devices can be kept busy.
-> This is only a temporary fix until the block layer provides a non-blocking
-> submit_bio. Then the whole submit_worker mechanism can be killed.
+Gracefully fail when trying to mount a BTRFS file system that has a
+sectorsize smaller than PAGE_SIZE.  
 
-The problem with the every 8 requests logic is that we've still got a
-pretty good chance of getting stuck behind get_request_wait.  The way
-the elevator batching works is that it should give us a batch of
-requests, and once that batch is done we wait.
+On PPC it is possible to build a FS while using a 4k PAGE_SIZE kernel
+then boot into a 64K PAGE_SIZE kernel.  Presently open_ctree fails in an
+endless loop and hangs the machine in this situation. 
 
-If we jump around every 8 requests, we've turned this:
+My debugging has show this Sector size < Page size to be a non trivial
+situation and a graceful exit from the situation would be nice for the
+time being. 
 
-[ dev A bio 1-8, dev A bio 8-16, dev A bio 16-32, dev B bio 1-8, dev B ... ]
 
-into:
+Signed-off-by:  Keith Mannthey <kmannth@us.ibm.com>
 
-[ dev A bio 1-8, dev B bio 1-8, dev A bio 8-16, dev B bio 8-16 ]
+---
 
-They look like the same IO, but if we wait for a request when we do
-(dev B bio 1-8) then our dev A bio 1-8 bio is likely to dispatch without
-all the other dev A bios we had queued.
+diff -urN a/fs/btrfs/disk-io.c b/fs/btrfs/disk-io.c
+--- a/fs/btrfs/disk-io.c	2011-10-09 21:53:11.000000000 -0500
++++ b/fs/btrfs/disk-io.c	2011-11-29 17:33:15.000000000 -0600
+@@ -1916,6 +1916,12 @@
+ 		goto fail_sb_buffer;
+ 	}
+ 
++	if (sectorsize < PAGE_SIZE) {
++		printk(KERN_WARNING "btrfs: Incompatible sector size "
++		       "found on %s\n", sb->s_id);
++		goto fail_sb_buffer;
++	}
++
+ 	mutex_lock(&fs_info->chunk_mutex);
+ 	ret = btrfs_read_sys_array(tree_root);
+ 	mutex_unlock(&fs_info->chunk_mutex);
 
-As you said in IRC, we'd be better off with one thread per device or (my
-preference) with a real non-blocking submit_bio.  What kind of results
-did you get with your test from bumping the nr_requests?
 
--chris

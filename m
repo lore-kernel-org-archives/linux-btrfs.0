@@ -1,60 +1,102 @@
-From: Arne Jansen <sensille@gmx.net>
-Subject: Re: [PATCH] Btrfs: fix submit_worker congestion
-Date: Wed, 30 Nov 2011 11:30:01 +0100
-Message-ID: <4ED605A9.9070707@gmx.net>
-References: <1322599256-15621-1-git-send-email-sensille@gmx.net> <20111129214707.GT24338@shiny>
+From: Chris Samuel <chris@csamuel.org>
+Subject: [PATCH] Canonicalise BTRFS: and Btrfs: to btrfs:
+Date: Wed, 30 Nov 2011 22:05:21 +1100
+Message-ID: <201111302205.32712.chris@csamuel.org>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=ISO-8859-1
-To: Chris Mason <chris.mason@oracle.com>, linux-btrfs@vger.kernel.org
+Content-Type: multipart/signed;
+  boundary="nextPart7652984.cph6UXWbXO";
+  protocol="application/pgp-signature";
+  micalg=pgp-sha1
+To: linux-btrfs@vger.kernel.org, Chris Mason <chris.mason@oracle.com>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <20111129214707.GT24338@shiny>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 29.11.2011 22:47, Chris Mason wrote:
-> On Tue, Nov 29, 2011 at 09:40:56PM +0100, Arne Jansen wrote:
->> Write bios are submitted from the submit_worker. The worker pumps down
->> bios into the block layer until it signals a congestion. At least this
->> is the theory. In pratice submit_bio just blocks before any signalling
->> happens. As the bios are queued per device, this can lead to a situation
->> where only one device is served until all bios are submitted, and only
->> then the next device is served. This is obviously suboptimal.
->> This patch just throws out the congestion detection and reschedules the
->> worker every 8 requests. This way, all devices can be kept busy.
->> This is only a temporary fix until the block layer provides a non-blocking
->> submit_bio. Then the whole submit_worker mechanism can be killed.
-> 
-> The problem with the every 8 requests logic is that we've still got a
-> pretty good chance of getting stuck behind get_request_wait.  The way
-> the elevator batching works is that it should give us a batch of
-> requests, and once that batch is done we wait.
-> 
-> If we jump around every 8 requests, we've turned this:
-> 
-> [ dev A bio 1-8, dev A bio 8-16, dev A bio 16-32, dev B bio 1-8, dev B ... ]
+--nextPart7652984.cph6UXWbXO
+Content-Type: text/plain;
+  charset="us-ascii"
+Content-Transfer-Encoding: quoted-printable
 
-currently, it's more like
-[ dev A bio 1 - 5000, dev B bio 1-5000 ]
+Currently there are 3 different capitalisations of btrfs: used in
+printk()'s, BTRFS: (3 occurences), Btrfs: (1 occurence) and btrfs:
+(77 occurences).
 
-> 
-> into:
-> 
-> [ dev A bio 1-8, dev B bio 1-8, dev A bio 8-16, dev B bio 8-16 ]
+It's best to have them all the same for consistency, so we canonicalise
+the two minority cases to btrfs:.
 
-so this is a great improvement :)
+Signed-off-by: Chris Samuel <chris@csamuel.org>
+=2D--
+ fs/btrfs/disk-io.c |    4 ++--
+ fs/btrfs/inode.c   |    4 ++--
+ 2 files changed, 4 insertions(+), 4 deletions(-)
 
-> 
-> They look like the same IO, but if we wait for a request when we do
-> (dev B bio 1-8) then our dev A bio 1-8 bio is likely to dispatch without
-> all the other dev A bios we had queued.
-> 
-> As you said in IRC, we'd be better off with one thread per device or (my
-> preference) with a real non-blocking submit_bio.  What kind of results
-> did you get with your test from bumping the nr_requests?
+diff --git a/fs/btrfs/disk-io.c b/fs/btrfs/disk-io.c
+index 94abc25..f4d419b 100644
+=2D-- a/fs/btrfs/disk-io.c
++++ b/fs/btrfs/disk-io.c
+@@ -2106,7 +2106,7 @@ struct btrfs_root *open_ctree(struct super_block *sb,
+ 	features =3D btrfs_super_incompat_flags(disk_super) &
+ 		~BTRFS_FEATURE_INCOMPAT_SUPP;
+ 	if (features) {
+=2D		printk(KERN_ERR "BTRFS: couldn't mount because of "
++		printk(KERN_ERR "btrfs: couldn't mount because of "
+ 		       "unsupported optional features (%Lx).\n",
+ 		       (unsigned long long)features);
+ 		err =3D -EINVAL;
+@@ -2122,7 +2122,7 @@ struct btrfs_root *open_ctree(struct super_block *sb,
+ 	features =3D btrfs_super_compat_ro_flags(disk_super) &
+ 		~BTRFS_FEATURE_COMPAT_RO_SUPP;
+ 	if (!(sb->s_flags & MS_RDONLY) && features) {
+=2D		printk(KERN_ERR "BTRFS: couldn't mount RDWR because of "
++		printk(KERN_ERR "btrfs: couldn't mount RDWR because of "
+ 		       "unsupported option features (%Lx).\n",
+ 		       (unsigned long long)features);
+ 		err =3D -EINVAL;
+diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
+index 8ad26b1..399da74 100644
+=2D-- a/fs/btrfs/inode.c
++++ b/fs/btrfs/inode.c
+@@ -5057,7 +5057,7 @@ not_found_em:
+ insert:
+ 	btrfs_release_path(path);
+ 	if (em->start > start || extent_map_end(em) <=3D start) {
+=2D		printk(KERN_ERR "Btrfs: bad extent! em: [%llu %llu] passed "
++		printk(KERN_ERR "btrfs: bad extent! em: [%llu %llu] passed "
+ 		       "[%llu %llu]\n", (unsigned long long)em->start,
+ 		       (unsigned long long)em->len,
+ 		       (unsigned long long)start,
+@@ -6693,7 +6693,7 @@ void btrfs_destroy_inode(struct inode *inode)
+=20
+ 	spin_lock(&root->orphan_lock);
+ 	if (!list_empty(&BTRFS_I(inode)->i_orphan)) {
+=2D		printk(KERN_INFO "BTRFS: inode %llu still on the orphan list\n",
++		printk(KERN_INFO "btrfs: inode %llu still on the orphan list\n",
+ 		       (unsigned long long)btrfs_ino(inode));
+ 		list_del_init(&BTRFS_I(inode)->i_orphan);
+ 	}
+=2D-=20
+1.7.4.1
 
-what nr_requests do you mean? btrfs_async_submit_limit?
 
-Arne
+=2D-=20
+ Chris Samuel  :  http://www.csamuel.org/  :  Melbourne, VIC
 
-> 
-> -chris
-> --
+This email may come with a PGP signature as a file. Do not panic.
+=46or more info see: http://en.wikipedia.org/wiki/OpenPGP
+
+--nextPart7652984.cph6UXWbXO
+Content-Type: application/pgp-signature; name=signature.asc 
+Content-Description: This is a digitally signed message part.
+
+-----BEGIN PGP SIGNATURE-----
+Version: GnuPG v1.4.11 (GNU/Linux)
+
+iQEVAwUATtYN8Y1yjaOTJg85AQLOWAf/bL/giWEfpKhTZeCsNo87OsbxMmtjAvdu
+X59YIFmRHNGb2QU+AnBFjUDxiJUVIZCEAUmLoNBHxoQtVeCcgZCKSoLiPxPM4xaQ
+04PUeSk1KO6RUDckyI0SEBRC/XcveIziJ81rT85H9mY5x2oJkqm+Y60ZvA2+2o/o
+Bz6kFqBPWXZ/1K28k5RjXCbhhZPNYNxe+V/iLeLLAP5hg2sH66gcfLrn9kSFZ/wT
+50wzyijgywXqV3L94bIWRO2aMPpyggoi+GXxSvl6mIydO3UV/oZ4IytDtBGke/Kv
+p/EgORYh2Qfdbt7ut/qMzSSyQDe7TCPWaAfF/qtdU8E4W+mfUM5a6w==
+=T6+u
+-----END PGP SIGNATURE-----
+
+--nextPart7652984.cph6UXWbXO--

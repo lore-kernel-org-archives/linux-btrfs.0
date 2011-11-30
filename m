@@ -1,81 +1,57 @@
 From: Chris Samuel <chris@csamuel.org>
-Subject: [PATCH] Canonicalise BTRFS: and Btrfs: to btrfs:
-Date: Wed, 30 Nov 2011 22:05:21 +1100
-Message-ID: <201111302205.32712.chris@csamuel.org>
+Subject: [PATCH] Prefix mount messages with btrfs: for clarity
+Date: Wed, 30 Nov 2011 22:15:27 +1100
+Message-ID: <201111302215.28250.chris@csamuel.org>
 Mime-Version: 1.0
 Content-Type: multipart/signed;
-  boundary="nextPart7652984.cph6UXWbXO";
+  boundary="nextPart1331577.hPpuHdisbT";
   protocol="application/pgp-signature";
   micalg=pgp-sha1
 To: linux-btrfs@vger.kernel.org, Chris Mason <chris.mason@oracle.com>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
 List-ID: <linux-btrfs.vger.kernel.org>
 
---nextPart7652984.cph6UXWbXO
+--nextPart1331577.hPpuHdisbT
 Content-Type: text/plain;
   charset="us-ascii"
 Content-Transfer-Encoding: quoted-printable
 
-Currently there are 3 different capitalisations of btrfs: used in
-printk()'s, BTRFS: (3 occurences), Btrfs: (1 occurence) and btrfs:
-(77 occurences).
+Currently when mounting a btrfs filesystem a user searching dmesg
+has no obvious string to search for as currently we report something
+cryptic like:
 
-It's best to have them all the same for consistency, so we canonicalise
-the two minority cases to btrfs:.
+[ 5775.216078] device label DR devid 1 transid 15757 /dev/sdh1
+
+It would be much nicer if there was some mention of btrfs to find
+(as other filesystems generally provide), so this change prefixes
+that message with btrfs: to make it appear as:
+
+[ 5775.216078] btrfs: device label DR devid 1 transid 15757 /dev/sdh1
 
 Signed-off-by: Chris Samuel <chris@csamuel.org>
 =2D--
- fs/btrfs/disk-io.c |    4 ++--
- fs/btrfs/inode.c   |    4 ++--
- 2 files changed, 4 insertions(+), 4 deletions(-)
+ fs/btrfs/volumes.c |    4 ++--
+ 1 files changed, 2 insertions(+), 2 deletions(-)
 
-diff --git a/fs/btrfs/disk-io.c b/fs/btrfs/disk-io.c
-index 94abc25..f4d419b 100644
-=2D-- a/fs/btrfs/disk-io.c
-+++ b/fs/btrfs/disk-io.c
-@@ -2106,7 +2106,7 @@ struct btrfs_root *open_ctree(struct super_block *sb,
- 	features =3D btrfs_super_incompat_flags(disk_super) &
- 		~BTRFS_FEATURE_INCOMPAT_SUPP;
- 	if (features) {
-=2D		printk(KERN_ERR "BTRFS: couldn't mount because of "
-+		printk(KERN_ERR "btrfs: couldn't mount because of "
- 		       "unsupported optional features (%Lx).\n",
- 		       (unsigned long long)features);
- 		err =3D -EINVAL;
-@@ -2122,7 +2122,7 @@ struct btrfs_root *open_ctree(struct super_block *sb,
- 	features =3D btrfs_super_compat_ro_flags(disk_super) &
- 		~BTRFS_FEATURE_COMPAT_RO_SUPP;
- 	if (!(sb->s_flags & MS_RDONLY) && features) {
-=2D		printk(KERN_ERR "BTRFS: couldn't mount RDWR because of "
-+		printk(KERN_ERR "btrfs: couldn't mount RDWR because of "
- 		       "unsupported option features (%Lx).\n",
- 		       (unsigned long long)features);
- 		err =3D -EINVAL;
-diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
-index 8ad26b1..399da74 100644
-=2D-- a/fs/btrfs/inode.c
-+++ b/fs/btrfs/inode.c
-@@ -5057,7 +5057,7 @@ not_found_em:
- insert:
- 	btrfs_release_path(path);
- 	if (em->start > start || extent_map_end(em) <=3D start) {
-=2D		printk(KERN_ERR "Btrfs: bad extent! em: [%llu %llu] passed "
-+		printk(KERN_ERR "btrfs: bad extent! em: [%llu %llu] passed "
- 		       "[%llu %llu]\n", (unsigned long long)em->start,
- 		       (unsigned long long)em->len,
- 		       (unsigned long long)start,
-@@ -6693,7 +6693,7 @@ void btrfs_destroy_inode(struct inode *inode)
-=20
- 	spin_lock(&root->orphan_lock);
- 	if (!list_empty(&BTRFS_I(inode)->i_orphan)) {
-=2D		printk(KERN_INFO "BTRFS: inode %llu still on the orphan list\n",
-+		printk(KERN_INFO "btrfs: inode %llu still on the orphan list\n",
- 		       (unsigned long long)btrfs_ino(inode));
- 		list_del_init(&BTRFS_I(inode)->i_orphan);
- 	}
+diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
+index c37433d..bc08087 100644
+=2D-- a/fs/btrfs/volumes.c
++++ b/fs/btrfs/volumes.c
+@@ -722,9 +722,9 @@ int btrfs_scan_one_device(const char *path, fmode_t fla=
+gs, void *holder,
+ 	devid =3D btrfs_stack_device_id(&disk_super->dev_item);
+ 	transid =3D btrfs_super_generation(disk_super);
+ 	if (disk_super->label[0])
+=2D		printk(KERN_INFO "device label %s ", disk_super->label);
++		printk(KERN_INFO "btrfs: device label %s ", disk_super->label);
+ 	else
+=2D		printk(KERN_INFO "device fsid %pU ", disk_super->fsid);
++		printk(KERN_INFO "btrfs: device fsid %pU ", disk_super->fsid);
+ 	printk(KERN_CONT "devid %llu transid %llu %s\n",
+ 	       (unsigned long long)devid, (unsigned long long)transid, path);
+ 	ret =3D device_list_add(path, disk_super, devid, fs_devices_ret);
 =2D-=20
 1.7.4.1
-
 
 =2D-=20
  Chris Samuel  :  http://www.csamuel.org/  :  Melbourne, VIC
@@ -83,20 +59,20 @@ index 8ad26b1..399da74 100644
 This email may come with a PGP signature as a file. Do not panic.
 =46or more info see: http://en.wikipedia.org/wiki/OpenPGP
 
---nextPart7652984.cph6UXWbXO
+--nextPart1331577.hPpuHdisbT
 Content-Type: application/pgp-signature; name=signature.asc 
 Content-Description: This is a digitally signed message part.
 
 -----BEGIN PGP SIGNATURE-----
 Version: GnuPG v1.4.11 (GNU/Linux)
 
-iQEVAwUATtYN8Y1yjaOTJg85AQLOWAf/bL/giWEfpKhTZeCsNo87OsbxMmtjAvdu
-X59YIFmRHNGb2QU+AnBFjUDxiJUVIZCEAUmLoNBHxoQtVeCcgZCKSoLiPxPM4xaQ
-04PUeSk1KO6RUDckyI0SEBRC/XcveIziJ81rT85H9mY5x2oJkqm+Y60ZvA2+2o/o
-Bz6kFqBPWXZ/1K28k5RjXCbhhZPNYNxe+V/iLeLLAP5hg2sH66gcfLrn9kSFZ/wT
-50wzyijgywXqV3L94bIWRO2aMPpyggoi+GXxSvl6mIydO3UV/oZ4IytDtBGke/Kv
-p/EgORYh2Qfdbt7ut/qMzSSyQDe7TCPWaAfF/qtdU8E4W+mfUM5a6w==
-=T6+u
+iQEVAwUATtYQUI1yjaOTJg85AQKvUQf/Y5Z72onT7As6YO7pg/WqqyrQJ0TT7Tqr
+1UqEQsApvwXuWclKuZ45oosCGcWHa/LXfre43sRo/9uu2yCi+Dt8o60ah7t2UAHP
+kRU5oow3xjrtRruCHKWleFIOzNQ4wurANmv4kaYfKUmTV3lpCzm3Z2yEih/AL3oJ
+DxozeCargV5eWrsIAHkFZWFEaVHXQRGlOVdwIzvqs/3XibJtWSQ7yxn6ilX7rGxN
+R7s2kw71MUgfH6PZvndq071rSfdyFi6DQV5CFUKwho189ZwFwTVcJJqq2Z5LxeVx
+NznUPl5S8B8+Il6u29cUdPArx3m1t2nA10qfz7oehpxKiWZadlMXdg==
+=r9pj
 -----END PGP SIGNATURE-----
 
---nextPart7652984.cph6UXWbXO--
+--nextPart1331577.hPpuHdisbT--

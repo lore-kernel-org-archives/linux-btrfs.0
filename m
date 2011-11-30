@@ -1,29 +1,32 @@
-From: Chris Mason <chris.mason@oracle.com>
-Subject: Re: [RFC][PATCH] Sector Size check during Mount
-Date: Wed, 30 Nov 2011 10:06:48 -0500
-Message-ID: <20111130150648.GB24338@shiny>
-References: <1322617452.10304.15.camel@keith-laptop>
+From: Andy Whitcroft <apw@canonical.com>
+Subject: Re: [PATCH 1/1] btrfs: btrfs_calc_avail_data_space cope with no
+ read/write devices V2
+Date: Wed, 30 Nov 2011 15:40:46 +0000
+Message-ID: <20111130154046.GG6165@shadowen.org>
+References: <1312205910-13053-1-git-send-email-apw@canonical.com>
+ <20111128121041.GA19498@elie.hsd1.il.comcast.net>
+ <20111128122416.GA25996@localhost>
+ <4ED434A9.8020809@cn.fujitsu.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
-Cc: linux-btrfs@vger.kernel.org
-To: Keith Mannthey <kmannth@us.ibm.com>
-Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <1322617452.10304.15.camel@keith-laptop>
+Cc: Jonathan Nieder <jrnieder@gmail.com>,
+	Chris Mason <chris.mason@oracle.com>,
+	Josef Bacik <josef@redhat.com>,
+	Miao Xie <miaox@cn.fujitsu.com>,
+	Ivan Vilata i Balaguer <ivan@selidor.net>,
+	linux-btrfs@vger.kernel.org, linux-kernel@vger.kernel.org
+To: Li Zefan <lizf@cn.fujitsu.com>
+Return-path: <linux-kernel-owner@vger.kernel.org>
+In-Reply-To: <4ED434A9.8020809@cn.fujitsu.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Tue, Nov 29, 2011 at 05:44:12PM -0800, Keith Mannthey wrote:
-> Gracefully fail when trying to mount a BTRFS file system that has a
-> sectorsize smaller than PAGE_SIZE.  
-> 
-> On PPC it is possible to build a FS while using a 4k PAGE_SIZE kernel
-> then boot into a 64K PAGE_SIZE kernel.  Presently open_ctree fails in an
-> endless loop and hangs the machine in this situation. 
-> 
-> My debugging has show this Sector size < Page size to be a non trivial
-> situation and a graceful exit from the situation would be nice for the
-> time being. 
+On Tue, Nov 29, 2011 at 09:26:01AM +0800, Li Zefan wrote:
 
-Thanks.  The large block size patches should finally go into 3.3, which
-will make a big difference.
+> This patch has the same problem with your previous one, that it will set
+> f_bavail to 0. I've sent out a new patch yesterday.
 
--chris
+Ahh, sounds great thanks.  Often a patch is a good way to start a
+discussion to a more correct patch.  Specially when one is not an expert
+in the area.
+
+-apw

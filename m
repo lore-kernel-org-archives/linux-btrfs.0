@@ -1,44 +1,35 @@
-From: Keith Mannthey <kmannth@us.ibm.com>
-Subject: [RFC][PATCH] Sector Size check during Mount
-Date: Tue, 29 Nov 2011 17:44:12 -0800
-Message-ID: <1322617452.10304.15.camel@keith-laptop>
+From: Jeff Liu <jeff.liu@oracle.com>
+Subject: Re: [PATCH 2/2] Btrfs: set the i_nlink to 2 for an initial dir inode
+Date: Wed, 30 Nov 2011 10:12:14 +0800
+Message-ID: <4ED590FE.1010701@oracle.com>
+References: <4ED33C88.8060501@oracle.com> <4ED475F5.1090500@oracle.com> <20111129154804.GM24338@shiny>
+Reply-To: jeff.liu@oracle.com
 Mime-Version: 1.0
-Content-Type: text/plain
-To: linux-btrfs@vger.kernel.org
+Content-Type: text/plain; charset=ISO-8859-1
+To: Chris Mason <chris.mason@oracle.com>,
+	"linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
+In-Reply-To: <20111129154804.GM24338@shiny>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Gracefully fail when trying to mount a BTRFS file system that has a
-sectorsize smaller than PAGE_SIZE.  
+On 11/29/2011 11:48 PM, Chris Mason wrote:
 
-On PPC it is possible to build a FS while using a 4k PAGE_SIZE kernel
-then boot into a 64K PAGE_SIZE kernel.  Presently open_ctree fails in an
-endless loop and hangs the machine in this situation. 
+> On Tue, Nov 29, 2011 at 02:04:37PM +0800, Jeff Liu wrote:
+>> Please ignore this patch for now, it can cause the file system corrupted
+>> and failed to mount again, sorry for the noise!
+> 
+> Directories always have a link count of 1 in btrfs.  This tells find not
+> to use the link count as the count of subdirectories in the directory.
 
-My debugging has show this Sector size < Page size to be a non trivial
-situation and a graceful exit from the situation would be nice for the
-time being. 
+Thank you for your clarification!
 
+-Jeff
 
-Signed-off-by:  Keith Mannthey <kmannth@us.ibm.com>
-
----
-
-diff -urN a/fs/btrfs/disk-io.c b/fs/btrfs/disk-io.c
---- a/fs/btrfs/disk-io.c	2011-10-09 21:53:11.000000000 -0500
-+++ b/fs/btrfs/disk-io.c	2011-11-29 17:33:15.000000000 -0600
-@@ -1916,6 +1916,12 @@
- 		goto fail_sb_buffer;
- 	}
- 
-+	if (sectorsize < PAGE_SIZE) {
-+		printk(KERN_WARNING "btrfs: Incompatible sector size "
-+		       "found on %s\n", sb->s_id);
-+		goto fail_sb_buffer;
-+	}
-+
- 	mutex_lock(&fs_info->chunk_mutex);
- 	ret = btrfs_read_sys_array(tree_root);
- 	mutex_unlock(&fs_info->chunk_mutex);
+> 
+> -chris
+> --
+> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
+> the body of a message to majordomo@vger.kernel.org
+> More majordomo info at  http://vger.kernel.org/majordomo-info.html
 
 

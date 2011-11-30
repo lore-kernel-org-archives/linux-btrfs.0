@@ -1,56 +1,37 @@
 From: Chris Mason <chris.mason@oracle.com>
-Subject: Re: btrfs encryption problems
-Date: Wed, 30 Nov 2011 08:48:14 -0500
-Message-ID: <20111130134814.GW24338@shiny>
-References: <CAAVfQj=O5nDAcgsiNHz3dNXHDerNrq2Jw01WFLJr5q563oZToA@mail.gmail.com>
- <20111123110956.GB31800@attic.humilis.net>
- <CAAVfQj=r-Op2ZUrq8YOchVV=0_LzNmdxjYd03nDHn+t=120YQw@mail.gmail.com>
- <20111124160617.680b676f@zougloub.eu>
- <CAAVfQj=gM7ikTzdFmi=yNpo9guukQwFyKfdu7jD=z-J2PwrZEg@mail.gmail.com>
- <20111124165429.10496040@Bidule>
- <CAAVfQjmmXnyCmXerCyymEQm-DhDxi0YSSo9sVSvkHE1WvJ4wYA@mail.gmail.com>
+Subject: Re: Blocked for more than 120 seconds
+Date: Wed, 30 Nov 2011 09:10:06 -0500
+Message-ID: <20111130141006.GY24338@shiny>
+References: <4ED34359.6010305@robotech.de>
+ <1322472549.1962.2.camel@Nokia-N900>
+ <4ED5FAEF.8070400@robotech.de>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=iso-8859-1
-Cc: =?iso-8859-1?B?Suly9G1l?= Carretero <cJ-ko@zougloub.eu>,
-	sander@humilis.net, linux-btrfs@vger.kernel.org
-To: 810d4rk <810d4rk@gmail.com>
+Content-Type: text/plain; charset=us-ascii
+Cc: linux-btrfs@vger.kernel.org
+To: Tobias <tracer@robotech.de>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <CAAVfQjmmXnyCmXerCyymEQm-DhDxi0YSSo9sVSvkHE1WvJ4wYA@mail.gmail.com>
+In-Reply-To: <4ED5FAEF.8070400@robotech.de>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Fri, Nov 25, 2011 at 10:40:00AM +0000, 810d4rk wrote:
-> > My mistake, the same printks are printed when the encryption key is=
- incorrect, I've seen that here.
-> > It looks like you have some ugly hardware errors.
-> > The kernel cannot read from the drive, so it cannot guess the file =
-system on it.
-> > If the data is valuable, you could try to ddrescue the drive to a b=
-igger one.
-> > =A0(>750GB... and that will take time...) and attempt to mount the =
-rescued data.
-> > If the drive is in an USB enclosure, you could plug it directly via=
- SATA to the system (maybe it has issues?).
->=20
-> The hard drive is brand new, I also plugged it directly via eSATA and
-> checked the SMART data and run some tests and it succeeded in all, if
-> I format the drive again I have a working file-system for sure but
-> some of my data that is not on the backup disk will be gone.. I had
-> some time ago on opensuse tumbleweed a encrypted btrfs system and it
-> was gone some time ago like this external hard drive, I also had
-> various btrfs hard drives without encryption and they never failed,
-> and I will make a image of the disk but that will be later because I
-> don't have a backup hard drive bigger than 750gb, maybe btrfs fsck ca=
-n
-> restore my disk when it is officially released?
+On Wed, Nov 30, 2011 at 10:44:15AM +0100, Tobias wrote:
+> Am 28.11.2011 10:29, schrieb Chris Samuel:
+> >Hi Tobias,
+> >
+> >On Mon, 28 Nov 2011, 19:16:25 EST, Tobias<tracer@robotech.de>  wrote:
+> >
+> >>The problem occurs on the stock ubuntu kernel 2.6.38-8, 3.0.0-12,
+> >>3.0.0-13 and on my self-compiled 3.1.2.
+> >There's a lot of work gone into btrfs in 3.2,
+> >it would be interesting to know (speaking as
+> >just another user) whether it still occurs
+> >with 3.2-rc3.
+> >
+> I tried 3.2-rc3 tonight but the messages are still there:
 
-If you plug it in directly with esata, do the IO errors go away?  If so=
-,
-please post the kernel messages from that.
+We see a bunch of procs stuck waiting to start a transaction, but we
+don't see why they are waiting.  Could you please capture a sysrq-t
+during this?  That will show us all the waiters everywhere.  We're
+really looking for the one proc stuck in btrfs_commit_transaction, he's
+the key to the stalls.
 
 -chris
-
---
-To unsubscribe from this list: send the line "unsubscribe linux-btrfs" =
-in
-the body of a message to majordomo@vger.kernel.org
-More majordomo info at  http://vger.kernel.org/majordomo-info.html

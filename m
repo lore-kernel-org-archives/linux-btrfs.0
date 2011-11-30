@@ -1,55 +1,59 @@
-From: Sten Spans <sten@blinkenlights.nl>
-Subject: mkfs.btrfs failure on ARM
-Date: Wed, 30 Nov 2011 21:30:46 +0100 (CET)
-Message-ID: <alpine.DEB.0.99999.1111302114210.15548@zem.blinkenlights.nl>
+From: Goffredo Baroncelli <kreijack@inwind.it>
+Subject: Re: Resize command syntax wrong?
+Date: Wed, 30 Nov 2011 21:48:37 +0100
+Message-ID: <2642474.I5uc41HKUa@venice>
+References: <20111201011547.66633b20@natsu> <ByrP+cZy1uB@helmut.hullen.de> <20111201020730.33980a5e@natsu>
+Reply-To: Goffredo Baroncelli <kreijack@inwind.it>
 Mime-Version: 1.0
-Content-Type: TEXT/PLAIN; format=flowed; charset=US-ASCII
-To: linux-btrfs@vger.kernel.org
+Content-Type: text/plain; charset="us-ascii"
+Cc: helmut@hullen.de, linux-btrfs@vger.kernel.org
+To: Roman Mamedov <rm@romanrm.ru>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
+In-Reply-To: <20111201020730.33980a5e@natsu>
 List-ID: <linux-btrfs.vger.kernel.org>
 
+On Thursday, 01 December, 2011 02:07:30 you wrote:
+[...]
+> Resizing in both 'directions' seems to work very well on single-device BTRFS
+> filesystems, and also it's very useful that BTRFS is almost the only modern
+> FS (besides ext4) that can be shrinked. But with multi-device filesystems,
+> don't you agree it's non-obvious how (or is not even possible) to resize
+> the areas that BTRFS occupies on individual devices?
 
-I'm hitting an error with the default mkfs.btrfs in debian wheezy:
-ford:~# uname -a
-Linux ford.blinkenlights.nl 3.1.0-1-kirkwood #1 Tue Nov 15 00:17:24 UTC 
-2011 armv5tel GNU/Linux
-ford:~/btrfs-progs# dpkg -l | grep btrfs
-ii  btrfs-tools                           0.19+20111105-1 
-Checksumming Copy on Write Filesystem utilities
-ford:~# mkfs.btrfs /dev/vgroot/home
-WARNING! - Btrfs Btrfs v0.19 IS EXPERIMENTAL
-WARNING! - see http://btrfs.wiki.kernel.org before using
+I agree that it is not so an obviously syntax, however it is definitely 
+possible to shrink/grow a single disk in a multi disk scenario.
 
-mkfs.btrfs: volumes.c:1575: btrfs_read_chunk_tree: Assertion `!(ret)' 
-failed.
+The full syntax is the following ([1])
+-----------
 
-A fresh clone gives me:
+filesystem resize [<devid>:][+/-]<size>[gkm]|max <path> 
 
-ford:~/btrfs-progs# ./mkfs.btrfs /dev/vgroot/home
-WARNING! - Btrfs Btrfs v0.19 IS EXPERIMENTAL
-WARNING! - see http://btrfs.wiki.kernel.org before using
-
-mkfs.btrfs: volumes.c:846: btrfs_alloc_chunk: Assertion `!(ret)' failed.
-Aborted
-
-Tested with gcc 4.4 and 4.6.
-
-I did a git bisect and ended up here:
-
-ford:~/btrfs-progs# git bisect bad
-4e64e05c6b8d9a1ed30bb6eda30ef8e93c6af260 is the first bad commit
-commit 4e64e05c6b8d9a1ed30bb6eda30ef8e93c6af260
-Author: Donggeun Kim <dg77.kim@samsung.com>
-Date:   Thu Jul 8 09:17:59 2010 +0000
-
-     btrfs-progs: Add new feature to mkfs.btrfs to make file system image 
-file from source directory
+Resize a filesystem identified by <path>. The <size> parameter specifies the new 
+size of the filesystem. If the prefix + or - is present the size is increased or 
+decreased by the quantity <size>. If no units are specified, the unit of the 
+<size> parameter defaults to bytes. Optionally, the size parameter may be 
+suffixed by one of the following the units designators: 'K', 'M', or 'G', 
+kilobytes, megabytes, or gigabytes, respectively. 
+If 'max' is passed, the filesystem will occupy all available space on the 
+volume(s). 
+The resize command does not manipulate the size of underlying partition. If 
+you wish to enlarge/reduce a filesystem, you must make sure you can expand the 
+partition before enlarging the filesystem and shrink the partition after 
+reducing the size of the filesystem. 
+<devid> is the id of the device which was grow or shrink, as show by the 
+command btrfs filesystem show. If nothing is passed, the device devid=1 is 
+used.
+----------------------
 
 
-Anybody got a clue as to what the problem might be?
+IIRC I sent in the past a patch which added these further info in the man 
+page, but I think that this patch was lost... I have to resubmit another time
+
+BR
+G.Baroncelli
+
+[1] http://btrfs.ipv5.de/index.php?title=Btrfs(command)
 
 -- 
-Sten Spans
-
-"There is a crack in everything, that's how the light gets in."
-Leonard Cohen - Anthem
+gpg key@ keyserver.linux.it: Goffredo Baroncelli (ghigo) <kreijack@inwind.it>
+Key fingerprint = 4769 7E51 5293 D36C 814E  C054 BF04 F161 3DC5 0512

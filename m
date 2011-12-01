@@ -1,84 +1,45 @@
-From: Jan Schmidt <list.btrfs@jan-o-sch.net>
-Subject: [PATCH] Btrfs: fix meta data raid-repair merge problem
-Date: Thu,  1 Dec 2011 15:52:35 +0100
-Message-ID: <1322751155-30846-1-git-send-email-list.btrfs@jan-o-sch.net>
-To: chris.mason@oracle.com, linux-btrfs@vger.kernel.org
+From: Josef Bacik <josef@redhat.com>
+Subject: Re: WARNING: at fs/btrfs/inode.c:2198
+ btrfs_orphan_commit_root+0xa8/0xc0
+Date: Thu, 1 Dec 2011 10:14:22 -0500
+Message-ID: <20111201151422.GA2250@localhost.localdomain>
+References: <4EBA54F2.3030801@unilogicnetworks.net>
+ <20111109153552.GB1810@localhost.localdomain>
+ <4EBBBFFA.5090000@unilogicnetworks.net>
+ <20111114160342.GB1947@localhost.localdomain>
+ <4EC2B9E7.7020609@unilogicnetworks.net>
+ <20111115192926.GB1944@localhost.localdomain>
+ <4EC2C940.40605@unilogicnetworks.net>
+ <20111118195226.GB1811@localhost.localdomain>
+ <4ED0F44D.3070001@unilogicnetworks.net>
+Mime-Version: 1.0
+Content-Type: text/plain; charset=us-ascii
+Cc: Josef Bacik <josef@redhat.com>, linux-btrfs@vger.kernel.org
+To: Stefan Kleijkers <stefan@unilogicnetworks.net>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
+In-Reply-To: <4ED0F44D.3070001@unilogicnetworks.net>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Commit 4a54c8c16 introduced raid-repair, killing the individual
-readpage_io_failed_hook entries from inode.c and disk-io.c. Commit
-4bb31e92 introduced new readahead code, adding a readpage_io_failed_hook to
-disk-io.c.
+On Sat, Nov 26, 2011 at 03:14:37PM +0100, Stefan Kleijkers wrote:
+> Hello Josef,
+> 
+> I've new results, is this the trace you are looking for?
+> 
+> Trace of OSD0: http://pastebin.com/gddLBXE4
+> Dmesg of OSD0: http://pastebin.com/Uebzgkjv
+> 
+> OSD1 crashed a while later with the same messages.
+> 
 
-The raid-repair commit had logic to disable raid-repair, if
-readpage_io_failed_hook is set. Thus, the readahead commit effectively
-disabled raid-repair for meta data.
+Well those look perfect, but that shouldn't be happening, essentially what that
+tells me is we've somehow thought that we already have space reserved for that
+inode, but we don't, and the only way we test/set that value is under a
+spin_lock, so it simply cannot be happening that way.  So can you jack up your
+buffer size for ftrace and re-run and get me the same info again to make sure
+nothing to lost?  You can do that by doing something like this
 
-This commit changes the logic to always attempt raid-repair when needed and
-call the readpage_io_failed_hook in case raid-repair fails. This is much
-more straight forward and should have been like that from the beginning.
+echo 4096 > /sys/kernel/debug/traceing/buffer_size_kb
 
-Signed-off-by: Jan Schmidt <list.btrfs@jan-o-sch.net>
-Reported-by: Stefan Behrens <sbehrens@giantdisaster.de>
----
-I should have recognized this within the integration period. Enabling meta data
-correction in this rc-phase doesn't make me feel comfortable. But as we haven't
-had any problems related to raid repair so far and my tests where successful,
-I'd still like to see this in rc4, if nobody objects.
+and then running the test and gather the same info as before.  Thanks,
 
-The inline comment added is meant to help myself and others understanding these
-bits the next time. There are no algorithmic changes.
----
- fs/btrfs/extent_io.c |   27 ++++++++++++++++++++-------
- 1 files changed, 20 insertions(+), 7 deletions(-)
-
-diff --git a/fs/btrfs/extent_io.c b/fs/btrfs/extent_io.c
-index 9472d3d..c7a71bf 100644
---- a/fs/btrfs/extent_io.c
-+++ b/fs/btrfs/extent_io.c
-@@ -2287,14 +2287,20 @@ static void end_bio_extent_readpage(struct bio *bio, int err)
- 		if (!uptodate) {
- 			int failed_mirror;
- 			failed_mirror = (int)(unsigned long)bio->bi_bdev;
--			if (tree->ops && tree->ops->readpage_io_failed_hook)
--				ret = tree->ops->readpage_io_failed_hook(
--						bio, page, start, end,
--						failed_mirror, state);
--			else
--				ret = bio_readpage_error(bio, page, start, end,
--							 failed_mirror, NULL);
-+			/*
-+			 * The generic bio_readpage_error handles errors the
-+			 * following way: If possible, new read requests are
-+			 * created and submitted and will end up in
-+			 * end_bio_extent_readpage as well (if we're lucky, not
-+			 * in the !uptodate case). In that case it returns 0 and
-+			 * we just go on with the next page in our bio. If it
-+			 * can't handle the error it will return -EIO and we
-+			 * remain responsible for that page.
-+			 */
-+			ret = bio_readpage_error(bio, page, start, end,
-+							failed_mirror, NULL);
- 			if (ret == 0) {
-+error_handled:
- 				uptodate =
- 					test_bit(BIO_UPTODATE, &bio->bi_flags);
- 				if (err)
-@@ -2302,6 +2308,13 @@ static void end_bio_extent_readpage(struct bio *bio, int err)
- 				uncache_state(&cached);
- 				continue;
- 			}
-+			if (tree->ops && tree->ops->readpage_io_failed_hook) {
-+				ret = tree->ops->readpage_io_failed_hook(
-+							bio, page, start, end,
-+							failed_mirror, state);
-+				if (ret == 0)
-+					goto error_handled;
-+			}
- 		}
- 
- 		if (uptodate) {
--- 
-1.7.3.4
-
+Josef

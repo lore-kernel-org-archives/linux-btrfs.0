@@ -1,47 +1,84 @@
-From: Tsutomu Itoh <t-itoh@jp.fujitsu.com>
-Subject: [PATCH] Btrfs: forced readonly when orphan_del fails
-Date: Thu, 01 Dec 2011 19:21:22 +0900
-Message-ID: <201112011021.AA00039@T-ITOH1.jp.fujitsu.com>
-Mime-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Cc: linux-btrfs@vger.kernel.org
-To: chris.mason@oracle.com
+From: Jan Schmidt <list.btrfs@jan-o-sch.net>
+Subject: [PATCH] Btrfs: fix meta data raid-repair merge problem
+Date: Thu,  1 Dec 2011 15:52:35 +0100
+Message-ID: <1322751155-30846-1-git-send-email-list.btrfs@jan-o-sch.net>
+To: chris.mason@oracle.com, linux-btrfs@vger.kernel.org
 Return-path: <linux-btrfs-owner@vger.kernel.org>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-In the case where the orphan_del fails, and cannot return
-error to the caller, the filesystem turns to readonly instead
-of BUG_ON().
+Commit 4a54c8c16 introduced raid-repair, killing the individual
+readpage_io_failed_hook entries from inode.c and disk-io.c. Commit
+4bb31e92 introduced new readahead code, adding a readpage_io_failed_hook to
+disk-io.c.
 
-Signed-off-by: Tsutomu Itoh <t-itoh@jp.fujitsu.com>
+The raid-repair commit had logic to disable raid-repair, if
+readpage_io_failed_hook is set. Thus, the readahead commit effectively
+disabled raid-repair for meta data.
+
+This commit changes the logic to always attempt raid-repair when needed and
+call the readpage_io_failed_hook in case raid-repair fails. This is much
+more straight forward and should have been like that from the beginning.
+
+Signed-off-by: Jan Schmidt <list.btrfs@jan-o-sch.net>
+Reported-by: Stefan Behrens <sbehrens@giantdisaster.de>
 ---
- fs/btrfs/inode.c |    8 ++++++--
- 1 files changed, 6 insertions(+), 2 deletions(-)
+I should have recognized this within the integration period. Enabling meta data
+correction in this rc-phase doesn't make me feel comfortable. But as we haven't
+had any problems related to raid repair so far and my tests where successful,
+I'd still like to see this in rc4, if nobody objects.
 
-diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
-index 8ad26b1..464e79e 100644
---- a/fs/btrfs/inode.c
-+++ b/fs/btrfs/inode.c
-@@ -1960,7 +1960,10 @@ void btrfs_orphan_commit_root(struct btrfs_trans_handle *trans,
- 	    btrfs_root_refs(&root->root_item) > 0) {
- 		ret = btrfs_del_orphan_item(trans, root->fs_info->tree_root,
- 					    root->root_key.objectid);
--		BUG_ON(ret);
-+		if (ret) {
-+			btrfs_std_error(root->fs_info, ret);
-+			return;
-+		}
- 		root->orphan_item_inserted = 0;
- 	}
+The inline comment added is meant to help myself and others understanding these
+bits the next time. There are no algorithmic changes.
+---
+ fs/btrfs/extent_io.c |   27 ++++++++++++++++++++-------
+ 1 files changed, 20 insertions(+), 7 deletions(-)
+
+diff --git a/fs/btrfs/extent_io.c b/fs/btrfs/extent_io.c
+index 9472d3d..c7a71bf 100644
+--- a/fs/btrfs/extent_io.c
++++ b/fs/btrfs/extent_io.c
+@@ -2287,14 +2287,20 @@ static void end_bio_extent_readpage(struct bio *bio, int err)
+ 		if (!uptodate) {
+ 			int failed_mirror;
+ 			failed_mirror = (int)(unsigned long)bio->bi_bdev;
+-			if (tree->ops && tree->ops->readpage_io_failed_hook)
+-				ret = tree->ops->readpage_io_failed_hook(
+-						bio, page, start, end,
+-						failed_mirror, state);
+-			else
+-				ret = bio_readpage_error(bio, page, start, end,
+-							 failed_mirror, NULL);
++			/*
++			 * The generic bio_readpage_error handles errors the
++			 * following way: If possible, new read requests are
++			 * created and submitted and will end up in
++			 * end_bio_extent_readpage as well (if we're lucky, not
++			 * in the !uptodate case). In that case it returns 0 and
++			 * we just go on with the next page in our bio. If it
++			 * can't handle the error it will return -EIO and we
++			 * remain responsible for that page.
++			 */
++			ret = bio_readpage_error(bio, page, start, end,
++							failed_mirror, NULL);
+ 			if (ret == 0) {
++error_handled:
+ 				uptodate =
+ 					test_bit(BIO_UPTODATE, &bio->bi_flags);
+ 				if (err)
+@@ -2302,6 +2308,13 @@ static void end_bio_extent_readpage(struct bio *bio, int err)
+ 				uncache_state(&cached);
+ 				continue;
+ 			}
++			if (tree->ops && tree->ops->readpage_io_failed_hook) {
++				ret = tree->ops->readpage_io_failed_hook(
++							bio, page, start, end,
++							failed_mirror, state);
++				if (ret == 0)
++					goto error_handled;
++			}
+ 		}
  
-@@ -3532,7 +3535,8 @@ void btrfs_evict_inode(struct inode *inode)
- 	if (ret == 0) {
- 		trans->block_rsv = root->orphan_block_rsv;
- 		ret = btrfs_orphan_del(trans, inode);
--		BUG_ON(ret);
-+		if (ret)
-+			btrfs_std_error(root->fs_info, ret);
- 	}
- 
- 	trans->block_rsv = &root->fs_info->trans_block_rsv;
+ 		if (uptodate) {
+-- 
+1.7.3.4
 

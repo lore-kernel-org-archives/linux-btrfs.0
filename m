@@ -1,80 +1,57 @@
-From: Andrey Kuzmin <andrey.v.kuzmin@gmail.com>
-Subject: Re: btrfsck: unresolved ref root
-Date: Fri, 2 Dec 2011 18:13:51 +0400
-Message-ID: <CANvN+emO8sfR+ETOYXWXKQA_e=0_zYTTJo=sg+tVX5G9axmy1A@mail.gmail.com>
-References: <4ED89A25.4000207@jan-o-sch.net> <CANvN+enynzy=y3-vXDNHB4oFBjBZOTxwx9AvB+suoRkCsDwcwQ@mail.gmail.com>
+From: Konstantinos Skarlatos <k.skarlatos@gmail.com>
+Subject: Re: Blocked for more than 120 seconds
+Date: Fri, 02 Dec 2011 17:22:30 +0200
+Message-ID: <4ED8ED36.3080105@gmail.com>
+References: <4ED34359.6010305@robotech.de> <1322472549.1962.2.camel@Nokia-N900> <4ED5FAEF.8070400@robotech.de> <20111130141006.GY24338@shiny> <4ED738E5.3080200@robotech.de> <20111201184158.GB10535@shiny> <4ED8D6C8.4020609@robotech.de>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=UTF-8
-Cc: Chris Mason <chris.mason@oracle.com>,
-	linux-btrfs <linux-btrfs@vger.kernel.org>
-To: Jan Schmidt <list.btrfs@jan-o-sch.net>
+Content-Type: text/plain; charset=UTF-8;
+	format=flowed
+Cc: Chris Mason <chris.mason@oracle.com>, linux-btrfs@vger.kernel.org
+To: Tobias <tracer@robotech.de>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <CANvN+enynzy=y3-vXDNHB4oFBjBZOTxwx9AvB+suoRkCsDwcwQ@mail.gmail.com>
+In-Reply-To: <4ED8D6C8.4020609@robotech.de>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Just curious, would the observed behavior change if one modifies head i=
-n any
-way between snap and umount?
+Hi all
 
-Regards,
-Andrey
-
+On 2/12/2011 3:46 =CE=BC=CE=BC, Tobias wrote:
+> Hi Chris!
 >
-> 02.12.2011 13:28 =D0=BF=D0=BE=D0=BB=D1=8C=D0=B7=D0=BE=D0=B2=D0=B0=D1=82=
-=D0=B5=D0=BB=D1=8C "Jan Schmidt" <list.btrfs@jan-o-sch.net>
-> =D0=BD=D0=B0=D0=BF=D0=B8=D1=81=D0=B0=D0=BB:
+> Am 01.12.2011 19:41, schrieb Chris Mason:
+>>
+>> So, the transaction close is in btrfs_evict_inode, which sounds like=
+ a
+>> deadlock recently fixed by this commit:
+>>
+>> http://git.kernel.org/?p=3Dlinux/kernel/git/mason/linux-btrfs.git;a=3D=
+commit;h=3Daa38a711a893accf5b5192f3d705a120deaa81e0=20
+>>
+>>
+>> If you pull the for-linus branch from today, hopefully the problem w=
+ill
+>> be gone.
+>>
 >
+> This looks very good. With this Kernel i still have some hangs, but=20
+> only in rsync, only under high load and they don't lock up the system=
+=20
+> - so i guess it's ok now.
+I still have hangs and lock ups under the same situation (rsync of many=
+=20
+files) under 3.2rc3. rc3 made the hang appear after 200gb of files,=20
+while in rc2 i had hangs after only 11gb .
 >
-> While hunting another bug, I got distracted by btrfsck error output,
-> which is reproducible as simple as creating a snapshot. Either btrfsc=
-k
-> is strange or subvolume snapsnot does something wrong.
+> Thank You very much for Your help!
 >
-> # mkfs.btrfs /dev/sdo
-> # mount /dev/sdo /mnt/scratch/
-> # umount /mnt/scratch/
-> # btrfsck /dev/sdo
+> When will this patches go into the main Kernel?
 >
-> -> everything ok
+> Tobias
 >
-> # mount /dev/sdo /mnt/scratch/
-> # btrfs subvol snap /mnt/scratch/ /mnt/scratch/snap1
-> # umount /mnt/scratch
-> # btrfsck /dev/sdo
-> fs tree 257 refs 2
-> =C2=A0 =C2=A0 =C2=A0 =C2=A0unresolved ref root 257 dir 256 index 2 na=
-melen 5 name snap1
-> error 600
-> [...]
->
-> Tested with current for-linus and most current btrfsck. I also have
-> older filesystems with snapshots I never used on btrfsck before, they
-> also show the "unresolved ref" error.
->
-> From a quick look at the btrfsck code, this complaint means that btrf=
-sck
-> is looking for two BTRFS_ROOT_REF_KEY and BTRFS_ROOT_BACKREF_KEY each=
- in
-> the tree of tree roots. However there's only one of each (as I would
-> expect):
->
-> =C2=A0 =C2=A0 =C2=A0 =C2=A0item 4 key (FS_TREE ROOT_REF 257) itemoff =
-3238 itemsize 23
-> =C2=A0 =C2=A0 =C2=A0 =C2=A0 =C2=A0 =C2=A0 =C2=A0 =C2=A0root ref key d=
-irid 256 sequence 2 name snap1
-> ...
-> =C2=A0 =C2=A0 =C2=A0 =C2=A0item 12 key (257 ROOT_BACKREF 5) itemoff 2=
-315 itemsize 23
-> =C2=A0 =C2=A0 =C2=A0 =C2=A0 =C2=A0 =C2=A0 =C2=A0 =C2=A0root backref k=
-ey dirid 256 sequence 2 name snap1
->
-> -Jan
-> --
+> --=20
 > To unsubscribe from this list: send the line "unsubscribe linux-btrfs=
 " in
 > the body of a message to majordomo@vger.kernel.org
-> More majordomo info at =C2=A0http://vger.kernel.org/majordomo-info.ht=
-ml
+> More majordomo info at  http://vger.kernel.org/majordomo-info.html
 --
 To unsubscribe from this list: send the line "unsubscribe linux-btrfs" =
 in

@@ -1,51 +1,57 @@
-From: Konstantinos Skarlatos <k.skarlatos@gmail.com>
-Subject: Re: Blocked for more than 120 seconds
-Date: Fri, 02 Dec 2011 21:53:10 +0200
-Message-ID: <4ED92CA6.3030302@gmail.com>
-References: <4ED34359.6010305@robotech.de> <1322472549.1962.2.camel@Nokia-N900> <4ED5FAEF.8070400@robotech.de> <20111130141006.GY24338@shiny> <4ED738E5.3080200@robotech.de> <20111201184158.GB10535@shiny> <4ED8D6C8.4020609@robotech.de> <4ED8ED36.3080105@gmail.com> <4ED8F34F.8090609@robotech.de>
+From: Jeff Putney <jeffrey.putney@gmail.com>
+Subject: Re: Honest timeline for btrfsck
+Date: Fri, 2 Dec 2011 14:05:42 -0600
+Message-ID: <CA+JuuGqTxZyqcSW5LcQ1XuK63J+74zEe32FpnvG5MxbsxVeuLw@mail.gmail.com>
+References: <CAGh96GFhVEfXt=xcb-uGEBA3Ss2fc8BwOpJ2g8tXbm+VimdH3Q@mail.gmail.com>
+	<4E5FE9FC.9040705@cchtml.com>
+	<20110901203442.GA17928@carfax.org.uk>
+	<201109101209.40759.Martin@lichtvoll.de>
+	<CA+JuuGrvCTP=o8umQHQV968tMSfJzxAFOfnGO2RKV3RU4_Vshw@mail.gmail.com>
+	<20111005061628.GA3702@shiny.elevennetworks.com>
+	<j8lumr$cds$1@dough.gmane.org>
+	<CAFvQSYTauT8PEvs_ROdp1CugMkukiV3OpQ7on749U-ojMF=Abg@mail.gmail.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=UTF-8;
-	format=flowed
+Content-Type: text/plain; charset=ISO-8859-1
 Cc: linux-btrfs@vger.kernel.org
-To: Tobias <tracer@robotech.de>
+To: Clemens Eisserer <linuxhippy@gmail.com>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <4ED8F34F.8090609@robotech.de>
+In-Reply-To: <CAFvQSYTauT8PEvs_ROdp1CugMkukiV3OpQ7on749U-ojMF=Abg@mail.gmail.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-I see they got into 3.2rc4, so I am now compiling it. I will report=20
-back in a few hours
+Or, better yet, how about just releasing the source code already.
 
-On =CE=A0=CE=B1=CF=81=CE=B1=CF=83=CE=BA=CE=B5=CF=85=CE=AE, 2 =CE=94=CE=B5=
-=CE=BA=CE=AD=CE=BC=CE=B2=CF=81=CE=B9=CE=BF=CF=82 2011 5:48:31 =CE=BC=CE=
-=BC, Tobias wrote:
-> Am 02.12.2011 16:22, schrieb Konstantinos Skarlatos:
->>>> So, the transaction close is in btrfs_evict_inode, which sounds li=
-ke a
->>>> deadlock recently fixed by this commit:
->>>>
->>>> http://git.kernel.org/?p=3Dlinux/kernel/git/mason/linux-btrfs.git;=
-a=3Dcommit;h=3Daa38a711a893accf5b5192f3d705a120deaa81e0=20
->>>>
->>>>
->>>> If you pull the for-linus branch from today, hopefully the problem=
-=20
->>>> will
->>>> be gone.
->>>>
+
+On Wed, Nov 30, 2011 at 4:19 AM, Clemens Eisserer <linuxhippy@gmail.com=
+> wrot
+> Any update on the state of btrfschk?
+>
+> Thanks, Clemens
+>
+> 2011/10/31 David Summers <btrfs@summers5913.freeserve.co.uk>:
+>> On 05/10/11 07:16, Chris Mason wrote:
 >>>
->>> This looks very good. With this Kernel i still have some hangs, but=
-=20
->>> only in rsync, only under high load and they don't lock up the=20
->>> system - so i guess it's ok now.
+>>>
+>>> So over the next two weeks I'm juggling the merge window and the fs=
+ck
+>>> release. =A0My goal is to demo fsck at linuxcon europe. =A0Thanks a=
+gain for
+>>> all of your patience and help with Btrfs!
+>>>
+>> Any chance of a copy of your talk at linuxcon? ;)
 >>
->> I still have hangs and lock ups under the same situation (rsync of=20
->> many files) under 3.2rc3. rc3 made the hang appear after 200gb of=20
->> files, while in rc2 i had hangs after only 11gb .
->
-> Yes, i had them too in 3.2rc3! The problem where solved with patches=20
-> from the "btrfs-for-linus" -branch. (see link above).
->
-> Tobias
+>> David.
+>>
+>>
+>> --
+>> To unsubscribe from this list: send the line "unsubscribe linux-btrf=
+s" in
+>> the body of a message to majordomo@vger.kernel.org
+>> More majordomo info at =A0http://vger.kernel.org/majordomo-info.html
+> --
+> To unsubscribe from this list: send the line "unsubscribe linux-btrfs=
+" in
+> the body of a message to majordomo@vger.kernel.org
+> More majordomo info at =A0http://vger.kernel.org/majordomo-info.html
 >
 --
 To unsubscribe from this list: send the line "unsubscribe linux-btrfs" =

@@ -1,72 +1,55 @@
-From: Josef Bacik <josef@redhat.com>
-Subject: [PATCH] Btrfs: protect orphan block rsv with spin_lock
-Date: Fri,  2 Dec 2011 15:44:36 -0500
-Message-ID: <1322858676-4278-1-git-send-email-josef@redhat.com>
-To: linux-btrfs@vger.kernel.org, sage@newdream.net
+From: Arnd Hannemann <arnd@arndnet.de>
+Subject: [PATCH] Btrfs-progs: Fix some typos in btrfs man page
+Date: Fri,  2 Dec 2011 22:34:41 +0100
+Message-ID: <1322861681-3607-1-git-send-email-arnd@arndnet.de>
+Cc: linux-btrfs@vger.kernel.org, Arnd Hannemann <arnd@arndnet.de>
+To: chris.mason@oracle.com
 Return-path: <linux-btrfs-owner@vger.kernel.org>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-We've been seeing warnings coming out of the orphan commit stuff forever from
-ceph.  Turns out it's because we're racing with checking if the orphan block
-reserve is set, because we clear it outside of the spin_lock.  So leave the
-normal fastpath checks where they are, but take the spin_lock and _recheck_ to
-make sure we haven't had an orphan block rsv added in the meantime.  Then clear
-the root's orphan block rsv and release the lock.  With this patch a user said
-the warnings went away and they usually showed up pretty soon after he started
-ceph.  Thanks,
+	This Patch fixes some minor typos in the btrfs man page.
 
-Signed-off-by: Josef Bacik <josef@redhat.com>
+Signed-off-by: Arnd Hannemann <arnd@arndnet.de>
 ---
- fs/btrfs/inode.c |   23 +++++++++++++++++++----
- 1 files changed, 19 insertions(+), 4 deletions(-)
+ man/btrfs.8.in |    8 ++++----
+ 1 files changed, 4 insertions(+), 4 deletions(-)
 
-diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
-index 9ae9c2e..9de15f1 100644
---- a/fs/btrfs/inode.c
-+++ b/fs/btrfs/inode.c
-@@ -1951,12 +1951,28 @@ enum btrfs_orphan_cleanup_state {
- void btrfs_orphan_commit_root(struct btrfs_trans_handle *trans,
- 			      struct btrfs_root *root)
- {
-+	struct btrfs_block_rsv *block_rsv;
- 	int ret;
+diff --git a/man/btrfs.8.in b/man/btrfs.8.in
+index be478e0..bafca8d 100644
+--- a/man/btrfs.8.in
++++ b/man/btrfs.8.in
+@@ -137,7 +137,7 @@ is similar to \fBsubvolume list\fR command.
+ Defragment file data and/or directory metadata. To defragment all files in a
+ directory you have to specify each one on its own or use your shell wildcards.
  
- 	if (!list_empty(&root->orphan_list) ||
- 	    root->orphan_cleanup_state != ORPHAN_CLEANUP_DONE)
- 		return;
+-The start position and the number of bytes to deframention can be specified by \fIstart\fR and \fIlen\fR. Any extent bigger than \fIthresh\fR will be considered already defragged. Use 0 to take the kernel default, and use 1 to say eveery single extent must be rewritten. You can also turn on compression in defragment operations.
++The start position and the number of bytes to defragmention can be specified by \fIstart\fR and \fIlen\fR. Any extent bigger than \fIthresh\fR will be considered already defragged. Use 0 to take the kernel default, and use 1 to say every single extent must be rewritten. You can also turn on compression in defragment operations.
  
-+	spin_lock(&root->orphan_lock);
-+	if (!list_empty(&root->orphan_list)) {
-+		spin_unlock(&root->orphan_lock);
-+		return;
-+	}
-+
-+	if (root->orphan_cleanup_state != ORPHAN_CLEANUP_DONE) {
-+		spin_unlock(&root->orphan_lock);
-+		return;
-+	}
-+
-+	block_rsv = root->orphan_block_rsv;
-+	root->orphan_block_rsv = NULL;
-+	spin_unlock(&root->orphan_lock);
-+
- 	if (root->orphan_item_inserted &&
- 	    btrfs_root_refs(&root->root_item) > 0) {
- 		ret = btrfs_del_orphan_item(trans, root->fs_info->tree_root,
-@@ -1965,10 +1981,9 @@ void btrfs_orphan_commit_root(struct btrfs_trans_handle *trans,
- 		root->orphan_item_inserted = 0;
- 	}
+ \fB-v\fP be verbose
  
--	if (root->orphan_block_rsv) {
--		WARN_ON(root->orphan_block_rsv->size > 0);
--		btrfs_free_block_rsv(root, root->orphan_block_rsv);
--		root->orphan_block_rsv = NULL;
-+	if (block_rsv) {
-+		WARN_ON(block_rsv->size > 0);
-+		btrfs_free_block_rsv(root, block_rsv);
- 	}
- }
+@@ -291,7 +291,7 @@ Resolves an <inode> in subvolume <path> to all filesystem paths.
  
+ \fIOptions\fR
+ .IP -v 5
+-verbose mode. print count of returned paths and ioctl() return value
++verbose mode. Print count of returned paths and ioctl() return value.
+ .RE
+ .TP
+ 
+@@ -305,11 +305,11 @@ By default, each inode is then resolved to a file system path (similar to the
+ .IP -P 5
+ skip the path resolving and print the inodes instead
+ .IP -v 5
+-verbose mode. print count of returned paths and all ioctl() return values
++verbose mode. Print count of returned paths and all ioctl() return values.
+ .RE
+ 
+ .SH EXIT STATUS
+-\fBbtrfs\fR returns a zero exist status if it succeeds. Non zero is returned in
++\fBbtrfs\fR returns a zero exit status if it succeeds. Non zero is returned in
+ case of failure.
+ 
+ .SH AVAILABILITY
 -- 
-1.7.5.2
+1.7.5.4
 

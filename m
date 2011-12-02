@@ -1,60 +1,72 @@
-From: Jeff Putney <jeffrey.putney@gmail.com>
-Subject: Re: Honest timeline for btrfsck
-Date: Fri, 2 Dec 2011 14:05:42 -0600
-Message-ID: <CA+JuuGqTxZyqcSW5LcQ1XuK63J+74zEe32FpnvG5MxbsxVeuLw@mail.gmail.com>
-References: <CAGh96GFhVEfXt=xcb-uGEBA3Ss2fc8BwOpJ2g8tXbm+VimdH3Q@mail.gmail.com>
-	<4E5FE9FC.9040705@cchtml.com>
-	<20110901203442.GA17928@carfax.org.uk>
-	<201109101209.40759.Martin@lichtvoll.de>
-	<CA+JuuGrvCTP=o8umQHQV968tMSfJzxAFOfnGO2RKV3RU4_Vshw@mail.gmail.com>
-	<20111005061628.GA3702@shiny.elevennetworks.com>
-	<j8lumr$cds$1@dough.gmane.org>
-	<CAFvQSYTauT8PEvs_ROdp1CugMkukiV3OpQ7on749U-ojMF=Abg@mail.gmail.com>
-Mime-Version: 1.0
-Content-Type: text/plain; charset=ISO-8859-1
-Cc: linux-btrfs@vger.kernel.org
-To: Clemens Eisserer <linuxhippy@gmail.com>
+From: Josef Bacik <josef@redhat.com>
+Subject: [PATCH] Btrfs: protect orphan block rsv with spin_lock
+Date: Fri,  2 Dec 2011 15:44:36 -0500
+Message-ID: <1322858676-4278-1-git-send-email-josef@redhat.com>
+To: linux-btrfs@vger.kernel.org, sage@newdream.net
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <CAFvQSYTauT8PEvs_ROdp1CugMkukiV3OpQ7on749U-ojMF=Abg@mail.gmail.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Or, better yet, how about just releasing the source code already.
+We've been seeing warnings coming out of the orphan commit stuff forever from
+ceph.  Turns out it's because we're racing with checking if the orphan block
+reserve is set, because we clear it outside of the spin_lock.  So leave the
+normal fastpath checks where they are, but take the spin_lock and _recheck_ to
+make sure we haven't had an orphan block rsv added in the meantime.  Then clear
+the root's orphan block rsv and release the lock.  With this patch a user said
+the warnings went away and they usually showed up pretty soon after he started
+ceph.  Thanks,
 
+Signed-off-by: Josef Bacik <josef@redhat.com>
+---
+ fs/btrfs/inode.c |   23 +++++++++++++++++++----
+ 1 files changed, 19 insertions(+), 4 deletions(-)
 
-On Wed, Nov 30, 2011 at 4:19 AM, Clemens Eisserer <linuxhippy@gmail.com=
-> wrot
-> Any update on the state of btrfschk?
->
-> Thanks, Clemens
->
-> 2011/10/31 David Summers <btrfs@summers5913.freeserve.co.uk>:
->> On 05/10/11 07:16, Chris Mason wrote:
->>>
->>>
->>> So over the next two weeks I'm juggling the merge window and the fs=
-ck
->>> release. =A0My goal is to demo fsck at linuxcon europe. =A0Thanks a=
-gain for
->>> all of your patience and help with Btrfs!
->>>
->> Any chance of a copy of your talk at linuxcon? ;)
->>
->> David.
->>
->>
->> --
->> To unsubscribe from this list: send the line "unsubscribe linux-btrf=
-s" in
->> the body of a message to majordomo@vger.kernel.org
->> More majordomo info at =A0http://vger.kernel.org/majordomo-info.html
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-btrfs=
-" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at =A0http://vger.kernel.org/majordomo-info.html
->
---
-To unsubscribe from this list: send the line "unsubscribe linux-btrfs" =
-in
-the body of a message to majordomo@vger.kernel.org
-More majordomo info at  http://vger.kernel.org/majordomo-info.html
+diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
+index 9ae9c2e..9de15f1 100644
+--- a/fs/btrfs/inode.c
++++ b/fs/btrfs/inode.c
+@@ -1951,12 +1951,28 @@ enum btrfs_orphan_cleanup_state {
+ void btrfs_orphan_commit_root(struct btrfs_trans_handle *trans,
+ 			      struct btrfs_root *root)
+ {
++	struct btrfs_block_rsv *block_rsv;
+ 	int ret;
+ 
+ 	if (!list_empty(&root->orphan_list) ||
+ 	    root->orphan_cleanup_state != ORPHAN_CLEANUP_DONE)
+ 		return;
+ 
++	spin_lock(&root->orphan_lock);
++	if (!list_empty(&root->orphan_list)) {
++		spin_unlock(&root->orphan_lock);
++		return;
++	}
++
++	if (root->orphan_cleanup_state != ORPHAN_CLEANUP_DONE) {
++		spin_unlock(&root->orphan_lock);
++		return;
++	}
++
++	block_rsv = root->orphan_block_rsv;
++	root->orphan_block_rsv = NULL;
++	spin_unlock(&root->orphan_lock);
++
+ 	if (root->orphan_item_inserted &&
+ 	    btrfs_root_refs(&root->root_item) > 0) {
+ 		ret = btrfs_del_orphan_item(trans, root->fs_info->tree_root,
+@@ -1965,10 +1981,9 @@ void btrfs_orphan_commit_root(struct btrfs_trans_handle *trans,
+ 		root->orphan_item_inserted = 0;
+ 	}
+ 
+-	if (root->orphan_block_rsv) {
+-		WARN_ON(root->orphan_block_rsv->size > 0);
+-		btrfs_free_block_rsv(root, root->orphan_block_rsv);
+-		root->orphan_block_rsv = NULL;
++	if (block_rsv) {
++		WARN_ON(block_rsv->size > 0);
++		btrfs_free_block_rsv(root, block_rsv);
+ 	}
+ }
+ 
+-- 
+1.7.5.2
+

@@ -1,47 +1,44 @@
-From: Jan Schmidt <list.btrfs@jan-o-sch.net>
-Subject: btrfsck: unresolved ref root
-Date: Fri, 02 Dec 2011 10:28:05 +0100
-Message-ID: <4ED89A25.4000207@jan-o-sch.net>
+From: Mike Thomas <btrfs@thomii.com>
+Subject: btrfs errors
+Date: Fri, 2 Dec 2011 07:34:24 -0500
+Message-ID: <000501ccb0ee$b92cd590$2b8680b0$@thomii.com>
+References: <AFB7E63B2FEE4449B3DBF47BC3AA36F085956971@server2k8.thomii.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=ISO-8859-1
-Cc: Chris Mason <chris.mason@oracle.com>
-To: linux-btrfs <linux-btrfs@vger.kernel.org>
+Content-Type: text/plain; charset=iso-8859-1
+To: <linux-btrfs@vger.kernel.org>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
+In-Reply-To: <AFB7E63B2FEE4449B3DBF47BC3AA36F085956971@server2k8.thomii.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-While hunting another bug, I got distracted by btrfsck error output,
-which is reproducible as simple as creating a snapshot. Either btrfsck
-is strange or subvolume snapsnot does something wrong.
+Hi, I've been using btrfs for a while now, I've been utilizing snapshot=
+ting
+nightly/weekly/monthly.=A0 During the weekly I also do a backup of the
+filesystem to an ext4 filesystem.=A0 My storage is a linux md raid 5 vo=
+lume.=A0
+I've recently noticed these errors in the logs during the backup of the
+files to the ext4 filesystem.=A0 I am running RHEL 6.1
+(2.6.32-131.0.15.el6.x86_64)
 
-# mkfs.btrfs /dev/sdo
-# mount /dev/sdo /mnt/scratch/
-# umount /mnt/scratch/
-# btrfsck /dev/sdo
+I'd like to help in any way I can so I thought I'd post here to see if =
+there
+is anything I can do to help.
 
--> everything ok
+Thanks, Mike
 
-# mount /dev/sdo /mnt/scratch/
-# btrfs subvol snap /mnt/scratch/ /mnt/scratch/snap1
-# umount /mnt/scratch
-# btrfsck /dev/sdo
-fs tree 257 refs 2
-        unresolved ref root 257 dir 256 index 2 namelen 5 name snap1
-error 600
-[...]
+PS I'm new to helping on an opensource project!
 
-Tested with current for-linus and most current btrfsck. I also have
-older filesystems with snapshots I never used on btrfsck before, they
-also show the "unresolved ref" error.
+kernel: btrfs: dm-1 checksum verify failed on 759414784 wanted 52BAE689
+found 827C3140 level 0
+kernel: btrfs no csum found for inode 168597 start 82202624
+=85
+kernel: btrfs no csum found for inode 168597 start 84520960
+kernel: __ratelimit: 2267 callbacks suppressed
+kernel: btrfs no csum found for inode 170122 start 3772416
+=85
+kernel: btrfs no csum found for inode 170123 start 1720320
 
->From a quick look at the btrfsck code, this complaint means that btrfsck
-is looking for two BTRFS_ROOT_REF_KEY and BTRFS_ROOT_BACKREF_KEY each in
-the tree of tree roots. However there's only one of each (as I would
-expect):
-
-        item 4 key (FS_TREE ROOT_REF 257) itemoff 3238 itemsize 23
-                root ref key dirid 256 sequence 2 name snap1
-...
-        item 12 key (257 ROOT_BACKREF 5) itemoff 2315 itemsize 23
-                root backref key dirid 256 sequence 2 name snap1
-
--Jan
+--
+To unsubscribe from this list: send the line "unsubscribe linux-btrfs" =
+in
+the body of a message to majordomo@vger.kernel.org
+More majordomo info at  http://vger.kernel.org/majordomo-info.html

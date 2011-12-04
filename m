@@ -1,631 +1,282 @@
-From: Konstantinos Skarlatos <k.skarlatos@gmail.com>
-Subject: Re: Blocked for more than 120 seconds
-Date: Sun, 04 Dec 2011 14:11:24 +0200
-Message-ID: <4EDB636C.4010604@gmail.com>
-References: <4ED34359.6010305@robotech.de> <1322472549.1962.2.camel@Nokia-N900> <4ED5FAEF.8070400@robotech.de> <20111130141006.GY24338@shiny> <4ED738E5.3080200@robotech.de> <20111201184158.GB10535@shiny> <4ED8D6C8.4020609@robotech.de> <20111202140112.GN10535@shiny>
+From: "Sergey V." <sftp.mtuci@gmail.com>
+Subject: btrfs oops when defrag directories
+Date: Sun, 4 Dec 2011 23:21:20 +0400
+Message-ID: <201112042321.23160.sftp.mtuci@gmail.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=UTF-8;
-	format=flowed
-To: Chris Mason <chris.mason@oracle.com>, Tobias <tracer@robotech.de>,
-	linux-btrfs@vger.kernel.org, miaox <miaox@cn.fujitsu.com>
+Content-Type: text/plain;
+  charset="utf-8"
+To: linux-btrfs@vger.kernel.org
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <20111202140112.GN10535@shiny>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-even more kernel messages from btrfs crashing when rsyncing large=20
-amounts of data on 3.2rc4
+When i do `find -type d -xdev -print0 | xargs -0 btrfs fi defrag` to
+try to "defragments just the metadata held by the directory object" 
+(as noted at wiki [1]), i get several oopses.
 
+kernel version is 3.2.0-rc3; mount options is "compress=lzo,autodefrag".
 
-Dec  3 15:12:14 mail kernel: [15481.100564] loop0           D=20
-000000010044b6c5     0  1729      2 0x00000000
-Dec  3 15:12:14 mail kernel: [15481.101550]  ffff8801f9b31b30=20
-0000000000000046 0000000000000000 0000000000000000
-Dec  3 15:12:14 mail kernel: [15481.102548]  ffff880200950e40=20
-ffff8801f9b31fd8 ffff8801f9b31fd8 ffff8801f9b31fd8
-Dec  3 15:12:14 mail kernel: [15481.103539]  ffff880202cb7200=20
-ffff880200950e40 0000000000000002 ffff8801f9b31b78
-Dec  3 15:12:14 mail kernel: [15481.104533] Call Trace:
-Dec  3 15:12:14 mail kernel: [15481.105531]  [<ffffffff81101a55>] ?=20
-find_get_pages_tag+0x125/0x150
-Dec  3 15:12:14 mail kernel: [15481.106541]  [<ffffffff8110e205>] ?=20
-pagevec_lookup_tag+0x25/0x40
-Dec  3 15:12:14 mail kernel: [15481.107552]  [<ffffffff8101d639>] ?=20
-read_tsc+0x9/0x20
-Dec  3 15:12:14 mail kernel: [15481.108576]  [<ffffffff8108f14d>] ?=20
-ktime_get_ts+0xad/0xe0
-Dec  3 15:12:14 mail kernel: [15481.109592]  [<ffffffff81101d60>] ?=20
-__lock_page+0x70/0x70
-Dec  3 15:12:14 mail kernel: [15481.110607]  [<ffffffff814140bf>]=20
-schedule+0x3f/0x60
-Dec  3 15:12:14 mail kernel: [15481.111619]  [<ffffffff8141416f>]=20
-io_schedule+0x8f/0xd0
-Dec  3 15:12:14 mail kernel: [15481.112641]  [<ffffffff81101d6e>]=20
-sleep_on_page+0xe/0x20
-Dec  3 15:12:14 mail kernel: [15481.113639]  [<ffffffff8141491f>]=20
-__wait_on_bit+0x5f/0x90
-Dec  3 15:12:14 mail kernel: [15481.114629]  [<ffffffff81101f58>]=20
-wait_on_page_bit+0x78/0x80
-Dec  3 15:12:14 mail kernel: [15481.115628]  [<ffffffff81085790>] ?=20
-autoremove_wake_function+0x40/0x40
-Dec  3 15:12:14 mail kernel: [15481.116614]  [<ffffffff811020cc>]=20
-filemap_fdatawait_range+0x10c/0x1a0
-Dec  3 15:12:14 mail kernel: [15481.117613]  [<ffffffff811030c8>]=20
-filemap_write_and_wait_range+0x68/0x80
-Dec  3 15:12:14 mail kernel: [15481.118630]  [<ffffffffa03a7234>]=20
-xfs_file_fsync+0x54/0x340 [xfs]
-Dec  3 15:12:14 mail kernel: [15481.119629]  [<ffffffff8119148b>]=20
-vfs_fsync+0x2b/0x40
-Dec  3 15:12:14 mail kernel: [15481.120627]  [<ffffffffa04dacf2>]=20
-do_bio_filebacked+0x1b2/0x320 [loop]
-Dec  3 15:12:14 mail kernel: [15481.121645]  [<ffffffffa050efac>] ?=20
-end_workqueue_bio+0x9c/0xa0 [btrfs]
-Dec  3 15:12:14 mail kernel: [15481.122668]  [<ffffffffa04daf1b>]=20
-loop_thread+0xbb/0x260 [loop]
-Dec  3 15:12:14 mail kernel: [15481.123674]  [<ffffffff81085750>] ?=20
-abort_exclusive_wait+0xb0/0xb0
-Dec  3 15:12:14 mail kernel: [15481.124676]  [<ffffffffa04dae60>] ?=20
-do_bio_filebacked+0x320/0x320 [loop]
-Dec  3 15:12:14 mail kernel: [15481.125698]  [<ffffffff81084e0c>]=20
-kthread+0x8c/0xa0
-Dec  3 15:12:14 mail kernel: [15481.126710]  [<ffffffff81419a34>]=20
-kernel_thread_helper+0x4/0x10
-Dec  3 15:12:14 mail kernel: [15481.127721]  [<ffffffff81084d80>] ?=20
-kthread_worker_fn+0x190/0x190
-Dec  3 15:12:14 mail kernel: [15481.128742]  [<ffffffff81419a30>] ?=20
-gs_change+0x13/0x13
-Dec  3 15:12:14 mail kernel: [15481.131702] btrfs-transacti D=20
-ffff8801f9ab7200     0  1756      2 0x00000000
-Dec  3 15:12:14 mail kernel: [15481.132723]  ffff8801e7533bc0=20
-0000000000000046 ffff88020fc93400 0000000000000002
-Dec  3 15:12:14 mail kernel: [15481.133744]  ffff8801f9ab7200=20
-ffff8801e7533fd8 ffff8801e7533fd8 ffff8801e7533fd8
-Dec  3 15:12:14 mail kernel: [15481.134771]  ffff880200950e40=20
-ffff8801f9ab7200 ffff8801e7533b10 0000000081051ae2
-Dec  3 15:12:14 mail kernel: [15481.135813] Call Trace:
-Dec  3 15:12:14 mail kernel: [15481.136828]  [<ffffffff8105ad36>] ?=20
-ttwu_do_activate.constprop.172+0x66/0x70
-Dec  3 15:12:14 mail kernel: [15481.137863]  [<ffffffff8105bd6e>] ?=20
-try_to_wake_up+0x1de/0x290
-Dec  3 15:12:14 mail kernel: [15481.138914]  [<ffffffff814140bf>]=20
-schedule+0x3f/0x60
-Dec  3 15:12:14 mail kernel: [15481.139956]  [<ffffffff814147d5>]=20
-schedule_timeout+0x305/0x390
-Dec  3 15:12:14 mail kernel: [15481.141007]  [<ffffffff8104d003>] ?=20
-__wake_up+0x53/0x70
-Dec  3 15:12:14 mail kernel: [15481.142074]  [<ffffffff81413348>]=20
-wait_for_common+0xc8/0x160
-Dec  3 15:12:14 mail kernel: [15481.143124]  [<ffffffff8105be20>] ?=20
-try_to_wake_up+0x290/0x290
-Dec  3 15:12:14 mail kernel: [15481.144170]  [<ffffffff814133fd>]=20
-wait_for_completion+0x1d/0x20
-Dec  3 15:12:14 mail kernel: [15481.145229]  [<ffffffffa050f0bb>]=20
-write_dev_flush+0x4b/0x140 [btrfs]
-Dec  3 15:12:14 mail kernel: [15481.146275]  [<ffffffffa0511086>]=20
-write_all_supers+0x6f6/0x800 [btrfs]
-Dec  3 15:12:14 mail kernel: [15481.147317]  [<ffffffffa05111a3>]=20
-write_ctree_super+0x13/0x20 [btrfs]
-Dec  3 15:12:14 mail kernel: [15481.148354]  [<ffffffffa05164dd>]=20
-btrfs_commit_transaction+0x63d/0x880 [btrfs]
-Dec  3 15:12:14 mail kernel: [15481.149397]  [<ffffffff81085750>] ?=20
-abort_exclusive_wait+0xb0/0xb0
-Dec  3 15:12:14 mail kernel: [15481.150416]  [<ffffffffa0516b74>] ?=20
-start_transaction+0x94/0x2b0 [btrfs]
-Dec  3 15:12:14 mail kernel: [15481.151444]  [<ffffffffa050ed4d>]=20
-transaction_kthread+0x26d/0x290 [btrfs]
-Dec  3 15:12:14 mail kernel: [15481.152492]  [<ffffffffa050eae0>] ?=20
-btrfs_congested_fn+0xd0/0xd0 [btrfs]
-Dec  3 15:12:14 mail kernel: [15481.153519]  [<ffffffff81084e0c>]=20
-kthread+0x8c/0xa0
-Dec  3 15:12:14 mail kernel: [15481.154542]  [<ffffffff81419a34>]=20
-kernel_thread_helper+0x4/0x10
-Dec  3 15:12:14 mail kernel: [15481.155553]  [<ffffffff81084d80>] ?=20
-kthread_worker_fn+0x190/0x190
-Dec  3 15:12:14 mail kernel: [15481.156522]  [<ffffffff81419a30>] ?=20
-gs_change+0x13/0x13
-Dec  3 15:12:14 mail kernel: [15481.159519] smbd            D=20
-000000010044b8d7     0  2058    823 0x00000004
-Dec  3 15:12:14 mail kernel: [15481.160544]  ffff88005cf37a08=20
-0000000000000082 ffff88005cf37938 ffffffff81371188
-Dec  3 15:12:14 mail kernel: [15481.161588]  ffff8802012e63c0=20
-ffff88005cf37fd8 ffff88005cf37fd8 ffff88005cf37fd8
-Dec  3 15:12:14 mail kernel: [15481.162658]  ffff880202d21c80=20
-ffff8802012e63c0 ffff8802012769c0 0000000000000246
-Dec  3 15:12:14 mail kernel: [15481.163708] Call Trace:
-Dec  3 15:12:14 mail kernel: [15481.164736]  [<ffffffff81371188>] ?=20
-sch_direct_xmit+0x68/0x1d0
-Dec  3 15:12:14 mail kernel: [15481.165781]  [<ffffffff81355a00>] ?=20
-dev_queue_xmit+0x200/0x680
-Dec  3 15:12:14 mail kernel: [15481.166805]  [<ffffffff81389200>] ?=20
-ip_forward_options+0x1c0/0x1c0
-Dec  3 15:12:14 mail kernel: [15481.167822]  [<ffffffff8138adbe>] ?=20
-ip_finish_output+0x18e/0x310
-Dec  3 15:12:14 mail kernel: [15481.168850]  [<ffffffff8101d639>] ?=20
-read_tsc+0x9/0x20
-Dec  3 15:12:14 mail kernel: [15481.169853]  [<ffffffff8108f14d>] ?=20
-ktime_get_ts+0xad/0xe0
-Dec  3 15:12:14 mail kernel: [15481.170849]  [<ffffffff81101d60>] ?=20
-__lock_page+0x70/0x70
-Dec  3 15:12:14 mail kernel: [15481.171858]  [<ffffffff814140bf>]=20
-schedule+0x3f/0x60
-Dec  3 15:12:14 mail kernel: [15481.172851]  [<ffffffff8141416f>]=20
-io_schedule+0x8f/0xd0
-Dec  3 15:12:14 mail kernel: [15481.173844]  [<ffffffff81101d6e>]=20
-sleep_on_page+0xe/0x20
-Dec  3 15:12:14 mail kernel: [15481.174836]  [<ffffffff8141491f>]=20
-__wait_on_bit+0x5f/0x90
-Dec  3 15:12:14 mail kernel: [15481.175845]  [<ffffffff81101f58>]=20
-wait_on_page_bit+0x78/0x80
-Dec  3 15:12:14 mail kernel: [15481.176842]  [<ffffffff81085790>] ?=20
-autoremove_wake_function+0x40/0x40
-Dec  3 15:12:14 mail kernel: [15481.177845]  [<ffffffff81102845>]=20
-grab_cache_page_write_begin+0x95/0xe0
-Dec  3 15:12:14 mail kernel: [15481.178872]  [<ffffffffa03a1150>] ?=20
-xfs_get_blocks_direct+0x20/0x20 [xfs]
-Dec  3 15:12:14 mail kernel: [15481.179888]  [<ffffffff811967b8>]=20
-block_write_begin+0x38/0xa0
-Dec  3 15:12:14 mail kernel: [15481.180904]  [<ffffffffa03a1213>]=20
-xfs_vm_write_begin+0x43/0x70 [xfs]
-Dec  3 15:12:14 mail kernel: [15481.181928]  [<ffffffff8110233c>]=20
-generic_file_buffered_write+0x10c/0x270
-Dec  3 15:12:14 mail kernel: [15481.182955]  [<ffffffffa03aad66>] ?=20
-xfs_iunlock+0x116/0x180 [xfs]
-Dec  3 15:12:14 mail kernel: [15481.183979]  [<ffffffffa03a7fef>]=20
-xfs_file_buffered_aio_write+0x10f/0x200 [xfs]
-Dec  3 15:12:14 mail kernel: [15481.185011]  [<ffffffffa03a8252>]=20
-xfs_file_aio_write+0x172/0x2a0 [xfs]
-Dec  3 15:12:14 mail kernel: [15481.186052]  [<ffffffff81162d62>]=20
-do_sync_write+0xd2/0x110
-Dec  3 15:12:14 mail kernel: [15481.187073]  [<ffffffff811f0fcc>] ?=20
-security_file_permission+0x2c/0xb0
-Dec  3 15:12:14 mail kernel: [15481.188096]  [<ffffffff81163311>] ?=20
-rw_verify_area+0x61/0xf0
-Dec  3 15:12:14 mail kernel: [15481.189127]  [<ffffffff8116366f>]=20
-vfs_write+0xaf/0x180
-Dec  3 15:12:14 mail kernel: [15481.190141]  [<ffffffff81163b12>]=20
-sys_pwrite64+0x82/0xb0
-Dec  3 15:12:14 mail kernel: [15481.191149]  [<ffffffff814178c2>]=20
-system_call_fastpath+0x16/0x1b
-Dec  3 15:12:14 mail kernel: [15481.194224] kworker/2:3     D=20
-0000000000000000     0  3713      2 0x00000000
-Dec  3 15:12:14 mail kernel: [15481.195273]  ffff880005d49cc0=20
-0000000000000046 0000000246417c40 0000000800000000
-Dec  3 15:12:14 mail kernel: [15481.196304]  ffff8802013eaac0=20
-ffff880005d49fd8 ffff880005d49fd8 ffff880005d49fd8
-Dec  3 15:12:14 mail kernel: [15481.197329]  ffff8802013eeae0=20
-ffff8802013eaac0 ffff880005d49c20 ffffffffa03a3fcb
-Dec  3 15:12:14 mail kernel: [15481.198345] Call Trace:
-Dec  3 15:12:14 mail kernel: [15481.199365]  [<ffffffffa03a3fcb>] ?=20
-xfs_buf_iorequest+0x6b/0x100 [xfs]
-Dec  3 15:12:14 mail kernel: [15481.200393]  [<ffffffffa03fa603>] ?=20
-xlog_bdstrat+0x23/0x60 [xfs]
-Dec  3 15:12:14 mail kernel: [15481.201408]  [<ffffffffa03fb287>] ?=20
-xlog_sync+0x1d7/0x3c0 [xfs]
-Dec  3 15:12:14 mail kernel: [15481.202419]  [<ffffffff814140bf>]=20
-schedule+0x3f/0x60
-Dec  3 15:12:14 mail kernel: [15481.203418]  [<ffffffffa03fe62b>]=20
-_xfs_log_force_lsn+0x29b/0x2d0 [xfs]
-Dec  3 15:12:14 mail kernel: [15481.204420]  [<ffffffff8105be20>] ?=20
-try_to_wake_up+0x290/0x290
-Dec  3 15:12:14 mail kernel: [15481.205438]  [<ffffffffa03fa23b>]=20
-xfs_trans_commit+0x29b/0x2b0 [xfs]
-Dec  3 15:12:14 mail kernel: [15481.206450]  [<ffffffffa03b4c60>] ?=20
-xfs_sync_inode_attr+0xf0/0xf0 [xfs]
-Dec  3 15:12:14 mail kernel: [15481.207466]  [<ffffffffa03aa162>]=20
-xfs_fs_log_dummy+0x62/0x90 [xfs]
-Dec  3 15:12:14 mail kernel: [15481.208486]  [<ffffffff8111ff90>] ?=20
-refresh_cpu_vm_stats+0x1a0/0x1a0
-Dec  3 15:12:14 mail kernel: [15481.209504]  [<ffffffffa03b4ce4>]=20
-xfs_sync_worker+0x84/0x90 [xfs]
-Dec  3 15:12:14 mail kernel: [15481.210518]  [<ffffffff8107f446>]=20
-process_one_work+0x116/0x4d0
-Dec  3 15:12:14 mail kernel: [15481.211531]  [<ffffffff8107fdde>]=20
-worker_thread+0x15e/0x350
-Dec  3 15:12:14 mail kernel: [15481.212559]  [<ffffffff8107fc80>] ?=20
-manage_workers.isra.29+0x230/0x230
-Dec  3 15:12:14 mail kernel: [15481.213573]  [<ffffffff81084e0c>]=20
-kthread+0x8c/0xa0
-Dec  3 15:12:14 mail kernel: [15481.214577]  [<ffffffff81419a34>]=20
-kernel_thread_helper+0x4/0x10
-Dec  3 15:12:14 mail kernel: [15481.215596]  [<ffffffff81084d80>] ?=20
-kthread_worker_fn+0x190/0x190
-Dec  3 15:12:14 mail kernel: [15481.216600]  [<ffffffff81419a30>] ?=20
-gs_change+0x13/0x13
-Dec  3 15:14:14 mail kernel: [15601.217226] xfsbufd/md127   D=20
-00000001004562e8     0   527      2 0x00000000
-Dec  3 15:14:14 mail kernel: [15601.218264]  ffff8801f912fab0=20
-0000000000000046 0000000100000000 0000000300000001
-Dec  3 15:14:14 mail kernel: [15601.219326]  ffff8802009dc740=20
-ffff8801f912ffd8 ffff8801f912ffd8 ffff8801f912ffd8
-Dec  3 15:14:14 mail kernel: [15601.220375]  ffffffff8180d020=20
-ffff8802009dc740 ffff8801f912fa10 ffffffff8104d003
-Dec  3 15:14:14 mail kernel: [15601.221411] Call Trace:
-Dec  3 15:14:14 mail kernel: [15601.222441]  [<ffffffff8104d003>] ?=20
-__wake_up+0x53/0x70
-Dec  3 15:14:14 mail kernel: [15601.223461]  [<ffffffff8114d48b>] ?=20
-kfree+0x3b/0x170
-Dec  3 15:14:14 mail kernel: [15601.224479]  [<ffffffffa01c732b>] ?=20
-plugger_unplug+0x3b/0x50 [md_mod]
-Dec  3 15:14:14 mail kernel: [15601.225507]  [<ffffffff8121b457>] ?=20
-blk_flush_plug_list+0xa7/0x250
-Dec  3 15:14:14 mail kernel: [15601.226516]  [<ffffffff814140bf>]=20
-schedule+0x3f/0x60
-Dec  3 15:14:14 mail kernel: [15601.227516]  [<ffffffffa0378209>]=20
-get_active_stripe+0x2e9/0x600 [raid456]
-Dec  3 15:14:14 mail kernel: [15601.228540]  [<ffffffff8105be20>] ?=20
-try_to_wake_up+0x290/0x290
-Dec  3 15:14:14 mail kernel: [15601.229552]  [<ffffffffa037be22>]=20
-make_request+0x192/0x430 [raid456]
-Dec  3 15:14:14 mail kernel: [15601.230569]  [<ffffffff81085750>] ?=20
-abort_exclusive_wait+0xb0/0xb0
-Dec  3 15:14:14 mail kernel: [15601.231588]  [<ffffffffa01c964a>]=20
-md_make_request+0xfa/0x240 [md_mod]
-Dec  3 15:14:14 mail kernel: [15601.232628]  [<ffffffff811047a5>] ?=20
-mempool_alloc_slab+0x15/0x20
-Dec  3 15:14:14 mail kernel: [15601.233654]  [<ffffffff81219917>]=20
-generic_make_request+0xc7/0x100
-Dec  3 15:14:14 mail kernel: [15601.234682]  [<ffffffff812199d7>]=20
-submit_bio+0x87/0x110
-Dec  3 15:14:14 mail kernel: [15601.235731]  [<ffffffffa03a3e6c>]=20
-_xfs_buf_ioapply+0x15c/0x1c0 [xfs]
-Dec  3 15:14:14 mail kernel: [15601.236772]  [<ffffffffa03a4d75>] ?=20
-xfs_bdstrat_cb+0x65/0x120 [xfs]
-Dec  3 15:14:14 mail kernel: [15601.237815]  [<ffffffffa03a3fb9>]=20
-xfs_buf_iorequest+0x59/0x100 [xfs]
-Dec  3 15:14:14 mail kernel: [15601.238874]  [<ffffffffa03a4d75>]=20
-xfs_bdstrat_cb+0x65/0x120 [xfs]
-Dec  3 15:14:14 mail kernel: [15601.239916]  [<ffffffffa03a4f3e>]=20
-xfsbufd+0x10e/0x170 [xfs]
-Dec  3 15:14:14 mail kernel: [15601.240949]  [<ffffffff8105be32>] ?=20
-default_wake_function+0x12/0x20
-Dec  3 15:14:14 mail kernel: [15601.241995]  [<ffffffffa03a4e30>] ?=20
-xfs_bdstrat_cb+0x120/0x120 [xfs]
-Dec  3 15:14:14 mail kernel: [15601.243026]  [<ffffffff81084e0c>]=20
-kthread+0x8c/0xa0
-Dec  3 15:14:14 mail kernel: [15601.244051]  [<ffffffff81419a34>]=20
-kernel_thread_helper+0x4/0x10
-Dec  3 15:14:14 mail kernel: [15601.245076]  [<ffffffff81084d80>] ?=20
-kthread_worker_fn+0x190/0x190
-Dec  3 15:14:14 mail kernel: [15601.246114]  [<ffffffff81419a30>] ?=20
-gs_change+0x13/0x13
-Dec  3 15:14:14 mail kernel: [15601.249209] md127_resync    D=20
-00000001004562fa     0   529      2 0x00000000
-Dec  3 15:14:14 mail kernel: [15601.250259]  ffff8801f9073b80=20
-0000000000000046 0000000100000000 ffffffff81233ce7
-Dec  3 15:14:14 mail kernel: [15601.251316]  ffff8802013e8720=20
-ffff8801f9073fd8 ffff8801f9073fd8 ffff8801f9073fd8
-Dec  3 15:14:14 mail kernel: [15601.252392]  ffff880202cb4e60=20
-ffff8802013e8720 ffff880200b70138 ffff880004bff300
-Dec  3 15:14:14 mail kernel: [15601.253459] Call Trace:
-Dec  3 15:14:14 mail kernel: [15601.254516]  [<ffffffff81233ce7>] ?=20
-kobject_put+0x27/0x60
-Dec  3 15:14:14 mail kernel: [15601.255590]  [<ffffffff8121b913>] ?=20
-blk_queue_bio+0x2c3/0x410
-Dec  3 15:14:14 mail kernel: [15601.256642]  [<ffffffff814171a6>] ?=20
-retint_kernel+0x26/0x30
-Dec  3 15:14:14 mail kernel: [15601.257679]  [<ffffffff814140bf>]=20
-schedule+0x3f/0x60
-Dec  3 15:14:14 mail kernel: [15601.258721]  [<ffffffffa0378209>]=20
-get_active_stripe+0x2e9/0x600 [raid456]
-Dec  3 15:14:14 mail kernel: [15601.259756]  [<ffffffff8105be20>] ?=20
-try_to_wake_up+0x290/0x290
-Dec  3 15:14:14 mail kernel: [15601.260792]  [<ffffffffa037559a>]=20
-sync_request+0x35a/0x370 [raid456]
-Dec  3 15:14:14 mail kernel: [15601.261838]  [<ffffffffa01c9a08>] ?=20
-is_mddev_idle+0x128/0x140 [md_mod]
-Dec  3 15:14:14 mail kernel: [15601.262867]  [<ffffffffa01cd2bf>]=20
-md_do_sync+0x7ff/0xc70 [md_mod]
-Dec  3 15:14:14 mail kernel: [15601.263895]  [<ffffffff81085750>] ?=20
-abort_exclusive_wait+0xb0/0xb0
-Dec  3 15:14:14 mail kernel: [15601.264926]  [<ffffffff810748cb>] ?=20
-recalc_sigpending+0x1b/0x50
-Dec  3 15:14:14 mail kernel: [15601.265972]  [<ffffffffa01c9dce>]=20
-md_thread+0x10e/0x140 [md_mod]
-Dec  3 15:14:14 mail kernel: [15601.267002]  [<ffffffffa01c9cc0>] ?=20
-md_register_thread+0x110/0x110 [md_mod]
-Dec  3 15:14:14 mail kernel: [15601.268033]  [<ffffffff81084e0c>]=20
-kthread+0x8c/0xa0
-Dec  3 15:14:14 mail kernel: [15601.269074]  [<ffffffff81419a34>]=20
-kernel_thread_helper+0x4/0x10
-Dec  3 15:14:14 mail kernel: [15601.270103]  [<ffffffff81084d80>] ?=20
-kthread_worker_fn+0x190/0x190
-Dec  3 15:14:14 mail kernel: [15601.271132]  [<ffffffff81419a30>] ?=20
-gs_change+0x13/0x13
-Dec  3 15:14:14 mail kernel: [15601.274249] loop0           D=20
-000000010044b6c5     0  1729      2 0x00000000
-Dec  3 15:14:14 mail kernel: [15601.275320]  ffff8801f9b31b30=20
-0000000000000046 0000000000000000 0000000000000000
-Dec  3 15:14:14 mail kernel: [15601.276385]  ffff880200950e40=20
-ffff8801f9b31fd8 ffff8801f9b31fd8 ffff8801f9b31fd8
-Dec  3 15:14:14 mail kernel: [15601.277454]  ffff880202cb7200=20
-ffff880200950e40 0000000000000002 ffff8801f9b31b78
-Dec  3 15:14:14 mail kernel: [15601.278536] Call Trace:
-Dec  3 15:14:14 mail kernel: [15601.279594]  [<ffffffff81101a55>] ?=20
-find_get_pages_tag+0x125/0x150
-Dec  3 15:14:14 mail kernel: [15601.280671]  [<ffffffff8110e205>] ?=20
-pagevec_lookup_tag+0x25/0x40
-Dec  3 15:14:14 mail kernel: [15601.281736]  [<ffffffff8101d639>] ?=20
-read_tsc+0x9/0x20
-Dec  3 15:14:14 mail kernel: [15601.282801]  [<ffffffff8108f14d>] ?=20
-ktime_get_ts+0xad/0xe0
-Dec  3 15:14:14 mail kernel: [15601.283840]  [<ffffffff81101d60>] ?=20
-__lock_page+0x70/0x70
-Dec  3 15:14:14 mail kernel: [15601.284870]  [<ffffffff814140bf>]=20
-schedule+0x3f/0x60
-Dec  3 15:14:14 mail kernel: [15601.285902]  [<ffffffff8141416f>]=20
-io_schedule+0x8f/0xd0
-Dec  3 15:14:14 mail kernel: [15601.286919]  [<ffffffff81101d6e>]=20
-sleep_on_page+0xe/0x20
-Dec  3 15:14:14 mail kernel: [15601.287924]  [<ffffffff8141491f>]=20
-__wait_on_bit+0x5f/0x90
-Dec  3 15:14:14 mail kernel: [15601.288938]  [<ffffffff81101f58>]=20
-wait_on_page_bit+0x78/0x80
-Dec  3 15:14:14 mail kernel: [15601.289944]  [<ffffffff81085790>] ?=20
-autoremove_wake_function+0x40/0x40
-Dec  3 15:14:14 mail kernel: [15601.290953]  [<ffffffff811020cc>]=20
-filemap_fdatawait_range+0x10c/0x1a0
-Dec  3 15:14:14 mail kernel: [15601.291972]  [<ffffffff811030c8>]=20
-filemap_write_and_wait_range+0x68/0x80
-Dec  3 15:14:14 mail kernel: [15601.292985]  [<ffffffffa03a7234>]=20
-xfs_file_fsync+0x54/0x340 [xfs]
-Dec  3 15:14:14 mail kernel: [15601.293993]  [<ffffffff8119148b>]=20
-vfs_fsync+0x2b/0x40
-Dec  3 15:14:14 mail kernel: [15601.294993]  [<ffffffffa04dacf2>]=20
-do_bio_filebacked+0x1b2/0x320 [loop]
-Dec  3 15:14:14 mail kernel: [15601.296022]  [<ffffffffa050efac>] ?=20
-end_workqueue_bio+0x9c/0xa0 [btrfs]
-Dec  3 15:14:14 mail kernel: [15601.297029]  [<ffffffffa04daf1b>]=20
-loop_thread+0xbb/0x260 [loop]
-Dec  3 15:14:14 mail kernel: [15601.298032]  [<ffffffff81085750>] ?=20
-abort_exclusive_wait+0xb0/0xb0
-Dec  3 15:14:14 mail kernel: [15601.299049]  [<ffffffffa04dae60>] ?=20
-do_bio_filebacked+0x320/0x320 [loop]
-Dec  3 15:14:14 mail kernel: [15601.300057]  [<ffffffff81084e0c>]=20
-kthread+0x8c/0xa0
-Dec  3 15:14:14 mail kernel: [15601.301063]  [<ffffffff81419a34>]=20
-kernel_thread_helper+0x4/0x10
-Dec  3 15:14:14 mail kernel: [15601.302084]  [<ffffffff81084d80>] ?=20
-kthread_worker_fn+0x190/0x190
-Dec  3 15:14:14 mail kernel: [15601.303093]  [<ffffffff81419a30>] ?=20
-gs_change+0x13/0x13
-Dec  3 15:14:14 mail kernel: [15601.306162] btrfs-transacti D=20
-ffff8801f9ab7200     0  1756      2 0x00000000
-Dec  3 15:14:14 mail kernel: [15601.307205]  ffff8801e7533bc0=20
-0000000000000046 ffff88020fc93400 0000000000000002
-Dec  3 15:14:14 mail kernel: [15601.308257]  ffff8801f9ab7200=20
-ffff8801e7533fd8 ffff8801e7533fd8 ffff8801e7533fd8
-Dec  3 15:14:14 mail kernel: [15601.309327]  ffff880200950e40=20
-ffff8801f9ab7200 ffff8801e7533b10 0000000081051ae2
-Dec  3 15:14:14 mail kernel: [15601.310384] Call Trace:
-Dec  3 15:14:14 mail kernel: [15601.311427]  [<ffffffff8105ad36>] ?=20
-ttwu_do_activate.constprop.172+0x66/0x70
-Dec  3 15:14:14 mail kernel: [15601.312509]  [<ffffffff8105bd6e>] ?=20
-try_to_wake_up+0x1de/0x290
-Dec  3 15:14:14 mail kernel: [15601.313568]  [<ffffffff814140bf>]=20
-schedule+0x3f/0x60
-Dec  3 15:14:14 mail kernel: [15601.314612]  [<ffffffff814147d5>]=20
-schedule_timeout+0x305/0x390
-Dec  3 15:14:14 mail kernel: [15601.315658]  [<ffffffff8104d003>] ?=20
-__wake_up+0x53/0x70
-Dec  3 15:14:14 mail kernel: [15601.316680]  [<ffffffff81413348>]=20
-wait_for_common+0xc8/0x160
-Dec  3 15:14:14 mail kernel: [15601.317699]  [<ffffffff8105be20>] ?=20
-try_to_wake_up+0x290/0x290
-Dec  3 15:14:14 mail kernel: [15601.318730]  [<ffffffff814133fd>]=20
-wait_for_completion+0x1d/0x20
-Dec  3 15:14:14 mail kernel: [15601.319745]  [<ffffffffa050f0bb>]=20
-write_dev_flush+0x4b/0x140 [btrfs]
-Dec  3 15:14:14 mail kernel: [15601.320760]  [<ffffffffa0511086>]=20
-write_all_supers+0x6f6/0x800 [btrfs]
-Dec  3 15:14:14 mail kernel: [15601.321791]  [<ffffffffa05111a3>]=20
-write_ctree_super+0x13/0x20 [btrfs]
-Dec  3 15:14:14 mail kernel: [15601.322809]  [<ffffffffa05164dd>]=20
-btrfs_commit_transaction+0x63d/0x880 [btrfs]
-Dec  3 15:14:14 mail kernel: [15601.323831]  [<ffffffff81085750>] ?=20
-abort_exclusive_wait+0xb0/0xb0
-Dec  3 15:14:14 mail kernel: [15601.324855]  [<ffffffffa0516b74>] ?=20
-start_transaction+0x94/0x2b0 [btrfs]
-Dec  3 15:14:14 mail kernel: [15601.325894]  [<ffffffffa050ed4d>]=20
-transaction_kthread+0x26d/0x290 [btrfs]
-Dec  3 15:14:14 mail kernel: [15601.326918]  [<ffffffffa050eae0>] ?=20
-btrfs_congested_fn+0xd0/0xd0 [btrfs]
-Dec  3 15:14:14 mail kernel: [15601.327937]  [<ffffffff81084e0c>]=20
-kthread+0x8c/0xa0
-Dec  3 15:14:14 mail kernel: [15601.328963]  [<ffffffff81419a34>]=20
-kernel_thread_helper+0x4/0x10
-Dec  3 15:14:14 mail kernel: [15601.329979]  [<ffffffff81084d80>] ?=20
-kthread_worker_fn+0x190/0x190
-Dec  3 15:14:14 mail kernel: [15601.330995]  [<ffffffff81419a30>] ?=20
-gs_change+0x13/0x13
-Dec  3 15:14:14 mail kernel: [15601.334083] flush-9:127     D=20
-00000000a01fc200     0  1891      2 0x00000000
-Dec  3 15:14:14 mail kernel: [15601.335141]  ffff880171771540=20
-0000000000000046 0000000100000000 0000000300000001
-Dec  3 15:14:14 mail kernel: [15601.336194]  ffff8802009d9c80=20
-ffff880171771fd8 ffff880171771fd8 ffff880171771fd8
-Dec  3 15:14:14 mail kernel: [15601.337252]  ffff8802009dc740=20
-ffff8802009d9c80 ffff8801717714a0 ffffffff8104d003
-Dec  3 15:14:14 mail kernel: [15601.338304] Call Trace:
-Dec  3 15:14:14 mail kernel: [15601.339347]  [<ffffffff8104d003>] ?=20
-__wake_up+0x53/0x70
-Dec  3 15:14:14 mail kernel: [15601.340376]  [<ffffffff8114d48b>] ?=20
-kfree+0x3b/0x170
-Dec  3 15:14:14 mail kernel: [15601.341398]  [<ffffffffa01c732b>] ?=20
-plugger_unplug+0x3b/0x50 [md_mod]
-Dec  3 15:14:14 mail kernel: [15601.342432]  [<ffffffff8121b457>] ?=20
-blk_flush_plug_list+0xa7/0x250
-Dec  3 15:14:14 mail kernel: [15601.343453]  [<ffffffff814140bf>]=20
-schedule+0x3f/0x60
-Dec  3 15:14:14 mail kernel: [15601.344460]  [<ffffffffa0378209>]=20
-get_active_stripe+0x2e9/0x600 [raid456]
-Dec  3 15:14:14 mail kernel: [15601.345487]  [<ffffffffa01c6400>] ?=20
-md_wakeup_thread+0x10/0x30 [md_mod]
-Dec  3 15:14:14 mail kernel: [15601.346503]  [<ffffffff8105be20>] ?=20
-try_to_wake_up+0x290/0x290
-Dec  3 15:14:14 mail kernel: [15601.347519]  [<ffffffffa037be22>]=20
-make_request+0x192/0x430 [raid456]
-Dec  3 15:14:14 mail kernel: [15601.348555]  [<ffffffff81085750>] ?=20
-abort_exclusive_wait+0xb0/0xb0
-Dec  3 15:14:14 mail kernel: [15601.348559]  [<ffffffffa01c964a>]=20
-md_make_request+0xfa/0x240 [md_mod]
-Dec  3 15:14:14 mail kernel: [15601.348561]  [<ffffffff81219917>]=20
-generic_make_request+0xc7/0x100
-Dec  3 15:14:14 mail kernel: [15601.348563]  [<ffffffff812199d7>]=20
-submit_bio+0x87/0x110
-Dec  3 15:14:14 mail kernel: [15601.348565]  [<ffffffff8118b300>] ?=20
-__mark_inode_dirty+0x40/0x230
-Dec  3 15:14:14 mail kernel: [15601.348571]  [<ffffffffa03a16f7>]=20
-xfs_submit_ioend_bio.isra.11+0x57/0x80 [xfs]
-Dec  3 15:14:14 mail kernel: [15601.348578]  [<ffffffffa03a180e>]=20
-xfs_submit_ioend+0xee/0x110 [xfs]
-Dec  3 15:14:14 mail kernel: [15601.348585]  [<ffffffffa03a1a65>]=20
-xfs_vm_writepage+0x235/0x530 [xfs]
-Dec  3 15:14:14 mail kernel: [15601.348588]  [<ffffffff8110b75a>]=20
-__writepage+0x1a/0x50
-Dec  3 15:14:14 mail kernel: [15601.348591]  [<ffffffff8110bc21>]=20
-write_cache_pages+0x1e1/0x4e0
-Dec  3 15:14:14 mail kernel: [15601.348599]  [<ffffffffa03bab27>] ?=20
-kmem_alloc+0x67/0xe0 [xfs]
-Dec  3 15:14:14 mail kernel: [15601.348602]  [<ffffffff8110b740>] ?=20
-bdi_set_max_ratio+0x90/0x90
-Dec  3 15:14:14 mail kernel: [15601.348606]  [<ffffffff8110bf6d>]=20
-generic_writepages+0x4d/0x70
-Dec  3 15:14:14 mail kernel: [15601.348612]  [<ffffffffa03a06ad>]=20
-xfs_vm_writepages+0x4d/0x60 [xfs]
-Dec  3 15:14:14 mail kernel: [15601.348615]  [<ffffffff8110d6a4>]=20
-do_writepages+0x24/0x40
-Dec  3 15:14:14 mail kernel: [15601.348618]  [<ffffffff8118b76f>]=20
-writeback_single_inode+0x10f/0x3f0
-Dec  3 15:14:14 mail kernel: [15601.348621]  [<ffffffff8118be4a>]=20
-writeback_sb_inodes+0x1aa/0x270
-Dec  3 15:14:14 mail kernel: [15601.348624]  [<ffffffff8118bfae>]=20
-__writeback_inodes_wb+0x9e/0xd0
-Dec  3 15:14:14 mail kernel: [15601.348627]  [<ffffffff8118c5cb>]=20
-wb_writeback+0x37b/0x3b0
-Dec  3 15:14:14 mail kernel: [15601.348631]  [<ffffffff8117d562>] ?=20
-get_nr_inodes+0x52/0x70
-Dec  3 15:14:14 mail kernel: [15601.348634]  [<ffffffff8117e262>] ?=20
-get_nr_dirty_inodes+0x52/0x80
-Dec  3 15:14:14 mail kernel: [15601.348636]  [<ffffffff8118c69f>]=20
-wb_check_old_data_flush+0x9f/0xb0
-Dec  3 15:14:14 mail kernel: [15601.348639]  [<ffffffff8118db7c>]=20
-wb_do_writeback+0x19c/0x230
-Dec  3 15:14:14 mail kernel: [15601.348642]  [<ffffffff81414643>] ?=20
-schedule_timeout+0x173/0x390
-Dec  3 15:14:14 mail kernel: [15601.348645]  [<ffffffff81071b10>] ?=20
-init_timer_deferrable_key+0x30/0x30
-Dec  3 15:14:14 mail kernel: [15601.348648]  [<ffffffff8118dc9c>]=20
-bdi_writeback_thread+0x8c/0x340
-Dec  3 15:14:14 mail kernel: [15601.348651]  [<ffffffff8118dc10>] ?=20
-wb_do_writeback+0x230/0x230
-Dec  3 15:14:14 mail kernel: [15601.348654]  [<ffffffff81084e0c>]=20
-kthread+0x8c/0xa0
-Dec  3 15:14:14 mail kernel: [15601.348657]  [<ffffffff81419a34>]=20
-kernel_thread_helper+0x4/0x10
-Dec  3 15:14:14 mail kernel: [15601.348660]  [<ffffffff81084d80>] ?=20
-kthread_worker_fn+0x190/0x190
-Dec  3 15:14:14 mail kernel: [15601.348663]  [<ffffffff81419a30>] ?=20
-gs_change+0x13/0x13
-Dec  3 15:14:14 mail kernel: [15601.348669] smbd            D=20
-000000010044b8d7     0  2058    823 0x00000004
-Dec  3 15:14:14 mail kernel: [15601.348672]  ffff88005cf37a08=20
-0000000000000082 ffff88005cf37938 ffffffff81371188
-Dec  3 15:14:14 mail kernel: [15601.348676]  ffff8802012e63c0=20
-ffff88005cf37fd8 ffff88005cf37fd8 ffff88005cf37fd8
-Dec  3 15:14:14 mail kernel: [15601.348680]  ffff880202d21c80=20
-ffff8802012e63c0 ffff8802012769c0 0000000000000246
-Dec  3 15:14:14 mail kernel: [15601.348684] Call Trace:
-Dec  3 15:14:14 mail kernel: [15601.348687]  [<ffffffff81371188>] ?=20
-sch_direct_xmit+0x68/0x1d0
-Dec  3 15:14:14 mail kernel: [15601.348691]  [<ffffffff81355a00>] ?=20
-dev_queue_xmit+0x200/0x680
-Dec  3 15:14:14 mail kernel: [15601.348694]  [<ffffffff81389200>] ?=20
-ip_forward_options+0x1c0/0x1c0
-Dec  3 15:14:14 mail kernel: [15601.348697]  [<ffffffff8138adbe>] ?=20
-ip_finish_output+0x18e/0x310
-Dec  3 15:14:14 mail kernel: [15601.348700]  [<ffffffff8101d639>] ?=20
-read_tsc+0x9/0x20
-Dec  3 15:14:14 mail kernel: [15601.348703]  [<ffffffff8108f14d>] ?=20
-ktime_get_ts+0xad/0xe0
-Dec  3 15:14:14 mail kernel: [15601.348705]  [<ffffffff81101d60>] ?=20
-__lock_page+0x70/0x70
-Dec  3 15:14:14 mail kernel: [15601.348708]  [<ffffffff814140bf>]=20
-schedule+0x3f/0x60
-Dec  3 15:14:14 mail kernel: [15601.348711]  [<ffffffff8141416f>]=20
-io_schedule+0x8f/0xd0
-Dec  3 15:14:14 mail kernel: [15601.348714]  [<ffffffff81101d6e>]=20
-sleep_on_page+0xe/0x20
-Dec  3 15:14:14 mail kernel: [15601.348716]  [<ffffffff8141491f>]=20
-__wait_on_bit+0x5f/0x90
-Dec  3 15:14:14 mail kernel: [15601.348719]  [<ffffffff81101f58>]=20
-wait_on_page_bit+0x78/0x80
-Dec  3 15:14:14 mail kernel: [15601.348722]  [<ffffffff81085790>] ?=20
-autoremove_wake_function+0x40/0x40
-Dec  3 15:14:14 mail kernel: [15601.348725]  [<ffffffff81102845>]=20
-grab_cache_page_write_begin+0x95/0xe0
-Dec  3 15:14:14 mail kernel: [15601.348732]  [<ffffffffa03a1150>] ?=20
-xfs_get_blocks_direct+0x20/0x20 [xfs]
-Dec  3 15:14:14 mail kernel: [15601.348736]  [<ffffffff811967b8>]=20
-block_write_begin+0x38/0xa0
-Dec  3 15:14:14 mail kernel: [15601.348743]  [<ffffffffa03a1213>]=20
-xfs_vm_write_begin+0x43/0x70 [xfs]
-Dec  3 15:14:14 mail kernel: [15601.348746]  [<ffffffff8110233c>]=20
-generic_file_buffered_write+0x10c/0x270
-Dec  3 15:14:14 mail kernel: [15601.348754]  [<ffffffffa03aad66>] ?=20
-xfs_iunlock+0x116/0x180 [xfs]
-Dec  3 15:14:14 mail kernel: [15601.348761]  [<ffffffffa03a7fef>]=20
-xfs_file_buffered_aio_write+0x10f/0x200 [xfs]
-Dec  3 15:14:14 mail kernel: [15601.348768]  [<ffffffffa03a8252>]=20
-xfs_file_aio_write+0x172/0x2a0 [xfs]
-Dec  3 15:14:14 mail kernel: [15601.348772]  [<ffffffff81162d62>]=20
-do_sync_write+0xd2/0x110
-Dec  3 15:14:14 mail kernel: [15601.348775]  [<ffffffff811f0fcc>] ?=20
-security_file_permission+0x2c/0xb0
-Dec  3 15:14:14 mail kernel: [15601.348778]  [<ffffffff81163311>] ?=20
-rw_verify_area+0x61/0xf0
-Dec  3 15:14:14 mail kernel: [15601.348781]  [<ffffffff8116366f>]=20
-vfs_write+0xaf/0x180
-Dec  3 15:14:14 mail kernel: [15601.348784]  [<ffffffff81163b12>]=20
-sys_pwrite64+0x82/0xb0
-Dec  3 15:14:14 mail kernel: [15601.348787]  [<ffffffff814178c2>]=20
-system_call_fastpath+0x16/0x1b
+Thanks.
 
+[1] http://btrfs.ipv5.de/index.php?title=Problem_FAQ#Defragmenting_a_directory_doesn.27t_work
 
-On 2/12/2011 4:01 =CE=BC=CE=BC, Chris Mason wrote:
-> On Fri, Dec 02, 2011 at 02:46:48PM +0100, Tobias wrote:
->> Hi Chris!
->>
->> Am 01.12.2011 19:41, schrieb Chris Mason:
->>> So, the transaction close is in btrfs_evict_inode, which sounds lik=
-e a
->>> deadlock recently fixed by this commit:
->>>
->>> http://git.kernel.org/?p=3Dlinux/kernel/git/mason/linux-btrfs.git;a=
-=3Dcommit;h=3Daa38a711a893accf5b5192f3d705a120deaa81e0
->>>
->>> If you pull the for-linus branch from today, hopefully the problem =
-will
->>> be gone.
->>>
->> This looks very good. With this Kernel i still have some hangs, but
->> only in rsync, only under high load and they don't lock up the
->> system - so i guess it's ok now.
->>
->> Thank You very much for Your help!
-> Glad to hear this is working.  All the credit to Miao, who found the
-> deadlock.
->
->> When will this patches go into the main Kernel?
-> Linus pulled them in yesterday.
->
-> -chris
->
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-btrfs=
-" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
---
-To unsubscribe from this list: send the line "unsubscribe linux-btrfs" =
-in
-the body of a message to majordomo@vger.kernel.org
-More majordomo info at  http://vger.kernel.org/majordomo-info.html
+[ 2445.721245] ------------[ cut here ]------------
+[ 2445.721308] WARNING: at fs/btrfs/extent-tree.c:4740 __btrfs_free_extent+0x64f/0x700 [btrfs]()
+[ 2445.721315] Hardware name: PR210
+[ 2445.721319] Modules linked in: snd_seq_dummy snd_seq_oss snd_seq_midi_event snd_seq snd_seq_device snd_pcm_oss snd_mixer_oss ipv6 btrfs cpufreq_ondemand powernow_k8 freq_table mperf lp ppdev parport_pc parport fuse radeon ttm drm_kms_helper snd_hda_codec_hdmi drm snd_hda_codec_realtek snd_hda_intel snd_hda_codec agpgart sdhci_pci r8169 joydev snd_hwdep snd_pcm sdhci snd_timer i2c_algo_bit mmc_core i2c_piix4 video snd processor i2c_core battery mii evdev thermal ac button psmouse thermal_sys sg shpchp k8temp hwmon soundcore snd_page_alloc serio_raw
+[ 2445.721417] Pid: 2624, comm: btrfs-endio-wri Tainted: G        W    3.2.0-rc3+ #5
+[ 2445.721423] Call Trace:
+[ 2445.721441]  [<ffffffff8104fc7f>] warn_slowpath_common+0x7f/0xc0
+[ 2445.721450]  [<ffffffff8104fcda>] warn_slowpath_null+0x1a/0x20
+[ 2445.721475]  [<ffffffffa0426a3f>] __btrfs_free_extent+0x64f/0x700 [btrfs]
+[ 2445.721511]  [<ffffffffa04519fc>] ? btrfs_item_offset+0x3c/0x90 [btrfs]
+[ 2445.721537]  [<ffffffffa042a3a3>] run_clustered_refs+0x213/0x840 [btrfs]
+[ 2445.721548]  [<ffffffff8103e6cb>] ? __wake_up+0x4b/0x60
+[ 2445.721576]  [<ffffffffa0478700>] ? btrfs_find_ref_cluster+0xe0/0x190 [btrfs]
+[ 2445.721602]  [<ffffffffa042aa90>] btrfs_run_delayed_refs+0xc0/0x200 [btrfs]
+[ 2445.721631]  [<ffffffffa043bd68>] __btrfs_end_transaction+0xb8/0x230 [btrfs]
+[ 2445.721659]  [<ffffffffa043bf55>] btrfs_end_transaction+0x15/0x20 [btrfs]
+[ 2445.721688]  [<ffffffffa0441bbb>] btrfs_finish_ordered_io+0x16b/0x320 [btrfs]
+[ 2445.721700]  [<ffffffff8105e8aa>] ? try_to_del_timer_sync+0x8a/0xe0
+[ 2445.721729]  [<ffffffffa0441dc1>] btrfs_writepage_end_io_hook+0x51/0xa0 [btrfs]
+[ 2445.721756]  [<ffffffffa0476ca2>] end_compressed_bio_write+0x82/0xf0 [btrfs]
+[ 2445.721766]  [<ffffffff811598bd>] bio_endio+0x1d/0x40
+[ 2445.721792]  [<ffffffffa0434914>] end_workqueue_fn+0xf4/0x130 [btrfs]
+[ 2445.721819]  [<ffffffffa04645e4>] worker_loop+0xb4/0x500 [btrfs]
+[ 2445.721847]  [<ffffffffa0464530>] ? btrfs_queue_worker+0x300/0x300 [btrfs]
+[ 2445.721875]  [<ffffffffa0464530>] ? btrfs_queue_worker+0x300/0x300 [btrfs]
+[ 2445.721884]  [<ffffffff810709c6>] kthread+0x96/0xa0
+[ 2445.721893]  [<ffffffff817fd034>] kernel_thread_helper+0x4/0x10
+[ 2445.721902]  [<ffffffff81070930>] ? kthread_worker_fn+0x190/0x190
+[ 2445.721909]  [<ffffffff817fd030>] ? gs_change+0xb/0xb
+[ 2445.721915] ---[ end trace d59ffe0d1e39faba ]---
+[ 2445.721922] btrfs unable to find ref byte nr 5125677056 parent 0 root 5  owner 46703 offset 0
+[ 2445.721947] BUG: unable to handle kernel NULL pointer dereference at           (null)
+[ 2445.722011] IP: [<ffffffffa045c11e>] map_private_extent_buffer+0xe/0x150 [btrfs]
+[ 2445.722011] PGD 5ba83067 PUD 5ba7b067 PMD 0
+[ 2445.722011] Oops: 0000 [#1] SMP
+[ 2445.722011] CPU 0
+[ 2445.722011] Modules linked in: snd_seq_dummy snd_seq_oss snd_seq_midi_event snd_seq snd_seq_device snd_pcm_oss snd_mixer_oss ipv6 btrfs cpufreq_ondemand powernow_k8 freq_table mperf lp ppdev parport_pc parport fuse radeon ttm drm_kms_helper snd_hda_codec_hdmi drm snd_hda_codec_realtek snd_hda_intel snd_hda_codec agpgart sdhci_pci r8169 joydev snd_hwdep snd_pcm sdhci snd_timer i2c_algo_bit mmc_core i2c_piix4 video snd processor i2c_core battery mii evdev thermal ac button psmouse thermal_sys sg shpchp k8temp hwmon soundcore snd_page_alloc serio_raw
+[ 2445.722011]
+[ 2445.722011] Pid: 2624, comm: btrfs-endio-wri Tainted: G        W    3.2.0-rc3+ #5 Micro-Star International PR210/MS-1222
+[ 2445.722011] RIP: 0010:[<ffffffffa045c11e>]  [<ffffffffa045c11e>] map_private_extent_buffer+0xe/0x150 [btrfs]
+[ 2445.722011] RSP: 0018:ffff8800316ab9c0  EFLAGS: 00010286
+[ 2445.722011] RAX: 0000000000000000 RBX: 0000000000000065 RCX: ffff8800316aba00
+[ 2445.722011] RDX: 0000000000000004 RSI: 000000000000007a RDI: 0000000000000000
+[ 2445.722011] RBP: ffff8800316ab9e0 R08: ffff8800316ab9f8 R09: ffff8800316ab9f0
+[ 2445.722011] R10: 0000000000000000 R11: 0000000000000000 R12: 000000000000007a
+[ 2445.722011] R13: 0000000000000000 R14: 0000000000000065 R15: 0000000000000000
+[ 2445.722011] FS:  00007f3b4665a780(0000) GS:ffff88007bc00000(0000) knlGS:00000000f6ff56d0
+[ 2445.722011] CS:  0010 DS: 0000 ES: 0000 CR0: 000000008005003b
+[ 2445.722011] CR2: 0000000000000000 CR3: 000000005ba84000 CR4: 00000000000006f0
+[ 2445.722011] DR0: 0000000000000000 DR1: 0000000000000000 DR2: 0000000000000000
+[ 2445.722011] DR3: 0000000000000000 DR6: 00000000ffff0ff0 DR7: 0000000000000400
+[ 2445.722011] Process btrfs-endio-wri (pid: 2624, threadinfo ffff8800316aa000, task ffff8800449171a0)
+[ 2445.722011] Stack:
+[ 2445.722011]  0000000000000000 0000000000000000 ffff8800316aba30 0000000000000065
+[ 2445.722011]  ffff8800316aba30 ffffffffa0451b1c ffff8800316aba00 ffff880074a94000
+[ 2445.722011]  0000000000000005 000000013183a000 0000000000000000 ffff880074a94000
+[ 2445.722011] Call Trace:
+[ 2445.722011]  [<ffffffffa0451b1c>] btrfs_item_size+0x3c/0x90 [btrfs]
+[ 2445.722011]  [<ffffffffa0426651>] __btrfs_free_extent+0x261/0x700 [btrfs]
+[ 2445.722011]  [<ffffffffa04519fc>] ? btrfs_item_offset+0x3c/0x90 [btrfs]
+[ 2445.722011]  [<ffffffffa042a3a3>] run_clustered_refs+0x213/0x840 [btrfs]
+[ 2445.722011]  [<ffffffff8103e6cb>] ? __wake_up+0x4b/0x60
+[ 2445.722011]  [<ffffffffa0478700>] ? btrfs_find_ref_cluster+0xe0/0x190 [btrfs]
+[ 2445.722011]  [<ffffffffa042aa90>] btrfs_run_delayed_refs+0xc0/0x200 [btrfs]
+[ 2445.722011]  [<ffffffffa043bd68>] __btrfs_end_transaction+0xb8/0x230 [btrfs]
+[ 2445.722011]  [<ffffffffa043bf55>] btrfs_end_transaction+0x15/0x20 [btrfs]
+[ 2445.722011]  [<ffffffffa0441bbb>] btrfs_finish_ordered_io+0x16b/0x320 [btrfs]
+[ 2445.722011]  [<ffffffff8105e8aa>] ? try_to_del_timer_sync+0x8a/0xe0
+[ 2445.722011]  [<ffffffffa0441dc1>] btrfs_writepage_end_io_hook+0x51/0xa0 [btrfs]
+[ 2445.722011]  [<ffffffffa0476ca2>] end_compressed_bio_write+0x82/0xf0 [btrfs]
+[ 2445.722011]  [<ffffffff811598bd>] bio_endio+0x1d/0x40
+[ 2445.722011]  [<ffffffffa0434914>] end_workqueue_fn+0xf4/0x130 [btrfs]
+[ 2445.722011]  [<ffffffffa04645e4>] worker_loop+0xb4/0x500 [btrfs]
+[ 2445.722011]  [<ffffffffa0464530>] ? btrfs_queue_worker+0x300/0x300 [btrfs]
+[ 2445.722011]  [<ffffffffa0464530>] ? btrfs_queue_worker+0x300/0x300 [btrfs]
+[ 2445.722011]  [<ffffffff810709c6>] kthread+0x96/0xa0
+[ 2445.722011]  [<ffffffff817fd034>] kernel_thread_helper+0x4/0x10
+[ 2445.722011]  [<ffffffff81070930>] ? kthread_worker_fn+0x190/0x190
+[ 2445.722011]  [<ffffffff817fd030>] ? gs_change+0xb/0xb
+[ 2445.722011] Code: ff 41 89 dd e9 17 ff ff ff 48 8d 4e 01 48 89 b5 60 ff ff ff 48 89 4d 80 e9 d0 fc ff ff 55 48 89 e5 53 48 83 ec 18 66 66 66 66 90
+[ 2445.722011]  8b 1f 81 e3 ff 0f 00 00 48 8d 04 1e 4c 8d 54 10 ff 49 89 c3
+[ 2445.722011] RIP  [<ffffffffa045c11e>] map_private_extent_buffer+0xe/0x150 [btrfs]
+[ 2445.722011]  RSP <ffff8800316ab9c0>
+[ 2445.722011] CR2: 0000000000000000
+[ 2445.792409] ---[ end trace d59ffe0d1e39fabb ]---
+[ 2445.801004] ------------[ cut here ]------------
+[ 2445.801011] kernel BUG at fs/btrfs/inode.c:1667!
+[ 2445.801011] invalid opcode: 0000 [#2] SMP
+[ 2445.801011] CPU 0
+[ 2445.801011] Modules linked in: snd_seq_dummy snd_seq_oss snd_seq_midi_event snd_seq snd_seq_device snd_pcm_oss snd_mixer_oss ipv6 btrfs cpufreq_ondemand powernow_k8 freq_table mperf lp ppdev parport_pc parport fuse radeon ttm drm_kms_helper snd_hda_codec_hdmi drm snd_hda_codec_realtek snd_hda_intel snd_hda_codec agpgart sdhci_pci r8169 joydev snd_hwdep snd_pcm sdhci snd_timer i2c_algo_bit mmc_core i2c_piix4 video snd processor i2c_core battery mii evdev thermal ac button psmouse thermal_sys sg shpchp k8temp hwmon soundcore snd_page_alloc serio_raw
+[ 2445.801011]
+[ 2445.801011] Pid: 1596, comm: btrfs-endio-wri Tainted: G      D W    3.2.0-rc3+ #5 Micro-Star International PR210/MS-1222
+[ 2445.801011] RIP: 0010:[<ffffffffa0440ef6>]  [<ffffffffa0440ef6>] insert_reserved_file_extent.clone.41+0x276/0x280 [btrfs]
+[ 2445.801011] RSP: 0018:ffff880076c09c70  EFLAGS: 00010286
+[ 2445.801011] RAX: 00000000ffffffe4 RBX: ffff880074a942d0 RCX: 00000000002ef186
+[ 2445.801011] RDX: 00000000002ef185 RSI: 000060ff84000ba0 RDI: ffffea0001d2a500
+[ 2445.801011] RBP: ffff880076c09d00 R08: ffffffffa041a7ca R09: ffff880077057000
+[ 2445.801011] R10: ffffffffffffffe4 R11: 0000000000000000 R12: ffff880074a2d450
+[ 2445.801011] R13: 0000000000000000 R14: ffff880076cf2000 R15: ffff880037ea5048
+[ 2445.801011] FS:  00007f7cdb89e720(0000) GS:ffff88007bc00000(0000) knlGS:00000000f6ff56d0
+[ 2445.801011] CS:  0010 DS: 0000 ES: 0000 CR0: 000000008005003b
+[ 2445.801011] CR2: 00007f7cdb368cdb CR3: 0000000077097000 CR4: 00000000000006f0
+[ 2445.801011] DR0: 0000000000000000 DR1: 0000000000000000 DR2: 0000000000000000
+[ 2445.801011] DR3: 0000000000000000 DR6: 00000000ffff0ff0 DR7: 0000000000000400
+[ 2445.801011] Process btrfs-endio-wri (pid: 1596, threadinfo ffff880076c08000, task ffff880076ff6500)
+[ 2445.801011] Stack:
+[ 2445.801011]  02ff880076c09ca0 0000000000001000 00000001368d5000 0000000000002000
+[ 2445.801011]  ffff880076cf2000 0000000000000001 ffff880076c09cf0 ffffffffa043bff3
+[ 2445.801011]  ffffea00005c0f40 0000000000000010 ffff880076c09ce0 ffff880076cf2000
+[ 2445.801011] Call Trace:
+[ 2445.801011]  [<ffffffffa043bff3>] ? start_transaction+0x93/0x2a0 [btrfs]
+[ 2445.801011]  [<ffffffffa0441d22>] btrfs_finish_ordered_io+0x2d2/0x320 [btrfs]
+[ 2445.801011]  [<ffffffff8105e8aa>] ? try_to_del_timer_sync+0x8a/0xe0
+[ 2445.801011]  [<ffffffffa0441dc1>] btrfs_writepage_end_io_hook+0x51/0xa0 [btrfs]
+[ 2445.801011]  [<ffffffffa0476ca2>] end_compressed_bio_write+0x82/0xf0 [btrfs]
+[ 2445.801011]  [<ffffffff811598bd>] bio_endio+0x1d/0x40
+[ 2445.801011]  [<ffffffffa0434914>] end_workqueue_fn+0xf4/0x130 [btrfs]
+[ 2445.801011]  [<ffffffffa04645e4>] worker_loop+0xb4/0x500 [btrfs]
+[ 2445.801011]  [<ffffffffa0464530>] ? btrfs_queue_worker+0x300/0x300 [btrfs]
+[ 2445.801011]  [<ffffffffa0464530>] ? btrfs_queue_worker+0x300/0x300 [btrfs]
+[ 2445.801011]  [<ffffffff810709c6>] kthread+0x96/0xa0
+[ 2445.801011]  [<ffffffff817fd034>] kernel_thread_helper+0x4/0x10
+[ 2445.801011]  [<ffffffff81070930>] ? kthread_worker_fn+0x190/0x190
+[ 2445.801011]  [<ffffffff817fd030>] ? gs_change+0xb/0xb
+[ 2445.801011] Code: ff 0f 1f 40 00 41 80 bc 24 80 fe ff ff 84 75 a3 eb 9c 0f 1f 00 48 83 c4 68 b8 f4 ff ff ff 5b 41 5c 41 5d 41 5e 41 5f c9 c3 0f 0b <0f> 0b 0f 0b 66 0f 1f 44 00 00 55 48 89 e5 48 83 ec 20 48 89 5d
+[ 2445.801011] RIP  [<ffffffffa0440ef6>] insert_reserved_file_extent.clone.41+0x276/0x280 [btrfs]
+[ 2445.801011]  RSP <ffff880076c09c70>
+[ 2446.050997] ---[ end trace d59ffe0d1e39fabc ]---
+[ 2453.290312] ------------[ cut here ]------------
+[ 2453.291011] kernel BUG at fs/btrfs/extent-tree.c:5770!
+[ 2453.291011] invalid opcode: 0000 [#3] SMP
+[ 2453.291011] CPU 0
+[ 2453.291011] Modules linked in: snd_seq_dummy snd_seq_oss snd_seq_midi_event snd_seq snd_seq_device snd_pcm_oss snd_mixer_oss ipv6 btrfs cpufreq_ondemand powernow_k8 freq_table mperf lp ppdev parport_pc parport fuse radeon ttm drm_kms_helper snd_hda_codec_hdmi drm snd_hda_codec_realtek snd_hda_intel snd_hda_codec agpgart sdhci_pci r8169 joydev snd_hwdep snd_pcm sdhci snd_timer i2c_algo_bit mmc_core i2c_piix4 video snd processor i2c_core battery mii evdev thermal ac button psmouse thermal_sys sg shpchp k8temp hwmon soundcore snd_page_alloc serio_raw
+[ 2453.291011]
+[ 2453.291011] Pid: 1601, comm: btrfs-cleaner Tainted: G      D W    3.2.0-rc3+ #5 Micro-Star International PR210/MS-1222
+[ 2453.291011] RIP: 0010:[<ffffffffa042a9c3>]  [<ffffffffa042a9c3>] run_clustered_refs+0x833/0x840 [btrfs]
+[ 2453.291011] RSP: 0018:ffff880076c7d840  EFLAGS: 00010286
+[ 2453.291011] RAX: 00000000ffffffe4 RBX: ffff880040058d20 RCX: 0000000000000000
+[ 2453.291011] RDX: ffff88003418f118 RSI: 0000000000000286 RDI: 0000000000000000
+[ 2453.291011] RBP: ffff880076c7d930 R08: 0000000000000000 R09: 0000000001c3c000
+[ 2453.291011] R10: ffffffffffffffe4 R11: 0000000000000000 R12: ffff88003bb54b00
+[ 2453.291011] R13: ffff880056844cc0 R14: ffff880037ea60c0 R15: ffff880037ea6000
+[ 2453.291011] FS:  00007f5b49717740(0000) GS:ffff88007bc00000(0000) knlGS:00000000f6ff56d0
+[ 2453.291011] CS:  0010 DS: 0000 ES: 0000 CR0: 000000008005003b
+[ 2453.291011] CR2: 00007fa59204c008 CR3: 000000005a532000 CR4: 00000000000006f0
+[ 2453.291011] DR0: 0000000000000000 DR1: 0000000000000000 DR2: 0000000000000000
+[ 2453.291011] DR3: 0000000000000000 DR6: 00000000ffff0ff0 DR7: 0000000000000400
+[ 2453.291011] Process btrfs-cleaner (pid: 1601, threadinfo ffff880076c7c000, task ffff8800790cdeb0)
+[ 2453.291011] Stack:
+[ 2453.291011]  ffff8800128d86c0 ffff880021cfa5a0 0000000000000000 ffffffff8111bb0f
+[ 2453.291011]  ffff8800790cdeb0 0000000000000634 ffff880076cf2120 0000000000000020
+[ 2453.291011]  0000000000000000 00000000000005a5 000000000000060a 0000000000000005
+[ 2453.291011] Call Trace:
+[ 2453.291011]  [<ffffffff8111bb0f>] ? kmem_cache_alloc+0xcf/0x120
+[ 2453.291011]  [<ffffffffa042aa90>] btrfs_run_delayed_refs+0xc0/0x200 [btrfs]
+[ 2453.291011]  [<ffffffff817fa32e>] ? mutex_lock+0x1e/0x50
+[ 2453.291011]  [<ffffffffa043b4b7>] btrfs_commit_transaction+0x97/0x860 [btrfs]
+[ 2453.291011]  [<ffffffffa043ac27>] ? join_transaction.clone.24+0x27/0x230 [btrfs]
+[ 2453.291011]  [<ffffffff81070f10>] ? wake_up_bit+0x40/0x40
+[ 2453.291011]  [<ffffffffa0422acf>] may_commit_transaction+0x8f/0x100 [btrfs]
+[ 2453.291011]  [<ffffffffa0427a38>] ? get_alloc_profile+0x38/0x80 [btrfs]
+[ 2453.291011]  [<ffffffffa0428f7a>] reserve_metadata_bytes.clone.60+0x65a/0x6c0 [btrfs]
+[ 2453.291011]  [<ffffffffa041a7ca>] ? btrfs_free_path+0x2a/0x40 [btrfs]
+[ 2453.291011]  [<ffffffffa0429835>] btrfs_delalloc_reserve_metadata+0x115/0x1d0 [btrfs]
+[ 2453.291011]  [<ffffffffa04299fb>] btrfs_delalloc_reserve_space+0x3b/0x60 [btrfs]
+[ 2453.291011]  [<ffffffffa04681e5>] btrfs_defrag_file+0x465/0xc60 [btrfs]
+[ 2453.291011]  [<ffffffff8103e9da>] ? update_shares+0xca/0x100
+[ 2453.291011]  [<ffffffff812836ab>] ? radix_tree_lookup+0xb/0x10
+[ 2453.291011]  [<ffffffffa044a994>] btrfs_run_defrag_inodes+0x184/0x230 [btrfs]
+[ 2453.291011]  [<ffffffffa0434747>] cleaner_kthread+0x177/0x190 [btrfs]
+[ 2453.291011]  [<ffffffffa04345d0>] ? transaction_kthread+0x280/0x280 [btrfs]
+[ 2453.291011]  [<ffffffffa04345d0>] ? transaction_kthread+0x280/0x280 [btrfs]
+[ 2453.291011]  [<ffffffff810709c6>] kthread+0x96/0xa0
+[ 2453.291011]  [<ffffffff817fd034>] kernel_thread_helper+0x4/0x10
+[ 2453.291011]  [<ffffffff81070930>] ? kthread_worker_fn+0x190/0x190
+[ 2453.291011]  [<ffffffff817fd030>] ? gs_change+0xb/0xb
+[ 2453.291011] Code: ff e9 f4 f8 ff ff 0f 0b 80 fa b2 0f 84 94 f9 ff ff 0f 0b be 95 00 00 00 48 c7 c7 49 ec 48 a0 e8 04 53 c2 e0 e9 e5 f8 ff ff 0f 0b <0f> 0b 0f 0b 0f 0b 0f 0b 0f 0b 0f 0b 90 55 48 89 e5 41 57 41 56
+[ 2453.291011] RIP  [<ffffffffa042a9c3>] run_clustered_refs+0x833/0x840 [btrfs]
+[ 2453.291011]  RSP <ffff880076c7d840>
+[ 2453.606327] ---[ end trace d59ffe0d1e39fabd ]---
+[ 2458.290106] ------------[ cut here ]------------
+[ 2458.290167] WARNING: at fs/btrfs/extent-tree.c:4740 __btrfs_free_extent+0x64f/0x700 [btrfs]()
+[ 2458.290173] Hardware name: PR210
+[ 2458.290178] Modules linked in: snd_seq_dummy snd_seq_oss snd_seq_midi_event snd_seq snd_seq_device snd_pcm_oss snd_mixer_oss ipv6 btrfs cpufreq_ondemand powernow_k8 freq_table mperf lp ppdev parport_pc parport fuse radeon ttm drm_kms_helper snd_hda_codec_hdmi drm snd_hda_codec_realtek snd_hda_intel snd_hda_codec agpgart sdhci_pci r8169 joydev snd_hwdep snd_pcm sdhci snd_timer i2c_algo_bit mmc_core i2c_piix4 video snd processor i2c_core battery mii evdev thermal ac button psmouse thermal_sys sg shpchp k8temp hwmon soundcore snd_page_alloc serio_raw
+[ 2458.290282] Pid: 1602, comm: btrfs-transacti Tainted: G      D W    3.2.0-rc3+ #5
+[ 2458.290289] Call Trace:
+[ 2458.290305]  [<ffffffff8104fc7f>] warn_slowpath_common+0x7f/0xc0
+[ 2458.290315]  [<ffffffff8104fcda>] warn_slowpath_null+0x1a/0x20
+[ 2458.290340]  [<ffffffffa0426a3f>] __btrfs_free_extent+0x64f/0x700 [btrfs]
+[ 2458.290352]  [<ffffffff81040138>] ? hrtick_update+0x38/0x40
+[ 2458.290361]  [<ffffffff810402f4>] ? dequeue_task_fair+0x1b4/0x220
+[ 2458.290388]  [<ffffffffa042a3a3>] run_clustered_refs+0x213/0x840 [btrfs]
+[ 2458.290398]  [<ffffffff817f8c51>] ? __schedule+0x321/0x920
+[ 2458.290428]  [<ffffffffa0470df9>] ? tree_insert_offset+0x79/0xd0 [btrfs]
+[ 2458.290456]  [<ffffffffa0478700>] ? btrfs_find_ref_cluster+0xe0/0x190 [btrfs]
+[ 2458.290481]  [<ffffffffa042aa90>] btrfs_run_delayed_refs+0xc0/0x200 [btrfs]
+[ 2458.290491]  [<ffffffff817fa32e>] ? mutex_lock+0x1e/0x50
+[ 2458.290519]  [<ffffffffa043b4b7>] btrfs_commit_transaction+0x97/0x860 [btrfs]
+[ 2458.290548]  [<ffffffffa043ac27>] ? join_transaction.clone.24+0x27/0x230 [btrfs]
+[ 2458.290558]  [<ffffffff81070f10>] ? wake_up_bit+0x40/0x40
+[ 2458.290585]  [<ffffffffa04345b3>] transaction_kthread+0x263/0x280 [btrfs]
+[ 2458.290625]  [<ffffffffa0434350>] ? btrfs_congested_fn+0xb0/0xb0 [btrfs]
+[ 2458.290652]  [<ffffffffa0434350>] ? btrfs_congested_fn+0xb0/0xb0 [btrfs]
+[ 2458.290660]  [<ffffffff810709c6>] kthread+0x96/0xa0
+[ 2458.290670]  [<ffffffff817fd034>] kernel_thread_helper+0x4/0x10
+[ 2458.290678]  [<ffffffff81070930>] ? kthread_worker_fn+0x190/0x190
+[ 2458.290686]  [<ffffffff817fd030>] ? gs_change+0xb/0xb
+[ 2458.290692] ---[ end trace d59ffe0d1e39fabe ]---
+[ 2458.290699] btrfs unable to find ref byte nr 5125689344 parent 0 root 5  owner 64563 offset 0
+[ 2458.290722] BUG: unable to handle kernel NULL pointer dereference at           (null)
+[ 2458.291012] IP: [<ffffffffa045c11e>] map_private_extent_buffer+0xe/0x150 [btrfs]
+[ 2458.291012] PGD 568d5067 PUD 568d6067 PMD 0
+[ 2458.291012] Oops: 0000 [#4] SMP
+[ 2458.291012] CPU 0
+[ 2458.291012] Modules linked in: snd_seq_dummy snd_seq_oss snd_seq_midi_event snd_seq snd_seq_device snd_pcm_oss snd_mixer_oss ipv6 btrfs cpufreq_ondemand powernow_k8 freq_table mperf lp ppdev parport_pc parport fuse radeon ttm drm_kms_helper snd_hda_codec_hdmi drm snd_hda_codec_realtek snd_hda_intel snd_hda_codec agpgart sdhci_pci r8169 joydev snd_hwdep snd_pcm sdhci snd_timer i2c_algo_bit mmc_core i2c_piix4 video snd processor i2c_core battery mii evdev thermal ac button psmouse thermal_sys sg shpchp k8temp hwmon soundcore snd_page_alloc serio_raw
+[ 2458.291012]
+[ 2458.291012] Pid: 1602, comm: btrfs-transacti Tainted: G      D W    3.2.0-rc3+ #5 Micro-Star International PR210/MS-1222
+[ 2458.291012] RIP: 0010:[<ffffffffa045c11e>]  [<ffffffffa045c11e>] map_private_extent_buffer+0xe/0x150 [btrfs]
+[ 2458.291012] RSP: 0018:ffff8800772c5ab0  EFLAGS: 00010282
+[ 2458.291012] RAX: 0000000000000000 RBX: 0000000000000065 RCX: ffff8800772c5af0
+[ 2458.291012] RDX: 0000000000000004 RSI: 000000000000007a RDI: 0000000000000000
+[ 2458.291012] RBP: ffff8800772c5ad0 R08: ffff8800772c5ae8 R09: ffff8800772c5ae0
+[ 2458.291012] R10: 0000000000000000 R11: 0000000000000000 R12: 000000000000007a
+[ 2458.291012] R13: 0000000000000000 R14: 0000000000000065 R15: 0000000000000000
+[ 2458.291012] FS:  00007f5b49717740(0000) GS:ffff88007bc00000(0000) knlGS:00000000f6ff56d0
+[ 2458.291012] CS:  0010 DS: 0000 ES: 0000 CR0: 000000008005003b
+[ 2458.291012] CR2: 0000000000000000 CR3: 000000005a532000 CR4: 00000000000006f0
+[ 2458.291012] DR0: 0000000000000000 DR1: 0000000000000000 DR2: 0000000000000000
+[ 2458.291012] DR3: 0000000000000000 DR6: 00000000ffff0ff0 DR7: 0000000000000400
+[ 2458.291012] Process btrfs-transacti (pid: 1602, threadinfo ffff8800772c4000, task ffff8800790ce500)
+[ 2458.291012] Stack:
+[ 2458.291012]  0000000000000000 0000000000000000 ffff8800772c5b20 0000000000000065
+[ 2458.291012]  ffff8800772c5b20 ffffffffa0451b1c ffff8800772c5af0 ffff880074a941b0
+[ 2458.291012]  0000000000000005 000000013183d000 0000000000000000 ffff880074a941b0
+[ 2458.291012] Call Trace:
+[ 2458.291012]  [<ffffffffa0451b1c>] btrfs_item_size+0x3c/0x90 [btrfs]
+[ 2458.291012]  [<ffffffffa0426651>] __btrfs_free_extent+0x261/0x700 [btrfs]
+[ 2458.291012]  [<ffffffff81040138>] ? hrtick_update+0x38/0x40
+[ 2458.291012]  [<ffffffff810402f4>] ? dequeue_task_fair+0x1b4/0x220
+[ 2458.291012]  [<ffffffffa042a3a3>] run_clustered_refs+0x213/0x840 [btrfs]
+[ 2458.291012]  [<ffffffff817f8c51>] ? __schedule+0x321/0x920
+[ 2458.291012]  [<ffffffffa0470df9>] ? tree_insert_offset+0x79/0xd0 [btrfs]
+[ 2458.291012]  [<ffffffffa0478700>] ? btrfs_find_ref_cluster+0xe0/0x190 [btrfs]
+[ 2458.291012]  [<ffffffffa042aa90>] btrfs_run_delayed_refs+0xc0/0x200 [btrfs]
+[ 2458.291012]  [<ffffffff817fa32e>] ? mutex_lock+0x1e/0x50
+[ 2458.291012]  [<ffffffffa043b4b7>] btrfs_commit_transaction+0x97/0x860 [btrfs]
+[ 2458.291012]  [<ffffffffa043ac27>] ? join_transaction.clone.24+0x27/0x230 [btrfs]
+[ 2458.291012]  [<ffffffff81070f10>] ? wake_up_bit+0x40/0x40
+[ 2458.291012]  [<ffffffffa04345b3>] transaction_kthread+0x263/0x280 [btrfs]
+[ 2458.291012]  [<ffffffffa0434350>] ? btrfs_congested_fn+0xb0/0xb0 [btrfs]
+[ 2458.291012]  [<ffffffffa0434350>] ? btrfs_congested_fn+0xb0/0xb0 [btrfs]
+[ 2458.291012]  [<ffffffff810709c6>] kthread+0x96/0xa0
+[ 2458.291012]  [<ffffffff817fd034>] kernel_thread_helper+0x4/0x10
+[ 2458.291012]  [<ffffffff81070930>] ? kthread_worker_fn+0x190/0x190
+[ 2458.291012]  [<ffffffff817fd030>] ? gs_change+0xb/0xb
+[ 2458.291012] Code: ff 41 89 dd e9 17 ff ff ff 48 8d 4e 01 48 89 b5 60 ff ff ff 48 89 4d 80 e9 d0 fc ff ff 55 48 89 e5 53 48 83 ec 18 66 66 66 66 90
+[ 2458.291012]  8b 1f 81 e3 ff 0f 00 00 48 8d 04 1e 4c 8d 54 10 ff 49 89 c3
+[ 2458.291012] RIP  [<ffffffffa045c11e>] map_private_extent_buffer+0xe/0x150 [btrfs]
+[ 2458.291012]  RSP <ffff8800772c5ab0>
+[ 2458.291012] CR2: 0000000000000000
+[ 2458.588150] ---[ end trace d59ffe0d1e39fabf ]---

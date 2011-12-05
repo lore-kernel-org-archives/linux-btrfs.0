@@ -1,49 +1,50 @@
-From: Josef Bacik <josef@redhat.com>
-Subject: Re: [PATCH] Btrfs: protect orphan block rsv with spin_lock
-Date: Mon, 5 Dec 2011 09:30:09 -0500
-Message-ID: <20111205143008.GA3046@localhost.localdomain>
-References: <1322858676-4278-1-git-send-email-josef@redhat.com>
- <CAO47_-9=1Cai3Ux2CR-xc5DarRyQkEMWdFXk7=DKyU6OrDamOA@mail.gmail.com>
+From: Peeters Simon <peeters.simon@gmail.com>
+Subject: CPU usage in 3.2 RC4
+Date: Mon, 5 Dec 2011 19:15:20 +0100
+Message-ID: <CAKyAS7uM=Vba0PcgngNAsN=WLJxPufV4B35UjfmgEy4KajDa9g@mail.gmail.com>
+References: <CAKyAS7tOr9QDYQxZpniuwm9eV3CaJW8VpQCksOwCU=drCJGy2w@mail.gmail.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=iso-8859-1
-Cc: Josef Bacik <josef@redhat.com>, linux-btrfs@vger.kernel.org,
-	sage@newdream.net
-To: Christian Brunner <chb@muc.de>
+Content-Type: text/plain; charset=ISO-8859-1
+To: linux-btrfs@vger.kernel.org
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <CAO47_-9=1Cai3Ux2CR-xc5DarRyQkEMWdFXk7=DKyU6OrDamOA@mail.gmail.com>
+In-Reply-To: <CAKyAS7tOr9QDYQxZpniuwm9eV3CaJW8VpQCksOwCU=drCJGy2w@mail.gmail.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Mon, Dec 05, 2011 at 12:50:39PM +0100, Christian Brunner wrote:
-> 2011/12/2 Josef Bacik <josef@redhat.com>:
-> > We've been seeing warnings coming out of the orphan commit stuff fo=
-rever from
-> > ceph. =A0Turns out it's because we're racing with checking if the o=
-rphan block
-> > reserve is set, because we clear it outside of the spin_lock. =A0So=
- leave the
-> > normal fastpath checks where they are, but take the spin_lock and _=
-recheck_ to
-> > make sure we haven't had an orphan block rsv added in the meantime.=
- =A0Then clear
-> > the root's orphan block rsv and release the lock. =A0With this patc=
-h a user said
-> > the warnings went away and they usually showed up pretty soon after=
- he started
-> > ceph. =A0Thanks,
->=20
-> *sigh* - As soon as I turned my back to the serve console it also
-> happened again on one of our nodes. That was 25 hours after I started
-> the system. Usually I see these warnings a few minutes after the
-> start, but the have been cases in the past where it took longer. So
-> I'm not sure if the improvement is due to the patch.
->=20
-> Josef: I was still running the patch you sent me, but there was no
-> message from the printk's you added.
->=20
+hi everybody
 
-:( ok I'll try again.  Thanks,
+i recently switched from a 3.1 kernel to 3.2rc4 from fedora rawhide.
+since i switched i am having serious performance isues, mainly due to
+my limmited cpu (1.6Ghz attom single core)
+when i boot in 3.1 my bootup is mainly I/O limited (according to bootch=
+art)
+when i boot in 3.2 my bootup is compleetly CPU limited and takes a lot =
+more time
 
-Josef
+also file actions (like tar -xf linux-3.1.tar takes) are a cpu hogg,
+according to top most of the cpu usage is in kernel space, and i see
+different btrfs threads at the top
+
+time tar -xf linux-3.1.tar.bz2
+real=A0=A0=A0 11m10.037s
+user=A0=A0=A0 1m26.861s
+sys=A0=A0=A0 5m26.738s
+
+cpu usage
+8%user,
+82%sys,
+
+flush-btrfs-5 50%
+tar 45%
+btrfs-endio-write 20%
+btrfs-transaction 15%
+
+it would be nice if somebody could look into this, and hopefully get
+it fixed in 3.2 final (i am not a kernel or btrfs guru, so i don't
+know where to start looking for the problem)
+
+greetings
+
+Simon Peeters
 --
 To unsubscribe from this list: send the line "unsubscribe linux-btrfs" =
 in

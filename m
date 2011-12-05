@@ -1,34 +1,51 @@
-From: David Sterba <dave@jikos.cz>
-Subject: Re: [GIT PULL] Btrfs updates
-Date: Mon, 5 Dec 2011 15:08:09 +0100
-Message-ID: <20111205140809.GA12130@twin.jikos.cz>
-References: <20111201153955.GL5587@shiny> <4EDC7C89.6050803@cn.fujitsu.com> <20111205131413.GC26622@shiny>
-Reply-To: dave@jikos.cz
+From: Josef Bacik <josef@redhat.com>
+Subject: Re: [PATCH] Btrfs: protect orphan block rsv with spin_lock
+Date: Mon, 5 Dec 2011 09:30:09 -0500
+Message-ID: <20111205143008.GA3046@localhost.localdomain>
+References: <1322858676-4278-1-git-send-email-josef@redhat.com>
+ <CAO47_-9=1Cai3Ux2CR-xc5DarRyQkEMWdFXk7=DKyU6OrDamOA@mail.gmail.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-To: Chris Mason <chris.mason@oracle.com>,
-	Miao Xie <miaox@cn.fujitsu.com>,
-	Alexandre Oliva <oliva@lsd.ic.unicamp.br>,
-	linux-btrfs <linux-btrfs@vger.kernel.org>
+Content-Type: text/plain; charset=iso-8859-1
+Cc: Josef Bacik <josef@redhat.com>, linux-btrfs@vger.kernel.org,
+	sage@newdream.net
+To: Christian Brunner <chb@muc.de>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <20111205131413.GC26622@shiny>
+In-Reply-To: <CAO47_-9=1Cai3Ux2CR-xc5DarRyQkEMWdFXk7=DKyU6OrDamOA@mail.gmail.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Mon, Dec 05, 2011 at 08:14:13AM -0500, Chris Mason wrote:
-> On Mon, Dec 05, 2011 at 04:10:49PM +0800, Miao Xie wrote:
-> > [PATCH 08/20] Btrfs: try to allocate from cluster even at LOOP_NO_EMPTY_SIZE
-> 
-> Thanks, I'll push this 08/20 out as well.
+On Mon, Dec 05, 2011 at 12:50:39PM +0100, Christian Brunner wrote:
+> 2011/12/2 Josef Bacik <josef@redhat.com>:
+> > We've been seeing warnings coming out of the orphan commit stuff fo=
+rever from
+> > ceph. =A0Turns out it's because we're racing with checking if the o=
+rphan block
+> > reserve is set, because we clear it outside of the spin_lock. =A0So=
+ leave the
+> > normal fastpath checks where they are, but take the spin_lock and _=
+recheck_ to
+> > make sure we haven't had an orphan block rsv added in the meantime.=
+ =A0Then clear
+> > the root's orphan block rsv and release the lock. =A0With this patc=
+h a user said
+> > the warnings went away and they usually showed up pretty soon after=
+ he started
+> > ceph. =A0Thanks,
+>=20
+> *sigh* - As soon as I turned my back to the serve console it also
+> happened again on one of our nodes. That was 25 hours after I started
+> the system. Usually I see these warnings a few minutes after the
+> start, but the have been cases in the past where it took longer. So
+> I'm not sure if the improvement is due to the patch.
+>=20
+> Josef: I was still running the patch you sent me, but there was no
+> message from the printk's you added.
+>=20
 
-Please pick
+:( ok I'll try again.  Thanks,
 
-Li Zefan: Btrfs: check if the to-be-added device is writable
-Liu Bo: Btrfs: drop spin lock when memory alloc fails
-
-(collected in branch fixes-20111205 at my repo)
-
-I overlooked them and forgot to include in the fixes branch before the
-last pull request, sorry.
-
-
-david
+Josef
+--
+To unsubscribe from this list: send the line "unsubscribe linux-btrfs" =
+in
+the body of a message to majordomo@vger.kernel.org
+More majordomo info at  http://vger.kernel.org/majordomo-info.html

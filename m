@@ -1,47 +1,35 @@
-From: Christian Brunner <chb@muc.de>
-Subject: Re: [PATCH] Btrfs: protect orphan block rsv with spin_lock
-Date: Mon, 5 Dec 2011 12:50:39 +0100
-Message-ID: <CAO47_-9=1Cai3Ux2CR-xc5DarRyQkEMWdFXk7=DKyU6OrDamOA@mail.gmail.com>
-References: <1322858676-4278-1-git-send-email-josef@redhat.com>
-Reply-To: chb@muc.de
+From: Chris Mason <chris.mason@oracle.com>
+Subject: Re: Blocked for more than 120 seconds
+Date: Mon, 5 Dec 2011 08:12:52 -0500
+Message-ID: <20111205131252.GB26622@shiny>
+References: <4ED5FAEF.8070400@robotech.de>
+ <20111130141006.GY24338@shiny>
+ <4ED738E5.3080200@robotech.de>
+ <20111201184158.GB10535@shiny>
+ <4ED8D6C8.4020609@robotech.de>
+ <4ED8ED36.3080105@gmail.com>
+ <4ED8F34F.8090609@robotech.de>
+ <4ED92CA6.3030302@gmail.com>
+ <4ED96EE6.2010308@gmail.com>
+ <4EDA33FC.5020206@gmail.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=ISO-8859-1
-Cc: linux-btrfs@vger.kernel.org, sage@newdream.net
-To: Josef Bacik <josef@redhat.com>
+Content-Type: text/plain; charset=us-ascii
+Cc: Tobias <tracer@robotech.de>, linux-btrfs@vger.kernel.org
+To: Konstantinos Skarlatos <k.skarlatos@gmail.com>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <1322858676-4278-1-git-send-email-josef@redhat.com>
+In-Reply-To: <4EDA33FC.5020206@gmail.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-2011/12/2 Josef Bacik <josef@redhat.com>:
-> We've been seeing warnings coming out of the orphan commit stuff fore=
-ver from
-> ceph. =A0Turns out it's because we're racing with checking if the orp=
-han block
-> reserve is set, because we clear it outside of the spin_lock. =A0So l=
-eave the
-> normal fastpath checks where they are, but take the spin_lock and _re=
-check_ to
-> make sure we haven't had an orphan block rsv added in the meantime. =A0=
-Then clear
-> the root's orphan block rsv and release the lock. =A0With this patch =
-a user said
-> the warnings went away and they usually showed up pretty soon after h=
-e started
-> ceph. =A0Thanks,
+On Sat, Dec 03, 2011 at 04:36:44PM +0200, Konstantinos Skarlatos wrote:
+> unfortunately i was wrong. rc4 does not fix this issue for me when
+> rsyncing large amounts of data...
+> 
+> my mount options:
+> mount -o loop,compress=zlib,compress-force btrfs_test /storage/btrfs
+> the filesystem is a file on a raid5 xfs volume.
 
-*sigh* - As soon as I turned my back to the serve console it also
-happened again on one of our nodes. That was 25 hours after I started
-the system. Usually I see these warnings a few minutes after the
-start, but the have been cases in the past where it took longer. So
-I'm not sure if the improvement is due to the patch.
+Oh, the loop + raid5 + xfs is going to cause problems.  The loop driver
+is fine for testing but I wouldn't be using it in a production
+environment.
 
-Josef: I was still running the patch you sent me, but there was no
-message from the printk's you added.
-
-Thanks,
-Christian
---
-To unsubscribe from this list: send the line "unsubscribe linux-btrfs" =
-in
-the body of a message to majordomo@vger.kernel.org
-More majordomo info at  http://vger.kernel.org/majordomo-info.html
+-chris

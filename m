@@ -1,35 +1,48 @@
 From: Chris Mason <chris.mason@oracle.com>
-Subject: Re: Blocked for more than 120 seconds
-Date: Mon, 5 Dec 2011 08:12:52 -0500
-Message-ID: <20111205131252.GB26622@shiny>
-References: <4ED5FAEF.8070400@robotech.de>
- <20111130141006.GY24338@shiny>
- <4ED738E5.3080200@robotech.de>
- <20111201184158.GB10535@shiny>
- <4ED8D6C8.4020609@robotech.de>
- <4ED8ED36.3080105@gmail.com>
- <4ED8F34F.8090609@robotech.de>
- <4ED92CA6.3030302@gmail.com>
- <4ED96EE6.2010308@gmail.com>
- <4EDA33FC.5020206@gmail.com>
+Subject: Re: [GIT PULL] Btrfs updates
+Date: Mon, 5 Dec 2011 08:14:13 -0500
+Message-ID: <20111205131413.GC26622@shiny>
+References: <20111201153955.GL5587@shiny>
+ <4EDC7C89.6050803@cn.fujitsu.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
-Cc: Tobias <tracer@robotech.de>, linux-btrfs@vger.kernel.org
-To: Konstantinos Skarlatos <k.skarlatos@gmail.com>
+Cc: Alexandre Oliva <oliva@lsd.ic.unicamp.br>,
+	linux-btrfs <linux-btrfs@vger.kernel.org>
+To: Miao Xie <miaox@cn.fujitsu.com>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <4EDA33FC.5020206@gmail.com>
+In-Reply-To: <4EDC7C89.6050803@cn.fujitsu.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Sat, Dec 03, 2011 at 04:36:44PM +0200, Konstantinos Skarlatos wrote:
-> unfortunately i was wrong. rc4 does not fix this issue for me when
-> rsyncing large amounts of data...
+On Mon, Dec 05, 2011 at 04:10:49PM +0800, Miao Xie wrote:
+> Hi, Chris and Oliva
 > 
-> my mount options:
-> mount -o loop,compress=zlib,compress-force btrfs_test /storage/btrfs
-> the filesystem is a file on a raid5 xfs volume.
+> On thu, 1 Dec 2011 10:39:55 -0500, Chris Mason wrote:
+> > git://git.kernel.org/pub/scm/linux/kernel/git/mason/linux-btrfs.git for-linus
+> > 
+> > Has our current set of fixes.  This is fairly small, Alexandre Oliva has
+> > been chasing problems in our block allocator and kicked out important
+> > fixes.
+> > 
+> > Jan Schmidt fixed a merge error in the raid repair code, we're now
+> > properly repairing failed blocks (io errors or crc errors) without
+> > having to run a scrub.
+> > 
+> > Alexandre Oliva (5) commits (+8/-8):
+> >     Btrfs: skip block groups without enough space for a cluster (+1/-1)
+> 
+> This patch introduce a bug that we can not allocate blocks from the cluster
+> with enough space and it may make the block allocation fail.
+> 
+> This is because the check that the above patch introduced make the allocator
+> skip the cluster allocation, and jump to the uncluster allocation without
+> reclaiming all the blocks in the cluster, At this time, if all the free space
+> is in the cluster, and no space in the block group, the allocation will fail.
+> (we can trigger this bug on SSD.)
+> 
+> Fortunately, the following patch written by Oliva can fix this bug.
+> 
+> [PATCH 08/20] Btrfs: try to allocate from cluster even at LOOP_NO_EMPTY_SIZE
 
-Oh, the loop + raid5 + xfs is going to cause problems.  The loop driver
-is fine for testing but I wouldn't be using it in a production
-environment.
+Thanks, I'll push this 08/20 out as well.
 
 -chris

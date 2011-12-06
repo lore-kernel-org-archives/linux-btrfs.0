@@ -1,43 +1,30 @@
-From: Jan Schmidt <mail@jan-o-sch.net>
-Subject: Re: [PATCH] xfstests: check if qa user can execute commands
-Date: Tue, 06 Dec 2011 16:16:45 +0100
-Message-ID: <4EDE31DD.3000401@jan-o-sch.net>
-References: <1323165389-5419-1-git-send-email-list.btrfs@jan-o-sch.net> <20111206151300.GA11874@infradead.org>
+From: Jim <jim@webstarts.com>
+Subject: install errors 3.2.0-rc4
+Date: Tue, 06 Dec 2011 11:10:00 -0500
+Message-ID: <4EDE3E58.1030401@webstarts.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=ISO-8859-1
-Cc: Jan Schmidt <list.btrfs@jan-o-sch.net>,
-	linux-btrfs@vger.kernel.org, xfs@oss.sgi.com
-To: Christoph Hellwig <hch@infradead.org>
+Content-Type: text/plain; charset=ISO-8859-1; format=flowed
+To: linux-btrfs <linux-btrfs@vger.kernel.org>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <20111206151300.GA11874@infradead.org>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 06.12.2011 16:13, Christoph Hellwig wrote:
-> On Tue, Dec 06, 2011 at 10:56:29AM +0100, Jan Schmidt wrote:
->> _require_user only checks if the qa user exists in /etc/passwd. It may exist
->> though still not be able to execute anything (e.g. with a /bin/false shell).
->>
->> _user_do cannot determine failure to execute the given command, as it uses
->> _user_do_filter for post-processing which succeeds even if the command
->> fails. Thus, the check should be performed by _require_user.
-> 
-> Looks good.  Wouldn't
-> 
-> 	su $qa_user -c /bin/true
-> 
-> be the more normal way to write that test?
-
-I agree. I saw this and thought I'd adapt the (sometimes strange)
-predominant bash programming style:
-
- 921 _user_do()
- 922 {
- 923     if [ "$HOSTOS" == "IRIX" ]
- 924         then
- 925         echo $1 | /bin/bash "su $qa_user 2>&1" | _filter_user_do
- 926     else
- 927         echo $1 | su $qa_user 2>&1 | _filter_user_do
- 928     fi
- 929 }
-
--Jan
+Good morning btrfs list,
+I am trying to upgrade a remote server from kernel 3.1.0.rc4 to 
+3.2.0-rc4.  I am not using make oldconfig.  I use make menuconfig to do 
+a new configuration.  After doing the dance of selecting (deselecting 
+actually) all includes and modules, I make sure I select btrfs to be 
+built in the kernel.  The only place errors show up is in make install 
+where there are module not found errors.  The most troubling is:
+ERROR: modinfo: could not find module btrfs
+Why is it even looking for this module when I specified to build btrfs 
+in the kernel.  I would appreciate any thoughts, since this is a remote 
+server and any reboot issues involve much hassle with the colo service 
+team.  The hardware this is being built on is dual quad-core xeons, 48Gb 
+memory 1ea 1Tb system disk and 12ea 1Tb disks on adaptec card to become 
+btrfs system.  BTW, I am upgrading to pick up the latest patches as I 
+did have some exceptional latency when doing simple ls on the system.  I 
+was testing with about 5.5Gb data on the btrfs system, in a file setup 
+involving thousands of subvolumes (replaced dirs with subvols for 
+snapshots).
+Thanks
+Jim Maloney

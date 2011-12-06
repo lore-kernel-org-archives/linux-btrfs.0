@@ -1,24 +1,36 @@
-From: Christoph Hellwig <hch@infradead.org>
-Subject: Re: [PATCH 1/2] vfs: make writeback_in_progress() inline
-Date: Tue, 6 Dec 2011 04:55:02 -0500
-Message-ID: <20111206095502.GA9138@infradead.org>
-References: <4EDDA9B1.5050000@cn.fujitsu.com>
-Mime-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Cc: viro <viro@zeniv.linux.org.uk>,
-	Chris Mason <chris.mason@oracle.com>,
-	Ito <t-itoh@jp.fujitsu.com>,
-	Linux Btrfs <linux-btrfs@vger.kernel.org>,
-	Linux Fsdevel <linux-fsdevel@vger.kernel.org>
-To: Miao Xie <miaox@cn.fujitsu.com>
+From: Jan Schmidt <list.btrfs@jan-o-sch.net>
+Subject: [PATCH] xfstests: check if qa user can execute commands
+Date: Tue,  6 Dec 2011 10:56:29 +0100
+Message-ID: <1323165389-5419-1-git-send-email-list.btrfs@jan-o-sch.net>
+To: linux-btrfs@vger.kernel.org, xfs@oss.sgi.com
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <4EDDA9B1.5050000@cn.fujitsu.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Tue, Dec 06, 2011 at 01:35:45PM +0800, Miao Xie wrote:
-> writeback_in_progress() is very simple, and we will use writeback_in_progress()
-> in the module, so make it inline.
+_require_user only checks if the qa user exists in /etc/passwd. It may exist
+though still not be able to execute anything (e.g. with a /bin/false shell).
 
-Modules don't really have a business looking at this information.  I'd
-prefer to keep it static in fs-writeback.c.
+_user_do cannot determine failure to execute the given command, as it uses
+_user_do_filter for post-processing which succeeds even if the command
+fails. Thus, the check should be performed by _require_user.
+
+Signed-off-by: Jan Schmidt <list.btrfs@jan-o-sch.net>
+---
+ common.rc |    2 ++
+ 1 files changed, 2 insertions(+), 0 deletions(-)
+
+diff --git a/common.rc b/common.rc
+index cab0b64..f540a79 100644
+--- a/common.rc
++++ b/common.rc
+@@ -897,6 +897,8 @@ _require_user()
+     qa_user=fsgqa
+     _cat_passwd | grep -q $qa_user
+     [ "$?" == "0" ] || _notrun "$qa_user user not defined."
++    echo /bin/true | su $qa_user
++    [ "$?" == "0" ] || _notrun "$qa_user cannot execute commands."
+ }
+ 
+ _filter_user_do()
+-- 
+1.7.2.2
 

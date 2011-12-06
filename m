@@ -1,36 +1,46 @@
-From: Jan Schmidt <list.btrfs@jan-o-sch.net>
-Subject: [PATCH] xfstests: check if qa user can execute commands
-Date: Tue,  6 Dec 2011 10:56:29 +0100
-Message-ID: <1323165389-5419-1-git-send-email-list.btrfs@jan-o-sch.net>
-To: linux-btrfs@vger.kernel.org, xfs@oss.sgi.com
-Return-path: <linux-btrfs-owner@vger.kernel.org>
+From: Christoph Hellwig <hch@infradead.org>
+Subject: Re: [PATCH 2/2] Btrfs: fix deadlock on sb->s_umount when doing umount
+Date: Tue, 6 Dec 2011 04:59:23 -0500
+Message-ID: <20111206095923.GB9138@infradead.org>
+References: <4EDDA9B3.60508@cn.fujitsu.com>
+Mime-Version: 1.0
+Content-Type: text/plain; charset=us-ascii
+Cc: Chris Mason <chris.mason@oracle.com>,
+	viro <viro@zeniv.linux.org.uk>,
+	Linux Btrfs <linux-btrfs@vger.kernel.org>,
+	Linux Fsdevel <linux-fsdevel@vger.kernel.org>,
+	Ito <t-itoh@jp.fujitsu.com>
+To: Miao Xie <miaox@cn.fujitsu.com>
+Return-path: <linux-fsdevel-owner@vger.kernel.org>
+In-Reply-To: <4EDDA9B3.60508@cn.fujitsu.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-_require_user only checks if the qa user exists in /etc/passwd. It may exist
-though still not be able to execute anything (e.g. with a /bin/false shell).
+On Tue, Dec 06, 2011 at 01:35:47PM +0800, Miao Xie wrote:
+> The reason the deadlock is that:
+>   Task					Btrfs-cleaner
+>   umount()
+>     down_write(&s->s_umount)
+>     close_ctree()
+>       wait for the end of
+>       btrfs-cleaner
+> 					start_transaction
+> 					  reserve space
+> 					    shrink_delalloc()
+> 					      writeback_inodes_sb_nr_if_idle()
+> 						down_read(&sb->s_umount)
+> So, the deadlock has happened.
+> 
+> We fix it by trying to lock >s_umount, if _trylock_ fails, it means the fs
+> is on remounting or umounting. At this time, we will use the sync function of
+> btrfs to sync all the delalloc file. It may waste lots of time, but as a
+> corner case, we needn't care.
 
-_user_do cannot determine failure to execute the given command, as it uses
-_user_do_filter for post-processing which succeeds even if the command
-fails. Thus, the check should be performed by _require_user.
+I can't see why you need the writeout when the trylocks fails.  Umount
+needs to take care of writing out all pending file data anyway, so doing
+it from the cleaner thread in addition doesn't sound like it would help.
 
-Signed-off-by: Jan Schmidt <list.btrfs@jan-o-sch.net>
----
- common.rc |    2 ++
- 1 files changed, 2 insertions(+), 0 deletions(-)
-
-diff --git a/common.rc b/common.rc
-index cab0b64..f540a79 100644
---- a/common.rc
-+++ b/common.rc
-@@ -897,6 +897,8 @@ _require_user()
-     qa_user=fsgqa
-     _cat_passwd | grep -q $qa_user
-     [ "$?" == "0" ] || _notrun "$qa_user user not defined."
-+    echo /bin/true | su $qa_user
-+    [ "$?" == "0" ] || _notrun "$qa_user cannot execute commands."
- }
- 
- _filter_user_do()
--- 
-1.7.2.2
-
+So I'd rather suggest to move the trylock into
+writeback_inodes_sb_nr_if_idle, and while you're at it also rewrite
+writeback_inodes_sb_if_idle that ext4 is using to sit on top of
+writeback_inodes_sb_nr_if_idle to share that logic, and drop the
+unused writeback_inodes_sb_nr export.

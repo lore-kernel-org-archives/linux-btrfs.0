@@ -1,30 +1,42 @@
-From: Jim <jim@webstarts.com>
-Subject: install errors 3.2.0-rc4
-Date: Tue, 06 Dec 2011 11:10:00 -0500
-Message-ID: <4EDE3E58.1030401@webstarts.com>
+From: Chris Mason <chris.mason@oracle.com>
+Subject: Re: [PATCH 2/2] Btrfs: fix deadlock on sb->s_umount when doing umount
+Date: Tue, 6 Dec 2011 16:36:11 -0500
+Message-ID: <20111206213611.GB4029@shiny>
+References: <4EDDA9B3.60508@cn.fujitsu.com>
+ <20111206095923.GB9138@infradead.org>
+ <4EDDF740.6060100@cn.fujitsu.com>
+ <20111206112322.GA10836@infradead.org>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=ISO-8859-1; format=flowed
-To: linux-btrfs <linux-btrfs@vger.kernel.org>
-Return-path: <linux-btrfs-owner@vger.kernel.org>
+Content-Type: text/plain; charset=us-ascii
+Cc: Miao Xie <miaox@cn.fujitsu.com>, viro <viro@zeniv.linux.org.uk>,
+	Linux Btrfs <linux-btrfs@vger.kernel.org>,
+	Linux Fsdevel <linux-fsdevel@vger.kernel.org>,
+	Ito <t-itoh@jp.fujitsu.com>
+To: Christoph Hellwig <hch@infradead.org>
+Return-path: <linux-fsdevel-owner@vger.kernel.org>
+In-Reply-To: <20111206112322.GA10836@infradead.org>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Good morning btrfs list,
-I am trying to upgrade a remote server from kernel 3.1.0.rc4 to 
-3.2.0-rc4.  I am not using make oldconfig.  I use make menuconfig to do 
-a new configuration.  After doing the dance of selecting (deselecting 
-actually) all includes and modules, I make sure I select btrfs to be 
-built in the kernel.  The only place errors show up is in make install 
-where there are module not found errors.  The most troubling is:
-ERROR: modinfo: could not find module btrfs
-Why is it even looking for this module when I specified to build btrfs 
-in the kernel.  I would appreciate any thoughts, since this is a remote 
-server and any reboot issues involve much hassle with the colo service 
-team.  The hardware this is being built on is dual quad-core xeons, 48Gb 
-memory 1ea 1Tb system disk and 12ea 1Tb disks on adaptec card to become 
-btrfs system.  BTW, I am upgrading to pick up the latest patches as I 
-did have some exceptional latency when doing simple ls on the system.  I 
-was testing with about 5.5Gb data on the btrfs system, in a file setup 
-involving thousands of subvolumes (replaced dirs with subvols for 
-snapshots).
-Thanks
-Jim Maloney
+On Tue, Dec 06, 2011 at 06:23:23AM -0500, Christoph Hellwig wrote:
+> On Tue, Dec 06, 2011 at 07:06:40PM +0800, Miao Xie wrote:
+> > > I can't see why you need the writeout when the trylocks fails.  Umount
+> > > needs to take care of writing out all pending file data anyway, so doing
+> > > it from the cleaner thread in addition doesn't sound like it would help.
+> > 
+> > umount invokes sync_fs() and write out all the dirty file data. For the
+> > other file systems, its OK because the file system does not introduce dirty pages
+> > by itself. But btrfs is different. Its automatic defragment will make lots of dirty
+> > pages after sync_fs() and reserve lots of meta-data space for those pages.
+> > And then the cleaner thread may find there is no enough space to reserve, it must
+> > sync the dirty file data and release the reserved space which is for the dirty
+> > file data.
+> 
+> I think the safest way to fix is is to write out all dirty data again
+> once the cleaner thread has been safely stopped.
+> 
+
+Said another way we want to stop the autodefrag code before the unmount
+is ready to continue.  We also want to stop balancing, scrub etc.
+
+-chris
+

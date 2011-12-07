@@ -1,55 +1,40 @@
-From: Hidetoshi Seto <seto.hidetoshi@jp.fujitsu.com>
-Subject: [PATCH 3/3] perf: allow typecast for signed value
-Date: Wed, 07 Dec 2011 10:37:57 +0900
-Message-ID: <4EDEC375.2090808@jp.fujitsu.com>
-References: <4EDEC207.90403@jp.fujitsu.com>
+From: Al Viro <viro@ZenIV.linux.org.uk>
+Subject: Re: [PATCH] BTRFS: Establish i_ops before calling d_instantiate
+Date: Wed, 7 Dec 2011 02:04:46 +0000
+Message-ID: <20111207020446.GU2203@ZenIV.linux.org.uk>
+References: <4EDEB5D6.4040202@schaufler-ca.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=ISO-2022-JP
-Cc: linux-btrfs@vger.kernel.org,
-	Peter Zijlstra <a.p.zijlstra@chello.nl>,
-	Paul Mackerras <paulus@samba.org>, Ingo Molnar <mingo@elte.hu>,
-	Arnaldo Carvalho de Melo <acme@ghostprotocols.net>
-To: linux-kernel@vger.kernel.org
+Content-Type: text/plain; charset=us-ascii
+Cc: Chris Mason <chris.mason@oracle.com>,
+	linux-btrfs <linux-btrfs@vger.kernel.org>,
+	LSM <linux-security-module@vger.kernel.org>,
+	LKLM <linux-kernel@vger.kernel.org>
+To: Casey Schaufler <casey@schaufler-ca.com>
 Return-path: <linux-kernel-owner@vger.kernel.org>
-In-Reply-To: <4EDEC207.90403@jp.fujitsu.com>
+In-Reply-To: <4EDEB5D6.4040202@schaufler-ca.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Still I got following warning with btrfs tracepoints:
+On Tue, Dec 06, 2011 at 04:39:50PM -0800, Casey Schaufler wrote:
+> From: Casey Schaufler <casey@schaufler-ca.com>
+> 
+> The Smack LSM hook for security_d_instantiate checks
+> the inode's i_op->getxattr value to determine if the
+[snip]
 
-  $ perf script
-  Warning: Error: expected type 5 but read 4
-  Warning: Error: expected type 5 but read 0
+> +	inode->i_op = &btrfs_special_inode_operations;
+> +
+>  	err = btrfs_add_nondir(trans, dir, dentry, inode, 0, index);
+>  	if (err)
+>  		drop_inode = 1;
+>  	else {
+> -		inode->i_op = &btrfs_special_inode_operations;
+>  		init_special_inode(inode, inode->i_mode, rdev);
+>  		btrfs_update_inode(trans, root, inode);
 
-I found that the complained format is:
+To hell with LSM, there are much stronger reasons why d_instantiate() on
+a half-baked inode is wrong.  As soon as you've done it somebody can
+come and look that dentry up.
 
-  print fmt: "%s", (REC->val >= (u64)-4) ? "-" : __print_symbolic(...)
-                                     ~
-In perf's parser, the typecast, which is processed in process_paren(),
-only expects that (unsigned) token or another parenthesis will follow
-to the typecast.  It should expect signed tokens can be there too.
-
-Signed-off-by: Hidetoshi Seto <seto.hidetoshi@jp.fujitsu.com>
----
- tools/perf/util/trace-event-parse.c |    5 +++--
- 1 files changed, 3 insertions(+), 2 deletions(-)
-
-diff --git a/tools/perf/util/trace-event-parse.c b/tools/perf/util/trace-event-parse.c
-index b709f78..032f3de 100644
---- a/tools/perf/util/trace-event-parse.c
-+++ b/tools/perf/util/trace-event-parse.c
-@@ -1645,10 +1645,11 @@ process_paren(struct event *event, struct print_arg *arg, char **tok)
- 	type = read_token_item(&token);
- 
- 	/*
--	 * If the next token is an item or another open paren, then
--	 * this was a typecast.
-+	 * If the next token is an item (might be signed, with single op "-")
-+	 * or another open paren, then this was a typecast.
- 	 */
- 	if (event_item_type(type) ||
-+	    (type == EVENT_OP && strcmp(token, "-") == 0) ||
- 	    (type == EVENT_DELIM && strcmp(token, "(") == 0)) {
- 
- 		/* make this a typecast and contine */
--- 
-1.7.7.3
+IOW, the bug is real, but this patch is not enough - in particular, ->create()
+part is simply wrong.  We need to set ->a_ops before some joker comes and
+tries to open it, at the very least...

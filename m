@@ -1,7 +1,7 @@
 From: Hidetoshi Seto <seto.hidetoshi@jp.fujitsu.com>
-Subject: [PATCH 2/3] perf: allow processing single op args
-Date: Wed, 07 Dec 2011 10:37:15 +0900
-Message-ID: <4EDEC34B.302@jp.fujitsu.com>
+Subject: [PATCH 3/3] perf: allow typecast for signed value
+Date: Wed, 07 Dec 2011 10:37:57 +0900
+Message-ID: <4EDEC375.2090808@jp.fujitsu.com>
 References: <4EDEC207.90403@jp.fujitsu.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset=ISO-2022-JP
@@ -14,55 +14,42 @@ Return-path: <linux-kernel-owner@vger.kernel.org>
 In-Reply-To: <4EDEC207.90403@jp.fujitsu.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-I got following error from record with btrfs tracepoints:
+Still I got following warning with btrfs tracepoints:
 
   $ perf script
-  Fatal: unknown op '-'
+  Warning: Error: expected type 5 but read 4
+  Warning: Error: expected type 5 but read 0
 
-It seems that perf failed to handle '-' in the following format:
+I found that the complained format is:
 
-  print fmt: "%s", ((REC->id >= -9) || (REC->id <= 7)) ? "x" : "y"
-                                ~
-process_arg() have code to parse '-9' as a "single op" arg, which is
-PRINT_OP as type, '-' as op and have '9' as right arg but no left arg.
-However arg_num_eval() have no code to handle this "single op" arg
-even it is parsed successfully.
-
-This patch allow perf to process such "single op" args.
+  print fmt: "%s", (REC->val >= (u64)-4) ? "-" : __print_symbolic(...)
+                                     ~
+In perf's parser, the typecast, which is processed in process_paren(),
+only expects that (unsigned) token or another parenthesis will follow
+to the typecast.  It should expect signed tokens can be there too.
 
 Signed-off-by: Hidetoshi Seto <seto.hidetoshi@jp.fujitsu.com>
 ---
- tools/perf/util/trace-event-parse.c |   18 ++++++++++++++++++
- 1 files changed, 18 insertions(+), 0 deletions(-)
+ tools/perf/util/trace-event-parse.c |    5 +++--
+ 1 files changed, 3 insertions(+), 2 deletions(-)
 
 diff --git a/tools/perf/util/trace-event-parse.c b/tools/perf/util/trace-event-parse.c
-index c2adc76..b709f78 100644
+index b709f78..032f3de 100644
 --- a/tools/perf/util/trace-event-parse.c
 +++ b/tools/perf/util/trace-event-parse.c
-@@ -1355,6 +1355,24 @@ static long long arg_num_eval(struct print_arg *arg)
- 		val = arg_num_eval(arg->typecast.item);
- 		break;
- 	case PRINT_OP:
-+		if (!arg->op.left || arg->op.left->type == PRINT_NULL) {
-+			/* handle single op */
-+			right = arg_num_eval(arg->op.right);
-+			switch (arg->op.op[0]) {
-+			case '!':
-+				val = !right;
-+				break;
-+			case '+':
-+				val = right;
-+				break;
-+			case '-':
-+				val = -right;
-+				break;
-+			default:
-+				die("unknown single op %s", arg->op.op);
-+			}
-+			break;
-+		}
- 		switch (arg->op.op[0]) {
- 		case '|':
- 			left = arg_num_eval(arg->op.left);
+@@ -1645,10 +1645,11 @@ process_paren(struct event *event, struct print_arg *arg, char **tok)
+ 	type = read_token_item(&token);
+ 
+ 	/*
+-	 * If the next token is an item or another open paren, then
+-	 * this was a typecast.
++	 * If the next token is an item (might be signed, with single op "-")
++	 * or another open paren, then this was a typecast.
+ 	 */
+ 	if (event_item_type(type) ||
++	    (type == EVENT_OP && strcmp(token, "-") == 0) ||
+ 	    (type == EVENT_DELIM && strcmp(token, "(") == 0)) {
+ 
+ 		/* make this a typecast and contine */
 -- 
 1.7.7.3

@@ -1,85 +1,100 @@
-From: Li Zefan <lizf@cn.fujitsu.com>
-Subject: [PATCH] Btrfs: fix possible deadlock when opening a seed device
-Date: Wed, 07 Dec 2011 13:13:26 +0800
-Message-ID: <4EDEF5F6.7050700@cn.fujitsu.com>
+From: Lukas Czerner <lczerner@redhat.com>
+Subject: System Storage Manager
+Date: Wed, 7 Dec 2011 11:20:58 +0100 (CET)
+Message-ID: <alpine.LFD.2.00.1112071055270.4205@dhcp-27-109.brq.redhat.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=UTF-8
-To: "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
-Return-path: <linux-btrfs-owner@vger.kernel.org>
+Content-Type: TEXT/PLAIN; charset=US-ASCII
+Cc: linux-fsdevel@vger.kernel.org, linux-lvm@redhat.com,
+	linux-btrfs@vger.kernel.org, Ric Wheeler <rwheeler@redhat.com>
+To: linux-kernel@vger.kernel.org
+Return-path: <linux-kernel-owner@vger.kernel.org>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-The correct lock order is uuid_mutex -> volume_mutex -> chunk_mutex,
-but when we mount a filesystem which has backing seed devices, we have
-this lock chain:
+Hello everyone,
 
-    open_ctree()
-        lock(chunk_mutex);
-        read_chunk_tree();
-            read_one_dev();
-                open_seed_devices();
-                    lock(uuid_mutex);
+I would like to introduce to you a new tool called System Storage
+Manager (ssm). It is supposed to provide easy to use command line
+interface to manage your storage using various technologies like
+lvm, btrfs, encrypted volumes and possibly more.
 
-and then we hit a lockdep splat.
+Background
+----------
 
-Signed-off-by: Li Zefan <lizf@cn.fujitsu.com>
----
- fs/btrfs/disk-io.c |    2 --
- fs/btrfs/volumes.c |    9 +++++++--
- 2 files changed, 7 insertions(+), 4 deletions(-)
+In more sophisticated enterprise storage environments, management with
+Device Mapper (dm), Logical Volume Manager (LVM), or Multiple Devices
+(md) is becoming increasingly more difficult. With file systems added
+to the mix, the number of tools needed to configure and manage storage
+has grown so large that it is simply not user friendly. With so many
+options for a system administrator to consider, the opportunity for
+errors and problems is large.
 
-diff --git a/fs/btrfs/disk-io.c b/fs/btrfs/disk-io.c
-index 94abc25..b2d103f 100644
---- a/fs/btrfs/disk-io.c
-+++ b/fs/btrfs/disk-io.c
-@@ -2262,9 +2262,7 @@ struct btrfs_root *open_ctree(struct super_block *sb,
- 	   (unsigned long)btrfs_header_chunk_tree_uuid(chunk_root->node),
- 	   BTRFS_UUID_SIZE);
- 
--	mutex_lock(&fs_info->chunk_mutex);
- 	ret = btrfs_read_chunk_tree(chunk_root);
--	mutex_unlock(&fs_info->chunk_mutex);
- 	if (ret) {
- 		printk(KERN_WARNING "btrfs: failed to read chunk tree on %s\n",
- 		       sb->s_id);
-diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
-index c37433d..51b8a8d 100644
---- a/fs/btrfs/volumes.c
-+++ b/fs/btrfs/volumes.c
-@@ -3562,7 +3562,7 @@ static int open_seed_devices(struct btrfs_root *root, u8 *fsid)
- 	struct btrfs_fs_devices *fs_devices;
- 	int ret;
- 
--	mutex_lock(&uuid_mutex);
-+	BUG_ON(!mutex_is_locked(&uuid_mutex));
- 
- 	fs_devices = root->fs_info->fs_devices->seed;
- 	while (fs_devices) {
-@@ -3600,7 +3600,6 @@ static int open_seed_devices(struct btrfs_root *root, u8 *fsid)
- 	fs_devices->seed = root->fs_info->fs_devices->seed;
- 	root->fs_info->fs_devices->seed = fs_devices;
- out:
--	mutex_unlock(&uuid_mutex);
- 	return ret;
- }
- 
-@@ -3743,6 +3742,9 @@ int btrfs_read_chunk_tree(struct btrfs_root *root)
- 	if (!path)
- 		return -ENOMEM;
- 
-+	mutex_lock(&uuid_mutex);
-+	lock_chunks(root);
-+
- 	/* first we search for all of the device items, and then we
- 	 * read in all of the chunk items.  This way we can create chunk
- 	 * mappings that reference all of the devices that are afound
-@@ -3793,6 +3795,9 @@ again:
- 	}
- 	ret = 0;
- error:
-+	unlock_chunks(root);
-+	mutex_unlock(&uuid_mutex);
-+
- 	btrfs_free_path(path);
- 	return ret;
- }
--- 1.7.3.1 
+The btrfs administration tools have shown us that storage management can
+be simplified, and we are working to bring that ease of use to Linux
+filesystems in general.
+
+
+You can also find some more information in my presentation from LinuxCon
+Prague this year:
+
+http://people.redhat.com/lczerner/files/lczerner_fsm.pdf
+
+
+The code is still under development and no release has been made yet, but
+I would like to share with you what I have done so far, since the
+progress has been a bit slower than I have previously expected. The
+project lives on the sf.net :
+
+https://sourceforge.net/projects/storagemanager/
+
+and you can grab source files from git repository here:
+
+https://sourceforge.net/p/storagemanager/code/ci/a1a5fd616d06030f94b9d2e80ee6ebcad09ad35f/tree/
+
+More information can be found on the projects home page, or in the
+README file.
+
+https://sourceforge.net/p/storagemanager/home/Home/
+
+
+Notes
+-----
+
+- It is written in python
+- So far it supports commands : check, resize, create, list, add, remove
+- More commands to come : mirror, snapshot(!)
+- It does not support raid yet, except raid 0 from lvm (striped volume)
+- It has been tested with python 2.7, but would like to make it work on
+  python 2.6 as well.
+- It comes with some doctests, unittests and regression tests written in
+  bash (although it is for lvm only so far)
+- Its "modular" design should make it relatively simple to add support
+  for more back-ends other than lvm, or btrfs
+
+
+Things to be done before the actual release
+-------------------------------------------
+
+- Create btrfs bash tests
+- Create btrfs unittests
+- Extend python unittests to other backends
+- Use wipefs -a before using the device in add()
+- Consider using wipefs -a after removing the device
+- Remove the physical volume after it is removed from the group
+- Figure out how to create better pool names so it is unique in the system and
+  between the systems.
+- Add mirror support
+- Add snapshots support
+- Add raid support
+- use lsblk and blkid to get information
+- Better table alignment when the output spans multiple lines
+- Better error handling - not just plain Exception, but rather named exception
+  and handle it as main() in ssm module
+- Update readme
+- Add more documentation into the code
+
+
+Or course any comment or ideas would be highly appreciated. Please
+report bugs directly to me.
+
+Thanks!
+-Lukas

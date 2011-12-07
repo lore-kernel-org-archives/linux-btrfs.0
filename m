@@ -1,89 +1,62 @@
-From: <dsmith@tgen.org>
-Subject: FS won't mount, open_ctree failed, Assertion !(path->slots[0] == 0)
- failed
-Date: Wed, 7 Dec 2011 02:39:31 +0000
-Message-ID: <CB041FF1.1FD66%dsmith@tgen.org>
+From: Li Zefan <lizf@cn.fujitsu.com>
+Subject: [PATCH] Btrfs: update global block_rsv when creating a new block
+ group
+Date: Wed, 07 Dec 2011 13:12:59 +0800
+Message-ID: <4EDEF5DB.1080902@cn.fujitsu.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Cc: <dsmith@tgen.org>
-To: <linux-btrfs@vger.kernel.org>
+Content-Type: text/plain; charset=UTF-8
+To: "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-So I'm having a bit of trouble with one of my btrfs filesystems.  It isn't mounting after a power failure.  I can't get restore or btrfsck to run, even on backup supers.  I've pasted some output below.  My btrfs-progs below come from git this morning, running on linux 3.2.0.
+A bug was triggered while using seed device:
 
-# mount /dev/md2 /media/test/
-mount: wrong fs type, bad option, bad superblock on /dev/md2,
-       missing codepage or helper program, or other error
-       In some cases useful info is found in syslog - try
-       dmesg | tail  or so
+    # mkfs.btrfs /dev/loop1
+    # btrfstune -S 1 /dev/loop1
+    # mount -o /dev/loop1 /mnt
+    # btrfs dev add /dev/loop2 /mnt
 
-dmesg:
-[26423.775471] device label LUMBERYARD devid 1 transid 1268960 /dev/md2
-[26423.860966] parent transid verify failed on 25487586828288 wanted 1268960 found 1246404
-[26423.860974] parent transid verify failed on 25487586828288 wanted 1268960 found 1246404
-[26423.860979] parent transid verify failed on 25487586828288 wanted 1268960 found 1246404
-[26423.872936] btrfs: open_ctree failed
+btrfs: block rsv returned -28
+------------[ cut here ]------------
+WARNING: at fs/btrfs/extent-tree.c:5969 btrfs_alloc_free_block+0x166/0x396 [btrfs]()
+...
+Call Trace:
+...
+[<f7b7c31c>] btrfs_cow_block+0x101/0x147 [btrfs]
+[<f7b7eaa6>] btrfs_search_slot+0x1b8/0x55f [btrfs]
+[<f7b7f844>] btrfs_insert_empty_items+0x42/0x7f [btrfs]
+[<f7b7f8c1>] btrfs_insert_item+0x40/0x7e [btrfs]
+[<f7b8ac02>] btrfs_make_block_group+0x243/0x2aa [btrfs]
+[<f7bb3f53>] __btrfs_alloc_chunk+0x672/0x70e [btrfs]
+[<f7bb41ff>] init_first_rw_device+0x77/0x13c [btrfs]
+[<f7bb5a62>] btrfs_init_new_device+0x664/0x9fd [btrfs]
+[<f7bbb65a>] btrfs_ioctl+0x694/0xdbe [btrfs]
+[<c04f55f7>] do_vfs_ioctl+0x496/0x4cc
+[<c04f5660>] sys_ioctl+0x33/0x4f
+[<c07b9edf>] sysenter_do_call+0x12/0x38
+---[ end trace 906adac595facc7d ]---
 
-# ./btrfsck /dev/md2
-parent transid verify failed on 25487586828288 wanted 1268960 found 1246404
-parent transid verify failed on 25487586828288 wanted 1268960 found 1246404
-parent transid verify failed on 25487586828288 wanted 1268960 found 1246404
-parent transid verify failed on 25487586828288 wanted 1268960 found 1246404
-Ignoring transid failure
-btrfsck: root-tree.c:46: btrfs_find_last_root: Assertion `!(path->slots[0] == 0)' failed.
-Aborted
-# ./btrfsck -s 1 /dev/md2
-using SB copy 1, bytenr 67108864
-parent transid verify failed on 25483242758144 wanted 1268944 found 1268949
-parent transid verify failed on 25483242758144 wanted 1268944 found 1268949
-parent transid verify failed on 25483242758144 wanted 1268944 found 1268957
-parent transid verify failed on 25483242758144 wanted 1268944 found 1268957
-Ignoring transid failure
-btrfsck: root-tree.c:46: btrfs_find_last_root: Assertion `!(path->slots[0] == 0)' failed.
-Aborted
-# ./btrfsck -s 2 /dev/md2
-using SB copy 2, bytenr 274877906944
-parent transid verify failed on 25483242758144 wanted 1268944 found 1268949
-parent transid verify failed on 25483242758144 wanted 1268944 found 1268949
-parent transid verify failed on 25483242758144 wanted 1268944 found 1268957
-parent transid verify failed on 25483242758144 wanted 1268944 found 1268957
-Ignoring transid failure
-btrfsck: root-tree.c:46: btrfs_find_last_root: Assertion `!(path->slots[0] == 0)' failed.
-Aborted
+Since seed device is readonly, there's no usable space in the filesystem.
+Afterwards we add a sprout device to it, and the kernel creates a METADATA
+block group and a SYSTEM block group where comes free space we can reserve,
+but we still get revervation failure because the global block_rsv hasn't
+been updated accordingly.
 
-# ./find-root /dev/md2
-http://pastebin.com/3umfQHhh
+Signed-off-by: Li Zefan <lizf@cn.fujitsu.com>
+---
+ fs/btrfs/extent-tree.c |    1 +
+ 1 files changed, 1 insertions(+), 0 deletions(-)
 
-# ./restore -i -f 25483145760768 /dev/md2 /tmp
-parent transid verify failed on 25487586828288 wanted 1268960 found 1246404
-parent transid verify failed on 25487586828288 wanted 1268960 found 1246404
-parent transid verify failed on 25487586828288 wanted 1268960 found 1246404
-parent transid verify failed on 25487586828288 wanted 1268960 found 1246404
-Ignoring transid failure
-restore: root-tree.c:46: btrfs_find_last_root: Assertion `!(path->slots[0] == 0)' failed.
-Aborted
-# ./restore -i -u 1 /dev/md2 /tmp
-parent transid verify failed on 25483242758144 wanted 1268944 found 1268949
-parent transid verify failed on 25483242758144 wanted 1268944 found 1268949
-parent transid verify failed on 25483242758144 wanted 1268944 found 1268957
-parent transid verify failed on 25483242758144 wanted 1268944 found 1268957
-Ignoring transid failure
-restore: root-tree.c:46: btrfs_find_last_root: Assertion `!(path->slots[0] == 0)' failed.
-Aborted
-# ./restore -i -u 1 -f 25483145760768 /dev/md2 /tmp
-parent transid verify failed on 25483242758144 wanted 1268944 found 1268949
-parent transid verify failed on 25483242758144 wanted 1268944 found 1268949
-parent transid verify failed on 25483242758144 wanted 1268944 found 1268957
-parent transid verify failed on 25483242758144 wanted 1268944 found 1268957
-Ignoring transid failure
-restore: root-tree.c:46: btrfs_find_last_root: Assertion `!(path->slots[0] == 0)' failed.
-Aborted
-
-All further restores with various combinations of superblocks and bytenr's I tried produced output identical to one of the restores above.
-
-As the newest data on this filesystem had not been backed up, it would be nice if I could either return the filesystem to a mountable state, or recover specific files to another filesystem.  Any ideas?
-
--- David Smith
-
-
+diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
+index 813c6bb..363cfb0 100644
+--- a/fs/btrfs/extent-tree.c
++++ b/fs/btrfs/extent-tree.c
+@@ -7431,6 +7431,7 @@ int btrfs_make_block_group(struct btrfs_trans_handle *trans,
+ 	ret = update_space_info(root->fs_info, cache->flags, size, bytes_used,
+ 				&cache->space_info);
+ 	BUG_ON(ret);
++	update_global_block_rsv(root->fs_info);
+ 
+ 	spin_lock(&cache->space_info->lock);
+ 	cache->space_info->bytes_readonly += cache->bytes_super;
+-- 1.7.3.1 

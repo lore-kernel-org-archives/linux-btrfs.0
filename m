@@ -1,42 +1,110 @@
-From: Chris Mason <chris.mason@oracle.com>
-Subject: Re: [PATCH 2/2] Btrfs: fix deadlock on sb->s_umount when doing umount
-Date: Tue, 6 Dec 2011 16:36:11 -0500
-Message-ID: <20111206213611.GB4029@shiny>
-References: <4EDDA9B3.60508@cn.fujitsu.com>
- <20111206095923.GB9138@infradead.org>
- <4EDDF740.6060100@cn.fujitsu.com>
- <20111206112322.GA10836@infradead.org>
+From: Casey Schaufler <casey@schaufler-ca.com>
+Subject: [PATCH] BTRFS: Establish i_ops before calling d_instantiate
+Date: Tue, 06 Dec 2011 16:39:50 -0800
+Message-ID: <4EDEB5D6.4040202@schaufler-ca.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Cc: Miao Xie <miaox@cn.fujitsu.com>, viro <viro@zeniv.linux.org.uk>,
-	Linux Btrfs <linux-btrfs@vger.kernel.org>,
-	Linux Fsdevel <linux-fsdevel@vger.kernel.org>,
-	Ito <t-itoh@jp.fujitsu.com>
-To: Christoph Hellwig <hch@infradead.org>
-Return-path: <linux-fsdevel-owner@vger.kernel.org>
-In-Reply-To: <20111206112322.GA10836@infradead.org>
+Content-Type: text/plain; charset=ISO-8859-1; format=flowed
+Cc: Casey Schaufler <casey@schaufler-ca.com>,
+	LSM <linux-security-module@vger.kernel.org>,
+	LKLM <linux-kernel@vger.kernel.org>
+To: Chris Mason <chris.mason@oracle.com>,
+	linux-btrfs <linux-btrfs@vger.kernel.org>
+Return-path: <linux-kernel-owner@vger.kernel.org>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Tue, Dec 06, 2011 at 06:23:23AM -0500, Christoph Hellwig wrote:
-> On Tue, Dec 06, 2011 at 07:06:40PM +0800, Miao Xie wrote:
-> > > I can't see why you need the writeout when the trylocks fails.  Umount
-> > > needs to take care of writing out all pending file data anyway, so doing
-> > > it from the cleaner thread in addition doesn't sound like it would help.
-> > 
-> > umount invokes sync_fs() and write out all the dirty file data. For the
-> > other file systems, its OK because the file system does not introduce dirty pages
-> > by itself. But btrfs is different. Its automatic defragment will make lots of dirty
-> > pages after sync_fs() and reserve lots of meta-data space for those pages.
-> > And then the cleaner thread may find there is no enough space to reserve, it must
-> > sync the dirty file data and release the reserved space which is for the dirty
-> > file data.
-> 
-> I think the safest way to fix is is to write out all dirty data again
-> once the cleaner thread has been safely stopped.
-> 
+From: Casey Schaufler <casey@schaufler-ca.com>
 
-Said another way we want to stop the autodefrag code before the unmount
-is ready to continue.  We also want to stop balancing, scrub etc.
+The Smack LSM hook for security_d_instantiate checks
+the inode's i_op->getxattr value to determine if the
+containing filesystem supports extended attributes.
+The BTRFS filesystem sets the inode's i_op value only
+after it has instantiated the inode. This results in
+Smack incorrectly giving new BTRFS inodes attributes
+from the filesystem defaults on the assumption that
+values can't be stored on the filesystem. This patch
+moves the assignment of inode operation vectors ahead
+of the calls to d_instantiate, letting Smack know that
+the filesystem supports extended attributes. There
+should be no impact on the performance or behavior of
+BTRFS.
 
--chris
 
+Signed-off-by: Casey Schaufler <casey@schaufler-ca.com>
+
+---
+
+  fs/btrfs/inode.c |   31 ++++++++++++++++++++++++++-----
+  1 files changed, 26 insertions(+), 5 deletions(-)
+
+diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
+index 2c984f7..df0efca 100644
+--- a/fs/btrfs/inode.c
++++ b/fs/btrfs/inode.c
+@@ -4555,11 +4555,18 @@ static int btrfs_mknod(struct inode *dir, struct dentry *dentry,
+  		goto out_unlock;
+  	}
+  
++	/*
++	 * If the active LSM wants to access the inode during
++	 * d_instantiate it needs these. Smack checks to see
++	 * if the filesystem supports xattrs by looking at the
++	 * ops vector.
++	 */
++	inode->i_op = &btrfs_special_inode_operations;
++
+  	err = btrfs_add_nondir(trans, dir, dentry, inode, 0, index);
+  	if (err)
+  		drop_inode = 1;
+  	else {
+-		inode->i_op = &btrfs_special_inode_operations;
+  		init_special_inode(inode, inode->i_mode, rdev);
+  		btrfs_update_inode(trans, root, inode);
+  	}
+@@ -4613,14 +4620,21 @@ static int btrfs_create(struct inode *dir, struct dentry *dentry,
+  		goto out_unlock;
+  	}
+  
++	/*
++	 * If the active LSM wants to access the inode during
++	 * d_instantiate it needs these. Smack checks to see
++	 * if the filesystem supports xattrs by looking at the
++	 * ops vector.
++	 */
++	inode->i_fop = &btrfs_file_operations;
++	inode->i_op = &btrfs_file_inode_operations;
++
+  	err = btrfs_add_nondir(trans, dir, dentry, inode, 0, index);
+  	if (err)
+  		drop_inode = 1;
+  	else {
+  		inode->i_mapping->a_ops = &btrfs_aops;
+  		inode->i_mapping->backing_dev_info = &root->fs_info->bdi;
+-		inode->i_fop = &btrfs_file_operations;
+-		inode->i_op = &btrfs_file_inode_operations;
+  		BTRFS_I(inode)->io_tree.ops = &btrfs_extent_io_ops;
+  	}
+  out_unlock:
+@@ -7076,14 +7090,21 @@ static int btrfs_symlink(struct inode *dir, struct dentry *dentry,
+  		goto out_unlock;
+  	}
+  
++	/*
++	 * If the active LSM wants to access the inode during
++	 * d_instantiate it needs these. Smack checks to see
++	 * if the filesystem supports xattrs by looking at the
++	 * ops vector.
++	 */
++	inode->i_fop = &btrfs_file_operations;
++	inode->i_op = &btrfs_file_inode_operations;
++
+  	err = btrfs_add_nondir(trans, dir, dentry, inode, 0, index);
+  	if (err)
+  		drop_inode = 1;
+  	else {
+  		inode->i_mapping->a_ops = &btrfs_aops;
+  		inode->i_mapping->backing_dev_info = &root->fs_info->bdi;
+-		inode->i_fop = &btrfs_file_operations;
+-		inode->i_op = &btrfs_file_inode_operations;
+  		BTRFS_I(inode)->io_tree.ops = &btrfs_extent_io_ops;
+  	}
+  	if (drop_inode)

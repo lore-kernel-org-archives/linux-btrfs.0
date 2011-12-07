@@ -1,67 +1,98 @@
-From: Ilya Dryomov <idryomov@gmail.com>
-Subject: Re: [PATCH 2/2] Btrfs: fix deadlock on sb->s_umount when doing
- umount
-Date: Wed, 7 Dec 2011 13:11:58 +0200
-Message-ID: <20111207111158.GA4929@zambezi.lan>
-References: <4EDDA9B3.60508@cn.fujitsu.com>
- <20111206095923.GB9138@infradead.org>
- <4EDDF740.6060100@cn.fujitsu.com>
- <20111206112322.GA10836@infradead.org>
- <20111206213611.GB4029@shiny>
- <4EDED007.2070904@cn.fujitsu.com>
+From: Lukas Czerner <lczerner@redhat.com>
+Subject: Re: System Storage Manager
+Date: Wed, 7 Dec 2011 12:17:34 +0100 (CET)
+Message-ID: <alpine.LFD.2.00.1112071208190.15332@dhcp-27-109.brq.redhat.com>
+References: <alpine.LFD.2.00.1112071055270.4205@dhcp-27-109.brq.redhat.com> <4EDF4672.9080705@draigBrady.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Cc: Chris Mason <chris.mason@oracle.com>,
-	Christoph Hellwig <hch@infradead.org>,
-	viro <viro@zeniv.linux.org.uk>,
-	Linux Btrfs <linux-btrfs@vger.kernel.org>,
-	Linux Fsdevel <linux-fsdevel@vger.kernel.org>,
-	Ito <t-itoh@jp.fujitsu.com>
-To: Miao Xie <miaox@cn.fujitsu.com>
+Content-Type: MULTIPART/MIXED; BOUNDARY="8323328-927029420-1323256658=:15332"
+Cc: Lukas Czerner <lczerner@redhat.com>, linux-kernel@vger.kernel.org,
+	linux-fsdevel@vger.kernel.org, linux-lvm@redhat.com,
+	linux-btrfs@vger.kernel.org, Ric Wheeler <rwheeler@redhat.com>
+To: =?ISO-8859-15?Q?P=E1draig_Brady?= <P@draigBrady.com>
 Return-path: <linux-fsdevel-owner@vger.kernel.org>
-In-Reply-To: <4EDED007.2070904@cn.fujitsu.com>
+In-Reply-To: <4EDF4672.9080705@draigBrady.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Wed, Dec 07, 2011 at 10:31:35AM +0800, Miao Xie wrote:
-> On tue, 6 Dec 2011 16:36:11 -0500, Chris Mason wrote:
-> > On Tue, Dec 06, 2011 at 06:23:23AM -0500, Christoph Hellwig wrote:
-> >> On Tue, Dec 06, 2011 at 07:06:40PM +0800, Miao Xie wrote:
-> >>>> I can't see why you need the writeout when the trylocks fails.  Umount
-> >>>> needs to take care of writing out all pending file data anyway, so doing
-> >>>> it from the cleaner thread in addition doesn't sound like it would help.
-> >>>
-> >>> umount invokes sync_fs() and write out all the dirty file data. For the
-> >>> other file systems, its OK because the file system does not introduce dirty pages
-> >>> by itself. But btrfs is different. Its automatic defragment will make lots of dirty
-> >>> pages after sync_fs() and reserve lots of meta-data space for those pages.
-> >>> And then the cleaner thread may find there is no enough space to reserve, it must
-> >>> sync the dirty file data and release the reserved space which is for the dirty
-> >>> file data.
-> >>
-> >> I think the safest way to fix is is to write out all dirty data again
-> >> once the cleaner thread has been safely stopped.
-> >>
+  This message is in MIME format.  The first part should be readable text,
+  while the remaining parts are likely unreadable without MIME-aware tools.
+
+--8323328-927029420-1323256658=:15332
+Content-Type: TEXT/PLAIN; charset=ISO-8859-1
+Content-Transfer-Encoding: 8BIT
+
+On Wed, 7 Dec 2011, Pádraig Brady wrote:
+
+> On 12/07/2011 10:20 AM, Lukas Czerner wrote:
+> > Hello everyone,
 > > 
-> > Said another way we want to stop the autodefrag code before the unmount
-> > is ready to continue.  We also want to stop balancing, scrub etc.
+> > I would like to introduce to you a new tool called System Storage
+> > Manager (ssm). It is supposed to provide easy to use command line
+> > interface to manage your storage using various technologies like
+> > lvm, btrfs, encrypted volumes and possibly more.
+> > 
+> > Background
+> > ----------
+> > 
+> > In more sophisticated enterprise storage environments, management with
+> > Device Mapper (dm), Logical Volume Manager (LVM), or Multiple Devices
+> > (md) is becoming increasingly more difficult. With file systems added
+> > to the mix, the number of tools needed to configure and manage storage
+> > has grown so large that it is simply not user friendly. With so many
+> > options for a system administrator to consider, the opportunity for
+> > errors and problems is large.
 > 
-> But there is no good interface to do it before umount gets s_umount lock.
-> I think trylock(in writeback_inodes_sb_nr_if_idle()) + dirty data flush
-> can help us to fix the bug perfectly.
+> This seems like a worthwhile project given the overlap
+> in functionality from the various commands.
+> It echoes some of the functionality provided by libguestfs
+> for VM images I think.
+> 
+> > The btrfs administration tools have shown us that storage management can
+> > be simplified, and we are working to bring that ease of use to Linux
+> > filesystems in general.
+> > 
+> > 
+> > You can also find some more information in my presentation from LinuxCon
+> > Prague this year:
+> > 
+> > http://people.redhat.com/lczerner/files/lczerner_fsm.pdf
+> 
+> This had the name 'fsm'.
 
-But it won't fix the umount while balancing family of deadlocks (they
-are really of the same nature, vfs grabs s_umount mutex and we need it
-to proceed).  (Balance cancelling code is part of restriper patches,
-it's just a hook in close_ctree() that waits until we are done
-relocating a chunk - very similar to cleaner wait)
+Yes I had to change it, since fsm implies file system, but it is not
+only about file systems.
 
-One example would be that balancing code while dirtying pages calls
-balance_dirty_pages_ratelimited() for each dirtied page, as it should.
-And if balance_dirty_pages() then decides to initiate writeback we are
-stuck schedule()ing forever, because writeback can't proceed w/o
-read-taking s_umount mutex which is fully held by vfs - it just skips
-the relocation inode.
+> I do think 'ssm' is better, however I would drop the '.py' from
 
-Thanks,
+Already done. But I can see that it is still present in the README file.
+Will fix it, tanks.
 
-		Ilya
+> the command name. This is incidental and restrictive going forward.
+> Note I checked the debian and freebsd man pages and 'ssm' is available.
+
+I could not find it on http://manpages.debian.net/cgi-bin/man.cgi but I
+know there is a project called ssm:
+
+ssm.i686 : Macromolecular coordinate superposition library
+
+but my project is called System Storage Manager and ssm is just the
+executable. I could not find any binary with the same name (within
+Fedora), not sure if that will be a problem...
+
+> 
+> > The code is still under development and no release has been made yet, but
+> > I would like to share with you what I have done so far, since the
+> > progress has been a bit slower than I have previously expected. The
+> > project lives on the sf.net :
+> > 
+> > https://sourceforge.net/projects/storagemanager/
+> 
+> This is a much cleaner landing page:
+> http://sourceforge.net/p/storagemanager/home/Home/
+> 
+> cheers,
+> Pádraig.
+> 
+
+Thanks for comments!
+-Lukas
+--8323328-927029420-1323256658=:15332--

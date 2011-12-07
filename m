@@ -1,56 +1,89 @@
-From: Miao Xie <miaox@cn.fujitsu.com>
-Subject: Re: [PATCH 2/2] Btrfs: fix deadlock on sb->s_umount when doing umount
-Date: Wed, 07 Dec 2011 10:31:35 +0800
-Message-ID: <4EDED007.2070904@cn.fujitsu.com>
-References: <4EDDA9B3.60508@cn.fujitsu.com> <20111206095923.GB9138@infradead.org> <4EDDF740.6060100@cn.fujitsu.com> <20111206112322.GA10836@infradead.org> <20111206213611.GB4029@shiny>
-Reply-To: miaox@cn.fujitsu.com
+From: <dsmith@tgen.org>
+Subject: FS won't mount, open_ctree failed, Assertion !(path->slots[0] == 0)
+ failed
+Date: Wed, 7 Dec 2011 02:39:31 +0000
+Message-ID: <CB041FF1.1FD66%dsmith@tgen.org>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=ISO-8859-1
-To: Chris Mason <chris.mason@oracle.com>,
-	Christoph Hellwig <hch@infradead.org>,
-	viro <viro@zeniv.linux.org.uk>,
-	Linux Btrfs <linux-btrfs@vger.kernel.org>,
-	Linux Fsdevel <linux-fsdevel@vger.kernel.org>,
-	Ito <t-itoh@jp.fujitsu.com>
-Return-path: <linux-fsdevel-owner@vger.kernel.org>
-In-Reply-To: <20111206213611.GB4029@shiny>
+Content-Type: text/plain; charset="us-ascii"
+Cc: <dsmith@tgen.org>
+To: <linux-btrfs@vger.kernel.org>
+Return-path: <linux-btrfs-owner@vger.kernel.org>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On tue, 6 Dec 2011 16:36:11 -0500, Chris Mason wrote:
-> On Tue, Dec 06, 2011 at 06:23:23AM -0500, Christoph Hellwig wrote:
->> On Tue, Dec 06, 2011 at 07:06:40PM +0800, Miao Xie wrote:
->>>> I can't see why you need the writeout when the trylocks fails.  Umount
->>>> needs to take care of writing out all pending file data anyway, so doing
->>>> it from the cleaner thread in addition doesn't sound like it would help.
->>>
->>> umount invokes sync_fs() and write out all the dirty file data. For the
->>> other file systems, its OK because the file system does not introduce dirty pages
->>> by itself. But btrfs is different. Its automatic defragment will make lots of dirty
->>> pages after sync_fs() and reserve lots of meta-data space for those pages.
->>> And then the cleaner thread may find there is no enough space to reserve, it must
->>> sync the dirty file data and release the reserved space which is for the dirty
->>> file data.
->>
->> I think the safest way to fix is is to write out all dirty data again
->> once the cleaner thread has been safely stopped.
->>
-> 
-> Said another way we want to stop the autodefrag code before the unmount
-> is ready to continue.  We also want to stop balancing, scrub etc.
+So I'm having a bit of trouble with one of my btrfs filesystems.  It isn't mounting after a power failure.  I can't get restore or btrfsck to run, even on backup supers.  I've pasted some output below.  My btrfs-progs below come from git this morning, running on linux 3.2.0.
 
-But there is no good interface to do it before umount gets s_umount lock.
-I think trylock(in writeback_inodes_sb_nr_if_idle()) + dirty data flush
-can help us to fix the bug perfectly.
+# mount /dev/md2 /media/test/
+mount: wrong fs type, bad option, bad superblock on /dev/md2,
+       missing codepage or helper program, or other error
+       In some cases useful info is found in syslog - try
+       dmesg | tail  or so
 
-Thanks
-Miao
+dmesg:
+[26423.775471] device label LUMBERYARD devid 1 transid 1268960 /dev/md2
+[26423.860966] parent transid verify failed on 25487586828288 wanted 1268960 found 1246404
+[26423.860974] parent transid verify failed on 25487586828288 wanted 1268960 found 1246404
+[26423.860979] parent transid verify failed on 25487586828288 wanted 1268960 found 1246404
+[26423.872936] btrfs: open_ctree failed
 
-> 
-> -chris
-> 
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
-> 
+# ./btrfsck /dev/md2
+parent transid verify failed on 25487586828288 wanted 1268960 found 1246404
+parent transid verify failed on 25487586828288 wanted 1268960 found 1246404
+parent transid verify failed on 25487586828288 wanted 1268960 found 1246404
+parent transid verify failed on 25487586828288 wanted 1268960 found 1246404
+Ignoring transid failure
+btrfsck: root-tree.c:46: btrfs_find_last_root: Assertion `!(path->slots[0] == 0)' failed.
+Aborted
+# ./btrfsck -s 1 /dev/md2
+using SB copy 1, bytenr 67108864
+parent transid verify failed on 25483242758144 wanted 1268944 found 1268949
+parent transid verify failed on 25483242758144 wanted 1268944 found 1268949
+parent transid verify failed on 25483242758144 wanted 1268944 found 1268957
+parent transid verify failed on 25483242758144 wanted 1268944 found 1268957
+Ignoring transid failure
+btrfsck: root-tree.c:46: btrfs_find_last_root: Assertion `!(path->slots[0] == 0)' failed.
+Aborted
+# ./btrfsck -s 2 /dev/md2
+using SB copy 2, bytenr 274877906944
+parent transid verify failed on 25483242758144 wanted 1268944 found 1268949
+parent transid verify failed on 25483242758144 wanted 1268944 found 1268949
+parent transid verify failed on 25483242758144 wanted 1268944 found 1268957
+parent transid verify failed on 25483242758144 wanted 1268944 found 1268957
+Ignoring transid failure
+btrfsck: root-tree.c:46: btrfs_find_last_root: Assertion `!(path->slots[0] == 0)' failed.
+Aborted
+
+# ./find-root /dev/md2
+http://pastebin.com/3umfQHhh
+
+# ./restore -i -f 25483145760768 /dev/md2 /tmp
+parent transid verify failed on 25487586828288 wanted 1268960 found 1246404
+parent transid verify failed on 25487586828288 wanted 1268960 found 1246404
+parent transid verify failed on 25487586828288 wanted 1268960 found 1246404
+parent transid verify failed on 25487586828288 wanted 1268960 found 1246404
+Ignoring transid failure
+restore: root-tree.c:46: btrfs_find_last_root: Assertion `!(path->slots[0] == 0)' failed.
+Aborted
+# ./restore -i -u 1 /dev/md2 /tmp
+parent transid verify failed on 25483242758144 wanted 1268944 found 1268949
+parent transid verify failed on 25483242758144 wanted 1268944 found 1268949
+parent transid verify failed on 25483242758144 wanted 1268944 found 1268957
+parent transid verify failed on 25483242758144 wanted 1268944 found 1268957
+Ignoring transid failure
+restore: root-tree.c:46: btrfs_find_last_root: Assertion `!(path->slots[0] == 0)' failed.
+Aborted
+# ./restore -i -u 1 -f 25483145760768 /dev/md2 /tmp
+parent transid verify failed on 25483242758144 wanted 1268944 found 1268949
+parent transid verify failed on 25483242758144 wanted 1268944 found 1268949
+parent transid verify failed on 25483242758144 wanted 1268944 found 1268957
+parent transid verify failed on 25483242758144 wanted 1268944 found 1268957
+Ignoring transid failure
+restore: root-tree.c:46: btrfs_find_last_root: Assertion `!(path->slots[0] == 0)' failed.
+Aborted
+
+All further restores with various combinations of superblocks and bytenr's I tried produced output identical to one of the restores above.
+
+As the newest data on this filesystem had not been backed up, it would be nice if I could either return the filesystem to a mountable state, or recover specific files to another filesystem.  Any ideas?
+
+-- David Smith
+
 

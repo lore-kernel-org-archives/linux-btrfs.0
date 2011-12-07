@@ -1,40 +1,56 @@
-From: Al Viro <viro@ZenIV.linux.org.uk>
-Subject: Re: [PATCH] BTRFS: Establish i_ops before calling d_instantiate
-Date: Wed, 7 Dec 2011 02:04:46 +0000
-Message-ID: <20111207020446.GU2203@ZenIV.linux.org.uk>
-References: <4EDEB5D6.4040202@schaufler-ca.com>
+From: Miao Xie <miaox@cn.fujitsu.com>
+Subject: Re: [PATCH 2/2] Btrfs: fix deadlock on sb->s_umount when doing umount
+Date: Wed, 07 Dec 2011 10:31:35 +0800
+Message-ID: <4EDED007.2070904@cn.fujitsu.com>
+References: <4EDDA9B3.60508@cn.fujitsu.com> <20111206095923.GB9138@infradead.org> <4EDDF740.6060100@cn.fujitsu.com> <20111206112322.GA10836@infradead.org> <20111206213611.GB4029@shiny>
+Reply-To: miaox@cn.fujitsu.com
 Mime-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Cc: Chris Mason <chris.mason@oracle.com>,
-	linux-btrfs <linux-btrfs@vger.kernel.org>,
-	LSM <linux-security-module@vger.kernel.org>,
-	LKLM <linux-kernel@vger.kernel.org>
-To: Casey Schaufler <casey@schaufler-ca.com>
-Return-path: <linux-kernel-owner@vger.kernel.org>
-In-Reply-To: <4EDEB5D6.4040202@schaufler-ca.com>
+Content-Type: text/plain; charset=ISO-8859-1
+To: Chris Mason <chris.mason@oracle.com>,
+	Christoph Hellwig <hch@infradead.org>,
+	viro <viro@zeniv.linux.org.uk>,
+	Linux Btrfs <linux-btrfs@vger.kernel.org>,
+	Linux Fsdevel <linux-fsdevel@vger.kernel.org>,
+	Ito <t-itoh@jp.fujitsu.com>
+Return-path: <linux-fsdevel-owner@vger.kernel.org>
+In-Reply-To: <20111206213611.GB4029@shiny>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Tue, Dec 06, 2011 at 04:39:50PM -0800, Casey Schaufler wrote:
-> From: Casey Schaufler <casey@schaufler-ca.com>
+On tue, 6 Dec 2011 16:36:11 -0500, Chris Mason wrote:
+> On Tue, Dec 06, 2011 at 06:23:23AM -0500, Christoph Hellwig wrote:
+>> On Tue, Dec 06, 2011 at 07:06:40PM +0800, Miao Xie wrote:
+>>>> I can't see why you need the writeout when the trylocks fails.  Umount
+>>>> needs to take care of writing out all pending file data anyway, so doing
+>>>> it from the cleaner thread in addition doesn't sound like it would help.
+>>>
+>>> umount invokes sync_fs() and write out all the dirty file data. For the
+>>> other file systems, its OK because the file system does not introduce dirty pages
+>>> by itself. But btrfs is different. Its automatic defragment will make lots of dirty
+>>> pages after sync_fs() and reserve lots of meta-data space for those pages.
+>>> And then the cleaner thread may find there is no enough space to reserve, it must
+>>> sync the dirty file data and release the reserved space which is for the dirty
+>>> file data.
+>>
+>> I think the safest way to fix is is to write out all dirty data again
+>> once the cleaner thread has been safely stopped.
+>>
 > 
-> The Smack LSM hook for security_d_instantiate checks
-> the inode's i_op->getxattr value to determine if the
-[snip]
+> Said another way we want to stop the autodefrag code before the unmount
+> is ready to continue.  We also want to stop balancing, scrub etc.
 
-> +	inode->i_op = &btrfs_special_inode_operations;
-> +
->  	err = btrfs_add_nondir(trans, dir, dentry, inode, 0, index);
->  	if (err)
->  		drop_inode = 1;
->  	else {
-> -		inode->i_op = &btrfs_special_inode_operations;
->  		init_special_inode(inode, inode->i_mode, rdev);
->  		btrfs_update_inode(trans, root, inode);
+But there is no good interface to do it before umount gets s_umount lock.
+I think trylock(in writeback_inodes_sb_nr_if_idle()) + dirty data flush
+can help us to fix the bug perfectly.
 
-To hell with LSM, there are much stronger reasons why d_instantiate() on
-a half-baked inode is wrong.  As soon as you've done it somebody can
-come and look that dentry up.
+Thanks
+Miao
 
-IOW, the bug is real, but this patch is not enough - in particular, ->create()
-part is simply wrong.  We need to set ->a_ops before some joker comes and
-tries to open it, at the very least...
+> 
+> -chris
+> 
+> --
+> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
+> the body of a message to majordomo@vger.kernel.org
+> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+> 
+

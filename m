@@ -1,26 +1,25 @@
-From: Jeremy Sanders <jeremy@jeremysanders.net>
-Subject: Re: Btrfs switches to using mostly one thread
-Date: Thu, 08 Dec 2011 15:36:06 +0000
-Message-ID: <4EE0D966.10609@jeremysanders.net>
-References: <jbqkib$v1g$1@dough.gmane.org> <20111208153201.GJ8971@shiny>
+From: Phillip Susi <psusi@cfl.rr.com>
+Subject: Re: Cloning a Btrfs partition
+Date: Thu, 08 Dec 2011 10:49:26 -0500
+Message-ID: <4EE0DC86.9080005@cfl.rr.com>
+References: <22fa7cb1-728a-4a3d-a51b-3ff54053380e@mail.placs.net>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=ISO-8859-1; format=flowed
-To: Chris Mason <chris.mason@oracle.com>, linux-btrfs@vger.kernel.org
+Content-Type: text/plain; charset=UTF-8; format=flowed
+Cc: Freddie Cash <fjwcash@gmail.com>, linux-btrfs@vger.kernel.org
+To: BJ Quinn <bj@placs.net>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <20111208153201.GJ8971@shiny>
+In-Reply-To: <22fa7cb1-728a-4a3d-a51b-3ff54053380e@mail.placs.net>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 08/12/11 15:32, Chris Mason wrote:
-> On Thu, Dec 08, 2011 at 03:19:38PM +0000, Jeremy Sanders wrote:
->> Hi - I'm trying out btrfs again, and I see the same old bug in kernel 3.1.4
->> (Fedora 16, x86_64, dual-core), where after a few hours of writing, it
->> switches from writing with several threads to writing with one:
->
-> Ok, I'll try to reproduce this here.  Could you please do a sysrq-t, I'd
-> like to see what the other delalloc-writers are doing.
+On 12/7/2011 1:49 PM, BJ Quinn wrote:
+> What I need isn't really an equivalent "zfs send" -- my script can do
+> that. As I remember, zfs send was pretty slow too in a scenario like
+> this. What I need is to be able to clone a btrfs array somehow -- dd
+> would be nice, but as I said I end up with the identical UUID
+> problem. Is there a way to change the UUID of an array?
 
-I'll restart the copying to get it back to its failed state and post the 
-results when it fails.
-
-Jeremy
-
+No, btrfs send is exactly what you need.  Using dd is slow because it 
+copies unused blocks, and requires the source fs be unmounted and the 
+destination be an empty partition.  rsync is slow because it can't take 
+advantage of the btrfs tree to quickly locate the files (or parts of 
+them) that have changed.  A btrfs send would solve all of these issues.

@@ -1,46 +1,38 @@
-From: Goffredo Baroncelli <kreijack@inwind.it>
-Subject: Re: Cloning a Btrfs partition
-Date: Thu, 08 Dec 2011 20:22:19 +0100
-Message-ID: <1335463.NujyoKUyEg@venice>
-References: <bb747e0c-d6d8-4f60-a3f6-cf64c856515e@mail.placs.net> <d0ff909c-00a0-4f34-a1dc-6be0a8fdd832@mail.placs.net> <slrnje12mm.7db.stephane.chazelas@spam.is.invalid>
-Reply-To: Goffredo Baroncelli <kreijack@inwind.it>
+From: Chris Mason <chris.mason@oracle.com>
+Subject: [GIT PULL] Btrfs fixes
+Date: Thu, 8 Dec 2011 14:24:35 -0500
+Message-ID: <20111208192435.GR8971@shiny>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Cc: linux-btrfs@vger.kernel.org
-To: Stephane CHAZELAS <stephane_chazelas@yahoo.fr>
+Content-Type: text/plain; charset=us-ascii
+To: Linus Torvalds <torvalds@linux-foundation.org>,
+	LKML <linux-kernel@vger.kernel.org>,
+	linux-btrfs <linux-btrfs@vger.kernel.org>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <slrnje12mm.7db.stephane.chazelas@spam.is.invalid>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Thursday, 08 December, 2011 10:00:54 Stephane CHAZELAS wrote:
-> Because of the same uuid, the btrfs commands like filesystem
-> show will not always give sensible outputs. I tried to rename
-> the fsid by changing it in the superblocks, but it looks like it
-> is alsa included in a few other places where changing it
-> manually breaks some checksums, so I guess someone would have to
-> write a tool to do that job. I'm surprised it doesn't exist
-> already (or maybe it does and I'm not aware of it?).
+Hi everyone,
 
-The fs-uuid is recorded in the header of every tree block.
+The for-linus branch of the btrfs repository:
 
->From fs/btrfs/ctree.h
+git://git.kernel.org/pub/scm/linux/kernel/git/mason/linux-btrfs.git for-linus
 
-[...]
-/*
- * every tree block (leaf or node) starts with this header.
- */
-struct btrfs_header {
-        /* these first four must match the super block */
-        u8 csum[BTRFS_CSUM_SIZE];
-        u8 fsid[BTRFS_FSID_SIZE]; /* FS specific uuid */
-[...]
+Has a few more fixes.  The most notable here are two more patches from
+Alexandre's batch of allocator fixes.  The other two fix corner cases in
+the state code and in the code to add devices.
 
-Moreover I would be worried more about the uuid of the device than the 
-filesystem one...
+Alexandre Oliva (2) commits (+49/-51):
+    Btrfs: try to allocate from cluster even at LOOP_NO_EMPTY_SIZE (+18/-8)
+    Btrfs: try cluster but don't advance in search list (+31/-43)
 
+Liu Bo (1) commits (+16/-8):
+    Btrfs: drop spin lock when memory alloc fails
 
+Li Zefan (1) commits (+1/-1):
+    Btrfs: check if the to-be-added device is writable
 
+Total: (4) commits (+66/-60)
 
--- 
-gpg key@ keyserver.linux.it: Goffredo Baroncelli (ghigo) <kreijack@inwind.it>
-Key fingerprint = 4769 7E51 5293 D36C 814E  C054 BF04 F161 3DC5 0512
+ fs/btrfs/extent-tree.c |  100 +++++++++++++++++++++++------------------------
+ fs/btrfs/extent_io.c   |   24 ++++++++----
+ fs/btrfs/volumes.c     |    2 +-
+ 3 files changed, 66 insertions(+), 60 deletions(-)

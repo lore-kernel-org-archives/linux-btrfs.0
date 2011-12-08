@@ -1,38 +1,26 @@
-From: Jan Schmidt <list.btrfs@jan-o-sch.net>
-Subject: Re: WARNING: at fs/btrfs/extent-tree.c:4754 followed by BUG: unable
- to handle kernel NULL pointer dereference at (null)
-Date: Thu, 08 Dec 2011 17:03:55 +0100
-Message-ID: <4EE0DFEB.2000904@jan-o-sch.net>
-References: <vhv4r8-hb5.ln1@hurikhan.ath.cx>
+From: BJ Quinn <bj@placs.net>
+Subject: Re: Cloning a Btrfs partition
+Date: Thu, 08 Dec 2011 10:07:24 -0600 (CST)
+Message-ID: <61f156db-4242-47c4-9efb-a19154675947@mail.placs.net>
+References: <4EE0DC86.9080005@cfl.rr.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=ISO-8859-1
-Cc: linux-btrfs@vger.kernel.org
-To: Kai Krakow <hurikhan77+btrfs@gmail.com>
+Content-Type: text/plain; charset=utf-8
+Cc: Freddie Cash <fjwcash@gmail.com>, linux-btrfs@vger.kernel.org
+To: Phillip Susi <psusi@cfl.rr.com>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <vhv4r8-hb5.ln1@hurikhan.ath.cx>
+In-Reply-To: <4EE0DC86.9080005@cfl.rr.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 07.12.2011 21:40, Kai Krakow wrote:
-> Scrubbing reports 1 uncorrectable error. I have this error since my system 
-> froze due to some xorg graphic driver instability (was trying out SNA 
-> acceleration for sandybridge).
-> 
-> The problematic file seems to be in /usr/portage but scrubbing doesn't tell 
-> me the filename (I was under the impression 3.2.x adds a patch which should 
-> report filenames).
+>No, btrfs send is exactly what you need. Using dd is slow because it 
+>copies unused blocks, and requires the source fs be unmounted and the 
+>destination be an empty partition. rsync is slow because it can't take 
+>advantage of the btrfs tree to quickly locate the files (or parts of 
+>them) that have changed. A btrfs send would solve all of these issues. 
 
-It should. Did you take a look at dmesg output after scrubbing? If it
-doesn't contain a hint on the file or block, please paste what you get.
+Well, that depends.  Using dd is slow if you have a large percentage of the drive unused.  In my case, half or more of the drive is in use, and dd is about as efficient as is theoretically possible on the part of the drive that is in use.  You're right that it requires the drive to be unmounted and the destination to be an empty partition, but what I want to use dd for is to catch an empty drive up to being current and afterwards I'll use my rsync script to keep it up to date with the latest snapshots.  Maybe btrfs send will be more efficient, but in my experience with zfs send, dd was 10x faster unless your drive was nearly empty.
 
-> Everytime I run "emerge" (it is a gentoo system) my 
-> screen goes black after a few seconds and I can only revert to using ssh.
-> 
-> Problem is: As soon as this happens, some filesystem accesses block the 
-> process in disk state, it cannot be killed. This initiates some feedback 
-> loop: From now on any other process trying to access the FS freezes. I can 
-> only reisub now. It seems to be fine if data comes from cache instead from 
-> disk.
+At any rate, was someone saying that some work had already started on something like btrfs send?
 
-Please try to grab sysrq+w output in this state.
+Or, alternatively, given that dd would be sufficient for my needs, is there any way to change the UUID of a btrfs partition after I've cloned it?
 
--Jan
+-BJ

@@ -1,70 +1,104 @@
-From: Miao Xie <miaox@cn.fujitsu.com>
-Subject: Re: [PATCH 2/2] Btrfs: fix deadlock on sb->s_umount when doing umount
-Date: Thu, 08 Dec 2011 11:46:07 +0800
-Message-ID: <4EE032FF.1050701@cn.fujitsu.com>
-References: <4EDDA9B3.60508@cn.fujitsu.com> <20111206095923.GB9138@infradead.org> <4EDDF740.6060100@cn.fujitsu.com> <20111206112322.GA10836@infradead.org> <20111206213611.GB4029@shiny> <4EDED007.2070904@cn.fujitsu.com> <20111207111158.GA4929@zambezi.lan>
-Reply-To: miaox@cn.fujitsu.com
-Mime-Version: 1.0
-Content-Type: text/plain; charset=ISO-8859-1
-Cc: Chris Mason <chris.mason@oracle.com>,
-	Christoph Hellwig <hch@infradead.org>,
-	viro <viro@zeniv.linux.org.uk>,
-	Linux Btrfs <linux-btrfs@vger.kernel.org>,
-	Linux Fsdevel <linux-fsdevel@vger.kernel.org>,
-	Ito <t-itoh@jp.fujitsu.com>
-To: Ilya Dryomov <idryomov@gmail.com>
+From: Stephane CHAZELAS <stephane_chazelas@yahoo.fr>
+Subject: Re: Cloning a Btrfs partition
+Date: Thu, 8 Dec 2011 10:00:54 +0000 (UTC)
+Message-ID: <slrnje12mm.7db.stephane.chazelas@spam.is.invalid>
+References: <bb747e0c-d6d8-4f60-a3f6-cf64c856515e@mail.placs.net>
+ <d0ff909c-00a0-4f34-a1dc-6be0a8fdd832@mail.placs.net>
+To: linux-btrfs@vger.kernel.org
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <20111207111158.GA4929@zambezi.lan>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Wed, 7 Dec 2011 13:11:58 +0200, Ilya Dryomov wrote:
-> On Wed, Dec 07, 2011 at 10:31:35AM +0800, Miao Xie wrote:
->> On tue, 6 Dec 2011 16:36:11 -0500, Chris Mason wrote:
->>> On Tue, Dec 06, 2011 at 06:23:23AM -0500, Christoph Hellwig wrote:
->>>> On Tue, Dec 06, 2011 at 07:06:40PM +0800, Miao Xie wrote:
->>>>>> I can't see why you need the writeout when the trylocks fails.  Umount
->>>>>> needs to take care of writing out all pending file data anyway, so doing
->>>>>> it from the cleaner thread in addition doesn't sound like it would help.
->>>>>
->>>>> umount invokes sync_fs() and write out all the dirty file data. For the
->>>>> other file systems, its OK because the file system does not introduce dirty pages
->>>>> by itself. But btrfs is different. Its automatic defragment will make lots of dirty
->>>>> pages after sync_fs() and reserve lots of meta-data space for those pages.
->>>>> And then the cleaner thread may find there is no enough space to reserve, it must
->>>>> sync the dirty file data and release the reserved space which is for the dirty
->>>>> file data.
->>>>
->>>> I think the safest way to fix is is to write out all dirty data again
->>>> once the cleaner thread has been safely stopped.
->>>>
->>>
->>> Said another way we want to stop the autodefrag code before the unmount
->>> is ready to continue.  We also want to stop balancing, scrub etc.
->>
->> But there is no good interface to do it before umount gets s_umount lock.
->> I think trylock(in writeback_inodes_sb_nr_if_idle()) + dirty data flush
->> can help us to fix the bug perfectly.
-> 
-> But it won't fix the umount while balancing family of deadlocks (they
-> are really of the same nature, vfs grabs s_umount mutex and we need it
-> to proceed).  (Balance cancelling code is part of restriper patches,
-> it's just a hook in close_ctree() that waits until we are done
-> relocating a chunk - very similar to cleaner wait)
+2011-12-07, 12:35(-06), BJ Quinn:
+> I've got a 6TB btrfs array (two 3TB drives in a RAID 0). It's
+> about 2/3 full and has lots of snapshots. I've written a
+> script that runs through the snapshots and copies the data
+> efficiently (rsync --inplace --no-whole-file) from the main
+> 6TB array to a backup array, creating snapshots on the backup
+> array and then continuing on copying the next snapshot.
+> Problem is, it looks like it will take weeks to finish. 
+>
+> I've tried simply using dd to clone the btrfs partition, which
+> technically appears to work, but then it appears that the UUID
+> between the arrays is identical, so I can only mount one or
+> the other. This means I can't continue to simply update the
+> backup array with the new snapshots created on the main array
+> (my script is capable of "catching up" the backup array with
+> the new snapshots, but if I can't mount both arrays...). 
+[...]
 
-I will change the logic, we will add a while loop to check if something is
-running(xxx_running is not zero), if yes, invoke btrfs_sync_fs() to do
-dirty page flush.
+You can mount them if you specify the devices upon mount.
 
-> 
-> One example would be that balancing code while dirtying pages calls
-> balance_dirty_pages_ratelimited() for each dirtied page, as it should.
-> And if balance_dirty_pages() then decides to initiate writeback we are
-> stuck schedule()ing forever, because writeback can't proceed w/o
-> read-taking s_umount mutex which is fully held by vfs - it just skips
-> the relocation inode.
+Here's a method to transfer a full FS to some other with
+different layout.
 
-AFAIK, balance_dirty_pages() just wake up the flush thread, and the flush
-thread also doesn't grab s_umount. So we needn't worry about it.I think.
+In this example, we're transfering from a FS on a 3GB device
+(/dev/loop1) to a new FS on 2 2GB devices (/dev/loop2,
+/dev/loop3)
 
-Thanks
-Miao
+truncate -s 3G a1
+truncate -s 2G b1 b2
+losetup /dev/loop1 a1
+losetup /dev/loop2 b1
+losetup /dev/loop2 b2
+
+# our src FS on 1 disk:
+mkfs.btrfs /dev/loop1
+mkdir A B
+mount /dev/loop1 A
+# now we can fill it up, create subvolumes and snapshots...
+
+# at this point, we decide to make a clone of it. To do that, we
+# will make a snapshot of the device. For that, we need
+# temporary storage as a block device. That could be a disk
+# (like a USB key) or a nbd to another host, or anything. Here,
+# I'm going to use a loop device to a file. You need enough
+# space to store any modification done on the src FS while
+# you're the transfer and what is needed to do the transfer
+# (I can't tell you much about that).
+
+truncate -s 100M sa
+losetup /dev/loop4 sa
+
+umount A
+size=$(blockdev --getsize /dev/loop1)
+echo 0 "$size" /dev/loop1) snapshot-origin /dev/loop1 | dmsetup create a
+echo 0 "$size" snapshot /dev/loop1 /dev/loop4 N 8 | dmsetup create aSnap
+
+# now we have /dev/mapper/a as the src device which we can
+# remount as such and use:
+mount /dev/mapper/a A
+
+# and aSnap as a writable snapshot of the src device, which we
+# mount separately:
+mount /dev/mapper/aSnap B
+
+# The trick here is that we're going to add the two new devices
+# to "B" and remove the snapshot one. btrfs will automatically
+# migrate the data to the new device:
+btrfs device add /dev/loop2 /dev/loop3 B
+btrfs device delete /dev/mapper/aSnap B
+# END
+Once that's completed, you should have a copy of A in B.
+
+You may want to watch the status of the snapshot while you're
+transfering to check that it doesn't get full 
+
+That method can't be used to do some incremental "syncing"
+between two FS for which you'd still need something similar to
+"zfs send" (speaking of which, you may want to consider
+zfsonlinux which is now reaching a point where it's about as
+stable as btrfs, same performance level if not better and has a
+lot more features. I'm doing the switch myself while waiting for
+btrfs to be a bit more mature)
+
+Because of the same uuid, the btrfs commands like filesystem
+show will not always give sensible outputs. I tried to rename
+the fsid by changing it in the superblocks, but it looks like it
+is alsa included in a few other places where changing it
+manually breaks some checksums, so I guess someone would have to
+write a tool to do that job. I'm surprised it doesn't exist
+already (or maybe it does and I'm not aware of it?).
+
+-- 
+Stephane
+

@@ -1,25 +1,38 @@
-From: Phillip Susi <psusi@cfl.rr.com>
-Subject: Re: Cloning a Btrfs partition
-Date: Thu, 08 Dec 2011 10:49:26 -0500
-Message-ID: <4EE0DC86.9080005@cfl.rr.com>
-References: <22fa7cb1-728a-4a3d-a51b-3ff54053380e@mail.placs.net>
+From: Jan Schmidt <list.btrfs@jan-o-sch.net>
+Subject: Re: WARNING: at fs/btrfs/extent-tree.c:4754 followed by BUG: unable
+ to handle kernel NULL pointer dereference at (null)
+Date: Thu, 08 Dec 2011 17:03:55 +0100
+Message-ID: <4EE0DFEB.2000904@jan-o-sch.net>
+References: <vhv4r8-hb5.ln1@hurikhan.ath.cx>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=UTF-8; format=flowed
-Cc: Freddie Cash <fjwcash@gmail.com>, linux-btrfs@vger.kernel.org
-To: BJ Quinn <bj@placs.net>
+Content-Type: text/plain; charset=ISO-8859-1
+Cc: linux-btrfs@vger.kernel.org
+To: Kai Krakow <hurikhan77+btrfs@gmail.com>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <22fa7cb1-728a-4a3d-a51b-3ff54053380e@mail.placs.net>
+In-Reply-To: <vhv4r8-hb5.ln1@hurikhan.ath.cx>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 12/7/2011 1:49 PM, BJ Quinn wrote:
-> What I need isn't really an equivalent "zfs send" -- my script can do
-> that. As I remember, zfs send was pretty slow too in a scenario like
-> this. What I need is to be able to clone a btrfs array somehow -- dd
-> would be nice, but as I said I end up with the identical UUID
-> problem. Is there a way to change the UUID of an array?
+On 07.12.2011 21:40, Kai Krakow wrote:
+> Scrubbing reports 1 uncorrectable error. I have this error since my system 
+> froze due to some xorg graphic driver instability (was trying out SNA 
+> acceleration for sandybridge).
+> 
+> The problematic file seems to be in /usr/portage but scrubbing doesn't tell 
+> me the filename (I was under the impression 3.2.x adds a patch which should 
+> report filenames).
 
-No, btrfs send is exactly what you need.  Using dd is slow because it 
-copies unused blocks, and requires the source fs be unmounted and the 
-destination be an empty partition.  rsync is slow because it can't take 
-advantage of the btrfs tree to quickly locate the files (or parts of 
-them) that have changed.  A btrfs send would solve all of these issues.
+It should. Did you take a look at dmesg output after scrubbing? If it
+doesn't contain a hint on the file or block, please paste what you get.
+
+> Everytime I run "emerge" (it is a gentoo system) my 
+> screen goes black after a few seconds and I can only revert to using ssh.
+> 
+> Problem is: As soon as this happens, some filesystem accesses block the 
+> process in disk state, it cannot be killed. This initiates some feedback 
+> loop: From now on any other process trying to access the FS freezes. I can 
+> only reisub now. It seems to be fine if data comes from cache instead from 
+> disk.
+
+Please try to grab sysrq+w output in this state.
+
+-Jan

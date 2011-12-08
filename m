@@ -1,26 +1,20 @@
-From: BJ Quinn <bj@placs.net>
+From: Jan Schmidt <list.btrfs@jan-o-sch.net>
 Subject: Re: Cloning a Btrfs partition
-Date: Thu, 08 Dec 2011 10:07:24 -0600 (CST)
-Message-ID: <61f156db-4242-47c4-9efb-a19154675947@mail.placs.net>
-References: <4EE0DC86.9080005@cfl.rr.com>
+Date: Thu, 08 Dec 2011 17:09:31 +0100
+Message-ID: <4EE0E13B.4070603@jan-o-sch.net>
+References: <61f156db-4242-47c4-9efb-a19154675947@mail.placs.net>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=utf-8
-Cc: Freddie Cash <fjwcash@gmail.com>, linux-btrfs@vger.kernel.org
-To: Phillip Susi <psusi@cfl.rr.com>
+Content-Type: text/plain; charset=UTF-8
+Cc: Phillip Susi <psusi@cfl.rr.com>, Freddie Cash <fjwcash@gmail.com>,
+	linux-btrfs@vger.kernel.org
+To: BJ Quinn <bj@placs.net>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <4EE0DC86.9080005@cfl.rr.com>
+In-Reply-To: <61f156db-4242-47c4-9efb-a19154675947@mail.placs.net>
 List-ID: <linux-btrfs.vger.kernel.org>
 
->No, btrfs send is exactly what you need. Using dd is slow because it 
->copies unused blocks, and requires the source fs be unmounted and the 
->destination be an empty partition. rsync is slow because it can't take 
->advantage of the btrfs tree to quickly locate the files (or parts of 
->them) that have changed. A btrfs send would solve all of these issues. 
+On 08.12.2011 17:07, BJ Quinn wrote:
+> At any rate, was someone saying that some work had already started on something like btrfs send?
 
-Well, that depends.  Using dd is slow if you have a large percentage of the drive unused.  In my case, half or more of the drive is in use, and dd is about as efficient as is theoretically possible on the part of the drive that is in use.  You're right that it requires the drive to be unmounted and the destination to be an empty partition, but what I want to use dd for is to catch an empty drive up to being current and afterwards I'll use my rsync script to keep it up to date with the latest snapshots.  Maybe btrfs send will be more efficient, but in my experience with zfs send, dd was 10x faster unless your drive was nearly empty.
+That's right.
 
-At any rate, was someone saying that some work had already started on something like btrfs send?
-
-Or, alternatively, given that dd would be sufficient for my needs, is there any way to change the UUID of a btrfs partition after I've cloned it?
-
--BJ
+-Jan

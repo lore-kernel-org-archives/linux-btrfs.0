@@ -1,102 +1,46 @@
-From: David Marcin <djmarcin@gmail.com>
-Subject: BUG during btrfs device delete missing
-Date: Thu, 8 Dec 2011 11:06:47 -0800
-Message-ID: <CAHh_JMOxrqLRC2ad5n3DuArL1hQdNiixO7jd8StYSKLkbLUB7A@mail.gmail.com>
-References: <CAHh_JMPvmRNRrhh0aQhQiej+NP4Vb36MbFtECFphc8cUM9B=ZQ@mail.gmail.com>
+From: Goffredo Baroncelli <kreijack@inwind.it>
+Subject: Re: Cloning a Btrfs partition
+Date: Thu, 08 Dec 2011 20:22:19 +0100
+Message-ID: <1335463.NujyoKUyEg@venice>
+References: <bb747e0c-d6d8-4f60-a3f6-cf64c856515e@mail.placs.net> <d0ff909c-00a0-4f34-a1dc-6be0a8fdd832@mail.placs.net> <slrnje12mm.7db.stephane.chazelas@spam.is.invalid>
+Reply-To: Goffredo Baroncelli <kreijack@inwind.it>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=ISO-8859-1
-To: linux-btrfs@vger.kernel.org
+Content-Type: text/plain; charset="us-ascii"
+Cc: linux-btrfs@vger.kernel.org
+To: Stephane CHAZELAS <stephane_chazelas@yahoo.fr>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <CAHh_JMPvmRNRrhh0aQhQiej+NP4Vb36MbFtECFphc8cUM9B=ZQ@mail.gmail.com>
+In-Reply-To: <slrnje12mm.7db.stephane.chazelas@spam.is.invalid>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-raid10 metadata and data filesystem. =A0dmesg log follows. =A0The syste=
-m
-is unable to unmount the filesystem after this occurs.
+On Thursday, 08 December, 2011 10:00:54 Stephane CHAZELAS wrote:
+> Because of the same uuid, the btrfs commands like filesystem
+> show will not always give sensible outputs. I tried to rename
+> the fsid by changing it in the superblocks, but it looks like it
+> is alsa included in a few other places where changing it
+> manually breaks some checksums, so I guess someone would have to
+> write a tool to do that job. I'm surprised it doesn't exist
+> already (or maybe it does and I'm not aware of it?).
 
-=46ilesystem mounted at/mnt/btrfs with -o compress,degraded
-Command: btrfs device delete missing /mnt/btrfs
+The fs-uuid is recorded in the header of every tree block.
 
-[ =A0283.398222] ------------[ cut here ]------------
-[ =A0283.398289] kernel BUG at /home/apw/COD/linux/fs/btrfs/transaction=
-=2Ec:1329!
-[ =A0283.398355] invalid opcode: 0000 [#1] SMP
-[ =A0283.398481] CPU 3
-[ =A0283.398520] Modules linked in: nfsd nfs lockd fscache auth_rpcgss
-nfs_acl sunrpc psmouse lp parport joydev serio_raw btrfs zlib_deflate
-libcrc32c usbhid hid mpt2sas scsi_transport_sas raid_class e1000e
-[ =A0283.399435]
-[ =A0283.399491] Pid: 2216, comm: btrfs Not tainted
-3.2.0-030200rc2-generic #201111151435 Supermicro X8SIL/X8SIL
-[ =A0283.399678] RIP: 0010:[<ffffffffa00f7052>] =A0[<ffffffffa00f7052>]
-btrfs_commit_transaction+0x8f2/0x900 [btrfs]
-[ =A0283.399822] RSP: 0018:ffff880133573ac8 =A0EFLAGS: 00010282
-[ =A0283.399884] RAX: 00000000fffffffb RBX: ffff8801276540f0 RCX: ffff8=
-80133573a38
-[ =A0283.399952] RDX: 0000000000002000 RSI: 000004a22dd55000 RDI: ffff8=
-80127654150
-[ =A0283.400020] RBP: ffff880133573b88 R08: 0000000000002000 R09: 00000=
-00000000000
-[ =A0283.400087] R10: 0000000000000000 R11: 0000000000000001 R12: ffff8=
-80127654168
-[ =A0283.400154] R13: ffff880130b8ac00 R14: ffff8801276540f0 R15: ffff8=
-8012d4eb480
-[ =A0283.400220] FS: =A000007f0c17fc1760(0000) GS:ffff88013bcc0000(0000=
-)
-knlGS:0000000000000000
-[ =A0283.400302] CS: =A00010 DS: 0000 ES: 0000 CR0: 000000008005003b
-[ =A0283.400363] CR2: 00007f7e1d427870 CR3: 0000000132a4c000 CR4: 00000=
-000000006e0
-[ =A0283.400428] DR0: 0000000000000000 DR1: 0000000000000000 DR2: 00000=
-00000000000
-[ =A0283.400492] DR3: 0000000000000000 DR6: 00000000ffff0ff0 DR7: 00000=
-00000000400
-[ =A0283.400557] Process btrfs (pid: 2216, threadinfo ffff880133572000,
-task ffff8801306cdbc0)
-[ =A0283.400637] Stack:
-[ =A0283.400691] =A00000000000100000 ffffea0001a22701 ffff880133573b28
-ffff88012d4eb480
-[ =A0283.400905] =A00000000000000000 0000000000000132 ffff880133573b28
-ffffffffa00f65be
-[ =A0283.401122] =A00000000000000001 ffff880130b8ac00 ffff880130b8ac00
-0000000000000001
-[ =A0283.401322] Call Trace:
-[ =A0283.401380] =A0[<ffffffffa00f65be>] ? join_transaction+0xde/0x280 =
-[btrfs]
-[ =A0283.401441] =A0[<ffffffff81088a90>] ? wake_up_bit+0x40/0x40
-[ =A0283.401521] =A0[<ffffffffa013615e>] prepare_to_relocate+0xbe/0xd0 =
-[btrfs]
-[ =A0283.401604] =A0[<ffffffffa013c17b>] relocate_block_group+0x4b/0x5f=
-0 [btrfs]
-[ =A0283.401671] =A0[<ffffffff8160e7fe>] ? _raw_spin_lock+0xe/0x20
-[ =A0283.401750] =A0[<ffffffffa00f515b>] ?
-btrfs_clean_old_snapshots+0x7b/0x160 [btrfs]
-[ =A0283.401852] =A0[<ffffffffa013c8d3>]
-btrfs_relocate_block_group+0x1b3/0x2d0 [btrfs]
-[ =A0283.401952] =A0[<ffffffffa011ac8d>] btrfs_relocate_chunk+0x7d/0x43=
-0 [btrfs]
-[ =A0283.402038] =A0[<ffffffffa0125e42>] ?
-btrfs_tree_read_unlock_blocking+0x42/0x70 [btrfs]
-[ =A0283.402141] =A0[<ffffffffa011b8d3>] btrfs_shrink_device+0x223/0x44=
-0 [btrfs]
-[ =A0283.402226] =A0[<ffffffffa011bce2>] btrfs_rm_device+0x1f2/0x5c0 [b=
-trfs]
-[ =A0283.402310] =A0[<ffffffffa0125a78>] btrfs_ioctl+0x4e8/0x690 [btrfs=
-]
-[ =A0283.402379] =A0[<ffffffff811892a9>] do_vfs_ioctl+0x99/0x350
-[ =A0283.402443] =A0[<ffffffff81182dc5>] ? putname+0x35/0x50
-[ =A0283.402506] =A0[<ffffffff81189601>] sys_ioctl+0xa1/0xb0
-[ =A0283.402572] =A0[<ffffffff81616c02>] system_call_fastpath+0x16/0x1b
-[ =A0283.402634] Code: 00 48 85 db 0f 84 5b fe ff ff 48 8b 03 0f 1f 40
-00 48 8b 7b 08 48 83 c3 10 4c 89 ee ff d0 48 8b 03 48 85 c0 75 eb e9
-3a fe ff ff <0f> 0b eb fe 66 2e 0f 1f 84 00 00 00 00 00 55 48 89 e5 48
-83 ec
-[ =A0283.404962] RIP =A0[<ffffffffa00f7052>]
-btrfs_commit_transaction+0x8f2/0x900 [btrfs]
-[ =A0283.405099] =A0RSP <ffff880133573ac8>
-[ =A0283.405224] ---[ end trace d2452d35e90228f4 ]---
---
-To unsubscribe from this list: send the line "unsubscribe linux-btrfs" =
-in
-the body of a message to majordomo@vger.kernel.org
-More majordomo info at  http://vger.kernel.org/majordomo-info.html
+>From fs/btrfs/ctree.h
+
+[...]
+/*
+ * every tree block (leaf or node) starts with this header.
+ */
+struct btrfs_header {
+        /* these first four must match the super block */
+        u8 csum[BTRFS_CSUM_SIZE];
+        u8 fsid[BTRFS_FSID_SIZE]; /* FS specific uuid */
+[...]
+
+Moreover I would be worried more about the uuid of the device than the 
+filesystem one...
+
+
+
+
+-- 
+gpg key@ keyserver.linux.it: Goffredo Baroncelli (ghigo) <kreijack@inwind.it>
+Key fingerprint = 4769 7E51 5293 D36C 814E  C054 BF04 F161 3DC5 0512

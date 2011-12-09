@@ -1,75 +1,51 @@
-From: BJ Quinn <bj@placs.net>
-Subject: Re: Cloning a Btrfs partition
-Date: Thu, 08 Dec 2011 14:38:20 -0600 (CST)
-Message-ID: <6d560453-f847-4c7f-a881-ddcdb4e62002@mail.placs.net>
-References: <20111208200524.GT8971@shiny>
+From: Li Zefan <lizf@cn.fujitsu.com>
+Subject: [PATCH] Btrfs: fix ctime update of on-disk inode
+Date: Fri, 09 Dec 2011 09:40:35 +0800
+Message-ID: <4EE16713.2070907@cn.fujitsu.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=utf-8
-Cc: Jan Schmidt <list.btrfs@jan-o-sch.net>,
-	Phillip Susi <psusi@cfl.rr.com>,
-	Freddie Cash <fjwcash@gmail.com>, linux-btrfs@vger.kernel.org
-To: Chris Mason <chris.mason@oracle.com>
+Content-Type: text/plain; charset=UTF-8
+To: "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <20111208200524.GT8971@shiny>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-> Care to share you rsync script? 
+To reproduce the bug:
 
-Sure.  It's a little raw, and makes some assumptions about my environment, but it does the job other than the fact that it takes weeks to run.  :)
+    # touch /mnt/tmp
+    # stat /mnt/tmp | grep Change
+    Change: 2011-12-09 09:32:23.412105981 +0800
+    # chattr +i /mnt/tmp
+    # stat /mnt/tmp | grep Change
+    Change: 2011-12-09 09:32:43.198105295 +0800
+    # umount /mnt
+    # mount /dev/loop1 /mnt
+    # stat /mnt/tmp | grep Change
+    Change: 2011-12-09 09:32:23.412105981 +0800
 
-In the below example, the "main" or source FS is mounted at "/mnt/btrfs", the "backup" or target FS at "/mnt/btrfsbackup", and this script is located at "/mnt/btrfs/backupscripts".  I also run a slight variation of this script that makes it only "catch up" on snapshots that don't already exist on the backup FS simply by commenting out the rsync command directly above the echo that says "Export resynced snapshot".  If you don't comment that out, then the script attempts to re-sync ALL snapshots, even ones that have already been copied over in a previous run, effectively double checking that everything has already been copied.
+We should update ctime of in-memory inode before calling
+btrfs_update_inode().
 
-This script is as efficient as I know how to make it, as it uses the --no-whole-file and --inplace rsync switches to prevent btrfs from thinking lots of blocks have changed that haven't really changed and eating up lots of space.
+Signed-off-by: Li Zefan <lizf@cn.fujitsu.com>
+---
+ fs/btrfs/ioctl.c |    4 ++--
+ 1 files changed, 2 insertions(+), 2 deletions(-)
 
-Also, an assumption is made that directly under /mnt/btrfs there are many subvolumes, and that the snapshots for these subvolumes are stored under /mnt/btrfs/snapshots/[subvol name]/[snap name].
-
-Lastly, please note that I *DO* understand the purpose of the --bwlimit switch for rsync.  I've run it without that and it still takes weeks.  It's only in there now because it seemed to prevent issues I was having where the whole system would lock up under heavy btrfs activity.  I can't remember if that was a problem I solved by switching out my SATA controller card or by upgrading my kernel, but I don't believe I'm having that issue anymore.
-
-FWIW.
-
-#!/bin/bash
-
-# The following script is for exporting snapshots from one drive to another.
-#  Putting the word "STOP" (all caps, without quotes) in stopexport.txt will abort
-#  the process at the end of the current rsync job.
-
-DATE=`date +%Y%m%d`
-DATETIME=`date +%Y%m%d%H%M%S`
-SCRIPTSFOLDER="/mnt/btrfs/backupscripts"
-BACKUPFOLDER="/mnt/btrfs"
-EXTERNALDRIVE="/mnt/btrfsbackup"
-
-echo "Export Started `date`"
-echo
-
-# This will create all the snapshots in the original drive's snapshots folder
-#  on the export drive that don't exist on the export drive.
-for PATHNAME in $BACKUPFOLDER/snapshots/*
-do
-  if [ `cat $SCRIPTSFOLDER/stopexport.txt` = "STOP" ]; then
-    echo "STOP"
-    break
-  fi
-  SHARENAME=`basename $PATHNAME`
-  btrfs subvolume create $EXTERNALDRIVE/$SHARENAME
-  for SNAPPATH in $PATHNAME/*
-  do
-    echo $SNAPPATH
-    SNAPNAME=`basename $SNAPPATH`
-    if [ ! -d "$EXTERNALDRIVE/snapshots/$SHARENAME/$SNAPNAME" ]; then
-      rsync -avvP --delete --bwlimit=20000 --ignore-errors --no-whole-file --inplace $SNAPPATH/ $EXTERNALDRIVE/$SHARENAME
-      mkdir -p $EXTERNALDRIVE/snapshots/$SHARENAME
-      btrfs subvolume snapshot $EXTERNALDRIVE/$SHARENAME $EXTERNALDRIVE/snapshots/$SHARENAME/$SNAPNAME
-      echo "Export created snapshot $EXTERNALDRIVE/snapshots/$SHARENAME/$SNAPNAME"
-    else
-      rsync -avvP --delete --bwlimit=20000 --ignore-errors --no-whole-file --inplace $SNAPPATH/ $EXTERNALDRIVE/snapshots/$SHARENAME/$SNAPNAME
-      echo "Export resynced snapshot $EXTERNALDRIVE/snapshots/$SHARENAME/$SNAPNAME"
-    fi
-    if [ `cat $SCRIPTSFOLDER/stopexport.txt` = "STOP" ]; then
-     echo "STOP"
-     break
-    fi
-  done;
-done;
-
-echo "Export Completed `date`"
+diff --git a/fs/btrfs/ioctl.c b/fs/btrfs/ioctl.c
+index 72d4616..40eaa9f 100644
+--- a/fs/btrfs/ioctl.c
++++ b/fs/btrfs/ioctl.c
+@@ -252,11 +252,11 @@ static int btrfs_ioctl_setflags(struct file *file, void __user *arg)
+ 	trans = btrfs_join_transaction(root);
+ 	BUG_ON(IS_ERR(trans));
+ 
++	btrfs_update_iflags(inode);
++	inode->i_ctime = CURRENT_TIME;
+ 	ret = btrfs_update_inode(trans, root, inode);
+ 	BUG_ON(ret);
+ 
+-	btrfs_update_iflags(inode);
+-	inode->i_ctime = CURRENT_TIME;
+ 	btrfs_end_transaction(trans, root);
+ 
+ 	mnt_drop_write(file->f_path.mnt);
+-- 
+1.7.3.1

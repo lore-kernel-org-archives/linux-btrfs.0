@@ -1,60 +1,37 @@
-From: Chris Mason <chris.mason@oracle.com>
-Subject: Re: BUG during btrfs device delete missing
-Date: Fri, 9 Dec 2011 11:52:06 -0500
-Message-ID: <20111209165206.GE8971@shiny>
-References: <CAHh_JMPvmRNRrhh0aQhQiej+NP4Vb36MbFtECFphc8cUM9B=ZQ@mail.gmail.com>
- <CAHh_JMOxrqLRC2ad5n3DuArL1hQdNiixO7jd8StYSKLkbLUB7A@mail.gmail.com>
- <20111208194556.GS8971@shiny>
- <CAHh_JMOfLyHV=BSnW8J=8tn6huH0A2AvKqk6+WdOLCdG6zqkAA@mail.gmail.com>
-Mime-Version: 1.0
-Content-Type: text/plain; charset=iso-8859-1
-Cc: linux-btrfs@vger.kernel.org
-To: David Marcin <djmarcin@gmail.com>
+From: Josef Bacik <josef@redhat.com>
+Subject: [PATCH] Btrfs: fix leaked space in truncate
+Date: Fri,  9 Dec 2011 13:27:20 -0500
+Message-ID: <1323455240-8126-1-git-send-email-josef@redhat.com>
+To: linux-btrfs@vger.kernel.org
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <CAHh_JMOfLyHV=BSnW8J=8tn6huH0A2AvKqk6+WdOLCdG6zqkAA@mail.gmail.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Thu, Dec 08, 2011 at 12:27:52PM -0800, David Marcin wrote:
-> Hi Chris,
-> This was on 3.2-rc2 but I tried with rc4 and it segfaulted again. =A0=
-I
-> think the traces were the same but I've rebooted and can't say for
-> sure.
-> David
-> On Thu, Dec 8, 2011 at 11:45 AM, Chris Mason <chris.mason@oracle.com>=
- wrote:
-> > Which kernel is this? =A0This looks like one I recently fixed.
-> >
-> > -chris
-> >
-> > On Thu, Dec 08, 2011 at 11:06:47AM -0800, David Marcin wrote:
-> >> raid10 metadata and data filesystem. =A0dmesg log follows. =A0The =
-system
-> >> is unable to unmount the filesystem after this occurs.
-> >>
-> >> Filesystem mounted at/mnt/btrfs with -o compress,degraded
-> >> Command: btrfs device delete missing /mnt/btrfs
-> >>
-> >> [ =A0283.398222] ------------[ cut here ]------------
-> >> [ =A0283.398289] kernel BUG at /home/apw/COD/linux/fs/btrfs/transa=
-ction.c:1329!
+We were occasionaly leaking space when running xfstest 269.  This is because if
+we failed to start the transaction in the truncate loop we'd just goto out, but
+we need to break so that the inode is removed from the orphan list and the space
+is properly freed.  Thanks,
 
-So this crash means we failed to write all the blocks required to commi=
-t
-the transaction.  The reason is that we're getting failed bios to the
-missing device, and that failure isn't properly eaten by the
-raid aware endio code.
+Signed-off-by: Josef Bacik <josef@redhat.com>
+---
+ fs/btrfs/inode.c |    5 +++--
+ 1 files changed, 3 insertions(+), 2 deletions(-)
 
-If you pull the top commit from my for-linus branch, it should all work=
-=2E
+diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
+index d3e3ca2..ae5b354a 100644
+--- a/fs/btrfs/inode.c
++++ b/fs/btrfs/inode.c
+@@ -6581,8 +6581,9 @@ static int btrfs_truncate(struct inode *inode)
+ 			/* Just need the 1 for updating the inode */
+ 			trans = btrfs_start_transaction(root, 1);
+ 			if (IS_ERR(trans)) {
+-				err = PTR_ERR(trans);
+-				goto out;
++				ret = err = PTR_ERR(trans);
++				trans = NULL;
++				break;
+ 			}
+ 		}
+ 
+-- 
+1.7.5.2
 
-I know you've got a big FS here, I haven't tested this on raid10 yet,
-only raid1.  If you want to wait a bit for safety I'll do a raid10 run
-too.
-
--chris
---
-To unsubscribe from this list: send the line "unsubscribe linux-btrfs" =
-in
-the body of a message to majordomo@vger.kernel.org
-More majordomo info at  http://vger.kernel.org/majordomo-info.html

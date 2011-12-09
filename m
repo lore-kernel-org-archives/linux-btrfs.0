@@ -1,219 +1,216 @@
-From: Stefan Behrens <sbehrens@giantdisaster.de>
-Subject: [PATCH 2/3] Btrfs: add ioctl to get and reset the device stats
-Date: Fri,  9 Dec 2011 17:40:27 +0100
-Message-ID: <f2f1de6869aab38ff48d60235081257ce2c03bf4.1323448299.git.sbehrens@giantdisaster.de>
-References: <cover.1323448299.git.sbehrens@giantdisaster.de>
+From: Josef Bacik <josef@redhat.com>
+Subject: [PATCH] Btrfs: fix how we do delalloc reservations and how we free reservations on error
+Date: Fri,  9 Dec 2011 11:44:56 -0500
+Message-ID: <1323449096-7874-1-git-send-email-josef@redhat.com>
 To: linux-btrfs@vger.kernel.org
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <cover.1323448299.git.sbehrens@giantdisaster.de>
-In-Reply-To: <cover.1323448299.git.sbehrens@giantdisaster.de>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-An ioctl interface is added to get the device statistic counters.
-A second ioctl is added to atomically get and reset these counters.
+Running xfstests 269 with some tracing my scripts kept spitting out errors about
+releasing bytes that we didn't actually have reserved.  This took me down a huge
+rabbit hole and it turns out the way we deal with reserved_extents is wrong,
+we need to only be setting it if the reservation succeeds, otherwise the free()
+method will come in and unreserve space that isn't actually reserved yet, which
+can lead to other warnings and such.  The math was all working out right in the
+end, but it caused all sorts of other issues in addition to making my scripts
+yell and scream and generally make it impossible for me to track down the
+original issue I was looking for.  The other problem is with our error handling
+in the reservation code.  There are two cases that we need to deal with
 
-Signed-off-by: Stefan Behrens <sbehrens@giantdisaster.de>
+1) We raced with free.  In this case free won't free anything because csum_bytes
+is modified before we dro the lock in our reservation path, so free rightly
+doesn't release any space because the reservation code may be depending on that
+reservation.  However if we fail, we need the reservation side to do the free at
+that point since that space is no longer in use.  So as it stands the code was
+doing this fine and it worked out, except in case #2
+
+2) We don't race with free.  Nobody comes in and changes anything, and our
+reservation fails.  In this case we didn't reserve anything anyway and we just
+need to clean up csum_bytes but not free anything.  So we keep track of
+csum_bytes before we drop the lock and if it hasn't changed we know we can just
+decrement csum_bytes and carry on.
+
+Because of the case where we can race with free()'s since we have to drop our
+spin_lock to do the reservation, I'm going to serialize all reservations with
+the i_mutex.  We already get this for free in the heavy use paths, truncate and
+file write all hold the i_mutex, just needed to add it to page_mkwrite and
+various ioctl/balance things.  With this patch my space leak scripts no longer
+scream bloody murder.  Thanks,
+
+Signed-off-by: Josef Bacik <josef@redhat.com>
 ---
- fs/btrfs/ioctl.c   |   26 +++++++++++++++++++
- fs/btrfs/ioctl.h   |   27 ++++++++++++++++++++
- fs/btrfs/volumes.c |   69 ++++++++++++++++++++++++++++++++++++++++++++++++++++
- fs/btrfs/volumes.h |   13 ++++++++++
- 4 files changed, 135 insertions(+), 0 deletions(-)
+ fs/btrfs/extent-tree.c |   43 ++++++++++++++++++++++++++++++-------------
+ fs/btrfs/inode-map.c   |    2 ++
+ fs/btrfs/inode.c       |   10 ++++++++++
+ fs/btrfs/ioctl.c       |    2 ++
+ fs/btrfs/relocation.c  |    2 ++
+ 5 files changed, 46 insertions(+), 13 deletions(-)
 
-diff --git a/fs/btrfs/ioctl.c b/fs/btrfs/ioctl.c
-index 72d4616..bce3f92 100644
---- a/fs/btrfs/ioctl.c
-+++ b/fs/btrfs/ioctl.c
-@@ -2891,6 +2891,28 @@ static long btrfs_ioctl_scrub_progress(struct btrfs_root *root,
- 	return ret;
- }
+diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
+index 24cfd10..6dd0406 100644
+--- a/fs/btrfs/extent-tree.c
++++ b/fs/btrfs/extent-tree.c
+@@ -4189,10 +4189,15 @@ int btrfs_delalloc_reserve_metadata(struct inode *inode, u64 num_bytes)
+ 	struct btrfs_root *root = BTRFS_I(inode)->root;
+ 	struct btrfs_block_rsv *block_rsv = &root->fs_info->delalloc_block_rsv;
+ 	u64 to_reserve = 0;
++	u64 csum_bytes;
+ 	unsigned nr_extents = 0;
++	int extra_reserve = 0;
+ 	int flush = 1;
+ 	int ret;
  
-+static long btrfs_ioctl_get_device_stats(struct btrfs_root *root,
-+					 void __user *arg, int reset_after_read)
-+{
-+	struct btrfs_ioctl_get_device_stats *sa;
-+	int ret;
++	/* Need to be holding the i_mutex here */
++	WARN_ON(!mutex_is_locked(&inode->i_mutex));
 +
-+	if (!capable(CAP_SYS_ADMIN))
-+		return -EPERM;
-+
-+	sa = memdup_user(arg, sizeof(*sa));
-+	if (IS_ERR(sa))
-+		return PTR_ERR(sa);
-+
-+	ret = btrfs_get_device_stats(root, sa, reset_after_read);
-+
-+	if (copy_to_user(arg, sa, sizeof(*sa)))
-+		ret = -EFAULT;
-+
-+	kfree(sa);
-+	return ret;
-+}
-+
- static long btrfs_ioctl_ino_to_path(struct btrfs_root *root, void __user *arg)
- {
- 	int ret = 0;
-@@ -3108,6 +3130,10 @@ long btrfs_ioctl(struct file *file, unsigned int
- 		return btrfs_ioctl_scrub_cancel(root, argp);
- 	case BTRFS_IOC_SCRUB_PROGRESS:
- 		return btrfs_ioctl_scrub_progress(root, argp);
-+	case BTRFS_IOC_GET_DEVICE_STATS:
-+		return btrfs_ioctl_get_device_stats(root, argp, 0);
-+	case BTRFS_IOC_GET_AND_RESET_DEVICE_STATS:
-+		return btrfs_ioctl_get_device_stats(root, argp, 1);
+ 	if (btrfs_is_free_space_inode(root, inode))
+ 		flush = 0;
+ 
+@@ -4205,11 +4210,9 @@ int btrfs_delalloc_reserve_metadata(struct inode *inode, u64 num_bytes)
+ 	BTRFS_I(inode)->outstanding_extents++;
+ 
+ 	if (BTRFS_I(inode)->outstanding_extents >
+-	    BTRFS_I(inode)->reserved_extents) {
++	    BTRFS_I(inode)->reserved_extents)
+ 		nr_extents = BTRFS_I(inode)->outstanding_extents -
+ 			BTRFS_I(inode)->reserved_extents;
+-		BTRFS_I(inode)->reserved_extents += nr_extents;
+-	}
+ 
+ 	/*
+ 	 * Add an item to reserve for updating the inode when we complete the
+@@ -4217,11 +4220,12 @@ int btrfs_delalloc_reserve_metadata(struct inode *inode, u64 num_bytes)
+ 	 */
+ 	if (!BTRFS_I(inode)->delalloc_meta_reserved) {
+ 		nr_extents++;
+-		BTRFS_I(inode)->delalloc_meta_reserved = 1;
++		extra_reserve = 1;
  	}
  
- 	return -ENOTTY;
-diff --git a/fs/btrfs/ioctl.h b/fs/btrfs/ioctl.h
-index 252ae99..b9ffd0b 100644
---- a/fs/btrfs/ioctl.h
-+++ b/fs/btrfs/ioctl.h
-@@ -217,6 +217,29 @@ struct btrfs_ioctl_logical_ino_args {
- 	__u64				inodes;
- };
+ 	to_reserve = btrfs_calc_trans_metadata_size(root, nr_extents);
+ 	to_reserve += calc_csum_metadata_size(inode, num_bytes, 1);
++	csum_bytes = BTRFS_I(inode)->csum_bytes;
+ 	spin_unlock(&BTRFS_I(inode)->lock);
  
-+#define BTRFS_IOCTL_GET_DEVICE_STATS_MAX_NR_ITEMS	5
-+struct btrfs_ioctl_get_device_stats {
-+	__u64 devid;				/* in */
-+	__u64 nr_items;				/* in/out */
-+
-+	/* out values: */
-+
-+	/* disk I/O failure stats */
-+	__u64 cnt_write_io_errs; /* EIO or EREMOTEIO from lower layers */
-+	__u64 cnt_read_io_errs; /* EIO or EREMOTEIO from lower layers */
-+	__u64 cnt_flush_io_errs; /* EIO or EREMOTEIO from lower layers */
-+
-+	/* stats for indirect indications for I/O failures */
-+	__u64 cnt_corruption_errs; /* checksum error, bytenr error or
-+				    * contents is illegal: this is an
-+				    * indication that the block was damaged
-+				    * during read or write, or written to
-+				    * wrong location or read from wrong
-+				    * location */
-+	__u64 cnt_generation_errs; /* an indication that blocks have not
-+				    * been written */
-+};
-+
- #define BTRFS_IOC_SNAP_CREATE _IOW(BTRFS_IOCTL_MAGIC, 1, \
- 				   struct btrfs_ioctl_vol_args)
- #define BTRFS_IOC_DEFRAG _IOW(BTRFS_IOCTL_MAGIC, 2, \
-@@ -276,5 +299,9 @@ struct btrfs_ioctl_logical_ino_args {
- 					struct btrfs_ioctl_ino_path_args)
- #define BTRFS_IOC_LOGICAL_INO _IOWR(BTRFS_IOCTL_MAGIC, 36, \
- 					struct btrfs_ioctl_ino_path_args)
-+#define BTRFS_IOC_GET_DEVICE_STATS _IOWR(BTRFS_IOCTL_MAGIC, 52, \
-+					 struct btrfs_ioctl_get_device_stats)
-+#define BTRFS_IOC_GET_AND_RESET_DEVICE_STATS _IOWR(BTRFS_IOCTL_MAGIC, 53, \
-+					 struct btrfs_ioctl_get_device_stats)
+ 	ret = reserve_metadata_bytes(root, block_rsv, to_reserve, flush);
+@@ -4231,22 +4235,35 @@ int btrfs_delalloc_reserve_metadata(struct inode *inode, u64 num_bytes)
  
- #endif
-diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
-index cc21e14..99dfd00 100644
---- a/fs/btrfs/volumes.c
-+++ b/fs/btrfs/volumes.c
-@@ -3852,3 +3852,72 @@ void btrfs_device_stat_print_on_error(struct btrfs_device *device)
- 			   btrfs_device_stat_read(
- 				&device->cnt_generation_errs));
- }
+ 		spin_lock(&BTRFS_I(inode)->lock);
+ 		dropped = drop_outstanding_extent(inode);
+-		to_free = calc_csum_metadata_size(inode, num_bytes, 0);
+-		spin_unlock(&BTRFS_I(inode)->lock);
+-		to_free += btrfs_calc_trans_metadata_size(root, dropped);
+-
+ 		/*
+-		 * Somebody could have come in and twiddled with the
+-		 * reservation, so if we have to free more than we would have
+-		 * reserved from this reservation go ahead and release those
+-		 * bytes.
++		 * If the inodes csum_bytes is the same as the original
++		 * csum_bytes then we know we haven't raced with any free()ers
++		 * so we can just reduce our inodes csum bytes and carry on.
++		 * Otherwise we have to do the normal free thing to account for
++		 * the case that the free side didn't free up its reserve
++		 * because of this outstanding reservation.
+ 		 */
+-		to_free -= to_reserve;
++		if (BTRFS_I(inode)->csum_bytes == csum_bytes)
++			calc_csum_metadata_size(inode, num_bytes, 0);
++		else
++			to_free = calc_csum_metadata_size(inode, num_bytes, 0);
++		spin_unlock(&BTRFS_I(inode)->lock);
++		if (dropped)
++			to_free += btrfs_calc_trans_metadata_size(root, dropped);
 +
-+int btrfs_get_device_stats(struct btrfs_root *root,
-+			   struct btrfs_ioctl_get_device_stats *stats,
-+			   int reset_after_read)
-+{
-+	struct btrfs_device *dev;
-+	struct btrfs_fs_devices *fs_devices = root->fs_info->fs_devices;
-+
-+	mutex_lock(&fs_devices->device_list_mutex);
-+	dev = btrfs_find_device(root, stats->devid, NULL, NULL);
-+	mutex_unlock(&fs_devices->device_list_mutex);
-+
-+	if (!dev) {
-+		printk(KERN_WARNING
-+		       "btrfs: get device_stats failed, device not found\n");
-+		return -ENODEV;
-+	} else if (reset_after_read) {
-+		if (stats->nr_items >= 1)
-+			stats->cnt_write_io_errs =
-+				btrfs_device_stat_read_and_reset(
-+					&dev->cnt_write_io_errs);
-+		else
-+			btrfs_device_stat_reset(&dev->cnt_write_io_errs);
-+		if (stats->nr_items >= 2)
-+			stats->cnt_read_io_errs =
-+				btrfs_device_stat_read_and_reset(
-+					&dev->cnt_read_io_errs);
-+		else
-+			btrfs_device_stat_reset(&dev->cnt_read_io_errs);
-+		if (stats->nr_items >= 3)
-+			stats->cnt_flush_io_errs =
-+				btrfs_device_stat_read_and_reset(
-+					&dev->cnt_flush_io_errs);
-+		else
-+			btrfs_device_stat_reset(&dev->cnt_flush_io_errs);
-+		if (stats->nr_items >= 4)
-+			stats->cnt_corruption_errs =
-+				btrfs_device_stat_read_and_reset(
-+					&dev->cnt_corruption_errs);
-+		else
-+			btrfs_device_stat_reset(&dev->cnt_corruption_errs);
-+		if (stats->nr_items >= 5)
-+			stats->cnt_generation_errs =
-+				btrfs_device_stat_read_and_reset(
-+					&dev->cnt_generation_errs);
-+		else
-+			btrfs_device_stat_reset(&dev->cnt_generation_errs);
-+		dev->device_stats_dirty = 1;
-+	} else {
-+		if (stats->nr_items >= 1)
-+			stats->cnt_write_io_errs = btrfs_device_stat_read(
-+					&dev->cnt_write_io_errs);
-+		if (stats->nr_items >= 2)
-+			stats->cnt_read_io_errs = btrfs_device_stat_read(
-+					&dev->cnt_read_io_errs);
-+		if (stats->nr_items >= 3)
-+			stats->cnt_flush_io_errs = btrfs_device_stat_read(
-+					&dev->cnt_flush_io_errs);
-+		if (stats->nr_items >= 4)
-+			stats->cnt_corruption_errs = btrfs_device_stat_read(
-+					&dev->cnt_corruption_errs);
-+		if (stats->nr_items >= 5)
-+			stats->cnt_generation_errs = btrfs_device_stat_read(
-+					&dev->cnt_generation_errs);
+ 		if (to_free)
+ 			btrfs_block_rsv_release(root, block_rsv, to_free);
+ 		return ret;
+ 	}
+ 
++	spin_lock(&BTRFS_I(inode)->lock);
++	if (extra_reserve) {
++		BTRFS_I(inode)->delalloc_meta_reserved = 1;
++		nr_extents--;
 +	}
-+	if (stats->nr_items > 5)
-+		stats->nr_items = 5;
-+	return 0;
-+}
-diff --git a/fs/btrfs/volumes.h b/fs/btrfs/volumes.h
-index 51ad850..ad8c3bc 100644
---- a/fs/btrfs/volumes.h
-+++ b/fs/btrfs/volumes.h
-@@ -244,6 +244,9 @@ int find_free_dev_extent(struct btrfs_trans_handle *trans,
- struct btrfs_device *btrfs_find_device_for_logical(struct btrfs_root *root,
- 						   u64 logical, int mirror_num);
- void btrfs_device_stat_print_on_error(struct btrfs_device *device);
-+int btrfs_get_device_stats(struct btrfs_root *root,
-+			   struct btrfs_ioctl_get_device_stats *stats,
-+			   int reset_after_read);
++	BTRFS_I(inode)->reserved_extents += nr_extents;
++	spin_unlock(&BTRFS_I(inode)->lock);
++
+ 	block_rsv_add_bytes(block_rsv, to_reserve, 1);
  
- static inline void btrfs_device_stat_inc(atomic_t *cnt)
- {
-@@ -254,4 +257,14 @@ static inline int btrfs_device_stat_read(atomic_t *cnt)
- {
- 	return atomic_read(cnt);
- }
-+
-+static inline int btrfs_device_stat_read_and_reset(atomic_t *cnt)
-+{
-+	return atomic_xchg(cnt, 0);
-+}
-+
-+static inline void btrfs_device_stat_reset(atomic_t *cnt)
-+{
-+	atomic_set(cnt, 0);
-+}
- #endif
+ 	return 0;
+diff --git a/fs/btrfs/inode-map.c b/fs/btrfs/inode-map.c
+index f8962a9..31ff838 100644
+--- a/fs/btrfs/inode-map.c
++++ b/fs/btrfs/inode-map.c
+@@ -482,7 +482,9 @@ again:
+ 	/* Just to make sure we have enough space */
+ 	prealloc += 8 * PAGE_CACHE_SIZE;
+ 
++	mutex_lock(&inode->i_mutex);
+ 	ret = btrfs_delalloc_reserve_space(inode, prealloc);
++	mutex_unlock(&inode->i_mutex);
+ 	if (ret)
+ 		goto out_put;
+ 
+diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
+index 9de15f1..d3e3ca2 100644
+--- a/fs/btrfs/inode.c
++++ b/fs/btrfs/inode.c
+@@ -2207,7 +2207,14 @@ int btrfs_orphan_cleanup(struct btrfs_root *root)
+ 				continue;
+ 			}
+ 			nr_truncate++;
++			/*
++			 * Need to hold the imutex for reservation purposes, not
++			 * a huge deal here but I have a WARN_ON in
++			 * btrfs_delalloc_reserve_space to catch offenders.
++			 */
++			mutex_lock(&inode->i_mutex);
+ 			ret = btrfs_truncate(inode);
++			mutex_unlock(&inode->i_mutex);
+ 		} else {
+ 			nr_unlink++;
+ 		}
+@@ -6357,7 +6364,10 @@ int btrfs_page_mkwrite(struct vm_area_struct *vma, struct vm_fault *vmf)
+ 	u64 page_start;
+ 	u64 page_end;
+ 
++	/* Need this to keep space reservations serialized */
++	mutex_lock(&inode->i_mutex);
+ 	ret  = btrfs_delalloc_reserve_space(inode, PAGE_CACHE_SIZE);
++	mutex_unlock(&inode->i_mutex);
+ 	if (!ret)
+ 		ret = btrfs_update_time(vma->vm_file);
+ 	if (ret) {
+diff --git a/fs/btrfs/ioctl.c b/fs/btrfs/ioctl.c
+index 4a34c47..2551a01 100644
+--- a/fs/btrfs/ioctl.c
++++ b/fs/btrfs/ioctl.c
+@@ -858,8 +858,10 @@ static int cluster_pages_for_defrag(struct inode *inode,
+ 		return 0;
+ 	file_end = (isize - 1) >> PAGE_CACHE_SHIFT;
+ 
++	mutex_lock(&inode->i_mutex);
+ 	ret = btrfs_delalloc_reserve_space(inode,
+ 					   num_pages << PAGE_CACHE_SHIFT);
++	mutex_unlock(&inode->i_mutex);
+ 	if (ret)
+ 		return ret;
+ again:
+diff --git a/fs/btrfs/relocation.c b/fs/btrfs/relocation.c
+index dff29d5..cfb5543 100644
+--- a/fs/btrfs/relocation.c
++++ b/fs/btrfs/relocation.c
+@@ -2947,7 +2947,9 @@ static int relocate_file_extent_cluster(struct inode *inode,
+ 	index = (cluster->start - offset) >> PAGE_CACHE_SHIFT;
+ 	last_index = (cluster->end - offset) >> PAGE_CACHE_SHIFT;
+ 	while (index <= last_index) {
++		mutex_lock(&inode->i_mutex);
+ 		ret = btrfs_delalloc_reserve_metadata(inode, PAGE_CACHE_SIZE);
++		mutex_unlock(&inode->i_mutex);
+ 		if (ret)
+ 			goto out;
+ 
 -- 
-1.7.3.4
+1.7.5.2
 

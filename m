@@ -1,38 +1,49 @@
-From: Stefan Behrens <sbehrens@giantdisaster.de>
-Subject: Re: [PATCH 2/3] Btrfs: add ioctl to get and reset the device stats
-Date: Mon, 12 Dec 2011 14:34:25 +0100
-Message-ID: <4EE602E1.4020206@giantdisaster.de>
-References: <cover.1323448299.git.sbehrens@giantdisaster.de> <f2f1de6869aab38ff48d60235081257ce2c03bf4.1323448299.git.sbehrens@giantdisaster.de> <1328320.x7SNYXeJA2@venice>
+From: David Sterba <dave@jikos.cz>
+Subject: Re: [PATCH] Btrfs-progs: fail gracefully on error from open_ctree()
+Date: Mon, 12 Dec 2011 15:40:19 +0100
+Message-ID: <20111212144018.GB7322@twin.jikos.cz>
+References: <1320184042-5188-1-git-send-email-idryomov@gmail.com>
+Reply-To: dave@jikos.cz
 Mime-Version: 1.0
-Content-Type: text/plain; charset=ISO-8859-1
-Cc: linux-btrfs@vger.kernel.org
-To: Goffredo Baroncelli <kreijack@inwind.it>
+Content-Type: text/plain; charset=us-ascii
+Cc: linux-btrfs@vger.kernel.org, Chris Mason <chris.mason@oracle.com>,
+	Hugo Mills <hugo@carfax.org.uk>
+To: Ilya Dryomov <idryomov@gmail.com>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <1328320.x7SNYXeJA2@venice>
+In-Reply-To: <1320184042-5188-1-git-send-email-idryomov@gmail.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 12/11/2011 11:24 AM, Goffredo Baroncelli wrote:
-> On Friday, 09 December, 2011 17:40:27 Stefan Behrens wrote:
->> An ioctl interface is added to get the device statistic counters.
->> A second ioctl is added to atomically get and reset these counters.
-> 
-> [...]
-> 
->>
->> +static long btrfs_ioctl_get_device_stats(struct btrfs_root *root,
->> +					 void __user *arg, int reset_after_read)
->> +{
->> +	struct btrfs_ioctl_get_device_stats *sa;
->> +	int ret;
->> +
->> +	if (!capable(CAP_SYS_ADMIN))
->> +		return -EPERM;
->> +
-> 
-> I agree that the BTRFS_IOC_GET_AND_RESET_DEVICE_STATS should be a privileged 
-> operation. But I think that the BTRFS_IOC_GET_DEVICE_STATS should be allowed 
-> to everyone. Think about a daemon which look at the error, and then send an 
-> email to warn about possible defect. Allowing BTRFS_IOC_GET_DEVICE_STATS to 
-> everyone, prevent to run the deamon with root privileges.
+On Tue, Nov 01, 2011 at 11:47:22PM +0200, Ilya Dryomov wrote:
+> --- a/mkfs.c
+> +++ b/mkfs.c
+> @@ -1328,7 +1328,12 @@ int main(int ac, char **av)
+>  		fprintf(stderr, "error during mkfs %d\n", ret);
+>  		exit(1);
+>  	}
+> +
+>  	root = open_ctree(file, 0, O_RDWR);
+> +	if (!root) {
+> +		fprintf(stderr, "ctree init failed\n");
+> +		return -1;
 
-I fully agree to your comment and will change it in a v2. Thanks!
+I know you just moved the code, but this should be exit(1), same as the
+rest of the function does
+
+> +	}
+>  	root->fs_info->alloc_start = alloc_start;
+>  
+>  	ret = make_root_dir(root, mixed);
+> @@ -1343,10 +1348,6 @@ int main(int ac, char **av)
+>  		goto raid_groups;
+>  
+>  	btrfs_register_one_device(file);
+> -	if (!root) {
+> -		fprintf(stderr, "ctree init failed\n");
+> -		return -1;
+> -	}
+>  
+>  	zero_end = 1;
+>  	while(ac-- > 0) {
+
+
+david

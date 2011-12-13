@@ -1,55 +1,28 @@
-From: Nik Markovic <nmarkovi.navteq@gmail.com>
-Subject: Re: Consistent crash with cp reflink on large files
-Date: Mon, 12 Dec 2011 19:22:52 -0600
-Message-ID: <CAB3q874C0h1+W7t+8q-QNK7Kb2ujTrtHpD0WZkFaxjYbC9qJfg@mail.gmail.com>
-References: <CAB3q875f4HFCaR9=yk0iCy7HF55tpt65q2+-fCuNbkSFHrey_A@mail.gmail.com>
-	<4EE69FD5.4040009@cn.fujitsu.com>
+From: Phillip Susi <psusi@cfl.rr.com>
+Subject: Chunk allocation size
+Date: Mon, 12 Dec 2011 23:40:05 -0500
+Message-ID: <4EE6D725.7090606@cfl.rr.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=windows-1252
-Cc: miaox@cn.fujitsu.com, linux-btrfs@vger.kernel.org
-To: Li Zefan <lizf@cn.fujitsu.com>
+Content-Type: text/plain; charset=ISO-8859-1
+To: linux-btrfs@vger.kernel.org
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <4EE69FD5.4040009@cn.fujitsu.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Li Zefan wrote:
->
-> Nik Markovic wrote:
-> > Hi All,
-> >
-> > I have been encountering consistent btrfs filesystem crashes when
-> > using cp =96reflink=3Dalways on a large file and modifying it. I be=
-lieve
-> > that the test file needs to be fairly large as I was not able to
-> > reproduce with smaller files. The filesystem size is 45GB and file
-> > size is 10GB.
-> >
->
-> It should be fixed in 3.1 by this commit:
->
-> commit b6f3409b2197e8fcedb43e6600e37b7cfbe0715b
-> Author: Sage Weil <sage@newdream.net>
-> Date: =A0 Tue Sep 20 14:48:51 2011 -0400
->
-> =A0 =A0Btrfs: reserve sufficient space for ioctl clone
->
-> =A0 =A0Fix a crash/BUG_ON in the clone ioctl due to insufficient rese=
-rvation. We
-> =A0 =A0need to reserve space for:
->
-> =A0 =A0 - adjusting the old extent (possibly splitting it)
-> =A0 =A0 - adding the new extent
-> =A0 =A0 - updating the inode
-Thanks Li,
+-----BEGIN PGP SIGNED MESSAGE-----
+Hash: SHA1
 
-You are probably right. I upgraded to 3.2-rc5 today and was not able
-to reproduce with 100k iterations.
-Do you think that applying the same patch to 3.0 should fix this issue =
-in 3.0?
+While poking around with btrfs-gui I noticed my fs had a fair number of quite small chunks ( especially metadata ), so I started looking into how they are allocated.  It appears that the current rule is to allocate:
 
-Nik
---
-To unsubscribe from this list: send the line "unsubscribe linux-btrfs" =
-in
-the body of a message to majordomo@vger.kernel.org
-More majordomo info at  http://vger.kernel.org/majordomo-info.html
+1)  At most, 10% of the total fs capacity
+2)  For metadata, at most 256 mb
+3)  For data, at most 10gb, or 1gb per disk, whichever is lower
+
+Why these values?  Why have hard coded sizes at all instead of just saying for instance, 4% of total capacity for metadata and 8% of total capacity for data chunks?  In my case, I had two 36 gb disks, so this led to data chunks maxing out at 2gb ( or ~2.8% ), and metadata chunks maxing out at 256mb ( or ~0.36% ).  It seems to me that ideal chunk sizes should be in the vicinity of 4%-10% of total capacity ( giving a total of 10-21 chunks ), never less than 1% ( giving more than 100 chunks ).
+-----BEGIN PGP SIGNATURE-----
+Version: GnuPG v1.4.11 (GNU/Linux)
+Comment: Using GnuPG with Mozilla - http://enigmail.mozdev.org/
+
+iEYEARECAAYFAk7m1yUACgkQJ4UciIs+XuJ99wCfdhSvFB6S1uz+qTWBJotFoZ0d
+6FwAoJuerIp9brqfv1E2PJfRsV7VDEbr
+=FpRK
+-----END PGP SIGNATURE-----

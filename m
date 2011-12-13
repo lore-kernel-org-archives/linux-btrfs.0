@@ -1,40 +1,65 @@
-From: Josef Bacik <josef@redhat.com>
-Subject: [PATCH] Btrfs: only set cache_generation if we setup the block group
-Date: Tue, 13 Dec 2011 16:10:11 -0500
-Message-ID: <1323810611-6134-1-git-send-email-josef@redhat.com>
-To: linux-btrfs@vger.kernel.org
+From: Jeff Mahoney <jeffm@suse.com>
+Subject: Error handling: How to "lose" a transaction
+Date: Tue, 13 Dec 2011 16:47:30 -0500
+Message-ID: <4EE7C7F2.2080905@suse.com>
+Mime-Version: 1.0
+Content-Type: text/plain; charset=ISO-8859-1
+Cc: Mark Fasheh <mfasheh@suse.de>,
+	Btrfs Development List <linux-btrfs@vger.kernel.org>
+To: Chris Mason <chris.mason@oracle.com>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-A user reported a problem booting into a new kernel with the old format inodes.
-He was panicing in cow_file_range while writing out the inode cache.  This is
-because if the block group is not cached we'll just skip writing out the cache,
-however if it gets dirtied again in the same transaction and it finished caching
-we'd go ahead and write it out, but since we set cache_generation to the transid
-we think we've already truncated it and will just carry on, running into
-cow_file_range and blowing up.  We need to make sure we only set
-cache_generation if we've done the truncate.  The user tested this patch and
-verified that the panic no longer occured.  Thanks,
+-----BEGIN PGP SIGNED MESSAGE-----
+Hash: SHA1
 
-Reported-and-Tested-by: Klaus Bitto <klaus.bitto@gmail.com>
-Signed-off-by: Josef Bacik <josef@redhat.com>
----
- fs/btrfs/extent-tree.c |    2 +-
- 1 files changed, 1 insertions(+), 1 deletions(-)
 
-diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
-index 6c37d46..a9771cf 100644
---- a/fs/btrfs/extent-tree.c
-+++ b/fs/btrfs/extent-tree.c
-@@ -2822,7 +2822,7 @@ out_free:
- 	btrfs_release_path(path);
- out:
- 	spin_lock(&block_group->lock);
--	if (!ret)
-+	if (!ret && dcs == BTRFS_DC_SETUP)
- 		block_group->cache_generation = trans->transid;
- 	block_group->disk_cache_state = dcs;
- 	spin_unlock(&block_group->lock);
--- 
-1.7.5.2
+Hi Chris -
 
+I'm starting to dig into the fun part of error handling and
+btrfs_commit_transaction is a minefield right now.
+
+I've been thinking about how I would go about recovering from a
+serious error like an -EIO while writing out or an -ENOMEM in a deep
+part of the code that it's prohibitively expensive to recover from.
+Mostly I'm looking for the best way to make calling btrfs_std_error()
+be functionally equivalent to killing the power on the disk. We
+already block off new writers, but that's obviously nowhere near
+enough. We could have an open transaction floating around, uncommitted
+transactions queued, and then an unrecoverable error hits, forcing us
+to shut it all down.
+
+It seems to me that that a similar method of recovery that I wrote for
+reiserfs can be used here as well. Am I understanding correctly that
+if I go through the motions of committing the transaction *except* for
+updating the tree roots, or maybe even doing that but declining to
+write the superblocks out, that the transaction essentially doesn't
+exist on disk? Including the allocations? The in-memory representation
+will not match what's on disk, but that's what happens with every file
+system in RO-failure mode. With CoW even for data, data is essentially
+frozen in time as well. (I suppose with nodatacow that's not true, but
+that's for another day.)
+
+- -Jeff
+
+- -- 
+Jeff Mahoney
+SUSE Labs
+-----BEGIN PGP SIGNATURE-----
+Version: GnuPG v2.0.18 (GNU/Linux)
+Comment: Using GnuPG with Mozilla - http://enigmail.mozdev.org/
+
+iQIcBAEBAgAGBQJO58fxAAoJEB57S2MheeWyiH8P/RGfJUCwBoz83vLH5qRfsAzO
+Rnfjq9/NS+58zh5MGImimr9u6ZuNCfNUEFUDXGnVwF2Er1jHh0orU1pQdvU9XlHv
+T/vAyZp1s/emwwDPQX0Xo24QNumSzA2u7qnUuUBklq8l+KL99OZCErhu/eJ6i06S
+vTv6KflsL/EU5ISgro051fVLGep0ZF5hLYOJHQbCJaRlL6OwC2d8cWHGR+qBdRaw
+t4SQ+tVmKnnd4UzlpPzyQTCSOwdnSYtei28fCAy7X4rmycCXTa8eYQgvxkIabgkM
+IF8F8utcKT2yTFyUbJM3MWUx0yzPVsL77XnO8FCfYbusYC1EPTnMSGJ1CbupHvr1
+kmFJEOQ4rj8fxLzxYDdxjEJ7HtyIhQDfH1BZ1/0+e8BShepr7/60AwoNaWVOceN/
+rDDkkKgIogprGO0un1Fv3J+FNPgIR/47t1ULSUTLhg4vAqbQRuYiI36Y2zlG7G2a
+C/u/4UgrH40CVFVVtIRnjO67/QffTC3pf8Q6kzaXgotQJUt1XfY3a4X6MLQnfWKo
+bBQaPTIpsxtf7k3cnH5XfjQqtljGgXrbBExtMPKBor7RDPVw3KrLm4F35Enr4Gur
+pumzXQfiSC2oiSxpG1RXegZ2CXLKW4a/++kMApAOR98xTAHM8dzFhx0V0YZh/MHY
+Sc+ddgI2v5ZIUL2IV3WK
+=DmtI
+-----END PGP SIGNATURE-----

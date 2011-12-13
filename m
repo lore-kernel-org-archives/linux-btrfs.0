@@ -1,32 +1,40 @@
 From: Josef Bacik <josef@redhat.com>
-Subject: Re: [PATCH] Btrfs: don't panic if orphan item already exists
-Date: Tue, 13 Dec 2011 14:09:42 -0500
-Message-ID: <20111213190942.GA3602@localhost.localdomain>
-References: <1323798951-4329-1-git-send-email-josef@redhat.com>
- <4EE7A172.2010105@cfl.rr.com>
-Mime-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Cc: Josef Bacik <josef@redhat.com>, linux-btrfs@vger.kernel.org
-To: Phillip Susi <psusi@cfl.rr.com>
+Subject: [PATCH] Btrfs: only set cache_generation if we setup the block group
+Date: Tue, 13 Dec 2011 16:10:11 -0500
+Message-ID: <1323810611-6134-1-git-send-email-josef@redhat.com>
+To: linux-btrfs@vger.kernel.org
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <4EE7A172.2010105@cfl.rr.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Tue, Dec 13, 2011 at 02:03:14PM -0500, Phillip Susi wrote:
-> On 12/13/2011 12:55 PM, Josef Bacik wrote:
-> >I've been hitting this BUG_ON() in btrfs_orphan_add when running xfstest 269 in
-> >a loop.  This is because we will add an orphan item, do the truncate, the
-> >truncate will fail for whatever reason (*cough*ENOSPC*cough*) and then we're
-> >left with an orphan item still in the fs.  Then we come back later to do another
-> >truncate and it blows up because we already have an orphan item.  This is ok so
-> >just fix the BUG_ON() to only BUG() if ret is not EEXIST.  Thanks,
-> 
-> Wouldn't it be better to fix the underlying bug, and remove the
-> orphan item when the truncate fails?
-> 
+A user reported a problem booting into a new kernel with the old format inodes.
+He was panicing in cow_file_range while writing out the inode cache.  This is
+because if the block group is not cached we'll just skip writing out the cache,
+however if it gets dirtied again in the same transaction and it finished caching
+we'd go ahead and write it out, but since we set cache_generation to the transid
+we think we've already truncated it and will just carry on, running into
+cow_file_range and blowing up.  We need to make sure we only set
+cache_generation if we've done the truncate.  The user tested this patch and
+verified that the panic no longer occured.  Thanks,
 
-No because we still need the thing to be cleaned up.  If the truncate fails we
-need to leave the orphan item there so the next time the fs is mounted the inode
-is cleaned up, that's not a bug.  Thanks,
+Reported-and-Tested-by: Klaus Bitto <klaus.bitto@gmail.com>
+Signed-off-by: Josef Bacik <josef@redhat.com>
+---
+ fs/btrfs/extent-tree.c |    2 +-
+ 1 files changed, 1 insertions(+), 1 deletions(-)
 
-Josef
+diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
+index 6c37d46..a9771cf 100644
+--- a/fs/btrfs/extent-tree.c
++++ b/fs/btrfs/extent-tree.c
+@@ -2822,7 +2822,7 @@ out_free:
+ 	btrfs_release_path(path);
+ out:
+ 	spin_lock(&block_group->lock);
+-	if (!ret)
++	if (!ret && dcs == BTRFS_DC_SETUP)
+ 		block_group->cache_generation = trans->transid;
+ 	block_group->disk_cache_state = dcs;
+ 	spin_unlock(&block_group->lock);
+-- 
+1.7.5.2
+

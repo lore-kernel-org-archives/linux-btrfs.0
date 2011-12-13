@@ -1,40 +1,45 @@
-From: "Fajar A. Nugraha" <list@fajar.net>
-Subject: Re: btrfs encryption problems
-Date: Tue, 13 Dec 2011 13:56:57 +0700
-Message-ID: <CAG1y0scRTcpHxEnRHgeKgFtYgVYJdgMFydZfXmKEOnRQvUpcQA@mail.gmail.com>
-References: <CAAVfQj=O5nDAcgsiNHz3dNXHDerNrq2Jw01WFLJr5q563oZToA@mail.gmail.com>
-	<20111123110956.GB31800@attic.humilis.net>
-	<CAAVfQj=r-Op2ZUrq8YOchVV=0_LzNmdxjYd03nDHn+t=120YQw@mail.gmail.com>
-	<20111124160617.680b676f@zougloub.eu>
-	<CAAVfQj=gM7ikTzdFmi=yNpo9guukQwFyKfdu7jD=z-J2PwrZEg@mail.gmail.com>
-	<20111124165429.10496040@Bidule>
-	<CAAVfQjmmXnyCmXerCyymEQm-DhDxi0YSSo9sVSvkHE1WvJ4wYA@mail.gmail.com>
-	<20111130134814.GW24338@shiny>
-	<CAAVfQjk+O_3uLb=DShFwV2gVnLeDzQ45ebpMidDGFXZtqXJBbQ@mail.gmail.com>
+From: Christian Brunner <chb@muc.de>
+Subject: WARNING: at fs/btrfs/extent-tree.c:5980
+Date: Tue, 13 Dec 2011 09:04:54 +0100
+Message-ID: <CAO47_--mEi_vQNt5TE3vZWAWRVtqsJnMc=jQUNJLSvw8S8=jiA@mail.gmail.com>
+Reply-To: chb@muc.de
 Mime-Version: 1.0
 Content-Type: text/plain; charset=ISO-8859-1
-Cc: Chris Mason <chris.mason@oracle.com>,
-	=?ISO-8859-1?Q?J=E9r=F4me_Carretero?= <cJ-ko@zougloub.eu>,
-	sander@humilis.net, linux-btrfs@vger.kernel.org
-To: 810d4rk <810d4rk@gmail.com>
+To: linux-btrfs@vger.kernel.org
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <CAAVfQjk+O_3uLb=DShFwV2gVnLeDzQ45ebpMidDGFXZtqXJBbQ@mail.gmail.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Thu, Dec 1, 2011 at 5:15 AM, 810d4rk <810d4rk@gmail.com> wrote:
-> I plugged it directly by sata and this is what I get from the 3.1 ker=
-nel:
+Hi,
 
-> [ =A0581.921417] =A0sdb: sdb1
-> [ =A0581.921642] sd 2:0:0:0: [sdb] Attached SCSI disk
-> [ =A0660.040263] EXT4-fs (dm-4): VFS: Can't find ext4 filesystem
+with the latest btrfs for-linus I'm seeing seeing occasional
+btrfs_alloc_free_block warnings on several nodes in our ceph cluster.
 
-=2E.. and then what? Did you try decrypting and mounting it?
+Before the warning there is an additional block rsv -28 message, but
+there is plenty of free space on the disk.
 
---=20
-=46ajar
---
-To unsubscribe from this list: send the line "unsubscribe linux-btrfs" =
-in
-the body of a message to majordomo@vger.kernel.org
-More majordomo info at  http://vger.kernel.org/majordomo-info.html
+
+[201653.774412] btrfs: block rsv returned -28
+[201653.774415] ------------[ cut here ]------------
+[201653.779846] WARNING: at fs/btrfs/extent-tree.c:5980
+btrfs_alloc_free_block+0x347/0x360 [btrfs]()
+
+The complte trace is here:
+
+http://pastebin.com/0SFeZReg
+
+The extent-tree.c:5980 is in use_block_rsv():
+
+5974         if (ret) {
+5975                 static DEFINE_RATELIMIT_STATE(_rs,
+5976                                 DEFAULT_RATELIMIT_INTERVAL,
+5977                                 /*DEFAULT_RATELIMIT_BURST*/ 2);
+5978                 if (__ratelimit(&_rs)) {
+5979                         printk(KERN_DEBUG "btrfs: block rsv
+returned %d\n", ret);
+5980                         WARN_ON(1);
+5981                 }
+5982                 ret = reserve_metadata_bytes(root, block_rsv,
+blocksize, 0);
+
+Thanks,
+Christian

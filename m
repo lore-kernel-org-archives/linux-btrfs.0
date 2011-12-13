@@ -1,36 +1,208 @@
 From: Josef Bacik <josef@redhat.com>
-Subject: [PATCH] Btrfs: don't panic if orphan item already exists
-Date: Tue, 13 Dec 2011 12:55:51 -0500
-Message-ID: <1323798951-4329-1-git-send-email-josef@redhat.com>
+Subject: [PATCH] Btrfs: fix how we do delalloc reservations and how we free reservations on error V2
+Date: Tue, 13 Dec 2011 12:57:39 -0500
+Message-ID: <1323799059-4370-1-git-send-email-josef@redhat.com>
 To: linux-btrfs@vger.kernel.org
 Return-path: <linux-btrfs-owner@vger.kernel.org>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-I've been hitting this BUG_ON() in btrfs_orphan_add when running xfstest 269 in
-a loop.  This is because we will add an orphan item, do the truncate, the
-truncate will fail for whatever reason (*cough*ENOSPC*cough*) and then we're
-left with an orphan item still in the fs.  Then we come back later to do another
-truncate and it blows up because we already have an orphan item.  This is ok so
-just fix the BUG_ON() to only BUG() if ret is not EEXIST.  Thanks,
+Running xfstests 269 with some tracing my scripts kept spitting out errors about
+releasing bytes that we didn't actually have reserved.  This took me down a huge
+rabbit hole and it turns out the way we deal with reserved_extents is wrong,
+we need to only be setting it if the reservation succeeds, otherwise the free()
+method will come in and unreserve space that isn't actually reserved yet, which
+can lead to other warnings and such.  The math was all working out right in the
+end, but it caused all sorts of other issues in addition to making my scripts
+yell and scream and generally make it impossible for me to track down the
+original issue I was looking for.  The other problem is with our error handling
+in the reservation code.  There are two cases that we need to deal with
+
+1) We raced with free.  In this case free won't free anything because csum_bytes
+is modified before we dro the lock in our reservation path, so free rightly
+doesn't release any space because the reservation code may be depending on that
+reservation.  However if we fail, we need the reservation side to do the free at
+that point since that space is no longer in use.  So as it stands the code was
+doing this fine and it worked out, except in case #2
+
+2) We don't race with free.  Nobody comes in and changes anything, and our
+reservation fails.  In this case we didn't reserve anything anyway and we just
+need to clean up csum_bytes but not free anything.  So we keep track of
+csum_bytes before we drop the lock and if it hasn't changed we know we can just
+decrement csum_bytes and carry on.
+
+Because of the case where we can race with free()'s since we have to drop our
+spin_lock to do the reservation, I'm going to serialize all reservations with
+the i_mutex.  We already get this for free in the heavy use paths, truncate and
+file write all hold the i_mutex, just needed to add it to page_mkwrite and
+various ioctl/balance things.  With this patch my space leak scripts no longer
+scream bloody murder.  Thanks,
 
 Signed-off-by: Josef Bacik <josef@redhat.com>
 ---
- fs/btrfs/inode.c |    2 +-
- 1 files changed, 1 insertions(+), 1 deletions(-)
+V1->V2: Don't take the i_mutex in the space cache freeing stuff and fix the
+warning in btrfs_delalloc_reserve_metadata to only fire if we aren't a free
+space inode.  The free space stuff can't be written by multiple threads at the
+same time so this is safe.
 
-diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
-index ae5b354a..76e6c24 100644
---- a/fs/btrfs/inode.c
-+++ b/fs/btrfs/inode.c
-@@ -2047,7 +2047,7 @@ int btrfs_orphan_add(struct btrfs_trans_handle *trans, struct inode *inode)
- 	/* insert an orphan item to track this unlinked/truncated file */
- 	if (insert >= 1) {
- 		ret = btrfs_insert_orphan_item(trans, root, btrfs_ino(inode));
--		BUG_ON(ret);
-+		BUG_ON(ret && ret != -EEXIST);
+ fs/btrfs/extent-tree.c |   43 ++++++++++++++++++++++++++++++-------------
+ fs/btrfs/inode.c       |   10 ++++++++++
+ fs/btrfs/ioctl.c       |    2 ++
+ fs/btrfs/relocation.c  |    2 ++
+ 4 files changed, 44 insertions(+), 13 deletions(-)
+
+diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
+index 24cfd10..6c37d46 100644
+--- a/fs/btrfs/extent-tree.c
++++ b/fs/btrfs/extent-tree.c
+@@ -4189,12 +4189,17 @@ int btrfs_delalloc_reserve_metadata(struct inode *inode, u64 num_bytes)
+ 	struct btrfs_root *root = BTRFS_I(inode)->root;
+ 	struct btrfs_block_rsv *block_rsv = &root->fs_info->delalloc_block_rsv;
+ 	u64 to_reserve = 0;
++	u64 csum_bytes;
+ 	unsigned nr_extents = 0;
++	int extra_reserve = 0;
+ 	int flush = 1;
+ 	int ret;
+ 
++	/* Need to be holding the i_mutex here if we aren't free space cache */
+ 	if (btrfs_is_free_space_inode(root, inode))
+ 		flush = 0;
++	else
++		WARN_ON(!mutex_is_locked(&inode->i_mutex));
+ 
+ 	if (flush && btrfs_transaction_in_commit(root->fs_info))
+ 		schedule_timeout(1);
+@@ -4205,11 +4210,9 @@ int btrfs_delalloc_reserve_metadata(struct inode *inode, u64 num_bytes)
+ 	BTRFS_I(inode)->outstanding_extents++;
+ 
+ 	if (BTRFS_I(inode)->outstanding_extents >
+-	    BTRFS_I(inode)->reserved_extents) {
++	    BTRFS_I(inode)->reserved_extents)
+ 		nr_extents = BTRFS_I(inode)->outstanding_extents -
+ 			BTRFS_I(inode)->reserved_extents;
+-		BTRFS_I(inode)->reserved_extents += nr_extents;
+-	}
+ 
+ 	/*
+ 	 * Add an item to reserve for updating the inode when we complete the
+@@ -4217,11 +4220,12 @@ int btrfs_delalloc_reserve_metadata(struct inode *inode, u64 num_bytes)
+ 	 */
+ 	if (!BTRFS_I(inode)->delalloc_meta_reserved) {
+ 		nr_extents++;
+-		BTRFS_I(inode)->delalloc_meta_reserved = 1;
++		extra_reserve = 1;
  	}
  
- 	/* insert an orphan item to track subvolume contains orphan files */
+ 	to_reserve = btrfs_calc_trans_metadata_size(root, nr_extents);
+ 	to_reserve += calc_csum_metadata_size(inode, num_bytes, 1);
++	csum_bytes = BTRFS_I(inode)->csum_bytes;
+ 	spin_unlock(&BTRFS_I(inode)->lock);
+ 
+ 	ret = reserve_metadata_bytes(root, block_rsv, to_reserve, flush);
+@@ -4231,22 +4235,35 @@ int btrfs_delalloc_reserve_metadata(struct inode *inode, u64 num_bytes)
+ 
+ 		spin_lock(&BTRFS_I(inode)->lock);
+ 		dropped = drop_outstanding_extent(inode);
+-		to_free = calc_csum_metadata_size(inode, num_bytes, 0);
+-		spin_unlock(&BTRFS_I(inode)->lock);
+-		to_free += btrfs_calc_trans_metadata_size(root, dropped);
+-
+ 		/*
+-		 * Somebody could have come in and twiddled with the
+-		 * reservation, so if we have to free more than we would have
+-		 * reserved from this reservation go ahead and release those
+-		 * bytes.
++		 * If the inodes csum_bytes is the same as the original
++		 * csum_bytes then we know we haven't raced with any free()ers
++		 * so we can just reduce our inodes csum bytes and carry on.
++		 * Otherwise we have to do the normal free thing to account for
++		 * the case that the free side didn't free up its reserve
++		 * because of this outstanding reservation.
+ 		 */
+-		to_free -= to_reserve;
++		if (BTRFS_I(inode)->csum_bytes == csum_bytes)
++			calc_csum_metadata_size(inode, num_bytes, 0);
++		else
++			to_free = calc_csum_metadata_size(inode, num_bytes, 0);
++		spin_unlock(&BTRFS_I(inode)->lock);
++		if (dropped)
++			to_free += btrfs_calc_trans_metadata_size(root, dropped);
++
+ 		if (to_free)
+ 			btrfs_block_rsv_release(root, block_rsv, to_free);
+ 		return ret;
+ 	}
+ 
++	spin_lock(&BTRFS_I(inode)->lock);
++	if (extra_reserve) {
++		BTRFS_I(inode)->delalloc_meta_reserved = 1;
++		nr_extents--;
++	}
++	BTRFS_I(inode)->reserved_extents += nr_extents;
++	spin_unlock(&BTRFS_I(inode)->lock);
++
+ 	block_rsv_add_bytes(block_rsv, to_reserve, 1);
+ 
+ 	return 0;
+diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
+index 9de15f1..d3e3ca2 100644
+--- a/fs/btrfs/inode.c
++++ b/fs/btrfs/inode.c
+@@ -2207,7 +2207,14 @@ int btrfs_orphan_cleanup(struct btrfs_root *root)
+ 				continue;
+ 			}
+ 			nr_truncate++;
++			/*
++			 * Need to hold the imutex for reservation purposes, not
++			 * a huge deal here but I have a WARN_ON in
++			 * btrfs_delalloc_reserve_space to catch offenders.
++			 */
++			mutex_lock(&inode->i_mutex);
+ 			ret = btrfs_truncate(inode);
++			mutex_unlock(&inode->i_mutex);
+ 		} else {
+ 			nr_unlink++;
+ 		}
+@@ -6357,7 +6364,10 @@ int btrfs_page_mkwrite(struct vm_area_struct *vma, struct vm_fault *vmf)
+ 	u64 page_start;
+ 	u64 page_end;
+ 
++	/* Need this to keep space reservations serialized */
++	mutex_lock(&inode->i_mutex);
+ 	ret  = btrfs_delalloc_reserve_space(inode, PAGE_CACHE_SIZE);
++	mutex_unlock(&inode->i_mutex);
+ 	if (!ret)
+ 		ret = btrfs_update_time(vma->vm_file);
+ 	if (ret) {
+diff --git a/fs/btrfs/ioctl.c b/fs/btrfs/ioctl.c
+index 4a34c47..2551a01 100644
+--- a/fs/btrfs/ioctl.c
++++ b/fs/btrfs/ioctl.c
+@@ -858,8 +858,10 @@ static int cluster_pages_for_defrag(struct inode *inode,
+ 		return 0;
+ 	file_end = (isize - 1) >> PAGE_CACHE_SHIFT;
+ 
++	mutex_lock(&inode->i_mutex);
+ 	ret = btrfs_delalloc_reserve_space(inode,
+ 					   num_pages << PAGE_CACHE_SHIFT);
++	mutex_unlock(&inode->i_mutex);
+ 	if (ret)
+ 		return ret;
+ again:
+diff --git a/fs/btrfs/relocation.c b/fs/btrfs/relocation.c
+index dff29d5..cfb5543 100644
+--- a/fs/btrfs/relocation.c
++++ b/fs/btrfs/relocation.c
+@@ -2947,7 +2947,9 @@ static int relocate_file_extent_cluster(struct inode *inode,
+ 	index = (cluster->start - offset) >> PAGE_CACHE_SHIFT;
+ 	last_index = (cluster->end - offset) >> PAGE_CACHE_SHIFT;
+ 	while (index <= last_index) {
++		mutex_lock(&inode->i_mutex);
+ 		ret = btrfs_delalloc_reserve_metadata(inode, PAGE_CACHE_SIZE);
++		mutex_unlock(&inode->i_mutex);
+ 		if (ret)
+ 			goto out;
+ 
 -- 
 1.7.5.2
 

@@ -1,64 +1,47 @@
-From: Christian Brunner <chb@muc.de>
-Subject: Re: WARNING: at fs/btrfs/extent-tree.c:5980
-Date: Tue, 13 Dec 2011 09:10:00 +0100
-Message-ID: <CAO47_-8yPzQwKO8Kgp+9HvKNBdRm+1zA-bcLr1xxpasC4TmjHA@mail.gmail.com>
-References: <CAO47_--mEi_vQNt5TE3vZWAWRVtqsJnMc=jQUNJLSvw8S8=jiA@mail.gmail.com>
-Reply-To: chb@muc.de
+From: 810d4rk <810d4rk@gmail.com>
+Subject: Re: btrfs encryption problems
+Date: Tue, 13 Dec 2011 11:58:24 +0000
+Message-ID: <CAAVfQjnHkovhOQcWcRGAXON6ywfBAFHuT9vwp8QBf8hVd+wkjw@mail.gmail.com>
+References: <CAAVfQj=O5nDAcgsiNHz3dNXHDerNrq2Jw01WFLJr5q563oZToA@mail.gmail.com>
+	<20111123110956.GB31800@attic.humilis.net>
+	<CAAVfQj=r-Op2ZUrq8YOchVV=0_LzNmdxjYd03nDHn+t=120YQw@mail.gmail.com>
+	<20111124160617.680b676f@zougloub.eu>
+	<CAAVfQj=gM7ikTzdFmi=yNpo9guukQwFyKfdu7jD=z-J2PwrZEg@mail.gmail.com>
+	<20111124165429.10496040@Bidule>
+	<CAAVfQjmmXnyCmXerCyymEQm-DhDxi0YSSo9sVSvkHE1WvJ4wYA@mail.gmail.com>
+	<20111130134814.GW24338@shiny>
+	<CAAVfQjk+O_3uLb=DShFwV2gVnLeDzQ45ebpMidDGFXZtqXJBbQ@mail.gmail.com>
+	<CAG1y0scRTcpHxEnRHgeKgFtYgVYJdgMFydZfXmKEOnRQvUpcQA@mail.gmail.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=ISO-8859-1
-To: linux-btrfs@vger.kernel.org
+Content-Type: text/plain; charset=UTF-8
+Cc: Chris Mason <chris.mason@oracle.com>,
+	=?UTF-8?B?SsOpcsO0bWUgQ2FycmV0ZXJv?= <cJ-ko@zougloub.eu>,
+	sander@humilis.net, linux-btrfs@vger.kernel.org
+To: "Fajar A. Nugraha" <list@fajar.net>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <CAO47_--mEi_vQNt5TE3vZWAWRVtqsJnMc=jQUNJLSvw8S8=jiA@mail.gmail.com>
+In-Reply-To: <CAG1y0scRTcpHxEnRHgeKgFtYgVYJdgMFydZfXmKEOnRQvUpcQA@mail.gmail.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Sorry - I forgot to mention, that I'm still seeing this with:
+The disk is decrypted, after that I try to mount and it doesn't mount,
+this last message appears on the log after trying to mount the btrfs
+disk:
 
-[PATCH] Btrfs: update global block_rsv when creating a new block group
+> [  660.040263] EXT4-fs (dm-4): VFS: Can't find ext4 filesystem
 
-Christian
+On 13/12/2011, Fajar A. Nugraha <list@fajar.net> wrote:
+> On Thu, Dec 1, 2011 at 5:15 AM, 810d4rk <810d4rk@gmail.com> wrote:
+>> I plugged it directly by sata and this is what I get from the 3.1 kernel:
+>
+>> [  581.921417]  sdb: sdb1
+>> [  581.921642] sd 2:0:0:0: [sdb] Attached SCSI disk
+>> [  660.040263] EXT4-fs (dm-4): VFS: Can't find ext4 filesystem
+>
+> ... and then what? Did you try decrypting and mounting it?
+>
+> --
+> Fajar
+>
 
-2011/12/13 Christian Brunner <chb@muc.de>:
-> Hi,
->
-> with the latest btrfs for-linus I'm seeing seeing occasional
-> btrfs_alloc_free_block warnings on several nodes in our ceph cluster.
->
-> Before the warning there is an additional block rsv -28 message, but
-> there is plenty of free space on the disk.
->
->
-> [201653.774412] btrfs: block rsv returned -28
-> [201653.774415] ------------[ cut here ]------------
-> [201653.779846] WARNING: at fs/btrfs/extent-tree.c:5980
-> btrfs_alloc_free_block+0x347/0x360 [btrfs]()
->
-> The complte trace is here:
->
-> http://pastebin.com/0SFeZReg
->
-> The extent-tree.c:5980 is in use_block_rsv():
->
-> 5974 =A0 =A0 =A0 =A0 if (ret) {
-> 5975 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 static DEFINE_RATELIMIT_STATE(_r=
-s,
-> 5976 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =
-DEFAULT_RATELIMIT_INTERVAL,
-> 5977 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =
-/*DEFAULT_RATELIMIT_BURST*/ 2);
-> 5978 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 if (__ratelimit(&_rs)) {
-> 5979 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 printk(KERN_DEBU=
-G "btrfs: block rsv
-> returned %d\n", ret);
-> 5980 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 WARN_ON(1);
-> 5981 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 }
-> 5982 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 ret =3D reserve_metadata_bytes(r=
-oot, block_rsv,
-> blocksize, 0);
->
-> Thanks,
-> Christian
---
-To unsubscribe from this list: send the line "unsubscribe linux-btrfs" =
-in
-the body of a message to majordomo@vger.kernel.org
-More majordomo info at  http://vger.kernel.org/majordomo-info.html
+
+-- 
+Thanks

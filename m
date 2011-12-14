@@ -1,60 +1,23 @@
-From: Wilfred van Velzen <wvvelzen@gmail.com>
-Subject: Re: What is best practice when partitioning a device that holds one
- or more btr-filesystems
-Date: Wed, 14 Dec 2011 19:51:58 +0100
-Message-ID: <CAKsPgxG7yr3SzwJYdsS58dMxZ_DwWH6b1CLg0eXwDmfQNAY4XA@mail.gmail.com>
-References: <CAKsPgxFAjsuCRRG0hGRmpau=cOcaA5EfZYfB3AXQ8N7nL3EBmw@mail.gmail.com>
-	<CAKcLGm-LZmyOKm4gegZDRYaq-DO-KW+5CCb_E7n8WvF0fEFCeQ@mail.gmail.com>
+From: Phillip Susi <psusi@cfl.rr.com>
+Subject: Re: [PATCH] Btrfs: don't panic if orphan item already exists
+Date: Wed, 14 Dec 2011 14:59:51 -0500
+Message-ID: <4EE90037.6040105@cfl.rr.com>
+References: <1323798951-4329-1-git-send-email-josef@redhat.com> <4EE7A172.2010105@cfl.rr.com> <20111213190942.GA3602@localhost.localdomain> <4EE804EB.5070209@cn.fujitsu.com> <4EE8707D.7080504@cn.fujitsu.com> <20111214145843.GA1925@localhost.localdomain> <4EE8BD45.7090809@cfl.rr.com> <20111214152638.GB1925@localhost.localdomain> <4EE8C391.9090501@cfl.rr.com> <20111214154624.GA10536@localhost.localdomain>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=ISO-8859-1
-To: linux-btrfs@vger.kernel.org
+Content-Type: text/plain; charset=ISO-8859-1; format=flowed
+Cc: Miao Xie <miaox@cn.fujitsu.com>, WuBo <wu.bo@cn.fujitsu.com>,
+	linux-btrfs@vger.kernel.org
+To: Josef Bacik <josef@redhat.com>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <CAKcLGm-LZmyOKm4gegZDRYaq-DO-KW+5CCb_E7n8WvF0fEFCeQ@mail.gmail.com>
+In-Reply-To: <20111214154624.GA10536@localhost.localdomain>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Wed, Dec 14, 2011 at 7:21 PM, Mitch Harder
-<mitch.harder@sabayonlinux.org> wrote:
-> On Wed, Dec 14, 2011 at 7:00 AM, Wilfred van Velzen <wvvelzen@gmail.c=
-om> wrote:
->>
->> What is best practice when partitioning a device that holds one or
->> more btr-filesystems
->>
->
-> When it comes to "best practices" in btrfs filesystem layouts, your
-> primary consideration should be to make yourself robust to potential
-> filesystem failure.
->
-> Of course this should be true of any storage arrangement.
->
-> But if you're going to be playing with rc kernels and applying patche=
-s
-> off the list, you might want to break it up into multiple partitions
-> so as to mitigate the problem if one partition picks up a
-> inconsistency.
->
-> On the other hand, it's also good for people to use the volume and
-> subvolume features. =A0There's many different ways for people to make
-> use of volumes and subvolumes, and it's good to explore those
-> features.
+On 12/14/2011 10:46 AM, Josef Bacik wrote:
+> file looks like its only 50m but still has 100g of extents taking up space
+> orphan cleanup happens and the inode is truncated and the extra space is cleaned
+> up
 
-Well, of course there are different usecases for different situations.
+Yes, but isn't the only reason that the i_size change actually hit the 
+disk is because of the orphan item?  So with no orphan item, the i_size 
+remains at 100g.
 
-What I want to find out is, if you should partition differently when
-you are using btrfs compared to partitioning for the other
-older/regular filesystems for linux, for regular (production)
-usecases.
-
-(I'm not interested in what early adopter users do when they are using
-rc kernels...)
-
-http://btrfs.ipv5.de/index.php?title=3DUseCases#What_is_best_practice_w=
-hen_partitioning_a_device_that_holds_one_or_more_btr-filesystems
-
---=20
-Wilfred.
---
-To unsubscribe from this list: send the line "unsubscribe linux-btrfs" =
-in
-the body of a message to majordomo@vger.kernel.org
-More majordomo info at  http://vger.kernel.org/majordomo-info.html

@@ -1,7 +1,7 @@
 From: Josef Bacik <josef@redhat.com>
 Subject: Re: [PATCH] Btrfs: don't panic if orphan item already exists
-Date: Wed, 14 Dec 2011 10:27:07 -0500
-Message-ID: <20111214152638.GB1925@localhost.localdomain>
+Date: Wed, 14 Dec 2011 10:34:45 -0500
+Message-ID: <20111214153438.GA10175@localhost.localdomain>
 References: <1323798951-4329-1-git-send-email-josef@redhat.com>
  <4EE7A172.2010105@cfl.rr.com>
  <20111213190942.GA3602@localhost.localdomain>
@@ -30,20 +30,10 @@ On Wed, Dec 14, 2011 at 10:14:13AM -0500, Phillip Susi wrote:
 > call did not succeed )?
 > 
 
-Except consider the case that the program was written intelligently and checks
-for errors on truncate.  So he writes 100G, truncates to 50M, and the truncate
-fails and he closes the file and exits.  Then somewhere down the road the inode
-is evicted from cache and we reboot the box.  Next time the box comes up it only
-looks like a 50M file, except we're still taking up 100G of disk space, and we
-have no idea there's space there and it's still taken up in the allocator so it
-will just look like we've lost ~100G of space.  This is why it's left there, so
-everything can be cleaned up.
-
-Course now that I've had the chance to think and calm down a little bit there
-may be another option.  We could probably keep track of how much we've deleted
-in btrfs_truncate_inode_items, and then if we fail to complete the truncate we
-just set the i_size to whatever it is when we stopped truncating, update the
-inode and remove the orphan item.  I'll look into this and see how tricky it is
-to do.  Thanks,
+Yes because otherwise we'll leak space since the i_size has been updated
+already.  The other option is to make btrfs_truncate_inode_items update i_size
+as we truncate so if it fails we can delete the orphan item and then update the
+inode with the new i_size, that way we don't leave the orphan item on disk and
+we don't leak space.  I'll see how doable this is.  Thanks,
 
 Josef

@@ -1,105 +1,75 @@
 From: Miao Xie <miaox@cn.fujitsu.com>
-Subject: [PATCH] xfstests: open btrfsck to check the btrfs filesystem
-Date: Wed, 14 Dec 2011 15:35:20 +0800
-Message-ID: <4EE851B8.8010505@cn.fujitsu.com>
+Subject: [PATCH RESEND] Btrfs: fix inaccurate available space on raid0 profile
+Date: Wed, 14 Dec 2011 15:50:23 +0800
+Message-ID: <4EE8553F.8080608@cn.fujitsu.com>
 Reply-To: miaox@cn.fujitsu.com
 Mime-Version: 1.0
 Content-Type: text/plain; charset=GB2312
-Cc: Linux Btrfs <linux-btrfs@vger.kernel.org>, xfs@oss.sgi.com
-To: Christoph Hellwig <hch@infradead.org>
+To: Linux Btrfs <linux-btrfs@vger.kernel.org>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-We failed to get fsck program to check the btrfs file system, it is
-because btrfs uses its independent check tool which is named btrfsck
-to check the file system, so the common checker -- fsck -- could not
-find it, and reported there is no checker.
-
-This patch fix it by using btrfsck directly. 
+When we use raid0 as the data profile, df command may show us a very
+inaccurate value of the available space, which may be much less than the
+real one. It may make the users puzzled. Fix it by changing the calculation
+of the available space, and making it be more similar to a fake chunk
+allocation.
 
 Signed-off-by: Miao Xie <miaox@cn.fujitsu.com>
 ---
- common.rc |   54 ++++++++++++++++++++++++++++++++++++++++++++++++++++++
- 1 files changed, 54 insertions(+), 0 deletions(-)
+ fs/btrfs/super.c |   19 +++++++++++++------
+ 1 files changed, 13 insertions(+), 6 deletions(-)
 
-diff --git a/common.rc b/common.rc
-index cab0b64..b42e46d 100644
---- a/common.rc
-+++ b/common.rc
-@@ -1299,6 +1299,54 @@ _check_xfs_test_fs()
-     fi
- }
+diff --git a/fs/btrfs/super.c b/fs/btrfs/super.c
+index 8bd9d6d..01de53a 100644
+--- a/fs/btrfs/super.c
++++ b/fs/btrfs/super.c
+@@ -1079,7 +1079,7 @@ static int btrfs_calc_avail_data_space(struct btrfs_root *root, u64 *free_bytes)
+ 	u64 avail_space;
+ 	u64 used_space;
+ 	u64 min_stripe_size;
+-	int min_stripes = 1;
++	int min_stripes = 1, num_stripes = 1;
+ 	int i = 0, nr_devices;
+ 	int ret;
  
-+_check_btrfs_filesystem()
-+{
-+    device=$1
+@@ -1093,12 +1093,16 @@ static int btrfs_calc_avail_data_space(struct btrfs_root *root, u64 *free_bytes)
+ 
+ 	/* calc min stripe number for data space alloction */
+ 	type = btrfs_get_alloc_profile(root, 1);
+-	if (type & BTRFS_BLOCK_GROUP_RAID0)
++	if (type & BTRFS_BLOCK_GROUP_RAID0) {
+ 		min_stripes = 2;
+-	else if (type & BTRFS_BLOCK_GROUP_RAID1)
++		num_stripes = nr_devices;
++	} else if (type & BTRFS_BLOCK_GROUP_RAID1) {
+ 		min_stripes = 2;
+-	else if (type & BTRFS_BLOCK_GROUP_RAID10)
++		num_stripes = 2;
++	} else if (type & BTRFS_BLOCK_GROUP_RAID10) {
+ 		min_stripes = 4;
++		num_stripes = 4;
++	}
+ 
+ 	if (type & BTRFS_BLOCK_GROUP_DUP)
+ 		min_stripe_size = 2 * BTRFS_STRIPE_LEN;
+@@ -1167,13 +1171,16 @@ static int btrfs_calc_avail_data_space(struct btrfs_root *root, u64 *free_bytes)
+ 	i = nr_devices - 1;
+ 	avail_space = 0;
+ 	while (nr_devices >= min_stripes) {
++		if (num_stripes > nr_devices)
++			num_stripes = nr_devices;
 +
-+    # If type is set, we're mounted
-+    type=`_fs_type $device`
-+    ok=1
-+
-+    if [ "$type" = "$FSTYP" ]
-+    then
-+        # mounted ...
-+        mountpoint=`_umount_or_remount_ro $device`
-+    fi
-+
-+    btrfsck $device >$tmp.fsck 2>&1
-+    if [ $? -ne 0 ]
-+    then
-+        echo "_check_btrfs_filesystem: filesystem on $device is inconsistent (see $seq.full)"
-+
-+        echo "_check_btrfs_filesystem: filesystem on $device is inconsistent" >>$here/$seq.full
-+        echo "*** fsck.$FSTYP output ***"                     >>$here/$seq.full
-+        cat $tmp.fsck                                         >>$here/$seq.full
-+        echo "*** end fsck.$FSTYP output"                     >>$here/$seq.full
-+
-+        ok=0
-+    fi
-+    rm -f $tmp.fsck
-+
-+    if [ $ok -eq 0 ]
-+    then
-+        echo "*** mount output ***"                             >>$here/$seq.full
-+        _mount                                                  >>$here/$seq.full
-+        echo "*** end mount output"                             >>$here/$seq.full
-+    elif [ "$type" = "$FSTYP" ]
-+    then
-+	# was mounted ...
-+	_mount_or_remount_rw "$MOUNT_OPTIONS" $device $mountpoint
-+	ok=$?
-+    fi
-+
-+    if [ $ok -eq 0 ]; then
-+	status=1
-+	exit 1
-+    fi
-+
-+    return 0
-+}
-+
- _check_test_fs()
- {
-     case $FSTYP in
-@@ -1311,6 +1359,9 @@ _check_test_fs()
-     udf)
- 	# do nothing for now
- 	;;
-+    btrfs)
-+	_check_btrfs_filesystem $TEST_DEV
-+	;;
-     *)
- 	_check_generic_filesystem $TEST_DEV
- 	;;
-@@ -1337,6 +1388,9 @@ _check_scratch_fs()
-     nfs*)
- 	# Don't know how to check an NFS filesystem, yet.
- 	;;
-+    btrfs)
-+	_check_btrfs_filesystem $SCRATCH_DEV
-+	;;
-     *)
- 	_check_generic_filesystem $SCRATCH_DEV
- 	;;
--- 
-1.7.6.4
+ 		if (devices_info[i].max_avail >= min_stripe_size) {
+ 			int j;
+ 			u64 alloc_size;
+ 
+-			avail_space += devices_info[i].max_avail * min_stripes;
++			avail_space += devices_info[i].max_avail * num_stripes;
+ 			alloc_size = devices_info[i].max_avail;
+-			for (j = i + 1 - min_stripes; j <= i; j++)
++			for (j = i + 1 - num_stripes; j <= i; j++)
+ 				devices_info[j].max_avail -= alloc_size;
+ 		}
+ 		i--;
+-- 1.7.6.4

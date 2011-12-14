@@ -1,24 +1,29 @@
-From: Wilfred van Velzen <wvvelzen@gmail.com>
-Subject: What is best practice when partitioning a device that holds one or
- more btr-filesystems
-Date: Wed, 14 Dec 2011 14:00:38 +0100
-Message-ID: <CAKsPgxFAjsuCRRG0hGRmpau=cOcaA5EfZYfB3AXQ8N7nL3EBmw@mail.gmail.com>
+From: "Helmut Hullen" <Hullen@t-online.de>
+Subject: Re: What is best practice when partitioning a device that holds one or more btr-filesystems
+Date: 14 Dec 2011 14:17:00 +0100
+Message-ID: <BzrzxoPy1uB@helmut.hullen.de>
+References: <CAKsPgxFAjsuCRRG0hGRmpau=cOcaA5EfZYfB3AXQ8N7nL3EBmw@mail.gmail.com>
+Reply-To: helmut@hullen.de
 Mime-Version: 1.0
-Content-Type: text/plain; charset=ISO-8859-1
+Content-Type: text/plain; charset=US-ASCII
 To: linux-btrfs@vger.kernel.org
 Return-path: <linux-btrfs-owner@vger.kernel.org>
+In-Reply-To: <CAKsPgxFAjsuCRRG0hGRmpau=cOcaA5EfZYfB3AXQ8N7nL3EBmw@mail.gmail.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hi,
+Hallo, Wilfred,
 
-What is best practice when partitioning a device that holds one or
-more btr-filesystems
+Du meintest am 14.12.11:
 
-Do it the old fashioned way, and create a number of partitions
-according to your needs? Or create one big btrfs partition and use
-subvolumes where you would normally create different partitions?
+> What is best practice when partitioning a device that holds one or
+> more btr-filesystems
 
-What are the considerations for doing it either way?
+"That depends ..."
 
--- 
-Wilfred
+My favourite installation is a bundle of 2-TByte-disks which btrfs  
+presents as one big disk. data=raid0, metadata=raid1
+
+It's a kind of archive, p.e. for video *.mpeg
+
+Viele Gruesse!
+Helmut

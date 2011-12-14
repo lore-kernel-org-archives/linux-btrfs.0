@@ -1,45 +1,31 @@
-From: Josef Bacik <josef@redhat.com>
+From: Phillip Susi <psusi@cfl.rr.com>
 Subject: Re: [PATCH] Btrfs: don't panic if orphan item already exists
-Date: Wed, 14 Dec 2011 10:35:25 -0500
-Message-ID: <20111214153525.GB10175@localhost.localdomain>
-References: <1323798951-4329-1-git-send-email-josef@redhat.com>
- <4EE7A172.2010105@cfl.rr.com>
- <20111213190942.GA3602@localhost.localdomain>
- <4EE804EB.5070209@cn.fujitsu.com>
- <4EE8707D.7080504@cn.fujitsu.com>
- <20111214145843.GA1925@localhost.localdomain>
- <4EE8BD45.7090809@cfl.rr.com>
- <20111214153438.GA10175@localhost.localdomain>
+Date: Wed, 14 Dec 2011 10:41:05 -0500
+Message-ID: <4EE8C391.9090501@cfl.rr.com>
+References: <1323798951-4329-1-git-send-email-josef@redhat.com> <4EE7A172.2010105@cfl.rr.com> <20111213190942.GA3602@localhost.localdomain> <4EE804EB.5070209@cn.fujitsu.com> <4EE8707D.7080504@cn.fujitsu.com> <20111214145843.GA1925@localhost.localdomain> <4EE8BD45.7090809@cfl.rr.com> <20111214152638.GB1925@localhost.localdomain>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Cc: Phillip Susi <psusi@cfl.rr.com>, Miao Xie <miaox@cn.fujitsu.com>,
-	WuBo <wu.bo@cn.fujitsu.com>, linux-btrfs@vger.kernel.org
+Content-Type: text/plain; charset=ISO-8859-1; format=flowed
+Cc: Miao Xie <miaox@cn.fujitsu.com>, WuBo <wu.bo@cn.fujitsu.com>,
+	linux-btrfs@vger.kernel.org
 To: Josef Bacik <josef@redhat.com>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <20111214153438.GA10175@localhost.localdomain>
+In-Reply-To: <20111214152638.GB1925@localhost.localdomain>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Wed, Dec 14, 2011 at 10:34:45AM -0500, Josef Bacik wrote:
-> On Wed, Dec 14, 2011 at 10:14:13AM -0500, Phillip Susi wrote:
-> > On 12/14/2011 9:58 AM, Josef Bacik wrote:
-> > >There is no "underlying bug", there is a shitty situation, the shitty situation
-> > 
-> > Maybe my assumptions are wrong somewhere then.  You add the orphan
-> > item to make sure that the truncate will be finalized even if the
-> > system crashes before the transaction commits right?  So if
-> > truncate() fails with -ENOSPC, then you shouldn't be trying to
-> > finalize the truncate on the next mount, should you ( because the
-> > call did not succeed )?
-> > 
-> 
-> Yes because otherwise we'll leak space since the i_size has been updated
-> already.  The other option is to make btrfs_truncate_inode_items update i_size
-> as we truncate so if it fails we can delete the orphan item and then update the
-> inode with the new i_size, that way we don't leave the orphan item on disk and
-> we don't leak space.  I'll see how doable this is.  Thanks,
-> 
+On 12/14/2011 10:27 AM, Josef Bacik wrote:
+> Except consider the case that the program was written intelligently and checks
+> for errors on truncate.  So he writes 100G, truncates to 50M, and the truncate
+> fails and he closes the file and exits.  Then somewhere down the road the inode
+> is evicted from cache and we reboot the box.  Next time the box comes up it only
+> looks like a 50M file, except we're still taking up 100G of disk space, and we
+> have no idea there's space there and it's still taken up in the allocator so it
+> will just look like we've lost ~100G of space.  This is why it's left there, so
+> everything can be cleaned up.
 
-Sorry for the double reply, my email is being wonky and it didn't look like my
-original response went out.
+I'm a little confused here.  Is there a commit somewhere in there?  How 
+can the 100g allocation be committed, but not the i_size of the inode? 
+Shouldn't either both or neither be committed?  If both are committed, 
+and then the truncate fails, then I would expect the system to come back 
+up after a crash with the file still at 100g.  That is, as long as the 
+orphan item is not left in place after the failed truncate.
 
-Josef

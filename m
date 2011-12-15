@@ -1,90 +1,43 @@
-From: David Sterba <dave@jikos.cz>
-Subject: Re: kernel BUG at /build/buildd/linux-3.2.0/fs/btrfs/extent-tree.c:4816!
-Date: Thu, 15 Dec 2011 01:01:10 +0100
-Message-ID: <20111215000110.GC7322@twin.jikos.cz>
-References: <4ED437CE.3060909@kittilsen.org> <20111129151256.GJ24338@shiny> <4ED4FA72.5050804@kittilsen.org> <20111129154913.GN24338@shiny> <20111129164746.GN12759@twin.jikos.cz> <20111129181214.GO24338@shiny>
-Reply-To: dave@jikos.cz
+From: "Kok, Auke-jan H" <auke-jan.h.kok@intel.com>
+Subject: Re: What is best practice when partitioning a device that holds one
+ or more btr-filesystems
+Date: Wed, 14 Dec 2011 16:42:48 -0800
+Message-ID: <CABsxX9K15tyQRXOWtLci94jfyJjtTZh9eRf4ssBjK=yD8TVuXw@mail.gmail.com>
+References: <CAKsPgxFAjsuCRRG0hGRmpau=cOcaA5EfZYfB3AXQ8N7nL3EBmw@mail.gmail.com>
+	<CAKcLGm-LZmyOKm4gegZDRYaq-DO-KW+5CCb_E7n8WvF0fEFCeQ@mail.gmail.com>
+	<CAKsPgxG7yr3SzwJYdsS58dMxZ_DwWH6b1CLg0eXwDmfQNAY4XA@mail.gmail.com>
+	<CA+WRLO98Je2J1SMZv0zVi1r1AfGFcnUCHKU=sJAsYDuUssqx8w@mail.gmail.com>
+	<CAKsPgxEk8+WJ2dGpzO4WG=UcO9y8j6j_5nX4c5x6H=qbjVVAJw@mail.gmail.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-To: Chris Mason <chris.mason@oracle.com>,
-	Karl Mardoff Kittilsen <karl@kittilsen.org>,
-	linux-btrfs@vger.kernel.org
+Content-Type: text/plain; charset=ISO-8859-1
+Cc: linux-btrfs@vger.kernel.org
+To: Wilfred van Velzen <wvvelzen@gmail.com>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <20111129181214.GO24338@shiny>
+In-Reply-To: <CAKsPgxEk8+WJ2dGpzO4WG=UcO9y8j6j_5nX4c5x6H=qbjVVAJw@mail.gmail.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Tue, Nov 29, 2011 at 01:12:14PM -0500, Chris Mason wrote:
-> > Nov 28 00:11:14 karl-workstation kernel: [212918.235050] kernel BUG at
-> > /home/apw/COD/linux/fs/btrfs/extent-tree.c:4775!
-> > Nov 28 00:11:14 karl-workstation kernel: [212918.235118] RAX:
-> > 00000000ea000001 RBX: ffff880412c3ab40 RCX: ffff880380173900
-> > ^^^^^^^^^^^^^^^^
-> > 
-> > 4765                         ret = btrfs_search_slot(trans, extent_root,
-> > 4766                                                 &key, path, -1, 1);
-> > 4767                         if (ret) {
-> > 4768                                 printk(KERN_ERR "umm, got %d back from search"
-> > 4769                                        ", was looking for %llu\n", ret,
-> > 4770                                        (unsigned long long)bytenr);
-> > 4771                                 if (ret > 0)
-> > 4772                                         btrfs_print_leaf(extent_root,
-> > 4773                                                          path->nodes[0]);
-> > 4774                         }
-> > 4775                         BUG_ON(ret);
-> > 
-> > the ret value comes from btrfs_search_slot, returning " < 0" or 1, but
-> > RAX has some extra bits set, this could really be a RAM failure.
-> 
-> Interesting, look at this:
-> 
-> > karl@karl-precise:~/git/btrfs-progs$ sudo ./btrfsck /dev/md0
-> > ref mismatch on [2176962560 8192] extent item 480, found 1
-> > Incorrect local backref count on 2176970752 root 5 owner 2101705
-> > offset 368640 found 1 wanted 3925868545
-> > backpointer mismatch on [2176970752 4096]
-> 
-> 3925868545 == EA000001
+On Wed, Dec 14, 2011 at 1:42 PM, Wilfred van Velzen <wvvelzen@gmail.com> wrote:
+> On Wed, Dec 14, 2011 at 9:56 PM, Gareth Pye <gareth@cerberos.id.au> wrote:
+>> On Thu, Dec 15, 2011 at 5:51 AM, Wilfred van Velzen <wvvelzen@gmail.com>
+>> wrote:
+>>>
+>>> (I'm not interested in what early adopter users do when they are using
+>>> rc kernels...)
+>>
+>> Yet your going to use a FS without a working fsck? That puts you in early
+>> adopter territory to me.
+>
+> Yeah maybe. But I'm still not interested in it regarding partitioning! ;)
+>
+> But actually I decided not to use it for the production environment.
+> The missing working fsck is one of the reasons.
+> Although opensuse supports it and Suse Linux Enterprise Server 11 is
+> going to support it with their next SP release in Februari, and Fedora
+> might use it as default in their next release... Did I miss any?
 
-I applied usual first analysis steps (source line, registers, call
-chain), search slot could return 1 and taking a memory failure into
-account looks possible, though bit count of 'EA' is 5, seems too high.
+MeeGo has been using btrfs by default right from the start. In the
+current versions, we even install everything in a single btrfs
+partition, and use 2 subvolumes (/home and /), and create a factory
+reset snapshot of the / filesystem at installation.
 
-> Are you sure this is the BUG_ON he was triggering?
-
-This was referring to the second BUG_ON in the logs. I checked the first
-BUG_ON again and see:
-
-kernel: [  100.963478] kernel BUG at 
-/build/buildd/linux-3.2.0/fs/btrfs/extent-tree.c:4816!
-
-RAX: 00000000ea000001
-
-4815                 if (iref) {
-4816                         BUG_ON(!found_extent);
-4817                 } else {
-4818                         btrfs_set_extent_refs(leaf, ei, refs);
-4819                         btrfs_mark_buffer_dirty(leaf);
-4820                 }
-
-found_extent is int and modified at
-
-4686         int found_extent = 0;
-
-and
-
-4712                         if (key.type == BTRFS_EXTENT_ITEM_KEY &&
-4713                             key.offset == num_bytes) {
-4714                                 found_extent = 1;
-4715                                 break;
-4716                         }
-
-
-This looks like a crappy memory as well.
-
-> > offset 368640 found 1 wanted 3925868545
-> 3925868545 == EA000001
-
-"found 1 wanted 1"
-
-
-david
+Auke

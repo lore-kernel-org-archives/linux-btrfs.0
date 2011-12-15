@@ -1,40 +1,79 @@
-From: Sander <sander@humilis.net>
-Subject: Re: What is best practice when partitioning a device that holds one
- or more btr-filesystems
-Date: Thu, 15 Dec 2011 09:55:30 +0100
-Message-ID: <20111215085530.GA31915@attic.humilis.net>
-References: <CAKsPgxFAjsuCRRG0hGRmpau=cOcaA5EfZYfB3AXQ8N7nL3EBmw@mail.gmail.com>
- <CAKcLGm-LZmyOKm4gegZDRYaq-DO-KW+5CCb_E7n8WvF0fEFCeQ@mail.gmail.com>
- <CAKsPgxG7yr3SzwJYdsS58dMxZ_DwWH6b1CLg0eXwDmfQNAY4XA@mail.gmail.com>
- <4EE948AD.9040001@parallels.com>
- <20111215082543.GA12179@attic.humilis.net>
- <4EE9AFD8.1010306@parallels.com>
-Reply-To: sander@humilis.net
+From: Miao Xie <miaox@cn.fujitsu.com>
+Subject: [PATCH V2 2/2] Btrfs: fix wrong i_size when truncating a file to
+ a larger size
+Date: Thu, 15 Dec 2011 17:55:36 +0800
+Message-ID: <4EE9C418.4070800@cn.fujitsu.com>
+References: <4EE84D29.5070601@cn.fujitsu.com> <20111214165147.GF31158@shiny>
+Reply-To: miaox@cn.fujitsu.com
 Mime-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Cc: linux-btrfs@vger.kernel.org
-To: dima <dolenin@parallels.com>
+Content-Type: text/plain; charset=ISO-8859-1
+To: Chris Mason <chris.mason@oracle.com>,
+	Linux Btrfs <linux-btrfs@vger.kernel.org>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <4EE9AFD8.1010306@parallels.com>
+In-Reply-To: <20111214165147.GF31158@shiny>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-dima wrote (ao):
-> >>format the device to
-> >>btrfs and use subvolumes instead of your usual partitions (some
-> >>/boot restrictions apply). You won't be able to use grub2 though,
-> >>but syslinux will work.
-> >
-> >Grub2 has btrfs support for quite some time now, which you are aware of
-> >I assume. Grub2 can't cope with / in a subvolume or something?
-> 
-> No, btrfs has nothing to do with this. It is just that grub2 cannot
-> be installed to a partition-less drive (at least 1 partition is
-> needed), while syslinux can.
+Btrfsck report error 100 after the 83th case of xfstests was run, it means
+the i_size of the file is wrong.
 
-Ah, wasn't aware of that. Thanks for the info!
+The reason of this bug is that:
+Btrfs increased i_size of the file at the beginning, but it failed to expand
+the file, and failed to update the i_size to the old size because there is no
+enough space in the file system, so we found a wrong i_size.
 
-	Sander
+This patch fixes this bug by updating the i_size just when we pass the file
+expanding.
+
+Signed-off-by: Miao Xie <miaox@cn.fujitsu.com>
+---
+Changes v1 -> v2:
+- make i_size be accurate before truncate_pagecache() is called
+  (use truncate_setsize())
+---
+ fs/btrfs/inode.c |   20 ++++++++++++++------
+ 1 files changed, 14 insertions(+), 6 deletions(-)
+
+diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
+index 960818b..21051fc 100644
+--- a/fs/btrfs/inode.c
++++ b/fs/btrfs/inode.c
+@@ -3373,6 +3373,8 @@ int btrfs_cont_expand(struct inode *inode, loff_t oldsize, loff_t size)
  
+ static int btrfs_setsize(struct inode *inode, loff_t newsize)
+ {
++	struct btrfs_root *root = BTRFS_I(inode)->root;
++	struct btrfs_trans_handle *trans;
+ 	loff_t oldsize = i_size_read(inode);
+ 	int ret;
+ 
+@@ -3380,16 +3382,22 @@ static int btrfs_setsize(struct inode *inode, loff_t newsize)
+ 		return 0;
+ 
+ 	if (newsize > oldsize) {
+-		i_size_write(inode, newsize);
+-		btrfs_ordered_update_i_size(inode, i_size_read(inode), NULL);
+-		truncate_pagecache(inode, oldsize, newsize);
+ 		ret = btrfs_cont_expand(inode, oldsize, newsize);
+-		if (ret) {
+-			btrfs_setsize(inode, oldsize);
++		if (ret)
+ 			return ret;
++
++		truncate_setsize(inode, newsize);
++
++		trans = btrfs_start_transaction(root, 1);
++		if (IS_ERR(trans)) {
++			truncate_setsize(inode, oldsize);
++			return PTR_ERR(trans);
+ 		}
+ 
+-		mark_inode_dirty(inode);
++		btrfs_ordered_update_i_size(inode, i_size_read(inode), NULL);
++		ret = btrfs_update_inode(trans, root, inode);
++
++		btrfs_end_transaction_throttle(trans, root);
+ 	} else {
+ 
+ 		/*
 -- 
-Humilis IT Services and Solutions
-http://www.humilis.net
+1.7.6.4

@@ -1,43 +1,49 @@
-From: "Kok, Auke-jan H" <auke-jan.h.kok@intel.com>
+From: dima <dolenin@parallels.com>
 Subject: Re: What is best practice when partitioning a device that holds one
  or more btr-filesystems
-Date: Wed, 14 Dec 2011 16:42:48 -0800
-Message-ID: <CABsxX9K15tyQRXOWtLci94jfyJjtTZh9eRf4ssBjK=yD8TVuXw@mail.gmail.com>
-References: <CAKsPgxFAjsuCRRG0hGRmpau=cOcaA5EfZYfB3AXQ8N7nL3EBmw@mail.gmail.com>
-	<CAKcLGm-LZmyOKm4gegZDRYaq-DO-KW+5CCb_E7n8WvF0fEFCeQ@mail.gmail.com>
-	<CAKsPgxG7yr3SzwJYdsS58dMxZ_DwWH6b1CLg0eXwDmfQNAY4XA@mail.gmail.com>
-	<CA+WRLO98Je2J1SMZv0zVi1r1AfGFcnUCHKU=sJAsYDuUssqx8w@mail.gmail.com>
-	<CAKsPgxEk8+WJ2dGpzO4WG=UcO9y8j6j_5nX4c5x6H=qbjVVAJw@mail.gmail.com>
+Date: Thu, 15 Dec 2011 10:09:01 +0900
+Message-ID: <4EE948AD.9040001@parallels.com>
+References: <CAKsPgxFAjsuCRRG0hGRmpau=cOcaA5EfZYfB3AXQ8N7nL3EBmw@mail.gmail.com> <CAKcLGm-LZmyOKm4gegZDRYaq-DO-KW+5CCb_E7n8WvF0fEFCeQ@mail.gmail.com> <CAKsPgxG7yr3SzwJYdsS58dMxZ_DwWH6b1CLg0eXwDmfQNAY4XA@mail.gmail.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=ISO-8859-1
-Cc: linux-btrfs@vger.kernel.org
-To: Wilfred van Velzen <wvvelzen@gmail.com>
+Content-Type: text/plain; charset="UTF-8"; format=flowed
+To: <linux-btrfs@vger.kernel.org>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <CAKsPgxEk8+WJ2dGpzO4WG=UcO9y8j6j_5nX4c5x6H=qbjVVAJw@mail.gmail.com>
+In-Reply-To: <CAKsPgxG7yr3SzwJYdsS58dMxZ_DwWH6b1CLg0eXwDmfQNAY4XA@mail.gmail.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Wed, Dec 14, 2011 at 1:42 PM, Wilfred van Velzen <wvvelzen@gmail.com> wrote:
-> On Wed, Dec 14, 2011 at 9:56 PM, Gareth Pye <gareth@cerberos.id.au> wrote:
->> On Thu, Dec 15, 2011 at 5:51 AM, Wilfred van Velzen <wvvelzen@gmail.com>
->> wrote:
+On 12/15/2011 03:51 AM, Wilfred van Velzen wrote:
+> On Wed, Dec 14, 2011 at 7:21 PM, Mitch Harder
+> <mitch.harder@sabayonlinux.org>  wrote:
+>> On Wed, Dec 14, 2011 at 7:00 AM, Wilfred van Velzen<wvvelzen@gmail.com>  wrote:
 >>>
->>> (I'm not interested in what early adopter users do when they are using
->>> rc kernels...)
+>>> What is best practice when partitioning a device that holds one or
+>>> more btr-filesystems
+>>>
 >>
->> Yet your going to use a FS without a working fsck? That puts you in early
->> adopter territory to me.
+>> When it comes to "best practices" in btrfs filesystem layouts, your
+>> primary consideration should be to make yourself robust to potential
+>> filesystem failure.
+>>
+>> Of course this should be true of any storage arrangement.
+>>
+>> But if you're going to be playing with rc kernels and applying patches
+>> off the list, you might want to break it up into multiple partitions
+>> so as to mitigate the problem if one partition picks up a
+>> inconsistency.
+>>
+>> On the other hand, it's also good for people to use the volume and
+>> subvolume features.  There's many different ways for people to make
+>> use of volumes and subvolumes, and it's good to explore those
+>> features.
 >
-> Yeah maybe. But I'm still not interested in it regarding partitioning! ;)
+> Well, of course there are different usecases for different situations.
 >
-> But actually I decided not to use it for the production environment.
-> The missing working fsck is one of the reasons.
-> Although opensuse supports it and Suse Linux Enterprise Server 11 is
-> going to support it with their next SP release in Februari, and Fedora
-> might use it as default in their next release... Did I miss any?
+> What I want to find out is, if you should partition differently when
+> you are using btrfs compared to partitioning for the other
+> older/regular filesystems for linux, for regular (production)
+> usecases.
 
-MeeGo has been using btrfs by default right from the start. In the
-current versions, we even install everything in a single btrfs
-partition, and use 2 subvolumes (/home and /), and create a factory
-reset snapshot of the / filesystem at installation.
-
-Auke
+Maybe just skip partitioning altogether ;)  - format the device to btrfs 
+and use subvolumes instead of your usual partitions (some /boot 
+restrictions apply). You won't be able to use grub2 though, but syslinux 
+will work.

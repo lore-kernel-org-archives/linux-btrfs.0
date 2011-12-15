@@ -1,29 +1,30 @@
-From: 810d4rk <810d4rk@gmail.com>
-Subject: Re: btrfs encryption problems
-Date: Thu, 15 Dec 2011 19:44:31 +0000
-Message-ID: <CAAVfQjm03u6ZZTyvLGrz8VC7MebEkBzQ8Mo_Sqw2kmuEx427vg@mail.gmail.com>
-References: <CAAVfQj=O5nDAcgsiNHz3dNXHDerNrq2Jw01WFLJr5q563oZToA@mail.gmail.com>
-	<20111123110956.GB31800@attic.humilis.net>
-	<CAAVfQj=r-Op2ZUrq8YOchVV=0_LzNmdxjYd03nDHn+t=120YQw@mail.gmail.com>
-	<20111124160617.680b676f@zougloub.eu>
-	<CAAVfQj=gM7ikTzdFmi=yNpo9guukQwFyKfdu7jD=z-J2PwrZEg@mail.gmail.com>
-	<20111124165429.10496040@Bidule>
-	<CAAVfQjmmXnyCmXerCyymEQm-DhDxi0YSSo9sVSvkHE1WvJ4wYA@mail.gmail.com>
-	<20111130134814.GW24338@shiny>
-	<CAAVfQjk+O_3uLb=DShFwV2gVnLeDzQ45ebpMidDGFXZtqXJBbQ@mail.gmail.com>
-	<CAG1y0scRTcpHxEnRHgeKgFtYgVYJdgMFydZfXmKEOnRQvUpcQA@mail.gmail.com>
-	<CAAVfQjnHkovhOQcWcRGAXON6ywfBAFHuT9vwp8QBf8hVd+wkjw@mail.gmail.com>
+From: Chris Mason <chris.mason@oracle.com>
+Subject: Re: [PATCH] Btrfs: fix submit_worker congestion
+Date: Thu, 15 Dec 2011 16:12:03 -0500
+Message-ID: <20111215211203.GN18252@shiny>
+References: <1322599256-15621-1-git-send-email-sensille@gmx.net>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=UTF-8
-Cc: Chris Mason <chris.mason@oracle.com>,
-	=?UTF-8?B?SsOpcsO0bWUgQ2FycmV0ZXJv?= <cJ-ko@zougloub.eu>,
-	sander@humilis.net, linux-btrfs@vger.kernel.org
-To: "Fajar A. Nugraha" <list@fajar.net>
+Content-Type: text/plain; charset=us-ascii
+Cc: linux-btrfs@vger.kernel.org
+To: Arne Jansen <sensille@gmx.net>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <CAAVfQjnHkovhOQcWcRGAXON6ywfBAFHuT9vwp8QBf8hVd+wkjw@mail.gmail.com>
+In-Reply-To: <1322599256-15621-1-git-send-email-sensille@gmx.net>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Is anyone there trying to reproduce the bug??
+On Tue, Nov 29, 2011 at 09:40:56PM +0100, Arne Jansen wrote:
+> Write bios are submitted from the submit_worker. The worker pumps down
+> bios into the block layer until it signals a congestion. At least this
+> is the theory. In pratice submit_bio just blocks before any signalling
+> happens. As the bios are queued per device, this can lead to a situation
+> where only one device is served until all bios are submitted, and only
+> then the next device is served. This is obviously suboptimal.
+> This patch just throws out the congestion detection and reschedules the
+> worker every 8 requests. This way, all devices can be kept busy.
+> This is only a temporary fix until the block layer provides a non-blocking
+> submit_bio. Then the whole submit_worker mechanism can be killed.
 
--- 
-Thanks
+Could you please try the top commit in for-linus instead?  It seems to
+be helping here, although I wasn't able to trigger the same problems you
+reported.
+
+-chris

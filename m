@@ -1,36 +1,29 @@
-From: Tobias <tracer@robotech.de>
-Subject: Extreme slowdown
-Date: Thu, 15 Dec 2011 19:49:08 +0100
-Message-ID: <4EEA4124.20907@robotech.de>
+From: 810d4rk <810d4rk@gmail.com>
+Subject: Re: btrfs encryption problems
+Date: Thu, 15 Dec 2011 19:44:31 +0000
+Message-ID: <CAAVfQjm03u6ZZTyvLGrz8VC7MebEkBzQ8Mo_Sqw2kmuEx427vg@mail.gmail.com>
+References: <CAAVfQj=O5nDAcgsiNHz3dNXHDerNrq2Jw01WFLJr5q563oZToA@mail.gmail.com>
+	<20111123110956.GB31800@attic.humilis.net>
+	<CAAVfQj=r-Op2ZUrq8YOchVV=0_LzNmdxjYd03nDHn+t=120YQw@mail.gmail.com>
+	<20111124160617.680b676f@zougloub.eu>
+	<CAAVfQj=gM7ikTzdFmi=yNpo9guukQwFyKfdu7jD=z-J2PwrZEg@mail.gmail.com>
+	<20111124165429.10496040@Bidule>
+	<CAAVfQjmmXnyCmXerCyymEQm-DhDxi0YSSo9sVSvkHE1WvJ4wYA@mail.gmail.com>
+	<20111130134814.GW24338@shiny>
+	<CAAVfQjk+O_3uLb=DShFwV2gVnLeDzQ45ebpMidDGFXZtqXJBbQ@mail.gmail.com>
+	<CAG1y0scRTcpHxEnRHgeKgFtYgVYJdgMFydZfXmKEOnRQvUpcQA@mail.gmail.com>
+	<CAAVfQjnHkovhOQcWcRGAXON6ywfBAFHuT9vwp8QBf8hVd+wkjw@mail.gmail.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=ISO-8859-15; format=flowed
-To: Linux Btrfs <linux-btrfs@vger.kernel.org>
+Content-Type: text/plain; charset=UTF-8
+Cc: Chris Mason <chris.mason@oracle.com>,
+	=?UTF-8?B?SsOpcsO0bWUgQ2FycmV0ZXJv?= <cJ-ko@zougloub.eu>,
+	sander@humilis.net, linux-btrfs@vger.kernel.org
+To: "Fajar A. Nugraha" <list@fajar.net>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
+In-Reply-To: <CAAVfQjnHkovhOQcWcRGAXON6ywfBAFHuT9vwp8QBf8hVd+wkjw@mail.gmail.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hi all!
+Is anyone there trying to reproduce the bug??
 
-My BTRFS-FS ist getting really slow. Reading is ok, writing is slow and 
-deleting is horrible slow.
-
-There are many files and many links on the FS.
-
-# btrfs filesystem df /srv/storage
-Data: total=3.09TB, used=3.07TB
-System, DUP: total=8.00MB, used=496.00KB
-System: total=4.00MB, used=0.00
-Metadata, DUP: total=154.88GB, used=70.56GB
-Metadata: total=8.00MB, used=0.00
-
-Maybe it's because there is so much Metadata and it needs so many seeks 
-on the discs when deleting?
-
-I'd like to delete some of the old Files but its so horrible slow that i 
-think its maybe faster to copy all needed Data to a different Disc, 
-killing the FS and move the Files back...
-
-The machine is a QuadCore with 8GB RAM. Kernel is "3.1+for-linus".
-
-Any hints how i could speed it up?
-
-Tobias
+-- 
+Thanks

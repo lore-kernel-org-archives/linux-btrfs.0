@@ -1,46 +1,36 @@
-From: Miao Xie <miaox@cn.fujitsu.com>
-Subject: Re: [PATCH 2/2] Btrfs: fix wrong i_size when truncating a file to
- a larger size
-Date: Thu, 15 Dec 2011 14:02:03 +0800
-Message-ID: <4EE98D5B.3090603@cn.fujitsu.com>
-References: <4EE84D29.5070601@cn.fujitsu.com> <20111214165147.GF31158@shiny>
-Reply-To: miaox@cn.fujitsu.com
+From: Sander <sander@humilis.net>
+Subject: Re: What is best practice when partitioning a device that holds one
+ or more btr-filesystems
+Date: Thu, 15 Dec 2011 09:25:43 +0100
+Message-ID: <20111215082543.GA12179@attic.humilis.net>
+References: <CAKsPgxFAjsuCRRG0hGRmpau=cOcaA5EfZYfB3AXQ8N7nL3EBmw@mail.gmail.com>
+ <CAKcLGm-LZmyOKm4gegZDRYaq-DO-KW+5CCb_E7n8WvF0fEFCeQ@mail.gmail.com>
+ <CAKsPgxG7yr3SzwJYdsS58dMxZ_DwWH6b1CLg0eXwDmfQNAY4XA@mail.gmail.com>
+ <4EE948AD.9040001@parallels.com>
+Reply-To: sander@humilis.net
 Mime-Version: 1.0
-Content-Type: text/plain; charset=ISO-8859-1
-To: Chris Mason <chris.mason@oracle.com>,
-	Linux Btrfs <linux-btrfs@vger.kernel.org>
+Content-Type: text/plain; charset=us-ascii
+Cc: linux-btrfs@vger.kernel.org
+To: dima <dolenin@parallels.com>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <20111214165147.GF31158@shiny>
+In-Reply-To: <4EE948AD.9040001@parallels.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Wed, 14 Dec 2011 11:51:47 -0500, Chris Mason wrote:
-> On Wed, Dec 14, 2011 at 03:15:53PM +0800, Miao Xie wrote:
->> Btrfsck report error 100 after the 83th case of xfstests was run, it means
->> the i_size of the file is wrong.
->>
->> The reason of this bug is that:
->> Btrfs increased i_size of the file at the beginning, but it failed to expand
->> the file, and failed to update the i_size to the old size because there is no
->> enough space in the file system, so we found a wrong i_size.
->>
->> This patch fixes this bug by updating the i_size just when we pass the file
->> expanding and get enough space to update i-node.
-> 
-> Hmmm, have you tested this one with fsx-linux?  It should be ok to call
-> truncate_pagecache before bumping i_size in this case, since we
-> shouldn't have pages past i_size.
+dima wrote (ao):
+> Maybe just skip partitioning altogether ;)
 
-Yes, I have tested it. Everything is OK.
++1
 
-> But, truncate_pagecache does expect i_size to be accurate before the
-> call.
+> format the device to
+> btrfs and use subvolumes instead of your usual partitions (some
+> /boot restrictions apply). You won't be able to use grub2 though,
+> but syslinux will work.
 
-OK, I will modify my patch.
+Grub2 has btrfs support for quite some time now, which you are aware of
+I assume. Grub2 can't cope with / in a subvolume or something?
 
-Thanks for your comment.
-Miao
+	Sander
 
-> 
-> -chris
-> 
-
+-- 
+Humilis IT Services and Solutions
+http://www.humilis.net

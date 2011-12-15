@@ -1,79 +1,36 @@
-From: Miao Xie <miaox@cn.fujitsu.com>
-Subject: [PATCH V2 2/2] Btrfs: fix wrong i_size when truncating a file to
- a larger size
-Date: Thu, 15 Dec 2011 17:55:36 +0800
-Message-ID: <4EE9C418.4070800@cn.fujitsu.com>
-References: <4EE84D29.5070601@cn.fujitsu.com> <20111214165147.GF31158@shiny>
-Reply-To: miaox@cn.fujitsu.com
+From: Tobias <tracer@robotech.de>
+Subject: Extreme slowdown
+Date: Thu, 15 Dec 2011 19:49:08 +0100
+Message-ID: <4EEA4124.20907@robotech.de>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=ISO-8859-1
-To: Chris Mason <chris.mason@oracle.com>,
-	Linux Btrfs <linux-btrfs@vger.kernel.org>
+Content-Type: text/plain; charset=ISO-8859-15; format=flowed
+To: Linux Btrfs <linux-btrfs@vger.kernel.org>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <20111214165147.GF31158@shiny>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Btrfsck report error 100 after the 83th case of xfstests was run, it means
-the i_size of the file is wrong.
+Hi all!
 
-The reason of this bug is that:
-Btrfs increased i_size of the file at the beginning, but it failed to expand
-the file, and failed to update the i_size to the old size because there is no
-enough space in the file system, so we found a wrong i_size.
+My BTRFS-FS ist getting really slow. Reading is ok, writing is slow and 
+deleting is horrible slow.
 
-This patch fixes this bug by updating the i_size just when we pass the file
-expanding.
+There are many files and many links on the FS.
 
-Signed-off-by: Miao Xie <miaox@cn.fujitsu.com>
----
-Changes v1 -> v2:
-- make i_size be accurate before truncate_pagecache() is called
-  (use truncate_setsize())
----
- fs/btrfs/inode.c |   20 ++++++++++++++------
- 1 files changed, 14 insertions(+), 6 deletions(-)
+# btrfs filesystem df /srv/storage
+Data: total=3.09TB, used=3.07TB
+System, DUP: total=8.00MB, used=496.00KB
+System: total=4.00MB, used=0.00
+Metadata, DUP: total=154.88GB, used=70.56GB
+Metadata: total=8.00MB, used=0.00
 
-diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
-index 960818b..21051fc 100644
---- a/fs/btrfs/inode.c
-+++ b/fs/btrfs/inode.c
-@@ -3373,6 +3373,8 @@ int btrfs_cont_expand(struct inode *inode, loff_t oldsize, loff_t size)
- 
- static int btrfs_setsize(struct inode *inode, loff_t newsize)
- {
-+	struct btrfs_root *root = BTRFS_I(inode)->root;
-+	struct btrfs_trans_handle *trans;
- 	loff_t oldsize = i_size_read(inode);
- 	int ret;
- 
-@@ -3380,16 +3382,22 @@ static int btrfs_setsize(struct inode *inode, loff_t newsize)
- 		return 0;
- 
- 	if (newsize > oldsize) {
--		i_size_write(inode, newsize);
--		btrfs_ordered_update_i_size(inode, i_size_read(inode), NULL);
--		truncate_pagecache(inode, oldsize, newsize);
- 		ret = btrfs_cont_expand(inode, oldsize, newsize);
--		if (ret) {
--			btrfs_setsize(inode, oldsize);
-+		if (ret)
- 			return ret;
-+
-+		truncate_setsize(inode, newsize);
-+
-+		trans = btrfs_start_transaction(root, 1);
-+		if (IS_ERR(trans)) {
-+			truncate_setsize(inode, oldsize);
-+			return PTR_ERR(trans);
- 		}
- 
--		mark_inode_dirty(inode);
-+		btrfs_ordered_update_i_size(inode, i_size_read(inode), NULL);
-+		ret = btrfs_update_inode(trans, root, inode);
-+
-+		btrfs_end_transaction_throttle(trans, root);
- 	} else {
- 
- 		/*
--- 
-1.7.6.4
+Maybe it's because there is so much Metadata and it needs so many seeks 
+on the discs when deleting?
+
+I'd like to delete some of the old Files but its so horrible slow that i 
+think its maybe faster to copy all needed Data to a different Disc, 
+killing the FS and move the Files back...
+
+The machine is a QuadCore with 8GB RAM. Kernel is "3.1+for-linus".
+
+Any hints how i could speed it up?
+
+Tobias

@@ -1,30 +1,45 @@
-From: Chris Mason <chris.mason@oracle.com>
-Subject: Re: [PATCH] Btrfs: fix submit_worker congestion
-Date: Thu, 15 Dec 2011 16:12:03 -0500
-Message-ID: <20111215211203.GN18252@shiny>
-References: <1322599256-15621-1-git-send-email-sensille@gmx.net>
+From: Mitch Harder <mitch.harder@sabayonlinux.org>
+Subject: Re: btrfs encryption problems
+Date: Thu, 15 Dec 2011 17:49:17 -0600
+Message-ID: <CAKcLGm_scJ57cC1hHY4rmqTrqwOdndQDbBtj09UYMYYABLb2Tw@mail.gmail.com>
+References: <CAAVfQj=O5nDAcgsiNHz3dNXHDerNrq2Jw01WFLJr5q563oZToA@mail.gmail.com>
+	<20111123110956.GB31800@attic.humilis.net>
+	<CAAVfQj=r-Op2ZUrq8YOchVV=0_LzNmdxjYd03nDHn+t=120YQw@mail.gmail.com>
+	<20111124160617.680b676f@zougloub.eu>
+	<CAAVfQj=gM7ikTzdFmi=yNpo9guukQwFyKfdu7jD=z-J2PwrZEg@mail.gmail.com>
+	<20111124165429.10496040@Bidule>
+	<CAAVfQjmmXnyCmXerCyymEQm-DhDxi0YSSo9sVSvkHE1WvJ4wYA@mail.gmail.com>
+	<20111130134814.GW24338@shiny>
+	<CAAVfQjk+O_3uLb=DShFwV2gVnLeDzQ45ebpMidDGFXZtqXJBbQ@mail.gmail.com>
+	<CAG1y0scRTcpHxEnRHgeKgFtYgVYJdgMFydZfXmKEOnRQvUpcQA@mail.gmail.com>
+	<CAAVfQjnHkovhOQcWcRGAXON6ywfBAFHuT9vwp8QBf8hVd+wkjw@mail.gmail.com>
+	<CAAVfQjm03u6ZZTyvLGrz8VC7MebEkBzQ8Mo_Sqw2kmuEx427vg@mail.gmail.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Cc: linux-btrfs@vger.kernel.org
-To: Arne Jansen <sensille@gmx.net>
+Content-Type: text/plain; charset=ISO-8859-1
+Cc: "Fajar A. Nugraha" <list@fajar.net>,
+	Chris Mason <chris.mason@oracle.com>,
+	=?ISO-8859-1?Q?J=E9r=F4me_Carretero?= <cJ-ko@zougloub.eu>,
+	sander@humilis.net, linux-btrfs@vger.kernel.org
+To: 810d4rk <810d4rk@gmail.com>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <1322599256-15621-1-git-send-email-sensille@gmx.net>
+In-Reply-To: <CAAVfQjm03u6ZZTyvLGrz8VC7MebEkBzQ8Mo_Sqw2kmuEx427vg@mail.gmail.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Tue, Nov 29, 2011 at 09:40:56PM +0100, Arne Jansen wrote:
-> Write bios are submitted from the submit_worker. The worker pumps down
-> bios into the block layer until it signals a congestion. At least this
-> is the theory. In pratice submit_bio just blocks before any signalling
-> happens. As the bios are queued per device, this can lead to a situation
-> where only one device is served until all bios are submitted, and only
-> then the next device is served. This is obviously suboptimal.
-> This patch just throws out the congestion detection and reschedules the
-> worker every 8 requests. This way, all devices can be kept busy.
-> This is only a temporary fix until the block layer provides a non-blocking
-> submit_bio. Then the whole submit_worker mechanism can be killed.
+On Thu, Dec 15, 2011 at 1:44 PM, 810d4rk <810d4rk@gmail.com> wrote:
+> Is anyone there trying to reproduce the bug??
+>
 
-Could you please try the top commit in for-linus instead?  It seems to
-be helping here, although I wasn't able to trigger the same problems you
-reported.
+I've been using btrfs and luks encryption on my Acer netbook for about
+a year now.  I haven't had an unmountable corruption on that computer
+yet.
 
--chris
+What are your goals now?
+
+Are you trying to recover data from this disk, or are you trying to
+accomplish some debugging?
+
+Reviewing the thread, I don't see where you've run btrfsck on the
+/dev/mapper/<entry>.
+
+Although btrfsck won't fix anything, it might give some insight as the
+the extent of the corruption.

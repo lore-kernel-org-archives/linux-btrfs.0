@@ -1,49 +1,48 @@
-From: dima <dolenin@parallels.com>
-Subject: Re: What is best practice when partitioning a device that holds one
- or more btr-filesystems
-Date: Thu, 15 Dec 2011 10:09:01 +0900
-Message-ID: <4EE948AD.9040001@parallels.com>
-References: <CAKsPgxFAjsuCRRG0hGRmpau=cOcaA5EfZYfB3AXQ8N7nL3EBmw@mail.gmail.com> <CAKcLGm-LZmyOKm4gegZDRYaq-DO-KW+5CCb_E7n8WvF0fEFCeQ@mail.gmail.com> <CAKsPgxG7yr3SzwJYdsS58dMxZ_DwWH6b1CLg0eXwDmfQNAY4XA@mail.gmail.com>
+From: Miao Xie <miaox@cn.fujitsu.com>
+Subject: Re: [PATCH] Btrfs: don't panic if orphan item already exists
+Date: Thu, 15 Dec 2011 09:42:27 +0800
+Message-ID: <4EE95083.1040205@cn.fujitsu.com>
+References: <1323798951-4329-1-git-send-email-josef@redhat.com> <4EE7A172.2010105@cfl.rr.com> <20111213190942.GA3602@localhost.localdomain> <4EE804EB.5070209@cn.fujitsu.com> <4EE8707D.7080504@cn.fujitsu.com> <20111214145843.GA1925@localhost.localdomain> <4EE8BD45.7090809@cfl.rr.com> <20111214153438.GA10175@localhost.localdomain>
+Reply-To: miaox@cn.fujitsu.com
 Mime-Version: 1.0
-Content-Type: text/plain; charset="UTF-8"; format=flowed
-To: <linux-btrfs@vger.kernel.org>
+Content-Type: text/plain; charset=ISO-8859-1
+Cc: Phillip Susi <psusi@cfl.rr.com>, WuBo <wu.bo@cn.fujitsu.com>,
+	linux-btrfs@vger.kernel.org
+To: Josef Bacik <josef@redhat.com>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <CAKsPgxG7yr3SzwJYdsS58dMxZ_DwWH6b1CLg0eXwDmfQNAY4XA@mail.gmail.com>
+In-Reply-To: <20111214153438.GA10175@localhost.localdomain>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 12/15/2011 03:51 AM, Wilfred van Velzen wrote:
-> On Wed, Dec 14, 2011 at 7:21 PM, Mitch Harder
-> <mitch.harder@sabayonlinux.org>  wrote:
->> On Wed, Dec 14, 2011 at 7:00 AM, Wilfred van Velzen<wvvelzen@gmail.com>  wrote:
->>>
->>> What is best practice when partitioning a device that holds one or
->>> more btr-filesystems
->>>
+On 	wed, 14 Dec 2011 10:34:45 -0500, Josef Bacik wrote:
+> On Wed, Dec 14, 2011 at 10:14:13AM -0500, Phillip Susi wrote:
+>> On 12/14/2011 9:58 AM, Josef Bacik wrote:
+>>> There is no "underlying bug", there is a shitty situation, the shitty situation
 >>
->> When it comes to "best practices" in btrfs filesystem layouts, your
->> primary consideration should be to make yourself robust to potential
->> filesystem failure.
+>> Maybe my assumptions are wrong somewhere then.  You add the orphan
+>> item to make sure that the truncate will be finalized even if the
+>> system crashes before the transaction commits right?  So if
+>> truncate() fails with -ENOSPC, then you shouldn't be trying to
+>> finalize the truncate on the next mount, should you ( because the
+>> call did not succeed )?
 >>
->> Of course this should be true of any storage arrangement.
->>
->> But if you're going to be playing with rc kernels and applying patches
->> off the list, you might want to break it up into multiple partitions
->> so as to mitigate the problem if one partition picks up a
->> inconsistency.
->>
->> On the other hand, it's also good for people to use the volume and
->> subvolume features.  There's many different ways for people to make
->> use of volumes and subvolumes, and it's good to explore those
->> features.
->
-> Well, of course there are different usecases for different situations.
->
-> What I want to find out is, if you should partition differently when
-> you are using btrfs compared to partitioning for the other
-> older/regular filesystems for linux, for regular (production)
-> usecases.
+> 
+> Yes because otherwise we'll leak space since the i_size has been updated
+> already.  The other option is to make btrfs_truncate_inode_items update i_size
+> as we truncate so if it fails we can delete the orphan item and then update the
+> inode with the new i_size, that way we don't leave the orphan item on disk and
+> we don't leak space.  I'll see how doable this is.  Thanks,
 
-Maybe just skip partitioning altogether ;)  - format the device to btrfs 
-and use subvolumes instead of your usual partitions (some /boot 
-restrictions apply). You won't be able to use grub2 though, but syslinux 
-will work.
+Agree.
+I have made a patch based on this idea, which is under test.
+
+Thanks
+Miao
+
+> 
+> Josef
+> --
+> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
+> the body of a message to majordomo@vger.kernel.org
+> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+> 
+

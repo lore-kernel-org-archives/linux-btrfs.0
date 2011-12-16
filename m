@@ -1,45 +1,54 @@
-From: Mitch Harder <mitch.harder@sabayonlinux.org>
-Subject: Re: btrfs encryption problems
-Date: Thu, 15 Dec 2011 17:49:17 -0600
-Message-ID: <CAKcLGm_scJ57cC1hHY4rmqTrqwOdndQDbBtj09UYMYYABLb2Tw@mail.gmail.com>
-References: <CAAVfQj=O5nDAcgsiNHz3dNXHDerNrq2Jw01WFLJr5q563oZToA@mail.gmail.com>
-	<20111123110956.GB31800@attic.humilis.net>
-	<CAAVfQj=r-Op2ZUrq8YOchVV=0_LzNmdxjYd03nDHn+t=120YQw@mail.gmail.com>
-	<20111124160617.680b676f@zougloub.eu>
-	<CAAVfQj=gM7ikTzdFmi=yNpo9guukQwFyKfdu7jD=z-J2PwrZEg@mail.gmail.com>
-	<20111124165429.10496040@Bidule>
-	<CAAVfQjmmXnyCmXerCyymEQm-DhDxi0YSSo9sVSvkHE1WvJ4wYA@mail.gmail.com>
-	<20111130134814.GW24338@shiny>
-	<CAAVfQjk+O_3uLb=DShFwV2gVnLeDzQ45ebpMidDGFXZtqXJBbQ@mail.gmail.com>
-	<CAG1y0scRTcpHxEnRHgeKgFtYgVYJdgMFydZfXmKEOnRQvUpcQA@mail.gmail.com>
-	<CAAVfQjnHkovhOQcWcRGAXON6ywfBAFHuT9vwp8QBf8hVd+wkjw@mail.gmail.com>
-	<CAAVfQjm03u6ZZTyvLGrz8VC7MebEkBzQ8Mo_Sqw2kmuEx427vg@mail.gmail.com>
+From: Liu Bo <liubo2009@cn.fujitsu.com>
+Subject: Re: Extreme slowdown
+Date: Fri, 16 Dec 2011 10:09:48 +0800
+Message-ID: <4EEAA86C.4080706@cn.fujitsu.com>
+References: <4EEA4124.20907@robotech.de>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=ISO-8859-1
-Cc: "Fajar A. Nugraha" <list@fajar.net>,
-	Chris Mason <chris.mason@oracle.com>,
-	=?ISO-8859-1?Q?J=E9r=F4me_Carretero?= <cJ-ko@zougloub.eu>,
-	sander@humilis.net, linux-btrfs@vger.kernel.org
-To: 810d4rk <810d4rk@gmail.com>
+Content-Type: text/plain; charset=ISO-8859-15
+Cc: Linux Btrfs <linux-btrfs@vger.kernel.org>
+To: Tobias <tracer@robotech.de>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <CAAVfQjm03u6ZZTyvLGrz8VC7MebEkBzQ8Mo_Sqw2kmuEx427vg@mail.gmail.com>
+In-Reply-To: <4EEA4124.20907@robotech.de>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Thu, Dec 15, 2011 at 1:44 PM, 810d4rk <810d4rk@gmail.com> wrote:
-> Is anyone there trying to reproduce the bug??
->
+On 12/16/2011 02:49 AM, Tobias wrote:
+> Hi all!
+> 
+> My BTRFS-FS ist getting really slow. Reading is ok, writing is slow and
+> deleting is horrible slow.
+> 
+> There are many files and many links on the FS.
+> 
+> # btrfs filesystem df /srv/storage
+> Data: total=3.09TB, used=3.07TB
+> System, DUP: total=8.00MB, used=496.00KB
+> System: total=4.00MB, used=0.00
+> Metadata, DUP: total=154.88GB, used=70.56GB
+> Metadata: total=8.00MB, used=0.00
+> 
+> Maybe it's because there is so much Metadata and it needs so many seeks
+> on the discs when deleting?
+> 
+> I'd like to delete some of the old Files but its so horrible slow that i
+> think its maybe faster to copy all needed Data to a different Disc,
+> killing the FS and move the Files back...
+> 
+> The machine is a QuadCore with 8GB RAM. Kernel is "3.1+for-linus".
+> 
+> Any hints how i could speed it up?
+> 
 
-I've been using btrfs and luks encryption on my Acer netbook for about
-a year now.  I haven't had an unmountable corruption on that computer
-yet.
 
-What are your goals now?
+I recommend to run defragment on your files,
+it should help you, although defrag maybe slow, too.
 
-Are you trying to recover data from this disk, or are you trying to
-accomplish some debugging?
+thanks,
+liubo
 
-Reviewing the thread, I don't see where you've run btrfsck on the
-/dev/mapper/<entry>.
+> Tobias
+> -- 
+> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
+> the body of a message to majordomo@vger.kernel.org
+> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+> 
 
-Although btrfsck won't fix anything, it might give some insight as the
-the extent of the corruption.

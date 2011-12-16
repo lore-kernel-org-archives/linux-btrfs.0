@@ -1,80 +1,120 @@
-From: Shyam Prasad N <nspmangalore@gmail.com>
-Subject: Re: Extreme slowdown
-Date: Fri, 16 Dec 2011 09:45:19 +0530
-Message-ID: <4EEAC5D7.80707@gmail.com>
-References: <4EEA4124.20907@robotech.de> <CAG1y0sd1+kVcgXFPc-x9qFX03ix=4FLuhOniJyqGw-7=3wczug@mail.gmail.com> <CAAE6i0jL=mD=HU0GtfpJPLu__7NtV6WAuGb25CAWtV6N4f33wQ@mail.gmail.com>
-Reply-To: nspmangalore@gmail.com
+From: Akira Fujita <a-fujita@rs.jp.nec.com>
+Subject: [PATCH] Btrfs-progs: Fix manual of btrfs command
+Date: Fri, 16 Dec 2011 17:46:48 +0900
+Message-ID: <4EEB0578.6000709@rs.jp.nec.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=ISO-8859-1; format=flowed
-Cc: "Fajar A. Nugraha" <list@fajar.net>, Tobias <tracer@robotech.de>,
-	Linux Btrfs <linux-btrfs@vger.kernel.org>
-To: Chester <somethingsome2000@gmail.com>
+Content-Type: text/plain; charset=ISO-2022-JP
+Cc: linux-btrfs@vger.kernel.org, Akira Fujita <a-fujita@rs.jp.nec.com>
+To: Chris Mason <chris.mason@oracle.com>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <CAAE6i0jL=mD=HU0GtfpJPLu__7NtV6WAuGb25CAWtV6N4f33wQ@mail.gmail.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 12/16/2011 09:14 AM, Chester wrote:
-> On Thu, Dec 15, 2011 at 8:19 PM, Fajar A. Nugraha<list@fajar.net>  wrote:
->> On Fri, Dec 16, 2011 at 1:49 AM, Tobias<tracer@robotech.de>  wrote:
->>> Hi all!
->>>
->>> My BTRFS-FS ist getting really slow. Reading is ok, writing is slow and
->>> deleting is horrible slow.
->>>
->>> There are many files and many links on the FS.
->>>
->>> # btrfs filesystem df /srv/storage
->>> Data: total=3.09TB, used=3.07TB
->> this is ... what, over 99% full?
->> The slow down is normal, somewhat. Same thing happens on zfs, which
->> became slower when usage is above 80-90%.
-> I don't think "total" actually means "total space available" it
-> increases as you use up more space.
->>> Maybe it's because there is so much Metadata and it needs so many seeks on
->>> the discs when deleting?
->> I doubt it.
->>
->>> I'd like to delete some of the old Files but its so horrible slow that i
->>> think its maybe faster to copy all needed Data to a different Disc, killing
->>> the FS and move the Files back...
->>>
->>> The machine is a QuadCore with 8GB RAM. Kernel is "3.1+for-linus".
->>>
->>> Any hints how i could speed it up?
->> Try:
->> - mounting it with nodatacow:
->> https://btrfs.wiki.kernel.org/articles/f/a/q/FAQ_1fe9.html#Can_copy-on-write_be_turned_off_for_data_blocks.3F
->> - clobbering a big file:
->> https://btrfs.wiki.kernel.org/articles/f/a/q/FAQ_1fe9.html#if_your_device_is_large_.28.3E16gb.29
->>
->> ... until you have at least 20% free space available.
->>
->> --
->> Fajar
->> --
->> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
->> the body of a message to majordomo@vger.kernel.org
->> More majordomo info at  http://vger.kernel.org/majordomo-info.html
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
-Wouldn't it be more valuable to first collect enough info/data to debug 
-the problem, before suggesting ways to get out of this situation?
+Usage of balancing btrfs is "btrfs filesystem balance",
+not "btrfs device balance". And remove unneeded
+usage of "btrfs filesystem defrag".
+Also fix some typos and over 80 columns.
 
-AFAIK, the slowness could be due to several reasons:
-1. Slow disk writes.
-2. Too many things to commit to the disk.
-3. Too many things to do to actually accomplish the writes.
-4. Important threads suspending due to lack of resources.
-5. Something else which I've missed above.
+Signed-off-by: Akira Fujita <a-fujita@rs.jp.nec.com>
+---
+ man/btrfs.8.in |   35 +++++++++++++++++++++--------------
+ 1 files changed, 21 insertions(+), 14 deletions(-)
+diff --git a/man/btrfs.8.in b/man/btrfs.8.in
 
-Is there some sort of profiling which we can enable, which can give us 
-info about the speeds and quantities of read and write traffic on the fs?
-Aren't there btrfs statistics that we can print out, which can give us 
-these info? If not, we probably should think about adding some.
-
-P.S: btrfs n00b talking!
-
-Regards,
-Shyam
+index be478e0..2f36f2a 100644
+--- a/man/btrfs.8.in
++++ b/man/btrfs.8.in
+@@ -17,20 +17,20 @@ btrfs \- control a btrfs filesystem
+ .PP
+ \fBbtrfs\fP \fBsubvolume get-default\fP\fI <path>\fP
+ .PP
++\fBbtrfs\fP \fBfilesystem defragment\fP -c[zlib|lzo] [-l \fIlen\fR] \
++[-s \fIstart\fR] [-t \fIsize\fR] -[vf] <\fIfile\fR>|<\fIdir\fR> \
++[<\fIfile\fR>|<\fIdir\fR>...]
++.PP
+ \fBbtrfs\fP \fBfilesystem sync\fP\fI <path> \fP
+ .PP
+ \fBbtrfs\fP \fBfilesystem resize\fP\fI [+/\-]<size>[gkm]|max <filesystem>\fP
+ .PP
+ \fBbtrfs\fP \fBfilesystem label\fP\fI <dev> [newlabel]\fP
+ .PP
+-\fBbtrfs\fP \fBfilesystem defrag\fP\fI [options] <file>|<dir> [<file>|<dir>...]\fP
+-.PP
+ \fBbtrfs\fP \fBsubvolume find-new\fP\fI <subvolume> <last_gen>\fP
+ .PP
+ \fBbtrfs\fP \fBfilesystem balance\fP\fI <path> \fP
+ .PP
+-\fBbtrfs\fP \fBfilesystem defragment\fP\fI <file>|<dir> [<file>|<dir>...]\fP
+-.PP
+ \fBbtrfs\fP \fBdevice scan\fP\fI [--all-devices|<device> [<device>...]]\fP
+ .PP
+ \fBbtrfs\fP \fBdevice show\fP\fI [--all-devices|<uuid>|<label>]\fP
+@@ -78,7 +78,7 @@ and as
+ .I filesystem sync.
+ In this case
+ .I btrfs
+-returnsfilesystem sync
++returns filesystem sync
+ If a command is terminated by
+ .I --help
+ , the detailed help is showed. If the passed command matches more commands,
+@@ -132,12 +132,17 @@ Get the default subvolume of the filesystem \fI<path>\fR. The output format
+ is similar to \fBsubvolume list\fR command.
+ .TP
+ 
+-\fBfilesystem defragment\fP -c[zlib|lzo] [-l \fIlen\fR] [-s \fIstart\fR] [-t \fIsize\fR] -[vf] <\fIfile\fR>|<\fIdir\fR> [<\fIfile\fR>|<\fIdir\fR>...]
++\fBfilesystem defragment\fP -c[zlib|lzo] [-l \fIlen\fR] [-s \fIstart\fR] \
++[-t \fIsize\fR] -[vf] <\fIfile\fR>|<\fIdir\fR> [<\fIfile\fR>|<\fIdir\fR>...]
+ 
+ Defragment file data and/or directory metadata. To defragment all files in a
+ directory you have to specify each one on its own or use your shell wildcards.
+ 
+-The start position and the number of bytes to deframention can be specified by \fIstart\fR and \fIlen\fR. Any extent bigger than \fIthresh\fR will be considered already defragged. Use 0 to take the kernel default, and use 1 to say eveery single extent must be rewritten. You can also turn on compression in defragment operations.
++The start position and the number of bytes to defragment can be specified by 
++\fIstart\fR and \fIlen\fR. Any extent bigger than threshold will be 
++considered already defragged. Use 0 to take the kernel default, and use 1 to 
++say every single extent must be rewritten. You can also turn on compression in 
++defragment operations.
+ 
+ \fB-v\fP be verbose
+ 
+@@ -151,9 +156,11 @@ The start position and the number of bytes to deframention can be specified by \
+ 
+ \fB-t size\fP defragment only files at least \fIsize\fR bytes big
+ 
+-NOTE: defragmenting with kernels up to 2.6.37 will unlink COW-ed copies of data, don't 
+-use it if you use snapshots, have de-duplicated your data or made copies with 
+-\fBcp --reflink\fP.
++NOTE: defragmenting with kernels up to 2.6.37 will unlink COW-ed copies of data,
++don't use it if you use snapshots, have de-duplicated your data or made 
++copies with \fBcp --reflink\fP.
++.TP
++
+ \fBsubvolume find-new\fR\fI <subvolume> <last_gen>\fR
+ List the recently modified files in a subvolume, after \fI<last_gen>\fR ID.
+ .TP
+@@ -185,13 +192,13 @@ can expand the partition before enlarging the filesystem and shrink the
+ partition after reducing the size of the filesystem.
+ .TP
+ 
+-\fBbtrfs\fP \fBfilesystem label\fP\fI <dev> [newlabel]\fP
++\fBfilesystem label\fP\fI <dev> [newlabel]\fP
+ Show or update the label of a filesystem. \fI<dev>\fR is used to identify the
+ filesystem. 
+ If a \fInewlabel\fR optional argument is passed, the label is changed. The
+-following costraints exist for a label:
++following constraints exist for a label:
+ .IP
+-- the maximum allowable lenght shall be less or equal than 256 chars
++- the maximum allowable length shall be less or equal than 256 chars
+ .IP
+ - the label shall not  contain the '/' or '\\' characters.
+ 
+@@ -209,7 +216,7 @@ If \fB--all-devices\fP is passed, all the devices under /dev are scanned;
+ otherwise the devices list is extracted from the /proc/partitions file.
+ .TP
+ 
+-\fBdevice balance\fR \fI<path>\fR
++\fBfilesystem balance\fR \fI<path>\fR
+ Balance the chunks of the filesystem identified by \fI<path>\fR
+ across the devices.
+ .TP

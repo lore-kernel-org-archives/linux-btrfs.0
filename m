@@ -1,62 +1,65 @@
-From: Tobias <tracer@robotech.de>
+From: Hugo Mills <hugo@carfax.org.uk>
 Subject: Re: Extreme slowdown
-Date: Fri, 16 Dec 2011 10:09:14 +0100
-Message-ID: <4EEB0ABA.5050202@robotech.de>
-References: <4EEA4124.20907@robotech.de> <CAG1y0sd1+kVcgXFPc-x9qFX03ix=4FLuhOniJyqGw-7=3wczug@mail.gmail.com> <CAAE6i0jL=mD=HU0GtfpJPLu__7NtV6WAuGb25CAWtV6N4f33wQ@mail.gmail.com> <4EEAC5D7.80707@gmail.com>
+Date: Fri, 16 Dec 2011 09:11:03 +0000
+Message-ID: <20111216091103.GB17573@carfax.org.uk>
+References: <4EEA4124.20907@robotech.de>
+ <4EEAA86C.4080706@cn.fujitsu.com>
+ <4EEB06AC.4070500@robotech.de>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=ISO-8859-1; format=flowed
-Cc: Chester <somethingsome2000@gmail.com>,
-	"Fajar A. Nugraha" <list@fajar.net>,
+Content-Type: multipart/signed; micalg=pgp-sha1;
+	protocol="application/pgp-signature"; boundary="lEGEL1/lMxI0MVQ2"
+Cc: Liu Bo <liubo2009@cn.fujitsu.com>,
 	Linux Btrfs <linux-btrfs@vger.kernel.org>
-To: nspmangalore@gmail.com
+To: Tobias <tracer@robotech.de>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <4EEAC5D7.80707@gmail.com>
+In-Reply-To: <4EEB06AC.4070500@robotech.de>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Am 16.12.2011 05:15, schrieb Shyam Prasad N:
-> On 12/16/2011 09:14 AM, Chester wrote:
->> On Thu, Dec 15, 2011 at 8:19 PM, Fajar A. Nugraha<list@fajar.net>  
->> wrote:
->>> On Fri, Dec 16, 2011 at 1:49 AM, Tobias<tracer@robotech.de>  wrote:
->>>> Hi all!
->>>>
->>>> My BTRFS-FS ist getting really slow. Reading is ok, writing is slow 
->>>> and
->>>> deleting is horrible slow.
->>>>
->>>> There are many files and many links on the FS.
->>>>
->>>> # btrfs filesystem df /srv/storage
->>>> Data: total=3.09TB, used=3.07TB
->>> this is ... what, over 99% full?
->>> The slow down is normal, somewhat. Same thing happens on zfs, which
->>> became slower when usage is above 80-90%.
->> I don't think "total" actually means "total space available" it
->> increases as you use up more space.
-Chester is right, the disk is a 8TB Array - the fs is less than half filled.
 
-> Wouldn't it be more valuable to first collect enough info/data to 
-> debug the problem, before suggesting ways to get out of this situation?
->
-> AFAIK, the slowness could be due to several reasons:
-> 1. Slow disk writes.
-That depends on what is slow for you. Its a SATA-Disc-Array so good 
-linear Read/Write and low IOPs (compared to SSDs or SAS-Discs)
+--lEGEL1/lMxI0MVQ2
+Content-Type: text/plain; charset=us-ascii
+Content-Disposition: inline
 
-> 2. Too many things to commit to the disk.
-I think there should be very little data to write/commit when deleting 
-files. Remember: writing is slow, but acceptable - deleting is the problem
+On Fri, Dec 16, 2011 at 09:51:56AM +0100, Tobias wrote:
+> Am 16.12.2011 03:09, schrieb Liu Bo:
+> >On 12/16/2011 02:49 AM, Tobias wrote:
+> >>Any hints how i could speed it up?
+> >>
+> >
+> >I recommend to run defragment on your files,
+> >it should help you, although defrag maybe slow, too.
+> >
+> 
+> When deleting files does it matter if the data is fragmented?
 
-> 3. Too many things to do to actually accomplish the writes.
-I just do rm -rf xxx. What has BTRFS to do to actually delete a file or 
-directory?
+   Yes. Deleting a file involves visiting the metadata for every
+extent (i.e. fragment) and updating it to reduce the reference count
+and possibly free up the space -- which itself involves more writes,
+as the free space cache is updated.
 
-> Is there some sort of profiling which we can enable, which can give us 
-> info about the speeds and quantities of read and write traffic on the fs?
-> Aren't there btrfs statistics that we can print out, which can give us 
-> these info? If not, we probably should think about adding some.
+> When i do normal file-access the speed of reading is ok so until not
+> i didn't care about fragmentation. Especially because the data isn't
+> changes after the first write.
+> 
+> Can i do a defrag on the metadata only?
 
-Good question - maybe a dev can say?
+   Hugo.
 
-Tobias
+-- 
+=== Hugo Mills: hugo@... carfax.org.uk | darksatanic.net | lug.org.uk ===
+  PGP key: 515C238D from wwwkeys.eu.pgp.net or http://www.carfax.org.uk
+                    --- UNIX:  Italian pen maker. ---                    
 
+--lEGEL1/lMxI0MVQ2
+Content-Type: application/pgp-signature; name="signature.asc"
+Content-Description: Digital signature
+
+-----BEGIN PGP SIGNATURE-----
+Version: GnuPG v1.4.11 (GNU/Linux)
+
+iD8DBQFO6wsnIKyzvlFcI40RAg3xAKDOnvOC4/L3IS+Gy6MXzbAy7RZL1ACcCydp
+0IWCJ1xHJAV0g5v/DkZucMU=
+=sEi/
+-----END PGP SIGNATURE-----
+
+--lEGEL1/lMxI0MVQ2--

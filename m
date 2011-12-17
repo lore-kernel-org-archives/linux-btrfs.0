@@ -1,92 +1,56 @@
-From: Martin Steigerwald <Martin@lichtvoll.de>
+From: Chris Samuel <chris@csamuel.org>
 Subject: Re: speeding up slow btrfs filesystem
-Date: Sat, 17 Dec 2011 12:09:56 +0100
-Message-ID: <201112171209.56877.Martin@lichtvoll.de>
-References: <201112161851.52011.Martin@lichtvoll.de> <201112162158.45819.Martin@lichtvoll.de> <20111217100302.6beffbcd@sf.vba.domain> (sfid-20111217_102134_745546_A2A977B8)
+Date: Sat, 17 Dec 2011 22:11:17 +1100
+Message-ID: <201112172211.25456.chris@csamuel.org>
+References: <201112161851.52011.Martin@lichtvoll.de>
 Mime-Version: 1.0
-Content-Type: Text/Plain; charset=utf-8
-Cc: linux-btrfs@vger.kernel.org
-To: Sergei Trofimovich <slyich@gmail.com>
+Content-Type: multipart/signed;
+  boundary="nextPart1760776.CyB2Cg3BKM";
+  protocol="application/pgp-signature";
+  micalg=pgp-sha1
+To: linux-btrfs@vger.kernel.org
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <20111217100302.6beffbcd@sf.vba.domain>
+In-Reply-To: <201112161851.52011.Martin@lichtvoll.de>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Am Samstag, 17. Dezember 2011 schrieb Sergei Trofimovich:
-> On Fri, 16 Dec 2011 21:58:45 +0100
+--nextPart1760776.CyB2Cg3BKM
+Content-Type: Text/Plain;
+  charset="iso-8859-1"
+Content-Transfer-Encoding: quoted-printable
+
+On Sat, 17 Dec 2011 04:51:51 AM Martin Steigerwald wrote:
+
+> Currently I have:
 >=20
-> Martin Steigerwald <Martin@lichtvoll.de> wrote:
-> > Nope. Doesn=C2=B4t seem to help much.
-> >=20
-> > How to turn it off, after turning it on?
-> >=20
-> > deepdance:~> LANG=3DC mount -o remount,datacow /
-> > mount: / not mounted already, or bad option
->=20
-> In debian you can disable syncing on per-process basis:
->     http://packages.debian.org/sid/eatmydata
->=20
-> $ eatmydata apt-get install foo
-> $ eatmydata firefox
-> $ eatmydata liferea
->=20
-> makes things more bearable
+> deepdance:~> cat /proc/version
+> Linux version 3.0.0-2-686-pae (Debian 3.0.0-6)
 
-I am not ready to accept that this is the proper answer to what I=20
-experience. Applications using fsync() are realistic real world scenari=
-os=20
-and I think BTRFS has to cope with that.
+You are using a fairly old kernel btrfs-wise, I believe there's been=20
+work done in the 3.2 rc's to improve performance so I'd suggest it's=20
+well worth testing with 3.2-rc6 to see whether that helps.
 
-Yesterday I upgraded the laptop to 3.2-rc4. After converting the inode=20
-cache the filesystem appeared to be faster, but I have to wait for some=
-=20
-Debian packages to pile up on the repository servers to get a real=20
-impression.
+All the best,
+Chris
+=2D-=20
+ Chris Samuel  :  http://www.csamuel.org/  :  Melbourne, VIC
 
-I think I will scrub / balance / defragment the filesystem after a back=
-up.=20
-But I am not sure in what order.
+This email may come with a PGP signature as a file. Do not panic.
+=46or more info see: http://en.wikipedia.org/wiki/OpenPGP
 
-I understand that defragment defragments files. But then what does bala=
-nce=20
-do? For RAID setup I have seen it distributing data evenly across drive=
-s=20
-when I echo > /sys/block/sda/[=E2=80=A6]/delete a drive before and BTRF=
-S had to=20
-distribute unevenly cause of that. But what does it do on a filesystem =
-on a=20
-single drive? I bet it would balance out trees? Will it resize trees wi=
-th=20
-lots of unused space as well?
+--nextPart1760776.CyB2Cg3BKM
+Content-Type: application/pgp-signature; name=signature.asc 
+Content-Description: This is a digitally signed message part.
 
-According to
+-----BEGIN PGP SIGNATURE-----
+Version: GnuPG v1.4.11 (GNU/Linux)
 
-deepdance:~> btrfs filesystem df /=20
-Data: total=3D11.23GB, used=3D6.98GB
-System, DUP: total=3D8.00MB, used=3D4.00KB
-System: total=3D4.00MB, used=3D0.00
-Metadata, DUP: total=3D1.86GB, used=3D511.35MB
-deepdance:~> btrfs filesystem show
-[=E2=80=A6]
-Label: 'debian'  uuid: 2bf5b1dc-1d89-4f0d-a561-1a5551a27275
-        Total devices 1 FS bytes used 7.48GB
-        devid    1 size 15.00GB used 14.97GB path /dev/dm-0
+iQEVAwUATux41o1yjaOTJg85AQKZtQgAls804+8bWzW5iSSa3cGpFdGnm1FXP5dr
+M3kpq5o7FQM3isPzCfmfhXM7Bmk5KCq86iimO2b7V7NkP4HBb+Q8GNEq1jFrB1vZ
+qEOpQIa2ztB8Hxj2KI0g7ayf3cEAg74sPrgJyB3Eosqm3RELtoaklZ2BbCnMy79k
+OCDvUw+uLSR9YTBNdpfeevvirluOBxdzZzkNKWt7eqgCqhGNO8LczmHCdm5InsFG
+bQSmiAjYAhzfaIWJ5qpNPl5+HOI+w2n5h6XIIvMXjwNz9ZiXZeT6VU/0kl0QDZnK
+DgjDxiZ+adSTx3GCrBl2qwHj5o/5Mn3FqfAnsMyyeZkkdFrWdRFwng==
+=WXAZ
+-----END PGP SIGNATURE-----
 
-Btrfs Btrfs v0.19
-
-the filesystem might have had some chances to fragment heavily, cause t=
-he=20
-tree sizes add up almost to the 15 GB of space available.
-
-I also remember that for some time the filesystem was nearly full which=
-=20
-would explain the tree sizes.
-
-Ciao,
---=20
-Martin 'Helios' Steigerwald - http://www.Lichtvoll.de
-GPG: 03B0 0D6C 0040 0710 4AFA  B82F 991B EAAC A599 84C7
---
-To unsubscribe from this list: send the line "unsubscribe linux-btrfs" =
-in
-the body of a message to majordomo@vger.kernel.org
-More majordomo info at  http://vger.kernel.org/majordomo-info.html
+--nextPart1760776.CyB2Cg3BKM--

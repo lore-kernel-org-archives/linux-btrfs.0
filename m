@@ -1,135 +1,145 @@
-From: Hugo Mills <hugo@carfax.org.uk>
+From: Martin Steigerwald <Martin@lichtvoll.de>
 Subject: Re: speeding up slow btrfs filesystem
-Date: Sat, 17 Dec 2011 11:45:09 +0000
-Message-ID: <20111217114508.GE17573@carfax.org.uk>
-References: <201112161851.52011.Martin@lichtvoll.de>
- <201112171209.56877.Martin@lichtvoll.de>
- <20111217112619.GD17573@carfax.org.uk>
- <201112171238.07681.Martin@lichtvoll.de>
+Date: Sat, 17 Dec 2011 12:54:47 +0100
+Message-ID: <201112171254.47334.Martin@lichtvoll.de>
 Mime-Version: 1.0
-Content-Type: multipart/signed; micalg=pgp-sha1;
-	protocol="application/pgp-signature"; boundary="LSp5EJdfMPwZcMS1"
-Cc: Sergei Trofimovich <slyich@gmail.com>, linux-btrfs@vger.kernel.org
-To: Martin Steigerwald <Martin@lichtvoll.de>
+Content-Type: Text/Plain; charset=utf-8
+To: Goffredo Baroncelli <kreijack@inwind.it>,
+	linux-btrfs@vger.kernel.org
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <201112171238.07681.Martin@lichtvoll.de>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-
---LSp5EJdfMPwZcMS1
-Content-Type: text/plain; charset=utf-8
-Content-Disposition: inline
-Content-Transfer-Encoding: quoted-printable
-
-On Sat, Dec 17, 2011 at 12:38:07PM +0100, Martin Steigerwald wrote:
-> Am Samstag, 17. Dezember 2011 schrieb Hugo Mills:
-> > On Sat, Dec 17, 2011 at 12:09:56PM +0100, Martin Steigerwald wrote:
-> > > I think I will scrub / balance / defragment the filesystem after a
-> > > backup. But I am not sure in what order.
+Am Samstag, 17. Dezember 2011 schrieben Sie:
+> On Friday, 16 December, 2011 20:53:58 Martin Steigerwald wrote:
+> > > I found a solution, but requires a bit of setup.
 > > >=20
-> > > I understand that defragment defragments files. But then what does
-> > > balance do? For RAID setup I have seen it distributing data evenly
-> > > across drives when I echo > /sys/block/sda/[=E2=80=A6]/delete a drive=
- before
-> > > and BTRFS had to distribute unevenly cause of that. But what does it
-> > > do on a filesystem on a single drive? I bet it would balance out
-> > > trees? Will it resize trees with lots of unused space as well?
+> > >=20
+> > >=20
+> > > The idea is to avoid do perform sync during the package
+> > > installation. In order to avoid data loss in case of failure, I
+> > > create a snapshot before the upgrading. If something goes wrong
+> > > (i.e. a power failure) I rebooot the system from the snapshot. If
+> > > the installation finish without problem, I flush all the data to
+> > > the disk and remove the snapshot.
+> > >=20
+> > >=20
+> > >=20
+> > > For the detail, see a my old post titled "[RFC] aptitude & BTRFS
+> > > slow" (2011-10-19)
 > >=20
-> >    The metadata trees are automatically balanced, simply by the nature
-> > of the B-tree algorithms used. Balance won't, in general, affect them.
-> > The only thing that a balance will achieve on a single-disk filesystem
-> > is to reclaim unused space from allocated block groups -- so the
-> > "total" value in your Data and Metadata entries below will go down.
+> > Sounds more like a workaround to me than a solution.
 >=20
-> But thats only for optical viewing pleasure as far as I understood you?
+> Sorry but I strongly disagree.
 >=20
-> Only if there would be not enough free space for one tree to extend then =
-a=20
-> balance would make sense? I.e. when I had a lot of metadata so that the=
+> Aptitude was designed for an ordinary filesystem. Where the only way =
+to
+> have a filesystem consistency is to issue a lot of sync for every
+> package. But this doesn't prevent to have an half package
+> installed:(think about to an "openoffice" upgrade: in case of power
+> failure, you could not have nor the old openoffice, nor the new one.
+> Instead with the snapshot you can always have the old system or the n=
+ew
+> system. No half packages
+>=20
+> With BTRFS, I can say that the workaround[*] is using the sync and no=
+t
+> the snapshot
+>=20
+> The true is that BTRFS is different from ext4 (or ext3, xfs....). You
+> can use BTRFS like ext4 and you will find a lot of regression like
+> this.
+>=20
+> BTRFS is very different from an ordinary filesystem, and you have to
+> change some behaviour to take advantages with is peculiarities.
+
+This reminds me of the delayed allocation discussion as Ext4 introduced=
 =20
-> metadata would need to extend (which seems unlikely given below figures).
+that feature.
 
-   From the context, I think you're misusing the term "tree" here to
-mean "block group type" (i.e. data or metadata).
+Ext3/4 developer Theodore T=C2=B4so  said if the applications are not u=
+sing=20
+fsync() its their fault. But before OTOH applications began to avoid us=
+ing=20
+fsync() since it has had serious performance drawbacks on ext3 (not ext=
+4)=20
+with data=3Dordered.=20
 
-   That aside, though, yes, you're right, it's effectively only
-cosmetic -- although it can be useful if you have a fully-allocated
-filesystem where (for example) data is full and there's lots of
-metadata space free, and you want to write more data. In that case,
-the FS wants to allocate another Data block group, but can't because
-there's no raw storage left to allocate from, despite there being lots
-of free space in the allocated Metadata block groups. A balance in
-that case would free up some of the metadata block groups and allow
-that space to be reallocated as data. (I think it tries to do this
-anyway, but I'm not 100% sure about that).
+Ext4 now has workarounds for the rename and truncate cases, after Linus=
+=20
+requested boldly to not break existing userspace.
 
-> > > According to
-> > >=20
-> > > deepdance:~> btrfs filesystem df /
-> > > Data: total=3D11.23GB, used=3D6.98GB
-> > > System, DUP: total=3D8.00MB, used=3D4.00KB
-> > > System: total=3D4.00MB, used=3D0.00
-> > > Metadata, DUP: total=3D1.86GB, used=3D511.35MB
-> > > deepdance:~> btrfs filesystem show
-> > > [=E2=80=A6]
-> > > Label: 'debian'  uuid: 2bf5b1dc-1d89-4f0d-a561-1a5551a27275
-> > >=20
-> > >         Total devices 1 FS bytes used 7.48GB
-> > >         devid    1 size 15.00GB used 14.97GB path /dev/dm-0
-> > >=20
-> > > Btrfs Btrfs v0.19
-> > >=20
-> > > the filesystem might have had some chances to fragment heavily, cause
-> > > the tree sizes add up almost to the 15 GB of space available.
-> > >=20
-> > > I also remember that for some time the filesystem was nearly full
-> > > which would explain the tree sizes.
-> >=20
-> >    For metadata, the lower bound on size is 0.1% of the data size
-> > (because checksums are computed at 4 bytes for every 4096 bytes of
-> > data). However, data usage can be very much greater than this with
-> > inline extents, where small files can get embedded directly in the
-> > metadata section. This is probably more likely what explains the tree
-> > sizes.
-> >=20
-> >    I understand (although I've not done the analysis myself) that the
-> > maximum "wasted" space in btrfs's B-tree implementation is 50%. To the
-> > best of my knowledge, there's no compaction process for btrfs's trees
-> > available -- nor, in general, should you need one, as a fully-
-> > compacted tree would only have to be rearranged when more data is
-> > added to it, thus slowing the system down after compaction.
->=20
-> If I understand this correctly this means I can skip the balance step=20
-> completely.
+Now applications that use fsync() the way Theodore T=C2=B4so and other =
+see it=20
+correctly used should now skip the fsync() on a BTRFS?
 
-   Pretty much.
+I find it *highly* problematic when applications are required to adapt=20
+their behavior depending of the filesystem being in use.
 
-> I might still be doing the balance for that optical viewing pleasure ;).
+This just doesn=C2=B4t make sense to me.
 
-   :)
+If BTRFS has other means to guarantee filesystem consistency that is fa=
+ster=20
+it might still make fsync() a no-op or just creating a snapshot=20
+temporarily automatically.
 
-   It can't hurt, and with such a small FS it probably won't take
-long.
+> Using the snapshot during an upgrade open a lot of possibility which
+> are not allowed with EXT4. With snapshot you can always go back if
+> during an upgrade if something goes wrong (like strange packages
+> dependencies). Or you can have the previous configuration to go back
+> in case of trouble.
 
-   Hugo.
+Adding new possibilities is one thing. And supporting snapshots properl=
+y=20
+would depend on some support side from the applications. I think that=20
+using snapshots for upgrades is a good idea.
 
+But OTOH I think that BTRFS should not break or slow down existing=20
+userspace. I think that existing approaches like using fsync() like=20
+according to quite some filesystem developers it should be used should=20
+continue to work nicely.
+
+Similar goes for the hardlink limit.
+
+> [*] Of course this is due to the fact that the most part of the
+> filesystem is like ext4. Supporting BTRFS could be not the highest
+> priority.
+
+I do think that a
+
+if fs=3Dext4 then do this
+
+if fs=3Dbtrfs then do this and
+
+if fs=3Dext3 + data=3Dordered then do this
+
+if fs=3Dext3 + data=3Dordered + kernel=3Dwhatnot then do it a tad bit d=
+ifferently
+
+if fs=3Dunkown then assume this
+
+in a application is just kind about broken and always thought that one=20
+main task of a filesystem would be to lift off the burden on the detail=
+s on=20
+how data is saved from the application.
+
+Ok, some guidelines might be needed like if you save 10 bytes 1000 time=
+s=20
+it might be less performant than saving 10000 bytes at once, but aside=20
+from that=E2=80=A6
+
+So I think BTRFS should have a fast fsync - that fullfils the consisten=
+cy=20
+guarentee by whatever compatible way it sees fit - and for the system=20
+partition I would even trade in the cow functionality. I didn=C2=B4t ha=
+ve it=20
+with Ext4 anyway.
+
+Thanks,
 --=20
-=3D=3D=3D Hugo Mills: hugo@... carfax.org.uk | darksatanic.net | lug.org.uk=
- =3D=3D=3D
-  PGP key: 515C238D from wwwkeys.eu.pgp.net or http://www.carfax.org.uk
-  --- I'll take your bet, but make it ten thousand francs. I'm only --- =20
-                       a _poor_ corrupt official.                       =20
-
---LSp5EJdfMPwZcMS1
-Content-Type: application/pgp-signature; name="signature.asc"
-Content-Description: Digital signature
-
------BEGIN PGP SIGNATURE-----
-Version: GnuPG v1.4.11 (GNU/Linux)
-
-iD8DBQFO7IDEIKyzvlFcI40RAi2BAJ9BWql367mJ/TXOH4UpPL7S48PmAgCdH9Nu
-BqvXeS+lyiYcu6y0uyIe//s=
-=LZbg
------END PGP SIGNATURE-----
-
---LSp5EJdfMPwZcMS1--
+Martin 'Helios' Steigerwald - http://www.Lichtvoll.de
+GPG: 03B0 0D6C 0040 0710 4AFA  B82F 991B EAAC A599 84C7
+--
+To unsubscribe from this list: send the line "unsubscribe linux-btrfs" =
+in
+the body of a message to majordomo@vger.kernel.org
+More majordomo info at  http://vger.kernel.org/majordomo-info.html

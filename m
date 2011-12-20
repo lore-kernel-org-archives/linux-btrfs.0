@@ -1,170 +1,161 @@
 From: David Sterba <dsterba@suse.cz>
-Subject: [PATCH V2] btrfs: add new ioctl to determine size of compressed file
-Date: Tue, 20 Dec 2011 18:46:41 +0100
-Message-ID: <1324403201-12349-1-git-send-email-dsterba@suse.cz>
-References: <4EEFE5D2.6020401@cn.fujitsu.com>
-Cc: liubo2009@cn.fujitsu.com, chris.mason@oracle.com,
-	David Sterba <dsterba@suse.cz>
+Subject: [PATCH V2] btrfs-progs: Add ioctl to read compressed size of a file
+Date: Tue, 20 Dec 2011 18:49:58 +0100
+Message-ID: <1324403398-12489-1-git-send-email-dsterba@suse.cz>
+References: <20111219144706.GD24793@shiny>
+Cc: chris.mason@oracle.com, David Sterba <dsterba@suse.cz>
 To: linux-btrfs@vger.kernel.org
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <4EEFE5D2.6020401@cn.fujitsu.com>
+In-Reply-To: <20111219144706.GD24793@shiny>
 List-ID: <linux-btrfs.vger.kernel.org>
-
-Go through all extents of a file in a given [start,end) range and sum
-for:
-* regular extent: ->block_len, size is already rounded up to blocks
-* inline extents: length rounded up to 512
-
-The range is start inclusive / end exclusive. For whole a file pass
-0 and (u64)-1.
-
-The values returned are number of occupied 512B sectors for uncompressed
-and compressed size and  can be easily compared to determine rough
-compression ratio of the given file range.
-
-Based on implementation from Ulrich Hecht,
-http://comments.gmane.org/gmane.comp.file-systems.btrfs/6253
 
 Signed-off-by: David Sterba <dsterba@suse.cz>
 ---
 V1-V2:
-* count uncompressed length as well
-* add missed lock_extent
-* properly ordered unlocking sequence of mutex and extent
+* match current kernel side and print uncompressed length as well
+* now it's easy to print the compression ratio for the given range
 
- fs/btrfs/ioctl.c |   82 ++++++++++++++++++++++++++++++++++++++++++++++++++++++
- fs/btrfs/ioctl.h |   12 ++++++++
- 2 files changed, 94 insertions(+), 0 deletions(-)
+ btrfs.c      |    9 ++++++-
+ btrfs_cmds.c |   68 ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+ btrfs_cmds.h |    1 +
+ ioctl.h      |   13 +++++++++++
+ 4 files changed, 90 insertions(+), 1 deletions(-)
 
-diff --git a/fs/btrfs/ioctl.c b/fs/btrfs/ioctl.c
-index c04f02c..4e058d7 100644
---- a/fs/btrfs/ioctl.c
-+++ b/fs/btrfs/ioctl.c
-@@ -2972,6 +2972,86 @@ static int build_ino_list(u64 inum, u64 offset, u64 root, void *ctx)
- 	return 0;
+diff --git a/btrfs.c b/btrfs.c
+index 1def354..dbb7224 100644
+--- a/btrfs.c
++++ b/btrfs.c
+@@ -128,7 +128,14 @@ static struct Command commands[] = {
+ 	  "filesystem label", "<device> [<newlabel>]\n"
+ 	  "With one argument, get the label of filesystem on <device>.\n"
+ 	  "If <newlabel> is passed, set the filesystem label to <newlabel>.\n"
+-	  "The filesystem must be unmounted.\n"
++	  "The filesystem must be unmounted."
++	},
++	{ do_compr_size, -1,
++	  "filesystem csize", "[-s start] [-e end] file\n"
++		  "Read ordinary and compressed size of extents in the range [start,end)\n"
++		  "-s start  range start inclusive, accepts K/M/G modifiers\n"
++		  "-e end    range end exclusive, accepts K/M/G modifiers\n",
++	  NULL
+ 	},
+ 	{ do_scrub_start, -1,
+ 	  "scrub start", "[-Bdqr] <path>|<device>\n"
+diff --git a/btrfs_cmds.c b/btrfs_cmds.c
+index b59e9cb..1074ade 100644
+--- a/btrfs_cmds.c
++++ b/btrfs_cmds.c
+@@ -1305,3 +1305,71 @@ out:
+ 	free(inodes);
+ 	return ret;
  }
- 
-+/*
-+ * Returns the compressed size of an inode in 512 byte blocks.
-+ * Count the on-disk space used by extents starting in range [start, end),
-+ * inline data are rounded up to sector, ie. 512.
-+ *
-+ * The range is start inclusive and end exclusive so it can be used to
-+ * determine compressed size of a given extent by its start and start of the
-+ * next extent easily, without counting length.
-+ * Whole file is specified as start = 0, end = (u64)-1
-+ */
-+static long btrfs_ioctl_compr_size(struct file *file, void __user *argp)
++
++int do_compr_size(int argc, char **argv)
 +{
-+	struct inode *inode = fdentry(file)->d_inode;
-+	struct btrfs_ioctl_compr_size_args compr_args;
-+	u64 len;
-+	u64 compressed_size = 0;
-+	u64 size = 0;
-+	u64 offset = 0;
++	int ret;
++	int fd;
++	struct btrfs_ioctl_compr_size_args args;
 +
-+	if (S_ISDIR(inode->i_mode))
-+		return -EISDIR;
-+
-+	if (copy_from_user(&compr_args, argp,
-+				sizeof(struct btrfs_ioctl_compr_size_args)))
-+		return -EFAULT;
-+
-+	if (compr_args.start > compr_args.end)
-+		return -EINVAL;
-+
-+	mutex_lock(&inode->i_mutex);
-+
-+	offset = compr_args.start;
-+	if (inode->i_size > compr_args.end)
-+		len = compr_args.end;
-+	else
-+		len = inode->i_size;
-+
-+	/*
-+	 * do any pending delalloc/csum calc on inode, one way or
-+	 * another, and lock file content
-+	 */
-+	btrfs_wait_ordered_range(inode, compr_args.start, len);
-+
-+	lock_extent(&BTRFS_I(inode)->io_tree, compr_args.start, len, GFP_NOFS);
-+
-+	while (offset < len) {
-+		struct extent_map *em;
-+
-+		em = btrfs_get_extent(inode, NULL, 0, offset, 1, 0);
-+		if (IS_ERR_OR_NULL(em))
-+			goto error;
-+		if (em->block_len != (u64)-1) {
-+			compressed_size += em->block_len;
-+			size += ALIGN(em->len, inode->i_sb->s_blocksize);
-+		} else if (em->block_start == EXTENT_MAP_INLINE) {
-+			compressed_size += ALIGN(em->len, 512);
-+			size += ALIGN(em->len, 512);
++	args.start = 0;
++	args.end = (u64)-1;
++	optind = 1;
++	while (1) {
++		int c = getopt(argc, argv, "s:e:r");
++		if (c < 0)
++			break;
++		switch (c) {
++		case 's':
++			args.start = parse_size(optarg);
++			break;
++		case 'e':
++			args.end = parse_size(optarg);
++			break;
++		default:
++			fprintf(stderr, "ERROR: Invalid arguments for csize\n");
++			return 1;
 +		}
-+		offset += em->len;
-+		free_extent_map(em);
 +	}
-+	unlock_extent(&BTRFS_I(inode)->io_tree, compr_args.start, len, GFP_NOFS);
-+	mutex_unlock(&inode->i_mutex);
 +
-+	compr_args.size = size >> 9;
-+	compr_args.compressed_size = compressed_size >> 9;
++	if (args.start > args.end) {
++		fprintf(stderr, "ERROR: Invalid range for csize\n");
++		return 1;
++	}
 +
-+	if (copy_to_user(argp, &compr_args,
-+				sizeof(struct btrfs_ioctl_compr_size_args)))
-+		return -EFAULT;
++	if (argc - optind == 0) {
++		fprintf(stderr, "ERROR: Invalid arguments for csize\n");
++		return 1;
++	}
++	argc -= optind;
 +
++	fd = open_file_or_dir(argv[optind]);
++	if (fd < 0) {
++		fprintf(stderr, "ERROR: can't access '%s'\n", argv[optind]);
++		return 1;
++	}
++
++	ret = ioctl(fd, BTRFS_IOC_COMPR_SIZE, &args);
++	if (ret < 0) {
++		fprintf(stderr, "ERROR: ioctl returned %d, errno %d %s\n",
++				ret, errno, strerror(errno));
++		return errno;
++	}
++
++	printf("File name: %s\n", argv[optind]);
++	if (args.end == (u64)-1)
++		printf("File range:        %llu-EOF\n",
++				(unsigned long long)args.start);
++	else
++		printf("File range:        %llu-%llu\n",
++				(unsigned long long)args.start,
++				(unsigned long long)args.end);
++
++	printf("Compressed size:   %llu\n",
++			(unsigned long long)(args.compressed_size << 9));
++	printf("Uncompressed size: %llu\n",
++			(unsigned long long)(args.size << 9));
++	printf("Ratio:             %3.2f%%\n",
++			100.0 * args.compressed_size / args.size);
 +	return 0;
-+
-+error:
-+	unlock_extent(&BTRFS_I(inode)->io_tree, compr_args.start, len, GFP_NOFS);
-+	mutex_unlock(&inode->i_mutex);
-+
-+	return -EIO;
 +}
-+
- static long btrfs_ioctl_logical_to_ino(struct btrfs_root *root,
- 					void __user *arg)
- {
-@@ -3110,6 +3190,8 @@ long btrfs_ioctl(struct file *file, unsigned int
- 		return btrfs_ioctl_scrub_cancel(root, argp);
- 	case BTRFS_IOC_SCRUB_PROGRESS:
- 		return btrfs_ioctl_scrub_progress(root, argp);
-+	case BTRFS_IOC_COMPR_SIZE:
-+		return btrfs_ioctl_compr_size(file, argp);
- 	}
- 
- 	return -ENOTTY;
-diff --git a/fs/btrfs/ioctl.h b/fs/btrfs/ioctl.h
-index 252ae99..d7b425a 100644
---- a/fs/btrfs/ioctl.h
-+++ b/fs/btrfs/ioctl.h
-@@ -217,6 +217,16 @@ struct btrfs_ioctl_logical_ino_args {
+diff --git a/btrfs_cmds.h b/btrfs_cmds.h
+index 81182b1..d171214 100644
+--- a/btrfs_cmds.h
++++ b/btrfs_cmds.h
+@@ -42,3 +42,4 @@ int open_file_or_dir(const char *fname);
+ int do_ino_to_path(int nargs, char **argv);
+ int do_logical_to_ino(int nargs, char **argv);
+ char *path_for_root(int fd, u64 root);
++int do_compr_size(int argc, char **argv);
+diff --git a/ioctl.h b/ioctl.h
+index 1ae7537..5b5208a 100644
+--- a/ioctl.h
++++ b/ioctl.h
+@@ -224,6 +224,17 @@ struct btrfs_ioctl_logical_ino_args {
  	__u64				inodes;
  };
  
 +struct btrfs_ioctl_compr_size_args {
 +	/* Range start, inclusive */
-+	__u64	start;				/* in */
++	__u64   start;                          /* in */
 +	/* Range end, exclusive */
-+	__u64	end;				/* in */
-+	__u64	size;				/* out */
-+	__u64	compressed_size;		/* out */
-+	__u64	reserved[2];
++	__u64   end;                            /* in */
++	__u64   size;                           /* out */
++	__u64   compressed_size;                /* out */
++	__u64   reserved[2];
 +};
 +
++
+ /* BTRFS_IOC_SNAP_CREATE is no longer used by the btrfs command */
  #define BTRFS_IOC_SNAP_CREATE _IOW(BTRFS_IOCTL_MAGIC, 1, \
  				   struct btrfs_ioctl_vol_args)
- #define BTRFS_IOC_DEFRAG _IOW(BTRFS_IOCTL_MAGIC, 2, \
-@@ -276,5 +286,7 @@ struct btrfs_ioctl_logical_ino_args {
+@@ -277,5 +288,7 @@ struct btrfs_ioctl_logical_ino_args {
  					struct btrfs_ioctl_ino_path_args)
  #define BTRFS_IOC_LOGICAL_INO _IOWR(BTRFS_IOCTL_MAGIC, 36, \
  					struct btrfs_ioctl_ino_path_args)
 +#define BTRFS_IOC_COMPR_SIZE _IOR(BTRFS_IOCTL_MAGIC, 51, \
-+				struct btrfs_ioctl_compr_size_args)
++		                struct btrfs_ioctl_compr_size_args)
  
  #endif
 -- 
-1.7.6.233.gd79bc
+1.7.7.3
 

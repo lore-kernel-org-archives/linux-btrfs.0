@@ -1,161 +1,55 @@
-From: David Sterba <dsterba@suse.cz>
-Subject: [PATCH V2] btrfs-progs: Add ioctl to read compressed size of a file
-Date: Tue, 20 Dec 2011 18:49:58 +0100
-Message-ID: <1324403398-12489-1-git-send-email-dsterba@suse.cz>
-References: <20111219144706.GD24793@shiny>
-Cc: chris.mason@oracle.com, David Sterba <dsterba@suse.cz>
-To: linux-btrfs@vger.kernel.org
+From: =?UTF-8?B?SsOpcsO0bWUgUG91bGlu?= <jeromepoulin@gmail.com>
+Subject: Re: COW a file from snapshot
+Date: Tue, 20 Dec 2011 12:53:36 -0500
+Message-ID: <CALJXSJpTv2jJN6=J4tQygjAufuMt_FY=2Zg1=Xcwyb9qOUejJw@mail.gmail.com>
+References: <20111220150717.GA24891@hendrix.borisch.local>
+Mime-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Cc: linux-btrfs@vger.kernel.org
+To: Dave <dave@thekilempire.com>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <20111219144706.GD24793@shiny>
+In-Reply-To: <20111220150717.GA24891@hendrix.borisch.local>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Signed-off-by: David Sterba <dsterba@suse.cz>
----
-V1-V2:
-* match current kernel side and print uncompressed length as well
-* now it's easy to print the compression ratio for the given range
+You would need to apply this patch to your kernel:
+http://www.mail-archive.com/linux-btrfs@vger.kernel.org/msg09096.html
 
- btrfs.c      |    9 ++++++-
- btrfs_cmds.c |   68 ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
- btrfs_cmds.h |    1 +
- ioctl.h      |   13 +++++++++++
- 4 files changed, 90 insertions(+), 1 deletions(-)
+Is there any chance this patch gets in linux-next ?
+I use this feature all the time and it never broke on me.
 
-diff --git a/btrfs.c b/btrfs.c
-index 1def354..dbb7224 100644
---- a/btrfs.c
-+++ b/btrfs.c
-@@ -128,7 +128,14 @@ static struct Command commands[] = {
- 	  "filesystem label", "<device> [<newlabel>]\n"
- 	  "With one argument, get the label of filesystem on <device>.\n"
- 	  "If <newlabel> is passed, set the filesystem label to <newlabel>.\n"
--	  "The filesystem must be unmounted.\n"
-+	  "The filesystem must be unmounted."
-+	},
-+	{ do_compr_size, -1,
-+	  "filesystem csize", "[-s start] [-e end] file\n"
-+		  "Read ordinary and compressed size of extents in the range [start,end)\n"
-+		  "-s start  range start inclusive, accepts K/M/G modifiers\n"
-+		  "-e end    range end exclusive, accepts K/M/G modifiers\n",
-+	  NULL
- 	},
- 	{ do_scrub_start, -1,
- 	  "scrub start", "[-Bdqr] <path>|<device>\n"
-diff --git a/btrfs_cmds.c b/btrfs_cmds.c
-index b59e9cb..1074ade 100644
---- a/btrfs_cmds.c
-+++ b/btrfs_cmds.c
-@@ -1305,3 +1305,71 @@ out:
- 	free(inodes);
- 	return ret;
- }
-+
-+int do_compr_size(int argc, char **argv)
-+{
-+	int ret;
-+	int fd;
-+	struct btrfs_ioctl_compr_size_args args;
-+
-+	args.start = 0;
-+	args.end = (u64)-1;
-+	optind = 1;
-+	while (1) {
-+		int c = getopt(argc, argv, "s:e:r");
-+		if (c < 0)
-+			break;
-+		switch (c) {
-+		case 's':
-+			args.start = parse_size(optarg);
-+			break;
-+		case 'e':
-+			args.end = parse_size(optarg);
-+			break;
-+		default:
-+			fprintf(stderr, "ERROR: Invalid arguments for csize\n");
-+			return 1;
-+		}
-+	}
-+
-+	if (args.start > args.end) {
-+		fprintf(stderr, "ERROR: Invalid range for csize\n");
-+		return 1;
-+	}
-+
-+	if (argc - optind == 0) {
-+		fprintf(stderr, "ERROR: Invalid arguments for csize\n");
-+		return 1;
-+	}
-+	argc -= optind;
-+
-+	fd = open_file_or_dir(argv[optind]);
-+	if (fd < 0) {
-+		fprintf(stderr, "ERROR: can't access '%s'\n", argv[optind]);
-+		return 1;
-+	}
-+
-+	ret = ioctl(fd, BTRFS_IOC_COMPR_SIZE, &args);
-+	if (ret < 0) {
-+		fprintf(stderr, "ERROR: ioctl returned %d, errno %d %s\n",
-+				ret, errno, strerror(errno));
-+		return errno;
-+	}
-+
-+	printf("File name: %s\n", argv[optind]);
-+	if (args.end == (u64)-1)
-+		printf("File range:        %llu-EOF\n",
-+				(unsigned long long)args.start);
-+	else
-+		printf("File range:        %llu-%llu\n",
-+				(unsigned long long)args.start,
-+				(unsigned long long)args.end);
-+
-+	printf("Compressed size:   %llu\n",
-+			(unsigned long long)(args.compressed_size << 9));
-+	printf("Uncompressed size: %llu\n",
-+			(unsigned long long)(args.size << 9));
-+	printf("Ratio:             %3.2f%%\n",
-+			100.0 * args.compressed_size / args.size);
-+	return 0;
-+}
-diff --git a/btrfs_cmds.h b/btrfs_cmds.h
-index 81182b1..d171214 100644
---- a/btrfs_cmds.h
-+++ b/btrfs_cmds.h
-@@ -42,3 +42,4 @@ int open_file_or_dir(const char *fname);
- int do_ino_to_path(int nargs, char **argv);
- int do_logical_to_ino(int nargs, char **argv);
- char *path_for_root(int fd, u64 root);
-+int do_compr_size(int argc, char **argv);
-diff --git a/ioctl.h b/ioctl.h
-index 1ae7537..5b5208a 100644
---- a/ioctl.h
-+++ b/ioctl.h
-@@ -224,6 +224,17 @@ struct btrfs_ioctl_logical_ino_args {
- 	__u64				inodes;
- };
- 
-+struct btrfs_ioctl_compr_size_args {
-+	/* Range start, inclusive */
-+	__u64   start;                          /* in */
-+	/* Range end, exclusive */
-+	__u64   end;                            /* in */
-+	__u64   size;                           /* out */
-+	__u64   compressed_size;                /* out */
-+	__u64   reserved[2];
-+};
-+
-+
- /* BTRFS_IOC_SNAP_CREATE is no longer used by the btrfs command */
- #define BTRFS_IOC_SNAP_CREATE _IOW(BTRFS_IOCTL_MAGIC, 1, \
- 				   struct btrfs_ioctl_vol_args)
-@@ -277,5 +288,7 @@ struct btrfs_ioctl_logical_ino_args {
- 					struct btrfs_ioctl_ino_path_args)
- #define BTRFS_IOC_LOGICAL_INO _IOWR(BTRFS_IOCTL_MAGIC, 36, \
- 					struct btrfs_ioctl_ino_path_args)
-+#define BTRFS_IOC_COMPR_SIZE _IOR(BTRFS_IOCTL_MAGIC, 51, \
-+		                struct btrfs_ioctl_compr_size_args)
- 
- #endif
--- 
-1.7.7.3
-
+On Tue, Dec 20, 2011 at 10:07 AM, Dave <dave@thekilempire.com> wrote:
+>
+> -----BEGIN PGP SIGNED MESSAGE-----
+> Hash: SHA256
+>
+> So I've got a daily snapshot of my /home subvolume. =C2=A0Due to a fa=
+t finger, I've
+> damaged a rather large file so I'd like to pull if from one of these =
+snapshot
+> backups. =C2=A0I don't want to simply copy the file since it's many g=
+igs and cp
+> - --reflink=3Dalways doesn't work (produces the error Invalid cross-d=
+evice link).
+> Is there a way to recover that file and benefit from COW?
+> - --
+> - -=3D[dave]=3D-
+>
+> Entropy isn't what it used to be.
+> -----BEGIN PGP SIGNATURE-----
+> Version: GnuPG v1.4.11 (GNU/Linux)
+>
+> iF4EAREIAAYFAk7wpKUACgkQXM0u5ajNnCgMUQD/Uf0/HygZ9D8StT9Oc6E3+wM/
+> MBokh6h1iPN2OslJTxgA/RUzFMM2n0+3ORHwvOraJMBJl1P4JfabT31iuemn/BL2
+> =3D2cds
+> -----END PGP SIGNATURE-----
+> --
+> To unsubscribe from this list: send the line "unsubscribe linux-btrfs=
+" in
+> the body of a message to majordomo@vger.kernel.org
+> More majordomo info at =C2=A0http://vger.kernel.org/majordomo-info.ht=
+ml
+--
+To unsubscribe from this list: send the line "unsubscribe linux-btrfs" =
+in
+the body of a message to majordomo@vger.kernel.org
+More majordomo info at  http://vger.kernel.org/majordomo-info.html

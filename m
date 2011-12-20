@@ -1,172 +1,117 @@
-From: Goffredo Baroncelli <kreijack@inwind.it>
-Subject: Re: [PATCH V2] btrfs-progs: Add ioctl to read compressed size of a file
-Date: Tue, 20 Dec 2011 21:32:03 +0100
-Message-ID: <1842174.3dnFRLPOZl@venice>
-References: <20111219144706.GD24793@shiny> <1324403398-12489-1-git-send-email-dsterba@suse.cz>
-Reply-To: Goffredo Baroncelli <kreijack@inwind.it>
+From: Martin Steigerwald <Martin@lichtvoll.de>
+Subject: Re: 3.2-rc4: scrubbing locks up the kernel, then hung tasks on boot
+Date: Tue, 20 Dec 2011 21:46:32 +0100
+Message-ID: <201112202146.32265.Martin@lichtvoll.de>
+References: <201112171833.34720.Martin@lichtvoll.de> (sfid-20111217_183419_764882_9192E97F)
 Mime-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Cc: linux-btrfs@vger.kernel.org, chris.mason@oracle.com
-To: David Sterba <dsterba@suse.cz>
+Content-Type: Text/Plain; charset=utf-8
+To: linux-btrfs@vger.kernel.org
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <1324403398-12489-1-git-send-email-dsterba@suse.cz>
+In-Reply-To: <201112171833.34720.Martin@lichtvoll.de>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hi David
+Hi again!
 
-On Tuesday, 20 December, 2011 18:49:58 David Sterba wrote:
-> Signed-off-by: David Sterba <dsterba@suse.cz>
-> ---
-> V1-V2:
-> * match current kernel side and print uncompressed length as well
-> * now it's easy to print the compression ratio for the given range
-> 
->  btrfs.c      |    9 ++++++-
->  btrfs_cmds.c |   68
-> ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++ btrfs_cmds.h |  
->  1 +
->  ioctl.h      |   13 +++++++++++
+Any hints about this one?
 
-Please, update the man page too
+Since scrubbing worked okay on other machines, I can also redo the BTRF=
+S=20
+filesystem on this machine. Maybe it really has gained a corruption. (S=
+till=20
+scrubbing should not lock up the kernel hard, but=E2=80=A6)
 
->  4 files changed, 90 insertions(+), 1 deletions(-)
-> 
-> diff --git a/btrfs.c b/btrfs.c
-> index 1def354..dbb7224 100644
-> --- a/btrfs.c
-> +++ b/btrfs.c
-> @@ -128,7 +128,14 @@ static struct Command commands[] = {
->  	  "filesystem label", "<device> [<newlabel>]\n"
->  	  "With one argument, get the label of filesystem on <device>.\n"
->  	  "If <newlabel> is passed, set the filesystem label to <newlabel>.\n"
-> -	  "The filesystem must be unmounted.\n"
-> +	  "The filesystem must be unmounted."
-> +	},
-> +	{ do_compr_size, -1,
-> +	  "filesystem csize", "[-s start] [-e end] file\n"
-> +		  "Read ordinary and compressed size of extents in the range
-> [start,end)\n" +		  "-s start  range start inclusive, accepts K/M/G
-> modifiers\n"
-> +		  "-e end    range end exclusive, accepts K/M/G modifiers\n",
-> +	  NULL
->  	},
->  	{ do_scrub_start, -1,
->  	  "scrub start", "[-Bdqr] <path>|<device>\n"
-> diff --git a/btrfs_cmds.c b/btrfs_cmds.c
-> index b59e9cb..1074ade 100644
-> --- a/btrfs_cmds.c
-> +++ b/btrfs_cmds.c
-> @@ -1305,3 +1305,71 @@ out:
->  	free(inodes);
->  	return ret;
->  }
-> +
-> +int do_compr_size(int argc, char **argv)
-> +{
-> +	int ret;
-> +	int fd;
-> +	struct btrfs_ioctl_compr_size_args args;
-> +
-> +	args.start = 0;
-> +	args.end = (u64)-1;
-> +	optind = 1;
-> +	while (1) {
-> +		int c = getopt(argc, argv, "s:e:r");
-> +		if (c < 0)
-> +			break;
-> +		switch (c) {
-> +		case 's':
-> +			args.start = parse_size(optarg);
-> +			break;
-> +		case 'e':
-> +			args.end = parse_size(optarg);
-> +			break;
-> +		default:
-> +			fprintf(stderr, "ERROR: Invalid arguments for csize\n");
-> +			return 1;
-> +		}
-> +	}
-> +
-> +	if (args.start > args.end) {
-> +		fprintf(stderr, "ERROR: Invalid range for csize\n");
-> +		return 1;
-> +	}
-> +
-> +	if (argc - optind == 0) {
-> +		fprintf(stderr, "ERROR: Invalid arguments for csize\n");
-> +		return 1;
-> +	}
-> +	argc -= optind;
-> +
-> +	fd = open_file_or_dir(argv[optind]);
-> +	if (fd < 0) {
-> +		fprintf(stderr, "ERROR: can't access '%s'\n", argv[optind]);
-> +		return 1;
-> +	}
-> +
-> +	ret = ioctl(fd, BTRFS_IOC_COMPR_SIZE, &args);
-> +	if (ret < 0) {
-> +		fprintf(stderr, "ERROR: ioctl returned %d, errno %d %s\n",
-> +				ret, errno, strerror(errno));
-> +		return errno;
-> +	}
-> +
-> +	printf("File name: %s\n", argv[optind]);
-> +	if (args.end == (u64)-1)
-> +		printf("File range:        %llu-EOF\n",
-> +				(unsigned long long)args.start);
-> +	else
-> +		printf("File range:        %llu-%llu\n",
-> +				(unsigned long long)args.start,
-> +				(unsigned long long)args.end);
-> +
-> +	printf("Compressed size:   %llu\n",
-> +			(unsigned long long)(args.compressed_size << 9));
-> +	printf("Uncompressed size: %llu\n",
-> +			(unsigned long long)(args.size << 9));
-> +	printf("Ratio:             %3.2f%%\n",
-> +			100.0 * args.compressed_size / args.size);
-> +	return 0;
-> +}
-> diff --git a/btrfs_cmds.h b/btrfs_cmds.h
-> index 81182b1..d171214 100644
-> --- a/btrfs_cmds.h
-> +++ b/btrfs_cmds.h
-> @@ -42,3 +42,4 @@ int open_file_or_dir(const char *fname);
->  int do_ino_to_path(int nargs, char **argv);
->  int do_logical_to_ino(int nargs, char **argv);
->  char *path_for_root(int fd, u64 root);
-> +int do_compr_size(int argc, char **argv);
-> diff --git a/ioctl.h b/ioctl.h
-> index 1ae7537..5b5208a 100644
-> --- a/ioctl.h
-> +++ b/ioctl.h
-> @@ -224,6 +224,17 @@ struct btrfs_ioctl_logical_ino_args {
->  	__u64				inodes;
->  };
-> 
-> +struct btrfs_ioctl_compr_size_args {
-> +	/* Range start, inclusive */
-> +	__u64   start;                          /* in */
-> +	/* Range end, exclusive */
-> +	__u64   end;                            /* in */
-> +	__u64   size;                           /* out */
-> +	__u64   compressed_size;                /* out */
-> +	__u64   reserved[2];
-> +};
-> +
-> +
->  /* BTRFS_IOC_SNAP_CREATE is no longer used by the btrfs command */
->  #define BTRFS_IOC_SNAP_CREATE _IOW(BTRFS_IOCTL_MAGIC, 1, \
->  				   struct btrfs_ioctl_vol_args)
-> @@ -277,5 +288,7 @@ struct btrfs_ioctl_logical_ino_args {
->  					struct btrfs_ioctl_ino_path_args)
->  #define BTRFS_IOC_LOGICAL_INO _IOWR(BTRFS_IOCTL_MAGIC, 36, \
->  					struct btrfs_ioctl_ino_path_args)
-> +#define BTRFS_IOC_COMPR_SIZE _IOR(BTRFS_IOCTL_MAGIC, 51, \
-> +		                struct btrfs_ioctl_compr_size_args)
-> 
->  #endif
--- 
-gpg key@ keyserver.linux.it: Goffredo Baroncelli (ghigo) <kreijack@inwind.it>
-Key fingerprint = 4769 7E51 5293 D36C 814E  C054 BF04 F161 3DC5 0512
+Thanks,
+Martin
+
+Am Samstag, 17. Dezember 2011 schrieb Martin Steigerwald:
+> Hi!
+>=20
+> Finally I tried scrubbing the / BTRFS filesystem mentioned in the
+> thread "speeding up slow btrfs filesystem". However the machine looks
+> up hard then. It repeats the last few seconds of audio all over again=
+,
+> no mouse and no ssh connection anymore:
+>=20
+> deepdance:~> btrfs scrub start /
+> scrub started on /, fsid [=E2=80=A6] (pid=3D5737)
+> deepdance:~> Write failed: Broken pipe
+>=20
+>=20
+> After the second attempt of doing this the machine stops on booting
+> after the space cache enabled message. Then I get backtraced of hung
+> tasks:
+>=20
+> http://martin-steigerwald.de/tmp/btrfs/2011-17-12-deepdance-hang-at-b=
+oo
+> t/
+>=20
+>=20
+> I am able to mount the filesystem from grml 2011.12-rc1 with 3.1
+> kernel:
+>=20
+> root@grml ~ # Start lvm2
+> Setting up LVM Volume Groups  Reading all physical volumes.  This may
+> take a while...
+>   Found volume group "deepdance" using metadata type lvm2
+>   3 logical volume(s) in volume group "deepdance" now active
+> .
+> root@grml ~ # mount /mnt/debian
+> root@grml ~ # mount /mnt/home
+> root@grml ~ # dmesg | tail
+> [   55.479303] Installing knfsd (copyright (C) 1996 okir@monad.swb.de=
+).
+> [   64.352088] eth0: no IPv6 routers present
+> [   75.744318] fuse init (API version 7.17)
+> [   75.801245] ipmi message handler version 39.2
+> [   90.213880] end_request: I/O error, dev fd0, sector 0
+> [  229.117153] Btrfs loaded
+> [  229.117962] device label debian devid 1 transid 201769
+> /dev/mapper/deepdance-debian
+> [  229.577244] btrfs: disk space caching is enabled
+> [  245.375875] device label home devid 1 transid 72021
+> /dev/mapper/deepdance-home
+> [  245.433137] btrfs: disk space caching is enabled
+> root@grml ~ # umount /mnt/{debian,home}
+>=20
+> root@grml ~ # cat /proc/version
+> Linux version 3.1.0-2-grml-486 (Debian 3.1.0-2+grml.3) (ch@grml.org)
+> (gcc version 4.6.2 (Debian 4.6.2-5) ) #1 Fri Dec 9 00:25:07 UTC 2011
+>=20
+>=20
+> But after that 3.2-rc4 still doesn=C2=B4t boot.
+>=20
+> I am now trying to install a 3.1.0 debian kernel via chroot.
+>=20
+> Ok, after installing the 3.1.0 kernel it seems to work with 3.2.0-rc4
+> as well again. Its again converting the old style inodes. Thus I thin=
+k
+> on a sudden crash there may be an issue with the inode cache in
+> 3.2-rc4 that switching to 3.1.0, writing something, and then back to
+> 3.2.0-rc4 works around.
+>=20
+> But then I had this after upgrading from 3.0 to 3.2-rc4 as well. I
+> didn=C2=B4t report it here cause I thought it was a one-time issue.
+>=20
+> Hopefully you can make something out of the backtraces I tried to
+> snapshot with my digicam.
+>=20
+> Should I be concerned about the state of the filesystem?
+>=20
+> I will not try scrubbing it again for now ;)
+>=20
+> BTW the performance of the BTRFS fs while updating the inode cache is
+> abysmal. The machine is trying to boot for about 5 minutes now and
+> still no KDM to see. Hmm, at least there is an SSH now. No nothing
+> about these hard lock ups in syslog as I have suspected.
+>=20
+> Thanks,
+
+
+--=20
+Martin 'Helios' Steigerwald - http://www.Lichtvoll.de
+GPG: 03B0 0D6C 0040 0710 4AFA  B82F 991B EAAC A599 84C7
+--
+To unsubscribe from this list: send the line "unsubscribe linux-btrfs" =
+in
+the body of a message to majordomo@vger.kernel.org
+More majordomo info at  http://vger.kernel.org/majordomo-info.html

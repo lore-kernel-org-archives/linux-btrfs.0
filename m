@@ -1,29 +1,62 @@
-From: Dave <dave@thekilempire.com>
-Subject: COW a file from snapshot
-Date: Tue, 20 Dec 2011 10:07:18 -0500
-Message-ID: <20111220150717.GA24891@hendrix.borisch.local>
+From: David Sterba <dave@jikos.cz>
+Subject: Re: [PATCH] btrfs: add new ioctl to determine size of compressed file
+Date: Tue, 20 Dec 2011 18:26:58 +0100
+Message-ID: <20111220172658.GD7322@twin.jikos.cz>
+References: <1324304223-19079-1-git-send-email-dsterba@suse.cz> <4EEFE5D2.6020401@cn.fujitsu.com>
+Reply-To: dave@jikos.cz
 Mime-Version: 1.0
-Content-Type: text/plain; charset=us-ascii; x-action=pgp-signed
-To: linux-btrfs@vger.kernel.org
+Content-Type: text/plain; charset=us-ascii
+Cc: David Sterba <dsterba@suse.cz>, linux-btrfs@vger.kernel.org,
+	chris.mason@oracle.com
+To: Liu Bo <liubo2009@cn.fujitsu.com>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
+In-Reply-To: <4EEFE5D2.6020401@cn.fujitsu.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
------BEGIN PGP SIGNED MESSAGE-----
-Hash: SHA256
+On Tue, Dec 20, 2011 at 09:33:06AM +0800, Liu Bo wrote:
+> > +static long btrfs_ioctl_compr_size(struct file *file, void __user *argp)
+> > +{
+> > +	struct inode *inode = fdentry(file)->d_inode;
+> > +	struct btrfs_ioctl_compr_size_args compr_args;
+> > +	u64 len;
+> > +	u64 compressed_size = 0;
+> > +	u64 offset = 0;
+> > +
+> > +	if (S_ISDIR(inode->i_mode))
+> > +		return -EISDIR;
+> > +
+> > +	if (copy_from_user(&compr_args, argp,
+> > +				sizeof(struct btrfs_ioctl_compr_size_args)))
+> > +		return -EFAULT;
+> > +
+> > +	if (compr_args.start > compr_args.end)
+> > +		return -EINVAL;
+> > +
+> > +	mutex_lock(&inode->i_mutex);
+> > +
+> > +	offset = compr_args.start;
+> > +	if (inode->i_size > compr_args.end)
+> > +		len = compr_args.end;
+> > +	else
+> > +		len = inode->i_size;
+> > +
+> > +	/*
+> > +	 * do any pending delalloc/csum calc on inode, one way or
+> > +	 * another, and lock file content
+> > +	 */
+> > +	btrfs_wait_ordered_range(inode, compr_args.start, len);
+> > +
+> 
+> missing a lock_extent() ?
 
-So I've got a daily snapshot of my /home subvolume.  Due to a fat finger, I've
-damaged a rather large file so I'd like to pull if from one of these snapshot
-backups.  I don't want to simply copy the file since it's many gigs and cp
-- --reflink=always doesn't work (produces the error Invalid cross-device link).
-Is there a way to recover that file and benefit from COW?
-- -- 
-- -=[dave]=-
+yeah right, thanks, it was missing even in the original implementation
+and was left unnoticed.
 
-Entropy isn't what it used to be.
------BEGIN PGP SIGNATURE-----
-Version: GnuPG v1.4.11 (GNU/Linux)
+> and we may adjust i_mutex and [un]lock_extent.
 
-iF4EAREIAAYFAk7wpKUACgkQXM0u5ajNnCgMUQD/Uf0/HygZ9D8StT9Oc6E3+wM/
-MBokh6h1iPN2OslJTxgA/RUzFMM2n0+3ORHwvOraJMBJl1P4JfabT31iuemn/BL2
-=2cds
------END PGP SIGNATURE-----
+adjusted which way? I have swapped order of unlock_extent/mutex_unlock
+as it was in the wrong order wrt locking. I'll send V2 in a minute.
+
+
+thanks,
+david

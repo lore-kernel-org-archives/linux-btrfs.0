@@ -1,109 +1,51 @@
 From: Chris Mason <chris.mason@oracle.com>
-Subject: [CFP] Linux Storage, Filesystem & Memory Management Summit 2012
- (April 1-2)
-Date: Wed, 21 Dec 2011 13:55:17 -0500
-Message-ID: <20111221185517.GW19266@shiny>
+Subject: Re: "btrfs: open_ctree failed" error
+Date: Wed, 21 Dec 2011 14:06:05 -0500
+Message-ID: <20111221190605.GY19266@shiny>
+References: <loom.20111221T141346-863@post.gmane.org>
 Mime-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
-To: linux-btrfs@vger.kernel.org
+Cc: linux-btrfs@vger.kernel.org
+To: Malwina Bartoszynska <m.bartoszynska@rootbox.com>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
+In-Reply-To: <loom.20111221T141346-863@post.gmane.org>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hi everyone,
+On Wed, Dec 21, 2011 at 01:54:06PM +0000, Malwina Bartoszynska wrote:
+> Hello,
+> after unmounting btrfs partition, I can't mount it again.
+> 
+> root@xxx:~# btrfs device scan
+> Scanning for Btrfs filesystems
+> root@xxx:~# mount /dev/sdb /data/osd.0/
+> mount: wrong fs type, bad option, bad superblock on /dev/sdb,
+>        missing codepage or helper program, or other error
+>        In some cases useful info is found in syslog - try
+>        dmesg | tail  or so
+> 
+> root@xxxx:~# dmesg|tail
+> [57192.607912] device fsid ed25c604-3e11-4459-85b5-e4090c4d22d0 devid 
+> 2 transid14429 /dev/sda
+> [57204.796573] end_request: I/O error, dev fd0, sector 0
+> [57231.660913] device fsid ed25c604-3e11-4459-85b5-e4090c4d22d0 devid 1
+>  transid 14429 /dev/sdb
+> [57231.680387] parent transid verify failed on 424308420608 wanted 6970
+>  found 8959
+> [57231.680546] parent transid verify failed on 424308420608 wanted 6970
+> found 8959
+> [57231.680705] parent transid verify failed on 424308420608 wanted 6970 
+> found 8959
+> [57231.680861] parent transid verify failed on 424308420608 wanted 6970 
+> found 8959
+> [57231.680869] parent transid verify failed on 424308420608 wanted 6970 
+> found 8959
+> [57231.680875] Failed to read block groups: -5
+> [57231.704165] btrfs: open_ctree failed
 
-The LSF is a fantastic Linux technical conference.  I encourage anyone
-doing heavy development in the FS, VM or storage area to consider
-submitting a proposal to attend.
+Can you tell us more about this filesystem?  Was there an unclean
+shutdown or did you just unmount, mount again?
 
-The annual Linux Storage, Filesystem and Memory Management Summit for
-2012 will be held on the 2 days preceding the Linux Foundation
-Collaboration Summit at Hotel Nikko in San Francisco, CA:
+The confusing thing is that all of your disks seem to have the same copy
+of the block, so it looks like things were written properly.
 
-	https://events.linuxfoundation.org/events/lsfmm-summit
-	https://events.linuxfoundation.org/events/collaboration-summit/
-
-We'd therefore like to issue a call for agenda proposals that are
-suitable for cross-track discussion as well as more technical subjects
-for discussion in the breakout sessions.
-
-1) Suggestions for agenda topics should be sent before February 5th
-2012 to:
-
-lsf-pc@lists.linux-foundation.org
-
-and optionally cc the Linux list which would be most interested in it:
-
-SCSI: linux-scsi@vger.kernel.org
-FS: linux-fsdevel@vger.kernel.org
-MM: linux-mm@kvack.org
-
-Please remember to tag your subject with [LSF/MM TOPIC] to make it
-easier to track. Agenda topics and attendees will be selected by the
-programme committee, but the final agenda will be formed by consensus
-of the attendees on the day.
-
-We'll try to cap attendance at around 25-30 per track to facilitate
-discussions although the final numbers will depend on the room sizes at
-the venue.
-
-2) Requests to attend should be sent to:
-
-lsf-pc@lists.linux-foundation.org
-
-please summarize what expertise you will bring to the meeting, and what
-you'd like to discuss.  please also tag your email with [ATTEND] so
-there's less chance of it getting lost in the large mail pile.
-
-Presentations are allowed to guide discussion, but are strongly
-discouraged.  There will be no recording or audio bridge, however
-written minutes will be published as in previous years:
-
-2011:
-
-http://lwn.net/Articles/436871/
-http://lwn.net/Articles/437066/
-
-2010:
-http://lwn.net/Articles/399148/
-http://lwn.net/Articles/399313/
-http://lwn.net/Articles/400589/
-
-2009:
-http://lwn.net/Articles/327601/
-http://lwn.net/Articles/327740/
-http://lwn.net/Articles/328347/
-
-Prior years:
-http://www.usenix.org/events/lsf08/tech/lsf08sums.pdf
-http://www.usenix.org/publications/login/2007-06/openpdfs/lsf07sums.pdf
-
-3) If you have feedback on last year's meeting that we can use to
-improve this year's, please also send that to:
-
-lsf-pc@lists.linux-foundation.org
-
-Thank you on behalf of the Program Committee:
-
-Storage
-
-Jens Axboe
-James Bottomley
-Vivek Goyal
-Dan Williams
-
-Filesystems
-
-Trond Myklebust
-Chris Mason
-Christoph Hellwig
-Theodore Ts'o
-Mingming Cao
-Jan Kara
-Joel Becker
-
-MM
-
-Andrea Arcangeli
-Hugh Dickins
-Mel Gorman
-
+-chris

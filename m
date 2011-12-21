@@ -1,529 +1,122 @@
-From: Stefan Behrens <sbehrens@giantdisaster.de>
-Subject: [PATCH v2] Btrfs-progs: add command to get/reset device stats via ioctl
-Date: Wed, 21 Dec 2011 17:06:57 +0100
-Message-ID: <371a130356a9fe64810011095ad2f75a0372ad9f.1324477395.git.sbehrens@giantdisaster.de>
-References: <a25131138df35856fa143b9ddce746e47f147b2e.1323448579.git.sbehrens@giantdisaster.de>
+From: Elric Milon <whirm@gmx.com>
+Subject: kernel BUG at fs/btrfs/extent-tree.c:2287!
+Date: Wed, 21 Dec 2011 14:33:37 +0100
+Message-ID: <201112211433.37201.whirm@gmx.com>
+Mime-Version: 1.0
+Content-Type: text/plain;
+  charset="us-ascii"
 To: linux-btrfs@vger.kernel.org
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <a25131138df35856fa143b9ddce746e47f147b2e.1323448579.git.sbehrens@giantdisaster.de>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-"btrfs device stats" is used to retrieve and print the device stats.
-"btrfs device stats -z" is used to atomically retrieve, reset and
-print the stats.
+Hi, 
 
-Signed-off-by: Stefan Behrens <sbehrens@giantdisaster.de>
----
-Changes v1->v2:
-- Remove a verbose printf()
-- Cast u64 to unsigned long long for printf()
-- Update the man page
+I'm getting a Kernel Bug when trying to delete some file in a btrfs while 
+using 3.2.0-rc5.
 
- Makefile       |    4 +-
- btrfs.c        |    5 ++
- btrfs_cmds.c   |   67 ++++++++++++++++++++++++++++
- btrfs_cmds.h   |    5 ++
- ctree.h        |    6 +++
- devstats.c     |  135 ++++++++++++++++++++++++++++++++++++++++++++++++++++++++
- ioctl.h        |   27 +++++++++++
- man/btrfs.8.in |   13 +++++
- print-tree.c   |    6 +++
- scrub.c        |   74 +-----------------------------
- 10 files changed, 269 insertions(+), 73 deletions(-)
+Here's the kernel log:
+[  676.672080] btrfs bad tree block start 0 40044687360
+[  676.672233] btrfs bad tree block start 0 40044687360
+[  676.672323] btrfs bad tree block start 0 40044687360
+[  676.672399] btrfs bad tree block start 0 40044687360
+[  676.672488] btrfs bad tree block start 0 40044687360
+[  676.672562] btrfs bad tree block start 0 40044687360
+[  676.672637] btrfs bad tree block start 0 40044687360
+[  676.672679] ------------[ cut here ]------------
+[  676.672726] kernel BUG at fs/btrfs/extent-tree.c:2287!
+[  676.672769] invalid opcode: 0000 [#1] PREEMPT SMP 
+[  676.672818] CPU 0 
+[  676.672836] Modules linked in: bnep rfcomm pci_stub vboxpci(O) 
+vboxnetadp(O) vboxnetflt(O) vboxdrv(O) binfmt_misc fuse btusb bluetooth 
+usb_storage usbhid hid loop kvm_intel kvm snd_hda_codec_hdmi snd_hda_codec_idt 
+snd_hda_intel snd_hda_codec snd_hwdep snd_pcm_oss snd_mixer_oss snd_pcm 
+snd_seq snd_timer snd_seq_device snd uhci_hcd sdhci_pci sdhci ehci_hcd 
+mmc_core soundcore iTCO_wdt pcspkr snd_page_alloc mei(C) iTCO_vendor_support 
+i2c_i801 usbcore usb_common tpm_tis tpm tpm_bios ac scsi_wait_scan thermal 
+sd_mod crc_t10dif [last unloaded: scsi_wait_scan]
+[  676.673377] 
+[  676.673393] Pid: 5225, comm: rm Tainted: G         C O 3.2.0-rc5 #5 Dell 
+Inc. Latitude E4300                  /0D201R
+[  676.673484] RIP: 0010:[<ffffffff81201d19>]  [<ffffffff81201d19>] 
+run_clustered_refs+0x638/0x678
+[  676.673560] RSP: 0018:ffff8800a9b3bc28  EFLAGS: 00010282
+[  676.673603] RAX: 00000000fffffffb RBX: ffff8800ad59a9c0 RCX: 
+00000001801c0014
+[  676.673653] RDX: 00000001801c0015 RSI: ffffea000458b100 RDI: 
+0000000040120000
+[  676.673653] RBP: ffff8800a9b3bd08 R08: ffff8801162c4b40 R09: 
+00000001801c0001
+[  676.673653] R10: 0000000000000000 R11: 0000000952d97000 R12: 
+0000000000000000
+[  676.673653] R13: ffff8800bdf01a80 R14: ffff88010354e000 R15: 
+0000000000000000
+[  676.673653] FS:  00007f2a7322e700(0000) GS:ffff88011bc00000(0000) 
+knlGS:0000000000000000
+[  676.673653] CS:  0010 DS: 0000 ES: 0000 CR0: 000000008005003b
+[  676.673653] CR2: 00000000008a40a8 CR3: 00000000bdc5f000 CR4: 
+00000000000006f0
+[  676.673653] DR0: 0000000000000000 DR1: 0000000000000000 DR2: 
+0000000000000000
+[  676.673653] DR3: 0000000000000000 DR6: 00000000ffff0ff0 DR7: 
+0000000000000400
+[  676.673653] Process rm (pid: 5225, threadinfo ffff8800a9b3a000, task 
+ffff88001e906740)
+[  676.673653] Stack:
+[  676.673653]  0000000000034885 0000000000000000 ffff880000000001 
+0000000000000000
+[  676.673653]  ffff8800a9b3bc68 ffffffff810336f0 ffff8801161e1658 
+ffff8800a9b3bd38
+[  676.673653]  ffff8800a9b3bba8 0000000000000001 ffff8801161e1660 
+0000000000000005
+[  676.673653] Call Trace:
+[  676.673653]  [<ffffffff810336f0>] ? get_parent_ip+0xf/0x40
+[  676.673653]  [<ffffffff8123e641>] ? btrfs_find_ref_cluster+0xf6/0x137
+[  676.673653]  [<ffffffff81201e25>] btrfs_run_delayed_refs+0xcc/0x17c
+[  676.673653]  [<ffffffff811f5d3a>] ? btrfs_free_path+0x22/0x26
+[  676.673653]  [<ffffffff8120fa5e>] __btrfs_end_transaction+0x98/0x1f3
+[  676.673653]  [<ffffffff8120fbf0>] btrfs_end_transaction_throttle+0x13/0x15
+[  676.673653]  [<ffffffff81211a56>] __unlink_end_trans+0x68/0x6d
+[  676.673653]  [<ffffffff81216558>] btrfs_unlink+0x8a/0xa7
+[  676.673653]  [<ffffffff810f5d83>] vfs_unlink+0x6f/0xbd
+[  676.673653]  [<ffffffff810f5eba>] do_unlinkat+0xe9/0x173
+[  676.673653]  [<ffffffff810e993b>] ? filp_close+0x69/0x75
+[  676.673653]  [<ffffffff810f71d7>] sys_unlinkat+0x24/0x26
+[  676.673653]  [<ffffffff8149dcbb>] system_call_fastpath+0x16/0x1b
+[  676.673653] Code: 89 74 24 10 48 8b 73 48 48 89 74 24 08 48 8b 73 40 48 89 
+34 24 48 8b 7d a0 4c 89 f6 e8 d4 c9 ff ff eb 04 0f 0b 0f 0b 85 c0 74 02 <0f> 
+0b 48 89 df e8 d6 a5 ff ff 4c 89 e7 e8 aa 15 ee ff ff 45 94 
+[  676.673653] RIP  [<ffffffff81201d19>] run_clustered_refs+0x638/0x678
+[  676.673653]  RSP <ffff8800a9b3bc28>
+[  676.714652] ---[ end trace 40a721fc91a71635 ]---
 
-diff --git a/Makefile b/Makefile
-index eeb92ad..c7ad82b 100644
---- a/Makefile
-+++ b/Makefile
-@@ -36,8 +36,8 @@ all: version $(progs) manpages
- version:
- 	bash version.sh
- 
--btrfs: $(objects) btrfs.o btrfs_cmds.o scrub.o
--	$(CC) $(CFLAGS) -o btrfs btrfs.o btrfs_cmds.o scrub.o \
-+btrfs: $(objects) btrfs.o btrfs_cmds.o scrub.o devstats.o
-+	$(CC) $(CFLAGS) -o btrfs btrfs.o btrfs_cmds.o scrub.o devstats.o \
- 		$(objects) $(LDFLAGS) $(LIBS) -lpthread
- 
- calc-size: $(objects) calc-size.o
-diff --git a/btrfs.c b/btrfs.c
-index 1def354..078729a 100644
---- a/btrfs.c
-+++ b/btrfs.c
-@@ -159,6 +159,11 @@ static struct Command commands[] = {
- 		"filesystem.",
- 	  NULL
- 	},
-+	{ do_device_stats, -1,
-+	  "device stats", "[-z] <path>|<device>\n"
-+		"Show current device IO stats. -z to reset stats afterwards.",
-+	  NULL
-+	},
- 	{ do_add_volume, -2,
- 	  "device add", "<device> [<device>...] <path>\n"
- 		"Add a device to a filesystem.",
-diff --git a/btrfs_cmds.c b/btrfs_cmds.c
-index b59e9cb..065e103 100644
---- a/btrfs_cmds.c
-+++ b/btrfs_cmds.c
-@@ -117,6 +117,73 @@ int open_file_or_dir(const char *fname)
- 	return fd;
- }
- 
-+int get_device_info(int fd, u64 devid,
-+		    struct btrfs_ioctl_dev_info_args *di_args)
-+{
-+	int ret;
-+
-+	di_args->devid = devid;
-+	memset(&di_args->uuid, '\0', sizeof(di_args->uuid));
-+
-+	ret = ioctl(fd, BTRFS_IOC_DEV_INFO, di_args);
-+	return ret ? -errno : 0;
-+}
-+
-+int get_fs_info(int fd, char *path, struct btrfs_ioctl_fs_info_args *fi_args,
-+		struct btrfs_ioctl_dev_info_args **di_ret)
-+{
-+	int ret = 0;
-+	int ndevs = 0;
-+	int i = 1;
-+	struct btrfs_fs_devices *fs_devices_mnt = NULL;
-+	struct btrfs_ioctl_dev_info_args *di_args;
-+	char mp[BTRFS_PATH_NAME_MAX + 1];
-+
-+	memset(fi_args, 0, sizeof(*fi_args));
-+
-+	ret = ioctl(fd, BTRFS_IOC_FS_INFO, fi_args);
-+	if (ret && (errno == EINVAL || errno == ENOTTY)) {
-+		/* path is not a mounted btrfs. Try if it's a device */
-+		ret = check_mounted_where(fd, path, mp, sizeof(mp),
-+					  &fs_devices_mnt);
-+		if (!ret)
-+			return -EINVAL;
-+		if (ret < 0)
-+			return ret;
-+		fi_args->num_devices = 1;
-+		fi_args->max_id = fs_devices_mnt->latest_devid;
-+		i = fs_devices_mnt->latest_devid;
-+		memcpy(fi_args->fsid, fs_devices_mnt->fsid, BTRFS_FSID_SIZE);
-+		close(fd);
-+		fd = open_file_or_dir(mp);
-+		if (fd < 0)
-+			return -errno;
-+	} else if (ret) {
-+		return -errno;
-+	}
-+
-+	if (!fi_args->num_devices)
-+		return 0;
-+
-+	di_args = *di_ret = malloc(fi_args->num_devices * sizeof(*di_args));
-+	if (!di_args)
-+		return -errno;
-+
-+	for (; i <= fi_args->max_id; ++i) {
-+		BUG_ON(ndevs >= fi_args->num_devices);
-+		ret = get_device_info(fd, i, &di_args[ndevs]);
-+		if (ret == -ENODEV)
-+			continue;
-+		if (ret)
-+			return ret;
-+		ndevs++;
-+	}
-+
-+	BUG_ON(ndevs == 0);
-+
-+	return 0;
-+}
-+
- static u64 parse_size(char *s)
- {
- 	int len = strlen(s);
-diff --git a/btrfs_cmds.h b/btrfs_cmds.h
-index 81182b1..6be9cc5 100644
---- a/btrfs_cmds.h
-+++ b/btrfs_cmds.h
-@@ -41,4 +41,9 @@ int do_change_label(int argc, char **argv);
- int open_file_or_dir(const char *fname);
- int do_ino_to_path(int nargs, char **argv);
- int do_logical_to_ino(int nargs, char **argv);
-+int do_device_stats(int nargs, char **argv);
-+int get_device_info(int fd, u64 devid,
-+		    struct btrfs_ioctl_dev_info_args *di_args);
-+int get_fs_info(int fd, char *path, struct btrfs_ioctl_fs_info_args *fi_args,
-+		struct btrfs_ioctl_dev_info_args **di_ret);
- char *path_for_root(int fd, u64 root);
-diff --git a/ctree.h b/ctree.h
-index 54748c8..12a0603 100644
---- a/ctree.h
-+++ b/ctree.h
-@@ -912,6 +912,12 @@ struct btrfs_root {
- #define BTRFS_CHUNK_ITEM_KEY	228
- 
- /*
-+ * Persistantly stores the io stats in the device tree.
-+ * One key for all stats, (0, BTRFS_DEVICE_STATS_KEY, devid).
-+ */
-+#define BTRFS_DEVICE_STATS_KEY	248
-+
-+/*
-  * string items are for debugging.  They just store a short string of
-  * data in the FS
-  */
-diff --git a/devstats.c b/devstats.c
-new file mode 100644
-index 0000000..b46fcf6
---- /dev/null
-+++ b/devstats.c
-@@ -0,0 +1,135 @@
-+/*
-+ * Copyright (C) STRATO AG 2011.  All rights reserved.
-+ *
-+ * This program is free software; you can redistribute it and/or
-+ * modify it under the terms of the GNU General Public
-+ * License v2 as published by the Free Software Foundation.
-+ *
-+ * This program is distributed in the hope that it will be useful,
-+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
-+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
-+ * General Public License for more details.
-+ *
-+ * You should have received a copy of the GNU General Public
-+ * License along with this program; if not, write to the
-+ * Free Software Foundation, Inc., 59 Temple Place - Suite 330,
-+ * Boston, MA 021110-1307, USA.
-+ */
-+#include <stdio.h>
-+#include <stdlib.h>
-+#include <sys/ioctl.h>
-+#include <unistd.h>
-+
-+#include "ctree.h"
-+#include "ioctl.h"
-+#include "btrfs_cmds.h"
-+#include "utils.h"
-+#include "volumes.h"
-+#include "disk-io.h"
-+
-+
-+int do_device_stats(int argc, char **argv)
-+{
-+	char *path;
-+	struct btrfs_ioctl_fs_info_args fi_args;
-+	struct btrfs_ioctl_dev_info_args *di_args = NULL;
-+	int ret;
-+	int fdmnt;
-+	int i;
-+	char c;
-+	int fdres = -1;
-+	int err = 0;
-+	int cmd = BTRFS_IOC_GET_DEVICE_STATS;
-+
-+	optind = 1;
-+	while ((c = getopt(argc, argv, "z")) != -1) {
-+		switch (c) {
-+		case 'z':
-+			cmd = BTRFS_IOC_GET_AND_RESET_DEVICE_STATS;
-+			break;
-+		case '?':
-+		default:
-+			fprintf(stderr, "ERROR: device stat args invalid.\n"
-+					" device stat [-z] <path>|<device>\n"
-+					" -z  to reset stats after reading.\n");
-+			return 1;
-+		}
-+	}
-+
-+	if (optind + 1 != argc) {
-+		fprintf(stderr, "ERROR: device stat needs path|device as single"
-+			" argument\n");
-+		return 1;
-+	}
-+
-+	path = argv[optind];
-+
-+	fdmnt = open_file_or_dir(path);
-+	if (fdmnt < 0) {
-+		fprintf(stderr, "ERROR: can't access '%s'\n", path);
-+		return 12;
-+	}
-+
-+	ret = get_fs_info(fdmnt, path, &fi_args, &di_args);
-+	if (ret) {
-+		fprintf(stderr, "ERROR: getting dev info for devstats failed: "
-+				"%s\n", strerror(-ret));
-+		err = 1;
-+		goto out;
-+	}
-+	if (!fi_args.num_devices) {
-+		fprintf(stderr, "ERROR: no devices found\n");
-+		err = 1;
-+		goto out;
-+	}
-+
-+	for (i = 0; i < fi_args.num_devices; i++) {
-+		struct btrfs_ioctl_get_device_stats args = {0};
-+		__u8 path[BTRFS_DEVICE_PATH_NAME_MAX + 1];
-+
-+		strncpy((char *)path, (char *)di_args[i].path,
-+			BTRFS_DEVICE_PATH_NAME_MAX);
-+		path[BTRFS_DEVICE_PATH_NAME_MAX] = '\0';
-+
-+		args.devid = di_args[i].devid;
-+		args.nr_items = BTRFS_IOCTL_GET_DEVICE_STATS_MAX_NR_ITEMS;
-+
-+		if (ioctl(fdmnt, cmd, &args) < 0) {
-+			fprintf(stderr, "ERROR: ioctl(%s) on %s failed: %s\n",
-+			        BTRFS_IOC_GET_AND_RESET_DEVICE_STATS == cmd ?
-+			         "BTRFS_IOC_GET_AND_RESET_DEVICE_STATS" :
-+			         "BTRFS_IOC_GET_DEVICE_STATS",
-+			        path, strerror(errno));
-+			err = 1;
-+		} else {
-+			if (args.nr_items >= 1) 
-+				printf("[%s].cnt_write_io_errs   %llu\n",
-+				       path, (unsigned long long)
-+					     args.cnt_write_io_errs);
-+			if (args.nr_items >= 2) 
-+				printf("[%s].cnt_read_io_errs    %llu\n",
-+				       path, (unsigned long long)
-+					     args.cnt_read_io_errs);
-+			if (args.nr_items >= 3) 
-+				printf("[%s].cnt_flush_io_errs   %llu\n",
-+				       path, (unsigned long long)
-+					     args.cnt_flush_io_errs);
-+			if (args.nr_items >= 4) 
-+				printf("[%s].cnt_corruption_errs %llu\n",
-+				       path, (unsigned long long)
-+					     args.cnt_corruption_errs);
-+			if (args.nr_items >= 5) 
-+				printf("[%s].cnt_generation_errs %llu\n",
-+				       path, (unsigned long long)
-+					     args.cnt_generation_errs);
-+		}
-+	}
-+
-+out:
-+	free(di_args);
-+	close(fdmnt);
-+	if (fdres > -1)
-+		close(fdres);
-+
-+	return err;
-+}
-diff --git a/ioctl.h b/ioctl.h
-index 1ae7537..01bf158 100644
---- a/ioctl.h
-+++ b/ioctl.h
-@@ -224,6 +224,29 @@ struct btrfs_ioctl_logical_ino_args {
- 	__u64				inodes;
- };
- 
-+#define BTRFS_IOCTL_GET_DEVICE_STATS_MAX_NR_ITEMS	5
-+struct btrfs_ioctl_get_device_stats {
-+	__u64 devid;				/* in */
-+	__u64 nr_items;				/* in/out */
-+
-+	/* out values: */
-+
-+	/* disk I/O failure stats */
-+	__u64 cnt_write_io_errs; /* EIO or EREMOTEIO from lower layers */
-+	__u64 cnt_read_io_errs; /* EIO or EREMOTEIO from lower layers */
-+	__u64 cnt_flush_io_errs; /* EIO or EREMOTEIO from lower layers */
-+
-+	/* stats for indirect indications for I/O failures */
-+	__u64 cnt_corruption_errs; /* checksum error, bytenr error or
-+				    * contents is illegal: this is an
-+				    * indication that the block was damaged
-+				    * during read or write, or written to
-+				    * wrong location or read from wrong
-+				    * location */
-+	__u64 cnt_generation_errs; /* an indication that blocks have not
-+				    * been written */
-+};
-+
- /* BTRFS_IOC_SNAP_CREATE is no longer used by the btrfs command */
- #define BTRFS_IOC_SNAP_CREATE _IOW(BTRFS_IOCTL_MAGIC, 1, \
- 				   struct btrfs_ioctl_vol_args)
-@@ -277,5 +300,9 @@ struct btrfs_ioctl_logical_ino_args {
- 					struct btrfs_ioctl_ino_path_args)
- #define BTRFS_IOC_LOGICAL_INO _IOWR(BTRFS_IOCTL_MAGIC, 36, \
- 					struct btrfs_ioctl_ino_path_args)
-+#define BTRFS_IOC_GET_DEVICE_STATS _IOWR(BTRFS_IOCTL_MAGIC, 52, \
-+					 struct btrfs_ioctl_get_device_stats)
-+#define BTRFS_IOC_GET_AND_RESET_DEVICE_STATS _IOWR(BTRFS_IOCTL_MAGIC, 53, \
-+					 struct btrfs_ioctl_get_device_stats)
- 
- #endif
-diff --git a/man/btrfs.8.in b/man/btrfs.8.in
-index be478e0..14a5ded 100644
---- a/man/btrfs.8.in
-+++ b/man/btrfs.8.in
-@@ -35,6 +35,8 @@ btrfs \- control a btrfs filesystem
- .PP
- \fBbtrfs\fP \fBdevice show\fP\fI [--all-devices|<uuid>|<label>]\fP
- .PP
-+\fBbtrfs\fP \fBdevice stats\fP [-z] {\fI<path>\fP|\fI<device>\fP}
-+.PP
- \fBbtrfs\fP \fBdevice add\fP\fI <device> [<device>...] <path> \fP
- .PP
- \fBbtrfs\fP \fBdevice delete\fP\fI <device> [<device>...] <path> \fP
-@@ -230,6 +232,17 @@ Finally, if \fB--all-devices\fP is passed, all the devices under /dev are
- scanned.
- .TP
- 
-+\fBdevice stats\fP [-z] {\fI<path>\fP|\fI<device>\fP}
-+Read and print the device IO stats for all devices of the filesystem
-+identified by \fI<path>\fR or for a single \fI<device>\fR.
-+.RS
-+
-+\fIOptions\fR
-+.IP -z 5
-+Reset stats to zero after reading them.
-+.RE
-+.TP
-+
- \fBscrub start\fP [-Bdqru] {\fI<path>\fP|\fI<device>\fP}
- Start a scrub on all devices of the filesystem identified by \fI<path>\fR or on
- a single \fI<device>\fR. Without options, scrub is started as a background
-diff --git a/print-tree.c b/print-tree.c
-index 6039699..0923cd4 100644
---- a/print-tree.c
-+++ b/print-tree.c
-@@ -354,6 +354,9 @@ static void print_key_type(u8 type)
- 	case BTRFS_STRING_ITEM_KEY:
- 		printf("STRING_ITEM");
- 		break;
-+	case BTRFS_DEVICE_STATS_KEY:
-+		printf("DEVICE_STATS_ITEM");
-+		break;
- 	default:
- 		printf("UNKNOWN");
- 	};
-@@ -603,6 +606,9 @@ void btrfs_print_leaf(struct btrfs_root *root, struct extent_buffer *l)
- 			str = l->data + btrfs_item_ptr_offset(l, i);
- 			printf("\t\titem data %.*s\n", btrfs_item_size(l, item), str);
- 			break;
-+		case BTRFS_DEVICE_STATS_KEY:
-+			printf("\t\tdevice stats\n");
-+			break;
- 		};
- 		fflush(stdout);
- 	}
-diff --git a/scrub.c b/scrub.c
-index 9dca5f6..ab3dc96 100644
---- a/scrub.c
-+++ b/scrub.c
-@@ -961,74 +961,6 @@ static struct scrub_file_record *last_dev_scrub(
- 	return NULL;
- }
- 
--static int scrub_device_info(int fd, u64 devid,
--			     struct btrfs_ioctl_dev_info_args *di_args)
--{
--	int ret;
--
--	di_args->devid = devid;
--	memset(&di_args->uuid, '\0', sizeof(di_args->uuid));
--
--	ret = ioctl(fd, BTRFS_IOC_DEV_INFO, di_args);
--	return ret ? -errno : 0;
--}
--
--static int scrub_fs_info(int fd, char *path,
--				struct btrfs_ioctl_fs_info_args *fi_args,
--				struct btrfs_ioctl_dev_info_args **di_ret)
--{
--	int ret = 0;
--	int ndevs = 0;
--	int i = 1;
--	struct btrfs_fs_devices *fs_devices_mnt = NULL;
--	struct btrfs_ioctl_dev_info_args *di_args;
--	char mp[BTRFS_PATH_NAME_MAX + 1];
--
--	memset(fi_args, 0, sizeof(*fi_args));
--
--	ret = ioctl(fd, BTRFS_IOC_FS_INFO, fi_args);
--	if (ret && errno == EINVAL) {
--		/* path is no mounted btrfs. try if it's a device */
--		ret = check_mounted_where(fd, path, mp, sizeof(mp),
--						&fs_devices_mnt);
--		if (!ret)
--			return -EINVAL;
--		if (ret < 0)
--			return ret;
--		fi_args->num_devices = 1;
--		fi_args->max_id = fs_devices_mnt->latest_devid;
--		i = fs_devices_mnt->latest_devid;
--		memcpy(fi_args->fsid, fs_devices_mnt->fsid, BTRFS_FSID_SIZE);
--		close(fd);
--		fd = open_file_or_dir(mp);
--		if (fd < 0)
--			return -errno;
--	} else if (ret) {
--		return -errno;
--	}
--
--	if (!fi_args->num_devices)
--		return 0;
--
--	di_args = *di_ret = malloc(fi_args->num_devices * sizeof(*di_args));
--	if (!di_args)
--		return -errno;
--
--	for (; i <= fi_args->max_id; ++i) {
--		BUG_ON(ndevs >= fi_args->num_devices);
--		ret = scrub_device_info(fd, i, &di_args[ndevs]);
--		if (ret == -ENODEV)
--			continue;
--		if (ret)
--			return ret;
--		++ndevs;
--	}
--
--	BUG_ON(ndevs == 0);
--
--	return 0;
--}
--
- int mkdir_p(char *path)
- {
- 	int i;
-@@ -1151,7 +1083,7 @@ static int scrub_start(int argc, char **argv, int resume)
- 		return 12;
- 	}
- 
--	ret = scrub_fs_info(fdmnt, path, &fi_args, &di_args);
-+	ret = get_fs_info(fdmnt, path, &fi_args, &di_args);
- 	if (ret) {
- 		ERR(!do_quiet, "ERROR: getting dev info for scrub failed: "
- 		    "%s\n", strerror(-ret));
-@@ -1543,7 +1475,6 @@ int do_scrub_status(int argc, char **argv)
- 	int ret;
- 	int fdmnt;
- 	int i;
--	optind = 1;
- 	int print_raw = 0;
- 	int do_stats_per_dev = 0;
- 	char c;
-@@ -1551,6 +1482,7 @@ int do_scrub_status(int argc, char **argv)
- 	int fdres = -1;
- 	int err = 0;
- 
-+	optind = 1;
- 	while ((c = getopt(argc, argv, "dR")) != -1) {
- 		switch (c) {
- 		case 'd':
-@@ -1581,7 +1513,7 @@ int do_scrub_status(int argc, char **argv)
- 		return 12;
- 	}
- 
--	ret = scrub_fs_info(fdmnt, path, &fi_args, &di_args);
-+	ret = get_fs_info(fdmnt, path, &fi_args, &di_args);
- 	if (ret) {
- 		fprintf(stderr, "ERROR: getting dev info for scrub failed: "
- 				"%s\n", strerror(-ret));
+
+###############
+
+
+Mount options are:
+ rw,nosuid,relatime,compress=lzo,ssd,discard,space_cache,inode_cache
+
+The FS is on LVM on a Vertex II SSD disk. 
+
+If I run a scrub it aborts after reading 1.8GB and some more lines appear in 
+the kernel log:
+
+[ 1066.807925] btrfs bad tree block start 0 40044888064
+[ 1066.808430] btrfs bad tree block start 0 40044888064
+[ 1066.808523] btrfs bad tree block start 0 40044888064
+[ 1066.808584] btrfs bad tree block start 0 40044888064
+[ 1066.808674] btrfs bad tree block start 0 40044888064
+[ 1066.808750] btrfs bad tree block start 0 40044888064
+[ 1066.808822] btrfs bad tree block start 0 40044888064
+
+
+Are there any patches I can try to see if they fix this?
+
+I'm available to run some tests or provide more info if required.
+
+Thanks.
+
+
 -- 
-1.7.3.4
 
+Elric Milon

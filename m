@@ -1,42 +1,136 @@
-From: Dave Chinner <david@fromorbit.com>
-Subject: Re: [PATCH] fs: push file_update_time into ->page_mkwrite
-Date: Wed, 21 Dec 2011 15:11:26 +1100
-Message-ID: <20111221041126.GC23662@dastard>
-References: <1322581259-14409-1-git-send-email-josef@redhat.com>
- <20111129155020.GQ5635@quack.suse.cz>
+From: Malwina Bartoszynska <m.bartoszynska@rootbox.com>
+Subject: "btrfs: =?utf-8?b?b3Blbl9jdHJlZQ==?= failed" error
+Date: Wed, 21 Dec 2011 13:54:06 +0000 (UTC)
+Message-ID: <loom.20111221T141346-863@post.gmane.org>
 Mime-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
-Cc: Josef Bacik <josef@redhat.com>, linux-fsdevel@vger.kernel.org,
-	linux-btrfs@vger.kernel.org, viro@ZenIV.linux.org.uk,
-	hch@infradead.org
-To: Jan Kara <jack@suse.cz>
-Return-path: <linux-fsdevel-owner@vger.kernel.org>
-In-Reply-To: <20111129155020.GQ5635@quack.suse.cz>
+To: linux-btrfs@vger.kernel.org
+Return-path: <linux-btrfs-owner@vger.kernel.org>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Tue, Nov 29, 2011 at 04:50:20PM +0100, Jan Kara wrote:
-> On Tue 29-11-11 10:40:59, Josef Bacik wrote:
-> > The fault code has been calling file_update_time after ->page_mkwrite after it
-> > drops the page lock, but this is annoying because this calls mark_inode_dirty
-> > which can fail in Btrfs, so we want to be able to do these updates in
-> > ->page_mkwrite so we can get an error back to the user.  So get rid of the
-> > file_update_time calls in the fault code and push it into everybody who has a
-> > ->page_mkwrite.  I didn't do this for ubifs because it appears that ubifs
-> > already updates the time itself in ->page_mkwrite, presumebly for the same
-> > reasons as btrfs, so I left it as is.  Thanks,
->   But this effectively disables atime updates on mmaped writes for ext2,
-> ext3, and similar filesystems which is a no-go IMHO.
+Hello,
+after unmounting btrfs partition, I can't mount it again.
 
-Only because it requires all filesystems to implement ->page_mkwrite
-to maintain existing functionality.  .  The alternative is to say
-that if the filesystem implements the page-mkwrite method it must
-update the file times in that call, and then change the generic
-fault code to only update the file times if the filesystem doesn't
-implement page_mkwrite...
+root@xxx:~# btrfs device scan
+Scanning for Btrfs filesystems
+root@xxx:~# mount /dev/sdb /data/osd.0/
+mount: wrong fs type, bad option, bad superblock on /dev/sdb,
+       missing codepage or helper program, or other error
+       In some cases useful info is found in syslog - try
+       dmesg | tail  or so
 
-Cheers,
+root@xxxx:~# dmesg|tail
+[57192.607912] device fsid ed25c604-3e11-4459-85b5-e4090c4d22d0 devid 
+2 transid14429 /dev/sda
+[57204.796573] end_request: I/O error, dev fd0, sector 0
+[57231.660913] device fsid ed25c604-3e11-4459-85b5-e4090c4d22d0 devid 1
+ transid 14429 /dev/sdb
+[57231.680387] parent transid verify failed on 424308420608 wanted 6970
+ found 8959
+[57231.680546] parent transid verify failed on 424308420608 wanted 6970
+found 8959
+[57231.680705] parent transid verify failed on 424308420608 wanted 6970 
+found 8959
+[57231.680861] parent transid verify failed on 424308420608 wanted 6970 
+found 8959
+[57231.680869] parent transid verify failed on 424308420608 wanted 6970 
+found 8959
+[57231.680875] Failed to read block groups: -5
+[57231.704165] btrfs: open_ctree failed
+root@xxx:~#
+root@xxx:~# btrfs filesystem show
+Label: none  uuid: ed25c604-3e11-4459-85b5-e4090c4d22d0
+        Total devices 4 FS bytes used 111.07GB
+        devid    2 size 931.51GB used 56.02GB path /dev/sda
+        devid    1 size 931.51GB used 56.02GB path /dev/sdb
+        devid    4 size 232.89GB used 34.00GB path /dev/sdd
+        devid    3 size 184.26GB used 34.00GB path /dev/sdc4
 
-Dave.
+I was trying to fix it using btrfsc (from btrf-tools  0.19+20100601-3ubuntu3):
+
+root@xxx:~# btrfsck /dev/sdb
+parent transid verify failed on 424308420608 wanted 6970 found 8959
+parent transid verify failed on 424308420608 wanted 6970 found 8959
+parent transid verify failed on 424308420608 wanted 6970 found 8959
+Segmentation fault
+
+But it failed.
+Also btrfsc from current git repository failed. 
+root@xxx:/usr/src/test/btrfs-progs# ./btrfsck /dev/sdb
+parent transid verify failed on 424308420608 wanted 6970 found 8959
+parent transid verify failed on 424308420608 wanted 6970 found 8959
+parent transid verify failed on 424308420608 wanted 6970 found 8959
+parent transid verify failed on 424308420608 wanted 6970 found 8959
+Ignoring transid failure
+parent transid verify failed on 426205605888 wanted 8371 found 10836
+parent transid verify failed on 426205605888 wanted 8371 found 10836
+parent transid verify failed on 426205605888 wanted 8371 found 10836
+parent transid verify failed on 426205605888 wanted 8371 found 10836
+Ignoring transid failure
+parent transid verify failed on 424601571328 wanted 8959 found 10264
+parent transid verify failed on 424601571328 wanted 8959 found 10264
+parent transid verify failed on 424601571328 wanted 8959 found 10264
+parent transid verify failed on 424601571328 wanted 8959 found 10264
+Ignoring transid failure
+parent transid verify failed on 422394281984 wanted 6042 found 14369
+parent transid verify failed on 422394281984 wanted 6042 found 14369
+parent transid verify failed on 422394281984 wanted 6042 found 14369
+parent transid verify failed on 422394281984 wanted 6042 found 14369
+Ignoring transid failure
+parent transid verify failed on 422394277888 wanted 6042 found 14369
+parent transid verify failed on 422394277888 wanted 6042 found 14369
+parent transid verify failed on 422394277888 wanted 6042 found 14369
+parent transid verify failed on 422394277888 wanted 6042 found 14369
+Ignoring transid failure
+parent transid verify failed on 424867557376 wanted 8744 found 11654
+parent transid verify failed on 424867557376 wanted 8744 found 11654
+parent transid verify failed on 424867557376 wanted 8744 found 11654
+parent transid verify failed on 424867557376 wanted 8744 found 11654
+Ignoring transid failure
+parent transid verify failed on 426748997632 wanted 8747 found 9681
+parent transid verify failed on 426748997632 wanted 8747 found 9681
+parent transid verify failed on 426748997632 wanted 8747 found 9681
+parent transid verify failed on 426748997632 wanted 8747 found 9681
+Ignoring transid failure
+parent transid verify failed on 426748993536 wanted 8747 found 9681
+parent transid verify failed on 426748993536 wanted 8747 found 9681
+parent transid verify failed on 426748993536 wanted 8747 found 9681
+parent transid verify failed on 426748993536 wanted 8747 found 9681
+Ignoring transid failure
+parent transid verify failed on 426749001728 wanted 8747 found 9681
+parent transid verify failed on 426749001728 wanted 8747 found 9681
+parent transid verify failed on 426749001728 wanted 8747 found 9681
+parent transid verify failed on 426749001728 wanted 8747 found 9681
+Ignoring transid failure
+parent transid verify failed on 426749005824 wanted 8747 found 9681
+parent transid verify failed on 426749005824 wanted 8747 found 9681
+parent transid verify failed on 426749005824 wanted 8747 found 9681
+parent transid verify failed on 426749005824 wanted 8747 found 9681
+Ignoring transid failure
+parent transid verify failed on 423647268864 wanted 6496 found 11645
+parent transid verify failed on 423647268864 wanted 6496 found 11645
+parent transid verify failed on 423647268864 wanted 6496 found 11645
+parent transid verify failed on 423647268864 wanted 6496 found 11645
+Ignoring transid failure
+parent transid verify failed on 424308420608 wanted 6970 found 8959
+Ignoring transid failure
+leaf 417616629760 items 1 free space 3838 generation 5974 owner 7
+fs uuid ed25c604-3e11-4459-85b5-e4090c4d22d0
+chunk uuid b2b76fcf-3e03-4f9c-8cd1-4cad10c8bb2a
+        item 0 key (EXTENT_CSUM EXTENT_CSUM 375473815552) itemoff 3863
+ itemsize 
+132
+                extent csum item
+failed to find block number 292758224896
+Aborted
+
+
+I am using Btrfs v0.19 on Ubuntu 11.10(kernel  3.0.0-14-generic x86_64).
+
+How can I fix it?
+
+Best regards,
 -- 
-Dave Chinner
-david@fromorbit.com
+Malwina Bartoszynska
+
+

@@ -1,122 +1,348 @@
-From: Elric Milon <whirm@gmx.com>
-Subject: kernel BUG at fs/btrfs/extent-tree.c:2287!
-Date: Wed, 21 Dec 2011 14:33:37 +0100
-Message-ID: <201112211433.37201.whirm@gmx.com>
+From: Eric Sandeen <sandeen@sandeen.net>
+Subject: Re: [PATCH] xfstests: new check 276 to ensure btrfs backref integrity
+Date: Wed, 21 Dec 2011 11:48:16 -0600
+Message-ID: <4EF21BE0.4020009@sandeen.net>
+References: <1323264833-11075-1-git-send-email-list.btrfs@jan-o-sch.net>
 Mime-Version: 1.0
-Content-Type: text/plain;
-  charset="us-ascii"
-To: linux-btrfs@vger.kernel.org
-Return-path: <linux-btrfs-owner@vger.kernel.org>
+Content-Type: text/plain; charset="us-ascii"
+Cc: linux-btrfs@vger.kernel.org, xfs@oss.sgi.com
+To: Jan Schmidt <list.btrfs@jan-o-sch.net>
+Return-path: <xfs-bounces@oss.sgi.com>
+In-Reply-To: <1323264833-11075-1-git-send-email-list.btrfs@jan-o-sch.net>
+List-Unsubscribe: <http://oss.sgi.com/mailman/options/xfs>,
+	<mailto:xfs-request@oss.sgi.com?subject=unsubscribe>
+List-Archive: <http://oss.sgi.com/pipermail/xfs>
+List-Post: <mailto:xfs@oss.sgi.com>
+List-Help: <mailto:xfs-request@oss.sgi.com?subject=help>
+List-Subscribe: <http://oss.sgi.com/mailman/listinfo/xfs>,
+	<mailto:xfs-request@oss.sgi.com?subject=subscribe>
+Errors-To: xfs-bounces@oss.sgi.com
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hi, 
+On 12/7/11 7:33 AM, Jan Schmidt wrote:
+> This is a btrfs specific scratch test checking the backref walker. It
+> creates a file system with compressed and uncompressed data extents, picks
+> files randomly and uses filefrag to get their extents. It then asks the
+> btrfs utility (inspect-internal) to do the backref resolving from fs-logical
+> address (the one filefrag calls "physical") back to the inode number and
+> file-logical offset, verifying the result.
+> 
+> Signed-off-by: Jan Schmidt <list.btrfs@jan-o-sch.net>
+> ---
+>  276           |  230 +++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+>  276.out       |    4 +
+>  common.config |    1 +
+>  group         |    1 +
+>  4 files changed, 236 insertions(+), 0 deletions(-)
+>  create mode 100755 276
+>  create mode 100644 276.out
+> 
+> diff --git a/276 b/276
+> new file mode 100755
+> index 0000000..f22d089
+> --- /dev/null
+> +++ b/276
+> @@ -0,0 +1,230 @@
+> +#! /bin/bash
 
-I'm getting a Kernel Bug when trying to delete some file in a btrfs while 
-using 3.2.0-rc5.
+Please put copyright, license, test description etc here, following other
+existing tests as a template.
 
-Here's the kernel log:
-[  676.672080] btrfs bad tree block start 0 40044687360
-[  676.672233] btrfs bad tree block start 0 40044687360
-[  676.672323] btrfs bad tree block start 0 40044687360
-[  676.672399] btrfs bad tree block start 0 40044687360
-[  676.672488] btrfs bad tree block start 0 40044687360
-[  676.672562] btrfs bad tree block start 0 40044687360
-[  676.672637] btrfs bad tree block start 0 40044687360
-[  676.672679] ------------[ cut here ]------------
-[  676.672726] kernel BUG at fs/btrfs/extent-tree.c:2287!
-[  676.672769] invalid opcode: 0000 [#1] PREEMPT SMP 
-[  676.672818] CPU 0 
-[  676.672836] Modules linked in: bnep rfcomm pci_stub vboxpci(O) 
-vboxnetadp(O) vboxnetflt(O) vboxdrv(O) binfmt_misc fuse btusb bluetooth 
-usb_storage usbhid hid loop kvm_intel kvm snd_hda_codec_hdmi snd_hda_codec_idt 
-snd_hda_intel snd_hda_codec snd_hwdep snd_pcm_oss snd_mixer_oss snd_pcm 
-snd_seq snd_timer snd_seq_device snd uhci_hcd sdhci_pci sdhci ehci_hcd 
-mmc_core soundcore iTCO_wdt pcspkr snd_page_alloc mei(C) iTCO_vendor_support 
-i2c_i801 usbcore usb_common tpm_tis tpm tpm_bios ac scsi_wait_scan thermal 
-sd_mod crc_t10dif [last unloaded: scsi_wait_scan]
-[  676.673377] 
-[  676.673393] Pid: 5225, comm: rm Tainted: G         C O 3.2.0-rc5 #5 Dell 
-Inc. Latitude E4300                  /0D201R
-[  676.673484] RIP: 0010:[<ffffffff81201d19>]  [<ffffffff81201d19>] 
-run_clustered_refs+0x638/0x678
-[  676.673560] RSP: 0018:ffff8800a9b3bc28  EFLAGS: 00010282
-[  676.673603] RAX: 00000000fffffffb RBX: ffff8800ad59a9c0 RCX: 
-00000001801c0014
-[  676.673653] RDX: 00000001801c0015 RSI: ffffea000458b100 RDI: 
-0000000040120000
-[  676.673653] RBP: ffff8800a9b3bd08 R08: ffff8801162c4b40 R09: 
-00000001801c0001
-[  676.673653] R10: 0000000000000000 R11: 0000000952d97000 R12: 
-0000000000000000
-[  676.673653] R13: ffff8800bdf01a80 R14: ffff88010354e000 R15: 
-0000000000000000
-[  676.673653] FS:  00007f2a7322e700(0000) GS:ffff88011bc00000(0000) 
-knlGS:0000000000000000
-[  676.673653] CS:  0010 DS: 0000 ES: 0000 CR0: 000000008005003b
-[  676.673653] CR2: 00000000008a40a8 CR3: 00000000bdc5f000 CR4: 
-00000000000006f0
-[  676.673653] DR0: 0000000000000000 DR1: 0000000000000000 DR2: 
-0000000000000000
-[  676.673653] DR3: 0000000000000000 DR6: 00000000ffff0ff0 DR7: 
-0000000000000400
-[  676.673653] Process rm (pid: 5225, threadinfo ffff8800a9b3a000, task 
-ffff88001e906740)
-[  676.673653] Stack:
-[  676.673653]  0000000000034885 0000000000000000 ffff880000000001 
-0000000000000000
-[  676.673653]  ffff8800a9b3bc68 ffffffff810336f0 ffff8801161e1658 
-ffff8800a9b3bd38
-[  676.673653]  ffff8800a9b3bba8 0000000000000001 ffff8801161e1660 
-0000000000000005
-[  676.673653] Call Trace:
-[  676.673653]  [<ffffffff810336f0>] ? get_parent_ip+0xf/0x40
-[  676.673653]  [<ffffffff8123e641>] ? btrfs_find_ref_cluster+0xf6/0x137
-[  676.673653]  [<ffffffff81201e25>] btrfs_run_delayed_refs+0xcc/0x17c
-[  676.673653]  [<ffffffff811f5d3a>] ? btrfs_free_path+0x22/0x26
-[  676.673653]  [<ffffffff8120fa5e>] __btrfs_end_transaction+0x98/0x1f3
-[  676.673653]  [<ffffffff8120fbf0>] btrfs_end_transaction_throttle+0x13/0x15
-[  676.673653]  [<ffffffff81211a56>] __unlink_end_trans+0x68/0x6d
-[  676.673653]  [<ffffffff81216558>] btrfs_unlink+0x8a/0xa7
-[  676.673653]  [<ffffffff810f5d83>] vfs_unlink+0x6f/0xbd
-[  676.673653]  [<ffffffff810f5eba>] do_unlinkat+0xe9/0x173
-[  676.673653]  [<ffffffff810e993b>] ? filp_close+0x69/0x75
-[  676.673653]  [<ffffffff810f71d7>] sys_unlinkat+0x24/0x26
-[  676.673653]  [<ffffffff8149dcbb>] system_call_fastpath+0x16/0x1b
-[  676.673653] Code: 89 74 24 10 48 8b 73 48 48 89 74 24 08 48 8b 73 40 48 89 
-34 24 48 8b 7d a0 4c 89 f6 e8 d4 c9 ff ff eb 04 0f 0b 0f 0b 85 c0 74 02 <0f> 
-0b 48 89 df e8 d6 a5 ff ff 4c 89 e7 e8 aa 15 ee ff ff 45 94 
-[  676.673653] RIP  [<ffffffff81201d19>] run_clustered_refs+0x638/0x678
-[  676.673653]  RSP <ffff8800a9b3bc28>
-[  676.714652] ---[ end trace 40a721fc91a71635 ]---
+> +# creator
+> +owner=list.btrfs@jan-o-sch.net
+> +
+> +seq=`basename $0`
+> +echo "QA output created by $seq"
+> +
+> +here=`pwd`
+> +# 1=production, 0=avoid touching the scratch dev (no mount/umount, no writes)
+> +fresh=1
 
+I asked this on IRC but it seems unlikely that this will ever be changed.
+Is this essentially so you can debug a failure?  Might be worth a comment
+about under what conditions you would set it to 0.
 
-###############
+> +tmp=/tmp/$$
+> +status=1
+> +FSTYP=btrfs
 
+probably should not be explicitly set; no other test does this.
 
-Mount options are:
- rw,nosuid,relatime,compress=lzo,ssd,discard,space_cache,inode_cache
+> +
+> +_cleanup()
+> +{
+> +	if [ $fresh -ne 0 ]; then
+> +		echo "*** unmount" 
+> +		umount $SCRATCH_MNT 2>/dev/null
+> +	fi
+> +	rm -f $tmp.*
+> +}
+> +trap "_cleanup; exit \$status" 0 1 2 3 15
+> +
+> +# get standard environment, filters and checks
+> +. ./common.rc
+> +. ./common.filter
+> +
+> +# real QA test starts here
+> +_supported_fs btrfs
+> +_supported_os Linux
+> +
+> +if [ $fresh -ne 0 ]; then
+> +	_require_scratch
+> +fi
 
-The FS is on LVM on a Vertex II SSD disk. 
+If fresh == 0 then what device gets tested?
 
-If I run a scrub it aborts after reading 1.8GB and some more lines appear in 
-the kernel log:
+> +_require_nobigloopfs
+> +
+> +[ -n "$BTRFS_UTIL_PROG" ] || _notrun "btrfs executable not found"
+> +$BTRFS_UTIL_PROG inspect-internal --help >/dev/null 2>&1
+> +[ $? -eq 0 ] || _notrun "btrfs executable too old"
+> +which filefrag >/dev/null 2>&1
+> +[ $? -eq 0 ] || _notrun "filefrag missing"
 
-[ 1066.807925] btrfs bad tree block start 0 40044888064
-[ 1066.808430] btrfs bad tree block start 0 40044888064
-[ 1066.808523] btrfs bad tree block start 0 40044888064
-[ 1066.808584] btrfs bad tree block start 0 40044888064
-[ 1066.808674] btrfs bad tree block start 0 40044888064
-[ 1066.808750] btrfs bad tree block start 0 40044888064
-[ 1066.808822] btrfs bad tree block start 0 40044888064
+It might be nice to put these checks into (a) common.* file(s) if they
+might be useful in other tests going forward.
 
+> +
+> +
+> +rm -f $seq.full
+> +
 
-Are there any patches I can try to see if they fix this?
+comment on this filter's function please? :)
 
-I'm available to run some tests or provide more info if required.
+> +FILEFRAG_FILTER='if (/, blocksize (\d+)/) {$blocksize = $1; next} ($ext, '\
+> +'$logical, $physical, $expected, $length, $flags) = (/^\s*(\d+)\s+(\d+)'\
+> +'\s+(\d+)\s+(?:(\d+)\s+)?(\d+)\s+(.*)/) or next; $flags =~ '\
+> +'/(?:^|,)inline(?:,|$)/ and next; print $physical * $blocksize, "#", '\
+> +'$length * $blocksize, "#", $logical * $blocksize, " "'
+> +
+> +_filter_extents()
+> +{
+> +	tee -a $seq.full | $PERL_PROG -ne "$FILEFRAG_FILTER"
+> +}
+> +
+> +_check_file_extents()
+> +{
+> +	cmd="filefrag -vx $1"
+> +	echo "# $cmd" >> $seq.full
+> +	out=`$cmd | _filter_extents`
+> +	if [ -z "$out" ]; then
+> +		return 1
+> +	fi
+> +	echo "after filter: $out" >> $seq.full
+> +	echo $out
+> +	return 0
+> +}
 
-Thanks.
+maybe this should go in a common.* if it might be generically useful (see common.defrag, maybe)
 
+Can leave that to your judgement though.
 
--- 
+> +_btrfs_inspect_addr()
 
-Elric Milon
+I could really do with some comments explaining what this is doing, but then
+I am woefully btrfs-illiterate.
+
+> +{
+> +	mp=$1
+> +	addr=$2
+> +	expect_addr=$3
+> +	expect_inum=$4
+> +	file=$5
+> +	cmd="$BTRFS_UTIL_PROG inspect-internal logical-resolve -P $addr $mp"
+> +	echo "# $cmd" >> $seq.full
+> +	out=`$cmd`
+> +	echo "$out" >> $seq.full
+> +	grep_expr="inode $expect_inum offset $expect_addr root"
+> +	echo "$out" | grep "^$grep_expr 5$" >/dev/null
+> +	ret=$?
+> +	if [ $ret -eq 0 ]; then
+> +		# look for a root number that is not 5
+> +		echo "$out" | grep "^$grep_expr \([0-46-9][0-9]*\|5[0-9]\+\)$" \
+> +			>/dev/null
+> +		ret=$?
+> +	fi
+> +	if [ $ret -eq 0 ]; then
+> +		return 0
+> +	fi
+> +	echo "unexpected output from"
+> +	echo "	$cmd"
+> +	echo "expected inum: $expect_inum, expected address: $expect_addr,"\
+> +		"file: $file, got:"
+> +	echo "$out"
+> +	return 1
+> +}
+> +
+> +_btrfs_inspect_inum()
+> +{
+> +	file=$1
+> +	inum=$2
+> +	snap_name=$3
+> +	mp="$SCRATCH_MNT/$snap_name"
+
+Hm you conditionally required scratch, but use it here unconditionally I think?  Unless
+this is only called conditionally ... but I think you get here either way.
+
+> +	cmd="$BTRFS_UTIL_PROG inspect-internal inode-resolve $inum $mp"
+> +	echo "# $cmd" >> $seq.full
+> +	out=`$cmd`
+> +	echo "$out" >> $seq.full
+> +	grep_expr="^$file$"
+> +	cnt=`echo "$out" | grep "$grep_expr" | wc -l`
+> +	if [ $cnt -ge "1" ]; then
+> +		return 0
+> +	fi
+> +	echo "unexpected output from"
+> +	echo "	$cmd"
+> +	echo "expected path: $file, got:"
+> +	echo "$out"
+> +	return 1
+> +}
+> +
+> +_btrfs_inspect_check()
+> +{
+> +	file=$1
+> +	physical=$2
+> +	length=$3
+> +	logical=$4
+> +	snap_name=$5
+> +	cmd="stat -c %i $file"
+> +	echo "# $cmd" >> $seq.full
+> +	inum=`$cmd`
+> +	echo "$inum" >> $seq.full
+> +	_btrfs_inspect_addr "$SCRATCH_MNT/$snap_name" $physical $logical $inum\
+> +			$file
+
+scratch used unconditionally here as well?
+
+> +	ret=$?
+> +	if [ $ret -eq 0 ]; then
+> +		_btrfs_inspect_inum $file $inum $snap_name
+> +		ret=$?
+> +	fi
+> +	return $?
+> +}
+> +
+> +run_check()
+> +{
+> +	echo "# $@" >> $seq.full 2>&1
+> +	"$@" >> $seq.full 2>&1 || _fail "failed: '$@'"
+> +}
+
+Hm, that is handy.  :)
+
+> +workout()
+> +{
+> +	fsz=$1
+> +	nfiles=$2
+> +	procs=$3
+> +	snap_name=$4
+> +
+> +	if [ $fresh -ne 0 ]; then
+> +		umount $SCRATCH_DEV >/dev/null 2>&1
+> +		echo "*** mkfs -dsize=$fsz"    >>$seq.full
+> +		echo ""                                     >>$seq.full
+> +		_scratch_mkfs_sized $fsz >>$seq.full 2>&1 \
+> +			|| _fail "size=$fsz mkfs failed"
+> +		_scratch_mount                              >>$seq.full 2>&1 \
+> +			|| _fail "mount failed"
+> +		# -w ensures that the only ops are ones which cause write I/O
+> +		run_check $FSSTRESS_PROG -d $SCRATCH_MNT -w -p $procs -n 1000 \
+> +			$FSSTRESS_AVOID
+> +
+> +		run_check $BTRFS_UTIL_PROG subvol snap $SCRATCH_MNT \
+> +			$SCRATCH_MNT/$snap_name
+> +
+> +		run_check umount $SCRATCH_DEV >/dev/null 2>&1
+> +		run_check _scratch_mount "-o compress=lzo"
+> +
+> +		# -w ensures that the only ops are ones which cause write I/O
+> +		run_check $FSSTRESS_PROG -d $SCRATCH_MNT -w -p $procs -n 2000 \
+> +			$FSSTRESS_AVOID
+> +	else
+> +		echo "*** skipping mkfs part"	>>$seq.full
+> +	fi
+> +
+> +	cnt=0
+> +	errcnt=0
+> +	dir="$SCRATCH_MNT/$snap_name/"
+> +	for file in `find $dir -name f\* -size +0 | sort -R`; do
+> +		extents=`_check_file_extents $file`
+> +		ret=$?
+> +		if [ $ret -ne 0 ]; then
+> +			continue;
+> +		fi
+> +		for i in $extents; do
+> +			physical=$i
+> +			length=$i
+> +			logical=$i
+> +			physical=`echo $physical | sed -e 's/#.*//'`
+> +			length=`echo $length | sed -e 's/[^#]+#//'`
+> +			length=`echo $length | sed -e 's/#.*//'`
+> +			logical=`echo $logical | sed -e 's/.*#//'`
+> +			_btrfs_inspect_check $file $physical $length $logical \
+> +						$snap_name
+> +			ret=$?
+> +			if [ $ret -ne 0 ]; then
+> +				errcnt=`expr $errcnt + 1`
+> +			fi
+> +		done
+> +		cnt=`expr $cnt + 1`
+> +		if [ $cnt -ge $nfiles ]; then
+> +			break
+> +		fi
+> +	done
+> +	if [ $errcnt -gt 0 ]; then
+> +		echo "test failed: $errcnt error(s)"
+> +	fi
+> +}
+> +
+> +echo "*** test backref walking"
+> +
+> +snap_name="snap1"
+> +filesize=`expr 2000 \* 1024 \* 1024`
+> +nfiles=4
+> +numprocs=1
+> +
+> +workout $filesize $nfiles $numprocs $snap_name
+> +
+> +echo "*** done"
+> +status=0
+> +exit
+> diff --git a/276.out b/276.out
+> new file mode 100644
+> index 0000000..2032dea
+> --- /dev/null
+> +++ b/276.out
+> @@ -0,0 +1,4 @@
+> +QA output created by 276
+> +*** test backref walking
+> +*** done
+> +*** unmount
+> diff --git a/common.config b/common.config
+> index 1df2bbd..7bed1c5 100644
+> --- a/common.config
+> +++ b/common.config
+> @@ -185,6 +185,7 @@ case "$HOSTOS" in
+>          export MKFS_XFS_PROG="`set_prog_path mkfs.xfs`"
+>          export MKFS_UDF_PROG="`set_prog_path mkudffs`"
+>          export MKFS_BTRFS_PROG="`set_prog_path mkfs.btrfs`"
+> +        export BTRFS_UTIL_PROG="`set_prog_path btrfs`"
+>          export XFS_FSR_PROG="`set_prog_path xfs_fsr`"
+>          export MKFS_NFS_PROG="false"
+>          ;;
+> diff --git a/group b/group
+> index 08d999a..dd9f00d 100644
+> --- a/group
+> +++ b/group
+> @@ -389,3 +389,4 @@ deprecated
+>  273 auto rw
+>  274 auto rw
+>  275 auto rw
+> +276 auto rw metadata
+
+_______________________________________________
+xfs mailing list
+xfs@oss.sgi.com
+http://oss.sgi.com/mailman/listinfo/xfs

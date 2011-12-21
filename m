@@ -1,51 +1,20 @@
-From: Chris Mason <chris.mason@oracle.com>
-Subject: Re: "btrfs: open_ctree failed" error
-Date: Wed, 21 Dec 2011 14:06:05 -0500
-Message-ID: <20111221190605.GY19266@shiny>
-References: <loom.20111221T141346-863@post.gmane.org>
+From: Chris Baines <cbaines8@gmail.com>
+Subject: Re: kernel BUG at fs/btrfs/extent-tree.c:2287!
+Date: Wed, 21 Dec 2011 20:25:51 +0000
+Message-ID: <CAGGGvRugu0YkQqkPdAgOrZNiBE15tdUUz0fpO4ZRXhzPc=UeSg@mail.gmail.com>
+References: <201112211433.37201.whirm@gmx.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
+Content-Type: text/plain; charset=ISO-8859-1
 Cc: linux-btrfs@vger.kernel.org
-To: Malwina Bartoszynska <m.bartoszynska@rootbox.com>
+To: Elric Milon <whirm@gmx.com>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <loom.20111221T141346-863@post.gmane.org>
+In-Reply-To: <201112211433.37201.whirm@gmx.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Wed, Dec 21, 2011 at 01:54:06PM +0000, Malwina Bartoszynska wrote:
-> Hello,
-> after unmounting btrfs partition, I can't mount it again.
-> 
-> root@xxx:~# btrfs device scan
-> Scanning for Btrfs filesystems
-> root@xxx:~# mount /dev/sdb /data/osd.0/
-> mount: wrong fs type, bad option, bad superblock on /dev/sdb,
->        missing codepage or helper program, or other error
->        In some cases useful info is found in syslog - try
->        dmesg | tail  or so
-> 
-> root@xxxx:~# dmesg|tail
-> [57192.607912] device fsid ed25c604-3e11-4459-85b5-e4090c4d22d0 devid 
-> 2 transid14429 /dev/sda
-> [57204.796573] end_request: I/O error, dev fd0, sector 0
-> [57231.660913] device fsid ed25c604-3e11-4459-85b5-e4090c4d22d0 devid 1
->  transid 14429 /dev/sdb
-> [57231.680387] parent transid verify failed on 424308420608 wanted 6970
->  found 8959
-> [57231.680546] parent transid verify failed on 424308420608 wanted 6970
-> found 8959
-> [57231.680705] parent transid verify failed on 424308420608 wanted 6970 
-> found 8959
-> [57231.680861] parent transid verify failed on 424308420608 wanted 6970 
-> found 8959
-> [57231.680869] parent transid verify failed on 424308420608 wanted 6970 
-> found 8959
-> [57231.680875] Failed to read block groups: -5
-> [57231.704165] btrfs: open_ctree failed
+Looks like this is the same problem I'm having [1], this advice was
+given to me [2].
 
-Can you tell us more about this filesystem?  Was there an unclean
-shutdown or did you just unmount, mount again?
+Chris
 
-The confusing thing is that all of your disks seem to have the same copy
-of the block, so it looks like things were written properly.
-
--chris
+[1] http://www.spinics.net/lists/linux-btrfs/msg14262.html
+[2] http://www.spinics.net/lists/linux-btrfs/msg14263.html

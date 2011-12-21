@@ -1,136 +1,438 @@
-From: Malwina Bartoszynska <m.bartoszynska@rootbox.com>
-Subject: "btrfs: =?utf-8?b?b3Blbl9jdHJlZQ==?= failed" error
-Date: Wed, 21 Dec 2011 13:54:06 +0000 (UTC)
-Message-ID: <loom.20111221T141346-863@post.gmane.org>
-Mime-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
+From: Stefan Behrens <sbehrens@giantdisaster.de>
+Subject: [PATCH v2 3/3] Btrfs: read device stats on mount, write modified ones during commit
+Date: Wed, 21 Dec 2011 17:05:10 +0100
+Message-ID: <4c27800119f3e5bd2cf7e016cdb552ba7075e754.1324480889.git.sbehrens@giantdisaster.de>
+References: <4EE602E1.4020206@giantdisaster.de>
 To: linux-btrfs@vger.kernel.org
 Return-path: <linux-btrfs-owner@vger.kernel.org>
+In-Reply-To: <4EE602E1.4020206@giantdisaster.de>
+In-Reply-To: <cover.1324480889.git.sbehrens@giantdisaster.de>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hello,
-after unmounting btrfs partition, I can't mount it again.
+The device statistics are written into the device tree with each
+transaction commit. Only modified statistics are written.
+When a filesystem is mounted, the device statistics for each involved
+device are read from the device tree and used to initialize the
+counters.
 
-root@xxx:~# btrfs device scan
-Scanning for Btrfs filesystems
-root@xxx:~# mount /dev/sdb /data/osd.0/
-mount: wrong fs type, bad option, bad superblock on /dev/sdb,
-       missing codepage or helper program, or other error
-       In some cases useful info is found in syslog - try
-       dmesg | tail  or so
+Signed-off-by: Stefan Behrens <sbehrens@giantdisaster.de>
+---
+ fs/btrfs/ctree.h       |   51 ++++++++++++
+ fs/btrfs/disk-io.c     |    7 ++
+ fs/btrfs/print-tree.c  |    3 +
+ fs/btrfs/transaction.c |    4 +
+ fs/btrfs/volumes.c     |  205 ++++++++++++++++++++++++++++++++++++++++++++++++
+ fs/btrfs/volumes.h     |    9 ++
+ 6 files changed, 279 insertions(+), 0 deletions(-)
 
-root@xxxx:~# dmesg|tail
-[57192.607912] device fsid ed25c604-3e11-4459-85b5-e4090c4d22d0 devid 
-2 transid14429 /dev/sda
-[57204.796573] end_request: I/O error, dev fd0, sector 0
-[57231.660913] device fsid ed25c604-3e11-4459-85b5-e4090c4d22d0 devid 1
- transid 14429 /dev/sdb
-[57231.680387] parent transid verify failed on 424308420608 wanted 6970
- found 8959
-[57231.680546] parent transid verify failed on 424308420608 wanted 6970
-found 8959
-[57231.680705] parent transid verify failed on 424308420608 wanted 6970 
-found 8959
-[57231.680861] parent transid verify failed on 424308420608 wanted 6970 
-found 8959
-[57231.680869] parent transid verify failed on 424308420608 wanted 6970 
-found 8959
-[57231.680875] Failed to read block groups: -5
-[57231.704165] btrfs: open_ctree failed
-root@xxx:~#
-root@xxx:~# btrfs filesystem show
-Label: none  uuid: ed25c604-3e11-4459-85b5-e4090c4d22d0
-        Total devices 4 FS bytes used 111.07GB
-        devid    2 size 931.51GB used 56.02GB path /dev/sda
-        devid    1 size 931.51GB used 56.02GB path /dev/sdb
-        devid    4 size 232.89GB used 34.00GB path /dev/sdd
-        devid    3 size 184.26GB used 34.00GB path /dev/sdc4
-
-I was trying to fix it using btrfsc (from btrf-tools  0.19+20100601-3ubuntu3):
-
-root@xxx:~# btrfsck /dev/sdb
-parent transid verify failed on 424308420608 wanted 6970 found 8959
-parent transid verify failed on 424308420608 wanted 6970 found 8959
-parent transid verify failed on 424308420608 wanted 6970 found 8959
-Segmentation fault
-
-But it failed.
-Also btrfsc from current git repository failed. 
-root@xxx:/usr/src/test/btrfs-progs# ./btrfsck /dev/sdb
-parent transid verify failed on 424308420608 wanted 6970 found 8959
-parent transid verify failed on 424308420608 wanted 6970 found 8959
-parent transid verify failed on 424308420608 wanted 6970 found 8959
-parent transid verify failed on 424308420608 wanted 6970 found 8959
-Ignoring transid failure
-parent transid verify failed on 426205605888 wanted 8371 found 10836
-parent transid verify failed on 426205605888 wanted 8371 found 10836
-parent transid verify failed on 426205605888 wanted 8371 found 10836
-parent transid verify failed on 426205605888 wanted 8371 found 10836
-Ignoring transid failure
-parent transid verify failed on 424601571328 wanted 8959 found 10264
-parent transid verify failed on 424601571328 wanted 8959 found 10264
-parent transid verify failed on 424601571328 wanted 8959 found 10264
-parent transid verify failed on 424601571328 wanted 8959 found 10264
-Ignoring transid failure
-parent transid verify failed on 422394281984 wanted 6042 found 14369
-parent transid verify failed on 422394281984 wanted 6042 found 14369
-parent transid verify failed on 422394281984 wanted 6042 found 14369
-parent transid verify failed on 422394281984 wanted 6042 found 14369
-Ignoring transid failure
-parent transid verify failed on 422394277888 wanted 6042 found 14369
-parent transid verify failed on 422394277888 wanted 6042 found 14369
-parent transid verify failed on 422394277888 wanted 6042 found 14369
-parent transid verify failed on 422394277888 wanted 6042 found 14369
-Ignoring transid failure
-parent transid verify failed on 424867557376 wanted 8744 found 11654
-parent transid verify failed on 424867557376 wanted 8744 found 11654
-parent transid verify failed on 424867557376 wanted 8744 found 11654
-parent transid verify failed on 424867557376 wanted 8744 found 11654
-Ignoring transid failure
-parent transid verify failed on 426748997632 wanted 8747 found 9681
-parent transid verify failed on 426748997632 wanted 8747 found 9681
-parent transid verify failed on 426748997632 wanted 8747 found 9681
-parent transid verify failed on 426748997632 wanted 8747 found 9681
-Ignoring transid failure
-parent transid verify failed on 426748993536 wanted 8747 found 9681
-parent transid verify failed on 426748993536 wanted 8747 found 9681
-parent transid verify failed on 426748993536 wanted 8747 found 9681
-parent transid verify failed on 426748993536 wanted 8747 found 9681
-Ignoring transid failure
-parent transid verify failed on 426749001728 wanted 8747 found 9681
-parent transid verify failed on 426749001728 wanted 8747 found 9681
-parent transid verify failed on 426749001728 wanted 8747 found 9681
-parent transid verify failed on 426749001728 wanted 8747 found 9681
-Ignoring transid failure
-parent transid verify failed on 426749005824 wanted 8747 found 9681
-parent transid verify failed on 426749005824 wanted 8747 found 9681
-parent transid verify failed on 426749005824 wanted 8747 found 9681
-parent transid verify failed on 426749005824 wanted 8747 found 9681
-Ignoring transid failure
-parent transid verify failed on 423647268864 wanted 6496 found 11645
-parent transid verify failed on 423647268864 wanted 6496 found 11645
-parent transid verify failed on 423647268864 wanted 6496 found 11645
-parent transid verify failed on 423647268864 wanted 6496 found 11645
-Ignoring transid failure
-parent transid verify failed on 424308420608 wanted 6970 found 8959
-Ignoring transid failure
-leaf 417616629760 items 1 free space 3838 generation 5974 owner 7
-fs uuid ed25c604-3e11-4459-85b5-e4090c4d22d0
-chunk uuid b2b76fcf-3e03-4f9c-8cd1-4cad10c8bb2a
-        item 0 key (EXTENT_CSUM EXTENT_CSUM 375473815552) itemoff 3863
- itemsize 
-132
-                extent csum item
-failed to find block number 292758224896
-Aborted
-
-
-I am using Btrfs v0.19 on Ubuntu 11.10(kernel  3.0.0-14-generic x86_64).
-
-How can I fix it?
-
-Best regards,
+diff --git a/fs/btrfs/ctree.h b/fs/btrfs/ctree.h
+index 6738503..d8cd931 100644
+--- a/fs/btrfs/ctree.h
++++ b/fs/btrfs/ctree.h
+@@ -750,6 +750,26 @@ struct btrfs_csum_item {
+ 	u8 csum;
+ } __attribute__ ((__packed__));
+ 
++struct btrfs_device_stats_item {
++	/*
++	 * grow this item struct at the end for future enhancements and keep
++	 * the existing values unchanged
++	 */
++	__le64 cnt_write_io_errs; /* EIO or EREMOTEIO from lower layers */
++	__le64 cnt_read_io_errs; /* EIO or EREMOTEIO from lower layers */
++	__le64 cnt_flush_io_errs; /* EIO or EREMOTEIO from lower layers */
++
++	/* stats for indirect indications for I/O failures */
++	__le64 cnt_corruption_errs; /* checksum error, bytenr error or
++				     * contents is illegal: this is an
++				     * indication that the block was damaged
++				     * during read or write, or written to
++				     * wrong location or read from wrong
++				     * location */
++	__le64 cnt_generation_errs; /* an indication that blocks have not
++				     * been written */
++} __attribute__ ((__packed__));
++
+ /* different types of block groups (and chunks) */
+ #define BTRFS_BLOCK_GROUP_DATA     (1 << 0)
+ #define BTRFS_BLOCK_GROUP_SYSTEM   (1 << 1)
+@@ -1384,6 +1404,12 @@ struct btrfs_ioctl_defrag_range_args {
+ #define BTRFS_CHUNK_ITEM_KEY	228
+ 
+ /*
++ * Persistantly stores the io stats in the device tree.
++ * One key for all stats, (0, BTRFS_DEVICE_STATS_KEY, devid).
++ */
++#define BTRFS_DEVICE_STATS_KEY	248
++
++/*
+  * string items are for debugging.  They just store a short string of
+  * data in the FS
+  */
+@@ -2196,6 +2222,31 @@ static inline u32 btrfs_file_extent_inline_item_len(struct extent_buffer *eb,
+ 	return btrfs_item_size(eb, e) - offset;
+ }
+ 
++/* btrfs_device_stats_item */
++BTRFS_SETGET_FUNCS(device_stats_cnt_write_io_errs,
++		   struct btrfs_device_stats_item, cnt_write_io_errs, 64);
++BTRFS_SETGET_FUNCS(device_stats_cnt_read_io_errs,
++		   struct btrfs_device_stats_item, cnt_read_io_errs, 64);
++BTRFS_SETGET_FUNCS(device_stats_cnt_flush_io_errs,
++		   struct btrfs_device_stats_item, cnt_flush_io_errs, 64);
++BTRFS_SETGET_FUNCS(device_stats_cnt_corruption_errs,
++		   struct btrfs_device_stats_item, cnt_corruption_errs, 64);
++BTRFS_SETGET_FUNCS(device_stats_cnt_generation_errs,
++		   struct btrfs_device_stats_item, cnt_generation_errs, 64);
++
++BTRFS_SETGET_STACK_FUNCS(stack_device_stats_cnt_write_io_errs,
++			 struct btrfs_device_stats_item, cnt_write_io_errs, 64);
++BTRFS_SETGET_STACK_FUNCS(stack_device_stats_cnt_read_io_errs,
++			 struct btrfs_device_stats_item, cnt_read_io_errs, 64);
++BTRFS_SETGET_STACK_FUNCS(stack_device_stats_cnt_flush_io_errs,
++			 struct btrfs_device_stats_item, cnt_flush_io_errs, 64);
++BTRFS_SETGET_STACK_FUNCS(stack_device_stats_cnt_corruption_errs,
++			 struct btrfs_device_stats_item, cnt_corruption_errs,
++			 64);
++BTRFS_SETGET_STACK_FUNCS(stack_device_stats_cnt_generation_errs,
++			 struct btrfs_device_stats_item, cnt_generation_errs,
++			 64);
++
+ static inline struct btrfs_root *btrfs_sb(struct super_block *sb)
+ {
+ 	return sb->s_fs_info;
+diff --git a/fs/btrfs/disk-io.c b/fs/btrfs/disk-io.c
+index 905f1fa..cd9fcba 100644
+--- a/fs/btrfs/disk-io.c
++++ b/fs/btrfs/disk-io.c
+@@ -2325,6 +2325,13 @@ retry_root_backup:
+ 	fs_info->metadata_alloc_profile = (u64)-1;
+ 	fs_info->system_alloc_profile = fs_info->metadata_alloc_profile;
+ 
++	ret = btrfs_init_device_stats(fs_info);
++	if (ret) {
++		printk(KERN_ERR "btrfs: failed to init device_stats: %d\n",
++		       ret);
++		goto fail_block_groups;
++	}
++
+ 	ret = btrfs_init_space_info(fs_info);
+ 	if (ret) {
+ 		printk(KERN_ERR "Failed to initial space info: %d\n", ret);
+diff --git a/fs/btrfs/print-tree.c b/fs/btrfs/print-tree.c
+index f38e452..a9e45e4 100644
+--- a/fs/btrfs/print-tree.c
++++ b/fs/btrfs/print-tree.c
+@@ -294,6 +294,9 @@ void btrfs_print_leaf(struct btrfs_root *root, struct extent_buffer *l)
+ 			       btrfs_dev_extent_chunk_offset(l, dev_extent),
+ 			       (unsigned long long)
+ 			       btrfs_dev_extent_length(l, dev_extent));
++		case BTRFS_DEVICE_STATS_KEY:
++			printk(KERN_INFO "\t\tdevice stats\n");
++			break;
+ 		};
+ 	}
+ }
+diff --git a/fs/btrfs/transaction.c b/fs/btrfs/transaction.c
+index 81376d9..9cf3095 100644
+--- a/fs/btrfs/transaction.c
++++ b/fs/btrfs/transaction.c
+@@ -28,6 +28,7 @@
+ #include "locking.h"
+ #include "tree-log.h"
+ #include "inode-map.h"
++#include "volumes.h"
+ 
+ #define BTRFS_ROOT_TRANS_TAG 0
+ 
+@@ -724,6 +725,9 @@ static noinline int commit_cowonly_roots(struct btrfs_trans_handle *trans,
+ 	ret = btrfs_run_delayed_refs(trans, root, (unsigned long)-1);
+ 	BUG_ON(ret);
+ 
++	ret = btrfs_run_device_stats(trans, root->fs_info);
++	BUG_ON(ret);
++
+ 	while (!list_empty(&fs_info->dirty_cowonly_roots)) {
+ 		next = fs_info->dirty_cowonly_roots.next;
+ 		list_del_init(next);
+diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
+index 9ee33a5..c4c7dd1 100644
+--- a/fs/btrfs/volumes.c
++++ b/fs/btrfs/volumes.c
+@@ -38,6 +38,8 @@ static int init_first_rw_device(struct btrfs_trans_handle *trans,
+ 				struct btrfs_root *root,
+ 				struct btrfs_device *device);
+ static int btrfs_relocate_sys_chunks(struct btrfs_root *root);
++static void __btrfs_reset_device_stats(struct btrfs_device *dev);
++static void btrfs_device_stat_print_on_load(struct btrfs_device *device);
+ 
+ static DEFINE_MUTEX(uuid_mutex);
+ static LIST_HEAD(fs_uuids);
+@@ -362,6 +364,7 @@ static noinline int device_list_add(const char *path,
+ 			return -ENOMEM;
+ 		}
+ 		device->devid = devid;
++		device->device_stats_valid = 0;
+ 		device->work.func = pending_bios_fn;
+ 		memcpy(device->uuid, disk_super->dev_item.uuid,
+ 		       BTRFS_UUID_SIZE);
+@@ -3845,8 +3848,194 @@ error:
+ 	return ret;
+ }
+ 
++static void __btrfs_reset_device_stats(struct btrfs_device *device)
++{
++	btrfs_device_stat_reset(&device->cnt_write_io_errs);
++	btrfs_device_stat_reset(&device->cnt_read_io_errs);
++	btrfs_device_stat_reset(&device->cnt_flush_io_errs);
++	btrfs_device_stat_reset(&device->cnt_corruption_errs);
++	btrfs_device_stat_reset(&device->cnt_generation_errs);
++}
++
++int btrfs_init_device_stats(struct btrfs_fs_info *fs_info)
++{
++	struct btrfs_key key;
++	struct btrfs_key found_key;
++	struct btrfs_root *dev_root = fs_info->dev_root;
++	struct btrfs_fs_devices *fs_devices = fs_info->fs_devices;
++	struct extent_buffer *eb;
++	int slot;
++	int ret = 0;
++	struct btrfs_device *device;
++	struct btrfs_path *path = NULL;
++
++	path = btrfs_alloc_path();
++	if (!path) {
++		ret = -ENOMEM;
++		goto out;
++	}
++
++	mutex_lock(&fs_devices->device_list_mutex);
++	list_for_each_entry(device, &fs_devices->devices, dev_list) {
++		int item_size;
++		struct btrfs_device_stats_item *ptr;
++
++		key.objectid = 0;
++		key.type = BTRFS_DEVICE_STATS_KEY;
++		key.offset = device->devid;
++		ret = btrfs_search_slot(NULL, dev_root, &key, path, 0, 0);
++		if (ret) {
++			printk(KERN_WARNING "btrfs: no device_stats entry found for device %s (devid %llu) (OK on first mount after mkfs)\n",
++			       device->name, (unsigned long long)device->devid);
++			__btrfs_reset_device_stats(device);
++			device->device_stats_valid = 1;
++			device->device_stats_dirty = 1;
++			btrfs_release_path(path);
++			continue;
++		}
++		slot = path->slots[0];
++		eb = path->nodes[0];
++		btrfs_item_key_to_cpu(eb, &found_key, slot);
++		item_size = btrfs_item_size_nr(eb, slot);
++
++		ptr = btrfs_item_ptr(eb, slot,
++				     struct btrfs_device_stats_item);
++
++		if (item_size >= 1 * sizeof(__le64))
++			btrfs_device_stat_set(&device->cnt_write_io_errs,
++				btrfs_device_stats_cnt_write_io_errs(eb, ptr));
++		else
++			btrfs_device_stat_reset(&device->cnt_write_io_errs);
++		if (item_size >= 2 * sizeof(__le64))
++			btrfs_device_stat_set(&device->cnt_read_io_errs,
++				btrfs_device_stats_cnt_read_io_errs(eb, ptr));
++		else
++			btrfs_device_stat_reset(&device->cnt_read_io_errs);
++		if (item_size >= 3 * sizeof(__le64))
++			btrfs_device_stat_set(&device->cnt_flush_io_errs,
++				btrfs_device_stats_cnt_flush_io_errs(eb, ptr));
++		else
++			btrfs_device_stat_reset(&device->cnt_flush_io_errs);
++		if (item_size >= 4 * sizeof(__le64))
++			btrfs_device_stat_set(&device->cnt_corruption_errs,
++				btrfs_device_stats_cnt_corruption_errs(eb,
++								       ptr));
++		else
++			btrfs_device_stat_reset(&device->cnt_corruption_errs);
++		if (item_size >= 5 * sizeof(__le64))
++			btrfs_device_stat_set(&device->cnt_generation_errs,
++				btrfs_device_stats_cnt_generation_errs(eb,
++								       ptr));
++		else
++			btrfs_device_stat_reset(&device->cnt_generation_errs);
++
++		btrfs_device_stat_print_on_load(device);
++		device->device_stats_valid = 1;
++		btrfs_release_path(path);
++	}
++	mutex_unlock(&fs_devices->device_list_mutex);
++
++out:
++	btrfs_free_path(path);
++	return ret < 0 ? ret : 0;
++}
++
++static int update_device_stat_item(struct btrfs_trans_handle *trans,
++				   struct btrfs_root *dev_root,
++				   struct btrfs_device *device)
++{
++	struct btrfs_path *path;
++	struct btrfs_key key;
++	struct extent_buffer *eb;
++	struct btrfs_device_stats_item *ptr;
++	int ret;
++
++	key.objectid = 0;
++	key.type = BTRFS_DEVICE_STATS_KEY;
++	key.offset = device->devid;
++
++	path = btrfs_alloc_path();
++	BUG_ON(!path);
++	ret = btrfs_search_slot(trans, dev_root, &key, path, 0, 1);
++	if (ret < 0) {
++		printk(KERN_WARNING "btrfs: error %d while searching for device_stats item for device %s!\n",
++		       ret, device->name);
++		goto out;
++	}
++
++	if (0 == ret &&
++	    btrfs_item_size_nr(path->nodes[0], path->slots[0]) < sizeof(*ptr)) {
++		/* need to delete old one and insert a new one */
++		ret = btrfs_del_item(trans, dev_root, path);
++		if (0 != ret) {
++			printk(KERN_WARNING "btrfs: delete too small device_stats item for device %s failed %d!\n",
++			       device->name, ret);
++			goto out;
++		}
++		ret = 1;
++	}
++
++	if (1 == ret) {
++		/* need to insert a new item */
++		btrfs_release_path(path);
++		ret = btrfs_insert_empty_item(trans, dev_root, path,
++					      &key, sizeof(*ptr));
++		if (ret < 0) {
++			printk(KERN_WARNING "btrfs: insert device_stats item for device %s failed %d!\n",
++			       device->name, ret);
++			goto out;
++		}
++	}
++
++	eb = path->nodes[0];
++	ptr = btrfs_item_ptr(eb, path->slots[0],
++			     struct btrfs_device_stats_item);
++	btrfs_set_device_stats_cnt_write_io_errs(eb, ptr,
++		btrfs_device_stat_read(&device->cnt_write_io_errs));
++	btrfs_set_device_stats_cnt_read_io_errs(eb, ptr,
++		btrfs_device_stat_read(&device->cnt_read_io_errs));
++	btrfs_set_device_stats_cnt_flush_io_errs(eb, ptr,
++		btrfs_device_stat_read(&device->cnt_flush_io_errs));
++	btrfs_set_device_stats_cnt_corruption_errs(eb, ptr,
++		btrfs_device_stat_read(&device->cnt_corruption_errs));
++	btrfs_set_device_stats_cnt_generation_errs(eb, ptr,
++		btrfs_device_stat_read(&device->cnt_generation_errs));
++	btrfs_mark_buffer_dirty(eb);
++
++out:
++	btrfs_free_path(path);
++	return ret;
++}
++
++/*
++ * called from commit_transaction. Writes all changed device stats to disk.
++ */
++int btrfs_run_device_stats(struct btrfs_trans_handle *trans,
++			   struct btrfs_fs_info *fs_info)
++{
++	struct btrfs_root *dev_root = fs_info->dev_root;
++	struct btrfs_fs_devices *fs_devices = fs_info->fs_devices;
++	struct btrfs_device *device;
++	int ret = 0;
++
++	mutex_lock(&fs_devices->device_list_mutex);
++	list_for_each_entry(device, &fs_devices->devices, dev_list) {
++		if (!device->device_stats_valid || !device->device_stats_dirty)
++			continue;
++
++		ret = update_device_stat_item(trans, dev_root, device);
++		if (!ret)
++			device->device_stats_dirty = 0;
++	}
++	mutex_unlock(&fs_devices->device_list_mutex);
++
++	return ret;
++}
++
+ void btrfs_device_stat_print_on_error(struct btrfs_device *device)
+ {
++	if (!device->device_stats_valid)
++		return;
+ 	printk_ratelimited(KERN_ERR "btrfs: bdev %s errs: wr %u, rd %u,"
+ 			   " flush %u, corrupt %u, gen %u\n",
+ 			   device->name,
+@@ -3858,6 +4047,18 @@ void btrfs_device_stat_print_on_error(struct btrfs_device *device)
+ 				&device->cnt_generation_errs));
+ }
+ 
++static void btrfs_device_stat_print_on_load(struct btrfs_device *device)
++{
++	printk(KERN_INFO "btrfs: bdev %s errs: wr %u, rd %u, flush %u,"
++	       " corrupt %u, gen %u\n",
++	       device->name,
++	       btrfs_device_stat_read(&device->cnt_write_io_errs),
++	       btrfs_device_stat_read(&device->cnt_read_io_errs),
++	       btrfs_device_stat_read(&device->cnt_flush_io_errs),
++	       btrfs_device_stat_read(&device->cnt_corruption_errs),
++	       btrfs_device_stat_read(&device->cnt_generation_errs));
++}
++
+ int btrfs_get_device_stats(struct btrfs_root *root,
+ 			   struct btrfs_ioctl_get_device_stats *stats,
+ 			   int reset_after_read)
+@@ -3873,6 +4074,10 @@ int btrfs_get_device_stats(struct btrfs_root *root,
+ 		printk(KERN_WARNING
+ 		       "btrfs: get device_stats failed, device not found\n");
+ 		return -ENODEV;
++	} else if (!dev->device_stats_valid) {
++		printk(KERN_WARNING
++		       "btrfs: get device_stats failed, not yet valid\n");
++		return -ENODEV;
+ 	} else if (reset_after_read) {
+ 		if (stats->nr_items >= 1)
+ 			stats->cnt_write_io_errs =
+diff --git a/fs/btrfs/volumes.h b/fs/btrfs/volumes.h
+index ad8c3bc..7811347 100644
+--- a/fs/btrfs/volumes.h
++++ b/fs/btrfs/volumes.h
+@@ -108,6 +108,7 @@ struct btrfs_device {
+ 
+ 	/* disk I/O failure stats. For detailed description refer to
+ 	 * struct btrfs_device_stats_item in ctree.h */
++	int device_stats_valid;
+ 	int device_stats_dirty; /* counters need to be written to disk */
+ 	atomic_t cnt_write_io_errs;
+ 	atomic_t cnt_read_io_errs;
+@@ -243,6 +244,9 @@ int find_free_dev_extent(struct btrfs_trans_handle *trans,
+ 			 u64 *start, u64 *max_avail);
+ struct btrfs_device *btrfs_find_device_for_logical(struct btrfs_root *root,
+ 						   u64 logical, int mirror_num);
++int btrfs_init_device_stats(struct btrfs_fs_info *fs_info);
++int btrfs_run_device_stats(struct btrfs_trans_handle *trans,
++			   struct btrfs_fs_info *fs_info);
+ void btrfs_device_stat_print_on_error(struct btrfs_device *device);
+ int btrfs_get_device_stats(struct btrfs_root *root,
+ 			   struct btrfs_ioctl_get_device_stats *stats,
+@@ -267,4 +271,9 @@ static inline void btrfs_device_stat_reset(atomic_t *cnt)
+ {
+ 	atomic_set(cnt, 0);
+ }
++
++static inline void btrfs_device_stat_set(atomic_t *cnt, unsigned long val)
++{
++	atomic_set(cnt, val);
++}
+ #endif
 -- 
-Malwina Bartoszynska
-
+1.7.3.4
 

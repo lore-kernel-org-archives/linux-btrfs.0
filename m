@@ -1,7 +1,7 @@
 From: Jan Schmidt <list.btrfs@jan-o-sch.net>
-Subject: [PATCH v1 06/10] Btrfs: add sequence numbers to delayed refs
-Date: Thu, 22 Dec 2011 17:03:20 +0100
-Message-ID: <53f394364dd50bd315805ff21899514878d80ebd.1324568416.git.list.btrfs@jan-o-sch.net>
+Subject: [PATCH v1 08/10] Btrfs: add waitqueue instead of doing busy waiting for more delayed refs
+Date: Thu, 22 Dec 2011 17:03:22 +0100
+Message-ID: <32cd9117f52538ff0a83adbb7a3a0713799d1598.1324568416.git.list.btrfs@jan-o-sch.net>
 References: <cover.1324568415.git.list.btrfs@jan-o-sch.net>
 Cc: lizf@cn.fujitsu.com, sensille@gmx.net
 To: chris.mason@oracle.com, linux-btrfs@vger.kernel.org
@@ -10,234 +10,211 @@ In-Reply-To: <cover.1324568415.git.list.btrfs@jan-o-sch.net>
 In-Reply-To: <cover.1324568415.git.list.btrfs@jan-o-sch.net>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-From: Arne Jansen <sensille@gmx.net>
+Now that we may be holding back delayed refs for a limited period, we
+might end up having no runnable delayed refs. Without this commit, we'd
+do busy waiting in that thread until another (runnable) ref arives.
+Instead, we're detecting this situation and use a waitqueue, such that
+we only try to run more refs after
+	a) another runnable ref was added  or
+	b) delayed refs are no longer held back
 
-Sequence numbers are needed to reconstruct the backrefs of a given extent to
-a certain point in time. The total set of backrefs consist of the set of
-backrefs recorded on disk plus the enqueued delayed refs for it that existed
-at that moment.
-
-This patch also adds a list that records all delayed refs which are
-currently in the process of being added.
-
-When walking all refs of an extent in btrfs_find_all_roots(), we freeze the
-current state of delayed refs, honor anythinh up to this point and prevent
-processing newer delayed refs to assert consistency.
-
-Signed-off-by: Arne Jansen <sensille@gmx.net>
 Signed-off-by: Jan Schmidt <list.btrfs@jan-o-sch.net>
 ---
- fs/btrfs/delayed-ref.c |   34 +++++++++++++++++++++++
- fs/btrfs/delayed-ref.h |   70 ++++++++++++++++++++++++++++++++++++++++++++++++
- fs/btrfs/transaction.c |    4 +++
- 3 files changed, 108 insertions(+), 0 deletions(-)
+ fs/btrfs/delayed-ref.c |    8 ++++++
+ fs/btrfs/delayed-ref.h |    7 +++++
+ fs/btrfs/extent-tree.c |   59 +++++++++++++++++++++++++++++++++++++++++++++++-
+ fs/btrfs/transaction.c |    1 +
+ 4 files changed, 74 insertions(+), 1 deletions(-)
 
 diff --git a/fs/btrfs/delayed-ref.c b/fs/btrfs/delayed-ref.c
-index babd37b..a405db0 100644
+index ee18198..66e4f29 100644
 --- a/fs/btrfs/delayed-ref.c
 +++ b/fs/btrfs/delayed-ref.c
-@@ -101,6 +101,11 @@ static int comp_entry(struct btrfs_delayed_ref_node *ref2,
- 		return -1;
- 	if (ref1->type > ref2->type)
- 		return 1;
-+	/* merging of sequenced refs is not allowed */
-+	if (ref1->seq < ref2->seq)
-+		return -1;
-+	if (ref1->seq > ref2->seq)
-+		return 1;
- 	if (ref1->type == BTRFS_TREE_BLOCK_REF_KEY ||
- 	    ref1->type == BTRFS_SHARED_BLOCK_REF_KEY) {
- 		return comp_tree_refs(btrfs_delayed_node_to_tree_ref(ref2),
-@@ -209,6 +214,24 @@ int btrfs_delayed_ref_lock(struct btrfs_trans_handle *trans,
+@@ -664,6 +664,9 @@ int btrfs_add_delayed_tree_ref(struct btrfs_fs_info *fs_info,
+ 				   num_bytes, parent, ref_root, level, action,
+ 				   for_cow);
+ 	BUG_ON(ret);
++	if (!need_ref_seq(for_cow, ref_root) &&
++	    waitqueue_active(&delayed_refs->seq_wait))
++		wake_up(&delayed_refs->seq_wait);
+ 	spin_unlock(&delayed_refs->lock);
  	return 0;
  }
+@@ -712,6 +715,9 @@ int btrfs_add_delayed_data_ref(struct btrfs_fs_info *fs_info,
+ 				   num_bytes, parent, ref_root, owner, offset,
+ 				   action, for_cow);
+ 	BUG_ON(ret);
++	if (!need_ref_seq(for_cow, ref_root) &&
++	    waitqueue_active(&delayed_refs->seq_wait))
++		wake_up(&delayed_refs->seq_wait);
+ 	spin_unlock(&delayed_refs->lock);
+ 	return 0;
+ }
+@@ -739,6 +745,8 @@ int btrfs_add_delayed_extent_op(struct btrfs_fs_info *fs_info,
+ 				   extent_op->is_data);
+ 	BUG_ON(ret);
  
-+int btrfs_check_delayed_seq(struct btrfs_delayed_ref_root *delayed_refs,
-+			    u64 seq)
-+{
-+	struct seq_list *elem;
-+
-+	assert_spin_locked(&delayed_refs->lock);
-+	if (list_empty(&delayed_refs->seq_head))
-+		return 0;
-+
-+	elem = list_first_entry(&delayed_refs->seq_head, struct seq_list, list);
-+	if (seq >= elem->seq) {
-+		pr_debug("holding back delayed_ref %llu, lowest is %llu (%p)\n",
-+			 seq, elem->seq, delayed_refs);
-+		return 1;
-+	}
-+	return 0;
-+}
-+
- int btrfs_find_ref_cluster(struct btrfs_trans_handle *trans,
- 			   struct list_head *cluster, u64 start)
- {
-@@ -438,6 +461,7 @@ static noinline int add_delayed_ref_head(struct btrfs_fs_info *fs_info,
- 	ref->action  = 0;
- 	ref->is_head = 1;
- 	ref->in_tree = 1;
-+	ref->seq = 0;
- 
- 	head_ref = btrfs_delayed_node_to_head(ref);
- 	head_ref->must_insert_reserved = must_insert_reserved;
-@@ -479,6 +503,7 @@ static noinline int add_delayed_tree_ref(struct btrfs_fs_info *fs_info,
- 	struct btrfs_delayed_ref_node *existing;
- 	struct btrfs_delayed_tree_ref *full_ref;
- 	struct btrfs_delayed_ref_root *delayed_refs;
-+	u64 seq = 0;
- 
- 	if (action == BTRFS_ADD_DELAYED_EXTENT)
- 		action = BTRFS_ADD_DELAYED_REF;
-@@ -494,6 +519,10 @@ static noinline int add_delayed_tree_ref(struct btrfs_fs_info *fs_info,
- 	ref->is_head = 0;
- 	ref->in_tree = 1;
- 
-+	if (need_ref_seq(for_cow, ref_root))
-+		seq = inc_delayed_seq(delayed_refs);
-+	ref->seq = seq;
-+
- 	full_ref = btrfs_delayed_node_to_tree_ref(ref);
- 	full_ref->parent = parent;
- 	full_ref->root = ref_root;
-@@ -534,6 +563,7 @@ static noinline int add_delayed_data_ref(struct btrfs_fs_info *fs_info,
- 	struct btrfs_delayed_ref_node *existing;
- 	struct btrfs_delayed_data_ref *full_ref;
- 	struct btrfs_delayed_ref_root *delayed_refs;
-+	u64 seq = 0;
- 
- 	if (action == BTRFS_ADD_DELAYED_EXTENT)
- 		action = BTRFS_ADD_DELAYED_REF;
-@@ -549,6 +579,10 @@ static noinline int add_delayed_data_ref(struct btrfs_fs_info *fs_info,
- 	ref->is_head = 0;
- 	ref->in_tree = 1;
- 
-+	if (need_ref_seq(for_cow, ref_root))
-+		seq = inc_delayed_seq(delayed_refs);
-+	ref->seq = seq;
-+
- 	full_ref = btrfs_delayed_node_to_data_ref(ref);
- 	full_ref->parent = parent;
- 	full_ref->root = ref_root;
++	if (waitqueue_active(&delayed_refs->seq_wait))
++		wake_up(&delayed_refs->seq_wait);
+ 	spin_unlock(&delayed_refs->lock);
+ 	return 0;
+ }
 diff --git a/fs/btrfs/delayed-ref.h b/fs/btrfs/delayed-ref.h
-index a5fb2bc..174416f 100644
+index 174416f..d8f244d 100644
 --- a/fs/btrfs/delayed-ref.h
 +++ b/fs/btrfs/delayed-ref.h
-@@ -33,6 +33,9 @@ struct btrfs_delayed_ref_node {
- 	/* the size of the extent */
- 	u64 num_bytes;
- 
-+	/* seq number to keep track of insertion order */
-+	u64 seq;
-+
- 	/* ref count on this data structure */
- 	atomic_t refs;
- 
-@@ -136,6 +139,20 @@ struct btrfs_delayed_ref_root {
- 	int flushing;
- 
- 	u64 run_delayed_start;
+@@ -153,6 +153,12 @@ struct btrfs_delayed_ref_root {
+ 	 * as it might influence the outcome of the walk.
+ 	 */
+ 	struct list_head seq_head;
 +
 +	/*
-+	 * seq number of delayed refs. We need to know if a backref was being
-+	 * added before the currently processed ref or afterwards.
++	 * when the only refs we have in the list must not be processed, we want
++	 * to wait for more refs to show up or for the end of backref walking.
 +	 */
-+	u64 seq;
-+
-+	/*
-+	 * seq_list holds a list of all seq numbers that are currently being
-+	 * added to the list. While walking backrefs (btrfs_find_all_roots,
-+	 * qgroups), which might take some time, no newer ref must be processed,
-+	 * as it might influence the outcome of the walk.
-+	 */
-+	struct list_head seq_head;
++	wait_queue_head_t seq_wait;
  };
  
  static inline void btrfs_put_delayed_ref(struct btrfs_delayed_ref_node *ref)
-@@ -171,6 +188,59 @@ int btrfs_delayed_ref_lock(struct btrfs_trans_handle *trans,
- 			   struct btrfs_delayed_ref_head *head);
- int btrfs_find_ref_cluster(struct btrfs_trans_handle *trans,
- 			   struct list_head *cluster, u64 search_start);
+@@ -216,6 +222,7 @@ btrfs_put_delayed_seq(struct btrfs_delayed_ref_root *delayed_refs,
+ {
+ 	spin_lock(&delayed_refs->lock);
+ 	list_del(&elem->list);
++	wake_up(&delayed_refs->seq_wait);
+ 	spin_unlock(&delayed_refs->lock);
+ }
+ 
+diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
+index bbcca12..0a435e2 100644
+--- a/fs/btrfs/extent-tree.c
++++ b/fs/btrfs/extent-tree.c
+@@ -2300,7 +2300,12 @@ static noinline int run_clustered_refs(struct btrfs_trans_handle *trans,
+ 		ref->in_tree = 0;
+ 		rb_erase(&ref->rb_node, &delayed_refs->root);
+ 		delayed_refs->num_entries--;
+-
++		/*
++		 * we modified num_entries, but as we're currently running
++		 * delayed refs, skip
++		 *     wake_up(&delayed_refs->seq_wait);
++		 * here.
++		 */
+ 		spin_unlock(&delayed_refs->lock);
+ 
+ 		ret = run_one_delayed_ref(trans, root, ref, extent_op,
+@@ -2317,6 +2322,23 @@ static noinline int run_clustered_refs(struct btrfs_trans_handle *trans,
+ 	return count;
+ }
+ 
 +
-+struct seq_list {
-+	struct list_head list;
-+	u64 seq;
-+};
-+
-+static inline u64 inc_delayed_seq(struct btrfs_delayed_ref_root *delayed_refs)
++static void wait_for_more_refs(struct btrfs_delayed_ref_root *delayed_refs,
++			unsigned long num_refs)
 +{
-+	assert_spin_locked(&delayed_refs->lock);
-+	++delayed_refs->seq;
-+	return delayed_refs->seq;
-+}
++	struct list_head *first_seq = delayed_refs->seq_head.next;
 +
-+static inline void
-+btrfs_get_delayed_seq(struct btrfs_delayed_ref_root *delayed_refs,
-+		      struct seq_list *elem)
-+{
-+	assert_spin_locked(&delayed_refs->lock);
-+	elem->seq = delayed_refs->seq;
-+	list_add_tail(&elem->list, &delayed_refs->seq_head);
-+}
-+
-+static inline void
-+btrfs_put_delayed_seq(struct btrfs_delayed_ref_root *delayed_refs,
-+		      struct seq_list *elem)
-+{
-+	spin_lock(&delayed_refs->lock);
-+	list_del(&elem->list);
 +	spin_unlock(&delayed_refs->lock);
-+}
-+
-+int btrfs_check_delayed_seq(struct btrfs_delayed_ref_root *delayed_refs,
-+			    u64 seq);
-+
-+/*
-+ * delayed refs with a ref_seq > 0 must be held back during backref walking.
-+ * this only applies to items in one of the fs-trees. for_cow items never need
-+ * to be held back, so they won't get a ref_seq number.
-+ */
-+static inline int need_ref_seq(int for_cow, u64 rootid)
-+{
-+	if (for_cow)
-+		return 0;
-+
-+	if (rootid == BTRFS_FS_TREE_OBJECTID)
-+		return 1;
-+
-+	if ((s64)rootid >= (s64)BTRFS_FIRST_FREE_OBJECTID)
-+		return 1;
-+
-+	return 0;
++	pr_debug("waiting for more refs (num %ld, first %p)\n",
++		 num_refs, first_seq);
++	wait_event(delayed_refs->seq_wait,
++		   num_refs != delayed_refs->num_entries ||
++		   delayed_refs->seq_head.next != first_seq);
++	pr_debug("done waiting for more refs (num %ld, first %p)\n",
++		 delayed_refs->num_entries, delayed_refs->seq_head.next);
++	spin_lock(&delayed_refs->lock);
 +}
 +
  /*
-  * a node might live in a head or a regular ref, this lets you
-  * test for the proper type to use.
+  * this starts processing the delayed reference count updates and
+  * extent insertions we have queued up so far.  count can be
+@@ -2332,8 +2354,11 @@ int btrfs_run_delayed_refs(struct btrfs_trans_handle *trans,
+ 	struct btrfs_delayed_ref_node *ref;
+ 	struct list_head cluster;
+ 	int ret;
++	u64 delayed_start;
+ 	int run_all = count == (unsigned long)-1;
+ 	int run_most = 0;
++	unsigned long num_refs = 0;
++	int consider_waiting;
+ 
+ 	if (root == root->fs_info->extent_root)
+ 		root = root->fs_info->tree_root;
+@@ -2341,6 +2366,7 @@ int btrfs_run_delayed_refs(struct btrfs_trans_handle *trans,
+ 	delayed_refs = &trans->transaction->delayed_refs;
+ 	INIT_LIST_HEAD(&cluster);
+ again:
++	consider_waiting = 0;
+ 	spin_lock(&delayed_refs->lock);
+ 	if (count == 0) {
+ 		count = delayed_refs->num_entries * 2;
+@@ -2357,11 +2383,35 @@ again:
+ 		 * of refs to process starting at the first one we are able to
+ 		 * lock
+ 		 */
++		delayed_start = delayed_refs->run_delayed_start;
+ 		ret = btrfs_find_ref_cluster(trans, &cluster,
+ 					     delayed_refs->run_delayed_start);
+ 		if (ret)
+ 			break;
+ 
++		if (delayed_start >= delayed_refs->run_delayed_start) {
++			if (consider_waiting == 0) {
++				/*
++				 * btrfs_find_ref_cluster looped. let's do one
++				 * more cycle. if we don't run any delayed ref
++				 * during that cycle (because we can't because
++				 * all of them are blocked) and if the number of
++				 * refs doesn't change, we avoid busy waiting.
++				 */
++				consider_waiting = 1;
++				num_refs = delayed_refs->num_entries;
++			} else {
++				wait_for_more_refs(delayed_refs, num_refs);
++				/*
++				 * after waiting, things have changed. we
++				 * dropped the lock and someone else might have
++				 * run some refs, built new clusters and so on.
++				 * therefore, we restart staleness detection.
++				 */
++				consider_waiting = 0;
++			}
++		}
++
+ 		ret = run_clustered_refs(trans, root, &cluster);
+ 		BUG_ON(ret < 0);
+ 
+@@ -2369,6 +2419,11 @@ again:
+ 
+ 		if (count == 0)
+ 			break;
++
++		if (ret || delayed_refs->run_delayed_start == 0) {
++			/* refs were run, let's reset staleness detection */
++			consider_waiting = 0;
++		}
+ 	}
+ 
+ 	if (run_all) {
+@@ -4933,6 +4988,8 @@ static noinline int check_ref_cleanup(struct btrfs_trans_handle *trans,
+ 	rb_erase(&head->node.rb_node, &delayed_refs->root);
+ 
+ 	delayed_refs->num_entries--;
++	if (waitqueue_active(&delayed_refs->seq_wait))
++		wake_up(&delayed_refs->seq_wait);
+ 
+ 	/*
+ 	 * we don't take a ref on the node because we're removing it from the
 diff --git a/fs/btrfs/transaction.c b/fs/btrfs/transaction.c
-index a2bfedc..31a7393 100644
+index 31a7393..04c5c7c 100644
 --- a/fs/btrfs/transaction.c
 +++ b/fs/btrfs/transaction.c
-@@ -36,6 +36,8 @@ static noinline void put_transaction(struct btrfs_transaction *transaction)
- 	WARN_ON(atomic_read(&transaction->use_count) == 0);
- 	if (atomic_dec_and_test(&transaction->use_count)) {
- 		BUG_ON(!list_empty(&transaction->list));
-+		WARN_ON(transaction->delayed_refs.root.rb_node);
-+		WARN_ON(!list_empty(&transaction->delayed_refs.seq_head));
- 		memset(transaction, 0, sizeof(*transaction));
- 		kmem_cache_free(btrfs_transaction_cachep, transaction);
- 	}
-@@ -108,8 +110,10 @@ loop:
- 	cur_trans->delayed_refs.num_heads = 0;
+@@ -111,6 +111,7 @@ loop:
  	cur_trans->delayed_refs.flushing = 0;
  	cur_trans->delayed_refs.run_delayed_start = 0;
-+	cur_trans->delayed_refs.seq = 1;
+ 	cur_trans->delayed_refs.seq = 1;
++	init_waitqueue_head(&cur_trans->delayed_refs.seq_wait);
  	spin_lock_init(&cur_trans->commit_lock);
  	spin_lock_init(&cur_trans->delayed_refs.lock);
-+	INIT_LIST_HEAD(&cur_trans->delayed_refs.seq_head);
- 
- 	INIT_LIST_HEAD(&cur_trans->pending_snapshots);
- 	list_add_tail(&cur_trans->list, &root->fs_info->trans_list);
+ 	INIT_LIST_HEAD(&cur_trans->delayed_refs.seq_head);
 -- 
 1.7.3.4
 

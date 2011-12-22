@@ -1,39 +1,52 @@
-From: Sander <btrfs@humilis.net>
+From: Chris Samuel <chris@csamuel.org>
 Subject: Re: COW a file from snapshot
-Date: Thu, 22 Dec 2011 12:57:46 +0100
-Message-ID: <20111222115746.GB27550@attic.humilis.net>
-References: <20111220150717.GA24891@hendrix.borisch.local>
- <CALJXSJp4jzfjyo3msvt=ZHvtidBkNZ5CSsfr9rjReLzWet_Pqg@mail.gmail.com>
- <CABVOS0-7-UCetP03VS3rMPTnFYJ0+9r-PEypcY1cMd_oovr33g@mail.gmail.com>
- <201112222235.57662.chris@csamuel.org>
+Date: Thu, 22 Dec 2011 23:06:59 +1100
+Message-ID: <201112222307.03450.chris@csamuel.org>
+References: <20111220150717.GA24891@hendrix.borisch.local> <201112222235.57662.chris@csamuel.org> <CA+WRLO8iD=q9yXNv=ehwfNP0b0C_gDYztkix0fmxMGmNkAtnOw@mail.gmail.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Cc: linux-btrfs@vger.kernel.org
-To: Chris Samuel <chris@csamuel.org>
+Content-Type: multipart/signed;
+  boundary="nextPart5999523.89kAgbZgLS";
+  protocol="application/pgp-signature";
+  micalg=pgp-sha1
+To: linux-btrfs@vger.kernel.org
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <201112222235.57662.chris@csamuel.org>
+In-Reply-To: <CA+WRLO8iD=q9yXNv=ehwfNP0b0C_gDYztkix0fmxMGmNkAtnOw@mail.gmail.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Chris Samuel wrote (ao):
-> On Thu, 22 Dec 2011 07:12:13 PM Roman Kapusta wrote:
-> > I'm using btrfs for about two years and this is the key feature I'm
-> > missing all the time. Why is it not part of mainline btrfs already?
-> 
-> Because nobody has written the code to do it yet?
-> 
-> I'm sure the developers would welcome patches for this with open arms!
+--nextPart5999523.89kAgbZgLS
+Content-Type: Text/Plain;
+  charset="iso-8859-1"
+Content-Transfer-Encoding: quoted-printable
 
-As posted in this thread by Jerome two days ago:
+On Thu, 22 Dec 2011 10:57:10 PM Gareth Pye wrote:
 
-"You would need to apply this patch to your kernel:
-http://www.mail-archive.com/linux-btrfs@vger.kernel.org/msg09096.html
+> Chris, I recommend reading the previously linked thread.
 
-Is there any chance this patch gets in linux-next ?
-I use this feature all the time and it never broke on me."
+Mea culpa, I blame reading email out of order after getting out of=20
+hospital yesterday. :-(
 
+We now return you to your regularly scheduled mailing list..
 
-	Sander
+=2D-=20
+ Chris Samuel  :  http://www.csamuel.org/  :  Melbourne, VIC
 
--- 
-Humilis IT Services and Solutions
-http://www.humilis.net
+This email may come with a PGP signature as a file. Do not panic.
+=46or more info see: http://en.wikipedia.org/wiki/OpenPGP
+
+--nextPart5999523.89kAgbZgLS
+Content-Type: application/pgp-signature; name=signature.asc 
+Content-Description: This is a digitally signed message part.
+
+-----BEGIN PGP SIGNATURE-----
+Version: GnuPG v1.4.11 (GNU/Linux)
+
+iQEVAwUATvMdZI1yjaOTJg85AQL20gf/SOt3x4ocmKECcb9e1sTH4RXY0vK323kf
+BnoaTUhgvwDCHn98n5LVSEIT6SHs5d0R0kVSpxhojbLlWu/yWMHap14NBYRCD/k6
++lVloPQ77yGBZF15qk7/U+dgrTk5H6qfFP00D9fv+KYp31HNwBfCurbpaddMarWv
+pbWk91DqWzIP4bSbQhMa8dFcvIqAOs4q20pNkNv54JtzPT9BsmHUXoGirgfAB79D
+PgRfQsnqMHYOuslghd+TduKQQLwhcVvZ6Rn41KE7rwkJLd43BaHphvfc4459QMwT
+Bi+xFCj1DvdnPPx8uNR3f873XjcZqqdtR8a1DtdkRt/ZJ8w/aUdsaw==
+=xYok
+-----END PGP SIGNATURE-----
+
+--nextPart5999523.89kAgbZgLS--

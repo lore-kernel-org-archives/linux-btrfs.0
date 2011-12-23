@@ -1,48 +1,81 @@
 From: Chris Mason <chris.mason@oracle.com>
-Subject: Re: Btrfs: fix num_workers_starting bug and other bugs in async
- thread
-Date: Fri, 23 Dec 2011 08:21:26 -0500
-Message-ID: <20111223132126.GN19266@shiny>
-References: <20111223104453.GB8592@elgon.mountain>
- <20111223130603.GM19266@shiny>
+Subject: Re: Error handling: How to "lose" a transaction
+Date: Fri, 23 Dec 2011 09:17:31 -0500
+Message-ID: <20111223141731.GS19266@shiny>
+References: <4EE7C7F2.2080905@suse.com>
+ <20111214001319.GX31158@shiny>
+ <4EF29D0C.90709@suse.de>
+ <4EF2A24D.7040501@cn.fujitsu.com>
+ <4EF2A641.7070308@suse.de>
+ <4EF40DBF.4070505@suse.de>
 Mime-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
-Cc: Josef Bacik <josef@redhat.com>, linux-btrfs@vger.kernel.org
-To: Dan Carpenter <dan.carpenter@oracle.com>
+Cc: Liu Bo <liubo2009@cn.fujitsu.com>, Jeff Mahoney <jeffm@suse.com>,
+	Mark Fasheh <mfasheh@suse.de>,
+	Btrfs Development List <linux-btrfs@vger.kernel.org>
+To: Jeff Mahoney <jeffm@suse.de>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <20111223130603.GM19266@shiny>
+In-Reply-To: <4EF40DBF.4070505@suse.de>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Fri, Dec 23, 2011 at 08:06:03AM -0500, Chris Mason wrote:
-> On Fri, Dec 23, 2011 at 01:44:53PM +0300, Dan Carpenter wrote:
-> > Hi Josef,
-> > 
-> > Smatch complains about this change introduces a double unlock.
-> > 
-> > fs/btrfs/async-thread.c +608 find_worker(49) error: double unlock 'spin_lock:&workers->lock'
-> > 
-> >    579                          spin_unlock_irqrestore(&workers->lock, flags);
-> >                                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+On Fri, Dec 23, 2011 at 12:12:31AM -0500, Jeff Mahoney wrote:
+> -----BEGIN PGP SIGNED MESSAGE-----
+> Hash: SHA1
 > 
-> Thanks Dan, fixing.
-> >    602  found:
-> >    603          /*
-> >    604           * this makes sure the worker doesn't exit before it is placed
-> >    605           * onto a busy/idle list
-> >    606           */
-> >    607          atomic_inc(&worker->num_pending);
-> >    608          spin_unlock_irqrestore(&workers->lock, flags);
-> >                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-> > And again here.
+> On 12/21/2011 10:38 PM, Jeff Mahoney wrote:
+> > On 12/21/2011 10:21 PM, Liu Bo wrote:
+> >> On 12/22/2011 10:59 AM, Jeff Mahoney wrote: Sorry I haven't 
+> >> responded to this yet. I started digging right in and I've
+> >> started to have some good results. It turns out there's already a
+> >>  btrfs_cleanup_transaction call that will tear down outstanding 
+> >> transactions. It's not perfect and I've fixed a few bugs in
+> >> there, but it saved me a bunch of effort. I just wished I noticed
+> >> it a day before since I had it half implemented myself. :)
 > > 
-> > Btw, does find_worker() ever get called with IRQs disabled?  If so then
-> > __btrfs_start_workers() enables them.  Maybe that function should use
-> > spin_lock_irqsave() instead of spin_lock_irq().
+> > 
+> >>> Hi Jeff,
+> > 
+> >>> Yes, it should be, and I wrote this cleanup_transaction where
+> >>> I should notice you earlier... Anyway, thanks for your effort.
+> > 
+> >>> The error handling part has lots of corner cases, so I just
+> >>> pick up a brute way to tear down the current transaction in
+> >>> order to make the FS RO.
+> > 
+> > Oh, and it's worked great. The brute force method is a good start
+> > and will address the most severe problems (and most cases) well.
+> > I've decided to ignore most cases of -ENOMEM for now. The biggest
+> > bug I ran into so far was calling mutex_lock while holding a
+> > spinlock. It was a quick fix.
+> > 
+> > The method I've generally used is to mark the transaction aborted
+> > and pass the error up as quickly as possible, cleaning up the
+> > local allocations and locks as I go. The transaction gets
+> > completed normally, returns an error, isn't committed, and then is
+> > destroyed (with others, potentially) when called from in 
+> > btrfs_commit_transaction. Btrfs makes this super easy since we can 
+> > just skip all the CoW writes.
 > 
-> Patching this too.
+> 
+> Now, just out of curiosity, would it be ok if I printed this when we
+> ran out memory in deep call paths?
+> 
+>      FAIL WHALE!
+> 
+> W     W      W
+> W        W  W     W
+>               '.  W
+>   .-""-._     \ \.--|
+>  /       "-..__) .-'
+> |     _         /
+> \'-.__,   .__.,'
+>  `'----'._\--'
+> VVVVVVVVVVVVVVVVVVVVV
+> 
+> 
+> Happy Holidays ;)
 
-Read that too quickly.  __btrfs_start_workers() can't be called with
-irqs off, kthread_run schedules.
+I'll take any patch you put into the suse kernel ;)
 
 -chris
 

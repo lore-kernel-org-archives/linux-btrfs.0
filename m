@@ -1,52 +1,55 @@
-From: 810d4rk <810d4rk@gmail.com>
-Subject: Re: btrfs encryption problems
-Date: Fri, 23 Dec 2011 14:25:27 +0000
-Message-ID: <CAAVfQjkeH_umb41EoH4LRD_c15a7jxbR2N=6-3v9NcoHsiOR0Q@mail.gmail.com>
-References: <CAAVfQj=O5nDAcgsiNHz3dNXHDerNrq2Jw01WFLJr5q563oZToA@mail.gmail.com>
-	<20111123110956.GB31800@attic.humilis.net>
-	<CAAVfQj=r-Op2ZUrq8YOchVV=0_LzNmdxjYd03nDHn+t=120YQw@mail.gmail.com>
-	<20111124160617.680b676f@zougloub.eu>
-	<CAAVfQj=gM7ikTzdFmi=yNpo9guukQwFyKfdu7jD=z-J2PwrZEg@mail.gmail.com>
-	<20111124165429.10496040@Bidule>
-	<CAAVfQjmmXnyCmXerCyymEQm-DhDxi0YSSo9sVSvkHE1WvJ4wYA@mail.gmail.com>
-	<20111130134814.GW24338@shiny>
-	<CAAVfQjk+O_3uLb=DShFwV2gVnLeDzQ45ebpMidDGFXZtqXJBbQ@mail.gmail.com>
-	<CAG1y0scRTcpHxEnRHgeKgFtYgVYJdgMFydZfXmKEOnRQvUpcQA@mail.gmail.com>
-	<CAAVfQjnHkovhOQcWcRGAXON6ywfBAFHuT9vwp8QBf8hVd+wkjw@mail.gmail.com>
-	<CAAVfQjm03u6ZZTyvLGrz8VC7MebEkBzQ8Mo_Sqw2kmuEx427vg@mail.gmail.com>
-	<CAKcLGm_scJ57cC1hHY4rmqTrqwOdndQDbBtj09UYMYYABLb2Tw@mail.gmail.com>
+From: Jan Schmidt <list.btrfs@jan-o-sch.net>
+Subject: Re: [PATCH v1 05/10] Btrfs: add nested locking mode for paths
+Date: Fri, 23 Dec 2011 16:23:35 +0100
+Message-ID: <4EF49CF7.8010606@jan-o-sch.net>
+References: <cover.1324568415.git.list.btrfs@jan-o-sch.net> <108c7352f9047f90144360a5609816464b33afff.1324568416.git.list.btrfs@jan-o-sch.net> <20111222191617.GH19266@shiny>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=UTF-8
-Cc: "Fajar A. Nugraha" <list@fajar.net>,
-	Chris Mason <chris.mason@oracle.com>,
-	=?UTF-8?B?SsOpcsO0bWUgQ2FycmV0ZXJv?= <cJ-ko@zougloub.eu>,
-	sander@humilis.net, linux-btrfs@vger.kernel.org
-To: Mitch Harder <mitch.harder@sabayonlinux.org>
+Content-Type: text/plain; charset=ISO-8859-1; format=flowed
+Cc: linux-btrfs@vger.kernel.org, lizf@cn.fujitsu.com, sensille@gmx.net
+To: Chris Mason <chris.mason@oracle.com>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <CAKcLGm_scJ57cC1hHY4rmqTrqwOdndQDbBtj09UYMYYABLb2Tw@mail.gmail.com>
+In-Reply-To: <20111222191617.GH19266@shiny>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-> I've been using btrfs and luks encryption on my Acer netbook for about
-> a year now.  I haven't had an unmountable corruption on that computer
-> yet.
+Am 22.12.2011 20:16, schrieb Chris Mason:
+> On Thu, Dec 22, 2011 at 05:03:19PM +0100, Jan Schmidt wrote:
+>> From: Arne Jansen<sensille@gmx.net>
+>>
+>> This patch adds the possibilty to read-lock an extent even if it is already
+>> write-locked from the same thread. btrfs_find_all_roots() needs this
+>> capability.
 >
-> What are your goals now?
-
-I would like to recover the data that is not in the backup.
-
-> Are you trying to recover data from this disk, or are you trying to
-> accomplish some debugging?
-
-I am trying to recover the data, also I think this bug needs to be fixed.
-
-> Reviewing the thread, I don't see where you've run btrfsck on the
-> /dev/mapper/<entry>.
+> I'd rather not add a nested flag to the locking code, lets just make the
+> nesting explicitly allowed.
 >
-> Although btrfsck won't fix anything, it might give some insight as the
-> the extent of the corruption.
+> You shouldn't need locks around lock->owner.  Either your process owns
+> the lock (and it won't change away from your pid), or you don't own it
+> and it won't be your pid.  Just make sure the owner field gets cleared
+> when you do your final unlock.
 
-I have run it now and it says "No valid Btrfs found"
+Sounds good. I'll make a new patch the next days and send it. I'll also 
+force-push it into the for-chris branch mentioned in the cover letter. 
+So if anybody pulled that already, be warned.
 
+> So, if you are the owner of a write lock, you can add more write locks
+> or a read lock as required.
+>
+> Could you please describe the case where btrfs_find_all_roots needs
+> this?
 
--- 
-Thanks
+That's part of the patch set I ripped out of Arne's qgroup patches (I 
+hope he speaks up in case my explanation is garbage). The idea is that 
+find_all_roots should be callable even if you are currently holding a 
+lock on the data extent or the leaf in question. In order to resolve 
+non-shared refs, __resolve_indirect_ref needs so call btrfs_search_slot 
+on the fs-tree and that would deadlock if we called it while holding any 
+of the locks.
+
+The current application for find_all_roots does not strictly require 
+this bit, the caller won't have any of these locks (although I 
+experimented with a version that locked the extent before calling 
+find_all_roots while writing this patch set). But qgroups and btrfs send 
+will both depend on that. I decided to include that bit here to avoid 
+we're having multiple patch sets adding the same code later on.
+
+-Jan

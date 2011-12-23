@@ -1,81 +1,52 @@
-From: Chris Mason <chris.mason@oracle.com>
-Subject: Re: Error handling: How to "lose" a transaction
-Date: Fri, 23 Dec 2011 09:17:31 -0500
-Message-ID: <20111223141731.GS19266@shiny>
-References: <4EE7C7F2.2080905@suse.com>
- <20111214001319.GX31158@shiny>
- <4EF29D0C.90709@suse.de>
- <4EF2A24D.7040501@cn.fujitsu.com>
- <4EF2A641.7070308@suse.de>
- <4EF40DBF.4070505@suse.de>
+From: 810d4rk <810d4rk@gmail.com>
+Subject: Re: btrfs encryption problems
+Date: Fri, 23 Dec 2011 14:25:27 +0000
+Message-ID: <CAAVfQjkeH_umb41EoH4LRD_c15a7jxbR2N=6-3v9NcoHsiOR0Q@mail.gmail.com>
+References: <CAAVfQj=O5nDAcgsiNHz3dNXHDerNrq2Jw01WFLJr5q563oZToA@mail.gmail.com>
+	<20111123110956.GB31800@attic.humilis.net>
+	<CAAVfQj=r-Op2ZUrq8YOchVV=0_LzNmdxjYd03nDHn+t=120YQw@mail.gmail.com>
+	<20111124160617.680b676f@zougloub.eu>
+	<CAAVfQj=gM7ikTzdFmi=yNpo9guukQwFyKfdu7jD=z-J2PwrZEg@mail.gmail.com>
+	<20111124165429.10496040@Bidule>
+	<CAAVfQjmmXnyCmXerCyymEQm-DhDxi0YSSo9sVSvkHE1WvJ4wYA@mail.gmail.com>
+	<20111130134814.GW24338@shiny>
+	<CAAVfQjk+O_3uLb=DShFwV2gVnLeDzQ45ebpMidDGFXZtqXJBbQ@mail.gmail.com>
+	<CAG1y0scRTcpHxEnRHgeKgFtYgVYJdgMFydZfXmKEOnRQvUpcQA@mail.gmail.com>
+	<CAAVfQjnHkovhOQcWcRGAXON6ywfBAFHuT9vwp8QBf8hVd+wkjw@mail.gmail.com>
+	<CAAVfQjm03u6ZZTyvLGrz8VC7MebEkBzQ8Mo_Sqw2kmuEx427vg@mail.gmail.com>
+	<CAKcLGm_scJ57cC1hHY4rmqTrqwOdndQDbBtj09UYMYYABLb2Tw@mail.gmail.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Cc: Liu Bo <liubo2009@cn.fujitsu.com>, Jeff Mahoney <jeffm@suse.com>,
-	Mark Fasheh <mfasheh@suse.de>,
-	Btrfs Development List <linux-btrfs@vger.kernel.org>
-To: Jeff Mahoney <jeffm@suse.de>
+Content-Type: text/plain; charset=UTF-8
+Cc: "Fajar A. Nugraha" <list@fajar.net>,
+	Chris Mason <chris.mason@oracle.com>,
+	=?UTF-8?B?SsOpcsO0bWUgQ2FycmV0ZXJv?= <cJ-ko@zougloub.eu>,
+	sander@humilis.net, linux-btrfs@vger.kernel.org
+To: Mitch Harder <mitch.harder@sabayonlinux.org>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <4EF40DBF.4070505@suse.de>
+In-Reply-To: <CAKcLGm_scJ57cC1hHY4rmqTrqwOdndQDbBtj09UYMYYABLb2Tw@mail.gmail.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Fri, Dec 23, 2011 at 12:12:31AM -0500, Jeff Mahoney wrote:
-> -----BEGIN PGP SIGNED MESSAGE-----
-> Hash: SHA1
-> 
-> On 12/21/2011 10:38 PM, Jeff Mahoney wrote:
-> > On 12/21/2011 10:21 PM, Liu Bo wrote:
-> >> On 12/22/2011 10:59 AM, Jeff Mahoney wrote: Sorry I haven't 
-> >> responded to this yet. I started digging right in and I've
-> >> started to have some good results. It turns out there's already a
-> >>  btrfs_cleanup_transaction call that will tear down outstanding 
-> >> transactions. It's not perfect and I've fixed a few bugs in
-> >> there, but it saved me a bunch of effort. I just wished I noticed
-> >> it a day before since I had it half implemented myself. :)
-> > 
-> > 
-> >>> Hi Jeff,
-> > 
-> >>> Yes, it should be, and I wrote this cleanup_transaction where
-> >>> I should notice you earlier... Anyway, thanks for your effort.
-> > 
-> >>> The error handling part has lots of corner cases, so I just
-> >>> pick up a brute way to tear down the current transaction in
-> >>> order to make the FS RO.
-> > 
-> > Oh, and it's worked great. The brute force method is a good start
-> > and will address the most severe problems (and most cases) well.
-> > I've decided to ignore most cases of -ENOMEM for now. The biggest
-> > bug I ran into so far was calling mutex_lock while holding a
-> > spinlock. It was a quick fix.
-> > 
-> > The method I've generally used is to mark the transaction aborted
-> > and pass the error up as quickly as possible, cleaning up the
-> > local allocations and locks as I go. The transaction gets
-> > completed normally, returns an error, isn't committed, and then is
-> > destroyed (with others, potentially) when called from in 
-> > btrfs_commit_transaction. Btrfs makes this super easy since we can 
-> > just skip all the CoW writes.
-> 
-> 
-> Now, just out of curiosity, would it be ok if I printed this when we
-> ran out memory in deep call paths?
-> 
->      FAIL WHALE!
-> 
-> W     W      W
-> W        W  W     W
->               '.  W
->   .-""-._     \ \.--|
->  /       "-..__) .-'
-> |     _         /
-> \'-.__,   .__.,'
->  `'----'._\--'
-> VVVVVVVVVVVVVVVVVVVVV
-> 
-> 
-> Happy Holidays ;)
+> I've been using btrfs and luks encryption on my Acer netbook for about
+> a year now.  I haven't had an unmountable corruption on that computer
+> yet.
+>
+> What are your goals now?
 
-I'll take any patch you put into the suse kernel ;)
+I would like to recover the data that is not in the backup.
 
--chris
+> Are you trying to recover data from this disk, or are you trying to
+> accomplish some debugging?
 
+I am trying to recover the data, also I think this bug needs to be fixed.
+
+> Reviewing the thread, I don't see where you've run btrfsck on the
+> /dev/mapper/<entry>.
+>
+> Although btrfsck won't fix anything, it might give some insight as the
+> the extent of the corruption.
+
+I have run it now and it says "No valid Btrfs found"
+
+
+-- 
+Thanks

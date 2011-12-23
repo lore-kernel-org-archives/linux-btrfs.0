@@ -1,137 +1,129 @@
-From: Liu Bo <liubo2009@cn.fujitsu.com>
-Subject: Re: Error handling: How to "lose" a transaction
-Date: Fri, 23 Dec 2011 13:43:05 +0800
-Message-ID: <4EF414E9.3060009@cn.fujitsu.com>
-References: <4EE7C7F2.2080905@suse.com> <20111214001319.GX31158@shiny> <4EF29D0C.90709@suse.de> <4EF2A24D.7040501@cn.fujitsu.com> <4EF2A641.7070308@suse.de> <4EF40DBF.4070505@suse.de>
+From: Evan LeCompte <evanlec@gmail.com>
+Subject: Re: FS won't mount, =?utf-8?b?b3Blbl9jdHJlZQ==?= failed, Assertion !(path->slots[0] == 0) failed
+Date: Fri, 23 Dec 2011 09:37:28 +0000 (UTC)
+Message-ID: <loom.20111223T103108-120@post.gmane.org>
+References: <CB041FF1.1FD66%dsmith@tgen.org>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=ISO-8859-1
-Cc: Chris Mason <chris.mason@oracle.com>,
-	Jeff Mahoney <jeffm@suse.com>, Mark Fasheh <mfasheh@suse.de>,
-	Btrfs Development List <linux-btrfs@vger.kernel.org>
-To: Jeff Mahoney <jeffm@suse.de>
+Content-Type: text/plain; charset=us-ascii
+To: linux-btrfs@vger.kernel.org
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <4EF40DBF.4070505@suse.de>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 12/23/2011 01:12 PM, Jeff Mahoney wrote:
-> -----BEGIN PGP SIGNED MESSAGE-----
-> Hash: SHA1
+ <dsmith <at> tgen.org> writes:
+
 > 
-> On 12/21/2011 10:38 PM, Jeff Mahoney wrote:
->> On 12/21/2011 10:21 PM, Liu Bo wrote:
->>> On 12/22/2011 10:59 AM, Jeff Mahoney wrote: Sorry I haven't 
->>> responded to this yet. I started digging right in and I've
->>> started to have some good results. It turns out there's already a
->>>  btrfs_cleanup_transaction call that will tear down outstanding 
->>> transactions. It's not perfect and I've fixed a few bugs in
->>> there, but it saved me a bunch of effort. I just wished I noticed
->>> it a day before since I had it half implemented myself. :)
->>
->>>> Hi Jeff,
->>>> Yes, it should be, and I wrote this cleanup_transaction where
->>>> I should notice you earlier... Anyway, thanks for your effort.
->>>> The error handling part has lots of corner cases, so I just
->>>> pick up a brute way to tear down the current transaction in
->>>> order to make the FS RO.
->> Oh, and it's worked great. The brute force method is a good start
->> and will address the most severe problems (and most cases) well.
->> I've decided to ignore most cases of -ENOMEM for now. The biggest
->> bug I ran into so far was calling mutex_lock while holding a
->> spinlock. It was a quick fix.
->>
->> The method I've generally used is to mark the transaction aborted
->> and pass the error up as quickly as possible, cleaning up the
->> local allocations and locks as I go. The transaction gets
->> completed normally, returns an error, isn't committed, and then is
->> destroyed (with others, potentially) when called from in 
->> btrfs_commit_transaction. Btrfs makes this super easy since we can 
->> just skip all the CoW writes.
+> So I'm having a bit of trouble with one of my btrfs filesystems.  It isn't
+mounting after a power failure.  I
+> can't get restore or btrfsck to run, even on backup supers.  I've pasted some
+output below.  My btrfs-progs
+> below come from git this morning, running on linux 3.2.0.
 > 
+> # mount /dev/md2 /media/test/
+> mount: wrong fs type, bad option, bad superblock on /dev/md2,
+>        missing codepage or helper program, or other error
+>        In some cases useful info is found in syslog - try
+>        dmesg | tail  or so
 > 
-> Now, just out of curiosity, would it be ok if I printed this when we
-> ran out memory in deep call paths?
+> dmesg:
+> [26423.775471] device label LUMBERYARD devid 1 transid 1268960 /dev/md2
+> [26423.860966] parent transid verify failed on 25487586828288 wanted 1268960
+found 1246404
+> [26423.860974] parent transid verify failed on 25487586828288 wanted 1268960
+found 1246404
+> [26423.860979] parent transid verify failed on 25487586828288 wanted 1268960
+found 1246404
+> [26423.872936] btrfs: open_ctree failed
+> 
+> # ./btrfsck /dev/md2
+> parent transid verify failed on 25487586828288 wanted 1268960 found 1246404
+> parent transid verify failed on 25487586828288 wanted 1268960 found 1246404
+> parent transid verify failed on 25487586828288 wanted 1268960 found 1246404
+> parent transid verify failed on 25487586828288 wanted 1268960 found 1246404
+> Ignoring transid failure
+> btrfsck: root-tree.c:46: btrfs_find_last_root: Assertion `!(path->slots[0] ==
+0)' failed.
+> Aborted
+> # ./btrfsck -s 1 /dev/md2
+> using SB copy 1, bytenr 67108864
+> parent transid verify failed on 25483242758144 wanted 1268944 found 1268949
+> parent transid verify failed on 25483242758144 wanted 1268944 found 1268949
+> parent transid verify failed on 25483242758144 wanted 1268944 found 1268957
+> parent transid verify failed on 25483242758144 wanted 1268944 found 1268957
+> Ignoring transid failure
+> btrfsck: root-tree.c:46: btrfs_find_last_root: Assertion `!(path->slots[0] ==
+0)' failed.
+> Aborted
+> # ./btrfsck -s 2 /dev/md2
+> using SB copy 2, bytenr 274877906944
+> parent transid verify failed on 25483242758144 wanted 1268944 found 1268949
+> parent transid verify failed on 25483242758144 wanted 1268944 found 1268949
+> parent transid verify failed on 25483242758144 wanted 1268944 found 1268957
+> parent transid verify failed on 25483242758144 wanted 1268944 found 1268957
+> Ignoring transid failure
+> btrfsck: root-tree.c:46: btrfs_find_last_root: Assertion `!(path->slots[0] ==
+0)' failed.
+> Aborted
+> 
+> # ./find-root /dev/md2
+> http://pastebin.com/3umfQHhh
+> 
+> # ./restore -i -f 25483145760768 /dev/md2 /tmp
+> parent transid verify failed on 25487586828288 wanted 1268960 found 1246404
+> parent transid verify failed on 25487586828288 wanted 1268960 found 1246404
+> parent transid verify failed on 25487586828288 wanted 1268960 found 1246404
+> parent transid verify failed on 25487586828288 wanted 1268960 found 1246404
+> Ignoring transid failure
+> restore: root-tree.c:46: btrfs_find_last_root: Assertion `!(path->slots[0] ==
+0)' failed.
+> Aborted
+> # ./restore -i -u 1 /dev/md2 /tmp
+> parent transid verify failed on 25483242758144 wanted 1268944 found 1268949
+> parent transid verify failed on 25483242758144 wanted 1268944 found 1268949
+> parent transid verify failed on 25483242758144 wanted 1268944 found 1268957
+> parent transid verify failed on 25483242758144 wanted 1268944 found 1268957
+> Ignoring transid failure
+> restore: root-tree.c:46: btrfs_find_last_root: Assertion `!(path->slots[0] ==
+0)' failed.
+> Aborted
+> # ./restore -i -u 1 -f 25483145760768 /dev/md2 /tmp
+> parent transid verify failed on 25483242758144 wanted 1268944 found 1268949
+> parent transid verify failed on 25483242758144 wanted 1268944 found 1268949
+> parent transid verify failed on 25483242758144 wanted 1268944 found 1268957
+> parent transid verify failed on 25483242758144 wanted 1268944 found 1268957
+> Ignoring transid failure
+> restore: root-tree.c:46: btrfs_find_last_root: Assertion `!(path->slots[0] ==
+0)' failed.
+> Aborted
+> 
+> All further restores with various combinations of superblocks and bytenr's I
+tried produced output
+> identical to one of the restores above.
+> 
+> As the newest data on this filesystem had not been backed up, it would be nice
+if I could either return the
+> filesystem to a mountable state, or recover specific files to another
+filesystem.  Any ideas?
 > 
 
-I'm ok with this, but it depends on Chris :)
+I'm having the very same issue as you. I've tried all the latest btrfs tools,
+btrfsck, btrfs-zero-log, restore, find-root etc etc.
 
-Indeed, ENOMEM in deep call paths is a big big trouble for us, we don't yet have
-a graceful solution, and we can make an memory allocation with mask __GFP_NOFAIL
-flags for simplicity, although it is not recommended:
+All to no avail. only err output is always 
 
- * __GFP_NOFAIL: The VM implementation _must_ retry infinitely: the caller
- * cannot handle allocation failures.  This modifier is deprecated and no new
- * users should be added.
+"" btrfs_find_last_root: Assertion `!(path->slots[0] == 0)' failed. ""
+
+This is a very cryptic error that doesn't tell me anything. and it seems to be
+the only error that is ever thrown when transaction id's get out of sync.
+
+Is there ANY way to even recover ANY files at all from these btrfs filesystems
+that lose transid sync? mine occurred simply from a loose sata cable falling out
+of one of my drives while the system was running.
+
+This is extremely frustrating, but I guess I have no one to blame but myself. I
+do have a backup but its about a month old (my cron backup script died for some
+reason and I didn't notice). So I'm faced with losing a months worth of work :(
+
+Please help us, anyone!
 
 
->      FAIL WHALE!
-> 
-> W     W      W
-> W        W  W     W
->               '.  W
->   .-""-._     \ \.--|
->  /       "-..__) .-'
-> |     _         /
-> \'-.__,   .__.,'
->  `'----'._\--'
-> VVVVVVVVVVVVVVVVVVVVV
-> 
-> 
-> Happy Holidays ;)
-> 
-
-Happy Holidays!
-
-thanks,
-liubo
-
-> - -Jeff
-> 
->> Thanks!
->>
->> -Jeff
->>
->>
->>>> thanks, liubo
->>> This afternoon I started running xfstests on a dm-linear mapped 
->>> partition. Halfway through a sufficiently long test, I swap out 
->>> the linear mapping to an error mapping. It still crashes, but 
->>> somewhat less spectacularly. There are still a ton of BUG_ON's I 
->>> need to eliminate as well as work out the usual I/O
->>> error-recovery issue of uninterruptible, unrecoverable writeback
->>> contexts and still-locked pages holding up exit. I'm pretty
->>> pleased with the results so far and am pretty optimistic.
->>> -Jeff
->>
->>>> -- To unsubscribe from this list: send the line "unsubscribe 
->>>> linux-btrfs" in the body of a message to 
->>>> majordomo@vger.kernel.org More majordomo info at 
->>>> http://vger.kernel.org/majordomo-info.html
->>>>
->>
->> -- To unsubscribe from this list: send the line "unsubscribe
->> linux-btrfs" in the body of a message to majordomo@vger.kernel.org 
->> More majordomo info at  http://vger.kernel.org/majordomo-info.html
-> 
-> - -- 
-> Jeff Mahoney
-> SUSE Labs
-> -----BEGIN PGP SIGNATURE-----
-> Version: GnuPG v2.0.18 (GNU/Linux)
-> Comment: Using GnuPG with Mozilla - http://enigmail.mozdev.org/
-> 
-> iQIcBAEBAgAGBQJO9A2/AAoJEB57S2MheeWyiNIP/3Z6NETIXskkp+OVKTiF/gaP
-> bopj2dp92BlURFHEj5vJoESm4cUtQKTx9J/DB3yc7JDzc0UcRs9KCqGV9UpH6y9/
-> Zetzy3ZMsYyxvV5CZ50NGr+C1r5ULVGQ/UrPex/GT0bApcdBRMkFASLH8xkFl6dE
-> dfRjir038GzjVX/Phy0VPm0mg8eg77aco11Xk2+Y1MdEhsEqI+cUQYgA8O9M7HWy
-> 67Vv3KWxKC7PU6SYCPa0wGmQwTgs10GuKT9w+s7Ampy8iQhCgEuDo4dQxpRehQfp
-> YwD/vlHwVATTAR2zMbRtI0BWa+ideBzcdQg1QrZxB3o026Z7ooy+/fTqS6MiUrXy
-> mxGvb0g/BglK6Q86YQE77doIfJeUDLGoGQx2Zv1S9OzVwigo1a0LcP82P7yNnJBY
-> oihql+FAYBXwjqiAQ+wUvo7wy0H+ltmQgWfUDf5wjDHquTRT1H0kE15Okc8MX8+T
-> rmhp6vD1deX5Jz+JBIpCm94JhxUBPkBH2WksyA1jdLUOngHxRI0jmqz/5mPexV8e
-> dChaq1rsjYs5Zbbv/jpaefnEw0kbZ0cqS7uDLVVoyjEqGnBpqjdwE86WYjxc4biM
-> MkeSJ67Oof3ZGLWR0VQ+h4YnRjqAsMWsEd3jBLMo2krsr8ucc/UOzVDBVojDlGWJ
-> Z2HunZuWJkNgcsBatVoS
-> =z1sd
-> -----END PGP SIGNATURE-----
-> 
 

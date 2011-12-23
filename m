@@ -1,31 +1,37 @@
-From: Erik Logtenberg <erik@logtenberg.eu>
-Subject: Re: BTRFS fsck ?
-Date: Fri, 23 Dec 2011 17:55:35 +0100
-Message-ID: <4EF4B287.3090900@logtenberg.eu>
-References: <4ECB8A60.2020402@chibois.net> <20111122223140.GT28259@shiny>
+From: Chris Mason <chris.mason@oracle.com>
+Subject: [GIT PULL] Btrfs fixes
+Date: Fri, 23 Dec 2011 12:24:54 -0500
+Message-ID: <20111223172454.GT19266@shiny>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=ISO-8859-1
-To: linux-btrfs@vger.kernel.org
+Content-Type: text/plain; charset=us-ascii
+To: Linus Torvalds <torvalds@linux-foundation.org>,
+	LKML <linux-kernel@vger.kernel.org>,
+	linux-btrfs <linux-btrfs@vger.kernel.org>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <20111122223140.GT28259@shiny>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hi Chris,
+Hi Linus,
 
-Any updates on the results of another month of full time work on btrfsck?
+My for-linus branch has two commits:
 
-Thanks,
+git://git.kernel.org/pub/scm/linux/kernel/git/mason/linux-btrfs.git for-linus
 
-Erik.
+One is Al's patch in response to my last pull request, but with one small
+change to call d_instantiate before trying to log the inode in
+btrfs_link.
 
+The other is a double unlock that Dan Carpenter found.  These did get
+rebased this morning before I pushed them out, but I reran tests after
+the rebase.
 
-> I've set myself up for disappointment with release dates in the past.
-> 
-> We've found put some really important corruption fixes into the 3.2
-> merge window, and the current for-linus branch of the btrfs kernel repo
-> has a fix for write cache flushing bugs that are probably responsible
-> for most of the corruptions people have seen with power failures.
-> 
-> With this settled down, I'm back on fsck full time.
-> 
-> -chris
+Chris Mason (1) commits (+2/-1):
+    Btrfs: fix worker lock misuse in find_worker
+
+Al Viro (1) commits (+5/-4):
+    Btrfs: call d_instantiate after all ops are setup
+
+Total: (2) commits (+7/-5)
+
+ fs/btrfs/async-thread.c |    3 ++-
+ fs/btrfs/inode.c        |    9 +++++----
+ 2 files changed, 7 insertions(+), 5 deletions(-)

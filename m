@@ -1,8 +1,8 @@
 From: Evan LeCompte <evanlec@gmail.com>
 Subject: Re: FS won't mount, open_ctree failed, Assertion !(path->slots[0]
  == 0) failed
-Date: Sun, 25 Dec 2011 18:56:34 +0000
-Message-ID: <jd7rl0$1in$1@dough.gmane.org>
+Date: Sun, 25 Dec 2011 19:00:55 +0000
+Message-ID: <4EF772E7.10905@gmail.com>
 References: <CB041FF1.1FD66%dsmith@tgen.org> <loom.20111223T103108-120@post.gmane.org> <20111223181542.GU19266@shiny>
 Mime-Version: 1.0
 Content-Type: text/plain; charset=ISO-8859-1; format=flowed
@@ -49,14 +49,22 @@ On 12/23/2011 06:15 PM, Chris Mason wrote:
 > More majordomo info at  http://vger.kernel.org/majordomo-info.html
 >
 
-I'm running on a ubuntu 11.10 livecd with kernel 3.0.0
-Downloaded your latest git tree but
+I'm running on a ubuntu 11.10 livecd (kernel 3.0.0) but I did clone your 
+git repo and make && make install it.
 
-mount -o recovery failed
+however
 
-Is there anythng else I can do? I suppose I could try and build a livecd 
-with kernel 3.2 on it but thats pretty damn new so I'd have
-to engineer one from scratch or have another linux installation somewhere...
+mount -t btrfs -o recovery /dev/sda4 /mnt  failed
+same error , bad superblock
+
+also, this was a btrfs raid0 setup so it could be mounted via
+/dev/sda4 or /dev/sdb, however after that sata cable came loose
+I cannot mount either.
+
+Is there anything else we can do? I've screwed myself twice now using 
+btrfs raid0 so I think its time to call it quits and use something else
+for a while. but I'd really like to at least get my old data off this
+because my last backup is a month behind :(
 
 -- 
 --

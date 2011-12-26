@@ -1,12 +1,12 @@
 From: Evan LeCompte <evanlec@gmail.com>
 Subject: Re: FS won't mount, open_ctree failed, Assertion !(path->slots[0]
  == 0) failed
-Date: Sun, 25 Dec 2011 19:00:55 +0000
-Message-ID: <4EF772E7.10905@gmail.com>
+Date: Mon, 26 Dec 2011 19:06:44 +0000
+Message-ID: <4EF8C5C4.7090301@gmail.com>
 References: <CB041FF1.1FD66%dsmith@tgen.org> <loom.20111223T103108-120@post.gmane.org> <20111223181542.GU19266@shiny>
 Mime-Version: 1.0
 Content-Type: text/plain; charset=ISO-8859-1; format=flowed
-To: linux-btrfs@vger.kernel.org
+To: Chris Mason <chris.mason@oracle.com>, linux-btrfs@vger.kernel.org
 Return-path: <linux-btrfs-owner@vger.kernel.org>
 In-Reply-To: <20111223181542.GU19266@shiny>
 List-ID: <linux-btrfs.vger.kernel.org>
@@ -49,24 +49,13 @@ On 12/23/2011 06:15 PM, Chris Mason wrote:
 > More majordomo info at  http://vger.kernel.org/majordomo-info.html
 >
 
-I'm running on a ubuntu 11.10 livecd (kernel 3.0.0) but I did clone your 
-git repo and make && make install it.
+Chris,
+Can you help me work through the copy out recovery tools that you mentioned?
 
-however
+I can't seem to get anything else to work, if I could just recover the 
+files so I don't lose a month's work I'd be so happy...
 
-mount -t btrfs -o recovery /dev/sda4 /mnt  failed
-same error , bad superblock
+Thank you.
 
-also, this was a btrfs raid0 setup so it could be mounted via
-/dev/sda4 or /dev/sdb, however after that sata cable came loose
-I cannot mount either.
-
-Is there anything else we can do? I've screwed myself twice now using 
-btrfs raid0 so I think its time to call it quits and use something else
-for a while. but I'd really like to at least get my old data off this
-because my last backup is a month behind :(
-
--- 
 --
 Evan LeCompte
-

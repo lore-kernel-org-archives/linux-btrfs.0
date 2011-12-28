@@ -1,37 +1,40 @@
-From: Martin Steigerwald <Martin@lichtvoll.de>
-Subject: fstrim on BTRFS
-Date: Wed, 28 Dec 2011 17:57:15 +0100
-Message-ID: <201112281757.16019.Martin@lichtvoll.de>
+From: Konstantinos Skarlatos <k.skarlatos@gmail.com>
+Subject: Btrfs: blocked for more than 120 seconds, made worse by 3.2 rc7
+Date: Wed, 28 Dec 2011 21:26:07 +0200
+Message-ID: <4EFB6D4F.6070002@gmail.com>
 Mime-Version: 1.0
-Content-Type: text/plain;
-  charset="us-ascii"
-To: linux-btrfs@vger.kernel.org
+Content-Type: text/plain; charset=UTF-8; format=flowed
+Cc: Linux Btrfs <linux-btrfs@vger.kernel.org>,
+	Chris Mason <chris.mason@oracle.com>
+To: linux-kernel@vger.kernel.org
 Return-path: <linux-btrfs-owner@vger.kernel.org>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hi!
+Hello all:
+I have two machines with btrfs, that give me the "blocked for more than 
+120 seconds" message. After that I cannot write anything to disk, i am 
+unable to unmount the btrfs filesystem and i can only reboot with 
+sysrq-trigger.
 
-With 3.2-rc4 (probably earlier), Ext4 seems to remember what areas it 
-trimmed:
+It always happens when i write many files with rsync over network. When 
+i used 3.2rc6 it happened randomly on both machines after 50-500gb of 
+writes. with rc7 it happens after much less writes, probably 10gb or so, 
+but only on machine 1 for the time being. machine 2 has not crashed yet 
+after 200gb of writes and I am still testing that.
 
-merkaba:~> fstrim -v /boot
-/boot: 224657408 bytes were trimmed
-merkaba:~> fstrim -v /boot
-/boot: 0 bytes were trimmed
+machine 1: btrfs on a 6tb sparse file, mounted as loop, on a xfs 
+filesystem that lies on a 10TB md raid5. mount options 
+compress=zlib,compress-force
 
+machine 2: btrfs over md raid 5 (4x2TB)=5.5TB filesystem. mount options 
+compress=zlib,compress-force
 
-But BTRFS does not:
+pastebins:
 
-merkaba:~> fstrim -v /
-/: 4431613952 bytes were trimmed
-merkaba:~> fstrim -v /    
-/: 4341846016 bytes were trimmed
+machine1:
+3.2rc7 http://pastebin.com/u583G7jK
+3.2rc6 http://pastebin.com/L12TDaXa
 
-
-Is it planned to add this feature to BTRFS as well?
-
-
-I wish you a relaxed between Christmas and new year time,
--- 
-Martin 'Helios' Steigerwald - http://www.Lichtvoll.de
-GPG: 03B0 0D6C 0040 0710 4AFA  B82F 991B EAAC A599 84C7
+machine2:
+3.2rc6 http://pastebin.com/khD0wGXx
+3.2rc7 (not crashed yet)

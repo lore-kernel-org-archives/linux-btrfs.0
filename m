@@ -1,58 +1,51 @@
 From: Li Zefan <lizf@cn.fujitsu.com>
-Subject: Re: fstrim on BTRFS
-Date: Thu, 29 Dec 2011 17:39:59 +0800
-Message-ID: <4EFC356F.4060904@cn.fujitsu.com>
-References: <201112281757.16019.Martin@lichtvoll.de> <CAG1y0scg0vA1jfrp7GX8m9Puh0HJWBNgABHiXqrOuUGgH6p8KQ@mail.gmail.com>
+Subject: [RFC][PATCH 0/3] Btrfs: speed up fstrim
+Date: Thu, 29 Dec 2011 17:49:01 +0800
+Message-ID: <4EFC378D.7090606@cn.fujitsu.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=ISO-8859-1
-Cc: linux-btrfs@vger.kernel.org
-To: "Fajar A. Nugraha" <list@fajar.net>
+Content-Type: text/plain; charset=UTF-8
+Cc: "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>,
+	Martin Steigerwald <Martin@lichtvoll.de>
+To: Chris Mason <chris.mason@oracle.com>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <CAG1y0scg0vA1jfrp7GX8m9Puh0HJWBNgABHiXqrOuUGgH6p8KQ@mail.gmail.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Fajar A. Nugraha wrote:
-> On Wed, Dec 28, 2011 at 11:57 PM, Martin Steigerwald
-> <Martin@lichtvoll.de> wrote:
->> But BTRFS does not:
->>
->> merkaba:~> fstrim -v /
->> /: 4431613952 bytes were trimmed
->> merkaba:~> fstrim -v /
->> /: 4341846016 bytes were trimmed
-> 
-> .... and apparently it can't trim everything. Or maybe my kernel is
-> just too old.
-> 
-> 
-> $ sudo fstrim -v /
-> 2258165760 Bytes was trimmed
-> 
-> $ df -h /
-> Filesystem            Size  Used Avail Use% Mounted on
-> /dev/sda6              50G   34G   12G  75% /
-> 
-> $ mount | grep "/ "
-> /dev/sda6 on / type btrfs (rw,noatime,subvolid=258,compress-force=lzo)
-> 
-> so only about 2G out of 12G can be trimmed. This is on kernel 3.1.4.
-> 
+(This patchset is not for merge or review, except the first patch)
 
-That's because only free spaces in block groups will be trimmed. Btrfs
-allocates space from block groups, and when there's no space availabe,
-it will allocate a new block group from the pool. In your case there's
-~10G in the pool.
+By remembering which areas have been trimmed, we can speed up
+fstrim significantly.
 
-You can do a "btrfs fi df /", and you'll see the total size of existing
-block groups.
+    # fstrim -v /mnt/
+    /mnt/: 152772608 bytes were trimmed
+    # fstrim -v /mnt/
+    /mnt/: 0 bytes were trimmed
 
-You can empty the pool by:
+To implement this, after a free space item has been trimmed, we
+mark it as trimmed before inserting it into free space cache.
 
-	# dd if=/dev/zero of=/mytmpfile bs=1M
+(*)If we want to speed up the first fstrim after mounting the filesystem,
+we have to save the trimmed flag to disk, which will break backward
+compatibility, but only 3.2-rcX kernels will be affected.
 
-Then release the space (but it won't return back to the pool):
+That is, if you use fstrim in newest kernel with this patchset applied,
+and then you mount the fs in a 3.2-rcX kernel, you may trigger a BUG_ON()
+in __load_free_space_cache() sooner or later.
 
-	# rm /mytmpfile
-	# sync
+So, is this acceptable?
 
-and try "btrfs fi df /" and trim again.
+     # fstrim -v /mnt/
+     /mnt/: 267714560 bytes were trimmed
+     # fstrim -v /mnt/
+     /mnt/: 0 bytes were trimmed
+     # sync
+     # umount /mnt
+     # !mount
+     # fstrim -v /mnt/
+     /mnt/: 152240128 bytes were trimmed
+
+Because caches for block groups smaller than 100M will not be written
+to disk, we'll still have to trim them.
+
+*See this thread for a user request for this feature:
+	https://lkml.org/lkml/2011/12/1/24
+

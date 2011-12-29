@@ -1,43 +1,39 @@
 From: "Fajar A. Nugraha" <list@fajar.net>
 Subject: Re: fstrim on BTRFS
-Date: Thu, 29 Dec 2011 11:21:14 +0700
-Message-ID: <CAG1y0se+ctBx0YpsCGaW-8TKEN7PZix7PA8Eu-FzfVtkNPkkUQ@mail.gmail.com>
+Date: Thu, 29 Dec 2011 11:29:08 +0700
+Message-ID: <CAG1y0scg0vA1jfrp7GX8m9Puh0HJWBNgABHiXqrOuUGgH6p8KQ@mail.gmail.com>
 References: <201112281757.16019.Martin@lichtvoll.de>
-	<4EFBE668.7030800@cn.fujitsu.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset=ISO-8859-1
-To: linux-btrfs <linux-btrfs@vger.kernel.org>
+To: linux-btrfs@vger.kernel.org
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <4EFBE668.7030800@cn.fujitsu.com>
+In-Reply-To: <201112281757.16019.Martin@lichtvoll.de>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Thu, Dec 29, 2011 at 11:02 AM, Li Zefan <lizf@cn.fujitsu.com> wrote:
-> Martin Steigerwald wrote:
+On Wed, Dec 28, 2011 at 11:57 PM, Martin Steigerwald
+<Martin@lichtvoll.de> wrote:
+> But BTRFS does not:
+>
+> merkaba:~> fstrim -v /
+> /: 4431613952 bytes were trimmed
+> merkaba:~> fstrim -v /
+> /: 4341846016 bytes were trimmed
 
->> With 3.2-rc4 (probably earlier), Ext4 seems to remember what areas it
->> trimmed:
-
->> But BTRFS does not:
+.... and apparently it can't trim everything. Or maybe my kernel is
+just too old.
 
 
-> There's no such plan, but it's do-able, and I can take care of it.
-> There's an issue though.
+$ sudo fstrim -v /
+2258165760 Bytes was trimmed
 
-> For btrfs this issue can't be solved without disk format change that
-> will break older kernels, but only 3.2-rcX kernels will be affected if
-> we push the following change into mainline before 3.2 release.
+$ df -h /
+Filesystem            Size  Used Avail Use% Mounted on
+/dev/sda6              50G   34G   12G  75% /
 
-Slightly off-topic, how useful would trim be for btrfs when using
-newer SSD which have their own garbage collection and wear leveling
-(e.g. sandforce-based)?
+$ mount | grep "/ "
+/dev/sda6 on / type btrfs (rw,noatime,subvolid=258,compress-force=lzo)
 
-I'm trying fstrim and my disk is now pegged at write IOPS. Just
-wondering if maybe a "btrfs fi balance" would be more useful, since:
-- with trim, used space will remain used. Thus future writes will only
-utilized space marked as "free", making them wear faster
-- with "btrfs fi balance", btrfs will move the data around so (to some
-degree) the currently-unused space will be used, and  currently-used
-space will be unused, which will improve wear leveling.
+so only about 2G out of 12G can be trimmed. This is on kernel 3.1.4.
 
 -- 
 Fajar

@@ -1,49 +1,30 @@
-From: "Fajar A. Nugraha" <list@fajar.net>
-Subject: Re: Re: Re: Two way mirror in BRTFS
-Date: Fri, 30 Dec 2011 23:45:37 +0700
-Message-ID: <CAG1y0scUAHij+vUCUqOqCGMfaZwqiPNkt9cVZVc-4sVVMkc7Jw@mail.gmail.com>
-References: <CAG1y0sf8D1Nfzz90Dn5yun6d9CYjvT6xoZGo5DE29OkguHVuAw@mail.gmail.com>
-	<135550.23479.60309-2401-1978249025-1325258844@email.cz>
+From: Sandra Schlichting <littlesandra88@gmail.com>
+Subject: Encryption implementation like ZFS?
+Date: Fri, 30 Dec 2011 19:32:14 +0100
+Message-ID: <CAELiMBN7vPQ=42eNwT3oGztWS-666RrpzDzv7nDF_LX+0gjxhQ@mail.gmail.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset=ISO-8859-1
-Cc: linux-btrfs@vger.kernel.org
-To: jaromir.zdrazil@email.cz
+To: linux-btrfs@vger.kernel.org
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <135550.23479.60309-2401-1978249025-1325258844@email.cz>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-2011/12/30 Jaromir Zdrazil <jaromir.zdrazil@email.cz>:
->> > And if I am not mistaken, current version does not yet support a mountable
->> filesystem.
->>
->> You're mistaken :) With some extra work, you can even use it as root:
->> - http://zfsonlinux.org/example-zpl.html
->> -
->> https://github.com/dajhorn/pkg-zfs/wiki/HOWTO-install-Ubuntu-to-a-Native-ZFS-Root-Filesystem
->>
-> It seems I trust the web pages too much - in http://zfsonlinux.org/ is written that it does not ;O)) otherwise I would be using it already.
+Hi everybody,
 
-The web page is correct.
-http://zfsonlinux.org/: "Please keep in mind the current 0.5.2 stable
-release does not yet support a mountable filesystem. This
-functionality is currently available only in the 0.6.0-rc6 release
-candidate."
-http://zfsonlinux.org/example-zpl.html: "However, all the core
-functionality is in place and most of the advanced features are
-working. Stability of the latest release candidates has been very good
-and performance is respectible. Many people are successfully using the
-ZFS on Linux release candidates."
+According to [0] ZFS does encryption:
 
-Most zfsonlinux users use 0.6.0-rc6, and a big part of those is using
-the easy-to-install package from ubuntu ppa.
+One exception to this is the encryption support being added to the ZFS
+filesystem. Filesystem metadata such as filenames, ownership, ACLs,
+extended attributes are all stored encrypted on disk. The ZFS metadata
+about the storage pool is still stored in the clear so it is possible
+to determine how many filesystems (datasets) are available in the pool
+and even which ones are encrypted but not what the content of the
+stored files or directories are.
 
->> Either way, neither zfs or the (planned) btrfs send/receive supports
->> two-way/active-active setup. Both should (or will) work just fine for
->> one-way replication.
->>
-> That is what I needed to know! Thank you very much!
+Will btrfs implement encryption the same way?
 
-You're welcome.
+I read that the XFS encryption work have stalled. Does this impact btrfs?
 
--- 
-Fajar
+Best regards,
+Sandra
+
+[0] http://en.wikipedia.org/wiki/Filesystem-level_encryption

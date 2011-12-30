@@ -1,68 +1,70 @@
-From: Hugo Mills <hugo@carfax.org.uk>
-Subject: Re: data integrity in btrfs
-Date: Fri, 30 Dec 2011 13:38:26 +0000
-Message-ID: <20111230133826.GA2509@carfax.org.uk>
-References: <135528.24428.61333-23184-1070446607-1325251786@email.cz>
+From: =?us-ascii?Q?Jaromir=20Zdrazil?= <jaromir.zdrazil@email.cz>
+Subject: =?us-ascii?Q?Re=3A=20Re=3A=20Two=20way=20mirror=20in=20BRTFS?=
+Date: Fri, 30 Dec 2011 14:59:25 +0100 (CET)
+Message-ID: <135535.24205.61145-582-206632053-1325253564@email.cz>
+References: <CAG1y0sd2AvxucVJ5BKc4ysu08gS6SF7GJNX2DiP17co_NN6xLg@mail.gmail.com>
+Reply-To: jaromir.zdrazil@email.cz
 Mime-Version: 1.0
-Content-Type: multipart/signed; micalg=pgp-sha1;
-	protocol="application/pgp-signature"; boundary="SUOF0GtieIMvvwua"
-Cc: linux-btrfs@vger.kernel.org
-To: Jaromir Zdrazil <jaromir.zdrazil@email.cz>
+Content-Type: text/plain; charset=iso-8859-2
+To: linux-btrfs@vger.kernel.org
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <135528.24428.61333-23184-1070446607-1325251786@email.cz>
+In-Reply-To: <CAG1y0sd2AvxucVJ5BKc4ysu08gS6SF7GJNX2DiP17co_NN6xLg@mail.gmail.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
+> ------------ P=F9vodn=ED zpr=E1va ------------
+> Od: Fajar A. Nugraha <list@fajar.net>
+> P=F8edm=ECt: Re: Two way mirror in BRTFS
+> Datum: 30.12.2011 14:27:39
+> ----------------------------------------
+> 2011/12/30 Jaromir Zdrazil <jaromir.zdrazil@email.cz>:
+> > Sorry fo the typo in the subject!
+> >
+> > Just to add, I would like to see a two way mirror solution, but if =
+it will not
+> work now/is not implemnted yet, I would propably choose between drbd =
+in
+> asynchronous mode or make a some kind if "incremental" snapshot to a =
+remote
+> mapped disk (I do not know yet, if brtfs support it) =A0- it means ha=
+ve one
+> shapshop and let's say have a daily incremental update of this snapsh=
+ot.
+>=20
+> You mean like "zfs send -i"? If yes, why not just use zfs? There's
+> zfsonlinux project, with easy-to-install ppa for ubuntu. Or you could
+> compile it manually.
+>=20
+Thank you for your suggestion. As I know, there is not everything porte=
+d yet, and one of the missing important features I plan to use is to cr=
+ypt fs. And if I am not mistaken, current version does not yet support =
+a mountable filesystem.
+> >
+> > How would you do it?
+>=20
+> If you DO mean zfs-send-like-functionality, then you should ask about
+> "btrfs send and receive", not "two way mirror" (which is not an
+> accurate way to describe what you want). Also, send/receive ability
+> does not mean it can act as two-way mirror. It CAN be an alternative
+> to drbd async though.
 
---SUOF0GtieIMvvwua
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
-
-On Fri, Dec 30, 2011 at 02:29:46PM +0100, Jaromir Zdrazil wrote:
-> Hi again,
-> 
->    I know that ZFS include data integrity verification against data corruption modes using propably SHA256.
-> 
->    By sketchy readings at https://btrfs.wiki.kernel.org/index.html , http://en.wikipedia.org/wiki/Btrfs and other sources I have found just that there is Sha32C used and that it should be similar to ZFS.
-> 
->    How are data faults detected and repaired ni BRTFS? If the answer could be simple and precize, I would be more than happy.
-> 
-> Thank you! Gone to lunch ;O)
-
-   Every 4k block in btrfs is checksummed (using CRC32, so it's not
-cryptographically robust against malicious modification, but should
-spot most random errors).
-
-   If you use RAID-1 or RAID-10 storage, then you get two copies of
-each piece of data, stored on different devices. Each copy is
-independently checksummed. When data is read, the checksum is verified
-as well, and a failed checksum is logged to syslog. In this case, the
-filesystem will attempt to read the other copy. If both copies are
-bad, an I/O error is returned; if one of the copies is good, that data
-is returned.
-
-   With recent kernels and an up-to-date userspace, there is a feature
-called scrub which will read both copies of all of the data blocks in
-the filesystem and compare them to each other. If there is a mismatch
-with a failed checksum, scrub will rewrite the broken block to fix it.
-
-   Hugo.
-
--- 
-=== Hugo Mills: hugo@... carfax.org.uk | darksatanic.net | lug.org.uk ===
-  PGP key: 515C238D from wwwkeys.eu.pgp.net or http://www.carfax.org.uk
-       --- "Are you the man who rules the Universe?" "Well,  I ---       
-                              try not to."                               
-
---SUOF0GtieIMvvwua
-Content-Type: application/pgp-signature; name="signature.asc"
-Content-Description: Digital signature
-
------BEGIN PGP SIGNATURE-----
-Version: GnuPG v1.4.11 (GNU/Linux)
-
-iD8DBQFO/b7SIKyzvlFcI40RAvu8AJwMAPKsecHzJZlGSBK28QUN0+KHfACeNMRK
-lERNo0wUdD66NKHoI+Ngx0w=
-=/SB6
------END PGP SIGNATURE-----
-
---SUOF0GtieIMvvwua--
+If I understand it correctly, the diff between send and receive and two=
+ way mirror is that one is synchronous and the other is not (sends the =
+signal that the file have been succesfully written after all/one instan=
+ce have been succesfully written).
+Maybe you can explain it a bit more.
+>=20
+> I don't think there's any publicly available code for it yet though.
+>=20
+Thank you. Jaromir
+> --=20
+> Fajar
+> --
+> To unsubscribe from this list: send the line "unsubscribe linux-btrfs=
+" in
+> the body of a message to majordomo@vger.kernel.org
+> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+--
+To unsubscribe from this list: send the line "unsubscribe linux-btrfs" =
+in
+the body of a message to majordomo@vger.kernel.org
+More majordomo info at  http://vger.kernel.org/majordomo-info.html

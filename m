@@ -1,55 +1,43 @@
-From: Chris Mason <chris.mason@oracle.com>
-Subject: Re: fstrim on BTRFS
-Date: Tue, 3 Jan 2012 16:05:36 -0500
-Message-ID: <20120103210536.GJ6262@shiny>
-References: <201112281757.16019.Martin@lichtvoll.de>
- <4EFBE668.7030800@cn.fujitsu.com>
+From: C Anthony Risinger <anthony@xtfx.me>
+Subject: Re: Btrfs partition lost after RAID1 mirror disk failure?
+Date: Tue, 3 Jan 2012 15:49:36 -0600
+Message-ID: <CAGAVQTGMH0Y_5BvC6nxGsMcb3Dg2r8VEC10SN+gKRc08B1yDpA@mail.gmail.com>
+References: <CA+h3BtujUZbu17t0FSEht2wytE7Kj8T9DbAS7T74+c0bOWNnGA@mail.gmail.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Cc: Martin Steigerwald <Martin@lichtvoll.de>,
-	linux-btrfs@vger.kernel.org
-To: Li Zefan <lizf@cn.fujitsu.com>
+Content-Type: text/plain; charset=UTF-8
+Cc: linux-btrfs@vger.kernel.org
+To: Dan Garton <dan.garton@gmail.com>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <4EFBE668.7030800@cn.fujitsu.com>
+In-Reply-To: <CA+h3BtujUZbu17t0FSEht2wytE7Kj8T9DbAS7T74+c0bOWNnGA@mail.gmail.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Thu, Dec 29, 2011 at 12:02:48PM +0800, Li Zefan wrote:
-> Martin Steigerwald wrote:
-> > Hi!
-> > 
-> > With 3.2-rc4 (probably earlier), Ext4 seems to remember what areas it 
-> > trimmed:
-> > 
-> > merkaba:~> fstrim -v /boot
-> > /boot: 224657408 bytes were trimmed
-> > merkaba:~> fstrim -v /boot
-> > /boot: 0 bytes were trimmed
-> > 
-> > 
-> > But BTRFS does not:
-> > 
-> > merkaba:~> fstrim -v /
-> > /: 4431613952 bytes were trimmed
-> > merkaba:~> fstrim -v /    
-> > /: 4341846016 bytes were trimmed
-> > 
-> > 
-> > Is it planned to add this feature to BTRFS as well?
-> > 
-> 
-> There's no such plan, but it's do-able, and I can take care of it.
-> There's an issue though.
-> 
-> Whether we want to store TRIMMED information on disk? ext4 doesn't
-> do this, so the first fstrim will be slow though you've done fstrim
-> in previous mount.
+On Tue, Jan 3, 2012 at 8:44 AM, Dan Garton <dan.garton@gmail.com> wrote=
+:
+>
+>  [...]
+> =C2=A01327 =C2=A0btrfs-vol -a
+> =C2=A01328 =C2=A0btrfs-vol -a /nuvat
+> =C2=A01329 =C2=A0btrfs-vol -a asdasd /nuvat
+> =C2=A01330 =C2=A0btrfs-vol -a missing /nuvat
+> =C2=A01331 =C2=A0btrfs-vol -a /dev/sdc /nuvat
+> =C2=A01332 =C2=A0btrfs-vol -a /dev/sdb /nuvat
+> =C2=A01334 =C2=A0btrfs-vol -a missing /nuvat
+>  [...]
 
-I'd rather not store the trim status on disk.  The extra trims
-don't have a huge cost, and since some devices have a large granularity
-for trims, they may ignore the trim until it tosses a larger contiguous
-area of the disk.
+these look destructive to me ... adding the wrong devices and the
+existing devices back to the current array?  IIRC you should have `-r
+missing`, but in general, do not use the btrfsctl utility at all -- it
+won't have as much visibility/exception-handling/recovery as the
+`btrfs` utility.
 
-I'd be fine with a flag to the in-memory free extent struct that
-indicates if it has been trimmed down to the device.
+at what point did your FS become inaccessible?  your command history
+suggest it was working until shortly after these commands ... :-(
 
--chris
+--=20
+
+C Anthony
+--
+To unsubscribe from this list: send the line "unsubscribe linux-btrfs" =
+in
+the body of a message to majordomo@vger.kernel.org
+More majordomo info at  http://vger.kernel.org/majordomo-info.html

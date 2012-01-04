@@ -1,20 +1,26 @@
 From: Christoph Hellwig <hch@infradead.org>
-Subject: Re: 277: new test to verify on disk ctime update for chattr
-Date: Wed, 4 Jan 2012 13:42:33 -0500
-Message-ID: <20120104184233.GC8131@infradead.org>
-References: <4EF2AA17.40400@cn.fujitsu.com>
+Subject: Re: 276: fix up various issues
+Date: Wed, 4 Jan 2012 13:42:42 -0500
+Message-ID: <20120104184242.GD8131@infradead.org>
+References: <1325699686-21851-1-git-send-email-list.btrfs@jan-o-sch.net>
 Mime-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
-Cc: Christoph Hellwig <hch@infradead.org>,
-	"linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>,
-	xfs@oss.sgi.com
-To: Li Zefan <lizf@cn.fujitsu.com>
+Cc: xfs@oss.sgi.com, hch@infradead.org, sandeen@sandeen.net,
+	linux-btrfs@vger.kernel.org
+To: Jan Schmidt <list.btrfs@jan-o-sch.net>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <4EF2AA17.40400@cn.fujitsu.com>
+In-Reply-To: <1325699686-21851-1-git-send-email-list.btrfs@jan-o-sch.net>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Thu, Dec 22, 2011 at 11:55:03AM +0800, Li Zefan wrote:
-> We had a bug in btrfs which can be triggered by this test.
+On Wed, Jan 04, 2012 at 06:54:46PM +0100, Jan Schmidt wrote:
+> This commit fixes bd8ee45c. Changes:
+> - added a _require_btrfs helper function
+> - check for filefrag with _require_command
+> - always use _fail in case of errors
+> - added some comments
+> - removed $fresh code
+> - don't set FSTYP
+> 
+> Signed-off-by: Jan Schmidt <list.btrfs@jan-o-sch.net>
 
 Thanks, applied.
-

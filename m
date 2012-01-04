@@ -1,7 +1,7 @@
 From: Jan Schmidt <list.btrfs@jan-o-sch.net>
-Subject: [PATCH v2 01/10] Btrfs: generic data structure to build unique lists
-Date: Wed,  4 Jan 2012 18:35:39 +0100
-Message-ID: <da5c81356426c476112f2b59fe64bdb1b37f079d.1325692560.git.list.btrfs@jan-o-sch.net>
+Subject: [PATCH v2 05/10] Btrfs: add nested locking mode for paths
+Date: Wed,  4 Jan 2012 18:35:43 +0100
+Message-ID: <5b25f70f4200766355cdabda604e131d2fb6010d.1325692561.git.list.btrfs@jan-o-sch.net>
 References: <cover.1325692560.git.list.btrfs@jan-o-sch.net>
 To: chris.mason@oracle.com, linux-btrfs@vger.kernel.org
 Return-path: <linux-btrfs-owner@vger.kernel.org>
@@ -11,336 +11,160 @@ List-ID: <linux-btrfs.vger.kernel.org>
 
 From: Arne Jansen <sensille@gmx.net>
 
-ulist is a generic data structures to hold a collection of unique u64
-values. The only operations it supports is adding to the list and
-enumerating it.
-
-It is possible to store an auxiliary value along with the key. The
-implementation is preliminary and can probably be sped up significantly.
-
-It is used by btrfs_find_all_roots() quota to translate recursions into
-iterative loops.
+This patch adds the possibilty to read-lock an extent even if it is already
+write-locked from the same thread. btrfs_find_all_roots() needs this
+capability.
 
 Signed-off-by: Arne Jansen <sensille@gmx.net>
 Signed-off-by: Jan Schmidt <list.btrfs@jan-o-sch.net>
 ---
- fs/btrfs/Makefile |    2 +-
- fs/btrfs/ulist.c  |  220 +++++++++++++++++++++++++++++++++++++++++++++++++++++
- fs/btrfs/ulist.h  |   68 ++++++++++++++++
- 3 files changed, 289 insertions(+), 1 deletions(-)
+ fs/btrfs/extent_io.c |    1 +
+ fs/btrfs/extent_io.h |    2 +
+ fs/btrfs/locking.c   |   53 ++++++++++++++++++++++++++++++++++++++++++++++++-
+ 3 files changed, 54 insertions(+), 2 deletions(-)
 
-diff --git a/fs/btrfs/Makefile b/fs/btrfs/Makefile
-index c0ddfd2..7079840 100644
---- a/fs/btrfs/Makefile
-+++ b/fs/btrfs/Makefile
-@@ -8,6 +8,6 @@ btrfs-y += super.o ctree.o extent-tree.o print-tree.o root-tree.o dir-item.o \
- 	   extent_io.o volumes.o async-thread.o ioctl.o locking.o orphan.o \
- 	   export.o tree-log.o free-space-cache.o zlib.o lzo.o \
- 	   compression.o delayed-ref.o relocation.o delayed-inode.o scrub.o \
--	   reada.o backref.o
-+	   reada.o backref.o ulist.o
+diff --git a/fs/btrfs/extent_io.c b/fs/btrfs/extent_io.c
+index be1bf62..dd8d140 100644
+--- a/fs/btrfs/extent_io.c
++++ b/fs/btrfs/extent_io.c
+@@ -3571,6 +3571,7 @@ static struct extent_buffer *__alloc_extent_buffer(struct extent_io_tree *tree,
+ 	atomic_set(&eb->blocking_writers, 0);
+ 	atomic_set(&eb->spinning_readers, 0);
+ 	atomic_set(&eb->spinning_writers, 0);
++	eb->lock_nested = 0;
+ 	init_waitqueue_head(&eb->write_lock_wq);
+ 	init_waitqueue_head(&eb->read_lock_wq);
  
- btrfs-$(CONFIG_BTRFS_FS_POSIX_ACL) += acl.o
-diff --git a/fs/btrfs/ulist.c b/fs/btrfs/ulist.c
-new file mode 100644
-index 0000000..12f5147
---- /dev/null
-+++ b/fs/btrfs/ulist.c
-@@ -0,0 +1,220 @@
-+/*
-+ * Copyright (C) 2011 STRATO AG
-+ * written by Arne Jansen <sensille@gmx.net>
-+ * Distributed under the GNU GPL license version 2.
-+ */
-+
-+#include <linux/slab.h>
-+#include <linux/module.h>
-+#include "ulist.h"
-+
-+/*
-+ * ulist is a generic data structure to hold a collection of unique u64
-+ * values. The only operations it supports is adding to the list and
-+ * enumerating it.
-+ * It is possible to store an auxiliary value along with the key.
-+ *
-+ * The implementation is preliminary and can probably be sped up
-+ * significantly. A first step would be to store the values in an rbtree
-+ * as soon as ULIST_SIZE is exceeded.
-+ *
-+ * A sample usage for ulists is the enumeration of directed graphs without
-+ * visiting a node twice. The pseudo-code could look like this:
-+ *
-+ * ulist = ulist_alloc();
-+ * ulist_add(ulist, root);
-+ * elem = NULL;
-+ *
-+ * while ((elem = ulist_next(ulist, elem)) {
-+ * 	for (all child nodes n in elem)
-+ *		ulist_add(ulist, n);
-+ *	do something useful with the node;
-+ * }
-+ * ulist_free(ulist);
-+ *
-+ * This assumes the graph nodes are adressable by u64. This stems from the
-+ * usage for tree enumeration in btrfs, where the logical addresses are
-+ * 64 bit.
-+ *
-+ * It is also useful for tree enumeration which could be done elegantly
-+ * recursively, but is not possible due to kernel stack limitations. The
-+ * loop would be similar to the above.
-+ */
-+
-+/**
-+ * ulist_init - freshly initialize a ulist
-+ * @ulist:	the ulist to initialize
-+ *
-+ * Note: don't use this function to init an already used ulist, use
-+ * ulist_reinit instead.
-+ */
-+void ulist_init(struct ulist *ulist)
-+{
-+	ulist->nnodes = 0;
-+	ulist->nodes = ulist->int_nodes;
-+	ulist->nodes_alloced = ULIST_SIZE;
-+}
-+EXPORT_SYMBOL(ulist_init);
-+
-+/**
-+ * ulist_fini - free up additionally allocated memory for the ulist
-+ * @ulist:	the ulist from which to free the additional memory
-+ *
-+ * This is useful in cases where the base 'struct ulist' has been statically
-+ * allocated.
-+ */
-+void ulist_fini(struct ulist *ulist)
-+{
-+	/*
-+	 * The first ULIST_SIZE elements are stored inline in struct ulist.
-+	 * Only if more elements are alocated they need to be freed.
-+	 */
-+	if (ulist->nodes_alloced > ULIST_SIZE)
-+		kfree(ulist->nodes);
-+	ulist->nodes_alloced = 0;	/* in case ulist_fini is called twice */
-+}
-+EXPORT_SYMBOL(ulist_fini);
-+
-+/**
-+ * ulist_reinit - prepare a ulist for reuse
-+ * @ulist:	ulist to be reused
-+ *
-+ * Free up all additional memory allocated for the list elements and reinit
-+ * the ulist.
-+ */
-+void ulist_reinit(struct ulist *ulist)
-+{
-+	ulist_fini(ulist);
-+	ulist_init(ulist);
-+}
-+EXPORT_SYMBOL(ulist_reinit);
-+
-+/**
-+ * ulist_alloc - dynamically allocate a ulist
-+ * @gfp_mask:	allocation flags to for base allocation
-+ *
-+ * The allocated ulist will be returned in an initialized state.
-+ */
-+struct ulist *ulist_alloc(unsigned long gfp_mask)
-+{
-+	struct ulist *ulist = kmalloc(sizeof(*ulist), gfp_mask);
-+
-+	if (!ulist)
-+		return NULL;
-+
-+	ulist_init(ulist);
-+
-+	return ulist;
-+}
-+EXPORT_SYMBOL(ulist_alloc);
-+
-+/**
-+ * ulist_free - free dynamically allocated ulist
-+ * @ulist:	ulist to free
-+ *
-+ * It is not necessary to call ulist_fini before.
-+ */
-+void ulist_free(struct ulist *ulist)
-+{
-+	if (!ulist)
-+		return;
-+	ulist_fini(ulist);
-+	kfree(ulist);
-+}
-+EXPORT_SYMBOL(ulist_free);
-+
-+/**
-+ * ulist_add - add an element to the ulist
-+ * @ulist:	ulist to add the element to
-+ * @val:	value to add to ulist
-+ * @aux:	auxiliary value to store along with val
-+ * @gfp_mask:	flags to use for allocation
-+ *
-+ * Note: locking must be provided by the caller. In case of rwlocks write
-+ *       locking is needed
-+ *
-+ * Add an element to a ulist. The @val will only be added if it doesn't
-+ * already exist. If it is added, the auxiliary value @aux is stored along with
-+ * it. In case @val already exists in the ulist, @aux is ignored, even if
-+ * it differs from the already stored value.
-+ *
-+ * ulist_add returns 0 if @val already exists in ulist and 1 if @val has been
-+ * inserted.
-+ * In case of allocation failure -ENOMEM is returned and the ulist stays
-+ * unaltered.
-+ */
-+int ulist_add(struct ulist *ulist, u64 val, unsigned long aux,
-+	      unsigned long gfp_mask)
-+{
-+	int i;
-+
-+	for (i = 0; i < ulist->nnodes; ++i) {
-+		if (ulist->nodes[i].val == val)
-+			return 0;
+diff --git a/fs/btrfs/extent_io.h b/fs/btrfs/extent_io.h
+index 7604c30..bc6a042cb 100644
+--- a/fs/btrfs/extent_io.h
++++ b/fs/btrfs/extent_io.h
+@@ -129,6 +129,7 @@ struct extent_buffer {
+ 	struct list_head leak_list;
+ 	struct rcu_head rcu_head;
+ 	atomic_t refs;
++	pid_t lock_owner;
+ 
+ 	/* count of read lock holders on the extent buffer */
+ 	atomic_t write_locks;
+@@ -137,6 +138,7 @@ struct extent_buffer {
+ 	atomic_t blocking_readers;
+ 	atomic_t spinning_readers;
+ 	atomic_t spinning_writers;
++	int lock_nested;
+ 
+ 	/* protects write locks */
+ 	rwlock_t lock;
+diff --git a/fs/btrfs/locking.c b/fs/btrfs/locking.c
+index d77b67c..5e178d8 100644
+--- a/fs/btrfs/locking.c
++++ b/fs/btrfs/locking.c
+@@ -33,6 +33,14 @@ void btrfs_assert_tree_read_locked(struct extent_buffer *eb);
+  */
+ void btrfs_set_lock_blocking_rw(struct extent_buffer *eb, int rw)
+ {
++	if (eb->lock_nested) {
++		read_lock(&eb->lock);
++		if (eb->lock_nested && current->pid == eb->lock_owner) {
++			read_unlock(&eb->lock);
++			return;
++		}
++		read_unlock(&eb->lock);
 +	}
-+
-+	if (ulist->nnodes >= ulist->nodes_alloced) {
-+		u64 new_alloced = ulist->nodes_alloced + 128;
-+		struct ulist_node *new_nodes;
-+		void *old = NULL;
-+
+ 	if (rw == BTRFS_WRITE_LOCK) {
+ 		if (atomic_read(&eb->blocking_writers) == 0) {
+ 			WARN_ON(atomic_read(&eb->spinning_writers) != 1);
+@@ -57,6 +65,14 @@ void btrfs_set_lock_blocking_rw(struct extent_buffer *eb, int rw)
+  */
+ void btrfs_clear_lock_blocking_rw(struct extent_buffer *eb, int rw)
+ {
++	if (eb->lock_nested) {
++		read_lock(&eb->lock);
++		if (&eb->lock_nested && current->pid == eb->lock_owner) {
++			read_unlock(&eb->lock);
++			return;
++		}
++		read_unlock(&eb->lock);
++	}
+ 	if (rw == BTRFS_WRITE_LOCK_BLOCKING) {
+ 		BUG_ON(atomic_read(&eb->blocking_writers) != 1);
+ 		write_lock(&eb->lock);
+@@ -81,12 +97,25 @@ void btrfs_clear_lock_blocking_rw(struct extent_buffer *eb, int rw)
+ void btrfs_tree_read_lock(struct extent_buffer *eb)
+ {
+ again:
++	read_lock(&eb->lock);
++	if (atomic_read(&eb->blocking_writers) &&
++	    current->pid == eb->lock_owner) {
 +		/*
-+		 * if nodes_alloced == ULIST_SIZE no memory has been allocated
-+		 * yet, so pass NULL to krealloc
++		 * This extent is already write-locked by our thread. We allow
++		 * an additional read lock to be added because it's for the same
++		 * thread. btrfs_find_all_roots() depends on this as it may be
++		 * called on a partly (write-)locked tree.
 +		 */
-+		if (ulist->nodes_alloced > ULIST_SIZE)
-+			old = ulist->nodes;
-+
-+		new_nodes = krealloc(old, sizeof(*new_nodes) * new_alloced,
-+				     gfp_mask);
-+		if (!new_nodes)
-+			return -ENOMEM;
-+
-+		if (!old)
-+			memcpy(new_nodes, ulist->int_nodes,
-+			       sizeof(ulist->int_nodes));
-+
-+		ulist->nodes = new_nodes;
-+		ulist->nodes_alloced = new_alloced;
++		BUG_ON(eb->lock_nested);
++		eb->lock_nested = 1;
++		read_unlock(&eb->lock);
++		return;
 +	}
-+	ulist->nodes[ulist->nnodes].val = val;
-+	ulist->nodes[ulist->nnodes].aux = aux;
-+	++ulist->nnodes;
-+
-+	return 1;
-+}
-+EXPORT_SYMBOL(ulist_add);
-+
-+/**
-+ * ulist_next - iterate ulist
-+ * @ulist:	ulist to iterate
-+ * @prev:	previously returned element or %NULL to start iteration
-+ *
-+ * Note: locking must be provided by the caller. In case of rwlocks only read
-+ *       locking is needed
-+ *
-+ * This function is used to iterate an ulist. The iteration is started with
-+ * @prev = %NULL. It returns the next element from the ulist or %NULL when the
-+ * end is reached. No guarantee is made with respect to the order in which
-+ * the elements are returned. They might neither be returned in order of
-+ * addition nor in ascending order.
-+ * It is allowed to call ulist_add during an enumeration. Newly added items
-+ * are guaranteed to show up in the running enumeration.
-+ */
-+struct ulist_node *ulist_next(struct ulist *ulist, struct ulist_node *prev)
-+{
-+	int next;
-+
-+	if (ulist->nnodes == 0)
-+		return NULL;
-+
-+	if (!prev)
-+		return &ulist->nodes[0];
-+
-+	next = (prev - ulist->nodes) + 1;
-+	if (next < 0 || next >= ulist->nnodes)
-+		return NULL;
-+
-+	return &ulist->nodes[next];
-+}
-+EXPORT_SYMBOL(ulist_next);
-diff --git a/fs/btrfs/ulist.h b/fs/btrfs/ulist.h
-new file mode 100644
-index 0000000..2e25dec
---- /dev/null
-+++ b/fs/btrfs/ulist.h
-@@ -0,0 +1,68 @@
-+/*
-+ * Copyright (C) 2011 STRATO AG
-+ * written by Arne Jansen <sensille@gmx.net>
-+ * Distributed under the GNU GPL license version 2.
-+ *
-+ */
-+
-+#ifndef __ULIST__
-+#define __ULIST__
-+
-+/*
-+ * ulist is a generic data structure to hold a collection of unique u64
-+ * values. The only operations it supports is adding to the list and
-+ * enumerating it.
-+ * It is possible to store an auxiliary value along with the key.
-+ *
-+ * The implementation is preliminary and can probably be sped up
-+ * significantly. A first step would be to store the values in an rbtree
-+ * as soon as ULIST_SIZE is exceeded.
-+ */
-+
-+/*
-+ * number of elements statically allocated inside struct ulist
-+ */
-+#define ULIST_SIZE 16
-+
-+/*
-+ * element of the list
-+ */
-+struct ulist_node {
-+	u64 val;		/* value to store */
-+	unsigned long aux;	/* auxiliary value saved along with the val */
-+};
-+
-+struct ulist {
-+	/*
-+	 * number of elements stored in list
-+	 */
-+	unsigned long nnodes;
-+
-+	/*
-+	 * number of nodes we already have room for
-+	 */
-+	unsigned long nodes_alloced;
-+
-+	/*
-+	 * pointer to the array storing the elements. The first ULIST_SIZE
-+	 * elements are stored inline. In this case the it points to int_nodes.
-+	 * After exceeding ULIST_SIZE, dynamic memory is allocated.
-+	 */
-+	struct ulist_node *nodes;
-+
-+	/*
-+	 * inline storage space for the first ULIST_SIZE entries
-+	 */
-+	struct ulist_node int_nodes[ULIST_SIZE];
-+};
-+
-+void ulist_init(struct ulist *ulist);
-+void ulist_fini(struct ulist *ulist);
-+void ulist_reinit(struct ulist *ulist);
-+struct ulist *ulist_alloc(unsigned long gfp_mask);
-+void ulist_free(struct ulist *ulist);
-+int ulist_add(struct ulist *ulist, u64 val, unsigned long aux,
-+	      unsigned long gfp_mask);
-+struct ulist_node *ulist_next(struct ulist *ulist, struct ulist_node *prev);
-+
-+#endif
++	read_unlock(&eb->lock);
+ 	wait_event(eb->write_lock_wq, atomic_read(&eb->blocking_writers) == 0);
+ 	read_lock(&eb->lock);
+ 	if (atomic_read(&eb->blocking_writers)) {
+ 		read_unlock(&eb->lock);
+-		wait_event(eb->write_lock_wq,
+-			   atomic_read(&eb->blocking_writers) == 0);
+ 		goto again;
+ 	}
+ 	atomic_inc(&eb->read_locks);
+@@ -129,6 +158,7 @@ int btrfs_try_tree_write_lock(struct extent_buffer *eb)
+ 	}
+ 	atomic_inc(&eb->write_locks);
+ 	atomic_inc(&eb->spinning_writers);
++	eb->lock_owner = current->pid;
+ 	return 1;
+ }
+ 
+@@ -137,6 +167,15 @@ int btrfs_try_tree_write_lock(struct extent_buffer *eb)
+  */
+ void btrfs_tree_read_unlock(struct extent_buffer *eb)
+ {
++	if (eb->lock_nested) {
++		read_lock(&eb->lock);
++		if (eb->lock_nested && current->pid == eb->lock_owner) {
++			eb->lock_nested = 0;
++			read_unlock(&eb->lock);
++			return;
++		}
++		read_unlock(&eb->lock);
++	}
+ 	btrfs_assert_tree_read_locked(eb);
+ 	WARN_ON(atomic_read(&eb->spinning_readers) == 0);
+ 	atomic_dec(&eb->spinning_readers);
+@@ -149,6 +188,15 @@ void btrfs_tree_read_unlock(struct extent_buffer *eb)
+  */
+ void btrfs_tree_read_unlock_blocking(struct extent_buffer *eb)
+ {
++	if (eb->lock_nested) {
++		read_lock(&eb->lock);
++		if (eb->lock_nested && current->pid == eb->lock_owner) {
++			eb->lock_nested = 0;
++			read_unlock(&eb->lock);
++			return;
++		}
++		read_unlock(&eb->lock);
++	}
+ 	btrfs_assert_tree_read_locked(eb);
+ 	WARN_ON(atomic_read(&eb->blocking_readers) == 0);
+ 	if (atomic_dec_and_test(&eb->blocking_readers))
+@@ -181,6 +229,7 @@ again:
+ 	WARN_ON(atomic_read(&eb->spinning_writers));
+ 	atomic_inc(&eb->spinning_writers);
+ 	atomic_inc(&eb->write_locks);
++	eb->lock_owner = current->pid;
+ 	return 0;
+ }
+ 
 -- 
 1.7.3.4
 

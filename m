@@ -1,65 +1,26 @@
-From: Hugo Mills <hugo@carfax.org.uk>
-Subject: Re: btrfsprogs source code
-Date: Wed, 4 Jan 2012 18:37:45 +0000
-Message-ID: <20120104183745.GD27122@carfax.org.uk>
-References: <CAGvdiEZJwiJHqA8zqnQ1TRWeXMwrMM2oxUiQifKjN_z1EZF2sQ@mail.gmail.com>
- <1325613907.2995.10.camel@ayu>
- <20120104182419.GA11205@davidb.org>
+From: Christoph Hellwig <hch@infradead.org>
+Subject: Re: use btrfsck to check btrfs filesystems
+Date: Wed, 4 Jan 2012 13:42:24 -0500
+Message-ID: <20120104184224.GB8131@infradead.org>
+References: <4EE851B8.8010505@cn.fujitsu.com>
 Mime-Version: 1.0
-Content-Type: multipart/signed; micalg=pgp-sha1;
-	protocol="application/pgp-signature"; boundary="g7w8+K/95kPelPD2"
-Cc: Chris Mason <chris.mason@oracle.com>,
-	Calvin Walton <calvin.walton@kepstin.ca>,
-	"debit2005@gmail.com" <debit2005@gmail.com>,
-	linux-btrfs@vger.kernel.org
-To: David Brown <btrfs@davidb.org>
+Content-Type: text/plain; charset=us-ascii
+Cc: Christoph Hellwig <hch@infradead.org>,
+	Linux Btrfs <linux-btrfs@vger.kernel.org>, xfs@oss.sgi.com
+To: Miao Xie <miaox@cn.fujitsu.com>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <20120104182419.GA11205@davidb.org>
+In-Reply-To: <4EE851B8.8010505@cn.fujitsu.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-
---g7w8+K/95kPelPD2
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
-
-On Wed, Jan 04, 2012 at 10:24:20AM -0800, David Brown wrote:
-> On Tue, Jan 03, 2012 at 01:05:07PM -0500, Calvin Walton wrote:
+On Wed, Dec 14, 2011 at 03:35:20PM +0800, Miao Xie wrote:
+> We failed to get fsck program to check the btrfs file system, it is
+> because btrfs uses its independent check tool which is named btrfsck
+> to check the file system, so the common checker -- fsck -- could not
+> find it, and reported there is no checker.
 > 
-> >The best way to get the btrfs-progs source is probably via git; Chris
-> >Mason's repository for it can be found at
-> >http://git.kernel.org/?p=linux/kernel/git/mason/btrfs-progs.git
+> This patch fix it by using btrfsck directly. 
 > 
-> Chris,
-> 
-> The wiki at
-> https://btrfs.wiki.kernel.org/articles/b/t/r/Btrfs_source_repositories.html
-> still refers to a btrfs-progs-unstable.git repository, which is not
-> present at git.kernel.org.  Should we update this wiki, or do you have
-> plans on pushing an unstable repository again?
+> Signed-off-by: Miao Xie <miaox@cn.fujitsu.com>
 
-   That wiki is read-only, unfortunately. The up-to-date wiki is at
-[1], and we'll be decanting that back onto the kernel.org one when the
-kernel.org wiki is back in full working order.
+Thanks, applied.
 
-   Hugo.
-
-[1] http://btrfs.ipv5.de/
-
--- 
-=== Hugo Mills: hugo@... carfax.org.uk | darksatanic.net | lug.org.uk ===
-  PGP key: 515C238D from wwwkeys.eu.pgp.net or http://www.carfax.org.uk
-               --- echo "killall cat" > ~/curiosity.sh ---               
-
---g7w8+K/95kPelPD2
-Content-Type: application/pgp-signature; name="signature.asc"
-Content-Description: Digital signature
-
------BEGIN PGP SIGNATURE-----
-Version: GnuPG v1.4.11 (GNU/Linux)
-
-iD8DBQFPBJx5IKyzvlFcI40RAiVVAKDOQkFZvIgQpgZdNt6/Oa+1Qj+1PQCeJd3r
-4/CMK86iSOQgY/kpL+RGfMg=
-=uJ+4
------END PGP SIGNATURE-----
-
---g7w8+K/95kPelPD2--

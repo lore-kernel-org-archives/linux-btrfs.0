@@ -1,94 +1,64 @@
-From: "Kok, Auke-jan H" <auke-jan.h.kok@intel.com>
-Subject: Re: (renamed thread) btrfs metrics
-Date: Wed, 4 Jan 2012 10:46:27 -0800
-Message-ID: <CABsxX9+J9XvBzV8OEHfKJSaYtB8RziysW4JDtYW75Qje7tt4vQ@mail.gmail.com>
-References: <4F01BF5D.2070801@pocock.com.au>
-	<CAE5mzviX5kJ70nG3bLPwE7E3ZjmdQvsKNUbs6XXqVhs+MEeSXw@mail.gmail.com>
-	<4F01C6DC.3040609@pocock.com.au>
-	<20120102151422.GA27122@carfax.org.uk>
-	<4F01DA85.4050107@pocock.com.au>
-	<20120102163944.GB27122@carfax.org.uk>
-	<4F043C75.1080204@pocock.com.au>
+From: Dan Garton <dan.garton@gmail.com>
+Subject: Btrfs partition lost after RAID1 mirror disk failure?
+Date: Wed, 4 Jan 2012 20:35:02 +0000
+Message-ID: <CA+h3Btv8gt4SFiXe7p5GEwyRU3pi3F_-dTzRbUiQUc_U75j4fg@mail.gmail.com>
+References: <CA+h3BtujUZbu17t0FSEht2wytE7Kj8T9DbAS7T74+c0bOWNnGA@mail.gmail.com>
+	<CAGAVQTGMH0Y_5BvC6nxGsMcb3Dg2r8VEC10SN+gKRc08B1yDpA@mail.gmail.com>
+	<CA+h3BtsdcOnvXfjcUzRvEYFw_RavNE38hMP61RFXiSNoCHsGvg@mail.gmail.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=ISO-8859-1
-Cc: Hugo Mills <hugo@carfax.org.uk>, cwillu <cwillu@cwillu.com>,
-	linux-btrfs@vger.kernel.org
-To: Daniel Pocock <daniel@pocock.com.au>
+Content-Type: text/plain; charset=UTF-8
+To: linux-btrfs@vger.kernel.org
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <4F043C75.1080204@pocock.com.au>
+In-Reply-To: <CA+h3BtsdcOnvXfjcUzRvEYFw_RavNE38hMP61RFXiSNoCHsGvg@mail.gmail.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Wed, Jan 4, 2012 at 3:48 AM, Daniel Pocock <daniel@pocock.com.au> wr=
-ote:
+Hi, thanks for the reply.
+
+Yes, I agree, after going back over the commands, those ones you
+highlighted seem very suspicious....
+These commands were executed weeks ago amid a fair amount of confusion.
+
+But yes, I think that you are right - from memory the FS became
+inaccessible at about the time you mention.
+I would say that was the best theory as regards this problem.
+
+Assuming that this is the case, do I stand a chance of retrieving that
+volume and accessing that data again?
+Or does "destructive" imply total loss? (In which case, I'll cut my los=
+ses....)
+
+
+
+On 3 January 2012 21:49, C Anthony Risinger <anthony@xtfx.me> wrote:
 >
->>> I am looking at what metrics are needed to monitor btrfs in product=
-ion.
->>> =A0I actually look after the ganglia-modules-linux package, which i=
-ncludes
->>> some FS space metrics, but I figured that btrfs throws all that out=
- the
->>> window.
->>>
->>> Can you suggest metrics that would be meaningful, do I look in /pro=
-c or
->>> with syscalls, is there any code I should look at for an example of=
- how
->>> to extract them with C? =A0Ideally, Ganglia runs without root privi=
-leges
->>> too, so please let me know if btrfs will allow me to access them
->>
->> =A0 =A0It depends on what you want to know, really. If you want "how=
- close
->> am I to a full filesystem?", then the output of df will give you a
->> measure, even if it could be up to a factor of 2 out -- you can use =
-it
->> for predictive planning, though, as it'll be near zero when the FS
->> runs out of space.
+> On Tue, Jan 3, 2012 at 8:44 AM, Dan Garton <dan.garton@gmail.com> wro=
+te:
+> >
+> > =C2=A0[...]
+> > =C2=A01327 =C2=A0btrfs-vol -a
+> > =C2=A01328 =C2=A0btrfs-vol -a /nuvat
+> > =C2=A01329 =C2=A0btrfs-vol -a asdasd /nuvat
+> > =C2=A01330 =C2=A0btrfs-vol -a missing /nuvat
+> > =C2=A01331 =C2=A0btrfs-vol -a /dev/sdc /nuvat
+> > =C2=A01332 =C2=A0btrfs-vol -a /dev/sdb /nuvat
+> > =C2=A01334 =C2=A0btrfs-vol -a missing /nuvat
+> > =C2=A0[...]
 >
->
-> Maybe if you look at it from the point of the sysadmin and think abou=
+> these look destructive to me ... adding the wrong devices and the
+> existing devices back to the current array? =C2=A0IIRC you should hav=
+e `-r
+> missing`, but in general, do not use the btrfsctl utility at all -- i=
 t
-> what questions he might want to ask:
+> won't have as much visibility/exception-handling/recovery as the
+> `btrfs` utility.
 >
-> a) how much space would I reclaim if I deleted snapshot X?
+> at what point did your FS become inaccessible? =C2=A0your command his=
+tory
+> suggest it was working until shortly after these commands ... :-(
 >
-> b) how much space would I reclaim if I deleted all snapshots?
+> --
 >
-> c) how much space would I need if I start making 4 snapshots a day an=
-d
-> keeping them for 48 hours?
-
-chiming in on the discussion - what I'd like to personally see:
-
-=46irst, probably easiest: Display per subvol the space used that is
-"unique" (not used by other subvolumes), and shared (the opposite -
-all blocks that appear in other subvolumes as well).
-
-=46rom there on, one could potentially create a matrix: (proportional
-font art, apologies):
-
-          | subvol1  | subvol2  | subvol3  |
-----------+----------+----------+----------+
- subvol1  |   200M   |     20M  |     50M  |
-----------+----------+----------+----------+
- subvol2  |    20M   |    350M  |     22M  |
-----------+----------+----------+----------+
- subvol3  |    50M   |     22M  |    634M  |
-----------+----------+----------+----------+
-
-The diagonal obviously shows the "unique" blocks, subvol2 and subvol1
-share 20M data, etc. Missing from this plot would be "how much is
-shared between subvol1, subvol2, and subvol3" together, but it's a
-start and not something that hard to understand. One might add a
-column for "total size" of each subvol, which may obviously not be an
-addition of the rest of the columns in this diagram.
-
-Anyway, something like this would be high on my list of `df` numbers
-I'd like to see - since I think they are useful numbers.
-
-Cheers,
-
-Auke
+> C Anthony
 --
 To unsubscribe from this list: send the line "unsubscribe linux-btrfs" =
 in

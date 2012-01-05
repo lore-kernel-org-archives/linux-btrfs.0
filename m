@@ -1,102 +1,81 @@
-From: Martin Steigerwald <Martin@lichtvoll.de>
-Subject: Re: Why does Btrfs allow raid1 with mismatched drives? Also: How to look behind the curtain
-Date: Thu, 5 Jan 2012 11:39:20 +0100
-Message-ID: <201201051139.20334.Martin@lichtvoll.de>
-References: <4D48BA4B-AB66-46A2-8E79-050B798C9A3E@gmail.com> <20120105094444.GF27122@carfax.org.uk> <DFD486DD-C324-43EE-82BC-87DDCF432DB6@gmail.com> (sfid-20120105_110507_083017_9F92DD8C)
+From: Dave Chinner <david@fromorbit.com>
+Subject: Re: [3.2-rc7] slowdown, warning + oops creating lots of files
+Date: Thu, 5 Jan 2012 22:43:40 +1100
+Message-ID: <20120105114340.GF24466@dastard>
+References: <20120104214445.GE17026@dastard>
+ <20120104221105.GF17026@dastard>
+ <4F04D178.2070006@csamuel.org>
+ <20120104230122.GA24466@dastard>
+ <4F050996.1060206@cn.fujitsu.com>
+ <20120105022630.GD24466@dastard>
+ <4F05F5E3.70600@cn.fujitsu.com>
 Mime-Version: 1.0
-Content-Type: Text/Plain; charset=utf-8
-Cc: Fabian Zeindl <fabian.zeindl@gmail.com>,
-	Hugo Mills <hugo@carfax.org.uk>
-To: linux-btrfs@vger.kernel.org
+Content-Type: text/plain; charset=us-ascii
+Cc: Chris Samuel <chris@csamuel.org>, linux-btrfs@vger.kernel.org
+To: Liu Bo <liubo2009@cn.fujitsu.com>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <DFD486DD-C324-43EE-82BC-87DDCF432DB6@gmail.com>
+In-Reply-To: <4F05F5E3.70600@cn.fujitsu.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Am Donnerstag, 5. Januar 2012 schrieb Fabian Zeindl:
-> On Thursday, January 5, 2012 at 10:44 , Hugo Mills wrote:
-> > You should probably read the mis-named "Sysadmin's Guide"
-> > on the wiki[1], which explains what btrfs actually does with its
-> > replication.
-> >=20
-> > You should also probably read the FAQ entries on free space[2],
-> > since using plain "df" for btrfs is usually misleading.
->=20
-> I read both, but it doesn't answer my question on how btrfs behaves
-> when it can't actually do a raid1, because there's not enough data on
-> an "other" disk for a chunk-copy.
+On Thu, Jan 05, 2012 at 02:11:31PM -0500, Liu Bo wrote:
+> On 01/04/2012 09:26 PM, Dave Chinner wrote:
+> > On Wed, Jan 04, 2012 at 09:23:18PM -0500, Liu Bo wrote:
+> >> On 01/04/2012 06:01 PM, Dave Chinner wrote:
+> >>> On Thu, Jan 05, 2012 at 09:23:52AM +1100, Chris Samuel wrote:
+> >>>> On 05/01/12 09:11, Dave Chinner wrote:
+> >>>>
+> >>>>> Looks to be reproducable.
+> >>>> Does this happen with rc6 ?
+> >>> I haven't tried. All I'm doing is running some benchmarks to get
+> >>> numbers for a talk I'm giving about improvements in XFS metadata
+> >>> scalability, so I wanted to update my last set of numbers from
+> >>> 2.6.39.
+> >>>
+> >>> As it was, these benchmarks also failed on btrfs with oopsen and
+> >>> corruptions back in 2.6.39 time frame.  e.g. same VM, same
+> >>> test, different crashes, similar slowdowns as reported here:
+> >>> http://comments.gmane.org/gmane.comp.file-systems.btrfs/11062
+> >>>
+> >>> Given that there is now a history of this simple test uncovering
+> >>> problems, perhaps this is a test that should be run more regularly
+> >>> by btrfs developers?
+> >>>
+> >>>> If not then it might be easy to track down as there are only
+> >>>> 2 modifications between rc6 and rc7..
+> >>> They don't look like they'd be responsible for fixing an extent tree
+> >>> corruption, and I don't really have the time to do an open-ended
+> >>> bisect to find where the problem fix arose.
+> >>>
+> >>> As it is, 3rd attempt failed at 22m inodes, without the warning this
+> >>> time:
+> > 
+> > .....
+> > 
+> >>> It's hard to tell exactly what path gets to that BUG_ON(), so much
+> >>> code is inlined by the compiler into run_clustered_refs() that I
+> >>> can't tell exactly how it got to the BUG_ON() triggered in
+> >>> alloc_reserved_tree_block().
+> >>>
+> >> This seems to be an oops led by ENOSPC.
+> > 
+> > At the time of the oops, this is the space used on the filesystem:
+> > 
+> > $ df -h /mnt/scratch
+> > Filesystem      Size  Used Avail Use% Mounted on
+> > /dev/vdc         17T   31G   17T   1% /mnt/scratch
+> > 
+> > It's less than 0.2% full, so I think ENOSPC can be ruled out here.
+> > 
+> 
+> This bug has done something with our block reservation allocator, not the real disk space.
+> 
+> Can you try the below one and see what happens?
 
-=46rom my reading that Sysadmin Guide answers your question:
+Still crashes, still has severe slowdowns.
 
-BTRFS with RAID-1 will allocate chunks on two devices:
+Cheers,
 
-> Btrfs's "RAID" implementation bears only passing resemblance to
-> traditional RAID implementations. Instead, btrfs replicates data on a=
-=20
-> per-chunk basis. If the filesystem is configured to use "RAID-1", for=
-=20
-> example, chunks are allocated in pairs, with each chunk of the pair=20
-> being taken from a different block device. Data written to such a chu=
-nk=20
-> pair will be duplicated across both chunks.
->=20
-> Stripe-based "RAID" levels (RAID-0, RAID-10) work in a similar way,=20
-> allocating as many chunks as can fit across the drives with free spac=
-e,=20
-> and then perform striping of data at a level smaller than a chunk. So=
-,=20
-> for a RAID-10 filesystem on 4 disks, data may be stored like this:
-
-[=E2=80=A6 quoted from the Wiki page =E2=80=A6]
-
-"Allocating as many chunks as can fit across the drives" is also pretty=
-=20
-clear to me. So if BTRFS can=C2=B4t allocate a new chunk on two devices=
-, its=20
-full. To me it seems obvious that BTRFS will not break the RAID-1=20
-redundancy guarentee unless a drive fails.
-
-Thus when using a RAID-1 with two devices, the smaller one should defin=
-e=20
-the maximum capacity of the device. But when you use a RAID-1 with one =
-500=20
-GB and two 250 GB drives, BTRFS can replicate each chunk on the 500 GB=20
-drive on *one* of the both 250 GB drives.
-
-Thus is makes perfect sense to support differently sized drives in a BT=
-RFS=20
-pool.
-
-My own observations with a RAID-10 across 4 devices support this. I ech=
-o=C2=B4d=20
-"1" > /sys/block/sdX/delete to remove one harddisk while a dd was runni=
-ng=20
-to the RAID. BTRFS used the remaining disks. On next reboot all disks=20
-where available again. While BTRFS didn=C2=B4t start rebalancing the RA=
-ID=20
-automatically a btrfs filesystem balance made it fill up the previously=
-=20
-failed device until all devices had the same usage. This is also descri=
-bed=20
-in the sysadmin guide: So this is what you have to care for manually. I=
-f a=20
-drive failed, you have to balance the filesystem so that it creates=20
-replicas where they are missing.
-
-Now anyone deeper into BTRFS please check at whether my understanding=20
-matches what BTRFS is doing=E2=80=A6
-
-> > You could run a scrub, which will verify all of the data mirrors on
-> > the volume, and fix anything that's not redundant.
->=20
-> Will this command fail then for example?
-
-No, unless more than the allowed number of disks are failing.
-
---=20
-Martin 'Helios' Steigerwald - http://www.Lichtvoll.de
-GPG: 03B0 0D6C 0040 0710 4AFA  B82F 991B EAAC A599 84C7
---
-To unsubscribe from this list: send the line "unsubscribe linux-btrfs" =
-in
-the body of a message to majordomo@vger.kernel.org
-More majordomo info at  http://vger.kernel.org/majordomo-info.html
+Dave.
+-- 
+Dave Chinner
+david@fromorbit.com

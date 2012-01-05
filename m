@@ -1,68 +1,55 @@
-From: Hugo Mills <hugo@carfax.org.uk>
-Subject: Re: Why does Btrfs allow raid1 with mismatched drives? Also: How to
- look behind the curtain
-Date: Thu, 5 Jan 2012 09:44:44 +0000
-Message-ID: <20120105094444.GF27122@carfax.org.uk>
-References: <4D48BA4B-AB66-46A2-8E79-050B798C9A3E@gmail.com>
-Mime-Version: 1.0
-Content-Type: multipart/signed; micalg=pgp-sha1;
-	protocol="application/pgp-signature"; boundary="vmttodhTwj0NAgWp"
-Cc: linux-btrfs@vger.kernel.org
-To: Fabian Zeindl <fabian.zeindl@gmail.com>
+From: Liu Bo <liubo2009@cn.fujitsu.com>
+Subject: [RFC PATCH 0/3] apply the Probabilistic Skiplist on btrfs
+Date: Thu, 5 Jan 2012 17:48:06 +0800
+Message-ID: <1325756889-13294-1-git-send-email-liubo2009@cn.fujitsu.com>
+Cc: <chris.mason@oracle.com>, <josef@redhat.com>
+To: <linux-btrfs@vger.kernel.org>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <4D48BA4B-AB66-46A2-8E79-050B798C9A3E@gmail.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
+Since we are inclined to apply a lockless scheme on some objects of btrfs for
+higher performance, we want to build a RCU version the Probabilistic Skiplist.
 
---vmttodhTwj0NAgWp
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
+Here our skiplist algorithm is based on the skiplist experiments of
+Con Kolivas <kernel@kolivas.org> for BFS cpu scheduler.
+And more details about skiplist design are in patch 1.
 
-On Thu, Jan 05, 2012 at 10:21:57AM +0100, Fabian Zeindl wrote:
-> Hi,
-> 
->  the subject is pretty selfexplanatory. I"m creating a btrfs using
-> 
-> sudo mkfs.btrfs -m raid1 -d raid1 <smalldisk> <largedisk>
-> 
-> it creates the fs, apparently with the size of the larger disk, no matter in which order i supply the disk-arguments.
-> How can this be correct?
+Right now we have a plan to apply skiplist on extent_map and extent_state.
 
-   Because btrfs doesn't actually do "RAID-1" (in the sense that
-blocks with the same address on the two disks have identical
-contents). You should probably read the mis-named "Sysadmin's Guide"
-on the wiki[1], which explains what btrfs actually does with its
-replication.
+Here we choose extent_map firstly, since it is a "read mostly" thing,
+and the change is quite direct, all we need to do is
+a) to replace rbtree with skiplist,
+b) to add rcu support.
+And more details are in patch 2 and patch 3.
 
-   You should also probably read the FAQ entries on free space[2],
-since using plain "df" for btrfs is usually misleading.
+I've done some simple tests for performance on my 2-core box, there is no
+obvious difference, but I want to focus on the design side and make sure
+there is no more bug in it firstly.
 
-> Is there some way like "cat /proc/mdstat" to see what btrfs is doing and to assure myself my raid1 is secure? It's not
-> terribly important data, hence i'm trying btrfs, but i don't want to lose it either.
+For long term goals, we want to ship skiplist to lib, like lib/rbtree.c.
 
-   You could run a scrub, which will verify all of the data mirrors on
-the volume, and fix anything that's not redundant.
+MORE TESTS ARE WELCOME!
 
-   Hugo.
+Liu Bo (3):
+  Btrfs: add the Probabilistic Skiplist
+  Btrfs: rebuild extent_map based on skiplist
+  Btrfs: convert rwlock to RCU for extent_map
 
-[1] http://btrfs.ipv5.de/index.php?title=SysadminGuide
-[2] http://btrfs.ipv5.de/index.php?title=FAQ#Why_does_df_show_incorrect_free_space_for_my_RAID_volume.3F
+ fs/btrfs/Makefile      |    2 +-
+ fs/btrfs/compression.c |    8 +-
+ fs/btrfs/disk-io.c     |   15 ++-
+ fs/btrfs/extent_io.c   |   13 +-
+ fs/btrfs/extent_map.c  |  296 ++++++++++++++++++++++++++++++------------------
+ fs/btrfs/extent_map.h  |   21 +++-
+ fs/btrfs/file.c        |   23 +++-
+ fs/btrfs/inode.c       |   69 ++++++++----
+ fs/btrfs/ioctl.c       |    8 +-
+ fs/btrfs/relocation.c  |    9 +-
+ fs/btrfs/scrub.c       |    4 +-
+ fs/btrfs/skiplist.c    |   98 ++++++++++++++++
+ fs/btrfs/skiplist.h    |  217 +++++++++++++++++++++++++++++++++++
+ fs/btrfs/volumes.c     |   68 ++++++-----
+ 14 files changed, 651 insertions(+), 200 deletions(-)
+ create mode 100644 fs/btrfs/skiplist.c
+ create mode 100644 fs/btrfs/skiplist.h
 
--- 
-=== Hugo Mills: hugo@... carfax.org.uk | darksatanic.net | lug.org.uk ===
-  PGP key: 515C238D from wwwkeys.eu.pgp.net or http://www.carfax.org.uk
-                      --- vi: The core of evil. ---                      
-
---vmttodhTwj0NAgWp
-Content-Type: application/pgp-signature; name="signature.asc"
-Content-Description: Digital signature
-
------BEGIN PGP SIGNATURE-----
-Version: GnuPG v1.4.11 (GNU/Linux)
-
-iD8DBQFPBXEMIKyzvlFcI40RArRpAKCGtsagLYnQd/xBisSaiXM8eu+rDgCgmeD/
-4NG3Oi5BskiM8zvonluetnU=
-=l4GP
------END PGP SIGNATURE-----
-
---vmttodhTwj0NAgWp--

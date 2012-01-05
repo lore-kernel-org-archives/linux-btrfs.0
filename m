@@ -1,44 +1,67 @@
-From: Chris Samuel <chris@csamuel.org>
-Subject: Re: [3.2-rc7] slowdown, warning + oops creating lots of files
-Date: Fri, 06 Jan 2012 08:24:32 +1100
-Message-ID: <1325798672.17974.2.camel@Nokia-N900>
-References: <20120104214445.GE17026@dastard>
-	 <20120104221105.GF17026@dastard> <4F04D178.2070006@csamuel.org>
-	 <20120104230122.GA24466@dastard> <20120105184657.GC30372@shiny>
-	 <20120105194500.GD30372@shiny> <20120105201216.GG24466@dastard>
-	  <20120105210255.GE30372@shiny>
-Reply-To: Chris Samuel <chris@csamuel.org>
+From: Michael Andreen <harv@ruin.nu>
+Subject: Filesystem not mountable after reset, bad tree block
+Date: Thu, 5 Jan 2012 23:59:47 +0100
+Message-ID: <201201052359.47932.harv@ruin.nu>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=utf-8
-Cc: linux-btrfs@vger.kernel.org
-To: Chris Mason <chris.mason@oracle.com>,
-	Dave Chinner <david@fromorbit.com>
+Content-Type: text/plain;
+  charset="us-ascii"
+To: linux-btrfs@vger.kernel.org
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <20120105210255.GE30372@shiny>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Fri,=C2=A0  6 Jan 2012, 08:02:55 EST, Chris Mason <chris.mason@oracl=
-e.com> wrote:
+Hi,
 
-> Yeah, same thing here.=C2=A0  I'm testing a fix now, it's pretty dumb=
-=2E=C2=A0  We're
-> not allocating more metadata chunks from the drive because of where t=
-he
-> allocation is happening, so it is just a check for "do we need a new
-> chunk" in the right place.
->=20
-> I'll make sure it can fill my ssd and then send to you.
+Today one of my machines (running kernel 3.0.6) locked up, sadly the monitor 
+was stuck in power saving mode and no access over network so not sure exactly 
+what happened. After restarting the machine, the root filesystem is no longer 
+mountable the following output appears: 
 
-*If* the fix works would this be a candidate for a
-stable 3.2.1 release rather than having to wait for
-3.3?
+device label SSD devid 1 transid 507930 /dev/sdb2
+btrfs bad tree block start 0 188205998080
+btrfs bad tree block start 0 188205998080
+btrfs bad tree block start 0 188205998080
+btrfs: open_ctree failed
 
-cheers,
-Chris
---=20
-Chris Samuel - http://www.csamuel.org/ - on mobile
---
-To unsubscribe from this list: send the line "unsubscribe linux-btrfs" =
-in
-the body of a message to majordomo@vger.kernel.org
-More majordomo info at  http://vger.kernel.org/majordomo-info.html
+I downloaded the latest btrfs-progs, but getting similar output from several 
+of the programs:
+
+# ./btrfs-debug-tree /dev/sdb2
+Check tree block failed, want=188205998080, have=0
+Check tree block failed, want=188205998080, have=0
+Check tree block failed, want=188205998080, have=0
+Check tree block failed, want=188205998080, have=0
+Check tree block failed, want=188205998080, have=0
+read block failed check_tree_block
+btrfs-debug-tree: disk-io.c:447: find_and_setup_root: Assertion `!(!root-
+>node)' failed.
+Aborted
+
+The find-root program seems to think there is a root (and poentially some 
+older roots?), but not sure how to use that information.
+
+# ./find-root /dev/sdb2 
+Super think's the tree root is at 131212083200, chunk root 20983808
+Well block 13856997376 seems great, but generation doesn't match, have=321485, 
+want=507930
+Well block 16362573824 seems great, but generation doesn't match, have=317992, 
+want=507930
+Well block 16367947776 seems great, but generation doesn't match, have=321490, 
+want=507930
+Well block 36317024256 seems great, but generation doesn't match, have=195981, 
+want=507930
+Well block 39698722816 seems great, but generation doesn't match, have=273675, 
+want=507930
+Well block 39714439168 seems great, but generation doesn't match, have=320627, 
+want=507930
+Well block 43016519680 seems great, but generation doesn't match, have=272156, 
+want=507930
+Well block 43031748608 seems great, but generation doesn't match, have=302652, 
+want=507930
+Well block 47617982464 seems great, but generation doesn't match, have=274708, 
+want=507930
+Found tree root at 131212083200
+
+Anything else I can do to debug this or potentially recover a few bits before 
+reformatting?
+
+/Michael

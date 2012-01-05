@@ -1,39 +1,45 @@
-From: Maik Zumstrull <maik@zumstrull.net>
-Subject: Bug(?): btrfs carries on working if part of a device disappears
-Date: Thu, 5 Jan 2012 19:02:30 +0100
-Message-ID: <CAO=zWD+2D-qH-uLqdta6Yy_L2cE0ggCn7rMDUFz+w-9VMM=pQw@mail.gmail.com>
+From: Chris Mason <chris.mason@oracle.com>
+Subject: Re: [3.2-rc7] slowdown, warning + oops creating lots of files
+Date: Thu, 5 Jan 2012 13:46:57 -0500
+Message-ID: <20120105184657.GC30372@shiny>
+References: <20120104214445.GE17026@dastard>
+ <20120104221105.GF17026@dastard>
+ <4F04D178.2070006@csamuel.org>
+ <20120104230122.GA24466@dastard>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=UTF-8
-To: linux-btrfs@vger.kernel.org
+Content-Type: text/plain; charset=us-ascii
+Cc: Chris Samuel <chris@csamuel.org>, linux-btrfs@vger.kernel.org
+To: Dave Chinner <david@fromorbit.com>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
+In-Reply-To: <20120104230122.GA24466@dastard>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hello list,
+On Thu, Jan 05, 2012 at 10:01:22AM +1100, Dave Chinner wrote:
+> On Thu, Jan 05, 2012 at 09:23:52AM +1100, Chris Samuel wrote:
+> > On 05/01/12 09:11, Dave Chinner wrote:
+> > 
+> > > Looks to be reproducable.
+> > 
+> > Does this happen with rc6 ?
+> 
+> I haven't tried. All I'm doing is running some benchmarks to get
+> numbers for a talk I'm giving about improvements in XFS metadata
+> scalability, so I wanted to update my last set of numbers from
+> 2.6.39.
+> 
+> As it was, these benchmarks also failed on btrfs with oopsen and
+> corruptions back in 2.6.39 time frame.  e.g. same VM, same
+> test, different crashes, similar slowdowns as reported here:
+> http://comments.gmane.org/gmane.comp.file-systems.btrfs/11062
+> 
+> Given that there is now a history of this simple test uncovering
+> problems, perhaps this is a test that should be run more regularly
+> by btrfs developers?
 
-I hit a funny BIOS bug the other day where the BIOS suddenly sets a
-HPA on a random hard disk, leaving only the first 33 MB accessible.
-That disk had one device of a multi-device btrfs on it in my case.
-(With dm-crypt/LUKS in between, no partitioning or LVM.)
+Unfortunately, this one works for me.  I'll try it again and see if I
+can push harder.  If not, I'll see if I can trade beer for some
+diagnostic runs.
 
-The reason I'm writing to you is that btrfs apparently didn't care at
-all. It didn't complain, and it certainly didn't consider "Uhm, maybe
-I should stop writing to a file system that mostly doesn't exist
-anymore." The only errors I saw in dmesg were from the lower block
-device level: someone trying to read or write beyond the end of a
-device. An error btrfs apparently didn't mind. It took me a while to
-figure out what had happened, during which time btrfsck and the btrfs
-kernel part worked together to pretty much totally trash the fs. (I'm
-still trying a few things, but I'm not hopeful. Hold the default
-backup rant, I can in fact recover anything that was on this from
-elsewhere, I think.)
+Thanks Dave
 
-So, I think during mount, btrfs should check the reported size of the
-block device, and if it's significantly smaller than fs metadata
-implies it must be, mount degraded or read-only or not at all. And
-mostly, complain. Loudly.
-
-This was on Debian's linux-image-3.1.0-1-amd6 at version 3.1.6-1.
-Other ways this could happen than HPA are LVM or partitioning.
-
-
-Maik
+-chris

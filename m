@@ -1,54 +1,102 @@
-From: Daniel Pocock <daniel@pocock.com.au>
-Subject: Re: (renamed thread) btrfs metrics
-Date: Thu, 05 Jan 2012 11:09:07 +0100
-Message-ID: <4F0576C3.90502@pocock.com.au>
-References: <4F01BF5D.2070801@pocock.com.au>	<CAE5mzviX5kJ70nG3bLPwE7E3ZjmdQvsKNUbs6XXqVhs+MEeSXw@mail.gmail.com>	<4F01C6DC.3040609@pocock.com.au>	<20120102151422.GA27122@carfax.org.uk>	<4F01DA85.4050107@pocock.com.au>	<20120102163944.GB27122@carfax.org.uk>	<4F043C75.1080204@pocock.com.au> <CABsxX9+J9XvBzV8OEHfKJSaYtB8RziysW4JDtYW75Qje7tt4vQ@mail.gmail.com>
+From: Martin Steigerwald <Martin@lichtvoll.de>
+Subject: Re: Why does Btrfs allow raid1 with mismatched drives? Also: How to look behind the curtain
+Date: Thu, 5 Jan 2012 11:39:20 +0100
+Message-ID: <201201051139.20334.Martin@lichtvoll.de>
+References: <4D48BA4B-AB66-46A2-8E79-050B798C9A3E@gmail.com> <20120105094444.GF27122@carfax.org.uk> <DFD486DD-C324-43EE-82BC-87DDCF432DB6@gmail.com> (sfid-20120105_110507_083017_9F92DD8C)
 Mime-Version: 1.0
-Content-Type: text/plain; charset=ISO-8859-1
-Cc: Hugo Mills <hugo@carfax.org.uk>, cwillu <cwillu@cwillu.com>,
-	linux-btrfs@vger.kernel.org
-To: "Kok, Auke-jan H" <auke-jan.h.kok@intel.com>
+Content-Type: Text/Plain; charset=utf-8
+Cc: Fabian Zeindl <fabian.zeindl@gmail.com>,
+	Hugo Mills <hugo@carfax.org.uk>
+To: linux-btrfs@vger.kernel.org
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <CABsxX9+J9XvBzV8OEHfKJSaYtB8RziysW4JDtYW75Qje7tt4vQ@mail.gmail.com>
+In-Reply-To: <DFD486DD-C324-43EE-82BC-87DDCF432DB6@gmail.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
+Am Donnerstag, 5. Januar 2012 schrieb Fabian Zeindl:
+> On Thursday, January 5, 2012 at 10:44 , Hugo Mills wrote:
+> > You should probably read the mis-named "Sysadmin's Guide"
+> > on the wiki[1], which explains what btrfs actually does with its
+> > replication.
+> >=20
+> > You should also probably read the FAQ entries on free space[2],
+> > since using plain "df" for btrfs is usually misleading.
+>=20
+> I read both, but it doesn't answer my question on how btrfs behaves
+> when it can't actually do a raid1, because there's not enough data on
+> an "other" disk for a chunk-copy.
 
-> 
-> From there on, one could potentially create a matrix: (proportional
-> font art, apologies):
-> 
->           | subvol1  | subvol2  | subvol3  |
-> ----------+----------+----------+----------+
->  subvol1  |   200M   |     20M  |     50M  |
-> ----------+----------+----------+----------+
->  subvol2  |    20M   |    350M  |     22M  |
-> ----------+----------+----------+----------+
->  subvol3  |    50M   |     22M  |    634M  |
-> ----------+----------+----------+----------+
-> 
-> The diagonal obviously shows the "unique" blocks, subvol2 and subvol1
-> share 20M data, etc. Missing from this plot would be "how much is
-> shared between subvol1, subvol2, and subvol3" together, but it's a
-> start and not something that hard to understand. One might add a
-> column for "total size" of each subvol, which may obviously not be an
-> addition of the rest of the columns in this diagram.
-> 
-> Anyway, something like this would be high on my list of `df` numbers
-> I'd like to see - since I think they are useful numbers.
-> 
+=46rom my reading that Sysadmin Guide answers your question:
 
-This is an interesting way to look at it
+BTRFS with RAID-1 will allocate chunks on two devices:
 
-Ganglia typically records time series data, it is quite conceivable to
-create a metric for every permutation in each and store that in rrdtool
+> Btrfs's "RAID" implementation bears only passing resemblance to
+> traditional RAID implementations. Instead, btrfs replicates data on a=
+=20
+> per-chunk basis. If the filesystem is configured to use "RAID-1", for=
+=20
+> example, chunks are allocated in pairs, with each chunk of the pair=20
+> being taken from a different block device. Data written to such a chu=
+nk=20
+> pair will be duplicated across both chunks.
+>=20
+> Stripe-based "RAID" levels (RAID-0, RAID-10) work in a similar way,=20
+> allocating as many chunks as can fit across the drives with free spac=
+e,=20
+> and then perform striping of data at a level smaller than a chunk. So=
+,=20
+> for a RAID-10 filesystem on 4 disks, data may be stored like this:
 
-The challenge would then be in reporting on the data: the rrdtool graphs
-use time as an X-axis, and then it can display multiple Y values
+[=E2=80=A6 quoted from the Wiki page =E2=80=A6]
 
-However, now that I've started thinking about the type of data generated
-from btrfs, I was wondering if some kind of rr3dtool is needed - a 3D
-graphing solution - or potentially making graphs that do not include
-time on any axis?
+"Allocating as many chunks as can fit across the drives" is also pretty=
+=20
+clear to me. So if BTRFS can=C2=B4t allocate a new chunk on two devices=
+, its=20
+full. To me it seems obvious that BTRFS will not break the RAID-1=20
+redundancy guarentee unless a drive fails.
 
-Has anyone seen anything similar for administering ZFS, for example?
+Thus when using a RAID-1 with two devices, the smaller one should defin=
+e=20
+the maximum capacity of the device. But when you use a RAID-1 with one =
+500=20
+GB and two 250 GB drives, BTRFS can replicate each chunk on the 500 GB=20
+drive on *one* of the both 250 GB drives.
 
+Thus is makes perfect sense to support differently sized drives in a BT=
+RFS=20
+pool.
+
+My own observations with a RAID-10 across 4 devices support this. I ech=
+o=C2=B4d=20
+"1" > /sys/block/sdX/delete to remove one harddisk while a dd was runni=
+ng=20
+to the RAID. BTRFS used the remaining disks. On next reboot all disks=20
+where available again. While BTRFS didn=C2=B4t start rebalancing the RA=
+ID=20
+automatically a btrfs filesystem balance made it fill up the previously=
+=20
+failed device until all devices had the same usage. This is also descri=
+bed=20
+in the sysadmin guide: So this is what you have to care for manually. I=
+f a=20
+drive failed, you have to balance the filesystem so that it creates=20
+replicas where they are missing.
+
+Now anyone deeper into BTRFS please check at whether my understanding=20
+matches what BTRFS is doing=E2=80=A6
+
+> > You could run a scrub, which will verify all of the data mirrors on
+> > the volume, and fix anything that's not redundant.
+>=20
+> Will this command fail then for example?
+
+No, unless more than the allowed number of disks are failing.
+
+--=20
+Martin 'Helios' Steigerwald - http://www.Lichtvoll.de
+GPG: 03B0 0D6C 0040 0710 4AFA  B82F 991B EAAC A599 84C7
+--
+To unsubscribe from this list: send the line "unsubscribe linux-btrfs" =
+in
+the body of a message to majordomo@vger.kernel.org
+More majordomo info at  http://vger.kernel.org/majordomo-info.html

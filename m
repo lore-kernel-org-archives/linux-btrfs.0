@@ -1,29 +1,40 @@
-From: Fabian Zeindl <fabian.zeindl@gmail.com>
-Subject: Re: Why does Btrfs allow raid1 with mismatched drives? Also: How to look behind the curtain
-Date: Thu, 5 Jan 2012 10:53:28 +0100
-Message-ID: <DFD486DD-C324-43EE-82BC-87DDCF432DB6@gmail.com>
-References: <4D48BA4B-AB66-46A2-8E79-050B798C9A3E@gmail.com> <20120105094444.GF27122@carfax.org.uk>
-Mime-Version: 1.0 (Apple Message framework v1251.1)
-Content-Type: text/plain; charset=us-ascii
-Cc: linux-btrfs@vger.kernel.org
-To: Hugo Mills <hugo@carfax.org.uk>
+From: Jan Schmidt <mail@jan-o-sch.net>
+Subject: Re: [PATCH v2 00/10] Btrfs: backref walking rewrite
+Date: Thu, 05 Jan 2012 10:54:07 +0100
+Message-ID: <4F05733F.8070006@jan-o-sch.net>
+References: <cover.1325692560.git.list.btrfs@jan-o-sch.net> <4F053754.2000805@cn.fujitsu.com>
+Mime-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Cc: Jan Schmidt <list.btrfs@jan-o-sch.net>, chris.mason@oracle.com,
+	linux-btrfs@vger.kernel.org
+To: Li Zefan <lizf@cn.fujitsu.com>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <20120105094444.GF27122@carfax.org.uk>
+In-Reply-To: <4F053754.2000805@cn.fujitsu.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Thursday, January 5, 2012 at 10:44 , Hugo Mills wrote:
-> You should probably read the mis-named "Sysadmin's Guide" 
-> on the wiki[1], which explains what btrfs actually does with its
-> replication.
+On 05.01.2012 06:38, Li Zefan wrote:
+> Jan Schmidt wrote:
+>> This patch series is a major rewrite of the backref walking code. The patch
+>> series Arne sent some weeks ago for quota groups had a very interesting
+>> function, find_all_roots. I took this from him together with the bits needed
+>> for find_all_roots to work and replaced a major part of the code in backref.c
+>> with it.
+>>
+>> It can be pulled from
+>> 	git://git.jan-o-sch.net/btrfs-unstable for-chris
+>> There's also a gitweb for that repo on
+>> 	http://git.jan-o-sch.net/?p=btrfs-unstable
+>>
 > 
-> You should also probably read the FAQ entries on free space[2],
-> since using plain "df" for btrfs is usually misleading.
+> Thanks for the work!
+> 
+> I got a compile warning:
+> 
+>   CC [M]  fs/btrfs/backref.o
+> fs/btrfs/backref.c: In function 'inode_to_path':
+> fs/btrfs/backref.c:1312:3: warning: format '%ld' expects type 'long int', but argument 3 has type 'int
 
-I read both, but it doesn't answer my question on how btrfs behaves when it can't actually do a raid1, because there's not enough data on an "other" disk for a chunk-copy.
+Thanks for looking at this! Should now be fixed in my git repository
+(involved another force-push). I won't resend by email unless requested.
 
-> You could run a scrub, which will verify all of the data mirrors on
-> the volume, and fix anything that's not redundant.
-
-Will this command fail then for example?
-
-fabian
+-Jan

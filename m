@@ -1,18 +1,15 @@
 From: Martin Steigerwald <Martin@lichtvoll.de>
 Subject: Re: Why does Btrfs allow raid1 with mismatched drives? Also: How to look behind the curtain
-Date: Thu, 5 Jan 2012 15:41:01 +0100
-Message-ID: <201201051541.01491.Martin@lichtvoll.de>
+Date: Thu, 5 Jan 2012 15:40:18 +0100
+Message-ID: <201201051540.18764.Martin@lichtvoll.de>
+References: <4D48BA4B-AB66-46A2-8E79-050B798C9A3E@gmail.com> <CABVOS0_3O8qZTEOuAvdbsCKfMJNKYS1C0dU2CL5=h5MVSWDe+A@mail.gmail.com> <86174C7E-A954-416E-8A05-A4D58CF65BC8@gmail.com> (sfid-20120105_153050_134074_33A25932)
 Mime-Version: 1.0
 Content-Type: Text/Plain;
   charset="iso-8859-1"
-Cc: Fabian Zeindl <fabian.zeindl@gmail.com>,
-	Roman Kapusta <roman.kapusta@gmail.com>,
-	Hugo Mills <hugo@carfax.org.uk>
 To: linux-btrfs@vger.kernel.org
 Return-path: <linux-btrfs-owner@vger.kernel.org>
+In-Reply-To: <86174C7E-A954-416E-8A05-A4D58CF65BC8@gmail.com>
 List-ID: <linux-btrfs.vger.kernel.org>
-
-Sorry, accidentally dropped CC.
 
 Am Donnerstag, 5. Januar 2012 schrieb Fabian Zeindl:
 > On Jan 5, 2012, at 14:35 , Roman Kapusta wrote:

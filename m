@@ -1,49 +1,52 @@
-From: Chris Mason <chris.mason@oracle.com>
-Subject: Re: [3.2-rc7] slowdown, warning + oops creating lots of files
-Date: Thu, 5 Jan 2012 14:45:00 -0500
-Message-ID: <20120105194500.GD30372@shiny>
-References: <20120104214445.GE17026@dastard>
- <20120104221105.GF17026@dastard>
- <4F04D178.2070006@csamuel.org>
- <20120104230122.GA24466@dastard>
- <20120105184657.GC30372@shiny>
+From: pubny <pubny@xs4all.nl>
+Subject: Re: checkums when converting from ext[234] to Btrfs
+Date: Thu, 05 Jan 2012 20:48:33 +0100
+Message-ID: <1325792913.11943.1.camel@lupus.example.com>
+References: <1325157169.28566.21.camel@lupus>
+	 <1325686931.2127.112.camel@lupus>  <20120105154541.GN7322@twin.jikos.cz>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-To: Dave Chinner <david@fromorbit.com>,
-	Chris Samuel <chris@csamuel.org>, linux-btrfs@vger.kernel.org
+Content-Type: text/plain; charset=UTF-8
+Cc: linux-btrfs@vger.kernel.org
+To: dave@jikos.cz
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <20120105184657.GC30372@shiny>
+In-Reply-To: <20120105154541.GN7322@twin.jikos.cz>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Thu, Jan 05, 2012 at 01:46:57PM -0500, Chris Mason wrote:
-> On Thu, Jan 05, 2012 at 10:01:22AM +1100, Dave Chinner wrote:
-> > On Thu, Jan 05, 2012 at 09:23:52AM +1100, Chris Samuel wrote:
-> > > On 05/01/12 09:11, Dave Chinner wrote:
-> > > 
-> > > > Looks to be reproducable.
-> > > 
-> > > Does this happen with rc6 ?
-> > 
-> > I haven't tried. All I'm doing is running some benchmarks to get
-> > numbers for a talk I'm giving about improvements in XFS metadata
-> > scalability, so I wanted to update my last set of numbers from
-> > 2.6.39.
-> > 
-> > As it was, these benchmarks also failed on btrfs with oopsen and
-> > corruptions back in 2.6.39 time frame.  e.g. same VM, same
-> > test, different crashes, similar slowdowns as reported here:
-> > http://comments.gmane.org/gmane.comp.file-systems.btrfs/11062
-> > 
-> > Given that there is now a history of this simple test uncovering
-> > problems, perhaps this is a test that should be run more regularly
-> > by btrfs developers?
-> 
-> Unfortunately, this one works for me.  I'll try it again and see if I
-> can push harder.  If not, I'll see if I can trade beer for some
-> diagnostic runs.
+Thanks David. That's very helpful.
 
-Aha, if I try it just on the ssd instead of on my full array it triggers
-at 88M files.  Great.
+Regards,
+G=C3=A1bor
 
--chris
 
+-----Original Message-----
+=46rom: David Sterba <dave@jikos.cz>
+Reply-to: dave@jikos.cz
+To: pubny <pubny@xs4all.nl>
+Cc: linux-btrfs@vger.kernel.org
+Subject: Re: checkums when converting from ext[234] to Btrfs
+Date: Thu, 5 Jan 2012 16:45:41 +0100
+Mailer: Mutt/1.4.2.2i
+
+On Wed, Jan 04, 2012 at 03:22:11PM +0100, pubny wrote:
+> Could someone help me with a clarification whether the btrfs-convert
+> tool creates checksums on blocks of the existing ext[234] filesystem?
+
+yes, it does checksum by default and you can switch it off with the '-d=
+'
+option.
+
+> Any experiences how the size and the filesystem utilization (used vs.
+> total diskspace) impacts the time of conversion?
+
+I don't have numbers but it needs to go through extX metadata, read and
+checksum data blocks, then write btrfs metadata. Nothing where a
+significant time could be saved (except switching off the checksums).
+
+
+david
+
+--
+To unsubscribe from this list: send the line "unsubscribe linux-btrfs" =
+in
+the body of a message to majordomo@vger.kernel.org
+More majordomo info at  http://vger.kernel.org/majordomo-info.html

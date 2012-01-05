@@ -1,77 +1,42 @@
-From: idank <idank@tonian.com>
-Subject: btrfs truncate() does not change inode times
-Date: Thu, 05 Jan 2012 15:39:45 +0200
-Message-ID: <4F05A821.8090202@tonian.com>
-Mime-Version: 1.0
-Content-Type: text/plain; charset=ISO-8859-1
-To: linux-btrfs@vger.kernel.org,
-	"linux-fsdevel@vger.kernel.org" <linux-fsdevel@vger.kernel.org>
-Return-path: <linux-fsdevel-owner@vger.kernel.org>
+From: Fabian Zeindl <fabian.zeindl@gmail.com>
+Subject: Re: Why does Btrfs allow raid1 with mismatched drives? Also: How to look behind the curtain
+Date: Thu, 5 Jan 2012 14:47:02 +0100
+Message-ID: <86174C7E-A954-416E-8A05-A4D58CF65BC8@gmail.com>
+References: <4D48BA4B-AB66-46A2-8E79-050B798C9A3E@gmail.com> <20120105094444.GF27122@carfax.org.uk> <DFD486DD-C324-43EE-82BC-87DDCF432DB6@gmail.com> <201201051139.20334.Martin@lichtvoll.de> <82FEA956-FFE4-4A00-B895-AA381A35FEE7@gmail.com> <CABVOS0_3O8qZTEOuAvdbsCKfMJNKYS1C0dU2CL5=h5MVSWDe+A@mail.gmail.com>
+Mime-Version: 1.0 (Apple Message framework v1251.1)
+Content-Type: text/plain; charset=us-ascii
+Cc: Martin Steigerwald <Martin@lichtvoll.de>,
+	linux-btrfs@vger.kernel.org, Hugo Mills <hugo@carfax.org.uk>
+To: Roman Kapusta <roman.kapusta@gmail.com>
+Return-path: <linux-btrfs-owner@vger.kernel.org>
+In-Reply-To: <CABVOS0_3O8qZTEOuAvdbsCKfMJNKYS1C0dU2CL5=h5MVSWDe+A@mail.gmail.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hi all,
-I was running fstest (http://www.tuxera.com/community/posix-test-suite/) on btrfs. Only one test failed, and I believe it to be a bug in btrfs. The scenario is as follows:
-* crate a file.
-* note its times with stat.
-* sleep a few seconds
-* call truncate() on the file (not ftruncate(). ftruncate() works).
-* sync
-* note the file's times again with stat.
-expected result: ctime and mtime are greater.
-actual result: ctime and mtime remain unchanged.
+On Jan 5, 2012, at 14:35 , Roman Kapusta wrote:
+> you have still 4GB free of non RAID-1 (single) space, which is
+> currently unavailable, but it is planned that BTRFS will support mixed
+> storage:
+> some files can be RAID-1, some files can be RAID-0 and rest is basic
+> (single) storage
 
-Example:
-[root@fedora-client pjd-fstest-20080816]# pwd
-/test/pjd-fstest-20080816
-[root@fedora-client pjd-fstest-20080816]# mount | grep /test
-/dev/loop0 on /test type btrfs (rw,relatime)
-[root@fedora-client pjd-fstest-20080816]# touch ctime_test
-[root@fedora-client pjd-fstest-20080816]# stat ctime_test
-  File: `ctime_test'
-  Size: 0             Blocks: 0          IO Block: 4096   regular empty file
-Device: 29h/41d    Inode: 1160        Links: 1
-Access: (0644/-rw-r--r--)  Uid: (    0/    root)   Gid: (    0/    root)
-Access: 2012-01-05 14:42:21.067444155 +0200
-Modify: 2012-01-05 14:42:21.067444155 +0200
-Change: 2012-01-05 14:42:21.067444155 +0200
- Birth: -
-[root@fedora-client pjd-fstest-20080816]# strace ./fstest truncate ctime_test 200
-execve("./fstest", ["./fstest", "truncate", "ctime_test", "200"], [/* 34 vars */]) = 0
-brk(0)                                  = 0x17c9000
-mmap(NULL, 4096, PROT_READ|PROT_WRITE, MAP_PRIVATE|MAP_ANONYMOUS, -1, 0) = 0x7f412616d000
-access("/etc/ld.so.preload", R_OK)      = -1 ENOENT (No such file or directory)
-open("/etc/ld.so.cache", O_RDONLY)      = 3
-fstat(3, {st_mode=S_IFREG|0644, st_size=47545, ...}) = 0
-mmap(NULL, 47545, PROT_READ, MAP_PRIVATE, 3, 0) = 0x7f4126161000
-close(3)                                = 0
-open("/lib64/libc.so.6", O_RDONLY)      = 3
-read(3, "\177ELF\2\1\1\3\0\0\0\0\0\0\0\0\3\0>\0\1\0\0\0\260\24\342e2\0\0\0"..., 832) = 832
-fstat(3, {st_mode=S_IFREG|0755, st_size=1951736, ...}) = 0
-mmap(0x3265e00000, 3773688, PROT_READ|PROT_EXEC, MAP_PRIVATE|MAP_DENYWRITE, 3, 0) = 0x3265e00000
-mprotect(0x3265f8f000, 2097152, PROT_NONE) = 0
-mmap(0x326618f000, 20480, PROT_READ|PROT_WRITE, MAP_PRIVATE|MAP_FIXED|MAP_DENYWRITE, 3, 0x18f000) = 0x326618f000
-mmap(0x3266194000, 21752, PROT_READ|PROT_WRITE, MAP_PRIVATE|MAP_FIXED|MAP_ANONYMOUS, -1, 0) = 0x3266194000
-close(3)                                = 0
-mmap(NULL, 4096, PROT_READ|PROT_WRITE, MAP_PRIVATE|MAP_ANONYMOUS, -1, 0) = 0x7f4126160000
-mmap(NULL, 8192, PROT_READ|PROT_WRITE, MAP_PRIVATE|MAP_ANONYMOUS, -1, 0) = 0x7f412615e000
-arch_prctl(ARCH_SET_FS, 0x7f412615e720) = 0
-mprotect(0x326618f000, 16384, PROT_READ) = 0
-mprotect(0x326581e000, 4096, PROT_READ) = 0
-munmap(0x7f4126161000, 47545)           = 0
-umask(0)                                = 022
-truncate("ctime_test", 200)             = 0
-fstat(1, {st_mode=S_IFCHR|0620, st_rdev=makedev(136, 1), ...}) = 0
-mmap(NULL, 4096, PROT_READ|PROT_WRITE, MAP_PRIVATE|MAP_ANONYMOUS, -1, 0) = 0x7f412616c000
-write(1, "0\n", 20
-)                      = 2
-exit_group(0)                           = ?
-[root@fedora-client pjd-fstest-20080816]# sleep 2
-[root@fedora-client pjd-fstest-20080816]# stat ctime_test
-  File: `ctime_test'
-  Size: 200           Blocks: 0          IO Block: 4096   regular file
-Device: 29h/41d    Inode: 1160        Links: 1
-Access: (0644/-rw-r--r--)  Uid: (    0/    root)   Gid: (    0/    root)
-Access: 2012-01-05 14:42:21.067444155 +0200
-Modify: 2012-01-05 14:42:21.067444155 +0200
-Change: 2012-01-05 14:42:21.067444155 +0200
- Birth: -
+Understood. So to clarify things i think it would be good if btrfs could print out
+more detailled information.
+
+Available raw space: 10GB
+	7G on drive A
+	3G on drive B
+Assignable space for raid1: 3GB
+	 3G on drive A
+	 3G on drive B
+
+Or maybe the other way round: show which different "raid configurations" there are and how the use which space.
+
+I understand that "free space" is a difficult concept, if you do per-file or per-chunk redundancy, but i think there are 
+a lot of users out there who just want to do a "standard" replication with their whole disk.
+Maybe with the special ability of the 2x500G +1TB, which mdadm, AFAIK, can't do. 
+
+This would be just a subset of what btrfs can do, of course, but it's a frequently used subset, so maybe there could be some kind of 
+saved "profile" on how the user "intends" to use the filesystem.
+Output could then be clarified using that profile and it could also give warnings or prevent actions that make no sense.
+
+fabian

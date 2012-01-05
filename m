@@ -1,40 +1,55 @@
-From: Jan Schmidt <mail@jan-o-sch.net>
-Subject: Re: [PATCH v2 00/10] Btrfs: backref walking rewrite
-Date: Thu, 05 Jan 2012 10:54:07 +0100
-Message-ID: <4F05733F.8070006@jan-o-sch.net>
-References: <cover.1325692560.git.list.btrfs@jan-o-sch.net> <4F053754.2000805@cn.fujitsu.com>
-Mime-Version: 1.0
-Content-Type: text/plain; charset=UTF-8
-Cc: Jan Schmidt <list.btrfs@jan-o-sch.net>, chris.mason@oracle.com,
-	linux-btrfs@vger.kernel.org
-To: Li Zefan <lizf@cn.fujitsu.com>
+From: Liu Bo <liubo2009@cn.fujitsu.com>
+Subject: [RFC PATCH 0/3] apply the Probabilistic Skiplist on btrfs
+Date: Thu, 5 Jan 2012 17:30:19 +0800
+Message-ID: <1325755822-13147-1-git-send-email-liubo2009@cn.fujitsu.com>
+Cc: <chris.mason@oracle.com>, <josef@redhat.com>, <dave@jikos.cz>
+To: <linux-btrfs@vger.kernel.org>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <4F053754.2000805@cn.fujitsu.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 05.01.2012 06:38, Li Zefan wrote:
-> Jan Schmidt wrote:
->> This patch series is a major rewrite of the backref walking code. The patch
->> series Arne sent some weeks ago for quota groups had a very interesting
->> function, find_all_roots. I took this from him together with the bits needed
->> for find_all_roots to work and replaced a major part of the code in backref.c
->> with it.
->>
->> It can be pulled from
->> 	git://git.jan-o-sch.net/btrfs-unstable for-chris
->> There's also a gitweb for that repo on
->> 	http://git.jan-o-sch.net/?p=btrfs-unstable
->>
-> 
-> Thanks for the work!
-> 
-> I got a compile warning:
-> 
->   CC [M]  fs/btrfs/backref.o
-> fs/btrfs/backref.c: In function 'inode_to_path':
-> fs/btrfs/backref.c:1312:3: warning: format '%ld' expects type 'long int', but argument 3 has type 'int
+Since we are inclined to apply a lockless scheme on some objects of btrfs for
+higher performance, we want to build a RCU version the Probabilistic Skiplist.
 
-Thanks for looking at this! Should now be fixed in my git repository
-(involved another force-push). I won't resend by email unless requested.
+Here our skiplist algorithm is based on the skiplist experiments of
+Con Kolivas <kernel@kolivas.org> for BFS cpu scheduler.
+And more details about skiplist design are in patch 1.
 
--Jan
+Right now we have a plan to apply skiplist on extent_map and extent_state.
+
+Here we choose extent_map firstly, since it is a "read mostly" thing,
+and the change is quite direct, all we need to do is
+a) to replace rbtree with skiplist,
+b) to add rcu support.
+And more details are in patch 2 and patch 3.
+
+I've done some simple tests for performance on my 2-core box, there is no
+obvious difference, but I want to focus on the design side and make sure
+there is no more bug in it firstly.
+
+For long term goals, we want to ship skiplist to lib, like lib/rbtree.c.
+
+MORE TESTS ARE WELCOME!
+
+Liu Bo (3):
+  Btrfs: add the Probabilistic Skiplist
+  Btrfs: rebuild extent_map based on skiplist
+  Btrfs: convert rwlock to RCU for extent_map
+
+ fs/btrfs/Makefile      |    2 +-
+ fs/btrfs/compression.c |    8 +-
+ fs/btrfs/disk-io.c     |   15 ++-
+ fs/btrfs/extent_io.c   |   13 +-
+ fs/btrfs/extent_map.c  |  296 ++++++++++++++++++++++++++++++------------------
+ fs/btrfs/extent_map.h  |   21 +++-
+ fs/btrfs/file.c        |   23 +++-
+ fs/btrfs/inode.c       |   69 ++++++++----
+ fs/btrfs/ioctl.c       |    8 +-
+ fs/btrfs/relocation.c  |    9 +-
+ fs/btrfs/scrub.c       |    4 +-
+ fs/btrfs/skiplist.c    |   98 ++++++++++++++++
+ fs/btrfs/skiplist.h    |  217 +++++++++++++++++++++++++++++++++++
+ fs/btrfs/volumes.c     |   68 ++++++-----
+ 14 files changed, 651 insertions(+), 200 deletions(-)
+ create mode 100644 fs/btrfs/skiplist.c
+ create mode 100644 fs/btrfs/skiplist.h
+

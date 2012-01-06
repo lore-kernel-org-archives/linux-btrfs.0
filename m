@@ -1,48 +1,45 @@
-From: David Sterba <dsterba@suse.cz>
-Subject: [PATCH] btrfs: silence warning in raid array setup
-Date: Fri,  6 Jan 2012 16:18:53 +0100
-Message-ID: <1325863133-31460-1-git-send-email-dsterba@suse.cz>
-Cc: chris.mason@oracle.com, David Sterba <dsterba@suse.cz>
-To: linux-btrfs@vger.kernel.org
+From: David Sterba <dave@jikos.cz>
+Subject: Re: Crash in io_ctl_drop_pages after mount with csum errors
+Date: Fri, 6 Jan 2012 16:55:18 +0100
+Message-ID: <20120106155518.GR7322@twin.jikos.cz>
+References: <20120105164919.GP7322@twin.jikos.cz> <4F06A027.3060908@cn.fujitsu.com>
+Reply-To: dave@jikos.cz
+Mime-Version: 1.0
+Content-Type: text/plain; charset=us-ascii
+Cc: linux-btrfs@vger.kernel.org
+To: Li Zefan <lizf@cn.fujitsu.com>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
+In-Reply-To: <4F06A027.3060908@cn.fujitsu.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Raid array setup code creates an extent buffer in an usual way. When the
-PAGE_CACHE_SIZE is > super block size, the extent pages are not marked
-up-to-date, which triggers a WARN_ON in the following
-write_extent_buffer call. Add an explicit SetPageUptodate call to
-silence the warning.
+On Fri, Jan 06, 2012 at 03:17:59PM +0800, Li Zefan wrote:
+> > [ 1499.946409] BUG: unable to handle kernel NULL pointer dereference at 0000000000000001
+> > [ 1499.946437] IP: [<ffffffffa0456dd7>] io_ctl_drop_pages+0x37/0x70 [btrfs]
+> 
+> 0x01 is weired, don't know how it occured. Nevertheless we need this fix:
+> 
+> diff --git a/fs/btrfs/free-space-cache.c b/fs/btrfs/free-space-cache.c
+> index ec23d43..81771ca 100644
+> --- a/fs/btrfs/free-space-cache.c
+> +++ b/fs/btrfs/free-space-cache.c
+> @@ -319,9 +319,11 @@ static void io_ctl_drop_pages(struct io_ctl *io_ctl)
+>  	io_ctl_unmap_page(io_ctl);
+>  
+>  	for (i = 0; i < io_ctl->num_pages; i++) {
+> -		ClearPageChecked(io_ctl->pages[i]);
+> -		unlock_page(io_ctl->pages[i]);
+> -		page_cache_release(io_ctl->pages[i]);
+> +		if (io_ctl->pages[i]) {
+> +			ClearPageChecked(io_ctl->pages[i]);
+> +			unlock_page(io_ctl->pages[i]);
+> +			page_cache_release(io_ctl->pages[i]);
+> +		}
+>  	}
+>  }
 
-Signed-off-by: David Sterba <dsterba@suse.cz>
----
- fs/btrfs/volumes.c |   14 ++++++++++++++
- 1 files changed, 14 insertions(+), 0 deletions(-)
+mount did not crash with this fix, though anything that touches files
+causes the crash. umount is still stuck the same way as before. I'll not
+touch the partitions in case you have patches to test.
 
-diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
-index f4b839f..732ccc6 100644
---- a/fs/btrfs/volumes.c
-+++ b/fs/btrfs/volumes.c
-@@ -3699,6 +3699,20 @@ int btrfs_read_sys_array(struct btrfs_root *root)
- 		return -ENOMEM;
- 	btrfs_set_buffer_uptodate(sb);
- 	btrfs_set_buffer_lockdep_class(root->root_key.objectid, sb, 0);
-+	/*
-+	 * The sb extent buffer is artifical and just used to read the system array.
-+	 * btrfs_set_buffer_uptodate() call does not properly mark all it's
-+	 * pages up-to-date when the page is larger: extent does not cover the
-+	 * whole page and consequently check_page_uptodate does not find all
-+	 * the page's extents up-to-date (the hole beyond sb),
-+	 * write_extent_buffer then triggers a WARN_ON.
-+	 *
-+	 * Regular short extents go through mark_extent_buffer_dirty/writeback cycle,
-+	 * but sb spans only this function. Add an explicit SetPageUptodate call
-+	 * to silence the warning eg. on PowerPC 64.
-+	 */
-+	if (PAGE_CACHE_SIZE > BTRFS_SUPER_INFO_SIZE)
-+		SetPageUptodate(extent_buffer_page(sb, 0));
- 
- 	write_extent_buffer(sb, super_copy, 0, BTRFS_SUPER_INFO_SIZE);
- 	array_size = btrfs_super_sys_array_size(super_copy);
--- 
-1.7.8
 
+david

@@ -1,48 +1,83 @@
-From: Chris Mason <chris.mason@oracle.com>
-Subject: Re: [3.2-rc7] slowdown, warning + oops creating lots of files
-Date: Thu, 5 Jan 2012 20:22:44 -0500
-Message-ID: <20120106012244.GO30372@shiny>
-References: <20120104214445.GE17026@dastard>
- <20120104221105.GF17026@dastard>
- <4F04D178.2070006@csamuel.org>
- <20120104230122.GA24466@dastard>
- <20120105184657.GC30372@shiny>
- <20120105194500.GD30372@shiny>
- <20120105201216.GG24466@dastard>
- <20120105210255.GE30372@shiny>
- <1325798672.17974.2.camel@Nokia-N900>
+From: Miao Xie <miaox@cn.fujitsu.com>
+Subject: Re: [PATCH 2/3] Btrfs: make btrfs_truncate_inode_items() more readable
+Date: Fri, 06 Jan 2012 09:35:59 +0800
+Message-ID: <4F064FFF.9060404@cn.fujitsu.com>
+References: <4F056029.2080306@cn.fujitsu.com> <20120105151142.GB1843@localhost.localdomain>
+Reply-To: miaox@cn.fujitsu.com
 Mime-Version: 1.0
-Content-Type: text/plain; charset=iso-8859-1
-Cc: Dave Chinner <david@fromorbit.com>, linux-btrfs@vger.kernel.org
-To: Chris Samuel <chris@csamuel.org>
+Content-Type: text/plain; charset=ISO-8859-1
+Cc: Linux Btrfs <linux-btrfs@vger.kernel.org>
+To: Josef Bacik <josef@redhat.com>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <1325798672.17974.2.camel@Nokia-N900>
+In-Reply-To: <20120105151142.GB1843@localhost.localdomain>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Fri, Jan 06, 2012 at 08:24:32AM +1100, Chris Samuel wrote:
-> On Fri,=A0  6 Jan 2012, 08:02:55 EST, Chris Mason <chris.mason@oracle=
-=2Ecom> wrote:
->=20
-> > Yeah, same thing here.=A0  I'm testing a fix now, it's pretty dumb.=
-=A0  We're
-> > not allocating more metadata chunks from the drive because of where=
- the
-> > allocation is happening, so it is just a check for "do we need a ne=
-w
-> > chunk" in the right place.
-> >=20
-> > I'll make sure it can fill my ssd and then send to you.
->=20
-> *If* the fix works would this be a candidate for a
-> stable 3.2.1 release rather than having to wait for
-> 3.3?
+On thu, 5 Jan 2012 10:11:43 -0500, Josef Bacik wrote:
+>> +	extent_start = btrfs_file_extent_disk_bytenr(leaf, fi);
+>> +	if (offset < new_size) {
+>> +		/*
+>> +		 * If the new size is in the extent:
+>> +		 *   +--------------------------+
+>> +		 *   |				|
+>> +		 *   +--------------------------+
+>> +		 *   			^ new size
+>> +		 * so this extent should be truncated, not be dropped directly.
+>> +		 */
+>> +		orig_nbytes = btrfs_file_extent_num_bytes(leaf, fi);
+>> +		new_nbytes = round_up(new_size - offset, root->sectorsize);
+>> +
+>> +		btrfs_set_file_extent_num_bytes(leaf, fi, new_nbytes);
+>> +
+>> +		if (extent_start != 0 && root->ref_cows)
+>> +			inode_sub_bytes(inode, orig_nbytes - new_nbytes);
+>> +
+>> +		btrfs_mark_buffer_dirty(leaf);
+>> +		return 0;
+> 
+> Use ret = 0 here, and then further down...
+> 
+>> +	} else {
+>> +		/*
+>> +		 * If the new size is in the font of the extent:
+>> +		 *   +--------------------------+
+>> +		 *   |				|
+>> +		 *   +--------------------------+
+>> +		 *  ^ new size
+>> +		 * so this extent should be dropped.
+>> +		 */
+>> +
+>> +		/*
+>> +		 * It is a dummy extent, or it is in log tree, we needn't do
+>> +		 * anything, just drop it.
+>> +		 */
+>> +		if (extent_start == 0 ||
+>> +		    !(root->ref_cows || root == root->fs_info->tree_root))
+>> +			return 1;
+>> +
+>> +		/* If this file is not a free space management file... */
+>> +		/* FIXME blocksize != 4096 */
+>> +		if (root != root->fs_info->tree_root) {
+>> +			orig_nbytes = btrfs_file_extent_num_bytes(leaf, fi);
+>> +			inode_sub_bytes(inode, orig_nbytes);
+>> +		}
+>> +
+>> +		orig_nbytes = btrfs_file_extent_disk_num_bytes(leaf, fi);
+>> +		extent_offset = offset - btrfs_file_extent_offset(leaf, fi);
+>> +		btrfs_set_path_blocking(path);
+>> +		ret = btrfs_free_extent(trans, root, extent_start,
+>> +					orig_nbytes, 0,
+>> +					btrfs_header_owner(leaf),
+>> +					ino, extent_offset);
+>> +		BUG_ON(ret);
+>> +		btrfs_clear_path_blocking(path, NULL, 0);
+>> +
+>> +		return 1;
+> 
+> ret = 1
+>> +	}
+> 
+> return ret;
 
-Yes, it's pretty safe.
+OK, I'll modify it. Thanks for your review.
 
--chris
-
---
-To unsubscribe from this list: send the line "unsubscribe linux-btrfs" =
-in
-the body of a message to majordomo@vger.kernel.org
-More majordomo info at  http://vger.kernel.org/majordomo-info.html
+Miao

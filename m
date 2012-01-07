@@ -1,35 +1,63 @@
-From: Kai Krakow <hurikhan77+btrfs@gmail.com>
-Subject: Re: Filesystem not mountable after reset, bad tree block
-Date: Sat, 07 Jan 2012 13:05:08 +0100
-Message-ID: <k0plt8-ljc.ln1@hurikhan.ath.cx>
-References: <201201052359.47932.harv@ruin.nu>
+From: Goffredo Baroncelli <kreijack@inwind.it>
+Subject: Re: [PATCH] Btrfs-progs: restriper interface
+Date: Sat, 7 Jan 2012 13:48:44 +0100
+Message-ID: <201201071348.45052.kreijack@inwind.it>
+References: <1325860680-19403-1-git-send-email-idryomov@gmail.com>
+Reply-To: kreijack@inwind.it
 Mime-Version: 1.0
-Content-Type: text/plain; charset="ISO-8859-1"
-To: linux-btrfs@vger.kernel.org
+Content-Type: Text/Plain;
+  charset="iso-8859-15"
+Cc: linux-btrfs@vger.kernel.org
+To: Ilya Dryomov <idryomov@gmail.com>,
+	Chris Mason <chris.mason@oracle.com>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
+In-Reply-To: <1325860680-19403-1-git-send-email-idryomov@gmail.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hi!
+On Friday, 06 January, 2012 15:37:59 Ilya Dryomov wrote:
+> Hello,
+> 
+> This is an update of userspace restriper interface.  The main change is
+> that restriper commands have been moved under balance prefix.  So now we
+> have:
+> 
+> btrfs fi balance start
+> btrfs fi balance pause
+> btrfs fi balance cancel
+> btrfs fi balance resume
+> btrfs fi balance status
+> 
+> This breaks btrfs-progs backwards compatibility: to get the old
+> balancing behaviour you have to call 'btrfs fi balance start' instead of
+> 'btrfs fi balance'.  This is caused by stupidity of the core sub-command
+> matcher.
 
-Michael Andreen <harv@ruin.nu> schrieb:
-> The find-root program seems to think there is a root (and poentially some
-> older roots?), but not sure how to use that information.
-[...]
-> Anything else I can do to debug this or potentially recover a few bits
-> before reformatting?
+Hi Ilya,
 
-You could try the recovery programs from Josefs btrfs-progs tree[1]. You 
-could also try using kernel 3.2 which allows mounting in recovery mode. This 
-mode tries to find an older tree root. But I think your kernel did not keep 
-tree root backups for this purpose as it is AFAIR a feature of later 
-kernels.
+what you called "stupidity of the core sub-command matcher" was a design 
+decision.
 
-Better use a newer kernel - best use 3.2. There are bunch of fixes which 
-improve the situation with lost file systems after unexpected reboots or 
-power outages.
+If you make "btrfs balance" a both command and a prefix you (my opinion) 
+confuses a possible user and complex the interface:
 
-HTH
-Kai
+for example what means:
 
-[1] https://github.com/josefbacik/btrfs-progs
+# btrfs filesystem balance pause
 
+when 'pause' (and all the valid abbreviation like "pa" or "p" ) is a valid 
+mount point ?
+
+My opinion, in order to not break the backward compatibility is to add another 
+subcommand family, like 'restriper' or whatsoever, then deprecating the 
+'balance' sub command.
+
+Finally, please could you update the man page too ?
+
+BR
+G.Baroncelli
+
+Disclaimer, I was the author of the sub-command matcher.
+
+-- 
+gpg key@ keyserver.linux.it: Goffredo Baroncelli (ghigo) <kreijack@inwind.it>
+Key fingerprint = 4769 7E51 5293 D36C 814E  C054 BF04 F161 3DC5 0512

@@ -1,63 +1,83 @@
-From: Goffredo Baroncelli <kreijack@inwind.it>
+From: Ilya Dryomov <idryomov@gmail.com>
 Subject: Re: [PATCH] Btrfs-progs: restriper interface
-Date: Sat, 7 Jan 2012 13:48:44 +0100
-Message-ID: <201201071348.45052.kreijack@inwind.it>
+Date: Sat, 7 Jan 2012 16:25:29 +0200
+Message-ID: <20120107142529.GA8404@zambezi.lan>
 References: <1325860680-19403-1-git-send-email-idryomov@gmail.com>
-Reply-To: kreijack@inwind.it
+ <201201071348.45052.kreijack@inwind.it>
 Mime-Version: 1.0
-Content-Type: Text/Plain;
-  charset="iso-8859-15"
-Cc: linux-btrfs@vger.kernel.org
-To: Ilya Dryomov <idryomov@gmail.com>,
-	Chris Mason <chris.mason@oracle.com>
+Content-Type: text/plain; charset=us-ascii
+Cc: Chris Mason <chris.mason@oracle.com>, linux-btrfs@vger.kernel.org
+To: Goffredo Baroncelli <kreijack@inwind.it>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <1325860680-19403-1-git-send-email-idryomov@gmail.com>
+In-Reply-To: <201201071348.45052.kreijack@inwind.it>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Friday, 06 January, 2012 15:37:59 Ilya Dryomov wrote:
-> Hello,
+On Sat, Jan 07, 2012 at 01:48:44PM +0100, Goffredo Baroncelli wrote:
+> On Friday, 06 January, 2012 15:37:59 Ilya Dryomov wrote:
+> > Hello,
+> > 
+> > This is an update of userspace restriper interface.  The main change is
+> > that restriper commands have been moved under balance prefix.  So now we
+> > have:
+> > 
+> > btrfs fi balance start
+> > btrfs fi balance pause
+> > btrfs fi balance cancel
+> > btrfs fi balance resume
+> > btrfs fi balance status
+> > 
+> > This breaks btrfs-progs backwards compatibility: to get the old
+> > balancing behaviour you have to call 'btrfs fi balance start' instead of
+> > 'btrfs fi balance'.  This is caused by stupidity of the core sub-command
+> > matcher.
 > 
-> This is an update of userspace restriper interface.  The main change is
-> that restriper commands have been moved under balance prefix.  So now we
-> have:
+> Hi Ilya,
 > 
-> btrfs fi balance start
-> btrfs fi balance pause
-> btrfs fi balance cancel
-> btrfs fi balance resume
-> btrfs fi balance status
+> what you called "stupidity of the core sub-command matcher" was a design 
+> decision.
 > 
-> This breaks btrfs-progs backwards compatibility: to get the old
-> balancing behaviour you have to call 'btrfs fi balance start' instead of
-> 'btrfs fi balance'.  This is caused by stupidity of the core sub-command
-> matcher.
+> If you make "btrfs balance" a both command and a prefix you (my opinion) 
+> confuses a possible user and complex the interface:
+> 
+> for example what means:
+> 
+> # btrfs filesystem balance pause
+> 
+> when 'pause' (and all the valid abbreviation like "pa" or "p" ) is a valid 
+> mount point ?
 
-Hi Ilya,
+pause needs an argument so technically we have a way out here, but at
+the expense of an awful interface (because then we have to be able to
+deal with sub-commands with no arguments, etc)
 
-what you called "stupidity of the core sub-command matcher" was a design 
-decision.
+You are right, I was too quick to call it stupid.  I guess my problem is
+that I never bought this "the shortest abbreviation possible" thing.
+IMHO it would be much better if we had our long names and a handful of
+predefined abbreviations (like ip command for example).
 
-If you make "btrfs balance" a both command and a prefix you (my opinion) 
-confuses a possible user and complex the interface:
+> 
+> My opinion, in order to not break the backward compatibility is to add another 
+> subcommand family, like 'restriper' or whatsoever, then deprecating the 
+> 'balance' sub command.
 
-for example what means:
+It was that way initially, but half of what restriper does is selective
+balancing.  The other half is profile changing, but that also boils down
+to a balance.  So I decided not to introduce another obscure term.
 
-# btrfs filesystem balance pause
+As for compatibility, I guess we will have to eat it and have everybody
+switch from "btrfs fi balance" to "btrfs fi balance start" if we want
+that shortest match behaviour.  However if people feel strong about it I
+surely can put it under "restripe" and keep "btrfs fi balance" intact.
 
-when 'pause' (and all the valid abbreviation like "pa" or "p" ) is a valid 
-mount point ?
+Chris ?
 
-My opinion, in order to not break the backward compatibility is to add another 
-subcommand family, like 'restriper' or whatsoever, then deprecating the 
-'balance' sub command.
+> 
+> Finally, please could you update the man page too ?
 
-Finally, please could you update the man page too ?
+I will, this version was not intended for pulling anyway because of this
+problem.
 
-BR
-G.Baroncelli
+Thanks,
 
-Disclaimer, I was the author of the sub-command matcher.
+		Ilya
 
--- 
-gpg key@ keyserver.linux.it: Goffredo Baroncelli (ghigo) <kreijack@inwind.it>
-Key fingerprint = 4769 7E51 5293 D36C 814E  C054 BF04 F161 3DC5 0512

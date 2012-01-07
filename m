@@ -1,34 +1,35 @@
-From: C Anthony Risinger <anthony@xtfx.me>
-Subject: Re: Btrfs partition lost after RAID1 mirror disk failure?
-Date: Sat, 7 Jan 2012 00:22:03 -0600
-Message-ID: <CAGAVQTFJg9YFYFBPvQ2-TkS5_yvigYTvwEHTdRgQPObm8UmaFw@mail.gmail.com>
-References: <CA+h3BtujUZbu17t0FSEht2wytE7Kj8T9DbAS7T74+c0bOWNnGA@mail.gmail.com>
- <CAGAVQTGMH0Y_5BvC6nxGsMcb3Dg2r8VEC10SN+gKRc08B1yDpA@mail.gmail.com> <CA+h3BtsdcOnvXfjcUzRvEYFw_RavNE38hMP61RFXiSNoCHsGvg@mail.gmail.com>
+From: Kai Krakow <hurikhan77+btrfs@gmail.com>
+Subject: Re: Filesystem not mountable after reset, bad tree block
+Date: Sat, 07 Jan 2012 13:05:08 +0100
+Message-ID: <k0plt8-ljc.ln1@hurikhan.ath.cx>
+References: <201201052359.47932.harv@ruin.nu>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=UTF-8
-Cc: linux-btrfs@vger.kernel.org
-To: Dan Garton <dan.garton@gmail.com>
+Content-Type: text/plain; charset="ISO-8859-1"
+To: linux-btrfs@vger.kernel.org
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <CA+h3BtsdcOnvXfjcUzRvEYFw_RavNE38hMP61RFXiSNoCHsGvg@mail.gmail.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Wed, Jan 4, 2012 at 2:30 PM, Dan Garton <dan.garton@gmail.com> wrote:
->
-> Assuming that this is the case, do I stand a chance of retrieving that
-> volume and accessing that data again?
-> Or does "destructive" imply total loss? (In which case, I'll cut my
-> losses....)
+Hi!
 
-unfortunately i really don't know enough to advise ... i did similar
-actions a long time ago while experimenting for an initcpio-based
-rollback utility, but in my case the FS was a dummy/loopback, so i
-just burned it.  my only suggestion would be to try Josef's readonly
-recovery/slurp utility and maybe you can pull some data off, since my
-completely uninformed guess is the structures are 99% intact, but your
-UUIDs no longer match, or internal top-level pointers to wrong
-locations, etc etc.  perhaps someone more familiar with actual
-internals can be of more help -- good luck.
+Michael Andreen <harv@ruin.nu> schrieb:
+> The find-root program seems to think there is a root (and poentially some
+> older roots?), but not sure how to use that information.
+[...]
+> Anything else I can do to debug this or potentially recover a few bits
+> before reformatting?
 
--- 
+You could try the recovery programs from Josefs btrfs-progs tree[1]. You 
+could also try using kernel 3.2 which allows mounting in recovery mode. This 
+mode tries to find an older tree root. But I think your kernel did not keep 
+tree root backups for this purpose as it is AFAIR a feature of later 
+kernels.
 
-C Anthony
+Better use a newer kernel - best use 3.2. There are bunch of fixes which 
+improve the situation with lost file systems after unexpected reboots or 
+power outages.
+
+HTH
+Kai
+
+[1] https://github.com/josefbacik/btrfs-progs
+

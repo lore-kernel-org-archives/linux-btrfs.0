@@ -1,23 +1,73 @@
-From: "debit2005@gmail.com" <debit2005@gmail.com>
-Subject: BTRFS development
-Date: Sun, 8 Jan 2012 21:38:51 +0530
-Message-ID: <CAGvdiEai1F4XwkRLVq=YdLPigdRgcpg5PReKMHE+mZtz46_zYw@mail.gmail.com>
+From: PRIZE <Martine.Sennegon-Meslem@univ-paris1.fr>
+Subject: {Spam?}
+Date: Sun, 08 Jan 2012 17:18:29 +0100
+Message-ID: <20120108171829.bgr4m7oj23qecwsw__37740.9098473892$1326040228$gmane$org@courrier.univ-paris1.fr>
+Reply-To: googlelott_ery@hotmail.co.uk
 Mime-Version: 1.0
-Content-Type: text/plain; charset=ISO-8859-1
-To: linux-btrfs@vger.kernel.org
+Content-Type: multipart/mixed;
+	boundary="=_aexiwbgnwt4"
+To: undisclosed-recipients:;
 Return-path: <linux-btrfs-owner@vger.kernel.org>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hi Everyone in this list,
+This message is in MIME format.
 
-I am very new in this mailing list. I want to get involved into BTRFS
-file system development.
-But I could not figure out the starting pointer from which I start
-looking into the code.
+--=_aexiwbgnwt4
+Content-Type: text/plain;
+	charset=ISO-8859-1;
+	DelSp="Yes";
+	format="flowed"
+Content-Disposition: inline
+Content-Transfer-Encoding: 7bit
 
-Is it right to start from mkfs.btrfs source code specially from mkfs.c?
 
-I badly need suggestions from you guys.
 
-Thanks,
-Debasish
+-- 
+Ce message a ete verifie par MailScanner
+pour des virus ou des polluriels et rien de
+suspect n'a ete trouve.
+
+
+--=_aexiwbgnwt4
+Content-Type: application/msword;
+	name="prize.rtf"
+Content-Disposition: attachment;
+	filename="prize.rtf"
+Content-Transfer-Encoding: base64
+
+e1xydGYxXGFuc2lcYW5zaWNwZzEyNTJcZGVmZjBcZGVmbGFuZzE2MzkzXGRl
+ZmxhbmdmZTE2Mzkze1xmb250dGJse1xmMFxmbW9kZXJuXGZwcnExXGZjaGFy
+c2V0MCBDb3VyaWVyIE5ldzt9e1xmMVxmcm9tYW5cZnBycTJcZmNoYXJzZXQw
+IFRpbWVzIE5ldyBSb21hbjt9e1xmMlxmc3dpc3NcZnBycTJcZmNoYXJzZXQw
+IEFyaWFsO317XGYzXGZzd2lzc1xmcHJxMlxmY2hhcnNldDAgQ2FsaWJyaTt9
+fQ0Ke1xjb2xvcnRibCA7XHJlZDBcZ3JlZW4wXGJsdWUwO1xyZWQyNTVcZ3Jl
+ZW4wXGJsdWUwO30NCntcKlxnZW5lcmF0b3IgTXNmdGVkaXQgNS40MS4yMS4y
+NTA5O31cdmlld2tpbmQ0XHVjMVxwYXJkXG5vd2lkY3RscGFyXHFjXGNmMVxs
+YW5nOVxiXGYwXGZzMjQgIFRoaXMgaXNcfnRvIGluZm9ybSB5b3UgdGhhdCB5
+b3VyIGVtYWlsIGFkZHJlc3MgaGFzIHdvbiBwcml6ZSBtb25leSBvZlx+KFxj
+ZjJcZnMyN1wnYTM1MDAsMDAwLjAwXGNmMVxmczI0ICkgR0JQIGZvciBiZWVu
+IGFuIGFjdGl2ZSB3ZWIgZW1haWwgdXNlci4gVGhpcyBMb3R0ZXJ5XH5wcm9t
+b3Rpb24gd2FzIG9yZ2FuaXplZCBieSBHb29nbGUgR21haWwgJiBSZWRpZmZt
+YWlsIExPVFRFUlkgSU5DICYgV0lORE9XUyBMSVZFLlxjZjBcYjBcZjFccGFy
+DQpcY2YxXGJcZjBccGFyDQpBIGNoZXF1ZSBvZiA1MDAsMDAwLjAwIEdCUCBo
+YXMgYmVlbiBpc3N1ZWQgYWdhaW5zdCB5b3VyIHdpbm5pbmcgZW1haWwgYW5k
+IGhhcyBiZWVuIGZvcndhcmQgdG8gRmFpciBXYXlzIENvdXJpZXIgQ29tcGFu
+eSBmb3IgZGVsaXZlcnkgdG8geW91ciBjb3VudHJ5IG9mIHJlc2lkZW5jZS5c
+cGFyDQpccGFyZFxub3dpZGN0bHBhciBZb3UgYXJlIHJlcXVpcmVkIHRvIGNv
+bnRhY3QgRkFJUldBWVMgQ09VUklFUiBDT01QQU5ZIHZpYSBlbWFpbCB3aXRo
+IHRoZSBkZXRhaWxzIGJlbG93IHRvIGNsYWltIHlvdXIgd2lubmluZ3NccGFy
+DQpccGFyDQoxLiBGdWxsIG5hbWU6XHBhcg0KMi4gQ29udGFjdCBBZGRyZXNz
+OlxjZjBcZnMyMiAgICAgICAgICAgICAgICAgICAgXGIwXGYxXHBhcg0KXGNm
+MVxiXGYwXGZzMjQgMy4gQWdlOlxmMVxwYXINClxmMCA0LiBUZWxlcGhvbmUg
+TnVtYmVyOlxwYXINCjUuIFNleDpccGFyDQo2LiBPY2N1cGF0aW9uOlxwYXIN
+CjcuIFN0YXRlOlxwYXINCjguIENvdW50cnk6XHBhcg0KOS4gTmF0aW9uYWxp
+dHk6XHBhcg0KICAgICAgICAgICAgICAgICBccGFyDQpOYW1lOlxjZjIgIE1y
+LkNveCBSb29uZXlcY2YxICBccGFyDQpcY2YyIENvbnRhY3Q6XGIwXGYyXGZz
+MjAgZ29vZ2xlbG90dF9lcnlAaG90bWFpbC5jby51a1xiXGYwXGZzMjRccGFy
+DQogICAgICAgICAgICAgICAgICAgIFxjZjFcYjBcZjJcZnMyMFx+XGNmMFxm
+MVxmczI0XHBhcg0KXGNmMVxiXGYwIFRoYW5rIHlvdSBhbmQgYWNjZXB0IG15
+IGhlYXJ0eSBjb25ncmF0dWxhdGlvbnMgb25jZSBhZ2FpbiFcflx+XGNmMFxi
+MFxmM1xmczIyXHBhcg0KfQ0KAA==
+
+--=_aexiwbgnwt4--
+

@@ -1,48 +1,37 @@
-From: Goffredo Baroncelli <kreijack@inwind.it>
-Subject: Re: BTRFS development
-Date: Sun, 8 Jan 2012 21:29:33 +0100
-Message-ID: <201201082129.34193.kreijack@inwind.it>
-References: <CAGvdiEai1F4XwkRLVq=YdLPigdRgcpg5PReKMHE+mZtz46_zYw@mail.gmail.com>
-Reply-To: kreijack@inwind.it
+From: Michael Andreen <harv@ruin.nu>
+Subject: Re: Filesystem not mountable after reset, bad tree block
+Date: Sun, 8 Jan 2012 23:34:09 +0100
+Message-ID: <201201082334.09563.harv@ruin.nu>
+References: <201201052359.47932.harv@ruin.nu> <k0plt8-ljc.ln1@hurikhan.ath.cx> <20120107160140.GD12629@carfax.org.uk>
 Mime-Version: 1.0
 Content-Type: Text/Plain;
-  charset="iso-8859-1"
-Cc: linux-btrfs@vger.kernel.org
-To: "debit2005@gmail.com" <debit2005@gmail.com>
+  charset="iso-8859-15"
+Cc: Kai Krakow <hurikhan77+btrfs@gmail.com>,
+	linux-btrfs@vger.kernel.org
+To: Hugo Mills <hugo@carfax.org.uk>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <CAGvdiEai1F4XwkRLVq=YdLPigdRgcpg5PReKMHE+mZtz46_zYw@mail.gmail.com>
+In-Reply-To: <20120107160140.GD12629@carfax.org.uk>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Sunday, 08 January, 2012 17:08:51 debit2005@gmail.com wrote:
-> Hi Everyone in this list,
+On Saturday 07 January 2012 17:01:40 Hugo Mills wrote:
+> On Sat, Jan 07, 2012 at 01:05:08PM +0100, Kai Krakow wrote:
+> > 
+> > You could try the recovery programs from Josefs btrfs-progs tree[1].
 > 
-> I am very new in this mailing list. I want to get involved into BTRFS
-> file system development.
-> But I could not figure out the starting pointer from which I start
-> looking into the code.
-
-I suggest you to look at
-
-http://btrfs.ipv5.de/index.php?title=Main_Page#Documentation
-
-In the section "Developer documentation"
-
-
-
-
-
+>    You'll find what little documentation we have on the restore
+> program here:
 > 
-> Is it right to start from mkfs.btrfs source code specially from mkfs.c?
+>    http://btrfs.ipv5.de/index.php?title=Restore
 > 
-> I badly need suggestions from you guys.
-> 
-> Thanks,
-> Debasish
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+>    With luck, you'll just need to run restore, but there's also a
+> little bit on how to read and use the output of find-root.
 
--- 
-gpg key@ keyserver.linux.it: Goffredo Baroncelli (ghigo) <kreijack@inwind.it>
-Key fingerprint = 4769 7E51 5293 D36C 814E  C054 BF04 F161 3DC5 0512
+Thanks, it worked very well. Almost disappointed that it managed to recover 
+all the junk accumulated through the years ;)
+
+It had some problems on certain parts, crashing or just exiting with message 
+about "extent buffer leak", but rerunning it without -o made it continue past 
+that point. Not sure if that's normal or known, I'll keep the image around and 
+see if I have time to debug it.
+
+/Michael

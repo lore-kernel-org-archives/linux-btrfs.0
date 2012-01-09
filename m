@@ -1,35 +1,46 @@
-From: =?UTF-8?B?SsOpcsO0bWUgUG91bGlu?= <jeromepoulin@gmail.com>
-Subject: Re: [PATCH 0/2] btrfs: allow cross-subvolume BTRFS_IOC_CLONE
-Date: Mon, 9 Jan 2012 08:31:05 -0500
-Message-ID: <CALJXSJqgm=1bmrgWVjnbOoWQs3zKu5Wo2quQqM0UwC3ExX9q8g@mail.gmail.com>
-References: <cover.1301542804.git.larry@elder-gods.org>
-	<20110401133405.GA17956@infradead.org>
-	<1301665083-sup-3969@think>
-	<201112222324.16871.chris@csamuel.org>
-	<4F06E33C.8090104@gmail.com>
-	<20120106175713.GS7322@twin.jikos.cz>
-	<CAAdM645a0vyaXxoqxTpohNZCJ-=+i380m90wEkcixR62xgiBjQ@mail.gmail.com>
+From: Ilya Dryomov <idryomov@gmail.com>
+Subject: Re: [PATCH 00/21] Btrfs: restriper
+Date: Mon, 9 Jan 2012 15:44:18 +0200
+Message-ID: <20120109134418.GA10425@zambezi.lan>
+References: <1325860269-15013-1-git-send-email-idryomov@gmail.com>
+ <CAAdM645+sZ-z1T5==M9S_GBJ1R2h=8fwtx57uvXxWkFR=VtReg@mail.gmail.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=UTF-8
-Cc: dave@jikos.cz, Konstantinos Skarlatos <k.skarlatos@gmail.com>,
-	Chris Samuel <chris@csamuel.org>, linux-btrfs@vger.kernel.org,
-	Christoph Hellwig <hch@infradead.org>,
-	Chris Mason <chris.mason@oracle.com>
+Content-Type: text/plain; charset=us-ascii
+Cc: linux-btrfs@vger.kernel.org, Chris Mason <chris.mason@oracle.com>
 To: Marios Titas <redneb8888@gmail.com>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <CAAdM645a0vyaXxoqxTpohNZCJ-=+i380m90wEkcixR62xgiBjQ@mail.gmail.com>
+In-Reply-To: <CAAdM645+sZ-z1T5==M9S_GBJ1R2h=8fwtx57uvXxWkFR=VtReg@mail.gmail.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Mon, Jan 9, 2012 at 1:58 AM, Marios Titas <redneb8888@gmail.com> wrote:
->> The simple case of 'cp --reflink' works fine [...]
->
-> It doesn't work here:
->
-> cp: failed to clone `/tmp/test': Invalid cross-device link
->
-> That's with 3.1 + for-linus.
+On Mon, Jan 09, 2012 at 01:50:34AM -0500, Marios Titas wrote:
+> I tried this for many different scenarios and it seems to work pretty
+> well. I only ran into one problematic case: If you remove a device
+> from a multidevice filesystem it crashes. Here's how to reproduce it:
+> 
+> truncate -s1g /tmp/test1
+> truncate -s1g /tmp/test2
+> losetup /dev/loop1 /tmp/test1
+> losetup /dev/loop2 /tmp/test2
+> mkdir /tmp/test
+> ./mkfs.btrfs -L test -d single -m single /dev/loop1 /dev/loop2
+> mount -o noatime /dev/loop1 /tmp/test
+> ./btrfs dev del /dev/loop1 /tmp/test
+> ./btrfs fi bal start /tmp/test
+> 
+> There is no actual restriping involved but the above example does work
+> corretly under 3.1+for-linus whereas it fails with your patches.
 
-This is the problem, it doesn't work because you have to apply the
-patch at http://permalink.gmane.org/gmane.comp.file-systems.btrfs/9865
-which is not mainlined yet. This patch dates back from March 31st, I
-have been using it since it was released.
+Thanks for your testing.  The good news is that I put that BUG() there
+simply for debugging so it's nothing major:
+
+2520                    if (ret)
+2521                            BUG(); /* FIXME break ? */
+
+It used to be just a break out of the loop there, so that's the reason
+it doesn't panic with 3.1+for-linus.  I'll investigate further and fix
+this.
+
+Thanks,
+
+		Ilya
+

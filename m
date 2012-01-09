@@ -1,51 +1,33 @@
-From: David Brown <btrfs@davidb.org>
-Subject: Odd behavior of subvolume find-new
-Date: Mon, 9 Jan 2012 08:08:00 -0800
-Message-ID: <20120109160759.GA973@davidb.org>
+From: Mitch Harder <mitch.harder@sabayonlinux.org>
+Subject: Multiple btrfsck inode error 400 on Unclean Shutdowns
+Date: Mon, 9 Jan 2012 13:27:59 -0600
+Message-ID: <CAKcLGm-J=mhiZt8tOc_27gQYkSSkz2EpVDvgCVFgiDUZon_fow@mail.gmail.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=us-ascii; format=flowed
-To: linux-btrfs@vger.kernel.org
+Content-Type: text/plain; charset=ISO-8859-1
+To: linux-btrfs <linux-btrfs@vger.kernel.org>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-I've been creating some time-based snapshots, e.g.
+Lately, I've been running into a sharp increase in btrfsck inode 400
+corruptions after an unclean shutdown.
 
-      # btrfs subvolume snapshot @root 2012-01-09-@root
+The shutdowns have resulted from multiple sources (power outage, Xorg
+keyboard misconfiguration, etc...).  I have not made any systematic
+study of btrfs' robustness to corruption after an unclean shutdown,
+but I've had at least 4 btrfs partitions report btrfsck inode 400
+corruptions after unclean shutdowns.  That seems frequent enough for
+me to develop concerns that a regression has slipped in somewhere.
+Then again, maybe I'm just unlucky (I know you can't guarantee a
+shutdown won't lead to a potential corruption).
 
-After some changes, I wanted to see what had changed, so I tried:
+So far, the impact of these corruptions has been minor.  I've been
+able to pull the data from the partition without error for a reformat.
+ However, I see numerous errors reported if I try to run a balance
+once I get reports of btrfsck inode 400 corruptions.
 
-      # btrfs subvolume find-new @root 2012-01-09-@root
-      transid marker was 37
+Even though the impact of this corruption is minor, this frequency of
+issues after an unclean shutdown seems much higher than I encounter
+with competing file systems.
 
-which doesn't print anything out.  Curiously, if I make a snapshot of
-the snapshot, then I get output from the delta:
-
-      # btrfs subvolume snapshot 2012-01-09-@root tmp
-      # btrfs subvolume find-new @root tmp
-      ..... lots of output .....
-
-I haven't seen this behavior on other filesystems or subvolumes.
-
-My intent was to filter through the small script below to compute the
-size of the delta.
-
-Thanks,
-David
-
-#! /usr/bin/perl
-
-# Process the output of btrfs subvolume find-new and print out the
-# size used by the new data.  Doesn't show delta in metadata, only the
-# data itself.
-use strict;
-
-my $bytes = 0;
-while (<>) {
-	if (/ len (\d+) /) {
-		$bytes += $1;
-	}
-}
-printf "%d bytes\n", $bytes;
-printf "%.1f MByte\n", $bytes / 1024.0 / 1024.0;
-printf "%.1f GByte\n", $bytes / 1024.0 / 1024.0 / 1024.0;
-
+Has anybody else been encountering an increase in btrfsck inode 400
+errors recently?

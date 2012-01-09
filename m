@@ -1,35 +1,34 @@
-From: Josef Bacik <josef@redhat.com>
-Subject: [PATCH] Btrfs: don't call btrfs_throttle in file write
-Date: Thu, 12 Jan 2012 18:16:31 -0500
-Message-ID: <1326410191-1168-1-git-send-email-josef@redhat.com>
-Cc: Josef Bacik <josef@redhat.com>
-To: linux-btrfs@vger.kernel.org
+From: "Niels de Carpentier" <niels@decarpentier.com>
+Subject: Re: revert to static snapshot on reboot
+Date: Mon, 9 Jan 2012 16:21:31 +0100
+Message-ID: <b14e2228999a5acd0ee5d38705da7260.squirrel@webmail.decarpentier.com>
+References: <20120109064304.18411.qmail@otpproductions.com>
+Mime-Version: 1.0
+Content-Type: text/plain; charset=US-ASCII
+Cc: linux-btrfs@vger.kernel.org
+To: btrfs@spiritvideo.com
 Return-path: <linux-btrfs-owner@vger.kernel.org>
+In-Reply-To: <20120109064304.18411.qmail@otpproductions.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Btrfs_throttle will make us wait if there is a currently committing transaction
-until we can open new transactions, which is ridiculous since we don't actually
-start any transactions within the file write path anyway, so all this does is
-introduce big latencies if we have a sync/fsync heavy workload going on while
-somebody else is trying to do work.  Thanks,
+> The plan that occurs to me is to make a snapshot of the system in the
+> state that I want to always boot.  Then, I would rewrite the init
+> script in the initrd to (a) delete any old tmp copy of the snapshot;
+> (b) copy the static snapshot to a tmp copy; (c) mount the tmp copy.
+>
+> That's a little harder than I was hoping to work -- is there an easier
+> way to get this functionality?
 
-Signed-off-by: Josef Bacik <josef@redhat.com>
----
- fs/btrfs/file.c |    1 -
- 1 files changed, 0 insertions(+), 1 deletions(-)
+I would just create a filesystem with the static content, and on boot do:
 
-diff --git a/fs/btrfs/file.c b/fs/btrfs/file.c
-index 97fbe93..57c4b24 100644
---- a/fs/btrfs/file.c
-+++ b/fs/btrfs/file.c
-@@ -1273,7 +1273,6 @@ static noinline ssize_t __btrfs_buffered_write(struct file *file,
- 						   dirty_pages);
- 		if (dirty_pages < (root->leafsize >> PAGE_CACHE_SHIFT) + 1)
- 			btrfs_btree_balance_dirty(root, 1);
--		btrfs_throttle(root);
- 
- 		pos += copied;
- 		num_written += copied;
--- 
-1.7.6.4
+mount fs
+delete snapshots
+create snapshot
+unmount fs and mount snapshot.
+
+I'm not sure if you can snapshot a snapshot, otherwise you could start
+with a snapshot as well. (Just be sure not to delete it)
+
+Niels
+
 

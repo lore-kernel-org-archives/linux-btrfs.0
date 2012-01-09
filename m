@@ -1,50 +1,51 @@
-From: Phillip Susi <psusi@cfl.rr.com>
-Subject: [PATCH 1/2] btrfs-progs: removed extraneous whitespace from mkfs man page
-Date: Mon,  9 Jan 2012 10:18:55 -0500
-Message-ID: <1326122336-23363-1-git-send-email-psusi@cfl.rr.com>
-Cc: Phillip Susi <psusi@cfl.rr.com>
+From: David Brown <btrfs@davidb.org>
+Subject: Odd behavior of subvolume find-new
+Date: Mon, 9 Jan 2012 08:08:00 -0800
+Message-ID: <20120109160759.GA973@davidb.org>
+Mime-Version: 1.0
+Content-Type: text/plain; charset=us-ascii; format=flowed
 To: linux-btrfs@vger.kernel.org
 Return-path: <linux-btrfs-owner@vger.kernel.org>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-There were extra spaces around some of the arguments in the man
-page for mkfs.
+I've been creating some time-based snapshots, e.g.
 
-Signed-off-by: Phillip Susi <psusi@cfl.rr.com>
----
- man/mkfs.btrfs.8.in |   19 ++++++++++---------
- 1 files changed, 10 insertions(+), 9 deletions(-)
+      # btrfs subvolume snapshot @root 2012-01-09-@root
 
-diff --git a/man/mkfs.btrfs.8.in b/man/mkfs.btrfs.8.in
-index 432db1b..542e6cf 100644
---- a/man/mkfs.btrfs.8.in
-+++ b/man/mkfs.btrfs.8.in
-@@ -5,15 +5,16 @@ mkfs.btrfs \- create an btrfs filesystem
- .B mkfs.btrfs
- [ \fB\-A\fP\fI alloc-start\fP ]
- [ \fB\-b\fP\fI byte-count\fP ]
--[ \fB \-d\fP\fI data-profile\fP ]
--[ \fB \-l\fP\fI leafsize\fP ]
--[ \fB \-L\fP\fI label\fP ]
--[ \fB \-m\fP\fI metadata profile\fP ]
--[ \fB \-M\fP\fI mixed data+metadata\fP ]
--[ \fB \-n\fP\fI nodesize\fP ]
--[ \fB \-s\fP\fI sectorsize\fP ]
--[ \fB \-h\fP ]
--[ \fB \-V\fP ] \fI device\fP [ \fI device ...\fP ]
-+[ \fB\-d\fP\fI data-profile\fP ]
-+[ \fB\-l\fP\fI leafsize\fP ]
-+[ \fB\-L\fP\fI label\fP ]
-+[ \fB\-m\fP\fI metadata profile\fP ]
-+[ \fB\-M\fP\fI mixed data+metadata\fP ]
-+[ \fB\-n\fP\fI nodesize\fP ]
-+[ \fB\-s\fP\fI sectorsize\fP ]
-+[ \fB\-h\fP ]
-+[ \fB\-V\fP ]
-+\fI device\fP [ \fIdevice ...\fP ]
- .SH DESCRIPTION
- .B mkfs.btrfs
- is used to create an btrfs filesystem (usually in a disk partition, or an array
--- 
-1.7.5.4
+After some changes, I wanted to see what had changed, so I tried:
+
+      # btrfs subvolume find-new @root 2012-01-09-@root
+      transid marker was 37
+
+which doesn't print anything out.  Curiously, if I make a snapshot of
+the snapshot, then I get output from the delta:
+
+      # btrfs subvolume snapshot 2012-01-09-@root tmp
+      # btrfs subvolume find-new @root tmp
+      ..... lots of output .....
+
+I haven't seen this behavior on other filesystems or subvolumes.
+
+My intent was to filter through the small script below to compute the
+size of the delta.
+
+Thanks,
+David
+
+#! /usr/bin/perl
+
+# Process the output of btrfs subvolume find-new and print out the
+# size used by the new data.  Doesn't show delta in metadata, only the
+# data itself.
+use strict;
+
+my $bytes = 0;
+while (<>) {
+	if (/ len (\d+) /) {
+		$bytes += $1;
+	}
+}
+printf "%d bytes\n", $bytes;
+printf "%.1f MByte\n", $bytes / 1024.0 / 1024.0;
+printf "%.1f GByte\n", $bytes / 1024.0 / 1024.0 / 1024.0;
 

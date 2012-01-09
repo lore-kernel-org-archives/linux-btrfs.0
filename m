@@ -1,73 +1,38 @@
 From: Miao Xie <miaox@cn.fujitsu.com>
-Subject: Re: [RFC][PATCH 3/3] Btrfs: improve truncation of btrfs
-Date: Mon, 09 Jan 2012 13:35:49 +0800
-Message-ID: <4F0A7CB5.9020501@cn.fujitsu.com>
-References: <4F05602E.3030907@cn.fujitsu.com> <20120105151502.GC1843@localhost.localdomain> <4F066FB4.1030705@cn.fujitsu.com> <20120106145031.GA2031@localhost.localdomain>
+Subject: Re: [PATCH 1/3] Btrfs: fix btrfsck error 400 when truncating a compressed
+ file extent
+Date: Mon, 09 Jan 2012 13:49:27 +0800
+Message-ID: <4F0A7FE7.5080705@cn.fujitsu.com>
+References: <4F056023.4010302@cn.fujitsu.com> <CAKcLGm9rzcAJL-MC9u7jQmQgiEAWR4FPCVALxJHVJJ=Q0_p9TQ@mail.gmail.com>
 Reply-To: miaox@cn.fujitsu.com
 Mime-Version: 1.0
 Content-Type: text/plain; charset=ISO-8859-1
-Cc: Chris Mason <chris.mason@oracle.com>,
-	Linux Btrfs <linux-btrfs@vger.kernel.org>
-To: Josef Bacik <josef@redhat.com>
+Cc: Linux Btrfs <linux-btrfs@vger.kernel.org>
+To: Mitch Harder <mitch.harder@sabayonlinux.org>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <20120106145031.GA2031@localhost.localdomain>
+In-Reply-To: <CAKcLGm9rzcAJL-MC9u7jQmQgiEAWR4FPCVALxJHVJJ=Q0_p9TQ@mail.gmail.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Fri, 6 Jan 2012 09:50:31 -0500, Josef Bacik wrote:
-> On Fri, Jan 06, 2012 at 11:51:16AM +0800, Miao Xie wrote:
->> On thu, 5 Jan 2012 10:15:50 -0500, Josef Bacik wrote:
->>>> +	trans = btrfs_start_transaction(root, 2);
->>>> +	if (IS_ERR(trans))
->>>> +		return PTR_ERR(trans);
->>>>  
->>>>  	/*
->>>>  	 * setattr is responsible for setting the ordered_data_close flag,
->>>> @@ -6621,26 +6585,12 @@ static int btrfs_truncate(struct inode *inode)
->>>>  	 * using truncate to replace the contents of the file will
->>>>  	 * end up with a zero length file after a crash.
->>>>  	 */
->>>> -	if (inode->i_size == 0 && BTRFS_I(inode)->ordered_data_close)
->>>> +	if (newsize == 0 && BTRFS_I(inode)->ordered_data_close)
->>>>  		btrfs_add_ordered_operation(trans, root, inode);
->>
->> Since we have write out all the dirty page, we can drop the following code which is
->> in front of the while loop, and move the first btrfs_start_transaction() into the loop,
->> the logic of btrfs_truncate() will become simpler.
->>
->>>>  	while (1) {
->>>> -		ret = btrfs_block_rsv_refill(root, rsv, min_size);
->>>> -		if (ret) {
->>>> -			/*
->>>> -			 * This can only happen with the original transaction we
->>>> -			 * started above, every other time we shouldn't have a
->>>> -			 * transaction started yet.
->>>> -			 */
->>>> -			if (ret == -EAGAIN)
->>>> -				goto end_trans;
->>>> -			err = ret;
->>>> -			break;
->>>> -		}
->>>> -
->>>
->>> Taking this part out is wrong, we need to have this slack space to account for
->>> any COW that truncate does.  Other than that this looks pretty good.  Thanks,
->>>
->>
->> I think we can take this part out, because we start a new transaction every time we
->> do a truncation, and reserve enough space at that time. See below:
->>
+On Sun, 8 Jan 2012 22:45:14 -0600, Mitch Harder wrote:
+> 2012/1/5 Miao Xie <miaox@cn.fujitsu.com>:
+>> Reproduce steps:
+>>  # mkfs.btrfs /dev/sdb5
+>>  # mount /dev/sdb5 -o compress=lzo /mnt
+>>  # dd if=/dev/zero of=/mnt/tmpfile bs=128K count=1
+>>  # sync
+>>  # truncate -s 64K /mnt/tmpfile
+>>  root 5 inode 257 errors 400
 > 
-> Ok let me rephrase.  The whole reason I do this is because the reservation stuff
-> is tricky, we may not actually use any of this space and so constantly going
-> back to reserve it makes us much more likely to fail our truncate() because of
-> ENOSPC.  But if we just hold onto a min size and then refill it when we need to
-> we lower the risk considerably, so this needs to stay.  Thanks,
+> Is this patch set intended to address the general case of btrfsck
+> inode 400 errors, or is it intended for this specific case.
+> 
+> I've been picking up btrfsck inode 400 errors all over the place
+> recently on unclean shutdowns, and I was wondering if this patch set
+> might address the issue of unclean shutdowns, or if there is a more
+> general COW regression out there (or if I'm just extremely unlucky).
 
-I see.
-But I think this method is too gingerly, it can not avoid the ENOSPC completely, but it
-makes the code more complex. Though dropping this part will make the risk of ENOSPC higher,
-it doesn't break the meta-data. so it is enough that reserving space when starting a new
-transaction and just return the error number if ENOSPC happens.
+The purpose of this patch set is to fix the bug of the left orphan items which
+is caused by the truncation, not the general case of btrfsck 400 errors.
 
 Thanks
 Miao

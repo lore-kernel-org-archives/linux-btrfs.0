@@ -1,29 +1,33 @@
 From: Marios Titas <redneb8888@gmail.com>
-Subject: Re: [PATCH 00/21] Btrfs: restriper
-Date: Mon, 9 Jan 2012 01:50:34 -0500
-Message-ID: <CAAdM645+sZ-z1T5==M9S_GBJ1R2h=8fwtx57uvXxWkFR=VtReg@mail.gmail.com>
-References: <1325860269-15013-1-git-send-email-idryomov@gmail.com>
+Subject: Re: [PATCH 0/2] btrfs: allow cross-subvolume BTRFS_IOC_CLONE
+Date: Mon, 9 Jan 2012 01:58:34 -0500
+Message-ID: <CAAdM645a0vyaXxoqxTpohNZCJ-=+i380m90wEkcixR62xgiBjQ@mail.gmail.com>
+References: <cover.1301542804.git.larry@elder-gods.org>
+	<20110401133405.GA17956@infradead.org>
+	<1301665083-sup-3969@think>
+	<201112222324.16871.chris@csamuel.org>
+	<4F06E33C.8090104@gmail.com>
+	<20120106175713.GS7322@twin.jikos.cz>
 Mime-Version: 1.0
 Content-Type: text/plain; charset=ISO-8859-1
-Cc: linux-btrfs@vger.kernel.org, Chris Mason <chris.mason@oracle.com>
-To: Ilya Dryomov <idryomov@gmail.com>
+To: dave@jikos.cz, Konstantinos Skarlatos <k.skarlatos@gmail.com>,
+	Chris Samuel <chris@csamuel.org>, linux-btrfs@vger.kernel.org,
+	Christoph Hellwig <hch@infradead.org>,
+	Chris Mason <chris.mason@oracle.com>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <1325860269-15013-1-git-send-email-idryomov@gmail.com>
+In-Reply-To: <20120106175713.GS7322@twin.jikos.cz>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-I tried this for many different scenarios and it seems to work pretty
-well. I only ran into one problematic case: If you remove a device
-from a multidevice filesystem it crashes. Here's how to reproduce it:
+On Fri, Jan 6, 2012 at 12:57, David Sterba <dave@jikos.cz> wrote:
+> On Fri, Jan 06, 2012 at 02:04:12PM +0200, Konstantinos Skarlatos wrote:
+>> Me too wants cp --reflink across subvolumes. Please make this feature
+>> available to us, as its a "poor man's dedupe" and would give big space
+>> savings for many use cases.
+>
+> The simple case of 'cp --reflink' works fine [...]
 
-truncate -s1g /tmp/test1
-truncate -s1g /tmp/test2
-losetup /dev/loop1 /tmp/test1
-losetup /dev/loop2 /tmp/test2
-mkdir /tmp/test
-./mkfs.btrfs -L test -d single -m single /dev/loop1 /dev/loop2
-mount -o noatime /dev/loop1 /tmp/test
-./btrfs dev del /dev/loop1 /tmp/test
-./btrfs fi bal start /tmp/test
+It doesn't work here:
 
-There is no actual restriping involved but the above example does work
-corretly under 3.1+for-linus whereas it fails with your patches.
+cp: failed to clone `/tmp/test': Invalid cross-device link
+
+That's with 3.1 + for-linus.

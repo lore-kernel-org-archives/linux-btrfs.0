@@ -1,38 +1,29 @@
-From: Miao Xie <miaox@cn.fujitsu.com>
-Subject: Re: [PATCH 1/3] Btrfs: fix btrfsck error 400 when truncating a compressed
- file extent
-Date: Mon, 09 Jan 2012 13:49:27 +0800
-Message-ID: <4F0A7FE7.5080705@cn.fujitsu.com>
-References: <4F056023.4010302@cn.fujitsu.com> <CAKcLGm9rzcAJL-MC9u7jQmQgiEAWR4FPCVALxJHVJJ=Q0_p9TQ@mail.gmail.com>
-Reply-To: miaox@cn.fujitsu.com
+From: Marios Titas <redneb8888@gmail.com>
+Subject: Re: [PATCH 00/21] Btrfs: restriper
+Date: Mon, 9 Jan 2012 01:50:34 -0500
+Message-ID: <CAAdM645+sZ-z1T5==M9S_GBJ1R2h=8fwtx57uvXxWkFR=VtReg@mail.gmail.com>
+References: <1325860269-15013-1-git-send-email-idryomov@gmail.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset=ISO-8859-1
-Cc: Linux Btrfs <linux-btrfs@vger.kernel.org>
-To: Mitch Harder <mitch.harder@sabayonlinux.org>
+Cc: linux-btrfs@vger.kernel.org, Chris Mason <chris.mason@oracle.com>
+To: Ilya Dryomov <idryomov@gmail.com>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <CAKcLGm9rzcAJL-MC9u7jQmQgiEAWR4FPCVALxJHVJJ=Q0_p9TQ@mail.gmail.com>
+In-Reply-To: <1325860269-15013-1-git-send-email-idryomov@gmail.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Sun, 8 Jan 2012 22:45:14 -0600, Mitch Harder wrote:
-> 2012/1/5 Miao Xie <miaox@cn.fujitsu.com>:
->> Reproduce steps:
->>  # mkfs.btrfs /dev/sdb5
->>  # mount /dev/sdb5 -o compress=lzo /mnt
->>  # dd if=/dev/zero of=/mnt/tmpfile bs=128K count=1
->>  # sync
->>  # truncate -s 64K /mnt/tmpfile
->>  root 5 inode 257 errors 400
-> 
-> Is this patch set intended to address the general case of btrfsck
-> inode 400 errors, or is it intended for this specific case.
-> 
-> I've been picking up btrfsck inode 400 errors all over the place
-> recently on unclean shutdowns, and I was wondering if this patch set
-> might address the issue of unclean shutdowns, or if there is a more
-> general COW regression out there (or if I'm just extremely unlucky).
+I tried this for many different scenarios and it seems to work pretty
+well. I only ran into one problematic case: If you remove a device
+from a multidevice filesystem it crashes. Here's how to reproduce it:
 
-The purpose of this patch set is to fix the bug of the left orphan items which
-is caused by the truncation, not the general case of btrfsck 400 errors.
+truncate -s1g /tmp/test1
+truncate -s1g /tmp/test2
+losetup /dev/loop1 /tmp/test1
+losetup /dev/loop2 /tmp/test2
+mkdir /tmp/test
+./mkfs.btrfs -L test -d single -m single /dev/loop1 /dev/loop2
+mount -o noatime /dev/loop1 /tmp/test
+./btrfs dev del /dev/loop1 /tmp/test
+./btrfs fi bal start /tmp/test
 
-Thanks
-Miao
+There is no actual restriping involved but the above example does work
+corretly under 3.1+for-linus whereas it fails with your patches.

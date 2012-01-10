@@ -1,132 +1,86 @@
-From: Vincent Vanackere <vincent.vanackere@gmail.com>
-Subject: [v3.2-4874-ge4e1118 OOPS] btrfs-related kernel oops due to media
- error
-Date: Tue, 10 Jan 2012 17:06:23 +0100
-Message-ID: <4F0C61FF.5090709@gmail.com>
+From: Ilya Dryomov <idryomov@gmail.com>
+Subject: Re: [PATCH 00/21] Btrfs: restriper
+Date: Tue, 10 Jan 2012 20:31:06 +0200
+Message-ID: <20120110183106.GA13519@zambezi.lan>
+References: <1325860269-15013-1-git-send-email-idryomov@gmail.com>
+ <CAAdM645+sZ-z1T5==M9S_GBJ1R2h=8fwtx57uvXxWkFR=VtReg@mail.gmail.com>
+ <20120109134418.GA10425@zambezi.lan>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=UTF-8; format=flowed
-Cc: Vincent Vanackere <vincent.vanackere@gmail.com>
-To: linux-btrfs@vger.kernel.org,
-	Linux kernel mailing list <linux-kernel@vger.kernel.org>
-Return-path: <linux-kernel-owner@vger.kernel.org>
+Content-Type: text/plain; charset=us-ascii
+Cc: linux-btrfs@vger.kernel.org, Chris Mason <chris.mason@oracle.com>
+To: Marios Titas <redneb8888@gmail.com>
+Return-path: <linux-btrfs-owner@vger.kernel.org>
+In-Reply-To: <20120109134418.GA10425@zambezi.lan>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-[Note : this is a resent of a mail I send to linux-btrfs earlier, this 
-time tested with the lastest git kernel]
+On Mon, Jan 09, 2012 at 03:44:18PM +0200, Ilya Dryomov wrote:
+> On Mon, Jan 09, 2012 at 01:50:34AM -0500, Marios Titas wrote:
+> > I tried this for many different scenarios and it seems to work pretty
+> > well. I only ran into one problematic case: If you remove a device
+> > from a multidevice filesystem it crashes. Here's how to reproduce it:
+> > 
+> > truncate -s1g /tmp/test1
+> > truncate -s1g /tmp/test2
+> > losetup /dev/loop1 /tmp/test1
+> > losetup /dev/loop2 /tmp/test2
+> > mkdir /tmp/test
+> > ./mkfs.btrfs -L test -d single -m single /dev/loop1 /dev/loop2
+> > mount -o noatime /dev/loop1 /tmp/test
+> > ./btrfs dev del /dev/loop1 /tmp/test
+> > ./btrfs fi bal start /tmp/test
+> > 
+> > There is no actual restriping involved but the above example does work
+> > corretly under 3.1+for-linus whereas it fails with your patches.
+> 
+> Thanks for your testing.  The good news is that I put that BUG() there
+> simply for debugging so it's nothing major:
+> 
+> 2520                    if (ret)
+> 2521                            BUG(); /* FIXME break ? */
+> 
+> It used to be just a break out of the loop there, so that's the reason
+> it doesn't panic with 3.1+for-linus.  I'll investigate further and fix
+> this.
 
-Hi,
+I force-rebased my tree, removed two other BUG_ONs along with this one.
 
-One of my disks, partitioned into a single btrfs partition, is showing 
-media errors. The problem is that these errors lead to kernel panic from 
-btrfs - that make the filesystem unusable until reboot - and therefore 
-it is very hard for me to do a full backup of the data prior to changing 
-the disk.
-My current kernel is a vanilla kernel at current tip (output from git 
-describe is v3.2-4874-ge4e1118).
-I assume that the filesystem should not panic even in case of a media 
-error... Is there any procedure I can follow / patch I could apply to 
-salvage my data while ignoring media errors ?
+Thanks,
 
-logs/OOPS at the end of this mail, please let me know if more 
-information is needed,
+		Ilya
 
-Best regards,
 
-Vincent
 
------------------------------------------------------------------------
+diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
+index d7c5c7d..9b3d03d 100644
+--- a/fs/btrfs/volumes.c
++++ b/fs/btrfs/volumes.c
+@@ -2312,7 +2312,8 @@ static int chunk_drange_filter(struct extent_buffer *leaf,
+ 	int factor;
+ 	int i;
+ 
+-	BUG_ON(!(bargs->flags & BTRFS_BALANCE_ARGS_DEVID));
++	if (!(bargs->flags & BTRFS_BALANCE_ARGS_DEVID))
++		return 0;
+ 
+ 	if (btrfs_chunk_type(leaf, chunk) & (BTRFS_BLOCK_GROUP_DUP |
+ 	     BTRFS_BLOCK_GROUP_RAID1 | BTRFS_BLOCK_GROUP_RAID10))
+@@ -2355,7 +2356,8 @@ static int chunk_vrange_filter(struct extent_buffer *leaf,
+ static int chunk_soft_convert_filter(u64 chunk_profile,
+ 				     struct btrfs_balance_args *bargs)
+ {
+-	BUG_ON(!(bargs->flags & BTRFS_BALANCE_ARGS_CONVERT));
++	if (!(bargs->flags & BTRFS_BALANCE_ARGS_CONVERT))
++		return 0;
+ 
+ 	chunk_profile &= BTRFS_BLOCK_GROUP_PROFILE_MASK;
+ 
+@@ -2518,7 +2520,7 @@ again:
+ 		ret = btrfs_previous_item(chunk_root, path, 0,
+ 					  BTRFS_CHUNK_ITEM_KEY);
+ 		if (ret)
+-			BUG(); /* FIXME break ? */
++			break;
+ 
+ 		leaf = path->nodes[0];
+ 		slot = path->slots[0];
 
-[ 3210.717304] ata6.00: exception Emask 0x0 SAct 0x0 SErr 0x0 action 0x0
-[ 3210.717309] ata6.00: BMDMA stat 0x24
-[ 3210.717312] ata6.00: failed command: READ DMA EXT
-[ 3210.717318] ata6.00: cmd 25/00:08:5f:dc:2f/00:00:70:00:00/e0 tag 0 
-dma 4096 in
-[ 3210.717320]          res 51/40:00:61:dc:2f/40:00:70:00:00/e0 Emask 
-0x9 (media error)
-[ 3210.717323] ata6.00: status: { DRDY ERR }
-[ 3210.717325] ata6.00: error: { UNC }
-[ 3210.732234] ata6.00: configured for UDMA/133
-[ 3210.732248] sd 5:0:0:0: [sdd] Unhandled sense code
-[ 3210.732250] sd 5:0:0:0: [sdd]  Result: hostbyte=DID_OK 
-driverbyte=DRIVER_SENSE
-[ 3210.732254] sd 5:0:0:0: [sdd]  Sense Key : Medium Error [current] 
-[descriptor]
-[ 3210.732259] Descriptor sense data with sense descriptors (in hex):
-[ 3210.732261]         72 03 11 04 00 00 00 0c 00 0a 80 00 00 00 00 00
-[ 3210.732270]         70 2f dc 61
-[ 3210.732274] sd 5:0:0:0: [sdd]  Add. Sense: Unrecovered read error - 
-auto reallocate failed
-[ 3210.732278] sd 5:0:0:0: [sdd] CDB: Read(10): 28 00 70 2f dc 5f 00 00 
-08 00
-[ 3210.732287] end_request: I/O error, dev sdd, sector 1882184801
-[ 3210.732305] ata6: EH complete
-[ 3210.732322] BUG: unable to handle kernel NULL pointer dereference at 
-           (null)
-[ 3210.732373] IP: [<ffffffffa017f129>] extent_range_uptodate+0x59/0xe0 
-[btrfs]
-[ 3210.732426] PGD 21e9b7067 PUD 21e9b6067 PMD 0
-[ 3210.732455] Oops: 0000 [#1] SMP
-[ 3210.732475] CPU 3
-[ 3210.732486] Modules linked in: ip6table_filter ip6_tables 
-ipt_MASQUERADE bnep iptable_nat nf_nat rfcomm bluetooth 
-nf_conntrack_ipv4 nf_defrag_ipv4 xt_state nf_conntrack ipt_REJECT 
-xt_CHECKSUM iptable_mangle xt_tcpudp iptable_filter ip_tables x_tables 
-bridge stp kvm_intel kvm parport_pc ppdev nfsd nfs lockd fscache 
-binfmt_misc auth_rpcgss nfs_acl sunrpc dm_crypt snd_usb_audio 
-snd_usbmidi_lib joydev snd_hda_codec_realtek snd_hda_intel snd_hda_codec 
-snd_hwdep snd_pcm snd_seq_midi snd_rawmidi snd_seq_midi_event snd_seq 
-snd_timer snd_seq_device snd soundcore snd_page_alloc psmouse serio_raw 
-cdc_acm lp parport btrfs zlib_deflate libcrc32c hid_logitech ff_memless 
-usbhid hid i915 drm_kms_helper drm r8169 i2c_algo_bit video pata_jmicron
-[ 3210.732870]
-[ 3210.732880] Pid: 3856, comm: btrfs-endio-met Not tainted 3.2.0-custom 
-#2 Gigabyte Technology Co., Ltd. G33-DS3R/G33-DS3R
-[ 3210.732933] RIP: 0010:[<ffffffffa017f129>]  [<ffffffffa017f129>] 
-extent_range_uptodate+0x59/0xe0 [btrfs]
-[ 3210.732989] RSP: 0018:ffff880006f3fde0  EFLAGS: 00010246
-[ 3210.733014] RAX: 0000000000000000 RBX: 000000df57385000 RCX: 
-0000000000000000
-[ 3210.733047] RDX: 0000000000000001 RSI: 000000000df57385 RDI: 
-0000000000000000
-[ 3210.733079] RBP: ffff880006f3fe00 R08: 0000000000000000 R09: 
-ffff88008bce5200
-[ 3210.733111] R10: ffff8800299f9010 R11: 0000000000001000 R12: 
-ffff8802190f4030
-[ 3210.733143] R13: 000000df573853ff R14: ffff880006f3fe98 R15: 
-ffff880143263d88
-[ 3210.733175] FS:  0000000000000000(0000) GS:ffff88022fd80000(0000) 
-knlGS:0000000000000000
-[ 3210.733212] CS:  0010 DS: 0000 ES: 0000 CR0: 000000008005003b
-[ 3210.733238] CR2: 0000000000000000 CR3: 000000021f35a000 CR4: 
-00000000000406e0
-[ 3210.733270] DR0: 0000000000000000 DR1: 0000000000000000 DR2: 
-0000000000000000
-[ 3210.733302] DR3: 0000000000000000 DR6: 00000000ffff0ff0 DR7: 
-0000000000000400
-[ 3210.733334] Process btrfs-endio-met (pid: 3856, threadinfo 
-ffff880006f3e000, task ffff8801fa8d8000)
-[ 3210.733374] Stack:
-[ 3210.733385]  0000000000000000 ffff8800298dd838 ffff8801f9cc9840 
-ffff88021ee05000
-[ 3210.733423]  ffff880006f3fe30 ffffffffa01581f9 ffff880143263d80 
-ffff8800298dd860
-[ 3210.733461]  ffff880143263d80 ffff880143263d98 ffff880006f3fee0 
-ffffffffa0187fef
-[ 3210.733499] Call Trace:
-[ 3210.733524]  [<ffffffffa01581f9>] end_workqueue_fn+0x119/0x140 [btrfs]
-[ 3210.733567]  [<ffffffffa0187fef>] worker_loop+0x16f/0x5d0 [btrfs]
-[ 3210.733608]  [<ffffffffa0187e80>] ? btrfs_queue_worker+0x310/0x310 
-[btrfs]
-[ 3210.733643]  [<ffffffff8106fa93>] kthread+0x93/0xa0
-[ 3210.733668]  [<ffffffff8162caa4>] kernel_thread_helper+0x4/0x10
-[ 3210.733697]  [<ffffffff8106fa00>] ? 
-kthread_freezable_should_stop+0x70/0x70
-[ 3210.733729]  [<ffffffff8162caa0>] ? gs_change+0x13/0x13
-[ 3210.733752] Code: 01 f0 48 09 f0 a9 ff 0f 00 00 75 4e 49 39 dd b8 01 
-00 00 00 72 36 0f 1f 40 00 49 8b 7c 24 18 48 89 de 48 c1 ee 0c e8 17 38 
-f9 e0 <48> 8b 10 83 e2 08 74 5f 48 89 c7 48 81 c3 00 10 00 00 e8 f0 f7
-[ 3210.733919] RIP  [<ffffffffa017f129>] extent_range_uptodate+0x59/0xe0 
-[btrfs]
-[ 3210.733965]  RSP <ffff880006f3fde0>
-[ 3210.736202] CR2: 0000000000000000
-[ 3210.805459] ---[ end trace 06f41a860c47870b ]---

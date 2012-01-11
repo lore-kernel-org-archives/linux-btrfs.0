@@ -1,42 +1,36 @@
-From: Lukas Czerner <lczerner@redhat.com>
-Subject: Re: [PATCH] xfstests: fix 251's cp -axT problem
-Date: Wed, 11 Jan 2012 13:14:29 +0100 (CET)
-Message-ID: <alpine.LFD.2.00.1201111310060.5636@dhcp-27-109.brq.redhat.com>
-References: <1326195560-4434-1-git-send-email-liubo2009@cn.fujitsu.com> <20120111114544.GE14423@infradead.org>
+From: David Sterba <dsterba@suse.cz>
+Subject: Re: [PATCH] Btrfs: release space on error in page_mkwrite
+Date: Wed, 11 Jan 2012 15:27:09 +0100
+Message-ID: <20120111142709.GE21513@ds.suse.cz>
+References: <1326223218-5342-1-git-send-email-josef@redhat.com>
+Reply-To: dsterba@suse.cz
 Mime-Version: 1.0
-Content-Type: TEXT/PLAIN; charset=US-ASCII
-Cc: Liu Bo <liubo2009@cn.fujitsu.com>, linux-btrfs@vger.kernel.org,
-	xfs@oss.sgi.com, Lukas Czerner <lczerner@redhat.com>
-To: Christoph Hellwig <hch@infradead.org>
+Content-Type: text/plain; charset=us-ascii
+Cc: linux-btrfs@vger.kernel.org, dsterba@suse.cz
+To: Josef Bacik <josef@redhat.com>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <20120111114544.GE14423@infradead.org>
+In-Reply-To: <1326223218-5342-1-git-send-email-josef@redhat.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Wed, 11 Jan 2012, Christoph Hellwig wrote:
-
-> On Tue, Jan 10, 2012 at 07:39:20PM +0800, Liu Bo wrote:
-> > When I ran xfstests, 251 got failed cause "cp -axT" did not work as wish:
-> > cp: cannot overwrite directory `/mnt/scratch/1' with non-directory
-> > 
-> > With this patch, 251 has passed.
+On Tue, Jan 10, 2012 at 02:20:18PM -0500, Josef Bacik wrote:
+> If updating the inode gave us an ENOSPC we were just returning in page_mkwrite,
+> which is a problem since we make our reservation right before trying to update
+> the inode, so fix the out label so that we actually free our reservation.
+> Thanks,
 > 
-> Why would cp give that message with a missing /?
-> 
-> I'm not against putting this in, but I'd like to understand what's going
-> on.
-> 
-> Lukas, any idea?
-> 
+> Signed-off-by: Josef Bacik <josef@redhat.com>
+Tested-by: David Sterba <dsterba@suse.cz>
 
-Hi Christoph,
+reproducer:
 
-the only reason I can think of is probably that Liu is accessing the
-xfstests directory via symbolic link, hence the '$content' addresses the
-symbolic link and cp is trying to overwrite the directory with
-non-directory (symlink).
+while :;do ./check 209;done
 
-The fix is fine for both cases (xfstests as symlink and directory), confirmed
-with a simple test.
+and some writeback activity, i used compilation or multithreaed random
+writes via fio. the warning
 
-Thanks!
--Lukas
+WARNING: at fs/btrfs/extent-tree.c:7283 btrfs_free_block_groups+0x25b/0x370
+
+appeared within minutes.
+
+
+david

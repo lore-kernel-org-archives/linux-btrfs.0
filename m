@@ -1,86 +1,150 @@
-From: Anand Jain <Anand.Jain@oracle.com>
-Subject: Re: revert to static snapshot on reboot
-Date: Wed, 11 Jan 2012 11:42:38 +0800
-Message-ID: <4F0D052E.703@oracle.com>
-References: <20120109064304.18411.qmail@otpproductions.com>
+From: Li Zefan <lizf@cn.fujitsu.com>
+Subject: [PATCH 08/11] Btrfs: simplfy calculation of stripe length for discard
+ operation
+Date: Wed, 11 Jan 2012 13:54:42 +0800
+Message-ID: <4F0D2422.1060401@cn.fujitsu.com>
+References: <4F0D236E.2010306@cn.fujitsu.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=ISO-8859-1; format=flowed
-Cc: linux-btrfs@vger.kernel.org
-To: btrfs@spiritvideo.com
+Content-Type: text/plain; charset=UTF-8
+Cc: "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
+To: Chris Mason <chris.mason@oracle.com>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <20120109064304.18411.qmail@otpproductions.com>
+In-Reply-To: <4F0D236E.2010306@cn.fujitsu.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
+For btrfs raid, while discarding a range of space, we'll need to know
+the start offset and length to discard for each device, and it's done
+in btrfs_map_block().
 
+However the calculation is a bit complex for raid0 and raid10, so I
+reimplement it based on a fact that:
 
-  Upcoming btrfs autosnap feature might help your problem-solution.
-  But the main part in your case which is to replace the root
-  with its snapshot is something beyond the scope of autosnap
-  project.
+        dev1          dev2           dev3    (raid0)
+        -----------------------------------
+        s0 s3 s6      s1 s4 s7       s2 s5
 
-  What is being developed is a set of btrfs-prog sub-command to
-  create and manage snapshots with a rule-set. Code is under
-  development, if you would like to test and provide feedback
-  I can send you a copy this week.
+Each device has (total_stripes / nr_dev) stripes, or plus one.
 
-  OR if you want to just know the new feature relevant to you
-  its as below (not a complete features list though).
+Signed-off-by: Li Zefan <lizf@cn.fujitsu.com>
+---
+ fs/btrfs/volumes.c |   95 +++++++++++++++++-----------------------------------
+ 1 files changed, 31 insertions(+), 64 deletions(-)
 
-  - Create snapshot automatically based on
-     - AD-hoc (package-installation/boot ..etc)
-       
-     cli eg:
-     # btrfs autosnap enable <tag> <retain-policy> <subvol>
-
-     and the cli that a init or package script should call is
-     # btrfs autosnap now -t <tag> /btrfs
-     which will create a snapshot and reviews its retention policy.
-
-   retention policy can be based on count, based on FS % full, OR
-   manually maintained snapshots.
-
-
-  If you have any feedback pls let me know.
-
-thanks, Anand
-
-On Monday 09,January,2012 02:43 PM, btrfs@spiritvideo.com wrote:
-> Hi all --
->
-> I just installed my first btrfs-based linux tonight, and I must say it
-> gives me a very warm feeling!  Congratulations on all your hard work
-> and your fine product.
->
-> I administer laptops for a small school, and we want to implement what
-> Deep Freeze (http://www.faronics.com/enterprise/deep-freeze) does for
-> Windows -- no matter what a student does after they log in, when they
-> reboot it is all forgotten and the computer has returned to a standard
-> state.
->
-> I would think this would be a FAQ, but I have searched the web and
-> mailing list for the past couple of hours.
->
-> Of course it's easy to mount a snapshot, but then if students make
-> changes the snapshot changes.
->
-> The plan that occurs to me is to make a snapshot of the system in the
-> state that I want to always boot.  Then, I would rewrite the init
-> script in the initrd to (a) delete any old tmp copy of the snapshot;
-> (b) copy the static snapshot to a tmp copy; (c) mount the tmp copy.
->
-> That's a little harder than I was hoping to work -- is there an easier
-> way to get this functionality?
->
-> I have a small ext4 boot partition containing grub, vmlinuz and
-> initramfs.  Everything else is in a big btrfs root partition.  I am
-> running Fedora 14, with Fedora-patched linux 2.6.35.  I could upgrade
-> if necessary.
->
-> Thanks,
-> Bob
-> --
-> I blog about my work at the school at SmallSchoolIT.wordpress.com
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
+index 540fdd2..563ef65 100644
+--- a/fs/btrfs/volumes.c
++++ b/fs/btrfs/volumes.c
+@@ -3024,80 +3024,47 @@ static int __btrfs_map_block(struct btrfs_mapping_tree *map_tree, int rw,
+ 	atomic_set(&bbio->error, 0);
+ 
+ 	if (rw & REQ_DISCARD) {
++		int factor = 0;
++		int sub_stripes = 0;
++		u64 stripes_per_dev = 0;
++		u32 remaining_stripes = 0;
++
++		if (map->type &
++		    (BTRFS_BLOCK_GROUP_RAID0 | BTRFS_BLOCK_GROUP_RAID10)) {
++			if (map->type & BTRFS_BLOCK_GROUP_RAID0)
++				sub_stripes = 1;
++			else
++				sub_stripes = map->sub_stripes;
++
++			factor = map->num_stripes / sub_stripes;
++			stripes_per_dev = div_u64_rem(stripe_nr_end -
++						      stripe_nr_orig,
++						      factor,
++						      &remaining_stripes);
++		}
++
+ 		for (i = 0; i < num_stripes; i++) {
+ 			bbio->stripes[i].physical =
+ 				map->stripes[stripe_index].physical +
+ 				stripe_offset + stripe_nr * map->stripe_len;
+ 			bbio->stripes[i].dev = map->stripes[stripe_index].dev;
+ 
+-			if (map->type & BTRFS_BLOCK_GROUP_RAID0) {
+-				u64 stripes;
+-				u32 last_stripe = 0;
+-				int j;
+-
+-				div_u64_rem(stripe_nr_end - 1,
+-					    map->num_stripes,
+-					    &last_stripe);
+-
+-				for (j = 0; j < map->num_stripes; j++) {
+-					u32 test;
+-
+-					div_u64_rem(stripe_nr_end - 1 - j,
+-						    map->num_stripes, &test);
+-					if (test == stripe_index)
+-						break;
+-				}
+-				stripes = stripe_nr_end - 1 - j;
+-				do_div(stripes, map->num_stripes);
+-				bbio->stripes[i].length = map->stripe_len *
+-					(stripes - stripe_nr + 1);
+-
+-				if (i == 0) {
++			if (map->type & (BTRFS_BLOCK_GROUP_RAID0 |
++					 BTRFS_BLOCK_GROUP_RAID10)) {
++				bbio->stripes[i].length = stripes_per_dev *
++							  map->stripe_len;
++				if (i / sub_stripes < remaining_stripes)
++					bbio->stripes[i].length +=
++						map->stripe_len;
++				if (i < sub_stripes)
+ 					bbio->stripes[i].length -=
+ 						stripe_offset;
+-					stripe_offset = 0;
+-				}
+-				if (stripe_index == last_stripe)
+-					bbio->stripes[i].length -=
+-						stripe_end_offset;
+-			} else if (map->type & BTRFS_BLOCK_GROUP_RAID10) {
+-				u64 stripes;
+-				int j;
+-				int factor = map->num_stripes /
+-					     map->sub_stripes;
+-				u32 last_stripe = 0;
+-
+-				div_u64_rem(stripe_nr_end - 1,
+-					    factor, &last_stripe);
+-				last_stripe *= map->sub_stripes;
+-
+-				for (j = 0; j < factor; j++) {
+-					u32 test;
+-
+-					div_u64_rem(stripe_nr_end - 1 - j,
+-						    factor, &test);
+-
+-					if (test ==
+-					    stripe_index / map->sub_stripes)
+-						break;
+-				}
+-				stripes = stripe_nr_end - 1 - j;
+-				do_div(stripes, factor);
+-				bbio->stripes[i].length = map->stripe_len *
+-					(stripes - stripe_nr + 1);
+-
+-				if (i < map->sub_stripes) {
+-					bbio->stripes[i].length -=
+-						stripe_offset;
+-					if (i == map->sub_stripes - 1)
+-						stripe_offset = 0;
+-				}
+-				if (stripe_index >= last_stripe &&
+-				    stripe_index <= (last_stripe +
+-						     map->sub_stripes - 1)) {
++				if ((i / sub_stripes + 1) %
++				    sub_stripes == remaining_stripes)
+ 					bbio->stripes[i].length -=
+ 						stripe_end_offset;
+-				}
++				if (i == sub_stripes - 1)
++					stripe_offset = 0;
+ 			} else
+ 				bbio->stripes[i].length = *length;
+ 
+-- 
+1.7.3.1

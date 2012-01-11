@@ -1,119 +1,44 @@
-From: Li Zefan <lizf@cn.fujitsu.com>
-Subject: [PATCH 01/11] Btrfs: add pinned extents to on-disk free space cache
- correctly
-Date: Wed, 11 Jan 2012 13:52:04 +0800
-Message-ID: <4F0D2384.2070304@cn.fujitsu.com>
-References: <4F0D236E.2010306@cn.fujitsu.com>
+From: Sebastian Schikschneit <sebastian@schikschneit.eu>
+Subject: phenomenon of 0 Byte files while overwriting
+Date: Wed, 11 Jan 2012 10:23:39 +0100
+Message-ID: <CA+YvvZyA0EOc8wgPNg0=PfdVMX=wDV_B=1zVzL8-1FRj5J2KZA@mail.gmail.com>
+References: <CA+YvvZzLZ_CmwvJK=NNuimsxaDTZpS0asQhoAZOY0PAm=kzpoQ@mail.gmail.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset=UTF-8
-Cc: "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
-To: Chris Mason <chris.mason@oracle.com>
+To: linux-btrfs@vger.kernel.org
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <4F0D236E.2010306@cn.fujitsu.com>
+In-Reply-To: <CA+YvvZzLZ_CmwvJK=NNuimsxaDTZpS0asQhoAZOY0PAm=kzpoQ@mail.gmail.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-I got this while running xfstests:
+Dear BTRFS-Developer,
 
-[24256.836098] block group 317849600 has an wrong amount of free space
-[24256.836100] btrfs: failed to load free space cache for block group 317849600
+first of all sorry for my broken english - i hope you understand what
+i want to tell!?
+Since a few days i have a phenomenon when i try to overwrite a file.
+Description of the system:
 
-We should clamp the extent returned by find_first_extent_bit(),
-so the start of the extent won't smaller than the start of the
-block group.
+- linux server (3.0.0.15 - Ubuntu)
+- btrfs 0.19
+- samba 3.5.11
+- windows 7 x64 client
+- user: userX:users
+- file permissions 764 - userX - users
+- filesystem btrfs als single (approx 2TB) an btrfs as raid1 (approx 372GB)
 
-Signed-off-by: Li Zefan <lizf@cn.fujitsu.com>
----
- fs/btrfs/free-space-cache.c |   41 ++++++++++++++++++++---------------------
- 1 files changed, 20 insertions(+), 21 deletions(-)
+I tried to overwrite an existing file on the server via samba. An
+error was reported (windows error messages... 0x8007003a - the server
+could not do that...). After cancel this operation the file at the
+server was 0 Byte and clould not overwritten and now i could not
+delete the file via samba (per ssh and console it is possible). If i
+delete first and the copy the file to the server everything works
+fine. If i move the file on the server to anywhere and back,
+everything works fine.
+An btrfs-defrag does not help! After an btrfs-balance-run everything
+seems to work!
+I dont have this phenomenon while using ext3 with this samba configuration.
+Do you have any ideas?
+I'm locking forward to hearing from you.
 
-diff --git a/fs/btrfs/free-space-cache.c b/fs/btrfs/free-space-cache.c
-index ec23d43..01840ef 100644
---- a/fs/btrfs/free-space-cache.c
-+++ b/fs/btrfs/free-space-cache.c
-@@ -838,7 +838,7 @@ int __btrfs_write_out_cache(struct btrfs_root *root, struct inode *inode,
- 	struct io_ctl io_ctl;
- 	struct list_head bitmap_list;
- 	struct btrfs_key key;
--	u64 start, end, len;
-+	u64 start, extent_start, extent_end, len;
- 	int entries = 0;
- 	int bitmaps = 0;
- 	int ret;
-@@ -857,25 +857,12 @@ int __btrfs_write_out_cache(struct btrfs_root *root, struct inode *inode,
- 				     struct btrfs_free_cluster,
- 				     block_group_list);
- 
--	/*
--	 * We shouldn't have switched the pinned extents yet so this is the
--	 * right one
--	 */
--	unpin = root->fs_info->pinned_extents;
--
- 	/* Lock all pages first so we can lock the extent safely. */
- 	io_ctl_prepare_pages(&io_ctl, inode, 0);
- 
- 	lock_extent_bits(&BTRFS_I(inode)->io_tree, 0, i_size_read(inode) - 1,
- 			 0, &cached_state, GFP_NOFS);
- 
--	/*
--	 * When searching for pinned extents, we need to start at our start
--	 * offset.
--	 */
--	if (block_group)
--		start = block_group->key.objectid;
--
- 	node = rb_first(&ctl->free_space_offset);
- 	if (!node && cluster) {
- 		node = rb_first(&cluster->root);
-@@ -918,9 +905,20 @@ int __btrfs_write_out_cache(struct btrfs_root *root, struct inode *inode,
- 	 * We want to add any pinned extents to our free space cache
- 	 * so we don't leak the space
- 	 */
-+
-+	/*
-+	 * We shouldn't have switched the pinned extents yet so this is the
-+	 * right one
-+	 */
-+	unpin = root->fs_info->pinned_extents;
-+
-+	if (block_group)
-+		start = block_group->key.objectid;
-+
- 	while (block_group && (start < block_group->key.objectid +
- 			       block_group->key.offset)) {
--		ret = find_first_extent_bit(unpin, start, &start, &end,
-+		ret = find_first_extent_bit(unpin, start,
-+					    &extent_start, &extent_end,
- 					    EXTENT_DIRTY);
- 		if (ret) {
- 			ret = 0;
-@@ -928,20 +926,21 @@ int __btrfs_write_out_cache(struct btrfs_root *root, struct inode *inode,
- 		}
- 
- 		/* This pinned extent is out of our range */
--		if (start >= block_group->key.objectid +
-+		if (extent_start >= block_group->key.objectid +
- 		    block_group->key.offset)
- 			break;
- 
--		len = block_group->key.objectid +
--			block_group->key.offset - start;
--		len = min(len, end + 1 - start);
-+		extent_start = max(extent_start, start);
-+		extent_end = min(block_group->key.objectid +
-+				 block_group->key.offset, extent_end + 1);
-+		len = extent_end - extent_start;
- 
- 		entries++;
--		ret = io_ctl_add_entry(&io_ctl, start, len, NULL);
-+		ret = io_ctl_add_entry(&io_ctl, extent_start, len, NULL);
- 		if (ret)
- 			goto out_nospc;
- 
--		start = end + 1;
-+		start = extent_end;
- 	}
- 
- 	/* Write out the bitmaps */
--- 
-1.7.3.1
+Best wishes and thanks.
+
+Sebastian Schikschneit

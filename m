@@ -1,8 +1,7 @@
 From: Li Zefan <lizf@cn.fujitsu.com>
-Subject: [PATCH 10/11] Btrfs: update global block_rsv when creating a new
- block group
-Date: Wed, 11 Jan 2012 13:55:24 +0800
-Message-ID: <4F0D244C.103@cn.fujitsu.com>
+Subject: [PATCH 11/11] Btrfs: fix possible deadlock when opening a seed device
+Date: Wed, 11 Jan 2012 13:55:51 +0800
+Message-ID: <4F0D2467.6090109@cn.fujitsu.com>
 References: <4F0D236E.2010306@cn.fujitsu.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset=UTF-8
@@ -12,55 +11,79 @@ Return-path: <linux-btrfs-owner@vger.kernel.org>
 In-Reply-To: <4F0D236E.2010306@cn.fujitsu.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-A bug was triggered while using seed device:
+The correct lock order is uuid_mutex -> volume_mutex -> chunk_mutex,
+but when we mount a filesystem which has backing seed devices, we have
+this lock chain:
 
-    # mkfs.btrfs /dev/loop1
-    # btrfstune -S 1 /dev/loop1
-    # mount -o /dev/loop1 /mnt
-    # btrfs dev add /dev/loop2 /mnt
+    open_ctree()
+        lock(chunk_mutex);
+        read_chunk_tree();
+            read_one_dev();
+                open_seed_devices();
+                    lock(uuid_mutex);
 
-btrfs: block rsv returned -28
-------------[ cut here ]------------
-WARNING: at fs/btrfs/extent-tree.c:5969 btrfs_alloc_free_block+0x166/0x396 [btrfs]()
-...
-Call Trace:
-...
-[<f7b7c31c>] btrfs_cow_block+0x101/0x147 [btrfs]
-[<f7b7eaa6>] btrfs_search_slot+0x1b8/0x55f [btrfs]
-[<f7b7f844>] btrfs_insert_empty_items+0x42/0x7f [btrfs]
-[<f7b7f8c1>] btrfs_insert_item+0x40/0x7e [btrfs]
-[<f7b8ac02>] btrfs_make_block_group+0x243/0x2aa [btrfs]
-[<f7bb3f53>] __btrfs_alloc_chunk+0x672/0x70e [btrfs]
-[<f7bb41ff>] init_first_rw_device+0x77/0x13c [btrfs]
-[<f7bb5a62>] btrfs_init_new_device+0x664/0x9fd [btrfs]
-[<f7bbb65a>] btrfs_ioctl+0x694/0xdbe [btrfs]
-[<c04f55f7>] do_vfs_ioctl+0x496/0x4cc
-[<c04f5660>] sys_ioctl+0x33/0x4f
-[<c07b9edf>] sysenter_do_call+0x12/0x38
----[ end trace 906adac595facc7d ]---
-
-Since seed device is readonly, there's no usable space in the filesystem.
-Afterwards we add a sprout device to it, and the kernel creates a METADATA
-block group and a SYSTEM block group where comes free space we can reserve,
-but we still get revervation failure because the global block_rsv hasn't
-been updated accordingly.
+and then we hit a lockdep splat.
 
 Signed-off-by: Li Zefan <lizf@cn.fujitsu.com>
 ---
- fs/btrfs/extent-tree.c |    1 +
- 1 files changed, 1 insertions(+), 0 deletions(-)
+ fs/btrfs/disk-io.c |    2 --
+ fs/btrfs/volumes.c |    9 +++++++--
+ 2 files changed, 7 insertions(+), 4 deletions(-)
 
-diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
-index 5b53479..bf30f67 100644
---- a/fs/btrfs/extent-tree.c
-+++ b/fs/btrfs/extent-tree.c
-@@ -7446,6 +7446,7 @@ int btrfs_make_block_group(struct btrfs_trans_handle *trans,
- 	ret = update_space_info(root->fs_info, cache->flags, size, bytes_used,
- 				&cache->space_info);
- 	BUG_ON(ret);
-+	update_global_block_rsv(root->fs_info);
+diff --git a/fs/btrfs/disk-io.c b/fs/btrfs/disk-io.c
+index 3f9d555..858ab34 100644
+--- a/fs/btrfs/disk-io.c
++++ b/fs/btrfs/disk-io.c
+@@ -2270,9 +2270,7 @@ struct btrfs_root *open_ctree(struct super_block *sb,
+ 	   (unsigned long)btrfs_header_chunk_tree_uuid(chunk_root->node),
+ 	   BTRFS_UUID_SIZE);
  
- 	spin_lock(&cache->space_info->lock);
- 	cache->space_info->bytes_readonly += cache->bytes_super;
+-	mutex_lock(&fs_info->chunk_mutex);
+ 	ret = btrfs_read_chunk_tree(chunk_root);
+-	mutex_unlock(&fs_info->chunk_mutex);
+ 	if (ret) {
+ 		printk(KERN_WARNING "btrfs: failed to read chunk tree on %s\n",
+ 		       sb->s_id);
+diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
+index 563ef65..fbb493b 100644
+--- a/fs/btrfs/volumes.c
++++ b/fs/btrfs/volumes.c
+@@ -3506,7 +3506,7 @@ static int open_seed_devices(struct btrfs_root *root, u8 *fsid)
+ 	struct btrfs_fs_devices *fs_devices;
+ 	int ret;
+ 
+-	mutex_lock(&uuid_mutex);
++	BUG_ON(!mutex_is_locked(&uuid_mutex));
+ 
+ 	fs_devices = root->fs_info->fs_devices->seed;
+ 	while (fs_devices) {
+@@ -3544,7 +3544,6 @@ static int open_seed_devices(struct btrfs_root *root, u8 *fsid)
+ 	fs_devices->seed = root->fs_info->fs_devices->seed;
+ 	root->fs_info->fs_devices->seed = fs_devices;
+ out:
+-	mutex_unlock(&uuid_mutex);
+ 	return ret;
+ }
+ 
+@@ -3687,6 +3686,9 @@ int btrfs_read_chunk_tree(struct btrfs_root *root)
+ 	if (!path)
+ 		return -ENOMEM;
+ 
++	mutex_lock(&uuid_mutex);
++	lock_chunks(root);
++
+ 	/* first we search for all of the device items, and then we
+ 	 * read in all of the chunk items.  This way we can create chunk
+ 	 * mappings that reference all of the devices that are afound
+@@ -3737,6 +3739,9 @@ again:
+ 	}
+ 	ret = 0;
+ error:
++	unlock_chunks(root);
++	mutex_unlock(&uuid_mutex);
++
+ 	btrfs_free_path(path);
+ 	return ret;
+ }
 -- 
 1.7.3.1

@@ -1,36 +1,46 @@
-From: David Sterba <dsterba@suse.cz>
-Subject: Re: [PATCH] Btrfs: release space on error in page_mkwrite
-Date: Wed, 11 Jan 2012 15:27:09 +0100
-Message-ID: <20120111142709.GE21513@ds.suse.cz>
-References: <1326223218-5342-1-git-send-email-josef@redhat.com>
-Reply-To: dsterba@suse.cz
+From: David Sterba <dave@jikos.cz>
+Subject: Re: [RFC PATCH v2 1/3] Btrfs: add the Probabilistic Skiplist
+Date: Wed, 11 Jan 2012 15:41:51 +0100
+Message-ID: <20120111144151.GW7322@twin.jikos.cz>
+References: <1326180696-3614-1-git-send-email-liubo2009@cn.fujitsu.com> <1326180696-3614-2-git-send-email-liubo2009@cn.fujitsu.com> <20120111003700.GT7322@twin.jikos.cz> <4F0CEEB7.2080809@cn.fujitsu.com>
+Reply-To: dave@jikos.cz
 Mime-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
-Cc: linux-btrfs@vger.kernel.org, dsterba@suse.cz
-To: Josef Bacik <josef@redhat.com>
+Cc: dave@jikos.cz, linux-btrfs@vger.kernel.org, chris.mason@oracle.com,
+	josef@redhat.com
+To: Liu Bo <liubo2009@cn.fujitsu.com>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <1326223218-5342-1-git-send-email-josef@redhat.com>
+In-Reply-To: <4F0CEEB7.2080809@cn.fujitsu.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Tue, Jan 10, 2012 at 02:20:18PM -0500, Josef Bacik wrote:
-> If updating the inode gave us an ENOSPC we were just returning in page_mkwrite,
-> which is a problem since we make our reservation right before trying to update
-> the inode, so fix the out label so that we actually free our reservation.
-> Thanks,
+On Wed, Jan 11, 2012 at 10:06:47AM +0800, Liu Bo wrote:
+> > or you can set the maxlevel during skiplist creation, or predefine a
+> > "small" skiplist with compile-time-set level to whatever < 16.
+> >
+> > this can be tuned later of course.
+> > 
 > 
-> Signed-off-by: Josef Bacik <josef@redhat.com>
-Tested-by: David Sterba <dsterba@suse.cz>
+> Yes, I do set the maxlevel to 16 at the creation of a skiplist.
+> 
+> Here 4^(16 - 1) is 2^30, I don't think this is enough for some severe workloads which build large
+> amount of fragments.
 
-reproducer:
+2^30 is ~one bilion, still a lot :) but I understand your concerns.
 
-while :;do ./check 209;done
+> Maybe we should make the maxlevel self-update.
 
-and some writeback activity, i used compilation or multithreaed random
-writes via fio. the warning
+yeah, but this is IMO not necessary for the first version.
 
-WARNING: at fs/btrfs/extent-tree.c:7283 btrfs_free_block_groups+0x25b/0x370
+> > I suggest to pick the full prefix "skiplist_" instead of just "sl_",
+> > it'll be IMHO more readable and googlable. (Out of curiosity I grepped
+> > for the sl_ prefix and it's used by drivers/net/slip/slip.c).
+> 
+> I did hesitate for a while between "skiplist_" and "sl_"...
+> and I just wanna make it be similar to "rb_".
+>
+> Anyway, I'm ok with "skiplist_".
 
-appeared within minutes.
+thanks.
 
 
 david

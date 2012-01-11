@@ -1,64 +1,100 @@
-From: Kai Krakow <hurikhan77+btrfs@gmail.com>
-Subject: Re: revert to static snapshot on reboot
-Date: Mon, 09 Jan 2012 19:43:35 +0100
-Message-ID: <k3prt8-n92.ln1@hurikhan.ath.cx>
-References: <20120109064304.18411.qmail@otpproductions.com>
+From: David Sterba <dave@jikos.cz>
+Subject: Re: [RFC PATCH v2 1/3] Btrfs: add the Probabilistic Skiplist
+Date: Wed, 11 Jan 2012 01:37:00 +0100
+Message-ID: <20120111003700.GT7322@twin.jikos.cz>
+References: <1326180696-3614-1-git-send-email-liubo2009@cn.fujitsu.com> <1326180696-3614-2-git-send-email-liubo2009@cn.fujitsu.com>
+Reply-To: dave@jikos.cz
 Mime-Version: 1.0
-Content-Type: text/plain; charset="ISO-8859-1"
-To: linux-btrfs@vger.kernel.org
+Content-Type: text/plain; charset=us-ascii
+Cc: linux-btrfs@vger.kernel.org, chris.mason@oracle.com,
+	josef@redhat.com, dave@jikos.cz
+To: Liu Bo <liubo2009@cn.fujitsu.com>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
+In-Reply-To: <1326180696-3614-2-git-send-email-liubo2009@cn.fujitsu.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hello!
+Hi, a few thoughts and comments below:
 
-btrfs@spiritvideo.com <btrfs@spiritvideo.com> schrieb:
+On Tue, Jan 10, 2012 at 03:31:34PM +0800, Liu Bo wrote:
+> c) The level limit may need to be adjusted.
+>    I know it is a magic number, but now for simplicity we just keep it at 16,
+>    and then each skiplist is able to contain (2^32-1)/3 nodes at most.
 
-> The plan that occurs to me is to make a snapshot of the system in the
-> state that I want to always boot.  Then, I would rewrite the init
-> script in the initrd to (a) delete any old tmp copy of the snapshot;
-> (b) copy the static snapshot to a tmp copy; (c) mount the tmp copy.
+(2^32-1)/3 = 1,431,655,765 that's a lot, I wonder what an average member
+count of a skiplist would be and whether eg. maxlevel = 12 is not enough
+(5,592,405 members).
 
-I'd suggest to create a snapshot during initrd phase, then switch to that 
-snapshot as the root. Before creating the new snapshot, first delete all old 
-snapshots still there... Something like:
+or you can set the maxlevel during skiplist creation, or predefine a
+"small" skiplist with compile-time-set level to whatever < 16.
 
-# sda1 = btrfs
-mkdir -p /btrfs-prepare
-mount /dev/sda1 /btrfs-prepare -o $REAL_ROOT_FLAGS,...
-for snapshot in /btrfs-prepare/snapshots/*; do
-  btrfs sub del "$snapshot"
-done
-snapshot="snapshots/root-$(date +%s)"
-# original-root has to be a subvolume
-btrfs sub snap /btrfs-prepare/original-root /btrfs-prepare/"$snapshot"
-REAL_ROOT="$snapshot"
-sync
-umount /btrfs-prepare
-# now let the rest of the initrd switch to the real root
-# depending on your initrd system REAL_ROOT needs to be named
-# differently: it should result in mount options like
-# -o subvol=snapshots/root-123456789,...
+this can be tuned later of course.
 
-This should be much faster than copying stuff around. I'm not sure how btrfs 
-behaves when unmounting during the btrfs-cleaner deleting snapshots. It may 
-become instable over time. I'm sure the btrfs gurus here can comment on 
-this. I used a timestamp on the snapshot names so no naming conflicts occur 
-during snapshot deletion and creation. I figured that if deleting and 
-recreating the same snapshot name may confuse btrfs after unexpected reboots 
-while the btrfs-cleaner was still running.
+> --- /dev/null
+> +++ b/fs/btrfs/skiplist.c
+> @@ -0,0 +1,98 @@
+> +inline int sl_fill_node(struct sl_node *node, int level, gfp_t mask)
 
-The above script expects your btrfs layout to be something like that:
+I suggest to pick the full prefix "skiplist_" instead of just "sl_",
+it'll be IMHO more readable and googlable. (Out of curiosity I grepped
+for the sl_ prefix and it's used by drivers/net/slip/slip.c).
 
-$ ls -al /
-./
-original-root/ # system installation goes here (subvolume)
-snapshots/     # normal empty directory
-# nothing more
+> +{
+> +	struct sl_node **p;
+> +	struct sl_node **q;
+> +	int num;
+> +
+> +	BUG_ON(level > MAXLEVEL);
+> +
+> +	num = level + 1;
+> +	p = kmalloc(sizeof(*p) * num, mask);
+> +	BUG_ON(!p);
 
-This way you can also use an alternate initrd which does no snapshotting to 
-upgrade or reconfigure the system. Or you just chroot into the original root 
-and update that.
+you can drop the BUG_ON
 
-HTH
-Kai
+> +	if (!p)
+        ^^^^^^^
 
+> +		return -ENOMEM;
+> +	q = kmalloc(sizeof(*q) * num, mask);
+> +	BUG_ON(!q);
+        ^^^^^^^^^^
+
+> +	if (!q) {
+> +		kfree(p);
+> +		return -ENOMEM;
+> +	}
+> +
+> +	node->next = p;
+> +	node->prev = q;
+> +	node->level = level;
+> +	return 0;
+> +}
+> +
+> diff --git a/fs/btrfs/skiplist.h b/fs/btrfs/skiplist.h
+> new file mode 100644
+> index 0000000..3e414b5
+> --- /dev/null
+> +++ b/fs/btrfs/skiplist.h
+> +
+> +#define MAXLEVEL 16
+> +/* double p = 0.25; */
+> +
+> +struct sl_node {
+> +	struct sl_node **next;
+> +	struct sl_node **prev;
+> +	unsigned int level;
+> +	unsigned int head:1;
+
+the bitfield will use another sizeof(int) bytes, but the level is at
+most 16, you can reduce it's size eg to unsigned short.
+on the other hand, the structure has to start at address aligned to
+sizeof(void*) and the bytes after 'head' up to next sizeof(void*)
+boundary will be left unusable anyway. then, 'head' could be a full int
+or bool so the compiler is not restricted and forced to keep state of
+the single bit. if access to these items is exptected to be frequent,
+the diffenence could be mesurable.
+
+> +};
+
+
+david

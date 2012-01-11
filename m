@@ -1,7 +1,7 @@
 From: Li Zefan <lizf@cn.fujitsu.com>
-Subject: [PATCH 07/11] Btrfs: don't pre-allocate btrfs bio
-Date: Wed, 11 Jan 2012 13:53:51 +0800
-Message-ID: <4F0D23EF.9000103@cn.fujitsu.com>
+Subject: [PATCH 04/11] Btrfs: remove BUG_ON()s in btrfs_ioctl_setflags()
+Date: Wed, 11 Jan 2012 13:52:56 +0800
+Message-ID: <4F0D23B8.8060601@cn.fujitsu.com>
 References: <4F0D236E.2010306@cn.fujitsu.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset=UTF-8
@@ -11,124 +11,63 @@ Return-path: <linux-btrfs-owner@vger.kernel.org>
 In-Reply-To: <4F0D236E.2010306@cn.fujitsu.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-We pre-allocate a btrfs bio with fixed size, and then may re-allocate
-memory if we find stripes are bigger than the fixed size. But this
-pre-allocation is not necessary.
-
-Also we don't have to calcuate the stripe number twice.
+We can recover from errors and return -errno to user space.
 
 Signed-off-by: Li Zefan <lizf@cn.fujitsu.com>
 ---
- fs/btrfs/volumes.c |   67 ++++++++++++++++-----------------------------------
- 1 files changed, 21 insertions(+), 46 deletions(-)
+ fs/btrfs/ioctl.c |   18 ++++++++++++++----
+ 1 files changed, 14 insertions(+), 4 deletions(-)
 
-diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
-index 73f673c..540fdd2 100644
---- a/fs/btrfs/volumes.c
-+++ b/fs/btrfs/volumes.c
-@@ -2897,26 +2897,13 @@ static int __btrfs_map_block(struct btrfs_mapping_tree *map_tree, int rw,
- 	u64 stripe_nr;
- 	u64 stripe_nr_orig;
- 	u64 stripe_nr_end;
--	int stripes_allocated = 8;
--	int stripes_required = 1;
- 	int stripe_index;
- 	int i;
-+	int ret = 0;
- 	int num_stripes;
- 	int max_errors = 0;
- 	struct btrfs_bio *bbio = NULL;
+diff --git a/fs/btrfs/ioctl.c b/fs/btrfs/ioctl.c
+index c04f02c..9619fb0 100644
+--- a/fs/btrfs/ioctl.c
++++ b/fs/btrfs/ioctl.c
+@@ -176,6 +176,8 @@ static int btrfs_ioctl_setflags(struct file *file, void __user *arg)
+ 	struct btrfs_trans_handle *trans;
+ 	unsigned int flags, oldflags;
+ 	int ret;
++	u64 ip_oldflags;
++	unsigned int i_oldflags;
  
--	if (bbio_ret && !(rw & (REQ_WRITE | REQ_DISCARD)))
--		stripes_allocated = 1;
--again:
--	if (bbio_ret) {
--		bbio = kzalloc(btrfs_bio_size(stripes_allocated),
--				GFP_NOFS);
--		if (!bbio)
--			return -ENOMEM;
--
--		atomic_set(&bbio->error, 0);
--	}
--
- 	read_lock(&em_tree->lock);
- 	em = lookup_extent_mapping(em_tree, logical, *length);
- 	read_unlock(&em_tree->lock);
-@@ -2935,32 +2922,6 @@ again:
- 	if (mirror_num > map->num_stripes)
- 		mirror_num = 0;
+ 	if (btrfs_root_readonly(root))
+ 		return -EROFS;
+@@ -192,6 +194,9 @@ static int btrfs_ioctl_setflags(struct file *file, void __user *arg)
  
--	/* if our btrfs_bio struct is too small, back off and try again */
--	if (rw & REQ_WRITE) {
--		if (map->type & (BTRFS_BLOCK_GROUP_RAID1 |
--				 BTRFS_BLOCK_GROUP_DUP)) {
--			stripes_required = map->num_stripes;
--			max_errors = 1;
--		} else if (map->type & BTRFS_BLOCK_GROUP_RAID10) {
--			stripes_required = map->sub_stripes;
--			max_errors = 1;
--		}
--	}
--	if (rw & REQ_DISCARD) {
--		if (map->type & (BTRFS_BLOCK_GROUP_RAID0 |
--				 BTRFS_BLOCK_GROUP_RAID1 |
--				 BTRFS_BLOCK_GROUP_DUP |
--				 BTRFS_BLOCK_GROUP_RAID10)) {
--			stripes_required = map->num_stripes;
--		}
--	}
--	if (bbio_ret && (rw & (REQ_WRITE | REQ_DISCARD)) &&
--	    stripes_allocated < stripes_required) {
--		stripes_allocated = map->num_stripes;
--		free_extent_map(em);
--		kfree(bbio);
--		goto again;
--	}
- 	stripe_nr = offset;
- 	/*
- 	 * stripe_nr counts the total number of stripes we have to stride
-@@ -3055,6 +3016,13 @@ again:
+ 	mutex_lock(&inode->i_mutex);
+ 
++	ip_oldflags = ip->flags;
++	i_oldflags = inode->i_flags;
++
+ 	flags = btrfs_mask_flags(inode->i_mode, flags);
+ 	oldflags = btrfs_flags_to_ioctl(ip->flags);
+ 	if ((flags ^ oldflags) & (FS_APPEND_FL | FS_IMMUTABLE_FL)) {
+@@ -250,18 +255,23 @@ static int btrfs_ioctl_setflags(struct file *file, void __user *arg)
  	}
- 	BUG_ON(stripe_index >= map->num_stripes);
  
-+	bbio = kzalloc(btrfs_bio_size(num_stripes), GFP_NOFS);
-+	if (!bbio) {
-+		ret = -ENOMEM;
-+		goto out;
+ 	trans = btrfs_join_transaction(root);
+-	BUG_ON(IS_ERR(trans));
++	if (IS_ERR(trans)) {
++		ret = PTR_ERR(trans);
++		goto out_drop;
 +	}
-+	atomic_set(&bbio->error, 0);
-+
- 	if (rw & REQ_DISCARD) {
- 		for (i = 0; i < num_stripes; i++) {
- 			bbio->stripes[i].physical =
-@@ -3151,15 +3119,22 @@ again:
- 			stripe_index++;
- 		}
- 	}
--	if (bbio_ret) {
--		*bbio_ret = bbio;
--		bbio->num_stripes = num_stripes;
--		bbio->max_errors = max_errors;
--		bbio->mirror_num = mirror_num;
-+
-+	if (rw & REQ_WRITE) {
-+		if (map->type & (BTRFS_BLOCK_GROUP_RAID1 |
-+				 BTRFS_BLOCK_GROUP_RAID10 |
-+				 BTRFS_BLOCK_GROUP_DUP)) {
-+			max_errors = 1;
-+		}
- 	}
-+
-+	*bbio_ret = bbio;
-+	bbio->num_stripes = num_stripes;
-+	bbio->max_errors = max_errors;
-+	bbio->mirror_num = mirror_num;
- out:
- 	free_extent_map(em);
--	return 0;
-+	return ret;
- }
  
- int btrfs_map_block(struct btrfs_mapping_tree *map_tree, int rw,
+ 	btrfs_update_iflags(inode);
+ 	inode->i_ctime = CURRENT_TIME;
+ 	ret = btrfs_update_inode(trans, root, inode);
+-	BUG_ON(ret);
+ 
+ 	btrfs_end_transaction(trans, root);
++ out_drop:
++	if (ret) {
++		ip->flags = ip_oldflags;
++		inode->i_flags = i_oldflags;
++	}
+ 
+ 	mnt_drop_write(file->f_path.mnt);
+-
+-	ret = 0;
+  out_unlock:
+ 	mutex_unlock(&inode->i_mutex);
+ 	return ret;
 -- 
 1.7.3.1

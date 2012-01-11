@@ -1,44 +1,27 @@
-From: Sebastian Schikschneit <sebastian@schikschneit.eu>
-Subject: phenomenon of 0 Byte files while overwriting
-Date: Wed, 11 Jan 2012 10:23:39 +0100
-Message-ID: <CA+YvvZyA0EOc8wgPNg0=PfdVMX=wDV_B=1zVzL8-1FRj5J2KZA@mail.gmail.com>
-References: <CA+YvvZzLZ_CmwvJK=NNuimsxaDTZpS0asQhoAZOY0PAm=kzpoQ@mail.gmail.com>
+From: Christoph Hellwig <hch@infradead.org>
+Subject: Re: [PATCH] xfstests: fix 251's cp -axT problem
+Date: Wed, 11 Jan 2012 06:45:44 -0500
+Message-ID: <20120111114544.GE14423@infradead.org>
+References: <1326195560-4434-1-git-send-email-liubo2009@cn.fujitsu.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=UTF-8
-To: linux-btrfs@vger.kernel.org
+Content-Type: text/plain; charset=us-ascii
+Cc: linux-btrfs@vger.kernel.org, xfs@oss.sgi.com,
+	Lukas Czerner <lczerner@redhat.com>
+To: Liu Bo <liubo2009@cn.fujitsu.com>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <CA+YvvZzLZ_CmwvJK=NNuimsxaDTZpS0asQhoAZOY0PAm=kzpoQ@mail.gmail.com>
+In-Reply-To: <1326195560-4434-1-git-send-email-liubo2009@cn.fujitsu.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Dear BTRFS-Developer,
+On Tue, Jan 10, 2012 at 07:39:20PM +0800, Liu Bo wrote:
+> When I ran xfstests, 251 got failed cause "cp -axT" did not work as wish:
+> cp: cannot overwrite directory `/mnt/scratch/1' with non-directory
+> 
+> With this patch, 251 has passed.
 
-first of all sorry for my broken english - i hope you understand what
-i want to tell!?
-Since a few days i have a phenomenon when i try to overwrite a file.
-Description of the system:
+Why would cp give that message with a missing /?
 
-- linux server (3.0.0.15 - Ubuntu)
-- btrfs 0.19
-- samba 3.5.11
-- windows 7 x64 client
-- user: userX:users
-- file permissions 764 - userX - users
-- filesystem btrfs als single (approx 2TB) an btrfs as raid1 (approx 372GB)
+I'm not against putting this in, but I'd like to understand what's going
+on.
 
-I tried to overwrite an existing file on the server via samba. An
-error was reported (windows error messages... 0x8007003a - the server
-could not do that...). After cancel this operation the file at the
-server was 0 Byte and clould not overwritten and now i could not
-delete the file via samba (per ssh and console it is possible). If i
-delete first and the copy the file to the server everything works
-fine. If i move the file on the server to anywhere and back,
-everything works fine.
-An btrfs-defrag does not help! After an btrfs-balance-run everything
-seems to work!
-I dont have this phenomenon while using ext3 with this samba configuration.
-Do you have any ideas?
-I'm locking forward to hearing from you.
+Lukas, any idea?
 
-Best wishes and thanks.
-
-Sebastian Schikschneit

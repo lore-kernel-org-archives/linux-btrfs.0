@@ -1,90 +1,66 @@
-From: Danny Kukawka <danny.kukawka@bisect.de>
-Subject: [PATCH 2/4] return error code from change/get_label_unmounted
-Date: Thu, 12 Jan 2012 16:17:45 +0100
-Message-ID: <1326381467-19848-3-git-send-email-danny.kukawka@bisect.de>
-References: <1326381467-19848-1-git-send-email-danny.kukawka@bisect.de>
-Cc: David Sterba <dsterba@suse.cz>
-To: linux-btrfs@vger.kernel.org
+From: Christian Brunner <chb@muc.de>
+Subject: Re: [3.2-rc7] slowdown, warning + oops creating lots of files
+Date: Thu, 12 Jan 2012 17:18:37 +0100
+Message-ID: <CAO47_-_Jx9BV5FBs3vFtzzsh+Jo8FiQiXEdueR9DDgx2i4raXw@mail.gmail.com>
+References: <20120104214445.GE17026@dastard>
+	<20120104221105.GF17026@dastard>
+	<4F04D178.2070006@csamuel.org>
+	<20120104230122.GA24466@dastard>
+	<20120105184657.GC30372@shiny>
+	<20120105194500.GD30372@shiny>
+	<20120105201216.GG24466@dastard>
+	<20120105210255.GE30372@shiny>
+	<CAO47_--5T1_ud+d+nhpY0o93PaH5UyHdXOE1ve=B7weLGQrvSA@mail.gmail.com>
+Reply-To: chb@muc.de
+Mime-Version: 1.0
+Content-Type: text/plain; charset=ISO-8859-1
+To: Chris Mason <chris.mason@oracle.com>,
+	Dave Chinner <david@fromorbit.com>,
+	Chris Samuel <chris@csamuel.org>, linux-btrfs@vger.kernel.org
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <1326381467-19848-1-git-send-email-danny.kukawka@bisect.de>
+In-Reply-To: <CAO47_--5T1_ud+d+nhpY0o93PaH5UyHdXOE1ve=B7weLGQrvSA@mail.gmail.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-From: David Sterba <dsterba@suse.cz>
+2012/1/7 Christian Brunner <chb@muc.de>:
+> 2012/1/5 Chris Mason <chris.mason@oracle.com>:
+>> On Fri, Jan 06, 2012 at 07:12:16AM +1100, Dave Chinner wrote:
+>>> On Thu, Jan 05, 2012 at 02:45:00PM -0500, Chris Mason wrote:
+>>> > On Thu, Jan 05, 2012 at 01:46:57PM -0500, Chris Mason wrote:
+>>> > >
+>>> > > Unfortunately, this one works for me. =A0I'll try it again and =
+see if I
+>>> > > can push harder. =A0If not, I'll see if I can trade beer for so=
+me
+>>> > > diagnostic runs.
+>>> >
+>>> > Aha, if I try it just on the ssd instead of on my full array it t=
+riggers
+>>> > at 88M files. =A0Great.
+>>>
+>>> Good to know. =A0The error that is generating the BUG on my machine=
+ is
+>>> -28 (ENOSPC). =A0Given there's 17TB free on my filesystem....
+>>
+>> Yeah, same thing here. =A0I'm testing a fix now, it's pretty dumb. =A0=
+We're
+>> not allocating more metadata chunks from the drive because of where =
+the
+>> allocation is happening, so it is just a check for "do we need a new
+>> chunk" in the right place.
+>>
+>> I'll make sure it can fill my ssd and then send to you.
+>
+> Could you send the patch to the list (or to me), please? Telling from
+> what you mentioned on IRC this sounds quite interesting and I would
+> like to see if this solves my performance problems with ceph, too...
 
-Return error code from change/get_label_unmounted caused by
-caused by open_ctree()
----
- btrfslabel.c |   16 ++++++++--------
- 1 files changed, 8 insertions(+), 8 deletions(-)
+I apologize for bothering you again, but I would really like to give it=
+ a spin.
 
-diff --git a/btrfslabel.c b/btrfslabel.c
-index 2e5d539..29b00bf 100644
---- a/btrfslabel.c
-+++ b/btrfslabel.c
-@@ -46,7 +46,7 @@
- #define GET_LABEL                      3
- #define SET_LABEL                      4
- 
--static void change_label_unmounted(char *dev, char *nLabel)
-+static int change_label_unmounted(char *dev, char *nLabel)
- {
-        struct btrfs_root *root;
-        struct btrfs_trans_handle *trans;
-@@ -57,7 +57,7 @@ static void change_label_unmounted(char *dev, char *nLabel)
-        root = open_ctree(dev, 0, 1);
-        if (!root) {
- 		fprintf(stderr, "Open ctree failed\n");
--		return;
-+		return -1;
-        }
- 
-        trans = btrfs_start_transaction(root, 1);
-@@ -66,9 +66,10 @@ static void change_label_unmounted(char *dev, char *nLabel)
- 
-        /* Now we close it since we are done. */
-        close_ctree(root);
-+       return 0;
- }
- 
--static void get_label_unmounted(char *dev)
-+static int get_label_unmounted(char *dev)
- {
-        struct btrfs_root *root;
- 
-@@ -78,13 +79,14 @@ static void get_label_unmounted(char *dev)
-        root = open_ctree(dev, 0, 0);
-        if (!root) {
- 		fprintf(stderr, "Open ctree failed\n");
--		return;
-+		return -1;
-        }
- 
-        fprintf(stdout, "%s\n", root->fs_info->super_copy.label);
- 
-        /* Now we close it since we are done. */
-        close_ctree(root);
-+       return 0;
- }
- 
- int get_label(char *btrfs_dev)
-@@ -103,8 +105,7 @@ int get_label(char *btrfs_dev)
- 	       fprintf(stderr, "FATAL: the filesystem has to be unmounted\n");
- 	       return -2;
- 	}
--	get_label_unmounted(btrfs_dev);
--	return 0;
-+	return get_label_unmounted(btrfs_dev);
- }
- 
- 
-@@ -124,6 +125,5 @@ int set_label(char *btrfs_dev, char *nLabel)
- 	       fprintf(stderr, "FATAL: the filesystem has to be unmounted\n");
- 	       return -2;
- 	}
--	change_label_unmounted(btrfs_dev, nLabel);
--	return 0;
-+	return change_label_unmounted(btrfs_dev, nLabel);
- }
--- 
-1.7.8
-
+Thanks,
+Christian
+--
+To unsubscribe from this list: send the line "unsubscribe linux-btrfs" =
+in
+the body of a message to majordomo@vger.kernel.org
+More majordomo info at  http://vger.kernel.org/majordomo-info.html

@@ -1,28 +1,57 @@
-From: BJ Quinn <bj@placs.net>
-Subject: Re: Cloning a Btrfs partition
-Date: Wed, 11 Jan 2012 18:52:04 -0600 (CST)
-Message-ID: <c137d5af-bc20-41e4-95b3-480439c0e6b8@mail.placs.net>
-References: <f246b736-54be-46d6-8944-701f3bd70c68@mail.placs.net>
+From: Liu Bo <liubo2009@cn.fujitsu.com>
+Subject: Re: [PATCH] xfstests: fix 251's cp -axT problem
+Date: Thu, 12 Jan 2012 09:16:44 +0800
+Message-ID: <4F0E347C.5040506@cn.fujitsu.com>
+References: <1326195560-4434-1-git-send-email-liubo2009@cn.fujitsu.com> <20120111114544.GE14423@infradead.org> <alpine.LFD.2.00.1201111310060.5636@dhcp-27-109.brq.redhat.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=utf-8
-Cc: Jan Schmidt <list.btrfs@jan-o-sch.net>,
-	Phillip Susi <psusi@cfl.rr.com>,
-	Freddie Cash <fjwcash@gmail.com>, linux-btrfs@vger.kernel.org
-To: Chris Mason <chris.mason@oracle.com>
+Content-Type: text/plain; charset=ISO-8859-1
+Cc: Christoph Hellwig <hch@infradead.org>, linux-btrfs@vger.kernel.org,
+	xfs@oss.sgi.com
+To: Lukas Czerner <lczerner@redhat.com>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <f246b736-54be-46d6-8944-701f3bd70c68@mail.placs.net>
+In-Reply-To: <alpine.LFD.2.00.1201111310060.5636@dhcp-27-109.brq.redhat.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Now I've managed to basically bring my system to its knees.  My rsync script that takes weeks ends up bringing the system to a crawl long before it can ever finish.  I end up with 100% of the CPU used up by the following as shown by top
+On 01/11/2012 08:14 PM, Lukas Czerner wrote:
+> On Wed, 11 Jan 2012, Christoph Hellwig wrote:
+> 
+>> On Tue, Jan 10, 2012 at 07:39:20PM +0800, Liu Bo wrote:
+>>> When I ran xfstests, 251 got failed cause "cp -axT" did not work as wish:
+>>> cp: cannot overwrite directory `/mnt/scratch/1' with non-directory
+>>>
+>>> With this patch, 251 has passed.
+>> Why would cp give that message with a missing /?
+>>
+>> I'm not against putting this in, but I'd like to understand what's going
+>> on.
+>>
+>> Lukas, any idea?
+>>
+> 
+> Hi Christoph,
+> 
+> the only reason I can think of is probably that Liu is accessing the
+> xfstests directory via symbolic link, hence the '$content' addresses the
+> symbolic link and cp is trying to overwrite the directory with
+> non-directory (symlink).
+> 
+> The fix is fine for both cases (xfstests as symlink and directory), confirmed
+> with a simple test.
+> 
 
-btrfs-endio-wri
-btrfs-delayed-m
-btrfs-transacti
-btrfs-delalloc-
-btrfs-endio-met
+Sorry for not showing the full story in changelog, but symbolic link is the point:
 
-Now, I've got a bunch of snapshots, and the server is a backup server that backs up all the machines on the network.  It's using -o compress.  I've got a 6TB array of 2 3TB drives, that is now about 85% full.  There's lots of small files.  I tried to add another drive, but it won't ever finish a rebalance.  Df shows all 9TB as part of the array, but only shows available space as if the array was 6TB.  An attempt at copying all the data to a second array effectively brings the computer to its knees running the threads explained above.  The server never really recovers until a hard reboot and can't ever finish running a backup.
+[root@kvm tmp]# ll XFStests 
+lrwxrwxrwx 1 root root 32 Jan  1 09:48 XFStests -> /home/kvm_img/liub/xfstests-dev/
 
-Are there any mount options I should change?  I need the compression and snapshots to have enough space.
+thanks,
+liubo
 
--BJ
+> Thanks!
+> -Lukas
+> --
+> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
+> the body of a message to majordomo@vger.kernel.org
+> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+> 
+

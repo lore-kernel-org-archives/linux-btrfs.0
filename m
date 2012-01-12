@@ -1,53 +1,26 @@
-From: Chris Samuel <chris@csamuel.org>
-Subject: Re: Cloning a Btrfs partition
-Date: Thu, 12 Jan 2012 17:41:34 +1100
-Message-ID: <201201121741.37266.chris@csamuel.org>
-References: <f246b736-54be-46d6-8944-701f3bd70c68@mail.placs.net>
+From: David Sterba <dsterba@suse.cz>
+Subject: Re: [PATCH] Btrfs: release space on error in page_mkwrite
+Date: Thu, 12 Jan 2012 12:59:14 +0100
+Message-ID: <20120112115914.GA32405@ds.suse.cz>
+References: <1326223218-5342-1-git-send-email-josef@redhat.com>
+ <20120111142709.GE21513@ds.suse.cz>
+Reply-To: dsterba@suse.cz
 Mime-Version: 1.0
-Content-Type: multipart/signed;
-  boundary="nextPart7138025.QNgQxdql2U";
-  protocol="application/pgp-signature";
-  micalg=pgp-sha1
-To: linux-btrfs@vger.kernel.org
+Content-Type: text/plain; charset=us-ascii
+Cc: Josef Bacik <josef@redhat.com>, linux-btrfs@vger.kernel.org
+To: David Sterba <dsterba@suse.cz>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <f246b736-54be-46d6-8944-701f3bd70c68@mail.placs.net>
+In-Reply-To: <20120111142709.GE21513@ds.suse.cz>
 List-ID: <linux-btrfs.vger.kernel.org>
 
---nextPart7138025.QNgQxdql2U
-Content-Type: Text/Plain;
-  charset="utf-8"
-Content-Transfer-Encoding: quoted-printable
+On Wed, Jan 11, 2012 at 03:27:09PM +0100, David Sterba wrote:
+> On Tue, Jan 10, 2012 at 02:20:18PM -0500, Josef Bacik wrote:
+> WARNING: at fs/btrfs/extent-tree.c:7283 btrfs_free_block_groups+0x25b/0x370
+> 
+> appeared within minutes.
 
-On Fri, 30 Dec 2011 11:25:58 AM BJ Quinn wrote:
+Sorry, I spoke too soon, the test was running overnight and the warning
+is there. I'll send you updated logs and traces.
 
-> Any suggestions?  I'm using CentOS 6.2 fully updated.
 
-Are you using the 3.2 kernel as well ?
-
-The RHEL kernel probably has an old version of btrfs in it.
-
-cheers,
-Chris
-=2D-=20
- Chris Samuel  :  http://www.csamuel.org/  :  Melbourne, VIC
-
-This email may come with a PGP signature as a file. Do not panic.
-=46or more info see: http://en.wikipedia.org/wiki/OpenPGP
-
---nextPart7138025.QNgQxdql2U
-Content-Type: application/pgp-signature; name=signature.asc 
-Content-Description: This is a digitally signed message part.
-
------BEGIN PGP SIGNATURE-----
-Version: GnuPG v1.4.11 (GNU/Linux)
-
-iQEVAwUATw6Ano1yjaOTJg85AQJnUQgApRFMjnxb6dPEEkbsnv0cgoSjIltL1+NT
-8OGRS9x1LZdG7K5DZCRIDVqSPBrn97qcXwFQDAhY1qj/q/ok1W9sU8YULqZSmgx5
-E5rZYW5A4ZMzlDbvSBhkj5H6qZJZiO6xeYOarhdYW6qvEC7NVi0p3/O6Z+0ip9je
-GdLrTOb9AFppXFB2vunRluAobtLnWE4lBAHRbL/CN1YK5IPhrzN5wherY5FCTlPJ
-27zkWw/r10gJGYiWs8pmY4mv6bXNMKSjU01yzK8ZvddSKw2yGO4fZPD3hD8cjE/l
-6zkrVEO89PYkNLlu9b4DcAzme2HyWlm9uPu3VCoHy1ey+SUMbSq3dA==
-=kWb5
------END PGP SIGNATURE-----
-
---nextPart7138025.QNgQxdql2U--
+david

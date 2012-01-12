@@ -1,57 +1,53 @@
-From: Liu Bo <liubo2009@cn.fujitsu.com>
-Subject: Re: [PATCH] xfstests: fix 251's cp -axT problem
-Date: Thu, 12 Jan 2012 09:16:44 +0800
-Message-ID: <4F0E347C.5040506@cn.fujitsu.com>
-References: <1326195560-4434-1-git-send-email-liubo2009@cn.fujitsu.com> <20120111114544.GE14423@infradead.org> <alpine.LFD.2.00.1201111310060.5636@dhcp-27-109.brq.redhat.com>
+From: Chris Samuel <chris@csamuel.org>
+Subject: Re: Cloning a Btrfs partition
+Date: Thu, 12 Jan 2012 17:41:34 +1100
+Message-ID: <201201121741.37266.chris@csamuel.org>
+References: <f246b736-54be-46d6-8944-701f3bd70c68@mail.placs.net>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=ISO-8859-1
-Cc: Christoph Hellwig <hch@infradead.org>, linux-btrfs@vger.kernel.org,
-	xfs@oss.sgi.com
-To: Lukas Czerner <lczerner@redhat.com>
+Content-Type: multipart/signed;
+  boundary="nextPart7138025.QNgQxdql2U";
+  protocol="application/pgp-signature";
+  micalg=pgp-sha1
+To: linux-btrfs@vger.kernel.org
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <alpine.LFD.2.00.1201111310060.5636@dhcp-27-109.brq.redhat.com>
+In-Reply-To: <f246b736-54be-46d6-8944-701f3bd70c68@mail.placs.net>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 01/11/2012 08:14 PM, Lukas Czerner wrote:
-> On Wed, 11 Jan 2012, Christoph Hellwig wrote:
-> 
->> On Tue, Jan 10, 2012 at 07:39:20PM +0800, Liu Bo wrote:
->>> When I ran xfstests, 251 got failed cause "cp -axT" did not work as wish:
->>> cp: cannot overwrite directory `/mnt/scratch/1' with non-directory
->>>
->>> With this patch, 251 has passed.
->> Why would cp give that message with a missing /?
->>
->> I'm not against putting this in, but I'd like to understand what's going
->> on.
->>
->> Lukas, any idea?
->>
-> 
-> Hi Christoph,
-> 
-> the only reason I can think of is probably that Liu is accessing the
-> xfstests directory via symbolic link, hence the '$content' addresses the
-> symbolic link and cp is trying to overwrite the directory with
-> non-directory (symlink).
-> 
-> The fix is fine for both cases (xfstests as symlink and directory), confirmed
-> with a simple test.
-> 
+--nextPart7138025.QNgQxdql2U
+Content-Type: Text/Plain;
+  charset="utf-8"
+Content-Transfer-Encoding: quoted-printable
 
-Sorry for not showing the full story in changelog, but symbolic link is the point:
+On Fri, 30 Dec 2011 11:25:58 AM BJ Quinn wrote:
 
-[root@kvm tmp]# ll XFStests 
-lrwxrwxrwx 1 root root 32 Jan  1 09:48 XFStests -> /home/kvm_img/liub/xfstests-dev/
+> Any suggestions?  I'm using CentOS 6.2 fully updated.
 
-thanks,
-liubo
+Are you using the 3.2 kernel as well ?
 
-> Thanks!
-> -Lukas
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
-> 
+The RHEL kernel probably has an old version of btrfs in it.
 
+cheers,
+Chris
+=2D-=20
+ Chris Samuel  :  http://www.csamuel.org/  :  Melbourne, VIC
+
+This email may come with a PGP signature as a file. Do not panic.
+=46or more info see: http://en.wikipedia.org/wiki/OpenPGP
+
+--nextPart7138025.QNgQxdql2U
+Content-Type: application/pgp-signature; name=signature.asc 
+Content-Description: This is a digitally signed message part.
+
+-----BEGIN PGP SIGNATURE-----
+Version: GnuPG v1.4.11 (GNU/Linux)
+
+iQEVAwUATw6Ano1yjaOTJg85AQJnUQgApRFMjnxb6dPEEkbsnv0cgoSjIltL1+NT
+8OGRS9x1LZdG7K5DZCRIDVqSPBrn97qcXwFQDAhY1qj/q/ok1W9sU8YULqZSmgx5
+E5rZYW5A4ZMzlDbvSBhkj5H6qZJZiO6xeYOarhdYW6qvEC7NVi0p3/O6Z+0ip9je
+GdLrTOb9AFppXFB2vunRluAobtLnWE4lBAHRbL/CN1YK5IPhrzN5wherY5FCTlPJ
+27zkWw/r10gJGYiWs8pmY4mv6bXNMKSjU01yzK8ZvddSKw2yGO4fZPD3hD8cjE/l
+6zkrVEO89PYkNLlu9b4DcAzme2HyWlm9uPu3VCoHy1ey+SUMbSq3dA==
+=kWb5
+-----END PGP SIGNATURE-----
+
+--nextPart7138025.QNgQxdql2U--

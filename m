@@ -1,44 +1,56 @@
-From: "Niels de Carpentier" <niels@decarpentier.com>
-Subject: Re: revert to static snapshot on reboot
-Date: Thu, 12 Jan 2012 23:01:09 +0100
-Message-ID: <caac4792c203d54bce7dca9a10903263.squirrel@webmail.decarpentier.com>
-References: <20120109064304.18411.qmail@otpproductions.com>
-    <b14e2228999a5acd0ee5d38705da7260.squirrel@webmail.decarpentier.com>
-    <20120112213813.GA21769@carfax.org.uk>
+From: Vincent Vanackere <vincent.vanackere@gmail.com>
+Subject: Re: btrfs-related kernel oops due to media error
+Date: Thu, 12 Jan 2012 23:39:21 +0100
+Message-ID: <4F0F6119.4000605@gmail.com>
+References: <4F0B6BCB.80308@gmail.com> <40bebf953d60c05eff25fbde5bfbef17.squirrel@webmail.decarpentier.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=US-ASCII
-To: "Hugo Mills" <hugo@carfax.org.uk>, btrfs@spiritvideo.com,
-	linux-btrfs@vger.kernel.org
+Content-Type: text/plain; charset=UTF-8; format=flowed
+Cc: linux-btrfs@vger.kernel.org
+To: Niels de Carpentier <niels@decarpentier.com>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <20120112213813.GA21769@carfax.org.uk>
+In-Reply-To: <40bebf953d60c05eff25fbde5bfbef17.squirrel@webmail.decarpentier.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-> On Mon, Jan 09, 2012 at 04:21:31PM +0100, Niels de Carpentier wrote:
->> > The plan that occurs to me is to make a snapshot of the system in the
->> > state that I want to always boot.  Then, I would rewrite the init
->> > script in the initrd to (a) delete any old tmp copy of the snapshot;
->> > (b) copy the static snapshot to a tmp copy; (c) mount the tmp copy.
->> >
->> > That's a little harder than I was hoping to work -- is there an easier
->> > way to get this functionality?
->>
->> I would just create a filesystem with the static content, and on boot
->> do:
->>
->> mount fs
->> delete snapshots
->> create snapshot
->> unmount fs and mount snapshot.
->>
->> I'm not sure if you can snapshot a snapshot, otherwise you could start
->> with a snapshot as well. (Just be sure not to delete it)
->
->    Yes, you can make snapshots of snapshots. A btrfs snapshot is a
-> first-class citizen -- there's no real distinction between the
-> original subvolume and a snapshot of it.
 
-Good! That makes the op's case real simple. No need to copy any data, just
-snapshot and mount.
 
-Niels
+On Tue, Jan 10, 2012 at 00:01, Niels de Carpentier 
+<niels@decarpentier.com <mailto:niels@decarpentier.com>> wrote:
+
+     > Hi,
+     >
+     > One of my disks, partitioned into a single btrfs partition, is
+    showing
+     > media errors. The problem is that these errors lead to kernel
+    panic from
+     > btrfs - that make the filesystem unusable until reboot - and
+    therefore
+     > it is very hard for me to do a full backup of the data prior to
+    changing
+     > the disk.
+     > My current kernel is 3.2.0-8-generic from Ubuntu/precise (based
+    on linux
+     > 3.2-final) but I quickly tested and get the same error with an
+    older 3.1
+     > kernel (and I can probably reproduce it with a vanilla kernel if
+     > necessary).
+     > I assume that the filesystem should not panic even in case of a media
+     > error... Is there any procedure I can follow / patch I could apply to
+     > salvage my data while ignoring media errors ?
+
+    I don't know about btrfs, but writing the sector with hdparm
+    --write-sector will usually cause it to be remapped. You can use dd or
+    another tool to read the entire disk to find out if there are more bad
+    sectors.
+
+    Niels
+
+
+Thanks you for the hint !
+I'll probably try this but since I've already managed to make a copy of 
+all my interesting data, I think I'll keep the disk in the same state 
+(with the bad sectors not remapped) for a few days, hoping the btrfs 
+developers are interested in fixing this bug... Who will trust a 
+filesystem that OOPs on media failure ? ;-)
+
+Vincent
 

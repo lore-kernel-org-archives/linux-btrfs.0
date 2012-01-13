@@ -1,50 +1,60 @@
 From: Andi Kleen <andi@firstfloor.org>
-Subject: Re: [RFC PATCH v2 0/3] Btrfs: apply the Probabilistic Skiplist on btrfs
-Date: Thu, 12 Jan 2012 13:28:12 -0800
-Message-ID: <m21ur4sj9v.fsf@firstfloor.org>
-References: <1326180696-3614-1-git-send-email-liubo2009@cn.fujitsu.com>
-Mime-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Cc: <linux-btrfs@vger.kernel.org>, <chris.mason@oracle.com>,
-	<josef@redhat.com>, <dave@jikos.cz>
-To: Liu Bo <liubo2009@cn.fujitsu.com>
+Subject: Updated btrfs/crypto snappy interface ready for merging
+Date: Thu, 12 Jan 2012 16:28:47 -0800
+Message-ID: <1326414530-10789-1-git-send-email-andi@firstfloor.org>
+Cc: linux-kernel@vger.kernel.org, linux-btrfs@vger.kernel.org
+To: chris.mason@oracle.com
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <1326180696-3614-1-git-send-email-liubo2009@cn.fujitsu.com> (Liu
-	Bo's message of "Tue, 10 Jan 2012 15:31:33 +0800")
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Liu Bo <liubo2009@cn.fujitsu.com> writes:
->
-> Here we choose extent_map firstly, since it is a "read mostly" thing,
-> and the change is quite direct, all we need to do is
-> a) to replace rbtree with skiplist,
-> b) to add rcu support.
-> And more details are in patch 2 and patch 3.
->
-> I've done some simple tests for performance on my 2-core box, there is no
-> obvious difference, but I want to focus on the design side and make sure
-> there is no more bug in it firstly.
->
-> For long term goals, we want to ship skiplist to lib, like lib/rbtree.c.
+Here's a slightly updated version of the BTRFS snappy interface.
+snappy is a faster compression algorithm that provides similar
+compression as LZO, but generally better performance.
 
-I looked at skiplists some time ago. What made them awkward for kernel
-use is that you have to size the per node skip array in advance and it's
-hard to resize. So you have a node that wastes memory in common small
-cases, but still degenerates to linked list on very large sizes.
-With fine grained locking it gets even worse because the nodes get larger.
+This version has:
 
-Con didn't worry about this problem because he assumed the scheduler
-run queues never could get too long.
+- Ported to latest tree
+- Extensive testing and benchmarking (in its 3.0 based incarnation)
+- A few cleanups
+- Adds a minor performance improvement
 
-But for a very scalable subsystem that's definitely a problem.
+Should be ready for pulling into the btrfs tree now.
+The crypto parts have been acked by Herbert.
 
-I think skiplists are not a good fit here.
+The following changes since commit 2485a4b610171f4e1c4ab0d053569747795c1bbe:
 
-At least in our tests the older style trees got a lot better with Chris'
-recent locking improvements. 
+  Merge branch 'for-linus' of git://git.kernel.org/pub/scm/linux/kernel/git/dtor/input (2012-01-12 12:40:41 -0800)
 
-Now replacing rbtrees is probably still a good idea, but not convinced
-skiplist are suitable here. There were various other tree alternatives
-with better locking.
+are available in the git repository at:
+
+  git://git.kernel.org/pub/scm/linux/kernel/git/ak/linux-misc snappy
+
+Andi Kleen (3):
+      Add the snappy-c compressor to lib v2
+      BTRFS: Add snappy support v2
+      Add snappy interface to crypto API
+
+ crypto/Kconfig         |    9 +
+ crypto/Makefile        |    1 +
+ crypto/snappy.c        |   99 ++++
+ fs/btrfs/Kconfig       |    1 +
+ fs/btrfs/Makefile      |    2 +-
+ fs/btrfs/compression.c |    1 +
+ fs/btrfs/compression.h |    1 +
+ fs/btrfs/ctree.h       |    9 +-
+ fs/btrfs/disk-io.c     |    2 +
+ fs/btrfs/ioctl.c       |    4 +
+ fs/btrfs/snappy.c      |  432 ++++++++++++++++
+ fs/btrfs/super.c       |    9 +-
+ include/linux/snappy.h |   26 +
+ lib/Kconfig            |    6 +
+ lib/Makefile           |    4 +
+ lib/snappy.c           | 1300 ++++++++++++++++++++++++++++++++++++++++++++++++
+ 16 files changed, 1901 insertions(+), 5 deletions(-)
+ create mode 100644 crypto/snappy.c
+ create mode 100644 fs/btrfs/snappy.c
+ create mode 100644 include/linux/snappy.h
+ create mode 100644 lib/snappy.c
 
 -Andi
+

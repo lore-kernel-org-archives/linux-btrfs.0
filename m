@@ -1,97 +1,89 @@
-From: =?us-ascii?Q?Jaromir=20Zdrazil?= <jaromir.zdrazil@email.cz>
-Subject: =?us-ascii?Q?Re=3A=20Updated=20btrfs=2Fcrypto=20snappy=20interface=20ready=20for=20merging?=
-Date: Fri, 13 Jan 2012 03:40:45 +0100 (CET)
-Message-ID: <136712.27328.70563-11092-962093031-1326422445@email.cz>
-References: <1326414530-10789-1-git-send-email-andi@firstfloor.org>
-Reply-To: jaromir.zdrazil@email.cz
+From: Dave Chinner <david@fromorbit.com>
+Subject: Re: [RFC PATCH v2 0/3] Btrfs: apply the Probabilistic Skiplist on
+ btrfs
+Date: Fri, 13 Jan 2012 15:10:16 +1100
+Message-ID: <20120113041016.GG2806@dastard>
+References: <1326180696-3614-1-git-send-email-liubo2009@cn.fujitsu.com>
+ <m21ur4sj9v.fsf@firstfloor.org>
+ <4F0F945E.2040005@cn.fujitsu.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=iso-8859-2
-To: linux-btrfs@vger.kernel.org
+Content-Type: text/plain; charset=us-ascii
+Cc: Andi Kleen <andi@firstfloor.org>, linux-btrfs@vger.kernel.org,
+	chris.mason@oracle.com, josef@redhat.com, dave@jikos.cz
+To: Liu Bo <liubo2009@cn.fujitsu.com>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <1326414530-10789-1-git-send-email-andi@firstfloor.org>
+In-Reply-To: <4F0F945E.2040005@cn.fujitsu.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hi.
+On Fri, Jan 13, 2012 at 10:18:06AM +0800, Liu Bo wrote:
+> On 01/13/2012 05:28 AM, Andi Kleen wrote:
+> > Liu Bo <liubo2009@cn.fujitsu.com> writes:
+> >> Here we choose extent_map firstly, since it is a "read mostly" thing,
+> >> and the change is quite direct, all we need to do is
+> >> a) to replace rbtree with skiplist,
+> >> b) to add rcu support.
+> >> And more details are in patch 2 and patch 3.
+> >>
+> >> I've done some simple tests for performance on my 2-core box, there is no
+> >> obvious difference, but I want to focus on the design side and make sure
+> >> there is no more bug in it firstly.
+> >>
+> >> For long term goals, we want to ship skiplist to lib, like lib/rbtree.c.
+> > 
+> > I looked at skiplists some time ago. What made them awkward for kernel
+> > use is that you have to size the per node skip array in advance and it's
+> > hard to resize. So you have a node that wastes memory in common small
+> > cases, but still degenerates to linked list on very large sizes.
+> > With fine grained locking it gets even worse because the nodes get larger.
+....
+> > But for a very scalable subsystem that's definitely a problem.
+> > 
+> > I think skiplists are not a good fit here.
+....
+> > Now replacing rbtrees is probably still a good idea, but not convinced
+> > skiplist are suitable here. There were various other tree alternatives
+> > with better locking.
+> > 
+> 
+> Hi Andi,
+> 
+> I know what you're worried about, that still keeps biting me, too. ;)
+> 
+> Here we decide to make such an experiment of skiplist, since we have some
+> in-memory data structures that are dominated by reads, and what we want to
+> try is to apply RCU, a lockless read scheme, on them.
+> 
+> Yes, skiplist is not good enough for kernel use, but maybe RCU-skiplist can
+> be a candidate.
+> 
+> According to RCU semantic, once a RCU-skiplist is built, the "read most" thing
+> can ensure us that the whole skiplist will remain almost unchanged while running.
+> Thus, to some extent, we do not need to resize the nodes frequently.
+> 
+> So what do you think about this? :)
 
-   Thank you for the job. Could you please share the output of the test=
-ing and give us more info about the crypto?
+I don't think RCU lookups matter here - it's the fact that the
+skiplist needs to be a pre-determined size that is the problem
+because one size does not fit all users.
 
-Thank you!
-Jaromir
-> ------------ P=F9vodn=ED zpr=E1va ------------
-> Od: Andi Kleen <andi@firstfloor.org>
-> P=F8edm=ECt: Updated btrfs/crypto snappy interface ready for merging
-> Datum: 13.1.2012 01:30:21
-> ----------------------------------------
-> Here's a slightly updated version of the BTRFS snappy interface.
-> snappy is a faster compression algorithm that provides similar
-> compression as LZO, but generally better performance.
->=20
-> This version has:
->=20
-> - Ported to latest tree
-> - Extensive testing and benchmarking (in its 3.0 based incarnation)
-> - A few cleanups
-> - Adds a minor performance improvement
->=20
-> Should be ready for pulling into the btrfs tree now.
-> The crypto parts have been acked by Herbert.
->=20
-> The following changes since commit 2485a4b610171f4e1c4ab0d05356974779=
-5c1bbe:
->=20
->   Merge branch 'for-linus' of
-> git://git.kernel.org/pub/scm/linux/kernel/git/dtor/input (2012-01-12 =
-12:40:41
-> -0800)
->=20
-> are available in the git repository at:
->=20
->   git://git.kernel.org/pub/scm/linux/kernel/git/ak/linux-misc snappy
->=20
-> Andi Kleen (3):
->       Add the snappy-c compressor to lib v2
->       BTRFS: Add snappy support v2
->       Add snappy interface to crypto API
->=20
->  crypto/Kconfig         |    9 +
->  crypto/Makefile        |    1 +
->  crypto/snappy.c        |   99 ++++
->  fs/btrfs/Kconfig       |    1 +
->  fs/btrfs/Makefile      |    2 +-
->  fs/btrfs/compression.c |    1 +
->  fs/btrfs/compression.h |    1 +
->  fs/btrfs/ctree.h       |    9 +-
->  fs/btrfs/disk-io.c     |    2 +
->  fs/btrfs/ioctl.c       |    4 +
->  fs/btrfs/snappy.c      |  432 ++++++++++++++++
->  fs/btrfs/super.c       |    9 +-
->  include/linux/snappy.h |   26 +
->  lib/Kconfig            |    6 +
->  lib/Makefile           |    4 +
->  lib/snappy.c           | 1300 ++++++++++++++++++++++++++++++++++++++=
-++++++++++
->  16 files changed, 1901 insertions(+), 5 deletions(-)
->  create mode 100644 crypto/snappy.c
->  create mode 100644 fs/btrfs/snappy.c
->  create mode 100644 include/linux/snappy.h
->  create mode 100644 lib/snappy.c
->=20
-> -Andi
->=20
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-btrfs=
-" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
->=20
->=20
->=20
+If you want a RCU-based tree structure for extent lookups, then an
+RCU aware btree is a better bet. Dynamic resizing can be done in an
+RCU aware manner (the radix trees do it) so you should probably take
+the lib/btree.c code and look to making that RCU safe.  IIRC, the
+implementation was based on a RCU-btree prototype so maybe you might
+want to read up on that first:
 
-Jaromir Zdrazil
-jaromir.zdrazil@email.cz
---
-To unsubscribe from this list: send the line "unsubscribe linux-btrfs" =
-in
-the body of a message to majordomo@vger.kernel.org
-More majordomo info at  http://vger.kernel.org/majordomo-info.html
+http://programming.kicks-ass.net/kernel-patches/vma_lookup/btree.patch
+
+FWIW, I'm mentioning this out of self interest - I need a RCU safe
+tree structure to index extents for lookless lookups in the XFS
+buffer cache, but I've got a long list of things to do before I get
+to it. If someone else implements the tree, that's most of the work
+done for me. :)
+
+Cheers,
+
+Dave.
+-- 
+Dave Chinner
+david@fromorbit.com

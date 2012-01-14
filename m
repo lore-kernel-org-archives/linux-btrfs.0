@@ -1,65 +1,57 @@
-From: Roman Mamedov <rm@romanrm.ru>
-Subject: Re: btrfs on ssd and hdd
-Date: Sat, 14 Jan 2012 21:18:45 +0600
-Message-ID: <20120114211845.38888a94@natsu>
-References: <1289964295.1201326553279203.JavaMail.root@shiva>
-	<772574965.1221326553343545.JavaMail.root@shiva>
+From: "Marco L. Crociani" <marco.crociani@gmail.com>
+Subject: Re: Can't resize second device in RAID1
+Date: Sat, 14 Jan 2012 19:18:34 +0100
+Message-ID: <CADy=jfV+-sT_9opMeUXxOF4zWxt7PTQOg_+bPL7o5vq66omcsA@mail.gmail.com>
+References: <CADy=jfVZjRAE049OiD6VkoKkpzZh9e_=V62AvuVwxyHZyfuU1w@mail.gmail.com>
+ <CADy=jfWbzq81CrhCFy+RVd8e7265XZgkqomwOOxYaKehSpzasQ@mail.gmail.com>
+ <20120113231717.GB21769@carfax.org.uk> <CADy=jfU88LRMw4Jmk4O_n+URRQxN2EUpiZCZe7GVK_LHPShmZA@mail.gmail.com>
+ <20120114144236.GA22603@attic.humilis.net>
 Mime-Version: 1.0
-Content-Type: multipart/signed; micalg=PGP-SHA1;
- boundary="Sig_/v2hSt5rn.qFzO12JiSWY9wh"; protocol="application/pgp-signature"
+Content-Type: text/plain; charset=UTF-8
 Cc: linux-btrfs@vger.kernel.org
-To: luvar@plaintext.sk
+To: sander@humilis.net
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <772574965.1221326553343545.JavaMail.root@shiva>
+In-Reply-To: <20120114144236.GA22603@attic.humilis.net>
 List-ID: <linux-btrfs.vger.kernel.org>
 
---Sig_/v2hSt5rn.qFzO12JiSWY9wh
-Content-Type: text/plain; charset=US-ASCII
-Content-Transfer-Encoding: quoted-printable
+On Sat, Jan 14, 2012 at 3:42 PM, Sander <sander@humilis.net> wrote:
+> Marco L. Crociani wrote (ao):
+>> On Sat, Jan 14, 2012 at 12:17 AM, Hugo Mills <hugo@carfax.org.uk> wr=
+ote:
+>> > On Sat, Jan 14, 2012 at 12:12:06AM +0100, Marco L. Crociani wrote:
+>> >> # ./btrfs fi sh
+>> >> Label: 'RootFS'?? uuid: c87975a0-a575-405e-9890-d3f7f25bbd96
+>> >> ?????? Total devices 2 FS bytes used 284.98GB
+>> >> ?????? devid?????? 2 size 311.82GB used 286.51GB path /dev/sdb3
+>> >> ?????? devid?????? 1 size 897.76GB used 286.51GB path /dev/sda3
+>> >>
+>> >> /dev/sdb3 is the same.
+>> >>
+>> >> How can I resize /dev/sdb3?
+>> >
+>> > ?? I think the syntax you need is btrfs fi resize max /mnt/RootFS:=
+2
+>
+>> ./btrfs fi resize max /mnt/RootFS:2
+>> ERROR: can't access to '/mnt/RootFS:2'
+>
+> btrfs filesystem resize 2:max /mnt/RootFS
+>
+> =C2=A0 =C2=A0 =C2=A0 =C2=A0Sander
+>
+> --
+> Humilis IT Services and Solutions
+> http://www.humilis.net
 
-On Sat, 14 Jan 2012 16:02:23 +0100 (GMT+01:00)
-luvar@plaintext.sk wrote:
-
-> I am using for my workspace btrfs filesystem on ssd disk. I do not thrust=
- to my ssd and I want to have backup of all data on rotational hdd (raid5 o=
-f 5 disks). If I am not wrong, this can be done when I use btrfs on top of =
-two phycical media (one ssd and second md device). This I think would work =
-fine.
->=20
-> My question is, does btrfs recognize poor latency of md device and will p=
-reform most reads from ssd? (I want to set raid1 for metadata and also to d=
-ata). (side question, should be ssd in parameters of mount?)
->=20
-> PS: Is this crazy idea, or normal (planned) usecase?
-
-Hello,
-
-This is not a crazy idea, and it's already possible in MD-based RAID.
-Run 'man md' and 'man mdadm' and do a search for 'write-mostly' to read mor=
-e about it.
-
-However I don't think the same feature has been implemented in BTRFS yet.
+Perfect, Thank you!
+I've written a section on:
+http://btrfs.ipv5.de/index.php?title=3DUseCases
 
 --=20
-With respect,
-Roman
-
-~~~~~~~~~~~~~~~~~~~~~~~~~~~
-"Stallman had a printer,
-with code he could not see.
-So he began to tinker,
-and set the software free."
-
---Sig_/v2hSt5rn.qFzO12JiSWY9wh
-Content-Type: application/pgp-signature; name=signature.asc
-Content-Disposition: attachment; filename=signature.asc
-
------BEGIN PGP SIGNATURE-----
-Version: GnuPG v1.4.11 (GNU/Linux)
-
-iEYEARECAAYFAk8RnNUACgkQTLKSvz+PZwiGOgCfR6xH9qjR7IecR3E/33E/Lbh0
-aVkAni6vx1iNfk5bpIK84b6o8kmaKnYx
-=lkrp
------END PGP SIGNATURE-----
-
---Sig_/v2hSt5rn.qFzO12JiSWY9wh--
+Marco Lorenzo Crociani,
+marco.crociani@gmail.com
+--
+To unsubscribe from this list: send the line "unsubscribe linux-btrfs" =
+in
+the body of a message to majordomo@vger.kernel.org
+More majordomo info at  http://vger.kernel.org/majordomo-info.html

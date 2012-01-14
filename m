@@ -1,42 +1,21 @@
-From: Sander <sander@humilis.net>
-Subject: Re: Can't resize second device in RAID1
-Date: Sat, 14 Jan 2012 15:42:36 +0100
-Message-ID: <20120114144236.GA22603@attic.humilis.net>
-References: <CADy=jfVZjRAE049OiD6VkoKkpzZh9e_=V62AvuVwxyHZyfuU1w@mail.gmail.com>
- <CADy=jfWbzq81CrhCFy+RVd8e7265XZgkqomwOOxYaKehSpzasQ@mail.gmail.com>
- <20120113231717.GB21769@carfax.org.uk>
- <CADy=jfU88LRMw4Jmk4O_n+URRQxN2EUpiZCZe7GVK_LHPShmZA@mail.gmail.com>
-Reply-To: sander@humilis.net
+From: luvar@plaintext.sk
+Subject: btrfs on ssd and hdd
+Date: Sat, 14 Jan 2012 16:02:23 +0100 (GMT+01:00)
+Message-ID: <772574965.1221326553343545.JavaMail.root@shiva>
+References: <1289964295.1201326553279203.JavaMail.root@shiva>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Cc: Hugo Mills <hugo@carfax.org.uk>, linux-btrfs@vger.kernel.org
-To: "Marco L. Crociani" <marco.crociani@gmail.com>
+Content-Type: text/plain; charset=utf-8
+To: linux-btrfs@vger.kernel.org
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <CADy=jfU88LRMw4Jmk4O_n+URRQxN2EUpiZCZe7GVK_LHPShmZA@mail.gmail.com>
+In-Reply-To: <1289964295.1201326553279203.JavaMail.root@shiva>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Marco L. Crociani wrote (ao):
-> On Sat, Jan 14, 2012 at 12:17 AM, Hugo Mills <hugo@carfax.org.uk> wrote:
-> > On Sat, Jan 14, 2012 at 12:12:06AM +0100, Marco L. Crociani wrote:
-> >> # ./btrfs fi sh
-> >> Label: 'RootFS'?? uuid: c87975a0-a575-405e-9890-d3f7f25bbd96
-> >> ?????? Total devices 2 FS bytes used 284.98GB
-> >> ?????? devid?????? 2 size 311.82GB used 286.51GB path /dev/sdb3
-> >> ?????? devid?????? 1 size 897.76GB used 286.51GB path /dev/sda3
-> >>
-> >> /dev/sdb3 is the same.
-> >>
-> >> How can I resize /dev/sdb3?
-> >
-> > ?? I think the syntax you need is btrfs fi resize max /mnt/RootFS:2
+Hi,
+I am using for my workspace btrfs filesystem on ssd disk. I do not thrust to my ssd and I want to have backup of all data on rotational hdd (raid5 of 5 disks). If I am not wrong, this can be done when I use btrfs on top of two phycical media (one ssd and second md device). This I think would work fine.
 
-> ./btrfs fi resize max /mnt/RootFS:2
-> ERROR: can't access to '/mnt/RootFS:2'
+My question is, does btrfs recognize poor latency of md device and will preform most reads from ssd? (I want to set raid1 for metadata and also to data). (side question, should be ssd in parameters of mount?)
 
-btrfs filesystem resize 2:max /mnt/RootFS
+PS: Is this crazy idea, or normal (planned) usecase?
 
-	Sander
-
--- 
-Humilis IT Services and Solutions
-http://www.humilis.net
+Thanks for clarification,
+LuVar

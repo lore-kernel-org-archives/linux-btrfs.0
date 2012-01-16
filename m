@@ -1,61 +1,40 @@
 From: David Sterba <dave@jikos.cz>
 Subject: Re: Warning: bad fsid on block 20971520
-Date: Mon, 16 Jan 2012 15:34:28 +0100
-Message-ID: <20120116143428.GB7322@twin.jikos.cz>
-References: <20120111154621.GX7322@twin.jikos.cz> <20120111163714.GE2179@shiny> <20120111223434.GY7322@twin.jikos.cz>
+Date: Mon, 16 Jan 2012 19:36:10 +0100
+Message-ID: <20120116183610.GC7322@twin.jikos.cz>
+References: <20120111154621.GX7322@twin.jikos.cz> <20120111163714.GE2179@shiny> <20120111223434.GY7322@twin.jikos.cz> <20120116143428.GB7322@twin.jikos.cz>
 Reply-To: dave@jikos.cz
 Mime-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
 To: Chris Mason <chris.mason@oracle.com>, linux-btrfs@vger.kernel.org
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <20120111223434.GY7322@twin.jikos.cz>
+In-Reply-To: <20120116143428.GB7322@twin.jikos.cz>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Wed, Jan 11, 2012 at 11:34:34PM +0100, David Sterba wrote:
-> I will try to catch it with blktrace running.
+On Mon, Jan 16, 2012 at 03:34:28PM +0100, David Sterba wrote:
+> Per your advice, I'll try to test with other filesystems, with older
+> kernels, and in btrfs case add fsync into mkfs.
 
-Measurement disrupted the experiment. The second I start blktrace, these
-messages
+I left looping the 3.0.13 based sles kernel and did not trigger the
+warning for several hours.
 
-[450482.299863] device fsid 7f7bfb60-b8f3-457e-857a-9a1a187f750f devid 1 transid 7 /dev/sda9
-[450482.309642] btrfs: force lzo compression
-[450482.314802] btrfs: enabling inode map caching
-[450482.320363] btrfs: enabling auto defrag
-[450482.324138] btrfs: disk space caching is enabled
-[450482.378652] btrfs: failed to read chunk root on sda9
-[450482.385397] btrfs: open_ctree failed 
+In the meantime I grepped through my serial console logs and found that
+first 'bad fsid' message appeared in 3.0.0-rc5+ dated to 2011-06-01:
 
-appear in the log, mount fails and the test is not performed. (And
-immediately stop when blktrace stops.)
+[73673.623530] device fsid 5f1b5c0e-21ff-4896-bf48-8d64558dd205 devid 1 transid 7 /dev/sdb10
+[73673.633194] btrfs: enabling auto defrag
+[73673.636915] btrfs: enabling disk space caching
+[73673.644124] btrfs: enabling inode map caching
+[73673.649733] btrfs: force lzo compression
+[73673.740630] btrfs bad fsid on block 20971520
+[73673.746400] btrfs bad fsid on block 20971520
+[73673.760785] btrfs bad fsid on block 20971520
+[73673.766284] btrfs: failed to read chunk root on sdb10
+[73673.772969] btrfs warning page private not zero on page 20971520
+[73673.792224] btrfs: open_ctree failed
 
-There are a few occurances of the
-
-[450491.373282] btrfs bad fsid on block 20971520
-
-message. Blktrace log does not contain any record of 'mkfs' activity,
-the other involved process are there (mount, aio-dio, kernel threads).
-
-The other day I saw
-
-[ 8334.490486] device fsid 830e57b6-b9c3-471c-b4dc-4a8c2c56fb35 devid 1 transid 4 /dev/sda9
-[ 8334.500482] btrfs: force lzo compression 
-[ 8334.505853] btrfs: enabling inode map caching
-[ 8334.511539] btrfs: enabling auto defrag
-[ 8334.515234] btrfs: disk space caching is enabled
-[ 8334.532517] btrfs  0 12582912
-[ 8334.551594] btrfs bad tree block start 20971520 12582912
-[ 8334.560353] btrfs bad tree block start 0 12582912
-[ 8334.568263] btrfs bad tree block start 20971520 12582912
-[ 8334.575188] btrfs bad tree block start 20971520 12582912
-[ 8334.581946] btrfs bad tree block start 0 12582912
-[ 8334.588044] btrfs bad tree block start 20971520 12582912
-[ 8334.594543] btrfs: failed to read chunk root on sda9
-[ 8334.601040] btrfs: open_ctree failed
-
-a different instance of the the same.  So this looks rather serious.
-
-Per your advice, I'll try to test with other filesystems, with older
-kernels, and in btrfs case add fsync into mkfs.
+and there are several messages from 3.1.0-rc4 kernel, no more occurences
+of "page private not zero" message.
 
 
 david

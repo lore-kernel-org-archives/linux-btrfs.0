@@ -1,25 +1,36 @@
-From: Chris Mason <chris.mason@oracle.com>
-Subject: Re: Updated btrfs/crypto snappy interface ready for merging
-Date: Mon, 16 Jan 2012 08:54:42 -0500
-Message-ID: <20120116135442.GA28487@shiny>
-References: <1326414530-10789-1-git-send-email-andi@firstfloor.org>
+From: Josef Bacik <josef@redhat.com>
+Subject: Re: Possible btrfs deadlock coused by commit 660d3f6c
+Date: Mon, 16 Jan 2012 09:26:00 -0500
+Message-ID: <20120116142540.GB8265@dhcp231-144.rdu.redhat.com>
+References: <20120116085322.GB2105@redhat.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
-Cc: linux-kernel@vger.kernel.org, linux-btrfs@vger.kernel.org
-To: Andi Kleen <andi@firstfloor.org>
+Cc: Josef Bacik <josef@redhat.com>, Patrick <ragamuffin@datacomm.ch>,
+	linux-btrfs@vger.kernel.org
+To: Stanislaw Gruszka <sgruszka@redhat.com>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <1326414530-10789-1-git-send-email-andi@firstfloor.org>
+In-Reply-To: <20120116085322.GB2105@redhat.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Thu, Jan 12, 2012 at 04:28:47PM -0800, Andi Kleen wrote:
-> Here's a slightly updated version of the BTRFS snappy interface.
-> snappy is a faster compression algorithm that provides similar
-> compression as LZO, but generally better performance.
+On Mon, Jan 16, 2012 at 09:53:23AM +0100, Stanislaw Gruszka wrote:
+> Hi Josef,
+> 
+> commit 660d3f6cde552323578b85fc5a09a6742f1fe804
+> Author: Josef Bacik <josef@redhat.com>
+> Date:   Fri Dec 9 11:18:51 2011 -0500
+> 
+>     Btrfs: fix how we do delalloc reservations and how we free reservations on error
+> 
+> introduced possible deadlock. According to comment before
+> btrfs_page_mkwrite(), that function is not allowed to take
+> node->i_mutex .
+> 
+> The problem was detected by Patrick (full lockdep info is provided):
+> http://bugzilla.kernel.org/attachment.cgi?id=72072
+> during investigating of some other issue (kernel.org bug 42576)
+> 
 
-Thanks Andi, I've queued this up to a btrfs snappy branch.  I put the
-commits against 3.2 instead of 3.3 though so people could try it out.
+It's not a deadlock since you can't mmap a directory, but I posted a fix for
+this to linux-btrfs last week, afaik it's headed to -rc1.  Thanks,
 
-The only problem I've hit is that snappy is failing xfstests number 135.
-It's reproducible on an empty FS.  Could you please take a look?
-
--chris
+Joesf

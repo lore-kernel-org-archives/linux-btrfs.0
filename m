@@ -1,47 +1,25 @@
-From: Liu Bo <liubo2009@cn.fujitsu.com>
-Subject: [PATCH] Xfstest: make 218 support btrfs
-Date: Mon, 16 Jan 2012 18:21:56 +0800
-Message-ID: <1326709316-30419-1-git-send-email-liubo2009@cn.fujitsu.com>
-Cc: <xfs@oss.sgi.com>, <hch@infradead.org>
-To: <linux-btrfs@vger.kernel.org>
+From: Chris Mason <chris.mason@oracle.com>
+Subject: Re: Updated btrfs/crypto snappy interface ready for merging
+Date: Mon, 16 Jan 2012 08:54:42 -0500
+Message-ID: <20120116135442.GA28487@shiny>
+References: <1326414530-10789-1-git-send-email-andi@firstfloor.org>
+Mime-Version: 1.0
+Content-Type: text/plain; charset=us-ascii
+Cc: linux-kernel@vger.kernel.org, linux-btrfs@vger.kernel.org
+To: Andi Kleen <andi@firstfloor.org>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
+In-Reply-To: <1326414530-10789-1-git-send-email-andi@firstfloor.org>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Btrfs progs has a defragment tool, so we can test 218 on btrfs now.
+On Thu, Jan 12, 2012 at 04:28:47PM -0800, Andi Kleen wrote:
+> Here's a slightly updated version of the BTRFS snappy interface.
+> snappy is a faster compression algorithm that provides similar
+> compression as LZO, but generally better performance.
 
-Signed-off-by: Liu Bo <liubo2009@cn.fujitsu.com>
----
- 218           |    2 +-
- common.defrag |    3 +++
- 2 files changed, 4 insertions(+), 1 deletions(-)
+Thanks Andi, I've queued this up to a btrfs snappy branch.  I put the
+commits against 3.2 instead of 3.3 though so people could try it out.
 
-diff --git a/218 b/218
-index 53d0b61..77782c6 100755
---- a/218
-+++ b/218
-@@ -44,7 +44,7 @@ _cleanup()
- . ./common.defrag
- 
- # real QA test starts here
--_supported_fs xfs ext4
-+_supported_fs xfs ext4 btrfs
- _supported_os Linux
- 
- _setup_testdir
-diff --git a/common.defrag b/common.defrag
-index 4850803..ea6c14c 100644
---- a/common.defrag
-+++ b/common.defrag
-@@ -29,6 +29,9 @@ _require_defrag()
-     ext4|ext4dev)
-         DEFRAG_PROG=/usr/bin/e4defrag
- 	;;
-+    btrfs)
-+	DEFRAG_PROG="$BTRFS_UTIL_PROG filesystem defragment"
-+	;;
-     *)
-         _notrun "defragmentation not supported for fstype \"$FSTYP\""
- 	;;
--- 
-1.6.5.2
+The only problem I've hit is that snappy is failing xfstests number 135.
+It's reproducible on an empty FS.  Could you please take a look?
 
+-chris

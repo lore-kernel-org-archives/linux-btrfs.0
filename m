@@ -1,40 +1,48 @@
-From: David Sterba <dave@jikos.cz>
-Subject: Re: Warning: bad fsid on block 20971520
-Date: Mon, 16 Jan 2012 19:36:10 +0100
-Message-ID: <20120116183610.GC7322@twin.jikos.cz>
-References: <20120111154621.GX7322@twin.jikos.cz> <20120111163714.GE2179@shiny> <20120111223434.GY7322@twin.jikos.cz> <20120116143428.GB7322@twin.jikos.cz>
-Reply-To: dave@jikos.cz
+From: Al Viro <viro@ZenIV.linux.org.uk>
+Subject: Re: Possible btrfs deadlock coused by commit 660d3f6c
+Date: Mon, 16 Jan 2012 20:45:29 +0000
+Message-ID: <20120116204528.GP23916@ZenIV.linux.org.uk>
+References: <20120116085322.GB2105@redhat.com>
+ <20120116142540.GB8265@dhcp231-144.rdu.redhat.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
-To: Chris Mason <chris.mason@oracle.com>, linux-btrfs@vger.kernel.org
+Cc: Stanislaw Gruszka <sgruszka@redhat.com>,
+	Patrick <ragamuffin@datacomm.ch>, linux-btrfs@vger.kernel.org
+To: Josef Bacik <josef@redhat.com>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <20120116143428.GB7322@twin.jikos.cz>
+In-Reply-To: <20120116142540.GB8265@dhcp231-144.rdu.redhat.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Mon, Jan 16, 2012 at 03:34:28PM +0100, David Sterba wrote:
-> Per your advice, I'll try to test with other filesystems, with older
-> kernels, and in btrfs case add fsync into mkfs.
+On Mon, Jan 16, 2012 at 09:26:00AM -0500, Josef Bacik wrote:
+> On Mon, Jan 16, 2012 at 09:53:23AM +0100, Stanislaw Gruszka wrote:
+> > Hi Josef,
+> > 
+> > commit 660d3f6cde552323578b85fc5a09a6742f1fe804
+> > Author: Josef Bacik <josef@redhat.com>
+> > Date:   Fri Dec 9 11:18:51 2011 -0500
+> > 
+> >     Btrfs: fix how we do delalloc reservations and how we free reservations on error
+> > 
+> > introduced possible deadlock. According to comment before
+> > btrfs_page_mkwrite(), that function is not allowed to take
+> > node->i_mutex .
+> > 
+> > The problem was detected by Patrick (full lockdep info is provided):
+> > http://bugzilla.kernel.org/attachment.cgi?id=72072
+> > during investigating of some other issue (kernel.org bug 42576)
+> > 
+> 
+> It's not a deadlock since you can't mmap a directory, but I posted a fix for
+> this to linux-btrfs last week, afaik it's headed to -rc1.  Thanks,
 
-I left looping the 3.0.13 based sles kernel and did not trigger the
-warning for several hours.
+Sigh...  You know, I'm getting really annoyed with the "can't mmap a directory"
+bogosity resurfacing every couple of months or so.  No, you can't mmap a
+directory.  You also can't bugger a hedgehog, which is about as relevant.
 
-In the meantime I grepped through my serial console logs and found that
-first 'bad fsid' message appeared in 3.0.0-rc5+ dated to 2011-06-01:
-
-[73673.623530] device fsid 5f1b5c0e-21ff-4896-bf48-8d64558dd205 devid 1 transid 7 /dev/sdb10
-[73673.633194] btrfs: enabling auto defrag
-[73673.636915] btrfs: enabling disk space caching
-[73673.644124] btrfs: enabling inode map caching
-[73673.649733] btrfs: force lzo compression
-[73673.740630] btrfs bad fsid on block 20971520
-[73673.746400] btrfs bad fsid on block 20971520
-[73673.760785] btrfs bad fsid on block 20971520
-[73673.766284] btrfs: failed to read chunk root on sdb10
-[73673.772969] btrfs warning page private not zero on page 20971520
-[73673.792224] btrfs: open_ctree failed
-
-and there are several messages from 3.1.0-rc4 kernel, no more occurences
-of "page private not zero" message.
-
-
-david
+What you *can* do is write(2) on a regular file.  Which will happily grab
+->i_mutex (in case of btrfs, that's done in the beginning of
+btrfs_file_aio_write()) and eventually get the user pages in (in case of
+btrfs, iov_iter_fault_in_readable() from __btrfs_buffered_write() from
+btrfs_file_aio_write()).  IOW, you do get pagefaults with ->i_mutex
+held.  Which means ->mmap_sem grabbed while holding ->i_mutex.  No
+directories involved...

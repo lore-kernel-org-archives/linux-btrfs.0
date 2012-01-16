@@ -1,34 +1,28 @@
-From: Andi Kleen <andi@firstfloor.org>
-Subject: [PATCH] SNAPPY: Add dual GPL/BSD license to snappy module
-Date: Sun, 15 Jan 2012 14:49:14 -0800
-Message-ID: <1326667754-13255-1-git-send-email-andi@firstfloor.org>
-Cc: linux-kernel@vger.kernel.org, linux-btrfs@vger.kernel.org,
-	Andi Kleen <ak@linux.intel.com>
-To: chris.mason@oracle.com
-Return-path: <linux-kernel-owner@vger.kernel.org>
+From: Stanislaw Gruszka <sgruszka@redhat.com>
+Subject: Possible btrfs deadlock coused by commit 660d3f6c
+Date: Mon, 16 Jan 2012 09:53:23 +0100
+Message-ID: <20120116085322.GB2105@redhat.com>
+Mime-Version: 1.0
+Content-Type: text/plain; charset=us-ascii
+Cc: Patrick <ragamuffin@datacomm.ch>, linux-btrfs@vger.kernel.org
+To: Josef Bacik <josef@redhat.com>
+Return-path: <linux-btrfs-owner@vger.kernel.org>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-From: Andi Kleen <ak@linux.intel.com>
+Hi Josef,
 
-To avoid complaints from the module loader.
+commit 660d3f6cde552323578b85fc5a09a6742f1fe804
+Author: Josef Bacik <josef@redhat.com>
+Date:   Fri Dec 9 11:18:51 2011 -0500
 
-I made it dual because the original compression code was BSD.
+    Btrfs: fix how we do delalloc reservations and how we free reservations on error
 
-Reported-by: Chris Mason
-Signed-off-by: Andi Kleen <ak@linux.intel.com>
----
- lib/snappy.c |    2 ++
- 1 files changed, 2 insertions(+), 0 deletions(-)
+introduced possible deadlock. According to comment before
+btrfs_page_mkwrite(), that function is not allowed to take
+node->i_mutex .
 
-diff --git a/lib/snappy.c b/lib/snappy.c
-index 0b39e07..3848c6c 100644
---- a/lib/snappy.c
-+++ b/lib/snappy.c
-@@ -1298,3 +1298,5 @@ void snappy_free_env(struct snappy_env *env)
- 	memset(env, 0, sizeof(struct snappy_env));
- }
- EXPORT_SYMBOL(snappy_free_env);
-+
-+MODULE_LICENSE("Dual BSD/GPL");
--- 
-1.7.7.4
+The problem was detected by Patrick (full lockdep info is provided):
+http://bugzilla.kernel.org/attachment.cgi?id=72072
+during investigating of some other issue (kernel.org bug 42576)
+
+Stanislaw

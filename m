@@ -1,38 +1,47 @@
 From: Liu Bo <liubo2009@cn.fujitsu.com>
-Subject: [PATCH] Btrfs: do not defrag a file partially
-Date: Mon, 16 Jan 2012 18:21:13 +0800
-Message-ID: <1326709273-30384-1-git-send-email-liubo2009@cn.fujitsu.com>
+Subject: [PATCH] Xfstest: make 218 support btrfs
+Date: Mon, 16 Jan 2012 18:21:56 +0800
+Message-ID: <1326709316-30419-1-git-send-email-liubo2009@cn.fujitsu.com>
+Cc: <xfs@oss.sgi.com>, <hch@infradead.org>
 To: <linux-btrfs@vger.kernel.org>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-xfstests 218 complains that btrfs defrags a file partially:
- After: 1
- Write backwards sync, but contiguous - should defrag to 1 extent
- Before: 10
--After: 1
-+After: 2
-
-To fix this, we need to set max_to_defrag count properly.
+Btrfs progs has a defragment tool, so we can test 218 on btrfs now.
 
 Signed-off-by: Liu Bo <liubo2009@cn.fujitsu.com>
 ---
- fs/btrfs/ioctl.c |    2 +-
- 1 files changed, 1 insertions(+), 1 deletions(-)
+ 218           |    2 +-
+ common.defrag |    3 +++
+ 2 files changed, 4 insertions(+), 1 deletions(-)
 
-diff --git a/fs/btrfs/ioctl.c b/fs/btrfs/ioctl.c
-index c04f02c..712fb0c 100644
---- a/fs/btrfs/ioctl.c
-+++ b/fs/btrfs/ioctl.c
-@@ -1058,7 +1058,7 @@ int btrfs_defrag_file(struct inode *inode, struct file *file,
- 		i = range->start >> PAGE_CACHE_SHIFT;
- 	}
- 	if (!max_to_defrag)
--		max_to_defrag = last_index;
-+		max_to_defrag = last_index + 1;
+diff --git a/218 b/218
+index 53d0b61..77782c6 100755
+--- a/218
++++ b/218
+@@ -44,7 +44,7 @@ _cleanup()
+ . ./common.defrag
  
- 	/*
- 	 * make writeback starts from i, so the defrag range can be
+ # real QA test starts here
+-_supported_fs xfs ext4
++_supported_fs xfs ext4 btrfs
+ _supported_os Linux
+ 
+ _setup_testdir
+diff --git a/common.defrag b/common.defrag
+index 4850803..ea6c14c 100644
+--- a/common.defrag
++++ b/common.defrag
+@@ -29,6 +29,9 @@ _require_defrag()
+     ext4|ext4dev)
+         DEFRAG_PROG=/usr/bin/e4defrag
+ 	;;
++    btrfs)
++	DEFRAG_PROG="$BTRFS_UTIL_PROG filesystem defragment"
++	;;
+     *)
+         _notrun "defragmentation not supported for fstype \"$FSTYP\""
+ 	;;
 -- 
 1.6.5.2
 

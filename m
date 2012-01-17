@@ -1,25 +1,27 @@
-From: Chris Samuel <chris@csamuel.org>
-Subject: Re: Possible btrfs deadlock coused by commit 660d3f6c
-Date: Tue, 17 Jan 2012 09:35:36 +1100
-Message-ID: <4F14A638.7020903@csamuel.org>
-References: <20120116085322.GB2105@redhat.com> <20120116142540.GB8265@dhcp231-144.rdu.redhat.com> <20120116204528.GP23916@ZenIV.linux.org.uk> <20120116220142.GA10418@dhcp231-144.rdu.redhat.com>
+From: Mitch Harder <mitch.harder@sabayonlinux.org>
+Subject: Re: NULL Pointer Dereference While Scrubbing
+Date: Mon, 16 Jan 2012 18:10:09 -0600
+Message-ID: <CAKcLGm-s_ZUGNGUaQysKG6=AyUvE-c+q199UiK2H7GU1ksXaEA@mail.gmail.com>
+References: <CAKcLGm8a+f04xFTWsWHHQsv3b+YzknaKB_Fv5jc0a8EnkUhfog@mail.gmail.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset=ISO-8859-1
-Cc: Al Viro <viro@ZenIV.linux.org.uk>,
-	Stanislaw Gruszka <sgruszka@redhat.com>,
-	Patrick <ragamuffin@datacomm.ch>, linux-btrfs@vger.kernel.org
-To: Josef Bacik <josef@redhat.com>
+To: linux-btrfs <linux-btrfs@vger.kernel.org>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <20120116220142.GA10418@dhcp231-144.rdu.redhat.com>
+In-Reply-To: <CAKcLGm8a+f04xFTWsWHHQsv3b+YzknaKB_Fv5jc0a8EnkUhfog@mail.gmail.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 17/01/12 09:01, Josef Bacik wrote:
+On Tue, Jan 3, 2012 at 11:35 AM, Mitch Harder
+<mitch.harder@sabayonlinux.org> wrote:
+> I've recently run into a kernel "NULL pointer dereference" while
+> scrubbing a partition that had picked up error.
+>
 
-> Good point, either way it's been fixed.  Thanks,
+I'm no longer getting the NULL pointer panic on this partition.
 
-Is it worth pushing that fix into the stable 3.2.x releases ?
+I'm running into a new BUG_ON() now resulting from a EFBIG error in
+btrfs_add_system_chunk(...) (in fs/btrfs/volumes.c).
 
-cheers,
-Chris
--- 
- Chris Samuel  :  http://www.csamuel.org/  :  Melbourne, VIC
+I'm not sure if it is still interesting to pursue this issue.  If I
+could reproduce the NULL Pointer panic, it might be worth tracking
+down.  But as it stands now, btrfs is handling the corruption as best
+as it knows how.

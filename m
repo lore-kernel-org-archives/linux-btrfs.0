@@ -1,43 +1,45 @@
 From: Li Zefan <lizf@cn.fujitsu.com>
-Subject: Re: Updated btrfs/crypto snappy interface ready for merging
-Date: Tue, 17 Jan 2012 16:56:24 +0800
-Message-ID: <4F1537B8.1030706@cn.fujitsu.com>
-References: <1326414530-10789-1-git-send-email-andi@firstfloor.org> <20120116135442.GA28487@shiny> <4F1534FD.30707@cn.fujitsu.com> <20120117084650.GP11715@one.firstfloor.org>
+Subject: [PATCH] Btrfs: fix decompressing of snappy-compressed inline extents
+Date: Tue, 17 Jan 2012 17:07:18 +0800
+Message-ID: <4F153A46.70906@cn.fujitsu.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=ISO-8859-1
-Cc: Chris Mason <chris.mason@oracle.com>, linux-kernel@vger.kernel.org,
-	linux-btrfs@vger.kernel.org
-To: Andi Kleen <andi@firstfloor.org>
-Return-path: <linux-kernel-owner@vger.kernel.org>
-In-Reply-To: <20120117084650.GP11715@one.firstfloor.org>
+Content-Type: text/plain; charset=UTF-8
+Cc: Andi Kleen <andi@firstfloor.org>,
+	"linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
+To: Chris Mason <chris.mason@oracle.com>
+Return-path: <linux-btrfs-owner@vger.kernel.org>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Andi Kleen wrote:
->> It's because decompressing inline extents always fails. I've fixed it
->> and will send the patch out in a new mail thread.
-> 
-> Thanks for fixing.
-> 
->>
->> But seems there's bug in lib snappy code, which makes the decompressed
->> data doesn't quite match the original data.
->>
->> Simply copy a file to a btrfs filesystem with snappy enabled, and clear
->> page cache, and check the file:
-> 
-> Hmm weird, I have never seen this. Do you have a reproducer?
-> 
+The first four bytes is the length of all data chunks, and the first
+four bytes of each chunk is the length of compressed chunk data,
+even when there's only one chunk, which is the case for inline
+extents.
 
-Just use some randomly chosen text files. For example:
+Signed-off-by: Li Zefan <lizf@cn.fujitsu.com>
+---
+ fs/btrfs/snappy.c |    4 ++++
+ 1 files changed, 4 insertions(+), 0 deletions(-)
 
-	# mount -t btrfs -o compress=snappy /dev/xxx /mnt
-	# cp -r btrfs-progs-unstable/ /mnt
-	# sync
-	# echo 3 > /proc/sys/vm/drop_caches
-	# diff -Nurp btrfs-progs-unstable /mnt/btrfs-progs-unstable
-
-I've tested on both x86_32 and x86_64.
-
-> The basic compression code is quite well tested, I have a reasonable
-> unit test.
-> 
+diff --git a/fs/btrfs/snappy.c b/fs/btrfs/snappy.c
+index d6bd607..35b877e 100644
+--- a/fs/btrfs/snappy.c
++++ b/fs/btrfs/snappy.c
+@@ -392,12 +392,16 @@ static int btrfs_snappy_decompress(struct list_head *ws, unsigned char *data_in,
+ 	struct workspace *workspace = list_entry(ws, struct workspace, list);
+ 	size_t in_len;
+ 	size_t out_len;
++	size_t tot_len;
+ 	int ret = 0;
+ 	char *kaddr;
+ 	unsigned long bytes;
+ 
+ 	BUG_ON(srclen < SNAPPY_LEN);
+ 
++	tot_len = read_compress_length(data_in);
++	data_in += SNAPPY_LEN;
++
+ 	in_len = read_compress_length(data_in);
+ 	data_in += SNAPPY_LEN;
+ 
+-- 
+1.7.3.1

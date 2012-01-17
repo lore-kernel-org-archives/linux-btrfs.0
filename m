@@ -1,42 +1,34 @@
 From: Kyle Gates <kylegates@hotmail.com>
-Subject: fstab mount options ignored on subsequent subvolume mounts
-Date: Tue, 17 Jan 2012 13:09:36 -0600
-Message-ID: <COL113-W4695DE73CE3FDD13C0E8BBB0800@phx.gbl>
+Subject: btrfs-progs compile warnings on x86
+Date: Tue, 17 Jan 2012 13:17:39 -0600
+Message-ID: <COL113-W26B06C5519CFEB29075D36B0800@phx.gbl>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=US-ASCII
+Content-Type: text/plain; charset=iso-8859-1
 To: <linux-btrfs@vger.kernel.org>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
 List-ID: <linux-btrfs.vger.kernel.org>
 
 
-Greeting all,
+When compiling btrfs-progs (2011-12-01) from git://git.kernel.org/pub/s=
+cm/linux/kernel/git/mason/btrfs-progs.git on 3.2.1-030201-generic #2012=
+01121644 SMP Thu Jan 12 21:53:24 UTC 2012 i686 athlon i386 GNU/Linux
+I get the following warnings:
 
-I have multiple subvolumes on the same filesystem that are mounted with different options in fstab.
-The problem is the mount options for subsequent subvolume mounts seem to be ignored as reflected in /proc/mounts.
-
-$ cat /etc/fstab | grep mnt
-UUID=<REMOVED> /mnt/a btrfs subvol=a,defaults,nodatacow,autodefrag,noatime,space_cache,inode_cache 0 0
-UUID=<REMOVED> /mnt/b btrfs subvol=b,defaults,autodefrag,noatime,space_cache,inode_cache 0 0
-UUID=<REMOVED> /mnt/c btrfs subvol=c,defaults,compress=zlib,autodefrag,noatime,space_cache,inode_cache 0 0
-$ mount | grep mnt
-/dev/sdb2 on /mnt/a type btrfs (rw,noatime,subvol=a,nodatacow,autodefrag,space_cache,inode_cache)
-/dev/sdb2 on /mnt/b type btrfs (rw,noatime,subvol=b,autodefrag,space_cache,inode_cache)
-/dev/sdb2 on /mnt/c type btrfs (rw,noatime,subvol=c,compress=zlib,autodefrag,space_cache,inode_cache)
-$ cat /proc/mounts | grep mnt
-/dev/sdb2 /mnt/a btrfs rw,noatime,nodatasum,nodatacow,space_cache,autodefrag,inode_cache 0 0
-/dev/sdb2 /mnt/b btrfs rw,noatime,nodatasum,nodatacow,space_cache,autodefrag,inode_cache 0 0
-/dev/sdb2 /mnt/c btrfs rw,noatime,nodatasum,nodatacow,space_cache,autodefrag,inode_cache 0 0
-
-continuing the example which should only change the mount options for one of the subvolumes:
-$ sudo mount -o remount,compress=zlib /mnt/oldhome
-$ cat /proc/mounts | grep mnt
-/dev/sdb2 /mnt/a btrfs rw,noatime,nodatasum,nodatacow,compress=zlib,space_cache,autodefrag,inode_cache 0 0
-/dev/sdb2 /mnt/b btrfs rw,noatime,nodatasum,nodatacow,compress=zlib,space_cache,autodefrag,inode_cache 0 0
-/dev/sdb2 /mnt/c btrfs rw,noatime,nodatasum,nodatacow,compress=zlib,space_cache,autodefrag,inode_cache 0 0
-
-
-Running Ubuntu mainline kernel 3.2.1 (3.2.1-030201-generic #201201121644 SMP Thu Jan 12 21:53:24 UTC 2012 i686 athlon i386 GNU/Linux) with most recent btrfs-progs (2011-12-01) from linux/kernel/git/mason/btrfs-progs.git
+ls btrfs_cmds.c
+btrfs_cmds.c
+gcc -Wp,-MMD,./.btrfs_cmds.o.d,-MT,btrfs_cmds.o -Wall -D_FILE_OFFSET_BI=
+TS=3D64 -D_FORTIFY_SOURCE=3D2 -g -O0 -c btrfs_cmds.c
+btrfs_cmds.c: In function =E2__ino_to_path_fd=E2:
+btrfs_cmds.c:1138:15: warning: cast from pointer to integer of differen=
+t size [-Wpointer-to-int-cast]
+btrfs_cmds.c: In function =E2do_logical_to_ino=E2:
+btrfs_cmds.c:1242:15: warning: cast from pointer to integer of differen=
+t size [-Wpointer-to-int-cast]
 
 Thanks,
 Kyle
- 		 	   		  
+ 		 	   		  --
+To unsubscribe from this list: send the line "unsubscribe linux-btrfs" =
+in
+the body of a message to majordomo@vger.kernel.org
+More majordomo info at  http://vger.kernel.org/majordomo-info.html

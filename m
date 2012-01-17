@@ -1,47 +1,57 @@
-From: Mitch Harder <mitch.harder@sabayonlinux.org>
-Subject: Re: [PATCH] Btrfs: fix enospc error caused by wrong checks of the
- chunk allocation
-Date: Tue, 17 Jan 2012 13:27:17 -0600
-Message-ID: <CAKcLGm-GvMAqX7so86E5318jgOy2izMfGaA4V1U4swWppuAyQQ@mail.gmail.com>
-References: <4F153E33.8070803@cn.fujitsu.com>
-	<CAKcLGm_HRMWcg4Aze59EFjQARbnQTSCxyfyPB4bS3f2R4kfvuQ@mail.gmail.com>
-	<20120117163903.GD30322@shiny>
+From: Chris Mason <chris.mason@oracle.com>
+Subject: [GIT PULL 2/2] Btrfs changes from vfs.git
+Date: Tue, 17 Jan 2012 15:06:36 -0500
+Message-ID: <20120117200636.GD3658@shiny>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=ISO-8859-1
-To: Chris Mason <chris.mason@oracle.com>,
-	Mitch Harder <mitch.harder@sabayonlinux.org>,
-	miaox@cn.fujitsu.com, Linux Btrfs <linux-btrfs@vger.kernel.org>
+Content-Type: text/plain; charset=us-ascii
+To: LKML <linux-kernel@vger.kernel.org>,
+	linux-btrfs <linux-btrfs@vger.kernel.org>,
+	Linus Torvalds <torvalds@linux-foundation.org>,
+	Al Viro <viro@zeniv.linux.org.uk>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <20120117163903.GD30322@shiny>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Tue, Jan 17, 2012 at 10:39 AM, Chris Mason <chris.mason@oracle.com> =
-wrote:
-> On Tue, Jan 17, 2012 at 10:31:00AM -0600, Mitch Harder wrote:
->> On Tue, Jan 17, 2012 at 3:24 AM, Miao Xie <miaox@cn.fujitsu.com> wro=
-te:
->>
->> After applying this patch to the re-based integration branch, I was
->> able to clear an EFBIG error (that seemed to be related to chunk
->> allocation) I had previously been receiving while trying to balance =
-a
->> partially corrupted partition.
->>
->> I was receiving this bug from the btrfs_add_system_chunk() function
->> which had do_chunk_alloc() close up in the callback list.
->
-> The EFBIG error was my bug. =A0There's a commit in the new integratio=
-n
-> branch that fixes it (and an earlier one in integration that adds it)
->
+Hi Linus,
 
-I've confirmed that.  The error is cleared with just the rebased
-integration branch.
+This is pull request #2 of 2, and it's actually for a branch off Al's
+tree.
 
-Sorry, I was testing patches off the list to address the issue I was
-seeing at the same time as the rebase.
---
-To unsubscribe from this list: send the line "unsubscribe linux-btrfs" =
-in
-the body of a message to majordomo@vger.kernel.org
-More majordomo info at  http://vger.kernel.org/majordomo-info.html
+git://git.kernel.org/pub/scm/linux/kernel/git/viro/vfs.git btrfs
+
+There's one minor conflict in the ioctl.c, which I've resolved here:
+
+git://git.kernel.org/pub/scm/linux/kernel/git/mason/linux-btrfs.git viro
+
+I did the split pull like this because Al's changes are on 3.3-pre-rc
+and the rest of my stuff is on 3.2.  But I did test Al's code against
+the your current master.
+
+Al Viro (16) commits:
+    btrfs: kill pointless reassignment of ->s_fs_info in btrfs_fill_super() (+2/-5)
+    btrfs: make free_fs_info() call ->kill_sb() unconditional (+2/-6)
+    btrfs: take allocation of ->tree_root into open_ctree() (+5/-10)
+    btrfs: consolidate failure exits in btrfs_mount() a bit (+5/-16)
+    btrfs: merge free_fs_info() calls on fill_super failures (+1/-3)
+    btrfs: let ->s_fs_info point to fs_info, not root... (+45/-45)
+    btrfs: fix a deadlock in btrfs_scan_one_device() (+2/-3)
+    btrfs: preparation to fixing mount/umount race (+6/-3)
+    btrfs: make open_ctree() return int (+13/-13)
+    btrfs: sanitizing ->fs_info, part 5 (+11/-11)
+    btrfs: sanitizing ->fs_info, part 4 (+18/-20)
+    btrfs: sanitizing ->fs_info, part 3 (+5/-7)
+    btrfs: sanitizing ->fs_info, part 2 (+4/-1)
+    btrfs: sanitizing ->fs_info, part 1 (+6/-1)
+    btrfs: get ->kill_sb() of its own (+18/-9)
+    btrfs: fix mount/umount race (+4/-9)
+
+Total: (16) commits (+110/-125)
+
+ fs/btrfs/ctree.h   |    2 +-
+ fs/btrfs/disk-io.c |   70 +++++++++++++------------
+ fs/btrfs/disk-io.h |    6 +-
+ fs/btrfs/export.c  |    2 +-
+ fs/btrfs/ioctl.c   |    7 +--
+ fs/btrfs/super.c   |  143 +++++++++++++++++++++++-----------------------------
+ fs/btrfs/volumes.c |    5 +-
+ 7 files changed, 110 insertions(+), 125 deletions(-)
+

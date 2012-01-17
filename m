@@ -1,82 +1,47 @@
-From: David Summers <btrfs@summers5913.freeserve.co.uk>
-Subject: Re: Honest timeline for btrfsck
-Date: Tue, 17 Jan 2012 15:07:16 +0000
-Message-ID: <jf42r4$fua$1@dough.gmane.org>
-References: <CAGh96GFhVEfXt=xcb-uGEBA3Ss2fc8BwOpJ2g8tXbm+VimdH3Q@mail.gmail.com> <1312404713-sup-6548@shiny> <loom.20110818T030824-742@post.gmane.org> <1313700115-sup-2457@shiny>
+From: Phillip Susi <psusi@ubuntu.com>
+Subject: Re: Can't resize second device in RAID1
+Date: Tue, 17 Jan 2012 11:22:31 -0500
+Message-ID: <4F15A047.3080006@ubuntu.com>
+References: <CADy=jfVZjRAE049OiD6VkoKkpzZh9e_=V62AvuVwxyHZyfuU1w@mail.gmail.com> <CADy=jfWbzq81CrhCFy+RVd8e7265XZgkqomwOOxYaKehSpzasQ@mail.gmail.com> <20120113231717.GB21769@carfax.org.uk> <CADy=jfU88LRMw4Jmk4O_n+URRQxN2EUpiZCZe7GVK_LHPShmZA@mail.gmail.com> <20120114144236.GA22603@attic.humilis.net> <CADy=jfV+-sT_9opMeUXxOF4zWxt7PTQOg_+bPL7o5vq66omcsA@mail.gmail.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=UTF-8; format=flowed
-To: linux-btrfs@vger.kernel.org
+Content-Type: text/plain; charset=UTF-8
+Cc: sander@humilis.net, linux-btrfs@vger.kernel.org
+To: "Marco L. Crociani" <marco.crociani@gmail.com>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <1313700115-sup-2457@shiny>
+In-Reply-To: <CADy=jfV+-sT_9opMeUXxOF4zWxt7PTQOg_+bPL7o5vq66omcsA@mail.gmail.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 18/08/11 21:50, Chris Mason wrote:
-> Excerpts from Yalonda Gishtaka's message of 2011-08-17 21:09:37 -0400:
->> Chris Mason<chris.mason<at>  oracle.com>  writes:
->>
->>>
->>> Aside from making sure the kernel code is stable, btrfsck is all I'm
->>> working on right now.  I do expect a release in the next two weeks that
->>> can recover your data (and many others).
->>>
->>> Thanks,
->>> Chris
->>> --
->>
->>
->> Chris,
->>
->> We're all on the edge of our seats.  Can you provide an updated ETA on the
->> release of the first functional btrfsck tool?  No pressure or anything ;)
->
-> Hi everyone,
->
-> I've been working non-stop on this.  Currently fsck has four parts:
->
-> 1) mount -o recovery mode.  I've posted smaller forms of these patches
-> in the past that bypass log tree replay.  The new versions have code to
-> create stub roots for trees that can't be read (like the extent
-> allocation tree) and will allow the mount to proceed.
->
-> 2) fsck that scans for older roots.  This takes advantage of older
-> copies of metadata to look for consistent tree roots on disk.  The
-> downside is that it is currently very slow.  I'm trying to speed it up
-> by limiting the search to only the metadata block groups and a few other
-> tricks.
->
-> 3) fsck that fixes the extent allocation tree and the chunk tree.  This
-> is where I've been spending most of my time.  The problem is that it
-> tends to recover some filesystems and badly break others.  While I'm
-> fixing up the corner cases that work poorly, I'm adding an undo log to
-> the fsck code so that you can get the FS back into its original state if
-> you don't like the result of the fsck.
->
-> 4) The rest of the corruptions can be dealt with fairly well from the
-> kernel.  I have a series of patches to make the extent allocation tree
-> less strict about reference counts and other rules, basically allowing
-> the FS to limp along instead of crash.
->
-> These four things together are basically my minimal set of features
-> required for fedora and our own internal projects at Oracle to start
-> treating us as production filesystem.
->
-> There are always bugs to fix, and I have #1 and #2 mostly ready.  I had
-> hoped to get #1 out the door before I left on vacation and I still might
-> post it tonight.
->
-> -chris
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
->
+-----BEGIN PGP SIGNED MESSAGE-----
+Hash: SHA1
 
-Just checking my reading on where we are is correct.
+I submitted some patches a few weeks ago to fix this so you specify
+the device normally instead of looking up the internal devid and
+passing it as an undocumented prefix to the size parameter.  Hopefully
+they can get merged sometime soon.
 
-1&2 have been done?
+On 1/14/2012 1:18 PM, Marco L. Crociani wrote:
+>>> ./btrfs fi resize max /mnt/RootFS:2 ERROR: can't access to
+>>> '/mnt/RootFS:2'
+>> 
+>> btrfs filesystem resize 2:max /mnt/RootFS
+>> 
+>> Sander
+>> 
+>> -- Humilis IT Services and Solutions http://www.humilis.net
+> 
+> Perfect, Thank you! I've written a section on: 
+> http://btrfs.ipv5.de/index.php?title=UseCases
+> 
 
-Whats the progress on 3&4 - is Chris the only one working on these, or 
-are others active?
+-----BEGIN PGP SIGNATURE-----
+Version: GnuPG v2.0.17 (MingW32)
+Comment: Using GnuPG with Mozilla - http://enigmail.mozdev.org/
 
-David.
-
+iQEcBAEBAgAGBQJPFaBGAAoJEJrBOlT6nu754+0H/jyk5yDLn5T4sYiPNGAFQyG+
+SI47GsE3uD5pfQ0vve8YsDSburNbBzHTmsyWdn/YZE+TtocNTsj+Gj3m7bd/Flr8
+u/dM/4htyyiAjEXJeRQqlnApFDh0hBeMZSF1qK9odhMd8h2FqOfon7mrafCjPzGY
+R9FG1nTqXVmNBmdWQfTiRLnR5ErTBImd8Mo+zt9vbd5naR1Sxc9sUFk1BX4jP0lp
+ZK66C7SPMdb7HnVROPR2TEFHweAjPjF1YMcFOkR4/no37jB+g5/+wlF0YuV4hnc0
+BgC/5dZcxOP1R+nUNQ1xPZm7My+dlzVJaG9AqQC5IEKW7Lejn9HxJzgtZyTZ8hs=
+=QpE2
+-----END PGP SIGNATURE-----

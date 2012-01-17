@@ -1,45 +1,58 @@
-From: Li Zefan <lizf@cn.fujitsu.com>
-Subject: [PATCH] Btrfs: fix decompressing of snappy-compressed inline extents
-Date: Tue, 17 Jan 2012 17:07:18 +0800
-Message-ID: <4F153A46.70906@cn.fujitsu.com>
+From: David Sterba <dave@jikos.cz>
+Subject: Re: Updated btrfs/crypto snappy interface ready for merging
+Date: Tue, 17 Jan 2012 10:07:46 +0100
+Message-ID: <20120117090746.GD7322@twin.jikos.cz>
+References: <1326414530-10789-1-git-send-email-andi@firstfloor.org>
+Reply-To: dave@jikos.cz
 Mime-Version: 1.0
-Content-Type: text/plain; charset=UTF-8
-Cc: Andi Kleen <andi@firstfloor.org>,
-	"linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
-To: Chris Mason <chris.mason@oracle.com>
+Content-Type: text/plain; charset=us-ascii
+Cc: chris.mason@oracle.com, linux-kernel@vger.kernel.org,
+	linux-btrfs@vger.kernel.org
+To: Andi Kleen <andi@firstfloor.org>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
+In-Reply-To: <1326414530-10789-1-git-send-email-andi@firstfloor.org>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-The first four bytes is the length of all data chunks, and the first
-four bytes of each chunk is the length of compressed chunk data,
-even when there's only one chunk, which is the case for inline
-extents.
+On Thu, Jan 12, 2012 at 04:28:47PM -0800, Andi Kleen wrote:
+> Here's a slightly updated version of the BTRFS snappy interface.
+> snappy is a faster compression algorithm that provides similar
+> compression as LZO, but generally better performance.
 
-Signed-off-by: Li Zefan <lizf@cn.fujitsu.com>
----
- fs/btrfs/snappy.c |    4 ++++
- 1 files changed, 4 insertions(+), 0 deletions(-)
+Recently the LZ4 method showed up on the real-time compression scene
 
-diff --git a/fs/btrfs/snappy.c b/fs/btrfs/snappy.c
-index d6bd607..35b877e 100644
---- a/fs/btrfs/snappy.c
-+++ b/fs/btrfs/snappy.c
-@@ -392,12 +392,16 @@ static int btrfs_snappy_decompress(struct list_head *ws, unsigned char *data_in,
- 	struct workspace *workspace = list_entry(ws, struct workspace, list);
- 	size_t in_len;
- 	size_t out_len;
-+	size_t tot_len;
- 	int ret = 0;
- 	char *kaddr;
- 	unsigned long bytes;
- 
- 	BUG_ON(srclen < SNAPPY_LEN);
- 
-+	tot_len = read_compress_length(data_in);
-+	data_in += SNAPPY_LEN;
-+
- 	in_len = read_compress_length(data_in);
- 	data_in += SNAPPY_LEN;
- 
--- 
-1.7.3.1
+http://fastcompression.blogspot.com/p/lz4.html (homepage)
+http://code.google.com/p/lz4/ (source repo)
+
+it has comparable performance and compression ratio to snappy. Quoting
+from the source repo main page:
+
+Name            Ratio   C.speed D.speed
+LZ4 (r41)       2.08    319     1070
+LZO 2.05 1x_1   2.07    318      466
+Snappy 1.0.4    2.02    242      683
+
+My own benchmarking confirms that lz4 is has a bit faster decompression,
+but what is a big difference from snappy is it's memory consumption for
+compression:
+* 32kb for unbounded chunksize
+* 16kb for chunksize < 64k (a tuned compression)
+
+No additional memory is needed for decompression in both snappy and lz4.
+With a minor tweak and chunksize < 4G the context size could be reduced
+to 16k as well.
+
+There is also LZ4HC, "high compression" mode, which maintains same
+binary format, but the compression ratio is better.
+
+http://code.google.com/p/lz4hc/
+
+Usecase:
+There could be the fast version used transparently and the -hc version
+could be allowed for the 'fi defrag' command in order to recompress
+selected files.
+
+LZ4 is written in C and it's BSD, LZ4HC is L-GPL. There is some space
+for improvements in the code, but as it's good already as it stands now.
+
+
+david

@@ -1,51 +1,42 @@
-From: Jan Schmidt <list.btrfs@jan-o-sch.net>
-Subject: Re: NULL Pointer Dereference While Scrubbing
-Date: Tue, 17 Jan 2012 18:08:01 +0100
-Message-ID: <4F15AAF1.6090306@jan-o-sch.net>
-References: <CAKcLGm8a+f04xFTWsWHHQsv3b+YzknaKB_Fv5jc0a8EnkUhfog@mail.gmail.com>	<CAKcLGm-s_ZUGNGUaQysKG6=AyUvE-c+q199UiK2H7GU1ksXaEA@mail.gmail.com>	<CAKcLGm-WbMm+RLu9DY1ggriCAWMM0mKNH650WdwfVEjb_cJYsg@mail.gmail.com>	<4F15A4A5.8040501@jan-o-sch.net> <CAKcLGm9+TPwngXj0NE0UShreUd=OzUK2_FuXbJTCRA7rzoUOmg@mail.gmail.com>
+From: Kyle Gates <kylegates@hotmail.com>
+Subject: fstab mount options ignored on subsequent subvolume mounts
+Date: Tue, 17 Jan 2012 13:09:36 -0600
+Message-ID: <COL113-W4695DE73CE3FDD13C0E8BBB0800@phx.gbl>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=ISO-8859-1
-Cc: linux-btrfs <linux-btrfs@vger.kernel.org>
-To: Mitch Harder <mitch.harder@sabayonlinux.org>
+Content-Type: text/plain; charset=US-ASCII
+To: <linux-btrfs@vger.kernel.org>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <CAKcLGm9+TPwngXj0NE0UShreUd=OzUK2_FuXbJTCRA7rzoUOmg@mail.gmail.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 17.01.2012 18:03, Mitch Harder wrote:
-> You're correct about my original problem being with scrub.  I had lost
-> track of the multiple ways to make the partition BUG.
-> 
-> I've re-run scrub, and scrub now proceeds without error also, but it
-> still leaves the inode 400 error from btrfsck.
-> 
-> I am beginning to suspect that the partition had another inconsistency
-> that didn't have anything to do the the btrfsck reported error, but
-> was causing btrfs to run into a BUG when running various operations on
-> the disk.
 
-Sounds plausible.
+Greeting all,
 
-> The current Scrub results are:
-> 
-> # btrfs scrub start -B /mnt/gentoo/
-> scrub done for 75b9f12c-7f3a-4bb2-abe4-dc3da29558ed
-> 	scrub started at Tue Jan 17 10:52:26 2012 and finished after 57 seconds
-> 	total bytes scrubbed: 2.91GB with 0 errors
-> 
-> Which still leaves the following btrfsck result:
-> 
-> # btrfsck /dev/sdb5
-> root 5 inode 19772 errors 400
-> found 3125092352 bytes used err is 1
-> total csum bytes: 2476744
-> total tree bytes: 588513280
-> total fs tree bytes: 554622976
-> btree space waste bytes: 146782986
-> file data blocks allocated: 2536579072
->  referenced 5144166400
-> Btrfs Btrfs v0.19-dirty
+I have multiple subvolumes on the same filesystem that are mounted with different options in fstab.
+The problem is the mount options for subsequent subvolume mounts seem to be ignored as reflected in /proc/mounts.
 
-Alright, that's fine. Scrub isn't expected to find those.
-(I_ERR_FILE_NBYTES_WRONG)
+$ cat /etc/fstab | grep mnt
+UUID=<REMOVED> /mnt/a btrfs subvol=a,defaults,nodatacow,autodefrag,noatime,space_cache,inode_cache 0 0
+UUID=<REMOVED> /mnt/b btrfs subvol=b,defaults,autodefrag,noatime,space_cache,inode_cache 0 0
+UUID=<REMOVED> /mnt/c btrfs subvol=c,defaults,compress=zlib,autodefrag,noatime,space_cache,inode_cache 0 0
+$ mount | grep mnt
+/dev/sdb2 on /mnt/a type btrfs (rw,noatime,subvol=a,nodatacow,autodefrag,space_cache,inode_cache)
+/dev/sdb2 on /mnt/b type btrfs (rw,noatime,subvol=b,autodefrag,space_cache,inode_cache)
+/dev/sdb2 on /mnt/c type btrfs (rw,noatime,subvol=c,compress=zlib,autodefrag,space_cache,inode_cache)
+$ cat /proc/mounts | grep mnt
+/dev/sdb2 /mnt/a btrfs rw,noatime,nodatasum,nodatacow,space_cache,autodefrag,inode_cache 0 0
+/dev/sdb2 /mnt/b btrfs rw,noatime,nodatasum,nodatacow,space_cache,autodefrag,inode_cache 0 0
+/dev/sdb2 /mnt/c btrfs rw,noatime,nodatasum,nodatacow,space_cache,autodefrag,inode_cache 0 0
 
--Jan
+continuing the example which should only change the mount options for one of the subvolumes:
+$ sudo mount -o remount,compress=zlib /mnt/oldhome
+$ cat /proc/mounts | grep mnt
+/dev/sdb2 /mnt/a btrfs rw,noatime,nodatasum,nodatacow,compress=zlib,space_cache,autodefrag,inode_cache 0 0
+/dev/sdb2 /mnt/b btrfs rw,noatime,nodatasum,nodatacow,compress=zlib,space_cache,autodefrag,inode_cache 0 0
+/dev/sdb2 /mnt/c btrfs rw,noatime,nodatasum,nodatacow,compress=zlib,space_cache,autodefrag,inode_cache 0 0
+
+
+Running Ubuntu mainline kernel 3.2.1 (3.2.1-030201-generic #201201121644 SMP Thu Jan 12 21:53:24 UTC 2012 i686 athlon i386 GNU/Linux) with most recent btrfs-progs (2011-12-01) from linux/kernel/git/mason/btrfs-progs.git
+
+Thanks,
+Kyle
+ 		 	   		  

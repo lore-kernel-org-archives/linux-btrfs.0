@@ -1,71 +1,37 @@
 From: David Sterba <dave@jikos.cz>
-Subject: Re: fstab mount options ignored on subsequent subvolume mounts
-Date: Wed, 18 Jan 2012 13:15:38 +0100
-Message-ID: <20120118121538.GH7322@twin.jikos.cz>
-References: <COL113-W4695DE73CE3FDD13C0E8BBB0800@phx.gbl>
+Subject: Re: [RFC][PATCH 1/2] Btrfs: try to allocate new chunks with degenerated profile
+Date: Wed, 18 Jan 2012 13:34:51 +0100
+Message-ID: <20120118123451.GI7322@twin.jikos.cz>
+References: <4F154738.8000709@cn.fujitsu.com>
 Reply-To: dave@jikos.cz
 Mime-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
-Cc: linux-btrfs@vger.kernel.org
-To: Kyle Gates <kylegates@hotmail.com>
+Cc: Linux Btrfs <linux-btrfs@vger.kernel.org>
+To: Miao Xie <miaox@cn.fujitsu.com>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <COL113-W4695DE73CE3FDD13C0E8BBB0800@phx.gbl>
+In-Reply-To: <4F154738.8000709@cn.fujitsu.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Tue, Jan 17, 2012 at 01:09:36PM -0600, Kyle Gates wrote:
-> I have multiple subvolumes on the same filesystem that are mounted with different options in fstab.
-> The problem is the mount options for subsequent subvolume mounts seem to be ignored as reflected in /proc/mounts.
-
-The output of 'mount' and /proc/mounts is different. mount takes it from
-/etc/mtab while /proc/mounts gets the information from kernel (calls
-into super.c:btrfs_show_options() )
-
-'mtab':
-- contains the options in order in which they were given to mount or in
-  /etc/fstab
-- 
-
-/proc/mounts:
-- order of options is fixed (as defined in the function)
-- if the option has a default value which was not given to mount, it is
-  listed here (and is not in mtab)
-- an implied options appear here as well (like nodatacow implies
-  nodatasum)
-
-
-Now, you're giving different set of options to each subvolume, but they
-belong to one filesystem and thus will result in set of options given to
-the first mounted subvolume for every other mounted subvolume.
-
-The first subvol calls 'btrfs_fill_super' and 'btrfs_parse_options', the
-other do not and do not. Remount will call 'btrfs_parse_options' again
-and will change the options set.
-
-> $ cat /etc/fstab | grep mnt
-> UUID=<REMOVED> /mnt/a btrfs subvol=a,defaults,nodatacow,autodefrag,noatime,space_cache,inode_cache 0 0
-> UUID=<REMOVED> /mnt/b btrfs subvol=b,defaults,autodefrag,noatime,space_cache,inode_cache 0 0
-> UUID=<REMOVED> /mnt/c btrfs subvol=c,defaults,compress=zlib,autodefrag,noatime,space_cache,inode_cache 0 0
->
-> $ mount | grep mnt
-> /dev/sdb2 on /mnt/a type btrfs (rw,noatime,subvol=a,nodatacow,autodefrag,space_cache,inode_cache)
-> /dev/sdb2 on /mnt/b type btrfs (rw,noatime,subvol=b,autodefrag,space_cache,inode_cache)
-> /dev/sdb2 on /mnt/c type btrfs (rw,noatime,subvol=c,compress=zlib,autodefrag,space_cache,inode_cache)
-> $ cat /proc/mounts | grep mnt
-> /dev/sdb2 /mnt/a btrfs rw,noatime,nodatasum,nodatacow,space_cache,autodefrag,inode_cache 0 0
-> /dev/sdb2 /mnt/b btrfs rw,noatime,nodatasum,nodatacow,space_cache,autodefrag,inode_cache 0 0
-> /dev/sdb2 /mnt/c btrfs rw,noatime,nodatasum,nodatacow,space_cache,autodefrag,inode_cache 0 0
+On Tue, Jan 17, 2012 at 06:02:32PM +0800, Miao Xie wrote:
+> So we'd better make the behaviour of chunk allocation correspond with space
+> reservation and free space allocation, if there is no enough disk space to
+> allocate RAID(RAID0, RAID1, RAID10) chunks, we degenerate the profile and try
+> to allocate chunks again. Otherwise, enospc will happen though we reserve
+> the space successfully and BUG_ON() will be triggered.
 > 
-> continuing the example which should only change the mount options for one of the subvolumes:
-> $ sudo mount -o remount,compress=zlib /mnt/oldhome
-> $ cat /proc/mounts | grep mnt
-> /dev/sdb2 /mnt/a btrfs rw,noatime,nodatasum,nodatacow,compress=zlib,space_cache,autodefrag,inode_cache 0 0
-> /dev/sdb2 /mnt/b btrfs rw,noatime,nodatasum,nodatacow,compress=zlib,space_cache,autodefrag,inode_cache 0 0
-> /dev/sdb2 /mnt/c btrfs rw,noatime,nodatasum,nodatacow,compress=zlib,space_cache,autodefrag,inode_cache 0 0
+> Degenerating rule:
+>   RAID10 -> RAID1 -> DUP
+>   RAID0 -> SINGLE
 
-I think the above explains things in general in your listings, the last
-one missing is subvol= in /proc/mounts. This is not implemented, but is
-possible (save non-default subvol name with the subvol root and print in
-show_options).
+I think that silently changing RAID level under unpredictable conditions
+could be a very unpleasant suprise to the administrator. Even worse when
+it requires manual intervention to undo the change and without any
+possibility to prevent it to happen again.
+
+In case ENOSPC happens early due to overbooking (like untarring lots of
+files as reported several times), will probably make it happen sooner
+than when "there is absolutely no free space available". We will lose
+automatic raid1-repair and scrub repair capabilities, that's not good.
 
 
 david

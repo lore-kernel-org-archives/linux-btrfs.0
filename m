@@ -1,172 +1,142 @@
 From: Josef Bacik <josef@redhat.com>
-Subject: [PATCH] Btrfs: remove the ideal caching code
-Date: Wed, 18 Jan 2012 10:57:32 -0500
-Message-ID: <1326902252-3052-1-git-send-email-josef@redhat.com>
+Subject: [PATCH] Btrfs: remove search_start and search_end from find_free_extent and callers
+Date: Wed, 18 Jan 2012 10:57:50 -0500
+Message-ID: <1326902270-3092-1-git-send-email-josef@redhat.com>
 To: linux-btrfs@vger.kernel.org
 Return-path: <linux-btrfs-owner@vger.kernel.org>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-This is a relic from before we had the disk space cache and it was to make
-bootup times when you had btrfs as root not be so damned slow.  Now that we have
-the disk space cache this isn't a problem anymore and really having this code
-casues uneeded fragmentation and complexity, so just remove it.  Thanks,
+We have been passing nothing but (u64)-1 to find_free_extent for search_end in
+all of the callers, so it's completely useless, and we've always been passing 0
+in as search_start, so just remove them as function arguments and move
+search_start into find_free_extent.  Thanks,
 
 Signed-off-by: Josef Bacik <josef@redhat.com>
 ---
- fs/btrfs/extent-tree.c |   93 ++++-------------------------------------------
- 1 files changed, 8 insertions(+), 85 deletions(-)
+ fs/btrfs/ctree.h       |    3 +--
+ fs/btrfs/extent-tree.c |   16 ++++------------
+ fs/btrfs/inode.c       |    9 ++++-----
+ 3 files changed, 9 insertions(+), 19 deletions(-)
 
+diff --git a/fs/btrfs/ctree.h b/fs/btrfs/ctree.h
+index 3c2cbf7..d62a00b 100644
+--- a/fs/btrfs/ctree.h
++++ b/fs/btrfs/ctree.h
+@@ -2466,8 +2466,7 @@ int btrfs_reserve_extent(struct btrfs_trans_handle *trans,
+ 				  struct btrfs_root *root,
+ 				  u64 num_bytes, u64 min_alloc_size,
+ 				  u64 empty_size, u64 hint_byte,
+-				  u64 search_end, struct btrfs_key *ins,
+-				  u64 data);
++				  struct btrfs_key *ins, u64 data);
+ int btrfs_inc_ref(struct btrfs_trans_handle *trans, struct btrfs_root *root,
+ 		  struct extent_buffer *buf, int full_backref, int for_cow);
+ int btrfs_dec_ref(struct btrfs_trans_handle *trans, struct btrfs_root *root,
 diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
-index e0ad5f0..2288674 100644
+index 2288674..26f99ac 100644
 --- a/fs/btrfs/extent-tree.c
 +++ b/fs/btrfs/extent-tree.c
-@@ -5250,11 +5250,10 @@ static int get_block_group_index(struct btrfs_block_group_cache *cache)
- }
+@@ -5267,7 +5267,6 @@ enum btrfs_loop_type {
+ static noinline int find_free_extent(struct btrfs_trans_handle *trans,
+ 				     struct btrfs_root *orig_root,
+ 				     u64 num_bytes, u64 empty_size,
+-				     u64 search_start, u64 search_end,
+ 				     u64 hint_byte, struct btrfs_key *ins,
+ 				     u64 data)
+ {
+@@ -5276,6 +5275,7 @@ static noinline int find_free_extent(struct btrfs_trans_handle *trans,
+ 	struct btrfs_free_cluster *last_ptr = NULL;
+ 	struct btrfs_block_group_cache *block_group = NULL;
+ 	struct btrfs_block_group_cache *used_block_group;
++	u64 search_start = 0;
+ 	int empty_cluster = 2 * 1024 * 1024;
+ 	int allowed_chunk_alloc = 0;
+ 	int done_chunk_alloc = 0;
+@@ -5559,11 +5559,6 @@ unclustered_alloc:
+ 		}
+ checks:
+ 		search_start = stripe_align(root, offset);
+-		/* move on to the next group */
+-		if (search_start + num_bytes >= search_end) {
+-			btrfs_add_free_space(used_block_group, offset, num_bytes);
+-			goto loop;
+-		}
  
- enum btrfs_loop_type {
--	LOOP_FIND_IDEAL = 0,
--	LOOP_CACHING_NOWAIT = 1,
--	LOOP_CACHING_WAIT = 2,
--	LOOP_ALLOC_CHUNK = 3,
--	LOOP_NO_EMPTY_SIZE = 4,
-+	LOOP_CACHING_NOWAIT = 0,
-+	LOOP_CACHING_WAIT = 1,
-+	LOOP_ALLOC_CHUNK = 2,
-+	LOOP_NO_EMPTY_SIZE = 3,
- };
+ 		/* move on to the next group */
+ 		if (search_start + num_bytes >
+@@ -5711,11 +5706,9 @@ int btrfs_reserve_extent(struct btrfs_trans_handle *trans,
+ 			 struct btrfs_root *root,
+ 			 u64 num_bytes, u64 min_alloc_size,
+ 			 u64 empty_size, u64 hint_byte,
+-			 u64 search_end, struct btrfs_key *ins,
+-			 u64 data)
++			 struct btrfs_key *ins, u64 data)
+ {
+ 	int ret;
+-	u64 search_start = 0;
  
- /*
-@@ -5290,8 +5289,6 @@ static noinline int find_free_extent(struct btrfs_trans_handle *trans,
- 	bool failed_alloc = false;
- 	bool use_cluster = true;
- 	bool have_caching_bg = false;
--	u64 ideal_cache_percent = 0;
--	u64 ideal_cache_offset = 0;
+ 	data = btrfs_get_alloc_profile(root, data);
+ again:
+@@ -5730,8 +5723,7 @@ again:
  
  	WARN_ON(num_bytes < root->sectorsize);
- 	btrfs_set_key_type(ins, BTRFS_EXTENT_ITEM_KEY);
-@@ -5341,7 +5338,6 @@ static noinline int find_free_extent(struct btrfs_trans_handle *trans,
- 		empty_cluster = 0;
+ 	ret = find_free_extent(trans, root, num_bytes, empty_size,
+-			       search_start, search_end, hint_byte,
+-			       ins, data);
++			       hint_byte, ins, data);
  
- 	if (search_start == hint_byte) {
--ideal_cache:
- 		block_group = btrfs_lookup_block_group(root->fs_info,
- 						       search_start);
- 		used_block_group = block_group;
-@@ -5353,8 +5349,7 @@ ideal_cache:
- 		 * picked out then we don't care that the block group is cached.
- 		 */
- 		if (block_group && block_group_bits(block_group, data) &&
--		    (block_group->cached != BTRFS_CACHE_NO ||
--		     search_start == ideal_cache_offset)) {
-+		    block_group->cached != BTRFS_CACHE_NO) {
- 			down_read(&space_info->groups_sem);
- 			if (list_empty(&block_group->list) ||
- 			    block_group->ro) {
-@@ -5408,44 +5403,12 @@ search:
- have_block_group:
- 		cached = block_group_cache_done(block_group);
- 		if (unlikely(!cached)) {
--			u64 free_percent;
--
- 			found_uncached_bg = true;
- 			ret = cache_block_group(block_group, trans,
--						orig_root, 1);
--			if (block_group->cached == BTRFS_CACHE_FINISHED)
--				goto alloc;
--
--			free_percent = btrfs_block_group_used(&block_group->item);
--			free_percent *= 100;
--			free_percent = div64_u64(free_percent,
--						 block_group->key.offset);
--			free_percent = 100 - free_percent;
--			if (free_percent > ideal_cache_percent &&
--			    likely(!block_group->ro)) {
--				ideal_cache_offset = block_group->key.objectid;
--				ideal_cache_percent = free_percent;
--			}
--
--			/*
--			 * The caching workers are limited to 2 threads, so we
--			 * can queue as much work as we care to.
--			 */
--			if (loop > LOOP_FIND_IDEAL) {
--				ret = cache_block_group(block_group, trans,
--							orig_root, 0);
--				BUG_ON(ret);
--			}
--
--			/*
--			 * If loop is set for cached only, try the next block
--			 * group.
--			 */
--			if (loop == LOOP_FIND_IDEAL)
--				goto loop;
-+						orig_root, 0);
-+			BUG_ON(ret);
+ 	if (ret == -ENOSPC && num_bytes > min_alloc_size) {
+ 		num_bytes = num_bytes >> 1;
+@@ -6123,7 +6115,7 @@ struct extent_buffer *btrfs_alloc_free_block(struct btrfs_trans_handle *trans,
+ 		return ERR_CAST(block_rsv);
+ 
+ 	ret = btrfs_reserve_extent(trans, root, blocksize, blocksize,
+-				   empty_size, hint, (u64)-1, &ins, 0);
++				   empty_size, hint, &ins, 0);
+ 	if (ret) {
+ 		unuse_block_rsv(root->fs_info, block_rsv, blocksize);
+ 		return ERR_PTR(ret);
+diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
+index 5977987..4c58efe 100644
+--- a/fs/btrfs/inode.c
++++ b/fs/btrfs/inode.c
+@@ -634,8 +634,7 @@ retry:
+ 		ret = btrfs_reserve_extent(trans, root,
+ 					   async_extent->compressed_size,
+ 					   async_extent->compressed_size,
+-					   0, alloc_hint,
+-					   (u64)-1, &ins, 1);
++					   0, alloc_hint, &ins, 1);
+ 		btrfs_end_transaction(trans, root);
+ 
+ 		if (ret) {
+@@ -838,7 +837,7 @@ static noinline int cow_file_range(struct inode *inode,
+ 		cur_alloc_size = disk_num_bytes;
+ 		ret = btrfs_reserve_extent(trans, root, cur_alloc_size,
+ 					   root->sectorsize, 0, alloc_hint,
+-					   (u64)-1, &ins, 1);
++					   &ins, 1);
+ 		BUG_ON(ret);
+ 
+ 		em = alloc_extent_map();
+@@ -5386,7 +5385,7 @@ static struct extent_map *btrfs_new_extent_direct(struct inode *inode,
+ 
+ 	alloc_hint = get_extent_allocation_hint(inode, start, len);
+ 	ret = btrfs_reserve_extent(trans, root, len, root->sectorsize, 0,
+-				   alloc_hint, (u64)-1, &ins, 1);
++				   alloc_hint, &ins, 1);
+ 	if (ret) {
+ 		em = ERR_PTR(ret);
+ 		goto out;
+@@ -7280,7 +7279,7 @@ static int __btrfs_prealloc_file_range(struct inode *inode, int mode,
  		}
  
--alloc:
- 		if (unlikely(block_group->ro))
- 			goto loop;
- 
-@@ -5651,9 +5614,7 @@ loop:
- 	if (!ins->objectid && ++index < BTRFS_NR_RAID_TYPES)
- 		goto search;
- 
--	/* LOOP_FIND_IDEAL, only search caching/cached bg's, and don't wait for
--	 *			for them to make caching progress.  Also
--	 *			determine the best possible bg to cache
-+	/*
- 	 * LOOP_CACHING_NOWAIT, search partially cached block groups, kicking
- 	 *			caching kthreads as we move along
- 	 * LOOP_CACHING_WAIT, search everything, and wait if our bg is caching
-@@ -5663,45 +5624,7 @@ loop:
- 	 */
- 	if (!ins->objectid && loop < LOOP_NO_EMPTY_SIZE) {
- 		index = 0;
--		if (loop == LOOP_FIND_IDEAL && found_uncached_bg) {
--			found_uncached_bg = false;
--			loop++;
--			if (!ideal_cache_percent)
--				goto search;
--
--			/*
--			 * 1 of the following 2 things have happened so far
--			 *
--			 * 1) We found an ideal block group for caching that
--			 * is mostly full and will cache quickly, so we might
--			 * as well wait for it.
--			 *
--			 * 2) We searched for cached only and we didn't find
--			 * anything, and we didn't start any caching kthreads
--			 * either, so chances are we will loop through and
--			 * start a couple caching kthreads, and then come back
--			 * around and just wait for them.  This will be slower
--			 * because we will have 2 caching kthreads reading at
--			 * the same time when we could have just started one
--			 * and waited for it to get far enough to give us an
--			 * allocation, so go ahead and go to the wait caching
--			 * loop.
--			 */
--			loop = LOOP_CACHING_WAIT;
--			search_start = ideal_cache_offset;
--			ideal_cache_percent = 0;
--			goto ideal_cache;
--		} else if (loop == LOOP_FIND_IDEAL) {
--			/*
--			 * Didn't find a uncached bg, wait on anything we find
--			 * next.
--			 */
--			loop = LOOP_CACHING_WAIT;
--			goto search;
--		}
--
- 		loop++;
--
- 		if (loop == LOOP_ALLOC_CHUNK) {
- 		       if (allowed_chunk_alloc) {
- 				ret = do_chunk_alloc(trans, root, num_bytes +
+ 		ret = btrfs_reserve_extent(trans, root, num_bytes, min_size,
+-					   0, *alloc_hint, (u64)-1, &ins, 1);
++					   0, *alloc_hint, &ins, 1);
+ 		if (ret) {
+ 			if (own_trans)
+ 				btrfs_end_transaction(trans, root);
 -- 
 1.7.5.2
 

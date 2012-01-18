@@ -1,37 +1,72 @@
-From: David Sterba <dave@jikos.cz>
-Subject: Re: [RFC][PATCH 1/2] Btrfs: try to allocate new chunks with degenerated profile
-Date: Wed, 18 Jan 2012 13:34:51 +0100
-Message-ID: <20120118123451.GI7322@twin.jikos.cz>
+From: Hugo Mills <hugo@carfax.org.uk>
+Subject: Re: [RFC][PATCH 1/2] Btrfs: try to allocate new chunks with
+ degenerated profile
+Date: Wed, 18 Jan 2012 12:41:57 +0000
+Message-ID: <20120118124157.GF20139@carfax.org.uk>
 References: <4F154738.8000709@cn.fujitsu.com>
-Reply-To: dave@jikos.cz
+ <20120117205815.GG3658@shiny>
+ <4F169B04.3060200@jan-o-sch.net>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Cc: Linux Btrfs <linux-btrfs@vger.kernel.org>
-To: Miao Xie <miaox@cn.fujitsu.com>
+Content-Type: multipart/signed; micalg=pgp-sha1;
+	protocol="application/pgp-signature"; boundary="UKNXkkdQCYZ6W5l3"
+Cc: Chris Mason <chris.mason@oracle.com>,
+	Miao Xie <miaox@cn.fujitsu.com>,
+	Linux Btrfs <linux-btrfs@vger.kernel.org>
+To: Jan Schmidt <list.btrfs@jan-o-sch.net>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <4F154738.8000709@cn.fujitsu.com>
+In-Reply-To: <4F169B04.3060200@jan-o-sch.net>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Tue, Jan 17, 2012 at 06:02:32PM +0800, Miao Xie wrote:
-> So we'd better make the behaviour of chunk allocation correspond with space
-> reservation and free space allocation, if there is no enough disk space to
-> allocate RAID(RAID0, RAID1, RAID10) chunks, we degenerate the profile and try
-> to allocate chunks again. Otherwise, enospc will happen though we reserve
-> the space successfully and BUG_ON() will be triggered.
-> 
-> Degenerating rule:
->   RAID10 -> RAID1 -> DUP
->   RAID0 -> SINGLE
 
-I think that silently changing RAID level under unpredictable conditions
-could be a very unpleasant suprise to the administrator. Even worse when
-it requires manual intervention to undo the change and without any
-possibility to prevent it to happen again.
+--UKNXkkdQCYZ6W5l3
+Content-Type: text/plain; charset=iso-8859-1
+Content-Disposition: inline
+Content-Transfer-Encoding: quoted-printable
 
-In case ENOSPC happens early due to overbooking (like untarring lots of
-files as reported several times), will probably make it happen sooner
-than when "there is absolutely no free space available". We will lose
-automatic raid1-repair and scrub repair capabilities, that's not good.
+On Wed, Jan 18, 2012 at 11:12:20AM +0100, Jan Schmidt wrote:
+> On 17.01.2012 21:58, Chris Mason wrote:
+> > These two didn't make my first pull request just because I wanted to get
+> > something out the door.  I'll definitely have them in the next pull.
+>=20
+> Please, don't do that! You can't just degenerate to DUP when RAID1 is
+> out of space, that's entirely different.
 
+   Agreed. This isn't a good idea.
 
-david
+> It's debatable whether degeneration from RAID0 to single is acceptable,
+> but that again has different characteristics.
+
+   RAID-0 to single and RAID-10 to RAID-1 are less controversial, I
+think, although we need to be clear about what the performance
+guarantees of the striping are (and how they would be affected by the
+move to fewer disks). Given that we already degrade the striping of
+RAID-0 down to "as many devices as we can fit right now", we're not
+really providing much in the way of performance guarantees.
+
+   (I'd definitely support some way of defining a fixed-width stripe,
+but that's a whole separate question that we shouldn't get into now).
+
+> ENOSPC is the best choice for both in my opinon.
+>=20
+> -Jan
+
+--=20
+=3D=3D=3D Hugo Mills: hugo@... carfax.org.uk | darksatanic.net | lug.org.uk=
+ =3D=3D=3D
+  PGP key: 515C238D from wwwkeys.eu.pgp.net or http://www.carfax.org.uk
+      --- What's a Nazg=FBl like you doing in a place like this? ---     =
+=20
+
+--UKNXkkdQCYZ6W5l3
+Content-Type: application/pgp-signature; name="signature.asc"
+Content-Description: Digital signature
+
+-----BEGIN PGP SIGNATURE-----
+Version: GnuPG v1.4.11 (GNU/Linux)
+
+iD8DBQFPFr4VIKyzvlFcI40RAufQAJ9oWLGkxOsvUqyoXAIhH8+JptKlQwCaA8No
+EZSWv+DetDFN6ePA//0i0LE=
+=0BoK
+-----END PGP SIGNATURE-----
+
+--UKNXkkdQCYZ6W5l3--

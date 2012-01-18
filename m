@@ -1,109 +1,71 @@
-From: Arne Jansen <sensille@gmx.net>
-Subject: Re: [RFC][PATCH 1/2] Btrfs: try to allocate new chunks with degenerated
- profile
-Date: Wed, 18 Jan 2012 11:14:23 +0100
-Message-ID: <4F169B7F.6010700@gmx.net>
-References: <4F154738.8000709@cn.fujitsu.com>
+From: David Sterba <dave@jikos.cz>
+Subject: Re: fstab mount options ignored on subsequent subvolume mounts
+Date: Wed, 18 Jan 2012 13:15:38 +0100
+Message-ID: <20120118121538.GH7322@twin.jikos.cz>
+References: <COL113-W4695DE73CE3FDD13C0E8BBB0800@phx.gbl>
+Reply-To: dave@jikos.cz
 Mime-Version: 1.0
-Content-Type: text/plain; charset=ISO-8859-1
-Cc: Linux Btrfs <linux-btrfs@vger.kernel.org>
-To: miaox@cn.fujitsu.com
+Content-Type: text/plain; charset=us-ascii
+Cc: linux-btrfs@vger.kernel.org
+To: Kyle Gates <kylegates@hotmail.com>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <4F154738.8000709@cn.fujitsu.com>
+In-Reply-To: <COL113-W4695DE73CE3FDD13C0E8BBB0800@phx.gbl>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 17.01.2012 11:02, Miao Xie wrote:
-> If there is no free space, the free space allocator will try to get space from
-> the block group with the degenerated profile. For example, if there is no free
-> space in the RAID1 block groups, the allocator will try to allocate space from
-> the DUP block groups. And besides that, the space reservation has the similar
-> behaviour: if there is no enough space in the space cache to reserve, it will
-> reserve the space according to the disk space, and it just take mirror storage
-> into account, no RAID0, RAID1, or RAID10.
-> 
-> So we'd better make the behaviour of chunk allocation correspond with space
-> reservation and free space allocation, if there is no enough disk space to
-> allocate RAID(RAID0, RAID1, RAID10) chunks, we degenerate the profile and try
-> to allocate chunks again. Otherwise, enospc will happen though we reserve
-> the space successfully and BUG_ON() will be triggered.
-> 
-> Degenerating rule:
->   RAID10 -> RAID1 -> DUP
->   RAID0 -> SINGLE
-> 
+On Tue, Jan 17, 2012 at 01:09:36PM -0600, Kyle Gates wrote:
+> I have multiple subvolumes on the same filesystem that are mounted with different options in fstab.
+> The problem is the mount options for subsequent subvolume mounts seem to be ignored as reflected in /proc/mounts.
 
-Instead of changing the profile, wouldn't it be easier to just allow
-RAID10 go down to 2 disks and RAID0 to 1? That would make things easier
-in many places.
-What I'm strongly opposed to is changing a RAID1 to DUP, as this loses
-the protection against a single disk failure.
+The output of 'mount' and /proc/mounts is different. mount takes it from
+/etc/mtab while /proc/mounts gets the information from kernel (calls
+into super.c:btrfs_show_options() )
 
--Arne
+'mtab':
+- contains the options in order in which they were given to mount or in
+  /etc/fstab
+- 
 
-> Signed-off-by: Miao Xie <miaox@cn.fujitsu.com>
-> ---
->  fs/btrfs/extent-tree.c |   43 +++++++++++++++++++++++++++++++++++++++++--
->  1 files changed, 41 insertions(+), 2 deletions(-)
+/proc/mounts:
+- order of options is fixed (as defined in the function)
+- if the option has a default value which was not given to mount, it is
+  listed here (and is not in mtab)
+- an implied options appear here as well (like nodatacow implies
+  nodatasum)
+
+
+Now, you're giving different set of options to each subvolume, but they
+belong to one filesystem and thus will result in set of options given to
+the first mounted subvolume for every other mounted subvolume.
+
+The first subvol calls 'btrfs_fill_super' and 'btrfs_parse_options', the
+other do not and do not. Remount will call 'btrfs_parse_options' again
+and will change the options set.
+
+> $ cat /etc/fstab | grep mnt
+> UUID=<REMOVED> /mnt/a btrfs subvol=a,defaults,nodatacow,autodefrag,noatime,space_cache,inode_cache 0 0
+> UUID=<REMOVED> /mnt/b btrfs subvol=b,defaults,autodefrag,noatime,space_cache,inode_cache 0 0
+> UUID=<REMOVED> /mnt/c btrfs subvol=c,defaults,compress=zlib,autodefrag,noatime,space_cache,inode_cache 0 0
+>
+> $ mount | grep mnt
+> /dev/sdb2 on /mnt/a type btrfs (rw,noatime,subvol=a,nodatacow,autodefrag,space_cache,inode_cache)
+> /dev/sdb2 on /mnt/b type btrfs (rw,noatime,subvol=b,autodefrag,space_cache,inode_cache)
+> /dev/sdb2 on /mnt/c type btrfs (rw,noatime,subvol=c,compress=zlib,autodefrag,space_cache,inode_cache)
+> $ cat /proc/mounts | grep mnt
+> /dev/sdb2 /mnt/a btrfs rw,noatime,nodatasum,nodatacow,space_cache,autodefrag,inode_cache 0 0
+> /dev/sdb2 /mnt/b btrfs rw,noatime,nodatasum,nodatacow,space_cache,autodefrag,inode_cache 0 0
+> /dev/sdb2 /mnt/c btrfs rw,noatime,nodatasum,nodatacow,space_cache,autodefrag,inode_cache 0 0
 > 
-> diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
-> index 3e68e2b..87cd611 100644
-> --- a/fs/btrfs/extent-tree.c
-> +++ b/fs/btrfs/extent-tree.c
-> @@ -3065,6 +3065,30 @@ u64 btrfs_reduce_alloc_profile(struct btrfs_root *root, u64 flags)
->  	return flags;
->  }
->  
-> +/*
-> + * Degenerate the alloc profile:
-> + *   RAID10 -> RAID1 -> DUP
-> + *   RAID0 -> SINGLE
-> + *
-> + * This is used when there is no enough disk space to do chunk allocation.
-> + * After degenerating the profile, we will try to allocate new chunks again.
-> + */
-> +static u64 btrfs_degenerate_alloc_profile(u64 flags)
-> +{
-> +	if (flags & BTRFS_BLOCK_GROUP_RAID10) {
-> +		flags &= ~BTRFS_BLOCK_GROUP_RAID10;
-> +		flags |= BTRFS_BLOCK_GROUP_RAID1;
-> +	} else if (flags & BTRFS_BLOCK_GROUP_RAID1) {
-> +		flags &= ~BTRFS_BLOCK_GROUP_RAID1;
-> +		flags |= BTRFS_BLOCK_GROUP_DUP;
-> +	} else if (flags & BTRFS_BLOCK_GROUP_RAID0) {
-> +		flags &= ~BTRFS_BLOCK_GROUP_RAID0;
-> +	} else
-> +		flags = ULLONG_MAX;
-> +
-> +	return flags;
-> +}
-> +
->  static u64 get_alloc_profile(struct btrfs_root *root, u64 flags)
->  {
->  	if (flags & BTRFS_BLOCK_GROUP_DATA)
-> @@ -3356,8 +3380,23 @@ again:
->  	}
->  
->  	ret = btrfs_alloc_chunk(trans, extent_root, flags);
-> -	if (ret < 0 && ret != -ENOSPC)
-> -		goto out;
-> +	if (ret < 0) {
-> +		if (ret != -ENOSPC)
-> +			goto out;
-> +
-> +		/*
-> +		 * Degenerate the alloc profile:
-> +		 *   RAID10 -> RAID1 -> DUP
-> +		 *   RAID0 -> SINGLE
-> +		 * then we will try to allocate new chunks again. By this way,
-> +		 * we can utilize the whole disk spacem and make the behaviour
-> +		 * of the chunk allocation correspond with the space reservation
-> +		 * and the free space allocation.
-> +		 */
-> +		flags = btrfs_degenerate_alloc_profile(flags);
-> +		if (flags != ULLONG_MAX)
-> +			goto again;
-> +	}
->  
->  	spin_lock(&space_info->lock);
->  	if (ret)
+> continuing the example which should only change the mount options for one of the subvolumes:
+> $ sudo mount -o remount,compress=zlib /mnt/oldhome
+> $ cat /proc/mounts | grep mnt
+> /dev/sdb2 /mnt/a btrfs rw,noatime,nodatasum,nodatacow,compress=zlib,space_cache,autodefrag,inode_cache 0 0
+> /dev/sdb2 /mnt/b btrfs rw,noatime,nodatasum,nodatacow,compress=zlib,space_cache,autodefrag,inode_cache 0 0
+> /dev/sdb2 /mnt/c btrfs rw,noatime,nodatasum,nodatacow,compress=zlib,space_cache,autodefrag,inode_cache 0 0
 
+I think the above explains things in general in your listings, the last
+one missing is subvol= in /proc/mounts. This is not implemented, but is
+possible (save non-default subvol name with the subvol root and print in
+show_options).
+
+
+david

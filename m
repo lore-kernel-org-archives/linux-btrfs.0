@@ -1,56 +1,46 @@
-From: Chris Samuel <chris@csamuel.org>
-Subject: Re: Errors after clean reboot
-Date: Thu, 19 Jan 2012 18:37:55 +1100
-Message-ID: <201201191838.03289.chris@csamuel.org>
-References: <CALkG1Nwkeohg0CwWg-bGDnvvMuJLFO8RvB1r0FddqCk8MRDdww@mail.gmail.com>
-Mime-Version: 1.0
-Content-Type: multipart/signed;
-  boundary="nextPart1540451.CkOz3rd58c";
-  protocol="application/pgp-signature";
-  micalg=pgp-sha1
-Cc: Elsa Thomas <elsa.thomas-f5ob1dq@yopmail.com>
-To: linux-btrfs@vger.kernel.org
+From: Jan Schmidt <list.btrfs@jan-o-sch.net>
+Subject: [PATCH] Btrfs: fix uninit warning in backref.c
+Date: Thu, 19 Jan 2012 11:24:35 +0100
+Message-ID: <1326968675-12294-1-git-send-email-list.btrfs@jan-o-sch.net>
+References: <20120119100935.82c5ec6db156f3799835163f@canb.auug.org.au>
+Cc: linux-next@vger.kernel.org, linux-kernel@vger.kernel.org,
+	sensille@gmx.net, torvalds@linux-foundation.org
+To: sfr@canb.auug.org.au, chris.mason@oracle.com,
+	linux-btrfs@vger.kernel.org
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <CALkG1Nwkeohg0CwWg-bGDnvvMuJLFO8RvB1r0FddqCk8MRDdww@mail.gmail.com>
+In-Reply-To: <20120119100935.82c5ec6db156f3799835163f@canb.auug.org.au>
 List-ID: <linux-btrfs.vger.kernel.org>
 
---nextPart1540451.CkOz3rd58c
-Content-Type: Text/Plain;
-  charset="utf-8"
-Content-Transfer-Encoding: quoted-printable
+Added initialization with the declaration of ret. It isn't set later on the
+switch-default branch (which should never be taken).
 
-On Thursday 19 January 2012 17:54:37 Elsa Thomas wrote:
+Signed-off-by: Jan Schmidt <list.btrfs@jan-o-sch.net>
+---
+ fs/btrfs/backref.c |    4 ++--
+ 1 files changed, 2 insertions(+), 2 deletions(-)
 
-> I can no longer mount my Btrfs filesystem after a clean reboot.
-> Before the reboot, there were errors in the syslog, but
-> unfortunately I can't recover them now that the root filesystem
-> won't mount.
+diff --git a/fs/btrfs/backref.c b/fs/btrfs/backref.c
+index b9a8432..633c701 100644
+--- a/fs/btrfs/backref.c
++++ b/fs/btrfs/backref.c
+@@ -297,7 +297,7 @@ static int __add_delayed_refs(struct btrfs_delayed_ref_head *head, u64 seq,
+ 	struct btrfs_delayed_extent_op *extent_op = head->extent_op;
+ 	struct rb_node *n = &head->node.rb_node;
+ 	int sgn;
+-	int ret;
++	int ret = 0;
+ 
+ 	if (extent_op && extent_op->update_key)
+ 		btrfs_disk_key_to_cpu(info_key, &extent_op->key);
+@@ -392,7 +392,7 @@ static int __add_inline_refs(struct btrfs_fs_info *fs_info,
+ 			     struct btrfs_key *info_key, int *info_level,
+ 			     struct list_head *prefs)
+ {
+-	int ret;
++	int ret = 0;
+ 	int slot;
+ 	struct extent_buffer *leaf;
+ 	struct btrfs_key key;
+-- 
+1.7.3.4
 
-Might be worth trying to remount read-only, I've seen others reporting=20
-success with that when it won't remount read-write.
-
-Best of luck!
-Chris
-=2D-=20
- Chris Samuel  :  http://www.csamuel.org/  :  Melbourne, VIC
-
-This email may come with a PGP signature as a file. Do not panic.
-=46or more info see: http://en.wikipedia.org/wiki/OpenPGP
-
---nextPart1540451.CkOz3rd58c
-Content-Type: application/pgp-signature; name=signature.asc 
-Content-Description: This is a digitally signed message part.
-
------BEGIN PGP SIGNATURE-----
-Version: GnuPG v1.4.11 (GNU/Linux)
-
-iQEVAwUATxfIU41yjaOTJg85AQKCFwf+Jm2MbkI3a7kx0k9utMFM8QTjk/NxlCk3
-suTlwpziS3lVKqiONnyFjQ47lMsdmu2leELCwtNhyUi5aBwNKSoh4q40xMW/Sa1z
-Afk8dbRxvxUHxq1m8QkeZkv7alVX41aUYe01BpnkxIOmTIiP+fdZR19NNwh+OjzK
-hjBKXcD+SquxPWNOrpg3uuS3LP2PAAOYocFOUFCr71v2JJokYVvZm6JzdraCgN8u
-g+GazhR9X98d16Y69vMtWdHYVHSJnetg1Wl2NTPJo6igdTuh1mhNx7ViDRVpePU2
-dfPp96Ei6KcILfonNimz8zQdCAFF7IRJE6Dj3MZC71P22Mnfv+WNzw==
-=R+Pz
------END PGP SIGNATURE-----
-
---nextPart1540451.CkOz3rd58c--

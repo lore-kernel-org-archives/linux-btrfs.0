@@ -1,46 +1,50 @@
-From: Miao Xie <miaox@cn.fujitsu.com>
-Subject: Re: [RFC][PATCH 1/2] Btrfs: try to allocate new chunks with degenerated
- profile
-Date: Thu, 19 Jan 2012 13:58:32 +0800
-Message-ID: <4F17B108.1020103@cn.fujitsu.com>
-References: <4F154738.8000709@cn.fujitsu.com> <20120117205815.GG3658@shiny> <4F169B04.3060200@jan-o-sch.net>
-Reply-To: miaox@cn.fujitsu.com
+From: Elsa Thomas <elsa.thomas-f5ob1dq@yopmail.com>
+Subject: Errors after clean reboot
+Date: Wed, 18 Jan 2012 22:54:37 -0800
+Message-ID: <CALkG1Nwkeohg0CwWg-bGDnvvMuJLFO8RvB1r0FddqCk8MRDdww@mail.gmail.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=ISO-8859-1
-Cc: Chris Mason <chris.mason@oracle.com>,
-	Linux Btrfs <linux-btrfs@vger.kernel.org>
-To: Jan Schmidt <list.btrfs@jan-o-sch.net>
+Content-Type: text/plain; charset=UTF-8
+To: linux-btrfs@vger.kernel.org
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <4F169B04.3060200@jan-o-sch.net>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 	wed, 18 Jan 2012 11:12:20 +0100, Jan Schmidt wrote:
-> On 17.01.2012 21:58, Chris Mason wrote:
->> These two didn't make my first pull request just because I wanted to get
->> something out the door.  I'll definitely have them in the next pull.
-> 
-> Please, don't do that! You can't just degenerate to DUP when RAID1 is
-> out of space, that's entirely different.
-> 
-> It's debatable whether degeneration from RAID0 to single is acceptable,
-> but that again has different characteristics.
-> 
-> ENOSPC is the best choice for both in my opinon.
+I can no longer mount my Btrfs filesystem after a clean reboot. Before
+the reboot, there were errors in the syslog, but unfortunately I can't
+recover them now that the root filesystem won't mount.
 
-I understand what you said, but in fact, the free space allocator can degenerate
-the profile if it doesn't find enough free space. This patch just follows the
-rule which exists in the current code.
+Here is a mount attempt using kernel 3.2.1 with the latest git copy of
+the btrfs-progs from Josef's repository
+(77ac61128a0722cab89c785f5f2247304133b214). If there are any crazy
+outputs below, it might be my transcription:
 
-Maybe adding a new mount option is another good option.
-
-Thanks
-Miao
-
-> 
-> -Jan
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
-> 
-
+ref mismatch on [11938124288000 4096] extent item 1, found 0
+Backref 11938124288000 root 7 not referenced
+Incorrect global back ref count on 11938124288000 found 1 wanted 0
+backpointer mismatch on [11938124288000 4096]
+owner ref check failed [11938124288000 4096]
+ref mismatch on [11938136866816 4096] extent item 1, found 0
+Backref 11938136866816 root 7 not referenced
+Incorrect global back ref count on 11938136866816 found 1 wanted 0
+backpointer mismatch on [11938136866816 4096]
+owner ref check failed [11938136866816 4096]
+found 1899959918593 bytes used err is 1
+total csum bytes: 0
+total tree bytes: 8092626944
+total fs tree bytes: 7476834304
+btree space waste bytes: 2147150418
+file data blocks allocated: 5397271654400
+ referenced 1887149088768
+Btrfs Btrfs v0.19
+[ 2860.812831] btrfsck used greatest stack depth: 2400 bytes left
+dracut:/# mount -t btrfs -o recovery /dev/sdd3 /blah2
+[ 2905.640723] device fsid 10209b28-8190-4af6-9bce-8543c22bde8d devid
+15 transid 808248 /dev/sdd3
+[ 2905.862540] btrfs: enabling auto recovery parent transit verify
+failed on 6223284617216 wanted 807415 found 807912
+[ 2906.127226] parent transit verify failed on 6223284617216 wanted
+807415 found 807912
+[ 2906.129364] parent transit verify failed on 6223284617216 wanted
+807415 found 807912
+[ 2906.129791] parent transit verify failed on 6223284617216 wanted
+807415 found 807912
+[ 2906.218505] btrfs: open_ctree failed

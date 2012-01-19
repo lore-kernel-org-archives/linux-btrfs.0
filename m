@@ -1,136 +1,71 @@
-From: =?UTF-8?B?SsOpcsO0bWUgUG91bGlu?= <jeromepoulin@gmail.com>
-Subject: Btrfsck gives me errors
-Date: Wed, 18 Jan 2012 21:02:18 -0500
-Message-ID: <CALJXSJo=zh2beZYRkJRVyvM2h0HnGESTDhganDShxpQBspU==w@mail.gmail.com>
+From: Chris Baines <cbaines8@gmail.com>
+Subject: Re: bad tree block problems
+Date: Thu, 19 Jan 2012 03:26:02 +0000
+Message-ID: <CAGGGvRs-Xn4DLeAKROSB25OkVHsb+Y7cN8KPwOviMCJyri=Kuw@mail.gmail.com>
+References: <CAGGGvRtNCvt9LYvZE1ZEE9tYCS95KLTUdKKXnqDzm8vHbO-vfg@mail.gmail.com>
+ <20111220233637.GP19266@shiny> <CAGGGvRucivqjTz4X7LNdTo_Nx_oXY9wOor4f7zbnbCf_+-XKPw@mail.gmail.com>
+ <4EF13156.302@cn.fujitsu.com> <CAGGGvRsse8YhCxeyi+KOWNr2Oav+YS2iR9_4Px3gH4J1=8NH6w@mail.gmail.com>
+ <CAGGGvRvVUDbsZKOgqkA+CYfsfpYdHEDF5BYLs3sKVWw+ekH4nQ@mail.gmail.com>
+ <CAGGGvRtNS1_aAWh0=NOD9KTjBNY4Z9wDMATGYTOFCN-HXt4ssg@mail.gmail.com> <CAE5mzvgaoWWLoi2ejsFNzZ65h6Hov5KTDtBAAZU+x+4uHONGLg@mail.gmail.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=UTF-8
-To: linux-btrfs <linux-btrfs@vger.kernel.org>
+Content-Type: text/plain; charset=ISO-8859-1
+Cc: linux-btrfs@vger.kernel.org
+To: cwillu <cwillu@cwillu.com>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
+In-Reply-To: <CAE5mzvgaoWWLoi2ejsFNzZ65h6Hov5KTDtBAAZU+x+4uHONGLg@mail.gmail.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-I did a preemptive fsck after a RAID crash and got many errors, is
-there something I should do if everything I use works?
+Right, I can mount read only. Running a find command across the
+filesystem, yields lots of:
+[ 7775.228342] btrfs: corrupt leaf, bad key order:
+block=3D756502351872,root=3D1, slot=3D1
+type messages in dmesg, running a scrub gives:
+scrub status for 7d65d152-1200-4043-981a-06757707f1ba
+	scrub started at Wed Jan 18 22:29:30 2012 and was aborted after 5575 s=
+econds
+	total bytes scrubbed: 1.26TB with 0 errors
+And in dmesg:
+[13370.886533] btrfs bad tree block start 714438135808 714427781120
+[13370.962864] btrfs bad tree block start 714438135808 714427781120
+[13371.681333] btrfs bad tree block start 714438135808 714427781120
+[13371.724529] btrfs bad tree block start 714438135808 714427781120
+[13371.724690] btrfs bad tree block start 714438135808 714427781120
+[13371.724969] btrfs bad tree block start 714438135808 714427781120
+[13371.725099] btrfs bad tree block start 714438135808 714427781120
+[13371.725243] btrfs bad tree block start 714438135808 714427781120
+[13371.725412] btrfs bad tree block start 714438135808 714427781120
+[13371.725714] btrfs bad tree block start 714438135808 714427781120
 
-root 412 inode 427 errors 400
-root 412 inode 430 errors 400
-root 412 inode 434 errors 400
-root 412 inode 436 errors 400
-root 412 inode 440 errors 400
-root 412 inode 446 errors 400
-root 412 inode 448 errors 400
-root 412 inode 452 errors 400
-root 412 inode 458 errors 400
-root 412 inode 464 errors 400
-root 412 inode 466 errors 400
-root 412 inode 476 errors 400
-root 412 inode 479 errors 400
-root 412 inode 495 errors 400
-root 412 inode 498 errors 400
-root 412 inode 515 errors 400
-root 412 inode 518 errors 400
-root 412 inode 522 errors 400
-root 412 inode 524 errors 400
-root 412 inode 534 errors 400
-root 412 inode 537 errors 400
-root 412 inode 541 errors 400
-root 412 inode 543 errors 400
-root 412 inode 560 errors 400
-root 412 inode 563 errors 400
-root 412 inode 580 errors 400
-root 412 inode 583 errors 400
-root 412 inode 600 errors 400
-root 412 inode 603 errors 400
-root 412 inode 607 errors 400
-root 412 inode 620 errors 400
-root 412 inode 623 errors 400
-root 412 inode 627 errors 400
-root 412 inode 640 errors 400
-root 412 inode 643 errors 400
-root 412 inode 647 errors 400
-root 412 inode 649 errors 400
-root 412 inode 660 errors 400
-root 412 inode 663 errors 400
-root 412 inode 667 errors 400
-root 412 inode 669 errors 400
-root 412 inode 680 errors 400
-root 412 inode 683 errors 400
-root 412 inode 700 errors 400
-root 412 inode 703 errors 400
-root 412 inode 719 errors 400
-root 412 inode 722 errors 400
-root 412 inode 726 errors 400
-root 412 inode 739 errors 400
-root 412 inode 742 errors 400
-root 412 inode 746 errors 400
-root 412 inode 748 errors 400
-root 412 inode 752 errors 400
-root 412 inode 754 errors 400
-root 412 inode 771 errors 400
-root 412 inode 774 errors 400
-root 412 inode 780 errors 400
-root 412 inode 782 errors 400
-root 412 inode 786 errors 400
-root 412 inode 788 errors 400
-root 412 inode 792 errors 400
-root 412 inode 794 errors 400
-root 412 inode 798 errors 400
-root 412 inode 800 errors 400
-root 412 inode 804 errors 400
-root 412 inode 806 errors 400
-root 412 inode 810 errors 400
-root 412 inode 812 errors 400
-root 412 inode 816 errors 400
-root 412 inode 818 errors 400
-root 412 inode 822 errors 400
-root 412 inode 824 errors 400
-root 412 inode 828 errors 400
-root 412 inode 830 errors 400
-root 412 inode 834 errors 400
-root 412 inode 836 errors 400
-root 412 inode 840 errors 400
-root 412 inode 846 errors 400
-root 412 inode 852 errors 400
-root 412 inode 854 errors 400
-root 412 inode 858 errors 400
-root 412 inode 864 errors 400
-root 412 inode 866 errors 400
-root 412 inode 870 errors 400
-root 412 inode 872 errors 400
-root 412 inode 876 errors 400
-root 412 inode 878 errors 400
-root 412 inode 882 errors 400
-root 412 inode 885 errors 400
-root 412 inode 888 errors 400
-root 412 inode 891 errors 400
-root 412 inode 894 errors 400
-root 412 inode 897 errors 400
-root 412 inode 900 errors 400
-root 412 inode 903 errors 400
-root 412 inode 906 errors 400
-root 412 inode 909 errors 400
-root 412 inode 912 errors 400
-root 412 inode 938 errors 400
-root 412 inode 940 errors 400
-root 412 inode 944 errors 400
-root 412 inode 946 errors 400
-root 412 inode 950 errors 400
-root 412 inode 963 errors 400
-root 412 inode 966 errors 400
-root 412 inode 983 errors 400
-root 412 inode 986 errors 400
-root 412 inode 990 errors 400
-root 412 inode 1002 errors 400
-root 412 inode 1005 errors 400
-root 412 inode 1022 errors 400
-root 412 inode 1025 errors 400
-root 412 inode 1029 errors 400
-root 412 inode 1031 errors 400
-root 424 inode 291690 errors 400
-found 222893703168 bytes used err is 1
-total csum bytes: 217378224
-total tree bytes: 288571392
-total fs tree bytes: 23961600
-btree space waste bytes: 29683827
-file data blocks allocated: 11876872372224
- referenced 226945392640
-Btrfs Btrfs v0.19
+On 18 January 2012 20:48, cwillu <cwillu@cwillu.com> wrote:
+> First thing I'd try is to try mounting it readonly ("mount ... -o
+> ro"). =A0This should get it mounted, or at least failing at a later
+> point with different (better?) error messages to work from. =A0(dmesg
+> output after such an attempt would be useful).
+>
+> On the vanilla kernel front, Ubuntu has kernel debs without any extra
+> patches, which will/should work with debian. =A0(There may be a simil=
+ar
+> pure debian thing somewhere already, but anyways).
+>
+> If you see anything about dkms building modules when installing,
+> you'll have to disable those in order to prevent the nvidia and
+> virtualbox modules from being built/installed with vanilla kernel.
+>
+> Debs available from
+> http://kernel.ubuntu.com/~kernel-ppa/mainline/v3.2.1-precise/
+>
+> And the relevant dkms lines if applicable (module names may also vary=
+,
+> but dkms status will list the relevant ones assuming dkms is in fact
+> in use):
+>
+> "dkms status"
+> "dkms uninstall -m nvidia -v <from status> -k <from status, something
+> something 3.2.1>"
+> "dkms uninstall -m vboxhost -v <from status> -k <from status,
+> something something 3.2.1>"
+--
+To unsubscribe from this list: send the line "unsubscribe linux-btrfs" =
+in
+the body of a message to majordomo@vger.kernel.org
+More majordomo info at  http://vger.kernel.org/majordomo-info.html

@@ -1,47 +1,36 @@
-From: "Fajar A. Nugraha" <list@fajar.net>
-Subject: Re: Btrfsck gives me errors
-Date: Fri, 20 Jan 2012 14:19:13 +0700
-Message-ID: <CAG1y0sdDfFFuG0sSZHzkYmhGMCugXeN8PT33k8i02Zhnuj1-qg@mail.gmail.com>
-References: <CALJXSJo=zh2beZYRkJRVyvM2h0HnGESTDhganDShxpQBspU==w@mail.gmail.com>
-	<CAG1y0sfc1wBHKumrfBsFqT7PM1=tck4YY66czfci-FJyOZq_4A@mail.gmail.com>
-	<CALJXSJpjT1UCto5aojE6QgNPCTi-1U7+csCf6uUFOm7t+GR5Dg@mail.gmail.com>
+From: Dan Carpenter <dan.carpenter@oracle.com>
+Subject: [patch] Btrfs: fix bitwise vs logical condition
+Date: Fri, 20 Jan 2012 10:54:55 +0300
+Message-ID: <20120120075454.GA2295@elgon.mountain>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=ISO-8859-1
-Cc: linux-btrfs <linux-btrfs@vger.kernel.org>
-To: =?ISO-8859-1?Q?J=E9r=F4me_Poulin?= <jeromepoulin@gmail.com>
+Content-Type: text/plain; charset=us-ascii
+Cc: linux-btrfs@vger.kernel.org, kernel-janitors@vger.kernel.org
+To: Chris Mason <chris.mason@oracle.com>,
+	Ilya Dryomov <idryomov@gmail.com>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <CALJXSJpjT1UCto5aojE6QgNPCTi-1U7+csCf6uUFOm7t+GR5Dg@mail.gmail.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Fri, Jan 20, 2012 at 11:24 AM, J=E9r=F4me Poulin <jeromepoulin@gmail=
-=2Ecom> wrote:
-> On Wed, Jan 18, 2012 at 11:59 PM, Fajar A. Nugraha <list@fajar.net> w=
-rote:
->> some files, unmount, and mount it again. If second mount does not sh=
-ow
->> any error message then I'm pretty sure you're safe.
->
-> I just upgraded from 3.0 to 3.2.1 and mounted the filesystem, tried
-> find > /dev/null and only got messages about old space inode.
+The intent here was to do a logical && instead of a bitwise &.  The
+original condition tests whether they have the some of same bits set.
+I have fixed that and rewritten it to be more clear.
 
-That's normal. You'll also get the message if you switch back to 3.0,
-but it should be harmless.
+Signed-off-by: Dan Carpenter <dan.carpenter@oracle.com>
+---
+Warning:  This is a static analysis bug and I'm not very familiar with
+the code.  Please review carefully.
 
-> I then
-> used btrfsck again for the same exact result, I'll ignore them for
-> now, let's see what the shiny new btrfsck will do about them!
-
-who knows when it will be available :)
-
-Then again, most fsck feature has been implemented in kernel space so
-a mount will automatically "fix" some types of problems (somewhat
-similar to what zfs does, which has no fsck whatsoever). So just watch
-syslog for any unusual error messages.
-
---=20
-=46ajar
---
-To unsubscribe from this list: send the line "unsubscribe linux-btrfs" =
-in
-the body of a message to majordomo@vger.kernel.org
-More majordomo info at  http://vger.kernel.org/majordomo-info.html
+diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
+index 0b4e2af..0c54027 100644
+--- a/fs/btrfs/volumes.c
++++ b/fs/btrfs/volumes.c
+@@ -2376,8 +2376,8 @@ static int should_balance_chunk(struct btrfs_root *root,
+ 	u64 chunk_type = btrfs_chunk_type(leaf, chunk);
+ 
+ 	/* type filter */
+-	if (!((chunk_type & BTRFS_BLOCK_GROUP_TYPE_MASK) &
+-	      (bctl->flags & BTRFS_BALANCE_TYPE_MASK))) {
++	if (!(chunk_type & BTRFS_BLOCK_GROUP_TYPE_MASK) ||
++	    !(bctl->flags & BTRFS_BALANCE_TYPE_MASK)) {
+ 		return 0;
+ 	}
+ 

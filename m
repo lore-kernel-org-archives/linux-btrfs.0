@@ -1,56 +1,71 @@
-From: Ilya Dryomov <idryomov@gmail.com>
-Subject: Re: [patch] Btrfs: fix bitwise vs logical condition
-Date: Fri, 20 Jan 2012 18:00:50 +0200
-Message-ID: <20120120160050.GA25145@zambezi.lan>
-References: <20120120075454.GA2295@elgon.mountain>
- <20120120142437.GA2499@zambezi.lan>
- <20120120152129.GO3356@mwanda>
+From: Vincent Vanackere <vincent.vanackere@gmail.com>
+Subject: Re: [BUG - btrfs] kernel oops in extent_range_uptodate
+Date: Fri, 20 Jan 2012 17:48:57 +0100
+Message-ID: <4F199AF9.4030909@gmail.com>
+References: <4F182BED.3090009@gmail.com> <CAKcLGm9kVOw6D8kPECfhfohH4pAT=09qws7-jRsh1TZJTyh1_A@mail.gmail.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Cc: Chris Mason <chris.mason@oracle.com>, linux-btrfs@vger.kernel.org,
-	kernel-janitors@vger.kernel.org
-To: Dan Carpenter <dan.carpenter@oracle.com>
-Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <20120120152129.GO3356@mwanda>
+Content-Type: text/plain; charset=ISO-8859-1; format=flowed
+Cc: linux-btrfs@vger.kernel.org,
+	Linux kernel mailing list <linux-kernel@vger.kernel.org>
+To: Mitch Harder <mitch.harder@sabayonlinux.org>
+Return-path: <linux-kernel-owner@vger.kernel.org>
+In-Reply-To: <CAKcLGm9kVOw6D8kPECfhfohH4pAT=09qws7-jRsh1TZJTyh1_A@mail.gmail.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Fri, Jan 20, 2012 at 06:21:29PM +0300, Dan Carpenter wrote:
-> On Fri, Jan 20, 2012 at 04:24:37PM +0200, Ilya Dryomov wrote:
-> > --- a/fs/btrfs/volumes.c
-> > +++ b/fs/btrfs/volumes.c
-> > @@ -2375,12 +2375,11 @@ static int should_balance_chunk(struct btrfs_root *root,
-> >  	struct btrfs_balance_control *bctl = root->fs_info->balance_ctl;
-> >  	struct btrfs_balance_args *bargs = NULL;
-> >  	u64 chunk_type = btrfs_chunk_type(leaf, chunk);
-> > +	u64 mask = chunk_type & BTRFS_BLOCK_GROUP_TYPE_MASK;
-> >  
-> >  	/* type filter */
-> > -	if (!((chunk_type & BTRFS_BLOCK_GROUP_TYPE_MASK) &
-> > -	      (bctl->flags & BTRFS_BALANCE_TYPE_MASK))) {
-> > +	if (((bctl->flags & BTRFS_BALANCE_TYPE_MASK) & mask) != mask)
-> 
-> I don't know if it matters, but semantically this is not
-> equivalent to the original.  If mask has no flags set then this will
-> pass.  This says that every flag in mask but has to be set in
-> ->flags but in the original code, only one needed to be.
+On 01/19/2012 05:24 PM, Mitch Harder wrote:
+> On Thu, Jan 19, 2012 at 8:42 AM, Vincent Vanackere
+> <vincent.vanackere@gmail.com>  wrote:
+>> Hi,
+>>
+>> With the most current git kernel (90a4c0f51e8e44111a926be6f4c87af3938a79c3)
+>> I'm still getting the same reproducible kernel panic when trying to read a
+>> particular file stored on a btrfs filesystem (as seen in the log there are
+>> indeed disk media errors on this disk).
+>> I'd like the "software" part of this to be fixed - btrfs should definitely
+>> not oops even in case of media error - before sending the disk to RMA. Is
+>> there anything I can do to make progress on this ?
+>>
+> Is this kernel compiled with "Compile the kernel with debug info" (in
+> the "Kernel hacking  --->" configuration section)?
+>
+> It would be nice to have the specific line of code passing the NULL pointer.
 
-Yeah, that's why I said "we can strengthen that check".
+The kernel was compiled with debug information but modern linux 
+distribution make it really hard to keep your debug information it seems :-(
+I even had to compile btrfs builtin to keep the line numbers... Anyway, 
+thanks to kexec / kdump I finally managed to get this, hope it helps :
 
-> 
-> The original code was equivalent to:
-> 	if (!(chunk_type & bctl->flags & BTRFS_BLOCK_GROUP_TYPE_MASK &
-> 	      BTRFS_BALANCE_TYPE_MASK)) {...
-> 
-> It's weird that we have BTRFS_BLOCK_GROUP_TYPE_MASK and
-> BTRFS_BALANCE_TYPE_MASK which are the same except that the bitfields
-> have been renamed.  Can't we just reuse the first definition?
-> 
-> But really, if this isn't a bug, then I don't care.  The original is
-> fine, or whatever you choose.
-
-This is not a bug.
-
-Thanks,
-
-		Ilya
-
+crash> bt -l
+PID: 939    TASK: ffff880218a4adc0  CPU: 0   COMMAND: "btrfs-endio-met"
+  #0 [ffff88022316b9e0] machine_kexec at ffffffff810366aa
+     /usr/src/linux/arch/x86/kernel/machine_kexec_64.c: 339
+  #1 [ffff88022316ba50] crash_kexec at ffffffff810b2df8
+     /usr/src/linux/kernel/kexec.c: 1101
+  #2 [ffff88022316bb20] oops_end at ffffffff816afdd8
+     /usr/src/linux/arch/x86/kernel/dumpstack.c: 228
+  #3 [ffff88022316bb50] no_context at ffffffff816a3141
+     /usr/src/linux/arch/x86/mm/fault.c: 690
+  #4 [ffff88022316bbb0] __bad_area_nosemaphore at ffffffff816a3321
+     /usr/src/linux/arch/x86/mm/fault.c: 767
+  #5 [ffff88022316bc10] bad_area_nosemaphore at ffffffff816a3353
+     /usr/src/linux/arch/x86/mm/fault.c: 775
+  #6 [ffff88022316bc20] do_page_fault at ffffffff816b29b6
+     /usr/src/linux/arch/x86/mm/fault.c: 1122
+  #7 [ffff88022316bd30] page_fault at ffffffff816af235
+     /usr/src/linux/arch/x86_64/kernel/entry.S
+     [exception RIP: extent_range_uptodate+89]
+     RIP: ffffffff812c7239  RSP: ffff88022316bde0  RFLAGS: 00010246
+     RAX: 0000000000000000  RBX: 000000df57385000  RCX: 0000000000000000
+     RDX: 0000000000000001  RSI: 000000000df57385  RDI: 0000000000000000
+     RBP: ffff88022316be00   R8: 0000000000000000   R9: ffff88021f2823c0
+     R10: ffff88022034d010  R11: 0000000000001000  R12: ffff880222908410
+     R13: 000000df573853ff  R14: ffff88022316be98  R15: ffff88021a3e72a8
+     ORIG_RAX: ffffffffffffffff  CS: 0010  SS: 0018
+  #8 [ffff88022316be08] end_workqueue_fn at ffffffff812a04b9
+     /usr/src/linux/fs/btrfs/disk-io.c: 1564
+  #9 [ffff88022316be38] worker_loop at ffffffff812d18bf
+     /usr/src/linux/arch/x86/include/asm/atomic.h: 107
+#10 [ffff88022316bee8] kthread at ffffffff81070193
+     /usr/src/linux/kernel/kthread.c: 121
+#11 [ffff88022316bf48] kernel_thread_helper at ffffffff816b8124
+     /usr/src/linux/arch/x86/kernel/entry_64.S: 1163

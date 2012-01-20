@@ -1,191 +1,26 @@
-From: Christian Brunner <chb@muc.de>
-Subject: Btrfs slowdown with ceph (how to reproduce)
-Date: Fri, 20 Jan 2012 13:13:37 +0100
-Message-ID: <CAO47_-8Eb_v8X95KxSZ2H-DNC3hLZkrfq1ce3CAfW2G9CUV5gQ@mail.gmail.com>
-Reply-To: chb@muc.de
+From: =?UTF-8?B?SsOpcsO0bWUgUG91bGlu?= <jeromepoulin@gmail.com>
+Subject: Re: Btrfsck gives me errors
+Date: Fri, 20 Jan 2012 08:38:05 -0500
+Message-ID: <CALJXSJoCGQNAX8zJx6vkPkQyQo4QzriL0eNrMF11NbzVO=NBtg@mail.gmail.com>
+References: <CALJXSJo=zh2beZYRkJRVyvM2h0HnGESTDhganDShxpQBspU==w@mail.gmail.com>
+	<CAG1y0sfc1wBHKumrfBsFqT7PM1=tck4YY66czfci-FJyOZq_4A@mail.gmail.com>
+	<CALJXSJpjT1UCto5aojE6QgNPCTi-1U7+csCf6uUFOm7t+GR5Dg@mail.gmail.com>
+	<CAG1y0sdDfFFuG0sSZHzkYmhGMCugXeN8PT33k8i02Zhnuj1-qg@mail.gmail.com>
 Mime-Version: 1.0
-Content-Type: multipart/mixed; boundary=20cf307d055052208a04b6f49ccb
-Cc: ceph-devel@vger.kernel.org
-To: linux-btrfs@vger.kernel.org
+Content-Type: text/plain; charset=UTF-8
+Cc: linux-btrfs <linux-btrfs@vger.kernel.org>
+To: "Fajar A. Nugraha" <list@fajar.net>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
+In-Reply-To: <CAG1y0sdDfFFuG0sSZHzkYmhGMCugXeN8PT33k8i02Zhnuj1-qg@mail.gmail.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
---20cf307d055052208a04b6f49ccb
-Content-Type: text/plain; charset=ISO-8859-1
+On Fri, Jan 20, 2012 at 2:19 AM, Fajar A. Nugraha <list@fajar.net> wrote:
+> Then again, most fsck feature has been implemented in kernel space so
+> a mount will automatically "fix" some types of problems (somewhat
+> similar to what zfs does, which has no fsck whatsoever). So just watch
+> syslog for any unusual error messages.
 
-As you might know, I have been seeing btrfs slowdowns in our ceph
-cluster for quite some time. Even with the latest btrfs code for 3.3
-I'm still seeing these problems. To make things reproducible, I've now
-written a small test, that imitates ceph's behavior:
-
-On a freshly created btrfs filesystem (2 TB size, mounted with
-"noatime,nodiratime,compress=lzo,space_cache,inode_cache") I'm opening
-100 files. After that I'm doing random writes on these files with a
-sync_file_range after each write (each write has a size of 100 bytes)
-and ioctl(BTRFS_IOC_SYNC) after every 100 writes.
-
-After approximately 20 minutes, write activity suddenly increases
-fourfold and the average request size decreases (see chart in the
-attachment).
-
-You can find IOstat output here: http://pastebin.com/Smbfg1aG
-
-I hope that you are able to trace down the problem with the test
-program in the attachment.
-
-Thanks,
-Christian
-
---20cf307d055052208a04b6f49ccb
-Content-Type: text/x-csrc; charset=US-ASCII; name="btrfstest.c"
-Content-Disposition: attachment; filename="btrfstest.c"
-Content-Transfer-Encoding: base64
-X-Attachment-Id: f_gxn5qvsj0
-
-I2RlZmluZSBfR05VX1NPVVJDRQoKI2luY2x1ZGUgPGludHR5cGVzLmg+CiNpbmNsdWRlIDxzdGRp
-by5oPgojaW5jbHVkZSA8c3RkbGliLmg+CiNpbmNsdWRlIDxzdHJpbmcuaD4KI2luY2x1ZGUgPHN5
-cy90eXBlcy5oPgojaW5jbHVkZSA8c3lzL3N0YXQuaD4KI2luY2x1ZGUgPHN5cy9pb2N0bC5oPgoj
-aW5jbHVkZSA8ZmNudGwuaD4KI2luY2x1ZGUgPHVuaXN0ZC5oPgojaW5jbHVkZSA8YXR0ci94YXR0
-ci5oPgoKI2RlZmluZSBGSUxFX0NPVU5UIDEwMAojZGVmaW5lIEZJTEVfU0laRSA0MTk0MzA0Cgoj
-ZGVmaW5lIFNUUklORyAiMDEyMzQ1Njc4OTAxMjM0NTY3ODkwMTIzNDU2Nzg5MDEyMzQ1Njc4OTAx
-MjM0NTY3ODkwMTIzNDU2Nzg5MDEyMzQ1Njc4OTAxMjM0NTY3ODkwMTIzNDU2Nzg5MDEyMzQ1Njc4
-OSIKCiNkZWZpbmUgQlRSRlNfSU9DVExfTUFHSUMgMHg5NAojZGVmaW5lIEJUUkZTX0lPQ19TWU5D
-ICAgICAgICAgX0lPKEJUUkZTX0lPQ1RMX01BR0lDLCA4KQoKaW50IG1haW4oaW50IGFyZ2MsIGNo
-YXIgKmFyZ3ZbXSkgewogICAgY2hhciAqaW1nbmFtZSA9IGFyZ3ZbMV07IAogICAgY2hhciAqdGVt
-cG5hbWU7CiAgICBpbnQgZmRbRklMRV9DT1VOVF07IAogICAgaW50IGlsZW4sIGk7CgogICAgaWxl
-biA9IHN0cmxlbihpbWduYW1lKTsKICAgIHRlbXBuYW1lID0gbWFsbG9jKGlsZW4gKyA4KTsKCiAg
-ICBmb3IoaT0wOyBpIDwgRklMRV9DT1VOVDsgaSsrKSB7CglzbnByaW50Zih0ZW1wbmFtZSwgaWxl
-biArIDgsICIlcy4laSIsIGltZ25hbWUsIGkpOwogICAgCWZkW2ldID0gb3Blbih0ZW1wbmFtZSwg
-T19DUkVBVHxPX1JEV1IpOwogICAgfQoJCiAgICBpPTA7CiAgICB3aGlsZSgxKSB7CiAgICAgICAg
-aW50IHN0YXJ0ID0gcmFuZCgpICUgRklMRV9TSVpFOwogICAgICAgIGludCBmaWxlID0gcmFuZCgp
-ICUgRklMRV9DT1VOVDsKCiAgICAgICAgcHV0YygnLicsIHN0ZGVycik7CgogICAgICAgIGxzZWVr
-KGZkW2ZpbGVdLCBzdGFydCwgU0VFS19TRVQpOwogICAgICAgIHdyaXRlKGZkW2ZpbGVdLCBTVFJJ
-TkcsIDEwMCk7CiAgICAgICAgc3luY19maWxlX3JhbmdlKGZkW2ZpbGVdLCBzdGFydCwgMTAwLCAw
-eDIpOwoKICAgICAgICB1c2xlZXAoMjUwMDApOwoKICAgICAgICBpKys7CiAgICAgICAgaWYgKGkg
-PT0gMTAwKSB7CiAgICAgICAgICAgIGk9MDsKICAgICAgICAgICAgaW9jdGwoZmRbZmlsZV0sIEJU
-UkZTX0lPQ19TWU5DKTsKICAgICAgICB9CiAgICB9Cn0K
---20cf307d055052208a04b6f49ccb
-Content-Type: image/png; name="btrfstest.png"
-Content-Disposition: attachment; filename="btrfstest.png"
-Content-Transfer-Encoding: base64
-X-Attachment-Id: f_gxn63lqh1
-
-iVBORw0KGgoAAAANSUhEUgAAAfQAAAGQCAMAAABvbWL0AAACi1BMVEX////39/fm5ua/v7+5ubmI
-iIj29vb9/f3+/v75+fm+vr6cnJy0tLTZ2dno6Oi9vb36+vr7+/v8/PzDw8Pz8/P4+PiTk5Ph4eGS
-kpLs7Ozx8fH09PTd3d3e3t7n5+fw8PDKysq3t7ft7e3y8vKZmZmYmJjY2Njc3Nzk5OTr6+vW1tbB
-wcHR0dHa2trj4+OoqKigoKDHx8fQ0NCRkZEAAGYgIHlAQIygoMbAwNmPj4/GxsaAgLLJycnV1dVg
-YJ+ysrLOzs7b29uvr6+1tbXu7u7g4Oytra26urrFxcXT09Pg4OCsrKyxsbG4uLjq6uqwsLDp6emr
-q6u2trbAwMDNzc1AQEAgICBgYGCAgIAAAAD/ycn/rKz/oKD/tbX/7u7/t7f/gID/r6//z8//j4//
-9/f/x8f/l5f/39//h4f/5+f/n5//7+//19f/v7//p6f/xMT/srL/+/v/ior/Wlr/eXn/qqr/w8P/
-1tb/iYn/W1v/Z2f/X1//oqL/oaH/gYH/qan/g4P/5ub/tLT/bGz/yMj/m5v/cnL/uLj/0tL/rq7/
-np7/k5P/mZn/ysr/6ur/jo7/zc3/6+v/kZH/mpr/XFz/vLz/hIT/u7v/lpb/VFT/YmL/09P/pqb/
-fX3/8/P/3t73//fv/+/n/+fT/9Pf/9/P/8+7/7uv/6+n/6ef/5+P/4+H/4eA/4C//7/X/9eX/5eq
-/6q2/7aS/5J5/3la/1rG/8aW/5aa/5rH/8e3/7fD/8Pr/+uy/7Ke/57m/+bW/9be/97z//OD/4Om
-/6aG/4b7//uF/4Wu/65n/2eOjo6np6eenp6Wlpaqqqqampqurq6hoaGzs7O7u7vPz8/ExMTU1NTf
-39/v7+/19fUvSTAkAAAXWklEQVR4nO2dCWMbx3WAl5EoibKsUKJYRqItiZJrktYRSCZI1rQpWQ6V
-BJIsSwgu98ACIEASBJA4qqvmauQeae0mTe+mrdsADFmCJEimaSqTbRM7dlz3Ut3c+Tmdmb0AEMfu
-Yg/MzPtsCIvd5XCAj7Pz3gJ4KwiEjg/s2t0JMMjuXR/Ys3fv3n0SgkbX/ocOPHxQABjk4MMHHvrg
-nu5Dh2Xxyvruzh43uwXYTU/nkT29Xci7Zr33F/rc7RNgN30fOnqsv6PrkGq9t/MRt/sE2M2jnceP
-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
-Fg+wiSxYsv3/ngG8xZzLDEsAAAAASUVORK5CYII=
---20cf307d055052208a04b6f49ccb--
+However it has a way to be fully backed up without losing space which
+have been saved using snapshot and reflinks. Right now, this is not
+production critical data, so I've got backups only of files I think
+are critical to me, not reflinks and snapshots.

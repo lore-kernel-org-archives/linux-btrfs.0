@@ -1,55 +1,93 @@
 From: Swapnil Pimpale <swapnil.pict@gmail.com>
-Subject: Re: Problem with 3.3.0-rc1+: Target filesystem cannot find /sbin/init
-Date: Sun, 22 Jan 2012 18:54:27 +0530
-Message-ID: <CAGZys+QghV8xBygpy--kJytt-ZK6Mt_3SO7zNw4n-EN68EB95Q@mail.gmail.com>
-References: <CAGZys+Q_A0H36+e45f6jTr7VQB=bn3pq1+pCvt=MHumiQP-=QQ@mail.gmail.com>
-	<CAG1y0sfVYTyhvmqe8XmC13zi8qZgOeBsFjqHjc1ox8Y81LvKXg@mail.gmail.com>
+Subject: Compiler warnings: cast from pointer to integer of different size
+Date: Sun, 22 Jan 2012 19:58:43 +0530
+Message-ID: <CAGZys+S5cRjtMwFb_kJsZ8L4eYua8YstYJFBCVQ+8EEZ8F9WgQ@mail.gmail.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=ISO-8859-1
-Cc: kernel-janitors@vger.kernel.org, linux-btrfs@vger.kernel.org
-To: "Fajar A. Nugraha" <list@fajar.net>
+Content-Type: text/plain; charset=windows-1252
+To: linux-btrfs@vger.kernel.org
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <CAG1y0sfVYTyhvmqe8XmC13zi8qZgOeBsFjqHjc1ox8Y81LvKXg@mail.gmail.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-The problem is solved.
-Turns out btrfs is disabled by default.
+I encounter the following compiler warnings while compiling kernel 3.3.=
+0-rc1+
 
-On Sun, Jan 22, 2012 at 5:59 PM, Fajar A. Nugraha <list@fajar.net> wrot=
-e:
-> On Sun, Jan 22, 2012 at 7:21 PM, Swapnil Pimpale <swapnil.pict@gmail.=
-com> wrote:
->> I can successfully boot into Ubuntu 11.10 (3.0.0-14-generic-pae) wit=
-h
->> a btrfs root filesystem and an ext2 /boot partition.
->> But when I installed the latest vanilla (3.3.0-rc1+) and booted into
->
-> where did you get the kernel from? kernel.org snapshot? git? third
-> party package?
->
->> it, the first time the system froze.
->> Next time onwards, I get the following error every time:
->>
->> [ =A0 0.427443] [drm:i915_init] =A0*ERROR* drm/i915 cannot work with=
-out
->> intel_agp module!
->> mount: mounting udev on /dev failed: No such device
->> W: devtmpfs not available, falling back to tmpfs for /dev
->> mount: mounting /dev/disk/by-uuid/f43fdd7a-8ad7-4e96-ab1c-14ba82a432=
-4d
->> on /root failed: No such device
->
-> Do you know how to use your own costom kernel? That error is common
-> when a driver is missing (i.e. not built-in, and not included in
-> initrd). The easiest way to test that is to look at what's in
-> /proc/partitions and /dev/disk/by-id during normal system boot (I
-> assume you still have the old, working Ubuntu kernel?) and during
-> failed boot when you're dropped to busybox. If your root device
-> (sda8?) is not on /proc/partitions, then it's definitely block device
-> driver problem.
->
-> --
-> Fajar
+=2E..
+  CC      fs/btrfs/super.o
+  CC      fs/btrfs/ctree.o
+  CC      fs/btrfs/extent-tree.o
+fs/btrfs/extent-tree.c: In function =91btrfs_check_data_free_space=92:
+fs/btrfs/extent-tree.c:3314:11: warning: cast from pointer to integer
+of different size [-Wpointer-to-int-cast]
+fs/btrfs/extent-tree.c: In function =91btrfs_free_reserved_data_space=92=
+:
+fs/btrfs/extent-tree.c:3335:11: warning: cast from pointer to integer
+of different size [-Wpointer-to-int-cast]
+fs/btrfs/extent-tree.c: In function =91reserve_metadata_bytes=92:
+fs/btrfs/extent-tree.c:3698:13: warning: cast from pointer to integer
+of different size [-Wpointer-to-int-cast]
+fs/btrfs/extent-tree.c:3769:13: warning: cast from pointer to integer
+of different size [-Wpointer-to-int-cast]
+fs/btrfs/extent-tree.c: In function =91block_rsv_release_bytes=92:
+fs/btrfs/extent-tree.c:3915:13: warning: cast from pointer to integer
+of different size [-Wpointer-to-int-cast]
+fs/btrfs/extent-tree.c: In function =91update_global_block_rsv=92:
+fs/btrfs/extent-tree.c:4134:12: warning: cast from pointer to integer
+of different size [-Wpointer-to-int-cast]
+fs/btrfs/extent-tree.c:4141:12: warning: cast from pointer to integer
+of different size [-Wpointer-to-int-cast]
+fs/btrfs/extent-tree.c: In function =91btrfs_trans_release_metadata=92:
+fs/btrfs/extent-tree.c:4194:62: warning: cast from pointer to integer
+of different size [-Wpointer-to-int-cast]
+fs/btrfs/extent-tree.c: In function =91btrfs_update_reserved_bytes=92:
+fs/btrfs/extent-tree.c:4713:14: warning: cast from pointer to integer
+of different size [-Wpointer-to-int-cast]
+  CC      fs/btrfs/print-tree.o
+  CC      fs/btrfs/root-tree.o
+  CC      fs/btrfs/dir-item.o
+  CC      fs/btrfs/file-item.o
+  CC      fs/btrfs/inode-item.o
+  CC      fs/btrfs/inode-map.o
+fs/btrfs/inode-map.c: In function =91btrfs_save_ino_cache=92:
+fs/btrfs/inode-map.c:441:60: warning: cast from pointer to integer of
+different size [-Wpointer-to-int-cast]
+fs/btrfs/inode-map.c:503:60: warning: cast from pointer to integer of
+different size [-Wpointer-to-int-cast]
+  CC      fs/btrfs/disk-io.o
+  CC      fs/btrfs/transaction.o
+fs/btrfs/transaction.c: In function =91start_transaction=92:
+fs/btrfs/transaction.c:330:12: warning: cast from pointer to integer
+of different size [-Wpointer-to-int-cast]
+  CC      fs/btrfs/inode.o
+  CC      fs/btrfs/file.o
+  CC      fs/btrfs/tree-defrag.o
+  CC      fs/btrfs/extent_map.o
+  CC      fs/btrfs/sysfs.o
+  CC      fs/btrfs/struct-funcs.o
+  CC      fs/btrfs/xattr.o
+  CC      fs/btrfs/ordered-data.o
+  CC      fs/btrfs/extent_io.o
+  CC      fs/btrfs/volumes.o
+  CC      fs/btrfs/async-thread.o
+  CC      fs/btrfs/ioctl.o
+  CC      fs/btrfs/locking.o
+  CC      fs/btrfs/orphan.o
+  CC      fs/btrfs/export.o
+  CC      fs/btrfs/tree-log.o
+  CC      fs/btrfs/free-space-cache.o
+  CC      fs/btrfs/zlib.o
+  CC      fs/btrfs/lzo.o
+  CC      fs/btrfs/compression.o
+  CC      fs/btrfs/delayed-ref.o
+  CC      fs/btrfs/relocation.o
+  CC      fs/btrfs/delayed-inode.o
+  CC      fs/btrfs/scrub.o
+  CC      fs/btrfs/reada.o
+  CC      fs/btrfs/backref.o
+  CC      fs/btrfs/ulist.o
+  CC      fs/btrfs/acl.o
+  LD      fs/btrfs/btrfs.o
+  LD      fs/btrfs/built-in.o
+=2E..
 
 --Swapnil
 --

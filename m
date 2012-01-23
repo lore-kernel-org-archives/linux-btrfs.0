@@ -1,74 +1,60 @@
-From: Hugo Mills <hugo@carfax.org.uk>
-Subject: Re: Single drive volume + second drive -> RAID1?
-Date: Mon, 23 Jan 2012 09:25:15 +0000
-Message-ID: <20120123092514.GA5531@carfax.org.uk>
-References: <CAEPoJ-1PXu9Pt9E1EEudJ5NN-RunT4POJtjzo=BVRiOn_F97ng@mail.gmail.com>
- <CAEPoJ-34AmiaRpSCk4Whby4gDM6PSKYRyLHmG1my5_WFODaNrQ@mail.gmail.com>
+From: "Markus F.X.J. Oberhumer" <markus@oberhumer.com>
+Subject: ANN: linux-kernel-lzo-2.06.20120123 - update LZO to v2.06
+Date: Mon, 23 Jan 2012 17:19:40 +0100
+Message-ID: <4F1D889C.2050706@oberhumer.com>
+References: <1326414530-10789-1-git-send-email-andi@firstfloor.org> <4F16DFB0.2060404@oberhumer.com>
 Mime-Version: 1.0
-Content-Type: multipart/signed; micalg=pgp-sha1;
-	protocol="application/pgp-signature"; boundary="bg08WKrSYDhXBjb5"
-Cc: linux-btrfs@vger.kernel.org
-To: James <torpesco@gmail.com>
+Content-Type: text/plain; charset=ISO-8859-1
+Cc: Andi Kleen <andi@firstfloor.org>, chris.mason@oracle.com,
+	linux-btrfs@vger.kernel.org, Nitin Gupta <ngupta@vflare.org>,
+	Richard Purdie <rpurdie@openedhand.com>
+To: linux-kernel@vger.kernel.org
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <CAEPoJ-34AmiaRpSCk4Whby4gDM6PSKYRyLHmG1my5_WFODaNrQ@mail.gmail.com>
+In-Reply-To: <4F16DFB0.2060404@oberhumer.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
+Hi,
 
---bg08WKrSYDhXBjb5
-Content-Type: text/plain; charset=iso-8859-1
-Content-Disposition: inline
-Content-Transfer-Encoding: quoted-printable
+I've prepared a small package that updates the LZO version in the Linux
+kernel to LZO v2.06.
 
-On Mon, Jan 23, 2012 at 12:52:11AM -0800, James wrote:
-> On Mon, Jan 23, 2012 at 12:36 AM, James <torpesco@gmail.com> wrote:
-> > I bought one drive to replace the failing one. I'd like to end up with
-> > RAID1. Back in July I set up a server for my brother and (unless I'm
-> > forgetting a different path we ended up taking), I thought what I did
-> > was:
-> > =A01. mkfs.btrfs on a single drive but tell it to use RAID1
-> > =A02. copy data on
-> > =A03. once the second drive for the RAID1 was available, add it to the
-> > volume and rebalance (or something)
+Please get it from:
 
-   Why not just create the filesystem as RAID-1 in the first place?
+  http://www.oberhumer.com/opensource/lzo/download/Testing/linux-kernel-lzo-2.06.20120123.tar.gz
 
-# mkfs.btrfs -d raid1 -m raid1 /dev/sda1 /dev/sdb1
+As stated in the README, its main purpose is to allow easy benchmarking of the
+latest LZO versions - these do feature some nice speed improvements, and while
+I have done a lot of synthetic benchmarking I'm really very curious and
+appreciate feedback on "real-world" performance numbers like usage in
+btrfs and zram.
 
-   Then you can restore from your backups. You do have backups, right?
-(Remember, this is a filesystem still marked as "experimental").
+Share and enjoy,
+Markus
 
-> I must be mixing memories. Maybe that's what I did to end up with the
-> volume that turned out to be RAID0 for the data. On a whim, even
-> thought btrfs filesystem df /path showed no indications of RAID after
-> adding the second drive, I issued a balance command. I ran 'df' right
-> away and now see the results I don't want -- RAID0 data, RAID1
-> metadata. Ctrl-C doesn't seem to be aborting the balance.
+http://www.oberhumer.com/opensource/lzo/
 
-   Yes, balances are not interruptible right now. The restriper
-patches (in 3.3-rc1) will allow you to monitor balance progress and
-stop/restart them. They will also allow you to change RAID levels on
-the fly, which is what you were asking for in the first place.
+On 2012-01-18 16:05, Markus F.X.J. Oberhumer wrote:
+> On 2012-01-13 01:28, Andi Kleen wrote:
+>> Here's a slightly updated version of the BTRFS snappy interface.
+>> snappy is a faster compression algorithm that provides similar
+>> compression as LZO, but generally better performance.
+> 
+> I'd like to note that the LZO version in the current Linux kernel is
+> rather outdated - it seems to be based on the 2005 release.
+> 
+> In fact the latest version LZO 2.06 does compress both slightly faster and
+> better than snappy 1.0.4 when benchmarking the Calgary and Silesia
+> compression corpus (tested with gcc 4.6 on Nehalem & Sandy Bridge).
+> 
+> Furthermore please be aware that from a pure compression point of view
+> snappy et al. are very close cousins of LZO (strictly byte-aligned LZ77)
+> that mainly differ in implementation issues like using a table to
+> number of branches - and indeed similar optimizations could be applied
+> to any version.
+> 
+> I'm not sure if there is an official kernel maintainer of LZO, but I'd
+> offer to assist you updating to the latest version and eliminating
+> any possible performance issues.
 
-   Hugo.
-
---=20
-=3D=3D=3D Hugo Mills: hugo@... carfax.org.uk | darksatanic.net | lug.org.uk=
- =3D=3D=3D
-  PGP key: 515C238D from wwwkeys.eu.pgp.net or http://www.carfax.org.uk
-    --- There's an infinite number of monkeys outside who want to ---   =20
-               talk to us about this new script for Hamlet              =20
-                           they've worked out!                          =20
-
---bg08WKrSYDhXBjb5
-Content-Type: application/pgp-signature; name="signature.asc"
-Content-Description: Digital signature
-
------BEGIN PGP SIGNATURE-----
-Version: GnuPG v1.4.11 (GNU/Linux)
-
-iD8DBQFPHSd6IKyzvlFcI40RArfSAJ9D+4XCNPsLB4S8a61iGV0siEp2zwCfUOyd
-QdecUjlVDQs9nseUA3ALNcE=
-=6JUf
------END PGP SIGNATURE-----
-
---bg08WKrSYDhXBjb5--
+-- 
+Markus Oberhumer, <markus@oberhumer.com>, http://www.oberhumer.com/

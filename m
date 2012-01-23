@@ -1,62 +1,70 @@
-From: Chris Mason <chris.mason@oracle.com>
-Subject: Re: Btrfs slowdown with ceph (how to reproduce)
-Date: Mon, 23 Jan 2012 13:50:40 -0500
-Message-ID: <20120123185040.GH4387@shiny>
-References: <CAO47_-8Eb_v8X95KxSZ2H-DNC3hLZkrfq1ce3CAfW2G9CUV5gQ@mail.gmail.com>
- <20120123181928.GA3724@localhost.localdomain>
+From: Nitin Gupta <ngupta@vflare.org>
+Subject: Re: ANN: linux-kernel-lzo-2.06.20120123 - update LZO to v2.06
+Date: Mon, 23 Jan 2012 14:12:42 -0500
+Message-ID: <4F1DB12A.7010001@vflare.org>
+References: <1326414530-10789-1-git-send-email-andi@firstfloor.org> <4F16DFB0.2060404@oberhumer.com> <4F1D889C.2050706@oberhumer.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Cc: Christian Brunner <chb@muc.de>, linux-btrfs@vger.kernel.org,
-	ceph-devel@vger.kernel.org
-To: Josef Bacik <josef@redhat.com>
-Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <20120123181928.GA3724@localhost.localdomain>
+Content-Type: text/plain; charset=ISO-8859-1
+Cc: linux-kernel@vger.kernel.org, Andi Kleen <andi@firstfloor.org>,
+	chris.mason@oracle.com, linux-btrfs@vger.kernel.org,
+	Richard Purdie <rpurdie@openedhand.com>
+To: "Markus F.X.J. Oberhumer" <markus@oberhumer.com>
+Return-path: <linux-kernel-owner@vger.kernel.org>
+In-Reply-To: <4F1D889C.2050706@oberhumer.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Mon, Jan 23, 2012 at 01:19:29PM -0500, Josef Bacik wrote:
-> On Fri, Jan 20, 2012 at 01:13:37PM +0100, Christian Brunner wrote:
-> > As you might know, I have been seeing btrfs slowdowns in our ceph
-> > cluster for quite some time. Even with the latest btrfs code for 3.3
-> > I'm still seeing these problems. To make things reproducible, I've now
-> > written a small test, that imitates ceph's behavior:
-> > 
-> > On a freshly created btrfs filesystem (2 TB size, mounted with
-> > "noatime,nodiratime,compress=lzo,space_cache,inode_cache") I'm opening
-> > 100 files. After that I'm doing random writes on these files with a
-> > sync_file_range after each write (each write has a size of 100 bytes)
-> > and ioctl(BTRFS_IOC_SYNC) after every 100 writes.
-> > 
-> > After approximately 20 minutes, write activity suddenly increases
-> > fourfold and the average request size decreases (see chart in the
-> > attachment).
-> > 
-> > You can find IOstat output here: http://pastebin.com/Smbfg1aG
-> > 
-> > I hope that you are able to trace down the problem with the test
-> > program in the attachment.
->  
-> Ran it, saw the problem, tried the dangerdonteveruse branch in Chris's tree and
-> formatted the fs with 64k node and leaf sizes and the problem appeared to go
-> away.  So surprise surprise fragmentation is biting us in the ass.  If you can
-> try running that branch with 64k node and leaf sizes with your ceph cluster and
-> see how that works out.  Course you should only do that if you dont mind if you
-> lose everything :).  Thanks,
+Hi Markus,
+
+Thanks for the patches!
+
+On 01/23/2012 11:19 AM, Markus F.X.J. Oberhumer wrote:
+
+> Hi,
+> 
+> I've prepared a small package that updates the LZO version in the Linux
+> kernel to LZO v2.06.
+> 
+> Please get it from:
+> 
+>   http://www.oberhumer.com/opensource/lzo/download/Testing/linux-kernel-lzo-2.06.20120123.tar.gz
+> 
+> As stated in the README, its main purpose is to allow easy benchmarking of the
+> latest LZO versions - these do feature some nice speed improvements, and while
+> I have done a lot of synthetic benchmarking I'm really very curious and
+> appreciate feedback on "real-world" performance numbers like usage in
+> btrfs and zram.
 > 
 
-Please keep in mind this branch is only out there for development, and
-it really might have huge flaws.  scrub doesn't work with it correctly
-right now, and the IO error recovery code is probably broken too.
+I will soon integrate them with zram and get some performance numbers.
 
-Long term though, I think the bigger block sizes are going to make a
-huge difference in these workloads.
+Thanks,
+Nitin
 
-If you use the very dangerous code:
 
-mkfs.btrfs -l 64k -n 64k /dev/xxx
 
-(-l is leaf size, -n is node size).
-
-64K is the max right now, 32K may help just as much at a lower CPU cost.
-
--chris
-
+> 
+> http://www.oberhumer.com/opensource/lzo/
+> 
+> On 2012-01-18 16:05, Markus F.X.J. Oberhumer wrote:
+>> On 2012-01-13 01:28, Andi Kleen wrote:
+>>> Here's a slightly updated version of the BTRFS snappy interface.
+>>> snappy is a faster compression algorithm that provides similar
+>>> compression as LZO, but generally better performance.
+>>
+>> I'd like to note that the LZO version in the current Linux kernel is
+>> rather outdated - it seems to be based on the 2005 release.
+>>
+>> In fact the latest version LZO 2.06 does compress both slightly faster and
+>> better than snappy 1.0.4 when benchmarking the Calgary and Silesia
+>> compression corpus (tested with gcc 4.6 on Nehalem & Sandy Bridge).
+>>
+>> Furthermore please be aware that from a pure compression point of view
+>> snappy et al. are very close cousins of LZO (strictly byte-aligned LZ77)
+>> that mainly differ in implementation issues like using a table to
+>> number of branches - and indeed similar optimizations could be applied
+>> to any version.
+>>
+>> I'm not sure if there is an official kernel maintainer of LZO, but I'd
+>> offer to assist you updating to the latest version and eliminating
+>> any possible performance issues.
+> 

@@ -1,36 +1,49 @@
-From: David Sterba <dave@jikos.cz>
-Subject: Re: Updated btrfs/crypto snappy interface ready for merging
-Date: Wed, 25 Jan 2012 12:30:48 +0100
-Message-ID: <20120125113048.GL7322@twin.jikos.cz>
-References: <1326414530-10789-1-git-send-email-andi@firstfloor.org> <20120117090746.GD7322@twin.jikos.cz> <loom.20120118T155934-197@post.gmane.org> <loom.20120124T180109-491@post.gmane.org>
-Reply-To: dave@jikos.cz
-Mime-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Cc: linux-btrfs@vger.kernel.org
-To: Hugo Chevrain <hugochevrain@gmail.com>
+From: Jan Kara <jack@suse.cz>
+Subject: [PATCH] btrfs: Fix busyloops in transaction waiting code
+Date: Wed, 25 Jan 2012 15:31:46 +0100
+Message-ID: <1327501906-7646-1-git-send-email-jack@suse.cz>
+Cc: linux-btrfs@vger.kernel.org, Jan Kara <jack@suse.cz>,
+	stable@kernel.org
+To: Chris Mason <chris.mason@oracle.com>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <loom.20120124T180109-491@post.gmane.org>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Tue, Jan 24, 2012 at 05:03:16PM +0000, Hugo Chevrain wrote:
-> > evergreen writes:
-> > > 
-> > 
-> > Although there is LessFS's Mark Ruijter :
-> > http://www.lessfs.com/wordpress/?p=684&cpage=1#comment-3114
-> > 
-> > "On average the speeds appear to be 48% faster then snappy."
-> > Sounds promising...
-> > 
-> > --
-> 
-> Well, it seems that the performance is really good.
-> Apparently, LZ4 has displaced Snappy as speed champion for LessFS.
-> 
-> http://www.lessfs.com/wordpress/?p=688
+wait_log_commit() and wait_for_writer() were using slightly different
+conditions for deciding whether they should call schedule() and whether they
+should continue in the wait loop. Thus it could happen that we busylooped when
+the first condition was not true while the second one was. That is burning CPU
+cycles needlessly and is deadly on UP machines...
 
-I'm preparing a LZ4 on top of Chris' snappy branch to have some testbed
-for comparing and benchmarking. I'll send it to list after a few tests.
+CC: stable@kernel.org
+Signed-off-by: Jan Kara <jack@suse.cz>
+---
+ fs/btrfs/tree-log.c |    6 ++++--
+ 1 files changed, 4 insertions(+), 2 deletions(-)
 
+diff --git a/fs/btrfs/tree-log.c b/fs/btrfs/tree-log.c
+index cb877e0..966cc74 100644
+--- a/fs/btrfs/tree-log.c
++++ b/fs/btrfs/tree-log.c
+@@ -1957,7 +1957,8 @@ static int wait_log_commit(struct btrfs_trans_handle *trans,
+ 
+ 		finish_wait(&root->log_commit_wait[index], &wait);
+ 		mutex_lock(&root->log_mutex);
+-	} while (root->log_transid < transid + 2 &&
++	} while (root->fs_info->last_trans_log_full_commit !=
++		 trans->transid && root->log_transid < transid + 2 &&
+ 		 atomic_read(&root->log_commit[index]));
+ 	return 0;
+ }
+@@ -1966,7 +1967,8 @@ static int wait_for_writer(struct btrfs_trans_handle *trans,
+ 			   struct btrfs_root *root)
+ {
+ 	DEFINE_WAIT(wait);
+-	while (atomic_read(&root->log_writers)) {
++	while (root->fs_info->last_trans_log_full_commit !=
++	       trans->transid && atomic_read(&root->log_writers)) {
+ 		prepare_to_wait(&root->log_writer_wait,
+ 				&wait, TASK_UNINTERRUPTIBLE);
+ 		mutex_unlock(&root->log_mutex);
+-- 
+1.7.1
 
-david

@@ -1,37 +1,21 @@
-From: Andi Kleen <andi@firstfloor.org>
-Subject: Re: ANN: linux-kernel-lzo-2.06.20120123 - update LZO to v2.06
-Date: Wed, 25 Jan 2012 02:36:18 +0100
-Message-ID: <20120125013618.GA11715@one.firstfloor.org>
-References: <1326414530-10789-1-git-send-email-andi@firstfloor.org> <4F16DFB0.2060404@oberhumer.com> <4F1D889C.2050706@oberhumer.com>
+From: Anand Jain <Anand.Jain@oracle.com>
+Subject: Re: can't access diagrams on wiki
+Date: Wed, 25 Jan 2012 10:37:47 +0800
+Message-ID: <4F1F6AFB.6010906@oracle.com>
+References: <4EC09171.8030609@getsu.com> <20111114075648.GP28749@carfax.org.uk>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Cc: linux-kernel@vger.kernel.org, Andi Kleen <andi@firstfloor.org>,
-	chris.mason@oracle.com, linux-btrfs@vger.kernel.org,
-	Nitin Gupta <ngupta@vflare.org>,
-	Richard Purdie <rpurdie@openedhand.com>,
-	David Sterba <dave@jikos.cz>
-To: "Markus F.X.J. Oberhumer" <markus@oberhumer.com>
+Content-Type: text/plain; charset=ISO-8859-1; format=flowed
+To: Hugo Mills <hugo@carfax.org.uk>,
+	"J. David Beutel" <list@getsu.com>, linux-btrfs@vger.kernel.org
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <4F1D889C.2050706@oberhumer.com>
+In-Reply-To: <20111114075648.GP28749@carfax.org.uk>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Mon, Jan 23, 2012 at 05:19:40PM +0100, Markus F.X.J. Oberhumer wrote:
-> Hi,
-> 
-> I've prepared a small package that updates the LZO version in the Linux
-> kernel to LZO v2.06.
 
-I ran benchmarks on the new miniLZO and LZ4 on 64bit. LZ4 is generally slower 
-than snappy/lzo in the micro benchmarks. The new LZO is better than the old
-one, but still loses to snappy most of the time (but often by very
-small amounts only)
+> The wiki on kernel.org is in read-only mode
+> [1] http://btrfs.ipv5.de/
 
-Will be worth checking the new LZO will the full distribution boot test.
+  Is wiki still in read only mode? I am able to login,
+  but there isn't any link to create new page ?
 
-I agree it's definitely a good idea to update the kernel version.
-However I must say it would be a major project to bring it up
-to kernel coding standards.
-
-snappy is still interesting, but much less so than it was before.
-
--Andi
+thanks, Anand

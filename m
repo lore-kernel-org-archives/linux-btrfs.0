@@ -1,49 +1,53 @@
-From: Jan Kara <jack@suse.cz>
-Subject: [PATCH] btrfs: Fix busyloops in transaction waiting code
-Date: Wed, 25 Jan 2012 15:31:46 +0100
-Message-ID: <1327501906-7646-1-git-send-email-jack@suse.cz>
-Cc: linux-btrfs@vger.kernel.org, Jan Kara <jack@suse.cz>,
-	stable@kernel.org
-To: Chris Mason <chris.mason@oracle.com>
+From: Mitch Harder <mitch.harder@sabayonlinux.org>
+Subject: [PATCH] Btrfs: Check for NULL page in extent_range_uptodate
+Date: Wed, 25 Jan 2012 13:03:44 -0600
+Message-ID: <1327518224-4103-1-git-send-email-mitch.harder@sabayonlinux.org>
+Mime-Version: 1.0
+Cc: Mitch Harder <mitch.harder@sabayonlinux.org>
+To: linux-btrfs@vger.kernel.org
 Return-path: <linux-btrfs-owner@vger.kernel.org>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-wait_log_commit() and wait_for_writer() were using slightly different
-conditions for deciding whether they should call schedule() and whether they
-should continue in the wait loop. Thus it could happen that we busylooped when
-the first condition was not true while the second one was. That is burning CPU
-cycles needlessly and is deadly on UP machines...
+A user has encountered a NULL pointer kernel oops in btrfs when
+encountering media errors.  The problem has been identified
+as an unhandled NULL pointer returned from find_get_page().
+This modification simply checks for a NULL page, and returns
+with an error if found (the extent_range_uptodate() function
+returns 1 on errors).
 
-CC: stable@kernel.org
-Signed-off-by: Jan Kara <jack@suse.cz>
+After testing this patch, the user reported that the error with
+the NULL pointer oops was solved.  However, there is still a
+remaining problem with a thread becoming stuck in
+wait_on_page_locked(page) in the read_extent_buffer_pages(...)
+function in extent_io.c
+
+       for (i = start_i; i < num_pages; i++) {
+               page = extent_buffer_page(eb, i);
+               wait_on_page_locked(page);
+               if (!PageUptodate(page))
+                       ret = -EIO;
+       }
+
+This patch leaves the issue with the locked page yet to be resolved.
+
+Signed-off-by: Mitch Harder <mitch.harder@sabayonlinux.org>
 ---
- fs/btrfs/tree-log.c |    6 ++++--
- 1 files changed, 4 insertions(+), 2 deletions(-)
+ fs/btrfs/extent_io.c |    2 ++
+ 1 files changed, 2 insertions(+), 0 deletions(-)
 
-diff --git a/fs/btrfs/tree-log.c b/fs/btrfs/tree-log.c
-index cb877e0..966cc74 100644
---- a/fs/btrfs/tree-log.c
-+++ b/fs/btrfs/tree-log.c
-@@ -1957,7 +1957,8 @@ static int wait_log_commit(struct btrfs_trans_handle *trans,
- 
- 		finish_wait(&root->log_commit_wait[index], &wait);
- 		mutex_lock(&root->log_mutex);
--	} while (root->log_transid < transid + 2 &&
-+	} while (root->fs_info->last_trans_log_full_commit !=
-+		 trans->transid && root->log_transid < transid + 2 &&
- 		 atomic_read(&root->log_commit[index]));
- 	return 0;
- }
-@@ -1966,7 +1967,8 @@ static int wait_for_writer(struct btrfs_trans_handle *trans,
- 			   struct btrfs_root *root)
- {
- 	DEFINE_WAIT(wait);
--	while (atomic_read(&root->log_writers)) {
-+	while (root->fs_info->last_trans_log_full_commit !=
-+	       trans->transid && atomic_read(&root->log_writers)) {
- 		prepare_to_wait(&root->log_writer_wait,
- 				&wait, TASK_UNINTERRUPTIBLE);
- 		mutex_unlock(&root->log_mutex);
+diff --git a/fs/btrfs/extent_io.c b/fs/btrfs/extent_io.c
+index 9d09a4f..fcf77e1 100644
+--- a/fs/btrfs/extent_io.c
++++ b/fs/btrfs/extent_io.c
+@@ -3909,6 +3909,8 @@ int extent_range_uptodate(struct extent_io_tree *tree,
+ 	while (start <= end) {
+ 		index = start >> PAGE_CACHE_SHIFT;
+ 		page = find_get_page(tree->mapping, index);
++		if (!page)
++			return 1;
+ 		uptodate = PageUptodate(page);
+ 		page_cache_release(page);
+ 		if (!uptodate) {
 -- 
-1.7.1
+1.7.3.4
 

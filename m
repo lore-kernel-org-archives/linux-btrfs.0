@@ -1,81 +1,69 @@
-From: Duncan <1i5t5.duncan@cox.net>
-Subject: Re: Trying to mount RAID1 degraded with removed disk -> open_ctree
- failed
-Date: Thu, 26 Jan 2012 11:17:33 +0000 (UTC)
-Message-ID: <pan.2012.01.26.11.17.33@cox.net>
-References: <jfh8ja$pa$1@dough.gmane.org>
+From: Jan Schmidt <list.btrfs@jan-o-sch.net>
+Subject: Re: [PATCH 12/12] Btrfs: Fix file clone when source offset is not
+ 0
+Date: Thu, 26 Jan 2012 14:52:32 +0100
+Message-ID: <4F215AA0.8040505@jan-o-sch.net>
+References: <4D412FE6.7050101@cn.fujitsu.com> <4D4130D4.2000001@cn.fujitsu.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset=UTF-8
-To: linux-btrfs@vger.kernel.org
+Cc: Chris Mason <chris.mason@oracle.com>,
+	"linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
+To: Li Zefan <lizf@cn.fujitsu.com>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
+In-Reply-To: <4D4130D4.2000001@cn.fujitsu.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Dirk Lutzebaeck posted on Sun, 22 Jan 2012 16:05:14 +0100 as excerpted:
+I was looking at the clone range ioctl and have some remarks:
 
-> I have setup a RAID1 using 3 devices (500G each) on separate disks.
-> After removing one disk physically the filesystem cannot be mounted in
-> degraded nor in recovery mode.
+On 27.01.2011 09:46, Li Zefan wrote:
+> diff --git a/fs/btrfs/ioctl.c b/fs/btrfs/ioctl.c
+> index f87552a..1b61dab 100644
+> --- a/fs/btrfs/ioctl.c
+> +++ b/fs/btrfs/ioctl.c
+> @@ -1788,7 +1788,10 @@ static noinline long btrfs_ioctl_clone(struct file *file, unsigned long srcfd,
+>  
+>  			memcpy(&new_key, &key, sizeof(new_key));
+>  			new_key.objectid = inode->i_ino;
+> -			new_key.offset = key.offset + destoff - off;
+> +			if (off <= key.offset)
+> +				new_key.offset = key.offset + destoff - off;
+> +			else
+> +				new_key.offset = destoff;
+						 ^^^^^^^
+1) This looks spurious to me. What if destoff isn't aligned? That's what
+the "key.offset - off" code above is for. Before the patch, the code
+didn't work at all, I agree. But this fix can only work for aligned
+requests.
 
-> - latest kernel 3.2.1 and btrfs-tools on xubuntu 11.10
+2) The error in new_key also has propagated to the extent item's backref
+and wasn't fixed there. I did a range clone and ended up with an extent
+item like that:
+        item 30 key (1318842368 EXTENT_ITEM 131072) itemoff 1047
+itemsize 169
+                extent refs 8 gen 11103 flags 1
+[...]
+                extent data backref root 257 objectid 272 offset
+18446744073709494272 count 1
 
-> What is happening? RAID1 should be mountable degraded with one
-> missing/removed device.
+The last offset (equal to -14 * 4k) is obviously wrong. I didn't figure
+out how the variables are computed, but it looks like there's something
+wrong with the "datao" u64 to me.
 
-Note that I'm only researching btrfs for my own systems at this point and 
-am not using it yet.  However, because I *AM* researching it and already 
-read thru most of the wiki documentation, it's fresh in mind.
+3) Then, there's this code comment:
 
-Here's what the wiki says, tho of course it could be outdated:
+2180   /*
+2181    * TODO:
+2186    * - allow ranges within the same file to be cloned (provided
+2187    *   they don't overlap)?
+2188    */
 
-https://btrfs.wiki.kernel.org/
+This should be safe to do. Even with the current interface, we only
+check for inode equality. If they differ, cloning is permitted. Make a
+full-file clone, and you'll end up with two inodes referring to the same
+extent.
 
->From the multiple devices page:
+Detection of overlapping areas seems to be missing, though and should be
+added. Until that, the inode check stands as a (very weak) protection
+against overlapping clone requests.
 
->> By default, metadata will be mirrored across two devices and data will
->> be striped across all of the devices present.
-
-Question:  Did you specify -m raid1 -d raid1 when you did the mkfs.btrfs?
-
-While the -m raid1 would be the default given multiple devices, the -d 
-raid1 is not.  If you didn't specify -d raid1, you'll have raid0/striped 
-data with only the metadata being raid1/mirrored, thus explaining the 
-problem.
-
-
-At least with all devices present, the following should show the raid 
-level actually used (from the use cases page):
-
->> On a 2.6.37 or later kernel, use
->> 
->> btrfs fi df /mountpoint
->> 
->> The required support was broken accidentally in earlier kernels,
->> but has now been fixed.
-
-Also note since you're running a 3-device btrfs-raid-1, tho it shouldn't 
-affect a single device dropout, from the sysadmin guide page (near the 
-bottom of the raid and data replication section):
-
->> With RAID-1 and RAID-10, only two copies of each byte of data are
->> written, regardless of how many block devices are actually in use
->> on the filesystem.
-
-IOW, unlike standard or kernel/md raid-1, that 3-device btrfs-raid-1 will 
-**NOT** protect you if two of the three devices go bad before you've had 
-a chance to bring in and balance to a replacement for the first bad 
-device.
-
-As I said I'm just now researching my own btrfs upgrade, and don't know 
-for sure whether that's true or not, but if it is, it's a HUGE negative 
-for me, as I'm currently running 4-way kernel/md RAID-1 on an aging set 
-of drives, and was hoping to upgrade to btrfs raid-1 for the checksummed 
-integrity.  But given the age of the drives I really don't want to drop 
-below dual redundancy (3 copies), and this two-copies-only (single 
-redundancy) raid-1(-ish) no matter the number of devices, is 
-disappointing indeed!
-
--- 
-Duncan - List replies preferred.   No HTML msgs.
-"Every nonfree program has a lord, a master --
-and if you use the program, he is your master."  Richard Stallman
-
+-Jan

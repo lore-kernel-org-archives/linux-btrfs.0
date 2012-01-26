@@ -1,37 +1,43 @@
-From: Chester <somethingsome2000@gmail.com>
-Subject: Re: Will BTRFS repair or restore data if corrupted?
-Date: Thu, 26 Jan 2012 01:19:15 -0600
-Message-ID: <CAAE6i0j2RQY7JF2vqZtmS1n_AnEBG2oLzVtQwjfYwWLRULt78w@mail.gmail.com>
-References: <4F208FFD.4020508@online.no>
+From: Anand Jain <Anand.Jain@oracle.com>
+Subject: Re: can't access diagrams on wiki
+Date: Thu, 26 Jan 2012 16:53:43 +0800
+Message-ID: <4F211497.2030801@oracle.com>
+References: <4EC09171.8030609@getsu.com> <20111114075648.GP28749@carfax.org.uk> <4F1F6AFB.6010906@oracle.com> <4F1FAF3D.8070708@gmx.net>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=ISO-8859-1
-Cc: linux-btrfs@vger.kernel.org
-To: Waxhead <waxhead@online.no>
+Content-Type: text/plain; charset=ISO-8859-1; format=flowed
+Cc: Hugo Mills <hugo@carfax.org.uk>,
+	"J. David Beutel" <list@getsu.com>, linux-btrfs@vger.kernel.org
+To: Arne Jansen <sensille@gmx.net>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <4F208FFD.4020508@online.no>
+In-Reply-To: <4F1FAF3D.8070708@gmx.net>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Wed, Jan 25, 2012 at 5:27 PM, Waxhead <waxhead@online.no> wrote:
-> Hi,
+
+
+It worked. I missed the point that in mediawiki a
+link-to-the-new page will create a new-page.
+
+Further I hope the new contents created on btrfs.ipv5.de
+will be merged with btrfs.wiki.kernel.org when the latter
+is ready.
+
+thanks, Anand
+
+
+On Wednesday 25,January,2012 03:29 PM, Arne Jansen wrote:
+> On 25.01.2012 03:37, Anand Jain wrote:
+>>
+>>> The wiki on kernel.org is in read-only mode
+>>> [1] http://btrfs.ipv5.de/
+>>
+>>   Is wiki still in read only mode? I am able to login,
+>>   but there isn't any link to create new page ?
+>>
 >
-> From what I have read BTRFS does replace a bad copy of data with a kn=
-own
-> good copy (if it has one). Will BTRFS try to repair the corrupt data =
-or will
-> it simply silently restore the data without the user knowing that a f=
-ile has
-> been "fixed"?
-=46rom what I've seen, it'll quietly restore the data without the user
-knowing. The only indication would be in dmesg where there should be a
-message about incorrect checksums and btrfs fixing it automatically.
+> You mean the wiki  mentioned above? You have to confirm
+> your email address to create and edit pages. This was necessary
+> to slow down spammers :(
 >
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-btrfs=
-" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at =A0http://vger.kernel.org/majordomo-info.html
---
-To unsubscribe from this list: send the line "unsubscribe linux-btrfs" =
-in
-the body of a message to majordomo@vger.kernel.org
-More majordomo info at  http://vger.kernel.org/majordomo-info.html
+> -Arne
+>
+>> thanks, Anand

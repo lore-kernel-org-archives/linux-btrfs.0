@@ -1,43 +1,57 @@
-From: Anand Jain <Anand.Jain@oracle.com>
-Subject: Re: can't access diagrams on wiki
-Date: Thu, 26 Jan 2012 16:53:43 +0800
-Message-ID: <4F211497.2030801@oracle.com>
-References: <4EC09171.8030609@getsu.com> <20111114075648.GP28749@carfax.org.uk> <4F1F6AFB.6010906@oracle.com> <4F1FAF3D.8070708@gmx.net>
+From: Hugo Mills <hugo@carfax.org.uk>
+Subject: Re: Will BTRFS repair or restore data if corrupted?
+Date: Thu, 26 Jan 2012 08:59:38 +0000
+Message-ID: <20120126085938.GC5531@carfax.org.uk>
+References: <4F208FFD.4020508@online.no>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=ISO-8859-1; format=flowed
-Cc: Hugo Mills <hugo@carfax.org.uk>,
-	"J. David Beutel" <list@getsu.com>, linux-btrfs@vger.kernel.org
-To: Arne Jansen <sensille@gmx.net>
+Content-Type: multipart/signed; micalg=pgp-sha1;
+	protocol="application/pgp-signature"; boundary="pAwQNkOnpTn9IO2O"
+Cc: linux-btrfs@vger.kernel.org
+To: Waxhead <waxhead@online.no>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <4F1FAF3D.8070708@gmx.net>
+In-Reply-To: <4F208FFD.4020508@online.no>
 List-ID: <linux-btrfs.vger.kernel.org>
 
 
+--pAwQNkOnpTn9IO2O
+Content-Type: text/plain; charset=us-ascii
+Content-Disposition: inline
 
-It worked. I missed the point that in mediawiki a
-link-to-the-new page will create a new-page.
+On Thu, Jan 26, 2012 at 12:27:57AM +0100, Waxhead wrote:
+> Hi,
+> 
+> From what I have read BTRFS does replace a bad copy of data with a
+> known good copy (if it has one).
 
-Further I hope the new contents created on btrfs.ipv5.de
-will be merged with btrfs.wiki.kernel.org when the latter
-is ready.
+   Correct.
 
-thanks, Anand
+> Will BTRFS try to repair the corrupt data or will it simply silently
+> restore the data without the user knowing that a file has been
+> "fixed"?
 
+   No, it'll just return the good copy and report the failure in the
+system logs. If you want to fix the corrupt data, you need to use
+scrub, which will check everything and fix blocks with failed
+checksums.
 
-On Wednesday 25,January,2012 03:29 PM, Arne Jansen wrote:
-> On 25.01.2012 03:37, Anand Jain wrote:
->>
->>> The wiki on kernel.org is in read-only mode
->>> [1] http://btrfs.ipv5.de/
->>
->>   Is wiki still in read only mode? I am able to login,
->>   but there isn't any link to create new page ?
->>
->
-> You mean the wiki  mentioned above? You have to confirm
-> your email address to create and edit pages. This was necessary
-> to slow down spammers :(
->
-> -Arne
->
->> thanks, Anand
+   Hugo.
+
+-- 
+=== Hugo Mills: hugo@... carfax.org.uk | darksatanic.net | lug.org.uk ===
+  PGP key: 515C238D from wwwkeys.eu.pgp.net or http://www.carfax.org.uk
+          --- ...  one ping(1) to rule them all, and in the ---          
+                         darkness bind(2) them.                          
+
+--pAwQNkOnpTn9IO2O
+Content-Type: application/pgp-signature; name="signature.asc"
+Content-Description: Digital signature
+
+-----BEGIN PGP SIGNATURE-----
+Version: GnuPG v1.4.11 (GNU/Linux)
+
+iD8DBQFPIRX5IKyzvlFcI40RAkw0AJ96hLgKARuBWtoRQQBOqbrj9TMLuwCeKOYU
+RtxyuI1SX8QI3eopQbPINNY=
+=FLoU
+-----END PGP SIGNATURE-----
+
+--pAwQNkOnpTn9IO2O--

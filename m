@@ -1,36 +1,33 @@
-From: Hadmut Danisch <hadmut@danisch.de>
-Subject: Setting options permanently?
-Date: Fri, 27 Jan 2012 16:03:40 +0100
-Message-ID: <4F22BCCC.5090800@danisch.de>
+From: Chris Mason <chris.mason@oracle.com>
+Subject: Re: [PATCH] Btrfs: hold enough space for global_rsv
+Date: Fri, 27 Jan 2012 10:25:29 -0500
+Message-ID: <20120127152529.GA991@shiny>
+References: <1326793919-2712-1-git-send-email-liubo2009@cn.fujitsu.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=ISO-8859-15
-To: linux-btrfs@vger.kernel.org
+Content-Type: text/plain; charset=us-ascii
+Cc: linux-btrfs@vger.kernel.org
+To: Liu Bo <liubo2009@cn.fujitsu.com>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
+In-Reply-To: <1326793919-2712-1-git-send-email-liubo2009@cn.fujitsu.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hi,
+On Tue, Jan 17, 2012 at 05:51:59PM +0800, Liu Bo wrote:
+> I've kept hitting enospc warnings of global_rsv while running defragment on
+> files:
+> btrfs: block rsv returned -28
+> WARNING: at fs/btrfs/extent-tree.c:5984 btrfs_alloc_free_block+0x333/0x340 [btrfs]()
+> ...
+> 
+> I used a fio jobs to create a file with lots of fragments:
+> $ filefrag /mnt/btrfs/foobar
+> /mnt/btrfs/foobar: 66964 extents found
+> 
+> and then "btrfs fi defrag /mnt/btrfs/foobar && sync" would pop the warnings.
+> 
+> I found that the global_rsv size is just not enough for defragment, and didn't
+> find any space leak in using global_rsv, so double it and go ahead.
 
-just a question:
+I haven't pulled this one in yet, mostly because I think we need to take
+a step back and look harder at the numbers.
 
-Mounting options for file systems are usually given on the command line
-or in /etc/fstab.
-
-Both do not work with mobile storage devices like usb hard disks, since
-they are either mounted automatically through the desktop, or manually
-by a user who does not know or remember the mount options for this file
-system. At least it's error prone.
-
-
-
-What happens if a btrfs is mounted sometimes with and sometimes without
-the compression option? I'd guess it generates a mixture of compressed
-and uncompressed files, what is not exactly smart.
-
-Is there a way to set options like compression on a btrfs permanently to
-activate them even when mounted automatically by the desktop or manually
-by a third person?
-
-
-regards
-Hadmut
-
+-chris

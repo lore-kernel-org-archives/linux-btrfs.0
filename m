@@ -1,40 +1,65 @@
-From: Sage Weil <sage@newdream.net>
-Subject: Re: WARNING: at fs/btrfs/inode.c:2222
-Date: Fri, 27 Jan 2012 09:52:33 -0800 (PST)
-Message-ID: <Pine.LNX.4.64.1201270952150.5607@cobra.newdream.net>
-References: <Pine.LNX.4.64.1201270912570.5607@cobra.newdream.net>
- <20120127174042.GF991@shiny>
+From: Chester <somethingsome2000@gmail.com>
+Subject: Re: Setting options permanently?
+Date: Fri, 27 Jan 2012 17:20:32 -0600
+Message-ID: <CAAE6i0gSG4xuyJFQrmfFNh3ojF4GBbsgk7LsN+1XD=9Mp5rSUQ@mail.gmail.com>
+References: <4F22BCCC.5090800@danisch.de>
 Mime-Version: 1.0
-Content-Type: TEXT/PLAIN; charset=US-ASCII
+Content-Type: text/plain; charset=ISO-8859-1
 Cc: linux-btrfs@vger.kernel.org
-To: Chris Mason <chris.mason@oracle.com>
+To: Hadmut Danisch <hadmut@danisch.de>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <20120127174042.GF991@shiny>
+In-Reply-To: <4F22BCCC.5090800@danisch.de>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Fri, 27 Jan 2012, Chris Mason wrote:
-> On Fri, Jan 27, 2012 at 09:31:46AM -0800, Sage Weil wrote:
-> > Has anyone see this one before?  We've been hitting it sporatically for a 
-> > while now, although recently we've been able to trigger pretty easily.  
-> > The result is EINVAL from the snap create ioctl.
-> > 
-> > The kernel is v3.2 + some ceph stuff.
-> > 
-> > The code in question is
-> > 
-> > 		/* if we have links, this was a truncate, lets do that */
-> > 		if (inode->i_nlink) {
-> > 			if (!S_ISREG(inode->i_mode)) {
-> > 				WARN_ON(1);
-> > 				iput(inode);
-> > 				continue;
-> > 			}
-> > 
-> > Is this something obvious, or should we spend some time chasing it down?
-> 
-> This doesn't seem right, we've got an orphan on a directory for a
-> truncate?  The link count is probably 1, but no I haven't seen this.
+On Fri, Jan 27, 2012 at 9:03 AM, Hadmut Danisch <hadmut@danisch.de> wro=
+te:
+> Hi,
+>
+> just a question:
+>
+> Mounting options for file systems are usually given on the command li=
+ne
+> or in /etc/fstab.
+>
+> Both do not work with mobile storage devices like usb hard disks, sin=
+ce
+> they are either mounted automatically through the desktop, or manuall=
+y
+> by a user who does not know or remember the mount options for this fi=
+le
+> system. At least it's error prone.
+>
+>
+>
+> What happens if a btrfs is mounted sometimes with and sometimes witho=
+ut
+> the compression option? I'd guess it generates a mixture of compresse=
+d
+> and uncompressed files, what is not exactly smart.
+>
 
-Okay, looking into it.  Thanks!
+It should be okay to mount with compress or without compress. Even if
+you mount a volume with compressed data without '-o compress' you will
+still be able to correctly read the data (but newly written data will
+not be compressed)
 
-sage
+> Is there a way to set options like compression on a btrfs permanently=
+ to
+> activate them even when mounted automatically by the desktop or manua=
+lly
+> by a third person?
+>
+>
+> regards
+> Hadmut
+>
+> --
+> To unsubscribe from this list: send the line "unsubscribe linux-btrfs=
+" in
+> the body of a message to majordomo@vger.kernel.org
+> More majordomo info at =A0http://vger.kernel.org/majordomo-info.html
+--
+To unsubscribe from this list: send the line "unsubscribe linux-btrfs" =
+in
+the body of a message to majordomo@vger.kernel.org
+More majordomo info at  http://vger.kernel.org/majordomo-info.html

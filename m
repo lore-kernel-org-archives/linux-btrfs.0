@@ -1,14 +1,16 @@
 From: Chris Mason <chris.mason@oracle.com>
 Subject: [GIT PULL] Btrfs fixes
-Date: Fri, 27 Jan 2012 11:31:08 -0500
-Message-ID: <20120127163108.GD991@shiny>
+Date: Fri, 27 Jan 2012 11:34:16 -0500
+Message-ID: <20120127163416.GE991@shiny>
 Mime-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
 To: Linus Torvalds <torvalds@linux-foundation.org>,
 	linux-btrfs <linux-btrfs@vger.kernel.org>,
-	Linux-kernel <linux-kernel@google.com>
-Return-path: <linux-btrfs-owner@vger.kernel.org>
+	Linux-kernel <linux-kernel@vger.kernel.org>
+Return-path: <linux-kernel-owner@vger.kernel.org>
 List-ID: <linux-btrfs.vger.kernel.org>
+
+[ sorry resend without bad auto-complete for lkml ]
 
 Hi Linus,
 

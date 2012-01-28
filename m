@@ -1,68 +1,58 @@
-From: Ben Klein <shacklein@gmail.com>
+From: Roman Mamedov <rm@romanrm.ru>
 Subject: Re: Setting options permanently?
-Date: Sat, 28 Jan 2012 17:05:41 +1100
-Message-ID: <CAJboL97CGufkN=QEtr=ysU83nrq+UuUoEFuL+wJu85Hx+xBEuA@mail.gmail.com>
-References: <4F22BCCC.5090800@danisch.de> <CAAE6i0gSG4xuyJFQrmfFNh3ojF4GBbsgk7LsN+1XD=9Mp5rSUQ@mail.gmail.com>
- <4F234616.6020407@danisch.de> <pan.2012.01.28.03.32.23@cox.net>
+Date: Sat, 28 Jan 2012 14:23:44 +0600
+Message-ID: <20120128142344.6f18c989@natsu>
+References: <4F22BCCC.5090800@danisch.de>
+	<CAAE6i0gSG4xuyJFQrmfFNh3ojF4GBbsgk7LsN+1XD=9Mp5rSUQ@mail.gmail.com>
+	<4F234616.6020407@danisch.de>
+	<pan.2012.01.28.03.32.23@cox.net>
+	<CAJboL97CGufkN=QEtr=ysU83nrq+UuUoEFuL+wJu85Hx+xBEuA@mail.gmail.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=UTF-8
-Cc: linux-btrfs@vger.kernel.org
-To: Duncan <1i5t5.duncan@cox.net>
+Content-Type: multipart/signed; micalg=PGP-SHA1;
+ boundary="Sig_/LmWNF3W+U9D+rElP+1qP.q4"; protocol="application/pgp-signature"
+Cc: Duncan <1i5t5.duncan@cox.net>, linux-btrfs@vger.kernel.org
+To: Ben Klein <shacklein@gmail.com>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <pan.2012.01.28.03.32.23@cox.net>
+In-Reply-To: <CAJboL97CGufkN=QEtr=ysU83nrq+UuUoEFuL+wJu85Hx+xBEuA@mail.gmail.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 28 January 2012 14:32, Duncan <1i5t5.duncan@cox.net> wrote:
-> Hadmut Danisch posted on Sat, 28 Jan 2012 01:49:26 +0100 as excerpted=
-:
->
->> Am 28.01.2012 00:20, schrieb Chester:
->>> It should be okay to mount with compress or without compress. Even =
-if
->>> you mount a volume with compressed data without '-o compress' you w=
-ill
->>> still be able to correctly read the data (but newly written data wi=
-ll
->>> not be compressed)
->>
->> But having both compressed and uncompressed files in the filesystem =
-is
->> exactly what I want to avoid. Not because of reading problems, but t=
-o
->> avoid wasting disk space. I don't have a reading problem. I have a
->> writing problem.
->
-> Having a compression flag in the superblock (probably more than one, =
-thus
-> allowing indication of compression type, etc), which is I guess what
-> you're suggesting, sounds useful to me too. =C2=A0Perhaps it'll get i=
-t, once
-> development settles down a bit and they know enough about what's stil=
-l
-> missing in the existing superblock to be able to intelligently alloca=
-te
-> flags, etc, on a priority basis based on what they then know they nee=
-d.
+--Sig_/LmWNF3W+U9D+rElP+1qP.q4
+Content-Type: text/plain; charset=US-ASCII
+Content-Transfer-Encoding: quoted-printable
 
-mkfs -O some_feature comes to mind. I know mke2fs has that, but I
-haven't yet actually used btrfs; I'm waiting for fsck to be able to
-repair a damaged filesystem.
+On Sat, 28 Jan 2012 17:05:41 +1100
+Ben Klein <shacklein@gmail.com> wrote:
 
-> At this point I can certainly see a reluctance to make that change, t=
-ho,
-> since it's a rather small change to make on its own, and with continu=
-ing
-> tweaks to the compression types and etc, it's worth holding off
-> committing now to what might look like a bad implementation down the
-> line, when it has to continue to be supported.
+> If the compression routine changes in a later kernel/filesystem revision,
 
-This would affect not just a compression-preference option, but
-existing filesystems with compression. If the compression routine
-changes in a later kernel/filesystem revision, then you could end up
-with some files using one routine and others using another. Does btrfs
-currently have an "algorithm" specifier for compressed files?
---
-To unsubscribe from this list: send the line "unsubscribe linux-btrfs" =
-in
-the body of a message to majordomo@vger.kernel.org
-More majordomo info at  http://vger.kernel.org/majordomo-info.html
+There are already two different algorithms, zlib and lzo, and a third one -
+snappy - planned for inclusion.
+
+> then you could end up with some files using one routine and others using =
+another.
+
+Which is absolutely not a problem even right now.
+
+--=20
+With respect,
+Roman
+
+~~~~~~~~~~~~~~~~~~~~~~~~~~~
+"Stallman had a printer,
+with code he could not see.
+So he began to tinker,
+and set the software free."
+
+--Sig_/LmWNF3W+U9D+rElP+1qP.q4
+Content-Type: application/pgp-signature; name=signature.asc
+Content-Disposition: attachment; filename=signature.asc
+
+-----BEGIN PGP SIGNATURE-----
+Version: GnuPG v1.4.11 (GNU/Linux)
+
+iEYEARECAAYFAk8jsJAACgkQTLKSvz+PZwiocwCeN0sJxu7+Fx4S/TNDq69mEnWk
+c1cAoIl1Z1B9GBVd/woqPKQ2VKjy4LeP
+=ZSTH
+-----END PGP SIGNATURE-----
+
+--Sig_/LmWNF3W+U9D+rElP+1qP.q4--

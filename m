@@ -1,75 +1,39 @@
-From: Martin Steigerwald <Martin@lichtvoll.de>
-Subject: Re: [PATCH 3/3] filemap: don't call generic_write_sync for
-	-EIOCBQUEUED
-Date: Sat, 28 Jan 2012 16:08:06 +0100
-Message-ID: <201201281608.07348.Martin@lichtvoll.de>
-References: <1327698949-12616-1-git-send-email-jmoyer@redhat.com>
-	<1327698949-12616-4-git-send-email-jmoyer@redhat.com>
-	(sfid-20120127_225408_201177_50791DCC)
+From: Ben Klein <shacklein@gmail.com>
+Subject: Re: Setting options permanently?
+Date: Sat, 28 Jan 2012 20:24:50 +1100
+Message-ID: <CAJboL96_M7zP+ADvCcZKVkTZavgONXQ2H23sO6BPmvzrD9-0vw@mail.gmail.com>
+References: <4F22BCCC.5090800@danisch.de> <CAAE6i0gSG4xuyJFQrmfFNh3ojF4GBbsgk7LsN+1XD=9Mp5rSUQ@mail.gmail.com>
+ <4F234616.6020407@danisch.de> <pan.2012.01.28.03.32.23@cox.net>
+ <CAJboL97CGufkN=QEtr=ysU83nrq+UuUoEFuL+wJu85Hx+xBEuA@mail.gmail.com> <20120128142344.6f18c989@natsu>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Cc: linux-fsdevel@vger.kernel.org, Jeff Moyer <jmoyer@redhat.com>,
-        linux-ext4@vger.kernel.org, linux-btrfs@vger.kernel.org
-To: xfs@oss.sgi.com
-Return-path: <xfs-bounces@oss.sgi.com>
-In-Reply-To: <1327698949-12616-4-git-send-email-jmoyer@redhat.com>
-List-Unsubscribe: <http://oss.sgi.com/mailman/options/xfs>,
-	<mailto:xfs-request@oss.sgi.com?subject=unsubscribe>
-List-Archive: <http://oss.sgi.com/pipermail/xfs>
-List-Post: <mailto:xfs@oss.sgi.com>
-List-Help: <mailto:xfs-request@oss.sgi.com?subject=help>
-List-Subscribe: <http://oss.sgi.com/mailman/listinfo/xfs>,
-	<mailto:xfs-request@oss.sgi.com?subject=subscribe>
-Errors-To: xfs-bounces@oss.sgi.com
+Content-Type: text/plain; charset=UTF-8
+Cc: Duncan <1i5t5.duncan@cox.net>, linux-btrfs@vger.kernel.org
+To: Roman Mamedov <rm@romanrm.ru>
+Return-path: <linux-btrfs-owner@vger.kernel.org>
+In-Reply-To: <20120128142344.6f18c989@natsu>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Adding linux-btrfs to Cc.
+On 28 January 2012 19:23, Roman Mamedov <rm@romanrm.ru> wrote:
+> On Sat, 28 Jan 2012 17:05:41 +1100
+> Ben Klein <shacklein@gmail.com> wrote:
+>
+>> If the compression routine changes in a later kernel/filesystem revision,
+>
+> There are already two different algorithms, zlib and lzo, and a third one -
+> snappy - planned for inclusion.
+>
+>> then you could end up with some files using one routine and others using another.
+>
+> Which is absolutely not a problem even right now.
 
-Am Freitag, 27. Januar 2012 schrieb Jeff Moyer:
-> Hi,
+My bad :)
 
-Hi,
- 
-> As it stands, generic_file_aio_write will call into generic_write_sync
-> when -EIOCBQUEUED is returned from __generic_file_aio_write. 
-> EIOCBQUEUED indicates that an I/O was submitted but NOT completed. 
-> Thus, we will flush the disk cache, potentially before the write(s)
-> even make it to the disk!  Up until now, this has been the best we
-> could do, as file systems didn't bother to flush the disk cache after
-> an O_SYNC AIO+DIO write.  After applying the prior two patches to xfs
-> and ext4, at least the major two file systems do the right thing.  So,
-> let's go ahead and fix this backwards logic.
-
-Would this need an adaption to BTRFS as well?
-
-Thanks,
-Martin
-
-> Signed-off-by: Jeff Moyer <jmoyer@redhat.com>
-> ---
->  mm/filemap.c |    2 +-
->  1 files changed, 1 insertions(+), 1 deletions(-)
-> 
-> diff --git a/mm/filemap.c b/mm/filemap.c
-> index c4ee2e9..004442f 100644
-> --- a/mm/filemap.c
-> +++ b/mm/filemap.c
-> @@ -2634,7 +2634,7 @@ ssize_t generic_file_aio_write(struct kiocb
-> *iocb, const struct iovec *iov, ret = __generic_file_aio_write(iocb,
-> iov, nr_segs, &iocb->ki_pos); mutex_unlock(&inode->i_mutex);
-> 
-> -	if (ret > 0 || ret == -EIOCBQUEUED) {
-> +	if (ret > 0) {
->  		ssize_t err;
-> 
->  		err = generic_write_sync(file, pos, ret);
-
-
--- 
-Martin 'Helios' Steigerwald - http://www.Lichtvoll.de
-GPG: 03B0 0D6C 0040 0710 4AFA  B82F 991B EAAC A599 84C7
-
-_______________________________________________
-xfs mailing list
-xfs@oss.sgi.com
-http://oss.sgi.com/mailman/listinfo/xfs
+> --
+> With respect,
+> Roman
+>
+> ~~~~~~~~~~~~~~~~~~~~~~~~~~~
+> "Stallman had a printer,
+> with code he could not see.
+> So he began to tinker,
+> and set the software free."

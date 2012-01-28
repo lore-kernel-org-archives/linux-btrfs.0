@@ -1,78 +1,116 @@
 From: Nikolaus Rath <Nikolaus@rath.org>
-Subject: blocked tasks right after mounting (was: Hang when trying to access fs)
-Date: Sat, 28 Jan 2012 10:23:53 -0500
-Message-ID: <87zkd73l6e.fsf@vostro.rath.org>
-References: <874nvf50bm.fsf@vostro.rath.org>
+Subject: Hang when trying to access fs
+Date: Sat, 28 Jan 2012 10:11:25 -0500
+Message-ID: <874nvf50bm.fsf@vostro.rath.org>
 Mime-Version: 1.0
 Content-Type: text/plain; charset=utf-8
 To: linux-btrfs@vger.kernel.org
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <874nvf50bm.fsf@vostro.rath.org> (Nikolaus Rath's message of
-	"Sat, 28 Jan 2012 10:11:25 -0500")
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Nikolaus Rath <Nikolaus@rath.org> writes:
-> Hello,
->
-> When trying to rsync to btrfs, the process just hangs. dmesg output
-> alternates between:
-[...]
+Hello,
 
-I guess I should also mention that this is reproducible, and I don't
-even need to run rsync. Simply mounting the file system produces a
-similar warning soon afterwards:
+When trying to rsync to btrfs, the process just hangs. dmesg output
+alternates between:
 
-[  678.316046] usb 1-4: new high speed USB device number 7 using ehci_h=
-cd
-[  678.448928] usb 1-4: New USB device found, idVendor=3D152d, idProduc=
-t=3D2509
-[  678.448931] usb 1-4: New USB device strings: Mfr=3D10, Product=3D11,=
- SerialNumber=3D3
-[  678.448933] usb 1-4: Product: Usb production
-[  678.448934] usb 1-4: Manufacturer: Jmicron Corp.
-[  678.448936] usb 1-4: SerialNumber: 00A123456789
-[  678.450429] scsi7 : usb-storage 1-4:1.0
-[  681.372710] scsi 7:0:0:0: Direct-Access     WDC WD50 01AALS-00L3B2  =
-  0000 PQ: 0 ANSI: 2 CCS
-[  681.658185] sd 7:0:0:0: [sdg] 976773168 512-byte logical blocks: (50=
-0 GB/465 GiB)
-[  681.658925] sd 7:0:0:0: [sdg] Write Protect is off
-[  681.658929] sd 7:0:0:0: [sdg] Mode Sense: 28 00 00 00
-[  681.659675] sd 7:0:0:0: [sdg] No Caching mode page present
-[  681.659679] sd 7:0:0:0: [sdg] Assuming drive cache: write through
-[  681.662049] sd 7:0:0:0: [sdg] No Caching mode page present
-[  681.662052] sd 7:0:0:0: [sdg] Assuming drive cache: write through
-[  681.670316]  sdg: sdg1
-[  681.673554] sd 7:0:0:0: [sdg] No Caching mode page present
-[  681.673558] sd 7:0:0:0: [sdg] Assuming drive cache: write through
-[  681.673562] sd 7:0:0:0: [sdg] Attached SCSI disk
-[  791.512475] Btrfs loaded
-[  791.513625] device label Videos devid 1 transid 142 /dev/mapper/udis=
-ks-luks-uuid-7adf0c16-c741-485e-86dd-8a209fe4ce85-uid1000
-[  791.567843] btrfs: disk space caching is enabled
-[  960.456073] INFO: task sync:4930 blocked for more than 120 seconds.
-[  960.456077] "echo 0 > /proc/sys/kernel/hung_task_timeout_secs" disab=
-les this message.
-[  960.456080] sync            D ffff8800bfc92f40     0  4930      1 0x=
-00000000
-[  960.456085]  ffff88009f4d5790 0000000000000082 0000000000000000 ffff=
-8800bbf080c0
-[  960.456089]  0000000000012f40 ffff88009f4d7fd8 ffff88009f4d7fd8 ffff=
-88009f4d5790
-[  960.456094]  0000000000000246 000000018132de1c ffff880091d342f0 ffff=
-88008686ae80
-[  960.456098] Call Trace:
-[  960.456117]  [<ffffffffa05aed19>] ? wait_current_trans.isra.22+0xae/=
-0xdd [btrfs]
-[  960.456123]  [<ffffffff8105ec6b>] ? add_wait_queue+0x3c/0x3c
-[  960.456137]  [<ffffffffa05aff82>] ? start_transaction+0x231/0x246 [b=
-trfs]
-[  960.456141]  [<ffffffff81114543>] ? __sync_filesystem+0x6e/0x6e
-[  960.456150]  [<ffffffffa0594357>] ? btrfs_sync_fs+0x79/0x95 [btrfs]
-[  960.456153]  [<ffffffff8111452b>] ? __sync_filesystem+0x56/0x6e
-[  960.456157]  [<ffffffff810f6578>] ? iterate_supers+0x5e/0xab
-[  960.456160]  [<ffffffff811145cd>] ? sys_sync+0x3d/0x52
-[  960.456164]  [<ffffffff81332e12>] ? system_call_fastpath+0x16/0x1b
+Jan 28 09:42:49 vostro kernel: [  360.460076] INFO: task rsync:3484 blo=
+cked for more than 120 seconds.
+Jan 28 09:42:49 vostro kernel: [  360.460079] "echo 0 > /proc/sys/kerne=
+l/hung_task_timeout_secs" disables this message.
+Jan 28 09:42:49 vostro kernel: [  360.460081] rsync           D ffff880=
+09d8d7850     0  3484      1 0x00000004
+Jan 28 09:42:49 vostro kernel: [  360.460085]  ffff88009d8d7850 0000000=
+000000082 0000000000000000 ffff88009b4d1810
+Jan 28 09:42:49 vostro kernel: [  360.460089]  0000000000012f40 ffff880=
+092361fd8 ffff880092361fd8 ffff88009d8d7850
+Jan 28 09:42:49 vostro kernel: [  360.460092]  0000000000000246 fffffff=
+f8132de1c ffff88009b5342f0 ffff880094051e80
+Jan 28 09:42:49 vostro kernel: [  360.460096] Call Trace:
+Jan 28 09:42:49 vostro kernel: [  360.460102]  [<ffffffff8132de1c>] ? _=
+raw_spin_lock_irqsave+0x9/0x25
+Jan 28 09:42:49 vostro kernel: [  360.460118]  [<ffffffffa05afd19>] ? w=
+ait_current_trans.isra.22+0xae/0xdd [btrfs]
+Jan 28 09:42:49 vostro kernel: [  360.460122]  [<ffffffff8105ec6b>] ? a=
+dd_wait_queue+0x3c/0x3c
+Jan 28 09:42:49 vostro kernel: [  360.460132]  [<ffffffffa05b0f82>] ? s=
+tart_transaction+0x231/0x246 [btrfs]
+Jan 28 09:42:49 vostro kernel: [  360.460144]  [<ffffffffa05b9772>] ? b=
+trfs_dirty_inode+0x23/0x11d [btrfs]
+Jan 28 09:42:49 vostro kernel: [  360.460148]  [<ffffffff8111001c>] ? _=
+_mark_inode_dirty+0x22/0x17a
+Jan 28 09:42:49 vostro kernel: [  360.460159]  [<ffffffffa05b891e>] ? b=
+trfs_setattr+0x6d/0x92 [btrfs]
+Jan 28 09:42:49 vostro kernel: [  360.460162]  [<ffffffff81107642>] ? n=
+otify_change+0x18e/0x256
+Jan 28 09:42:49 vostro kernel: [  360.460165]  [<ffffffff810353a7>] ? s=
+hould_resched+0x5/0x23
+Jan 28 09:42:49 vostro kernel: [  360.460168]  [<ffffffff81114930>] ? u=
+times_common+0x10c/0x135
+Jan 28 09:42:49 vostro kernel: [  360.460170]  [<ffffffff81114a14>] ? d=
+o_utimes+0xbb/0xd6
+Jan 28 09:42:49 vostro kernel: [  360.460173]  [<ffffffff810f779c>] ? s=
+ys_newlstat+0x23/0x2b
+Jan 28 09:42:49 vostro kernel: [  360.460175]  [<ffffffff810353a7>] ? s=
+hould_resched+0x5/0x23
+Jan 28 09:42:49 vostro kernel: [  360.460178]  [<ffffffff81114b1a>] ? s=
+ys_utimensat+0x6e/0x77
+Jan 28 09:42:49 vostro kernel: [  360.460181]  [<ffffffff81332e12>] ? s=
+ystem_call_fastpath+0x16/0x1b
+
+and
+
+Jan 28 09:42:49 vostro kernel: [  360.460184] INFO: task rsync:3495 blo=
+cked for more than 120 seconds.
+Jan 28 09:42:49 vostro kernel: [  360.460185] "echo 0 > /proc/sys/kerne=
+l/hung_task_timeout_secs" disables this message.
+Jan 28 09:42:49 vostro kernel: [  360.460186] rsync           D ffff880=
+0bfc92f40     0  3495      1 0x00000004
+Jan 28 09:42:49 vostro kernel: [  360.460189]  ffff88009b4c47f0 0000000=
+000000086 ffff880000000000 ffff8800bbf080c0
+Jan 28 09:42:49 vostro kernel: [  360.460192]  0000000000012f40 ffff880=
+091ff1fd8 ffff880091ff1fd8 ffff88009b4c47f0
+Jan 28 09:42:49 vostro kernel: [  360.460196]  0000000000000000 0000000=
+1bff5b700 ffffffff8102f71b ffff880094060a20
+Jan 28 09:42:49 vostro kernel: [  360.460199] Call Trace:
+Jan 28 09:42:49 vostro kernel: [  360.460202]  [<ffffffff8102f71b>] ? p=
+te_alloc_one+0x2f/0x39
+Jan 28 09:42:49 vostro kernel: [  360.460205]  [<ffffffff8132d437>] ? _=
+_mutex_lock_common.isra.6+0xff/0x164
+Jan 28 09:42:49 vostro kernel: [  360.460209]  [<ffffffff810cada2>] ? c=
+opy_pte_range+0x34d/0x391
+Jan 28 09:42:49 vostro kernel: [  360.460211]  [<ffffffff8132d325>] ? m=
+utex_lock+0x1a/0x2d
+Jan 28 09:42:49 vostro kernel: [  360.460214]  [<ffffffff810fcb6d>] ? w=
+alk_component+0x1f4/0x406
+Jan 28 09:42:49 vostro kernel: [  360.460217]  [<ffffffff8102f999>] ? p=
+tep_set_access_flags+0x39/0x45
+Jan 28 09:42:49 vostro kernel: [  360.460219]  [<ffffffff810fd9c1>] ? p=
+ath_lookupat+0x7c/0x29e
+Jan 28 09:42:49 vostro kernel: [  360.460222]  [<ffffffff810353a7>] ? s=
+hould_resched+0x5/0x23
+Jan 28 09:42:49 vostro kernel: [  360.460224]  [<ffffffff8132cb37>] ? _=
+cond_resched+0x7/0x1c
+Jan 28 09:42:49 vostro kernel: [  360.460227]  [<ffffffff810fdbff>] ? d=
+o_path_lookup+0x1c/0x87
+Jan 28 09:42:49 vostro kernel: [  360.460229]  [<ffffffff810ff47a>] ? u=
+ser_path_at_empty+0x47/0x7b
+Jan 28 09:42:49 vostro kernel: [  360.460232]  [<ffffffff81330dea>] ? d=
+o_page_fault+0x2fc/0x337
+Jan 28 09:42:49 vostro kernel: [  360.460234]  [<ffffffff810f7636>] ? v=
+fs_fstatat+0x32/0x60
+Jan 28 09:42:49 vostro kernel: [  360.460236]  [<ffffffff810f778b>] ? s=
+ys_newlstat+0x12/0x2b
+Jan 28 09:42:49 vostro kernel: [  360.460239]  [<ffffffff810353a7>] ? s=
+hould_resched+0x5/0x23
+Jan 28 09:42:49 vostro kernel: [  360.460241]  [<ffffffff8132e435>] ? p=
+age_fault+0x25/0x30
+Jan 28 09:42:49 vostro kernel: [  360.460244]  [<ffffffff81332e12>] ? s=
+ystem_call_fastpath+0x16/0x1b
+
+
+Kernel is 3.1.0. I'm writing to a 500 GB external USB disk.
+
+Known bug? If not, anything I can do to help?
 
 
 Best,

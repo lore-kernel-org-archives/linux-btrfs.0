@@ -1,32 +1,85 @@
 From: Li Zefan <lizf@cn.fujitsu.com>
-Subject: Re: Setting options permanently?
-Date: Mon, 30 Jan 2012 15:49:27 +0800
-Message-ID: <4F264B87.3090400@cn.fujitsu.com>
-References: <4F22BCCC.5090800@danisch.de>
+Subject: [PATCH] Btrfs: allow cloning ranges within the same file
+Date: Mon, 30 Jan 2012 17:14:32 +0800
+Message-ID: <4F265F78.1010806@cn.fujitsu.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=ISO-8859-15
-Cc: linux-btrfs@vger.kernel.org
-To: Hadmut Danisch <hadmut@danisch.de>
+Content-Type: text/plain; charset=UTF-8
+Cc: Jan Schmidt <list.btrfs@jan-o-sch.net>
+To: "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <4F22BCCC.5090800@danisch.de>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-> Is there a way to set options like compression on a btrfs permanently to
-> activate them even when mounted automatically by the desktop or manually
-> by a third person?
+It's safe and easy to do so, provided the ranges don't overlap.
 
-Actually there is.
+Signed-off-by: Li Zefan <lizf@cn.fujitsu.com>
+---
+ fs/btrfs/ioctl.c |   23 ++++++++++++++++-------
+ 1 files changed, 16 insertions(+), 7 deletions(-)
 
-Btrfs supports per file compression flag, and if this flag is set to a
-directory, all files in that directory will inherit the flag.
+diff --git a/fs/btrfs/ioctl.c b/fs/btrfs/ioctl.c
+index 0b06a5c..8fcd671 100644
+--- a/fs/btrfs/ioctl.c
++++ b/fs/btrfs/ioctl.c
+@@ -2223,8 +2223,6 @@ static noinline long btrfs_ioctl_clone(struct file *file, unsigned long srcfd,
+ 	 *   decompress into destination's address_space (the file offset
+ 	 *   may change, so source mapping won't do), then recompress (or
+ 	 *   otherwise reinsert) a subrange.
+-	 * - allow ranges within the same file to be cloned (provided
+-	 *   they don't overlap)?
+ 	 */
+ 
+ 	/* the destination must be opened for writing */
+@@ -2247,8 +2245,6 @@ static noinline long btrfs_ioctl_clone(struct file *file, unsigned long srcfd,
+ 	src = src_file->f_dentry->d_inode;
+ 
+ 	ret = -EINVAL;
+-	if (src == inode)
+-		goto out_fput;
+ 
+ 	/* the src must be open for reading */
+ 	if (!(src_file->f_mode & FMODE_READ))
+@@ -2282,9 +2278,11 @@ static noinline long btrfs_ioctl_clone(struct file *file, unsigned long srcfd,
+ 	if (inode < src) {
+ 		mutex_lock_nested(&inode->i_mutex, I_MUTEX_PARENT);
+ 		mutex_lock_nested(&src->i_mutex, I_MUTEX_CHILD);
+-	} else {
++	} else if (inode > src) {
+ 		mutex_lock_nested(&src->i_mutex, I_MUTEX_PARENT);
+ 		mutex_lock_nested(&inode->i_mutex, I_MUTEX_CHILD);
++	} else {
++		mutex_lock(&inode->i_mutex);
+ 	}
+ 
+ 	/* determine range to clone */
+@@ -2302,6 +2300,13 @@ static noinline long btrfs_ioctl_clone(struct file *file, unsigned long srcfd,
+ 	    !IS_ALIGNED(destoff, bs))
+ 		goto out_unlock;
+ 
++	/*
++	 * allow ranges within the same file to be cloned only if
++	 * they don't overlap
++	 */
++	if (src == inode && !(off + len <= destoff || destoff + len <= off))
++		goto out_unlock;
++
+ 	if (destoff > inode->i_size) {
+ 		ret = btrfs_cont_expand(inode, inode->i_size, destoff);
+ 		if (ret)
+@@ -2543,8 +2548,12 @@ out:
+ 	btrfs_release_path(path);
+ 	unlock_extent(&BTRFS_I(src)->io_tree, off, off+len, GFP_NOFS);
+ out_unlock:
+-	mutex_unlock(&src->i_mutex);
+-	mutex_unlock(&inode->i_mutex);
++	if (src != inode) {
++		mutex_unlock(&src->i_mutex);
++		mutex_unlock(&inode->i_mutex);
++	} else {
++		mutex_unlock(&inode->i_mutex);
++	}
+ 	vfree(buf);
+ 	btrfs_free_path(path);
+ out_fput:
+-- 
+1.7.3.1
 
-So you can mount the filesystem for the first time and set the flag for
-the root dir, and that's it. There's a flaw that the compression method
-is zlib, which should be changed to lzo (or lz4, or snappy..) in the
-future.
-
-chattr is used to set file flags, and there was a patchset to enable
-compression flag for chattr, but was never merged:
-
-http://www.spinics.net/lists/linux-btrfs/msg09604.html
-http://www.spinics.net/lists/linux-btrfs/msg09605.html

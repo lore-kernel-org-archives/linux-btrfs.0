@@ -1,48 +1,35 @@
-From: Rohit Mehta <pigdog@gmail.com>
-Subject: Re: newbie problems (difficulty with mkfs.btrfs and learning how to
- navigate trees
-Date: Mon, 30 Jan 2012 11:38:51 -0500
-Message-ID: <CAHb3AmJWh-0W-f5AjZxstu8xtd+evA2VFidJPu+XecA4_O-t-Q@mail.gmail.com>
-References: <CAHb3AmJiv3Leq1QUO3JNQ3tuZ06jFQXWv=Jba65AW9qbk-T4Qw@mail.gmail.com>
-	<pan.2012.01.30.05.56.40@cox.net>
+From: Richard Sharpe <realrichardsharpe@gmail.com>
+Subject: Tuning of btrfs for throughput?
+Date: Mon, 30 Jan 2012 11:35:31 -0800
+Message-ID: <CACyXjPxb3Ped7yvv5je_g76T+uDKKYkhC7t7MY_-GQK3WuTQ-Q@mail.gmail.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset=ISO-8859-1
-To: Duncan <1i5t5.duncan@cox.net>, linux-btrfs@vger.kernel.org
+To: linux-btrfs@vger.kernel.org
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <pan.2012.01.30.05.56.40@cox.net>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Mon, Jan 30, 2012 at 12:56 AM, Duncan <1i5t5.duncan@cox.net> wrote:
+Hi,
 
-> First, a general point. =A0You don't mention what kernel or tools sou=
-rces
-> you are using.
+I am interested in any feedback on tuning btrfs for throughput?
 
-My apologies! I was using the 3.2.2 kernel and the unstable btrfs
-tools from the Integration repository as of last night
-( http://git.darksatanic.net/repo/btrfs-progs-unstable.git )  Although
-I did try with certain other permutations of kernels and versions of
-btrfs-progs.
+I am running on 3.2.1 and have set up btrfs across 11 7200RPM 1TB 3.5"
+drives. I told btrfs to mirror metadata and stripe data.
 
-I'm only playing with BTRFS in UML, trying to understand how it works
-at this point.
+For my current simple throughput tests I am running dd with 256kiB
+blocks and 1M blocks (memory is 64Gib).
 
-> It's quite likely that mixed-mode simply won't yet work on that tiny =
-a
-> filesystem created with raid1 mode data, but for sure I'd try it with=
- the
-> latest code, in case the problem is now fixed.
->
-> So, I'd say try it with something larger, probably 1/8 gig to 1/4 gig=
- at
-> least. =A0Or if that's not convenient at present, run as you mentione=
-d,
-> either raid0 mode or one device, no-raid, for now.
+All tests are done with conv=fdatasync and then with and without oflags=direct.
 
-Thanks, it does seem to work on larger filesystems.  I'll work with
-500 MB virtual disks.
---
-To unsubscribe from this list: send the line "unsubscribe linux-btrfs" =
-in
-the body of a message to majordomo@vger.kernel.org
-More majordomo info at  http://vger.kernel.org/majordomo-info.html
+I get around 800MB/s in the non DIRECTIO case, and around 430MB/s in
+the DIRECTIO case (which is pretty impressive it seems to me).
+
+However, what I would like to know is are there any tuning parameters
+I can tweak to push the numbers up a bit?
+
+I see lots of idle time (80+%) on my 16 cores (probably two by four by two).
+
+Would I be better of with 10 drives rather than 11, or 12 rather than 11?
+
+-- 
+Regards,
+Richard Sharpe

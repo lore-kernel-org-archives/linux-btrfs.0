@@ -1,44 +1,48 @@
-From: Kyle Gates <kylegates@hotmail.com>
-Subject: RE: btrfs-raid questions I couldn't find an answer to on the wiki
-Date: Mon, 30 Jan 2012 08:58:41 -0600
-Message-ID: <COL113-W485767962008EF29E7E27EB08D0@phx.gbl>
-References: <pan.2012.01.26.15.41.32@cox.net>,<201201291223.40161.kreijack@inwind.it>
+From: Rohit Mehta <pigdog@gmail.com>
+Subject: Re: newbie problems (difficulty with mkfs.btrfs and learning how to
+ navigate trees
+Date: Mon, 30 Jan 2012 11:38:51 -0500
+Message-ID: <CAHb3AmJWh-0W-f5AjZxstu8xtd+evA2VFidJPu+XecA4_O-t-Q@mail.gmail.com>
+References: <CAHb3AmJiv3Leq1QUO3JNQ3tuZ06jFQXWv=Jba65AW9qbk-T4Qw@mail.gmail.com>
+	<pan.2012.01.30.05.56.40@cox.net>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=US-ASCII
-Cc: <linux-btrfs@vger.kernel.org>
-To: <kreijack@inwind.it>, <1i5t5.duncan@cox.net>
+Content-Type: text/plain; charset=ISO-8859-1
+To: Duncan <1i5t5.duncan@cox.net>, linux-btrfs@vger.kernel.org
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <201201291223.40161.kreijack@inwind.it>
+In-Reply-To: <pan.2012.01.30.05.56.40@cox.net>
 List-ID: <linux-btrfs.vger.kernel.org>
 
+On Mon, Jan 30, 2012 at 12:56 AM, Duncan <1i5t5.duncan@cox.net> wrote:
 
-I've been having good luck with my /boot on a separate 1GB RAID1 btrfs filesystem using grub2 (2 disks only! I wouldn't try it with 3). I should note, however, that I'm NOT using compression on this volume because if I remember correctly it may not play well with grub (maybe that was just lzo though) and I'm also not using subvolumes either for the same reason.
+> First, a general point. =A0You don't mention what kernel or tools sou=
+rces
+> you are using.
 
-Kyle
+My apologies! I was using the 3.2.2 kernel and the unstable btrfs
+tools from the Integration repository as of last night
+( http://git.darksatanic.net/repo/btrfs-progs-unstable.git )  Although
+I did try with certain other permutations of kernels and versions of
+btrfs-progs.
 
-----------------------------------------
-> From: kreijack@inwind.it
-> To: 1i5t5.duncan@cox.net
-> Subject: Re: btrfs-raid questions I couldn't find an answer to on the wiki
-> Date: Sun, 29 Jan 2012 12:23:39 +0100
-> CC: linux-btrfs@vger.kernel.org
+I'm only playing with BTRFS in UML, trying to understand how it works
+at this point.
+
+> It's quite likely that mixed-mode simply won't yet work on that tiny =
+a
+> filesystem created with raid1 mode data, but for sure I'd try it with=
+ the
+> latest code, in case the problem is now fixed.
 >
-> On Thursday, 26 January, 2012 16:41:32 Duncan wrote:
-> > 1) My /boot partition and its backup (which I do want to keep separate
-> > from root) are only 128 MB each. The wiki recommends 1 gig sizes
-> > minimum, but there's some indication that's dated info due to mixed data/
-> > metadata mode in recent kernels.
-> >
-> > Is a 128 MB btrfs reasonable? What's the mixed-mode minumum recommended
-> > and what is overhead going to look like?
->
-> IIRC, the minimum size should be 256MB. Anyway, if you want/allow a separate
-> partition for /boot I suggest to use a classic filesystem like ext3.
->
-> BR
-> G.Baroncelli
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at http://vger.kernel.org/majordomo-info.html
- 		 	   		  
+> So, I'd say try it with something larger, probably 1/8 gig to 1/4 gig=
+ at
+> least. =A0Or if that's not convenient at present, run as you mentione=
+d,
+> either raid0 mode or one device, no-raid, for now.
+
+Thanks, it does seem to work on larger filesystems.  I'll work with
+500 MB virtual disks.
+--
+To unsubscribe from this list: send the line "unsubscribe linux-btrfs" =
+in
+the body of a message to majordomo@vger.kernel.org
+More majordomo info at  http://vger.kernel.org/majordomo-info.html

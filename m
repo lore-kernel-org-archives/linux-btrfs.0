@@ -1,126 +1,83 @@
-From: "Olivier B." <xen.list@daevel.fr>
-Subject: Re: [Xen-devel] Linux 3.2.2 & btrfs, on a DomU
-Date: Tue, 31 Jan 2012 10:28:39 +0100
-Message-ID: <4F27B447.5020003@daevel.fr>
-References: <4F22F403.2030104@daevel.fr>
+From: lutz.euler@freenet.de (Lutz Euler)
+Subject: Spurious ENOSPC while filling a filesystem with rsync
+Date: Mon, 30 Jan 2012 20:04:04 +0100
+Message-ID: <20262.59812.23853.734233@localhost.localdomain>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=ISO-8859-1;
-	format=flowed
+Content-Type: text/plain; charset=iso-8859-1
 To: linux-btrfs@vger.kernel.org
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <4F22F403.2030104@daevel.fr>
 List-ID: <linux-btrfs.vger.kernel.org>
 
 Hi,
 
-since I have no response from Xen developpers, I suppose it's a btrfs=20
-problem ; but maybe I'm wrong. What can you think about that error ?
+I was rsyncing some 54 GB onto a newly created btrfs filesystem,
+both metadata and data in RAID1 and using lzo compression, when
+after transferring less than half of the amount rsync stopped
+with "no space left on device", while the destination filesystem
+was less than half filled. I started rsync again shortly afterwards
+and it finished the copy without further problems.
 
-thanks,
-Olivier
+The filesystem is doing just fine now, there were no errors logged
+to syslog, I don't know whether this is reproducible (didn't try),
+but, as I am AFAIK using the newest version of the software involved,
+I send this mail just to say: It is still possible to get an unwarrante=
+d
+ENOSPC with btrfs.
 
-PS : I have not subscribe do the list, so CC me please.
+Please see below for the details.
 
+Thanks for working on btrfs! Regards,
 
-Le 27/01/2012 19:59, Olivier B. a =E9crit :
-> Hi,
->
-> I switch one of my DomU to a 3.2.2 linux kernel (renamed in 2.6.42.2,
-> for compatibility with some software), and I have some problem with b=
-trfs.
->
-> I don't know if it's a btrfs or xen problem, the call trace is :
->
-> [56580.320024] INFO: rcu_sched detected stall on CPU 0 (t=3D15000 jif=
-fies)
-> [56580.320024] Pid: 11505, comm: btrfs-delayed-m Tainted: G C
-> 2.6.42.2-dae-xen #2
-> [56580.320024] Call Trace:
-> [56580.320024] <IRQ> [<ffffffff81084719>] ? __rcu_pending+0x82/0x337
-> [56580.320024] [<ffffffff810678bd>] ? tick_nohz_handler+0xbe/0xbe
-> [56580.320024] [<ffffffff81084ccc>] ? rcu_check_callbacks+0x7e/0xae
-> [56580.320024] [<ffffffff81050d44>] ? update_process_times+0x31/0x63
-> [56580.320024] [<ffffffff8106791f>] ? tick_sched_timer+0x62/0x7e
-> [56580.320024] [<ffffffff8105e8b4>] ? __run_hrtimer.isra.28+0x52/0xaa
-> [56580.320024] [<ffffffff8105ee8c>] ? hrtimer_interrupt+0xd5/0x1a1
-> [56580.320024] [<ffffffff8100537e>] ? xen_timer_interrupt+0x28/0x159
-> [56580.320024] [<ffffffff81080097>] ? handle_irq_event_percpu+0x24/0x=
-11c
-> [56580.320024] [<ffffffff810824b1>] ? handle_percpu_irq+0x35/0x4c
-> [56580.320024] [<ffffffff811cbe90>] ? __xen_evtchn_do_upcall+0x154/0x=
-1eb
-> [56580.320024] [<ffffffff8100525c>] ? xen_force_evtchn_callback+0x9/0=
-xa
-> [56580.320024] [<ffffffff811cd490>] ? xen_evtchn_do_upcall+0x22/0x32
-> [56580.320024] [<ffffffff812f863e>] ? xen_do_hypervisor_callback+0x1e=
-/0x30
-> [56580.320024] <EOI> [<ffffffff810013aa>] ? hypercall_page+0x3aa/0x10=
-00
-> [56580.320024] [<ffffffff810013aa>] ? hypercall_page+0x3aa/0x1000
-> [56580.320024] [<ffffffff811cc7d5>] ? xen_poll_irq_timeout+0x38/0x44
-> [56580.320024] [<ffffffff812ee21f>] ? xen_spin_lock_slow+0x86/0xdf
-> [56580.320024] [<ffffffff8100688a>] ? __xen_spin_lock+0x32/0x3b
-> [56580.320024] [<ffffffff8106bd6a>] ? do_raw_spin_lock+0x5/0x8
-> [56580.320024] [<ffffffffa002badd>] ?
-> find_free_extent.constprop.77+0x495/0x94b [btrfs]
-> [56580.320024] [<ffffffffa00689fe>] ?
-> btrfs_add_delayed_tree_ref+0x77/0x120 [btrfs]
-> [56580.320024] [<ffffffffa002e61b>] ? btrfs_reserve_extent+0xa4/0x148
-> [btrfs]
-> [56580.320024] [<ffffffffa002eadb>] ? btrfs_alloc_free_block+0x15d/0x=
-283
-> [btrfs]
-> [56580.320024] [<ffffffff81005842>] ? check_events+0x12/0x20
-> [56580.320024] [<ffffffffa0021f3a>] ? __btrfs_cow_block+0x102/0x32c [=
-btrfs]
-> [56580.320024] [<ffffffffa0022257>] ? btrfs_cow_block+0xf3/0x102 [btr=
-fs]
-> [56580.320024] [<ffffffffa0024c84>] ? btrfs_search_slot+0x225/0x64e [=
-btrfs]
-> [56580.320024] [<ffffffffa00285f2>] ?
-> lookup_inline_extent_backref+0xa8/0x360 [btrfs]
-> [56580.320024] [<ffffffffa002a35c>] ? __btrfs_free_extent+0xcb/0x5c8
-> [btrfs]
-> [56580.320024] [<ffffffff812f1dac>] ? __slab_free+0xd6/0x206
-> [56580.320024] [<ffffffff810b9c65>] ? arch_local_irq_restore+0x7/0x8
-> [56580.320024] [<ffffffffa002d87e>] ? run_clustered_refs+0x65f/0x6a9
-> [btrfs]
-> [56580.320024] [<ffffffff81177fe4>] ? rb_next+0x39/0x3f
-> [56580.320024] [<ffffffffa002d991>] ? btrfs_run_delayed_refs+0xc9/0x1=
-85
-> [btrfs]
-> [56580.320024] [<ffffffff812ee18a>] ? xen_spin_unlock_slow+0x4d/0x5c
-> [56580.320024] [<ffffffffa003b13a>] ? __btrfs_end_transaction+0x90/0x=
-1dd
-> [btrfs]
-> [56580.320024] [<ffffffffa006ff08>] ?
-> btrfs_async_run_delayed_node_done+0xf8/0x156 [btrfs]
-> [56580.320024] [<ffffffffa005a150>] ? worker_loop+0x16a/0x45a [btrfs]
-> [56580.320024] [<ffffffffa0059fe6>] ? btrfs_queue_worker+0x279/0x279
-> [btrfs]
-> [56580.320024] [<ffffffff8105bbba>] ? kthread+0x76/0x7e
-> [56580.320024] [<ffffffff812f84f4>] ? kernel_thread_helper+0x4/0x10
-> [56580.320024] [<ffffffff812f65b3>] ? int_ret_from_sys_call+0x7/0x1b
-> [56580.320024] [<ffffffff812f5cbc>] ? retint_restore_args+0x5/0x6
-> [56580.320024] [<ffffffff812f84f0>] ? gs_change+0x13/0x13
->
-> I had the problem with 3.2, 3.2.1, then 3.2.2. With and without the
-> renaming to 2.6.42.x.
->
-> The Xen version is 4.0.1 (from Debian amd64), and the Dom0 kernel is =
-a
-> 3.1.0 (also from Debian).
->
-> Thanks for any advice,
->
-> Olivier B.
->
-> _______________________________________________
-> Xen-devel mailing list
-> Xen-devel@lists.xensource.com
-> http://lists.xensource.com/xen-devel
->
+Lutz
 
+Kernel: v3.3-rc1-383-g0a96265
+uname -a: Linux test 3.3.0-rc1 #1 SMP PREEMPT Sun Jan 29 16:06:29 CET
+  2012 x86_64 x86_64 x86_64 GNU/Linux
+btrfs-progs: cloned on 2012-01-25 from
+  git://git.kernel.org/pub/scm/linux/kernel/git/mason/btrfs-progs.git,
+  latest commit is fdb6c0402337d9607c7a39155088eaf033742752.
+OS: Ubuntu 11.04.
+
+The source filesystem is ext4 on an SSD.
+The destination is another SSD (sdb), partitioned into 2 x 40 GB.
+The filesystem was created like so:
+# mkfs.btrfs -d raid1 -m raid1 /dev/sdb1 /dev/sdb2
+# btrfs device scan
+I made an entry in /etc/fstab:
+UUID=3D88af7576-3027-4a3b-a5ae-34bfd167982f /mnt btrfs compress=3Dlzo 0=
+ 0
+# mount /mnt
+# grep sdb /proc/mounts
+/dev/sdb1 /mnt btrfs rw,relatime,compress=3Dlzo,ssd,space_cache 0 0
+
+The rsync call was:
+$ time rsync -ax --delete test /mnt
+
+After 17 minutes rsync stopped with "No space left on device",
+but there was still lots of space:
+
+$ df -h /mnt
+Dateisystem            Size  Used Avail Use% Eingeh=E4ngt auf
+/dev/sdb1              75G   31G   42G  43% /mnt
+# btrfs fi show /dev/sdb1
+Label: none  uuid: 88af7576-3027-4a3b-a5ae-34bfd167982f
+	Total devices 2 FS bytes used 15.47GB
+	devid    2 size 37.26GB used 21.01GB path /dev/sdb2
+	devid    1 size 37.26GB used 21.03GB path /dev/sdb1
+
+I issued the same rsync call a few minutes later and after another
+17 minutes it finished successfully. The filesystem is still not full:
+
+$ df -h /mnt
+Dateisystem            Size  Used Avail Use% Eingeh=E4ngt auf
+/dev/sdb1              75G   62G   12G  85% /mnt
+# btrfs fi show /dev/sdb1
+Label: none  uuid: 88af7576-3027-4a3b-a5ae-34bfd167982f
+	Total devices 2 FS bytes used 30.92GB
+	devid    2 size 37.26GB used 37.25GB path /dev/sdb2
+	devid    1 size 37.26GB used 37.26GB path /dev/sdb1
+$ du -sh /mnt
+54G	/mnt
 --
 To unsubscribe from this list: send the line "unsubscribe linux-btrfs" =
 in

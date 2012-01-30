@@ -1,119 +1,63 @@
-From: Duncan <1i5t5.duncan@cox.net>
-Subject: Re: newbie problems (difficulty with mkfs.btrfs and learning how to
- navigate trees
-Date: Mon, 30 Jan 2012 05:56:40 +0000 (UTC)
-Message-ID: <pan.2012.01.30.05.56.40@cox.net>
-References: <CAHb3AmJiv3Leq1QUO3JNQ3tuZ06jFQXWv=Jba65AW9qbk-T4Qw@mail.gmail.com>
+From: Li Zefan <lizf@cn.fujitsu.com>
+Subject: Re: [PATCH 12/12] Btrfs: Fix file clone when source offset is not
+ 0
+Date: Mon, 30 Jan 2012 14:33:35 +0800
+Message-ID: <4F2639BF.80702@cn.fujitsu.com>
+References: <4D412FE6.7050101@cn.fujitsu.com> <4D4130D4.2000001@cn.fujitsu.com> <4F215AA0.8040505@jan-o-sch.net>
 Mime-Version: 1.0
 Content-Type: text/plain; charset=UTF-8
-To: linux-btrfs@vger.kernel.org
+Cc: Chris Mason <chris.mason@oracle.com>,
+	"linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
+To: Jan Schmidt <list.btrfs@jan-o-sch.net>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
+In-Reply-To: <4F215AA0.8040505@jan-o-sch.net>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Rohit Mehta posted on Sun, 29 Jan 2012 22:06:59 -0500 as excerpted:
-
-> Hi everyone, I'm trying to learn about btrfs and the various trees and
-> data structures.  To that end I have been trying to create a small RAID
-> 1 filesystem (with 2 10MB devices), and it appears mkfs.btrfs does not
-> like this. (output follows
+Jan Schmidt wrote:
+> I was looking at the clone range ioctl and have some remarks:
 > 
->   # ./mkfs.btrfs -d raid1 -m raid1 -b 10485760 /dev/ubdc /dev/ubdb SMALL
->   VOLUME: forcing mixed metadata/data groups
+> On 27.01.2011 09:46, Li Zefan wrote:
+>> diff --git a/fs/btrfs/ioctl.c b/fs/btrfs/ioctl.c
+>> index f87552a..1b61dab 100644
+>> --- a/fs/btrfs/ioctl.c
+>> +++ b/fs/btrfs/ioctl.c
+>> @@ -1788,7 +1788,10 @@ static noinline long btrfs_ioctl_clone(struct file *file, unsigned long srcfd,
+>>  
+>>  			memcpy(&new_key, &key, sizeof(new_key));
+>>  			new_key.objectid = inode->i_ino;
+>> -			new_key.offset = key.offset + destoff - off;
+>> +			if (off <= key.offset)
+>> +				new_key.offset = key.offset + destoff - off;
+>> +			else
+>> +				new_key.offset = destoff;
+> 						 ^^^^^^^
+> 1) This looks spurious to me. What if destoff isn't aligned? That's what
+> the "key.offset - off" code above is for. Before the patch, the code
+> didn't work at all, I agree. But this fix can only work for aligned
+> requests.
 > 
->   WARNING! - Btrfs Btrfs v0.19 IS EXPERIMENTAL WARNING! - see
->   http://btrfs.wiki.kernel.org before using
+> 2) The error in new_key also has propagated to the extent item's backref
+> and wasn't fixed there. I did a range clone and ended up with an extent
+> item like that:
+>         item 30 key (1318842368 EXTENT_ITEM 131072) itemoff 1047
+> itemsize 169
+>                 extent refs 8 gen 11103 flags 1
+> [...]
+>                 extent data backref root 257 objectid 272 offset
+> 18446744073709494272 count 1
 > 
->   Created a data/metadata chunk of size 1048576 adding device /dev/ubdb
->   id 2 mkfs.btrfs: mkfs.c:221: create_one_raid_group: Assertion `!(ret)'
->   failed.
->   Aborted
+> The last offset (equal to -14 * 4k) is obviously wrong. I didn't figure
+> out how the variables are computed, but it looks like there's something
+> wrong with the "datao" u64 to me.
 > 
-> However if I don't set the raid1 options, I can create a 20 MB RAID0
-> filesystem, or I can also create a 10 MB filesystem on one disk without
-> any errors.  Large disk devices also seem to work as RAID1 or RAID0)
-> 
-> I'm really just trying to start to dig in and understand the code, but I
-> figured a small filesystem would be easier to walk. I might just mess
-> with a single disk for now, but I would appreciate any advice.
 
-Hi.  FWIW, I'm only researching btrfs at this point in preparation for 
-installing, so while I have the kernel options active and tools 
-installed, that's as far as I've gotten on the actually doing it side.  
-The below is thus based on recent posts here, the tools manpages, and the 
-wiki, at:
+Unfortunately this is expected. The calculation is:
 
-https://btrfs.wiki.kernel.org/
+extent_item.extent_data_ref.offset = file_pos - file_extent.extent_offset
 
+so you may get negative offset.
 
-First, a general point.  You don't mention what kernel or tools sources 
-you are using.  btrfs is still under rapid development and every new 
-kernel version brings bugfixes and tweaks, so you really want at least 
-the latest stable kernel available (3.2.something at this point), if not 
-the development kernels (3.3-rcs at this point or live-git).  Similarly 
-with the tools. The 0.19 release was in 2009 and simply isn't current.  
-Users of this experimental filesystem really should be running a recently 
-built live-git version.  There's actually two trees available, the 
-official kernel.org tree, and the "integration tree", which tracks 
-patches seen on the list.  See the wiki for more.
-
-Second, the mixed-chunk (data/metadata) code is quite new, and not yet 
-well tested.  This doubles-down on the point above -- you WILL want the 
-latest code if you're doing mixed-chunk, which you will be with small 
-fileystems, see the next point.
-
-Third, "small" is relative!
-
-On the wiki there's a pre-mixed-chunk example of a "small" btrfs 
-filesystem of 4 GB!  I'm on record here as grumbling that perhaps it 
-makes me old, but I wouldn't call anything measured in the gigabytes 
-particularly "small", even if in practical terms it is on today's disks!  
-Another spot recommends filesystems no smaller than a gigabyte, noting 
-that (again, pre-mixed-chunk), even with that, one should expect to lose 
-a quarter of it to metadata, given chunk limitations.
-
-Mixed-chunk does have the down side of more fragmentation, however, so 
-it's recommended for filesystems of 1 GB or smaller to better utilize the 
-space, but not for > 1 GB.
-
-Obviously, with a 10 MB filesystem you're definitely testing the lower 
-limits of a filesystem that calls even a four-gig fileystem "small"!  
-Combine that with the newness of the mixed-chunk code and the fact that 
-you might be running (relatively) older code (with "older" in this case 
-potentially meaning live-git kernel and integration-tree userspace more 
-than, say, a week old, especially given the newness of mixed-chunk mode 
-itself).
-
-It's quite likely that mixed-mode simply won't yet work on that tiny a 
-filesystem created with raid1 mode data, but for sure I'd try it with the 
-latest code, in case the problem is now fixed.
-
-So, I'd say try it with something larger, probably 1/8 gig to 1/4 gig at 
-least.  Or if that's not convenient at present, run as you mentioned, 
-either raid0 mode or one device, no-raid, for now.
-
-
-Meanwhile, my interest involves raid1 mode on (relatively) small devices, 
-tho not 10 MB small, more like 128 MB small, as well.  As such, you may 
-wish to check my posts for the last few days.  I've responded to several 
-questions such as yours based on the wiki info, but also started a thread 
-with a number of related questions (btrfs-raid questions I couldn't find 
-an answer to on the wiki, posted last Thursday).
-
-Of particular interest there, we were debating even a 128 MB btrfs image 
-(raid1), in my case for a separate /boot partition.  The recommendation 
-was to make it bigger, quarter or half gig (which I could do as I have a 
-bit of free space on the drives I'll be using, unused with the current 
-layout), or for such a small and special-purpose filesystem, to use 
-something more traditional, probably either the reiserfs I'm using now or 
-ext2/3/4.
-
-(If you just joined the list and don't know where to find an archive to 
-look up older posts, I'm using gmane.org, here.  I use the newsgroup 
-interface for both reading and posting, but they also have a web 
-interface, if you prefer.)
-
--- 
-Duncan - List replies preferred.   No HTML msgs.
-"Every nonfree program has a lord, a master --
-and if you use the program, he is your master."  Richard Stallman
-
+The design idea was to reduce the number of extent backrefs in that
+a data backref can point to different file extents in the same file
+(in this case the "count" field > 1). We didn't expect nagetive
+offset until range clone was implemented.

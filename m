@@ -1,32 +1,32 @@
-From: Sander <sander@humilis.net>
+From: Li Zefan <lizf@cn.fujitsu.com>
 Subject: Re: Setting options permanently?
-Date: Mon, 30 Jan 2012 08:18:13 +0100
-Message-ID: <20120130071813.GA12780@attic.humilis.net>
+Date: Mon, 30 Jan 2012 15:49:27 +0800
+Message-ID: <4F264B87.3090400@cn.fujitsu.com>
 References: <4F22BCCC.5090800@danisch.de>
- <CAAE6i0gSG4xuyJFQrmfFNh3ojF4GBbsgk7LsN+1XD=9Mp5rSUQ@mail.gmail.com>
- <4F234616.6020407@danisch.de>
-Reply-To: sander@humilis.net
 Mime-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Cc: Chester <somethingsome2000@gmail.com>, linux-btrfs@vger.kernel.org
+Content-Type: text/plain; charset=ISO-8859-15
+Cc: linux-btrfs@vger.kernel.org
 To: Hadmut Danisch <hadmut@danisch.de>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <4F234616.6020407@danisch.de>
+In-Reply-To: <4F22BCCC.5090800@danisch.de>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hadmut Danisch wrote (ao):
-> I currently don't see how to repair this afterwards without removing the
-> uncompressed files and writing new ones, which on the other hand spoils
-> hte memory saving effect of using snapshots instead of copies.
+> Is there a way to set options like compression on a btrfs permanently to
+> activate them even when mounted automatically by the desktop or manually
+> by a third person?
 
-As also mentioned by Li Zefan, you can use defrag. But this will indeed
-not work nicely with snapshots. And you need more free space than the
-largest file on the filesystem.
+Actually there is.
 
-find / -xdev -execdir btrfs filesystem defrag -czlib {} +
+Btrfs supports per file compression flag, and if this flag is set to a
+directory, all files in that directory will inherit the flag.
 
-	Sander
+So you can mount the filesystem for the first time and set the flag for
+the root dir, and that's it. There's a flaw that the compression method
+is zlib, which should be changed to lzo (or lz4, or snappy..) in the
+future.
 
--- 
-Humilis IT Services and Solutions
-http://www.humilis.net
+chattr is used to set file flags, and there was a patchset to enable
+compression flag for chattr, but was never merged:
+
+http://www.spinics.net/lists/linux-btrfs/msg09604.html
+http://www.spinics.net/lists/linux-btrfs/msg09605.html

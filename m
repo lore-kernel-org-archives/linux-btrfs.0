@@ -1,28 +1,26 @@
 From: Li Zefan <lizf@cn.fujitsu.com>
-Subject: Re: btrfs-raid questions I couldn't find an answer to on the wiki
-Date: Mon, 30 Jan 2012 13:49:52 +0800
-Message-ID: <4F262F80.5000103@cn.fujitsu.com>
-References: <pan.2012.01.26.15.41.32@cox.net> <201201291223.40161.kreijack@inwind.it>
+Subject: Re: Setting options permanently?
+Date: Mon, 30 Jan 2012 13:57:49 +0800
+Message-ID: <4F26315D.30905@cn.fujitsu.com>
+References: <4F22BCCC.5090800@danisch.de>	<CAAE6i0gSG4xuyJFQrmfFNh3ojF4GBbsgk7LsN+1XD=9Mp5rSUQ@mail.gmail.com>	<4F234616.6020407@danisch.de> <pan.2012.01.28.03.32.23@cox.net>
 Mime-Version: 1.0
 Content-Type: text/plain; charset=UTF-8
-Cc: Duncan <1i5t5.duncan@cox.net>, linux-btrfs@vger.kernel.org
-To: kreijack@inwind.it
+Cc: linux-btrfs@vger.kernel.org
+To: Duncan <1i5t5.duncan@cox.net>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <201201291223.40161.kreijack@inwind.it>
+In-Reply-To: <pan.2012.01.28.03.32.23@cox.net>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Goffredo Baroncelli wrote:
-> On Thursday, 26 January, 2012 16:41:32 Duncan wrote:
->> 1) My /boot partition and its backup (which I do want to keep separate 
->> from root) are only 128 MB each.  The wiki recommends 1 gig sizes 
->> minimum, but there's some indication that's dated info due to mixed data/
->> metadata mode in recent kernels.
->>
->> Is a 128 MB btrfs reasonable?  What's the mixed-mode minumum recommended 
->> and what is overhead going to look like?
+>> I currently don't see how to repair this afterwards without removing the
+>> uncompressed files and writing new ones, which on the other hand spoils
+>> hte memory saving effect of using snapshots instead of copies.
 > 
-> IIRC, the minimum size should be 256MB. Anyway, if you want/allow a separate 
-> partition for  /boot I suggest to use a classic filesystem like ext3.
+> A rebalance is the usual way of handling such things, since that rewrites 
+> every chunk, taking account of current mount options, etc.  If I've been 
+> reading correctly, a defrag should handle it now as well, altho that used 
+> to break snapshots/cow/reflink-copies, but I /think/ I read that with 3.2 
+> (or was it 3.3-rc1) it doesn't, any more.
 > 
 
-The 256MB limitation has been removed.
+Rebalance won't do the trick, but defrag can. And defrag still breaks
+snapshots, which I'm working on.

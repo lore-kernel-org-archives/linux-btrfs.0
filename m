@@ -1,85 +1,98 @@
-From: Jan Schmidt <list.btrfs@jan-o-sch.net>
-Subject: Re: [PATCH 12/12] Btrfs: Fix file clone when source offset is not
- 0
-Date: Mon, 30 Jan 2012 11:03:23 +0100
-Message-ID: <4F266AEB.6030403@jan-o-sch.net>
-References: <4D412FE6.7050101@cn.fujitsu.com> <4D4130D4.2000001@cn.fujitsu.com> <4F215AA0.8040505@jan-o-sch.net> <4F2639BF.80702@cn.fujitsu.com>
-Mime-Version: 1.0
-Content-Type: text/plain; charset=UTF-8
-Cc: Chris Mason <chris.mason@oracle.com>,
-	"linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
-To: Li Zefan <lizf@cn.fujitsu.com>
+From: =?iso-8859-1?Q?Jo=E3o_Eduardo_Lu=EDs?= <jecluis@gmail.com>
+Subject: Magic numbers in a couple of btrfs source files
+Date: Mon, 30 Jan 2012 12:39:16 +0000
+Message-ID: <B83EEE8B-082C-43E4-812A-1F102E57CA2F@gmail.com>
+Mime-Version: 1.0 (Apple Message framework v1084)
+Content-Type: multipart/signed; protocol="application/pgp-signature"; micalg=pgp-sha1; boundary="Apple-Mail-4--419877544"
+To: linux-btrfs <linux-btrfs@vger.kernel.org>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <4F2639BF.80702@cn.fujitsu.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 30.01.2012 07:33, Li Zefan wrote:
-> Jan Schmidt wrote:
->> I was looking at the clone range ioctl and have some remarks:
->>
->> On 27.01.2011 09:46, Li Zefan wrote:
->>> diff --git a/fs/btrfs/ioctl.c b/fs/btrfs/ioctl.c
->>> index f87552a..1b61dab 100644
->>> --- a/fs/btrfs/ioctl.c
->>> +++ b/fs/btrfs/ioctl.c
->>> @@ -1788,7 +1788,10 @@ static noinline long btrfs_ioctl_clone(struct file *file, unsigned long srcfd,
->>>  
->>>  			memcpy(&new_key, &key, sizeof(new_key));
->>>  			new_key.objectid = inode->i_ino;
->>> -			new_key.offset = key.offset + destoff - off;
->>> +			if (off <= key.offset)
->>> +				new_key.offset = key.offset + destoff - off;
->>> +			else
->>> +				new_key.offset = destoff;
->> 						 ^^^^^^^
->> 1) This looks spurious to me. What if destoff isn't aligned? That's what
->> the "key.offset - off" code above is for. Before the patch, the code
->> didn't work at all, I agree. But this fix can only work for aligned
->> requests.
->>
->> 2) The error in new_key also has propagated to the extent item's backref
->> and wasn't fixed there. I did a range clone and ended up with an extent
->> item like that:
->>         item 30 key (1318842368 EXTENT_ITEM 131072) itemoff 1047
->> itemsize 169
->>                 extent refs 8 gen 11103 flags 1
->> [...]
->>                 extent data backref root 257 objectid 272 offset
->> 18446744073709494272 count 1
->>
->> The last offset (equal to -14 * 4k) is obviously wrong. I didn't figure
->> out how the variables are computed, but it looks like there's something
->> wrong with the "datao" u64 to me.
->>
-> 
-> Unfortunately this is expected. The calculation is:
-> 
-> extent_item.extent_data_ref.offset = file_pos - file_extent.extent_offset
-> 
-> so you may get negative offset.
+This is an OpenPGP/MIME signed message (RFC 2440 and 3156)
+--Apple-Mail-4--419877544
+Content-Transfer-Encoding: quoted-printable
+Content-Type: text/plain; charset=iso-8859-1
 
-I see where the negative offset comes from. But what can this offset be
-used for?
+Hi folks,
 
-> The design idea was to reduce the number of extent backrefs in that
-> a data backref can point to different file extents in the same file
-> (in this case the "count" field > 1). We didn't expect nagetive
-> offset until range clone was implemented.
 
-Reducing the number of backrefs is a good thing. In case of count > 1,
-it's clear that the offset cannot reference all of the extent data
-items. We have different design choices:
+I've been reading through the delayed references code, and have stumbled
+across a couple of numeric values about which I have no idea whatsoever.
 
-a) Use the above computation and leave the filesystem with an unusable
-offset value for extent backrefs.
+I was hoping someone could enlighten me on what they are for, and why
+they are used in spite of any other particular value.
 
-b) Use either one of the extent data item offsets this backref references.
+For instance, in delayed-ref.c one can read
 
-c) Always use a predefined constant (like 0 or -1) when count > 1.
+int btrfs_find_ref_cluster(struct btrfs_trans_handle *trans,
+			   struct list_head *cluster, u64 start)
+{
+[...]
+again:
+	while (node && count < 32) {
+		ref =3D rb_entry(node, struct btrfs_delayed_ref_node, =
+rb_node);
+[...]
+}
 
-d) Disallow count > 1 for those refs and turn them into shared refs as
-soon as count gets > 1.
+and in transaction.c one can read
+static int __btrfs_end_transaction(struct btrfs_trans_handle *trans,
+			  struct btrfs_root *root, int throttle, int =
+lock)
+{
+[...]
 
-I don't like a :-)
+	while (count < 4) {
+		unsigned long cur =3D trans->delayed_ref_updates;
+		trans->delayed_ref_updates =3D 0;
+		if (cur &&
+		    trans->transaction->delayed_refs.num_heads_ready > =
+64) {
+			trans->delayed_ref_updates =3D 0;
+[...]
+}
 
--Jan
+I've been wondering about what the 32 and the 64 mean. These values seem
+far too round to be random, and I'm sure there is a purpose behind them, =
+but if
+it is obvious I'm certainly missing the point.
+
+The 'count < 4' also throws me off, but I'm assuming it is someway to =
+guarantee
+everything gets flushed.
+
+Any help would be appreciated.
+
+
+Cheers,
+Joao
+
+---
+Jo=E3o Eduardo Lu=EDs
+gpg key: 477C26E5 from pool.keyserver.eu=20
+
+
+
+
+
+
+--Apple-Mail-4--419877544
+content-type: application/pgp-signature; x-mac-type=70674453;
+	name=PGP.sig
+content-description: This is a digitally signed message part
+content-disposition: inline; filename=PGP.sig
+content-transfer-encoding: 7bit
+
+-----BEGIN PGP SIGNATURE-----
+Version: GnuPG/MacGPG2 v2.0.16 (Darwin)
+
+iQEcBAEBAgAGBQJPJo95AAoJEJ9vvxhHfCblmxwH+wRfej6UW4ExTrVdzVJORNrt
+/EaMt1pImv3jMef9dtPtjY2MPwk5h2s6lt/8YlHpmcHGj5UgEPw+HF02jPg4Iuyi
+p7C3wPom6iIM66H1a+rbfzchUd9uWiMeH1sygN5i+lTDUIjEeLs5X5YUZCqdMvF+
+S7d8quyisYxWoKkkb675QMDKdEkcRidBA8LVmt1PM3tvuzfFwEQVAvxfr3a3h9s4
+kZ4fpZvl2IEseGdbTMPPxNFF7LI/UjIe6Q3qRUjzl8LBmUebA5DIJVD0yytQbbHd
+iAHGDMmrQDiAIHVQygvcJSZElS7f8AMHH6yVtYCLLb0gjBumrqFf790p2J3qhyQ=
+=trhq
+-----END PGP SIGNATURE-----
+
+--Apple-Mail-4--419877544--

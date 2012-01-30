@@ -1,93 +1,85 @@
 From: Jan Schmidt <list.btrfs@jan-o-sch.net>
-Subject: Re: [PATCH] Btrfs: allow cloning ranges within the same file
-Date: Mon, 30 Jan 2012 10:56:15 +0100
-Message-ID: <4F26693F.2010705@jan-o-sch.net>
-References: <4F265F78.1010806@cn.fujitsu.com>
+Subject: Re: [PATCH 12/12] Btrfs: Fix file clone when source offset is not
+ 0
+Date: Mon, 30 Jan 2012 11:03:23 +0100
+Message-ID: <4F266AEB.6030403@jan-o-sch.net>
+References: <4D412FE6.7050101@cn.fujitsu.com> <4D4130D4.2000001@cn.fujitsu.com> <4F215AA0.8040505@jan-o-sch.net> <4F2639BF.80702@cn.fujitsu.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset=UTF-8
-Cc: "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
+Cc: Chris Mason <chris.mason@oracle.com>,
+	"linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
 To: Li Zefan <lizf@cn.fujitsu.com>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <4F265F78.1010806@cn.fujitsu.com>
+In-Reply-To: <4F2639BF.80702@cn.fujitsu.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-I like allowing those clones. However ...
+On 30.01.2012 07:33, Li Zefan wrote:
+> Jan Schmidt wrote:
+>> I was looking at the clone range ioctl and have some remarks:
+>>
+>> On 27.01.2011 09:46, Li Zefan wrote:
+>>> diff --git a/fs/btrfs/ioctl.c b/fs/btrfs/ioctl.c
+>>> index f87552a..1b61dab 100644
+>>> --- a/fs/btrfs/ioctl.c
+>>> +++ b/fs/btrfs/ioctl.c
+>>> @@ -1788,7 +1788,10 @@ static noinline long btrfs_ioctl_clone(struct file *file, unsigned long srcfd,
+>>>  
+>>>  			memcpy(&new_key, &key, sizeof(new_key));
+>>>  			new_key.objectid = inode->i_ino;
+>>> -			new_key.offset = key.offset + destoff - off;
+>>> +			if (off <= key.offset)
+>>> +				new_key.offset = key.offset + destoff - off;
+>>> +			else
+>>> +				new_key.offset = destoff;
+>> 						 ^^^^^^^
+>> 1) This looks spurious to me. What if destoff isn't aligned? That's what
+>> the "key.offset - off" code above is for. Before the patch, the code
+>> didn't work at all, I agree. But this fix can only work for aligned
+>> requests.
+>>
+>> 2) The error in new_key also has propagated to the extent item's backref
+>> and wasn't fixed there. I did a range clone and ended up with an extent
+>> item like that:
+>>         item 30 key (1318842368 EXTENT_ITEM 131072) itemoff 1047
+>> itemsize 169
+>>                 extent refs 8 gen 11103 flags 1
+>> [...]
+>>                 extent data backref root 257 objectid 272 offset
+>> 18446744073709494272 count 1
+>>
+>> The last offset (equal to -14 * 4k) is obviously wrong. I didn't figure
+>> out how the variables are computed, but it looks like there's something
+>> wrong with the "datao" u64 to me.
+>>
+> 
+> Unfortunately this is expected. The calculation is:
+> 
+> extent_item.extent_data_ref.offset = file_pos - file_extent.extent_offset
+> 
+> so you may get negative offset.
 
-On 30.01.2012 10:14, Li Zefan wrote:
-> It's safe and easy to do so, provided the ranges don't overlap.
-> 
-> Signed-off-by: Li Zefan <lizf@cn.fujitsu.com>
-> ---
->  fs/btrfs/ioctl.c |   23 ++++++++++++++++-------
->  1 files changed, 16 insertions(+), 7 deletions(-)
-> 
-> diff --git a/fs/btrfs/ioctl.c b/fs/btrfs/ioctl.c
-> index 0b06a5c..8fcd671 100644
-> --- a/fs/btrfs/ioctl.c
-> +++ b/fs/btrfs/ioctl.c
-> @@ -2223,8 +2223,6 @@ static noinline long btrfs_ioctl_clone(struct file *file, unsigned long srcfd,
->  	 *   decompress into destination's address_space (the file offset
->  	 *   may change, so source mapping won't do), then recompress (or
->  	 *   otherwise reinsert) a subrange.
-> -	 * - allow ranges within the same file to be cloned (provided
-> -	 *   they don't overlap)?
->  	 */
->  
->  	/* the destination must be opened for writing */
-> @@ -2247,8 +2245,6 @@ static noinline long btrfs_ioctl_clone(struct file *file, unsigned long srcfd,
->  	src = src_file->f_dentry->d_inode;
->  
->  	ret = -EINVAL;
-> -	if (src == inode)
-> -		goto out_fput;
->  
->  	/* the src must be open for reading */
->  	if (!(src_file->f_mode & FMODE_READ))
-> @@ -2282,9 +2278,11 @@ static noinline long btrfs_ioctl_clone(struct file *file, unsigned long srcfd,
->  	if (inode < src) {
->  		mutex_lock_nested(&inode->i_mutex, I_MUTEX_PARENT);
->  		mutex_lock_nested(&src->i_mutex, I_MUTEX_CHILD);
-> -	} else {
-> +	} else if (inode > src) {
->  		mutex_lock_nested(&src->i_mutex, I_MUTEX_PARENT);
->  		mutex_lock_nested(&inode->i_mutex, I_MUTEX_CHILD);
-> +	} else {
-> +		mutex_lock(&inode->i_mutex);
->  	}
->  
->  	/* determine range to clone */
-> @@ -2302,6 +2300,13 @@ static noinline long btrfs_ioctl_clone(struct file *file, unsigned long srcfd,
->  	    !IS_ALIGNED(destoff, bs))
->  		goto out_unlock;
->  
-> +	/*
-> +	 * allow ranges within the same file to be cloned only if
-> +	 * they don't overlap
-> +	 */
-> +	if (src == inode && !(off + len <= destoff || destoff + len <= off))
-            ^^^^^^^^^^^^
-... this check isn't sufficient. Two different inodes can reference the
-same data extent and we must prevent overlap cloning there as well.
+I see where the negative offset comes from. But what can this offset be
+used for?
+
+> The design idea was to reduce the number of extent backrefs in that
+> a data backref can point to different file extents in the same file
+> (in this case the "count" field > 1). We didn't expect nagetive
+> offset until range clone was implemented.
+
+Reducing the number of backrefs is a good thing. In case of count > 1,
+it's clear that the offset cannot reference all of the extent data
+items. We have different design choices:
+
+a) Use the above computation and leave the filesystem with an unusable
+offset value for extent backrefs.
+
+b) Use either one of the extent data item offsets this backref references.
+
+c) Always use a predefined constant (like 0 or -1) when count > 1.
+
+d) Disallow count > 1 for those refs and turn them into shared refs as
+soon as count gets > 1.
+
+I don't like a :-)
 
 -Jan
-
-> +		goto out_unlock;
-> +
->  	if (destoff > inode->i_size) {
->  		ret = btrfs_cont_expand(inode, inode->i_size, destoff);
->  		if (ret)
-> @@ -2543,8 +2548,12 @@ out:
->  	btrfs_release_path(path);
->  	unlock_extent(&BTRFS_I(src)->io_tree, off, off+len, GFP_NOFS);
->  out_unlock:
-> -	mutex_unlock(&src->i_mutex);
-> -	mutex_unlock(&inode->i_mutex);
-> +	if (src != inode) {
-> +		mutex_unlock(&src->i_mutex);
-> +		mutex_unlock(&inode->i_mutex);
-> +	} else {
-> +		mutex_unlock(&inode->i_mutex);
-> +	}
->  	vfree(buf);
->  	btrfs_free_path(path);
->  out_fput:

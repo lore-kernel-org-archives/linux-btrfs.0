@@ -1,39 +1,44 @@
-From: Mitch Harder <mitch.harder@sabayonlinux.org>
+From: Thomas Weber <thomas.weber.linux@googlemail.com>
 Subject: Re: btrfs bug
-Date: Tue, 31 Jan 2012 15:37:18 -0600
-Message-ID: <CAKcLGm-z3pJZgr30WYs8D8_VnVFMcjErKtvG5_ys-FOo=dRPEw@mail.gmail.com>
-References: <4F282D3B.8050609@gmail.com>
+Date: Tue, 31 Jan 2012 22:51:31 +0100
+Message-ID: <4F286263.7010502@gmail.com>
+References: <4F282D3B.8050609@gmail.com> <CAKcLGm-z3pJZgr30WYs8D8_VnVFMcjErKtvG5_ys-FOo=dRPEw@mail.gmail.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=ISO-8859-1
-Cc: linux-btrfs@vger.kernel.org
-To: Thomas Weber <thomas.weber.linux@googlemail.com>
+Content-Type: text/plain; charset=ISO-8859-1; format=flowed
+Cc: Thomas Weber <thomas.weber.linux@googlemail.com>,
+	linux-btrfs@vger.kernel.org
+To: Mitch Harder <mitch.harder@sabayonlinux.org>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <4F282D3B.8050609@gmail.com>
+In-Reply-To: <CAKcLGm-z3pJZgr30WYs8D8_VnVFMcjErKtvG5_ys-FOo=dRPEw@mail.gmail.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Tue, Jan 31, 2012 at 12:04 PM, Thomas Weber
-<thomas.weber.linux@googlemail.com> wrote:
-> Hello,
->
-> this morning my laptop with btrfs crashed. It is an ssd drive.
->
-> It is a Linux aramis 3.2.2-1-ARCH #1 SMP PREEMPT Thu Jan 26 08:40:20 CET
-> 2012 x86_64 Intel(R) Core(TM)2 Duo CPU T7250 @ 2.00GHz GenuineIntel
-> GNU/Linux
->
-> Regards,
-> Thomas
->
->
-> This two lines are from a photo, that i made.
->> kernel BUG at fs/btrfs/extent_io.c:4357!
->> invalid opcode: 0000 [#1] PREEMPT SMP
->
-> The rest is from dmesg.
->
+Hello Mitch,
 
-In your dmesg output, immediately prior to what you posted, there
-should have been a message like: "btrfs memmove bogus src_offset %lu
-move len %lu len %lu".
+On 01/31/2012 10:37 PM, Mitch Harder wrote:
+> On Tue, Jan 31, 2012 at 12:04 PM, Thomas Weber
+> <thomas.weber.linux@googlemail.com>  wrote:
+>> Hello,
+>>
+>> this morning my laptop with btrfs crashed. It is an ssd drive.
+>>
+>> It is a Linux aramis 3.2.2-1-ARCH #1 SMP PREEMPT Thu Jan 26 08:40:20 CET
+>> 2012 x86_64 Intel(R) Core(TM)2 Duo CPU T7250 @ 2.00GHz GenuineIntel
+>> GNU/Linux
+>>
+>> Regards,
+>> Thomas
+>>
+>>
+>> This two lines are from a photo, that i made.
+>>> kernel BUG at fs/btrfs/extent_io.c:4357!
+>>> invalid opcode: 0000 [#1] PREEMPT SMP
+>> The rest is from dmesg.
+>>
+> In your dmesg output, immediately prior to what you posted, there
+> should have been a message like: "btrfs memmove bogus src_offset %lu
+> move len %lu len %lu".
+>
+> If you still have this output, could you post that line with its values?
+no, sorry i don't have more output.
 
-If you still have this output, could you post that line with its values?
+Thomas

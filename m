@@ -1,42 +1,39 @@
-From: Duncan <1i5t5.duncan@cox.net>
-Subject: Re: newbie problems (difficulty with mkfs.btrfs and learning how to
- navigate trees
-Date: Tue, 31 Jan 2012 06:12:21 +0000 (UTC)
-Message-ID: <pan.2012.01.31.06.12.20@cox.net>
-References: <CAHb3AmJiv3Leq1QUO3JNQ3tuZ06jFQXWv=Jba65AW9qbk-T4Qw@mail.gmail.com>
-	<pan.2012.01.30.05.56.40@cox.net>
-	<CAHb3AmJWh-0W-f5AjZxstu8xtd+evA2VFidJPu+XecA4_O-t-Q@mail.gmail.com>
+From: Sander <sander@humilis.net>
+Subject: Re: Tuning of btrfs for throughput?
+Date: Tue, 31 Jan 2012 08:08:03 +0100
+Message-ID: <20120131070803.GA24017@attic.humilis.net>
+References: <CACyXjPxb3Ped7yvv5je_g76T+uDKKYkhC7t7MY_-GQK3WuTQ-Q@mail.gmail.com>
+Reply-To: sander@humilis.net
 Mime-Version: 1.0
-Content-Type: text/plain; charset=UTF-8
-To: linux-btrfs@vger.kernel.org
+Content-Type: text/plain; charset=us-ascii
+Cc: linux-btrfs@vger.kernel.org
+To: Richard Sharpe <realrichardsharpe@gmail.com>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
+In-Reply-To: <CACyXjPxb3Ped7yvv5je_g76T+uDKKYkhC7t7MY_-GQK3WuTQ-Q@mail.gmail.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Rohit Mehta posted on Mon, 30 Jan 2012 11:38:51 -0500 as excerpted:
+Richard Sharpe wrote (ao):
+> I am running on 3.2.1 and have set up btrfs across 11 7200RPM 1TB 3.5"
+> drives. I told btrfs to mirror metadata and stripe data.
 
-> Thanks, it does seem to work on larger filesystems.  I'll work with 500
-> MB virtual disks.
+> However, what I would like to know is are there any tuning parameters
+> I can tweak to push the numbers up a bit?
+> 
+> I see lots of idle time (80+%) on my 16 cores (probably two by four by two).
 
-FWIW I'd suggest 512 MiB, just because btrfs seems to like powers of two 
-as opposed to powers of 10.  That might be what you meant anyway, but 
-it's not what you posted.  =:^/
+Do you have a partition on the disks? On a partitionless disk you don't
+have to deal with aligning.
 
-Talking about which, if you want to try 500 vs 512 vs 520 (or 512 plus 
-whatever the system usage size turns out to be for such a volume, I 
-assumed 8 MiB here), I'd be quite interested in comparative results.  It 
-may be that getting it exactly right means a far more efficient layout, 
-less space waste and faster access, or that it really doesn't matter that 
-much.  I don't know, which is why the results of such a test would be so 
-interesting. =:^)
+You could try mkfs.btrfs -l 32k -n 32k as per
+http://www.mail-archive.com/linux-btrfs@vger.kernel.org/msg14585.html
 
-Of course on real disks as opposed to virtual, speed would depend on the 
-disk alignment (512 byte vs 4KiB physical sectors and alignment to it, 
-for spinning media, larger erase chunks, up to 1 or 4 MiB, likely on ssd), 
-etc, but physical disk layout shouldn't directly affect btrfs' chunk-size 
-and space utilization efficiency.
+Depending on the nature of your data, you could try with zlib, lzo or
+snappy compression.
+
+I'd say dd is a lousy benchmarktool btw.
+
+	Sander
 
 -- 
-Duncan - List replies preferred.   No HTML msgs.
-"Every nonfree program has a lord, a master --
-and if you use the program, he is your master."  Richard Stallman
-
+Humilis IT Services and Solutions
+http://www.humilis.net

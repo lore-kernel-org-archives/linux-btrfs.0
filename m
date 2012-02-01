@@ -1,56 +1,71 @@
-From: Duncan <1i5t5.duncan@cox.net>
-Subject: Re: btrfs-raid questions I couldn't find an answer to on the wiki
-Date: Wed, 1 Feb 2012 06:59:26 +0000 (UTC)
-Message-ID: <pan.2012.02.01.06.59.25@cox.net>
-References: <pan.2012.01.26.15.41.32@cox.net>
-	<201201291223.40161.kreijack@inwind.it>
-	<COL113-W485767962008EF29E7E27EB08D0@phx.gbl>
-	<pan.2012.01.31.05.55.47@cox.net>
-	<COL113-DS1406F918FEA81D38635AA3B0730@phx.gbl>
+From: Li Zefan <lizf@cn.fujitsu.com>
+Subject: Re: [PATCH] Btrfs: allow cloning ranges within the same file
+Date: Wed, 01 Feb 2012 17:34:21 +0800
+Message-ID: <4F29071D.7020609@cn.fujitsu.com>
+References: <4F265F78.1010806@cn.fujitsu.com> <4F26693F.2010705@jan-o-sch.net>
 Mime-Version: 1.0
 Content-Type: text/plain; charset=UTF-8
-To: linux-btrfs@vger.kernel.org
+Cc: "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
+To: Jan Schmidt <list.btrfs@jan-o-sch.net>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
+In-Reply-To: <4F26693F.2010705@jan-o-sch.net>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Kyle Gates posted on Tue, 31 Jan 2012 18:22:51 -0600 as excerpted:
+>> It's safe and easy to do so, provided the ranges don't overlap.
+>>
+>> Signed-off-by: Li Zefan <lizf@cn.fujitsu.com>
+>> ---
+>>  fs/btrfs/ioctl.c |   23 ++++++++++++++++-------
+>>  1 files changed, 16 insertions(+), 7 deletions(-)
+>>
+>> diff --git a/fs/btrfs/ioctl.c b/fs/btrfs/ioctl.c
+>> index 0b06a5c..8fcd671 100644
+>> --- a/fs/btrfs/ioctl.c
+>> +++ b/fs/btrfs/ioctl.c
+>> @@ -2223,8 +2223,6 @@ static noinline long btrfs_ioctl_clone(struct file *file, unsigned long srcfd,
+>>  	 *   decompress into destination's address_space (the file offset
+>>  	 *   may change, so source mapping won't do), then recompress (or
+>>  	 *   otherwise reinsert) a subrange.
+>> -	 * - allow ranges within the same file to be cloned (provided
+>> -	 *   they don't overlap)?
+>>  	 */
+>>  
+>>  	/* the destination must be opened for writing */
+>> @@ -2247,8 +2245,6 @@ static noinline long btrfs_ioctl_clone(struct file *file, unsigned long srcfd,
+>>  	src = src_file->f_dentry->d_inode;
+>>  
+>>  	ret = -EINVAL;
+>> -	if (src == inode)
+>> -		goto out_fput;
+>>  
+>>  	/* the src must be open for reading */
+>>  	if (!(src_file->f_mode & FMODE_READ))
+>> @@ -2282,9 +2278,11 @@ static noinline long btrfs_ioctl_clone(struct file *file, unsigned long srcfd,
+>>  	if (inode < src) {
+>>  		mutex_lock_nested(&inode->i_mutex, I_MUTEX_PARENT);
+>>  		mutex_lock_nested(&src->i_mutex, I_MUTEX_CHILD);
+>> -	} else {
+>> +	} else if (inode > src) {
+>>  		mutex_lock_nested(&src->i_mutex, I_MUTEX_PARENT);
+>>  		mutex_lock_nested(&inode->i_mutex, I_MUTEX_CHILD);
+>> +	} else {
+>> +		mutex_lock(&inode->i_mutex);
+>>  	}
+>>  
+>>  	/* determine range to clone */
+>> @@ -2302,6 +2300,13 @@ static noinline long btrfs_ioctl_clone(struct file *file, unsigned long srcfd,
+>>  	    !IS_ALIGNED(destoff, bs))
+>>  		goto out_unlock;
+>>  
+>> +	/*
+>> +	 * allow ranges within the same file to be cloned only if
+>> +	 * they don't overlap
+>> +	 */
+>> +	if (src == inode && !(off + len <= destoff || destoff + len <= off))
+>             ^^^^^^^^^^^^
+> ... this check isn't sufficient. Two different inodes can reference the
+> same data extent and we must prevent overlap cloning there as well.
+> 
 
-> I don't think I specifically enabled mixed chunk support when I created
-> this filesystem. It was done on a 2.6 kernel sometime in the middle of
-> 2011 iirc.
-
-Yeah, I'd guess that was before mixed-chunk, or at least before it became 
-the default for <=1GiB filesystems, so even if it was supported it 
-wouldn't have been the default.
-
-Meaning there's still an open question as to whether grub-1.99 supports 
-mixed-chunk.
-
-It looks like I might get more time to play with it this coming week than 
-I had this past week.  I might try some of my own experiments... and 
-whether grub groks mixed-chunk will certainly be among them if I do.
-
-As for those recommending something other than btrfs for /boot, yes, 
-that's a possibility, but I strongly prefer to standardize on a single 
-filesystem type.  Right now, that's reiserfs for everything except flash-
-based USB and legacy floppies (both of which I use ext4 without 
-journaling for, except for the floppies I used to update my BIOS, before 
-my 2003 era mainboard got EOLed; those were freedos images), and 
-ultimately, I hope it'll be btrfs for everything including flash-based 
-(tho perhaps not for legacy floppies, but it has been awhile since I used 
-one of them for anything, after that last BIOS update...).
-
-Of course I'm going to keep reiserfs on my backups, even if I use btrfs 
-for my working system, for the time being since btrfs is still in heavy 
-development, but ultimately, I want to go all btrfs just as I'm all 
-reiserfs now, and that would include both /boot 2-spindle raid-1s.
-
-Tho if btrfs doesn't work well for that ATM, I can keep /boot as reiserfs 
-for the time being, since I'm already keeping it for the backups, for the 
-time being.
-
--- 
-Duncan - List replies preferred.   No HTML msgs.
-"Every nonfree program has a lord, a master --
-and if you use the program, he is your master."  Richard Stallman
-
+Could you be more elaborate on this? I don't know what's the problem
+you're refering to.

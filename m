@@ -1,49 +1,56 @@
-From: Chris Mason <chris.mason@oracle.com>
-Subject: Re: brtfs on top of dmcrypt with SSD. No corruption iff write cache
- off?
-Date: Wed, 1 Feb 2012 12:56:24 -0500
-Message-ID: <20120201175624.GE16796@shiny>
-References: <20120130003754.GD4380@merlins.org>
+From: Mitch Harder <mitch.harder@sabayonlinux.org>
+Subject: Re: btrfs bug
+Date: Wed, 1 Feb 2012 12:07:27 -0600
+Message-ID: <CAKcLGm_qgV_o61t3n9Wo7GsO7=BJcy6TBBzcJK=SzxctFYGEog@mail.gmail.com>
+References: <4F282D3B.8050609@gmail.com>
+	<CAKcLGm-z3pJZgr30WYs8D8_VnVFMcjErKtvG5_ys-FOo=dRPEw@mail.gmail.com>
+	<4F286263.7010502@gmail.com>
+	<4F28CB94.1040803@gmail.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
+Content-Type: text/plain; charset=ISO-8859-1
 Cc: linux-btrfs@vger.kernel.org
-To: Marc MERLIN <marc@merlins.org>
+To: Thomas Weber <thomas.weber.linux@googlemail.com>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <20120130003754.GD4380@merlins.org>
+In-Reply-To: <4F28CB94.1040803@gmail.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Sun, Jan 29, 2012 at 04:37:54PM -0800, Marc MERLIN wrote:
-> Howdy,
-> 
-> I'm considering using brtfs for my new laptop install.
-> 
-> Encryption is however a requirement, and ecryptfs doesn't quite cut it for
-> me, so that leaves me with dmcrypt which is what I've been using with
-> ext3/ext4 for years.
-> 
-> https://btrfs.wiki.kernel.org/articles/g/o/t/Gotchas.html 
-> still states that 
-> 'dm-crypt block devices require write-caching to be turned off on the
-> underlying HDD'
-> While the report was for 2.6.33, I'll assume it's still true.
-> 
-> 
-> I was considering migrating to a recent 256GB SSD and 3.2.x kernel.
-> 
-> First, I'd like to check if the 'turn off write cache' comment is still
-> accurate and if it does apply to SSDs too.
-> 
-> Second, I was wondering if anyone is running btrfs over dmcrypt on an SSD
-> and what the performance is like with write cache turned off (I'm actually
-> not too sure what the impact is for SSDs considering that writing to flash
-> can actually be slower than writing to a hard drive).
+On Tue, Jan 31, 2012 at 11:20 PM, Thomas Weber
+<thomas.weber.linux@googlemail.com> wrote:
+> Hello Mitch,
+>
+> I have good news for you. I looked through all log files and found in the
+> everything.log the following:
+>
+> Regards,
+> Thomas
+>
+>
+> Jan 31 05:12:24 localhost kernel: [87276.968049] btrfs memmove bogus
+> src_offset 1870 move len 687876531 len 4096
+> Jan 31 05:12:24 localhost kernel: [87276.968136] ------------[ cut here
+> ]------------
+> Jan 31 05:12:24 localhost kernel: [87276.968222] kernel BUG at
+> fs/btrfs/extent_io.c:4357!
+> Jan 31 05:12:24 localhost kernel: [87276.968296] invalid opcode: 0000 [#1]
+> PREEMPT SMP
 
-Performance without the cache on is going to vary wildly from one SSD to
-another.  Some really need it to give them nice fat writes while others
-do better on smaller writes.  It's best to just test yours and see.
+[...snip...]
 
-With a 3.2 kernel (it really must be 3.2 or higher), both btrfs and dm
-are doing the right thing for barriers.
+This is coming from a BUG_ON(1) in the memcpy_extent_buffer() function
+in extent_io.c
 
--chris
+	if (src_offset + len > dst->len) {
+		printk(KERN_ERR "btrfs memmove bogus src_offset %lu move "
+		       "len %lu dst len %lu\n", src_offset, len, dst->len);
+		BUG_ON(1);
+	}
 
+So, since (1870 + 687876531) > 4096, the BUG_ON was triggered.
+
+There are two calls to memcpy_extent_buffer() from
+setup_items_for_insert (the next function back in the callback shown
+from the BUG_ON), so that part makes sense, at least.
+
+I don't know if anybody else has anything to say on this, but my best
+guess is that this btrfs volume has picked up some corruptions that
+are feeding in some bad values.

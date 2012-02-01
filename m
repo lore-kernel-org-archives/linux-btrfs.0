@@ -1,96 +1,100 @@
-From: Kyle Gates <kylegates@hotmail.com>
-Subject: RE: btrfs-raid questions I couldn't find an answer to on the wiki
-Date: Tue, 31 Jan 2012 18:22:51 -0600
-Message-ID: <COL113-DS1406F918FEA81D38635AA3B0730@phx.gbl>
-References: <pan.2012.01.26.15.41.32@cox.net>,<201201291223.40161.kreijack@inwind.it>,<COL113-W485767962008EF29E7E27EB08D0@phx.gbl>,<pan.2012.01.31.05.55.47@cox.net>
+From: Kai Krakow <hurikhan77+btrfs@gmail.com>
+Subject: [3.2.1] BUG at fs/btrfs/inode.c:1588
+Date: Wed, 01 Feb 2012 02:05:24 +0100
+Message-ID: <vqfmv8-9ch.ln1@hurikhan.ath.cx>
 Mime-Version: 1.0
-Content-Type: text/plain; format=flowed; charset="iso-8859-1";
-	reply-type=original
-To: <1i5t5.duncan@cox.net>, <linux-btrfs@vger.kernel.org>
+Content-Type: text/plain; charset="ISO-8859-1"
+To: linux-btrfs@vger.kernel.org
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <pan.2012.01.31.05.55.47@cox.net>
 List-ID: <linux-btrfs.vger.kernel.org>
 
->> I've been having good luck with my /boot on a separate 1GB RAID1 btrfs
->> filesystem using grub2 (2 disks only! I wouldn't try it with 3). I
->> should note, however, that I'm NOT using compression on this volume
->> because if I remember correctly it may not play well with grub (maybe
->> that was just lzo though) and I'm also not using subvolumes either for
->> the same reason.
->
-> Thanks! I'm on grub2 as well. It's is still masked on gentoo, but I
-> recently unmasked and upgraded to it, taking advantage of the fact that I
-> have two two-spindle md/raid-1s for /boot and its backup to test and
-> upgrade one of them first, then the other only when I was satisfied with
-> the results on the first set. I'll be using a similar strategy for the
-> btrfs upgrades, only most of my md/raid-1s are 4-spindle, with two sets,
-> working and backup, and I'll upgrade one set first.
->
-> I'm going to keep /boot a pair of two-spindle raid-1s, but intend to make
-> them btrfs-raid1s instead of md/raid-1s, and will upgrade one two-spindle
-> set at a time.
->
-> More on the status of grub2 btrfs-compression support based on my
-> research. There is support for btrfs/gzip-compression in at least grub
-> trunk. AFAIK, it's gzip-compression in grub-1.99-release and
-> lzo-compression in trunk only, but I may be misremembering and it's gzip
-> in trunk only and only uncompressed in grub-1.99-release.
+Just happened while writing a huge avi file to my usb3 backup disk:
 
-I believe you are correct that btrfs zlib support is included in grub2 
-version 1.99 and lzo is in trunk.
-I'll try compressing the files on /boot for one installed kernel with the 
-defrag -czlib option and see how it goes.
-Result: Seemed to work just fine.
+[356036.596292] ------------[ cut here ]------------
+[356036.596300] kernel BUG at fs/btrfs/inode.c:1588!
+[356036.596304] invalid opcode: 0000 [#1] SMP 
+[356036.596307] CPU 2 
+[356036.596309] Modules linked in: vmnet(O) vmblock(O) vsock(O) vmci(O) 
+vmmon(O) af_packet snd_seq_oss snd_seq_midi_event snd_seq snd_pcm_oss 
+snd_mixer_oss nls_iso8859_15 nls_cp437 vfat fat btusb bluetooth zram(C) loop 
+snd_usb_audio snd_hwdep snd_usbmidi_lib snd_rawmidi snd_seq_device 
+gspca_sonixj gspca_main videodev v4l2_compat_ioctl32 pcspkr i2c_i801 evdev 
+unix fuse xfs nfs nfs_acl auth_rpcgss lockd sunrpc reiserfs scsi_wait_scan 
+hid_monterey hid_microsoft hid_logitech hid_ezkey hid_cypress hid_chicony 
+hid_cherry hid_belkin hid_apple hid_a4tech usbhid usb_storage hid sr_mod 
+cdrom sg pata_cmd64x [last unloaded: microcode]
+[356036.596346] 
+[356036.596349] Pid: 28747, comm: btrfs-fixup-1 Tainted: G         C O 
+3.2.1-gentoo-r2 #1 To Be Filled By O.E.M. To Be Filled By O.E.M./Z68 Pro3
+[356036.596355] RIP: 0010:[<ffffffff811605fe>]  [<ffffffff811605fe>] 
+btrfs_writepage_fixup_worker+0xde/0x121
+[356036.596363] RSP: 0000:ffff8801e2379de0  EFLAGS: 00010246
+[356036.596366] RAX: 0000000000000000 RBX: ffffea00019b1a00 RCX: 
+0000000000000000
+[356036.596370] RDX: 0000000000000000 RSI: ffffffffffffffff RDI: 
+ffff88008a1bbb40
+[356036.596373] RBP: 00000000033fd000 R08: ffff8801e2379d2c R09: 
+0000000180240024
+[356036.596377] R10: 0000000000000000 R11: bf800000bf800000 R12: 
+ffff88008a1bbc10
+[356036.596380] R13: 0000000000000000 R14: ffff8801e2379df8 R15: 
+00000000033fdfff
+[356036.596384] FS:  0000000000000000(0000) GS:ffff88043fb00000(0000) 
+knlGS:0000000000000000
+[356036.596387] CS:  0010 DS: 0000 ES: 0000 CR0: 000000008005003b
+[356036.596391] CR2: 00007f5ef9660000 CR3: 00000003253f2000 CR4: 
+00000000000406e0
+[356036.596394] DR0: 0000000000000000 DR1: 0000000000000000 DR2: 
+0000000000000000
+[356036.596398] DR3: 0000000000000000 DR6: 00000000ffff0ff0 DR7: 
+0000000000000400
+[356036.596401] Process btrfs-fixup-1 (pid: 28747, threadinfo 
+ffff8801e2378000, task ffff8802d2160650)
+[356036.596405] Stack:
+[356036.596407]  ffff88008a1bbab0 ffff88026d847540 ffffffffffffffff 
+ffff88003a7c1f50
+[356036.596412]  0000000000000000 ffff88019bf62d80 ffff88019bf62dd0 
+ffff88019bf62d98
+[356036.596417]  ffff88019bf62da8 ffff8802d2160650 ffff88019bf62d88 
+ffffffff8117f23f
+[356036.596421] Call Trace:
+[356036.596426]  [<ffffffff8117f23f>] ? worker_loop+0x170/0x485
+[356036.596431]  [<ffffffff8117f0cf>] ? btrfs_queue_worker+0x272/0x272
+[356036.596435]  [<ffffffff8117f0cf>] ? btrfs_queue_worker+0x272/0x272
+[356036.596439]  [<ffffffff810489fb>] ? kthread+0x7a/0x82
+[356036.596445]  [<ffffffff81444634>] ? kernel_thread_helper+0x4/0x10
+[356036.596449]  [<ffffffff81048981>] ? kthread_worker_fn+0x135/0x135
+[356036.596453]  [<ffffffff81444630>] ? gs_change+0xb/0xb
+[356036.596456] Code: 00 00 4c 89 f1 48 8b 3c 24 e8 67 4f 01 00 48 89 df e8 
+b2 70 f2 ff ba 01 00 00 00 4c 89 ee 4c 89 e7 e8 bf 29 01 00 e9 4b ff ff ff 
+<0f> 0b 41 b8 50 00 00 00 4c 89 f1 4c 89 fa 48 89 ee 48 8b 3c 24 
+[356036.596478] RIP  [<ffffffff811605fe>] 
+btrfs_writepage_fixup_worker+0xde/0x121
+[356036.596483]  RSP <ffff8801e2379de0>
+[356036.653626] ---[ end trace 9fa19a7644192fb6 ]---
 
-> In any event, since I'm running 128 MB /boot md/raid-1s without
-> compression now, and intend to increase the size to at least a quarter
-> gig to better align the following partitions, /boot is the one set of
-> btrfs partitions I do NOT intend to enable compression on, so that won't
-> be an issue for me here. And since for /boot I'm running a pair of
-> two-spindle raid1s instead of my usual quad-spindle raid1s, you've
-> confirmed that works as well. =:^)
->
-> As a side note, since I only recently did the grub2 upgrade, I've been
-> enjoying its ability to load and read md/raid and my current reiserfs
-> directly, thus giving me the ability to look up info in at least text-
-> based main system config and notes files directly from grub2, without
-> booting into Linux, if for some reason the above-grub boot is hosed or
-> inconvenient at that moment. I just realized that if I want to maintain
-> that direct-from-grub access, I'll need to ensure that the grub2 I'm
-> running groks the btrfs compression scheme I'm using on any filesystem I
-> want grub2 to be able to read.
->
-> Hmm... that brings up another question: You mention a 1-gig btrfs-raid1 /
-> boot, but do NOT mention whether you installed it before or after mixed-
-> chunk (data/metadata) support made it into btrfs and became the default
-> for <= 1 gig filesystems.
+btrfsck now finds many of these:
 
-I don't think I specifically enabled mixed chunk support when I created this 
-filesystem. It was done on a 2.6 kernel sometime in the middle of 2011 iirc.
+jupiter ~ # btrfsck /dev/sde1
+root 256 inode 12746 errors 400
+root 256 inode 12747 errors 400
+root 256 inode 12748 errors 400
+root 256 inode 12749 errors 400
+root 256 inode 17141 errors 400
+root 256 inode 219966 errors 400
+root 256 inode 224243 errors 400
+root 256 inode 225245 errors 400
+root 256 inode 225354 errors 400
+root 256 inode 290639 errors 2000
+root 256 inode 291751 errors 2000
 
-> Can you confirm one way or the other whether you're running mixed-chunk
-> on that 1-gig? I'm not sure whether grub2's btrfs module groks mixed-
-> chunk or not, or whether that even matters to it.
->
-> Also, could you confirm mbr-bios vs gpt-bios vs uefi-gpt partitions? I'm
-> using gpt-bios partitioning here, with the special gpt-bios-reserved
-> partition, so grub2-install can build the modules necessary for /boot
-> access directly into its core-image and install that in the gpt-bios-
-> reserved partition. It occurs to me that either uefi-gpt or gpt-bios
-> with the appropriate reserved partition won't have quite the same issues
-> with grub2 reading a btrfs /boot that either mbr-bios or gpt-bios without
-> a reserved bios partition would. If you're running gpt-bios with a
-> reserved bios partition, that confirms yet another aspect of your setup,
-> compared to mine. If you're running uefi-gpt, not so much as at least in
-> theory, that's best-case. If you're running either mbr-bios or gpt-bios
-> without a reserved bios partition, that's a worst-case, so if it works,
-> then the others should definitely work.
+This disk is used for nothing else then the following cycle:
 
-Same here, gpt-bios, 1MB partition with bios_grub flag set (gdisk code EF02) 
-for grub to reside on.
+1. mount it (compress-force=gzip)
+2. run rsync to backup my system (using cow-friendly rsync flags)
+3. create a snapshot
+4. unmount it
 
-> Meanwhile, you're right about subvolumes. I'd not try them on a btrfs
-> /boot, either. (I don't really see the use case for it, for a separate
-> /boot, tho there's certainly a case for a /boot subvolume on a btrfs
-> root, for people doing that.)
+So that error must have been introduced simply by running rsync. It has 
+plenty of free space (about 800 GB).
 

@@ -1,91 +1,110 @@
-From: Konstantinos Skarlatos <k.skarlatos@gmail.com>
-Subject: kernel BUG at fs/btrfs/extent-tree.c
-Date: Thu, 02 Feb 2012 23:28:58 +0200
-Message-ID: <4F2B001A.5040006@gmail.com>
+From: Kai Krakow <hurikhan77+btrfs@gmail.com>
+Subject: Re: [3.2.1] BUG at fs/btrfs/inode.c:1588
+Date: Fri, 03 Feb 2012 00:25:51 +0100
+Message-ID: <mkirv8-uns.ln1@hurikhan.ath.cx>
+References: <vqfmv8-9ch.ln1@hurikhan.ath.cx> <fgdov8-ord.ln1@hurikhan.ath.cx> <51epv8-2qu.ln1@hurikhan.ath.cx> <pan.2012.02.02.11.19.06@cox.net>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=UTF-8; format=flowed
-To: Linux Btrfs <linux-btrfs@vger.kernel.org>
+Content-Type: text/plain; charset="ISO-8859-1"
+To: linux-btrfs@vger.kernel.org
 Return-path: <linux-btrfs-owner@vger.kernel.org>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hello,  i get this kernel message on my btrfs filesystem.
-kernel is 3.2.2-1-aufs_friendly from arch linux (3.2.2 with aufs patches)
+Thank you, Duncon...
 
-[  401.013567] ------------[ cut here ]------------
-[  401.013594] kernel BUG at fs/btrfs/extent-tree.c:5736!
-[  401.013616] invalid opcode: 0000 [#1] PREEMPT SMP
-[  401.013641] CPU 2
-[  401.013650] Modules linked in: fuse ipv6 btrfs zlib_deflate crc32c 
-libcrc32c loop xfs exportfs ext2 raid456 async_raid6_recov async_pq 
-raid6_pq async_xor snd_hda_codec_hdmi xor async_memcpy async_tx md_mod 
-snd_hda_intel snd_hda_codec radeon snd_hwdep snd_pcm snd_timer snd ttm 
-soundcore drm_kms_helper drm i2c_piix4 snd_page_alloc i2c_algo_bit 
-i2c_core shpchp pci_hotplug processor edac_core sp5100_tco evdev r8169 
-pcspkr button mii wmi edac_mce_amd k10temp ext4 mbcache jbd2 crc16 
-sd_mod pata_acpi ohci_hcd pata_jmicron ehci_hcd ahci libahci libata 
-xhci_hcd usbcore scsi_mod usb_common
-[  401.013957]
-[  401.013966] Pid: 548, comm: btrfs-cleaner Not tainted 
-3.2.2-1-aufs_friendly #1 Gigabyte Technology Co., Ltd. 
-GA-890GPA-UD3H/GA-890GPA-UD3H
-[  401.014020] RIP: 0010:[<ffffffffa04b4db7>]  [<ffffffffa04b4db7>] 
-alloc_reserved_file_extent+0x1e7/0x200 [btrfs]
-[  401.014073] RSP: 0018:ffff8801e5d05b70  EFLAGS: 00010282
-[  401.014095] RAX: 00000000ffffffef RBX: ffff8801e75d4630 RCX: 
-0000000000000001
-[  401.014124] RDX: 0000000000000008 RSI: 0000000000000001 RDI: 
-ffff8801eb2a6be0
-[  401.014153] RBP: ffff8801e5d05bf0 R08: 00000000000004ad R09: 
-ffff8801e5d059b0
-[  401.014181] R10: ffff8801fa4c2800 R11: ffff8801e1924090 R12: 
-00000000000000b2
-[  401.014210] R13: 0000000000000000 R14: ffff8801e5d05c9b R15: 
-ffff8801e1924090
-[  401.014239] FS:  00007f2012b1a740(0000) GS:ffff88020fc80000(0000) 
-knlGS:0000000000000000
-[  401.014271] CS:  0010 DS: 0000 ES: 0000 CR0: 000000008005003b
-[  401.014295] CR2: 00007fb3c00b0088 CR3: 00000001e4a80000 CR4: 
-00000000000006e0
-[  401.014324] DR0: 0000000000000000 DR1: 0000000000000000 DR2: 
-0000000000000000
-[  401.014352] DR3: 0000000000000000 DR6: 00000000ffff0ff0 DR7: 
-0000000000000400
-[  401.014382] Process btrfs-cleaner (pid: 548, threadinfo 
-ffff8801e5d04000, task ffff880201b063c0)
-[  401.014416] Stack:
-[  401.014425]  ffff880100000035 000000000000023f 0000000000000d6b 
-0000000000000000
-[  401.014462]  ffff8801fa4c2000 0000000000000246 ffffffffa04b8e4d 
-ffff8801f9ef0000
-[  401.014497]  ffff88018febe038 00000035d245c0f0 ffff8801e5d05bf0 
-ffff88018d9fa9c0
-[  401.014533] Call Trace:
-[  401.014550]  [<ffffffffa04b8e4d>] ? run_clustered_refs+0x11d/0x810 
-[btrfs]
-[  401.014583]  [<ffffffffa04b9029>] run_clustered_refs+0x2f9/0x810 [btrfs]
-[  401.014618]  [<ffffffffa0506101>] ? btrfs_find_ref_cluster+0xe1/0x190 
-[btrfs]
-[  401.014651]  [<ffffffffa04b9608>] btrfs_run_delayed_refs+0xc8/0x220 
-[btrfs]
-[  401.014684]  [<ffffffffa04c9c98>] 
-btrfs_should_end_transaction+0x98/0xa0 [btrfs]
-[  401.014719]  [<ffffffffa04bb2a4>] btrfs_drop_snapshot+0x2c4/0x590 [btrfs]
-[  401.014752]  [<ffffffffa04d993e>] ? 
-btrfs_run_defrag_inodes+0x1fe/0x210 [btrfs]
-[  401.014786]  [<ffffffffa04cb37f>] 
-btrfs_clean_old_snapshots+0xff/0x140 [btrfs]
-[  401.014820]  [<ffffffffa04c2ffc>] cleaner_kthread+0x16c/0x1a0 [btrfs]
-[  401.014851]  [<ffffffffa04c2e90>] ? transaction_kthread+0x290/0x290 
-[btrfs]
-[  401.014881]  [<ffffffff8108839c>] kthread+0x8c/0xa0
-[  401.014903]  [<ffffffff8142b2f4>] kernel_thread_helper+0x4/0x10
-[  401.014929]  [<ffffffff81088310>] ? kthread_worker_fn+0x190/0x190
-[  401.014956]  [<ffffffff8142b2f0>] ? gs_change+0x13/0x13
-[  401.014978] Code: 4c 89 ea 48 89 c6 e8 59 b4 02 00 48 8b 75 a8 8b 55 
-20 48 8b 7d b8 48 81 c6 86 00 00 00 e8 12 b2 02 00 eb 92 b8 f4 ff ff ff 
-eb bf <0f> 0b 49 8b 56 09 49 8b 36 48 c7 c7 20 f0 51 a0 31 c0 e8 6a 9b
-[  401.016869] RIP  [<ffffffffa04b4db7>] 
-alloc_reserved_file_extent+0x1e7/0x200 [btrfs]
-[  401.016869]  RSP <ffff8801e5d05b70>
-[  401.019349] ---[ end trace c960a7b93b93472b ]---
-[  401.020617] note: btrfs-cleaner[548] exited with preempt_count 1
+Duncan <1i5t5.duncan@cox.net> schrieb:
+
+> Kai Krakow posted on Thu, 02 Feb 2012 04:54:45 +0100 as excerpted:
+> 
+>> Kai Krakow <hurikhan77+btrfs@gmail.com> schrieb:
+>> 
+>>> Interestingly, the filesystem was not unmountable - system hung. After
+>>> reisub and checking again with "btrfs scrub" no errors where reported
+>>> and it just rsync'ed fine this time. This does not make sense to me.
+>> 
+>> btrfsck still shows a lot of errors, while scrubbing says everything is
+>> okay... *sigh
+>> 
+>> Now, how should one fix it if there is still no repair utility? I'm
+>> pretty sure sooner or later I will run into a BUG_ON again...
+> 
+> I had hoped someone else better qualified would answer, and they may
+> still do so, but in the meantime, a couple notes...
+
+Still I think you gained good insight by reading all those posts. I'm using 
+btrfs for a few weeks now and it is pretty solid since 3.2. I've been 
+reading the list a few weeks before starting btrfs but only looked at 
+articles about corruption and data loss. I started using btrfs when rescue 
+tools became available and the most annoying corruption bugs had been fixed. 
+But I've been hit by corruption and freezes a few times so I decided to have 
+that big usb3 disk which I rsync every now and then using snapshots for 
+rollback.
+
+> 1) This is unfortunately quite handwavy as I don't understand the details
+> myself, but if I'm reading the list right, there's a known "phantom ENOSPC
+> bug" that some are hitting when trying to write a large file (gigs, think
+> dvd image), or do an rsync of several gigs, or...  It may be that you hit
+> it, and on retry, enough of the file was already there that it didn't
+> trigger the second time around.
+
+On my first thought this was my suspicion, too. But otoh there was no ENOSPC 
+message, neither in dmesg nor in rsync. Rsync just froze, I was able to kill 
+it and my script continued to create a snapshot afterwards and unmount. I 
+tried to mount again after btrfsck, it worked fine, I unmounted, system 
+hung. I rebooted, scrubbed my two-disk array, no problems, I mounted the 
+backup disk again, rsync'ed it, went fine, unmounted. But btrfsck still 
+shows the same errors for this disk. *sigh
+
+[...]
+> So there's a short-to-medium-term workaround coming and a longer term
+> fix, once they trace down the problem itself.  Meanwhile, don't be too
+> worried about ENOSPC errors the occur under heavy write load and that go
+> away on retry, as there's apparently others having the same issue.
+
+I reported it here in the hope that it helps tracking down the bug or find 
+people with similar experiences. Since "only" my backup disk is affected it 
+is not a big problem. I can create it from scratch but try not to do it 
+until someone guides me in tracking it down a bit. I think btrfs should try 
+to fix such corruptions online while using it. From what I've learned here 
+this is the long-term target and a working btrfsck should just be a helper 
+tool. And the reason for the long delayed btrfsck is that Chris wants to 
+have proper online fixing in place first.
+
+At least I can tell this corruption was introduced by bad logic in the 
+kernel, and not by some crash. The usb3 disk is solely mounted for the 
+purpose of rsync'ing and unmounted all the other times.
+
+> 2) Just a couple days ago I read an article that claimed Oracle has a Feb
+> 16 deadline for a working btrfsck as that's the deadline for getting it
+> in their next shipping Unbreakable Linux release.  I won't claim to know
+> if the article is correct or not, but if so, a reasonably working btrfsck
+> should be available within two weeks. =:^)  Of course it may continue to
+> improve after that...
+
+Sounds good. I wonder if Chris could tell anything on that point. ;-)
+
+> Meanwhile, there's a tool already available that should allow retrieving
+> the undamaged data off of unmountable filesystems, at least, and there's
+> another tool that allows rollback to an earlier root node if necessary,
+> thus allowing recovery of most filesystems at the cost of losing the last
+> few seconds of work.  Given the experimental nature of btrfs and the
+> known lack of a proper btrfsck at this point anyway, that's... actually
+> quite reasonable, and the reason I decided it was time to start checking
+> out btrfs myself (I'm still researching but have been on the list about a
+> week now and had read a couple weeks worth of posts before I responded to
+> anything).
+
+The tools are btrfs-rescue and btrfs-repair from Josef's btrfs-progs 
+available from github.
+
+> Hopefully that's somewhat helpful in pointing you in the right direction,
+> at least. =:^)
+
+Well, no real news to me. But it is good having another soul here interested 
+in gaining some knowledge. I think btrfs will become a great filesystem.
+
+But if you could provide a link for the Feb 16 deadline I'd be eager to read 
+the article.
+
+Regards,
+Kai
+

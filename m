@@ -1,7 +1,7 @@
 From: Ilya Dryomov <idryomov@gmail.com>
-Subject: [PATCH 2/3] Btrfs-progs: implement new subcommand parser
-Date: Fri,  3 Feb 2012 23:23:59 +0200
-Message-ID: <1328304240-26100-3-git-send-email-idryomov@gmail.com>
+Subject: [PATCH 3/3] Btrfs-progs: switch all existing commands to a new parser
+Date: Fri,  3 Feb 2012 23:24:00 +0200
+Message-ID: <1328304240-26100-4-git-send-email-idryomov@gmail.com>
 References: <1328304240-26100-1-git-send-email-idryomov@gmail.com>
 Cc: Chris Mason <chris.mason@oracle.com>, idryomov@gmail.com
 To: linux-btrfs@vger.kernel.org
@@ -9,981 +9,1244 @@ Return-path: <linux-btrfs-owner@vger.kernel.org>
 In-Reply-To: <1328304240-26100-1-git-send-email-idryomov@gmail.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-This completely replaces the existing subcommand infrastructure, which
-is not flexible enough to accomodate our needs.  Instead of a global
-command table we now have per-level tables and command group handlers,
-which allows command-group-specific handling of options and subcommands.
-The new parser exports a clear interface and gets out of the way - all
-control over how matching is done is passed to commands and command
-group handlers.
-
-One side effect of this is that command implementors have to check the
-number of arguments themselves - patch to fix up all existing commands
-follows.
+The new infrastructure offloads checking number of arguments passed to a
+command to individual command handlers.  Fix them up accordingly.
 
 Signed-off-by: Ilya Dryomov <idryomov@gmail.com>
 ---
- Makefile   |    4 +-
- btrfs.c    |  574 ++++++++++++++++++++----------------------------------------
- commands.h |   80 +++++++++
- help.c     |  207 ++++++++++++++++++++++
- 4 files changed, 479 insertions(+), 386 deletions(-)
- create mode 100644 commands.h
- create mode 100644 help.c
+ btrfs.c           |    5 ++
+ btrfs_cmds.h      |   41 -------------
+ cmds-device.c     |  104 ++++++++++++++++++++++-----------
+ cmds-filesystem.c |  170 +++++++++++++++++++++++++++++++++++++++-------------
+ cmds-inspect.c    |   61 ++++++++++++++-----
+ cmds-scrub.c      |  109 +++++++++++++++++++++++++---------
+ cmds-subvolume.c  |  161 ++++++++++++++++++++++++++++++++++++++------------
+ commands.h        |   15 +++++
+ 8 files changed, 466 insertions(+), 200 deletions(-)
+ delete mode 100644 btrfs_cmds.h
 
-diff --git a/Makefile b/Makefile
-index 0d47bd5..deafda6 100644
---- a/Makefile
-+++ b/Makefile
-@@ -38,8 +38,8 @@ all: version $(progs) manpages
- version:
- 	bash version.sh
- 
--btrfs: $(objects) btrfs.o common.o $(cmds_objects)
--	$(CC) $(CFLAGS) -o btrfs btrfs.o common.o $(cmds_objects) \
-+btrfs: $(objects) btrfs.o help.o common.o $(cmds_objects)
-+	$(CC) $(CFLAGS) -o btrfs btrfs.o help.o common.o $(cmds_objects) \
- 		$(objects) $(LDFLAGS) $(LIBS) -lpthread
- 
- calc-size: $(objects) calc-size.o
 diff --git a/btrfs.c b/btrfs.c
-index 1def354..7cff30b 100644
+index 7cff30b..599a3e7 100644
 --- a/btrfs.c
 +++ b/btrfs.c
-@@ -19,444 +19,250 @@
- #include <stdlib.h>
- #include <string.h>
+@@ -238,6 +238,11 @@ static int handle_options(int *argc, char ***argv)
  
--#include "kerncompat.h"
+ const struct cmd_group btrfs_cmd_group = {
+ 	btrfs_cmd_group_usage, btrfs_cmd_group_info, {
++		{ "subvolume", cmd_subvolume, NULL, &subvolume_cmd_group, 0 },
++		{ "filesystem", cmd_filesystem, NULL, &filesystem_cmd_group, 0 },
++		{ "device", cmd_device, NULL, &device_cmd_group, 0 },
++		{ "scrub", cmd_scrub, NULL, &scrub_cmd_group, 0 },
++		{ "inspect-internal", cmd_inspect, NULL, &inspect_cmd_group, 0 },
+ 		{ "help", cmd_help, cmd_help_usage, NULL, 0 },
+ 		{ "version", cmd_version, cmd_version_usage, NULL, 0 },
+ 		{ 0, 0, 0, 0, 0 }
+diff --git a/btrfs_cmds.h b/btrfs_cmds.h
+deleted file mode 100644
+index efca7c5..0000000
+--- a/btrfs_cmds.h
++++ /dev/null
+@@ -1,41 +0,0 @@
+-/*
+- * This program is free software; you can redistribute it and/or
+- * modify it under the terms of the GNU General Public
+- * License v2 as published by the Free Software Foundation.
+- *
+- * This program is distributed in the hope that it will be useful,
+- * but WITHOUT ANY WARRANTY; without even the implied warranty of
+- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+- * General Public License for more details.
+- *
+- * You should have received a copy of the GNU General Public
+- * License along with this program; if not, write to the
+- * Free Software Foundation, Inc., 59 Temple Place - Suite 330,
+- * Boston, MA 021110-1307, USA.
+- */
+-
+-/* btrfs_cmds.c*/
+-int do_clone(int nargs, char **argv);
+-int do_delete_subvolume(int nargs, char **argv);
+-int do_create_subvol(int nargs, char **argv);
+-int do_fssync(int nargs, char **argv);
+-int do_defrag(int argc, char **argv);
+-int do_show_filesystem(int nargs, char **argv);
+-int do_add_volume(int nargs, char **args);
+-int do_balance(int nargs, char **argv);
+-int do_scrub_start(int nargs, char **argv);
+-int do_scrub_status(int argc, char **argv);
+-int do_scrub_resume(int argc, char **argv);
+-int do_scrub_cancel(int nargs, char **argv);
+-int do_remove_volume(int nargs, char **args);
+-int do_scan(int nargs, char **argv);
+-int do_resize(int nargs, char **argv);
+-int do_subvol_list(int nargs, char **argv);
+-int do_set_default_subvol(int nargs, char **argv);
+-int do_get_default_subvol(int nargs, char **argv);
+-int do_df_filesystem(int nargs, char **argv);
+-int do_find_newer(int argc, char **argv);
+-int do_change_label(int argc, char **argv);
+-int open_file_or_dir(const char *fname);
+-int do_ino_to_path(int nargs, char **argv);
+-int do_logical_to_ino(int nargs, char **argv);
+diff --git a/cmds-device.c b/cmds-device.c
+index 0fc4c7f..51089ba 100644
+--- a/cmds-device.c
++++ b/cmds-device.c
+@@ -28,7 +28,7 @@
+ #include "ioctl.h"
+ #include "utils.h"
+ 
 -#include "btrfs_cmds.h"
 +#include "commands.h"
+ 
+ /* FIXME - imported cruft, fix sparse errors and warnings */
+ #ifdef __CHECKER__
+@@ -39,12 +39,24 @@ struct btrfs_ioctl_vol_args { char name[BTRFS_VOL_NAME_MAX]; };
+ static inline int ioctl(int fd, int define, void *arg) { return 0; }
+ #endif
+ 
+-int do_add_volume(int nargs, char **args)
+-{
++static const char device_cmd_group_usage[] =
++	"btrfs device <command> [<args>]";
++
++static const char * const cmd_add_dev_usage[] = {
++	"btrfs device add <device> [<device>...] <path>",
++	"Add a device to a filesystem",
++	NULL
++};
+ 
+-	char	*mntpnt = args[nargs-1];
++static int cmd_add_dev(int argc, char **argv)
++{
++	char	*mntpnt;
+ 	int	i, fdmnt, ret=0, e;
+ 
++	if (check_argc_min(argc, 3))
++		usage(cmd_add_dev_usage);
++
++	mntpnt = argv[argc - 1];
+ 
+ 	fdmnt = open_file_or_dir(mntpnt);
+ 	if (fdmnt < 0) {
+@@ -52,62 +64,62 @@ int do_add_volume(int nargs, char **args)
+ 		return 12;
+ 	}
+ 
+-	for (i = 1; i < (nargs-1); i++ ){
++	for (i = 1; i < argc - 1; i++ ){
+ 		struct btrfs_ioctl_vol_args ioctl_args;
+ 		int	devfd, res;
+ 		u64 dev_block_count = 0;
+ 		struct stat st;
+ 		int mixed = 0;
+ 
+-		res = check_mounted(args[i]);
++		res = check_mounted(argv[i]);
+ 		if (res < 0) {
+ 			fprintf(stderr, "error checking %s mount status\n",
+-				args[i]);
++				argv[i]);
+ 			ret++;
+ 			continue;
+ 		}
+ 		if (res == 1) {
+-			fprintf(stderr, "%s is mounted\n", args[i]);
++			fprintf(stderr, "%s is mounted\n", argv[i]);
+ 			ret++;
+ 			continue;
+ 		}
+ 
+-		devfd = open(args[i], O_RDWR);
++		devfd = open(argv[i], O_RDWR);
+ 		if (!devfd) {
+-			fprintf(stderr, "ERROR: Unable to open device '%s'\n", args[i]);
++			fprintf(stderr, "ERROR: Unable to open device '%s'\n", argv[i]);
+ 			close(devfd);
+ 			ret++;
+ 			continue;
+ 		}
+ 		res = fstat(devfd, &st);
+ 		if (res) {
+-			fprintf(stderr, "ERROR: Unable to stat '%s'\n", args[i]);
++			fprintf(stderr, "ERROR: Unable to stat '%s'\n", argv[i]);
+ 			close(devfd);
+ 			ret++;
+ 			continue;
+ 		}
+ 		if (!S_ISBLK(st.st_mode)) {
+-			fprintf(stderr, "ERROR: '%s' is not a block device\n", args[i]);
++			fprintf(stderr, "ERROR: '%s' is not a block device\n", argv[i]);
+ 			close(devfd);
+ 			ret++;
+ 			continue;
+ 		}
+ 
+-		res = btrfs_prepare_device(devfd, args[i], 1, &dev_block_count, &mixed);
++		res = btrfs_prepare_device(devfd, argv[i], 1, &dev_block_count, &mixed);
+ 		if (res) {
+-			fprintf(stderr, "ERROR: Unable to init '%s'\n", args[i]);
++			fprintf(stderr, "ERROR: Unable to init '%s'\n", argv[i]);
+ 			close(devfd);
+ 			ret++;
+ 			continue;
+ 		}
+ 		close(devfd);
+ 
+-		strncpy(ioctl_args.name, args[i], BTRFS_PATH_NAME_MAX);
++		strncpy(ioctl_args.name, argv[i], BTRFS_PATH_NAME_MAX);
+ 		res = ioctl(fdmnt, BTRFS_IOC_ADD_DEV, &ioctl_args);
+ 		e = errno;
+ 		if(res<0){
+-			fprintf(stderr, "ERROR: error adding the device '%s' - %s\n", 
+-				args[i], strerror(e));
++			fprintf(stderr, "ERROR: error adding the device '%s' - %s\n",
++				argv[i], strerror(e));
+ 			ret++;
+ 		}
+ 
+@@ -118,31 +130,40 @@ int do_add_volume(int nargs, char **args)
+ 		return ret+20;
+ 	else
+ 		return 0;
+-
+ }
+ 
+-int do_remove_volume(int nargs, char **args)
+-{
++static const char * const cmd_rm_dev_usage[] = {
++	"btrfs device delete <device> [<device>...] <path>",
++	"Remove a device from a filesystem",
++	NULL
++};
+ 
+-	char	*mntpnt = args[nargs-1];
++static int cmd_rm_dev(int argc, char **argv)
++{
++	char	*mntpnt;
+ 	int	i, fdmnt, ret=0, e;
+ 
++	if (check_argc_min(argc, 3))
++		usage(cmd_rm_dev_usage);
++
++	mntpnt = argv[argc - 1];
++
+ 	fdmnt = open_file_or_dir(mntpnt);
+ 	if (fdmnt < 0) {
+ 		fprintf(stderr, "ERROR: can't access to '%s'\n", mntpnt);
+ 		return 12;
+ 	}
+ 
+-	for(i=1 ; i < (nargs-1) ; i++ ){
++	for(i=1 ; i < argc - 1; i++ ){
+ 		struct	btrfs_ioctl_vol_args arg;
+ 		int	res;
+ 
+-		strncpy(arg.name, args[i], BTRFS_PATH_NAME_MAX);
++		strncpy(arg.name, argv[i], BTRFS_PATH_NAME_MAX);
+ 		res = ioctl(fdmnt, BTRFS_IOC_RM_DEV, &arg);
+ 		e = errno;
+ 		if(res<0){
+-			fprintf(stderr, "ERROR: error removing the device '%s' - %s\n", 
+-				args[i], strerror(e));
++			fprintf(stderr, "ERROR: error removing the device '%s' - %s\n",
++				argv[i], strerror(e));
+ 			ret++;
+ 		}
+ 	}
+@@ -154,18 +175,21 @@ int do_remove_volume(int nargs, char **args)
+ 		return 0;
+ }
+ 
+-int do_scan(int argc, char **argv)
++static const char * const cmd_scan_dev_usage[] = {
++	"btrfs device scan [<device>...]",
++	"Scan devices for a btrfs filesystem",
++	NULL
++};
++
++static int cmd_scan_dev(int argc, char **argv)
+ {
+ 	int	i, fd, e;
+ 	int	checklist = 1;
+ 	int	devstart = 1;
+ 
+-	if( argc >= 2 && !strcmp(argv[1],"--all-devices")){
+-
+-		if( argc >2 ){
+-			fprintf(stderr, "ERROR: too may arguments\n");
+-                        return 22;
+-                }
++	if( argc > 1 && !strcmp(argv[1],"--all-devices")){
++		if (check_argc_max(argc, 2))
++			usage(cmd_scan_dev_usage);
+ 
+ 		checklist = 0;
+ 		devstart += 1;
+@@ -210,7 +234,7 @@ int do_scan(int argc, char **argv)
+ 
+ 		if( ret < 0 ){
+ 			close(fd);
+-			fprintf(stderr, "ERROR: unable to scan the device '%s' - %s\n", 
++			fprintf(stderr, "ERROR: unable to scan the device '%s' - %s\n",
+ 				argv[i], strerror(e));
+ 			return 11;
+ 		}
+@@ -218,6 +242,18 @@ int do_scan(int argc, char **argv)
+ 
+ 	close(fd);
+ 	return 0;
+-
+ }
+ 
++const struct cmd_group device_cmd_group = {
++	device_cmd_group_usage, NULL, {
++		{ "add", cmd_add_dev, cmd_add_dev_usage, NULL, 0 },
++		{ "delete", cmd_rm_dev, cmd_rm_dev_usage, NULL, 0 },
++		{ "scan", cmd_scan_dev, cmd_scan_dev_usage, NULL, 0 },
++		{ 0, 0, 0, 0, 0 }
++	}
++};
++
++int cmd_device(int argc, char **argv)
++{
++	return handle_command_group(&device_cmd_group, argc, argv);
++}
+diff --git a/cmds-filesystem.c b/cmds-filesystem.c
+index 2e607d2..828ca0c 100644
+--- a/cmds-filesystem.c
++++ b/cmds-filesystem.c
+@@ -31,17 +31,31 @@
+ 
  #include "version.h"
  
--#define BASIC_HELP 0
--#define ADVANCED_HELP 1
--
--typedef int (*CommandFunction)(int argc, char **argv);
--
--struct Command {
--	CommandFunction	func;	/* function which implements the command */
--	int	nargs;		/* if == 999, any number of arguments
--				   if >= 0, number of arguments,
--				   if < 0, _minimum_ number of arguments */
--	char	*verb;		/* verb */
--	char	*help;		/* help lines; from the 2nd line onward they 
--                                   are automatically indented */
--        char    *adv_help;      /* advanced help message; from the 2nd line 
--                                   onward they are automatically indented */
--
--	/* the following fields are run-time filled by the program */
--	char	**cmds;		/* array of subcommands */
--	int	ncmds;		/* number of subcommand */
--};
-+static const char btrfs_cmd_group_usage[] =
-+	"btrfs [--help] [--version] <group> [<group>...] <command> [<args>]";
+-#include "btrfs_cmds.h"
++#include "commands.h"
+ #include "btrfslabel.h"
  
--static struct Command commands[] = {
-+static const char btrfs_cmd_group_info[] =
-+	"Use --help as an argument for information on a specific group or command.";
- 
--	/*
--		avoid short commands different for the case only
--	*/
--	{ do_clone, -2,
--	  "subvolume snapshot", "[-r] <source> [<dest>/]<name>\n"
--		"Create a writable/readonly snapshot of the subvolume <source> with\n"
--		"the name <name> in the <dest> directory.",
--	  NULL
--	},
--	{ do_delete_subvolume, 1,
--	  "subvolume delete", "<subvolume>\n"
--		"Delete the subvolume <subvolume>.",
--	  NULL
--	},
--	{ do_create_subvol, 1,
--	  "subvolume create", "[<dest>/]<name>\n"
--		"Create a subvolume in <dest> (or the current directory if\n"
--		"not passed).",
--	  NULL
--	},
--	{ do_subvol_list, -1, "subvolume list", "[-p] <path>\n"
--		"List the snapshot/subvolume of a filesystem.",
--		"[-p] <path>\n"
--		"List the snapshot/subvolume of a filesystem.\n"
--		"-p	   print parent ID"
--	},
--	{ do_set_default_subvol, 2,
--	  "subvolume set-default", "<id> <path>\n"
--		"Set the subvolume of the filesystem <path> which will be mounted\n"
--		"as default.",
--	  NULL
--	},
--	{ do_find_newer, 2, "subvolume find-new", "<path> <last_gen>\n"
--		"List the recently modified files in a filesystem.",
--	  NULL
--	},
--	{ do_defrag, -1,
--	  "filesystem defragment", "[-vf] [-c[zlib,lzo]] [-s start] [-l len] [-t size] <file>|<dir> [<file>|<dir>...]\n"
--		"Defragment a file or a directory.",
--	  	"[-vcf] [-s start] [-l len] [-t size] <file>|<dir> [<file>|<dir>...]\n"
--		"Defragment file data or directory metadata.\n"
--		"-v         be verbose\n"
--		"-c         compress the file while defragmenting\n"
--		"-f         flush data to disk immediately after defragmenting\n"
--		"-s start   defragment only from byte onward\n"
--		"-l len     defragment only up to len bytes\n"
--		"-t size    minimal size of file to be considered for defragmenting\n"
--	},
--	{ do_get_default_subvol, 1, "subvolume get-default", "<path>\n"
--		"Get the default subvolume of a filesystem."
--	},
--	{ do_fssync, 1,
--	  "filesystem sync", "<path>\n"
--		"Force a sync on the filesystem <path>.",
--	  NULL
--	},
--	{ do_resize, 2,
--	  "filesystem resize", "[+/-]<newsize>[gkm]|max <filesystem>\n"
--		"Resize the file system. If 'max' is passed, the filesystem\n"
--		"will occupe all available space on the device.",
--	  NULL
--	},
--	{ do_show_filesystem, 999,
--	  "filesystem show", "[--all-devices][<uuid>|<label>]\n"
--		"Show the info of a btrfs filesystem. If no argument\n"
--		"is passed, info of all the btrfs filesystem are shown.",
--	  NULL
--	},
--	{ do_df_filesystem, 1,
--	  "filesystem df", "<path>\n"
--		"Show space usage information for a mount point.",
--	  NULL
--	},
--	{ do_balance, 1,
--	  "filesystem balance", "<path>\n"
--		"Balance the chunks across the device.",
--	  NULL
--	},
--	{ do_change_label, -1,
--	  "filesystem label", "<device> [<newlabel>]\n"
--	  "With one argument, get the label of filesystem on <device>.\n"
--	  "If <newlabel> is passed, set the filesystem label to <newlabel>.\n"
--	  "The filesystem must be unmounted.\n"
--	},
--	{ do_scrub_start, -1,
--	  "scrub start", "[-Bdqr] <path>|<device>\n"
--		"Start a new scrub.",
--		"\n-B  do not background\n"
--		"-d  stats per device (-B only)\n"
--		"-q  quiet\n"
--		"-r  read only mode\n"
--	},
--	{ do_scrub_cancel, 1,
--	  "scrub cancel", "<path>|<device>\n"
--		"Cancel a running scrub.",
--	  NULL
--	},
--	{ do_scrub_resume, -1,
--	  "scrub resume", "[-Bdqr] <path>|<device>\n"
--		"Resume previously canceled or interrupted scrub.",
--	  NULL
--	},
--	{ do_scrub_status, -1,
--	  "scrub status", "[-d] <path>|<device>\n"
--		"Show status of running or finished scrub.",
--	  NULL
--	},
--	{ do_scan, 999, 
--	  "device scan", "[<device>...]\n"
--		"Scan all device for or the passed device for a btrfs\n"
--		"filesystem.",
--	  NULL
--	},
--	{ do_add_volume, -2,
--	  "device add", "<device> [<device>...] <path>\n"
--		"Add a device to a filesystem.",
--	  NULL
--	},
--	{ do_remove_volume, -2,
--	  "device delete", "<device> [<device>...] <path>\n"
--		"Remove a device from a filesystem.",
--	  NULL
--	},
--	{ do_ino_to_path, -2,
--	  "inspect-internal inode-resolve", "[-v] <inode> <path>\n"
--		"get file system paths for the given inode.",
--	  NULL
--	},
--	{ do_logical_to_ino, -2,
--	  "inspect-internal logical-resolve", "[-v] [-P] <logical> <path>\n"
--		"get file system paths for the given logical address.",
--	  NULL
--	},
--	{ 0, 0, 0, 0 }
--};
-+char argv0_buf[ARGV0_BUF_SIZE] = "btrfs";
- 
--static char *get_prgname(char *programname)
-+static inline const char *skip_prefix(const char *str, const char *prefix)
+-int do_df_filesystem(int nargs, char **argv)
++static const char filesystem_cmd_group_usage[] =
++	"btrfs filesystem [<group>] <command> [<args>]";
++
++static const char * const cmd_df_usage[] = {
++	"btrfs filesystem df <path>",
++	"Show space usage information for a mount point",
++	NULL
++};
++
++static int cmd_df(int argc, char **argv)
  {
--	char	*np;
--	np = strrchr(programname,'/');
--	if(!np)
--		np = programname;
--	else
--		np++;
--
--	return np;
-+	size_t len = strlen(prefix);
-+	return strncmp(str, prefix, len) ? NULL : str + len;
+ 	struct btrfs_ioctl_space_args *sargs;
+ 	u64 count = 0, i;
+ 	int ret;
+ 	int fd;
+ 	int e;
+-	char *path = argv[1];
++	char *path;
++
++	if (check_argc_exact(argc, 2))
++		usage(cmd_df_usage);
++
++	path = argv[1];
+ 
+ 	fd = open_file_or_dir(path);
+ 	if (fd < 0) {
+@@ -195,7 +209,14 @@ static void print_one_uuid(struct btrfs_fs_devices *fs_devices)
+ 	printf("\n");
  }
  
--static void print_help(char *programname, struct Command *cmd, int helptype)
-+int prefixcmp(const char *str, const char *prefix)
- {
--	char	*pc;
--
--	printf("\t%s %s ", programname, cmd->verb );
-+	for (; ; str++, prefix++)
-+		if (!*prefix)
-+			return 0;
-+		else if (*str != *prefix)
-+			return (unsigned char)*prefix - (unsigned char)*str;
-+}
- 
--	if (helptype == ADVANCED_HELP && cmd->adv_help)
--		for(pc = cmd->adv_help; *pc; pc++){
--			putchar(*pc);
--			if(*pc == '\n')
--				printf("\t\t");
--		}
--	else
--		for(pc = cmd->help; *pc; pc++){
--			putchar(*pc);
--			if(*pc == '\n')
--				printf("\t\t");
-+static int parse_one_token(const char *arg, const struct cmd_group *grp,
-+			   const struct cmd_struct **cmd_ret)
-+{
-+	const struct cmd_struct *cmd = grp->commands;
-+	const struct cmd_struct *abbrev_cmd = NULL, *ambiguous_cmd = NULL;
+-int do_show_filesystem(int argc, char **argv)
++static const char * const cmd_show_usage[] = {
++	"btrfs filesystem show [--all-devices] [<uuid>|<label>]",
++	"Show the structure of a filesystem",
++	"If no argument is given, structure of all present filesystems is shown.",
++	NULL
++};
 +
-+	for (; cmd->token; cmd++) {
-+		const char *rest;
-+
-+		rest = skip_prefix(arg, cmd->token);
-+		if (!rest) {
-+			if (!prefixcmp(cmd->token, arg)) {
-+				if (abbrev_cmd) {
-+					/*
-+					 * If this is abbreviated, it is
-+					 * ambiguous. So when there is no
-+					 * exact match later, we need to
-+					 * error out.
-+					 */
-+					ambiguous_cmd = abbrev_cmd;
-+				}
-+				abbrev_cmd = cmd;
-+			}
-+			continue;
- 		}
-+		if (*rest)
-+			continue;
- 
--	putchar('\n');
--}
-+		*cmd_ret = cmd;
-+		return 0;
-+	}
- 
--static void help(char *np)
--{
--	struct Command *cp;
-+	if (ambiguous_cmd)
-+		return -2;
- 
--	printf("Usage:\n");
--	for( cp = commands; cp->verb; cp++ )
--		print_help(np, cp, BASIC_HELP);
-+	if (abbrev_cmd) {
-+		*cmd_ret = abbrev_cmd;
-+		return 0;
-+	}
- 
--	printf("\n\t%s help|--help|-h\n\t\tShow the help.\n",np);
--	printf("\n\t%s <cmd> --help\n\t\tShow detailed help for a command or\n\t\t"
--	       "subset of commands.\n",np);
--	printf("\n%s\n", BTRFS_BUILD_VERSION);
-+	return -1;
- }
- 
--static int split_command(char *cmd, char ***commands)
-+static const struct cmd_struct *
-+parse_command_token(const char *arg, const struct cmd_group *grp)
++static int cmd_show(int argc, char **argv)
  {
--	int	c, l;
--	char	*p, *s;
-+	const struct cmd_struct *cmd;
+ 	struct list_head *all_uuids;
+ 	struct btrfs_fs_devices *fs_devices;
+@@ -205,15 +226,13 @@ int do_show_filesystem(int argc, char **argv)
+ 	int checklist = 1;
+ 	int searchstart = 1;
  
--	for( *commands = 0, l = c = 0, p = s = cmd ; ; p++, l++ ){
--		if ( *p && *p != ' ' )
--			continue;
--
--		/* c + 2 so that we have room for the null */
--		(*commands) = realloc( (*commands), sizeof(char *)*(c + 2));
--		(*commands)[c] = strndup(s, l);
--		c++;
--		l = 0;
--		s = p+1;
--		if( !*p ) break;
-+	switch(parse_one_token(arg, grp, &cmd)) {
-+	case -1:
-+		help_unknown_token(arg, grp);
-+	case -2:
-+		help_ambiguous_token(arg, grp);
+-	if( argc >= 2 && !strcmp(argv[1],"--all-devices")){
++	if( argc > 1 && !strcmp(argv[1],"--all-devices")){
+ 		checklist = 0;
+ 		searchstart += 1;
  	}
  
--	(*commands)[c] = 0;
--	return c;
-+	return cmd;
+-	if( argc > searchstart+1 ){
+-		fprintf(stderr, "ERROR: too many arguments\n");
+-		return 22;
+-	}	
++	if (check_argc_max(argc, searchstart + 1))
++		usage(cmd_show_usage);
+ 
+ 	if(checklist)
+ 		ret = btrfs_scan_block_devices(0);
+@@ -240,10 +259,21 @@ int do_show_filesystem(int argc, char **argv)
+ 	return 0;
  }
  
--/*
--	This function checks if the passed command is ambiguous
--*/
--static int check_ambiguity(struct Command *cmd, char **argv){
--	int		i;
--	struct Command	*cp;
--	/* check for ambiguity */
--	for( i = 0 ; i < cmd->ncmds ; i++ ){
--		int match;
--		for( match = 0, cp = commands; cp->verb; cp++ ){
--			int	j, skip;
--			char	*s1, *s2;
--
--			if( cp->ncmds < i )
--				continue;
--
--			for( skip = 0, j = 0 ; j < i ; j++ )
--				if( strcmp(cmd->cmds[j], cp->cmds[j])){
--					skip=1;
--					break;
--				}
--			if(skip)
--				continue;
--
--			if( !strcmp(cmd->cmds[i], cp->cmds[i]))
--				continue;
--			for(s2 = cp->cmds[i], s1 = argv[i+1];
--				*s1 == *s2 && *s1; s1++, s2++ ) ;
--			if( !*s1 )
--				match++;
--		}
--		if(match){
--			int j;
--			fprintf(stderr, "ERROR: in command '");
--			for( j = 0 ; j <= i ; j++ )
--				fprintf(stderr, "%s%s",j?" ":"", argv[j+1]);
--			fprintf(stderr, "', '%s' is ambiguous\n",argv[j]);
--			return -2;
-+void handle_help_options_next_level(const struct cmd_struct *cmd,
-+				    int argc, char **argv)
-+{
-+	if (argc < 2)
-+		return;
+-int do_fssync(int argc, char **argv)
++static const char * const cmd_sync_usage[] = {
++	"btrfs filesystem sync <path>",
++	"Force a sync on a filesystem",
++	NULL
++};
 +
-+	if (!strcmp(argv[1], "--help")) {
-+		if (cmd->next) {
-+			argc--;
-+			argv++;
-+			help_command_group(cmd->next, argc, argv);
-+		} else {
-+			usage_command(cmd, 1, 0);
- 		}
-+
-+		exit(0);
- 	}
--	return 0;
- }
- 
--/*
-- * This function, compacts the program name and the command in the first
-- * element of the '*av' array
-- */
--static int prepare_args(int *ac, char ***av, char *prgname, struct Command *cmd ){
--
--	char	**ret;
--	int	i;
--	char	*newname;
--
--	ret = (char **)malloc(sizeof(char*)*(*ac+1));
--	newname = (char*)malloc(strlen(prgname)+strlen(cmd->verb)+2);
--	if( !ret || !newname ){
--		free(ret);
--		free(newname);
--		return -1;
--	}
-+static void fixup_argv0(char **argv, const char *token)
-+{
-+	int len = strlen(argv0_buf);
- 
--	ret[0] = newname;
--	for(i=0; i < *ac ; i++ )
--		ret[i+1] = (*av)[i];
-+	snprintf(argv0_buf + len, sizeof(argv0_buf) - len, " %s", token);
-+	argv[0] = argv0_buf;
-+}
- 
--	strcpy(newname, prgname);
--	strcat(newname, " ");
--	strcat(newname, cmd->verb);
-+int handle_command_group(const struct cmd_group *grp, int argc,
-+			 char **argv)
- 
--	(*ac)++;
--	*av = ret;
-+{
-+	const struct cmd_struct *cmd;
- 
--	return 0;
-+	argc--;
-+	argv++;
-+	if (argc < 1) {
-+		usage_command_group(grp, 0, 0);
-+		exit(1);
-+	}
- 
-+	cmd = parse_command_token(argv[0], grp);
-+
-+	handle_help_options_next_level(cmd, argc, argv);
-+
-+	fixup_argv0(argv, cmd->token);
-+	return cmd->fn(argc, argv);
- }
- 
-+int check_argc_exact(int nargs, int expected)
-+{
-+	if (nargs < expected)
-+		fprintf(stderr, "%s: too few arguments\n", argv0_buf);
-+	if (nargs > expected)
-+		fprintf(stderr, "%s: too many arguments\n", argv0_buf);
- 
-+	return nargs != expected;
-+}
- 
--/*
--	This function performs the following jobs:
--	- show the help if '--help' or 'help' or '-h' are passed
--	- verify that a command is not ambiguous, otherwise show which
--	  part of the command is ambiguous
--	- if after a (even partial) command there is '--help' show detailed help
--	  for all the matching commands
--	- if the command doesn't match show an error
--	- finally, if a command matches, they return which command matched and
--	  the arguments
--
--	The function return 0 in case of help is requested; <0 in case
--	of uncorrect command; >0 in case of matching commands
--	argc, argv are the arg-counter and arg-vector (input)
--	*nargs_ is the number of the arguments after the command (output)
--	**cmd_  is the invoked command (output)
--	***args_ are the arguments after the command
--
--*/
--static int parse_args(int argc, char **argv,
--		      CommandFunction *func_,
--		      int *nargs_, char **cmd_, char ***args_ )
-+int check_argc_min(int nargs, int expected)
++static int cmd_sync(int argc, char **argv)
  {
--	struct Command	*cp;
--	struct Command	*matchcmd=0;
--	char		*prgname = get_prgname(argv[0]);
--	int		i=0, helprequested=0;
--
--	if( argc < 2 || !strcmp(argv[1], "help") ||
--		!strcmp(argv[1], "-h") || !strcmp(argv[1], "--help")){
--		help(prgname);
--		return 0;
-+	if (nargs < expected) {
-+		fprintf(stderr, "%s: too few arguments\n", argv0_buf);
-+		return 1;
- 	}
+ 	int 	fd, res, e;
+-	char	*path = argv[1];
++	char	*path;
++
++	if (check_argc_exact(argc, 2))
++		usage(cmd_sync_usage);
++
++	path = argv[1];
  
--	for( cp = commands; cp->verb; cp++ )
--		if( !cp->ncmds)
--			cp->ncmds = split_command(cp->verb, &(cp->cmds));
-+	return 0;
-+}
+ 	fd = open_file_or_dir(path);
+ 	if (fd < 0) {
+@@ -302,7 +332,20 @@ static int parse_compress_type(char *s)
+ 	};
+ }
  
--	for( cp = commands; cp->verb; cp++ ){
--		int     match;
-+int check_argc_max(int nargs, int expected)
-+{
-+	if (nargs > expected) {
-+		fprintf(stderr, "%s: too many arguments\n", argv0_buf);
-+		return 1;
-+	}
- 
--		if( argc-1 < cp->ncmds )
--			continue;
--		for( match = 1, i = 0 ; i < cp->ncmds ; i++ ){
--			char	*s1, *s2;
--			s1 = cp->cmds[i];
--			s2 = argv[i+1];
--
--			for(s2 = cp->cmds[i], s1 = argv[i+1];
--				*s1 == *s2 && *s1;
--				s1++, s2++ ) ;
--			if( *s1 ){
--				match=0;
--				break;
--			}
--		}
-+	return 0;
-+}
- 
--		/* If you understand why this code works ...
--			you are a genious !! */
--		if(argc>i+1 && !strcmp(argv[i+1],"--help")){
--			if(!helprequested)
--				printf("Usage:\n");
--			print_help(prgname, cp, ADVANCED_HELP);
--			helprequested=1;
--			continue;
--		}
-+const struct cmd_group btrfs_cmd_group;
- 
--		if(!match)
--			continue;
--
--		matchcmd = cp;
--		*nargs_  = argc-matchcmd->ncmds-1;
--		*cmd_ = matchcmd->verb;
--		*args_ = argv+matchcmd->ncmds+1;
--		*func_ = cp->func;
-+static const char * const cmd_help_usage[] = {
-+	"btrfs help [--full]",
-+	"Dislay help information",
+-int do_defrag(int ac, char **av)
++static const char * const cmd_defrag_usage[] = {
++	"btrfs filesystem defragment [options] <file>|<dir> [<file>|<dir>...]",
++	"Defragment a file or a directory",
 +	"",
-+	"--full     display detailed help on every command",
++	"-v             be verbose",
++	"-c[zlib,lzo]   compress the file while defragmenting",
++	"-f             flush data to disk immediately after defragmenting",
++	"-s start       defragment only from byte onward",
++	"-l len         defragment only up to len bytes",
++	"-t size        minimal size of file to be considered for defragmenting",
 +	NULL
 +};
- 
--		break;
--	}
-+static int cmd_help(int argc, char **argv)
-+{
-+	help_command_group(&btrfs_cmd_group, argc, argv);
-+	return 0;
-+}
- 
--	if(helprequested){
--		printf("\n%s\n", BTRFS_BUILD_VERSION);
--		return 0;
--	}
-+static const char * const cmd_version_usage[] = {
-+	"btrfs version",
-+	"Display btrfs-progs version",
-+	NULL
-+};
- 
--	if(!matchcmd){
--		fprintf( stderr, "ERROR: unknown command '%s'\n",argv[1]);
--		help(prgname);
--		return -1;
--	}
-+static int cmd_version(int argc, char **argv)
-+{
-+	printf("%s\n", BTRFS_BUILD_VERSION);
-+	return 0;
-+}
- 
--	if(check_ambiguity(matchcmd, argv))
--		return -2;
-+static int handle_options(int *argc, char ***argv)
-+{
-+	char **orig_argv = *argv;
 +
-+	while (*argc > 0) {
-+		const char *arg = (*argv)[0];
-+		if (arg[0] != '-')
-+			break;
-+
-+		if (!strcmp(arg, "--help")) {
-+			break;
-+		} else if (!strcmp(arg, "--version")) {
-+			break;
-+		} else {
-+			fprintf(stderr, "Unknown option: %s\n", arg);
-+			fprintf(stderr, "usage: %s\n",
-+				btrfs_cmd_group.usagestr);
-+			exit(129);
-+		}
++static int cmd_defrag(int argc, char **argv)
+ {
+ 	int fd;
+ 	int flush = 0;
+@@ -320,9 +363,10 @@ int do_defrag(int ac, char **av)
  
--	/* check the number of argument */
--	if (matchcmd->nargs < 0 && matchcmd->nargs < -*nargs_ ){
--		fprintf(stderr, "ERROR: '%s' requires minimum %d arg(s)\n",
--			matchcmd->verb, -matchcmd->nargs);
--			return -2;
--	}
--	if(matchcmd->nargs >= 0 && matchcmd->nargs != *nargs_ && matchcmd->nargs != 999){
--		fprintf(stderr, "ERROR: '%s' requires %d arg(s)\n",
--			matchcmd->verb, matchcmd->nargs);
--			return -2;
-+		(*argv)++;
-+		(*argc)--;
+ 	optind = 1;
+ 	while(1) {
+-		int c = getopt(ac, av, "vc::fs:l:t:");
++		int c = getopt(argc, argv, "vc::fs:l:t:");
+ 		if (c < 0)
+ 			break;
++
+ 		switch(c) {
+ 		case 'c':
+ 			compress_type = BTRFS_COMPRESS_ZLIB;
+@@ -350,16 +394,12 @@ int do_defrag(int ac, char **av)
+ 			fancy_ioctl = 1;
+ 			break;
+ 		default:
+-			fprintf(stderr, "Invalid arguments for defragment\n");
+-			free(av);
+-			return 1;
++			usage(cmd_defrag_usage);
+ 		}
  	}
--	
--        if (prepare_args( nargs_, args_, prgname, matchcmd )){
--                fprintf(stderr, "ERROR: not enough memory\\n");
--		return -20;
--        }
--
+-	if (ac - optind == 0) {
+-		fprintf(stderr, "Invalid arguments for defragment\n");
+-		free(av);
+-		return 1;
+-	}
++
++	if (check_argc_min(argc - optind, 1))
++		usage(cmd_defrag_usage);
  
--	return 1;
-+	return (*argv) - orig_argv;
+ 	memset(&range, 0, sizeof(range));
+ 	range.start = start;
+@@ -372,12 +412,12 @@ int do_defrag(int ac, char **av)
+ 	if (flush)
+ 		range.flags |= BTRFS_DEFRAG_RANGE_START_IO;
+ 
+-	for (i = optind; i < ac; i++) {
++	for (i = optind; i < argc; i++) {
+ 		if (verbose)
+-			printf("%s\n", av[i]);
+-		fd = open_file_or_dir(av[i]);
++			printf("%s\n", argv[i]);
++		fd = open_file_or_dir(argv[i]);
+ 		if (fd < 0) {
+-			fprintf(stderr, "failed to open %s\n", av[i]);
++			fprintf(stderr, "failed to open %s\n", argv[i]);
+ 			perror("open:");
+ 			errors++;
+ 			continue;
+@@ -398,7 +438,7 @@ int do_defrag(int ac, char **av)
+ 		}
+ 		if (ret) {
+ 			fprintf(stderr, "ERROR: defrag failed on %s - %s\n",
+-				av[i], strerror(e));
++				argv[i], strerror(e));
+ 			errors++;
+ 		}
+ 		close(fd);
+@@ -410,16 +450,25 @@ int do_defrag(int ac, char **av)
+ 		exit(1);
+ 	}
+ 
+-	free(av);
+ 	return errors + 20;
  }
--int main(int ac, char **av )
+ 
+-int do_balance(int argc, char **argv)
 -{
- 
--	char		*cmd=0, **args=0;
--	int		nargs=0, r;
--	CommandFunction func=0;
-+const struct cmd_group btrfs_cmd_group = {
-+	btrfs_cmd_group_usage, btrfs_cmd_group_info, {
-+		{ "help", cmd_help, cmd_help_usage, NULL, 0 },
-+		{ "version", cmd_version, cmd_version_usage, NULL, 0 },
-+		{ 0, 0, 0, 0, 0 }
-+	},
++static const char * const cmd_balance_usage[] = {
++	"btrfs filesystem balance <path>",
++	"Balance the chunks across the device",
++	NULL
 +};
  
--	r = parse_args(ac, av, &func, &nargs, &cmd, &args);
--	if( r <= 0 ){
--		/* error or no command to parse*/
--		exit(-r);
-+int main(int argc, char **argv)
++static int cmd_balance(int argc, char **argv)
 +{
-+	const struct cmd_struct *cmd;
+ 	int	fdmnt, ret=0, e;
+ 	struct btrfs_ioctl_vol_args args;
+-	char	*path = argv[1];
++	char	*path;
 +
-+	argc--;
-+	argv++;
-+	handle_options(&argc, &argv);
-+	if (argc > 0) {
-+		if (!prefixcmp(argv[0], "--"))
-+			argv[0] += 2;
-+	} else {
-+		usage_command_group(&btrfs_cmd_group, 0, 0);
-+		exit(1);
- 	}
++	if (check_argc_exact(argc, 2))
++		usage(cmd_balance_usage);
++
++	path = argv[1];
  
--	exit(func(nargs, args));
-+	cmd = parse_command_token(argv[0], &btrfs_cmd_group);
+ 	fdmnt = open_file_or_dir(path);
+ 	if (fdmnt < 0) {
+@@ -440,12 +489,25 @@ int do_balance(int argc, char **argv)
+ 	return 0;
+ }
  
--}
-+	handle_help_options_next_level(cmd, argc, argv);
+-int do_resize(int argc, char **argv)
+-{
++static const char * const cmd_resize_usage[] = {
++	"btrfs filesystem resize [+/-]<newsize>[gkm]|max <path>",
++	"Resize a filesystem",
++	"If 'max' is passed, the filesystem will occupy all available space",
++	"on the device.",
++	NULL
++};
  
-+	fixup_argv0(argv, cmd->token);
-+	exit(cmd->fn(argc, argv));
++static int cmd_resize(int argc, char **argv)
++{
+ 	struct btrfs_ioctl_vol_args	args;
+ 	int	fd, res, len, e;
+-	char	*amount=argv[1], *path=argv[2];
++	char	*amount, *path;
++
++	if (check_argc_exact(argc, 3))
++		usage(cmd_resize_usage);
++
++	amount = argv[1];
++	path = argv[2];
+ 
+ 	fd = open_file_or_dir(path);
+ 	if (fd < 0) {
+@@ -472,17 +534,39 @@ int do_resize(int argc, char **argv)
+ 	return 0;
+ }
+ 
+-int do_change_label(int nargs, char **argv)
++static const char * const cmd_label_usage[] = {
++	"btrfs filesystem label <device> [<newlabel>]",
++	"Get or change the label of an unmounted filesystem",
++	"With one argument, get the label of filesystem on <device>.",
++	"If <newlabel> is passed, set the filesystem label to <newlabel>.",
++	NULL
++};
++
++static int cmd_label(int argc, char **argv)
+ {
+-	/* check the number of argument */
+-	if ( nargs > 3 ){
+-		fprintf(stderr, "ERROR: '%s' requires maximum 2 args\n",
+-			argv[0]);
+-		return -2;
+-	}else if (nargs == 2){
+-		return get_label(argv[1]);
+-	} else {	/* nargs == 0 */
++	if (check_argc_min(argc, 2) || check_argc_max(argc, 3))
++		usage(cmd_label_usage);
++
++	if (argc > 2)
+ 		return set_label(argv[1], argv[2]);
+-	}
++	else
++		return get_label(argv[1]);
+ }
+ 
++const struct cmd_group filesystem_cmd_group = {
++	filesystem_cmd_group_usage, NULL, {
++		{ "df", cmd_df, cmd_df_usage, NULL, 0 },
++		{ "show", cmd_show, cmd_show_usage, NULL, 0 },
++		{ "sync", cmd_sync, cmd_sync_usage, NULL, 0 },
++		{ "defragment", cmd_defrag, cmd_defrag_usage, NULL, 0 },
++		{ "balance", cmd_balance, cmd_balance_usage, NULL, 0 },
++		{ "resize", cmd_resize, cmd_resize_usage, NULL, 0 },
++		{ "label", cmd_label, cmd_label_usage, NULL, 0 },
++		{ 0, 0, 0, 0, 0 },
++	}
++};
++
++int cmd_filesystem(int argc, char **argv)
++{
++	return handle_command_group(&filesystem_cmd_group, argc, argv);
 +}
-diff --git a/commands.h b/commands.h
-new file mode 100644
-index 0000000..092b368
---- /dev/null
-+++ b/commands.h
-@@ -0,0 +1,80 @@
-+/*
-+ * This program is free software; you can redistribute it and/or
-+ * modify it under the terms of the GNU General Public
-+ * License v2 as published by the Free Software Foundation.
-+ *
-+ * This program is distributed in the hope that it will be useful,
-+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
-+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
-+ * General Public License for more details.
-+ *
-+ * You should have received a copy of the GNU General Public
-+ * License along with this program; if not, write to the
-+ * Free Software Foundation, Inc., 59 Temple Place - Suite 330,
-+ * Boston, MA 021110-1307, USA.
-+ */
+diff --git a/cmds-inspect.c b/cmds-inspect.c
+index ca42d7f..6cf565d 100644
+--- a/cmds-inspect.c
++++ b/cmds-inspect.c
+@@ -23,11 +23,14 @@
+ #include "kerncompat.h"
+ #include "ioctl.h"
+ 
+-#include "btrfs_cmds.h"
++#include "commands.h"
+ 
+ /* btrfs-list.c */
+ char *path_for_root(int fd, u64 root);
+ 
++static const char inspect_cmd_group_usage[] =
++	"btrfs inspect-internal <command> <args>";
 +
-+#define ARGV0_BUF_SIZE	64
-+
-+struct cmd_struct {
-+	const char *token;
-+	int (*fn)(int, char **);
-+
-+	/*
-+	 * Usage strings
-+	 *
-+	 * A NULL-terminated array of the following format:
-+	 *
-+	 *   usagestr[0] - one-line synopsis (required)
-+	 *   usagestr[1] - one-line short description (required)
-+	 *   usagestr[2..m] - a long (possibly multi-line) description
-+	 *                    (optional)
-+	 *   usagestr[m + 1] - an empty line separator (required if at least one
-+	 *                     option string is given, not needed otherwise)
-+	 *   usagestr[m + 2..n] - option strings, one option per line
-+	 *                        (optional)
-+	 *   usagestr[n + 1] - NULL terminator
-+	 *
-+	 * Options (if present) should always (even if there is no long
-+	 * description) be prepended with an empty line.  Supplied strings are
-+	 * indented but otherwise printed as-is, no automatic wrapping is done.
-+	 *
-+	 * Grep for cmd_*_usage[] for examples.
-+	 */
-+	const char * const *usagestr;
-+
-+	/* should be NULL if token is not a subgroup */
-+	const struct cmd_group *next;
-+
-+	/* if true don't list this token in help listings */
-+	int hidden;
+ static int __ino_to_path_fd(u64 inum, int fd, int verbose, const char *prepend)
+ {
+ 	int ret;
+@@ -70,29 +73,34 @@ out:
+ 	return ret;
+ }
+ 
+-int do_ino_to_path(int nargs, char **argv)
++static const char * const cmd_inode_resolve_usage[] = {
++	"btrfs inspect-internal inode-resolve [-v] <inode> <path>",
++	"Get file system paths for the given inode",
++	NULL
 +};
 +
-+struct cmd_group {
-+	const char *usagestr;
-+	const char *infostr;
++static int cmd_inode_resolve(int argc, char **argv)
+ {
+ 	int fd;
+ 	int verbose = 0;
+ 
+ 	optind = 1;
+ 	while (1) {
+-		int c = getopt(nargs, argv, "v");
++		int c = getopt(argc, argv, "v");
+ 		if (c < 0)
+ 			break;
 +
-+	const struct cmd_struct commands[];
+ 		switch (c) {
+ 		case 'v':
+ 			verbose = 1;
+ 			break;
+ 		default:
+-			fprintf(stderr, "invalid arguments for ipath\n");
+-			return 1;
++			usage(cmd_inode_resolve_usage);
+ 		}
+ 	}
+-	if (nargs - optind != 2) {
+-		fprintf(stderr, "invalid arguments for ipath\n");
+-		return 1;
+-	}
++
++	if (check_argc_exact(argc - optind, 2))
++		usage(cmd_inode_resolve_usage);
+ 
+ 	fd = open_file_or_dir(argv[optind+1]);
+ 	if (fd < 0) {
+@@ -104,7 +112,13 @@ int do_ino_to_path(int nargs, char **argv)
+ 				argv[optind+1]);
+ }
+ 
+-int do_logical_to_ino(int nargs, char **argv)
++static const char * const cmd_logical_resolve_usage[] = {
++	"btrfs inspect-internal logical-resolve [-Pv] <logical> <path>",
++	"Get file system paths for the given logical address",
++	NULL
 +};
 +
-+/* btrfs.c */
-+int prefixcmp(const char *str, const char *prefix);
++static int cmd_logical_resolve(int argc, char **argv)
+ {
+ 	int ret;
+ 	int fd;
+@@ -119,9 +133,10 @@ int do_logical_to_ino(int nargs, char **argv)
+ 
+ 	optind = 1;
+ 	while (1) {
+-		int c = getopt(nargs, argv, "Pv");
++		int c = getopt(argc, argv, "Pv");
+ 		if (c < 0)
+ 			break;
 +
-+int check_argc_exact(int nargs, int expected);
-+int check_argc_min(int nargs, int expected);
-+int check_argc_max(int nargs, int expected);
+ 		switch (c) {
+ 		case 'P':
+ 			getpath = 0;
+@@ -130,14 +145,12 @@ int do_logical_to_ino(int nargs, char **argv)
+ 			verbose = 1;
+ 			break;
+ 		default:
+-			fprintf(stderr, "invalid arguments for ipath\n");
+-			return 1;
++			usage(cmd_logical_resolve_usage);
+ 		}
+ 	}
+-	if (nargs - optind != 2) {
+-		fprintf(stderr, "invalid arguments for ipath\n");
+-		return 1;
+-	}
 +
-+int handle_command_group(const struct cmd_group *grp, int argc,
-+			 char **argv);
++	if (check_argc_exact(argc - optind, 2))
++		usage(cmd_logical_resolve_usage);
+ 
+ 	inodes = malloc(4096);
+ 	if (!inodes)
+@@ -212,3 +225,17 @@ out:
+ 	return ret;
+ }
+ 
++const struct cmd_group inspect_cmd_group = {
++	inspect_cmd_group_usage, NULL, {
++		{ "inode-resolve", cmd_inode_resolve, cmd_inode_resolve_usage,
++			NULL, 0 },
++		{ "logical-resolve", cmd_logical_resolve,
++			cmd_logical_resolve_usage, NULL, 0 },
++		{ 0, 0, 0, 0, 0 }
++	}
++};
 +
-+/* help.c */
-+extern const char * const generic_cmd_help_usage[];
-+
-+void usage(const char * const *usagestr);
-+void usage_command(const struct cmd_struct *cmd, int full, int err);
-+void usage_command_group(const struct cmd_group *grp, int all, int err);
-+
-+void help_unknown_token(const char *arg, const struct cmd_group *grp);
-+void help_ambiguous_token(const char *arg, const struct cmd_group *grp);
-+
-+void help_command_group(const struct cmd_group *grp, int argc, char **argv);
-diff --git a/help.c b/help.c
-new file mode 100644
-index 0000000..932bdf2
---- /dev/null
-+++ b/help.c
-@@ -0,0 +1,207 @@
-+/*
-+ * This program is free software; you can redistribute it and/or
-+ * modify it under the terms of the GNU General Public
-+ * License v2 as published by the Free Software Foundation.
-+ *
-+ * This program is distributed in the hope that it will be useful,
-+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
-+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
-+ * General Public License for more details.
-+ *
-+ * You should have received a copy of the GNU General Public
-+ * License along with this program; if not, write to the
-+ * Free Software Foundation, Inc., 59 Temple Place - Suite 330,
-+ * Boston, MA 021110-1307, USA.
-+ */
-+
-+#include <stdio.h>
-+#include <stdlib.h>
-+#include <string.h>
-+
++int cmd_inspect(int argc, char **argv)
++{
++	return handle_command_group(&inspect_cmd_group, argc, argv);
++}
+diff --git a/cmds-scrub.c b/cmds-scrub.c
+index 9dca5f6..af855ba 100644
+--- a/cmds-scrub.c
++++ b/cmds-scrub.c
+@@ -34,11 +34,15 @@
+ 
+ #include "ctree.h"
+ #include "ioctl.h"
+-#include "btrfs_cmds.h"
+ #include "utils.h"
+ #include "volumes.h"
+ #include "disk-io.h"
+ 
 +#include "commands.h"
 +
-+extern char argv0_buf[ARGV0_BUF_SIZE];
++static const char scrub_cmd_group_usage[] =
++	"btrfs scrub <command> [options] <path>|<device>";
 +
-+#define USAGE_SHORT		1U
-+#define USAGE_LONG		2U
-+#define USAGE_OPTIONS		4U
-+#define USAGE_LISTING		8U
+ #define SCRUB_DATA_FILE "/var/lib/btrfs/scrub.status"
+ #define SCRUB_PROGRESS_SOCKET_PATH "/var/lib/btrfs/scrub.progress"
+ #define SCRUB_FILE_VERSION_PREFIX "scrub status"
+@@ -1047,6 +1051,9 @@ int mkdir_p(char *path)
+ 	return 0;
+ }
+ 
++static const char * const cmd_scrub_start_usage[];
++static const char * const cmd_scrub_resume_usage[];
 +
-+static int do_usage_one_command(const char * const *usagestr,
-+				unsigned int flags, FILE *outf)
-+{
-+	int pad = 4;
+ static int scrub_start(int argc, char **argv, int resume)
+ {
+ 	int fdmnt;
+@@ -1114,21 +1121,16 @@ static int scrub_start(int argc, char **argv, int resume)
+ 			break;
+ 		case '?':
+ 		default:
+-			fprintf(stderr, "ERROR: scrub args invalid.\n"
+-					" -B  do not background\n"
+-					" -d  stats per device (-B only)\n"
+-					" -q  quiet\n"
+-					" -r  read only mode\n");
+-			return 1;
++			usage(resume ? cmd_scrub_resume_usage :
++						cmd_scrub_start_usage);
+ 		}
+ 	}
+ 
+ 	/* try to catch most error cases before forking */
+ 
+-	if (optind + 1 != argc) {
+-		fprintf(stderr, "ERROR: scrub start needs path as last "
+-			"argument\n");
+-		return 1;
++	if (check_argc_exact(argc - optind, 1)) {
++		usage(resume ? cmd_scrub_resume_usage :
++					cmd_scrub_start_usage);
+ 	}
+ 
+ 	spc.progress = NULL;
+@@ -1473,25 +1475,42 @@ out:
+ 	return 0;
+ }
+ 
+-int do_scrub_start(int argc, char **argv)
++static const char * const cmd_scrub_start_usage[] = {
++	"btrfs scrub start [-Bdqr] <path>|<device>",
++	"Start a new scrub",
++	"",
++	"-B     do not background",
++	"-d     stats per device (-B only)",
++	"-q     be quiet",
++	"-r     read only mode",
++	NULL
++};
 +
-+	if (!usagestr || !*usagestr)
-+		return -1;
++static int cmd_scrub_start(int argc, char **argv)
+ {
+ 	return scrub_start(argc, argv, 0);
+ }
+ 
+-int do_scrub_resume(int argc, char **argv)
+-{
+-	return scrub_start(argc, argv, 1);
+-}
++static const char * const cmd_scrub_cancel_usage[] = {
++	"btrfs scrub cancel <path>|<device>",
++	"Cancel a running scrub",
++	NULL
++};
+ 
+-int do_scrub_cancel(int argc, char **argv)
++static int cmd_scrub_cancel(int argc, char **argv)
+ {
+-	char *path = argv[1];
++	char *path;
+ 	int ret;
+ 	int fdmnt;
+ 	int err;
+ 	char mp[BTRFS_PATH_NAME_MAX + 1];
+ 	struct btrfs_fs_devices *fs_devices_mnt = NULL;
+ 
++	if (check_argc_exact(argc, 2))
++		usage(cmd_scrub_cancel_usage);
 +
-+	fprintf(outf, "%s%s\n", (flags & USAGE_LISTING) ? "    " : "usage: ",
-+		*usagestr++);
++	path = argv[1];
 +
-+	/* a short one-line description (mandatory) */
-+	if ((flags & USAGE_SHORT) == 0)
-+		return 0;
-+	else if (!*usagestr)
-+		return -2;
+ 	fdmnt = open_file_or_dir(path);
+ 	if (fdmnt < 0) {
+ 		fprintf(stderr, "ERROR: scrub cancel failed\n");
+@@ -1528,9 +1547,33 @@ again:
+ 	return 0;
+ }
+ 
+-int do_scrub_status(int argc, char **argv)
++static const char * const cmd_scrub_resume_usage[] = {
++	"btrfs scrub resume [-Bdqr] <path>|<device>",
++	"Resume previously canceled or interrupted scrub",
++	"",
++	"-B     do not background",
++	"-d     stats per device (-B only)",
++	"-q     be quiet",
++	"-r     read only mode",
++	NULL
++};
 +
-+	if (flags & USAGE_LISTING)
-+		pad = 8;
-+	else
-+		fputc('\n', outf);
-+
-+	fprintf(outf, "%*s%s\n", pad, "", *usagestr++);
-+
-+	/* a long (possibly multi-line) description (optional) */
-+	if (!*usagestr || ((flags & USAGE_LONG) == 0))
-+		return 0;
-+
-+	if (**usagestr)
-+		fputc('\n', outf);
-+	while (*usagestr && **usagestr)
-+		fprintf(outf, "%*s%s\n", pad, "", *usagestr++);
-+
-+	/* options (optional) */
-+	if (!*usagestr || ((flags & USAGE_OPTIONS) == 0))
-+		return 0;
-+
-+	/*
-+	 * options (if present) should always (even if there is no long
-+	 * description) be prepended with an empty line, skip it
-+	 */
-+	usagestr++;
-+
-+	fputc('\n', outf);
-+	while (*usagestr)
-+		fprintf(outf, "%*s%s\n", pad, "", *usagestr++);
-+
-+	return 0;
++static int cmd_scrub_resume(int argc, char **argv)
+ {
++	return scrub_start(argc, argv, 1);
 +}
 +
-+static int usage_command_internal(const char * const *usagestr,
-+				  const char *token, int full, int lst,
-+				  FILE *outf)
++static const char * const cmd_scrub_status_usage[] = {
++	"btrfs scrub status [-dR] <path>|<device>",
++	"Show status of running or finished scrub",
++	"",
++	"-d     stats per device",
++	"-R     print raw stats",
++	NULL
++};
+ 
++static int cmd_scrub_status(int argc, char **argv)
 +{
-+	unsigned int flags = USAGE_SHORT;
-+	int ret;
+ 	char *path;
+ 	struct btrfs_ioctl_fs_info_args fi_args;
+ 	struct btrfs_ioctl_dev_info_args *di_args = NULL;
+@@ -1543,7 +1586,6 @@ int do_scrub_status(int argc, char **argv)
+ 	int ret;
+ 	int fdmnt;
+ 	int i;
+-	optind = 1;
+ 	int print_raw = 0;
+ 	int do_stats_per_dev = 0;
+ 	char c;
+@@ -1551,6 +1593,7 @@ int do_scrub_status(int argc, char **argv)
+ 	int fdres = -1;
+ 	int err = 0;
+ 
++	optind = 1;
+ 	while ((c = getopt(argc, argv, "dR")) != -1) {
+ 		switch (c) {
+ 		case 'd':
+@@ -1561,17 +1604,12 @@ int do_scrub_status(int argc, char **argv)
+ 			break;
+ 		case '?':
+ 		default:
+-			fprintf(stderr, "ERROR: scrub status args invalid.\n"
+-					" -d  stats per device\n");
+-			return 1;
++			usage(cmd_scrub_status_usage);
+ 		}
+ 	}
+ 
+-	if (optind + 1 != argc) {
+-		fprintf(stderr, "ERROR: scrub status needs path as last "
+-			"argument\n");
+-		return 1;
+-	}
++	if (check_argc_exact(argc - optind, 1))
++		usage(cmd_scrub_status_usage);
+ 
+ 	path = argv[optind];
+ 
+@@ -1664,3 +1702,18 @@ out:
+ 
+ 	return err;
+ }
 +
-+	if (full)
-+		flags |= USAGE_LONG | USAGE_OPTIONS;
-+	if (lst)
-+		flags |= USAGE_LISTING;
-+
-+	ret = do_usage_one_command(usagestr, flags, outf);
-+	switch (ret) {
-+	case -1:
-+		fprintf(outf, "No usage for '%s'\n", token);
-+		break;
-+	case -2:
-+		fprintf(outf, "No short description for '%s'\n", token);
-+		break;
++const struct cmd_group scrub_cmd_group = {
++	scrub_cmd_group_usage, NULL, {
++		{ "start", cmd_scrub_start, cmd_scrub_start_usage, NULL, 0 },
++		{ "cancel", cmd_scrub_cancel, cmd_scrub_cancel_usage, NULL, 0 },
++		{ "resume", cmd_scrub_resume, cmd_scrub_resume_usage, NULL, 0 },
++		{ "status", cmd_scrub_status, cmd_scrub_status_usage, NULL, 0 },
++		{ 0, 0, 0, 0, 0 }
 +	}
++};
 +
-+	return ret;
-+}
-+
-+static void usage_command_usagestr(const char * const *usagestr,
-+				   const char *token, int full, int err)
++int cmd_scrub(int argc, char **argv)
 +{
-+	FILE *outf = err ? stderr : stdout;
-+	int ret;
-+
-+	ret = usage_command_internal(usagestr, token, full, 0, outf);
-+	if (!ret)
-+		fputc('\n', outf);
++	return handle_command_group(&scrub_cmd_group, argc, argv);
 +}
+diff --git a/cmds-subvolume.c b/cmds-subvolume.c
+index 931506c..68ebd40 100644
+--- a/cmds-subvolume.c
++++ b/cmds-subvolume.c
+@@ -27,12 +27,15 @@
+ #include "kerncompat.h"
+ #include "ioctl.h"
+ 
+-#include "btrfs_cmds.h"
++#include "commands.h"
+ 
+ /* btrfs-list.c */
+ int list_subvols(int fd, int print_parent, int get_default);
+ int find_updated_files(int fd, u64 root_id, u64 oldest_gen);
+ 
++static const char subvolume_cmd_group_usage[] =
++	"btrfs subvolume <command> <args>";
 +
-+void usage_command(const struct cmd_struct *cmd, int full, int err)
-+{
-+	usage_command_usagestr(cmd->usagestr, cmd->token, full, err);
-+}
+ /*
+  * test if path is a directory
+  * this function return
+@@ -52,13 +55,26 @@ static int test_isdir(char *path)
+ 	return S_ISDIR(st.st_mode);
+ }
+ 
+-int do_create_subvol(int argc, char **argv)
++static const char * const cmd_subvol_create_usage[] = {
++	"btrfs subvolume create [<dest>/]<name>",
++	"Create a subvolume",
++	"Create a subvolume <name> in <dest>.  If <dest> is not given",
++	"subvolume <name> will be created in the current directory.",
++	NULL
++};
 +
-+void usage(const char * const *usagestr)
-+{
-+	usage_command_usagestr(usagestr, NULL, 1, 1);
-+	exit(129);
-+}
++static int cmd_subvol_create(int argc, char **argv)
+ {
+ 	int	res, fddst, len, e;
+ 	char	*newname;
+ 	char	*dstdir;
+ 	struct btrfs_ioctl_vol_args	args;
+-	char	*dst = argv[1];
++	char	*dst;
 +
-+static void usage_command_group_internal(const struct cmd_group *grp, int full,
-+					 FILE *outf)
-+{
-+	const struct cmd_struct *cmd = grp->commands;
-+	int do_sep = 0;
++	if (check_argc_exact(argc, 2))
++		usage(cmd_subvol_create_usage);
 +
-+	for (; cmd->token; cmd++) {
-+		if (cmd->hidden)
-+			continue;
++	dst = argv[1];
+ 
+ 	res = test_isdir(dst);
+ 	if(res >= 0 ){
+@@ -105,7 +121,6 @@ int do_create_subvol(int argc, char **argv)
+ 	}
+ 
+ 	return 0;
+-
+ }
+ 
+ /*
+@@ -127,12 +142,23 @@ static int test_issubvolume(char *path)
+ 	return (st.st_ino == 256) && S_ISDIR(st.st_mode);
+ }
+ 
+-int do_delete_subvolume(int argc, char **argv)
++static const char * const cmd_subvol_delete_usage[] = {
++	"btrfs subvolume delete <name>",
++	"Delete a subvolume",
++	NULL
++};
 +
-+		if (full && cmd != grp->commands)
-+			fputc('\n', outf);
++static int cmd_subvol_delete(int argc, char **argv)
+ {
+ 	int	res, fd, len, e;
+ 	struct btrfs_ioctl_vol_args	args;
+ 	char	*dname, *vname, *cpath;
+-	char	*path = argv[1];
++	char	*path;
 +
-+		if (!cmd->next) {
-+			if (do_sep) {
-+				fputc('\n', outf);
-+				do_sep = 0;
-+			}
++	if (check_argc_exact(argc, 2))
++		usage(cmd_subvol_delete_usage);
 +
-+			usage_command_internal(cmd->usagestr, cmd->token, full,
-+					       1, outf);
-+			continue;
-+		}
++	path = argv[1];
+ 
+ 	res = test_issubvolume(path);
+ 	if(res<0){
+@@ -186,32 +212,40 @@ int do_delete_subvolume(int argc, char **argv)
+ 	}
+ 
+ 	return 0;
+-
+ }
+ 
+-int do_subvol_list(int argc, char **argv)
++static const char * const cmd_subvol_list_usage[] = {
++	"btrfs subvolume list [-p] <path>",
++	"List subvolumes (and snapshots)",
++	"",
++	"-p     print parent ID",
++	NULL
++};
 +
-+		/* this is an entry point to a nested command group */
++static int cmd_subvol_list(int argc, char **argv)
+ {
+ 	int fd;
+ 	int ret;
+ 	int print_parent = 0;
+ 	char *subvol;
+-        int optind = 1;
+ 
++	optind = 1;
+ 	while(1) {
+ 		int c = getopt(argc, argv, "p");
+-		if (c < 0) break;
++		if (c < 0)
++			break;
 +
-+		if (!full && cmd != grp->commands)
-+			fputc('\n', outf);
+ 		switch(c) {
+ 		case 'p':
+ 			print_parent = 1;
+-			optind++;
+ 			break;
++		default:
++			usage(cmd_subvol_list_usage);
+ 		}
+ 	}
+-	
+-	if (argc - optind != 1) {
+-		fprintf(stderr, "ERROR: invalid arguments for subvolume list\n");
+-		return 1;
+-	}
 +
-+		usage_command_group_internal(cmd->next, full, outf);
++	if (check_argc_exact(argc - optind, 1))
++		usage(cmd_subvol_list_usage);
+ 
+ 	subvol = argv[optind];
+ 
+@@ -236,41 +270,46 @@ int do_subvol_list(int argc, char **argv)
+ 	return 0;
+ }
+ 
+-int do_clone(int argc, char **argv)
++static const char * const cmd_snapshot_usage[] = {
++	"btrfs subvolume snapshot [-r] <source> [<dest>/]<name>",
++	"Create a snapshot of the subvolume",
++	"Create a writable/readonly snapshot of the subvolume <source> with",
++	"the name <name> in the <dest> directory",
++	"",
++	"-r     create a readonly snapshot",
++	NULL
++};
 +
-+		if (!full)
-+			do_sep = 1;
++static int cmd_snapshot(int argc, char **argv)
+ {
+ 	char	*subvol, *dst;
+-	int	res, fd, fddst, len, e, optind = 0, readonly = 0;
++	int	res, fd, fddst, len, e, readonly = 0;
+ 	char	*newname;
+ 	char	*dstdir;
+ 	struct btrfs_ioctl_vol_args_v2	args;
+ 
+ 	memset(&args, 0, sizeof(args));
+ 
++	optind = 1;
+ 	while (1) {
+ 		int c = getopt(argc, argv, "r");
+-
+ 		if (c < 0)
+ 			break;
++
+ 		switch (c) {
+ 		case 'r':
+-			optind++;
+ 			readonly = 1;
+ 			break;
+ 		default:
+-			fprintf(stderr,
+-				"Invalid arguments for subvolume snapshot\n");
+-			free(argv);
+-			return 1;
++			usage(cmd_snapshot_usage);
+ 		}
+ 	}
+-	if (argc - optind != 3) {
+-		fprintf(stderr, "Invalid arguments for subvolume snapshot\n");
+-		free(argv);
+-		return 1;
+-	}
+ 
+-	subvol = argv[optind+1];
+-	dst = argv[optind+2];
++	if (check_argc_exact(argc - optind, 2))
++		usage(cmd_snapshot_usage);
++
++	subvol = argv[optind];
++	dst = argv[optind + 1];
+ 
+ 	res = test_issubvolume(subvol);
+ 	if(res<0){
+@@ -350,15 +389,23 @@ int do_clone(int argc, char **argv)
+ 	}
+ 
+ 	return 0;
+-
+ }
+ 
+-int do_get_default_subvol(int nargs, char **argv)
++static const char * const cmd_subvol_get_default_usage[] = {
++	"btrfs subvolume get-dafault <path>",
++	"Get the default subvolume of a filesystem",
++	NULL
++};
++
++static int cmd_subvol_get_default(int argc, char **argv)
+ {
+ 	int fd;
+ 	int ret;
+ 	char *subvol;
+ 
++	if (check_argc_exact(argc, 2))
++		usage(cmd_subvol_get_default_usage);
++
+ 	subvol = argv[1];
+ 
+ 	ret = test_issubvolume(subvol);
+@@ -382,12 +429,24 @@ int do_get_default_subvol(int nargs, char **argv)
+ 	return 0;
+ }
+ 
+-int do_set_default_subvol(int nargs, char **argv)
++static const char * const cmd_subvol_set_default_usage[] = {
++	"btrfs subvolume set-dafault <subvolid> <path>",
++	"Set the default subvolume of a filesystem",
++	NULL
++};
++
++static int cmd_subvol_set_default(int argc, char **argv)
+ {
+ 	int	ret=0, fd, e;
+ 	u64	objectid;
+-	char	*path = argv[2];
+-	char	*subvolid = argv[1];
++	char	*path;
++	char	*subvolid;
++
++	if (check_argc_exact(argc, 3))
++		usage(cmd_subvol_set_default_usage);
++
++	subvolid = argv[1];
++	path = argv[2];
+ 
+ 	fd = open_file_or_dir(path);
+ 	if (fd < 0) {
+@@ -411,13 +470,22 @@ int do_set_default_subvol(int nargs, char **argv)
+ 	return 0;
+ }
+ 
+-int do_find_newer(int argc, char **argv)
++static const char * const cmd_find_new_usage[] = {
++	"btrfs subvolume find-new <path> <lastgen>",
++	"List the recently modified files in a filesystem",
++	NULL
++};
++
++static int cmd_find_new(int argc, char **argv)
+ {
+ 	int fd;
+ 	int ret;
+ 	char *subvol;
+ 	u64 last_gen;
+ 
++	if (check_argc_exact(argc, 3))
++		usage(cmd_find_new_usage);
++
+ 	subvol = argv[1];
+ 	last_gen = atoll(argv[2]);
+ 
+@@ -442,3 +510,22 @@ int do_find_newer(int argc, char **argv)
+ 	return 0;
+ }
+ 
++const struct cmd_group subvolume_cmd_group = {
++	subvolume_cmd_group_usage, NULL, {
++		{ "create", cmd_subvol_create, cmd_subvol_create_usage, NULL, 0 },
++		{ "delete", cmd_subvol_delete, cmd_subvol_delete_usage, NULL, 0 },
++		{ "list", cmd_subvol_list, cmd_subvol_list_usage, NULL, 0 },
++		{ "snapshot", cmd_snapshot, cmd_snapshot_usage, NULL, 0 },
++		{ "get-default", cmd_subvol_get_default,
++			cmd_subvol_get_default_usage, NULL, 0 },
++		{ "set-default", cmd_subvol_set_default,
++			cmd_subvol_set_default_usage, NULL, 0 },
++		{ "find-new", cmd_find_new, cmd_find_new_usage, NULL, 0 },
++		{ 0, 0, 0, 0, 0 }
 +	}
-+}
++};
 +
-+void usage_command_group(const struct cmd_group *grp, int full, int err)
++int cmd_subvolume(int argc, char **argv)
 +{
-+	FILE *outf = err ? stderr : stdout;
-+
-+	fprintf(outf, "usage: %s\n\n", grp->usagestr);
-+	usage_command_group_internal(grp, full, outf);
-+	fputc('\n', outf);
-+
-+	if (grp->infostr)
-+		fprintf(outf, "%s\n", grp->infostr);
++	return handle_command_group(&subvolume_cmd_group, argc, argv);
 +}
+diff --git a/commands.h b/commands.h
+index 092b368..5d024c2 100644
+--- a/commands.h
++++ b/commands.h
+@@ -78,3 +78,18 @@ void help_unknown_token(const char *arg, const struct cmd_group *grp);
+ void help_ambiguous_token(const char *arg, const struct cmd_group *grp);
+ 
+ void help_command_group(const struct cmd_group *grp, int argc, char **argv);
 +
-+void help_unknown_token(const char *arg, const struct cmd_group *grp)
-+{
-+	fprintf(stderr, "%s: unknown token '%s'\n", argv0_buf, arg);
-+	usage_command_group(grp, 0, 1);
-+	exit(1);
-+}
++/* common.c */
++int open_file_or_dir(const char *fname);
 +
-+void help_ambiguous_token(const char *arg, const struct cmd_group *grp)
-+{
-+	const struct cmd_struct *cmd = grp->commands;
++extern const struct cmd_group subvolume_cmd_group;
++extern const struct cmd_group filesystem_cmd_group;
++extern const struct cmd_group device_cmd_group;
++extern const struct cmd_group scrub_cmd_group;
++extern const struct cmd_group inspect_cmd_group;
 +
-+	fprintf(stderr, "%s: ambiguous token '%s'\n", argv0_buf, arg);
-+	fprintf(stderr, "\nDid you mean one of these ?\n");
-+
-+	for (; cmd->token; cmd++) {
-+		if (!prefixcmp(cmd->token, arg))
-+			fprintf(stderr, "\t%s\n", cmd->token);
-+	}
-+
-+	exit(1);
-+}
-+
-+void help_command_group(const struct cmd_group *grp, int argc, char **argv)
-+{
-+	int full = 0;
-+
-+	if (argc > 1) {
-+		if (!strcmp(argv[1], "--full"))
-+			full = 1;
-+	}
-+
-+	usage_command_group(grp, full, 0);
-+}
++int cmd_subvolume(int argc, char **argv);
++int cmd_filesystem(int argc, char **argv);
++int cmd_device(int argc, char **argv);
++int cmd_scrub(int argc, char **argv);
++int cmd_inspect(int argc, char **argv);
 -- 
 1.7.6.3
 

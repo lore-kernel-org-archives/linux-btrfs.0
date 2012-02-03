@@ -1,79 +1,96 @@
-From: lutz.euler@freenet.de (Lutz Euler)
-Subject: Can't write much data on a degraded mirror
-Date: Fri, 3 Feb 2012 20:17:49 +0100
-Message-ID: <20268.13021.256682.485482@localhost.localdomain>
-Mime-Version: 1.0
-Content-Type: text/plain; charset=iso-8859-1
+From: Ilya Dryomov <idryomov@gmail.com>
+Subject: [PATCH 0/3] Btrfs-progs: new subcommand infrastructure
+Date: Fri,  3 Feb 2012 23:23:57 +0200
+Message-ID: <1328304240-26100-1-git-send-email-idryomov@gmail.com>
+Cc: Chris Mason <chris.mason@oracle.com>, idryomov@gmail.com
 To: linux-btrfs@vger.kernel.org
 Return-path: <linux-btrfs-owner@vger.kernel.org>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hi,
+Hello,
 
-Btrfs seems not to want to allocate new chunks on a degraded mirror,
-severely restricting the amount of new data that can be written to such
-a filesystem. I hope this is not intentional? It makes mirroring much
-less useful than it could be, at least for me.
+When integrating restriper into progs I encountered a problem with the
+core subcommand matcher - it wouldn't allow one to handle some of the
+command groups in a custom way.  The existing parser operates only with
+individual commands and there's no way to handle command groups as a
+whole w/o losing ambiguity stuff and proper error reporting.
 
-My use case: I want to use btrfs with two mirrored disks on a desktop
-machine. Lets say the filesystem is far from full. Assume one disk
-fails, I send it in for RMA and have to wait 6 weeks for a replacement.
-I could live without the mirror redundancy during this time but not
-without the ability to store more data on the filesystem.
+There are other problems with the existing infrastructure: it dumps
+several screens of usage on you almost every time you misspell
+something; if you misspell an option instead of usage for a particular
+command you get an arbitrary error message; in response to
 
-I would prefer if btrfs remembered the size of the missing device and
-allowed to allocate space on the degraded mirror until the capacity is
-reached that the nondegraded mirror had.
+btrfs filesystem aaadfaaa /mnt
 
-Here is how to reproduce the effect:
+it prints
 
-Create and mount a mirror of two 20 GB devices:
+ERROR: unknown command 'filesystem'
 
-# dd if=3D/dev/zero of=3D/tmp/img0 bs=3D1 count=3D0 seek=3D20G
-# dd if=3D/dev/zero of=3D/tmp/img1 bs=3D1 count=3D0 seek=3D20G
-# losetup -f /tmp/img0
-# losetup -f /tmp/img1
-# losetup -a
-/dev/loop0: [0802]:1441845 (/tmp/img0)
-/dev/loop1: [0802]:1441856 (/tmp/img1)
-# mkfs.btrfs -d raid1 -m raid1 /dev/loop0 /dev/loop1
-# mount /dev/loop0 /mnt
-# df -h /mnt
-Dateisystem            Size  Used Avail Use% Eingeh=E4ngt auf
-/dev/loop0             40G   56K   38G   1% /mnt
+when it really should print out aaadfaaa, etc.
 
-Umount, make one device unavailable and mount degraded:
+So I decided to replace it completely with something that would allow
+explicit command group handling and fix these annoyances along the way.
+Instead of a global command table we now have per-level tables and
+command group handlers, which allow command-group-specific handling of
+options and subcommands.  The new parser exports a clear interface and
+gets out of the way - all control over how matching is done is passed to
+commands and command group handlers.
 
-# umount /mnt
-# losetup -d /dev/loop1
-# mount -o degraded /dev/loop0 /mnt
-# df -h /mnt
-Dateisystem            Size  Used Avail Use% Eingeh=E4ngt auf
-/dev/loop0             40G  312K  2,0G   1% /mnt
+One side effect of this is that command implementors now have to check
+the number of arguments themselves but that's a small price to pay,
+besides the old argument counting thing did not take into account
+options anyway.  I switched all existing commands and people with
+outstanding progs patchsets are welcome to point me at them so I can
+switch those too.
 
-Notice that the "Avail" value has shrunk drastically; it seems
-to show only the space available in already allocated chunks.
-Now, "df" might simply lie, so let's try to put data on the filesystem:
+I also rearranged files around a bit - each command group resides in a
+separate file now - so the diffstat seems to be huge, but it really is
+not.
 
-# dd if=3D/dev/zero of=3D/mnt/data bs=3D4K count=3D512K
+There should be no user-visible changes apart from usage and help
+output.  If you find any please report them.  Any feedback is more than
+welcome.
 
--> ENOSPC after writing 1.1 GB
+The patchset is on top of btrfs-progs master branch, available at:
 
-The software used is:
+git://github.com/idryomov/btrfs-progs.git parser
 
-Kernel: v3.3-rc1-383-g0a96265
-uname -a: Linux test 3.3.0-rc1 #1 SMP PREEMPT Sun Jan 29 16:06:29 CET
-  2012 x86_64 x86_64 x86_64 GNU/Linux
-btrfs-progs: cloned on 2012-01-25 from
-  git://git.kernel.org/pub/scm/linux/kernel/git/mason/btrfs-progs.git,
-  latest commit is fdb6c0402337d9607c7a39155088eaf033742752.
-OS: Ubuntu 11.04.
+Thanks,
 
-Kind regards,
+		Ilya
 
-Lutz
---
-To unsubscribe from this list: send the line "unsubscribe linux-btrfs" =
-in
-the body of a message to majordomo@vger.kernel.org
-More majordomo info at  http://vger.kernel.org/majordomo-info.html
+
+Ilya Dryomov (3):
+  Btrfs-progs: rearrange files in the repo
+  Btrfs-progs: implement new subcommand parser
+  Btrfs-progs: switch all existing commands to a new parser
+
+ Makefile          |    6 +-
+ btrfs.c           |  579 ++++++------------
+ btrfs_cmds.c      | 1307 ----------------------------------------
+ btrfs_cmds.h      |   44 --
+ cmds-device.c     |  259 ++++++++
+ cmds-filesystem.c |  572 ++++++++++++++++++
+ cmds-inspect.c    |  241 ++++++++
+ cmds-scrub.c      | 1719 +++++++++++++++++++++++++++++++++++++++++++++++++++++
+ cmds-subvolume.c  |  531 +++++++++++++++++
+ commands.h        |   95 +++
+ common.c          |   46 ++
+ help.c            |  207 +++++++
+ scrub.c           | 1666 ---------------------------------------------------
+ 13 files changed, 3869 insertions(+), 3403 deletions(-)
+ delete mode 100644 btrfs_cmds.c
+ delete mode 100644 btrfs_cmds.h
+ create mode 100644 cmds-device.c
+ create mode 100644 cmds-filesystem.c
+ create mode 100644 cmds-inspect.c
+ create mode 100644 cmds-scrub.c
+ create mode 100644 cmds-subvolume.c
+ create mode 100644 commands.h
+ create mode 100644 common.c
+ create mode 100644 help.c
+ delete mode 100644 scrub.c
+
+-- 
+1.7.6.3
+

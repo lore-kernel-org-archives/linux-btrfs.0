@@ -1,110 +1,79 @@
-From: Kai Krakow <hurikhan77+btrfs@gmail.com>
-Subject: Re: [3.2.1] BUG at fs/btrfs/inode.c:1588
-Date: Fri, 03 Feb 2012 00:25:51 +0100
-Message-ID: <mkirv8-uns.ln1@hurikhan.ath.cx>
-References: <vqfmv8-9ch.ln1@hurikhan.ath.cx> <fgdov8-ord.ln1@hurikhan.ath.cx> <51epv8-2qu.ln1@hurikhan.ath.cx> <pan.2012.02.02.11.19.06@cox.net>
+From: lutz.euler@freenet.de (Lutz Euler)
+Subject: Can't write much data on a degraded mirror
+Date: Fri, 3 Feb 2012 20:17:49 +0100
+Message-ID: <20268.13021.256682.485482@localhost.localdomain>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="ISO-8859-1"
+Content-Type: text/plain; charset=iso-8859-1
 To: linux-btrfs@vger.kernel.org
 Return-path: <linux-btrfs-owner@vger.kernel.org>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Thank you, Duncon...
+Hi,
 
-Duncan <1i5t5.duncan@cox.net> schrieb:
+Btrfs seems not to want to allocate new chunks on a degraded mirror,
+severely restricting the amount of new data that can be written to such
+a filesystem. I hope this is not intentional? It makes mirroring much
+less useful than it could be, at least for me.
 
-> Kai Krakow posted on Thu, 02 Feb 2012 04:54:45 +0100 as excerpted:
-> 
->> Kai Krakow <hurikhan77+btrfs@gmail.com> schrieb:
->> 
->>> Interestingly, the filesystem was not unmountable - system hung. After
->>> reisub and checking again with "btrfs scrub" no errors where reported
->>> and it just rsync'ed fine this time. This does not make sense to me.
->> 
->> btrfsck still shows a lot of errors, while scrubbing says everything is
->> okay... *sigh
->> 
->> Now, how should one fix it if there is still no repair utility? I'm
->> pretty sure sooner or later I will run into a BUG_ON again...
-> 
-> I had hoped someone else better qualified would answer, and they may
-> still do so, but in the meantime, a couple notes...
+My use case: I want to use btrfs with two mirrored disks on a desktop
+machine. Lets say the filesystem is far from full. Assume one disk
+fails, I send it in for RMA and have to wait 6 weeks for a replacement.
+I could live without the mirror redundancy during this time but not
+without the ability to store more data on the filesystem.
 
-Still I think you gained good insight by reading all those posts. I'm using 
-btrfs for a few weeks now and it is pretty solid since 3.2. I've been 
-reading the list a few weeks before starting btrfs but only looked at 
-articles about corruption and data loss. I started using btrfs when rescue 
-tools became available and the most annoying corruption bugs had been fixed. 
-But I've been hit by corruption and freezes a few times so I decided to have 
-that big usb3 disk which I rsync every now and then using snapshots for 
-rollback.
+I would prefer if btrfs remembered the size of the missing device and
+allowed to allocate space on the degraded mirror until the capacity is
+reached that the nondegraded mirror had.
 
-> 1) This is unfortunately quite handwavy as I don't understand the details
-> myself, but if I'm reading the list right, there's a known "phantom ENOSPC
-> bug" that some are hitting when trying to write a large file (gigs, think
-> dvd image), or do an rsync of several gigs, or...  It may be that you hit
-> it, and on retry, enough of the file was already there that it didn't
-> trigger the second time around.
+Here is how to reproduce the effect:
 
-On my first thought this was my suspicion, too. But otoh there was no ENOSPC 
-message, neither in dmesg nor in rsync. Rsync just froze, I was able to kill 
-it and my script continued to create a snapshot afterwards and unmount. I 
-tried to mount again after btrfsck, it worked fine, I unmounted, system 
-hung. I rebooted, scrubbed my two-disk array, no problems, I mounted the 
-backup disk again, rsync'ed it, went fine, unmounted. But btrfsck still 
-shows the same errors for this disk. *sigh
+Create and mount a mirror of two 20 GB devices:
 
-[...]
-> So there's a short-to-medium-term workaround coming and a longer term
-> fix, once they trace down the problem itself.  Meanwhile, don't be too
-> worried about ENOSPC errors the occur under heavy write load and that go
-> away on retry, as there's apparently others having the same issue.
+# dd if=3D/dev/zero of=3D/tmp/img0 bs=3D1 count=3D0 seek=3D20G
+# dd if=3D/dev/zero of=3D/tmp/img1 bs=3D1 count=3D0 seek=3D20G
+# losetup -f /tmp/img0
+# losetup -f /tmp/img1
+# losetup -a
+/dev/loop0: [0802]:1441845 (/tmp/img0)
+/dev/loop1: [0802]:1441856 (/tmp/img1)
+# mkfs.btrfs -d raid1 -m raid1 /dev/loop0 /dev/loop1
+# mount /dev/loop0 /mnt
+# df -h /mnt
+Dateisystem            Size  Used Avail Use% Eingeh=E4ngt auf
+/dev/loop0             40G   56K   38G   1% /mnt
 
-I reported it here in the hope that it helps tracking down the bug or find 
-people with similar experiences. Since "only" my backup disk is affected it 
-is not a big problem. I can create it from scratch but try not to do it 
-until someone guides me in tracking it down a bit. I think btrfs should try 
-to fix such corruptions online while using it. From what I've learned here 
-this is the long-term target and a working btrfsck should just be a helper 
-tool. And the reason for the long delayed btrfsck is that Chris wants to 
-have proper online fixing in place first.
+Umount, make one device unavailable and mount degraded:
 
-At least I can tell this corruption was introduced by bad logic in the 
-kernel, and not by some crash. The usb3 disk is solely mounted for the 
-purpose of rsync'ing and unmounted all the other times.
+# umount /mnt
+# losetup -d /dev/loop1
+# mount -o degraded /dev/loop0 /mnt
+# df -h /mnt
+Dateisystem            Size  Used Avail Use% Eingeh=E4ngt auf
+/dev/loop0             40G  312K  2,0G   1% /mnt
 
-> 2) Just a couple days ago I read an article that claimed Oracle has a Feb
-> 16 deadline for a working btrfsck as that's the deadline for getting it
-> in their next shipping Unbreakable Linux release.  I won't claim to know
-> if the article is correct or not, but if so, a reasonably working btrfsck
-> should be available within two weeks. =:^)  Of course it may continue to
-> improve after that...
+Notice that the "Avail" value has shrunk drastically; it seems
+to show only the space available in already allocated chunks.
+Now, "df" might simply lie, so let's try to put data on the filesystem:
 
-Sounds good. I wonder if Chris could tell anything on that point. ;-)
+# dd if=3D/dev/zero of=3D/mnt/data bs=3D4K count=3D512K
 
-> Meanwhile, there's a tool already available that should allow retrieving
-> the undamaged data off of unmountable filesystems, at least, and there's
-> another tool that allows rollback to an earlier root node if necessary,
-> thus allowing recovery of most filesystems at the cost of losing the last
-> few seconds of work.  Given the experimental nature of btrfs and the
-> known lack of a proper btrfsck at this point anyway, that's... actually
-> quite reasonable, and the reason I decided it was time to start checking
-> out btrfs myself (I'm still researching but have been on the list about a
-> week now and had read a couple weeks worth of posts before I responded to
-> anything).
+-> ENOSPC after writing 1.1 GB
 
-The tools are btrfs-rescue and btrfs-repair from Josef's btrfs-progs 
-available from github.
+The software used is:
 
-> Hopefully that's somewhat helpful in pointing you in the right direction,
-> at least. =:^)
+Kernel: v3.3-rc1-383-g0a96265
+uname -a: Linux test 3.3.0-rc1 #1 SMP PREEMPT Sun Jan 29 16:06:29 CET
+  2012 x86_64 x86_64 x86_64 GNU/Linux
+btrfs-progs: cloned on 2012-01-25 from
+  git://git.kernel.org/pub/scm/linux/kernel/git/mason/btrfs-progs.git,
+  latest commit is fdb6c0402337d9607c7a39155088eaf033742752.
+OS: Ubuntu 11.04.
 
-Well, no real news to me. But it is good having another soul here interested 
-in gaining some knowledge. I think btrfs will become a great filesystem.
+Kind regards,
 
-But if you could provide a link for the Feb 16 deadline I'd be eager to read 
-the article.
-
-Regards,
-Kai
-
+Lutz
+--
+To unsubscribe from this list: send the line "unsubscribe linux-btrfs" =
+in
+the body of a message to majordomo@vger.kernel.org
+More majordomo info at  http://vger.kernel.org/majordomo-info.html

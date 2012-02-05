@@ -1,89 +1,39 @@
-From: Kai Krakow <hurikhan77+btrfs@gmail.com>
-Subject: Re: [3.2.1] BUG at fs/btrfs/inode.c:1588
-Date: Sun, 05 Feb 2012 09:01:25 +0100
-Message-ID: <pjp109-kdo.ln1@hurikhan.ath.cx>
-References: <vqfmv8-9ch.ln1@hurikhan.ath.cx> <82ivv8-dsn.ln1@hurikhan.ath.cx> <CAKcLGm_=bRf7g+ezE7OBRNka57Z_NcofkMW-XkGmC1jAFv0gyw@mail.gmail.com>
+From: "Nikos Voutsinas" <nvoutsin@noc.edunet.gr>
+Subject: Re: subvolume info in /proc/mounts
+Date: Sun, 5 Feb 2012 12:30:42 +0200
+Message-ID: <2ed5fe028fdcfd3d53cf217e13b827d9.squirrel@webmail01.edunet.gr>
+References: <13975aa6fbfab9c845a2582c043aa938.squirrel@webmail01.edunet.gr>
+    <20120204214430.GA15350@twin.jikos.cz>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="ISO-8859-1"
-To: linux-btrfs@vger.kernel.org
+Content-Type: text/plain;charset=utf-8
+Cc: linux-btrfs@vger.kernel.org
+To: dave@jikos.cz
 Return-path: <linux-btrfs-owner@vger.kernel.org>
+In-Reply-To: <20120204214430.GA15350@twin.jikos.cz>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Mitch Harder <mitch.harder@sabayonlinux.org> schrieb:
+> Hi,
+>
+> On Sat, Feb 04, 2012 at 08:40:51PM +0200, Nikos Voutsinas wrote:
+>> There was a patch to include the subvolume mount option into
+>> /proc/mounts.
+>> Did that make it into the kernel;
+>
+> I havent' seen such patch, do you have a link?
+>
+>> If not, what is the formal way to find out which subvolume is mounted;
+>
+> Not right now, see detailed answer to a similar question:
+> http://permalink.gmane.org/gmane.comp.file-systems.btrfs/15385
+>
+> In short, possible but not implemented.
+>
 
-> On Sat, Feb 4, 2012 at 5:40 AM, Kai Krakow <hurikhan77+btrfs@gmail.com>
-> wrote:
->> It's actually the case for me that rsync writes to the device using mount
->> options "compress-force=zlib" and that rsync probably truncates files
->> sometimes when using the inplace option.
->>
->> So that occurence is explained. Can anyone tell how bad it is to have
->> this error? May the fs explode at some point or is it just an error I
->> could safely ignore for the moment?
->>
->> And what about the "inode errors 2000"? What's the 2000 standing for?
->>
-> 
-> As I understand it, Miao Xie's "Btrfs: fix btrfsck error 400 when
-> truncating a compressed" patch was intended to address only one
-> scenario that would lead to 400 errors.  It was not intended to
-> comprehensively address problems that generate inode 400 errors, nor
-> will this patch fix the error once it encountered.
+It's quite old, but what was this about;
 
-I already understood that this patch wont magically fix errors already on 
-disk. But my hope is, in 3.3, it would not introduce such errors any longer. 
-But from what you write it could still generate inode 400 errors?
+http://thread.gmane.org/gmane.comp.file-systems.btrfs/4487
 
-I conclude that there exist many points in the btrfs code which could 
-generate inode 400 errors, and Miao Xie's patch only fixes the one scenario 
-about truncating compressed files? Well, that should at least fix the 
-problems for me because I believe this is coming from using compress-force 
-with rsync-inplace... I don't think these errors are originating from 
-somewhere else because this disk is only mounted for the few minutes I'm 
-running the rsync to it, then unmounted. Any maybe 3-4 weeks ago there have 
-been no errors in btrfsck...
-
-> As it stands right now, if you have errors reported by btrfsck, and
-> you've exhausted the tools available for addressing errors (scrub and
-> zero-ing out the log are the only two I know of),
-
-I think I will try btrfs-repair from Josef... That's one other tool for 
-addressing errors.
-
-> you only really have
-> two options (until further tools such as btrfsck are released):
-> 
-> (1)  Run with the errors and cross your fingers.
-
-I don't like crossing fingers for computers... ;-)
-
-> (2)  Backup and restore onto a freshly formatted  volume (there are
-> some new tools available to extract data if you encounter errors).
-
-This is my backup disk so I could easily purge it and restart with a backup 
-from scratch - it will just take some hours for the first sync.
-
-> My personal preference is to backup and restore.
-
-This is why I got this external backup disk. ;-)
-
-> With respect to the error codes, you have to look in the source for
-> btrfsck.c.  Inode errors are defined as I_ERR_<error>.
-> 
-> 0x400 (1 << 8) errors are I_ERR_FILE_NBYTES_WRONG
-> 0x2000 (1 << 13) errors are I_ERR_LINK_COUNT_WRONG
-
-Thanks for the pointers. I probably could live with the wrong link count. 
-Not sure what kind of problems and wrong nbytes value introduces but at 
-least my latest snapshot seems to be okay. Well, and at least these kind of 
-errors seem like a proper candidate for btrfs-repair from Josef's btrs-progs 
-tree.
-
-> The 400 inode errors have been common lately.  I haven't seen as many
-> 2000 inode errors.
-
-I report back if btrfs-repair could fix it for me...
-
-Thanks,
-Kai
+Assuming that pools with multiple subvolumes and/or snapshots is the way
+of doing things in btrfs, the subvolume info is required for the every day
+administration.
 

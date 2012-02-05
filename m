@@ -1,29 +1,32 @@
-From: Chris Mason <chris.mason@oracle.com>
-Subject: Re: [PATCH 0/3] Btrfs-progs: restriper interface
-Date: Sun, 5 Feb 2012 10:40:07 -0500
-Message-ID: <20120205154007.GI16796@shiny>
-References: <1328305752-32160-1-git-send-email-idryomov@gmail.com>
- <20120203221342.GA19330@carfax.org.uk>
+From: Duncan <1i5t5.duncan@cox.net>
+Subject: Re: [3.2.1] BUG at fs/btrfs/inode.c:1588
+Date: Sun, 5 Feb 2012 16:15:20 +0000 (UTC)
+Message-ID: <pan.2012.02.05.16.15.20@cox.net>
+References: <vqfmv8-9ch.ln1@hurikhan.ath.cx>
+	<82ivv8-dsn.ln1@hurikhan.ath.cx>
+	<CAKcLGm_=bRf7g+ezE7OBRNka57Z_NcofkMW-XkGmC1jAFv0gyw@mail.gmail.com>
+	<pjp109-kdo.ln1@hurikhan.ath.cx>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-To: Hugo Mills <hugo@carfax.org.uk>, Ilya Dryomov <idryomov@gmail.com>,
-	linux-btrfs@vger.kernel.org
+Content-Type: text/plain; charset=UTF-8
+To: linux-btrfs@vger.kernel.org
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <20120203221342.GA19330@carfax.org.uk>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Fri, Feb 03, 2012 at 10:13:42PM +0000, Hugo Mills wrote:
->    Hi, Ilya,
-> 
-> On Fri, Feb 03, 2012 at 11:49:09PM +0200, Ilya Dryomov wrote:
-> > This is the userspace part of restriper, rebased onto the new progs
-> > infrastructure.
-> 
->    I'm definitely very busy for the next three weeks, but if nobody
-> else has picked these (and the parser patches) up by then, I'll grab
-> them for my integration branch at that point.
+Kai Krakow posted on Sun, 05 Feb 2012 09:01:25 +0100 as excerpted:
 
-Thanks Hugo, I've got them here.
+> This is why I got this external backup disk. ;-)
 
--chris
+You've tested that backup, I hope?  If you're using it as a system disk, 
+be sure you can boot from it without the main disk running so the system 
+can't pull anything from it.
+
+I mention this because I have an external that's not directly bootable.  
+I had to create a USB stick to boot from, that can then load the system 
+off the unbootable USB drive after the kernel is loaded.  People could be 
+caught out if they weren't aware it wasn't bootable...
+
+-- 
+Duncan - List replies preferred.   No HTML msgs.
+"Every nonfree program has a lord, a master --
+and if you use the program, he is your master."  Richard Stallman
 

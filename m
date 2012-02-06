@@ -1,30 +1,29 @@
-From: "Fajar A. Nugraha" <list@fajar.net>
-Subject: Re: subvolume info in /proc/mounts
-Date: Mon, 6 Feb 2012 06:38:38 +0700
-Message-ID: <CAG1y0scGVbmpTDBehrz79RCMY_HqBEtLwf_wALvbp4EBq3bzKQ@mail.gmail.com>
-References: <13975aa6fbfab9c845a2582c043aa938.squirrel@webmail01.edunet.gr>
-	<20120204214430.GA15350@twin.jikos.cz>
-	<2ed5fe028fdcfd3d53cf217e13b827d9.squirrel@webmail01.edunet.gr>
+From: Fahrzin Hemmati <fahhem2@gmail.com>
+Subject: Accidental formatting
+Date: Sun, 05 Feb 2012 19:41:45 -0800
+Message-ID: <4F2F4BF9.7070609@gmail.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=ISO-8859-1
-Cc: linux-btrfs@vger.kernel.org
-To: Nikos Voutsinas <nvoutsin@noc.edunet.gr>
+Content-Type: text/plain; charset=ISO-8859-1; format=flowed
+To: "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <2ed5fe028fdcfd3d53cf217e13b827d9.squirrel@webmail01.edunet.gr>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Sun, Feb 5, 2012 at 5:30 PM, Nikos Voutsinas <nvoutsin@noc.edunet.gr> wrote:
->>> If not, what is the formal way to find out which subvolume is mounted;
->>
->> Not right now, see detailed answer to a similar question:
->> http://permalink.gmane.org/gmane.comp.file-systems.btrfs/15385
+I recently re-installed Ubuntu, and somewhere along the way the 
+installer decided to clear out /var, which happens to be a separate 
+btrfs device from /. When I do "btfrs filesystem df /var" it outputs this:
 
-> Assuming that pools with multiple subvolumes and/or snapshots is the way
-> of doing things in btrfs, the subvolume info is required for the every day
-> administration.
+Data: total=134.01GB, used=485.78
+System, DUP: total=8.00MB, used=20.00KB
+System: total=4.00MB, used=0.00
+Metadata, DUP: total=1.62GB, used=6.87MB
+Metadata: total=8.00MB, used=0.00
 
-For simple administration, /etc/mtab (or the output of mount) as
-mentioned in David's link should work.
+The reserved Data, 134GB, resembles closely the amount of data on my 
+drive before the formatting. Therefore, I believe what happened was the 
+installer didn't format /var, just cleared out the files. I didn't 
+properly backup /var, but I have important files on it. Is there a way 
+to have btrfs look around the reserved metadata area for orphaned files 
+and get them back?
 
--- 
-Fajar
+Thanks! Any help is greatly appreciated!
+Fahrzin Hemmati

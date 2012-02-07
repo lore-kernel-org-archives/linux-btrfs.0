@@ -1,69 +1,69 @@
-From: Duncan <1i5t5.duncan@cox.net>
-Subject: Re: Understanding Default RAID Behavior
-Date: Tue, 7 Feb 2012 10:17:19 +0000 (UTC)
-Message-ID: <pan.2012.02.07.10.17.18@cox.net>
-References: <4F30AF89.4090402@techsym.com> <o70709-9m4.ln1@hurikhan.ath.cx>
+From: Hugo Mills <hugo@carfax.org.uk>
+Subject: Re: [PATCH 0/3] Btrfs-progs: restriper interface
+Date: Tue, 7 Feb 2012 11:05:05 +0000
+Message-ID: <20120207110505.GE19330@carfax.org.uk>
+References: <1328305752-32160-1-git-send-email-idryomov@gmail.com>
+ <201202041406.28273.kreijack@inwind.it>
+ <20120204144717.GB10916@zambezi.lan>
+ <201202062320.19154.kreijack@inwind.it>
+ <20120207093037.GA9690@zambezi.lan>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=UTF-8
-To: linux-btrfs@vger.kernel.org
+Content-Type: multipart/signed; micalg=pgp-sha1;
+	protocol="application/pgp-signature"; boundary="Q8BnQc91gJZX4vDc"
+Cc: Goffredo Baroncelli <kreijack@inwind.it>,
+	linux-btrfs@vger.kernel.org, Chris Mason <chris.mason@oracle.com>
+To: Ilya Dryomov <idryomov@gmail.com>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
+In-Reply-To: <20120207093037.GA9690@zambezi.lan>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Kai Krakow posted on Tue, 07 Feb 2012 08:25:10 +0100 as excerpted:
 
-> Mario Lopez <mario.lopez@techsym.com> schrieb:
+--Q8BnQc91gJZX4vDc
+Content-Type: text/plain; charset=us-ascii
+Content-Disposition: inline
+
+On Tue, Feb 07, 2012 at 11:30:37AM +0200, Ilya Dryomov wrote:
+> On Mon, Feb 06, 2012 at 11:20:18PM +0100, Goffredo Baroncelli wrote:
+> > If exist a filesystem called 's' 
+> > 
+> > # btrfs fi bal s
+> > 
+> > could be:
+> > 
+> > 1) an error (missing parameters for the command "btrfs filesystem balance 
+> > start/status" )
+> > 2) the starting of the balance of the filesystem 's'
 > 
->> The Wiki does not make it clear as to why adding a secondary device
->> defaults to RAID1 metadata and RAID0 data. I bought two SSDs with the
->> intention of doing a BTRFS RAID0 for my root.
->> 
->> What is the difference between forcing RAID0 on metadata and data as
->> opposed to the default behavior? Can anyone clarify that?
-> 
-> I think the purpose is that on meta data corruption (which can happen
-> and is probably more important than file data) the file system can
-> "heal" itself by replacing a corrupted meta data block with an intact
-> copy. Also during scrubbing btrfs will check all those blocks and
-> magically fix broken ones.
+> It's true, but you are supposed to look at the synopsis before using new
+> commands.
 
-Further toward the same point, it's worth noting that btrfs' defaults are 
-double-metadata even on SINGLE spindles (single data, double metadata, is 
-the default).
+   Haha. This is naive at best.
 
-If a block of data is corrupted, you've only lost that block, generally a 
-portion of a single file.  If a block of metadata is corrupted, it can 
-kill access to multiple files, and due to tail-packing, corrupt the data 
-itself for many files.  Several btrfs features including double-metadata 
-and data/metadata checksumming are designed to provide better than 
-traditional filesystem and data integrity, and the double-metadata 
-feature is a critical part of that.
+   I'm with Goffredo on this one -- I would much prefer to stick to
+commands of precisely two words: a group and an action.
 
-But of course the fact that you (OP) are targeting raid0 in the first 
-place indicates that you're not particularly concerned about data 
-integrity, but instead want speed and performance.  Presumably that means 
-that you either have backups of the data you'll be storing there (be they 
-local or simply data that can be downloaded from elsewhere on the net 
-again, if necessary), or it's not critical data that you'll be unduly 
-inconvenienced if it's lost in any case.  As such, you may well wish to 
-run raid0 metadata as well, strictly for the performance, since you're 
-deliberately declaring the data not worth worrying about losing by 
-running it raid0.
+   That should mean that we have "filesystem balance" as a synonym for
+"balance start", and all the other restriper functions under "balance
+XYZ". Then the remaining parameter will always be the filesystem path.
 
-If that is indeed the case, it's worth looking at the various mount 
-options, etc, as well, including the no-checksumming option, etc, thus 
-further speeding things up.  Once you go single metadata, you're already 
-giving up a good portion of your ability to recover from bad metadata 
-checksums in any case, so you might as well avoid the overhead of 
-checksumming entirely.  nocow is another potential option, tho whether it 
-increases performance or decreases it will depend on your data and 
-usage.  Similarly with the compression options, which will increase I/O 
-bandwidth at the cost of CPU cycles, so depending on where your 
-bottleneck is (it's likely a far closer call with SSDs than with spinning 
-media, tho, as spinning media will benefit from compression far more due 
-to their worse I/O bottleneck).
+   Hugo.
 
 -- 
-Duncan - List replies preferred.   No HTML msgs.
-"Every nonfree program has a lord, a master --
-and if you use the program, he is your master."  Richard Stallman
+=== Hugo Mills: hugo@... carfax.org.uk | darksatanic.net | lug.org.uk ===
+  PGP key: 515C238D from wwwkeys.eu.pgp.net or http://www.carfax.org.uk
+   --- "How deep will this sub go?" "Oh,  she'll go all the way to ---   
+                    the bottom if we don't stop her."                    
 
+--Q8BnQc91gJZX4vDc
+Content-Type: application/pgp-signature; name="signature.asc"
+Content-Description: Digital signature
+
+-----BEGIN PGP SIGNATURE-----
+Version: GnuPG v1.4.11 (GNU/Linux)
+
+iD8DBQFPMQVgIKyzvlFcI40RAgA4AKC6ex6t84FY92aXeVEuT9/QzxUH7gCgpJFC
+ryt6w7TQZ1wFrt/FgDenCXU=
+=CuKO
+-----END PGP SIGNATURE-----
+
+--Q8BnQc91gJZX4vDc--

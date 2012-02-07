@@ -1,101 +1,58 @@
-From: Ilya Dryomov <idryomov@gmail.com>
-Subject: Re: [PATCH 0/3] Btrfs-progs: restriper interface
-Date: Tue, 7 Feb 2012 11:30:37 +0200
-Message-ID: <20120207093037.GA9690@zambezi.lan>
-References: <1328305752-32160-1-git-send-email-idryomov@gmail.com>
- <201202041406.28273.kreijack@inwind.it>
- <20120204144717.GB10916@zambezi.lan>
- <201202062320.19154.kreijack@inwind.it>
+From: Duncan <1i5t5.duncan@cox.net>
+Subject: Re: Several unhappy btrfs's after RAID meltdown
+Date: Tue, 7 Feb 2012 09:53:59 +0000 (UTC)
+Message-ID: <pan.2012.02.07.09.53.58@cox.net>
+References: <20120205184128.GC18806@localhost.localdomain>
+	<20120207033945.GA5639@localhost.localdomain>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Cc: Hugo Mills <hugo@carfax.org.uk>, linux-btrfs@vger.kernel.org,
-	Chris Mason <chris.mason@oracle.com>
-To: Goffredo Baroncelli <kreijack@inwind.it>
+Content-Type: text/plain; charset=UTF-8
+To: linux-btrfs@vger.kernel.org
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <201202062320.19154.kreijack@inwind.it>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Mon, Feb 06, 2012 at 11:20:18PM +0100, Goffredo Baroncelli wrote:
-> On Saturday, 04 February, 2012 15:47:17 Ilya Dryomov wrote:
-> > On Sat, Feb 04, 2012 at 02:06:28PM +0100, Goffredo Baroncelli wrote:
-> > > Hi Ilya,
-> > > 
-> > > On Friday, 03 February, 2012 22:49:09 Ilya Dryomov wrote:
-> > > > Hello,
-> > > > 
-> > > > This is the userspace part of restriper, rebased onto the new progs
-> > > > infrastructure.  Restriper commands are located under 'balance' prefix,
-> > > > which is now the top level command group.  However to not confuse
-> > > > existing users 'balance' prefix is also available under 'filesystem':
-> > > > 
-> > > > btrfs [filesystem] balance start
-> > > > btrfs [filesystem] balance pause
-> > > > btrfs [filesystem] balance cancel
-> > > > btrfs [filesystem] balance resume
-> > > > btrfs [filesystem] balance status
-> > > > 
-> > > > Backwards compatibility is fully preserved thanks to the new command
-> > > > parser: the old 'btrfs filesystem balance <path>' works as expected.
-> > > 
-> > > I prefer to avoid prefix which may confuse the user. If I have a
-> > > subvolume
-> > > 
-> > > called "s", what means:
-> > > 	btrfs filesystem balance s
-> > > 
-> > > Is it a missing argument (the path required for btrfs filesystem balance)
-> > > or is it a synonymus of
-> > > 
-> > > 	btrfs filesystem balance start ./s
-> > > 
-> > > (or btrfs filesystem balance stop ./s)
-> > > 
-> > > ?
-> > 
-> > It's a path.  It's unambiguous because every subcommand requires an
-> > argument. If you omit the path argument you get the following:
-> 
-> Sorry, I disagree. It is ambiguous because you are not able to  understand if 
-> there is an error of missing parameters.
-> 
-> If exist a filesystem called 's' 
-> 
-> # btrfs fi bal s
-> 
-> could be:
-> 
-> 1) an error (missing parameters for the command "btrfs filesystem balance 
-> start/status" )
-> 2) the starting of the balance of the filesystem 's'
+Ryan C. Underwood posted on Mon, 06 Feb 2012 21:39:45 -0600 as excerpted:
 
-It's true, but you are supposed to look at the synopsis before using new
-commands.  The old user (who doesn't know anything about these new fancy
-commands) won't see the difference.  The new users should take a look at
-the man page or at least at the help output.
+> Does anyone have any idea how I should proceed with the below quoted
+> situation?  Unfortunately, I am going to have to give up on btrfs if it
+> is really so fragile.  I am using kernel 3.2.2 and btrfs-tools from
+> November.
 
-To make things even more clear I'll merge a slight change to allow
-multi-line synopsis for command groups.  So the help looks like:
+Regardless of the technical details of your situation, keep in mind that 
+btrfs is still experimental at this time, and remains under heavy 
+development, as you'll have noticed if you read the kernel's changelogs 
+or this list at all.  Kernel 3.2.2 is relatively recent altho you could 
+try the latest 3.3 rc or git kernel as well, but I'd suggest a btrfs-
+tools rebuild as November really isn't particularly current there.
 
-btrfs-progs-new$ ./btrfs fi bal --help
-usage: btrfs [filesystem] balance <command> [options] <path>
-   or: btrfs [filesystem] balance <path>
+However, complaining about the fragility of a still in development and 
+marked experimental filesystem would seem disingenuous at best.  
+Particularly when it's used on top of a dmcrypt layer that btrfs was 
+known to have issues with (see the wiki), **AND** when you were using 
+raid-5 and had not just a single spindle failure, but a double-spindle 
+failure, a situation that's well outside anything raid-5 claims to handle 
+(raid-6 OTOH... or triple-redundant raid-1 or raid-10...).
 
-    btrfs [filesystem] balance start [options] <path>
-        Balance chunks across the devices
-    btrfs [filesystem] balance pause <path>
-        Pause running balance
-    btrfs [filesystem] balance cancel <path>
-        Cancel running or paused balance
-    btrfs [filesystem] balance resume <path>
-        Resume interrupted balance
-    btrfs [filesystem] balance status [-v] <path>
-        Show status of running or paused balance
+OK, so given you're running an experimental filesystem on a block-device 
+stack it's known to have problems with, you surely had backups if the 
+data was at all important to you.  Simply restore from those backups.  If 
+you didn't care to make backups, when running in such a known unstable 
+situation, well, obviously the data couldn't have been so important to 
+you after all, as you obviously didn't care about it enough to do those 
+backups, and by the sound of things, not even enough to be informed about 
+the development and stability status of the filesystem and block-device 
+stack you were using.
 
-'btrfs filesystem balance' command is deprecated, please use
-'btrfs balance start' command instead.
+IOW, yes, btrfs is to be considered fragile at this point.  It's still in 
+development, there's not even an error-correcting btrfsck yet, and you 
+were using it on a block-device stack that the wiki specifically mentions 
+is problematic.  Both the btrfs kernel option and the wiki have big 
+warnings about the stability at this point, specifically stating that 
+it's not to be trusted to safely hold data yet.  If you were using it 
+contrary to those warnings and lost data due to lack of backups, there's 
+no one to blame but yourself.
 
-It clearly shows that 's' in your example will be interpreted as a path.
+-- 
+Duncan - List replies preferred.   No HTML msgs.
+"Every nonfree program has a lord, a master --
+and if you use the program, he is your master."  Richard Stallman
 
-Thanks,
-
-		Ilya

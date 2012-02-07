@@ -1,55 +1,66 @@
 From: Duncan <1i5t5.duncan@cox.net>
-Subject: Re: Several unhappy btrfs's after RAID meltdown
-Date: Tue, 7 Feb 2012 09:53:59 +0000 (UTC)
-Message-ID: <pan.2012.02.07.09.53.58@cox.net>
-References: <20120205184128.GC18806@localhost.localdomain>
-	<20120207033945.GA5639@localhost.localdomain>
+Subject: Re: Understanding Default RAID Behavior
+Date: Tue, 7 Feb 2012 10:17:19 +0000 (UTC)
+Message-ID: <pan.2012.02.07.10.17.18@cox.net>
+References: <4F30AF89.4090402@techsym.com> <o70709-9m4.ln1@hurikhan.ath.cx>
 Mime-Version: 1.0
 Content-Type: text/plain; charset=UTF-8
 To: linux-btrfs@vger.kernel.org
 Return-path: <linux-btrfs-owner@vger.kernel.org>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Ryan C. Underwood posted on Mon, 06 Feb 2012 21:39:45 -0600 as excerpted:
+Kai Krakow posted on Tue, 07 Feb 2012 08:25:10 +0100 as excerpted:
 
-> Does anyone have any idea how I should proceed with the below quoted
-> situation?  Unfortunately, I am going to have to give up on btrfs if it
-> is really so fragile.  I am using kernel 3.2.2 and btrfs-tools from
-> November.
+> Mario Lopez <mario.lopez@techsym.com> schrieb:
+> 
+>> The Wiki does not make it clear as to why adding a secondary device
+>> defaults to RAID1 metadata and RAID0 data. I bought two SSDs with the
+>> intention of doing a BTRFS RAID0 for my root.
+>> 
+>> What is the difference between forcing RAID0 on metadata and data as
+>> opposed to the default behavior? Can anyone clarify that?
+> 
+> I think the purpose is that on meta data corruption (which can happen
+> and is probably more important than file data) the file system can
+> "heal" itself by replacing a corrupted meta data block with an intact
+> copy. Also during scrubbing btrfs will check all those blocks and
+> magically fix broken ones.
 
-Regardless of the technical details of your situation, keep in mind that 
-btrfs is still experimental at this time, and remains under heavy 
-development, as you'll have noticed if you read the kernel's changelogs 
-or this list at all.  Kernel 3.2.2 is relatively recent altho you could 
-try the latest 3.3 rc or git kernel as well, but I'd suggest a btrfs-
-tools rebuild as November really isn't particularly current there.
+Further toward the same point, it's worth noting that btrfs' defaults are 
+double-metadata even on SINGLE spindles (single data, double metadata, is 
+the default).
 
-However, complaining about the fragility of a still in development and 
-marked experimental filesystem would seem disingenuous at best.  
-Particularly when it's used on top of a dmcrypt layer that btrfs was 
-known to have issues with (see the wiki), **AND** when you were using 
-raid-5 and had not just a single spindle failure, but a double-spindle 
-failure, a situation that's well outside anything raid-5 claims to handle 
-(raid-6 OTOH... or triple-redundant raid-1 or raid-10...).
+If a block of data is corrupted, you've only lost that block, generally a 
+portion of a single file.  If a block of metadata is corrupted, it can 
+kill access to multiple files, and due to tail-packing, corrupt the data 
+itself for many files.  Several btrfs features including double-metadata 
+and data/metadata checksumming are designed to provide better than 
+traditional filesystem and data integrity, and the double-metadata 
+feature is a critical part of that.
 
-OK, so given you're running an experimental filesystem on a block-device 
-stack it's known to have problems with, you surely had backups if the 
-data was at all important to you.  Simply restore from those backups.  If 
-you didn't care to make backups, when running in such a known unstable 
-situation, well, obviously the data couldn't have been so important to 
-you after all, as you obviously didn't care about it enough to do those 
-backups, and by the sound of things, not even enough to be informed about 
-the development and stability status of the filesystem and block-device 
-stack you were using.
+But of course the fact that you (OP) are targeting raid0 in the first 
+place indicates that you're not particularly concerned about data 
+integrity, but instead want speed and performance.  Presumably that means 
+that you either have backups of the data you'll be storing there (be they 
+local or simply data that can be downloaded from elsewhere on the net 
+again, if necessary), or it's not critical data that you'll be unduly 
+inconvenienced if it's lost in any case.  As such, you may well wish to 
+run raid0 metadata as well, strictly for the performance, since you're 
+deliberately declaring the data not worth worrying about losing by 
+running it raid0.
 
-IOW, yes, btrfs is to be considered fragile at this point.  It's still in 
-development, there's not even an error-correcting btrfsck yet, and you 
-were using it on a block-device stack that the wiki specifically mentions 
-is problematic.  Both the btrfs kernel option and the wiki have big 
-warnings about the stability at this point, specifically stating that 
-it's not to be trusted to safely hold data yet.  If you were using it 
-contrary to those warnings and lost data due to lack of backups, there's 
-no one to blame but yourself.
+If that is indeed the case, it's worth looking at the various mount 
+options, etc, as well, including the no-checksumming option, etc, thus 
+further speeding things up.  Once you go single metadata, you're already 
+giving up a good portion of your ability to recover from bad metadata 
+checksums in any case, so you might as well avoid the overhead of 
+checksumming entirely.  nocow is another potential option, tho whether it 
+increases performance or decreases it will depend on your data and 
+usage.  Similarly with the compression options, which will increase I/O 
+bandwidth at the cost of CPU cycles, so depending on where your 
+bottleneck is (it's likely a far closer call with SSDs than with spinning 
+media, tho, as spinning media will benefit from compression far more due 
+to their worse I/O bottleneck).
 
 -- 
 Duncan - List replies preferred.   No HTML msgs.

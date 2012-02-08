@@ -1,52 +1,48 @@
-From: Chester <somethingsome2000@gmail.com>
-Subject: Re: btrfs unmountable after failed suspend
-Date: Wed, 8 Feb 2012 13:22:19 -0600
-Message-ID: <CAAE6i0ggEyVGh94L7n00Mm-YZTq26de2kZspU+AQKiaA=JD+8g@mail.gmail.com>
-References: <CAAE6i0g4VVpy7FduBHCY33Nt_iSOh39-9i2KWqA0fXETQUKLPA@mail.gmail.com>
- <CAAE6i0jEaXmgmnmyUOrOr+5RyvPce25QZFALan+JBQ80K=UwNQ@mail.gmail.com>
- <CAAE6i0hXA7rzZ=VCnezfyHQFn=+UcfrmUsfR-GQZcgvxFW+qJQ@mail.gmail.com> <20120208125536.GI16796@shiny>
+From: Martin <m_btrfs@ml1.co.uk>
+Subject: btrfs support for efficient SSD operation (data blocks alignment)
+Date: Wed, 08 Feb 2012 19:24:03 +0000
+Message-ID: <jgui4j$th5$1@dough.gmane.org>
 Mime-Version: 1.0
 Content-Type: text/plain; charset=ISO-8859-1
-To: Chris Mason <chris.mason@oracle.com>,
-	Chester <somethingsome2000@gmail.com>,
-	linux-btrfs <linux-btrfs@vger.kernel.org>
+To: linux-btrfs@vger.kernel.org
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <20120208125536.GI16796@shiny>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Wed, Feb 8, 2012 at 6:55 AM, Chris Mason <chris.mason@oracle.com> wr=
-ote:
-> On Tue, Feb 07, 2012 at 06:10:15PM -0600, Chester wrote:
->> This is dmesg mounted with -o ro,recovery
->> [ =A0 20.957392] exe used greatest stack depth: 4920 bytes left
->> [ =A0145.340317] device label BtrfsLinux devid 1 transid 332442 /dev=
-/sda6
->> [ =A0145.341702] btrfs: enabling auto recovery
->> [ =A0145.341803] btrfs: disk space caching is enabled
->> [ =A0152.457967] btrfs: corrupt leaf, bad key order:
->> block=3D653297209344,root=3D1, slot=3D7
->> [ =A0152.487933] btrfs: corrupt leaf, bad key order:
->> block=3D653297209344,root=3D1, slot=3D7
->> [ =A0152.488326] ------------[ cut here ]------------
->> [ =A0152.488549] kernel BUG at fs/btrfs/extent-tree.c:5797!
->
-> Well, this isn't good. =A0If you can run btrfs-zero-log it'll get pas=
-t
-> this part, but I'd suggest a fsck run to see if there are other
-> corrupted blocks.
-I've already tried the -o recovery option at mount. I was told it does
-the same as btrfs-zero-log (but probably less destructive). Just a
-quick question: Will the release of btrfsck later this month be able
-to fix these corruptions?
->
-> Bad key ordering is usually from memory corruption, so this block
-> probably isn't alone.
-Yeah. Could be from using zcache. I haven't had a problem with it
-until I tried to suspend to RAM though.
->
-> -chris
---
-To unsubscribe from this list: send the line "unsubscribe linux-btrfs" =
-in
-the body of a message to majordomo@vger.kernel.org
-More majordomo info at  http://vger.kernel.org/majordomo-info.html
+My understanding is that for x86 architecture systems, btrfs only allows
+a sector size of 4kB for a HDD/SSD. That is fine for the present HDDs
+assuming the partitions are aligned to a 4kB boundary for that device.
+
+However for SSDs...
+
+I'm using for example a 60GByte SSD that has:
+
+    8kB page size;
+    16kB logical to physical mapping chunk size;
+    2MB erase block size;
+    64MB cache.
+
+And the sector size reported to Linux 3.0 is the default 512 bytes!
+
+
+My first thought is to try formatting with a sector size of 16kB to
+align with the SSD logical mapping chunk size. This is to avoid SSD
+write amplification. Also, the data transfer performance for that device
+is near maximum for writes with a blocksize of 16kB and above. Yet,
+btrfs supports a 4kByte page/sector size only at present...
+
+
+Is there any control possible over the btrfs filesystem structure to map
+metadata and data structures to the underlying device boundaries?
+
+For example to maximise performance, can the data chunks and the data
+chunk size be aligned to be sympathetic to the SSD logical mapping chunk
+size and the erase block size?
+
+What features other than the trim function does btrfs employ to optimise
+for SSD operation?
+
+
+Regards,
+Martin
+
+

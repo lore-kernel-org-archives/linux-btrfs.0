@@ -1,81 +1,63 @@
-From: Chester <somethingsome2000@gmail.com>
-Subject: Re: btrfs unmountable after failed suspend
-Date: Wed, 8 Feb 2012 14:46:34 -0600
-Message-ID: <CAAE6i0hWxsSKLoN8zyJv9H4tu5R5B3KXvbgZzHDcMHYC4JX3mA@mail.gmail.com>
-References: <CAAE6i0g4VVpy7FduBHCY33Nt_iSOh39-9i2KWqA0fXETQUKLPA@mail.gmail.com>
- <CAAE6i0jEaXmgmnmyUOrOr+5RyvPce25QZFALan+JBQ80K=UwNQ@mail.gmail.com>
- <CAAE6i0hXA7rzZ=VCnezfyHQFn=+UcfrmUsfR-GQZcgvxFW+qJQ@mail.gmail.com>
- <20120208125536.GI16796@shiny> <CAAE6i0ggEyVGh94L7n00Mm-YZTq26de2kZspU+AQKiaA=JD+8g@mail.gmail.com>
- <20120208202658.GH8384@shiny>
+From: Mitch Harder <mitch.harder@sabayonlinux.org>
+Subject: Re: Premature ENOSPC only with zlib Compression
+Date: Wed, 8 Feb 2012 15:01:09 -0600
+Message-ID: <CAKcLGm-ps-B9jZ8Xyxy0BduDcgzEtwsy0FzFhmV1GWZ_MP8q2g@mail.gmail.com>
+References: <CAKcLGm--EKeAbw7JzBtv7snhXEJSzTMZjn9_QDT+jGRCWsjM2g@mail.gmail.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset=ISO-8859-1
-To: Chris Mason <chris.mason@oracle.com>,
-	Chester <somethingsome2000@gmail.com>,
-	linux-btrfs <linux-btrfs@vger.kernel.org>
+To: linux-btrfs <linux-btrfs@vger.kernel.org>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <20120208202658.GH8384@shiny>
+In-Reply-To: <CAKcLGm--EKeAbw7JzBtv7snhXEJSzTMZjn9_QDT+jGRCWsjM2g@mail.gmail.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Wed, Feb 8, 2012 at 2:26 PM, Chris Mason <chris.mason@oracle.com> wr=
-ote:
-> On Wed, Feb 08, 2012 at 01:22:19PM -0600, Chester wrote:
->> On Wed, Feb 8, 2012 at 6:55 AM, Chris Mason <chris.mason@oracle.com>=
- wrote:
->> > On Tue, Feb 07, 2012 at 06:10:15PM -0600, Chester wrote:
->> >> This is dmesg mounted with -o ro,recovery
->> >> [ =A0 20.957392] exe used greatest stack depth: 4920 bytes left
->> >> [ =A0145.340317] device label BtrfsLinux devid 1 transid 332442 /=
-dev/sda6
->> >> [ =A0145.341702] btrfs: enabling auto recovery
->> >> [ =A0145.341803] btrfs: disk space caching is enabled
->> >> [ =A0152.457967] btrfs: corrupt leaf, bad key order:
->> >> block=3D653297209344,root=3D1, slot=3D7
->> >> [ =A0152.487933] btrfs: corrupt leaf, bad key order:
->> >> block=3D653297209344,root=3D1, slot=3D7
->> >> [ =A0152.488326] ------------[ cut here ]------------
->> >> [ =A0152.488549] kernel BUG at fs/btrfs/extent-tree.c:5797!
->> >
->> > Well, this isn't good. =A0If you can run btrfs-zero-log it'll get =
-past
->> > this part, but I'd suggest a fsck run to see if there are other
->> > corrupted blocks.
->> I've already tried the -o recovery option at mount. I was told it do=
-es
->> the same as btrfs-zero-log (but probably less destructive). Just a
+On Wed, Jan 18, 2012 at 10:13 AM, Mitch Harder
+<mitch.harder@sabayonlinux.org> wrote:
+> I have a Btrfs partition that is reliably reproducing premature ENOSPC
+> when restoring the disk from a tar file, but it is only happening with
+> zlib compression (lzo or no compression proceeds normally).
 >
-> It does zero the log, but looks like it does so a little too late. =A0=
-The
-> mount -o recovery code zeros it if we failed to read some of the tree
-> roots, but you're hitting the tree log before we fail. =A0Long story
-> short, you need to btrfs-zero-log ;)
+> I've had the same issue at least back through the 3.1 kernel series,
+> and I've been having intermittent issues even further back.
 >
->> quick question: Will the release of btrfsck later this month be able
->> to fix these corruptions?
+> I am currently using a 3.2.1 kernel merged with Chris' latest
+> integration branch.
 >
-> Fixing the key ordering is pretty easy, I can do that here. =A0But I'=
-ll
-> need to see the fsck output to say if the rest is fixed in the curren=
-t
-> code.
+> I've performed about 12 trials trying to explore various combinations
+> of compress, compress-force, compress[-force]=[zlib,lzo] and
+> autodefrag.
 >
->> >
->> > Bad key ordering is usually from memory corruption, so this block
->> > probably isn't alone.
->> Yeah. Could be from using zcache. I haven't had a problem with it
->> until I tried to suspend to RAM though.
+> If I use no compression, or if I explicitly declare lzo compression, I
+> don't receive the premature ENOSPC when untarring my restoration
+> archive to the empty partition.
 >
-> Could be, I'd suggest running with CONFIG_DEBUG_PAGE_ALLOC. =A0You mi=
-ght
-> also just have bad ram.
+> If I don't specify compression (zlib is the default) or specify zlib,
+> I get consistent premature ENOSPC errors regardless of other
+> combinations.
+>
+> I apologize if this is already general knowledge, but I couldn't see
+> where this has been posted to the list before.
+>
+> As time allows, I will try to capture exactly where this ENOSPC is
+> being issued in btrfs by inserting WARN_ON's in my local version
+> where-ever ENOSPC is set.
 
-I certainly hope it's not just bad ram. I just got this laptop half a y=
-ear ago!
-I'll try to get a fsck output when I get home..
->
-> -chris
->
---
-To unsubscribe from this list: send the line "unsubscribe linux-btrfs" =
-in
-the body of a message to majordomo@vger.kernel.org
-More majordomo info at  http://vger.kernel.org/majordomo-info.html
+Some follow-up...
+
+I've injected some debugging code to isolate when the ENOSPC is being
+generated when using zlib compression.
+
+When using zlib, I'm getting intermittent ENOSPC in the
+may_commit_transaction() function in extent-tree.c at this point:
+
+	if (delayed_rsv->size < bytes) {
+		spin_unlock(&delayed_rsv->lock);
+		return -ENOSPC;
+	}
+
+The typical values for (delayed_rsv->size < bytes) have been:
+delayed_rsv->size ( = 0x60000) < bytes ( = 0x78000)
+
+This typically occurs when unzipping a section of my backup that
+contains lots of small files that are probably being mostly in-lined.
+
+I don't see errors in this section when using lzo or no compression.

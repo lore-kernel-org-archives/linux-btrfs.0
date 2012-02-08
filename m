@@ -1,94 +1,49 @@
-From: cwillu <cwillu@cwillu.com>
-Subject: Re: BTRFS crash during mount
-Date: Wed, 8 Feb 2012 17:00:01 -0600
-Message-ID: <CAE5mzvi2UXyVYYxPeHA19RV=Gy90c7c_CA3rPZN5rrAUJB-07A@mail.gmail.com>
-References: <4F32F502.6070307@swissonline.ch>
+From: Jan Kara <jack@suse.cz>
+Subject: Re: [PATCH] mkfs: Handle creation of filesystem larger than the
+ first device
+Date: Thu, 9 Feb 2012 00:20:15 +0100
+Message-ID: <20120208232015.GE1696@quack.suse.cz>
+References: <1327593785-23466-1-git-send-email-jack@suse.cz>
+ <4F32F0AB.8030003@ubuntu.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=UTF-8
-Cc: linux-btrfs@vger.kernel.org
-To: Daniel Kuhn <cheeef@swissonline.ch>
+Content-Type: text/plain; charset=us-ascii
+Cc: Jan Kara <jack@suse.cz>, linux-btrfs@vger.kernel.org,
+	Chris Mason <chris.mason@oracle.com>,
+	David Sterba <dsterba@suse.cz>
+To: Phillip Susi <psusi@ubuntu.com>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <4F32F502.6070307@swissonline.ch>
+In-Reply-To: <4F32F0AB.8030003@ubuntu.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Wed, Feb 8, 2012 at 4:19 PM, Daniel Kuhn <cheeef@swissonline.ch> wro=
-te:
-> After a forced power turn-off the filesystem of my primary boot parti=
-tion
-> cannot be mounted anymore,
-> btrfs crashes during the mount process. I'm using OpenSuse 12.1 but I=
-'ve
-> also tried mounting with a newer kernel 3.2.2 (systemrescue cd) and w=
-ith a
-> usb-converter connected to another PC without success.
->
-> The kernel log seems pretty specific about the crash location, see be=
-low.
->
-> Best regards,
-> Daniel Kuhn
->
->
-> [ =C2=A0 66.476674] ------------[ cut here ]------------
-> [ =C2=A0 66.476684] kernel BUG at fs/btrfs/free-space-cache.c:1515!
-> [ =C2=A0 66.476691] invalid opcode: 0000 [#1] SMP
-> [ =C2=A0 66.476699] Modules linked in: tpm_tis tpm tpm_bios i2c_nforc=
-e2 serio_raw
-> pcspkr floppy k10temp asus_atk0110 raid10 raid456 async_raid6_recov a=
-sync_pq
-> raid6_pq async_xor xor async_memcpy async_tx raid1 raid0 multipath li=
-near
-> ata_generic nouveau ttm drm_kms_helper drm i2c_algo_bit firewire_ohci
-> i2c_core pata_acpi mxm_wmi forcedeth pata_marvell firewire_core pata_=
-amd
-> video wmi
-> [ =C2=A0 66.476752]
-> [ =C2=A0 66.476759] Pid: 1844, comm: mount Not tainted 3.2.2-alt250-i=
-586 #2
-> System manufacturer System Product Name/M3N-HT DELUXE
-> [ =C2=A0 66.476772] EIP: 0060:[<c06f7b6f>] EFLAGS: 00010206 CPU: 2
-> [ =C2=A0 66.476785] EIP is at remove_from_bitmap+0xa8/0x285
-> [ =C2=A0 66.476792] EAX: 6a92c000 EBX: 00000000 ECX: 0005c000 EDX: 00=
-000002
-> [ =C2=A0 66.476799] ESI: f2f5baa8 EDI: f2f5ba8c EBP: f2f5ba48 ESP: f2=
-f5b9ec
-> [ =C2=A0 66.476805] =C2=A0DS: 007b ES: 007b FS: 00d8 GS: 00e0 SS: 006=
-8
-> [ =C2=A0 66.476813] Process mount (pid: 1844, ti=3Df2f5a000 task=3Df2=
-ff7080
-> task.ti=3Df2f5a000)
-> [ =C2=A0 66.476818] Stack:
-> [ =C2=A0 66.476822] =C2=A0f2f5ba2c 00000385 00000000 f2f5ba58 f275037=
-0 f2f5ba48
-> f2f5ba44 f2f5ba40
-> [ =C2=A0 66.476837] =C2=A000000019 71bfffff 00000002 71c00000 0000000=
-2 f3159600
-> 073ba000 00000000
-> [ =C2=A0 66.476851] =C2=A00005c000 00000000 6a92c000 00000002 f2f5baa=
-8 00000000
-> f2750370 f2f5baa0
-> [ =C2=A0 66.476865] Call Trace:
-> [ =C2=A0 66.476877] =C2=A0[<c06f9bf4>] btrfs_remove_free_space+0x34c/=
-0x370
-> [ =C2=A0 66.476889] =C2=A0[<c06bcfa3>] btrfs_alloc_logged_file_extent=
-+0x114/0x211
-> [ =C2=A0 66.476900] =C2=A0[<c06af00c>] ? btrfs_free_path+0x1b/0x1e
-> [ =C2=A0 66.476909] =C2=A0[<c06af00c>] ? btrfs_free_path+0x1b/0x1e
-> [ =C2=A0 66.476919] =C2=A0[<c06f5afd>] replay_one_extent+0x470/0x5f2
-> [ =C2=A0 66.476929] =C2=A0[<c050ef9a>] ? __fsnotify_inode_delete+0x8/=
-0xa
-> [ =C2=A0 66.476941] =C2=A0[<c06f6f55>] replay_one_buffer+0x1d6/0x229
-> [ =C2=A0 66.476950] =C2=A0[<c06f2cfe>] walk_down_log_tree+0x15b/0x2cd
-> [ =C2=A0 66.476959] =C2=A0[<c06f3062>] walk_log_tree+0x71/0x188
-> [ =C2=A0 66.476968] =C2=A0[<c06f5011>] btrfs_recover_log_trees+0x24a/=
-0x257
-> [snip]
+On Wed 08-02-12 17:01:15, Phillip Susi wrote:
+> -----BEGIN PGP SIGNED MESSAGE-----
+> Hash: SHA1
+> 
+> On 1/26/2012 11:03 AM, Jan Kara wrote:
+> > make_btrfs() function takes a size of filesystem as an argument. It
+> > uses this value to set the size of the first device as well which
+> > is wrong for filesystems larger than this device. It results in
+> > 'attemp to access beyond end of device' messages from the kernel.
+> > So add size of the first device as an argument to make_btrfs().
+> 
+> I don't think this patch is correct.  Yes, the size switch only
+> applies to the first device, so it doesn't make any sense to try to
+> use a value larger than that device.  Attempting to do so probably
+> should be trapped and it should error out, and the man page should
+> probably clarify the fact that the size is only for the first device.
+> 
+> It looks like you think the size should somehow apply to multiple
+> devices or to the total fs size when creating on multiple devices, and
+> that just doesn't make sense.
+  Thanks for your reply. I admit I was not sure what exactly size argument
+should be. So after looking into the code for a while I figured it should
+be a total size of the filesystem - or differently it should be size of
+virtual block address space in the filesystem. Thus when filesystem has
+more devices (or admin wants to add more devices later), it can be larger
+than the first device. But I'm not really a btrfs developper so I might be
+wrong and of course feel free to fix the issue as you deem fit.
 
--o recovery under 3.2 or later should fix it up.  You'll want to
-remain on 3.2 at that point, and then switch to 3.3 when that's
-released, and so on.
---
-To unsubscribe from this list: send the line "unsubscribe linux-btrfs" =
-in
-the body of a message to majordomo@vger.kernel.org
-More majordomo info at  http://vger.kernel.org/majordomo-info.html
+								Honza
+-- 
+Jan Kara <jack@suse.cz>
+SUSE Labs, CR

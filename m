@@ -1,46 +1,52 @@
-From: Jan Schmidt <list.btrfs@jan-o-sch.net>
-Subject: [PATCH] Btrfs: avoid positive number with ERR_PTR
-Date: Wed,  8 Feb 2012 16:01:01 +0100
-Message-ID: <1328713261-14134-1-git-send-email-list.btrfs@jan-o-sch.net>
-References: <20120208085712.GA6554@elgon.mountain>
-Cc: linux-btrfs@vger.kernel.org
-To: dan.carpenter@oracle.com, chris.mason@oracle.com
+From: Chester <somethingsome2000@gmail.com>
+Subject: Re: btrfs unmountable after failed suspend
+Date: Wed, 8 Feb 2012 13:22:19 -0600
+Message-ID: <CAAE6i0ggEyVGh94L7n00Mm-YZTq26de2kZspU+AQKiaA=JD+8g@mail.gmail.com>
+References: <CAAE6i0g4VVpy7FduBHCY33Nt_iSOh39-9i2KWqA0fXETQUKLPA@mail.gmail.com>
+ <CAAE6i0jEaXmgmnmyUOrOr+5RyvPce25QZFALan+JBQ80K=UwNQ@mail.gmail.com>
+ <CAAE6i0hXA7rzZ=VCnezfyHQFn=+UcfrmUsfR-GQZcgvxFW+qJQ@mail.gmail.com> <20120208125536.GI16796@shiny>
+Mime-Version: 1.0
+Content-Type: text/plain; charset=ISO-8859-1
+To: Chris Mason <chris.mason@oracle.com>,
+	Chester <somethingsome2000@gmail.com>,
+	linux-btrfs <linux-btrfs@vger.kernel.org>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <20120208085712.GA6554@elgon.mountain>
+In-Reply-To: <20120208125536.GI16796@shiny>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-inode_ref_info() returns 1 when the element wasn't found and < 0 on error,
-just like btrfs_search_slot(). In iref_to_path() it's an error when the
-inode ref can't be found, thus we return ERR_PTR(ret) in that case. In order
-to avoid ERR_PTR(1), we now set ret to -ENOENT in that case.
-
-Signed-off-by: Jan Schmidt <list.btrfs@jan-o-sch.net>
----
-On 08.02.2012 10:18, Dan Carpenter wrote:
-> I looked at the code, but couldn't tell if it was intentional or not.
-
-It wasn't :-)
-
-Thank you,
--Jan
----
- fs/btrfs/backref.c |    2 ++
- 1 files changed, 2 insertions(+), 0 deletions(-)
----
-
-diff --git a/fs/btrfs/backref.c b/fs/btrfs/backref.c
-index 633c701..98f6bf10 100644
---- a/fs/btrfs/backref.c
-+++ b/fs/btrfs/backref.c
-@@ -892,6 +892,8 @@ static char *iref_to_path(struct btrfs_root *fs_root, struct btrfs_path *path,
- 		if (eb != eb_in)
- 			free_extent_buffer(eb);
- 		ret = inode_ref_info(parent, 0, fs_root, path, &found_key);
-+		if (ret > 0)
-+			ret = -ENOENT;
- 		if (ret)
- 			break;
- 		next_inum = found_key.offset;
--- 
-1.7.3.4
-
+On Wed, Feb 8, 2012 at 6:55 AM, Chris Mason <chris.mason@oracle.com> wr=
+ote:
+> On Tue, Feb 07, 2012 at 06:10:15PM -0600, Chester wrote:
+>> This is dmesg mounted with -o ro,recovery
+>> [ =A0 20.957392] exe used greatest stack depth: 4920 bytes left
+>> [ =A0145.340317] device label BtrfsLinux devid 1 transid 332442 /dev=
+/sda6
+>> [ =A0145.341702] btrfs: enabling auto recovery
+>> [ =A0145.341803] btrfs: disk space caching is enabled
+>> [ =A0152.457967] btrfs: corrupt leaf, bad key order:
+>> block=3D653297209344,root=3D1, slot=3D7
+>> [ =A0152.487933] btrfs: corrupt leaf, bad key order:
+>> block=3D653297209344,root=3D1, slot=3D7
+>> [ =A0152.488326] ------------[ cut here ]------------
+>> [ =A0152.488549] kernel BUG at fs/btrfs/extent-tree.c:5797!
+>
+> Well, this isn't good. =A0If you can run btrfs-zero-log it'll get pas=
+t
+> this part, but I'd suggest a fsck run to see if there are other
+> corrupted blocks.
+I've already tried the -o recovery option at mount. I was told it does
+the same as btrfs-zero-log (but probably less destructive). Just a
+quick question: Will the release of btrfsck later this month be able
+to fix these corruptions?
+>
+> Bad key ordering is usually from memory corruption, so this block
+> probably isn't alone.
+Yeah. Could be from using zcache. I haven't had a problem with it
+until I tried to suspend to RAM though.
+>
+> -chris
+--
+To unsubscribe from this list: send the line "unsubscribe linux-btrfs" =
+in
+the body of a message to majordomo@vger.kernel.org
+More majordomo info at  http://vger.kernel.org/majordomo-info.html

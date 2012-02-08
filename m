@@ -1,63 +1,47 @@
-From: Mitch Harder <mitch.harder@sabayonlinux.org>
-Subject: Re: Premature ENOSPC only with zlib Compression
-Date: Wed, 8 Feb 2012 15:01:09 -0600
-Message-ID: <CAKcLGm-ps-B9jZ8Xyxy0BduDcgzEtwsy0FzFhmV1GWZ_MP8q2g@mail.gmail.com>
-References: <CAKcLGm--EKeAbw7JzBtv7snhXEJSzTMZjn9_QDT+jGRCWsjM2g@mail.gmail.com>
+From: Phillip Susi <psusi@ubuntu.com>
+Subject: Re: [PATCH] mkfs: Handle creation of filesystem larger than the first
+ device
+Date: Wed, 08 Feb 2012 17:01:15 -0500
+Message-ID: <4F32F0AB.8030003@ubuntu.com>
+References: <1327593785-23466-1-git-send-email-jack@suse.cz>
 Mime-Version: 1.0
 Content-Type: text/plain; charset=ISO-8859-1
-To: linux-btrfs <linux-btrfs@vger.kernel.org>
+Cc: linux-btrfs@vger.kernel.org, Chris Mason <chris.mason@oracle.com>,
+	David Sterba <dsterba@suse.cz>
+To: Jan Kara <jack@suse.cz>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <CAKcLGm--EKeAbw7JzBtv7snhXEJSzTMZjn9_QDT+jGRCWsjM2g@mail.gmail.com>
+In-Reply-To: <1327593785-23466-1-git-send-email-jack@suse.cz>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Wed, Jan 18, 2012 at 10:13 AM, Mitch Harder
-<mitch.harder@sabayonlinux.org> wrote:
-> I have a Btrfs partition that is reliably reproducing premature ENOSPC
-> when restoring the disk from a tar file, but it is only happening with
-> zlib compression (lzo or no compression proceeds normally).
->
-> I've had the same issue at least back through the 3.1 kernel series,
-> and I've been having intermittent issues even further back.
->
-> I am currently using a 3.2.1 kernel merged with Chris' latest
-> integration branch.
->
-> I've performed about 12 trials trying to explore various combinations
-> of compress, compress-force, compress[-force]=[zlib,lzo] and
-> autodefrag.
->
-> If I use no compression, or if I explicitly declare lzo compression, I
-> don't receive the premature ENOSPC when untarring my restoration
-> archive to the empty partition.
->
-> If I don't specify compression (zlib is the default) or specify zlib,
-> I get consistent premature ENOSPC errors regardless of other
-> combinations.
->
-> I apologize if this is already general knowledge, but I couldn't see
-> where this has been posted to the list before.
->
-> As time allows, I will try to capture exactly where this ENOSPC is
-> being issued in btrfs by inserting WARN_ON's in my local version
-> where-ever ENOSPC is set.
+-----BEGIN PGP SIGNED MESSAGE-----
+Hash: SHA1
 
-Some follow-up...
+On 1/26/2012 11:03 AM, Jan Kara wrote:
+> make_btrfs() function takes a size of filesystem as an argument. It
+> uses this value to set the size of the first device as well which
+> is wrong for filesystems larger than this device. It results in
+> 'attemp to access beyond end of device' messages from the kernel.
+> So add size of the first device as an argument to make_btrfs().
 
-I've injected some debugging code to isolate when the ENOSPC is being
-generated when using zlib compression.
+I don't think this patch is correct.  Yes, the size switch only
+applies to the first device, so it doesn't make any sense to try to
+use a value larger than that device.  Attempting to do so probably
+should be trapped and it should error out, and the man page should
+probably clarify the fact that the size is only for the first device.
 
-When using zlib, I'm getting intermittent ENOSPC in the
-may_commit_transaction() function in extent-tree.c at this point:
+It looks like you think the size should somehow apply to multiple
+devices or to the total fs size when creating on multiple devices, and
+that just doesn't make sense.
 
-	if (delayed_rsv->size < bytes) {
-		spin_unlock(&delayed_rsv->lock);
-		return -ENOSPC;
-	}
+-----BEGIN PGP SIGNATURE-----
+Version: GnuPG v2.0.17 (MingW32)
+Comment: Using GnuPG with Mozilla - http://enigmail.mozdev.org/
 
-The typical values for (delayed_rsv->size < bytes) have been:
-delayed_rsv->size ( = 0x60000) < bytes ( = 0x78000)
-
-This typically occurs when unzipping a section of my backup that
-contains lots of small files that are probably being mostly in-lined.
-
-I don't see errors in this section when using lzo or no compression.
+iQEcBAEBAgAGBQJPMvCrAAoJEJrBOlT6nu75A/IH/3Pn9MFhxXI1kTu1jriA/1ZA
+IaCPkZbNFvS1DC5U8E75Ys4Qtn/SkwVOdGG8VCObfJKhhbWXEGKLdtllxV8WUkRM
+QYN3rFeb3gLxb9UIcyyRC+RDtJtVzVXClFN7WYgA2QXmCyYdnV3axzvO/tkvADuq
+Is28sKnYzV9poKTlghqFmEGmqcnTtfFKg9MC60wGDKEOMuAeijImGaAEp773G7+S
+JSOOPcuDj/Lh7ZO+duR2ul+zUI9DWr2IbZM6zUxOoN2fZEJAwJLNPsU7rBDX8w+g
+FVHFHrRv6wVGq0I7Dvb2flif5O0wSRA5yhK/7GanaVEMBKSV9A0c5qOE9LakL/s=
+=X7QW
+-----END PGP SIGNATURE-----

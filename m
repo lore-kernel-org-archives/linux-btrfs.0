@@ -1,49 +1,48 @@
 From: Chris Samuel <chris@csamuel.org>
-Subject: Re: Several unhappy btrfs's after RAID meltdown
-Date: Wed, 8 Feb 2012 17:32:39 +1100
-Message-ID: <201202081732.42843.chris@csamuel.org>
-References: <20120205184128.GC18806@localhost.localdomain> <20120207033945.GA5639@localhost.localdomain> <pan.2012.02.07.09.53.58@cox.net>
+Subject: Re: Btrfs out of inodes becomes corrupt
+Date: Wed, 8 Feb 2012 17:41:12 +1100
+Message-ID: <201202081741.13243.chris@csamuel.org>
+References: <b0ee762c11692ea16e81a34469311c14@localhost> <20120205195742.GC19330@carfax.org.uk>
 Mime-Version: 1.0
 Content-Type: multipart/signed;
-  boundary="nextPart1409453.YM6B11Xp6k";
+  boundary="nextPart7075353.3Klqrd7c5y";
   protocol="application/pgp-signature";
   micalg=pgp-sha1
 To: linux-btrfs@vger.kernel.org
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <pan.2012.02.07.09.53.58@cox.net>
+In-Reply-To: <20120205195742.GC19330@carfax.org.uk>
 List-ID: <linux-btrfs.vger.kernel.org>
 
---nextPart1409453.YM6B11Xp6k
+--nextPart7075353.3Klqrd7c5y
 Content-Type: Text/Plain;
-  charset="utf-8"
+  charset="iso-8859-15"
 Content-Transfer-Encoding: quoted-printable
 
-On Tuesday 07 February 2012 20:53:59 Duncan wrote:
+On Monday 06 February 2012 06:57:42 Hugo Mills wrote:
 
-> Kernel 3.2.2 is relatively recent altho you could=20
-> try the latest 3.3 rc or git kernel as well
+> > This al under debian  with kernel 2.6.32-5.
+>=20
+>    Aargh.
+>=20
+>    You are aware that this is an insanely old version of the brtfs
+> code, and it has major flaws in it?
 
-Please keep in mind that work done in git does not appear to get=20
-backported to the stable updates for releases (such as 3.2.x), in=20
-other words you'll have the same btrfs code as in the first 3.2=20
-release.
+As someone who runs his work laptop with a 2.6.32 laptop and btrfs for=20
+/home I'll bite at this one - I've held off updating after reading the=20
+issues people were reporting on the list with newer kernels that did=20
+not appear to be present in 2.6.32 (indeed IIRC a particular problem=20
+from that time could only be solved at the time be remounting the=20
+filesystem with 2.6.32, at which point newer kernels could access it=20
+again).   It's served me very well, it "just works" (so far at least).
 
-You will need to use RC's (or git) for the current btrfs kernel code.
+It's now sounding that 3.2 is probably stable enough for me to=20
+consider updating to the next KUbuntu release when it comes out.
 
-> Particularly when it's used on top of a dmcrypt layer that btrfs was
-> known to have issues with
+NB:  Yes, I do make nightly backups, and no, I don't run the=20
+filesystem at anything close to even a quarter full (not that that=20
+guarantees anything, or is even particularly deliberate).
 
-I believe the issues between btrfs and dm-crypt have been sorted out=20
-as of 3.2 (going on an earlier posting of Chris Masons).
-
-Returning to the OP's case, I'm surprised that ext4 is able to get=20
-anything back and I'd say that's a testament to its long development=20
-life (ext->ext2->ext3->ext4) in comparison to btrfs. If that happened=20
-on a system I was sysadmin'ing (and it has - losing an entire tray of=20
-drives in a RAID array due to controller firmware bugs really spoils=20
-your day) I'd be reaching for the backup tapes about now.
-
-Best of luck!
+cheers,
 Chris
 =2D-=20
  Chris Samuel  :  http://www.csamuel.org/  :  Melbourne, VIC
@@ -51,20 +50,20 @@ Chris
 This email may come with a PGP signature as a file. Do not panic.
 =46or more info see: http://en.wikipedia.org/wiki/OpenPGP
 
---nextPart1409453.YM6B11Xp6k
+--nextPart7075353.3Klqrd7c5y
 Content-Type: application/pgp-signature; name=signature.asc 
 Content-Description: This is a digitally signed message part.
 
 -----BEGIN PGP SIGNATURE-----
 Version: GnuPG v1.4.11 (GNU/Linux)
 
-iQEVAwUATzIXB41yjaOTJg85AQJgFAgAuYYhkGXXEUdavTUCUDYoMIYqwAdaazpF
-q4J1kSBV6I1a9lhAanxMdB+ZuKiyTemej23yl/u2Izgg/JGhJaMhLUmaJ93f3QZU
-7CifJoFaOLH7MJb2TdigVCp1OPVHQ2QOyAl4vdIxUd8Gh0whvcPkwOZOZ7utnCjs
-zehNllzc77vHS3zFvwXpRvrE7AMmXXYPr/kGwjiLBVDhnxUEBBa2syUiStKQpOfJ
-z3znXGtBRNsHC9mcGPF6MccStdzqxXLOCUe5lmNOauEc/j/bjJIpv83KRVYa8+bZ
-NWvwHMRXr10zuMHEIm3f6vlOuA9/NfU5dOkT0RQYAZdK8p6+IsLiXg==
-=OsKA
+iQEVAwUATzIZCY1yjaOTJg85AQJMmwf/RcP6XTIA05CC4Sld3JpHFURlQG5s0iOy
+FNZeK/IjrTdANB5Otg8yKtDvBZaElH5haKPxIQYasR3WwI62j6Q/cGwCX4A2iD9U
+/HQ9ZbBiY50+f4+RvkPVNy2Jt2n0WmdoHO7eH3tOIrRwbwKZzF3Sk+y2EL7htDtf
+S2r7CRUmxwQbpPJflHboXJ53YiTPtdHOU53Iy6lfZL00WFgc8YWuj0MXy+/JLj4C
+CRFWO2/ZepdgbAePquYU8rBcNnfUTcJ0NZE5TeTqA/MaKsgtjMov+bZfdUZSUL02
+4tqQGVhLJhzpsDLY7etv1m85eEXhddO86QR2BbATtNO5/gxU5qXZ2g==
+=xAPR
 -----END PGP SIGNATURE-----
 
---nextPart1409453.YM6B11Xp6k--
+--nextPart7075353.3Klqrd7c5y--

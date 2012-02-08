@@ -1,51 +1,31 @@
-From: Felix Blanke <felixblanke@gmail.com>
-Subject: Re: Btrfs out of inodes becomes corrupt
-Date: Wed, 08 Feb 2012 10:00:43 +0100
-Message-ID: <4F3239BB.2070805@gmail.com>
-References: <b0ee762c11692ea16e81a34469311c14@localhost> <20120205195742.GC19330@carfax.org.uk> <201202081741.13243.chris@csamuel.org>
+From: Dan Carpenter <dan.carpenter@oracle.com>
+Subject: passing positive numbers to ERR_PTR()
+Date: Wed, 8 Feb 2012 12:18:09 +0300
+Message-ID: <20120208085712.GA6554@elgon.mountain>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=UTF-8; format=flowed
+Content-Type: text/plain; charset=us-ascii
 Cc: linux-btrfs@vger.kernel.org
-To: Chris Samuel <chris@csamuel.org>
+To: Jan Schmidt <list.btrfs@jan-o-sch.net>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <201202081741.13243.chris@csamuel.org>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 2/8/12 7:41 AM, Chris Samuel wrote:
-> On Monday 06 February 2012 06:57:42 Hugo Mills wrote:
->
->>> This al under debian  with kernel 2.6.32-5.
->>
->>     Aargh.
->>
->>     You are aware that this is an insanely old version of the brtfs
->> code, and it has major flaws in it?
->
-> As someone who runs his work laptop with a 2.6.32 laptop and btrfs for
-> /home I'll bite at this one - I've held off updating after reading the
-> issues people were reporting on the list with newer kernels that did
-> not appear to be present in 2.6.32 (indeed IIRC a particular problem
-> from that time could only be solved at the time be remounting the
-> filesystem with 2.6.32, at which point newer kernels could access it
-> again).   It's served me very well, it "just works" (so far at least).
->
-> It's now sounding that 3.2 is probably stable enough for me to
-> consider updating to the next KUbuntu release when it comes out.
->
-> NB:  Yes, I do make nightly backups, and no, I don't run the
-> filesystem at anything close to even a quarter full (not that that
-> guarantees anything, or is even particularly deliberate).
->
-> cheers,
-> Chris
+Hi Jan,
 
-Ofc you can be one of the lucky users who doesn't hit a bug on .32. Imho 
-that isn't an argument for not upgrading.
-There are new bugs in 3.2, but on the other hand there are hundreds of 
-fixed bugs, new features etc.
+Smatch complains when you pass positive numbers to ERR_PTR().  There
+is a warning triggered in iref_to_path().
 
-Especially using alpha releases of software without upgrading whenever 
-there is a chance to seems very strange to me :)
+fs/btrfs/backref.c +920 iref_to_path()
+   918  
+   919          if (ret)
+   920                  return ERR_PTR(ret);
+                                       ^^^
+"ret" can be either a negative error code, zero, or one here.
 
-Kind regards,
-Felix Blanke
+   921  
+
+I looked at the code, but couldn't tell if it was intentional or not.
+It really is pretty unusual to do that, so maybe there should be a
+comment or something.
+
+regards,
+dan carpenter

@@ -1,55 +1,24 @@
-From: Roman Mamedov <rm@romanrm.ru>
+From: "Norbert Scheibner" <scno@gmx.net>
 Subject: Re: Freeing space over reboot question
-Date: Fri, 10 Feb 2012 00:20:55 +0600
-Message-ID: <20120210002055.6819f76c@natsu>
+Date: Thu, 09 Feb 2012 19:57:47 +0100
+Message-ID: <20120209185747.92590@gmx.net>
 References: <20120209174232.318280@gmx.net>
+ <CAAE6i0j02XLf3OGCj_6osrGZpe-Dd9PLmaAg5dB-EzzFJUpQnw@mail.gmail.com>
 Mime-Version: 1.0
-Content-Type: multipart/signed; micalg=PGP-SHA1;
- boundary="Sig_/o+c_RXYRgc2Bb=7X_manpbR"; protocol="application/pgp-signature"
+Content-Type: text/plain; charset="utf-8"
 Cc: linux-btrfs@vger.kernel.org
-To: "Norbert Scheibner" <scno@gmx.net>
+To: Chester <somethingsome2000@gmail.com>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <20120209174232.318280@gmx.net>
+In-Reply-To: <CAAE6i0j02XLf3OGCj_6osrGZpe-Dd9PLmaAg5dB-EzzFJUpQnw@mail.gmail.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
---Sig_/o+c_RXYRgc2Bb=7X_manpbR
-Content-Type: text/plain; charset=US-ASCII
-Content-Transfer-Encoding: quoted-printable
+On Thu, 9 Feb 2012 12:11:19 -0600 Chester wrote:
 
-On Thu, 09 Feb 2012 18:42:32 +0100
-"Norbert Scheibner" <scno@gmx.net> wrote:
+> A similar thing has happened to me recently. The snapshot deletion
+> happens asynchronously and should continue after a reboot (in my
+> case). If you boot up your system and leave it idle, take a look at
+> iotop. You might see a [btrfs-cleaner] doing some work.
 
-> So the used space of subvolume I deleted, was not freed.
+No that didn't help. The backup did not start immediately after the reboot and 5 days later - still no change.
 
-AFAIK the only reliable way currently to ensure the space after a subvolume
-deletion is freed, is to remount the FS.=20
-
-In my opinion this is very inconvenient in many aspects, and I think "btrfs=
- fi
-sync" absolutely should sync all ongoing cleanerd operations too. Which it
-currently doesn't, and in fact this makes me wonder, does "btrfs fi sync"
-even do anything more than the standard "sync" program at all.
-
---=20
-With respect,
-Roman
-
-~~~~~~~~~~~~~~~~~~~~~~~~~~~
-"Stallman had a printer,
-with code he could not see.
-So he began to tinker,
-and set the software free."
-
---Sig_/o+c_RXYRgc2Bb=7X_manpbR
-Content-Type: application/pgp-signature; name=signature.asc
-Content-Disposition: attachment; filename=signature.asc
-
------BEGIN PGP SIGNATURE-----
-Version: GnuPG v1.4.11 (GNU/Linux)
-
-iEYEARECAAYFAk80DocACgkQTLKSvz+PZwgzXwCeJ0MiX82UEom5Lm+x/Uk5OveL
-3KUAoJVCv+Os7LH75GoKNAPPnm/J/VXX
-=gIyQ
------END PGP SIGNATURE-----
-
---Sig_/o+c_RXYRgc2Bb=7X_manpbR--
+    Norbert

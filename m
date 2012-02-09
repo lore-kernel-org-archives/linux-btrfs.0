@@ -1,105 +1,23 @@
-From: lutz.euler@freenet.de (Lutz Euler)
-Subject: Re: Bulk discard doesn't work after add/delete of devices
-Date: Thu, 9 Feb 2012 16:50:48 +0100
-Message-ID: <20275.60248.386622.516828@localhost.localdomain>
-References: <20270.59513.240729.662692@localhost.localdomain>
-	<4F3386D8.6010108@cn.fujitsu.com>
+From: David Sterba <dave@jikos.cz>
+Subject: Re: can't access diagrams on wiki
+Date: Thu, 9 Feb 2012 17:31:21 +0100
+Message-ID: <20120209163121.GD15350@twin.jikos.cz>
+References: <4EC09171.8030609@getsu.com> <20111114075648.GP28749@carfax.org.uk> <4F1F6AFB.6010906@oracle.com> <4F1FAF3D.8070708@gmx.net> <4F211497.2030801@oracle.com>
+Reply-To: dave@jikos.cz
 Mime-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
-Cc: linux-btrfs@vger.kernel.org
-To: Liu Bo <liubo2009@cn.fujitsu.com>
+Cc: Arne Jansen <sensille@gmx.net>, Hugo Mills <hugo@carfax.org.uk>,
+	"J. David Beutel" <list@getsu.com>, linux-btrfs@vger.kernel.org
+To: Anand Jain <Anand.Jain@oracle.com>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <4F3386D8.6010108@cn.fujitsu.com>
+In-Reply-To: <4F211497.2030801@oracle.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hi Liu,
+On Thu, Jan 26, 2012 at 04:53:43PM +0800, Anand Jain wrote:
+> Further I hope the new contents created on btrfs.ipv5.de
+> will be merged with btrfs.wiki.kernel.org when the latter
+> is ready.
 
-thanks for looking into this!
+Sure, that's the plan.
 
-You wrote:
-
-> Would you please test the following patch on your box?
-> 
-> thanks,
-> liubo
-> 
-> diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
-> index 77ea23c..b6e2c92 100644
-> --- a/fs/btrfs/extent-tree.c
-> +++ b/fs/btrfs/extent-tree.c
-> @@ -7653,9 +7653,16 @@ int btrfs_trim_fs(struct btrfs_root *root, struct fstrim_range *range)
->  	u64 start;
->  	u64 end;
->  	u64 trimmed = 0;
-> +	u64 total_bytes = btrfs_super_total_bytes(fs_info->super_copy);
->  	int ret = 0;
->  
-> -	cache = btrfs_lookup_block_group(fs_info, range->start);
-> +	/*
-> +	 * try to trim all FS space, our block group may start from non-zero.
-> +	 */
-> +	if (range->len == total_bytes)
-> +		cache = btrfs_lookup_first_block_group(fs_info, range->start);
-> +	else
-> +		cache = btrfs_lookup_block_group(fs_info, range->start);
->  
->  	while (cache) {
->  		if (cache->key.objectid >= (range->start + range->len)) {
-> -- 
-> 1.6.5.2
-
-I'm sorry but that didn't help.
-I applied the patch on top of v3.3-rc2-172-g23783f8 and still fstrim
-says: "0 bytes were trimmed".
-
-I left the printk's I mentioned in place. They show that now "cache"
-is not 0 so the "while (cache)" loop is entered but nevertheless
-"btrfs_trim_block_group" is never called. So I put in more printk's
-and found that the objectid is so large that the loop is immediately
-terminated (output of printk's in "//" comments below):
-
-int btrfs_trim_fs(struct btrfs_root *root, struct fstrim_range *range)
-{
-	struct btrfs_fs_info *fs_info = root->fs_info;
-	struct btrfs_block_group_cache *cache = NULL;
-	u64 group_trimmed;
-	u64 start;
-	u64 end;
-	u64 trimmed = 0;
-	u64 total_bytes = btrfs_super_total_bytes(fs_info->super_copy);
-	int ret = 0;
-
-// range.start = 0, .len = 160815300608, .minlen = 512
-
-	/*
-	 * try to trim all FS space, our block group may start from non-zero.
-	 */
-	if (range->len == total_bytes)
-		cache = btrfs_lookup_first_block_group(fs_info, range->start);
-	else
-		cache = btrfs_lookup_block_group(fs_info, range->start);
-
-// cache != 0
-
-	while (cache) {
-
-// cache->key.objectid = 213702934528
-
-		if (cache->key.objectid >= (range->start + range->len)) {
-			btrfs_put_block_group(cache);
-			break;
-		}
-
-// This line is not reached.
-
-Here's the output of "btrfs fi show /dev/sda3" again:
-
-failed to read /dev/sr0
-Label: none  uuid: 88af7576-3027-4a3b-a5ae-34bfd167982f
-	Total devices 2 FS bytes used 29.05GB
-	devid    4 size 74.53GB used 40.06GB path /dev/sdb1
-	devid    3 size 75.24GB used 40.06GB path /dev/sda3
-
-Kind regards,
-
-Lutz
+david

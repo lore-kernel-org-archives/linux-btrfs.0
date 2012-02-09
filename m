@@ -1,24 +1,30 @@
-From: "Norbert Scheibner" <scno@gmx.net>
+From: cwillu <cwillu@cwillu.com>
 Subject: Re: Freeing space over reboot question
-Date: Thu, 09 Feb 2012 19:57:47 +0100
-Message-ID: <20120209185747.92590@gmx.net>
+Date: Thu, 9 Feb 2012 13:02:49 -0600
+Message-ID: <CAE5mzvgQmCj4rrmfqvvNeyM-_-hOUpC_kEWrJQf5QwAzmLPGEQ@mail.gmail.com>
 References: <20120209174232.318280@gmx.net>
- <CAAE6i0j02XLf3OGCj_6osrGZpe-Dd9PLmaAg5dB-EzzFJUpQnw@mail.gmail.com>
+	<20120210002055.6819f76c@natsu>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="utf-8"
-Cc: linux-btrfs@vger.kernel.org
-To: Chester <somethingsome2000@gmail.com>
+Content-Type: text/plain; charset=UTF-8
+Cc: Norbert Scheibner <scno@gmx.net>, linux-btrfs@vger.kernel.org
+To: Roman Mamedov <rm@romanrm.ru>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <CAAE6i0j02XLf3OGCj_6osrGZpe-Dd9PLmaAg5dB-EzzFJUpQnw@mail.gmail.com>
+In-Reply-To: <20120210002055.6819f76c@natsu>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Thu, 9 Feb 2012 12:11:19 -0600 Chester wrote:
+On Thu, Feb 9, 2012 at 12:20 PM, Roman Mamedov <rm@romanrm.ru> wrote:
+> On Thu, 09 Feb 2012 18:42:32 +0100
+> "Norbert Scheibner" <scno@gmx.net> wrote:
+>
+>> So the used space of subvolume I deleted, was not freed.
+>
+> AFAIK the only reliable way currently to ensure the space after a subvolume
+> deletion is freed, is to remount the FS.
+>
+> In my opinion this is very inconvenient in many aspects, and I think "btrfs fi
+> sync" absolutely should sync all ongoing cleanerd operations too. Which it
+> currently doesn't, and in fact this makes me wonder, does "btrfs fi sync"
+> even do anything more than the standard "sync" program at all.
 
-> A similar thing has happened to me recently. The snapshot deletion
-> happens asynchronously and should continue after a reboot (in my
-> case). If you boot up your system and leave it idle, take a look at
-> iotop. You might see a [btrfs-cleaner] doing some work.
-
-No that didn't help. The backup did not start immediately after the reboot and 5 days later - still no change.
-
-    Norbert
+It doesn't.  It triggers the same function that the global sync would
+(but doesn't also sync every other mounted filesystem).

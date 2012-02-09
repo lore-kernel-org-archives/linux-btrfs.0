@@ -1,42 +1,58 @@
-From: Phillip Susi <psusi@ubuntu.com>
-Subject: Re: [PATCH] mkfs: Handle creation of filesystem larger than the first
- device
-Date: Wed, 08 Feb 2012 22:05:26 -0500
-Message-ID: <4F3337F6.7010900@ubuntu.com>
-References: <1327593785-23466-1-git-send-email-jack@suse.cz> <4F32F0AB.8030003@ubuntu.com> <20120208232015.GE1696@quack.suse.cz>
+From: Jeff Liu <jeff.liu@oracle.com>
+Subject: [PATCH]  Btrfs: return EUCLEAN rather than ENXIO once internal error
+ has occurred for SEEK_DATA/SEEK_HOLE inquiry
+Date: Thu, 09 Feb 2012 11:46:00 +0800
+Message-ID: <4F334178.7030704@oracle.com>
+Reply-To: jeff.liu@oracle.com
 Mime-Version: 1.0
 Content-Type: text/plain; charset=ISO-8859-1
-Cc: linux-btrfs@vger.kernel.org, Chris Mason <chris.mason@oracle.com>,
-	David Sterba <dsterba@suse.cz>
-To: Jan Kara <jack@suse.cz>
+Cc: Dave Chinner <david@fromorbit.com>
+To: "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <20120208232015.GE1696@quack.suse.cz>
 List-ID: <linux-btrfs.vger.kernel.org>
 
------BEGIN PGP SIGNED MESSAGE-----
-Hash: SHA1
+By referring to http://linux.die.net/man/2/lseek, return ENXIO only
+when "offset beyond EOF" for either SEEK_DATA or SEEK_HOLE inquiry.
+But we return it in case of internal issue too if btrfs_get_extent_fiemap() failed
+due to other issues.  This will confuse the user applications to be expecting ENXIO when
+trying to find a specific data or hole location once it has occurred.
 
-On 02/08/2012 06:20 PM, Jan Kara wrote:
->   Thanks for your reply. I admit I was not sure what exactly size argument
-> should be. So after looking into the code for a while I figured it should
-> be a total size of the filesystem - or differently it should be size of
-> virtual block address space in the filesystem. Thus when filesystem has
-> more devices (or admin wants to add more devices later), it can be larger
-> than the first device. But I'm not really a btrfs developper so I might be
-> wrong and of course feel free to fix the issue as you deem fit.
+Thanks Dave for pointing that out in XFS thread.
 
-The size of the fs is the total size of the individual disks.  When you limit the size, you limit the size of a disk, not the whole fs.  IIRC, mkfs initializes the fs on the first disk, which is why it was using that size as the size of the whole fs, and then adds the other disks after ( which then add their size to the total fs size ).  It might be nice if mkfs could take sizes for each disk, but it only seems to take one size for the initial disk.
+This patch fix it to return EUCLEAN, or maybe another particular errno is more reasonable in Btrfs to indicate this fatal error?
+
+Thanks,
+-Jeff
 
 
------BEGIN PGP SIGNATURE-----
-Version: GnuPG v1.4.11 (GNU/Linux)
-Comment: Using GnuPG with Mozilla - http://enigmail.mozdev.org/
+Cc: david@fromorbit.com
+Signed-off-by: Jie Liu <jeff.liu@oracle.com>
 
-iQEcBAEBAgAGBQJPMzf2AAoJEJrBOlT6nu75Ci8H/j3+8AR5H+UGOzpwMEBmPViJ
-PCVc5fAqOgLlQgjAII9dF74/1a6NyC9hjWBXPlhfrc3rA0JBj6x2AknvGnTQ6/Xo
-4hMu8sFSSOtHf/aTXh7B7YJ/WrqDgkiEOSpcRVJyltzhKt0bbE3t9/IfxAhvkB1z
-3CuEs9UeIn9wOV2fcyXoNMWpPQ+tNkxrvE817BHjPdQ5Z1+d2Cc0AxM22lgBVsZZ
-J+oneFOeqSIGZ9hbr0WVEjHaWJpxEapNmVGE5RIrpneTGpe3eAijqbBa8TEg+C2R
-iVCT7tBG3gOGhRoApMNM2IP2TgGLHMRgwP8QQv4/9MTNrOEP3G77tbCDHBfKMNA=
-=g+5L
------END PGP SIGNATURE-----
+---
+ fs/btrfs/file.c |    4 ++--
+ 1 files changed, 2 insertions(+), 2 deletions(-)
+
+diff --git a/fs/btrfs/file.c b/fs/btrfs/file.c
+index 97fbe93..6693040 100644
+--- a/fs/btrfs/file.c
++++ b/fs/btrfs/file.c
+@@ -1761,7 +1761,7 @@ static int find_desired_extent(struct inode *inode, loff_t *offset, int origin)
+ 						     start - root->sectorsize,
+ 						     root->sectorsize, 0);
+ 		if (IS_ERR(em)) {
+-			ret = -ENXIO;
++			ret = -EUCLEAN;
+ 			goto out;
+ 		}
+ 		last_end = em->start + em->len;
+@@ -1773,7 +1773,7 @@ static int find_desired_extent(struct inode *inode, loff_t *offset, int origin)
+ 	while (1) {
+ 		em = btrfs_get_extent_fiemap(inode, NULL, 0, start, len, 0);
+ 		if (IS_ERR(em)) {
+-			ret = -ENXIO;
++			ret = -EUCLEAN;
+ 			break;
+ 		}
+ 
+-- 
+1.7.9

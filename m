@@ -1,47 +1,54 @@
 From: Chris Mason <chris.mason@oracle.com>
-Subject: Re: btrfs unmountable after failed suspend
-Date: Fri, 10 Feb 2012 16:27:49 -0500
-Message-ID: <20120210212749.GR8384@shiny>
-References: <CAAE6i0g4VVpy7FduBHCY33Nt_iSOh39-9i2KWqA0fXETQUKLPA@mail.gmail.com>
- <CAAE6i0jEaXmgmnmyUOrOr+5RyvPce25QZFALan+JBQ80K=UwNQ@mail.gmail.com>
- <CAAE6i0hXA7rzZ=VCnezfyHQFn=+UcfrmUsfR-GQZcgvxFW+qJQ@mail.gmail.com>
- <20120208125536.GI16796@shiny>
- <CAAE6i0ggEyVGh94L7n00Mm-YZTq26de2kZspU+AQKiaA=JD+8g@mail.gmail.com>
- <20120208202658.GH8384@shiny>
- <CAAE6i0hWxsSKLoN8zyJv9H4tu5R5B3KXvbgZzHDcMHYC4JX3mA@mail.gmail.com>
- <CAAE6i0isDwiA_vyg=KX_sodu7gyux7wJhEM5OXjD=4jgRqwj+g@mail.gmail.com>
- <CAAE6i0h+E0vQ4D6gr7MQiwS00hnQGk5R7ubkRa00NdkoaNxcNA@mail.gmail.com>
+Subject: Re: can't read superblock (but could mount)
+Date: Fri, 10 Feb 2012 17:18:42 -0500
+Message-ID: <20120210221842.GU8384@shiny>
+References: <20120210203051.Horde.q5KnHsL8999PNXBrH5AlxdA@webmail.df.eu>
 Mime-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
-Cc: linux-btrfs <linux-btrfs@vger.kernel.org>
-To: Chester <somethingsome2000@gmail.com>
+Cc: linux-btrfs@vger.kernel.org
+To: btrfs@nentwig.biz
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <CAAE6i0h+E0vQ4D6gr7MQiwS00hnQGk5R7ubkRa00NdkoaNxcNA@mail.gmail.com>
+In-Reply-To: <20120210203051.Horde.q5KnHsL8999PNXBrH5AlxdA@webmail.df.eu>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Thu, Feb 09, 2012 at 06:54:42PM -0600, Chester wrote:
-> Output for btrfs-debug-tree for that specific block in dmesg
+On Fri, Feb 10, 2012 at 08:30:51PM +0100, btrfs@nentwig.biz wrote:
+> Hi!
 > 
-> And available here ( http://pastebin.com/AgdvS5JM ) in case the lines
-> wrap and look ugly
+> I used to have arch linux running on 1 btrfs partition (sda1, incl. /boot).
+> When switching to 3.2.5 recently the system fails to boot:
 > 
-> leaf 653297209344 items 43 free space 673 generation 332442 owner 2
-> fs uuid 0f5b2f4f-1aa0-4e6f-b904-e5b4d4588144
-> chunk uuid 27536f0d-993b-4da3-85eb-1c9b08c435cb
-> 	item 7 key (653284831232 EXTENT_ITEM 4096) itemoff 3551 itemsize 51
-> 		extent refs 1 gen 332218 flags 2
-> 		tree block key (654686961664 a8 4096) level 0
-> 		tree block backref root 2
-> 	item 8 key (653284818944 EXTENT_ITEM 4096) itemoff 3500 itemsize 51
-> 		extent refs 1 gen 332218 flags 2
-> 		tree block key (654687121408 a8 4096) level 0
-> 		tree block backref root 2
+> (after udevd)
+> /etc/rc.sysinit: line 15: 117 Bus error  mountpoint -q /proc
+> and so on, no idea.
+> 
+> It used to boot with 3.2.4, but
+> 
+> 1) I obviously had some corruption in the tree, when I tried to delete a
+> certain file I hit e.g. "kernel BUG at fs/btrfs/extent-tree.c" message.
+> 
+> 2) Even while running 3.2.4 I was unable to mount the partition from a
+> parallel gentoo or live USB install and I still am:
+> 
+> # mount /dev/sda1 /mnt/arch/
+> mount: /dev/sda1: can't read superblock
+> 
+> The strange thing is: when trying to boot from the partition the
+> boot loader (syslinux) is
+> obviously still able load the kernel from that partition.
+> 
+> Tried btrfs-zero-log and some deperate other things. Result: I can
+> now actually
+> execute btrfsck which previously used to fail:
 
-Ok, its worth pointing out that you're just one bit away from proper
-ordering here.  While I'm testing out this code to fix key ordering,
-could you please run memtest86 on your machine?
+Ok, step one:
 
-The other fields all look correct.
+Pull down the dangerdonteveruse branch of btrfs-progs:
+
+git://git.kernel.org/pub/scm/linux/kernel/git/mason/btrfs-progs.git dangerdonteveruse
+
+Run btrfs-debug-tree -r /dev/sda1 and send the output here please.
+
+This block with bad transid is from your FS root.  We'll need to a root
+that matches.  But we should be able to patch things up!
 
 -chris
-

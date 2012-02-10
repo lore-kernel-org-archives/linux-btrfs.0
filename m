@@ -1,727 +1,205 @@
-From: Mitch Harder <mitch.harder@sabayonlinux.org>
-Subject: [PATCH/RFC] Btrfs: Add conditional ENOSPC debugging.
-Date: Thu,  9 Feb 2012 15:38:41 -0600
-Message-ID: <1328823521-8487-1-git-send-email-mitch.harder@sabayonlinux.org>
+From: Chester <somethingsome2000@gmail.com>
+Subject: Re: btrfs unmountable after failed suspend
+Date: Thu, 9 Feb 2012 18:54:42 -0600
+Message-ID: <CAAE6i0h+E0vQ4D6gr7MQiwS00hnQGk5R7ubkRa00NdkoaNxcNA@mail.gmail.com>
+References: <CAAE6i0g4VVpy7FduBHCY33Nt_iSOh39-9i2KWqA0fXETQUKLPA@mail.gmail.com>
+ <CAAE6i0jEaXmgmnmyUOrOr+5RyvPce25QZFALan+JBQ80K=UwNQ@mail.gmail.com>
+ <CAAE6i0hXA7rzZ=VCnezfyHQFn=+UcfrmUsfR-GQZcgvxFW+qJQ@mail.gmail.com>
+ <20120208125536.GI16796@shiny> <CAAE6i0ggEyVGh94L7n00Mm-YZTq26de2kZspU+AQKiaA=JD+8g@mail.gmail.com>
+ <20120208202658.GH8384@shiny> <CAAE6i0hWxsSKLoN8zyJv9H4tu5R5B3KXvbgZzHDcMHYC4JX3mA@mail.gmail.com>
+ <CAAE6i0isDwiA_vyg=KX_sodu7gyux7wJhEM5OXjD=4jgRqwj+g@mail.gmail.com>
 Mime-Version: 1.0
-Cc: Mitch Harder <mitch.harder@sabayonlinux.org>
-To: linux-btrfs@vger.kernel.org
+Content-Type: text/plain; charset=ISO-8859-1
+To: Chris Mason <chris.mason@oracle.com>,
+	Chester <somethingsome2000@gmail.com>,
+	linux-btrfs <linux-btrfs@vger.kernel.org>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
+In-Reply-To: <CAAE6i0isDwiA_vyg=KX_sodu7gyux7wJhEM5OXjD=4jgRqwj+g@mail.gmail.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-This patch isn't intended for inclusion in the kernel, but is provided
-to facilitate ENOSPC debugging in a framework that will have no
-impact on Btrfs unless compiled conditionally.
+Output for btrfs-debug-tree for that specific block in dmesg
 
-Debugging printk statements are wrapped in #ifdef macros
-to allow btrfs to be built in its original form unless debugging
-is explicitly requested when the kernel is built.
+And available here ( http://pastebin.com/AgdvS5JM ) in case the lines
+wrap and look ugly
 
-The debugging can be enabled as follows:
-KCFLAGS="-DBTRFS_DEBUG_ENOSPC" \
-KCPPFLAGS="-DBTRFS_DEBUG_ENOSPC" \
-make
-
-The patch was constructed by searching the Btrfs code for "ENOSPC",
-and inserting printk statements as appropriate if the occurance
-was a generation point for an ENOSPC.
-
-I initially developed this patch to track down where ENOSPC errors were being
-generated when using zlib compression.
-
-This patch will occasionally generate some false positives, since ENOSPC
-conditions are sometimes corrected before returning an error to the caller.
-
-It is also interesting for highlighting all the places in Btrfs where an
-ENOSPC can be generated.
-
-Signed-off-by: Mitch Harder <mitch.harder@sabayonlinux.org>
----
- fs/btrfs/delayed-inode.c    |   10 ++++
- fs/btrfs/extent-tree.c      |   84 +++++++++++++++++++++++++++++++++
- fs/btrfs/free-space-cache.c |  109 +++++++++++++++++++++++++++++++++++++++++++
- fs/btrfs/inode-map.c        |   17 +++++++
- fs/btrfs/inode.c            |   53 +++++++++++++++++++++
- fs/btrfs/volumes.c          |   58 +++++++++++++++++++++++
- fs/btrfs/xattr.c            |   10 ++++
- 7 files changed, 341 insertions(+), 0 deletions(-)
-
-diff --git a/fs/btrfs/delayed-inode.c b/fs/btrfs/delayed-inode.c
-index fe4cd0f..31b717f 100644
---- a/fs/btrfs/delayed-inode.c
-+++ b/fs/btrfs/delayed-inode.c
-@@ -656,8 +656,18 @@ static int btrfs_delayed_inode_reserve_metadata(
- 		 * EAGAIN to make us stop the transaction we have, so return
- 		 * ENOSPC instead so that btrfs_dirty_inode knows what to do.
- 		 */
-+#ifdef BTRFS_DEBUG_ENOSPC
-+		if (unlikely(ret == -EAGAIN)) {
-+			ret = -ENOSPC;
-+			if (printk_ratelimit())
-+				printk(KERN_WARNING
-+				       "btrfs: ENOSPC set in "
-+				       "btrfs_delayed_inode_reserve_metadata\n");
-+		}
-+#else
- 		if (ret == -EAGAIN)
- 			ret = -ENOSPC;
-+#endif
- 		if (!ret) {
- 			node->bytes_reserved = num_bytes;
- 			trace_btrfs_space_reservation(root->fs_info,
-diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
-index 283af7a..aeb1b4f 100644
---- a/fs/btrfs/extent-tree.c
-+++ b/fs/btrfs/extent-tree.c
-@@ -3308,6 +3308,12 @@ commit_trans:
- 			goto again;
- 		}
- 
-+#ifdef BTRFS_DEBUG_ENOSPC
-+		if (printk_ratelimit())
-+			printk(KERN_WARNING
-+			       "btrfs: ENOSPC returned from "
-+			       "btrfs_check_data_free_space\n");
-+#endif
- 		return -ENOSPC;
- 	}
- 	data_sinfo->bytes_may_use += bytes;
-@@ -3608,20 +3614,46 @@ static int may_commit_transaction(struct btrfs_root *root,
- 	 * See if there is some space in the delayed insertion reservation for
- 	 * this reservation.
- 	 */
-+#ifdef BTRFS_DEBUG_ENOSPC
-+	if (unlikely(space_info != delayed_rsv->space_info)) {
-+		if (printk_ratelimit())
-+			printk(KERN_WARNING
-+			       "btrfs: ENOSPC returned from "
-+			       "may_commit_transaction(1)\n");
-+		return -ENOSPC;
-+	}
-+#else
- 	if (space_info != delayed_rsv->space_info)
- 		return -ENOSPC;
-+#endif
- 
- 	spin_lock(&delayed_rsv->lock);
- 	if (delayed_rsv->size < bytes) {
- 		spin_unlock(&delayed_rsv->lock);
-+#ifdef BTRFS_DEBUG_ENOSPC
-+		if (printk_ratelimit())
-+			printk(KERN_WARNING
-+			       "btrfs: ENOSPC returned from "
-+			       "may_commit_transaction(2)\n");
-+#endif
- 		return -ENOSPC;
- 	}
- 	spin_unlock(&delayed_rsv->lock);
- 
- commit:
- 	trans = btrfs_join_transaction(root);
-+#ifdef BTRFS_DEBUG_ENOSPC
-+	if (unlikely(IS_ERR(trans))) {
-+		if (printk_ratelimit())
-+			printk(KERN_WARNING
-+			       "btrfs: ENOSPC returned from "
-+			       "may_commit_transaction(3)\n");
-+		return -ENOSPC;
-+	}
-+#else
- 	if (IS_ERR(trans))
- 		return -ENOSPC;
-+#endif
- 
- 	return btrfs_commit_transaction(trans, root);
- }
-@@ -3828,6 +3860,13 @@ out:
- 		wake_up_all(&space_info->wait);
- 		spin_unlock(&space_info->lock);
- 	}
-+#ifdef BTRFS_DEBUG_ENOSPC
-+	if (unlikely(ret == -ENOSPC))
-+		if (printk_ratelimit())
-+			printk(KERN_WARNING
-+			       "btrfs: ENOSPC returned from "
-+			       "reserve_metadata_bytes\n");
-+#endif
- 	return ret;
- }
- 
-@@ -3860,6 +3899,13 @@ static int block_rsv_use_bytes(struct btrfs_block_rsv *block_rsv,
- 		ret = 0;
- 	}
- 	spin_unlock(&block_rsv->lock);
-+#ifdef BTRFS_DEBUG_ENOSPC
-+	if (unlikely(ret == -ENOSPC))
-+		if (printk_ratelimit())
-+			printk(KERN_WARNING
-+			       "btrfs: ENOSPC returned from "
-+			       "block_rsv_use_bytes\n");
-+#endif
- 	return ret;
- }
- 
-@@ -4009,6 +4055,13 @@ int btrfs_block_rsv_check(struct btrfs_root *root,
- 		ret = 0;
- 	spin_unlock(&block_rsv->lock);
- 
-+#ifdef BTRFS_DEBUG_ENOSPC
-+	if (unlikely(ret == -ENOSPC))
-+		if (printk_ratelimit())
-+			printk(KERN_WARNING
-+			       "btrfs: ENOSPC returned from "
-+			       "btrfs_block_rsv_check\n");
-+#endif
- 	return ret;
- }
- 
-@@ -4039,6 +4092,13 @@ static inline int __btrfs_block_rsv_refill(struct btrfs_root *root,
- 		return 0;
- 	}
- 
-+#ifdef BTRFS_DEBUG_ENOSPC
-+	if (unlikely(ret == -ENOSPC))
-+		if (printk_ratelimit())
-+			printk(KERN_WARNING
-+			       "btrfs: ENOSPC returned from "
-+			       "__btrfs_block_rsv_refill\n");
-+#endif
- 	return ret;
- }
- 
-@@ -5306,7 +5366,12 @@ static noinline int find_free_extent(struct btrfs_trans_handle *trans,
- 
- 	space_info = __find_space_info(root->fs_info, data);
- 	if (!space_info) {
-+#ifdef BTRFS_DEBUG_ENOSPC
-+		printk(KERN_ERR "No space info for %llu "
-+				"(ENOSPC in find_free_extent)\n", data);
-+#else
- 		printk(KERN_ERR "No space info for %llu\n", data);
-+#endif
- 		return -ENOSPC;
- 	}
- 
-@@ -5735,6 +5800,12 @@ loop:
- 
- 		goto search;
- 	} else if (!ins->objectid) {
-+#ifdef BTRFS_DEBUG_ENOSPC
-+		if (printk_ratelimit())
-+			printk(KERN_WARNING
-+			       "btrfs: ENOSPC returned in "
-+			       "find_free_extent\n");
-+#endif
- 		ret = -ENOSPC;
- 	} else if (ins->objectid) {
- 		ret = 0;
-@@ -6173,6 +6244,12 @@ use_block_rsv(struct btrfs_trans_handle *trans,
- 		}
- 	}
- 
-+#ifdef BTRFS_DEBUG_ENOSPC
-+	if (printk_ratelimit())
-+		printk(KERN_WARNING
-+		       "btrfs: ENOSPC returned in "
-+		       "use_block_rsv\n");
-+#endif
- 	return ERR_PTR(-ENOSPC);
- }
- 
-@@ -7083,6 +7160,13 @@ static int set_block_group_ro(struct btrfs_block_group_cache *cache, int force)
- out:
- 	spin_unlock(&cache->lock);
- 	spin_unlock(&sinfo->lock);
-+#ifdef BTRFS_DEBUG_ENOSPC
-+	if (unlikely(ret == -ENOSPC))
-+		if (printk_ratelimit())
-+			printk(KERN_WARNING
-+			       "btrfs: ENOSPC returned from "
-+			       "set_block_group_ro\n");
-+#endif
- 	return ret;
- }
- 
-diff --git a/fs/btrfs/free-space-cache.c b/fs/btrfs/free-space-cache.c
-index 5802b147..b3fea25 100644
---- a/fs/btrfs/free-space-cache.c
-+++ b/fs/btrfs/free-space-cache.c
-@@ -210,11 +210,23 @@ int btrfs_truncate_free_space_cache(struct btrfs_root *root,
- 		btrfs_calc_trans_metadata_size(root, 1);
- 
- 	spin_lock(&trans->block_rsv->lock);
-+#ifdef BTRFS_DEBUG_ENOSPC
-+	if (unlikely(trans->block_rsv->reserved < needed_bytes)) {
-+		spin_unlock(&trans->block_rsv->lock);
-+		trans->block_rsv = rsv;
-+		if (printk_ratelimit())
-+			printk(KERN_WARNING
-+			       "btrfs: ENOSPC returned from "
-+			       "btrfs_truncate_free_space_cache\n");
-+		return -ENOSPC;
-+	}
-+#else
- 	if (trans->block_rsv->reserved < needed_bytes) {
- 		spin_unlock(&trans->block_rsv->lock);
- 		trans->block_rsv = rsv;
- 		return -ENOSPC;
- 	}
-+#endif
- 	spin_unlock(&trans->block_rsv->lock);
- 
- 	oldsize = i_size_read(inode);
-@@ -475,8 +487,18 @@ static int io_ctl_add_entry(struct io_ctl *io_ctl, u64 offset, u64 bytes,
- {
- 	struct btrfs_free_space_entry *entry;
- 
-+#ifdef BTRFS_DEBUG_ENOSPC
-+	if (unlikely(!io_ctl->cur)) {
-+		if (printk_ratelimit())
-+			printk(KERN_WARNING
-+			       "btrfs: ENOSPC returned from "
-+			       "io_ctl_add_entry\n");
-+		return -ENOSPC;
-+	}
-+#else
- 	if (!io_ctl->cur)
- 		return -ENOSPC;
-+#endif
- 
- 	entry = io_ctl->cur;
- 	entry->offset = cpu_to_le64(offset);
-@@ -502,8 +524,18 @@ static int io_ctl_add_entry(struct io_ctl *io_ctl, u64 offset, u64 bytes,
- 
- static int io_ctl_add_bitmap(struct io_ctl *io_ctl, void *bitmap)
- {
-+#ifdef BTRFS_DEBUG_ENOSPC
-+	if (unlikely(!io_ctl->cur)) {
-+		if (printk_ratelimit())
-+			printk(KERN_WARNING
-+			       "btrfs: ENOSPC returned from "
-+			       "io_ctl_add_bitmap(1)\n");
-+		return -ENOSPC;
-+	}
-+#else
- 	if (!io_ctl->cur)
- 		return -ENOSPC;
-+#endif
- 
- 	/*
- 	 * If we aren't at the start of the current page, unmap this one and
-@@ -511,8 +543,18 @@ static int io_ctl_add_bitmap(struct io_ctl *io_ctl, void *bitmap)
- 	 */
- 	if (io_ctl->cur != io_ctl->orig) {
- 		io_ctl_set_crc(io_ctl, io_ctl->index - 1);
-+#ifdef BTRFS_DEBUG_ENOSPC
-+		if (unlikely(io_ctl->index >= io_ctl->num_pages)) {
-+			if (printk_ratelimit())
-+				printk(KERN_WARNING
-+				       "btrfs: ENOSPC returned from "
-+				       "io_ctl_add_bitmap(2)\n");
-+			return -ENOSPC;
-+		}
-+#else
- 		if (io_ctl->index >= io_ctl->num_pages)
- 			return -ENOSPC;
-+#endif
- 		io_ctl_map_page(io_ctl, 0);
- 	}
- 
-@@ -2322,8 +2364,18 @@ again:
- 		i = next_zero;
- 	}
- 
-+#ifdef BTRFS_DEBUG_ENOSPC
-+	if (unlikely(!found_bits)) {
-+		if (printk_ratelimit())
-+			printk(KERN_WARNING
-+			       "btrfs: ENOSPC set in "
-+			       "btrfs_bitmap_cluster\n");
-+		return -ENOSPC;
-+	}
-+#else
- 	if (!found_bits)
- 		return -ENOSPC;
-+#endif
- 
- 	if (!total_found) {
- 		start = i;
-@@ -2374,8 +2426,18 @@ setup_cluster_no_bitmap(struct btrfs_block_group_cache *block_group,
- 	u64 total_size = 0;
- 
- 	entry = tree_search_offset(ctl, offset, 0, 1);
-+#ifdef BTRFS_DEBUG_ENOSPC
-+	if (unlikely(!entry)) {
-+		if (printk_ratelimit())
-+			printk(KERN_WARNING
-+			       "btrfs: ENOSPC Returned in "
-+			       "setup_cluster_no_bitmap(1)\n");
-+		return -ENOSPC;
-+	}
-+#else
- 	if (!entry)
- 		return -ENOSPC;
-+#endif
- 
- 	/*
- 	 * We don't want bitmaps, so just move along until we find a normal
-@@ -2385,8 +2447,18 @@ setup_cluster_no_bitmap(struct btrfs_block_group_cache *block_group,
- 		if (entry->bitmap && list_empty(&entry->list))
- 			list_add_tail(&entry->list, bitmaps);
- 		node = rb_next(&entry->offset_index);
-+#ifdef BTRFS_DEBUG_ENOSPC
-+		if (unlikely(!node)) {
-+			if (printk_ratelimit())
-+				printk(KERN_WARNING
-+				       "btrfs: ENOSPC Returned in "
-+				       "setup_cluster_no_bitmap(2)\n");
-+			return -ENOSPC;
-+		}
-+#else
- 		if (!node)
- 			return -ENOSPC;
-+#endif
- 		entry = rb_entry(node, struct btrfs_free_space, offset_index);
- 	}
- 
-@@ -2415,8 +2487,18 @@ setup_cluster_no_bitmap(struct btrfs_block_group_cache *block_group,
- 			max_extent = entry->bytes;
- 	}
- 
-+#ifdef BTRFS_DEBUG_ENOSPC
-+	if (unlikely(window_free < bytes || max_extent < cont1_bytes)) {
-+		if (printk_ratelimit())
-+			printk(KERN_WARNING
-+			       "btrfs: ENOSPC Returned in "
-+			       "setup_cluster_no_bitmap(3)\n");
-+		return -ENOSPC;
-+	}
-+#else
- 	if (window_free < bytes || max_extent < cont1_bytes)
- 		return -ENOSPC;
-+#endif
- 
- 	cluster->window_start = first->offset;
- 
-@@ -2461,8 +2543,18 @@ setup_cluster_bitmap(struct btrfs_block_group_cache *block_group,
- 	int ret = -ENOSPC;
- 	u64 bitmap_offset = offset_to_bitmap(ctl, offset);
- 
-+#ifdef BTRFS_DEBUG_ENOSPC
-+	if (unlikely(ctl->total_bitmaps == 0)) {
-+		if (printk_ratelimit())
-+			printk(KERN_WARNING
-+			       "btrfs: ENOSPC returned from "
-+			       "setup_cluster_bitmap(1)\n");
-+		return -ENOSPC;
-+	}
-+#else
- 	if (ctl->total_bitmaps == 0)
- 		return -ENOSPC;
-+#endif
- 
- 	/*
- 	 * The bitmap that covers offset won't be in the list unless offset
-@@ -2488,6 +2580,12 @@ setup_cluster_bitmap(struct btrfs_block_group_cache *block_group,
- 	 * The bitmaps list has all the bitmaps that record free space
- 	 * starting after offset, so no more search is required.
- 	 */
-+#ifdef BTRFS_DEBUG_ENOSPC
-+	if (printk_ratelimit())
-+		printk(KERN_WARNING
-+		       "btrfs: ENOSPC returned from "
-+		       "setup_cluster_bitmap(2)\n");
-+#endif
- 	return -ENOSPC;
- }
- 
-@@ -2534,10 +2632,21 @@ int btrfs_find_space_cluster(struct btrfs_trans_handle *trans,
- 	 * If we know we don't have enough space to make a cluster don't even
- 	 * bother doing all the work to try and find one.
- 	 */
-+#ifdef BTRFS_DEBUG_ENOSPC
-+	if (unlikely(ctl->free_space < bytes)) {
-+		spin_unlock(&ctl->tree_lock);
-+		if (printk_ratelimit())
-+			printk(KERN_WARNING
-+			       "btrfs: ENOSPC returned from "
-+			       "btrfs_find_space_cluster\n");
-+		return -ENOSPC;
-+	}
-+#else
- 	if (ctl->free_space < bytes) {
- 		spin_unlock(&ctl->tree_lock);
- 		return -ENOSPC;
- 	}
-+#endif
- 
- 	spin_lock(&cluster->lock);
- 
-diff --git a/fs/btrfs/inode-map.c b/fs/btrfs/inode-map.c
-index 213ffa8..34007da 100644
---- a/fs/btrfs/inode-map.c
-+++ b/fs/btrfs/inode-map.c
-@@ -198,9 +198,20 @@ again:
- 		   root->cached == BTRFS_CACHE_FINISHED ||
- 		   root->free_ino_ctl->free_space > 0);
- 
-+#ifdef BTRFS_DEBUG_ENOSPC
-+	if (unlikely(root->cached == BTRFS_CACHE_FINISHED &&
-+		     root->free_ino_ctl->free_space == 0)) {
-+		if (printk_ratelimit())
-+			printk(KERN_WARNING
-+			       "btrfs: ENOSPC returned from "
-+			       "btrfs_find_free_ino\n");
-+		return -ENOSPC;
-+	}
-+#else
- 	if (root->cached == BTRFS_CACHE_FINISHED &&
- 	    root->free_ino_ctl->free_space == 0)
- 		return -ENOSPC;
-+#endif
- 	else
- 		goto again;
- }
-@@ -559,6 +570,12 @@ int btrfs_find_free_objectid(struct btrfs_root *root, u64 *objectid)
- 	}
- 
- 	if (unlikely(root->highest_objectid >= BTRFS_LAST_FREE_OBJECTID)) {
-+#ifdef BTRFS_DEBUG_ENOSPC
-+		if (printk_ratelimit())
-+			printk(KERN_WARNING
-+			       "btrfs: ENOSPC set in "
-+			       "btrfs_find_free_objectid\n");
-+#endif
- 		ret = -ENOSPC;
- 		goto out;
- 	}
-diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
-index d8e4a6d..005e87a 100644
---- a/fs/btrfs/inode.c
-+++ b/fs/btrfs/inode.c
-@@ -2702,18 +2702,59 @@ static struct btrfs_trans_handle *__unlink_start_trans(struct inode *dir,
- 	if (!IS_ERR(trans) || PTR_ERR(trans) != -ENOSPC)
- 		return trans;
- 
-+#ifdef BTRFS_DEBUG_ENOSPC
-+	if (unlikely(ino == BTRFS_EMPTY_SUBVOL_DIR_OBJECTID)) {
-+		if (printk_ratelimit())
-+			printk(KERN_WARNING
-+			       "btrfs: ENOSPC returned from "
-+			       "__unlink_start_trans(1)\n");
-+		return ERR_PTR(-ENOSPC);
-+	}
-+#else
- 	if (ino == BTRFS_EMPTY_SUBVOL_DIR_OBJECTID)
- 		return ERR_PTR(-ENOSPC);
-+#endif
- 
- 	/* check if there is someone else holds reference */
-+#ifdef BTRFS_DEBUG_ENOSPC
-+	if (unlikely(S_ISDIR(inode->i_mode)
-+		     && atomic_read(&inode->i_count) > 1)) {
-+		if (printk_ratelimit())
-+			printk(KERN_WARNING
-+			       "btrfs: ENOSPC returned from "
-+			       "__unlink_start_trans(2)\n");
-+		return ERR_PTR(-ENOSPC);
-+	}
-+#else
- 	if (S_ISDIR(inode->i_mode) && atomic_read(&inode->i_count) > 1)
- 		return ERR_PTR(-ENOSPC);
-+#endif
- 
-+#ifdef BTRFS_DEBUG_ENOSPC
-+	if (unlikely(atomic_read(&inode->i_count) > 2)) {
-+		if (printk_ratelimit())
-+			printk(KERN_WARNING
-+			       "btrfs: ENOSPC returned from "
-+			       "__unlink_start_trans(3)\n");
-+		return ERR_PTR(-ENOSPC);
-+	}
-+#else
- 	if (atomic_read(&inode->i_count) > 2)
- 		return ERR_PTR(-ENOSPC);
-+#endif
- 
-+#ifdef BTRFS_DEBUG_ENOSPC
-+	if (unlikely(xchg(&root->fs_info->enospc_unlink, 1))) {
-+		if (printk_ratelimit())
-+			printk(KERN_WARNING
-+			       "btrfs: ENOSPC returned from "
-+			       "__unlink_start_trans(4)\n");
-+		return ERR_PTR(-ENOSPC);
-+	}
-+#else
- 	if (xchg(&root->fs_info->enospc_unlink, 1))
- 		return ERR_PTR(-ENOSPC);
-+#endif
- 
- 	path = btrfs_alloc_path();
- 	if (!path) {
-@@ -2833,11 +2874,23 @@ out:
- 				&root->fs_info->global_block_rsv,
- 				trans->bytes_reserved);
- 
-+#ifdef BTRFS_DEBUG_ENOSPC
-+	if (unlikely(err)) {
-+		btrfs_end_transaction(trans, root);
-+		root->fs_info->enospc_unlink = 0;
-+		if ((err == -ENOSPC) && (printk_ratelimit()))
-+			printk(KERN_WARNING
-+			       "btrfs: ENOSPC returned from "
-+			       "__unlink_start_trans(5)\n");
-+		return ERR_PTR(err);
-+	}
-+#else
- 	if (err) {
- 		btrfs_end_transaction(trans, root);
- 		root->fs_info->enospc_unlink = 0;
- 		return ERR_PTR(err);
- 	}
-+#endif
- 
- 	trans->block_rsv = &root->fs_info->global_block_rsv;
- 	return trans;
-diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
-index 9c4b8ed..23f7911 100644
---- a/fs/btrfs/volumes.c
-+++ b/fs/btrfs/volumes.c
-@@ -983,6 +983,13 @@ error:
- 	*start = max_hole_start;
- 	if (len)
- 		*len = max_hole_size;
-+#ifdef BTRFS_DEBUG_ENOSPC
-+	if (ret == -ENOSPC)
-+		if (printk_ratelimit())
-+			printk(KERN_WARNING
-+			       "btrfs: ENOSPC set in "
-+			       "find_free_dev_extent\n");
-+#endif
- 	return ret;
- }
- 
-@@ -1933,8 +1940,18 @@ static int btrfs_relocate_chunk(struct btrfs_root *root,
- 	em_tree = &root->fs_info->mapping_tree.map_tree;
- 
- 	ret = btrfs_can_relocate(extent_root, chunk_offset);
-+#ifdef BTRFS_DEBUG_ENOSPC
-+	if (unlikely(ret)) {
-+		if (printk_ratelimit())
-+			printk(KERN_WARNING
-+			       "btrfs: ENOSPC returned from "
-+			       "btrfs_relocate_chunk\n");
-+		return -ENOSPC;
-+	}
-+#else
- 	if (ret)
- 		return -ENOSPC;
-+#endif
- 
- 	/* step one, relocate all the extents inside this chunk */
- 	ret = btrfs_relocate_block_group(extent_root, chunk_offset);
-@@ -2069,6 +2086,13 @@ again:
- 	}
- error:
- 	btrfs_free_path(path);
-+#ifdef BTRFS_DEBUG_ENOSPC
-+	if (ret == -ENOSPC)
-+		if (printk_ratelimit())
-+			printk(KERN_WARNING
-+			       "btrfs: ENOSPC returned from "
-+			       "btrfs_relocate_sys_chunks\n");
-+#endif
- 	return ret;
- }
- 
-@@ -2581,8 +2605,18 @@ error:
- 	if (enospc_errors) {
- 		printk(KERN_INFO "btrfs: %d enospc errors during balance\n",
- 		       enospc_errors);
-+#ifdef BTRFS_DEBUG_ENOSPC
-+		if (!ret) {
-+			if (printk_ratelimit())
-+				printk(KERN_WARNING
-+				       "btrfs: ENOSPC returned from "
-+				       "__btrfs_balance\n");
-+			ret = -ENOSPC;
-+		}
-+#else
- 		if (!ret)
- 			ret = -ENOSPC;
-+#endif
- 	}
- 
- 	return ret;
-@@ -3039,6 +3073,13 @@ again:
- 	btrfs_end_transaction(trans, root);
- done:
- 	btrfs_free_path(path);
-+#ifdef BTRFS_DEBUG_ENOSPC
-+	if (unlikely(ret == -ENOSPC))
-+		if (printk_ratelimit())
-+			printk(KERN_WARNING
-+			       "btrfs: ENOSPC returned from "
-+			       "btrfs_shrink_device\n");
-+#endif
- 	return ret;
- }
- 
-@@ -3125,8 +3166,18 @@ static int __btrfs_alloc_chunk(struct btrfs_trans_handle *trans,
- 		type &= ~BTRFS_BLOCK_GROUP_DUP;
- 	}
- 
-+#ifdef BTRFS_DEBUG_ENOSPC
-+	if (unlikely(list_empty(&fs_devices->alloc_list))) {
-+		return -ENOSPC;
-+		if (printk_ratelimit())
-+			printk(KERN_WARNING
-+			       "btrfs: ENOSPC returned from "
-+			       "__btrfs_alloc_chunk(1)\n");
-+	}
-+#else
- 	if (list_empty(&fs_devices->alloc_list))
- 		return -ENOSPC;
-+#endif
- 
- 	sub_stripes = 1;
- 	dev_stripes = 1;
-@@ -3347,6 +3398,13 @@ static int __btrfs_alloc_chunk(struct btrfs_trans_handle *trans,
- error:
- 	kfree(map);
- 	kfree(devices_info);
-+#ifdef BTRFS_DEBUG_ENOSPC
-+	if (ret == -ENOSPC)
-+		if (printk_ratelimit())
-+			printk(KERN_WARNING
-+			       "btrfs: ENOSPC returned from "
-+			       "__btrfs_alloc_chunk(2)\n");
-+#endif
- 	return ret;
- }
- 
-diff --git a/fs/btrfs/xattr.c b/fs/btrfs/xattr.c
-index e7a5659..a880f87 100644
---- a/fs/btrfs/xattr.c
-+++ b/fs/btrfs/xattr.c
-@@ -95,8 +95,18 @@ static int do_setxattr(struct btrfs_trans_handle *trans,
- 	size_t name_len = strlen(name);
- 	int ret = 0;
- 
-+#ifdef BTRFS_DEBUG_ENOSPC
-+	if (unlikely(name_len + size > BTRFS_MAX_XATTR_SIZE(root))) {
-+		if (printk_ratelimit())
-+			printk(KERN_WARNING
-+			       "btrfs: ENOSPC returned from "
-+			       "do_setxattr\n");
-+		return -ENOSPC;
-+	}
-+#else
- 	if (name_len + size > BTRFS_MAX_XATTR_SIZE(root))
- 		return -ENOSPC;
-+#endif
- 
- 	path = btrfs_alloc_path();
- 	if (!path)
--- 
-1.7.3.4
-
+leaf 653297209344 items 43 free space 673 generation 332442 owner 2
+fs uuid 0f5b2f4f-1aa0-4e6f-b904-e5b4d4588144
+chunk uuid 27536f0d-993b-4da3-85eb-1c9b08c435cb
+	item 0 key (653284786176 EXTENT_ITEM 4096) itemoff 3926 itemsize 69
+		extent refs 3 gen 330325 flags 2
+		tree block key (5587 c 5579) level 0
+		tree block backref root 256
+		shared block backref parent 742205943808
+		shared block backref parent 737977237504
+	item 1 key (653284790272 EXTENT_ITEM 4096) itemoff 3875 itemsize 51
+		extent refs 1 gen 332218 flags 2
+		tree block key (654686625792 a8 4096) level 0
+		tree block backref root 2
+	item 2 key (653284794368 EXTENT_ITEM 4096) itemoff 3824 itemsize 51
+		extent refs 1 gen 332438 flags 2
+		tree block key (18446744073709551606 80 390195183616) level 1
+		tree block backref root 7
+	item 3 key (653284798464 EXTENT_ITEM 4096) itemoff 3773 itemsize 51
+		extent refs 1 gen 332438 flags 2
+		tree block key (18446744073709551606 80 390443347968) level 0
+		tree block backref root 7
+	item 4 key (653284802560 EXTENT_ITEM 4096) itemoff 3722 itemsize 51
+		extent refs 1 gen 332438 flags 2
+		tree block key (400765636608 a8 155648) level 1
+		tree block backref root 2
+	item 5 key (653284806656 EXTENT_ITEM 4096) itemoff 3671 itemsize 51
+		extent refs 1 gen 332438 flags 2
+		tree block key (402394804224 a8 12288) level 0
+		tree block backref root 2
+	item 6 key (653284810752 EXTENT_ITEM 4096) itemoff 3602 itemsize 69
+		extent refs 3 gen 329238 flags 2
+		tree block key (50522 60 524) level 0
+		tree block backref root 256
+		shared block backref parent 742140727296
+		shared block backref parent 738011779072
+	item 7 key (653284831232 EXTENT_ITEM 4096) itemoff 3551 itemsize 51
+		extent refs 1 gen 332218 flags 2
+		tree block key (654686961664 a8 4096) level 0
+		tree block backref root 2
+	item 8 key (653284818944 EXTENT_ITEM 4096) itemoff 3500 itemsize 51
+		extent refs 1 gen 332218 flags 2
+		tree block key (654687121408 a8 4096) level 0
+		tree block backref root 2
+	item 9 key (653284823040 EXTENT_ITEM 4096) itemoff 3449 itemsize 51
+		extent refs 1 gen 332218 flags 2
+		tree block key (654688612352 a8 4096) level 0
+		tree block backref root 2
+	item 10 key (653284827136 EXTENT_ITEM 4096) itemoff 3398 itemsize 51
+		extent refs 1 gen 332218 flags 2
+		tree block key (654690684928 a8 4096) level 0
+		tree block backref root 2
+	item 11 key (653284831232 EXTENT_ITEM 4096) itemoff 3347 itemsize 51
+		extent refs 1 gen 330677 flags 258
+		tree block key (257 54 2990375638) level 0
+		shared block backref parent 737976102912
+	item 12 key (653284835328 EXTENT_ITEM 4096) itemoff 3296 itemsize 51
+		extent refs 1 gen 332218 flags 2
+		tree block key (654691397632 a8 4096) level 0
+		tree block backref root 2
+	item 13 key (653284839424 EXTENT_ITEM 4096) itemoff 3245 itemsize 51
+		extent refs 1 gen 330677 flags 258
+		tree block key (257 54 2138317573) level 0
+		shared block backref parent 737976102912
+	item 14 key (653284843520 EXTENT_ITEM 4096) itemoff 3194 itemsize 51
+		extent refs 1 gen 332430 flags 2
+		tree block key (283 c 1641737) level 0
+		tree block backref root 257
+	item 15 key (653284847616 EXTENT_ITEM 4096) itemoff 3143 itemsize 51
+		extent refs 1 gen 332218 flags 2
+		tree block key (737085390848 a8 4096) level 0
+		tree block backref root 2
+	item 16 key (653284855808 EXTENT_ITEM 4096) itemoff 3092 itemsize 51
+		extent refs 1 gen 329210 flags 2
+		tree block key (219304 54 429834975) level 0
+		tree block backref root 1511
+	item 17 key (653284864000 EXTENT_ITEM 4096) itemoff 3041 itemsize 51
+		extent refs 1 gen 329210 flags 2
+		tree block key (12504 c 202665) level 0
+		tree block backref root 1511
+	item 18 key (653284868096 EXTENT_ITEM 4096) itemoff 2990 itemsize 51
+		extent refs 1 gen 329207 flags 2
+		tree block key (10468 1 0) level 0
+		tree block backref root 1511
+	item 19 key (653284872192 EXTENT_ITEM 4096) itemoff 2939 itemsize 51
+		extent refs 1 gen 329213 flags 2
+		tree block key (184862 60 688) level 0
+		tree block backref root 1511
+	item 20 key (653284876288 EXTENT_ITEM 4096) itemoff 2888 itemsize 51
+		extent refs 1 gen 332363 flags 2
+		tree block key (377190010880 a8 12288) level 0
+		tree block backref root 2
+	item 21 key (653284880384 EXTENT_ITEM 4096) itemoff 2837 itemsize 51
+		extent refs 1 gen 332406 flags 2
+		tree block key (1589771 1 0) level 0
+		tree block backref root 257
+	item 22 key (653284884480 EXTENT_ITEM 4096) itemoff 2786 itemsize 51
+		extent refs 1 gen 329215 flags 2
+		tree block key (15062 1 0) level 0
+		tree block backref root 1511
+	item 23 key (653284892672 EXTENT_ITEM 4096) itemoff 2735 itemsize 51
+		extent refs 1 gen 323553 flags 258
+		tree block key (52069 1 0) level 0
+		tree block backref root 260
+	item 24 key (653284896768 EXTENT_ITEM 4096) itemoff 2666 itemsize 69
+		extent refs 3 gen 323540 flags 258
+		tree block key (208047 6c 0) level 0
+		tree block backref root 1511
+		tree block backref root 262
+		shared block backref parent 656081068032
+	item 25 key (653284900864 EXTENT_ITEM 4096) itemoff 2615 itemsize 51
+		extent refs 1 gen 332430 flags 2
+		tree block key (1075845 1 0) level 2
+		tree block backref root 257
+	item 26 key (653284904960 EXTENT_ITEM 4096) itemoff 2564 itemsize 51
+		extent refs 1 gen 332218 flags 2
+		tree block key (724886913024 a8 4096) level 0
+		tree block backref root 2
+	item 27 key (653284909056 EXTENT_ITEM 4096) itemoff 2513 itemsize 51
+		extent refs 1 gen 332438 flags 2
+		tree block key (425495932928 a8 45056) level 1
+		tree block backref root 2
+	item 28 key (653284913152 EXTENT_ITEM 4096) itemoff 2462 itemsize 51
+		extent refs 1 gen 332218 flags 2
+		tree block key (724889038848 a8 4096) level 0
+		tree block backref root 2
+	item 29 key (653284917248 EXTENT_ITEM 4096) itemoff 2411 itemsize 51
+		extent refs 1 gen 332438 flags 2
+		tree block key (438298386432 a8 20480) level 0
+		tree block backref root 2
+	item 30 key (653284921344 EXTENT_ITEM 4096) itemoff 2360 itemsize 51
+		extent refs 1 gen 332218 flags 2
+		tree block key (724890869760 a8 4096) level 0
+		tree block backref root 2
+	item 31 key (653284925440 EXTENT_ITEM 4096) itemoff 2309 itemsize 51
+		extent refs 1 gen 332361 flags 2
+		tree block key (585 54 1690954686) level 0
+		tree block backref root 257
+	item 32 key (653284929536 EXTENT_ITEM 4096) itemoff 2258 itemsize 51
+		extent refs 1 gen 332406 flags 2
+		tree block key (1589801 1 0) level 0
+		tree block backref root 257
+	item 33 key (653284933632 EXTENT_ITEM 4096) itemoff 2207 itemsize 51
+		extent refs 1 gen 330673 flags 2
+		tree block key (18446744073709551606 80 420865138688) level 1
+		tree block backref root 7
+	item 34 key (653284937728 EXTENT_ITEM 4096) itemoff 2156 itemsize 51
+		extent refs 1 gen 330673 flags 2
+		tree block key (18446744073709551606 80 421055201280) level 0
+		tree block backref root 7
+	item 35 key (653284945920 EXTENT_ITEM 4096) itemoff 2105 itemsize 51
+		extent refs 1 gen 332218 flags 2
+		tree block key (724898709504 a8 4096) level 0
+		tree block backref root 2
+	item 36 key (653284950016 EXTENT_ITEM 4096) itemoff 2054 itemsize 51
+		extent refs 1 gen 332223 flags 2
+		tree block key (370322698240 a8 8192) level 1
+		tree block backref root 2
+	item 37 key (653284954112 EXTENT_ITEM 4096) itemoff 2003 itemsize 51
+		extent refs 1 gen 329207 flags 2
+		tree block key (10053 6c 0) level 0
+		tree block backref root 1511
+	item 38 key (653284958208 EXTENT_ITEM 4096) itemoff 1952 itemsize 51
+		extent refs 1 gen 332223 flags 2
+		tree block key (370362576896 a8 12288) level 0
+		tree block backref root 2
+	item 39 key (653284962304 EXTENT_ITEM 4096) itemoff 1901 itemsize 51
+		extent refs 1 gen 330673 flags 2
+		tree block key (18446744073709551606 80 421068566528) level 0
+		tree block backref root 7
+	item 40 key (653284966400 EXTENT_ITEM 4096) itemoff 1850 itemsize 51
+		extent refs 1 gen 332218 flags 2
+		tree block key (724912443392 a8 4096) level 0
+		tree block backref root 2
+	item 41 key (653284970496 EXTENT_ITEM 4096) itemoff 1799 itemsize 51
+		extent refs 1 gen 332361 flags 2
+		tree block key (585 54 1944515731) level 0
+		tree block backref root 257
+	item 42 key (653284974592 EXTENT_ITEM 4096) itemoff 1748 itemsize 51
+		extent refs 1 gen 324601 flags 2
+		tree block key (18446744073709551606 80 728263335936) level 0
+		tree block backref root 7

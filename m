@@ -1,69 +1,66 @@
-From: Phillip Susi <psusi@ubuntu.com>
-Subject: Re: btrfs-raid questions I couldn't find an answer to on the wiki
-Date: Fri, 10 Feb 2012 14:45:43 -0500
-Message-ID: <4F3573E7.9080306@ubuntu.com>
-References: <pan.2012.01.26.15.41.32@cox.net> <201201291223.40161.kreijack@inwind.it> <COL113-W485767962008EF29E7E27EB08D0@phx.gbl> <pan.2012.01.31.05.55.47@cox.net>
+From: Josef Bacik <josef@redhat.com>
+Subject: Re: [LSF/MM TOPIC] COWing writeback pages
+Date: Fri, 10 Feb 2012 14:51:49 -0500
+Message-ID: <20120210195149.GC9049@localhost.localdomain>
+References: <Pine.LNX.4.64.1202081055170.24717@cobra.newdream.net>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=UTF-8
-Cc: linux-btrfs@vger.kernel.org
-To: Duncan <1i5t5.duncan@cox.net>
-Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <pan.2012.01.31.05.55.47@cox.net>
+Content-Type: text/plain; charset=us-ascii
+Cc: linux-btrfs@vger.kernel.org, linux-fsdevel@vger.kernel.org,
+	dan.mick@dreamhost.com, jecluis@gmail.com
+To: Sage Weil <sage@newdream.net>
+Return-path: <linux-fsdevel-owner@vger.kernel.org>
+In-Reply-To: <Pine.LNX.4.64.1202081055170.24717@cobra.newdream.net>
 List-ID: <linux-btrfs.vger.kernel.org>
 
------BEGIN PGP SIGNED MESSAGE-----
-Hash: SHA1
+On Fri, Feb 10, 2012 at 11:25:27AM -0800, Sage Weil wrote:
+> Hi everyone,
+> 
+> The takeaway from the 'stable pages' discussions in the last few workshops 
+> was that pages under writeback should remain locked so that subsequent 
+> writers don't touch them while they are en route to the disk.  This 
+> prevents bad checksums and DIF/DIX type failures (whereas previously we 
+> didn't really care whether old or new data reached the disk).
+> 
+> The fear is/was that anyone subsequently modifying the page will have to 
+> wait for writeback io to complete before continuing.  I seem to remember 
+> somebody (Martin?) saying that in practice, under "real" workloads, that 
+> doesn't actually happen, so don't worry about it.  (Does anyone remember 
+> the details of what testing led to that conclusion?)
+> 
+> Anyway, we are seeing what looks like an analogous problem with btrfs, 
+> where operations sometimes block waiting for writeback of the btree pages.  
+> Although the 'keep rewriting the same page' pattern may not be prevalent 
+> in normal file workloads, it does seem to happen with the btrfs btree.
+> 
+> The obvious solution seems to be to COW the page if it is under writeback 
+> and we want to remodify it.  Presumably that can be done just in btrfs, to 
+> address the btrfs-specific symptoms we're hitting, but I'm interested in 
+> hearing from other folks about whether it's more generally useful VM 
+> functionality for other filesystems and other workloads.
+> 
+> Unfortunately, we haven't been able to pinpoint the exact scenarios under 
+> which this triggers under btrfs.  We regularly see long stalls for 
+> metadata operations (create() and similar metadata-only operations) that 
+> block after btrfs_commit_transaction has "finished" the previous 
+> transaction and is doing
+> 
+> 		return filemap_write_and_wait(btree_inode->i_mapping);
+> 
+> What we're less clear about is when btrfs will modify the in-memory page 
+> in place (and thus wait) versus COWing the page... still digging into this 
+> now.
+> 
 
-On 1/31/2012 12:55 AM, Duncan wrote:
-> Thanks!  I'm on grub2 as well.  It's is still masked on gentoo, but
-> I recently unmasked and upgraded to it, taking advantage of the
-> fact that I have two two-spindle md/raid-1s for /boot and its
-> backup to test and upgrade one of them first, then the other only
-> when I was satisfied with the results on the first set.  I'll be
-> using a similar strategy for the btrfs upgrades, only most of my
-> md/raid-1s are 4-spindle, with two sets, working and backup, and
-> I'll upgrade one set first.
+Heh so I'm working on this now, specifically in the heavy create() workload, and
+I've just about got it nailed down.  A lot of this problem is because we rely on
+normal pagecache for our metadata so I'm copying xfs and creating our own
+caching.
 
-Why do you want to have a separate /boot partition?  Unless you can't
-boot without it, having one just makes things more
-complex/problematic.  If you do have one, I agree that it is best to
-keep it ext4 not btrfs.
+The thing is since we have an inode hanging out with normal pagecache pages we
+can have multiple people trying to write out dirty pages in our inode at the
+same time, and since it goes through our normal write path we'll end up in this
+case where we're waiting on writeback for pages we won't actually end up writing
+out.  My code will fix this, if we're talking about the same problem ;).
+Thanks,
 
-> Meanwhile, you're right about subvolumes.  I'd not try them on a
-> btrfs /boot, either.  (I don't really see the use case for it, for
-> a separate /boot, tho there's certainly a case for a /boot
-> subvolume on a btrfs root, for people doing that.)
-
-The Ubuntu installer creates two subvolumes by default when you
-install on btrfs: one named @, mounted on /, and one named @home,
-mounted on /home.  Grub2 handles this well since the subvols have
-names in the default root, so grub just refers to /@/boot instead of
-/boot, and so on.  The apt-btrfs-snapshot package makes apt
-automatically snapshot the root subvol so you can revert after an
-upgrade.  This seamlessly causes grub to go back to the old boot menu
-without the new kernels too, since it goes back to reading the old
-grub.cfg in the reverted root subvol.
-
-I have a radically different suggestion you might consider rebuilding
-your system using.  Partition each disk into only two partitions: one
-for bios_grub, and one for everything else ( or just use MBR and skip
-the bios_grub partition ).  Give the second partitions to mdadm to
-make a raid10 array out of.  If you use a 2x far and 2x offset instead
-of the default near layout, you will have an array that can still
-handle any 2 of the 4 drives failing, will have twice the capacity of
-a 4 way mirror, almost the same sequential read throughput of a 4 way
-raid0, and about twice the write throughput of a 4 way mirror.
-Partition that array up and put your filesystems on it.
-
------BEGIN PGP SIGNATURE-----
-Version: GnuPG v2.0.17 (MingW32)
-Comment: Using GnuPG with Mozilla - http://enigmail.mozdev.org/
-
-iQEcBAEBAgAGBQJPNXPnAAoJEJrBOlT6nu75/d8IAJ0fQ3xWPe6SYBY8nj34mcWh
-ql6C4ieMkd07ZCuymT5ZVhWJhtdc6/Vg7ecWmhYdeu4d1WGp4DvTumEYHVl4ZlRk
-mT9Lq4SupDL5Dk0nfxZUqY8XnIek3kIG/wgekgdSuLF0J9QFQdCFc25j/idIh0Dy
-Gk5NJtgKmsTKUQhzPQZxif8nwWVQzQICm5P//FeOQgx8sq7iVdCQHUxlJEPfsL7m
-CVVMJPVk+524rFTWxLZ4KLbXkNE7nrikg7UMlWBtM5gflkU0Y+bfmZKPGcqBCSSn
-AId5M5alzjLSLblBqwf8wKpEIiDXBqb6f+bSxqnk5FdKKx5l5lziZyqQM+gnyIo=
-=ePD3
------END PGP SIGNATURE-----
+Josef

@@ -1,118 +1,69 @@
-From: btrfs@nentwig.biz
-Subject: can't read superblock (but could mount)
-Date: Fri, 10 Feb 2012 20:30:51 +0100
-Message-ID: <20120210203051.Horde.q5KnHsL8999PNXBrH5AlxdA@webmail.df.eu>
+From: Phillip Susi <psusi@ubuntu.com>
+Subject: Re: btrfs-raid questions I couldn't find an answer to on the wiki
+Date: Fri, 10 Feb 2012 14:45:43 -0500
+Message-ID: <4F3573E7.9080306@ubuntu.com>
+References: <pan.2012.01.26.15.41.32@cox.net> <201201291223.40161.kreijack@inwind.it> <COL113-W485767962008EF29E7E27EB08D0@phx.gbl> <pan.2012.01.31.05.55.47@cox.net>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=ISO-8859-1; format=flowed; DelSp=Yes
-To: linux-btrfs@vger.kernel.org
+Content-Type: text/plain; charset=UTF-8
+Cc: linux-btrfs@vger.kernel.org
+To: Duncan <1i5t5.duncan@cox.net>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
+In-Reply-To: <pan.2012.01.31.05.55.47@cox.net>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hi!
+-----BEGIN PGP SIGNED MESSAGE-----
+Hash: SHA1
 
-I used to have arch linux running on 1 btrfs partition (sda1, incl. /boot).
-When switching to 3.2.5 recently the system fails to boot:
+On 1/31/2012 12:55 AM, Duncan wrote:
+> Thanks!  I'm on grub2 as well.  It's is still masked on gentoo, but
+> I recently unmasked and upgraded to it, taking advantage of the
+> fact that I have two two-spindle md/raid-1s for /boot and its
+> backup to test and upgrade one of them first, then the other only
+> when I was satisfied with the results on the first set.  I'll be
+> using a similar strategy for the btrfs upgrades, only most of my
+> md/raid-1s are 4-spindle, with two sets, working and backup, and
+> I'll upgrade one set first.
 
-(after udevd)
-/etc/rc.sysinit: line 15: 117 Bus error  mountpoint -q /proc
-and so on, no idea.
+Why do you want to have a separate /boot partition?  Unless you can't
+boot without it, having one just makes things more
+complex/problematic.  If you do have one, I agree that it is best to
+keep it ext4 not btrfs.
 
-It used to boot with 3.2.4, but
+> Meanwhile, you're right about subvolumes.  I'd not try them on a
+> btrfs /boot, either.  (I don't really see the use case for it, for
+> a separate /boot, tho there's certainly a case for a /boot
+> subvolume on a btrfs root, for people doing that.)
 
-1) I obviously had some corruption in the tree, when I tried to delete a
-certain file I hit e.g. "kernel BUG at fs/btrfs/extent-tree.c" message.
+The Ubuntu installer creates two subvolumes by default when you
+install on btrfs: one named @, mounted on /, and one named @home,
+mounted on /home.  Grub2 handles this well since the subvols have
+names in the default root, so grub just refers to /@/boot instead of
+/boot, and so on.  The apt-btrfs-snapshot package makes apt
+automatically snapshot the root subvol so you can revert after an
+upgrade.  This seamlessly causes grub to go back to the old boot menu
+without the new kernels too, since it goes back to reading the old
+grub.cfg in the reverted root subvol.
 
-2) Even while running 3.2.4 I was unable to mount the partition from a
-parallel gentoo or live USB install and I still am:
+I have a radically different suggestion you might consider rebuilding
+your system using.  Partition each disk into only two partitions: one
+for bios_grub, and one for everything else ( or just use MBR and skip
+the bios_grub partition ).  Give the second partitions to mdadm to
+make a raid10 array out of.  If you use a 2x far and 2x offset instead
+of the default near layout, you will have an array that can still
+handle any 2 of the 4 drives failing, will have twice the capacity of
+a 4 way mirror, almost the same sequential read throughput of a 4 way
+raid0, and about twice the write throughput of a 4 way mirror.
+Partition that array up and put your filesystems on it.
 
-# mount /dev/sda1 /mnt/arch/
-mount: /dev/sda1: can't read superblock
+-----BEGIN PGP SIGNATURE-----
+Version: GnuPG v2.0.17 (MingW32)
+Comment: Using GnuPG with Mozilla - http://enigmail.mozdev.org/
 
-The strange thing is: when trying to boot from the partition the boot  
-loader (syslinux) is
-obviously still able load the kernel from that partition.
-
-Tried btrfs-zero-log and some deperate other things. Result: I can now  
-actually
-execute btrfsck which previously used to fail:
-
-# btrfsck /dev/sda1
-Extent back ref already exists for 9872289792 parent 0 root 5
-leaf parent key incorrect 9872289792
-bad block 9872289792
-ref mismatch on [9872289792 4096] extent item 1, found 2
-Incorrect global backref count on 9872289792 found 1 wanted 2
-backpointer mismatch on [9872289792 4096]
-owner ref check failed [9872289792 4096]
-ref mismatch on [9889067008 4096] extent item 1, found 0
-Backref 9889067008 root 5 not referenced
-Incorrect global backref count on 9889067008 found 1 wanted 0
-backpointer mismatch on [9889067008 4096]
-owner ref check failed [9889067008 4096]
-ref mismatch on [37163102208 65536] extent item 1, found 0
-Incorrect local backref count on 37163102208 root 5 owner 3360937  
-offset 0 found 0 wanted 1
-backpointer mismatch on [37163102208 65536]
-owner ref check failed [37163102208 65536]
-ref mismatch on [37163814912 36864] extent item 0, found 1
-Backref 37163814912 root 5 owner 3360939 offset 0 num_refs 0 not found  
-in extent tree
-Incorrect local backref count on 37163814912 root 5 owner 3360939  
-offset 0 found 1 wanted 0
-backpointer mismatch on [37163814912 36864]
-found 15491117056 bytes used err is 1
-total csum bytes: 14764500
-total tree bytes: 366956544
-total fs tree bytes: 317714432
-btree space waste bytes: 90628933
-file data blocks allocated: 16182484992
-  referenced 17813028864
-Btrfs Btrfs v0.19-dirty
-
-However this doesn't seem to fix anything. Can run it over and over  
-again with same output.
-
-btrfs-show does recognize the partition...
-
-# btrfs-show /dev/sda1
-**
-** WARNING: this program is considered deprecated
-** Please consider to switch to the btrfs utility
-**
-failed to read /dev/sde: No medium found
-Label: none  uuid: 9e9886fc-3e60-4c59-a246-727662769ee2
-         Total devices 1 FS bytes used 14.43GB
-         devid    1 size 37.27GB used 34.52GB path /dev/sda1
-
-Btrfs Btrfs v0.19-dirty
-
-
-...while device scan does not:
-
-# btrfs device scan /dev/sda1
-Scanning for Btrfs filesystems in '/dev/sda1'
-
-
-Finally dmesg after a mount attempt:
-
-[88124.390308] Btrfs detected SSD devices, enabling SSD mode
-[88124.392354] parent transid verify failed on 9872289792 wanted  
-152893 found 120351
-[88124.392357] parent transid verify failed on 9872289792 wanted  
-152893 found 120351
-[88124.392359] parent transid verify failed on 9872289792 wanted  
-152893 found 120351
-[88124.392360] parent transid verify failed on 9872289792 wanted  
-152893 found 120351
-[88124.392361] parent transid verify failed on 9872289792 wanted  
-152893 found 120351
-[88124.392370] BTRFS: inode 3392566 still on the orphan list
-[88124.392372] btrfs: could not do orphan cleanup -5
-[88124.688187] btrfs: open_ctree failed
-
-
-Any chance to rescue the data?
-
-thx
-tcn
-
+iQEcBAEBAgAGBQJPNXPnAAoJEJrBOlT6nu75/d8IAJ0fQ3xWPe6SYBY8nj34mcWh
+ql6C4ieMkd07ZCuymT5ZVhWJhtdc6/Vg7ecWmhYdeu4d1WGp4DvTumEYHVl4ZlRk
+mT9Lq4SupDL5Dk0nfxZUqY8XnIek3kIG/wgekgdSuLF0J9QFQdCFc25j/idIh0Dy
+Gk5NJtgKmsTKUQhzPQZxif8nwWVQzQICm5P//FeOQgx8sq7iVdCQHUxlJEPfsL7m
+CVVMJPVk+524rFTWxLZ4KLbXkNE7nrikg7UMlWBtM5gflkU0Y+bfmZKPGcqBCSSn
+AId5M5alzjLSLblBqwf8wKpEIiDXBqb6f+bSxqnk5FdKKx5l5lziZyqQM+gnyIo=
+=ePD3
+-----END PGP SIGNATURE-----

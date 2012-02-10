@@ -1,58 +1,98 @@
-From: Jan Schmidt <list.btrfs@jan-o-sch.net>
-Subject: Re: [PATCH/RFC] Btrfs: Add conditional ENOSPC debugging.
-Date: Fri, 10 Feb 2012 10:33:31 +0100
-Message-ID: <4F34E46B.8030109@jan-o-sch.net>
-References: <1328823521-8487-1-git-send-email-mitch.harder@sabayonlinux.org>
+From: Jan Kara <jack@suse.cz>
+Subject: Re: [PATCH] mkfs: Handle creation of filesystem larger than the
+ first device
+Date: Fri, 10 Feb 2012 11:49:19 +0100
+Message-ID: <20120210104919.GE10509@quack.suse.cz>
+References: <1327593785-23466-1-git-send-email-jack@suse.cz>
+ <4F32F0AB.8030003@ubuntu.com>
+ <20120208232015.GE1696@quack.suse.cz>
+ <4F3337F6.7010900@ubuntu.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=ISO-8859-1
-Cc: Mitch Harder <mitch.harder@sabayonlinux.org>
-To: linux-btrfs <linux-btrfs@vger.kernel.org>
+Content-Type: multipart/mixed; boundary="k1lZvvs/B4yU6o8G"
+Cc: Jan Kara <jack@suse.cz>, linux-btrfs@vger.kernel.org,
+	Chris Mason <chris.mason@oracle.com>,
+	David Sterba <dsterba@suse.cz>
+To: Phillip Susi <psusi@ubuntu.com>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <1328823521-8487-1-git-send-email-mitch.harder@sabayonlinux.org>
+In-Reply-To: <4F3337F6.7010900@ubuntu.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hi Mitch,
 
-having this patch on the list is a good idea. I've two remarks, just in
-case it will be included sometimes:
+--k1lZvvs/B4yU6o8G
+Content-Type: text/plain; charset=us-ascii
+Content-Disposition: inline
 
-On 09.02.2012 22:38, Mitch Harder wrote:
-> diff --git a/fs/btrfs/delayed-inode.c b/fs/btrfs/delayed-inode.c
-> index fe4cd0f..31b717f 100644
-> --- a/fs/btrfs/delayed-inode.c
-> +++ b/fs/btrfs/delayed-inode.c
-> @@ -656,8 +656,18 @@ static int btrfs_delayed_inode_reserve_metadata(
->  		 * EAGAIN to make us stop the transaction we have, so return
->  		 * ENOSPC instead so that btrfs_dirty_inode knows what to do.
->  		 */
-> +#ifdef BTRFS_DEBUG_ENOSPC
-> +		if (unlikely(ret == -EAGAIN)) {
-> +			ret = -ENOSPC;
-> +			if (printk_ratelimit())
+On Wed 08-02-12 22:05:26, Phillip Susi wrote:
+> -----BEGIN PGP SIGNED MESSAGE-----
+> Hash: SHA1
+> 
+> On 02/08/2012 06:20 PM, Jan Kara wrote:
+> >   Thanks for your reply. I admit I was not sure what exactly size argument
+> > should be. So after looking into the code for a while I figured it should
+> > be a total size of the filesystem - or differently it should be size of
+> > virtual block address space in the filesystem. Thus when filesystem has
+> > more devices (or admin wants to add more devices later), it can be larger
+> > than the first device. But I'm not really a btrfs developper so I might be
+> > wrong and of course feel free to fix the issue as you deem fit.
+> 
+> The size of the fs is the total size of the individual disks.  When you
+> limit the size, you limit the size of a disk, not the whole fs.  IIRC,
+> mkfs initializes the fs on the first disk, which is why it was using that
+> size as the size of the whole fs, and then adds the other disks after (
+> which then add their size to the total fs size ).
+  OK, I missed that btrfs_add_to_fsid() increases total size of the
+filesystem. So now I agree with you. New patch is attached. Thanks for your
+review.
 
->From linux/printk.h:
-/*
- * Please don't use printk_ratelimit(), because it shares ratelimiting state
- * with all other unrelated printk_ratelimit() callsites.  Instead use
- * printk_ratelimited() or plain old __ratelimit().
- */
+> It might be nice if
+> mkfs could take sizes for each disk, but it only seems to take one size
+> for the initial disk.
+  Yes, but I don't see a realistic usecase so I don't think it's really
+worth the work.
 
-printk_ratelimited() seems the right choice, here.
+								Honza
+-- 
+Jan Kara <jack@suse.cz>
+SUSE Labs, CR
 
-> +				printk(KERN_WARNING
-> +				       "btrfs: ENOSPC set in "
-> +				       "btrfs_delayed_inode_reserve_metadata\n");
-> +		}
-> +#else
->  		if (ret == -EAGAIN)
->  			ret = -ENOSPC;
-> +#endif
+--k1lZvvs/B4yU6o8G
+Content-Type: text/x-patch; charset=us-ascii
+Content-Disposition: attachment; filename="0001-mkfs-Handle-creation-of-filesystem-larger-than-the-f.patch"
 
-I don't like the #if placements throughout the patch. Copying all the
-conditions is error prone (especially when changes are made later on).
+>From e5f46872232520310c56327593c02ef6a7f5ea33 Mon Sep 17 00:00:00 2001
+From: Jan Kara <jack@suse.cz>
+Date: Fri, 10 Feb 2012 11:44:44 +0100
+Subject: [PATCH] mkfs: Handle creation of filesystem larger than the first device
 
-I'd rather leave all the conditions as they stand (possibly adding the
-unlikely() macro if you wish). Same for the following return statement
-or assignment. Simply put printk_ratelimited() into the #if ... #endif.
+mkfs does not properly check requested size of the filesystem. Thus if the
+requested size is larger than the first device, it happily creates larger
+filesystem than a device it resides on which results in 'attemp to access
+beyond end of device' messages from the kernel. So verify specified filesystem
+size against the size of the first device.
 
--Jan
+CC: David Sterba <dsterba@suse.cz>
+Signed-off-by: Jan Kara <jack@suse.cz>
+---
+ mkfs.c |    4 ++++
+ 1 files changed, 4 insertions(+), 0 deletions(-)
+
+diff --git a/mkfs.c b/mkfs.c
+index e3ced19..3afe9eb 100644
+--- a/mkfs.c
++++ b/mkfs.c
+@@ -1282,6 +1282,10 @@ int main(int ac, char **av)
+ 		ret = btrfs_prepare_device(fd, file, zero_end, &dev_block_count, &mixed);
+ 		if (block_count == 0)
+ 			block_count = dev_block_count;
++		else if (block_count > dev_block_count) {
++			fprintf(stderr, "%s is smaller than requested size\n", file);
++			exit(1);
++		}
+ 	} else {
+ 		ac = 0;
+ 		file = av[optind++];
+-- 
+1.7.1
+
+
+--k1lZvvs/B4yU6o8G--

@@ -1,55 +1,48 @@
-From: Chris Mason <chris.mason@oracle.com>
-Subject: Re: can't read superblock (but could mount)
-Date: Fri, 10 Feb 2012 18:39:59 -0500
-Message-ID: <20120210233959.GV8384@shiny>
-References: <20120210203051.Horde.q5KnHsL8999PNXBrH5AlxdA@webmail.df.eu>
- <20120210221842.GU8384@shiny>
+From: Timo Witte <timo.witte@googlemail.com>
+Subject: Hot data Tracking
+Date: Sat, 11 Feb 2012 05:49:41 +0100
+Message-ID: <4F35F365.8000602@googlemail.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Cc: linux-btrfs@vger.kernel.org
-To: btrfs@nentwig.biz
+Content-Type: multipart/signed; micalg=pgp-sha1;
+ protocol="application/pgp-signature";
+ boundary="------------enigD68F8E303B94F25D73BB504A"
+To: linux-btrfs@vger.kernel.org
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <20120210221842.GU8384@shiny>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Fri, Feb 10, 2012 at 05:18:42PM -0500, Chris Mason wrote:
-> On Fri, Feb 10, 2012 at 08:30:51PM +0100, btrfs@nentwig.biz wrote:
-> > Hi!
-> > 
-> > I used to have arch linux running on 1 btrfs partition (sda1, incl. /boot).
-> > When switching to 3.2.5 recently the system fails to boot:
-> > 
-> > (after udevd)
-> > /etc/rc.sysinit: line 15: 117 Bus error  mountpoint -q /proc
-> > and so on, no idea.
-> > 
-> > It used to boot with 3.2.4, but
-> > 
-> > 1) I obviously had some corruption in the tree, when I tried to delete a
-> > certain file I hit e.g. "kernel BUG at fs/btrfs/extent-tree.c" message.
-> > 
-> > 2) Even while running 3.2.4 I was unable to mount the partition from a
-> > parallel gentoo or live USB install and I still am:
-> > 
-> > # mount /dev/sda1 /mnt/arch/
-> > mount: /dev/sda1: can't read superblock
-> > 
-> > The strange thing is: when trying to boot from the partition the
-> > boot loader (syslinux) is
-> > obviously still able load the kernel from that partition.
-> > 
-> > Tried btrfs-zero-log and some deperate other things. Result: I can
-> > now actually
-> > execute btrfsck which previously used to fail:
-> 
-> Ok, step one:
-> 
-> Pull down the dangerdonteveruse branch of btrfs-progs:
-> 
-> git://git.kernel.org/pub/scm/linux/kernel/git/mason/btrfs-progs.git dangerdonteveruse
-> 
-> Run btrfs-debug-tree -r /dev/sda1 and send the output here please.
+This is an OpenPGP/MIME signed message (RFC 2440 and 3156)
+--------------enigD68F8E303B94F25D73BB504A
+Content-Type: text/plain; charset=ISO-8859-15
+Content-Transfer-Encoding: quoted-printable
 
-Sorry, that's btrfs-debug-tree -R /dev/sda1
+What happened to the hot data tracking feature in btrfs? There are a lot
+of old patches from aug 2010, but it looks like the feature has been
+completly removed from the current version of btrfs. Is this feature
+still on the roadmap?
 
--chris
+
+--------------enigD68F8E303B94F25D73BB504A
+Content-Type: application/pgp-signature; name="signature.asc"
+Content-Description: OpenPGP digital signature
+Content-Disposition: attachment; filename="signature.asc"
+
+-----BEGIN PGP SIGNATURE-----
+Version: GnuPG v1.4.11 (GNU/Linux)
+Comment: Using GnuPG with Mozilla - http://enigmail.mozdev.org/
+
+iQIcBAEBAgAGBQJPNfNlAAoJELFS+VMgnyVJoLUP/1TwCzLRmbXOZttsPeYj3Kje
+k8LbiI56VB1ns9E7xTCV3YRV6iodRLsTttZIcV/MpA0y2mhMjbw+7dnW7739J9iB
+sMo6Iibir/iagcTPm8onV7BZI8Jc6bA9Bxh5mPswOf3PCzfs9/Km7NvHYov41g/w
+tqloiJWhcYG442itWMkmUluD4/Rz6bf3pAMjyDwjtOOvHZuOp6kK6IWysB6+DlhN
+8ol3gv5jJ5EuVpZ6H2CBXlEGWhhEbmEjYkvIJAez5uCeq7PpbU9FAKimNA3XGIZP
+HhKiyzxrWVf790Q1Id7l9BNGJ6DEKpMILWBJb4wXEPhhWX4x4Qtd/F0cs9ug0ca1
+3cq8pYQX/GG2/EXx3XHGFQqPu/TV+jgBnupuQfhNNnLWmZ6twJ5/uyV6kJhuk1T2
+rzCbEakxQILqpUfEwiG1emWnyMsrln2AGm5F+skw7oKSAAGco4G/E002kGi1iKhT
+5fAElbDBOaP8BfvViCU9JUybyTElaRo2OAC645denDrha8gCJVi7IFT6BYve7qF7
+TGc+pD0sg+mBI7yJ81eIjDBgPmk+cFS2pXptvfiJBaXzUmOkfyiuGmh6p78BpG8r
+aHu2tmb4gL+RuzTHK5S/97OJ1W1t3iMntz84QShvWeEKKzkXkPeqFUM3FsAz0dd6
+J8g1HqU+yr4zLGkSHqZJ
+=3Oei
+-----END PGP SIGNATURE-----
+
+--------------enigD68F8E303B94F25D73BB504A--

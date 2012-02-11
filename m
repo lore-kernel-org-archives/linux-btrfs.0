@@ -1,34 +1,42 @@
-From: "Norbert Scheibner" <scno@gmx.net>
-Subject: Re: Freeing space over reboot question
-Date: Sat, 11 Feb 2012 17:42:25 +0100
-Message-ID: <20120211164225.263630@gmx.net>
-References: <20120209174232.318280@gmx.net>	<20120210002055.6819f76c@natsu>
-	<20120211134715.200530@gmx.net> <20120211195632.59931608@natsu>
+From: Chester <somethingsome2000@gmail.com>
+Subject: Re: btrfs unmountable after failed suspend
+Date: Sat, 11 Feb 2012 15:42:12 -0600
+Message-ID: <CAAE6i0g3T-0EOoxGYJAde3rQY53QvwhAtHwSgZ-VPd1sTpgkjg@mail.gmail.com>
+References: <CAAE6i0g4VVpy7FduBHCY33Nt_iSOh39-9i2KWqA0fXETQUKLPA@mail.gmail.com>
+ <CAAE6i0jEaXmgmnmyUOrOr+5RyvPce25QZFALan+JBQ80K=UwNQ@mail.gmail.com>
+ <CAAE6i0hXA7rzZ=VCnezfyHQFn=+UcfrmUsfR-GQZcgvxFW+qJQ@mail.gmail.com>
+ <20120208125536.GI16796@shiny> <CAAE6i0ggEyVGh94L7n00Mm-YZTq26de2kZspU+AQKiaA=JD+8g@mail.gmail.com>
+ <20120208202658.GH8384@shiny> <CAAE6i0hWxsSKLoN8zyJv9H4tu5R5B3KXvbgZzHDcMHYC4JX3mA@mail.gmail.com>
+ <CAAE6i0isDwiA_vyg=KX_sodu7gyux7wJhEM5OXjD=4jgRqwj+g@mail.gmail.com>
+ <CAAE6i0h+E0vQ4D6gr7MQiwS00hnQGk5R7ubkRa00NdkoaNxcNA@mail.gmail.com> <20120210212749.GR8384@shiny>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="utf-8"
-Cc: linux-btrfs@vger.kernel.org
-To: Roman Mamedov <rm@romanrm.ru>
+Content-Type: text/plain; charset=ISO-8859-1
+To: Chris Mason <chris.mason@oracle.com>,
+	Chester <somethingsome2000@gmail.com>,
+	linux-btrfs <linux-btrfs@vger.kernel.org>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <20120211195632.59931608@natsu>
+In-Reply-To: <20120210212749.GR8384@shiny>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Sat, 11 Feb 2012 19:56:32 +0600 Roman Mamedov <rm@romanrm.ru> wrote:
+On Fri, Feb 10, 2012 at 3:27 PM, Chris Mason <chris.mason@oracle.com> w=
+rote:
 
-> > Have You tried it Yourself? I think the problem was the remount
-> > before the space has been completely freed in background. It
-> > left a valid and working fs, with still work to do.
-> 
-> Yes, after some snapshot deletions the umount takes a really long time.
+>
+> Ok, its worth pointing out that you're just one bit away from proper
+> ordering here. =A0While I'm testing out this code to fix key ordering=
+,
+> could you please run memtest86 on your machine?
+>
 
-Ok, then the question is, why did this not happen here?
- 
-> > In my opinion the kernel should either stall the umount till the
-> > space is given free
-> 
-> In my experience it seemed to do just that.
+I ran memtest for a good 16 hours and it has passed 8 times without any=
+ errors.
 
-Hm, I did the umount under kernel 3.1 and after the reboot
-I used kernel 3.2. Is that the reason?
-
-Regards
-    Norbert
+> The other fields all look correct.
+>
+> -chris
+>
+--
+To unsubscribe from this list: send the line "unsubscribe linux-btrfs" =
+in
+the body of a message to majordomo@vger.kernel.org
+More majordomo info at  http://vger.kernel.org/majordomo-info.html

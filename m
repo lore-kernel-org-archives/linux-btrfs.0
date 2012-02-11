@@ -1,80 +1,36 @@
-From: btrfs@nentwig.biz
-Subject: Re: can't read superblock (but could mount)
-Date: Sat, 11 Feb 2012 07:27:25 +0100
-Message-ID: <20120211072725.Horde.8iYhMlNNcXdPNgpNS2yG-PA@webmail.df.eu>
-References: <20120210203051.Horde.q5KnHsL8999PNXBrH5AlxdA@webmail.df.eu>
- <20120210221842.GU8384@shiny> <20120210233959.GV8384@shiny>
+From: "Norbert Scheibner" <scno@gmx.net>
+Subject: Re: Freeing space over reboot question
+Date: Sat, 11 Feb 2012 14:47:15 +0100
+Message-ID: <20120211134715.200530@gmx.net>
+References: <20120209174232.318280@gmx.net> <20120210002055.6819f76c@natsu>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=ISO-8859-1; format=flowed; DelSp=Yes
+Content-Type: text/plain; charset="utf-8"
 Cc: linux-btrfs@vger.kernel.org
-To: Chris Mason <chris.mason@oracle.com>
+To: Roman Mamedov <rm@romanrm.ru>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <20120210233959.GV8384@shiny>
+In-Reply-To: <20120210002055.6819f76c@natsu>
 List-ID: <linux-btrfs.vger.kernel.org>
 
+On: Fri, 10 Feb 2012 00:20:55 +0600 Roman Mamedov <rm@romanrm.ru> wrote
 
-Quoting Chris Mason <chris.mason@oracle.com>:
+> AFAIK the only reliable way currently to ensure the space after a
+> subvolume
+> deletion is freed, is to remount the FS. 
 
-> On Fri, Feb 10, 2012 at 05:18:42PM -0500, Chris Mason wrote:
->> Ok, step one:
->>
->> Pull down the dangerdonteveruse branch of btrfs-progs:
->>
->> git://git.kernel.org/pub/scm/linux/kernel/git/mason/btrfs-progs.git  
->> dangerdonteveruse
->>
->> Run btrfs-debug-tree -r /dev/sda1 and send the output here please.
->
-> Sorry, that's btrfs-debug-tree -R /dev/sda1
+Have You tried it Yourself? I think the problem was the remount
+before the space has been completely freed in background. It
+left a valid and working fs, with still work to do.
 
-# ./btrfs-debug-tree -R /dev/sda1
-root tree: 10229936128 level 1
-chunk tree: 10364125184 level 1
-extent tree key (EXTENT_TREE ROOT_ITEM 0) 10229944320 level 3
-device tree key (DEV_TREE ROOT_ITEM 0) 10192654336 level 0
-fs tree key (FS_TREE ROOT_ITEM 0) 10103791616 level 3
-checksum tree key (CSUM_TREE ROOT_ITEM 0) 10103156736 level 2
-data reloc tree key (DATA_RELOC_TREE ROOT_ITEM 0) 10027970560 level 0
-btrfs root backup slot 0
-         tree root gen 157090 block 10229907456
-                 extent root gen 157090 block 10229911552
-                 chunk root gen 124887 block 10364125184
-                 device root gen 124887 block 10192654336
-                 csum root gen 157032 block 10103156736
-                 fs root gen 157032 block 10103791616
-                 15491051520 used 40020631552 total 1 devices
-btrfs root backup slot 1
-         tree root gen 157091 block 10229948416
-                 extent root gen 157091 block 10229952512
-                 chunk root gen 124887 block 10364125184
-                 device root gen 124887 block 10192654336
-                 csum root gen 157032 block 10103156736
-                 fs root gen 157032 block 10103791616
-                 15491051520 used 40020631552 total 1 devices
-btrfs root backup slot 2
-         tree root gen 157092 block 10229907456
-                 extent root gen 157092 block 10229911552
-                 chunk root gen 124887 block 10364125184
-                 device root gen 124887 block 10192654336
-                 csum root gen 157032 block 10103156736
-                 fs root gen 157032 block 10103791616
-                 15491051520 used 40020631552 total 1 devices
-btrfs root backup slot 3
-         tree root gen 157093 block 10229936128
-                 extent root gen 157093 block 10229944320
-                 chunk root gen 124887 block 10364125184
-                 device root gen 124887 block 10192654336
-                 csum root gen 157032 block 10103156736
-                 fs root gen 157032 block 10103791616
-                 15491051520 used 40020631552 total 1 devices
-total bytes 40020631552
-bytes used 15491051520
-uuid 9e9886fc-3e60-4c59-a246-727662769ee2
-Btrfs Btrfs v0.19
+In my opinion the kernel should either stall the umount till the
+space is given free or restart the cleaner after the next mount.
 
+To stall the umount could be annoying and make the user believe
+something is broken, because the cleaner could take a while and
+it feels to classic for modern fs.
 
-But we it is that the bootloader apparently is able to load (at least)  
-the kernel (and initrd) from the partition?
+Is there a way to leave an entry in the log to replay after the
+next mount? Pardon me if I use the wrong terms here, I'm just
+an interested user and not a fs-crack or even a programmer.
 
-
-
+Regards
+    Norbert

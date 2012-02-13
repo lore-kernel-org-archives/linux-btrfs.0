@@ -1,46 +1,72 @@
-From: David Sterba <dave@jikos.cz>
-Subject: Re: Several unhappy btrfs's after RAID meltdown
-Date: Mon, 13 Feb 2012 14:48:50 +0100
-Message-ID: <20120213134850.GF15350@twin.jikos.cz>
-References: <20120205184128.GC18806@localhost.localdomain> <20120207033945.GA5639@localhost.localdomain> <pan.2012.02.07.09.53.58@cox.net> <20120207140431.GB5639@localhost.localdomain> <CAKcLGm9mLhwc1ZFp=ingR814X77QetX3LOkSqxdbussjj2gykQ@mail.gmail.com> <20120207154225.GD5639@localhost.localdomain> <20120207174645.GE5639@localhost.localdomain> <20120207174907.GF5639@localhost.localdomain> <20120212163134.GA15216@localhost.localdomain>
-Reply-To: dave@jikos.cz
+From: Roman Mamedov <rm@romanrm.ru>
+Subject: Re: Set nodatacow per file?
+Date: Mon, 13 Feb 2012 19:51:16 +0600
+Message-ID: <20120213195116.26e64e16@natsu>
+References: <4F38B8F0.5020506@yahoo.com>
+	<4F38BE53.4080204@parallels.com>
+	<20120213140921.5a009404@natsu>
+	<4F39133F.50908@parallels.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Cc: linux-btrfs@vger.kernel.org
-To: nemesis@icequake.net
+Content-Type: multipart/signed; micalg=PGP-SHA1;
+ boundary="Sig_/iIK6+m6vXa4XsDdoe+L=Kix"; protocol="application/pgp-signature"
+Cc: <linux-btrfs@vger.kernel.org>
+To: dima <dolenin@parallels.com>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <20120212163134.GA15216@localhost.localdomain>
+In-Reply-To: <4F39133F.50908@parallels.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Sun, Feb 12, 2012 at 10:31:34AM -0600, Ryan C. Underwood wrote:
-> So, I examined the below filesystem, the one of the two that I would
-> really like to restore.  There is basically nothing but zeros, and
-> very occasionally a sparse string of data, until exactly 0x200000
-> offset,
+--Sig_/iIK6+m6vXa4XsDdoe+L=Kix
+Content-Type: text/plain; charset=US-ASCII
+Content-Transfer-Encoding: quoted-printable
 
-This matches start of an allocation cluster.
+On Mon, 13 Feb 2012 22:42:23 +0900
+dima <dolenin@parallels.com> wrote:
 
-> ... at which point the data is suddenly very packed and looks like
-> usual compressed data should.  Is there a way one could de-LZO the
-> data chunkwise and dump to another device so I could even get an idea
-> what I am looking at?
+> > gcc -o /usr/local/bin/nocow nocow.c
+> > ln -sf /usr/local/bin/nocow /usr/local/bin/cow
 
-If the blocks are in right order, you can decompress the raw data from
-the format
+> I don't seem to be able to 'unset' the NOCOW flag.  Looking at the code=20
+> I would guess that it is supposed to alternate between 'cow' and 'nocow'=
+=20
+> states, but the condition
+>      printf("Remove NOCOW flag for %s\n", argv[1]);
+> never shows for me. What should I do to make it working?
+> Maybe it would be nice to have a switch to just check if nocow is set on=
+=20
+> file without actually changing the flag.
 
-[4B total length] [4B compressed chunk length][chunk data] [another chunk]
+If you place it in /usr/local/bin and also make a symlink "nocow -> cow" as
+described in the quoted part above, you can then just run:=20
 
-there is no signature of the compressed extent boundaries, but the
-lengths stored are always smaller than 128K, so it's hex values like
+# cow ./filename
 
-23 04 00 00 | 34 01 00 00 | <lzo data...>
+and the program will instead unset the NOCOW flag.
 
-and shoud be detectable in the block sequence.
+Of course it remains to be a very basic program, I'm not sure if it's worth
+developing it further, or to add this to 'btrfs', as Liu Bo in the adjacent
+thread said that there are patches to chattr/lsattr for using the COW
+attribute.
 
-> What about a 'superblock' signature I can scan
-> for?
+--=20
+With respect,
+Roman
 
-_BHRfS_M at offset 0x40 in a 4kb aligned block
+~~~~~~~~~~~~~~~~~~~~~~~~~~~
+"Stallman had a printer,
+with code he could not see.
+So he began to tinker,
+and set the software free."
 
+--Sig_/iIK6+m6vXa4XsDdoe+L=Kix
+Content-Type: application/pgp-signature; name=signature.asc
+Content-Disposition: attachment; filename=signature.asc
 
-david
+-----BEGIN PGP SIGNATURE-----
+Version: GnuPG v1.4.11 (GNU/Linux)
+
+iEYEARECAAYFAk85FVQACgkQTLKSvz+PZwhPlQCeP8SyMWB7K2WumZBX82EwGH7W
+nOMAn1QrbfzH740jMqoXKGBggeQ0vozV
+=41FG
+-----END PGP SIGNATURE-----
+
+--Sig_/iIK6+m6vXa4XsDdoe+L=Kix--

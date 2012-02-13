@@ -1,7 +1,7 @@
 From: David Sterba <dsterba@suse.cz>
-Subject: [PATCH 4/4] btrfs: lz4: add wrapper functions and enable it
-Date: Mon, 13 Feb 2012 20:05:37 +0100
-Message-ID: <1329159937-23976-4-git-send-email-dsterba@suse.cz>
+Subject: [PATCH 2/4] btrfs: add LZ4 compression method
+Date: Mon, 13 Feb 2012 20:05:35 +0100
+Message-ID: <1329159937-23976-2-git-send-email-dsterba@suse.cz>
 References: <20120213190325.GJ15350@twin.jikos.cz>
  <1329159937-23976-1-git-send-email-dsterba@suse.cz>
 Cc: David Sterba <dsterba@suse.cz>
@@ -10,515 +10,963 @@ Return-path: <linux-btrfs-owner@vger.kernel.org>
 In-Reply-To: <1329159937-23976-1-git-send-email-dsterba@suse.cz>
 List-ID: <linux-btrfs.vger.kernel.org>
 
+Adjusted a few defines to compile. The on-stack context allocation is
+disabled and either LZ4_compress64kCtx or LZ4_compressCtx must be used.
+
+Origin: http://lz4.googlecode.com/svn/trunk
+Revision: 55
+
 Signed-off-by: David Sterba <dsterba@suse.cz>
 ---
- fs/btrfs/Makefile      |    2 +-
- fs/btrfs/compression.c |    1 +
- fs/btrfs/compression.h |    1 +
- fs/btrfs/lz4_wrapper.c |  429 ++++++++++++++++++++++++++++++++++++++++++++++++
- fs/btrfs/lzo.c         |    2 +
- fs/btrfs/super.c       |    3 -
- 6 files changed, 434 insertions(+), 4 deletions(-)
- create mode 100644 fs/btrfs/lz4_wrapper.c
+ fs/btrfs/Makefile |    2 +-
+ fs/btrfs/lz4.c    |  810 +++++++++++++++++++++++++++++++++++++++++++++++++++++
+ fs/btrfs/lz4.h    |  107 +++++++
+ 3 files changed, 918 insertions(+), 1 deletions(-)
+ create mode 100644 fs/btrfs/lz4.c
+ create mode 100644 fs/btrfs/lz4.h
 
 diff --git a/fs/btrfs/Makefile b/fs/btrfs/Makefile
-index 11f8c4e..7bb7497 100644
+index f22fe03..11f8c4e 100644
 --- a/fs/btrfs/Makefile
 +++ b/fs/btrfs/Makefile
 @@ -8,7 +8,7 @@ btrfs-y += super.o ctree.o extent-tree.o print-tree.o root-tree.o dir-item.o \
  	   extent_io.o volumes.o async-thread.o ioctl.o locking.o orphan.o \
  	   export.o tree-log.o free-space-cache.o zlib.o lzo.o \
  	   compression.o delayed-ref.o relocation.o delayed-inode.o scrub.o \
--	   reada.o backref.o ulist.o snappy.o lz4.o
-+	   reada.o backref.o ulist.o snappy.o lz4.o lz4_wrapper.o
+-	   reada.o backref.o ulist.o snappy.o
++	   reada.o backref.o ulist.o snappy.o lz4.o
  
  btrfs-$(CONFIG_BTRFS_FS_POSIX_ACL) += acl.o
  btrfs-$(CONFIG_BTRFS_FS_CHECK_INTEGRITY) += check-integrity.o
-diff --git a/fs/btrfs/compression.c b/fs/btrfs/compression.c
-index f85f7fd..93b481e 100644
---- a/fs/btrfs/compression.c
-+++ b/fs/btrfs/compression.c
-@@ -731,6 +731,7 @@ struct btrfs_compress_op *btrfs_compress_op[] = {
- 	&btrfs_zlib_compress,
- 	&btrfs_lzo_compress,
- 	&btrfs_snappy_compress,
-+	&btrfs_lz4_compress,
- };
- 
- int __init btrfs_init_compress(void)
-diff --git a/fs/btrfs/compression.h b/fs/btrfs/compression.h
-index 971a425..d8e8e73 100644
---- a/fs/btrfs/compression.h
-+++ b/fs/btrfs/compression.h
-@@ -80,5 +80,6 @@ struct btrfs_compress_op {
- extern struct btrfs_compress_op btrfs_zlib_compress;
- extern struct btrfs_compress_op btrfs_lzo_compress;
- extern struct btrfs_compress_op btrfs_snappy_compress;
-+extern struct btrfs_compress_op btrfs_lz4_compress;
- 
- #endif
-diff --git a/fs/btrfs/lz4_wrapper.c b/fs/btrfs/lz4_wrapper.c
+diff --git a/fs/btrfs/lz4.c b/fs/btrfs/lz4.c
 new file mode 100644
-index 0000000..bff9b1b
+index 0000000..e41d0cf
 --- /dev/null
-+++ b/fs/btrfs/lz4_wrapper.c
-@@ -0,0 +1,429 @@
++++ b/fs/btrfs/lz4.c
+@@ -0,0 +1,810 @@
 +/*
-+ * Copyright (C) 2008 Oracle.  All rights reserved.
++   LZ4 - Fast LZ compression algorithm
++   Copyright (C) 2011-2012, Yann Collet.
++   BSD 2-Clause License (http://www.opensource.org/licenses/bsd-license.php)
++
++   Redistribution and use in source and binary forms, with or without
++   modification, are permitted provided that the following conditions are
++   met:
++
++       * Redistributions of source code must retain the above copyright
++   notice, this list of conditions and the following disclaimer.
++       * Redistributions in binary form must reproduce the above
++   copyright notice, this list of conditions and the following disclaimer
++   in the documentation and/or other materials provided with the
++   distribution.
++
++   THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
++   "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
++   LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
++   A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
++   OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
++   SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
++   LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
++   DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
++   THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
++   (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
++   OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
++*/
++/*
++ * With authors permission dual licensed as BSD/GPL for linux kernel
 + *
-+ * This program is free software; you can redistribute it and/or
-+ * modify it under the terms of the GNU General Public
-+ * License v2 as published by the Free Software Foundation.
-+ *
-+ * This program is distributed in the hope that it will be useful,
-+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
-+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
-+ * General Public License for more details.
-+ *
-+ * You should have received a copy of the GNU General Public
-+ * License along with this program; if not, write to the
-+ * Free Software Foundation, Inc., 59 Temple Place - Suite 330,
-+ * Boston, MA 021110-1307, USA.
++ * Origin: http://lz4.googlecode.com/svn/trunk
++ * Revision: 55
 + */
 +
-+#include <linux/kernel.h>
-+#include <linux/slab.h>
-+#include <linux/vmalloc.h>
-+#include <linux/init.h>
-+#include <linux/err.h>
-+#include <linux/sched.h>
-+#include <linux/pagemap.h>
-+#include <linux/bio.h>
++//**************************************
++// Tuning parameters
++//**************************************
++// COMPRESSIONLEVEL :
++// Increasing this value improves compression ratio
++// Lowering this value reduces memory usage
++// Reduced memory usage typically improves speed, due to cache effect (ex : L1 32KB for Intel, L1 64KB for AMD)
++// Memory usage formula : N->2^(N+2) Bytes (examples : 12 -> 16KB ; 17 -> 512KB)
++#define COMPRESSIONLEVEL 12
++
++// NONCOMPRESSIBLE_CONFIRMATION :
++// Decreasing this value will make the algorithm skip faster data segments considered "incompressible"
++// This may decrease compression ratio dramatically, but will be faster on incompressible data
++// Increasing this value will make the algorithm search more before declaring a segment "incompressible"
++// This could improve compression a bit, but will be slower on incompressible data
++// The default value (6) is recommended
++#define NONCOMPRESSIBLE_CONFIRMATION 6
++
++// BIG_ENDIAN_NATIVE_BUT_INCOMPATIBLE :
++// This will provide a boost to performance for big endian cpu, but the resulting compressed stream will be incompatible with little-endian CPU.
++// You can set this option to 1 in situations where data will stay within closed environment
++// This option is useless on Little_Endian CPU (such as x86)
++//#define BIG_ENDIAN_NATIVE_BUT_INCOMPATIBLE 1
++
++
++
++//**************************************
++// CPU Feature Detection
++//**************************************
++// 32 or 64 bits ?
++#if (__x86_64__ || __x86_64 || __amd64__ || __amd64 || __ppc64__ || _WIN64 || __LP64__ || _LP64)   // Detects 64 bits mode
++#define ARCH64 1
++#else
++#define ARCH64 0
++#endif
++
++// Little Endian or Big Endian ? 
++#if (__BIG_ENDIAN__ || __BIG_ENDIAN || _BIG_ENDIAN || _ARCH_PPC || __PPC__ || __PPC || PPC || __powerpc__ || __powerpc || powerpc || ((defined(__BYTE_ORDER__)&&(__BYTE_ORDER__ == __ORDER_BIG_ENDIAN__))) )
++#define CPU_BIG_ENDIAN 1
++#else
++// Little Endian assumed. PDP Endian and other very rare endian format are unsupported.
++#endif
++
++// Unaligned memory access ?
++// This feature is automatically enabled for "common" CPU, such as x86.
++// For others CPU, you may want to force this option manually to improve performance if your target CPU supports unaligned memory access
++#if (__ARM_FEATURE_UNALIGNED)
++#define CPU_UNALIGNED_ACCESS 1
++#endif
++
++// Uncomment this parameter if your target system does not support hardware bit count
++//#define _FORCE_SW_BITCOUNT
++
++
++
++//**************************************
++// Compiler Options
++//**************************************
++#if __STDC_VERSION__ >= 199901L    // C99
++  /* "restrict" is a known keyword */
++#else
++#define restrict  // Disable restrict
++#endif
++
++#ifdef _MSC_VER
++#define inline __forceinline    // Visual is not C99, but supports inline
++#endif
++
++#if (defined(__GNUC__) && (!(CPU_UNALIGNED_ACCESS)))
++#define _PACKED __attribute__ ((packed))
++#else
++#define _PACKED
++#endif
++
++#ifdef _MSC_VER  // Visual Studio
++#define bswap16(i) _byteswap_ushort(i)
++#else
++#define bswap16(i) (((i)>>8) | ((i)<<8))
++#endif
++
++
++//**************************************
++// Includes
++//**************************************
++#ifdef __KERNEL__
++#include <linux/string.h>
++#include <linux/bug.h>
++#define malloc(size)	({ BUG(); (void*)0; })
++#define free(ptr)	({ BUG(); (void*)0; })
++#else
++#include <stdlib.h>   // for malloc
++#include <string.h>   // for memset
 +#include "lz4.h"
-+#include "compression.h"
++#endif
 +
-+#define LZ4_LEN		4
-+#define LZ4_CHUNK_SIZE	(4096)
-+#define LZ4_MAX_WORKBUF	2*LZ4_CHUNK_SIZE
 +
-+struct workspace {
-+	void *mem;	/* work memory for compression */
-+	void *buf;	/* where compressed data goes */
-+	void *cbuf;	/* where decompressed data goes */
-+	struct list_head list;
++//**************************************
++// Basic Types
++//**************************************
++#if defined(_MSC_VER)    // Visual Studio does not support 'stdint' natively
++#define BYTE	unsigned __int8
++#define U16		unsigned __int16
++#define U32		unsigned __int32
++#define S32		__int32
++#define U64		unsigned __int64
++#else
++#ifdef __KERNEL__
++#include <asm/byteorder.h>
++#include <linux/types.h>
++#define BYTE	u8
++#define U16	u16
++#define U32	u32
++#define S32	s32
++#define U64	u64
++
++#else
++#include <stdint.h>
++#define BYTE	uint8_t
++#define U16		uint16_t
++#define U32		uint32_t
++#define S32		int32_t
++#define U64		uint64_t
++#endif // __KERNEL__
++#endif
++
++
++//**************************************
++// Constants
++//**************************************
++#define MINMATCH 4
++#define SKIPSTRENGTH (NONCOMPRESSIBLE_CONFIRMATION>2?NONCOMPRESSIBLE_CONFIRMATION:2)
++#define STACKLIMIT 13
++#define HEAPMODE (HASH_LOG>STACKLIMIT)  // Defines if memory is allocated into the stack (local variable), or into the heap (malloc()).
++#define COPYLENGTH 8
++#define LASTLITERALS 5
++#define MFLIMIT (COPYLENGTH+MINMATCH)
++#define MINLENGTH (MFLIMIT+1)
++
++#define MAXD_LOG 16
++#define MAX_DISTANCE ((1 << MAXD_LOG) - 1)
++
++#define HASH_LOG COMPRESSIONLEVEL
++#define HASHTABLESIZE (1 << HASH_LOG)
++#define HASH_MASK (HASHTABLESIZE - 1)
++
++#define ML_BITS 4
++#define ML_MASK ((1U<<ML_BITS)-1)
++#define RUN_BITS (8-ML_BITS)
++#define RUN_MASK ((1U<<RUN_BITS)-1)
++
++/*
++ * Disable on-stack context allocation for linux kernel
++ */
++#undef STACKLIMIT
++#define STACKLIMIT 0
++
++
++//**************************************
++// Architecture-specific macros
++//**************************************
++#if ARCH64	// 64-bit
++#define STEPSIZE 8
++#define UARCH U64
++#define AARCH A64
++#define LZ4_COPYSTEP(s,d)		A64(d) = A64(s); d+=8; s+=8;
++#define LZ4_COPYPACKET(s,d)		LZ4_COPYSTEP(s,d)
++#define LZ4_SECURECOPY(s,d,e)	if (d<e) LZ4_WILDCOPY(s,d,e)
++#define HTYPE U32
++#define INITBASE(base)			const BYTE* const base = ip
++#else		// 32-bit
++#define STEPSIZE 4
++#define UARCH U32
++#define AARCH A32
++#define LZ4_COPYSTEP(s,d)		A32(d) = A32(s); d+=4; s+=4;
++#define LZ4_COPYPACKET(s,d)		LZ4_COPYSTEP(s,d); LZ4_COPYSTEP(s,d);
++#define LZ4_SECURECOPY			LZ4_WILDCOPY
++#define HTYPE const BYTE*
++#define INITBASE(base)			const int base = 0
++#endif
++
++#if ((CPU_BIG_ENDIAN) && !(BIG_ENDIAN_NATIVE_BUT_INCOMPATIBLE))
++#define LZ4_READ_LITTLEENDIAN_16(d,s,p) { U16 v = A16(p); v = bswap16(v); d = (s) - v; }
++#define LZ4_WRITE_LITTLEENDIAN_16(p,i) { U16 v = (U16)(i); v = bswap16(v); A16(p) = v; p+=2; }
++#else		// Little Endian
++#define LZ4_READ_LITTLEENDIAN_16(d,s,p) { d = (s) - A16(p); }
++#define LZ4_WRITE_LITTLEENDIAN_16(p,v) { A16(p) = v; p+=2; }
++#endif
++
++
++//**************************************
++// Local structures
++//**************************************
++struct refTables
++{
++	HTYPE hashTable[HASHTABLESIZE];
 +};
 +
-+static void lz4_free_workspace(struct list_head *ws)
++typedef struct _U64_S
 +{
-+	struct workspace *workspace = list_entry(ws, struct workspace, list);
++	U64 v;
++} _PACKED U64_S;
 +
-+	vfree(workspace->buf);
-+	vfree(workspace->cbuf);
-+	vfree(workspace->mem);
-+	kfree(workspace);
++typedef struct _U32_S
++{
++	U32 v;
++} _PACKED U32_S;
++
++typedef struct _U16_S
++{
++	U16 v;
++} _PACKED U16_S;
++
++#define A64(x) (((U64_S *)(x))->v)
++#define A32(x) (((U32_S *)(x))->v)
++#define A16(x) (((U16_S *)(x))->v)
++
++
++//**************************************
++// Macros
++//**************************************
++#define LZ4_HASH_FUNCTION(i)	(((i) * 2654435761U) >> ((MINMATCH*8)-HASH_LOG))
++#define LZ4_HASH_VALUE(p)		LZ4_HASH_FUNCTION(A32(p))
++#define LZ4_WILDCOPY(s,d,e)		do { LZ4_COPYPACKET(s,d) } while (d<e);
++#define LZ4_BLINDCOPY(s,d,l)	{ BYTE* e=(d)+l; LZ4_WILDCOPY(s,d,e); d=e; }
++
++
++//****************************
++// Private functions
++//****************************
++#if ARCH64
++
++inline static int LZ4_NbCommonBytes (register U64 val)
++{
++#if CPU_BIG_ENDIAN
++    #if defined(_MSC_VER) && !defined(_FORCE_SW_BITCOUNT)
++    unsigned long r = 0;
++    _BitScanReverse64( &r, val );
++    return (int)(r>>3);
++    #elif defined(__GNUC__) && !defined(_FORCE_SW_BITCOUNT)
++    return (__builtin_clzll(val) >> 3);
++    #else
++	int r;
++	if (!(val>>32)) { r=4; } else { r=0; val>>=32; }
++	if (!(val>>16)) { r+=2; val>>=8; } else { val>>=24; }
++	r += (!val);
++	return r;
++    #endif
++#else
++    #if defined(_MSC_VER) && !defined(_FORCE_SW_BITCOUNT)
++    unsigned long r = 0;
++    _BitScanForward64( &r, val );
++    return (int)(r>>3);
++    #elif defined(__GNUC__) && !defined(_FORCE_SW_BITCOUNT)
++    return (__builtin_ctzll(val) >> 3); 
++    #else
++	static const int DeBruijnBytePos[64] = { 0, 0, 0, 0, 0, 1, 1, 2, 0, 3, 1, 3, 1, 4, 2, 7, 0, 2, 3, 6, 1, 5, 3, 5, 1, 3, 4, 4, 2, 5, 6, 7, 7, 0, 1, 2, 3, 3, 4, 6, 2, 6, 5, 5, 3, 4, 5, 6, 7, 1, 2, 4, 6, 4, 4, 5, 7, 2, 6, 5, 7, 6, 7, 7 };
++	return DeBruijnBytePos[((U64)((val & -val) * 0x0218A392CDABBD3F)) >> 58];
++    #endif
++#endif
 +}
 +
-+static struct list_head *lz4_alloc_workspace(void)
++#else
++
++inline static int LZ4_NbCommonBytes (register U32 val)
 +{
-+	struct workspace *workspace;
-+
-+	workspace = kzalloc(sizeof(*workspace), GFP_NOFS);
-+	if (!workspace)
-+		return ERR_PTR(-ENOMEM);
-+
-+	workspace->mem = vmalloc(LZ4_context64k_size());
-+	workspace->buf = vmalloc(LZ4_MAX_WORKBUF);
-+	workspace->cbuf = vmalloc(LZ4_MAX_WORKBUF);
-+	if (!workspace->mem || !workspace->buf || !workspace->cbuf)
-+		goto fail;
-+
-+	INIT_LIST_HEAD(&workspace->list);
-+
-+	return &workspace->list;
-+fail:
-+	lz4_free_workspace(&workspace->list);
-+	return ERR_PTR(-ENOMEM);
++#if CPU_BIG_ENDIAN
++    #if defined(_MSC_VER) && !defined(_FORCE_SW_BITCOUNT)
++    unsigned long r = 0;
++    _BitScanReverse( &r, val );
++    return (int)(r>>3);
++    #elif defined(__GNUC__) && !defined(_FORCE_SW_BITCOUNT)
++    return (__builtin_clz(val) >> 3);
++    #else
++	int r;
++	if (!(val>>16)) { r=2; val>>=8; } else { r=0; val>>=24; }
++	r += (!val);
++	return r;
++    #endif
++#else
++    #if defined(_MSC_VER) && !defined(_FORCE_SW_BITCOUNT)
++    unsigned long r = 0;
++    _BitScanForward( &r, val );
++    return (int)(r>>3);
++    #elif defined(__GNUC__) && !defined(_FORCE_SW_BITCOUNT)
++    return (__builtin_ctz(val) >> 3); 
++    #else
++	static const int DeBruijnBytePos[32] = { 0, 0, 3, 0, 3, 1, 3, 0, 3, 2, 2, 1, 3, 2, 0, 1, 3, 3, 1, 2, 2, 2, 2, 0, 3, 1, 2, 0, 1, 0, 1, 1 };
++	return DeBruijnBytePos[((U32)((val & -val) * 0x077CB531U)) >> 27];
++    #endif
++#endif
 +}
 +
-+static inline void write_compress_length(char *buf, size_t len)
++#endif
++
++
++//******************************
++// Public Compression functions
++//******************************
++
++int LZ4_compressCtx(void** ctx,
++				 const char* source,
++				 char* dest,
++				 int isize)
 +{
-+	__le32 dlen;
++#if HEAPMODE
++	struct refTables *srt = (struct refTables *) (*ctx);
++	HTYPE* HashTable;
++#else
++	HTYPE HashTable[HASHTABLESIZE] = {0};
++#endif
 +
-+	dlen = cpu_to_le32(len);
-+	memcpy(buf, &dlen, LZ4_LEN);
-+}
++	const BYTE* ip = (BYTE*) source;
++	INITBASE(base);
++	const BYTE* anchor = ip;
++	const BYTE* const iend = ip + isize;
++	const BYTE* const mflimit = iend - MFLIMIT;
++#define matchlimit (iend - LASTLITERALS)
 +
-+static inline size_t read_compress_length(char *buf)
-+{
-+	__le32 dlen;
++	BYTE* op = (BYTE*) dest;
 +
-+	memcpy(&dlen, buf, LZ4_LEN);
-+	return le32_to_cpu(dlen);
-+}
++	int len, length;
++	const int skipStrength = SKIPSTRENGTH;
++	U32 forwardH;
 +
-+static int lz4_compress_pages(struct list_head *ws,
-+			      struct address_space *mapping,
-+			      u64 start, unsigned long len,
-+			      struct page **pages,
-+			      unsigned long nr_dest_pages,
-+			      unsigned long *out_pages,
-+			      unsigned long *total_in,
-+			      unsigned long *total_out,
-+			      unsigned long max_out)
-+{
-+	struct workspace *workspace = list_entry(ws, struct workspace, list);
-+	int ret = 0;
-+	char *data_in;
-+	char *cpage_out;
-+	int nr_pages = 0;
-+	struct page *in_page = NULL;
-+	struct page *out_page = NULL;
-+	unsigned long bytes_left;
 +
-+	size_t in_len;
-+	size_t out_len;
-+	char *buf;
-+	unsigned long tot_in = 0;
-+	unsigned long tot_out = 0;
-+	unsigned long pg_bytes_left;
-+	unsigned long out_offset;
-+	unsigned long bytes;
-+
-+	*out_pages = 0;
-+	*total_out = 0;
-+	*total_in = 0;
-+
-+	in_page = find_get_page(mapping, start >> PAGE_CACHE_SHIFT);
-+	data_in = kmap(in_page);
-+
-+	/*
-+	 * store the size of all chunks of compressed data in
-+	 * the first 4 bytes
-+	 */
-+	out_page = alloc_page(GFP_NOFS | __GFP_HIGHMEM);
-+	if (out_page == NULL) {
-+		ret = -ENOMEM;
-+		goto out;
++	// Init
++	if (isize<MINLENGTH) goto _last_literals;
++#if HEAPMODE
++	if (*ctx == NULL)
++	{
++		srt = (struct refTables *) malloc ( sizeof(struct refTables) );
++		*ctx = (void*) srt;
 +	}
-+	cpage_out = kmap(out_page);
-+	out_offset = LZ4_LEN;
-+	tot_out = LZ4_LEN;
-+	pages[0] = out_page;
-+	nr_pages = 1;
-+	pg_bytes_left = PAGE_CACHE_SIZE - LZ4_LEN;
++	HashTable = (HTYPE*)(srt->hashTable);
++	memset((void*)HashTable, 0, sizeof(srt->hashTable));
++#else
++	(void) ctx;
++#endif
 +
-+	/* compress at most one page of data each time */
-+	in_len = min(len, PAGE_CACHE_SIZE);
-+	while (tot_in < len) {
-+		out_len = LZ4_compress64kCtx(&workspace->mem, data_in,
-+				workspace->cbuf, in_len);
-+		if (out_len <= 0) {
-+			printk(KERN_DEBUG
-+				"btrfs: lz4 compress in loop returned %d\n",
-+			       ret);
-+			ret = -1;
-+			goto out;
++
++	// First Byte
++	HashTable[LZ4_HASH_VALUE(ip)] = ip - base;
++	ip++; forwardH = LZ4_HASH_VALUE(ip);
++
++	// Main Loop
++    for ( ; ; )
++	{
++		int findMatchAttempts = (1U << skipStrength) + 3;
++		const BYTE* forwardIp = ip;
++		const BYTE* ref;
++		BYTE* token;
++
++		// Find a match
++		do {
++			U32 h = forwardH;
++			int step = findMatchAttempts++ >> skipStrength;
++			ip = forwardIp;
++			forwardIp = ip + step;
++
++			if (forwardIp > mflimit) { goto _last_literals; }
++
++			forwardH = LZ4_HASH_VALUE(forwardIp);
++			ref = base + HashTable[h];
++			HashTable[h] = ip - base;
++
++		} while ((ref < ip - MAX_DISTANCE) || (A32(ref) != A32(ip)));
++
++		// Catch up
++		while ((ip>anchor) && (ref>(BYTE*)source) && (ip[-1]==ref[-1])) { ip--; ref--; }
++
++		// Encode Literal length
++		length = ip - anchor;
++		token = op++;
++		if (length>=(int)RUN_MASK) { *token=(RUN_MASK<<ML_BITS); len = length-RUN_MASK; for(; len > 254 ; len-=255) *op++ = 255; *op++ = (BYTE)len; }
++		else *token = (length<<ML_BITS);
++
++		// Copy Literals
++		LZ4_BLINDCOPY(anchor, op, length);
++
++_next_match:
++		// Encode Offset
++		LZ4_WRITE_LITTLEENDIAN_16(op,ip-ref);
++
++		// Start Counting
++		ip+=MINMATCH; ref+=MINMATCH;   // MinMatch verified
++		anchor = ip;
++		while (ip<matchlimit-(STEPSIZE-1))
++		{
++			UARCH diff = AARCH(ref) ^ AARCH(ip);
++			if (!diff) { ip+=STEPSIZE; ref+=STEPSIZE; continue; }
++			ip += LZ4_NbCommonBytes(diff);
++			goto _endCount;
 +		}
++		if (ARCH64) if ((ip<(matchlimit-3)) && (A32(ref) == A32(ip))) { ip+=4; ref+=4; }
++		if ((ip<(matchlimit-1)) && (A16(ref) == A16(ip))) { ip+=2; ref+=2; }
++		if ((ip<matchlimit) && (*ref == *ip)) ip++;
++_endCount:
 +
-+		/* store the size of this chunk of compressed data */
-+		write_compress_length(cpage_out + out_offset, out_len);
-+		tot_out += LZ4_LEN;
-+		out_offset += LZ4_LEN;
-+		pg_bytes_left -= LZ4_LEN;
++		// Encode MatchLength
++		len = (ip - anchor);
++		if (len>=(int)ML_MASK) { *token+=ML_MASK; len-=ML_MASK; for(; len > 509 ; len-=510) { *op++ = 255; *op++ = 255; } if (len > 254) { len-=255; *op++ = 255; } *op++ = (BYTE)len; }
++		else *token += len;
 +
-+		tot_in += in_len;
-+		tot_out += out_len;
++		// Test end of chunk
++		if (ip > mflimit) { anchor = ip;  break; }
 +
-+		/* copy bytes from the working buffer into the pages */
-+		buf = workspace->cbuf;
-+		while (out_len) {
-+			bytes = min_t(unsigned long, pg_bytes_left, out_len);
++		// Fill table
++		HashTable[LZ4_HASH_VALUE(ip-2)] = ip - 2 - base;
 +
-+			memcpy(cpage_out + out_offset, buf, bytes);
++		// Test next position
++		ref = base + HashTable[LZ4_HASH_VALUE(ip)];
++		HashTable[LZ4_HASH_VALUE(ip)] = ip - base;
++		if ((ref > ip - (MAX_DISTANCE + 1)) && (A32(ref) == A32(ip))) { token = op++; *token=0; goto _next_match; }
 +
-+			out_len -= bytes;
-+			pg_bytes_left -= bytes;
-+			buf += bytes;
-+			out_offset += bytes;
-+
-+			/*
-+			 * we need another page for writing out.
-+			 *
-+			 * Note if there's less than 4 bytes left, we just
-+			 * skip to a new page.
-+			 */
-+			if ((out_len == 0 && pg_bytes_left < LZ4_LEN) ||
-+			    pg_bytes_left == 0) {
-+				if (pg_bytes_left) {
-+					memset(cpage_out + out_offset, 0,
-+					       pg_bytes_left);
-+					tot_out += pg_bytes_left;
-+				}
-+
-+				/* we're done, don't allocate new page */
-+				if (out_len == 0 && tot_in >= len)
-+					break;
-+
-+				kunmap(out_page);
-+				if (nr_pages == nr_dest_pages) {
-+					out_page = NULL;
-+					ret = -1;
-+					goto out;
-+				}
-+
-+				out_page = alloc_page(GFP_NOFS | __GFP_HIGHMEM);
-+				if (out_page == NULL) {
-+					ret = -ENOMEM;
-+					goto out;
-+				}
-+				cpage_out = kmap(out_page);
-+				pages[nr_pages++] = out_page;
-+
-+				pg_bytes_left = PAGE_CACHE_SIZE;
-+				out_offset = 0;
-+			}
-+		}
-+
-+		/* we're making it bigger, give up */
-+		if (tot_in > 8192 && tot_in < tot_out)
-+			goto out;
-+
-+		/* we're all done */
-+		if (tot_in >= len)
-+			break;
-+
-+		if (tot_out > max_out)
-+			break;
-+
-+		bytes_left = len - tot_in;
-+		kunmap(in_page);
-+		page_cache_release(in_page);
-+
-+		start += PAGE_CACHE_SIZE;
-+		in_page = find_get_page(mapping, start >> PAGE_CACHE_SHIFT);
-+		data_in = kmap(in_page);
-+		in_len = min(bytes_left, PAGE_CACHE_SIZE);
++		// Prepare next loop
++		anchor = ip++;
++		forwardH = LZ4_HASH_VALUE(ip);
 +	}
 +
-+	if (tot_out > tot_in)
-+		goto out;
-+
-+	/* store the size of all chunks of compressed data */
-+	cpage_out = kmap(pages[0]);
-+	write_compress_length(cpage_out, tot_out);
-+
-+	kunmap(pages[0]);
-+
-+	ret = 0;
-+	*total_out = tot_out;
-+	*total_in = tot_in;
-+out:
-+	*out_pages = nr_pages;
-+	if (out_page)
-+		kunmap(out_page);
-+
-+	if (in_page) {
-+		kunmap(in_page);
-+		page_cache_release(in_page);
++_last_literals:
++	// Encode Last Literals
++	{
++		int lastRun = iend - anchor;
++		if (lastRun>=(int)RUN_MASK) { *op++=(RUN_MASK<<ML_BITS); lastRun-=RUN_MASK; for(; lastRun > 254 ; lastRun-=255) *op++ = 255; *op++ = (BYTE) lastRun; }
++		else *op++ = (lastRun<<ML_BITS);
++		memcpy(op, anchor, iend - anchor);
++		op += iend-anchor;
 +	}
 +
-+	return ret;
++	// End
++	return (int) (((char*)op)-dest);
 +}
 +
-+static int lz4_decompress_biovec(struct list_head *ws,
-+				 struct page **pages_in,
-+				 u64 disk_start,
-+				 struct bio_vec *bvec,
-+				 int vcnt,
-+				 size_t srclen)
++
++
++// Note : this function is valid only if isize < LZ4_64KLIMIT
++#define LZ4_64KLIMIT ((1<<16) + (MFLIMIT-1))
++#define HASHLOG64K (HASH_LOG+1)
++#define HASH64KTABLESIZE (1U<<HASHLOG64K)
++#define LZ4_HASH64K_FUNCTION(i)	(((i) * 2654435761U) >> ((MINMATCH*8)-HASHLOG64K))
++#define LZ4_HASH64K_VALUE(p)	LZ4_HASH64K_FUNCTION(A32(p))
++int LZ4_compress64kCtx(void** ctx,
++				 const char* source,
++				 char* dest,
++				 int isize)
 +{
-+	struct workspace *workspace = list_entry(ws, struct workspace, list);
-+	int ret = 0, ret2;
-+	char *data_in;
-+	unsigned long page_in_index = 0;
-+	unsigned long page_out_index = 0;
-+	unsigned long total_pages_in = (srclen + PAGE_CACHE_SIZE - 1) /
-+					PAGE_CACHE_SIZE;
-+	unsigned long buf_start;
-+	unsigned long buf_offset = 0;
-+	unsigned long bytes;
-+	unsigned long working_bytes;
-+	unsigned long pg_offset;
++#if HEAPMODE
++	struct refTables *srt = (struct refTables *) (*ctx);
++	U16* HashTable;
++#else
++	U16 HashTable[HASH64KTABLESIZE] = {0};
++#endif
 +
-+	size_t in_len;
-+	size_t out_len;
-+	unsigned long in_offset;
-+	unsigned long in_page_bytes_left;
-+	unsigned long tot_in;
-+	unsigned long tot_out;
-+	unsigned long tot_len;
-+	char *buf;
-+	bool may_late_unmap, need_unmap;
++	const BYTE* ip = (BYTE*) source;
++	const BYTE* anchor = ip;
++	const BYTE* const base = ip;
++	const BYTE* const iend = ip + isize;
++	const BYTE* const mflimit = iend - MFLIMIT;
++#define matchlimit (iend - LASTLITERALS)
 +
-+	data_in = kmap(pages_in[0]);
-+	tot_len = read_compress_length(data_in);
++	BYTE* op = (BYTE*) dest;
 +
-+	tot_in = LZ4_LEN;
-+	in_offset = LZ4_LEN;
-+	tot_len = min_t(size_t, srclen, tot_len);
-+	in_page_bytes_left = PAGE_CACHE_SIZE - LZ4_LEN;
++	int len, length;
++	const int skipStrength = SKIPSTRENGTH;
++	U32 forwardH;
 +
-+	tot_out = 0;
-+	pg_offset = 0;
 +
-+	while (tot_in < tot_len) {
-+		in_len = read_compress_length(data_in + in_offset);
-+		in_page_bytes_left -= LZ4_LEN;
-+		in_offset += LZ4_LEN;
-+		tot_in += LZ4_LEN;
-+
-+		tot_in += in_len;
-+		working_bytes = in_len;
-+		may_late_unmap = need_unmap = false;
-+
-+		/* fast path: avoid using the working buffer */
-+		if (in_page_bytes_left >= in_len) {
-+			buf = data_in + in_offset;
-+			bytes = in_len;
-+			may_late_unmap = true;
-+			goto cont;
-+		}
-+
-+		/* copy bytes from the pages into the working buffer */
-+		buf = workspace->cbuf;
-+		buf_offset = 0;
-+		while (working_bytes) {
-+			bytes = min(working_bytes, in_page_bytes_left);
-+
-+			memcpy(buf + buf_offset, data_in + in_offset, bytes);
-+			buf_offset += bytes;
-+cont:
-+			working_bytes -= bytes;
-+			in_page_bytes_left -= bytes;
-+			in_offset += bytes;
-+
-+			/* check if we need to pick another page */
-+			if ((working_bytes == 0 && in_page_bytes_left < LZ4_LEN)
-+			    || in_page_bytes_left == 0) {
-+				tot_in += in_page_bytes_left;
-+
-+				if (working_bytes == 0 && tot_in >= tot_len)
-+					break;
-+
-+				if (page_in_index + 1 >= total_pages_in) {
-+					ret = -1;
-+					goto done;
-+				}
-+
-+				if (may_late_unmap)
-+					need_unmap = true;
-+				else
-+					kunmap(pages_in[page_in_index]);
-+
-+				data_in = kmap(pages_in[++page_in_index]);
-+
-+				in_page_bytes_left = PAGE_CACHE_SIZE;
-+				in_offset = 0;
-+			}
-+		}
-+
-+		out_len = LZ4_uncompress_unknownOutputSize(buf, workspace->buf,
-+				in_len, LZ4_CHUNK_SIZE);
-+		if (need_unmap)
-+			kunmap(pages_in[page_in_index - 1]);
-+		if (out_len < 0) {
-+			printk(KERN_WARNING "btrfs: lz4 decompress failed\n");
-+			ret = -1;
-+			break;
-+		}
-+
-+		buf_start = tot_out;
-+		tot_out += out_len;
-+
-+		ret2 = btrfs_decompress_buf2page(workspace->buf, buf_start,
-+						 tot_out, disk_start,
-+						 bvec, vcnt,
-+						 &page_out_index, &pg_offset);
-+		if (ret2 == 0)
-+			break;
++	// Init
++	if (isize<MINLENGTH) goto _last_literals;
++#if HEAPMODE
++	if (*ctx == NULL)
++	{
++		srt = (struct refTables *) malloc ( sizeof(struct refTables) );
++		*ctx = (void*) srt;
 +	}
-+done:
-+	kunmap(pages_in[page_in_index]);
-+	return ret;
++	HashTable = (U16*)(srt->hashTable);
++	memset((void*)HashTable, 0, sizeof(srt->hashTable));
++#else
++	(void) ctx;
++#endif
++
++
++	// First Byte
++	ip++; forwardH = LZ4_HASH64K_VALUE(ip);
++
++	// Main Loop
++    for ( ; ; )
++	{
++		int findMatchAttempts = (1U << skipStrength) + 3;
++		const BYTE* forwardIp = ip;
++		const BYTE* ref;
++		BYTE* token;
++
++		// Find a match
++		do {
++			U32 h = forwardH;
++			int step = findMatchAttempts++ >> skipStrength;
++			ip = forwardIp;
++			forwardIp = ip + step;
++
++			if (forwardIp > mflimit) { goto _last_literals; }
++
++			forwardH = LZ4_HASH64K_VALUE(forwardIp);
++			ref = base + HashTable[h];
++			HashTable[h] = ip - base;
++
++		} while (A32(ref) != A32(ip));
++
++		// Catch up
++		while ((ip>anchor) && (ref>(BYTE*)source) && (ip[-1]==ref[-1])) { ip--; ref--; }
++
++		// Encode Literal length
++		length = ip - anchor;
++		token = op++;
++		if (length>=(int)RUN_MASK) { *token=(RUN_MASK<<ML_BITS); len = length-RUN_MASK; for(; len > 254 ; len-=255) *op++ = 255; *op++ = (BYTE)len; }
++		else *token = (length<<ML_BITS);
++
++		// Copy Literals
++		LZ4_BLINDCOPY(anchor, op, length);
++
++_next_match:
++		// Encode Offset
++		LZ4_WRITE_LITTLEENDIAN_16(op,ip-ref);
++
++		// Start Counting
++		ip+=MINMATCH; ref+=MINMATCH;   // MinMatch verified
++		anchor = ip;
++		while (ip<matchlimit-(STEPSIZE-1))
++		{
++			UARCH diff = AARCH(ref) ^ AARCH(ip);
++			if (!diff) { ip+=STEPSIZE; ref+=STEPSIZE; continue; }
++			ip += LZ4_NbCommonBytes(diff);
++			goto _endCount;
++		}
++		if (ARCH64) if ((ip<(matchlimit-3)) && (A32(ref) == A32(ip))) { ip+=4; ref+=4; }
++		if ((ip<(matchlimit-1)) && (A16(ref) == A16(ip))) { ip+=2; ref+=2; }
++		if ((ip<matchlimit) && (*ref == *ip)) ip++;
++_endCount:
++
++		// Encode MatchLength
++		len = (ip - anchor);
++		if (len>=(int)ML_MASK) { *token+=ML_MASK; len-=ML_MASK; for(; len > 509 ; len-=510) { *op++ = 255; *op++ = 255; } if (len > 254) { len-=255; *op++ = 255; } *op++ = (BYTE)len; }
++		else *token += len;
++
++		// Test end of chunk
++		if (ip > mflimit) { anchor = ip;  break; }
++
++		// Fill table
++		HashTable[LZ4_HASH64K_VALUE(ip-2)] = ip - 2 - base;
++
++		// Test next position
++		ref = base + HashTable[LZ4_HASH64K_VALUE(ip)];
++		HashTable[LZ4_HASH64K_VALUE(ip)] = ip - base;
++		if (A32(ref) == A32(ip)) { token = op++; *token=0; goto _next_match; }
++
++		// Prepare next loop
++		anchor = ip++;
++		forwardH = LZ4_HASH64K_VALUE(ip);
++	}
++
++_last_literals:
++	// Encode Last Literals
++	{
++		int lastRun = iend - anchor;
++		if (lastRun>=(int)RUN_MASK) { *op++=(RUN_MASK<<ML_BITS); lastRun-=RUN_MASK; for(; lastRun > 254 ; lastRun-=255) *op++ = 255; *op++ = (BYTE) lastRun; }
++		else *op++ = (lastRun<<ML_BITS);
++		memcpy(op, anchor, iend - anchor);
++		op += iend-anchor;
++	}
++
++	// End
++	return (int) (((char*)op)-dest);
 +}
 +
-+static int lz4_decompress(struct list_head *ws, unsigned char *data_in,
-+			  struct page *dest_page,
-+			  unsigned long start_byte,
-+			  size_t srclen, size_t destlen)
++
++
++int LZ4_compress(const char* source, 
++				 char* dest,
++				 int isize)
 +{
-+	struct workspace *workspace = list_entry(ws, struct workspace, list);
-+	size_t in_len;
-+	size_t out_len;
-+	size_t tot_len;
-+	int ret = 0;
-+	char *kaddr;
-+	unsigned long bytes;
-+
-+	BUG_ON(srclen < LZ4_LEN);
-+
-+	tot_len = read_compress_length(data_in);
-+	data_in += LZ4_LEN;
-+
-+	in_len = read_compress_length(data_in);
-+	data_in += LZ4_LEN;
-+
-+	out_len = LZ4_uncompress_unknownOutputSize(data_in, workspace->buf,
-+			in_len, LZ4_CHUNK_SIZE);
-+	if (out_len < 0) {
-+		printk(KERN_WARNING "btrfs: lz4 decompress failed\n");
-+		ret = -1;
-+		goto out;
-+	}
-+
-+	if (out_len < start_byte) {
-+		ret = -1;
-+		goto out;
-+	}
-+
-+	bytes = min_t(unsigned long, destlen, out_len - start_byte);
-+
-+	kaddr = kmap_atomic(dest_page, KM_USER0);
-+	memcpy(kaddr, workspace->buf + start_byte, bytes);
-+	kunmap_atomic(kaddr, KM_USER0);
-+out:
-+	return ret;
++#if HEAPMODE
++	void* ctx = malloc(sizeof(struct refTables));
++	int result;
++	if (isize < LZ4_64KLIMIT)
++		result = LZ4_compress64kCtx(&ctx, source, dest, isize);
++	else result = LZ4_compressCtx(&ctx, source, dest, isize);
++	free(ctx);
++	return result;
++#else
++	if (isize < (int)LZ4_64KLIMIT) return LZ4_compress64kCtx(NULL, source, dest, isize);
++	return LZ4_compressCtx(NULL, source, dest, isize);
++#endif
 +}
 +
-+struct btrfs_compress_op btrfs_lz4_compress = {
-+	.alloc_workspace	= lz4_alloc_workspace,
-+	.free_workspace		= lz4_free_workspace,
-+	.compress_pages		= lz4_compress_pages,
-+	.decompress_biovec	= lz4_decompress_biovec,
-+	.decompress		= lz4_decompress,
-+};
-diff --git a/fs/btrfs/lzo.c b/fs/btrfs/lzo.c
-index a178f5e..3be72d3 100644
---- a/fs/btrfs/lzo.c
-+++ b/fs/btrfs/lzo.c
-@@ -16,6 +16,8 @@
-  * Boston, MA 021110-1307, USA.
-  */
- 
-+/* Based on lzo.c wrapper */
 +
- #include <linux/kernel.h>
- #include <linux/slab.h>
- #include <linux/vmalloc.h>
-diff --git a/fs/btrfs/super.c b/fs/btrfs/super.c
-index b65c94b..68c980e 100644
---- a/fs/btrfs/super.c
-+++ b/fs/btrfs/super.c
-@@ -290,9 +290,6 @@ int btrfs_parse_options(struct btrfs_root *root, char *options)
- 			} else if (strcmp(args[0].from, "lz4") == 0) {
- 				compress_type = "lz4";
- 				info->compress_type = BTRFS_COMPRESS_LZ4;
--				/* remove when implemented */
--				ret = -EINVAL;
--				goto out;
- 			} else {
- 				ret = -EINVAL;
- 				goto out;
++
++
++//****************************
++// Decompression functions
++//****************************
++
++// Note : The decoding functions LZ4_uncompress() and LZ4_uncompress_unknownOutputSize()
++//		are safe against "buffer overflow" attack type.
++//		They will never write nor read outside of the provided input and output buffers.
++//		A corrupted input will produce an error result, a negative int, indicating the position of the error within input stream.
++
++int LZ4_uncompress(const char* source, 
++				 char* dest,
++				 int osize)
++{
++	// Local Variables
++	const BYTE* restrict ip = (const BYTE*) source;
++	const BYTE* restrict ref;
++
++	BYTE* restrict op = (BYTE*) dest;
++	BYTE* const oend = op + osize;
++	BYTE* cpy;
++
++	BYTE token;
++
++	int	len, length;
++	size_t dec[] ={0, 3, 2, 3, 0, 0, 0, 0};
++
++
++	// Main Loop
++	while (1)
++	{
++		// get runlength
++		token = *ip++;
++		if ((length=(token>>ML_BITS)) == RUN_MASK)  { for (;(len=*ip++)==255;length+=255){} length += len; }
++
++		// copy literals
++		cpy = op+length;
++		if (cpy>oend-COPYLENGTH)
++		{
++			if (cpy > oend) goto _output_error;
++			memcpy(op, ip, length);
++			ip += length;
++			break;    // Necessarily EOF
++		}
++		LZ4_WILDCOPY(ip, op, cpy); ip -= (op-cpy); op = cpy;
++
++		// get offset
++		LZ4_READ_LITTLEENDIAN_16(ref,cpy,ip); ip+=2;
++		if (ref < (BYTE* const)dest) goto _output_error;
++
++		// get matchlength
++		if ((length=(token&ML_MASK)) == ML_MASK) { for (;*ip==255;length+=255) {ip++;} length += *ip++; }
++
++		// copy repeated sequence
++		if (op-ref<STEPSIZE)
++		{
++#if ARCH64
++			size_t dec2table[]={0, 0, 0, -1, 0, 1, 2, 3};
++			size_t dec2 = dec2table[op-ref];
++#else
++			const int dec2 = 0;
++#endif
++			*op++ = *ref++;
++			*op++ = *ref++;
++			*op++ = *ref++;
++			*op++ = *ref++;
++			ref -= dec[op-ref];
++			A32(op)=A32(ref); op += STEPSIZE-4;
++			ref -= dec2;
++		} else { LZ4_COPYSTEP(ref,op); }
++		cpy = op + length - (STEPSIZE-4);
++		if (cpy>oend-COPYLENGTH)
++		{
++			if (cpy > oend) goto _output_error;
++			LZ4_SECURECOPY(ref, op, (oend-COPYLENGTH));
++			while(op<cpy) *op++=*ref++;
++			op=cpy;
++			if (op == oend) break;    // Check EOF (should never happen, since last 5 bytes are supposed to be literals)
++			continue;
++		}
++		LZ4_SECURECOPY(ref, op, cpy);
++		op=cpy;		// correction
++	}
++
++	// end of decoding
++	return (int) (((char*)ip)-source);
++
++	// write overflow error detected
++_output_error:
++	return (int) (-(((char*)ip)-source));
++}
++
++
++int LZ4_uncompress_unknownOutputSize(
++				const char* source, 
++				char* dest,
++				int isize,
++				int maxOutputSize)
++{
++	// Local Variables
++	const BYTE* restrict ip = (const BYTE*) source;
++	const BYTE* const iend = ip + isize;
++	const BYTE* restrict ref;
++
++	BYTE* restrict op = (BYTE*) dest;
++	BYTE* const oend = op + maxOutputSize;
++	BYTE* cpy;
++
++	BYTE token;
++
++	int	len, length;
++	size_t dec[] ={0, 3, 2, 3, 0, 0, 0, 0};
++
++
++	// Main Loop
++	while (ip<iend)
++	{
++		// get runlength
++		token = *ip++;
++		if ((length=(token>>ML_BITS)) == RUN_MASK)  { for (;(len=*ip++)==255;length+=255){} length += len; }
++
++		// copy literals
++		cpy = op+length;
++		if (cpy>oend-COPYLENGTH)
++		{
++			if (cpy > oend) goto _output_error;
++			memcpy(op, ip, length);
++			op += length;
++			break;    // Necessarily EOF
++		}
++		LZ4_WILDCOPY(ip, op, cpy); ip -= (op-cpy); op = cpy;
++		if (ip>=iend) break;    // check EOF
++
++		// get offset
++		LZ4_READ_LITTLEENDIAN_16(ref,cpy,ip); ip+=2;
++		if (ref < (BYTE* const)dest) goto _output_error;
++
++		// get matchlength
++		if ((length=(token&ML_MASK)) == ML_MASK) { for (;(len=*ip++)==255;length+=255){} length += len; }
++
++		// copy repeated sequence
++		if (op-ref<STEPSIZE)
++		{
++#if ARCH64
++			size_t dec2table[]={0, 0, 0, -1, 0, 1, 2, 3};
++			size_t dec2 = dec2table[op-ref];
++#else
++			const int dec2 = 0;
++#endif
++			*op++ = *ref++;
++			*op++ = *ref++;
++			*op++ = *ref++;
++			*op++ = *ref++;
++			ref -= dec[op-ref];
++			A32(op)=A32(ref); op += STEPSIZE-4;
++			ref -= dec2;
++		} else { LZ4_COPYSTEP(ref,op); }
++		cpy = op + length - (STEPSIZE-4);
++		if (cpy>oend-COPYLENGTH)
++		{
++			if (cpy > oend) goto _output_error;
++			LZ4_SECURECOPY(ref, op, (oend-COPYLENGTH));
++			while(op<cpy) *op++=*ref++;
++			op=cpy;
++			if (op == oend) break;    // Check EOF (should never happen, since last 5 bytes are supposed to be literals)
++			continue;
++		}
++		LZ4_SECURECOPY(ref, op, cpy);
++		op=cpy;		// correction
++	}
++
++	// end of decoding
++	return (int) (((char*)op)-dest);
++
++	// write overflow error detected
++_output_error:
++	return (int) (-(((char*)ip)-source));
++}
++
+diff --git a/fs/btrfs/lz4.h b/fs/btrfs/lz4.h
+new file mode 100644
+index 0000000..bbd5e12
+--- /dev/null
++++ b/fs/btrfs/lz4.h
+@@ -0,0 +1,107 @@
++/*
++   LZ4 - Fast LZ compression algorithm
++   Header File
++   Copyright (C) 2011, Yann Collet.
++   BSD License
++
++   Redistribution and use in source and binary forms, with or without
++   modification, are permitted provided that the following conditions are
++   met:
++
++       * Redistributions of source code must retain the above copyright
++   notice, this list of conditions and the following disclaimer.
++       * Redistributions in binary form must reproduce the above
++   copyright notice, this list of conditions and the following disclaimer
++   in the documentation and/or other materials provided with the
++   distribution.
++
++   THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
++   "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
++   LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
++   A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
++   OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
++   SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
++   LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
++   DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
++   THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
++   (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
++   OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
++*/
++
++/*
++ * With authors permission dual licensed as BSD/GPL for linux kernel
++ *
++ * Origin: http://lz4.googlecode.com/svn/trunk
++ * Revision: 54
++ */
++#pragma once
++
++#if defined (__cplusplus)
++extern "C" {
++#endif
++
++
++//****************************
++// Simple Functions
++//****************************
++
++int LZ4_compress   (const char* source, char* dest, int isize);
++int LZ4_uncompress (const char* source, char* dest, int osize);
++
++/*
++LZ4_compress() :
++	return : the number of bytes in compressed buffer dest
++	note : destination buffer must be already allocated.
++		To avoid any problem, size it to handle worst cases situations (input data not compressible)
++		Worst case size is : "inputsize + 0.4%", with "0.4%" being at least 8 bytes.
++
++LZ4_uncompress() :
++	osize  : is the output size, therefore the original size
++	return : the number of bytes read in the source buffer
++			 If the source stream is malformed, the function will stop decoding and return a negative result, indicating the byte position of the faulty instruction
++			 This version never writes beyond dest + osize, and is therefore protected against malicious data packets
++	note 2 : destination buffer must be already allocated
++*/
++
++
++//****************************
++// Advanced Functions
++//****************************
++
++int LZ4_uncompress_unknownOutputSize (const char* source, char* dest, int isize, int maxOutputSize);
++
++/*
++LZ4_uncompress_unknownOutputSize() :
++	isize  : is the input size, therefore the compressed size
++	maxOutputSize : is the size of the destination buffer (which must be already allocated)
++	return : the number of bytes decoded in the destination buffer (necessarily <= maxOutputSize)
++			 If the source stream is malformed, the function will stop decoding and return a negative result, indicating the byte position of the faulty instruction
++			 This version never writes beyond dest + maxOutputSize, and is therefore protected against malicious data packets
++	note   : This version is a bit slower than LZ4_uncompress
++*/
++
++
++int LZ4_compressCtx(void** ctx, const char* source,  char* dest, int isize);
++
++/*
++LZ4_compressCtx() :
++	This function explicitly handles the CTX memory structure.
++	It avoids allocating/deallocating memory between each call, improving performance when malloc is time-consuming.
++	Note : when memory is allocated into the stack (default mode), there is no "malloc" penalty.
++	Therefore, this function is mostly useful when memory is allocated into the heap (it requires increasing HASH_LOG value beyond STACK_LIMIT)
++
++	On first call : provide a *ctx=NULL; It will be automatically allocated.
++	On next calls : reuse the same ctx pointer.
++	Use different pointers for different threads when doing multi-threading.
++
++	note : performance difference is small, mostly noticeable in HeapMode when repetitively calling the compression function over many small segments.
++*/
++
++int LZ4_compress64kCtx(void** ctx,
++				 const char* source,
++				 char* dest,
++				 int isize);
++
++#if defined (__cplusplus)
++}
++#endif
 -- 
 1.7.8
 

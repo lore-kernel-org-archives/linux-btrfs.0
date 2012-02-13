@@ -1,196 +1,68 @@
-From: David Sterba <dave@jikos.cz>
+From: Timo Witte <timo.witte@googlemail.com>
 Subject: Re: Set nodatacow per file?
-Date: Mon, 13 Feb 2012 15:10:40 +0100
-Message-ID: <20120213141040.GG15350@twin.jikos.cz>
-References: <4F38B8F0.5020506@yahoo.com> <4F38BE53.4080204@parallels.com>
-Reply-To: dave@jikos.cz
+Date: Mon, 13 Feb 2012 15:21:35 +0100
+Message-ID: <4F391C6F.8040405@googlemail.com>
+References: <4F38B8F0.5020506@yahoo.com> <4F38BE53.4080204@parallels.com> <20120213141040.GG15350@twin.jikos.cz>
 Mime-Version: 1.0
-Content-Type: multipart/mixed; boundary="3V7upXqbjpZ4EhLz"
-Cc: linux-btrfs@vger.kernel.org
-To: dima <dolenin@parallels.com>
+Content-Type: multipart/signed; micalg=pgp-sha1;
+ protocol="application/pgp-signature";
+ boundary="------------enig105E83AFBB5E44BD79D49B1C"
+To: linux-btrfs@vger.kernel.org
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <4F38BE53.4080204@parallels.com>
+In-Reply-To: <20120213141040.GG15350@twin.jikos.cz>
 List-ID: <linux-btrfs.vger.kernel.org>
 
+This is an OpenPGP/MIME signed message (RFC 2440 and 3156)
+--------------enig105E83AFBB5E44BD79D49B1C
+Content-Type: text/plain; charset=ISO-8859-1
+Content-Transfer-Encoding: quoted-printable
 
---3V7upXqbjpZ4EhLz
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
+The fileflags utility works great!
+Thanks!
 
-Hi,
+Am 13.02.2012 15:10, schrieb David Sterba:
+> Hi,
+>=20
+> On Mon, Feb 13, 2012 at 04:40:03PM +0900, dima wrote:
+>> Actually it is possible. Check out David's response to my question fro=
+m=20
+>> some time ago:
+>> http://permalink.gmane.org/gmane.comp.file-systems.btrfs/14227
+>=20
+> this was a quick aid, please see attached file for an updated tool to s=
+et
+> the file flags, now added 'z' for NOCOMPRESS flag, and supports chattr
+> syntax plus all of the standard file flags.
+>=20
+> Setting and unsetting nocow is done like 'fileflags +C file' or -C for
+> unseting. Without any + or - options it prints current state.
+>=20
+>=20
+> david
 
-On Mon, Feb 13, 2012 at 04:40:03PM +0900, dima wrote:
-> Actually it is possible. Check out David's response to my question from 
-> some time ago:
-> http://permalink.gmane.org/gmane.comp.file-systems.btrfs/14227
 
-this was a quick aid, please see attached file for an updated tool to set
-the file flags, now added 'z' for NOCOMPRESS flag, and supports chattr
-syntax plus all of the standard file flags.
+--------------enig105E83AFBB5E44BD79D49B1C
+Content-Type: application/pgp-signature; name="signature.asc"
+Content-Description: OpenPGP digital signature
+Content-Disposition: attachment; filename="signature.asc"
 
-Setting and unsetting nocow is done like 'fileflags +C file' or -C for
-unseting. Without any + or - options it prints current state.
+-----BEGIN PGP SIGNATURE-----
+Version: GnuPG v1.4.11 (GNU/Linux)
+Comment: Using GnuPG with Mozilla - http://enigmail.mozdev.org/
 
+iQIcBAEBAgAGBQJPORxzAAoJELFS+VMgnyVJZtYP+gI2OWzI7Se2bKqGgaWRmg9d
+UoYqWzS4BZH8HOEjSdIr2BTsk6EnJefJDRUZfjpt1y9RM8ewD3aSfKH9uCwJlSpC
+gTb/n6n2acEqM3DiIm7B/j1zQqX0FhgVQqXvWdw9yQ5w+nllbK1h+qmGIU/qSWTs
+nBTyXUnh1SKjy2LO5GHkgZln+Umb6imvEhZ+USp8B9GrCMXL3OZwa1ONA7EXcmFh
+riyNsq1TGGuW06KF6q6cEUUfuGPfI37t3DIbEHKC8Hm/4UDrBrENs+8YHvV6SmFT
+q094v3tpLXWEyoeaArQ7qeeIuYC3/uQR9MJZ7I5ZzGbw2/BH1Kbwj3FjYjLtDeKR
+rNnrFLSVvQTU0FUHj1lcJgt3InqSxwsVHwNjSRkMiybz2sDSuFcIKCZHUEAYn+1j
+oROeoc1IPrMNYGzpjIE2ihKIfc5sPFML3TLNVND6Ie0M4jhuBvhlbbfRLIfCDqdq
+OrtCCE+nCGyrUj4ZuUKHQiODvhfMoqUya5wqgIBvFAow0ko+cdL/sbbT5f+6mH/5
+aDz2z8AZxbamcpu8u488XQbJWJVVjIxOrhRQFcC6E2YfpvNm/qVAgaiBYRERj14R
+/3V63c6EoPduCgZVcWV1yGdPeqp2zTI0GK89bBTl2TpqWami7pAhRGaAf1DQETby
+w8jPksoLpqDDamqJ2coU
+=5Zbi
+-----END PGP SIGNATURE-----
 
-david
-
---3V7upXqbjpZ4EhLz
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: attachment; filename="fileflags.c"
-
-#include <errno.h>
-#include <fcntl.h>
-#include <inttypes.h>
-#include <linux/fs.h>
-#include <linux/types.h>
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-#include <sys/ioctl.h>
-
-#ifndef FS_NOCOMP_FL
-#define FS_NOCOMP_FL                    0x00000400 /* Don't compress */
-#endif
-
-#ifndef FS_NOCOW_FL
-#define FS_NOCOW_FL                     0x00800000 /* Do not cow file */
-#endif
-
-struct flags_name {
-	unsigned long	flag;
-	const char	short_name;
-	const char	*long_name;
-};
-
-static const struct flags_name flags[]={
-	/* new */
-	{ FS_NOCOW_FL, 'C', "NOCOW" },
-	{ FS_NOCOMP_FL, 'z', "Not_Compressed" },
-	/* current */
-	{ FS_SECRM_FL, 's', "Secure_Deletion" },
-	{ FS_UNRM_FL, 'u' , "Undelete" },
-	{ FS_SYNC_FL, 'S', "Synchronous_Updates" },
-	{ FS_DIRSYNC_FL, 'D', "Synchronous_Directory_Updates" },
-	{ FS_IMMUTABLE_FL, 'i', "Immutable" },
-	{ FS_APPEND_FL, 'a', "Append_Only" },
-	{ FS_NODUMP_FL, 'd', "No_Dump" },
-	{ FS_NOATIME_FL, 'A', "No_Atime" },
-	{ FS_COMPR_FL, 'c', "Compression_Requested" },
-	{ FS_COMPRBLK_FL, 'B', "Compressed_File" },
-	{ FS_DIRTY_FL, 'Z', "Compressed_Dirty_File" },
-	{ FS_ECOMPR_FL, 'E', "Compression_Error" },
-	{ FS_JOURNAL_DATA_FL, 'j', "Journaled_Data" },
-	{ FS_INDEX_FL, 'I', "Indexed_directory" },
-	{ FS_NOTAIL_FL, 't', "No_Tailmerging" },
-	{ FS_TOPDIR_FL, 'T', "Top_of_Directory_Hierarchies" },
-	/* { EXT4_EXTENTS_FL, 'e', "Extents" }, */
-	/* { EXT4_HUGE_FILE_FL, 'h', "Huge_file" }, */
-};
-
-static unsigned long to_set, to_unset;
-
-unsigned long c2val(char c)
-{
-	int i;
-
-	for(i=0;i<sizeof(flags)/sizeof(flags[0]);i++) {
-		if(flags[i].short_name==c)
-			return flags[i].flag;
-	}
-
-	printf("Warning: flag '%c' not found\n", c);
-	return 0;
-}
-void list_flags(unsigned long fflags)
-{
-	int i;
-
-	printf("Flags:\n");
-	for(i=0;i<sizeof(flags)/sizeof(flags[0]);i++) {
-		if(fflags & flags[i].flag) {
-			printf(" %c %s\n",
-				flags[i].short_name,
-				flags[i].long_name);
-		}
-	}
-}
-
-void set_flag(const char* in)
-{
-	int i;
-
-	for(i=0;i<strlen(in);i++) {
-		to_set |= c2val(in[i]);
-		printf(" set %c\n", in[i]);
-	}
-}
-
-void unset_flag(const char* in)
-{
-	int i;
-
-	for(i=0;i<strlen(in);i++) {
-		to_unset |= c2val(in[i]);
-		printf(" unset %c\n", in[i]);
-	}
-}
-
-int main(int argc, char **argv)
-{
-        int ret;
-	int optind;
-	int modify=0;
-
-	if (argc < 2) {
-		printf("usage: %s [options] [--] file...\n", argv[0]);
-		exit(1);
-	}
-	to_set = 0;
-	to_unset = 0;
-	for(optind=1;optind<argc;optind++) {
-		char *o=argv[optind];
-		if(o[0]=='-' && o[1]=='-') {
-			optind++;
-			break;
-		} else if(o[0]=='-') {
-			unset_flag(o+1);
-			modify=1;
-		} else if(o[0]=='+') {
-			set_flag(o+1);
-			modify=1;
-		} else break;
-	}
-
-	for(;optind<argc;optind++) {
-		unsigned long fflags;
-		int fd = -1;
-
-		if(fd!=-1) close(fd);
-		fd = open(argv[optind], O_RDONLY);
-		if (fd == -1) {
-			perror("open()");
-			continue;
-		}
-		ret = ioctl(fd, FS_IOC_GETFLAGS, &fflags);
-		if (ret == -1) {
-			perror("ioctl(GETFLAGS)");
-			continue;
-		}
-		if(modify) {
-			fflags |= to_set;
-			fflags &= ~to_unset;
-			ret = ioctl(fd, FS_IOC_SETFLAGS, &fflags);
-			if (ret == -1) {
-				perror("ioctl(SETFLAGS)");
-				continue;
-			}
-		}
-		printf("File: %s\n", argv[optind]);
-		list_flags(fflags);
-		putchar('\n');
-	}
-
-        return 0;
-}
-
---3V7upXqbjpZ4EhLz--
+--------------enig105E83AFBB5E44BD79D49B1C--

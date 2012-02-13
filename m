@@ -1,131 +1,48 @@
-From: Christoph Hellwig <hch@infradead.org>
-Subject: Re: [PATCH 3/3 v2] xfstests: add btrfs online defragments QA test
-Date: Mon, 13 Feb 2012 12:53:44 -0500
-Message-ID: <20120213175344.GA15040@infradead.org>
-References: <1328766034-1324-1-git-send-email-liubo2009@cn.fujitsu.com>
+From: David Sterba <dave@jikos.cz>
+Subject: [RFB] add LZ4 compression method to btrfs
+Date: Mon, 13 Feb 2012 20:03:25 +0100
+Message-ID: <20120213190325.GJ15350@twin.jikos.cz>
+Reply-To: dave@jikos.cz
 Mime-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
-Cc: xfs@oss.sgi.com, hch@infradead.org, linux-btrfs@vger.kernel.org
-To: Liu Bo <liubo2009@cn.fujitsu.com>
+To: linux-btrfs@vger.kernel.org
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <1328766034-1324-1-git-send-email-liubo2009@cn.fujitsu.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-This still needs a bit more work:
+Hi,
 
-> +test_path="`pwd`"
-> +progs_dir="$test_path/src/btrfs_online_defragment/"
+so here it is, LZ4 compression method inside btrfs. The patchset is based on
+top of current Chris' for-linus + Andi's snappy implementation + the fixes from
+Li Zefan. Passes xfstests and stresstests.
 
-this isn't actually used.
+I haven't measured performance on wide range of hardware or workloads, rather
+wanted to publish the patches before I get distracted again.  I'd like to ask
+anyone willing and able to test this to share your results with us.
 
+At least an example from standalone benchmarks of
+snappy-c/snappy(upstream)/lzo/lz4:
 
-> +tmp=tmp/$$
-> +defrag_args="$test_path/${seq}.args"
+Silesia corpus (avg of 10 runs), AMD bulldozer box, 12G ram, 1Ghz cpu:
 
-Just hardcode the arguments, preferably without the args file
-indirection.
+lz4              =   739860 us ( 286 MB/s)   195930 us (1081 MB/s) 211957760 -> 101630873 47.9%
+snappy 1.0.4     =     1050 ms ( 201 MB/s)      248 ms ( 853 MB/s) 211957760 -> 104739310 49.4%
+snappy-c         =   940111 us ( 225 MB/s)   299690 us ( 707 MB/s) 211957760 -> 131060567 61.8%
+lzo 2.06 1x_1    =   739421 us ( 286 MB/s)   436542 us ( 485 MB/s) 211957760 -> 100576151 47.5%
 
-> +_create_file()
-> +{
-> +	CNT=11999
-> +	FILESIZE=48000
-> +	if [ "$DEFRAG_TARGET" = "1" ];then
-> +		for i in `seq $CNT -1 0`; do
-> +			dd if=/dev/zero of=$SCRATCH_MNT/tmp_file bs=4k count=1 \
-> +			 conv=notrunc seek=$i oflag=sync &>/dev/null
-> +		done
-> +		# get md5sum
-> +		md5sum $SCRATCH_MNT/tmp_file > /tmp/checksum
-> +	elif [ "$DEFRAG_TARGET" = "2" ];then
-> +		mkdir $SCRATCH_MNT/tmp_dir
-> +		for i in `seq $CNT -1 0`; do
-> +			dd if=/dev/zero of=$SCRATCH_MNT/tmp_dir/tmp_file bs=4k \
-> +			count=1 conv=notrunc seek=$i oflag=sync &>/dev/null
-> +		done
-> +		# get md5sum
-> +		md5sum $SCRATCH_MNT/tmp_dir/tmp_file > /tmp/checksum
-> +	elif [ "$DEFRAG_TARGET" = "3" ];then
-> +		for i in `seq $CNT -1 0`; do
-> +			dd if=/dev/zero of=$SCRATCH_MNT/tmp_file bs=4k count=1 \
-> +			conv=notrunc seek=$i oflag=sync &>/dev/null
-> +		done
-> +		# get md5sum
-> +		md5sum $SCRATCH_MNT/tmp_file > /tmp/checksum
-> +	fi
-> +}
+Silesia corpus (avg of 10 runs), Nehalem X7560, 2.3Ghz cpu:
 
-It seems like each of these cases should be a different function.
+lz4              =   624170 us ( 339 MB/s)   200622 us (1056 MB/s) 211957760 -> 101630873 47.9%
+snappy 1.0.4     =     1047 ms ( 202 MB/s)      265 ms ( 797 MB/s) 211957760 -> 104739310 49.4%
+snappy-c         =   836415 us ( 253 MB/s)   300567 us ( 705 MB/s) 211957760 -> 131060567 61.8%
+lzo 2.06 1x_1    =   639305 us ( 331 MB/s)   470840 us ( 450 MB/s) 211957760 -> 100576151 47.5%
 
-> +_btrfs_online_defrag()
-> +{
-> +	str=""
-> +	if [ "$FILE_RANGE" = "2" ];then
-> +		str="$str -s -1 -l $((FILESIZE / 2)) "
-> +	elif [ "$FILE_RANGE" = "3" ];then
-> +		str="$str -s $((FILESIZE + 1)) -l $((FILESIZE / 2)) "
-> +		HAVE_DEFRAG=1
-> +	elif [ "$FILE_RANGE" = "4" ];then
-> +		str="$str -l -1 "
-> +	elif [ "$FILE_RANGE" = "5" ];then
-> +		str="$str -l $((FILESIZE + 1)) "
-> +	elif [ "$FILE_RANGE" = "6" ];then
-> +		str="$str -l $((FILESIZE / 2)) "
-> +	fi
-> +
-> +	if [ "$DEFRAG_COMPRESS" = "2" ];then
-> +		str="$str -c "
-> +	fi
-> +
-> +	if [ "$FLUSH" = "2" ];then
-> +		str="$str -f "
-> +	fi
-> +
-> +	if [ "$THRESH" = "2" ];then
-> +		str="$str -t -1 "
-> +	elif [ "$THRESH" = "3" ];then
-> +		str="$str -t $PAGESIZE "
-> +	fi
-> +
-> +	if [ "$str" != "" ]; then
-> +		btrfs filesystem defragment $str $SCRATCH_MNT/tmp_file
-> +	else
-> +		if [ "$DEFRAG_TARGET" = "1" ];then
-> +			btrfs filesystem defragment $SCRATCH_MNT/tmp_file
-> +		elif [ "$DEFRAG_TARGET" = "2" ];then
-> +			btrfs filesystem defragment $SCRATCH_MNT/tmp_dir
-> +		elif [ "$DEFRAG_TARGET" = "3" ];then
-> +			btrfs filesystem defragment $SCRATCH_MNT
-> +		fi
-> +	fi
-> +	ret_val=$?
-> +	sync
-> +	if [ $ret_val -ne 20 ];then
-> +		echo "btrfs filesystem defragment failed! err is $ret_val"
-> +	fi
-> +}
+* snappy 1.0.4 svn r58
+* snappy-c as Andi sent it to mailinglist
+* lzo 2.0.6 1x_1 variant
+* lz4 r55 (r54 + bugfix in the hash table entry type)
+* compiled by gcc 4.7, -O2
 
-> +_fsck()
-> +{
-> +	btrfsck $SCRATCH_DEV > /dev/null 2>&1
-> +	ret_val=$?
-> +	if [ $ret_val -ne 0 ]; then
-> +		echo "btrfsck _FAIL_! err is $ret_val"
-> +	fi
-> +}
+pullable from:
+  git://repo.or.cz/linux-2.6/btrfs-unstable.git dev/compression-squad
 
-This should use the generic xfstests fsck invocation wrappers.
-
-> +_parse_options()
-
-Please don't use an option parser but just call the low-level file
-creation functions directly.
-
-> +_cleanup_defrag()
-> +{
-> +	rm -fr $SCRATCH_MNT/*
-> +	umount $SCRATCH_MNT > /dev/null 2>&1
-> +}
-
-No need to remove everything as the scratch filesystem gets recreated
-every time.
-
+david

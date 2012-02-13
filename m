@@ -1,972 +1,249 @@
-From: David Sterba <dsterba@suse.cz>
-Subject: [PATCH 2/4] btrfs: add LZ4 compression method
-Date: Mon, 13 Feb 2012 20:05:35 +0100
-Message-ID: <1329159937-23976-2-git-send-email-dsterba@suse.cz>
-References: <20120213190325.GJ15350@twin.jikos.cz>
- <1329159937-23976-1-git-send-email-dsterba@suse.cz>
-Cc: David Sterba <dsterba@suse.cz>
+From: Andrea Gelmini <andrea.gelmini@gmail.com>
+Subject: Re: [3.2.1] BUG at fs/btrfs/inode.c:1588
+Date: Mon, 13 Feb 2012 22:05:13 +0100
+Message-ID: <CAK-xaQbU5Cg0Qa3MS8QzU-pDfZmkSOZRTtYgBnxS_OKeqfTzdA@mail.gmail.com>
+References: <vqfmv8-9ch.ln1@hurikhan.ath.cx>
+Mime-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Cc: Kai Krakow <hurikhan77+btrfs@gmail.com>
 To: linux-btrfs@vger.kernel.org
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <1329159937-23976-1-git-send-email-dsterba@suse.cz>
+In-Reply-To: <vqfmv8-9ch.ln1@hurikhan.ath.cx>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Adjusted a few defines to compile. The on-stack context allocation is
-disabled and either LZ4_compress64kCtx or LZ4_compressCtx must be used.
+2012/2/1 Kai Krakow <hurikhan77+btrfs@gmail.com>:
+> Just happened while writing a huge avi file to my usb3 backup disk:
 
-Origin: http://lz4.googlecode.com/svn/trunk
-Revision: 55
+Same problem here, I try to give the filesystem history:
+a) three days ago I format a 219GB partition:
+   1) latest Linus' git kernel tree;
+   2) two nested subvolumes;
+   3) options: defaults,noatime,nobarrier,ssd,noacl,compress,subvol=root,autodefrag
+b) I copy ~90GB of data;
+c) I mount same as above, without compress;
+d) I copy other data, to ~140GB;
+e) run balance, after a while I had to poweroff;
+f) two days ago, I boot and it finishes the balance;
+g) I put in cron a snapshot every hour;
+h) today (after a lot of clean resume/suspend in RAM) I run VirtualBox
+and start an Ubuntu 12.04 install in Guest;
+i) near the end of installation VirtualBox get stuck (but everything
+else works) and kernel complain:
 
-Signed-off-by: David Sterba <dsterba@suse.cz>
----
- fs/btrfs/Makefile |    2 +-
- fs/btrfs/lz4.c    |  810 +++++++++++++++++++++++++++++++++++++++++++++++++++++
- fs/btrfs/lz4.h    |  107 +++++++
- 3 files changed, 918 insertions(+), 1 deletions(-)
- create mode 100644 fs/btrfs/lz4.c
- create mode 100644 fs/btrfs/lz4.h
+[16661.706465] ------------[ cut here ]------------
+[16661.706514] kernel BUG at fs/btrfs/inode.c:1588!
+[16661.706556] invalid opcode: 0000 [#1] SMP
+[16661.706597] CPU 0
+[16661.706615] Modules linked in: zram(C) xfs exportfs usbhid hid
+binfmt_misc pci_stub vboxpci(O) vboxnetadp(O) vboxnetflt(O) vboxdrv(O)
+rfcomm bnep joydev snd_hda_codec_realtek snd_hda_intel snd_hda_codec
+snd_hwdep uvcvideo r852 sm_common nand videobuf2_core snd_pcm videodev
+nand_ids btusb v4l2_compat_ioctl32 bluetooth mtd videobuf2_vmalloc
+videobuf2_memops nand_bch bch option usb_wwan nand_ecc usbserial
+psmouse snd_timer iwl3945 snd_page_alloc iwlegacy raid10 raid456
+async_pq async_xor xor async_memcpy async_raid6_recov raid6_pq
+async_tx raid0 linear dm_mirror dm_region_hash dm_log usb_storage
+sdhci_pci sdhci i915 drm_kms_helper mmc_core drm intel_agp intel_gtt
+sky2 agpgart
+[16661.707016]
+[16661.707016] Pid: 710, comm: btrfs-fixup-1 Tainted: G         C O
+3.3.0-rc3g+ #13 SAMSUNG ELECTRONICS CO., LTD. SQ45S70S/SQ45S70S
+[16661.707016] RIP: 0010:[<ffffffff811aedc5>]  [<ffffffff811aedc5>]
+btrfs_writepage_fixup_worker+0x145/0x150
+[16661.707016] RSP: 0000:ffff8800b9bb3df0  EFLAGS: 00010246
+[16661.707016] RAX: 0000000000000000 RBX: ffffea0002185900 RCX: 0000000002488000
+[16661.707016] RDX: ffff8800897ae2a8 RSI: ffffffffffffffff RDI: ffff8800897ae428
+[16661.707016] RBP: 0000000002488000 R08: 0000000000000008 R09: ffff8800b9bb3da8
+[16661.707016] R10: 0000000000001000 R11: 0000000000000000 R12: ffff8800b75f5ff0
+[16661.707016] R13: 0000000000000000 R14: 0000000002488fff R15: ffff8800b75f5e70
+[16661.707016] FS:  0000000000000000(0000) GS:ffff8800bf400000(0000)
+knlGS:0000000000000000
+[16661.707016] CS:  0010 DS: 0000 ES: 0000 CR0: 000000008005003b
+[16661.707016] CR2: 00007fa504fd40e0 CR3: 00000000ba515000 CR4: 00000000000006f0
+[16661.707016] DR0: 0000000000000000 DR1: 0000000000000000 DR2: 0000000000000000
+[16661.707016] DR3: 0000000000000000 DR6: 00000000ffff0ff0 DR7: 0000000000000400
+[16661.707016] Process btrfs-fixup-1 (pid: 710, threadinfo
+ffff8800b9bb2000, task ffff8800373edcd0)
+[16661.707016] Stack:
+[16661.707016]  ffffffff81046a30 ffff880085a0d960 00000000ffffffff
+ffff88008e3602a0
+[16661.707016]  ffff8800bf410b40 ffff8800b9ce3840 ffff880085a0d968
+ffff8800b9ce3858
+[16661.707016]  ffff8800b9ce3890 ffff8800b9bb3e90 ffff8800b9ce3858
+ffffffff811d6972
+[16661.707016] Call Trace:
+[16661.707016]  [<ffffffff81046a30>] ? run_timer_softirq+0x220/0x220
+[16661.707016]  [<ffffffff811d6972>] ? worker_loop+0xa2/0x500
+[16661.707016]  [<ffffffff811d68d0>] ? btrfs_queue_worker+0x340/0x340
+[16661.707016]  [<ffffffff81056966>] ? kthread+0x96/0xa0
+[16661.707016]  [<ffffffff8150b534>] ? kernel_thread_helper+0x4/0x10
+[16661.707016]  [<ffffffff810568d0>] ? kthread_freezable_should_stop+0x60/0x60
+[16661.707016]  [<ffffffff8150b530>] ? gs_change+0xb/0xb
+[16661.707016] Code: 41 5f c3 0f 1f 00 41 b8 50 00 00 00 48 8d 4c 24
+18 4c 89 f2 48 89 ee 4c 89 ff e8 d7 a4 01 00 eb b8 48 89 df e8 3d 01
+ef ff eb 9c <0f> 0b 66 0f 1f 84 00 00 00 00 00 41 55 4c 8d 6e 40 41 54
+55 48
+[16661.707016] RIP  [<ffffffff811aedc5>]
+btrfs_writepage_fixup_worker+0x145/0x150
+[16661.707016]  RSP <ffff8800b9bb3df0>
+[16661.731968] ---[ end trace 9b36ae9483fc03e3 ]---
 
-diff --git a/fs/btrfs/Makefile b/fs/btrfs/Makefile
-index f22fe03..11f8c4e 100644
---- a/fs/btrfs/Makefile
-+++ b/fs/btrfs/Makefile
-@@ -8,7 +8,7 @@ btrfs-y += super.o ctree.o extent-tree.o print-tree.o root-tree.o dir-item.o \
- 	   extent_io.o volumes.o async-thread.o ioctl.o locking.o orphan.o \
- 	   export.o tree-log.o free-space-cache.o zlib.o lzo.o \
- 	   compression.o delayed-ref.o relocation.o delayed-inode.o scrub.o \
--	   reada.o backref.o ulist.o snappy.o
-+	   reada.o backref.o ulist.o snappy.o lz4.o
- 
- btrfs-$(CONFIG_BTRFS_FS_POSIX_ACL) += acl.o
- btrfs-$(CONFIG_BTRFS_FS_CHECK_INTEGRITY) += check-integrity.o
-diff --git a/fs/btrfs/lz4.c b/fs/btrfs/lz4.c
-new file mode 100644
-index 0000000..e41d0cf
---- /dev/null
-+++ b/fs/btrfs/lz4.c
-@@ -0,0 +1,810 @@
-+/*
-+   LZ4 - Fast LZ compression algorithm
-+   Copyright (C) 2011-2012, Yann Collet.
-+   BSD 2-Clause License (http://www.opensource.org/licenses/bsd-license.php)
-+
-+   Redistribution and use in source and binary forms, with or without
-+   modification, are permitted provided that the following conditions are
-+   met:
-+
-+       * Redistributions of source code must retain the above copyright
-+   notice, this list of conditions and the following disclaimer.
-+       * Redistributions in binary form must reproduce the above
-+   copyright notice, this list of conditions and the following disclaimer
-+   in the documentation and/or other materials provided with the
-+   distribution.
-+
-+   THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
-+   "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
-+   LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
-+   A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
-+   OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
-+   SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
-+   LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
-+   DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
-+   THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
-+   (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
-+   OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-+*/
-+/*
-+ * With authors permission dual licensed as BSD/GPL for linux kernel
-+ *
-+ * Origin: http://lz4.googlecode.com/svn/trunk
-+ * Revision: 55
-+ */
-+
-+//**************************************
-+// Tuning parameters
-+//**************************************
-+// COMPRESSIONLEVEL :
-+// Increasing this value improves compression ratio
-+// Lowering this value reduces memory usage
-+// Reduced memory usage typically improves speed, due to cache effect (ex : L1 32KB for Intel, L1 64KB for AMD)
-+// Memory usage formula : N->2^(N+2) Bytes (examples : 12 -> 16KB ; 17 -> 512KB)
-+#define COMPRESSIONLEVEL 12
-+
-+// NONCOMPRESSIBLE_CONFIRMATION :
-+// Decreasing this value will make the algorithm skip faster data segments considered "incompressible"
-+// This may decrease compression ratio dramatically, but will be faster on incompressible data
-+// Increasing this value will make the algorithm search more before declaring a segment "incompressible"
-+// This could improve compression a bit, but will be slower on incompressible data
-+// The default value (6) is recommended
-+#define NONCOMPRESSIBLE_CONFIRMATION 6
-+
-+// BIG_ENDIAN_NATIVE_BUT_INCOMPATIBLE :
-+// This will provide a boost to performance for big endian cpu, but the resulting compressed stream will be incompatible with little-endian CPU.
-+// You can set this option to 1 in situations where data will stay within closed environment
-+// This option is useless on Little_Endian CPU (such as x86)
-+//#define BIG_ENDIAN_NATIVE_BUT_INCOMPATIBLE 1
-+
-+
-+
-+//**************************************
-+// CPU Feature Detection
-+//**************************************
-+// 32 or 64 bits ?
-+#if (__x86_64__ || __x86_64 || __amd64__ || __amd64 || __ppc64__ || _WIN64 || __LP64__ || _LP64)   // Detects 64 bits mode
-+#define ARCH64 1
-+#else
-+#define ARCH64 0
-+#endif
-+
-+// Little Endian or Big Endian ? 
-+#if (__BIG_ENDIAN__ || __BIG_ENDIAN || _BIG_ENDIAN || _ARCH_PPC || __PPC__ || __PPC || PPC || __powerpc__ || __powerpc || powerpc || ((defined(__BYTE_ORDER__)&&(__BYTE_ORDER__ == __ORDER_BIG_ENDIAN__))) )
-+#define CPU_BIG_ENDIAN 1
-+#else
-+// Little Endian assumed. PDP Endian and other very rare endian format are unsupported.
-+#endif
-+
-+// Unaligned memory access ?
-+// This feature is automatically enabled for "common" CPU, such as x86.
-+// For others CPU, you may want to force this option manually to improve performance if your target CPU supports unaligned memory access
-+#if (__ARM_FEATURE_UNALIGNED)
-+#define CPU_UNALIGNED_ACCESS 1
-+#endif
-+
-+// Uncomment this parameter if your target system does not support hardware bit count
-+//#define _FORCE_SW_BITCOUNT
-+
-+
-+
-+//**************************************
-+// Compiler Options
-+//**************************************
-+#if __STDC_VERSION__ >= 199901L    // C99
-+  /* "restrict" is a known keyword */
-+#else
-+#define restrict  // Disable restrict
-+#endif
-+
-+#ifdef _MSC_VER
-+#define inline __forceinline    // Visual is not C99, but supports inline
-+#endif
-+
-+#if (defined(__GNUC__) && (!(CPU_UNALIGNED_ACCESS)))
-+#define _PACKED __attribute__ ((packed))
-+#else
-+#define _PACKED
-+#endif
-+
-+#ifdef _MSC_VER  // Visual Studio
-+#define bswap16(i) _byteswap_ushort(i)
-+#else
-+#define bswap16(i) (((i)>>8) | ((i)<<8))
-+#endif
-+
-+
-+//**************************************
-+// Includes
-+//**************************************
-+#ifdef __KERNEL__
-+#include <linux/string.h>
-+#include <linux/bug.h>
-+#define malloc(size)	({ BUG(); (void*)0; })
-+#define free(ptr)	({ BUG(); (void*)0; })
-+#else
-+#include <stdlib.h>   // for malloc
-+#include <string.h>   // for memset
-+#include "lz4.h"
-+#endif
-+
-+
-+//**************************************
-+// Basic Types
-+//**************************************
-+#if defined(_MSC_VER)    // Visual Studio does not support 'stdint' natively
-+#define BYTE	unsigned __int8
-+#define U16		unsigned __int16
-+#define U32		unsigned __int32
-+#define S32		__int32
-+#define U64		unsigned __int64
-+#else
-+#ifdef __KERNEL__
-+#include <asm/byteorder.h>
-+#include <linux/types.h>
-+#define BYTE	u8
-+#define U16	u16
-+#define U32	u32
-+#define S32	s32
-+#define U64	u64
-+
-+#else
-+#include <stdint.h>
-+#define BYTE	uint8_t
-+#define U16		uint16_t
-+#define U32		uint32_t
-+#define S32		int32_t
-+#define U64		uint64_t
-+#endif // __KERNEL__
-+#endif
-+
-+
-+//**************************************
-+// Constants
-+//**************************************
-+#define MINMATCH 4
-+#define SKIPSTRENGTH (NONCOMPRESSIBLE_CONFIRMATION>2?NONCOMPRESSIBLE_CONFIRMATION:2)
-+#define STACKLIMIT 13
-+#define HEAPMODE (HASH_LOG>STACKLIMIT)  // Defines if memory is allocated into the stack (local variable), or into the heap (malloc()).
-+#define COPYLENGTH 8
-+#define LASTLITERALS 5
-+#define MFLIMIT (COPYLENGTH+MINMATCH)
-+#define MINLENGTH (MFLIMIT+1)
-+
-+#define MAXD_LOG 16
-+#define MAX_DISTANCE ((1 << MAXD_LOG) - 1)
-+
-+#define HASH_LOG COMPRESSIONLEVEL
-+#define HASHTABLESIZE (1 << HASH_LOG)
-+#define HASH_MASK (HASHTABLESIZE - 1)
-+
-+#define ML_BITS 4
-+#define ML_MASK ((1U<<ML_BITS)-1)
-+#define RUN_BITS (8-ML_BITS)
-+#define RUN_MASK ((1U<<RUN_BITS)-1)
-+
-+/*
-+ * Disable on-stack context allocation for linux kernel
-+ */
-+#undef STACKLIMIT
-+#define STACKLIMIT 0
-+
-+
-+//**************************************
-+// Architecture-specific macros
-+//**************************************
-+#if ARCH64	// 64-bit
-+#define STEPSIZE 8
-+#define UARCH U64
-+#define AARCH A64
-+#define LZ4_COPYSTEP(s,d)		A64(d) = A64(s); d+=8; s+=8;
-+#define LZ4_COPYPACKET(s,d)		LZ4_COPYSTEP(s,d)
-+#define LZ4_SECURECOPY(s,d,e)	if (d<e) LZ4_WILDCOPY(s,d,e)
-+#define HTYPE U32
-+#define INITBASE(base)			const BYTE* const base = ip
-+#else		// 32-bit
-+#define STEPSIZE 4
-+#define UARCH U32
-+#define AARCH A32
-+#define LZ4_COPYSTEP(s,d)		A32(d) = A32(s); d+=4; s+=4;
-+#define LZ4_COPYPACKET(s,d)		LZ4_COPYSTEP(s,d); LZ4_COPYSTEP(s,d);
-+#define LZ4_SECURECOPY			LZ4_WILDCOPY
-+#define HTYPE const BYTE*
-+#define INITBASE(base)			const int base = 0
-+#endif
-+
-+#if ((CPU_BIG_ENDIAN) && !(BIG_ENDIAN_NATIVE_BUT_INCOMPATIBLE))
-+#define LZ4_READ_LITTLEENDIAN_16(d,s,p) { U16 v = A16(p); v = bswap16(v); d = (s) - v; }
-+#define LZ4_WRITE_LITTLEENDIAN_16(p,i) { U16 v = (U16)(i); v = bswap16(v); A16(p) = v; p+=2; }
-+#else		// Little Endian
-+#define LZ4_READ_LITTLEENDIAN_16(d,s,p) { d = (s) - A16(p); }
-+#define LZ4_WRITE_LITTLEENDIAN_16(p,v) { A16(p) = v; p+=2; }
-+#endif
-+
-+
-+//**************************************
-+// Local structures
-+//**************************************
-+struct refTables
-+{
-+	HTYPE hashTable[HASHTABLESIZE];
-+};
-+
-+typedef struct _U64_S
-+{
-+	U64 v;
-+} _PACKED U64_S;
-+
-+typedef struct _U32_S
-+{
-+	U32 v;
-+} _PACKED U32_S;
-+
-+typedef struct _U16_S
-+{
-+	U16 v;
-+} _PACKED U16_S;
-+
-+#define A64(x) (((U64_S *)(x))->v)
-+#define A32(x) (((U32_S *)(x))->v)
-+#define A16(x) (((U16_S *)(x))->v)
-+
-+
-+//**************************************
-+// Macros
-+//**************************************
-+#define LZ4_HASH_FUNCTION(i)	(((i) * 2654435761U) >> ((MINMATCH*8)-HASH_LOG))
-+#define LZ4_HASH_VALUE(p)		LZ4_HASH_FUNCTION(A32(p))
-+#define LZ4_WILDCOPY(s,d,e)		do { LZ4_COPYPACKET(s,d) } while (d<e);
-+#define LZ4_BLINDCOPY(s,d,l)	{ BYTE* e=(d)+l; LZ4_WILDCOPY(s,d,e); d=e; }
-+
-+
-+//****************************
-+// Private functions
-+//****************************
-+#if ARCH64
-+
-+inline static int LZ4_NbCommonBytes (register U64 val)
-+{
-+#if CPU_BIG_ENDIAN
-+    #if defined(_MSC_VER) && !defined(_FORCE_SW_BITCOUNT)
-+    unsigned long r = 0;
-+    _BitScanReverse64( &r, val );
-+    return (int)(r>>3);
-+    #elif defined(__GNUC__) && !defined(_FORCE_SW_BITCOUNT)
-+    return (__builtin_clzll(val) >> 3);
-+    #else
-+	int r;
-+	if (!(val>>32)) { r=4; } else { r=0; val>>=32; }
-+	if (!(val>>16)) { r+=2; val>>=8; } else { val>>=24; }
-+	r += (!val);
-+	return r;
-+    #endif
-+#else
-+    #if defined(_MSC_VER) && !defined(_FORCE_SW_BITCOUNT)
-+    unsigned long r = 0;
-+    _BitScanForward64( &r, val );
-+    return (int)(r>>3);
-+    #elif defined(__GNUC__) && !defined(_FORCE_SW_BITCOUNT)
-+    return (__builtin_ctzll(val) >> 3); 
-+    #else
-+	static const int DeBruijnBytePos[64] = { 0, 0, 0, 0, 0, 1, 1, 2, 0, 3, 1, 3, 1, 4, 2, 7, 0, 2, 3, 6, 1, 5, 3, 5, 1, 3, 4, 4, 2, 5, 6, 7, 7, 0, 1, 2, 3, 3, 4, 6, 2, 6, 5, 5, 3, 4, 5, 6, 7, 1, 2, 4, 6, 4, 4, 5, 7, 2, 6, 5, 7, 6, 7, 7 };
-+	return DeBruijnBytePos[((U64)((val & -val) * 0x0218A392CDABBD3F)) >> 58];
-+    #endif
-+#endif
-+}
-+
-+#else
-+
-+inline static int LZ4_NbCommonBytes (register U32 val)
-+{
-+#if CPU_BIG_ENDIAN
-+    #if defined(_MSC_VER) && !defined(_FORCE_SW_BITCOUNT)
-+    unsigned long r = 0;
-+    _BitScanReverse( &r, val );
-+    return (int)(r>>3);
-+    #elif defined(__GNUC__) && !defined(_FORCE_SW_BITCOUNT)
-+    return (__builtin_clz(val) >> 3);
-+    #else
-+	int r;
-+	if (!(val>>16)) { r=2; val>>=8; } else { r=0; val>>=24; }
-+	r += (!val);
-+	return r;
-+    #endif
-+#else
-+    #if defined(_MSC_VER) && !defined(_FORCE_SW_BITCOUNT)
-+    unsigned long r = 0;
-+    _BitScanForward( &r, val );
-+    return (int)(r>>3);
-+    #elif defined(__GNUC__) && !defined(_FORCE_SW_BITCOUNT)
-+    return (__builtin_ctz(val) >> 3); 
-+    #else
-+	static const int DeBruijnBytePos[32] = { 0, 0, 3, 0, 3, 1, 3, 0, 3, 2, 2, 1, 3, 2, 0, 1, 3, 3, 1, 2, 2, 2, 2, 0, 3, 1, 2, 0, 1, 0, 1, 1 };
-+	return DeBruijnBytePos[((U32)((val & -val) * 0x077CB531U)) >> 27];
-+    #endif
-+#endif
-+}
-+
-+#endif
-+
-+
-+//******************************
-+// Public Compression functions
-+//******************************
-+
-+int LZ4_compressCtx(void** ctx,
-+				 const char* source,
-+				 char* dest,
-+				 int isize)
-+{
-+#if HEAPMODE
-+	struct refTables *srt = (struct refTables *) (*ctx);
-+	HTYPE* HashTable;
-+#else
-+	HTYPE HashTable[HASHTABLESIZE] = {0};
-+#endif
-+
-+	const BYTE* ip = (BYTE*) source;
-+	INITBASE(base);
-+	const BYTE* anchor = ip;
-+	const BYTE* const iend = ip + isize;
-+	const BYTE* const mflimit = iend - MFLIMIT;
-+#define matchlimit (iend - LASTLITERALS)
-+
-+	BYTE* op = (BYTE*) dest;
-+
-+	int len, length;
-+	const int skipStrength = SKIPSTRENGTH;
-+	U32 forwardH;
-+
-+
-+	// Init
-+	if (isize<MINLENGTH) goto _last_literals;
-+#if HEAPMODE
-+	if (*ctx == NULL)
-+	{
-+		srt = (struct refTables *) malloc ( sizeof(struct refTables) );
-+		*ctx = (void*) srt;
-+	}
-+	HashTable = (HTYPE*)(srt->hashTable);
-+	memset((void*)HashTable, 0, sizeof(srt->hashTable));
-+#else
-+	(void) ctx;
-+#endif
-+
-+
-+	// First Byte
-+	HashTable[LZ4_HASH_VALUE(ip)] = ip - base;
-+	ip++; forwardH = LZ4_HASH_VALUE(ip);
-+
-+	// Main Loop
-+    for ( ; ; )
-+	{
-+		int findMatchAttempts = (1U << skipStrength) + 3;
-+		const BYTE* forwardIp = ip;
-+		const BYTE* ref;
-+		BYTE* token;
-+
-+		// Find a match
-+		do {
-+			U32 h = forwardH;
-+			int step = findMatchAttempts++ >> skipStrength;
-+			ip = forwardIp;
-+			forwardIp = ip + step;
-+
-+			if (forwardIp > mflimit) { goto _last_literals; }
-+
-+			forwardH = LZ4_HASH_VALUE(forwardIp);
-+			ref = base + HashTable[h];
-+			HashTable[h] = ip - base;
-+
-+		} while ((ref < ip - MAX_DISTANCE) || (A32(ref) != A32(ip)));
-+
-+		// Catch up
-+		while ((ip>anchor) && (ref>(BYTE*)source) && (ip[-1]==ref[-1])) { ip--; ref--; }
-+
-+		// Encode Literal length
-+		length = ip - anchor;
-+		token = op++;
-+		if (length>=(int)RUN_MASK) { *token=(RUN_MASK<<ML_BITS); len = length-RUN_MASK; for(; len > 254 ; len-=255) *op++ = 255; *op++ = (BYTE)len; }
-+		else *token = (length<<ML_BITS);
-+
-+		// Copy Literals
-+		LZ4_BLINDCOPY(anchor, op, length);
-+
-+_next_match:
-+		// Encode Offset
-+		LZ4_WRITE_LITTLEENDIAN_16(op,ip-ref);
-+
-+		// Start Counting
-+		ip+=MINMATCH; ref+=MINMATCH;   // MinMatch verified
-+		anchor = ip;
-+		while (ip<matchlimit-(STEPSIZE-1))
-+		{
-+			UARCH diff = AARCH(ref) ^ AARCH(ip);
-+			if (!diff) { ip+=STEPSIZE; ref+=STEPSIZE; continue; }
-+			ip += LZ4_NbCommonBytes(diff);
-+			goto _endCount;
-+		}
-+		if (ARCH64) if ((ip<(matchlimit-3)) && (A32(ref) == A32(ip))) { ip+=4; ref+=4; }
-+		if ((ip<(matchlimit-1)) && (A16(ref) == A16(ip))) { ip+=2; ref+=2; }
-+		if ((ip<matchlimit) && (*ref == *ip)) ip++;
-+_endCount:
-+
-+		// Encode MatchLength
-+		len = (ip - anchor);
-+		if (len>=(int)ML_MASK) { *token+=ML_MASK; len-=ML_MASK; for(; len > 509 ; len-=510) { *op++ = 255; *op++ = 255; } if (len > 254) { len-=255; *op++ = 255; } *op++ = (BYTE)len; }
-+		else *token += len;
-+
-+		// Test end of chunk
-+		if (ip > mflimit) { anchor = ip;  break; }
-+
-+		// Fill table
-+		HashTable[LZ4_HASH_VALUE(ip-2)] = ip - 2 - base;
-+
-+		// Test next position
-+		ref = base + HashTable[LZ4_HASH_VALUE(ip)];
-+		HashTable[LZ4_HASH_VALUE(ip)] = ip - base;
-+		if ((ref > ip - (MAX_DISTANCE + 1)) && (A32(ref) == A32(ip))) { token = op++; *token=0; goto _next_match; }
-+
-+		// Prepare next loop
-+		anchor = ip++;
-+		forwardH = LZ4_HASH_VALUE(ip);
-+	}
-+
-+_last_literals:
-+	// Encode Last Literals
-+	{
-+		int lastRun = iend - anchor;
-+		if (lastRun>=(int)RUN_MASK) { *op++=(RUN_MASK<<ML_BITS); lastRun-=RUN_MASK; for(; lastRun > 254 ; lastRun-=255) *op++ = 255; *op++ = (BYTE) lastRun; }
-+		else *op++ = (lastRun<<ML_BITS);
-+		memcpy(op, anchor, iend - anchor);
-+		op += iend-anchor;
-+	}
-+
-+	// End
-+	return (int) (((char*)op)-dest);
-+}
-+
-+
-+
-+// Note : this function is valid only if isize < LZ4_64KLIMIT
-+#define LZ4_64KLIMIT ((1<<16) + (MFLIMIT-1))
-+#define HASHLOG64K (HASH_LOG+1)
-+#define HASH64KTABLESIZE (1U<<HASHLOG64K)
-+#define LZ4_HASH64K_FUNCTION(i)	(((i) * 2654435761U) >> ((MINMATCH*8)-HASHLOG64K))
-+#define LZ4_HASH64K_VALUE(p)	LZ4_HASH64K_FUNCTION(A32(p))
-+int LZ4_compress64kCtx(void** ctx,
-+				 const char* source,
-+				 char* dest,
-+				 int isize)
-+{
-+#if HEAPMODE
-+	struct refTables *srt = (struct refTables *) (*ctx);
-+	U16* HashTable;
-+#else
-+	U16 HashTable[HASH64KTABLESIZE] = {0};
-+#endif
-+
-+	const BYTE* ip = (BYTE*) source;
-+	const BYTE* anchor = ip;
-+	const BYTE* const base = ip;
-+	const BYTE* const iend = ip + isize;
-+	const BYTE* const mflimit = iend - MFLIMIT;
-+#define matchlimit (iend - LASTLITERALS)
-+
-+	BYTE* op = (BYTE*) dest;
-+
-+	int len, length;
-+	const int skipStrength = SKIPSTRENGTH;
-+	U32 forwardH;
-+
-+
-+	// Init
-+	if (isize<MINLENGTH) goto _last_literals;
-+#if HEAPMODE
-+	if (*ctx == NULL)
-+	{
-+		srt = (struct refTables *) malloc ( sizeof(struct refTables) );
-+		*ctx = (void*) srt;
-+	}
-+	HashTable = (U16*)(srt->hashTable);
-+	memset((void*)HashTable, 0, sizeof(srt->hashTable));
-+#else
-+	(void) ctx;
-+#endif
-+
-+
-+	// First Byte
-+	ip++; forwardH = LZ4_HASH64K_VALUE(ip);
-+
-+	// Main Loop
-+    for ( ; ; )
-+	{
-+		int findMatchAttempts = (1U << skipStrength) + 3;
-+		const BYTE* forwardIp = ip;
-+		const BYTE* ref;
-+		BYTE* token;
-+
-+		// Find a match
-+		do {
-+			U32 h = forwardH;
-+			int step = findMatchAttempts++ >> skipStrength;
-+			ip = forwardIp;
-+			forwardIp = ip + step;
-+
-+			if (forwardIp > mflimit) { goto _last_literals; }
-+
-+			forwardH = LZ4_HASH64K_VALUE(forwardIp);
-+			ref = base + HashTable[h];
-+			HashTable[h] = ip - base;
-+
-+		} while (A32(ref) != A32(ip));
-+
-+		// Catch up
-+		while ((ip>anchor) && (ref>(BYTE*)source) && (ip[-1]==ref[-1])) { ip--; ref--; }
-+
-+		// Encode Literal length
-+		length = ip - anchor;
-+		token = op++;
-+		if (length>=(int)RUN_MASK) { *token=(RUN_MASK<<ML_BITS); len = length-RUN_MASK; for(; len > 254 ; len-=255) *op++ = 255; *op++ = (BYTE)len; }
-+		else *token = (length<<ML_BITS);
-+
-+		// Copy Literals
-+		LZ4_BLINDCOPY(anchor, op, length);
-+
-+_next_match:
-+		// Encode Offset
-+		LZ4_WRITE_LITTLEENDIAN_16(op,ip-ref);
-+
-+		// Start Counting
-+		ip+=MINMATCH; ref+=MINMATCH;   // MinMatch verified
-+		anchor = ip;
-+		while (ip<matchlimit-(STEPSIZE-1))
-+		{
-+			UARCH diff = AARCH(ref) ^ AARCH(ip);
-+			if (!diff) { ip+=STEPSIZE; ref+=STEPSIZE; continue; }
-+			ip += LZ4_NbCommonBytes(diff);
-+			goto _endCount;
-+		}
-+		if (ARCH64) if ((ip<(matchlimit-3)) && (A32(ref) == A32(ip))) { ip+=4; ref+=4; }
-+		if ((ip<(matchlimit-1)) && (A16(ref) == A16(ip))) { ip+=2; ref+=2; }
-+		if ((ip<matchlimit) && (*ref == *ip)) ip++;
-+_endCount:
-+
-+		// Encode MatchLength
-+		len = (ip - anchor);
-+		if (len>=(int)ML_MASK) { *token+=ML_MASK; len-=ML_MASK; for(; len > 509 ; len-=510) { *op++ = 255; *op++ = 255; } if (len > 254) { len-=255; *op++ = 255; } *op++ = (BYTE)len; }
-+		else *token += len;
-+
-+		// Test end of chunk
-+		if (ip > mflimit) { anchor = ip;  break; }
-+
-+		// Fill table
-+		HashTable[LZ4_HASH64K_VALUE(ip-2)] = ip - 2 - base;
-+
-+		// Test next position
-+		ref = base + HashTable[LZ4_HASH64K_VALUE(ip)];
-+		HashTable[LZ4_HASH64K_VALUE(ip)] = ip - base;
-+		if (A32(ref) == A32(ip)) { token = op++; *token=0; goto _next_match; }
-+
-+		// Prepare next loop
-+		anchor = ip++;
-+		forwardH = LZ4_HASH64K_VALUE(ip);
-+	}
-+
-+_last_literals:
-+	// Encode Last Literals
-+	{
-+		int lastRun = iend - anchor;
-+		if (lastRun>=(int)RUN_MASK) { *op++=(RUN_MASK<<ML_BITS); lastRun-=RUN_MASK; for(; lastRun > 254 ; lastRun-=255) *op++ = 255; *op++ = (BYTE) lastRun; }
-+		else *op++ = (lastRun<<ML_BITS);
-+		memcpy(op, anchor, iend - anchor);
-+		op += iend-anchor;
-+	}
-+
-+	// End
-+	return (int) (((char*)op)-dest);
-+}
-+
-+
-+
-+int LZ4_compress(const char* source, 
-+				 char* dest,
-+				 int isize)
-+{
-+#if HEAPMODE
-+	void* ctx = malloc(sizeof(struct refTables));
-+	int result;
-+	if (isize < LZ4_64KLIMIT)
-+		result = LZ4_compress64kCtx(&ctx, source, dest, isize);
-+	else result = LZ4_compressCtx(&ctx, source, dest, isize);
-+	free(ctx);
-+	return result;
-+#else
-+	if (isize < (int)LZ4_64KLIMIT) return LZ4_compress64kCtx(NULL, source, dest, isize);
-+	return LZ4_compressCtx(NULL, source, dest, isize);
-+#endif
-+}
-+
-+
-+
-+
-+//****************************
-+// Decompression functions
-+//****************************
-+
-+// Note : The decoding functions LZ4_uncompress() and LZ4_uncompress_unknownOutputSize()
-+//		are safe against "buffer overflow" attack type.
-+//		They will never write nor read outside of the provided input and output buffers.
-+//		A corrupted input will produce an error result, a negative int, indicating the position of the error within input stream.
-+
-+int LZ4_uncompress(const char* source, 
-+				 char* dest,
-+				 int osize)
-+{
-+	// Local Variables
-+	const BYTE* restrict ip = (const BYTE*) source;
-+	const BYTE* restrict ref;
-+
-+	BYTE* restrict op = (BYTE*) dest;
-+	BYTE* const oend = op + osize;
-+	BYTE* cpy;
-+
-+	BYTE token;
-+
-+	int	len, length;
-+	size_t dec[] ={0, 3, 2, 3, 0, 0, 0, 0};
-+
-+
-+	// Main Loop
-+	while (1)
-+	{
-+		// get runlength
-+		token = *ip++;
-+		if ((length=(token>>ML_BITS)) == RUN_MASK)  { for (;(len=*ip++)==255;length+=255){} length += len; }
-+
-+		// copy literals
-+		cpy = op+length;
-+		if (cpy>oend-COPYLENGTH)
-+		{
-+			if (cpy > oend) goto _output_error;
-+			memcpy(op, ip, length);
-+			ip += length;
-+			break;    // Necessarily EOF
-+		}
-+		LZ4_WILDCOPY(ip, op, cpy); ip -= (op-cpy); op = cpy;
-+
-+		// get offset
-+		LZ4_READ_LITTLEENDIAN_16(ref,cpy,ip); ip+=2;
-+		if (ref < (BYTE* const)dest) goto _output_error;
-+
-+		// get matchlength
-+		if ((length=(token&ML_MASK)) == ML_MASK) { for (;*ip==255;length+=255) {ip++;} length += *ip++; }
-+
-+		// copy repeated sequence
-+		if (op-ref<STEPSIZE)
-+		{
-+#if ARCH64
-+			size_t dec2table[]={0, 0, 0, -1, 0, 1, 2, 3};
-+			size_t dec2 = dec2table[op-ref];
-+#else
-+			const int dec2 = 0;
-+#endif
-+			*op++ = *ref++;
-+			*op++ = *ref++;
-+			*op++ = *ref++;
-+			*op++ = *ref++;
-+			ref -= dec[op-ref];
-+			A32(op)=A32(ref); op += STEPSIZE-4;
-+			ref -= dec2;
-+		} else { LZ4_COPYSTEP(ref,op); }
-+		cpy = op + length - (STEPSIZE-4);
-+		if (cpy>oend-COPYLENGTH)
-+		{
-+			if (cpy > oend) goto _output_error;
-+			LZ4_SECURECOPY(ref, op, (oend-COPYLENGTH));
-+			while(op<cpy) *op++=*ref++;
-+			op=cpy;
-+			if (op == oend) break;    // Check EOF (should never happen, since last 5 bytes are supposed to be literals)
-+			continue;
-+		}
-+		LZ4_SECURECOPY(ref, op, cpy);
-+		op=cpy;		// correction
-+	}
-+
-+	// end of decoding
-+	return (int) (((char*)ip)-source);
-+
-+	// write overflow error detected
-+_output_error:
-+	return (int) (-(((char*)ip)-source));
-+}
-+
-+
-+int LZ4_uncompress_unknownOutputSize(
-+				const char* source, 
-+				char* dest,
-+				int isize,
-+				int maxOutputSize)
-+{
-+	// Local Variables
-+	const BYTE* restrict ip = (const BYTE*) source;
-+	const BYTE* const iend = ip + isize;
-+	const BYTE* restrict ref;
-+
-+	BYTE* restrict op = (BYTE*) dest;
-+	BYTE* const oend = op + maxOutputSize;
-+	BYTE* cpy;
-+
-+	BYTE token;
-+
-+	int	len, length;
-+	size_t dec[] ={0, 3, 2, 3, 0, 0, 0, 0};
-+
-+
-+	// Main Loop
-+	while (ip<iend)
-+	{
-+		// get runlength
-+		token = *ip++;
-+		if ((length=(token>>ML_BITS)) == RUN_MASK)  { for (;(len=*ip++)==255;length+=255){} length += len; }
-+
-+		// copy literals
-+		cpy = op+length;
-+		if (cpy>oend-COPYLENGTH)
-+		{
-+			if (cpy > oend) goto _output_error;
-+			memcpy(op, ip, length);
-+			op += length;
-+			break;    // Necessarily EOF
-+		}
-+		LZ4_WILDCOPY(ip, op, cpy); ip -= (op-cpy); op = cpy;
-+		if (ip>=iend) break;    // check EOF
-+
-+		// get offset
-+		LZ4_READ_LITTLEENDIAN_16(ref,cpy,ip); ip+=2;
-+		if (ref < (BYTE* const)dest) goto _output_error;
-+
-+		// get matchlength
-+		if ((length=(token&ML_MASK)) == ML_MASK) { for (;(len=*ip++)==255;length+=255){} length += len; }
-+
-+		// copy repeated sequence
-+		if (op-ref<STEPSIZE)
-+		{
-+#if ARCH64
-+			size_t dec2table[]={0, 0, 0, -1, 0, 1, 2, 3};
-+			size_t dec2 = dec2table[op-ref];
-+#else
-+			const int dec2 = 0;
-+#endif
-+			*op++ = *ref++;
-+			*op++ = *ref++;
-+			*op++ = *ref++;
-+			*op++ = *ref++;
-+			ref -= dec[op-ref];
-+			A32(op)=A32(ref); op += STEPSIZE-4;
-+			ref -= dec2;
-+		} else { LZ4_COPYSTEP(ref,op); }
-+		cpy = op + length - (STEPSIZE-4);
-+		if (cpy>oend-COPYLENGTH)
-+		{
-+			if (cpy > oend) goto _output_error;
-+			LZ4_SECURECOPY(ref, op, (oend-COPYLENGTH));
-+			while(op<cpy) *op++=*ref++;
-+			op=cpy;
-+			if (op == oend) break;    // Check EOF (should never happen, since last 5 bytes are supposed to be literals)
-+			continue;
-+		}
-+		LZ4_SECURECOPY(ref, op, cpy);
-+		op=cpy;		// correction
-+	}
-+
-+	// end of decoding
-+	return (int) (((char*)op)-dest);
-+
-+	// write overflow error detected
-+_output_error:
-+	return (int) (-(((char*)ip)-source));
-+}
-+
-diff --git a/fs/btrfs/lz4.h b/fs/btrfs/lz4.h
-new file mode 100644
-index 0000000..bbd5e12
---- /dev/null
-+++ b/fs/btrfs/lz4.h
-@@ -0,0 +1,107 @@
-+/*
-+   LZ4 - Fast LZ compression algorithm
-+   Header File
-+   Copyright (C) 2011, Yann Collet.
-+   BSD License
-+
-+   Redistribution and use in source and binary forms, with or without
-+   modification, are permitted provided that the following conditions are
-+   met:
-+
-+       * Redistributions of source code must retain the above copyright
-+   notice, this list of conditions and the following disclaimer.
-+       * Redistributions in binary form must reproduce the above
-+   copyright notice, this list of conditions and the following disclaimer
-+   in the documentation and/or other materials provided with the
-+   distribution.
-+
-+   THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
-+   "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
-+   LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
-+   A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
-+   OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
-+   SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
-+   LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
-+   DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
-+   THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
-+   (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
-+   OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-+*/
-+
-+/*
-+ * With authors permission dual licensed as BSD/GPL for linux kernel
-+ *
-+ * Origin: http://lz4.googlecode.com/svn/trunk
-+ * Revision: 54
-+ */
-+#pragma once
-+
-+#if defined (__cplusplus)
-+extern "C" {
-+#endif
-+
-+
-+//****************************
-+// Simple Functions
-+//****************************
-+
-+int LZ4_compress   (const char* source, char* dest, int isize);
-+int LZ4_uncompress (const char* source, char* dest, int osize);
-+
-+/*
-+LZ4_compress() :
-+	return : the number of bytes in compressed buffer dest
-+	note : destination buffer must be already allocated.
-+		To avoid any problem, size it to handle worst cases situations (input data not compressible)
-+		Worst case size is : "inputsize + 0.4%", with "0.4%" being at least 8 bytes.
-+
-+LZ4_uncompress() :
-+	osize  : is the output size, therefore the original size
-+	return : the number of bytes read in the source buffer
-+			 If the source stream is malformed, the function will stop decoding and return a negative result, indicating the byte position of the faulty instruction
-+			 This version never writes beyond dest + osize, and is therefore protected against malicious data packets
-+	note 2 : destination buffer must be already allocated
-+*/
-+
-+
-+//****************************
-+// Advanced Functions
-+//****************************
-+
-+int LZ4_uncompress_unknownOutputSize (const char* source, char* dest, int isize, int maxOutputSize);
-+
-+/*
-+LZ4_uncompress_unknownOutputSize() :
-+	isize  : is the input size, therefore the compressed size
-+	maxOutputSize : is the size of the destination buffer (which must be already allocated)
-+	return : the number of bytes decoded in the destination buffer (necessarily <= maxOutputSize)
-+			 If the source stream is malformed, the function will stop decoding and return a negative result, indicating the byte position of the faulty instruction
-+			 This version never writes beyond dest + maxOutputSize, and is therefore protected against malicious data packets
-+	note   : This version is a bit slower than LZ4_uncompress
-+*/
-+
-+
-+int LZ4_compressCtx(void** ctx, const char* source,  char* dest, int isize);
-+
-+/*
-+LZ4_compressCtx() :
-+	This function explicitly handles the CTX memory structure.
-+	It avoids allocating/deallocating memory between each call, improving performance when malloc is time-consuming.
-+	Note : when memory is allocated into the stack (default mode), there is no "malloc" penalty.
-+	Therefore, this function is mostly useful when memory is allocated into the heap (it requires increasing HASH_LOG value beyond STACK_LIMIT)
-+
-+	On first call : provide a *ctx=NULL; It will be automatically allocated.
-+	On next calls : reuse the same ctx pointer.
-+	Use different pointers for different threads when doing multi-threading.
-+
-+	note : performance difference is small, mostly noticeable in HeapMode when repetitively calling the compression function over many small segments.
-+*/
-+
-+int LZ4_compress64kCtx(void** ctx,
-+				 const char* source,
-+				 char* dest,
-+				 int isize);
-+
-+#if defined (__cplusplus)
-+}
-+#endif
--- 
-1.7.8
+l) I can't remove ~/VirtualBox VMs/Ubuntu (command "rm -rf" doesn't
+return), but I can cleanly close others apps;
+m) booting from recovery partition I can mount BTRFS and rm the directory above;
+n) run btrfsck
 
+fs tree 454 refs 12
+	unresolved ref root 454 dir 844801 index 5 namelen 9 name snap-0212 error 600
+	unresolved ref root 455 dir 844801 index 5 namelen 9 name snap-0212 error 600
+	unresolved ref root 458 dir 844801 index 5 namelen 9 name snap-0212 error 600
+	unresolved ref root 459 dir 844801 index 5 namelen 9 name snap-0212 error 600
+	unresolved ref root 466 dir 844801 index 5 namelen 9 name snap-0212 error 600
+	unresolved ref root 498 dir 844801 index 5 namelen 9 name snap-0212 error 600
+	unresolved ref root 500 dir 844801 index 5 namelen 9 name snap-0212 error 600
+	unresolved ref root 501 dir 844801 index 5 namelen 9 name snap-0212 error 600
+	unresolved ref root 503 dir 844801 index 5 namelen 9 name snap-0212 error 600
+	unresolved ref root 504 dir 844801 index 5 namelen 9 name snap-0212 error 600
+	unresolved ref root 507 dir 844801 index 5 namelen 9 name snap-0212 error 600
+fs tree 455 refs 11
+	unresolved ref root 455 dir 844801 index 6 namelen 24 name
+snap-2012-02-12.15:23:24 error 600
+	unresolved ref root 458 dir 844801 index 6 namelen 24 name
+snap-2012-02-12.15:23:24 error 600
+	unresolved ref root 459 dir 844801 index 6 namelen 24 name
+snap-2012-02-12.15:23:24 error 600
+	unresolved ref root 466 dir 844801 index 6 namelen 24 name
+snap-2012-02-12.15:23:24 error 600
+	unresolved ref root 498 dir 844801 index 6 namelen 24 name
+snap-2012-02-12.15:23:24 error 600
+	unresolved ref root 500 dir 844801 index 6 namelen 24 name
+snap-2012-02-12.15:23:24 error 600
+	unresolved ref root 501 dir 844801 index 6 namelen 24 name
+snap-2012-02-12.15:23:24 error 600
+	unresolved ref root 503 dir 844801 index 6 namelen 24 name
+snap-2012-02-12.15:23:24 error 600
+	unresolved ref root 504 dir 844801 index 6 namelen 24 name
+snap-2012-02-12.15:23:24 error 600
+	unresolved ref root 507 dir 844801 index 6 namelen 24 name
+snap-2012-02-12.15:23:24 error 600
+fs tree 458 refs 10
+	unresolved ref root 458 dir 844801 index 7 namelen 24 name
+snap-2012-02-13.00:44:53 error 600
+	unresolved ref root 459 dir 844801 index 7 namelen 24 name
+snap-2012-02-13.00:44:53 error 600
+	unresolved ref root 466 dir 844801 index 7 namelen 24 name
+snap-2012-02-13.00:44:53 error 600
+	unresolved ref root 498 dir 844801 index 7 namelen 24 name
+snap-2012-02-13.00:44:53 error 600
+	unresolved ref root 500 dir 844801 index 7 namelen 24 name
+snap-2012-02-13.00:44:53 error 600
+	unresolved ref root 501 dir 844801 index 7 namelen 24 name
+snap-2012-02-13.00:44:53 error 600
+	unresolved ref root 503 dir 844801 index 7 namelen 24 name
+snap-2012-02-13.00:44:53 error 600
+	unresolved ref root 504 dir 844801 index 7 namelen 24 name
+snap-2012-02-13.00:44:53 error 600
+	unresolved ref root 507 dir 844801 index 7 namelen 24 name
+snap-2012-02-13.00:44:53 error 600
+fs tree 459 refs 9
+	unresolved ref root 459 dir 844801 index 8 namelen 24 name
+snap-2012-02-13.01:00:01 error 600
+	unresolved ref root 466 dir 844801 index 8 namelen 24 name
+snap-2012-02-13.01:00:01 error 600
+	unresolved ref root 498 dir 844801 index 8 namelen 24 name
+snap-2012-02-13.01:00:01 error 600
+	unresolved ref root 500 dir 844801 index 8 namelen 24 name
+snap-2012-02-13.01:00:01 error 600
+	unresolved ref root 501 dir 844801 index 8 namelen 24 name
+snap-2012-02-13.01:00:01 error 600
+	unresolved ref root 503 dir 844801 index 8 namelen 24 name
+snap-2012-02-13.01:00:01 error 600
+	unresolved ref root 504 dir 844801 index 8 namelen 24 name
+snap-2012-02-13.01:00:01 error 600
+	unresolved ref root 507 dir 844801 index 8 namelen 24 name
+snap-2012-02-13.01:00:01 error 600
+fs tree 466 refs 8
+	unresolved ref root 466 dir 844801 index 9 namelen 24 name
+snap-2012-02-13.11:00:01 error 600
+	unresolved ref root 498 dir 844801 index 9 namelen 24 name
+snap-2012-02-13.11:00:01 error 600
+	unresolved ref root 500 dir 844801 index 9 namelen 24 name
+snap-2012-02-13.11:00:01 error 600
+	unresolved ref root 501 dir 844801 index 9 namelen 24 name
+snap-2012-02-13.11:00:01 error 600
+	unresolved ref root 503 dir 844801 index 9 namelen 24 name
+snap-2012-02-13.11:00:01 error 600
+	unresolved ref root 504 dir 844801 index 9 namelen 24 name
+snap-2012-02-13.11:00:01 error 600
+	unresolved ref root 507 dir 844801 index 9 namelen 24 name
+snap-2012-02-13.11:00:01 error 600
+fs tree 498 refs 7
+	unresolved ref root 498 dir 844801 index 10 namelen 24 name
+snap-2012-02-13.12:00:01 error 600
+	unresolved ref root 500 dir 844801 index 10 namelen 24 name
+snap-2012-02-13.12:00:01 error 600
+	unresolved ref root 501 dir 844801 index 10 namelen 24 name
+snap-2012-02-13.12:00:01 error 600
+	unresolved ref root 503 dir 844801 index 10 namelen 24 name
+snap-2012-02-13.12:00:01 error 600
+	unresolved ref root 504 dir 844801 index 10 namelen 24 name
+snap-2012-02-13.12:00:01 error 600
+	unresolved ref root 507 dir 844801 index 10 namelen 24 name
+snap-2012-02-13.12:00:01 error 600
+fs tree 500 refs 6
+	unresolved ref root 500 dir 844801 index 11 namelen 24 name
+snap-2012-02-13.14:00:01 error 600
+	unresolved ref root 501 dir 844801 index 11 namelen 24 name
+snap-2012-02-13.14:00:01 error 600
+	unresolved ref root 503 dir 844801 index 11 namelen 24 name
+snap-2012-02-13.14:00:01 error 600
+	unresolved ref root 504 dir 844801 index 11 namelen 24 name
+snap-2012-02-13.14:00:01 error 600
+	unresolved ref root 507 dir 844801 index 11 namelen 24 name
+snap-2012-02-13.14:00:01 error 600
+fs tree 501 refs 5
+	unresolved ref root 501 dir 844801 index 12 namelen 24 name
+snap-2012-02-13.18:00:01 error 600
+	unresolved ref root 503 dir 844801 index 12 namelen 24 name
+snap-2012-02-13.18:00:01 error 600
+	unresolved ref root 504 dir 844801 index 12 namelen 24 name
+snap-2012-02-13.18:00:01 error 600
+	unresolved ref root 507 dir 844801 index 12 namelen 24 name
+snap-2012-02-13.18:00:01 error 600
+fs tree 503 refs 4
+	unresolved ref root 503 dir 844801 index 13 namelen 24 name
+snap-2012-02-13.19:00:01 error 600
+	unresolved ref root 504 dir 844801 index 13 namelen 24 name
+snap-2012-02-13.19:00:01 error 600
+	unresolved ref root 507 dir 844801 index 13 namelen 24 name
+snap-2012-02-13.19:00:01 error 600
+fs tree 504 refs 3
+	unresolved ref root 504 dir 844801 index 14 namelen 24 name
+snap-2012-02-13.20:00:01 error 600
+	unresolved ref root 507 dir 844801 index 14 namelen 24 name
+snap-2012-02-13.20:00:01 error 600
+fs tree 507 refs 2
+	unresolved ref root 507 dir 844801 index 15 namelen 24 name
+snap-2012-02-13.21:00:01 error 600
+found 148321431552 bytes used err is 1
+total csum bytes: 143183508
+total tree bytes: 1695162368
+total fs tree bytes: 1380012032
+btree space waste bytes: 395268619
+file data blocks allocated: 181930553344
+ referenced 190255210496
+
+o) remove all snapshots, so btrsck stop complain:
+
+found 144518303744 bytes used err is 0
+total csum bytes: 139577232
+total tree bytes: 1588137984
+total fs tree bytes: 1281392640
+btree space waste bytes: 370101450
+file data blocks allocated: 143005290496
+ referenced 152667561984
+
+p) scrub is still running, but everything seems fine.
+
+Thanks a lot for your time,
+Andrea

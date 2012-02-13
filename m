@@ -1,46 +1,50 @@
-From: dima <dolenin@parallels.com>
-Subject: Re: Set nodatacow per file?
-Date: Mon, 13 Feb 2012 17:40:25 +0900
-Message-ID: <4F38CC79.6050906@parallels.com>
-References: <4F38B8F0.5020506@yahoo.com> <4F38BE53.4080204@parallels.com> <20120213140921.5a009404@natsu>
+From: Steven Whitehouse <swhiteho@redhat.com>
+Subject: Re: [Cluster-devel] [PATCH 3/4] gfs2: Use generic handlers of
+ O_SYNC AIO DIO
+Date: Mon, 13 Feb 2012 09:42:18 +0000
+Message-ID: <1329126138.2702.4.camel@menhir>
+References: <1328889842-23231-1-git-send-email-jack@suse.cz>
+	 <1328889842-23231-4-git-send-email-jack@suse.cz>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="UTF-8"; format=flowed
-To: <linux-btrfs@vger.kernel.org>
-Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <20120213140921.5a009404@natsu>
+Content-Type: text/plain; charset="UTF-8"
+Cc: Jeff Moyer <jmoyer@redhat.com>, cluster-devel@redhat.com,
+	LKML <linux-kernel@vger.kernel.org>, xfs@oss.sgi.com,
+	linux-btrfs@vger.kernel.org, linux-fsdevel@vger.kernel.org,
+	linux-ext4@vger.kernel.org, ocfs2-devel@oss.oracle.com
+To: Jan Kara <jack@suse.cz>
+Return-path: <linux-ext4-owner@vger.kernel.org>
+In-Reply-To: <1328889842-23231-4-git-send-email-jack@suse.cz>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 02/13/2012 05:09 PM, Roman Mamedov wrote:
-> On Mon, 13 Feb 2012 16:40:03 +0900
-> dima<dolenin@parallels.com>  wrote:
->
->> Hello Ralf-Peter,
->>
->> Actually it is possible. Check out David's response to my question from
->> some time ago:
->> http://permalink.gmane.org/gmane.comp.file-systems.btrfs/14227
->>
->> The nocow.c script he attached does just the thing you want. The script
->> is really working. I needed nocow for different purpose but it did not
->> occur to me to try it on VM image and see if the performance would
->> improve. Sounds like a great idea. If you get around to try it, pls.
->> post your impressions here.
->
-> Thanks for the link, this is indeed interesting.
->
-> I made a couple of small changes, i.e. I wanted a way to unset nocow and to
-> check that changing flags really worked.
->
-> gcc -o /usr/local/bin/nocow nocow.c
-> ln -sf /usr/local/bin/nocow /usr/local/bin/cow
->
-> Perhaps the support for setting this flag should be added to the 'btrfs'
-> utility.
+Hi,
+
+Acked-by: Steven Whitehouse <swhiteho@redhat.com>
+
+That looks ok to me,
+
+Steve.
+
+On Fri, 2012-02-10 at 17:04 +0100, Jan Kara wrote:
+> Use generic handlers to queue fsync() when AIO DIO is completed for O_SYNC
+> file.
+> 
+> Signed-off-by: Jan Kara <jack@suse.cz>
+> ---
+>  fs/gfs2/aops.c |    2 +-
+>  1 files changed, 1 insertions(+), 1 deletions(-)
+> 
+> diff --git a/fs/gfs2/aops.c b/fs/gfs2/aops.c
+> index 501e5cb..9c381ff 100644
+> --- a/fs/gfs2/aops.c
+> +++ b/fs/gfs2/aops.c
+> @@ -1034,7 +1034,7 @@ static ssize_t gfs2_direct_IO(int rw, struct kiocb *iocb,
+>  
+>  	rv = __blockdev_direct_IO(rw, iocb, inode, inode->i_sb->s_bdev, iov,
+>  				  offset, nr_segs, gfs2_get_block_direct,
+> -				  NULL, NULL, 0);
+> +				  NULL, NULL, DIO_SYNC_WRITES);
+>  out:
+>  	gfs2_glock_dq_m(1, &gh);
+>  	gfs2_holder_uninit(&gh);
 
 
-Cool. Thanks Roma!
-I really wanted the feature to 'unset' the nocow and check the current 
-state of flags. Will check it out today. I also think that it should 
-definitely be included into the userspace btrfs utilities.
-best
-~dima

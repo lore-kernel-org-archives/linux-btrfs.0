@@ -1,51 +1,46 @@
-From: dima <dolenin@parallels.com>
-Subject: Re: Set nodatacow per file?
-Date: Mon, 13 Feb 2012 22:42:23 +0900
-Message-ID: <4F39133F.50908@parallels.com>
-References: <4F38B8F0.5020506@yahoo.com> <4F38BE53.4080204@parallels.com> <20120213140921.5a009404@natsu>
+From: David Sterba <dave@jikos.cz>
+Subject: Re: Several unhappy btrfs's after RAID meltdown
+Date: Mon, 13 Feb 2012 14:48:50 +0100
+Message-ID: <20120213134850.GF15350@twin.jikos.cz>
+References: <20120205184128.GC18806@localhost.localdomain> <20120207033945.GA5639@localhost.localdomain> <pan.2012.02.07.09.53.58@cox.net> <20120207140431.GB5639@localhost.localdomain> <CAKcLGm9mLhwc1ZFp=ingR814X77QetX3LOkSqxdbussjj2gykQ@mail.gmail.com> <20120207154225.GD5639@localhost.localdomain> <20120207174645.GE5639@localhost.localdomain> <20120207174907.GF5639@localhost.localdomain> <20120212163134.GA15216@localhost.localdomain>
+Reply-To: dave@jikos.cz
 Mime-Version: 1.0
-Content-Type: text/plain; charset="ISO-8859-1"; format=flowed
-To: <linux-btrfs@vger.kernel.org>
+Content-Type: text/plain; charset=us-ascii
+Cc: linux-btrfs@vger.kernel.org
+To: nemesis@icequake.net
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <20120213140921.5a009404@natsu>
+In-Reply-To: <20120212163134.GA15216@localhost.localdomain>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 02/13/2012 05:09 PM, Roman Mamedov wrote:
-> On Mon, 13 Feb 2012 16:40:03 +0900
-> dima<dolenin@parallels.com>  wrote:
->
->> Hello Ralf-Peter,
->>
->> Actually it is possible. Check out David's response to my question from
->> some time ago:
->> http://permalink.gmane.org/gmane.comp.file-systems.btrfs/14227
->>
->> The nocow.c script he attached does just the thing you want. The script
->> is really working. I needed nocow for different purpose but it did not
->> occur to me to try it on VM image and see if the performance would
->> improve. Sounds like a great idea. If you get around to try it, pls.
->> post your impressions here.
->
-> Thanks for the link, this is indeed interesting.
->
-> I made a couple of small changes, i.e. I wanted a way to unset nocow and to
-> check that changing flags really worked.
->
-> gcc -o /usr/local/bin/nocow nocow.c
-> ln -sf /usr/local/bin/nocow /usr/local/bin/cow
->
-> Perhaps the support for setting this flag should be added to the 'btrfs'
-> utility.
->
+On Sun, Feb 12, 2012 at 10:31:34AM -0600, Ryan C. Underwood wrote:
+> So, I examined the below filesystem, the one of the two that I would
+> really like to restore.  There is basically nothing but zeros, and
+> very occasionally a sparse string of data, until exactly 0x200000
+> offset,
 
-Hello Roman,
-I don't seem to be able to 'unset' the NOCOW flag.  Looking at the code 
-I would guess that it is supposed to alternate between 'cow' and 'nocow' 
-states, but the condition
-     printf("Remove NOCOW flag for %s\n", argv[1]);
-never shows for me. What should I do to make it working?
-Maybe it would be nice to have a switch to just check if nocow is set on 
-file without actually changing the flag.
+This matches start of an allocation cluster.
 
-thanks
-~dima
+> ... at which point the data is suddenly very packed and looks like
+> usual compressed data should.  Is there a way one could de-LZO the
+> data chunkwise and dump to another device so I could even get an idea
+> what I am looking at?
+
+If the blocks are in right order, you can decompress the raw data from
+the format
+
+[4B total length] [4B compressed chunk length][chunk data] [another chunk]
+
+there is no signature of the compressed extent boundaries, but the
+lengths stored are always smaller than 128K, so it's hex values like
+
+23 04 00 00 | 34 01 00 00 | <lzo data...>
+
+and shoud be detectable in the block sequence.
+
+> What about a 'superblock' signature I can scan
+> for?
+
+_BHRfS_M at offset 0x40 in a 4kb aligned block
+
+
+david

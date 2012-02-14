@@ -1,41 +1,139 @@
-From: Hubert Kario <hka@qbs.com.pl>
-Subject: Cross-subvolume reflink copy (BTRFS_IOC_CLONE over subvolume boundaries)
-Date: Tue, 14 Feb 2012 00:52:33 +0100
-Message-ID: <2704295.VfXjvSRAYV@bursa01>
+From: Liu Bo <liubo2009@cn.fujitsu.com>
+Subject: Re: [PATCH 3/3 v2] xfstests: add btrfs online defragments QA test
+Date: Tue, 14 Feb 2012 09:20:00 +0800
+Message-ID: <4F39B6C0.4090606@cn.fujitsu.com>
+References: <1328766034-1324-1-git-send-email-liubo2009@cn.fujitsu.com> <20120213175344.GA15040@infradead.org>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=iso-8859-1
-To: linux-btrfs@vger.kernel.org
+Content-Type: text/plain; charset=ISO-8859-1
+Cc: xfs@oss.sgi.com, linux-btrfs@vger.kernel.org
+To: Christoph Hellwig <hch@infradead.org>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
+In-Reply-To: <20120213175344.GA15040@infradead.org>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-It's been nearly a year since the patches needed to implement a reflink=
-ed copy=20
-between subvolumes have been posted=20
-(http://permalink.gmane.org/gmane.comp.file-systems.btrfs/9865 ) and I =
-still=20
-get "Invalid cross-device link" error with Linux 3.2.4 while I try to d=
-o a cp=20
---reflink between subvolumes.
+On 02/14/2012 01:53 AM, Christoph Hellwig wrote:
+> This still needs a bit more work:
+> 
+>> +test_path="`pwd`"
+>> +progs_dir="$test_path/src/btrfs_online_defragment/"
+> 
+> this isn't actually used.
+> 
+> 
+>> +tmp=tmp/$$
+>> +defrag_args="$test_path/${seq}.args"
+> 
+> Just hardcode the arguments, preferably without the args file
+> indirection.
+> 
+>> +_create_file()
+>> +{
+>> +	CNT=11999
+>> +	FILESIZE=48000
+>> +	if [ "$DEFRAG_TARGET" = "1" ];then
+>> +		for i in `seq $CNT -1 0`; do
+>> +			dd if=/dev/zero of=$SCRATCH_MNT/tmp_file bs=4k count=1 \
+>> +			 conv=notrunc seek=$i oflag=sync &>/dev/null
+>> +		done
+>> +		# get md5sum
+>> +		md5sum $SCRATCH_MNT/tmp_file > /tmp/checksum
+>> +	elif [ "$DEFRAG_TARGET" = "2" ];then
+>> +		mkdir $SCRATCH_MNT/tmp_dir
+>> +		for i in `seq $CNT -1 0`; do
+>> +			dd if=/dev/zero of=$SCRATCH_MNT/tmp_dir/tmp_file bs=4k \
+>> +			count=1 conv=notrunc seek=$i oflag=sync &>/dev/null
+>> +		done
+>> +		# get md5sum
+>> +		md5sum $SCRATCH_MNT/tmp_dir/tmp_file > /tmp/checksum
+>> +	elif [ "$DEFRAG_TARGET" = "3" ];then
+>> +		for i in `seq $CNT -1 0`; do
+>> +			dd if=/dev/zero of=$SCRATCH_MNT/tmp_file bs=4k count=1 \
+>> +			conv=notrunc seek=$i oflag=sync &>/dev/null
+>> +		done
+>> +		# get md5sum
+>> +		md5sum $SCRATCH_MNT/tmp_file > /tmp/checksum
+>> +	fi
+>> +}
+> 
+> It seems like each of these cases should be a different function.
+> 
+>> +_btrfs_online_defrag()
+>> +{
+>> +	str=""
+>> +	if [ "$FILE_RANGE" = "2" ];then
+>> +		str="$str -s -1 -l $((FILESIZE / 2)) "
+>> +	elif [ "$FILE_RANGE" = "3" ];then
+>> +		str="$str -s $((FILESIZE + 1)) -l $((FILESIZE / 2)) "
+>> +		HAVE_DEFRAG=1
+>> +	elif [ "$FILE_RANGE" = "4" ];then
+>> +		str="$str -l -1 "
+>> +	elif [ "$FILE_RANGE" = "5" ];then
+>> +		str="$str -l $((FILESIZE + 1)) "
+>> +	elif [ "$FILE_RANGE" = "6" ];then
+>> +		str="$str -l $((FILESIZE / 2)) "
+>> +	fi
+>> +
+>> +	if [ "$DEFRAG_COMPRESS" = "2" ];then
+>> +		str="$str -c "
+>> +	fi
+>> +
+>> +	if [ "$FLUSH" = "2" ];then
+>> +		str="$str -f "
+>> +	fi
+>> +
+>> +	if [ "$THRESH" = "2" ];then
+>> +		str="$str -t -1 "
+>> +	elif [ "$THRESH" = "3" ];then
+>> +		str="$str -t $PAGESIZE "
+>> +	fi
+>> +
+>> +	if [ "$str" != "" ]; then
+>> +		btrfs filesystem defragment $str $SCRATCH_MNT/tmp_file
+>> +	else
+>> +		if [ "$DEFRAG_TARGET" = "1" ];then
+>> +			btrfs filesystem defragment $SCRATCH_MNT/tmp_file
+>> +		elif [ "$DEFRAG_TARGET" = "2" ];then
+>> +			btrfs filesystem defragment $SCRATCH_MNT/tmp_dir
+>> +		elif [ "$DEFRAG_TARGET" = "3" ];then
+>> +			btrfs filesystem defragment $SCRATCH_MNT
+>> +		fi
+>> +	fi
+>> +	ret_val=$?
+>> +	sync
+>> +	if [ $ret_val -ne 20 ];then
+>> +		echo "btrfs filesystem defragment failed! err is $ret_val"
+>> +	fi
+>> +}
+> 
+>> +_fsck()
+>> +{
+>> +	btrfsck $SCRATCH_DEV > /dev/null 2>&1
+>> +	ret_val=$?
+>> +	if [ $ret_val -ne 0 ]; then
+>> +		echo "btrfsck _FAIL_! err is $ret_val"
+>> +	fi
+>> +}
+> 
+> This should use the generic xfstests fsck invocation wrappers.
+> 
+>> +_parse_options()
+> 
+> Please don't use an option parser but just call the low-level file
+> creation functions directly.
+> 
+>> +_cleanup_defrag()
+>> +{
+>> +	rm -fr $SCRATCH_MNT/*
+>> +	umount $SCRATCH_MNT > /dev/null 2>&1
+>> +}
+> 
+> No need to remove everything as the scratch filesystem gets recreated
+> every time.
+> 
+> 
 
-This is a *very* useful feature to have (think offline file-level dedup=
-lication=20
-for one thing).
+OK, I'll update this more carefully ;)
+and thanks for your time!
 
-=46rom what I was able to find in the archives, the only objection (use=
-rland=20
-operation crossing subvolume boundaries) was rebutted by Chris Mason.=20
-
-Is there something else that I missed?
-
-Regards,
---=20
-Hubert Kario
-QBS - Quality Business Software
-02-656 Warszawa, ul. Ksawer=F3w 30/85
-tel. +48 (22) 646-61-51, 646-74-24
-www.qbs.com.pl
---
-To unsubscribe from this list: send the line "unsubscribe linux-btrfs" =
-in
-the body of a message to majordomo@vger.kernel.org
-More majordomo info at  http://vger.kernel.org/majordomo-info.html
+thanks,
+liubo

@@ -1,139 +1,61 @@
-From: Liu Bo <liubo2009@cn.fujitsu.com>
-Subject: Re: [PATCH 3/3 v2] xfstests: add btrfs online defragments QA test
-Date: Tue, 14 Feb 2012 09:20:00 +0800
-Message-ID: <4F39B6C0.4090606@cn.fujitsu.com>
-References: <1328766034-1324-1-git-send-email-liubo2009@cn.fujitsu.com> <20120213175344.GA15040@infradead.org>
+From: =?UTF-8?B?SsOpcsO0bWUgUG91bGlu?= <jeromepoulin@gmail.com>
+Subject: Re: [PATCH 00/21] Btrfs: restriper
+Date: Mon, 13 Feb 2012 21:31:09 -0500
+Message-ID: <CALJXSJpjmb2F=fg_KML_W61gRPfiFH8Drz-H+uukn9d4owdwTg@mail.gmail.com>
+References: <1325860269-15013-1-git-send-email-idryomov@gmail.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=ISO-8859-1
-Cc: xfs@oss.sgi.com, linux-btrfs@vger.kernel.org
-To: Christoph Hellwig <hch@infradead.org>
+Content-Type: text/plain; charset=UTF-8
+Cc: linux-btrfs@vger.kernel.org
+To: Ilya Dryomov <idryomov@gmail.com>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <20120213175344.GA15040@infradead.org>
+In-Reply-To: <1325860269-15013-1-git-send-email-idryomov@gmail.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 02/14/2012 01:53 AM, Christoph Hellwig wrote:
-> This still needs a bit more work:
-> 
->> +test_path="`pwd`"
->> +progs_dir="$test_path/src/btrfs_online_defragment/"
-> 
-> this isn't actually used.
-> 
-> 
->> +tmp=tmp/$$
->> +defrag_args="$test_path/${seq}.args"
-> 
-> Just hardcode the arguments, preferably without the args file
-> indirection.
-> 
->> +_create_file()
->> +{
->> +	CNT=11999
->> +	FILESIZE=48000
->> +	if [ "$DEFRAG_TARGET" = "1" ];then
->> +		for i in `seq $CNT -1 0`; do
->> +			dd if=/dev/zero of=$SCRATCH_MNT/tmp_file bs=4k count=1 \
->> +			 conv=notrunc seek=$i oflag=sync &>/dev/null
->> +		done
->> +		# get md5sum
->> +		md5sum $SCRATCH_MNT/tmp_file > /tmp/checksum
->> +	elif [ "$DEFRAG_TARGET" = "2" ];then
->> +		mkdir $SCRATCH_MNT/tmp_dir
->> +		for i in `seq $CNT -1 0`; do
->> +			dd if=/dev/zero of=$SCRATCH_MNT/tmp_dir/tmp_file bs=4k \
->> +			count=1 conv=notrunc seek=$i oflag=sync &>/dev/null
->> +		done
->> +		# get md5sum
->> +		md5sum $SCRATCH_MNT/tmp_dir/tmp_file > /tmp/checksum
->> +	elif [ "$DEFRAG_TARGET" = "3" ];then
->> +		for i in `seq $CNT -1 0`; do
->> +			dd if=/dev/zero of=$SCRATCH_MNT/tmp_file bs=4k count=1 \
->> +			conv=notrunc seek=$i oflag=sync &>/dev/null
->> +		done
->> +		# get md5sum
->> +		md5sum $SCRATCH_MNT/tmp_file > /tmp/checksum
->> +	fi
->> +}
-> 
-> It seems like each of these cases should be a different function.
-> 
->> +_btrfs_online_defrag()
->> +{
->> +	str=""
->> +	if [ "$FILE_RANGE" = "2" ];then
->> +		str="$str -s -1 -l $((FILESIZE / 2)) "
->> +	elif [ "$FILE_RANGE" = "3" ];then
->> +		str="$str -s $((FILESIZE + 1)) -l $((FILESIZE / 2)) "
->> +		HAVE_DEFRAG=1
->> +	elif [ "$FILE_RANGE" = "4" ];then
->> +		str="$str -l -1 "
->> +	elif [ "$FILE_RANGE" = "5" ];then
->> +		str="$str -l $((FILESIZE + 1)) "
->> +	elif [ "$FILE_RANGE" = "6" ];then
->> +		str="$str -l $((FILESIZE / 2)) "
->> +	fi
->> +
->> +	if [ "$DEFRAG_COMPRESS" = "2" ];then
->> +		str="$str -c "
->> +	fi
->> +
->> +	if [ "$FLUSH" = "2" ];then
->> +		str="$str -f "
->> +	fi
->> +
->> +	if [ "$THRESH" = "2" ];then
->> +		str="$str -t -1 "
->> +	elif [ "$THRESH" = "3" ];then
->> +		str="$str -t $PAGESIZE "
->> +	fi
->> +
->> +	if [ "$str" != "" ]; then
->> +		btrfs filesystem defragment $str $SCRATCH_MNT/tmp_file
->> +	else
->> +		if [ "$DEFRAG_TARGET" = "1" ];then
->> +			btrfs filesystem defragment $SCRATCH_MNT/tmp_file
->> +		elif [ "$DEFRAG_TARGET" = "2" ];then
->> +			btrfs filesystem defragment $SCRATCH_MNT/tmp_dir
->> +		elif [ "$DEFRAG_TARGET" = "3" ];then
->> +			btrfs filesystem defragment $SCRATCH_MNT
->> +		fi
->> +	fi
->> +	ret_val=$?
->> +	sync
->> +	if [ $ret_val -ne 20 ];then
->> +		echo "btrfs filesystem defragment failed! err is $ret_val"
->> +	fi
->> +}
-> 
->> +_fsck()
->> +{
->> +	btrfsck $SCRATCH_DEV > /dev/null 2>&1
->> +	ret_val=$?
->> +	if [ $ret_val -ne 0 ]; then
->> +		echo "btrfsck _FAIL_! err is $ret_val"
->> +	fi
->> +}
-> 
-> This should use the generic xfstests fsck invocation wrappers.
-> 
->> +_parse_options()
-> 
-> Please don't use an option parser but just call the low-level file
-> creation functions directly.
-> 
->> +_cleanup_defrag()
->> +{
->> +	rm -fr $SCRATCH_MNT/*
->> +	umount $SCRATCH_MNT > /dev/null 2>&1
->> +}
-> 
-> No need to remove everything as the scratch filesystem gets recreated
-> every time.
-> 
-> 
+On Fri, Jan 6, 2012 at 9:30 AM, Ilya Dryomov <idryomov@gmail.com> wrote=
+:
+> This is a respin of restriper patch series which adds an initial
+> implementation of restriper (it's a clever name for relocation framew=
+ork
+> that allows to do selective profile changing and selective balancing
+> with some goodies like pausing/resuming and reporting progress to the
+> user). =C2=A0See userspace cover patch for usage examples.
 
-OK, I'll update this more carefully ;)
-and thanks for your time!
+I just tried merging this on my kernel 3.2.1 and it seems to work
+nicely. I compiled your btrfs-progs, made an LVM snapshot and launched
+a balance on my 300 GB filesystem converted from ext4. It worked for
+converting my metadata from single to dup, however, it didn't succeed
+converting my system from single to dup.
 
-thanks,
-liubo
+Here is the command I used:
+root /usr/src/kernel/btrfs-progs # ./btrfs balance start -f -v
+-sconvert=3Ddup -mconvert=3Ddup /mnt/btrfs/
+Dumping filters: flags 0xe, state 0x0, force is on
+  METADATA (flags 0x100): converting, target=3D32, soft is off
+  SYSTEM (flags 0x100): converting, target=3D32, soft is off
+Done, had to relocate 28 out of 220 chunks
+
+Then tried:
+root /usr/src/kernel/btrfs-progs # ./btrfs balance start -f -v
+-sconvert=3Ddup /mnt/btrfs/
+Dumping filters: flags 0xa, state 0x0, force is on
+  SYSTEM (flags 0x100): converting, target=3D32, soft is off
+Done, had to relocate 0 out of 239 chunks
+
+Before:
+root /usr/src/kernel/btrfs-progs # ./btrfs fi df /mnt/btrfs/
+Data: total=3D217.33GB, used=3D211.68GB
+System: total=3D32.00MB, used=3D28.00KB
+Metadata: total=3D19.39GB, used=3D14.18GB
+
+And here is the result after balance:
+root /usr/src/kernel/btrfs-progs # ./btrfs fi df /mnt/btrfs/
+Data: total=3D226.33GB, used=3D225.56GB
+System: total=3D32.00MB, used=3D36.00KB
+Metadata, DUP: total=3D4.75GB, used=3D297.77MB
+
+I also used the status command which was working correctly.
+--
+To unsubscribe from this list: send the line "unsubscribe linux-btrfs" =
+in
+the body of a message to majordomo@vger.kernel.org
+More majordomo info at  http://vger.kernel.org/majordomo-info.html

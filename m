@@ -1,27 +1,39 @@
-From: Timo Nentwig <btrfs@nentwig.biz>
-Subject: Re: can't read superblock (but could mount)
-Date: Tue, 14 Feb 2012 19:54:43 +0100 (CET)
-Message-ID: <alpine.LNX.2.00.1202141950420.18337@localhost>
-References: <20120210203051.Horde.q5KnHsL8999PNXBrH5AlxdA@webmail.df.eu> <20120210221842.GU8384@shiny> <20120210233959.GV8384@shiny> <20120211072725.Horde.8iYhMlNNcXdPNgpNS2yG-PA@webmail.df.eu> <20120213130943.GA1573@shiny> <alpine.LNX.2.00.1202141832420.11051@localhost>
- <20120214184131.GZ1573@shiny>
+From: Andi Kleen <ak@linux.intel.com>
+Subject: Re: [PATCH 1/3] Add the snappy-c compressor to lib v2
+Date: Tue, 14 Feb 2012 11:52:06 -0800
+Message-ID: <4F3ABB66.1040202@linux.intel.com>
+References: <1326414530-10789-1-git-send-email-andi@firstfloor.org>	<1326414530-10789-2-git-send-email-andi@firstfloor.org> <CAKcLGm8u9oKEBjFW3VpLZDUd=56mRRrr-_zjf-M7Hf5NpTTM8Q@mail.gmail.com>
 Mime-Version: 1.0
-Content-Type: TEXT/PLAIN; charset=US-ASCII; format=flowed
-To: linux-btrfs@vger.kernel.org
+Content-Type: text/plain; charset=ISO-8859-1; format=flowed
+Cc: Andi Kleen <andi@firstfloor.org>, chris.mason@oracle.com,
+	linux-kernel@vger.kernel.org, linux-btrfs@vger.kernel.org
+To: Mitch Harder <mitch.harder@sabayonlinux.org>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <20120214184131.GZ1573@shiny>
+In-Reply-To: <CAKcLGm8u9oKEBjFW3VpLZDUd=56mRRrr-_zjf-M7Hf5NpTTM8Q@mail.gmail.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
 
+> (BTW:  If you're ever reworking this patch set, I'd like to make an ad
+> hoc request for slightly different names for fs/btrfs/snappy.c and
+> lib/snappy.c)
 
-On Tue, 14 Feb 2012, Chris Mason wrote:
+Why?
 
-> As for how we got here, I think you said you were originally running
-> something older than 3.2 when these problems started, correct?
+> When building a x86 kernel, I get the following errors:
+>    CC [M]  lib/snappy.o
+> lib/snappy.c: In function 'snappy_init_env':
+> lib/snappy.c:1268:2: error: implicit declaration of function 'vmalloc'
+>    CC [M]  fs/btrfs/free-space-cache.o
+> lib/snappy.c:1268:18: warning: assignment makes pointer from integer
+> without a cast
+> lib/snappy.c: In function 'snappy_free_env':
+> lib/snappy.c:1293:2: error: implicit declaration of function 'vfree'
+> make[1]: *** [lib/snappy.o] Error 1
+> make: *** [lib] Error 2
+>
+> The error clears with this patch:
 
-Nope, I was already on 3.2.1 or 3.2.4. I restored a backup in the meantime
-and already had to soft-reset the box:
+Added thanks.
 
-# ls -ltr ~/.kde4/share/config/
-ls: reading directory /home/foo/.kde4/share/config/: Input/output error
+-Andi
 
-Sigh...

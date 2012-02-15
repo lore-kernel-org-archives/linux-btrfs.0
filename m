@@ -1,26 +1,97 @@
-From: Timo Nentwig <btrfs@nentwig.biz>
-Subject: Re: can't read superblock (but could mount)
-Date: Wed, 15 Feb 2012 07:03:49 +0100 (CET)
-Message-ID: <alpine.LNX.2.00.1202150701150.24133@localhost>
-References: <20120210203051.Horde.q5KnHsL8999PNXBrH5AlxdA@webmail.df.eu> <20120210221842.GU8384@shiny> <20120210233959.GV8384@shiny> <20120211072725.Horde.8iYhMlNNcXdPNgpNS2yG-PA@webmail.df.eu> <20120213130943.GA1573@shiny> <alpine.LNX.2.00.1202141832420.11051@localhost>
- <20120214184131.GZ1573@shiny> <alpine.LNX.2.00.1202141950420.18337@localhost> <20120214211422.GE1573@shiny>
+From: Chester <somethingsome2000@gmail.com>
+Subject: Consistent error on loop device
+Date: Wed, 15 Feb 2012 02:30:01 -0600
+Message-ID: <CAAE6i0iQpEdozDcE+0Vmbd8ZFrcqCXGhJ3J9Mp46X7QW+w6ooA@mail.gmail.com>
 Mime-Version: 1.0
-Content-Type: TEXT/PLAIN; charset=US-ASCII; format=flowed
-To: linux-btrfs@vger.kernel.org
+Content-Type: text/plain; charset=ISO-8859-1
+To: linux-btrfs <linux-btrfs@vger.kernel.org>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <20120214211422.GE1573@shiny>
 List-ID: <linux-btrfs.vger.kernel.org>
 
+$ cd btrfs-progs
+$ git branch
+* dangerdonteveruse
+  master
+
+$ dd if=/dev/zero of=../btrfsvol bs=1 count=0 seek=10G
+0+0 records in
+0+0 records out
+0 bytes (0 B) copied, 1.7086e-05 s, 0.0 kB/s
+
+$ du -h --apparent-size ../btrfsvol
+10G     ../btrfsvol
+$ losetup /dev/loop1 ../btrfsvol
+$ ./mkfs.btrfs /dev/loop1
+
+WARNING! - Btrfs Btrfs v0.19 IS EXPERIMENTAL
+WARNING! - see http://btrfs.wiki.kernel.org before using
+
+fs created label (null) on /dev/loop1
+        nodesize 4096 leafsize 4096 sectorsize 4096 size 10.00GB
+Btrfs Btrfs v0.19
+
+$ ./btrfsck /dev/loop1
+checking extents
+checking fs roots
+checking root refs
+found 28672 bytes used err is 0
+total csum bytes: 0
+total tree bytes: 28672
+total fs tree bytes: 8192
+btree space waste bytes: 23875
+file data blocks allocated: 0
+ referenced 0
+Btrfs Btrfs v0.19
+
+$ mount /dev/loop1 /mnt
+$ cp -r ../btrfs-progs /mnt
+
+$ btrfs fi sync /mnt
+FSSync '/mnt'
+$ umount /mnt
+
+$ ./btrfsck /dev/loop1
+checking extents
+checking fs roots
+checking root refs
+found 14983168 bytes used err is 0
+total csum bytes: 14112
+total tree bytes: 401408
+total fs tree bytes: 339968
+btree space waste bytes: 104131
+file data blocks allocated: 14581760
+ referenced 14581760
+Btrfs Btrfs v0.19
+
+$ mount -o autodefrag,inode_cache /dev/loop1 /mnt
+$ rm -rf /mnt/*
+zsh: sure you want to delete all the files in /mnt [yn]? y
+
+$ cp -r ../btrfs-progs /mnt
+$ btrfs fi sync /mnt
+FSSync '/mnt'
+$ umount /mnt
+
+$ ./btrfsck /dev/loop1
+checking extents
+checking fs roots
+root 5 inode 18446744073709551604 errors 2000
+root 5 inode 18446744073709551605 errors 1
+found 15060992 bytes used err is 1
+total csum bytes: 14148
+total tree bytes: 442368
+total fs tree bytes: 372736
+btree space waste bytes: 142523
+file data blocks allocated: 14618624
+ referenced 14618624
+Btrfs Btrfs v0.19
 
 
-On Tue, 14 Feb 2012, Chris Mason wrote:
+If it means anything, the loop file is located on a btrfs volume as well.
+This error keeps showing up when copying files to a mounted loop dev
+with -o autodefrag,inode_cache
 
-> Ok, 3.2 shouldn't have done this.  Was this an external drive?  What
-> else do you have on the system?
+Also, this is on Chris's for-linus branch
 
-Nothing special actually. Standard arch linux with virtualbox kernel modules.
-It's a SSD if this should matter. Mounted with ssd,compress=lzo,noatime.
-
-> Is this the same FS that was corrupted or a different one?
-
-Different one. Created from an old 3.2.1 gentoo install (btrfs 0.19-dirty).
+Ahh I just tested one last time before committing to send the email.
+The problem only shows up when using inode_cache

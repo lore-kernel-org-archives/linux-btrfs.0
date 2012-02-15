@@ -1,45 +1,46 @@
-From: Chris Mason <chris.mason@oracle.com>
-Subject: Re: can't read superblock (but could mount)
-Date: Wed, 15 Feb 2012 08:23:22 -0500
-Message-ID: <20120215132322.GR1573@shiny>
-References: <20120210203051.Horde.q5KnHsL8999PNXBrH5AlxdA@webmail.df.eu>
- <20120210221842.GU8384@shiny>
- <20120210233959.GV8384@shiny>
- <20120211072725.Horde.8iYhMlNNcXdPNgpNS2yG-PA@webmail.df.eu>
- <20120213130943.GA1573@shiny>
- <alpine.LNX.2.00.1202141832420.11051@localhost>
- <20120214184131.GZ1573@shiny>
- <alpine.LNX.2.00.1202141950420.18337@localhost>
- <20120214211422.GE1573@shiny>
- <alpine.LNX.2.00.1202150701150.24133@localhost>
+From: Calvin Walton <calvin.walton@kepstin.ca>
+Subject: Re: brtfs on top of dmcrypt with SSD. No corruption iff write cache
+ off?
+Date: Wed, 15 Feb 2012 10:42:43 -0500
+Message-ID: <1329320563.1897.6.camel@ayu>
+References: <20120130003754.GD4380@merlins.org>
+	 <20120201175624.GE16796@shiny> <20120202032345.GB31903@merlins.org>
+	 <20120202124241.GW16796@shiny> <20120202152722.GI12429@merlins.org>
+	 <20120130003754.GD4380@merlins.org> <20120201175624.GE16796@shiny>
+	 <20120202032345.GB31903@merlins.org> <20120212223242.GA31989@merlins.org>
+	 <4F384FAA.5060506@redhat.com> <20120213001400.GD31989@merlins.org>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Cc: linux-btrfs@vger.kernel.org
-To: Timo Nentwig <btrfs@nentwig.biz>
+Content-Type: text/plain; charset="UTF-8"
+Cc: Milan Broz <mbroz@redhat.com>,
+	Chris Mason <chris.mason@oracle.com>,
+	linux-btrfs@vger.kernel.org, jeff@deserettechnology.com
+To: Marc MERLIN <marc@merlins.org>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <alpine.LNX.2.00.1202150701150.24133@localhost>
+In-Reply-To: <20120213001400.GD31989@merlins.org>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Wed, Feb 15, 2012 at 07:03:49AM +0100, Timo Nentwig wrote:
+On Sun, 2012-02-12 at 16:14 -0800, Marc MERLIN wrote:
+> Considering that I have a fairly new crucial 256GB SDD, I'm going to assume
+> that this bit applies to me:
+> "On the other side, TRIM is usually overrated. Drive itself should keep good
+> performance even without TRIM, either by using internal garbage collecting
+> process or by some area reserved for optimal writes handling."
 > 
-> 
-> On Tue, 14 Feb 2012, Chris Mason wrote:
-> 
-> >Ok, 3.2 shouldn't have done this.  Was this an external drive?  What
-> >else do you have on the system?
-> 
-> Nothing special actually. Standard arch linux with virtualbox kernel modules.
-> It's a SSD if this should matter. Mounted with ssd,compress=lzo,noatime.
+> So it sounds like I should just not give the "ssd" mount option to btrfs,
+> and not worry about TRIM. 
 
-Ok, it sounds like we've got some memory corruption problems in here.
-Hopefully not from virtualbox, but I'd start with an memtest.
+The 'ssd' option on btrfs is actually completely unrelated to trim
+support. Instead, it changes how blocks are allocated on the device,
+taking advantage of the the improved random read/write speed. The 'ssd'
+option should be autodetected on most SSDs, but I don't know if this is
+handled correctly when you're using dm-crypt. (Btrfs prints a message at
+mount time when it autodetects this.) It shouldn't hurt to leave it.
 
-> 
-> >Is this the same FS that was corrupted or a different one?
-> 
-> Different one. Created from an old 3.2.1 gentoo install (btrfs 0.19-dirty).
+Discard is handled with a separate mount option on btrfs (called
+'discard'), and is disabled by default even if you have the 'ssd' option
+enabled, because of the negative performance impact it has had on some
+SSDs.
 
-Different FS, same machine?  Please include all the kernel messages.
-
--chris
+-- 
+Calvin Walton <calvin.walton@kepstin.ca>
 

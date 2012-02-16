@@ -1,62 +1,166 @@
-From: Chris Samuel <chris@csamuel.org>
-Subject: Re: brtfs on top of dmcrypt with SSD. No corruption iff write cache off?
-Date: Thu, 16 Feb 2012 17:33:19 +1100
-Message-ID: <201202161733.25977.chris@csamuel.org>
-References: <20120130003754.GD4380@merlins.org> <4F384FAA.5060506@redhat.com> <20120213001400.GD31989@merlins.org>
+From: Miao Xie <miaox@cn.fujitsu.com>
+Subject: [PATCH] Btrfs: fix deadlock on page lock when doing auto-defragment
+Date: Thu, 16 Feb 2012 15:01:24 +0800
+Message-ID: <4F3CA9C4.3090904@cn.fujitsu.com>
+Reply-To: miaox@cn.fujitsu.com
 Mime-Version: 1.0
-Content-Type: multipart/signed;
-  boundary="nextPart7647969.PCMSWHBhsn";
-  protocol="application/pgp-signature";
-  micalg=pgp-sha1
-To: linux-btrfs@vger.kernel.org
+Content-Type: text/plain; charset=UTF-8
+To: Linux Btrfs <linux-btrfs@vger.kernel.org>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <20120213001400.GD31989@merlins.org>
 List-ID: <linux-btrfs.vger.kernel.org>
 
---nextPart7647969.PCMSWHBhsn
-Content-Type: Text/Plain;
-  charset="iso-8859-1"
-Content-Transfer-Encoding: quoted-printable
+When I ran xfstests circularly on a auto-defragment btrfs, the deadlock
+happened.
 
-On Monday 13 February 2012 11:14:00 Marc MERLIN wrote:
+Steps to reproduce:
+[tty0]
+ # export MOUNT_OPTIONS="-o autodefrag"
+ # export TEST_DEV=<partition1>
+ # export TEST_DIR=<mountpoint1>
+ # export SCRATCH_DEV=<partition2>
+ # export SCRATCH_MNT=<mountpoint2>
+ # while [ 1 ]
+ > do
+ > ./check 091 127 263
+ > sleep 1
+ > done
+[tty1]
+ # while [ 1 ]
+ > do
+ > echo 3 > /proc/sys/vm/drop_caches
+ > done
 
-> I knew that it created some security problems but I had not yet
-> found the page you just gave, which effectively states that TRIM
-> isn't actually that big a win on recent SSDs (I thought it was
-> actually pretty important to use it on them until now).
+Several hours later, the test processes will hang on, and the deadlock will
+happen on page lock.
 
-In addition TRIM has always been problematic for SATA SSD's as it was=20
-initially specified as a non-queueable command:
+The reason is that:
+  Auto defrag task		Flush thread			Test task
+				btrfs_writepages()
+				  add ordered extent
+				  (including page 1, 2)
+				  set page 1 writeback
+				  set page 2 writeback
+				endio_fn()
+				  end page 2 writeback
+								release page 2
+lock page 1
+alloc and lock page 2
+page 2 is not uptodate
+  btrfs_readpage()
+    start ordered extent()
+    btrfs_writepages()
+      try  to lock page 1
 
-https://lwn.net/Articles/347511/
+so deadlock happens.
 
-However, it appears that a queueable TRIM command has been introduced=20
-for SATA 3.1:
+Fix this bug by unlocking the page which is in writeback, and re-locking it
+after the writeback end.
 
-http://techreport.com/discussions.x/21311
+Signed-off-by: Miao Xie <miax@cn.fujitsu.com>
+---
+ fs/btrfs/ioctl.c |   53 +++++++++++++++++++++++++++++------------------------
+ 1 files changed, 29 insertions(+), 24 deletions(-)
 
-cheers!
-Chris
-=2D-=20
- Chris Samuel  :  http://www.csamuel.org/  :  Melbourne, VIC
-
-This email may come with a PGP signature as a file. Do not panic.
-=46or more info see: http://en.wikipedia.org/wiki/OpenPGP
-
---nextPart7647969.PCMSWHBhsn
-Content-Type: application/pgp-signature; name=signature.asc 
-Content-Description: This is a digitally signed message part.
-
------BEGIN PGP SIGNATURE-----
-Version: GnuPG v1.4.11 (GNU/Linux)
-
-iQEVAwUATzyjL41yjaOTJg85AQJ0zAgAt0kTs6b/fHkyx0x6ZUOrIIWnU8XXpxsU
-6xx/hEuuBlW6BbbUH1AniHV1CmZ+Qhow7b0DhPsj8sroB+kVjczQcdlxJVcqNtXq
-gBeB46xiaOAxlC5wYi90MEhW+gqvP7IVYutsmx546haD0S9NGVPZxttm92Dhm81p
-PZoCGgkG/+4TVQ4HhJFPntcghU9SXhzadB0o4QGzFH3K+s7nNahXdJ4cyGD6zZtg
-PlL1wQHtQQXdnLA+rxSn1+6q4qJcNB+8v0H1h2QrDIjVwuEDSPZjuRbc9WHX58qG
-xMy0q+CkrRsksxaEZPC9RC2VXwc3hszj9tyiV2GLvsYfigerEt1ClQ==
-=aTav
------END PGP SIGNATURE-----
-
---nextPart7647969.PCMSWHBhsn--
+diff --git a/fs/btrfs/ioctl.c b/fs/btrfs/ioctl.c
+index 0b06a5c..e9bdb8b 100644
+--- a/fs/btrfs/ioctl.c
++++ b/fs/btrfs/ioctl.c
+@@ -862,6 +862,7 @@ static int cluster_pages_for_defrag(struct inode *inode,
+ 	int i_done;
+ 	struct btrfs_ordered_extent *ordered;
+ 	struct extent_state *cached_state = NULL;
++	struct extent_io_tree *tree;
+ 	gfp_t mask = btrfs_alloc_write_mask(inode->i_mapping);
+ 
+ 	if (isize == 0)
+@@ -872,18 +873,34 @@ static int cluster_pages_for_defrag(struct inode *inode,
+ 					   num_pages << PAGE_CACHE_SHIFT);
+ 	if (ret)
+ 		return ret;
+-again:
+-	ret = 0;
+ 	i_done = 0;
++	tree = &BTRFS_I(inode)->io_tree;
+ 
+ 	/* step one, lock all the pages */
+ 	for (i = 0; i < num_pages; i++) {
+ 		struct page *page;
++again:
+ 		page = find_or_create_page(inode->i_mapping,
+-					    start_index + i, mask);
++					   start_index + i, mask);
+ 		if (!page)
+ 			break;
+ 
++		page_start = page_offset(page);
++		page_end = page_start + PAGE_CACHE_SIZE - 1;
++		while (1) {
++			lock_extent(tree, page_start, page_end, GFP_NOFS);
++			ordered = btrfs_lookup_ordered_extent(inode,
++							      page_start);
++			unlock_extent(tree, page_start, page_end, GFP_NOFS);
++			if (!ordered)
++				break;
++
++			unlock_page(page);
++			btrfs_start_ordered_extent(inode, ordered, 1);
++			btrfs_put_ordered_extent(ordered);
++			lock_page(page);
++		}
++
+ 		if (!PageUptodate(page)) {
+ 			btrfs_readpage(NULL, page);
+ 			lock_page(page);
+@@ -894,15 +911,22 @@ again:
+ 				break;
+ 			}
+ 		}
++
+ 		isize = i_size_read(inode);
+ 		file_end = (isize - 1) >> PAGE_CACHE_SHIFT;
+-		if (!isize || page->index > file_end ||
+-		    page->mapping != inode->i_mapping) {
++		if (!isize || page->index > file_end) {
+ 			/* whoops, we blew past eof, skip this page */
+ 			unlock_page(page);
+ 			page_cache_release(page);
+ 			break;
+ 		}
++
++		if (page->mapping != inode->i_mapping) {
++			unlock_page(page);
++			page_cache_release(page);
++			goto again;
++		}
++
+ 		pages[i] = page;
+ 		i_done++;
+ 	}
+@@ -925,25 +949,6 @@ again:
+ 	lock_extent_bits(&BTRFS_I(inode)->io_tree,
+ 			 page_start, page_end - 1, 0, &cached_state,
+ 			 GFP_NOFS);
+-	ordered = btrfs_lookup_first_ordered_extent(inode, page_end - 1);
+-	if (ordered &&
+-	    ordered->file_offset + ordered->len > page_start &&
+-	    ordered->file_offset < page_end) {
+-		btrfs_put_ordered_extent(ordered);
+-		unlock_extent_cached(&BTRFS_I(inode)->io_tree,
+-				     page_start, page_end - 1,
+-				     &cached_state, GFP_NOFS);
+-		for (i = 0; i < i_done; i++) {
+-			unlock_page(pages[i]);
+-			page_cache_release(pages[i]);
+-		}
+-		btrfs_wait_ordered_range(inode, page_start,
+-					 page_end - page_start);
+-		goto again;
+-	}
+-	if (ordered)
+-		btrfs_put_ordered_extent(ordered);
+-
+ 	clear_extent_bit(&BTRFS_I(inode)->io_tree, page_start,
+ 			  page_end - 1, EXTENT_DIRTY | EXTENT_DELALLOC |
+ 			  EXTENT_DO_ACCOUNTING, 0, 0, &cached_state,
+-- 
+1.7.6.5

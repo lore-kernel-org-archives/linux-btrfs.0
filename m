@@ -1,51 +1,43 @@
 From: Chris Mason <chris.mason@oracle.com>
-Subject: Re: Premature ENOSPC only with zlib Compression
-Date: Thu, 16 Feb 2012 12:55:36 -0500
-Message-ID: <20120216175536.GL21896@shiny>
-References: <CAKcLGm--EKeAbw7JzBtv7snhXEJSzTMZjn9_QDT+jGRCWsjM2g@mail.gmail.com>
- <CAFDW0jLfLtEpnijsratvGho8RzC9D7nJD8H2y0SdZ6AxYeGpYw@mail.gmail.com>
- <201202162131.38463.chris@csamuel.org>
- <CAFDW0jJgNxNXJHiJxur+QaPAioyAyZ+-ftnTtZ2rR69Tqy0bfw@mail.gmail.com>
+Subject: Re: NOCOW + compress-force = bug
+Date: Thu, 16 Feb 2012 12:58:15 -0500
+Message-ID: <20120216175815.GM21896@shiny>
+References: <4F38B8F0.5020506@yahoo.com>
+ <4F38BE53.4080204@parallels.com>
+ <20120213141040.GG15350@twin.jikos.cz>
+ <20120216195515.643f4aa7@natsu>
 Mime-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
-Cc: Chris Samuel <chris@csamuel.org>, linux-btrfs@vger.kernel.org
-To: Ahmet Inan <ainan@mathematik.uni-freiburg.de>
+Cc: dave@jikos.cz, dima <dolenin@parallels.com>,
+	linux-btrfs@vger.kernel.org
+To: Roman Mamedov <rm@romanrm.ru>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <CAFDW0jJgNxNXJHiJxur+QaPAioyAyZ+-ftnTtZ2rR69Tqy0bfw@mail.gmail.com>
+In-Reply-To: <20120216195515.643f4aa7@natsu>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Thu, Feb 16, 2012 at 04:05:40PM +0100, Ahmet Inan wrote:
-> On Thu, Feb 16, 2012 at 11:31 AM, Chris Samuel <chris@csamuel.org> wrote:
-> > On Thursday 16 February 2012 19:06:52 Ahmet Inan wrote:
-> >
-> >> and got ENOSPC again :(
-> >>
-> >> so it doesnt matter if lzo or zlib: ENOSPC with compression
-> >> enabled!
-> >>
-> >> my kernel: vanilla 3.2.5
-> >
-> > I know that there has been an ENOSPC fix go in to the 3.3 RC kernels
-> > since the 3.2 release, any chance you'd be able to see if it still
-> > happens with the current 3.3 RC ?
+On Thu, Feb 16, 2012 at 07:55:15PM +0600, Roman Mamedov wrote:
+> Hello,
 > 
-> just tested 3.3.0-rc3, and it works like a charm!
+> Please be aware that there seems to be a possible problem with using NOCOW
+> flag on files situated on a filesystem mounted with compress-force(=lzo, in my
+> case).
 > 
-> but there are lots of issues with external packages not compiling with 3.3,
-> why i wont be able to deploy it to our systems here yet.
+> Since experimenting with NOCOW, I started regularly hitting this BUG at
+> extent-tree.c:5813 
 > 
-> could this one bugfix be backported to 3.2?
-
-All of the btrfs patches in 3.3-rc are against 3.2 in my git tree:
-
-git://git.kernel.org/pub/scm/linux/kernel/git/mason/linux-btrfs.git for-linus
-
-
+>   5813                 BUG_ON(!(flags & BTRFS_BLOCK_FLAG_FULL_BACKREF));
 > 
-> here are some results from my unsquashfs'ing just to show how
-> awesome btrfs with lzo is. these results are _not_ from an ssd btw!
-> (spinning disks, rebooted between tests)
+> I was unable to make netconsole work over a bridged interface, so can only
+> post screenshots of this OOPS:
+>   http://romanrm.ru/pics/2012/2012-02-16-btrfs-bug-1.jpg
+>   http://romanrm.ru/pics/2012/2012-02-16-btrfs-bug-2.jpg
+> 
+> This happened four times already, and always on snapshot creation (but not
+> every case). I have hourly snapshots in crontab, and only one case out of about
+> ten fails with this problem. Did not try to deliberately reproduce it yet by
+> manually making snapshots very often, etc.
 
-Very nice ;)
+Interesting, NOCOW and compression don't really mix.  We always cow for
+compression.  I'll try to reproduce it.
 
 -chris

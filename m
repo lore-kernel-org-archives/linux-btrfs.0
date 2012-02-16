@@ -1,53 +1,51 @@
-From: Timo Nentwig <btrfs@nentwig.biz>
-Subject: Re: can't read superblock (but could mount)
-Date: Thu, 16 Feb 2012 18:04:47 +0100 (CET)
-Message-ID: <alpine.LNX.2.00.1202161856220.1579@localhost>
-References: <20120210203051.Horde.q5KnHsL8999PNXBrH5AlxdA@webmail.df.eu> <20120210221842.GU8384@shiny> <20120210233959.GV8384@shiny> <20120211072725.Horde.8iYhMlNNcXdPNgpNS2yG-PA@webmail.df.eu> <20120213130943.GA1573@shiny> <alpine.LNX.2.00.1202141832420.11051@localhost>
- <20120214184131.GZ1573@shiny> <alpine.LNX.2.00.1202141950420.18337@localhost> <20120214211422.GE1573@shiny> <alpine.LNX.2.00.1202150701150.24133@localhost> <20120215132322.GR1573@shiny>
+From: Chris Mason <chris.mason@oracle.com>
+Subject: Re: Premature ENOSPC only with zlib Compression
+Date: Thu, 16 Feb 2012 12:55:36 -0500
+Message-ID: <20120216175536.GL21896@shiny>
+References: <CAKcLGm--EKeAbw7JzBtv7snhXEJSzTMZjn9_QDT+jGRCWsjM2g@mail.gmail.com>
+ <CAFDW0jLfLtEpnijsratvGho8RzC9D7nJD8H2y0SdZ6AxYeGpYw@mail.gmail.com>
+ <201202162131.38463.chris@csamuel.org>
+ <CAFDW0jJgNxNXJHiJxur+QaPAioyAyZ+-ftnTtZ2rR69Tqy0bfw@mail.gmail.com>
 Mime-Version: 1.0
-Content-Type: TEXT/PLAIN; charset=US-ASCII; format=flowed
-To: linux-btrfs@vger.kernel.org
+Content-Type: text/plain; charset=us-ascii
+Cc: Chris Samuel <chris@csamuel.org>, linux-btrfs@vger.kernel.org
+To: Ahmet Inan <ainan@mathematik.uni-freiburg.de>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <20120215132322.GR1573@shiny>
+In-Reply-To: <CAFDW0jJgNxNXJHiJxur+QaPAioyAyZ+-ftnTtZ2rR69Tqy0bfw@mail.gmail.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-
-
-On Wed, 15 Feb 2012, Chris Mason wrote:
-
-> Date: Wed, 15 Feb 2012 08:23:22 -0500
-> From: Chris Mason <chris.mason@oracle.com>
-> To: Timo Nentwig <btrfs@nentwig.biz>
-> Cc: linux-btrfs@vger.kernel.org
-> Subject: Re: can't read superblock (but could mount)
+On Thu, Feb 16, 2012 at 04:05:40PM +0100, Ahmet Inan wrote:
+> On Thu, Feb 16, 2012 at 11:31 AM, Chris Samuel <chris@csamuel.org> wrote:
+> > On Thursday 16 February 2012 19:06:52 Ahmet Inan wrote:
+> >
+> >> and got ENOSPC again :(
+> >>
+> >> so it doesnt matter if lzo or zlib: ENOSPC with compression
+> >> enabled!
+> >>
+> >> my kernel: vanilla 3.2.5
+> >
+> > I know that there has been an ENOSPC fix go in to the 3.3 RC kernels
+> > since the 3.2 release, any chance you'd be able to see if it still
+> > happens with the current 3.3 RC ?
 > 
-> On Wed, Feb 15, 2012 at 07:03:49AM +0100, Timo Nentwig wrote:
->> On Tue, 14 Feb 2012, Chris Mason wrote:
->>
->>> Ok, 3.2 shouldn't have done this.  Was this an external drive?  What
->>> else do you have on the system?
->>
->> Nothing special actually. Standard arch linux with virtualbox kernel modules.
->> It's a SSD if this should matter. Mounted with ssd,compress=lzo,noatime.
->
-> Ok, it sounds like we've got some memory corruption problems in here.
-> Hopefully not from virtualbox, but I'd start with an memtest.
+> just tested 3.3.0-rc3, and it works like a charm!
+> 
+> but there are lots of issues with external packages not compiling with 3.3,
+> why i wont be able to deploy it to our systems here yet.
+> 
+> could this one bugfix be backported to 3.2?
 
-Wow, now I'm really impressed! :) You are probably right. I overclocked memory
-and ran memtest for like 1-2h without errors and had a rock solid system for 
-quite a while when I recently started to witness all kinds of random and 
-reoccuring crashes. Actually blamed the broken FS rather than to run memtest 
-again. Mea culpa.
+All of the btrfs patches in 3.3-rc are against 3.2 in my git tree:
 
-So, I hit 1 error after a while, somewhat lowered clock freq and no error in 
-17h straight. I'll recreate the FS on that box.
+git://git.kernel.org/pub/scm/linux/kernel/git/mason/linux-btrfs.git for-linus
 
-Thanks a lot for your support!
 
->>> Is this the same FS that was corrupted or a different one?
->>
->> Different one. Created from an old 3.2.1 gentoo install (btrfs 0.19-dirty).
->
-> Different FS, same machine?  Please include all the kernel messages.
+> 
+> here are some results from my unsquashfs'ing just to show how
+> awesome btrfs with lzo is. these results are _not_ from an ssd btw!
+> (spinning disks, rebooted between tests)
 
-Yes, same machine, same SSD drive, new mkfs.btrfs.
+Very nice ;)
+
+-chris

@@ -1,62 +1,88 @@
-From: David Sterba <dave@jikos.cz>
-Subject: Re: Problems Implementing Snappy Patches
-Date: Thu, 16 Feb 2012 14:15:35 +0100
-Message-ID: <20120216131535.GB1046@twin.jikos.cz>
-References: <CAKcLGm_AgoHWa1TGwxz6PfSkKvxmDXi_3ykHR10WgTFVW9Gt4g@mail.gmail.com> <4F3C6495.60906@cn.fujitsu.com>
-Reply-To: dave@jikos.cz
+From: Roman Mamedov <rm@romanrm.ru>
+Subject: NOCOW + compress-force = bug
+Date: Thu, 16 Feb 2012 19:55:15 +0600
+Message-ID: <20120216195515.643f4aa7@natsu>
+References: <4F38B8F0.5020506@yahoo.com>
+	<4F38BE53.4080204@parallels.com>
+	<20120213141040.GG15350@twin.jikos.cz>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Cc: Mitch Harder <mitch.harder@sabayonlinux.org>,
-	linux-btrfs <linux-btrfs@vger.kernel.org>, andi@firstfloor.org
-To: Li Zefan <lizf@cn.fujitsu.com>
+Content-Type: multipart/signed; micalg=PGP-SHA1;
+ boundary="Sig_/veAUPMTq837EXvEkhPaP=Cd"; protocol="application/pgp-signature"
+Cc: dima <dolenin@parallels.com>, linux-btrfs@vger.kernel.org
+To: dave@jikos.cz
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <4F3C6495.60906@cn.fujitsu.com>
+In-Reply-To: <20120213141040.GG15350@twin.jikos.cz>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Thu, Feb 16, 2012 at 10:06:13AM +0800, Li Zefan wrote:
-> Mitch Harder wrote:
-> > I've been trying to test the snappy compression patches, but I'm
-> > getting corruptions when trying to use snappy as built on my system.
-> > 
-> > I've also tried sourcing my snappy patches from Chris Mason's snappy
-> > branch on kernel.org with the same result.
-> > 
-> 
-> A month ago I saved emails as patches and applied them on linux-btrfs'
-> for-linus branch, and I got the same problem. Then I used the snappy
-> branch (plus my fix), and it was fine. Don't know why.
+--Sig_/veAUPMTq837EXvEkhPaP=Cd
+Content-Type: text/plain; charset=US-ASCII
+Content-Transfer-Encoding: quoted-printable
 
-The decompression corruptions Mitch reported look same as what you sent.
-And I don't think they are caused by misapplied patches, I've checked
-both 'mbox via mutt' -> git or pull from Chris' branch, + your patches to
-fix the inlined extents, no other changes.
+Hello,
 
-I did this test:
-* mkfs
-* mount with compress-force=snappy
-* copy linux-3.2
-* drop caches  (or umount/mount)
-* check md5sums from original
+Please be aware that there seems to be a possible problem with using NOCOW
+flag on files situated on a filesystem mounted with compress-force(=3Dlzo, =
+in my
+case).
 
-Result:
-md5sum: WARNING: 32986 computed checksums did NOT match
+Since experimenting with NOCOW, I started regularly hitting this BUG at
+extent-tree.c:5813=20
 
-there are 37617 files in linux-3.2/
+  5813                 BUG_ON(!(flags & BTRFS_BLOCK_FLAG_FULL_BACKREF));
 
-syslog says just:
-[  728.744179] Btrfs loaded
-[  728.746332] device fsid 194bbb84-1f87-4a37-8091-957d557633f1 devid 1 transid 4 /dev/sda9
-[  728.747693] btrfs: enabling auto defrag
-[  728.747698] btrfs: enabling inode map caching
-[  728.747702] btrfs: use snappy compression
-[  728.747704] btrfs: disk space caching is enabled
+I was unable to make netconsole work over a bridged interface, so can only
+post screenshots of this OOPS:
+  http://romanrm.ru/pics/2012/2012-02-16-btrfs-bug-1.jpg
+  http://romanrm.ru/pics/2012/2012-02-16-btrfs-bug-2.jpg
 
-> > My system is a Core 2 Duo x86_64 Sabayon based system (Gentoo is our
-> > parent distro).  My target btrfs/snappy partition is a 16 GB partition
-> > I use for testing on a 500GB Western Digital Hard Drive.
+This happened four times already, and always on snapshot creation (but not
+every case). I have hourly snapshots in crontab, and only one case out of a=
+bout
+ten fails with this problem. Did not try to deliberately reproduce it yet by
+manually making snapshots very often, etc.
 
-I use the same testbox and disk as always, no related hw problems in
-syslog.
+On Mon, 13 Feb 2012 15:10:40 +0100
+David Sterba <dave@jikos.cz> wrote:
+
+> Hi,
+>=20
+> On Mon, Feb 13, 2012 at 04:40:03PM +0900, dima wrote:
+> > Actually it is possible. Check out David's response to my question from=
+=20
+> > some time ago:
+> > http://permalink.gmane.org/gmane.comp.file-systems.btrfs/14227
+>=20
+> this was a quick aid, please see attached file for an updated tool to set
+> the file flags, now added 'z' for NOCOMPRESS flag, and supports chattr
+> syntax plus all of the standard file flags.
+>=20
+> Setting and unsetting nocow is done like 'fileflags +C file' or -C for
+> unseting. Without any + or - options it prints current state.
+>=20
+>=20
+> david
 
 
-david
+--=20
+With respect,
+Roman
+
+~~~~~~~~~~~~~~~~~~~~~~~~~~~
+"Stallman had a printer,
+with code he could not see.
+So he began to tinker,
+and set the software free."
+
+--Sig_/veAUPMTq837EXvEkhPaP=Cd
+Content-Type: application/pgp-signature; name=signature.asc
+Content-Disposition: attachment; filename=signature.asc
+
+-----BEGIN PGP SIGNATURE-----
+Version: GnuPG v1.4.11 (GNU/Linux)
+
+iEYEARECAAYFAk89CsMACgkQTLKSvz+PZwhfIwCfZj1Db0//kskrJVYWemXrPa1z
+v2MAn25DFtjzFosf60LrMeoSYb/2vM1v
+=Bbg3
+-----END PGP SIGNATURE-----
+
+--Sig_/veAUPMTq837EXvEkhPaP=Cd--

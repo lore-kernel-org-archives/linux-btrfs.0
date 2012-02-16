@@ -1,55 +1,36 @@
-From: Liu Bo <liubo2009@cn.fujitsu.com>
-Subject: [PATCH 2/4] Btrfs: skip states when they does not contain bits to clear
-Date: Thu, 16 Feb 2012 18:34:37 +0800
-Message-ID: <1329388479-31341-2-git-send-email-liubo2009@cn.fujitsu.com>
-References: <1329388479-31341-1-git-send-email-liubo2009@cn.fujitsu.com>
-To: <linux-btrfs@vger.kernel.org>
+From: Mitch Harder <mitch.harder@sabayonlinux.org>
+Subject: Re: Problems Implementing Snappy Patches
+Date: Thu, 16 Feb 2012 07:01:01 -0600
+Message-ID: <CAKcLGm9V0FCc=tuYHOYJofNvxBst0g1LiLCLeCPP9NkBLGcRbA@mail.gmail.com>
+References: <CAKcLGm_AgoHWa1TGwxz6PfSkKvxmDXi_3ykHR10WgTFVW9Gt4g@mail.gmail.com>
+	<4F3C6495.60906@cn.fujitsu.com>
+Mime-Version: 1.0
+Content-Type: text/plain; charset=ISO-8859-1
+Cc: linux-btrfs <linux-btrfs@vger.kernel.org>
+To: Li Zefan <lizf@cn.fujitsu.com>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <1329388479-31341-1-git-send-email-liubo2009@cn.fujitsu.com>
+In-Reply-To: <4F3C6495.60906@cn.fujitsu.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Clearing a range's bits is different with setting them, since we don't
-need to touch them when states do not contain bits we want.
+On Wed, Feb 15, 2012 at 8:06 PM, Li Zefan <lizf@cn.fujitsu.com> wrote:
+> Mitch Harder wrote:
+>> When I copy directory containing a kernel sources git repository to =
+a
+>> freshly formated partition mounted with snappy, I get a corrupted
+>> copy. =A0If I mount with lzo or lz4 compression, I don't see any
+>> corruptions from the copy.
+>>
+>> I'm not showing any errors in dmesg.
+>>
+>
+> You're not seeing any errors, right?
 
-Signed-off-by: Liu Bo <liubo2009@cn.fujitsu.com>
----
- fs/btrfs/extent_io.c |   15 ++++++++++-----
- 1 files changed, 10 insertions(+), 5 deletions(-)
+That is correct.
 
-diff --git a/fs/btrfs/extent_io.c b/fs/btrfs/extent_io.c
-index e941cc4..e791fef 100644
---- a/fs/btrfs/extent_io.c
-+++ b/fs/btrfs/extent_io.c
-@@ -513,6 +513,15 @@ hit_next:
- 	WARN_ON(state->end < start);
- 	last_end = state->end;
- 
-+	if (state->end < end && !need_resched())
-+		next_node = rb_next(&state->rb_node);
-+	else
-+		next_node = NULL;
-+
-+	/* the state doesn't have the wanted bits, go ahead */
-+	if (!(state->state & bits))
-+		goto next;
-+
- 	/*
- 	 *     | ---- desired range ---- |
- 	 *  | state | or
-@@ -565,12 +574,8 @@ hit_next:
- 		goto out;
- 	}
- 
--	if (state->end < end && prealloc && !need_resched())
--		next_node = rb_next(&state->rb_node);
--	else
--		next_node = NULL;
--
- 	set |= clear_state_bit(tree, state, &bits, wake);
-+next:
- 	if (last_end == (u64)-1)
- 		goto out;
- 	start = last_end + 1;
--- 
-1.6.5.2
-
+I'm not seeing any errors thrown out directly from the copy command,
+nor am I seeing anything else in the dmesg log.
+--
+To unsubscribe from this list: send the line "unsubscribe linux-btrfs" =
+in
+the body of a message to majordomo@vger.kernel.org
+More majordomo info at  http://vger.kernel.org/majordomo-info.html

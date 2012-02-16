@@ -1,53 +1,51 @@
-From: Tsutomu Itoh <t-itoh@jp.fujitsu.com>
-Subject: [PATCH] Btrfs: fix return value check of extent_io_ops
-Date: Thu, 16 Feb 2012 10:11:40 +0900
-Message-ID: <201202160111.AA00043@T-ITOH1.jp.fujitsu.com>
+From: Li Zefan <lizf@cn.fujitsu.com>
+Subject: Re: Problems Implementing Snappy Patches
+Date: Thu, 16 Feb 2012 10:06:13 +0800
+Message-ID: <4F3C6495.60906@cn.fujitsu.com>
+References: <CAKcLGm_AgoHWa1TGwxz6PfSkKvxmDXi_3ykHR10WgTFVW9Gt4g@mail.gmail.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Cc: linux-btrfs@vger.kernel.org
-To: chris.mason@oracle.com
+Content-Type: text/plain; charset=ISO-8859-1
+Cc: linux-btrfs <linux-btrfs@vger.kernel.org>
+To: Mitch Harder <mitch.harder@sabayonlinux.org>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
+In-Reply-To: <CAKcLGm_AgoHWa1TGwxz6PfSkKvxmDXi_3ykHR10WgTFVW9Gt4g@mail.gmail.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-This patch adds the check on the return value of extent_io_ops.
+Mitch Harder wrote:
+> I've been trying to test the snappy compression patches, but I'm
+> getting corruptions when trying to use snappy as built on my system.
+> 
+> I'm checking out the Linux 3.2.6 kernel, merging that with the latest
+> 'for-linus' branch on Chris Mason's kernel.org repo, and then
+> integrating the snappy and lz4 patches from David Sterba's git
+> repository (dev/compression-squad branch).
+> 
+> I've tried a simple merge of the dev/compression-squad branch (which
+> merged without complaint by git), and I also tried a second build of
+> the kernel integrating the dev/compression-squad branch patches with
+> format-patch (git format-patch -k -m -U5 --stdout <range> | git am -3
+> -k).
+> 
+> I've also tried sourcing my snappy patches from Chris Mason's snappy
+> branch on kernel.org with the same result.
+> 
 
-Signed-off-by: Tsutomu Itoh <t-itoh@jp.fujitsu.com>
----
- fs/btrfs/extent_io.c |   16 ++++++++++------
- 1 files changed, 10 insertions(+), 6 deletions(-)
+A month ago I saved emails as patches and applied them on linux-btrfs'
+for-linus branch, and I got the same problem. Then I used the snappy
+branch (plus my fix), and it was fine. Don't know why.
 
-diff --git a/fs/btrfs/extent_io.c b/fs/btrfs/extent_io.c
-index fcf77e1..a84621f 100644
---- a/fs/btrfs/extent_io.c
-+++ b/fs/btrfs/extent_io.c
-@@ -2154,9 +2154,10 @@ static int bio_readpage_error(struct bio *failed_bio, struct page *page,
- 		 "this_mirror=%d, num_copies=%d, in_validation=%d\n", read_mode,
- 		 failrec->this_mirror, num_copies, failrec->in_validation);
- 
--	tree->ops->submit_bio_hook(inode, read_mode, bio, failrec->this_mirror,
--					failrec->bio_flags, 0);
--	return 0;
-+	ret = tree->ops->submit_bio_hook(inode, read_mode, bio,
-+					 failrec->this_mirror,
-+					 failrec->bio_flags, 0);
-+	return ret;
- }
- 
- /* lots and lots of room for performance fixes in the end_bio funcs */
-@@ -2779,9 +2780,12 @@ static int __extent_writepage(struct page *page, struct writeback_control *wbc,
- 				delalloc_start = delalloc_end + 1;
- 				continue;
- 			}
--			tree->ops->fill_delalloc(inode, page, delalloc_start,
--						 delalloc_end, &page_started,
--						 &nr_written);
-+			ret = tree->ops->fill_delalloc(inode, page,
-+						       delalloc_start,
-+						       delalloc_end,
-+						       &page_started,
-+						       &nr_written);
-+			BUG_ON(ret);
- 			/*
- 			 * delalloc_end is already one less than the total
- 			 * length, so we don't subtract one from
+> I get the same results either way.
+> 
+> My system is a Core 2 Duo x86_64 Sabayon based system (Gentoo is our
+> parent distro).  My target btrfs/snappy partition is a 16 GB partition
+> I use for testing on a 500GB Western Digital Hard Drive.
+> 
+> When I copy directory containing a kernel sources git repository to a
+> freshly formated partition mounted with snappy, I get a corrupted
+> copy.  If I mount with lzo or lz4 compression, I don't see any
+> corruptions from the copy.
+> 
+> I'm not showing any errors in dmesg.
+> 
 
+You're not seeing any errors, right?

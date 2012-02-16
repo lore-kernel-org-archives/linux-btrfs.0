@@ -1,58 +1,42 @@
-From: Chris Samuel <chris@csamuel.org>
-Subject: Re: Premature ENOSPC only with zlib Compression
-Date: Thu, 16 Feb 2012 21:31:35 +1100
-Message-ID: <201202162131.38463.chris@csamuel.org>
-References: <CAKcLGm--EKeAbw7JzBtv7snhXEJSzTMZjn9_QDT+jGRCWsjM2g@mail.gmail.com> <CAFDW0jLfLtEpnijsratvGho8RzC9D7nJD8H2y0SdZ6AxYeGpYw@mail.gmail.com>
-Mime-Version: 1.0
-Content-Type: multipart/signed;
-  boundary="nextPart1410197.UbgOHglJpB";
-  protocol="application/pgp-signature";
-  micalg=pgp-sha1
-To: linux-btrfs@vger.kernel.org
+From: Liu Bo <liubo2009@cn.fujitsu.com>
+Subject: [PATCH 4/4] Btrfs: fix a bug on overcommit stuff
+Date: Thu, 16 Feb 2012 18:34:39 +0800
+Message-ID: <1329388479-31341-4-git-send-email-liubo2009@cn.fujitsu.com>
+References: <1329388479-31341-1-git-send-email-liubo2009@cn.fujitsu.com>
+To: <linux-btrfs@vger.kernel.org>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <CAFDW0jLfLtEpnijsratvGho8RzC9D7nJD8H2y0SdZ6AxYeGpYw@mail.gmail.com>
+In-Reply-To: <1329388479-31341-1-git-send-email-liubo2009@cn.fujitsu.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
---nextPart1410197.UbgOHglJpB
-Content-Type: Text/Plain;
-  charset="utf-8"
-Content-Transfer-Encoding: quoted-printable
+When overcommitting, we should check the sum of pinned space and
+bytes for delayed item.
 
-On Thursday 16 February 2012 19:06:52 Ahmet Inan wrote:
+Signed-off-by: Liu Bo <liubo2009@cn.fujitsu.com>
+---
+ fs/btrfs/extent-tree.c |    5 ++++-
+ 1 files changed, 4 insertions(+), 1 deletions(-)
 
-> and got ENOSPC again :(
->=20
-> so it doesnt matter if lzo or zlib: ENOSPC with compression
-> enabled!
->=20
-> my kernel: vanilla 3.2.5
+diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
+index 283af7a..e4a67c9 100644
+--- a/fs/btrfs/extent-tree.c
++++ b/fs/btrfs/extent-tree.c
+@@ -3611,12 +3611,15 @@ static int may_commit_transaction(struct btrfs_root *root,
+ 	if (space_info != delayed_rsv->space_info)
+ 		return -ENOSPC;
+ 
++	spin_lock(&space_info->lock);
+ 	spin_lock(&delayed_rsv->lock);
+-	if (delayed_rsv->size < bytes) {
++	if (space_info->bytes_pinned + delayed_rsv->size < bytes) {
+ 		spin_unlock(&delayed_rsv->lock);
++		spin_unlock(&space_info->lock);
+ 		return -ENOSPC;
+ 	}
+ 	spin_unlock(&delayed_rsv->lock);
++	spin_unlock(&space_info->lock);
+ 
+ commit:
+ 	trans = btrfs_join_transaction(root);
+-- 
+1.6.5.2
 
-I know that there has been an ENOSPC fix go in to the 3.3 RC kernels=20
-since the 3.2 release, any chance you'd be able to see if it still=20
-happens with the current 3.3 RC ?
-
-cheers,
-Chris
-=2D-=20
- Chris Samuel  :  http://www.csamuel.org/  :  Melbourne, VIC
-
-This email may come with a PGP signature as a file. Do not panic.
-=46or more info see: http://en.wikipedia.org/wiki/OpenPGP
-
---nextPart1410197.UbgOHglJpB
-Content-Type: application/pgp-signature; name=signature.asc 
-Content-Description: This is a digitally signed message part.
-
------BEGIN PGP SIGNATURE-----
-Version: GnuPG v1.4.11 (GNU/Linux)
-
-iQEVAwUATzzbCI1yjaOTJg85AQLdtQgAmn4UglHEUhxOg+tVH+Rrd6OevsKtD01x
-3BlW/HKmX9ZboEGxiPlPWQx295sDOpQttGCFX0Fo6u+0mvT/6WtVrNzTm2XmcXQV
-SaqAA6PcwUk+D4MRBCk5MbFeg0iDThm9+JrGcJv6vw94PyZS7M/hw8EqZa7CtUAx
-KX5UrkPDZZkI4KNmG9cMC6yh/82A9TzjxF3K2L6pQOHGytlLP9GcLqg8oj8xEwYg
-ZLKc4JE3INm1dnnJMJRt0DEIqd4TLveqVqsVpQSDWRZjMj4tZjX1XlQdR9CRJfiu
-1jgXN05Zp1lKF35qMjtIEcfd1QI1vZ6MSEFLpnxk2jTgdm7+Jw7lvA==
-=M8t8
------END PGP SIGNATURE-----
-
---nextPart1410197.UbgOHglJpB--

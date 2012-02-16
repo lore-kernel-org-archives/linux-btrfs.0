@@ -1,42 +1,53 @@
-From: Mitch Harder <mitch.harder@sabayonlinux.org>
-Subject: Re: Problems Implementing Snappy Patches
-Date: Wed, 15 Feb 2012 17:14:25 -0600
-Message-ID: <CAKcLGm-oLE6kLkPF9XadZpd_XSKnfKZ=CpdjGozz46P4i-Eo3g@mail.gmail.com>
-References: <CAKcLGm_AgoHWa1TGwxz6PfSkKvxmDXi_3ykHR10WgTFVW9Gt4g@mail.gmail.com>
-	<pan.2012.02.15.23.03.29@cox.net>
+From: Tsutomu Itoh <t-itoh@jp.fujitsu.com>
+Subject: [PATCH] Btrfs: fix return value check of extent_io_ops
+Date: Thu, 16 Feb 2012 10:11:40 +0900
+Message-ID: <201202160111.AA00043@T-ITOH1.jp.fujitsu.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=ISO-8859-1
-To: linux-btrfs@vger.kernel.org
+Content-Type: text/plain; charset=us-ascii
+Cc: linux-btrfs@vger.kernel.org
+To: chris.mason@oracle.com
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <pan.2012.02.15.23.03.29@cox.net>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Wed, Feb 15, 2012 at 5:03 PM, Duncan <1i5t5.duncan@cox.net> wrote:
-> Mitch Harder posted on Wed, 15 Feb 2012 16:46:00 -0600 as excerpted:
->
->> I've been trying to test the snappy compression patches, but I'm get=
-ting
->> corruptions when trying to use snappy as built on my system.
->>
->> I'm checking out the Linux 3.2.6 kernel, merging that with the lates=
-t
->> 'for-linus' branch on Chris Mason's kernel.org repo, and then
->> integrating the snappy and lz4 patches from David Sterba's git
->> repository (dev/compression-squad branch).
->
-> Given that we're past the 3.3 kernel merge window, wouldn't Chris's "=
-for-
-> linus" branch be based on the patches that went into 3.3, now? =A0IOW=
-,
-> you're basing on 3.2.x but AFAIK you should be basing on 3.3, now, so
-> you're missing the 3.3 patches which CM's for-linus tree branch shoul=
-d be
-> assuming, at this point.
->
+This patch adds the check on the return value of extent_io_ops.
 
-Chris's 'for-linus' branch is currently based on 3.2 (but not 3.2.6).
---
-To unsubscribe from this list: send the line "unsubscribe linux-btrfs" =
-in
-the body of a message to majordomo@vger.kernel.org
-More majordomo info at  http://vger.kernel.org/majordomo-info.html
+Signed-off-by: Tsutomu Itoh <t-itoh@jp.fujitsu.com>
+---
+ fs/btrfs/extent_io.c |   16 ++++++++++------
+ 1 files changed, 10 insertions(+), 6 deletions(-)
+
+diff --git a/fs/btrfs/extent_io.c b/fs/btrfs/extent_io.c
+index fcf77e1..a84621f 100644
+--- a/fs/btrfs/extent_io.c
++++ b/fs/btrfs/extent_io.c
+@@ -2154,9 +2154,10 @@ static int bio_readpage_error(struct bio *failed_bio, struct page *page,
+ 		 "this_mirror=%d, num_copies=%d, in_validation=%d\n", read_mode,
+ 		 failrec->this_mirror, num_copies, failrec->in_validation);
+ 
+-	tree->ops->submit_bio_hook(inode, read_mode, bio, failrec->this_mirror,
+-					failrec->bio_flags, 0);
+-	return 0;
++	ret = tree->ops->submit_bio_hook(inode, read_mode, bio,
++					 failrec->this_mirror,
++					 failrec->bio_flags, 0);
++	return ret;
+ }
+ 
+ /* lots and lots of room for performance fixes in the end_bio funcs */
+@@ -2779,9 +2780,12 @@ static int __extent_writepage(struct page *page, struct writeback_control *wbc,
+ 				delalloc_start = delalloc_end + 1;
+ 				continue;
+ 			}
+-			tree->ops->fill_delalloc(inode, page, delalloc_start,
+-						 delalloc_end, &page_started,
+-						 &nr_written);
++			ret = tree->ops->fill_delalloc(inode, page,
++						       delalloc_start,
++						       delalloc_end,
++						       &page_started,
++						       &nr_written);
++			BUG_ON(ret);
+ 			/*
+ 			 * delalloc_end is already one less than the total
+ 			 * length, so we don't subtract one from
+

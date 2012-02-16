@@ -1,106 +1,62 @@
-From: "Norbert Scheibner" <scno@gmx.net>
-Subject: btrsfck shows errors...
-Date: Thu, 16 Feb 2012 18:58:53 +0100
-Message-ID: <20120216175853.19050@gmx.net>
+From: Chris Mason <chris.mason@oracle.com>
+Subject: Re: can't read superblock (but could mount)
+Date: Thu, 16 Feb 2012 13:14:07 -0500
+Message-ID: <20120216181407.GR21896@shiny>
+References: <20120210233959.GV8384@shiny>
+ <20120211072725.Horde.8iYhMlNNcXdPNgpNS2yG-PA@webmail.df.eu>
+ <20120213130943.GA1573@shiny>
+ <alpine.LNX.2.00.1202141832420.11051@localhost>
+ <20120214184131.GZ1573@shiny>
+ <alpine.LNX.2.00.1202141950420.18337@localhost>
+ <20120214211422.GE1573@shiny>
+ <alpine.LNX.2.00.1202150701150.24133@localhost>
+ <20120215132322.GR1573@shiny>
+ <alpine.LNX.2.00.1202161856220.1579@localhost>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=utf-8
-To: linux-btrfs@vger.kernel.org
+Content-Type: text/plain; charset=us-ascii
+Cc: linux-btrfs@vger.kernel.org
+To: Timo Nentwig <btrfs@nentwig.biz>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
+In-Reply-To: <alpine.LNX.2.00.1202161856220.1579@localhost>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Gl=C3=BCck Auf!
-On kernel 3.2 with btrfs-progs-dangerdonteveruse-62b7993.
-I have these subvolumes on a working fs on 1 TB hdd:
+On Thu, Feb 16, 2012 at 06:04:47PM +0100, Timo Nentwig wrote:
+> 
+> 
+> On Wed, 15 Feb 2012, Chris Mason wrote:
+> 
+> >Date: Wed, 15 Feb 2012 08:23:22 -0500
+> >From: Chris Mason <chris.mason@oracle.com>
+> >To: Timo Nentwig <btrfs@nentwig.biz>
+> >Cc: linux-btrfs@vger.kernel.org
+> >Subject: Re: can't read superblock (but could mount)
+> >
+> >On Wed, Feb 15, 2012 at 07:03:49AM +0100, Timo Nentwig wrote:
+> >>On Tue, 14 Feb 2012, Chris Mason wrote:
+> >>
+> >>>Ok, 3.2 shouldn't have done this.  Was this an external drive?  What
+> >>>else do you have on the system?
+> >>
+> >>Nothing special actually. Standard arch linux with virtualbox kernel modules.
+> >>It's a SSD if this should matter. Mounted with ssd,compress=lzo,noatime.
+> >
+> >Ok, it sounds like we've got some memory corruption problems in here.
+> >Hopefully not from virtualbox, but I'd start with an memtest.
+> 
+> Wow, now I'm really impressed! :) You are probably right. I overclocked memory
+> and ran memtest for like 1-2h without errors and had a rock solid
+> system for quite a while when I recently started to witness all
+> kinds of random and reoccuring crashes. Actually blamed the broken
+> FS rather than to run memtest again. Mea culpa.
+> 
+> So, I hit 1 error after a while, somewhat lowered clock freq and no
+> error in 17h straight. I'll recreate the FS on that box.
 
-ID 257 top level 5 path system-backup-20110803-182701-monthly
-ID 481 top level 5 path system-backup-20110901-040001-monthly
-ID 809 top level 5 path system-backup-20111001-040001-monthly
-ID 864 top level 5 path system-backup-20111101-040001-monthly
-ID 928 top level 5 path system-backup-20111201-040001-monthly
-ID 1404 top level 5 path system-backup-20120101-155108-monthly
-ID 1431 top level 5 path system-backup-20120201-040001-monthly
-ID 1432 top level 5 path system-backup-20120202-040001
-ID 1433 top level 5 path system-backup-20120203-040001
-ID 1723 top level 5 path system-backup
-ID 2373 top level 5 path system-backup-20120210-040001
-ID 2378 top level 5 path system-backup-20120211-040001
-ID 2383 top level 5 path system-backup-20120212-040002
-ID 2391 top level 5 path system-backup-20120213-040001
-ID 2398 top level 5 path system-backup-20120214-040001
-ID 2401 top level 5 path system-backup-20120215-040001
+Grin, never be impressed when kernel guys blame the memory.  We might as
+well be saying its cosmic rays.
 
-btrsfsck shows:
-checking extents
-checking fs roots
-root 5 inode 18446744073709551604 errors 2000
-root 5 inode 18446744073709551605 errors 1
-root 257 inode 18446744073709551604 errors 2000
-root 257 inode 18446744073709551605 errors 1
-root 481 inode 610772 errors 400
-root 481 inode 18446744073709551604 errors 2000
-root 481 inode 18446744073709551605 errors 1
-root 809 inode 610772 errors 400
-root 809 inode 18446744073709551604 errors 2000
-root 809 inode 18446744073709551605 errors 1
-root 864 inode 610772 errors 400
-root 864 inode 18446744073709551604 errors 2000
-root 864 inode 18446744073709551605 errors 1
-root 928 inode 610772 errors 400
-root 928 inode 18446744073709551604 errors 2000
-root 928 inode 18446744073709551605 errors 1
-root 1404 inode 610772 errors 400
-root 1404 inode 18446744073709551604 errors 2000
-root 1404 inode 18446744073709551605 errors 1
-root 1431 inode 610772 errors 400
-root 1431 inode 18446744073709551604 errors 2000
-root 1431 inode 18446744073709551605 errors 1
-root 1432 inode 610772 errors 400
-root 1432 inode 18446744073709551604 errors 2000
-root 1432 inode 18446744073709551605 errors 1
-root 1433 inode 610772 errors 400
-root 1433 inode 18446744073709551604 errors 2000
-root 1433 inode 18446744073709551605 errors 1
-root 1723 inode 610772 errors 400
-root 1723 inode 18446744073709551604 errors 2000
-root 1723 inode 18446744073709551605 errors 1
-root 2373 inode 610772 errors 400
-root 2373 inode 18446744073709551604 errors 2000
-root 2373 inode 18446744073709551605 errors 1
-root 2378 inode 610772 errors 400
-root 2378 inode 18446744073709551604 errors 2000
-root 2378 inode 18446744073709551605 errors 1
-root 2383 inode 610772 errors 400
-root 2383 inode 18446744073709551604 errors 2000
-root 2383 inode 18446744073709551605 errors 1
-root 2391 inode 610772 errors 400
-root 2391 inode 18446744073709551604 errors 2000
-root 2391 inode 18446744073709551605 errors 1
-root 2398 inode 610772 errors 400
-root 2398 inode 18446744073709551604 errors 2000
-root 2398 inode 18446744073709551605 errors 1
-root 2401 inode 610772 errors 400
-root 2401 inode 18446744073709551604 errors 2000
-root 2401 inode 18446744073709551605 errors 1
-found 683579826176 bytes used err is 1
-total csum bytes: 664064404
-total tree bytes: 3535802368
-total fs tree bytes: 2500636672
-btree space waste bytes: 958368184
-file data blocks allocated: 763722764288
- referenced 763722764288
+Really though, for this particular type of corruption it is usually some
+hardware problem, or a memory corruption bug in the kernel.  Thanks for
+humoring me and running the memtest.
 
-I already tried scrub and balance, both worked, but
-the errors are still there. It's the same fs I
-mentioned in my post from Thu, 09 Feb 2012 18:42:32
-+0100.
-
-Is there anything I can do to repair that fs now or do
-I have to wait for a really working btrfsck?
-
-Cheers
-      Norbert
---
-To unsubscribe from this list: send the line "unsubscribe linux-btrfs" =
-in
-the body of a message to majordomo@vger.kernel.org
-More majordomo info at  http://vger.kernel.org/majordomo-info.html
+-chris

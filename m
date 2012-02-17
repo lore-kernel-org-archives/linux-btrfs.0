@@ -1,39 +1,22 @@
-From: Vincenzo Laurenziello <vincenx@fastwebnet.it>
-Subject: [PATCH] Cleanup useless lines
-Date: Thu, 16 Feb 2012 20:37:00 +0100
-Message-ID: <1329421020.20228.5.camel@icarus>
-Reply-To: vinx83@gmail.com
+From: Mitch Harder <mitch.harder@sabayonlinux.org>
+Subject: Re: Problems Implementing Snappy Patches
+Date: Thu, 16 Feb 2012 18:10:44 -0600
+Message-ID: <CAKcLGm-bwEEHJ6UihN3Ov7Y5E=kYWEtU7qYbLKY7aJmBjZNy4A@mail.gmail.com>
+References: <CAKcLGm_AgoHWa1TGwxz6PfSkKvxmDXi_3ykHR10WgTFVW9Gt4g@mail.gmail.com>
+	<4F3C6495.60906@cn.fujitsu.com>
+	<20120216131535.GB1046@twin.jikos.cz>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="UTF-8"
-Cc: josef@redhat.com
-To: linux-btrfs@vger.kernel.org
+Content-Type: text/plain; charset=ISO-8859-1
+To: dave@jikos.cz, Li Zefan <lizf@cn.fujitsu.com>,
+	Mitch Harder <mitch.harder@sabayonlinux.org>,
+	linux-btrfs <linux-btrfs@vger.kernel.org>, andi@firstfloor.org
 Return-path: <linux-btrfs-owner@vger.kernel.org>
+In-Reply-To: <20120216131535.GB1046@twin.jikos.cz>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-This patch removes two useless calls of btrfs_header_nritems() in balance_level().
+Just to add another data point, I built Chris Mason's 'snappy' branch
+from git.kernel.org as-is (a 3.2.0 kernel plus the snappy patches)
+with no additional patches.
 
-Signed-off-by: Vincenzo Laurenziello <vinx83@gmail.com>
-Signed-off-by: Josef Bacik <josef@redhat.com>
----
---- a/fs/btrfs/ctree.c	2012-02-13 20:17:29.000000000 +0100
-+++ b/fs/btrfs/ctree.c	2012-02-16 19:44:59.830817118 +0100
-@@ -966,8 +966,6 @@ static noinline int balance_level(struct
- 	    BTRFS_NODEPTRS_PER_BLOCK(root) / 4)
- 		return 0;
- 
--	btrfs_header_nritems(mid);
--
- 	left = read_node_slot(root, parent, pslot - 1);
- 	if (left) {
- 		btrfs_tree_lock(left);
-@@ -997,7 +995,6 @@ static noinline int balance_level(struct
- 		wret = push_node_left(trans, root, left, mid, 1);
- 		if (wret < 0)
- 			ret = wret;
--		btrfs_header_nritems(mid);
- 	}
- 
- 	/*
----
-
-
+This 3.2.0 snappy kernel also exhibits the problem copying the kernel
+sources to a snappy-compressed partition.

@@ -1,55 +1,46 @@
-From: Marc MERLIN <marc@merlins.org>
-Subject: Re: brtfs on top of dmcrypt with SSD. No corruption iff write cache off?
-Date: Sat, 18 Feb 2012 08:07:02 -0800
-Message-ID: <20120218160702.GB32373@merlins.org>
-References: <20120130003754.GD4380@merlins.org> <20120213001400.GD31989@merlins.org> <201202181339.24502.Martin@lichtvoll.de> <201202181349.23385.Martin@lichtvoll.de> <20120130003754.GD4380@merlins.org> <4F384FAA.5060506@redhat.com> <20120213001400.GD31989@merlins.org> <201202181339.24502.Martin@lichtvoll.de>
-Mime-Version: 1.0
+From: Curtis Jones <curtis.jones@gmail.com>
+Subject: btrfs open_ctree failed (after recent Ubuntu update)
+Date: Sat, 18 Feb 2012 15:34:22 -0500
+Message-ID: <455D7450-3946-478A-9021-6B01A4D7FB9B@gmail.com>
+Mime-Version: 1.0 (Apple Message framework v1257)
 Content-Type: text/plain; charset=us-ascii
-Cc: linux-btrfs@vger.kernel.org, Milan Broz <mbroz@redhat.com>,
-	Chris Mason <chris.mason@oracle.com>,
-	jeff@deserettechnology.com
-To: Martin Steigerwald <Martin@lichtvoll.de>
+To: linux-btrfs@vger.kernel.org
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <201202181349.23385.Martin@lichtvoll.de> <201202181339.24502.Martin@lichtvoll.de>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Sat, Feb 18, 2012 at 01:39:24PM +0100, Martin Steigerwald wrote:
-> To Milan Broz: Well now I noticed that you linked to your own blog entry. 
+I recently let the Update Manager run after ignoring it for a couple of weeks. It required a reboot. My USB btrfs volume didn't mount after reboot. dmesg revealed:
 
-He did not, I'm the one who did.
-I asked a bunch of questions since the online docs didn't address them for
-me. Some of you answered those for me, I asked access to the wiki and I
-updated the wiki to have the information you gave me.
+[ 463.187097] btrfs: open_ctree failed
+[ 991.567090] device label StoreW devid 1 transid 37077 /dev/sdb
+[ 1003.171989] device label StoreW devid 1 transid 37077 /dev/sdb
+[ 1003.207990] parent transid verify failed on 79466496 wanted 33999 found 36704
+[ 1003.208363] parent transid verify failed on 79466496 wanted 33999 found 36704
+[ 1003.208857] parent transid verify failed on 79466496 wanted 33999 found 36704
+[ 1003.208859] parent transid verify failed on 79466496 wanted 33999 found 36704
+[ 1003.230889] btrfs: open_ctree failed
 
-While I have no inherent bias one way or another, obviously I did put some
-of your opinions on the wiki :)
+btrfs-show plainly enough finds my volume:
 
-> Please do not take my below statements personally - I might have written 
-> them a bit harshly. Actually I do not really know whether your statement 
-> that TRIM is overrated is correct, but before believing that TRIM does not 
-> give much advantage, I would like to see at least some evidence of any 
-> sort, cause for me my explaination below that it should make a difference 
-> at least seems logical to me.
+$ sudo btrfs-show
+Label: StoreW uuid: e98e0ffd-3d0b-4b55-bacc-0d60797f0f29
+Total devices 1 FS bytes used 1.79TB
+devid 1 size 2.73TB used 1.90TB path /dev/sdb
 
-That sounds like a reasonable request to me.
+Btrfs Btrfs v0.19
 
-In the meantime I changed the page to 
-'Does Btrfs support TRIM/discard?
+but everything else (like "btrfsctl -a") doesn't see it.
 
-"-o discard" is supported, but can have some negative consequences on
-performance on some SSDs or at least whether it adds worthwhile performance
-is up for debate depending on who you ask, and makes undeletion/recovery
-near impossible while being a security problem if you use dm-crypt
-underneath (see
-http://asalor.blogspot.com/2011/08/trim-dm-crypt-problems.html ), therefore
-it is not enabled by default. You are welcome to run your own benchmarks and
-post them here, with the caveat that they'll be very SSD firmware specific.'
+I've read dozens of pleas for "open_ctree" issues, but none of them had useful conclusions. Is there anything I can do?
 
-I'll leave further edits to others ;)
+Any help would be appreciated. Thank you. Please CC me on any replies.
 
-Marc
--- 
-"A mouse is a device used to point at the xterm you want to type in" - A.S.R.
-Microsoft is to operating systems ....
-                                      .... what McDonalds is to gourmet cooking
-Home page: http://marc.merlins.org/  
+Linux veriton 3.0.0-16-generic-pae #28-Ubuntu SMP Fri Jan 27 19:24:01 UTC 2012 i686 i686 i386 GNU/Linux
+
+--
+Curtis Jones
+curtisjones.us
+404.492.6437
+
+
+
+

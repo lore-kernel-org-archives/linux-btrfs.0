@@ -1,70 +1,98 @@
-From: Ahmet Inan <ainan@mathematik.uni-freiburg.de>
-Subject: Re: Premature ENOSPC only with zlib Compression
-Date: Fri, 17 Feb 2012 17:34:42 +0100
-Message-ID: <CAFDW0jKA4s-Z9RnpLOdSME4xRuokZqjVeEEO+ZAC9b8Qp5GHqQ@mail.gmail.com>
-References: <CAKcLGm--EKeAbw7JzBtv7snhXEJSzTMZjn9_QDT+jGRCWsjM2g@mail.gmail.com>
-	<CAFDW0jLfLtEpnijsratvGho8RzC9D7nJD8H2y0SdZ6AxYeGpYw@mail.gmail.com>
-	<201202162131.38463.chris@csamuel.org>
-	<CAFDW0jJgNxNXJHiJxur+QaPAioyAyZ+-ftnTtZ2rR69Tqy0bfw@mail.gmail.com>
-	<20120216175536.GL21896@shiny>
+From: Martin Steigerwald <Martin@lichtvoll.de>
+Subject: Re: brtfs on top of dmcrypt with SSD. No corruption iff write cache off?
+Date: Sat, 18 Feb 2012 13:33:21 +0100
+Message-ID: <201202181333.21540.Martin@lichtvoll.de>
+References: <20120130003754.GD4380@merlins.org> <4F384FAA.5060506@redhat.com> <20120213001400.GD31989@merlins.org> (sfid-20120213_091738_261043_A8965C3B)
 Mime-Version: 1.0
-Content-Type: text/plain; charset=UTF-8
-To: Chris Mason <chris.mason@oracle.com>,
-	Ahmet Inan <ainan@mathematik.uni-freiburg.de>,
-	Chris Samuel <chris@csamuel.org>, linux-btrfs@vger.kernel.org
+Content-Type: Text/Plain; charset=iso-8859-1
+To: linux-btrfs@vger.kernel.org
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <20120216175536.GL21896@shiny>
+In-Reply-To: <20120213001400.GD31989@merlins.org>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Thu, Feb 16, 2012 at 6:55 PM, Chris Mason <chris.mason@oracle.com> wrote:
-> On Thu, Feb 16, 2012 at 04:05:40PM +0100, Ahmet Inan wrote:
->> On Thu, Feb 16, 2012 at 11:31 AM, Chris Samuel <chris@csamuel.org> wrote:
->> > On Thursday 16 February 2012 19:06:52 Ahmet Inan wrote:
->> >
->> >> and got ENOSPC again :(
->> >>
->> >> so it doesnt matter if lzo or zlib: ENOSPC with compression
->> >> enabled!
->> >>
->> >> my kernel: vanilla 3.2.5
->> >
->> > I know that there has been an ENOSPC fix go in to the 3.3 RC kernels
->> > since the 3.2 release, any chance you'd be able to see if it still
->> > happens with the current 3.3 RC ?
->>
->> just tested 3.3.0-rc3, and it works like a charm!
->>
->> but there are lots of issues with external packages not compiling with 3.3,
->> why i wont be able to deploy it to our systems here yet.
->>
->> could this one bugfix be backported to 3.2?
->
-> All of the btrfs patches in 3.3-rc are against 3.2 in my git tree:
->
-> git://git.kernel.org/pub/scm/linux/kernel/git/mason/linux-btrfs.git for-linus
+Am Montag, 13. Februar 2012 schrieb Marc MERLIN:
+> On Mon, Feb 13, 2012 at 12:47:54AM +0100, Milan Broz wrote:
+> > On 02/12/2012 11:32 PM, Marc MERLIN wrote:
+> > >Actually I had one more question.
+> > >
+> > >I read this page:
+> > >http://www.redhat.com/archives/dm-devel/2011-July/msg00042.html
+> > >
+> > >I'm not super clear if with 3.2.5 kernel, I need to pass the speci=
+al
+> > >allow_discards option for brtfs and dm-crypt to be safe together, =
+or
+> > >whether
+> > >they now talk through an API and everything "just works" :)
+> >=20
+> > If you want discards to be supported in dmcrypt, you have to enable
+> > it manually.
+> >=20
+> > The most comfortable way is just use recent cryptsetup and add
+> > --allow-discards option to luksOpen command.
+> >=20
+> > It will be never enabled by default in dmcrypt for security reasons
+> > http://asalor.blogspot.com/2011/08/trim-dm-crypt-problems.html
+>=20
+> Thanks for the answer.
+> I knew that it created some security problems but I had not yet found
+> the page you just gave, which effectively states that TRIM isn't
+> actually that big a win on recent SSDs (I thought it was actually
+> pretty important to use it on them until now).
 
-thank you very much, it works as it should.
-had to couse some traffic on kernel.org but finally i got a local linux repo!
+Well I find
 
-is for-linus considered stable and can i pull regularly?
+"On the other side, TRIM is usually overrated. Drive itself should keep=
+=20
+good performance even without TRIM, either by using internal garbage=20
+collecting process or by some area reserved for optimal writes handling=
+=2E"
 
-here what i did for those interested:
+a very, very weak statement on the matter, cause it lacks any links to =
+any=20
+evidence for the statement made. For that I meant to knew up to know is=
+=20
+that wear leaveling of the SSD can be more effective the more space the=
+ SSD=20
+controller/firmware can use for wear leveling freely. Thus when I give=20
+space back to the SSD via fstrim it has more space for wear leveling wh=
+ich=20
+should lead to more evenly distributed write pattterns and more evenly=20
+distributed write accesses to flash cells and thus a longer life time. =
+I do=20
+not see any other means on how the SSD drive can do that data has been=20
+freed again except for it being overwritten, then the old write locatio=
+n=20
+can be freed of course. But then BTRFS does COW and thus when I underst=
+and=20
+this correctly, the SSD wouldn=B4t even be told when a file is overwrit=
+ten,=20
+cause actually it isn=B4t, but is written to a new location. Thus espec=
+ially=20
+for BTRFS I see even more reasons to use fstrim.
 
-cd /usr/src/
-rm linux
-git clone git://git.kernel.org/pub/scm/linux/kernel/git/stable/linux-stable.git
-linux
-cd linux
-git checkout linux-3.2.y
-git pull git://git.kernel.org/pub/scm/linux/kernel/git/mason/linux-btrfs.git
-for-linus
-cp /boot/config .config
-make menuconfig
-# look around, save and exit
-make -j8
-make modules_install
-make install
+I have no scientifical backing either, but at least I tried to think of=
+ an=20
+explaination that appears logical to me instead of just saying it is so=
+=20
+without providing any explaination at all. Yes, I dislike bold statemen=
+ts=20
+without any backing at all. (If I overread something in the text, pleas=
+e=20
+hint me to it, but I did not see any explaination or link to support th=
+e=20
+statement.)
 
-and thats it, 3.2.6 stable kernel from git with latest for-linus btrfs from git
+I use ecryptfs and I use fstrim occassionally with BTRFS and Ext4, but =
+I=20
+do not use online discard.
 
-Ahmet
+Thanks,
+--=20
+Martin 'Helios' Steigerwald - http://www.Lichtvoll.de
+GPG: 03B0 0D6C 0040 0710 4AFA  B82F 991B EAAC A599 84C7
+--
+To unsubscribe from this list: send the line "unsubscribe linux-btrfs" =
+in
+the body of a message to majordomo@vger.kernel.org
+More majordomo info at  http://vger.kernel.org/majordomo-info.html

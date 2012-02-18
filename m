@@ -1,14 +1,32 @@
 From: Martin Steigerwald <Martin@lichtvoll.de>
 Subject: Re: brtfs on top of dmcrypt with SSD. No corruption iff write cache off?
-Date: Sat, 18 Feb 2012 13:33:21 +0100
-Message-ID: <201202181333.21540.Martin@lichtvoll.de>
+Date: Sat, 18 Feb 2012 13:39:24 +0100
+Message-ID: <201202181339.24502.Martin@lichtvoll.de>
 References: <20120130003754.GD4380@merlins.org> <4F384FAA.5060506@redhat.com> <20120213001400.GD31989@merlins.org> (sfid-20120213_091738_261043_A8965C3B)
 Mime-Version: 1.0
 Content-Type: Text/Plain; charset=iso-8859-1
+Cc: Marc MERLIN <marc@merlins.org>, Milan Broz <mbroz@redhat.com>,
+	Chris Mason <chris.mason@oracle.com>,
+	jeff@deserettechnology.com
 To: linux-btrfs@vger.kernel.org
 Return-path: <linux-btrfs-owner@vger.kernel.org>
 In-Reply-To: <20120213001400.GD31989@merlins.org>
 List-ID: <linux-btrfs.vger.kernel.org>
+
+Sorry, I forget to keep Cc=B4s, different lists, different habits.
+
+To Milan Broz: Well now I noticed that you linked to your own blog entr=
+y.=20
+Please do not take my below statements personally - I might have writte=
+n=20
+them a bit harshly. Actually I do not really know whether your statemen=
+t=20
+that TRIM is overrated is correct, but before believing that TRIM does =
+not=20
+give much advantage, I would like to see at least some evidence of any=20
+sort, cause for me my explaination below that it should make a differen=
+ce=20
+at least seems logical to me.
 
 Am Montag, 13. Februar 2012 schrieb Marc MERLIN:
 > On Mon, Feb 13, 2012 at 12:47:54AM +0100, Milan Broz wrote:

@@ -1,50 +1,53 @@
-From: Clemens Eisserer <linuxhippy@gmail.com>
-Subject: Re: brtfs on top of dmcrypt with SSD. No corruption iff write cache off?
-Date: Sun, 19 Feb 2012 01:53:37 +0100
-Message-ID: <CAFvQSYTthK8AxAKGeU8aP1cm5nYpQ4pr3i3a2X4iArRZbK_QYg@mail.gmail.com>
-References: <20120130003754.GD4380@merlins.org>
-	<4F384FAA.5060506@redhat.com>
-	<20120213001400.GD31989@merlins.org>
-	<201202181349.23385.Martin@lichtvoll.de>
-	<201202181339.24502.Martin@lichtvoll.de>
-	<20120218160702.GB32373@merlins.org>
-Mime-Version: 1.0
-Content-Type: text/plain; charset=UTF-8
-To: linux-btrfs@vger.kernel.org
+From: Curtis Jones <curtis.jones@gmail.com>
+Subject: Re: btrfs open_ctree failed (after recent Ubuntu update)
+Date: Sat, 18 Feb 2012 21:47:35 -0500
+Message-ID: <FA65D86B-2BF3-49C9-941D-04AFF239523D@gmail.com>
+References: <455D7450-3946-478A-9021-6B01A4D7FB9B@gmail.com> <201202191000.34819.chris@csamuel.org>
+Mime-Version: 1.0 (Apple Message framework v1257)
+Content-Type: text/plain; charset=US-ASCII
+Cc: linux-btrfs@vger.kernel.org
+To: Chris Samuel <chris@csamuel.org>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <20120218160702.GB32373@merlins.org>
+In-Reply-To: <201202191000.34819.chris@csamuel.org>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hi,
+I don't want to push this too far in the direction of being an Ubuntu support thread; but do you happen to know of any convenient methods for installing a 3.2.x kernel on Ubuntu? I'd like to minimize the chance of screwing up my existing Ubuntu installation....
 
-> "-o discard" is supported, but can have some negative consequences on
-> performance on some SSDs or at least whether it adds worthwhile performance
-> is up for debate ....
+Thanks for your help.
 
-The problem is, that TRIM can't be benchmarked in a traditional way -
-by running one run with TRIM and another one without and later
-comparing numbers.
-Sure, enabling TRIM causes your benchmarks to run a bit slower in the
-first place (as the TRIM commands need to be generated and interpreted
-by the SSD, which is not free) - however without TRIM the SSD won't
-have any clue what data is "dead" and what needs to be rescued until
-you overwrite it.
-
-On my SandForce SSD I had disabled TRIM (because those drives are
-known for the good recovery without TRIM), and for now the SSD is in
-the following state:
-
-dd oflag=sync if=/some_large_file_in_page_cache of=testfile bs=4M
-567558236 bytes (568 MB) copied, 23.7798 s, 23.9 MB/s
-
-233 SandForce_Internal      0x0000   000   000   000    Old_age
-Offline      -       3968
-241 Lifetime_Writes_GiB     0x0032   000   000   000    Old_age
-Always       -       1280
+--
+Curtis Jones
+curtisjones.us
+404.492.6437
 
 
-So that drive is writing at 24mb/s and has a write amplification of
-3.1 - usually you see values between one and two.
-Completly "normal" desktop useage.
 
-- Clemens
+
+On Feb 18, 2012, at 18.00.27, Chris Samuel wrote:
+
+> On Sunday 19 February 2012 07:34:22 Curtis Jones wrote:
+> 
+>> Any help would be appreciated. Thank you. Please CC me on any
+>> replies.
+>> 
+>> Linux veriton 3.0.0-16-generic-pae #28-Ubuntu SMP Fri Jan 27
+>> 19:24:01 UTC 2012 i686 i686 i386 GNU/Linux
+> 
+> That's a fairly old kernel in btrfs terms, you may want to try the 
+> latest 3.2.x kernel from the Ubuntu Mainline Kernel PPA here:
+> 
+> http://kernel.ubuntu.com/~kernel-ppa/mainline/
+> 
+> If that doesn't work out you can try the latest 3.3 RC there too.
+> 
+> I'm running the 64-bit 3.2.5 kernel from there on Kubuntu 11.10 and it 
+> is fine (modulo boot time complaints about the apparmour stuff).
+> 
+> cheers,
+> Chris
+> -- 
+> Chris Samuel  :  http://www.csamuel.org/  :  Melbourne, VIC
+> 
+> This email may come with a PGP signature as a file. Do not panic.
+> For more info see: http://en.wikipedia.org/wiki/OpenPGP
+

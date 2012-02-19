@@ -1,29 +1,22 @@
-From: Hubert Kario <kario@wit.edu.pl>
-Subject: [PATCH] Fix segmentation fault when opening invalid file system
-Date: Sun, 19 Feb 2012 21:11:46 +0100
-Message-ID: <1329682306-21681-1-git-send-email-kario@wit.edu.pl>
+From: Manuel Silvoso <msilvoso@internet.lu>
+Subject: Bug? What should I report
+Date: Sun, 19 Feb 2012 22:10:20 +0100
+Message-ID: <4F41653C.7080006@internet.lu>
+Reply-To: msilvoso@internet.lu
+Mime-Version: 1.0
+Content-Type: text/plain; charset=ISO-8859-1
 To: linux-btrfs@vger.kernel.org
 Return-path: <linux-btrfs-owner@vger.kernel.org>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Signed-off-by: Hubert Kario <kario@wit.edu.pl>
----
- btrfslabel.c |    2 ++
- 1 files changed, 2 insertions(+), 0 deletions(-)
+Hello,
 
-diff --git a/btrfslabel.c b/btrfslabel.c
-index c9f4684..3c3566b 100644
---- a/btrfslabel.c
-+++ b/btrfslabel.c
-@@ -55,6 +55,8 @@ static void change_label_unmounted(char *dev, char *nLabel)
-         * and as read-write.
-         */
-        root = open_ctree(dev, 0, 1);
-+       if (!root) /* errors are printed by open_ctree() */
-+         return;
- 
-        trans = btrfs_start_transaction(root, 1);
-        strncpy(root->fs_info->super_copy.label, nLabel, BTRFS_LABEL_SIZE);
--- 
-1.7.9
+I installed an Arch Linux (completely updated - kernel 3.2.6-2) on btrfs
+to test the distro and the filesystem.
+My filesystem got corrupted. I think this happened because I unplugged
+an external DVD drive without umounting it (or it could be a
+coincidence). What logs or other infos would be interesting to you?
 
+Best regards,
+
+Manu

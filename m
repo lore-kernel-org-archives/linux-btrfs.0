@@ -1,64 +1,50 @@
-From: Chris Samuel <chris@csamuel.org>
-Subject: Re: btrfs open_ctree failed (after recent Ubuntu update)
-Date: Sun, 19 Feb 2012 10:00:27 +1100
-Message-ID: <201202191000.34819.chris@csamuel.org>
-References: <455D7450-3946-478A-9021-6B01A4D7FB9B@gmail.com>
+From: Clemens Eisserer <linuxhippy@gmail.com>
+Subject: Re: brtfs on top of dmcrypt with SSD. No corruption iff write cache off?
+Date: Sun, 19 Feb 2012 01:53:37 +0100
+Message-ID: <CAFvQSYTthK8AxAKGeU8aP1cm5nYpQ4pr3i3a2X4iArRZbK_QYg@mail.gmail.com>
+References: <20120130003754.GD4380@merlins.org>
+	<4F384FAA.5060506@redhat.com>
+	<20120213001400.GD31989@merlins.org>
+	<201202181349.23385.Martin@lichtvoll.de>
+	<201202181339.24502.Martin@lichtvoll.de>
+	<20120218160702.GB32373@merlins.org>
 Mime-Version: 1.0
-Content-Type: multipart/signed;
-  boundary="nextPart3151165.5maGbWLSPI";
-  protocol="application/pgp-signature";
-  micalg=pgp-sha1
-Cc: Curtis Jones <curtis.jones@gmail.com>
+Content-Type: text/plain; charset=UTF-8
 To: linux-btrfs@vger.kernel.org
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <455D7450-3946-478A-9021-6B01A4D7FB9B@gmail.com>
+In-Reply-To: <20120218160702.GB32373@merlins.org>
 List-ID: <linux-btrfs.vger.kernel.org>
 
---nextPart3151165.5maGbWLSPI
-Content-Type: Text/Plain;
-  charset="iso-8859-1"
-Content-Transfer-Encoding: quoted-printable
+Hi,
 
-On Sunday 19 February 2012 07:34:22 Curtis Jones wrote:
+> "-o discard" is supported, but can have some negative consequences on
+> performance on some SSDs or at least whether it adds worthwhile performance
+> is up for debate ....
 
-> Any help would be appreciated. Thank you. Please CC me on any
-> replies.
->
-> Linux veriton 3.0.0-16-generic-pae #28-Ubuntu SMP Fri Jan 27
-> 19:24:01 UTC 2012 i686 i686 i386 GNU/Linux
+The problem is, that TRIM can't be benchmarked in a traditional way -
+by running one run with TRIM and another one without and later
+comparing numbers.
+Sure, enabling TRIM causes your benchmarks to run a bit slower in the
+first place (as the TRIM commands need to be generated and interpreted
+by the SSD, which is not free) - however without TRIM the SSD won't
+have any clue what data is "dead" and what needs to be rescued until
+you overwrite it.
 
-That's a fairly old kernel in btrfs terms, you may want to try the=20
-latest 3.2.x kernel from the Ubuntu Mainline Kernel PPA here:
+On my SandForce SSD I had disabled TRIM (because those drives are
+known for the good recovery without TRIM), and for now the SSD is in
+the following state:
 
-http://kernel.ubuntu.com/~kernel-ppa/mainline/
+dd oflag=sync if=/some_large_file_in_page_cache of=testfile bs=4M
+567558236 bytes (568 MB) copied, 23.7798 s, 23.9 MB/s
 
-If that doesn't work out you can try the latest 3.3 RC there too.
+233 SandForce_Internal      0x0000   000   000   000    Old_age
+Offline      -       3968
+241 Lifetime_Writes_GiB     0x0032   000   000   000    Old_age
+Always       -       1280
 
-I'm running the 64-bit 3.2.5 kernel from there on Kubuntu 11.10 and it=20
-is fine (modulo boot time complaints about the apparmour stuff).
 
-cheers,
-Chris
-=2D-=20
- Chris Samuel  :  http://www.csamuel.org/  :  Melbourne, VIC
+So that drive is writing at 24mb/s and has a write amplification of
+3.1 - usually you see values between one and two.
+Completly "normal" desktop useage.
 
-This email may come with a PGP signature as a file. Do not panic.
-=46or more info see: http://en.wikipedia.org/wiki/OpenPGP
-
---nextPart3151165.5maGbWLSPI
-Content-Type: application/pgp-signature; name=signature.asc 
-Content-Description: This is a digitally signed message part.
-
------BEGIN PGP SIGNATURE-----
-Version: GnuPG v1.4.11 (GNU/Linux)
-
-iQEVAwUAT0AtjI1yjaOTJg85AQKCKAgAjBymXgGocFNXU3+bKW4v3y8Gk/HkpxvJ
-w3IP4P5nhLZtdkBGPkvcHL6XZcspTU6VOyU6eaquHEOpCLm4W6EK40BXG3/Epb/x
-5p7koiscDP4kvH6jf1UIJcNjpW5JxY7BHvum2egH9R3b/2yUE22f9N/P4XoDnCrw
-w8/klNsstDitdJeasq0Pvt6HURN/U2U9dvJzXqAVA3z8sLj7u38n96ZHrPB7oH3i
-l9UhIqyImYjApzM08MAu6EThl96BKU8KlUAMdFw9DJWwAtBflyOkh1Tsm7wJn57m
-APHvTvIEDU5uSRtA77HHBRBFs5BSP+Lr16sjgnbdddcyvLCqkfjCYA==
-=IhdV
------END PGP SIGNATURE-----
-
---nextPart3151165.5maGbWLSPI--
+- Clemens

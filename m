@@ -1,22 +1,23 @@
-From: Hugo Mills <hugo@carfax.org.uk>
+From: jlcenter@comcast.net
 Subject: Re: btrfs open_ctree failed (after recent Ubuntu update)
-Date: Sun, 19 Feb 2012 19:26:05 +0000
-Message-ID: <20120219192605.GA5350@carfax.org.uk>
-References: <201202191000.34819.chris@csamuel.org>
- <1236042020.1069615.1329678208635.JavaMail.root@sz0019a.westchester.pa.mail.comcast.net>
+Date: Sun, 19 Feb 2012 19:31:51 +0000 (UTC)
+Message-ID: <1323199538.1070187.1329679911124.JavaMail.root@sz0019a.westchester.pa.mail.comcast.net>
+References: <20120219192605.GA5350@carfax.org.uk>
 Mime-Version: 1.0
-Content-Type: multipart/signed; micalg=pgp-sha1;
-	protocol="application/pgp-signature"; boundary="IJpNTDwzlM2Ie8A6"
-Cc: linux-btrfs@vger.kernel.org
-To: jlcenter@comcast.net
+Content-Type: text/plain; charset=utf-8
+To: linux-btrfs@vger.kernel.org
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <1236042020.1069615.1329678208635.JavaMail.root@sz0019a.westchester.pa.mail.comcast.net>
+In-Reply-To: <20120219192605.GA5350@carfax.org.uk>
 List-ID: <linux-btrfs.vger.kernel.org>
 
+Thanks, Hugo.  I'll check this out.  -John
 
---IJpNTDwzlM2Ie8A6
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
+----- Original Message -----
+From: "Hugo Mills" <hugo@carfax.org.uk>
+To: jlcenter@comcast.net
+Cc: linux-btrfs@vger.kernel.org
+Sent: Sunday, February 19, 2012 2:26:05 PM
+Subject: Re: btrfs open_ctree failed (after recent Ubuntu update)
 
 On Sun, Feb 19, 2012 at 07:03:28PM +0000, jlcenter@comcast.net wrote:
 > I was curious, if one goes the route of upgrading the kernel, how
@@ -71,17 +72,3 @@ http://btrfs.ipv5.de/index.php?title=Btrfs_source_repositories#Official_reposito
 === Hugo Mills: hugo@... carfax.org.uk | darksatanic.net | lug.org.uk ===
   PGP key: 515C238D from wwwkeys.eu.pgp.net or http://www.carfax.org.uk
             --- There isn't a noun that can't be verbed. ---             
-
---IJpNTDwzlM2Ie8A6
-Content-Type: application/pgp-signature; name="signature.asc"
-Content-Description: Digital signature
-
------BEGIN PGP SIGNATURE-----
-Version: GnuPG v1.4.11 (GNU/Linux)
-
-iD8DBQFPQUzNIKyzvlFcI40RAlarAJ97OVAX6hnDY3QXKaqmQbATy0srdwCfctxd
-LrLODr1w4xTKg0UZYoby5EA=
-=OUKb
------END PGP SIGNATURE-----
-
---IJpNTDwzlM2Ie8A6--

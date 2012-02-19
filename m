@@ -1,53 +1,83 @@
-From: Curtis Jones <curtis.jones@gmail.com>
+From: Chris Samuel <chris@csamuel.org>
 Subject: Re: btrfs open_ctree failed (after recent Ubuntu update)
-Date: Sat, 18 Feb 2012 21:47:35 -0500
-Message-ID: <FA65D86B-2BF3-49C9-941D-04AFF239523D@gmail.com>
-References: <455D7450-3946-478A-9021-6B01A4D7FB9B@gmail.com> <201202191000.34819.chris@csamuel.org>
-Mime-Version: 1.0 (Apple Message framework v1257)
-Content-Type: text/plain; charset=US-ASCII
-Cc: linux-btrfs@vger.kernel.org
-To: Chris Samuel <chris@csamuel.org>
+Date: Sun, 19 Feb 2012 21:41:09 +1100
+Message-ID: <201202192141.13497.chris@csamuel.org>
+References: <455D7450-3946-478A-9021-6B01A4D7FB9B@gmail.com> <201202191000.34819.chris@csamuel.org> <FA65D86B-2BF3-49C9-941D-04AFF239523D@gmail.com>
+Mime-Version: 1.0
+Content-Type: multipart/signed;
+  boundary="nextPart13043654.NYtZ5baVRO";
+  protocol="application/pgp-signature";
+  micalg=pgp-sha1
+To: linux-btrfs@vger.kernel.org, Curtis Jones <curtis.jones@gmail.com>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <201202191000.34819.chris@csamuel.org>
+In-Reply-To: <FA65D86B-2BF3-49C9-941D-04AFF239523D@gmail.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-I don't want to push this too far in the direction of being an Ubuntu support thread; but do you happen to know of any convenient methods for installing a 3.2.x kernel on Ubuntu? I'd like to minimize the chance of screwing up my existing Ubuntu installation....
+--nextPart13043654.NYtZ5baVRO
+Content-Type: Text/Plain;
+  charset="iso-8859-1"
+Content-Transfer-Encoding: quoted-printable
 
-Thanks for your help.
+Hi Curtis,
 
---
-Curtis Jones
-curtisjones.us
-404.492.6437
+On Sunday 19 February 2012 13:47:35 Curtis Jones wrote:
 
+> I don't want to push this too far in the direction of being an
+> Ubuntu support thread; but do you happen to know of any convenient
+> methods for installing a 3.2.x kernel on Ubuntu? I'd like to
+> minimize the chance of screwing up my existing Ubuntu
+> installation....
 
+My suggestion would be (given the uname -a info you supplied showed
+you were running a PAE kernel):
 
+1) First become root with:
 
-On Feb 18, 2012, at 18.00.27, Chris Samuel wrote:
+sudo -i
 
-> On Sunday 19 February 2012 07:34:22 Curtis Jones wrote:
-> 
->> Any help would be appreciated. Thank you. Please CC me on any
->> replies.
->> 
->> Linux veriton 3.0.0-16-generic-pae #28-Ubuntu SMP Fri Jan 27
->> 19:24:01 UTC 2012 i686 i686 i386 GNU/Linux
-> 
-> That's a fairly old kernel in btrfs terms, you may want to try the 
-> latest 3.2.x kernel from the Ubuntu Mainline Kernel PPA here:
-> 
-> http://kernel.ubuntu.com/~kernel-ppa/mainline/
-> 
-> If that doesn't work out you can try the latest 3.3 RC there too.
-> 
-> I'm running the 64-bit 3.2.5 kernel from there on Kubuntu 11.10 and it 
-> is fine (modulo boot time complaints about the apparmour stuff).
-> 
-> cheers,
-> Chris
-> -- 
-> Chris Samuel  :  http://www.csamuel.org/  :  Melbourne, VIC
-> 
-> This email may come with a PGP signature as a file. Do not panic.
-> For more info see: http://en.wikipedia.org/wiki/OpenPGP
+2) Then download the current stable mainline kernel release:
 
+wget -c http://kernel.ubuntu.com/~kernel-ppa/mainline/v3.2.6-precise/linux-=
+image-3.2.6-030206-generic-
+pae_3.2.6-030206.201202131435_i386.deb
+
+3) Install the deb package you just downloaded with:
+
+dpkg -i ./linux-image-3.2.6-030206-generic-pae_3.2.6-030206.201202131435_i3=
+86.deb
+
+Then you should be able to reboot into it.
+
+If you want to get rid of it you reboot and pick the latest 3.0 kernel
+that grub offers you and then:
+
+sudo -i
+apt-get remove --purge linux-image-3.2.6-030206-generic-pae
+
+Hope this helps!
+
+cheers,
+Chris
+=2D-=20
+ Chris Samuel  :  http://www.csamuel.org/  :  Melbourne, VIC
+
+This email may come with a PGP signature as a file. Do not panic.
+=46or more info see: http://en.wikipedia.org/wiki/OpenPGP
+
+--nextPart13043654.NYtZ5baVRO
+Content-Type: application/pgp-signature; name=signature.asc 
+Content-Description: This is a digitally signed message part.
+
+-----BEGIN PGP SIGNATURE-----
+Version: GnuPG v1.4.11 (GNU/Linux)
+
+iQEVAwUAT0DRxY1yjaOTJg85AQJHWgf/ai/WHf0L9yy/LTrY/O21vkhUicj6yM0g
+KisHWnDQJ/0ABuHBeeCWKHJ2EF7qtEJMLRcP1J+2u3Enrf/WkfFxsDTeprxF43H/
+obBqQxwk0KrOTDdT0byOxFoBz/j0JnLVE2TXr4AvHuhZJaY/amTUG/RF+Sw0gV/K
+sy+Dn5+9KhKcC9v6IOz21vpthlC2qm4bDlA/jiD68L4AFskLHekMqbA3M9T0y5Hg
+cng3Lg1jyDtd8QruPbdUBBfwfEge2M/t1qGPoH/uGghIFxvCc3CVxckHtAzqGua5
+0zhAkCtqzW7QnlkefjG3j5SNIEKHRzWBX2fVi+2bm9WMqlRLmbHJ/w==
+=5F15
+-----END PGP SIGNATURE-----
+
+--nextPart13043654.NYtZ5baVRO--

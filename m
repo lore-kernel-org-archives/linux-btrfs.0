@@ -1,46 +1,31 @@
 From: David Sterba <dave@jikos.cz>
-Subject: Re: [PATCH] Btrfs: avoid setting ->d_op twice
-Date: Tue, 21 Feb 2012 15:52:29 +0100
-Message-ID: <20120221145229.GI1046@twin.jikos.cz>
-References: <4F435E1C.8090902@cn.fujitsu.com>
+Subject: Re: Hot data Tracking
+Date: Wed, 22 Feb 2012 00:24:45 +0100
+Message-ID: <20120221232445.GJ1046@twin.jikos.cz>
+References: <4F35F365.8000602@googlemail.com>
 Reply-To: dave@jikos.cz
 Mime-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
-Cc: "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
-To: Li Zefan <lizf@cn.fujitsu.com>
+Cc: linux-btrfs@vger.kernel.org
+To: Timo Witte <timo.witte@googlemail.com>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <4F435E1C.8090902@cn.fujitsu.com>
+In-Reply-To: <4F35F365.8000602@googlemail.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hi,
+On Sat, Feb 11, 2012 at 05:49:41AM +0100, Timo Witte wrote:
+> What happened to the hot data tracking feature in btrfs? There are a lot
+> of old patches from aug 2010, but it looks like the feature has been
+> completly removed from the current version of btrfs. Is this feature
+> still on the roadmap?
 
-thanks for the patch!
+Removed? AFAIK it hasn't been ever merged, though it's be a nice
+feature. There were suggestions to turn it into a generic API for any
+filesystem to use, but this hasn't happened.
 
-On Tue, Feb 21, 2012 at 05:04:28PM +0800, Li Zefan wrote:
-> Follow those instructions, and you'll trigger a warning in the
-> beginning of d_set_d_op():
-> 
->   # mkfs.btrfs /dev/loop3
->   # mount /dev/loop3 /mnt
->   # btrfs sub create /mnt/sub
->   # btrfs sub snap /mnt /mnt/snap
->   # touch /mnt/snap/sub
->   touch: cannot touch `tmp': Permission denied
-
-is this the right error code? permission denied == EACCESS and this is
-returned in case of file
-
-(strace touch file)
-
-open("file", O_WRONLY|O_CREAT|O_NOCTTY|O_NONBLOCK, 0666) = -1 EACCES (Permission denied)
-
-while mkdir returns (strace mkdir a-dir)
-
-mkdir("a-dir", 0777)                    = -1 EPERM (Operation not permitted)
-
-
-The commands were run as root and EPERM looks more adequate than
-EACCESS.
+The patches are quite independent and it was easy to refresh them on top
+of current for-linus branch. A test run did not survive a "random"
+xfstest, 013 this time, so I probably mismerged some bits. The patchset
+lives in branch foreign/ibm/hotdatatrack in my git repo.
 
 
 david

@@ -1,85 +1,99 @@
-From: Curtis Jones <curtis.jones@gmail.com>
-Subject: Re: btrfs open_ctree failed (after recent Ubuntu update)
-Date: Mon, 20 Feb 2012 21:30:27 -0500
-Message-ID: <59C258B5-F261-41B3-9FC9-48E6E3F158FB@gmail.com>
-References: <455D7450-3946-478A-9021-6B01A4D7FB9B@gmail.com> <201202191000.34819.chris@csamuel.org> <FA65D86B-2BF3-49C9-941D-04AFF239523D@gmail.com> <201202192141.13497.chris@csamuel.org> <E271A902-2E12-494D-85D2-FFFD9362FC30@gmail.com> <CAG1y0sdqOuRJ9RJhZ9MEkz8DYyGbsxPOzScAq70jBYE2YOR=tA@mail.gmail.com>
-Mime-Version: 1.0 (Apple Message framework v1257)
-Content-Type: text/plain; charset=US-ASCII
-Cc: Chris Samuel <chris@csamuel.org>, linux-btrfs@vger.kernel.org
-To: "Fajar A. Nugraha" <list@fajar.net>
+From: Gareth Pye <gareth@cerberos.id.au>
+Subject: Re: Balance RAID10 with odd device count
+Date: Tue, 21 Feb 2012 13:46:10 +1100
+Message-ID: <CA+WRLO_3dZ90w97CSwXeQ7X-UC5dhJm-HiPVKDJpnNsV5SbigQ@mail.gmail.com>
+References: <CA+Huu1H9WAiRH203N60XVRAHE1oBx_Bh9DTcshbJ280jYvG+kA@mail.gmail.com>
+	<CAHH42iun+Qby5evPhwv0T6LH7BaOk=pcPrPbrKXe2BUEnNX5sA@mail.gmail.com>
+	<CAHH42isod-cyEqG1rfq6m1ki2EV_FqU6TnX9WzH+BJ7s6OF1aQ@mail.gmail.com>
+	<CA+Huu1FF9-wFXyG4NvvNLwJv5eqHUcVK_UHeENSY9A=9ssXSEQ@mail.gmail.com>
+	<CA+WRLO9BgqE+CwCUNgjwjVFyjDDp94SBX_EbdVciHUd0jpUqWQ@mail.gmail.com>
+	<CA+Huu1H3q-eztZ8W3BK=y4TR7ero1tc=QdzAkiFewQw8jA-7-g@mail.gmail.com>
+Mime-Version: 1.0
+Content-Type: text/plain; charset=ISO-8859-1
+Cc: linux-btrfs@vger.kernel.org
+To: tom@drdabbles.us
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <CAG1y0sdqOuRJ9RJhZ9MEkz8DYyGbsxPOzScAq70jBYE2YOR=tA@mail.gmail.com>
+In-Reply-To: <CA+Huu1H3q-eztZ8W3BK=y4TR7ero1tc=QdzAkiFewQw8jA-7-g@mail.gmail.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Fajar,
+I'd probably want to use DupeX to refer to what was classically RAID1
+(Duplicate across all disks) and Dupe is an alias for Dup2 but one can
+also choose Dupe3 through Dupe99
 
-Thanks for the instructions. I've included some extra detail here for future generations.
+And I keep forgetting to post to the list in plain text, so many of
+you may not have noticed my original email that only exists on the
+mailing list in the Quotation in Tom's email
 
-I followed the instructions here (https://wiki.archlinux.org/index.php/Btrfs) to obtain the source code for btrfs-zero-log, specifically:
+On Tue, Feb 21, 2012 at 12:59 PM, Tom Cameron <tomc603@gmail.com> wrote=
+:
+> Gareth,
+>
+> I would completely agree. I only use the RAID vernacular here because=
+,
+> well, it's the unfortunate defacto standard way to talk about data
+> protection.
+>
+> I'd go a step beyond saying dupe or dupe + stripe, because future
+> modifications could conceivably see the addition of multiple
+> duplicated sets. The case of 4 disks in a BTRFS filesystem with dupe
+> running across all of them would be a clear extension I could see. So
+> that would be something like 4D. I'm not real sure what you'd use for
+> the terminology, but something completely different than RAID-like
+> terms is almost certainly best. Just look at the ZFS documentation to
+> see how carefully they have to spell out what RAID-Z, Z2, and Z3 do
+> because they used the RAID acronym.
+>
+> On Mon, Feb 20, 2012 at 8:47 PM, Gareth Pye <gareth@cerberos.id.au> w=
+rote:
+>> On Tue, Feb 21, 2012 at 12:07 PM, Tom Cameron <tomc603@gmail.com> wr=
+ote:
+>>>
+>>> It seems from the BTRFS documentation that the RAID1 profile is
+>>> actually "mirror", or store 2 copies of the object. Perhaps when
+>>> Oracle makes BTRFS a production option they should more clearly spe=
+ll
+>>> that out.
+>>
+>>
+>> I'd really like BTRFS to not use RAID level terminology anywhere (ot=
+her than
+>> maybe in=A0parenthesis=A0along the lines of: "this is similar to RAI=
+DX") and use
+>> less ambigious options as the recommended way to talk about things. =
+As there
+>> is good reason to talk about Dup and RAID1 differently as they aren'=
+t the
+>> same on more than 2 drives. Doing it that way will make people under=
+stand
+>> what is going on more often, which should be good.
+>>
+>> It also makes things much easier to remember. Like how much data can=
+ you fit
+>> on a 6 drive RAID10? I dunno, but I can more intuitively answer that=
+ same
+>> question when it is phrased as just simply 'dup', or maybe 'dup + st=
+ripe'.
+>>
+>> Is there a difference in BTRFS between dup and raid10?
+>>
+>> --
+>> Gareth Pye
+>> Level 2 Judge, Melbourne, Australia
+>> Australian MTG Forum:=A0mtgau.com
+>> gareth@cerberos.id.au=A0-=A0www.rockpaperdynamite.wordpress.com
+>> "Dear God, I would like to file a bug report"
+>>
 
-	git clone git://git.kernel.org/pub/scm/linux/kernel/git/mason/btrfs-progs.git
-	make 
-	make btrfs-zero-log
 
-If this isn't the source code I should use, please let me know.
 
-I ran into two dependency issues (uuid/uuid.h and attr/xattr.h) during "make" which I resolved, respectively, with:
-
-	sudo apt-get install uuid-dev
-	sudo apt-get install libattr1-dev
-
-And then I ran btrfs-zero-log:
-
-	$ sudo ./btrfs-zero-log /dev/sdb
-	parent transid verify failed on 79466496 wanted 33999 found 36704
-	parent transid verify failed on 79466496 wanted 33999 found 36704
-	parent transid verify failed on 79466496 wanted 33999 found 36704
-	parent transid verify failed on 79466496 wanted 33999 found 36704
-	Ignoring transid failure
-	Unable to find block group for 0
-	btrfs-zero-log: extent-tree.c:284: find_search_start: Assertion `!(1)' failed.
-
-I'll have to repurpose another disk to try out your restore suggestion; which I can't do from my presently remote location. If you have any other suggestions, or if the above info spawns any new ideas, please let me know.
-
-Thanks.
-
+--=20
+Gareth Pye
+Level 2 Judge, Melbourne, Australia
+Australian MTG Forum:=A0mtgau.com
+gareth@cerberos.id.au=A0-=A0www.rockpaperdynamite.wordpress.com
+"Dear God, I would like to file a bug report"
 --
-Curtis Jones
-curtisjones.us
-404.492.6437
-
-
-
-
-On Feb 20, 2012, at 01.23.00, Fajar A. Nugraha wrote:
-
-> On Mon, Feb 20, 2012 at 10:34 AM, Curtis Jones <curtis.jones@gmail.com> wrote:
->> Chris,
->> 
->> Thank you for those kernel-update instructions. That was the least painful kernel update I could have imagined. I rebooted and verified (via uname) that I am in fact running the new kernel. After looking at dmesg I can confirm that the exact same error is still occurring though. I re-read your previous email and saw that you recommended the 3.3-rc release if 3.2.6 didn't suffice. So I did the same thing with 3.3-rc. And I found the same error (or what appears to be the same error), again:
->> 
->>> [  186.982910] device label StoreW devid 1 transid 37077 /dev/sdb
->>> [  187.015081] parent transid verify failed on 79466496 wanted 33999 found 36704
->>> [  187.015088] parent transid verify failed on 79466496 wanted 33999 found 36704
->>> [  187.015091] parent transid verify failed on 79466496 wanted 33999 found 36704
->>> [  187.015094] parent transid verify failed on 79466496 wanted 33999 found 36704
->>> [  187.015764] btrfs: open_ctree failed
->> 
->> uname now reports:
->> 
->>> Linux veriton 3.3.0-030300rc4-generic-pae #201202181935 SMP Sun Feb 19 00:53:06 UTC 2012 i686 i686 i386 GNU/Linux
->> 
->> I'm not sure what to try next;
-> 
-> I'd try with latest tools now. IIRC there's two programs you can try:
-> - btrfs-zero-log, which (as the name implies) zeroes-out transaction log
-> - restore, which would try to read files from a broken btrfs and copy
-> it elsewhere, and
-> 
-> Try the first one. If you can, dump the content of the disk to a file
-> first (with dd or dd_rescue) and try it on that file. Just in case
-> something goes horribly wrong :)
-> 
-> -- 
-> Fajar
-
+To unsubscribe from this list: send the line "unsubscribe linux-btrfs" =
+in
+the body of a message to majordomo@vger.kernel.org
+More majordomo info at  http://vger.kernel.org/majordomo-info.html

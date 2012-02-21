@@ -1,144 +1,100 @@
-From: Tom Cameron <tomc603@gmail.com>
+From: Hugo Mills <hugo@carfax.org.uk>
 Subject: Re: Balance RAID10 with odd device count
-Date: Mon, 20 Feb 2012 20:07:41 -0500
-Message-ID: <CA+Huu1FF9-wFXyG4NvvNLwJv5eqHUcVK_UHeENSY9A=9ssXSEQ@mail.gmail.com>
+Date: Tue, 21 Feb 2012 01:13:23 +0000
+Message-ID: <20120221011323.GC5350@carfax.org.uk>
 References: <CA+Huu1H9WAiRH203N60XVRAHE1oBx_Bh9DTcshbJ280jYvG+kA@mail.gmail.com>
-	<CAHH42iun+Qby5evPhwv0T6LH7BaOk=pcPrPbrKXe2BUEnNX5sA@mail.gmail.com>
-	<CAHH42isod-cyEqG1rfq6m1ki2EV_FqU6TnX9WzH+BJ7s6OF1aQ@mail.gmail.com>
-Reply-To: tom@drdabbles.us
 Mime-Version: 1.0
-Content-Type: text/plain; charset=ISO-8859-1
+Content-Type: multipart/signed; micalg=pgp-sha1;
+	protocol="application/pgp-signature"; boundary="WplhKdTI2c8ulnbP"
 Cc: linux-btrfs@vger.kernel.org
-To: Wes <anomaly256@gmail.com>
+To: tom@drdabbles.us
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <CAHH42isod-cyEqG1rfq6m1ki2EV_FqU6TnX9WzH+BJ7s6OF1aQ@mail.gmail.com>
+In-Reply-To: <CA+Huu1H9WAiRH203N60XVRAHE1oBx_Bh9DTcshbJ280jYvG+kA@mail.gmail.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-I figured you meant that.
 
-Using RAID1 on N drives normally would mean all drives have a copy of
-the object. The upshot of this is that you can lose N-1 drives and
-still access data. In systems like ZFS or BTRFS you would also expect
-a read speed of N*, since you could theoretically read from all drives
-in parallel as long as the checksum is valid.
+--WplhKdTI2c8ulnbP
+Content-Type: text/plain; charset=us-ascii
+Content-Disposition: inline
 
-It seems from the BTRFS documentation that the RAID1 profile is
-actually "mirror", or store 2 copies of the object. Perhaps when
-Oracle makes BTRFS a production option they should more clearly spell
-that out.
+On Mon, Feb 20, 2012 at 07:35:18PM -0500, Tom Cameron wrote:
+> I had a 4 drive RAID10 btrfs setup that I added a fifth drive to with
+> the "btrfs device add" command. Once the device was added, I used the
+> balance command to distribute the data through the drives. This
+> resulted in an infinite run of the btrfs tool with data moving back
+> and forth across the drives over and over again. When using the "btrfs
+> filesystem show" command, I could see the same pattern repeated in the
+> byte counts on each of the drives.
 
-So, if the fixes were done at Linuxconf, would we be looking at a 3.3
-or a 3.4 release?
+   The balance operation should be guaranteed to complete. At least,
+it does these days (back in the 2.6.35 days, it didn't always
+complete). Having a repeating pattern of bytes counts isn't
+necessarily a sign that it's stuck in an infinite loop. It was
+probably just taking a very long time.
 
+   If you use 3.3-rc4, and apply the restriper patches to the
+userspace tools, you can use the new restriper code, which adds
+(amongst many other things) a progress counter to balances.
 
-On Mon, Feb 20, 2012 at 7:51 PM, Wes <anomaly256@gmail.com> wrote:
-> Sorry, I meant 'removing 2 drives' in the raid1 with 3 drives example
->
->
->
-> On Tue, Feb 21, 2012 at 11:45 AM, Wes <anomaly256@gmail.com> wrote:
->> I've noticed similar behavior when even RAID0'ing an odd number of
->> devices which should be even more trivial in practice.
->> You would expect something like:
->> sda A1 B1
->> sdb A2 B2
->> sdc A3 B3
->>
->> or at least, if BTRFS can only handle block pairs,
->>
->> sda =A0A1 B2
->> sdb =A0A2 C1
->> sdc =A0B1 C2
->>
->> But the end result was that disk usage and reporting went all out of
->> whack, allocation reporting got confused and started returning
->> impossible values, and very shortly after the entire FS was corrupte=
-d.
->> =A0Rebalancing messed everything up royally and in the end I conclud=
-ed
->> to simply not use an odd number of drives with BTRFS.
->>
->> I also tried RAID1 with an odd number of drives, expecting to have 2
->> redundant mirrors. =A0Instead the end result was that the blocks wer=
-e
->> still only allocated in pairs, and since they were allocated
->> round-robbin on the drives I completely lost the ability to remove a=
-ny
->> single drive from the array without data loss.
->>
->> ie:
->> Instead of:
->> sda A1 B1
->> sdb A1 B1
->> sdc A1 B1
->>
->> it ended up doing:
->>
->> sda A1 B1
->> sdb A1 C1
->> sdc B1 C1
->>
->> meaning removing any 1 drive would result in lost data.
->>
->> I was told that this issue should have been resolved a while ago by =
-a
->> dev at Linuxconf, however this test of mine was only about 2 months
->> ago.
->>
->>
->>
->>
->> On Tue, Feb 21, 2012 at 11:35 AM, Tom Cameron <tomc603@gmail.com> wr=
-ote:
->>> I had a 4 drive RAID10 btrfs setup that I added a fifth drive to wi=
-th
->>> the "btrfs device add" command. Once the device was added, I used t=
-he
->>> balance command to distribute the data through the drives. This
->>> resulted in an infinite run of the btrfs tool with data moving back
->>> and forth across the drives over and over again. When using the "bt=
-rfs
->>> filesystem show" command, I could see the same pattern repeated in =
-the
->>> byte counts on each of the drives.
->>>
->>> It would probably add more complexity to the code, but adding a che=
-ck
->>> for loops like this may be handy. While a 5-drive RAID10 array is a
->>> weird configuration (I'm waiting for a case with 6 bays), it _shoul=
-d_
->>> be possible with filesystems like BTRFS. In my head, the distributi=
-on
->>> of data would be uneven across drives, but the duplicate and stripe
->>> count should be even at the end. I'd imagine it to look something l=
-ike
->>> this:
->>>
->>> D1: A1 B1 C1 D1
->>> D2: A1 B1 C1 =A0 =A0E1
->>> D3: A2 B2 =A0 =A0D1 E1
->>> D4: A2 =A0 =A0C2 D2 E2
->>> D5: =A0 =A0B2 C2 D2 E2
->>>
->>> This is obviously over simplified, but the general idea is the same=
-=2E I
->>> haven't looked into the way the "RAID"ing of objects works in BTRFS
->>> yet, but because it's a filesystem and not a block-based system it
->>> should be smart enough to care only about the duplication and strip=
-ing
->>> of data, and not the actual block-level or extent-level balancing.
->>> Thoughts?
->>>
->>> Thanks in advance!
->>> Tom
->>> --
->>> To unsubscribe from this list: send the line "unsubscribe linux-btr=
-fs" in
->>> the body of a message to majordomo@vger.kernel.org
->>> More majordomo info at =A0http://vger.kernel.org/majordomo-info.htm=
-l
---
-To unsubscribe from this list: send the line "unsubscribe linux-btrfs" =
-in
-the body of a message to majordomo@vger.kernel.org
-More majordomo info at  http://vger.kernel.org/majordomo-info.html
+> It would probably add more complexity to the code, but adding a check
+> for loops like this may be handy. While a 5-drive RAID10 array is a
+> weird configuration (I'm waiting for a case with 6 bays), it _should_
+> be possible with filesystems like BTRFS.
+
+   Indeed it should. I've not tested it yet myself, though.
+
+> In my head, the distribution
+> of data would be uneven across drives, but the duplicate and stripe
+> count should be even at the end. I'd imagine it to look something like
+> this:
+> 
+> D1: A1 B1 C1 D1
+> D2: A1 B1 C1    E1
+> D3: A2 B2    D1 E1
+> D4: A2    C2 D2 E2
+> D5:    B2 C2 D2 E2
+
+   Yup, that's about right. Except that the empty spaces aren't there,
+so it'll look more like this:
+
+D1: A1 B1 C1 D1
+D2: A1 B1 C1 E1
+D3: A2 B2 D1 E1
+D4: A2 C2 D2 E2
+D5: B2 C2 D2 E2
+
+> This is obviously over simplified, but the general idea is the same. I
+> haven't looked into the way the "RAID"ing of objects works in BTRFS
+> yet,
+
+   See the "SysadminGuide" on the wiki[1] for a fuller explanation. I
+should probably expand the example to show the case with odd numbers
+of drives (and possibly with unbalanced disk sizes too).
+
+> but because it's a filesystem and not a block-based system it
+> should be smart enough to care only about the duplication and striping
+> of data, and not the actual block-level or extent-level balancing.
+
+   Hugo.
+
+[1] http://btrfs.ipv5.de/index.php?title=SysadminGuide
+
+-- 
+=== Hugo Mills: hugo@... carfax.org.uk | darksatanic.net | lug.org.uk ===
+  PGP key: 515C238D from wwwkeys.eu.pgp.net or http://www.carfax.org.uk
+         --- I'd make a joke about UDP,  but I don't know if ---         
+                     anyone's actually listening...                      
+
+--WplhKdTI2c8ulnbP
+Content-Type: application/pgp-signature; name="signature.asc"
+Content-Description: Digital signature
+
+-----BEGIN PGP SIGNATURE-----
+Version: GnuPG v1.4.11 (GNU/Linux)
+
+iD8DBQFPQu+zIKyzvlFcI40RAoTcAKDLMxVLQkqOYTP9w5lsysy7yzqF+ACdHuX3
+4Fgfb9kEFXFnqKwj+LJNQME=
+=JAoW
+-----END PGP SIGNATURE-----
+
+--WplhKdTI2c8ulnbP--

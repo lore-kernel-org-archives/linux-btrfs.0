@@ -1,29 +1,46 @@
-From: Dan Carpenter <dan.carpenter@oracle.com>
-Subject: [patch] Btrfs: silence a compiler warning
-Date: Wed, 22 Feb 2012 10:30:55 +0300
-Message-ID: <20120222073055.GB7389@elgon.mountain>
+From: Xavier Nicollet <nicollet@jeru.org>
+Subject: Re: Balance RAID10 with odd device count
+Date: Wed, 22 Feb 2012 09:56:27 +0100
+Message-ID: <20120222085627.GS30450@jeru.org>
+References: <CA+Huu1H9WAiRH203N60XVRAHE1oBx_Bh9DTcshbJ280jYvG+kA@mail.gmail.com>
+ <CAHH42iun+Qby5evPhwv0T6LH7BaOk=pcPrPbrKXe2BUEnNX5sA@mail.gmail.com>
+ <CAHH42isod-cyEqG1rfq6m1ki2EV_FqU6TnX9WzH+BJ7s6OF1aQ@mail.gmail.com>
+ <CA+Huu1FF9-wFXyG4NvvNLwJv5eqHUcVK_UHeENSY9A=9ssXSEQ@mail.gmail.com>
+ <CA+WRLO9BgqE+CwCUNgjwjVFyjDDp94SBX_EbdVciHUd0jpUqWQ@mail.gmail.com>
+ <CA+Huu1H3q-eztZ8W3BK=y4TR7ero1tc=QdzAkiFewQw8jA-7-g@mail.gmail.com>
+ <20120221075422.GG5350@carfax.org.uk>
+Reply-To: nicollet@jeru.org
 Mime-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Cc: linux-btrfs@vger.kernel.org, kernel-janitors@vger.kernel.org
-To: Chris Mason <chris.mason@oracle.com>
+Content-Type: text/plain; charset=iso-8859-15
+To: Hugo Mills <hugo@carfax.org.uk>, tom@drdabbles.us,
+	Gareth Pye <gareth@cerberos.id.au>, linux-btrfs@vger.kernel.org
 Return-path: <linux-btrfs-owner@vger.kernel.org>
+In-Reply-To: <20120221075422.GG5350@carfax.org.uk>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Gcc warns that "ret" can be used uninitialized.  It can't actually be
-used uninitialized because btrfs_num_copies() always returns 1 or more.
+Le 21 February 2012 ? 07:54, Hugo Mills a =E9crit:
+>    Some time ago, I proposed the following scheme:
+>=20
+> <n>C<m>S<p>P
+>=20
+>    where n is the number of copies (suffixed by C), m is the number o=
+f
+> stripes for that data (suffixed by S), and p is the number of parity
+> blocks (suffixed by P). Values of zero are omitted.
+>=20
+>    So btrfs's RAID-1 would be 2C, RAID-0 would be 1CnS, RAID-5 would
+> be 1CnS1P, and RAID-6 would be 1CnS2P. DUP would need a special
+> indicator to show that it wasn't redundant in the face of a whole-dis=
+k
+> failure: 2CN
 
-Signed-off-by: Dan Carpenter <dan.carpenter@oracle.com>
+Seems clear. However, is the S really relevant ?
+It would be simpler without it, wouldn't it ?
 
-diff --git a/fs/btrfs/check-integrity.c b/fs/btrfs/check-integrity.c
-index 064b29b..c053e90 100644
---- a/fs/btrfs/check-integrity.c
-+++ b/fs/btrfs/check-integrity.c
-@@ -643,7 +643,7 @@ static struct btrfsic_dev_state *btrfsic_dev_state_hashtable_lookup(
- static int btrfsic_process_superblock(struct btrfsic_state *state,
- 				      struct btrfs_fs_devices *fs_devices)
- {
--	int ret;
-+	int ret = 0;
- 	struct btrfs_super_block *selected_super;
- 	struct list_head *dev_head = &fs_devices->devices;
- 	struct btrfs_device *device;
+--=20
+Xavier Nicollet
+--
+To unsubscribe from this list: send the line "unsubscribe linux-btrfs" =
+in
+the body of a message to majordomo@vger.kernel.org
+More majordomo info at  http://vger.kernel.org/majordomo-info.html

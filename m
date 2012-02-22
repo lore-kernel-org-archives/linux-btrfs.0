@@ -1,48 +1,29 @@
-From: Li Zefan <lizf@cn.fujitsu.com>
-Subject: Re: [PATCH] Btrfs: avoid setting ->d_op twice
-Date: Wed, 22 Feb 2012 09:29:45 +0800
-Message-ID: <4F444509.5000701@cn.fujitsu.com>
-References: <4F435E1C.8090902@cn.fujitsu.com> <20120221145229.GI1046@twin.jikos.cz>
+From: Dan Carpenter <dan.carpenter@oracle.com>
+Subject: [patch] Btrfs: silence a compiler warning
+Date: Wed, 22 Feb 2012 10:30:55 +0300
+Message-ID: <20120222073055.GB7389@elgon.mountain>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=ISO-8859-1
-Cc: "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
-To: David Sterba <dave@jikos.cz>
+Content-Type: text/plain; charset=us-ascii
+Cc: linux-btrfs@vger.kernel.org, kernel-janitors@vger.kernel.org
+To: Chris Mason <chris.mason@oracle.com>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <20120221145229.GI1046@twin.jikos.cz>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-David Sterba wrote:
-> Hi,
-> 
-> thanks for the patch!
-> 
-> On Tue, Feb 21, 2012 at 05:04:28PM +0800, Li Zefan wrote:
->> Follow those instructions, and you'll trigger a warning in the
->> beginning of d_set_d_op():
->>
->>   # mkfs.btrfs /dev/loop3
->>   # mount /dev/loop3 /mnt
->>   # btrfs sub create /mnt/sub
->>   # btrfs sub snap /mnt /mnt/snap
->>   # touch /mnt/snap/sub
->>   touch: cannot touch `tmp': Permission denied
-> 
-> is this the right error code? permission denied == EACCESS and this is
-> returned in case of file
-> 
-> (strace touch file)
-> 
-> open("file", O_WRONLY|O_CREAT|O_NOCTTY|O_NONBLOCK, 0666) = -1 EACCES (Permission denied)
-> 
-> while mkdir returns (strace mkdir a-dir)
-> 
-> mkdir("a-dir", 0777)                    = -1 EPERM (Operation not permitted)
-> 
-> 
-> The commands were run as root and EPERM looks more adequate than
-> EACCESS.
-> 
+Gcc warns that "ret" can be used uninitialized.  It can't actually be
+used uninitialized because btrfs_num_copies() always returns 1 or more.
 
-This is a different issue, and EPERM is returned by VFS not btrfs.
+Signed-off-by: Dan Carpenter <dan.carpenter@oracle.com>
 
-Feel free to submit a patch to fsdevel for discussion.
+diff --git a/fs/btrfs/check-integrity.c b/fs/btrfs/check-integrity.c
+index 064b29b..c053e90 100644
+--- a/fs/btrfs/check-integrity.c
++++ b/fs/btrfs/check-integrity.c
+@@ -643,7 +643,7 @@ static struct btrfsic_dev_state *btrfsic_dev_state_hashtable_lookup(
+ static int btrfsic_process_superblock(struct btrfsic_state *state,
+ 				      struct btrfs_fs_devices *fs_devices)
+ {
+-	int ret;
++	int ret = 0;
+ 	struct btrfs_super_block *selected_super;
+ 	struct list_head *dev_head = &fs_devices->devices;
+ 	struct btrfs_device *device;

@@ -1,65 +1,65 @@
-From: Chris Mason <chris.mason@oracle.com>
-Subject: [PATCH] Btrfs: clear the extent uptodate bits during parent transid
- failures
-Date: Wed, 22 Feb 2012 12:43:35 -0500
-Message-ID: <20120222174335.GO4078@shiny>
+From: Dan Carpenter <dan.carpenter@oracle.com>
+Subject: [patch v2] Btrfs: silence a compiler warning
+Date: Wed, 22 Feb 2012 22:41:57 +0300
+Message-ID: <20120222194157.GA4045@mwanda>
+References: <20120222073055.GB7389@elgon.mountain>
+ <20120222162926.GA25392@davidb.org>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-To: linux-btrfs@vger.kernel.org
+Content-Type: multipart/signed; micalg=pgp-sha1;
+	protocol="application/pgp-signature"; boundary="GvXjxJ+pjyke8COw"
+Cc: Chris Mason <chris.mason@oracle.com>, linux-btrfs@vger.kernel.org,
+	kernel-janitors@vger.kernel.org
+To: David Brown <davidb@davidb.org>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
+In-Reply-To: <20120222162926.GA25392@davidb.org>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Normally I just toss patches into git, but this one is pretty subtle and
-I wanted to send it around for extra review.  QA at Oracle did a test
-where they unplugged one drive of a btrfs raid1 mirror for a while and
-then plugged it back in.
 
-The end result is that we have a whole bunch of out-of-date blocks on
-the bad mirror.  The btrfs parent transid pointers are supposed to
-detect these bad blocks and then we're supposed to read from the good
-copy instead.
+--GvXjxJ+pjyke8COw
+Content-Type: text/plain; charset=us-ascii
+Content-Disposition: inline
 
-The good news is we did detect the bad blocks.  The bad news is we
-didn't jump over to the good mirror instead.  This patch explains why:
+Gcc warns that "ret" can be used uninitialized.  It can't actually be
+used uninitialized because btrfs_num_copies() always returns 1 or more.
 
-Author: Chris Mason <chris.mason@oracle.com>
-Date:   Wed Feb 22 12:36:24 2012 -0500
+Signed-off-by: Dan Carpenter <dan.carpenter@oracle.com>
+---
+v2: use the uninitialized_var() macro instead of initializing to 0.
 
-    Btrfs: clear the extent uptodate bits during parent transid failures
-    
-    If btrfs reads a block and finds a parent transid mismatch, it clears
-    the uptodate flags on the extent buffer, and the pages inside it.  But
-    we only clear the uptodate bits in the state tree if the block straddles
-    more than one page.
-    
-    This is from an old optimization from to reduce contention on the extent
-    state tree.  But it is buggy because the code that retries a read from
-    a different copy of the block is going to find the uptodate state bits
-    set and skip the IO.
-    
-    The end result of the bug is that we'll never actually read the good
-    copy (if there is one).
-    
-    The fix here is to always clear the uptodate state bits, which is safe
-    because this code is only called when the parent transid fails.
-    
-    Signed-off-by: Chris Mason <chris.mason@oracle.com>
+diff --git a/fs/btrfs/check-integrity.c b/fs/btrfs/check-integrity.c
+index 064b29b..3bb3853 100644
+--- a/fs/btrfs/check-integrity.c
++++ b/fs/btrfs/check-integrity.c
+@@ -643,7 +643,7 @@ static struct btrfsic_dev_state *btrfsic_dev_state_hashtable_lookup(
+ static int btrfsic_process_superblock(struct btrfsic_state *state,
+ 				      struct btrfs_fs_devices *fs_devices)
+ {
+-	int ret;
++	int uninitialized_var(ret);
+ 	struct btrfs_super_block *selected_super;
+ 	struct list_head *dev_head = &fs_devices->devices;
+ 	struct btrfs_device *device;
 
-diff --git a/fs/btrfs/extent_io.c b/fs/btrfs/extent_io.c
-index 1e8d5e5..a4dc892 100644
---- a/fs/btrfs/extent_io.c
-+++ b/fs/btrfs/extent_io.c
-@@ -3852,10 +3852,9 @@ int clear_extent_buffer_uptodate(struct extent_io_tree *tree,
- 	num_pages = num_extent_pages(eb->start, eb->len);
- 	clear_bit(EXTENT_BUFFER_UPTODATE, &eb->bflags);
- 
--	if (eb_straddles_pages(eb)) {
--		clear_extent_uptodate(tree, eb->start, eb->start + eb->len - 1,
--				      cached_state, GFP_NOFS);
--	}
-+	clear_extent_uptodate(tree, eb->start, eb->start + eb->len - 1,
-+			      cached_state, GFP_NOFS);
-+
- 	for (i = 0; i < num_pages; i++) {
- 		page = extent_buffer_page(eb, i);
- 		if (page)
+--GvXjxJ+pjyke8COw
+Content-Type: application/pgp-signature; name="signature.asc"
+Content-Description: Digital signature
+
+-----BEGIN PGP SIGNATURE-----
+Version: GnuPG v1.4.11 (GNU/Linux)
+
+iQIcBAEBAgAGBQJPRUUFAAoJEOnZkXI/YHqR9EIP/02ATU3/+sF52aqOp5MVbP3N
+kmLB18IKs+9xNeimBtF4bXe1mZnPO0xgUOdP9skiLt+j2yS5mryirrZAOfEPzoKo
+VDcaDD8IgNYFqebZn7werluAZQkwxXN2AuER2zpmbGrcHWlPuCUg24EIqTMyiGg9
+YxtZEfCaH9hpgDan8tnOfc/xgNW0NX6F4M5EYLG4/bb0Qvym3lhObq2g4ItgmVM1
+KVz6AXusFshWSY4gf6/v+KJAWJafIib1lyN+RHCRmfvMEXctuCCQdZBlyoYfVKaF
+mKSULBHe98g4EAFt8Q4NlYJ0zB/7Iej5Jb5CQMdMX2LWYi/Hey1JHehmjHUiTjNs
+wZsXb+d1gxRGt+54v29Gb9BZpWmPsGeNpnxpEt50JQZyNRgP3cekHdqkD4Oo5UzF
+EzXyX61ETQEZTPKsSsQg32Zej9dHotAoQBvy9oObMklQ8qj90UYRcRzn5UG5U+Gu
+5FvQsigh7BnbgBikhLgnMbWa82dUj64a84X+XDu4y1OsZ7lj2ZhZasBxkLhPjtf/
+X76mDT42KhrfYa5c394btrJAXsRvtEKwIicd2/lCfnB0YtwjsxShOzVTUvEFqx7l
+/0s34L7MSrX+mG5lwHkN1TgsFbjdbMUqNIOGmbR0rPAiMX3dCzK/4qwuqzT0oOmV
+pu0NblHZnu2GWa+NCwD3
+=hOjl
+-----END PGP SIGNATURE-----
+
+--GvXjxJ+pjyke8COw--

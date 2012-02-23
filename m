@@ -1,123 +1,83 @@
-From: "Matthias G. Eckermann" <mge@suse.com>
-Subject: Re: [RFC] btrfs auto snapshot
-Date: Thu, 23 Feb 2012 15:09:43 +0100
-Message-ID: <20120223140943.GA18618@suse.com>
-References: <4E4B2452.9070407@oracle.com> <1483419.CO5JBoDgFX@bursa22> <4F462ADE.4040507@oracle.com> <CAG1y0sddAf4zdvj82Xx-H0_YH8ssyzmtOJ1-+sUVnRUJM4+gTw@mail.gmail.com>
-Reply-To: "Matthias G. Eckermann" <mge@suse.com>
+From: Chris Mason <chris.mason@oracle.com>
+Subject: Re: [PATCH] Btrfs: clear the extent uptodate bits during parent
+ transid failures
+Date: Thu, 23 Feb 2012 09:24:55 -0500
+Message-ID: <20120223142455.GO18080@shiny>
+References: <20120222174335.GO4078@shiny>
+ <4F45A08A.4050007@cn.fujitsu.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=utf-8
-Cc: Hubert Kario <hka@qbs.com.pl>,
-	linux-btrfs <linux-btrfs@vger.kernel.org>,
-	Chris Mason <chris.mason@oracle.com>
-To: "Fajar A. Nugraha" <list@fajar.net>,
-	Anand Jain <Anand.Jain@oracle.com>
+Content-Type: text/plain; charset=us-ascii
+Cc: linux-btrfs@vger.kernel.org
+To: Liu Bo <liubo2009@cn.fujitsu.com>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <CAG1y0sddAf4zdvj82Xx-H0_YH8ssyzmtOJ1-+sUVnRUJM4+gTw@mail.gmail.com>
+In-Reply-To: <4F45A08A.4050007@cn.fujitsu.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hello all,
+On Thu, Feb 23, 2012 at 10:12:26AM +0800, Liu Bo wrote:
+> On 02/23/2012 01:43 AM, Chris Mason wrote:
+> > Normally I just toss patches into git, but this one is pretty subtle and
+> > I wanted to send it around for extra review.  QA at Oracle did a test
+> > where they unplugged one drive of a btrfs raid1 mirror for a while and
+> > then plugged it back in.
+> > 
+> > The end result is that we have a whole bunch of out-of-date blocks on
+> > the bad mirror.  The btrfs parent transid pointers are supposed to
+> > detect these bad blocks and then we're supposed to read from the good
+> > copy instead.
+> > 
+> > The good news is we did detect the bad blocks.  The bad news is we
+> > didn't jump over to the good mirror instead.  This patch explains why:
+> > 
+> > Author: Chris Mason <chris.mason@oracle.com>
+> > Date:   Wed Feb 22 12:36:24 2012 -0500
+> > 
+> >     Btrfs: clear the extent uptodate bits during parent transid failures
+> >     
+> >     If btrfs reads a block and finds a parent transid mismatch, it clears
+> >     the uptodate flags on the extent buffer, and the pages inside it.  But
+> >     we only clear the uptodate bits in the state tree if the block straddles
+> >     more than one page.
+> >     
+> >     This is from an old optimization from to reduce contention on the extent
+> >     state tree.  But it is buggy because the code that retries a read from
+> >     a different copy of the block is going to find the uptodate state bits
+> >     set and skip the IO.
+> >     
+> >     The end result of the bug is that we'll never actually read the good
+> >     copy (if there is one).
+> >     
+> >     The fix here is to always clear the uptodate state bits, which is safe
+> >     because this code is only called when the parent transid fails.
+> > 
+> 
+> Reviewed-by: Liu Bo <liubo2009@cn.fujitsu.com>
 
-On 2012-02-23 T 19:13 +0700 Fajar A. Nugraha wrote:
-> On Thu, Feb 23, 2012 at 7:02 PM, Anand Jain wrote:
->=20
-> > and what you will notice is autosnap snapshots =C2=A0are named
-> > using uuid.
-> >
-> > =C2=A0Main reason to drop time-stamp based names is that,
-> > =C2=A0 =C2=A0- test (clicking on Take-snapshot button) which took m=
-ore
-> > =C2=A0than one snapshot per second was failing.
-> > =C2=A0 =C2=A0- a more descriptive creation time is available using =
-a =C2=A0
-> > command line option as in the example below.
-> > =C2=A0-----
-> > =C2=A0# btrfs su list -t tag=3D@minute,parent=3D/btrfs/sv1 /btrfs
-> > =C2=A0/btrfs/.autosnap/6c0dabfa-5ddb-11e1-a8c1-0800271feb99 Thu Feb=
- 23 13:01:18 2012 /btrfs/sv1 @minute
-> > =C2=A0/btrfs/.autosnap/5669613e-5ddd-11e1-a644-0800271feb99 Thu Feb=
- 23 13:15:01 2012 /btrfs/sv1 @minute
-> > =C2=A0-----
-> > =C2=A0As of now code for time-stamp as autosnap snapshot name is
-> > =C2=A0commented out, if more people wanted it to be a time-stamp
-> > =C2=A0based names, I don't mind having that way. Please do let me
-> > know.
->=20
-> For me the main bonus point of having timestamp in names in
-> the abiility to sort it by creation date by simply using "ls".
-> As for the more-than-one-click-per-second problem, in my
-> script I simply let it fail and return informative-enough
-> error message.
->=20
-> A workaround would be adding nanosecond timestamp, or put the
-> UUID AFTER the time stamp, e.g:
-> /btrfs/.autosnap/@minute_20120223_131501_123456_5669613e-5ddd-11e1-a6=
-44-0800271feb99
+Thanks!
 
-I wonder, if this is not mixing several aspects / requirements:
-1. unique snapshot numbering
-2. storing the time stamp of a snapshot
-3. human visible order of snapshots
+> 
+> or we can be safer:
+> 
+> diff --git a/fs/btrfs/extent_io.c b/fs/btrfs/extent_io.c
+> index fcf77e1..c1fe25d 100644
+> --- a/fs/btrfs/extent_io.c
+> +++ b/fs/btrfs/extent_io.c
+> @@ -3859,8 +3859,12 @@ int clear_extent_buffer_uptodate(struct extent_io_tree *tree,
+>  	}
+>  	for (i = 0; i < num_pages; i++) {
+>  		page = extent_buffer_page(eb, i);
+> -		if (page)
+> +		if (page) {
+> +			u64 start = (u64)page->index << PAGE_CACHE_SHIFT;
+> +			u64 end = start + PAGE_CACHE_SIZE - 1;
+> +
+>  			ClearPageUptodate(page);
+> +			clear_extent_uptodate(tree, start, end, NULL, GFP_NOFS);
+>  	}
+>  	return 0;
+>  }
 
-Thus we have chosen a different solution in our "snapper"
-approach (as announced here in Aug 2011):
-- the snapshot number is a simple integer
-  -> human visible order of snapshots
-- all metadata is stored in an XML file associated to
-  this snapshot
-- this requires that the btrfs snapshot itself is
-  in a subdirectory of the snapshot-numbered directory.
+Hmmm, I'm not sure this is safer.  Our readpage trusts the extent
+uptodate bits unconditionally, so we should really clear them
+unconditionally as well.
 
-Example:
-
-----------------------------< snip >----------------------------
-
-2012-02-23 15:02 (0) ~
-naxos root (5)  # tree -x /.snapshots/6/
-/.snapshots/6/
-|-- filelist-5.txt
-|-- info.xml
-`-- snapshot
-
-2012-02-23 15:02 (0) ~
-naxos root (5)  # cat /.snapshots/6/info.xml
-<?xml version=3D"1.0"?>
-<snapshot>
-  <type>post</type>
-  <num>6</num>
-  <date>2012-02-23 11:32:59</date>
-  <pre_num>5</pre_num>
-  <cleanup>number</cleanup>
-</snapshot>
-
-----------------------------< snap >----------------------------
-
-With introducing a store for meta information, the requirements
-listed above (1-3) can be fulfilled.
-
-Shouldn't the autosnap implementation include a similar
-option and/or functionality? Or does it already?
-
-=46eel free to copy what snapper does:)
-
-so long -
-	MgE
-
-P.S.: For those interested in the details: snapshots 5 and 6 are
-a pre-post-pair, which enclose the real action: a timezone
-change.  "filelist-5.txt" contains the file which differ between
-5 and 6 for faster access from the management layer.
-
---=20
-Matthias G. Eckermann     Senior Product Manager   SUSE=C2=AE Linux Ent=
-erprise
-Phone: +49 30 44315731    Mobile: +49 179 2949448        Twitter: mge15=
-12
-SUSE LINUX Products GmbH  Maxfeldstra=C3=9Fe 5          90409 N=C3=BCrn=
-berg Germany
-GF: Jeff Hawn, Jennifer Guild, Felix Imend=C3=B6rffer, HRB 16746 (AG N=C3=
-=BCrnberg)
---
-To unsubscribe from this list: send the line "unsubscribe linux-btrfs" =
-in
-the body of a message to majordomo@vger.kernel.org
-More majordomo info at  http://vger.kernel.org/majordomo-info.html
+-chris

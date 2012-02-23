@@ -1,129 +1,101 @@
-From: qasdfgtyuiop <qasdfgtyuiop@gmail.com>
-Subject: Re: Is there any data recovery tool?
-Date: Thu, 23 Feb 2012 18:16:04 +0800
-Message-ID: <CAMtaSwTr5bZg3WSt_ZArkT=amfR0XqnuWy4ZAQbUA00Rhq6PeQ@mail.gmail.com>
-References: <CAMtaSwTAeKrvQ2ev7-genxt49ivOAGLYDbKDpO6q1vYExMzj3g@mail.gmail.com>
- <pan.2012.02.22.12.58.49@cox.net>
+From: Hubert Kario <hka@qbs.com.pl>
+Subject: Re: [RFC] btrfs auto snapshot
+Date: Thu, 23 Feb 2012 11:37:02 +0100
+Message-ID: <1483419.CO5JBoDgFX@bursa22>
+References: <4E4B2452.9070407@oracle.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=ISO-8859-1
-Cc: linux-btrfs@vger.kernel.org
-To: Duncan <1i5t5.duncan@cox.net>
+Content-Type: multipart/signed; boundary="nextPart2599394.cefb35Mp6j"; micalg="sha256"; protocol="application/pkcs7-signature"
+Cc: linux-btrfs <linux-btrfs@vger.kernel.org>,
+	Chris Mason <chris.mason@oracle.com>
+To: Anand Jain <Anand.Jain@oracle.com>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <pan.2012.02.22.12.58.49@cox.net>
+In-Reply-To: <4E4B2452.9070407@oracle.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-OK.
 
-On Wed, Feb 22, 2012 at 8:58 PM, Duncan <1i5t5.duncan@cox.net> wrote:
-> qasdfgtyuiop posted on Tue, 21 Feb 2012 20:11:06 +0800 as excerpted:
->
->> I'm using GNU/linux with btrfs root. My filesystem is created with
->> command "mkfs.btrfs /dev/sda" . =A0Today I'm trying to install Micro=
-soft
->> Windows 7 on /dev/sdb , a 16GB esata ssd. =A0After the installation,=
- I
->> found that Windows create a "hidden" NTFS partition called "System
->> Reserved" on the first 100MB of my /dev/sda and that my btrfs filesy=
-stem
->> was lost! =A0I have searched google for help but I got no useful
->> information. =A0Is there any data recovery tools?
->
-> The btrfs kernel option says:
->
-> Btrfs filesystem (EXPERIMENTAL) Unstable disk format
->
-> Its description says in part:
->
-> Btrfs is highly experimental, and THE DISK FORMAT IS NOT YET FINALIZE=
-D.
-> You should say N here unless you are interested in testing Btrfs with=
- non-
-> critical data. [...] If unsure, say N.
->
-> The front page and getting started pages of the wiki (see URL below)
-> also heavily emphasize the development aspect and backups, and the so=
-urce
-> code section has this to say:
->
-> Warning, Btrfs evolves very quickly do not test it unless:
->
-> =A0 =A0You have good backups and you have tested the restore capabili=
-ty
-> =A0 =A0You have a backup installation that you can switch to when
-> =A0 =A0 =A0 =A0something breaks
-> =A0 =A0You are willing to report any issues you find
-> =A0 =A0You can apply patches and compile the latest btrfs code agains=
-t your
-> =A0 =A0 =A0 =A0kernel (quite easy with git and dkms, see below)
-> =A0 =A0You acknowledge that btrfs may eat your data
-> =A0 =A0Backups! Backups! Backups!
->
->
-> Given all that, any data you store on btrfs is by definition not part=
-icularly
-> important, either because you have it backed up in a more stable form=
-at
-> elsewhere (which might be the net, or local), or because the data rea=
-lly
-> /isn't/ particularly important to you in the first place, or you'd ha=
-ve
-> made and tested backups (naturally, always test recovery from your ba=
-ckups,
-> as an untested backup is worse than none, since it's likely to give y=
-ou
-> a false sense of security) before putting it on the after all still
-> experimental and under heavy development btrfs in the first place.
->
-> Thus, you shouldn't need to worry about a data recovery tool, since
-> you can either simply restore from backups (which since you tested
-> recovery, you're already familiar with the recovery procedures),
-> or the data was simply garbage you were using for testing and didn't
-> care about losing anyway.
->
->
-> Never-the-less, yes, there's a recovery tool, naturally experimental
-> just like the filesystem itself at this point, but there is one. =A0T=
-esting
-> and suggestions for improvements, especially with patches, will be
-> welcomed.
->
-> It seems you need to read up on the wiki, which covers this among oth=
-er
-> things. =A0There's an older version on btrfs.wiki.kernel.org, but tha=
-t's
-> not updated ATM due to restrictions in place since the kernel.org
-> breakin some months ago. =A0The "temporary" (but six months and count=
-ing,
-> I believe) replacement is at btrfs.ipv5.de:
->
-> http://btrfs.ipv5.de/index.php?title=3DMain_Page
->
-> The restore and find-root commands from btrfs-progs are specifically
-> covered on this page:
->
-> http://btrfs.ipv5.de/index.php?title=3DRestore
->
-> If you wish to try a newer copy of btrfs-progs (after all, it's all
-> still in development, and bugs are fixed all the time), you'll also w=
-ant
-> to read:
->
-> http://btrfs.ipv5.de/index.php?title=3DGetting_started#Compiling_Btrf=
-s_from_sources
->
->
-> --
-> Duncan - List replies preferred. =A0 No HTML msgs.
-> "Every nonfree program has a lord, a master --
-> and if you use the program, he is your master." =A0Richard Stallman
->
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-btrfs=
-" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at =A0http://vger.kernel.org/majordomo-info.html
---
-To unsubscribe from this list: send the line "unsubscribe linux-btrfs" =
-in
-the body of a message to majordomo@vger.kernel.org
-More majordomo info at  http://vger.kernel.org/majordomo-info.html
+--nextPart2599394.cefb35Mp6j
+Content-Transfer-Encoding: quoted-printable
+Content-Type: text/plain; charset="iso-8859-1"
+
+On Wednesday 17 of August 2011 10:15:46 Anand Jain wrote:
+>   btrfs auto snapshot feature will include:
+>   Initially:
+<snip>
+>       - snapshot destination will be subvol/.btrfs/snapshot@<time> an=
+d
+>         snapshot/.btrfs/snapshot@<time> for subvolume and snapshot
+>         respectively
+
+Is there some reason not to use the format used by shadow_copy2 overlay=
+ for=20
+Samba? (The one providing Shadow Volume Copy functionality for Windows=20=
+
+clients):
+
+Current date in this format you get like this:
+
+@GMT-`date -u '+%Y.%m.%d-%H.%M.%S'`
+
+For example: @GMT-2012.02.23-10.34.32
+
+This way, when the volume is exported using Samba, you can easily expor=
+t=20
+past copies too, without creating links.
+
+Regards,
+--=20
+Hubert Kario
+QBS - Quality Business Software
+02-656 Warszawa, ul. Ksawer=F3w 30/85
+tel. +48 (22) 646-61-51, 646-74-24
+www.qbs.com.pl
+--nextPart2599394.cefb35Mp6j
+Content-Type: application/pkcs7-signature; name="smime.p7s"
+Content-Disposition: attachment; filename="smime.p7s"
+Content-Transfer-Encoding: base64
+
+MIAGCSqGSIb3DQEHAqCAMIACAQExDzANBglghkgBZQMEAgEFADCABgkqhkiG9w0BBwEAAKCCBsow
+ggbGMIIErqADAgECAghgRNYwzIbzHzANBgkqhkiG9w0BAQsFADBRMSowKAYDVQQLDCFRQlMgQ2xh
+c3MgMyBDZXJ0aWZpY2F0ZSBBdXRob3JpdHkxFjAUBgNVBAoMDVFCUyBKYW4gS3ViYW4xCzAJBgNV
+BAYTAlBMMB4XDTExMDUxNjEwMDUzMloXDTEyMDUxNjEwMDUzMlowgaYxHTAbBgkqhkiG9w0BCQEW
+DmhrYUBxYnMuY29tLnBsMRUwEwYDVQQDDAxIdWJlcnQgS2FyaW8xDzANBgNVBCoMBkh1YmVydDEO
+MAwGA1UEBAwFS2FyaW8xFzAVBgNVBAoMDlFCUyBKYW4gS3ViYcWEMREwDwYDVQQHDAhXYXJzemF3
+YTEUMBIGA1UECAwLbWF6b3dpZWNraWUxCzAJBgNVBAYTAlBMMIIBIjANBgkqhkiG9w0BAQEFAAOC
+AQ8AMIIBCgKCAQEAtmTUo4Y/Qnf6MzeQiOYc56cvVa1b3VJaZDGC3ZSj8rPlj68nHL/Tk9FCRI3S
+YlJ1efskI4j8zVlxKTLetPCEUqE3PO2UQ0OaFCpdcbZQ9yvVXUbEVNAZ5quE856LmQzQ33/Kvsek
+LEzfYfeLS1yjqrhqIUYblkycZT6wowsx70NfXtfSb6H9DDjX1u0WpU6jK8lLaphEA9vQB+zEfYQW
+raCY1E0auEiGbPfPNi3x0if/ckVuUYCwr7IJaQg4hcYXFhUuKcbbFebUDOl8L1oi/2QwxC83U87p
+an+2awtbCWD33Q+QwSRoHUuX6pQs0sPnZehh+PfdmAC9MkWAg8fXRwIDAQABo4ICSjCCAkYwUQYI
+KwYBBQUHAQEERTBDMEEGCCsGAQUFBzABhjVodHRwOi8vY2EucWJzLmNvbS5wbDo4MDgwL2VqYmNh
+L3B1YmxpY3dlYi9zdGF0dXMvb2NzcDAdBgNVHQ4EFgQUZ6aWItDHMTdc4y1LLdYvTB/kmhswDAYD
+VR0TAQH/BAIwADAfBgNVHSMEGDAWgBRThM4WgbPV3Ji/Qgr6taX1RUTbLDCB/QYDVR0fBIH1MIHy
+MIHvoIGVoIGShoGPaHR0cDovL2NhLnFicy5jb20ucGw6ODA4MC9lamJjYS9wdWJsaWN3ZWIvd2Vi
+ZGlzdC9jZXJ0ZGlzdD9jbWQ9Y3JsJmlzc3Vlcj1vdT1RQlMlMjBDbGFzcyUyMDMlMjBDZXJ0aWZp
+Y2F0ZSUyMEF1dGhvcml0eSxvPVFCUyUyMEphbiUyMEt1YmFuLGM9UEyiVaRTMFExKjAoBgNVBAsM
+IVFCUyBDbGFzcyAzIENlcnRpZmljYXRlIEF1dGhvcml0eTEWMBQGA1UECgwNUUJTIEphbiBLdWJh
+bjELMAkGA1UEBhMCUEwwDgYDVR0PAQH/BAQDAgSwMGIGA1UdJQRbMFkGCCsGAQUFBwMCBggrBgEF
+BQcDAwYIKwYBBQUHAwQGCisGAQQBgjcUAgIGCisGAQQBgjcKAwwGCisGAQQBgjcCARUGCisGAQQB
+gjcCARYGCSqGSIb3LwEBBTAvBgNVHREEKDAmgQ5oa2FAcWJzLmNvbS5wbIEUd2VibWFzdGVyQHFi
+cy5jb20ucGwwDQYJKoZIhvcNAQELBQADggIBAE2d0JelbaaQJRuxZxndox3YC6JbOU+rG2wtQ0NG
+rS2xtlqW3NnFrwj0Z9aCAJxFh1kD6HpeGqhx6QHILCIjjogJ4hJsge66B37oP+xd1SJVGHlpeyA/
+hS2Fj6r0YnTT6umy0i6tDO9lvbPewalfklVCwkjqnJsFiMI4qew7HY/Gc/GxHABjE2W9NeXtDDfq
+zxJ3LUXwuqVHF74EMO7N1mBgiGOM7yAVuOCGzpX86fgWFpLqRHKymuSj9VgIAa80eX3+LOZ3YYzc
+SAbY2TJbN1BmU5kfGQMTIceXzB8Inub1PfUQ7mrLhheq3UIt+3MaUtgfhi2Um1RPtxway6JtUpu+
+pDXHukM5vgYHRfIgfVE5jClLLeIv9ktjDpd5cGhhQjtzfeE+kaP8323xj2M+c2RJurcj2TGE48dj
+e3aGLK4a7VSd8fsGNgdOYjua3f29kRGX/O1hug+bRAd0WYYEjIZL/eB8EAm6k75B9IyGvdyXP5xu
+SxW4kRRj6cU22M8evhFJ6uM/Rljn3UESuob2m7hsloJVJbqDPUlvkqT8q26VLdiSoHY0vikw+oxq
+dgmTm8dicjBi+ajvkonqDP3d2sm+yqpOld0+2HvEzYrPxCzg85H5WWCmTjR+bgbb04gFWi0e7P6X
+hGysv5O7TJTFOkZ4WnKM6QqUrpSaM9PC4eR7MYICHjCCAhoCAQEwXTBRMSowKAYDVQQLDCFRQlMg
+Q2xhc3MgMyBDZXJ0aWZpY2F0ZSBBdXRob3JpdHkxFjAUBgNVBAoMDVFCUyBKYW4gS3ViYW4xCzAJ
+BgNVBAYTAlBMAghgRNYwzIbzHzANBglghkgBZQMEAgEFAKCBkzAYBgkqhkiG9w0BCQMxCwYJKoZI
+hvcNAQcBMBwGCSqGSIb3DQEJBTEPFw0xMjAyMjMxMDM3MDJaMCgGCSqGSIb3DQEJDzEbMBkwCwYJ
+YIZIAWUDBAECMAoGCCqGSIb3DQMHMC8GCSqGSIb3DQEJBDEiBCC5x2zrkBRnl+jZf2UGlNVzhJb6
+U9kic5OqyutrvKKRLTANBgkqhkiG9w0BAQEFAASCAQA2V8mGlhIbyOrvZ0i/cTHyiWrZVL+OLhfU
+jHmY8nAY3LPjfCc+gqh5d9t2QgDKQDV2tKe47kdJE5+gsimuVAk5vZ5HU12k4h6OmK7Jqz6jDEIH
+uQ3zCoO1bu2DFx1kqjCXGhz5BfusCB9HHgcrrrmB7fSHuWcLP0PUt6PZu8PgmLdzcLrENhiDhR9Z
+IbPokj40zbiffDe8Nd0icgMDR8MQokkl5xQZrjpJYIjBHkr0mwWR5iFKRtOSyDxD6N64oZydDqvs
+20Hh5ONeADkbC57wfcsI12XQfmlK7CBxWM8qAoXTDzi+5ZN+sPV+62nNqxoNPs1N6qCJxMgJgIN9
+IavPAAAAAAAA
+
+--nextPart2599394.cefb35Mp6j--
+

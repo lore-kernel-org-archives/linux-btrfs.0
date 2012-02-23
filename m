@@ -1,47 +1,57 @@
-From: "Fajar A. Nugraha" <list@fajar.net>
-Subject: Re: [RFC] btrfs auto snapshot
-Date: Thu, 23 Feb 2012 16:54:06 +0700
-Message-ID: <CAG1y0sdhm03Pqi+j2Z00MS+p5CMQav=r0c7LahNpjJRv+rEQmw@mail.gmail.com>
-References: <4E4B2452.9070407@oracle.com>
-	<20110817140433.GA32261@hendrix.borisch.local>
-	<4E4BD53A.7080708@pacific.net>
-	<20110817173837.GA29509@suse.com>
+From: Andrew Morton <akpm@linux-foundation.org>
+Subject: Re: [PATCH 1/2] treewide: fix memory corruptions when TASK_COMM_LEN
+ != 16
+Date: Thu, 23 Feb 2012 01:57:26 -0800
+Message-ID: <20120223015726.cb065d73.akpm@linux-foundation.org>
+References: <1327183785-27023-1-git-send-email-jengelh@medozas.de>
+	<20120124135443.2772d455.akpm@linux-foundation.org>
+	<alpine.LNX.2.01.1201250121260.20692@frira.zrqbmnf.qr>
+	<20120131172334.7f26f164.akpm@linux-foundation.org>
+	<alpine.LNX.2.01.1202010224510.29848@frira.zrqbmnf.qr>
+	<20120131174914.8ce5291d.akpm@linux-foundation.org>
+	<alpine.LNX.2.01.1202010257240.29848@frira.zrqbmnf.qr>
+	<20120131190109.b53347fd.akpm@linux-foundation.org>
+	<alpine.LNX.2.01.1202221343530.10125@frira.zrqbmnf.qr>
+	<20120222125810.50cd5789.akpm@linux-foundation.org>
+	<alpine.LNX.2.01.1202222303190.15465@frira.zrqbmnf.qr>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=ISO-8859-1
-Cc: linux-btrfs <linux-btrfs@vger.kernel.org>
-To: "Matthias G. Eckermann" <mge@suse.com>
-Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <20110817173837.GA29509@suse.com>
+Content-Type: text/plain; charset=US-ASCII
+Cc: linux-kernel@vger.kernel.org, linux-btrfs@vger.kernel.org
+To: Jan Engelhardt <jengelh@medozas.de>
+Return-path: <linux-kernel-owner@vger.kernel.org>
+In-Reply-To: <alpine.LNX.2.01.1202222303190.15465@frira.zrqbmnf.qr>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Thu, Aug 18, 2011 at 12:38 AM, Matthias G. Eckermann <mge@suse.com> =
-wrote:
-> Ah, sure. Sorry. =A0Packages for "blocxx" for:
-> =A0 =A0 =A0 =A0Fedora_14 =A0 =A0 =A0 Fedora_15
-> =A0 =A0 =A0 =A0RHEL-5 =A0 =A0 =A0 =A0 =A0RHEL-6
-> =A0 =A0 =A0 =A0SLE_11_SP1
-> =A0 =A0 =A0 =A0openSUSE_11.4 =A0 openSUSE_Factory
->
-> are available in the openSUSE buildservice at:
->
-> =A0 =A0 =A0 =A0http://download.opensuse.org/repositories/home:/mge151=
-2:/snapper/
->
+On Thu, 23 Feb 2012 10:09:33 +0100 (CET) Jan Engelhardt <jengelh@medozas.de> wrote:
 
-Hi Matthias,
+> On Wednesday 2012-02-22 21:58, Andrew Morton wrote:
+> 
+> >On Wed, 22 Feb 2012 13:48:08 +0100 (CET)
+> >Jan Engelhardt <jengelh@medozas.de> wrote:
+> >
+> >> task: provide a larger task command buffer
+> >
+> ><scratches head>
+> >
+> >Why are we bothering ourselves about this?
+> 
+> Some prefer to know what's going on in the system. Every other or 
+> so kernel release there are some new happy kthreads, such as
+> 
+> 24930 ?        S      0:00  \_ [btrfs-endio-1]
+> 24931 ?        S      0:00  \_ [btrfs-endio-met]
+> 24932 ?        S      0:00  \_ [btrfs-endio-met]
+> 24933 ?        S      0:00  \_ [btrfs-endio-wri]
+> 24934 ?        S      0:00  \_ [btrfs-freespace]
+> 
+> at which point one is curious to find out the rest of the met and why 
+> there are two of them. If expanded one actually sees they are different 
+> kthreads (rather than just per-cpu instances for a WQ, for example)
+> 
+> $ grep Name /proc/{29431,29432}/stat*
+> /proc/29431/status:Name: btrfs-endio-meta-1
+> /proc/29432/status:Name: btrfs-endio-meta-write-1
+> 
+> That's all.
 
-I'm testing your packages on top of RHEL6 + kernel 3.2.7. A small
-suggestion, you should include /etc/sysconfig/snapper in the package
-(at least for RHEL6, haven't tested the other ones). Even if it just
-contains
-
-SNAPPER_CONFIGS=3D""
-
-Thanks,
-
-=46ajar
---
-To unsubscribe from this list: send the line "unsubscribe linux-btrfs" =
-in
-the body of a message to majordomo@vger.kernel.org
-More majordomo info at  http://vger.kernel.org/majordomo-info.html
+doh.  The fix for that is to have less clueless btrfs developers.

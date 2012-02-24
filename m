@@ -1,41 +1,27 @@
-From: dima <dolenin@parallels.com>
-Subject: Re: Set nodatacow per file?
-Date: Fri, 24 Feb 2012 14:22:08 +0900
-Message-ID: <4F471E80.2040809@parallels.com>
-References: <4F38B8F0.5020506@yahoo.com>
+From: Anand Jain <Anand.Jain@oracle.com>
+Subject: Re: git resources
+Date: Fri, 24 Feb 2012 13:35:30 +0800
+Message-ID: <4F4721A2.3050903@oracle.com>
+References: <4E4E0C21.1010207@oracle.com> <4E4E0F3E.2080504@gmx.net>	 <20110819112403.GA5400@carfax.org.uk> <1313796410.31428.137.camel@homer>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="UTF-8"; format=flowed
-To: <linux-btrfs@vger.kernel.org>
+Content-Type: text/plain; charset=UTF-8; format=flowed
+Cc: Hugo Mills <hugo@carfax.org.uk>, Arne Jansen <sensille@gmx.net>,
+	Linux Btrfs <linux-btrfs@vger.kernel.org>
+To: Homer Parker <hparker@homershut.net>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <4F38B8F0.5020506@yahoo.com>
+In-Reply-To: <1313796410.31428.137.camel@homer>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 02/13/2012 04:17 PM, Ralf-Peter Rohbeck wrote:
-> Hello,
-> is it possible to set nodatacow on a per-file basis? I couldn't find
-> anything.
-> If not, wouldn't that be a great feature to get around the performance
-> issues with VM and database storage? Of course cloning should still
-> cause COW.
 
-Hello,
-Going back to the original question from Ralf I wanted to share my 
-experience.
 
-Yesterday I set up KVM+qemu and set -z -C with David's 'fileflags' 
-utility for the VM image file.
-I was very pleased with results - Redhat 6 Minimal installation was 
-installed in 10 minutes whereas it was taking 'forever' the last time I 
-tried it some 4 months ago. Writes during installation were very 
-moderate. Performance of VM is excellent. Installing some big packages 
-with yum inside VM goes very quickly with the speed indistinguishable 
-from that of bare metal installs.
+> (When we have this I shall update the btrfs wiki)
 
-I am not quite sure should this improvement be attributed to the nocow 
-and nocompress flags or to the overall improvement of btrfs (I am on 
-3.3-rc4 kernel) but KVM is definitely more than usable on btrfs now.
+  As promised an article was posted here sometime back.
+  
+   Writing patch for btrfs
+   http://btrfs.ipv5.de/index.php?title=Writing_patch_for_btrfs
 
-I am yet to test the install speed and performance without those flags set.
+  It was long waiting in my mail draft as kernel.org was down
+  sorry for the delay.
 
-best
-~dima
+-Anand

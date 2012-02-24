@@ -1,31 +1,35 @@
-From: Ilya Dryomov <idryomov@gmail.com>
-Subject: Re: Wrong error message when using unknown 2nd subcommand
-Date: Fri, 24 Feb 2012 12:54:16 +0200
-Message-ID: <20120224105416.GA2023@zambezi.lan>
-References: <alpine.LNX.2.01.1202240647260.12486@frira.zrqbmnf.qr>
+From: Graeme Geldenhuys <graemeg.lists@gmail.com>
+Subject: case insensitive option
+Date: Fri, 24 Feb 2012 13:17:04 +0200
+Message-ID: <CALVqcdiVqGs4V7+7EdG1P6tnwvoi1ifh94VhFT26LBcHNn3Npg@mail.gmail.com>
+Reply-To: graemeglists@gmail.com
 Mime-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Cc: linux-btrfs@vger.kernel.org
-To: Jan Engelhardt <jengelh@medozas.de>
+Content-Type: text/plain; charset=UTF-8
+To: linux-btrfs@vger.kernel.org
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <alpine.LNX.2.01.1202240647260.12486@frira.zrqbmnf.qr>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Fri, Feb 24, 2012 at 06:48:58AM +0100, Jan Engelhardt wrote:
-> 
-> In btrfsprogs-0.19, using an unknown second argument (fd, misspelled) 
-> leads to an error message complaining about the first argument (it 
-> should report the second one instead).
-> 
-> $ btrfs fi df
-> ERROR: 'filesystem df' requires 1 arg(s)
-> $ btrfs fi fd
-> ERROR: unknown command 'fi'
+Hi,
 
-Yep, that's one of the bugs in the current progs parser.  I rewrote it
-completely, it's available from the 'parser' branch of Chris'
-btrfs-progs repo and should be merged into master shortly.
+[ Not sure if this is the appropriate mailing list ]
 
-Thanks,
 
-		Ilya
+Are there any plans to add an option to make Btrfs file systems case
+insensitive - like what JFS has with the -O format option (and Mac OS
+X with HFS+)? This would be awesome if it does.
+
+Is there an official place for Btrfs feature requests?
+
+--=20
+Regards,
+=C2=A0 - Graeme -
+
+
+_______________________________________________
+fpGUI - a cross-platform Free Pascal GUI toolkit
+http://fpgui.sourceforge.net
+--
+To unsubscribe from this list: send the line "unsubscribe linux-btrfs" =
+in
+the body of a message to majordomo@vger.kernel.org
+More majordomo info at  http://vger.kernel.org/majordomo-info.html

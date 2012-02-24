@@ -1,27 +1,19 @@
-From: Anand Jain <Anand.Jain@oracle.com>
-Subject: Re: git resources
-Date: Fri, 24 Feb 2012 13:35:30 +0800
-Message-ID: <4F4721A2.3050903@oracle.com>
-References: <4E4E0C21.1010207@oracle.com> <4E4E0F3E.2080504@gmx.net>	 <20110819112403.GA5400@carfax.org.uk> <1313796410.31428.137.camel@homer>
+From: Jan Engelhardt <jengelh@medozas.de>
+Subject: Wrong error message when using unknown 2nd subcommand
+Date: Fri, 24 Feb 2012 06:48:58 +0100 (CET)
+Message-ID: <alpine.LNX.2.01.1202240647260.12486@frira.zrqbmnf.qr>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=UTF-8; format=flowed
-Cc: Hugo Mills <hugo@carfax.org.uk>, Arne Jansen <sensille@gmx.net>,
-	Linux Btrfs <linux-btrfs@vger.kernel.org>
-To: Homer Parker <hparker@homershut.net>
+Content-Type: TEXT/PLAIN; charset=US-ASCII
+To: linux-btrfs@vger.kernel.org
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <1313796410.31428.137.camel@homer>
 List-ID: <linux-btrfs.vger.kernel.org>
 
 
+In btrfsprogs-0.19, using an unknown second argument (fd, misspelled) 
+leads to an error message complaining about the first argument (it 
+should report the second one instead).
 
-> (When we have this I shall update the btrfs wiki)
-
-  As promised an article was posted here sometime back.
-  
-   Writing patch for btrfs
-   http://btrfs.ipv5.de/index.php?title=Writing_patch_for_btrfs
-
-  It was long waiting in my mail draft as kernel.org was down
-  sorry for the delay.
-
--Anand
+$ btrfs fi df
+ERROR: 'filesystem df' requires 1 arg(s)
+$ btrfs fi fd
+ERROR: unknown command 'fi'

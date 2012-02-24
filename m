@@ -1,98 +1,155 @@
-From: Chris Mason <chris.mason@oracle.com>
-Subject: [GIT PULL] Btrfs updates
-Date: Fri, 24 Feb 2012 11:41:24 -0500
-Message-ID: <20120224164124.GI26638@shiny>
+From: Nik Markovic <nmarkovi.navteq@gmail.com>
+Subject: Re: Strange prformance degradation when COW writes happen at fixed offsets
+Date: Fri, 24 Feb 2012 14:38:57 -0600
+Message-ID: <CAB3q876D=jFQF8D+PypAkZM3Uuxgwmf+tjLB9m9Pb5JZsCHZTw@mail.gmail.com>
+References: <CAB3q8748dryFek4UZnh+5__feqp_ffCX-VdZNkcs62B=X47Ghw@mail.gmail.com>
+	<CAB3q874F+6HrjvxYduex3sKcskMYcVXOa_CqW6i1F=gDv8+u7g@mail.gmail.com>
+	<pan.2012.02.24.06.38.07@cox.net>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-To: linux-btrfs <linux-btrfs@vger.kernel.org>,
-	LKML <linux-kernel@vger.kernel.org>,
-	Linus Torvalds <torvalds@linux-foundation.org>
+Content-Type: text/plain; charset=ISO-8859-1
+Cc: linux-btrfs@vger.kernel.org
+To: Duncan <1i5t5.duncan@cox.net>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
+In-Reply-To: <pan.2012.02.24.06.38.07@cox.net>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hi Linus,
+On Fri, Feb 24, 2012 at 12:38 AM, Duncan <1i5t5.duncan@cox.net> wrote:
+> Nik Markovic posted on Thu, 23 Feb 2012 20:31:02 -0600 as excerpted:
+>
+>> I noticed a few errors in the script that I used. I corrected it and=
+ it
+>> seems that degradation is occurring even at fully random writes:
+>
+> I don't have an ssd, but is it possible that you're simply seeing era=
+se-
+> block related degradation due to multi-write-block sized erase-blocks=
+?
+>
+> It seems to me that when originally written to the btrfs-on-ssd, the =
+file
+> will likely be written block-sequentially enough that the file as a w=
+hole
+> takes up relatively few erase-blocks. =A0As you COW-write individual
+> blocks, they'll be written elsewhere, perhaps all the changed blocks =
+to a
+> new erase-block, perhaps each to a different erase block.
 
-Please pull the for-linus branch of the btrfs repo:
+This is a very interesting insight. I wasn't even aware of the
+erase-block issue, so I did some reading up on it...
 
-git://git.kernel.org/pub/scm/linux/kernel/git/mason/linux-btrfs.git for-linus
+>
+> As you increase the successive COW generation count, the file's file-
+> system/write blocks will be spread thru more and more erase-blocks,
+> basically fragmentation but of the SSD-critical type, into more and m=
+ore
+> erase blocks, thus affecting modification and removal time but not re=
+ad
+> time.
 
-This is later than I wanted because I got backed up running through
-btrfs bugs from the Oracle QA teams.  But they are all bug fixes that
-we've queued and tested since rc1.
+OK, so time to write would increase due to fragmentation and writing,
+it now makes sense (though I don't see why small writes would affect
+this, but my concerns are not writes anyway), but why would cp
+--reflink time increase so much. Yes, new extents would be created,
+but btrfs doesn't write into data blocks, does it? I figured its
+metadata would be kept in one place. I figure the only thing BTRFS
+would do on cp --reflink=3Dalways:
+1. Take a collection of extents owned by source.
+2. Make the new copy use the same collection of extents.
+3. Write the collection of extents to the "directory".
 
-Nothing in particular stands out, this just reflects bug fixing and QA
-done in parallel by all the btrfs developers.  The most user visible of
-these is:
+Now this process seems to be CPU intensive. When I remove or make a
+reflink copy, one core pikes up to 100%, which tells me that there's a
+performance issue there, not an ssd issue. Also, only one CPU thread
+is being used for this. I figured that I can improve this by some
+setting. Maybe thread_pool mount option? Are there any updates in
+later kernels that I should possibly pick up?
 
-Btrfs: clear the extent uptodate bits during parent transid failures 
+>
+> IIRC I saw a note about this on the wiki, in regard to the nodatacow
+> mount-option. =A0Let's see if I can find it again. =A0Hmm... yes...
+>
+> http://btrfs.ipv5.de/index.php?title=3DGetting_started#Mount_Options
+>
+> In particular this (for nodatacow, read the rest as there's additiona=
+l
+> implications):
+>
+>>>>>>
+> Performance gain is usually < 5% unless the workload is random writes=
+ to
+> large database files, where the difference can become very large.
+> <<<<<
+>
 
-Because that helps deal with out of date drives (say an iscsi disk that
-has gone away and come back).  The old code wasn't always properly
-retrying the other mirror for this type of failure.
+Unless I am wrong, this would disable COW completely and reflink copy.
+Reflinks are a crucial component and the sole
+reason I picked BTRFS for the system that I am writing for my company.
+The autodefrag option addresses multiple writes. Writing is not the
+problem, but cp --reflink should be near-instant. That was the reason
+we chose BTRFS over ZFS, which seemed to be the only feasible
+alternative. ZFS snapshot complicate the design and deduplication copy
+time is the same as (or not much better than) raw copy.
 
-Liu Bo (6) commits (+24/-15):
-    Btrfs: be less strict on finding next node in clear_extent_bit (+1/-2)
-    Btrfs: skip states when they does not contain bits to clear (+10/-5)
-    Btrfs: kick out redundant stuff in convert_extent_bit (+0/-5)
-    Btrfs: increase the global block reserve estimates (+1/-1)
-    Btrfs: fix trim 0 bytes after a device delete (+8/-1)
-    Btrfs: fix a bug on overcommit stuff (+4/-1)
+> In addition to nodatacow, see the note on the autodefrag option.
+>
+> IOW, with the repeated generations of random-writes to cow-copies, yo=
+u're
+> apparently triggering a cow-worst-case fragmentation situation. =A0It
+> shouldn't affect read-time much on SSD, but it certainly will affect =
+copy
+> and erase time, as the data and metadata (which as you'll recall is 2=
+X by
+> default on btrfs) gets written to more and more blocks that need upda=
+ted
+> at copy/erase time,
+>
+>
+> That /might/ be the problem triggering the freezes you noted that set=
+ off
+> the original investigation as well, if the SSD firmware is running ou=
+t of
+> erase blocks and having to pause access while it rearranges data to a=
+llow
+> operations to continue. =A0Since your original issue on "rotating rus=
+t"
+> drives was fragmentation, rewriting would seem to be something you do
+> quite a lot of, triggering different but similar-cause issues on SSDs=
+ as
+> well.
+>
+> FWIW, with that sort of database-style workload, large files constant=
+ly
+> random-change rewritten, something like xfs might be more appropriate
+> than btrfs. =A0See the recent xfs presentations (were they at ScaleX =
+or
+> LinuxConf.au? both happened about the same time and were covered in t=
+he
+> same LWN weekly edition) as covered a couple weeks ago on LWN for mor=
+e.
+>
 
-Chris Mason (6) commits (+93/-47):
-    Btrfs: clear the extent uptodate bits during parent transid failures (+3/-4)
-    Btrfs: add extra sanity checks on the path names in btrfs_mksubvol (+6/-0)
-    Btrfs: don't reserve data with extents locked in btrfs_fallocate (+10/-15)
-    Btrfs: improve error handling for btrfs_insert_dir_item callers (+26/-7)
-    Btrfs: fix compiler warnings on 32 bit systems (+26/-20)
-    Btrfs: make sure we update latest_bdev (+22/-1)
+As I mentioned above, the COW is the crucial component of our system,
+XFS won't do. Our system does not do random writes. In fact it is
+mainly heavy on read operation. The system does occasional "rotation
+of rust" on large files in a way that version control system would
+(large files are modified and then used as a new baseline)
 
-Tsutomu Itoh (3) commits (+15/-8):
-    Btrfs: check return value of lookup_extent_mapping() correctly (+4/-2)
-    Btrfs: fix memory leak in load_free_space_cache() (+1/-0)
-    Btrfs: fix return value check of extent_io_ops (+10/-6)
+> --
+> Duncan - List replies preferred. =A0 No HTML msgs.
+> "Every nonfree program has a lord, a master --
+> and if you use the program, he is your master." =A0Richard Stallman
+>
+> --
+> To unsubscribe from this list: send the line "unsubscribe linux-btrfs=
+" in
+> the body of a message to majordomo@vger.kernel.org
+> More majordomo info at =A0http://vger.kernel.org/majordomo-info.html
 
-David Sterba (2) commits (+17/-3):
-    btrfs: fix structs where bitfields and spinlock/atomic share 8B word (+3/-3)
-    btrfs: silence warning in raid array setup (+14/-0)
-
-Jan Schmidt (1) commits (+2/-0):
-    Btrfs: avoid positive number with ERR_PTR
-
-Jeff Mahoney (1) commits (+53/-27):
-    btrfs: delalloc for page dirtied out-of-band in fixup worker
-
-Keith Mannthey (1) commits (+6/-0):
-    btrfs: Sector Size check during Mount
-
-Arne Jansen (1) commits (+5/-3):
-    btrfs: don't check DUP chunks twice
-
-Jeff Liu (1) commits (+2/-2):
-    Btrfs: return the internal error unchanged if btrfs_get_extent_fiemap() call failed for SEEK_DATA/SEEK_HOLE inquiry
-
-Miao Xie (1) commits (+29/-24):
-    Btrfs: fix deadlock on page lock when doing auto-defragment
-
-Florian Albrechtskirchinger (1) commits (+4/-2):
-    btrfs: honor umask when creating subvol root
-
-Total: (24) commits (+250/-131)
-
- fs/btrfs/backref.c          |    2 +
- fs/btrfs/check-integrity.c  |    2 +-
- fs/btrfs/compression.c      |    2 +
- fs/btrfs/ctree.h            |    2 +-
- fs/btrfs/disk-io.c          |   12 +++++
- fs/btrfs/extent-tree.c      |   51 ++++++++++++-------
- fs/btrfs/extent_io.c        |  113 +++++++++++++++++++++++++------------------
- fs/btrfs/extent_io.h        |    1 +
- fs/btrfs/extent_map.h       |    4 +-
- fs/btrfs/file.c             |   29 +++++-------
- fs/btrfs/free-space-cache.c |    1 +
- fs/btrfs/inode-map.c        |    6 ++-
- fs/btrfs/inode.c            |   40 +++++++++++++--
- fs/btrfs/ioctl.c            |   59 +++++++++++++---------
- fs/btrfs/scrub.c            |    8 ++-
- fs/btrfs/transaction.c      |   16 ++++---
- fs/btrfs/volumes.c          |   33 ++++++++++++-
- 17 files changed, 250 insertions(+), 131 deletions(-)
+Thanks for all your help on this issue. I hope that someone can point
+out some more tweaks or added features/fixes after 3.2 RC5 that I may
+do.
+--
+To unsubscribe from this list: send the line "unsubscribe linux-btrfs" =
+in
+the body of a message to majordomo@vger.kernel.org
+More majordomo info at  http://vger.kernel.org/majordomo-info.html

@@ -1,36 +1,49 @@
-From: Martin Steigerwald <Martin@lichtvoll.de>
-Subject: Re: 3.2-rc4: scrubbing locks up the kernel, then hung tasks on boot
-Date: Sat, 25 Feb 2012 21:14:59 +0100
-Message-ID: <201202252114.59282.Martin@lichtvoll.de>
-References: <201112171833.34720.Martin@lichtvoll.de> <201202241651.57233.Martin@lichtvoll.de> <4F48986D.4090703@gmx.net> (sfid-20120225_103102_312157_516EF482)
+From: Duncan <1i5t5.duncan@cox.net>
+Subject: Re: [PATCH] btrfs: don't add both copies of DUP to reada extent
+ tree
+Date: Sat, 25 Feb 2012 22:03:32 +0000 (UTC)
+Message-ID: <pan.2012.02.25.22.03.32@cox.net>
+References: <1330157387-6803-1-git-send-email-sensille@gmx.net>
+	<pan.2012.02.25.08.33.39@cox.net> <4F48DD9E.7030200@gmx.net>
 Mime-Version: 1.0
-Content-Type: Text/Plain; charset=utf-8
-Cc: linux-btrfs@vger.kernel.org
-To: Arne Jansen <sensille@gmx.net>
+Content-Type: text/plain; charset=UTF-8
+To: linux-btrfs@vger.kernel.org
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <4F48986D.4090703@gmx.net>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Am Samstag, 25. Februar 2012 schrieb Arne Jansen:
-> Hi Martin,
->=20
-> I just sent 2 patches to the list. Could you please test if these
-> fix your problem with scrub?
+Arne Jansen posted on Sat, 25 Feb 2012 14:09:50 +0100 as excerpted:
 
-I saved them and I try to. But no promises as to when. The machine is s=
-low=20
-at compiling kernels. And there are two annoying Pulseaudio issues I=C2=
-=B4d=20
-like to take time to gather more infos about that Pulseaudio developers=
-=20
-requested. So there is some sort of a backlog.
+> On 02/25/12 09:33, Duncan wrote:
+>> Arne Jansen posted on Sat, 25 Feb 2012 09:09:47 +0100 as excerpted:
+>>
+>>> Normally when there are 2 copies of a block, we add both to the reada
+>>> extent tree and prefetch only the one that is easier to reach.
+>>> This way we can better utilize multiple devices.
+>>> In case of DUP this makes no sense as both copies reside on the same
+>>> device.
+>>
+>> I'm not a coder and thus can't really read the code to know, but
+>> wouldn't the same easier-to-reach logic apply there, only to seeking? 
+>> One of the DUPs should be easier to reach (less seeking) than the
+>> other.
+>>
+>>
+> Well, the commit message is kind of sloppy. The reada code collects as
+> many blocks near to each other and reads them sequentially. From time to
+> time it moves on to the next filled zone. That's when a longer seek
+> happens. It doesn't try to keep these longer seeks as short as possible,
+> instead it picks a zone on the disk where it has many blocks to read.
+> As both parts of a DUP are filled equally, it doesn't matter which one
+> it picks, so it is sufficient to keep track of only one half of the
+> mirror. Things change in a multi-disk setup, as the heads can move
+> independently.
+> 
+> (this explanation is kind of sloppy, too)
 
-Ciao,
---=20
-Martin 'Helios' Steigerwald - http://www.Lichtvoll.de
-GPG: 03B0 0D6C 0040 0710 4AFA  B82F 991B EAAC A599 84C7
---
-To unsubscribe from this list: send the line "unsubscribe linux-btrfs" =
-in
-the body of a message to majordomo@vger.kernel.org
-More majordomo info at  http://vger.kernel.org/majordomo-info.html
+Thanks.  Makes sense, now.
+
+-- 
+Duncan - List replies preferred.   No HTML msgs.
+"Every nonfree program has a lord, a master --
+and if you use the program, he is your master."  Richard Stallman
+

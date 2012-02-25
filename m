@@ -1,55 +1,92 @@
 From: Arne Jansen <sensille@gmx.net>
-Subject: [PATCH] btrfs: don't add both copies of DUP to reada extent tree
-Date: Sat, 25 Feb 2012 09:09:47 +0100
-Message-ID: <1330157387-6803-1-git-send-email-sensille@gmx.net>
-To: linux-btrfs@vger.kernel.org
+Subject: Re: 3.2-rc4: scrubbing locks up the kernel, then hung tasks on boot
+Date: Sat, 25 Feb 2012 09:14:37 +0100
+Message-ID: <4F48986D.4090703@gmx.net>
+References: <201112171833.34720.Martin@lichtvoll.de> <201201211149.53403.Martin@lichtvoll.de> <201201211219.40433.Martin@lichtvoll.de> (sfid-20120121_123006_768632_E7FD03DC) <201202241651.57233.Martin@lichtvoll.de>
+Mime-Version: 1.0
+Content-Type: text/plain; charset=UTF-8;
+	format=flowed
+Cc: linux-btrfs@vger.kernel.org
+To: Martin Steigerwald <Martin@lichtvoll.de>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
+In-Reply-To: <201202241651.57233.Martin@lichtvoll.de>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Normally when there are 2 copies of a block, we add both to the
-reada extent tree and prefetch only the one that is easier to reach.
-This way we can better utilize multiple devices.
-In case of DUP this makes no sense as both copies reside on the
-same device.
+Hi Martin,
 
-Signed-off-by: Arne Jansen <sensille@gmx.net>
----
- fs/btrfs/reada.c |   13 +++++++++++++
- 1 files changed, 13 insertions(+), 0 deletions(-)
+I just sent 2 patches to the list. Could you please test if these
+fix your problem with scrub?
 
-diff --git a/fs/btrfs/reada.c b/fs/btrfs/reada.c
-index 85ce503..8127ae9 100644
---- a/fs/btrfs/reada.c
-+++ b/fs/btrfs/reada.c
-@@ -325,6 +325,7 @@ static struct reada_extent *reada_find_extent(struct btrfs_root *root,
- 	struct btrfs_mapping_tree *map_tree = &fs_info->mapping_tree;
- 	struct btrfs_bio *bbio = NULL;
- 	struct btrfs_device *dev;
-+	struct btrfs_device *prev_dev;
- 	u32 blocksize;
- 	u64 length;
- 	int nzones = 0;
-@@ -404,8 +405,20 @@ static struct reada_extent *reada_find_extent(struct btrfs_root *root,
- 		spin_unlock(&fs_info->reada_lock);
- 		goto error;
- 	}
-+	prev_dev = NULL;
- 	for (i = 0; i < nzones; ++i) {
- 		dev = bbio->stripes[i].dev;
-+		if (dev == prev_dev) {
-+			/*
-+			 * in case of DUP, just add the first zone. As both
-+			 * are on the same device, there's nothing to gain
-+			 * from adding both.
-+			 * Also, it wouldn't work, as the tree is per device
-+			 * and adding would fail with EEXIST
-+			 */
-+			continue;
-+		}
-+		prev_dev = dev;
- 		ret = radix_tree_insert(&dev->reada_extents, index, re);
- 		if (ret) {
- 			while (--i >= 0) {
--- 
-1.7.3.4
+Thanks,
+Arne
 
+
+On 02/24/12 16:51, Martin Steigerwald wrote:
+> Am Samstag, 21. Januar 2012 schrieb Martin Steigerwald:
+>> Am Samstag, 21. Januar 2012 schrieb Martin Steigerwald:
+>>> I still have this with 3.2.0-1-pae - which is a debian kernel based
+>>> on 3.2.1.
+>>>
+>>> When I do btrfs scrub start / the machine locks immediately up hard=
+=2E
+>>>
+>>> Then usually on next boot it stops on space_cache enabled message,
+>>> but not  the one for /, but the one for /home which is mounted
+>>> later.
+>>>
+>>> When I then boot with 3.1 it works. BTRFS redos the space_cache the=
+n
+>>> while  the machine takes ages to boot - I mean ages - 10 minutes ti=
+ll
+>>> KDM prompt is no problem there.
+>>
+>> I now tested scrubbing /home which is a different BTRFS filesystem o=
+n
+>> the same machine.
+>>
+>> Then the scrub is started, scrub status tells me so, but nothing
+>> happens, no block in/out activity in vmstat, no CPU related activity
+>> in top.
+>>
+>> btrfs scrub cancel then hangs, but not the complete machine, only th=
+e
+>> process.
+>>
+>> I had this once on my T520 with the internal Intel SSD 320 as well. =
+The
+>> other time it worked.
+>>
+>> Well maybe that is due to BTRFS doing something else on my T23 now:
+>>
+>> deepdance:~>  ps aux | grep ino-cache | grep -v grep
+>> root      1992  5.5  0.0      0     0 ?        D    12:15   0:09
+>> [btrfs- ino-cache]
+>>
+>> Hmmm, so I just let it sit for a while, maybe eventually it will scr=
+ub
+>> /home.
+>>
+>> At least it doesn=C2=B4t lock up hard, so there might really be some=
+thing
+>> strange with /.
+>
+> FWIW a btrfs filesystem balance / does work. After this a btrfs scrub=
+ start
+> / still locks the kernel.
+>
+> Anyway, I might be waiting for the new fsck and try it on the partiti=
+on.
+> Or redo the filesystem from scratch, cause I think trying to debug th=
+is
+> will take way more time.
+>
+> I might also as well redo /home as well. Two fresh 3.2 or 3.3 kernel =
+BTRFS
+> and see whether they work better.
+>
+
+--
+To unsubscribe from this list: send the line "unsubscribe linux-btrfs" =
+in
+the body of a message to majordomo@vger.kernel.org
+More majordomo info at  http://vger.kernel.org/majordomo-info.html

@@ -1,55 +1,109 @@
-From: Duncan <1i5t5.duncan@cox.net>
-Subject: Re: btrfs: block rsv returned -28
-Date: Sat, 25 Feb 2012 04:55:45 +0000 (UTC)
-Message-ID: <pan.2012.02.25.04.55.45@cox.net>
-References: <4F4846E1.50307@polymtl.ca>
-	<CAE5mzvhzsHDU=HU9_MTcp8ptA25tcn7HkxqOE1SNqznvRk9eMQ@mail.gmail.com>
-	<4F484BB8.2090601@polymtl.ca>
+From: Liu Bo <liubo2009@cn.fujitsu.com>
+Subject: Re: [BUG] Kernel Bug at fs/btrfs/volumes.c:3638
+Date: Sat, 25 Feb 2012 14:12:05 +0800
+Message-ID: <4F487BB5.1060706@cn.fujitsu.com>
+References: <4F476959.2010400@linux.vnet.ibm.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=UTF-8
-To: linux-btrfs@vger.kernel.org
-Return-path: <linux-btrfs-owner@vger.kernel.org>
+Content-Type: text/plain; charset=ISO-8859-1
+Cc: linux-btrfs@vger.kernel.org, linux-kernel@vger.kernel.org,
+	chris.mason@oracle.com, kamalesh@linux.vnet.ibm.com
+To: Nageswara R Sastry <rnsastry@linux.vnet.ibm.com>
+Return-path: <linux-kernel-owner@vger.kernel.org>
+In-Reply-To: <4F476959.2010400@linux.vnet.ibm.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Christian Robert posted on Fri, 24 Feb 2012 21:47:20 -0500 as excerpted:
-
-> wrong, I tryed to wait until "Load average" got near to zero (couple of
-> minutes)
-> before unmounting and it changed nothing. None of thoses subvolumes have
-> any data inside so deleting should be trivial and quick.
+On 02/24/2012 06:41 PM, Nageswara R Sastry wrote:
+> Hello,
 > 
-> Got the kernel backtrace "while" doing the deletes. Not after.
+> While working with 'fsfuzz - file system fuzzing tool' on 'btrfs'
+> encountered the following kernel bug.
+> 
+> Environment:
+> Kernel Version: 3.3.0-rc4
+> Architecture: s390, x86
+> 
+> Providing the kernel trace from 's390' arch.
+> 
+> Btrfs loaded
+> device fsid 346683e8-0fcc-4440-b421-4535e73d60d6 devid 1 transid 4
+> /dev/loop0
+> btrfs: disk space caching is enabled
+> unable to find logical 131072 len 4096
+> ------------[ cut here ]------------
+> kernel BUG at fs/btrfs/volumes.c:3638!
+> illegal operation: 0001 [#1] SMP
+> Modules linked in: btrfs zlib_deflate crc32c libcrc32c loop dm_multipath
+> dm_mod qeth_l3 ipv6 vmur dasd_eckd_mod dasd_mod scsi_dh_hp_sw
+> scsi_dh_alua scsi_dh_rdac scsi_dh_emc scsi_dh scsi_mod qeth qdio
+> ccwgroup ext3 mbcache jbd
+> CPU: 0 Not tainted 3.3.0-rc4-0.27-default #1
+> Process mount (pid: 2396, task: 000000003f176738, ksp: 0000000002ab7648)
+> Krnl PSW : 0704300180000000 000003e004c10e08
+> (__btrfs_map_block+0x794/0x8cc [btrfs])
+>            R:0 T:1 IO:1 EX:1 Key:0 M:1 W:0 P:0 AS:0 CC:3 PM:0 EA:3
+> Krnl GPRS: 0000000000010000 0700000000000008 000000000000002d
+> 0400000000000000
+>            00000000004d3f26 00000000004e21a8 0000000002ab7828
+> 0000000002130d00
+>            000000003ee5ed90 000000003e962108 0000000000020000
+> 000000003e962110
+>            000003e004bb0000 000003e004c4c990 000003e004c10e04
+> 0000000002ab7620
+> Krnl Code: 000003e004c10df8: e34050000004       lg      %r4,0(%r5)
+>            000003e004c10dfe: c0e5fffcfb87       brasl   %r14,3e004bb050c
+>           #000003e004c10e04: a7f40001           brc     15,3e004c10e06
+>>000003e004c10e08: a7f40000           brc     15,3e004c10e08
+>            000003e004c10e0c: 12bb               ltr     %r11,%r11
+>            000003e004c10e0e: a7c4ffb7           brc     12,3e004c10d7c
+>            000003e004c10e12: e31090200004       lg      %r1,32(%r9)
+>            000003e004c10e18: d507d0001078       clc     0(8,%r13),120(%r1)
+> Call Trace:
+> ([<000003e004c10e04>] __btrfs_map_block+0x790/0x8cc [btrfs])
+>  [<000003e004c10f6e>] btrfs_map_block+0x2e/0x3c [btrfs]
+>  [<000003e004c11db4>] btrfs_map_bio+0x74/0x2ac [btrfs]
+>  [<000003e004be13c6>] btree_submit_bio_hook+0xd6/0xf0 [btrfs]
+>  [<000003e004c06b4c>] submit_one_bio+0xb4/0xf8 [btrfs]
+>  [<000003e004c0e292>] read_extent_buffer_pages+0x292/0x630 [btrfs]
+>  [<000003e004bddd0c>] btree_read_extent_buffer_pages+0xc8/0xfc [btrfs]
+>  [<000003e004bdf488>] read_tree_block+0x48/0x7c [btrfs]
+>  [<000003e004be30d6>] open_ctree+0xec6/0x15f8 [btrfs]
+>  [<000003e004bbb7d8>] btrfs_fill_super+0x90/0x170 [btrfs]
+>  [<000003e004bbbefa>] btrfs_mount+0x3ea/0x3f8 [btrfs]
+>  [<0000000000260b96>] mount_fs+0x5a/0x188
+>  [<00000000002852e6>] vfs_kern_mount+0x6e/0x11c
+>  [<0000000000285442>] do_kern_mount+0x52/0x114
+>  [<000000000028573c>] do_mount+0x238/0x288
+>  [<000000000028584e>] SyS_mount+0xc2/0xf0
+>  [<00000000004d7d88>] sysc_noemu+0x22/0x28
+>  [<000003fffd1fab1e>] 0x3fffd1fab1e
+> Last Breaking-Event-Address:
+>  [<000003e004c10e04>] __btrfs_map_block+0x790/0x8cc [btrfs]
+> 
+> ---[ end trace 1e786b24696895a8 ]---
+> 
+> 
+> Steps to reproduce:
+> # mount <mangled file system image> <mount point> -t btrfs -o loop
+> 
+> Please let me know if you need more information. Thanks in advance.
+> 
 
-Please don't top post.  It makes replying in context nearly impossible.  
-Here, I quote your reply, but the context in which it was made gets lost 
-because you top-posted instead of replying inline, at the appropriate 
-place based on context, or bottom-posting if it's not /too/ long (it 
-isn't, bottom posting would have been fine, in this case) and you can't 
-be bothered to trim to context appropriately.
+Hi,
 
-cwillu is correct.  The subvolume deletes do happen in the background and 
-it can delay unmounting, in cases like this 10K subvolumes scenario, 
-significantly.  There was some discussion of that recently on another 
-thread, along with a patch so the unmounting is allowed (for shutdown, 
-etc) and the cleanup picked up again after remounting,  But it was recent 
-enough the patch will have only just made it into 3.3-prerelease kernel 
-mainline (probably with Chris's pull request to Linus from less than 12 
-hours ago, as CCed to this list, I'm not sure Linus has actually pulled 
-it yet), or may be delayed until the 3.4 commit window.
+I guess you're mounting a quite small partition.
 
-Never-the-less, you have a point about the backtraces happening while 
-doing the deletes.  That's a problem that the allow unmount and finish 
-cleanup later patch wouldn't have addressed by itself, but it's possible 
-other recent patches address it (especially since the pull includes a lot 
-of fixes based on Oracle's current intensive btrfs internal QA testing), 
-so I'd suggest doing a git pull in a few hours, checking that Linus has 
-applied Chris's pull request (this assumes you're running mainline 
-kernel, of course), and after that's applied and you're running the new 
-kernel with it, rerunning your test.  If it still backtraces at that 
-point then yeah, it's worth further investigation.
+Given that this oops is in such an early stage,
+could you please show 1) your mkfs.btrfs options and 2) the log of "btrfs-debug-tree /dev/loop0"?
 
--- 
-Duncan - List replies preferred.   No HTML msgs.
-"Every nonfree program has a lord, a master --
-and if you use the program, he is your master."  Richard Stallman
+thanks,
+liubo
 
+> Regards
+> R.Nageswara Sastry
+> 
+> -- 
+> To unsubscribe from this list: send the line "unsubscribe linux-kernel" in
+> the body of a message to majordomo@vger.kernel.org
+> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+> Please read the FAQ at  http://www.tux.org/lkml/
+> 

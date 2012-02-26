@@ -1,58 +1,147 @@
-From: Fahrzin Hemmati <fahhem2@gmail.com>
+From: "Brian J. Murrell" <brian@interlinx.bc.ca>
 Subject: Re: filesystem full when it's not?  out of inodes?  huh?
-Date: Sat, 25 Feb 2012 20:05:13 -0800
-Message-ID: <4F49AF79.4020706@gmail.com>
-References: <jic3e1$gpe$1@dough.gmane.org> <4F499498.1040006@gmail.com> <jic4m8$j6g$1@dough.gmane.org> <4F499AE4.80908@gmail.com> <jicait$grq$1@dough.gmane.org>
+Date: Sun, 26 Feb 2012 00:45:35 -0500
+Message-ID: <jicgtv$bg2$1@dough.gmane.org>
+References: <jic3e1$gpe$1@dough.gmane.org> <4F499498.1040006@gmail.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=ISO-8859-1; format=flowed
-Cc: linux-btrfs@vger.kernel.org
-To: "Brian J. Murrell" <brian@interlinx.bc.ca>
+Content-Type: multipart/signed; micalg=pgp-sha1;
+ protocol="application/pgp-signature";
+ boundary="------------enig6EDFC81B5F19A2612181EEA5"
+To: linux-btrfs@vger.kernel.org
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <jicait$grq$1@dough.gmane.org>
+In-Reply-To: <4F499498.1040006@gmail.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 2/25/2012 7:57 PM, Brian J. Murrell wrote:
-> On 12-02-25 09:37 PM, Fahrzin Hemmati wrote:
->> Nope, still in heavy development, though you should upgrade to 3.2.
-> I recall being told I should upgrade to 2.6.36 (or was it .37 or .38) at
-> one time.  Seems like one should always upgrade.  :-/
-It's a new, in-development filesystem. Until they say "It's stable, have 
-fun", you should upgrade. If you follow any other filesystem before 
-they've marked it stable and you'll get the same responses.
->> Also, the devs mentioned in several places it's not friendly to small
->> drives, and I'm pretty sure 5GB is considered tiny.
-> But it won't ever get taken serious if it can't be used on "regular"
-> filesystems.  I shouldn't have to allocate an 80G filesystem for 3G of
-> data just so that the filesystem isn't "tiny".
-All filesystems have their own pros and cons; btrfs, at least while 
-in-development doesn't support small filesystems. Again, nobody's 
-responded to the contrary, but there may be a way to changing the 
-default allocation size to less than 1GB, making your use case viable. I 
-recommend Google.
->> I don't think you need to separate /usr out to it's own disk. You could
->> instead create a single drive with multiple subvolumes for /, /var,
->> /usr, etc.
-> The point is to separate filesystems which can easily fill with
-> application data growth from filesystems that can have more fatal
-> effects by being filled.
->
-> That said, I don't think having /var as a subvolume in the same pool as
-> / and /usr achieves that usage isolation, does it?  Isn't /var still
-> allowed to consume all of the space that it, / and /usr share with them
-> all being subvolumes in the same pool?
->
->> When you have Ubuntu use btrfs for /, it creates @ and @home
->> for / and /home, respectively,
-> Yes, I had noticed that.  I also didn't immediately see anything that
-> prevents /home from filling / as I describe above.
->
-> Cheers,
-> b.
->
+This is an OpenPGP/MIME signed message (RFC 2440 and 3156)
+--------------enig6EDFC81B5F19A2612181EEA5
+Content-Type: text/plain; charset=ISO-8859-1
+Content-Transfer-Encoding: quoted-printable
 
-No, at least not yet, nor am I aware of any plans for subvolume quotas, 
-though I could be wrong. If you wish to use a small space for your /usr, 
-you can either wait for btrfs to support your use-case (or find out how 
-to change allocation size), or use another filesystem that already does.
+On 12-02-25 09:10 PM, Fahrzin Hemmati wrote:
+> btrfs is horrible for small filesystems (like a 5GB drive). df -h says
+> you have 967MB available, but btrfs (at least by default) allocates 1GB=
 
---Farz
+> at a time to data/metadata. This means that your 10MB file is too big
+> for the current allocation and requires a new data chunk, or another
+> 1GB, which you don't have.
+
+So increasing the size of the filesystem should suffice then?  How much
+bigger?  10G?  Nope.  still not big enough:
+
+# lvextend -L+1G /dev/rootvol/mint_usr; btrfs fi resize max /usr; df -h /=
+usr
+  Extending logical volume mint_usr to 10.00 GiB
+  Logical volume mint_usr successfully resized
+Resize '/usr' of 'max'
+Filesystem            Size  Used Avail Use% Mounted on
+/dev/mapper/rootvol-mint_usr
+                       10G  2.8G  6.0G  32% /usr
+test ~ # apt-get install -y -f
+Reading package lists... Done
+Building dependency tree      =20
+Reading state information... Done
+Correcting dependencies... Done
+The following extra packages will be installed:
+  linux-headers-3.0.0-16-generic
+The following NEW packages will be installed:
+  linux-headers-3.0.0-16-generic
+0 upgraded, 1 newly installed, 0 to remove and 2 not upgraded.
+264 not fully installed or removed.
+Need to get 0 B/851 kB of archives.
+After this operation, 10.8 MB of additional disk space will be used.
+(Reading database ... 180246 files and directories currently installed.)
+Unpacking linux-headers-3.0.0-16-generic (from .../linux-headers-3.0.0-16=
+-generic_3.0.0-16.28_i386.deb) ...
+dpkg: error processing /var/cache/apt/archives/linux-headers-3.0.0-16-gen=
+eric_3.0.0-16.28_i386.deb (--unpack):
+ unable to install new version of `/usr/src/linux-headers-3.0.0-16-generi=
+c/include/config/dvb/usb.h': No space left on device
+
+20G maybe?  Nope:
+
+# lvextend -L20G /dev/rootvol/mint_usr; btrfs fi resize max /usr; df -h /=
+usr
+  Extending logical volume mint_usr to 20.00 GiB
+  Logical volume mint_usr successfully resized
+Resize '/usr' of 'max'
+Filesystem            Size  Used Avail Use% Mounted on
+/dev/mapper/rootvol-mint_usr
+                       20G  2.8G   16G  15% /usr
+test ~ # apt-get install -y -f
+Reading package lists... Done
+Building dependency tree      =20
+Reading state information... Done
+Correcting dependencies... Done
+The following extra packages will be installed:
+  linux-headers-3.0.0-16-generic
+The following NEW packages will be installed:
+  linux-headers-3.0.0-16-generic
+0 upgraded, 1 newly installed, 0 to remove and 2 not upgraded.
+264 not fully installed or removed.
+Need to get 0 B/851 kB of archives.
+After this operation, 10.8 MB of additional disk space will be used.
+(Reading database ... 180246 files and directories currently installed.)
+Unpacking linux-headers-3.0.0-16-generic (from .../linux-headers-3.0.0-16=
+-generic_3.0.0-16.28_i386.deb) ...
+dpkg: error processing /var/cache/apt/archives/linux-headers-3.0.0-16-gen=
+eric_3.0.0-16.28_i386.deb (--unpack):
+ unable to install new version of `/usr/src/linux-headers-3.0.0-16-generi=
+c/include/config/ncpfs/packet/signing.h': No space left on device
+
+Maybe 50G?  Yup:
+
+# apt-get install -y -f
+Reading package lists... Done
+Building dependency tree      =20
+Reading state information... Done
+Correcting dependencies... Done
+The following extra packages will be installed:
+  linux-headers-3.0.0-16-generic
+The following NEW packages will be installed:
+  linux-headers-3.0.0-16-generic
+0 upgraded, 1 newly installed, 0 to remove and 2 not upgraded.
+264 not fully installed or removed.
+Need to get 0 B/851 kB of archives.
+After this operation, 10.8 MB of additional disk space will be used.
+(Reading database ... 180246 files and directories currently installed.)
+Unpacking linux-headers-3.0.0-16-generic (from .../linux-headers-3.0.0-16=
+-generic_3.0.0-16.28_i386.deb) ...
+Setting up linux-image-3.0.0-16-generic (3.0.0-16.28) ...
+=2E..
+# df -h /usr
+Filesystem            Size  Used Avail Use% Mounted on
+/dev/mapper/rootvol-mint_usr
+                       50G  2.8G   43G   7% /usr
+
+So I guess I need a 50G btrfs filesystem for 2.8G worth of data?
+
+Does that really seem right?  I suppose to be fair it could have been
+some other value between 20G and 50G since I didn't test values in
+between.  So still, I need some amount more than 20G of space to store
+2.8G of data?
+
+Surely there is something going on here other than just btrfs sucks for
+small filesystems.
+
+b.
+
+
+
+
+
+--------------enig6EDFC81B5F19A2612181EEA5
+Content-Type: application/pgp-signature; name="signature.asc"
+Content-Description: OpenPGP digital signature
+Content-Disposition: attachment; filename="signature.asc"
+
+-----BEGIN PGP SIGNATURE-----
+Version: GnuPG v1.4.11 (GNU/Linux)
+Comment: Using GnuPG with Mozilla - http://enigmail.mozdev.org/
+
+iEYEARECAAYFAk9Jxv8ACgkQl3EQlGLyuXDHfwCeMqjhlx5HCXNfy50z45KHPVjR
+lCIAoKu9P3nBDSkEHnEcv/KRiUuXGrpZ
+=4cYN
+-----END PGP SIGNATURE-----
+
+--------------enig6EDFC81B5F19A2612181EEA5--
+

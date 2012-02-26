@@ -1,59 +1,53 @@
-From: Hugo Mills <hugo@carfax.org.uk>
+From: "Helmut Hullen" <Hullen@t-online.de>
 Subject: Re: LABEL only 1 device
-Date: Sun, 26 Feb 2012 15:30:36 +0000
-Message-ID: <20120226153036.GB18898@carfax.org.uk>
-References: <C3b0ka5D1uB@helmut.hullen.de>
+Date: 26 Feb 2012 17:12:00 +0100
+Message-ID: <C3b12r9i1uB@helmut.hullen.de>
+References: <20120226153036.GB18898@carfax.org.uk>
+Reply-To: helmut@hullen.de
 Mime-Version: 1.0
-Content-Type: multipart/signed; micalg=pgp-sha1;
-	protocol="application/pgp-signature"; boundary="QKdGvSO+nmPlgiQ/"
-Cc: linux-btrfs@vger.kernel.org
-To: helmut@hullen.de
+Content-Type: text/plain; charset=US-ASCII
+To: linux-btrfs@vger.kernel.org
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <C3b0ka5D1uB@helmut.hullen.de>
+In-Reply-To: <20120226153036.GB18898@carfax.org.uk>
 List-ID: <linux-btrfs.vger.kernel.org>
 
+Hallo, Hugo,
 
---QKdGvSO+nmPlgiQ/
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
+Du meintest am 26.02.12:
 
-On Sun, Feb 26, 2012 at 04:23:00PM +0100, Helmut Hullen wrote:
-> Hallo, linux-btrfs,
-> 
-> maybe it's a big error using the commmand
-> 
->   mkfs.btrfs -L xyz /dev/sdx1 /dev/sdy1 /dev/sdz1
-> 
-> (and so labelling many partitions) because each device/partition gets  
-> the same label.
-> 
-> Mounting seems to be no problem, but (p.e.) "delete" doesn't kill the  
-> btrfs informations shown with (p.e.) "blkid /dev/sdy1", especially it  
-> doesn't delete the label.
+>> Mounting seems to be no problem, but (p.e.) "delete" doesn't kill
+>> the btrfs informations shown with (p.e.) "blkid /dev/sdy1",
+>> especially it doesn't delete the label.
 
-   What do you mean by "delete" here?
+>    What do you mean by "delete" here?
 
-   The label is a *filesystem* label, not a label for the block
-device(s) it lives on, so it doesn't make much sense to talk about
-putting an FS label on only one of the devices that the FS is on.
+   btrfs device delete <device> <path>
 
-   Hugo.
+>    The label is a *filesystem* label, not a label for the block
+> device(s) it lives on, so it doesn't make much sense to talk about
+> putting an FS label on only one of the devices that the FS is on.
 
--- 
-=== Hugo Mills: hugo@... carfax.org.uk | darksatanic.net | lug.org.uk ===
-  PGP key: 515C238D from wwwkeys.eu.pgp.net or http://www.carfax.org.uk
-     --- "I am the author. You are the audience. I outrank you!" ---     
+My (planned) usual work (once a year or so):
 
---QKdGvSO+nmPlgiQ/
-Content-Type: application/pgp-signature; name="signature.asc"
-Content-Description: Digital signature
+        btrfs device add <biggerdevice> <path>
+        btrfs filesystem balance <path>
+        btrfs device delete <smallerdevice> <path>
 
------BEGIN PGP SIGNATURE-----
-Version: GnuPG v1.4.11 (GNU/Linux)
+And the "devices" are (p.e.) /dev/sdj1, /dev/sdk1 etc. (partitions on a  
+device).
 
-iD8DBQFPSlAcIKyzvlFcI40RAqTEAKCfDHoMBefwbSVn4OLbntsCjLr6BgCeODex
-xp9kSZI3WUAaO7/4VkVk8cQ=
-=UZPf
------END PGP SIGNATURE-----
+Therefor I can see some informations via (p.e.)
 
---QKdGvSO+nmPlgiQ/--
+        blkid /dev/sdj1
+
+I prefer LABELling the devices/partitions, and then I'd seen that the  
+option "-L" makes problems when I use it for more than 1 device/ 
+partition.
+
+With other file systems there's no real problem with the same label for  
+several partitions - it doesn't work. But btrfs bundles these partitions  
+(perhaps sometimes/most times regardless of the labels of the other  
+partitions).
+
+Viele Gruesse!
+Helmut

@@ -1,145 +1,71 @@
-From: Duncan <1i5t5.duncan@cox.net>
-Subject: Re: LABEL only 1 device
-Date: Mon, 27 Feb 2012 16:48:34 +0000 (UTC)
-Message-ID: <pan.2012.02.27.16.48.34@cox.net>
-References: <20120227101154.GE18898@carfax.org.uk>
-	<C3f2t9RT1uB@helmut.hullen.de>
+From: Nik Markovic <nmarkovi.navteq@gmail.com>
+Subject: Re: Errors in dmesg, no crashes though.
+Date: Mon, 27 Feb 2012 14:58:29 -0600
+Message-ID: <CAB3q874sxdP8Y8Bs=NMhkceQ4VFqJSDOGe=hXvUOLM9k205JWQ@mail.gmail.com>
+References: <CACCfv7p=w3j5+K698nms0-T1XJLXg=SWhQQ82jf7yvSUt9nYPw@mail.gmail.com>
+	<20120227150346.GQ1046@twin.jikos.cz>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=UTF-8
-To: linux-btrfs@vger.kernel.org
+Content-Type: text/plain; charset=ISO-8859-1
+To: dave@jikos.cz, Jordan Windsor <jordanw2@gmail.com>,
+	linux-btrfs@vger.kernel.org, josef@redhat.com
 Return-path: <linux-btrfs-owner@vger.kernel.org>
+In-Reply-To: <20120227150346.GQ1046@twin.jikos.cz>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Helmut Hullen posted on Mon, 27 Feb 2012 11:27:00 +0100 as excerpted:
+I've just seen this too on Fedora 16 while I was investigating an NFS i=
+ssue.
+I was trying to copy a file from an NFS mount to a btrfs partition.
+The NFS transfers for large files were occurring in bursts for some
+reason and I was aborting the copy at times. This NFS problem was not
+related to btrfs (cat NFS file > /dev/null was also bursting and
+slow).
 
-> Du meintest am 27.02.12:
-> 
->>>>    mkfs.btrfs creates a new filesystem. The -L option sets the label
->>>> for the newly-created FS.
+Originally I ran  3.2.1-3.fc16, but just upgraded to 3.2.7-1.fc16. The
+file system was formatted with 3.2.1 originally.
 
->>> The safest way may be deleting this option ... it seems to work as
->>> expected only when I create a new FS on 1 disk/partition.
-> 
->>    I've said this several times: Your expectations are wrong. You
->> don't label partitions.
-> 
-> Yes - now I know.
-> But I'm afraid other people also expect wrong - when I use mkfs.ext[234]
-> then this option works (in another way than with "mkfs.btrfs").
+I can't say for sure what caused this - whether it was the NFS being
+slow, the copy being interrupted, or btrfs itself.
 
-AFAIK, it works in the same way... that is, it labels the, in that case, 
-ext2/3/4 filesystem, in this case (mkfs.btrfs), btrfs filesystem.
+Regards,
+Nik
 
->From the manpages:
-
-mkfs.btrfs (aka mkbtrfs):
-
-       -L, --label name
-              Specify a label for the filesystem.
-
-mkfs.ext2/3/4 (aka mke2fs):
-
-       -L new-volume-label
-              Set  the  volume  label  for the filesystem to
-	      new-volume-label.  The maximum length of the
-              volume label is 16 bytes.
-
-e2label:
-
-       e2label  will display or change the filesystem label on the
-       ext2, ext3, or ext4 filesystem located on device.
-
-mkreiserfs:
-
-      -l | --label LABEL
-              Sets   the   volume  label  of  the filesystem. LABEL
-              can at most be 16 characters long; if it is longer than
-              16 characters, mkreiserfs will truncate it.
-
-reiserfstune:
-
-       -l | --label LABEL
-              Set  the  volume  label  of  the filesystem. LABEL can
-              be at most 16 characters long; if it is longer than 16
-              characters, reiserfstune will truncate it.
-
-The mkswap manpage does make things a bit more confusing, until you 
-realize that the "device" they're referencing is a "swap device", which 
-can be a file, not just a "block device".
-
-       mkswap sets up a Linux swap area on a device or in a file.
-
-       [...]
-
-       -L, --label label
-              Specify a label for the device, to allow swapon by label.
-
-
-fstab indicates the filesystem label:
-
-       The first field (fs_spec).
-              This field describes the block special device or remote
-              filesystem to be mounted.
-
-              For ordinary mounts it will hold (a link to) a block
-              special device  node  (as  created  by mknod(8))  for
-              the device to be mounted, like `/dev/cdrom' or
-              `/dev/sdb7'.  [...]
-
-              Instead of giving the device explicitly, one may
-              indicate the (ext2 or xfs) filesystem that is to
-              be  mounted  by its UUID or volume label (cf.
-              e2label(8) or xfs_admin(8)), writing
-              LABEL=<label> or UUID=<uuid>, e.g., `LABEL=Boot'[.]
-              This  will  make  the  system more robust: adding
-              or removing a SCSI disk changes the disk device name
-              but not the filesystem volume label.
-
-mount seems to be confused, using label in both the filesystem and device 
-context (it also discusses selinux labels, etc, which are of course 
-different).  I'm not going to quote it here as the bits discussing label 
-are dispersed and getting context clear on all of them would take a lot 
-of space.  Searching the manpage for "label" (case insensitive search) 
-works, tho, again noting that it uses "label" in selinux and other 
-contexts as well.
-
-In another post I mentioned that gpt partitions do have "names", which 
-/could/ function similarly to labels, tho Linux including the mount 
-command generally ignores them at present.  From the gdisk (part of 
-gptfdisk) manpage (the cgdisk and sgdisk manpages, same package, are 
-similarly worded, including the note on the distinction between gpt 
-partition name and filesystem label):
-
-       c      Change the GPT name of a partition. This name is encoded
-              as a UTF-16 string, but proper entry and display of
-              anything beyond basic ASCII values requires suitable
-              locale and font support. For the most part, Linux ignores
-              the partition name, but it may be important in some OSes.
-              GPT  fdisk sets a default name based on the partition type
-              code. Note that the GPT partition name is different from
-              the filesystem name, which is encoded in the filesystem's
-              data structures.
-
-Note especially that last sentence, above.
-
-
-So a filesystem label is just that, a /filesystem/ label.  That there's 
-normally a 1:1 correspondence between filesystem and the block device(s) 
-it's on is simply an accident.  But it's NOT an accident when a btrfs 
-filesystem label applies to ALL the devices that compose the filesystem, 
-since it's a FILESYSTEM label, NOT a PARTITION label.  As the gptfdisk 
-manpages make clear, partition names/labels, where they exist as in gpt 
-based partitioning, are quite distinct from the filesystem names/labels.
-
-
-However, the above manpage research does point out that while usage is 
-generally quite consistent, the mkswap and mount manpages usage is 
-ambiguous, and should be made more clear.
-
-Perhaps later today I'll file bugs...
-
--- 
-Duncan - List replies preferred.   No HTML msgs.
-"Every nonfree program has a lord, a master --
-and if you use the program, he is your master."  Richard Stallman
-
+On Mon, Feb 27, 2012 at 9:03 AM, David Sterba <dave@jikos.cz> wrote:
+> On Sat, Feb 25, 2012 at 09:14:01AM +1030, Jordan Windsor wrote:
+>> I'm running Ubuntu under KVM, with btrfs on the host where the
+>> Qemu/KVM image is stored, the VM was also running at the time. I was
+>> going to check something unrelated in the dmesg output, as I did tha=
+t
+>> I noticed some errors in it about btrfs here they are:
+>>
+>>
+>> [ 4294.431807] btrfs: block rsv returned -28
+>> [ 4294.431811] ------------[ cut here ]------------
+>> [ 4294.431831] WARNING: at fs/btrfs/extent-tree.c:5985
+>
+> This is a warning and it shows up from time to time, accross recent
+> releases.
+>
+>> This didn't cause any crashes or related issues, also unrelated (I
+>> think?) is that I get very low performance (about 5MBps according to
+>> iostat) in a guest under Qemu/KVM.
+>> 3.2.7-1-ARCH x86_64 Arch Linux
+>
+> Yes, the performance goes down as some pathological should-not-happen
+> code path is taken. I myself haven't seen this error recently during
+> testing, but at the time I did, it slowed down the machine for a whil=
+e,
+> ie. it's not a inifinite loop. Seems there's a dark corner of
+> space reservations left for Josef.
+>
+>
+> david
+> --
+> To unsubscribe from this list: send the line "unsubscribe linux-btrfs=
+" in
+> the body of a message to majordomo@vger.kernel.org
+> More majordomo info at =A0http://vger.kernel.org/majordomo-info.html
+--
+To unsubscribe from this list: send the line "unsubscribe linux-btrfs" =
+in
+the body of a message to majordomo@vger.kernel.org
+More majordomo info at  http://vger.kernel.org/majordomo-info.html

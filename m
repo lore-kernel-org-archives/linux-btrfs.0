@@ -1,69 +1,52 @@
-From: Paul Gortmaker <paul.gortmaker@windriver.com>
-Subject: [PATCH] btrfs: fixup module.h usage as required
-Date: Sun, 26 Feb 2012 20:16:58 -0500
-Message-ID: <1330305418-3507-1-git-send-email-paul.gortmaker@windriver.com>
-Cc: linux-btrfs@vger.kernel.org, linux-kernel@vger.kernel.org,
-	Paul Gortmaker <paul.gortmaker@windriver.com>
-To: chris.mason@oracle.com
-Return-path: <linux-btrfs-owner@vger.kernel.org>
+From: =?UTF-8?B?SsOpcsO0bWU=?= Carretero <cJ-ko@zougloub.eu>
+Subject: Re: [BUG] Kernel Bug at fs/btrfs/volumes.c:3638
+Date: Sun, 26 Feb 2012 23:42:58 -0500
+Message-ID: <20120226234258.522ee56e@Bidule>
+References: <4F476959.2010400@linux.vnet.ibm.com>
+Mime-Version: 1.0
+Content-Type: text/plain; charset=US-ASCII
+Cc: Nageswara R Sastry <rnsastry@linux.vnet.ibm.com>,
+	linux-kernel@vger.kernel.org, chris.mason@oracle.com,
+	kamalesh@linux.vnet.ibm.com, Liu Bo <liubo2009@cn.fujitsu.com>
+To: linux-btrfs@vger.kernel.org
+Return-path: <linux-kernel-owner@vger.kernel.org>
+In-Reply-To: <4F476959.2010400@linux.vnet.ibm.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Delete the instances of module.h that aren't actually used
-or needed.  Replace with export.h as required.
+On Fri, 24 Feb 2012 16:11:29 +0530
+Nageswara R Sastry <rnsastry@linux.vnet.ibm.com> wrote:
 
-Signed-off-by: Paul Gortmaker <paul.gortmaker@windriver.com>
----
-[This is 100% independent of any cleanups I'm working on, so it
- can go in via the btrfs tree seamlessly.]
+> Hello,
+> 
+> While working with 'fsfuzz - file system fuzzing tool' on 'btrfs' 
+> encountered the following kernel bug.
 
-diff --git a/fs/btrfs/extent_io.c b/fs/btrfs/extent_io.c
-index a55fbe6..9452204 100644
---- a/fs/btrfs/extent_io.c
-+++ b/fs/btrfs/extent_io.c
-@@ -4,7 +4,6 @@
- #include <linux/mm.h>
- #include <linux/pagemap.h>
- #include <linux/page-flags.h>
--#include <linux/module.h>
- #include <linux/spinlock.h>
- #include <linux/blkdev.h>
- #include <linux/swap.h>
-diff --git a/fs/btrfs/extent_map.c b/fs/btrfs/extent_map.c
-index 7c97b33..711c877 100644
---- a/fs/btrfs/extent_map.c
-+++ b/fs/btrfs/extent_map.c
-@@ -1,6 +1,5 @@
- #include <linux/err.h>
- #include <linux/slab.h>
--#include <linux/module.h>
- #include <linux/spinlock.h>
- #include <linux/hardirq.h>
- #include "ctree.h"
-diff --git a/fs/btrfs/sysfs.c b/fs/btrfs/sysfs.c
-index daac9ae..5b326cd 100644
---- a/fs/btrfs/sysfs.c
-+++ b/fs/btrfs/sysfs.c
-@@ -21,7 +21,6 @@
- #include <linux/spinlock.h>
- #include <linux/completion.h>
- #include <linux/buffer_head.h>
--#include <linux/module.h>
- #include <linux/kobject.h>
- 
- #include "ctree.h"
-diff --git a/fs/btrfs/ulist.c b/fs/btrfs/ulist.c
-index 12f5147..273dea8 100644
---- a/fs/btrfs/ulist.c
-+++ b/fs/btrfs/ulist.c
-@@ -5,7 +5,7 @@
-  */
- 
- #include <linux/slab.h>
--#include <linux/module.h>
-+#include <linux/export.h>
- #include "ulist.h"
- 
- /*
+I inquired about robustness a while ago and it seems it's at some point on the horizon, but not now.
+My concern was about hot-unplugged disk drives, but btrfs also doesn't appreciate meta-data corruption.
+btrfs-raid users could be concerned, because contrarily to on a real RAID, the btrfs meta-data is a potential weak link.
+
+At some point, I would appreciate some kind of thorough evaluation using a fuzzer on small disk images.
+The btrfs developers could for instance:
+- provide a script to create a filesystem image with a known layout (known corpus)
+- provide .config and reference to kernel sources to build the kernel
+- provide a minimal root filesystem to be run under qemu, it would run a procedure on the other disk image at boot
+  crashes wouldn't affect the host, which is good.
+- provide a way to retrieve the test parameters and results for every test case
+  in case of bug, the test can be reproduced by the developers since the configuration is known
+- expect volunteers to run the scenarios (I know I would)
+The tricky part is of course the potentially super-costly procedure...
+Simplest case: flipping every bit / writing blocks with pseudo-random data, even on meta-data only, as the outcome on data is supposed to be known.
+Smarter: flipping bits on every btrfs meta-data structure type at every possible logical location.
+
+The kind of stuff that would help all this could be something like Python bindings for a *btrfs library*.
+Helpful even for prototyping fsck stuff, making illustrations, etc.
+
+As of today, how are btrfs developers testing the filesystem implementation (except with xfstests) ?
+
+Best regards,
+
 -- 
-1.7.9.1
+cJ
 
+PS: don't be mistaken, I'm not asking for all that, just suggesting.
+My time goes to something else, but I do have sleepy computers at home, and they could help.

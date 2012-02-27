@@ -1,60 +1,92 @@
-From: dima <dolenin@parallels.com>
-Subject: Re: Set nodatacow per file?
-Date: Mon, 27 Feb 2012 22:54:10 +0900
-Message-ID: <4F4B8B02.9080303@parallels.com>
-References: <4F38B8F0.5020506@yahoo.com> <4F471E80.2040809@parallels.com>
+From: David Sterba <dave@jikos.cz>
+Subject: Re: [BUG] Kernel Bug at fs/btrfs/volumes.c:3638
+Date: Mon, 27 Feb 2012 15:52:17 +0100
+Message-ID: <20120227145217.GP1046@twin.jikos.cz>
+References: <4F476959.2010400@linux.vnet.ibm.com> <20120226234258.522ee56e@Bidule>
+Reply-To: dave@jikos.cz
 Mime-Version: 1.0
-Content-Type: text/plain; charset="UTF-8"; format=flowed
-To: <linux-btrfs@vger.kernel.org>
+Content-Type: text/plain; charset=iso-8859-1
+Cc: linux-btrfs@vger.kernel.org,
+	Nageswara R Sastry <rnsastry@linux.vnet.ibm.com>,
+	linux-kernel@vger.kernel.org, chris.mason@oracle.com,
+	kamalesh@linux.vnet.ibm.com, Liu Bo <liubo2009@cn.fujitsu.com>
+To: =?iso-8859-1?B?Suly9G1l?= Carretero <cJ-ko@zougloub.eu>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <4F471E80.2040809@parallels.com>
+In-Reply-To: <20120226234258.522ee56e@Bidule>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hello,
+On Sun, Feb 26, 2012 at 11:42:58PM -0500, J=E9r=F4me Carretero wrote:
+> At some point, I would appreciate some kind of thorough evaluation us=
+ing a fuzzer on small disk images.
+> The btrfs developers could for instance:
+> - provide a script to create a filesystem image with a known layout (=
+known corpus)
+> - provide .config and reference to kernel sources to build the kernel
+> - provide a minimal root filesystem to be run under qemu, it would ru=
+n a procedure on the other disk image at boot
+>   crashes wouldn't affect the host, which is good.
+> - provide a way to retrieve the test parameters and results for every=
+ test case
+>   in case of bug, the test can be reproduced by the developers since =
+the configuration is known
+> - expect volunteers to run the scenarios (I know I would)
+> The tricky part is of course the potentially super-costly procedure..=
+=2E
+> Simplest case: flipping every bit / writing blocks with pseudo-random=
+ data, even on meta-data only, as the outcome on data is supposed to be=
+ known.
+> Smarter: flipping bits on every btrfs meta-data structure type at eve=
+ry possible logical location.
 
-Since several people asked to post the results, here they are.
-I tried raw virtio disk with and without -z -C set and also qcow2 virtio 
-disk without -z -C set and did not notice any difference in performance 
-at all - Redhat 6.2 Minimal installs in 10 minutes in each case. The 
-"abysmal" performance as it was some several months ago (like 10 minutes 
-just for virtual disk formatting) under the same conditions is no more 
-at least on 3.3.0-rc5.
+There is a dangerdonteveruse(tm) utility btrfs-corrupt-block able to
+target at specific metadata structure and corrupt it, with the fsck
+counterpart for the rescue. I believe we'll see more updates in that
+area.
 
-best
-~dima
+The block checksums are supposed to catch bitflips after they were
+written down to device (provided the data were correct up to the
+checksum point).
+
+If you're talking about random bitflips in metadata structures during
+processing, that's very likely to crash in many ways of course. I think
+some logic needs to be added to those corruptions and accompanied by th=
+e
+fsck part.
+
+> The kind of stuff that would help all this could be something like Py=
+thon bindings for a *btrfs library*.
+> Helpful even for prototyping fsck stuff, making illustrations, etc.
+
+We could see btrfsprogs turn into a library + tool, someday. Added to
+project page.
+
+> As of today, how are btrfs developers testing the filesystem implemen=
+tation (except with xfstests) ?
+
+If there is a patch fixing particular bug, I try to set up environment
+stressing exactly that bug (and sometimes finding another one ...). The
+xfstests suite is a must before any testing. There are common loads
+raising the chances to hit a bug like repeated snapshots (and deletions=
+),
+exhausting data/metadata space, 'fi defrag', 'fi sync', 'fi balance'.
+
+Sometimes it's enough to run a specific xfstest in a loop. I have set o=
+f
+hackish scripts doing just these tasks or wrappers around xfstests to
+create filesystem with desired raid levels (where applicable) and let
+the suite run on top of it.
+
+Another dimension of testing are mount options, there are some
+combinations likely to execrise specific parts of code, or create files
+in a way that may confuse different mount options (like nodatasum).
+
+We've seen btrfs-specific tests added to xfstests, so it's mostly
+changing the outer environment for the testsuite.
 
 
-On 02/24/2012 02:22 PM, dima wrote:
-> On 02/13/2012 04:17 PM, Ralf-Peter Rohbeck wrote:
->> Hello,
->> is it possible to set nodatacow on a per-file basis? I couldn't find
->> anything.
->> If not, wouldn't that be a great feature to get around the performance
->> issues with VM and database storage? Of course cloning should still
->> cause COW.
->
-> Hello,
-> Going back to the original question from Ralf I wanted to share my
-> experience.
->
-> Yesterday I set up KVM+qemu and set -z -C with David's 'fileflags'
-> utility for the VM image file.
-> I was very pleased with results - Redhat 6 Minimal installation was
-> installed in 10 minutes whereas it was taking 'forever' the last time I
-> tried it some 4 months ago. Writes during installation were very
-> moderate. Performance of VM is excellent. Installing some big packages
-> with yum inside VM goes very quickly with the speed indistinguishable
-> from that of bare metal installs.
->
-> I am not quite sure should this improvement be attributed to the nocow
-> and nocompress flags or to the overall improvement of btrfs (I am on
-> 3.3-rc4 kernel) but KVM is definitely more than usable on btrfs now.
->
-> I am yet to test the install speed and performance without those flags set.
->
-> best
-> ~dima
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at http://vger.kernel.org/majordomo-info.html
+david
+--
+To unsubscribe from this list: send the line "unsubscribe linux-btrfs" =
+in
+the body of a message to majordomo@vger.kernel.org
+More majordomo info at  http://vger.kernel.org/majordomo-info.html

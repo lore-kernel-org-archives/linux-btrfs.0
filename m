@@ -1,92 +1,41 @@
 From: David Sterba <dave@jikos.cz>
-Subject: Re: [BUG] Kernel Bug at fs/btrfs/volumes.c:3638
-Date: Mon, 27 Feb 2012 15:52:17 +0100
-Message-ID: <20120227145217.GP1046@twin.jikos.cz>
-References: <4F476959.2010400@linux.vnet.ibm.com> <20120226234258.522ee56e@Bidule>
+Subject: Re: Errors in dmesg, no crashes though.
+Date: Mon, 27 Feb 2012 16:03:46 +0100
+Message-ID: <20120227150346.GQ1046@twin.jikos.cz>
+References: <CACCfv7p=w3j5+K698nms0-T1XJLXg=SWhQQ82jf7yvSUt9nYPw@mail.gmail.com>
 Reply-To: dave@jikos.cz
 Mime-Version: 1.0
-Content-Type: text/plain; charset=iso-8859-1
-Cc: linux-btrfs@vger.kernel.org,
-	Nageswara R Sastry <rnsastry@linux.vnet.ibm.com>,
-	linux-kernel@vger.kernel.org, chris.mason@oracle.com,
-	kamalesh@linux.vnet.ibm.com, Liu Bo <liubo2009@cn.fujitsu.com>
-To: =?iso-8859-1?B?Suly9G1l?= Carretero <cJ-ko@zougloub.eu>
+Content-Type: text/plain; charset=us-ascii
+Cc: linux-btrfs@vger.kernel.org, josef@redhat.com
+To: Jordan Windsor <jordanw2@gmail.com>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <20120226234258.522ee56e@Bidule>
+In-Reply-To: <CACCfv7p=w3j5+K698nms0-T1XJLXg=SWhQQ82jf7yvSUt9nYPw@mail.gmail.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Sun, Feb 26, 2012 at 11:42:58PM -0500, J=E9r=F4me Carretero wrote:
-> At some point, I would appreciate some kind of thorough evaluation us=
-ing a fuzzer on small disk images.
-> The btrfs developers could for instance:
-> - provide a script to create a filesystem image with a known layout (=
-known corpus)
-> - provide .config and reference to kernel sources to build the kernel
-> - provide a minimal root filesystem to be run under qemu, it would ru=
-n a procedure on the other disk image at boot
->   crashes wouldn't affect the host, which is good.
-> - provide a way to retrieve the test parameters and results for every=
- test case
->   in case of bug, the test can be reproduced by the developers since =
-the configuration is known
-> - expect volunteers to run the scenarios (I know I would)
-> The tricky part is of course the potentially super-costly procedure..=
-=2E
-> Simplest case: flipping every bit / writing blocks with pseudo-random=
- data, even on meta-data only, as the outcome on data is supposed to be=
- known.
-> Smarter: flipping bits on every btrfs meta-data structure type at eve=
-ry possible logical location.
+On Sat, Feb 25, 2012 at 09:14:01AM +1030, Jordan Windsor wrote:
+> I'm running Ubuntu under KVM, with btrfs on the host where the
+> Qemu/KVM image is stored, the VM was also running at the time. I was
+> going to check something unrelated in the dmesg output, as I did that
+> I noticed some errors in it about btrfs here they are:
+> 
+> 
+> [ 4294.431807] btrfs: block rsv returned -28
+> [ 4294.431811] ------------[ cut here ]------------
+> [ 4294.431831] WARNING: at fs/btrfs/extent-tree.c:5985
 
-There is a dangerdonteveruse(tm) utility btrfs-corrupt-block able to
-target at specific metadata structure and corrupt it, with the fsck
-counterpart for the rescue. I believe we'll see more updates in that
-area.
+This is a warning and it shows up from time to time, accross recent
+releases.
 
-The block checksums are supposed to catch bitflips after they were
-written down to device (provided the data were correct up to the
-checksum point).
+> This didn't cause any crashes or related issues, also unrelated (I
+> think?) is that I get very low performance (about 5MBps according to
+> iostat) in a guest under Qemu/KVM.
+> 3.2.7-1-ARCH x86_64 Arch Linux
 
-If you're talking about random bitflips in metadata structures during
-processing, that's very likely to crash in many ways of course. I think
-some logic needs to be added to those corruptions and accompanied by th=
-e
-fsck part.
-
-> The kind of stuff that would help all this could be something like Py=
-thon bindings for a *btrfs library*.
-> Helpful even for prototyping fsck stuff, making illustrations, etc.
-
-We could see btrfsprogs turn into a library + tool, someday. Added to
-project page.
-
-> As of today, how are btrfs developers testing the filesystem implemen=
-tation (except with xfstests) ?
-
-If there is a patch fixing particular bug, I try to set up environment
-stressing exactly that bug (and sometimes finding another one ...). The
-xfstests suite is a must before any testing. There are common loads
-raising the chances to hit a bug like repeated snapshots (and deletions=
-),
-exhausting data/metadata space, 'fi defrag', 'fi sync', 'fi balance'.
-
-Sometimes it's enough to run a specific xfstest in a loop. I have set o=
-f
-hackish scripts doing just these tasks or wrappers around xfstests to
-create filesystem with desired raid levels (where applicable) and let
-the suite run on top of it.
-
-Another dimension of testing are mount options, there are some
-combinations likely to execrise specific parts of code, or create files
-in a way that may confuse different mount options (like nodatasum).
-
-We've seen btrfs-specific tests added to xfstests, so it's mostly
-changing the outer environment for the testsuite.
+Yes, the performance goes down as some pathological should-not-happen
+code path is taken. I myself haven't seen this error recently during
+testing, but at the time I did, it slowed down the machine for a while,
+ie. it's not a inifinite loop. Seems there's a dark corner of
+space reservations left for Josef.
 
 
 david
---
-To unsubscribe from this list: send the line "unsubscribe linux-btrfs" =
-in
-the body of a message to majordomo@vger.kernel.org
-More majordomo info at  http://vger.kernel.org/majordomo-info.html

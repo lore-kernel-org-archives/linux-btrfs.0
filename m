@@ -1,67 +1,54 @@
 From: Hugo Mills <hugo@carfax.org.uk>
-Subject: Re: LABEL only 1 device
-Date: Mon, 27 Feb 2012 10:11:55 +0000
-Message-ID: <20120227101154.GE18898@carfax.org.uk>
-References: <20120226171419.GD18898@carfax.org.uk>
- <C3f2Sw5i1uB@helmut.hullen.de>
+Subject: Re: btrfs-convert options
+Date: Mon, 27 Feb 2012 10:13:01 +0000
+Message-ID: <20120227101301.GF18898@carfax.org.uk>
+References: <C3f2V78D1uB@helmut.hullen.de>
 Mime-Version: 1.0
 Content-Type: multipart/signed; micalg=pgp-sha1;
-	protocol="application/pgp-signature"; boundary="X3gaHHMYHkYqP6yf"
+	protocol="application/pgp-signature"; boundary="aPdhxNJGSeOG9wFI"
 Cc: linux-btrfs@vger.kernel.org
 To: helmut@hullen.de
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <C3f2Sw5i1uB@helmut.hullen.de>
+In-Reply-To: <C3f2V78D1uB@helmut.hullen.de>
 List-ID: <linux-btrfs.vger.kernel.org>
 
 
---X3gaHHMYHkYqP6yf
+--aPdhxNJGSeOG9wFI
 Content-Type: text/plain; charset=us-ascii
 Content-Disposition: inline
 
-On Mon, Feb 27, 2012 at 07:44:00AM +0100, Helmut Hullen wrote:
-> Hallo, Hugo,
+On Mon, Feb 27, 2012 at 08:52:00AM +0100, Helmut Hullen wrote:
+> Hallo, linux-btrfs,
 > 
-> Du meintest am 26.02.12:
+> I want to change some TByte disks (at least one) from ext4 to btrfs. And  
+> I want "-d raid0 -m raid1". Is it possible to tell btrfs-convert  
+> especially these options for data and metadata?
 > 
-> >    mkfs.btrfs creates a new filesystem. The -L option sets the label
-> > for the newly-created FS. It *cannot* be used to change the label of
-> > an existing FS.
-> 
-> The safest way may be deleting this option ... it seems to work as  
-> expected only when I create a new FS on 1 disk/partition.
+> Or have I to use "mkfs.btrfs" (and then copy the backup) when I want  
+> these options?
 
-   I've said this several times: Your expectations are wrong. You
-don't label partitions. You label filesystems. You are using the wrong
-tool (filesystems labels) for the job (uniquely identifying
-partitions).
+   The other alternative is to get hold of 3.3-rcX and the latest
+userspace tools (currently in the "dangerdonteveruse branch, but
+should be in "master" very soon), and use the restriper after you've
+converted.
 
-> > If you want to do that, use "btrfs filesystem label".
-> 
-> And that seems to work as I expected - fine.
-> 
-> Adding a device works, deleting a device works. Fine!
-> Now I'll try the job with my Terabyte disks.
-> 
-> (Yes - I have backups ...)
-> 
-> Viele Gruesse!
-> Helmut
+   Hugo.
 
 -- 
 === Hugo Mills: hugo@... carfax.org.uk | darksatanic.net | lug.org.uk ===
   PGP key: 515C238D from wwwkeys.eu.pgp.net or http://www.carfax.org.uk
                   --- Be pure. Be vigilant. Behave. ---                  
 
---X3gaHHMYHkYqP6yf
+--aPdhxNJGSeOG9wFI
 Content-Type: application/pgp-signature; name="signature.asc"
 Content-Description: Digital signature
 
 -----BEGIN PGP SIGNATURE-----
 Version: GnuPG v1.4.11 (GNU/Linux)
 
-iD8DBQFPS1bqIKyzvlFcI40RAnAiAJ90CJVgouKzxLfOSGZYxNYChmi/BQCgoy0y
-hSEi7p35gY6rOUPyB8xMr5U=
-=gOXZ
+iD8DBQFPS1ctIKyzvlFcI40RAqj4AJ9MrhkmogN+fiZHkjlZYzBEu9vcCACfez3j
+jwv+qUgkFyw/eYsy/Ln4e/w=
+=uq3H
 -----END PGP SIGNATURE-----
 
---X3gaHHMYHkYqP6yf--
+--aPdhxNJGSeOG9wFI--

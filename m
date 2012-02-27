@@ -1,49 +1,35 @@
-From: Nageswara R Sastry <rnsastry@linux.vnet.ibm.com>
-Subject: Re: [BUG] Kernel Bug at fs/btrfs/volumes.c:3638
-Date: Mon, 27 Feb 2012 11:26:28 +0530
-Message-ID: <4F4B1B0C.4040100@linux.vnet.ibm.com>
-References: <4F476959.2010400@linux.vnet.ibm.com> <4F487BB5.1060706@cn.fujitsu.com>
+From: "Helmut Hullen" <Hullen@t-online.de>
+Subject: Re: LABEL only 1 device
+Date: 27 Feb 2012 07:44:00 +0100
+Message-ID: <C3f2Sw5i1uB@helmut.hullen.de>
+References: <20120226171419.GD18898@carfax.org.uk>
+Reply-To: helmut@hullen.de
 Mime-Version: 1.0
-Content-Type: text/plain; charset=UTF-8;
-	format=flowed
-Cc: linux-btrfs@vger.kernel.org, linux-kernel@vger.kernel.org,
-	chris.mason@oracle.com, kamalesh@linux.vnet.ibm.com
-To: Liu Bo <liubo2009@cn.fujitsu.com>
+Content-Type: text/plain; charset=US-ASCII
+To: linux-btrfs@vger.kernel.org
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <4F487BB5.1060706@cn.fujitsu.com>
+In-Reply-To: <20120226171419.GD18898@carfax.org.uk>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On =E0=B0=AB=E0=B0=BF=E0=B0=AC=E0=B1=8D=E0=B0=B0=E0=B0=B5=E0=B0=B0=E0=B0=
-=BF 25 =E0=B0=B6=E0=B0=A8=E0=B0=BF=E0=B0=B5=E0=B0=BE=E0=B0=B0=E0=B0=82 =
-2012 =E0=B0=89. 11:42, Liu Bo wrote:
-> Hi, I guess you're mounting a quite small partition. Given that this=20
-> oops is in such an early stage, could you please show 1) your=20
-> mkfs.btrfs options and 2) the log of "btrfs-debug-tree /dev/loop0"?=20
-> thanks, liubo
-Here are the steps with options,
+Hallo, Hugo,
 
-1. dd if=3D/dev/zero of=3D<filename.img> bs=3D1M count=3D16
+Du meintest am 26.02.12:
 
-2. mkfs.btrfs <filename.img>
+>    mkfs.btrfs creates a new filesystem. The -L option sets the label
+> for the newly-created FS. It *cannot* be used to change the label of
+> an existing FS.
 
-3. Corrupt the <filename.img> using 'mangle'
+The safest way may be deleting this option ... it seems to work as  
+expected only when I create a new FS on 1 disk/partition.
 
-4. mount -t btrfs -o loop <filename.img> <mount point>
+> If you want to do that, use "btrfs filesystem label".
 
-5. # btrfs-debug-tree <filename.img>
-Couldn't map the block 3221392384
-Couldn't read chunk root
-unable to open <filename.img>
-# btrfs-debug-tree /dev/loop0
-Couldn't map the block 3221392384
-Couldn't read chunk root
-unable to open /dev/loop0
+And that seems to work as I expected - fine.
 
-Regards,
-R.Nageswara Sastry
+Adding a device works, deleting a device works. Fine!
+Now I'll try the job with my Terabyte disks.
 
---
-To unsubscribe from this list: send the line "unsubscribe linux-btrfs" =
-in
-the body of a message to majordomo@vger.kernel.org
-More majordomo info at  http://vger.kernel.org/majordomo-info.html
+(Yes - I have backups ...)
+
+Viele Gruesse!
+Helmut

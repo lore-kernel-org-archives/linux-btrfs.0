@@ -1,49 +1,54 @@
-From: "Helmut Hullen" <Hullen@t-online.de>
-Subject: Re: LABEL only 1 device
-Date: 27 Feb 2012 13:24:00 +0100
-Message-ID: <C3f3Dlli1uB@helmut.hullen.de>
-References: <20120227120640.GO1046@twin.jikos.cz>
-Reply-To: helmut@hullen.de
+From: Johannes Hirte <johannes.hirte@fem.tu-ilmenau.de>
+Subject: Re: [PATCH] Btrfs: hold enough space for global_rsv
+Date: Mon, 27 Feb 2012 14:29:04 +0100
+Message-ID: <20120227142904.18c5df56@fem.tu-ilmenau.de>
+References: <1326793919-2712-1-git-send-email-liubo2009@cn.fujitsu.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset=US-ASCII
-To: linux-btrfs@vger.kernel.org
+Cc: <linux-btrfs@vger.kernel.org>
+To: Liu Bo <liubo2009@cn.fujitsu.com>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <20120227120640.GO1046@twin.jikos.cz>
+In-Reply-To: <1326793919-2712-1-git-send-email-liubo2009@cn.fujitsu.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hallo, David,
+Am Tue, 17 Jan 2012 17:51:59 +0800
+schrieb Liu Bo <liubo2009@cn.fujitsu.com>:
 
-Du meintest am 27.02.12:
+> I've kept hitting enospc warnings of global_rsv while running
+> defragment on files:
+> btrfs: block rsv returned -28
+> WARNING: at fs/btrfs/extent-tree.c:5984
+> btrfs_alloc_free_block+0x333/0x340 [btrfs]() ...
+> 
+> I used a fio jobs to create a file with lots of fragments:
+> $ filefrag /mnt/btrfs/foobar
+> /mnt/btrfs/foobar: 66964 extents found
+> 
+> and then "btrfs fi defrag /mnt/btrfs/foobar && sync" would pop the
+> warnings.
+> 
+> I found that the global_rsv size is just not enough for defragment,
+> and didn't find any space leak in using global_rsv, so double it and
+> go ahead.
+> 
+> Signed-off-by: Liu Bo <liubo2009@cn.fujitsu.com>
+> ---
+>  fs/btrfs/extent-tree.c |    2 +-
+>  1 files changed, 1 insertions(+), 1 deletions(-)
+> 
+> diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
+> index 8603ee4..77ea23c 100644
+> --- a/fs/btrfs/extent-tree.c
+> +++ b/fs/btrfs/extent-tree.c
+> @@ -3979,7 +3979,7 @@ static u64 calc_global_metadata_size(struct
+> btrfs_fs_info *fs_info) num_bytes += div64_u64(data_used + meta_used,
+> 50); 
+>  	if (num_bytes * 3 > meta_used)
+> -		num_bytes = div64_u64(meta_used, 3);
+> +		num_bytes = div64_u64(meta_used, 3) * 2;
+>  
+>  	return ALIGN(num_bytes, fs_info->extent_root->leafsize <<
+> 10); }
 
-[deleting btrfs partition]
-
->>    OK, the real problem you're seeing is that when btrfs removes a
->> device from the filesystem, that device is not modified in any way.
->> This means that the old superblock is left behind on it, containing
->> the FS label information. What you need to do is, immediately after
->> removing a device from the FS, zero the first part of the partition
->> with dd and /dev/zero.
-
-> A correction here: if the device being removed is writable, the
-> superblock is cleared so it's not recognized as a part of any other
-> fs:
-
-[...]
-
-> Doing this manually means zeroing 4k block at all offsets up to
-> partition size:
-
-> Superblock 0 offset 65536
-> Superblock 1 offset 67108864
-> Superblock 2 offset 274877906944
-> Superblock 3 offset 1125899906842624
-> Superblock 4 offset 4611686018427387904
-
-My actual experiments:
-
-  dd if=/dev/zero of=/dev/sdxn bs=16M count=1
-
-seems to be enough. Perhaps deleting the first 16 MByte is too much.
-
-Viele Gruesse!
-Helmut
+This patch breakes my system. With this applied all services fail on
+boot with "no space left" messages.

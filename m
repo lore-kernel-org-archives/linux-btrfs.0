@@ -1,71 +1,59 @@
-From: Nik Markovic <nmarkovi.navteq@gmail.com>
-Subject: Re: Errors in dmesg, no crashes though.
-Date: Mon, 27 Feb 2012 14:58:29 -0600
-Message-ID: <CAB3q874sxdP8Y8Bs=NMhkceQ4VFqJSDOGe=hXvUOLM9k205JWQ@mail.gmail.com>
-References: <CACCfv7p=w3j5+K698nms0-T1XJLXg=SWhQQ82jf7yvSUt9nYPw@mail.gmail.com>
-	<20120227150346.GQ1046@twin.jikos.cz>
+From: "Helmut Hullen" <Hullen@t-online.de>
+Subject: Re: LABEL only 1 device
+Date: 27 Feb 2012 22:15:00 +0100
+Message-ID: <C3f4teQD1uB@helmut.hullen.de>
+References: <pan.2012.02.27.16.48.34@cox.net>
+Reply-To: helmut@hullen.de
 Mime-Version: 1.0
-Content-Type: text/plain; charset=ISO-8859-1
-To: dave@jikos.cz, Jordan Windsor <jordanw2@gmail.com>,
-	linux-btrfs@vger.kernel.org, josef@redhat.com
+Content-Type: text/plain; charset=US-ASCII
+To: linux-btrfs@vger.kernel.org
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <20120227150346.GQ1046@twin.jikos.cz>
+In-Reply-To: <pan.2012.02.27.16.48.34@cox.net>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-I've just seen this too on Fedora 16 while I was investigating an NFS i=
-ssue.
-I was trying to copy a file from an NFS mount to a btrfs partition.
-The NFS transfers for large files were occurring in bursts for some
-reason and I was aborting the copy at times. This NFS problem was not
-related to btrfs (cat NFS file > /dev/null was also bursting and
-slow).
+Hallo, Duncan,
 
-Originally I ran  3.2.1-3.fc16, but just upgraded to 3.2.7-1.fc16. The
-file system was formatted with 3.2.1 originally.
+Du meintest am 27.02.12:
 
-I can't say for sure what caused this - whether it was the NFS being
-slow, the copy being interrupted, or btrfs itself.
+>>>    I've said this several times: Your expectations are wrong. You
+>>> don't label partitions.
 
-Regards,
-Nik
+>> Yes - now I know.
+>> But I'm afraid other people also expect wrong - when I use
+>> mkfs.ext[234] then this option works (in another way than with
+>> "mkfs.btrfs").
 
-On Mon, Feb 27, 2012 at 9:03 AM, David Sterba <dave@jikos.cz> wrote:
-> On Sat, Feb 25, 2012 at 09:14:01AM +1030, Jordan Windsor wrote:
->> I'm running Ubuntu under KVM, with btrfs on the host where the
->> Qemu/KVM image is stored, the VM was also running at the time. I was
->> going to check something unrelated in the dmesg output, as I did tha=
-t
->> I noticed some errors in it about btrfs here they are:
->>
->>
->> [ 4294.431807] btrfs: block rsv returned -28
->> [ 4294.431811] ------------[ cut here ]------------
->> [ 4294.431831] WARNING: at fs/btrfs/extent-tree.c:5985
->
-> This is a warning and it shows up from time to time, accross recent
-> releases.
->
->> This didn't cause any crashes or related issues, also unrelated (I
->> think?) is that I get very low performance (about 5MBps according to
->> iostat) in a guest under Qemu/KVM.
->> 3.2.7-1-ARCH x86_64 Arch Linux
->
-> Yes, the performance goes down as some pathological should-not-happen
-> code path is taken. I myself haven't seen this error recently during
-> testing, but at the time I did, it slowed down the machine for a whil=
-e,
-> ie. it's not a inifinite loop. Seems there's a dark corner of
-> space reservations left for Josef.
->
->
-> david
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-btrfs=
-" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at =A0http://vger.kernel.org/majordomo-info.html
---
-To unsubscribe from this list: send the line "unsubscribe linux-btrfs" =
-in
-the body of a message to majordomo@vger.kernel.org
-More majordomo info at  http://vger.kernel.org/majordomo-info.html
+> AFAIK, it works in the same way... that is, it labels the, in that
+> case, ext2/3/4 filesystem, in this case (mkfs.btrfs), btrfs
+> filesystem.
+
+> From the manpages:
+
+> mkfs.btrfs (aka mkbtrfs):
+
+>        -L, --label name
+>               Specify a label for the filesystem.
+
+> mkfs.ext2/3/4 (aka mke2fs):
+
+>        -L new-volume-label
+>               Set  the  volume  label  for the filesystem to
+> 	      new-volume-label.  The maximum length of the
+>               volume label is 16 bytes.
+
+But there's a small difference:
+
+        mke2fs -L MyLabel /dev/sdn4
+
+only sets/changes the label (ok - it tests the type of the partition and  
+refuses labeling if the type doesn't fit).
+
+        mkfs.btrfs -L MyLabel /dev/sdn4
+
+not only sets/changes the label but also (re-)creates a btrfs  
+filesystem, using the default parameters.
+
+I had to learn this difference ...
+
+Viele Gruesse!
+Helmut

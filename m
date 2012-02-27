@@ -1,54 +1,60 @@
-From: Johannes Hirte <johannes.hirte@fem.tu-ilmenau.de>
-Subject: Re: [PATCH] Btrfs: hold enough space for global_rsv
-Date: Mon, 27 Feb 2012 14:29:04 +0100
-Message-ID: <20120227142904.18c5df56@fem.tu-ilmenau.de>
-References: <1326793919-2712-1-git-send-email-liubo2009@cn.fujitsu.com>
+From: dima <dolenin@parallels.com>
+Subject: Re: Set nodatacow per file?
+Date: Mon, 27 Feb 2012 22:54:10 +0900
+Message-ID: <4F4B8B02.9080303@parallels.com>
+References: <4F38B8F0.5020506@yahoo.com> <4F471E80.2040809@parallels.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=US-ASCII
-Cc: <linux-btrfs@vger.kernel.org>
-To: Liu Bo <liubo2009@cn.fujitsu.com>
+Content-Type: text/plain; charset="UTF-8"; format=flowed
+To: <linux-btrfs@vger.kernel.org>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <1326793919-2712-1-git-send-email-liubo2009@cn.fujitsu.com>
+In-Reply-To: <4F471E80.2040809@parallels.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Am Tue, 17 Jan 2012 17:51:59 +0800
-schrieb Liu Bo <liubo2009@cn.fujitsu.com>:
+Hello,
 
-> I've kept hitting enospc warnings of global_rsv while running
-> defragment on files:
-> btrfs: block rsv returned -28
-> WARNING: at fs/btrfs/extent-tree.c:5984
-> btrfs_alloc_free_block+0x333/0x340 [btrfs]() ...
-> 
-> I used a fio jobs to create a file with lots of fragments:
-> $ filefrag /mnt/btrfs/foobar
-> /mnt/btrfs/foobar: 66964 extents found
-> 
-> and then "btrfs fi defrag /mnt/btrfs/foobar && sync" would pop the
-> warnings.
-> 
-> I found that the global_rsv size is just not enough for defragment,
-> and didn't find any space leak in using global_rsv, so double it and
-> go ahead.
-> 
-> Signed-off-by: Liu Bo <liubo2009@cn.fujitsu.com>
-> ---
->  fs/btrfs/extent-tree.c |    2 +-
->  1 files changed, 1 insertions(+), 1 deletions(-)
-> 
-> diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
-> index 8603ee4..77ea23c 100644
-> --- a/fs/btrfs/extent-tree.c
-> +++ b/fs/btrfs/extent-tree.c
-> @@ -3979,7 +3979,7 @@ static u64 calc_global_metadata_size(struct
-> btrfs_fs_info *fs_info) num_bytes += div64_u64(data_used + meta_used,
-> 50); 
->  	if (num_bytes * 3 > meta_used)
-> -		num_bytes = div64_u64(meta_used, 3);
-> +		num_bytes = div64_u64(meta_used, 3) * 2;
->  
->  	return ALIGN(num_bytes, fs_info->extent_root->leafsize <<
-> 10); }
+Since several people asked to post the results, here they are.
+I tried raw virtio disk with and without -z -C set and also qcow2 virtio 
+disk without -z -C set and did not notice any difference in performance 
+at all - Redhat 6.2 Minimal installs in 10 minutes in each case. The 
+"abysmal" performance as it was some several months ago (like 10 minutes 
+just for virtual disk formatting) under the same conditions is no more 
+at least on 3.3.0-rc5.
 
-This patch breakes my system. With this applied all services fail on
-boot with "no space left" messages.
+best
+~dima
+
+
+On 02/24/2012 02:22 PM, dima wrote:
+> On 02/13/2012 04:17 PM, Ralf-Peter Rohbeck wrote:
+>> Hello,
+>> is it possible to set nodatacow on a per-file basis? I couldn't find
+>> anything.
+>> If not, wouldn't that be a great feature to get around the performance
+>> issues with VM and database storage? Of course cloning should still
+>> cause COW.
+>
+> Hello,
+> Going back to the original question from Ralf I wanted to share my
+> experience.
+>
+> Yesterday I set up KVM+qemu and set -z -C with David's 'fileflags'
+> utility for the VM image file.
+> I was very pleased with results - Redhat 6 Minimal installation was
+> installed in 10 minutes whereas it was taking 'forever' the last time I
+> tried it some 4 months ago. Writes during installation were very
+> moderate. Performance of VM is excellent. Installing some big packages
+> with yum inside VM goes very quickly with the speed indistinguishable
+> from that of bare metal installs.
+>
+> I am not quite sure should this improvement be attributed to the nocow
+> and nocompress flags or to the overall improvement of btrfs (I am on
+> 3.3-rc4 kernel) but KVM is definitely more than usable on btrfs now.
+>
+> I am yet to test the install speed and performance without those flags set.
+>
+> best
+> ~dima
+> --
+> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
+> the body of a message to majordomo@vger.kernel.org
+> More majordomo info at http://vger.kernel.org/majordomo-info.html

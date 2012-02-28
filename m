@@ -1,35 +1,63 @@
-From: dima <dolenin@parallels.com>
-Subject: Re: Set nodatacow per file?
-Date: Tue, 28 Feb 2012 09:51:42 +0900
-Message-ID: <4F4C251E.7040601@parallels.com>
-References: <4F38B8F0.5020506@yahoo.com> <4F471E80.2040809@parallels.com> <4F4B8B02.9080303@parallels.com> <CAAE6i0hmL5ZRaGYhWptt4qDvKz1SF=6L=Q_MF4Uow5txavTa1g@mail.gmail.com>
+From: Liu Bo <liubo2009@cn.fujitsu.com>
+Subject: Re: [PATCH] Btrfs: hold enough space for global_rsv
+Date: Tue, 28 Feb 2012 10:06:14 +0800
+Message-ID: <4F4C3696.8010804@cn.fujitsu.com>
+References: <1326793919-2712-1-git-send-email-liubo2009@cn.fujitsu.com> <20120227142904.18c5df56@fem.tu-ilmenau.de>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="UTF-8"; format=flowed
-To: <linux-btrfs@vger.kernel.org>
+Content-Type: text/plain; charset=ISO-8859-1
+Cc: linux-btrfs@vger.kernel.org
+To: Johannes Hirte <johannes.hirte@fem.tu-ilmenau.de>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <CAAE6i0hmL5ZRaGYhWptt4qDvKz1SF=6L=Q_MF4Uow5txavTa1g@mail.gmail.com>
+In-Reply-To: <20120227142904.18c5df56@fem.tu-ilmenau.de>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 02/28/2012 07:10 AM, Chester wrote:
-> On Mon, Feb 27, 2012 at 7:54 AM, dima<dolenin@parallels.com>  wrote:
->> Hello,
+On 02/27/2012 09:29 PM, Johannes Hirte wrote:
+> Am Tue, 17 Jan 2012 17:51:59 +0800
+> schrieb Liu Bo <liubo2009@cn.fujitsu.com>:
+> 
+>> I've kept hitting enospc warnings of global_rsv while running
+>> defragment on files:
+>> btrfs: block rsv returned -28
+>> WARNING: at fs/btrfs/extent-tree.c:5984
+>> btrfs_alloc_free_block+0x333/0x340 [btrfs]() ...
 >>
->> Since several people asked to post the results, here they are.
->> I tried raw virtio disk with and without -z -C set and also qcow2 virtio
->> disk without -z -C set and did not notice any difference in performance at
->> all - Redhat 6.2 Minimal installs in 10 minutes in each case. The "abysmal"
->> performance as it was some several months ago (like 10 minutes just for
->> virtual disk formatting) under the same conditions is no more at least on
->> 3.3.0-rc5.
->
-> Just to make sure, this is a _new_ virtual disk right? I can barely
-> contain my excitement right now. This is amazing progress.
+>> I used a fio jobs to create a file with lots of fragments:
+>> $ filefrag /mnt/btrfs/foobar
+>> /mnt/btrfs/foobar: 66964 extents found
+>>
+>> and then "btrfs fi defrag /mnt/btrfs/foobar && sync" would pop the
+>> warnings.
+>>
+>> I found that the global_rsv size is just not enough for defragment,
+>> and didn't find any space leak in using global_rsv, so double it and
+>> go ahead.
+>>
+>> Signed-off-by: Liu Bo <liubo2009@cn.fujitsu.com>
+>> ---
+>>  fs/btrfs/extent-tree.c |    2 +-
+>>  1 files changed, 1 insertions(+), 1 deletions(-)
+>>
+>> diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
+>> index 8603ee4..77ea23c 100644
+>> --- a/fs/btrfs/extent-tree.c
+>> +++ b/fs/btrfs/extent-tree.c
+>> @@ -3979,7 +3979,7 @@ static u64 calc_global_metadata_size(struct
+>> btrfs_fs_info *fs_info) num_bytes += div64_u64(data_used + meta_used,
+>> 50); 
+>>  	if (num_bytes * 3 > meta_used)
+>> -		num_bytes = div64_u64(meta_used, 3);
+>> +		num_bytes = div64_u64(meta_used, 3) * 2;
+>>  
+>>  	return ALIGN(num_bytes, fs_info->extent_root->leafsize <<
+>> 10); }
+> 
+> This patch breakes my system. With this applied all services fail on
+> boot with "no space left" messages.
+> 
 
-Yes, it is a newly created virtual disk. By the way, one thing that 
-slipped out from my message - in case of raw I did pre-allocation of the 
-entire image, but in case of qcow2 I unchecked this box in virt-manager 
-and the disk was "growing" as the system was installing. Nevertheless I 
-did not notice performance degradation during the install.
+It's weird since this patch is just aiming to enlarge our metadata reservation count.
 
-best
-~dima
+so you've tried a revert or a bisect, right?  Can you show me the environment or any log messages?
+
+thanks,
+liubo

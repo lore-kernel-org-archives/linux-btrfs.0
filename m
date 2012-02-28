@@ -1,80 +1,34 @@
-From: Hugo Mills <hugo@carfax.org.uk>
-Subject: Re: SELinux inode size gotcha in btrfs.
-Date: Tue, 28 Feb 2012 11:37:05 +0000
-Message-ID: <20120228113705.GD4481@carfax.org.uk>
-References: <loom.20120227T210703-631@post.gmane.org>
- <20120227231749.GR1046@twin.jikos.cz>
- <loom.20120228T122833-822@post.gmane.org>
+From: Karel Zak <kzak@redhat.com>
+Subject: Re: LABEL only 1 device
+Date: Tue, 28 Feb 2012 23:35:57 +0100
+Message-ID: <20120228223557.GA4515@x2.net.home>
+References: <20120226153036.GB18898@carfax.org.uk>
+ <C3b12r9i1uB@helmut.hullen.de>
+ <20120226164400.GC18898@carfax.org.uk>
+ <pan.2012.02.26.18.07.31@cox.net>
 Mime-Version: 1.0
-Content-Type: multipart/signed; micalg=pgp-sha1;
-	protocol="application/pgp-signature"; boundary="/3yNEOqWowh/8j+e"
+Content-Type: text/plain; charset=us-ascii
 Cc: linux-btrfs@vger.kernel.org
-To: Alex <alex@bpmit.com>
+To: Duncan <1i5t5.duncan@cox.net>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <loom.20120228T122833-822@post.gmane.org>
+In-Reply-To: <pan.2012.02.26.18.07.31@cox.net>
 List-ID: <linux-btrfs.vger.kernel.org>
 
+On Sun, Feb 26, 2012 at 06:07:31PM +0000, Duncan wrote:
+> Unfortunately, since gpt is reasonably new in terms of filesystem and 
+> partitioning tools, there isn't really anything (mount, etc) that makes 
+> /use/ of that label yet,
 
---/3yNEOqWowh/8j+e
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
+udev exports GPT labels and uuids by symlinks, see
 
-On Tue, Feb 28, 2012 at 11:30:26AM +0000, Alex wrote:
-> David Sterba <dave <at> jikos.cz> writes:
-> 
-> > 
-> > That's right. Inode represented as btrfs_inode_item does not contain any
-> > xattr fields, they're stored independently as a btrfs_dir_item of type
-> > BTRFS_FT_XATTR . Due to the way the b-tree keys are built, the xattr
-> > item key should be stored near the inode item key, that's for the tree
-> > search side. The xattr data are always stored inline in the b-tree leaf.
-> > 
-> 
-> 
-> Thank you David and Hugo,
-> 
-> My bad on three counts:
-> 1) My courtesy close seems to have gone missing.
->  Sorry and thank you for replying.
-> 2) I, perhaps, should have pointed to
-> https://wiki.debian.org/SELinux/Setup#Prerequisites
-> _.28kernel_and_filesystems.29
-> which gives a better explanation.
+  ls /dev/disk/by-partlabel/
+  ls /dev/disk/by-partuuid/
 
-   Aaah, OK, that makes sense now. So: we don't have the issue over
-xattr sizes at all. The main issue would then seem to be over
-atomicity of writing xattrs -- I don't know what the APIs for this
-look like, or whether we've implemented them, so I can't comment any
-further on btrfs's suitability I'm afraid.
+you can use these links in your fstab. And if I good remember kernel
+supports PARTUUID for root= command line option.
 
-> 3) Made it clear that I wasn't attacking
->  XFS, It's my fs of (non /boot) choice
-> for some years now; I'm exploring SELinux
->  (after the recent Linux conf au 2012
-> talk) and know I have used inode size defaults
->  for my xfs init back in the day!
-
-   I certainly didn't read it as such.
-
-   Hugo.
+    Karel
 
 -- 
-=== Hugo Mills: hugo@... carfax.org.uk | darksatanic.net | lug.org.uk ===
-  PGP key: 515C238D from wwwkeys.eu.pgp.net or http://www.carfax.org.uk
-   --- In the future, terrorists won't be carrying their ID cards. ---   
-                   They'll be carrying yours. -- Henry                   
-                         Porter,  Suspect Nation                         
-
---/3yNEOqWowh/8j+e
-Content-Type: application/pgp-signature; name="signature.asc"
-Content-Description: Digital signature
-
------BEGIN PGP SIGNATURE-----
-Version: GnuPG v1.4.11 (GNU/Linux)
-
-iD8DBQFPTLxhIKyzvlFcI40RAp+vAJ9SdZZZLO5/6DJ9VaV61w9KPeV/5ACdHHeG
-Aq60DQiXS6BRAJEjqMmacYs=
-=nePP
------END PGP SIGNATURE-----
-
---/3yNEOqWowh/8j+e--
+ Karel Zak  <kzak@redhat.com>
+ http://karelzak.blogspot.com

@@ -1,78 +1,47 @@
-From: Nik Markovic <nmarkovi.navteq@gmail.com>
-Subject: Copy and remove performance impacted by COW reflink rewrite (2)
-Date: Wed, 29 Feb 2012 12:33:43 -0600
-Message-ID: <CAB3q875DbbRaTSA+ack5msqdYDmscTVkpfSt-6scjxE3ojQz8A@mail.gmail.com>
-Mime-Version: 1.0
-Content-Type: text/plain; charset=ISO-8859-1
+From: Ilya Dryomov <idryomov@gmail.com>
+Subject: [PATCH] Btrfs: stop silently switching single chunks to raid0 on balance
+Date: Wed, 29 Feb 2012 22:00:26 +0200
+Message-ID: <1330545626-9009-1-git-send-email-idryomov@gmail.com>
+Cc: Chris Mason <chris.mason@oracle.com>, idryomov@gmail.com
 To: linux-btrfs@vger.kernel.org
 Return-path: <linux-btrfs-owner@vger.kernel.org>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hi All,
+This has been causing a lot of confusion for quite a while now and a lot
+of users were surprised by this (some of them were even stuck in a
+ENOSPC situation which they couldn't easily get out of).  The addition
+of restriper gives users a clear choice between raid0 and drive concat
+setup so there's absolutely no excuse for us to keep doing this.
 
-(retrying to post again - somehow message got blocked)
-I am running 3.2.7-1.fc16.x86_64 (latest FC 16 kernel)
+Signed-off-by: Ilya Dryomov <idryomov@gmail.com>
+---
+ fs/btrfs/extent-tree.c |    5 ++---
+ 1 files changed, 2 insertions(+), 3 deletions(-)
 
-I posted regarding this problem earlier, but after some research and
-found improvement with new kernel version. so  I decided to repost in
-a new thread to clean things up...
+diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
+index 37e0a80..e0969eb 100644
+--- a/fs/btrfs/extent-tree.c
++++ b/fs/btrfs/extent-tree.c
+@@ -7029,7 +7029,6 @@ static u64 update_block_group_flags(struct btrfs_root *root, u64 flags)
+ 		if (flags & (BTRFS_BLOCK_GROUP_RAID1 |
+ 			     BTRFS_BLOCK_GROUP_RAID10))
+ 			return stripped | BTRFS_BLOCK_GROUP_DUP;
+-		return flags;
+ 	} else {
+ 		/* they already had raid on here, just return */
+ 		if (flags & stripped)
+@@ -7042,9 +7041,9 @@ static u64 update_block_group_flags(struct btrfs_root *root, u64 flags)
+ 		if (flags & BTRFS_BLOCK_GROUP_DUP)
+ 			return stripped | BTRFS_BLOCK_GROUP_RAID1;
+ 
+-		/* turn single device chunks into raid0 */
+-		return stripped | BTRFS_BLOCK_GROUP_RAID0;
++		/* this is drive concat, leave it alone */
+ 	}
++
+ 	return flags;
+ }
+ 
+-- 
+1.7.6.3
 
-The intention of this post is to hopefully be useful and point out
-some performance numbers that devs can use for testing and hopefully
-get some tips to improve performance of cp and rm.
-
-The test:
-1. Create a 10GB file A
-2. Make 40000 writes of a few bytes each.
-3. Make a reflink of A as B.
-4. Remove A
-5. Iterate steps 2-4 and use new B as A for each iteration.
-
-Ideally each iteration would take trivial time and run equally for
-each test and no or little CPU would be used.
-I observed increased CPU usage with each cp and rm after every iteration.
-
-One of the users pointed out that SSD erase-blocks may have something
-to do with the observation but I'm having difficulties taking this as
-an answer because the numbers are repeatable with each re-run and SSD
-has plenty of space. I wish I had a 16 GB RAM (probably will next
-week) to make a ramdisk and to run a test on it.
-
-Test can be found here:
-pastebin _dot_ com/1gD0aZic
-To run, make a directory on a btrfs filesystem with about 15G free
-space at least, CD INTO IT (files will be created in pwd) and run
-"bash <pastebin file> random". The output will be in random.csv
-
-Graphs:
-The X axis is thest iteration 1-20.
-The Y axis on the left is time to cp/rm/sync and the RIGHT (blue) axis
-are write times. There's a slight improvement for the initial writes,
-but that's probably due to the original file having only one extent.
-
-SSD: img7.imageshack _dot_ us/img7/3928/ssdac.png
-(rw,relatime,ssd,nospace_cache)
-
-HDD: http://img819.imageshack _dot_ us/img819/5595/hddw.png
-(rw,relatime,nospace_cache)
-
-HDD graph is posted as reference. The oscillation is expected due to
-media fragmentation, but internal fragmentation trend follows the SSD
-findings for a fw initial reqrites. The slow write times are expected
-due to random writes causing a 10ms head delay (500 secs / 4000 ops ~=
- 10ms for each write)
-
-The SSD graph shows the actual problem better. The curves for rm, cp
-and sync seem to follow the log(n) inherent design (B-tree search
-complexty), but take too long in my opinion. I would like to get some
-advice on how to improve these times and/or some analysis from a
-developer.
-
-I tried balance after the test and deleted the last remaining file
-21.tst, but it would take it 1.5 MINUTES to run! My conclusion is that
-it is broken. I also tried nodatacow and nodatasum and got no obvious
-improvements. Defrag would return immediately and I could run it
-during the test too without impacting the test numbers.
-
-Thanks,
-Nik Markovic

@@ -1,37 +1,78 @@
-From: cwillu <cwillu@cwillu.com>
-Subject: Re: Set nodatacow per file?
-Date: Wed, 29 Feb 2012 09:34:01 -0600
-Message-ID: <CAE5mzviA4OVO=a=yyov9ysim0cMvRr3HjDOZUSCn-GcH5S8f5Q@mail.gmail.com>
-References: <4F38B8F0.5020506@yahoo.com>
-	<4F38BE53.4080204@parallels.com>
-	<20120213141040.GG15350@twin.jikos.cz>
-	<COL113-W608CD6CB84D365D60C7B7FB06F0@phx.gbl>
+From: Nik Markovic <nmarkovi.navteq@gmail.com>
+Subject: Copy and remove performance impacted by COW reflink rewrite (2)
+Date: Wed, 29 Feb 2012 12:33:43 -0600
+Message-ID: <CAB3q875DbbRaTSA+ack5msqdYDmscTVkpfSt-6scjxE3ojQz8A@mail.gmail.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=UTF-8
-Cc: dave@jikos.cz, linux-btrfs@vger.kernel.org
-To: Kyle Gates <kylegates@hotmail.com>
+Content-Type: text/plain; charset=ISO-8859-1
+To: linux-btrfs@vger.kernel.org
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <COL113-W608CD6CB84D365D60C7B7FB06F0@phx.gbl>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-> I get the following errors when running fileflags on large (>2GB) database files:
->
-> open(): No such file or directory
->
-> open(): Value too large for defined data type
+Hi All,
 
-http://www.gnu.org/software/coreutils/faq/#Value-too-large-for-defined-data-type
+(retrying to post again - somehow message got blocked)
+I am running 3.2.7-1.fc16.x86_64 (latest FC 16 kernel)
 
-"""The message "Value too large for defined data type" is a system
-error message reported when an operation on a large file is attempted
-using a non-large file data type. Large files are defined as anything
-larger than a signed 32-bit integer, or stated differently, larger
-than 2GB.
+I posted regarding this problem earlier, but after some research and
+found improvement with new kernel version. so  I decided to repost in
+a new thread to clean things up...
 
-Many system calls that deal with files return values in a "long int"
-data type. On 32-bit hardware a long int is 32-bits and therefore this
-imposes a 2GB limit on the size of files. When this was invented that
-was HUGE and it was hard to conceive of needing anything that large.
-Time has passed and files can be much larger today. On native 64-bit
-systems the file size limit is usually 2GB * 2GB. Which we will again
-think is huge."""
+The intention of this post is to hopefully be useful and point out
+some performance numbers that devs can use for testing and hopefully
+get some tips to improve performance of cp and rm.
+
+The test:
+1. Create a 10GB file A
+2. Make 40000 writes of a few bytes each.
+3. Make a reflink of A as B.
+4. Remove A
+5. Iterate steps 2-4 and use new B as A for each iteration.
+
+Ideally each iteration would take trivial time and run equally for
+each test and no or little CPU would be used.
+I observed increased CPU usage with each cp and rm after every iteration.
+
+One of the users pointed out that SSD erase-blocks may have something
+to do with the observation but I'm having difficulties taking this as
+an answer because the numbers are repeatable with each re-run and SSD
+has plenty of space. I wish I had a 16 GB RAM (probably will next
+week) to make a ramdisk and to run a test on it.
+
+Test can be found here:
+pastebin _dot_ com/1gD0aZic
+To run, make a directory on a btrfs filesystem with about 15G free
+space at least, CD INTO IT (files will be created in pwd) and run
+"bash <pastebin file> random". The output will be in random.csv
+
+Graphs:
+The X axis is thest iteration 1-20.
+The Y axis on the left is time to cp/rm/sync and the RIGHT (blue) axis
+are write times. There's a slight improvement for the initial writes,
+but that's probably due to the original file having only one extent.
+
+SSD: img7.imageshack _dot_ us/img7/3928/ssdac.png
+(rw,relatime,ssd,nospace_cache)
+
+HDD: http://img819.imageshack _dot_ us/img819/5595/hddw.png
+(rw,relatime,nospace_cache)
+
+HDD graph is posted as reference. The oscillation is expected due to
+media fragmentation, but internal fragmentation trend follows the SSD
+findings for a fw initial reqrites. The slow write times are expected
+due to random writes causing a 10ms head delay (500 secs / 4000 ops ~=
+ 10ms for each write)
+
+The SSD graph shows the actual problem better. The curves for rm, cp
+and sync seem to follow the log(n) inherent design (B-tree search
+complexty), but take too long in my opinion. I would like to get some
+advice on how to improve these times and/or some analysis from a
+developer.
+
+I tried balance after the test and deleted the last remaining file
+21.tst, but it would take it 1.5 MINUTES to run! My conclusion is that
+it is broken. I also tried nodatacow and nodatasum and got no obvious
+improvements. Defrag would return immediately and I could run it
+during the test too without impacting the test numbers.
+
+Thanks,
+Nik Markovic

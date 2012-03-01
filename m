@@ -1,75 +1,64 @@
-From: Jacek Luczak <difrost.kernel@gmail.com>
-Subject: Re: getdents - ext4 vs btrfs performance
-Date: Thu, 1 Mar 2012 14:35:57 +0100
-Message-ID: <CADDYkjQ-N2+2sJMb9=DZt1vr1=nWkCCdXB2xJAPgkhAuguEPyg@mail.gmail.com>
-References: <CADDYkjS5VJeYyHzqumazQ0qKg+HwA6GO+zYSJj7rkHNZFwjcoQ@mail.gmail.com>
-	<CADDYkjRni4i3QvWo+hOn-Ct4mFoTpL1-ydmE7fbzYJmHFhS3_Q@mail.gmail.com>
-	<CADDYkjRYrKaBvTQ4Pe6bfemL7r5W=AU468uy0krFAEJD45syow@mail.gmail.com>
-	<20120229144244.GF5054@shiny>
-	<CADDYkjSEcktUYS+FzoEQ-FH1yMCvq4as5S2LoJyQBPM9=+CoTw@mail.gmail.com>
+From: Arvin Schnell <aschnell@suse.de>
+Subject: Re: [RFC] btrfs auto snapshot
+Date: Thu, 1 Mar 2012 14:48:17 +0100
+Message-ID: <20120301134817.GA15719@suse.de>
+References: <4E4B2452.9070407@oracle.com> <20110817140433.GA32261@hendrix.borisch.local> <4E4BD53A.7080708@pacific.net> <20110817173837.GA29509@suse.com> <CAG1y0sdhm03Pqi+j2Z00MS+p5CMQav=r0c7LahNpjJRv+rEQmw@mail.gmail.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=ISO-8859-1
-To: Chris Mason <chris.mason@oracle.com>,
-	Jacek Luczak <difrost.kernel@gmail.com>,
-	linux-ext4@vger.kernel.org,
-	linux-fsdevel <linux-fsdevel@vger.kernel.org>,
-	LKML <linux-kernel@vger.kernel.org>, linux-btrfs@vger.kernel.org,
-	lczerner@redhat.com
-Return-path: <linux-ext4-owner@vger.kernel.org>
-In-Reply-To: <CADDYkjSEcktUYS+FzoEQ-FH1yMCvq4as5S2LoJyQBPM9=+CoTw@mail.gmail.com>
+Content-Type: text/plain; charset=iso-8859-15
+Cc: linux-btrfs <linux-btrfs@vger.kernel.org>
+To: "Fajar A. Nugraha" <list@fajar.net>
+Return-path: <linux-btrfs-owner@vger.kernel.org>
+In-Reply-To: <CAG1y0sdhm03Pqi+j2Z00MS+p5CMQav=r0c7LahNpjJRv+rEQmw@mail.gmail.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-2012/2/29 Jacek Luczak <difrost.kernel@gmail.com>:
-> 2012/2/29 Chris Mason <chris.mason@oracle.com>:
->> On Wed, Feb 29, 2012 at 03:07:45PM +0100, Jacek Luczak wrote:
->>
->> [ btrfs faster than ext for find and cp -a ]
->>
->>> 2012/2/29 Jacek Luczak <difrost.kernel@gmail.com>:
->>>
->>> I will try to answer the question from the broken email I've sent.
->>>
->>> @Lukas, it was always a fresh FS on top of LVM logical volume. I've
->>> been cleaning cache/remounting to sync all data before (re)doing
->>> tests.
->>
->> The next step is to get cp -a out of the picture, in this case you're
->> benchmarking both the read speed and the write speed (what are you
->> copying to btw?).
->
-> It's simple cp -a Jenkins{,.bak} so dir to dir copy on same volume.
->
->> Using tar cf /dev/zero <some_dir> is one way to get a consistent picture
->> of the read speed.
->
-> IMO the problem is not - only - in read speed. The directory order hit
-> here. There's a difference in the sequential tests that place btrfs as
-> the winner but still this should not have that huge influence on
-> getdents. I know a bit on the difference between ext4 and btrfs
-> directory handling and I would not expect that huge difference. On the
-> production system where the issue has been observed doing some real
-> work in the background copy takes up to 4h.
->
-> For me btrfs looks perfect here, what could be worth checking is the
-> change of timing in syscall between 39.4 and 3.2.7. Before getdents
-> was not that high on the list while now it jumps to second position
-> but without huge impact on the timings.
->
->> You can confirm the theory that it is directory order causing problems
->> by using acp to read the data.
->>
->> http://oss.oracle.com/~mason/acp/acp-0.6.tar.bz2
->
-> Will check this still today and report back.
->
+On Thu, Feb 23, 2012 at 04:54:06PM +0700, Fajar A. Nugraha wrote:
+> On Thu, Aug 18, 2011 at 12:38 AM, Matthias G. Eckermann <mge@suse.com=
+> wrote:
 
-While I was about to grab acp I've noticed seekwatcher with made my day :)
+> > are available in the openSUSE buildservice at:
+> >
+> > =A0 =A0 =A0 =A0http://download.opensuse.org/repositories/home:/mge1=
+512:/snapper/
+> >
+>=20
+> Hi Matthias,
+>=20
+> I'm testing your packages on top of RHEL6 + kernel 3.2.7. A small
+> suggestion, you should include /etc/sysconfig/snapper in the package
+> (at least for RHEL6, haven't tested the other ones). Even if it just
+> contains
+>=20
+> SNAPPER_CONFIGS=3D""
 
-seekwatcher run of tar cf to eliminate writes (all done on 3.2.7):
-1) btrfs: http://dozzie.jarowit.net/~dozzie/luczajac/tar_btrfs.png
-2) ext4: http://dozzie.jarowit.net/~dozzie/luczajac/tar_ext4.png
-3) both merged: http://dozzie.jarowit.net/~dozzie/luczajac/tar_btrfs_ext4.png
+Hi Fajar,
 
-I will send acp results soon.
+thanks for reporting that issue, I have fixed it now.
 
--Jacek
+We have now created a project in the openSUSE buildservice were
+we provide snapper packages for various distributions, e.g. RHEL6
+and Fedora 16. Please find the downloads at:
+
+  http://download.opensuse.org/repositories/filesystems:/snapper/
+
+I'll also add a link from the snapper home page:
+
+  http://en.opensuse.org/Portal:Snapper.
+
+I have tested snapper on Fedora 16 and found no problems.
+
+Regards,
+  Arvin
+
+--=20
+Arvin Schnell, <aschnell@suse.de>
+Senior Software Engineer, Research & Development
+SUSE LINUX Products GmbH, GF: Jeff Hawn, Jennifer Guild, Felix Imend=F6=
+rffer, HRB 16746 (AG N=FCrnberg)
+Maxfeldstra=DFe 5
+90409 N=FCrnberg
+Germany
+--
+To unsubscribe from this list: send the line "unsubscribe linux-btrfs" =
+in
+the body of a message to majordomo@vger.kernel.org
+More majordomo info at  http://vger.kernel.org/majordomo-info.html

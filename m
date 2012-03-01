@@ -1,168 +1,99 @@
-From: Theodore Tso <tytso@MIT.EDU>
-Subject: Re: getdents - ext4 vs btrfs performance
-Date: Wed, 29 Feb 2012 23:44:31 -0500
-Message-ID: <E15A491F-62E2-4518-939F-07B3AB4C3E65@mit.edu>
-References: <CADDYkjS5VJeYyHzqumazQ0qKg+HwA6GO+zYSJj7rkHNZFwjcoQ@mail.gmail.com>
-Mime-Version: 1.0 (Apple Message framework v1257)
-Content-Type: text/plain; charset=windows-1252
-Cc: Theodore Tso <tytso@mit.edu>, linux-ext4@vger.kernel.org,
-	linux-fsdevel <linux-fsdevel@vger.kernel.org>,
-	LKML <linux-kernel@vger.kernel.org>, linux-btrfs@vger.kernel.org
-To: Jacek Luczak <difrost.kernel@gmail.com>
-Return-path: <linux-ext4-owner@vger.kernel.org>
-In-Reply-To: <CADDYkjS5VJeYyHzqumazQ0qKg+HwA6GO+zYSJj7rkHNZFwjcoQ@mail.gmail.com>
+From: David Sterba <dave@jikos.cz>
+Subject: Re: [BUG] Kernel Bug at fs/btrfs/volumes.c:3638
+Date: Thu, 1 Mar 2012 01:27:55 +0100
+Message-ID: <20120301002755.GV1046@twin.jikos.cz>
+References: <4F476959.2010400@linux.vnet.ibm.com>
+Reply-To: dave@jikos.cz
+Mime-Version: 1.0
+Content-Type: text/plain; charset=us-ascii
+Cc: linux-btrfs@vger.kernel.org, linux-kernel@vger.kernel.org,
+	chris.mason@oracle.com, kamalesh@linux.vnet.ibm.com
+To: Nageswara R Sastry <rnsastry@linux.vnet.ibm.com>
+Return-path: <linux-kernel-owner@vger.kernel.org>
+In-Reply-To: <4F476959.2010400@linux.vnet.ibm.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-You might try sorting the entries returned by readdir by inode number b=
-efore you stat them.    This is a long-standing weakness in ext3/ext4, =
-and it has to do with how we added hashed tree indexes to directories i=
-n (a) a backwards compatible way, that (b) was POSIX compliant with res=
-pect to adding and removing directory entries concurrently with reading=
- all of the directory entries using readdir.
+I just noticed that there's a bugreport from opensuse user tripping over
+the same BUG() during log replay (and his problem was solved by
+btrfs-zero-log), probably after some crash. The kernel version was 3.1
+ie. without the corruption fixes, so while it happened during normal use
+(and not via a crafted fs image), I'm not sure if this is still the case
+with recent kernels.
 
-You might try compiling spd_readdir from the e2fsprogs source tree (in =
-the contrib directory):
+Turning the BUG in __btrfs_map_block to return needs checking the value
+in not-so-few callers and from various callpaths, it's not
+straightforward to do eg. a quick return during mount, as in your case.
 
-http://git.kernel.org/?p=3Dfs/ext2/e2fsprogs.git;a=3Dblob;f=3Dcontrib/s=
-pd_readdir.c;h=3Df89832cd7146a6f5313162255f057c5a754a4b84;hb=3Dd9a5d375=
-35794842358e1cfe4faa4a89804ed209
-
-=85 and then using that as a LD_PRELOAD, and see how that changes thing=
-s.
-
-The short version is that we can't easily do this in the kernel since i=
-t's a problem that primarily shows up with very big directories, and us=
-ing non-swappable kernel memory to store all of the directory entries a=
-nd then sort them so they can be returned in inode number just isn't pr=
-actical.   It is something which can be easily done in userspace, thoug=
-h, and a number of programs (including mutt for its Maildir support) do=
-es do, and it helps greatly for workloads where you are calling readdir=
-() followed by something that needs to access the inode (i.e., stat, un=
-link, etc.)
-
--- Ted
+Good that Jeff Mahoney's error handling series reduce the number of
+callers to update.
 
 
-On Feb 29, 2012, at 8:52 AM, Jacek Luczak wrote:
+david
 
-> Hi All,
->=20
-> /*Sorry for sending incomplete email, hit wrong button :) I guess I
-> can't use Gmail */
->=20
-> Long story short: We've found that operations on a directory structur=
-e
-> holding many dirs takes ages on ext4.
->=20
-> The Question: Why there's that huge difference in ext4 and btrfs? See
-> below test results for real values.
->=20
-> Background: I had to backup a Jenkins directory holding workspace for
-> few projects which were co from svn (implies lot of extra .svn dirs).
-> The copy takes lot of time (at least more than I've expected) and
-> process was mostly in D (disk sleep). I've dig more and done some
-> extra test to see if this is not a regression on block/fs site. To
-> isolate the issue I've also performed same tests on btrfs.
->=20
-> Test environment configuration:
-> 1) HW: HP ProLiant BL460 G6, 48 GB of memory, 2x 6 core Intel X5670 H=
-T
-> enabled, Smart Array P410i, RAID 1 on top of 2x 10K RPM SAS HDDs.
-> 2) Kernels: All tests were done on following kernels:
-> - 2.6.39.4-3 -- the build ID (3) is used here for internal tacking of
-> config changes mostly. In -3 we've introduced ,,fix readahead pipelin=
-e
-> break caused by block plug'' patch. Otherwise it's pure 2.6.39.4.
-> - 3.2.7 -- latest kernel at the time of testing (3.2.8 has been
-> release recently).
-> 3) A subject of tests, directory holding:
-> - 54GB of data (measured on ext4)
-> - 1978149 files
-> - 844008 directories
-> 4) Mount options:
-> - ext4 -- errors=3Dremount-ro,noatime,
-> data=3Dwriteback
-> - btrfs -- noatime,nodatacow and for later investigation on
-> copression effect: noatime,nodatacow,compress=3Dlzo
->=20
-> In all tests I've been measuring time of execution. Following tests
-> were performed:
-> - find . -type d
-> - find . -type f
-> - cp -a
-> - rm -rf
->=20
-> Ext4 results:
-> | Type     | 2.6.39.4-3   | 3.2.7
-> | Dir cnt  | 17m 40sec  | 11m 20sec
-> | File cnt |  17m 36sec | 11m 22sec
-> | Copy    | 1h 28m        | 1h 27m
-> | Remove| 3m 43sec    | 3m 38sec
->=20
-> Btrfs results (without lzo comression):
-> | Type     | 2.6.39.4-3   | 3.2.7
-> | Dir cnt  | 2m 22sec  | 2m 21sec
-> | File cnt |  2m 26sec | 2m 23sec
-> | Copy    | 36m 22sec | 39m 35sec
-> | Remove| 7m 51sec   | 10m 43sec
->=20
-> From above one can see that copy takes close to 1h less on btrfs. I'v=
-e
-> done strace counting times of calls, results are as follows (from
-> 3.2.7):
-> 1) Ext4 (only to elements):
-> % time     seconds  usecs/call     calls    errors syscall
-> ------ ----------- ----------- --------- --------- ----------------
-> 57.01   13.257850           1  15082163           read
-> 23.40    5.440353           3   1687702           getdents
-> 6.15    1.430559           0   3672418           lstat
-> 3.80    0.883767           0  13106961           write
-> 2.32    0.539959           0   4794099           open
-> 1.69    0.393589           0    843695           mkdir
-> 1.28    0.296700           0   5637802           setxattr
-> 0.80    0.186539           0   7325195           stat
->=20
-> 2) Btrfs:
-> % time     seconds  usecs/call     calls    errors syscall
-> ------ ----------- ----------- --------- --------- ----------------
-> 53.38    9.486210           1  15179751           read
-> 11.38    2.021662           1   1688328           getdents
-> 10.64    1.890234           0   4800317           open
-> 6.83    1.213723           0  13201590           write
-> 4.85    0.862731           0   5644314           setxattr
-> 3.50    0.621194           1    844008           mkdir
-> 2.75    0.489059           0   3675992         1 lstat
-> 1.71    0.303544           0   5644314           llistxattr
-> 1.50    0.265943           0   1978149           utimes
-> 1.02    0.180585           0   5644314    844008 getxattr
->=20
-> On btrfs getdents takes much less time which prove the bottleneck in
-> copy time on ext4 is this syscall. In 2.6.39.4 it shows even less tim=
-e
-> for getdents:
-> % time     seconds  usecs/call     calls    errors syscall
-> ------ ----------- ----------- --------- --------- ----------------
-> 50.77   10.978816           1  15033132           read
-> 14.46    3.125996           1   4733589           open
-> 7.15    1.546311           0   5566988           setxattr
-> 5.89    1.273845           0   3626505           lstat
-> 5.81    1.255858           1   1667050           getdents
-> 5.66    1.224403           0  13083022           write
-> 3.40    0.735114           1    833371           mkdir
-> 1.96    0.424881           0   5566988           llistxattr
->=20
->=20
-> Why so huge difference in the getdents timings?
->=20
-> -Jacek
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-fsdev=
-el" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+------------[ cut here ]------------
+WARNING: at /home/abuild/rpmbuild/BUILD/kernel-desktop-3.1.0/linux-3.1/fs/btrfs/tree-log.c:1729 walk_down_log_tree+0x
+15a/0x3e0 [btrfs]()
+Pid: 8978, comm: mount Not tainted 3.1.0-1.2-desktop #1
+Call Trace:
+ [<ffffffff810043fa>] dump_trace+0xaa/0x2b0
+ [<ffffffff81582a4a>] dump_stack+0x69/0x6f
+ [<ffffffff8105386b>] warn_slowpath_common+0x7b/0xc0
+ [<ffffffffa0573cba>] walk_down_log_tree+0x15a/0x3e0 [btrfs]
+ [<ffffffffa0574267>] walk_log_tree+0xc7/0x1f0 [btrfs]
+ [<ffffffffa057803c>] btrfs_recover_log_trees+0x1ec/0x2d0 [btrfs]
+ [<ffffffffa0544303>] open_ctree+0x13c3/0x1740 [btrfs]
+ [<ffffffffa0522733>] btrfs_fill_super.isra.36+0x73/0x150 [btrfs]
+ [<ffffffffa0523b29>] btrfs_mount+0x359/0x3e0 [btrfs]
+ [<ffffffff81156465>] mount_fs+0x45/0x1d0
+ [<ffffffff8116fdb6>] vfs_kern_mount+0x66/0xd0
+ [<ffffffff81171383>] do_kern_mount+0x53/0x120
+ [<ffffffff81172e35>] do_mount+0x1a5/0x260
+ [<ffffffff811732da>] sys_mount+0x9a/0xf0
+ [<ffffffff815a3292>] system_call_fastpath+0x16/0x1b
+ [<00007fc524137daa>] 0x7fc524137da9
+---[ end trace 2bf4520d35da960f ]---
+unable to find logical 5493736079360 len 4096
+------------[ cut here ]------------
 
---
-To unsubscribe from this list: send the line "unsubscribe linux-ext4" i=
-n
-the body of a message to majordomo@vger.kernel.org
-More majordomo info at  http://vger.kernel.org/majordomo-info.html
+1728                 if (btrfs_header_level(cur) != *level)
+1729                         WARN_ON(1);
+
+
+kernel BUG at /home/abuild/rpmbuild/BUILD/kernel-desktop-3.1.0/linux-3.1/fs/btrfs/volumes.c:2891!
+invalid opcode: 0000 [#1] PREEMPT SMP
+CPU 1
+
+Pid: 8978, comm: mount Tainted: G        W   3.1.0-1.2-desktop #1
+RIP: 0010:[<ffffffffa0568e28>]  [<ffffffffa0568e28>] __btrfs_map_block+0x7c8/0x890 [btrfs]
+RSP: 0018:ffff8801b7507798  EFLAGS: 00010296
+RAX: 0000000000000043 RBX: 000004ff1c300000 RCX: 0000000000002a82
+RDX: 000000000000723a RSI: 0000000000000046 RDI: 0000000000000202
+RBP: ffff8801b7507860 R08: 000000000000000a R09: 0000000000000000
+R10: 0000000000000000 R11: 0000000000000001 R12: ffff8801dcd10cc0
+R13: 0000000000000001 R14: 0000000000000000 R15: 0000000000000001
+FS:  00007fc524c587e0(0000) GS:ffff88021fd00000(0000) knlGS:0000000000000000
+CS:  0010 DS: 0000 ES: 0000 CR0: 0000000080050033
+CR2: 00007faea5cb8000 CR3: 00000001b74f4000 CR4: 00000000000006e0
+DR0: 0000000000000000 DR1: 0000000000000000 DR2: 0000000000000000
+DR3: 0000000000000000 DR6: 00000000ffff0ff0 DR7: 0000000000000400
+Process mount (pid: 8978, threadinfo ffff8801b7506000, task ffff8801b0d9c740)
+Call Trace:
+ [<ffffffffa056baa7>] btrfs_map_bio+0x57/0x210 [btrfs]
+ [<ffffffffa05600d4>] submit_one_bio+0x64/0xa0 [btrfs]
+ [<ffffffffa05653c7>] read_extent_buffer_pages+0x367/0x4a0 [btrfs]
+ [<ffffffffa053fd10>] btree_read_extent_buffer_pages.isra.63+0x80/0xc0 [btrfs]
+ [<ffffffffa0542b3a>] btrfs_read_buffer+0x2a/0x40 [btrfs]
+ [<ffffffffa0576d56>] replay_one_buffer+0x46/0x360 [btrfs]
+ [<ffffffffa0573d6d>] walk_down_log_tree+0x20d/0x3e0 [btrfs]
+ [<ffffffffa0574267>] walk_log_tree+0xc7/0x1f0 [btrfs]
+ [<ffffffffa057803c>] btrfs_recover_log_trees+0x1ec/0x2d0 [btrfs]
+ [<ffffffffa0544303>] open_ctree+0x13c3/0x1740 [btrfs]
+ [<ffffffffa0522733>] btrfs_fill_super.isra.36+0x73/0x150 [btrfs]
+ [<ffffffffa0523b29>] btrfs_mount+0x359/0x3e0 [btrfs]
+ [<ffffffff81156465>] mount_fs+0x45/0x1d0
+ [<ffffffff8116fdb6>] vfs_kern_mount+0x66/0xd0
+ [<ffffffff81171383>] do_kern_mount+0x53/0x120
+ [<ffffffff81172e35>] do_mount+0x1a5/0x260
+ [<ffffffff811732da>] sys_mount+0x9a/0xf0
+ [<ffffffff815a3292>] system_call_fastpath+0x16/0x1b
+ [<00007fc524137daa>] 0x7fc524137da9

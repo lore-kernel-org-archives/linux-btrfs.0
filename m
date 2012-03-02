@@ -1,55 +1,58 @@
-From: Sander <sander@humilis.net>
-Subject: Re: [PATCH] [RFC] Add btrfs autosnap feature
-Date: Fri, 2 Mar 2012 13:25:40 +0100
-Message-ID: <20120302122540.GA10972@attic.humilis.net>
-References: <1330484376-16178-1-git-send-email-anand.jain@oracle.com>
- <1330484376-16178-2-git-send-email-anand.jain@oracle.com>
- <CAE5mzvjiL+81AsSspTrE1A1BBiL27zJ1qK1oqCF27oL+-CG9Mw@mail.gmail.com>
- <20120302113421.GA6214@suse.de>
- <CAE5mzviFyib_=a5Yd_cegxTA7aAj3EQCPbXMK3fXk7Qx_A+37A@mail.gmail.com>
-Reply-To: sander@humilis.net
+From: "Brian J. Murrell" <brian@interlinx.bc.ca>
+Subject: subvolume nomenclature
+Date: Fri, 02 Mar 2012 08:31:33 -0500
+Message-ID: <jiqi3l$d4k$1@dough.gmane.org>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Cc: Arvin Schnell <aschnell@suse.de>, linux-btrfs@vger.kernel.org
-To: cwillu <cwillu@cwillu.com>
+Content-Type: multipart/signed; micalg=pgp-sha1;
+ protocol="application/pgp-signature";
+ boundary="------------enig839D1CA65CA2116A43B2E315"
+To: linux-btrfs@vger.kernel.org
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <CAE5mzviFyib_=a5Yd_cegxTA7aAj3EQCPbXMK3fXk7Qx_A+37A@mail.gmail.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-cwillu wrote (ao):
-> > While developing snapper I faced similar problems and looked at
-> > find-new but unfortunately it is not sufficient. E.g. when a file
-> > is deleted find-new does not report anything, see the reply to my
-> > mail here one year ago [1]. Also for newly created empty files
-> > find-new reports nothing, the same with metadata changes.
+This is an OpenPGP/MIME signed message (RFC 2440 and 3156)
+--------------enig839D1CA65CA2116A43B2E315
+Content-Type: text/plain; charset=ISO-8859-1
+Content-Transfer-Encoding: quoted-printable
 
-> For a system-wide undo'ish sort of thing that I think autosnapper is
-> going for, it should work quite nicely, but you're right that it
-> doesn't help a whole lot with a backup system.  It can't tell you
-> which files were touched or deleted, but it will still tell you that
-> _something_ in the subvolume was touched, modified or deleted (at
-> least, as of the last commit), which is all you need if you're only
-> ever comparing it to its source.
+I seem to have the following subvolumes of my filesystem:
 
-Tar can remove deleted files for you during a restore. This is (imho) a
-really cool feature of tar, and I use it in combination with btrfs
-snapshots.
+# btrfs sub li /
+ID 256 top level 5 path @
+ID 257 top level 5 path @home
+ID 258 top level 5 path @/etc/apt/oneiric
 
-https://www.gnu.org/software/tar/manual/tar.html#SEC94
+I *think* the last one is there due to a:
 
-"The option `--listed-incremental' instructs tar to operate on an
-incremental archive with additional metadata stored in a standalone
-file, called a snapshot file. The purpose of this file is to help
-determine which files have been changed, added or deleted since the last
-backup"
+# btrfsctl -s oneiric /
 
-"When extracting from the incremental backup GNU tar attempts to restore
-the exact state the file system had when the archive was created. In
-particular, it will delete those files in the file system that did not
-exist in their directories when the archive was created"
+that I did prior to doing an upgrade.  I can't seem to figure out the
+nomenclature to delete it though:
 
-	Sander
+# btrfs sub de /@/etc/apt/oneiric
+ERROR: error accessing '/@/etc/apt/oneiric'
 
--- 
-Humilis IT Services and Solutions
-http://www.humilis.net
+I've tried lots of other combinations with no luck.
+
+Can anyone give me a hint (or the answer :-) )?
+
+Cheers,
+b.
+
+
+--------------enig839D1CA65CA2116A43B2E315
+Content-Type: application/pgp-signature; name="signature.asc"
+Content-Description: OpenPGP digital signature
+Content-Disposition: attachment; filename="signature.asc"
+
+-----BEGIN PGP SIGNATURE-----
+Version: GnuPG v1.4.11 (GNU/Linux)
+Comment: Using GnuPG with Mozilla - http://enigmail.mozdev.org/
+
+iEYEARECAAYFAk9Qy7UACgkQl3EQlGLyuXBAawCeOTVaVK2To8As0rl20qBKLFf2
+ce8AoJ787oew8DwS6hn0fu6buoFdHFJE
+=p7Vp
+-----END PGP SIGNATURE-----
+
+--------------enig839D1CA65CA2116A43B2E315--
+

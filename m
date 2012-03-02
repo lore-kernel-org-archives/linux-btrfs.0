@@ -1,55 +1,78 @@
-From: Arvin Schnell <aschnell@suse.de>
-Subject: Re: [PATCH] [RFC] Add btrfs autosnap feature
-Date: Fri, 2 Mar 2012 12:34:21 +0100
-Message-ID: <20120302113421.GA6214@suse.de>
-References: <1330484376-16178-1-git-send-email-anand.jain@oracle.com> <1330484376-16178-2-git-send-email-anand.jain@oracle.com> <CAE5mzvjiL+81AsSspTrE1A1BBiL27zJ1qK1oqCF27oL+-CG9Mw@mail.gmail.com>
+From: "Brian J. Murrell" <brian@interlinx.bc.ca>
+Subject: Re: filesystem full when it's not?  out of inodes?  huh?
+Date: Fri, 02 Mar 2012 06:50:41 -0500
+Message-ID: <jiqc6i$e2$1@dough.gmane.org>
+References: <jic3e1$gpe$1@dough.gmane.org> <4F499498.1040006@gmail.com> <20120226110044.GA18898@carfax.org.uk>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=iso-8859-15
+Content-Type: multipart/signed; micalg=pgp-sha1;
+ protocol="application/pgp-signature";
+ boundary="------------enigBC7740FDCD39000EBA3CFD7E"
 To: linux-btrfs@vger.kernel.org
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <CAE5mzvjiL+81AsSspTrE1A1BBiL27zJ1qK1oqCF27oL+-CG9Mw@mail.gmail.com>
+In-Reply-To: <20120226110044.GA18898@carfax.org.uk>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Thu, Mar 01, 2012 at 05:54:40AM -0600, cwillu wrote:
+This is an OpenPGP/MIME signed message (RFC 2440 and 3156)
+--------------enigBC7740FDCD39000EBA3CFD7E
+Content-Type: text/plain; charset=ISO-8859-1
+Content-Transfer-Encoding: quoted-printable
 
-> There doesn't appear to be any reason for the scratch file to exist a=
-t
-> all (one can build up the hash while reading the directories), and
-> keeping a scratch file in /etc/ is poor practice in the first place
-> (that's what /tmp and/or /var/run is for).  It's also a lot of io to
-> stat every file in the subvolume every time you make a snapshot, and
-> I'm not convinced that the walk is actually correctly implemented:
-> what stops an autosnap of / from including all of /proc and /sys in
-> the hash?
+On 12-02-26 06:00 AM, Hugo Mills wrote:
 >=20
-> Perhaps all that is unnecessary:  rather than doing the walk, why not
-> make use of btrfs subvolume find-new (or rather, the syscalls it
-> uses)?
+>    The option that nobody's mentioned yet is to use mixed mode. This
+> is the -M or --mixed option when you create the filesystem. It's
+> designed specifically for small filesystems, and removes the
+> data/metadata split for more efficient packing.
 
-While developing snapper I faced similar problems and looked at
-find-new but unfortunately it is not sufficient. E.g. when a file
-is deleted find-new does not report anything, see the reply to my
-mail here one year ago [1]. Also for newly created empty files
-find-new reports nothing, the same with metadata changes.
+Cool.
 
-If I'm wrong or find-new gets extended I happy to implement it in
-snapper.
+>    As mentioned before, you probably need to upgrade to 3.2 or 3.3-rc5
+> anyway. There were quite a few fixes in the ENOSPC/allocation area
+> since then.
 
-Regards,
-  Arvin
+I've upgraded to the Ubuntu Precise kernel which looks to be 3.2.6 with
+btrfs-tools 0.19+20100601-3ubuntu3 so that would look like a btrfs-progs
+snapshot from 2010-06-01 and (unsurprisingly) I don't see the -M option
+in mkfs.btrfs.
 
-[1] http://www.spinics.net/lists/linux-btrfs/msg08683.html
+So I went digging and I just wanted to verify what I think I am seeing.
 
---=20
-Arvin Schnell, <aschnell@suse.de>
-Senior Software Engineer, Research & Development
-SUSE LINUX Products GmbH, GF: Jeff Hawn, Jennifer Guild, Felix Imend=F6=
-rffer, HRB 16746 (AG N=FCrnberg)
-Maxfeldstra=DFe 5
-90409 N=FCrnberg
-Germany
---
-To unsubscribe from this list: send the line "unsubscribe linux-btrfs" =
-in
-the body of a message to majordomo@vger.kernel.org
-More majordomo info at  http://vger.kernel.org/majordomo-info.html
+Looking at
+
+http://git.kernel.org/?p=3Dlinux/kernel/git/stable/linux-stable.git;a=3Dc=
+ommit;h=3D67377734fd24c32cbdfeb697c2e2bd7fed519e75
+
+it would appear that the mixed data+metadata code landed in the kernel
+back in Sep, of 2010, is that correct?
+
+And looking at
+
+http://git.kernel.org/?p=3Dlinux/kernel/git/mason/btrfs-progs.git;a=3Dcom=
+mit;h=3Db8802ae3fa0c70d4cfc3287ed07479925973b0ac
+
+the userspace support for this landed in Dec. of 2010, is that right?
+
+If my archeology is correct, then I only need to update my btrfs-tools,
+yes?  Is  2010-06-01 really the last time the tools were considered
+stable or are Ubuntu just being conservative and/or lazy about updating?
+
+Cheers,
+b.
+
+
+--------------enigBC7740FDCD39000EBA3CFD7E
+Content-Type: application/pgp-signature; name="signature.asc"
+Content-Description: OpenPGP digital signature
+Content-Disposition: attachment; filename="signature.asc"
+
+-----BEGIN PGP SIGNATURE-----
+Version: GnuPG v1.4.11 (GNU/Linux)
+Comment: Using GnuPG with Mozilla - http://enigmail.mozdev.org/
+
+iEYEARECAAYFAk9QtBIACgkQl3EQlGLyuXBWVACgk6dPyq8maq+LxD9xw4sOLfwI
+wzkAnjQUN2myefxtM5b0VivEFrSfKBXd
+=KaRm
+-----END PGP SIGNATURE-----
+
+--------------enigBC7740FDCD39000EBA3CFD7E--
+

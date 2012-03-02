@@ -1,87 +1,55 @@
-From: Jacek Luczak <difrost.kernel@gmail.com>
-Subject: Re: getdents - ext4 vs btrfs performance
-Date: Fri, 2 Mar 2012 11:05:56 +0100
-Message-ID: <CADDYkjQ8jgWUo7=eAeMjve0iRmVZMcrjjbqnvPq0SchE5W9Fqg@mail.gmail.com>
-References: <CADDYkjS5VJeYyHzqumazQ0qKg+HwA6GO+zYSJj7rkHNZFwjcoQ@mail.gmail.com>
-	<E15A491F-62E2-4518-939F-07B3AB4C3E65@mit.edu>
-	<20120301143859.GX5054@shiny>
+From: Arvin Schnell <aschnell@suse.de>
+Subject: Re: [PATCH] [RFC] Add btrfs autosnap feature
+Date: Fri, 2 Mar 2012 12:34:21 +0100
+Message-ID: <20120302113421.GA6214@suse.de>
+References: <1330484376-16178-1-git-send-email-anand.jain@oracle.com> <1330484376-16178-2-git-send-email-anand.jain@oracle.com> <CAE5mzvjiL+81AsSspTrE1A1BBiL27zJ1qK1oqCF27oL+-CG9Mw@mail.gmail.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=windows-1252
-To: Chris Mason <chris.mason@oracle.com>, Theodore Tso <tytso@mit.edu>,
-	Jacek Luczak <difrost.kernel@gmail.com>,
-	linux-ext4@vger.kernel.org,
-	linux-fsdevel <linux-fsdevel@vger.kernel.org>,
-	LKML <linux-kernel@vger.kernel.org>, linux-btrfs@vger.kernel.org
-Return-path: <linux-ext4-owner@vger.kernel.org>
-In-Reply-To: <20120301143859.GX5054@shiny>
+Content-Type: text/plain; charset=iso-8859-15
+To: linux-btrfs@vger.kernel.org
+Return-path: <linux-btrfs-owner@vger.kernel.org>
+In-Reply-To: <CAE5mzvjiL+81AsSspTrE1A1BBiL27zJ1qK1oqCF27oL+-CG9Mw@mail.gmail.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-2012/3/1 Chris Mason <chris.mason@oracle.com>:
-> On Wed, Feb 29, 2012 at 11:44:31PM -0500, Theodore Tso wrote:
->> You might try sorting the entries returned by readdir by inode numbe=
-r before you stat them. =A0 =A0This is a long-standing weakness in ext3=
-/ext4, and it has to do with how we added hashed tree indexes to direct=
-ories in (a) a backwards compatible way, that (b) was POSIX compliant w=
-ith respect to adding and removing directory entries concurrently with =
-reading all of the directory entries using readdir.
->>
->> You might try compiling spd_readdir from the e2fsprogs source tree (=
-in the contrib directory):
->>
->> http://git.kernel.org/?p=3Dfs/ext2/e2fsprogs.git;a=3Dblob;f=3Dcontri=
-b/spd_readdir.c;h=3Df89832cd7146a6f5313162255f057c5a754a4b84;hb=3Dd9a5d=
-37535794842358e1cfe4faa4a89804ed209
->>
->> =85 and then using that as a LD_PRELOAD, and see how that changes th=
-ings.
->>
->> The short version is that we can't easily do this in the kernel sinc=
-e it's a problem that primarily shows up with very big directories, and=
- using non-swappable kernel memory to store all of the directory entrie=
-s and then sort them so they can be returned in inode number just isn't=
- practical. =A0 It is something which can be easily done in userspace, =
-though, and a number of programs (including mutt for its Maildir suppor=
-t) does do, and it helps greatly for workloads where you are calling re=
-addir() followed by something that needs to access the inode (i.e., sta=
-t, unlink, etc.)
->>
->
-> For reading the files, the acp program I sent him tries to do somethi=
-ng
-> similar. =A0I had forgotten about spd_readdir though, we should consi=
-der
-> hacking that into cp and tar.
->
-> One interesting note is the page cache used to help here. =A0Picture =
-two
-> tests:
->
-> A) time tar cf /dev/zero /home
->
-> and
->
-> cp -a /home /new_dir_in_new_fs
-> unmount / flush caches
-> B) time tar cf /dev/zero /new_dir_in_new_fs
->
-> On ext, The time for B used to be much faster than the time for A
-> because the files would get written back to disk in roughly htree ord=
-er.
-> Based on Jacek's data, that isn't true anymore.
+On Thu, Mar 01, 2012 at 05:54:40AM -0600, cwillu wrote:
 
-I've took both on tests. The subject is acp and spd_readdir used with
-tar, all on ext4:
-1) acp: http://91.234.146.107/~difrost/seekwatcher/acp_ext4.png
-2) spd_readdir: http://91.234.146.107/~difrost/seekwatcher/tar_ext4_rea=
-dir.png
-3) both: http://91.234.146.107/~difrost/seekwatcher/acp_vs_spd_ext4.png
+> There doesn't appear to be any reason for the scratch file to exist a=
+t
+> all (one can build up the hash while reading the directories), and
+> keeping a scratch file in /etc/ is poor practice in the first place
+> (that's what /tmp and/or /var/run is for).  It's also a lot of io to
+> stat every file in the subvolume every time you make a snapshot, and
+> I'm not convinced that the walk is actually correctly implemented:
+> what stops an autosnap of / from including all of /proc and /sys in
+> the hash?
+>=20
+> Perhaps all that is unnecessary:  rather than doing the walk, why not
+> make use of btrfs subvolume find-new (or rather, the syscalls it
+> uses)?
 
-The acp looks much better than spd_readdir but directory copy with
-spd_readdir decreased to 52m 39sec (30 min less).
+While developing snapper I faced similar problems and looked at
+find-new but unfortunately it is not sufficient. E.g. when a file
+is deleted find-new does not report anything, see the reply to my
+mail here one year ago [1]. Also for newly created empty files
+find-new reports nothing, the same with metadata changes.
 
--Jacek
+If I'm wrong or find-new gets extended I happy to implement it in
+snapper.
+
+Regards,
+  Arvin
+
+[1] http://www.spinics.net/lists/linux-btrfs/msg08683.html
+
+--=20
+Arvin Schnell, <aschnell@suse.de>
+Senior Software Engineer, Research & Development
+SUSE LINUX Products GmbH, GF: Jeff Hawn, Jennifer Guild, Felix Imend=F6=
+rffer, HRB 16746 (AG N=FCrnberg)
+Maxfeldstra=DFe 5
+90409 N=FCrnberg
+Germany
 --
-To unsubscribe from this list: send the line "unsubscribe linux-ext4" i=
-n
+To unsubscribe from this list: send the line "unsubscribe linux-btrfs" =
+in
 the body of a message to majordomo@vger.kernel.org
 More majordomo info at  http://vger.kernel.org/majordomo-info.html

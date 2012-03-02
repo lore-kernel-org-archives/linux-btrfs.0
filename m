@@ -1,78 +1,44 @@
-From: "Brian J. Murrell" <brian@interlinx.bc.ca>
-Subject: Re: filesystem full when it's not?  out of inodes?  huh?
-Date: Fri, 02 Mar 2012 06:50:41 -0500
-Message-ID: <jiqc6i$e2$1@dough.gmane.org>
-References: <jic3e1$gpe$1@dough.gmane.org> <4F499498.1040006@gmail.com> <20120226110044.GA18898@carfax.org.uk>
+From: cwillu <cwillu@cwillu.com>
+Subject: Re: [PATCH] [RFC] Add btrfs autosnap feature
+Date: Fri, 2 Mar 2012 06:04:08 -0600
+Message-ID: <CAE5mzviFyib_=a5Yd_cegxTA7aAj3EQCPbXMK3fXk7Qx_A+37A@mail.gmail.com>
+References: <1330484376-16178-1-git-send-email-anand.jain@oracle.com>
+	<1330484376-16178-2-git-send-email-anand.jain@oracle.com>
+	<CAE5mzvjiL+81AsSspTrE1A1BBiL27zJ1qK1oqCF27oL+-CG9Mw@mail.gmail.com>
+	<20120302113421.GA6214@suse.de>
 Mime-Version: 1.0
-Content-Type: multipart/signed; micalg=pgp-sha1;
- protocol="application/pgp-signature";
- boundary="------------enigBC7740FDCD39000EBA3CFD7E"
-To: linux-btrfs@vger.kernel.org
+Content-Type: text/plain; charset=UTF-8
+Cc: linux-btrfs@vger.kernel.org
+To: Arvin Schnell <aschnell@suse.de>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <20120226110044.GA18898@carfax.org.uk>
+In-Reply-To: <20120302113421.GA6214@suse.de>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-This is an OpenPGP/MIME signed message (RFC 2440 and 3156)
---------------enigBC7740FDCD39000EBA3CFD7E
-Content-Type: text/plain; charset=ISO-8859-1
-Content-Transfer-Encoding: quoted-printable
+>> Perhaps all that is unnecessary: =C2=A0rather than doing the walk, w=
+hy not
+>> make use of btrfs subvolume find-new (or rather, the syscalls it
+>> uses)?
+>
+> While developing snapper I faced similar problems and looked at
+> find-new but unfortunately it is not sufficient. E.g. when a file
+> is deleted find-new does not report anything, see the reply to my
+> mail here one year ago [1]. Also for newly created empty files
+> find-new reports nothing, the same with metadata changes.
+>
+> If I'm wrong or find-new gets extended I happy to implement it in
+> snapper.
 
-On 12-02-26 06:00 AM, Hugo Mills wrote:
->=20
->    The option that nobody's mentioned yet is to use mixed mode. This
-> is the -M or --mixed option when you create the filesystem. It's
-> designed specifically for small filesystems, and removes the
-> data/metadata split for more efficient packing.
+=46or a system-wide undo'ish sort of thing that I think autosnapper is
+going for, it should work quite nicely, but you're right that it
+doesn't help a whole lot with a backup system.  It can't tell you
+which files were touched or deleted, but it will still tell you that
+_something_ in the subvolume was touched, modified or deleted (at
+least, as of the last commit), which is all you need if you're only
+ever comparing it to its source.
 
-Cool.
-
->    As mentioned before, you probably need to upgrade to 3.2 or 3.3-rc5
-> anyway. There were quite a few fixes in the ENOSPC/allocation area
-> since then.
-
-I've upgraded to the Ubuntu Precise kernel which looks to be 3.2.6 with
-btrfs-tools 0.19+20100601-3ubuntu3 so that would look like a btrfs-progs
-snapshot from 2010-06-01 and (unsurprisingly) I don't see the -M option
-in mkfs.btrfs.
-
-So I went digging and I just wanted to verify what I think I am seeing.
-
-Looking at
-
-http://git.kernel.org/?p=3Dlinux/kernel/git/stable/linux-stable.git;a=3Dc=
-ommit;h=3D67377734fd24c32cbdfeb697c2e2bd7fed519e75
-
-it would appear that the mixed data+metadata code landed in the kernel
-back in Sep, of 2010, is that correct?
-
-And looking at
-
-http://git.kernel.org/?p=3Dlinux/kernel/git/mason/btrfs-progs.git;a=3Dcom=
-mit;h=3Db8802ae3fa0c70d4cfc3287ed07479925973b0ac
-
-the userspace support for this landed in Dec. of 2010, is that right?
-
-If my archeology is correct, then I only need to update my btrfs-tools,
-yes?  Is  2010-06-01 really the last time the tools were considered
-stable or are Ubuntu just being conservative and/or lazy about updating?
-
-Cheers,
-b.
-
-
---------------enigBC7740FDCD39000EBA3CFD7E
-Content-Type: application/pgp-signature; name="signature.asc"
-Content-Description: OpenPGP digital signature
-Content-Disposition: attachment; filename="signature.asc"
-
------BEGIN PGP SIGNATURE-----
-Version: GnuPG v1.4.11 (GNU/Linux)
-Comment: Using GnuPG with Mozilla - http://enigmail.mozdev.org/
-
-iEYEARECAAYFAk9QtBIACgkQl3EQlGLyuXBWVACgk6dPyq8maq+LxD9xw4sOLfwI
-wzkAnjQUN2myefxtM5b0VivEFrSfKBXd
-=KaRm
------END PGP SIGNATURE-----
-
---------------enigBC7740FDCD39000EBA3CFD7E--
-
+-- Carey
+--
+To unsubscribe from this list: send the line "unsubscribe linux-btrfs" =
+in
+the body of a message to majordomo@vger.kernel.org
+More majordomo info at  http://vger.kernel.org/majordomo-info.html

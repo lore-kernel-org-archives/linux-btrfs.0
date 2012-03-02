@@ -1,39 +1,35 @@
-From: cwillu <cwillu@cwillu.com>
-Subject: Re: subvolume nomenclature
-Date: Fri, 2 Mar 2012 07:36:42 -0600
-Message-ID: <CAE5mzvhsb+O6xEvpOW5nh7iLgk5M+mgFD_ASVCpM0P==LSANqQ@mail.gmail.com>
-References: <jiqi3l$d4k$1@dough.gmane.org>
+From: Chris Mason <chris.mason@oracle.com>
+Subject: Re: getdents - ext4 vs btrfs performance
+Date: Fri, 2 Mar 2012 09:00:38 -0500
+Message-ID: <20120302140038.GD5054@shiny>
+References: <CADDYkjS5VJeYyHzqumazQ0qKg+HwA6GO+zYSJj7rkHNZFwjcoQ@mail.gmail.com>
+ <E15A491F-62E2-4518-939F-07B3AB4C3E65@mit.edu>
+ <20120301143859.GX5054@shiny>
+ <CADDYkjQ8jgWUo7=eAeMjve0iRmVZMcrjjbqnvPq0SchE5W9Fqg@mail.gmail.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=UTF-8
-Cc: linux-btrfs@vger.kernel.org
-To: "Brian J. Murrell" <brian@interlinx.bc.ca>
-Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <jiqi3l$d4k$1@dough.gmane.org>
+Content-Type: text/plain; charset=us-ascii
+Cc: Theodore Tso <tytso@mit.edu>, linux-ext4@vger.kernel.org,
+	linux-fsdevel <linux-fsdevel@vger.kernel.org>,
+	LKML <linux-kernel@vger.kernel.org>, linux-btrfs@vger.kernel.org
+To: Jacek Luczak <difrost.kernel@gmail.com>
+Return-path: <linux-ext4-owner@vger.kernel.org>
+In-Reply-To: <CADDYkjQ8jgWUo7=eAeMjve0iRmVZMcrjjbqnvPq0SchE5W9Fqg@mail.gmail.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Fri, Mar 2, 2012 at 7:31 AM, Brian J. Murrell <brian@interlinx.bc.ca=
-> wrote:
-> I seem to have the following subvolumes of my filesystem:
->
-> # btrfs sub li /
-> ID 256 top level 5 path @
-> ID 257 top level 5 path @home
-> ID 258 top level 5 path @/etc/apt/oneiric
->
-> I *think* the last one is there due to a:
->
-> # btrfsctl -s oneiric /
->
-> that I did prior to doing an upgrade. =C2=A0I can't seem to figure ou=
-t the
-> nomenclature to delete it though:
->
-> # btrfs sub de /@/etc/apt/oneiric
+On Fri, Mar 02, 2012 at 11:05:56AM +0100, Jacek Luczak wrote:
+> 
+> I've took both on tests. The subject is acp and spd_readdir used with
+> tar, all on ext4:
+> 1) acp: http://91.234.146.107/~difrost/seekwatcher/acp_ext4.png
+> 2) spd_readdir: http://91.234.146.107/~difrost/seekwatcher/tar_ext4_readir.png
+> 3) both: http://91.234.146.107/~difrost/seekwatcher/acp_vs_spd_ext4.png
+> 
+> The acp looks much better than spd_readdir but directory copy with
+> spd_readdir decreased to 52m 39sec (30 min less).
 
-Try btrfs sub delete /etc/apt/oneiric, assuming that that's the path
-where you actually see it.
---
-To unsubscribe from this list: send the line "unsubscribe linux-btrfs" =
-in
-the body of a message to majordomo@vger.kernel.org
-More majordomo info at  http://vger.kernel.org/majordomo-info.html
+Do you have stats on how big these files are, and how fragmented they
+are?  For acp and spd to give us this, I think something has gone wrong
+at writeback time (creating individual fragmented files).
+
+-chris
+

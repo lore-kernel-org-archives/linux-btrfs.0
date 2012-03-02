@@ -1,56 +1,23 @@
-From: Chris Mason <chris.mason@oracle.com>
-Subject: Re: getdents - ext4 vs btrfs performance
-Date: Fri, 2 Mar 2012 09:26:51 -0500
-Message-ID: <20120302142651.GH5054@shiny>
-References: <CADDYkjS5VJeYyHzqumazQ0qKg+HwA6GO+zYSJj7rkHNZFwjcoQ@mail.gmail.com>
- <E15A491F-62E2-4518-939F-07B3AB4C3E65@mit.edu>
- <20120301143859.GX5054@shiny>
- <CADDYkjQ8jgWUo7=eAeMjve0iRmVZMcrjjbqnvPq0SchE5W9Fqg@mail.gmail.com>
- <20120302140038.GD5054@shiny>
- <CADDYkjT8apYQpdZqr1gZKiHbm9xfTaLr=8GEJF0VKF9neHwgOg@mail.gmail.com>
+From: Kyle Gates <kylegates@hotmail.com>
+Subject: nocow flags
+Date: Fri, 2 Mar 2012 11:29:40 -0600
+Message-ID: <COL113-W450746A36272A165E90E1FB06D0@phx.gbl>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=iso-8859-1
-Cc: Theodore Tso <tytso@mit.edu>, linux-ext4@vger.kernel.org,
-	linux-fsdevel <linux-fsdevel@vger.kernel.org>,
-	LKML <linux-kernel@vger.kernel.org>, linux-btrfs@vger.kernel.org
-To: Jacek Luczak <difrost.kernel@gmail.com>
-Return-path: <linux-kernel-owner@vger.kernel.org>
-In-Reply-To: <CADDYkjT8apYQpdZqr1gZKiHbm9xfTaLr=8GEJF0VKF9neHwgOg@mail.gmail.com>
+Content-Type: text/plain; charset=US-ASCII
+To: <linux-btrfs@vger.kernel.org>
+Return-path: <linux-btrfs-owner@vger.kernel.org>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Fri, Mar 02, 2012 at 03:16:12PM +0100, Jacek Luczak wrote:
-> 2012/3/2 Chris Mason <chris.mason@oracle.com>:
-> > On Fri, Mar 02, 2012 at 11:05:56AM +0100, Jacek Luczak wrote:
-> >>
-> >> I've took both on tests. The subject is acp and spd_readdir used w=
-ith
-> >> tar, all on ext4:
-> >> 1) acp: http://91.234.146.107/~difrost/seekwatcher/acp_ext4.png
-> >> 2) spd_readdir: http://91.234.146.107/~difrost/seekwatcher/tar_ext=
-4_readir.png
-> >> 3) both: http://91.234.146.107/~difrost/seekwatcher/acp_vs_spd_ext=
-4.png
-> >>
-> >> The acp looks much better than spd_readdir but directory copy with
-> >> spd_readdir decreased to 52m 39sec (30 min less).
-> >
-> > Do you have stats on how big these files are, and how fragmented th=
-ey
-> > are? =A0For acp and spd to give us this, I think something has gone=
- wrong
-> > at writeback time (creating individual fragmented files).
->=20
-> How big? Which files?
 
-All the files you're reading ;)
+I set the C (NOCOW) and z (Not_Compressed) flags on a folder but the extent counts of files contained there keep increasing.
+Said files are large and frequently modified but not changing in size. This does not happen when the filesystem is mounted with nodatacow.
 
-filefrag will tell you how many extents each file has, any file with
-more than one extent is interesting.  (The ext4 crowd may have better
-suggestions on measuring fragmentation).
+I'm using this as a workaround since subvolumes can't be mounted with different options simultaneously. ie. one with COW, one with nodatacow
 
-Since you mention this is a compile farm, I'm guessing there are a bunc=
-h
-of .o files created by parallel builds.  There are a lot of chances for
-delalloc and the kernel writeback code to do the wrong thing here.
+Any ideas why the flags are being ignored?
 
--chris
+I'm running 32bit 3.3rc4 with noatime,nodatasum,space_cache,autodefrag,inode_cache on a 3 disk RAID0 data RAID1 metadata filesystem.
+
+Thanks,
+Kyle
+ 		 	   		  

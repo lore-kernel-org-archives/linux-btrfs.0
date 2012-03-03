@@ -1,68 +1,60 @@
-From: Duncan <1i5t5.duncan@cox.net>
-Subject: Re: nocow flags
-Date: Sat, 3 Mar 2012 05:45:28 +0000 (UTC)
-Message-ID: <pan.2012.03.03.05.45.28@cox.net>
-References: <COL113-W450746A36272A165E90E1FB06D0@phx.gbl>
+From: Chris Samuel <chris@csamuel.org>
+Subject: Re: filesystem full when it's not?  out of inodes?  huh?
+Date: Sat, 3 Mar 2012 21:25:59 +1100
+Message-ID: <201203032126.06007.chris@csamuel.org>
+References: <jic3e1$gpe$1@dough.gmane.org> <4F499AE4.80908@gmail.com> <pan.2012.02.26.08.52.06@cox.net>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=UTF-8
+Content-Type: multipart/signed;
+  boundary="nextPart2100327.Oxuen5QaBi";
+  protocol="application/pgp-signature";
+  micalg=pgp-sha1
 To: linux-btrfs@vger.kernel.org
 Return-path: <linux-btrfs-owner@vger.kernel.org>
+In-Reply-To: <pan.2012.02.26.08.52.06@cox.net>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Kyle Gates posted on Fri, 02 Mar 2012 11:29:40 -0600 as excerpted:
+--nextPart2100327.Oxuen5QaBi
+Content-Type: Text/Plain;
+  charset="utf-8"
+Content-Transfer-Encoding: quoted-printable
 
-> I set the C (NOCOW) and z (Not_Compressed) flags on a folder but the
-> extent counts of files contained there keep increasing.
-> Said files are large and frequently modified but not changing in size.
-> This does not happen when the filesystem is mounted with nodatacow.
-> 
-> I'm using this as a workaround since subvolumes can't be mounted with
-> different options simultaneously. ie. one with COW, one with nodatacow
-> 
-> Any ideas why the flags are being ignored?
-> 
-> I'm running 32bit 3.3rc4 with
-> noatime,nodatasum,space_cache,autodefrag,inode_cache on a 3 disk RAID0
-> data RAID1 metadata filesystem.
+On Sunday 26 February 2012 19:52:06 Duncan wrote:
 
-I'm not sure if it applies here or not, but there's a note on the wiki 
-under the defrag discussion, that mentions that defrag, anyway, is per-
-file, and defragging a dir doesn't defrag the files in that dir.  I'm
-/guessing/ the same thing may apply here since these are per-file flags.
+> It's astonishing to me the number of people that come in here
+> complaining  about problems with a filesystem the kernel option of
+> which says
+>=20
+> Title:
+>=20
+> Btrfs filesystem (EXPERIMENTAL) Unstable disk format
 
-There's a workaround suggested.  Let me see if I can find that note 
-again...
+On the other hand, if they didn't keep complaining then perhaps that=20
+label would go away prematurely because nobody was reporting problems?=20
 
-Found it in the problem FAQ:
+:-)
 
-http://btrfs.ipv5.de/index.php?
-title=Problem_FAQ#Defragmenting_a_directory_doesn.27t_work
+cheers!
+Chris
+=2D-=20
+ Chris Samuel  :  http://www.csamuel.org/  :  Melbourne, VIC
 
->>>>>
+This email may come with a PGP signature as a file. Do not panic.
+=46or more info see: http://en.wikipedia.org/wiki/OpenPGP
 
-Defragmenting a directory doesn't work
+--nextPart2100327.Oxuen5QaBi
+Content-Type: application/pgp-signature; name=signature.asc 
+Content-Description: This is a digitally signed message part.
 
-Running this:
+-----BEGIN PGP SIGNATURE-----
+Version: GnuPG v1.4.11 (GNU/Linux)
 
-# btrfs filesystem defragment ~/stuff
+iQEVAwUAT1Hxt41yjaOTJg85AQJT8Qf/SckZJrbBXA/t7K8X/xMFdY6vd/FHGxyY
+Vy4mqHdFppeDpFN9WgeYOKWV2h+BVAq+O090rHm/eT8kHzR3Evho8zEbgZE5rJIq
+ZUrxmYmhf+TK4dRa4KI/LUp3Ie/BP0WTd3XNnByDEhSK3O7lwf1MODn/z9xacQUC
+sZFbcuBPY/Qr5120xSJz1t3E0Ch/7YiUvIVDroddUsG4DX3j0Zrdvn5t2NfhnFb0
+6xN9K4oGO9gaB9IHIIOHFIgLi7QHeKFQOEQgVbrHeXZ6iwWchBdVVe9kvpHKQ6nG
+BfG4u9Rdw3cz6XOpiDkALOG2pSBv2+aDwPCYo/ZuDfcscmdXnvEsMw==
+=mjD6
+-----END PGP SIGNATURE-----
 
-doesn't defragment the contents of the directory.
-
-This is by design. btrfs fi defrag operates on the single filesystem 
-object passed to it. This means that the command defragments just the 
-metadata held by the directory object, and not the contents of the 
-directory. If you want to defragment the contents of the directory, 
-something like this would be more useful:
-
-# find -type f -xdev -print0 | xargs -0 btrfs fi defrag
-
-<<<<<
-
-Perhaps you need to do something similar to set the flags on all the 
-files under a specific dir?
-
--- 
-Duncan - List replies preferred.   No HTML msgs.
-"Every nonfree program has a lord, a master --
-and if you use the program, he is your master."  Richard Stallman
-
+--nextPart2100327.Oxuen5QaBi--

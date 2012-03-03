@@ -1,55 +1,68 @@
-From: cwillu <cwillu@cwillu.com>
-Subject: Re: subvolume nomenclature
-Date: Fri, 2 Mar 2012 13:59:19 -0600
-Message-ID: <CAE5mzvgGtQMXWzndahMKyX2iV9QjVO4T9=9V1ifnSrxMnwM1bQ@mail.gmail.com>
-References: <jiqi3l$d4k$1@dough.gmane.org>
-	<CAE5mzvhsb+O6xEvpOW5nh7iLgk5M+mgFD_ASVCpM0P==LSANqQ@mail.gmail.com>
-	<jir7vn$3uc$1@dough.gmane.org>
+From: Duncan <1i5t5.duncan@cox.net>
+Subject: Re: nocow flags
+Date: Sat, 3 Mar 2012 05:45:28 +0000 (UTC)
+Message-ID: <pan.2012.03.03.05.45.28@cox.net>
+References: <COL113-W450746A36272A165E90E1FB06D0@phx.gbl>
 Mime-Version: 1.0
 Content-Type: text/plain; charset=UTF-8
-Cc: linux-btrfs@vger.kernel.org
-To: "Brian J. Murrell" <brian@interlinx.bc.ca>
+To: linux-btrfs@vger.kernel.org
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <jir7vn$3uc$1@dough.gmane.org>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Fri, Mar 2, 2012 at 1:44 PM, Brian J. Murrell <brian@interlinx.bc.ca=
-> wrote:
-> On 12-03-02 08:36 AM, cwillu wrote:
->>
->> Try btrfs sub delete /etc/apt/oneiric, assuming that that's the path
->> where you actually see it.
->
-> Well, there is a root filesystem at /etc/apt/oneiric:
->
-> # ls /etc/apt/oneiric/
-> bin =C2=A0 etc =C2=A0 =C2=A0 =C2=A0 =C2=A0 initrd.img.old =C2=A0mnt =C2=
-=A0 root =C2=A0selinux =C2=A0tmp =C2=A0vmlinuz
-> boot =C2=A0home =C2=A0 =C2=A0 =C2=A0 =C2=A0lib =C2=A0 =C2=A0 =C2=A0 =C2=
-=A0 =C2=A0 =C2=A0 opt =C2=A0 run =C2=A0 srv =C2=A0 =C2=A0 =C2=A0usr =C2=
-=A0vmlinuz.old
-> dev =C2=A0 initrd.img =C2=A0media =C2=A0 =C2=A0 =C2=A0 =C2=A0 =C2=A0 =
-proc =C2=A0sbin =C2=A0sys =C2=A0 =C2=A0 =C2=A0var
->
-> but it doesn't delete:
->
-> # btrfs subvolume delete /etc/apt/oneiric
-> Delete subvolume '/etc/apt/oneiric'
-> ERROR: cannot delete '/etc/apt/oneiric' - Device or resource busy
+Kyle Gates posted on Fri, 02 Mar 2012 11:29:40 -0600 as excerpted:
 
-root@repository:~/foo$ btrfs sub create bar
-Create subvolume './bar'
-root@repository:~/foo$ cd bar
-root@repository:~/foo/bar$ btrfs sub del /home/cwillu/foo/bar
-Delete subvolume '/home/cwillu/foo/bar'
-ERROR: cannot delete '/home/cwillu/foo/bar' - Device or resource busy
+> I set the C (NOCOW) and z (Not_Compressed) flags on a folder but the
+> extent counts of files contained there keep increasing.
+> Said files are large and frequently modified but not changing in size.
+> This does not happen when the filesystem is mounted with nodatacow.
+> 
+> I'm using this as a workaround since subvolumes can't be mounted with
+> different options simultaneously. ie. one with COW, one with nodatacow
+> 
+> Any ideas why the flags are being ignored?
+> 
+> I'm running 32bit 3.3rc4 with
+> noatime,nodatasum,space_cache,autodefrag,inode_cache on a 3 disk RAID0
+> data RAID1 metadata filesystem.
 
+I'm not sure if it applies here or not, but there's a note on the wiki 
+under the defrag discussion, that mentions that defrag, anyway, is per-
+file, and defragging a dir doesn't defrag the files in that dir.  I'm
+/guessing/ the same thing may apply here since these are per-file flags.
 
-It's likely there's at least one process with an open handle to that
-subvolume (even just a shell that as its current working directory).
-lsof | grep /etc/apt/oneiric should tell you what you need.
---
-To unsubscribe from this list: send the line "unsubscribe linux-btrfs" =
-in
-the body of a message to majordomo@vger.kernel.org
-More majordomo info at  http://vger.kernel.org/majordomo-info.html
+There's a workaround suggested.  Let me see if I can find that note 
+again...
+
+Found it in the problem FAQ:
+
+http://btrfs.ipv5.de/index.php?
+title=Problem_FAQ#Defragmenting_a_directory_doesn.27t_work
+
+>>>>>
+
+Defragmenting a directory doesn't work
+
+Running this:
+
+# btrfs filesystem defragment ~/stuff
+
+doesn't defragment the contents of the directory.
+
+This is by design. btrfs fi defrag operates on the single filesystem 
+object passed to it. This means that the command defragments just the 
+metadata held by the directory object, and not the contents of the 
+directory. If you want to defragment the contents of the directory, 
+something like this would be more useful:
+
+# find -type f -xdev -print0 | xargs -0 btrfs fi defrag
+
+<<<<<
+
+Perhaps you need to do something similar to set the flags on all the 
+files under a specific dir?
+
+-- 
+Duncan - List replies preferred.   No HTML msgs.
+"Every nonfree program has a lord, a master --
+and if you use the program, he is your master."  Richard Stallman
+

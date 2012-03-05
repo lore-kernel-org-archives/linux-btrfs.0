@@ -1,46 +1,104 @@
 From: Jan Kara <jack@suse.cz>
-Subject: Re: getdents - ext4 vs btrfs performance
-Date: Mon, 5 Mar 2012 14:10:53 +0100
-Message-ID: <20120305131053.GH6643@quack.suse.cz>
-References: <CADDYkjS5VJeYyHzqumazQ0qKg+HwA6GO+zYSJj7rkHNZFwjcoQ@mail.gmail.com>
- <E15A491F-62E2-4518-939F-07B3AB4C3E65@mit.edu>
- <20120301143859.GX5054@shiny>
- <CADDYkjQ8jgWUo7=eAeMjve0iRmVZMcrjjbqnvPq0SchE5W9Fqg@mail.gmail.com>
- <20120302140038.GD5054@shiny>
- <CADDYkjT8apYQpdZqr1gZKiHbm9xfTaLr=8GEJF0VKF9neHwgOg@mail.gmail.com>
- <20120302142651.GH5054@shiny>
- <20120302193215.GB22215@thunk.org>
-Mime-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Cc: Chris Mason <chris.mason@oracle.com>,
-	Jacek Luczak <difrost.kernel@gmail.com>,
-	linux-ext4@vger.kernel.org,
-	linux-fsdevel <linux-fsdevel@vger.kernel.org>,
-	LKML <linux-kernel@vger.kernel.org>, linux-btrfs@vger.kernel.org
-To: Ted Ts'o <tytso@mit.edu>
-Return-path: <linux-kernel-owner@vger.kernel.org>
-In-Reply-To: <20120302193215.GB22215@thunk.org>
+Subject: [PATCH 17/19] btrfs: Convert to new freezing mechanism
+Date: Mon,  5 Mar 2012 17:01:15 +0100
+Message-ID: <1330963277-26336-18-git-send-email-jack@suse.cz>
+References: <1330963277-26336-1-git-send-email-jack@suse.cz>
+Cc: linux-fsdevel@vger.kernel.org, Al Viro <viro@ZenIV.linux.org.uk>,
+	Christoph Hellwig <hch@infradead.org>, dchinner@redhat.com,
+	sandeen@redhat.com, Kamal Mostafa <kamal@canonical.com>,
+	Jan Kara <jack@suse.cz>, linux-btrfs@vger.kernel.org,
+	Chris Mason <chris.mason@oracle.com>
+To: LKML <linux-kernel@vger.kernel.org>
+Return-path: <linux-btrfs-owner@vger.kernel.org>
+In-Reply-To: <1330963277-26336-1-git-send-email-jack@suse.cz>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Fri 02-03-12 14:32:15, Ted Tso wrote:
-> On Fri, Mar 02, 2012 at 09:26:51AM -0500, Chris Mason wrote:
-> It would be interesting to have a project where someone added
-> fallocate() support into libelf, and then added some hueristics into
-> ext4 so that if a file is fallocated to a precise size, or if the file
-> is fully written and closed before writeback begins, that we use this
-> to more efficiently pack the space used by the files by the block
-> allocator.  This is a place where I would not be surprised that XFS
-> has some better code to avoid accelerated file system aging, and where
-> we could do better with ext4 with some development effort.
-  AFAIK XFS people actually prefer that applications let them do their work
-using delayed allocation and do not interfere with fallocate(2) calls. The
-problem they have with fallocate(2) is that it forces you to allocate
-blocks while with delayed allocation you can make the decision about
-allocation later. So for small files which completely fit into pagecache
-before they get pushed out by writeback, they can make better decisions
-from delayed allocation. Just dumping my memory from some other thread...
+We convert btrfs_file_aio_write() to use new freeze check.  We also add proper
+freeze protection to btrfs_page_mkwrite(). Checks in cleaner_kthread() and
+transaction_kthread() can be safely removed since btrfs_freeze() will lock
+the mutexes and thus block the threads (and they shouldn't have anything to
+do anyway).
 
-							Honza
+CC: linux-btrfs@vger.kernel.org
+CC: Chris Mason <chris.mason@oracle.com>
+Signed-off-by: Jan Kara <jack@suse.cz>
+---
+ fs/btrfs/disk-io.c |    3 ---
+ fs/btrfs/file.c    |    3 ++-
+ fs/btrfs/inode.c   |    6 +++++-
+ 3 files changed, 7 insertions(+), 5 deletions(-)
+
+diff --git a/fs/btrfs/disk-io.c b/fs/btrfs/disk-io.c
+index 811d9f9..fc0f74c 100644
+--- a/fs/btrfs/disk-io.c
++++ b/fs/btrfs/disk-io.c
+@@ -1586,8 +1586,6 @@ static int cleaner_kthread(void *arg)
+ 	struct btrfs_root *root = arg;
+ 
+ 	do {
+-		vfs_check_frozen(root->fs_info->sb, SB_FREEZE_WRITE);
+-
+ 		if (!(root->fs_info->sb->s_flags & MS_RDONLY) &&
+ 		    mutex_trylock(&root->fs_info->cleaner_mutex)) {
+ 			btrfs_run_delayed_iputs(root);
+@@ -1618,7 +1616,6 @@ static int transaction_kthread(void *arg)
+ 
+ 	do {
+ 		delay = HZ * 30;
+-		vfs_check_frozen(root->fs_info->sb, SB_FREEZE_WRITE);
+ 		mutex_lock(&root->fs_info->transaction_kthread_mutex);
+ 
+ 		spin_lock(&root->fs_info->trans_lock);
+diff --git a/fs/btrfs/file.c b/fs/btrfs/file.c
+index 859ba2d..1aac7ca 100644
+--- a/fs/btrfs/file.c
++++ b/fs/btrfs/file.c
+@@ -1348,7 +1348,7 @@ static ssize_t btrfs_file_aio_write(struct kiocb *iocb,
+ 	ssize_t err = 0;
+ 	size_t count, ocount;
+ 
+-	vfs_check_frozen(inode->i_sb, SB_FREEZE_WRITE);
++	sb_start_write(inode->i_sb);
+ 
+ 	mutex_lock(&inode->i_mutex);
+ 
+@@ -1439,6 +1439,7 @@ static ssize_t btrfs_file_aio_write(struct kiocb *iocb,
+ 			num_written = err;
+ 	}
+ out:
++	sb_end_write(inode->i_sb);
+ 	current->backing_dev_info = NULL;
+ 	return num_written ? num_written : err;
+ }
+diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
+index 32214fe..63c9006 100644
+--- a/fs/btrfs/inode.c
++++ b/fs/btrfs/inode.c
+@@ -6405,6 +6405,7 @@ int btrfs_page_mkwrite(struct vm_area_struct *vma, struct vm_fault *vmf)
+ 	u64 page_start;
+ 	u64 page_end;
+ 
++	sb_start_pagefault(inode->i_sb);
+ 	ret  = btrfs_delalloc_reserve_space(inode, PAGE_CACHE_SIZE);
+ 	if (!ret) {
+ 		ret = btrfs_update_time(vma->vm_file);
+@@ -6495,12 +6496,15 @@ again:
+ 	unlock_extent_cached(io_tree, page_start, page_end, &cached_state, GFP_NOFS);
+ 
+ out_unlock:
+-	if (!ret)
++	if (!ret) {
++		sb_end_pagefault(inode->i_sb);
+ 		return VM_FAULT_LOCKED;
++	}
+ 	unlock_page(page);
+ out:
+ 	btrfs_delalloc_release_space(inode, PAGE_CACHE_SIZE);
+ out_noreserve:
++	sb_end_pagefault(inode->i_sb);
+ 	return ret;
+ }
+ 
 -- 
-Jan Kara <jack@suse.cz>
-SUSE Labs, CR
+1.7.1
+

@@ -1,34 +1,57 @@
-From: Arne Jansen <sensille@gmx.net>
+From: Anand Jain <Anand.Jain@oracle.com>
 Subject: Re: [PATCH] [RFC] Add btrfs autosnap feature
-Date: Mon, 05 Mar 2012 08:18:28 +0100
-Message-ID: <4F5468C4.5090401@gmx.net>
-References: <1330484376-16178-1-git-send-email-anand.jain@oracle.com>	<1330484376-16178-2-git-send-email-anand.jain@oracle.com>	<CAE5mzvjiL+81AsSspTrE1A1BBiL27zJ1qK1oqCF27oL+-CG9Mw@mail.gmail.com>	<4F54625E.6040003@oracle.com> <CAG1y0sdy0p2D4AHBcHgiYxPYknbW8O3xgCuvwKy==sWnW5BJAg@mail.gmail.com>
+Date: Mon, 05 Mar 2012 18:21:02 +0800
+Message-ID: <4F54938E.6080704@oracle.com>
+References: <1330484376-16178-1-git-send-email-anand.jain@oracle.com>	<1330484376-16178-2-git-send-email-anand.jain@oracle.com> <CAE5mzvjiL+81AsSspTrE1A1BBiL27zJ1qK1oqCF27oL+-CG9Mw@mail.gmail.com> <4F54625E.6040003@oracle.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=ISO-8859-1
-Cc: Anand Jain <Anand.Jain@oracle.com>, cwillu <cwillu@cwillu.com>,
-	linux-btrfs@vger.kernel.org, hugo@carfax.org.uk,
+Content-Type: text/plain; charset=UTF-8; format=flowed
+Cc: linux-btrfs@vger.kernel.org, hugo@carfax.org.uk,
 	chris.mason@oracle.com
-To: "Fajar A. Nugraha" <list@fajar.net>
+To: cwillu <cwillu@cwillu.com>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <CAG1y0sdy0p2D4AHBcHgiYxPYknbW8O3xgCuvwKy==sWnW5BJAg@mail.gmail.com>
+In-Reply-To: <4F54625E.6040003@oracle.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 05.03.2012 08:07, Fajar A. Nugraha wrote:
-> On Mon, Mar 5, 2012 at 1:51 PM, Anand Jain <Anand.Jain@oracle.com> wrote:
->>
->>> (notably the direct modification of
->>> crontab files, which is considered to be an internal detail if I
->>> understand correctly, and I'm fairly certain is broken as written),
->>
->>
->>  I did came across that point of view however, using crontab cli in the
->>  program wasn't convincing either, (library call would have been better).
->>  any other better ways to manage cron entries ?
->>
-> 
-> /etc/cron.{d,daily,hourly} ?
-> 
 
-An alternative would be to have an hourly (or minutely) fixed cronjob
-and let the tool decide whether any snapshots have to be created. This
-way you don't have to mess around with the crontab.
+
+>> Prior to making a new snapshot, grab the (stored) transid of the
+>> previous snapshot, and check if any files have been modified in the
+>> source since that transid: btrfs sub find "${source}"
+>> "${previous_transid}". If nothing is returned, then you don't have to
+>> bother making the snapshot at all, otherwise after making the
+>> snapshot, grab the transid via btrfs sub find "${new_snapshot}" -1,
+>> and store it some place (even a dot file in the root of the snapshot
+>> would work).
+
+
+  there might be small window of time where transid and snapshot could
+  be out of sync as we know them. since there is no atomic command which
+  provides both - snapshot and transid. As in the example below.
+  
+  Assume tgw is the transaction group write which happens after we have
+  read the transaction group id.
+  ---
+  sync; read current tran-id and compare
+  (new tgw occurs)
+  snapshot
+  new tgw  occurs
+  sync; read current tran-id again and store
+  ---
+
+  which will result in failing to take snapshot even if there are changes.
+
+  Certainly there will be some trade off, and below logic seems to be
+  more safer...
+  ---
+  sync; read current tran-id and compare with previous
+  new tgw occurs
+  snapshot
+  new tgw occurs
+  store tran_id+2 (since tran_id gets added by two for a snapshot)
+  ---
+
+  which might have a situation where we have two identical snapshot.
+  but a safer trade off.
+
+thanks, Anand
+  

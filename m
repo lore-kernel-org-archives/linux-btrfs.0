@@ -1,125 +1,97 @@
-From: Hugo Mills <hugo@carfax.org.uk>
-Subject: Re: ?Understanding metadata efficiency of btrfs
-Date: Tue, 6 Mar 2012 11:29:58 +0000
-Message-ID: <20120306112957.GJ4481@carfax.org.uk>
-References: <F728B049-9007-4FA6-B75B-0249A472E40C@gmail.com>
- <pan.2012.03.06.05.30.23@cox.net>
+From: Johannes Hirte <johannes.hirte@fem.tu-ilmenau.de>
+Subject: Re: [PATCH] Btrfs: hold enough space for global_rsv
+Date: Tue, 6 Mar 2012 14:50:32 +0100
+Message-ID: <20120306145032.697641a3@fem.tu-ilmenau.de>
+References: <1326793919-2712-1-git-send-email-liubo2009@cn.fujitsu.com>
+	<20120227142904.18c5df56@fem.tu-ilmenau.de>
+	<4F4C3696.8010804@cn.fujitsu.com>
 Mime-Version: 1.0
-Content-Type: multipart/signed; micalg=pgp-sha1;
-	protocol="application/pgp-signature"; boundary="4vpci17Ql0Nrbul2"
+Content-Type: text/plain; charset=US-ASCII
 Cc: linux-btrfs@vger.kernel.org
-To: Duncan <1i5t5.duncan@cox.net>, Kai Ren <gleemanrk@gmail.com>
+To: Liu Bo <liubo2009@cn.fujitsu.com>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <pan.2012.03.06.05.30.23@cox.net>
+In-Reply-To: <4F4C3696.8010804@cn.fujitsu.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
+Am Tue, 28 Feb 2012 10:06:14 +0800
+schrieb Liu Bo <liubo2009@cn.fujitsu.com>:
 
---4vpci17Ql0Nrbul2
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
-
-On Tue, Mar 06, 2012 at 05:30:23AM +0000, Duncan wrote:
-> Kai Ren posted on Mon, 05 Mar 2012 21:16:34 -0500 as excerpted:
-> 
-> > I've run a little wired benchmark on comparing Btrfs v0.19 and XFS:
-> 
-> [snip description of test]
+> On 02/27/2012 09:29 PM, Johannes Hirte wrote:
+> > Am Tue, 17 Jan 2012 17:51:59 +0800
+> > schrieb Liu Bo <liubo2009@cn.fujitsu.com>:
 > > 
-> > I monitor the number of disk read requests
+> >> I've kept hitting enospc warnings of global_rsv while running
+> >> defragment on files:
+> >> btrfs: block rsv returned -28
+> >> WARNING: at fs/btrfs/extent-tree.c:5984
+> >> btrfs_alloc_free_block+0x333/0x340 [btrfs]() ...
+> >>
+> >> I used a fio jobs to create a file with lots of fragments:
+> >> $ filefrag /mnt/btrfs/foobar
+> >> /mnt/btrfs/foobar: 66964 extents found
+> >>
+> >> and then "btrfs fi defrag /mnt/btrfs/foobar && sync" would pop the
+> >> warnings.
+> >>
+> >> I found that the global_rsv size is just not enough for defragment,
+> >> and didn't find any space leak in using global_rsv, so double it
+> >> and go ahead.
+> >>
+> >> Signed-off-by: Liu Bo <liubo2009@cn.fujitsu.com>
+> >> ---
+> >>  fs/btrfs/extent-tree.c |    2 +-
+> >>  1 files changed, 1 insertions(+), 1 deletions(-)
+> >>
+> >> diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
+> >> index 8603ee4..77ea23c 100644
+> >> --- a/fs/btrfs/extent-tree.c
+> >> +++ b/fs/btrfs/extent-tree.c
+> >> @@ -3979,7 +3979,7 @@ static u64 calc_global_metadata_size(struct
+> >> btrfs_fs_info *fs_info) num_bytes += div64_u64(data_used +
+> >> meta_used, 50); 
+> >>  	if (num_bytes * 3 > meta_used)
+> >> -		num_bytes = div64_u64(meta_used, 3);
+> >> +		num_bytes = div64_u64(meta_used, 3) * 2;
+> >>  
+> >>  	return ALIGN(num_bytes, fs_info->extent_root->leafsize <<
+> >> 10); }
 > > 
-> >        #WriteRq  #ReadRq  #WriteSect  #ReadSect
-> > Btrfs   2403520  1571183    29249216   13512248 
-> > XFS      625493   396080    10302718    4932800
+> > This patch breakes my system. With this applied all services fail on
+> > boot with "no space left" messages.
 > > 
-> > I found the number of write quests of Btrfs is significant larger than
-> > XFS.
 > 
-> > I am not quite familiar with how btrfs commits the metadata change into
-> > the disks. From the website, it is said that btrfs uses COW B-tree
-> > which never overwrite previous disk pages. I assume that Btrfs also
-> > keep an in-memory buffer to keep the metadata changes.  But it is
-> > unclear to me that how often Btrfs will commit these changes
-> > and what is the behind mechanism.
-
-   By default, btrfs will commit a transaction every 30 seconds.
-
-   (Some of this is probably playing a bit fast and loose with
-terminology such as "block cache". I'm sure if I've made any major
-errors, I'll be corrected.)
-
-   The "in-memory buffer" is simply the standard Linux block layer and
-FS cache: When a piece of metadata is searched for, btrfs walks down
-the relevant tree, loading each tree node (a 4k page) in turn, until
-it finds the metadata. Unless there is a huge amount of memory
-pressure, Linux's block cache will hang on those blocks in RAM.
-
-   btrfs can then modify those blocks as much as it likes, in RAM, as
-userspace tools request those changes to be made (e.g. writes,
-deletes, etc). By the CoW nature of the FS, modifying a metadata block
-will also require modification of the block above it in the tree, and
-so on up to the top of the tree. If it's all kept in RAM, this is a
-fast operation, since the trees aren't usually very deep(*).
-
-   At regular intervals (30s), the btrfs code will ensure that it has
-a consistent in-memory set of blocks, and flushes those dirty blocks
-to disk, ensuring that they're moved from the original location. It
-does so by first writing all of the tree data, sending down disk flush
-commands to ensure that the data gets to disk reliably, and then
-writing out new copies of the superblocks so that they point to the
-new trees.
-
-[snip]
-> The #1 biggest difference between btrfs and most other filesystems is 
-> that btrfs, by default, duplicates all metadata -- two copies of all 
-> metadata, one copy of data, by default.
-[snip]
-> So that doubles the btrfs metadata writes, right there, since by default, 
-> btrfs double-copies all metadata.
+> It's weird since this patch is just aiming to enlarge our metadata
+> reservation count.
 > 
-> The #2 big factor is that btrfs (again, by default, but this is a major 
-> feature of btrfs, otherwise, you might as well run something else) does 
-> full checksumming for both data and metadata.  Unlike most filesystems, 
-[snip] 
-> And of course all these checksums must be written somewhere as well, so 
-> that's another huge increase in written metadata, even for 0-length 
-> files, since the metadata itself is checksummed!
+> so you've tried a revert or a bisect, right?  Can you show me the
+> environment or any log messages?
+> 
+> thanks,
+> liubo
 
-   This isn't quite true. btrfs checksums everything at the rate of a
-single (currently 4-byte) checksum per (4096-byte) page. In the case
-of data blocks, those go in the checksum tree -- thus increasing the
-size of the metadata, as you suggest. However, for metadata blocks,
-the checksum is written into each metadata block itself. Thus the
-checksum overhead of metadata is effectively zero.
+Sorry for the long delay. My system was really screwed up and
+took time to fix it.
+First, it wasn't your patch that made the system fail. At this time, it
+was the first revision that didn't work anymore. I don't know why this
+one. Short time later also earlier revisions showed that error. I was
+able to boot with a live system from USB stick. The filesystem was
+mountable and readable, but I couldn't modify or create a single file.
+Two or three times I got a
 
-   Further, if the files are all zero length, I'd expect the file
-"data" to be held inline in the extent tree, which will increase the
-per-file size of the metadata a little, but not much. As a result of
-this, there won't be any checksums in the checksum tree, because all
-of the extents are stored inline elsewhere, and checksummed by the
-normal embedded metadata checksums.
+btrfs: fail to dirty inode 256 error -28
 
-   Hugo.
+but most times nothing was reported in the logs.
 
-(*) An internal tree node holds up to 121 tree-node references, so the
-depth of a tree with n items in it is approximately log(n)/log(121). A
-tree with a billion items in it would have a maximum depth of 5.
+The filesystem consists of three subvolumes, the default one, one for
+rootfs and one for home. If I did a defrag on the rootfs, I was able to
+create files. But after unmounting and remounting the filesystem, the
+same error appeared again. Also a balance of the filesystem resulted in
+no space error after some time.
+I've backed up the filesystem, deleted the subvolumes, recreated them
+and copied the data back. Now everything seems to work again. I've also
+a full image of the damaged filesystem for further investigation. If
+someone has an idea for testing, I'm happy to try it.
 
--- 
-=== Hugo Mills: hugo@... carfax.org.uk | darksatanic.net | lug.org.uk ===
-  PGP key: 515C238D from wwwkeys.eu.pgp.net or http://www.carfax.org.uk
-           --- I believe that it's closely correlated with ---           
-                       the aeroswine coefficient.                        
 
---4vpci17Ql0Nrbul2
-Content-Type: application/pgp-signature; name="signature.asc"
-Content-Description: Digital signature
-
------BEGIN PGP SIGNATURE-----
-Version: GnuPG v1.4.11 (GNU/Linux)
-
-iD8DBQFPVfU1IKyzvlFcI40RAjB0AKDHNbL/LRSggaiEV4I7SFkeuoKQsgCgvtJc
-47mG2YTvWn+8qzpfxCf27UI=
-=uN3c
------END PGP SIGNATURE-----
-
---4vpci17Ql0Nrbul2--
+regards,
+  Johannes

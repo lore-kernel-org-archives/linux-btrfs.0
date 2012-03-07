@@ -1,64 +1,34 @@
-From: "Fajar A. Nugraha" <list@fajar.net>
-Subject: Re: compressed btrfs "No space left on device"
-Date: Wed, 7 Mar 2012 11:15:54 +0700
-Message-ID: <CAG1y0sex2WYSwhtB9U1x_3fkb6DN_WVBmbvbsARmrjBL+BwF1Q@mail.gmail.com>
-References: <4EC12C5A.2070304@arndnet.de>
-	<4EC15CDB.90103@arndnet.de>
-	<4EC3F9E5.60500@arndnet.de>
+From: Wang Sheng-Hui <shhuiw@gmail.com>
+Subject: [PATCH] btrfs/locking.c: minor fix on the comment for btrfs_try_tree_write_lock
+Date: Wed, 07 Mar 2012 16:13:32 +0800
+Message-ID: <4F5718AC.80705@gmail.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset=ISO-8859-1
-To: linux-btrfs@vger.kernel.org
+To: Chris Mason <chris.mason@oracle.com>, linux-btrfs@vger.kernel.org,
+	linux-kernel@vger.kernel.org
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <4EC3F9E5.60500@arndnet.de>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Thu, Nov 17, 2011 at 12:59 AM, Arnd Hannemann <arnd@arndnet.de> wrot=
-e:
-> Am 14.11.2011 19:24, schrieb Arnd Hannemann:
->> Am 14.11.2011 15:57, schrieb Arnd Hannemann:
->>
->>> I'm using btrfs for my /usr/share/ partition and keep getting the f=
-ollowing error
->>> while installing a debian package which should take no more than 22=
-8 MB:
->>>
->>> Unpacking texlive-fonts-extra (from .../texlive-fonts-extra_2009-10=
-ubuntu1_all.deb) ...
->>> =A0dpkg: error processing /var/cache/apt/archives/texlive-fonts-ext=
-ra_2009-10ubuntu1_all.deb (--unpack):
->>> =A0unable to install new version of `/usr/share/texmf-texlive/fonts=
-/type1/public/allrunes/frutlt.pfb': No space left on device
+btrfs_try_tree_write_lock is used for write lock, not for read lock.
 
+Signed-off-by: Wang Sheng-Hui <shhuiw@gmail.com>
+---
+ fs/btrfs/locking.c |    2 +-
+ 1 files changed, 1 insertions(+), 1 deletions(-)
 
->> FYI: The problem is the same with mainline kernel v3.1.1.
->
-> JFYI: the problem went away in 3.2-rc2 =A0so someone must
-> have fixed something.
+diff --git a/fs/btrfs/locking.c b/fs/btrfs/locking.c
+index 5e178d8..4e4705c 100644
+--- a/fs/btrfs/locking.c
++++ b/fs/btrfs/locking.c
+@@ -142,7 +142,7 @@ int btrfs_try_tree_read_lock(struct extent_buffer *eb)
+ }
+ 
+ /*
+- * returns 1 if we get the read lock and 0 if we don't
++ * returns 1 if we get the write lock and 0 if we don't
+  * this won't wait for blocking writers or readers
+  */
+ int btrfs_try_tree_write_lock(struct extent_buffer *eb)
+-- 
+1.7.1
 
-I just experienced the same thing in Ubuntu precise, 3.2.0-17-generic,
-so I don't think it's fixed yet.
-
-$ sudo btrfs fi df /
-Data: total=3D43.47GB, used=3D38.47GB
-System, DUP: total=3D8.00MB, used=3D12.00KB
-System: total=3D4.00MB, used=3D0.00
-Metadata, DUP: total=3D3.25GB, used=3D912.47MB
-Metadata: total=3D8.00MB, used=3D0.00
-
-$ df -h /
-=46ilesystem      Size  Used Avail Use% Mounted on
-/dev/sda6        50G   41G  5.1G  89% /
-
-the problem occur when copying precise lxc root template (322M, 13759
-files/directories).
-
-It only happens when using zlib compression though, using lzo works fin=
-e.
-
---=20
-=46ajar
---
-To unsubscribe from this list: send the line "unsubscribe linux-btrfs" =
-in
-the body of a message to majordomo@vger.kernel.org
-More majordomo info at  http://vger.kernel.org/majordomo-info.html

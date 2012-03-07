@@ -1,34 +1,25 @@
-From: Wang Sheng-Hui <shhuiw@gmail.com>
-Subject: [PATCH] btrfs/locking.c: minor fix on the comment for btrfs_try_tree_write_lock
-Date: Wed, 07 Mar 2012 16:13:32 +0800
-Message-ID: <4F5718AC.80705@gmail.com>
+From: Fahrzin Hemmati <fahhem2@gmail.com>
+Subject: Continuous Benchmarking
+Date: Wed, 07 Mar 2012 00:57:28 -0800
+Message-ID: <4F5722F8.3070505@gmail.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=ISO-8859-1
-To: Chris Mason <chris.mason@oracle.com>, linux-btrfs@vger.kernel.org,
-	linux-kernel@vger.kernel.org
+Content-Type: text/plain; charset=ISO-8859-1; format=flowed
+To: "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-btrfs_try_tree_write_lock is used for write lock, not for read lock.
+Hello,
 
-Signed-off-by: Wang Sheng-Hui <shhuiw@gmail.com>
----
- fs/btrfs/locking.c |    2 +-
- 1 files changed, 1 insertions(+), 1 deletions(-)
+I've got a system up-and-running that can run arbitrary benchmarks in a 
+VM with direct access to an SSD drive. I'd like to have a benchmark to 
+run on a few different revisions of the btrfs code to get some data to 
+test with, so if any btrfs devs or testers would like to help, please 
+send a list of commands to run and what directory to run them from 
+(inside the mount or outside can be inferred by /mnt/btrfs versus any 
+other path).
 
-diff --git a/fs/btrfs/locking.c b/fs/btrfs/locking.c
-index 5e178d8..4e4705c 100644
---- a/fs/btrfs/locking.c
-+++ b/fs/btrfs/locking.c
-@@ -142,7 +142,7 @@ int btrfs_try_tree_read_lock(struct extent_buffer *eb)
- }
- 
- /*
-- * returns 1 if we get the read lock and 0 if we don't
-+ * returns 1 if we get the write lock and 0 if we don't
-  * this won't wait for blocking writers or readers
-  */
- int btrfs_try_tree_write_lock(struct extent_buffer *eb)
--- 
-1.7.1
+I can benchmark both btrfs-progs and the kernel module separately, in 
+case there are any btrfs-progs specific benchmarks people would like to run.
 
+Best,
+Fahrzin Hemmati

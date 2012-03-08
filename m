@@ -1,100 +1,68 @@
 From: Jacek Luczak <difrost.kernel@gmail.com>
-Subject: Re: WARNING: at fs/btrfs/extent-tree.c:5985
-Date: Thu, 8 Mar 2012 12:33:42 +0100
-Message-ID: <CADDYkjS4NctGzreFHSMFq8qBO9ZjWDntaikRq+-J-fU-Jcr_vw@mail.gmail.com>
-References: <CADDYkjRAUxA7n2zv1H8dfbLd29n+sZGVaRBVcTr23j_QubbJoQ@mail.gmail.com>
+Subject: kernel BUG at fs/btrfs/delayed-inode.c:1466!
+Date: Thu, 8 Mar 2012 13:10:45 +0100
+Message-ID: <CADDYkjQHvmfhmsdt7K0O74DZK6BVqxPaWh_jEi8uJ_HBEz-QhQ@mail.gmail.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset=ISO-8859-1
 To: linux-btrfs <linux-btrfs@vger.kernel.org>,
 	LKML <linux-kernel@vger.kernel.org>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <CADDYkjRAUxA7n2zv1H8dfbLd29n+sZGVaRBVcTr23j_QubbJoQ@mail.gmail.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-2012/3/6 Jacek Luczak <difrost.kernel@gmail.com>:
-> Hi All,
->
-> I've noticed today below WARN_ON from btrfs. Google shows hits in the
-> same place ([1] and [2]) but the path is different. It could happen
-> when svn checout or few rsyncs were running - now I'm not able to put
-> in correct timings. There's =A0btrfs_item_offset() in backtrace and I
-> was not able to find it from btrfs kernel code - there's _nr instead.
-> Am I blind?
->
-> I will try to reproduce this. Any hints based on code path how could
-> it be triggered?
->
-> Cheers,
-> -Jacek
->
-> [1] http://www.spinics.net/lists/linux-btrfs/msg15229.html
-> [2] https://bugzilla.redhat.com/show_bug.cgi?id=3D789632
->
-> ------------[ cut here ]------------
-> WARNING: at fs/btrfs/extent-tree.c:5985
-> btrfs_alloc_free_block+0xc5/0x292 [btrfs]()
-> Hardware name: ProLiant BL460c G6
-> Modules linked in: btrfs zlib_deflate lzo_compress ext4 jbd2 crc16
-> ipmi_devintf autofs4 be2iscsi iscsi_boot_sysfs ib_iser rdma_cm ib_cm
-> iw_cm ib_sa ib_mad ib_addr iscsi_tcp bnx2i cnic uio ipv6 cxgb3i
-> libcxgbi iw_cxgb3 ib_core cxgb3 libiscsi_tcp libiscsi
-> scsi_transport_iscsi dm_mirror dm_region_hash dm_log dm_multipath
-> video battery acpi_pad acpi_ipmi ac parport usbhid evdev
-> acpi_power_meter radeon ttm drm_kms_helper drm hwmon backlight
-> i2c_algo_bit ipmi_si bnx2x ipmi_msghandler i2c_core hpilo hpwdt
-> psmouse mdio ehci_hcd uhci_hcd
-> Pid: 4865, comm: flush-btrfs-11 Tainted: G =A0 =A0 =A0 =A0W =A0 =A03.=
-2.7 #2
-> Call Trace:
-> =A0[<ffffffffa038461f>] ? btrfs_alloc_free_block+0xc5/0x292 [btrfs]
-> =A0[<ffffffff8106901d>] ? warn_slowpath_common+0x78/0x8d
-> =A0[<ffffffffa038461f>] ? btrfs_alloc_free_block+0xc5/0x292 [btrfs]
-> =A0[<ffffffffa039ebad>] ? btrfs_item_offset+0x2c/0x61 [btrfs]
-> =A0[<ffffffffa03737dc>] ? leaf_space_used+0x86/0xb5 [btrfs]
-> =A0[<ffffffffa0377a7a>] ? split_leaf+0x2d9/0x632 [btrfs]
-> =A0[<ffffffffa0379261>] ? btrfs_search_slot+0x6c1/0x75a [btrfs]
-> =A0[<ffffffffa0379e6e>] ? btrfs_insert_empty_items+0x61/0xab [btrfs]
-> =A0[<ffffffffa039507c>] ? insert_inline_extent+0xea/0x2d4 [btrfs]
-> =A0[<ffffffffa0395389>] ? cow_file_range_inline+0x123/0x163 [btrfs]
-> =A0[<ffffffffa038fc2c>] ? start_transaction+0x1d5/0x205 [btrfs]
-> =A0[<ffffffffa0397137>] ? cow_file_range+0x113/0x337 [btrfs]
-> =A0[<ffffffffa0379653>] ? btrfs_next_leaf+0x359/0x36a [btrfs]
-> =A0[<ffffffffa0397d7b>] ? run_delalloc_nocow+0x5d9/0x673 [btrfs]
-> =A0[<ffffffffa0397e8b>] ? run_delalloc_range+0x76/0x338 [btrfs]
-> =A0[<ffffffff811ef37c>] ? blk_queue_bio+0x2db/0x2fb
-> =A0[<ffffffffa03a9367>] ? __extent_writepage+0x259/0x689 [btrfs]
-> =A0[<ffffffff811eef50>] ? generic_make_request+0x90/0xde
-> =A0[<ffffffff811ef06a>] ? submit_bio+0xcc/0xd5
-> =A0[<ffffffffa03a4fcc>] ? extent_writepages+0x1cc/0x2d5 [btrfs]
-> =A0[<ffffffffa0398ed4>] ? uncompress_inline+0x141/0x141 [btrfs]
-> =A0[<ffffffff81137956>] ? writeback_single_inode+0x109/0x291
-> =A0[<ffffffff81137fde>] ? writeback_sb_inodes+0x156/0x1fe
-> =A0[<ffffffff81138461>] ? wb_writeback+0x10a/0x1f8
-> =A0[<ffffffff81073b4b>] ? lock_timer_base+0x26/0x4b
-> =A0[<ffffffff811385bb>] ? wb_do_writeback+0x6c/0x1c1
-> =A0[<ffffffff813e2e22>] ? schedule_timeout+0x1d6/0x1f4
-> =A0[<ffffffff81073c7b>] ? msleep+0x1e/0x1e
-> =A0[<ffffffff81138802>] ? bdi_writeback_thread+0x7d/0x1c1
-> =A0[<ffffffff81138785>] ? wakeup_flusher_threads+0x75/0x75
-> =A0[<ffffffff810822aa>] ? kthread+0x7e/0x86
-> =A0[<ffffffff813e6a74>] ? kernel_thread_helper+0x4/0x10
-> =A0[<ffffffff8108222c>] ? kthread_stop+0xa8/0xa8
-> =A0[<ffffffff813e6a70>] ? gs_change+0x13/0x13
-> ---[ end trace 1547a049b7c6896a ]---
-> use_block_rsv: 11 callbacks suppressed
-> btrfs: block rsv returned -28
-> ------------[ cut here ]------------
+Hi,
 
-I've tried to catch that issue. Looks like that it occurs when there's
-a data move between NFS and BTRFS (now I have a dump of all processes
-from the system when issue popped up). I did not found a trigger for
-this but it seem to go inline with Niks observations [1].
+this shown up today. I had to do a hard reboot as graceful hanged on sync().
+
+------------[ cut here ]------------
+kernel BUG at fs/btrfs/delayed-inode.c:1466!
+invalid opcode: 0000 [#1] SMP
+CPU 10
+Modules linked in: btrfs zlib_deflate lzo_compress ipmi_devintf
+autofs4 be2iscsi iscsi_boot_sysfs ib_iser rdma_cm ib_cm iw_cm ib_sa
+ib_mad ib_addr iscsi_tcp bnx2i cnic uio ipv6 cxgb3i libcxgbi iw_cxgb3
+ib_core cxgb3 libiscsi_tcp libiscsi scsi_transport_iscsi dm_mirror
+dm_region_hash dm_log dm_multipath video battery acpi_pad acpi_ipmi ac
+parport usbhid evdev acpi_power_meter radeon ttm drm_kms_helper drm
+hwmon backlight i2c_algo_bit ipmi_si bnx2x ipmi_msghandler i2c_core
+hpwdt hpilo psmouse mdio uhci_hcd ehci_hcd
+
+Pid: 1488, comm: mips-wrs-linux- Tainted: G        W    3.2.7 #2 HP
+ProLiant BL460c G6
+RIP: 0010:[<ffffffffa03559f9>]  [<ffffffffa03559f9>]
+btrfs_delete_delayed_dir_index+0xe9/0x157 [btrfs]
+RSP: 0018:ffff8805d5b43ba8  EFLAGS: 00010286
+RAX: 00000000ffffffe4 RBX: ffff8805f0a57c00 RCX: 0000000002b06e0a
+RDX: 00000000ffffffe4 RSI: 0000000000018000 RDI: ffff880bee4c8150
+RBP: 00000000fffffff4 R08: ffffea002fd582c0 R09: 0000001a00000000
+R10: 0000000000000001 R11: ffff880bf58c7800 R12: ffff8801059cf0e0
+R13: ffff8801059cf128 R14: ffff8805d5b43bb8 R15: ffff880bf58c7800
+FS:  0000000000000000(0000) GS:ffff880c1fca0000(0063) knlGS:00000000f77566c0
+CS:  0010 DS: 002b ES: 002b CR0: 000000008005003b
+CR2: 000000000807b3b9 CR3: 0000000953a76000 CR4: 00000000000006e0
+DR0: 0000000000000000 DR1: 0000000000000000 DR2: 0000000000000000
+DR3: 0000000000000000 DR6: 00000000ffff0ff0 DR7: 0000000000000400
+Process mips-wrs-linux- (pid: 1488, threadinfo ffff8805d5b42000, task
+ffff8805b4acec00)
+Stack:
+ 0000000000000085 ffff880bf0984870 000000000033bef7 0000000000008560
+ 0000000000000000 00000000000007bf ffff880bf0984870 00000000000009d9
+ 0000000000000000 ffff880bf560b1b0 ffff8805c29a5e88 000000000033bef7
+Call Trace:
+ [<ffffffffa03210e5>] ? __btrfs_unlink_inode+0x172/0x25e [btrfs]
+ [<ffffffffa032158c>] ? btrfs_rename+0x38b/0x55b [btrfs]
+ [<ffffffff81124e8c>] ? vfs_rename+0x202/0x382
+ [<ffffffff81127312>] ? sys_renameat+0x169/0x1e5
+ [<ffffffff81051164>] ? do_page_fault+0x39b/0x3af
+ [<ffffffff8112c35e>] ? dput+0x3f/0x126
+ [<ffffffff8111ee28>] ? vfs_fstatat+0x57/0x60
+ [<ffffffff81057176>] ? sys32_lstat64+0x20/0x29
+ [<ffffffff810a72f2>] ? audit_syscall_entry+0x176/0x1a1
+ [<ffffffff813e6c30>] ? sysenter_dispatch+0x7/0x2e
+Code: 4c 89 ef e8 ad d6 08 e1 eb 74 fc 48 8d 78 18 4c 89 f6 48 89 c2
+a5 a5 a5 a5 a4 4c 89 fe 48 8b 7c 24 08 e8 58 e9 ff ff 85 c0 74 04 <0f>
+0b eb fe 4c 89 ef e8 5c d6 08 e1 ba 02 00 00 00 48 89 de 4c
+RIP  [<ffffffffa03559f9>] btrfs_delete_delayed_dir_index+0xe9/0x157 [btrfs]
+ RSP <ffff8805d5b43ba8>
+---[ end trace cc1045e0105e2505 ]---
 
 -Jacek
-
-[1] http://www.spinics.net/lists/linux-btrfs/msg15292.html
---
-To unsubscribe from this list: send the line "unsubscribe linux-btrfs" =
-in
-the body of a message to majordomo@vger.kernel.org
-More majordomo info at  http://vger.kernel.org/majordomo-info.html

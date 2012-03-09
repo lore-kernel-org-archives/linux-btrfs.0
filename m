@@ -1,36 +1,33 @@
-From: Andor Daam <andor.daam@googlemail.com>
-Subject: ext3/4, btrfs, ocfs2: How to assure that cleancache_invalidate_fs is
- called on every superblock free
-Date: Fri, 9 Mar 2012 14:40:22 +0100
-Message-ID: <CACQs63L2wfXKaD5sH6OOV+Bm_+37F3QOdt1QMFbWnB9AE4iCpA@mail.gmail.com>
+From: David Sterba <dave@jikos.cz>
+Subject: Re: btrfs_search_slot BUG...
+Date: Fri, 9 Mar 2012 15:01:58 +0100
+Message-ID: <20120309140158.GK4334@twin.jikos.cz>
+References: <CAMVG2suFfpjC_n8SpaDRLAZpWGFAPdoT+ESOkrNuoH0WoH8juQ@mail.gmail.com> <4F598839.5060806@cn.fujitsu.com>
+Reply-To: dave@jikos.cz
 Mime-Version: 1.0
-Content-Type: text/plain; charset=ISO-8859-1
-Cc: dan.magenheimer@oracle.com, fschmaus@gmail.com, linux-mm@kvack.org,
-	ilendir@googlemail.com, sjenning@linux.vnet.ibm.com,
-	konrad.wilk@oracle.com, i4passt@lists.informatik.uni-erlangen.de,
-	ngupta@vflare.org
-To: linux-fsdevel@vger.kernel.org, linux-btrfs@vger.kernel.org,
-	linux-ext4@vger.kernel.org, ocfs2-devel@oss.oracle.com
-Return-path: <linux-ext4-owner@vger.kernel.org>
+Content-Type: text/plain; charset=us-ascii
+Cc: Daniel J Blueman <daniel@quora.org>,
+	Chris Mason <chris.mason@oracle.com>,
+	Linux BTRFS <linux-btrfs@vger.kernel.org>,
+	Josef Bacik <josef@redhat.com>
+To: Liu Bo <liubo2009@cn.fujitsu.com>
+Return-path: <linux-btrfs-owner@vger.kernel.org>
+In-Reply-To: <4F598839.5060806@cn.fujitsu.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hello,
+On Fri, Mar 09, 2012 at 12:34:01PM +0800, Liu Bo wrote:
+> On 03/09/2012 12:25 PM, Daniel J Blueman wrote:
+> > When testing out 16KB blocks with direct I/O [1] on 3.3-rc6, we
+> > quickly see btrfs_search_slot returning positive numbers, popping an
+> > assertion [2].
+> > 
+> > Are >4KB block sizes known broken for now?
+> 
+> Yes, exactly, the kernel side is not ready for >4K block size, but AFAIK it _is_ on going.
 
-Is it ever possible for a superblock for a mounted filesystem to be
-free'd without a previous call to unmount the filesystem?
-I need to be certain that the function cleancache_invalidate_fs, which
-is at the moment called by deactivate_locked_super (fs/super.c) [1],
-is called before every free on a superblock of cleancache-enabled
-filesystems.
-Is this already the case or are there situations in which this does not happen?
+This is connected rather to PAGE_SIZE and PAGE_CACHE_SIZE, which happens
+to be 4k on x86_64, but eg. ia64 or powerpc64 are happy with 64k blocks
+(leaf and node).
 
-It would be interesting to know this, as we are planning to have
-cleancache save pointers to superblocks of every mounted
-cleancache-enabled filesystem [2] and it would be fatal if a
-superblock is free'd without cleancache being notified.
 
-Regards
-Andor
-
-[1] commit c515e1fd361c2a08a9c2eb139396ec30a4f477dc
-[2] http://marc.info/?l=linux-mm&m=133122649732669&w=2
+david

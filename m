@@ -1,41 +1,23 @@
-From: Liu Bo <liubo2009@cn.fujitsu.com>
-Subject: Re: btrfs_search_slot BUG...
-Date: Fri, 09 Mar 2012 12:34:01 +0800
-Message-ID: <4F598839.5060806@cn.fujitsu.com>
-References: <CAMVG2suFfpjC_n8SpaDRLAZpWGFAPdoT+ESOkrNuoH0WoH8juQ@mail.gmail.com>
+From: Chris Samuel <chris@csamuel.org>
+Subject: Re: kernel BUG at fs/btrfs/delayed-inode.c:1466!
+Date: Fri, 09 Mar 2012 17:43:42 +1100
+Message-ID: <4F59A69E.1040002@csamuel.org>
+References: <CADDYkjQHvmfhmsdt7K0O74DZK6BVqxPaWh_jEi8uJ_HBEz-QhQ@mail.gmail.com>	<20120308155211.GF4334@twin.jikos.cz> <CADDYkjTG-q5+pFRFt9sGKq=cgL=ZgQaNZV=2ipBsSbuvxCa3jw@mail.gmail.com> <4F595D6D.6080809@cn.fujitsu.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset=ISO-8859-1
-Cc: Chris Mason <chris.mason@oracle.com>,
-	Linux BTRFS <linux-btrfs@vger.kernel.org>,
-	Josef Bacik <josef@redhat.com>
-To: Daniel J Blueman <daniel@quora.org>
+To: linux-btrfs <linux-btrfs@vger.kernel.org>,
+	LKML <linux-kernel@vger.kernel.org>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <CAMVG2suFfpjC_n8SpaDRLAZpWGFAPdoT+ESOkrNuoH0WoH8juQ@mail.gmail.com>
+In-Reply-To: <4F595D6D.6080809@cn.fujitsu.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 03/09/2012 12:25 PM, Daniel J Blueman wrote:
-> When testing out 16KB blocks with direct I/O [1] on 3.3-rc6, we
-> quickly see btrfs_search_slot returning positive numbers, popping an
-> assertion [2].
-> 
-> Are >4KB block sizes known broken for now?
-> 
+On 09/03/12 12:31, Liu Bo wrote:
 
-Yes, exactly, the kernel side is not ready for >4K block size, but AFAIK it _is_ on going.
+> So are these warnings based on the latest upstream of btrfs?
 
-thanks,
-liubo
+Looks like it was 3.2.7, his oops said:
 
-> Thanks,
->   Daniel
-> 
-> --- [1]
-> 
-> mkfs.btrfs -m raid1 -d raid1 -l 16k -n 16k /dev/sda /dev/sdb
-> mount /dev/sda /store && cd /store
-> fio /usr/share/doc/fio/examples/iometer-file-access-server
-> 
-> --- [2]
-> 
-> kernel BUG at /home/apw/COD/linux/fs/btrfs/extent-tree.c:1481!
+Pid: 1488, comm: mips-wrs-linux- Tainted: G        W    3.2.7 #2 HP
 
+-- 
+ Chris Samuel  :  http://www.csamuel.org/  :  Melbourne, VIC

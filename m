@@ -1,50 +1,64 @@
-From: Jacek Luczak <difrost.kernel@gmail.com>
-Subject: Re: kernel BUG at fs/btrfs/delayed-inode.c:1466!
-Date: Fri, 9 Mar 2012 15:33:24 +0100
-Message-ID: <CADDYkjRK3h_e3GPDQMpVwSwn6aQ5MwA1FoF1wFV05=LytK3chg@mail.gmail.com>
-References: <CADDYkjQHvmfhmsdt7K0O74DZK6BVqxPaWh_jEi8uJ_HBEz-QhQ@mail.gmail.com>
-	<20120308155211.GF4334@twin.jikos.cz>
-	<CADDYkjTG-q5+pFRFt9sGKq=cgL=ZgQaNZV=2ipBsSbuvxCa3jw@mail.gmail.com>
-	<4F595D6D.6080809@cn.fujitsu.com>
-	<20120309105537.GG4334@twin.jikos.cz>
-	<CADDYkjRcRbxxPErdMBOs55-gNHZA0GfxcsWNrVbAuv37b3rtvw@mail.gmail.com>
-	<20120309114010.GH4334@twin.jikos.cz>
-	<CADDYkjQiMpPHLq4NTe5yo1iZfCgtwTgm+3ZDRUdMACpumsdFqw@mail.gmail.com>
+From: Chris Mason <chris.mason@oracle.com>
+Subject: Re: getdents - ext4 vs btrfs performance
+Date: Fri, 9 Mar 2012 09:34:46 -0500
+Message-ID: <20120309143446.GO29510@shiny>
+References: <CADDYkjS5VJeYyHzqumazQ0qKg+HwA6GO+zYSJj7rkHNZFwjcoQ@mail.gmail.com>
+ <alpine.LFD.2.00.1203091158430.4487@dhcp-27-109.brq.redhat.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=ISO-8859-1
-To: dave@jikos.cz, Jacek Luczak <difrost.kernel@gmail.com>,
-	Liu Bo <liubo2009@cn.fujitsu.com>,
-	linux-btrfs <linux-btrfs@vger.kernel.org>,
-	LKML <linux-kernel@vger.kernel.org>, josef@redhat.com
-Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <CADDYkjQiMpPHLq4NTe5yo1iZfCgtwTgm+3ZDRUdMACpumsdFqw@mail.gmail.com>
+Content-Type: text/plain; charset=us-ascii
+Cc: Jacek Luczak <difrost.kernel@gmail.com>,
+	linux-ext4@vger.kernel.org,
+	linux-fsdevel <linux-fsdevel@vger.kernel.org>,
+	LKML <linux-kernel@vger.kernel.org>, linux-btrfs@vger.kernel.org
+To: Lukas Czerner <lczerner@redhat.com>
+Return-path: <linux-kernel-owner@vger.kernel.org>
+In-Reply-To: <alpine.LFD.2.00.1203091158430.4487@dhcp-27-109.brq.redhat.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-2012/3/9 Jacek Luczak <difrost.kernel@gmail.com>:
-> 2012/3/9 David Sterba <dave@jikos.cz>:
->> On Fri, Mar 09, 2012 at 12:08:12PM +0100, Jacek Luczak wrote:
->>> For this one I've created also a report [1].
->>> >
->>> > so there is probably other problem in reservations and it just blew up during
->>> > the unlink call.
->>>
->>> Could be as this came up after a longer time of throwing above WARN_ON.
->>>
->>> I'm now cloning the Linus tree. Lets see if both will pop up on there.
->>
->> The 3.3-rc6 should help in one case, with
->>
->> http://thread.gmane.org/gmane.comp.file-systems.btrfs/15268
->>
->> but I was able to reproduce the WARN_ON even with this patch, didn't get
->> to debugging it again yet.
->
-> Those two issues go inline. After a longer while of WARN_ON the BUG_ON
-> hit again.
+On Fri, Mar 09, 2012 at 12:29:29PM +0100, Lukas Czerner wrote:
+> Hi,
+> 
+> I have created a simple script which creates a bunch of files with
+> random names in the directory and then performs operation like list,
+> tar, find, copy and remove. I have run it for ext4, xfs and btrfs with
+> the 4k size files. And the result is that ext4 pretty much dominates the
+> create times, tar times and find times. However copy times is a whole
+> different story unfortunately - is sucks badly.
+> 
+> Once we cross the mark of 320000 files in the directory (on my system) the
+> ext4 is becoming significantly worse in copy times. And that is where
+> the hash tree order in the directory entry really hit in.
+> 
+> Here is a simple graph:
+> 
+> http://people.redhat.com/lczerner/files/copy_benchmark.pdf
+> 
+> Here is a data where you can play with it:
+> 
+> https://www.google.com/fusiontables/DataSource?snapid=S425803zyTE
+> 
+> and here is the txt file for convenience:
+> 
+> http://people.redhat.com/lczerner/files/copy_data.txt
+> 
+> I have also run the correlation.py from Phillip Susi on directory with
+> 100000 4k files and indeed the name to block correlation in ext4 is pretty
+> much random :)
+> 
+> _ext4_
+> Name to inode correlation: 0.50002499975
+> Name to block correlation: 0.50002499975
+> Inode to block correlation: 0.9999900001
+> 
+> _xfs_
+> Name to inode correlation: 0.969660303397
+> Name to block correlation: 0.969660303397
+> Inode to block correlation: 1.0
+> 
+> 
+> So there definitely is a huge space for improvements in ext4.
 
-One more observation. Host is running builds from CI system. After
-BUG_ON pop up all builds take 50% more time to complete. Also I see
-that current load average stall at value of 7 even if host is
-completely idle.
+Thanks Lukas, this is great data.  There is definitely room for btrfs to
+speed up in the other phases as well.
 
--Jacek
+-chris

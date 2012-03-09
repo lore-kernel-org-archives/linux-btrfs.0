@@ -1,35 +1,24 @@
 From: David Sterba <dave@jikos.cz>
-Subject: Re: kernel BUG at fs/btrfs/delayed-inode.c:1466!
-Date: Fri, 9 Mar 2012 12:40:10 +0100
-Message-ID: <20120309114010.GH4334@twin.jikos.cz>
-References: <CADDYkjQHvmfhmsdt7K0O74DZK6BVqxPaWh_jEi8uJ_HBEz-QhQ@mail.gmail.com> <20120308155211.GF4334@twin.jikos.cz> <CADDYkjTG-q5+pFRFt9sGKq=cgL=ZgQaNZV=2ipBsSbuvxCa3jw@mail.gmail.com> <4F595D6D.6080809@cn.fujitsu.com> <20120309105537.GG4334@twin.jikos.cz> <CADDYkjRcRbxxPErdMBOs55-gNHZA0GfxcsWNrVbAuv37b3rtvw@mail.gmail.com>
+Subject: Re: [PATCH] Btrfs: set page->private to the eb
+Date: Fri, 9 Mar 2012 14:43:48 +0100
+Message-ID: <20120309134348.GJ4334@twin.jikos.cz>
+References: <20120308183659.GA2648@dhcp231-144.rdu.redhat.com> <4F595C6C.9080706@cn.fujitsu.com>
 Reply-To: dave@jikos.cz
 Mime-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
-Cc: dave@jikos.cz, Liu Bo <liubo2009@cn.fujitsu.com>,
-	linux-btrfs <linux-btrfs@vger.kernel.org>,
-	LKML <linux-kernel@vger.kernel.org>, josef@redhat.com
-To: Jacek Luczak <difrost.kernel@gmail.com>
-Return-path: <linux-kernel-owner@vger.kernel.org>
-In-Reply-To: <CADDYkjRcRbxxPErdMBOs55-gNHZA0GfxcsWNrVbAuv37b3rtvw@mail.gmail.com>
+Cc: Josef Bacik <josef@redhat.com>, linux-btrfs@vger.kernel.org
+To: Liu Bo <liubo2009@cn.fujitsu.com>
+Return-path: <linux-btrfs-owner@vger.kernel.org>
+In-Reply-To: <4F595C6C.9080706@cn.fujitsu.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Fri, Mar 09, 2012 at 12:08:12PM +0100, Jacek Luczak wrote:
-> For this one I've created also a report [1].
-> >
-> > so there is probably other problem in reservations and it just blew up during
-> > the unlink call.
+On Fri, Mar 09, 2012 at 09:27:08AM +0800, Liu Bo wrote:
+> This is not against the normal branch, so we must inform people that. :)
 > 
-> Could be as this came up after a longer time of throwing above WARN_ON.
-> 
-> I'm now cloning the Linus tree. Lets see if both will pop up on there.
+> Have a quick look, and I guess it is for "Btrfs: allow metadata blocks
+> larger than the page size", isn't it?
 
-The 3.3-rc6 should help in one case, with
-
-http://thread.gmane.org/gmane.comp.file-systems.btrfs/15268
-
-but I was able to reproduce the WARN_ON even with this patch, didn't get
-to debugging it again yet.
+yes it is.
 
 
 david

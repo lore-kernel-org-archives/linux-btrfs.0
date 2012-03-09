@@ -1,64 +1,51 @@
-From: Chris Mason <chris.mason@oracle.com>
-Subject: Re: getdents - ext4 vs btrfs performance
-Date: Fri, 9 Mar 2012 09:34:46 -0500
-Message-ID: <20120309143446.GO29510@shiny>
-References: <CADDYkjS5VJeYyHzqumazQ0qKg+HwA6GO+zYSJj7rkHNZFwjcoQ@mail.gmail.com>
- <alpine.LFD.2.00.1203091158430.4487@dhcp-27-109.brq.redhat.com>
-Mime-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Cc: Jacek Luczak <difrost.kernel@gmail.com>,
-	linux-ext4@vger.kernel.org,
-	linux-fsdevel <linux-fsdevel@vger.kernel.org>,
-	LKML <linux-kernel@vger.kernel.org>, linux-btrfs@vger.kernel.org
-To: Lukas Czerner <lczerner@redhat.com>
-Return-path: <linux-kernel-owner@vger.kernel.org>
-In-Reply-To: <alpine.LFD.2.00.1203091158430.4487@dhcp-27-109.brq.redhat.com>
+From: Josef Bacik <josef@redhat.com>
+Subject: [PATCH] Btrfs: only use the existing eb if it's count isn't 0
+Date: Fri,  9 Mar 2012 09:53:04 -0500
+Message-ID: <1331304784-2745-1-git-send-email-josef@redhat.com>
+To: linux-btrfs@vger.kernel.org
+Return-path: <linux-btrfs-owner@vger.kernel.org>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Fri, Mar 09, 2012 at 12:29:29PM +0100, Lukas Czerner wrote:
-> Hi,
-> 
-> I have created a simple script which creates a bunch of files with
-> random names in the directory and then performs operation like list,
-> tar, find, copy and remove. I have run it for ext4, xfs and btrfs with
-> the 4k size files. And the result is that ext4 pretty much dominates the
-> create times, tar times and find times. However copy times is a whole
-> different story unfortunately - is sucks badly.
-> 
-> Once we cross the mark of 320000 files in the directory (on my system) the
-> ext4 is becoming significantly worse in copy times. And that is where
-> the hash tree order in the directory entry really hit in.
-> 
-> Here is a simple graph:
-> 
-> http://people.redhat.com/lczerner/files/copy_benchmark.pdf
-> 
-> Here is a data where you can play with it:
-> 
-> https://www.google.com/fusiontables/DataSource?snapid=S425803zyTE
-> 
-> and here is the txt file for convenience:
-> 
-> http://people.redhat.com/lczerner/files/copy_data.txt
-> 
-> I have also run the correlation.py from Phillip Susi on directory with
-> 100000 4k files and indeed the name to block correlation in ext4 is pretty
-> much random :)
-> 
-> _ext4_
-> Name to inode correlation: 0.50002499975
-> Name to block correlation: 0.50002499975
-> Inode to block correlation: 0.9999900001
-> 
-> _xfs_
-> Name to inode correlation: 0.969660303397
-> Name to block correlation: 0.969660303397
-> Inode to block correlation: 1.0
-> 
-> 
-> So there definitely is a huge space for improvements in ext4.
+We can run into a problem where we find an eb for our existing page already on
+the radix tree but it has a ref count of 0.  It hasn't yet been removed by RCU
+yet so this can cause issues where we will use the EB after free.  So do
+atomic_inc_not_zero on the exists->refs and if it is zero just do
+synchronize_rcu() and try again.  We won't have to worry about new allocators
+coming in since they will block on the page lock at this point.  Thanks,
 
-Thanks Lukas, this is great data.  There is definitely room for btrfs to
-speed up in the other phases as well.
+Signed-off-by: Josef Bacik <josef@redhat.com>
+---
+ fs/btrfs/extent_io.c |   10 ++++++++--
+ 1 files changed, 8 insertions(+), 2 deletions(-)
 
--chris
+diff --git a/fs/btrfs/extent_io.c b/fs/btrfs/extent_io.c
+index 197595a..6d948eb 100644
+--- a/fs/btrfs/extent_io.c
++++ b/fs/btrfs/extent_io.c
+@@ -3732,7 +3732,7 @@ struct extent_buffer *alloc_extent_buffer(struct extent_io_tree *tree,
+ 	}
+ 	if (uptodate)
+ 		set_bit(EXTENT_BUFFER_UPTODATE, &eb->bflags);
+-
++again:
+ 	ret = radix_tree_preload(GFP_NOFS & ~__GFP_HIGHMEM);
+ 	if (ret)
+ 		goto free_eb;
+@@ -3742,7 +3742,13 @@ struct extent_buffer *alloc_extent_buffer(struct extent_io_tree *tree,
+ 	if (ret == -EEXIST) {
+ 		exists = radix_tree_lookup(&tree->buffer,
+ 						start >> PAGE_CACHE_SHIFT);
+-		atomic_inc(&exists->refs);
++		if (!atomic_inc_not_zero(&exists->refs)) {
++			spin_unlock(&tree->buffer_lock);
++			radix_tree_preload_end();
++			synchronize_rcu();
++			exists = NULL;
++			goto again;
++		}
+ 		spin_unlock(&tree->buffer_lock);
+ 		radix_tree_preload_end();
+ 		goto free_eb;
+-- 
+1.7.5.2
+

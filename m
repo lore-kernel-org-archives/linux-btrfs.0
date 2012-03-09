@@ -1,24 +1,36 @@
-From: David Sterba <dave@jikos.cz>
-Subject: Re: [PATCH] Btrfs: set page->private to the eb
-Date: Fri, 9 Mar 2012 14:43:48 +0100
-Message-ID: <20120309134348.GJ4334@twin.jikos.cz>
-References: <20120308183659.GA2648@dhcp231-144.rdu.redhat.com> <4F595C6C.9080706@cn.fujitsu.com>
-Reply-To: dave@jikos.cz
+From: Andor Daam <andor.daam@googlemail.com>
+Subject: ext3/4, btrfs, ocfs2: How to assure that cleancache_invalidate_fs is
+ called on every superblock free
+Date: Fri, 9 Mar 2012 14:40:22 +0100
+Message-ID: <CACQs63L2wfXKaD5sH6OOV+Bm_+37F3QOdt1QMFbWnB9AE4iCpA@mail.gmail.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Cc: Josef Bacik <josef@redhat.com>, linux-btrfs@vger.kernel.org
-To: Liu Bo <liubo2009@cn.fujitsu.com>
-Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <4F595C6C.9080706@cn.fujitsu.com>
+Content-Type: text/plain; charset=ISO-8859-1
+Cc: dan.magenheimer@oracle.com, fschmaus@gmail.com, linux-mm@kvack.org,
+	ilendir@googlemail.com, sjenning@linux.vnet.ibm.com,
+	konrad.wilk@oracle.com, i4passt@lists.informatik.uni-erlangen.de,
+	ngupta@vflare.org
+To: linux-fsdevel@vger.kernel.org, linux-btrfs@vger.kernel.org,
+	linux-ext4@vger.kernel.org, ocfs2-devel@oss.oracle.com
+Return-path: <linux-ext4-owner@vger.kernel.org>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Fri, Mar 09, 2012 at 09:27:08AM +0800, Liu Bo wrote:
-> This is not against the normal branch, so we must inform people that. :)
-> 
-> Have a quick look, and I guess it is for "Btrfs: allow metadata blocks
-> larger than the page size", isn't it?
+Hello,
 
-yes it is.
+Is it ever possible for a superblock for a mounted filesystem to be
+free'd without a previous call to unmount the filesystem?
+I need to be certain that the function cleancache_invalidate_fs, which
+is at the moment called by deactivate_locked_super (fs/super.c) [1],
+is called before every free on a superblock of cleancache-enabled
+filesystems.
+Is this already the case or are there situations in which this does not happen?
 
+It would be interesting to know this, as we are planning to have
+cleancache save pointers to superblocks of every mounted
+cleancache-enabled filesystem [2] and it would be fatal if a
+superblock is free'd without cleancache being notified.
 
-david
+Regards
+Andor
+
+[1] commit c515e1fd361c2a08a9c2eb139396ec30a4f477dc
+[2] http://marc.info/?l=linux-mm&m=133122649732669&w=2

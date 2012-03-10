@@ -1,36 +1,33 @@
-From: Chris Mason <chris.mason@oracle.com>
-Subject: [GIT PULL] Btrfs updates
-Date: Fri, 9 Mar 2012 21:01:50 -0500
-Message-ID: <20120310020150.GW29510@shiny>
+From: Ted Ts'o <tytso@mit.edu>
+Subject: Re: getdents - ext4 vs btrfs performance
+Date: Fri, 9 Mar 2012 22:52:02 -0500
+Message-ID: <20120310035202.GA5652@thunk.org>
+References: <CADDYkjS5VJeYyHzqumazQ0qKg+HwA6GO+zYSJj7rkHNZFwjcoQ@mail.gmail.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
-To: Linus Torvalds <torvalds@linux-foundation.org>,
-	linux-btrfs <linux-btrfs@vger.kernel.org>,
-	LKML <linux-kernel@vger.kernel.org>
-Return-path: <linux-kernel-owner@vger.kernel.org>
+Cc: linux-ext4@vger.kernel.org,
+	linux-fsdevel <linux-fsdevel@vger.kernel.org>,
+	LKML <linux-kernel@vger.kernel.org>, linux-btrfs@vger.kernel.org
+To: Jacek Luczak <difrost.kernel@gmail.com>
+Return-path: <linux-fsdevel-owner@vger.kernel.org>
+In-Reply-To: <CADDYkjS5VJeYyHzqumazQ0qKg+HwA6GO+zYSJj7rkHNZFwjcoQ@mail.gmail.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hi Linus,
+Hey Jacek,
 
-I have two additional and btrfs fixes in my for-linus branch
+I'm curious parameters of the set of directories on your production
+server.  On an ext4 file system, assuming you've copied the
+directories over, what are the result of this command pipeline when
+you are cd'ed into the top of the directory hierarchy of interest
+(your svn tree, as I recall)?
 
-git://git.kernel.org/pub/scm/linux/kernel/git/mason/linux-btrfs.git for-linus
+find . -type d -ls | awk '{print $7}' | sort -n | uniq -c
 
-One is a casting error that leads to memory corruption on i386 during
-scrub, and the other fixes a corner case in the backref walking code
-(also triggered by scrub).
+I'm just curious what the distribution of directories sizes are in
+practice for your use case...
 
-These are reviewed and tested.  I was holding off on this while trying
-to track enospc bug reports, but it isn't yet clear if those are
-regressions.  These are valid fixes either way.
+Thanks,
 
-Chris Mason (1) commits (+1/-1):
-    Btrfs: fix casting error in scrub reada code
+						- Ted
 
-Li Zefan (1) commits (+6/-2):
-    btrfs: fix locking issues in find_parent_nodes()
 
-Total: (2) commits (+7/-3)
- fs/btrfs/backref.c |    8 ++++++--
- fs/btrfs/reada.c   |    2 +-
- 2 files changed, 7 insertions(+), 3 deletions(-)

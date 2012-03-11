@@ -1,148 +1,86 @@
-From: Ted Ts'o <tytso@mit.edu>
-Subject: Re: getdents - ext4 vs btrfs performance
-Date: Sun, 11 Mar 2012 12:13:20 -0400
-Message-ID: <20120311161320.GC1048@thunk.org>
-References: <CADDYkjS5VJeYyHzqumazQ0qKg+HwA6GO+zYSJj7rkHNZFwjcoQ@mail.gmail.com>
- <alpine.LFD.2.00.1203091158430.4487@dhcp-27-109.brq.redhat.com>
- <BCAD47C1-B95A-4EDB-8EFB-3D4E325DE57D@whamcloud.com>
- <20120310044804.GB5652@thunk.org>
- <9709DE62-CE25-41C4-A33C-63336B51DC5E@whamcloud.com>
+From: Kamal Mostafa <kamal@canonical.com>
+Subject: Re: [PATCH 00/19] Fix filesystem freezing deadlocks
+Date: Sun, 11 Mar 2012 13:22:44 -0700
+Message-ID: <1331497364.4641.86.camel@fourier>
+References: <1330963277-26336-1-git-send-email-jack@suse.cz>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Cc: Lukas Czerner <lczerner@redhat.com>,
-	Jacek Luczak <difrost.kernel@gmail.com>,
-	"linux-ext4@vger.kernel.org" <linux-ext4@vger.kernel.org>,
-	linux-fsdevel <linux-fsdevel@vger.kernel.org>,
-	LKML <linux-kernel@vger.kernel.org>,
-	"linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
-To: Andreas Dilger <adilger@whamcloud.com>
+Content-Type: multipart/signed; micalg="pgp-sha256";
+	protocol="application/pgp-signature"; boundary="=-ZY9a+JFJ078GfM0ruD69"
+Cc: LKML <linux-kernel@vger.kernel.org>, linux-fsdevel@vger.kernel.org,
+	Al Viro <viro@ZenIV.linux.org.uk>,
+	Christoph Hellwig <hch@infradead.org>, dchinner@redhat.com,
+	sandeen@redhat.com, Alex Elder <elder@kernel.org>,
+	Anton Altaparmakov <anton@tuxera.com>, Ben Myers <bpm@sgi.com>,
+	Chris Mason <chris.mason@oracle.com>, cluster-devel@redhat.com,
+	"David S. Miller" <davem@davemloft.net>,
+	fuse-devel@lists.sourceforge.net,
+	"J. Bruce Fields" <bfields@fieldses.org>,
+	Joel Becker <jlbec@evilplan.org>,
+	KONISHI Ryusuke <konishi.ryusuke@lab.ntt.co.jp>,
+	linux-btrfs@vger.kernel.org, linux-ext4@vger.kernel.org,
+	linux-nfs@vger.kernel.org, linux-nilfs@vger.kernel.org,
+	linux-ntfs-dev@lists.sourceforge.net,
+	Mark Fasheh <mfasheh@suse.com>,
+	Miklos Szeredi <miklos@szeredi.hu>, ocfs2-devel@oss.oracle.com,
+	OGAWA Hirofumi <hirofumi@mail.parknet.co.jp>,
+	Steven Whitehouse <swhiteho@redhat.com>,
+	Th
+To: Jan Kara <jack@suse.cz>
 Return-path: <linux-ext4-owner@vger.kernel.org>
-In-Reply-To: <9709DE62-CE25-41C4-A33C-63336B51DC5E@whamcloud.com>
+In-Reply-To: <1330963277-26336-1-git-send-email-jack@suse.cz>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Sun, Mar 11, 2012 at 04:30:37AM -0600, Andreas Dilger wrote:
-> > if the userspace process could
-> > feed us the exact set of filenames that will be used in the directory,
-> > plus the exact file sizes for each of the file names...
-> 
-> Except POSIX doesn't allow anything close to this at all.  Something like
-> fallocate() for directories would at least give the kernel a hint about
-> how large the directory is, but fewer userspace tools have this information
-> than the file size (e.g. tar doesn't really store a "directory", just a
-> bunch of pathnames that happen to have largely the same components).
 
-Yes, this was purely a thought experiment idea (although if we could
-try to extend the interface if it really neted enough gains).  My
-point was that even if we could do this, we really are trading off
-write performance for read performance (since you would now be doing
-the extra seeking on the tar extraction phase).
+--=-ZY9a+JFJ078GfM0ruD69
+Content-Type: text/plain; charset="UTF-8"
+Content-Transfer-Encoding: quoted-printable
 
-Ultimately, while I believe it makes sense to optimize the "readdir +
-seek" case, I don't believe it makes sense to optimize the "copy out
-the directory using tar" benchmark --- since I believe this is much
-more of a benchmark workload than something that happens a huge amount
-in real life, and even for people who do backups (which unfortunately
-as we know is a too-small percentage of the ext4 user base), they
-generally will prefer than the "real" use case for the file system be
-fast rather than the backup phase, and in point of fact as the file
-system gets more fragmented, even if some file systems can offer
-perfect name -> block correlation, over time I'll bet their
-correlation breaks down and so ext4's disadvantage over those file
-systems will disappear in real life usages.  So I don't believe it
-makes that much sense to worry overly about the "name -> block"
-correlation for freshly formatted file systems.  It's a nice-to-have,
-but I really think that's more of a benchmark game than anything else.
+On Mon, 2012-03-05 at 17:00 +0100, Jan Kara wrote:
+> Hallelujah,
+>=20
+>   after a couple of weeks and several rewrites, here comes the third iter=
+ation
+> of my patches to improve filesystem freezing.  [...]
 
-> In the cases where size IS known in advance, or at least if the directory
-> is going to be large, an allocation policy like mine would essentially
-> "predict" where a uniformly distributed hash function will allocate the
-> inodes for better reading order.
+We've been testing this patch set at Canonical on the multipath failover
+SAN configuration where we originally encountered the freeze deadlock.
+We are happy to report that it does appear to fix the problem.  Thanks
+Jan!
 
-Well, yes; if we knew in advance how many files (roughly) would be
-stored in a directory, there are some optimizations we could do.  The
-simplest of which is preallocating the directory blocks so they are
-contiguous on disk.  I'm not pursuaded yet that the optimizations are
-worth the effort of trying to define a new interface and then trying
-to convince application programers to use a hypothetical interface
-extension *just* for this purpose, though.
+Please add the following endorsements for these patches (those actually
+exercised by our test case):  01, 02, 03, 06, 07, 08, 09, 10, 14, 18, 19
 
-> The unfortunate part is that this will help small directories, where the
-> problem is already largely hidden by readahead and the page cache, but it
-> doesn't help at all for huge directories that do not fit into cache.  That
-> is where my approach would do well, but the difficulty is in knowing at
-> create time how large the directory will be.
+BugLink: https://bugs.launchpad.net/bugs/897421
+Tested-by: Kamal Mostafa <kamal@canonical.com>
+Tested-by: Peter M. Petrakis <peter.petrakis@canonical.com>
+Tested-by: Dann Frazier <dann.frazier@canonical.com>
+Tested-by: Massimo Morana <massimo.morana@canonical.com>
 
-Well, my goal in proposing this optimization is that helps for the
-"medium size" directories in the cold cache case.  The ext4 user who
-first kicked off this thread was using his file system for an SVN
-server, as I recall.  I could easily believe that he has thousands of
-files; maybe even tens of thousands of files in a directory.  But that
-probably still fits in 256k, or at best 512k worth of directory blocks.
+ -Kamal
 
-It definitely won't help for the really lage directories, yes; but how
-common are they?  The most common case I can think of is squid caches,
-but you can configure a larger number of 1st and 2nd level
-subdirectories to keep the actual directory size smaller.
 
-> > for directories which are less than
-> > this threshold size, the entire directory is sucked in after the first
-> > readdir() after an opendir() or rewinddir().  The directory contents
-> > are then sorted by inode number (or loaded into an rbtree ordered by
-> > inode number), and returned back to userspace in the inode order via
-> > readdir().  The directory contents will be released on a closedir() or
-> > rewinddir().
-> 
-> What would the telldir() cookie be in this case?  The inode number, or
-> the file descriptor?  What happens if the directory size crosses the
-> threshold while the cache is in use?  I guess in that case the cache
-> could still be used (according to POSIX) because readdir() doesn't need
-> to report entries added after it started.
+--=-ZY9a+JFJ078GfM0ruD69
+Content-Type: application/pgp-signature; name="signature.asc"
+Content-Description: This is a digitally signed message part
+Content-Transfer-Encoding: 7bit
 
-The telldir() cookie can simply be an ordinal -- so "7" means the 7th
-directory entry in the rbtree.  And all we need to do, which obeys
-POSIX as you've noted, is that we instantiate the rbtree during the
-first readdir() after an opendir() or rewinddir(), and free the old
-rbtree() when we get the rewinddir(), reach the end of the directory
-stream, or get the closedir().
+-----BEGIN PGP SIGNATURE-----
+Version: GnuPG v1.4.11 (GNU/Linux)
 
-> > 3) If we want do to better than that, we could create new flag
-> > O_NOTELLDIR, which can be set via fcntl.  (This way programs can use
-> > do something like "dir = opendir(..); fd = dirfd(dir); fcntl(fd,
-> > SETFL, O_NOTELLDIR);").  For files who know they don't need to use
-> > telldir/seekdir, they can set this flag, which will allow the above
-> > optimization to be used on large files.
-> 
-> Probably a bit messy.  Since telldir() is rarely used outside NFS (AFAIK,
-> though I recall something dumb happening in GNU libc at one point that
-> was doing a telldir() and seekdir() for every entry) we could assume no
-> telldir() users until it actually was used on the filesystem, and that
-> could set a hint in the superblock EXT2_FLAGS section.  The only userspace
-> programs I could find that call telldir() are smbd and nmbd (and related
-> tools) and perl (not sure when or why).
+iQIcBAABCAAGBQJPXQmUAAoJEHqwmdxYrXhZHr4P/jsrFBiULwoouLaGlr1gLx1D
+Tk4Die/IiVlO8Vj+ADKTySFKNjk1r2PiNwUKCezri3PeJqFgCHaeURemY5rurPMA
+Qms6XFaKA+8BxtawR2ZdgLodgCnppx1pamzFsoLkd5TnluRdUxlBtvro+B8ID2SO
+6pkeAzYybiI7tOU6VDDSB324DKndcA6YnUQQsATwJUZ3qjf8bdHX5YCc+Il7K9Fe
+BV6EMCdtNVCYwJvYMnhU/kDP2wAEP9hqF5ajBr+0+Q6WPs2/OQvOrr9ctGNyCZBo
+pTBHIFHYRg3g8wlKvsSSisvVZlBAwdDdxXkhk7zfkYEngjwoqzWIqT0qvavBJicM
+h5MoKwC/Zke6xNIPFwAV/AC+vNHkOt5QgV2GhAdphiNQFsgAbv/AY5SswM6JFpdk
+P6WETGa4bMBpLcTHGfxCvO9KevQ9gnQWXHzsbYz0Wl3YYEsU4aBFPICQSf7/amNR
+X9WvhURZwfLSkjOMHee0Lu/qEXrEYNT62Fj+bRKyZkUM0rabU44HBmJHE10lTXlY
+xWKDthAHk+kQPDMI/76jpKDS7M4rE+ohTxM9nQBio4W8v4MS/LHPB84BsHeZFl8v
+4SGJAC9y6UFDamdqnBUDhPL8iLLU77dL+cHcvEdopsLrulRC/6bGkH8xE/5IJjZo
+LXTCfQ+fy3utvK5ooIR4
+=Lndm
+-----END PGP SIGNATURE-----
 
-By the time a process uses telldir(), we're midway through a readdir()
-stream, and so by that point it's too late to switch back to a
-seekdir-friendly order.  So what do we do at that point?  If we
-continue returning directory entries where we read in each directory
-256kb at a time, sorting by inode number, and then returning dirents
-in inode number order, then anytime there was a telldir() during a
-256kb chuck, we wouldn't be able to discard that rbtree, but rather we
-would have to keep it in memory until the next rewinddir().  So a
-process which opens a large directory(), and then calls telldir() a
-huge number of times could end up pinning a large amount of kernel
-memory.
+--=-ZY9a+JFJ078GfM0ruD69--
 
-We could, of course, set some kind of resource limit on this, and if a
-process behaves too badly by calling telldir in a way that it has
-pinned too much kernel memory, we could potentially kill the process.
-We could then tell application programmers that if they really want to
-use telldir() a huge amount, they need to tell us in advance via some
-kind of process flag.  That is, we could default to being
-telldir-unfriendly instead of defaulting to telldir-friendly.  If we
-really think it's only Samba and Perl, and that we can convince them
-to give us this hint, then that we might get away with it.
-
-I had been assuming though that we would have to default to
-telldir-friendly, which is why I suggested the O_NOTELLDIR flag.
-
-		  	       	 	   - Ted

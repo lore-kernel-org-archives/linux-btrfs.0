@@ -1,83 +1,108 @@
-From: Anand Jain <Anand.Jain@oracle.com>
-Subject: Re: kernel BUG at fs/btrfs/transaction.c:1337!
-Date: Mon, 12 Mar 2012 15:09:46 +0800
-Message-ID: <4F5DA13A.7010506@oracle.com>
-References: <CAMtaSwQUG2ovM8Yv_2+kLNMQbtMzwDq1pgd9PsMC3xYn2b6xmw@mail.gmail.com>
+From: Li Zefan <lizf@cn.fujitsu.com>
+Subject: [PATCH 1/2] Btrfs: make clear_extent_bit() always return 0 on success
+Date: Mon, 12 Mar 2012 16:39:28 +0800
+Message-ID: <4F5DB640.3010102@cn.fujitsu.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=ISO-8859-1; format=flowed
-Cc: btrfs <linux-btrfs@vger.kernel.org>
-To: qasdfgtyuiop <qasdfgtyuiop@gmail.com>
+Content-Type: text/plain; charset=UTF-8
+To: "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <CAMtaSwQUG2ovM8Yv_2+kLNMQbtMzwDq1pgd9PsMC3xYn2b6xmw@mail.gmail.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
+Currently it returns a set of bits that were cleared, but this return
+value is not used at all.
 
-  could you also post few lines of dmesg logged _before_ the below logs.
+Moreover it doesn't seem to be useful, because we may clear the bits
+of a few extent_states, but only the cleared bits of last one is
+returned.
 
-Thanks,  -Anand
+Signed-off-by: Li Zefan <lizf@cn.fujitsu.com>
+---
+ fs/btrfs/extent_io.c |   19 +++++++------------
+ 1 files changed, 7 insertions(+), 12 deletions(-)
 
-
-On Saturday 10,March,2012 06:26 PM, qasdfgtyuiop wrote:
-> [11558.527680] ------------[ cut here ]------------
-> [11558.527708] kernel BUG at fs/btrfs/transaction.c:1337!
-> [11558.527730] invalid opcode: 0000 [#1] PREEMPT SMP
-> [11558.527764] CPU 1
-> [11558.527776] Modules linked in: loop nls_cp437 vfat fat dm_mod xfs
-> exportfs jfs usb_storage uas fuse ext4 jbd2 mbcache snd_hda_codec_hdmi
-> snd_hda_codec_realtek arc4 iwlwifi snd_hda_intel snd_hda_codec
-> uvcvideo snd_hwdep nouveau iTCO_wdt i2c_i801 jmb38x_ms broadcom
-> snd_pcm i915 videodev tg3 sdhci_pci v4l2_compat_ioctl32 mac80211 sdhci
-> ttm i2c_algo_bit snd_page_alloc intel_agp snd_timer mxm_wmi serio_raw
-> drm_kms_helper btusb media bluetooth drm psmouse evdev joydev pcspkr
-> crc16 mei(C) iTCO_vendor_support snd libphy intel_ips memstick
-> mmc_core cfg80211 soundcore intel_gtt i2c_core thermal battery
-> ideapad_laptop sparse_keymap rfkill wmi ac video processor button
-> btrfs crc32c libcrc32c zlib_deflate sd_mod sr_mod cdrom usbhid hid
-> ahci libahci libata scsi_mod ehci_hcd usbcore usb_common
-> [11558.528323]
-> [11558.528333] Pid: 125, comm: btrfs-transacti Tainted: G         C
-> 3.2.9-1-ARCH #1 LENOVO                           IdeaPad Y460    /KL2
-> [11558.528389] RIP: 0010:[<ffffffffa014c879>]  [<ffffffffa014c879>]
-> btrfs_commit_transaction+0x879/0x880 [btrfs]
-> [11558.528439] RSP: 0018:ffff8801af1dfde0  EFLAGS: 00010282
-> [11558.528460] RAX: 00000000fffffffb RBX: ffff8801afa91690 RCX: 0000000000000000
-> [11558.528484] RDX: ffff8801af1dfce8 RSI: 0000000003c10000 RDI: ffff8801afa916f0
-> [11558.528510] RBP: ffff8801af1dfe70 R08: 0000000000002000 R09: 0000000000000000
-> [11558.528536] R10: 0000000000000000 R11: 0000000000000001 R12: ffff8801b13ab000
-> [11558.528561] R13: ffff8801afa90c18 R14: ffff8801afa91708 R15: 0000000000000218
-> [11558.528586] FS:  0000000000000000(0000) GS:ffff8801bbc80000(0000)
-> knlGS:0000000000000000
-> [11558.528616] CS:  0010 DS: 0000 ES: 0000 CR0: 000000008005003b
-> [11558.528637] CR2: 00007fb7899244e8 CR3: 0000000001805000 CR4: 00000000000006e0
-> [11558.528663] DR0: 0000000000000000 DR1: 0000000000000000 DR2: 0000000000000000
-> [11558.528688] DR3: 0000000000000000 DR6: 00000000ffff0ff0 DR7: 0000000000000400
-> [11558.528714] Process btrfs-transacti (pid: 125, threadinfo
-> ffff8801af1de000, task ffff8801aff2ce60)
-> [11558.528744] Stack:
-> [11558.528755]  ffff8801af1dfe10 0000000000000000 0000000000000000
-> ffff8801aff2ce60
-> [11558.528791]  ffffffff81088d80 ffff8801af1dfe08 ffff8801af1dfe08
-> ffffffffa014ccd4
-> [11558.528827]  0000000000000000 00000000af2b0560 ffff8801aff2ce60
-> ffff8801b13ab000
-> [11558.528863] Call Trace:
-> [11558.528879]  [<ffffffff81088d80>] ? abort_exclusive_wait+0xb0/0xb0
-> [11558.528910]  [<ffffffffa014ccd4>] ? start_transaction+0x94/0x2b0 [btrfs]
-> [11558.528940]  [<ffffffffa0144e6d>] transaction_kthread+0x26d/0x290 [btrfs]
-> [11558.528971]  [<ffffffffa0144c00>] ? btrfs_congested_fn+0xd0/0xd0 [btrfs]
-> [11558.528996]  [<ffffffff8108843c>] kthread+0x8c/0xa0
-> [11558.529018]  [<ffffffff8145feb4>] kernel_thread_helper+0x4/0x10
-> [11558.529040]  [<ffffffff810883b0>] ? kthread_worker_fn+0x190/0x190
-> [11558.529064]  [<ffffffff8145feb0>] ? gs_change+0x13/0x13
-> [11558.529083] Code: ff ff e9 44 f9 ff ff 0f 0b 0f 0b 0f 0b be fc 04
-> 00 00 48 c7 c7 fa 00 1a a0 e8 84 98 f1 e0 e9 3c fb ff ff 0f 0b 0f 0b
-> 0f 0b 0f 0b<0f>  0b 0f 0b 0f 1f 00 55 48 89 e5 53 48 83 ec 08 66 66 66
-> 66 90
-> [11558.529389] RIP  [<ffffffffa014c879>]
-> btrfs_commit_transaction+0x879/0x880 [btrfs]
-> [11558.529425]  RSP<ffff8801af1dfde0>
-> [11558.592012] ---[ end trace e0456c287e012690 ]---
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+diff --git a/fs/btrfs/extent_io.c b/fs/btrfs/extent_io.c
+index a55fbe6..c968c95 100644
+--- a/fs/btrfs/extent_io.c
++++ b/fs/btrfs/extent_io.c
+@@ -394,18 +394,16 @@ static int split_state(struct extent_io_tree *tree, struct extent_state *orig,
+ 
+ /*
+  * utility function to clear some bits in an extent state struct.
+- * it will optionally wake up any one waiting on this state (wake == 1), or
+- * forcibly remove the state from the tree (delete == 1).
++ * it will optionally wake up any one waiting on this state (wake == 1)
+  *
+  * If no bits are set on the state struct after clearing things, the
+  * struct is freed and removed from the tree
+  */
+-static int clear_state_bit(struct extent_io_tree *tree,
++static void clear_state_bit(struct extent_io_tree *tree,
+ 			    struct extent_state *state,
+ 			    int *bits, int wake)
+ {
+ 	int bits_to_clear = *bits & ~EXTENT_CTLBITS;
+-	int ret = state->state & bits_to_clear;
+ 
+ 	if ((bits_to_clear & EXTENT_DIRTY) && (state->state & EXTENT_DIRTY)) {
+ 		u64 range = state->end - state->start + 1;
+@@ -427,7 +425,6 @@ static int clear_state_bit(struct extent_io_tree *tree,
+ 	} else {
+ 		merge_state(tree, state);
+ 	}
+-	return ret;
+ }
+ 
+ static struct extent_state *
+@@ -449,8 +446,7 @@ alloc_extent_state_atomic(struct extent_state *prealloc)
+  *
+  * the range [start, end] is inclusive.
+  *
+- * This takes the tree lock, and returns < 0 on error, > 0 if any of the
+- * bits were already set, or zero if none of the bits were already set.
++ * This takes the tree lock, and returns < 0 on error.
+  */
+ int clear_extent_bit(struct extent_io_tree *tree, u64 start, u64 end,
+ 		     int bits, int wake, int delete,
+@@ -464,7 +460,6 @@ int clear_extent_bit(struct extent_io_tree *tree, u64 start, u64 end,
+ 	struct rb_node *node;
+ 	u64 last_end;
+ 	int err;
+-	int set = 0;
+ 	int clear = 0;
+ 
+ 	if (delete)
+@@ -547,7 +542,7 @@ hit_next:
+ 		if (err)
+ 			goto out;
+ 		if (state->end <= end) {
+-			set |= clear_state_bit(tree, state, &bits, wake);
++			clear_state_bit(tree, state, &bits, wake);
+ 			if (last_end == (u64)-1)
+ 				goto out;
+ 			start = last_end + 1;
+@@ -568,13 +563,13 @@ hit_next:
+ 		if (wake)
+ 			wake_up(&state->wq);
+ 
+-		set |= clear_state_bit(tree, prealloc, &bits, wake);
++		clear_state_bit(tree, prealloc, &bits, wake);
+ 
+ 		prealloc = NULL;
+ 		goto out;
+ 	}
+ 
+-	set |= clear_state_bit(tree, state, &bits, wake);
++	clear_state_bit(tree, state, &bits, wake);
+ next:
+ 	if (last_end == (u64)-1)
+ 		goto out;
+@@ -591,7 +586,7 @@ out:
+ 	if (prealloc)
+ 		free_extent_state(prealloc);
+ 
+-	return set;
++	return 0;
+ 
+ search_again:
+ 	if (start > end)
+-- 1.7.3.1 

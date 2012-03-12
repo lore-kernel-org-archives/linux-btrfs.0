@@ -1,86 +1,83 @@
-From: Kamal Mostafa <kamal@canonical.com>
-Subject: Re: [PATCH 00/19] Fix filesystem freezing deadlocks
-Date: Sun, 11 Mar 2012 13:22:44 -0700
-Message-ID: <1331497364.4641.86.camel@fourier>
-References: <1330963277-26336-1-git-send-email-jack@suse.cz>
+From: Anand Jain <Anand.Jain@oracle.com>
+Subject: Re: kernel BUG at fs/btrfs/transaction.c:1337!
+Date: Mon, 12 Mar 2012 15:09:46 +0800
+Message-ID: <4F5DA13A.7010506@oracle.com>
+References: <CAMtaSwQUG2ovM8Yv_2+kLNMQbtMzwDq1pgd9PsMC3xYn2b6xmw@mail.gmail.com>
 Mime-Version: 1.0
-Content-Type: multipart/signed; micalg="pgp-sha256";
-	protocol="application/pgp-signature"; boundary="=-ZY9a+JFJ078GfM0ruD69"
-Cc: LKML <linux-kernel@vger.kernel.org>, linux-fsdevel@vger.kernel.org,
-	Al Viro <viro@ZenIV.linux.org.uk>,
-	Christoph Hellwig <hch@infradead.org>, dchinner@redhat.com,
-	sandeen@redhat.com, Alex Elder <elder@kernel.org>,
-	Anton Altaparmakov <anton@tuxera.com>, Ben Myers <bpm@sgi.com>,
-	Chris Mason <chris.mason@oracle.com>, cluster-devel@redhat.com,
-	"David S. Miller" <davem@davemloft.net>,
-	fuse-devel@lists.sourceforge.net,
-	"J. Bruce Fields" <bfields@fieldses.org>,
-	Joel Becker <jlbec@evilplan.org>,
-	KONISHI Ryusuke <konishi.ryusuke@lab.ntt.co.jp>,
-	linux-btrfs@vger.kernel.org, linux-ext4@vger.kernel.org,
-	linux-nfs@vger.kernel.org, linux-nilfs@vger.kernel.org,
-	linux-ntfs-dev@lists.sourceforge.net,
-	Mark Fasheh <mfasheh@suse.com>,
-	Miklos Szeredi <miklos@szeredi.hu>, ocfs2-devel@oss.oracle.com,
-	OGAWA Hirofumi <hirofumi@mail.parknet.co.jp>,
-	Steven Whitehouse <swhiteho@redhat.com>,
-	Th
-To: Jan Kara <jack@suse.cz>
-Return-path: <linux-ext4-owner@vger.kernel.org>
-In-Reply-To: <1330963277-26336-1-git-send-email-jack@suse.cz>
+Content-Type: text/plain; charset=ISO-8859-1; format=flowed
+Cc: btrfs <linux-btrfs@vger.kernel.org>
+To: qasdfgtyuiop <qasdfgtyuiop@gmail.com>
+Return-path: <linux-btrfs-owner@vger.kernel.org>
+In-Reply-To: <CAMtaSwQUG2ovM8Yv_2+kLNMQbtMzwDq1pgd9PsMC3xYn2b6xmw@mail.gmail.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
 
---=-ZY9a+JFJ078GfM0ruD69
-Content-Type: text/plain; charset="UTF-8"
-Content-Transfer-Encoding: quoted-printable
+  could you also post few lines of dmesg logged _before_ the below logs.
 
-On Mon, 2012-03-05 at 17:00 +0100, Jan Kara wrote:
-> Hallelujah,
->=20
->   after a couple of weeks and several rewrites, here comes the third iter=
-ation
-> of my patches to improve filesystem freezing.  [...]
-
-We've been testing this patch set at Canonical on the multipath failover
-SAN configuration where we originally encountered the freeze deadlock.
-We are happy to report that it does appear to fix the problem.  Thanks
-Jan!
-
-Please add the following endorsements for these patches (those actually
-exercised by our test case):  01, 02, 03, 06, 07, 08, 09, 10, 14, 18, 19
-
-BugLink: https://bugs.launchpad.net/bugs/897421
-Tested-by: Kamal Mostafa <kamal@canonical.com>
-Tested-by: Peter M. Petrakis <peter.petrakis@canonical.com>
-Tested-by: Dann Frazier <dann.frazier@canonical.com>
-Tested-by: Massimo Morana <massimo.morana@canonical.com>
-
- -Kamal
+Thanks,  -Anand
 
 
---=-ZY9a+JFJ078GfM0ruD69
-Content-Type: application/pgp-signature; name="signature.asc"
-Content-Description: This is a digitally signed message part
-Content-Transfer-Encoding: 7bit
-
------BEGIN PGP SIGNATURE-----
-Version: GnuPG v1.4.11 (GNU/Linux)
-
-iQIcBAABCAAGBQJPXQmUAAoJEHqwmdxYrXhZHr4P/jsrFBiULwoouLaGlr1gLx1D
-Tk4Die/IiVlO8Vj+ADKTySFKNjk1r2PiNwUKCezri3PeJqFgCHaeURemY5rurPMA
-Qms6XFaKA+8BxtawR2ZdgLodgCnppx1pamzFsoLkd5TnluRdUxlBtvro+B8ID2SO
-6pkeAzYybiI7tOU6VDDSB324DKndcA6YnUQQsATwJUZ3qjf8bdHX5YCc+Il7K9Fe
-BV6EMCdtNVCYwJvYMnhU/kDP2wAEP9hqF5ajBr+0+Q6WPs2/OQvOrr9ctGNyCZBo
-pTBHIFHYRg3g8wlKvsSSisvVZlBAwdDdxXkhk7zfkYEngjwoqzWIqT0qvavBJicM
-h5MoKwC/Zke6xNIPFwAV/AC+vNHkOt5QgV2GhAdphiNQFsgAbv/AY5SswM6JFpdk
-P6WETGa4bMBpLcTHGfxCvO9KevQ9gnQWXHzsbYz0Wl3YYEsU4aBFPICQSf7/amNR
-X9WvhURZwfLSkjOMHee0Lu/qEXrEYNT62Fj+bRKyZkUM0rabU44HBmJHE10lTXlY
-xWKDthAHk+kQPDMI/76jpKDS7M4rE+ohTxM9nQBio4W8v4MS/LHPB84BsHeZFl8v
-4SGJAC9y6UFDamdqnBUDhPL8iLLU77dL+cHcvEdopsLrulRC/6bGkH8xE/5IJjZo
-LXTCfQ+fy3utvK5ooIR4
-=Lndm
------END PGP SIGNATURE-----
-
---=-ZY9a+JFJ078GfM0ruD69--
-
+On Saturday 10,March,2012 06:26 PM, qasdfgtyuiop wrote:
+> [11558.527680] ------------[ cut here ]------------
+> [11558.527708] kernel BUG at fs/btrfs/transaction.c:1337!
+> [11558.527730] invalid opcode: 0000 [#1] PREEMPT SMP
+> [11558.527764] CPU 1
+> [11558.527776] Modules linked in: loop nls_cp437 vfat fat dm_mod xfs
+> exportfs jfs usb_storage uas fuse ext4 jbd2 mbcache snd_hda_codec_hdmi
+> snd_hda_codec_realtek arc4 iwlwifi snd_hda_intel snd_hda_codec
+> uvcvideo snd_hwdep nouveau iTCO_wdt i2c_i801 jmb38x_ms broadcom
+> snd_pcm i915 videodev tg3 sdhci_pci v4l2_compat_ioctl32 mac80211 sdhci
+> ttm i2c_algo_bit snd_page_alloc intel_agp snd_timer mxm_wmi serio_raw
+> drm_kms_helper btusb media bluetooth drm psmouse evdev joydev pcspkr
+> crc16 mei(C) iTCO_vendor_support snd libphy intel_ips memstick
+> mmc_core cfg80211 soundcore intel_gtt i2c_core thermal battery
+> ideapad_laptop sparse_keymap rfkill wmi ac video processor button
+> btrfs crc32c libcrc32c zlib_deflate sd_mod sr_mod cdrom usbhid hid
+> ahci libahci libata scsi_mod ehci_hcd usbcore usb_common
+> [11558.528323]
+> [11558.528333] Pid: 125, comm: btrfs-transacti Tainted: G         C
+> 3.2.9-1-ARCH #1 LENOVO                           IdeaPad Y460    /KL2
+> [11558.528389] RIP: 0010:[<ffffffffa014c879>]  [<ffffffffa014c879>]
+> btrfs_commit_transaction+0x879/0x880 [btrfs]
+> [11558.528439] RSP: 0018:ffff8801af1dfde0  EFLAGS: 00010282
+> [11558.528460] RAX: 00000000fffffffb RBX: ffff8801afa91690 RCX: 0000000000000000
+> [11558.528484] RDX: ffff8801af1dfce8 RSI: 0000000003c10000 RDI: ffff8801afa916f0
+> [11558.528510] RBP: ffff8801af1dfe70 R08: 0000000000002000 R09: 0000000000000000
+> [11558.528536] R10: 0000000000000000 R11: 0000000000000001 R12: ffff8801b13ab000
+> [11558.528561] R13: ffff8801afa90c18 R14: ffff8801afa91708 R15: 0000000000000218
+> [11558.528586] FS:  0000000000000000(0000) GS:ffff8801bbc80000(0000)
+> knlGS:0000000000000000
+> [11558.528616] CS:  0010 DS: 0000 ES: 0000 CR0: 000000008005003b
+> [11558.528637] CR2: 00007fb7899244e8 CR3: 0000000001805000 CR4: 00000000000006e0
+> [11558.528663] DR0: 0000000000000000 DR1: 0000000000000000 DR2: 0000000000000000
+> [11558.528688] DR3: 0000000000000000 DR6: 00000000ffff0ff0 DR7: 0000000000000400
+> [11558.528714] Process btrfs-transacti (pid: 125, threadinfo
+> ffff8801af1de000, task ffff8801aff2ce60)
+> [11558.528744] Stack:
+> [11558.528755]  ffff8801af1dfe10 0000000000000000 0000000000000000
+> ffff8801aff2ce60
+> [11558.528791]  ffffffff81088d80 ffff8801af1dfe08 ffff8801af1dfe08
+> ffffffffa014ccd4
+> [11558.528827]  0000000000000000 00000000af2b0560 ffff8801aff2ce60
+> ffff8801b13ab000
+> [11558.528863] Call Trace:
+> [11558.528879]  [<ffffffff81088d80>] ? abort_exclusive_wait+0xb0/0xb0
+> [11558.528910]  [<ffffffffa014ccd4>] ? start_transaction+0x94/0x2b0 [btrfs]
+> [11558.528940]  [<ffffffffa0144e6d>] transaction_kthread+0x26d/0x290 [btrfs]
+> [11558.528971]  [<ffffffffa0144c00>] ? btrfs_congested_fn+0xd0/0xd0 [btrfs]
+> [11558.528996]  [<ffffffff8108843c>] kthread+0x8c/0xa0
+> [11558.529018]  [<ffffffff8145feb4>] kernel_thread_helper+0x4/0x10
+> [11558.529040]  [<ffffffff810883b0>] ? kthread_worker_fn+0x190/0x190
+> [11558.529064]  [<ffffffff8145feb0>] ? gs_change+0x13/0x13
+> [11558.529083] Code: ff ff e9 44 f9 ff ff 0f 0b 0f 0b 0f 0b be fc 04
+> 00 00 48 c7 c7 fa 00 1a a0 e8 84 98 f1 e0 e9 3c fb ff ff 0f 0b 0f 0b
+> 0f 0b 0f 0b<0f>  0b 0f 0b 0f 1f 00 55 48 89 e5 53 48 83 ec 08 66 66 66
+> 66 90
+> [11558.529389] RIP  [<ffffffffa014c879>]
+> btrfs_commit_transaction+0x879/0x880 [btrfs]
+> [11558.529425]  RSP<ffff8801af1dfde0>
+> [11558.592012] ---[ end trace e0456c287e012690 ]---
+> --
+> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
+> the body of a message to majordomo@vger.kernel.org
+> More majordomo info at  http://vger.kernel.org/majordomo-info.html

@@ -1,36 +1,54 @@
-From: Avi Kivity <avi@redhat.com>
-Subject: Re: btrfs oops (autodefrag related?)
-Date: Tue, 13 Mar 2012 10:57:59 +0200
-Message-ID: <4F5F0C17.8030307@redhat.com>
-References: <4F5E4F66.2030701@redhat.com> <20120313000435.GH29393@shiny>
+From: Jan Schmidt <list.btrfs@jan-o-sch.net>
+Subject: Re: [PATCH] Btrfs: convert refs and pages_reading to ints
+Date: Tue, 13 Mar 2012 10:51:04 +0100
+Message-ID: <4F5F1888.7060901@jan-o-sch.net>
+References: <1331309197-5389-1-git-send-email-josef@redhat.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset=ISO-8859-1
-To: Chris Mason <chris.mason@oracle.com>, linux-btrfs@vger.kernel.org
+Cc: linux-btrfs@vger.kernel.org
+To: Josef Bacik <josef@redhat.com>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <20120313000435.GH29393@shiny>
+In-Reply-To: <1331309197-5389-1-git-send-email-josef@redhat.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 03/13/2012 02:04 AM, Chris Mason wrote:
-> On Mon, Mar 12, 2012 at 09:32:54PM +0200, Avi Kivity wrote:
-> > Because I'm such a btrfs fanboi I'm running btrfs on my /, all past
-> > experience notwithstanding.  In an attempt to recover some performance,
-> > I enabled autodefrag, and got this in return:
->
-> Hi Avi,
->
-> This one was fixed in the 3.3 series.  You can pull from my for-linus
-> repo for a commit against 3.2.
->
-> git://git.kernel.org/pub/scm/linux/kernel/git/mason/linux-btrfs.git for-linus
->
-> The individual fix is here:
->
-> http://git.kernel.org/?p=linux/kernel/git/mason/linux-btrfs.git;a=commit;h=87826df0ec36fc28884b4ddbb3f3af41c4c2008f
->
->
+Hi Josef,
 
-Thanks.  Suggest queueing it for -stable.
+On 09.03.2012 17:06, Josef Bacik wrote:
+> I need to be able to safely deal with refs in my next patch, so convert refs and
 
--- 
-error compiling committee.c: too many arguments to function
+Did I miss your next patch?
 
+> pages_reading to ints and introduce an eb_lock spinlock so I can use this to
+> safely manipulate the refs count when marking eb's as stale.  Thanks,
+
+I don't see what makes this version safer, are you synchronizing
+eb->refs with eb->pages_reading? This would be strange, because
+eb->pages_reading sounds like it could never be != 0 when eb->refs goes
+down to 0. Could you extend your description a bit, please?
+
+> diff --git a/fs/btrfs/extent_io.h b/fs/btrfs/extent_io.h
+> index f030a2d..d11e872 100644
+> --- a/fs/btrfs/extent_io.h
+> +++ b/fs/btrfs/extent_io.h
+> @@ -128,8 +128,9 @@ struct extent_buffer {
+>  	unsigned long map_len;
+>  	unsigned long bflags;
+>  	struct extent_io_tree *tree;
+> -	atomic_t refs;
+> -	atomic_t pages_reading;
+> +	spinlock_t eb_lock;
+
+If you need that one, then please use another name for this. We already
+have the extent buffer's rwlock, it'll only be a matter of time until
+somebody (me) confuses eb->lock and eb->eb_lock. I'd like something
+representing its purpose (which I didn't catch yet). eb->refs_lock or
+eb->pages_lock might be appropriate.
+
+> +	int refs;
+> +	int pages_reading;
+>  	struct list_head leak_list;
+>  	struct rcu_head rcu_head;
+>  	pid_t lock_owner;
+
+Thanks,
+-Jan

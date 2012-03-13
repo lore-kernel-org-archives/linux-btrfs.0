@@ -1,386 +1,126 @@
-From: Josef Bacik <josef@redhat.com>
-Subject: [PATCH] Btrfs: introduce free_extent_buffer_stale
-Date: Tue, 13 Mar 2012 09:51:30 -0400
-Message-ID: <20120313135130.GC5023@dhcp231-144.rdu.redhat.com>
+From: Anand Jain <Anand.Jain@oracle.com>
+Subject: Re: kernel BUG at fs/btrfs/transaction.c:1337!
+Date: Tue, 13 Mar 2012 22:45:06 +0800
+Message-ID: <4F5F5D72.80706@oracle.com>
+References: <CAMtaSwQUG2ovM8Yv_2+kLNMQbtMzwDq1pgd9PsMC3xYn2b6xmw@mail.gmail.com> <4F5DA13A.7010506@oracle.com> <CAMtaSwThPed_GjJOGFVYhHjBiCCVNc-KAe6XsvOLpZ0dRwpYfw@mail.gmail.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-To: linux-btrfs@vger.kernel.org
+Content-Type: text/plain; charset=ISO-8859-1; format=flowed
+Cc: btrfs <linux-btrfs@vger.kernel.org>
+To: qasdfgtyuiop <qasdfgtyuiop@gmail.com>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
+In-Reply-To: <CAMtaSwThPed_GjJOGFVYhHjBiCCVNc-KAe6XsvOLpZ0dRwpYfw@mail.gmail.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Because btrfs cow's we can end up with extent buffers that are no longer
-necessary just sitting around in memory.  So instead of evicting these pages, we
-could end up evicting things we actually care about.  Thus we have
-free_extent_buffer_stale for use when we are freeing tree blocks.  This will
-make it so that the ref for the eb being in the radix tree is dropped as soon as
-possible and then is freed when the refcount hits 0 instead of waiting to be
-released by releasepage.  Thanks,
 
-Signed-off-by: Josef Bacik <josef@redhat.com>
----
- fs/btrfs/ctree.c       |   31 +++++++---
- fs/btrfs/disk-io.c     |   14 +----
- fs/btrfs/extent-tree.c |    4 -
- fs/btrfs/extent_io.c   |  157 ++++++++++++++++++++++++++++++++++++++----------
- fs/btrfs/extent_io.h   |    5 +-
- 5 files changed, 152 insertions(+), 59 deletions(-)
 
-diff --git a/fs/btrfs/ctree.c b/fs/btrfs/ctree.c
-index 0639a55..fbf0f12 100644
---- a/fs/btrfs/ctree.c
-+++ b/fs/btrfs/ctree.c
-@@ -156,10 +156,23 @@ struct extent_buffer *btrfs_root_node(struct btrfs_root *root)
- {
- 	struct extent_buffer *eb;
- 
--	rcu_read_lock();
--	eb = rcu_dereference(root->node);
--	extent_buffer_get(eb);
--	rcu_read_unlock();
-+	while (1) {
-+		rcu_read_lock();
-+		eb = rcu_dereference(root->node);
-+
-+		/*
-+		 * RCU really hurts here, we could free up the root node because
-+		 * it was cow'ed but we may not get the new root node yet so do
-+		 * the inc_not_zero dance and if it doesn't work then
-+		 * synchronize_rcu and try again.
-+		 */
-+		if (extent_buffer_inc_not_zero(eb)) {
-+			rcu_read_unlock();
-+			break;
-+		}
-+		rcu_read_unlock();
-+		synchronize_rcu();
-+	}
- 	return eb;
- }
- 
-@@ -504,7 +517,7 @@ static noinline int __btrfs_cow_block(struct btrfs_trans_handle *trans,
- 	}
- 	if (unlock_orig)
- 		btrfs_tree_unlock(buf);
--	free_extent_buffer(buf);
-+	free_extent_buffer_stale(buf);
- 	btrfs_mark_buffer_dirty(cow);
- 	*cow_ret = cow;
- 	return 0;
-@@ -959,7 +972,7 @@ static noinline int balance_level(struct btrfs_trans_handle *trans,
- 		root_sub_used(root, mid->len);
- 		btrfs_free_tree_block(trans, root, mid, 0, 1, 0);
- 		/* once for the root ptr */
--		free_extent_buffer(mid);
-+		free_extent_buffer_stale(mid);
- 		return 0;
- 	}
- 	if (btrfs_header_nritems(mid) >
-@@ -1016,7 +1029,7 @@ static noinline int balance_level(struct btrfs_trans_handle *trans,
- 				ret = wret;
- 			root_sub_used(root, right->len);
- 			btrfs_free_tree_block(trans, root, right, 0, 1, 0);
--			free_extent_buffer(right);
-+			free_extent_buffer_stale(right);
- 			right = NULL;
- 		} else {
- 			struct btrfs_disk_key right_key;
-@@ -1056,7 +1069,7 @@ static noinline int balance_level(struct btrfs_trans_handle *trans,
- 			ret = wret;
- 		root_sub_used(root, mid->len);
- 		btrfs_free_tree_block(trans, root, mid, 0, 1, 0);
--		free_extent_buffer(mid);
-+		free_extent_buffer_stale(mid);
- 		mid = NULL;
- 	} else {
- 		/* update the parent key to reflect our changes */
-@@ -3781,7 +3794,9 @@ static noinline int btrfs_del_leaf(struct btrfs_trans_handle *trans,
- 
- 	root_sub_used(root, leaf->len);
- 
-+	extent_buffer_get(leaf);
- 	btrfs_free_tree_block(trans, root, leaf, 0, 1, 0);
-+	free_extent_buffer_stale(leaf);
- 	return 0;
- }
- /*
-diff --git a/fs/btrfs/disk-io.c b/fs/btrfs/disk-io.c
-index b8f2284..a3c9166 100644
---- a/fs/btrfs/disk-io.c
-+++ b/fs/btrfs/disk-io.c
-@@ -925,21 +925,9 @@ static int btree_readpage(struct file *file, struct page *page)
- 
- static int btree_releasepage(struct page *page, gfp_t gfp_flags)
- {
--	struct extent_map_tree *map;
--	struct extent_io_tree *tree;
--	int ret;
--
- 	if (PageWriteback(page) || PageDirty(page))
- 		return 0;
--
--	tree = &BTRFS_I(page->mapping->host)->io_tree;
--	map = &BTRFS_I(page->mapping->host)->extent_tree;
--
--	ret = try_release_extent_state(map, tree, page, gfp_flags);
--	if (!ret)
--		return 0;
--
--	return try_release_extent_buffer(tree, page);
-+	return try_release_extent_buffer(page, gfp_flags);
- }
- 
- static void btree_invalidatepage(struct page *page, unsigned long offset)
-diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
-index e5111d5..4f7cc56 100644
---- a/fs/btrfs/extent-tree.c
-+++ b/fs/btrfs/extent-tree.c
-@@ -5011,10 +5011,6 @@ static int __btrfs_free_extent(struct btrfs_trans_handle *trans,
- 		if (is_data) {
- 			ret = btrfs_del_csums(trans, root, bytenr, num_bytes);
- 			BUG_ON(ret);
--		} else {
--			invalidate_mapping_pages(info->btree_inode->i_mapping,
--			     bytenr >> PAGE_CACHE_SHIFT,
--			     (bytenr + num_bytes - 1) >> PAGE_CACHE_SHIFT);
- 		}
- 
- 		ret = update_block_group(trans, root, bytenr, num_bytes, 0);
-diff --git a/fs/btrfs/extent_io.c b/fs/btrfs/extent_io.c
-index f6f31b6..41596a7 100644
---- a/fs/btrfs/extent_io.c
-+++ b/fs/btrfs/extent_io.c
-@@ -3637,6 +3637,8 @@ static void btrfs_release_extent_buffer_page(struct extent_buffer *eb,
- 			 */
- 			if (PagePrivate(page) &&
- 			    page->private == (unsigned long)eb) {
-+				BUG_ON(PageDirty(page));
-+				BUG_ON(PageWriteback(page));
- 				/*
- 				 * We need to make sure we haven't be attached
- 				 * to a new eb.
-@@ -3755,7 +3757,10 @@ again:
- 		goto free_eb;
- 	}
- 	/* add one reference for the tree */
--	extent_buffer_get(eb);
-+	spin_lock(&eb->eb_lock);
-+	eb->refs++;
-+	set_bit(EXTENT_BUFFER_TREE_REF, &eb->bflags);
-+	spin_unlock(&eb->eb_lock);
- 	spin_unlock(&tree->buffer_lock);
- 	radix_tree_preload_end();
- 
-@@ -3805,19 +3810,116 @@ struct extent_buffer *find_extent_buffer(struct extent_io_tree *tree,
- 	return NULL;
- }
- 
-+static inline void btrfs_release_extent_buffer_rcu(struct rcu_head *head)
-+{
-+	struct extent_buffer *eb =
-+			container_of(head, struct extent_buffer, rcu_head);
-+
-+	__free_extent_buffer(eb);
-+}
-+
-+static int extent_buffer_under_io(struct extent_buffer *eb,
-+				  struct page *locked_page)
-+{
-+	unsigned long num_pages, i;
-+
-+	num_pages = num_extent_pages(eb->start, eb->len);
-+	for (i = 0; i < num_pages; i++) {
-+		struct page *page = eb->pages[i];
-+		int need_unlock = 0;
-+
-+		if (!page)
-+			continue;
-+
-+		if (page != locked_page) {
-+			if (!trylock_page(page))
-+				return 1;
-+			need_unlock = 1;
-+		}
-+
-+		if (PageDirty(page) || PageWriteback(page)) {
-+			if (need_unlock)
-+				unlock_page(page);
-+			return 1;
-+		}
-+		if (need_unlock)
-+			unlock_page(page);
-+	}
-+
-+	return 0;
-+}
-+
-+/* Expects to have eb->eb_lock already held */
-+static void release_extent_buffer(struct extent_buffer *eb, gfp_t mask)
-+{
-+	if (--eb->refs == 0) {
-+		struct extent_io_tree *tree = eb->tree;
-+		int ret;
-+
-+		spin_unlock(&eb->eb_lock);
-+
-+		might_sleep_if(mask & __GFP_WAIT);
-+		ret = clear_extent_bit(tree, eb->start,
-+				       eb->start + eb->len - 1, -1, 0, 0,
-+				       NULL, mask);
-+		if (ret < 0) {
-+			/*
-+			 * We failed to clear the state bits which likely means
-+			 * ENOMEM, so just re-up the eb ref and continue, we
-+			 * will get freed later on via releasepage or something
-+			 * else and will be ok.
-+			 */
-+			spin_lock(&eb->eb_lock);
-+			set_bit(EXTENT_BUFFER_TREE_REF, &eb->bflags);
-+			eb->refs++;
-+			spin_unlock(&eb->eb_lock);
-+			return;
-+		}
-+
-+		spin_lock(&tree->buffer_lock);
-+		radix_tree_delete(&tree->buffer,
-+				  eb->start >> PAGE_CACHE_SHIFT);
-+		spin_unlock(&tree->buffer_lock);
-+
-+		/* Should be safe to release our pages at this point */
-+		btrfs_release_extent_buffer_page(eb, 0);
-+
-+		call_rcu(&eb->rcu_head, btrfs_release_extent_buffer_rcu);
-+		return;
-+	}
-+	spin_unlock(&eb->eb_lock);
-+}
-+
- void free_extent_buffer(struct extent_buffer *eb)
- {
- 	if (!eb)
- 		return;
- 
- 	spin_lock(&eb->eb_lock);
--	if (--eb->refs != 0) {
--		spin_unlock(&eb->eb_lock);
-+	if (test_bit(EXTENT_BUFFER_STALE, &eb->bflags) &&
-+	    !extent_buffer_under_io(eb, NULL) &&
-+	    test_and_clear_bit(EXTENT_BUFFER_TREE_REF, &eb->bflags))
-+		eb->refs--;
-+
-+	/*
-+	 * I know this is terrible, but it's temporary until we stop tracking
-+	 * the uptodate bits and such for the extent buffers.
-+	 */
-+	release_extent_buffer(eb, GFP_ATOMIC);
-+}
-+
-+void free_extent_buffer_stale(struct extent_buffer *eb)
-+{
-+	if (!eb)
- 		return;
--	}
--	spin_unlock(&eb->eb_lock);
- 
--	WARN_ON(1);
-+	spin_lock(&eb->eb_lock);
-+	set_bit(EXTENT_BUFFER_STALE, &eb->bflags);
-+
-+	if (!extent_buffer_under_io(eb, NULL) &&
-+	    test_and_clear_bit(EXTENT_BUFFER_TREE_REF, &eb->bflags))
-+		eb->refs--;
-+	release_extent_buffer(eb, GFP_NOFS);
- }
- 
- int clear_extent_buffer_dirty(struct extent_io_tree *tree,
-@@ -4427,42 +4529,31 @@ void memmove_extent_buffer(struct extent_buffer *dst, unsigned long dst_offset,
- 	}
- }
- 
--static inline void btrfs_release_extent_buffer_rcu(struct rcu_head *head)
--{
--	struct extent_buffer *eb =
--			container_of(head, struct extent_buffer, rcu_head);
--
--	__free_extent_buffer(eb);
--}
--
--int try_release_extent_buffer(struct extent_io_tree *tree, struct page *page)
-+int try_release_extent_buffer(struct page *page, gfp_t mask)
- {
--	u64 start = page_offset(page);
- 	struct extent_buffer *eb = (struct extent_buffer *)page->private;
--	int ret = 1;
--	int release = 0;
- 
- 	if (!PagePrivate(page) || !eb)
- 		return 1;
- 
--	spin_lock(&tree->buffer_lock);
- 	spin_lock(&eb->eb_lock);
--	if (eb->refs > 1 || test_bit(EXTENT_BUFFER_DIRTY, &eb->bflags)) {
-+	if (eb->refs > 1 || extent_buffer_under_io(eb, page)) {
- 		spin_unlock(&eb->eb_lock);
--		ret = 0;
--		goto out;
-+		return 0;
- 	}
--	eb->refs--;
--	release = 1;
--	spin_unlock(&eb->eb_lock);
- 
--	radix_tree_delete(&tree->buffer, start >> PAGE_CACHE_SHIFT);
--	btrfs_release_extent_buffer_page(eb, 0);
--out:
--	spin_unlock(&tree->buffer_lock);
-+	if ((mask & GFP_NOFS) == GFP_NOFS)
-+		mask = GFP_NOFS;
- 
--	/* at this point we can safely release the extent buffer */
--	if (release)
--		call_rcu(&eb->rcu_head, btrfs_release_extent_buffer_rcu);
--	return ret;
-+	/*
-+	 * If tree ref isn't set then we know the ref on this eb is a real ref,
-+	 * so just return, this page will likely be freed soon anyway.
-+	 */
-+	if (!test_and_clear_bit(EXTENT_BUFFER_TREE_REF, &eb->bflags)) {
-+		spin_unlock(&eb->eb_lock);
-+		return 0;
-+	}
-+	release_extent_buffer(eb, mask);
-+
-+	return 1;
- }
-diff --git a/fs/btrfs/extent_io.h b/fs/btrfs/extent_io.h
-index f0d6973..b244ec1 100644
---- a/fs/btrfs/extent_io.h
-+++ b/fs/btrfs/extent_io.h
-@@ -35,6 +35,8 @@
- #define EXTENT_BUFFER_DIRTY 2
- #define EXTENT_BUFFER_CORRUPT 3
- #define EXTENT_BUFFER_READAHEAD 4	/* this got triggered by readahead */
-+#define EXTENT_BUFFER_TREE_REF 5
-+#define EXTENT_BUFFER_STALE 6
- 
- /* these are flags for extent_clear_unlock_delalloc */
- #define EXTENT_CLEAR_UNLOCK_PAGE 0x1
-@@ -190,7 +192,7 @@ void extent_io_tree_init(struct extent_io_tree *tree,
- int try_release_extent_mapping(struct extent_map_tree *map,
- 			       struct extent_io_tree *tree, struct page *page,
- 			       gfp_t mask);
--int try_release_extent_buffer(struct extent_io_tree *tree, struct page *page);
-+int try_release_extent_buffer(struct page *page, gfp_t mask);
- int try_release_extent_state(struct extent_map_tree *map,
- 			     struct extent_io_tree *tree, struct page *page,
- 			     gfp_t mask);
-@@ -267,6 +269,7 @@ struct extent_buffer *alloc_extent_buffer(struct extent_io_tree *tree,
- struct extent_buffer *find_extent_buffer(struct extent_io_tree *tree,
- 					 u64 start, unsigned long len);
- void free_extent_buffer(struct extent_buffer *eb);
-+void free_extent_buffer_stale(struct extent_buffer *eb);
- #define WAIT_NONE	0
- #define WAIT_COMPLETE	1
- #define WAIT_PAGE_LOCK	2
--- 
-1.7.5.2
+  These logs doesn't have the traces of the below BUG_ON().
+  stack as in the dmesg below has 'btrfs_congested_fn'
+  which generally notifies block-device near Q full condition.
+  we would need logs to confirm anything further. was there
+  a kernel dump generated when BUG_ON was called? that should
+  help.
 
+Thanks, Anand
+
+
+On 03/13/12 13:42, qasdfgtyuiop wrote:
+> All my logs are attached
+> I have reinstalled my system the old filesystem has been backuped as a
+> img file using dd if=/dev/sdb1 of=broken-btrfs.img bs=1G.  I mounted
+> the broken filesystem and copied the log files out.  While copying I
+> got the error message:
+> cp: reading `log/messages.log': Input/output error
+> cp: failed to extend `/home/gaoxiang/tests/log/messages.log': Input/output error
+> cp: reading `log/kernel.log': Input/output error
+> cp: failed to extend `/home/gaoxiang/tests/log/kernel.log': Input/output error
+> cp: reading `log/errors.log': Input/output error
+> cp: failed to extend `/home/gaoxiang/tests/log/errors.log': Input/output error
+> cp: reading `log/everything.log': Input/output error
+> cp: failed to extend `/home/gaoxiang/tests/log/everything.log':
+> Input/output error
+>
+>
+> On Mon, Mar 12, 2012 at 3:09 PM, Anand Jain<Anand.Jain@oracle.com>  wrote:
+>>
+>>   could you also post few lines of dmesg logged _before_ the below logs.
+>>
+>> Thanks,  -Anand
+>>
+>>
+>>
+>> On Saturday 10,March,2012 06:26 PM, qasdfgtyuiop wrote:
+>>>
+>>> [11558.527680] ------------[ cut here ]------------
+>>> [11558.527708] kernel BUG at fs/btrfs/transaction.c:1337!
+>>> [11558.527730] invalid opcode: 0000 [#1] PREEMPT SMP
+>> [11558.527764] CPU 1
+>>> [11558.527776] Modules linked in: loop nls_cp437 vfat fat dm_mod xfs
+>>> exportfs jfs usb_storage uas fuse ext4 jbd2 mbcache snd_hda_codec_hdmi
+>>> snd_hda_codec_realtek arc4 iwlwifi snd_hda_intel snd_hda_codec
+>>> uvcvideo snd_hwdep nouveau iTCO_wdt i2c_i801 jmb38x_ms broadcom
+>>> snd_pcm i915 videodev tg3 sdhci_pci v4l2_compat_ioctl32 mac80211 sdhci
+>>> ttm i2c_algo_bit snd_page_alloc intel_agp snd_timer mxm_wmi serio_raw
+>>> drm_kms_helper btusb media bluetooth drm psmouse evdev joydev pcspkr
+>>> crc16 mei(C) iTCO_vendor_support snd libphy intel_ips memstick
+>>> mmc_core cfg80211 soundcore intel_gtt i2c_core thermal battery
+>>> ideapad_laptop sparse_keymap rfkill wmi ac video processor button
+>>> btrfs crc32c libcrc32c zlib_deflate sd_mod sr_mod cdrom usbhid hid
+>>> ahci libahci libata scsi_mod ehci_hcd usbcore usb_common
+>>> [11558.528323]
+>>> [11558.528333] Pid: 125, comm: btrfs-transacti Tainted: G         C
+>>> 3.2.9-1-ARCH #1 LENOVO                           IdeaPad Y460    /KL2
+>>> [11558.528389] RIP: 0010:[<ffffffffa014c879>]  [<ffffffffa014c879>]
+>>> btrfs_commit_transaction+0x879/0x880 [btrfs]
+>>> [11558.528439] RSP: 0018:ffff8801af1dfde0  EFLAGS: 00010282
+>>> [11558.528460] RAX: 00000000fffffffb RBX: ffff8801afa91690 RCX:
+>>> 0000000000000000
+>>> [11558.528484] RDX: ffff8801af1dfce8 RSI: 0000000003c10000 RDI:
+>>> ffff8801afa916f0
+>>> [11558.528510] RBP: ffff8801af1dfe70 R08: 0000000000002000 R09:
+>>> 0000000000000000
+>>> [11558.528536] R10: 0000000000000000 R11: 0000000000000001 R12:
+>>> ffff8801b13ab000
+>>> [11558.528561] R13: ffff8801afa90c18 R14: ffff8801afa91708 R15:
+>>> 0000000000000218
+>>> [11558.528586] FS:  0000000000000000(0000) GS:ffff8801bbc80000(0000)
+>>> knlGS:0000000000000000
+>>> [11558.528616] CS:  0010 DS: 0000 ES: 0000 CR0: 000000008005003b
+>>> [11558.528637] CR2: 00007fb7899244e8 CR3: 0000000001805000 CR4:
+>>> 00000000000006e0
+>>> [11558.528663] DR0: 0000000000000000 DR1: 0000000000000000 DR2:
+>>> 0000000000000000
+>>> [11558.528688] DR3: 0000000000000000 DR6: 00000000ffff0ff0 DR7:
+>>> 0000000000000400
+>>> [11558.528714] Process btrfs-transacti (pid: 125, threadinfo
+>>> ffff8801af1de000, task ffff8801aff2ce60)
+>>> [11558.528744] Stack:
+>>> [11558.528755]  ffff8801af1dfe10 0000000000000000 0000000000000000
+>>> ffff8801aff2ce60
+>>> [11558.528791]  ffffffff81088d80 ffff8801af1dfe08 ffff8801af1dfe08
+>>> ffffffffa014ccd4
+>>> [11558.528827]  0000000000000000 00000000af2b0560 ffff8801aff2ce60
+>>> ffff8801b13ab000
+>>> [11558.528863] Call Trace:
+>>> [11558.528879]  [<ffffffff81088d80>] ? abort_exclusive_wait+0xb0/0xb0
+>>> [11558.528910]  [<ffffffffa014ccd4>] ? start_transaction+0x94/0x2b0
+>>> [btrfs]
+>>> [11558.528940]  [<ffffffffa0144e6d>] transaction_kthread+0x26d/0x290
+>>> [btrfs]
+>>> [11558.528971]  [<ffffffffa0144c00>] ? btrfs_congested_fn+0xd0/0xd0
+>>> [btrfs]
+>>> [11558.528996]  [<ffffffff8108843c>] kthread+0x8c/0xa0
+>>> [11558.529018]  [<ffffffff8145feb4>] kernel_thread_helper+0x4/0x10
+>>> [11558.529040]  [<ffffffff810883b0>] ? kthread_worker_fn+0x190/0x190
+>>> [11558.529064]  [<ffffffff8145feb0>] ? gs_change+0x13/0x13
+>>> [11558.529083] Code: ff ff e9 44 f9 ff ff 0f 0b 0f 0b 0f 0b be fc 04
+>>> 00 00 48 c7 c7 fa 00 1a a0 e8 84 98 f1 e0 e9 3c fb ff ff 0f 0b 0f 0b
+>>> 0f 0b 0f 0b<0f>    0b 0f 0b 0f 1f 00 55 48 89 e5 53 48 83 ec 08 66 66 66
+>>> 66 90
+>>> [11558.529389] RIP  [<ffffffffa014c879>]
+>>> btrfs_commit_transaction+0x879/0x880 [btrfs]
+>>> [11558.529425]  RSP<ffff8801af1dfde0>
+>>> [11558.592012] ---[ end trace e0456c287e012690 ]---
+>>> --
+>>> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
+>>> the body of a message to majordomo@vger.kernel.org
+>>> More majordomo info at  http://vger.kernel.org/majordomo-info.html

@@ -1,63 +1,61 @@
-From: Duncan <1i5t5.duncan@cox.net>
-Subject: Re: immutable (WORM) file system
-Date: Tue, 13 Mar 2012 00:09:08 +0000 (UTC)
-Message-ID: <pan.2012.03.13.00.09.08@cox.net>
-References: <CAP7LQsLiDC8Y=g+ocQGYdC-4LdpDWs9QkL+PvMD311wR2UY0GQ@mail.gmail.com>
-	<CAAE6i0j4n9_7=swv8NJE1FVToXjPCefT+NtSbbaShs6UBKVQjg@mail.gmail.com>
+From: Chris Samuel <chris@csamuel.org>
+Subject: Re: btrfs oops (autodefrag related?)
+Date: Tue, 13 Mar 2012 11:13:28 +1100
+Message-ID: <201203131113.32951.chris@csamuel.org>
+References: <4F5E4F66.2030701@redhat.com> <20120313000435.GH29393@shiny>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=UTF-8
-To: linux-btrfs@vger.kernel.org
+Content-Type: multipart/signed;
+  boundary="nextPart1804657.7uh3MG6omF";
+  protocol="application/pgp-signature";
+  micalg=pgp-sha1
+To: Chris Mason <chris.mason@oracle.com>, Avi Kivity <avi@redhat.com>,
+	linux-btrfs@vger.kernel.org
 Return-path: <linux-btrfs-owner@vger.kernel.org>
+In-Reply-To: <20120313000435.GH29393@shiny>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Chester posted on Mon, 12 Mar 2012 14:52:47 -0500 as excerpted:
+--nextPart1804657.7uh3MG6omF
+Content-Type: Text/Plain;
+  charset="iso-8859-1"
+Content-Transfer-Encoding: quoted-printable
 
-> On Mon, Mar 12, 2012 at 2:36 PM, Fong Vang <sudoyang@gmail.com> wrote=
-:
->> Does anyone know if there's a plan to provide an option to make a BT=
-RFS
->> filesystem a WORM (write-one-read-many)? =C2=A0So essentially, once =
-a file
->> has been written it cannot be altered nor deleted. =C2=A0To delete w=
-ould
->> require a newfs. =C2=A0I know that there's extended attributes but r=
-oot can
->> alter that on individual files.
->>
->> Anyway, thanks in advance for any help.
+On Tuesday 13 March 2012 11:04:35 Chris Mason wrote:
 
-> There's support for Read-only snapshots, so you might be able to use
-> that with some clever scripting =3D\
+> This one was fixed in the 3.3 series.  You can pull from my
+> for-linus repo for a commit against 3.2.
 
-[Quote rearranged into standard contextual quote and reply order.]
+Note though that some people are reporting regressions with premature=20
+ENOSPC in 3.3-rc7, to quote:
 
-If I'm reading between the lines correctly, that's not going to suffice=
-=2E =20
-It sounds to me like the request is for an indelible/immutable journal,=
-=20
-potentially backed by a legal requirement.
+# - bisected down to 5500cdb (Btrfs: increase the global block
+# reserve estimates). After reverting this one Linus master works
+# for me again.
 
-Think (US) SOX, Sarbanes-Oxley, requirements, or similar elsewhere.  Or=
-=20
-consider a criminal computer-related case where an investigator's every=
-=20
-action while analyzing a suspect's drive is write-once recorded, creati=
-ng=20
-a permanent record to be used in court.  Or for that matter, consider t=
-he=20
-audit trail of an electronic voting machine.
+Though after reversion they hit ENOSPC much later (but still=20
+prematurely).
 
-In such cases an indelible log that cannot be altered without destructi=
-on=20
-is vital.
+cheers,
+Chris
+=2D-=20
+ Chris Samuel  :  http://www.csamuel.org/  :  Melbourne, VIC
 
---=20
-Duncan - List replies preferred.   No HTML msgs.
-"Every nonfree program has a lord, a master --
-and if you use the program, he is your master."  Richard Stallman
+This email may come with a PGP signature as a file. Do not panic.
+=46or more info see: http://en.wikipedia.org/wiki/OpenPGP
 
---
-To unsubscribe from this list: send the line "unsubscribe linux-btrfs" =
-in
-the body of a message to majordomo@vger.kernel.org
-More majordomo info at  http://vger.kernel.org/majordomo-info.html
+--nextPart1804657.7uh3MG6omF
+Content-Type: application/pgp-signature; name=signature.asc 
+Content-Description: This is a digitally signed message part.
+
+-----BEGIN PGP SIGNATURE-----
+Version: GnuPG v1.4.11 (GNU/Linux)
+
+iQEVAwUAT16RKY1yjaOTJg85AQJ1rwf/SGh+gwy/XCHRime+LhMaeAMHhd1pN0AP
+q8BJEMM+Tzx+GZYuIwNzTAZR+KOXg/D8xgJg092AMF4kIxn/mz967UJLIjDoH40N
+ai2ADfqI0xAY1H4Gu3jkPR7gbAYAKDhYBza/wGgrYU4to1m5epH44mq4fou3hHZZ
+HKsIaMGqzlVHwd1ndaolcJ3OynJVCqxAEsxLYKp43eTxCtwpOrlDFLOdNpV5cZwC
+BXIX8eBIGIb/4gnGSqtRHOetR40Q5hVi4HRlYrkIwOT91VZfpiLqtd4Ued1pXAc1
+5xRNdIik3b2yKS5lHKBuaCpDNvRr8LLVescEC0akInYsrW1wqV29MA==
+=mWp7
+-----END PGP SIGNATURE-----
+
+--nextPart1804657.7uh3MG6omF--

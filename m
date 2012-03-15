@@ -1,55 +1,88 @@
-From: Martin Steigerwald <Martin@lichtvoll.de>
+From: Chris Mason <chris.mason@oracle.com>
 Subject: Re: 3.2-rc4: scrubbing locks up the kernel, then hung tasks on boot
-Date: Thu, 15 Mar 2012 18:39:56 +0100
-Message-ID: <201203151839.56317.Martin@lichtvoll.de>
-References: <201112171833.34720.Martin@lichtvoll.de> <4F48986D.4090703@gmx.net> <201203151832.19703.Martin@lichtvoll.de> (sfid-20120315_183454_374374_B9F41B06)
+Date: Thu, 15 Mar 2012 13:42:45 -0400
+Message-ID: <20120315174245.GV19217@shiny>
+References: <201112171833.34720.Martin@lichtvoll.de>
+ <201202241651.57233.Martin@lichtvoll.de>
+ <4F48986D.4090703@gmx.net>
+ <201203151832.19703.Martin@lichtvoll.de>
 Mime-Version: 1.0
-Content-Type: Text/Plain; charset=utf-8
-Cc: Arne Jansen <sensille@gmx.net>
-To: linux-btrfs@vger.kernel.org
+Content-Type: text/plain; charset=iso-8859-1
+Cc: linux-btrfs@vger.kernel.org, Arne Jansen <sensille@gmx.net>
+To: Martin Steigerwald <Martin@lichtvoll.de>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
 In-Reply-To: <201203151832.19703.Martin@lichtvoll.de>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Am Donnerstag, 15. M=C3=A4rz 2012 schrieb Martin Steigerwald:
-> [20880.564225] "echo 0 > /proc/sys/kernel/hung_task_timeout_secs"
-> disables this message. [20880.564234] btrfs           D
-> 000012d2     0  3348      1 0x00000000 [20880.564251]  c0b72080
-> 00000086 2cae1a17 000012d2 ec3ae5a0 00000000 000012d2 c14769c0
-> [20880.564275]  c0b7222c c14769c0 00008050 e0b96ce0 ee000120 d1d5dae0
-> d1d5db20 00000028 [20880.564298]  c105d451 00000092 c12b949b 00000092
-> f0b7037c 00000246 eee6073c c105d451
+On Thu, Mar 15, 2012 at 06:32:19PM +0100, Martin Steigerwald wrote:
+> Am Samstag, 25. Februar 2012 schrieb Arne Jansen:
+> > On 02/24/12 16:51, Martin Steigerwald wrote:
+> > > Am Samstag, 21. Januar 2012 schrieb Martin Steigerwald:
+> > >> Am Samstag, 21. Januar 2012 schrieb Martin Steigerwald:
+> > >>> I still have this with 3.2.0-1-pae - which is a debian kernel b=
+ased
+> > >>> on 3.2.1.
+> > >>>=20
+> > >>> When I do btrfs scrub start / the machine locks immediately up
+> > >>> hard.
+> > >>>=20
+> > >>> Then usually on next boot it stops on space_cache enabled messa=
+ge,
+> > >>> but not  the one for /, but the one for /home which is mounted
+> > >>> later.
+> > >>>=20
+> > >>> When I then boot with 3.1 it works. BTRFS redos the space_cache
+> > >>> then while  the machine takes ages to boot - I mean ages - 10
+> > >>> minutes till KDM prompt is no problem there.
+> > >>=20
+> > >> I now tested scrubbing /home which is a different BTRFS filesyst=
+em
+> > >> on the same machine.
+> > >>=20
+> > >> Then the scrub is started, scrub status tells me so, but nothing
+> > >> happens, no block in/out activity in vmstat, no CPU related acti=
+vity
+> > >> in top.
+> > >>=20
+> > >> btrfs scrub cancel then hangs, but not the complete machine, onl=
+y
+> > >> the process.
+> > >>=20
+> > >> I had this once on my T520 with the internal Intel SSD 320 as we=
+ll.
+> > >> The other time it worked.
+> > >>=20
+> > >> Well maybe that is due to BTRFS doing something else on my T23 n=
+ow:
+> > >>=20
+> > >> deepdance:~>  ps aux | grep ino-cache | grep -v grep
+> > >> root      1992  5.5  0.0      0     0 ?        D    12:15   0:09
+> > >> [btrfs- ino-cache]
+> > >>=20
+> > >> Hmmm, so I just let it sit for a while, maybe eventually it will
+> > >> scrub /home.
+> > >>=20
+> > >> At least it doesn=B4t lock up hard, so there might really be som=
+ething
+> > >> strange with /.
+> > >=20
+> > > FWIW a btrfs filesystem balance / does work. After this a btrfs s=
+crub
+> > > start / still locks the kernel.
+> >
+> > Hi Martin,
+> >=20
+> > I just sent 2 patches to the list. Could you please test if these
+> > fix your problem with scrub?
+>=20
+> I didn=B4t yet test it but I tried the first balance then scrub stuff=
+ again:
 
-Seems to be a thread of the btrfs scrub start process:
+Looks like you're on a 32 bit machine.  The current for-linus branch ha=
+s
+an important fix for scrub on 32 bit that should solve this.
 
-martin@deepdance:~/scrub-hang-2012-03-15#1> ps aux | grep "btrfs " | gr=
-ep -v grep=20
-root      3347  0.5  0.0  18520   112 pts/5    Sl   18:10   0:08 btrfs =
-scrub start /
-root      3429  0.0  0.0   2128   304 pts/5    D+   18:24   0:00 btrfs =
-scrub cancel /
-
-deepdance:/proc/3348> cat cmdline
-btrfsscrubstart/#                                                      =
-                                                             =20
-deepdance:/proc/3348> cat sched =20
-btrfs (3348, #threads: 3)
----------------------------------------------------------
-se.exec_start                      :      20693902.056600
-se.vruntime                        :       4558167.340245
-se.sum_exec_runtime                :          8284.354850
-nr_switches                        :               116554
-nr_voluntary_switches              :               115784
-nr_involuntary_switches            :                  770
-se.load.weight                     :                 1024
-policy                             :                    0
-prio                               :                  120
-clock-delta                        :                  563
-
-Thanks,
---=20
-Martin 'Helios' Steigerwald - http://www.Lichtvoll.de
-GPG: 03B0 0D6C 0040 0710 4AFA  B82F 991B EAAC A599 84C7
+-chris
 --
 To unsubscribe from this list: send the line "unsubscribe linux-btrfs" =
 in

@@ -1,69 +1,51 @@
-From: Jacek Luczak <difrost.kernel@gmail.com>
-Subject: Re: getdents - ext4 vs btrfs performance
-Date: Thu, 15 Mar 2012 08:59:38 +0100
-Message-ID: <CADDYkjRv=ASgzJV25beyN3t=7=djRcRAxy0tEqcZ9NX300boBg@mail.gmail.com>
-References: <CADDYkjS5VJeYyHzqumazQ0qKg+HwA6GO+zYSJj7rkHNZFwjcoQ@mail.gmail.com>
-	<20120310035202.GA5652@thunk.org>
-Mime-Version: 1.0
-Content-Type: text/plain; charset=ISO-8859-1
-To: "Ted Ts'o" <tytso@mit.edu>,
-	Jacek Luczak <difrost.kernel@gmail.com>,
-	linux-ext4@vger.kernel.org,
-	linux-fsdevel <linux-fsdevel@vger.kernel.org>,
-	LKML <linux-kernel@vger.kernel.org>, linux-btrfs@vger.kernel.org
-Return-path: <linux-ext4-owner@vger.kernel.org>
-In-Reply-To: <20120310035202.GA5652@thunk.org>
+From: Liu Bo <liubo2009@cn.fujitsu.com>
+Subject: [RFC PATCH 0/5] apply rwlock for extent state
+Date: Thu, 15 Mar 2012 17:12:12 +0800
+Message-ID: <1331802737-29454-1-git-send-email-liubo2009@cn.fujitsu.com>
+To: <linux-btrfs@vger.kernel.org>
+Return-path: <linux-btrfs-owner@vger.kernel.org>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-2012/3/10 Ted Ts'o <tytso@mit.edu>:
-> Hey Jacek,
->
-> I'm curious parameters of the set of directories on your production
-> server. =A0On an ext4 file system, assuming you've copied the
-> directories over, what are the result of this command pipeline when
-> you are cd'ed into the top of the directory hierarchy of interest
-> (your svn tree, as I recall)?
->
-> find . -type d -ls | awk '{print $7}' | sort -n | uniq -c
->
-> I'm just curious what the distribution of directories sizes are in
-> practice for your use case...
->
+This patchset is against one of project ideas, RBtree lock contention:
+"Btrfs uses a number of rbtrees to index in-memory data structures.
+Some of these are dominated by reads, and the lock contention from searching
+them is showing up in profiles.  We need to look into an RCU and sequence
+counter combination to allow lockless reads."
 
-Hi Ted,
+The goal is to use RCU, but we take it as a long term one, and instead we use
+rwlock until we find a mature rcu structure for lockless read.
 
-below is from the latest upstream on ext4:
+So what we need to do is to make the code RCU friendly, and the idea mainly
+comes from Chris Mason:
+Quoted:
+"I think the extent_state code can be much more RCU friendly if we separate
+the operations on the tree from operations on the individual state.
+In general, we can gain a lot of performance if we are able to reduce
+the write locks taken at endio time.  Especially for reads, these are
+critical."
 
- 843341 4096
-    165 12288
-     29 16384
-    164 20480
-     26 24576
-     22 28672
-     24 32768
-    118 36864
-     12 40960
-     19 45056
-      3 49152
-     12 53248
-     37 57344
-     10 61440
-      2 65536
-     13 69632
-      1 131072
-      1 139264
-      1 143360
-      1 221184
-      1 249856
-      1 258048
-      1 262144
-      1 319488
-      2 335872
-      1 339968
+If we read a 10M file with pagecache,
+$ dd if=/mnt/btrfs/foobar of=/dev/null bs=1M
 
--Jacek
---
-To unsubscribe from this list: send the line "unsubscribe linux-ext4" i=
-n
-the body of a message to majordomo@vger.kernel.org
-More majordomo info at  http://vger.kernel.org/majordomo-info.html
+without this patchset,
+        lock for read : lock for write ~= 2:1
+with this patchset,
+        lock for read : lock for write ~= 200:1
+
+I've run through xfstests, and no bugs jump out by then.
+MORE TESTS ARE WELCOME!
+
+
+Liu Bo (5):
+  Btrfs: use radix tree for checksum
+  Btrfs: merge adjacent states as much as possible
+  Btrfs: use large extent range for read and its endio
+  Btrfs: apply rwlock for extent state
+  Btrfs: avoid splitting state when truncating pagecache
+
+ fs/btrfs/extent_io.c        |  768 +++++++++++++++++++++++++++++++++----------
+ fs/btrfs/extent_io.h        |    5 +-
+ fs/btrfs/free-space-cache.c |    5 +
+ fs/btrfs/inode.c            |   22 +-
+ 4 files changed, 614 insertions(+), 186 deletions(-)
+

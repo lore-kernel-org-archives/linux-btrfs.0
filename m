@@ -1,74 +1,40 @@
-From: Chris Mason <chris.mason@oracle.com>
-Subject: Re: getdents - ext4 vs btrfs performance
-Date: Wed, 14 Mar 2012 15:17:39 -0400
-Message-ID: <20120314191739.GA19217@shiny>
-References: <CADDYkjS5VJeYyHzqumazQ0qKg+HwA6GO+zYSJj7rkHNZFwjcoQ@mail.gmail.com>
- <alpine.LFD.2.00.1203091158430.4487@dhcp-27-109.brq.redhat.com>
- <BCAD47C1-B95A-4EDB-8EFB-3D4E325DE57D@whamcloud.com>
- <20120310044804.GB5652@thunk.org>
- <4F5F9A97.5060404@ubuntu.com>
- <20120313195339.GA24124@thunk.org>
- <4F5FAC9C.9070607@gmail.com>
- <20120313213304.GB11969@thunk.org>
- <alpine.LFD.2.00.1203140825090.5379@dhcp-27-109.brq.redhat.com>
- <20120314125002.GH15379@thunk.org>
+From: =?UTF-8?B?SsOpcsO0bWU=?= Carretero <cJ-ko@zougloub.eu>
+Subject: Re: [weird] High CPU usage caused by btrfs-transaction thread busy
+ doing find_next_zero_bit()
+Date: Wed, 14 Mar 2012 23:16:16 -0400
+Message-ID: <20120314231616.601de469@Bidule>
+References: <20120222112021.2c8c4d4b@Malcolm>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-To: "Ted Ts'o" <tytso@mit.edu>, Lukas Czerner <lczerner@redhat.com>,
-	Phillip Susi <phillsusi@gmail.com>,
-	Andreas Dilger <adilger@whamcloud.com>,
-	Jacek Luczak <difrost.kernel@gmail.com>,
-	"linux-ext4@vger.kernel.org" <linux-ext4@vger.kernel.org>,
-	linux-fsdevel <linux-fsdevel@vger.kernel.org>,
-	LKML <linux-kernel@vger.kernel.org>,
-	"linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
-Return-path: <linux-ext4-owner@vger.kernel.org>
-In-Reply-To: <20120314125002.GH15379@thunk.org>
+Content-Type: text/plain; charset=UTF-8
+To: linux-btrfs <linux-btrfs@vger.kernel.org>
+Return-path: <linux-btrfs-owner@vger.kernel.org>
+In-Reply-To: <20120222112021.2c8c4d4b@Malcolm>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Wed, Mar 14, 2012 at 08:50:02AM -0400, Ted Ts'o wrote:
-> On Wed, Mar 14, 2012 at 09:12:02AM +0100, Lukas Czerner wrote:
-> > I kind of like the idea about having the separate btree with inode
-> > numbers for the directory reading, just because it does not affect
-> > allocation policy nor the write performance which is a good thing. Also
-> > it has been done before in btrfs and it works very well for them. The
-> > only downside (aside from format change) is the extra step when removing
-> > the directory entry, but the positives outperform the negatives.
-> 
-> Well, there will be extra (journaled!) block reads and writes involved
-> when adding or removing directory entries.  So the performance on
-> workloads that do a large number of directory adds and removed will
-> have to be impacted.  By how much is not obvious, but it will be
-> something which is measurable.
+On Wed, 22 Feb 2012 11:20:21 -0500
+J=C3=A9r=C3=B4me Carretero <cJ-ko@zougloub.eu> wrote:
 
-Most of the difference in btrfs rm times comes from our double indexing.
-We store the directory name 3 times, once for each dir index and once
-in the inode backref.  But the inode backref doesn't generate seeks the
-same way the extra directory index does, so it is probably only 10% of
-the cost.
+> My filesystem is super-sluggish since about a week, and perf top tell=
+s me
+> that find_next_bit(), find_next_zero_bit() is eating my netbook's CPU=
+=2E
+>=20
+> The kernel is 3.3-rc3+188 (g3ec1e88) and I don't use this laptop a lo=
+t,
+> so I'm ready to cooperate.
 
-We also delete file data crcs during rm, so if you're benchmarking
-things to see how much it will hurt, benchmark btrfs on zero length
-files.
+This machine was updated to today's kernel, and behaves same as before.
+scrub says nothing, but btrfsck doesn't like to be run.
 
-In terms of other costs, most users of readdir will eventually wander
-off and stat or open the files in the dir.  With your current indexes, the stat
-reads the same directory blocks that readdir used.
+Does this interest someone (metadump image) or I can reformat the drive=
+ ?
 
-With the double index, the stat reads the name index instead of the
-readdir index.  For the common case of normal directories, today's ext4
-will have the directory blocks in cache when stat is called.  Btrfs has
-to do extra reads to pull in the name index.
+Regards,
 
-Josef worked around this by prefilling a dentry during readdir with
-details on where to find the inode.
-
-Either way, I'd definitely recommend sitting down with the xfs directory
-indexes and look at how they manage locality without the double
-indexing.  It's faster than btrfs and without the penalty.
-
-It's also worth mentioning that on an SSD, there is no benefit at all to
-the extra index.  So when the industry finally floods the markets with
-hybrid PCM shingled drives, this might all be moot.
-
--chris
+--=20
+cJ
+--
+To unsubscribe from this list: send the line "unsubscribe linux-btrfs" =
+in
+the body of a message to majordomo@vger.kernel.org
+More majordomo info at  http://vger.kernel.org/majordomo-info.html

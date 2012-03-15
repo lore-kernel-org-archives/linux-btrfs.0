@@ -1,92 +1,69 @@
-From: Liu Bo <liubo2009@cn.fujitsu.com>
-Subject: [PATCH] Btrfs: fix deadlock during allocating chunks
-Date: Thu, 15 Mar 2012 15:25:08 +0800
-Message-ID: <1331796308-28789-1-git-send-email-liubo2009@cn.fujitsu.com>
-To: <linux-btrfs@vger.kernel.org>
-Return-path: <linux-btrfs-owner@vger.kernel.org>
+From: Jacek Luczak <difrost.kernel@gmail.com>
+Subject: Re: getdents - ext4 vs btrfs performance
+Date: Thu, 15 Mar 2012 08:59:38 +0100
+Message-ID: <CADDYkjRv=ASgzJV25beyN3t=7=djRcRAxy0tEqcZ9NX300boBg@mail.gmail.com>
+References: <CADDYkjS5VJeYyHzqumazQ0qKg+HwA6GO+zYSJj7rkHNZFwjcoQ@mail.gmail.com>
+	<20120310035202.GA5652@thunk.org>
+Mime-Version: 1.0
+Content-Type: text/plain; charset=ISO-8859-1
+To: "Ted Ts'o" <tytso@mit.edu>,
+	Jacek Luczak <difrost.kernel@gmail.com>,
+	linux-ext4@vger.kernel.org,
+	linux-fsdevel <linux-fsdevel@vger.kernel.org>,
+	LKML <linux-kernel@vger.kernel.org>, linux-btrfs@vger.kernel.org
+Return-path: <linux-ext4-owner@vger.kernel.org>
+In-Reply-To: <20120310035202.GA5652@thunk.org>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-This deadlock comes from xfstests 251.
+2012/3/10 Ted Ts'o <tytso@mit.edu>:
+> Hey Jacek,
+>
+> I'm curious parameters of the set of directories on your production
+> server. =A0On an ext4 file system, assuming you've copied the
+> directories over, what are the result of this command pipeline when
+> you are cd'ed into the top of the directory hierarchy of interest
+> (your svn tree, as I recall)?
+>
+> find . -type d -ls | awk '{print $7}' | sort -n | uniq -c
+>
+> I'm just curious what the distribution of directories sizes are in
+> practice for your use case...
+>
 
-We'll hold the chunk_mutex throughout the whole of a chunk allocation.
-But if we find that we've used up system chunk space, we need to allocate a
-new system chunk, but this will lead to a recursion of chunk allocation and end
-up with a deadlock on chunk_mutex.
-So instead we need to allocate the system chunk first if we find we're in ENOSPC.
+Hi Ted,
 
-Signed-off-by: Liu Bo <liubo2009@cn.fujitsu.com>
----
- fs/btrfs/extent-tree.c |   50 ++++++++++++++++++++++++++++++++++++++++++++++++
- 1 files changed, 50 insertions(+), 0 deletions(-)
+below is from the latest upstream on ext4:
 
-diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
-index 37e0a80..3bd5410 100644
---- a/fs/btrfs/extent-tree.c
-+++ b/fs/btrfs/extent-tree.c
-@@ -3396,6 +3396,50 @@ static int should_alloc_chunk(struct btrfs_root *root,
- 	return 1;
- }
- 
-+static u64 get_system_chunk_thresh(struct btrfs_root *root, u64 type)
-+{
-+	u64 num_dev;
-+
-+	if (type & BTRFS_BLOCK_GROUP_RAID10 ||
-+	    type & BTRFS_BLOCK_GROUP_RAID0)
-+		num_dev = root->fs_info->fs_devices->rw_devices;
-+	else if (type & BTRFS_BLOCK_GROUP_RAID1)
-+		num_dev = 2;
-+	else
-+		num_dev = 1;	/* DUP or single */
-+
-+	/* metadata for updating devices and chunk tree */
-+	return btrfs_calc_trans_metadata_size(root, num_dev + 1);
-+}
-+
-+static void check_system_chunk(struct btrfs_trans_handle *trans,
-+			       struct btrfs_root *root, u64 type)
-+{
-+	struct btrfs_space_info *info;
-+	u64 left;
-+	u64 thresh;
-+
-+	info = __find_space_info(root->fs_info, BTRFS_BLOCK_GROUP_SYSTEM);
-+	spin_lock(&info->lock);
-+	left = info->total_bytes - info->bytes_used - info->bytes_pinned -
-+		info->bytes_reserved - info->bytes_readonly;
-+	spin_unlock(&info->lock);
-+
-+	thresh = get_system_chunk_thresh(root, type);
-+	if (left < thresh && btrfs_test_opt(root, ENOSPC_DEBUG)) {
-+		printk(KERN_INFO "left=%llu, need=%llu, flags=%llu\n",
-+		       left, thresh, type);
-+		dump_space_info(info, 0, 0);
-+	}
-+
-+	if (left < thresh) {
-+		u64 flags;
-+
-+		flags = btrfs_get_alloc_profile(root->fs_info->chunk_root, 0);
-+		btrfs_alloc_chunk(trans, root, flags);
-+	}
-+}
-+
- static int do_chunk_alloc(struct btrfs_trans_handle *trans,
- 			  struct btrfs_root *extent_root, u64 alloc_bytes,
- 			  u64 flags, int force)
-@@ -3468,6 +3512,12 @@ again:
- 			force_metadata_allocation(fs_info);
- 	}
- 
-+	/*
-+	 * Check if we have enough space in SYSTEM chunk because we may need
-+	 * to update devices.
-+	 */
-+	check_system_chunk(trans, extent_root, flags);
-+
- 	ret = btrfs_alloc_chunk(trans, extent_root, flags);
- 	if (ret < 0 && ret != -ENOSPC)
- 		goto out;
--- 
-1.6.5.2
+ 843341 4096
+    165 12288
+     29 16384
+    164 20480
+     26 24576
+     22 28672
+     24 32768
+    118 36864
+     12 40960
+     19 45056
+      3 49152
+     12 53248
+     37 57344
+     10 61440
+      2 65536
+     13 69632
+      1 131072
+      1 139264
+      1 143360
+      1 221184
+      1 249856
+      1 258048
+      1 262144
+      1 319488
+      2 335872
+      1 339968
 
+-Jacek
+--
+To unsubscribe from this list: send the line "unsubscribe linux-ext4" i=
+n
+the body of a message to majordomo@vger.kernel.org
+More majordomo info at  http://vger.kernel.org/majordomo-info.html

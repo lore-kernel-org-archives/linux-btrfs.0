@@ -1,130 +1,71 @@
-From: Martin Steigerwald <Martin@lichtvoll.de>
-Subject: Re: 3.2-rc4: scrubbing locks up the kernel, then hung tasks on boot
-Date: Sat, 17 Mar 2012 10:43:25 +0100
-Message-ID: <201203171043.25660.Martin@lichtvoll.de>
-References: <201112171833.34720.Martin@lichtvoll.de> <20120315174245.GV19217@shiny> <201203161605.47792.Martin@lichtvoll.de> (sfid-20120316_160919_841295_64D691DA)
+From: Hugo Mills <hugo@carfax.org.uk>
+Subject: Re: Can't mount, power failure - recoverable?
+Date: Sat, 17 Mar 2012 10:31:40 +0000
+Message-ID: <20120317103140.GA3172@carfax.org.uk>
+References: <loom.20120317T051243-551@post.gmane.org>
 Mime-Version: 1.0
-Content-Type: Text/Plain; charset=utf-8
-Cc: Chris Mason <chris.mason@oracle.com>,
-	Arne Jansen <sensille@gmx.net>, stable@kernel.org,
-	"Greg Kroah-Hartman" <gregkh@linuxfoundation.org>
-To: linux-btrfs@vger.kernel.org
+Content-Type: multipart/signed; micalg=pgp-sha1;
+	protocol="application/pgp-signature"; boundary="mYCpIKhGyMATD0i+"
+Cc: linux-btrfs@vger.kernel.org
+To: Skylar Burtenshaw <daninfuchs@gmail.com>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <201203161605.47792.Martin@lichtvoll.de>
+In-Reply-To: <loom.20120317T051243-551@post.gmane.org>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hi Greg, Chris, Arne, hi everyone,
 
-Am Freitag, 16. M=C3=A4rz 2012 schrieb Martin Steigerwald:
-> Am Donnerstag, 15. M=C3=A4rz 2012 schrieb Chris Mason:
-> > On Thu, Mar 15, 2012 at 06:32:19PM +0100, Martin Steigerwald wrote:
-> > > Am Samstag, 25. Februar 2012 schrieb Arne Jansen:
-> > > > On 02/24/12 16:51, Martin Steigerwald wrote:
-> > > > > Am Samstag, 21. Januar 2012 schrieb Martin Steigerwald:
-> > > > >> Am Samstag, 21. Januar 2012 schrieb Martin Steigerwald:
-> > > > >>> I still have this with 3.2.0-1-pae - which is a debian kern=
-el
-> > > > >>> based on 3.2.1.
-> > > > >>>=20
-> > > > >>> When I do btrfs scrub start / the machine locks immediately
-> > > > >>> up hard.
-> > > > >>>=20
-> > > > >>> Then usually on next boot it stops on space_cache enabled
-> > > > >>> message, but not  the one for /, but the one for /home whic=
-h
-> > > > >>> is mounted later.
->=20
-> [=E2=80=A6]
->=20
-> > > > >> I now tested scrubbing /home which is a different BTRFS
-> > > > >> filesystem on the same machine.
-> > > > >>=20
-> > > > >> Then the scrub is started, scrub status tells me so, but
-> > > > >> nothing happens, no block in/out activity in vmstat, no CPU
-> > > > >> related activity in top.
-> > > > >>=20
-> > > > >> btrfs scrub cancel then hangs, but not the complete machine,
-> > > > >> only the process.
-> > > > >>=20
-> > > > >> I had this once on my T520 with the internal Intel SSD 320 a=
-s
-> > > > >> well. The other time it worked.
-> > > > >>=20
-> > > > >> Well maybe that is due to BTRFS doing something else on my T=
-23
-> > > > >> now:
-> > > > >>=20
-> > > > >> deepdance:~>  ps aux | grep ino-cache | grep -v grep
-> > > > >> root      1992  5.5  0.0      0     0 ?        D    12:15 =20
-> > > > >> 0:09 [btrfs- ino-cache]
->=20
-> [=E2=80=A6]
->=20
-> > > > >> At least it doesn=C2=B4t lock up hard, so there might really=
- be
-> > > > >> something strange with /.
-> > > > >=20
-> > > > > FWIW a btrfs filesystem balance / does work. After this a btr=
-fs
-> > > > > scrub start / still locks the kernel.
-> > > >=20
-> > > > Hi Martin,
-> > > >=20
-> > > > I just sent 2 patches to the list. Could you please test if the=
-se
-> > > > fix your problem with scrub?
-> > >=20
-> > > I didn=C2=B4t yet test it but I tried the first balance then scru=
-b stuff
-> >=20
-> > > again:
-> > Looks like you're on a 32 bit machine.  The current for-linus branc=
-h
-> > has an important fix for scrub on 32 bit that should solve this.
->=20
-> So finally - the machine did make-kpkg over night and complained abou=
-t
-> missing Documentation lguest, then I switched off lots from distro
-> default config and just did the usual make stuff - I was able to scru=
-b
-> both partitions on that ThinkPad T23:
->=20
-> deepdance:~> btrfs scrub status /
-> scrub status for 2bf5b1dc-1d89-4f0d-a561-1a5551a27275
->         scrub started at Fri Mar 16 11:56:12 2012 and finished after
-> 741 seconds total bytes scrubbed: 9.62GB with 0 errors
->=20
-> deepdance:~> btrfs scrub status /home
-> scrub status for a600de65-e1ab-4cbf-b150-bbaeaf9fa98d
->         scrub started at Fri Mar 16 12:00:31 2012 and finished after
-> 1708 seconds total bytes scrubbed: 36.63GB with 0 errors
->=20
-> Thanks a lot for fixing this.
->=20
-> Tested-by: Martin Steigerwald <martin@lichtvoll.de>
-[=E2=80=A6]
+--mYCpIKhGyMATD0i+
+Content-Type: text/plain; charset=us-ascii
+Content-Disposition: inline
 
-Would that patch
+On Sat, Mar 17, 2012 at 04:24:02AM +0000, Skylar Burtenshaw wrote:
+> Hey all. First and foremost, great work on the filesystem. Love it. That is,
+> until this...
+> 
+> AGES ago, I had a power failure. I had 22 drives in one BTRFS filesystem. I
+> know, dumb idea given that it's an experimental FS, but it's not important data,
+> just.....LOTS of it. A dozen terabytes or so.
 
-Btrfs: fix casting error in scrub reada code
+> Now when I try to mount it with all present kernels (up to 3.2.0) I
+> get several minutes of disk churning, and a kernel stack trace.
+> Every tool I throw at it fails. find-root only shows one tree (at
+> the very end) after complaining about blocks seeming great, but
+> generations don't match for ages.
 
-http://git.kernel.org/?p=3Dlinux/kernel/git/mason/linux-
-btrfs.git;a=3Dcommit;h=3Da175423c831ea582c06784d1e172d2ce1d79923a
+   Can you give us the last, say, 200 lines of find-root's output?
+Does it give you any listings for "root objectid"s? With find-root and
+recover, it's not necessarily fatal that the transids/generations
+don't match.
 
-(sorry for line break. KMail insists on it even when I disable line bre=
-aks=20
-due to the minus sign in the URL.)
+> The btrfsck from the stable tree lists twenty "item # key" messages,
+> then stops with "failed to find block number 20975616" and aborts
+> every time.
 
-that I tested above be something for stable?
+> I've been sitting on this filesystem for half a year now, using my
+> backup array, but it's getting full. I realize I'm being very sparse
+> on information, but I'm not sure what you need from me.
 
-To my knowledge Debian Wheezy and Ubuntu 12.04 LTS will have 3.2.
+   Only half a year? :) I sat on my broken 6TB array for a year before
+I gave up and recovered the data I didn't have in backups... (And for
+the same reason you have -- I ran out of space on the secondary
+storage)
 
-Thanks,
---=20
-Martin 'Helios' Steigerwald - http://www.Lichtvoll.de
-GPG: 03B0 0D6C 0040 0710 4AFA  B82F 991B EAAC A599 84C7
---
-To unsubscribe from this list: send the line "unsubscribe linux-btrfs" =
-in
-the body of a message to majordomo@vger.kernel.org
-More majordomo info at  http://vger.kernel.org/majordomo-info.html
+   Hugo.
+
+-- 
+=== Hugo Mills: hugo@... carfax.org.uk | darksatanic.net | lug.org.uk ===
+  PGP key: 515C238D from wwwkeys.eu.pgp.net or http://www.carfax.org.uk
+         --- 2 + 2 = 5,  for sufficiently large values of 2. ---         
+
+--mYCpIKhGyMATD0i+
+Content-Type: application/pgp-signature; name="signature.asc"
+Content-Description: Digital signature
+
+-----BEGIN PGP SIGNATURE-----
+Version: GnuPG v1.4.11 (GNU/Linux)
+
+iD8DBQFPZGgLIKyzvlFcI40RAlgjAJ4xX5u16jBoYUyoVdCYNMuOI1LLzACguQLA
+giDlgUBfxWTpEg004TVfX8A=
+=FcQ+
+-----END PGP SIGNATURE-----
+
+--mYCpIKhGyMATD0i+--

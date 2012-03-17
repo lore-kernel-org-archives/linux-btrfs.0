@@ -1,63 +1,43 @@
-From: Hugo Mills <hugo@carfax.org.uk>
+From: Alex <alex@bpmit.com>
 Subject: Re: "not enough space" with "data raid0"
-Date: Sat, 17 Mar 2012 14:43:38 +0000
-Message-ID: <20120317144337.GJ3172@carfax.org.uk>
-References: <20120317140057.GF3172@carfax.org.uk>
- <C52qXqKD1uB@helmut.hullen.de>
+Date: Sat, 17 Mar 2012 15:17:05 +0000 (UTC)
+Message-ID: <loom.20120317T161152-906@post.gmane.org>
+References: <C52pxfli1uB@helmut.hullen.de> <loom.20120317T131420-684@post.gmane.org> <20120317122522.GD3172@carfax.org.uk> <loom.20120317T141129-14@post.gmane.org> <20120317140057.GF3172@carfax.org.uk>
 Mime-Version: 1.0
-Content-Type: multipart/signed; micalg=pgp-sha1;
-	protocol="application/pgp-signature"; boundary="MzdA25v054BPvyZa"
-Cc: linux-btrfs@vger.kernel.org
-To: helmut@hullen.de
+Content-Type: text/plain; charset=us-ascii
+To: linux-btrfs@vger.kernel.org
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <C52qXqKD1uB@helmut.hullen.de>
 List-ID: <linux-btrfs.vger.kernel.org>
 
+Hugo Mills <hugo <at> carfax.org.uk> writes:
 
---MzdA25v054BPvyZa
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
-
-On Sat, Mar 17, 2012 at 03:24:00PM +0100, Helmut Hullen wrote:
-> Hallo, Hugo,
 > 
-> Du meintest am 17.03.12:
+> On Sat, Mar 17, 2012 at 01:36:04PM +0000, Alex wrote:
+
 > 
-> >> What's the 'solution' though to Hugo's situation?
-> >> By 'solution' I mean the highest-utility way of dealing with unequal
-> >> devices problem in a two or more -up setting.
+>    I don't have this problem personally. I just know something about
+> the way btrfs allocates chunks. I think you meant Helmut has the
+> problem. :)
 > 
-> >    Use mkfs.btrfs -d single, as I said in another part of this
-> > thread.
+> > I'm struggling how to mkfs.btrfs with this new knowledge whilst resolving it
+> > with the btrfs storage pool concept.
+> > 
+> > I stress there is a difficulty with my understanding not btrfs.
 > 
-> Does "single" allow adding new (bigger) disks and removing old (smaller)  
-> disks?
+>    Hugo.
+> 
 
-   Yes. "single" is effectively "RAID linear" -- just adding the disks
-together, effectively linearly(*). It's called "single" because it's
-single (i.e. no) redundancy.
 
-   Hugo.
+Yes, I meant Hugo .. damn .. Helmut, sorry! However deed-poll is a cost
+effective measure which would allow you to avoid the coincident first letter
+with Helmut. ;-)
 
-(*) actually the allocator will kind of "stripe" the data in 1GiB-wide
-stripes, but that's incidental really.
+Since we're still experimental in the non-SUSE and Oracle world and the space
+meta demands sb lower can I squeak by:
 
--- 
-=== Hugo Mills: hugo@... carfax.org.uk | darksatanic.net | lug.org.uk ===
-  PGP key: 515C238D from wwwkeys.eu.pgp.net or http://www.carfax.org.uk
-   --- A diverse working environment:  Di longer you vork here, di ---   
-                             verse it gets.                              
+mkfs.btrfs -d single -m raid1 ?
 
---MzdA25v054BPvyZa
-Content-Type: application/pgp-signature; name="signature.asc"
-Content-Description: Digital signature
+Don't laugh.
 
------BEGIN PGP SIGNATURE-----
-Version: GnuPG v1.4.11 (GNU/Linux)
 
-iD8DBQFPZKMZIKyzvlFcI40RAkd7AKDQH8yrH5f8n1MYSzL9l66WY/fDBwCfU3/f
-rStzIeExjVuyrDFVszkNLKI=
-=NLvP
------END PGP SIGNATURE-----
 
---MzdA25v054BPvyZa--

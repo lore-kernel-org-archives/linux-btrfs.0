@@ -1,23 +1,40 @@
-From: cwillu <cwillu@cwillu.com>
-Subject: Re: Can't mount, power failure - recoverable?
-Date: Sat, 17 Mar 2012 01:51:27 -0600
-Message-ID: <CAE5mzvi8oX4B+yriTRnj_g+_a3=BoC-o1BSRs4PpJsAMBOP5xw@mail.gmail.com>
-References: <loom.20120317T051243-551@post.gmane.org>
+From: "Helmut Hullen" <Hullen@t-online.de>
+Subject: looking for non existent devices
+Date: 17 Mar 2012 10:32:00 +0100
+Message-ID: <C52pIRfT1uB@helmut.hullen.de>
+Reply-To: helmut@hullen.de
 Mime-Version: 1.0
-Content-Type: text/plain; charset=UTF-8
-Cc: linux-btrfs@vger.kernel.org
-To: Skylar Burtenshaw <daninfuchs@gmail.com>
+Content-Type: text/plain; charset=US-ASCII
+To: linux-btrfs@vger.kernel.org
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <loom.20120317T051243-551@post.gmane.org>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-> Now when I try to mount it with all present kernels (up to 3.2.0) I get several
-> minutes of disk churning, and a kernel stack trace.
+Hallo, linux-btrfs,
 
-[snip]
+some commands still look for non existent devices.
 
-> As such, my questions are these:
-> 1) What information do you require in order to ascertain the degree of my
-> problem?
+I don't use "udev".
+When I run
 
-The stack trace would be a start :p
+        btrfs filesystem show
+
+only the existent devices are shown - fine.
+
+When I run
+
+        btrfs filesystem label
+
+or
+
+        btrfs scrub status /dev/sdxn
+
+then I get a lot of error messages with (p.e.)
+
+  failed to read /dev/hda6: No such device or address
+  failed to read /dev/sdm7: No such device or address
+  failed to read /dev/sr3: No such device or address
+
+Kernel 3.2.9
+
+Viele Gruesse!
+Helmut

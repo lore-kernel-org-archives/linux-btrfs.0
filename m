@@ -1,32 +1,27 @@
-From: Alex <alex@bpmit.com>
+From: "Helmut Hullen" <Hullen@t-online.de>
 Subject: Re: "not enough space" with "data raid0"
-Date: Sat, 17 Mar 2012 12:19:54 +0000 (UTC)
-Message-ID: <loom.20120317T131420-684@post.gmane.org>
-References: <C52pxfli1uB@helmut.hullen.de>
+Date: 17 Mar 2012 13:18:00 +0100
+Message-ID: <C52q4Ocy1uB@helmut.hullen.de>
+References: <201203172313.19705.chris@csamuel.org>
+Reply-To: helmut@hullen.de
 Mime-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
+Content-Type: text/plain; charset=US-ASCII
 To: linux-btrfs@vger.kernel.org
 Return-path: <linux-btrfs-owner@vger.kernel.org>
+In-Reply-To: <201203172313.19705.chris@csamuel.org>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Helmut Hullen <Hullen <at> t-online.de> writes:
+Hallo, Chris,
 
-> 
+Du meintest am 17.03.12:
 
-> 
-> Where is the problem, how can I use the full space?
-> 
-> Viele Gruesse!
-> Helmut
+>> Where is the problem, how can I use the full space?
 
-Effectively it's missing the trigger to rebalance when the 'primary' device
-starts to get full, or just to randomly spread the data between the devices.
+> Which kernel was this with Helmut?
 
-Isn't this going to be a problem for anyone restoring from a backup? Lots of
-data heading to btrfs without a pause.
+Kernel 3.2.9 (self made)
 
-Helmut, can you tell everyone which version of the kernel & patches you're
-running pls.
+btrfs-progs-20111030
 
-
-
+Viele Gruesse!
+Helmut

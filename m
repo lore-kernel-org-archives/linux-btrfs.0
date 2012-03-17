@@ -1,23 +1,40 @@
-From: Travis Shivers <ttshivers@gmail.com>
-Subject: Re: Btrfs Storage Array Corrupted
-Date: Fri, 16 Mar 2012 12:30:15 -0500
-Message-ID: <CAPeorG8tvjfaCFRa3UjLwd855T8M=8a12JST6doG21N9qyVsOQ@mail.gmail.com>
-References: <CAPeorG-1EtMAu9XzSNqMW-=QwhN-_bZorLXy9Pr5N+J-LKPzTg@mail.gmail.com>
- <4F4D8259.2090209@oracle.com> <20120229025027.GB15383@shiny>
- <CAPeorG_-z-UuVrzUhLucMnPg5QxUcQKh4r23ut6fOLObxL4C8A@mail.gmail.com>
- <CAE5mzvixYURzdNX3snjjJESUNUBz316YjzDxfZe6-Q2TGBMYww@mail.gmail.com>
- <CAPeorG9E0SDXqoa7VeUASxAbtBf+voQVRgfZ_FtOb3d6nbe-ZQ@mail.gmail.com>
- <20120229135926.GB5054@shiny> <CAPeorG9u6Z-Z5QnxAc5QB3ZzrR17+3Y2t-UQFd8v_aqN-rVwTA@mail.gmail.com>
- <20120229221414.GS5054@shiny> <CAPeorG-rC6_bM+vX0Jyap74TdRr7cgQjBfb_PBvNHDz-yyQkWw@mail.gmail.com>
- <20120229234437.GT5054@shiny> <CAPeorG8xpyeetBRSAt092Ac2qMcvFLLi2utXvfSgYWbzt0M3zw@mail.gmail.com>
+From: Skylar Burtenshaw <daninfuchs@gmail.com>
+Subject: Can't mount, power failure - recoverable?
+Date: Sat, 17 Mar 2012 04:24:02 +0000 (UTC)
+Message-ID: <loom.20120317T051243-551@post.gmane.org>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=ISO-8859-1
+Content-Type: text/plain; charset=us-ascii
 To: linux-btrfs@vger.kernel.org
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <CAPeorG8xpyeetBRSAt092Ac2qMcvFLLi2utXvfSgYWbzt0M3zw@mail.gmail.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-When you finish the patch, where should I get it from? Is it a general
-btrfs patch, and I would grab it in the next kernel release, or is it
-a specific patch for me, and I would grab it from a btrfs repository?
-Thanks again for all of your help.
+Hey all. First and foremost, great work on the filesystem. Love it. That is,
+until this...
+
+AGES ago, I had a power failure. I had 22 drives in one BTRFS filesystem. I
+know, dumb idea given that it's an experimental FS, but it's not important data,
+just.....LOTS of it. A dozen terabytes or so.
+
+Now when I try to mount it with all present kernels (up to 3.2.0) I get several
+minutes of disk churning, and a kernel stack trace. Every tool I throw at it
+fails. find-root only shows one tree (at the very end) after complaining about
+blocks seeming great, but generations don't match for ages. The btrfsck from the
+stable tree lists twenty "item # key" messages, then stops with "failed to find
+block number 20975616" and aborts every time.
+
+I've been sitting on this filesystem for half a year now, using my backup array,
+but it's getting full. I realize I'm being very sparse on information, but I'm
+not sure what you need from me.
+
+As such, my questions are these:
+1) What information do you require in order to ascertain the degree of my
+problem?
+
+2) (Once more information is obtained, of course.) Is there any hope of this
+filesystem being reliably recovered? I realize that's a loaded question and that
+you obviously can't give me a definite 100% answer, but I would like to know if
+it's time to wipe it and start anew, or if the odds are good enough that I
+should wait.
+
+Thank you very much for your attention.
+

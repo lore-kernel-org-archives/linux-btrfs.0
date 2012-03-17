@@ -1,51 +1,36 @@
-From: Chris Samuel <chris@csamuel.org>
-Subject: Re: "not enough space" with "data raid0"
-Date: Sat, 17 Mar 2012 23:13:10 +1100
-Message-ID: <201203172313.19705.chris@csamuel.org>
-References: <C52pxfli1uB@helmut.hullen.de>
+From: Chris Mason <chris.mason@oracle.com>
+Subject: Re: Can't mount, power failure - recoverable?
+Date: Sat, 17 Mar 2012 08:18:32 -0400
+Message-ID: <20120317121832.GF19217@shiny>
+References: <loom.20120317T051243-551@post.gmane.org>
 Mime-Version: 1.0
-Content-Type: multipart/signed;
-  boundary="nextPart5739266.UBfWgZoJrB";
-  protocol="application/pgp-signature";
-  micalg=pgp-sha1
-To: linux-btrfs@vger.kernel.org
+Content-Type: text/plain; charset=us-ascii
+Cc: linux-btrfs@vger.kernel.org
+To: Skylar Burtenshaw <daninfuchs@gmail.com>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <C52pxfli1uB@helmut.hullen.de>
+In-Reply-To: <loom.20120317T051243-551@post.gmane.org>
 List-ID: <linux-btrfs.vger.kernel.org>
 
---nextPart5739266.UBfWgZoJrB
-Content-Type: Text/Plain;
-  charset="iso-8859-1"
-Content-Transfer-Encoding: quoted-printable
+On Sat, Mar 17, 2012 at 04:24:02AM +0000, Skylar Burtenshaw wrote:
+> Hey all. First and foremost, great work on the filesystem. Love it. That is,
+> until this...
+> 
+> AGES ago, I had a power failure. I had 22 drives in one BTRFS filesystem. I
+> know, dumb idea given that it's an experimental FS, but it's not important data,
+> just.....LOTS of it. A dozen terabytes or so.
 
-On Saturday 17 March 2012 23:01:00 Helmut Hullen wrote:
+Which kernel was used during the power outage?  If 3.2 or higher you may
+be able to mount -o recovery
 
-> Where is the problem, how can I use the full space?
+> 
+> Now when I try to mount it with all present kernels (up to 3.2.0) I get several
+> minutes of disk churning, and a kernel stack trace. Every tool I throw at it
+> fails. find-root only shows one tree (at the very end) after complaining about
+> blocks seeming great, but generations don't match for ages. The btrfsck from the
+> stable tree lists twenty "item # key" messages, then stops with "failed to find
+> block number 20975616" and aborts every time.
 
-Which kernel was this with Helmut?
+We'll definitely need the stack trace, and the tool output.  From there
+I'll ask for more.
 
-cheers,
-Chris
-=2D-=20
- Chris Samuel  :  http://www.csamuel.org/  :  Melbourne, VIC
-
-This email may come with a PGP signature as a file. Do not panic.
-=46or more info see: http://en.wikipedia.org/wiki/OpenPGP
-
---nextPart5739266.UBfWgZoJrB
-Content-Type: application/pgp-signature; name=signature.asc 
-Content-Description: This is a digitally signed message part.
-
------BEGIN PGP SIGNATURE-----
-Version: GnuPG v1.4.11 (GNU/Linux)
-
-iQEVAwUAT2R/141yjaOTJg85AQK5wwgAlBbXOUdnodBifRgx3VWzzvmf1DX+5MhP
-5la45aF9SVl5rMS46Ifj593L8KdGQMBerzfbRQPaxC2CSG1U35BbcdgLy6rWu9ey
-fiq5SIW/sDqaPBQ7huoOJukXCBS0kJc6Act0AXtlwwK+hs8GhNkgG3dvcTpjNzYE
-rabVOJA4WtDHbE/6Vf+wmqrmFeKWr7CVszyYkTZZXLVxs0a1x3ycIyeo9lEPnuhK
-cLQm36PidT8odPX5CfRwVm2EC0SNvcH3QJBWV2u18fLLNhTdUfvNODcII6u2JA0E
-ApfEYV6tH6quHEUAmbHfS/MEN4emomRKCLnplIuEBNUULj/7StZkAA==
-=F0al
------END PGP SIGNATURE-----
-
---nextPart5739266.UBfWgZoJrB--
+-chris

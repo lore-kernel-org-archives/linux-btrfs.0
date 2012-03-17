@@ -1,36 +1,92 @@
-From: Chris Mason <chris.mason@oracle.com>
-Subject: Re: Can't mount, power failure - recoverable?
-Date: Sat, 17 Mar 2012 08:18:32 -0400
-Message-ID: <20120317121832.GF19217@shiny>
-References: <loom.20120317T051243-551@post.gmane.org>
+From: Hugo Mills <hugo@carfax.org.uk>
+Subject: Re: "not enough space" with "data raid0"
+Date: Sat, 17 Mar 2012 12:19:09 +0000
+Message-ID: <20120317121909.GB3172@carfax.org.uk>
+References: <C52pxfli1uB@helmut.hullen.de>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
+Content-Type: multipart/signed; micalg=pgp-sha1;
+	protocol="application/pgp-signature"; boundary="7ZAtKRhVyVSsbBD2"
 Cc: linux-btrfs@vger.kernel.org
-To: Skylar Burtenshaw <daninfuchs@gmail.com>
+To: helmut@hullen.de
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <loom.20120317T051243-551@post.gmane.org>
+In-Reply-To: <C52pxfli1uB@helmut.hullen.de>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Sat, Mar 17, 2012 at 04:24:02AM +0000, Skylar Burtenshaw wrote:
-> Hey all. First and foremost, great work on the filesystem. Love it. That is,
-> until this...
+
+--7ZAtKRhVyVSsbBD2
+Content-Type: text/plain; charset=us-ascii
+Content-Disposition: inline
+
+On Sat, Mar 17, 2012 at 01:01:00PM +0100, Helmut Hullen wrote:
+> Hallo, linux-btrfs,
 > 
-> AGES ago, I had a power failure. I had 22 drives in one BTRFS filesystem. I
-> know, dumb idea given that it's an experimental FS, but it's not important data,
-> just.....LOTS of it. A dozen terabytes or so.
-
-Which kernel was used during the power outage?  If 3.2 or higher you may
-be able to mount -o recovery
-
+> I've (once more) created my test system:
 > 
-> Now when I try to mount it with all present kernels (up to 3.2.0) I get several
-> minutes of disk churning, and a kernel stack trace. Every tool I throw at it
-> fails. find-root only shows one tree (at the very end) after complaining about
-> blocks seeming great, but generations don't match for ages. The btrfsck from the
-> stable tree lists twenty "item # key" messages, then stops with "failed to find
-> block number 20975616" and aborts every time.
+>   mkfs.btrfs -d raid0 -m raid1 /dev/sdb1 /dev/sdc1
+> 
+> 73 GB + 146 GB.
+> 
+> Then I mounted it and copied about 150 GByte onto it. But copying was  
+> incomplete, the job ended with "no space on ..."
+> 
+> 
+> # btrfs fi show
+> 
+> Label: 'Scsi'  uuid: e30586e9-a903-4d17-8ec0-1781457212c6
+> 	Total devices 2 FS bytes used 134.86GB
+> 	devid    1 size 68.37GB used 68.37GB path /dev/sdb1
+> 	devid    2 size 136.73GB used 68.35GB path /dev/sdc1
+> 
+> Btrfs Btrfs v0.19
+> 
+> # btrfs fi df <mountpoint>
+> 
+> Data, RAID0: total=134.68GB, used=134.67GB
+> Data: total=8.00MB, used=8.00MB
+> System, RAID1: total=8.00MB, used=16.00KB
+> System: total=4.00MB, used=0.00
+> Metadata, RAID1: total=1.00GB, used=185.39MB
+> Metadata: total=8.00MB, used=0.00
+> 
+> # df <mountpoint>
+> 
+> Filesystem     1K-blocks      Used Available Use% Mounted on
+> /dev/sdc1      215059324 141597364      8724 100% /mnt/btr
+> 
+> # fdisk -l
+> 
+> Disk /dev/sdb: 73.4 GB, 73407868928 bytes
+> Disk /dev/sdc: 146.8 GB, 146814976000 bytes
+> 
+> -----------------------------------
+> 
+> Where is the problem, how can I use the full space?
 
-We'll definitely need the stack trace, and the tool output.  From there
-I'll ask for more.
+   You can't. btrfs requires RAID-0 to be at least two devices wide
+(otherwise it's not striped at all, which is the point of RAID-0). If
+you want to use the full capacity of both disks and don't care about
+the performance gain from striping, use -d single (which is the
+default). If you do care about the performance gain from striping,
+then you're going to have to lose some usable space.
 
--chris
+   Hugo.
+
+-- 
+=== Hugo Mills: hugo@... carfax.org.uk | darksatanic.net | lug.org.uk ===
+  PGP key: 515C238D from wwwkeys.eu.pgp.net or http://www.carfax.org.uk
+  --- I am but mad north-north-west:  when the wind is southerly, I ---  
+                       know a hawk from a handsaw.                       
+
+--7ZAtKRhVyVSsbBD2
+Content-Type: application/pgp-signature; name="signature.asc"
+Content-Description: Digital signature
+
+-----BEGIN PGP SIGNATURE-----
+Version: GnuPG v1.4.11 (GNU/Linux)
+
+iD8DBQFPZIE8IKyzvlFcI40RAlQfAKC+u/KXRV0FYk6bldOflM7khEVNpgCdFmFN
+SEiQdtMLgMQ9EUqxT5OFYqM=
+=Evky
+-----END PGP SIGNATURE-----
+
+--7ZAtKRhVyVSsbBD2--

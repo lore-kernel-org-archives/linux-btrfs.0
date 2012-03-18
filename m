@@ -1,37 +1,53 @@
-From: "Helmut Hullen" <Hullen@t-online.de>
+From: Chris Samuel <chris@csamuel.org>
 Subject: Re: "scrub" stops the machine
-Date: 18 Mar 2012 09:04:00 +0100
-Message-ID: <C56sI2Gi1uB@helmut.hullen.de>
-References: <201203171914.28883.Martin@lichtvoll.de>
-Reply-To: helmut@hullen.de
+Date: Sun, 18 Mar 2012 20:18:19 +1100
+Message-ID: <201203182018.25038.chris@csamuel.org>
+References: <C56sI2Gi1uB@helmut.hullen.de>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=US-ASCII
+Content-Type: multipart/signed;
+  boundary="nextPart13898236.R1q2Q9cdPT";
+  protocol="application/pgp-signature";
+  micalg=pgp-sha1
 To: linux-btrfs@vger.kernel.org
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <201203171914.28883.Martin@lichtvoll.de>
+In-Reply-To: <C56sI2Gi1uB@helmut.hullen.de>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hallo, Martin,
+--nextPart13898236.R1q2Q9cdPT
+Content-Type: Text/Plain;
+  charset="iso-8859-1"
+Content-Transfer-Encoding: quoted-printable
 
-Du meintest am 17.03.12:
+On Sunday 18 March 2012 19:04:00 Helmut Hullen wrote:
 
->>>>          btrfs scrub start /mnt/btr
->>>>
->>>> and all was dead. Really dead. No access via keybord, no access
->>>> via SSH.
+> Second try with kernel 3.2.5: same problem.
 
->>> what kernel are you using?
+My understanding is that all 3.2.x versions will have the same btrfs=20
+code, if you want to try with a newer version you'll need to try the=20
+3.3 release candidates.
 
->> As mentioned some hours ago: 3.2.9 (self made).
+cheers!
+Chris
+=2D-=20
+ Chris Samuel  :  http://www.csamuel.org/  :  Melbourne, VIC
 
->>> Are you by any chance on a 32 bit maschine?
+This email may come with a PGP signature as a file. Do not panic.
+=46or more info see: http://en.wikipedia.org/wiki/OpenPGP
 
->> Yes.
+--nextPart13898236.R1q2Q9cdPT
+Content-Type: application/pgp-signature; name=signature.asc 
+Content-Description: This is a digitally signed message part.
 
+-----BEGIN PGP SIGNATURE-----
+Version: GnuPG v1.4.11 (GNU/Linux)
 
-Second try with kernel 3.2.5: same problem.
+iQEVAwUAT2WoXI1yjaOTJg85AQKhoAf/UsZHJVuPZSlH7WLYfyusgDb6DGgZDRw+
+UHVOBtyKHKDsnLoU13g30odWbOHFL+9lpDdcO/SmVy8AGerJkMVBEpzM9Fs7wOAy
+H6Rxw463iM3mXME0piAQH0OwFmGCvqwKh7cf4DFNXzuIam6BpNipcGLxoRu48hMc
+0CEP3Njm6+aJSTO1f7rhl7NSRPUoJEyy5umSBHrIFB3JO6Mfji9fbc6kHLLBgFkl
+paZoDp1+tGFj6s/YzO8ejY5WZE/k3sNAuGNh2MiuTvW7wN2dFpRvYdNwFnSZ3ze+
+UVVQLR35y6owLbZQd9+gFH+Cw4xcY/+SfOlfmrln3b0IOeQMeR/I0A==
+=Wz/P
+-----END PGP SIGNATURE-----
 
-The system is completely dead.
-
-Viele Gruesse!
-Helmut
+--nextPart13898236.R1q2Q9cdPT--

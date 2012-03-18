@@ -1,73 +1,141 @@
-From: Skylar Burtenshaw <daninfuchs@gmail.com>
-Subject: Re: Can't mount, power failure - recoverable?
-Date: Sat, 17 Mar 2012 19:06:28 +0000 (UTC)
-Message-ID: <loom.20120317T193619-962@post.gmane.org>
-References: <loom.20120317T051243-551@post.gmane.org> <20120317121832.GF19217@shiny>
+From: Greg Kroah-Hartman <gregkh@linuxfoundation.org>
+Subject: Re: 3.2-rc4: scrubbing locks up the kernel, then hung tasks on boot
+Date: Sat, 17 Mar 2012 17:37:08 -0700
+Message-ID: <20120318003708.GE22993@kroah.com>
+References: <201112171833.34720.Martin@lichtvoll.de>
+ <20120315174245.GV19217@shiny>
+ <201203161605.47792.Martin@lichtvoll.de>
+ <201203171043.25660.Martin@lichtvoll.de>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-To: linux-btrfs@vger.kernel.org
+Content-Type: text/plain; charset=utf-8
+Cc: linux-btrfs@vger.kernel.org, Chris Mason <chris.mason@oracle.com>,
+	Arne Jansen <sensille@gmx.net>, stable@kernel.org
+To: Martin Steigerwald <Martin@lichtvoll.de>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
+In-Reply-To: <201203171043.25660.Martin@lichtvoll.de>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Chris Mason <chris.mason <at> oracle.com> writes:
+On Sat, Mar 17, 2012 at 10:43:25AM +0100, Martin Steigerwald wrote:
+> Hi Greg, Chris, Arne, hi everyone,
+>=20
+> Am Freitag, 16. M=C3=A4rz 2012 schrieb Martin Steigerwald:
+> > Am Donnerstag, 15. M=C3=A4rz 2012 schrieb Chris Mason:
+> > > On Thu, Mar 15, 2012 at 06:32:19PM +0100, Martin Steigerwald wrot=
+e:
+> > > > Am Samstag, 25. Februar 2012 schrieb Arne Jansen:
+> > > > > On 02/24/12 16:51, Martin Steigerwald wrote:
+> > > > > > Am Samstag, 21. Januar 2012 schrieb Martin Steigerwald:
+> > > > > >> Am Samstag, 21. Januar 2012 schrieb Martin Steigerwald:
+> > > > > >>> I still have this with 3.2.0-1-pae - which is a debian ke=
+rnel
+> > > > > >>> based on 3.2.1.
+> > > > > >>>=20
+> > > > > >>> When I do btrfs scrub start / the machine locks immediate=
+ly
+> > > > > >>> up hard.
+> > > > > >>>=20
+> > > > > >>> Then usually on next boot it stops on space_cache enabled
+> > > > > >>> message, but not  the one for /, but the one for /home wh=
+ich
+> > > > > >>> is mounted later.
+> >=20
+> > [=E2=80=A6]
+> >=20
+> > > > > >> I now tested scrubbing /home which is a different BTRFS
+> > > > > >> filesystem on the same machine.
+> > > > > >>=20
+> > > > > >> Then the scrub is started, scrub status tells me so, but
+> > > > > >> nothing happens, no block in/out activity in vmstat, no CP=
+U
+> > > > > >> related activity in top.
+> > > > > >>=20
+> > > > > >> btrfs scrub cancel then hangs, but not the complete machin=
+e,
+> > > > > >> only the process.
+> > > > > >>=20
+> > > > > >> I had this once on my T520 with the internal Intel SSD 320=
+ as
+> > > > > >> well. The other time it worked.
+> > > > > >>=20
+> > > > > >> Well maybe that is due to BTRFS doing something else on my=
+ T23
+> > > > > >> now:
+> > > > > >>=20
+> > > > > >> deepdance:~>  ps aux | grep ino-cache | grep -v grep
+> > > > > >> root      1992  5.5  0.0      0     0 ?        D    12:15 =
+=20
+> > > > > >> 0:09 [btrfs- ino-cache]
+> >=20
+> > [=E2=80=A6]
+> >=20
+> > > > > >> At least it doesn=C2=B4t lock up hard, so there might real=
+ly be
+> > > > > >> something strange with /.
+> > > > > >=20
+> > > > > > FWIW a btrfs filesystem balance / does work. After this a b=
+trfs
+> > > > > > scrub start / still locks the kernel.
+> > > > >=20
+> > > > > Hi Martin,
+> > > > >=20
+> > > > > I just sent 2 patches to the list. Could you please test if t=
+hese
+> > > > > fix your problem with scrub?
+> > > >=20
+> > > > I didn=C2=B4t yet test it but I tried the first balance then sc=
+rub stuff
+> > >=20
+> > > > again:
+> > > Looks like you're on a 32 bit machine.  The current for-linus bra=
+nch
+> > > has an important fix for scrub on 32 bit that should solve this.
+> >=20
+> > So finally - the machine did make-kpkg over night and complained ab=
+out
+> > missing Documentation lguest, then I switched off lots from distro
+> > default config and just did the usual make stuff - I was able to sc=
+rub
+> > both partitions on that ThinkPad T23:
+> >=20
+> > deepdance:~> btrfs scrub status /
+> > scrub status for 2bf5b1dc-1d89-4f0d-a561-1a5551a27275
+> >         scrub started at Fri Mar 16 11:56:12 2012 and finished afte=
+r
+> > 741 seconds total bytes scrubbed: 9.62GB with 0 errors
+> >=20
+> > deepdance:~> btrfs scrub status /home
+> > scrub status for a600de65-e1ab-4cbf-b150-bbaeaf9fa98d
+> >         scrub started at Fri Mar 16 12:00:31 2012 and finished afte=
+r
+> > 1708 seconds total bytes scrubbed: 36.63GB with 0 errors
+> >=20
+> > Thanks a lot for fixing this.
+> >=20
+> > Tested-by: Martin Steigerwald <martin@lichtvoll.de>
+> [=E2=80=A6]
+>=20
+> Would that patch
+>=20
+> Btrfs: fix casting error in scrub reada code
+>=20
+> http://git.kernel.org/?p=3Dlinux/kernel/git/mason/linux-
+> btrfs.git;a=3Dcommit;h=3Da175423c831ea582c06784d1e172d2ce1d79923a
+>=20
+> (sorry for line break. KMail insists on it even when I disable line b=
+reaks=20
+> due to the minus sign in the URL.)
+>=20
+> that I tested above be something for stable?
 
-> Which kernel was used during the power outage?
-The kernel in use was 2.6.38 or so. Didn't write that down, but I'm fairly
-certain it was .38 or .37 - sorry I can't be more precise.
+<formletter>
 
-Here's the trace. Mount attempt using 3.2.0;
+This is not the correct way to submit patches for inclusion in the
+stable kernel tree.  Please read Documentation/stable_kernel_rules.txt
+for how to do this properly.
 
-[ 39.873019] device label SolaceNetArray devid 20 transid 267118 /dev/sda3
-[ 39.894154] btrfs: disk space caching is enabled
-[ 62.383043] BUG: unable to handle kernel NULL pointer dereference at
-00000000000000d0
-[ 62.383114] IP: [<ffffffffa0021161>] btrfs_put_block_group+0x11/0x70 [btrfs]
-[ 62.383190] PGD 78e80067 PUD 79588067 PMD 0
-[ 62.383231] Oops: 0002 [#1] SMP
-[ 62.383261] CPU 0
-[ 62.383277] Modules linked in: aoe radeon ttm nfsd drm_kms_helper drm nfs lockd
-k8temp fscache auth_rpcgss nfs_acl lp i2c_algo_bit edac_core edac_mce_amd
-i2c_nforce2 psmouse asus_atk0110 serio_raw parport sunrpc usbhid hid 3w_9xxx
-floppy sata_promise pata_sil680 sata_nv forcedeth pata_amd sky2 sata_sil24 nbd
-btrfs zlib_deflate libcrc32c
-[ 62.383583]
-[ 62.383597] Pid: 1764, comm: mount Not tainted 3.2.0-030200-generic
-#201201042035 System manufacturer
-System Product Name/A8N32-SLI-Deluxe
-[ 62.383692] RIP: 0010:[<ffffffffa0021161>] [<ffffffffa0021161>]
-btrfs_put_block_group+0x11/0x70
-[btrfs]
-[ 62.383772] RSP: 0018:ffff880078e79568 EFLAGS: 00010292
-[ 62.383810] RAX: ffff880072e35000 RBX: 0000000000000000 RCX: 0000160000000000
-[ 62.383861] RDX: 000000000004136e RSI: 0000000040000000 RDI: 0000000000000000
-[ 62.383912] RBP: ffff880078e79578 R08: 0000000000000000 R09: 0000000000000002
-[ 62.383962] R10: 0000000000000000 R11: 0000000000000000 R12: ffff88007b3ca000
-[ 62.384013] R13: 0000000000000000 R14: ffff880077daa048 R15: ffff880000000000
-[ 62.384064] FS: 00007f95889927e0(0000) GS:ffff88007fc00000(0000)
-knlGS:0000000000000000
-[ 62.384121] CS: 0010 DS: 0000 ES: 0000 CR0: 000000008005003b
-[ 62.384162] CR2: 00000000000000d0 CR3: 0000000078c90000 CR4: 00000000000006f0
-[ 62.384213] DR0: 0000000000000000 DR1: 0000000000000000 DR2: 0000000000000000
-[ 62.384263] DR3: 0000000000000000 DR6: 00000000ffff0ff0 DR7: 0000000000000400
-[ 62.384314] Process mount (pid: 1764, threadinfo ffff880078e78000, task
-ffff88007ab90000)
-[ 62.384371] Stack:
-[ 62.386171] ffff880078e79578 ffff8800729e9320 ffff880078e795d8 ffffffffa0024bdf
-[ 62.386928] ffff880000000002 0000000000000000 ffff880077ff8190 000000000004136f
-[ 62.386928] ffff880078e795d8 ffff88007b3ca000 ffff880072ba6460 ffff8800729e9320
-[ 62.386928] Call Trace:
-[ 62.386928] [<ffffffffa0024bdf>] btrfs_free_tree_block+0xef/0x1a0 [btrfs]
-[ 62.386928] [<ffffffffa001b99a>] __btrfs_cow_block+0x2ca/0x4b0 [btrfs]
-[ 62.386928] [<ffffffffa001c14e>] btrfs_cow_block+0xee/0x200 [btrfs]
-[ 62.386928] [<ffffffffa001ee68>] btrfs_search_slot+0x328/0x730 [btrfs]
-[ 62.386928] [<ffffffffa002919c>] lookup_inline_extent_backref+0xbc/0x400 [btrfs]
-[ 62.386928] [<ffffffff811674ad>] ? kmem_cache_alloc+0xcd/0x120
-[ 62.386928] [<ffffffffa002ac56>] __btrfs_free_extent+0xd6/0x700 [btrfs]
-[ 62.386928] [<ffffffff8107720c>] ? lock_timer_base+0x3c/0x70
-[ 62.386928] [<ffffffff81138c58>] ? bdi_wakeup_thread_delayed+0x38/0x40
-[ 62.386928] [<ffffffffa002b3da>] run_delayed_tree_ref+0x15a/0x160 [btrfs]
-
-
-
-
-
+</formletter>
+--
+To unsubscribe from this list: send the line "unsubscribe linux-btrfs" =
+in
+the body of a message to majordomo@vger.kernel.org
+More majordomo info at  http://vger.kernel.org/majordomo-info.html

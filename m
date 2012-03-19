@@ -1,37 +1,53 @@
-From: Stefan Behrens <sbehrens@giantdisaster.de>
-Subject: [PATCH] Btrfs: fix btrfs_ioctl_dev_info() crash on missing device
-Date: Mon, 19 Mar 2012 16:17:22 +0100
-Message-ID: <1332170242-30064-1-git-send-email-sbehrens@giantdisaster.de>
-To: linux-btrfs@vger.kernel.org
+From: Greg Kroah-Hartman <gregkh@linuxfoundation.org>
+Subject: Re: 3.2-rc4: scrubbing locks up the kernel, then hung tasks on boot
+Date: Mon, 19 Mar 2012 08:48:10 -0700
+Message-ID: <20120319154810.GB8176@kroah.com>
+References: <201112171833.34720.Martin@lichtvoll.de>
+ <201203171043.25660.Martin@lichtvoll.de>
+ <20120318003708.GE22993@kroah.com>
+ <201203190931.26493.ms@teamix.de>
+Mime-Version: 1.0
+Content-Type: text/plain; charset=us-ascii
+Cc: linux-btrfs@vger.kernel.org,
+	Martin Steigerwald <Martin@lichtvoll.de>,
+	Chris Mason <chris.mason@oracle.com>,
+	Arne Jansen <sensille@gmx.net>, stable@kernel.org
+To: Martin Steigerwald <ms@teamix.de>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
+In-Reply-To: <201203190931.26493.ms@teamix.de>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-When a filesystem is mounted with the degraded option, it is
-possible that some of the devices are not there.
-btrfs_ioctl_dev_info() crashs in this case because the device
-name is a NULL pointer. This ioctl was only used for scrub.
+On Mon, Mar 19, 2012 at 09:31:24AM +0100, Martin Steigerwald wrote:
+> > <formletter>
+> > 
+> > This is not the correct way to submit patches for inclusion in the
+> > stable kernel tree.  Please read Documentation/stable_kernel_rules.txt
+> > for how to do this properly.
+> > 
+> > </formletter>
+> 
+> What point of the rules do you refer to? Is it
+> 
+>  - It or an equivalent fix must already exist in Linus' tree (upstream).
 
-Signed-off-by: Stefan Behrens <sbehrens@giantdisaster.de>
----
- fs/btrfs/ioctl.c |    5 ++++-
- 1 files changed, 4 insertions(+), 1 deletions(-)
+Yes.
 
-diff --git a/fs/btrfs/ioctl.c b/fs/btrfs/ioctl.c
-index 6834be4..9b4028b 100644
---- a/fs/btrfs/ioctl.c
-+++ b/fs/btrfs/ioctl.c
-@@ -2188,7 +2188,10 @@ static long btrfs_ioctl_dev_info(struct btrfs_root *root, void __user *arg)
- 	di_args->bytes_used = dev->bytes_used;
- 	di_args->total_bytes = dev->total_bytes;
- 	memcpy(di_args->uuid, dev->uuid, sizeof(di_args->uuid));
--	strncpy(di_args->path, dev->name, sizeof(di_args->path));
-+	if (dev->name)
-+		strncpy(di_args->path, dev->name, sizeof(di_args->path));
-+	else
-+		di_args->path[0] = '\0';
- 
- out:
- 	if (ret == 0 && copy_to_user(arg, di_args, sizeof(*di_args)))
--- 
-1.7.3.4
+Without that, there's nothing I can do with this.
 
+> Or do you want the patch quoted in the mail?
+> 
+> Anyways its not yet in linus tree AFAIR and from my side it was a question 
+> whether it should be included at all. I thought it might be good ccing you on 
+> that question already.
+
+It's nice, yes, but note that you sent this to me directly, didn't cc:
+the proper stable mailing list so that others who maintain other stable
+trees also didn't get the notice, and again, there's really nothing that
+the stable maintainers can do about this at the moment.
+
+But, if this does go to Linus's tree, then stable@vger.kernel.org would
+be very interested in knowing about it.
+
+thanks,
+
+greg k-h

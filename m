@@ -1,53 +1,27 @@
-From: Greg Kroah-Hartman <gregkh@linuxfoundation.org>
-Subject: Re: 3.2-rc4: scrubbing locks up the kernel, then hung tasks on boot
-Date: Mon, 19 Mar 2012 08:48:10 -0700
-Message-ID: <20120319154810.GB8176@kroah.com>
-References: <201112171833.34720.Martin@lichtvoll.de>
- <201203171043.25660.Martin@lichtvoll.de>
- <20120318003708.GE22993@kroah.com>
- <201203190931.26493.ms@teamix.de>
+From: Hullen@t-online.de (Helmut Hullen)
+Subject: Re: [PATCH] Btrfs: fix btrfs_ioctl_dev_info() crash on missing device
+Date: 19 Mar 2012 16:54:00 +0100
+Message-ID: <C5Ax0wQeCXB@helmut.hullen.de>
+References: <1332170242-30064-1-git-send-email-sbehrens@giantdisaster.de>
+Reply-To: helmut@hullen.de
 Mime-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Cc: linux-btrfs@vger.kernel.org,
-	Martin Steigerwald <Martin@lichtvoll.de>,
-	Chris Mason <chris.mason@oracle.com>,
-	Arne Jansen <sensille@gmx.net>, stable@kernel.org
-To: Martin Steigerwald <ms@teamix.de>
+Content-Type: text/plain; charset=US-ASCII
+To: linux-btrfs@vger.kernel.org
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <201203190931.26493.ms@teamix.de>
+In-Reply-To: <1332170242-30064-1-git-send-email-sbehrens@giantdisaster.de>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Mon, Mar 19, 2012 at 09:31:24AM +0100, Martin Steigerwald wrote:
-> > <formletter>
-> > 
-> > This is not the correct way to submit patches for inclusion in the
-> > stable kernel tree.  Please read Documentation/stable_kernel_rules.txt
-> > for how to do this properly.
-> > 
-> > </formletter>
-> 
-> What point of the rules do you refer to? Is it
-> 
->  - It or an equivalent fix must already exist in Linus' tree (upstream).
+Hallo, Stefan,
 
-Yes.
+Du meintest am 19.03.12:
 
-Without that, there's nothing I can do with this.
+> When a filesystem is mounted with the degraded option, it is
+> possible that some of the devices are not there.
+> btrfs_ioctl_dev_info() crashs in this case because the device
+> name is a NULL pointer. This ioctl was only used for scrub.
 
-> Or do you want the patch quoted in the mail?
-> 
-> Anyways its not yet in linus tree AFAIR and from my side it was a question 
-> whether it should be included at all. I thought it might be good ccing you on 
-> that question already.
+Just for curiosity: can that happen when I first delete a partition/disk  
+and then run "btrfs scrub start"?
 
-It's nice, yes, but note that you sent this to me directly, didn't cc:
-the proper stable mailing list so that others who maintain other stable
-trees also didn't get the notice, and again, there's really nothing that
-the stable maintainers can do about this at the moment.
-
-But, if this does go to Linus's tree, then stable@vger.kernel.org would
-be very interested in knowing about it.
-
-thanks,
-
-greg k-h
+Viele Gruesse!
+Helmut

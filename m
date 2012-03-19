@@ -1,65 +1,36 @@
-From: Martin Steigerwald <ms@teamix.de>
-Subject: Re: 3.2-rc4: scrubbing locks up the kernel, then hung tasks on boot
-Date: Mon, 19 Mar 2012 17:03:09 +0100
-Message-ID: <201203191703.10539.ms@teamix.de>
-References: <201112171833.34720.Martin@lichtvoll.de> <201203190931.26493.ms@teamix.de> <20120319154810.GB8176@kroah.com>
+From: Martin Steigerwald <Martin@lichtvoll.de>
+Subject: Re: "scrub" stops the machine
+Date: Mon, 19 Mar 2012 18:10:19 +0100
+Message-ID: <201203191810.19697.Martin@lichtvoll.de>
+References: <C52rKdGT1uB@helmut.hullen.de> <201203190922.58586.Martin@lichtvoll.de> <201203192201.04671.chris@csamuel.org> (sfid-20120319_134324_451485_AED6CE07)
 Mime-Version: 1.0
-Content-Type: Text/Plain; charset=iso-8859-1
-Cc: linux-btrfs@vger.kernel.org,
-	Martin Steigerwald <Martin@lichtvoll.de>,
-	Chris Mason <chris.mason@oracle.com>,
-	Arne Jansen <sensille@gmx.net>
-To: "Greg Kroah-Hartman" <gregkh@linuxfoundation.org>
+Content-Type: Text/Plain; charset=utf-8
+Cc: Chris Samuel <chris@csamuel.org>
+To: linux-btrfs@vger.kernel.org
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <20120319154810.GB8176@kroah.com>
+In-Reply-To: <201203192201.04671.chris@csamuel.org>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Am Montag, 19. M=E4rz 2012 schrieb Greg Kroah-Hartman:
-> On Mon, Mar 19, 2012 at 09:31:24AM +0100, Martin Steigerwald wrote:
-> > > <formletter>
-> > >=20
-> > > This is not the correct way to submit patches for inclusion in th=
-e
-> > > stable kernel tree.  Please read Documentation/stable_kernel_rule=
-s.txt
-> > > for how to do this properly.
-> > >=20
-> > > </formletter>
-> >=20
-> > What point of the rules do you refer to? Is it
-> >=20
-> >  - It or an equivalent fix must already exist in Linus' tree (upstr=
-eam).
+Am Montag, 19. M=C3=A4rz 2012 schrieb Chris Samuel:
+> On Monday 19 March 2012 19:22:58 Martin Steigerwald wrote:
+> > Maybe 3.2.10 oder 3.2.11 contains some related fixes?
 >=20
-> Yes.
->=20
-> Without that, there's nothing I can do with this.
->=20
-> > Or do you want the patch quoted in the mail?
-> >=20
-> > Anyways its not yet in linus tree AFAIR and from my side it was a
-> > question whether it should be included at all. I thought it might b=
-e
-> > good ccing you on that question already.
->=20
-> It's nice, yes, but note that you sent this to me directly, didn't cc=
-:
-> the proper stable mailing list so that others who maintain other stab=
-le
-> trees also didn't get the notice, and again, there's really nothing t=
-hat
-> the stable maintainers can do about this at the moment.
+> I don't believe that any btrfs fixes get pushed to the stable release=
+s
+> (at least, not yet), you'll need 3.3 for newer code.
 
-I did, but got the address wrong, missed the vger in it.
+Well maybe the second btrfs filesystem balance call or a possible upgra=
+de=20
+of btrfs-tools fixed it for me. Cause I didn=C2=B4t do anything specifi=
+c to fix=20
+the hard lock up issue. The getting stuck issue Chris Mason fixed by wi=
+th=20
+casting patch.
 
-Anyway, I try to follow-up on this, when its in Linus tree (via git wai=
-t and=20
-notify for commit? - nah just kidding, but would be useful ;)
-
-Thanks,
+Ciao,
 --=20
-Martin Steigerwald - teamix GmbH - http://www.teamix.de
-gpg: 19E3 8D42 896F D004 08AC A0CA 1E10 C593 0399 AE90
+Martin 'Helios' Steigerwald - http://www.Lichtvoll.de
+GPG: 03B0 0D6C 0040 0710 4AFA  B82F 991B EAAC A599 84C7
 --
 To unsubscribe from this list: send the line "unsubscribe linux-btrfs" =
 in

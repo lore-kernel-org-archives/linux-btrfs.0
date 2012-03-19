@@ -1,110 +1,46 @@
-From: Chris Mason <chris.mason@oracle.com>
-Subject: Re: Can't mount, power failure - recoverable?
-Date: Mon, 19 Mar 2012 14:02:35 -0400
-Message-ID: <20120319180235.GH3976@shiny>
-References: <loom.20120317T051243-551@post.gmane.org>
- <CAE5mzvi8oX4B+yriTRnj_g+_a3=BoC-o1BSRs4PpJsAMBOP5xw@mail.gmail.com>
- <loom.20120317T192345-893@post.gmane.org>
- <20120318151615.GE3976@shiny>
- <loom.20120318T193113-459@post.gmane.org>
+From: "Alex Plumbley-Jones" <alex@bpmit.com>
+Subject: Re: "not enough space" with "data raid0"
+Date: Mon, 19 Mar 2012 21:45:32 +0000
+Message-ID: <1178707600-1332193533-cardhu_decombobulator_blackberry.rim.net-1895453107-@b26.c8.bise7.blackberry>
+References: <C52pxfli1uB@helmut.hullen.de>
+  <loom.20120317T131420-684@post.gmane.org>
+  <20120317122522.GD3172@carfax.org.uk>
+  <loom.20120317T141129-14@post.gmane.org>
+  <20120317140057.GF3172@carfax.org.uk>
+  <loom.20120319T160836-470@post.gmane.org>
+  <20120319175850.GO3172@carfax.org.uk>
+Reply-To: alex@bpmit.com
 Mime-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
+Content-Type: text/plain; charset="Windows-1252"
 Cc: linux-btrfs@vger.kernel.org
-To: Skylar Burtenshaw <daninfuchs@gmail.com>
+To: "Hugo Mills" <hugo@carfax.org.uk>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <loom.20120318T193113-459@post.gmane.org>
+In-Reply-To: <20120319175850.GO3172@carfax.org.uk>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Sun, Mar 18, 2012 at 06:49:13PM +0000, Skylar Burtenshaw wrote:
-> > Looks like some of the bottom of this trace is missing.> 
-> 
-> That's because I'm amazing, Chris. I don't even know how that happened.. Trying
-> again:
+SGkgSHVnbywgDQoNCkkgZGlkIG1lbnRpb24gYmFja3VwcyBzaXIgaW4gbXkgbGFzdCBzZW50ZW5j
+ZSwgYnV0IHRoYW5rIHlvdSBhbnl3YXkuICBObyBoYXJtIGluIHJlcGVhdGluZyB0aGUgcG9pbnQu
+IA0KDQoNCg0KQmxhY2tiZXJyeSBQSU46MjY4YTI5NTMNClNlbnQgZnJvbSBteSBCbGFja0JlcnJ5
+rg0KDQotLS0tLU9yaWdpbmFsIE1lc3NhZ2UtLS0tLQ0KRnJvbTogSHVnbyBNaWxscyA8aHVnb0Bj
+YXJmYXgub3JnLnVrPg0KRGF0ZTogTW9uLCAxOSBNYXIgMjAxMiAxNzo1ODo1MCANClRvOiBBbGV4
+PGFsZXhAYnBtaXQuY29tPg0KQ2M6IDxsaW51eC1idHJmc0B2Z2VyLmtlcm5lbC5vcmc+DQpTdWJq
+ZWN0OiBSZTogIm5vdCBlbm91Z2ggc3BhY2UiIHdpdGggImRhdGEgcmFpZDAiDQoNCk9uIE1vbiwg
+TWFyIDE5LCAyMDEyIGF0IDAzOjE0OjE5UE0gKzAwMDAsIEFsZXggd3JvdGU6DQo+IA0KPiA+ICAg
+IEknbSB3b3JraW5nIG9uIGEgY29tcHJlaGVuc2l2ZSBleHBsYW5hdGlvbiBvZiB0aGUgbGltaXRz
+IG9uIGJ0cmZzJ3MNCj4gPiBzcGFjZSB1c2FnZSwgYW5kIGEgbGl0dGxlIEphdmFTY3JpcHQgdG9v
+bCB0byBoZWxwIHBsYW4vZXhwbGFpbiBkaXNrDQo+ID4gdXNhZ2UuDQo+IA0KPiBUaGFuayB5b3Ug
+SHVnby4NCj4gDQo+IEdpdmVuIHRoZSBrZXJuZWwgMy4zIHJlbGVhc2UgeWVzdGVyZGF5IFsxXSB3
+ZSd2ZSBnYWluZWQgdGhlIGFiaWxpdHkgdG8gcmVzdHJpcGUNCj4gdG8gZGlmZmVyZW50IHJhaWQg
+bGV2ZWxzIGFmdGVyIHRoZSBmYWN0LiBTbyBJIGd1ZXNzIEkgZG9uJ3QgaGF2ZSB0b28gbXVjaCB0
+bw0KPiB3b3JyeSBhYm91dCB3aXRoIGRlY2VudCBiYWNrdXBzLg0KDQogICBZZXMsIHlvdSBkby4g
+UkFJRCBpcyBub3QgYSBiYWNrdXA6IFdoYXQgaGFwcGVucyBpZiB5b3UgYWNjaWRlbnRhbGx5DQp3
+cml0ZSB6ZXJvZXMgb3ZlciBhbGwgeW91ciBzdXBlcmJsb2Nrcz8gT3Igcm0gLXJmIC9ob21lPyBS
+QUlEIHdpbGwgbm90DQpoZWxwIHlvdSBoZXJlLg0KDQogICBIdWdvLg0KDQotLSANCj09PSBIdWdv
+IE1pbGxzOiBodWdvQC4uLiBjYXJmYXgub3JnLnVrIHwgZGFya3NhdGFuaWMubmV0IHwgbHVnLm9y
+Zy51ayA9PT0NCiAgUEdQIGtleTogNTE1QzIzOEQgZnJvbSB3d3drZXlzLmV1LnBncC5uZXQgb3Ig
+aHR0cDovL3d3dy5jYXJmYXgub3JnLnVrDQogICAtLS0gSW4gdGhlIGZ1dHVyZSwgdGVycm9yaXN0
+cyB3b24ndCBiZSBjYXJyeWluZyB0aGVpciBJRCBjYXJkcy4gLS0tICAgDQogICAgICAgICAgICAg
+ICAgICAgVGhleSdsbCBiZSBjYXJyeWluZyB5b3Vycy4gLS0gSGVucnkgICAgICAgICAgICAgICAg
+ICAgDQogICAgICAgICAgICAgICAgICAgICAgICAgUG9ydGVyLCAgU3VzcGVjdCBOYXRpb24gICAg
+ICAgICAgICAgICAgICAgICAgICAgDQoNCg==
 
-;) Ok, so the good news is that you're crashing when you try to write to
-the FS.  The kernel you were running had bugs in btrfs that make power
-failures very dangerous.  Starting with 3.2, these are fixed.
-
-The safest way forward from here is to just copy your data off and run a
-newer kernel.  Do you have the spare capacity for this?
-
--chris
-
-> 
-> BUG: unable to handle kernel NULL pointer dereference at 00000000000$
-> IP: [<ffffffffa0021161>] btrfs_put_block_group+0x11/0x70 [btrfs]
-> PGD 78e80067 PUD 79588067 PMD 0
-> Oops: 0002 [#1] SMP
-> CPU 0
-> Modules linked in: aoe radeon ttm nfsd drm_kms_helper drm nfs lockd k8temp
-> fscache auth_rpcgss nfs_acl lp i2c_algo_bit edac_core edac_mce_amd i2c_nforce2
-> psmouse asus_atk0110 serio_raw parport sunrpc usbhid hid 3w_9xxx floppy
-> sata_promise pata_sil680 sata_nv forcedeth pata_amd sky2 sata_sil24 nbd btrfs
-> zlib_deflate libcrc32c
-> Pid: 1764, comm: mount Not tainted 3.2.0-030200-generic #201201042035 System
-> manufacturer
->         System Product Name/A8N32-SLI-Deluxe
-> RIP: 0010:[<ffffffffa0021161>]  [<ffffffffa0021161>]
-> btrfs_put_block_group+0x11/0x70 [btrfs]
-> RSP: 0018:ffff880078e79568  EFLAGS: 00010292
-> RAX: ffff880072e35000 RBX: 0000000000000000 RCX: 0000160000000000
-> RDX: 000000000004136e RSI: 0000000040000000 RDI: 0000000000000000
-> RBP: ffff880078e79578 R08: 0000000000000000 R09: 0000000000000002
-> R10: 0000000000000000 R11: 0000000000000000 R12: ffff88007b3ca000
-> R13: 0000000000000000 R14: ffff880077daa048 R15: ffff880000000000
-> FS:  00007f95889927e0(0000) GS:ffff88007fc00000(0000) knlGS:0000000000000000
-> CS:  0010 DS: 0000 ES: 0000 CR0: 000000008005003b
-> CR2: 00000000000000d0 CR3: 0000000078c90000 CR4: 00000000000006f0
-> DR0: 0000000000000000 DR1: 0000000000000000 DR2: 0000000000000000
-> DR3: 0000000000000000 DR6: 00000000ffff0ff0 DR7: 0000000000000400
-> Process mount (pid: 1764, threadinfo ffff880078e78000, task ffff88007ab90000)
-> Stack:
->  ffff880078e79578 ffff8800729e9320 ffff880078e795d8 ffffffffa0024bdf
->  ffff880000000002 0000000000000000 ffff880077ff8190 000000000004136f
->  ffff880078e795d8 ffff88007b3ca000 ffff880072ba6460 ffff8800729e9320
-> Call Trace:
->  [<ffffffffa0024bdf>] btrfs_free_tree_block+0xef/0x1a0 [btrfs]
->  [<ffffffffa001b99a>] __btrfs_cow_block+0x2ca/0x4b0 [btrfs]
->  [<ffffffffa001c14e>] btrfs_cow_block+0xee/0x200 [btrfs]
->  [<ffffffffa001ee68>] btrfs_search_slot+0x328/0x730 [btrfs]
->  [<ffffffffa002919c>] lookup_inline_extent_backref+0xbc/0x400 [btrfs]
->  [<ffffffff811674ad>] ? kmem_cache_alloc+0xcd/0x120
->  [<ffffffffa002ac56>] __btrfs_free_extent+0xd6/0x700 [btrfs]
->  [<ffffffff8107720c>] ? lock_timer_base+0x3c/0x70
->  [<ffffffff81138c58>] ? bdi_wakeup_thread_delayed+0x38/0x40
->  [<ffffffffa002b3da>] run_delayed_tree_ref+0x15a/0x160 [btrfs]
->  [<ffffffffa00586be>] ? memcmp_extent_buffer+0x1de/0x230 [btrfs]
->  [<ffffffffa002b5db>] run_one_delayed_ref+0x9b/0xc0 [btrfs]
->  [<ffffffffa002b6c0>] run_clustered_refs+0xc0/0x220 [btrfs]
->  [<ffffffffa002b8ea>] btrfs_run_delayed_refs+0xca/0x220 [btrfs]
->  [<ffffffff81053033>] ? __wake_up+0x53/0x70
->  [<ffffffffa003a1c6>] commit_cowonly_roots+0x86/0x1e0 [btrfs]
->  [<ffffffffa003afff>] btrfs_commit_transaction+0x42f/0x900 [btrfs]
->  [<ffffffffa003ab9d>] ? join_transaction+0x24d/0x280 [btrfs]
->  [<ffffffff8108afd0>] ? wake_up_bit+0x40/0x40
->  [<ffffffffa0035ae8>] btrfs_commit_super+0x88/0xd0 [btrfs]
->  [<ffffffffa0036be0>] close_ctree+0x340/0x3b0 [btrfs]
->  [<ffffffff8119648e>] ? iput+0x3e/0x50
->  [<ffffffffa00437e4>] ? btrfs_iget+0xf4/0x110 [btrfs]
->  [<ffffffffa0016226>] btrfs_fill_super+0x136/0x150 [btrfs]
->  [<ffffffff81317c1a>] ? strlcpy+0x4a/0x60
->  [<ffffffffa0018185>] btrfs_mount+0x335/0x370 [btrfs]
->  [<ffffffff8117f1b3>] mount_fs+0x43/0x1a0
->  [<ffffffff8119b633>] vfs_kern_mount+0x63/0xd0
->  [<ffffffff8119b722>] do_kern_mount+0x52/0x110
->  [<ffffffff812a2c3a>] ? security_capable+0x2a/0x30
->  [<ffffffff8119d15d>] do_mount+0x1ed/0x240
->  [<ffffffff8119d240>] sys_mount+0x90/0xe0
->  [<ffffffff8164f242>] system_call_fastpath+0x16/0x1b
-> Code: 62 04 e1 eb cd be 95 00 00 00 48 c7 c7 48 fb 08 a0 e8 14 62 04 e1 eb cb 66
-> 90 55 48 89 e5 53 48 83 ec 08 66 66 66 66 90 48 89 fb <f0> ff 8f d0 00 00 00 0f
-> 94 c0 84 c0 74 22 48 83 7f 48 00 75 22
-> RIP  [<ffffffffa0021161>] btrfs_put_block_group+0x11/0x70 [btrfs]
->  RSP <ffff880078e79568>
-> CR2: 00000000000000d0
-> ---[ end trace dbfc4032ba5e601f ]---
-> 
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html

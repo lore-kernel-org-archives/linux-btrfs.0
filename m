@@ -1,46 +1,55 @@
-From: "Alex Plumbley-Jones" <alex@bpmit.com>
-Subject: Re: "not enough space" with "data raid0"
-Date: Mon, 19 Mar 2012 21:45:32 +0000
-Message-ID: <1178707600-1332193533-cardhu_decombobulator_blackberry.rim.net-1895453107-@b26.c8.bise7.blackberry>
-References: <C52pxfli1uB@helmut.hullen.de>
-  <loom.20120317T131420-684@post.gmane.org>
-  <20120317122522.GD3172@carfax.org.uk>
-  <loom.20120317T141129-14@post.gmane.org>
-  <20120317140057.GF3172@carfax.org.uk>
-  <loom.20120319T160836-470@post.gmane.org>
-  <20120319175850.GO3172@carfax.org.uk>
-Reply-To: alex@bpmit.com
+From: Skylar Burtenshaw <daninfuchs@gmail.com>
+Subject: Re: Can't mount, power failure - recoverable?
+Date: Tue, 20 Mar 2012 03:06:42 +0000 (UTC)
+Message-ID: <loom.20120320T035257-31@post.gmane.org>
+References: <loom.20120317T051243-551@post.gmane.org> <CAE5mzvi8oX4B+yriTRnj_g+_a3=BoC-o1BSRs4PpJsAMBOP5xw@mail.gmail.com> <loom.20120317T192345-893@post.gmane.org> <20120318151615.GE3976@shiny> <loom.20120318T193113-459@post.gmane.org> <20120319180235.GH3976@shiny>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="Windows-1252"
-Cc: linux-btrfs@vger.kernel.org
-To: "Hugo Mills" <hugo@carfax.org.uk>
+Content-Type: text/plain; charset=us-ascii
+To: linux-btrfs@vger.kernel.org
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <20120319175850.GO3172@carfax.org.uk>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-SGkgSHVnbywgDQoNCkkgZGlkIG1lbnRpb24gYmFja3VwcyBzaXIgaW4gbXkgbGFzdCBzZW50ZW5j
-ZSwgYnV0IHRoYW5rIHlvdSBhbnl3YXkuICBObyBoYXJtIGluIHJlcGVhdGluZyB0aGUgcG9pbnQu
-IA0KDQoNCg0KQmxhY2tiZXJyeSBQSU46MjY4YTI5NTMNClNlbnQgZnJvbSBteSBCbGFja0JlcnJ5
-rg0KDQotLS0tLU9yaWdpbmFsIE1lc3NhZ2UtLS0tLQ0KRnJvbTogSHVnbyBNaWxscyA8aHVnb0Bj
-YXJmYXgub3JnLnVrPg0KRGF0ZTogTW9uLCAxOSBNYXIgMjAxMiAxNzo1ODo1MCANClRvOiBBbGV4
-PGFsZXhAYnBtaXQuY29tPg0KQ2M6IDxsaW51eC1idHJmc0B2Z2VyLmtlcm5lbC5vcmc+DQpTdWJq
-ZWN0OiBSZTogIm5vdCBlbm91Z2ggc3BhY2UiIHdpdGggImRhdGEgcmFpZDAiDQoNCk9uIE1vbiwg
-TWFyIDE5LCAyMDEyIGF0IDAzOjE0OjE5UE0gKzAwMDAsIEFsZXggd3JvdGU6DQo+IA0KPiA+ICAg
-IEknbSB3b3JraW5nIG9uIGEgY29tcHJlaGVuc2l2ZSBleHBsYW5hdGlvbiBvZiB0aGUgbGltaXRz
-IG9uIGJ0cmZzJ3MNCj4gPiBzcGFjZSB1c2FnZSwgYW5kIGEgbGl0dGxlIEphdmFTY3JpcHQgdG9v
-bCB0byBoZWxwIHBsYW4vZXhwbGFpbiBkaXNrDQo+ID4gdXNhZ2UuDQo+IA0KPiBUaGFuayB5b3Ug
-SHVnby4NCj4gDQo+IEdpdmVuIHRoZSBrZXJuZWwgMy4zIHJlbGVhc2UgeWVzdGVyZGF5IFsxXSB3
-ZSd2ZSBnYWluZWQgdGhlIGFiaWxpdHkgdG8gcmVzdHJpcGUNCj4gdG8gZGlmZmVyZW50IHJhaWQg
-bGV2ZWxzIGFmdGVyIHRoZSBmYWN0LiBTbyBJIGd1ZXNzIEkgZG9uJ3QgaGF2ZSB0b28gbXVjaCB0
-bw0KPiB3b3JyeSBhYm91dCB3aXRoIGRlY2VudCBiYWNrdXBzLg0KDQogICBZZXMsIHlvdSBkby4g
-UkFJRCBpcyBub3QgYSBiYWNrdXA6IFdoYXQgaGFwcGVucyBpZiB5b3UgYWNjaWRlbnRhbGx5DQp3
-cml0ZSB6ZXJvZXMgb3ZlciBhbGwgeW91ciBzdXBlcmJsb2Nrcz8gT3Igcm0gLXJmIC9ob21lPyBS
-QUlEIHdpbGwgbm90DQpoZWxwIHlvdSBoZXJlLg0KDQogICBIdWdvLg0KDQotLSANCj09PSBIdWdv
-IE1pbGxzOiBodWdvQC4uLiBjYXJmYXgub3JnLnVrIHwgZGFya3NhdGFuaWMubmV0IHwgbHVnLm9y
-Zy51ayA9PT0NCiAgUEdQIGtleTogNTE1QzIzOEQgZnJvbSB3d3drZXlzLmV1LnBncC5uZXQgb3Ig
-aHR0cDovL3d3dy5jYXJmYXgub3JnLnVrDQogICAtLS0gSW4gdGhlIGZ1dHVyZSwgdGVycm9yaXN0
-cyB3b24ndCBiZSBjYXJyeWluZyB0aGVpciBJRCBjYXJkcy4gLS0tICAgDQogICAgICAgICAgICAg
-ICAgICAgVGhleSdsbCBiZSBjYXJyeWluZyB5b3Vycy4gLS0gSGVucnkgICAgICAgICAgICAgICAg
-ICAgDQogICAgICAgICAgICAgICAgICAgICAgICAgUG9ydGVyLCAgU3VzcGVjdCBOYXRpb24gICAg
-ICAgICAgICAgICAgICAgICAgICAgDQoNCg==
+> ;) 
+I like you. Hehe.. ;)
+
+
+> Ok, so the good news is that you're crashing when you try to write to
+> the FS.
+
+Well, I'll go ahead and assume you're right (you know, since it's your baby and
+all, and you know what you're talking about better than anyone I can think of)
+but the problem here is that I'm not getting past "mount". "mount /dev/sda3
+/mnt/tmp" ....churn churn churn, about a minute or two later, bam, kernel stack
+trace. If it's crashing because it's being written to, it's not because I'm
+asking it to write. Though on that note, I tried 'mount -o ro,recovery' and got
+"mount: Stale NTFS handle" which..made me lol. Same with just '-o ro'. '-o
+recovery' procudes a stack trace. And, just for the heck of it (because I have
+too much time on my hands) I tried chmod'ing -r to all of the dev nodes of the
+drives in the array - surprise surprise, same stack trace.
+
+
+> Starting with 3.2, these are fixed.
+
+This makes me happy, because I feel that I can now trust it more. Especially
+since I kicked out the $200 for batteries for that damn UPS.. Rack systems are
+expensive.
+
+
+> The safest way forward from here is to just copy your data off and run a
+> newer kernel.
+
+One step ahead of you there, thankfully.
+
+
+>  Do you have the spare capacity for this?
+
+I'm not sure how cursing is looked upon on this group, so I'll simply say "no"
+and let your imagination fill in the blanks..hah. I could probably limp it, if I
+was able to transfer approx. 1tb then remove a drive from the filesystem and add
+it to my backup system, but that'd get hairy fast. Especially since the FS is
+'damaged' and likely would not survive removal. If you say the only way is to
+copy data off, I'll find a way - be it credit or borrowing drives - since I know
+that's likely what it'll come to...but that's last resort, for me. At this
+point, I almost want to hear "you're screwed" just so I can be done with it, but
+it would not make me happy. Thanks so much for your support.
 

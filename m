@@ -1,34 +1,40 @@
-From: "Martin K. Petersen" <martin.petersen@oracle.com>
-Subject: Re: [PATCH] btrfs-progs: mkfs: allow not to trim a device
-Date: Tue, 20 Mar 2012 09:30:43 -0400
-Message-ID: <yq17gyf1jss.fsf@sermon.lab.mkp.net>
-References: <1332010297-18581-1-git-send-email-dsterba@suse.cz>
-	<201203191824.17665.Martin@lichtvoll.de>
-	<20120320101641.GM32563@ds.suse.cz>
+From: Daniel J Blueman <daniel@quora.org>
+Subject: 'bad tree block start' mount failure...
+Date: Tue, 20 Mar 2012 23:43:34 +0800
+Message-ID: <CAMVG2suJw2miSP9QUi-ArFrzS0-okN0_MsLPZTc6Xv7xkjLHDw@mail.gmail.com>
 Mime-Version: 1.0
-Content-Type: text/plain
-Cc: Martin Steigerwald <Martin@lichtvoll.de>,
-	linux-btrfs@vger.kernel.org, Roland Dreier <roland@purestorage.com>
-To: dsterba@suse.cz
+Content-Type: text/plain; charset=ISO-8859-1
+Cc: Chris Mason <chris.mason@oracle.com>
+To: Linux BTRFS <linux-btrfs@vger.kernel.org>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <20120320101641.GM32563@ds.suse.cz> (David Sterba's message of
-	"Tue, 20 Mar 2012 11:16:41 +0100")
 List-ID: <linux-btrfs.vger.kernel.org>
 
->>>>> "David" == David Sterba <dsterba@suse.cz> writes:
+Booting linux 3.3, I found a particular set of steps [1] produces an
+fs which is unmountable [2]. This also occurs when data is written
+after mounting, so is entirely possible to hit in practice if RAID-0
+is used.
 
->> Just curious: Whats the use case for this?
+Many thanks,
+  Daniel
 
-David> http://digitalvampire.org/blog/index.php/2012/03/16/you-can-never-be-too-rich-or-too-thin/
+--- [1]
 
-Well, a cap of 1MB per UNMAP command is absolute crazy talk. We
-currently do 2GB per command on ATA and 2TB per command on most SCSI
-targets.
+mkfs.btrfs -m raid0 -d raid0 /dev/sdb1 /dev/sdc1
+mount /dev/sdb1 /mnt
+umount /mnt
+mount /dev/sdb1 /mnt -o compress
+umount /mnt
+mount /dev/sdb1 /mnt -o ssd
+umount /mnt
+mount /dev/sdb1 /mnt -o discard
+umount /mnt
+mount /dev/sdb1 /mnt
+<mount failure>
 
-I don't disagree that it may make sense to have a disable discard option
-to mkfs. But Roland really needs to get his VPD reporting fixed. I
-suspect what the array meant to communicate was a 1MB discard
-granularity, not a 1MB per command limit...a common mistake.
+--- [2]
 
+[13259.593809] btrfs bad tree block start 0 37715968
+[13259.593832] btrfs: failed to read tree root on sdc1
+[13259.594221] btrfs: open_ctree failed
 -- 
-Martin K. Petersen	Oracle Linux Engineering
+Daniel J Blueman

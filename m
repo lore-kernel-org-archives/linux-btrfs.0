@@ -1,51 +1,38 @@
-From: Ilya Dryomov <idryomov@gmail.com>
+From: Hullen@t-online.de (Helmut Hullen)
 Subject: Re: looking for non existent devices
-Date: Wed, 21 Mar 2012 20:12:02 +0200
-Message-ID: <20120321181202.GA1973@zambezi.lan>
-References: <C52pIRfT1uB@helmut.hullen.de>
+Date: 21 Mar 2012 19:24:00 +0100
+Message-ID: <C5J2uwYuCXB@helmut.hullen.de>
+References: <20120321181202.GA1973@zambezi.lan>
+Reply-To: helmut@hullen.de
 Mime-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Cc: linux-btrfs@vger.kernel.org
-To: helmut@hullen.de
+Content-Type: text/plain; charset=US-ASCII
+To: linux-btrfs@vger.kernel.org
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <C52pIRfT1uB@helmut.hullen.de>
+In-Reply-To: <20120321181202.GA1973@zambezi.lan>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Sat, Mar 17, 2012 at 10:32:00AM +0100, Helmut Hullen wrote:
-> Hallo, linux-btrfs,
-> 
-> some commands still look for non existent devices.
-> 
-> I don't use "udev".
-> When I run
-> 
->         btrfs filesystem show
-> 
-> only the existent devices are shown - fine.
-> 
-> When I run
-> 
->         btrfs filesystem label
-> 
-> or
-> 
->         btrfs scrub status /dev/sdxn
-> 
-> then I get a lot of error messages with (p.e.)
-> 
->   failed to read /dev/hda6: No such device or address
->   failed to read /dev/sdm7: No such device or address
->   failed to read /dev/sr3: No such device or address
+Hallo, Ilya,
 
-Hi Helmut,
+Du meintest am 21.03.12:
 
-I think this has been fixed in recent btrfs-progs, commit 32eff711.
-Could test with that commit present please ?  (You can get it from
-dangerdonteveruse branch of Chris' btrfs-progs repo [1], the 'danger'
-tag is irrelevant as long as you don't try to run fsck from that branch)
+>> When I run
+>>
+>>         btrfs filesystem label
+>>
+>> or
+>>
+>>         btrfs scrub status /dev/sdxn
+>>
+>> then I get a lot of error messages with (p.e.)
+>>
+>>   failed to read /dev/hda6: No such device or address
+>>   failed to read /dev/sdm7: No such device or address
+>>   failed to read /dev/sr3: No such device or address
 
-[1] git://git.kernel.org/pub/scm/linux/kernel/git/mason/btrfs-progs.git
+> I think this has been fixed in recent btrfs-progs, commit 32eff711.
 
-Thanks,
+It is fixed in some (or many) places, it is not fixed everywhere. I had  
+used kernel 3.2.9
 
-		Ilya
+Viele Gruesse!
+Helmut

@@ -1,45 +1,24 @@
-From: Arne Jansen <sensille@gmx.net>
-Subject: Re: Synchronous snapshot delete
-Date: Wed, 21 Mar 2012 12:44:57 +0100
-Message-ID: <4F69BF39.5090708@gmx.net>
-References: <4F695302.4060809@oracle.com>
+From: Andrea Gelmini <andrea.gelmini@gmail.com>
+Subject: Re: [RFC PATCH 0/5] apply rwlock for extent state
+Date: Wed, 21 Mar 2012 13:34:54 +0100
+Message-ID: <CAK-xaQZGnkwQGq7TXy50vJwNMRXnM3WR6jqCnSXSf7-6yFRJ5A@mail.gmail.com>
+References: <1331802737-29454-1-git-send-email-liubo2009@cn.fujitsu.com> <4F694262.6050409@cn.fujitsu.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=ISO-8859-1
-Cc: linux-btrfs <linux-btrfs@vger.kernel.org>
-To: Anand Jain <Anand.Jain@oracle.com>
+Content-Type: text/plain; charset=UTF-8
+Cc: linux-btrfs@vger.kernel.org, Chris Mason <chris.mason@oracle.com>,
+	Josef Bacik <josef@redhat.com>, Arne Jansen <sensille@gmx.net>,
+	David Sterba <dsterba@suse.cz>
+To: Liu Bo <liubo2009@cn.fujitsu.com>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <4F695302.4060809@oracle.com>
+In-Reply-To: <4F694262.6050409@cn.fujitsu.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hi Anand,
+2012/3/21 Liu Bo <liubo2009@cn.fujitsu.com>:
+> Any comments?
 
-On 21.03.2012 05:03, Anand Jain wrote:
-> 
-> Hi Team,
-> 
->  Could you let me know if you are working on..
-> 
->    Synchronous snapshot delete  (or similar)
-> 
->  few requested for this feature, just wanted
->  to know if anyone has picked up this and is
->  working on it.
+No comment, but I'm using this patches without problem since you
+published it (compressed
+/home with hourly snapshot delete/creation).
 
-I'm not working directly on that feature, but I'm reworking
-the snapshot deletion process to make use of the metadata
-readahead. This should touch only very slightly the code that
-needs adjustment for sync snapshot deletion.
-Another thing you could add while you fiddle with this interface
-would be the capability to trigger the deletion of several snapshots
-in one transaction. This would speed up the process if you want
-to delete hundreds or thousands of snapshots.
-
--Arne
-
-> Thanks, Anand
-> 
-> -- 
-> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
-
+Thanks a lot for your work,
+Andrea

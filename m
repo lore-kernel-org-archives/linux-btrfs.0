@@ -1,46 +1,47 @@
-From: Justin Sharp <sharp@sharpone.net>
-Subject: Re: bcache with SSD instead of battery powered raid cards
-Date: Tue, 20 Mar 2012 22:47:44 -0600
-Message-ID: <4F695D70.8030106@sharpone.net>
-References: <CANT588ujRWQtreA07dPK9ynj7dXVGykRMXjcQy_kFd3mFimZ6w@mail.gmail.com>
-Mime-Version: 1.0
-Content-Type: text/plain; charset=ISO-8859-1; format=flowed
-Cc: linux-btrfs@vger.kernel.org
-To: Kiran Patil <kirantpatil@gmail.com>
+From: Liu Bo <liubo2009@cn.fujitsu.com>
+Subject: [PATCH RESEND] Xfstest: make 218 support btrfs
+Date: Wed, 21 Mar 2012 13:26:05 +0800
+Message-ID: <1332307565-26036-1-git-send-email-liubo2009@cn.fujitsu.com>
+Cc: <linux-btrfs@vger.kernel.org>, <hch@infradead.org>
+To: <xfs@oss.sgi.com>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <CANT588ujRWQtreA07dPK9ynj7dXVGykRMXjcQy_kFd3mFimZ6w@mail.gmail.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 03/13/2012 04:06 AM, Kiran Patil wrote:
-> Hi,
->
-> Is anybody using bcache with SSD instead of battery powered raid cards
-> with Btrfs ?
->
-> Hard drives are cheap and big, SSDs are fast but small and expensive.
-> Wouldn't it be nice if you could transparently get the advantages of
-> both? With Bcache, you can have your cake and eat it too.
->
-> Bcache is a patch for the Linux kernel to use SSDs to cache other
-> block devices. It's analogous to L2Arc for ZFS, but Bcache also does
-> writeback caching, and it's filesystem agnostic. It's designed to be
-> switched on with a minimum of effort, and to work well without
-> configuration on any setup. By default it won't cache sequential IO,
-> just the random reads and writes that SSDs excel at. It's meant to be
-> suitable for desktops, servers, high end storage arrays, and perhaps
-> even embedded.
->
-> http://bcache.evilpiepirate.org/
-Did you ever experiment with this? What results did you find?
+Btrfs progs has a defragment tool, so we can test 218 on btrfs now.
 
-There is also something similar called flashcache developed by some 
-facebook engineer that I'm interested in trying. They are supposedly 
-using this to speed up mysql+innodb. It is out of mainline tree code 
-though, and I don't think there is much of an effort to get it in. It 
-supports writeback, writethrough and writearound (blocks are never 
-cached on write, only on read) caching. It uses dm-mapper to combine 
-your 'cache block' with your 'slow spinning block' and then you put your 
-filesystem on top of that dm device. https://github.com/facebook/flashcache
+Signed-off-by: Liu Bo <liubo2009@cn.fujitsu.com>
+---
+ 218           |    2 +-
+ common.defrag |    3 +++
+ 2 files changed, 4 insertions(+), 1 deletions(-)
 
-Regards,
---Justin
+diff --git a/218 b/218
+index 53d0b61..77782c6 100755
+--- a/218
++++ b/218
+@@ -44,7 +44,7 @@ _cleanup()
+ . ./common.defrag
+ 
+ # real QA test starts here
+-_supported_fs xfs ext4
++_supported_fs xfs ext4 btrfs
+ _supported_os Linux
+ 
+ _setup_testdir
+diff --git a/common.defrag b/common.defrag
+index 4850803..ea6c14c 100644
+--- a/common.defrag
++++ b/common.defrag
+@@ -29,6 +29,9 @@ _require_defrag()
+     ext4|ext4dev)
+         DEFRAG_PROG=/usr/bin/e4defrag
+ 	;;
++    btrfs)
++	DEFRAG_PROG="$BTRFS_UTIL_PROG filesystem defragment"
++	;;
+     *)
+         _notrun "defragmentation not supported for fstype \"$FSTYP\""
+ 	;;
+-- 
+1.6.5.2
+

@@ -1,48 +1,52 @@
-From: Miao Xie <miaox@cn.fujitsu.com>
-Subject: Re: [RFC PATCH 1/2] vfs: add an interface to do some preparation
- for umount
-Date: Thu, 22 Mar 2012 13:07:19 +0800
-Message-ID: <4F6AB387.5010800@cn.fujitsu.com>
-References: <4F6A98CB.1070308@cn.fujitsu.com> <20120322034109.GU6589@ZenIV.linux.org.uk>
-Reply-To: miaox@cn.fujitsu.com
+From: Dave Chinner <david@fromorbit.com>
+Subject: Re: [RFC PATCH 2/2] Btrfs: fix deadlock on umount by umount_prepare
+ interface
+Date: Thu, 22 Mar 2012 17:29:02 +1100
+Message-ID: <20120322062902.GF3592@dastard>
+References: <4F6A98CD.5090701@cn.fujitsu.com>
+ <20120322043936.GD3592@dastard>
+ <4F6AB7C6.4020300@cn.fujitsu.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=ISO-8859-1
+Content-Type: text/plain; charset=us-ascii
 Cc: Chris Mason <chris.mason@oracle.com>,
-	Linux Fsdevel <linux-fsdevel@vger.kernel.org>,
-	Linux Btrfs <linux-btrfs@vger.kernel.org>
-To: Al Viro <viro@ZenIV.linux.org.uk>
+	viro <viro@zeniv.linux.org.uk>,
+	Linux Btrfs <linux-btrfs@vger.kernel.org>,
+	Linux Fsdevel <linux-fsdevel@vger.kernel.org>
+To: Miao Xie <miaox@cn.fujitsu.com>
 Return-path: <linux-fsdevel-owner@vger.kernel.org>
-In-Reply-To: <20120322034109.GU6589@ZenIV.linux.org.uk>
+In-Reply-To: <4F6AB7C6.4020300@cn.fujitsu.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Thu, 22 Mar 2012 03:41:09 +0000, Al Viro wrote:
-> On Thu, Mar 22, 2012 at 11:13:15AM +0800, Miao Xie wrote:
->> Some file systems can do some works in the background by kthreads, we'd
->> better stop those works before we umount the file system, or it is easy to
->> introduce some problems. So we add an interface that is used to do some
->> preparation for umount.
+On Thu, Mar 22, 2012 at 01:25:26PM +0800, Miao Xie wrote:
+> On Thu, 22 Mar 2012 15:39:36 +1100, Dave Chinner wrote:
+> > On Thu, Mar 22, 2012 at 11:13:17AM +0800, Miao Xie wrote:
+> >> The reason the deadlock is that:
+> >>   Task					Btrfs-cleaner
+> >>   umount()
+> >>     down_write(&s->s_umount)
+> >>     close_ctree()
+> >>       wait for the end of
+> >>       btrfs-cleaner
+> >> 					start_transaction
+> >> 					  reserve space
+> >> 					    shrink_delalloc()
+> >> 					      writeback_inodes_sb_nr_if_idle()
+> >> 						down_read(&sb->s_umount)
+> >> So, the deadlock has happened.
+> > 
+> > Every time a deadlock involving writeback_inodes_sb...if_idle()
+> > comes up, I give the same response. If the s_umount is write locked,
+> > then the sb is not idle. IOWs, writeback_inodes_sb...if_idle()
+> > should be doing down_read_trylock(), not down_read().
 > 
-> NAK.  First of all, fs might be in active use _after_ umount.  man 8 umount,
-> see umount -l there.  Moreover, the same superblock may very well be mounted
-> more than once, so umount of an individual mountpoint would better not do
-> anything nasty to users of other ones.
-> 
-> IOW, this is completely misguided - you are dealing with whatever problem it
-> is at least two layers above the right one.
-> 
-> 1) vfsmount may be detached from mount trees but remain in active use.
-> 2) there may be many vfsmounts over given struct super_block.
-> 
-> Doing things earlier than the final mntput() runs afoul of (1); doing
-> them before the final deactivate_locked_super() runs afoul of (2).
-> 
-> What the hell is that thread doing that needs ->s_umount for serialization
-> and why is it doing that?
+> Someone did this work several months ago, but those patches have not been
+> applied until now, so...
 
-AFAIK, acquiring ->s_umount is to avoid the filesystem going from r/w to r/o.
+... work to get them into the current/next release.
 
-This is patch is slapdash, I will find another way to deal with the bug we found.
+Cheers,
 
-Thanks for your review.
-
-Miao
+Dave.
+-- 
+Dave Chinner
+david@fromorbit.com

@@ -1,55 +1,169 @@
 From: Jeff Mahoney <jeffm@suse.com>
-Subject: [patch 04/35] btrfs: Fix kfree of member instead of structure
-Date: Wed, 21 Mar 2012 21:11:08 -0400
-Message-ID: <20120322011133.538275590@suse.com>
+Subject: [patch 02/35] btrfs: Catch locking failures in {set,clear,convert}_extent_bit
+Date: Wed, 21 Mar 2012 21:11:06 -0400
+Message-ID: <20120322011133.260932864@suse.com>
 References: <20120322011104.212214639@suse.com>
 Cc: David Sterba <dsterba@suse.com>
 To: Linux Btrfs List <linux-btrfs@vger.kernel.org>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Correctness fix: The kfree calls in the add_delayed_* functions free
-the node that's passed into it, but the node is a member of another
-structure. It works because it's always the first member of the
-containing structure, but it should really be using the containing
-structure itself.
+The *_state functions can only return 0 or -EEXIST. This patch addresses
+the cases where those functions returning -EEXIST represent a locking
+failure. It handles them by panicking with an appropriate error message.
 
 Signed-off-by: Jeff Mahoney <jeffm@suse.com>
 ---
- fs/btrfs/delayed-ref.c |    6 +++---
- 1 files changed, 3 insertions(+), 3 deletions(-)
+ fs/btrfs/extent_io.c |   58 ++++++++++++++++++++++++++++++++-----------------
+ 1 files changed, 38 insertions(+), 20 deletions(-)
 
-diff --git a/fs/btrfs/delayed-ref.c b/fs/btrfs/delayed-ref.c
-index 66e4f29..29ecd54 100644
---- a/fs/btrfs/delayed-ref.c
-+++ b/fs/btrfs/delayed-ref.c
-@@ -487,7 +487,7 @@ static noinline int add_delayed_ref_head(struct btrfs_fs_info *fs_info,
- 		 * we've updated the existing ref, free the newly
- 		 * allocated ref
+diff --git a/fs/btrfs/extent_io.c b/fs/btrfs/extent_io.c
+index a55fbe6..601f23b 100644
+--- a/fs/btrfs/extent_io.c
++++ b/fs/btrfs/extent_io.c
+@@ -53,6 +53,12 @@ struct extent_page_data {
+ 	unsigned int sync_io:1;
+ };
+ 
++static inline struct btrfs_fs_info *
++tree_fs_info(struct extent_io_tree *tree)
++{
++	return btrfs_sb(tree->mapping->host->i_sb);
++}
++
+ int __init extent_io_init(void)
+ {
+ 	extent_state_cache = kmem_cache_create("extent_state",
+@@ -439,6 +445,13 @@ alloc_extent_state_atomic(struct extent_state *prealloc)
+ 	return prealloc;
+ }
+ 
++void extent_io_tree_panic(struct extent_io_tree *tree, int err)
++{
++	btrfs_panic(tree_fs_info(tree), err, "Locking error: "
++		    "Extent tree was modified by another "
++		    "thread while locked.");
++}
++
+ /*
+  * clear some bits on a range in the tree.  This may require splitting
+  * or inserting elements in the tree, so the gfp mask is used to
+@@ -542,7 +555,9 @@ hit_next:
+ 		prealloc = alloc_extent_state_atomic(prealloc);
+ 		BUG_ON(!prealloc);
+ 		err = split_state(tree, state, prealloc, start);
+-		BUG_ON(err == -EEXIST);
++		if (err)
++			extent_io_tree_panic(tree, err);
++
+ 		prealloc = NULL;
+ 		if (err)
+ 			goto out;
+@@ -564,7 +579,9 @@ hit_next:
+ 		prealloc = alloc_extent_state_atomic(prealloc);
+ 		BUG_ON(!prealloc);
+ 		err = split_state(tree, state, prealloc, end + 1);
+-		BUG_ON(err == -EEXIST);
++		if (err)
++			extent_io_tree_panic(tree, err);
++
+ 		if (wake)
+ 			wake_up(&state->wq);
+ 
+@@ -742,8 +759,10 @@ again:
+ 		prealloc = alloc_extent_state_atomic(prealloc);
+ 		BUG_ON(!prealloc);
+ 		err = insert_state(tree, prealloc, start, end, &bits);
++		if (err)
++			extent_io_tree_panic(tree, err);
++
+ 		prealloc = NULL;
+-		BUG_ON(err == -EEXIST);
+ 		goto out;
+ 	}
+ 	state = rb_entry(node, struct extent_state, rb_node);
+@@ -809,7 +828,9 @@ hit_next:
+ 		prealloc = alloc_extent_state_atomic(prealloc);
+ 		BUG_ON(!prealloc);
+ 		err = split_state(tree, state, prealloc, start);
+-		BUG_ON(err == -EEXIST);
++		if (err)
++			extent_io_tree_panic(tree, err);
++
+ 		prealloc = NULL;
+ 		if (err)
+ 			goto out;
+@@ -846,12 +867,9 @@ hit_next:
  		 */
--		kfree(ref);
-+		kfree(head_ref);
- 	} else {
- 		delayed_refs->num_heads++;
- 		delayed_refs->num_heads_ready++;
-@@ -549,7 +549,7 @@ static noinline int add_delayed_tree_ref(struct btrfs_fs_info *fs_info,
- 		 * we've updated the existing ref, free the newly
- 		 * allocated ref
+ 		err = insert_state(tree, prealloc, start, this_end,
+ 				   &bits);
+-		BUG_ON(err == -EEXIST);
+-		if (err) {
+-			free_extent_state(prealloc);
+-			prealloc = NULL;
+-			goto out;
+-		}
++		if (err)
++			extent_io_tree_panic(tree, err);
++
+ 		cache_state(prealloc, cached_state);
+ 		prealloc = NULL;
+ 		start = this_end + 1;
+@@ -873,7 +891,8 @@ hit_next:
+ 		prealloc = alloc_extent_state_atomic(prealloc);
+ 		BUG_ON(!prealloc);
+ 		err = split_state(tree, state, prealloc, end + 1);
+-		BUG_ON(err == -EEXIST);
++		if (err)
++			extent_io_tree_panic(tree, err);
+ 
+ 		set_state_bits(tree, prealloc, &bits);
+ 		cache_state(prealloc, cached_state);
+@@ -946,7 +965,8 @@ again:
+ 		}
+ 		err = insert_state(tree, prealloc, start, end, &bits);
+ 		prealloc = NULL;
+-		BUG_ON(err == -EEXIST);
++		if (err)
++			extent_io_tree_panic(tree, err);
+ 		goto out;
+ 	}
+ 	state = rb_entry(node, struct extent_state, rb_node);
+@@ -1002,7 +1022,8 @@ hit_next:
+ 			goto out;
+ 		}
+ 		err = split_state(tree, state, prealloc, start);
+-		BUG_ON(err == -EEXIST);
++		if (err)
++			extent_io_tree_panic(tree, err);
+ 		prealloc = NULL;
+ 		if (err)
+ 			goto out;
+@@ -1041,12 +1062,8 @@ hit_next:
  		 */
--		kfree(ref);
-+		kfree(full_ref);
- 	} else {
- 		delayed_refs->num_entries++;
- 		trans->delayed_ref_updates++;
-@@ -611,7 +611,7 @@ static noinline int add_delayed_data_ref(struct btrfs_fs_info *fs_info,
- 		 * we've updated the existing ref, free the newly
- 		 * allocated ref
- 		 */
--		kfree(ref);
-+		kfree(full_ref);
- 	} else {
- 		delayed_refs->num_entries++;
- 		trans->delayed_ref_updates++;
+ 		err = insert_state(tree, prealloc, start, this_end,
+ 				   &bits);
+-		BUG_ON(err == -EEXIST);
+-		if (err) {
+-			free_extent_state(prealloc);
+-			prealloc = NULL;
+-			goto out;
+-		}
++		if (err)
++			extent_io_tree_panic(tree, err);
+ 		prealloc = NULL;
+ 		start = this_end + 1;
+ 		goto search_again;
+@@ -1065,7 +1082,8 @@ hit_next:
+ 		}
+ 
+ 		err = split_state(tree, state, prealloc, end + 1);
+-		BUG_ON(err == -EEXIST);
++		if (err)
++			extent_io_tree_panic(tree, err);
+ 
+ 		set_state_bits(tree, prealloc, &bits);
+ 		clear_state_bit(tree, prealloc, &clear_bits, 0);
 -- 
 1.7.9
 

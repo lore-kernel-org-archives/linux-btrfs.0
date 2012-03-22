@@ -1,60 +1,120 @@
 From: Jeff Mahoney <jeffm@suse.com>
-Subject: [patch 32/35] btrfs: Fix busyloop in transaction_kthread()
-Date: Wed, 21 Mar 2012 21:11:36 -0400
-Message-ID: <20120322011137.504023260@suse.com>
+Subject: [patch 33/35] btrfs: handle errors when excluding super extents
+Date: Wed, 21 Mar 2012 21:11:37 -0400
+Message-ID: <20120322011137.642386355@suse.com>
 References: <20120322011104.212214639@suse.com>
-Cc: David Sterba <dsterba@suse.com>, Jan Kara <jack@suse.cz>
+Cc: David Sterba <dsterba@suse.com>, David Sterba <dsterba@suse.cz>
 To: Linux Btrfs List <linux-btrfs@vger.kernel.org>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-When a filesystem got aborted due do error, transaction_kthread() will
-busyloop.  Fix it by going to sleep in that case as well. Maybe we should
-just stop transaction_kthread() when filesystem is aborted but that would be
-more complex.
+Some images produced by btrfs-image cause a mount crash in rmap block
+when excluding superblock extents. Handle the errors gracefully.
 
-Signed-off-by: Jan Kara <jack@suse.cz>
+Signed-off-by: David Sterba <dsterba@suse.cz>
 ---
- fs/btrfs/disk-io.c |    9 +++++++--
- 1 files changed, 7 insertions(+), 2 deletions(-)
+ fs/btrfs/extent-tree.c |   19 ++++++++++++++++---
+ fs/btrfs/volumes.c     |   20 +++++++++++++++++---
+ 2 files changed, 33 insertions(+), 6 deletions(-)
 
-diff --git a/fs/btrfs/disk-io.c b/fs/btrfs/disk-io.c
-index 16a0cad..438993e 100644
---- a/fs/btrfs/disk-io.c
-+++ b/fs/btrfs/disk-io.c
-@@ -1640,8 +1640,10 @@ static int transaction_kthread(void *arg)
- 	u64 transid;
- 	unsigned long now;
- 	unsigned long delay;
-+	bool cannot_commit;
+diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
+index 0bdb9fa..8055d58 100644
+--- a/fs/btrfs/extent-tree.c
++++ b/fs/btrfs/extent-tree.c
+@@ -250,10 +250,17 @@ static int exclude_super_stripes(struct btrfs_root *root,
  
- 	do {
-+		cannot_commit = false;
- 		delay = HZ * 30;
- 		vfs_check_frozen(root->fs_info->sb, SB_FREEZE_WRITE);
- 		mutex_lock(&root->fs_info->transaction_kthread_mutex);
-@@ -1665,8 +1667,10 @@ static int transaction_kthread(void *arg)
- 
- 		/* If the file system is aborted, this will always fail. */
- 		trans = btrfs_join_transaction(root);
--		if (IS_ERR(trans))
-+		if (IS_ERR(trans)) {
-+			cannot_commit = true;
- 			goto sleep;
+ 	for (i = 0; i < BTRFS_SUPER_MIRROR_MAX; i++) {
+ 		bytenr = btrfs_sb_offset(i);
++		if (bytenr <= cache->key.objectid + cache->key.offset)
++			break;
++		logical = NULL;
+ 		ret = btrfs_rmap_block(&root->fs_info->mapping_tree,
+ 				       cache->key.objectid, bytenr,
+ 				       0, &logical, &nr, &stripe_len);
+-		BUG_ON(ret); /* -ENOMEM */
++		if (ret < 0) {
++			kfree(logical);
++			free_excluded_extents(root, cache);
++			goto out;
 +		}
- 		if (transid == trans->transid) {
- 			btrfs_commit_transaction(trans, root);
- 		} else {
-@@ -1679,7 +1683,8 @@ sleep:
- 		if (!try_to_freeze()) {
- 			set_current_state(TASK_INTERRUPTIBLE);
- 			if (!kthread_should_stop() &&
--			    !btrfs_transaction_blocked(root->fs_info))
-+			    (!btrfs_transaction_blocked(root->fs_info) ||
-+			     cannot_commit))
- 				schedule_timeout(delay);
- 			__set_current_state(TASK_RUNNING);
- 		}
+ 
+ 		while (nr--) {
+ 			cache->bytes_super += stripe_len;
+@@ -264,7 +271,9 @@ static int exclude_super_stripes(struct btrfs_root *root,
+ 
+ 		kfree(logical);
+ 	}
+-	return 0;
++
++out:
++	return ret;
+ }
+ 
+ static struct btrfs_caching_control *
+@@ -7665,7 +7674,11 @@ int btrfs_read_block_groups(struct btrfs_root *root)
+ 		 * info has super bytes accounted for, otherwise we'll think
+ 		 * we have more space than we actually do.
+ 		 */
+-		exclude_super_stripes(root, cache);
++		ret = exclude_super_stripes(root, cache);
++		if (ret < 0) {
++			kfree(cache);
++			goto error;
++		}
+ 
+ 		/*
+ 		 * check for two cases, either we are full, and therefore
+diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
+index f818f48..3400fbd 100644
+--- a/fs/btrfs/volumes.c
++++ b/fs/btrfs/volumes.c
+@@ -3911,12 +3911,22 @@ int btrfs_rmap_block(struct btrfs_mapping_tree *map_tree,
+ 	u64 length;
+ 	u64 stripe_nr;
+ 	int i, j, nr = 0;
++	int ret = 0;
+ 
+ 	read_lock(&em_tree->lock);
+ 	em = lookup_extent_mapping(em_tree, chunk_start, 1);
+ 	read_unlock(&em_tree->lock);
+ 
+-	BUG_ON(!em || em->start != chunk_start);
++	if (!em)
++		return -ENOENT;
++
++	if (em->start != chunk_start) {
++		printk(KERN_DEBUG "btrfs: rmap em->start %llu != %llu\n",
++				em->start, chunk_start);
++		ret = -EINVAL;
++		goto out_error;
++	}
++
+ 	map = (struct map_lookup *)em->bdev;
+ 
+ 	length = em->len;
+@@ -3926,7 +3936,10 @@ int btrfs_rmap_block(struct btrfs_mapping_tree *map_tree,
+ 		do_div(length, map->num_stripes);
+ 
+ 	buf = kzalloc(sizeof(u64) * map->num_stripes, GFP_NOFS);
+-	BUG_ON(!buf); /* -ENOMEM */
++	if (!buf) {
++		ret = -ENOMEM;
++		goto out_error;
++	}
+ 
+ 	for (i = 0; i < map->num_stripes; i++) {
+ 		if (devid && map->stripes[i].dev->devid != devid)
+@@ -3960,8 +3973,9 @@ int btrfs_rmap_block(struct btrfs_mapping_tree *map_tree,
+ 	*naddrs = nr;
+ 	*stripe_len = map->stripe_len;
+ 
++out_error:
+ 	free_extent_map(em);
+-	return 0;
++	return ret;
+ }
+ 
+ static void btrfs_end_bio(struct bio *bio, int err)
 -- 
 1.7.9
 

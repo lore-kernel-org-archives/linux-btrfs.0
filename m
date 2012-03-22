@@ -1,83 +1,55 @@
 From: Jeff Mahoney <jeffm@suse.com>
-Subject: [patch 12/35] btrfs: Factor out tree->ops->merge_bio_hook call
-Date: Wed, 21 Mar 2012 21:11:16 -0400
-Message-ID: <20120322011134.657375130@suse.com>
+Subject: [patch 10/35] btrfs: btrfs_update_root error push-up
+Date: Wed, 21 Mar 2012 21:11:14 -0400
+Message-ID: <20120322011134.369657433@suse.com>
 References: <20120322011104.212214639@suse.com>
 Cc: David Sterba <dsterba@suse.com>
 To: Linux Btrfs List <linux-btrfs@vger.kernel.org>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-In submit_extent_page, there's a visually noisy if statement that, in
-the midst of other conditions, does the tree dependency for tree->ops
-and tree->ops->merge_bio_hook before calling it, and then another
-condition afterwards. If an error is returned from merge_bio_hook,
-there's no way to catch it. It's considered a routine "1" return
-value instead of a failure.
-
-This patch factors out the dependency check into a new local merge_bio
-routine and BUG's on an error. The if statement is less noisy as a side-
-effect.
+btrfs_update_root BUG's when it can't alloc a path, yet it can recover
+from a search error. This patch returns -ENOMEM instead.
 
 Signed-off-by: Jeff Mahoney <jeffm@suse.com>
 ---
- fs/btrfs/extent_io.c |   17 ++++++++++++++---
- fs/btrfs/inode.c     |    5 +++--
- 2 files changed, 17 insertions(+), 5 deletions(-)
+ fs/btrfs/ctree.h     |    7 ++++---
+ fs/btrfs/root-tree.c |    4 +++-
+ 2 files changed, 7 insertions(+), 4 deletions(-)
 
-diff --git a/fs/btrfs/extent_io.c b/fs/btrfs/extent_io.c
-index a4a7a18..c342e92 100644
---- a/fs/btrfs/extent_io.c
-+++ b/fs/btrfs/extent_io.c
-@@ -2429,6 +2429,19 @@ static int submit_one_bio(int rw, struct bio *bio, int mirror_num,
- 	return ret;
- }
+diff --git a/fs/btrfs/ctree.h b/fs/btrfs/ctree.h
+index a97a670..339e637 100644
+--- a/fs/btrfs/ctree.h
++++ b/fs/btrfs/ctree.h
+@@ -2724,9 +2724,10 @@ int btrfs_del_root(struct btrfs_trans_handle *trans, struct btrfs_root *root,
+ int btrfs_insert_root(struct btrfs_trans_handle *trans, struct btrfs_root
+ 		      *root, struct btrfs_key *key, struct btrfs_root_item
+ 		      *item);
+-int btrfs_update_root(struct btrfs_trans_handle *trans, struct btrfs_root
+-		      *root, struct btrfs_key *key, struct btrfs_root_item
+-		      *item);
++int __must_check btrfs_update_root(struct btrfs_trans_handle *trans,
++				   struct btrfs_root *root,
++				   struct btrfs_key *key,
++				   struct btrfs_root_item *item);
+ int btrfs_find_last_root(struct btrfs_root *root, u64 objectid, struct
+ 			 btrfs_root_item *item, struct btrfs_key *key);
+ int btrfs_find_dead_roots(struct btrfs_root *root, u64 objectid);
+diff --git a/fs/btrfs/root-tree.c b/fs/btrfs/root-tree.c
+index 1fd93d6..1486cf9 100644
+--- a/fs/btrfs/root-tree.c
++++ b/fs/btrfs/root-tree.c
+@@ -93,7 +93,9 @@ int btrfs_update_root(struct btrfs_trans_handle *trans, struct btrfs_root
+ 	unsigned long ptr;
  
-+static int merge_bio(struct extent_io_tree *tree, struct page *page,
-+		     unsigned long offset, size_t size, struct bio *bio,
-+		     unsigned long bio_flags)
-+{
-+	int ret = 0;
-+	if (tree->ops && tree->ops->merge_bio_hook)
-+		ret = tree->ops->merge_bio_hook(page, offset, size, bio,
-+						bio_flags);
-+	BUG_ON(ret < 0);
-+	return ret;
+ 	path = btrfs_alloc_path();
+-	BUG_ON(!path);
++	if (!path)
++		return -ENOMEM;
 +
-+}
-+
- static int submit_extent_page(int rw, struct extent_io_tree *tree,
- 			      struct page *page, sector_t sector,
- 			      size_t size, unsigned long offset,
-@@ -2457,9 +2470,7 @@ static int submit_extent_page(int rw, struct extent_io_tree *tree,
- 				sector;
- 
- 		if (prev_bio_flags != bio_flags || !contig ||
--		    (tree->ops && tree->ops->merge_bio_hook &&
--		     tree->ops->merge_bio_hook(page, offset, page_size, bio,
--					       bio_flags)) ||
-+		    merge_bio(tree, page, offset, page_size, bio, bio_flags) ||
- 		    bio_add_page(bio, page, page_size, offset) < page_size) {
- 			ret = submit_one_bio(rw, bio, mirror_num,
- 					     prev_bio_flags);
-diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
-index f0dfd7d..ad1e88d 100644
---- a/fs/btrfs/inode.c
-+++ b/fs/btrfs/inode.c
-@@ -1425,10 +1425,11 @@ int btrfs_merge_bio_hook(struct page *page, unsigned long offset,
- 	map_length = length;
- 	ret = btrfs_map_block(map_tree, READ, logical,
- 			      &map_length, NULL, 0);
--
-+	/* Will always return 0 or 1 with map_multi == NULL */
-+	BUG_ON(ret < 0);
- 	if (map_length < length + size)
- 		return 1;
--	return ret;
-+	return 0;
- }
- 
- /*
+ 	ret = btrfs_search_slot(trans, root, key, path, 0, 1);
+ 	if (ret < 0)
+ 		goto out;
 -- 
 1.7.9
 

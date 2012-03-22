@@ -1,60 +1,42 @@
-From: Liu Bo <liubo2009@cn.fujitsu.com>
-Subject: [PATCH] Btrfs: fix recursive defragment with autodefrag option
-Date: Thu, 22 Mar 2012 19:13:12 +0800
-Message-ID: <1332414792-30988-1-git-send-email-liubo2009@cn.fujitsu.com>
-To: <linux-btrfs@vger.kernel.org>
+From: Josef Bacik <josef@redhat.com>
+Subject: Re: [RFC PATCH 0/5] apply rwlock for extent state
+Date: Thu, 22 Mar 2012 09:09:33 -0400
+Message-ID: <20120322130932.GA2118@dhcp231-144.rdu.redhat.com>
+References: <1331802737-29454-1-git-send-email-liubo2009@cn.fujitsu.com>
+ <4F694262.6050409@cn.fujitsu.com>
+ <CAK-xaQZGnkwQGq7TXy50vJwNMRXnM3WR6jqCnSXSf7-6yFRJ5A@mail.gmail.com>
+ <4F6A7A8D.7060508@csamuel.org>
+ <4F6A7DAA.6050203@cn.fujitsu.com>
+Mime-Version: 1.0
+Content-Type: text/plain; charset=us-ascii
+Cc: Andrea Gelmini <andrea.gelmini@gmail.com>,
+	Chris Samuel <chris@csamuel.org>, linux-btrfs@vger.kernel.org,
+	Chris Mason <chris.mason@oracle.com>,
+	Josef Bacik <josef@redhat.com>, Arne Jansen <sensille@gmx.net>,
+	David Sterba <dsterba@suse.cz>
+To: Liu Bo <liubo2009@cn.fujitsu.com>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
+In-Reply-To: <4F6A7DAA.6050203@cn.fujitsu.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Reproduce:
-$ mkfs.btrfs disk
-$ mount disk /mnt -o autodefrag
-$ dd if=/dev/zero of=/mnt/foobar bs=4k count=10 2>/dev/null && sync
-$ for i in `seq 9 -2 0`; do dd if=/dev/zero of=/mnt/foobar bs=4k count=1 \
-  seek=$i conv=notrunc 2> /dev/null; done && sync
+On Thu, Mar 22, 2012 at 09:17:30AM +0800, Liu Bo wrote:
+> On 03/22/2012 09:04 AM, Chris Samuel wrote:
+> > On 21/03/12 23:34, Andrea Gelmini wrote:
+> > 
+> >> No comment, but I'm using this patches without problem since you
+> >> published it (compressed /home with hourly snapshot delete/creation).
+> > 
+> > Well worth sending a Tested-By: tag then, it's useful information.
+> > 
+> > cheers,
+> > Chris
+> 
+> 
+> Besides a Tested-By: tag, I'll appreciate a lot if anyone can provide
+> improvement/regression on performance with this patchset ;)
+>
 
-then we'll get to defrag "foobar" again and again.
-So does option "-o autodefrag,compress".
+I've started reviewing some of it Liu and I'll try to get to the rest of it
+today.  Thanks,
 
-Reasons:
-When the cleaner kthread gets to fetch inodes from the defrag tree and defrag
-them, it will dirty pages and submit them, this will comes to another DATA COW
-where the processing inode will be inserted to the defrag tree again.
-
-This patch sets a rule for COW code, i.e. insert an inode when we're really
-going to make some defragments.
-
-Signed-off-by: Liu Bo <liubo2009@cn.fujitsu.com>
----
- fs/btrfs/inode.c |    8 +++++---
- 1 files changed, 5 insertions(+), 3 deletions(-)
-
-diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
-index 892b347..7f5018d 100644
---- a/fs/btrfs/inode.c
-+++ b/fs/btrfs/inode.c
-@@ -344,8 +344,9 @@ static noinline int compress_file_range(struct inode *inode,
- 	int will_compress;
- 	int compress_type = root->fs_info->compress_type;
- 
--	/* if this is a small write inside eof, kick off a defragbot */
--	if (end <= BTRFS_I(inode)->disk_i_size && (end - start + 1) < 16 * 1024)
-+	/* if this is a small write inside eof, kick off a defrag */
-+	if ((end - start + 1) < 16 * 1024 &&
-+	    (start > 0 || end + 1 < BTRFS_I(inode)->disk_i_size))
- 		btrfs_add_inode_defrag(NULL, inode);
- 
- 	actual_end = min_t(u64, isize, end + 1);
-@@ -800,7 +801,8 @@ static noinline int cow_file_range(struct inode *inode,
- 	ret = 0;
- 
- 	/* if this is a small write inside eof, kick off defrag */
--	if (end <= BTRFS_I(inode)->disk_i_size && num_bytes < 64 * 1024)
-+	if (num_bytes < 64 * 1024 &&
-+	    (start > 0 || end + 1 < BTRFS_I(inode)->disk_i_size))
- 		btrfs_add_inode_defrag(trans, inode);
- 
- 	if (start == 0) {
--- 
-1.6.5.2
-
+Josef 

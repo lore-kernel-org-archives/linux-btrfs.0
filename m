@@ -1,58 +1,75 @@
 From: Jeff Mahoney <jeffm@suse.com>
-Subject: [patch 19/35] btrfs: Dont BUG_ON errors from btrfs_create_subvol_root()
-Date: Wed, 21 Mar 2012 21:11:23 -0400
-Message-ID: <20120322011135.665837219@suse.com>
+Subject: [patch 34/35] btrfs: enhance superblock sanity checks
+Date: Wed, 21 Mar 2012 21:11:38 -0400
+Message-ID: <20120322011137.776809504@suse.com>
 References: <20120322011104.212214639@suse.com>
-Cc: David Sterba <dsterba@suse.com>, Mark Fasheh <mfasheh@suse.com>
+Cc: David Sterba <dsterba@suse.com>, David Sterba <dsterba@suse.cz>
 To: Linux Btrfs List <linux-btrfs@vger.kernel.org>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-This is called from only one place - create_subvol() which passes errors
-safely back out to it's caller, btrfs_mksubvol where they are handled.
+Validate checksum algorithm during mount and prevent BUG_ON later in
+btrfs_super_csum_size.
 
-Additionally, btrfs_create_subvol_root() itself bug's needlessly from error
-return of btrfs_update_inode(). Since create_subvol() was fixed to catch
-errors we can bubble this one up too.
-
-Signed-off-by: Mark Fasheh <mfasheh@suse.com>
+Signed-off-by: David Sterba <dsterba@suse.cz>
 ---
- fs/btrfs/inode.c |    3 +--
- fs/btrfs/ioctl.c |    5 +++++
- 2 files changed, 6 insertions(+), 2 deletions(-)
+ fs/btrfs/disk-io.c |   23 ++++++++++++++++++-----
+ 1 files changed, 18 insertions(+), 5 deletions(-)
 
-diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
-index 593a2c3..4113233 100644
---- a/fs/btrfs/inode.c
-+++ b/fs/btrfs/inode.c
-@@ -6734,10 +6734,9 @@ int btrfs_create_subvol_root(struct btrfs_trans_handle *trans,
- 	btrfs_i_size_write(inode, 0);
+diff --git a/fs/btrfs/disk-io.c b/fs/btrfs/disk-io.c
+index 438993e..38c2ee1 100644
+--- a/fs/btrfs/disk-io.c
++++ b/fs/btrfs/disk-io.c
+@@ -48,7 +48,7 @@
+ static struct extent_io_ops btree_extent_io_ops;
+ static void end_workqueue_fn(struct btrfs_work *work);
+ static void free_fs_root(struct btrfs_root *root);
+-static void btrfs_check_super_valid(struct btrfs_fs_info *fs_info,
++static int btrfs_check_super_valid(struct btrfs_fs_info *fs_info,
+ 				    int read_only);
+ static void btrfs_destroy_ordered_operations(struct btrfs_root *root);
+ static void btrfs_destroy_ordered_extents(struct btrfs_root *root);
+@@ -2135,7 +2135,12 @@ int open_ctree(struct super_block *sb,
+ 	/* check FS state, whether FS is broken. */
+ 	fs_info->fs_state |= btrfs_super_flags(disk_super);
  
- 	err = btrfs_update_inode(trans, new_root, inode);
--	BUG_ON(err);
+-	btrfs_check_super_valid(fs_info, sb->s_flags & MS_RDONLY);
++	ret = btrfs_check_super_valid(fs_info, sb->s_flags & MS_RDONLY);
++	if (ret) {
++		printk(KERN_ERR "btrfs: superblock contains fatal errors\n");
++		err = ret;
++		goto fail_alloc;
++	}
  
- 	iput(inode);
--	return 0;
-+	return err;
+ 	/*
+ 	 * run through our array of backup supers and setup
+@@ -3324,15 +3329,23 @@ out:
+ 	return 0;
  }
  
- struct inode *btrfs_alloc_inode(struct super_block *sb)
-diff --git a/fs/btrfs/ioctl.c b/fs/btrfs/ioctl.c
-index 4e51494..de25e42 100644
---- a/fs/btrfs/ioctl.c
-+++ b/fs/btrfs/ioctl.c
-@@ -430,6 +430,11 @@ static noinline int create_subvol(struct btrfs_root *root,
- 	btrfs_record_root_in_trans(trans, new_root);
- 
- 	ret = btrfs_create_subvol_root(trans, new_root, new_dirid);
-+	if (ret) {
-+		/* We potentially lose an unused inode item here */
-+		goto fail;
+-static void btrfs_check_super_valid(struct btrfs_fs_info *fs_info,
++static int btrfs_check_super_valid(struct btrfs_fs_info *fs_info,
+ 			      int read_only)
+ {
++	if (btrfs_super_csum_type(fs_info->super_copy) >= ARRAY_SIZE(btrfs_csum_sizes)) {
++		printk(KERN_ERR "btrfs: unsupported checksum algorithm\n");
++		return -EINVAL;
 +	}
 +
- 	/*
- 	 * insert the directory item
- 	 */
+ 	if (read_only)
+-		return;
++		return 0;
+ 
+-	if (fs_info->fs_state & BTRFS_SUPER_FLAG_ERROR)
++	if (fs_info->fs_state & BTRFS_SUPER_FLAG_ERROR) {
+ 		printk(KERN_WARNING "warning: mount fs with errors, "
+ 		       "running btrfsck is recommended\n");
++	}
++
++	return 0;
+ }
+ 
+ int btrfs_error_commit_super(struct btrfs_root *root)
 -- 
 1.7.9
 

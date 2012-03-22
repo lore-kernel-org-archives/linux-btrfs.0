@@ -1,37 +1,140 @@
 From: Jeff Mahoney <jeffm@suse.com>
-Subject: [patch 27/35] btrfs: Remove BUG_ON from __btrfs_alloc_chunk()
-Date: Wed, 21 Mar 2012 21:11:31 -0400
-Message-ID: <20120322011136.785328415@suse.com>
+Subject: [patch 29/35] btrfs: add varargs to btrfs_error
+Date: Wed, 21 Mar 2012 21:11:33 -0400
+Message-ID: <20120322011137.066157779@suse.com>
 References: <20120322011104.212214639@suse.com>
-Cc: David Sterba <dsterba@suse.com>, Mark Fasheh <mfasheh@suse.de>
+Cc: David Sterba <dsterba@suse.com>
 To: Linux Btrfs List <linux-btrfs@vger.kernel.org>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-We BUG_ON() error from add_extent_mapping(), but that error looks pretty
-easy to bubble back up - as far as I can tell there have not been any
-permanent modifications to fs state at that point.
+ btrfs currently handles most errors with BUG_ON. This patch is a work-in-
+ progress but aims to handle most errors other than internal logic
+ errors and ENOMEM more gracefully.
 
-Signed-off-by: Mark Fasheh <mfasheh@suse.de>
+ This iteration prevents most crashes but can run into lockups with
+ the page lock on occasion when the timing "works out."
+
+Signed-off-by: Jeff Mahoney <jeffm@suse.com>
 ---
- fs/btrfs/volumes.c |    3 ++-
- 1 files changed, 2 insertions(+), 1 deletions(-)
+ fs/btrfs/ctree.h |   12 ++++++++-
+ fs/btrfs/super.c |   63 ++++++++++++++++++++++++++++++++++++++++++++++++------
+ 2 files changed, 66 insertions(+), 9 deletions(-)
 
-diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
-index 8d4b7d4..8bf19e1 100644
---- a/fs/btrfs/volumes.c
-+++ b/fs/btrfs/volumes.c
-@@ -3327,8 +3327,9 @@ static int __btrfs_alloc_chunk(struct btrfs_trans_handle *trans,
- 	write_lock(&em_tree->lock);
- 	ret = add_extent_mapping(em_tree, em);
- 	write_unlock(&em_tree->lock);
--	BUG_ON(ret);
- 	free_extent_map(em);
-+	if (ret)
-+		goto error;
+diff --git a/fs/btrfs/ctree.h b/fs/btrfs/ctree.h
+index f6bca05..8829f80 100644
+--- a/fs/btrfs/ctree.h
++++ b/fs/btrfs/ctree.h
+@@ -2964,13 +2964,21 @@ ssize_t btrfs_listxattr(struct dentry *dentry, char *buffer, size_t size);
+ /* super.c */
+ int btrfs_parse_options(struct btrfs_root *root, char *options);
+ int btrfs_sync_fs(struct super_block *sb, int wait);
++void btrfs_printk(struct btrfs_fs_info *fs_info, const char *fmt, ...);
+ void __btrfs_std_error(struct btrfs_fs_info *fs_info, const char *function,
+-		     unsigned int line, int errno);
++		     unsigned int line, int errno, const char *fmt, ...);
  
- 	ret = btrfs_make_block_group(trans, extent_root, 0, type,
- 				     BTRFS_FIRST_CHUNK_TREE_OBJECTID,
+ #define btrfs_std_error(fs_info, errno)				\
+ do {								\
+ 	if ((errno))						\
+-		__btrfs_std_error((fs_info), __func__, __LINE__, (errno));\
++		__btrfs_std_error((fs_info), __func__,		\
++				   __LINE__, (errno), NULL);	\
++} while (0)
++
++#define btrfs_error(fs_info, errno, fmt, args...)		\
++do {								\
++	__btrfs_std_error((fs_info), __func__, __LINE__,	\
++			  (errno), fmt, ##args);		\
+ } while (0)
+ 
+ void __btrfs_panic(struct btrfs_fs_info *fs_info, const char *function,
+diff --git a/fs/btrfs/super.c b/fs/btrfs/super.c
+index ae7963b..7fe69ee 100644
+--- a/fs/btrfs/super.c
++++ b/fs/btrfs/super.c
+@@ -127,25 +127,74 @@ static void btrfs_handle_error(struct btrfs_fs_info *fs_info)
+  * invokes the approciate error response.
+  */
+ void __btrfs_std_error(struct btrfs_fs_info *fs_info, const char *function,
+-		     unsigned int line, int errno)
++		       unsigned int line, int errno, const char *fmt, ...)
+ {
+ 	struct super_block *sb = fs_info->sb;
+ 	char nbuf[16];
+ 	const char *errstr;
++	va_list args;
++	va_start(args, fmt);
+ 
+ 	/*
+ 	 * Special case: if the error is EROFS, and we're already
+ 	 * under MS_RDONLY, then it is safe here.
+ 	 */
+ 	if (errno == -EROFS && (sb->s_flags & MS_RDONLY))
+-		return;
++  		return;
+ 
+-	errstr = btrfs_decode_error(fs_info, errno, nbuf);
+-	printk(KERN_CRIT "BTRFS error (device %s) in %s:%d: %s\n",
+-		sb->s_id, function, line, errstr);
+-	save_error_info(fs_info);
++  	errstr = btrfs_decode_error(fs_info, errno, nbuf);
++	if (fmt) {
++		struct va_format vaf = {
++			.fmt = fmt,
++			.va = &args,
++		};
++
++		printk(KERN_CRIT "BTRFS error (device %s) in %s:%d: %s (%pV)\n",
++			sb->s_id, function, line, errstr, &vaf);
++	} else {
++		printk(KERN_CRIT "BTRFS error (device %s) in %s:%d: %s\n",
++			sb->s_id, function, line, errstr);
++	}
++
++	/* Don't go through full error handling during mount */
++	if (sb->s_flags & MS_BORN) {
++		save_error_info(fs_info);
++		btrfs_handle_error(fs_info);
++	}
++	va_end(args);
++}
+ 
+-	btrfs_handle_error(fs_info);
++const char *logtypes[] = {
++	"emergency",
++	"alert",
++	"critical",
++	"error",
++	"warning",
++	"notice",
++	"info",
++	"debug",
++};
++
++void btrfs_printk(struct btrfs_fs_info *fs_info, const char *fmt, ...)
++{
++	struct super_block *sb = fs_info->sb;
++	char lvl[4];
++	struct va_format vaf;
++	va_list args;
++	const char *type = logtypes[4];
++
++	va_start(args, fmt);
++
++	if (fmt[0] == '<' && isdigit(fmt[1]) && fmt[2] == '>') {
++		strncpy(lvl, fmt, 3);
++		fmt += 3;
++		type = logtypes[fmt[1] - '0'];
++	} else
++		*lvl = '\0';
++
++	vaf.fmt = fmt;
++	vaf.va = &args;
++	printk("%sBTRFS %s (device %s): %pV", lvl, type, sb->s_id, &vaf);
+ }
+ 
+ /*
 -- 
 1.7.9
 

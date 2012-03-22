@@ -1,80 +1,163 @@
-From: Jeff Mahoney <jeffm@suse.com>
-Subject: [patch 21/35] btrfs: Dont BUG_ON kzalloc error in btrfs_lookup_csums_range()
-Date: Wed, 21 Mar 2012 21:11:25 -0400
-Message-ID: <20120322011135.937953541@suse.com>
-References: <20120322011104.212214639@suse.com>
-Cc: David Sterba <dsterba@suse.com>, Mark Fasheh <mfasheh@suse.com>
-To: Linux Btrfs List <linux-btrfs@vger.kernel.org>
+From: Liu Bo <liubo2009@cn.fujitsu.com>
+Subject: Re: [patch 17/35] btrfs: split extent_state ops
+Date: Thu, 22 Mar 2012 09:56:38 +0800
+Message-ID: <4F6A86D6.8040109@cn.fujitsu.com>
+References: <20120322011104.212214639@suse.com> <20120322011135.373316482@suse.com>
+Mime-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Cc: Linux Btrfs List <linux-btrfs@vger.kernel.org>,
+	David Sterba <dsterba@suse.com>
+To: Jeff Mahoney <jeffm@suse.com>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
+In-Reply-To: <20120322011135.373316482@suse.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Unfortunately it isn't enough to just exit here - the kzalloc() happens in a
-loop and the allocated items are added to a linked list whose head is passed
-in from the caller.
+On 03/22/2012 09:11 AM, Jeff Mahoney wrote:
+>  set_extent_bit can do exclusive locking but only when called by lock_extent*,
+> 
+>  Drop the exclusive bits argument except when called by lock_extent.
+> 
 
-To fix the BUG_ON() and also provide the semantic that the list passed in is
-only modified on success, I create function-local temporary list that we add
-items too. If no error is met, that list is spliced to the callers at the
-end of the function. Otherwise the list will be walked and all items freed
-before the error value is returned.
+Hi Jeff,
 
-I did a simple test on this patch by forcing an error at the kzalloc() point
-and verifying that when this hits (git clone seemed to exercise this), the
-function throws the proper error. Unfortunately but predictably, we later
-hit a BUG_ON(ret) type line that still hasn't been fixed up ;)
+I have to say this is not a good cleanup, any benefits?
 
-Signed-off-by: Mark Fasheh <mfasheh@suse.com>
----
- fs/btrfs/file-item.c |   15 +++++++++++++--
- 1 files changed, 13 insertions(+), 2 deletions(-)
+thanks,
+liubo
 
-diff --git a/fs/btrfs/file-item.c b/fs/btrfs/file-item.c
-index edb69b4..89af104 100644
---- a/fs/btrfs/file-item.c
-+++ b/fs/btrfs/file-item.c
-@@ -284,6 +284,7 @@ int btrfs_lookup_csums_range(struct btrfs_root *root, u64 start, u64 end,
- 	struct btrfs_ordered_sum *sums;
- 	struct btrfs_sector_sum *sector_sum;
- 	struct btrfs_csum_item *item;
-+	LIST_HEAD(tmplist);
- 	unsigned long offset;
- 	int ret;
- 	size_t size;
-@@ -358,7 +359,10 @@ int btrfs_lookup_csums_range(struct btrfs_root *root, u64 start, u64 end,
- 					MAX_ORDERED_SUM_BYTES(root));
- 			sums = kzalloc(btrfs_ordered_sum_size(root, size),
- 					GFP_NOFS);
--			BUG_ON(!sums);
-+			if (!sums) {
-+				ret = -ENOMEM;
-+				goto fail;
-+			}
- 
- 			sector_sum = sums->sums;
- 			sums->bytenr = start;
-@@ -380,12 +384,19 @@ int btrfs_lookup_csums_range(struct btrfs_root *root, u64 start, u64 end,
- 				offset += csum_size;
- 				sector_sum++;
- 			}
--			list_add_tail(&sums->list, list);
-+			list_add_tail(&sums->list, &tmplist);
- 		}
- 		path->slots[0]++;
- 	}
- 	ret = 0;
- fail:
-+	while (ret < 0 && !list_empty(&tmplist)) {
-+		sums = list_entry(&tmplist, struct btrfs_ordered_sum, list);
-+		list_del(&sums->list);
-+		kfree(sums);
-+	}
-+	list_splice_tail(&tmplist, list);
-+
- 	btrfs_free_path(path);
- 	return ret;
- }
--- 
-1.7.9
-
-
+> Signed-off-by: Jeff Mahoney <jeffm@suse.com>
+> ---
+>  fs/btrfs/extent_io.c |   36 +++++++++++++++++++++++-------------
+>  fs/btrfs/extent_io.h |    2 +-
+>  fs/btrfs/inode.c     |    2 +-
+>  3 files changed, 25 insertions(+), 15 deletions(-)
+> 
+> diff --git a/fs/btrfs/extent_io.c b/fs/btrfs/extent_io.c
+> index 0112c02..ffa7cc3 100644
+> --- a/fs/btrfs/extent_io.c
+> +++ b/fs/btrfs/extent_io.c
+> @@ -721,9 +721,10 @@ static void uncache_state(struct extent_state **cached_ptr)
+>   * [start, end] is inclusive This takes the tree lock.
+>   */
+>  
+> -int set_extent_bit(struct extent_io_tree *tree, u64 start, u64 end,
+> -		   int bits, int exclusive_bits, u64 *failed_start,
+> -		   struct extent_state **cached_state, gfp_t mask)
+> +static int __must_check
+> +__set_extent_bit(struct extent_io_tree *tree, u64 start, u64 end,
+> +		 int bits, int exclusive_bits, u64 *failed_start,
+> +		 struct extent_state **cached_state, gfp_t mask)
+>  {
+>  	struct extent_state *state;
+>  	struct extent_state *prealloc = NULL;
+> @@ -917,6 +918,15 @@ search_again:
+>  	goto again;
+>  }
+>  
+> +int set_extent_bit(struct extent_io_tree *tree, u64 start, u64 end, int bits,
+> +		   u64 *failed_start, struct extent_state **cached_state,
+> +		   gfp_t mask)
+> +{
+> +	return __set_extent_bit(tree, start, end, bits, 0, failed_start,
+> +				cached_state, mask);
+> +}
+> +
+> +
+>  /**
+>   * convert_extent - convert all bits in a given range from one bit to another
+>   * @tree:	the io tree to search
+> @@ -1111,14 +1121,14 @@ search_again:
+>  int set_extent_dirty(struct extent_io_tree *tree, u64 start, u64 end,
+>  		     gfp_t mask)
+>  {
+> -	return set_extent_bit(tree, start, end, EXTENT_DIRTY, 0, NULL,
+> +	return set_extent_bit(tree, start, end, EXTENT_DIRTY, NULL,
+>  			      NULL, mask);
+>  }
+>  
+>  int set_extent_bits(struct extent_io_tree *tree, u64 start, u64 end,
+>  		    int bits, gfp_t mask)
+>  {
+> -	return set_extent_bit(tree, start, end, bits, 0, NULL,
+> +	return set_extent_bit(tree, start, end, bits, NULL,
+>  			      NULL, mask);
+>  }
+>  
+> @@ -1133,7 +1143,7 @@ int set_extent_delalloc(struct extent_io_tree *tree, u64 start, u64 end,
+>  {
+>  	return set_extent_bit(tree, start, end,
+>  			      EXTENT_DELALLOC | EXTENT_UPTODATE,
+> -			      0, NULL, cached_state, mask);
+> +			      NULL, cached_state, mask);
+>  }
+>  
+>  int clear_extent_dirty(struct extent_io_tree *tree, u64 start, u64 end,
+> @@ -1147,7 +1157,7 @@ int clear_extent_dirty(struct extent_io_tree *tree, u64 start, u64 end,
+>  int set_extent_new(struct extent_io_tree *tree, u64 start, u64 end,
+>  		     gfp_t mask)
+>  {
+> -	return set_extent_bit(tree, start, end, EXTENT_NEW, 0, NULL,
+> +	return set_extent_bit(tree, start, end, EXTENT_NEW, NULL,
+>  			      NULL, mask);
+>  }
+>  
+> @@ -1155,7 +1165,7 @@ int set_extent_uptodate(struct extent_io_tree *tree, u64 start, u64 end,
+>  			struct extent_state **cached_state, gfp_t mask)
+>  {
+>  	return set_extent_bit(tree, start, end, EXTENT_UPTODATE, 0,
+> -			      NULL, cached_state, mask);
+> +			      cached_state, mask);
+>  }
+>  
+>  static int clear_extent_uptodate(struct extent_io_tree *tree, u64 start,
+> @@ -1176,9 +1186,9 @@ int lock_extent_bits(struct extent_io_tree *tree, u64 start, u64 end,
+>  	int err;
+>  	u64 failed_start;
+>  	while (1) {
+> -		err = set_extent_bit(tree, start, end, EXTENT_LOCKED | bits,
+> -				     EXTENT_LOCKED, &failed_start,
+> -				     cached_state, GFP_NOFS);
+> +		err = __set_extent_bit(tree, start, end, EXTENT_LOCKED | bits,
+> +				       EXTENT_LOCKED, &failed_start,
+> +				       cached_state, GFP_NOFS);
+>  		if (err == -EEXIST) {
+>  			wait_extent_bit(tree, failed_start, end, EXTENT_LOCKED);
+>  			start = failed_start;
+> @@ -1199,8 +1209,8 @@ int try_lock_extent(struct extent_io_tree *tree, u64 start, u64 end)
+>  	int err;
+>  	u64 failed_start;
+>  
+> -	err = set_extent_bit(tree, start, end, EXTENT_LOCKED, EXTENT_LOCKED,
+> -			     &failed_start, NULL, GFP_NOFS);
+> +	err = __set_extent_bit(tree, start, end, EXTENT_LOCKED, EXTENT_LOCKED,
+> +			       &failed_start, NULL, GFP_NOFS);
+>  	if (err == -EEXIST) {
+>  		if (failed_start > start)
+>  			clear_extent_bit(tree, start, failed_start - 1,
+> diff --git a/fs/btrfs/extent_io.h b/fs/btrfs/extent_io.h
+> index 439e183..3a171c2 100644
+> --- a/fs/btrfs/extent_io.h
+> +++ b/fs/btrfs/extent_io.h
+> @@ -209,7 +209,7 @@ int clear_extent_bit(struct extent_io_tree *tree, u64 start, u64 end,
+>  int set_extent_bits(struct extent_io_tree *tree, u64 start, u64 end,
+>  		    int bits, gfp_t mask);
+>  int set_extent_bit(struct extent_io_tree *tree, u64 start, u64 end,
+> -		   int bits, int exclusive_bits, u64 *failed_start,
+> +		   int bits, u64 *failed_start,
+>  		   struct extent_state **cached_state, gfp_t mask);
+>  int set_extent_uptodate(struct extent_io_tree *tree, u64 start, u64 end,
+>  			struct extent_state **cached_state, gfp_t mask);
+> diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
+> index d16bf3f..593a2c3 100644
+> --- a/fs/btrfs/inode.c
+> +++ b/fs/btrfs/inode.c
+> @@ -6233,7 +6233,7 @@ static ssize_t btrfs_direct_IO(int rw, struct kiocb *iocb,
+>  	if (writing) {
+>  		write_bits = EXTENT_DELALLOC | EXTENT_DO_ACCOUNTING;
+>  		ret = set_extent_bit(&BTRFS_I(inode)->io_tree, lockstart, lockend,
+> -				     EXTENT_DELALLOC, 0, NULL, &cached_state,
+> +				     EXTENT_DELALLOC, NULL, &cached_state,
+>  				     GFP_NOFS);
+>  		if (ret) {
+>  			clear_extent_bit(&BTRFS_I(inode)->io_tree, lockstart,
 

@@ -1,42 +1,51 @@
-From: Josef Bacik <josef@redhat.com>
-Subject: Re: [RFC PATCH 0/5] apply rwlock for extent state
-Date: Thu, 22 Mar 2012 09:09:33 -0400
-Message-ID: <20120322130932.GA2118@dhcp231-144.rdu.redhat.com>
-References: <1331802737-29454-1-git-send-email-liubo2009@cn.fujitsu.com>
- <4F694262.6050409@cn.fujitsu.com>
- <CAK-xaQZGnkwQGq7TXy50vJwNMRXnM3WR6jqCnSXSf7-6yFRJ5A@mail.gmail.com>
- <4F6A7A8D.7060508@csamuel.org>
- <4F6A7DAA.6050203@cn.fujitsu.com>
+From: Stefan Behrens <sbehrens@giantdisaster.de>
+Subject: Re: [patch 35/35] btrfs: disallow unequal data/metadata blocksize
+ for mixed block groups
+Date: Thu, 22 Mar 2012 17:02:24 +0100
+Message-ID: <4F6B4D10.3090709@giantdisaster.de>
+References: <20120322011104.212214639@suse.com> <20120322011137.923792033@suse.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Cc: Andrea Gelmini <andrea.gelmini@gmail.com>,
-	Chris Samuel <chris@csamuel.org>, linux-btrfs@vger.kernel.org,
-	Chris Mason <chris.mason@oracle.com>,
-	Josef Bacik <josef@redhat.com>, Arne Jansen <sensille@gmx.net>,
-	David Sterba <dsterba@suse.cz>
-To: Liu Bo <liubo2009@cn.fujitsu.com>
+Content-Type: text/plain; charset=ISO-8859-1
+Cc: Linux Btrfs List <linux-btrfs@vger.kernel.org>,
+	David Sterba <dsterba@suse.com>, David Sterba <dsterba@suse.cz>
+To: Jeff Mahoney <jeffm@suse.com>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <4F6A7DAA.6050203@cn.fujitsu.com>
+In-Reply-To: <20120322011137.923792033@suse.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Thu, Mar 22, 2012 at 09:17:30AM +0800, Liu Bo wrote:
-> On 03/22/2012 09:04 AM, Chris Samuel wrote:
-> > On 21/03/12 23:34, Andrea Gelmini wrote:
-> > 
-> >> No comment, but I'm using this patches without problem since you
-> >> published it (compressed /home with hourly snapshot delete/creation).
-> > 
-> > Well worth sending a Tested-By: tag then, it's useful information.
-> > 
-> > cheers,
-> > Chris
+On 3/22/2012 2:11 AM, Jeff Mahoney wrote:
+> With support for bigger metadata blocks, we must avoid mounting a
+> filesystem with different block size for mixed block groups, this causes
+> corruption (found by xfstests/083).
 > 
+> Signed-off-by: David Sterba <dsterba@suse.cz>
+> ---
+>  fs/btrfs/disk-io.c |    8 ++++++++
+>  1 files changed, 8 insertions(+), 0 deletions(-)
 > 
-> Besides a Tested-By: tag, I'll appreciate a lot if anyone can provide
-> improvement/regression on performance with this patchset ;)
->
+> diff --git a/fs/btrfs/disk-io.c b/fs/btrfs/disk-io.c
+> index 38c2ee1..55272b0 100644
+> --- a/fs/btrfs/disk-io.c
+> +++ b/fs/btrfs/disk-io.c
+> @@ -2302,6 +2302,14 @@ int open_ctree(struct super_block *sb,
+>  		goto fail_sb_buffer;
+>  	}
+>  
+> +	if ((features & BTRFS_FEATURE_INCOMPAT_MIXED_GROUPS) &&
+> +			(leafsize != nodesize && sectorsize != nodesize)) {
 
-I've started reviewing some of it Liu and I'll try to get to the rest of it
-today.  Thanks,
+Dave, Shouldn't this be like this (you want all three sizes to be equal
+in mixed mode, don't you?):
+	if ((features & BTRFS_FEATURE_INCOMPAT_MIXED_GROUPS) &&
+			(leafsize != nodesize || sectorsize != nodesize)) {
 
-Josef 
+
+> +		printk(KERN_WARNING "btrfs: unequal leaf/node/sector sizes "
+> +				"are not allowed for mixed block groups on %s\n",
+> +				sb->s_id);
+> +		goto fail_sb_buffer;
+> +	}
+> +
+>  	mutex_lock(&fs_info->chunk_mutex);
+>  	ret = btrfs_read_sys_array(tree_root);
+>  	mutex_unlock(&fs_info->chunk_mutex);

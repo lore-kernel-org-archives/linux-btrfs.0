@@ -1,79 +1,97 @@
 From: Jeff Mahoney <jeffm@suse.com>
-Subject: [patch 08/35] btrfs: Remove set bits return from clear_extent_bit
-Date: Wed, 21 Mar 2012 21:11:12 -0400
-Message-ID: <20120322011134.102248113@suse.com>
+Subject: [patch 14/35] btrfs: __add_reloc_root error push-up
+Date: Wed, 21 Mar 2012 21:11:18 -0400
+Message-ID: <20120322011134.934540271@suse.com>
 References: <20120322011104.212214639@suse.com>
 Cc: David Sterba <dsterba@suse.com>
 To: Linux Btrfs List <linux-btrfs@vger.kernel.org>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-There is only one caller of clear_extent_bit that checks the return value
-and it only checks if it's negative. Since there are no users of the
-returned bits functionality of clear_extent_bit, stop returning it
-and avoid complicating error handling.
+This patch pushes kmalloc errors up to the caller and BUGs in the caller.
+
+The BUG_ON for duplicate reloc tree root insertion is replaced with a
+panic explaining the issue.
 
 Signed-off-by: Jeff Mahoney <jeffm@suse.com>
 ---
- fs/btrfs/extent_io.c |   12 +++++-------
- 1 files changed, 5 insertions(+), 7 deletions(-)
+ fs/btrfs/relocation.c |   22 ++++++++++++++++------
+ 1 files changed, 16 insertions(+), 6 deletions(-)
 
-diff --git a/fs/btrfs/extent_io.c b/fs/btrfs/extent_io.c
-index 601f23b..a4a7a18 100644
---- a/fs/btrfs/extent_io.c
-+++ b/fs/btrfs/extent_io.c
-@@ -462,8 +462,7 @@ void extent_io_tree_panic(struct extent_io_tree *tree, int err)
-  *
-  * the range [start, end] is inclusive.
-  *
-- * This takes the tree lock, and returns < 0 on error, > 0 if any of the
-- * bits were already set, or zero if none of the bits were already set.
-+ * This takes the tree lock, and returns 0 on success and < 0 on error.
+diff --git a/fs/btrfs/relocation.c b/fs/btrfs/relocation.c
+index e5996ff..974b0df 100644
+--- a/fs/btrfs/relocation.c
++++ b/fs/btrfs/relocation.c
+@@ -1221,14 +1221,15 @@ fail:
+ /*
+  * helper to add 'address of tree root -> reloc tree' mapping
   */
- int clear_extent_bit(struct extent_io_tree *tree, u64 start, u64 end,
- 		     int bits, int wake, int delete,
-@@ -477,7 +476,6 @@ int clear_extent_bit(struct extent_io_tree *tree, u64 start, u64 end,
- 	struct rb_node *node;
- 	u64 last_end;
- 	int err;
--	int set = 0;
- 	int clear = 0;
+-static int __add_reloc_root(struct btrfs_root *root)
++static int __must_check __add_reloc_root(struct btrfs_root *root)
+ {
+ 	struct rb_node *rb_node;
+ 	struct mapping_node *node;
+ 	struct reloc_control *rc = root->fs_info->reloc_ctl;
  
- 	if (delete)
-@@ -562,7 +560,7 @@ hit_next:
- 		if (err)
- 			goto out;
- 		if (state->end <= end) {
--			set |= clear_state_bit(tree, state, &bits, wake);
-+			clear_state_bit(tree, state, &bits, wake);
- 			if (last_end == (u64)-1)
- 				goto out;
- 			start = last_end + 1;
-@@ -585,13 +583,13 @@ hit_next:
- 		if (wake)
- 			wake_up(&state->wq);
+ 	node = kmalloc(sizeof(*node), GFP_NOFS);
+-	BUG_ON(!node);
++	if (!node)
++		return -ENOMEM;
  
--		set |= clear_state_bit(tree, prealloc, &bits, wake);
-+		clear_state_bit(tree, prealloc, &bits, wake);
+ 	node->bytenr = root->node->start;
+ 	node->data = root;
+@@ -1237,7 +1238,12 @@ static int __add_reloc_root(struct btrfs_root *root)
+ 	rb_node = tree_insert(&rc->reloc_root_tree.rb_root,
+ 			      node->bytenr, &node->rb_node);
+ 	spin_unlock(&rc->reloc_root_tree.lock);
+-	BUG_ON(rb_node);
++	if (rb_node) {
++		kfree(node);
++		btrfs_panic(root->fs_info, -EEXIST, "Duplicate root found "
++			    "for start=%llu while inserting into relocation "
++			    "tree\n");
++	}
  
- 		prealloc = NULL;
- 		goto out;
+ 	list_add_tail(&root->root_list, &rc->reloc_roots);
+ 	return 0;
+@@ -1353,6 +1359,7 @@ int btrfs_init_reloc_root(struct btrfs_trans_handle *trans,
+ 	struct btrfs_root *reloc_root;
+ 	struct reloc_control *rc = root->fs_info->reloc_ctl;
+ 	int clear_rsv = 0;
++	int ret;
+ 
+ 	if (root->reloc_root) {
+ 		reloc_root = root->reloc_root;
+@@ -1372,7 +1379,8 @@ int btrfs_init_reloc_root(struct btrfs_trans_handle *trans,
+ 	if (clear_rsv)
+ 		trans->block_rsv = NULL;
+ 
+-	__add_reloc_root(reloc_root);
++	ret = __add_reloc_root(reloc_root);
++	BUG_ON(ret < 0);
+ 	root->reloc_root = reloc_root;
+ 	return 0;
+ }
+@@ -4226,7 +4234,8 @@ int btrfs_recover_relocation(struct btrfs_root *root)
+ 				       reloc_root->root_key.offset);
+ 		BUG_ON(IS_ERR(fs_root));
+ 
+-		__add_reloc_root(reloc_root);
++		err = __add_reloc_root(reloc_root);
++		BUG_ON(err < 0);
+ 		fs_root->reloc_root = reloc_root;
  	}
  
--	set |= clear_state_bit(tree, state, &bits, wake);
-+	clear_state_bit(tree, state, &bits, wake);
- next:
- 	if (last_end == (u64)-1)
- 		goto out;
-@@ -608,7 +606,7 @@ out:
- 	if (prealloc)
- 		free_extent_state(prealloc);
+@@ -4428,7 +4437,8 @@ void btrfs_reloc_post_snapshot(struct btrfs_trans_handle *trans,
+ 	reloc_root = create_reloc_root(trans, root->reloc_root,
+ 				       new_root->root_key.objectid);
  
--	return set;
-+	return 0;
+-	__add_reloc_root(reloc_root);
++	ret = __add_reloc_root(reloc_root);
++	BUG_ON(ret < 0);
+ 	new_root->reloc_root = reloc_root;
  
- search_again:
- 	if (start > end)
+ 	if (rc->create_reloc_tree) {
 -- 
 1.7.9
 

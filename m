@@ -1,47 +1,79 @@
 From: Jeff Mahoney <jeffm@suse.com>
-Subject: [patch 11/35] btrfs: Simplify btrfs_submit_bio_hook
-Date: Wed, 21 Mar 2012 21:11:15 -0400
-Message-ID: <20120322011134.511321146@suse.com>
+Subject: [patch 08/35] btrfs: Remove set bits return from clear_extent_bit
+Date: Wed, 21 Mar 2012 21:11:12 -0400
+Message-ID: <20120322011134.102248113@suse.com>
 References: <20120322011104.212214639@suse.com>
 Cc: David Sterba <dsterba@suse.com>
 To: Linux Btrfs List <linux-btrfs@vger.kernel.org>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-btrfs_submit_bio_hook currently calls btrfs_bio_wq_end_io in either case
-of an if statement that determines one of the arguments.
-
-This patch moves the function call outside of the if statement and uses it
-to only determine the different argument. This allows us to catch an
-error in one place in a more visually obvious way.
+There is only one caller of clear_extent_bit that checks the return value
+and it only checks if it's negative. Since there are no users of the
+returned bits functionality of clear_extent_bit, stop returning it
+and avoid complicating error handling.
 
 Signed-off-by: Jeff Mahoney <jeffm@suse.com>
 ---
- fs/btrfs/inode.c |    7 ++++---
- 1 files changed, 4 insertions(+), 3 deletions(-)
+ fs/btrfs/extent_io.c |   12 +++++-------
+ 1 files changed, 5 insertions(+), 7 deletions(-)
 
-diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
-index 892b347..f0dfd7d 100644
---- a/fs/btrfs/inode.c
-+++ b/fs/btrfs/inode.c
-@@ -1479,13 +1479,14 @@ static int btrfs_submit_bio_hook(struct inode *inode, int rw, struct bio *bio,
- 	struct btrfs_root *root = BTRFS_I(inode)->root;
- 	int ret = 0;
- 	int skip_sum;
-+	int metadata = 0;
+diff --git a/fs/btrfs/extent_io.c b/fs/btrfs/extent_io.c
+index 601f23b..a4a7a18 100644
+--- a/fs/btrfs/extent_io.c
++++ b/fs/btrfs/extent_io.c
+@@ -462,8 +462,7 @@ void extent_io_tree_panic(struct extent_io_tree *tree, int err)
+  *
+  * the range [start, end] is inclusive.
+  *
+- * This takes the tree lock, and returns < 0 on error, > 0 if any of the
+- * bits were already set, or zero if none of the bits were already set.
++ * This takes the tree lock, and returns 0 on success and < 0 on error.
+  */
+ int clear_extent_bit(struct extent_io_tree *tree, u64 start, u64 end,
+ 		     int bits, int wake, int delete,
+@@ -477,7 +476,6 @@ int clear_extent_bit(struct extent_io_tree *tree, u64 start, u64 end,
+ 	struct rb_node *node;
+ 	u64 last_end;
+ 	int err;
+-	int set = 0;
+ 	int clear = 0;
  
- 	skip_sum = BTRFS_I(inode)->flags & BTRFS_INODE_NODATASUM;
+ 	if (delete)
+@@ -562,7 +560,7 @@ hit_next:
+ 		if (err)
+ 			goto out;
+ 		if (state->end <= end) {
+-			set |= clear_state_bit(tree, state, &bits, wake);
++			clear_state_bit(tree, state, &bits, wake);
+ 			if (last_end == (u64)-1)
+ 				goto out;
+ 			start = last_end + 1;
+@@ -585,13 +583,13 @@ hit_next:
+ 		if (wake)
+ 			wake_up(&state->wq);
  
- 	if (btrfs_is_free_space_inode(root, inode))
--		ret = btrfs_bio_wq_end_io(root->fs_info, bio, 2);
--	else
--		ret = btrfs_bio_wq_end_io(root->fs_info, bio, 0);
-+		metadata = 2;
-+
-+	ret = btrfs_bio_wq_end_io(root->fs_info, bio, metadata);
- 	BUG_ON(ret);
+-		set |= clear_state_bit(tree, prealloc, &bits, wake);
++		clear_state_bit(tree, prealloc, &bits, wake);
  
- 	if (!(rw & REQ_WRITE)) {
+ 		prealloc = NULL;
+ 		goto out;
+ 	}
+ 
+-	set |= clear_state_bit(tree, state, &bits, wake);
++	clear_state_bit(tree, state, &bits, wake);
+ next:
+ 	if (last_end == (u64)-1)
+ 		goto out;
+@@ -608,7 +606,7 @@ out:
+ 	if (prealloc)
+ 		free_extent_state(prealloc);
+ 
+-	return set;
++	return 0;
+ 
+ search_again:
+ 	if (start > end)
 -- 
 1.7.9
 

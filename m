@@ -1,68 +1,86 @@
-From: cwillu <cwillu@cwillu.com>
+From: Hugo Mills <hugo@carfax.org.uk>
 Subject: Re: heterogeneous raid1
-Date: Fri, 23 Mar 2012 00:47:45 -0600
-Message-ID: <CAE5mzvgzt3Jf-D+Rrm-8ueppwsPCdvUCP=w1CrfYo6_FFNOD7Q@mail.gmail.com>
+Date: Fri, 23 Mar 2012 10:20:07 +0000
+Message-ID: <20120323102007.GA14080@carfax.org.uk>
 References: <20120323061159.GA11099@mcelrath.org>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=UTF-8
+Content-Type: multipart/signed; micalg=pgp-sha1;
+	protocol="application/pgp-signature"; boundary="GvXjxJ+pjyke8COw"
 Cc: linux-btrfs@vger.kernel.org
 To: Bob McElrath <bob@mcelrath.org>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
 In-Reply-To: <20120323061159.GA11099@mcelrath.org>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-> In a nutshell: organize your heterogenous disks into two "halves", th=
-e sum of
-> which are of roughly equal size, and create a raid1 array across thos=
-e two
+
+--GvXjxJ+pjyke8COw
+Content-Type: text/plain; charset=us-ascii
+Content-Disposition: inline
+
+On Fri, Mar 23, 2012 at 06:11:59AM +0000, Bob McElrath wrote:
+> Greetings butter-heads,
+> 
+> I would like to implement a redundant (raid1) disk array on heterogeneous disks
+> using btrfs.  A more detailed description of what I want to do can be found here:
+> 
+> http://superuser.com/questions/387851/a-zfs-or-lvm-or-md-redundant-heterogeneous-storage-proposal/388536
+> 
+> In a nutshell: organize your heterogenous disks into two "halves", the sum of
+> which are of roughly equal size, and create a raid1 array across those two
 > halves.
->
+> 
+> For various reasons I decided to go with btrfs over zfs.  What I have done is to
+> create two lvm Logical Volumes, one using a single large disk, and another as a
+> linear concatenation of several smaller disks.  It works, so far, and I could
+> automate it with some scripts.
+
+   btrfs doesn't quite do things this way. As well as the FAQ
+suggested by Carey, you might want to look at the (rather misnamed)
+SysadminGuide on the wiki at http://btrfs.ipv5.de/ .
+
+> In the long term, I would like this to be something that btrfs could do by
+> itself, without LVM.  Having absolutely no knowledge of the btrfs code, this
+> seems easy, I'm sure you'll tell me otherwise.  ;)  But one needs:
+> 
+> 1) The ability to "group" a heterogeneous set of disks into the "halves" of a
+> raid1.  I don't understand what btrfs is doing if you give it more than 2
+> devices and ask for raid1.
+> 
+> 2) Intellegently rebalance when a new device is added or removed (e.g. rearrange
+> the halves, and rebalance as necessary)
+
+   A balance operation is incredibly expensive. It would be much
+better to have a complex policy on when to rebalance. Think of trying
+to add two new disks to a nearly-full 20TB array: you really don't
+want to have to wait for 20TB of data to be rewritten before you add
+the second drive. Such a complex policy doesn't belong in the kernel
+(and probably doesn't belong in code, unless you've got some
+mind-reading software, or a webcam and enough image-processing to
+identify the stack of disks on the admin's desk).
+
+   I'm not trying to argue that you shouldn't automatically rebalance
+after a new device is added, but more that the feature probably
+shouldn't be in the kernel.
+
+   Hugo.
+
 [snip]
->
-> In the long term, I would like this to be something that btrfs could =
-do by
-> itself, without LVM. =C2=A0Having absolutely no knowledge of the btrf=
-s code, this
-> seems easy, I'm sure you'll tell me otherwise. =C2=A0;) =C2=A0But one=
- needs:
 
-It already does this, no organisation necessary.
+-- 
+=== Hugo Mills: hugo@... carfax.org.uk | darksatanic.net | lug.org.uk ===
+  PGP key: 515C238D from wwwkeys.eu.pgp.net or http://www.carfax.org.uk
+      --- UNIX: British manufacturer of modular shelving units. ---      
 
-> While btrfs seems to support multi-disk devices, in trying this, I en=
-countered
-> the following deadly error: creating a raid1 btrfs with more than 2 d=
-evices
-> cannot be mounted in degraded mode if one or more are missing. =C2=A0=
-(In the above
-> plan, a filesystem should be mountable as long as one "half" is intac=
-t) =C2=A0With 1
-> of 4 devices missing in such a circumstance, I get:
+--GvXjxJ+pjyke8COw
+Content-Type: application/pgp-signature; name="signature.asc"
+Content-Description: Digital signature
 
-I suspect you didn't make a raid1, but rather a raid1 metadata with
-raid0 data.
+-----BEGIN PGP SIGNATURE-----
+Version: GnuPG v1.4.11 (GNU/Linux)
 
-> Both these errors were encountered with Ubuntu 11.10 (linux 3.0.9). =C2=
-=A0I tried
-> with 3.0.22 and I got "failed to read chunk tree" instead of the abov=
-e "failed
-> to read chunk root" and furthermore after mounting it degraded, I cou=
-ld not
-> mount it non-degraded, even after a balance and a fsck.
+iD8DBQFPbE5XIKyzvlFcI40RAu4YAJ0Q4FzkiwLHXyJvG4Wm5WPgSpF4QgCeLXWW
+3+Tph+yhJtHE0iX5r8EMdVw=
+=LjQJ
+-----END PGP SIGNATURE-----
 
-3.0 is seriously out of date: anything prior to 3.2 can cause problems
-on a hard reboot, and a bunch of other things have also been fixed.
-
-
-> P.S. why doesn't df work with btrfs raid1? =C2=A0Why is 'btrfs fi df'=
- necessary?
-
-df works fine, but doesn't (and can't) give a complete picture:
-there's no way for btrfs to extend the syscall df uses to return more
-information without breaking the api for everybody else.
-
-Note that the faq covers all of these points :p
---
-To unsubscribe from this list: send the line "unsubscribe linux-btrfs" =
-in
-the body of a message to majordomo@vger.kernel.org
-More majordomo info at  http://vger.kernel.org/majordomo-info.html
+--GvXjxJ+pjyke8COw--

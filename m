@@ -1,86 +1,68 @@
-From: Hugo Mills <hugo@carfax.org.uk>
+From: Roman Mamedov <rm@romanrm.ru>
 Subject: Re: heterogeneous raid1
-Date: Fri, 23 Mar 2012 10:20:07 +0000
-Message-ID: <20120323102007.GA14080@carfax.org.uk>
+Date: Fri, 23 Mar 2012 16:44:35 +0600
+Message-ID: <20120323164435.4c21f92e@natsu>
 References: <20120323061159.GA11099@mcelrath.org>
 Mime-Version: 1.0
-Content-Type: multipart/signed; micalg=pgp-sha1;
-	protocol="application/pgp-signature"; boundary="GvXjxJ+pjyke8COw"
+Content-Type: multipart/signed; micalg=PGP-SHA1;
+ boundary="Sig_/PhvYwxnjRTbooYdXjw1mA4q"; protocol="application/pgp-signature"
 Cc: linux-btrfs@vger.kernel.org
 To: Bob McElrath <bob@mcelrath.org>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
 In-Reply-To: <20120323061159.GA11099@mcelrath.org>
 List-ID: <linux-btrfs.vger.kernel.org>
 
+--Sig_/PhvYwxnjRTbooYdXjw1mA4q
+Content-Type: text/plain; charset=US-ASCII
+Content-Transfer-Encoding: quoted-printable
 
---GvXjxJ+pjyke8COw
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
+On Fri, 23 Mar 2012 06:11:59 +0000
+Bob McElrath <bob@mcelrath.org> wrote:
 
-On Fri, Mar 23, 2012 at 06:11:59AM +0000, Bob McElrath wrote:
-> Greetings butter-heads,
-> 
-> I would like to implement a redundant (raid1) disk array on heterogeneous disks
-> using btrfs.  A more detailed description of what I want to do can be found here:
-> 
-> http://superuser.com/questions/387851/a-zfs-or-lvm-or-md-redundant-heterogeneous-storage-proposal/388536
-> 
-> In a nutshell: organize your heterogenous disks into two "halves", the sum of
+> http://superuser.com/questions/387851/a-zfs-or-lvm-or-md-redundant-hetero=
+geneous-storage-proposal/388536
+>=20
+> In a nutshell: organize your heterogenous disks into two "halves", the su=
+m of
 > which are of roughly equal size, and create a raid1 array across those two
 > halves.
-> 
-> For various reasons I decided to go with btrfs over zfs.  What I have done is to
-> create two lvm Logical Volumes, one using a single large disk, and another as a
-> linear concatenation of several smaller disks.  It works, so far, and I could
-> automate it with some scripts.
 
-   btrfs doesn't quite do things this way. As well as the FAQ
-suggested by Carey, you might want to look at the (rather misnamed)
-SysadminGuide on the wiki at http://btrfs.ipv5.de/ .
+This seems to be an extremely simplistic concept and also a very inefficient
+use of storage space, while not even providing enough redundancy (can't
+reliably tolerate an any-two-disks failure even).
 
-> In the long term, I would like this to be something that btrfs could do by
-> itself, without LVM.  Having absolutely no knowledge of the btrfs code, this
-> seems easy, I'm sure you'll tell me otherwise.  ;)  But one needs:
-> 
-> 1) The ability to "group" a heterogeneous set of disks into the "halves" of a
-> raid1.  I don't understand what btrfs is doing if you give it more than 2
-> devices and ask for raid1.
-> 
-> 2) Intellegently rebalance when a new device is added or removed (e.g. rearrange
-> the halves, and rebalance as necessary)
+I suggest that you go with http://linuxconfig.org/prouhd-raid-for-the-end-u=
+ser
+instead. Depending on how many drives you have, the widest portion can be r=
+aid
+6, then decreasing to RAID5 for the second stage, then finally to RAID1 for
+the tail.
 
-   A balance operation is incredibly expensive. It would be much
-better to have a complex policy on when to rebalance. Think of trying
-to add two new disks to a nearly-full 20TB array: you really don't
-want to have to wait for 20TB of data to be rewritten before you add
-the second drive. Such a complex policy doesn't belong in the kernel
-(and probably doesn't belong in code, unless you've got some
-mind-reading software, or a webcam and enough image-processing to
-identify the stack of disks on the admin's desk).
+Also remember that with MD you can also create arrays from arrays. So e.g. a
+RAID0 of two 500GB members can join a RAID6 of 1TB members. More on this id=
+ea:
+http://louwrentius.com/blog/2008/08/building-a-raid-6-array-of-mixed-drives/
 
-   I'm not trying to argue that you shouldn't automatically rebalance
-after a new device is added, but more that the feature probably
-shouldn't be in the kernel.
+--=20
+With respect,
+Roman
 
-   Hugo.
+~~~~~~~~~~~~~~~~~~~~~~~~~~~
+"Stallman had a printer,
+with code he could not see.
+So he began to tinker,
+and set the software free."
 
-[snip]
-
--- 
-=== Hugo Mills: hugo@... carfax.org.uk | darksatanic.net | lug.org.uk ===
-  PGP key: 515C238D from wwwkeys.eu.pgp.net or http://www.carfax.org.uk
-      --- UNIX: British manufacturer of modular shelving units. ---      
-
---GvXjxJ+pjyke8COw
-Content-Type: application/pgp-signature; name="signature.asc"
-Content-Description: Digital signature
+--Sig_/PhvYwxnjRTbooYdXjw1mA4q
+Content-Type: application/pgp-signature; name=signature.asc
+Content-Disposition: attachment; filename=signature.asc
 
 -----BEGIN PGP SIGNATURE-----
-Version: GnuPG v1.4.11 (GNU/Linux)
+Version: GnuPG v1.4.12 (GNU/Linux)
 
-iD8DBQFPbE5XIKyzvlFcI40RAu4YAJ0Q4FzkiwLHXyJvG4Wm5WPgSpF4QgCeLXWW
-3+Tph+yhJtHE0iX5r8EMdVw=
-=LjQJ
+iEYEARECAAYFAk9sVBMACgkQTLKSvz+PZwgQOQCglA1QcUgxpzxBHXSF1XGK8GUA
+uJUAn0w2bgA8OFijGeE8sptaHhMXtZMQ
+=iHxU
 -----END PGP SIGNATURE-----
 
---GvXjxJ+pjyke8COw--
+--Sig_/PhvYwxnjRTbooYdXjw1mA4q--

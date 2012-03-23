@@ -1,51 +1,79 @@
-From: Stefan Behrens <sbehrens@giantdisaster.de>
-Subject: Re: [patch 35/35] btrfs: disallow unequal data/metadata blocksize
- for mixed block groups
-Date: Thu, 22 Mar 2012 17:02:24 +0100
-Message-ID: <4F6B4D10.3090709@giantdisaster.de>
-References: <20120322011104.212214639@suse.com> <20120322011137.923792033@suse.com>
+From: Bob McElrath <bob@mcelrath.org>
+Subject: heterogeneous raid1
+Date: Fri, 23 Mar 2012 06:11:59 +0000
+Message-ID: <20120323061159.GA11099@mcelrath.org>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=ISO-8859-1
-Cc: Linux Btrfs List <linux-btrfs@vger.kernel.org>,
-	David Sterba <dsterba@suse.com>, David Sterba <dsterba@suse.cz>
-To: Jeff Mahoney <jeffm@suse.com>
+Content-Type: text/plain; charset=us-ascii
+To: linux-btrfs@vger.kernel.org
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <20120322011137.923792033@suse.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 3/22/2012 2:11 AM, Jeff Mahoney wrote:
-> With support for bigger metadata blocks, we must avoid mounting a
-> filesystem with different block size for mixed block groups, this causes
-> corruption (found by xfstests/083).
-> 
-> Signed-off-by: David Sterba <dsterba@suse.cz>
-> ---
->  fs/btrfs/disk-io.c |    8 ++++++++
->  1 files changed, 8 insertions(+), 0 deletions(-)
-> 
-> diff --git a/fs/btrfs/disk-io.c b/fs/btrfs/disk-io.c
-> index 38c2ee1..55272b0 100644
-> --- a/fs/btrfs/disk-io.c
-> +++ b/fs/btrfs/disk-io.c
-> @@ -2302,6 +2302,14 @@ int open_ctree(struct super_block *sb,
->  		goto fail_sb_buffer;
->  	}
->  
-> +	if ((features & BTRFS_FEATURE_INCOMPAT_MIXED_GROUPS) &&
-> +			(leafsize != nodesize && sectorsize != nodesize)) {
+Greetings butter-heads,
 
-Dave, Shouldn't this be like this (you want all three sizes to be equal
-in mixed mode, don't you?):
-	if ((features & BTRFS_FEATURE_INCOMPAT_MIXED_GROUPS) &&
-			(leafsize != nodesize || sectorsize != nodesize)) {
+I would like to implement a redundant (raid1) disk array on heterogeneous disks
+using btrfs.  A more detailed description of what I want to do can be found here:
 
+http://superuser.com/questions/387851/a-zfs-or-lvm-or-md-redundant-heterogeneous-storage-proposal/388536
 
-> +		printk(KERN_WARNING "btrfs: unequal leaf/node/sector sizes "
-> +				"are not allowed for mixed block groups on %s\n",
-> +				sb->s_id);
-> +		goto fail_sb_buffer;
-> +	}
-> +
->  	mutex_lock(&fs_info->chunk_mutex);
->  	ret = btrfs_read_sys_array(tree_root);
->  	mutex_unlock(&fs_info->chunk_mutex);
+In a nutshell: organize your heterogenous disks into two "halves", the sum of
+which are of roughly equal size, and create a raid1 array across those two
+halves.
+
+For various reasons I decided to go with btrfs over zfs.  What I have done is to
+create two lvm Logical Volumes, one using a single large disk, and another as a
+linear concatenation of several smaller disks.  It works, so far, and I could
+automate it with some scripts.
+
+In the long term, I would like this to be something that btrfs could do by
+itself, without LVM.  Having absolutely no knowledge of the btrfs code, this
+seems easy, I'm sure you'll tell me otherwise.  ;)  But one needs:
+
+1) The ability to "group" a heterogeneous set of disks into the "halves" of a
+raid1.  I don't understand what btrfs is doing if you give it more than 2
+devices and ask for raid1.
+
+2) Intellegently rebalance when a new device is added or removed (e.g. rearrange
+the halves, and rebalance as necessary)
+
+While btrfs seems to support multi-disk devices, in trying this, I encountered
+the following deadly error: creating a raid1 btrfs with more than 2 devices
+cannot be mounted in degraded mode if one or more are missing.  (In the above
+plan, a filesystem should be mountable as long as one "half" is intact)  With 1
+of 4 devices missing in such a circumstance, I get:
+
+    device fsid 2ea954c6-d9ee-47c4-9f90-79a1342c71df devid 1 transid 31 /dev/loop0
+    btrfs: allowing degraded mounts
+    btrfs: failed to read chunk root on loop0
+    btrfs: open_ctree failed
+
+btrfs fi show:
+    Label: none  uuid: 2ea954c6-d9ee-47c4-9f90-79a1342c71df
+        Total devices 4 FS bytes used 1.78GB
+        devid    1 size 1.00GB used 1.00GB path /dev/loop0
+        devid    2 size 1.00GB used 1023.00MB path /dev/loop1
+        devid    3 size 1.00GB used 1023.00MB path /dev/loop2
+        *** Some devices missing
+
+Also I discovered that writing to a degraded 2-disk raid1 btrfs array quickly
+fills up the disk.  It does not behave as a single disk.  
+
+Both these errors were encountered with Ubuntu 11.10 (linux 3.0.9).  I tried
+with 3.0.22 and I got "failed to read chunk tree" instead of the above "failed
+to read chunk root" and furthermore after mounting it degraded, I could not
+mount it non-degraded, even after a balance and a fsck.
+
+So, any comments on the general difficulty of implementing this proposal?  Can
+someone explain the above errors?  What is btrfs doing with >2 disks and raid1?
+Any comments on what parts of this should be inside btrfs, and which parts are
+better in external scripts?  I think this feature would be extremely popular: it
+turns btrfs into a Drobo.
+
+P.S. why doesn't df work with btrfs raid1?  Why is 'btrfs fi df' necessary?
+
+--
+Cheers, Bob McElrath
+
+"The individual has always had to struggle to keep from being overwhelmed by
+the tribe.  If you try it, you will be lonely often, and sometimes frightened.
+But no price is too high to pay for the privilege of owning yourself." 
+    -- Friedrich Nietzsche

@@ -1,18 +1,25 @@
-From: Sander <sander@humilis.net>
+From: Hugo Mills <hugo@carfax.org.uk>
 Subject: Re: "Invalid argument" when mounting a btrfs raid1 filesystem
-Date: Sat, 24 Mar 2012 19:16:44 +0100
-Message-ID: <20120324181644.GA28243@attic.humilis.net>
+Date: Sat, 24 Mar 2012 18:21:05 +0000
+Message-ID: <20120324182104.GB14080@carfax.org.uk>
 References: <87vclt99tg.fsf@falma.de>
-Reply-To: sander@humilis.net
 Mime-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
+Content-Type: multipart/signed; micalg=pgp-sha1;
+	protocol="application/pgp-signature"; boundary="8P1HSweYDcXXzwPJ"
 Cc: linux-btrfs@vger.kernel.org
 To: Christoph Groth <cwg@falma.de>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
 In-Reply-To: <87vclt99tg.fsf@falma.de>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Christoph Groth wrote (ao):
+
+--8P1HSweYDcXXzwPJ
+Content-Type: text/plain; charset=us-ascii
+Content-Disposition: inline
+
+On Sat, Mar 24, 2012 at 06:40:27PM +0100, Christoph Groth wrote:
+> Hello,
+> 
 > I'm trying to install current Debian testing (=kernel version 3.2) with
 > btrfs as the root file system.  There is also a small ext3 /boot
 > partition.
@@ -43,11 +50,36 @@ Christoph Groth wrote (ao):
 > 
 > Isn't this very weird?  Any ideas?
 
-You might need 'btrfs device scan' before you can mount a multi-device
-filesystem.
+   As Sadner says, you have to run "btrfs dev scan" before you try to
+mount the FS. If you have root on btrfs, this will have to go in an
+initrd; otherwise, it can go in your initscripts anywhere before the
+non-root filesystem mounts.
 
-	Sander
+   Basically, the kernel needs to know which devices hold which btrfs
+filesystems (organised by UUID) before it tries to mount them. So,
+there's an ioctl that is used for sending that data to the kernel, and
+a userspace tool (btrfs dev scan) that enumerates all of the block
+devices it can see, looks for a btrfs superblock on them, and tells
+the kernel.
+
+   Hugo.
 
 -- 
-Humilis IT Services and Solutions
-http://www.humilis.net
+=== Hugo Mills: hugo@... carfax.org.uk | darksatanic.net | lug.org.uk ===
+  PGP key: 515C238D from wwwkeys.eu.pgp.net or http://www.carfax.org.uk
+        --- Have found Lost City of Atlantis.  High Priest is ---        
+                           winning at quoits.                            
+
+--8P1HSweYDcXXzwPJ
+Content-Type: application/pgp-signature; name="signature.asc"
+Content-Description: Digital signature
+
+-----BEGIN PGP SIGNATURE-----
+Version: GnuPG v1.4.11 (GNU/Linux)
+
+iD8DBQFPbhCQIKyzvlFcI40RAtLTAJ9BumTsr37P9BTs/6VM1Cf5pL578wCfZLLW
+xVvpJZM8+9fDLHIGFBnMLZE=
+=JNkB
+-----END PGP SIGNATURE-----
+
+--8P1HSweYDcXXzwPJ--

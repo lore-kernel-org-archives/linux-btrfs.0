@@ -1,52 +1,59 @@
-From: Christoph Groth <cwg@falma.de>
-Subject: Re: "Invalid argument" when mounting a btrfs raid1 filesystem
-Date: Sat, 24 Mar 2012 23:26:50 +0100
-Message-ID: <87fwcx8wk5.fsf@falma.de>
-References: <87vclt99tg.fsf@falma.de> <20120324182104.GB14080@carfax.org.uk>
-	<loom.20120324T194951-446@post.gmane.org>
+From: Chris Samuel <chris@csamuel.org>
+Subject: Re: heterogeneous raid1
+Date: Sun, 25 Mar 2012 22:48:44 +1100
+Message-ID: <201203252248.49707.chris@csamuel.org>
+References: <20120323061159.GA11099@mcelrath.org> <20120323231307.283be0fb@natsu> <20120323173539.GC11099@mcelrath.org>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
+Content-Type: multipart/signed;
+  boundary="nextPart3643989.yAUZDIS74l";
+  protocol="application/pgp-signature";
+  micalg=pgp-sha1
 To: linux-btrfs@vger.kernel.org
 Return-path: <linux-btrfs-owner@vger.kernel.org>
+In-Reply-To: <20120323173539.GC11099@mcelrath.org>
 List-ID: <linux-btrfs.vger.kernel.org>
 
->>    Basically, the kernel needs to know which devices hold which btrfs
->> filesystems (organised by UUID) before it tries to mount them. So,
->> there's an ioctl that is used for sending that data to the kernel,
->> and a userspace tool (btrfs dev scan) that enumerates all of the
->> block devices it can see, looks for a btrfs superblock on them, and
->> tells the kernel.
->> 
->>    Hugo.
+--nextPart3643989.yAUZDIS74l
+Content-Type: Text/Plain;
+  charset="iso-8859-1"
+Content-Transfer-Encoding: quoted-printable
 
-Thanks for the quick help!  I guess that error message ("Invalid
-argument") could be made more to the point...
+On Saturday 24 March 2012 04:35:39 Bob McElrath wrote:
 
-Alex <alex@bpmit.com> writes:
+> I'm still dreaming of a fs/admin tool that I can throw disks at,
+> and not have to spend so much time with the details of
+> partitioning/raid/lvm/fs.
 
-> If you install the package btrfs-tools (currently dated 5 November
-> 2011 in unstable), it'll set up the necessary.
+There was a tool called System Storage Manager (ssm) that someone from=20
+RedHat posted about late last year:
 
-The proper btrfs-tools package was already installed by debian-installer
-(currently the version in testing is the same as in unstable).
-Apparently the initrd.img put in place by the installer was not doing
-what it should.  (I'm not sure whether initrd.img is built during
-installation or whether just some common one is installed.)
+http://www.redhat.com/archives/linux-lvm/2011-December/msg00012.html
 
-I did the following to get a system that boots:
+Unfortunately it looks like the git repo on SourceForge hasn't been=20
+touched since the code was pushed last December. :-(
 
-(1) Use the rescue mode of the installation medium to get a shell with
-    /dev/sda2 mounted as root.
+cheers,
+Chris
+=2D-=20
+ Chris Samuel  :  http://www.csamuel.org/  :  Melbourne, VIC
 
-(2) Run "update-initramfs -u" to update initrd.img
+This email may come with a PGP signature as a file. Do not panic.
+=46or more info see: http://en.wikipedia.org/wiki/OpenPGP
 
-(3) Run "update-grub" (Not sure whether this was necessary)
+--nextPart3643989.yAUZDIS74l
+Content-Type: application/pgp-signature; name=signature.asc 
+Content-Description: This is a digitally signed message part.
 
-(4) Modify /etc/fstab such that the line for the root FS ends with "0 0"
-    and not with "0 1".  This is to make the system bootable even when
-    there is no btrfs.fsck.
+-----BEGIN PGP SIGNATURE-----
+Version: GnuPG v1.4.11 (GNU/Linux)
 
-After a reboot, things started working properly.
+iQEVAwUAT28GHY1yjaOTJg85AQKV4wf5AU8qU6WhLzJawdPtSlWaRx0QJf+1GNRr
+t1UnhyOgiSCsuacg8RElUv5KPMyQt0olmvhQxRkKQi31cYkZFgfKkR3BerVqmcLf
+WH0hrqL0jnRMZgWrO2RBrQIFjQOwDTY7cjgGFgMkYQBuji4z5T3t+Cfbg0bo8sA5
+/RnR7nwTVFISZELdwu9NaUqpsd1K1Phxuu6WEP1R/Wc3sfvBmCBuHSRQkki2Xfnm
+Fi/xPBSA70/hv2yKL0H8Pn20Q3hwRWIayNF2QL+GOC6yEGiij2qpV1aKJ7sIAZb6
+mDC5JKRxpRrmB9KTF96/H5KfK7hcnkbZcasmcE582yNzaUGJk2YNog==
+=TYfd
+-----END PGP SIGNATURE-----
 
-Christoph
-
+--nextPart3643989.yAUZDIS74l--

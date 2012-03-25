@@ -1,70 +1,35 @@
-From: Daniel J Blueman <daniel@quora.org>
-Subject: attempt to access beyond end of device and livelock
-Date: Sun, 25 Mar 2012 21:40:37 +0800
-Message-ID: <CAMVG2ss5WzwhgPunD5greRii1HFuEYt1TMQwxgUNitrpHtguVA@mail.gmail.com>
+From: Waxhead <waxhead@online.no>
+Subject: Is btrfsck really required?
+Date: Sun, 25 Mar 2012 18:36:34 +0200
+Message-ID: <4F6F4992.9030100@online.no>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=ISO-8859-1
-Cc: Linux BTRFS <linux-btrfs@vger.kernel.org>
-To: Li Dongyang <lidongyang@novell.com>,
-	Zheng Yan <zheng.yan@oracle.com>
+Content-Type: text/plain; charset=ISO-8859-1; format=flowed
+To: linux-btrfs@vger.kernel.org
 Return-path: <linux-btrfs-owner@vger.kernel.org>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hi Dongyang, Yan,
+After playing around with btrfs for a while, reading about it and also 
+watching Avi Miller's presentation on youtube I am starting to wonder 
+why one would need btrfsck at all. I am no expert in filesystems so I 
+apologize if any of these questions may sound a bit stupid.
 
-When testing BTRFS with RAID 0 metadata on linux-3.3, we see discard
-ranges exceeding the end of the block device [1], potentially causing
-dataloss; when this occurs, filesystem writeback becomes catatonic due
-to continual resubmission.
+1. How "self-healing" is btrfs really?! According to Miller's talk btrfs 
+is making a (circular?) backup of the root tree every 30 seconds.
+If I remember correctly the root tree is also mirrored several places on 
+disk and on rotational media all those are updated in tandem. This is 
+leading me to believe that there should be no problem in recovering from 
+a corruption.
 
-The reproducer is quite simple [2]. Hope this proves useful...
+2. Also in addition to question 1. Is there some sanity checking when 
+writing the root tree? e.g. if you write garbage to the root tree by 
+accident will there be some recovery mechanism there to protect you as well?
 
-Thanks,
-  Daniel
+3. What is the point with the mount -o recovery ? If there already is a 
+corruption there is there any reason btrfs should not recover 
+automatically by itself?
 
---- [1]
+4. If a disk responds slowly, Will btrfs throw it out of a raid 
+configuration and if so will a btrfsck be less strict about timeouts and 
+will it automatically rebalance the data from the bad disk over to other 
+good disks?!
 
-attempt to access beyond end of device
-ram0: rw=129, want=8452072, limit=4096000
-...
-
---- [2]
-
-modprobe brd rd_size=2048000 (or boot with ramdisk_size=2048000)
-mkfs.btrfs -m raid0 /dev/ram0 /dev/ram1
-mount /dev/ram0 /mnt -o discard
-fio testcase
-umount /mnt
-
---- [3] testcase
-
-[global]
-directory=/mnt
-rw=randread
-size=256m
-ioengine=libaio
-iodepth=4
-invalidate=1
-direct=1
-
-[bgwriter]
-rw=randwrite
-iodepth=32
-
-[queryA]
-iodepth=1
-ioengine=mmap
-thinktime=3
-
-[queryB]
-iodepth=1
-ioengine=mmap
-thinktime=1
-
-[bgupdater]
-rw=randrw
-iodepth=16
-thinktime=1
-size=32m
--- 
-Daniel J Blueman

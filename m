@@ -1,46 +1,42 @@
-From: Calvin Walton <calvin.walton@kepstin.ca>
-Subject: Re: "Invalid argument" when mounting a btrfs raid1 filesystem
-Date: Mon, 26 Mar 2012 11:00:58 -0400
-Message-ID: <1332774058.22830.2.camel@ayu>
-References: <87vclt99tg.fsf@falma.de> <20120324182104.GB14080@carfax.org.uk>
-	 <20120326085134.GK2040@x2.net.home>
+From: Alexander Block <ablock84@googlemail.com>
+Subject: State of btrfs send/receive
+Date: Mon, 26 Mar 2012 17:46:40 +0200
+Message-ID: <CAB9VWqBM3n6ACp8tx42zwzyLyme-HXB-Ag-t0JMhZBjKjjwwcw@mail.gmail.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="UTF-8"
-Cc: Hugo Mills <hugo@carfax.org.uk>, Christoph Groth <cwg@falma.de>,
-	linux-btrfs@vger.kernel.org
-To: Karel Zak <kzak@redhat.com>
+Content-Type: text/plain; charset=ISO-8859-1
+To: linux-btrfs@vger.kernel.org
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <20120326085134.GK2040@x2.net.home>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Mon, 2012-03-26 at 10:51 +0200, Karel Zak wrote:
-> On Sat, Mar 24, 2012 at 06:21:05PM +0000, Hugo Mills wrote:
-> >    As Sadner says, you have to run "btrfs dev scan" before you try to
-> > mount the FS. If you have root on btrfs, this will have to go in an
-> > initrd; otherwise, it can go in your initscripts anywhere before the
-> > non-root filesystem mounts.
-> > 
-> >    Basically, the kernel needs to know which devices hold which btrfs
-> > filesystems (organised by UUID) before it tries to mount them. So,
-> > there's an ioctl that is used for sending that data to the kernel, and
-> > a userspace tool (btrfs dev scan) that enumerates all of the block
-> > devices it can see, looks for a btrfs superblock on them, and tells
-> > the kernel.
-> 
->  Please, move all this logic to udev rules where we already scans all
->  devices. It's really bad to scan all device more than once. We spent
->  years to fix this problem for LVM, I don't think that btrfs has to
->  repeat the same mistakes.
+Hello,
 
-Oh, this is already possible to do with udev rules, quite easily. In
-fact, dracut ships with the appropriate udev rules, which it uses to
-initialize btrfs filesystems in the initramfs:
+I used btrfs some time to do incremental backups of large (200GB) VM
+images, which worked fine using snapshots and rsync (with --inplace to
+preserve COW).
+The only problem with this solution is that it takes extremely long
+due to rsync's performance on large files. For this reason, I can't
+await the btrfs send/receive feature.
+The latest discussion regarding send/receive that I know about is this one:
 
-http://git.kernel.org/?p=boot/dracut/dracut.git;a=blob;f=modules.d/90btrfs/80-btrfs.rules;hb=HEAD
+http://thread.gmane.org/gmane.comp.file-systems.btrfs/12318/focus=12340
 
-which would be suitable with minor modifications for use in a system
-udev installation as well.
+So my question is, especially to Jan Schmidt, are there any news on
+this feature?
 
--- 
-Calvin Walton <calvin.walton@kepstin.ca>
+If there is no progress yet, would it be possible to create
+send/receive like features entirely in
+userspace at the moment, without touching too much kernel code? I
+remember that I've read a
+discussion some time ago about missing data for directory changes when
+using find-new.
+The discussion did not mention if this is a problem of the find-new
+command or a problem of the
+currently offered apis to the userspace? Is this still the case (or
+was it ever?) and are there
+any other pitfalls that I may come across while implementing a
+send/receive like tool in userspace.
+I'm asking because I'm not that experienced in kernel programming to
+actually add features on
+the kernel side.
 
+Alex.

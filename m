@@ -1,83 +1,144 @@
-From: Sander <sander@humilis.net>
-Subject: kernel BUG at fs/btrfs/extent-tree.c:4263  (due to lost usb
- connection)
-Date: Mon, 26 Mar 2012 14:52:55 +0200
-Message-ID: <20120326125255.GA23075@attic.humilis.net>
-Reply-To: sander@humilis.net
-Mime-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-To: linux-btrfs@vger.kernel.org
-Return-path: <linux-btrfs-owner@vger.kernel.org>
+From: Josef Bacik <josef@redhat.com>
+Subject: [RFC] [PATCH 2/2] Btrfs: move over to use ->update_time
+Date: Mon, 26 Mar 2012 10:10:31 -0400
+Message-ID: <1332771031-3337-2-git-send-email-josef@redhat.com>
+References: <1332771031-3337-1-git-send-email-josef@redhat.com>
+To: linux-fsdevel@vger.kernel.org, viro@ZenIV.linux.org.uk,
+	linux-btrfs@vger.kernel.org, hch@infradead.org
+Return-path: <linux-fsdevel-owner@vger.kernel.org>
+In-Reply-To: <1332771031-3337-1-git-send-email-josef@redhat.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hello all,
+Btrfs had been doing it's own file_update_time so we could catch ENOSPC
+properly, so just update our btrfs_update_time to work with the new stuff and
+then we'll be fancy later.  Thanks,
 
-I've just encountered a "kernel BUG at fs/btrfs/extent-tree.c:4263" due
-to a usb connection hickup to the storage (so you might as well stop
-reading now ;-) )
+Signed-off-by: Josef Bacik <josef@redhat.com>
+---
+ fs/btrfs/ctree.h |    1 -
+ fs/btrfs/file.c  |    2 +-
+ fs/btrfs/inode.c |   53 ++++++++++++++---------------------------------------
+ 3 files changed, 15 insertions(+), 41 deletions(-)
 
-With google, a lot turns up on "kernel BUG at fs/btrfs/extent-tree.c",
-but not on the specific line number, nor on
-"PC is at drop_outstanding_extent"
-or
-"LR is at btrfs_delalloc_release_metadata"
-
-The system is a pandaboard running a plain Linus kernel 3.3.0 with a
-btrfs filesystem just created this morning, over two Intel 320 600GB
-ssd's, connected via usb (on an usb hub), on top of md_crypt. Mount
-options: "subvol=rootvolume,space_cache,inode_cache,compress=lzo,ssd"
-
-It seems the usb hub lost its connection, so it seems perfectly normal
-for the system to Oops. I'm reporting this just as a datapoint.
-
-FWIW, the filesystem seems to be just fine after the reboot. A 'scrub'
-found 0 errors. I'd say that is pretty neat!
-
-	Sander
-
-
-[ 8409.792541] ------------[ cut here ]------------
-[ 8409.797576] kernel BUG at fs/btrfs/extent-tree.c:4263!
-[ 8409.797576] Internal error: Oops - BUG: 0 [#1] SMP
-[ 8409.797576] Modules linked in:
-[ 8409.809112] CPU: 1    Not tainted  (3.3.0 #8)
-[ 8409.815734] PC is at drop_outstanding_extent+0xa/0x44
-[ 8409.821044] LR is at btrfs_delalloc_release_metadata+0x39/0x94
-[ 8409.827148] pc : [<c010e0e2>]    lr : [<c01138bd>]    psr: 60000133
-[ 8409.827148] sp : ed72fe30  ip : 00000000  fp : 00000000
-[ 8409.827148] r10: 00001000  r9 : eee13da8  r8 : d3d2c738
-[ 8409.827148] r7 : eee13c08  r6 : ed54c800  r5 : 00000000  r4 : 00009fff
-[ 8409.851440] r3 : eee13bf0  r2 : 00000000  r1 : 00001000  r0 : eee13da8
-[ 8409.858276] Flags: nZCv  IRQs on  FIQs on  Mode SVC_32  ISA Thumb  Segment kernel
-[ 8409.863708] Control: 50c5387d  Table: ad50804a  DAC: 00000015
-[ 8409.863708] Process btrfs-transacti (pid: 241, stack limit = 0xed72e2f8)
-[ 8409.879119] Stack: (0xed72fe30 to 0xed730000)
-[ 8409.879119] fe20:                                     eee13da8 00000001 00009000 eee13da8
-[ 8409.892242] fe40: ffffffff ed54c800 d3d4c428 d3d2c738 ed658c00 00009000 00000000 c014761d
-[ 8409.892242] fe60: d3d4c428 d3d2c738 00000000 00000000 00000000 00000000 ed54c800 d3d4c428
-[ 8409.902862] fe80: eee13da8 ed658c00 d3d2c738 c011a283 00000000 00000000 00009000 00000000
-[ 8409.902862] fea0: 00009000 00000000 ed72fec8 d3d4c428 ed72fec8 00000000 ffffffff 00000000
-[ 8409.902862] fec0: 00000000 00000000 5ecb0000 00000000 00000000 d3d4c428 ed5c303c 00000000
-[ 8409.926483] fee0: ed5c3000 ed54c800 00000002 ed5c304c 00000000 c011ed07 00000000 d3c8af54
-[ 8409.926483] ff00: ed54c800 ee0f6000 ed653410 00000000 ed5c3000 c0152c2d ed653400 d3c8ae90
-[ 8409.952148] ff20: ed653410 ed5c0c00 d3d4c428 d3c8ae90 d3c8af14 d3c8ae98 00000000 000000d5
-[ 8409.952148] ff40: 00000000 c011f869 00000000 c011f037 00000000 00000000 00000000 00000000
-[ 8409.952148] ff60: ed72da40 c00322e5 ed72ff68 ed72ff68 ed5c0c00 00000000 00000000 ed5c0c00
-[ 8409.977813] ff80: 00000033 00000000 00000000 00000000 00000000 c011b473 00000000 ed70bc10
-[ 8409.977813] ffa0: ed5c0c00 c011b379 00000033 00000000 ed70bc10 ed5c0c00 c011b379 c0032059
-[ 8409.994934] ffc0: ed70bc10 00000000 ed5c0c00 00000000 00000000 dead4ead ffffffff ffffffff
-[ 8409.996551] ffe0: ed72ffe0 ed72ffe0 ed70bc10 c003200d c000cd39 c000cd39 00000000 00000000
-[ 8410.012054] [<c010e0e2>] (drop_outstanding_extent+0xa/0x44) from [<c01138bd>] (btrfs_delalloc_release_metadata+0x39/0x94)
-[ 8410.023559] [<c01138bd>] (btrfs_delalloc_release_metadata+0x39/0x94) from [<c014761d>] (btrfs_write_out_ino_cache+0x55/0x68)
-[ 8410.023559] [<c014761d>] (btrfs_write_out_ino_cache+0x55/0x68) from [<c011a283>] (btrfs_save_ino_cache+0x1eb/0x22c)
-[ 8410.023559] [<c011a283>] (btrfs_save_ino_cache+0x1eb/0x22c) from [<c011ed07>] (commit_fs_roots+0x6f/0xe0)
-[ 8410.051208] [<c011ed07>] (commit_fs_roots+0x6f/0xe0) from [<c011f869>] (btrfs_commit_transaction+0x2cb/0x506)
-[ 8410.051208] [<c011f869>] (btrfs_commit_transaction+0x2cb/0x506) from [<c011b473>] (transaction_kthread+0xfb/0x188)
-[ 8410.066650] [<c011b473>] (transaction_kthread+0xfb/0x188) from [<c0032059>] (kthread+0x4d/0x60)
-[ 8410.066650] [<c0032059>] (kthread+0x4d/0x60) from [<c000cd39>] (kernel_thread_exit+0x1/0x6)
-[ 8410.090301] Code: 73dc f8d3 21a4 b902 (de02) 3a01 
-[ 8410.100433] ---[ end trace 6b16e1c6e6a2dd9c ]---
-
+diff --git a/fs/btrfs/ctree.h b/fs/btrfs/ctree.h
+index 9d6f59c..9e4a06e 100644
+--- a/fs/btrfs/ctree.h
++++ b/fs/btrfs/ctree.h
+@@ -2887,7 +2887,6 @@ int btrfs_readpage(struct file *file, struct page *page);
+ void btrfs_evict_inode(struct inode *inode);
+ int btrfs_write_inode(struct inode *inode, struct writeback_control *wbc);
+ int btrfs_dirty_inode(struct inode *inode);
+-int btrfs_update_time(struct file *file);
+ struct inode *btrfs_alloc_inode(struct super_block *sb);
+ void btrfs_destroy_inode(struct inode *inode);
+ int btrfs_drop_inode(struct inode *inode);
+diff --git a/fs/btrfs/file.c b/fs/btrfs/file.c
+index 859ba2d..50b8cea 100644
+--- a/fs/btrfs/file.c
++++ b/fs/btrfs/file.c
+@@ -1389,7 +1389,7 @@ static ssize_t btrfs_file_aio_write(struct kiocb *iocb,
+ 		goto out;
+ 	}
+ 
+-	err = btrfs_update_time(file);
++	err = file_update_time(file);
+ 	if (err) {
+ 		mutex_unlock(&inode->i_mutex);
+ 		goto out;
+diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
+index c2c44d6..2c7359b 100644
+--- a/fs/btrfs/inode.c
++++ b/fs/btrfs/inode.c
+@@ -4287,46 +4287,18 @@ int btrfs_dirty_inode(struct inode *inode)
+  * This is a copy of file_update_time.  We need this so we can return error on
+  * ENOSPC for updating the inode in the case of file write and mmap writes.
+  */
+-int btrfs_update_time(struct file *file)
++static int btrfs_update_time(struct inode *inode, struct timespec *now,
++			     int flags)
+ {
+-	struct inode *inode = file->f_path.dentry->d_inode;
+-	struct timespec now;
+-	int ret;
+-	enum { S_MTIME = 1, S_CTIME = 2, S_VERSION = 4 } sync_it = 0;
+-
+-	/* First try to exhaust all avenues to not sync */
+-	if (IS_NOCMTIME(inode))
+-		return 0;
+-
+-	now = current_fs_time(inode->i_sb);
+-	if (!timespec_equal(&inode->i_mtime, &now))
+-		sync_it = S_MTIME;
+-
+-	if (!timespec_equal(&inode->i_ctime, &now))
+-		sync_it |= S_CTIME;
+-
+-	if (IS_I_VERSION(inode))
+-		sync_it |= S_VERSION;
+-
+-	if (!sync_it)
+-		return 0;
+-
+-	/* Finally allowed to write? Takes lock. */
+-	if (mnt_want_write_file(file))
+-		return 0;
+-
+-	/* Only change inode inside the lock region */
+-	if (sync_it & S_VERSION)
++	if (flags & S_VERSION)
+ 		inode_inc_iversion(inode);
+-	if (sync_it & S_CTIME)
+-		inode->i_ctime = now;
+-	if (sync_it & S_MTIME)
+-		inode->i_mtime = now;
+-	ret = btrfs_dirty_inode(inode);
+-	if (!ret)
+-		mark_inode_dirty_sync(inode);
+-	mnt_drop_write(file->f_path.mnt);
+-	return ret;
++	if (flags & S_CTIME)
++		inode->i_ctime = *now;
++	if (flags & S_MTIME)
++		inode->i_mtime = *now;
++	if (flags & S_ATIME)
++		inode->i_atime = *now;
++	return btrfs_dirty_inode(inode);
+ }
+ 
+ /*
+@@ -6405,7 +6377,7 @@ int btrfs_page_mkwrite(struct vm_area_struct *vma, struct vm_fault *vmf)
+ 
+ 	ret  = btrfs_delalloc_reserve_space(inode, PAGE_CACHE_SIZE);
+ 	if (!ret)
+-		ret = btrfs_update_time(vma->vm_file);
++		ret = file_update_time(vma->vm_file);
+ 	if (ret) {
+ 		if (ret == -ENOMEM)
+ 			ret = VM_FAULT_OOM;
+@@ -7451,6 +7423,7 @@ static const struct inode_operations btrfs_file_inode_operations = {
+ 	.permission	= btrfs_permission,
+ 	.fiemap		= btrfs_fiemap,
+ 	.get_acl	= btrfs_get_acl,
++	.update_time	= btrfs_update_time,
+ };
+ static const struct inode_operations btrfs_special_inode_operations = {
+ 	.getattr	= btrfs_getattr,
+@@ -7461,6 +7434,7 @@ static const struct inode_operations btrfs_special_inode_operations = {
+ 	.listxattr	= btrfs_listxattr,
+ 	.removexattr	= btrfs_removexattr,
+ 	.get_acl	= btrfs_get_acl,
++	.update_time	= btrfs_update_time,
+ };
+ static const struct inode_operations btrfs_symlink_inode_operations = {
+ 	.readlink	= generic_readlink,
+@@ -7474,6 +7448,7 @@ static const struct inode_operations btrfs_symlink_inode_operations = {
+ 	.listxattr	= btrfs_listxattr,
+ 	.removexattr	= btrfs_removexattr,
+ 	.get_acl	= btrfs_get_acl,
++	.update_time	= btrfs_update_time,
+ };
+ 
+ const struct dentry_operations btrfs_dentry_operations = {
 -- 
-Humilis IT Services and Solutions
-http://www.humilis.net
+1.7.5.2
+

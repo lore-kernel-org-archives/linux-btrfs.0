@@ -1,46 +1,61 @@
-From: "Fajar A. Nugraha" <list@fajar.net>
-Subject: Re: Can't mount, power failure - recoverable?
-Date: Mon, 26 Mar 2012 15:56:45 +0700
-Message-ID: <CAG1y0scA0bRfLfJsTpOn9kDVQrf3Ncu8eLKmOkj142YMEmcjwg@mail.gmail.com>
-References: <loom.20120317T051243-551@post.gmane.org>
-	<CAE5mzvi8oX4B+yriTRnj_g+_a3=BoC-o1BSRs4PpJsAMBOP5xw@mail.gmail.com>
-	<loom.20120317T192345-893@post.gmane.org>
-	<20120318151615.GE3976@shiny>
-	<loom.20120318T193113-459@post.gmane.org>
-	<20120319180235.GH3976@shiny>
-	<loom.20120320T035257-31@post.gmane.org>
-	<loom.20120326T103140-428@post.gmane.org>
-	<CAG1y0sdg18Dv2YA_WDRSYp3eGTHO-V2xx99OXxDJQx=O4qqgHA@mail.gmail.com>
-	<loom.20120326T104619-458@post.gmane.org>
+From: Felix Blanke <felixblanke@gmail.com>
+Subject: Re: btrfs and backups
+Date: Mon, 26 Mar 2012 10:56:52 +0200
+Message-ID: <4F702F54.90300@gmail.com>
+References: <CAAMvbhFkaz7_N99D3Gu0WcBPKF2oTdaEfZXQDsUE1fRgSi5msw@mail.gmail.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=ISO-8859-1
+Content-Type: text/plain; charset=UTF-8; format=flowed
 Cc: linux-btrfs@vger.kernel.org
-To: Skylar Burtenshaw <daninfuchs@gmail.com>
+To: James Courtier-Dutton <james.dutton@gmail.com>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <loom.20120326T104619-458@post.gmane.org>
+In-Reply-To: <CAAMvbhFkaz7_N99D3Gu0WcBPKF2oTdaEfZXQDsUE1fRgSi5msw@mail.gmail.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Mon, Mar 26, 2012 at 3:49 PM, Skylar Burtenshaw <daninfuchs@gmail.com> wrote:
-> Fajar A. Nugraha <list <at> fajar.net> writes:
+On 3/26/12 10:30 AM, James Courtier-Dutton wrote:
+> Hi,
 >
->> Didn't Chris' last response basically say "use kernel 3.2 or newer,
->> mount the fs (possibly with -o ro), and copy the data elsewhere"?
+> I have a local btrfs file system with various sub-volumes that have
+> had snapshots done on them.
 >
-> Why yes, yes it did actually. I appreciate your spotlighting it, just in case I
-> somehow managed to miss it, though.
+> Is there some tool like rsync that I could copy all the data and
+> snapshots to a backup system, but still only use the same amount of
+> space as the source filesystem.
+> I see a problem being getting a consistent and steady state during the rsync.
+> I was thinking that I might be able to do this with LVM snapshots, but
+> that would require something along these lines:
+> 1) pause the btrfs filesystem into a consistent state that can be
+> mounted cleanly
+> 2) Do LVM snapshot on it.
+> 3) un-pause btrfs filesystem.
 >
->> Have you done that?
+> I can then do a block level backup of the LVM snapshot and it should
+> be mountable on the backup server.
+> So, the snapshot is not a snapshot of the current filesystem, it is a
+> snapshot of all the snapshots and all the sub-volumes at a particular
+> time, that is in a stable state to be backed up.
 >
-> I have. In fact, in my first message, I stated that in all kernels up to present
-> 3.2 kernels, I get several minutes of disk churning, then a stack trace. Also
-> present in my messages is the fact that the filesystem will not mount, as well
-> as data output from the recovery program etc which fail to recognize things in
-> the filesystem that they require in order to fix it. Did you have something you
-> wished to suggest, in order to help me? If so, I'd gladly listen to any proposed
-> ideas.
+> I don't know if 1 is supported?
+> I suppose I am hoping for 1,2,3 to already be supported by some
+> special btrfs command.
+>
+>
+> Any ideas?
 
-Since you apprently tried "-o ro" (which I missed), then my last
-suggestion is probably kernel 3.3 with "-o ro". just in case :)
 
--- 
-Fajar
+I'm not sure if I understand your problem right, but I would suggest:
+
+1) Snapshot the subvolume on the source
+2) rsync the snapshot to the destination
+3) Snapshot the destination
+
+Kind regards,
+Felix
+
+>
+> Kind Regards
+>
+> James
+> --
+> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
+> the body of a message to majordomo@vger.kernel.org
+> More majordomo info at  http://vger.kernel.org/majordomo-info.html

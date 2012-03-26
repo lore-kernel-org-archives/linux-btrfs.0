@@ -1,42 +1,17 @@
-From: James Courtier-Dutton <james.dutton@gmail.com>
-Subject: btrfs and backups
-Date: Mon, 26 Mar 2012 09:30:05 +0100
-Message-ID: <CAAMvbhFkaz7_N99D3Gu0WcBPKF2oTdaEfZXQDsUE1fRgSi5msw@mail.gmail.com>
+From: Skylar Burtenshaw <daninfuchs@gmail.com>
+Subject: Re: Can't mount, power failure - recoverable?
+Date: Mon, 26 Mar 2012 08:34:46 +0000 (UTC)
+Message-ID: <loom.20120326T103140-428@post.gmane.org>
+References: <loom.20120317T051243-551@post.gmane.org> <CAE5mzvi8oX4B+yriTRnj_g+_a3=BoC-o1BSRs4PpJsAMBOP5xw@mail.gmail.com> <loom.20120317T192345-893@post.gmane.org> <20120318151615.GE3976@shiny> <loom.20120318T193113-459@post.gmane.org> <20120319180235.GH3976@shiny> <loom.20120320T035257-31@post.gmane.org>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=UTF-8
+Content-Type: text/plain; charset=us-ascii
 To: linux-btrfs@vger.kernel.org
 Return-path: <linux-btrfs-owner@vger.kernel.org>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hi,
+Hey - been a few days, not meaning to pester but I wanted to make sure my
+previous message didn't slip through the cracks. If I offended, I apologize - I
+certainly didn't mean to, and my attempts at joviality can come across as
+abrasive. If you simply haven't had time to look into this yet, or it's bizarre
+enough that it's taking time to isolate, take all the time you need. Thank you.
 
-I have a local btrfs file system with various sub-volumes that have
-had snapshots done on them.
-
-Is there some tool like rsync that I could copy all the data and
-snapshots to a backup system, but still only use the same amount of
-space as the source filesystem.
-I see a problem being getting a consistent and steady state during the rsync.
-I was thinking that I might be able to do this with LVM snapshots, but
-that would require something along these lines:
-1) pause the btrfs filesystem into a consistent state that can be
-mounted cleanly
-2) Do LVM snapshot on it.
-3) un-pause btrfs filesystem.
-
-I can then do a block level backup of the LVM snapshot and it should
-be mountable on the backup server.
-So, the snapshot is not a snapshot of the current filesystem, it is a
-snapshot of all the snapshots and all the sub-volumes at a particular
-time, that is in a stable state to be backed up.
-
-I don't know if 1 is supported?
-I suppose I am hoping for 1,2,3 to already be supported by some
-special btrfs command.
-
-
-Any ideas?
-
-Kind Regards
-
-James

@@ -1,48 +1,48 @@
-From: Jan Schmidt <list.btrfs@jan-o-sch.net>
-Subject: [PATCH 2/3] Btrfs: check return value of btrfs_cow_block()
-Date: Tue, 27 Mar 2012 16:11:59 +0200
-Message-ID: <103e976616fe9c2a3e40764c979fa1a592274da2.1332852833.git.list.btrfs@jan-o-sch.net>
-References: <cover.1332852833.git.list.btrfs@jan-o-sch.net>
-To: chris.mason@oracle.com, linux-btrfs@vger.kernel.org
+From: Ilya Dryomov <idryomov@gmail.com>
+Subject: [PATCH 0/8] Restriper fixes
+Date: Tue, 27 Mar 2012 18:04:20 +0300
+Message-ID: <1332860668-27298-1-git-send-email-idryomov@gmail.com>
+Cc: Chris Mason <chris.mason@oracle.com>, idryomov@gmail.com
+To: linux-btrfs@vger.kernel.org
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <cover.1332852833.git.list.btrfs@jan-o-sch.net>
-In-Reply-To: <cover.1332852833.git.list.btrfs@jan-o-sch.net>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-The two helper functions commit_cowonly_roots() and
-create_pending_snapshot() failed to check the return value from
-btrfs_cow_block(), which could at least in theory fail with -ENOSPC from
-btrfs_alloc_free_block(). This commit adds the missing checks.
+Hi Chris,
 
-Signed-off-by: Jan Schmidt <list.btrfs@jan-o-sch.net>
----
- fs/btrfs/transaction.c |    6 ++++--
- 1 files changed, 4 insertions(+), 2 deletions(-)
+The main one here is the improvement to btrfs_can_relocate(), which is
+now a tiny bit smarter and does not return ENOSPC when there's plenty of
+unallocated space for target chunks.  This, in addition to my patch
+which disables silent profile "upgrades", should lower a number of
+corner cases in profile changing.
 
-diff --git a/fs/btrfs/transaction.c b/fs/btrfs/transaction.c
-index 04b77e3..cd220f2 100644
---- a/fs/btrfs/transaction.c
-+++ b/fs/btrfs/transaction.c
-@@ -718,7 +718,8 @@ static noinline int commit_cowonly_roots(struct btrfs_trans_handle *trans,
- 	BUG_ON(ret);
- 
- 	eb = btrfs_lock_root_node(fs_info->tree_root);
--	btrfs_cow_block(trans, fs_info->tree_root, eb, NULL, 0, &eb);
-+	ret = btrfs_cow_block(trans, fs_info->tree_root, eb, NULL, 0, &eb);
-+	BUG_ON(ret);
- 	btrfs_tree_unlock(eb);
- 	free_extent_buffer(eb);
- 
-@@ -949,7 +950,8 @@ static noinline int create_pending_snapshot(struct btrfs_trans_handle *trans,
- 	btrfs_set_root_flags(new_root_item, root_flags);
- 
- 	old = btrfs_lock_root_node(root);
--	btrfs_cow_block(trans, root, old, NULL, 0, &old);
-+	ret = btrfs_cow_block(trans, root, old, NULL, 0, &old);
-+	BUG_ON(ret);
- 	btrfs_set_lock_blocking(old);
- 
- 	btrfs_copy_root(trans, root, old, &tmp, objectid);
+The rest are a bunch of cleanups and some minor fixes.
+
+Please pull from
+
+git://github.com/idryomov/btrfs-unstable.git for-chris
+
+top commit 213e64da90d14537cd63f7090d6c4d1fcc75d9f8
+
+Thanks,
+
+		Ilya
+
+
+Ilya Dryomov (8):
+  Btrfs: add wrappers for working with alloc profiles
+  Btrfs: make profile_is_valid() check more strict
+  Btrfs: move alloc_profile_is_valid() to volumes.c
+  Btrfs: add get_restripe_target() helper
+  Btrfs: add __get_block_group_index() helper
+  Btrfs: improve the logic in btrfs_can_relocate()
+  Btrfs: validate target profiles only if we are going to use them
+  Btrfs: allow dup for data chunks in mixed mode
+
+ fs/btrfs/ctree.h       |   33 +++++------
+ fs/btrfs/extent-tree.c |  158 ++++++++++++++++++++++++++----------------------
+ fs/btrfs/volumes.c     |   88 ++++++++++++++++-----------
+ 3 files changed, 152 insertions(+), 127 deletions(-)
+
 -- 
-1.7.3.4
+1.7.9.1
 

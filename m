@@ -1,52 +1,68 @@
-From: Not Zippy <notzippy@gmail.com>
-Subject: Re: btrfs: open_ctree failed
-Date: Tue, 27 Mar 2012 08:21:07 -0700
-Message-ID: <CANDob0Lx-kX7LHsup8m5sY=_UmyA2qXOtsxbnwtV5p+eR-2ERQ@mail.gmail.com>
-References: <CANDob0+rwkLGeJg4kP+TpPpN8VOdrOV684F5YiLC6+BkzYehHA@mail.gmail.com>
- <CANDob0+cBXnNH1dZ5socF7vaNoAB8wHACA4cN-w_1Z4T=VKUbA@mail.gmail.com>
- <20120326215740.GA2597@carfax.org.uk> <CANDob0JDQKObq8L2s8E7D9x_=k=MgsaMu=g0DBaZqGqCO_O70Q@mail.gmail.com>
- <20120326224729.GB2597@carfax.org.uk> <CANDob0KMJXQT47MusDnwTMLV5E=whSOSp+E8zAw2ZF6hTsNyOg@mail.gmail.com>
- <20120327130208.GC2597@carfax.org.uk>
+From: cwillu <cwillu@cwillu.com>
+Subject: Re: btrfs csum failed, scrub ok
+Date: Tue, 27 Mar 2012 10:24:32 -0600
+Message-ID: <CAE5mzvh57pD_FTonZNEfH0a0o-oPNKo7OsGR3hSi_5oEW0mNGQ@mail.gmail.com>
+References: <87haxawbtw.fsf@falma.de>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=ISO-8859-1
-To: Hugo Mills <hugo@carfax.org.uk>, Not Zippy <notzippy@gmail.com>,
-	linux-btrfs@vger.kernel.org
+Content-Type: text/plain; charset=UTF-8
+Cc: linux-btrfs@vger.kernel.org
+To: Christoph Groth <cwg@falma.de>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <20120327130208.GC2597@carfax.org.uk>
+In-Reply-To: <87haxawbtw.fsf@falma.de>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-I had found that note on the restore but my restore.c does not allow
-that flag (it is also missing the "m" flag as well), I used the branch
-dangerousdonteveruse on
-https://git.kernel.org/?p=3Dlinux/kernel/git/mason/btrfs-progs.git I
-switched to the master branch to see if there was a difference but it
-does not appear to be any different. (I did find a btrfs-progs on
-git-hub which appears to have those flags, but i thought the best to
-use would be on git.kernel. )
-
-Assuming I can locate the correct restore.c, is there a some other
-software to determine the object id of the subvolume ?  the root
-object id was 5
-
-thanks
-Nz
-
-On Tue, Mar 27, 2012 at 6:02 AM, Hugo Mills <hugo@carfax.org.uk> wrote:
-> On Tue, Mar 27, 2012 at 05:58:17AM -0700, Not Zippy wrote:
->> One entire subvolume was restored. But there were 4 subvolumes on th=
-at
->> partition. Is there a way to specify/force the restore of a differen=
-t
->> subvolume ?
->>
->> find-root seems to only find a single root.
+On Tue, Mar 27, 2012 at 4:57 AM, Christoph Groth <cwg@falma.de> wrote:
+> I have a freshly installed system with btrfs as the root file system.
+> The machine is running linux 3.2. =C2=A0The raid1 btrfs file system l=
+ives on
+> two new hard drives.
 >
-> =A0 There is only a single root tree, so that's understandable. If yo=
-u
-> have a look at the documentation for restore[1], it mentions (right
-> near the bottom of the page) that -r will allow you to select an
-> alternative subvolume to recover from.
+> About one day after installation the following message appeared in
+> kern.log. =C2=A0There were no other errors.
 >
+> root@mim:/var/log# grep 'btrfs.*fail' kern.log
+> Mar 27 01:07:46 mim kernel: [ 6480.233861] btrfs csum failed ino 4535=
+09 off 1495040 csum 3301532933 private 4156998194
+> Mar 27 01:07:46 mim kernel: [ 6480.234470] btrfs csum failed ino 4535=
+09 off 1499136 csum 1873118812 private 3512102188
+> Mar 27 01:07:46 mim kernel: [ 6480.234572] btrfs csum failed ino 4535=
+09 off 1503232 csum 1034640717 private 2041007647
+> Mar 27 01:07:46 mim kernel: [ 6480.234670] btrfs csum failed ino 4535=
+09 off 1507328 csum 889729013 private 2342095239
+> Mar 27 01:07:46 mim kernel: [ 6480.237977] btrfs csum failed ino 4535=
+09 off 1503232 csum 1518679450 private 2041007647
+> Mar 27 01:07:46 mim kernel: [ 6480.238149] btrfs csum failed ino 4535=
+09 off 1507328 csum 889729013 private 2342095239
+> Mar 27 01:07:46 mim kernel: [ 6480.238330] btrfs csum failed ino 4535=
+09 off 1495040 csum 3234580989 private 4156998194
+> Mar 27 01:07:46 mim kernel: [ 6480.238447] btrfs csum failed ino 4535=
+09 off 1499136 csum 1873118812 private 3512102188
+> Mar 27 01:07:46 mim kernel: [ 6480.243873] btrfs csum failed ino 4535=
+09 off 1503232 csum 2184012753 private 2041007647
+> Mar 27 01:07:46 mim kernel: [ 6480.243962] btrfs csum failed ino 4535=
+09 off 1507328 csum 240604621 private 2342095239
+>
+> inode 453509 belongs to a file installed by dpkg
+>
+> root@mim:/# find / -inum 453509 -ls
+> 453509 1976 -rw-r--r-- =C2=A0 1 root =C2=A0 =C2=A0 root =C2=A0 =C2=A0=
+ =C2=A02020832 Mar =C2=A07 21:11 /usr/lib/libreoffice/basis3.4/program/=
+libsblx.so
+>
+> That file seems to be ok, there are no errors when re-reading it.
+>
+> A scrub done the morning after the incident also didn't find any
+> problems:
+>
+> root@mim:/home/cwg# btrfs scrub status /
+> scrub status for 2da00153-f9ea-4d6c-a6cc-10c913d22686
+> =C2=A0 =C2=A0 =C2=A0 =C2=A0scrub started at Tue Mar 27 10:37:49 2012 =
+and finished after 3921 seconds
+> =C2=A0 =C2=A0 =C2=A0 =C2=A0total bytes scrubbed: 550.20GB with 0 erro=
+rs
+
+If btrfs is able to find a good copy, it will fix the bad copy automati=
+cally.
 --
 To unsubscribe from this list: send the line "unsubscribe linux-btrfs" =
 in

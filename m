@@ -1,7 +1,7 @@
 From: Ilya Dryomov <idryomov@gmail.com>
-Subject: [PATCH 2/8] Btrfs: make profile_is_valid() check more strict
-Date: Tue, 27 Mar 2012 18:04:22 +0300
-Message-ID: <1332860668-27298-3-git-send-email-idryomov@gmail.com>
+Subject: [PATCH 6/8] Btrfs: improve the logic in btrfs_can_relocate()
+Date: Tue, 27 Mar 2012 18:04:26 +0300
+Message-ID: <1332860668-27298-7-git-send-email-idryomov@gmail.com>
 References: <1332860668-27298-1-git-send-email-idryomov@gmail.com>
 Cc: Chris Mason <chris.mason@oracle.com>, idryomov@gmail.com
 To: linux-btrfs@vger.kernel.org
@@ -9,103 +9,70 @@ Return-path: <linux-btrfs-owner@vger.kernel.org>
 In-Reply-To: <1332860668-27298-1-git-send-email-idryomov@gmail.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-"0" is a valid value for an on-disk chunk profile, but it is not a valid
-extended profile.  (We have a separate bit for single chunks in extended
-case)
-
-Also rename it to alloc_profile_is_valid() for clarity.
+Currently if we don't have enough space allocated we go ahead and loop
+though devices in the hopes of finding enough space for a chunk of the
+*same* type as the one we are trying to relocate.  The problem with that
+is that if we are trying to restripe the chunk its target type can be
+more relaxed than the current one (eg require less devices or less
+space).  So, when restriping, run checks against the target profile
+instead of the current one.
 
 Signed-off-by: Ilya Dryomov <idryomov@gmail.com>
 ---
- fs/btrfs/ctree.h       |   21 +++++++++++++--------
- fs/btrfs/extent-tree.c |    2 +-
- fs/btrfs/volumes.c     |    6 +++---
- 3 files changed, 17 insertions(+), 12 deletions(-)
+ fs/btrfs/extent-tree.c |   24 ++++++++++++++++++------
+ 1 files changed, 18 insertions(+), 6 deletions(-)
 
-diff --git a/fs/btrfs/ctree.h b/fs/btrfs/ctree.h
-index aba7832..f057e92 100644
---- a/fs/btrfs/ctree.h
-+++ b/fs/btrfs/ctree.h
-@@ -2735,22 +2735,27 @@ static inline void free_fs_info(struct btrfs_fs_info *fs_info)
- 	kfree(fs_info);
- }
- /**
-- * profile_is_valid - tests whether a given profile is valid and reduced
-+ * alloc_profile_is_valid - see if a given profile is valid and reduced
-  * @flags: profile to validate
-  * @extended: if true @flags is treated as an extended profile
-  */
--static inline int profile_is_valid(u64 flags, int extended)
-+static inline int alloc_profile_is_valid(u64 flags, int extended)
- {
--	u64 mask = ~BTRFS_BLOCK_GROUP_PROFILE_MASK;
-+	u64 mask = (extended ? BTRFS_EXTENDED_PROFILE_MASK :
-+			       BTRFS_BLOCK_GROUP_PROFILE_MASK);
- 
- 	flags &= ~BTRFS_BLOCK_GROUP_TYPE_MASK;
--	if (extended)
--		mask &= ~BTRFS_AVAIL_ALLOC_BIT_SINGLE;
- 
--	if (flags & mask)
-+	/* 1) check that all other bits are zeroed */
-+	if (flags & ~mask)
- 		return 0;
--	/* true if zero or exactly one bit set */
--	return (flags & (~flags + 1)) == flags;
-+
-+	/* 2) see if profile is reduced */
-+	if (flags == 0)
-+		return !extended; /* "0" is valid for usual profiles */
-+
-+	/* true if exactly one bit set */
-+	return (flags & (flags - 1)) == 0;
- }
- 
- /* root-item.c */
 diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
-index 9f16fdb..8c5bd8f 100644
+index c44aa96..9454045 100644
 --- a/fs/btrfs/extent-tree.c
 +++ b/fs/btrfs/extent-tree.c
-@@ -3400,7 +3400,7 @@ static int do_chunk_alloc(struct btrfs_trans_handle *trans,
- 	int wait_for_alloc = 0;
+@@ -7136,6 +7136,7 @@ int btrfs_can_relocate(struct btrfs_root *root, u64 bytenr)
+ 	u64 min_free;
+ 	u64 dev_min = 1;
+ 	u64 dev_nr = 0;
++	u64 target;
+ 	int index;
+ 	int full = 0;
  	int ret = 0;
+@@ -7176,13 +7177,11 @@ int btrfs_can_relocate(struct btrfs_root *root, u64 bytenr)
+ 	/*
+ 	 * ok we don't have enough space, but maybe we have free space on our
+ 	 * devices to allocate new chunks for relocation, so loop through our
+-	 * alloc devices and guess if we have enough space.  However, if we
+-	 * were marked as full, then we know there aren't enough chunks, and we
+-	 * can just return.
++	 * alloc devices and guess if we have enough space.  if this block
++	 * group is going to be restriped, run checks against the target
++	 * profile instead of the current one.
+ 	 */
+ 	ret = -1;
+-	if (full)
+-		goto out;
  
--	BUG_ON(!profile_is_valid(flags, 0));
-+	BUG_ON(!alloc_profile_is_valid(flags, 0));
- 
- 	space_info = __find_space_info(extent_root->fs_info, flags);
- 	if (!space_info) {
-diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
-index 4b263a2..e4ef0f2 100644
---- a/fs/btrfs/volumes.c
-+++ b/fs/btrfs/volumes.c
-@@ -2669,7 +2669,7 @@ int btrfs_balance(struct btrfs_balance_control *bctl,
- 		allowed |= (BTRFS_BLOCK_GROUP_RAID0 | BTRFS_BLOCK_GROUP_RAID1 |
- 				BTRFS_BLOCK_GROUP_RAID10);
- 
--	if (!profile_is_valid(bctl->data.target, 1) ||
-+	if (!alloc_profile_is_valid(bctl->data.target, 1) ||
- 	    bctl->data.target & ~allowed) {
- 		printk(KERN_ERR "btrfs: unable to start balance with target "
- 		       "data profile %llu\n",
-@@ -2677,7 +2677,7 @@ int btrfs_balance(struct btrfs_balance_control *bctl,
- 		ret = -EINVAL;
- 		goto out;
- 	}
--	if (!profile_is_valid(bctl->meta.target, 1) ||
-+	if (!alloc_profile_is_valid(bctl->meta.target, 1) ||
- 	    bctl->meta.target & ~allowed) {
- 		printk(KERN_ERR "btrfs: unable to start balance with target "
- 		       "metadata profile %llu\n",
-@@ -2685,7 +2685,7 @@ int btrfs_balance(struct btrfs_balance_control *bctl,
- 		ret = -EINVAL;
- 		goto out;
- 	}
--	if (!profile_is_valid(bctl->sys.target, 1) ||
-+	if (!alloc_profile_is_valid(bctl->sys.target, 1) ||
- 	    bctl->sys.target & ~allowed) {
- 		printk(KERN_ERR "btrfs: unable to start balance with target "
- 		       "system profile %llu\n",
+ 	/*
+ 	 * index:
+@@ -7192,7 +7191,20 @@ int btrfs_can_relocate(struct btrfs_root *root, u64 bytenr)
+ 	 *      3: raid0
+ 	 *      4: single
+ 	 */
+-	index = get_block_group_index(block_group);
++	target = get_restripe_target(root->fs_info, block_group->flags);
++	if (target) {
++		index = __get_block_group_index(extended_to_chunk(target));
++	} else {
++		/*
++		 * this is just a balance, so if we were marked as full
++		 * we know there is no space for a new chunk
++		 */
++		if (full)
++			goto out;
++
++		index = get_block_group_index(block_group);
++	}
++
+ 	if (index == 0) {
+ 		dev_min = 4;
+ 		/* Divide by 2 */
 -- 
 1.7.9.1
 

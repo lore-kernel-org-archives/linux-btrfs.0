@@ -1,69 +1,60 @@
 From: Liu Bo <liubo2009@cn.fujitsu.com>
-Subject: [PATCH 03/10] Btrfs: fix race between direct io and autodefrag
-Date: Tue, 27 Mar 2012 14:44:31 +0800
-Message-ID: <1332830678-3992-4-git-send-email-liubo2009@cn.fujitsu.com>
+Subject: [PATCH 07/10] Btrfs: do not bother to defrag an extent if it is a big real extent
+Date: Tue, 27 Mar 2012 14:44:35 +0800
+Message-ID: <1332830678-3992-8-git-send-email-liubo2009@cn.fujitsu.com>
 References: <1332830678-3992-1-git-send-email-liubo2009@cn.fujitsu.com>
 To: <linux-btrfs@vger.kernel.org>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
 In-Reply-To: <1332830678-3992-1-git-send-email-liubo2009@cn.fujitsu.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-The bug is from running xfstests 209 with autodefrag.
+$ mkfs.btrfs /dev/sdb7
+$ mount /dev/sdb7 /mnt/btrfs/ -oautodefrag
+$ dd if=/dev/zero of=/mnt/btrfs/foobar bs=4k count=10 oflag=direct 2>/dev/null
+$ filefrag -v /mnt/btrfs/foobar
+Filesystem type is: 9123683e
+File size of /mnt/btrfs/foobar is 40960 (10 blocks, blocksize 4096)
+ ext logical physical expected length flags
+   0       0     3072              10 eof
+/mnt/btrfs/foobar: 1 extent found
 
-The race is as follows:
-       t1                       t2(autodefrag)
-   direct IO
-     invalidate pagecache
-     dio(old data)             add_inode_defrag
-     invalidate pagecache
-   endio
+Now we have a big real extent [0, 40960), but autodefrag will still defrag it.
 
-   direct IO
-     invalidate pagecache
-                                run_defrag
-                                  readpage(old data)
-                                  set page dirty (old data)
-     dio(new data, rewrite)
-     invalidate pagecache (*)
-     endio
+$ sync
+$ filefrag -v /mnt/btrfs/foobar
+Filesystem type is: 9123683e
+File size of /mnt/btrfs/foobar is 40960 (10 blocks, blocksize 4096)
+ ext logical physical expected length flags
+   0       0     3082              10 eof
+/mnt/btrfs/foobar: 1 extent found
 
-t2(autodefrag) will get old data into pagecache via readpage and set
-pagecache dirty.  Meanwhile, invalidate pagecache(*) will fail due to
-dirty flags in pages.  So the old data may be flushed into disk by
-flush thread, which will lead to data loss.
-
-And so does the case of user defragment progs.
-
-The patch fixes this race by holding i_mutex when we readpage and set page dirty.
+So if we already find a big real extent, we're ok about that, just skip it.
 
 Signed-off-by: Liu Bo <liubo2009@cn.fujitsu.com>
-Signed-off-by: Miao Xie <miaox@cn.fujitsu.com>
 ---
- fs/btrfs/ioctl.c |    6 +++++-
- 1 files changed, 5 insertions(+), 1 deletions(-)
+ fs/btrfs/ioctl.c |    9 +++------
+ 1 files changed, 3 insertions(+), 6 deletions(-)
 
 diff --git a/fs/btrfs/ioctl.c b/fs/btrfs/ioctl.c
-index d8b5471..0acc828 100644
+index 66a4933..7a6d15c 100644
 --- a/fs/btrfs/ioctl.c
 +++ b/fs/btrfs/ioctl.c
-@@ -1123,12 +1123,16 @@ int btrfs_defrag_file(struct inode *inode, struct file *file,
- 			ra_index += max_cluster;
- 		}
+@@ -1126,12 +1126,9 @@ int btrfs_defrag_file(struct inode *inode, struct file *file,
+ 		if (!(inode->i_sb->s_flags & MS_ACTIVE))
+ 			break;
  
-+		mutex_lock(&inode->i_mutex);
- 		ret = cluster_pages_for_defrag(inode, pages, i, cluster);
--		if (ret < 0)
-+		if (ret < 0) {
-+			mutex_unlock(&inode->i_mutex);
- 			goto out_ra;
-+		}
- 
- 		defrag_count += ret;
- 		balance_dirty_pages_ratelimited_nr(inode->i_mapping, ret);
-+		mutex_unlock(&inode->i_mutex);
- 
- 		if (newer_than) {
- 			if (newer_off == (u64)-1)
+-		if (!newer_than &&
+-		    !should_defrag_range(inode, (u64)i << PAGE_CACHE_SHIFT,
+-					PAGE_CACHE_SIZE,
+-					extent_thresh,
+-					&last_len, &skip,
+-					&defrag_end)) {
++		if (!should_defrag_range(inode, (u64)i << PAGE_CACHE_SHIFT,
++					 PAGE_CACHE_SIZE, extent_thresh,
++					 &last_len, &skip, &defrag_end)) {
+ 			unsigned long next;
+ 			/*
+ 			 * the should_defrag function tells us how much to skip
 -- 
 1.6.5.2
 

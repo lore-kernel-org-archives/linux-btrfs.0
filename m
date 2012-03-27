@@ -1,86 +1,62 @@
 From: Liu Bo <liubo2009@cn.fujitsu.com>
-Subject: [PATCH 06/10] Btrfs: add a check to decide if we should defrag the range
-Date: Tue, 27 Mar 2012 14:44:34 +0800
-Message-ID: <1332830678-3992-7-git-send-email-liubo2009@cn.fujitsu.com>
+Subject: [PATCH 05/10][RESEND] Btrfs: fix recursive defragment with autodefrag option
+Date: Tue, 27 Mar 2012 14:44:33 +0800
+Message-ID: <1332830678-3992-6-git-send-email-liubo2009@cn.fujitsu.com>
 References: <1332830678-3992-1-git-send-email-liubo2009@cn.fujitsu.com>
 To: <linux-btrfs@vger.kernel.org>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
 In-Reply-To: <1332830678-3992-1-git-send-email-liubo2009@cn.fujitsu.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-If our file's layout is as follows:
-| hole | data1 | hole | data2 |
+Reproduce:
+$ mkfs.btrfs disk
+$ mount disk /mnt -o autodefrag
+$ dd if=/dev/zero of=/mnt/foobar bs=4k count=10 2>/dev/null && sync
+$ for i in `seq 9 -2 0`; do dd if=/dev/zero of=/mnt/foobar bs=4k count=1 \
+  seek=$i conv=notrunc 2> /dev/null; done && sync
 
-we do not need to defrag this file, because this file has holes and
-cannot be merged into one extent.
+then we'll get to defrag "foobar" again and again.
+So does option "-o autodefrag,compress".
+
+Reasons:
+When the cleaner kthread gets to fetch inodes from the defrag tree and defrag
+them, it will dirty pages and submit them, this will comes to another DATA COW
+where the processing inode will be inserted to the defrag tree again.
+
+This patch sets a rule for COW code, i.e. insert an inode when we're really
+going to make some defragments.
 
 Signed-off-by: Liu Bo <liubo2009@cn.fujitsu.com>
 ---
- fs/btrfs/ioctl.c |   36 +++++++++++++++++++++++++++++++++++-
- 1 files changed, 35 insertions(+), 1 deletions(-)
+ fs/btrfs/inode.c |    8 +++++---
+ 1 files changed, 5 insertions(+), 3 deletions(-)
 
-diff --git a/fs/btrfs/ioctl.c b/fs/btrfs/ioctl.c
-index 81faa78..66a4933 100644
---- a/fs/btrfs/ioctl.c
-+++ b/fs/btrfs/ioctl.c
-@@ -769,6 +769,31 @@ none:
- 	return -ENOENT;
- }
+diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
+index 892b347..7f5018d 100644
+--- a/fs/btrfs/inode.c
++++ b/fs/btrfs/inode.c
+@@ -344,8 +344,9 @@ static noinline int compress_file_range(struct inode *inode,
+ 	int will_compress;
+ 	int compress_type = root->fs_info->compress_type;
  
-+/*
-+ * Validaty check of prev em and next em:
-+ * 1) no prev/next em
-+ * 2) prev/next em is an hole/inline extent
-+ */
-+static int check_adjacent_extents(struct inode *inode, struct extent_map *em)
-+{
-+	struct extent_map_tree *em_tree = &BTRFS_I(inode)->extent_tree;
-+	struct extent_map *prev = NULL, *next = NULL;
-+	int ret = 0;
-+
-+	read_lock(&em_tree->lock);
-+	prev = lookup_extent_mapping(em_tree, em->start - 1, (u64)-1);
-+	next = lookup_extent_mapping(em_tree, em->start + em->len, (u64)-1);
-+	read_unlock(&em_tree->lock);
-+
-+	if ((!prev || prev->block_start >= EXTENT_MAP_LAST_BYTE) &&
-+	    (!next || next->block_start >= EXTENT_MAP_LAST_BYTE))
-+		ret = 1;
-+	free_extent_map(prev);
-+	free_extent_map(next);
-+
-+	return ret;
-+}
-+
- static int should_defrag_range(struct inode *inode, u64 start, u64 len,
- 			       int thresh, u64 *last_len, u64 *skip,
- 			       u64 *defrag_end)
-@@ -806,8 +831,16 @@ static int should_defrag_range(struct inode *inode, u64 start, u64 len,
- 	}
+-	/* if this is a small write inside eof, kick off a defragbot */
+-	if (end <= BTRFS_I(inode)->disk_i_size && (end - start + 1) < 16 * 1024)
++	/* if this is a small write inside eof, kick off a defrag */
++	if ((end - start + 1) < 16 * 1024 &&
++	    (start > 0 || end + 1 < BTRFS_I(inode)->disk_i_size))
+ 		btrfs_add_inode_defrag(NULL, inode);
  
- 	/* this will cover holes, and inline extents */
--	if (em->block_start >= EXTENT_MAP_LAST_BYTE)
-+	if (em->block_start >= EXTENT_MAP_LAST_BYTE) {
-+		ret = 0;
-+		goto out;
-+	}
-+
-+	/* If we have nothing to merge with us, just skip. */
-+	if (check_adjacent_extents(inode, em)) {
- 		ret = 0;
-+		goto out;
-+	}
+ 	actual_end = min_t(u64, isize, end + 1);
+@@ -800,7 +801,8 @@ static noinline int cow_file_range(struct inode *inode,
+ 	ret = 0;
  
- 	/*
- 	 * we hit a real extent, if it is big don't bother defragging it again
-@@ -815,6 +848,7 @@ static int should_defrag_range(struct inode *inode, u64 start, u64 len,
- 	if ((*last_len == 0 || *last_len >= thresh) && em->len >= thresh)
- 		ret = 0;
+ 	/* if this is a small write inside eof, kick off defrag */
+-	if (end <= BTRFS_I(inode)->disk_i_size && num_bytes < 64 * 1024)
++	if (num_bytes < 64 * 1024 &&
++	    (start > 0 || end + 1 < BTRFS_I(inode)->disk_i_size))
+ 		btrfs_add_inode_defrag(trans, inode);
  
-+out:
- 	/*
- 	 * last_len ends up being a counter of how many bytes we've defragged.
- 	 * every time we choose not to defrag an extent, we reset *last_len
+ 	if (start == 0) {
 -- 
 1.6.5.2
 

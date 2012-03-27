@@ -1,96 +1,27 @@
-From: "Matthias G. Eckermann" <mge@suse.com>
-Subject: Re: Create subvolume from a directory?
-Date: Wed, 28 Mar 2012 00:24:22 +0200
-Message-ID: <20120327222422.GA32675@suse.com>
-References: <loom.20120327T190041-268@post.gmane.org>
-Reply-To: "Matthias G. Eckermann" <mge@suse.com>
+From: Jan Engelhardt <jengelh@medozas.de>
+Subject: Re: btrfs crash after disk reconnect
+Date: Wed, 28 Mar 2012 01:26:04 +0200 (CEST)
+Message-ID: <alpine.LNX.2.01.1203280125360.15111@frira.zrqbmnf.qr>
+References: <alpine.LNX.2.01.1203231303520.2601@frira.zrqbmnf.qr> <4F6FC99F.3010209@cn.fujitsu.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=utf-8
-To: Alex <alex@bpmit.com>, linux-btrfs@vger.kernel.org
+Content-Type: TEXT/PLAIN; charset=US-ASCII
+Cc: linux-btrfs@vger.kernel.org
+To: Liu Bo <liubo2009@cn.fujitsu.com>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <loom.20120327T190041-268@post.gmane.org>
+In-Reply-To: <4F6FC99F.3010209@cn.fujitsu.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hello Alex and all,
+On Monday 2012-03-26 03:42, Liu Bo wrote:
 
-On 2012-03-27 T 17:19 +0000 Alex wrote:
+>On 03/23/2012 08:07 PM, Jan Engelhardt wrote:
+>> Observed on Linux 3.2.9 after the controller/disk flaked in-out.
+>> (The world still needs a SCSI error decoding tool to tell normal people 
+>> what cmd and res are about.)
+>> 
+>
+>I'm not that sure if your 3.2.9-jng4-default build contains this commit or not:
+>
+>commit 8bedd51b6121c4607784d75f852828d25d119c52
+>(Btrfs: Check for NULL page in extent_range_uptodate)
 
-> Just a quick question but can't find an obvious answer.
->=20
-> Can I create/convert a existing (btrfs) directory into a
-> subvolume?
->=20
-> It would be very helpful when transferring 'partitions'
-> into btrfs.  I found a similar question way back in
-> google, but that site is down now generally.
-
-As far as I am aware, this is not possible directly. My
-approach to this would be using copy with reflinks:
-
-------------------------------< snip >------------------------------
-
-## migrate /var/lib/lxc/installserver=20
-## from directory to btrfs subvolume
-
-# du -ks /var/lib/lxc/installserver
-500332  /var/lib/lxc/installserver
-
-# mv /var/lib/lxc/installserver /var/lib/lxc/installserver_tmp
-
-# btrfs subvol create /var/lib/lxc/installserver
-Create subvolume '/var/lib/lxc/installserver'
-
-# time cp -a --reflink /var/lib/lxc/installserver_tmp/rootfs /var/lib/l=
-xc/installserver
-
-real    0m1.367s
-user    0m0.148s
-sys     0m1.108s
-
-## Now remove /var/lib/lxc/installserver_tmp (or not)
-
-------------------------------< snap >------------------------------
-
-Just to compare this with a "mv":
-
-------------------------------< snip >------------------------------
-
-## Go back to former state
-
-# btrfs subvol delete /var/lib/lxc/installserver
-Delete subvolume '/var/lib/lxc/installserver'
-
-# btrfs subvol create /var/lib/lxc/installserver
-Create subvolume '/var/lib/lxc/installserver'
-
-# time mv /var/lib/lxc/installserver_tmp/rootfs /var/lib/lxc/installser=
-ver/
-
-real    0m12.917s
-user    0m0.208s=20
-sys     0m2.508s=20
-
-------------------------------< snap >------------------------------
-
-While the time measurement might be flawed due to the subvol
-actions inbetween, caching etc.: I tried several times, and
-"cp --reflinks" always is multiple times faster than "mv" in
-my environment.
-
-Or did I misunderstand your question?
-
-so long -
-	MgE
-
---=20
-Matthias G. Eckermann     Senior Product Manager   SUSE=C2=AE Linux Ent=
-erprise
-SUSE LINUX Products GmbH  Maxfeldstra=C3=9Fe 5          90409 N=C3=BCrn=
-berg Germany
-GF: Jeff Hawn, Jennifer Guild, Felix Imend=C3=B6rffer, HRB 16746 (AG N=C3=
-=BCrnberg)
---
-To unsubscribe from this list: send the line "unsubscribe linux-btrfs" =
-in
-the body of a message to majordomo@vger.kernel.org
-More majordomo info at  http://vger.kernel.org/majordomo-info.html
+8bedd isn't in 3.2.9; thanks for the hint, I will try that one.

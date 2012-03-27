@@ -1,37 +1,46 @@
 From: Jan Schmidt <list.btrfs@jan-o-sch.net>
-Subject: [PATCH 1/3] Btrfs: actually call btrfs_init_lockdep
-Date: Tue, 27 Mar 2012 16:11:58 +0200
-Message-ID: <e565d4b962948e70f37f417603caf131a773621b.1332852833.git.list.btrfs@jan-o-sch.net>
-References: <cover.1332852833.git.list.btrfs@jan-o-sch.net>
+Subject: [GIT PULL] Btrfs fixes for 3.4
+Date: Tue, 27 Mar 2012 16:11:57 +0200
+Message-ID: <cover.1332852833.git.list.btrfs@jan-o-sch.net>
 To: chris.mason@oracle.com, linux-btrfs@vger.kernel.org
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <cover.1332852833.git.list.btrfs@jan-o-sch.net>
-In-Reply-To: <cover.1332852833.git.list.btrfs@jan-o-sch.net>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-btrfs_init_lockdep only makes our lockdep class names look prettier, thus
-it did never hurt we forgot to actually call it. This turns our lockdep
-identifier strings from lockdep auto-set #[id] into really pretty
-"btrfs-fs-01" or "btrfs-csum-03".
+Hi Chris,
 
-Signed-off-by: Jan Schmidt <list.btrfs@jan-o-sch.net>
----
- fs/btrfs/super.c |    2 ++
- 1 files changed, 2 insertions(+), 0 deletions(-)
+please pull my three current patches from my repo, based on your
+for-linus branch (I can rebase them to the integration branch if that
+helps):
 
-diff --git a/fs/btrfs/super.c b/fs/btrfs/super.c
-index 61717a4..5239003 100644
---- a/fs/btrfs/super.c
-+++ b/fs/btrfs/super.c
-@@ -1404,6 +1404,8 @@ static int __init init_btrfs_fs(void)
- 	if (err)
- 		goto unregister_ioctl;
- 
-+	btrfs_init_lockdep();
-+
- 	printk(KERN_INFO "%s loaded\n", BTRFS_BUILD_VERSION);
- 	return 0;
- 
+	git://git.jan-o-sch.net/btrfs-unstable for-chris
+
+It's two really small fixes both mentioned earlier and a more or less
+imporant fixup for scrub. While working fine in 3.2, name resolving can
+deadlock since the first rc of 3.3. I suggest we queue that patch 3/3
+for submission to 3.3-stable.
+
+I'm passing xfstests just as good as for-linus is doing without my
+patches (which is not really good). I also made some manual error
+insertion tests to verify that the scrub deadlock chance is really gone.
+
+And, we really should have an xfstest for raid-repair and scrub-repair.
+Anyone? :-)
+
+-Jan
+
+Jan Schmidt (3):
+  Btrfs: actually call btrfs_init_lockdep
+  Btrfs: check return value of btrfs_cow_block()
+  Btrfs: fix regression in scrub path resolving
+
+ fs/btrfs/backref.c     |  115 +++++++++++++++++++++++++++--------------------
+ fs/btrfs/backref.h     |    5 +-
+ fs/btrfs/ioctl.c       |    4 +-
+ fs/btrfs/scrub.c       |    4 +-
+ fs/btrfs/super.c       |    2 +
+ fs/btrfs/transaction.c |    6 ++-
+ 6 files changed, 79 insertions(+), 57 deletions(-)
+
 -- 
 1.7.3.4
 

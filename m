@@ -1,85 +1,48 @@
-From: Goffredo Baroncelli <krexxjack@libero.it>
-Subject: Re: Create subvolume from a directory?
-Date: Wed, 28 Mar 2012 18:54:40 +0200
-Message-ID: <4F734250.5030009@libero.it>
-References: <loom.20120327T190041-268@post.gmane.org> <20120327222422.GA32675@suse.com> <4F727504.3070105@cn.fujitsu.com>
-Reply-To: kreijack@inwind.it
-Mime-Version: 1.0
-Content-Type: text/plain; charset=UTF-8; format=flowed
-Cc: "Matthias G. Eckermann" <mge@suse.com>, Alex <alex@bpmit.com>,
-	linux-btrfs@vger.kernel.org
-To: Liu Bo <liubo2009@cn.fujitsu.com>
+From: Josef Bacik <josef@redhat.com>
+Subject: [PATCH] btrfs-progs: enforce block count on all devices in mkfs
+Date: Wed, 28 Mar 2012 14:20:52 -0400
+Message-ID: <1332958852-5953-1-git-send-email-josef@redhat.com>
+To: linux-btrfs@vger.kernel.org
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <4F727504.3070105@cn.fujitsu.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
+I had a test that creates a 7gig raid1 device but it was ending up wonky
+because the second device that gets added is the full size of the disk
+instead of the limited size.  So enforce the limited size on all disks
+passed in at mkfs time, otherwise our threshold calculations end up wonky
+when doing chunk allocations.  Thanks,
 
-Hello Liu
+Signed-off-by: Josef Bacik <josef@redhat.com>
+---
+ mkfs.c  |    1 +
+ utils.c |    2 ++
+ 2 files changed, 3 insertions(+), 0 deletions(-)
 
-On 03/28/2012 04:18 AM, Liu Bo wrote:
-> On 03/28/2012 06:24 AM, Matthias G. Eckermann wrote:
-
->> # time cp -a --reflink /var/lib/lxc/installserver_tmp/rootfs /var/lib/lxc/installserver
->>
->
-> This is too much weird.
->
-> AFAIK, clone between different subvolumes should be forbidden.
-> So this would get a "Invalid cross-device link", because an individual subvolume can be mounted directly.
-
-Could you elaborate which would be the issue ?
-"cp --reflink"-ing a file is not different than snapshotting a file. In 
-any case I could mount a snapshot and not the source subvolume.
-
-
-
->
-> thanks,
-> liubo
->
->> real    0m1.367s
->> user    0m0.148s
->> sys     0m1.108s
->>
->> ## Now remove /var/lib/lxc/installserver_tmp (or not)
->>
->> ------------------------------<  snap>------------------------------
->>
->> Just to compare this with a "mv":
->>
->> ------------------------------<  snip>------------------------------
->>
->> ## Go back to former state
->>
->> # btrfs subvol delete /var/lib/lxc/installserver
->> Delete subvolume '/var/lib/lxc/installserver'
->>
->> # btrfs subvol create /var/lib/lxc/installserver
->> Create subvolume '/var/lib/lxc/installserver'
->>
->> # time mv /var/lib/lxc/installserver_tmp/rootfs /var/lib/lxc/installserver/
->>
->> real    0m12.917s
->> user    0m0.208s
->> sys     0m2.508s
->>
->> ------------------------------<  snap>------------------------------
->>
->> While the time measurement might be flawed due to the subvol
->> actions inbetween, caching etc.: I tried several times, and
->> "cp --reflinks" always is multiple times faster than "mv" in
->> my environment.
->>
->> Or did I misunderstand your question?
->>
->> so long -
->> 	MgE
->>
->
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
-> .
->
+diff --git a/mkfs.c b/mkfs.c
+index c531ef2..6ae412f 100644
+--- a/mkfs.c
++++ b/mkfs.c
+@@ -1404,6 +1404,7 @@ int main(int ac, char **av)
+ 			close(fd);
+ 			continue;
+ 		}
++		dev_block_count = block_count;
+ 		ret = btrfs_prepare_device(fd, file, zero_end,
+ 					   &dev_block_count, &mixed);
+ 		mixed = old_mixed;
+diff --git a/utils.c b/utils.c
+index ee7fa1b..552233b 100644
+--- a/utils.c
++++ b/utils.c
+@@ -555,6 +555,8 @@ int btrfs_prepare_device(int fd, char *file, int zero_end, u64 *block_count_ret,
+ 		fprintf(stderr, "unable to find %s size\n", file);
+ 		exit(1);
+ 	}
++	if (*block_count_ret)
++		block_count = min(block_count, *block_count_ret);
+ 	zero_end = 1;
+ 
+ 	if (block_count < 1024 * 1024 * 1024 && !(*mixed)) {
+-- 
+1.7.5.2
 

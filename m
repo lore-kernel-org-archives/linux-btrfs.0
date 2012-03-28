@@ -1,33 +1,24 @@
-From: Alex <alex@bpmit.com>
-Subject: Re: Create subvolume from a directory?
-Date: Wed, 28 Mar 2012 11:11:14 +0000 (UTC)
-Message-ID: <loom.20120328T130855-118@post.gmane.org>
-References: <loom.20120327T190041-268@post.gmane.org> <20120328092455.GD11610@twin.jikos.cz>
+From: Danny Piccirillo <danny.piccirillo@member.fsf.org>
+Subject: Fractal Tree Indexing over B-Trees?
+Date: Wed, 28 Mar 2012 14:25:39 +0000 (UTC)
+Message-ID: <loom.20120328T160525-464@post.gmane.org>
 Mime-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
 To: linux-btrfs@vger.kernel.org
 Return-path: <linux-btrfs-owner@vger.kernel.org>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-David Sterba <dave <at> jikos.cz> writes:
+The case has been made on Phoronix for F-Trees: They makes use hard
+drive speeds, not (relatively slow) access times; beat SSD's; and scale 
+perfectly across multiple cores with hundreds of millions of entries.
 
-> 
-> On Tue, Mar 27, 2012 at 05:19:06PM +0000, Alex wrote:
-> > Can I create/convert a existing (btrfs) directory into a subvolume?
-> 
-> For the reference there's an entry at the wiki:
-> 
->
-http://btrfs.ipv5.de/index.php?title=UseCases#Can_I_take_a_snapshot_of_a_directory.3F
-> 
+http://en.wikipedia.org/wiki/TokuDB#Fractal_tree_indexes
 
-Thank you all for your replies.
+How TokuDB Fractal Tree Databases Work
 
-Kind regards.
-(happily experimenting with btrfs in a 3.3 kernel!)
+Via: http://www.phoronix.com/scan.php?page=news_item&px=MTA3NjM
 
-Al.
-
-
-
+Time for someone to get started on ftrfs? Or can it be implemented 
+in Btrfs? 
+https://bugzilla.kernel.org/show_bug.cgi?id=43004
 

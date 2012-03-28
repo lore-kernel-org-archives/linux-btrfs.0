@@ -1,17 +1,15 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cantor2.suse.de ([195.135.220.15]:60105 "EHLO mx2.suse.de"
+Received: from cantor2.suse.de ([195.135.220.15]:58614 "EHLO mx2.suse.de"
 	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1754633Ab2CEQBk (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 5 Mar 2012 11:01:40 -0500
+	id S1758843Ab2C1XoC (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Wed, 28 Mar 2012 19:44:02 -0400
 From: Jan Kara <jack@suse.cz>
-To: LKML <linux-kernel@vger.kernel.org>
-Cc: linux-fsdevel@vger.kernel.org, Al Viro <viro@ZenIV.linux.org.uk>,
-        Christoph Hellwig <hch@infradead.org>, dchinner@redhat.com,
-        sandeen@redhat.com, Kamal Mostafa <kamal@canonical.com>,
-        Jan Kara <jack@suse.cz>, Alex Elder <elder@kernel.org>,
-        Anton Altaparmakov <anton@tuxera.com>, Ben Myers <bpm@sgi.com>,
-        Chris Mason <chris.mason@oracle.com>, cluster-devel@redhat.com,
-        "David S. Miller" <davem@davemloft.net>,
+To: linux-fsdevel@vger.kernel.org
+Cc: Al Viro <viro@ZenIV.linux.org.uk>, dchinner@redhat.com, sandeen@redhat.com,
+        Kamal Mostafa <kamal@canonical.com>, Jan Kara <jack@suse.cz>,
+        Alex Elder <elder@kernel.org>, Anton Altaparmakov <anton@tuxera.com>,
+        Ben Myers <bpm@sgi.com>, Chris Mason <chris.mason@oracle.com>,
+        cluster-devel@redhat.com, "David S. Miller" <davem@davemloft.net>,
         fuse-devel@lists.sourceforge.net,
         "J. Bruce Fields" <bfields@fieldses.org>,
         Joel Becker <jlbec@evilplan.org>,
@@ -23,18 +21,18 @@ Cc: linux-fsdevel@vger.kernel.org, Al Viro <viro@ZenIV.linux.org.uk>,
         OGAWA Hirofumi <hirofumi@mail.parknet.co.jp>,
         Steven Whitehouse <swhiteho@redhat.com>,
         "Theodore Ts'o" <tytso@mit.edu>, xfs@oss.sgi.com
-Subject: [PATCH 00/19] Fix filesystem freezing deadlocks
-Date: Mon,  5 Mar 2012 17:00:58 +0100
-Message-Id: <1330963277-26336-1-git-send-email-jack@suse.cz>
+Subject: [PATCH 00/19 v4] Fix filesystem freezing deadlocks
+Date: Thu, 29 Mar 2012 01:43:15 +0200
+Message-Id: <1332978214-15535-1-git-send-email-jack@suse.cz>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-  Hallelujah,
+  Hello,
 
-  after a couple of weeks and several rewrites, here comes the third iteration
-of my patches to improve filesystem freezing.  Filesystem freezing is currently
-racy and thus we can end up with dirty data on frozen filesystem (see changelog
-patch 06 for detailed race description). This patch series aims at fixing this.
+  here is the fourth iteration of my patches to improve filesystem freezing.
+Filesystem freezing is currently racy and thus we can end up with dirty data on
+frozen filesystem (see changelog patch 06 for detailed race description). This
+patch series aims at fixing this.
 
 To be able to block all places where inodes get dirtied, I've moved filesystem
 freeze handling in mnt_want_write() / mnt_drop_write(). This however required
@@ -60,6 +58,11 @@ reasonably confident this could finally be the right solution.
 And for people wanting to test - this patchset is based on patch series
 "Push file_update_time() into .page_mkwrite" so you'll need to pull that one
 in as well.
+
+Changes since v3:
+  * added third level of freezing for fs internal purposes - hooked some
+    filesystems to use it (XFS, nilfs2)
+  * removed racy i_size check from filemap_mkwrite()
 
 Changes since v2:
   * completely rewritten

@@ -1,44 +1,85 @@
-From: C Anthony Risinger <anthony@xtfx.me>
-Subject: Re: Fractal Tree Indexing over B-Trees?
-Date: Wed, 28 Mar 2012 10:10:00 -0500
-Message-ID: <CAGAVQTExDd4SaH0=5Bw2VZ+H06Len+f44GAmZVvx_wsNBAP39Q@mail.gmail.com>
-References: <loom.20120328T160525-464@post.gmane.org>
+From: Goffredo Baroncelli <krexxjack@libero.it>
+Subject: Re: Create subvolume from a directory?
+Date: Wed, 28 Mar 2012 18:54:40 +0200
+Message-ID: <4F734250.5030009@libero.it>
+References: <loom.20120327T190041-268@post.gmane.org> <20120327222422.GA32675@suse.com> <4F727504.3070105@cn.fujitsu.com>
+Reply-To: kreijack@inwind.it
 Mime-Version: 1.0
-Content-Type: text/plain; charset=UTF-8
-Cc: linux-btrfs@vger.kernel.org
-To: Danny Piccirillo <danny.piccirillo@member.fsf.org>
+Content-Type: text/plain; charset=UTF-8; format=flowed
+Cc: "Matthias G. Eckermann" <mge@suse.com>, Alex <alex@bpmit.com>,
+	linux-btrfs@vger.kernel.org
+To: Liu Bo <liubo2009@cn.fujitsu.com>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <loom.20120328T160525-464@post.gmane.org>
+In-Reply-To: <4F727504.3070105@cn.fujitsu.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Wed, Mar 28, 2012 at 9:25 AM, Danny Piccirillo
-<danny.piccirillo@member.fsf.org> wrote:
-> The case has been made on Phoronix for F-Trees: They makes use hard
-> drive speeds, not (relatively slow) access times; beat SSD's; and scale
-> perfectly across multiple cores with hundreds of millions of entries.
+
+Hello Liu
+
+On 03/28/2012 04:18 AM, Liu Bo wrote:
+> On 03/28/2012 06:24 AM, Matthias G. Eckermann wrote:
+
+>> # time cp -a --reflink /var/lib/lxc/installserver_tmp/rootfs /var/lib/lxc/installserver
+>>
 >
-> http://en.wikipedia.org/wiki/TokuDB#Fractal_tree_indexes
+> This is too much weird.
 >
-> How TokuDB Fractal Tree Databases Work
+> AFAIK, clone between different subvolumes should be forbidden.
+> So this would get a "Invalid cross-device link", because an individual subvolume can be mounted directly.
+
+Could you elaborate which would be the issue ?
+"cp --reflink"-ing a file is not different than snapshotting a file. In 
+any case I could mount a snapshot and not the source subvolume.
+
+
+
 >
-> Via: http://www.phoronix.com/scan.php?page=news_item&px=MTA3NjM
+> thanks,
+> liubo
 >
-> Time for someone to get started on ftrfs? Or can it be implemented
-> in Btrfs?
-> https://bugzilla.kernel.org/show_bug.cgi?id=43004
+>> real    0m1.367s
+>> user    0m0.148s
+>> sys     0m1.108s
+>>
+>> ## Now remove /var/lib/lxc/installserver_tmp (or not)
+>>
+>> ------------------------------<  snap>------------------------------
+>>
+>> Just to compare this with a "mv":
+>>
+>> ------------------------------<  snip>------------------------------
+>>
+>> ## Go back to former state
+>>
+>> # btrfs subvol delete /var/lib/lxc/installserver
+>> Delete subvolume '/var/lib/lxc/installserver'
+>>
+>> # btrfs subvol create /var/lib/lxc/installserver
+>> Create subvolume '/var/lib/lxc/installserver'
+>>
+>> # time mv /var/lib/lxc/installserver_tmp/rootfs /var/lib/lxc/installserver/
+>>
+>> real    0m12.917s
+>> user    0m0.208s
+>> sys     0m2.508s
+>>
+>> ------------------------------<  snap>------------------------------
+>>
+>> While the time measurement might be flawed due to the subvol
+>> actions inbetween, caching etc.: I tried several times, and
+>> "cp --reflinks" always is multiple times faster than "mv" in
+>> my environment.
+>>
+>> Or did I misunderstand your question?
+>>
+>> so long -
+>> 	MgE
+>>
+>
+> --
+> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
+> the body of a message to majordomo@vger.kernel.org
+> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+> .
+>
 
-whoa, very cool stuff.  fractals are awesome, cool to see them in use.
-
-... 2010/11, surprised i never heard of it before now.  thanks for the
-reference/links at the very least!
-
-aside: i once described fractals to my grandmother (100% devout
-catholic) as related to my own understanding of the universe --
-specifically, i pointed out how their often simple mathematical
-identity fragments into an infinitely self-similar pattern of
-seemingly unbounded complexity -- she told me i was describing god ...
-and, well, we agreed :-)
-
--- 
-
-C Anthony

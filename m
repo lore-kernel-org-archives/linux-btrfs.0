@@ -1,54 +1,33 @@
-From: Duncan <1i5t5.duncan@cox.net>
-Subject: Re: "not enough space" with "data raid0"
-Date: Thu, 29 Mar 2012 01:07:05 +0000 (UTC)
-Message-ID: <pan.2012.03.29.01.07.05@cox.net>
-References: <C52pxfli1uB@helmut.hullen.de>
-	<20120317121909.GB3172@carfax.org.uk> <4F735AB8.40301@ubuntu.com>
-	<loom.20120329T000904-903@post.gmane.org>
+From: Liu Bo <liubo2009@cn.fujitsu.com>
+Subject: Re: Create subvolume from a directory?
+Date: Thu, 29 Mar 2012 09:24:44 +0800
+Message-ID: <4F73B9DC.3040402@cn.fujitsu.com>
+References: <loom.20120327T190041-268@post.gmane.org> <20120327222422.GA32675@suse.com> <4F727504.3070105@cn.fujitsu.com> <4F734250.5030009@libero.it>
 Mime-Version: 1.0
 Content-Type: text/plain; charset=UTF-8
-To: linux-btrfs@vger.kernel.org
+Cc: "Matthias G. Eckermann" <mge@suse.com>, Alex <alex@bpmit.com>,
+	linux-btrfs@vger.kernel.org
+To: kreijack@inwind.it
 Return-path: <linux-btrfs-owner@vger.kernel.org>
+In-Reply-To: <4F734250.5030009@libero.it>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Alex posted on Wed, 28 Mar 2012 22:11:01 +0000 as excerpted:
-
-> Phillip Susi <psusi <at> ubuntu.com> writes:
+On 03/29/2012 12:54 AM, Goffredo Baroncelli wrote:
+>>
+> 
+> Could you elaborate which would be the issue ?
+> "cp --reflink"-ing a file is not different than snapshotting a file. In
+> any case I could mount a snapshot and not the source subvolume.
 > 
 > 
->> So currently btrfs's concept of raid0 is "stripe across as many disks
->> as possible, with a minimum of 2 disks".  Is there any reason for that
->> minimum?  I don't see why it can't allow only one if that's the best it
->> can manage.
->> 
-> That's called "Single". http://btrfs.ipv5.de/index.php?title=Mkfs.btrfs
+> 
 
-It's called "single" if you deliberately create it that way, yes.  
+We already have a debate about this "cross-link device":
+http://comments.gmane.org/gmane.comp.file-systems.btrfs/9864
 
-However, Phillip's point was, I believe, that if a striped set can start 
-with say five devices of varying size and drop one at a time as the 
-smallest devices run out of space, there's no reason it should stop at 
-two devices.  If the goal is maximum performance, it should insist on 
-using only the space available in parallel across all devices and should 
-refuse to drop even a single one.  If OTOH, the goal is maximum 
-utilization of available space, with a secondary goal of performance if 
-at all possible, then it should drop devices all the way down to a single 
-device, not stopping at two.
+"cp --reflink" will use clone feature, which can share data among files, but metadata is preserved individually.
 
-Since btrfs apparently is already content to drop from say five devices 
-to two despite the performance drop on the way, there's no fundamental 
-reason it should stop there; it should continue all the way down to a 
-single device, even tho when it gets to that point it's no longer 
-actually striped.
+My case is that I can mount both a subvolume and a snapshot via "-o subvol=xxx" or "-o subvolid=xxx".
 
-Of course, that's defining the behavior I'd expect of a mature btrfs.  
-Right now, it's still experimental, with many missing features.  If at 
-this point there's and arbitrary line drawn at two devices minimum, 
-that's just the way it is.  But I'd not expect that line to be there when 
-the filesystem is declared mature and fully ready for use.
-
--- 
-Duncan - List replies preferred.   No HTML msgs.
-"Every nonfree program has a lord, a master --
-and if you use the program, he is your master."  Richard Stallman
-
+thanks,
+liubo

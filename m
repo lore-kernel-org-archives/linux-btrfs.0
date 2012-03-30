@@ -1,37 +1,51 @@
-From: "Fajar A. Nugraha" <list@fajar.net>
-Subject: Re: btrfsck integration with userlevel API for fsck
-Date: Fri, 30 Mar 2012 10:22:53 +0700
-Message-ID: <CAG1y0sfiZ_A282OxnF0qMS52jYpJyBZ_hQ1x2HrV5bmfnX1XFQ@mail.gmail.com>
-References: <CAO_nJAbXsqU+dnZaEME-OjC-4Y8jZ5HhtyGV24BgFebPMhCW=w@mail.gmail.com>
+From: Wang Sheng-Hui <shhuiw@gmail.com>
+Subject: [PATCH] btrfs/ctree.c: remove the unnecessary 'return -1;' at the
+ end of bin_search
+Date: Fri, 30 Mar 2012 15:14:27 +0800
+Message-ID: <4F755D53.1070102@gmail.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset=ISO-8859-1
-Cc: linux-btrfs@vger.kernel.org
-To: member graysky <graysky@archlinux.us>
+To: Chris Mason <chris.mason@oracle.com>, linux-btrfs@vger.kernel.org,
+	linux-kernel@vger.kernel.org
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <CAO_nJAbXsqU+dnZaEME-OjC-4Y8jZ5HhtyGV24BgFebPMhCW=w@mail.gmail.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Fri, Mar 30, 2012 at 5:08 AM, member graysky <graysky@archlinux.us> =
-wrote:
-> Are there plans to integrate btrfsck with the userlevel API for fsck?
+The code path should not reach there. Remove it.
 
-There isn't even a stable, working, fixing btrfsck yet :)
+Signed-off-by: Wang Sheng-Hui <shhuiw@gmail.com>
+---
+ fs/btrfs/ctree.c |    6 ++----
+ 1 files changed, 2 insertions(+), 4 deletions(-)
 
-> AFAIK, it currently does not work as such (i.e. `shutdown -rF now`
-> does not trigger a check on the next boot). =A0What is the recommende=
-d
-> method to check a btrfs root filesystem? =A0Live media?
+diff --git a/fs/btrfs/ctree.c b/fs/btrfs/ctree.c
+index 0639a55..c1be2da 100644
+--- a/fs/btrfs/ctree.c
++++ b/fs/btrfs/ctree.c
+@@ -829,20 +829,18 @@ static noinline int generic_bin_search(struct extent_buffer *eb,
+ static int bin_search(struct extent_buffer *eb, struct btrfs_key *key,
+ 		      int level, int *slot)
+ {
+-	if (level == 0) {
++	if (level == 0)
+ 		return generic_bin_search(eb,
+ 					  offsetof(struct btrfs_leaf, items),
+ 					  sizeof(struct btrfs_item),
+ 					  key, btrfs_header_nritems(eb),
+ 					  slot);
+-	} else {
++	else
+ 		return generic_bin_search(eb,
+ 					  offsetof(struct btrfs_node, ptrs),
+ 					  sizeof(struct btrfs_key_ptr),
+ 					  key, btrfs_header_nritems(eb),
+ 					  slot);
+-	}
+-	return -1;
+ }
+ 
+ int btrfs_bin_search(struct extent_buffer *eb, struct btrfs_key *key,
+-- 
+1.7.1
 
-Currently? None. Set the last part of root line in fstab to "0" to
-disable fsck.
-Newer kernels should be smart enough to recover from unclean shutdown
-automatically, kinda like what zfs does, or what ext3/4 does with its
-journal replay.
 
---=20
-=46ajar
---
-To unsubscribe from this list: send the line "unsubscribe linux-btrfs" =
-in
-the body of a message to majordomo@vger.kernel.org
-More majordomo info at  http://vger.kernel.org/majordomo-info.html
+

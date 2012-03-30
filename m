@@ -1,55 +1,195 @@
-From: Sander <sander@humilis.net>
-Subject: Re: kernel BUG at fs/btrfs/volumes.c:2733
-Date: Fri, 30 Mar 2012 19:49:56 +0200
-Message-ID: <20120330174956.GA770@panda>
-References: <20120329105235.GA1198@panda>
- <20120329135324.GA1899@zambezi.lan>
- <20120329151422.GC29741@panda>
- <20120329154154.GA3891@zambezi.lan>
-Reply-To: sander@humilis.net
+From: Chris Mason <chris.mason@oracle.com>
+Subject: [GIT PULL] Btrfs fixes and features
+Date: Fri, 30 Mar 2012 13:51:06 -0400
+Message-ID: <20120330175106.GB755@shiny>
 Mime-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
-Cc: linux-btrfs@vger.kernel.org
-To: Ilya Dryomov <idryomov@gmail.com>
+To: Linus Torvalds <torvalds@linux-foundation.org>,
+	linux-btrfs <linux-btrfs@vger.kernel.org>,
+	LKML <linux-kernel@vger.kernel.org>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <20120329154154.GA3891@zambezi.lan>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hello Ilya,
+Hi everyone,
 
-Ilya Dryomov wrote (ao):
-> > > I'm definitely intrested in reproducing it. Could you please umount this
-> > > filesystem, capture the output of 'btrfs-debug-tree -d <dev>' and post it
-> > > somewhere ?
-> > 
-> > Will do. It is the / filesystem, so I'll need to reboot.
-> 
-> I need this to confirm that balance item is on disk.
+This pull request is pretty big, picking up patches that have been under
+development for some time.  I have it in two branches:
 
-I'm sorry it took so long. I'll mail the output to you directly.
+# against 3.3
+#
+git://git.kernel.org/pub/scm/linux/kernel/git/mason/linux-btrfs.git for-linus
 
-> > > After that mount it back and see if there is "btrfs: continuing
-> > > balance" line in dmesg (and if btrfs-balance kthread shows up)?
+# merged with linus git as of this morning (conflict in fs/btrfs/scrub.c)
+#
+git://git.kernel.org/pub/scm/linux/kernel/git/mason/linux-btrfs.git for-linus-merged
 
-There is no such line in dmesg, and currently no btrfs-balance kthread
-is running. I've pulled Chris Masons for-linus and booted with the
-resulting kernel.
+The conflict resolution was to pick my version of scrub.c and then go in
+and drop all the KM_ args from kmap/unmap_atomic.
 
-> > > If so, just let it run, it should finish the balance and remove
-> > > on-disk item. (You can query the status of running balance with 'btrfs
-> > > balance status <mnt>')
-> > 
-> > Do I need newer tools for that? This is Debian Sid (unstable):
-> 
-> Yeah, you do. That command is in master now, but it's not really
-> needed. If btrfs-balance shows up, just wait for it to finish, it
-> should get rid of the balance item. If it doesn't show up but the item
-> is there we will have to dig deeper.
+We've merged in the error handling patches from SuSE.  These are already
+shipping in the sles kernel, and they give btrfs the ability to abort
+transactions and go readonly on errors.  It involves a lot of churn as
+they clarify BUG_ONs, and remove the ones we now properly deal with.
 
-Ok :-)
+Josef reworked the way our metadata interacts with the page cache.
+page->private now points to the btrfs extent_buffer object, which makes
+everything faster.  He changed it so we write an whole extent buffer at
+a time instead of allowing individual pages to go down,, which will be
+important for the raid5/6 code (for the 3.5 merge window ;)
 
-	Sander
+Josef also made us more aggressive about dropping pages for metadata
+blocks that were freed due to COW.  Overall, our metadata caching is
+much faster now.
 
--- 
-Humilis IT Services and Solutions
-http://www.humilis.net
+We've integrated my patch for metadata bigger than the page size.  This
+allows metadata blocks up to 64KB in size.  In practice 16K and 32K seem
+to work best.  For workloads with lots of metadata, this cuts down the
+size of the extent allocation tree dramatically and fragments much less.
+
+Scrub was updated to support the larger block sizes, which ended up
+being a fairly large change (thanks Stefan Behrens).
+
+We also have an assortment of fixes and updates, especially to the
+balancing code (Ilya Dryomov), the back ref walker (Jan Schmidt) and the
+defragging code (Liu Bo).
+
+Jeff Mahoney (21) commits (+1982/-1051):
+    btrfs: clean_tree_block should panic on observed memory corruption and return void (+12/-7)
+    btrfs: avoid NULL deref in btrfs_reserve_extent with DEBUG_ENOSPC (+2/-1)
+    btrfs: Catch locking failures in {set,clear,convert}_extent_bit (+38/-20)
+    btrfs: return void in functions without error conditions (+293/-410)
+    btrfs: replace many BUG_ONs with proper error handling (+980/-385)
+    btrfs: Remove set bits return from clear_extent_bit (+5/-7)
+    btrfs: enhance transaction abort infrastructure (+300/-56)
+    btrfs: Factor out tree->ops->merge_bio_hook call (+17/-5)
+    btrfs: Fix kfree of member instead of structure (+3/-3)
+    btrfs: btrfs_drop_snapshot should return int (+12/-8)
+    btrfs: ->submit_bio_hook error push-up (+31/-15)
+    btrfs: find_and_setup_root error push-up (+6/-5)
+    btrfs: __add_reloc_root error push-up (+16/-6)
+    btrfs: btrfs_update_root error push-up (+7/-4)
+    btrfs: Panic on bad rbtree operations (+39/-9)
+    btrfs: Simplify btrfs_submit_bio_hook (+4/-3)
+    btrfs: drop gfp_t from lock_extent (+63/-76)
+    btrfs: add varargs to btrfs_error (+66/-9)
+    btrfs: Simplify btrfs_insert_root (+3/-6)
+    btrfs: split extent_state ops (+25/-15)
+    btrfs: Add btrfs_panic() (+60/-1)
+
+Ilya Dryomov (11) commits (+177/-159):
+    Btrfs: validate target profiles only if we are going to use them (+11/-16)
+    Btrfs: stop silently switching single chunks to raid0 on balance (+2/-3)
+    Btrfs: add wrappers for working with alloc profiles (+30/-30)
+    Btrfs: move alloc_profile_is_valid() to volumes.c (+25/-30)
+    Btrfs: make profile_is_valid() check more strict (+17/-12)
+    Btrfs: fix infinite loop in btrfs_shrink_device() (+2/-3)
+    Btrfs: improve the logic in btrfs_can_relocate() (+18/-6)
+    Btrfs: allow dup for data chunks in mixed mode (+9/-4)
+    Btrfs: add __get_block_group_index() helper (+12/-5)
+    Btrfs: add get_restripe_target() helper (+50/-44)
+    Btrfs: fix memory leak in resolver code (+1/-6)
+
+Mark Fasheh (10) commits (+60/-19):
+    btrfs: Don't BUG_ON kzalloc error in btrfs_lookup_csums_range() (+13/-2)
+    btrfs: Don't BUG_ON insert errors in btrfs_alloc_dev_extent() (+3/-1)
+    btrfs: Go readonly on bad extent refs in update_ref_for_cow() (+5/-1)
+    btrfs: Don't BUG_ON errors from btrfs_create_subvol_root() (+6/-2)
+    btrfs: Don't BUG_ON errors from update_ref_for_cow() (+4/-1)
+    btrfs: Don't BUG_ON errors in __finish_chunk_alloc() (+6/-4)
+    btrfs: Don't BUG_ON() errors in update_ref_for_cow() (+7/-4)
+    btrfs: Go readonly on tree errors in balance_level (+11/-2)
+    btrfs: Remove BUG_ON from __finish_chunk_alloc() (+3/-1)
+    btrfs: Remove BUG_ON from __btrfs_alloc_chunk() (+2/-1)
+
+Liu Bo (8) commits (+133/-52):
+    Btrfs: do not bother to defrag an extent if it is a big real extent (+3/-6)
+    Btrfs: add a check to decide if we should defrag the range (+35/-1)
+    Btrfs: show useful info in space reservation tracepoint (+13/-25)
+    Btrfs: fix recursive defragment with autodefrag option (+5/-3)
+    Btrfs: fix race between direct io and autodefrag (+5/-1)
+    Btrfs: update to the right index of defragment (+3/-0)
+    Btrfs: fix deadlock during allocating chunks (+50/-0)
+    Btrfs: fix the mismatch of page->mapping (+19/-16)
+
+Chris Mason (8) commits (+356/-247):
+    Btrfs: update the checks for mixed block groups with big metadata blocks (+17/-12)
+    Btrfs: don't use threaded IO completion helpers for metadata writes (+4/-4)
+    Btrfs: flush out and clean up any block device pages during mount (+4/-0)
+    Btrfs: allow metadata blocks larger than the page size (+190/-189)
+    Btrfs: add the ability to cache a pointer into the eb (+116/-30)
+    Btrfs: adjust the write_lock_level as we unlock (+17/-6)
+    Btrfs: don't use crc items bigger than 4KB (+3/-1)
+    Btrfs: loop waiting on writeback (+5/-5)
+
+Josef Bacik (8) commits (+788/-497):
+    Btrfs: remove search_start and search_end from find_free_extent and callers (+9/-19)
+    Btrfs: deal with read errors on extent buffers differently (+66/-27)
+    Btrfs: only use the existing eb if it's count isn't 0 (+8/-2)
+    Btrfs: ensure an entire eb is written at once (+390/-209)
+    Btrfs: introduce mark_extent_buffer_accessed (+15/-2)
+    Btrfs: introduce free_extent_buffer_stale (+201/-60)
+    Btrfs: remove the ideal caching code (+8/-85)
+    Btrfs: set page->private to the eb (+91/-93)
+
+Stefan Behrens (3) commits (+1045/-381):
+    Btrfs: introduce common define for max number of mirrors (+7/-5)
+    Btrfs: change scrub to support big blocks (+1013/-340)
+    Btrfs: minor cleanup in scrub (+25/-36)
+
+Jan Schmidt (3) commits (+79/-57):
+    Btrfs: fix regression in scrub path resolving (+73/-55)
+    Btrfs: check return value of btrfs_cow_block() (+4/-2)
+    Btrfs: actually call btrfs_init_lockdep (+2/-0)
+
+David Sterba (2) commits (+26/-5):
+    btrfs: disallow unequal data/metadata blocksize for mixed block groups (+8/-0)
+    Btrfs: enhance superblock sanity checks (+18/-5)
+
+Jan Kara (1) commits (+7/-2):
+    btrfs: Fix busyloop in transaction_kthread()
+
+Total: (75) commits
+
+ fs/btrfs/async-thread.c      |   15 +-
+ fs/btrfs/async-thread.h      |    4 +-
+ fs/btrfs/backref.c           |  122 ++--
+ fs/btrfs/backref.h           |    5 +-
+ fs/btrfs/compression.c       |   38 +-
+ fs/btrfs/compression.h       |    2 +-
+ fs/btrfs/ctree.c             |  384 ++++++------
+ fs/btrfs/ctree.h             |  169 +++--
+ fs/btrfs/delayed-inode.c     |   33 +-
+ fs/btrfs/delayed-ref.c       |   33 +-
+ fs/btrfs/dir-item.c          |   10 +-
+ fs/btrfs/disk-io.c           |  649 ++++++++++---------
+ fs/btrfs/disk-io.h           |   10 +-
+ fs/btrfs/export.c            |    2 +-
+ fs/btrfs/extent-tree.c       |  737 ++++++++++++----------
+ fs/btrfs/extent_io.c         | 1035 ++++++++++++++++++++++---------
+ fs/btrfs/extent_io.h         |   62 +-
+ fs/btrfs/file-item.c         |   57 +-
+ fs/btrfs/file.c              |   52 +-
+ fs/btrfs/free-space-cache.c  |   15 +-
+ fs/btrfs/inode-item.c        |    6 +-
+ fs/btrfs/inode-map.c         |   25 +-
+ fs/btrfs/inode.c             |  457 +++++++++-----
+ fs/btrfs/ioctl.c             |  194 ++++--
+ fs/btrfs/locking.c           |    6 +-
+ fs/btrfs/locking.h           |    4 +-
+ fs/btrfs/ordered-data.c      |   60 +-
+ fs/btrfs/ordered-data.h      |   24 +-
+ fs/btrfs/orphan.c            |    2 +-
+ fs/btrfs/reada.c             |   10 +-
+ fs/btrfs/relocation.c        |  130 ++--
+ fs/btrfs/root-tree.c         |   25 +-
+ fs/btrfs/scrub.c             | 1408 +++++++++++++++++++++++++++++++-----------
+ fs/btrfs/struct-funcs.c      |   53 +-
+ fs/btrfs/super.c             |  192 +++++-
+ fs/btrfs/transaction.c       |  213 +++++--
+ fs/btrfs/transaction.h       |    3 +
+ fs/btrfs/tree-log.c          |   96 ++-
+ fs/btrfs/tree-log.h          |    2 +-
+ fs/btrfs/volumes.c           |  240 ++++---
+ fs/btrfs/volumes.h           |    4 +-
+ include/trace/events/btrfs.h |   44 ++
+ 42 files changed, 4407 insertions(+), 2225 deletions(-)

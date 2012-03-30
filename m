@@ -1,51 +1,39 @@
-From: Wang Sheng-Hui <shhuiw@gmail.com>
-Subject: [PATCH] btrfs/ctree.c: remove the unnecessary 'return -1;' at the
- end of bin_search
-Date: Fri, 30 Mar 2012 15:14:27 +0800
-Message-ID: <4F755D53.1070102@gmail.com>
-Mime-Version: 1.0
-Content-Type: text/plain; charset=ISO-8859-1
-To: Chris Mason <chris.mason@oracle.com>, linux-btrfs@vger.kernel.org,
-	linux-kernel@vger.kernel.org
+From: Stefan Behrens <sbehrens@giantdisaster.de>
+Subject: [PATCH] Btrfs: fix that check_int_data mount option was ignored
+Date: Fri, 30 Mar 2012 13:58:32 +0200
+Message-ID: <daf37d5ff1e0454797c9f5ff0397df7690ba5b4d.1333107802.git.sbehrens@giantdisaster.de>
+References: <a1550959ef3f5776fcd0b0bf97487f1ef0863ef0.1333107802.git.sbehrens@giantdisaster.de>
+To: linux-btrfs@vger.kernel.org
 Return-path: <linux-btrfs-owner@vger.kernel.org>
+In-Reply-To: <a1550959ef3f5776fcd0b0bf97487f1ef0863ef0.1333107802.git.sbehrens@giantdisaster.de>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-The code path should not reach there. Remove it.
+The bitfield member mount_opt was too small by one bit to hold the mount
+option that enabled to include data extents in the integrity checker.
+Since the same issue happened when the BTRFS_MOUNT_PANIC_ON_FATAL_ERROR
+option was added (git rebase silently merges so that the increase of the
+size of the bitfield member is lost), the bit limit was removed entirely.
 
-Signed-off-by: Wang Sheng-Hui <shhuiw@gmail.com>
+Signed-off-by: Stefan Behrens <sbehrens@giantdisaster.de>
 ---
- fs/btrfs/ctree.c |    6 ++----
- 1 files changed, 2 insertions(+), 4 deletions(-)
+The patch is based on cmason/integration as of 3/30/2012.
 
-diff --git a/fs/btrfs/ctree.c b/fs/btrfs/ctree.c
-index 0639a55..c1be2da 100644
---- a/fs/btrfs/ctree.c
-+++ b/fs/btrfs/ctree.c
-@@ -829,20 +829,18 @@ static noinline int generic_bin_search(struct extent_buffer *eb,
- static int bin_search(struct extent_buffer *eb, struct btrfs_key *key,
- 		      int level, int *slot)
- {
--	if (level == 0) {
-+	if (level == 0)
- 		return generic_bin_search(eb,
- 					  offsetof(struct btrfs_leaf, items),
- 					  sizeof(struct btrfs_item),
- 					  key, btrfs_header_nritems(eb),
- 					  slot);
--	} else {
-+	else
- 		return generic_bin_search(eb,
- 					  offsetof(struct btrfs_node, ptrs),
- 					  sizeof(struct btrfs_key_ptr),
- 					  key, btrfs_header_nritems(eb),
- 					  slot);
--	}
--	return -1;
- }
- 
- int btrfs_bin_search(struct extent_buffer *eb, struct btrfs_key *key,
+ fs/btrfs/ctree.h |    2 +-
+ 1 files changed, 1 insertions(+), 1 deletions(-)
+
+diff --git a/fs/btrfs/ctree.h b/fs/btrfs/ctree.h
+index 5b8ef8e..ec42a24 100644
+--- a/fs/btrfs/ctree.h
++++ b/fs/btrfs/ctree.h
+@@ -1078,7 +1078,7 @@ struct btrfs_fs_info {
+ 	 * is required instead of the faster short fsync log commits
+ 	 */
+ 	u64 last_trans_log_full_commit;
+-	unsigned long mount_opt:21;
++	unsigned long mount_opt;
+ 	unsigned long compress_type:4;
+ 	u64 max_inline;
+ 	u64 alloc_start;
 -- 
-1.7.1
-
-
+1.7.3.4
 

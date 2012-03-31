@@ -1,38 +1,14 @@
-From: Wang Sheng-Hui <shhuiw@gmail.com>
-Subject: [PATCH] btrfs/extent_io.c: return -ENOMEM instead of BUG_ON on allocation
- failure in set_extent_bit if __GFP_WAIT is set in the mask
-Date: Sat, 31 Mar 2012 15:25:17 +0800
-Message-ID: <4F76B15D.9010801@gmail.com>
+From: Christoph Hellwig <hch@infradead.org>
+Subject: Re: [PATCH 1/3][RESEND] 251: fix cp -axT problem
+Date: Sat, 31 Mar 2012 16:11:54 -0400
+Message-ID: <20120331201154.GB18556@infradead.org>
+References: <1328516869-19474-1-git-send-email-liubo2009@cn.fujitsu.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=ISO-8859-1
-To: Chris Mason <chris.mason@oracle.com>, linux-btrfs@vger.kernel.org,
-	linux-kernel@vger.kernel.org
+Content-Type: text/plain; charset=us-ascii
+Cc: linux-btrfs@vger.kernel.org, hch@infradead.org, xfs@oss.sgi.com
+To: Liu Bo <liubo2009@cn.fujitsu.com>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
+In-Reply-To: <1328516869-19474-1-git-send-email-liubo2009@cn.fujitsu.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-If __GFP_WAIT is set in the mask, set_extent_bit should return
--ENOMEM to its caller to decide what to do on allocation failure,
-instead of BUG_ON.
-
-Signed-off-by: Wang Sheng-Hui <shhuiw@gmail.com>
----
- fs/btrfs/extent_io.c |    3 ++-
- 1 files changed, 2 insertions(+), 1 deletions(-)
-
-diff --git a/fs/btrfs/extent_io.c b/fs/btrfs/extent_io.c
-index b67814c..fd2411e 100644
---- a/fs/btrfs/extent_io.c
-+++ b/fs/btrfs/extent_io.c
-@@ -720,7 +720,8 @@ int set_extent_bit(struct extent_io_tree *tree, u64 start, u64 end,
- again:
- 	if (!prealloc && (mask & __GFP_WAIT)) {
- 		prealloc = alloc_extent_state(mask);
--		BUG_ON(!prealloc);
-+		if (!prealloc)
-+			return -ENOMEM;
- 	}
- 
- 	spin_lock(&tree->lock);
--- 
-1.7.1
-
+Thanks, applied.

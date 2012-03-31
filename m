@@ -1,35 +1,38 @@
 From: Wang Sheng-Hui <shhuiw@gmail.com>
-Subject: [PATCH] btrfs/extent_io.c: cleanup the comment for clear_state_bit
-Date: Sat, 31 Mar 2012 14:40:15 +0800
-Message-ID: <4F76A6CF.6080007@gmail.com>
+Subject: [PATCH] btrfs/extent_io.c: return -ENOMEM instead of BUG_ON on allocation
+ failure in set_extent_bit if __GFP_WAIT is set in the mask
+Date: Sat, 31 Mar 2012 15:25:17 +0800
+Message-ID: <4F76B15D.9010801@gmail.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset=ISO-8859-1
 To: Chris Mason <chris.mason@oracle.com>, linux-btrfs@vger.kernel.org,
 	linux-kernel@vger.kernel.org
-Return-path: <linux-kernel-owner@vger.kernel.org>
+Return-path: <linux-btrfs-owner@vger.kernel.org>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-No 'delete' arg is used for clear_state_bit anymore.
-Cleanup the comment.
+If __GFP_WAIT is set in the mask, set_extent_bit should return
+-ENOMEM to its caller to decide what to do on allocation failure,
+instead of BUG_ON.
 
 Signed-off-by: Wang Sheng-Hui <shhuiw@gmail.com>
 ---
- fs/btrfs/extent_io.c |    3 +--
- 1 files changed, 1 insertions(+), 2 deletions(-)
+ fs/btrfs/extent_io.c |    3 ++-
+ 1 files changed, 2 insertions(+), 1 deletions(-)
 
 diff --git a/fs/btrfs/extent_io.c b/fs/btrfs/extent_io.c
-index 2862454..b67814c 100644
+index b67814c..fd2411e 100644
 --- a/fs/btrfs/extent_io.c
 +++ b/fs/btrfs/extent_io.c
-@@ -394,8 +394,7 @@ static int split_state(struct extent_io_tree *tree, struct extent_state *orig,
+@@ -720,7 +720,8 @@ int set_extent_bit(struct extent_io_tree *tree, u64 start, u64 end,
+ again:
+ 	if (!prealloc && (mask & __GFP_WAIT)) {
+ 		prealloc = alloc_extent_state(mask);
+-		BUG_ON(!prealloc);
++		if (!prealloc)
++			return -ENOMEM;
+ 	}
  
- /*
-  * utility function to clear some bits in an extent state struct.
-- * it will optionally wake up any one waiting on this state (wake == 1), or
-- * forcibly remove the state from the tree (delete == 1).
-+ * it will optionally wake up any one waiting on this state (wake == 1).
-  *
-  * If no bits are set on the state struct after clearing things, the
-  * struct is freed and removed from the tree
+ 	spin_lock(&tree->lock);
 -- 
 1.7.1
+

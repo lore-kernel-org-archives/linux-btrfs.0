@@ -1,18 +1,26 @@
-From: =?UTF-8?B?SsOpcsO0bWUgUG91bGlu?= <jeromepoulin@gmail.com>
+From: "Norbert Scheibner" <scno@gmx.net>
 Subject: Re: cross-subvolume cp --reflink
-Date: Sun, 1 Apr 2012 11:42:23 -0400
-Message-ID: <CALJXSJpjOX3t6Xa=gFF2p13eSb+SJfRc_pc0d5ScShnK-5BwkQ@mail.gmail.com>
-References: <20120401152749.61790@gmx.net>
+Date: Sun, 01 Apr 2012 18:41:36 +0200
+Message-ID: <20120401164136.61800@gmx.net>
+References: <20120401152749.61790@gmx.net> <4F787485.202@gmail.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=UTF-8
-Cc: Norbert Scheibner <scno@gmx.net>
-To: linux-btrfs <linux-btrfs@vger.kernel.org>
+Content-Type: text/plain; charset="utf-8"
+Cc: linux-btrfs@vger.kernel.org
+To: Konstantinos Skarlatos <k.skarlatos@gmail.com>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <20120401152749.61790@gmx.net>
+In-Reply-To: <4F787485.202@gmail.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Sun, Apr 1, 2012 at 11:27 AM, Norbert Scheibner <scno@gmx.net> wrote:
-> Some users tested this patch successfully for week,s or months in 2 or 3 kernel versions since then, true?
+> On: Sun, 01 Apr 2012 18:30:13 +0300 Konstantinos Skarlatos wrote
 
-If this feature must be implented in VFS in another patch, why not
-just activate what works and make the future patch disable it again?
+> +1 from me too, i would save enormous amounts of space with a patch 
+> like that, at least until dedupe is implemented. We could call it "poor 
+> man's dedupe"
+
+That's my point. This poor man's dedupe would solve my problems here very well. I don't need a zfs-variant of dedupe. I can implement such a file-based dedupe with userland tools and would be happy.
+
+It's there, it's tested, it doesn't break another thing. Use it!
+
+Greetings
+   Norbert
+

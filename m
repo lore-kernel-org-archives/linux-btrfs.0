@@ -1,47 +1,27 @@
-From: Wang Sheng-Hui <shhuiw@gmail.com>
-Subject: [PATCH] btrfs/extent_io.c: fix btrfs_release_extent_buffer_page with
- the right usage of num_extent_pages
-Date: Sun, 01 Apr 2012 15:15:47 +0800
-Message-ID: <4F7800A3.4010504@gmail.com>
+From: "Norbert Scheibner" <scno@gmx.net>
+Subject: cross-subvolume cp --reflink
+Date: Sun, 01 Apr 2012 17:27:49 +0200
+Message-ID: <20120401152749.61790@gmx.net>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=ISO-8859-1
-To: Chris Mason <chris.mason@oracle.com>, linux-btrfs@vger.kernel.org,
-	linux-kernel@vger.kernel.org
+Content-Type: text/plain; charset=utf-8
+To: linux-btrfs@vger.kernel.org
 Return-path: <linux-btrfs-owner@vger.kernel.org>
 List-ID: <linux-btrfs.vger.kernel.org>
 
+Gl=C3=BCck Auf!
+I know its been discussed more then ones, but as a user I really would =
+like to see the patch for allowing this in the kernel.
 
-num_extent_pages returns the number of pages in the specific range, not
-the index of the last page in the eb range. btrfs_release_extent_buffer_page
-is called with start_idx set 0 in current codes, so it's not a problem yet.
-But the logic is indeed wrong. Fix it with this patch.
+Some users tested this patch successfully for weeks or months in 2 or 3=
+ kernel versions since then, true?
 
+I'd say by creating a snapshot, it's nothing else in the end. More then=
+ one file or tree sharing the same data on disc, or am I wrong?
 
-Signed-off-by: Wang Sheng-Hui <shhuiw@gmail.com>
----
- fs/btrfs/extent_io.c |    4 +++-
- 1 files changed, 3 insertions(+), 1 deletions(-)
-
-diff --git a/fs/btrfs/extent_io.c b/fs/btrfs/extent_io.c
-index 6099261..941f0ea 100644
---- a/fs/btrfs/extent_io.c
-+++ b/fs/btrfs/extent_io.c
-@@ -3976,11 +3976,13 @@ static void btrfs_release_extent_buffer_page(struct extent_buffer *eb,
- 						unsigned long start_idx)
- {
- 	unsigned long index;
-+	unsigned long num_pages;
- 	struct page *page;
- 
- 	BUG_ON(extent_buffer_under_io(eb));
- 
--	index = num_extent_pages(eb->start, eb->len);
-+	num_pages = num_extent_pages(eb->start, eb->len);
-+	index = start_idx + num_pages;
- 	if (start_idx >= index)
- 		return;
- 
--- 
-1.7.1
-
-
+So why not?
+    Norbert
+--
+To unsubscribe from this list: send the line "unsubscribe linux-btrfs" =
+in
+the body of a message to majordomo@vger.kernel.org
+More majordomo info at  http://vger.kernel.org/majordomo-info.html

@@ -1,25 +1,42 @@
-From: Dan Carpenter <dan.carpenter@oracle.com>
-Subject: Re: btrfs: enhance transaction abort infrastructure
-Date: Mon, 2 Apr 2012 15:48:05 +0300
-Message-ID: <20120402124805.GI3289@mwanda>
-References: <20120402090854.GA9939@elgon.mountain>
- <20120402104644.GC14256@twin.jikos.cz>
-Mime-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-To: jeffm@suse.com, linux-btrfs@vger.kernel.org,
-	David Sterba <dave@jikos.cz>
+From: Sergei Trofimovich <slyich@gmail.com>
+Subject: [btrfs-progs: PATCH 1/2] Makefile: use $(CC) as a compilers instead of $(CC)/gcc
+Date: Mon,  2 Apr 2012 16:10:01 +0300
+Message-ID: <1333372202-627-1-git-send-email-slyich@gmail.com>
+Cc: Sergei Trofimovich <slyfox@gentoo.org>,
+	Chris Mason <chris.mason@oracle.com>
+To: linux-btrfs@vger.kernel.org
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <20120402104644.GC14256@twin.jikos.cz>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Mon, Apr 02, 2012 at 12:46:44PM +0200, David Sterba wrote:
-> 
-> Thanks for cathing it.  Are you going to send a patch or are you fine
-> with a Reported-by: ?
-> 
+From: Sergei Trofimovich <slyfox@gentoo.org>
 
-You're welcome.  :)  Reported-by is fine.
+CC: Chris Mason <chris.mason@oracle.com>
+Signed-off-by: Sergei Trofimovich <slyfox@gentoo.org>
+---
+ Makefile |    6 +++---
+ 1 files changed, 3 insertions(+), 3 deletions(-)
 
-regards,
-dan carpenter
+diff --git a/Makefile b/Makefile
+index 79818e6..ebfd5c8 100644
+--- a/Makefile
++++ b/Makefile
+@@ -44,13 +44,13 @@ btrfs: $(objects) btrfs.o help.o common.o $(cmds_objects)
+ 		$(objects) $(LDFLAGS) $(LIBS) -lpthread
+ 
+ calc-size: $(objects) calc-size.o
+-	gcc $(CFLAGS) -o calc-size calc-size.o $(objects) $(LDFLAGS) $(LIBS)
++	$(CC) $(CFLAGS) -o calc-size calc-size.o $(objects) $(LDFLAGS) $(LIBS)
+ 
+ btrfs-find-root: $(objects) find-root.o
+-	gcc $(CFLAGS) -o btrfs-find-root find-root.o $(objects) $(LDFLAGS) $(LIBS)
++	$(CC) $(CFLAGS) -o btrfs-find-root find-root.o $(objects) $(LDFLAGS) $(LIBS)
+ 
+ btrfs-restore: $(objects) restore.o
+-	gcc $(CFLAGS) -o btrfs-restore restore.o $(objects) $(LDFLAGS) $(LIBS) $(RESTORE_LIBS)
++	$(CC) $(CFLAGS) -o btrfs-restore restore.o $(objects) $(LDFLAGS) $(LIBS) $(RESTORE_LIBS)
+ 
+ btrfsctl: $(objects) btrfsctl.o
+ 	$(CC) $(CFLAGS) -o btrfsctl btrfsctl.o $(objects) $(LDFLAGS) $(LIBS)
+-- 
+1.7.8.5
 

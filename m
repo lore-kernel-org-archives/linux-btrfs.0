@@ -1,52 +1,48 @@
-From: Liu Bo <liubo2009@cn.fujitsu.com>
-Subject: Re: [PATCH] Btrfs: do not mount when we have a sectorsize unequal
- to PAGE_SIZE
-Date: Tue, 03 Apr 2012 16:35:28 +0800
-Message-ID: <4F7AB650.3000108@cn.fujitsu.com>
-References: <1333418213-2718-1-git-send-email-liubo2009@cn.fujitsu.com> <20120403080659.GF1084@x2.net.home>
+From: David Sterba <dave@jikos.cz>
+Subject: Re: [PATCH] Btrfs: do not mount when we have a sectorsize unequal to PAGE_SIZE
+Date: Tue, 3 Apr 2012 15:18:21 +0200
+Message-ID: <20120403131821.GE14256@twin.jikos.cz>
+References: <1333418213-2718-1-git-send-email-liubo2009@cn.fujitsu.com> <20120403080659.GF1084@x2.net.home> <4F7AB650.3000108@cn.fujitsu.com>
+Reply-To: dave@jikos.cz
 Mime-Version: 1.0
-Content-Type: text/plain; charset=ISO-8859-1
-Cc: linux-btrfs@vger.kernel.org
-To: Karel Zak <kzak@redhat.com>
+Content-Type: text/plain; charset=us-ascii
+Cc: Karel Zak <kzak@redhat.com>, linux-btrfs@vger.kernel.org
+To: Liu Bo <liubo2009@cn.fujitsu.com>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <20120403080659.GF1084@x2.net.home>
+In-Reply-To: <4F7AB650.3000108@cn.fujitsu.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 04/03/2012 04:06 PM, Karel Zak wrote:
-> On Tue, Apr 03, 2012 at 09:56:53AM +0800, Liu Bo wrote:
->> Our code is not ready to cope with a sectorsize that's not equal to PAGE_SIZE.
->> It will lead to hanging-on while writing something.
->>
->> Signed-off-by: Liu Bo <liubo2009@cn.fujitsu.com>
->> ---
->>  fs/btrfs/disk-io.c |    6 +++---
->>  1 files changed, 3 insertions(+), 3 deletions(-)
->>
->> diff --git a/fs/btrfs/disk-io.c b/fs/btrfs/disk-io.c
->> index 20196f4..b9866f2 100644
->> --- a/fs/btrfs/disk-io.c
->> +++ b/fs/btrfs/disk-io.c
->> @@ -2254,9 +2254,9 @@ int open_ctree(struct super_block *sb,
->>  		goto fail_sb_buffer;
->>  	}
->>  
->> -	if (sectorsize < PAGE_SIZE) {
->> -		printk(KERN_WARNING "btrfs: Incompatible sector size "
->> -		       "found on %s\n", sb->s_id);
->> +	if (sectorsize != PAGE_SIZE) {
->> +		printk(KERN_WARNING "btrfs: Incompatible sector size(%lu) "
->> +		       "found on %s\n", (unsigned long)sectorsize, sb->s_id);
+On Tue, Apr 03, 2012 at 04:35:28PM +0800, Liu Bo wrote:
+> >  That's strange. Does it mean that if I create the filesystem and then
+> >  reboot to another kernel with different PAGE_SIZE then the filesystem
+> >  is unaccessible for me?
 > 
->  That's strange. Does it mean that if I create the filesystem and then
->  reboot to another kernel with different PAGE_SIZE then the filesystem
->  is unaccessible for me?
+> I'm afraid yes until we can deal with sectorsize and PAGE_SIZE
+> gracefully.
 > 
->     Karel
-> 
+> For now, I didn't test if a read will cause oops or not, but if it's
+> ok, an alternative way is to make FS readonly.
 
-I'm afraid yes until we can deal with sectorsize and PAGE_SIZE gracefully.
+Writes will cause hang. I have tested that read-only mount of a 64k
+sectorsize is ok, file reads do not hang, but any file larger than the
+inline limit is empty due to failed csums.
 
-For now, I didn't test if a read will cause oops or not, but if it's ok, an alternative way is to make FS readonly.
+Example read of
 
-thanks,
-liubo
+65483 ./drivers/scsi/qla2xxx/qla_isr.c
+
+leads to
+
+[ 9249.370133] btrfs csum failed ino 13837 off 0 csum 4169121208 private 3722900035
+
+while reading
+
+65471 ./arch/powerpc/platforms/cell/spufs/file.c
+
+is just fine.
+
+So for now even forcing a read-only mount is not good option, though we
+may try to enhance the csum verification.
+
+
+david

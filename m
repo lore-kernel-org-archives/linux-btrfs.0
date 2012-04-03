@@ -1,87 +1,68 @@
-From: Chris Mason <chris.mason@oracle.com>
-Subject: Re: btrfs io errors on 3.4rc1
-Date: Mon, 2 Apr 2012 19:50:50 -0400
-Message-ID: <20120402235021.GA20070@shiny.msi.event>
-References: <20120402180214.GA1830@redhat.com>
- <20120402194814.GA10965@shiny.msi.event>
- <20120402211622.GA2487@redhat.com>
- <20120402212608.GA14958@shiny.msi.event>
- <20120402214051.GB2487@redhat.com>
- <20120402222802.GA18000@shiny.nikko.sjc.wayport.net>
- <20120402223350.GA16907@redhat.com>
- <20120402223919.GB18000@shiny.nikko.sjc.wayport.net>
- <20120402225131.GB16907@redhat.com>
+From: Liu Bo <liubo2009@cn.fujitsu.com>
+Subject: Re: [PATCH] Btrfs: do not mount when we have a sectorsize larger
+ than PAGE_SIZE
+Date: Tue, 03 Apr 2012 09:15:39 +0800
+Message-ID: <4F7A4F3B.3010108@cn.fujitsu.com>
+References: <1333366098-32341-1-git-send-email-liubo2009@cn.fujitsu.com> <20120402121724.GD14256@twin.jikos.cz>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-To: Dave Jones <davej@redhat.com>,
-	Linux Kernel <linux-kernel@vger.kernel.org>,
-	linux-btrfs@vger.kernel.org
-Return-path: <linux-kernel-owner@vger.kernel.org>
-In-Reply-To: <20120402225131.GB16907@redhat.com>
+Content-Type: text/plain; charset=ISO-8859-1
+To: linux-btrfs@vger.kernel.org
+Return-path: <linux-btrfs-owner@vger.kernel.org>
+In-Reply-To: <20120402121724.GD14256@twin.jikos.cz>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Mon, Apr 02, 2012 at 06:51:31PM -0400, Dave Jones wrote:
-> On Mon, Apr 02, 2012 at 06:39:19PM -0400, Chris Mason wrote:
->  > On Mon, Apr 02, 2012 at 06:33:50PM -0400, Dave Jones wrote:
->  > > On Mon, Apr 02, 2012 at 06:28:02PM -0400, Chris Mason wrote:
->  > >  
->  > >  > > x86-64.
->  > >  > > 
->  > >  > > dmesg below.  (ignore the rpc oops, reported elsewhere, it's unrelated)
->  > >  > 
->  > >  > Well, there really are no btrfs messages in there at all.  Do you have
->  > >  > free space for a clean copy of the btrfs partition?  Trying to figure
->  > >  > out if you have a stale corruption (on two boxes seems really unlikely).
->  > >  > I definitely can't reproduce it here.
->  > > 
->  > > Don't really have any free space for it (It's the / partition on both)
->  > > 
->  > > Is there a wip btrfs.fsck yet ? One of the machines is just a scratch testbox,
->  > > so I'm happy to run it even if it'll potentially make things worse.
->  > 
->  > The current btrfsck repair mode will fix problems in the extent
->  > allocation tree, but that probably isn't what you're seeing.  I'd just
->  > run it read only and see if it finds any problems.
->  > 
->  > (You'll need the FS completely unmounted though).
+On 04/02/2012 08:17 PM, David Sterba wrote:
+> On Mon, Apr 02, 2012 at 07:28:18PM +0800, Liu Bo wrote:
+>> --- a/fs/btrfs/disk-io.c
+>> +++ b/fs/btrfs/disk-io.c
+>> @@ -2104,6 +2104,14 @@ int open_ctree(struct super_block *sb,
+>>  		err = -EINVAL;
+>>  		goto fail_alloc;
+>>  	}
+>> +	if (btrfs_super_sectorsize(disk_super) > PAGE_CACHE_SIZE) {
+>> +		printk(KERN_ERR "BTRFS: couldn't mount because sectorsize(%d)"
+>> +		       " was larger than PAGE_SIZE(%lu)\n",
 > 
-> I'll start a bisect later to see if I can narrow it down at least.
+> %llu
+> 
 
-Ok, a directed bisect of the major suspects.  Josef changed the extent
-buffer eio code in this commit (jump to the commit before it):
+err, thanks for caching it.
 
-commit ea466794084f55d8fcc100711cf17923bf57e962
-Author: Josef Bacik <josef@redhat.com>
-Date:   Mon Mar 26 21:57:36 2012 -0400
+>> +		       btrfs_super_sectorsize(disk_super),
+>> +		       (unsigned long long)PAGE_CACHE_SIZE);
+>> +		err = -EINVAL;
+>> +		goto fail_alloc;
+>> +	}
+>>  
+>>  	features = btrfs_super_incompat_flags(disk_super);
+>>  	features |= BTRFS_FEATURE_INCOMPAT_MIXED_BACKREF;
+> 
+> We have the opposite check a few lines below
+> 
+> 2257         if (sectorsize < PAGE_SIZE) {
+> 2258                 printk(KERN_WARNING "btrfs: Incompatible sector size "
+> 2259                        "found on %s\n", sb->s_id);
+> 2260                 goto fail_sb_buffer;
+> 2261         }
+> 2262
+> 
+> so sectorsize must be equal to PAGE_SIZE always and one check can catch
+> both cases.
+> 
 
-    Btrfs: deal with read errors on extent buffers differently
+But this check is _useless_ when we have a sectorsize which is larger than PAGE_SIZE,
+we're not ready for that, too.
 
-You can jump to the commit before my big blocks change:
+We already have one check, so I'll modify this instead. :)
 
-commit 727011e07cbdf87772fcc1999cccd15cc915eb62
-Author: Chris Mason <chris.mason@oracle.com>
-Date:   Fri Aug 6 13:21:20 2010 -0400
+thanks,
+liubo
 
-    Btrfs: allow metadata blocks larger than the page size
+> 
+> david
+> --
+> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
+> the body of a message to majordomo@vger.kernel.org
+> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+> 
 
-The SUSE code would be my other suspect.  It came from this commit:
-
-commit 1d4284bd6e8d7dd1d5521a6747bdb6dc1caf0225
-Merge: b5d67f6 65139ed
-Author: Chris Mason <chris.mason@oracle.com>
-Date:   Wed Mar 28 20:31:37 2012 -0400
-
-    Merge branch 'error-handling' into for-linus
-
-commit 65139ed99234d8505948cdb7a835452eb5c191f9
-Author: David Sterba <dsterba@suse.cz>
-Date:   Fri Feb 17 12:26:09 2012 +0100
-
-    btrfs: disallow unequal data/metadata blocksize for mixed block
-groups
-
-So if you git reset --hard b5d67f6, you'll get rid of the suse code.
-
-Thanks Dave!
-
--chris

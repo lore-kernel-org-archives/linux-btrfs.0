@@ -1,50 +1,48 @@
-From: Chris Mason <chris.mason@oracle.com>
-Subject: Re: btrfs io errors on 3.4rc1
-Date: Tue, 3 Apr 2012 15:35:53 -0400
-Message-ID: <20120403193553.GB30032@shiny.us.oracle.com>
-References: <20120402223919.GB18000@shiny.nikko.sjc.wayport.net>
- <20120402225131.GB16907@redhat.com>
- <20120402235021.GA20070@shiny.msi.event>
- <20120403014722.GA618@redhat.com>
- <20120403142607.GA14083@ds.suse.cz>
- <20120403162023.GA7227@redhat.com>
- <20120403163343.GD14083@ds.suse.cz>
- <20120403165055.GA10975@redhat.com>
- <20120403170750.GB10975@redhat.com>
- <20120403171632.GA25334@redhat.com>
+From: Remco Hosman <remco@hosman.xs4all.nl>
+Subject: weekend of btrfs findings
+Date: Tue, 03 Apr 2012 21:11:26 +0200
+Message-ID: <4F7B4B5E.4050902@hosman.xs4all.nl>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-To: Dave Jones <davej@redhat.com>, David Sterba <dsterba@suse.cz>,
-	Linux Kernel <linux-kernel@vger.kernel.org>,
-	linux-btrfs@vger.kernel.org, jeffm@suse.com
-Return-path: <linux-kernel-owner@vger.kernel.org>
-In-Reply-To: <20120403171632.GA25334@redhat.com>
+Content-Type: text/plain; charset=ISO-8859-1; format=flowed
+To: linux-btrfs@vger.kernel.org
+Return-path: <linux-btrfs-owner@vger.kernel.org>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Tue, Apr 03, 2012 at 01:16:33PM -0400, Dave Jones wrote:
-> On Tue, Apr 03, 2012 at 01:07:50PM -0400, Dave Jones wrote:
-> 
->  >  > wait, what...
->  >  > 
->  >  >  535         memset(trans, 0, sizeof(*trans));
->  >  >  536         kmem_cache_free(btrfs_trans_handle_cachep, trans);
->  >  >  537 
->  >  >  538         if (throttle)
->  >  >  539                 btrfs_run_delayed_iputs(root);
->  >  >  540 
->  >  >  541         if (trans->aborted ||
->  >  >  542             root->fs_info->fs_state & BTRFS_SUPER_FLAG_ERROR) {
->  >  >  543                 return -EIO;
->  >  >  544         }
->  >  > 
->  >  > that looks like a pretty clear use-after-free.
->  > 
->  > Ok, trying this..
-> 
-> Yep that fixes it.  Chris I'll mail it to you again with a proper sign-off.
-> 
-> thanks for the help chasing this down David.
+hi,
+after getting a USB enclosure that allowes me to access each of its 
+disks as individual devices, i played around with btrfs a weekend, and 
+here are some questions i hit, but could not find an answer for.
 
-Awesome, many thanks guys.
+Setup: 4 disks, 2x 500gig, 2x1500gig, connected to a SATA port 
+multiplier backplane to a SATA<->USB converter. PC is a i686 Celeron M, 
+running 3.4.0-rc1, running the latest btrfs tools from git.
 
--chris
+*) at first, i created the volume as raid10. i started filling it up, 
+and when the 2 500gig disks where full, i got ENOSPC errors. which makes 
+me wonder: what is the advantage of raid10 over raid1?
+
+*) i added a 16gig SD card to the array
+
+*) with `btrfs balance start -dprofile=raid1 /vol` (the syntax of the -d 
+parameter is not clear in the help --full or man page). this operation 
+completed quite quickly.
+
+*) i continued to fill it, and i could put another 100gig orso on the 
+volume before i hit ENOSPC again. but this time, there is plenty of 
+space on the 2 1500gig disks that should be usable right?
+
+*) i deleted the 16gig SD card from the array. when i watched this 
+process with dstat, i noticed that its doing lots of writes to the 
+device beeing deleted. why is this? after a while, it failed claiming 
+there was not enough free space.
+
+*) i started a rebalance, when i watched this with `btrfs balance status 
+/vol` i showed that is planned to process 549 chunks, when i paused and 
+resumed it, (the pause takes quite a while), it only planned to do 80 
+chuncks.
+
+If i should do more specific tests or provide specific details, please 
+let me know. i have little experience in 'official' testing these kind 
+of things.
+
+Remco

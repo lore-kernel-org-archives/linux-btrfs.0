@@ -1,140 +1,81 @@
-From: Remco Hosman <remco@hosman.xs4all.nl>
-Subject: Re: weekend of btrfs findings
-Date: Wed, 04 Apr 2012 07:04:28 +0200
-Message-ID: <4F7BD65C.3000202@hosman.xs4all.nl>
-References: <4F7B4B5E.4050902@hosman.xs4all.nl> <pan.2012.04.04.04.45.23@cox.net>
+From: James Courtier-Dutton <james.dutton@gmail.com>
+Subject: Re: [PATCH] Btrfs: do not mount when we have a sectorsize larger than PAGE_SIZE
+Date: Wed, 4 Apr 2012 10:17:59 +0100
+Message-ID: <CAAMvbhFCB6X2urJr3kcUxnB1VoZMeW66rS_dYmPbJrSkvOgBZQ@mail.gmail.com>
+References: <1333366098-32341-1-git-send-email-liubo2009@cn.fujitsu.com>
+	<20120402121724.GD14256@twin.jikos.cz>
+	<4F7A4F3B.3010108@cn.fujitsu.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=UTF-8; format=flowed
-To: linux-btrfs@vger.kernel.org
+Content-Type: text/plain; charset=UTF-8
+Cc: linux-btrfs@vger.kernel.org
+To: Liu Bo <liubo2009@cn.fujitsu.com>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <pan.2012.04.04.04.45.23@cox.net>
+In-Reply-To: <4F7A4F3B.3010108@cn.fujitsu.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 04/04/2012 06:45 AM, Duncan wrote:
-> Remco Hosman posted on Tue, 03 Apr 2012 21:11:26 +0200 as excerpted:
->
->> after getting a USB enclosure that allowes me to access each of its
->> disks as individual devices, i played around with btrfs a weekend, and
->> here are some questions i hit, but could not find an answer for.
+On 3 April 2012 02:15, Liu Bo <liubo2009@cn.fujitsu.com> wrote:
+> On 04/02/2012 08:17 PM, David Sterba wrote:
+>> On Mon, Apr 02, 2012 at 07:28:18PM +0800, Liu Bo wrote:
+>>> --- a/fs/btrfs/disk-io.c
+>>> +++ b/fs/btrfs/disk-io.c
+>>> @@ -2104,6 +2104,14 @@ int open_ctree(struct super_block *sb,
+>>> =C2=A0 =C2=A0 =C2=A0 =C2=A0 =C2=A0 =C2=A0 =C2=A0err =3D -EINVAL;
+>>> =C2=A0 =C2=A0 =C2=A0 =C2=A0 =C2=A0 =C2=A0 =C2=A0goto fail_alloc;
+>>> =C2=A0 =C2=A0 =C2=A0}
+>>> + =C2=A0 =C2=A0if (btrfs_super_sectorsize(disk_super) > PAGE_CACHE_=
+SIZE) {
+>>> + =C2=A0 =C2=A0 =C2=A0 =C2=A0 =C2=A0 =C2=A0printk(KERN_ERR "BTRFS: =
+couldn't mount because sectorsize(%d)"
+>>> + =C2=A0 =C2=A0 =C2=A0 =C2=A0 =C2=A0 =C2=A0 =C2=A0 =C2=A0 =C2=A0 " =
+was larger than PAGE_SIZE(%lu)\n",
 >>
->> Setup: 4 disks, 2x 500gig, 2x1500gig, connected to a SATA port
->> multiplier backplane to a SATA<->USB converter. PC is a i686 Celeron M,
->> running 3.4.0-rc1, running the latest btrfs tools from git.
+>> %llu
 >>
->> *) at first, i created the volume as raid10. i started filling it up,
->> and when the 2 500gig disks where full, i got ENOSPC errors. which makes
->> me wonder: what is the advantage of raid10 over raid1?
-> You didn't mention reading the wiki (either one, see below), which covers
-> most of these questions directly or indirectly.  That would seem to be
-> your next step.
 >
-> Meanwhile, short and incomplete answer but enough to get you started:
-> btrfs' so-called "raid1" and "raid10" really doesn't fit the generally
-> used definition thereof.
+> err, thanks for caching it.
 >
-> Starting with raid1, in general usage, a raid1 mirrors the content N
-> times across N devices, with the space available being the space on the
-> smallest device.  So if you had those four disks and were using the
-> entire disk, two half-T, two 1.5T, in a NORMAL raid1, the space available
-> would be the half-T of the smallest device, with all data duplicated four
-> times, once to each device.  The last 1T of the larger devices would
-> remain unused, or if they were partitioned half-T/1T, free for other
-> usage, perhaps a second raid1 across only those two devices.
+>>> + =C2=A0 =C2=A0 =C2=A0 =C2=A0 =C2=A0 =C2=A0 =C2=A0 =C2=A0 =C2=A0 bt=
+rfs_super_sectorsize(disk_super),
+>>> + =C2=A0 =C2=A0 =C2=A0 =C2=A0 =C2=A0 =C2=A0 =C2=A0 =C2=A0 =C2=A0 (u=
+nsigned long long)PAGE_CACHE_SIZE);
+>>> + =C2=A0 =C2=A0 =C2=A0 =C2=A0 =C2=A0 =C2=A0err =3D -EINVAL;
+>>> + =C2=A0 =C2=A0 =C2=A0 =C2=A0 =C2=A0 =C2=A0goto fail_alloc;
+>>> + =C2=A0 =C2=A0}
+>>>
+>>> =C2=A0 =C2=A0 =C2=A0features =3D btrfs_super_incompat_flags(disk_su=
+per);
+>>> =C2=A0 =C2=A0 =C2=A0features |=3D BTRFS_FEATURE_INCOMPAT_MIXED_BACK=
+REF;
+>>
+>> We have the opposite check a few lines below
+>>
+>> 2257 =C2=A0 =C2=A0 =C2=A0 =C2=A0 if (sectorsize < PAGE_SIZE) {
+>> 2258 =C2=A0 =C2=A0 =C2=A0 =C2=A0 =C2=A0 =C2=A0 =C2=A0 =C2=A0 printk(=
+KERN_WARNING "btrfs: Incompatible sector size "
+>> 2259 =C2=A0 =C2=A0 =C2=A0 =C2=A0 =C2=A0 =C2=A0 =C2=A0 =C2=A0 =C2=A0 =
+=C2=A0 =C2=A0 =C2=A0"found on %s\n", sb->s_id);
+>> 2260 =C2=A0 =C2=A0 =C2=A0 =C2=A0 =C2=A0 =C2=A0 =C2=A0 =C2=A0 goto fa=
+il_sb_buffer;
+>> 2261 =C2=A0 =C2=A0 =C2=A0 =C2=A0 }
+>> 2262
+>>
+>> so sectorsize must be equal to PAGE_SIZE always and one check can ca=
+tch
+>> both cases.
+>>
 >
-> By contrast, btrfs' so-called raid1 is actually only two-way mirroring,
-> regardless of the number of devices, a VERY critical difference if the
-> intent was to actually allow three of the four devices to die and still
-> have access to the data on the fourth one, as a true raid1 would give you
-> but btrfs' so-called raid1 will NOT.  However, btrfs WOULD take advantage
-> of the full size of the devices (barring bugs, remember btrfs is still
-> experimental/development/testing-only in the mainstream kernel at least),
-> giving you access to the full (1.5*2+0.5*2)/2=2T of space.  Tho it
-> doesn't matter with only two devices, since btrfs' two-way-mirror is the
-> same as a standard raid1 in that case.
+> But this check is _useless_ when we have a sectorsize which is larger=
+ than PAGE_SIZE,
+> we're not ready for that, too.
 >
+> We already have one check, so I'll modify this instead. :)
 >
-> Raid0 is of course striped for speed, but without redundancy (less
-> reliable than a single device since loss of any of them kills the raid0,
-> but faster access), and raid10 is normally a stripe of mirrors, aka
-> raid1+0, tho some implementations including Linux' own md/raid software
-> raid allow a hybrid mode that blurs the lines between the two layers.
->
-> btrfs raid0 is normal striped, but btrfs raid10 is again not really
-> raid10, since the raid1 portion is only two-way, not N-way.
->
-> But with four devices, raid10 and the btrfs mode called raid10 will be
-> the same anyway.
->
-> Of course, with btrfs, you specify the redundancy level for both the data
-> and metadata, separately.  With multiple devices, btrfs by default is
-> metadata mirrored (so-called raid1 but only two-way) while data is
-> striped/raid0 across all available devices.
->
-> But critically, with btrfs, raid0 and raid10 modes REQUIRE at least two
-> stripes THEY WON'T DO SINGLE "unstriped".  So with four devices, two
-> smaller and two 3 times the size of the smaller ones, once the space on
-> the smaller ones is used, you get the out-of-space error because there's
-> no way to both mirror and stripe further data across only two devices.
->
->
-> When you added the fifth device, even tho it was so small (16 gig),
-> because the other devices were bigger and you were now beyond the minimal
-> number of devices for the raid10, and because metadata is only two-way-
-> mirrored anyway, you effectively got a multiple of that 16 gigs, maybe
-> 16*5=80 gigs or so, tho as a simple user I'm not sure exactly how that
-> allotment goes and thus the real multiplier (and it may actually depend
-> on your data:metadata usage ratio, etc).
->
-> Based on your comments, it sounds like what you actually expected was the
-> two-way-mirrored behavior of the so-called raid1 mode, letting you use
-> all the space, but without the speed bonus of raid10 striping.
->
-> But you REALLY need to read the wiki.  If you weren't yet aware of that,
-> there's a whole lot more about btrfs that you need to know that you're
-> probably not aware of.  Freespace, what's reported using different
-> methods, and what each one actually means, is a big one.  Then there's
-> the various mount options, etc.
->
-> Oh, and one more thing.  Because btrfs /is/ experimental, (a) be prepared
-> to lose any data you put on it (but by your comments you probably
-> understand that bit already), and (b) running current kernels is
-> critical, as each one still includes a lot of fixes from the one before.
-> That means at *LEAST* 3.2.  There's apparently a regression for some
-> people in 3.3 but you'd normally be expected to be upgrading to it about
-> now, and many testers run the mainline Linus rc kernels (3.4-rc1
-> currently), or even newer not-yet-in-linus-tree btrfs.  Again, see the
-> wiki for more.
->
-> FWIW, there's actually two wikis, a stale version at the official
-> kernel.org site that is read-only due to kernel.org security changes
-> after the breakin some months ago, and a much more current actually
-> updated one but with a less official looking URL.  Hopefully someday the
-> official wiki will be writable again, or at least can be static-content
-> updated, maybe when btrfs loses its experimental tag in the kernel, but
-> meanwhile:
->
-> Official but stale read-only wiki: https://btrfs.wiki.kernel.org/
->
-> Updated wiki: http://btrfs.ipv5.de/index.php?title=Main_Page
->
-Hi, thanks for your reply.
 
-I did read the wiki (the ipv5 one, should have mentioned it), and was 
-aware of the basic 'raid0' and 'raid1' methods, but was wondering about 
-'raid10' in spesific  because at least during writes, i saw it wring to 
-disk 1, then disk2, then disk3, then disk4 after each other, but that is 
-just the buffering beeing done by the OS i think. this was only the case 
-when writing big files (several gigs), with smaller files, all disks 
-where beeing written to at the same time.
-
-Also, i could not find a method to see what 'raid' level it is currently 
-set at.
-
-At the moment, the array is doing a full (non interrupted) rebalance, 
-will see how much further i can fill up the array when that is finished.
-
-The data i am playing with at the moment is a copy of the readynas i 
-would like it to replace over the next few months, so the data is not 
-important.
-
-Remco
+Minor observation.
+One is "PAGE_SIZE" and one is "PAGE_CACHE_SIZE".
+Might those be different?
+--
+To unsubscribe from this list: send the line "unsubscribe linux-btrfs" =
+in
+the body of a message to majordomo@vger.kernel.org
+More majordomo info at  http://vger.kernel.org/majordomo-info.html

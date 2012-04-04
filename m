@@ -1,81 +1,69 @@
-From: James Courtier-Dutton <james.dutton@gmail.com>
-Subject: Re: [PATCH] Btrfs: do not mount when we have a sectorsize larger than PAGE_SIZE
-Date: Wed, 4 Apr 2012 10:17:59 +0100
-Message-ID: <CAAMvbhFCB6X2urJr3kcUxnB1VoZMeW66rS_dYmPbJrSkvOgBZQ@mail.gmail.com>
-References: <1333366098-32341-1-git-send-email-liubo2009@cn.fujitsu.com>
-	<20120402121724.GD14256@twin.jikos.cz>
-	<4F7A4F3B.3010108@cn.fujitsu.com>
+From: Jeff Mahoney <jeffm@suse.de>
+Subject: Re: [PATCH] btrfs/extent_io.c: return -ENOMEM instead of BUG_ON on
+ allocation failure in set_extent_bit if __GFP_WAIT is set in the mask
+Date: Wed, 04 Apr 2012 09:29:44 -0400
+Message-ID: <4F7C4CC8.7060007@suse.de>
+References: <4F76B15D.9010801@gmail.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=UTF-8
-Cc: linux-btrfs@vger.kernel.org
-To: Liu Bo <liubo2009@cn.fujitsu.com>
+Content-Type: text/plain; charset=ISO-8859-1
+Cc: Chris Mason <chris.mason@oracle.com>, linux-btrfs@vger.kernel.org,
+	linux-kernel@vger.kernel.org
+To: Wang Sheng-Hui <shhuiw@gmail.com>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <4F7A4F3B.3010108@cn.fujitsu.com>
+In-Reply-To: <4F76B15D.9010801@gmail.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 3 April 2012 02:15, Liu Bo <liubo2009@cn.fujitsu.com> wrote:
-> On 04/02/2012 08:17 PM, David Sterba wrote:
->> On Mon, Apr 02, 2012 at 07:28:18PM +0800, Liu Bo wrote:
->>> --- a/fs/btrfs/disk-io.c
->>> +++ b/fs/btrfs/disk-io.c
->>> @@ -2104,6 +2104,14 @@ int open_ctree(struct super_block *sb,
->>> =C2=A0 =C2=A0 =C2=A0 =C2=A0 =C2=A0 =C2=A0 =C2=A0err =3D -EINVAL;
->>> =C2=A0 =C2=A0 =C2=A0 =C2=A0 =C2=A0 =C2=A0 =C2=A0goto fail_alloc;
->>> =C2=A0 =C2=A0 =C2=A0}
->>> + =C2=A0 =C2=A0if (btrfs_super_sectorsize(disk_super) > PAGE_CACHE_=
-SIZE) {
->>> + =C2=A0 =C2=A0 =C2=A0 =C2=A0 =C2=A0 =C2=A0printk(KERN_ERR "BTRFS: =
-couldn't mount because sectorsize(%d)"
->>> + =C2=A0 =C2=A0 =C2=A0 =C2=A0 =C2=A0 =C2=A0 =C2=A0 =C2=A0 =C2=A0 " =
-was larger than PAGE_SIZE(%lu)\n",
->>
->> %llu
->>
->
-> err, thanks for caching it.
->
->>> + =C2=A0 =C2=A0 =C2=A0 =C2=A0 =C2=A0 =C2=A0 =C2=A0 =C2=A0 =C2=A0 bt=
-rfs_super_sectorsize(disk_super),
->>> + =C2=A0 =C2=A0 =C2=A0 =C2=A0 =C2=A0 =C2=A0 =C2=A0 =C2=A0 =C2=A0 (u=
-nsigned long long)PAGE_CACHE_SIZE);
->>> + =C2=A0 =C2=A0 =C2=A0 =C2=A0 =C2=A0 =C2=A0err =3D -EINVAL;
->>> + =C2=A0 =C2=A0 =C2=A0 =C2=A0 =C2=A0 =C2=A0goto fail_alloc;
->>> + =C2=A0 =C2=A0}
->>>
->>> =C2=A0 =C2=A0 =C2=A0features =3D btrfs_super_incompat_flags(disk_su=
-per);
->>> =C2=A0 =C2=A0 =C2=A0features |=3D BTRFS_FEATURE_INCOMPAT_MIXED_BACK=
-REF;
->>
->> We have the opposite check a few lines below
->>
->> 2257 =C2=A0 =C2=A0 =C2=A0 =C2=A0 if (sectorsize < PAGE_SIZE) {
->> 2258 =C2=A0 =C2=A0 =C2=A0 =C2=A0 =C2=A0 =C2=A0 =C2=A0 =C2=A0 printk(=
-KERN_WARNING "btrfs: Incompatible sector size "
->> 2259 =C2=A0 =C2=A0 =C2=A0 =C2=A0 =C2=A0 =C2=A0 =C2=A0 =C2=A0 =C2=A0 =
-=C2=A0 =C2=A0 =C2=A0"found on %s\n", sb->s_id);
->> 2260 =C2=A0 =C2=A0 =C2=A0 =C2=A0 =C2=A0 =C2=A0 =C2=A0 =C2=A0 goto fa=
-il_sb_buffer;
->> 2261 =C2=A0 =C2=A0 =C2=A0 =C2=A0 }
->> 2262
->>
->> so sectorsize must be equal to PAGE_SIZE always and one check can ca=
-tch
->> both cases.
->>
->
-> But this check is _useless_ when we have a sectorsize which is larger=
- than PAGE_SIZE,
-> we're not ready for that, too.
->
-> We already have one check, so I'll modify this instead. :)
->
+-----BEGIN PGP SIGNED MESSAGE-----
+Hash: SHA1
 
-Minor observation.
-One is "PAGE_SIZE" and one is "PAGE_CACHE_SIZE".
-Might those be different?
---
-To unsubscribe from this list: send the line "unsubscribe linux-btrfs" =
-in
-the body of a message to majordomo@vger.kernel.org
-More majordomo info at  http://vger.kernel.org/majordomo-info.html
+On 03/31/2012 03:25 AM, Wang Sheng-Hui wrote:
+> If __GFP_WAIT is set in the mask, set_extent_bit should return 
+> -ENOMEM to its caller to decide what to do on allocation failure, 
+> instead of BUG_ON.
+> 
+> Signed-off-by: Wang Sheng-Hui <shhuiw@gmail.com> --- 
+> fs/btrfs/extent_io.c |    3 ++- 1 files changed, 2 insertions(+), 1
+> deletions(-)
+> 
+> diff --git a/fs/btrfs/extent_io.c b/fs/btrfs/extent_io.c index
+> b67814c..fd2411e 100644 --- a/fs/btrfs/extent_io.c +++
+> b/fs/btrfs/extent_io.c @@ -720,7 +720,8 @@ int
+> set_extent_bit(struct extent_io_tree *tree, u64 start, u64 end, 
+> again: if (!prealloc && (mask & __GFP_WAIT)) { prealloc =
+> alloc_extent_state(mask); -		BUG_ON(!prealloc); +		if (!prealloc) +
+> return -ENOMEM; }
+> 
+> spin_lock(&tree->lock);
+
+Hi Sheng-Hui -
+
+Do you have a follow-on series to this? With the exception of the
+set_extent_dirty call in end_bio_extent_readpage, every set_extent_bit
+caller uses GFP_NOFS, which includes __GFP_WAIT. If we return a
+failure here, we need to catch the failure in the call sites.
+Otherwise, the failure will just be ignored and we'll end up with an
+inconsistent extent state tree.
+
+- -Jeff
+
+- -- 
+Jeff Mahoney
+SUSE Labs
+-----BEGIN PGP SIGNATURE-----
+Version: GnuPG v2.0.18 (GNU/Linux)
+Comment: Using GnuPG with Mozilla - http://enigmail.mozdev.org/
+
+iQIcBAEBAgAGBQJPfEzIAAoJEB57S2MheeWyqcoP/RagYePToMYOdgjjxVz2cwkf
+BLT5B0KWWaJa0KtEOpgQATmldmA4CCq6WmC7R/Omy1q9RD75rheKxaxuQY35NTFe
+czBSfVr3VeMy1A6dIK+wHOiAfheuT90xSgXJJMpdkjHmNjEA1g2nupAFltUE/L70
++xFxotBuoYuTe8u++QES0JGqnw8YI6FW0z3Z4buyoqRhgiX7TukNfXXgx4c2HI0/
+cOkxyvYpDi2WF9EtESn/ekwf4Rjx9kNUX/9owmDWYgHD4MLjwSQsRbwZ7BrZEM3k
+aBe8yZGpgr3UuL9nGiPbWHsyBeAskvXaL6Y2YIczJSvsoP/DM+9SsHAwnqkVaBHv
+8qQiQqUhF1mrdl3GBSvKJarGczrSmbWZ5X94oYq4MCKyi3SeTN/bcJS+p5EV1Tvs
+LMRqqj26leHnl+bYKGWIfJqQRuYcfbkzTOADbn54iMYj2aG2raUjI9D53TUIInuV
+Csm2hhKJn+HDwu2+gZX1F99W0ehs1ps86oGfkT4WA/H7fTmugiEYxsM1Dk71Ti7/
+eadns62DYFZyzKk4/jP/8Rjygc4YM/T2F9qb+SX3hWGhIIZiz5qOxjgBZy91i+84
+W+DDUHjZPU+O14nNlKFA3INGS9823ENklRkzpNUhLx7ffrCLOAS73O2rzHcaSmtk
+FSDWO4EqxIAi4t3LoL14
+=Pxwh
+-----END PGP SIGNATURE-----

@@ -1,48 +1,76 @@
-From: Arnd Hannemann <arnd@arndnet.de>
-Subject: [PATCH] Btrfs: allow mount -o remount,compress=no
-Date: Wed,  4 Apr 2012 21:46:17 +0200
-Message-ID: <1333568777-16986-1-git-send-email-arnd@arndnet.de>
-Cc: Arnd Hannemann <arnd@arndnet.de>
-To: chris.mason@oracle.com, linux-btrfs@vger.kernel.org,
-	linux-kernel@vger.kernel.org
-Return-path: <linux-kernel-owner@vger.kernel.org>
+From: Hugo Mills <hugo@carfax.org.uk>
+Subject: Re: hard links
+Date: Wed, 4 Apr 2012 20:53:39 +0100
+Message-ID: <20120404195339.GE32070@carfax.org.uk>
+References: <4F7C78FE.2020508@arndnet.de>
+ <4F7CA218.5070902@gmail.com>
+ <4F7CA37B.50006@arndnet.de>
+Mime-Version: 1.0
+Content-Type: multipart/signed; micalg=pgp-sha1;
+	protocol="application/pgp-signature"; boundary="lkTb+7nhmha7W+c3"
+Cc: nspmangalore@gmail.com, linux-btrfs@vger.kernel.org
+To: Arnd Hannemann <arnd@arndnet.de>
+Return-path: <linux-btrfs-owner@vger.kernel.org>
+In-Reply-To: <4F7CA37B.50006@arndnet.de>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Btrfs allows to turn on compression on a mounted and used filesystem
-by issuing mount -o remount,compress=lzo.
-This patch allows to turn compression off again
-while the filesystem is mounted.
 
-Signed-off-by: Arnd Hannemann <arnd@arndnet.de>
----
- fs/btrfs/super.c |    7 ++++++-
- 1 files changed, 6 insertions(+), 1 deletions(-)
+--lkTb+7nhmha7W+c3
+Content-Type: text/plain; charset=us-ascii
+Content-Disposition: inline
 
-diff --git a/fs/btrfs/super.c b/fs/btrfs/super.c
-index 8d5d380..f1fb6c0 100644
---- a/fs/btrfs/super.c
-+++ b/fs/btrfs/super.c
-@@ -394,15 +394,20 @@ int btrfs_parse_options(struct btrfs_root *root, char *options)
- 			    strcmp(args[0].from, "zlib") == 0) {
- 				compress_type = "zlib";
- 				info->compress_type = BTRFS_COMPRESS_ZLIB;
-+				btrfs_set_opt(info->mount_opt, COMPRESS);
- 			} else if (strcmp(args[0].from, "lzo") == 0) {
- 				compress_type = "lzo";
- 				info->compress_type = BTRFS_COMPRESS_LZO;
-+				btrfs_set_opt(info->mount_opt, COMPRESS);
-+			} else if (strncmp(args[0].from, "no", 2) == 0) {
-+				compress_type = "no";
-+				info->compress_type = BTRFS_COMPRESS_NONE;
-+				btrfs_clear_opt(info->mount_opt, COMPRESS);
- 			} else {
- 				ret = -EINVAL;
- 				goto out;
- 			}
- 
--			btrfs_set_opt(info->mount_opt, COMPRESS);
- 			if (compress_force) {
- 				btrfs_set_opt(info->mount_opt, FORCE_COMPRESS);
- 				pr_info("btrfs: force %s compression\n",
+On Wed, Apr 04, 2012 at 09:39:39PM +0200, Arnd Hannemann wrote:
+> Am 04.04.2012 21:33, schrieb Shyam Prasad N:
+> > On 04/04/2012 10:08 PM, Arnd Hannemann wrote:
+> >> Hi,
+> >>
+> >> today I experimented with hard links on btrfs and by this used all available inode space of a file.
+> >> Interestingly if this happens even a rename of such an filename to  an _equal length_ filename
+> >> fails:
+> >>
+> >> arnd@kallisto:/mnt/btrfs/tmp$ mv a b
+> >> mv: cannot move `a' to `b': Too many links
+> >>
+> >> Is this expected behavior?
+> >> There should be no reason to let this particular case fail?
+> >>
+> 
+> > What do you mean by 'used all available inode space'? What did you do exactly?
+> 
+
+   There's no inode limit specifically. The limit is on the number of
+hardlinks to the same file stored in the same directory (and it's very
+small). This is a known limitation of btrfs. Someone's working on a
+fix (can't remember who, off-hand), but it's not been published yet.
+
+> I created hard links of a file in the same directory until no additional one
+> can be created.
+> 
+> Eg.:
+> touch a
+> for i in {1..1000}; do ln a $i; done;
+
+   This is a little odd, but I don't really know what the internals of
+mv try to do...
+
+   Hugo.
+
 -- 
-1.7.9.1
+=== Hugo Mills: hugo@... carfax.org.uk | darksatanic.net | lug.org.uk ===
+  PGP key: 515C238D from wwwkeys.eu.pgp.net or http://www.carfax.org.uk
+         --- Nothing right in my left brain. Nothing left in ---         
+                             my right brain.                             
+
+--lkTb+7nhmha7W+c3
+Content-Type: application/pgp-signature; name="signature.asc"
+Content-Description: Digital signature
+
+-----BEGIN PGP SIGNATURE-----
+Version: GnuPG v1.4.11 (GNU/Linux)
+
+iD8DBQFPfKbDIKyzvlFcI40RAlYbAJ9TbhGdtx3VSDHIht6pVovTBpCsmgCfTwZo
+v7IHqsc3G8oZTO51s6lHAK4=
+=rAsL
+-----END PGP SIGNATURE-----
+
+--lkTb+7nhmha7W+c3--

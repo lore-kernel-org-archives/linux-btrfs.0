@@ -1,326 +1,121 @@
-From: Mark Fasheh <mfasheh@suse.de>
-Subject: [PATCH 3/3] btrfs: extended inode refs
-Date: Thu,  5 Apr 2012 13:09:03 -0700
-Message-ID: <1333656543-4843-4-git-send-email-mfasheh@suse.de>
+From: Jeff Mahoney <jeffm@suse.de>
+Subject: Re: [PATCH 0/3] btrfs: extended inode refs
+Date: Thu, 05 Apr 2012 17:13:29 -0400
+Message-ID: <4F7E0AF9.7070305@suse.de>
 References: <1333656543-4843-1-git-send-email-mfasheh@suse.de>
-Cc: Chris Mason <chris.mason@oracle.com>,
-	Josef Bacik <josef@redhat.com>, Mark Fasheh <mfasheh@suse.de>
-To: linux-btrfs@vger.kernel.org
+Mime-Version: 1.0
+Content-Type: text/plain; charset=ISO-8859-1
+Cc: linux-btrfs@vger.kernel.org, Chris Mason <chris.mason@oracle.com>,
+	Josef Bacik <josef@redhat.com>
+To: Mark Fasheh <mfasheh@suse.de>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
 In-Reply-To: <1333656543-4843-1-git-send-email-mfasheh@suse.de>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-The iterate_irefs in backref.c is used to build path components from inode
-refs. I had to add a 2nd iterate function callback to handle extended refs.
+-----BEGIN PGP SIGNED MESSAGE-----
+Hash: SHA1
 
-Both iterate callbacks eventually converge upon iref_to_path() which I was
-able to keep as one function with some small code to abstract away
-differences in the two disk structures.
+On 04/05/2012 04:09 PM, Mark Fasheh wrote:
+> Currently btrfs has a limitation on the maximum number of hard
+> links an inode can have. Specifically, links are stored in an array
+> of ref items:
+> 
+> struct btrfs_inode_ref { __le64 index; __le16 name_len; /* name
+> goes here */ } __attribute__ ((__packed__));
+> 
+> The ref arrays are found via key triple:
+> 
+> (inode objectid, BTRFS_INODE_EXTREF_KEY, parent dir objectid)
+> 
+> Since items can not exceed the size of a leaf, the total number of
+> links that can be stored for a given inode / parent dir pair is
+> limited to under 4k. This works fine for the most common case of
+> few to only a handful of links. Once the link count gets higher
+> however, we begin to return EMLINK.
+> 
+> 
+> The following patches fix this situation by introducing a new ref
+> item:
+> 
+> struct btrfs_inode_extref { __le64 parent_objectid; __le64 index; 
+> __le16 name_len; __u8   name[0]; /* name goes here */ }
+> __attribute__ ((__packed__));
+> 
+> Extended refs behave differently from ref arrays in several key
+> areas.
 
-Signed-off-by: Mark Fasheh <mfasheh@suse.de>
----
- fs/btrfs/backref.c |  200 ++++++++++++++++++++++++++++++++++++++++++----------
- fs/btrfs/backref.h |    4 +-
- 2 files changed, 165 insertions(+), 39 deletions(-)
+Thanks for digging into this. It's been heating up on the list lately.
 
-diff --git a/fs/btrfs/backref.c b/fs/btrfs/backref.c
-index 0436c12..f2b8952 100644
---- a/fs/btrfs/backref.c
-+++ b/fs/btrfs/backref.c
-@@ -22,6 +22,7 @@
- #include "ulist.h"
- #include "transaction.h"
- #include "delayed-ref.h"
-+#include "tree-log.h"
- 
- /*
-  * this structure records all encountered refs on the way up to the root
-@@ -858,62 +859,75 @@ static int inode_ref_info(u64 inum, u64 ioff, struct btrfs_root *fs_root,
- }
- 
- /*
-- * this iterates to turn a btrfs_inode_ref into a full filesystem path. elements
-- * of the path are separated by '/' and the path is guaranteed to be
-- * 0-terminated. the path is only given within the current file system.
-- * Therefore, it never starts with a '/'. the caller is responsible to provide
-- * "size" bytes in "dest". the dest buffer will be filled backwards. finally,
-- * the start point of the resulting string is returned. this pointer is within
-- * dest, normally.
-- * in case the path buffer would overflow, the pointer is decremented further
-- * as if output was written to the buffer, though no more output is actually
-- * generated. that way, the caller can determine how much space would be
-- * required for the path to fit into the buffer. in that case, the returned
-- * value will be smaller than dest. callers must check this!
-+ * Given the parent objectid and name/name_len pairs of an inode ref
-+ * (any version) this iterates to turn that information into a
-+ * full filesystem path. elements of the path are separated by '/' and
-+ * the path is guaranteed to be 0-terminated. the path is only given
-+ * within the current file system.  Therefore, it never starts with a
-+ * '/'. the caller is responsible to provide "size" bytes in
-+ * "dest". the dest buffer will be filled backwards. finally, the
-+ * start point of the resulting string is returned. this pointer is
-+ * within dest, normally.  in case the path buffer would overflow, the
-+ * pointer is decremented further as if output was written to the
-+ * buffer, though no more output is actually generated. that way, the
-+ * caller can determine how much space would be required for the path
-+ * to fit into the buffer. in that case, the returned value will be
-+ * smaller than dest. callers must check this!
-  */
- static char *iref_to_path(struct btrfs_root *fs_root, struct btrfs_path *path,
--				struct btrfs_inode_ref *iref,
--				struct extent_buffer *eb_in, u64 parent,
--				char *dest, u32 size)
-+			  int name_len, unsigned long name_off,
-+			  struct extent_buffer *eb_in, u64 parent,
-+			  char *dest, u32 size)
- {
--	u32 len;
- 	int slot;
- 	u64 next_inum;
- 	int ret;
- 	s64 bytes_left = size - 1;
- 	struct extent_buffer *eb = eb_in;
- 	struct btrfs_key found_key;
-+	struct btrfs_inode_ref *iref;
-+	struct btrfs_inode_extref *iref2;
- 
- 	if (bytes_left >= 0)
- 		dest[bytes_left] = '\0';
- 
- 	while (1) {
--		len = btrfs_inode_ref_name_len(eb, iref);
--		bytes_left -= len;
-+		bytes_left -= name_len;
- 		if (bytes_left >= 0)
- 			read_extent_buffer(eb, dest + bytes_left,
--						(unsigned long)(iref + 1), len);
-+					   name_off, name_len);
- 		if (eb != eb_in)
- 			free_extent_buffer(eb);
-+
-+		/* Ok, we have enough to find any refs to the parent inode. */
- 		ret = inode_ref_info(parent, 0, fs_root, path, &found_key);
--		if (ret > 0)
--			ret = -ENOENT;
--		if (ret)
--			break;
- 		next_inum = found_key.offset;
-+		if (ret == 0) {
-+			slot = path->slots[0];
-+			eb = path->nodes[0];
-+			/* make sure we can use eb after releasing the path */
-+			if (eb != eb_in)
-+				atomic_inc(&eb->refs);
-+			btrfs_release_path(path);
-+			iref = btrfs_item_ptr(eb, slot, struct btrfs_inode_ref);
-+
-+			name_len = btrfs_inode_ref_name_len(eb, iref);
-+			name_off = (unsigned long)(iref + 1);
-+		} else {
-+			ret = btrfs_find_one_extref(fs_root, parent, 0, path,
-+						    &iref2, NULL);
-+			if (ret)
-+				break;
-+
-+			next_inum = btrfs_inode_extref_parent(eb, iref2);
-+			name_off = (unsigned long)&iref2->name;
-+			name_len = btrfs_inode_extref_name_len(eb, iref2);
-+		}
- 
- 		/* regular exit ahead */
- 		if (parent == next_inum)
- 			break;
- 
--		slot = path->slots[0];
--		eb = path->nodes[0];
--		/* make sure we can use eb after releasing the path */
--		if (eb != eb_in)
--			atomic_inc(&eb->refs);
--		btrfs_release_path(path);
--
--		iref = btrfs_item_ptr(eb, slot, struct btrfs_inode_ref);
- 		parent = next_inum;
- 		--bytes_left;
- 		if (bytes_left >= 0)
-@@ -1226,9 +1240,9 @@ int iterate_inodes_from_logical(u64 logical, struct btrfs_fs_info *fs_info,
- 	return ret;
- }
- 
--static int iterate_irefs(u64 inum, struct btrfs_root *fs_root,
--				struct btrfs_path *path,
--				iterate_irefs_t *iterate, void *ctx)
-+static int iterate_inode_refs(u64 inum, struct btrfs_root *fs_root,
-+			      struct btrfs_path *path,
-+			      iterate_irefs_t *iterate, void *ctx)
- {
- 	int ret;
- 	int slot;
-@@ -1244,7 +1258,7 @@ static int iterate_irefs(u64 inum, struct btrfs_root *fs_root,
- 
- 	while (1) {
- 		ret = inode_ref_info(inum, parent ? parent+1 : 0, fs_root, path,
--					&found_key);
-+				     &found_key);
- 		if (ret < 0)
- 			break;
- 		if (ret) {
-@@ -1286,6 +1300,76 @@ static int iterate_irefs(u64 inum, struct btrfs_root *fs_root,
- 	return ret;
- }
- 
-+static int iterate_inode_extrefs(u64 inum, struct btrfs_root *fs_root,
-+				 struct btrfs_path *path,
-+				 iterate_extrefs_t *iterate, void *ctx)
-+{
-+	int ret;
-+	int slot;
-+	u64 offset = 0;
-+	u64 parent;
-+	int found = 0;
-+	struct extent_buffer *eb;
-+	struct btrfs_item *item;
-+	struct btrfs_inode_extref *iref2;
-+
-+	while (1) {
-+		ret = btrfs_find_one_extref(fs_root, inum, offset, path, &iref2,
-+					    &offset);
-+		if (ret < 0)
-+			break;
-+		if (ret) {
-+			ret = found ? 0 : -ENOENT;
-+			break;
-+		}
-+		++found;
-+
-+		slot = path->slots[0];
-+		eb = path->nodes[0];
-+		/* make sure we can use eb after releasing the path */
-+		atomic_inc(&eb->refs);
-+		btrfs_release_path(path);
-+
-+		item = btrfs_item_nr(eb, slot);
-+		iref2 = btrfs_item_ptr(eb, slot, struct btrfs_inode_extref);
-+
-+		parent = btrfs_inode_extref_parent(eb, iref2);
-+		ret = iterate(parent, iref2, eb, ctx);
-+		if (ret) {
-+			free_extent_buffer(eb);
-+			break;
-+		}
-+
-+		free_extent_buffer(eb);
-+		offset++;
-+	}
-+
-+	btrfs_release_path(path);
-+
-+	return ret;
-+}
-+
-+static int iterate_irefs(u64 inum, struct btrfs_root *fs_root,
-+			 struct btrfs_path *path,
-+			 iterate_irefs_t *iterate,
-+			 iterate_extrefs_t *iterate2, void *ctx)
-+{
-+	int ret, found_refs = 0;
-+
-+	ret = iterate_inode_refs(inum, fs_root, path, iterate, ctx);
-+	if (ret && ret != -ENOENT)
-+		return ret;
-+
-+	if (ret != -ENOENT)
-+		++found_refs;
-+
-+	ret = iterate_inode_extrefs(inum, fs_root, path, iterate2, ctx);
-+	if (ret == -ENOENT && found_refs)
-+		return 0;
-+
-+	return ret;
-+}
-+
- /*
-  * returns 0 if the path could be dumped (probably truncated)
-  * returns <0 in case of an error
-@@ -1299,13 +1383,53 @@ static int inode_to_path(u64 inum, struct btrfs_inode_ref *iref,
- 	int i = ipath->fspath->elem_cnt;
- 	const int s_ptr = sizeof(char *);
- 	u32 bytes_left;
-+	u32 name_len = btrfs_inode_ref_name_len(eb, iref);
-+
-+	bytes_left = ipath->fspath->bytes_left > s_ptr ?
-+					ipath->fspath->bytes_left - s_ptr : 0;
-+
-+	fspath_min = (char *)ipath->fspath->val + (i + 1) * s_ptr;
-+	fspath = iref_to_path(ipath->fs_root, ipath->btrfs_path, name_len,
-+			      (unsigned long)(iref + 1), eb, inum, fspath_min,
-+			      bytes_left);
-+	if (IS_ERR(fspath))
-+		return PTR_ERR(fspath);
-+
-+	if (fspath > fspath_min) {
-+		ipath->fspath->val[i] = (u64)(unsigned long)fspath;
-+		++ipath->fspath->elem_cnt;
-+		ipath->fspath->bytes_left = fspath - fspath_min;
-+	} else {
-+		++ipath->fspath->elem_missed;
-+		ipath->fspath->bytes_missing += fspath_min - fspath;
-+		ipath->fspath->bytes_left = 0;
-+	}
-+
-+	return 0;
-+}
-+
-+/*
-+ * returns 0 if the path could be dumped (probably truncated)
-+ * returns <0 in case of an error
-+ */
-+static int inode_to_path2(u64 inum, struct btrfs_inode_extref *iref2,
-+			  struct extent_buffer *eb, void *ctx)
-+{
-+	struct inode_fs_paths *ipath = ctx;
-+	char *fspath;
-+	char *fspath_min;
-+	int i = ipath->fspath->elem_cnt;
-+	const int s_ptr = sizeof(char *);
-+	u32 bytes_left;
-+	u32 name_len = btrfs_inode_extref_name_len(eb, iref2);
- 
- 	bytes_left = ipath->fspath->bytes_left > s_ptr ?
- 					ipath->fspath->bytes_left - s_ptr : 0;
- 
- 	fspath_min = (char *)ipath->fspath->val + (i + 1) * s_ptr;
--	fspath = iref_to_path(ipath->fs_root, ipath->btrfs_path, iref, eb,
--				inum, fspath_min, bytes_left);
-+	fspath = iref_to_path(ipath->fs_root, ipath->btrfs_path, name_len,
-+			      (unsigned long)&iref2->name, eb, inum,
-+			      fspath_min, bytes_left);
- 	if (IS_ERR(fspath))
- 		return PTR_ERR(fspath);
- 
-@@ -1339,7 +1463,7 @@ static int inode_to_path(u64 inum, struct btrfs_inode_ref *iref,
- int paths_from_inode(u64 inum, struct inode_fs_paths *ipath)
- {
- 	return iterate_irefs(inum, ipath->fs_root, ipath->btrfs_path,
--				inode_to_path, ipath);
-+			     inode_to_path, inode_to_path2, ipath);
- }
- 
- /*
-diff --git a/fs/btrfs/backref.h b/fs/btrfs/backref.h
-index d00dfa9..4634ed7 100644
---- a/fs/btrfs/backref.h
-+++ b/fs/btrfs/backref.h
-@@ -31,7 +31,9 @@ struct inode_fs_paths {
- typedef int (iterate_extent_inodes_t)(u64 inum, u64 offset, u64 root,
- 		void *ctx);
- typedef int (iterate_irefs_t)(u64 parent, struct btrfs_inode_ref *iref,
--				struct extent_buffer *eb, void *ctx);
-+				 struct extent_buffer *eb, void *ctx);
-+typedef int (iterate_extrefs_t)(u64 parent, struct btrfs_inode_extref *iref,
-+				 struct extent_buffer *eb, void *ctx);
- 
- int inode_item_info(u64 inum, u64 ioff, struct btrfs_root *fs_root,
- 			struct btrfs_path *path);
--- 
-1.7.7
+> Each extended refs is it's own item so there is no ref array (and 
+> therefore no limit on size).
+> 
+> As a result, we must use a different addressing scheme. Extended
+> ref keys look like:
+> 
+> (inode objectid, BTRFS_INODE_EXTREF_KEY, hash)
+> 
+> Where hash is defined as a function of the parent objectid and link
+> name.
 
+I think this is effective. It will essentially have the same
+properties as a dirent but seeds the hash at objectid instead of ~1.
+
+> This effectively fixes the limitation, though we have a slightly
+> less efficient packing of link data. To keep the best of both
+> worlds then, I implemented the following behavior:
+> 
+> Extended refs don't replace the existing ref array. An inode gets
+> an extended ref for a given link _only_ after the ref array has
+> been filled.  So the most common cases shouldn't actually see any
+> difference in performance or disk usage as they'll never get to the
+> point where we're using an extended ref.
+> 
+> It's important while reading the patches however that there's still
+> the possibility that we can have a set of operations that grow out
+> an inode ref array (adding some extended refs) and then remove only
+> the refs in the array.  I don't really see this being common but
+> it's a case we always have to consider when coding these changes.
+> 
+> Right now there is a limitation for extrefs in that we're not
+> handling the possibility of a hash collision. There are two ways I
+> see we can deal with this:
+> 
+> We can use a 56-bit hash and keep a generation counter in the lower
+> 8 bits of the offset field.  The cost would be an additional tree
+> search (between offset <hash>00 and <hash>FF) if we don't find
+> exactly the name we were looking for.
+> 
+> An alternative solution to dealing with collisions could be to
+> emulate the dir-item insertion code - specifically something like
+> insert_with_overflow() which will stuff multiple items under one
+> key. I tend to prefer the idea of
+
+I vote for this option. The code for insert_with_overflow is already
+well tested and anything that will generate a collision in dirent
+insertion will generate a collision for the backref insertion. The
+dirent structure is larger than the extref structure, so there should
+always be space to match the dirent leaf so that a failure occurs
+there first.
+
+- -Jeff
+- -- 
+Jeff Mahoney
+SUSE Labs
+-----BEGIN PGP SIGNATURE-----
+Version: GnuPG v2.0.18 (GNU/Linux)
+Comment: Using GnuPG with Mozilla - http://enigmail.mozdev.org/
+
+iQIcBAEBAgAGBQJPfgr5AAoJEB57S2MheeWyt6cQAJPHUlCtB3+huJTodA7ow+jy
+3WPhrbTPYME6lLpC/JQH8XbogKL1IqLbsvl9M3KzHMZAJ4fRzNJXmMCFgIou4cgu
+v2cnNwkU1r5LJF/M3HMk1nhxABCeSONNTFqDbEp/eiTbI7X/UsM6q0vdPpj0vYih
+20kWZhazmgx4pUPrtldKU+k91jjsZRoZyn8Bx6lEYPKIx1RQuBDPDH8q3ep5og2d
+OQHDfMVNEJJ9Mz9lv+BZDqx/Q2Om8wyaM5GfjhtSocT+XrpTT4tC8FnKiUuOE1Ej
+dy1Td43t+cCWvglGRDFj5I6ObfW7x4aUDTizo1hMUuGEQFQVc3vGY3OtDuqPxwoV
+XS/4XRR3GU2cmsyjTky4Twa+81RF84cUl05+gM9VMaD7BJX60kIp1SXnE/TpyVUd
+oVgZsgkV75R4XmjBp1zDrDRHTzpsgxm+zaVhSTxOKWhnV1bWLZ36SXw/1LRr0IVP
+K+0xbnds7WWoRJNMSpJTBgAr7N4A5QEYvIUSQEO4UpgX4EXHYkfWstvvYNx1vUOT
+HiHtS3ZKbrfzcmD1ZNSOPAcxold5BsVisuBwoyJnvOyCFeCi+Q+S0W8wA0kI6iS8
+57nWYZfGelKLm/ATL8vPkpj6BCkFfhAK8neNdd80v1SpkUJOZr5tMTxaYO1r3QvC
+T0e3jAC32pgrJ/2fByT+
+=dx+I
+-----END PGP SIGNATURE-----

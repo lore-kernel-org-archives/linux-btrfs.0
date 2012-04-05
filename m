@@ -1,80 +1,104 @@
-From: Wang Sheng-Hui <shhuiw@gmail.com>
-Subject: Re: [PATCH] btrfs/extent_io.c: return -ENOMEM instead of BUG_ON on
- allocation failure in set_extent_bit if __GFP_WAIT is set in the mask
-Date: Thu, 05 Apr 2012 10:10:20 +0800
-Message-ID: <4F7CFF0C.7020300@gmail.com>
-References: <4F76B15D.9010801@gmail.com> <4F7C4CC8.7060007@suse.de>
+From: Bobby Powers <bobbypowers@gmail.com>
+Subject: Re: [PATCH v2] Btrfs, lockdep: get_restripe_target: use lockdep in BUG_ON
+Date: Thu, 5 Apr 2012 12:23:01 -0400
+Message-ID: <CAArOQ2Vc35VnbTCAZigTGZ3pL-f8mAtA9Ugpdjo5S=M7Ujpeiw@mail.gmail.com>
+References: <1333570774-26462-1-git-send-email-bobbypowers@gmail.com>
+	<1333591452-23264-1-git-send-email-bobbypowers@gmail.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=UTF-8
-Cc: Chris Mason <chris.mason@oracle.com>, linux-btrfs@vger.kernel.org,
-	linux-kernel@vger.kernel.org
-To: Jeff Mahoney <jeffm@suse.de>
-Return-path: <linux-kernel-owner@vger.kernel.org>
-In-Reply-To: <4F7C4CC8.7060007@suse.de>
+Content-Type: text/plain; charset=ISO-8859-1
+Cc: Bobby Powers <bobbypowers@gmail.com>,
+	Ilya Dryomov <idryomov@gmail.com>,
+	Chris Mason <chris.mason@oracle.com>,
+	Andi Kleen <ak@linux.intel.com>, Jeff Mahoney <jeffm@suse.de>,
+	Ingo Molnar <mingo@redhat.com>, linux-kernel@vger.kernel.org
+To: linux-btrfs@vger.kernel.org
+Return-path: <linux-btrfs-owner@vger.kernel.org>
+In-Reply-To: <1333591452-23264-1-git-send-email-bobbypowers@gmail.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 2012=E5=B9=B404=E6=9C=8804=E6=97=A5 21:29, Jeff Mahoney wrote:
-> -----BEGIN PGP SIGNED MESSAGE-----
-> Hash: SHA1
->=20
-> On 03/31/2012 03:25 AM, Wang Sheng-Hui wrote:
->> If __GFP_WAIT is set in the mask, set_extent_bit should return=20
->> -ENOMEM to its caller to decide what to do on allocation failure,=20
->> instead of BUG_ON.
->>
->> Signed-off-by: Wang Sheng-Hui <shhuiw@gmail.com> ---=20
->> fs/btrfs/extent_io.c |    3 ++- 1 files changed, 2 insertions(+), 1
->> deletions(-)
->>
->> diff --git a/fs/btrfs/extent_io.c b/fs/btrfs/extent_io.c index
->> b67814c..fd2411e 100644 --- a/fs/btrfs/extent_io.c +++
->> b/fs/btrfs/extent_io.c @@ -720,7 +720,8 @@ int
->> set_extent_bit(struct extent_io_tree *tree, u64 start, u64 end,=20
->> again: if (!prealloc && (mask & __GFP_WAIT)) { prealloc =3D
->> alloc_extent_state(mask); -		BUG_ON(!prealloc); +		if (!prealloc) +
->> return -ENOMEM; }
->>
->> spin_lock(&tree->lock);
->=20
-> Hi Sheng-Hui -
->=20
-> Do you have a follow-on series to this? With the exception of the
-> set_extent_dirty call in end_bio_extent_readpage, every set_extent_bi=
-t
-> caller uses GFP_NOFS, which includes __GFP_WAIT. If we return a
-> failure here, we need to catch the failure in the call sites.
-> Otherwise, the failure will just be ignored and we'll end up with an
-> inconsistent extent state tree.
->=20
-> - -Jeff
->=20
+On Wed, Apr 4, 2012 at 10:04 PM, Bobby Powers <bobbypowers@gmail.com> w=
+rote:
+> spin_is_locked always returns 0 on non-SMP systems, which causes btrf=
+s
+> to fail the mount. =A0There is documentation pending as to why checki=
+ng
 
-Hi Jeff,
+I guess I should be explicit in stating that this is a regression, so
+this patch or something else that addresses it should be pulled into
+3.4.
 
-I'll review the code and provide a list of patches later.
-Currently we can skip it, I think.
-
-Thanks,
-Sheng-Hui
-
-> - --=20
-> Jeff Mahoney
-> SUSE Labs
-> -----BEGIN PGP SIGNATURE-----
-> Version: GnuPG v2.0.18 (GNU/Linux)
-> Comment: Using GnuPG with Mozilla - http://enigmail.mozdev.org/
->=20
-> iQIcBAEBAgAGBQJPfEzIAAoJEB57S2MheeWyqcoP/RagYePToMYOdgjjxVz2cwkf
-> BLT5B0KWWaJa0KtEOpgQATmldmA4CCq6WmC7R/Omy1q9RD75rheKxaxuQY35NTFe
-> czBSfVr3VeMy1A6dIK+wHOiAfheuT90xSgXJJMpdkjHmNjEA1g2nupAFltUE/L70
-> +xFxotBuoYuTe8u++QES0JGqnw8YI6FW0z3Z4buyoqRhgiX7TukNfXXgx4c2HI0/
-> cOkxyvYpDi2WF9EtESn/ekwf4Rjx9kNUX/9owmDWYgHD4MLjwSQsRbwZ7BrZEM3k
-> aBe8yZGpgr3UuL9nGiPbWHsyBeAskvXaL6Y2YIczJSvsoP/DM+9SsHAwnqkVaBHv
-> 8qQiQqUhF1mrdl3GBSvKJarGczrSmbWZ5X94oYq4MCKyi3SeTN/bcJS+p5EV1Tvs
-> LMRqqj26leHnl+bYKGWIfJqQRuYcfbkzTOADbn54iMYj2aG2raUjI9D53TUIInuV
-> Csm2hhKJn+HDwu2+gZX1F99W0ehs1ps86oGfkT4WA/H7fTmugiEYxsM1Dk71Ti7/
-> eadns62DYFZyzKk4/jP/8Rjygc4YM/T2F9qb+SX3hWGhIIZiz5qOxjgBZy91i+84
-> W+DDUHjZPU+O14nNlKFA3INGS9823ENklRkzpNUhLx7ffrCLOAS73O2rzHcaSmtk
-> FSDWO4EqxIAi4t3LoL14
-> =3DPxwh
-> -----END PGP SIGNATURE-----
+> for spin_is_locked is a bad idea:
+>
+> https://lkml.org/lkml/2012/3/27/413
+>
+> The suggested lockdep_assert_held() is not appropriate in this case,
+> as what get_restripe_target() is checking for is that either
+> volume_mutex is held or balance_lock is held. =A0Luckily
+> lockdep_assert_held() is a simple macro:
+>
+> WARN_ON(debug_locks && !lockdep_is_held(l))
+>
+> We can mimic the structure in get_restripe_target(), but we need to
+> make sure lockdep_is_held() is defined for the !LOCKDEP case.
+>
+> CC: Ilya Dryomov <idryomov@gmail.com>
+> CC: Chris Mason <chris.mason@oracle.com>
+> CC: Andi Kleen <ak@linux.intel.com>
+> CC: Jeff Mahoney <jeffm@suse.de>
+> CC: Ingo Molnar <mingo@redhat.com>
+> CC: linux-kernel@vger.kernel.org
+> Signed-off-by: Bobby Powers <bobbypowers@gmail.com>
+> ---
+> =A0fs/btrfs/extent-tree.c =A0| =A0 =A05 +++--
+> =A0include/linux/lockdep.h | =A0 =A01 +
+> =A02 files changed, 4 insertions(+), 2 deletions(-)
+>
+> diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
+> index a844204..4d13eb1 100644
+> --- a/fs/btrfs/extent-tree.c
+> +++ b/fs/btrfs/extent-tree.c
+> @@ -24,6 +24,7 @@
+> =A0#include <linux/kthread.h>
+> =A0#include <linux/slab.h>
+> =A0#include <linux/ratelimit.h>
+> +#include <linux/lockdep.h>
+> =A0#include "compat.h"
+> =A0#include "hash.h"
+> =A0#include "ctree.h"
+> @@ -3158,8 +3159,8 @@ static u64 get_restripe_target(struct btrfs_fs_=
+info *fs_info, u64 flags)
+> =A0 =A0 =A0 =A0struct btrfs_balance_control *bctl =3D fs_info->balanc=
+e_ctl;
+> =A0 =A0 =A0 =A0u64 target =3D 0;
+>
+> - =A0 =A0 =A0 BUG_ON(!mutex_is_locked(&fs_info->volume_mutex) &&
+> - =A0 =A0 =A0 =A0 =A0 =A0 =A0!spin_is_locked(&fs_info->balance_lock))=
+;
+> + =A0 =A0 =A0 BUG_ON(debug_locks && !lockdep_is_held(&fs_info->volume=
+_mutex) &&
+> + =A0 =A0 =A0 =A0 =A0 =A0 =A0!lockdep_is_held(&fs_info->balance_lock)=
+);
+>
+> =A0 =A0 =A0 =A0if (!bctl)
+> =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0return 0;
+> diff --git a/include/linux/lockdep.h b/include/linux/lockdep.h
+> index d36619e..94c0edb 100644
+> --- a/include/linux/lockdep.h
+> +++ b/include/linux/lockdep.h
+> @@ -392,6 +392,7 @@ struct lock_class_key { };
+>
+> =A0#define lockdep_depth(tsk) =A0 =A0 (0)
+>
+> +#define lockdep_is_held(l) =A0 =A0 (0)
+> =A0#define lockdep_assert_held(l) =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 do =
+{ } while (0)
+>
+> =A0#define lockdep_recursing(tsk) =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 (0)
+> --
+> 1.7.10.rc3.3.g19a6c
+>
+--
+To unsubscribe from this list: send the line "unsubscribe linux-btrfs" =
+in
+the body of a message to majordomo@vger.kernel.org
+More majordomo info at  http://vger.kernel.org/majordomo-info.html

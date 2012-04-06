@@ -1,46 +1,60 @@
-From: Wang Sheng-Hui <shhuiw@gmail.com>
-Subject: [PATCH 3/4 RESEND] Btrfs: fix btrfs_release_extent_buffer_page with
- the right usage of num_extent_pages
-Date: Fri, 06 Apr 2012 14:35:31 +0800
-Message-ID: <4F7E8EB3.4070609@gmail.com>
+From: David Sterba <dave@jikos.cz>
+Subject: Re: [PATCH] Btrfs: allow mount -o remount,compress=no
+Date: Fri, 6 Apr 2012 12:22:32 +0200
+Message-ID: <20120406102232.GH14256@twin.jikos.cz>
+References: <1333568777-16986-1-git-send-email-arnd@arndnet.de>
+Reply-To: dave@jikos.cz
 Mime-Version: 1.0
-Content-Type: text/plain; charset=ISO-8859-1
-To: Chris Mason <chris.mason@oracle.com>, linux-btrfs@vger.kernel.org,
+Content-Type: text/plain; charset=us-ascii
+Cc: chris.mason@oracle.com, linux-btrfs@vger.kernel.org,
 	linux-kernel@vger.kernel.org
+To: Arnd Hannemann <arnd@arndnet.de>
 Return-path: <linux-kernel-owner@vger.kernel.org>
+In-Reply-To: <1333568777-16986-1-git-send-email-arnd@arndnet.de>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-num_extent_pages returns the number of pages in the specific range, not
-the index of the last page in the eb range.
+On Wed, Apr 04, 2012 at 09:46:17PM +0200, Arnd Hannemann wrote:
+> Btrfs allows to turn on compression on a mounted and used filesystem
+> by issuing mount -o remount,compress=lzo.
+> This patch allows to turn compression off again
+> while the filesystem is mounted.
 
-btrfs_release_extent_buffer_page is called with start_idx set 0 in current
-codes, so it's not a problem yet. But the logic is indeed wrong.
+I agree it makes sense to allow for turning off the compression via
+remount. Currently the mount flag FORCE_COMPRESS implies COMPRESS and
+your code may lead to FORCE_COMPRESS without COMPRESS. To fix that
+clear the force option as well.
 
-Fix it here.
+For completeness, there should be also possibility of
 
-Signed-off-by: Wang Sheng-Hui <shhuiw@gmail.com>
----
- fs/btrfs/extent_io.c |    4 +++-
- 1 files changed, 3 insertions(+), 1 deletions(-)
+  -o remount,compress-force=no
 
-diff --git a/fs/btrfs/extent_io.c b/fs/btrfs/extent_io.c
-index 5505356..ddfc1d5 100644
---- a/fs/btrfs/extent_io.c
-+++ b/fs/btrfs/extent_io.c
-@@ -3975,11 +3975,13 @@ static void btrfs_release_extent_buffer_page(struct extent_buffer *eb,
- 						unsigned long start_idx)
- {
- 	unsigned long index;
-+	unsigned long num_pages;
- 	struct page *page;
- 
- 	BUG_ON(extent_buffer_under_io(eb));
- 
--	index = num_extent_pages(eb->start, eb->len);
-+	num_pages = num_extent_pages(eb->start, eb->len);
-+	index = start_idx + num_pages;
- 	if (start_idx >= index)
- 		return;
- 
--- 
-1.7.1
+doing exactly the same, just a different syntax. Proposed fix below.
+
+> --- a/fs/btrfs/super.c
+> +++ b/fs/btrfs/super.c
+> @@ -394,15 +394,20 @@ int btrfs_parse_options(struct btrfs_root *root, char *options)
+>  			    strcmp(args[0].from, "zlib") == 0) {
+>  				compress_type = "zlib";
+>  				info->compress_type = BTRFS_COMPRESS_ZLIB;
+> +				btrfs_set_opt(info->mount_opt, COMPRESS);
+>  			} else if (strcmp(args[0].from, "lzo") == 0) {
+>  				compress_type = "lzo";
+>  				info->compress_type = BTRFS_COMPRESS_LZO;
+> +				btrfs_set_opt(info->mount_opt, COMPRESS);
+> +			} else if (strncmp(args[0].from, "no", 2) == 0) {
+> +				compress_type = "no";
+> +				info->compress_type = BTRFS_COMPRESS_NONE;
+> +				btrfs_clear_opt(info->mount_opt, COMPRESS);
+
+				btrfs_clear_opt(info->mount_opt, FORCE_COMPRESS);
+				compress_force = false;
+
+>  			} else {
+>  				ret = -EINVAL;
+>  				goto out;
+>  			}
+>  
+> -			btrfs_set_opt(info->mount_opt, COMPRESS);
+>  			if (compress_force) {
+>  				btrfs_set_opt(info->mount_opt, FORCE_COMPRESS);
+>  				pr_info("btrfs: force %s compression\n",

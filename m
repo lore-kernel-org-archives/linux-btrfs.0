@@ -1,53 +1,51 @@
-From: Ilya Dryomov <idryomov@gmail.com>
-Subject: Re: kernel BUG at extent-tree.c:3162 (get_restripe_target)
-Date: Fri, 6 Apr 2012 20:05:29 +0300
-Message-ID: <20120406170529.GA1907@zambezi.lan>
-References: <CAKcLGm8SgQchrk1fVg0FZ9uqr1v+cLzoWt1jk7vsJdZVfA72pA@mail.gmail.com>
- <20120406154314.GI14256@twin.jikos.cz>
- <CAKcLGm990SucW0qUHfiG75=jWQid-q8hJ0cCgJLWMATpGWvQnw@mail.gmail.com>
+From: Mitch Harder <mitch.harder@sabayonlinux.org>
+Subject: Re: [PATCH v2] Btrfs, lockdep: get_restripe_target: use lockdep in BUG_ON
+Date: Fri, 6 Apr 2012 12:20:33 -0500
+Message-ID: <CAKcLGm86PNyGZStE79Jg9nWygiCaz=fOt6uvOaMA57gnOYo6MA@mail.gmail.com>
+References: <1333570774-26462-1-git-send-email-bobbypowers@gmail.com>
+	<1333591452-23264-1-git-send-email-bobbypowers@gmail.com>
+	<CAArOQ2Vc35VnbTCAZigTGZ3pL-f8mAtA9Ugpdjo5S=M7Ujpeiw@mail.gmail.com>
+	<20120405165148.GA2595@zambezi.lan>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=utf-8
-Cc: dave@jikos.cz, linux-btrfs <linux-btrfs@vger.kernel.org>
-To: Mitch Harder <mitch.harder@sabayonlinux.org>
-Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <CAKcLGm990SucW0qUHfiG75=jWQid-q8hJ0cCgJLWMATpGWvQnw@mail.gmail.com>
+Content-Type: text/plain; charset=ISO-8859-1
+Cc: Bobby Powers <bobbypowers@gmail.com>, linux-btrfs@vger.kernel.org,
+	Chris Mason <chris.mason@oracle.com>,
+	Andi Kleen <ak@linux.intel.com>, Jeff Mahoney <jeffm@suse.de>,
+	Ingo Molnar <mingo@redhat.com>, linux-kernel@vger.kernel.org
+To: Ilya Dryomov <idryomov@gmail.com>
+Return-path: <linux-kernel-owner@vger.kernel.org>
+In-Reply-To: <20120405165148.GA2595@zambezi.lan>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Fri, Apr 06, 2012 at 10:52:13AM -0500, Mitch Harder wrote:
-> On Fri, Apr 6, 2012 at 10:43 AM, David Sterba <dave@jikos.cz> wrote:
-> > On Fri, Apr 06, 2012 at 10:33:04AM -0500, Mitch Harder wrote:
-> >> I'm consistently hitting the BUG_ON in the new get_restripe_target
-> >> function that was added by "[PATCH 4/8] Btrfs: add
-> >> get_restripe_target() helper" when trying to initially mount a btr=
-fs
-> >> partition.
-> >>
-> >> Lines fs/btrfs/extent-tree.c:3161-3162:
-> >>
-> >> =C2=A0 =C2=A0 =C2=A0 BUG_ON(!mutex_is_locked(&fs_info->volume_mute=
-x) &&
-> >> =C2=A0 =C2=A0 =C2=A0 =C2=A0 =C2=A0 =C2=A0 =C2=A0!spin_is_locked(&f=
-s_info->balance_lock));
-> >
-> > Is it a single CPU machine? See
-> >
-> > http://www.spinics.net/lists/linux-btrfs/msg15884.html
-> >
->=20
-> Thanks!
->=20
-> Yes, this is a single CPU machine.  I'll test the solution from that =
-thread.
+On Thu, Apr 5, 2012 at 11:51 AM, Ilya Dryomov <idryomov@gmail.com> wrot=
+e:
+> On Thu, Apr 05, 2012 at 12:23:01PM -0400, Bobby Powers wrote:
+>> On Wed, Apr 4, 2012 at 10:04 PM, Bobby Powers <bobbypowers@gmail.com=
+> wrote:
+>> > spin_is_locked always returns 0 on non-SMP systems, which causes b=
+trfs
+>> > to fail the mount. =A0There is documentation pending as to why che=
+cking
+>>
+>> I guess I should be explicit in stating that this is a regression, s=
+o
+>> this patch or something else that addresses it should be pulled into
+>> 3.4.
+>
+> Yes, this is a regression and spin_is_locked() definitely has to go. =
+=A0I
+> don't have a strong opinion on this assert, if there are objections t=
+o
+> v2 I'm OK with ripping that BUG_ON entirely and replacing it with a
+> comment (this function and its callers are WIP).
+>
 
-Sorry about that.  I'm going to hold off a bit to see if there will be
-any objections to v2 from that thread, but we will definitely do
-something about this by rc3 or rc4 at worst.
+I'm still hitting this BUG_ON after applying this patch on my single
+CPU AthlonXP x86 system.
 
-Thanks,
+I'm running a 3.3.1 kernel merged with the for-linus branch, and had
+this patch applied.
 
-		Ilya
---
-To unsubscribe from this list: send the line "unsubscribe linux-btrfs" =
-in
-the body of a message to majordomo@vger.kernel.org
-More majordomo info at  http://vger.kernel.org/majordomo-info.html
+I am currently testing with the BUG_ON commented out.  The btrfs
+partitions mount without error, and I haven't encountered any
+immediate issues.

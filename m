@@ -1,60 +1,43 @@
-From: David Sterba <dave@jikos.cz>
-Subject: Re: [PATCH] Btrfs: allow mount -o remount,compress=no
-Date: Fri, 6 Apr 2012 12:22:32 +0200
-Message-ID: <20120406102232.GH14256@twin.jikos.cz>
-References: <1333568777-16986-1-git-send-email-arnd@arndnet.de>
-Reply-To: dave@jikos.cz
+From: Daniel J Blueman <daniel@quora.org>
+Subject: [3.4-rc1] attempt to access beyond end of device and livelock
+Date: Fri, 6 Apr 2012 19:36:59 +0800
+Message-ID: <CAMVG2st4VPbujSY1hH+VjbR1gxCR0ZEGznrObYMWnpgo++Ynug@mail.gmail.com>
+References: <CAMVG2ss5WzwhgPunD5greRii1HFuEYt1TMQwxgUNitrpHtguVA@mail.gmail.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Cc: chris.mason@oracle.com, linux-btrfs@vger.kernel.org,
-	linux-kernel@vger.kernel.org
-To: Arnd Hannemann <arnd@arndnet.de>
+Content-Type: text/plain; charset=ISO-8859-1
+Cc: Linux BTRFS <linux-btrfs@vger.kernel.org>,
+	Linux Kernel <linux-kernel@vger.kernel.org>
+To: Josef Bacik <josef@redhat.com>,
+	Chris Mason <chris.mason@oracle.com>
 Return-path: <linux-kernel-owner@vger.kernel.org>
-In-Reply-To: <1333568777-16986-1-git-send-email-arnd@arndnet.de>
+In-Reply-To: <CAMVG2ss5WzwhgPunD5greRii1HFuEYt1TMQwxgUNitrpHtguVA@mail.gmail.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Wed, Apr 04, 2012 at 09:46:17PM +0200, Arnd Hannemann wrote:
-> Btrfs allows to turn on compression on a mounted and used filesystem
-> by issuing mount -o remount,compress=lzo.
-> This patch allows to turn compression off again
-> while the filesystem is mounted.
+Hi Josef, Chris,
 
-I agree it makes sense to allow for turning off the compression via
-remount. Currently the mount flag FORCE_COMPRESS implies COMPRESS and
-your code may lead to FORCE_COMPRESS without COMPRESS. To fix that
-clear the force option as well.
+When testing BTRFS with RAID 0 metadata on linux-3.4-rc1, we see
+discard ranges exceeding the end of the block device [1], potentially
+causing dataloss; when this occurs, filesystem writeback becomes
+catatonic due to continual resubmission.
 
-For completeness, there should be also possibility of
+Simply mounting with discard a raid0 metadata filesystem and copying
+some data in [2] provokes the issue.
 
-  -o remount,compress-force=no
+Thanks,
+=A0Daniel
 
-doing exactly the same, just a different syntax. Proposed fix below.
+--- [1]
 
-> --- a/fs/btrfs/super.c
-> +++ b/fs/btrfs/super.c
-> @@ -394,15 +394,20 @@ int btrfs_parse_options(struct btrfs_root *root, char *options)
->  			    strcmp(args[0].from, "zlib") == 0) {
->  				compress_type = "zlib";
->  				info->compress_type = BTRFS_COMPRESS_ZLIB;
-> +				btrfs_set_opt(info->mount_opt, COMPRESS);
->  			} else if (strcmp(args[0].from, "lzo") == 0) {
->  				compress_type = "lzo";
->  				info->compress_type = BTRFS_COMPRESS_LZO;
-> +				btrfs_set_opt(info->mount_opt, COMPRESS);
-> +			} else if (strncmp(args[0].from, "no", 2) == 0) {
-> +				compress_type = "no";
-> +				info->compress_type = BTRFS_COMPRESS_NONE;
-> +				btrfs_clear_opt(info->mount_opt, COMPRESS);
+attempt to access beyond end of device
+ram0: rw=3D129, want=3D8452072, limit=3D4096000
+=2E..
 
-				btrfs_clear_opt(info->mount_opt, FORCE_COMPRESS);
-				compress_force = false;
+--- [2]
 
->  			} else {
->  				ret = -EINVAL;
->  				goto out;
->  			}
->  
-> -			btrfs_set_opt(info->mount_opt, COMPRESS);
->  			if (compress_force) {
->  				btrfs_set_opt(info->mount_opt, FORCE_COMPRESS);
->  				pr_info("btrfs: force %s compression\n",
+modprobe brd rd_size=3D2048000 (or boot with ramdisk_size=3D2048000)
+mkfs.btrfs -m raid0 /dev/ram0 /dev/ram1
+mount /dev/ram0 /mnt -o discard
+cd /mnt && tar -xvzf linux.tar.gz
+<access beyond end of device and livelock>
+--=20
+Daniel J Blueman

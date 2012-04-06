@@ -1,59 +1,142 @@
-From: Alfredo Esteban <aedelatorre@gmail.com>
-Subject: bash completion file
-Date: Thu, 5 Apr 2012 23:40:00 +0200
-Message-ID: <CAKZ=RP927=nS7j=LNmsgLb3=yQ=gPM-7f7p3=d3MLVgzL4YJPA@mail.gmail.com>
+From: Li Zefan <lizefan@huawei.com>
+Subject: Re: [PATCH 1/2] Btrfs: make clear_extent_bit() always return 0 on
+ success
+Date: Fri, 06 Apr 2012 08:24:37 +0800
+Message-ID: <4F7E37C5.7010703@huawei.com>
+References: <4F5DB640.3010102@cn.fujitsu.com>
+ <20120405165209.GG14256@twin.jikos.cz>
 Mime-Version: 1.0
-Content-Type: multipart/mixed; boundary=20cf303bfc84d4b04a04bcf561a8
-To: linux-btrfs@vger.kernel.org
+Content-Type: text/plain; charset=ISO-8859-1
+Cc: "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>,
+	chris.mason@oracle.com
+To: dave@jikos.cz
 Return-path: <linux-btrfs-owner@vger.kernel.org>
+In-reply-to: <20120405165209.GG14256@twin.jikos.cz>
 List-ID: <linux-btrfs.vger.kernel.org>
 
---20cf303bfc84d4b04a04bcf561a8
-Content-Type: text/plain; charset=ISO-8859-1
+(Note: I've changed my email address ;)
 
-Hi,
+David Sterba wrote:
 
-Firstly, thanks to developers for their work.
+> On Mon, Mar 12, 2012 at 04:39:28PM +0800, Li Zefan wrote:
+>> Currently it returns a set of bits that were cleared, but this return
+>> value is not used at all.
+>>
+>> Moreover it doesn't seem to be useful, because we may clear the bits
+>> of a few extent_states, but only the cleared bits of last one is
+>> returned.
+>>
+>> Signed-off-by: Li Zefan <lizf@cn.fujitsu.com>
+>> ---
+>>  fs/btrfs/extent_io.c |   19 +++++++------------
+>>  1 files changed, 7 insertions(+), 12 deletions(-)
+>>
+>> diff --git a/fs/btrfs/extent_io.c b/fs/btrfs/extent_io.c
+>> index a55fbe6..c968c95 100644
+>> --- a/fs/btrfs/extent_io.c
+>> +++ b/fs/btrfs/extent_io.c
+>> @@ -394,18 +394,16 @@ static int split_state(struct extent_io_tree *tree, struct extent_state *orig,
+>>  
+>>  /*
+>>   * utility function to clear some bits in an extent state struct.
+>> - * it will optionally wake up any one waiting on this state (wake == 1), or
+>> - * forcibly remove the state from the tree (delete == 1).
+>> + * it will optionally wake up any one waiting on this state (wake == 1)
+>>   *
+>>   * If no bits are set on the state struct after clearing things, the
+>>   * struct is freed and removed from the tree
+>>   */
+>> -static int clear_state_bit(struct extent_io_tree *tree,
+>> +static void clear_state_bit(struct extent_io_tree *tree,
+>>  			    struct extent_state *state,
+>>  			    int *bits, int wake)
+>>  {
+>>  	int bits_to_clear = *bits & ~EXTENT_CTLBITS;
+>> -	int ret = state->state & bits_to_clear;
+>>  
+>>  	if ((bits_to_clear & EXTENT_DIRTY) && (state->state & EXTENT_DIRTY)) {
+>>  		u64 range = state->end - state->start + 1;
+>> @@ -427,7 +425,6 @@ static int clear_state_bit(struct extent_io_tree *tree,
+>>  	} else {
+>>  		merge_state(tree, state);
+>>  	}
+>> -	return ret;
+>>  }
+>>  
+>>  static struct extent_state *
+> 
+> The above part of the patch still applies and with only subject change
+> to something like
+> 
+>   Btrfs: retrurn void from clear_state_bit
+> 
+> is a rc2 material. So, Li, if you're ok with this change I'm adding it
+> (with the 2/2 patch) to my local queue of rc patches for Chris.
+> 
 
-I'm a btrfs user and I wrote my bash completion file for "btrfs"
-command. This way, I can use tab to complete command line in bash.
 
-I'm sending you it. I hope you find it useful. In Debian-like distros
-you should put it in /etc/bash_completion.d/.
+Thanks for doing this!
 
-For btrfs developers: If you want to include it in the distros
-package, feel you free.
+--
+Li Zefan
 
-Alfredo
+> 
+> david
+> 
+> (the rest of the patch was done within the error handling series)
+> 
+>> @@ -449,8 +446,7 @@ alloc_extent_state_atomic(struct extent_state *prealloc)
+>>   *
+>>   * the range [start, end] is inclusive.
+>>   *
+>> - * This takes the tree lock, and returns < 0 on error, > 0 if any of the
+>> - * bits were already set, or zero if none of the bits were already set.
+>> + * This takes the tree lock, and returns < 0 on error.
+>>   */
+>>  int clear_extent_bit(struct extent_io_tree *tree, u64 start, u64 end,
+>>  		     int bits, int wake, int delete,
+>> @@ -464,7 +460,6 @@ int clear_extent_bit(struct extent_io_tree *tree, u64 start, u64 end,
+>>  	struct rb_node *node;
+>>  	u64 last_end;
+>>  	int err;
+>> -	int set = 0;
+>>  	int clear = 0;
+>>  
+>>  	if (delete)
+>> @@ -547,7 +542,7 @@ hit_next:
+>>  		if (err)
+>>  			goto out;
+>>  		if (state->end <= end) {
+>> -			set |= clear_state_bit(tree, state, &bits, wake);
+>> +			clear_state_bit(tree, state, &bits, wake);
+>>  			if (last_end == (u64)-1)
+>>  				goto out;
+>>  			start = last_end + 1;
+>> @@ -568,13 +563,13 @@ hit_next:
+>>  		if (wake)
+>>  			wake_up(&state->wq);
+>>  
+>> -		set |= clear_state_bit(tree, prealloc, &bits, wake);
+>> +		clear_state_bit(tree, prealloc, &bits, wake);
+>>  
+>>  		prealloc = NULL;
+>>  		goto out;
+>>  	}
+>>  
+>> -	set |= clear_state_bit(tree, state, &bits, wake);
+>> +	clear_state_bit(tree, state, &bits, wake);
+>>  next:
+>>  	if (last_end == (u64)-1)
+>>  		goto out;
+>> @@ -591,7 +586,7 @@ out:
+>>  	if (prealloc)
+>>  		free_extent_state(prealloc);
+>>  
+>> -	return set;
+>> +	return 0;
+>>  
+>>  search_again:
+>>  	if (start > end)
+>> -- 1.7.3.1 
 
---20cf303bfc84d4b04a04bcf561a8
-Content-Type: application/octet-stream; name=btrfs
-Content-Disposition: attachment; filename=btrfs
-Content-Transfer-Encoding: base64
-X-Attachment-Id: f_h0obwvid0
 
-X2J0cmZzKCkgCnsKICAgIGxvY2FsIGN1ciBwcmV2IAogICAgQ09NUFJFUExZPSgpCiAgICAKICAg
-IGN1cj0iJHtDT01QX1dPUkRTW0NPTVBfQ1dPUkRdfSIKICAgIHByZXY9IiR7Q09NUF9XT1JEU1tD
-T01QX0NXT1JELTFdfSIKCiAgICBjb21tYW5kcz0nc3Vidm9sdW1lIGZpbGVzeXN0ZW0gZGV2aWNl
-IGhlbHAnCiAgICBjb21tYW5kc19zdWJ2b2x1bWU9J3NuYXBzaG90IGRlbGV0ZSBjcmVhdGUgbGlz
-dCBmaW5kLW5ldyBzZXQtZGVmYXVsdCcKICAgIGNvbW1hbmRzX2ZpbGVzeXN0ZW09J2RlZnJhZ21l
-bnQgc3luYyByZXNpemUgc2hvdyBkZiBiYWxhbmNlJwogICAgY29tbWFuZHNfZGV2aWNlPSdzY2Fu
-IGFkZCBkZWxldGUnCgogICAgaWYgWyAkQ09NUF9DV09SRCAtZXEgMSBdOyB0aGVuCiAgICAgICAg
-Q09NUFJFUExZPSggJCggY29tcGdlbiAtVyAiJGNvbW1hbmRzIiAtLSAiJGN1ciIgKSApCiAgICBl
-bGlmIFsgJENPTVBfQ1dPUkQgLWVxIDIgXTsgdGhlbgogICAgICAgIGNhc2UgJHByZXYgaW4KICAg
-ICAgICAgICAgc3Vidm9sdW1lKQogICAgICAgICAgICAgICAgQ09NUFJFUExZPSggJCggY29tcGdl
-biAtVyAiJGNvbW1hbmRzX3N1YnZvbHVtZSIgLS0gIiRjdXIiICkgKQogICAgICAgICAgICAgICAg
-cmV0dXJuIDAKICAgICAgICAgICAgICAgIDs7CiAgICAgICAgICAgIGZpbGVzeXN0ZW0pCiAgICAg
-ICAgICAgICAgICBDT01QUkVQTFk9KCAkKCBjb21wZ2VuIC1XICIkY29tbWFuZHNfZmlsZXN5c3Rl
-bSIgLS0gIiRjdXIiICkgKQogICAgICAgICAgICAgICAgcmV0dXJuIDAKICAgICAgICAgICAgICAg
-IDs7CiAgICAgICAgICAgIGRldmljZSkKICAgICAgICAgICAgICAgIENPTVBSRVBMWT0oICQoIGNv
-bXBnZW4gLVcgIiRjb21tYW5kc19kZXZpY2UiIC0tICIkY3VyIiApICkKICAgICAgICAgICAgICAg
-IHJldHVybiAwCiAgICAgICAgICAgICAgICA7OwogICAgICAgIGVzYWMKICAgIGVsaWYgWyAkQ09N
-UF9DV09SRCAtZXEgMyBdOyB0aGVuCiAgICAgICAgY2FzZSAkcHJldiBpbgogICAgICAgICAgICBz
-bmFwc2hvdHxkZWxldGV8Y3JlYXRlfGxpc3R8ZmluZC1uZXd8c3luY3xkZnxiYWxhbmNlfCBcCiAg
-ICAgICAgICAgIHNjYW58YWRkKQogICAgICAgICAgICAgICAgX2ZpbGVkaXIgLWQKICAgICAgICAg
-ICAgICAgIHJldHVybiAwCiAgICAgICAgICAgICAgICA7OwogICAgICAgICAgICBkZWZyYWdtZW50
-KQogICAgICAgICAgICAgICAgX2ZpbGVkaXIKICAgICAgICAgICAgICAgIHJldHVybiAwCiAgICAg
-ICAgICAgICAgICA7OwogICAgICAgIGVzYWMKICAgIGZpCgogICAgcmV0dXJuIDAgIAp9Cgpjb21w
-bGV0ZSAtRiBfYnRyZnMgYnRyZnMK
---20cf303bfc84d4b04a04bcf561a8--

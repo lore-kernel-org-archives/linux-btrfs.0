@@ -1,35 +1,35 @@
 From: Wang Sheng-Hui <shhuiw@gmail.com>
-Subject: [PATCH 4/4] Btrfs: fix the comment for find_first_extent_bit
-Date: Fri, 06 Apr 2012 14:35:47 +0800
-Message-ID: <4F7E8EC3.9030306@gmail.com>
+Subject: [PATCH 1/4 RESEND] Btrfs: remove the useless assignment to *entry
+ in function tree_insert of file extent_io.c
+Date: Fri, 06 Apr 2012 14:35:05 +0800
+Message-ID: <4F7E8E99.3080306@gmail.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset=ISO-8859-1
 To: Chris Mason <chris.mason@oracle.com>, linux-btrfs@vger.kernel.org,
 	linux-kernel@vger.kernel.org
-Return-path: <linux-kernel-owner@vger.kernel.org>
+Return-path: <linux-btrfs-owner@vger.kernel.org>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-The return value of find_first_extent_bit is 1 or 0, no < 0.
-And if found something, return 0; if nothing was found, return 1.
-Fix the comment.
+In tree_insert, var *entry is used in the loop only, and is useless
+out of the loop. Remove the useless assignment after the loop.
 
 Signed-off-by: Wang Sheng-Hui <shhuiw@gmail.com>
 ---
- fs/btrfs/extent_io.c |    2 +-
- 1 files changed, 1 insertions(+), 1 deletions(-)
+ fs/btrfs/extent_io.c |    1 -
+ 1 files changed, 0 insertions(+), 1 deletions(-)
 
 diff --git a/fs/btrfs/extent_io.c b/fs/btrfs/extent_io.c
-index ddfc1d5..26fbe1c 100644
+index 8d904dd..7b679e2 100644
 --- a/fs/btrfs/extent_io.c
 +++ b/fs/btrfs/extent_io.c
-@@ -1288,7 +1288,7 @@ out:
-  * returned if we find something, and *start_ret and *end_ret are
-  * set to reflect the state struct that was found.
-  *
-- * If nothing was found, 1 is returned, < 0 on error
-+ * If nothing was found, 1 is returned. If found something, return 0.
-  */
- int find_first_extent_bit(struct extent_io_tree *tree, u64 start,
- 			  u64 *start_ret, u64 *end_ret, int bits)
+@@ -186,7 +186,6 @@ static struct rb_node *tree_insert(struct rb_root *root, u64 offset,
+ 			return parent;
+ 	}
+ 
+-	entry = rb_entry(node, struct tree_entry, rb_node);
+ 	rb_link_node(node, parent, p);
+ 	rb_insert_color(node, root);
+ 	return NULL;
 -- 
 1.7.1
+

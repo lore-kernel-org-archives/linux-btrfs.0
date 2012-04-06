@@ -1,142 +1,117 @@
-From: Li Zefan <lizefan@huawei.com>
-Subject: Re: [PATCH 1/2] Btrfs: make clear_extent_bit() always return 0 on
- success
-Date: Fri, 06 Apr 2012 08:24:37 +0800
-Message-ID: <4F7E37C5.7010703@huawei.com>
-References: <4F5DB640.3010102@cn.fujitsu.com>
- <20120405165209.GG14256@twin.jikos.cz>
+From: Liu Bo <liubo2009@cn.fujitsu.com>
+Subject: Re: [PATCH 0/3] btrfs: extended inode refs
+Date: Fri, 06 Apr 2012 09:24:21 +0800
+Message-ID: <4F7E45C5.5090306@cn.fujitsu.com>
+References: <1333656543-4843-1-git-send-email-mfasheh@suse.de>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=ISO-8859-1
-Cc: "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>,
-	chris.mason@oracle.com
-To: dave@jikos.cz
+Content-Type: text/plain; charset=UTF-8
+Cc: linux-btrfs@vger.kernel.org, Chris Mason <chris.mason@oracle.com>,
+	Josef Bacik <josef@redhat.com>
+To: Mark Fasheh <mfasheh@suse.de>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-reply-to: <20120405165209.GG14256@twin.jikos.cz>
+In-Reply-To: <1333656543-4843-1-git-send-email-mfasheh@suse.de>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-(Note: I've changed my email address ;)
-
-David Sterba wrote:
-
-> On Mon, Mar 12, 2012 at 04:39:28PM +0800, Li Zefan wrote:
->> Currently it returns a set of bits that were cleared, but this return
->> value is not used at all.
->>
->> Moreover it doesn't seem to be useful, because we may clear the bits
->> of a few extent_states, but only the cleared bits of last one is
->> returned.
->>
->> Signed-off-by: Li Zefan <lizf@cn.fujitsu.com>
->> ---
->>  fs/btrfs/extent_io.c |   19 +++++++------------
->>  1 files changed, 7 insertions(+), 12 deletions(-)
->>
->> diff --git a/fs/btrfs/extent_io.c b/fs/btrfs/extent_io.c
->> index a55fbe6..c968c95 100644
->> --- a/fs/btrfs/extent_io.c
->> +++ b/fs/btrfs/extent_io.c
->> @@ -394,18 +394,16 @@ static int split_state(struct extent_io_tree *tree, struct extent_state *orig,
->>  
->>  /*
->>   * utility function to clear some bits in an extent state struct.
->> - * it will optionally wake up any one waiting on this state (wake == 1), or
->> - * forcibly remove the state from the tree (delete == 1).
->> + * it will optionally wake up any one waiting on this state (wake == 1)
->>   *
->>   * If no bits are set on the state struct after clearing things, the
->>   * struct is freed and removed from the tree
->>   */
->> -static int clear_state_bit(struct extent_io_tree *tree,
->> +static void clear_state_bit(struct extent_io_tree *tree,
->>  			    struct extent_state *state,
->>  			    int *bits, int wake)
->>  {
->>  	int bits_to_clear = *bits & ~EXTENT_CTLBITS;
->> -	int ret = state->state & bits_to_clear;
->>  
->>  	if ((bits_to_clear & EXTENT_DIRTY) && (state->state & EXTENT_DIRTY)) {
->>  		u64 range = state->end - state->start + 1;
->> @@ -427,7 +425,6 @@ static int clear_state_bit(struct extent_io_tree *tree,
->>  	} else {
->>  		merge_state(tree, state);
->>  	}
->> -	return ret;
->>  }
->>  
->>  static struct extent_state *
+On 04/06/2012 04:09 AM, Mark Fasheh wrote:
+> Currently btrfs has a limitation on the maximum number of hard links an
+> inode can have. Specifically, links are stored in an array of ref
+> items:
 > 
-> The above part of the patch still applies and with only subject change
-> to something like
+> struct btrfs_inode_ref {
+> 	__le64 index;
+> 	__le16 name_len;
+> 	/* name goes here */
+> } __attribute__ ((__packed__));
 > 
->   Btrfs: retrurn void from clear_state_bit
+> The ref arrays are found via key triple:
 > 
-> is a rc2 material. So, Li, if you're ok with this change I'm adding it
-> (with the 2/2 patch) to my local queue of rc patches for Chris.
+> (inode objectid, BTRFS_INODE_EXTREF_KEY, parent dir objectid)
+> 
+> Since items can not exceed the size of a leaf, the total number of links
+> that can be stored for a given inode / parent dir pair is limited to under
+> 4k. This works fine for the most common case of few to only a handful of
+> links. Once the link count gets higher however, we begin to return EMLINK.
+> 
+> 
+> The following patches fix this situation by introducing a new ref item:
+> 
+> struct btrfs_inode_extref {
+> 	__le64 parent_objectid;
+> 	__le64 index;
+> 	__le16 name_len;
+> 	__u8   name[0];
+> 	/* name goes here */
+> } __attribute__ ((__packed__));
+> 
+> Extended refs behave differently from ref arrays in several key areas.
+> 
+> Each extended refs is it's own item so there is no ref array (and
+> therefore no limit on size).
+> 
+> As a result, we must use a different addressing scheme. Extended ref keys
+> look like:
+> 
+> (inode objectid, BTRFS_INODE_EXTREF_KEY, hash)
+> 
+> Where hash is defined as a function of the parent objectid and link name.
+> 
+> This effectively fixes the limitation, though we have a slightly less
+> efficient packing of link data. To keep the best of both worlds then, I
+> implemented the following behavior:
+> 
+> Extended refs don't replace the existing ref array. An inode gets an
+> extended ref for a given link _only_ after the ref array has been filled.  So
+> the most common cases shouldn't actually see any difference in performance
+> or disk usage as they'll never get to the point where we're using an
+> extended ref.
+> 
+> It's important while reading the patches however that there's still the
+> possibility that we can have a set of operations that grow out an inode ref
+> array (adding some extended refs) and then remove only the refs in the
+> array.  I don't really see this being common but it's a case we always have
+> to consider when coding these changes.
+> 
+> Right now there is a limitation for extrefs in that we're not handling the
+> possibility of a hash collision. There are two ways I see we can deal with
+> this:
+> 
+> We can use a 56-bit hash and keep a generation counter in the lower 8
+> bits of the offset field.  The cost would be an additional tree search
+> (between offset <hash>00 and <hash>FF) if we don't find exactly the name we
+> were looking for.
+> 
+> An alternative solution to dealing with collisions could be to emulate the
+> dir-item insertion code - specifically something like insert_with_overflow()
+> which will stuff multiple items under one key. I tend to prefer the idea of
+> simply including a generation in the key offset however since it maintains
+> the 1:1 relationship of keys to names which turns out to be much nicer to
+> code for in my honest opinion. Also none of the code which iterates the tree
+> looking for refs would have to change as the only difference is in the key
+> offset and not in the actual item structure.
+> 
+> 
+> Testing wise, the patches are in an intermediate state. I've debugged a fair
+> bit but I'm certain there's gremlins lurking in there.  The basic namespace
+> operations work well enough (link, unlink, etc).  I've done light testing of
+> my changes in backref.c by exercising BTRFS_IOC_INO_PATHS.  The changes in
+> tree-log.c need the most review and testing - I haven't really figured out a
+> great way to exercise the code in tree-log yet (suggestions would be
+> great!).
 > 
 
+For the log recover test, I used to sysrq+b to make sure our log remains on disk.
 
-Thanks for doing this!
+Will also test this patchset sooner or later.
 
---
-Li Zefan
+thanks,
+liubo
 
 > 
-> david
+> Finally, these patches are based off Linux v3.3.
+> 	--Mark
+> --
+> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
+> the body of a message to majordomo@vger.kernel.org
+> More majordomo info at  http://vger.kernel.org/majordomo-info.html
 > 
-> (the rest of the patch was done within the error handling series)
-> 
->> @@ -449,8 +446,7 @@ alloc_extent_state_atomic(struct extent_state *prealloc)
->>   *
->>   * the range [start, end] is inclusive.
->>   *
->> - * This takes the tree lock, and returns < 0 on error, > 0 if any of the
->> - * bits were already set, or zero if none of the bits were already set.
->> + * This takes the tree lock, and returns < 0 on error.
->>   */
->>  int clear_extent_bit(struct extent_io_tree *tree, u64 start, u64 end,
->>  		     int bits, int wake, int delete,
->> @@ -464,7 +460,6 @@ int clear_extent_bit(struct extent_io_tree *tree, u64 start, u64 end,
->>  	struct rb_node *node;
->>  	u64 last_end;
->>  	int err;
->> -	int set = 0;
->>  	int clear = 0;
->>  
->>  	if (delete)
->> @@ -547,7 +542,7 @@ hit_next:
->>  		if (err)
->>  			goto out;
->>  		if (state->end <= end) {
->> -			set |= clear_state_bit(tree, state, &bits, wake);
->> +			clear_state_bit(tree, state, &bits, wake);
->>  			if (last_end == (u64)-1)
->>  				goto out;
->>  			start = last_end + 1;
->> @@ -568,13 +563,13 @@ hit_next:
->>  		if (wake)
->>  			wake_up(&state->wq);
->>  
->> -		set |= clear_state_bit(tree, prealloc, &bits, wake);
->> +		clear_state_bit(tree, prealloc, &bits, wake);
->>  
->>  		prealloc = NULL;
->>  		goto out;
->>  	}
->>  
->> -	set |= clear_state_bit(tree, state, &bits, wake);
->> +	clear_state_bit(tree, state, &bits, wake);
->>  next:
->>  	if (last_end == (u64)-1)
->>  		goto out;
->> @@ -591,7 +586,7 @@ out:
->>  	if (prealloc)
->>  		free_extent_state(prealloc);
->>  
->> -	return set;
->> +	return 0;
->>  
->>  search_again:
->>  	if (start > end)
->> -- 1.7.3.1 
-
 

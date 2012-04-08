@@ -1,74 +1,44 @@
-From: Liu Bo <liubo2009@cn.fujitsu.com>
-Subject: [PATCH] Btrfs: fix eof while discarding extents
-Date: Sun, 8 Apr 2012 18:43:44 +0800
-Message-ID: <1333881824-23836-1-git-send-email-liubo2009@cn.fujitsu.com>
-Cc: <daniel@quora.org>
-To: <linux-btrfs@vger.kernel.org>
+From: David Sterba <dsterba@suse.cz>
+Subject: [PATCH] Revert "Btrfs: increase the global block reserve estimates"
+Date: Mon,  9 Apr 2012 01:40:51 +0200
+Message-ID: <1333928451-26468-1-git-send-email-dsterba@suse.cz>
+Cc: David Sterba <dsterba@suse.cz>, stable@vger.kernel.org,
+	Liu Bo <liubo2009@cn.fujitsu.com>,
+	Chris Mason <chris.mason@oracle.com>
+To: linux-btrfs@vger.kernel.org
 Return-path: <linux-btrfs-owner@vger.kernel.org>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-We miscalculate the length of extents we're discarding, and it leads to
-an eof of device.
+This reverts commit 5500cdbe14d7435e04f66ff3cfb8ecd8b8e44ebf.
 
-Reported-by: Daniel Blueman <daniel@quora.org>
-Signed-off-by: Liu Bo <liubo2009@cn.fujitsu.com>
+We had numerous reports of premature ENOSPC that were bisected to this
+patch. Reverting will not break things but a warning in 'use_block_rsv'
+may show up in the syslog.
+
+There's no alternative fix in sight and the ENOSPC problem affects all
+3.3 btrfs users during normal filesystem use.
+
+CC: stable@vger.kernel.org
+CC: Liu Bo <liubo2009@cn.fujitsu.com>
+CC: Chris Mason <chris.mason@oracle.com>
+Signed-off-by: David Sterba <dsterba@suse.cz>
 ---
- fs/btrfs/volumes.c |   20 ++++++++++++++++++--
- 1 files changed, 18 insertions(+), 2 deletions(-)
+ fs/btrfs/extent-tree.c |    2 +-
+ 1 files changed, 1 insertions(+), 1 deletions(-)
 
-diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
-index a872b48..759d024 100644
---- a/fs/btrfs/volumes.c
-+++ b/fs/btrfs/volumes.c
-@@ -3833,6 +3833,7 @@ static int __btrfs_map_block(struct btrfs_mapping_tree *map_tree, int rw,
- 		int sub_stripes = 0;
- 		u64 stripes_per_dev = 0;
- 		u32 remaining_stripes = 0;
-+		u32 last_stripe = 0;
+diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
+index a844204..ace5e8c 100644
+--- a/fs/btrfs/extent-tree.c
++++ b/fs/btrfs/extent-tree.c
+@@ -4205,7 +4205,7 @@ static u64 calc_global_metadata_size(struct btrfs_fs_info *fs_info)
+ 	num_bytes += div64_u64(data_used + meta_used, 50);
  
- 		if (map->type &
- 		    (BTRFS_BLOCK_GROUP_RAID0 | BTRFS_BLOCK_GROUP_RAID10)) {
-@@ -3846,6 +3847,8 @@ static int __btrfs_map_block(struct btrfs_mapping_tree *map_tree, int rw,
- 						      stripe_nr_orig,
- 						      factor,
- 						      &remaining_stripes);
-+			div_u64_rem(stripe_nr_end - 1, factor, &last_stripe);
-+			last_stripe *= sub_stripes;
- 		}
+ 	if (num_bytes * 3 > meta_used)
+-		num_bytes = div64_u64(meta_used, 3) * 2;
++		num_bytes = div64_u64(meta_used, 3);
  
- 		for (i = 0; i < num_stripes; i++) {
-@@ -3858,16 +3861,29 @@ static int __btrfs_map_block(struct btrfs_mapping_tree *map_tree, int rw,
- 					 BTRFS_BLOCK_GROUP_RAID10)) {
- 				bbio->stripes[i].length = stripes_per_dev *
- 							  map->stripe_len;
-+
- 				if (i / sub_stripes < remaining_stripes)
- 					bbio->stripes[i].length +=
- 						map->stripe_len;
-+
-+				/*
-+				 * Special for the first stripe and
-+				 * the last stripe:
-+				 *
-+				 * |-------|...|-------|
-+				 *     |----------|
-+				 *    off     end_off
-+				 */
- 				if (i < sub_stripes)
- 					bbio->stripes[i].length -=
- 						stripe_offset;
--				if ((i / sub_stripes + 1) %
--				    sub_stripes == remaining_stripes)
-+
-+				if (stripe_index >= last_stripe &&
-+				    stripe_index <= (last_stripe +
-+						     sub_stripes - 1))
- 					bbio->stripes[i].length -=
- 						stripe_end_offset;
-+
- 				if (i == sub_stripes - 1)
- 					stripe_offset = 0;
- 			} else
+ 	return ALIGN(num_bytes, fs_info->extent_root->leafsize << 10);
+ }
 -- 
-1.6.5.2
+1.7.9
 

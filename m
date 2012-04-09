@@ -1,30 +1,36 @@
 From: Daniel J Blueman <daniel@quora.org>
-Subject: Re: btrfs 3.2.2 -> 3.3.1 upgrade finally ate babies, some advice?
-Date: Mon, 9 Apr 2012 22:35:49 +0800
-Message-ID: <CAMVG2stk4skvQHCyKUzjV-WLJc8Emt0GjRBZBOK-_EJj4q-JYA@mail.gmail.com>
+Subject: Re: [3.4-rc1] attempt to access beyond end of device and livelock
+Date: Mon, 9 Apr 2012 22:44:23 +0800
+Message-ID: <CAMVG2staWGn6uUic3=ALYpT8MpkED3xUP2WCuMUnRSVcsjEN0A@mail.gmail.com>
+References: <CAMVG2ss5WzwhgPunD5greRii1HFuEYt1TMQwxgUNitrpHtguVA@mail.gmail.com>
+	<CAMVG2st4VPbujSY1hH+VjbR1gxCR0ZEGznrObYMWnpgo++Ynug@mail.gmail.com>
+	<4F81510B.60406@cn.fujitsu.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset=ISO-8859-1
-Cc: Linux BTRFS <linux-btrfs@vger.kernel.org>,
-	Liu Bo <liubo2009@cn.fujitsu.com>
-To: Leho Kraav <leho@kraav.com>
-Return-path: <linux-btrfs-owner@vger.kernel.org>
+Cc: Josef Bacik <josef@redhat.com>,
+	Chris Mason <chris.mason@oracle.com>,
+	Linux BTRFS <linux-btrfs@vger.kernel.org>,
+	Linux Kernel <linux-kernel@vger.kernel.org>
+To: Liu Bo <liubo2009@cn.fujitsu.com>
+Return-path: <linux-kernel-owner@vger.kernel.org>
+In-Reply-To: <4F81510B.60406@cn.fujitsu.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Leho Kraav <leho <at> kraav.com> writes:
+On 8 April 2012 16:49, Liu Bo <liubo2009@cn.fujitsu.com> wrote:
+> On 04/06/2012 07:36 PM, Daniel J Blueman wrote:
+>> Hi Josef, Chris,
+>>
+>> When testing BTRFS with RAID 0 metadata on linux-3.4-rc1, we see
+>> discard ranges exceeding the end of the block device [1], potentially
+>> causing dataloss; when this occurs, filesystem writeback becomes
+>> catatonic due to continual resubmission.
 []
-> Apr  8 02:46:11 s9 kernel: [  189.691778] attempt to access beyond end
-> of device
-> Apr  8 02:46:11 s9 kernel: [  189.691787] dm-3: rw=129, want=23361976,
-> limit=20967424
+> Thanks for the report, this bug shows we've miscalculated the length of discard extents.
+>
+> I'll send a patch for this soon.
 
-I recently bumped into this too [1]. Liu Bo posted a patch for it [2],
-which tests out fine here. The workaround is to not mount with
-'discard' until eg ~3.4-rc3 or later.
+The patch test out well here on 3.4-rc2. Thanks Bo!
 
-Thanks,
-  Daniel
-
-[1] http://permalink.gmane.org/gmane.comp.file-systems.btrfs/16409
-[2] http://permalink.gmane.org/gmane.comp.file-systems.btrfs/16649
+Daniel
 -- 
 Daniel J Blueman

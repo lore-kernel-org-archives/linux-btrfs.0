@@ -1,63 +1,37 @@
 From: David Sterba <dave@jikos.cz>
-Subject: Re: Large metadata mount messages lost after reboot
-Date: Tue, 10 Apr 2012 00:15:24 +0200
-Message-ID: <20120409221524.GA11041@twin.jikos.cz>
-References: <CADxhoDTqCuvtiAUd5a4AAZsLBQ=7i-mvf8X0FeZB1CyBJXpdyg@mail.gmail.com>
+Subject: Re: [PATCH] Revert "Btrfs: increase the global block reserve
+ estimates"
+Date: Tue, 10 Apr 2012 00:40:08 +0200
+Message-ID: <20120409224008.GB11041@twin.jikos.cz>
+References: <1333928451-26468-1-git-send-email-dsterba@suse.cz>
+ <4F823D44.5070200@cn.fujitsu.com>
 Reply-To: dave@jikos.cz
 Mime-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
-Cc: linux-btrfs@vger.kernel.org
-To: Calvin Morrow <calvin.morrow@gmail.com>
+Cc: David Sterba <dsterba@suse.cz>, linux-btrfs@vger.kernel.org,
+	stable@vger.kernel.org, Chris Mason <chris.mason@oracle.com>,
+	Josef Bacik <josef@redhat.com>
+To: Liu Bo <liubo2009@cn.fujitsu.com>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <CADxhoDTqCuvtiAUd5a4AAZsLBQ=7i-mvf8X0FeZB1CyBJXpdyg@mail.gmail.com>
+In-Reply-To: <4F823D44.5070200@cn.fujitsu.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Mon, Apr 09, 2012 at 04:06:56PM -0600, Calvin Morrow wrote:
-> After a reboot however, the "flagging fs with big metadata feature"
-> message no longer appears on subsequent mounts.
+On Mon, Apr 09, 2012 at 09:37:08AM +0800, Liu Bo wrote:
+> The whole thing is about our overcommit stuff, that is,
+> since we are not able to get _precise_ number of reservation right now, we usually
+> reserve more than what we need.
+> For this, we've done overcommit dance (thanks for Josef's work!) but it's still not
+> enough for our reservation when we still have some disk space.
+>
+> I'm ok with this revert, but since we don't use up all the reserved space in most time,
+> I assume the following can be an alternative, thanks,
 
-        /*
-         * flag our filesystem as having big metadata blocks if
-         * they are bigger than the page size
-         */
-        if (btrfs_super_leafsize(disk_super) > PAGE_CACHE_SIZE) {
-                if (!(features & BTRFS_FEATURE_INCOMPAT_BIG_METADATA))
-                        printk(KERN_INFO "btrfs flagging fs with big metadata feature\n");
-                features |= BTRFS_FEATURE_INCOMPAT_BIG_METADATA;
-        }
-
-translation: it will print the message only the first time it's mounted and the
-flag is not already stored on disk.
-
-> Is this expected behavior?
-
-Yes it is.
-
-> Is there a way I can dump filesystem
-> information to determine what leaf and node size the filesystem thinks
-> it has?
-
-# mkfs.btrfs -n 32k -l 32k image
-
-WARNING! - Btrfs v0.19-152-g1957076 IS STAB^WEXPERIMENTAL
-WARNING! - see http://btrfs.wiki.kernel.org before using
-
-fs created label (null) on image
-        nodesize 32768 leafsize 32768 sectorsize 4096 size 300.00GB
-Btrfs v0.19-152-g1957076
-
-# file image
-image: BTRFS Filesystem sectorsize 4096, nodesize 32768, leafsize 32768)
-
-and it does it by looking to the first superblock:
-
-/usr/share/misc/magic:
-# BTRFS
-0x10040         string          _BHRfS_M        BTRFS Filesystem
->0x1012b        string          >\0             (label "%s",
->0x10090        lelong          x               sectorsize %d,
->0x10094        lelong          x               nodesize %d,
->0x10098        lelong          x               leafsize %d)
+Unfortunatelly the situation looks not good for 3.3 btrfs users, I'm
+looking for something we know that somehow (ie like in 3.2) works and
+are able to submit to the stable tree very soon. I'll definitelly test
+your alternative and if Chris applies it during the -rc phase we'll have
+more time to verify it or you/Josef fix it in another way.
 
 
+thanks,
 david

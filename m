@@ -1,70 +1,48 @@
-From: Martin Steigerwald <Martin@lichtvoll.de>
-Subject: Re: btrfs 3.2.2 -> 3.3.1 upgrade finally ate babies, some advice?
-Date: Mon, 9 Apr 2012 21:07:22 +0200
-Message-ID: <201204092107.22994.Martin@lichtvoll.de>
-References: <CAMVG2stk4skvQHCyKUzjV-WLJc8Emt0GjRBZBOK-_EJj4q-JYA@mail.gmail.com> <4F82F5BA.3080504@kraav.com> <CAMVG2styuLG9ai0rb20jf=pwnAA3XU3zZsL5PfmxoMXYajG9BQ@mail.gmail.com> (sfid-20120409_204022_475677_05FF62C7)
-Mime-Version: 1.0
-Content-Type: Text/Plain; charset=iso-8859-1
-Cc: Daniel J Blueman <daniel@quora.org>, Leho Kraav <leho@kraav.com>,
-	Liu Bo <liubo2009@cn.fujitsu.com>
+From: Josef Bacik <josef@redhat.com>
+Subject: [PATCH] Btrfs-progs: make btrfsck aware of free space inodes
+Date: Mon,  9 Apr 2012 15:22:13 -0400
+Message-ID: <1333999333-11529-1-git-send-email-josef@redhat.com>
 To: linux-btrfs@vger.kernel.org
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <CAMVG2styuLG9ai0rb20jf=pwnAA3XU3zZsL5PfmxoMXYajG9BQ@mail.gmail.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Am Montag, 9. April 2012 schrieb Daniel J Blueman:
-> On 9 April 2012 22:44, Leho Kraav <leho@kraav.com> wrote:
-> > On 09.04.2012 17:35, Daniel J Blueman wrote:
-> >> Leho Kraav<leho<at>  kraav.com>  writes:
-> >> []
-> >>=20
-> >>> Apr  8 02:46:11 s9 kernel: [  189.691778] attempt to access beyon=
-d
-> >>> end of device
-> >>> Apr  8 02:46:11 s9 kernel: [  189.691787] dm-3: rw=3D129,
-> >>> want=3D23361976, limit=3D20967424
-> >>=20
-> >> I recently bumped into this too [1]. Liu Bo posted a patch for it
-> >> [2], which tests out fine here. The workaround is to not mount wit=
-h
-> >> 'discard' until eg ~3.4-rc3 or later.
-> >>=20
-> >> [1] http://permalink.gmane.org/gmane.comp.file-systems.btrfs/16409
-> >> [2] http://permalink.gmane.org/gmane.comp.file-systems.btrfs/16649
-> >=20
-> > Oh wow, thanks. This sounds exactly like what happened. I got the
-> > livelock post off my search results, but the patch post doesn't see=
-m
-> > to have any of the keywords I was looking for, since I had no idea
-> > it could be related to discards.
-> >=20
-> > So can this become a problem earlier too, not only when the space
-> > used is
->=20
-> > approaching limits? If not, I think I should be good until 3.4:
-> Looks like it affects at least 3.3 and 3.4-rc1/2 in all circumstances=
-=2E
+The new xfstests will run fsck against the volume to make sure we didn't
+introduce any inconsistencies, which is nice except we will error out
+immediately if we mount with inode_cache.  We need to make btrfsck skip the
+special free space cache items and then just assume that we have a link for
+the free space cache inode item.  This makes btrfsck pass with success on a
+fs with inode cache items.  Thanks,
 
-Is offline discard via fstrim also affected?
+Signed-off-by: Josef Bacik <josef@redhat.com>
+---
+ btrfsck.c |    7 +++++++
+ 1 files changed, 7 insertions(+), 0 deletions(-)
 
-I used fstrim some times for my / BTRFS with 3.3.0-trunk Debian kernel=20
-(should be 3.3.0) and
+diff --git a/btrfsck.c b/btrfsck.c
+index 7aac736..572dde0 100644
+--- a/btrfsck.c
++++ b/btrfsck.c
+@@ -274,6 +274,9 @@ static struct inode_record *get_inode_rec(struct cache_tree *inode_cache,
+ 		node->cache.size = 1;
+ 		node->data = rec;
+ 
++		if (ino == BTRFS_FREE_INO_OBJECTID)
++			rec->found_link = 1;
++
+ 		ret = insert_existing_cache_extent(inode_cache, &node->cache);
+ 		BUG_ON(ret);
+ 	}
+@@ -1015,6 +1018,10 @@ static int process_one_leaf(struct btrfs_root *root, struct extent_buffer *eb,
+ 	nritems = btrfs_header_nritems(eb);
+ 	for (i = 0; i < nritems; i++) {
+ 		btrfs_item_key_to_cpu(eb, &key, i);
++
++		if (key.objectid == BTRFS_FREE_SPACE_OBJECTID)
++			continue;
++
+ 		if (active_node->current == NULL ||
+ 		    active_node->current->ino < key.objectid) {
+ 			if (active_node->current) {
+-- 
+1.7.5.2
 
-martin@merkaba:~> zgrep "beyond" /var/log/syslog*
-martin@merkaba:~#1>
-
-Seems I am safe.
-
-But I think I won=B4t use fstrim for now anymore on any BTRFS partition=
-=20
-until I have some confirmation that it is safe.
-
-Thanks,
---=20
-Martin 'Helios' Steigerwald - http://www.Lichtvoll.de
-GPG: 03B0 0D6C 0040 0710 4AFA  B82F 991B EAAC A599 84C7
---
-To unsubscribe from this list: send the line "unsubscribe linux-btrfs" =
-in
-the body of a message to majordomo@vger.kernel.org
-More majordomo info at  http://vger.kernel.org/majordomo-info.html

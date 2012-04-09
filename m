@@ -1,37 +1,46 @@
 From: David Sterba <dave@jikos.cz>
-Subject: Re: [PATCH] Revert "Btrfs: increase the global block reserve
- estimates"
-Date: Tue, 10 Apr 2012 00:40:08 +0200
-Message-ID: <20120409224008.GB11041@twin.jikos.cz>
-References: <1333928451-26468-1-git-send-email-dsterba@suse.cz>
- <4F823D44.5070200@cn.fujitsu.com>
+Subject: Re: btrfs 3.2.2 -> 3.3.1 upgrade finally ate babies, some advice?
+Date: Tue, 10 Apr 2012 01:19:54 +0200
+Message-ID: <20120409231954.GC11041@twin.jikos.cz>
+References: <CAMVG2stk4skvQHCyKUzjV-WLJc8Emt0GjRBZBOK-_EJj4q-JYA@mail.gmail.com>
+ <4F82F5BA.3080504@kraav.com>
+ <CAMVG2styuLG9ai0rb20jf=pwnAA3XU3zZsL5PfmxoMXYajG9BQ@mail.gmail.com>
+ <4F834D75.5060703@kraav.com>
+ <4F835550.6090106@kraav.com>
 Reply-To: dave@jikos.cz
 Mime-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
-Cc: David Sterba <dsterba@suse.cz>, linux-btrfs@vger.kernel.org,
-	stable@vger.kernel.org, Chris Mason <chris.mason@oracle.com>,
-	Josef Bacik <josef@redhat.com>
-To: Liu Bo <liubo2009@cn.fujitsu.com>
+Cc: Daniel J Blueman <daniel@quora.org>,
+	Linux BTRFS <linux-btrfs@vger.kernel.org>,
+	Liu Bo <liubo2009@cn.fujitsu.com>, idryomov@gmail.com
+To: Leho Kraav <leho@kraav.com>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <4F823D44.5070200@cn.fujitsu.com>
+In-Reply-To: <4F835550.6090106@kraav.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Mon, Apr 09, 2012 at 09:37:08AM +0800, Liu Bo wrote:
-> The whole thing is about our overcommit stuff, that is,
-> since we are not able to get _precise_ number of reservation right now, we usually
-> reserve more than what we need.
-> For this, we've done overcommit dance (thanks for Josef's work!) but it's still not
-> enough for our reservation when we still have some disk space.
->
-> I'm ok with this revert, but since we don't use up all the reserved space in most time,
-> I assume the following can be an alternative, thanks,
+On Tue, Apr 10, 2012 at 12:32:00AM +0300, Leho Kraav wrote:
+> It is also BUG time WITH the patch. Mount succeeds, but "btrfs fi balance
+> HOME" gives us:
+> 
+> Apr 10 00:24:18 server sudo: pam_unix(sudo:session): session opened for user > root by (uid=1000)
+> Apr 10 00:24:18 server kernel: [  363.839105] ------------[ cut here > ]------------
+> Apr 10 00:24:18 server kernel: [  363.839163] kernel BUG at > fs/btrfs/volumes.c:2733!
 
-Unfortunatelly the situation looks not good for 3.3 btrfs users, I'm
-looking for something we know that somehow (ie like in 3.2) works and
-are able to submit to the stable tree very soon. I'll definitelly test
-your alternative and if Chris applies it during the -rc phase we'll have
-more time to verify it or you/Josef fix it in another way.
+that's
+
+2732         if (!(bctl->flags & BTRFS_BALANCE_RESUME)) {
+2733                 BUG_ON(ret == -EEXIST);
+^^^^
+2734                 set_balance_control(bctl);
+2735         } else {
+2736                 BUG_ON(ret != -EEXIST);
+2737                 spin_lock(&fs_info->balance_lock);
+2738                 update_balance_args(bctl);
+2739                 spin_unlock(&fs_info->balance_lock);
+2740         }
+
+IIRC somebody reported similar problem recently. It basically means
+there's an inconsistent balance state. Adding Ilya to CC.
 
 
-thanks,
 david

@@ -1,39 +1,45 @@
-From: Leho Kraav <leho@kraav.com>
-Subject: Re: btrfs 3.2.2 -> 3.3.1 upgrade finally ate babies, some advice?
-Date: Tue, 10 Apr 2012 18:31:57 +0300
-Message-ID: <4F84526D.1070207@kraav.com>
-References: <CAMVG2stk4skvQHCyKUzjV-WLJc8Emt0GjRBZBOK-_EJj4q-JYA@mail.gmail.com> <4F82F5BA.3080504@kraav.com> <CAMVG2styuLG9ai0rb20jf=pwnAA3XU3zZsL5PfmxoMXYajG9BQ@mail.gmail.com> <4F834D75.5060703@kraav.com> <4F835550.6090106@kraav.com> <20120409231954.GC11041@twin.jikos.cz> <20120410090718.GA2345@zambezi.lan>
+From: Calvin Walton <calvin.walton@kepstin.ca>
+Subject: Re: Boot speed/mount time regression with 3.4.0-rc2
+Date: Tue, 10 Apr 2012 12:04:00 -0400
+Message-ID: <1334073840.2758.5.camel@ayu>
+References: <1333986823.2928.6.camel@ayu> <1333991404.2817.6.camel@ayu>
+	 <20120409205429.GB6958@localhost.localdomain> <1334006446.2678.0.camel@ayu>
+	 <20120410151645.GC2296@localhost.localdomain>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=UTF-8; format=flowed
-Cc: Daniel J Blueman <daniel@quora.org>,
-	Linux BTRFS <linux-btrfs@vger.kernel.org>,
-	Liu Bo <liubo2009@cn.fujitsu.com>
-To: Ilya Dryomov <idryomov@gmail.com>
+Content-Type: text/plain; charset="UTF-8"
+Cc: linux-btrfs@vger.kernel.org, Chris Mason <chris.mason@oracle.com>
+To: Josef Bacik <josef@redhat.com>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <20120410090718.GA2345@zambezi.lan>
+In-Reply-To: <20120410151645.GC2296@localhost.localdomain>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 10.04.2012 12:07, Ilya Dryomov wrote:
- > On Tue, Apr 10, 2012 at 01:19:54AM +0200, David Sterba wrote:
- >>
- >> IIRC somebody reported similar problem recently. It basically means
- >> there's an inconsistent balance state. Adding Ilya to CC.
- >
- > Leho, so you just mount with discard patch and run 'btrfs fi balance
- > <mnt>', correct ?
- >
- > The problem is that you have balance state on disk (from trying to run
- > balance earlier w/o discard patch) but we are failing to pick it up on
- > mount.
- >
- > Could you please post the entire dmesg and the output of
- > 'btrfs-debug-tree -d<dev>' somewhere ?
- >
- > Could you also apply the debug patch below, mount your fs and send me
- > dmesg output (no need to run balance, just mount) ?
- >
+On Tue, 2012-04-10 at 11:16 -0400, Josef Bacik wrote:
+> On Mon, Apr 09, 2012 at 05:20:46PM -0400, Calvin Walton wrote:
+> > On Mon, 2012-04-09 at 16:54 -0400, Josef Bacik wrote:
+> > > On Mon, Apr 09, 2012 at 01:10:04PM -0400, Calvin Walton wrote:
+> > > > On Mon, 2012-04-09 at 11:53 -0400, Calvin Walton wrote:
+> > > > > Hi,
+> > > > > 
+> > > > > I have a system that's using a dracut-generated initramfs to mount a
+> > > > > btrfs root. After upgrading to kernel 3.4.0-rc2 to test it out, I've
+> > > > > noticed that the process of mounting the root filesystem takes much
+> > > > > longer with 3.4.0-rc2 than it did with 3.3.1 - nearly 30 seconds slower!
+> 
+> Ok drop that previous patch and give this one a whirl, it helped on my laptop.
+> This is only  half of the problem AFAICS, but it's the easier half to fix, in
+> the meantime I need to lock down why we're not writing out cache for a bunch of
+> block groups, but thats trickier since the messages I need are spit out while
+> I'm shutting down, so I need to get creative.  Let me know if/how much this
+> helps.  Thanks,
 
-Your understanding of situation based on above is correct.
+This one brings the mount time right down on my laptop, it's back to
+around 0.5 seconds, same as 3.3.x.
 
-Yes I can do all the stuff, but it's going to take until next week, 
-since I'm travelling and I can't risk BUG-ing my server remotely.
+Tested-by: Calvin Walton <calvin.walton@kepstin.ca>
+
+I'll keep following this email thread; let me know if you have any other
+patches that you want me to try out.
+
+-- 
+Calvin Walton <calvin.walton@kepstin.ca>
+

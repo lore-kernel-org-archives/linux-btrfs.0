@@ -1,45 +1,37 @@
-From: Arvin Schnell <aschnell@suse.de>
+From: "Fajar A. Nugraha" <list@fajar.net>
 Subject: Re: Snapper packages for Ubuntu
-Date: Tue, 10 Apr 2012 13:50:22 +0200
-Message-ID: <20120410115022.GB24057@suse.de>
+Date: Tue, 10 Apr 2012 20:08:15 +0700
+Message-ID: <CAG1y0scsfBjVBAL8EQFKJGoR=Dm2K11E8MJLcmqq=gckb0kG2g@mail.gmail.com>
 References: <CAG1y0sdbtPB+9MxmzTuBD3kSe18kaU-fkfutNCg97jXHaQeCjQ@mail.gmail.com>
+	<20120410115022.GB24057@suse.de>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=iso-8859-15
-Cc: linux-btrfs <linux-btrfs@vger.kernel.org>,
-	"Matthias G. Eckermann" <mge@suse.com>
-To: "Fajar A. Nugraha" <list@fajar.net>
+Content-Type: text/plain; charset=ISO-8859-1
+Cc: linux-btrfs <linux-btrfs@vger.kernel.org>
+To: Arvin Schnell <aschnell@suse.de>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <CAG1y0sdbtPB+9MxmzTuBD3kSe18kaU-fkfutNCg97jXHaQeCjQ@mail.gmail.com>
+In-Reply-To: <20120410115022.GB24057@suse.de>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Tue, Apr 10, 2012 at 05:37:38PM +0700, Fajar A. Nugraha wrote:
-> Hi,
->=20
-> I've created snapper packages for Ubuntu, available on
-> https://launchpad.net/~snapper/+archive/stable. For those new to
-> snapper, it's a tool for managing btrfs snapshots
-> (http://en.opensuse.org/Portal:Snapper). It depends on libblocxx
-> available from https://launchpad.net/~bjoern-esser-n/+archive/blocxx =
-,
-> and currently uses git source up to commit 50dec40. I've done some
-> limited testing and it seems to to work correctly so far.
+On Tue, Apr 10, 2012 at 6:50 PM, Arvin Schnell <aschnell@suse.de> wrote:
+> On Tue, Apr 10, 2012 at 05:37:38PM +0700, Fajar A. Nugraha wrote:
+>> Hi,
+>>
+>> I've created snapper packages for Ubuntu, available on
+>> https://launchpad.net/~snapper/+archive/stable. For those new to
+>> snapper, it's a tool for managing btrfs snapshots
+>> (http://en.opensuse.org/Portal:Snapper). It depends on libblocxx
 
-libblocxx is not required for snapper anymore since about a
-month. It's checked during configure.
+> libblocxx is not required for snapper anymore since about a
+> month. It's checked during configure.
 
-Regards,
-  Arvin
+You're right. I just tested it, and not having libblocxx during
+compilation results in less dependencies (namely libblocxx itself,
+plus libssl, libcrypto, and libpcre).
 
---=20
-Arvin Schnell, <aschnell@suse.de>
-Senior Software Engineer, Research & Development
-SUSE LINUX Products GmbH, GF: Jeff Hawn, Jennifer Guild, Felix Imend=F6=
-rffer, HRB 16746 (AG N=FCrnberg)
-Maxfeldstra=DFe 5
-90409 N=FCrnberg
-Germany
---
-To unsubscribe from this list: send the line "unsubscribe linux-btrfs" =
-in
-the body of a message to majordomo@vger.kernel.org
-More majordomo info at  http://vger.kernel.org/majordomo-info.html
+What functionality, if any, is not available when not using libblocxx?
+Since it's still used when present during configure, I assume it's
+good for something.
+
+Thanks.
+
+Fajar

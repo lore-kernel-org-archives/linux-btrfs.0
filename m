@@ -1,46 +1,31 @@
 From: Arvin Schnell <aschnell@suse.de>
-Subject: Re: snapper for Ubuntu? (WAS: btrfs auto snapshot)
-Date: Tue, 10 Apr 2012 13:46:23 +0200
-Message-ID: <20120410114623.GA24057@suse.de>
-References: <CAG1y0sdzOXhWowTiBomc6CDEVGJdpJy983P5suQfFC_-NmnYtQ@mail.gmail.com>
+Subject: Re: Snapper packages for Ubuntu
+Date: Tue, 10 Apr 2012 13:50:22 +0200
+Message-ID: <20120410115022.GB24057@suse.de>
+References: <CAG1y0sdbtPB+9MxmzTuBD3kSe18kaU-fkfutNCg97jXHaQeCjQ@mail.gmail.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset=iso-8859-15
-Cc: linux-btrfs <linux-btrfs@vger.kernel.org>
+Cc: linux-btrfs <linux-btrfs@vger.kernel.org>,
+	"Matthias G. Eckermann" <mge@suse.com>
 To: "Fajar A. Nugraha" <list@fajar.net>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <CAG1y0sdzOXhWowTiBomc6CDEVGJdpJy983P5suQfFC_-NmnYtQ@mail.gmail.com>
+In-Reply-To: <CAG1y0sdbtPB+9MxmzTuBD3kSe18kaU-fkfutNCg97jXHaQeCjQ@mail.gmail.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Mon, Apr 09, 2012 at 08:18:45AM +0700, Fajar A. Nugraha wrote:
-> On Thu, Mar 1, 2012 at 8:48 PM, Arvin Schnell <aschnell@suse.de> wrot=
-e:
-> > We have now created a project in the openSUSE buildservice were
-> > we provide snapper packages for various distributions, e.g. RHEL6
-> > and Fedora 16. Please find the downloads at:
-> >
-> > =A0http://download.opensuse.org/repositories/filesystems:/snapper/
-> >
-> > I'll also add a link from the snapper home page:
-> >
-> > =A0http://en.opensuse.org/Portal:Snapper.
-> >
-> > I have tested snapper on Fedora 16 and found no problems.
+On Tue, Apr 10, 2012 at 05:37:38PM +0700, Fajar A. Nugraha wrote:
+> Hi,
 >=20
-> Hi Arvin,
->=20
-> I noticed that openSUSE buildservice now provides debs for ubuntu as
-> well. I can't seem to find a way to add it to apt source list though,
-> using the usual line
->=20
-> deb uri distribution [component1] ....
+> I've created snapper packages for Ubuntu, available on
+> https://launchpad.net/~snapper/+archive/stable. For those new to
+> snapper, it's a tool for managing btrfs snapshots
+> (http://en.opensuse.org/Portal:Snapper). It depends on libblocxx
+> available from https://launchpad.net/~bjoern-esser-n/+archive/blocxx =
+,
+> and currently uses git source up to commit 50dec40. I've done some
+> limited testing and it seems to to work correctly so far.
 
-You can use these commands:
-
-echo 'deb http://download.opensuse.org/repositories/filesystems:/snappe=
-r/Debian_6.0/ /' >> /etc/apt/sources.list
-
-apt-get update
-apt-get install snapper
+libblocxx is not required for snapper anymore since about a
+month. It's checked during configure.
 
 Regards,
   Arvin

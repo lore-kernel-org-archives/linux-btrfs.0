@@ -1,40 +1,39 @@
-From: Chris Mason <chris.mason@oracle.com>
-Subject: Re: [PATCH] Revert "Btrfs: increase the global block reserve
- estimates"
-Date: Tue, 10 Apr 2012 11:24:15 -0400
-Message-ID: <20120410152415.GW29506@shiny>
-References: <1333928451-26468-1-git-send-email-dsterba@suse.cz>
- <4F823D44.5070200@cn.fujitsu.com>
- <20120409224008.GB11041@twin.jikos.cz>
+From: Leho Kraav <leho@kraav.com>
+Subject: Re: btrfs 3.2.2 -> 3.3.1 upgrade finally ate babies, some advice?
+Date: Tue, 10 Apr 2012 18:31:57 +0300
+Message-ID: <4F84526D.1070207@kraav.com>
+References: <CAMVG2stk4skvQHCyKUzjV-WLJc8Emt0GjRBZBOK-_EJj4q-JYA@mail.gmail.com> <4F82F5BA.3080504@kraav.com> <CAMVG2styuLG9ai0rb20jf=pwnAA3XU3zZsL5PfmxoMXYajG9BQ@mail.gmail.com> <4F834D75.5060703@kraav.com> <4F835550.6090106@kraav.com> <20120409231954.GC11041@twin.jikos.cz> <20120410090718.GA2345@zambezi.lan>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-To: Liu Bo <liubo2009@cn.fujitsu.com>, David Sterba <dsterba@suse.cz>,
-	linux-btrfs@vger.kernel.org, stable@vger.kernel.org,
-	Josef Bacik <josef@redhat.com>
+Content-Type: text/plain; charset=UTF-8; format=flowed
+Cc: Daniel J Blueman <daniel@quora.org>,
+	Linux BTRFS <linux-btrfs@vger.kernel.org>,
+	Liu Bo <liubo2009@cn.fujitsu.com>
+To: Ilya Dryomov <idryomov@gmail.com>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <20120409224008.GB11041@twin.jikos.cz>
+In-Reply-To: <20120410090718.GA2345@zambezi.lan>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Tue, Apr 10, 2012 at 12:40:08AM +0200, David Sterba wrote:
-> On Mon, Apr 09, 2012 at 09:37:08AM +0800, Liu Bo wrote:
-> > The whole thing is about our overcommit stuff, that is,
-> > since we are not able to get _precise_ number of reservation right now, we usually
-> > reserve more than what we need.
-> > For this, we've done overcommit dance (thanks for Josef's work!) but it's still not
-> > enough for our reservation when we still have some disk space.
-> >
-> > I'm ok with this revert, but since we don't use up all the reserved space in most time,
-> > I assume the following can be an alternative, thanks,
-> 
-> Unfortunatelly the situation looks not good for 3.3 btrfs users, I'm
-> looking for something we know that somehow (ie like in 3.2) works and
-> are able to submit to the stable tree very soon. I'll definitelly test
-> your alternative and if Chris applies it during the -rc phase we'll have
-> more time to verify it or you/Josef fix it in another way.
+On 10.04.2012 12:07, Ilya Dryomov wrote:
+ > On Tue, Apr 10, 2012 at 01:19:54AM +0200, David Sterba wrote:
+ >>
+ >> IIRC somebody reported similar problem recently. It basically means
+ >> there's an inconsistent balance state. Adding Ilya to CC.
+ >
+ > Leho, so you just mount with discard patch and run 'btrfs fi balance
+ > <mnt>', correct ?
+ >
+ > The problem is that you have balance state on disk (from trying to run
+ > balance earlier w/o discard patch) but we are failing to pick it up on
+ > mount.
+ >
+ > Could you please post the entire dmesg and the output of
+ > 'btrfs-debug-tree -d<dev>' somewhere ?
+ >
+ > Could you also apply the debug patch below, mount your fs and send me
+ > dmesg output (no need to run balance, just mount) ?
+ >
 
-Lets do the alternative of reverting the patch and dropping the warning.
-I've been trying to find a small and simple patch for that but I don't
-think that's going to happen for a stable commit.
+Your understanding of situation based on above is correct.
 
--chris
-
+Yes I can do all the stuff, but it's going to take until next week, 
+since I'm travelling and I can't risk BUG-ing my server remotely.

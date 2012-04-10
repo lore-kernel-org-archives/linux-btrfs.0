@@ -1,45 +1,94 @@
-From: Calvin Walton <calvin.walton@kepstin.ca>
-Subject: Re: Boot speed/mount time regression with 3.4.0-rc2
-Date: Tue, 10 Apr 2012 12:04:00 -0400
-Message-ID: <1334073840.2758.5.camel@ayu>
-References: <1333986823.2928.6.camel@ayu> <1333991404.2817.6.camel@ayu>
-	 <20120409205429.GB6958@localhost.localdomain> <1334006446.2678.0.camel@ayu>
-	 <20120410151645.GC2296@localhost.localdomain>
+From: Ilya Dryomov <idryomov@gmail.com>
+Subject: Re: kernel BUG at fs/btrfs/volumes.c:2733
+Date: Tue, 10 Apr 2012 19:06:43 +0300
+Message-ID: <20120410160643.GA3056@zambezi.lan>
+References: <20120329105235.GA1198@panda>
+ <20120329135324.GA1899@zambezi.lan>
+ <20120329151422.GC29741@panda>
+ <20120329154154.GA3891@zambezi.lan>
+ <20120330174956.GA770@panda>
+ <20120330195251.GA1928@zambezi.lan>
+ <20120330204405.GA2632@panda>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="UTF-8"
-Cc: linux-btrfs@vger.kernel.org, Chris Mason <chris.mason@oracle.com>
-To: Josef Bacik <josef@redhat.com>
+Content-Type: text/plain; charset=us-ascii
+Cc: linux-btrfs@vger.kernel.org
+To: Sander <sander@humilis.net>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <20120410151645.GC2296@localhost.localdomain>
+In-Reply-To: <20120330204405.GA2632@panda>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Tue, 2012-04-10 at 11:16 -0400, Josef Bacik wrote:
-> On Mon, Apr 09, 2012 at 05:20:46PM -0400, Calvin Walton wrote:
-> > On Mon, 2012-04-09 at 16:54 -0400, Josef Bacik wrote:
-> > > On Mon, Apr 09, 2012 at 01:10:04PM -0400, Calvin Walton wrote:
-> > > > On Mon, 2012-04-09 at 11:53 -0400, Calvin Walton wrote:
-> > > > > Hi,
-> > > > > 
-> > > > > I have a system that's using a dracut-generated initramfs to mount a
-> > > > > btrfs root. After upgrading to kernel 3.4.0-rc2 to test it out, I've
-> > > > > noticed that the process of mounting the root filesystem takes much
-> > > > > longer with 3.4.0-rc2 than it did with 3.3.1 - nearly 30 seconds slower!
+On Fri, Mar 30, 2012 at 10:44:05PM +0200, Sander wrote:
+> Ilya Dryomov wrote (ao):
+> > On Fri, Mar 30, 2012 at 07:49:56PM +0200, Sander wrote:
+> > Thanks. btrfs-debug-tree confirms that you've got a balance item on
+> > media.
 > 
-> Ok drop that previous patch and give this one a whirl, it helped on my laptop.
-> This is only  half of the problem AFAICS, but it's the easier half to fix, in
-> the meantime I need to lock down why we're not writing out cache for a bunch of
-> block groups, but thats trickier since the messages I need are spit out while
-> I'm shutting down, so I need to get creative.  Let me know if/how much this
-> helps.  Thanks,
+> > > > > > After that mount it back and see if there is "btrfs: continuing
+> > > > > > balance" line in dmesg (and if btrfs-balance kthread shows up)?
+> > > 
+> > > There is no such line in dmesg, and currently no btrfs-balance kthread
+> > > is running. I've pulled Chris Masons for-linus and booted with the
+> > > resulting kernel.
+> > 
+> > And given the above it's weird. We are failing to locate the item
+> > during mount for some reason and I would like to find out why. So if
+> > you are up for running debugging patches (really just compiling btrfs
+> > module and sending me dmesg output) I would appreciate that.
+> 
+> Sure, please send me patches.
 
-This one brings the mount time right down on my laptop, it's back to
-around 0.5 seconds, same as 3.3.x.
+I'm sorry this took a week, I was backed up.  If you still have that fs
+around in that state, could you please apply the patch below, mount it
+and send me dmesg output ?  (no need to run balance or anything, just
+mount)
 
-Tested-by: Calvin Walton <calvin.walton@kepstin.ca>
+Thanks,
 
-I'll keep following this email thread; let me know if you have any other
-patches that you want me to try out.
+		Ilya
 
--- 
-Calvin Walton <calvin.walton@kepstin.ca>
 
+
+diff --git a/fs/btrfs/disk-io.c b/fs/btrfs/disk-io.c
+index 20196f4..86fa082 100644
+--- a/fs/btrfs/disk-io.c
++++ b/fs/btrfs/disk-io.c
+@@ -1867,6 +1867,7 @@ int open_ctree(struct super_block *sb,
+ 	csum_root = fs_info->csum_root = btrfs_alloc_root(fs_info);
+ 	chunk_root = fs_info->chunk_root = btrfs_alloc_root(fs_info);
+ 	dev_root = fs_info->dev_root = btrfs_alloc_root(fs_info);
++printk("open_ctree\n");
+ 
+ 	if (!tree_root || !extent_root || !csum_root ||
+ 	    !chunk_root || !dev_root) {
+diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
+index a872b48..2e39348 100644
+--- a/fs/btrfs/volumes.c
++++ b/fs/btrfs/volumes.c
+@@ -2834,6 +2834,7 @@ static int balance_kthread(void *data)
+ 	mutex_lock(&fs_info->balance_mutex);
+ 
+ 	set_balance_control(bctl);
++printk("balance_kthread: flags %llu\n", (unsigned long long)bctl->flags);
+ 
+ 	if (btrfs_test_opt(fs_info->tree_root, SKIP_BALANCE)) {
+ 		printk(KERN_INFO "btrfs: force skipping balance\n");
+@@ -2858,6 +2859,7 @@ int btrfs_recover_balance(struct btrfs_root *tree_root)
+ 	struct btrfs_key key;
+ 	int ret;
+ 
++printk("recover_balance\n");
+ 	path = btrfs_alloc_path();
+ 	if (!path)
+ 		return -ENOMEM;
+@@ -2872,7 +2874,11 @@ int btrfs_recover_balance(struct btrfs_root *tree_root)
+ 	key.type = BTRFS_BALANCE_ITEM_KEY;
+ 	key.offset = 0;
+ 
++printk("key.obj %llu\n", (unsigned long long)key.objectid);
++printk("key.type %d\n", key.type);
++printk("key.off %llu\n", (unsigned long long)key.offset);
+ 	ret = btrfs_search_slot(NULL, tree_root, &key, path, 0, 0);
++printk("search ret %d\n", ret);
+ 	if (ret < 0)
+ 		goto out_bctl;
+ 	if (ret > 0) { /* ret = -ENOENT; */

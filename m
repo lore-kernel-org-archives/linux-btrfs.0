@@ -1,63 +1,44 @@
-From: "Matthias G. Eckermann" <mge@suse.com>
+From: "Fajar A. Nugraha" <list@fajar.net>
 Subject: Re: snapper for Ubuntu? (WAS: btrfs auto snapshot)
-Date: Tue, 10 Apr 2012 16:35:57 +0200
-Message-ID: <20120410143557.GC5850@suse.com>
-References: <CAG1y0sdzOXhWowTiBomc6CDEVGJdpJy983P5suQfFC_-NmnYtQ@mail.gmail.com> <20120410114623.GA24057@suse.de> <CAG1y0seZqb+KkSA8Ae0cSfoGWCfBFnPotCM3FUs4q9fND5XjXw@mail.gmail.com>
-Reply-To: "Matthias G. Eckermann" <mge@suse.com>
+Date: Tue, 10 Apr 2012 21:50:32 +0700
+Message-ID: <CAG1y0sdnXMuq4d-kDjrS6FkD1+iDBoF0-uz_d_FxwhO2wTP2Lg@mail.gmail.com>
+References: <CAG1y0sdzOXhWowTiBomc6CDEVGJdpJy983P5suQfFC_-NmnYtQ@mail.gmail.com>
+	<20120410114623.GA24057@suse.de>
+	<CAG1y0seZqb+KkSA8Ae0cSfoGWCfBFnPotCM3FUs4q9fND5XjXw@mail.gmail.com>
+	<20120410143557.GC5850@suse.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=utf-8
-Cc: linux-btrfs <linux-btrfs@vger.kernel.org>
-To: "Fajar A. Nugraha" <list@fajar.net>,
-	Arvin Schnell <aschnell@suse.de>
+Content-Type: text/plain; charset=ISO-8859-1
+Cc: Arvin Schnell <aschnell@suse.de>,
+	linux-btrfs <linux-btrfs@vger.kernel.org>
+To: "Matthias G. Eckermann" <mge@suse.com>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <CAG1y0seZqb+KkSA8Ae0cSfoGWCfBFnPotCM3FUs4q9fND5XjXw@mail.gmail.com>
+In-Reply-To: <20120410143557.GC5850@suse.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 2012-04-10 T 20:48 +0700 Fajar A. Nugraha wrote:
-=20
-> Anyway, I got snapper-0.0.10-0 installed now, but having a small
-> problem. I use different subvolumes for multiple directories. For
-> example, /home and /data. Creating the config for both results in an
-> error
->=20
-> $ sudo snapper list-configs
-> Config | Subvolume
-> -------+----------
-> $ sudo snapper create-config /home
-> $ sudo snapper create-config /data
-> Creating config failed (config already exists).
-> $ sudo snapper list-configs
-> Config | Subvolume
-> -------+----------
-> root   | /home
->=20
-> How can I create config for /data or other directories (other than
-> manually creating the config file and .snapshots directory)?
-=20
-This should do it:
+On Tue, Apr 10, 2012 at 9:35 PM, Matthias G. Eckermann <mge@suse.com> wrote:
+> On 2012-04-10 T 20:48 +0700 Fajar A. Nugraha wrote:
+>> How can I create config for /data or other directories (other than
+>> manually creating the config file and .snapshots directory)?
+>
+> This should do it:
+>
+> sudo snapper -c home create-config /home
+> sudo snapper -c data create-config /data
+>
+> The reasons for the extra "-c <name>" is that you have to
+> tell snapper, which name to choose for the configuration
+> you want to create. This name is the one you can reference
+> in future actions such as create/modify/delete.
 
-sudo snapper -c home create-config /home
-sudo snapper -c data create-config /data
+Great! That works, thanks.
 
-The reasons for the extra "-c <name>" is that you have to
-tell snapper, which name to choose for the configuration
-you want to create. This name is the one you can reference
-in future actions such as create/modify/delete.
+Is there an oposite of create-config, i.e. delete for just one subvolume?
+delete-config seems to delete everything (configs for all subvolume
+and all snapshots).
 
-HTH
+Also, one minor detail, I noticed that the cron configuration file is
+/etc/sysconfig/snapper. It should be /etc/default/snapper in
+ubuntu/debian.
 
-so long -
-	MgE
-
---=20
-Matthias G. Eckermann     Senior Product Manager   SUSE=C2=AE Linux Ent=
-erprise
-SUSE LINUX Products GmbH  Maxfeldstra=C3=9Fe 5          90409 N=C3=BCrn=
-berg Germany
-GF: Jeff Hawn, Jennifer Guild, Felix Imend=C3=B6rffer, HRB 16746 (AG N=C3=
-=BCrnberg)
---
-To unsubscribe from this list: send the line "unsubscribe linux-btrfs" =
-in
-the body of a message to majordomo@vger.kernel.org
-More majordomo info at  http://vger.kernel.org/majordomo-info.html
+-- 
+Fajar

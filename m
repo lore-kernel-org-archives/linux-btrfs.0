@@ -1,44 +1,60 @@
-From: "Fajar A. Nugraha" <list@fajar.net>
-Subject: [PATCH] Snapper: Always create .snapshot dir unconditonally
-Date: Tue, 10 Apr 2012 17:38:26 +0700
-Message-ID: <CAG1y0sdSVvcSTNAbhUnC6MQSuKRUvQ4CTi8wLAcvXP-N_iJ1Mg@mail.gmail.com>
+From: Arvin Schnell <aschnell@suse.de>
+Subject: Re: snapper for Ubuntu? (WAS: btrfs auto snapshot)
+Date: Tue, 10 Apr 2012 13:46:23 +0200
+Message-ID: <20120410114623.GA24057@suse.de>
+References: <CAG1y0sdzOXhWowTiBomc6CDEVGJdpJy983P5suQfFC_-NmnYtQ@mail.gmail.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=ISO-8859-1
+Content-Type: text/plain; charset=iso-8859-15
 Cc: linux-btrfs <linux-btrfs@vger.kernel.org>
-To: Arvin Schnell <aschnell@suse.de>,
-	"Matthias G. Eckermann" <mge@suse.com>
+To: "Fajar A. Nugraha" <list@fajar.net>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
+In-Reply-To: <CAG1y0sdzOXhWowTiBomc6CDEVGJdpJy983P5suQfFC_-NmnYtQ@mail.gmail.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Current version of snapper (commit 50dec40) bails out with this error
-if .snapshots directory doesn't exist (as is the case on new snapper
-install):
+On Mon, Apr 09, 2012 at 08:18:45AM +0700, Fajar A. Nugraha wrote:
+> On Thu, Mar 1, 2012 at 8:48 PM, Arvin Schnell <aschnell@suse.de> wrot=
+e:
+> > We have now created a project in the openSUSE buildservice were
+> > we provide snapper packages for various distributions, e.g. RHEL6
+> > and Fedora 16. Please find the downloads at:
+> >
+> > =A0http://download.opensuse.org/repositories/filesystems:/snapper/
+> >
+> > I'll also add a link from the snapper home page:
+> >
+> > =A0http://en.opensuse.org/Portal:Snapper.
+> >
+> > I have tested snapper on Fedora 16 and found no problems.
+>=20
+> Hi Arvin,
+>=20
+> I noticed that openSUSE buildservice now provides debs for ubuntu as
+> well. I can't seem to find a way to add it to apt source list though,
+> using the usual line
+>=20
+> deb uri distribution [component1] ....
 
-2012-04-10 16:15:30,241 ERROR libsnapper(17784)
-Snapshot.cc(nextNumber):362 - mkdir failed errno:2 (No such file or
-directory)
+You can use these commands:
 
-This patch tries to create .snapshots dir unconditionally.
+echo 'deb http://download.opensuse.org/repositories/filesystems:/snappe=
+r/Debian_6.0/ /' >> /etc/apt/sources.list
 
-Signed-off-by: Fajar A. Nugraha <github@fajar.net>
----
- snapper/Snapshot.cc |    3 +++
- 1 files changed, 3 insertions(+), 0 deletions(-)
+apt-get update
+apt-get install snapper
 
-diff --git a/snapper/Snapshot.cc b/snapper/Snapshot.cc
-index 8e9cc37..277fad7 100644
---- a/snapper/Snapshot.cc
-+++ b/snapper/Snapshot.cc
-@@ -353,6 +353,9 @@ namespace snapper
- 	    if (snapper->getFilesystem()->checkSnapshot(num))
- 		continue;
+Regards,
+  Arvin
 
-+	    // try to create .snapshots dir unconditionally
-+	    mkdir(snapper->infosDir().c_str(), 0711);
-+
- 	    if (mkdir((snapper->infosDir() + "/" + decString(num)).c_str(),
-0777) == 0)
- 		break;
-
--- 
-1.7.9.1
+--=20
+Arvin Schnell, <aschnell@suse.de>
+Senior Software Engineer, Research & Development
+SUSE LINUX Products GmbH, GF: Jeff Hawn, Jennifer Guild, Felix Imend=F6=
+rffer, HRB 16746 (AG N=FCrnberg)
+Maxfeldstra=DFe 5
+90409 N=FCrnberg
+Germany
+--
+To unsubscribe from this list: send the line "unsubscribe linux-btrfs" =
+in
+the body of a message to majordomo@vger.kernel.org
+More majordomo info at  http://vger.kernel.org/majordomo-info.html

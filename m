@@ -1,55 +1,62 @@
-From: "Jim Schutt" <jaschut@sandia.gov>
-Subject: Re: kernel BUG at fs/btrfs/extent_io.c:3982!
-Date: Tue, 10 Apr 2012 14:32:22 -0600
-Message-ID: <4F8498D6.6050905@sandia.gov>
-References: <4F848C62.6030100@sandia.gov> <20120410202440.GZ29506@shiny>
+From: Arvin Schnell <aschnell@suse.de>
+Subject: Re: snapper for Ubuntu? (WAS: btrfs auto snapshot)
+Date: Wed, 11 Apr 2012 11:53:16 +0200
+Message-ID: <20120411095316.GA2850@suse.de>
+References: <CAG1y0sdzOXhWowTiBomc6CDEVGJdpJy983P5suQfFC_-NmnYtQ@mail.gmail.com> <20120410114623.GA24057@suse.de> <CAG1y0seZqb+KkSA8Ae0cSfoGWCfBFnPotCM3FUs4q9fND5XjXw@mail.gmail.com> <20120410143557.GC5850@suse.com> <CAG1y0sdnXMuq4d-kDjrS6FkD1+iDBoF0-uz_d_FxwhO2wTP2Lg@mail.gmail.com>
 Mime-Version: 1.0
-Content-Type: text/plain;
- charset=utf-8;
- format=flowed
-To: "Chris Mason" <chris.mason@oracle.com>, linux-btrfs@vger.kernel.org
+Content-Type: text/plain; charset=iso-8859-15
+Cc: "Matthias G. Eckermann" <mge@suse.com>,
+	linux-btrfs <linux-btrfs@vger.kernel.org>
+To: "Fajar A. Nugraha" <list@fajar.net>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <20120410202440.GZ29506@shiny>
+In-Reply-To: <CAG1y0sdnXMuq4d-kDjrS6FkD1+iDBoF0-uz_d_FxwhO2wTP2Lg@mail.gmail.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 04/10/2012 02:24 PM, Chris Mason wrote:
-> On Tue, Apr 10, 2012 at 01:39:14PM -0600, Jim Schutt wrote:
->> Hi,
->>
->> I hit this BUG today.
->>
->> I'm running 3.3.1 merged with the ceph and btrfs bits for 3.4,
->> i.e. 3.3.1 +
->>    commit bc3f116fec194 "Btrfs: update the checks for mixed block groups with big metadata blocks"
->>    commit c666601a935b9 "rbd: move snap_rwsem to the device, rename to header_rwsem"
->>
->> The btrfs filesystem in question is backing a Ceph OSD under
->> a heavy write load.
->>
->> Here's the bug:
->>
->> [510342.517157] ------------[ cut here ]------------
->> [510342.521855] kernel BUG at fs/btrfs/extent_io.c:3982!
->
-> Could you please confirm that line number is this BUG_ON()
->
->          BUG_ON(extent_buffer_under_io(eb));
+On Tue, Apr 10, 2012 at 09:50:32PM +0700, Fajar A. Nugraha wrote:
+> On Tue, Apr 10, 2012 at 9:35 PM, Matthias G. Eckermann <mge@suse.com>=
+ wrote:
+> > On 2012-04-10 T 20:48 +0700 Fajar A. Nugraha wrote:
+> >> How can I create config for /data or other directories (other than
+> >> manually creating the config file and .snapshots directory)?
+> >
+> > This should do it:
+> >
+> > sudo snapper -c home create-config /home
+> > sudo snapper -c data create-config /data
+> >
+> > The reasons for the extra "-c <name>" is that you have to
+> > tell snapper, which name to choose for the configuration
+> > you want to create. This name is the one you can reference
+> > in future actions such as create/modify/delete.
+>=20
+> Great! That works, thanks.
+>=20
+> Is there an oposite of create-config, i.e. delete for just one subvol=
+ume?
+> delete-config seems to delete everything (configs for all subvolume
+> and all snapshots).
 
-Yep, that's definitely it:
+delete-config only deletes one config. Otherwise that is a bug.
 
-git blame fs/btrfs/extent_io.c | grep -w 3982
-0b32f4bb (Josef Bacik        2012-03-13 09:38:00 -0400 3982) 	BUG_ON(extent_buffer_under_io(eb));
+> Also, one minor detail, I noticed that the cron configuration file is
+> /etc/sysconfig/snapper. It should be /etc/default/snapper in
+> ubuntu/debian.
 
->
-> Josef has a theory on this one, but I want to make sure we're chasing
-> the right thing.
+Thanks for the hint.
 
-Great, thanks.  I'll be happy to test any patches, if needed.
+Regards,
+  Arvin
 
--- Jim
-
->
-> -chris
->
-
-
+--=20
+Arvin Schnell, <aschnell@suse.de>
+Senior Software Engineer, Research & Development
+SUSE LINUX Products GmbH, GF: Jeff Hawn, Jennifer Guild, Felix Imend=F6=
+rffer, HRB 16746 (AG N=FCrnberg)
+Maxfeldstra=DFe 5
+90409 N=FCrnberg
+Germany
+--
+To unsubscribe from this list: send the line "unsubscribe linux-btrfs" =
+in
+the body of a message to majordomo@vger.kernel.org
+More majordomo info at  http://vger.kernel.org/majordomo-info.html

@@ -1,73 +1,150 @@
-From: David Sterba <dave@jikos.cz>
-Subject: Re: [PATCH] Revert "Btrfs: increase the global block reserve
- estimates"
-Date: Wed, 11 Apr 2012 18:00:30 +0200
-Message-ID: <20120411160030.GG11041@twin.jikos.cz>
-References: <1333928451-26468-1-git-send-email-dsterba@suse.cz>
- <4F823D44.5070200@cn.fujitsu.com>
-Reply-To: dave@jikos.cz
+From: Chester <somethingsome2000@gmail.com>
+Subject: Re: Boot speed/mount time regression with 3.4.0-rc2
+Date: Wed, 11 Apr 2012 11:38:33 -0500
+Message-ID: <CAAE6i0jU99ySXNQzyed+YotRzXcieUzDCZJU0Ju0r0b+AxZjhg@mail.gmail.com>
+References: <1333986823.2928.6.camel@ayu>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Cc: David Sterba <dsterba@suse.cz>, linux-btrfs@vger.kernel.org,
-	stable@vger.kernel.org, Chris Mason <chris.mason@oracle.com>,
-	Josef Bacik <josef@redhat.com>
-To: Liu Bo <liubo2009@cn.fujitsu.com>
+Content-Type: text/plain; charset=ISO-8859-1
+Cc: linux-btrfs@vger.kernel.org
+To: Calvin Walton <calvin.walton@kepstin.ca>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <4F823D44.5070200@cn.fujitsu.com>
+In-Reply-To: <1333986823.2928.6.camel@ayu>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Mon, Apr 09, 2012 at 09:37:08AM +0800, Liu Bo wrote:
-> diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
-> index a844204..1b692c2 100644
-> --- a/fs/btrfs/extent-tree.c
-> +++ b/fs/btrfs/extent-tree.c
-> @@ -3844,6 +3844,7 @@ again:
->  
->  		spin_lock(&root->fs_info->free_chunk_lock);
->  		avail = root->fs_info->free_chunk_space;
-> +		spin_unlock(&root->fs_info->free_chunk_lock);
->  
->  		/*
->  		 * If we have dup, raid1 or raid10 then only half of the free
-> @@ -3854,17 +3855,6 @@ again:
->  			       BTRFS_BLOCK_GROUP_RAID10))
->  			avail >>= 1;
->  
-> -		/*
-> -		 * If we aren't flushing don't let us overcommit too much, say
-> -		 * 1/8th of the space.  If we can flush, let it overcommit up to
-> -		 * 1/2 of the space.
-> -		 */
-> -		if (flush)
-> -			avail >>= 3;
-> -		else
-> -			avail >>= 1;
-> -		 spin_unlock(&root->fs_info->free_chunk_lock);
-> -
->  		if (used + num_bytes < space_info->total_bytes + avail) {
->  			space_info->bytes_may_use += orig_bytes;
->  			trace_btrfs_space_reservation(root->fs_info,
+On Mon, Apr 9, 2012 at 10:53 AM, Calvin Walton <calvin.walton@kepstin.c=
+a> wrote:
+>
+> Hi,
+>
+> I have a system that's using a dracut-generated initramfs to mount a
+> btrfs root. After upgrading to kernel 3.4.0-rc2 to test it out, I've
+> noticed that the process of mounting the root filesystem takes much
+> longer with 3.4.0-rc2 than it did with 3.3.1 - nearly 30 seconds slow=
+er!
+>
+> Does anyone have any ideas? I'm going to try bisecting the issue to s=
+ee
+> if I can narrow down the cause. I've included excerpts from dmesg of =
+the
+> bad and good kernels here, and attached the complete dmesg from the b=
+ad
+> kernel, in case it has anything interesting that I've trimmed out her=
+e.
+>
+> slow:
+> [ =A0 =A00.000000] Linux version 3.4.0-rc2 (cwalton@ayu) (gcc version=
+ 4.6.3
+> (Exherbo gcc-4.6.3) ) #57 SMP PREEMPT Mon Apr 9 11:19:43 EDT 2012
+> [ =A0 =A00.000000] Command line:
+> root=3DUUID=3D43969cd0-4aca-4297-bfbe-952a692f7d55
+> rootflags=3Dsubvolid=3D262,compress=3Dlzo,autodefrag,space_cache,inod=
+e_cache,noatime
+> mtrr_chunk_size=3D512M quiet
+> <snip>
+> [ =A0 =A01.058257] udevd[701]: starting version 182
+> [ =A0 =A01.389606] device label Linux data devid 1 transid 611923 /de=
+v/sda4
+> [ =A0 =A01.498659] dracut: Checking, if btrfs device complete
+> [ =A0 =A01.644808] device label Linux data devid 1 transid 611923 /de=
+v/sda4
+> [ =A0 =A01.647993] btrfs: disk space caching is enabled
+> [ =A0 =A02.180836] device label Linux data devid 1 transid 611923 /de=
+v/sda4
+> [ =A0 =A02.181663] btrfs: use lzo compression
+> [ =A0 =A02.181667] btrfs: enabling auto defrag
+> [ =A0 =A02.181670] btrfs: enabling inode map caching
+> [ =A0 =A02.181672] btrfs: disk space caching is enabled
+> [ =A0 =A02.697845] dracut: Checking btrfs:
+> /dev/disk/by-uuid/43969cd0-4aca-4297-bfbe-952a692f7d55
+> [ =A0 =A02.699999] dracut: trying to mount
+> /dev/disk/by-uuid/43969cd0-4aca-4297-bfbe-952a692f7d55
+> [ =A0 =A02.702637] device label Linux data devid 1 transid 611923 /de=
+v/sda4
+> [ =A0 =A02.704376] btrfs: disk space caching is enabled
+> [ =A0 =A03.081720] dracut: btrfs:
+> /dev/disk/by-uuid/43969cd0-4aca-4297-bfbe-952a692f7d55 is clean
+> [ =A0 29.934639] dracut: Remounting
+> /dev/disk/by-uuid/43969cd0-4aca-4297-bfbe-952a692f7d55 with -o
+> subvolid=3D262,compress=3Dlzo,autodefrag,space_cache,inode_cache,noat=
+ime,ro
+> [ =A0 29.936810] device label Linux data devid 1 transid 611926 /dev/=
+sda4
+> [ =A0 29.937720] btrfs: use lzo compression
+> [ =A0 29.937726] btrfs: enabling auto defrag
+> [ =A0 29.937733] btrfs: enabling inode map caching
+> [ =A0 29.937735] btrfs: disk space caching is enabled
+> [ =A0 30.388066] dracut: Mounted root filesystem /dev/sda4
+> [ =A0 30.461884] dracut: Switching root
+> [ =A0 31.241729] udevd[1322]: starting version 182
+> [ =A0 31.422905] btrfs: use lzo compression
+> [ =A0 31.422909] btrfs: enabling auto defrag
+> [ =A0 31.422913] btrfs: enabling inode map caching
+> [ =A0 31.422915] btrfs: disk space caching is enabled
+>
+> vs fast:
+> [ =A0 =A00.000000] Linux version 3.3.1 (cwalton@ayu) (gcc version 4.6=
+=2E3
+> (Exherbo gcc-4.6.3) ) #53 SMP PREEMPT Wed Apr 4 01:20:47 EDT 2012
+> [ =A0 =A00.000000] Command line:
+> root=3DUUID=3D43969cd0-4aca-4297-bfbe-952a692f7d55
+> rootflags=3Dsubvolid=3D262,compress=3Dlzo,autodefrag,space_cache,inod=
+e_cache,noatime
 
-Hangs during xfstests/013 with freshly made fs with just -o space_cache
-mount:
+Calvin, I noticed that you have the space_cache mount option set. I
+remember josef saying that it is a one-time option where it's a
+permanent change after mounting for the first time, therefore each
+subsequent mount will not require the option. In fact, if the option
+is specified again, the space_cache is reset.
 
-$ btrfs fi df /mnt/a1
-Data, RAID0: total=4.00GB, used=652.00KB
-Data: total=8.00MB, used=0.00
-System, RAID1: total=8.00MB, used=4.00KB
-System: total=4.00MB, used=0.00
-Metadata, RAID1: total=1.00GB, used=52.00KB
-Metadata: total=8.00MB, used=0.00
+Is this still up-to-date info?
 
-/root/xfstests/ltp/fsstress -r -v -m 8 -n 1000 -d /mnt/a1/fsstress.26492.1
 
-[<ffffffffa004e845>] btrfs_start_ordered_extent+0x85/0x140 [btrfs]
-[<ffffffffa004ea44>] btrfs_wait_ordered_extents+0x144/0x230 [btrfs]
-[<ffffffffa0004962>] btrfs_sync_fs+0x52/0x100 [btrfs]
-[<ffffffff81172983>] __sync_filesystem+0x63/0x90
-[<ffffffff811729cf>] sync_one_sb+0x1f/0x30
-[<ffffffff81147611>] iterate_supers+0xf1/0x100
-[<ffffffff811728d0>] sync_filesystems+0x20/0x30
-[<ffffffff81172a76>] sys_sync+0x26/0x40
-[<ffffffff818a65a9>] system_call_fastpath+0x16/0x1b
-[<ffffffffffffffff>] 0xffffffffffffffff
+> mtrr_chunk_size=3D512M quiet
+> <snip>
+> [ =A0 =A01.060117] udevd[695]: starting version 182
+> [ =A0 =A01.344328] device label Linux data devid 1 transid 611917 /de=
+v/sda4
+> [ =A0 =A01.384888] dracut: Checking, if btrfs device complete
+> [ =A0 =A01.405121] device label Linux data devid 1 transid 611917 /de=
+v/sda4
+> [ =A0 =A01.405905] btrfs: disk space caching is enabled
+> [ =A0 =A01.971953] device label Linux data devid 1 transid 611917 /de=
+v/sda4
+> [ =A0 =A01.972519] btrfs: use lzo compression
+> [ =A0 =A01.972523] btrfs: enabling auto defrag
+> [ =A0 =A01.972526] btrfs: enabling inode map caching
+> [ =A0 =A01.972528] btrfs: disk space caching is enabled
+> [ =A0 =A02.528540] dracut: Checking btrfs:
+> /dev/disk/by-uuid/43969cd0-4aca-4297-bfbe-952a692f7d55
+> [ =A0 =A02.530725] dracut: trying to mount
+> /dev/disk/by-uuid/43969cd0-4aca-4297-bfbe-952a692f7d55
+> [ =A0 =A02.558285] device label Linux data devid 1 transid 611917 /de=
+v/sda4
+> [ =A0 =A02.559087] btrfs: disk space caching is enabled
+> [ =A0 =A03.013103] dracut: btrfs:
+> /dev/disk/by-uuid/43969cd0-4aca-4297-bfbe-952a692f7d55 is clean
+> [ =A0 =A03.518807] dracut: Remounting
+> /dev/disk/by-uuid/43969cd0-4aca-4297-bfbe-952a692f7d55 with -o
+> subvolid=3D262,compress=3Dlzo,autodefrag,space_cache,inode_cache,noat=
+ime,ro
+> [ =A0 =A03.520031] device label Linux data devid 1 transid 611920 /de=
+v/sda4
+> [ =A0 =A03.520680] btrfs: use lzo compression
+> [ =A0 =A03.520684] btrfs: enabling auto defrag
+> [ =A0 =A03.520688] btrfs: enabling inode map caching
+> [ =A0 =A03.520689] btrfs: disk space caching is enabled
+> [ =A0 =A04.066285] dracut: Mounted root filesystem /dev/sda4
+> [ =A0 =A04.120861] dracut: Switching root
+> [ =A0 =A04.995934] btrfs: use lzo compression
+> [ =A0 =A04.995938] btrfs: enabling auto defrag
+> [ =A0 =A04.995942] btrfs: enabling inode map caching
+> [ =A0 =A04.995943] btrfs: disk space caching is enabled
+> [ =A0 =A05.010473] udevd[1330]: starting version 182
+>
+> --
+> Calvin Walton <calvin.walton@kepstin.ca>
+--
+To unsubscribe from this list: send the line "unsubscribe linux-btrfs" =
+in
+the body of a message to majordomo@vger.kernel.org
+More majordomo info at  http://vger.kernel.org/majordomo-info.html

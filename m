@@ -1,112 +1,97 @@
 From: Josef Bacik <josef@redhat.com>
 Subject: Re: Boot speed/mount time regression with 3.4.0-rc2
-Date: Wed, 11 Apr 2012 14:24:26 -0400
-Message-ID: <20120411182426.GD2506@localhost.localdomain>
+Date: Wed, 11 Apr 2012 13:04:22 -0400
+Message-ID: <20120411170422.GA2506@localhost.localdomain>
 References: <1333986823.2928.6.camel@ayu>
- <CAAE6i0jU99ySXNQzyed+YotRzXcieUzDCZJU0Ju0r0b+AxZjhg@mail.gmail.com>
+ <1333991404.2817.6.camel@ayu>
+ <20120409205429.GB6958@localhost.localdomain>
+ <1334006446.2678.0.camel@ayu>
+ <20120410151645.GC2296@localhost.localdomain>
+ <CAFDW0j+=qe49pX3frjEoozOMz-gKKxqJ+jeeTgyXEskDL_9W8w@mail.gmail.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset=iso-8859-1
-Cc: Calvin Walton <calvin.walton@kepstin.ca>,
-	linux-btrfs@vger.kernel.org
-To: Chester <somethingsome2000@gmail.com>
+Cc: Josef Bacik <josef@redhat.com>,
+	Calvin Walton <calvin.walton@kepstin.ca>,
+	linux-btrfs@vger.kernel.org, Chris Mason <chris.mason@oracle.com>
+To: Ahmet Inan <ainan@mathematik.uni-freiburg.de>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <CAAE6i0jU99ySXNQzyed+YotRzXcieUzDCZJU0Ju0r0b+AxZjhg@mail.gmail.com>
+In-Reply-To: <CAFDW0j+=qe49pX3frjEoozOMz-gKKxqJ+jeeTgyXEskDL_9W8w@mail.gmail.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Wed, Apr 11, 2012 at 11:38:33AM -0500, Chester wrote:
-> On Mon, Apr 9, 2012 at 10:53 AM, Calvin Walton <calvin.walton@kepstin=
-=2Eca> wrote:
+On Wed, Apr 11, 2012 at 05:26:29PM +0200, Ahmet Inan wrote:
+> On Tue, Apr 10, 2012 at 5:16 PM, Josef Bacik <josef@redhat.com> wrote=
+:
+> > On Mon, Apr 09, 2012 at 05:20:46PM -0400, Calvin Walton wrote:
+> >> On Mon, 2012-04-09 at 16:54 -0400, Josef Bacik wrote:
+> >> > On Mon, Apr 09, 2012 at 01:10:04PM -0400, Calvin Walton wrote:
+> >> > > On Mon, 2012-04-09 at 11:53 -0400, Calvin Walton wrote:
+> >> > > > Hi,
+> >> > > >
+> >> > > > I have a system that's using a dracut-generated initramfs to=
+ mount a
+> >> > > > btrfs root. After upgrading to kernel 3.4.0-rc2 to test it o=
+ut, I've
+> >> > > > noticed that the process of mounting the root filesystem tak=
+es much
+> >> > > > longer with 3.4.0-rc2 than it did with 3.3.1 - nearly 30 sec=
+onds slower!
+> >>
+> >> > > And the bisect results are in:
+> >> > > 285ff5af6ce358e73f53b55c9efadd4335f4c2ff is the first bad comm=
+it
+> >> > > commit 285ff5af6ce358e73f53b55c9efadd4335f4c2ff
+> >> > > Author: Josef Bacik <josef@redhat.com>
+> >> > > Date: =A0 Fri Jan 13 15:27:45 2012 -0500
+> >> > >
+> >> > > =A0 =A0 Btrfs: remove the ideal caching code>
+> >> >
+> >> > Ok can you give this a whirl? =A0You are going to have to boot/r=
+eboot a few times
+> >> > to let the cache get re-generated again to make sure it's taken =
+effect, but
+> >> > hopefully this will help out. =A0Thanks,
+> >>
+> >> Unfortunately, it doesn't seem to help. Even after 3 or 4 reboots =
+with
+> >> this patch applied I'm still seeing the same delay.
+> >>
 > >
-> > Hi,
-> >
-> > I have a system that's using a dracut-generated initramfs to mount =
-a
-> > btrfs root. After upgrading to kernel 3.4.0-rc2 to test it out, I'v=
-e
-> > noticed that the process of mounting the root filesystem takes much
-> > longer with 3.4.0-rc2 than it did with 3.3.1 - nearly 30 seconds sl=
-ower!
-> >
-> > Does anyone have any ideas? I'm going to try bisecting the issue to=
- see
-> > if I can narrow down the cause. I've included excerpts from dmesg o=
-f the
-> > bad and good kernels here, and attached the complete dmesg from the=
- bad
-> > kernel, in case it has anything interesting that I've trimmed out h=
-ere.
-> >
-> > slow:
-> > [ =A0 =A00.000000] Linux version 3.4.0-rc2 (cwalton@ayu) (gcc versi=
-on 4.6.3
-> > (Exherbo gcc-4.6.3) ) #57 SMP PREEMPT Mon Apr 9 11:19:43 EDT 2012
-> > [ =A0 =A00.000000] Command line:
-> > root=3DUUID=3D43969cd0-4aca-4297-bfbe-952a692f7d55
-> > rootflags=3Dsubvolid=3D262,compress=3Dlzo,autodefrag,space_cache,in=
-ode_cache,noatime
-> > mtrr_chunk_size=3D512M quiet
-> > <snip>
-> > [ =A0 =A01.058257] udevd[701]: starting version 182
-> > [ =A0 =A01.389606] device label Linux data devid 1 transid 611923 /=
-dev/sda4
-> > [ =A0 =A01.498659] dracut: Checking, if btrfs device complete
-> > [ =A0 =A01.644808] device label Linux data devid 1 transid 611923 /=
-dev/sda4
-> > [ =A0 =A01.647993] btrfs: disk space caching is enabled
-> > [ =A0 =A02.180836] device label Linux data devid 1 transid 611923 /=
-dev/sda4
-> > [ =A0 =A02.181663] btrfs: use lzo compression
-> > [ =A0 =A02.181667] btrfs: enabling auto defrag
-> > [ =A0 =A02.181670] btrfs: enabling inode map caching
-> > [ =A0 =A02.181672] btrfs: disk space caching is enabled
-> > [ =A0 =A02.697845] dracut: Checking btrfs:
-> > /dev/disk/by-uuid/43969cd0-4aca-4297-bfbe-952a692f7d55
-> > [ =A0 =A02.699999] dracut: trying to mount
-> > /dev/disk/by-uuid/43969cd0-4aca-4297-bfbe-952a692f7d55
-> > [ =A0 =A02.702637] device label Linux data devid 1 transid 611923 /=
-dev/sda4
-> > [ =A0 =A02.704376] btrfs: disk space caching is enabled
-> > [ =A0 =A03.081720] dracut: btrfs:
-> > /dev/disk/by-uuid/43969cd0-4aca-4297-bfbe-952a692f7d55 is clean
-> > [ =A0 29.934639] dracut: Remounting
-> > /dev/disk/by-uuid/43969cd0-4aca-4297-bfbe-952a692f7d55 with -o
-> > subvolid=3D262,compress=3Dlzo,autodefrag,space_cache,inode_cache,no=
-atime,ro
-> > [ =A0 29.936810] device label Linux data devid 1 transid 611926 /de=
-v/sda4
-> > [ =A0 29.937720] btrfs: use lzo compression
-> > [ =A0 29.937726] btrfs: enabling auto defrag
-> > [ =A0 29.937733] btrfs: enabling inode map caching
-> > [ =A0 29.937735] btrfs: disk space caching is enabled
-> > [ =A0 30.388066] dracut: Mounted root filesystem /dev/sda4
-> > [ =A0 30.461884] dracut: Switching root
-> > [ =A0 31.241729] udevd[1322]: starting version 182
-> > [ =A0 31.422905] btrfs: use lzo compression
-> > [ =A0 31.422909] btrfs: enabling auto defrag
-> > [ =A0 31.422913] btrfs: enabling inode map caching
-> > [ =A0 31.422915] btrfs: disk space caching is enabled
-> >
-> > vs fast:
-> > [ =A0 =A00.000000] Linux version 3.3.1 (cwalton@ayu) (gcc version 4=
-=2E6.3
-> > (Exherbo gcc-4.6.3) ) #53 SMP PREEMPT Wed Apr 4 01:20:47 EDT 2012
-> > [ =A0 =A00.000000] Command line:
-> > root=3DUUID=3D43969cd0-4aca-4297-bfbe-952a692f7d55
-> > rootflags=3Dsubvolid=3D262,compress=3Dlzo,autodefrag,space_cache,in=
-ode_cache,noatime
+> > Ok drop that previous patch and give this one a whirl, it helped on=
+ my laptop.
+> > This is only =A0half of the problem AFAICS, but it's the easier hal=
+f to fix, in
+> > the meantime I need to lock down why we're not writing out cache fo=
+r a bunch of
+> > block groups, but thats trickier since the messages I need are spit=
+ out while
+> > I'm shutting down, so I need to get creative. =A0Let me know if/how=
+ much this
+> > helps. =A0Thanks,
 >=20
-> Calvin, I noticed that you have the space_cache mount option set. I
-> remember josef saying that it is a one-time option where it's a
-> permanent change after mounting for the first time, therefore each
-> subsequent mount will not require the option. In fact, if the option
-> is specified again, the space_cache is reset.
+> i have tried your patch and my system still needs several minutes to =
+boot
+> until it can be used.
+> Also tried to reboot several times - it doesn't look like its getting=
+ better.
+> The last thing the system does when its shutting down is a read-only
+> remount of "/" so no umount.
+> Booting was much faster before i pulled for-linus a few weeks ago but
+> i couldn't find the time to bisect it yet ..
 >=20
-> Is this still up-to-date info?
+> please also look at the attached dmesg.txt.
+> this is an core i3 system with 2x2TB BTRFS RAID1 and lots of
+> home directories and snapshots.
+>=20
+> I'm going to test this patch on twenty more computers but with
+> smaller HDDs and less files and see if it helps to speed up their
+> boot times.
 >=20
 
-No you can leave space_cache set, there's another option for resetting =
-the space
-cache, clear_cache iirc.  Thanks,
+Ok looks like you are running into a different problem.  Could you mayb=
+e run
+bootchart and upload the resulting png somewhere so I can look and see =
+what all
+is running while you boot?  Thanks,
 
 Josef
 --

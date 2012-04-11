@@ -1,67 +1,216 @@
-From: Josef Bacik <josef@redhat.com>
-Subject: Re: kernel BUG at fs/btrfs/extent_io.c:1890!
-Date: Wed, 11 Apr 2012 11:01:58 -0400
-Message-ID: <20120411150158.GA5820@localhost.localdomain>
-References: <CACfQV3hb92zrYUJ8to1mq8s1wzfdEoMBDi9b5VmfZ0AZ=UBkFA@mail.gmail.com>
+From: Ahmet Inan <ainan@mathematik.uni-freiburg.de>
+Subject: Re: Boot speed/mount time regression with 3.4.0-rc2
+Date: Wed, 11 Apr 2012 17:26:29 +0200
+Message-ID: <CAFDW0j+=qe49pX3frjEoozOMz-gKKxqJ+jeeTgyXEskDL_9W8w@mail.gmail.com>
+References: <1333986823.2928.6.camel@ayu>
+	<1333991404.2817.6.camel@ayu>
+	<20120409205429.GB6958@localhost.localdomain>
+	<1334006446.2678.0.camel@ayu>
+	<20120410151645.GC2296@localhost.localdomain>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Cc: linux-btrfs@vger.kernel.org
-To: Francesco Cepparo <francesco.cepparo@gmail.com>
+Content-Type: multipart/mixed; boundary=90e6ba4fc6ec05e15b04bd68dd3e
+Cc: Calvin Walton <calvin.walton@kepstin.ca>,
+	linux-btrfs@vger.kernel.org, Chris Mason <chris.mason@oracle.com>
+To: Josef Bacik <josef@redhat.com>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <CACfQV3hb92zrYUJ8to1mq8s1wzfdEoMBDi9b5VmfZ0AZ=UBkFA@mail.gmail.com>
+In-Reply-To: <20120410151645.GC2296@localhost.localdomain>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Wed, Apr 11, 2012 at 02:44:26PM +0000, Francesco Cepparo wrote:
-> Hi, I've been using btrfs for a while now, and some months ago one of
-> my filesystems stopped mounting. I tried to fix it by mounting it with
-> the recovery option, by using btrfs-zero-log and by restoring the
-> superblock but it didn't work, so I left the filesystem standing there
-> waiting for the fsck repairing tool to be released (running the
-> version of fsck I had at the time produced the following output:
-> http://dl.dropbox.com/u/2565562/btrfsck-old-output while running the
-> 2012-03-28 version of btrfsck produces the following output:
-> http://dl.dropbox.com/u/2565562/btrfsck-20120328-output.gz ).
-> I'm still waiting for the repairing tool and I haven't tried the
-> dangerous don't ever use branch, but as I have updated the kernel to
-> version 3.4.0-rc2 I tried to mount the filesystem again with the new
-> kernel, and instead of failing with this error message:
-> http://dl.dropbox.com/u/2565562/btrfs-kernel-3.3 as it did with kernel
-> 3.3.1 and the previous kernels, with 3.4.0-rc2 it now hits the
-> following kernel BUG:
-> http://dl.dropbox.com/u/2565562/btrfs-kernel-3.4-bug
-> 
-> I hope I can be of any help in improving the already great btrfs.
-> Also, is there any hope for me to recover my old filesystem? :)
+--90e6ba4fc6ec05e15b04bd68dd3e
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: quoted-printable
 
-Sorry, can you try this patch and see if it stops panicing, thanks,
+On Tue, Apr 10, 2012 at 5:16 PM, Josef Bacik <josef@redhat.com> wrote:
+> On Mon, Apr 09, 2012 at 05:20:46PM -0400, Calvin Walton wrote:
+>> On Mon, 2012-04-09 at 16:54 -0400, Josef Bacik wrote:
+>> > On Mon, Apr 09, 2012 at 01:10:04PM -0400, Calvin Walton wrote:
+>> > > On Mon, 2012-04-09 at 11:53 -0400, Calvin Walton wrote:
+>> > > > Hi,
+>> > > >
+>> > > > I have a system that's using a dracut-generated initramfs to mount=
+ a
+>> > > > btrfs root. After upgrading to kernel 3.4.0-rc2 to test it out, I'=
+ve
+>> > > > noticed that the process of mounting the root filesystem takes muc=
+h
+>> > > > longer with 3.4.0-rc2 than it did with 3.3.1 - nearly 30 seconds s=
+lower!
+>>
+>> > > And the bisect results are in:
+>> > > 285ff5af6ce358e73f53b55c9efadd4335f4c2ff is the first bad commit
+>> > > commit 285ff5af6ce358e73f53b55c9efadd4335f4c2ff
+>> > > Author: Josef Bacik <josef@redhat.com>
+>> > > Date: =C2=A0 Fri Jan 13 15:27:45 2012 -0500
+>> > >
+>> > > =C2=A0 =C2=A0 Btrfs: remove the ideal caching code>
+>> >
+>> > Ok can you give this a whirl? =C2=A0You are going to have to boot/rebo=
+ot a few times
+>> > to let the cache get re-generated again to make sure it's taken effect=
+, but
+>> > hopefully this will help out. =C2=A0Thanks,
+>>
+>> Unfortunately, it doesn't seem to help. Even after 3 or 4 reboots with
+>> this patch applied I'm still seeing the same delay.
+>>
+>
+> Ok drop that previous patch and give this one a whirl, it helped on my la=
+ptop.
+> This is only =C2=A0half of the problem AFAICS, but it's the easier half t=
+o fix, in
+> the meantime I need to lock down why we're not writing out cache for a bu=
+nch of
+> block groups, but thats trickier since the messages I need are spit out w=
+hile
+> I'm shutting down, so I need to get creative. =C2=A0Let me know if/how mu=
+ch this
+> helps. =C2=A0Thanks,
 
-Josef
+i have tried your patch and my system still needs several minutes to boot
+until it can be used.
+Also tried to reboot several times - it doesn't look like its getting bette=
+r.
+The last thing the system does when its shutting down is a read-only
+remount of "/" so no umount.
+Booting was much faster before i pulled for-linus a few weeks ago but
+i couldn't find the time to bisect it yet ..
 
+please also look at the attached dmesg.txt.
+this is an core i3 system with 2x2TB BTRFS RAID1 and lots of
+home directories and snapshots.
 
-diff --git a/fs/btrfs/disk-io.c b/fs/btrfs/disk-io.c
-index 20196f4..2a3ddd2 100644
---- a/fs/btrfs/disk-io.c
-+++ b/fs/btrfs/disk-io.c
-@@ -383,17 +383,17 @@ static int btree_read_extent_buffer_pages(struct btrfs_root *root,
- 		if (test_bit(EXTENT_BUFFER_CORRUPT, &eb->bflags))
- 			break;
- 
-+		num_copies = btrfs_num_copies(&root->fs_info->mapping_tree,
-+					      eb->start, eb->len);
-+		if (num_copies == 1)
-+			break;
-+
- 		if (!failed_mirror) {
- 			failed = 1;
- 			printk(KERN_ERR "failed mirror was %d\n", eb->failed_mirror);
- 			failed_mirror = eb->failed_mirror;
- 		}
- 
--		num_copies = btrfs_num_copies(&root->fs_info->mapping_tree,
--					      eb->start, eb->len);
--		if (num_copies == 1)
--			break;
--
- 		mirror_num++;
- 		if (mirror_num == failed_mirror)
- 			mirror_num++;
+I'm going to test this patch on twenty more computers but with
+smaller HDDs and less files and see if it helps to speed up their
+boot times.
+
+Ahmet
+
+--90e6ba4fc6ec05e15b04bd68dd3e
+Content-Type: text/plain; charset=US-ASCII; name="dmesg.txt"
+Content-Disposition: attachment; filename="dmesg.txt"
+Content-Transfer-Encoding: base64
+X-Attachment-Id: f_h0wizc5f0
+
+WyAgIDI4LjE1NTEzNF0gYnRyZnM6IHVzZSBsem8gY29tcHJlc3Npb24KWyAgMjM5LjY5ODUxNl0g
+SU5GTzogdGFzayBidHJmcy10cmFuc2FjdGk6OTk3IGJsb2NrZWQgZm9yIG1vcmUgdGhhbiAxMjAg
+c2Vjb25kcy4KWyAgMjM5LjY5ODUyMF0gImVjaG8gMCA+IC9wcm9jL3N5cy9rZXJuZWwvaHVuZ190
+YXNrX3RpbWVvdXRfc2VjcyIgZGlzYWJsZXMgdGhpcyBtZXNzYWdlLgpbICAyMzkuNjk4NTI0XSBi
+dHJmcy10cmFuc2FjdGkgRCBmZmZmODgwMjNmY2QwYTAwICAgICAwICAgOTk3ICAgICAgMiAweDAw
+MDAwMDAwClsgIDIzOS42OTg1MzBdICBmZmZmODgwMjMzYzFiY2UwIDAwMDAwMDAwMDAwMDAwNDYg
+ZmZmZjg4MDIzNGJjYzljMCAwMDAwMDAwMDAwMDEwYTAwClsgIDIzOS42OTg1MzVdICBmZmZmODgw
+MjMzYzFiZmQ4IGZmZmY4ODAyMzNjMWEwMDAgMDAwMDAwMDAwMDAxMGEwMCAwMDAwMDAwMDAwMDA0
+MDAwClsgIDIzOS42OTg1MzldICBmZmZmODgwMjMzYzFiZmQ4IDAwMDAwMDAwMDAwMTBhMDAgZmZm
+Zjg4MDIzNmQzODRjMCBmZmZmODgwMjM0YmNjOWMwClsgIDIzOS42OTg1NDRdIENhbGwgVHJhY2U6
+ClsgIDIzOS42OTg1NTRdICBbPGZmZmZmZmZmODEwNWQ3Mzg+XSA/IGlkbGVfYmFsYW5jZSsweDEw
+OC8weDEzMApbICAyMzkuNjk4NTgwXSAgWzxmZmZmZmZmZmEwMDFlYzA0Pl0gPyBkb19jaHVua19h
+bGxvYy5jbG9uZS42OCsweDc0LzB4NDAwIFtidHJmc10KWyAgMjM5LjY5ODYwMl0gIFs8ZmZmZmZm
+ZmZhMDA3NzQwMz5dID8gYnRyZnNfZmluZF9yZWZfY2x1c3RlcisweDMzLzB4MTcwIFtidHJmc10K
+WyAgMjM5LjY5ODYxOF0gIFs8ZmZmZmZmZmZhMDAxZWEzMz5dID8gYnRyZnNfcmVkdWNlX2FsbG9j
+X3Byb2ZpbGUrMHg1My8weDEyMCBbYnRyZnNdClsgIDIzOS42OTg2MjRdICBbPGZmZmZmZmZmODEw
+Y2FmOGM+XSA/IGNhY2hlX2FsbG9jX3JlZmlsbCsweDdjLzB4MjgwClsgIDIzOS42OTg2MzBdICBb
+PGZmZmZmZmZmODE2MGJlYmE+XSBzY2hlZHVsZSsweDNhLzB4NTAKWyAgMjM5LjY5ODYzNF0gIFs8
+ZmZmZmZmZmY4MTYwYTI0NT5dIHNjaGVkdWxlX3RpbWVvdXQrMHgxYzUvMHgyMjAKWyAgMjM5LjY5
+ODYzOF0gIFs8ZmZmZmZmZmY4MTYwYWFmOT5dID8gbXV0ZXhfbG9jaysweDE5LzB4NDAKWyAgMjM5
+LjY5ODY0M10gIFs8ZmZmZmZmZmY4MTA0YzJlYj5dID8gcHJlcGFyZV90b193YWl0KzB4NWIvMHg5
+MApbICAyMzkuNjk4NjYyXSAgWzxmZmZmZmZmZmEwMDMzMWJmPl0gYnRyZnNfY29tbWl0X3RyYW5z
+YWN0aW9uKzB4MzBmLzB4OWEwIFtidHJmc10KWyAgMjM5LjY5ODY4MF0gIFs8ZmZmZmZmZmZhMDAz
+MjQ3Mj5dID8gam9pbl90cmFuc2FjdGlvbi5jbG9uZS4yNisweDIyLzB4MmUwIFtidHJmc10KWyAg
+MjM5LjY5ODY4NV0gIFs8ZmZmZmZmZmY4MTA0YzA1MD5dID8gd2FrZV91cF9iaXQrMHg0MC8weDQw
+ClsgIDIzOS42OTg3MDFdICBbPGZmZmZmZmZmYTAwMmJiNWI+XSB0cmFuc2FjdGlvbl9rdGhyZWFk
+KzB4MjViLzB4MmQwIFtidHJmc10KWyAgMjM5LjY5ODcxN10gIFs8ZmZmZmZmZmZhMDAyYjkwMD5d
+ID8gYnRyZnNfYWxsb2Nfcm9vdCsweDMwLzB4MzAgW2J0cmZzXQpbICAyMzkuNjk4NzMzXSAgWzxm
+ZmZmZmZmZmEwMDJiOTAwPl0gPyBidHJmc19hbGxvY19yb290KzB4MzAvMHgzMCBbYnRyZnNdClsg
+IDIzOS42OTg3MzddICBbPGZmZmZmZmZmODEwNGJiNjY+XSBrdGhyZWFkKzB4OTYvMHhhMApbICAy
+MzkuNjk4NzQyXSAgWzxmZmZmZmZmZjgxNjBlOWQ0Pl0ga2VybmVsX3RocmVhZF9oZWxwZXIrMHg0
+LzB4MTAKWyAgMjM5LjY5ODc0Nl0gIFs8ZmZmZmZmZmY4MTA0YmFkMD5dID8ga3RocmVhZF9mcmVl
+emFibGVfc2hvdWxkX3N0b3ArMHg3MC8weDcwClsgIDIzOS42OTg3NTBdICBbPGZmZmZmZmZmODE2
+MGU5ZDA+XSA/IGdzX2NoYW5nZSsweGIvMHhiClsgIDM1OS4zNjcyNzRdIElORk86IHRhc2sgYnRy
+ZnMtdHJhbnNhY3RpOjk5NyBibG9ja2VkIGZvciBtb3JlIHRoYW4gMTIwIHNlY29uZHMuClsgIDM1
+OS4zNjcyNzhdICJlY2hvIDAgPiAvcHJvYy9zeXMva2VybmVsL2h1bmdfdGFza190aW1lb3V0X3Nl
+Y3MiIGRpc2FibGVzIHRoaXMgbWVzc2FnZS4KWyAgMzU5LjM2NzI4MV0gYnRyZnMtdHJhbnNhY3Rp
+IEQgZmZmZjg4MDIzZmNkMGEwMCAgICAgMCAgIDk5NyAgICAgIDIgMHgwMDAwMDAwMApbICAzNTku
+MzY3Mjg4XSAgZmZmZjg4MDIzM2MxYmNlMCAwMDAwMDAwMDAwMDAwMDQ2IGZmZmY4ODAyMzRiY2M5
+YzAgMDAwMDAwMDAwMDAxMGEwMApbICAzNTkuMzY3MjkyXSAgZmZmZjg4MDIzM2MxYmZkOCBmZmZm
+ODgwMjMzYzFhMDAwIDAwMDAwMDAwMDAwMTBhMDAgMDAwMDAwMDAwMDAwNDAwMApbICAzNTkuMzY3
+Mjk3XSAgZmZmZjg4MDIzM2MxYmZkOCAwMDAwMDAwMDAwMDEwYTAwIGZmZmY4ODAyMzZkMzg0YzAg
+ZmZmZjg4MDIzNGJjYzljMApbICAzNTkuMzY3MzAyXSBDYWxsIFRyYWNlOgpbICAzNTkuMzY3MzEx
+XSAgWzxmZmZmZmZmZjgxMDVkNzM4Pl0gPyBpZGxlX2JhbGFuY2UrMHgxMDgvMHgxMzAKWyAgMzU5
+LjM2NzM0MV0gIFs8ZmZmZmZmZmZhMDAxZWMwND5dID8gZG9fY2h1bmtfYWxsb2MuY2xvbmUuNjgr
+MHg3NC8weDQwMCBbYnRyZnNdClsgIDM1OS4zNjczNjFdICBbPGZmZmZmZmZmYTAwNzc0MDM+XSA/
+IGJ0cmZzX2ZpbmRfcmVmX2NsdXN0ZXIrMHgzMy8weDE3MCBbYnRyZnNdClsgIDM1OS4zNjczNzZd
+ICBbPGZmZmZmZmZmYTAwMWVhMzM+XSA/IGJ0cmZzX3JlZHVjZV9hbGxvY19wcm9maWxlKzB4NTMv
+MHgxMjAgW2J0cmZzXQpbICAzNTkuMzY3MzgyXSAgWzxmZmZmZmZmZjgxMGNhZjhjPl0gPyBjYWNo
+ZV9hbGxvY19yZWZpbGwrMHg3Yy8weDI4MApbICAzNTkuMzY3Mzg3XSAgWzxmZmZmZmZmZjgxNjBi
+ZWJhPl0gc2NoZWR1bGUrMHgzYS8weDUwClsgIDM1OS4zNjczOTJdICBbPGZmZmZmZmZmODE2MGEy
+NDU+XSBzY2hlZHVsZV90aW1lb3V0KzB4MWM1LzB4MjIwClsgIDM1OS4zNjczOTVdICBbPGZmZmZm
+ZmZmODE2MGFhZjk+XSA/IG11dGV4X2xvY2srMHgxOS8weDQwClsgIDM1OS4zNjc0MDFdICBbPGZm
+ZmZmZmZmODEwNGMyZWI+XSA/IHByZXBhcmVfdG9fd2FpdCsweDViLzB4OTAKWyAgMzU5LjM2NzQx
+OF0gIFs8ZmZmZmZmZmZhMDAzMzFiZj5dIGJ0cmZzX2NvbW1pdF90cmFuc2FjdGlvbisweDMwZi8w
+eDlhMCBbYnRyZnNdClsgIDM1OS4zNjc0MzRdICBbPGZmZmZmZmZmYTAwMzI0NzI+XSA/IGpvaW5f
+dHJhbnNhY3Rpb24uY2xvbmUuMjYrMHgyMi8weDJlMCBbYnRyZnNdClsgIDM1OS4zNjc0MzldICBb
+PGZmZmZmZmZmODEwNGMwNTA+XSA/IHdha2VfdXBfYml0KzB4NDAvMHg0MApbICAzNTkuMzY3NDU0
+XSAgWzxmZmZmZmZmZmEwMDJiYjViPl0gdHJhbnNhY3Rpb25fa3RocmVhZCsweDI1Yi8weDJkMCBb
+YnRyZnNdClsgIDM1OS4zNjc0NjhdICBbPGZmZmZmZmZmYTAwMmI5MDA+XSA/IGJ0cmZzX2FsbG9j
+X3Jvb3QrMHgzMC8weDMwIFtidHJmc10KWyAgMzU5LjM2NzQ4M10gIFs8ZmZmZmZmZmZhMDAyYjkw
+MD5dID8gYnRyZnNfYWxsb2Nfcm9vdCsweDMwLzB4MzAgW2J0cmZzXQpbICAzNTkuMzY3NDg3XSAg
+WzxmZmZmZmZmZjgxMDRiYjY2Pl0ga3RocmVhZCsweDk2LzB4YTAKWyAgMzU5LjM2NzQ5MV0gIFs8
+ZmZmZmZmZmY4MTYwZTlkND5dIGtlcm5lbF90aHJlYWRfaGVscGVyKzB4NC8weDEwClsgIDM1OS4z
+Njc0OTVdICBbPGZmZmZmZmZmODEwNGJhZDA+XSA/IGt0aHJlYWRfZnJlZXphYmxlX3Nob3VsZF9z
+dG9wKzB4NzAvMHg3MApbICAzNTkuMzY3NDk5XSAgWzxmZmZmZmZmZjgxNjBlOWQwPl0gPyBnc19j
+aGFuZ2UrMHhiLzB4YgpbICAzODEuNDAyMjE2XSBkZXZpY2UgbGFiZWwgcm9vdCBkZXZpZCAyIHRy
+YW5zaWQgMTkxMjc5IC9kZXYvc2RiMgpbICAzODEuNTEzNjkwXSBkZXZpY2UgbGFiZWwgcm9vdCBk
+ZXZpZCAyIHRyYW5zaWQgMTkxMjgwIC9kZXYvc2RiMgpbICAzODEuNTQ0MzU1XSBkZXZpY2UgbGFi
+ZWwgcm9vdCBkZXZpZCAyIHRyYW5zaWQgMTkxMjgwIC9kZXYvc2RiMgpbICAzODEuNTk4NjkzXSBk
+ZXZpY2UgbGFiZWwgcm9vdCBkZXZpZCAyIHRyYW5zaWQgMTkxMjgwIC9kZXYvc2RiMgpbICAzODEu
+NjU3MzIxXSBkZXZpY2UgbGFiZWwgcm9vdCBkZXZpZCAyIHRyYW5zaWQgMTkxMjgwIC9kZXYvc2Ri
+MgpbICAzODUuNDg5MTc0XSB0ZzMgMDAwMDowMjowMC4wOiBpcnEgNDMgZm9yIE1TSS9NU0ktWApb
+ICAzODYuNDAzNDI4XSB0ZzMgMDAwMDowMjowMC4wOiBldGgwOiBMaW5rIGlzIGRvd24KWyAgMzg5
+LjQwNDk5M10gdGczIDAwMDA6MDI6MDAuMDogZXRoMDogTGluayBpcyB1cCBhdCAxMDAwIE1icHMs
+IGZ1bGwgZHVwbGV4ClsgIDM4OS40MDQ5OThdIHRnMyAwMDAwOjAyOjAwLjA6IGV0aDA6IEZsb3cg
+Y29udHJvbCBpcyBvbiBmb3IgVFggYW5kIG9uIGZvciBSWApbICA0MDAuOTU1NTA0XSBORlNEOiBV
+c2luZyAvdmFyL2xpYi9uZnMvdjRyZWNvdmVyeSBhcyB0aGUgTkZTdjQgc3RhdGUgcmVjb3Zlcnkg
+ZGlyZWN0b3J5ClsgIDQwMC45NTU1MjddIE5GU0Q6IHN0YXJ0aW5nIDkwLXNlY29uZCBncmFjZSBw
+ZXJpb2QKWyAgNTk4LjcwNDc2Nl0gSU5GTzogdGFzayBidHJmcy10cmFuc2FjdGk6OTk3IGJsb2Nr
+ZWQgZm9yIG1vcmUgdGhhbiAxMjAgc2Vjb25kcy4KWyAgNTk4LjcwNDc3MV0gImVjaG8gMCA+IC9w
+cm9jL3N5cy9rZXJuZWwvaHVuZ190YXNrX3RpbWVvdXRfc2VjcyIgZGlzYWJsZXMgdGhpcyBtZXNz
+YWdlLgpbICA1OTguNzA0Nzc1XSBidHJmcy10cmFuc2FjdGkgRCBmZmZmODgwMjNmYzUwYTAwICAg
+ICAwICAgOTk3ICAgICAgMiAweDAwMDAwMDAwClsgIDU5OC43MDQ3ODFdICBmZmZmODgwMjMzYzFi
+YTgwIDAwMDAwMDAwMDAwMDAwNDYgZmZmZjg4MDIzNGJjYzljMCAwMDAwMDAwMDAwMDEwYTAwClsg
+IDU5OC43MDQ3ODZdICBmZmZmODgwMjMzYzFiZmQ4IGZmZmY4ODAyMzNjMWEwMDAgMDAwMDAwMDAw
+MDAxMGEwMCAwMDAwMDAwMDAwMDA0MDAwClsgIDU5OC43MDQ3OTFdICBmZmZmODgwMjMzYzFiZmQ4
+IDAwMDAwMDAwMDAwMTBhMDAgZmZmZjg4MDIzNmQwYTJjMCBmZmZmODgwMjM0YmNjOWMwClsgIDU5
+OC43MDQ3OTZdIENhbGwgVHJhY2U6ClsgIDU5OC43MDQ4MDZdICBbPGZmZmZmZmZmODEwYTIxZGY+
+XSA/IHJlbGVhc2VfcGFnZXMrMHgxYWYvMHgyMDAKWyAgNTk4LjcwNDgxMl0gIFs8ZmZmZmZmZmY4
+MTA5NmNlMD5dID8gX19sb2NrX3BhZ2UrMHg3MC8weDcwClsgIDU5OC43MDQ4MTldICBbPGZmZmZm
+ZmZmODE2MGJlYmE+XSBzY2hlZHVsZSsweDNhLzB4NTAKWyAgNTk4LjcwNDgyMl0gIFs8ZmZmZmZm
+ZmY4MTYwYmYyYj5dIGlvX3NjaGVkdWxlKzB4NWIvMHg4MApbICA1OTguNzA0ODI2XSAgWzxmZmZm
+ZmZmZjgxMDk2Y2U5Pl0gc2xlZXBfb25fcGFnZSsweDkvMHgxMApbICA1OTguNzA0ODMxXSAgWzxm
+ZmZmZmZmZjgxNjBhMzUyPl0gX193YWl0X29uX2JpdF9sb2NrKzB4NTIvMHhiMApbICA1OTguNzA0
+ODM1XSAgWzxmZmZmZmZmZjgxMDk2Y2QyPl0gX19sb2NrX3BhZ2UrMHg2Mi8weDcwClsgIDU5OC43
+MDQ4NDBdICBbPGZmZmZmZmZmODEwNGMwOTA+XSA/IGF1dG9yZW1vdmVfd2FrZV9mdW5jdGlvbisw
+eDQwLzB4NDAKWyAgNTk4LjcwNDg3Ml0gIFs8ZmZmZmZmZmZhMDA1NmRmMT5dIGV4dGVudF93cml0
+ZV9jYWNoZV9wYWdlcy5jbG9uZS4yNi5jbG9uZS40MCsweDIxMS8weDNlMCBbYnRyZnNdClsgIDU5
+OC43MDQ4OTZdICBbPGZmZmZmZmZmYTAwNTcxZjU+XSBleHRlbnRfd3JpdGVwYWdlcysweDQ1LzB4
+NjAgW2J0cmZzXQpbICA1OTguNzA0OTE2XSAgWzxmZmZmZmZmZmEwMDM3NTAwPl0gPyB1bmNvbXBy
+ZXNzX2lubGluZS5jbG9uZS40NCsweDFiMC8weDFiMCBbYnRyZnNdClsgIDU5OC43MDQ5MzRdICBb
+PGZmZmZmZmZmYTAwMzZkNDI+XSBidHJmc193cml0ZXBhZ2VzKzB4MjIvMHgzMCBbYnRyZnNdClsg
+IDU5OC43MDQ5MzldICBbPGZmZmZmZmZmODEwYTBkNGM+XSBkb193cml0ZXBhZ2VzKzB4MWMvMHgz
+MApbICA1OTguNzA0OTQzXSAgWzxmZmZmZmZmZjgxMDk3OTFiPl0gX19maWxlbWFwX2ZkYXRhd3Jp
+dGVfcmFuZ2UrMHg1Yi8weDYwClsgIDU5OC43MDQ5NDhdICBbPGZmZmZmZmZmODEwOTg3ZDc+XSBm
+aWxlbWFwX2ZsdXNoKzB4MTcvMHgyMApbICA1OTguNzA0OTY3XSAgWzxmZmZmZmZmZmEwMDUxYzgy
+Pl0gYnRyZnNfcnVuX29yZGVyZWRfb3BlcmF0aW9ucysweDE5Mi8weDIwMCBbYnRyZnNdClsgIDU5
+OC43MDQ5ODZdICBbPGZmZmZmZmZmYTAwMzJmMjY+XSBidHJmc19jb21taXRfdHJhbnNhY3Rpb24r
+MHg3Ni8weDlhMCBbYnRyZnNdClsgIDU5OC43MDQ5OTFdICBbPGZmZmZmZmZmODEwM2JmOTI+XSA/
+IGRlbF90aW1lcl9zeW5jKzB4MzIvMHg1MApbICA1OTguNzA1MDA5XSAgWzxmZmZmZmZmZmEwMDMy
+NDcyPl0gPyBqb2luX3RyYW5zYWN0aW9uLmNsb25lLjI2KzB4MjIvMHgyZTAgW2J0cmZzXQpbICA1
+OTguNzA1MDEzXSAgWzxmZmZmZmZmZjgxMDRjMDUwPl0gPyB3YWtlX3VwX2JpdCsweDQwLzB4NDAK
+WyAgNTk4LjcwNTAzMF0gIFs8ZmZmZmZmZmZhMDAyYmI1Yj5dIHRyYW5zYWN0aW9uX2t0aHJlYWQr
+MHgyNWIvMHgyZDAgW2J0cmZzXQpbICA1OTguNzA1MDQ2XSAgWzxmZmZmZmZmZmEwMDJiOTAwPl0g
+PyBidHJmc19hbGxvY19yb290KzB4MzAvMHgzMCBbYnRyZnNdClsgIDU5OC43MDUwNjJdICBbPGZm
+ZmZmZmZmYTAwMmI5MDA+XSA/IGJ0cmZzX2FsbG9jX3Jvb3QrMHgzMC8weDMwIFtidHJmc10KWyAg
+NTk4LjcwNTA2Nl0gIFs8ZmZmZmZmZmY4MTA0YmI2Nj5dIGt0aHJlYWQrMHg5Ni8weGEwClsgIDU5
+OC43MDUwNzFdICBbPGZmZmZmZmZmODE2MGU5ZDQ+XSBrZXJuZWxfdGhyZWFkX2hlbHBlcisweDQv
+MHgxMApbICA1OTguNzA1MDc2XSAgWzxmZmZmZmZmZjgxMDRiYWQwPl0gPyBrdGhyZWFkX2ZyZWV6
+YWJsZV9zaG91bGRfc3RvcCsweDcwLzB4NzAKWyAgNTk4LjcwNTA3OV0gIFs8ZmZmZmZmZmY4MTYw
+ZTlkMD5dID8gZ3NfY2hhbmdlKzB4Yi8weGIK
+--90e6ba4fc6ec05e15b04bd68dd3e--

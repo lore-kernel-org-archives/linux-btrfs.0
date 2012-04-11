@@ -1,52 +1,34 @@
 From: Josef Bacik <josef@redhat.com>
-Subject: Re: kernel BUG at fs/btrfs/extent_io.c:3982!
-Date: Wed, 11 Apr 2012 16:28:23 -0400
-Message-ID: <20120411202823.GG2506@localhost.localdomain>
-References: <4F848C62.6030100@sandia.gov>
- <20120411190926.GE2506@localhost.localdomain>
- <4F85E87E.90804@sandia.gov>
-Mime-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Cc: Josef Bacik <josef@redhat.com>, linux-btrfs@vger.kernel.org
-To: Jim Schutt <jaschut@sandia.gov>
-Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <4F85E87E.90804@sandia.gov>
+Subject: [PATCH] fs: make i_generation a u64
+Date: Wed, 11 Apr 2012 16:42:48 -0400
+Message-ID: <1334176968-8687-1-git-send-email-josef@redhat.com>
+To: linux-fsdevel@vger.kernel.org, linux-btrfs@vger.kernel.org,
+	viro@ZenIV.linux.org.uk
+Return-path: <linux-fsdevel-owner@vger.kernel.org>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Wed, Apr 11, 2012 at 02:24:30PM -0600, Jim Schutt wrote:
-> On 04/11/2012 01:09 PM, Josef Bacik wrote:
-> >On Tue, Apr 10, 2012 at 01:39:14PM -0600, Jim Schutt wrote:
-> >>Hi,
-> >>
-> >>I hit this BUG today.
-> >>
-> >>I'm running 3.3.1 merged with the ceph and btrfs bits for 3.4,
-> >>i.e. 3.3.1 +
-> >>   commit bc3f116fec194 "Btrfs: update the checks for mixed block groups with big metadata blocks"
-> >>   commit c666601a935b9 "rbd: move snap_rwsem to the device, rename to header_rwsem"
-> >>
-> >>The btrfs filesystem in question is backing a Ceph OSD under
-> >>a heavy write load.
-> >>
-> >>Here's the bug:
-> >>
-> >
-> >Can you give this a whirl and let me know how it goes?  If I'm right you should
-> >see a warning pop up in your messages.  Thanks,
-> 
-> OK, I've got my test running with your patch applied
-> to my previous kernel.
-> 
-> Do you expect your warning to only fire when my
-> previous kernel would have BUGged?  I ask because I've
-> only seen the BUG once, so it may be a low-probability
-> occurrence.
-> 
-> It seems like I should keep testing until I see either
-> your new warning or the BUG, right?
-> 
+Btrfs stores generation numbers as 64bit numbers, which means we have to
+carry around a u64 in our incore inode in addition to setting i_generation.
+So convert to a u64 so btrfs can kill it's incore generation.  Thanks,
 
-So hopefully you will see my WARN with no BUG, but yes keep running until you
-see one or the other please ;).  Thanks,
+Signed-off-by: Josef Bacik <josef@redhat.com>
+---
+ include/linux/fs.h |    2 +-
+ 1 files changed, 1 insertions(+), 1 deletions(-)
 
-Josef
+diff --git a/include/linux/fs.h b/include/linux/fs.h
+index 9be896d..40564e0 100644
+--- a/include/linux/fs.h
++++ b/include/linux/fs.h
+@@ -831,7 +831,7 @@ struct inode {
+ 		struct cdev		*i_cdev;
+ 	};
+ 
+-	__u32			i_generation;
++	u64			i_generation;
+ 
+ #ifdef CONFIG_FSNOTIFY
+ 	__u32			i_fsnotify_mask; /* all events this inode cares about */
+-- 
+1.7.7.6
+

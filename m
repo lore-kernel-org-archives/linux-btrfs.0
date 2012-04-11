@@ -1,62 +1,69 @@
-From: Arvin Schnell <aschnell@suse.de>
-Subject: Re: snapper for Ubuntu? (WAS: btrfs auto snapshot)
-Date: Wed, 11 Apr 2012 11:53:16 +0200
-Message-ID: <20120411095316.GA2850@suse.de>
-References: <CAG1y0sdzOXhWowTiBomc6CDEVGJdpJy983P5suQfFC_-NmnYtQ@mail.gmail.com> <20120410114623.GA24057@suse.de> <CAG1y0seZqb+KkSA8Ae0cSfoGWCfBFnPotCM3FUs4q9fND5XjXw@mail.gmail.com> <20120410143557.GC5850@suse.com> <CAG1y0sdnXMuq4d-kDjrS6FkD1+iDBoF0-uz_d_FxwhO2wTP2Lg@mail.gmail.com>
+From: Jan Schmidt <list.btrfs@jan-o-sch.net>
+Subject: Re: [PATCH 0/3] btrfs: extended inode refs
+Date: Wed, 11 Apr 2012 15:11:46 +0200
+Message-ID: <4F858312.6090905@jan-o-sch.net>
+References: <1333656543-4843-1-git-send-email-mfasheh@suse.de> <4F7E0AF9.7070305@suse.de>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=iso-8859-15
-Cc: "Matthias G. Eckermann" <mge@suse.com>,
-	linux-btrfs <linux-btrfs@vger.kernel.org>
-To: "Fajar A. Nugraha" <list@fajar.net>
+Content-Type: text/plain; charset=ISO-8859-1
+Cc: Mark Fasheh <mfasheh@suse.de>, linux-btrfs@vger.kernel.org,
+	Chris Mason <chris.mason@oracle.com>,
+	Josef Bacik <josef@redhat.com>
+To: Jeff Mahoney <jeffm@suse.de>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <CAG1y0sdnXMuq4d-kDjrS6FkD1+iDBoF0-uz_d_FxwhO2wTP2Lg@mail.gmail.com>
+In-Reply-To: <4F7E0AF9.7070305@suse.de>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Tue, Apr 10, 2012 at 09:50:32PM +0700, Fajar A. Nugraha wrote:
-> On Tue, Apr 10, 2012 at 9:35 PM, Matthias G. Eckermann <mge@suse.com>=
- wrote:
-> > On 2012-04-10 T 20:48 +0700 Fajar A. Nugraha wrote:
-> >> How can I create config for /data or other directories (other than
-> >> manually creating the config file and .snapshots directory)?
-> >
-> > This should do it:
-> >
-> > sudo snapper -c home create-config /home
-> > sudo snapper -c data create-config /data
-> >
-> > The reasons for the extra "-c <name>" is that you have to
-> > tell snapper, which name to choose for the configuration
-> > you want to create. This name is the one you can reference
-> > in future actions such as create/modify/delete.
->=20
-> Great! That works, thanks.
->=20
-> Is there an oposite of create-config, i.e. delete for just one subvol=
-ume?
-> delete-config seems to delete everything (configs for all subvolume
-> and all snapshots).
+Hi Jeff,
 
-delete-config only deletes one config. Otherwise that is a bug.
+On 05.04.2012 23:13, Jeff Mahoney wrote:
+>> As a result, we must use a different addressing scheme. Extended
+>> ref keys look like:
+> 
+>> (inode objectid, BTRFS_INODE_EXTREF_KEY, hash)
+> 
+>> Where hash is defined as a function of the parent objectid and link
+>> name.
+> 
+> I think this is effective. It will essentially have the same
+> properties as a dirent but seeds the hash at objectid instead of ~1.
 
-> Also, one minor detail, I noticed that the cron configuration file is
-> /etc/sysconfig/snapper. It should be /etc/default/snapper in
-> ubuntu/debian.
+The objectid is already part of the key. What's the point in seeding it
+to crc32 instead of ~1?
 
-Thanks for the hint.
+>> Right now there is a limitation for extrefs in that we're not
+>> handling the possibility of a hash collision. There are two ways I
+>> see we can deal with this:
+> 
+>> We can use a 56-bit hash and keep a generation counter in the lower
+>> 8 bits of the offset field.  The cost would be an additional tree
+>> search (between offset <hash>00 and <hash>FF) if we don't find
+>> exactly the name we were looking for.
+> 
+>> An alternative solution to dealing with collisions could be to
+>> emulate the dir-item insertion code - specifically something like
+>> insert_with_overflow() which will stuff multiple items under one
+>> key. I tend to prefer the idea of
+> 
+> I vote for this option.
 
-Regards,
-  Arvin
+Having more than one way to deal with hash collisions for keys doesn't
+feel right. Let's find out which works best and use it in both places.
+If the current insert_with_overflow style is best, please use that for
+extrefs as well. If it isn't, can we replace it with something that
+works for both?
 
---=20
-Arvin Schnell, <aschnell@suse.de>
-Senior Software Engineer, Research & Development
-SUSE LINUX Products GmbH, GF: Jeff Hawn, Jennifer Guild, Felix Imend=F6=
-rffer, HRB 16746 (AG N=FCrnberg)
-Maxfeldstra=DFe 5
-90409 N=FCrnberg
-Germany
---
-To unsubscribe from this list: send the line "unsubscribe linux-btrfs" =
-in
-the body of a message to majordomo@vger.kernel.org
-More majordomo info at  http://vger.kernel.org/majordomo-info.html
+> The code for insert_with_overflow is already
+> well tested
+
+I'm looking forward to seeing tests or references to the archives
+discussing this. Do you have a link for me?
+
+> and anything that will generate a collision in dirent
+> insertion will generate a collision for the backref insertion. The
+> dirent structure is larger than the extref structure, so there should
+> always be space to match the dirent leaf so that a failure occurs
+> there first.
+
+I agree with that bit.
+
+-Jan

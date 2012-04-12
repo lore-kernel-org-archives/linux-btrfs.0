@@ -1,64 +1,54 @@
-From: Jesper Juhl <jj@chaosbits.net>
-Subject: [PATCH] Btrfs: Make free_ipath() deal gracefully with NULL
- pointers
-Date: Thu, 12 Apr 2012 22:47:52 +0200 (CEST)
-Message-ID: <alpine.LNX.2.00.1204122246410.7553@swampdragon.chaosbits.net>
+From: Travis Shivers <ttshivers@gmail.com>
+Subject: Btrfs Array Recovery
+Date: Thu, 12 Apr 2012 16:25:49 -0500
+Message-ID: <CAPeorG9SqVbg=ciH++P5SjPAGp5t=-B7gnSYUQ80UFQ3HGK91Q@mail.gmail.com>
 Mime-Version: 1.0
-Content-Type: TEXT/PLAIN; charset=US-ASCII
-Cc: Chris Mason <chris.mason@oracle.com>, linux-btrfs@vger.kernel.org
-To: linux-kernel@vger.kernel.org
-Return-path: <linux-kernel-owner@vger.kernel.org>
+Content-Type: text/plain; charset=ISO-8859-1
+To: linux-btrfs@vger.kernel.org
+Return-path: <linux-btrfs-owner@vger.kernel.org>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Make free_ipath() behave like most other freeing functions in the
-kernel and gracefully do nothing when passed a NULL pointer.
+A few months ago, my btrfs storage array became corrupted because of a
+power failure. A while ago, I made this thread to try and resolve the
+problem. (http://www.digipedia.pl/usenet/thread/11904/15955/) You can
+find detailed information about the problem in the previous thread,
+but I am happy to provide any other details. It didn't really go
+anywhere in the way of solving my problem. The thread ended in me
+waiting for a patch that would allow me to mount my corrupted array
+which was around 2 months ago.
 
-Besides this making the bahaviour consistent with functions such as
-kfree(), vfree(), btrfs_free_path() etc etc, it also fixes a real NULL
-deref issue in fs/btrfs/ioctl.c::btrfs_ioctl_ino_to_path(). In that
-function we have this code:
+While I have been waiting, I have tried several things. One of the
+things that I tried was installing the latest Linux kernel (3.4 RC1)
+with the btrfs integrity checking enabled. I read about this module
+here: (http://lwn.net/Articles/466493/) With the option compiled in, I
+have had severe mounting problems. I can only try to mount the array
+once before it does some strange things. The first time I try and
+mount it, it fails, but logs this in dmesg:
+(http://pastebin.com/YwAsdjhs) It looks like there is a bug in this
+integrity checking code. After I try to mount the drive after the
+first time, it just hangs and doesn't return anything or log anything
+in dmesg. Even trying to mount the drive without the integrity
+checking problem hangs and has the same problems.
 
-...
-        ipath = init_ipath(size, root, path);
-        if (IS_ERR(ipath)) {
-                ret = PTR_ERR(ipath);
-                ipath = NULL;
-                goto out;
-        }
-...
-out:
-        btrfs_free_path(path);
-        free_ipath(ipath);
-...
+I have also grabbed the latest version of btrfs-progs since I saw that
+btrfsck could now repair some corruptions. I built the utilities and
+executed btrfsck. This is the result of the command:
+(http://pastebin.com/CEyvy17r) I saw that there was an error occurring
+in the code at line 1864, so I commented out that line which had the
+text: BUG_ON(rec->is_root);
+I then recompiled the utilities and executed btrfsck again and got
+this: (http://pastebin.com/ihYmuCAm) I also tried btrfsck with the
+repair option with these results: (http://pastebin.com/gnrStyqh)
 
-If we ever take the true branch of that 'if' statement we'll end up
-passing a NULL pointer to free_ipath() which will subsequently
-dereference it and we'll go "Boom" :-(
-This patch will avoid that.
-
-Signed-off-by: Jesper Juhl <jj@chaosbits.net>
----
- fs/btrfs/backref.c |    2 ++
- 1 file changed, 2 insertions(+)
-
-diff --git a/fs/btrfs/backref.c b/fs/btrfs/backref.c
-index f4e9074..b332ff0 100644
---- a/fs/btrfs/backref.c
-+++ b/fs/btrfs/backref.c
-@@ -1414,6 +1414,8 @@ struct inode_fs_paths *init_ipath(s32 total_bytes, struct btrfs_root *fs_root,
- 
- void free_ipath(struct inode_fs_paths *ipath)
- {
-+	if (!ipath)
-+		return;
- 	kfree(ipath->fspath);
- 	kfree(ipath);
- }
--- 
-1.7.10
-
-
--- 
-Jesper Juhl <jj@chaosbits.net>       http://www.chaosbits.net/
-Don't top-post http://www.catb.org/jargon/html/T/top-post.html
-Plain text mails only, please.
+Another thing that I have experimented with is btrfs-restore. I have
+been somewhat successful in using this tool to restore the files. The
+main problem that I have is that it cannot restore over half of the
+files on the array and just puts an empty file with a size of 0. It
+does restore the other half of the array perfectly. On the files that
+it cannot restore, it returns a return code of -3. For example, here
+is an example of a file which is unable to be restored by this tool:
+(http://pastebin.com/Rg5a0xdG) I read more about this tool here
+(http://btrfs.ipv5.de/index.php?title=Restore) I tried this tool with
+'-u 1' and '-u 2' flags, which did not help anything. I do not think
+that half of my array is corrupted since it was just a power failure
+and the drive is also mirrored, which should provide some redundancy.

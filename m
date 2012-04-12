@@ -1,32 +1,64 @@
-From: Josef Bacik <josef@redhat.com>
-Subject: Re: [PATCH] fs: make i_generation a u64
-Date: Thu, 12 Apr 2012 15:49:56 -0400
-Message-ID: <20120412194955.GO1924@localhost.localdomain>
-References: <1334176968-8687-1-git-send-email-josef@redhat.com>
- <20120412194217.GC26332@thunk.org>
+From: Jesper Juhl <jj@chaosbits.net>
+Subject: [PATCH] Btrfs: Make free_ipath() deal gracefully with NULL
+ pointers
+Date: Thu, 12 Apr 2012 22:47:52 +0200 (CEST)
+Message-ID: <alpine.LNX.2.00.1204122246410.7553@swampdragon.chaosbits.net>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Cc: Josef Bacik <josef@redhat.com>, linux-fsdevel@vger.kernel.org,
-	linux-btrfs@vger.kernel.org, viro@ZenIV.linux.org.uk
-To: "Ted Ts'o" <tytso@mit.edu>
-Return-path: <linux-fsdevel-owner@vger.kernel.org>
-In-Reply-To: <20120412194217.GC26332@thunk.org>
+Content-Type: TEXT/PLAIN; charset=US-ASCII
+Cc: Chris Mason <chris.mason@oracle.com>, linux-btrfs@vger.kernel.org
+To: linux-kernel@vger.kernel.org
+Return-path: <linux-kernel-owner@vger.kernel.org>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Thu, Apr 12, 2012 at 03:42:17PM -0400, Ted Ts'o wrote:
-> On Wed, Apr 11, 2012 at 04:42:48PM -0400, Josef Bacik wrote:
-> > Btrfs stores generation numbers as 64bit numbers, which means we have to
-> > carry around a u64 in our incore inode in addition to setting i_generation.
-> > So convert to a u64 so btrfs can kill it's incore generation.  Thanks,
-> > 
-> > Signed-off-by: Josef Bacik <josef@redhat.com>
-> 
-> Why is btrfs using a 64-bit generation number, out of curiosity?  The
-> only user of the inode generation number as far as I can tell is NFS,
-> and even NFSv4 is using a 32-bit generation number....
-> 
+Make free_ipath() behave like most other freeing functions in the
+kernel and gracefully do nothing when passed a NULL pointer.
 
-It's just tied to our transaction id #'s which are 64bit, no super awesome
-reason or anything.  Thanks,
+Besides this making the bahaviour consistent with functions such as
+kfree(), vfree(), btrfs_free_path() etc etc, it also fixes a real NULL
+deref issue in fs/btrfs/ioctl.c::btrfs_ioctl_ino_to_path(). In that
+function we have this code:
 
-Josef
+...
+        ipath = init_ipath(size, root, path);
+        if (IS_ERR(ipath)) {
+                ret = PTR_ERR(ipath);
+                ipath = NULL;
+                goto out;
+        }
+...
+out:
+        btrfs_free_path(path);
+        free_ipath(ipath);
+...
+
+If we ever take the true branch of that 'if' statement we'll end up
+passing a NULL pointer to free_ipath() which will subsequently
+dereference it and we'll go "Boom" :-(
+This patch will avoid that.
+
+Signed-off-by: Jesper Juhl <jj@chaosbits.net>
+---
+ fs/btrfs/backref.c |    2 ++
+ 1 file changed, 2 insertions(+)
+
+diff --git a/fs/btrfs/backref.c b/fs/btrfs/backref.c
+index f4e9074..b332ff0 100644
+--- a/fs/btrfs/backref.c
++++ b/fs/btrfs/backref.c
+@@ -1414,6 +1414,8 @@ struct inode_fs_paths *init_ipath(s32 total_bytes, struct btrfs_root *fs_root,
+ 
+ void free_ipath(struct inode_fs_paths *ipath)
+ {
++	if (!ipath)
++		return;
+ 	kfree(ipath->fspath);
+ 	kfree(ipath);
+ }
+-- 
+1.7.10
+
+
+-- 
+Jesper Juhl <jj@chaosbits.net>       http://www.chaosbits.net/
+Don't top-post http://www.catb.org/jargon/html/T/top-post.html
+Plain text mails only, please.

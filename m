@@ -1,189 +1,124 @@
 From: Josef Bacik <josef@redhat.com>
-Subject: Re: [PATCH] Btrfs: use i_version instead of our own sequence
-Date: Thu, 12 Apr 2012 09:31:07 -0400
-Message-ID: <20120412133107.GC1924@localhost.localdomain>
-References: <1333986794-6525-1-git-send-email-josef@redhat.com>
- <CALLzPKY0ViBnaH8PVOmxad+oPpbWiYOz24+Lc8CWNuzKbyHHng@mail.gmail.com>
+Subject: Re: Boot speed/mount time regression with 3.4.0-rc2
+Date: Thu, 12 Apr 2012 09:37:48 -0400
+Message-ID: <20120412133747.GE1924@localhost.localdomain>
+References: <1333986823.2928.6.camel@ayu>
+ <1333991404.2817.6.camel@ayu>
+ <20120409205429.GB6958@localhost.localdomain>
+ <1334006446.2678.0.camel@ayu>
+ <20120410151645.GC2296@localhost.localdomain>
+ <CAFDW0j+=qe49pX3frjEoozOMz-gKKxqJ+jeeTgyXEskDL_9W8w@mail.gmail.com>
+ <20120411170422.GA2506@localhost.localdomain>
+ <CAFDW0jJZ16jPn766fdn3Hm=WWkR71n0kJapfPZzgHd3o71b1hQ@mail.gmail.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset=iso-8859-1
-Cc: Josef Bacik <josef@redhat.com>, linux-btrfs@vger.kernel.org
-To: "Kasatkin, Dmitry" <dmitry.kasatkin@intel.com>
+Cc: Josef Bacik <josef@redhat.com>,
+	Calvin Walton <calvin.walton@kepstin.ca>,
+	linux-btrfs@vger.kernel.org, Chris Mason <chris.mason@oracle.com>
+To: Ahmet Inan <ainan@mathematik.uni-freiburg.de>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <CALLzPKY0ViBnaH8PVOmxad+oPpbWiYOz24+Lc8CWNuzKbyHHng@mail.gmail.com>
+In-Reply-To: <CAFDW0jJZ16jPn766fdn3Hm=WWkR71n0kJapfPZzgHd3o71b1hQ@mail.gmail.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Thu, Apr 12, 2012 at 04:22:26PM +0300, Kasatkin, Dmitry wrote:
-> On Mon, Apr 9, 2012 at 6:53 PM, Josef Bacik <josef@redhat.com> wrote:
-> > We've been keeping around the inode sequence number in hopes that s=
-omebody
-> > would use it, but nobody uses it and people actually use i_version =
-which
-> > serves the same purpose, so use i_version where we used the incore =
-inode's
-> > sequence number and that way the sequence is updated properly acros=
-s the
-> > board, and not just in file write. =A0Thanks,
+On Thu, Apr 12, 2012 at 11:22:51AM +0200, Ahmet Inan wrote:
+> On Wed, Apr 11, 2012 at 7:04 PM, Josef Bacik <josef@redhat.com> wrote=
+:
+> > On Wed, Apr 11, 2012 at 05:26:29PM +0200, Ahmet Inan wrote:
+> >> On Tue, Apr 10, 2012 at 5:16 PM, Josef Bacik <josef@redhat.com> wr=
+ote:
+> >> > On Mon, Apr 09, 2012 at 05:20:46PM -0400, Calvin Walton wrote:
+> >> >> On Mon, 2012-04-09 at 16:54 -0400, Josef Bacik wrote:
+> >> >> > On Mon, Apr 09, 2012 at 01:10:04PM -0400, Calvin Walton wrote=
+:
+> >> >> > > On Mon, 2012-04-09 at 11:53 -0400, Calvin Walton wrote:
+> >> >> > > > Hi,
+> >> >> > > >
+> >> >> > > > I have a system that's using a dracut-generated initramfs=
+ to mount a
+> >> >> > > > btrfs root. After upgrading to kernel 3.4.0-rc2 to test i=
+t out, I've
+> >> >> > > > noticed that the process of mounting the root filesystem =
+takes much
+> >> >> > > > longer with 3.4.0-rc2 than it did with 3.3.1 - nearly 30 =
+seconds slower!
+> >> >>
+> >> >> > > And the bisect results are in:
+> >> >> > > 285ff5af6ce358e73f53b55c9efadd4335f4c2ff is the first bad c=
+ommit
+> >> >> > > commit 285ff5af6ce358e73f53b55c9efadd4335f4c2ff
+> >> >> > > Author: Josef Bacik <josef@redhat.com>
+> >> >> > > Date: =A0 Fri Jan 13 15:27:45 2012 -0500
+> >> >> > >
+> >> >> > > =A0 =A0 Btrfs: remove the ideal caching code>
+> >> >> >
+> >> >> > Ok can you give this a whirl? =A0You are going to have to boo=
+t/reboot a few times
+> >> >> > to let the cache get re-generated again to make sure it's tak=
+en effect, but
+> >> >> > hopefully this will help out. =A0Thanks,
+> >> >>
+> >> >> Unfortunately, it doesn't seem to help. Even after 3 or 4 reboo=
+ts with
+> >> >> this patch applied I'm still seeing the same delay.
+> >> >>
+> >> >
+> >> > Ok drop that previous patch and give this one a whirl, it helped=
+ on my laptop.
+> >> > This is only =A0half of the problem AFAICS, but it's the easier =
+half to fix, in
+> >> > the meantime I need to lock down why we're not writing out cache=
+ for a bunch of
+> >> > block groups, but thats trickier since the messages I need are s=
+pit out while
+> >> > I'm shutting down, so I need to get creative. =A0Let me know if/=
+how much this
+> >> > helps. =A0Thanks,
+> >>
+> >> i have tried your patch and my system still needs several minutes =
+to boot
+> >> until it can be used.
+> >> Also tried to reboot several times - it doesn't look like its gett=
+ing better.
+> >> The last thing the system does when its shutting down is a read-on=
+ly
+> >> remount of "/" so no umount.
+> >> Booting was much faster before i pulled for-linus a few weeks ago =
+but
+> >> i couldn't find the time to bisect it yet ..
+> >>
+> >> please also look at the attached dmesg.txt.
+> >> this is an core i3 system with 2x2TB BTRFS RAID1 and lots of
+> >> home directories and snapshots.
+> >>
+> >> I'm going to test this patch on twenty more computers but with
+> >> smaller HDDs and less files and see if it helps to speed up their
+> >> boot times.
+> >>
 > >
-> > Signed-off-by: Josef Bacik <josef@redhat.com>
-> > ---
-> > =A0fs/btrfs/btrfs_inode.h =A0 | =A0 =A03 ---
-> > =A0fs/btrfs/delayed-inode.c | =A0 =A04 ++--
-> > =A0fs/btrfs/file.c =A0 =A0 =A0 =A0 =A0| =A0 =A01 -
-> > =A0fs/btrfs/inode.c =A0 =A0 =A0 =A0 | =A0 =A05 ++---
-> > =A0fs/btrfs/super.c =A0 =A0 =A0 =A0 | =A0 =A02 +-
-> > =A05 files changed, 5 insertions(+), 10 deletions(-)
-> >
-> > diff --git a/fs/btrfs/btrfs_inode.h b/fs/btrfs/btrfs_inode.h
-> > index 9b9b15f..3771b85 100644
-> > --- a/fs/btrfs/btrfs_inode.h
-> > +++ b/fs/btrfs/btrfs_inode.h
-> > @@ -83,9 +83,6 @@ struct btrfs_inode {
-> > =A0 =A0 =A0 =A0 */
-> > =A0 =A0 =A0 =A0u64 generation;
-> >
-> > - =A0 =A0 =A0 /* sequence number for NFS changes */
-> > - =A0 =A0 =A0 u64 sequence;
-> > -
-> > =A0 =A0 =A0 =A0/*
-> > =A0 =A0 =A0 =A0 * transid of the trans_handle that last modified th=
-is inode
-> > =A0 =A0 =A0 =A0 */
-> > diff --git a/fs/btrfs/delayed-inode.c b/fs/btrfs/delayed-inode.c
-> > index 03e3748..bcd40c7 100644
-> > --- a/fs/btrfs/delayed-inode.c
-> > +++ b/fs/btrfs/delayed-inode.c
-> > @@ -1706,7 +1706,7 @@ static void fill_stack_inode_item(struct btrf=
-s_trans_handle *trans,
-> > =A0 =A0 =A0 =A0btrfs_set_stack_inode_nbytes(inode_item, inode_get_b=
-ytes(inode));
-> > =A0 =A0 =A0 =A0btrfs_set_stack_inode_generation(inode_item,
-> > =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0=
- =A0 =A0 =A0 BTRFS_I(inode)->generation);
-> > - =A0 =A0 =A0 btrfs_set_stack_inode_sequence(inode_item, BTRFS_I(in=
-ode)->sequence);
-> > + =A0 =A0 =A0 btrfs_set_stack_inode_sequence(inode_item, inode->i_v=
-ersion);
-> > =A0 =A0 =A0 =A0btrfs_set_stack_inode_transid(inode_item, trans->tra=
-nsid);
-> > =A0 =A0 =A0 =A0btrfs_set_stack_inode_rdev(inode_item, inode->i_rdev=
-);
-> > =A0 =A0 =A0 =A0btrfs_set_stack_inode_flags(inode_item, BTRFS_I(inod=
-e)->flags);
-> > @@ -1754,7 +1754,7 @@ int btrfs_fill_inode(struct inode *inode, u32=
- *rdev)
-> > =A0 =A0 =A0 =A0set_nlink(inode, btrfs_stack_inode_nlink(inode_item)=
-);
-> > =A0 =A0 =A0 =A0inode_set_bytes(inode, btrfs_stack_inode_nbytes(inod=
-e_item));
-> > =A0 =A0 =A0 =A0BTRFS_I(inode)->generation =3D btrfs_stack_inode_gen=
-eration(inode_item);
-> > - =A0 =A0 =A0 BTRFS_I(inode)->sequence =3D btrfs_stack_inode_sequen=
-ce(inode_item);
-> > + =A0 =A0 =A0 inode->i_version =3D btrfs_stack_inode_sequence(inode=
-_item);
-> > =A0 =A0 =A0 =A0inode->i_rdev =3D 0;
-> > =A0 =A0 =A0 =A0*rdev =3D btrfs_stack_inode_rdev(inode_item);
-> > =A0 =A0 =A0 =A0BTRFS_I(inode)->flags =3D btrfs_stack_inode_flags(in=
-ode_item);
-> > diff --git a/fs/btrfs/file.c b/fs/btrfs/file.c
-> > index 431b565..f0da02b 100644
-> > --- a/fs/btrfs/file.c
-> > +++ b/fs/btrfs/file.c
-> > @@ -1404,7 +1404,6 @@ static ssize_t btrfs_file_aio_write(struct ki=
-ocb *iocb,
-> > =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0mutex_unlock(&inode->i_mutex);
-> > =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0goto out;
-> > =A0 =A0 =A0 =A0}
-> > - =A0 =A0 =A0 BTRFS_I(inode)->sequence++;
-> >
-> > =A0 =A0 =A0 =A0start_pos =3D round_down(pos, root->sectorsize);
-> > =A0 =A0 =A0 =A0if (start_pos > i_size_read(inode)) {
-> > diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
-> > index 7a084fb..7d3dd2f 100644
-> > --- a/fs/btrfs/inode.c
-> > +++ b/fs/btrfs/inode.c
-> > @@ -2510,7 +2510,7 @@ static void btrfs_read_locked_inode(struct in=
-ode *inode)
-> >
-> > =A0 =A0 =A0 =A0inode_set_bytes(inode, btrfs_inode_nbytes(leaf, inod=
-e_item));
-> > =A0 =A0 =A0 =A0BTRFS_I(inode)->generation =3D btrfs_inode_generatio=
-n(leaf, inode_item);
-> > - =A0 =A0 =A0 BTRFS_I(inode)->sequence =3D btrfs_inode_sequence(lea=
-f, inode_item);
-> > + =A0 =A0 =A0 inode->i_version =3D btrfs_inode_sequence(leaf, inode=
-_item);
-> > =A0 =A0 =A0 =A0inode->i_generation =3D BTRFS_I(inode)->generation;
-> > =A0 =A0 =A0 =A0inode->i_rdev =3D 0;
-> > =A0 =A0 =A0 =A0rdev =3D btrfs_inode_rdev(leaf, inode_item);
-> > @@ -2594,7 +2594,7 @@ static void fill_inode_item(struct btrfs_tran=
-s_handle *trans,
-> >
-> > =A0 =A0 =A0 =A0btrfs_set_inode_nbytes(leaf, item, inode_get_bytes(i=
-node));
-> > =A0 =A0 =A0 =A0btrfs_set_inode_generation(leaf, item, BTRFS_I(inode=
-)->generation);
-> > - =A0 =A0 =A0 btrfs_set_inode_sequence(leaf, item, BTRFS_I(inode)->=
-sequence);
-> > + =A0 =A0 =A0 btrfs_set_inode_sequence(leaf, item, inode->i_version=
-);
-> > =A0 =A0 =A0 =A0btrfs_set_inode_transid(leaf, item, trans->transid);
-> > =A0 =A0 =A0 =A0btrfs_set_inode_rdev(leaf, item, inode->i_rdev);
-> > =A0 =A0 =A0 =A0btrfs_set_inode_flags(leaf, item, BTRFS_I(inode)->fl=
-ags);
-> > @@ -6884,7 +6884,6 @@ struct inode *btrfs_alloc_inode(struct super_=
-block *sb)
-> > =A0 =A0 =A0 =A0ei->root =3D NULL;
-> > =A0 =A0 =A0 =A0ei->space_info =3D NULL;
-> > =A0 =A0 =A0 =A0ei->generation =3D 0;
-> > - =A0 =A0 =A0 ei->sequence =3D 0;
-> > =A0 =A0 =A0 =A0ei->last_trans =3D 0;
-> > =A0 =A0 =A0 =A0ei->last_sub_trans =3D 0;
-> > =A0 =A0 =A0 =A0ei->logged_trans =3D 0;
-> > diff --git a/fs/btrfs/super.c b/fs/btrfs/super.c
-> > index 54e7ee9..ee1bb31 100644
-> > --- a/fs/btrfs/super.c
-> > +++ b/fs/btrfs/super.c
-> > @@ -770,7 +770,7 @@ static int btrfs_fill_super(struct super_block =
-*sb,
-> > =A0#ifdef CONFIG_BTRFS_FS_POSIX_ACL
-> > =A0 =A0 =A0 =A0sb->s_flags |=3D MS_POSIXACL;
-> > =A0#endif
-> > -
-> > + =A0 =A0 =A0 sb->s_flags |=3D MS_I_VERSION;
-> > =A0 =A0 =A0 =A0err =3D open_ctree(sb, fs_devices, (char *)data);
-> > =A0 =A0 =A0 =A0if (err) {
-> > =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0printk("btrfs: open_ctree failed\n")=
-;
-> > --
-> > 1.7.5.2
-> >
-> > --
-> > To unsubscribe from this list: send the line "unsubscribe linux-btr=
-fs" in
-> > the body of a message to majordomo@vger.kernel.org
-> > More majordomo info at =A0http://vger.kernel.org/majordomo-info.htm=
-l
+> > Ok looks like you are running into a different problem. =A0Could yo=
+u maybe run
+> > bootchart and upload the resulting png somewhere so I can look and =
+see what all
+> > is running while you boot? =A0Thanks,
 >=20
-> BTW.
-> 1. where is BTRFS devel git tree?
-> 2. when this is coming to mainline?
+> http://aam.mathematik.uni-freiburg.de/IAM/homepages/ainan/bootchart.p=
+ng
+>=20
+> i have tried your patch now on the twenty more computers i mentioned =
+and
+> still it takes a minute to remount rw "/" on those, even after severa=
+l reboots.
 >=20
 
-There's a bunch, my personal tree with just my patches is here
+Oops responding to the whole list this time..
 
-git://git.kernel.org/pub/scm/linux/kernel/git/josef/btrfs-work.git
-
-a tree with all outstanding mailinglist patches is here
-
-git://git.kernel.org/pub/scm/linux/kernel/git/josef/btrfs-next.git
-
-and Chris's tree which is where all things go through to get to mainlin=
-e is here
-
-git://git.kernel.org/pub/scm/linux/kernel/git/mason/linux-btrfs.git
-
-It will probably be in the next merge window.  Thanks,
+Um ouch your system appears to not be doing anything for like 300 secon=
+ds but
+sitting there.  Can you hook up a console and capture sysrq+w while tha=
+ts going
+on?  Also you are mounting with -o space_cache right?  Can I see your d=
+mesg to
+make sure it's doing what it's supposed to?  Thanks,
 
 Josef
 --

@@ -1,64 +1,186 @@
-From: Josef Bacik <josef@redhat.com>
-Subject: Re: [PATCH] fs: make i_generation a u64
-Date: Thu, 12 Apr 2012 09:20:52 -0400
-Message-ID: <20120412132052.GB1924@localhost.localdomain>
-References: <1334176968-8687-1-git-send-email-josef@redhat.com>
- <CANGUGtBHNHE0=GQg-Hv1YUaYNhpt9F5-9qt+_UQ6fkCL__gxaQ@mail.gmail.com>
+From: "Kasatkin, Dmitry" <dmitry.kasatkin@intel.com>
+Subject: Re: [PATCH] Btrfs: use i_version instead of our own sequence
+Date: Thu, 12 Apr 2012 16:22:26 +0300
+Message-ID: <CALLzPKY0ViBnaH8PVOmxad+oPpbWiYOz24+Lc8CWNuzKbyHHng@mail.gmail.com>
+References: <1333986794-6525-1-git-send-email-josef@redhat.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=iso-8859-1
-Cc: Josef Bacik <josef@redhat.com>, linux-fsdevel@vger.kernel.org,
-	linux-btrfs@vger.kernel.org, viro@zeniv.linux.org.uk
-To: Marco Stornelli <marco.stornelli@gmail.com>
+Content-Type: text/plain; charset=UTF-8
+Cc: linux-btrfs@vger.kernel.org
+To: Josef Bacik <josef@redhat.com>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <CANGUGtBHNHE0=GQg-Hv1YUaYNhpt9F5-9qt+_UQ6fkCL__gxaQ@mail.gmail.com>
+In-Reply-To: <1333986794-6525-1-git-send-email-josef@redhat.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Thu, Apr 12, 2012 at 08:46:14AM +0200, Marco Stornelli wrote:
-> 2012/4/11 Josef Bacik <josef@redhat.com>:
-> > Btrfs stores generation numbers as 64bit numbers, which means we ha=
-ve to
-> > carry around a u64 in our incore inode in addition to setting i_gen=
-eration.
-> > So convert to a u64 so btrfs can kill it's incore generation. =A0Th=
-anks,
-> >
-> > Signed-off-by: Josef Bacik <josef@redhat.com>
-> > ---
-> > =A0include/linux/fs.h | =A0 =A02 +-
-> > =A01 files changed, 1 insertions(+), 1 deletions(-)
-> >
-> > diff --git a/include/linux/fs.h b/include/linux/fs.h
-> > index 9be896d..40564e0 100644
-> > --- a/include/linux/fs.h
-> > +++ b/include/linux/fs.h
-> > @@ -831,7 +831,7 @@ struct inode {
-> > =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0struct cdev =A0 =A0 =A0 =A0 =A0 =A0 =
-*i_cdev;
-> > =A0 =A0 =A0 =A0};
-> >
-> > - =A0 =A0 =A0 __u32 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 i_generatio=
-n;
-> > + =A0 =A0 =A0 u64 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 i_generat=
-ion;
-> >
-> > =A0#ifdef CONFIG_FSNOTIFY
-> > =A0 =A0 =A0 =A0__u32 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 i_fsnotify=
-_mask; /* all events this inode cares about */
-> > --
-> > 1.7.7.6
->=20
-> This patch can have several impact on other fs. Only to do an example
-> you can see the code in ioctl of ext4. I haven't got study the code
-> but the ioctl returns a long, but on 32bit system, long means 4 bytes=
-,
-> so how we can return i_generation with ioctl?
->=20
+On Mon, Apr 9, 2012 at 6:53 PM, Josef Bacik <josef@redhat.com> wrote:
+> We've been keeping around the inode sequence number in hopes that som=
+ebody
+> would use it, but nobody uses it and people actually use i_version wh=
+ich
+> serves the same purpose, so use i_version where we used the incore in=
+ode's
+> sequence number and that way the sequence is updated properly across =
+the
+> board, and not just in file write. =C2=A0Thanks,
+>
+> Signed-off-by: Josef Bacik <josef@redhat.com>
+> ---
+> =C2=A0fs/btrfs/btrfs_inode.h =C2=A0 | =C2=A0 =C2=A03 ---
+> =C2=A0fs/btrfs/delayed-inode.c | =C2=A0 =C2=A04 ++--
+> =C2=A0fs/btrfs/file.c =C2=A0 =C2=A0 =C2=A0 =C2=A0 =C2=A0| =C2=A0 =C2=A0=
+1 -
+> =C2=A0fs/btrfs/inode.c =C2=A0 =C2=A0 =C2=A0 =C2=A0 | =C2=A0 =C2=A05 +=
++---
+> =C2=A0fs/btrfs/super.c =C2=A0 =C2=A0 =C2=A0 =C2=A0 | =C2=A0 =C2=A02 +=
+-
+> =C2=A05 files changed, 5 insertions(+), 10 deletions(-)
+>
+> diff --git a/fs/btrfs/btrfs_inode.h b/fs/btrfs/btrfs_inode.h
+> index 9b9b15f..3771b85 100644
+> --- a/fs/btrfs/btrfs_inode.h
+> +++ b/fs/btrfs/btrfs_inode.h
+> @@ -83,9 +83,6 @@ struct btrfs_inode {
+> =C2=A0 =C2=A0 =C2=A0 =C2=A0 */
+> =C2=A0 =C2=A0 =C2=A0 =C2=A0u64 generation;
+>
+> - =C2=A0 =C2=A0 =C2=A0 /* sequence number for NFS changes */
+> - =C2=A0 =C2=A0 =C2=A0 u64 sequence;
+> -
+> =C2=A0 =C2=A0 =C2=A0 =C2=A0/*
+> =C2=A0 =C2=A0 =C2=A0 =C2=A0 * transid of the trans_handle that last m=
+odified this inode
+> =C2=A0 =C2=A0 =C2=A0 =C2=A0 */
+> diff --git a/fs/btrfs/delayed-inode.c b/fs/btrfs/delayed-inode.c
+> index 03e3748..bcd40c7 100644
+> --- a/fs/btrfs/delayed-inode.c
+> +++ b/fs/btrfs/delayed-inode.c
+> @@ -1706,7 +1706,7 @@ static void fill_stack_inode_item(struct btrfs_=
+trans_handle *trans,
+> =C2=A0 =C2=A0 =C2=A0 =C2=A0btrfs_set_stack_inode_nbytes(inode_item, i=
+node_get_bytes(inode));
+> =C2=A0 =C2=A0 =C2=A0 =C2=A0btrfs_set_stack_inode_generation(inode_ite=
+m,
+> =C2=A0 =C2=A0 =C2=A0 =C2=A0 =C2=A0 =C2=A0 =C2=A0 =C2=A0 =C2=A0 =C2=A0=
+ =C2=A0 =C2=A0 =C2=A0 =C2=A0 =C2=A0 =C2=A0 =C2=A0 =C2=A0 =C2=A0 =C2=A0 =
+BTRFS_I(inode)->generation);
+> - =C2=A0 =C2=A0 =C2=A0 btrfs_set_stack_inode_sequence(inode_item, BTR=
+=46S_I(inode)->sequence);
+> + =C2=A0 =C2=A0 =C2=A0 btrfs_set_stack_inode_sequence(inode_item, ino=
+de->i_version);
+> =C2=A0 =C2=A0 =C2=A0 =C2=A0btrfs_set_stack_inode_transid(inode_item, =
+trans->transid);
+> =C2=A0 =C2=A0 =C2=A0 =C2=A0btrfs_set_stack_inode_rdev(inode_item, ino=
+de->i_rdev);
+> =C2=A0 =C2=A0 =C2=A0 =C2=A0btrfs_set_stack_inode_flags(inode_item, BT=
+RFS_I(inode)->flags);
+> @@ -1754,7 +1754,7 @@ int btrfs_fill_inode(struct inode *inode, u32 *=
+rdev)
+> =C2=A0 =C2=A0 =C2=A0 =C2=A0set_nlink(inode, btrfs_stack_inode_nlink(i=
+node_item));
+> =C2=A0 =C2=A0 =C2=A0 =C2=A0inode_set_bytes(inode, btrfs_stack_inode_n=
+bytes(inode_item));
+> =C2=A0 =C2=A0 =C2=A0 =C2=A0BTRFS_I(inode)->generation =3D btrfs_stack=
+_inode_generation(inode_item);
+> - =C2=A0 =C2=A0 =C2=A0 BTRFS_I(inode)->sequence =3D btrfs_stack_inode=
+_sequence(inode_item);
+> + =C2=A0 =C2=A0 =C2=A0 inode->i_version =3D btrfs_stack_inode_sequenc=
+e(inode_item);
+> =C2=A0 =C2=A0 =C2=A0 =C2=A0inode->i_rdev =3D 0;
+> =C2=A0 =C2=A0 =C2=A0 =C2=A0*rdev =3D btrfs_stack_inode_rdev(inode_ite=
+m);
+> =C2=A0 =C2=A0 =C2=A0 =C2=A0BTRFS_I(inode)->flags =3D btrfs_stack_inod=
+e_flags(inode_item);
+> diff --git a/fs/btrfs/file.c b/fs/btrfs/file.c
+> index 431b565..f0da02b 100644
+> --- a/fs/btrfs/file.c
+> +++ b/fs/btrfs/file.c
+> @@ -1404,7 +1404,6 @@ static ssize_t btrfs_file_aio_write(struct kioc=
+b *iocb,
+> =C2=A0 =C2=A0 =C2=A0 =C2=A0 =C2=A0 =C2=A0 =C2=A0 =C2=A0mutex_unlock(&=
+inode->i_mutex);
+> =C2=A0 =C2=A0 =C2=A0 =C2=A0 =C2=A0 =C2=A0 =C2=A0 =C2=A0goto out;
+> =C2=A0 =C2=A0 =C2=A0 =C2=A0}
+> - =C2=A0 =C2=A0 =C2=A0 BTRFS_I(inode)->sequence++;
+>
+> =C2=A0 =C2=A0 =C2=A0 =C2=A0start_pos =3D round_down(pos, root->sector=
+size);
+> =C2=A0 =C2=A0 =C2=A0 =C2=A0if (start_pos > i_size_read(inode)) {
+> diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
+> index 7a084fb..7d3dd2f 100644
+> --- a/fs/btrfs/inode.c
+> +++ b/fs/btrfs/inode.c
+> @@ -2510,7 +2510,7 @@ static void btrfs_read_locked_inode(struct inod=
+e *inode)
+>
+> =C2=A0 =C2=A0 =C2=A0 =C2=A0inode_set_bytes(inode, btrfs_inode_nbytes(=
+leaf, inode_item));
+> =C2=A0 =C2=A0 =C2=A0 =C2=A0BTRFS_I(inode)->generation =3D btrfs_inode=
+_generation(leaf, inode_item);
+> - =C2=A0 =C2=A0 =C2=A0 BTRFS_I(inode)->sequence =3D btrfs_inode_seque=
+nce(leaf, inode_item);
+> + =C2=A0 =C2=A0 =C2=A0 inode->i_version =3D btrfs_inode_sequence(leaf=
+, inode_item);
+> =C2=A0 =C2=A0 =C2=A0 =C2=A0inode->i_generation =3D BTRFS_I(inode)->ge=
+neration;
+> =C2=A0 =C2=A0 =C2=A0 =C2=A0inode->i_rdev =3D 0;
+> =C2=A0 =C2=A0 =C2=A0 =C2=A0rdev =3D btrfs_inode_rdev(leaf, inode_item=
+);
+> @@ -2594,7 +2594,7 @@ static void fill_inode_item(struct btrfs_trans_=
+handle *trans,
+>
+> =C2=A0 =C2=A0 =C2=A0 =C2=A0btrfs_set_inode_nbytes(leaf, item, inode_g=
+et_bytes(inode));
+> =C2=A0 =C2=A0 =C2=A0 =C2=A0btrfs_set_inode_generation(leaf, item, BTR=
+=46S_I(inode)->generation);
+> - =C2=A0 =C2=A0 =C2=A0 btrfs_set_inode_sequence(leaf, item, BTRFS_I(i=
+node)->sequence);
+> + =C2=A0 =C2=A0 =C2=A0 btrfs_set_inode_sequence(leaf, item, inode->i_=
+version);
+> =C2=A0 =C2=A0 =C2=A0 =C2=A0btrfs_set_inode_transid(leaf, item, trans-=
+>transid);
+> =C2=A0 =C2=A0 =C2=A0 =C2=A0btrfs_set_inode_rdev(leaf, item, inode->i_=
+rdev);
+> =C2=A0 =C2=A0 =C2=A0 =C2=A0btrfs_set_inode_flags(leaf, item, BTRFS_I(=
+inode)->flags);
+> @@ -6884,7 +6884,6 @@ struct inode *btrfs_alloc_inode(struct super_bl=
+ock *sb)
+> =C2=A0 =C2=A0 =C2=A0 =C2=A0ei->root =3D NULL;
+> =C2=A0 =C2=A0 =C2=A0 =C2=A0ei->space_info =3D NULL;
+> =C2=A0 =C2=A0 =C2=A0 =C2=A0ei->generation =3D 0;
+> - =C2=A0 =C2=A0 =C2=A0 ei->sequence =3D 0;
+> =C2=A0 =C2=A0 =C2=A0 =C2=A0ei->last_trans =3D 0;
+> =C2=A0 =C2=A0 =C2=A0 =C2=A0ei->last_sub_trans =3D 0;
+> =C2=A0 =C2=A0 =C2=A0 =C2=A0ei->logged_trans =3D 0;
+> diff --git a/fs/btrfs/super.c b/fs/btrfs/super.c
+> index 54e7ee9..ee1bb31 100644
+> --- a/fs/btrfs/super.c
+> +++ b/fs/btrfs/super.c
+> @@ -770,7 +770,7 @@ static int btrfs_fill_super(struct super_block *s=
+b,
+> =C2=A0#ifdef CONFIG_BTRFS_FS_POSIX_ACL
+> =C2=A0 =C2=A0 =C2=A0 =C2=A0sb->s_flags |=3D MS_POSIXACL;
+> =C2=A0#endif
+> -
+> + =C2=A0 =C2=A0 =C2=A0 sb->s_flags |=3D MS_I_VERSION;
+> =C2=A0 =C2=A0 =C2=A0 =C2=A0err =3D open_ctree(sb, fs_devices, (char *=
+)data);
+> =C2=A0 =C2=A0 =C2=A0 =C2=A0if (err) {
+> =C2=A0 =C2=A0 =C2=A0 =C2=A0 =C2=A0 =C2=A0 =C2=A0 =C2=A0printk("btrfs:=
+ open_ctree failed\n");
+> --
+> 1.7.5.2
+>
+> --
+> To unsubscribe from this list: send the line "unsubscribe linux-btrfs=
+" in
+> the body of a message to majordomo@vger.kernel.org
+> More majordomo info at =C2=A0http://vger.kernel.org/majordomo-info.ht=
+ml
 
-Thanks for pointing this out, I will fix ext4 up and look to see if any=
-body else
-does something similar,
+BTW.
+1. where is BTRFS devel git tree?
+2. when this is coming to mainline?
 
-Josef
+- Dmitry
 --
 To unsubscribe from this list: send the line "unsubscribe linux-btrfs" =
 in

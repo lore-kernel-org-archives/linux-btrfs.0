@@ -1,138 +1,72 @@
 From: Arne Jansen <sensille@gmx.net>
-Subject: [PATCH 5/5] btrfs: use droptree for snapshot deletion
-Date: Thu, 12 Apr 2012 17:54:42 +0200
-Message-ID: <fbdcedb2ec7d4b0eee1a7cf22fc3550db26bd710.1334241664.git.sensille@gmx.net>
-References: <cover.1334241664.git.sensille@gmx.net>
+Subject: [PATCH 0/5] btrfs: snapshot deletion via readahead
+Date: Thu, 12 Apr 2012 17:54:37 +0200
+Message-ID: <cover.1334241664.git.sensille@gmx.net>
 To: linux-btrfs@vger.kernel.org
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <cover.1334241664.git.sensille@gmx.net>
-In-Reply-To: <cover.1334241664.git.sensille@gmx.net>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Update btrfs_clean_old_snapshots to make use of droptree. Snapshots
-with old backrefs and snapshots which deletion is always in progress
-are deleted with the old code, all other snapshots deletions use
-droptree.
-Some droptree-related debug code is also added to reada.c.
+This patchset reimplements snapshot deletion with the help of the readahead
+framework. For this callbacks are added to the framework. The main idea is
+to traverse many snapshots at once at read many branches at once. This way
+readahead get many requests at once (currently about 50000), giving it the
+chance to order disk accesses properly. On a single disk, the effect is
+currently spoiled by sync operations that still take place, mainly checksum
+deletion. The most benefit can be gained with multiple devices, as all devices
+can be fully utilized. It scales quite well with the number of devices.
+For more details see the commit messages of the individual patches and the
+source code comments.
 
-Signed-off-by: Arne Jansen <sensille@gmx.net>
----
- fs/btrfs/disk-io.c     |    1 +
- fs/btrfs/reada.c       |   13 +++++++++++++
- fs/btrfs/transaction.c |   35 +++++++++++++++++++++++++++++++++--
- 3 files changed, 47 insertions(+), 2 deletions(-)
+How it is tested:
+I created a test volume using David Sterba's stress-subvol-git-aging.sh. It
+checks out randoms version of the kernel git tree, creating a snapshot from it
+from time to time and checks out other versions there, and so on. In the end
+the fs had 80 subvols with various degrees of sharing between them. The
+following tests were conducted on it:
+ - delete a subvol using droptree and check the fs with btrfsck afterwards
+   for consistency
+ - delete all subvols and verify with btrfs-debug-tree that the extent
+   allocation tree is clean
+ - delete 70 subvols, and in parallel empty the other 10 with rm -rf to get
+   a good pressure on locking
+ - add various degrees of memory pressure to the previous test to get pages
+   to expire early from page cache
+ - enable all relevant kernel debugging options during all tests
 
-diff --git a/fs/btrfs/disk-io.c b/fs/btrfs/disk-io.c
-index 7b3ddd7..b175cfa 100644
---- a/fs/btrfs/disk-io.c
-+++ b/fs/btrfs/disk-io.c
-@@ -3041,6 +3041,7 @@ int close_ctree(struct btrfs_root *root)
- 	btrfs_pause_balance(root->fs_info);
- 
- 	btrfs_scrub_cancel(root);
-+	btrfs_droptree_pause(fs_info);
- 
- 	/* wait for any defraggers to finish */
- 	wait_event(fs_info->transaction_wait,
-diff --git a/fs/btrfs/reada.c b/fs/btrfs/reada.c
-index 0d88163..69a9409 100644
---- a/fs/btrfs/reada.c
-+++ b/fs/btrfs/reada.c
-@@ -1112,6 +1112,19 @@ int btrfs_reada_wait(struct reada_control *rc)
- 		dump_devs(fs_info, atomic_read(&rc->elems) < 10 ? 1 : 0);
- 		printk(KERN_DEBUG "reada_wait on %p: %d elems\n", rc,
- 			atomic_read(&rc->elems));
-+		mutex_lock(&fs_info->droptree_lock);
-+
-+		for (i = 0; i < BTRFS_MAX_LEVEL; ++i) {
-+			if (fs_info->droptree_req[i] == 0)
-+				continue;
-+			printk(KERN_DEBUG "droptree req on level %d: %ld out "
-+				"of %ld, queue is %sempty\n",
-+				i, fs_info->droptree_req[i],
-+				fs_info->droptree_limit[i],
-+				list_empty(&fs_info->droptree_queue[i]) ?
-+						"" : "not ");
-+		}
-+		mutex_unlock(&fs_info->droptree_lock);
- 	}
- 
- 	dump_devs(fs_info, atomic_read(&rc->elems) < 10 ? 1 : 0);
-diff --git a/fs/btrfs/transaction.c b/fs/btrfs/transaction.c
-index 04b77e3..2d72a7e 100644
---- a/fs/btrfs/transaction.c
-+++ b/fs/btrfs/transaction.c
-@@ -1182,6 +1182,9 @@ int btrfs_commit_transaction(struct btrfs_trans_handle *trans,
- 	spin_unlock(&cur_trans->commit_lock);
- 	wake_up(&root->fs_info->transaction_blocked_wait);
- 
-+	ret = btrfs_droptree_pause(root->fs_info);
-+	BUG_ON(ret);
-+
- 	spin_lock(&root->fs_info->trans_lock);
- 	if (cur_trans->list.prev != &root->fs_info->trans_list) {
- 		prev_trans = list_entry(cur_trans->list.prev,
-@@ -1363,6 +1366,7 @@ int btrfs_commit_transaction(struct btrfs_trans_handle *trans,
- 	trace_btrfs_transaction_commit(root);
- 
- 	btrfs_scrub_continue(root);
-+	btrfs_droptree_continue(root->fs_info);
- 
- 	if (current->journal_info == trans)
- 		current->journal_info = NULL;
-@@ -1381,12 +1385,22 @@ int btrfs_commit_transaction(struct btrfs_trans_handle *trans,
- int btrfs_clean_old_snapshots(struct btrfs_root *root)
- {
- 	LIST_HEAD(list);
-+	LIST_HEAD(new);
- 	struct btrfs_fs_info *fs_info = root->fs_info;
-+	struct btrfs_root_item *root_item = &root->root_item;
- 
- 	spin_lock(&fs_info->trans_lock);
- 	list_splice_init(&fs_info->dead_roots, &list);
- 	spin_unlock(&fs_info->trans_lock);
- 
-+	/*
-+	 * in a first pass, pick out all snapshot deletions that have been
-+	 * interrupted from a previous mount on an older kernel that didn't
-+	 * support the droptree version of snapshot deletion. We continue
-+	 * it with the old code. Also deletions of roots from very old
-+	 * filesystems with old-style backrefs will be handled by the old
-+	 * code
-+	 */
- 	while (!list_empty(&list)) {
- 		root = list_entry(list.next, struct btrfs_root, root_list);
- 		list_del(&root->root_list);
-@@ -1394,10 +1408,27 @@ int btrfs_clean_old_snapshots(struct btrfs_root *root)
- 		btrfs_kill_all_delayed_nodes(root);
- 
- 		if (btrfs_header_backref_rev(root->node) <
--		    BTRFS_MIXED_BACKREF_REV)
-+		    BTRFS_MIXED_BACKREF_REV) {
- 			btrfs_drop_snapshot(root, NULL, 0, 0);
--		else
-+		} else if (btrfs_disk_key_objectid(&root_item->drop_progress)) {
- 			btrfs_drop_snapshot(root, NULL, 1, 0);
-+		} else {
-+			/* put on list for processing by droptree */
-+			list_add_tail(&root->root_list, &new);
-+		}
- 	}
-+
-+	droptree_drop_list(fs_info, &new);
-+	while (!list_empty(&new)) {
-+		/*
-+		 * if there are any roots left on the list after drop_list,
-+		 * delete them with the old code. This can happen in when the
-+		 * fs hasn't got enough space for the droptree inode left.
-+		 */
-+		root = list_entry(list.next, struct btrfs_root, root_list);
-+		list_del(&root->root_list);
-+		btrfs_drop_snapshot(root, NULL, 1, 0);
-+	}
-+
- 	return 0;
- }
+The performance gain on a single drive was about 20%, on 8 drives about 600%.
+It depends vastly on the maximum parallelity of the readahead, that is
+currently hardcoded to about 50000. This number is subject to 2 factors, the
+available RAM and the size of the saved state for a commit. As the full state
+has to be saved on commit, a large parallelity leads to a large state.
+
+Based on this I'll see if I can add delayed checksum deletions and running
+the delayed refs via readahead, to gain a maximum ordering of I/O ops.
+
+This patchset is also available at
+
+git://git.kernel.org/pub/scm/linux/kernel/git/arne/linux-btrfs.git droptree
+
+Arne Jansen (5):
+  btrfs: extend readahead interface
+  btrfs: add droptree inode
+  btrfs: droptree structures and initialization
+  btrfs: droptree implementation
+  btrfs: use droptree for snapshot deletion
+
+ fs/btrfs/Makefile           |    2 +-
+ fs/btrfs/btrfs_inode.h      |    4 +
+ fs/btrfs/ctree.h            |   78 ++-
+ fs/btrfs/disk-io.c          |   19 +
+ fs/btrfs/droptree.c         | 1916 +++++++++++++++++++++++++++++++++++++++++++
+ fs/btrfs/free-space-cache.c |  131 +++-
+ fs/btrfs/free-space-cache.h |   32 +
+ fs/btrfs/inode.c            |    3 +-
+ fs/btrfs/reada.c            |  494 +++++++++---
+ fs/btrfs/scrub.c            |   29 +-
+ fs/btrfs/transaction.c      |   35 +-
+ 11 files changed, 2592 insertions(+), 151 deletions(-)
+ create mode 100644 fs/btrfs/droptree.c
+
 -- 
 1.7.3.4
 

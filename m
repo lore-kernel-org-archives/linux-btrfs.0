@@ -1,56 +1,47 @@
-From: "Kasatkin, Dmitry" <dmitry.kasatkin@intel.com>
-Subject: Re: [RFC] [PATCH 2/2] Btrfs: move over to use ->update_time
-Date: Thu, 12 Apr 2012 14:43:43 +0300
-Message-ID: <CALLzPKavvF4c5x1RLA7OU0wtj5YiVsSrGkw7SsZJbJ8nRdD-Dw@mail.gmail.com>
-References: <1332771031-3337-1-git-send-email-josef@redhat.com>
-	<1332771031-3337-2-git-send-email-josef@redhat.com>
-	<CALLzPKbs7ALeP9sM2OorMiMFCXGs26oPM9=EjBny0NiQi0orSQ@mail.gmail.com>
-	<20120404174300.GB2097@localhost.localdomain>
-	<1333561669.12904.0.camel@falcor>
-	<CALLzPKYvPqi=9dboZDh4Gm0Poouoa2ZY7K3hbhS9bmkiK6nFAQ@mail.gmail.com>
-	<20120404181622.GC2097@localhost.localdomain>
-	<20120409151605.GA6482@fieldses.org>
-	<20120410074801.GE11041@twin.jikos.cz>
-	<CALLzPKaiYkp15DnP2m+ZdX+zVpVDWPwU7Ct+MrsetAFYXYR0ig@mail.gmail.com>
-	<20120412113246.GC23876@twin.jikos.cz>
+From: Chris Mason <chris.mason@oracle.com>
+Subject: Re: [PATCH RFC] Btrfs: improve space count for files with fragments
+Date: Thu, 12 Apr 2012 08:16:23 -0400
+Message-ID: <20120412121623.GI29506@shiny>
+References: <1334221502-9222-1-git-send-email-liubo2009@cn.fujitsu.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=UTF-8
-To: dave@jikos.cz, "Kasatkin, Dmitry" <dmitry.kasatkin@intel.com>,
-	"J. Bruce Fields" <bfields@fieldses.org>,
-	Josef Bacik <josef@redhat.com>,
-	Mimi Zohar <zohar@linux.vnet.ibm.com>,
-	linux-fsdevel@vger.kernel.org, viro@zeniv.linux.org.uk,
-	linux-btrfs@vger.kernel.org, hch@infradead.org
+Content-Type: text/plain; charset=us-ascii
+Cc: linux-btrfs@vger.kernel.org
+To: Liu Bo <liubo2009@cn.fujitsu.com>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <20120412113246.GC23876@twin.jikos.cz>
+In-Reply-To: <1334221502-9222-1-git-send-email-liubo2009@cn.fujitsu.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Thu, Apr 12, 2012 at 2:32 PM, David Sterba <dave@jikos.cz> wrote:
-> On Thu, Apr 12, 2012 at 02:09:08PM +0300, Kasatkin, Dmitry wrote:
->> Where is it? Can you please point out?
->
-> http://permalink.gmane.org/gmane.comp.file-systems.btrfs/16662
->
-> the relevant part:
->
-> -- a/fs/btrfs/super.c
-> +++ b/fs/btrfs/super.c
-> @@ -770,7 +770,7 @@ static int btrfs_fill_super(struct super_block *s=
-b,
-> =C2=A0#ifdef CONFIG_BTRFS_FS_POSIX_ACL
-> =C2=A0 =C2=A0 =C2=A0 =C2=A0sb->s_flags |=3D MS_POSIXACL;
-> =C2=A0#endif
-> -
-> + =C2=A0 =C2=A0 =C2=A0 sb->s_flags |=3D MS_I_VERSION;
-> =C2=A0 =C2=A0 =C2=A0 =C2=A0err =3D open_ctree(sb, fs_devices, (char *=
-)data);
-> =C2=A0 =C2=A0 =C2=A0 =C2=A0if (err) {
-> =C2=A0 =C2=A0 =C2=A0 =C2=A0 =C2=A0 =C2=A0 =C2=A0 =C2=A0printk("btrfs:=
- open_ctree failed\n");
+On Thu, Apr 12, 2012 at 05:05:02PM +0800, Liu Bo wrote:
+> Here is a simple scenario:
+> 
+> $ dd if=/dev/zero of=/mnt/btrfs/foobar bs=1k count=20;sync
+> $ btrfs fi df /mnt/btrfs
+> 
+> we get 20K used, but then
+> 
+> $ dd if=/dev/zero of=/mnt/btrfs/foobar bs=1k count=4 seek=4 conv=notrunc;sync
+> $ btrfs fi df /mnt/btrfs
+> 
+> we get 24K used.
+> 
+> Here is the problem, it is possible that a file with lots of fragments costs
+> nearly double space than its i_size, like:
+> 
+> 0k              20k
+> | --- extent --- |      turned to be on disk    <---  extent --->  <-- A -->
+>      | - A - |                                  | -------------- | | ----- |
+>      1k      19k                                       20k + 18k = 38k
+> 
+>                         but what users want is  <---  extent --->  <-- A -->
+>                                                 | --- |     | -- | | ----- |
+>                                                     1k + 1k + 18k = 20k
+> 
+> 18K is wasted.
 
-=46antastic.. I see...
---
-To unsubscribe from this list: send the line "unsubscribe linux-btrfs" =
-in
-the body of a message to majordomo@vger.kernel.org
-More majordomo info at  http://vger.kernel.org/majordomo-info.html
+Thanks for working on this.  I'd prefer that when we create the bookend
+extents, we just split the original (20K extent in your case) as long as
+there are no other references.
+
+That would allow us to fully free the parts that are no actually used.
+
+-chris

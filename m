@@ -1,37 +1,26 @@
-From: Jan Schmidt <mail@jan-o-sch.net>
-Subject: Re: [PATCH 3/3] btrfs: extended inode refs
-Date: Thu, 12 Apr 2012 20:38:18 +0200
-Message-ID: <4F87211A.9070905@jan-o-sch.net>
-References: <1333656543-4843-1-git-send-email-mfasheh@suse.de> <1333656543-4843-4-git-send-email-mfasheh@suse.de> <4F871808.3050309@jan-o-sch.net>
+From: Ted Ts'o <tytso@mit.edu>
+Subject: Re: [PATCH] fs: make i_generation a u64
+Date: Thu, 12 Apr 2012 15:42:17 -0400
+Message-ID: <20120412194217.GC26332@thunk.org>
+References: <1334176968-8687-1-git-send-email-josef@redhat.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=ISO-8859-1
-Cc: Mark Fasheh <mfasheh@suse.de>, linux-btrfs@vger.kernel.org,
-	Chris Mason <chris.mason@oracle.com>,
-	Josef Bacik <josef@redhat.com>
-To: Jan Schmidt <list.btrfs@jan-o-sch.net>
+Content-Type: text/plain; charset=us-ascii
+Cc: linux-fsdevel@vger.kernel.org, linux-btrfs@vger.kernel.org,
+	viro@ZenIV.linux.org.uk
+To: Josef Bacik <josef@redhat.com>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <4F871808.3050309@jan-o-sch.net>
+In-Reply-To: <1334176968-8687-1-git-send-email-josef@redhat.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 12.04.2012 19:59, Jan Schmidt wrote:
->> -static int iterate_irefs(u64 inum, struct btrfs_root *fs_root,
->> -				struct btrfs_path *path,
->> -				iterate_irefs_t *iterate, void *ctx)
->> +static int iterate_inode_refs(u64 inum, struct btrfs_root *fs_root,
->> +			      struct btrfs_path *path,
->> +			      iterate_irefs_t *iterate, void *ctx)
+On Wed, Apr 11, 2012 at 04:42:48PM -0400, Josef Bacik wrote:
+> Btrfs stores generation numbers as 64bit numbers, which means we have to
+> carry around a u64 in our incore inode in addition to setting i_generation.
+> So convert to a u64 so btrfs can kill it's incore generation.  Thanks,
 > 
-> This function must not call free_extent_buffer(eb) in line 1306 after
-> applying your patch set (immediately before the break). Second, I think
-> we'd better add a blocking read lock on eb after incrementing it's
-> refcount, because we need the current content to stay as it is. Both
-> isn't part of your patches, but it might be easier if you make that
-> bugfix change as a 3/4 patch within your set and turn this one into 4/4.
-> If you don't like that, I'll send a separate patch for it. Don't miss
-> the unlock if you do it ;-)
+> Signed-off-by: Josef Bacik <josef@redhat.com>
 
-FYI: There are more read locks missing in the current version of
-backref.c. So I made a bugfix patch myself which I'll test and send
-tomorrow.
+Why is btrfs using a 64-bit generation number, out of curiosity?  The
+only user of the inode generation number as far as I can tell is NFS,
+and even NFSv4 is using a 32-bit generation number....
 
--Jan
+						- Ted

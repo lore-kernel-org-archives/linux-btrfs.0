@@ -1,61 +1,103 @@
-From: David Sterba <dave@jikos.cz>
-Subject: Re: Details about compression and extents
-Date: Thu, 12 Apr 2012 11:28:32 +0200
-Message-ID: <20120412092832.GB23876@twin.jikos.cz>
-References: <CAB9VWqCV2A9=nbbV59gPb9N_xBF_eivGE1rD7==qx0GSKe02og@mail.gmail.com>
-Reply-To: dave@jikos.cz
+From: =?ISO-8859-1?Q?Csaba_T=F3th?= <tcsaba@greengaialing.hu>
+Subject: [PATCH] mkfs.btrfs on ARM
+Date: Thu, 12 Apr 2012 11:36:40 +0100
+Message-ID: <4F86B038.5060402@greengaialing.hu>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Cc: linux-btrfs@vger.kernel.org
-To: Alexander Block <ablock84@googlemail.com>
+Content-Type: multipart/mixed;
+ boundary="------------090000080004060705010600"
+To: linux-btrfs@vger.kernel.org
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <CAB9VWqCV2A9=nbbV59gPb9N_xBF_eivGE1rD7==qx0GSKe02og@mail.gmail.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Thu, Apr 12, 2012 at 10:27:13AM +0200, Alexander Block wrote:
-> 1. How is decided what to compress and what not? After a fast test
-> with a 2g image file, I've looked into the extents of that file with
-> find-new and it turned out that only some of the first extents were
-> compressed. The file was simply copied with cp.
+This is a multi-part message in MIME format.
+--------------090000080004060705010600
+Content-Type: text/plain; charset=ISO-8859-1; format=flowed
+Content-Transfer-Encoding: 8bit
 
-with -o compress mount, a file extent is directly sent to compression
-and if this turns out to be inefficient (ie. compressed size is larger
-than uncompressed), then the NOCOMPRESS per-inode flag is set and no
-further compression is done on that file. Yes this is not ideal and
-this should be more adaptive than just bailing out completely after one
-incompressible extent.
+Hi,
 
-with -o compress-force the NOCOMPRESS flag is never set, so it may lead
-to the other extreme that extents are compressed but it does not reduce
-size at all.
+    I tried to run the mkfs.btrfs command on an AT91SAM9260 processor 
+(ARM, at91).
+The cross compiling was quite simple but it doesn't work on the target 
+platform.
+The mkfs.btrfs stopped with an assert and the filesystem wasn't mountable.
 
-> 2. I compared the extents of that mentioned file from a non-compressed
-> fs and from a compressed fs and see much more and much smaller extents
-> in the compressed fs. Does compression affect extent allocation or is
-> this just a coincidence?
+    I looked for solution on the internet. Some people noticed this 
+issue too, but nobody has a patch about it.
+I found an interesting information, that some ARM processor isn't able 
+to access a word from an
+halfword aligned location 
+(http://www.aleph1.co.uk/chapter-10-arm-structured-alignment-faq).
+The gcc consider to use the correct alignment but in some situation the 
+problem is remaining.
 
-The extents size is limited to 128k right now, to reduce performance hit
-when doing random reads from the middle. This also means more metadata
-are needed for the extents.
+    In the btrfs-progs there are a struct named extent_buffer. It has a 
+data field which could contains a bunch
+of unaligned structs. The gcc can't access the member fields of these 
+structs correctly.
+I found a workaround/solution that solve this problem. If I use the 
+memcpy command instead of setting or getting
+members directly, the problem is eliminated.
 
-> The source file was in use (VirtualBox was
-> running) while I was copying it...if this has too much influence on
-> extent allocation then please ignore the whole question.
+    I have written a patch which works correctly on my platform.
+I have attached this patch to my letter.
 
-This should not matter here.
-
-> 3. How large are the blocks that get compressed? If it's dynamic, how
-> is decided which size to use?
-
-128k, fixed.
-
-> 4. If there is no maximum on compressed extents size, is the whole
-> extent compressed at once or in blocks?
-
-currently in 4k blocks (where 4k == PAGE_CACHE_SIZE), though it also
-depends on the compression method used. zlib is able to reuse the
-dictionary for another block and the compression ratio is better at the
-cost of speed.
+Best regards,
+    Csaba Tóth, Watt 22 Ltd.
 
 
-david
+
+--------------090000080004060705010600
+Content-Type: text/x-patch;
+ name="btrfs-progs-0.19.arm_align.patch"
+Content-Transfer-Encoding: 7bit
+Content-Disposition: attachment;
+ filename="btrfs-progs-0.19.arm_align.patch"
+
+diff -ur btrfs-progs-0.19.orig/ctree.c btrfs-progs-0.19/ctree.c
+--- btrfs-progs-0.19.orig/ctree.c	2009-06-11 17:56:15.000000000 +0100
++++ btrfs-progs-0.19/ctree.c	2012-04-08 20:54:48.012221953 +0100
+@@ -722,14 +722,14 @@
+ 	int mid;
+ 	int ret;
+ 	unsigned long offset;
+-	struct btrfs_disk_key *tmp;
++	struct btrfs_disk_key tmp;
+ 
+ 	while(low < high) {
+ 		mid = (low + high) / 2;
+ 		offset = p + mid * item_size;
+ 
+-		tmp = (struct btrfs_disk_key *)(eb->data + offset);
+-		ret = btrfs_comp_keys(tmp, key);
++		memcpy(&tmp, eb->data + offset, sizeof(struct btrfs_disk_key));
++		ret = btrfs_comp_keys(&tmp, key);
+ 
+ 		if (ret < 0)
+ 			low = mid + 1;
+diff -ur btrfs-progs-0.19.orig/ctree.h btrfs-progs-0.19/ctree.h
+--- btrfs-progs-0.19.orig/ctree.h	2009-06-11 17:56:15.000000000 +0100
++++ btrfs-progs-0.19/ctree.h	2012-04-08 20:25:04.578695193 +0100
+@@ -890,14 +890,17 @@
+ {									\
+ 	unsigned long offset = (unsigned long)s;			\
+ 	type *p = (type *) (eb->data + offset);				\
+-	return le##bits##_to_cpu(p->member);				\
++	u##bits tmp;							\
++	memcpy(&tmp, &(p->member), sizeof(tmp));			\
++	return le##bits##_to_cpu(tmp);					\
+ }									\
+ static inline void btrfs_set_##name(struct extent_buffer *eb,		\
+ 				    type *s, u##bits val)		\
+ {									\
+ 	unsigned long offset = (unsigned long)s;			\
+ 	type *p = (type *) (eb->data + offset);				\
+-	p->member = cpu_to_le##bits(val);				\
++	u##bits tmp = cpu_to_le##bits(val);				\
++	memcpy(&(p->member), &tmp, sizeof(tmp));			\
+ }
+ 
+ #define BTRFS_SETGET_STACK_FUNCS(name, type, member, bits)		\
+
+
+--------------090000080004060705010600--

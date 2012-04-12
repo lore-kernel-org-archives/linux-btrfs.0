@@ -1,54 +1,71 @@
-From: Travis Shivers <ttshivers@gmail.com>
-Subject: Btrfs Array Recovery
-Date: Thu, 12 Apr 2012 16:25:49 -0500
-Message-ID: <CAPeorG9SqVbg=ciH++P5SjPAGp5t=-B7gnSYUQ80UFQ3HGK91Q@mail.gmail.com>
+From: Duncan <1i5t5.duncan@cox.net>
+Subject: Wiki update request: source repo page   Was: [PATCH] Btrfs: use
+ i_version instead of our own sequence
+Date: Thu, 12 Apr 2012 21:41:17 +0000 (UTC)
+Message-ID: <pan.2012.04.12.21.41.17@cox.net>
+References: <1333986794-6525-1-git-send-email-josef@redhat.com>
+	<CALLzPKY0ViBnaH8PVOmxad+oPpbWiYOz24+Lc8CWNuzKbyHHng@mail.gmail.com>
+	<20120412133107.GC1924@localhost.localdomain>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=ISO-8859-1
+Content-Type: text/plain; charset=UTF-8
 To: linux-btrfs@vger.kernel.org
 Return-path: <linux-btrfs-owner@vger.kernel.org>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-A few months ago, my btrfs storage array became corrupted because of a
-power failure. A while ago, I made this thread to try and resolve the
-problem. (http://www.digipedia.pl/usenet/thread/11904/15955/) You can
-find detailed information about the problem in the previous thread,
-but I am happy to provide any other details. It didn't really go
-anywhere in the way of solving my problem. The thread ended in me
-waiting for a patch that would allow me to mount my corrupted array
-which was around 2 months ago.
+Josef Bacik posted on Thu, 12 Apr 2012 09:31:07 -0400 as excerpted:
 
-While I have been waiting, I have tried several things. One of the
-things that I tried was installing the latest Linux kernel (3.4 RC1)
-with the btrfs integrity checking enabled. I read about this module
-here: (http://lwn.net/Articles/466493/) With the option compiled in, I
-have had severe mounting problems. I can only try to mount the array
-once before it does some strange things. The first time I try and
-mount it, it fails, but logs this in dmesg:
-(http://pastebin.com/YwAsdjhs) It looks like there is a bug in this
-integrity checking code. After I try to mount the drive after the
-first time, it just hangs and doesn't return anything or log anything
-in dmesg. Even trying to mount the drive without the integrity
-checking problem hangs and has the same problems.
+>> BTW.
+>> 1. where is BTRFS devel git tree?
+>> 2. when this is coming to mainline?
+>> 
+>> 
+> There's a bunch, my personal tree with just my patches is here
+> 
+> git://git.kernel.org/pub/scm/linux/kernel/git/josef/btrfs-work.git
+> 
+> a tree with all outstanding mailinglist patches is here
+> 
+> git://git.kernel.org/pub/scm/linux/kernel/git/josef/btrfs-next.git
+> 
+> and Chris's tree which is where all things go through to get to mainline
+> is here
+> 
+> git://git.kernel.org/pub/scm/linux/kernel/git/mason/linux-btrfs.git
+> 
+> It will probably be in the next merge window.  Thanks,
 
-I have also grabbed the latest version of btrfs-progs since I saw that
-btrfsck could now repair some corruptions. I built the utilities and
-executed btrfsck. This is the result of the command:
-(http://pastebin.com/CEyvy17r) I saw that there was an error occurring
-in the code at line 1864, so I commented out that line which had the
-text: BUG_ON(rec->is_root);
-I then recompiled the utilities and executed btrfsck again and got
-this: (http://pastebin.com/ihYmuCAm) I also tried btrfsck with the
-repair option with these results: (http://pastebin.com/gnrStyqh)
 
-Another thing that I have experimented with is btrfs-restore. I have
-been somewhat successful in using this tool to restore the files. The
-main problem that I have is that it cannot restore over half of the
-files on the array and just puts an empty file with a size of 0. It
-does restore the other half of the array perfectly. On the files that
-it cannot restore, it returns a return code of -3. For example, here
-is an example of a file which is unable to be restored by this tool:
-(http://pastebin.com/Rg5a0xdG) I read more about this tool here
-(http://btrfs.ipv5.de/index.php?title=Restore) I tried this tool with
-'-u 1' and '-u 2' flags, which did not help anything. I do not think
-that half of my array is corrupted since it was just a power failure
-and the drive is also mirrored, which should provide some redundancy.
+Could this list be added to the btrfs wiki, source repositories page?
+
+http://btrfs.ipv5.de/index.php?title=Btrfs_source_repositories
+
+While there, please review the dkms information:
+
+0) At least a paragraph actually describing what dkms is/does would be 
+extremely useful.  A link to another page on the topic or to an external 
+dkms resource for more information is probably in order as well.
+
+1) Near the top of the dkms section, under "You have a very recent 
+kernel", the for instance says dkms doesn't work with recent kernels, but 
+then backporting is mentioned.  So you want to use it if you have a very 
+recent kernel, but it doesn't work with recent kernels and backporting is 
+needed?  WTF?
+
+2) Is Chris's tree STILL based on old 2.6.32 without further updates 
+except to btrfs?  If so, the link to it in the earlier btrfs kernel 
+module git repository section should probably have a BIG WARNING TO THAT 
+EFFECT, instead of simply saying it downloads a complete Linux kernel 
+tree.
+
+3) Further down there's a step that says Patch version script, noting 
+2.6.27, which is older still.  Has cmason merged that patch?
+
+4) The instructions appear to assume a kernel module an initr* based 
+setup.  What about people who configure and build a custom monolithic 
+kernel, with module loading disabled?
+
+-- 
+Duncan - List replies preferred.   No HTML msgs.
+"Every nonfree program has a lord, a master --
+and if you use the program, he is your master."  Richard Stallman
+

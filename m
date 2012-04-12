@@ -1,38 +1,26 @@
-From: Chris Mason <chris.mason@oracle.com>
-Subject: Re: [PATCH] fs: make i_generation a u64
-Date: Wed, 11 Apr 2012 20:32:57 -0400
-Message-ID: <20120412003257.GH29506@shiny>
-References: <1334176968-8687-1-git-send-email-josef@redhat.com>
+From: Roman Shaposhnik <roman@shaposhnik.org>
+Subject: Usage in embedded projects
+Date: Wed, 11 Apr 2012 18:08:47 -0700
+Message-ID: <CA+ULb+vGT8PYDHzuJnvqpommtH6=tpu2153KQPyLsRqw1t=0TA@mail.gmail.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Cc: linux-fsdevel@vger.kernel.org, linux-btrfs@vger.kernel.org,
-	viro@ZenIV.linux.org.uk
-To: Josef Bacik <josef@redhat.com>
+Content-Type: text/plain; charset=ISO-8859-1
+To: linux-btrfs@vger.kernel.org
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <1334176968-8687-1-git-send-email-josef@redhat.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Wed, Apr 11, 2012 at 04:42:48PM -0400, Josef Bacik wrote:
-> Btrfs stores generation numbers as 64bit numbers, which means we have to
-> carry around a u64 in our incore inode in addition to setting i_generation.
-> So convert to a u64 so btrfs can kill it's incore generation.  Thanks,
-> 
-> Signed-off-by: Josef Bacik <josef@redhat.com>
-> ---
->  include/linux/fs.h |    2 +-
->  1 files changed, 1 insertions(+), 1 deletions(-)
-> 
-> diff --git a/include/linux/fs.h b/include/linux/fs.h
-> index 9be896d..40564e0 100644
-> --- a/include/linux/fs.h
-> +++ b/include/linux/fs.h
-> @@ -831,7 +831,7 @@ struct inode {
->  		struct cdev		*i_cdev;
->  	};
->  
-> -	__u32			i_generation;
-> +	u64			i_generation;
+Hi!
 
-Why was this using __u32 instead of u32?
+after attending Chris' presentation at Linux Foundation Summit
+I got really excited about the potential for using btrfs in some
+of the embedded projects that I do. With that in mind, here's a couple
+of question (feel free to vector me off to an FAQ ;-)):
+  * does anybody on this list have any experience with btrfs in the
+embedded space?
+     OpenWRT/OpenEmbedded or anything else? Most of my projects are
+     MIPS (some are ARM).
+  * what's the kernel/userland versions that I should start with?
+  * is there any reason for a restriction to the size of the device (>=256 MB)?
+    256MB is a lot for an embedded application.
 
--chris
+Thanks,
+Roman.

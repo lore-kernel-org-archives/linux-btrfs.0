@@ -1,48 +1,64 @@
-From: Ahmet Inan <ainan@mathematik.uni-freiburg.de>
-Subject: Re: Boot speed/mount time regression with 3.4.0-rc2
-Date: Fri, 13 Apr 2012 15:20:56 +0200
-Message-ID: <CAFDW0jKS6VXtosBuppoWLzJpe=pTQ-=RCd7SsdqL33eRw4AUMQ@mail.gmail.com>
-References: <1333986823.2928.6.camel@ayu>
-	<1333991404.2817.6.camel@ayu>
-	<20120409205429.GB6958@localhost.localdomain>
-	<1334006446.2678.0.camel@ayu>
-	<20120410151645.GC2296@localhost.localdomain>
-	<CAFDW0j+=qe49pX3frjEoozOMz-gKKxqJ+jeeTgyXEskDL_9W8w@mail.gmail.com>
-	<20120411170422.GA2506@localhost.localdomain>
-	<CAFDW0jJZ16jPn766fdn3Hm=WWkR71n0kJapfPZzgHd3o71b1hQ@mail.gmail.com>
-	<20120412133747.GE1924@localhost.localdomain>
-	<20120412142349.GI1924@localhost.localdomain>
-	<CAFDW0jJq46TXa_a1soYESgjZosBDM8razvT271S3_SoyQeBbSA@mail.gmail.com>
-	<CAE5mzvjJ+fuixm=OpKua6t6s6sncz1RGwXem8D6ZS=jDRDQ3+g@mail.gmail.com>
-	<CAFDW0jL4TTWtqMw4f_1WpQuEU7Q1SoTUo_rBVGcdHt008Sx1Zw@mail.gmail.com>
-	<CAFDW0jKMEQ+oMN41euh1cMy4h+6Qntt5UL9+0HZw4r9SpDJVvQ@mail.gmail.com>
-	<CAE5mzvhk+bC2N5+JEw-N-KBNmvLO-Y8x5gCPik2cokE7MX8Q+w@mail.gmail.com>
+From: Chris Mason <chris.mason@oracle.com>
+Subject: [GIT PULL] Btrfs updates
+Date: Fri, 13 Apr 2012 09:38:29 -0400
+Message-ID: <20120413133829.GY29506@shiny>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=UTF-8
-Cc: Josef Bacik <josef@redhat.com>,
-	Calvin Walton <calvin.walton@kepstin.ca>,
-	linux-btrfs@vger.kernel.org, Chris Mason <chris.mason@oracle.com>
-To: cwillu <cwillu@cwillu.com>
+Content-Type: text/plain; charset=us-ascii
+To: Linus Torvalds <torvalds@linux-foundation.org>,
+	LKML <linux-kernel@vger.kernel.org>,
+	linux-btrfs <linux-btrfs@vger.kernel.org>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <CAE5mzvhk+bC2N5+JEw-N-KBNmvLO-Y8x5gCPik2cokE7MX8Q+w@mail.gmail.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Fri, Apr 13, 2012 at 2:57 PM, cwillu <cwillu@cwillu.com> wrote:
-> These are usb disks? =C2=A0Does that failure at 12.241517 (or related=
-)
-> happen every time?
+Hi Linus,
 
-no, 0CCD:0052 is the webcam. i dont have the modules for the webcam
-in initramfs, thats why.
+My for-linus branch has btrfs fixes and updates:
 
-the real slowness is around 33.305370
+git://git.kernel.org/pub/scm/linux/kernel/git/mason/linux-btrfs.git for-linus
 
-The 2 SATA Disks are fine. I have many more Computers with varying
-Hardware but the same Kernel and see the same Problems there too.
+The top commit is the only one that isn't strictly a bug fix.  It
+updates the btrfs metadata checker code to support metadata blocks
+larger than the page size.  This code isn't compiled in by default, and
+it is only used by developers.  I put it at the top so you could just
+peel it off if you didn't want it.  I also put a for-linus-min branch
+without this commit:
 
-Ahmet
---
-To unsubscribe from this list: send the line "unsubscribe linux-btrfs" =
-in
-the body of a message to majordomo@vger.kernel.org
-More majordomo info at  http://vger.kernel.org/majordomo-info.html
+git://git.kernel.org/pub/scm/linux/kernel/git/mason/linux-btrfs.git for-linus-min
+
+The others are pure bug fixes.  We have a use-after-free in there, along
+with errors when mount -o discard is enabled, and a BUG_ON(we should
+compile with UP more often).
+
+Stefan Behrens (1) commits (+415/-146):
+    Btrfs: change integrity checker to support big blocks
+
+Chris Mason (2) commits (+2/-2):
+    Revert "Btrfs: increase the global block reserve estimates" (+1/-1)
+    Btrfs: fix uninit variable in repair_eb_io_failure (+1/-1)
+
+Dave Jones (1) commits (+5/-4):
+    Btrfs: fix use-after-free in __btrfs_end_transaction
+
+Liu Bo (1) commits (+18/-2):
+    Btrfs: fix eof while discarding extents
+
+Ilya Dryomov (1) commits (+2/-3):
+    Btrfs: remove lock assert from get_restripe_target()
+
+Josef Bacik (1) commits (+3/-10):
+    Btrfs: use commit root when loading free space cache
+
+Tsutomu Itoh (1) commits (+10/-0):
+    Btrfs: check return value of bio_alloc() properly
+
+Total: (8) commits (+455/-167)
+
+ fs/btrfs/check-integrity.c  |  561 ++++++++++++++++++++++++++++++++-----------
+ fs/btrfs/compression.c      |    2 +
+ fs/btrfs/extent-tree.c      |   11 +-
+ fs/btrfs/extent_io.c        |    6 +-
+ fs/btrfs/free-space-cache.c |    9 +-
+ fs/btrfs/scrub.c            |    4 +
+ fs/btrfs/transaction.c      |    9 +-
+ fs/btrfs/volumes.c          |   20 +-
+ 8 files changed, 455 insertions(+), 167 deletions(-)

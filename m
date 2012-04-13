@@ -1,83 +1,55 @@
-From: Martin Steigerwald <Martin@lichtvoll.de>
-Subject: Re: btrfs mount flags
-Date: Sat, 14 Apr 2012 00:05:08 +0200
-Message-ID: <201204140005.08619.Martin@lichtvoll.de>
-References: <jjul59-m49.ln1@hurikhan.ath.cx> (sfid-20120413_182119_379057_8476B95A)
+From: "A. James Lewis" <james@fsck.co.uk>
+Subject: Can lgetxattr legally return ENODATA?
+Date: Sat, 14 Apr 2012 00:06:02 +0100
+Message-ID: <4F88B15A.5080200@fsck.co.uk>
 Mime-Version: 1.0
-Content-Type: Text/Plain;
-  charset="iso-8859-1"
-Cc: Kai Krakow <hurikhan77+btrfs@gmail.com>
+Content-Type: text/plain; charset=ISO-8859-15
 To: linux-btrfs@vger.kernel.org
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <jjul59-m49.ln1@hurikhan.ath.cx>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Am Freitag, 13. April 2012 schrieb Kai Krakow:
-> Hello!
 
-Hi!
-
-> Is there any documentation about btrfs mount flags wrt:
-> 
-> 1. which flags are one-time options and are permanent,
-> 2. which flags are global per btrfs partition,
-> 3. which flags are local per subvolume mount?
-> 
-> I'm asking because while googling I found very confusing info about
-> autodefrag. Some say it is a global flag, others say to get autodefrag
-> one has to supply it for each subvolume mount to have autodefrag for
-> that subvolume.
-> 
-> Then there's space_cache which is a one-time option and does not need
-> to be given on successive mounts. Otoh there's inode_cache which I
-> would expect to be handled the same but it doesn't look like it's
-> implemented that way.
-
-I like the distinction in Ext3/Ext4. There are mount option and filesystem 
-features that can be activated at mkfs time or (some) later with tune2fs.
-
-Now I would expect a one time mount option to be a filesystem feature that 
-I enabled with btrfstune or so. Cause I always understood mount options as 
-temporary unless I write them into /etc/fstab. But then tune2fs / Ext also 
-supports default mount options, so you could encode into the fs as well.
-
-There even is a btrfstune command and it has a switch to enable something:
-
-merkaba:~> btrfstune 
-usage: btrfstune [options] device
-        -S value        enable/disable seeding
-
-but no manual page here. Seeding is mentioned at:
-
-Seed Device support
-It is now possible to create a filesystem to seed other Btrfs filesystems. 
-The original filesystem and devices are included as a readonly starting 
-point to the new FS. All modifications go onto different devices and the COW 
-machinery makes sure the original is unchanged.
-
-http://btrfs.ipv5.de/index.php?title=Changelog#Seed_Device_support
+-----BEGIN PGP SIGNED MESSAGE-----
+Hash: SHA1
 
 
-Anyway the documentation of mount options is on:
+Please excuse my ignorance here, but I wondered if this could be a BTRFS
+related issue... and perhaps one which might not often be spotted if it is.
 
-http://btrfs.ipv5.de/index.php?title=Mount_options
+A friend of mine has been having trouble with a backup application on a
+BTRFS filesystem, and recently sent me this, which made me think that
+there might be an edge case where something weird is happening:-
 
-it seems.
+> Not sure if your interested but I thought I'd get my hands dirty and
+try and figure this boxbackup problem out. stracing the problem gave me
+this as the cause:
+>
+> lgetxattr("/srv/WWW/Stuff/includes/CI-application/views/objects/items",
+"system.posix_acl_default", 0x0, 0) = -1 ENODATA (No data available)
+>
+> I looked up the call here:
+> http://linux.die.net/man/2/lgetxattr
+>
+> But unfortunately it doesn't have the ENODATA error listed
+> (its not on the stat page it refers to either)
+>
+> Boxbackup assumes it can only be caused by a file permissions problem
+and so gives that error I had, but the fact that a folder next to it
+with identical permissions is fine is odd.
+>
+> In the end I copied all the files out with SAMBA, deleted them on the
+BTRFS volume and put them back in again. After setting the permissions
+the same as they were before and restarting boxbackup the problem vanished.
 
+- -- 
+A. James Lewis (james@fsck.co.uk)
+Engineering does not require science. Science helps a lot but people
+built perfectly good brick walls long before they knew why cement works.
+-----BEGIN PGP SIGNATURE-----
+Version: GnuPG v1.4.11 (GNU/Linux)
 
-There only for "space_cache" it is mentioned that it is permanent. Not for 
-"inode_cache".
+iEYEARECAAYFAk+IsT0ACgkQ1OQXXvP2GMFl4wCbB+bcK5gtkgOhHXYsOV2DV7wG
+RWgAnj+6rX3RogB8gopEkxhV4EVlaxaZ
+=o9Xj
+-----END PGP SIGNATURE-----
 
-The mount manpage which usually has mount options of various filesystems 
-does not mention BTRFS yet. I am not sure whether each filesystem should 
-have an own manpage anyway.
-
-
-Whatever is used, I would like to have a clear distinction between 
-permanent and volatile settings. And I think a permanent option is 
-something which should be set and queryable by a tuning command.
-
-Ciao,
--- 
-Martin 'Helios' Steigerwald - http://www.Lichtvoll.de
-GPG: 03B0 0D6C 0040 0710 4AFA  B82F 991B EAAC A599 84C7

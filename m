@@ -1,73 +1,69 @@
 From: Duncan <1i5t5.duncan@cox.net>
-Subject: Re: btr fs unmountable after disk failure
-Date: Fri, 13 Apr 2012 20:32:06 +0000 (UTC)
-Message-ID: <pan.2012.04.13.20.32.06@cox.net>
-References: <alpine.LNX.2.01.1204131252070.26191@frira.zrqbmnf.qr>
-	<20120413105822.GF4856@carfax.org.uk>
-	<alpine.LNX.2.01.1204131536110.24064@frira.zrqbmnf.qr>
+Subject: Re: Wiki update request: source repo page Was: [PATCH] Btrfs: use
+ i_version instead of our own sequence
+Date: Fri, 13 Apr 2012 21:55:20 +0000 (UTC)
+Message-ID: <pan.2012.04.13.21.55.20@cox.net>
+References: <1333986794-6525-1-git-send-email-josef@redhat.com>
+	<CALLzPKY0ViBnaH8PVOmxad+oPpbWiYOz24+Lc8CWNuzKbyHHng@mail.gmail.com>
+	<20120412133107.GC1924@localhost.localdomain>
+	<pan.2012.04.12.21.41.17@cox.net> <20120412215546.GB4856@carfax.org.uk>
+	<pan.2012.04.12.22.56.00@cox.net> <20120413131632.GG4856@carfax.org.uk>
+	<pan.2012.04.13.18.48.48@cox.net>
+	<CAE5mzvhym10Y9-Z8zLKrQYhvBR6FhUHigk-xs_OWNiQJWFG4PQ@mail.gmail.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset=UTF-8
 To: linux-btrfs@vger.kernel.org
 Return-path: <linux-btrfs-owner@vger.kernel.org>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Jan Engelhardt posted on Fri, 13 Apr 2012 15:42:14 +0200 as excerpted:
+cwillu posted on Fri, 13 Apr 2012 14:03:38 -0600 as excerpted:
 
-> On Friday 2012-04-13 12:58, Hugo Mills wrote:
->>On Fri, Apr 13, 2012 at 12:55:43PM +0200, Jan Engelhardt wrote:
->>> 
->>> I originally created a RAID1(0) compound out of 4 drives. One of them
->>> [sdf] failed recently and was removed. The filesystem is no longer
->>> mountable with the 3 drives left.
+> The fact is that you _don't_ know that your device names aren't going to
+> change one day, any more than a generation of developers who only worked
+> with ext3 knew that "fsync is expensive and all you really need is the
+> atomic guarantee of mv".
 
->>   I think you need "-o degraded" in this case.
-> 
-> Yes indeed, -o degraded makes it go. Where is such documented? I know I
-> can't expect mount(8) to yet have it, but there is not a mount.btrfs(8)
-> either.
+What I /do/ know is that such changes will be due to either (1) kernel 
+upgrades or (2) hardware changes (planned upgrades or unpredicted 
+failure).  Both factors can be mitigated with redundant layers of 
+fallback and dynamic reconfiguration.
 
-To the extent that it /is/ documented, probably the wiki.
+Regardless of what brings those device names, a fallback to an earlier 
+kernel, or a different device, or a bit of manual grub commandline new 
+device location detection and according alteration of the grub-passed 
+kernel command line so I can boot and make the necessary permanent config 
+changes, is all it'll take to change that.
 
-http://btrfs.ipv5.de/index.php?title=Main_Page
+And as an admin working with stuff directly within my reach to fix when 
+necessary, unlike that generation of developers on ext3 with expensive 
+fsync, once it's out of my reach to directly manipulate for a fix, it's 
+no longer something I need to worry about.
 
-(Note that there's an old/stale wiki at btrfs.wiki.kernel.org as well, 
-but it's read-only since the kernel.org breakin and thus is quite stale 
-by now.)
+Granted, btrfs and distro devs have to worry about products out of their 
+direct reach to fix, but that doesn't mean they have to take the tools 
+away (or even simply hide them) from those that can and do put them to 
+use.
 
-Looking at the mount options listed there, "degraded" is the first on the 
-list. =:^)
+> Everyone needs to start somewhere, but it's not unreasonable to expect
+> an admin to understand how their distro does things, and where to find
+> answers when they don't know, and to verify that their knowledge is
+> correct.  The middle of a disaster recovery should not be the first time
+> you've tried a recovery.
 
-http://btrfs.ipv5.de/index.php?title=Mount_options
+Agreed.  That's why a prudent admin continually scans the radar for 
+incoming, as well as having tested fallbacks for the unexpected.
 
+Either that, or as I was at one point, they don't have the knowledge or 
+experience yet, but are willing to risk loss of data and a new install, 
+in ordered to get that knowledge and experience.  I remember being in 
+that group myself, and to a certain extent, I'm still a part of it.  
+After all, that level of risk and the knowledge and experienced gained 
+from it is part of the pull of pre-releases, live-git kernels, and 
+experimental filesystems, in the first place.
 
-> # btrfs fi show
-> Label: 'srv'  uuid: 88300cd5-dbcb-4147-9ee4-c65a1c895e1d
->         Total devices 5 FS bytes used 1.23TB
->	  devid    2 size 1.36TB used 692.88GB path /dev/sdd
->         devid    5 size 1.36TB used 51.00GB path /dev/sdf
->         devid    3 size 1.36TB used 692.88GB path /dev/sde
->         devid    1 size 1.36TB used 692.90GB path /dev/sdc
->         *** Some devices missing
-> 
-> devices are missing, but how would I remove the old devid 4 (the "some"
-> that's "missing")? `btrfs fi del` does not take ids, unfortunately.
-
-You probably know my answer: wiki! =:^)
-
-See the using btrfs with multiple devices page:
-
-http://btrfs.ipv5.de/index.php?title=Using_Btrfs_with_Multiple_Devices
-
-Look under replacing failed devices.
-
-In particular, btrfs device del missing /mnt/pnt  (device not filesystem, 
-missing tells btrfs to remove the first missing device).
-
-If you're asking this sort of questions it should be obvious that there's 
-a lot more info you'll likely find useful on the wiki as well, so I'd 
-encourage you to spend some time browsing around.  Your btrfs filesystems 
-and consequently, your stress levels managing them, should thank you for 
-it. =:^)
+But that doesn't mean I don't try to control that risk by building on 
+knowledge and experience I already have to limit the risk stack at other 
+levels.
 
 -- 
 Duncan - List replies preferred.   No HTML msgs.

@@ -1,72 +1,83 @@
-From: Duncan <1i5t5.duncan@cox.net>
-Subject: Re: Wiki update request: source repo page Was: [PATCH] Btrfs: use
- i_version instead of our own sequence
-Date: Fri, 13 Apr 2012 21:55:20 +0000 (UTC)
-Message-ID: <pan.2012.04.13.21.55.20@cox.net>
-References: <1333986794-6525-1-git-send-email-josef@redhat.com>
-	<CALLzPKY0ViBnaH8PVOmxad+oPpbWiYOz24+Lc8CWNuzKbyHHng@mail.gmail.com>
-	<20120412133107.GC1924@localhost.localdomain>
-	<pan.2012.04.12.21.41.17@cox.net> <20120412215546.GB4856@carfax.org.uk>
-	<pan.2012.04.12.22.56.00@cox.net> <20120413131632.GG4856@carfax.org.uk>
-	<pan.2012.04.13.18.48.48@cox.net>
-	<CAE5mzvhym10Y9-Z8zLKrQYhvBR6FhUHigk-xs_OWNiQJWFG4PQ@mail.gmail.com>
+From: Martin Steigerwald <Martin@lichtvoll.de>
+Subject: Re: btrfs mount flags
+Date: Sat, 14 Apr 2012 00:05:08 +0200
+Message-ID: <201204140005.08619.Martin@lichtvoll.de>
+References: <jjul59-m49.ln1@hurikhan.ath.cx> (sfid-20120413_182119_379057_8476B95A)
 Mime-Version: 1.0
-Content-Type: text/plain; charset=UTF-8
+Content-Type: Text/Plain;
+  charset="iso-8859-1"
+Cc: Kai Krakow <hurikhan77+btrfs@gmail.com>
 To: linux-btrfs@vger.kernel.org
 Return-path: <linux-btrfs-owner@vger.kernel.org>
+In-Reply-To: <jjul59-m49.ln1@hurikhan.ath.cx>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-cwillu posted on Fri, 13 Apr 2012 14:03:38 -0600 as excerpted:
+Am Freitag, 13. April 2012 schrieb Kai Krakow:
+> Hello!
 
-> The fact is that you _don't_ know that your device names aren't going to
-> change one day, any more than a generation of developers who only worked
-> with ext3 knew that "fsync is expensive and all you really need is the
-> atomic guarantee of mv".
+Hi!
 
-What I /do/ know is that such changes will be due to either (1) kernel 
-upgrades or (2) hardware changes (planned upgrades or unpredicted 
-failure).  Both factors can be mitigated with redundant layers of 
-fallback and dynamic reconfiguration.
+> Is there any documentation about btrfs mount flags wrt:
+> 
+> 1. which flags are one-time options and are permanent,
+> 2. which flags are global per btrfs partition,
+> 3. which flags are local per subvolume mount?
+> 
+> I'm asking because while googling I found very confusing info about
+> autodefrag. Some say it is a global flag, others say to get autodefrag
+> one has to supply it for each subvolume mount to have autodefrag for
+> that subvolume.
+> 
+> Then there's space_cache which is a one-time option and does not need
+> to be given on successive mounts. Otoh there's inode_cache which I
+> would expect to be handled the same but it doesn't look like it's
+> implemented that way.
 
-Regardless of what brings those device names, a fallback to an earlier 
-kernel, or a different device, or a bit of manual grub commandline new 
-device location detection and according alteration of the grub-passed 
-kernel command line so I can boot and make the necessary permanent config 
-changes, is all it'll take to change that.
+I like the distinction in Ext3/Ext4. There are mount option and filesystem 
+features that can be activated at mkfs time or (some) later with tune2fs.
 
-And as an admin working with stuff directly within my reach to fix when 
-necessary, unlike that generation of developers on ext3 with expensive 
-fsync, once it's out of my reach to directly manipulate for a fix, it's 
-no longer something I need to worry about.
+Now I would expect a one time mount option to be a filesystem feature that 
+I enabled with btrfstune or so. Cause I always understood mount options as 
+temporary unless I write them into /etc/fstab. But then tune2fs / Ext also 
+supports default mount options, so you could encode into the fs as well.
 
-Granted, btrfs and distro devs have to worry about products out of their 
-direct reach to fix, but that doesn't mean they have to take the tools 
-away (or even simply hide them) from those that can and do put them to 
-use.
+There even is a btrfstune command and it has a switch to enable something:
 
-> Everyone needs to start somewhere, but it's not unreasonable to expect
-> an admin to understand how their distro does things, and where to find
-> answers when they don't know, and to verify that their knowledge is
-> correct.  The middle of a disaster recovery should not be the first time
-> you've tried a recovery.
+merkaba:~> btrfstune 
+usage: btrfstune [options] device
+        -S value        enable/disable seeding
 
-Agreed.  That's why a prudent admin continually scans the radar for 
-incoming, as well as having tested fallbacks for the unexpected.
+but no manual page here. Seeding is mentioned at:
 
-Either that, or as I was at one point, they don't have the knowledge or 
-experience yet, but are willing to risk loss of data and a new install, 
-in ordered to get that knowledge and experience.  I remember being in 
-that group myself, and to a certain extent, I'm still a part of it.  
-After all, that level of risk and the knowledge and experienced gained 
-from it is part of the pull of pre-releases, live-git kernels, and 
-experimental filesystems, in the first place.
+Seed Device support
+It is now possible to create a filesystem to seed other Btrfs filesystems. 
+The original filesystem and devices are included as a readonly starting 
+point to the new FS. All modifications go onto different devices and the COW 
+machinery makes sure the original is unchanged.
 
-But that doesn't mean I don't try to control that risk by building on 
-knowledge and experience I already have to limit the risk stack at other 
-levels.
+http://btrfs.ipv5.de/index.php?title=Changelog#Seed_Device_support
 
+
+Anyway the documentation of mount options is on:
+
+http://btrfs.ipv5.de/index.php?title=Mount_options
+
+it seems.
+
+
+There only for "space_cache" it is mentioned that it is permanent. Not for 
+"inode_cache".
+
+The mount manpage which usually has mount options of various filesystems 
+does not mention BTRFS yet. I am not sure whether each filesystem should 
+have an own manpage anyway.
+
+
+Whatever is used, I would like to have a clear distinction between 
+permanent and volatile settings. And I think a permanent option is 
+something which should be set and queryable by a tuning command.
+
+Ciao,
 -- 
-Duncan - List replies preferred.   No HTML msgs.
-"Every nonfree program has a lord, a master --
-and if you use the program, he is your master."  Richard Stallman
-
+Martin 'Helios' Steigerwald - http://www.Lichtvoll.de
+GPG: 03B0 0D6C 0040 0710 4AFA  B82F 991B EAAC A599 84C7

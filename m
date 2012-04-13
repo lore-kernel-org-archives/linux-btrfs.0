@@ -1,45 +1,33 @@
-From: Greg KH <greg@kroah.com>
-Subject: Re: [PATCH] Btrfs: fix regression in scrub path resolving
-Date: Fri, 13 Apr 2012 08:25:59 -0700
-Message-ID: <20120413152559.GA30525@kroah.com>
-References: <1334329095-26326-1-git-send-email-list.btrfs@jan-o-sch.net>
+From: Kai Krakow <hurikhan77+btrfs@gmail.com>
+Subject: btrfs mount flags
+Date: Fri, 13 Apr 2012 17:50:45 +0200
+Message-ID: <jjul59-m49.ln1@hurikhan.ath.cx>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Cc: stable@vger.kernel.org, linux-btrfs@vger.kernel.org,
-	chris.mason@oracle.com
-To: Jan Schmidt <list.btrfs@jan-o-sch.net>
+Content-Type: text/plain; charset="ISO-8859-1"
+To: linux-btrfs@vger.kernel.org
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <1334329095-26326-1-git-send-email-list.btrfs@jan-o-sch.net>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Fri, Apr 13, 2012 at 04:58:15PM +0200, Jan Schmidt wrote:
-> commit 7a3ae2f8c8c8432e65467b7fc84d5deab04061a0 upstream.
-> 
-> In commit 4692cf58 (Linux 3.3) we introduced new backref walking code for
-> btrfs. This assumes we're searching live roots, which requires a transaction
-> context. While scrubbing, however, we must not join a transaction because
-> this could deadlock with the commit path:
-> 
-> Can be exploited by corrupting data in btrfs (e.g. btrfs-corrupt-block) and
-> then starting a scrub job (btrfs scrub). This will find the corrupt block
-> and resolve the file paths affected. If that happens while btrfs is about to
-> commit its transaction, a deadlock occurs: The scrub process prevents the
-> commit from completing, while the path resolving code joins a transaction
-> which blocks until the current transaction completes.
-> 
-> Additionally, what scrub really wants to do is resolving a logical address
-> in the commit root it's currently checking. This patch adds support for
-> logical to path resolving on commit roots and makes scrub use that.
-> 
-> Signed-off-by: Jan Schmidt <list.btrfs@jan-o-sch.net>
-> Signed-off-by: Chris Mason <chris.mason@oracle.com>
-> ---
-> 
-> I know, it's quite big for a stable patch. Anyway, it fixes a 3.3 regression
-> and should therefore be included in the next 3.3-stable release. Tested on
-> top of Linux 3.3.1.
+Hello!
 
-I'll include it if Chris gives his ack for it.
+Is there any documentation about btrfs mount flags wrt:
 
-Chris?
+1. which flags are one-time options and are permanent,
+2. which flags are global per btrfs partition,
+3. which flags are local per subvolume mount?
+
+I'm asking because while googling I found very confusing info about 
+autodefrag. Some say it is a global flag, others say to get autodefrag one 
+has to supply it for each subvolume mount to have autodefrag for that 
+subvolume.
+
+Then there's space_cache which is a one-time option and does not need to be 
+given on successive mounts. Otoh there's inode_cache which I would expect to 
+be handled the same but it doesn't look like it's implemented that way.
+
+Then maybe there are flags which are obsolete meanwhile because they are 
+default features with later kernel versions.
+
+Thanks,
+Kai
 

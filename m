@@ -1,17 +1,18 @@
-From: Arne Jansen <sensille@gmx.net>
+From: Liu Bo <liubo2009@cn.fujitsu.com>
 Subject: Re: [PATCH 0/5] btrfs: snapshot deletion via readahead
-Date: Fri, 13 Apr 2012 09:19:04 +0200
-Message-ID: <4F87D368.5070807@gmx.net>
+Date: Fri, 13 Apr 2012 15:20:20 +0800
+Message-ID: <4F87D3B4.9010709@cn.fujitsu.com>
 References: <cover.1334241664.git.sensille@gmx.net> <4F87A034.3030607@cn.fujitsu.com> <4F87CD6D.5040100@gmx.net> <4F87D157.4040607@cn.fujitsu.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset=ISO-8859-1
 Cc: linux-btrfs@vger.kernel.org
-To: Liu Bo <liubo2009@cn.fujitsu.com>
+To: Arne Jansen <sensille@gmx.net>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
 In-Reply-To: <4F87D157.4040607@cn.fujitsu.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 13.04.2012 09:10, Liu Bo wrote:
+On 04/13/2012 03:10 PM, Liu Bo wrote:
+
 > On 04/13/2012 02:53 PM, Arne Jansen wrote:
 > 
 >> On 13.04.2012 05:40, Liu Bo wrote:
@@ -52,11 +53,9 @@ On 13.04.2012 09:10, Liu Bo wrote:
 >>>>>> Based on this I'll see if I can add delayed checksum deletions and running
 >>>>>> the delayed refs via readahead, to gain a maximum ordering of I/O ops.
 >>>>>>
->>>>
 >>>> Hi Arne,
 >>>>
 >>>> Can you please show us some user cases in this, or can we get some extra benefits from it? :)
->>
 >> The case I'm most concerned with is having large filesystems (like 20x3T)
 >> with thousands of users on it in thousands of subvolumes and making
 >> hourly snapshots. Creating these snapshots is relatively easy, getting rid
@@ -72,13 +71,6 @@ On 13.04.2012 09:10, Liu Bo wrote:
 > 
 > Apr  8 14:58:08 kvm kernel: ------------[ cut here ]------------
 > Apr  8 14:58:08 kvm kernel: kernel BUG at fs/btrfs/droptree.c:418!
-
-might be out of memory. How much does this vm (?) have?
-Can you try to reduce the constants in disk-io.c:2003-2005?
-
-Thanks,
-Arne
-
 > Apr  8 14:58:08 kvm kernel: invalid opcode: 0000 [#1] SMP
 > Apr  8 14:58:08 kvm kernel: CPU 1
 > Apr  8 14:58:08 kvm kernel: Modules linked in: btrfs(O) zlib_deflate libcrc32c ip6table_filter ip6_tables ebtable_nat ebtables iptable_filter ipt_REJECT ip_tables bridge stp llc nfsd lockd nfs_acl auth_rpcgss exportfs autofs4 sunrpc cpufreq_ondemand acpi_cpufreq freq_table mperf be2iscsi iscsi_boot_sysfs bnx2i cnic uio cxgb3i libcxgbi cxgb3 mdio ib_iser rdma_cm ib_cm iw_cm ib_sa ib_mad ib_core ib_addr ipv6 iscsi_tcp libiscsi_tcp libiscsi scsi_transport_iscsi ext3 jbd dm_mirror dm_region_hash dm_log dm_mod kvm_intel kvm ppdev sg parport_pc parport coretemp hwmon pcspkr i2c_i801 iTCO_wdt iTCO_vendor_support sky2 snd_hda_codec_realtek snd_hda_intel snd_hda_codec snd_hwdep snd_seq snd_seq_device snd_pcm snd_timer snd soundcore snd_page_alloc ext4 mbcache jbd2 sd_mod crc_t10dif pata_acpi ata_
@@ -116,3 +108,49 @@ Arne
 > 
 > thanks,
 
+
+The script:
+
+        umount /mnt/btrfs
+        mkfs.btrfs /dev/sdb7
+        mount /dev/sdb7 /mnt/btrfs
+
+        echo "fio"
+        fio fio.jobs
+
+        echo "remount 1"
+        umount /mnt/btrfs; mount /dev/sdb7 /mnt/btrfs;
+
+        for i in `seq 1 1 2000`;
+        do
+                btrfs sub snap /mnt/btrfs /mnt/btrfs/s$i > /dev/null 2>&1;
+        done
+
+        echo "remount 2"
+        umount /mnt/btrfs; mount /dev/sdb7 /mnt/btrfs;
+
+        for i in `seq 1 1 2000`;
+        do
+                btrfs sub delete /mnt/btrfs/s$i > /dev/null 2>&1;
+        done
+
+        echo "umount"
+        time umount /mnt/btrfs
+
+fio.jobs:
+
+[global]
+group_reporting
+bs=4k
+rw=randrw
+sync=0
+ioengine=sync
+directory=/mnt/btrfs/
+
+[READ]
+filename=foobar
+size=200M
+
+thanks,
+-- 
+liubo 

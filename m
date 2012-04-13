@@ -1,28 +1,100 @@
-From: cwillu <cwillu@cwillu.com>
-Subject: Re: Boot speed/mount time regression with 3.4.0-rc2
-Date: Fri, 13 Apr 2012 00:49:59 -0600
-Message-ID: <CAE5mzvjJ+fuixm=OpKua6t6s6sncz1RGwXem8D6ZS=jDRDQ3+g@mail.gmail.com>
-References: <1333986823.2928.6.camel@ayu>
-	<1333991404.2817.6.camel@ayu>
-	<20120409205429.GB6958@localhost.localdomain>
-	<1334006446.2678.0.camel@ayu>
-	<20120410151645.GC2296@localhost.localdomain>
-	<CAFDW0j+=qe49pX3frjEoozOMz-gKKxqJ+jeeTgyXEskDL_9W8w@mail.gmail.com>
-	<20120411170422.GA2506@localhost.localdomain>
-	<CAFDW0jJZ16jPn766fdn3Hm=WWkR71n0kJapfPZzgHd3o71b1hQ@mail.gmail.com>
-	<20120412133747.GE1924@localhost.localdomain>
-	<20120412142349.GI1924@localhost.localdomain>
-	<CAFDW0jJq46TXa_a1soYESgjZosBDM8razvT271S3_SoyQeBbSA@mail.gmail.com>
+From: Arne Jansen <sensille@gmx.net>
+Subject: Re: [PATCH 0/5] btrfs: snapshot deletion via readahead
+Date: Fri, 13 Apr 2012 08:53:33 +0200
+Message-ID: <4F87CD6D.5040100@gmx.net>
+References: <cover.1334241664.git.sensille@gmx.net> <4F87A034.3030607@cn.fujitsu.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=UTF-8
-Cc: Josef Bacik <josef@redhat.com>,
-	Calvin Walton <calvin.walton@kepstin.ca>,
-	linux-btrfs@vger.kernel.org, Chris Mason <chris.mason@oracle.com>
-To: Ahmet Inan <ainan@mathematik.uni-freiburg.de>
+Content-Type: text/plain; charset=ISO-8859-1
+Cc: linux-btrfs@vger.kernel.org
+To: Liu Bo <liubo2009@cn.fujitsu.com>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <CAFDW0jJq46TXa_a1soYESgjZosBDM8razvT271S3_SoyQeBbSA@mail.gmail.com>
+In-Reply-To: <4F87A034.3030607@cn.fujitsu.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-> dmesg and fstab attached as requested.
+On 13.04.2012 05:40, Liu Bo wrote:
+> On 04/12/2012 11:54 PM, Arne Jansen wrote:
+>> This patchset reimplements snapshot deletion with the help of the readahead
+>> framework. For this callbacks are added to the framework. The main idea is
+>> to traverse many snapshots at once at read many branches at once. This way
+>> readahead get many requests at once (currently about 50000), giving it the
+>> chance to order disk accesses properly. On a single disk, the effect is
+>> currently spoiled by sync operations that still take place, mainly checksum
+>> deletion. The most benefit can be gained with multiple devices, as all devices
+>> can be fully utilized. It scales quite well with the number of devices.
+>> For more details see the commit messages of the individual patches and the
+>> source code comments.
+>>
+>> How it is tested:
+>> I created a test volume using David Sterba's stress-subvol-git-aging.sh. It
+>> checks out randoms version of the kernel git tree, creating a snapshot from it
+>> from time to time and checks out other versions there, and so on. In the end
+>> the fs had 80 subvols with various degrees of sharing between them. The
+>> following tests were conducted on it:
+>>  - delete a subvol using droptree and check the fs with btrfsck afterwards
+>>    for consistency
+>>  - delete all subvols and verify with btrfs-debug-tree that the extent
+>>    allocation tree is clean
+>>  - delete 70 subvols, and in parallel empty the other 10 with rm -rf to get
+>>    a good pressure on locking
+>>  - add various degrees of memory pressure to the previous test to get pages
+>>    to expire early from page cache
+>>  - enable all relevant kernel debugging options during all tests
+>>
+>> The performance gain on a single drive was about 20%, on 8 drives about 600%.
+>> It depends vastly on the maximum parallelity of the readahead, that is
+>> currently hardcoded to about 50000. This number is subject to 2 factors, the
+>> available RAM and the size of the saved state for a commit. As the full state
+>> has to be saved on commit, a large parallelity leads to a large state.
+>>
+>> Based on this I'll see if I can add delayed checksum deletions and running
+>> the delayed refs via readahead, to gain a maximum ordering of I/O ops.
+>>
+> 
+> Hi Arne,
+> 
+> Can you please show us some user cases in this, or can we get some extra benefits from it? :)
 
-Need dmesg after you've hit alt-sysrq-w a couple times during the slow period.
+The case I'm most concerned with is having large filesystems (like 20x3T)
+with thousands of users on it in thousands of subvolumes and making
+hourly snapshots. Creating these snapshots is relatively easy, getting rid
+of them is not.
+But there are already reports where deleting a single snapshot can take
+several days. So we really need a huge speedup here, and this is only
+the beginning :)
+
+-Arne
+
+> 
+> thanks,
+> liubo
+> 
+>> This patchset is also available at
+>>
+>> git://git.kernel.org/pub/scm/linux/kernel/git/arne/linux-btrfs.git droptree
+>>
+>> Arne Jansen (5):
+>>   btrfs: extend readahead interface
+>>   btrfs: add droptree inode
+>>   btrfs: droptree structures and initialization
+>>   btrfs: droptree implementation
+>>   btrfs: use droptree for snapshot deletion
+>>
+>>  fs/btrfs/Makefile           |    2 +-
+>>  fs/btrfs/btrfs_inode.h      |    4 +
+>>  fs/btrfs/ctree.h            |   78 ++-
+>>  fs/btrfs/disk-io.c          |   19 +
+>>  fs/btrfs/droptree.c         | 1916 +++++++++++++++++++++++++++++++++++++++++++
+>>  fs/btrfs/free-space-cache.c |  131 +++-
+>>  fs/btrfs/free-space-cache.h |   32 +
+>>  fs/btrfs/inode.c            |    3 +-
+>>  fs/btrfs/reada.c            |  494 +++++++++---
+>>  fs/btrfs/scrub.c            |   29 +-
+>>  fs/btrfs/transaction.c      |   35 +-
+>>  11 files changed, 2592 insertions(+), 151 deletions(-)
+>>  create mode 100644 fs/btrfs/droptree.c
+>>
+> --
+> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
+> the body of a message to majordomo@vger.kernel.org
+> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+

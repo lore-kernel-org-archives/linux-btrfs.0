@@ -1,64 +1,65 @@
-From: Chris Mason <chris.mason@oracle.com>
-Subject: [GIT PULL] Btrfs updates
-Date: Fri, 13 Apr 2012 09:38:29 -0400
-Message-ID: <20120413133829.GY29506@shiny>
+From: Jan Engelhardt <jengelh@medozas.de>
+Subject: Re: btr fs unmountable after disk failure
+Date: Fri, 13 Apr 2012 15:42:14 +0200 (CEST)
+Message-ID: <alpine.LNX.2.01.1204131536110.24064@frira.zrqbmnf.qr>
+References: <alpine.LNX.2.01.1204131252070.26191@frira.zrqbmnf.qr> <20120413105822.GF4856@carfax.org.uk>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-To: Linus Torvalds <torvalds@linux-foundation.org>,
-	LKML <linux-kernel@vger.kernel.org>,
-	linux-btrfs <linux-btrfs@vger.kernel.org>
+Content-Type: TEXT/PLAIN; charset=US-ASCII
+Cc: linux-btrfs@vger.kernel.org
+To: Hugo Mills <hugo@carfax.org.uk>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
+In-Reply-To: <20120413105822.GF4856@carfax.org.uk>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hi Linus,
 
-My for-linus branch has btrfs fixes and updates:
+On Friday 2012-04-13 12:58, Hugo Mills wrote:
+>On Fri, Apr 13, 2012 at 12:55:43PM +0200, Jan Engelhardt wrote:
+>> 
+>> I originally created a RAID1(0) compound out of 4 drives. One of them 
+>> [sdf] failed recently and was removed. The filesystem is no longer 
+>> mountable with the 3 drives left.
+>> On 3.3.1:
+>> 
+>> # btrfs dev scan
+>> [ 1065.572938] device label srv devid 1 transid 11386 /dev/sdc
+>> [ 1065.573044] device label srv devid 3 transid 11386 /dev/sde
+>> [ 1066.089981] device label srv devid 2 transid 11386 /dev/sdd
+>> # mount /dev/sdd /top.srv
+>> [ 1070.201339] device label srv devid 2 transid 11386 /dev/sdd
+>> [ 1070.201666] btrfs: disk space caching is enabled
+>> [ 1070.203310] btrfs: failed to read the system array on sde
+>> [ 1070.204458] btrfs: open_ctree failed
+>> (Sparse error message, innit..)
+>
+>   I think you need "-o degraded" in this case.
 
-git://git.kernel.org/pub/scm/linux/kernel/git/mason/linux-btrfs.git for-linus
+Yes indeed, -o degraded makes it go. Where is such documented? I know
+I can't expect mount(8) to yet have it, but there is not a
+mount.btrfs(8) either.
 
-The top commit is the only one that isn't strictly a bug fix.  It
-updates the btrfs metadata checker code to support metadata blocks
-larger than the page size.  This code isn't compiled in by default, and
-it is only used by developers.  I put it at the top so you could just
-peel it off if you didn't want it.  I also put a for-linus-min branch
-without this commit:
+After mounting, df shows
 
-git://git.kernel.org/pub/scm/linux/kernel/git/mason/linux-btrfs.git for-linus-min
+Filesystem               1K-blocks       Used Available Use% Mounted on
+/dev/sdd                5860554336 2651644680  20368600 100% /top.srv
 
-The others are pure bug fixes.  We have a use-after-free in there, along
-with errors when mount -o discard is enabled, and a BUG_ON(we should
-compile with UP more often).
+Adding the new disk now yields yet another kernel warning.
 
-Stefan Behrens (1) commits (+415/-146):
-    Btrfs: change integrity checker to support big blocks
+# btrfs dev add /dev/sdf /top.srv; df
+[10852.064139] btrfs: free space inode generation (0) did not match
+free space cache generation (11385)
+Filesystem               1K-blocks       Used Available Use% Mounted on
+/dev/sdd                7325692920 2651643152 2974681688  48% /top.srv
 
-Chris Mason (2) commits (+2/-2):
-    Revert "Btrfs: increase the global block reserve estimates" (+1/-1)
-    Btrfs: fix uninit variable in repair_eb_io_failure (+1/-1)
+According to
+# btrfs fi show
+Label: 'srv'  uuid: 88300cd5-dbcb-4147-9ee4-c65a1c895e1d
+        Total devices 5 FS bytes used 1.23TB
+        devid    2 size 1.36TB used 692.88GB path /dev/sdd
+        devid    5 size 1.36TB used 51.00GB path /dev/sdf
+        devid    3 size 1.36TB used 692.88GB path /dev/sde
+        devid    1 size 1.36TB used 692.90GB path /dev/sdc
+        *** Some devices missing
 
-Dave Jones (1) commits (+5/-4):
-    Btrfs: fix use-after-free in __btrfs_end_transaction
-
-Liu Bo (1) commits (+18/-2):
-    Btrfs: fix eof while discarding extents
-
-Ilya Dryomov (1) commits (+2/-3):
-    Btrfs: remove lock assert from get_restripe_target()
-
-Josef Bacik (1) commits (+3/-10):
-    Btrfs: use commit root when loading free space cache
-
-Tsutomu Itoh (1) commits (+10/-0):
-    Btrfs: check return value of bio_alloc() properly
-
-Total: (8) commits (+455/-167)
-
- fs/btrfs/check-integrity.c  |  561 ++++++++++++++++++++++++++++++++-----------
- fs/btrfs/compression.c      |    2 +
- fs/btrfs/extent-tree.c      |   11 +-
- fs/btrfs/extent_io.c        |    6 +-
- fs/btrfs/free-space-cache.c |    9 +-
- fs/btrfs/scrub.c            |    4 +
- fs/btrfs/transaction.c      |    9 +-
- fs/btrfs/volumes.c          |   20 +-
- 8 files changed, 455 insertions(+), 167 deletions(-)
+devices are missing, but how would I remove the old devid 4
+(the "some" that's "missing")? `btrfs fi del` does not take
+ids, unfortunately.

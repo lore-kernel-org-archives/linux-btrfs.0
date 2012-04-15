@@ -1,56 +1,108 @@
-From: Martin Steigerwald <Martin@lichtvoll.de>
-Subject: Re: btrfs mount flags
-Date: Sun, 15 Apr 2012 12:00:31 +0200
-Message-ID: <201204151200.31568.Martin@lichtvoll.de>
-References: <jjul59-m49.ln1@hurikhan.ath.cx> <t0ho59-rjd.ln1@hurikhan.ath.cx> <pan.2012.04.15.05.53.30@cox.net> (sfid-20120415_113808_299097_7352B259)
+From: Marc MERLIN <marc@merlins.org>
+Subject: Creating backup snapshots (8 per filesystem) causes No space left on device?
+Date: Sun, 15 Apr 2012 08:07:41 -0700
+Message-ID: <20120415150740.GA10248@merlins.org>
 Mime-Version: 1.0
-Content-Type: Text/Plain;
-  charset="utf-8"
+Content-Type: text/plain; charset=us-ascii
 To: linux-btrfs@vger.kernel.org
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <pan.2012.04.15.05.53.30@cox.net>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-No cc - instead of whats habit on this list - as you prefer list replies.
+Howdy,
 
-Am Sonntag, 15. April 2012 schrieb Duncan:
-> I believe there's a current report of a performance regression due to
-> the  space cache, too, tho it's possible I'm getting this mixed up
-> with the inode cache.  Someone with an ssd is using btrfs as their
-> rootfs, and ran without the space cache for quite some time.  Now the
-> first time the system's mounted with the space cache, it's supposed to
-> take a bit longer, but this person is reporting that it's taking MUCH
-> longer, for EVERY boot, now.  The original root read-only mount is
-> fine, but immediately after the remount read-write, there's a long
-> delay with not a lot going on, according to the bootchart they were
-> asked to run as a diagnostic.  This guy has something like 60 machines
-> with this problem, so it's not some random machine acting up,
-> either.  I think they've tracked it to some code that hadn't been
-> updated for the space cache (corner-case, they didn't expect it would
-> be affected), but I'm not sure what the status on the patch is.  But
-> the expectation is a fix by 3.4 release, some 4-6 weeks or so, from
-> now.  Anyway, at least people with existing btrfs filesystems might
-> want to hold off on enabling that option for the moment, if they're
-> running the 3.4-rcs, but by 3.4 release, it'll hopefully be fine.
+I have a little script that creates hourly/daily/weekly snapshots on a device that
+otherwise has plenty of disk space free:
+gandalfthegreat:~# df -h | grep cryptroot
+/dev/mapper/cryptroot     232G  144G   85G  63% /
+/dev/mapper/cryptroot     232G  144G   85G  63% /usr
+/dev/mapper/cryptroot     232G  144G   85G  63% /var
+/dev/mapper/cryptroot     232G  144G   85G  63% /home
+/dev/mapper/cryptroot     232G  144G   85G  63% /tmp
+/dev/mapper/cryptroot     232G  144G   85G  63% /mnt/btrfs_pool1
 
-Interesting.
+I have kernel 3.3.1.
 
-I am running with space_cache and inode_cache for quite some time already, 
-and did not see issues, but for the moment 3.3 is the newest kernel I use.
+The FAQ of course talks about the topic:
+https://btrfs.wiki.kernel.org/articles/f/a/q/FAQ_1fe9.html
 
-When switching forth an back between 3.2/3.3 and earlier kernels I have 
-seen it being rebuild, which on my ThinkPad T23 where BTRFS generally 
-seems to be really slow let the boot process crawl. But after it has been 
-build its fine. While the filesystem is still slower than the XFS I had 
-there before I believe.
+but I can't get the filesystem show command to output anything useful:
+gandalfthegreat:~# btrfs filesystem show /dev/mapper/cryptroot 
+Btrfs Btrfs v0.19
+gandalfthegreat:~# 
 
-Maybe a fix will be in some rc candidate before 3.4 release.
+and the btrfs df ssems to show that I'm ok:
+gandalfthegreat:~# btrfs filesystem df /home
+Data: total=169.01GB, used=134.70GB
+System, DUP: total=8.00MB, used=28.00KB
+System: total=4.00MB, used=0.00
+Metadata, DUP: total=5.88GB, used=4.39GB
+Metadata: total=8.00MB, used=0.00
+gandalfthegreat:~# 
 
-Maybe an update wiki page could serve as input for additions to mount 
-Manpage. Or a special btrfs mount options manpage. I would be willing to 
-help with that as time permits.
+I read about rebalance but it's a mostly new fliesystem will little churn, and I'm 
+not anywhere close to full filesystem yet.
 
-Ciao,
+So far, when this happened, I've had to delete a set of older snapshots.
+This would make sense if I was close to full, but at 63% I'm nowhere that.
+
+Any idea what's going on and how I can debug further and more specifically
+what I should capture next time I get a no free space error in userspace?
+
+Thanks,
+Marc
+
+
+gandalfthegreat:/mnt/btrfs_pool1# l
+total 4
+dr-xr-xr-x 1 root root 2210 Apr 15 08:00 ./
+drwxr-xr-x 1 root root  112 Feb 12 17:38 ../
+drwxr-xr-x 1 root root   12 Feb 12 17:57 home/
+drwxr-xr-x 1 root root   12 Feb 12 17:57 home_daily_20120412_00:01:01/
+drwxr-xr-x 1 root root   12 Feb 12 17:57 home_daily_20120413_00:01:02/
+drwxr-xr-x 1 root root   12 Feb 12 17:57 home_daily_20120414_00:01:01/
+drwxr-xr-x 1 root root   12 Feb 12 17:57 home_daily_20120415_00:01:01/
+drwxr-xr-x 1 root root   12 Feb 12 17:57 home_hourly_20120415_06:00:01/
+drwxr-xr-x 1 root root   12 Feb 12 17:57 home_hourly_20120415_07:00:01/
+drwxr-xr-x 1 root root   12 Feb 12 17:57 home_hourly_20120415_08:00:01/
+drwxr-xr-x 1 root root   12 Feb 12 17:57 home_weekly_20120415_00:02:01/
+drwxr-xr-x 1 root root  436 Apr  3 07:26 root/
+drwxr-xr-x 1 root root  436 Apr  3 07:26 root_daily_20120412_00:01:01/
+drwxr-xr-x 1 root root  436 Apr  3 07:26 root_daily_20120414_00:01:01/
+drwxr-xr-x 1 root root  436 Apr  3 07:26 root_daily_20120415_00:01:01/
+drwxr-xr-x 1 root root  436 Apr  3 07:26 root_hourly_20120415_06:00:01/
+drwxr-xr-x 1 root root  436 Apr  3 07:26 root_hourly_20120415_07:00:01/
+drwxr-xr-x 1 root root  436 Apr  3 07:26 root_hourly_20120415_08:00:01/
+drwxr-xr-x 1 root root  436 Apr  3 07:26 root_weekly_20120415_00:02:01/
+drwxrwxrwt 1 root root 7476 Apr 15 08:05 tmp/
+drwxrwxrwt 1 root root 7156 Apr 12 00:01 tmp_daily_20120412_00:01:01/
+drwxrwxrwt 1 root root 7130 Apr 13 00:01 tmp_daily_20120413_00:01:02/
+drwxrwxrwt 1 root root 7236 Apr 14 00:01 tmp_daily_20120414_00:01:01/
+drwxrwxrwt 1 root root 7368 Apr 15 00:01 tmp_daily_20120415_00:01:01/
+drwxrwxrwt 1 root root 7368 Apr 15 06:00 tmp_hourly_20120415_06:00:01/
+drwxrwxrwt 1 root root 7368 Apr 15 07:00 tmp_hourly_20120415_07:00:01/
+drwxrwxrwt 1 root root 7476 Apr 15 08:00 tmp_hourly_20120415_08:00:01/
+drwxrwxrwt 1 root root 7368 Apr 15 00:02 tmp_weekly_20120415_00:02:01/
+drwxr-xr-x 1 root root  206 Mar 31 11:07 usr/
+drwxr-xr-x 1 root root  206 Mar 31 11:07 usr_daily_20120412_00:01:01/
+drwxr-xr-x 1 root root  206 Mar 31 11:07 usr_daily_20120413_00:01:02/
+drwxr-xr-x 1 root root  206 Mar 31 11:07 usr_daily_20120414_00:01:01/
+drwxr-xr-x 1 root root  206 Mar 31 11:07 usr_daily_20120415_00:01:01/
+drwxr-xr-x 1 root root  206 Mar 31 11:07 usr_hourly_20120415_06:00:01/
+drwxr-xr-x 1 root root  206 Mar 31 11:07 usr_hourly_20120415_07:00:01/
+drwxr-xr-x 1 root root  206 Mar 31 11:07 usr_hourly_20120415_08:00:01/
+drwxr-xr-x 1 root root  206 Mar 31 11:07 usr_weekly_20120415_00:02:01/
+drwxr-xr-x 1 root root  130 Feb 12 23:52 var/
+drwxr-xr-x 1 root root  130 Feb 12 23:52 var_daily_20120412_00:01:01/
+drwxr-xr-x 1 root root  130 Feb 12 23:52 var_daily_20120413_00:01:02/
+drwxr-xr-x 1 root root  130 Feb 12 23:52 var_daily_20120414_00:01:01/
+drwxr-xr-x 1 root root  130 Feb 12 23:52 var_daily_20120415_00:01:01/
+drwxr-xr-x 1 root root  130 Feb 12 23:52 var_hourly_20120415_06:00:01/
+drwxr-xr-x 1 root root  130 Feb 12 23:52 var_hourly_20120415_07:00:01/
+drwxr-xr-x 1 root root  130 Feb 12 23:52 var_hourly_20120415_08:00:01/
+drwxr-xr-x 1 root root  130 Feb 12 23:52 var_weekly_20120415_00:02:01/
+
 -- 
-Martin 'Helios' Steigerwald - http://www.Lichtvoll.de
-GPG: 03B0 0D6C 0040 0710 4AFA  B82F 991B EAAC A599 84C7
+"A mouse is a device used to point at the xterm you want to type in" - A.S.R.
+Microsoft is to operating systems ....
+                                      .... what McDonalds is to gourmet cooking
+Home page: http://marc.merlins.org/  

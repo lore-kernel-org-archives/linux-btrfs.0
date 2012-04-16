@@ -1,62 +1,48 @@
-From: Josef Bacik <josef@redhat.com>
-Subject: Re: [PATCH v2] btrfs: fix early abort in 'remount'
-Date: Mon, 16 Apr 2012 09:55:34 -0400
-Message-ID: <20120416135534.GB2024@localhost.localdomain>
-References: <4F8B7214.5010702@cn.fujitsu.com>
- <1334547877-13726-1-git-send-email-slyich@gmail.com>
+From: David Sterba <dave@jikos.cz>
+Subject: Re: [PATCH] fs/btrfs/volumes.c: add missing free_fs_devices
+Date: Mon, 16 Apr 2012 16:02:07 +0200
+Message-ID: <20120416140207.GB20982@twin.jikos.cz>
+References: <1334395473-16667-1-git-send-email-Julia.Lawall@lip6.fr>
+Reply-To: dave@jikos.cz
 Mime-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
-Cc: linux-btrfs@vger.kernel.org, Liu Bo <liubo2009@cn.fujitsu.com>,
-	Sergei Trofimovich <slyfox@gentoo.org>,
-	Jeff Mahoney <jeffm@suse.com>,
-	Chris Mason <chris.mason@oracle.com>,
-	Josef Bacik <josef@redhat.com>
-To: Sergei Trofimovich <slyich@gmail.com>
-Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <1334547877-13726-1-git-send-email-slyich@gmail.com>
+Cc: Chris Mason <chris.mason@oracle.com>,
+	kernel-janitors@vger.kernel.org, linux-btrfs@vger.kernel.org,
+	linux-kernel@vger.kernel.org
+To: Julia Lawall <Julia.Lawall@lip6.fr>
+Return-path: <linux-kernel-owner@vger.kernel.org>
+In-Reply-To: <1334395473-16667-1-git-send-email-Julia.Lawall@lip6.fr>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Mon, Apr 16, 2012 at 06:44:37AM +0300, Sergei Trofimovich wrote:
-> From: Sergei Trofimovich <slyfox@gentoo.org>
+On Sat, Apr 14, 2012 at 11:24:33AM +0200, Julia Lawall wrote:
+> From: Julia Lawall <Julia.Lawall@lip6.fr>
 > 
-> Cc: Jeff Mahoney <jeffm@suse.com>
-> Cc: Chris Mason <chris.mason@oracle.com>
-> Cc: Josef Bacik <josef@redhat.com>
-> Signed-off-by: Sergei Trofimovich <slyfox@gentoo.org>
+> Free fs_devices as done in the error-handling code just below.
+> 
+> Signed-off-by: Julia Lawall <Julia.Lawall@lip6.fr>
+> 
 > ---
->  fs/btrfs/super.c |    6 ++++--
->  1 files changed, 4 insertions(+), 2 deletions(-)
+>  fs/btrfs/volumes.c |    4 +++-
+>  1 file changed, 3 insertions(+), 1 deletion(-)
 > 
-> diff --git a/fs/btrfs/super.c b/fs/btrfs/super.c
-> index 8d5d380..2f28fc0 100644
-> --- a/fs/btrfs/super.c
-> +++ b/fs/btrfs/super.c
-> @@ -1148,13 +1148,15 @@ static int btrfs_remount(struct super_block *sb, int *flags, char *data)
->  		if (ret)
->  			goto restore;
->  	} else {
-> -		if (fs_info->fs_devices->rw_devices == 0)
-> +		if (fs_info->fs_devices->rw_devices == 0) {
->  			ret = -EACCES;
->  			goto restore;
-> +		}
+> diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
+> index a872b48..5d246c3 100644
+> --- a/fs/btrfs/volumes.c
+> +++ b/fs/btrfs/volumes.c
+> @@ -4334,8 +4334,10 @@ static int open_seed_devices(struct btrfs_root *root, u8 *fsid)
 >  
-> -		if (btrfs_super_log_root(fs_info->super_copy) != 0)
-> +		if (btrfs_super_log_root(fs_info->super_copy) != 0) {
->  			ret = -EINVAL;
->  			goto restore;
-> +		}
+>  	ret = __btrfs_open_devices(fs_devices, FMODE_READ,
+>  				   root->fs_info->bdev_holder);
+> -	if (ret)
+> +	if (ret) {
+> +		free_fs_devices(fs_devices);
+>  		goto out;
+> +	}
 >  
->  		ret = btrfs_cleanup_fs_roots(fs_info);
->  		if (ret)
-> -- 
-> 1.7.8.5
-> 
+>  	if (!fs_devices->seeding) {
+>  		__btrfs_close_devices(fs_devices);
 
-Haha oops,
+Reviewed-by: David Sterba <dsterba@suse.cz>
 
-Reviewed-by: Josef Bacik <josef@redhat.com>
-
-Thanks,
-
-Josef
+thanks,
+david

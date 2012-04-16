@@ -1,48 +1,33 @@
 From: David Sterba <dave@jikos.cz>
-Subject: Re: [PATCH] fs/btrfs/volumes.c: add missing free_fs_devices
-Date: Mon, 16 Apr 2012 16:02:07 +0200
-Message-ID: <20120416140207.GB20982@twin.jikos.cz>
-References: <1334395473-16667-1-git-send-email-Julia.Lawall@lip6.fr>
+Subject: Re: [PATCH v2] Btrfs: allow mount -o remount,compress=no
+Date: Mon, 16 Apr 2012 16:42:35 +0200
+Message-ID: <20120416144233.GC20982@twin.jikos.cz>
+References: <20120406102232.GH14256@twin.jikos.cz>
+ <1334582871-3670-1-git-send-email-arnd@arndnet.de>
 Reply-To: dave@jikos.cz
 Mime-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
-Cc: Chris Mason <chris.mason@oracle.com>,
-	kernel-janitors@vger.kernel.org, linux-btrfs@vger.kernel.org,
+Cc: dave@jikos.cz, chris.mason@oracle.com, linux-btrfs@vger.kernel.org,
 	linux-kernel@vger.kernel.org
-To: Julia Lawall <Julia.Lawall@lip6.fr>
+To: Arnd Hannemann <arnd@arndnet.de>
 Return-path: <linux-kernel-owner@vger.kernel.org>
-In-Reply-To: <1334395473-16667-1-git-send-email-Julia.Lawall@lip6.fr>
+In-Reply-To: <1334582871-3670-1-git-send-email-arnd@arndnet.de>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Sat, Apr 14, 2012 at 11:24:33AM +0200, Julia Lawall wrote:
-> From: Julia Lawall <Julia.Lawall@lip6.fr>
+On Mon, Apr 16, 2012 at 03:27:51PM +0200, Arnd Hannemann wrote:
+> Btrfs allows to turn on compression on a mounted and used filesystem
+> by issuing mount -o remount,compress=lzo.
+> This patch allows to turn compression off again
+> while the filesystem is mounted. As suggested by David Sterba
+> if the compress-force option was set, it is implicitly cleared
+> if compression is turned off.
 > 
-> Free fs_devices as done in the error-handling code just below.
-> 
-> Signed-off-by: Julia Lawall <Julia.Lawall@lip6.fr>
-> 
-> ---
->  fs/btrfs/volumes.c |    4 +++-
->  1 file changed, 3 insertions(+), 1 deletion(-)
-> 
-> diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
-> index a872b48..5d246c3 100644
-> --- a/fs/btrfs/volumes.c
-> +++ b/fs/btrfs/volumes.c
-> @@ -4334,8 +4334,10 @@ static int open_seed_devices(struct btrfs_root *root, u8 *fsid)
->  
->  	ret = __btrfs_open_devices(fs_devices, FMODE_READ,
->  				   root->fs_info->bdev_holder);
-> -	if (ret)
-> +	if (ret) {
-> +		free_fs_devices(fs_devices);
->  		goto out;
-> +	}
->  
->  	if (!fs_devices->seeding) {
->  		__btrfs_close_devices(fs_devices);
+> Signed-off-by: Arnd Hannemann <arnd@arndnet.de>
 
-Reviewed-by: David Sterba <dsterba@suse.cz>
+Tested-by: David Sterba <dsterba@suse.cz>
 
-thanks,
+worked perfectly, remounting back and forth with compress=lzo =no
+-force=lzo etc, checked output via 'mount'.
+
+
 david

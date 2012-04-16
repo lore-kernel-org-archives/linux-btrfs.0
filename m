@@ -1,35 +1,62 @@
-From: David Sterba <dave@jikos.cz>
-Subject: Re: Errors in rebalancing RAID1 array after disk failure.
-Date: Mon, 16 Apr 2012 15:46:43 +0200
-Message-ID: <20120416134643.GA20982@twin.jikos.cz>
-References: <CADy=jfVRz5UuKcFkDXC9hwZnP8Z=E9NuF9p3hE6b0ZC06k7DWg@mail.gmail.com>
- <CADy=jfWC1vJs_TWt-EmvAN2Ybqw8kjN2tFV_vgAb-OKeGMpotg@mail.gmail.com>
- <CADy=jfV9pKJurcormuMK7KW54-DKSvYns-Ow-T_FEELGmFQ18Q@mail.gmail.com>
-Reply-To: dave@jikos.cz
+From: Josef Bacik <josef@redhat.com>
+Subject: Re: [PATCH v2] btrfs: fix early abort in 'remount'
+Date: Mon, 16 Apr 2012 09:55:34 -0400
+Message-ID: <20120416135534.GB2024@localhost.localdomain>
+References: <4F8B7214.5010702@cn.fujitsu.com>
+ <1334547877-13726-1-git-send-email-slyich@gmail.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=iso-8859-1
-Cc: linux-btrfs@vger.kernel.org
-To: "Marco L. Crociani" <marco.crociani@gmail.com>
+Content-Type: text/plain; charset=us-ascii
+Cc: linux-btrfs@vger.kernel.org, Liu Bo <liubo2009@cn.fujitsu.com>,
+	Sergei Trofimovich <slyfox@gentoo.org>,
+	Jeff Mahoney <jeffm@suse.com>,
+	Chris Mason <chris.mason@oracle.com>,
+	Josef Bacik <josef@redhat.com>
+To: Sergei Trofimovich <slyich@gmail.com>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <CADy=jfV9pKJurcormuMK7KW54-DKSvYns-Ow-T_FEELGmFQ18Q@mail.gmail.com>
+In-Reply-To: <1334547877-13726-1-git-send-email-slyich@gmail.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Sat, Apr 14, 2012 at 06:39:12PM +0200, Marco L. Crociani wrote:
-> Apr 14 18:07:52 evo kernel: [=A0 431.054709] btrfs: relocating block
-> group 1401002393600 flags 17
-> Apr 14 18:08:14 evo kernel: [=A0 453.506541] btrfs csum failed ino 36=
-2
-> off 910946304 csum 432355644 private 175165154
+On Mon, Apr 16, 2012 at 06:44:37AM +0300, Sergei Trofimovich wrote:
+> From: Sergei Trofimovich <slyfox@gentoo.org>
+> 
+> Cc: Jeff Mahoney <jeffm@suse.com>
+> Cc: Chris Mason <chris.mason@oracle.com>
+> Cc: Josef Bacik <josef@redhat.com>
+> Signed-off-by: Sergei Trofimovich <slyfox@gentoo.org>
+> ---
+>  fs/btrfs/super.c |    6 ++++--
+>  1 files changed, 4 insertions(+), 2 deletions(-)
+> 
+> diff --git a/fs/btrfs/super.c b/fs/btrfs/super.c
+> index 8d5d380..2f28fc0 100644
+> --- a/fs/btrfs/super.c
+> +++ b/fs/btrfs/super.c
+> @@ -1148,13 +1148,15 @@ static int btrfs_remount(struct super_block *sb, int *flags, char *data)
+>  		if (ret)
+>  			goto restore;
+>  	} else {
+> -		if (fs_info->fs_devices->rw_devices == 0)
+> +		if (fs_info->fs_devices->rw_devices == 0) {
+>  			ret = -EACCES;
+>  			goto restore;
+> +		}
+>  
+> -		if (btrfs_super_log_root(fs_info->super_copy) != 0)
+> +		if (btrfs_super_log_root(fs_info->super_copy) != 0) {
+>  			ret = -EINVAL;
+>  			goto restore;
+> +		}
+>  
+>  		ret = btrfs_cleanup_fs_roots(fs_info);
+>  		if (ret)
+> -- 
+> 1.7.8.5
+> 
 
-The failed checksums prevent balance to relocate the blockgroup, which
-is a needed step during 'dev delete'. Unless the csum is fixable by
-using another copy, I think the only option left is to delete the file
-(not counting the unsafe way of resetting the block's cheksum).
+Haha oops,
 
+Reviewed-by: Josef Bacik <josef@redhat.com>
 
-david
---
-To unsubscribe from this list: send the line "unsubscribe linux-btrfs" =
-in
-the body of a message to majordomo@vger.kernel.org
-More majordomo info at  http://vger.kernel.org/majordomo-info.html
+Thanks,
+
+Josef

@@ -1,55 +1,30 @@
-From: Arnd Hannemann <arnd@arndnet.de>
-Subject: [PATCH v2] Btrfs: allow mount -o remount,compress=no
-Date: Mon, 16 Apr 2012 15:27:51 +0200
-Message-ID: <1334582871-3670-1-git-send-email-arnd@arndnet.de>
-References: <20120406102232.GH14256@twin.jikos.cz>
-Cc: chris.mason@oracle.com, linux-btrfs@vger.kernel.org,
-	linux-kernel@vger.kernel.org, Arnd Hannemann <arnd@arndnet.de>
-To: dave@jikos.cz
+From: Josef Bacik <josef@redhat.com>
+Subject: Re: kernel BUG at fs/btrfs/extent_io.c:1890!
+Date: Mon, 16 Apr 2012 09:34:56 -0400
+Message-ID: <20120416133455.GA2024@localhost.localdomain>
+References: <CACfQV3hb92zrYUJ8to1mq8s1wzfdEoMBDi9b5VmfZ0AZ=UBkFA@mail.gmail.com>
+ <20120411150158.GA5820@localhost.localdomain>
+ <CACfQV3j_WGTB-+booc1bDMvs1i_Kjr_WAAmLKgUb9sUWe-+wPg@mail.gmail.com>
+ <20120412180836.GJ1924@localhost.localdomain>
+ <20120412181525.GU29506@shiny>
+ <20120412182049.GK1924@localhost.localdomain>
+ <CACfQV3j1X_08UJ_o-09thSUM-8SpBse9zB5eWWbuFSz5=7mWPw@mail.gmail.com>
+ <20120413144529.GC1923@localhost.localdomain>
+ <CACfQV3jq3eGq2i4OneR4A3jcnSg_irMCmPFJHOwrpE_Dd0swkg@mail.gmail.com>
+Mime-Version: 1.0
+Content-Type: text/plain; charset=us-ascii
+Cc: Josef Bacik <josef@redhat.com>,
+	Chris Mason <chris.mason@oracle.com>,
+	linux-btrfs@vger.kernel.org
+To: Francesco Cepparo <francesco.cepparo@gmail.com>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <20120406102232.GH14256@twin.jikos.cz>
+In-Reply-To: <CACfQV3jq3eGq2i4OneR4A3jcnSg_irMCmPFJHOwrpE_Dd0swkg@mail.gmail.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Btrfs allows to turn on compression on a mounted and used filesystem
-by issuing mount -o remount,compress=lzo.
-This patch allows to turn compression off again
-while the filesystem is mounted. As suggested by David Sterba
-if the compress-force option was set, it is implicitly cleared
-if compression is turned off.
+On Sat, Apr 14, 2012 at 12:06:13AM +0000, Francesco Cepparo wrote:
+> That did it :) the kernel now fails the mounting gracefully as it did before. :)
+> Thanks!
 
-Signed-off-by: Arnd Hannemann <arnd@arndnet.de>
----
- fs/btrfs/super.c |    9 ++++++++-
- 1 file changed, 8 insertions(+), 1 deletion(-)
+Perfect! :)
 
-diff --git a/fs/btrfs/super.c b/fs/btrfs/super.c
-index 8d5d380..79a2ca5 100644
---- a/fs/btrfs/super.c
-+++ b/fs/btrfs/super.c
-@@ -394,15 +394,22 @@ int btrfs_parse_options(struct btrfs_root *root, char *options)
- 			    strcmp(args[0].from, "zlib") == 0) {
- 				compress_type = "zlib";
- 				info->compress_type = BTRFS_COMPRESS_ZLIB;
-+				btrfs_set_opt(info->mount_opt, COMPRESS);
- 			} else if (strcmp(args[0].from, "lzo") == 0) {
- 				compress_type = "lzo";
- 				info->compress_type = BTRFS_COMPRESS_LZO;
-+				btrfs_set_opt(info->mount_opt, COMPRESS);
-+			} else if (strncmp(args[0].from, "no", 2) == 0) {
-+				compress_type = "no";
-+				info->compress_type = BTRFS_COMPRESS_NONE;
-+				btrfs_clear_opt(info->mount_opt, COMPRESS);
-+				btrfs_clear_opt(info->mount_opt, FORCE_COMPRESS);
-+				compress_force = false;
- 			} else {
- 				ret = -EINVAL;
- 				goto out;
- 			}
- 
--			btrfs_set_opt(info->mount_opt, COMPRESS);
- 			if (compress_force) {
- 				btrfs_set_opt(info->mount_opt, FORCE_COMPRESS);
- 				pr_info("btrfs: force %s compression\n",
--- 
-1.7.9.5
-
+Josef 

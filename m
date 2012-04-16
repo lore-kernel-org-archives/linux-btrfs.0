@@ -1,57 +1,58 @@
 From: "Sergey V." <sftp.mtuci@gmail.com>
-Subject: Re: [btrfs-progs: PATCH 2/2] Makefile: use $(MAKE) instead of hardcoded 'make'
-Date: Mon, 16 Apr 2012 15:50:13 +0400
-Message-ID: <201204161550.13859.sftp.mtuci@gmail.com>
-References: <1333372202-627-1-git-send-email-slyich@gmail.com> <1333372202-627-2-git-send-email-slyich@gmail.com>
+Subject: Re: [PATCH v2] btrfs: fix early abort in 'remount'
+Date: Mon, 16 Apr 2012 15:52:11 +0400
+Message-ID: <201204161552.11922.sftp.mtuci@gmail.com>
+References: <4F8B7214.5010702@cn.fujitsu.com> <1334547877-13726-1-git-send-email-slyich@gmail.com>
 Mime-Version: 1.0
 Content-Type: Text/Plain;
   charset="utf-8"
-Cc: linux-btrfs@vger.kernel.org,
+Cc: linux-btrfs@vger.kernel.org, Liu Bo <liubo2009@cn.fujitsu.com>,
 	Sergei Trofimovich <slyfox@gentoo.org>,
-	Chris Mason <chris.mason@oracle.com>
+	Jeff Mahoney <jeffm@suse.com>,
+	Chris Mason <chris.mason@oracle.com>,
+	Josef Bacik <josef@redhat.com>
 To: Sergei Trofimovich <slyich@gmail.com>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <1333372202-627-2-git-send-email-slyich@gmail.com>
+In-Reply-To: <1334547877-13726-1-git-send-email-slyich@gmail.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Monday 02 of April 2012 17:10:02 Sergei Trofimovich wrote:
+On Monday 16 of April 2012 07:44:37 Sergei Trofimovich wrote:
 > From: Sergei Trofimovich <slyfox@gentoo.org>
 > 
-> CC: Chris Mason <chris.mason@oracle.com>
+> Cc: Jeff Mahoney <jeffm@suse.com>
+> Cc: Chris Mason <chris.mason@oracle.com>
+> Cc: Josef Bacik <josef@redhat.com>
 > Signed-off-by: Sergei Trofimovich <slyfox@gentoo.org>
 > ---
->  Makefile |    6 +++---
->  1 files changed, 3 insertions(+), 3 deletions(-)
+>  fs/btrfs/super.c |    6 ++++--
+>  1 files changed, 4 insertions(+), 2 deletions(-)
 > 
-> diff --git a/Makefile b/Makefile
-> index ebfd5c8..9694444 100644
-> --- a/Makefile
-> +++ b/Makefile
-> @@ -101,15 +101,15 @@ ioctl-test: $(objects) ioctl-test.o
->  	$(CC) $(CFLAGS) -o ioctl-test $(objects) ioctl-test.o $(LDFLAGS) $(LIBS)
+> diff --git a/fs/btrfs/super.c b/fs/btrfs/super.c
+> index 8d5d380..2f28fc0 100644
+> --- a/fs/btrfs/super.c
+> +++ b/fs/btrfs/super.c
+> @@ -1148,13 +1148,15 @@ static int btrfs_remount(struct super_block *sb, int *flags, char *data)
+>  		if (ret)
+>  			goto restore;
+>  	} else {
+> -		if (fs_info->fs_devices->rw_devices == 0)
+> +		if (fs_info->fs_devices->rw_devices == 0) {
+>  			ret = -EACCES;
+>  			goto restore;
+> +		}
 >  
->  manpages:
-> -	cd man; make
-> +	cd man; $(MAKE)
+> -		if (btrfs_super_log_root(fs_info->super_copy) != 0)
+> +		if (btrfs_super_log_root(fs_info->super_copy) != 0) {
+>  			ret = -EINVAL;
+>  			goto restore;
+> +		}
 >  
->  install-man:
-> -	cd man; make install
-> +	cd man; $(MAKE) install
->  
->  clean :
->  	rm -f $(progs) cscope.out *.o .*.d btrfs-convert btrfs-image btrfs-select-super \
->  	      btrfs-zero-log btrfstune dir-test ioctl-test quick-test version.h
-> -	cd man; make clean
-> +	cd man; $(MAKE) clean
->  
->  install: $(progs) install-man
->  	$(INSTALL) -m755 -d $(DESTDIR)$(bindir)
+>  		ret = btrfs_cleanup_fs_roots(fs_info);
+>  		if (ret)
 > -- 
 
-Resonable.
+Patch is correct
 
 Reviewed-by: Sergey V. <sftp.mtuci@gmail.com>
 
-for both patches.
-
-Thanks
+Thanks.

@@ -1,108 +1,101 @@
 From: Jan Kara <jack@suse.cz>
-Subject: [PATCH 00/19 v5] Fix filesystem freezing deadlocks
-Date: Mon, 16 Apr 2012 18:13:38 +0200
-Message-ID: <1334592845-22862-1-git-send-email-jack@suse.cz>
+Subject: [PATCH 24/27] btrfs: Convert to new freezing mechanism
+Date: Mon, 16 Apr 2012 18:14:02 +0200
+Message-ID: <1334592845-22862-25-git-send-email-jack@suse.cz>
+References: <1334592845-22862-1-git-send-email-jack@suse.cz>
 Cc: dchinner@redhat.com, LKML <linux-kernel@vger.kernel.org>,
 	linux-fsdevel@vger.kernel.org, Jan Kara <jack@suse.cz>,
-	Alex Elder <elder@kernel.org>,
-	Anton Altaparmakov <anton@tuxera.com>, Ben Myers <bpm@sgi.com>,
-	Chris Mason <chris.mason@oracle.com>, cluster-devel@redhat.com,
-	"David S. Miller" <davem@davemloft.net>,
-	fuse-devel@lists.sourceforge.net,
-	"J. Bruce Fields" <bfields@fieldses.org>,
-	Joel Becker <jlbec@evilplan.org>,
-	KONISHI Ryusuke <konishi.ryusuke@lab.ntt.co.jp>,
-	linux-btrfs@vger.kernel.org, linux-ext4@vger.kernel.org,
-	linux-nfs@vger.kernel.org, linux-nilfs@vger.kernel.org,
-	linux-ntfs-dev@lists.sourceforge.net,
-	Mark Fasheh <mfasheh@suse.com>,
-	Miklos Szeredi <miklos@szeredi.hu>, ocfs2-devel@oss.oracle.com,
-	OGAWA Hirofumi <hirofumi@mail.parknet.co.jp>,
-	Steven Whitehouse <swhiteho@redhat.com>,
-	"Theodore Ts'o" <tytso@mit.edu>, xfs@oss.sgi.com
+	linux-btrfs@vger.kernel.org, Chris Mason <chris.mason@oracle.com>
 To: Al Viro <viro@ZenIV.linux.org.uk>
 Return-path: <linux-kernel-owner@vger.kernel.org>
+In-Reply-To: <1334592845-22862-1-git-send-email-jack@suse.cz>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-  Hello,
+We convert btrfs_file_aio_write() to use new freeze check.  We also add proper
+freeze protection to btrfs_page_mkwrite(). Checks in cleaner_kthread() and
+transaction_kthread() can be safely removed since btrfs_freeze() will lock
+the mutexes and thus block the threads (and they shouldn't have anything to
+do anyway).
 
-  here is the fifth iteration of my patches to improve filesystem freezing.
-No serious changes since last time. Mostly I rebased patches and merged this
-series with series moving file_update_time() to ->page_mkwrite() to simplify
-testing and merging.
-
-Filesystem freezing is currently racy and thus we can end up with dirty data on
-frozen filesystem (see changelog patch 13 for detailed race description). This
-patch series aims at fixing this.
-
-To be able to block all places where inodes get dirtied, I've moved filesystem
-file_update_time() call to ->page_mkwrite callback (patches 01-07) and put
-freeze handling in mnt_want_write() / mnt_drop_write(). That however required
-some code shuffling and changes to kern_path_create() (see patches 09-12). I
-think the result is OK but opinions may differ ;). The advantage of this change
-also is that all filesystems get freeze protection almost for free - even ext2
-can handle freezing well now.
-
-Another potential contention point might be patch 19. In that patch we make
-freeze_super() refuse to freeze the filesystem when there are open but unlinked
-files which may be impractical in some cases. The main reason for this is the
-problem with handling of file deletion from fput() called with mmap_sem held
-(e.g. from munmap(2)), and then there's the fact that we cannot really force
-such filesystem into a consistent state... But if people think that freezing
-with open but unlinked files should happen, then I have some possible
-solutions in mind (maybe as a separate patchset since this is large enough).
-
-I'm not able to hit any deadlocks, lockdep warnings, or dirty data on frozen
-filesystem despite beating it with fsstress and bash-shared-mapping while
-freezing and unfreezing for several hours (using ext4 and xfs) so I'm
-reasonably confident this could finally be the right solution.
-
-Changes since v4:
-  * added a couple of Acked-by's
-  * added some comments & doc update
-  * added patches from series "Push file_update_time() into .page_mkwrite"
-    since it doesn't make much sense to keep them separate anymore
-  * rebased on top of 3.4-rc2
-
-Changes since v3:
-  * added third level of freezing for fs internal purposes - hooked some
-    filesystems to use it (XFS, nilfs2)
-  * removed racy i_size check from filemap_mkwrite()
-
-Changes since v2:
-  * completely rewritten
-  * freezing is now blocked at VFS entry points
-  * two stage freezing to handle both mmapped writes and other IO
-
-The biggest changes since v1:
-  * have two counters to provide safe state transitions for SB_FREEZE_WRITE
-    and SB_FREEZE_TRANS states
-  * use percpu counters instead of own percpu structure
-  * added documentation fixes from the old fs freezing series
-  * converted XFS to use SB_FREEZE_TRANS counter instead of its private
-    m_active_trans counter
-
-								Honza
-
-CC: Alex Elder <elder@kernel.org>
-CC: Anton Altaparmakov <anton@tuxera.com>
-CC: Ben Myers <bpm@sgi.com>
-CC: Chris Mason <chris.mason@oracle.com>
-CC: cluster-devel@redhat.com
-CC: "David S. Miller" <davem@davemloft.net>
-CC: fuse-devel@lists.sourceforge.net
-CC: "J. Bruce Fields" <bfields@fieldses.org>
-CC: Joel Becker <jlbec@evilplan.org>
-CC: KONISHI Ryusuke <konishi.ryusuke@lab.ntt.co.jp>
 CC: linux-btrfs@vger.kernel.org
-CC: linux-ext4@vger.kernel.org
-CC: linux-nfs@vger.kernel.org
-CC: linux-nilfs@vger.kernel.org
-CC: linux-ntfs-dev@lists.sourceforge.net
-CC: Mark Fasheh <mfasheh@suse.com>
-CC: Miklos Szeredi <miklos@szeredi.hu>
-CC: ocfs2-devel@oss.oracle.com
-CC: OGAWA Hirofumi <hirofumi@mail.parknet.co.jp>
-CC: Steven Whitehouse <swhiteho@redhat.com>
-CC: "Theodore Ts'o" <tytso@mit.edu>
-CC: xfs@oss.sgi.com
+CC: Chris Mason <chris.mason@oracle.com>
+Signed-off-by: Jan Kara <jack@suse.cz>
+---
+ fs/btrfs/disk-io.c |    3 ---
+ fs/btrfs/file.c    |    3 ++-
+ fs/btrfs/inode.c   |    6 +++++-
+ 3 files changed, 7 insertions(+), 5 deletions(-)
+
+diff --git a/fs/btrfs/disk-io.c b/fs/btrfs/disk-io.c
+index 20196f4..555a57a 100644
+--- a/fs/btrfs/disk-io.c
++++ b/fs/btrfs/disk-io.c
+@@ -1527,8 +1527,6 @@ static int cleaner_kthread(void *arg)
+ 	struct btrfs_root *root = arg;
+ 
+ 	do {
+-		vfs_check_frozen(root->fs_info->sb, SB_FREEZE_WRITE);
+-
+ 		if (!(root->fs_info->sb->s_flags & MS_RDONLY) &&
+ 		    mutex_trylock(&root->fs_info->cleaner_mutex)) {
+ 			btrfs_run_delayed_iputs(root);
+@@ -1560,7 +1558,6 @@ static int transaction_kthread(void *arg)
+ 	do {
+ 		cannot_commit = false;
+ 		delay = HZ * 30;
+-		vfs_check_frozen(root->fs_info->sb, SB_FREEZE_WRITE);
+ 		mutex_lock(&root->fs_info->transaction_kthread_mutex);
+ 
+ 		spin_lock(&root->fs_info->trans_lock);
+diff --git a/fs/btrfs/file.c b/fs/btrfs/file.c
+index d83260d..a48251e 100644
+--- a/fs/btrfs/file.c
++++ b/fs/btrfs/file.c
+@@ -1358,7 +1358,7 @@ static ssize_t btrfs_file_aio_write(struct kiocb *iocb,
+ 	ssize_t err = 0;
+ 	size_t count, ocount;
+ 
+-	vfs_check_frozen(inode->i_sb, SB_FREEZE_WRITE);
++	sb_start_write(inode->i_sb);
+ 
+ 	mutex_lock(&inode->i_mutex);
+ 
+@@ -1449,6 +1449,7 @@ static ssize_t btrfs_file_aio_write(struct kiocb *iocb,
+ 			num_written = err;
+ 	}
+ out:
++	sb_end_write(inode->i_sb);
+ 	current->backing_dev_info = NULL;
+ 	return num_written ? num_written : err;
+ }
+diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
+index 115bc05..db4fc01 100644
+--- a/fs/btrfs/inode.c
++++ b/fs/btrfs/inode.c
+@@ -6592,6 +6592,7 @@ int btrfs_page_mkwrite(struct vm_area_struct *vma, struct vm_fault *vmf)
+ 	u64 page_start;
+ 	u64 page_end;
+ 
++	sb_start_pagefault(inode->i_sb);
+ 	ret  = btrfs_delalloc_reserve_space(inode, PAGE_CACHE_SIZE);
+ 	if (!ret) {
+ 		ret = btrfs_update_time(vma->vm_file);
+@@ -6681,12 +6682,15 @@ again:
+ 	unlock_extent_cached(io_tree, page_start, page_end, &cached_state, GFP_NOFS);
+ 
+ out_unlock:
+-	if (!ret)
++	if (!ret) {
++		sb_end_pagefault(inode->i_sb);
+ 		return VM_FAULT_LOCKED;
++	}
+ 	unlock_page(page);
+ out:
+ 	btrfs_delalloc_release_space(inode, PAGE_CACHE_SIZE);
+ out_noreserve:
++	sb_end_pagefault(inode->i_sb);
+ 	return ret;
+ }
+ 
+-- 
+1.7.1

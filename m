@@ -1,27 +1,57 @@
-From: Alex <creamyfish@gmail.com>
-Subject: Is this enough for us to have triple-parity RAID?
-Date: Mon, 16 Apr 2012 18:04:51 +0800
-Message-ID: <CAMqP1GXTCRTXraAXpqqh53-hcr0pkp5fPxysF_+mXm_1cewSpA@mail.gmail.com>
+From: "Sergey V." <sftp.mtuci@gmail.com>
+Subject: Re: [btrfs-progs: PATCH 2/2] Makefile: use $(MAKE) instead of hardcoded 'make'
+Date: Mon, 16 Apr 2012 15:50:13 +0400
+Message-ID: <201204161550.13859.sftp.mtuci@gmail.com>
+References: <1333372202-627-1-git-send-email-slyich@gmail.com> <1333372202-627-2-git-send-email-slyich@gmail.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=ISO-8859-1
-To: "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
+Content-Type: Text/Plain;
+  charset="utf-8"
+Cc: linux-btrfs@vger.kernel.org,
+	Sergei Trofimovich <slyfox@gentoo.org>,
+	Chris Mason <chris.mason@oracle.com>
+To: Sergei Trofimovich <slyich@gmail.com>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
+In-Reply-To: <1333372202-627-2-git-send-email-slyich@gmail.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hey guys,
-I have done some work about triple-parity RAID and is posted in
-linuxquestions.org
-Please go there and search for =A0"Is this enough for us to have
-triple-parity RAID?"
+On Monday 02 of April 2012 17:10:02 Sergei Trofimovich wrote:
+> From: Sergei Trofimovich <slyfox@gentoo.org>
+> 
+> CC: Chris Mason <chris.mason@oracle.com>
+> Signed-off-by: Sergei Trofimovich <slyfox@gentoo.org>
+> ---
+>  Makefile |    6 +++---
+>  1 files changed, 3 insertions(+), 3 deletions(-)
+> 
+> diff --git a/Makefile b/Makefile
+> index ebfd5c8..9694444 100644
+> --- a/Makefile
+> +++ b/Makefile
+> @@ -101,15 +101,15 @@ ioctl-test: $(objects) ioctl-test.o
+>  	$(CC) $(CFLAGS) -o ioctl-test $(objects) ioctl-test.o $(LDFLAGS) $(LIBS)
+>  
+>  manpages:
+> -	cd man; make
+> +	cd man; $(MAKE)
+>  
+>  install-man:
+> -	cd man; make install
+> +	cd man; $(MAKE) install
+>  
+>  clean :
+>  	rm -f $(progs) cscope.out *.o .*.d btrfs-convert btrfs-image btrfs-select-super \
+>  	      btrfs-zero-log btrfstune dir-test ioctl-test quick-test version.h
+> -	cd man; make clean
+> +	cd man; $(MAKE) clean
+>  
+>  install: $(progs) install-man
+>  	$(INSTALL) -m755 -d $(DESTDIR)$(bindir)
+> -- 
 
-As a die-hard follower of Linux, I truly wish btrfs would
-have =A0triple-parity RAID integrated in the future. For those who are
-interested, why
-don't you go take a look and give me some feedback.
+Resonable.
 
-creamyfish
---
-To unsubscribe from this list: send the line "unsubscribe linux-btrfs" =
-in
-the body of a message to majordomo@vger.kernel.org
-More majordomo info at  http://vger.kernel.org/majordomo-info.html
+Reviewed-by: Sergey V. <sftp.mtuci@gmail.com>
+
+for both patches.
+
+Thanks

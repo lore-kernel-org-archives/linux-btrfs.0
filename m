@@ -1,104 +1,56 @@
-From: Jan Kara <jack@suse.cz>
-Subject: [PATCH 11/27] btrfs: Push mnt_want_write() outside of i_mutex
-Date: Mon, 16 Apr 2012 18:13:49 +0200
-Message-ID: <1334592845-22862-12-git-send-email-jack@suse.cz>
+From: Andreas Dilger <adilger@whamcloud.com>
+Subject: Re: [PATCH 00/19 v5] Fix filesystem freezing deadlocks
+Date: Mon, 16 Apr 2012 15:02:50 -0700
+Message-ID: <C9A0E2F0-ED57-40D6-9F75-5D72D45D21F0@dilger.ca>
 References: <1334592845-22862-1-git-send-email-jack@suse.cz>
-Cc: dchinner@redhat.com, LKML <linux-kernel@vger.kernel.org>,
-	linux-fsdevel@vger.kernel.org, Jan Kara <jack@suse.cz>,
-	Chris Mason <chris.mason@oracle.com>,
-	linux-btrfs@vger.kernel.org
-To: Al Viro <viro@ZenIV.linux.org.uk>
+Mime-Version: 1.0 (Apple Message framework v1084)
+Content-Type: text/plain; charset=us-ascii
+Cc: Al Viro <viro@ZenIV.linux.org.uk>, dchinner@redhat.com,
+	LKML <linux-kernel@vger.kernel.org>,
+	linux-fsdevel@vger.kernel.org, Alex Elder <elder@kernel.org>,
+	Anton Altaparmakov <anton@tuxera.com>, Ben Myers <bpm@sgi.com>,
+	Chris Mason <chris.mason@oracle.com>, cluster-devel@redhat.com,
+	"David S. Miller" <davem@davemloft.net>,
+	fuse-devel@lists.sourceforge.net,
+	"J. Bruce Fields" <bfields@fieldses.org>,
+	Joel Becker <jlbec@evilplan.org>,
+	KONISHI Ryusuke <konishi.ryusuke@lab.ntt.co.jp>,
+	linux-btrfs@vger.kernel.org, linux-ext4@vger.kernel.org,
+	linux-nfs@vger.kernel.org, linux-nilfs@vger.kernel.org,
+	linux-ntfs-dev@lists.sourceforge.net,
+	Mark Fasheh <mfasheh@suse.com>,
+	Miklos Szeredi <miklos@szeredi.hu>, ocfs2-devel@oss.oracle.com,
+	OGAWA Hirofumi <hirofumi@mail.parknet.co.jp>,
+	Steven Whitehouse <swhiteho@redhat.com>,
+	"Theodore Ts'o" <tytso@mit.edu>, xfs@oss.sgi.com
+To: Jan Kara <jack@suse.cz>
 Return-path: <linux-kernel-owner@vger.kernel.org>
 In-Reply-To: <1334592845-22862-1-git-send-email-jack@suse.cz>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-When mnt_want_write() starts to handle freezing it will get a full lock
-semantics requiring proper lock ordering. So push mnt_want_write() call
-consistently outside of i_mutex.
+On 2012-04-16, at 9:13 AM, Jan Kara wrote:
+> Another potential contention point might be patch 19. In that patch
+> we make freeze_super() refuse to freeze the filesystem when there
+> are open but unlinked files which may be impractical in some cases.
+> The main reason for this is the problem with handling of file deletion
+> from fput() called with mmap_sem held (e.g. from munmap(2)), and
+> then there's the fact that we cannot really force such filesystem
+> into a consistent state... But if people think that freezing with
+> open but unlinked files should happen, then I have some possible
+> solutions in mind (maybe as a separate patchset since this is
+> large enough).
 
-CC: Chris Mason <chris.mason@oracle.com>
-CC: linux-btrfs@vger.kernel.org
-Signed-off-by: Jan Kara <jack@suse.cz>
----
- fs/btrfs/ioctl.c |   23 +++++++++++------------
- 1 files changed, 11 insertions(+), 12 deletions(-)
+Looking at a desktop system, I think it is very typical that there
+are open-unlinked files present, so I don't know if this is really
+an acceptable solution.  It isn't clear from your comments whether
+this is a blanket refusal for all open-unlinked files, or only in
+some particular cases...
 
-diff --git a/fs/btrfs/ioctl.c b/fs/btrfs/ioctl.c
-index 18cc23d..869d913 100644
---- a/fs/btrfs/ioctl.c
-+++ b/fs/btrfs/ioctl.c
-@@ -192,6 +192,10 @@ static int btrfs_ioctl_setflags(struct file *file, void __user *arg)
- 	if (!inode_owner_or_capable(inode))
- 		return -EACCES;
- 
-+	ret = mnt_want_write_file(file);
-+	if (ret)
-+		return ret;
-+
- 	mutex_lock(&inode->i_mutex);
- 
- 	ip_oldflags = ip->flags;
-@@ -206,10 +210,6 @@ static int btrfs_ioctl_setflags(struct file *file, void __user *arg)
- 		}
- 	}
- 
--	ret = mnt_want_write_file(file);
--	if (ret)
--		goto out_unlock;
--
- 	if (flags & FS_SYNC_FL)
- 		ip->flags |= BTRFS_INODE_SYNC;
- 	else
-@@ -271,9 +271,9 @@ static int btrfs_ioctl_setflags(struct file *file, void __user *arg)
- 		inode->i_flags = i_oldflags;
- 	}
- 
--	mnt_drop_write_file(file);
-  out_unlock:
- 	mutex_unlock(&inode->i_mutex);
-+	mnt_drop_write_file(file);
- 	return ret;
- }
- 
-@@ -639,6 +639,10 @@ static noinline int btrfs_mksubvol(struct path *parent,
- 	struct dentry *dentry;
- 	int error;
- 
-+	error = mnt_want_write(parent->mnt);
-+	if (error)
-+		return error;
-+
- 	mutex_lock_nested(&dir->i_mutex, I_MUTEX_PARENT);
- 
- 	dentry = lookup_one_len(name, parent->dentry, namelen);
-@@ -650,13 +654,9 @@ static noinline int btrfs_mksubvol(struct path *parent,
- 	if (dentry->d_inode)
- 		goto out_dput;
- 
--	error = mnt_want_write(parent->mnt);
--	if (error)
--		goto out_dput;
--
- 	error = btrfs_may_create(dir, dentry);
- 	if (error)
--		goto out_drop_write;
-+		goto out_dput;
- 
- 	down_read(&BTRFS_I(dir)->root->fs_info->subvol_sem);
- 
-@@ -674,12 +674,11 @@ static noinline int btrfs_mksubvol(struct path *parent,
- 		fsnotify_mkdir(dir, dentry);
- out_up_read:
- 	up_read(&BTRFS_I(dir)->root->fs_info->subvol_sem);
--out_drop_write:
--	mnt_drop_write(parent->mnt);
- out_dput:
- 	dput(dentry);
- out_unlock:
- 	mutex_unlock(&dir->i_mutex);
-+	mnt_drop_write(parent->mnt);
- 	return error;
- }
- 
--- 
-1.7.1
+lsof | grep deleted
+nautilus  25393  adilger   19r      REG           253,0      340     253954 /home/adilger/.local/share/gvfs-metadata/home (deleted)
+nautilus  25393  adilger   20r      REG           253,0    32768     253964 /home/adilger/.local/share/gvfs-metadata/home-f332a8f3.log (deleted)
+gnome-ter 25623  adilger   22u      REG            0,18    17841    2717846 /tmp/vtePIRJCW (deleted)
+gnome-ter 25623  adilger   23u      REG            0,18     5568    2717847 /tmp/vteDCSJCW (deleted)
+gnome-ter 25623  adilger   29u      REG            0,18      480    2728484 /tmp/vte6C1TCW (deleted)
+
+Cheers, Andreas

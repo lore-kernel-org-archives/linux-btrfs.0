@@ -1,122 +1,87 @@
-From: Olivier Doucet <webmaster@ajeux.com>
-Subject: Kernel bug in BTRFS (kernel 3.3.0)
-Date: Tue, 17 Apr 2012 11:23:27 +0200
-Message-ID: <CAPPqfY0T7KmTx=5tcwbUs-zZcB+-yxf01-CWFWY7LUqxepAuNg@mail.gmail.com>
+From: Jan Kara <jack@suse.cz>
+Subject: Re: [PATCH 00/19 v5] Fix filesystem freezing deadlocks
+Date: Tue, 17 Apr 2012 11:32:46 +0200
+Message-ID: <20120417093246.GD7198@quack.suse.cz>
+References: <1334592845-22862-1-git-send-email-jack@suse.cz>
+ <C9A0E2F0-ED57-40D6-9F75-5D72D45D21F0@dilger.ca>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=ISO-8859-1
-To: linux-btrfs@vger.kernel.org
-Return-path: <linux-btrfs-owner@vger.kernel.org>
+Content-Type: text/plain; charset=us-ascii
+Cc: Jan Kara <jack@suse.cz>, Al Viro <viro@ZenIV.linux.org.uk>,
+	dchinner@redhat.com, LKML <linux-kernel@vger.kernel.org>,
+	linux-fsdevel@vger.kernel.org, Alex Elder <elder@kernel.org>,
+	Anton Altaparmakov <anton@tuxera.com>, Ben Myers <bpm@sgi.com>,
+	Chris Mason <chris.mason@oracle.com>, cluster-devel@redhat.com,
+	"David S. Miller" <davem@davemloft.net>,
+	fuse-devel@lists.sourceforge.net,
+	"J. Bruce Fields" <bfields@fieldses.org>,
+	Joel Becker <jlbec@evilplan.org>,
+	KONISHI Ryusuke <konishi.ryusuke@lab.ntt.co.jp>,
+	linux-btrfs@vger.kernel.org, linux-ext4@vger.kernel.org,
+	linux-nfs@vger.kernel.org, linux-nilfs@vger.kernel.org,
+	linux-ntfs-dev@lists.sourceforge.net,
+	Mark Fasheh <mfasheh@suse.com>,
+	Miklos Szeredi <miklos@szeredi.hu>, ocfs2-devel@oss.oracle.com,
+	OGAWA Hirofumi <hirofumi@mail.parknet.co.jp>,
+	Steven Whitehouse <swhiteho@redhat.com>,
+	Theodore Ts'o <tytso@mit.edu>, xfs@os
+To: Andreas Dilger <adilger@whamcloud.com>
+Return-path: <linux-ext4-owner@vger.kernel.org>
+In-Reply-To: <C9A0E2F0-ED57-40D6-9F75-5D72D45D21F0@dilger.ca>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hi,
+On Mon 16-04-12 15:02:50, Andreas Dilger wrote:
+> On 2012-04-16, at 9:13 AM, Jan Kara wrote:
+> > Another potential contention point might be patch 19. In that patch
+> > we make freeze_super() refuse to freeze the filesystem when there
+> > are open but unlinked files which may be impractical in some cases.
+> > The main reason for this is the problem with handling of file deletion
+> > from fput() called with mmap_sem held (e.g. from munmap(2)), and
+> > then there's the fact that we cannot really force such filesystem
+> > into a consistent state... But if people think that freezing with
+> > open but unlinked files should happen, then I have some possible
+> > solutions in mind (maybe as a separate patchset since this is
+> > large enough).
+> 
+> Looking at a desktop system, I think it is very typical that there
+> are open-unlinked files present, so I don't know if this is really
+> an acceptable solution.  It isn't clear from your comments whether
+> this is a blanket refusal for all open-unlinked files, or only in
+> some particular cases...
+  Thanks for looking at this. It is currently a blanket refusal. And I
+agree it's problematic. There are two problems with open but unlinked
+files.
 
-Doing some extensive benchmarks on BTRFS, I encountered a kernel bug
-in BTRFS (as reported in dmesg)
+One is that some old filesystems cannot get in a consistent state in
+presence of open but unlinked files but for filesystems we really care
+about - xfs, ext4, ext3, btrfs, or even ocfs2, gfs2 - that is not a real
+issue (these filesystems will delete those inodes on next mount read-write).
 
-Maybe the information below can help you making btrfs better.
+The other problem is with what should happen when you put last inode
+reference on a frozen filesystem. Two possibilities I see are:
 
-Situation
-Doing an intensive sequential write on a SAS 3TB disk drive (SEAGATE
-ST33000652SS) with 128 threads with Sysbench.
-Device is connected through an HBA. Blocksize was 256k ; Kernel is
-3.3.0 (x86_64) ; Btrfs is version v0.19
+a) block the iput() call - that is inconvenient because it can be
+called in various contexts. I think we could possibly use the same level of
+freeze protection as for page fault (this has changed since I originally
+thought about this and that would make things simpler) but I'm not
+completely sure.
 
-Write is done through an LVS volume formated with BTRFS of course;
-Mount options are : rw,noatime,nodiratime,compress=3Dlzo,nospace_cache
+b) let the iput finish but filesystem will keep inode on its orphan list
+(or it's equivalent) and the inode will be deleted after the filesystem is
+thawed. The advantage of this is we don't have to block iput(), the
+disadvantage is we have to have filesystem support and not all filesystems
+can do this.
 
-Dmesg gives me following error :
+Any thoughts?
 
-[370517.203926] sd 0:0:15:0: [sdo] Device not ready
-[370517.203930] sd 0:0:15:0: [sdo] =A0Result: hostbyte=3DDID_OK
-driverbyte=3DDRIVER_SENSE
-[370517.203935] sd 0:0:15:0: [sdo] =A0Sense Key : Not Ready [current]
-[370517.203940] sd 0:0:15:0: [sdo] =A0ASC=3D0x4 <<vendor>> ASCQ=3D0xf2
-[370517.203946] sd 0:0:15:0: [sdo] CDB: Write(10): 2a 00 00 00 6a 00 00=
- 00 80 00
-[370517.203955] end_request: I/O error, dev sdo, sector 27136
-[370517.204236] sd 0:0:15:0: [sdo] Device not ready
-[370517.204240] sd 0:0:15:0: [sdo] =A0Result: hostbyte=3DDID_OK
-driverbyte=3DDRIVER_SENSE
-[370517.204244] sd 0:0:15:0: [sdo] =A0Sense Key : Not Ready [current]
-[370517.204249] sd 0:0:15:0: [sdo] =A0ASC=3D0x4 <<vendor>> ASCQ=3D0xf2
-[370517.204255] sd 0:0:15:0: [sdo] CDB: Write(10): 2a 00 00 00 08 80 00=
- 00 08 00
-[370517.204265] end_request: I/O error, dev sdo, sector 2176
-[370517.204283] lost page write due to I/O error on dm-5
-[370517.204350] btrfs: 1 errors while writing supers
-[370517.204376] ------------[ cut here ]------------
-[370517.204391] kernel BUG at fs/btrfs/disk-io.c:2880!
-[370517.204406] invalid opcode: 0000 [#1] SMP
-[370517.204423] CPU 2
-[370517.204436] Pid: 8790, comm: sysbench Not tainted 3.3.0-oxeva #2
-Supermicro X8DTT-H/X8DTT-H
-[370517.204482] RIP: 0010:[<ffffffff81389e63>] =A0[<ffffffff81389e63>]
-write_all_supers+0x833/0x840
-[370517.204508] RSP: 0018:ffff880e52f63b68 =A0EFLAGS: 00010292
-[370517.204522] RAX: 000000000000003b RBX: ffff88100ef81f38 RCX:
-0000000000000068
-[370517.204539] RDX: 0000000000000000 RSI: 0000000000000046 RDI:
-ffffffff81f9c6b0
-[370517.204556] RBP: ffff880e52f63bd8 R08: 0000000000000000 R09:
-ffffffff81bba980
-[370517.204573] R10: 0000000000000001 R11: 0000000000000000 R12:
-ffff880e52f63ba0
-[370517.204592] R13: ffff88100ef81f38 R14: ffff881010902000 R15:
-0000000000000001
-[370517.204829] FS: =A000007f3a2300c700(0000) GS:ffff88081fc40000(0000)
-knlGS:0000000000000000
-[370517.204954] CS: =A00010 DS: 0000 ES: 0000 CR0: 000000008005003b
-[370517.205024] CR2: 00007f3a24b9e998 CR3: 0000000ce9963000 CR4:
-00000000000006e0
-[370517.205147] DR0: 0000000000000000 DR1: 0000000000000000 DR2:
-0000000000000000
-[370517.205269] DR3: 0000000000000000 DR6: 00000000ffff0ff0 DR7:
-0000000000000400
-[370517.205393] Process sysbench (pid: 8790, threadinfo
-ffff880e52f62000, task ffff881008902880)
-[370517.205519] Stack:
-[370517.205580] =A0ffff88101090210b ffff88100ef81ec0 0000000052f63ba8
-0000000100000001
-[370517.205716] =A0ffff881010d59000 ffff881000000001 ffff880811d87400
-ffff88100ef81f38
-[370517.205849] =A000000013c4a03fff ffff880ff058d000 ffff880811d87400
-ffff881002a915a0
-[370517.205984] Call Trace:
-[370517.206049] =A0[<ffffffff81389e7e>] write_ctree_super+0xe/0x10
-[370517.206119] =A0[<ffffffff813c24b4>] btrfs_sync_log+0x424/0x5c0
-[370517.206190] =A0[<ffffffff8139e9cb>] btrfs_sync_file+0x17b/0x1e0
-[370517.206260] =A0[<ffffffff81160703>] vfs_fsync_range+0x23/0x30
-[370517.206329] =A0[<ffffffff8116076c>] generic_write_sync+0x3c/0x40
-[370517.206399] =A0[<ffffffff8139f4a7>] btrfs_file_aio_write+0x317/0x53=
-0
-[370517.206472] =A0[<ffffffff8113556a>] do_sync_write+0xda/0x120
-[370517.206544] =A0[<ffffffff8110037f>] ? handle_mm_fault+0x1af/0x320
-[370517.206614] =A0[<ffffffff81135ab8>] vfs_write+0xc8/0x190
-[370517.206682] =A0[<ffffffff81135c12>] sys_pwrite64+0x92/0xa0
-[370517.206753] =A0[<ffffffff81aa82e2>] system_call_fastpath+0x16/0x1b
-[370517.206820] Code: e9 72 fe ff ff 44 89 d6 48 c7 c7 b8 68 d2 81 31
-c0 e8 43 b1 71 00 0f 0b eb fe 8b 75 b8 48 c7 c7 b8 68 d2 81 31 c0 e8
-2e b1 71 00 <0f> 0b eb fe 66 0f 1f 84 00 00 00 00 00 55 48 89 f7 48 89
-e5 89
-[370517.207167] RIP =A0[<ffffffff81389e63>] write_all_supers+0x833/0x84=
-0
-[370517.207239] =A0RSP <ffff880e52f63b68>
-[370517.207673] ---[ end trace f208fa157676276c ]---
-
-
-I don't know if the device failed because BTRFS did something wrong,
-or if BTRFS failed because of the device.
-
-After this error, device cannot be accessed anymore (stuck and fdisk
-returned no info, neither do smartctl - just 'device busy').
-
-By the way, I'm actually doing some extensive benchmarks, comparing
-BTRFS with XFS or EXT4. I'll post results on this mailing list in a
-few days, I'm sure it can be interested for you.
-
-Olivier
---
-To unsubscribe from this list: send the line "unsubscribe linux-btrfs" =
-in
-the body of a message to majordomo@vger.kernel.org
-More majordomo info at  http://vger.kernel.org/majordomo-info.html
+								Honza
+> 
+> lsof | grep deleted
+> nautilus  25393  adilger   19r      REG           253,0      340     253954 /home/adilger/.local/share/gvfs-metadata/home (deleted)
+> nautilus  25393  adilger   20r      REG           253,0    32768     253964 /home/adilger/.local/share/gvfs-metadata/home-f332a8f3.log (deleted)
+> gnome-ter 25623  adilger   22u      REG            0,18    17841    2717846 /tmp/vtePIRJCW (deleted)
+> gnome-ter 25623  adilger   23u      REG            0,18     5568    2717847 /tmp/vteDCSJCW (deleted)
+> gnome-ter 25623  adilger   29u      REG            0,18      480    2728484 /tmp/vte6C1TCW (deleted)
+  
+-- 
+Jan Kara <jack@suse.cz>
+SUSE Labs, CR

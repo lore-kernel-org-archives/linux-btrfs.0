@@ -1,94 +1,76 @@
-From: "Marco L. Crociani" <marco.crociani@gmail.com>
-Subject: Re: Errors in rebalancing RAID1 array after disk failure.
-Date: Tue, 17 Apr 2012 02:25:52 +0200
-Message-ID: <CADy=jfW6rrSwPV6WvKVhcRYd67GMvB57ynSZOjPuDUnnssgZYg@mail.gmail.com>
-References: <CADy=jfVRz5UuKcFkDXC9hwZnP8Z=E9NuF9p3hE6b0ZC06k7DWg@mail.gmail.com>
- <CADy=jfWC1vJs_TWt-EmvAN2Ybqw8kjN2tFV_vgAb-OKeGMpotg@mail.gmail.com>
- <CADy=jfV9pKJurcormuMK7KW54-DKSvYns-Ow-T_FEELGmFQ18Q@mail.gmail.com>
- <20120416134643.GA20982@twin.jikos.cz> <CADy=jfVh8ZvyyJTdBBFTVRSnBHka8sNrVUQcEx_ciROdB=pYhQ@mail.gmail.com>
+From: Dave Chinner <david@fromorbit.com>
+Subject: Re: [PATCH 00/19 v5] Fix filesystem freezing deadlocks
+Date: Tue, 17 Apr 2012 10:43:29 +1000
+Message-ID: <20120417004329.GE6734@dastard>
+References: <1334592845-22862-1-git-send-email-jack@suse.cz>
+ <C9A0E2F0-ED57-40D6-9F75-5D72D45D21F0@dilger.ca>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=UTF-8
-To: dave@jikos.cz, "Marco L. Crociani" <marco.crociani@gmail.com>,
-	linux-btrfs@vger.kernel.org
-Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <CADy=jfVh8ZvyyJTdBBFTVRSnBHka8sNrVUQcEx_ciROdB=pYhQ@mail.gmail.com>
+Content-Type: text/plain; charset=us-ascii
+Cc: Jan Kara <jack@suse.cz>, Al Viro <viro@ZenIV.linux.org.uk>,
+	dchinner@redhat.com, LKML <linux-kernel@vger.kernel.org>,
+	linux-fsdevel@vger.kernel.org, Alex Elder <elder@kernel.org>,
+	Anton Altaparmakov <anton@tuxera.com>, Ben Myers <bpm@sgi.com>,
+	Chris Mason <chris.mason@oracle.com>, cluster-devel@redhat.com,
+	"David S. Miller" <davem@davemloft.net>,
+	fuse-devel@lists.sourceforge.net,
+	"J. Bruce Fields" <bfields@fieldses.org>,
+	Joel Becker <jlbec@evilplan.org>,
+	KONISHI Ryusuke <konishi.ryusuke@lab.ntt.co.jp>,
+	linux-btrfs@vger.kernel.org, linux-ext4@vger.kernel.org,
+	linux-nfs@vger.kernel.org, linux-nilfs@vger.kernel.org,
+	linux-ntfs-dev@lists.sourceforge.net,
+	Mark Fasheh <mfasheh@suse.com>,
+	Miklos Szeredi <miklos@szeredi.hu>, ocfs2-devel@oss.oracle.com,
+	OGAWA Hirofumi <hirofumi@mail.parknet.co.jp>,
+	Steven Whitehouse <swhiteho@redhat.com>,
+	Theodore Ts'o <tytso@mit.edu>, xfs@os
+To: Andreas Dilger <adilger@whamcloud.com>
+Return-path: <linux-ext4-owner@vger.kernel.org>
+In-Reply-To: <C9A0E2F0-ED57-40D6-9F75-5D72D45D21F0@dilger.ca>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Tue, Apr 17, 2012 at 12:56 AM, Marco L. Crociani
-<marco.crociani@gmail.com> wrote:
-> On Mon, Apr 16, 2012 at 3:46 PM, David Sterba <dave@jikos.cz> wrote:
->> On Sat, Apr 14, 2012 at 06:39:12PM +0200, Marco L. Crociani wrote:
->>> Apr 14 18:07:52 evo kernel: [=C2=A0 431.054709] btrfs: relocating b=
-lock
->>> group 1401002393600 flags 17
->>> Apr 14 18:08:14 evo kernel: [=C2=A0 453.506541] btrfs csum failed i=
-no 362
->>> off 910946304 csum 432355644 private 175165154
->>
->> The failed checksums prevent balance to relocate the blockgroup, whi=
-ch
->> is a needed step during 'dev delete'. Unless the csum is fixable by
->> using another copy, I think the only option left is to delete the fi=
-le
->> (not counting the unsafe way of resetting the block's cheksum).
->>
->
-> I deleted the files.
-> (" find /mnt/sda3 -inum 362 -ls " is correct to find them? )
->
-> Now it gives me errors on inode 257
-> I deleted a file but it still gives me errors on inode 257 but "find
-> /mnt/sda3 -inum 257 -ls" gives me nothing now.
->
-> Apr 17 00:41:49 evo kernel: [ =C2=A0156.530441] device label RootFS d=
-evid 1
-> transid 47037 /dev/sda3
-> Apr 17 00:41:49 evo kernel: [ =C2=A0156.734993] device label RootFS d=
-evid 3
-> transid 47037 /dev/sdb3
-> Apr 17 00:42:12 evo kernel: [ =C2=A0179.496155] device label RootFS d=
-evid 1
-> transid 47037 /dev/sda3
-> Apr 17 00:42:12 evo kernel: [ =C2=A0179.496881] btrfs: allowing degra=
-ded mounts
-> Apr 17 00:42:12 evo kernel: [ =C2=A0179.496888] btrfs: disk space cac=
-hing is enabled
-> Apr 17 00:42:24 evo kernel: [ =C2=A0191.290093] btrfs: relocating blo=
-ck
-> group 1401002393600 flags 17
-> Apr 17 00:42:53 evo kernel: [ =C2=A0220.417535] btrfs csum failed ino=
- 257
-> off 910946304 csum 432355644 private 175165154
-> Apr 17 00:42:53 evo kernel: [ =C2=A0220.480570] btrfs csum failed ino=
- 257
-> off 910946304 csum 432355644 private 175165154
-> Apr 17 00:42:53 evo kernel: [ =C2=A0220.480868] btrfs csum failed ino=
- 257
-> off 910946304 csum 432355644 private 175165154
-> Apr 17 00:42:53 evo kernel: [ =C2=A0220.505168] btrfs csum failed ino=
- 257
-> off 910946304 csum 432355644 private 175165154
-> Apr 17 00:42:53 evo kernel: [ =C2=A0220.528368] btrfs csum failed ino=
- 257
-> off 910946304 csum 432355644 private 175165154
->
->
-> --
-> Marco Lorenzo Crociani,
+On Mon, Apr 16, 2012 at 03:02:50PM -0700, Andreas Dilger wrote:
+> On 2012-04-16, at 9:13 AM, Jan Kara wrote:
+> > Another potential contention point might be patch 19. In that patch
+> > we make freeze_super() refuse to freeze the filesystem when there
+> > are open but unlinked files which may be impractical in some cases.
+> > The main reason for this is the problem with handling of file deletion
+> > from fput() called with mmap_sem held (e.g. from munmap(2)), and
+> > then there's the fact that we cannot really force such filesystem
+> > into a consistent state... But if people think that freezing with
+> > open but unlinked files should happen, then I have some possible
+> > solutions in mind (maybe as a separate patchset since this is
+> > large enough).
+> 
+> Looking at a desktop system, I think it is very typical that there
+> are open-unlinked files present, so I don't know if this is really
+> an acceptable solution.  It isn't clear from your comments whether
+> this is a blanket refusal for all open-unlinked files, or only in
+> some particular cases...
+> 
+> lsof | grep deleted
+> nautilus  25393  adilger   19r      REG           253,0      340     253954 /home/adilger/.local/share/gvfs-metadata/home (deleted)
+> nautilus  25393  adilger   20r      REG           253,0    32768     253964 /home/adilger/.local/share/gvfs-metadata/home-f332a8f3.log (deleted)
+> gnome-ter 25623  adilger   22u      REG            0,18    17841    2717846 /tmp/vtePIRJCW (deleted)
+> gnome-ter 25623  adilger   23u      REG            0,18     5568    2717847 /tmp/vteDCSJCW (deleted)
+> gnome-ter 25623  adilger   29u      REG            0,18      480    2728484 /tmp/vte6C1TCW (deleted)
 
-Running another time btrfs dev delete missing return a different error
-(something like invalid argument), and no log activity.
-Then umount completely freeze the system. Keyboard's leds start blinkin=
-g.
-Also alt gr + print screen + REISUB doesn't work.
+Unlinked-but-open files are the reason that XFS dirties the log
+after the freeze process is complete. This ensures that if the
+system crashes while the filesystem is frozen then log recovery
+during the next mount will process the unlinked (orphaned) inodes
+and free the correctly. i.e. you can still freeze a filesystem with
+inodes in this state successfully and have everythign behave as
+you'd expect.
 
---=20
-Marco Lorenzo Crociani,
-marco.crociani@gmail.com
-Telefono: +39 02320622509
-=46ax: +39 02700540121
---
-To unsubscribe from this list: send the line "unsubscribe linux-btrfs" =
-in
-the body of a message to majordomo@vger.kernel.org
-More majordomo info at  http://vger.kernel.org/majordomo-info.html
+I'm not sure how other filesystems handle this problem, but perhaps
+pushing this check down into filesystem specific code or adding a
+superblock feature flag might be a way to allow filesystems to
+handle this case in the way they think is best...
+
+Cheers,
+
+Dave.
+-- 
+Dave Chinner
+david@fromorbit.com

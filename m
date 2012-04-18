@@ -1,45 +1,55 @@
-From: Nicholas Tung <gatoatigrado@gmail.com>
-Subject: segmentation fault while running btrfsck
-Date: Wed, 18 Apr 2012 01:34:48 -0700
-Message-ID: <CAH55dvMzcduXnvrGP03cG=mJP7CwJm6mMCv2A3FVR8Rb_GaSNA@mail.gmail.com>
+From: David Sterba <dave@jikos.cz>
+Subject: Re: Kernel bug in BTRFS (kernel 3.3.0)
+Date: Wed, 18 Apr 2012 11:25:42 +0200
+Message-ID: <20120418092542.GE20982@twin.jikos.cz>
+References: <CAPPqfY0T7KmTx=5tcwbUs-zZcB+-yxf01-CWFWY7LUqxepAuNg@mail.gmail.com>
+ <4F8E418A.2020801@oracle.com>
+Reply-To: dave@jikos.cz
 Mime-Version: 1.0
-Content-Type: text/plain; charset=UTF-8
-To: linux-btrfs@vger.kernel.org
+Content-Type: text/plain; charset=us-ascii
+Cc: Olivier Doucet <webmaster@ajeux.com>, linux-btrfs@vger.kernel.org
+To: anand jain <anand.jain@oracle.com>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
+In-Reply-To: <4F8E418A.2020801@oracle.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hi all,
+On Wed, Apr 18, 2012 at 12:22:34PM +0800, anand jain wrote:
+> > [370517.204350] btrfs: 1 errors while writing supers
+> > [370517.204376] ------------[ cut here ]------------
+> > [370517.204391] kernel BUG at fs/btrfs/disk-io.c:2880!
+> 
+>   -----------
+>       if (total_errors > max_errors) {
+>           printk(KERN_ERR "btrfs: %d errors while writing supers\n",
+>                  total_errors);
+>           /* This shouldn't happen. FUA is masked off if unsupported */
+>           BUG();
+>       }
+>   -----------
 
-    One of my btrfs volumes got corrupted, and seems to be
-unrecoverable. When I tried to run a recent version of btrfsck (built
-from git), it crashed with a segmentation fault. I have a file
-containing the first 8 GB (copied with "dd if=3D/dev/sda5 ..."), which
-seems to reproduce the segmentation fault when using the btrfsck tool.
-The volume shouldn't have any too-personal files (a different
-partition handles "/home"), so I'm comfortable sharing it with any
-longstanding btrfs developers (yeah, "/etc/passwd", but ... whatever).
-I have access to a machine on UC Berkeley's network (w/ fast internet
-access), so the 8GB shouldn't be a problem. Also, here is the output
-from btrfsck (the "** Segmentation Fault **" is my annotation -- I
-think it's printed by the shell according btrfsck's error code),
-http://pastebin.com/3txgBn71 .
+This is what versions up to 3.3 do.
 
-    I do need to use my computer, so I reformatted the partition with
-ext4 after I couldn't get my data back. I hope this error can help
-development of BTRFS though; it seems like a very promising
-filesystem. A final note: the corruption of my partition was likely
-due to some hardware instability problems -- it could either be
-related to the SATA controller (some of the earlier Intel H67 Sandy
-Bridge motherboards like mine had issues), bad SATA cables, or new SSD
-(though, I ran badblocks, and it seemed okay ... and very fast, yay!).
-The disk would unmount, and wouldn't be recognized by the motherboard
-until I left the system off for a while.
+> 
+>   accessible disk(s) is(are) below the critical number of disk(s),
+>   btrfs has limited choice. IMO instead of BUG, we could have a
+>   user configurable choice to either panic or fail-pending-IO,
+>   dump and force-unmount.
 
-Thanks,
-Nicholas =E2=80=94=C2=A0https://ntung.com=C2=A0=E2=80=94=C2=A04432-nstu=
-ng
---
-To unsubscribe from this list: send the line "unsubscribe linux-btrfs" =
-in
-the body of a message to majordomo@vger.kernel.org
-More majordomo info at  http://vger.kernel.org/majordomo-info.html
+With 3.4-rc the BUG is not there, -EIO is returned and the filesystem
+goes readonly. Something like the following output, triggered by
+echo 1 > /sys/block/DEV/device/delete
+
+[27712.760344] sd 6:0:0:0: [sdg] Synchronizing SCSI cache
+[27712.760448] sd 6:0:0:0: [sdg] Stopping disk
+[27712.762771] ata6.00: disabled
+[27732.780063] BTRFS error (device sdg1) in btree_writepage_io_failed_hook:3735: IO failure (Error occured while writing out btree at 29442048)
+[27732.780072] btrfs is forced readonly
+[27732.780081] BTRFS error (device sdg1) in btree_writepage_io_failed_hook:3735: IO failure (Error occured while writing out btree at 29437952)
+[27732.780090] BTRFS error (device sdg1) in btree_writepage_io_failed_hook:3735: IO failure (Error occured while writing out btree at 29433856)
+[27732.780121] BTRFS error (device sdg1) in btrfs_commit_transaction:1455: IO failure (Error while writing out transaction.)
+[27732.780131] BTRFS warning (device sdg1): Skipping commit of aborted transaction.
+[27732.780137] delayed_refs has NO entry
+[27732.780714] ata6: hard resetting link
+
+
+david

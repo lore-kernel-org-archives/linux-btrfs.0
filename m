@@ -1,24 +1,46 @@
 From: David Sterba <dave@jikos.cz>
-Subject: Re: [patch 1/2] Btrfs: double unlock bug in error handling
-Date: Wed, 18 Apr 2012 12:14:07 +0200
-Message-ID: <20120418101407.GG20982@twin.jikos.cz>
-References: <20120418065903.GE12831@elgon.mountain>
+Subject: Re: [PATCH] Btrfs: always store the mirror we read the eb from
+Date: Wed, 18 Apr 2012 12:44:07 +0200
+Message-ID: <20120418104407.GH20982@twin.jikos.cz>
+References: <1334583746-3332-1-git-send-email-josef@redhat.com>
 Reply-To: dave@jikos.cz
 Mime-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
-Cc: Chris Mason <chris.mason@oracle.com>,
-	Jeff Mahoney <jeffm@suse.com>, linux-btrfs@vger.kernel.org,
-	kernel-janitors@vger.kernel.org
-To: Dan Carpenter <dan.carpenter@oracle.com>
+Cc: linux-btrfs@vger.kernel.org
+To: Josef Bacik <josef@redhat.com>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <20120418065903.GE12831@elgon.mountain>
+In-Reply-To: <1334583746-3332-1-git-send-email-josef@redhat.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Wed, Apr 18, 2012 at 09:59:03AM +0300, Dan Carpenter wrote:
-> The caller expects this function to return with the lock held and
-> releases it immediately on error.
-> 
-> Signed-off-by: Dan Carpenter <dan.carpenter@oracle.com>
-Reviewed-by: David Sterba <dsterba@suse.cz>
+On Mon, Apr 16, 2012 at 09:42:26AM -0400, Josef Bacik wrote:
+> --- a/fs/btrfs/disk-io.c
+> +++ b/fs/btrfs/disk-io.c
+> @@ -390,8 +390,7 @@ static int btree_read_extent_buffer_pages(struct btrfs_root *root,
+>  
+>  		if (!failed_mirror) {
+>  			failed = 1;
+> -			printk(KERN_ERR "failed mirror was %d\n", eb->failed_mirror);
+> -			failed_mirror = eb->failed_mirror;
+> +			failed_mirror = eb->read_mirror;
+>  		}
+>  
+>  		mirror_num++;
 
-Good catch, thanks.
+this hunk does not apply for me (on top of master or for-linus), there's
+a different context. In your version the
+
+	if (!failed_mirror)
+
+check is moved after
+
+ 392                 num_copies = btrfs_num_copies(&root->fs_info->mapping_tree,
+ 393                                               eb->start, eb->len);
+ 394                 if (num_copies == 1)
+ 395                         break;
+ 396
+
+which was one of the incremental patches sent for testing, but it's
+needed.
+
+
+david

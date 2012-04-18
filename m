@@ -1,22 +1,51 @@
 From: Chris Samuel <chris@csamuel.org>
-Subject: Re: [PATCH] btrfs: don't return EINTR
-Date: Wed, 18 Apr 2012 09:39:17 +1000
-Message-ID: <4F8DFF25.9070506@csamuel.org>
-References: <1334408175-6568-1-git-send-email-sensille@gmx.net> <4F8D7B04.9050904@gmx.net> <20120417152401.GL28915@shiny> <20120417182219.GA4143@localhost.localdomain> <4F8DBCCB.10904@gmx.net> <20120417191424.GB4143@localhost.localdomain> <20120417193417.GU28915@shiny> <20120417193619.GC4143@localhost.localdomain> <20120417193843.GV28915@shiny> <4F8DC7C8.3070907@gmx.net>
+Subject: Re: [PATCH 00/19 v5] Fix filesystem freezing deadlocks
+Date: Wed, 18 Apr 2012 10:46:55 +1000
+Message-ID: <4F8E0EFF.4090007@csamuel.org>
+References: <1334592845-22862-1-git-send-email-jack@suse.cz> <C9A0E2F0-ED57-40D6-9F75-5D72D45D21F0@dilger.ca> <20120417004329.GE6734@dastard> <141752A3-EDF1-4ABC-919D-4170B0455948@whamcloud.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset=ISO-8859-1
-To: linux-btrfs@vger.kernel.org
+Cc: Dave Chinner <david@fromorbit.com>, Jan Kara <jack@suse.cz>,
+	Al Viro <viro@ZenIV.linux.org.uk>, dchinner@redhat.com,
+	LKML <linux-kernel@vger.kernel.org>,
+	linux-fsdevel@vger.kernel.org, Alex Elder <elder@kernel.org>,
+	Anton Altaparmakov <anton@tuxera.com>, Ben Myers <bpm@sgi.com>,
+	Chris Mason <chris.mason@oracle.com>, cluster-devel@redhat.com,
+	"David S. Miller" <davem@davemloft.net>,
+	fuse-devel@lists.sourceforge.net,
+	"J. Bruce Fields" <bfields@fieldses.org>,
+	Joel Becker <jlbec@evilplan.org>,
+	KONISHI Ryusuke <konishi.ryusuke@lab.ntt.co.jp>,
+	linux-btrfs@vger.kernel.org, linux-ext4@vger.kernel.org,
+	linux-nfs@vger.kernel.org, linux-nilfs@vger.kernel.org,
+	linux-ntfs-dev@lists.sourceforge.net,
+	Mark Fasheh <mfasheh@suse.com>,
+	Miklos Szeredi <miklos@szeredi.hu>, ocfs2-devel@oss.oracle.com,
+	OGAWA Hirofumi <hirofumi@mail.parknet.co.jp>,
+	Steven Whitehouse <swhiteho@redhat.com>,
+To: Andreas Dilger <adilger@whamcloud.com>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <4F8DC7C8.3070907@gmx.net>
+In-Reply-To: <141752A3-EDF1-4ABC-919D-4170B0455948@whamcloud.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 18/04/12 05:43, Arne Jansen wrote:
+On 17/04/12 15:10, Andreas Dilger wrote:
 
-> but not even the manpage states EINTR as return value from unlink.
+> (which IMHO would prevent nearly every Gnome system from freezing unless these
+> apps have changed their behaviour in more recent releases).
 
-Yeah, it's not mentioned in the Single UNIX Spec:
+It would also affect current KDE desktops as they tend to use MySQL for
+Akonadi & Nepomuk, plus anyone using Chromium (and presumably Chrome):
 
-http://pubs.opengroup.org/onlinepubs/9699919799/functions/unlink.html
+samuel@eris:/tmp$ sudo lsof | grep deleted | awk '{print $1}' | sort |
+uniq -c
+[sudo] password for samuel:
+     32 chromium-
+      1 dovecot
+      5 imap-logi
+      5 mysqld
+
+I would be surprised if you could find many systems that didn't have
+files in this situation.
 
 -- 
  Chris Samuel  :  http://www.csamuel.org/  :  Melbourne, VIC

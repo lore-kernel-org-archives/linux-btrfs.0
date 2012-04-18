@@ -1,18 +1,17 @@
-From: Arne Jansen <sensille@gmx.net>
+From: Josef Bacik <josef@redhat.com>
 Subject: Re: [PATCH v2] btrfs: don't return EINTR
-Date: Wed, 18 Apr 2012 16:22:25 +0200
-Message-ID: <4F8ECE21.6010008@gmx.net>
+Date: Wed, 18 Apr 2012 10:36:11 -0400
+Message-ID: <20120418143611.GC1937@localhost.localdomain>
 References: <1334737636-16580-1-git-send-email-sensille@gmx.net>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=ISO-8859-1
-Cc: Josef Bacik <josef@redhat.com>,
-	Chris Mason <chris.mason@oracle.com>
-To: linux-btrfs@vger.kernel.org
+Content-Type: text/plain; charset=us-ascii
+Cc: linux-btrfs@vger.kernel.org
+To: Arne Jansen <sensille@gmx.net>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
 In-Reply-To: <1334737636-16580-1-git-send-email-sensille@gmx.net>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 18.04.2012 10:27, Arne Jansen wrote:
+On Wed, Apr 18, 2012 at 10:27:16AM +0200, Arne Jansen wrote:
 > It is basically a good thing if we are interruptible when waiting for
 > free space, but the generality in which it is implemented currently
 > leads to system calls being interruptible that are not documented this
@@ -22,12 +21,6 @@ On 18.04.2012 10:27, Arne Jansen wrote:
 > Thanks to David Sterba for suggesting this.
 > 
 > Signed-off-by: Arne Jansen <sensille@gmx.net>
-
-So, is this patch a candidate for the next rc? ;)
-
--Arne
-
-
 > ---
 >  fs/btrfs/extent-tree.c |    9 +++------
 >  1 files changed, 3 insertions(+), 6 deletions(-)
@@ -54,3 +47,10 @@ So, is this patch a candidate for the next rc? ;)
 >  		spin_lock(&space_info->lock);
 >  	}
 
+Ok I like this one,
+
+Reviewed-by: Josef Bacik <josef@redhat.com>
+
+Thanks,
+
+Josef

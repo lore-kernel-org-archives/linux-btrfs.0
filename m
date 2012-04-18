@@ -1,58 +1,82 @@
-From: Chris Mason <chris.mason@oracle.com>
-Subject: Re: [PATCH v2] btrfs: don't return EINTR
-Date: Wed, 18 Apr 2012 12:32:34 -0400
-Message-ID: <20120418163234.GF28915@shiny>
-References: <1334737636-16580-1-git-send-email-sensille@gmx.net>
- <20120418143611.GC1937@localhost.localdomain>
+From: Martin Steigerwald <Martin@lichtvoll.de>
+Subject: Re: Btrfs in degraded mode
+Date: Wed, 18 Apr 2012 18:45:11 +0200
+Message-ID: <201204181845.11400.Martin@lichtvoll.de>
+References: <loom.20120417T181336-69@post.gmane.org> <pan.2012.04.18.06.42.15@cox.net> (sfid-20120418_152838_787859_C21E7CF9)
 Mime-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Cc: Arne Jansen <sensille@gmx.net>, linux-btrfs@vger.kernel.org
-To: Josef Bacik <josef@redhat.com>
+Content-Type: Text/Plain; charset=utf-8
+To: linux-btrfs@vger.kernel.org
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <20120418143611.GC1937@localhost.localdomain>
+In-Reply-To: <pan.2012.04.18.06.42.15@cox.net>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Wed, Apr 18, 2012 at 10:36:11AM -0400, Josef Bacik wrote:
-> On Wed, Apr 18, 2012 at 10:27:16AM +0200, Arne Jansen wrote:
-> > It is basically a good thing if we are interruptible when waiting for
-> > free space, but the generality in which it is implemented currently
-> > leads to system calls being interruptible that are not documented this
-> > way. For example git can't handle interrupted unlink(), leading to
-> > corrupt repos under space pressure.
-> > Instead we raise the bar to only be interruptible by SIGKILL.
-> > Thanks to David Sterba for suggesting this.
-> > 
-> > Signed-off-by: Arne Jansen <sensille@gmx.net>
-> > ---
-> >  fs/btrfs/extent-tree.c |    9 +++------
-> >  1 files changed, 3 insertions(+), 6 deletions(-)
-> > 
-> > diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
-> > index 2b35f8d..10d4bb7 100644
-> > --- a/fs/btrfs/extent-tree.c
-> > +++ b/fs/btrfs/extent-tree.c
-> > @@ -3769,13 +3769,10 @@ again:
-> >  		 */
-> >  		if (current->journal_info)
-> >  			return -EAGAIN;
-> > -		ret = wait_event_interruptible(space_info->wait,
-> > -					       !space_info->flush);
-> > -		/* Must have been interrupted, return */
-> > -		if (ret) {
-> > -			printk(KERN_DEBUG "btrfs: %s returning -EINTR\n", __func__);
-> > +		ret = wait_event_killable(space_info->wait, !space_info->flush);
-> > +		/* Must have been killed, return */
-> > +		if (ret)
-> >  			return -EINTR;
-> > -		}
-> >  
-> >  		spin_lock(&space_info->lock);
-> >  	}
-> 
-> Ok I like this one,
-> 
-> Reviewed-by: Josef Bacik <josef@redhat.com>
+Am Mittwoch, 18. April 2012 schrieb Duncan:
+> Shridhar Shetty posted on Tue, 17 Apr 2012 16:14:45 +0000 as excerpte=
+d:
+> > I have created a btrfs filesystem with RAID1 setup having 2 disks.
+> > Everything works fine but when I try to umount the device and remou=
+nt
+> > it in degraded mode,
+> > the data still goes into both the disk. ideally in degraded mode on=
+ly
+> > one disk show disk activity and not the failed ones.
+> >
+> >=20
+> >
+> > System Config:
+> > Base OS: Slackware kernel: linux 3.3.2
+> >
+> >=20
+> >
+> > "sar -pd 2 10" shows me that the data is been written/read from bot=
+h
+> > devices.
+> >
+> >=20
+> >
+> > Also, Is there any way in which I can remove the failed disk withou=
+t
+> > adding a new one in a RAID1 (2 disk setup). The reason being we wan=
+t
+> > the option to keep it running in degraded(single disk) mode for
+> > sometime and on a weekend replace the failed drive with a fresh one
+> > :-).
+>=20
+> Are you sure you created the filesystem with raid1 mode for both data
+> and  metadata?  Some people end up with only one or the other set to
+> raid1 mode (metadata defaults to mirroring on two-device, but data
+> will default to single if not specifically set).
+>=20
+> Meanwhile, AFAIK the degraded option doesn't force degraded, it only=20
+> allows mounting degraded if the other device is non-functional.  If
+> btrfs  detects all its devices and doesn't detect a problem with one,
+> it'll still try to run all devices, regardless of the degraded
+> mount-option.
 
-Perfect.
+You can echo 1 >
 
--chris
+martin@merkaba:/sys/block/sda/device> ls -l delete
+--w------- 1 root root 4096 Apr 18 18:40 delete
+
+of the device you want to get rid of. (Double check that you have got t=
+he=20
+right device!)
+
+But you either need to reboot (tested) or to rescan the bus to get the=20
+device back (untested, don=C2=B4t know whether this works).
+
+btrfs filesystem show should then report the device as missing and you=20
+should be able to delete it from it.
+
+But then btrfs device delete should do the same in a cleaner way. (I.e.=
+=20
+without remove the device from Linux entirely.)
+
+--=20
+Martin 'Helios' Steigerwald - http://www.Lichtvoll.de
+GPG: 03B0 0D6C 0040 0710 4AFA  B82F 991B EAAC A599 84C7
+--
+To unsubscribe from this list: send the line "unsubscribe linux-btrfs" =
+in
+the body of a message to majordomo@vger.kernel.org
+More majordomo info at  http://vger.kernel.org/majordomo-info.html

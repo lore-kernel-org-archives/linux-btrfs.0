@@ -1,34 +1,26 @@
-From: Jan Schmidt <list.btrfs@jan-o-sch.net>
-Subject: Re: An issue when mounting the dd-copied partition and the original
- one together
-Date: Fri, 20 Apr 2012 09:40:01 +0200
-Message-ID: <4F9112D1.8080905@jan-o-sch.net>
-References: <CAOLNCyrvxNi-wKYdPaUX9Qvpzi7RhVjDgmig-Mr1_M5HmXza2Q@mail.gmail.com> <201204201720.44788.chris@csamuel.org>
+From: Avi Kivity <avi.kivity@gmail.com>
+Subject: Problems with nodatacow/nodatasum
+Date: Fri, 20 Apr 2012 11:19:39 +0300
+Message-ID: <CAEbWaipj_MzfM2wF6CpQg5dNCmLNLVomReDmnBVZHv9R3Be-cw@mail.gmail.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset=ISO-8859-1
-Cc: linux-btrfs@vger.kernel.org
-To: Chris Samuel <chris@csamuel.org>
+To: linux-btrfs@vger.kernel.org
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <201204201720.44788.chris@csamuel.org>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hi Chris,
+I have a btrfs filesystem mounted in two locations as two subvolumes:
 
-On 20.04.2012 09:20, Chris Samuel wrote:
-> Jan Schmidt was working on a "btrfs send" type command to help with 
-> this, but I've not heard anything recently (last December he posted 
-> that he was distracted by the backref-walking code which was a 
-> necessary precursor for the send/receive code).
 
-I still have that in my work queue. Backref walking can be considered
-quite stable by now, however it's not guaranteed to be consistent in
-every situation when used on live trees. There's only a few corner cases
-where it's breaking, but for the qgroup patches, we need to get rid of
-those.
+  /dev/mapper/luks-blah /                       btrfs
+subvol=/rootvol        1 1
+  /dev/mapper/luks-blah /var/lib/libvirt/images     btrfs
+nodatasum,nodatacow,subvol=/images.libvirt        1 2
 
-btrfs send would operate on read-only snapshots, where I consider
-backref walking stable by now. Someone has to push that backref
-resolving thing on live trees forward, though. So send/receive is by no
-means forgotten about, but further delayed.
+However, a file under the second  mount is getting seriously
+fragmented.  It started out with a few dozen extents (reasonable for a
+several gigabytes), now it's 11000 and counting, after an application
+started pounding on it with a bit of threaded O_DIRECT random I/O.
 
--Jan
+3.3.1-5.fc16.x86_64
+
+Any hints?

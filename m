@@ -1,8 +1,8 @@
 From: Josef Bacik <josef@redhat.com>
 Subject: Re: [PATCH 2/4] restore: don't corrupt stack for a zero-length
  command-line argument
-Date: Fri, 20 Apr 2012 14:37:53 -0400
-Message-ID: <20120420183752.GB1957@localhost.localdomain>
+Date: Fri, 20 Apr 2012 14:40:59 -0400
+Message-ID: <20120420184059.GC1957@localhost.localdomain>
 References: <1334943408-6720-1-git-send-email-jim@meyering.net>
  <1334943408-6720-3-git-send-email-jim@meyering.net>
 Mime-Version: 1.0
@@ -40,11 +40,8 @@ On Fri, Apr 20, 2012 at 07:36:46PM +0200, Jim Meyering wrote:
 > +	while (len && dir_name[--len] == '/')) {
 > +		dir_name[len] = '\0';
 >  	}
-> 
->  	if (find_dir) {
 
-Reviewed-by: Josef Bacik <josef@redhat.com>
-
-Thanks,
+Oops I didn't notice this until I was looking at patch 3, can you take out that
+extra ) here so the patch is bisectable.  Thanks,
 
 Josef

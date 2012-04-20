@@ -1,43 +1,47 @@
 From: Josef Bacik <josef@redhat.com>
-Subject: Re: [PATCH 1/4] mkfs: use strdup in place of strlen,malloc,strcpy
- sequence
-Date: Fri, 20 Apr 2012 14:36:56 -0400
-Message-ID: <20120420183655.GA1957@localhost.localdomain>
+Subject: Re: [PATCH 2/4] restore: don't corrupt stack for a zero-length
+ command-line argument
+Date: Fri, 20 Apr 2012 14:37:53 -0400
+Message-ID: <20120420183752.GB1957@localhost.localdomain>
 References: <1334943408-6720-1-git-send-email-jim@meyering.net>
- <1334943408-6720-2-git-send-email-jim@meyering.net>
+ <1334943408-6720-3-git-send-email-jim@meyering.net>
 Mime-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
 Cc: linux-btrfs@vger.kernel.org
 To: Jim Meyering <jim@meyering.net>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <1334943408-6720-2-git-send-email-jim@meyering.net>
+In-Reply-To: <1334943408-6720-3-git-send-email-jim@meyering.net>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Fri, Apr 20, 2012 at 07:36:45PM +0200, Jim Meyering wrote:
+On Fri, Apr 20, 2012 at 07:36:46PM +0200, Jim Meyering wrote:
 > From: Jim Meyering <meyering@redhat.com>
 > 
-> * mkfs.c (traverse_directory): No semantic change.
+> Given a zero-length directory name, the trailing-slash removal
+> code would test dir_name[-1], and if it were found to be a slash,
+> would set it to '\0'.
 > ---
->  mkfs.c |    3 +--
->  1 file changed, 1 insertion(+), 2 deletions(-)
+>  restore.c |    8 +++-----
+>  1 file changed, 3 insertions(+), 5 deletions(-)
 > 
-> diff --git a/mkfs.c b/mkfs.c
-> index c531ef2..03239fb 100644
-> --- a/mkfs.c
-> +++ b/mkfs.c
-> @@ -911,8 +911,7 @@ static int traverse_directory(struct btrfs_trans_handle *trans,
->  	/* Add list for source directory */
->  	dir_entry = malloc(sizeof(struct directory_name_entry));
->  	dir_entry->dir_name = dir_name;
-> -	dir_entry->path = malloc(strlen(dir_name) + 1);
-> -	strcpy(dir_entry->path, dir_name);
-> +	dir_entry->path = strdup(dir_name);
+> diff --git a/restore.c b/restore.c
+> index 250c9d3..f049105 100644
+> --- a/restore.c
+> +++ b/restore.c
+> @@ -849,11 +849,9 @@ int main(int argc, char **argv)
+>  	strncpy(dir_name, argv[optind + 1], 128);
 > 
->  	parent_inum = highest_inum + BTRFS_FIRST_FREE_OBJECTID;
->  	dir_entry->inum = parent_inum;
-> -- 
-> 1.7.10.208.gb4267
+>  	/* Strip the trailing / on the dir name */
+> -	while (1) {
+> -		len = strlen(dir_name);
+> -		if (dir_name[len - 1] != '/')
+> -			break;
+> -		dir_name[len - 1] = '\0';
+> +	len = strlen(dir_name);
+> +	while (len && dir_name[--len] == '/')) {
+> +		dir_name[len] = '\0';
+>  	}
 > 
+>  	if (find_dir) {
 
 Reviewed-by: Josef Bacik <josef@redhat.com>
 

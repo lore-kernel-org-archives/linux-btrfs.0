@@ -1,45 +1,36 @@
-From: Chris Mason <chris.mason@oracle.com>
-Subject: Re: Problems with nodatacow/nodatasum
-Date: Fri, 20 Apr 2012 20:15:51 -0400
-Message-ID: <20120421001551.GL30599@shiny>
-References: <CAEbWaipj_MzfM2wF6CpQg5dNCmLNLVomReDmnBVZHv9R3Be-cw@mail.gmail.com>
- <20120420091250.GK20982@twin.jikos.cz>
- <CAEbWaiqfh9KBM5U0QtqULHwLed854MeY=cPSxWRhoEGND9ve0A@mail.gmail.com>
-Mime-Version: 1.0
-Content-Type: text/plain; charset=iso-8859-1
-Cc: dave@jikos.cz, linux-btrfs@vger.kernel.org
-To: Avi Kivity <avi.kivity@gmail.com>
+From: Jim Meyering <jim@meyering.net>
+Subject: [PATCHv3 1/4] mkfs: use strdup in place of strlen,malloc,strcpy sequence
+Date: Sat, 21 Apr 2012 09:50:14 +0200
+Message-ID: <1334994617-30016-2-git-send-email-jim@meyering.net>
+References: <1334994617-30016-1-git-send-email-jim@meyering.net>
+To: linux-btrfs@vger.kernel.org
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <CAEbWaiqfh9KBM5U0QtqULHwLed854MeY=cPSxWRhoEGND9ve0A@mail.gmail.com>
+In-Reply-To: <1334994617-30016-1-git-send-email-jim@meyering.net>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Fri, Apr 20, 2012 at 12:22:11PM +0300, Avi Kivity wrote:
-> On Fri, Apr 20, 2012 at 12:12 PM, David Sterba <dave@jikos.cz> wrote:
-> > On Fri, Apr 20, 2012 at 11:19:39AM +0300, Avi Kivity wrote:
-> >> =A0 /dev/mapper/luks-blah / =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0 =A0=
- =A0 btrfs
-> >> subvol=3D/rootvol =A0 =A0 =A0 =A01 1
-> >> =A0 /dev/mapper/luks-blah /var/lib/libvirt/images =A0 =A0 btrfs
-> >> nodatasum,nodatacow,subvol=3D/images.libvirt =A0 =A0 =A0 =A01 2
-> >
-> > what does /proc/mounts say about the applied options? do you see
-> > nodatasum and nodatacow there? afaik most (if not all) mount option=
-s
-> > affect the whole filesystem including any subvolume mounts. =A0havi=
-ng
-> > per-subvol options is possible, just not implemented.
-> >
->=20
-> Nothing, the options don't show up there.
->=20
-> Are there plans to allow per-subvolume nodatasum/nodatacow?
+From: Jim Meyering <meyering@redhat.com>
 
-It can be set on a per file basis, let me push out a commit to btrfs
-progs with ioctls to set it.
+* mkfs.c (traverse_directory): No semantic change.
 
--chris
---
-To unsubscribe from this list: send the line "unsubscribe linux-btrfs" =
-in
-the body of a message to majordomo@vger.kernel.org
-More majordomo info at  http://vger.kernel.org/majordomo-info.html
+Reviewed-by: Josef Bacik <josef@redhat.com>
+---
+ mkfs.c |    3 +--
+ 1 file changed, 1 insertion(+), 2 deletions(-)
+
+diff --git a/mkfs.c b/mkfs.c
+index c531ef2..03239fb 100644
+--- a/mkfs.c
++++ b/mkfs.c
+@@ -911,8 +911,7 @@ static int traverse_directory(struct btrfs_trans_handle *trans,
+ 	/* Add list for source directory */
+ 	dir_entry = malloc(sizeof(struct directory_name_entry));
+ 	dir_entry->dir_name = dir_name;
+-	dir_entry->path = malloc(strlen(dir_name) + 1);
+-	strcpy(dir_entry->path, dir_name);
++	dir_entry->path = strdup(dir_name);
+
+ 	parent_inum = highest_inum + BTRFS_FIRST_FREE_OBJECTID;
+ 	dir_entry->inum = parent_inum;
+-- 
+1.7.10.228.g81f95
+

@@ -1,7 +1,7 @@
 From: Ahmet Inan <ainan@mathematik.uni-freiburg.de>
 Subject: Re: Boot speed/mount time regression with 3.4.0-rc2
-Date: Sun, 22 Apr 2012 11:16:57 +0200
-Message-ID: <CAFDW0jKmJzDBVyzC7uEWs-Bx9x0SHZs3duFjd9dAo_VW21sEBw@mail.gmail.com>
+Date: Sun, 22 Apr 2012 15:57:11 +0200
+Message-ID: <CAFDW0jJZjqZQSFF0VUriyWXvmJYPUV5yBQwLks5XxSTdXU5KRQ@mail.gmail.com>
 References: <20120410151645.GC2296@localhost.localdomain>
 	<CAFDW0j+=qe49pX3frjEoozOMz-gKKxqJ+jeeTgyXEskDL_9W8w@mail.gmail.com>
 	<20120411170422.GA2506@localhost.localdomain>
@@ -15,6 +15,7 @@ References: <20120410151645.GC2296@localhost.localdomain>
 	<20120413134716.GB1923@localhost.localdomain>
 	<CAFDW0jKRig6GTB4Oq4VG8xZQN4ArUnft1X9ST7cfyLHFTUs4NA@mail.gmail.com>
 	<20120422105919.28b027a0@sf.home>
+	<CAFDW0jKmJzDBVyzC7uEWs-Bx9x0SHZs3duFjd9dAo_VW21sEBw@mail.gmail.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset=UTF-8
 Cc: Josef Bacik <josef@redhat.com>, cwillu <cwillu@cwillu.com>,
@@ -22,86 +23,108 @@ Cc: Josef Bacik <josef@redhat.com>, cwillu <cwillu@cwillu.com>,
 	linux-btrfs@vger.kernel.org, Chris Mason <chris.mason@oracle.com>
 To: Sergei Trofimovich <slyich@gmail.com>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <20120422105919.28b027a0@sf.home>
+In-Reply-To: <CAFDW0jKmJzDBVyzC7uEWs-Bx9x0SHZs3duFjd9dAo_VW21sEBw@mail.gmail.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Sun, Apr 22, 2012 at 9:59 AM, Sergei Trofimovich <slyich@gmail.com> =
-wrote:
-> On Sat, 21 Apr 2012 22:54:41 +0200
-> Ahmet Inan <ainan@mathematik.uni-freiburg.de> wrote:
->
->> On Fri, Apr 13, 2012 at 3:47 PM, Josef Bacik <josef@redhat.com> wrot=
-e:
->> > On Fri, Apr 13, 2012 at 02:26:19PM +0200, Ahmet Inan wrote:
->> >> On Fri, Apr 13, 2012 at 1:22 PM, Ahmet Inan
->> >> <ainan@mathematik.uni-freiburg.de> wrote:
->> >> > On Fri, Apr 13, 2012 at 8:49 AM, cwillu <cwillu@cwillu.com> wro=
+On Sun, Apr 22, 2012 at 11:16 AM, Ahmet Inan
+<ainan@mathematik.uni-freiburg.de> wrote:
+> On Sun, Apr 22, 2012 at 9:59 AM, Sergei Trofimovich <slyich@gmail.com=
+> wrote:
+>> On Sat, 21 Apr 2012 22:54:41 +0200
+>> Ahmet Inan <ainan@mathematik.uni-freiburg.de> wrote:
+>>
+>>> On Fri, Apr 13, 2012 at 3:47 PM, Josef Bacik <josef@redhat.com> wro=
 te:
->> >> >>> dmesg and fstab attached as requested.
->> >> >>
->> >> >> Need dmesg after you've hit alt-sysrq-w a couple times during =
-the slow period.
->> >> >
->> >> > here.
->> >> >
->> >> > i guess i should also increase dmesg history size next time.
->> >> > other than the slow boot, everything seems normal after 10-20mi=
-nutes.
->> >> >
->> >> > fyi: the space_cache option is not really helping with those
->> >> > twenty computers. the one thing i observed is, that sometimes
->> >> > they reboot fast and only to reboot slow again after that.
->> >>
->> >> sorry for spaming the list with my dmesg files,
->> >> please tell me, how i could do better.
->> >>
->> >> here a more complete dmesg.
->> >
->> > Hrm so you are getting blocked task warnings just trying to mount =
-the
->> > filesystem, so either your disk is really really really slow or th=
-ere's
->> > something bigger going on. =C2=A0Let me think about this some and =
-I'll get back to
->> > you.
+>>> > On Fri, Apr 13, 2012 at 02:26:19PM +0200, Ahmet Inan wrote:
+>>> >> On Fri, Apr 13, 2012 at 1:22 PM, Ahmet Inan
+>>> >> <ainan@mathematik.uni-freiburg.de> wrote:
+>>> >> > On Fri, Apr 13, 2012 at 8:49 AM, cwillu <cwillu@cwillu.com> wr=
+ote:
+>>> >> >>> dmesg and fstab attached as requested.
+>>> >> >>
+>>> >> >> Need dmesg after you've hit alt-sysrq-w a couple times during=
+ the slow period.
+>>> >> >
+>>> >> > here.
+>>> >> >
+>>> >> > i guess i should also increase dmesg history size next time.
+>>> >> > other than the slow boot, everything seems normal after 10-20m=
+inutes.
+>>> >> >
+>>> >> > fyi: the space_cache option is not really helping with those
+>>> >> > twenty computers. the one thing i observed is, that sometimes
+>>> >> > they reboot fast and only to reboot slow again after that.
+>>> >>
+>>> >> sorry for spaming the list with my dmesg files,
+>>> >> please tell me, how i could do better.
+>>> >>
+>>> >> here a more complete dmesg.
+>>> >
+>>> > Hrm so you are getting blocked task warnings just trying to mount=
+ the
+>>> > filesystem, so either your disk is really really really slow or t=
+here's
+>>> > something bigger going on. =C2=A0Let me think about this some and=
+ I'll get back to
+>>> > you.
+>>>
+>>> Josef, i finally found out something:
+>>>
+>>> btrfs in kernel =3D> fast boot
+>>> btrfs as module =3D> very slow boot
+>>>
+>>> and here see the results:
+>>> http://aam.mathematik.uni-freiburg.de/IAM/homepages/ainan/bootchart=
+_btrfs_in_kernel.png
+>>>
+>>> this is much, much better!
+>>>
+>>> I dont understand why btrfs as a module performs that bad on rotati=
+ng disk.
+>>> On SSD i had no issues and also i never used space_cache before.
 >>
->> Josef, i finally found out something:
+>> There is a suspiction that putting space_cache (or anything else) to=
+ fstab for rootfs
+>> does not get applied due to a bug:
 >>
->> btrfs in kernel =3D> fast boot
->> btrfs as module =3D> very slow boot
->>
->> and here see the results:
->> http://aam.mathematik.uni-freiburg.de/IAM/homepages/ainan/bootchart_=
-btrfs_in_kernel.png
->>
->> this is much, much better!
->>
->> I dont understand why btrfs as a module performs that bad on rotatin=
-g disk.
->> On SSD i had no issues and also i never used space_cache before.
+>> =C2=A0 =C2=A0http://www.mail-archive.com/linux-btrfs@vger.kernel.org=
+/msg16039.html
 >
-> There is a suspiction that putting space_cache (or anything else) to =
-fstab for rootfs
-> does not get applied due to a bug:
+> Thats right.
 >
-> =C2=A0 =C2=A0http://www.mail-archive.com/linux-btrfs@vger.kernel.org/=
-msg16039.html
+> space_cache only got enabled for real, after ive set the option in th=
+e
+> boot argument once.
+> Even if it looks like it gets enabled in dmesg via /etc/fstab,
+> the next boot without space_cache doesnt show space_cache enabled.
+>
+> But this is another problem i will look into later.
 
-Thats right.
+I just pulled for-linus and thank you for that patch Sergei.
+Now i can enable space_cache on all systems without playing
+with bootarguments or fstab:
 
-space_cache only got enabled for real, after ive set the option in the
-boot argument once.
-Even if it looks like it gets enabled in dmesg via /etc/fstab,
-the next boot without space_cache doesnt show space_cache enabled.
+# mount -o remount,space_cache /
 
-But this is another problem i will look into later.
-At the moment the biggest problem is having btrfs as a module.
+it speeds up boot times after a couple reboots. perfect!
 
-> Do all of your affected computers run 3.4.0-rc kernels?
+> At the moment the biggest problem is having btrfs as a module.
 
-They run vanilla/linux-3.3.2 with btrfs/for-linus.
-The unaffected computers have <=3D vanilla/linux-3.2.9 with
-btrfs/for-linus from 2 months ago or so.
+To be sure i just rebooted that troublesome computer again with
+btrfs as module and with space_cache enabled:
+
+http://aam.mathematik.uni-freiburg.de/IAM/homepages/ainan/bootchart_btr=
+fs_as_module.png
+
+So it looks like btrfs as module only amplified that
+space_cache problem ..
+
+And now that space_cache is enabled and working even btrfs as
+module works ok.
+
+Conclusion:
+
+btrfs in kernel + space_cache solves all my slow boot problems.
 
 Ahmet
 --

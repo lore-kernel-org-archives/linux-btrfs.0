@@ -1,73 +1,44 @@
 From: Josef Bacik <josef@redhat.com>
-Subject: [PATCH] Btrfs: remove useless waiting and extra filemap work
-Date: Mon, 23 Apr 2012 14:42:29 -0400
-Message-ID: <1335206549-8670-1-git-send-email-josef@redhat.com>
+Subject: [PATCH] Btrfs: do not do filemap_write_and_wait_range in fsync
+Date: Mon, 23 Apr 2012 15:06:41 -0400
+Message-ID: <1335208001-8833-1-git-send-email-josef@redhat.com>
 To: linux-btrfs@vger.kernel.org
 Return-path: <linux-btrfs-owner@vger.kernel.org>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-In btrfs_wait_ordered_range we have been calling filemap_fdata_write() twice
-because compression does strange things and then waiting.  Then we look up
-ordered extents and if we find any we will always schedule_timeout(); once
-and then loop back around and do it all again.  We will even check to see if
-there is delalloc pages on this range and loop again.  So this patch gets
-rid of the multipe fdata_write() calls and just does
-filemap_write_and_wait().  In the case of compression we will still find the
-ordered extents and start those individually if we need to so that is ok,
-but in the normal buffered case we avoid all this weird overhead.
-
-Then in the case of the schedule_timeout(1), we don't need it.  All callers
-either 1) don't care, they just want to make sure what they just wrote maeks
-it to disk or 2) are doing the lock()->lookup ordered->unlock->flush thing
-in which case it will lock and check for ordered extents _anyway_ so get
-back to them as quickly as possible.  The delaloc check is simply not
-needed, this only catches the case where we write to the file again since
-doing the filemap_write_and_wait() and if the caller truly cares about that
-it will take care of everything itself.  Thanks,
+We already do the btrfs_wait_ordered_range which will do this for us, so
+just remove this call so we don't call it twice.  Thanks,
 
 Signed-off-by: Josef Bacik <josef@redhat.com>
 ---
- fs/btrfs/ordered-data.c |   17 ++---------------
- 1 files changed, 2 insertions(+), 15 deletions(-)
+ fs/btrfs/file.c |   11 ++++++-----
+ 1 files changed, 6 insertions(+), 5 deletions(-)
 
-diff --git a/fs/btrfs/ordered-data.c b/fs/btrfs/ordered-data.c
-index acfb360..e587716 100644
---- a/fs/btrfs/ordered-data.c
-+++ b/fs/btrfs/ordered-data.c
-@@ -623,19 +623,11 @@ void btrfs_wait_ordered_range(struct inode *inode, u64 start, u64 len)
- 		if (orig_end > INT_LIMIT(loff_t))
- 			orig_end = INT_LIMIT(loff_t);
- 	}
--again:
-+
- 	/* start IO across the range first to instantiate any delalloc
- 	 * extents
- 	 */
--	filemap_fdatawrite_range(inode->i_mapping, start, orig_end);
--
--	/* The compression code will leave pages locked but return from
--	 * writepage without setting the page writeback.  Starting again
--	 * with WB_SYNC_ALL will end up waiting for the IO to actually start.
--	 */
--	filemap_fdatawrite_range(inode->i_mapping, start, orig_end);
--
--	filemap_fdatawait_range(inode->i_mapping, start, orig_end);
-+	filemap_write_and_wait_range(inode->i_mapping, start, orig_end);
+diff --git a/fs/btrfs/file.c b/fs/btrfs/file.c
+index f0da02b..0c8ed6a 100644
+--- a/fs/btrfs/file.c
++++ b/fs/btrfs/file.c
+@@ -1492,14 +1492,15 @@ int btrfs_sync_file(struct file *file, loff_t start, loff_t end, int datasync)
  
- 	end = orig_end;
- 	found = 0;
-@@ -659,11 +651,6 @@ again:
- 			break;
- 		end--;
- 	}
--	if (found || test_range_bit(&BTRFS_I(inode)->io_tree, start, orig_end,
--			   EXTENT_DELALLOC, 0, NULL)) {
--		schedule_timeout(1);
--		goto again;
--	}
- }
+ 	trace_btrfs_sync_file(file, datasync);
  
- /*
+-	ret = filemap_write_and_wait_range(inode->i_mapping, start, end);
+-	if (ret)
+-		return ret;
+ 	mutex_lock(&inode->i_mutex);
+ 
+-	/* we wait first, since the writeback may change the inode */
++	/*
++	 * we wait first, since the writeback may change the inode, also wait
++	 * ordered range does a filemape_write_and_wait_range which is why we
++	 * don't do it above like other file systems.
++	 */
+ 	root->log_batch++;
+-	btrfs_wait_ordered_range(inode, 0, (u64)-1);
++	btrfs_wait_ordered_range(inode, start, end);
+ 	root->log_batch++;
+ 
+ 	/*
 -- 
 1.7.7.6
 

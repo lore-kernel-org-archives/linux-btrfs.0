@@ -1,194 +1,119 @@
-From: Goffredo Baroncelli <kreijack@libero.it>
-Subject: [btrfs-progs] [bug][patch] Leaking file handle in scrub_fs_info()
-Date: Tue, 24 Apr 2012 20:43:23 +0200
-Message-ID: <4F96F44B.8000400@libero.it>
-Reply-To: kreijack@inwind.it
-Mime-Version: 1.0
-Content-Type: text/plain; charset=ISO-8859-1
-Cc: linux-btrfs <linux-btrfs@vger.kernel.org>,
-	Hugo Mills <hugo@carfax.org.uk>
-To: Jan Schmidt <list.btrfs@jan-o-sch.net>
+From: Sergei Trofimovich <slyich@gmail.com>
+Subject: [PATCH v2] btrfs: allow changing 'thread_pool' size at remount time
+Date: Tue, 24 Apr 2012 22:59:16 +0300
+Message-ID: <1335297556-11160-1-git-send-email-slyich@gmail.com>
+References: <20120424181025.GC6164@localhost.localdomain>
+Cc: Sergei Trofimovich <slyfox@gentoo.org>,
+	Josef Bacik <josef@redhat.com>,
+	Chris Mason <chris.mason@oracle.com>
+To: linux-btrfs@vger.kernel.org
 Return-path: <linux-btrfs-owner@vger.kernel.org>
+In-Reply-To: <20120424181025.GC6164@localhost.localdomain>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hi Jan,
+From: Sergei Trofimovich <slyfox@gentoo.org>
 
-I was giving a look to the function scrub_fs_info( ), and to me it seems
-that could be a potential file handle leaking problem.
+Changing 'mount -oremount,thread_pool=2 /' didn't make any effect:
 
+maximum amount of worker threads is specified in 2 places:
+- in 'strict btrfs_fs_info::thread_pool_size'
+- in each worker struct: 'struct btrfs_workers::max_workers'
 
-In fact:
+'mount -oremount' updated only 'btrfs_fs_info::thread_pool_size'.
 
-static int scrub_fs_info(int fd, char *path,
-                    struct btrfs_ioctl_fs_info_args *fi_args,
-                    struct btrfs_ioctl_dev_info_args **di_ret)
-{
+Fix it by pushing new maximum value to all created worker structures
+as well.
 
-[...]
+Cc: Josef Bacik <josef@redhat.com>
+Cc: Chris Mason <chris.mason@oracle.com>
+Signed-off-by: Sergei Trofimovich <slyfox@gentoo.org>
+---
+v1->v2: - added locking around 'workers' struct
+        - almost succeeded to fit 80-chars limit (one-off)
+WARNING: This patch makes sense only with
+WARNING:    "btrfs: fix early abort in 'remount'"
+WARNING: sitting in Josef's -next branch.
+ fs/btrfs/super.c |   45 ++++++++++++++++++++++++++++++++++++++++-----
+ 1 files changed, 40 insertions(+), 5 deletions(-)
 
-        ret = ioctl(fd, BTRFS_IOC_FS_INFO, fi_args);
-        if (ret && errno == EINVAL) {
-                /* path is no mounted btrfs. try if it's a device */
-[...]
-                close(fd);			<--- Here the
-						     file handle is
-						     closed
-
-                fd = open_file_or_dir(mp);	<--- then it is
-						     re-opened
-                if (fd < 0)
-                        return -errno;
-        } else if (ret) {
-                return -errno;
-        }
-[...]
-
-But in the rest of the function:
-a) the file handle is not closed
-b) the (new) file handle isn't returned
-
-The function "scrub_fs_info()" is called from the functions
-1) cmd_scrub_status(), which doesn't use the file handle after the call
-to the cmd_scrub_status() [except for a close()]. So no problem at all.
-2) scrub_start(), which uses the file handle after the call to the
-cmd_scrub_status() functions.
-
-My suggestions is to change scrub_fs_info() to accept only the path.
-Then it open (and closes) its own (and private) the file descriptor.
-
-Instead scrub_start(), opens a file descriptor after the call to the
-scrub_fs_info() function.
-
-What do you think ?
-
-BR
-G.Baroncelli
-
-You can pull the patch below from
-
-	http://cassiopea.homelinux.net/git/btrfs-progs-unstable.git
-
-branch
-
-	fd-leaking
-
------
-
-diff --git a/cmds-scrub.c b/cmds-scrub.c
-index c4503f4..486768c 100644
---- a/cmds-scrub.c
-+++ b/cmds-scrub.c
-@@ -979,19 +979,26 @@ static int scrub_device_info(int fd, u64 devid,
- 	return ret ? -errno : 0;
+diff --git a/fs/btrfs/super.c b/fs/btrfs/super.c
+index 2f28fc0..289dbfc 100644
+--- a/fs/btrfs/super.c
++++ b/fs/btrfs/super.c
+@@ -435,11 +435,8 @@ int btrfs_parse_options(struct btrfs_root *root, char *options)
+ 		case Opt_thread_pool:
+ 			intarg = 0;
+ 			match_int(&args[0], &intarg);
+-			if (intarg) {
++			if (intarg)
+ 				info->thread_pool_size = intarg;
+-				printk(KERN_INFO "btrfs: thread pool %d\n",
+-				       info->thread_pool_size);
+-			}
+ 			break;
+ 		case Opt_max_inline:
+ 			num = match_strdup(&args[0]);
+@@ -1119,6 +1116,40 @@ error_fs_info:
+ 	return ERR_PTR(error);
  }
-
--static int scrub_fs_info(int fd, char *path,
-+static int scrub_fs_info( char *path,
- 				struct btrfs_ioctl_fs_info_args *fi_args,
- 				struct btrfs_ioctl_dev_info_args **di_ret)
- {
- 	int ret = 0;
- 	int ndevs = 0;
- 	int i = 1;
-+	int fd;
- 	struct btrfs_fs_devices *fs_devices_mnt = NULL;
- 	struct btrfs_ioctl_dev_info_args *di_args;
- 	char mp[BTRFS_PATH_NAME_MAX + 1];
-
- 	memset(fi_args, 0, sizeof(*fi_args));
-
-+	fd  = open_file_or_dir(path);
-+	if (fd < 0) {
-+		fprintf(stderr, "ERROR: can't access to '%s'\n", path);
-+		return -1;
-+	}
+ 
++static void btrfs_set_max_workers(struct btrfs_workers *workers, int new_limit)
++{
++	spin_lock_irq(&workers->lock);
++	workers->max_workers = new_limit;
++	spin_unlock_irq(&workers->lock);
++}
 +
- 	ret = ioctl(fd, BTRFS_IOC_FS_INFO, fi_args);
- 	if (ret && errno == EINVAL) {
- 		/* path is no mounted btrfs. try if it's a device */
-@@ -1010,28 +1017,36 @@ static int scrub_fs_info(int fd, char *path,
- 		if (fd < 0)
- 			return -errno;
- 	} else if (ret) {
-+		close(fd);
- 		return -errno;
++static void btrfs_resize_thread_pool(struct btrfs_fs_info *fs_info,
++				     int new_pool_size, int old_pool_size)
++{
++	if (new_pool_size == old_pool_size)
++		return;
++
++	fs_info->thread_pool_size = new_pool_size;
++
++	printk(KERN_INFO "btrfs: resize thread pool %d -> %d\n",
++	       old_pool_size, new_pool_size);
++
++	btrfs_set_max_workers(&fs_info->generic_worker, new_pool_size);
++	btrfs_set_max_workers(&fs_info->workers, new_pool_size);
++	btrfs_set_max_workers(&fs_info->delalloc_workers, new_pool_size);
++	btrfs_set_max_workers(&fs_info->submit_workers, new_pool_size);
++	btrfs_set_max_workers(&fs_info->caching_workers, new_pool_size);
++	btrfs_set_max_workers(&fs_info->fixup_workers, new_pool_size);
++	btrfs_set_max_workers(&fs_info->endio_workers, new_pool_size);
++	btrfs_set_max_workers(&fs_info->endio_meta_workers, new_pool_size);
++	btrfs_set_max_workers(&fs_info->endio_meta_write_workers, new_pool_size);
++	btrfs_set_max_workers(&fs_info->endio_write_workers, new_pool_size);
++	btrfs_set_max_workers(&fs_info->endio_freespace_worker, new_pool_size);
++	btrfs_set_max_workers(&fs_info->delayed_workers, new_pool_size);
++	btrfs_set_max_workers(&fs_info->readahead_workers, new_pool_size);
++	btrfs_set_max_workers(&fs_info->scrub_workers, new_pool_size);
++}
++
+ static int btrfs_remount(struct super_block *sb, int *flags, char *data)
+ {
+ 	struct btrfs_fs_info *fs_info = btrfs_sb(sb);
+@@ -1138,6 +1169,9 @@ static int btrfs_remount(struct super_block *sb, int *flags, char *data)
+ 		goto restore;
  	}
-
--	if (!fi_args->num_devices)
-+	if (!fi_args->num_devices){
-+		close(fd);
+ 
++	btrfs_resize_thread_pool(fs_info,
++		fs_info->thread_pool_size, old_thread_pool_size);
++
+ 	if ((*flags & MS_RDONLY) == (sb->s_flags & MS_RDONLY))
  		return 0;
-+	}
-
- 	di_args = *di_ret = malloc(fi_args->num_devices * sizeof(*di_args));
--	if (!di_args)
-+	if (!di_args){
-+		close(fd);
- 		return -errno;
-+	}
-
- 	for (; i <= fi_args->max_id; ++i) {
- 		BUG_ON(ndevs >= fi_args->num_devices);
- 		ret = scrub_device_info(fd, i, &di_args[ndevs]);
- 		if (ret == -ENODEV)
- 			continue;
--		if (ret)
-+		if (ret){
-+			close(fd);
- 			return ret;
-+		}
- 		++ndevs;
- 	}
-
- 	BUG_ON(ndevs == 0);
-
-+	close(fd);
- 	return 0;
+ 
+@@ -1181,7 +1215,8 @@ restore:
+ 	fs_info->compress_type = old_compress_type;
+ 	fs_info->max_inline = old_max_inline;
+ 	fs_info->alloc_start = old_alloc_start;
+-	fs_info->thread_pool_size = old_thread_pool_size;
++	btrfs_resize_thread_pool(fs_info,
++		old_thread_pool_size, fs_info->thread_pool_size);
+ 	fs_info->metadata_ratio = old_metadata_ratio;
+ 	return ret;
  }
-
-@@ -1155,7 +1170,7 @@ static int scrub_start(int argc, char **argv, int
-resume)
- 		return 12;
- 	}
-
--	ret = scrub_fs_info(fdmnt, path, &fi_args, &di_args);
-+	ret = scrub_fs_info(path, &fi_args, &di_args);
- 	if (ret) {
- 		ERR(!do_quiet, "ERROR: getting dev info for scrub failed: "
- 		    "%s\n", strerror(-ret));
-@@ -1586,7 +1601,6 @@ static int cmd_scrub_status(int argc, char **argv)
- 		.sun_family = AF_UNIX,
- 	};
- 	int ret;
--	int fdmnt;
- 	int i;
- 	int print_raw = 0;
- 	int do_stats_per_dev = 0;
-@@ -1615,13 +1629,7 @@ static int cmd_scrub_status(int argc, char **argv)
-
- 	path = argv[optind];
-
--	fdmnt = open_file_or_dir(path);
--	if (fdmnt < 0) {
--		fprintf(stderr, "ERROR: can't access to '%s'\n", path);
--		return 12;
--	}
--
--	ret = scrub_fs_info(fdmnt, path, &fi_args, &di_args);
-+	ret = scrub_fs_info(path, &fi_args, &di_args);
- 	if (ret) {
- 		fprintf(stderr, "ERROR: getting dev info for scrub failed: "
- 				"%s\n", strerror(-ret));
-@@ -1698,7 +1706,6 @@ static int cmd_scrub_status(int argc, char **argv)
- out:
- 	free_history(past_scrubs);
- 	free(di_args);
--	close(fdmnt);
- 	if (fdres > -1)
- 		close(fdres);
-
-
-
-
-
+-- 
+1.7.8.5
 

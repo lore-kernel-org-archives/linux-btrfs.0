@@ -1,35 +1,85 @@
-From: Daniel J Blueman <daniel@quora.org>
-Subject: [PATCH] Prevent root_list corruption
-Date: Tue, 24 Apr 2012 13:11:40 +0800
-Message-ID: <1335244300-6599-1-git-send-email-daniel@quora.org>
-Cc: "Josef Bacik" <josef@redhat.com>,
-	Daniel J Blueman <daniel@quora.org>
-To: linux-btrfs@vger.kernel.org, "Chris Mason" <chris.mason@oracle.com>
+From: Hubert Kario <hka@qbs.com.pl>
+Subject: Re: Backup of btrfs with metadata?
+Date: Tue, 24 Apr 2012 11:37:46 +0200
+Message-ID: <2283206.qFxMYzKDV2@bursa22>
+References: <4F959735.8040305@jots.org>
+Mime-Version: 1.0
+Content-Type: multipart/signed; boundary="nextPart2574855.qlUWbbh0yD"; micalg="sha256"; protocol="application/pkcs7-signature"
+Cc: linux-btrfs@vger.kernel.org
+To: Ken D'Ambrosio <ken@jots.org>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
+In-Reply-To: <4F959735.8040305@jots.org>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-I was seeing root_list corruption on unmount during fs resize in 3.4-rc4; add
-correct locking to address this.
 
-Signed-off-by: Daniel J Blueman <daniel@quora.org>
----
- fs/btrfs/relocation.c |    2 ++
- 1 file changed, 2 insertions(+)
+--nextPart2574855.qlUWbbh0yD
+Content-Transfer-Encoding: quoted-printable
+Content-Type: text/plain; charset="iso-8859-1"
 
-diff --git a/fs/btrfs/relocation.c b/fs/btrfs/relocation.c
-index 017281d..5a105a0 100644
---- a/fs/btrfs/relocation.c
-+++ b/fs/btrfs/relocation.c
-@@ -1279,7 +1279,9 @@ static int __update_reloc_root(struct btrfs_root *root, int del)
- 		if (rb_node)
- 			backref_tree_panic(rb_node, -EEXIST, node->bytenr);
- 	} else {
-+		spin_lock(&root->fs_info->trans_lock);
- 		list_del_init(&root->root_list);
-+		spin_unlock(&root->fs_info->trans_lock);
- 		kfree(node);
- 	}
- 	return 0;
--- 
-1.7.9.5
+On Monday 23 of April 2012 13:53:57 Ken D'Ambrosio wrote:
+> I know this question was asked, oh, a year ago, and the answer was
+> "No."  But I'm wondering if anything's changed in the interim.
+> Specifically, shy of "dd", is there any way to back up the files and
+> metadata on a btrfs partition?
+
+btrfs send is a work in progress, currently there are problems in tree=20=
+
+traversal that are being worked on
+
+Regards,
+--=20
+Hubert Kario
+QBS - Quality Business Software
+02-656 Warszawa, ul. Ksawer=F3w 30/85
+tel. +48 (22) 646-61-51, 646-74-24
+www.qbs.com.pl
+--nextPart2574855.qlUWbbh0yD
+Content-Type: application/pkcs7-signature; name="smime.p7s"
+Content-Disposition: attachment; filename="smime.p7s"
+Content-Transfer-Encoding: base64
+
+MIAGCSqGSIb3DQEHAqCAMIACAQExDzANBglghkgBZQMEAgEFADCABgkqhkiG9w0BBwEAAKCCBsow
+ggbGMIIErqADAgECAghgRNYwzIbzHzANBgkqhkiG9w0BAQsFADBRMSowKAYDVQQLDCFRQlMgQ2xh
+c3MgMyBDZXJ0aWZpY2F0ZSBBdXRob3JpdHkxFjAUBgNVBAoMDVFCUyBKYW4gS3ViYW4xCzAJBgNV
+BAYTAlBMMB4XDTExMDUxNjEwMDUzMloXDTEyMDUxNjEwMDUzMlowgaYxHTAbBgkqhkiG9w0BCQEW
+DmhrYUBxYnMuY29tLnBsMRUwEwYDVQQDDAxIdWJlcnQgS2FyaW8xDzANBgNVBCoMBkh1YmVydDEO
+MAwGA1UEBAwFS2FyaW8xFzAVBgNVBAoMDlFCUyBKYW4gS3ViYcWEMREwDwYDVQQHDAhXYXJzemF3
+YTEUMBIGA1UECAwLbWF6b3dpZWNraWUxCzAJBgNVBAYTAlBMMIIBIjANBgkqhkiG9w0BAQEFAAOC
+AQ8AMIIBCgKCAQEAtmTUo4Y/Qnf6MzeQiOYc56cvVa1b3VJaZDGC3ZSj8rPlj68nHL/Tk9FCRI3S
+YlJ1efskI4j8zVlxKTLetPCEUqE3PO2UQ0OaFCpdcbZQ9yvVXUbEVNAZ5quE856LmQzQ33/Kvsek
+LEzfYfeLS1yjqrhqIUYblkycZT6wowsx70NfXtfSb6H9DDjX1u0WpU6jK8lLaphEA9vQB+zEfYQW
+raCY1E0auEiGbPfPNi3x0if/ckVuUYCwr7IJaQg4hcYXFhUuKcbbFebUDOl8L1oi/2QwxC83U87p
+an+2awtbCWD33Q+QwSRoHUuX6pQs0sPnZehh+PfdmAC9MkWAg8fXRwIDAQABo4ICSjCCAkYwUQYI
+KwYBBQUHAQEERTBDMEEGCCsGAQUFBzABhjVodHRwOi8vY2EucWJzLmNvbS5wbDo4MDgwL2VqYmNh
+L3B1YmxpY3dlYi9zdGF0dXMvb2NzcDAdBgNVHQ4EFgQUZ6aWItDHMTdc4y1LLdYvTB/kmhswDAYD
+VR0TAQH/BAIwADAfBgNVHSMEGDAWgBRThM4WgbPV3Ji/Qgr6taX1RUTbLDCB/QYDVR0fBIH1MIHy
+MIHvoIGVoIGShoGPaHR0cDovL2NhLnFicy5jb20ucGw6ODA4MC9lamJjYS9wdWJsaWN3ZWIvd2Vi
+ZGlzdC9jZXJ0ZGlzdD9jbWQ9Y3JsJmlzc3Vlcj1vdT1RQlMlMjBDbGFzcyUyMDMlMjBDZXJ0aWZp
+Y2F0ZSUyMEF1dGhvcml0eSxvPVFCUyUyMEphbiUyMEt1YmFuLGM9UEyiVaRTMFExKjAoBgNVBAsM
+IVFCUyBDbGFzcyAzIENlcnRpZmljYXRlIEF1dGhvcml0eTEWMBQGA1UECgwNUUJTIEphbiBLdWJh
+bjELMAkGA1UEBhMCUEwwDgYDVR0PAQH/BAQDAgSwMGIGA1UdJQRbMFkGCCsGAQUFBwMCBggrBgEF
+BQcDAwYIKwYBBQUHAwQGCisGAQQBgjcUAgIGCisGAQQBgjcKAwwGCisGAQQBgjcCARUGCisGAQQB
+gjcCARYGCSqGSIb3LwEBBTAvBgNVHREEKDAmgQ5oa2FAcWJzLmNvbS5wbIEUd2VibWFzdGVyQHFi
+cy5jb20ucGwwDQYJKoZIhvcNAQELBQADggIBAE2d0JelbaaQJRuxZxndox3YC6JbOU+rG2wtQ0NG
+rS2xtlqW3NnFrwj0Z9aCAJxFh1kD6HpeGqhx6QHILCIjjogJ4hJsge66B37oP+xd1SJVGHlpeyA/
+hS2Fj6r0YnTT6umy0i6tDO9lvbPewalfklVCwkjqnJsFiMI4qew7HY/Gc/GxHABjE2W9NeXtDDfq
+zxJ3LUXwuqVHF74EMO7N1mBgiGOM7yAVuOCGzpX86fgWFpLqRHKymuSj9VgIAa80eX3+LOZ3YYzc
+SAbY2TJbN1BmU5kfGQMTIceXzB8Inub1PfUQ7mrLhheq3UIt+3MaUtgfhi2Um1RPtxway6JtUpu+
+pDXHukM5vgYHRfIgfVE5jClLLeIv9ktjDpd5cGhhQjtzfeE+kaP8323xj2M+c2RJurcj2TGE48dj
+e3aGLK4a7VSd8fsGNgdOYjua3f29kRGX/O1hug+bRAd0WYYEjIZL/eB8EAm6k75B9IyGvdyXP5xu
+SxW4kRRj6cU22M8evhFJ6uM/Rljn3UESuob2m7hsloJVJbqDPUlvkqT8q26VLdiSoHY0vikw+oxq
+dgmTm8dicjBi+ajvkonqDP3d2sm+yqpOld0+2HvEzYrPxCzg85H5WWCmTjR+bgbb04gFWi0e7P6X
+hGysv5O7TJTFOkZ4WnKM6QqUrpSaM9PC4eR7MYICHjCCAhoCAQEwXTBRMSowKAYDVQQLDCFRQlMg
+Q2xhc3MgMyBDZXJ0aWZpY2F0ZSBBdXRob3JpdHkxFjAUBgNVBAoMDVFCUyBKYW4gS3ViYW4xCzAJ
+BgNVBAYTAlBMAghgRNYwzIbzHzANBglghkgBZQMEAgEFAKCBkzAYBgkqhkiG9w0BCQMxCwYJKoZI
+hvcNAQcBMBwGCSqGSIb3DQEJBTEPFw0xMjA0MjQwOTM3NDZaMCgGCSqGSIb3DQEJDzEbMBkwCwYJ
+YIZIAWUDBAECMAoGCCqGSIb3DQMHMC8GCSqGSIb3DQEJBDEiBCDtB0ufxX5mj4sX9cZ8SzzkxcSJ
+NXPqnFJ8lPiPWpZaRDANBgkqhkiG9w0BAQEFAASCAQCzQbjCHmd/YvQ9zBm3uJ1443ga86pLpqOG
++L3HmEIqUVCg9S3jaVwDEP54fx2ZMmkVYIBhZczwag8FW8yQHkXx24dHbdFNhbbWb2hFQJw0MT2p
+p+vsyUEsCiphDeEdnEpvD61wpI5sPAWeADcStWcT68XfzhuoF1QRXGDtmTzIB5KoxUnK+kO8lwQJ
+VMDsgCyuvjlN25/8ShuHBQViYJd4V1uQdRUcnP0vcA+NrQ33laLcXdfexdCICX+KyrBsh2Hj6Thl
+6op1p8g0MP5WN2FBACE7nvpXi9X7aXNbcSMk7eYDRai6qPZd4txSIa98wuY5ajrnQ0jSadZow4/N
+AIYnAAAAAAAA
+
+--nextPart2574855.qlUWbbh0yD--
 

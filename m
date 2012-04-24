@@ -1,112 +1,43 @@
 From: Josef Bacik <josef@redhat.com>
-Subject: Re: [PATCH] btrfs: allow changing 'thread_pool' size at remount time
-Date: Tue, 24 Apr 2012 13:32:37 -0400
-Message-ID: <20120424173237.GA6164@localhost.localdomain>
-References: <1335288404-11565-1-git-send-email-slyich@gmail.com>
+Subject: Re: Ceph on btrfs 3.4rc
+Date: Tue, 24 Apr 2012 13:33:44 -0400
+Message-ID: <20120424173343.GB6164@localhost.localdomain>
+References: <CAJafhzSVZ3+1ApgJU=sQu6gM62BeWVGG4mqFPNYRHx79czYJtQ@mail.gmail.com>
+ <20120424152141.GB3326@localhost.localdomain>
+ <Pine.LNX.4.64.1204240922040.29159@cobra.newdream.net>
 Mime-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
-Cc: linux-btrfs@vger.kernel.org,
-	Sergei Trofimovich <slyfox@gentoo.org>,
-	Josef Bacik <josef@redhat.com>,
-	Chris Mason <chris.mason@oracle.com>
-To: Sergei Trofimovich <slyich@gmail.com>
+Cc: Christian Brunner <christian@brunner-muc.de>,
+	Josef Bacik <josef@redhat.com>, linux-btrfs@vger.kernel.org,
+	ceph-devel@vger.kernel.org
+To: Sage Weil <sage@newdream.net>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <1335288404-11565-1-git-send-email-slyich@gmail.com>
+In-Reply-To: <Pine.LNX.4.64.1204240922040.29159@cobra.newdream.net>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Tue, Apr 24, 2012 at 08:26:44PM +0300, Sergei Trofimovich wrote:
-> From: Sergei Trofimovich <slyfox@gentoo.org>
+On Tue, Apr 24, 2012 at 09:26:15AM -0700, Sage Weil wrote:
+> On Tue, 24 Apr 2012, Josef Bacik wrote:
+> > On Fri, Apr 20, 2012 at 05:09:34PM +0200, Christian Brunner wrote:
+> > > After running ceph on XFS for some time, I decided to try btrfs again.
+> > > Performance with the current "for-linux-min" branch and big metadata
+> > > is much better. The only problem (?) I'm still seeing is a warning
+> > > that seems to occur from time to time:
 > 
-> Changing 'mount -oremount,thread_pool=2 /' didn't make any effect:
+> Actually, before you do that... we have a new tool, 
+> test_filestore_workloadgen, that generates a ceph-osd-like workload on the 
+> local file system.  It's a subset of what a full OSD might do, but if 
+> we're lucky it will be sufficient to reproduce this issue.  Something like
 > 
-> maximum amount of worker threads is specified in 2 places:
-> - in 'strict btrfs_fs_info::thread_pool_size'
-> - in each worker struct: 'struct btrfs_workers::max_workers'
+>  test_filestore_workloadgen --osd-data /foo --osd-journal /bar
 > 
-> 'mount -oremount' updated only 'btrfs_fs_info::thread_pool_size'.
+> will hopefully do the trick.
 > 
-> Fix it by pushing new maximum value to all created worker structures
-> as well.
+> Christian, maybe you can see if that is able to trigger this warning?  
+> You'll need to pull it from the current master branch; it wasn't in the 
+> last release.
 > 
-> Cc: Josef Bacik <josef@redhat.com>
-> Cc: Chris Mason <chris.mason@oracle.com>
-> Signed-off-by: Sergei Trofimovich <slyfox@gentoo.org>
-> ---
-> WARNING: This patch makes sense only with
-> WARNING:    "btrfs: fix early abort in 'remount'"
-> WARNING: sitting in Josef's -next branch.
->  fs/btrfs/super.c |   38 +++++++++++++++++++++++++++++++++-----
->  1 files changed, 33 insertions(+), 5 deletions(-)
-> 
-> diff --git a/fs/btrfs/super.c b/fs/btrfs/super.c
-> index 2f28fc0..ed2dab9 100644
-> --- a/fs/btrfs/super.c
-> +++ b/fs/btrfs/super.c
-> @@ -435,11 +435,8 @@ int btrfs_parse_options(struct btrfs_root *root, char *options)
->  		case Opt_thread_pool:
->  			intarg = 0;
->  			match_int(&args[0], &intarg);
-> -			if (intarg) {
-> +			if (intarg)
->  				info->thread_pool_size = intarg;
-> -				printk(KERN_INFO "btrfs: thread pool %d\n",
-> -				       info->thread_pool_size);
-> -			}
->  			break;
->  		case Opt_max_inline:
->  			num = match_strdup(&args[0]);
-> @@ -1119,6 +1116,35 @@ error_fs_info:
->  	return ERR_PTR(error);
->  }
->  
-> +static void btrfs_set_max_workers(struct btrfs_workers *workers, int new_limit)
-> +{
-> +	workers->max_workers = new_limit;
-> +}
 
-This needs to be protected by it's spin lock, so do
-
-spin_lock_irq(&workers->lock);
-workers->max_workers = new_limit;
-spin_unlock_irq(&workers->lock);
-
-Also this doesn't do anything for thread pools that have already gone above the
-new maximum.  In practice this shouldn't happen really since most of these
-workers are related to writing anyway, but it may be prudent in the future to
-make btrfs_set_max_workers to go through and stop threads until the workers are
-below the new limit.  This doesn't have to be done in this patch, just good idea
-for future work.
-
-> +
-> +static void btrfs_resize_thread_pool(struct btrfs_fs_info *fs_info, int new_pool_size, int old_pool_size)
-> +{
-> +	if (new_pool_size != old_pool_size) {
-> +		fs_info->thread_pool_size = new_pool_size;
-> +
-> +		printk(KERN_INFO "btrfs: resize thread pool %d -> %d\n", old_pool_size, new_pool_size);
-> +
-> +		btrfs_set_max_workers(&fs_info->generic_worker, new_pool_size);
-> +		btrfs_set_max_workers(&fs_info->workers, new_pool_size);
-> +		btrfs_set_max_workers(&fs_info->delalloc_workers, new_pool_size);
-> +		btrfs_set_max_workers(&fs_info->submit_workers, new_pool_size);
-> +		btrfs_set_max_workers(&fs_info->caching_workers, new_pool_size);
-> +		btrfs_set_max_workers(&fs_info->fixup_workers, new_pool_size);
-> +		btrfs_set_max_workers(&fs_info->endio_workers, new_pool_size);
-> +		btrfs_set_max_workers(&fs_info->endio_meta_workers, new_pool_size);
-> +		btrfs_set_max_workers(&fs_info->endio_meta_write_workers, new_pool_size);
-> +		btrfs_set_max_workers(&fs_info->endio_write_workers, new_pool_size);
-> +		btrfs_set_max_workers(&fs_info->endio_freespace_worker, new_pool_size);
-> +		btrfs_set_max_workers(&fs_info->delayed_workers, new_pool_size);
-> +		btrfs_set_max_workers(&fs_info->readahead_workers, new_pool_size);
-> +		btrfs_set_max_workers(&fs_info->scrub_workers, new_pool_size);
-> +	}
-> +}
-> +
-
-These lines are past the 80 column mark, if you are using vim do
-
-:set textwidth=80
-
-and that should help.  Thanks,
+Keep up the good work Sage, at this rate I'll never have to setup ceph for
+myself :),
 
 Josef

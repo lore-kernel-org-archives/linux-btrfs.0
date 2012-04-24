@@ -1,120 +1,108 @@
-From: Sage Weil <sage@newdream.net>
-Subject: Re: Ceph on btrfs 3.4rc
-Date: Tue, 24 Apr 2012 09:26:15 -0700 (PDT)
-Message-ID: <Pine.LNX.4.64.1204240922040.29159@cobra.newdream.net>
-References: <CAJafhzSVZ3+1ApgJU=sQu6gM62BeWVGG4mqFPNYRHx79czYJtQ@mail.gmail.com>
- <20120424152141.GB3326@localhost.localdomain>
-Mime-Version: 1.0
-Content-Type: TEXT/PLAIN; charset=US-ASCII
-Cc: linux-btrfs@vger.kernel.org, ceph-devel@vger.kernel.org
-To: Christian Brunner <christian@brunner-muc.de>,
-	Josef Bacik <josef@redhat.com>
+From: Sergei Trofimovich <slyich@gmail.com>
+Subject: [PATCH] btrfs: allow changing 'thread_pool' size at remount time
+Date: Tue, 24 Apr 2012 20:26:44 +0300
+Message-ID: <1335288404-11565-1-git-send-email-slyich@gmail.com>
+Cc: Sergei Trofimovich <slyfox@gentoo.org>,
+	Josef Bacik <josef@redhat.com>,
+	Chris Mason <chris.mason@oracle.com>
+To: linux-btrfs@vger.kernel.org
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <20120424152141.GB3326@localhost.localdomain>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Tue, 24 Apr 2012, Josef Bacik wrote:
-> On Fri, Apr 20, 2012 at 05:09:34PM +0200, Christian Brunner wrote:
-> > After running ceph on XFS for some time, I decided to try btrfs again.
-> > Performance with the current "for-linux-min" branch and big metadata
-> > is much better. The only problem (?) I'm still seeing is a warning
-> > that seems to occur from time to time:
+From: Sergei Trofimovich <slyfox@gentoo.org>
 
-Actually, before you do that... we have a new tool, 
-test_filestore_workloadgen, that generates a ceph-osd-like workload on the 
-local file system.  It's a subset of what a full OSD might do, but if 
-we're lucky it will be sufficient to reproduce this issue.  Something like
+Changing 'mount -oremount,thread_pool=2 /' didn't make any effect:
 
- test_filestore_workloadgen --osd-data /foo --osd-journal /bar
+maximum amount of worker threads is specified in 2 places:
+- in 'strict btrfs_fs_info::thread_pool_size'
+- in each worker struct: 'struct btrfs_workers::max_workers'
 
-will hopefully do the trick.
+'mount -oremount' updated only 'btrfs_fs_info::thread_pool_size'.
 
-Christian, maybe you can see if that is able to trigger this warning?  
-You'll need to pull it from the current master branch; it wasn't in the 
-last release.
+Fix it by pushing new maximum value to all created worker structures
+as well.
 
-Thanks!
-sage
+Cc: Josef Bacik <josef@redhat.com>
+Cc: Chris Mason <chris.mason@oracle.com>
+Signed-off-by: Sergei Trofimovich <slyfox@gentoo.org>
+---
+WARNING: This patch makes sense only with
+WARNING:    "btrfs: fix early abort in 'remount'"
+WARNING: sitting in Josef's -next branch.
+ fs/btrfs/super.c |   38 +++++++++++++++++++++++++++++++++-----
+ 1 files changed, 33 insertions(+), 5 deletions(-)
 
+diff --git a/fs/btrfs/super.c b/fs/btrfs/super.c
+index 2f28fc0..ed2dab9 100644
+--- a/fs/btrfs/super.c
++++ b/fs/btrfs/super.c
+@@ -435,11 +435,8 @@ int btrfs_parse_options(struct btrfs_root *root, char *options)
+ 		case Opt_thread_pool:
+ 			intarg = 0;
+ 			match_int(&args[0], &intarg);
+-			if (intarg) {
++			if (intarg)
+ 				info->thread_pool_size = intarg;
+-				printk(KERN_INFO "btrfs: thread pool %d\n",
+-				       info->thread_pool_size);
+-			}
+ 			break;
+ 		case Opt_max_inline:
+ 			num = match_strdup(&args[0]);
+@@ -1119,6 +1116,35 @@ error_fs_info:
+ 	return ERR_PTR(error);
+ }
+ 
++static void btrfs_set_max_workers(struct btrfs_workers *workers, int new_limit)
++{
++	workers->max_workers = new_limit;
++}
++
++static void btrfs_resize_thread_pool(struct btrfs_fs_info *fs_info, int new_pool_size, int old_pool_size)
++{
++	if (new_pool_size != old_pool_size) {
++		fs_info->thread_pool_size = new_pool_size;
++
++		printk(KERN_INFO "btrfs: resize thread pool %d -> %d\n", old_pool_size, new_pool_size);
++
++		btrfs_set_max_workers(&fs_info->generic_worker, new_pool_size);
++		btrfs_set_max_workers(&fs_info->workers, new_pool_size);
++		btrfs_set_max_workers(&fs_info->delalloc_workers, new_pool_size);
++		btrfs_set_max_workers(&fs_info->submit_workers, new_pool_size);
++		btrfs_set_max_workers(&fs_info->caching_workers, new_pool_size);
++		btrfs_set_max_workers(&fs_info->fixup_workers, new_pool_size);
++		btrfs_set_max_workers(&fs_info->endio_workers, new_pool_size);
++		btrfs_set_max_workers(&fs_info->endio_meta_workers, new_pool_size);
++		btrfs_set_max_workers(&fs_info->endio_meta_write_workers, new_pool_size);
++		btrfs_set_max_workers(&fs_info->endio_write_workers, new_pool_size);
++		btrfs_set_max_workers(&fs_info->endio_freespace_worker, new_pool_size);
++		btrfs_set_max_workers(&fs_info->delayed_workers, new_pool_size);
++		btrfs_set_max_workers(&fs_info->readahead_workers, new_pool_size);
++		btrfs_set_max_workers(&fs_info->scrub_workers, new_pool_size);
++	}
++}
++
+ static int btrfs_remount(struct super_block *sb, int *flags, char *data)
+ {
+ 	struct btrfs_fs_info *fs_info = btrfs_sb(sb);
+@@ -1138,6 +1164,8 @@ static int btrfs_remount(struct super_block *sb, int *flags, char *data)
+ 		goto restore;
+ 	}
+ 
++	btrfs_resize_thread_pool(fs_info, fs_info->thread_pool_size, old_thread_pool_size);
++
+ 	if ((*flags & MS_RDONLY) == (sb->s_flags & MS_RDONLY))
+ 		return 0;
+ 
+@@ -1181,7 +1209,7 @@ restore:
+ 	fs_info->compress_type = old_compress_type;
+ 	fs_info->max_inline = old_max_inline;
+ 	fs_info->alloc_start = old_alloc_start;
+-	fs_info->thread_pool_size = old_thread_pool_size;
++	btrfs_resize_thread_pool(fs_info, old_thread_pool_size, fs_info->thread_pool_size);
+ 	fs_info->metadata_ratio = old_metadata_ratio;
+ 	return ret;
+ }
+-- 
+1.7.8.5
 
-> > 
-> > [87703.784552] ------------[ cut here ]------------
-> > [87703.789759] WARNING: at fs/btrfs/inode.c:2103
-> > btrfs_orphan_commit_root+0xf6/0x100 [btrfs]()
-> > [87703.799070] Hardware name: ProLiant DL180 G6
-> > [87703.804024] Modules linked in: btrfs zlib_deflate libcrc32c xfs
-> > exportfs sunrpc bonding ipv6 sg serio_raw pcspkr iTCO_wdt
-> > iTCO_vendor_support i7core_edac edac_core ixgbe dca mdio
-> > iomemory_vsl(PO) hpsa squashfs [last unloaded: scsi_wait_scan]
-> > [87703.828166] Pid: 929, comm: kworker/1:2 Tainted: P           O
-> > 3.3.2-1.fits.1.el6.x86_64 #1
-> > [87703.837513] Call Trace:
-> > [87703.840280]  [<ffffffff8104df6f>] warn_slowpath_common+0x7f/0xc0
-> > [87703.847016]  [<ffffffff8104dfca>] warn_slowpath_null+0x1a/0x20
-> > [87703.853533]  [<ffffffffa0355686>] btrfs_orphan_commit_root+0xf6/0x100 [btrfs]
-> > [87703.861541]  [<ffffffffa0350a06>] commit_fs_roots+0xc6/0x1c0 [btrfs]
-> > [87703.868674]  [<ffffffffa0351bcb>]
-> > btrfs_commit_transaction+0x5db/0xa50 [btrfs]
-> > [87703.876745]  [<ffffffff810127a3>] ? __switch_to+0x153/0x440
-> > [87703.882966]  [<ffffffff81070a90>] ? wake_up_bit+0x40/0x40
-> > [87703.888997]  [<ffffffffa0352040>] ?
-> > btrfs_commit_transaction+0xa50/0xa50 [btrfs]
-> > [87703.897271]  [<ffffffffa035205f>] do_async_commit+0x1f/0x30 [btrfs]
-> > [87703.904262]  [<ffffffff81068949>] process_one_work+0x129/0x450
-> > [87703.910777]  [<ffffffff8106b7eb>] worker_thread+0x17b/0x3c0
-> > [87703.916991]  [<ffffffff8106b670>] ? manage_workers+0x220/0x220
-> > [87703.923504]  [<ffffffff810703fe>] kthread+0x9e/0xb0
-> > [87703.928952]  [<ffffffff8158c224>] kernel_thread_helper+0x4/0x10
-> > [87703.935555]  [<ffffffff81070360>] ? kthread_freezable_should_stop+0x70/0x70
-> > [87703.943323]  [<ffffffff8158c220>] ? gs_change+0x13/0x13
-> > [87703.949149] ---[ end trace b8c31966cca731fa ]---
-> > [91128.812399] ------------[ cut here ]------------
-> > [91128.817576] WARNING: at fs/btrfs/inode.c:2103
-> > btrfs_orphan_commit_root+0xf6/0x100 [btrfs]()
-> > [91128.826930] Hardware name: ProLiant DL180 G6
-> > [91128.831897] Modules linked in: btrfs zlib_deflate libcrc32c xfs
-> > exportfs sunrpc bonding ipv6 sg serio_raw pcspkr iTCO_wdt
-> > iTCO_vendor_support i7core_edac edac_core ixgbe dca mdio
-> > iomemory_vsl(PO) hpsa squashfs [last unloaded: scsi_wait_scan]
-> > [91128.856086] Pid: 6806, comm: btrfs-transacti Tainted: P        W  O
-> > 3.3.2-1.fits.1.el6.x86_64 #1
-> > [91128.865912] Call Trace:
-> > [91128.868670]  [<ffffffff8104df6f>] warn_slowpath_common+0x7f/0xc0
-> > [91128.875379]  [<ffffffff8104dfca>] warn_slowpath_null+0x1a/0x20
-> > [91128.881900]  [<ffffffffa0355686>] btrfs_orphan_commit_root+0xf6/0x100 [btrfs]
-> > [91128.889894]  [<ffffffffa0350a06>] commit_fs_roots+0xc6/0x1c0 [btrfs]
-> > [91128.897019]  [<ffffffffa03a2b61>] ?
-> > btrfs_run_delayed_items+0xf1/0x160 [btrfs]
-> > [91128.905075]  [<ffffffffa0351bcb>]
-> > btrfs_commit_transaction+0x5db/0xa50 [btrfs]
-> > [91128.913156]  [<ffffffffa03524b2>] ? start_transaction+0x92/0x310 [btrfs]
-> > [91128.920643]  [<ffffffff81070a90>] ? wake_up_bit+0x40/0x40
-> > [91128.926667]  [<ffffffffa034cfcb>] transaction_kthread+0x26b/0x2e0 [btrfs]
-> > [91128.934254]  [<ffffffffa034cd60>] ?
-> > btrfs_destroy_marked_extents.clone.0+0x1f0/0x1f0 [btrfs]
-> > [91128.943671]  [<ffffffffa034cd60>] ?
-> > btrfs_destroy_marked_extents.clone.0+0x1f0/0x1f0 [btrfs]
-> > [91128.953079]  [<ffffffff810703fe>] kthread+0x9e/0xb0
-> > [91128.958532]  [<ffffffff8158c224>] kernel_thread_helper+0x4/0x10
-> > [91128.965133]  [<ffffffff81070360>] ? kthread_freezable_should_stop+0x70/0x70
-> > [91128.972913]  [<ffffffff8158c220>] ? gs_change+0x13/0x13
-> > [91128.978826] ---[ end trace b8c31966cca731fb ]---
-> > 
-> > I'm able to reproduce this with ceph on a single server with 4 disks
-> > (4 filesystems/osds) and a small test program based on librbd. It is
-> > simply writing random bytes on a rbd volume (see attachment).
-> > 
-> > Is this something I should care about? Any hint's on solving this
-> > would be appreciated.
-> > 
-> 
-> Can you send me a config or some basic steps for me to setup ceph on my box so I
-> can run this program and finally track down this problem?  Thanks,
-> 
-> Josef
-> --
-> To unsubscribe from this list: send the line "unsubscribe ceph-devel" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
-> 
-> 

@@ -1,31 +1,25 @@
-From: Thomas Weber <thomas.weber.linux@googlemail.com>
-Subject: Re: bug?
-Date: Tue, 24 Apr 2012 17:47:57 +0200
-Message-ID: <4F96CB2D.9040809@gmail.com>
-References: <4F92ADE3.3010403@gmail.com> <20120424152638.GC3326@localhost.localdomain>
+From: Daniel J Blueman <daniel@quora.org>
+Subject: block_rsv_check EAGAIN vs ENOSPC...
+Date: Tue, 24 Apr 2012 23:50:24 +0800
+Message-ID: <CAMVG2stv_CbF=-A=yS40_Q6N5+_fpc2SSJxL3Rga0LQXpc8MSA@mail.gmail.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset=ISO-8859-1
-Cc: Thomas Weber <thomas.weber.linux@googlemail.com>,
-	linux-btrfs@vger.kernel.org
-To: Josef Bacik <josef@redhat.com>
+Cc: Linux BTRFS <linux-btrfs@vger.kernel.org>
+To: Josef Bacik <josef@redhat.com>,
+	Chris Mason <chris.mason@oracle.com>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <20120424152638.GC3326@localhost.localdomain>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hello Josef,
+With 3.4-rc4 under certain workloads, I see btrfs_block_rsv_check
+return -ENOSPC.
 
-On 04/24/2012 05:26 PM, Josef Bacik wrote:
-> On Sat, Apr 21, 2012 at 02:53:55PM +0200, Thomas Weber wrote:
->> Hello,
->>
->> today my laptop crashed with the following output. Installed is
->> Archlinux with btrfs on a SSD.
->> Is it btrfs related?
-> Sort of an old kernel, can you try on something recent?  It doesn't look
-> familiar but who knows.  Thanks,
->
-> Josef
-I was on the 3.2 kernel because of the enospc problem. Today I updated
-to 3.3.3 kernel.
+Since btrfs_block_rsv_check can only return -ENOSPC or 0,
+relocation.c:3816 checks for -EAGAIN, which is either redundant or
+should be -ENOSPC, which I initially suspected.
 
-Thomas
+Let me know which the behaviour should be and I'll get a patch tested and sent.
+
+Thanks,
+  Daniel
+-- 
+Daniel J Blueman

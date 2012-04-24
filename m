@@ -1,53 +1,57 @@
 From: Chris Mason <chris.mason@oracle.com>
-Subject: Re: [PATCH] Btrfs: complete page writeback before doing ordered
- extents
-Date: Tue, 24 Apr 2012 10:15:29 -0400
-Message-ID: <20120424141529.GI22794@shiny>
-References: <1335202424-7135-1-git-send-email-josef@redhat.com>
- <4F9606EF.2080005@cn.fujitsu.com>
+Subject: Re: [PATCH] Btrfs: do not do filemap_write_and_wait_range in fsync
+Date: Tue, 24 Apr 2012 10:16:33 -0400
+Message-ID: <20120424141633.GJ22794@shiny>
+References: <1335208001-8833-1-git-send-email-josef@redhat.com>
+ <20120423232945.GD22794@shiny>
+ <20120424131446.GA1940@localhost.localdomain>
 Mime-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
-Cc: Josef Bacik <josef@redhat.com>, linux-btrfs@vger.kernel.org
-To: Liu Bo <liubo2009@cn.fujitsu.com>
+Cc: linux-btrfs@vger.kernel.org
+To: Josef Bacik <josef@redhat.com>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <4F9606EF.2080005@cn.fujitsu.com>
+In-Reply-To: <20120424131446.GA1940@localhost.localdomain>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Tue, Apr 24, 2012 at 09:50:39AM +0800, Liu Bo wrote:
-> On 04/24/2012 01:33 AM, Josef Bacik wrote:
-> 
-> > We can deadlock waiting for pages to end writeback because we are doing an
-> > allocation while hold a tree lock since the ordered extent stuff will
-> > require tree locks.  A quick easy way to fix this is to end page writeback
-> > before we do our ordered io stuff, which works fine since we don't really
-> > need the page for this to work.  Eventually we want to make this work happen
-> > as soon as the io is completed and then push the ordered extent stuff off to
-> > a worker thread, but at this stage we need this deadlock fixed with changing
-> > as little as possible.  Thanks,
+On Tue, Apr 24, 2012 at 09:14:47AM -0400, Josef Bacik wrote:
+> On Mon, Apr 23, 2012 at 07:29:45PM -0400, Chris Mason wrote:
+> > On Mon, Apr 23, 2012 at 03:06:41PM -0400, Josef Bacik wrote:
+> > > We already do the btrfs_wait_ordered_range which will do this for us, so
+> > > just remove this call so we don't call it twice.  Thanks,
+> > > 
+> > > Signed-off-by: Josef Bacik <josef@redhat.com>
+> > > ---
+> > >  fs/btrfs/file.c |   11 ++++++-----
+> > >  1 files changed, 6 insertions(+), 5 deletions(-)
+> > > 
+> > > diff --git a/fs/btrfs/file.c b/fs/btrfs/file.c
+> > > index f0da02b..0c8ed6a 100644
+> > > --- a/fs/btrfs/file.c
+> > > +++ b/fs/btrfs/file.c
+> > > @@ -1492,14 +1492,15 @@ int btrfs_sync_file(struct file *file, loff_t start, loff_t end, int datasync)
+> > >  
+> > >  	trace_btrfs_sync_file(file, datasync);
+> > >  
+> > > -	ret = filemap_write_and_wait_range(inode->i_mapping, start, end);
+> > > -	if (ret)
+> > > -		return ret;
+> > >  	mutex_lock(&inode->i_mutex);
+> > 
+> > Hmmm, I think there are some good benefits to doing the wait
+> > outside of the mutex.
+> > 
+> > The question is, do we need to do it again after we take the mutex?  I
+> > tend to think no, if you're racing another write with the fsync, you get
+> > what you deserve.
 > > 
 > 
-> 
-> Hi Josef,
-> 
-> I'm ok with the patch, but could you show us more details about the deadlock between allocation and endio?
+> Yeah I thought about this and I wasn't sure, the only reason I left it where it
+> was is because of the log_batch thing, I'm not sure what exactly that does and I
+> didn't want to mess with what we have.  If that can be done outside the mutex
+> then lets do that.  Thanks,
 
-Josef and I have been talking about this one off-list for a while.  It's
-a deadlock I tracked down in my overnight stress runs.
-
-Basically what we have is the io-less dirty throttling code saying there
-are too many pages in writeback, and so new allocations are backing up
-and waiting for pages to leave writeback.
-
-But the pages can't leave writeback because we're waiting on more memory
-to complete the metadata changes at endio time.  Strictly speaking the
-VM is doing something wrong here, our NOFS allocations shouldn't be
-waiting for writeback to finish.
-
-But, strictly speaking we're doing something wrong too, we're doing too
-many allocations with pages tied up in writeback.
-
-So this splits the page from the metadata changes.  We're still doing
-the metadata changes after the IO is complete, but we're doing them
-after we've let the pages go.
+The log batch is just something to kick the logging code so that it
+knows there are more loggers coming in.  It's the wait around for more
+changes thing.
 
 -chris

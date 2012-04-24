@@ -1,14 +1,15 @@
-From: Ilya Dryomov <idryomov@gmail.com>
+From: Chris Mason <chris.mason@oracle.com>
 Subject: Re: 'filesystem resize max' tries to use devid 1
-Date: Tue, 24 Apr 2012 18:58:40 +0300
-Message-ID: <20120424155839.GB1928@zambezi.lan>
+Date: Tue, 24 Apr 2012 11:59:20 -0400
+Message-ID: <20120424155920.GM22794@shiny>
 References: <CAJwq8q6Dd-Z6z=1H5h8m9TE8aBioY9x99ZBsGWa7pRdbVtDZOQ@mail.gmail.com>
  <20120424153114.GD3326@localhost.localdomain>
  <20120424153903.GA1928@zambezi.lan>
  <20120424154225.GE3326@localhost.localdomain>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=utf-8
-Cc: Jeremy Atkins <antrat@gmail.com>, linux-btrfs@vger.kernel.org
+Content-Type: text/plain; charset=iso-8859-1
+Cc: Ilya Dryomov <idryomov@gmail.com>,
+	Jeremy Atkins <antrat@gmail.com>, linux-btrfs@vger.kernel.org
 To: Josef Bacik <josef@redhat.com>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
 In-Reply-To: <20120424154225.GE3326@localhost.localdomain>
@@ -32,7 +33,7 @@ s dev
 > > > > ERROR: unable to resize '/' - Invalid argument
 > > > >=20
 > > > > in dmesg i see:
-> > > > [ =C2=A0 72.729685] btrfs: resizer unable to find device 1
+> > > > [ =A0 72.729685] btrfs: resizer unable to find device 1
 > > > >=20
 > > > > $ sudo btrfs fi df /
 > > > > Data: total=3D34.00GB, used=3D17.79GB
@@ -40,11 +41,10 @@ s dev
 > > > > Metadata, DUP: total=3D33.50GB, used=3D394.93MB
 > > > >=20
 > > > > $ sudo btrfs fi sh
-> > > > Label: none =C2=A0uuid: b0ad55e2-09e0-4658-8cab-d2e11ba03753
-> > > > =C2=A0 =C2=A0 =C2=A0 =C2=A0 Total devices 1 FS bytes used 17.18=
-GB
-> > > > =C2=A0 =C2=A0 =C2=A0 =C2=A0 devid =C2=A0 =C2=A02 size 1.62TB us=
-ed 101.12GB path /dev/sdc4
+> > > > Label: none =A0uuid: b0ad55e2-09e0-4658-8cab-d2e11ba03753
+> > > > =A0 =A0 =A0 =A0 Total devices 1 FS bytes used 17.18GB
+> > > > =A0 =A0 =A0 =A0 devid =A0 =A02 size 1.62TB used 101.12GB path /=
+dev/sdc4
 > > > >=20
 > > > >=20
 > > > > $ uname -r
@@ -79,14 +79,13 @@ specific
 > things, but I think just a normal btrfs fi resize max should do all d=
 evices for
 > simplicity and easy of use, no need for a fs:max.  Thanks,
+>=20
 
-Sorry, I misread.  'btrfs fi resize max <mnt>' should of course resize
-the entire FS.  I think this popped up before, at least a couple times.
-I'll do it if nobody else wants to.
+Agreed, I hadn't thought of it this way in the past, but I can see
+people expecting max to mean max out all the devices.
 
-Thanks,
+-chris
 
-		Ilya
 --
 To unsubscribe from this list: send the line "unsubscribe linux-btrfs" =
 in

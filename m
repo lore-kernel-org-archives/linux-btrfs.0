@@ -1,35 +1,59 @@
-From: Daniel J Blueman <daniel@quora.org>
-Subject: [PATCH] Fix space checking during fs resize
-Date: Wed, 25 Apr 2012 14:20:02 +0800
-Message-ID: <1335334802-15469-1-git-send-email-daniel@quora.org>
-Cc: Yan Zheng <yanzheng@21cn.com>, Josef Bacik <josef@redhat.com>,
-	linux-btrfs@vger.kernel.org, Daniel J Blueman <daniel@quora.org>
-To: Chris Mason <chris.mason@oracle.com>
+From: Liu Bo <liubo2009@cn.fujitsu.com>
+Subject: Re: [PATCH] Btrfs: complete page writeback before doing ordered extents
+Date: Wed, 25 Apr 2012 15:52:07 +0800
+Message-ID: <4F97AD27.2070506@cn.fujitsu.com>
+References: <1335202424-7135-1-git-send-email-josef@redhat.com> <4F9606EF.2080005@cn.fujitsu.com> <20120424141529.GI22794@shiny>
+Mime-Version: 1.0
+Content-Type: text/plain; charset=ISO-8859-1
+To: Chris Mason <chris.mason@oracle.com>,
+	Josef Bacik <josef@redhat.com>, linux-btrfs@vger.kernel.org
 Return-path: <linux-btrfs-owner@vger.kernel.org>
+In-Reply-To: <20120424141529.GI22794@shiny>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Fix out-of-space checking, addressing a warning and potential resource
-leak when resizing the filesystem down while allocating blocks.
+On 04/24/2012 10:15 PM, Chris Mason wrote:
 
-Signed-off-by: Daniel J Blueman <daniel@quora.org>
-Reviewed-by: Josef Bacik <josef@redhat.com>
----
- fs/btrfs/relocation.c |    2 +-
- 1 file changed, 1 insertion(+), 1 deletion(-)
+> On Tue, Apr 24, 2012 at 09:50:39AM +0800, Liu Bo wrote:
+>> On 04/24/2012 01:33 AM, Josef Bacik wrote:
+>>
+>>> We can deadlock waiting for pages to end writeback because we are doing an
+>>> allocation while hold a tree lock since the ordered extent stuff will
+>>> require tree locks.  A quick easy way to fix this is to end page writeback
+>>> before we do our ordered io stuff, which works fine since we don't really
+>>> need the page for this to work.  Eventually we want to make this work happen
+>>> as soon as the io is completed and then push the ordered extent stuff off to
+>>> a worker thread, but at this stage we need this deadlock fixed with changing
+>>> as little as possible.  Thanks,
+>>>
+>>
+>> Hi Josef,
+>>
+>> I'm ok with the patch, but could you show us more details about the deadlock between allocation and endio?
+> 
+> Josef and I have been talking about this one off-list for a while.  It's
+> a deadlock I tracked down in my overnight stress runs.
+> 
+> Basically what we have is the io-less dirty throttling code saying there
+> are too many pages in writeback, and so new allocations are backing up
+> and waiting for pages to leave writeback.
+> 
+> But the pages can't leave writeback because we're waiting on more memory
+> to complete the metadata changes at endio time.  Strictly speaking the
+> VM is doing something wrong here, our NOFS allocations shouldn't be
+> waiting for writeback to finish.
+> 
+> But, strictly speaking we're doing something wrong too, we're doing too
+> many allocations with pages tied up in writeback.
+> 
+> So this splits the page from the metadata changes.  We're still doing
+> the metadata changes after the IO is complete, but we're doing them
+> after we've let the pages go.
+> 
+> -chris
+> 
 
-diff --git a/fs/btrfs/relocation.c b/fs/btrfs/relocation.c
-index 017281d..cd2b46e 100644
---- a/fs/btrfs/relocation.c
-+++ b/fs/btrfs/relocation.c
-@@ -3811,7 +3811,7 @@ restart:
- 
- 		ret = btrfs_block_rsv_check(rc->extent_root, rc->block_rsv, 5);
- 		if (ret < 0) {
--			if (ret != -EAGAIN) {
-+			if (ret != -ENOSPC) {
- 				err = ret;
- 				WARN_ON(1);
- 				break;
--- 
-1.7.9.5
 
+Now it's clear, thanks for the explanation. :)
+
+thanks,
+liubo

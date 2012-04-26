@@ -1,33 +1,32 @@
-From: Thomas Rohwer <trohwer@ennit.de>
+From: Bart Noordervliet <bart@noordervliet.net>
 Subject: Re: Interpreting Output of "btrfs fi show"
-Date: Thu, 26 Apr 2012 11:06:47 +0200
-Message-ID: <4F991027.6000903@ennit.de>
+Date: Thu, 26 Apr 2012 12:04:21 +0200
+Message-ID: <CAGy7UtioPbdjomzuv3phZcF+HShyYKytkOKnAhP+4VGj29Aahg@mail.gmail.com>
 References: <4F98B447.30102@ennit.de> <CAGy7UtgsWOmvG16oFTRutFTu5bwq4kT+CQTicqPuYa45YhqUSA@mail.gmail.com>
+ <4F991027.6000903@ennit.de>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=UTF-8; format=flowed
+Content-Type: text/plain; charset=UTF-8
 Cc: linux-btrfs@vger.kernel.org
-To: Bart Noordervliet <bart@noordervliet.net>
+To: Thomas Rohwer <trohwer@ennit.de>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <CAGy7UtgsWOmvG16oFTRutFTu5bwq4kT+CQTicqPuYa45YhqUSA@mail.gmail.com>
+In-Reply-To: <4F991027.6000903@ennit.de>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hello Bart,
+On Thu, Apr 26, 2012 at 11:06, Thomas Rohwer <trohwer@ennit.de> wrote:
+>> As for the two filesystems shown in btrfs fi show... I have no clue
+>> what that is about. Did you maybe make a mistake to create a btrfs
+>> filesystem on the whole disk at first?
+>
+> That is possible. But afterwards I certainly repartioned the device and
+> created a btrfs filesystem on /dev/sda1. Maybe this info is only in
+> the partition table? I understand that I should avoid mounting /dev/sda
+> in this situation.
 
-> there's a known regression in 3.3.0 that causes btrfs to report
-> out-of-space too early. If you upgrade to 3.3.3 or the latest 3.4 rc
-> the problem should be gone.
-
-thanks for the information. I will update my kernel.
-
-> As for the two filesystems shown in btrfs fi show... I have no clue
-> what that is about. Did you maybe make a mistake to create a btrfs
-> filesystem on the whole disk at first?
-
-That is possible. But afterwards I certainly repartioned the device and
-created a btrfs filesystem on /dev/sda1. Maybe this info is only in
-the partition table? I understand that I should avoid mounting /dev/sda
-in this situation.
-
-Sincerely,
-
-Thomas Rohwer
+Well I think there is a btrfs superblock still present from the
+full-disk filesystem. Due to the offset of the first partition from
+the start of the disk, this superblock was not overwritten when you
+created the filesystem inside the partition. But they very much
+overlap and the full-disk superblock will probably eventually be
+overwritten by elements from the partition filesystem. How you would
+go about erasing the stale superblock and whether it is safe to do so
+I can't say though.

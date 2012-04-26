@@ -1,24 +1,28 @@
-From: David Sterba <dave@jikos.cz>
+From: Hullen@t-online.de (Helmut Hullen)
 Subject: Re: Interpreting Output of "btrfs fi show"
-Date: Thu, 26 Apr 2012 13:53:26 +0200
-Message-ID: <20120426115326.GO20982@twin.jikos.cz>
-References: <CAGy7UtioPbdjomzuv3phZcF+HShyYKytkOKnAhP+4VGj29Aahg@mail.gmail.com>
- <C7$h9m5PCXB@helmut.hullen.de>
-Reply-To: dave@jikos.cz
+Date: 26 Apr 2012 15:59:00 +0200
+Message-ID: <C7$hz9fuCXB@helmut.hullen.de>
+References: <20120426115326.GO20982@twin.jikos.cz>
+Reply-To: helmut@hullen.de
 Mime-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Cc: linux-btrfs@vger.kernel.org
-To: helmut@hullen.de
+Content-Type: text/plain; charset=US-ASCII
+To: linux-btrfs@vger.kernel.org
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <C7$h9m5PCXB@helmut.hullen.de>
+In-Reply-To: <20120426115326.GO20982@twin.jikos.cz>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Thu, Apr 26, 2012 at 01:11:00PM +0200, Helmut Hullen wrote:
-> I now use to delete about the first 10 MByte of the target disk via "dd  
-> if=/dev/zero"
+Hallo, David,
 
-FYI, the minimal amount of data you need to rewrite is 4k:
+Du meintest am 26.04.12:
 
-dd if=/dev/zero of=/dev/ice bs=1k count=4 seek=64
+>> I now use to delete about the first 10 MByte of the target disk via
+>> "dd if=/dev/zero"
 
-david
+> FYI, the minimal amount of data you need to rewrite is 4k:
+
+> dd if=/dev/zero of=/dev/ice bs=1k count=4 seek=64
+
+Thank you - I'll try to remember the next time I need this command!
+
+Viele Gruesse!
+Helmut

@@ -1,38 +1,67 @@
-From: Chris Mason <chris.mason@oracle.com>
-Subject: Re: Optionally enforced time-based ACLs for BTRFS
-Date: Thu, 26 Apr 2012 16:04:23 -0400
-Message-ID: <20120426200423.GR22794@shiny>
-References: <DE6EA944EF16AF4CA4C0D1856C83808006C7F05E96@ex7>
+From: Duncan <1i5t5.duncan@cox.net>
+Subject: Re: Interpreting Output of "btrfs fi show"
+Date: Thu, 26 Apr 2012 20:54:47 +0000 (UTC)
+Message-ID: <pan.2012.04.26.20.54.46@cox.net>
+References: <CAGy7UtioPbdjomzuv3phZcF+HShyYKytkOKnAhP+4VGj29Aahg@mail.gmail.com>
+	<C7$h9m5PCXB@helmut.hullen.de>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Cc: "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
-To: David Bruzos <David.Bruzos@jaxport.com>
+Content-Type: text/plain; charset=UTF-8
+To: linux-btrfs@vger.kernel.org
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <DE6EA944EF16AF4CA4C0D1856C83808006C7F05E96@ex7>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Thu, Apr 26, 2012 at 03:30:39PM -0400, David Bruzos wrote:
+Helmut Hullen posted on Thu, 26 Apr 2012 13:11:00 +0200 as excerpted:
 
-> Hi BTRFS folks: In my organization, many use cases exist for a
-> time-based honoring  field for FS ACLs.  I've done some brief research
-> regarding this topic, but I was unable to find any reference to such a
-> thing in any file system.  I understand that a feature like time-based
-> honoring for ACLs may arguably be something that should exist in
-> higher layers (E.G. some document management system), but on the other
-> hand, I see no real reason that an extra ACL field that would allow
-> for time-based granting/removing of permissions to some user would be
-> a problem.
+> Hallo, Bart,
+> 
+> Du meintest am 26.04.12:
+> 
+>>>> As for the two filesystems shown in btrfs fi show... I have no clue
+>>>> what that is about. Did you maybe make a mistake to create a btrfs
+>>>> filesystem on the whole disk at first?
+> 
+>>> That is possible. But afterwards I certainly repartioned the device
+>>> and created a btrfs filesystem on /dev/sda1. Maybe this info is only
+>>> in the partition table? I understand that I should avoid mounting
+>>> /dev/sda in this situation.
+> 
+>> Well I think there is a btrfs superblock still present from the
+>> full-disk filesystem. Due to the offset of the first partition from the
+>> start of the disk, this superblock was not overwritten when you created
+>> the filesystem inside the partition.
+> 
+> Sounds familiar ...
+> 
+> I now use to delete about the first 10 MByte of the target disk via "dd
+> if=/dev/zero"
 
-One of the interesting thing about linux acls is the filesystems don't
-really implement acls.  We implement xattrs, and the higher layers stuff
-acls into them.  In a few key spots we tell the higher layers how to do
-that, and we also call back into the higher layers for permission
-checks.
+Interestingly, this reminds me very much of the problem reiserfs has 
+(used to have??) with reiserfsck --rebuild-tree, where it would scan the 
+disk and decide anything that looked like a reiserfs superblock must 
+indeed be one, so any loopback filesystems created on a larger reiserfs 
+would screw up the larger reiserfs if rebuild-tree was ever run on it.
 
-This is a long way of saying the changes would have to happen in the
-generic acl code.  This is a good thing, it will get much more review
-that way.
+FWIW, I still run reiserfs, while waiting for a new filesystem with tail-
+packing (FWIW one of the features btrfs has, but btrfs isn't mature yet), 
+but I've never done a loopback reiserfs hosted on reiserfs -- I make sure 
+any loopbacks are something else, so I I've never had that problem 
+personally nor do I expect to.
 
-I'd suggest posting this to linux-fsdevel.
+But /unlike/ reiserfs, which was only affected with the well warned as 
+don't-use-unless-you-have-to fsck --rebuild-tree option, it seems that 
+due to btrfs scan, etc, btrfs has its similar problem in more routine 
+operation.
 
--chris
+But of course Chris Mason, being reiserfs maintainer for many years (and 
+whose praises I continue to sing for introducing and making ordered 
+journaling the reiserfs default in the mainline kernel... such that 
+during the infamous period when ext3 defaulted to writeback journaling, 
+reiserfs was arguably more stable than ext3!), both knows and has 
+forgotten waayyy more about that than most of us would ever /dream/ of 
+knowing in the first place, I'm sure!
+
+-- 
+Duncan - List replies preferred.   No HTML msgs.
+"Every nonfree program has a lord, a master --
+and if you use the program, he is your master."  Richard Stallman
+

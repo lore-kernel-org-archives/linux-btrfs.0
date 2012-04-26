@@ -1,58 +1,48 @@
-From: Chris Mason <chris.mason@oracle.com>
-Subject: Re: [RFC PATCH v2] Btrfs: improve space count for files with
- fragments
-Date: Thu, 26 Apr 2012 13:14:30 -0400
-Message-ID: <20120426171430.GP22794@shiny>
-References: <1335422363-31198-1-git-send-email-liubo2009@cn.fujitsu.com>
+From: David Bruzos <David.Bruzos@jaxport.com>
+Subject: Optionally enforced time-based ACLs for BTRFS
+Date: Thu, 26 Apr 2012 15:30:39 -0400
+Message-ID: <DE6EA944EF16AF4CA4C0D1856C83808006C7F05E96@ex7>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Cc: linux-btrfs@vger.kernel.org
-To: Liu Bo <liubo2009@cn.fujitsu.com>
+Content-Type: text/plain; charset="us-ascii"
+To: "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <1335422363-31198-1-git-send-email-liubo2009@cn.fujitsu.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Thu, Apr 26, 2012 at 02:39:23PM +0800, Liu Bo wrote:
-> Here is a simple scenario:
-> $ dd if=/dev/zero of=/mnt/btrfs/foobar bs=1k count=20;sync
-> $ btrfs fi df /mnt/btrfs
-> 
-> we get 20K used, but then
-> $ dd if=/dev/zero of=/mnt/btrfs/foobar bs=1k count=4 seek=4 conv=notrunc;sync
-> $ btrfs fi df /mnt/btrfs
-> 
-> we get 24K used.
-> Here is the problem, it is possible that an _unshared_ file with lots of
-> fragments costs nearly double space than its i_size, like:
-> 0k              20k
-> | --- extent --- |      turned to be on disk    <---  extent --->  <-- A -->
->      | - A - |                                  | -------------- | | ----- |
->      1k      19k                                       20k + 18k = 38k
-> 
->                         but what users want is  <---  extent --->  <-- A -->
->                                                 | --- |     | -- | | ----- |
->                                                     1k + 1k + 18k = 20k
-> so 18k is wasted.
-> 
-> With the current backref design, there is no easy way to fix this, because it
-> needs to touch several subtle parts, such as delayed ref stuff, extent backref.
-> 
-> So here I give it a try by splitting the extent which we're processing(the idea
-> comes from Chris :)).
-> 
-> The benifits:
-> As the above example shows, we'll get three individual extents: 1k + 1k + 18k,
-> with their checksums are well splitted.
-> 
-> The defects:
-> Yes, it makes the code much uglier.  And since we've disabled the merging of
-> delayed refs, we'll get some performance regression.
-> 
-> NOTE:
-> The patch may still have some bugs since we need more time to tune the subtle
-> things.
+Hi BTRFS folks:
+	In my organization, many use cases exist for a time-based honoring  field for FS ACLs.  I've done some brief research regarding this topic, but I was unable to find any reference to such a thing in any file system.
+	I understand that a feature like time-based honoring for ACLs may arguably be something that should exist in higher layers (E.G. some document management system), but on the other hand, I see no real reason that an extra ACL field that would allow for time-based granting/removing of permissions to some user would be a problem.
 
-Thanks for working on this.  Could you please explain in detail what the
-pinned extents do?
+* The logic would go something like this (ACE means Access control Entry):
+	If ACE.time = 0 or ACE.time > current_time; then
+		Honor ACE 
+	Elif Ace.time < 0 and (current.time+ACE.time) > 0; then
+		Honor ACE
+	Else
+		not honor ACE
+	fi
 
--chris
+	for uses like company-wide file servers, etc, a little feature like that could go very far in long-term management of file system permissions.  You could easily and non-hackeshly temporarily grant access to file system objects, without having to makemodifications to applications, system utilities,or system libraries.  The behavior could be easily controled by mount options (could be off by default) and a small utility or function of the standard file system's utilities could allow for easy management of the value in the time fields (change, expire, etc).
+	Of course, acurit time would then be crutial to system security, but today acurit time is crytical on servers anyway in most situations.  Besides, it would definitly be an optional feature, enabled at the user's choice.
+	If we add a second field, then both expire time and activation time could be set for a given access control entry at the same time.  In that case, negative values for the fields could indicate things like restrict access to ---, r-x, etc, regardless of the ACE's actual content.  Basically, it would be something like XFS's mask entry, but applying to the ACE itself not the entire list.
+
+
+	Any thoughts, suggestions, ideas?
+	Am I just plain crazy?
+
+Thanks for the great work you're doing.
+
+David Bruzos (Systems Administrator)
+2831 Talleyrand Ave.
+Jacksonville, FL  32206
+Office: (904) 357-3069
+
+
+________________________________________________________________________________________________
+
+Please note that under Florida's public records law (F.S. 668.6076), most written communications 
+to or from the Jacksonville Port Authority are public records, available to the public and media 
+upon request. Your email communications may therefore be subject to public disclosure. If you have 
+received this email in error, please notify the sender by return email and delete immediately 
+without forwarding to others.
+
+

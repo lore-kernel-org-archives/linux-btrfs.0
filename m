@@ -1,30 +1,49 @@
 From: Josef Bacik <josef@redhat.com>
-Subject: Re: [PATCH] Add missing unlocks on error paths
-Date: Thu, 26 Apr 2012 11:08:56 -0400
-Message-ID: <20120426150855.GA25603@dhcp231-144.rdu.redhat.com>
-References: <1335369891-19137-1-git-send-email-daniel@quora.org>
- <20120425214014.GM20982@twin.jikos.cz>
+Subject: Re: [PATCH 1/4] vfs: introduce try_to_writeback_inodes_sb(_nr)
+Date: Thu, 26 Apr 2012 11:12:00 -0400
+Message-ID: <20120426151159.GB25603@dhcp231-144.rdu.redhat.com>
+References: <4F98B9A7.8060209@gmail.com>
+ <20120426031156.GY9541@dastard>
+ <CAAW_DMg9VLEtV40=qAbT3WZ4tN+ejZxToFHO0AiqDmjvV=V4eA@mail.gmail.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
-To: Daniel J Blueman <daniel@quora.org>, linux-btrfs@vger.kernel.org,
-	Chris Mason <chris.mason@oracle.com>,
-	Josef Bacik <josef@redhat.com>
+Cc: Dave Chinner <david@fromorbit.com>,
+	Alexander Viro <viro@zeniv.linux.org.uk>,
+	Christoph Hellwig <hch@infradead.org>,
+	Linux FSDevel <linux-fsdevel@vger.kernel.org>,
+	Linux Btrfs <linux-btrfs@vger.kernel.org>,
+	miaox@cn.fujitsu.com, Kamal Mostafa <kamal@canonical.com>,
+	Linux Ext4 <linux-ext4@vger.kernel.org>
+To: Xie Miao <miaoxie1984@gmail.com>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <20120425214014.GM20982@twin.jikos.cz>
+In-Reply-To: <CAAW_DMg9VLEtV40=qAbT3WZ4tN+ejZxToFHO0AiqDmjvV=V4eA@mail.gmail.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Wed, Apr 25, 2012 at 11:40:14PM +0200, David Sterba wrote:
-> On Thu, Apr 26, 2012 at 12:04:51AM +0800, Daniel J Blueman wrote:
-> > Correctly drop locks during error cases.
-> > 
-> > Signed-off-by: Daniel J Blueman <daniel@quora.org>
-> > ---
+On Thu, Apr 26, 2012 at 03:55:52PM +0800, Xie Miao wrote:
+> On Thu, Apr 26, 2012 at 11:11 AM, Dave Chinner <david@fromorbit.com> wrote:
+> > > writeback_inodes_sb(_nr) grabs s_umount lock when it want to start
+> > > writeback,
+> > > it may bring us deadlock problem when doing umount. So we introduce new
+> > > functions -- try_to_writeback_inodes_sb(_nr) -- which use
+> > > down_read_trylock()
+> > > instead of down_read() to avoid that deadlock problem.
+> > >
+> > > This idea came from Christoph Hellwig.
+> > > Some code is from the patch of Kamal Mostafa.
+> >
+> > This just re-implements writeback_inodes_[nr]_sb_if_idle() with a
+> > trylock instead of a blocking lock.
+> >
+> > Just replace the blocking lock in writeback_inodes_[nr]_sb_if_idle()
+> > with a trylock and use that.
 > 
-> fyi, the same patch is already present in for-linus,
-> 871383be592ba7e819d27556591e315a0df38cee
-> [http://www.spinics.net/lists/linux-btrfs/msg15837.html]
+> The change of these two functions is relative to three modules,  so I think
+> the patch set now is easy to be reviewed by the developers of each module.
 > 
 
-Hrm weird I didn't have that in btrfs-next.  Thanks,
+I agree with David, there's no sense in making something completely seperate,
+this function was introduced soley to kick off background writeout if we could
+with no garuntees, if the other users suddenly don't like the behavior they can
+creating something different for themselves.  Thanks,
 
 Josef

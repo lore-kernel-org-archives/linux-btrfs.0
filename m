@@ -1,96 +1,107 @@
 From: Miao Xie <miaoxie1984@gmail.com>
-Subject: [PATCH 1/4] vfs: introduce try_to_writeback_inodes_sb(_nr)
-Date: Thu, 26 Apr 2012 10:57:43 +0800
-Message-ID: <4F98B9A7.8060209@gmail.com>
+Subject: [PATCH 2/4] Btrfs: fix deadlock on sb->s_umount when doing umount
+Date: Thu, 26 Apr 2012 10:58:04 +0800
+Message-ID: <4F98B9BC.7010905@gmail.com>
 Reply-To: miaoxie1984@gmail.com
 Mime-Version: 1.0
 Content-Type: text/plain; charset=GB2312
-Cc: Christoph Hellwig <hch@infradead.org>,
-	Linux FSDevel <linux-fsdevel@vger.kernel.org>,
+Cc: Tsutomu Itoh <t-itoh@jp.fujitsu.com>, miaox@cn.fujitsu.com,
 	Linux Btrfs <linux-btrfs@vger.kernel.org>,
-	miaox@cn.fujitsu.com, Kamal Mostafa <kamal@canonical.com>,
-	Linux Ext4 <linux-ext4@vger.kernel.org>
-To: Alexander Viro <viro@zeniv.linux.org.uk>
-Return-path: <linux-ext4-owner@vger.kernel.org>
+	Linux FSDevel <linux-fsdevel@vger.kernel.org>
+To: Chris Mason <chris.mason@oracle.com>
+Return-path: <linux-fsdevel-owner@vger.kernel.org>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-writeback_inodes_sb(_nr) grabs s_umount lock when it want to start writeback,
-it may bring us deadlock problem when doing umount. So we introduce new
-functions -- try_to_writeback_inodes_sb(_nr) -- which use down_read_trylock()
-instead of down_read() to avoid that deadlock problem.
+The reason the deadlock is that:
+  Task					Btrfs-cleaner
+  umount()
+    down_write(&s->s_umount)
+    sync_filesystem()
+					do auto-defragment and produce
+					lots of dirty pages
+    close_ctree()
+      wait for the end of
+      btrfs-cleaner
+					start_transaction
+					  reserve space
+					    shrink_delalloc()
+					      writeback_inodes_sb_nr_if_idle()
+						down_read(&sb->s_umount)
+So, the deadlock has happened.
 
-This idea came from Christoph Hellwig.
-Some code is from the patch of Kamal Mostafa.
+We fix it by using try_to_writeback_inodes_sb_nr(), this function will try to
+get sb->s_umount, if fail, it won't do any writeback. At this time, In order to
+get enough space to reserve successfully, we will use the sync function of
+btrfs to sync all the delalloc file. This operation is safe, we needn't worry
+about the case that the filesystem goes from r/w to r/o. because the filesystem
+should guarantee all the dirty pages have been written into the disk after it
+becomes readonly, so the sync operation will do nothing if the filesystem is
+already readonly. Though it may waste lots of time, as a corner case, we
+needn't care.
 
+Reported-by: Tsutomu Itoh <t-itoh@jp.fujitsu.com>
 Signed-off-by: Miao Xie <miaox@cn.fujitsu.com>
 ---
- fs/fs-writeback.c         |   39 +++++++++++++++++++++++++++++++++++++++
- include/linux/writeback.h |    3 +++
- 2 files changed, 42 insertions(+), 0 deletions(-)
+ fs/btrfs/disk-io.c     |    3 +++
+ fs/btrfs/extent-tree.c |   25 +++++++++++++++++++++++--
+ 2 files changed, 26 insertions(+), 2 deletions(-)
 
-diff --git a/fs/fs-writeback.c b/fs/fs-writeback.c
-index 539f36c..b0c35c3 100644
---- a/fs/fs-writeback.c
-+++ b/fs/fs-writeback.c
-@@ -1291,6 +1291,45 @@ int writeback_inodes_sb_nr_if_idle(struct super_block *sb,
- EXPORT_SYMBOL(writeback_inodes_sb_nr_if_idle);
+diff --git a/fs/btrfs/disk-io.c b/fs/btrfs/disk-io.c
+index 20196f4..59b566d 100644
+--- a/fs/btrfs/disk-io.c
++++ b/fs/btrfs/disk-io.c
+@@ -3056,6 +3056,9 @@ int close_ctree(struct btrfs_root *root)
+ 	/* clear out the rbtree of defraggable inodes */
+ 	btrfs_run_defrag_inodes(fs_info);
  
- /**
-+ * try_to_writeback_inodes_sb_nr - try to start writeback if none underway
-+ * @sb: the superblock
-+ * @nr: the number of pages to write
-+ * @reason: the reason of writeback
-+ *
-+ * Invoke writeback_inodes_sb_nr if no writeback is currently underway.
-+ * Returns 1 if writeback was started, 0 if not.
-+ */
-+int try_to_writeback_inodes_sb_nr(struct super_block *sb,
-+				  unsigned long nr,
-+				  enum wb_reason reason)
++	/* sync all the dirty pages which are made by auto defrag */
++	sync_filesystem(fs_info->sb);
++
+ 	/*
+ 	 * Here come 2 situations when btrfs is broken to flip readonly:
+ 	 *
+diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
+index 2b35f8d..e533ab3 100644
+--- a/fs/btrfs/extent-tree.c
++++ b/fs/btrfs/extent-tree.c
+@@ -3580,6 +3580,28 @@ out:
+ 	return ret;
+ }
+ 
++void btrfs_writeback_inodes_sb_nr(struct btrfs_root *root,
++				  unsigned long nr_pages)
 +{
-+	if (writeback_in_progress(sb->s_bdi))
-+		return 1;
++	struct super_block *sb = root->fs_info->sb;
++	int started;
 +
-+	if (!down_read_trylock(&sb->s_umount))
-+		return 0;
-+
-+	writeback_inodes_sb_nr(sb, nr, reason);
-+	up_read(&sb->s_umount);
-+	return 1;
++	/* If we can not start writeback, just sync all the delalloc file. */
++	started = try_to_writeback_inodes_sb_nr(sb, nr_pages,
++						WB_REASON_FS_FREE_SPACE);
++	if (!started) {
++		/*
++		 * We needn't worry the filesystem going from r/w to r/o though
++		 * we don't acquire ->s_umount mutex, because the filesystem
++		 * should guarantee the delalloc inodes list be empty after
++		 * the filesystem is readonly(all dirty pages are written to
++		 * the disk).
++		 */
++		btrfs_start_delalloc_inodes(root, 0);
++		btrfs_wait_ordered_extents(root, 0, 0);
++	}
 +}
-+EXPORT_SYMBOL(try_to_writeback_inodes_sb_nr);
 +
-+/**
-+ * try_to_writeback_inodes_sb - try to start writeback if none underway
-+ * @sb: the superblock
-+ * @reason: reason why some writeback work was initiated
-+ *
-+ * Implement by try_to_writeback_inodes_sb_nr()
-+ * Returns 1 if writeback was started, 0 if not.
-+ */
-+int try_to_writeback_inodes_sb(struct super_block *sb, enum wb_reason reason)
-+{
-+	return try_to_writeback_inodes_sb_nr(sb, get_nr_dirty_pages(), reason);
-+}
-+EXPORT_SYMBOL(try_to_writeback_inodes_sb);
-+
-+/**
-  * sync_inodes_sb	-	sync sb inode pages
-  * @sb: the superblock
-  *
-diff --git a/include/linux/writeback.h b/include/linux/writeback.h
-index a2b84f5..d8e2a99 100644
---- a/include/linux/writeback.h
-+++ b/include/linux/writeback.h
-@@ -89,6 +89,9 @@ void writeback_inodes_sb_nr(struct super_block *, unsigned long nr,
- int writeback_inodes_sb_if_idle(struct super_block *, enum wb_reason reason);
- int writeback_inodes_sb_nr_if_idle(struct super_block *, unsigned long nr,
- 							enum wb_reason reason);
-+int try_to_writeback_inodes_sb(struct super_block *, enum wb_reason reason);
-+int try_to_writeback_inodes_sb_nr(struct super_block *, unsigned long nr,
-+				  enum wb_reason reason);
- void sync_inodes_sb(struct super_block *);
- long writeback_inodes_wb(struct bdi_writeback *wb, long nr_pages,
- 				enum wb_reason reason);
+ /*
+  * shrink metadata reservation for delalloc
+  */
+@@ -3624,8 +3646,7 @@ static int shrink_delalloc(struct btrfs_root *root, u64 to_reclaim,
+ 		smp_mb();
+ 		nr_pages = min_t(unsigned long, nr_pages,
+ 		       root->fs_info->delalloc_bytes >> PAGE_CACHE_SHIFT);
+-		writeback_inodes_sb_nr_if_idle(root->fs_info->sb, nr_pages,
+-						WB_REASON_FS_FREE_SPACE);
++		btrfs_writeback_inodes_sb_nr(root, nr_pages);
+ 
+ 		spin_lock(&space_info->lock);
+ 		if (reserved > space_info->bytes_may_use)
 -- 
 1.7.6.5

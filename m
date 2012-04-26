@@ -1,28 +1,30 @@
-From: Hullen@t-online.de (Helmut Hullen)
-Subject: Re: Interpreting Output of "btrfs fi show"
-Date: 26 Apr 2012 15:59:00 +0200
-Message-ID: <C7$hz9fuCXB@helmut.hullen.de>
-References: <20120426115326.GO20982@twin.jikos.cz>
-Reply-To: helmut@hullen.de
+From: Josef Bacik <josef@redhat.com>
+Subject: Re: [PATCH] Add missing unlocks on error paths
+Date: Thu, 26 Apr 2012 11:08:56 -0400
+Message-ID: <20120426150855.GA25603@dhcp231-144.rdu.redhat.com>
+References: <1335369891-19137-1-git-send-email-daniel@quora.org>
+ <20120425214014.GM20982@twin.jikos.cz>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=US-ASCII
-To: linux-btrfs@vger.kernel.org
+Content-Type: text/plain; charset=us-ascii
+To: Daniel J Blueman <daniel@quora.org>, linux-btrfs@vger.kernel.org,
+	Chris Mason <chris.mason@oracle.com>,
+	Josef Bacik <josef@redhat.com>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <20120426115326.GO20982@twin.jikos.cz>
+In-Reply-To: <20120425214014.GM20982@twin.jikos.cz>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hallo, David,
+On Wed, Apr 25, 2012 at 11:40:14PM +0200, David Sterba wrote:
+> On Thu, Apr 26, 2012 at 12:04:51AM +0800, Daniel J Blueman wrote:
+> > Correctly drop locks during error cases.
+> > 
+> > Signed-off-by: Daniel J Blueman <daniel@quora.org>
+> > ---
+> 
+> fyi, the same patch is already present in for-linus,
+> 871383be592ba7e819d27556591e315a0df38cee
+> [http://www.spinics.net/lists/linux-btrfs/msg15837.html]
+> 
 
-Du meintest am 26.04.12:
+Hrm weird I didn't have that in btrfs-next.  Thanks,
 
->> I now use to delete about the first 10 MByte of the target disk via
->> "dd if=/dev/zero"
-
-> FYI, the minimal amount of data you need to rewrite is 4k:
-
-> dd if=/dev/zero of=/dev/ice bs=1k count=4 seek=64
-
-Thank you - I'll try to remember the next time I need this command!
-
-Viele Gruesse!
-Helmut
+Josef

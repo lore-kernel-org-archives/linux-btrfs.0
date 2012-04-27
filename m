@@ -1,125 +1,174 @@
-From: Daniel J Blueman <daniel@quora.org>
-Subject: worker list corruption crash
-Date: Fri, 27 Apr 2012 10:26:27 +0800
-Message-ID: <CAMVG2ssoaPFDj9cBtBByE4xXuENYo=SXipgP=XxrXKmqaK=78w@mail.gmail.com>
+From: Liu Bo <liubo2009@cn.fujitsu.com>
+Subject: Re: [PATCH 0/5] btrfs: snapshot deletion via readahead
+Date: Fri, 27 Apr 2012 11:16:36 +0800
+Message-ID: <4F9A0F94.3030409@cn.fujitsu.com>
+References: <cover.1334241664.git.sensille@gmx.net> <4F87A034.3030607@cn.fujitsu.com> <4F87CD6D.5040100@gmx.net> <4F87D157.4040607@cn.fujitsu.com> <4F87D368.5070807@gmx.net> <4F87D924.6080501@cn.fujitsu.com> <4F8D1D49.1060404@gmx.net>
 Mime-Version: 1.0
 Content-Type: text/plain; charset=ISO-8859-1
-Cc: Linux BTRFS <linux-btrfs@vger.kernel.org>
-To: Chris Mason <chris.mason@oracle.com>,
-	Josef Bacik <josef@redhat.com>
+Cc: linux-btrfs@vger.kernel.org
+To: Arne Jansen <sensille@gmx.net>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
+In-Reply-To: <4F8D1D49.1060404@gmx.net>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-In 3.4-rc4, I've come across worker list corruption while scrubbing,
-leading to (in two separate cases) warning [1] and crashing [2]. The
-connection with scrubbing is likely the increased rate of worker
-threads starting and stopping.
+On 04/17/2012 03:35 PM, Arne Jansen wrote:
 
-In btrfs_stop_workers, access to worker->worker_list is done without
-holding worker->lock (it is in all other callsites). We can't take
-worker->lock there due to lock inversion deadlock (as it is the outer
-lock), and if we drop the workers->lock to acquire worker->lock and
-then workers->lock, we can't guarantee worker is still valid.
+> On 13.04.2012 09:43, Liu Bo wrote:
+>> > On 04/13/2012 03:19 PM, Arne Jansen wrote:
+>> > 
+>>> >>
+>>> >> might be out of memory. How much does this vm (?) have?
+>>> >> Can you try to reduce the constants in disk-io.c:2003-2005?
+>>> >>
+>>> >> Thanks,
+>>> >> Arne
+>>> >>
+>> > 
+>> > 
+>> > Seems not related to an OOM:
+>> > # free -m
+>> >              total       used       free     shared    buffers     cached
+>> > Mem:          1973        478       1494          0         49        315
+>> > -/+ buffers/cache:        113       1859
+>> > Swap:            0          0          0
+>> > 
+>> > 
+> 
+> so it seems I've lost a patch along the way that was supposed to fix
+> that: "btrfs: fix race in reada". I pushed my tree again with this
+> patch on top.
+> 
 
-If feels like a global workers list pointer should be used and it's
-lock should be the outer one to avoid this scenario, or maybe I'm
-missing something?
 
-Daniel
+Hi Arne,
 
---- [1]
+Sorry for the long delay.
 
-WARNING: at lib/list_debug.c:55 __list_del_entry+0xa1/0xd0()
-Hardware name: Latitude E5420
-list_del corruption. prev->next should be ffff88019cb3e268, but was
-ffff88021af4f628
-Pid: 5232, comm: btrfs-scrub-4 Not tainted 3.4.0-rc4-debug+ #1
+I've tested the droptree patch (1/5->5/5) on the latest upstream 3.4-rc4
+along with the missed patch "btrfs: fix race in reada".
+
+And I've got several different bugs and hangs, one of them is the following:
+
+Btrfs loaded
+device fsid e7b013a1-0d11-4162-83de-8404360f520a devid 1 transid 4 /dev/sdb6
+btrfs: disk space caching is enabled
+Btrfs detected SSD devices, enabling SSD mode
+device fsid e7b013a1-0d11-4162-83de-8404360f520a devid 1 transid 8 /dev/sdb6
+btrfs: disk space caching is enabled
+Btrfs detected SSD devices, enabling SSD mode
+device fsid e7b013a1-0d11-4162-83de-8404360f520a devid 1 transid 2011 /dev/sdb6
+btrfs: disk space caching is enabled
+Btrfs detected SSD devices, enabling SSD mode
+btrfs: block rsv returned -28
+------------[ cut here ]------------
+WARNING: at fs/btrfs/extent-tree.c:6220 btrfs_alloc_free_block+0x353/0x370 [btrfs]()
+Hardware name: QiTianM7150
+Modules linked in: btrfs(O) zlib_deflate libcrc32c ip6table_filter ip6_tables iptable_filter ip_tables ebtable_nat ebtables ipt_REJECT bridge stp llc nfsd lockd nfs_acl auth_rpcgss exportfs autofs4 sunrpc cpufreq_ondemand acpi_cpufreq freq_table mperf be2iscsi iscsi_boot_sysfs bnx2i cnic uio cxgb3i libcxgbi cxgb3 mdio ib_iser rdma_cm ib_cm iw_cm ib_sa ib_mad ib_core ib_addr ipv6 iscsi_tcp libiscsi_tcp libiscsi scsi_transport_iscsi ext3 jbd dm_mirror dm_region_hash dm_log dm_mod kvm_intel kvm ppdev sg parport_pc parport coretemp hwmon i2c_i801 pcspkr iTCO_wdt iTCO_vendor_support sky2 snd_hda_codec_realtek snd_hda_intel snd_hda_codec snd_hwdep snd_seq snd_seq_device snd_pcm snd_timer snd soundcore snd_page_alloc ext4 mbcache jbd2 sd_mod crc_t10dif pata_acpi ata_generic ata_piix i915 drm_kms_
+ helper drm i2c_algo_bit i2c_core video [last unloaded: btrfs]
+Pid: 4605, comm: btrfs-transacti Tainted: G           O 3.4.0-rc4+ #11
 Call Trace:
- [<ffffffff8103c54a>] warn_slowpath_common+0x7a/0xb0
- [<ffffffff8103c621>] warn_slowpath_fmt+0x41/0x50
- [<ffffffff81229931>] __list_del_entry+0xa1/0xd0
- [<ffffffffa01087d5>] try_worker_shutdown+0x73/0xad [btrfs]
- [<ffffffffa00dfbff>] worker_loop+0x17f/0x330 [btrfs]
- [<ffffffffa00dfa80>] ? check_pending_worker_creates.isra.1+0xd0/0xd0 [btrfs]
- [<ffffffff8105d9ee>] kthread+0x8e/0xa0
- [<ffffffff815ae0d4>] kernel_thread_helper+0x4/0x10
- [<ffffffff815ac799>] ? retint_restore_args+0xe/0xe
- [<ffffffff8105d960>] ? __init_kthread_worker+0x70/0x70
- [<ffffffff815ae0d0>] ? gs_change+0xb/0xb
+ [<ffffffff8104d6df>] warn_slowpath_common+0x7f/0xc0
+ [<ffffffff8104d73a>] warn_slowpath_null+0x1a/0x20
+ [<ffffffffa0726b43>] btrfs_alloc_free_block+0x353/0x370 [btrfs]
+ [<ffffffffa0755c71>] ? read_extent_buffer+0xd1/0x130 [btrfs]
+ [<ffffffffa072e04a>] ? btree_read_extent_buffer_pages.clone.2+0xca/0x140 [btrfs]
+ [<ffffffffa0710a62>] __btrfs_cow_block+0x142/0x570 [btrfs]
+ [<ffffffffa07130dd>] ? read_block_for_search+0x14d/0x3e0 [btrfs]
+ [<ffffffffa0711492>] btrfs_cow_block+0x102/0x210 [btrfs]
+ [<ffffffffa0716b5c>] btrfs_search_slot+0x42c/0x960 [btrfs]
+ [<ffffffffa07853b9>] btrfs_delete_delayed_items+0x99/0x340 [btrfs]
+ [<ffffffff81152662>] ? kmem_cache_alloc+0x152/0x190
+ [<ffffffffa0786212>] btrfs_run_delayed_items+0x112/0x160 [btrfs]
+ [<ffffffffa07346df>] btrfs_commit_transaction+0x36f/0xa80 [btrfs]
+ [<ffffffffa07351c2>] ? start_transaction+0x92/0x320 [btrfs]
+ [<ffffffff8106fb60>] ? wake_up_bit+0x40/0x40
+ [<ffffffffa072fb5b>] transaction_kthread+0x26b/0x2e0 [btrfs]
+ [<ffffffffa072f8f0>] ? btrfs_destroy_marked_extents.clone.0+0x1f0/0x1f0 [btrfs]
+ [<ffffffffa072f8f0>] ? btrfs_destroy_marked_extents.clone.0+0x1f0/0x1f0 [btrfs]
+ [<ffffffff8106f4be>] kthread+0x9e/0xb0
+ [<ffffffff814fc864>] kernel_thread_helper+0x4/0x10
+ [<ffffffff8106f420>] ? kthread_freezable_should_stop+0x70/0x70
+ [<ffffffff814fc860>] ? gs_change+0x13/0x13
+---[ end trace 504e7bc5e13ed457 ]---
+btrfs: block rsv returned -28
+------------[ cut here ]------------
+WARNING: at fs/btrfs/extent-tree.c:6220 btrfs_alloc_free_block+0x353/0x370 [btrfs]()
+Hardware name: QiTianM7150
+Modules linked in: btrfs(O) zlib_deflate libcrc32c ip6table_filter ip6_tables iptable_filter ip_tables ebtable_nat ebtables ipt_REJECT bridge stp llc nfsd lockd nfs_acl auth_rpcgss exportfs autofs4 sunrpc cpufreq_ondemand acpi_cpufreq freq_table mperf be2iscsi iscsi_boot_sysfs bnx2i cnic uio cxgb3i libcxgbi cxgb3 mdio ib_iser rdma_cm ib_cm iw_cm ib_sa ib_mad ib_core ib_addr ipv6 iscsi_tcp libiscsi_tcp libiscsi scsi_transport_iscsi ext3 jbd dm_mirror dm_region_hash dm_log dm_mod kvm_intel kvm ppdev sg parport_pc parport coretemp hwmon i2c_i801 pcspkr iTCO_wdt iTCO_vendor_support sky2 snd_hda_codec_realtek snd_hda_intel snd_hda_codec snd_hwdep snd_seq snd_seq_device snd_pcm snd_timer snd soundcore snd_page_alloc ext4 mbcache jbd2 sd_mod crc_t10dif pata_acpi ata_generic ata_piix i915 drm_kms_
+ helper drm i2c_algo_bit i2c_core video [last unloaded: btrfs]
+Pid: 4605, comm: btrfs-transacti Tainted: G        W  O 3.4.0-rc4+ #11
+Call Trace:
+ [<ffffffff8104d6df>] warn_slowpath_common+0x7f/0xc0
+ [<ffffffff8104d73a>] warn_slowpath_null+0x1a/0x20
+ [<ffffffffa0726b43>] btrfs_alloc_free_block+0x353/0x370 [btrfs]
+ [<ffffffffa0755c71>] ? read_extent_buffer+0xd1/0x130 [btrfs]
+ [<ffffffffa072e04a>] ? btree_read_extent_buffer_pages.clone.2+0xca/0x140 [btrfs]
+ [<ffffffffa0710a62>] __btrfs_cow_block+0x142/0x570 [btrfs]
+ [<ffffffffa07130dd>] ? read_block_for_search+0x14d/0x3e0 [btrfs]
+ [<ffffffffa0711492>] btrfs_cow_block+0x102/0x210 [btrfs]
+ [<ffffffffa0716b5c>] btrfs_search_slot+0x42c/0x960 [btrfs]
+ [<ffffffffa07853b9>] btrfs_delete_delayed_items+0x99/0x340 [btrfs]
+ [<ffffffff81152662>] ? kmem_cache_alloc+0x152/0x190
+ [<ffffffffa0786212>] btrfs_run_delayed_items+0x112/0x160 [btrfs]
+ [<ffffffffa07346df>] btrfs_commit_transaction+0x36f/0xa80 [btrfs]
+ [<ffffffffa07351c2>] ? start_transaction+0x92/0x320 [btrfs]
+ [<ffffffff8106fb60>] ? wake_up_bit+0x40/0x40
+ [<ffffffffa072fb5b>] transaction_kthread+0x26b/0x2e0 [btrfs]
+ [<ffffffffa072f8f0>] ? btrfs_destroy_marked_extents.clone.0+0x1f0/0x1f0 [btrfs]
+ [<ffffffffa072f8f0>] ? btrfs_destroy_marked_extents.clone.0+0x1f0/0x1f0 [btrfs]
+ [<ffffffff8106f4be>] kthread+0x9e/0xb0
+ [<ffffffff814fc864>] kernel_thread_helper+0x4/0x10
+ [<ffffffff8106f420>] ? kthread_freezable_should_stop+0x70/0x70
+ [<ffffffff814fc860>] ? gs_change+0x13/0x13
+---[ end trace 504e7bc5e13ed458 ]---
+------------[ cut here ]------------
+kernel BUG at fs/btrfs/transaction.c:1550!
+invalid opcode: 0000 [#1] SMP 
+CPU 1 
+Modules linked in: btrfs(O) zlib_deflate libcrc32c ip6table_filter ip6_tables iptable_filter ip_tables ebtable_nat ebtables ipt_REJECT bridge stp llc nfsd lockd nfs_acl auth_rpcgss exportfs autofs4 sunrpc cpufreq_ondemand acpi_cpufreq freq_table mperf be2iscsi iscsi_boot_sysfs bnx2i cnic uio cxgb3i libcxgbi cxgb3 mdio ib_iser rdma_cm ib_cm iw_cm ib_sa ib_mad ib_core ib_addr ipv6 iscsi_tcp libiscsi_tcp libiscsi scsi_transport_iscsi ext3 jbd dm_mirror dm_region_hash dm_log dm_mod kvm_intel kvm ppdev sg parport_pc parport coretemp hwmon i2c_i801 pcspkr iTCO_wdt iTCO_vendor_support sky2 snd_hda_codec_realtek snd_hda_intel snd_hda_codec snd_hwdep snd_seq snd_seq_device snd_pcm snd_timer snd soundcore snd_page_alloc ext4 mbcache jbd2 sd_mod crc_t10dif pata_acpi ata_generic ata_piix i915 drm_kms_
+ helper drm i2c_algo_bit i2c_core video [last unloaded: btrfs]
 
-(gdb) list *(try_worker_shutdown+0x73)
-0x7e854 is in try_worker_shutdown (fs/btrfs/async-thread.c:241).
-warning: Source file is more recent than executable.
-236		    atomic_read(&worker->num_pending) == 0) {
-237			freeit = 1;
-238			list_del_init(&worker->worker_list);
-239			worker->workers->num_workers--;
-240		}
-241		spin_unlock(&worker->workers->lock);
-242		spin_unlock_irq(&worker->lock);
-243	
-244		if (freeit)
-245			put_worker(worker);
-
---- [2]
-
-BUG: unable to handle kernel paging request at ffffffff8157f529
-IP: [<ffffffff8108dd2e>] __lock_acquire+0x1be/0x900
-PGD 1a0d067 PUD 1a11063 PMD 14001e1
-Oops: 0003 [#1] SMP
-CPU 1
-Pid: 2975, comm: btrfs-scrub-3 Tainted: G        W    3.4.0-rc4-debug+
-#1 Dell Inc. Latitude E5420/0H5TG2
-RIP: 0010:[<ffffffff8108dd2e>]  [<ffffffff8108dd2e>] __lock_acquire+0x1be/0x900
-RSP: 0018:ffff8801ad747d00  EFLAGS: 00010082
-RAX: ffffffff81110b08 RBX: ffff8801df242288 RCX: 0000000000000000
-RDX: 0000000000000000 RSI: 0000000000000000 RDI: ffff8801df242288
-RBP: ffff8801ad747d70 R08: 0000000000000002 R09: 0000000000000001
-R10: 0000000000000000 R11: ffff8801df39c190 R12: ffff8801df39bc00
-R13: 0000000000000000 R14: 0000000000000002 R15: ffffffff8157f391
-FS:  0000000000000000(0000) GS:ffff88022ec80000(0000) knlGS:0000000000000000
+Pid: 4604, comm: btrfs-cleaner Tainted: G        W  O 3.4.0-rc4+ #11 LENOVO QiTianM7150/To be filled by O.E.M.
+RIP: 0010:[<ffffffffa0732de0>]  [<ffffffffa0732de0>] btrfs_clean_old_snapshots+0x1d0/0x1e0 [btrfs]
+RSP: 0018:ffff880057113df0  EFLAGS: 00010286
+RAX: 00000000ffff8800 RBX: ffff880057113e10 RCX: ffff880052166780
+RDX: ffff880057113e10 RSI: ffff880057113e10 RDI: ffff880052166780
+RBP: ffff880057113e60 R08: ffff880057113e10 R09: 0000000000000000
+R10: 0000000000000000 R11: 0000000000000001 R12: ffff880000000000
+R13: 0000160000000000 R14: ffff880079ecb800 R15: ffff880057113e20
+FS:  0000000000000000(0000) GS:ffff88007da80000(0000) knlGS:0000000000000000
 CS:  0010 DS: 0000 ES: 0000 CR0: 000000008005003b
-CR2: ffffffff8157f529 CR3: 0000000001a0b000 CR4: 00000000000407e0
+CR2: 0000003842cd3ac0 CR3: 00000000542eb000 CR4: 00000000000407e0
 DR0: 0000000000000000 DR1: 0000000000000000 DR2: 0000000000000000
 DR3: 0000000000000000 DR6: 00000000ffff0ff0 DR7: 0000000000000400
-Process btrfs-scrub-3 (pid: 2975, threadinfo ffff8801ad746000, task
-ffff8801df39bc00)
+Process btrfs-cleaner (pid: 4604, threadinfo ffff880057112000, task ffff880075d60b30)
 Stack:
- ffff8801ad747d20 0000000000000286 ffff8801ad747d80 ffffffff82577548
- ffff8801ad747d60 ffff8801df39c190 ffff880100000000 ffffffff8104a5ca
- ffff8801ad747d80 ffff8801df39bc00 0000000000000046 ffff880221cdde90
+ ffff880052166780 ffff880076918000 ffff880057113fd8 ffff880052166400
+ ffff880052166780 ffff880052166780 ffff880052166f80 ffff880079f16f80
+ ffff880057113e80 ffff880079ecb800 ffff880057113e80 ffff880057113e98
 Call Trace:
- [<ffffffff8104a5ca>] ? del_timer_sync+0x8a/0xc0
- [<ffffffff8108e995>] lock_acquire+0x55/0x70
- [<ffffffffa010878b>] ? try_worker_shutdown+0x29/0xad [btrfs]
- [<ffffffff815abaac>] _raw_spin_lock+0x3c/0x50
- [<ffffffffa010878b>] ? try_worker_shutdown+0x29/0xad [btrfs]
- [<ffffffffa010878b>] try_worker_shutdown+0x29/0xad [btrfs]
- [<ffffffffa00dfbff>] worker_loop+0x17f/0x330 [btrfs]
- [<ffffffffa00dfa80>] ? check_pending_worker_creates.isra.1+0xd0/0xd0 [btrfs]
- [<ffffffff8105d9ee>] kthread+0x8e/0xa0
- [<ffffffff815ae0d4>] kernel_thread_helper+0x4/0x10
- [<ffffffff815ac799>] ? retint_restore_args+0xe/0xe
- [<ffffffff8105d960>] ? __init_kthread_worker+0x70/0x70
- [<ffffffff815ae0d0>] ? gs_change+0xb/0xb
-Code: 00 48 c7 c7 50 30 7b 81 89 55 b0 e8 6d e8 fa ff 8b 55 b0 eb a8
-0f 1f 84 00 00 00 00 00 4c 8b 7c d3 08 4d 85 ff 0f 84 c9 fe ff ff <f0>
-41 ff 87 98 0$
-RIP  [<ffffffff8108dd2e>] __lock_acquire+0x1be/0x900
- RSP <ffff8801ad747d00>
-CR2: ffffffff8157f529
+ [<ffffffffa072d360>] cleaner_kthread+0x160/0x1c0 [btrfs]
+ [<ffffffffa072d200>] ? btrfs_bio_wq_end_io+0x90/0x90 [btrfs]
+ [<ffffffffa072d200>] ? btrfs_bio_wq_end_io+0x90/0x90 [btrfs]
+ [<ffffffff8106f4be>] kthread+0x9e/0xb0
+ [<ffffffff814fc864>] kernel_thread_helper+0x4/0x10
+ [<ffffffff8106f420>] ? kthread_freezable_should_stop+0x70/0x70
+ [<ffffffff814fc860>] ? gs_change+0x13/0x13
+Code: 22 b2 e0 31 c9 31 f6 ba 01 00 00 00 4c 89 e7 e8 47 24 ff ff 48 39 5d b0 75 d9 48 83 c4 48 31 c0 5b 41 5c 41 5d 41 5e 41 5f c9 c3 <0f> 0b eb fe 66 66 66 2e 0f 1f 84 00 00 00 00 00 55 48 89 e5 53 
+RIP  [<ffffffffa0732de0>] btrfs_clean_old_snapshots+0x1d0/0x1e0 [btrfs]
+ RSP <ffff880057113df0>
+---[ end trace 504e7bc5e13ed459 ]---
 
-(gdb) list *(try_worker_shutdown+0x29)
-0x7e80a is in try_worker_shutdown (fs/btrfs/async-thread.c:232).
-227	
-228		spin_lock_irq(&worker->lock);
-229		spin_lock(&worker->workers->lock);
-230		if (worker->workers->num_workers > 1 &&
-231		    worker->idle &&
-232		    !worker->working &&
-233		    !list_empty(&worker->worker_list) &&
-234		    list_empty(&worker->prio_pending) &&
-235		    list_empty(&worker->pending) &&
-236		    atomic_read(&worker->num_pending) == 0) {
--- 
-Daniel J Blueman
+
+kernel BUG at fs/btrfs/transaction.c:1550!
+refers to 
+int btrfs_clean_old_snapshots(struct btrfs_root *root)
+{
+[...]
+        while (!list_empty(&list)) {
+[...]
+                BUG_ON(ret < 0);    ---> the bug
+        }
+
+thanks,
+liubo

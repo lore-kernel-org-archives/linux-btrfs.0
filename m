@@ -1,65 +1,99 @@
-From: David Bruzos <David.Bruzos@jaxport.com>
-Subject: RE: Optionally enforced time-based ACLs for BTRFS
-Date: Thu, 26 Apr 2012 17:27:12 -0400
-Message-ID: <DE6EA944EF16AF4CA4C0D1856C83808006C7F05ECB@ex7>
-References: <DE6EA944EF16AF4CA4C0D1856C83808006C7F05E96@ex7>
- <20120426200423.GR22794@shiny>
+From: Liu Bo <liubo2009@cn.fujitsu.com>
+Subject: Re: [RFC PATCH v2] Btrfs: improve space count for files with fragments
+Date: Fri, 27 Apr 2012 09:44:13 +0800
+Message-ID: <4F99F9ED.6030106@cn.fujitsu.com>
+References: <1335422363-31198-1-git-send-email-liubo2009@cn.fujitsu.com> <20120426171430.GP22794@shiny>
 Mime-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Cc: "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
-To: Chris Mason <chris.mason@oracle.com>
+Content-Type: text/plain; charset=ISO-8859-1
+To: Chris Mason <chris.mason@oracle.com>, linux-btrfs@vger.kernel.org
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <20120426200423.GR22794@shiny>
+In-Reply-To: <20120426171430.GP22794@shiny>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hi Chris:
-	Thank you for your very informative response.  I will post the message to linux-fsdevel and see what they have to say about it.
+On 04/27/2012 01:14 AM, Chris Mason wrote:
 
-	Any comments you would like to share regarding why something like what I suggested has apparently never been implemented?
-
-Again, thanks!
-
-David Bruzos (Systems Administrator)
-
-
------Original Message-----
-From: Chris Mason [mailto:chris.mason@oracle.com] 
-Sent: Thursday, April 26, 2012 4:04 PM
-To: David Bruzos
-Cc: linux-btrfs@vger.kernel.org
-Subject: Re: Optionally enforced time-based ACLs for BTRFS
-
-On Thu, Apr 26, 2012 at 03:30:39PM -0400, David Bruzos wrote:
-
-> Hi BTRFS folks: In my organization, many use cases exist for a
-> time-based honoring  field for FS ACLs.  I've done some brief research
-> regarding this topic, but I was unable to find any reference to such a
-> thing in any file system.  I understand that a feature like time-based
-> honoring for ACLs may arguably be something that should exist in
-> higher layers (E.G. some document management system), but on the other
-> hand, I see no real reason that an extra ACL field that would allow
-> for time-based granting/removing of permissions to some user would be
-> a problem.
-
-One of the interesting thing about linux acls is the filesystems don't
-really implement acls.  We implement xattrs, and the higher layers stuff
-acls into them.  In a few key spots we tell the higher layers how to do
-that, and we also call back into the higher layers for permission
-checks.
-
-This is a long way of saying the changes would have to happen in the
-generic acl code.  This is a good thing, it will get much more review
-that way.
-
-I'd suggest posting this to linux-fsdevel.
-
--chris
-________________________________________________________________________________________________
-
-Please note that under Florida's public records law (F.S. 668.6076), most written communications 
-to or from the Jacksonville Port Authority are public records, available to the public and media 
-upon request. Your email communications may therefore be subject to public disclosure. If you have 
-received this email in error, please notify the sender by return email and delete immediately 
-without forwarding to others.
+> On Thu, Apr 26, 2012 at 02:39:23PM +0800, Liu Bo wrote:
+>> > Here is a simple scenario:
+>> > $ dd if=/dev/zero of=/mnt/btrfs/foobar bs=1k count=20;sync
+>> > $ btrfs fi df /mnt/btrfs
+>> > 
+>> > we get 20K used, but then
+>> > $ dd if=/dev/zero of=/mnt/btrfs/foobar bs=1k count=4 seek=4 conv=notrunc;sync
+>> > $ btrfs fi df /mnt/btrfs
+>> > 
+>> > we get 24K used.
+>> > Here is the problem, it is possible that an _unshared_ file with lots of
+>> > fragments costs nearly double space than its i_size, like:
+>> > 0k              20k
+>> > | --- extent --- |      turned to be on disk    <---  extent --->  <-- A -->
+>> >      | - A - |                                  | -------------- | | ----- |
+>> >      1k      19k                                       20k + 18k = 38k
+>> > 
+>> >                         but what users want is  <---  extent --->  <-- A -->
+>> >                                                 | --- |     | -- | | ----- |
+>> >                                                     1k + 1k + 18k = 20k
+>> > so 18k is wasted.
+>> > 
+>> > With the current backref design, there is no easy way to fix this, because it
+>> > needs to touch several subtle parts, such as delayed ref stuff, extent backref.
+>> > 
+>> > So here I give it a try by splitting the extent which we're processing(the idea
+>> > comes from Chris :)).
+>> > 
+>> > The benifits:
+>> > As the above example shows, we'll get three individual extents: 1k + 1k + 18k,
+>> > with their checksums are well splitted.
+>> > 
+>> > The defects:
+>> > Yes, it makes the code much uglier.  And since we've disabled the merging of
+>> > delayed refs, we'll get some performance regression.
+>> > 
+>> > NOTE:
+>> > The patch may still have some bugs since we need more time to tune the subtle
+>> > things.
+> 
+> Thanks for working on this.  Could you please explain in detail what the
+> pinned extents do?
 
 
+Sure.
+
+Let's take the above case:
+0k              20k
+| --- extent --- |
+    | - A - |
+    1k      19k
+
+And we assume that this extent starts from disk_bytenr on its FS logical offset.
+
+By splitting the [0k, 20k) extent, we'll get three delayed refs into the delayed-ref rbtree:
+a) [0k, 20k),  in which only [disk_bytenr+1k, disk_bytenr+19k) will be freed at the end.
+b) [0k, 1k),   which will _not_ allocate a new extent but use the remained space of [0k, 20k).
+c) [19k, 20k), ditto.
+
+And another ref [1k,19k) will get a new allocated space by our normal endio routine.
+
+What I want is
+free  [0k, 20k),  set this range DIRTY in the pinned_extents tree.
+alloc [0k, 1k),   clear this range DIRTY in the pinned_extents tree.
+alloc [19k, 20k), ditto.
+
+However, in my stress test, this three refs may not be ordered by a)->b)->c), but b)->a)->c) instead.
+That would be a problem, because it will confuse our space_info's counter: bytes_reserved, bytes_pinned.
+
+So I use EXTENT_PINNED flag to indicate this range will use pinned space rather than reserved space.
+
+As for b)->a)->c), the logic will be:
+b) alloc [0k, 1k),   since no range covers this, set it PINNED in the pinned_extents tree.
+a) free  [0k, 20k),  set this range DIRTY in the pinned_extents tree, and find [0k, 1k) tagged with PINNED,
+   clear [0k, 1k) PINNED & DIRTY in the pinned_extents tree, and update our space_info's counter: bytes_pinned.
+c) alloc [19k, 20k), clear this range DIRTY in the pinned_extents tree.
+
+Maybe I'd better pick up a new name for EXTENT_PINNED. :)
+
+Actually I'm not satisfied with the patch as I do not want to make the code any uglier at all, so I kept it as RFC...
+
+Any thoughts?
+
+thanks,
+liubo

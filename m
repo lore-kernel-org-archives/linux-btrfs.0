@@ -1,37 +1,25 @@
-From: Josef Bacik <josef@redhat.com>
-Subject: Re: worker list corruption crash
-Date: Fri, 27 Apr 2012 09:41:02 -0400
-Message-ID: <20120427134102.GA2088@localhost.localdomain>
-References: <CAMVG2ssoaPFDj9cBtBByE4xXuENYo=SXipgP=XxrXKmqaK=78w@mail.gmail.com>
+From: Chris Mason <chris.mason@oracle.com>
+Subject: Re: Optionally enforced time-based ACLs for BTRFS
+Date: Fri, 27 Apr 2012 10:57:08 -0400
+Message-ID: <20120427145708.GG7340@shiny>
+References: <DE6EA944EF16AF4CA4C0D1856C83808006C7F05E96@ex7>
+ <20120426200423.GR22794@shiny>
+ <DE6EA944EF16AF4CA4C0D1856C83808006C7F05ECB@ex7>
 Mime-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
-Cc: Chris Mason <chris.mason@oracle.com>,
-	Josef Bacik <josef@redhat.com>,
-	Linux BTRFS <linux-btrfs@vger.kernel.org>
-To: Daniel J Blueman <daniel@quora.org>
+Cc: "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
+To: David Bruzos <David.Bruzos@jaxport.com>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <CAMVG2ssoaPFDj9cBtBByE4xXuENYo=SXipgP=XxrXKmqaK=78w@mail.gmail.com>
+In-Reply-To: <DE6EA944EF16AF4CA4C0D1856C83808006C7F05ECB@ex7>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Fri, Apr 27, 2012 at 10:26:27AM +0800, Daniel J Blueman wrote:
-> In 3.4-rc4, I've come across worker list corruption while scrubbing,
-> leading to (in two separate cases) warning [1] and crashing [2]. The
-> connection with scrubbing is likely the increased rate of worker
-> threads starting and stopping.
+On Thu, Apr 26, 2012 at 05:27:12PM -0400, David Bruzos wrote:
+> Hi Chris:
+> 	Thank you for your very informative response.  I will post the message to linux-fsdevel and see what they have to say about it.
 > 
-> In btrfs_stop_workers, access to worker->worker_list is done without
-> holding worker->lock (it is in all other callsites). We can't take
-> worker->lock there due to lock inversion deadlock (as it is the outer
-> lock), and if we drop the workers->lock to acquire worker->lock and
-> then workers->lock, we can't guarantee worker is still valid.
-> 
-> If feels like a global workers list pointer should be used and it's
-> lock should be the outer one to avoid this scenario, or maybe I'm
-> missing something?
-> 
+> 	Any comments you would like to share regarding why something like what I suggested has apparently never been implemented?
 
-I think you are missing something, as I read it we're always holding
-workers->lock when we touch the worker_list, so we should be safe, so I wonder
-what could be going on here...
+Most features in the kernel are based on customer demand.  I think we
+just haven't had enough people asking for it ;)
 
-Josef
+-chris

@@ -1,244 +1,116 @@
-From: Miao Xie <miaoxie1984@gmail.com>
-Subject: Re: [PATCH 2/4] Btrfs: fix deadlock on sb->s_umount when doing umount
-Date: Fri, 27 Apr 2012 18:55:13 +0800
-Message-ID: <4F9A7B11.1020400@gmail.com>
-References: <4F98B9BC.7010905@gmail.com> <20120426114456.GN20982@twin.jikos.cz>
-Reply-To: miaoxie1984@gmail.com
+From: Christian Brunner <christian@brunner-muc.de>
+Subject: Re: Ceph on btrfs 3.4rc
+Date: Fri, 27 Apr 2012 13:02:08 +0200
+Message-ID: <CAJafhzSgaQ3sx=Af0Ru0CiwQH37V5y8jgjoTo_8yozcjo9rpPA@mail.gmail.com>
+References: <CAJafhzSVZ3+1ApgJU=sQu6gM62BeWVGG4mqFPNYRHx79czYJtQ@mail.gmail.com>
+	<20120424152141.GB3326@localhost.localdomain>
+	<Pine.LNX.4.64.1204240922040.29159@cobra.newdream.net>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=UTF-8
-To: Miao Xie <miaoxie1984@gmail.com>,
-	Chris Mason <chris.mason@oracle.com>,
-	Tsutomu Itoh <t-itoh@jp.fujitsu.com>, miaox@cn.fujitsu.com,
-	Linux Btrfs <linux-btrfs@vger.kernel.org>,
-	Linux FSDevel <linux-fsdevel@vger.kernel.org>
-Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <20120426114456.GN20982@twin.jikos.cz>
+Content-Type: multipart/mixed; boundary=14dae93410eb2188b704bea70980
+Cc: Josef Bacik <josef@redhat.com>, linux-btrfs@vger.kernel.org,
+	ceph-devel@vger.kernel.org
+To: Sage Weil <sage@newdream.net>
+Return-path: <ceph-devel-owner@vger.kernel.org>
+In-Reply-To: <Pine.LNX.4.64.1204240922040.29159@cobra.newdream.net>
 List-ID: <linux-btrfs.vger.kernel.org>
 
+--14dae93410eb2188b704bea70980
+Content-Type: text/plain; charset=ISO-8859-1
+Content-Transfer-Encoding: quoted-printable
 
->> The reason the deadlock is that:
->>   Task					Btrfs-cleaner
->>   umount()
->>     down_write(&s->s_umount)
->>     sync_filesystem()
->> 					do auto-defragment and produce
->> 					lots of dirty pages
->>     close_ctree()
->>       wait for the end of
->>       btrfs-cleaner
-> 
-> why it's needed to wait for cleaner during close_ctree? I got bitten
+Am 24. April 2012 18:26 schrieb Sage Weil <sage@newdream.net>:
+> On Tue, 24 Apr 2012, Josef Bacik wrote:
+>> On Fri, Apr 20, 2012 at 05:09:34PM +0200, Christian Brunner wrote:
+>> > After running ceph on XFS for some time, I decided to try btrfs again.
+>> > Performance with the current "for-linux-min" branch and big metadata
+>> > is much better. The only problem (?) I'm still seeing is a warning
+>> > that seems to occur from time to time:
+>
+> Actually, before you do that... we have a new tool,
+> test_filestore_workloadgen, that generates a ceph-osd-like workload on th=
+e
+> local file system. =A0It's a subset of what a full OSD might do, but if
+> we're lucky it will be sufficient to reproduce this issue. =A0Something l=
+ike
+>
+> =A0test_filestore_workloadgen --osd-data /foo --osd-journal /bar
+>
+> will hopefully do the trick.
+>
+> Christian, maybe you can see if that is able to trigger this warning?
+> You'll need to pull it from the current master branch; it wasn't in the
+> last release.
 
-> yesterday by (a non-deadlock) scenario, when there were tons of deleted
+Trying to reproduce with test_filestore_workloadgen didn't work for
+me. So here are some instructions on how to reproduce with a minimal
+ceph setup.
 
-> snapshots, filesystem almost full, so getting and managing free space
-> was slow (btrfs-cache thread was more active than btrfs-cleaner), and
-> umount just did not end. interruptible by reboot only.
+You will need a single system with two disks and a bit of memory.
 
-> 
+- Compile and install ceph (detailed instructions:
+http://ceph.newdream.net/docs/master/ops/install/mkcephfs/)
 
-> avoiding this particular case of waiting for cleaner:
+- For the test setup I've used two tmpfs files as journal devices. To
+create these, do the following:
 
+# mkdir -p /ceph/temp
+# mount -t tmpfs tmpfs /ceph/temp
+# dd if=3D/dev/zero of=3D/ceph/temp/journal0 count=3D500 bs=3D1024k
+# dd if=3D/dev/zero of=3D/ceph/temp/journal1 count=3D500 bs=3D1024k
 
-Your patch doesn't fix the problem.
-  Task					Btrfs-cleaner
-  umount()
-    down_write(&s->s_umount)
-    sync_filesystem()
-					do auto-defragment for some files
-					and produce lots of dirty pages.
-					do auto-defragment for the left files
-					  start_transaction
-					    reserve space
-					      shrink_delalloc()
-						writeback_inodes_sb_nr_if_idle()
-						  down_read(&sb->s_umount)
-    close_ctree()
-      stop_kthread()
-	wait for the end of
-	btrfs-cleaner
+- Now you should create and mount btrfs. Here is what I did:
 
-the deadlock still happens.
+# mkfs.btrfs -l 64k -n 64k /dev/sda
+# mkfs.btrfs -l 64k -n 64k /dev/sdb
+# mkdir /ceph/osd.000
+# mkdir /ceph/osd.001
+# mount -o noatime,space_cache,inode_cache,autodefrag /dev/sda /ceph/osd.00=
+0
+# mount -o noatime,space_cache,inode_cache,autodefrag /dev/sdb /ceph/osd.00=
+1
 
-But I found you add a trylock for ->s_umount in cleaner_kthread(), this method
-can fix the deadlock problem, I think. It may be introduced by the other patch,
-could you send that patch to me? I found if we fail to trylock ->cleaner_mutex,
-we will forget to unlock ->s_umount.
+- Create /etc/ceph/ceph.conf similar to the attached ceph.conf. You
+will probably have to change the btrfs devices and the hostname
+(os39).
 
-Thanks
-Miao
+- Create the ceph filesystems:
 
-> 
-> --- a/fs/btrfs/disk-io.c
-> +++ b/fs/btrfs/disk-io.c
-> @@ -3064,7 +3066,13 @@ int btrfs_commit_super(struct btrfs_root *root)
-> 
->         mutex_lock(&root->fs_info->cleaner_mutex);
->         btrfs_run_delayed_iputs(root);
-> -       btrfs_clean_old_snapshots(root);
-> +       if (!btrfs_fs_closing(root->fs_info)) {
-> +               /* btrfs_clean_old_snapshots(root); */
-> +               wake_up_process(root->fs_info->cleaner_kthread);
-> +               printk(KERN_DEBUG "btrfs: wake cleaner from commit_super\n");
-> +       } else {
-> +               printk(KERN_DEBUG "btrfs: skip cleaning when going down\n");
-> +       }
->         mutex_unlock(&root->fs_info->cleaner_mutex);
-> 
->         /* wait until ongoing cleanup work done */
-> 
-> 
-> plus not even trying to call the cleaner directly, rather waking the cleaner
-> thread. (attached whole work-in-progress patch).
-> 
-> david
-> ---
-> 
-> diff --git a/fs/btrfs/disk-io.c b/fs/btrfs/disk-io.c
-> index 58a232d..0651f6f 100644
-> --- a/fs/btrfs/disk-io.c
-> +++ b/fs/btrfs/disk-io.c
-> @@ -1617,13 +1617,14 @@ static int cleaner_kthread(void *arg)
->  	struct btrfs_root *root = arg;
->  
->  	do {
-> +		int again = 0;
->  		vfs_check_frozen(root->fs_info->sb, SB_FREEZE_WRITE);
->  
->  		if (!(root->fs_info->sb->s_flags & MS_RDONLY) &&
->  			down_read_trylock(&root->fs_info->sb->s_umount) &&
->  		    mutex_trylock(&root->fs_info->cleaner_mutex)) {
->  			btrfs_run_delayed_iputs(root);
-> -			btrfs_clean_old_snapshots(root);
-> +			again = btrfs_clean_one_old_snapshot(root);
->  			mutex_unlock(&root->fs_info->cleaner_mutex);
->  			btrfs_run_defrag_inodes(root->fs_info);
->  			up_read(&root->fs_info->sb->s_umount);
-> @@ -1631,7 +1632,7 @@ static int cleaner_kthread(void *arg)
->  
->  		if (freezing(current)) {
->  			refrigerator();
-> -		} else {
-> +		} else if (!again) {//FIXME: check again now directly from dead_roots?
->  			set_current_state(TASK_INTERRUPTIBLE);
->  			if (!kthread_should_stop())
->  				schedule();
-> @@ -3064,7 +3066,13 @@ int btrfs_commit_super(struct btrfs_root *root)
->  
->  	mutex_lock(&root->fs_info->cleaner_mutex);
->  	btrfs_run_delayed_iputs(root);
-> -	btrfs_clean_old_snapshots(root);
-> +	if (!btrfs_fs_closing(root->fs_info)) {
-> +		/* btrfs_clean_old_snapshots(root); */
-> +		wake_up_process(root->fs_info->cleaner_kthread);
-> +		printk(KERN_DEBUG "btrfs: wake cleaner from commit_super\n");
-> +	} else {
-> +		printk(KERN_DEBUG "btrfs: skip cleaning when going down\n");
-> +	}
->  	mutex_unlock(&root->fs_info->cleaner_mutex);
->  
->  	/* wait until ongoing cleanup work done */
-> diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
-> index ec1e0c6..3aba911 100644
-> --- a/fs/btrfs/extent-tree.c
-> +++ b/fs/btrfs/extent-tree.c
-> @@ -6995,6 +6995,11 @@ int btrfs_drop_snapshot(struct btrfs_root *root,
->  	wc->reada_count = BTRFS_NODEPTRS_PER_BLOCK(root);
->  
->  	while (1) {
-> +		if (btrfs_fs_closing(root->fs_info)) {
-> +			printk(KERN_DEBUG "btrfs: drop early exit\n");
-> +			err = -EAGAIN;
-> +			goto out_end_trans;
-> +		}
->  		ret = walk_down_tree(trans, root, path, wc);
->  		if (ret < 0) {
->  			err = ret;
-> diff --git a/fs/btrfs/relocation.c b/fs/btrfs/relocation.c
-> index 922e6ec..c9dc857 100644
-> --- a/fs/btrfs/relocation.c
-> +++ b/fs/btrfs/relocation.c
-> @@ -4060,6 +4060,7 @@ int btrfs_relocate_block_group(struct btrfs_root *extent_root, u64 group_start)
->  	while (1) {
->  		mutex_lock(&fs_info->cleaner_mutex);
->  
-> +		// FIXME: wake cleaner
->  		btrfs_clean_old_snapshots(fs_info->tree_root);
->  		ret = relocate_block_group(rc);
->  
-> diff --git a/fs/btrfs/transaction.c b/fs/btrfs/transaction.c
-> index de2942f..3d83f6b 100644
-> --- a/fs/btrfs/transaction.c
-> +++ b/fs/btrfs/transaction.c
-> @@ -783,7 +783,7 @@ static noinline int commit_cowonly_roots(struct btrfs_trans_handle *trans,
->  int btrfs_add_dead_root(struct btrfs_root *root)
->  {
->  	spin_lock(&root->fs_info->trans_lock);
-> -	list_add(&root->root_list, &root->fs_info->dead_roots);
-> +	list_add_tail(&root->root_list, &root->fs_info->dead_roots);
->  	spin_unlock(&root->fs_info->trans_lock);
->  	return 0;
->  }
-> @@ -1533,7 +1533,45 @@ int btrfs_clean_old_snapshots(struct btrfs_root *root)
->  			ret = btrfs_drop_snapshot(root, NULL, 0, 0);
->  		else
->  			ret =btrfs_drop_snapshot(root, NULL, 1, 0);
-> -		BUG_ON(ret < 0);
-> +		BUG_ON(ret < 0 && ret != -EAGAIN);
->  	}
->  	return 0;
->  }
-> +/*
-> + * return < 0 if error
-> + * 0 if there are no more dead_roots at the time of call
-> + * 1 there are more to be processed, call me again
-> + *
-> + * (racy)
-> + */
-> +int btrfs_clean_one_old_snapshot(struct btrfs_root *root)
-> +{
-> +	int ret;
-> +	int run_again = 1;
-> +	struct btrfs_fs_info *fs_info = root->fs_info;
-> +
-> +	if (root->fs_info->sb->s_flags & MS_RDONLY) {
-> +		printk(KERN_WARNING "btrfs: cleaner called for RO fs!\n");
-> +	}
-> +
-> +	spin_lock(&fs_info->trans_lock);
-> +	root = list_first_entry(&fs_info->dead_roots,
-> +			struct btrfs_root, root_list);
-> +	list_del(&root->root_list);
-> +	if (list_empty(&fs_info->dead_roots))
-> +		run_again = 0;
-> +	spin_unlock(&fs_info->trans_lock);
-> +
-> +	printk(KERN_DEBUG "btrfs: cleaner removing %llu\n",
-> +			(unsigned long long)root->objectid);
-> +
-> +	btrfs_kill_all_delayed_nodes(root);
-> +
-> +	if (btrfs_header_backref_rev(root->node) <
-> +			BTRFS_MIXED_BACKREF_REV)
-> +		ret = btrfs_drop_snapshot(root, NULL, 0, 0);
-> +	else
-> +		ret = btrfs_drop_snapshot(root, NULL, 1, 0);
-> +	BUG_ON(ret < 0 && ret != -EAGAIN);
-> +	return run_again || ret == -EAGAIN;
-> +}
-> diff --git a/fs/btrfs/transaction.h b/fs/btrfs/transaction.h
-> index fe27379..7071ca5 100644
-> --- a/fs/btrfs/transaction.h
-> +++ b/fs/btrfs/transaction.h
-> @@ -94,6 +94,7 @@ int btrfs_write_and_wait_transaction(struct btrfs_trans_handle *trans,
->  int btrfs_add_dead_root(struct btrfs_root *root);
->  int btrfs_defrag_root(struct btrfs_root *root, int cacheonly);
->  int btrfs_clean_old_snapshots(struct btrfs_root *root);
-> +int btrfs_clean_one_old_snapshot(struct btrfs_root *root);
->  int btrfs_commit_transaction(struct btrfs_trans_handle *trans,
->  			     struct btrfs_root *root);
->  int btrfs_commit_transaction_async(struct btrfs_trans_handle *trans,
-> ---
-> 
+# mkdir /ceph/mon
+# mkcephfs -a -c /etc/ceph/ceph.conf
 
+- Start ceph (e.g. "service ceph start")
 
+- Now you should be able to use ceph - "ceph -s" will tell you about
+the state of the ceph cluster.
+
+- "rbd create -size 100 testimg" will create an rbd image on the ceph clust=
+er.
+
+- Compile my test with "gcc -o rbdtest rbdtest.c -lrbd" and run it
+with "./rbdtest testimg".
+
+I can see the first btrfs_orphan_commit_root warning after an hour or
+so... I hope that I've described all necessary steps. If there is a
+problem just send me a note.
+
+Thanks,
+Christian
+
+--14dae93410eb2188b704bea70980
+Content-Type: application/octet-stream; name="ceph.conf"
+Content-Disposition: attachment; filename="ceph.conf"
+Content-Transfer-Encoding: base64
+X-Attachment-Id: f_h1j4o9g20
+
+W2dsb2JhbF0KICAgICAgICBhdXRoIHN1cHBvcnRlZCA9IG5vbmUgCglkZWJ1ZyBvcHRyYWNrZXIg
+PSAwIDsgdG8gd29yayBhcnJvdW5kIGEgbG9nIHByb2JsZW0gaW4gY2VwaCAwLjQ1CgpbbW9uXQog
+ICAgICAgIG1vbiBkYXRhID0gL2NlcGgvbW9uCgpbbW9uLjBdCiAgICAgICAgaG9zdCA9IG9zMzkK
+ICAgICAgICBtb24gYWRkciA9IDEyNy4wLjAuMTo2Nzg5Cgpbb3NkXQogICAgICAgIG9zZCBkYXRh
+ID0gL2NlcGgvb3NkLiRpZAoJb3NkIGNsYXNzIGRpciA9IC91c3IvbGliNjQvcmFkb3MtY2xhc3Nl
+cwoKW29zZC4wMDBdCiAgICAgICAgaG9zdCA9IG9zMzkKICAgICAgICBvc2Qgam91cm5hbCA9IC9j
+ZXBoL3RlbXAvam91cm5hbDAKICAgICAgICBvc2Qgam91cm5hbCBzaXplID0gNTAwTQoJam91cm5h
+bCBkaW8gPSBGYWxzZQogICAgICAgIGJ0cmZzIGRldnMgPSAiL2Rldi9zZGEiCgpbb3NkLjAwMV0K
+ICAgICAgICBob3N0ID0gb3MzOQogICAgICAgIG9zZCBqb3VybmFsID0gL2NlcGgvdGVtcC9qb3Vy
+bmFsMQogICAgICAgIG9zZCBqb3VybmFsIHNpemUgPSA1MDBNCiAgICAgICAgam91cm5hbCBkaW8g
+PSBGYWxzZQogICAgICAgIGJ0cmZzIGRldnMgPSAiL2Rldi9zZGIiCg==
+--14dae93410eb2188b704bea70980--

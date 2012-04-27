@@ -1,25 +1,53 @@
-From: Chris Mason <chris.mason@oracle.com>
-Subject: Re: Optionally enforced time-based ACLs for BTRFS
-Date: Fri, 27 Apr 2012 10:57:08 -0400
-Message-ID: <20120427145708.GG7340@shiny>
-References: <DE6EA944EF16AF4CA4C0D1856C83808006C7F05E96@ex7>
- <20120426200423.GR22794@shiny>
- <DE6EA944EF16AF4CA4C0D1856C83808006C7F05ECB@ex7>
-Mime-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Cc: "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
-To: David Bruzos <David.Bruzos@jaxport.com>
+From: Jan Schmidt <list.btrfs@jan-o-sch.net>
+Subject: [PATCH] Btrfs: kill unreachable code in push_node_left
+Date: Fri, 27 Apr 2012 17:03:50 +0200
+Message-ID: <1335539030-17306-1-git-send-email-list.btrfs@jan-o-sch.net>
+To: chris.mason@oracle.com, linux-btrfs@vger.kernel.org
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <DE6EA944EF16AF4CA4C0D1856C83808006C7F05ECB@ex7>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Thu, Apr 26, 2012 at 05:27:12PM -0400, David Bruzos wrote:
-> Hi Chris:
-> 	Thank you for your very informative response.  I will post the message to linux-fsdevel and see what they have to say about it.
-> 
-> 	Any comments you would like to share regarding why something like what I suggested has apparently never been implemented?
+We had the following code in push_node_left:
 
-Most features in the kernel are based on customer demand.  I think we
-just haven't had enough people asking for it ;)
+	x = min(y, x);
+        if (x < y) {
+		/* confusing comment here */
+		...
+	}
 
--chris
+That if's condition can't become true, so just kill the entire block. Plus:
+no one will ever need to worry about the removed confusing comment.
+
+Signed-off-by: Jan Schmidt <list.btrfs@jan-o-sch.net>
+---
+ fs/btrfs/ctree.c |   14 ++------------
+ 1 files changed, 2 insertions(+), 12 deletions(-)
+
+diff --git a/fs/btrfs/ctree.c b/fs/btrfs/ctree.c
+index e801f22..0d2f4e5 100644
+--- a/fs/btrfs/ctree.c
++++ b/fs/btrfs/ctree.c
+@@ -1999,19 +1999,9 @@ static int push_node_left(struct btrfs_trans_handle *trans,
+ 	if (push_items <= 0)
+ 		return 1;
+ 
+-	if (empty) {
++	if (empty)
+ 		push_items = min(src_nritems, push_items);
+-		if (push_items < src_nritems) {
+-			/* leave at least 8 pointers in the node if
+-			 * we aren't going to empty it
+-			 */
+-			if (src_nritems - push_items < 8) {
+-				if (push_items <= 8)
+-					return 1;
+-				push_items -= 8;
+-			}
+-		}
+-	} else
++	else
+ 		push_items = min(src_nritems - 8, push_items);
+ 
+ 	copy_extent_buffer(dst, src,
+-- 
+1.7.3.4
+

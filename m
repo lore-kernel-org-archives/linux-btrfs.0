@@ -1,50 +1,74 @@
-From: Remco Hosman <remco@hosman.xs4all.nl>
-Subject: Re: [PATCH] Btrfs: fix repair code for RAID10
-Date: Sat, 28 Apr 2012 16:36:41 +0200
-Message-ID: <A83340D2-E2B9-4B41-954C-CD67E3C21DB4@hosman.xs4all.nl>
-References: <1335354171-16608-1-git-send-email-list.btrfs@jan-o-sch.net>
-Mime-Version: 1.0 (1.0)
-Content-Type: text/plain;
-	charset=us-ascii
-Cc: "chris.mason@oracle.com" <chris.mason@oracle.com>,
-	"linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
-To: Jan Schmidt <list.btrfs@jan-o-sch.net>
+From: Hubert Kario <hka@qbs.com.pl>
+Subject: Re: Interpreting Output of "btrfs fi show"
+Date: Sat, 28 Apr 2012 18:42:52 +0200
+Message-ID: <8118972.tgkAvno4mK@bursa22>
+References: <CAGy7UtioPbdjomzuv3phZcF+HShyYKytkOKnAhP+4VGj29Aahg@mail.gmail.com> <C7$h9m5PCXB@helmut.hullen.de> <pan.2012.04.26.20.54.46@cox.net>
+Mime-Version: 1.0
+Content-Type: text/plain; charset=iso-8859-1
+Cc: linux-btrfs@vger.kernel.org, chris.mason@oracle.com,
+	josef@redhat.com
+To: Duncan <1i5t5.duncan@cox.net>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <1335354171-16608-1-git-send-email-list.btrfs@jan-o-sch.net>
+In-Reply-To: <pan.2012.04.26.20.54.46@cox.net>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 25 Apr 2012, at 13:42, Jan Schmidt <list.btrfs@jan-o-sch.net> wrote:
+On Thursday 26 of April 2012 20:54:47 Duncan wrote:
+> Helmut Hullen posted on Thu, 26 Apr 2012 13:11:00 +0200 as excerpted:
+> > Hallo, Bart,
+> >>=20
+> >> Well I think there is a btrfs superblock still present from the
+> >> full-disk filesystem. Due to the offset of the first partition fro=
+m the
+> >> start of the disk, this superblock was not overwritten when you cr=
+eated
+> >> the filesystem inside the partition.
+> >=20
+> > Sounds familiar ...
+> >=20
+> > I now use to delete about the first 10 MByte of the target disk via=
+ "dd
+> > if=3D/dev/zero"
+>=20
+> But /unlike/ reiserfs, which was only affected with the well warned a=
+s
+> don't-use-unless-you-have-to fsck --rebuild-tree option, it seems tha=
+t
+> due to btrfs scan, etc, btrfs has its similar problem in more routine
+> operation.
 
-> btrfs_map_block sets mirror_num, so that the repair code knows eventually
-> which device gave us the read error. For RAID10, mirror_num must be 1 or 2.
-> Before this fix mirror_num was incorrectly related to our stripe index.
-> 
-> Signed-off-by: Jan Schmidt <list.btrfs@jan-o-sch.net>
-> ---
-> fs/btrfs/volumes.c |    3 ++-
-> 1 files changed, 2 insertions(+), 1 deletions(-)
-> 
-> diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
-> index 3b98417..1411b99 100644
-> --- a/fs/btrfs/volumes.c
-> +++ b/fs/btrfs/volumes.c
-> @@ -3807,10 +3807,11 @@ static int __btrfs_map_block(struct btrfs_mapping_tree *map_tree, int rw,
->        else if (mirror_num)
->            stripe_index += mirror_num - 1;
->        else {
-> +            int old_stripe_index = stripe_index;
->            stripe_index = find_live_mirror(map, stripe_index,
->                          map->sub_stripes, stripe_index +
->                          current->pid % map->sub_stripes);
-> -            mirror_num = stripe_index + 1;
-> +            mirror_num = stripe_index - old_stripe_index + 1;
->        }
->    } else {
->        /*
-> -- 
-> 1.7.3.4
-> 
+I'd say that this kind of problem is basically impossible in btrfs beca=
+use=20
+of FS UUID written all over the tree.
 
-Tested-by: Remco Hosman
-remco@hosman.xs4all.nl
+What we see here, is a superblock that is written in *very* specific pl=
+ace=20
+on the partition, that just is aligned in place that makes the whole di=
+sk=20
+look like btrfs.
 
+I don't think it's actually possible for btrfs to put a file with btrfs=
+=20
+filesystem image in place where it could seem like the basic block devi=
+ce=20
+has btrfs /too/. It depends on whatever the metadata block is allocated=
+=20
+before data block on disk. It /may/ be possible in mixed data-metadata=20
+allocation mode.
+Chris or Josef, can you confirm?
+
+Still, a "zero-superblock" option would be useful for the btrfs tool. I=
+'ll=20
+see what I can do about this.
+
+Regards,
+--=20
+Hubert Kario
+QBS - Quality Business Software
+02-656 Warszawa, ul. Ksawer=F3w 30/85
+tel. +48 (22) 646-61-51, 646-74-24
+www.qbs.com.pl
+--
+To unsubscribe from this list: send the line "unsubscribe linux-btrfs" =
+in
+the body of a message to majordomo@vger.kernel.org
+More majordomo info at  http://vger.kernel.org/majordomo-info.html

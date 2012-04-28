@@ -1,65 +1,100 @@
-From: Jan Schmidt <mail@jan-o-sch.net>
-Subject: Re: [PATCH] Btrfs: kill unreachable code in push_node_left
-Date: Fri, 27 Apr 2012 17:15:23 +0200
-Message-ID: <4F9AB80B.6060604@jan-o-sch.net>
-References: <1335539030-17306-1-git-send-email-list.btrfs@jan-o-sch.net>
+From: Chris Mason <chris.mason@oracle.com>
+Subject: [GIT PULL] Btrfs fixes
+Date: Sat, 28 Apr 2012 08:27:48 -0400
+Message-ID: <20120428122748.GJ7340@shiny>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=ISO-8859-1
-Cc: chris.mason@oracle.com, linux-btrfs@vger.kernel.org
-To: Jan Schmidt <list.btrfs@jan-o-sch.net>
+Content-Type: text/plain; charset=us-ascii
+To: Linus Torvalds <torvalds@linux-foundation.org>,
+	linux-btrfs <linux-btrfs@vger.kernel.org>,
+	LKML <linux-kernel@vger.kernel.org>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <1335539030-17306-1-git-send-email-list.btrfs@jan-o-sch.net>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Actually, scratch that one.
+Hi everyone,
 
-Sorry,
--Jan
+The for-linus branch of the btrfs git tree:
 
-On 27.04.2012 17:03, Jan Schmidt wrote:
-> We had the following code in push_node_left:
-> 
-> 	x = min(y, x);
->         if (x < y) {
-> 		/* confusing comment here */
-> 		...
-> 	}
-> 
-> That if's condition can't become true, so just kill the entire block. Plus:
-> no one will ever need to worry about the removed confusing comment.
-> 
-> Signed-off-by: Jan Schmidt <list.btrfs@jan-o-sch.net>
-> ---
->  fs/btrfs/ctree.c |   14 ++------------
->  1 files changed, 2 insertions(+), 12 deletions(-)
-> 
-> diff --git a/fs/btrfs/ctree.c b/fs/btrfs/ctree.c
-> index e801f22..0d2f4e5 100644
-> --- a/fs/btrfs/ctree.c
-> +++ b/fs/btrfs/ctree.c
-> @@ -1999,19 +1999,9 @@ static int push_node_left(struct btrfs_trans_handle *trans,
->  	if (push_items <= 0)
->  		return 1;
->  
-> -	if (empty) {
-> +	if (empty)
->  		push_items = min(src_nritems, push_items);
+git://git.kernel.org/pub/scm/linux/kernel/git/mason/linux-btrfs.git for-linus
 
-(still, adding an else path with "push_items = src_nritems" would have
-been much more obvious)
+Has our collection of bug fixes.  I missed the last rc because I thought
+our patches were making NFS crash during my xfs test runs.  Turns out it
+was an NFS client bug fixed by someone else while I tried to bisect it.
 
-> -		if (push_items < src_nritems) {
-> -			/* leave at least 8 pointers in the node if
-> -			 * we aren't going to empty it
-> -			 */
-> -			if (src_nritems - push_items < 8) {
-> -				if (push_items <= 8)
-> -					return 1;
-> -				push_items -= 8;
-> -			}
-> -		}
-> -	} else
-> +	else
->  		push_items = min(src_nritems - 8, push_items);
->  
->  	copy_extent_buffer(dst, src,
+All of these fixes are small, but some are fairly high impact.  The
+biggest are fixes for our mount -o remount handling, a deadlock due
+to GFP_KERNEL allocations in readdir, and a RAID10 error handling bug.
+
+This was tested against both 3.3 and Linus' master as of this morning.
+
+Stefan Behrens (4) commits (+7/-19):
+    Btrfs: don't count CRC or header errors twice while scrubbing (+0/-15)
+    Btrfs: fix btrfs_ioctl_dev_info() crash on missing device (+4/-1)
+    Btrfs: fix that check_int_data mount option was ignored (+1/-1)
+    Btrfs: fix block_rsv and space_info lock ordering (+2/-2)
+
+Jan Schmidt (3) commits (+20/-8):
+    Btrfs: don't call free_extent_buffer twice in iterate_irefs (+3/-5)
+    Btrfs: add missing read locks in backref.c (+15/-2)
+    Btrfs: fix repair code for RAID10 (+2/-1)
+
+Arne Jansen (3) commits (+39/-26):
+    btrfs: don't add both copies of DUP to reada extent tree (+13/-0)
+    btrfs: fix race in reada (+23/-20)
+    btrfs: don't return EINTR (+3/-6)
+
+Li Zefan (3) commits (+32/-25):
+    Btrfs: avoid possible use-after-free in clear_extent_bit() (+21/-15)
+    Btrfs: retrurn void from clear_state_bit (+2/-5)
+    Btrfs: avoid setting ->d_op twice (+9/-5)
+
+Daniel J Blueman (2) commits (+3/-1):
+    Btrfs: Fix space checking during fs resize (+1/-1)
+    Btrfs: Prevent root_list corruption (+2/-0)
+
+Chris Mason (2) commits (+8/-31):
+    Btrfs: avoid deadlocks from GFP_KERNEL allocations during btrfs_real_readdir (+1/-29)
+    Btrfs: reduce lock contention during extent insertion (+7/-2)
+
+Josef Bacik (2) commits (+17/-21):
+    Btrfs: always store the mirror we read the eb from (+17/-20)
+    Btrfs: do not start delalloc inodes during sync (+0/-1)
+
+Jesper Juhl (1) commits (+2/-0):
+    Btrfs: Make free_ipath() deal gracefully with NULL pointers
+
+Liu Bo (1) commits (+3/-3):
+    Btrfs: do not mount when we have a sectorsize unequal to PAGE_SIZE
+
+Julia Lawall (1) commits (+3/-1):
+    fs/btrfs/volumes.c: add missing free_fs_devices
+
+Ilya Dryomov (1) commits (+4/-2):
+    Btrfs: fix max chunk size check in chunk allocator
+
+Dan Carpenter (1) commits (+2/-0):
+    Btrfs: double unlock bug in error handling
+
+David Sterba (1) commits (+5/-1):
+    btrfs: add missing unlocks to transaction abort paths
+
+Sergei Trofimovich (1) commits (+4/-2):
+    btrfs: fix early abort in 'remount'
+
+Total: (26) commits
+
+ fs/btrfs/backref.c     |   27 +++++++++++++++++------
+ fs/btrfs/ctree.h       |    2 +-
+ fs/btrfs/disk-io.c     |   22 +++++++++----------
+ fs/btrfs/extent-tree.c |   15 ++++++-------
+ fs/btrfs/extent_io.c   |   56 ++++++++++++++++++++++++------------------------
+ fs/btrfs/extent_io.h   |    4 ++--
+ fs/btrfs/file.c        |    9 ++++++--
+ fs/btrfs/inode.c       |   54 ++++++++++++++++------------------------------
+ fs/btrfs/ioctl.c       |    5 ++++-
+ fs/btrfs/reada.c       |   48 +++++++++++++++++++++++++----------------
+ fs/btrfs/relocation.c  |    4 +++-
+ fs/btrfs/scrub.c       |   15 -------------
+ fs/btrfs/super.c       |    7 +++---
+ fs/btrfs/transaction.c |    6 +++++-
+ fs/btrfs/volumes.c     |   13 +++++++----
+ 15 files changed, 148 insertions(+), 139 deletions(-)

@@ -1,89 +1,64 @@
-From: Hugo Mills <hugo@carfax.org.uk>
-Subject: Re: Interpreting Output of "btrfs fi show"
-Date: Sun, 29 Apr 2012 19:34:27 +0100
-Message-ID: <20120429183427.GL6172@carfax.org.uk>
-References: <CAGy7UtioPbdjomzuv3phZcF+HShyYKytkOKnAhP+4VGj29Aahg@mail.gmail.com>
- <C7$h9m5PCXB@helmut.hullen.de>
- <pan.2012.04.26.20.54.46@cox.net>
- <8118972.tgkAvno4mK@bursa22>
+From: "Norbert Scheibner" <scno@gmx.net>
+Subject: Re: cross-subvolume cp --reflink
+Date: Sun, 29 Apr 2012 22:05:34 +0200
+Message-ID: <op.wdjl3kx0r07q8e@tron.scheibner.rb>
+References: <20120401152749.61790@gmx.net>
+ <CALJXSJpjOX3t6Xa=gFF2p13eSb+SJfRc_pc0d5ScShnK-5BwkQ@mail.gmail.com>
+ <2272893.XFoXOC5Zif@bursa22>
 Mime-Version: 1.0
-Content-Type: multipart/signed; micalg=pgp-sha1;
-	protocol="application/pgp-signature"; boundary="cy9Nn4fUvYST66Pl"
-Cc: Duncan <1i5t5.duncan@cox.net>, linux-btrfs@vger.kernel.org,
-	chris.mason@oracle.com, josef@redhat.com
-To: Hubert Kario <hka@qbs.com.pl>
+Content-Type: text/plain; charset=iso-8859-15;
+	format=flowed	delsp=yes
+Cc: linux-btrfs <linux-btrfs@vger.kernel.org>
+To: =?iso-8859-15?Q?J=E9r=F4me_Poulin?= <jeromepoulin@gmail.com>,
+	"Hubert Kario" <hka@qbs.com.pl>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <8118972.tgkAvno4mK@bursa22>
+In-Reply-To: <2272893.XFoXOC5Zif@bursa22>
 List-ID: <linux-btrfs.vger.kernel.org>
 
+Am 29.04.2012, 01:53 Uhr, schrieb Hubert Kario <hka@qbs.com.pl>:
 
---cy9Nn4fUvYST66Pl
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
+> On Sunday 01 of April 2012 11:42:23 J=E9r=F4me Poulin wrote:
+>> On Sun, Apr 1, 2012 at 11:27 AM, Norbert Scheibner <scno@gmx.net> wr=
+ote:
+>> > Some users tested this patch successfully for week,s or months in =
+2 =20
+>> or 3
+>> > kernel versions since then, true?
+>> If this feature must be implented in VFS in another patch, why not
+>> just activate what works and make the future patch disable it again?
+>
+> Why would (should) it be impleemented in VFS? reflink copy is complet=
+ely
+> different from normal copy and hard link.
 
-On Sat, Apr 28, 2012 at 06:42:52PM +0200, Hubert Kario wrote:
-> On Thursday 26 of April 2012 20:54:47 Duncan wrote:
-> > Helmut Hullen posted on Thu, 26 Apr 2012 13:11:00 +0200 as excerpted:
-> > > Hallo, Bart,
-> > >> 
-> > >> Well I think there is a btrfs superblock still present from the
-> > >> full-disk filesystem. Due to the offset of the first partition from the
-> > >> start of the disk, this superblock was not overwritten when you created
-> > >> the filesystem inside the partition.
-> > > 
-> > > Sounds familiar ...
-> > > 
-> > > I now use to delete about the first 10 MByte of the target disk via "dd
-> > > if=/dev/zero"
-> > 
-> > But /unlike/ reiserfs, which was only affected with the well warned as
-> > don't-use-unless-you-have-to fsck --rebuild-tree option, it seems that
-> > due to btrfs scan, etc, btrfs has its similar problem in more routine
-> > operation.
-> 
-> I'd say that this kind of problem is basically impossible in btrfs because 
-> of FS UUID written all over the tree.
-> 
-> What we see here, is a superblock that is written in *very* specific place 
-> on the partition, that just is aligned in place that makes the whole disk 
-> look like btrfs.
-> 
-> I don't think it's actually possible for btrfs to put a file with btrfs 
-> filesystem image in place where it could seem like the basic block device 
-> has btrfs /too/. It depends on whatever the metadata block is allocated 
-> before data block on disk. It /may/ be possible in mixed data-metadata 
-> allocation mode.
-> Chris or Josef, can you confirm?
+I wouldn't make a VFS issue out of that. That should be another discuss=
+ion.
 
-   It's actually even harder than that -- btrfs filesystems have the
-FS UUID embedded in every single block of metadata, including the
-superblock, so there's no way of mixing up two filesystems, even if
-they actually occupy blocks on the same device (as in the scenario
-above).
+But:
+> Subvolumes in btrfs are barriers *only* in btrfs and not visible in V=
+=46S.
 
-   However, this comes at a price, which is that a block-for-block
-copy of a btrfs filesystem looks like it's a part of the original FS,
-and you can't mount both the original and the copy on the same machine
-at the same time.
+That is just a bug in my opinion, so it should work anyway, but to look=
+ at =20
+it from VFS point of view is strengthening me in wanting the outstandin=
+g =20
+patches integrated, as this feature could be supported by VFS in the =20
+future.
 
-   Hugo.
+> IMHO it's strictly btrfs business and not supporting reflink copy bet=
+ween
+> arbitrary directories is a bug.
 
--- 
-=== Hugo Mills: hugo@... carfax.org.uk | darksatanic.net | lug.org.uk ===
-  PGP key: 515C238D from wwwkeys.eu.pgp.net or http://www.carfax.org.uk
-  --- "What's so bad about being drunk?" "You ask a glass of water" ---  
-                                                                         
+I don't know exactly, but I think ZFS is another candidate for "cp =20
+--reflink". For some of the log-structured filesystems this could be =20
+usefull too, but I don't know if some of them already supports this or =
+=20
+plan to support this in the future.
 
---cy9Nn4fUvYST66Pl
-Content-Type: application/pgp-signature; name="signature.asc"
-Content-Description: Digital signature
-
------BEGIN PGP SIGNATURE-----
-Version: GnuPG v1.4.11 (GNU/Linux)
-
-iD8DBQFPnYmzIKyzvlFcI40RAlq2AKC9XIFzx+/DrE/jRh9QkagQiqD3rgCfQvmo
-UiII/w0/DTTHwpLPnz8btwU=
-=EocZ
------END PGP SIGNATURE-----
-
---cy9Nn4fUvYST66Pl--
+Greetings
+     Norbert
+--
+To unsubscribe from this list: send the line "unsubscribe linux-btrfs" =
+in
+the body of a message to majordomo@vger.kernel.org
+More majordomo info at  http://vger.kernel.org/majordomo-info.html

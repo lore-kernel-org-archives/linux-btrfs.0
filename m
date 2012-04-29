@@ -1,96 +1,85 @@
-From: Hubert Kario <hka@qbs.com.pl>
-Subject: Re: cross-subvolume cp --reflink
-Date: Sun, 29 Apr 2012 01:53:54 +0200
-Message-ID: <2272893.XFoXOC5Zif@bursa22>
-References: <20120401152749.61790@gmx.net> <CALJXSJpjOX3t6Xa=gFF2p13eSb+SJfRc_pc0d5ScShnK-5BwkQ@mail.gmail.com>
+From: Duncan <1i5t5.duncan@cox.net>
+Subject: Re: Interpreting Output of "btrfs fi show"
+Date: Sun, 29 Apr 2012 04:15:24 +0000 (UTC)
+Message-ID: <pan.2012.04.29.04.15.24@cox.net>
+References: <CAGy7UtioPbdjomzuv3phZcF+HShyYKytkOKnAhP+4VGj29Aahg@mail.gmail.com>
+	<C7$h9m5PCXB@helmut.hullen.de> <pan.2012.04.26.20.54.46@cox.net>
+	<8118972.tgkAvno4mK@bursa22>
 Mime-Version: 1.0
-Content-Type: multipart/signed; boundary="nextPart14210487.EdzILNcUGp"; micalg="sha256"; protocol="application/pkcs7-signature"
-Cc: linux-btrfs <linux-btrfs@vger.kernel.org>,
-	Norbert Scheibner <scno@gmx.net>
-To: =?ISO-8859-1?Q?J=E9r=F4me?= Poulin <jeromepoulin@gmail.com>
+Content-Type: text/plain; charset=UTF-8
+To: linux-btrfs@vger.kernel.org
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <CALJXSJpjOX3t6Xa=gFF2p13eSb+SJfRc_pc0d5ScShnK-5BwkQ@mail.gmail.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
+Hubert Kario posted on Sat, 28 Apr 2012 18:42:52 +0200 as excerpted:
 
---nextPart14210487.EdzILNcUGp
-Content-Transfer-Encoding: quoted-printable
-Content-Type: text/plain; charset="iso-8859-1"
+> On Thursday 26 of April 2012 20:54:47 Duncan wrote:
+>> Helmut Hullen posted on Thu, 26 Apr 2012 13:11:00 +0200 as excerpted:
+>> > Hallo, Bart,
+>> >> 
+>> >> Well I think there is a btrfs superblock still present from the
+>> >> full-disk filesystem. Due to the offset of the first partition from
+>> >> the start of the disk, this superblock was not overwritten when you
+>> >> created the filesystem inside the partition.
+>> > 
+>> > Sounds familiar ...
+>> > 
+>> > I now use to delete about the first 10 MByte of the target disk via
+>> > "dd if=/dev/zero"
+>> 
+>> But /unlike/ reiserfs, which was only affected with the well warned as
+>> don't-use-unless-you-have-to fsck --rebuild-tree option, it seems that
+>> due to btrfs scan, etc, btrfs has its similar problem in more routine
+>> operation.
+> 
+> I'd say that this kind of problem is basically impossible in btrfs
+> because of FS UUID written all over the tree.
 
-On Sunday 01 of April 2012 11:42:23 J=E9r=F4me Poulin wrote:
-> On Sun, Apr 1, 2012 at 11:27 AM, Norbert Scheibner <scno@gmx.net> wro=
-te:
-> > Some users tested this patch successfully for week,s or months in 2=
- or 3
-> > kernel versions since then, true?
-> If this feature must be implented in VFS in another patch, why not
-> just activate what works and make the future patch disable it again?
+Very good point!  I had forgotten about that.
 
-Why would (should) it be impleemented in VFS? reflink copy is completel=
-y=20
-different from normal copy and hard link.
+> What we see here, is a superblock that is written in *very* specific
+> place on the partition, that just is aligned in place that makes the
+> whole disk look like btrfs.
 
-Subvolumes in btrfs are barriers *only* in btrfs and not visible in VFS=
-.
+Yes.  That would be more analogous to the md/raid problem related to one 
+of the 1.x metadata formats, where it's at the /end/ of the volume.  If 
+that "volume" happens to correspond to the end of the physical disk as 
+well, then it's not always clear whether the md with metadata of that 
+version is the entire device or just a partition thereon.
 
-IMHO it's strictly btrfs business and not supporting reflink copy betwe=
-en=20
-arbitrary directories is a bug.
+> I don't think it's actually possible for btrfs to put a file with btrfs
+> filesystem image in place where it could seem like the basic block
+> device has btrfs /too/. It depends on whatever the metadata block is
+> allocated before data block on disk. It /may/ be possible in mixed
+> data-metadata allocation mode.
+> Chris or Josef, can you confirm?
 
-Regards,
---=20
-Hubert Kario
-QBS - Quality Business Software
-02-656 Warszawa, ul. Ksawer=F3w 30/85
-tel. +48 (22) 646-61-51, 646-74-24
-www.qbs.com.pl
---nextPart14210487.EdzILNcUGp
-Content-Type: application/pkcs7-signature; name="smime.p7s"
-Content-Disposition: attachment; filename="smime.p7s"
-Content-Transfer-Encoding: base64
+Makes sense.  I too would like confirmation on the mixed-mode case, tho, 
+as when I setup with btrfs, I'll very likely be using mixed-mode for some 
+of my smaller filesystems.  (I don't plan on using the sub-volumes for 
+that, as a good part of the reason I'm doing it is robustness, not 
+putting all my data "eggs" in the same filesystem "basket".  Keeping them 
+in separate baskets means if one filesystem "basket" dies, I've lost only 
+a relatively small subset of my data.)
 
-MIAGCSqGSIb3DQEHAqCAMIACAQExDzANBglghkgBZQMEAgEFADCABgkqhkiG9w0BBwEAAKCCBsow
-ggbGMIIErqADAgECAghgRNYwzIbzHzANBgkqhkiG9w0BAQsFADBRMSowKAYDVQQLDCFRQlMgQ2xh
-c3MgMyBDZXJ0aWZpY2F0ZSBBdXRob3JpdHkxFjAUBgNVBAoMDVFCUyBKYW4gS3ViYW4xCzAJBgNV
-BAYTAlBMMB4XDTExMDUxNjEwMDUzMloXDTEyMDUxNjEwMDUzMlowgaYxHTAbBgkqhkiG9w0BCQEW
-DmhrYUBxYnMuY29tLnBsMRUwEwYDVQQDDAxIdWJlcnQgS2FyaW8xDzANBgNVBCoMBkh1YmVydDEO
-MAwGA1UEBAwFS2FyaW8xFzAVBgNVBAoMDlFCUyBKYW4gS3ViYcWEMREwDwYDVQQHDAhXYXJzemF3
-YTEUMBIGA1UECAwLbWF6b3dpZWNraWUxCzAJBgNVBAYTAlBMMIIBIjANBgkqhkiG9w0BAQEFAAOC
-AQ8AMIIBCgKCAQEAtmTUo4Y/Qnf6MzeQiOYc56cvVa1b3VJaZDGC3ZSj8rPlj68nHL/Tk9FCRI3S
-YlJ1efskI4j8zVlxKTLetPCEUqE3PO2UQ0OaFCpdcbZQ9yvVXUbEVNAZ5quE856LmQzQ33/Kvsek
-LEzfYfeLS1yjqrhqIUYblkycZT6wowsx70NfXtfSb6H9DDjX1u0WpU6jK8lLaphEA9vQB+zEfYQW
-raCY1E0auEiGbPfPNi3x0if/ckVuUYCwr7IJaQg4hcYXFhUuKcbbFebUDOl8L1oi/2QwxC83U87p
-an+2awtbCWD33Q+QwSRoHUuX6pQs0sPnZehh+PfdmAC9MkWAg8fXRwIDAQABo4ICSjCCAkYwUQYI
-KwYBBQUHAQEERTBDMEEGCCsGAQUFBzABhjVodHRwOi8vY2EucWJzLmNvbS5wbDo4MDgwL2VqYmNh
-L3B1YmxpY3dlYi9zdGF0dXMvb2NzcDAdBgNVHQ4EFgQUZ6aWItDHMTdc4y1LLdYvTB/kmhswDAYD
-VR0TAQH/BAIwADAfBgNVHSMEGDAWgBRThM4WgbPV3Ji/Qgr6taX1RUTbLDCB/QYDVR0fBIH1MIHy
-MIHvoIGVoIGShoGPaHR0cDovL2NhLnFicy5jb20ucGw6ODA4MC9lamJjYS9wdWJsaWN3ZWIvd2Vi
-ZGlzdC9jZXJ0ZGlzdD9jbWQ9Y3JsJmlzc3Vlcj1vdT1RQlMlMjBDbGFzcyUyMDMlMjBDZXJ0aWZp
-Y2F0ZSUyMEF1dGhvcml0eSxvPVFCUyUyMEphbiUyMEt1YmFuLGM9UEyiVaRTMFExKjAoBgNVBAsM
-IVFCUyBDbGFzcyAzIENlcnRpZmljYXRlIEF1dGhvcml0eTEWMBQGA1UECgwNUUJTIEphbiBLdWJh
-bjELMAkGA1UEBhMCUEwwDgYDVR0PAQH/BAQDAgSwMGIGA1UdJQRbMFkGCCsGAQUFBwMCBggrBgEF
-BQcDAwYIKwYBBQUHAwQGCisGAQQBgjcUAgIGCisGAQQBgjcKAwwGCisGAQQBgjcCARUGCisGAQQB
-gjcCARYGCSqGSIb3LwEBBTAvBgNVHREEKDAmgQ5oa2FAcWJzLmNvbS5wbIEUd2VibWFzdGVyQHFi
-cy5jb20ucGwwDQYJKoZIhvcNAQELBQADggIBAE2d0JelbaaQJRuxZxndox3YC6JbOU+rG2wtQ0NG
-rS2xtlqW3NnFrwj0Z9aCAJxFh1kD6HpeGqhx6QHILCIjjogJ4hJsge66B37oP+xd1SJVGHlpeyA/
-hS2Fj6r0YnTT6umy0i6tDO9lvbPewalfklVCwkjqnJsFiMI4qew7HY/Gc/GxHABjE2W9NeXtDDfq
-zxJ3LUXwuqVHF74EMO7N1mBgiGOM7yAVuOCGzpX86fgWFpLqRHKymuSj9VgIAa80eX3+LOZ3YYzc
-SAbY2TJbN1BmU5kfGQMTIceXzB8Inub1PfUQ7mrLhheq3UIt+3MaUtgfhi2Um1RPtxway6JtUpu+
-pDXHukM5vgYHRfIgfVE5jClLLeIv9ktjDpd5cGhhQjtzfeE+kaP8323xj2M+c2RJurcj2TGE48dj
-e3aGLK4a7VSd8fsGNgdOYjua3f29kRGX/O1hug+bRAd0WYYEjIZL/eB8EAm6k75B9IyGvdyXP5xu
-SxW4kRRj6cU22M8evhFJ6uM/Rljn3UESuob2m7hsloJVJbqDPUlvkqT8q26VLdiSoHY0vikw+oxq
-dgmTm8dicjBi+ajvkonqDP3d2sm+yqpOld0+2HvEzYrPxCzg85H5WWCmTjR+bgbb04gFWi0e7P6X
-hGysv5O7TJTFOkZ4WnKM6QqUrpSaM9PC4eR7MYICHjCCAhoCAQEwXTBRMSowKAYDVQQLDCFRQlMg
-Q2xhc3MgMyBDZXJ0aWZpY2F0ZSBBdXRob3JpdHkxFjAUBgNVBAoMDVFCUyBKYW4gS3ViYW4xCzAJ
-BgNVBAYTAlBMAghgRNYwzIbzHzANBglghkgBZQMEAgEFAKCBkzAYBgkqhkiG9w0BCQMxCwYJKoZI
-hvcNAQcBMBwGCSqGSIb3DQEJBTEPFw0xMjA0MjgyMzUzNTVaMCgGCSqGSIb3DQEJDzEbMBkwCwYJ
-YIZIAWUDBAECMAoGCCqGSIb3DQMHMC8GCSqGSIb3DQEJBDEiBCA7PEfm2WaugJIJ+rA+CEuc/qpM
-txkZp/PiTtqwA2CNlzANBgkqhkiG9w0BAQEFAASCAQBvxM9pmBAmTpBqffTsScKQuPf8UKk9P0OU
-Nj6g4Wu0ig05o9NbDXIG2DP13c9w7roQVCHE78xviNSrLNvpgsjNuGRX/sbFx8/oSPwriTd4rvpo
-cAiw2LV0JJ1dV+edjh8x3K6XI4NAgIWAVYCEg/8pL6az83FKTwJeKVvGgpW/rGVSr87lTIjy7wZQ
-O/ahLyjbwmpwHq5fM//oWYyaHKHk0ig1Ls8w9j4SGDh1LXmz4mLmloOev/j0DjG9+Rx5fPzti/Yt
-kmCxMGARsjZgXKqaCCYnPOgN4rN1BMMW3cpPXNeYJzSxg3OGqwrkNJgZj4ew5Pjq/BER3VlQJ5xf
-+IvUAAAAAAAA
+> Still, a "zero-superblock" option would be useful for the btrfs tool.
+> I'll see what I can do about this.
 
---nextPart14210487.EdzILNcUGp--
+Yes, indeed.  Particularly since various bits of btrfs functionality 
+depend on scanning for filesystems (presumably their superblocks), and 
+output like that in the OP can be confusing indeed, as well as 
+potentially dangerous in recovery situations, where the wrong one might 
+be activated by accident.  (FWIW, there's an mdadm --zero-superblock 
+option.  I should take note of this thread and be sure I use it when next 
+I redo my layouts, probably when I switch some of them to btrfs instead, 
+tho that's going to be a bit as I'm waiting for N-way-mirroring, aka 
+proper raid1 mode, not the 2-way-only-mirroring that btrfs calls raid1 
+mode currently.)
+
+Thanks.
+
+-- 
+Duncan - List replies preferred.   No HTML msgs.
+"Every nonfree program has a lord, a master --
+and if you use the program, he is your master."  Richard Stallman
 

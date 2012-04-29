@@ -1,47 +1,72 @@
-From: Martin Steigerwald <Martin@lichtvoll.de>
-Subject: Re: Interpreting Output of "btrfs fi show"
-Date: Sun, 29 Apr 2012 08:13:48 +0200
-Message-ID: <201204290813.48417.Martin@lichtvoll.de>
-References: <4F98B447.30102@ennit.de> <4F991027.6000903@ennit.de> <CAGy7UtioPbdjomzuv3phZcF+HShyYKytkOKnAhP+4VGj29Aahg@mail.gmail.com> (sfid-20120426_132755_567365_AE299C6C)
+From: Miao Xie <miaoxie1984@gmail.com>
+Subject: [PATCH 2/2] Btrfs: flush all the dirty pages if try_to_writeback_inodes_sb_nr()
+ fails
+Date: Sun, 29 Apr 2012 23:25:19 +0800
+Message-ID: <4F9D5D5F.5070503@gmail.com>
+Reply-To: miaoxie1984@gmail.com
 Mime-Version: 1.0
-Content-Type: Text/Plain; charset=utf-8
-To: linux-btrfs@vger.kernel.org
+Content-Type: text/plain; charset=GB2312
+Cc: miaox@cn.fujitsu.com, Linux Btrfs <linux-btrfs@vger.kernel.org>
+To: Chris Mason <chris.mason@oracle.com>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <CAGy7UtioPbdjomzuv3phZcF+HShyYKytkOKnAhP+4VGj29Aahg@mail.gmail.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Am Donnerstag, 26. April 2012 schrieb Bart Noordervliet:
-> On Thu, Apr 26, 2012 at 11:06, Thomas Rohwer <trohwer@ennit.de> wrote=
-:
-> >> As for the two filesystems shown in btrfs fi show... I have no clu=
-e
-> >> what that is about. Did you maybe make a mistake to create a btrfs
-> >> filesystem on the whole disk at first?
-> >=20
-> > That is possible. But afterwards I certainly repartioned the device
-> > and created a btrfs filesystem on /dev/sda1. Maybe this info is onl=
-y
-> > in the partition table? I understand that I should avoid mounting
-> > /dev/sda in this situation.
->=20
-> Well I think there is a btrfs superblock still present from the
-> full-disk filesystem. Due to the offset of the first partition from
-> the start of the disk, this superblock was not overwritten when you
-> created the filesystem inside the partition. But they very much
-> overlap and the full-disk superblock will probably eventually be
-> overwritten by elements from the partition filesystem. How you would
-> go about erasing the stale superblock and whether it is safe to do so
-> I can't say though.
+We may try to flush some dirty pages when there is no enough space to reserve.
+But it is possible that this operation fails, in order to get enough space to
+reserve successfully, we will sync all the delalloc file. This operation is
+safe, we needn't worry about the case that the filesystem goes from r/w to r/o.
+because the filesystem should guarantee all the dirty pages have been written
+into the disk after it becomes readonly, so the sync operation will do nothing
+if the filesystem is already readonly. Though it may waste lots of time,
+as a corner case, we needn't care.
 
-There is the command wipefs. Whether its safe to use here I do not know=
-=2E I=20
-wouldn=C2=B4t try without a backup.
+Signed-off-by: Miao Xie <miaox@cn.fujitsu.com>
+---
+ fs/btrfs/extent-tree.c |   25 +++++++++++++++++++++++--
+ 1 files changed, 23 insertions(+), 2 deletions(-)
 
---=20
-Martin 'Helios' Steigerwald - http://www.Lichtvoll.de
-GPG: 03B0 0D6C 0040 0710 4AFA  B82F 991B EAAC A599 84C7
---
-To unsubscribe from this list: send the line "unsubscribe linux-btrfs" =
-in
-the body of a message to majordomo@vger.kernel.org
-More majordomo info at  http://vger.kernel.org/majordomo-info.html
+diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
+index deb2577..e533ab3 100644
+--- a/fs/btrfs/extent-tree.c
++++ b/fs/btrfs/extent-tree.c
+@@ -3580,6 +3580,28 @@ out:
+ 	return ret;
+ }
+ 
++void btrfs_writeback_inodes_sb_nr(struct btrfs_root *root,
++				  unsigned long nr_pages)
++{
++	struct super_block *sb = root->fs_info->sb;
++	int started;
++
++	/* If we can not start writeback, just sync all the delalloc file. */
++	started = try_to_writeback_inodes_sb_nr(sb, nr_pages,
++						WB_REASON_FS_FREE_SPACE);
++	if (!started) {
++		/*
++		 * We needn't worry the filesystem going from r/w to r/o though
++		 * we don't acquire ->s_umount mutex, because the filesystem
++		 * should guarantee the delalloc inodes list be empty after
++		 * the filesystem is readonly(all dirty pages are written to
++		 * the disk).
++		 */
++		btrfs_start_delalloc_inodes(root, 0);
++		btrfs_wait_ordered_extents(root, 0, 0);
++	}
++}
++
+ /*
+  * shrink metadata reservation for delalloc
+  */
+@@ -3624,8 +3646,7 @@ static int shrink_delalloc(struct btrfs_root *root, u64 to_reclaim,
+ 		smp_mb();
+ 		nr_pages = min_t(unsigned long, nr_pages,
+ 		       root->fs_info->delalloc_bytes >> PAGE_CACHE_SHIFT);
+-		try_to_writeback_inodes_sb_nr(root->fs_info->sb, nr_pages,
+-					      WB_REASON_FS_FREE_SPACE);
++		btrfs_writeback_inodes_sb_nr(root, nr_pages);
+ 
+ 		spin_lock(&space_info->lock);
+ 		if (reserved > space_info->bytes_may_use)
+-- 
+1.7.6.5

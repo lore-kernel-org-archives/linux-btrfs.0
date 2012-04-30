@@ -1,66 +1,101 @@
-From: Mike Fleetwood <mike.fleetwood@googlemail.com>
-Subject: Re: Interpreting Output of "btrfs fi show"
-Date: Mon, 30 Apr 2012 19:12:55 +0100
-Message-ID: <CAMU1PDhukD76UDQ9fUbcsZKW7gsw0vBQC7LjvT8Ocme+G_xpzw@mail.gmail.com>
-References: <4F98B447.30102@ennit.de>
-	<CAGy7UtioPbdjomzuv3phZcF+HShyYKytkOKnAhP+4VGj29Aahg@mail.gmail.com>
-	<201204290813.48417.Martin@lichtvoll.de>
-	<4295276.7uL8mlRAJE@bursa01>
-Mime-Version: 1.0
-Content-Type: text/plain; charset=UTF-8
-Cc: Martin Steigerwald <Martin@lichtvoll.de>,
-	linux-btrfs@vger.kernel.org
-To: Hubert Kario <hka@qbs.com.pl>
+From: Hubert Kario <kario@wit.edu.pl>
+Subject: [PATCH] btrfs: add command to zero out superblock
+Date: Mon, 30 Apr 2012 20:34:37 +0200
+Message-ID: <1335810877-7179-1-git-send-email-kario@wit.edu.pl>
+Cc: Hubert Kario <kario@wit.edu.pl>
+To: linux-btrfs@vger.kernel.org
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <4295276.7uL8mlRAJE@bursa01>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 30 April 2012 18:10, Hubert Kario <hka@qbs.com.pl> wrote:
-> On Sunday 29 of April 2012 08:13:48 Martin Steigerwald wrote:
->> Am Donnerstag, 26. April 2012 schrieb Bart Noordervliet:
->> > On Thu, Apr 26, 2012 at 11:06, Thomas Rohwer <trohwer@ennit.de> wr=
-ote:
->> > >> As for the two filesystems shown in btrfs fi show... I have no =
-clue
->> > >> what that is about. Did you maybe make a mistake to create a bt=
-rfs
->> > >> filesystem on the whole disk at first?
->> > >
->> > > That is possible. But afterwards I certainly repartioned the dev=
-ice
->> > > and created a btrfs filesystem on /dev/sda1. Maybe this info is =
-only
->> > > in the partition table? I understand that I should avoid mountin=
-g
->> > > /dev/sda in this situation.
->> >
->> > Well I think there is a btrfs superblock still present from the
->> > full-disk filesystem. Due to the offset of the first partition fro=
-m
->> > the start of the disk, this superblock was not overwritten when yo=
-u
->> > created the filesystem inside the partition. But they very much
->> > overlap and the full-disk superblock will probably eventually be
->> > overwritten by elements from the partition filesystem. How you wou=
-ld
->> > go about erasing the stale superblock and whether it is safe to do=
- so
->> > I can't say though.
->>
->> There is the command wipefs. Whether its safe to use here I do not k=
-now. I
->> wouldn=C2=B4t try without a backup.
->
-> Sorry, but I'm unable to find it. Is it a `btrfs` tool option or is i=
-t a
-> standalone application (in similar form as is the `btrfs-zero-log`)?
+Signed-off-by: Hubert Kario <kario@wit.edu.pl>
+---
+ cmds-device.c  |   42 ++++++++++++++++++++++++++++++++++++++++++
+ man/btrfs.8.in |    7 +++++++
+ 2 files changed, 49 insertions(+)
 
-Google is your friend.  wipefs is part of util-linux from 2.17, circa J=
-an-2010.
+diff --git a/cmds-device.c b/cmds-device.c
+index db625a6..1edb091 100644
+--- a/cmds-device.c
++++ b/cmds-device.c
+@@ -246,11 +246,53 @@ static int cmd_scan_dev(int argc, char **argv)
+ 	return 0;
+ }
+ 
++static const char * const cmd_zero_dev_usage[] = {
++	"btrfs device zero-superblock <device> [<device> ...]",
++	"Remove btrfs filesystem superblock from devices.",
++	"WARNING! This command will make filesystem residing on the devices",
++	"completely unmountable!",
++	NULL
++};
++
++static int cmd_zero_dev(int argc, char **argv)
++{
++	int fd;
++	char *file;
++	int arg_processed;
++	int ret = 0;
++	u64 device_len;
++	int mixed_mode_needed;
++	const int ZERO_END = 1;
++
++	if( argc < 2 ) {
++		usage(cmd_zero_dev_usage);
++	}
++
++	for(arg_processed = 1; arg_processed < argc; arg_processed++) {
++		file = argv[arg_processed];
++
++		fd = open(file, O_RDWR);
++		if (fd < 0) {
++			fprintf(stderr, "Unable to open %s\n", file);
++			ret |= 1;
++			continue;
++		}
++
++		ret |= btrfs_prepare_device(fd, file, ZERO_END, &device_len,
++				&mixed_mode_needed);
++
++		close(fd);
++	}
++
++	return ret;
++}
++
+ const struct cmd_group device_cmd_group = {
+ 	device_cmd_group_usage, NULL, {
+ 		{ "add", cmd_add_dev, cmd_add_dev_usage, NULL, 0 },
+ 		{ "delete", cmd_rm_dev, cmd_rm_dev_usage, NULL, 0 },
+ 		{ "scan", cmd_scan_dev, cmd_scan_dev_usage, NULL, 0 },
++		{ "zero-superblock", cmd_zero_dev, cmd_zero_dev_usage, NULL, 0 },
+ 		{ 0, 0, 0, 0, 0 }
+ 	}
+ };
+diff --git a/man/btrfs.8.in b/man/btrfs.8.in
+index be478e0..a840f7e 100644
+--- a/man/btrfs.8.in
++++ b/man/btrfs.8.in
+@@ -39,6 +39,8 @@ btrfs \- control a btrfs filesystem
+ .PP
+ \fBbtrfs\fP \fBdevice delete\fP\fI <device> [<device>...] <path> \fP
+ .PP
++\fBbtrfs\fP \fBdevice zero-superblock\fP\fI <device> [<device>...] \fP
++.PP
+ \fBbtrfs\fP \fBscrub start\fP [-Bdqru] {\fI<path>\fP|\fI<device>\fP}
+ .PP
+ \fBbtrfs\fP \fBscrub cancel\fP {\fI<path>\fP|\fI<device>\fP}
+@@ -230,6 +232,11 @@ Finally, if \fB--all-devices\fP is passed, all the devices under /dev are
+ scanned.
+ .TP
+ 
++\fBdevice zero-superblock\fR\fI <dev> [<dev>..]\fR
++The space on the disk where btrfs metadata can reside is overwritten with
++zeros.
++.TP
++
+ \fBscrub start\fP [-Bdqru] {\fI<path>\fP|\fI<device>\fP}
+ Start a scrub on all devices of the filesystem identified by \fI<path>\fR or on
+ a single \fI<device>\fR. Without options, scrub is started as a background
+-- 
+1.7.10
 
-Mike
---
-To unsubscribe from this list: send the line "unsubscribe linux-btrfs" =
-in
-the body of a message to majordomo@vger.kernel.org
-More majordomo info at  http://vger.kernel.org/majordomo-info.html

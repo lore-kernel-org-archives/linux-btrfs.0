@@ -1,36 +1,61 @@
-From: Christoph Hellwig <hch@infradead.org>
-Subject: Re: [RFC] [PATCH 1/2] fs: introduce inode operation ->update_time
-Date: Mon, 30 Apr 2012 11:21:47 -0400
-Message-ID: <20120430152147.GA20554@infradead.org>
-References: <1332771031-3337-1-git-send-email-josef@redhat.com>
+From: David Sterba <dave@jikos.cz>
+Subject: Re: Segfault on "btrfs subvolume delete" with kernel 3.3.4
+Date: Mon, 30 Apr 2012 18:07:35 +0200
+Message-ID: <20120430160735.GA6740@twin.jikos.cz>
+References: <4F9E7B2E.2030109@daevel.fr>
+Reply-To: dave@jikos.cz
 Mime-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
-Cc: linux-fsdevel@vger.kernel.org, viro@ZenIV.linux.org.uk,
-	linux-btrfs@vger.kernel.org, hch@infradead.org
-To: Josef Bacik <josef@redhat.com>
+Cc: linux-btrfs@vger.kernel.org, josef@redhat.com
+To: Olivier Bonvalet <btrfs.list@daevel.fr>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <1332771031-3337-1-git-send-email-josef@redhat.com>
+In-Reply-To: <4F9E7B2E.2030109@daevel.fr>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Mon, Mar 26, 2012 at 10:10:30AM -0400, Josef Bacik wrote:
-> Btrfs has to make sure we have space to allocate new blocks in order to modify
-> the inode, so updating time can fail.  We've gotten around this by having our
-> own file_update_time but this is kind of a pain, and Christoph has indicated he
-> would like to make xfs do something different with atime updates.  So introduce
-> ->update_time, where we will deal with i_version an a/m/c time updates and
-> indicate which changes need to be made.  The normal version just does what it
-> has always done, updates the time and marks the inode dirty, and then
-> filesystems can choose to do something different.
+On Mon, Apr 30, 2012 at 01:44:46PM +0200, Olivier Bonvalet wrote:
+> Apr 30 13:37:05 frozen kernel: [  238.508458] RIP: e030:[<ffffffffa004207f>]
+> [<ffffffffa004207f>] btrfs_unlink_subvol+0x184/0x1f9 [btrfs]
+> Apr 30 13:37:05 frozen kernel: [  238.508496] RAX: 00000000ffffffe4 RBX:
+> ffff880268af81b0 RCX: ffff880272180e58
+
+the same crash has been reported
+
+http://permalink.gmane.org/gmane.comp.file-systems.btrfs/16239
+
+and the call to BUG_ON has been replaced by a transaction abort within
+the error handling series in 3.4-rc*
+
+The error code is -28 ie ENOSPC, and if I'm guessing the crash site
+
+  btrfs_unlink_subvol+0x184/0x1f9 
+
+correctly, it's the last call to update_inode that fails:
+
+3.4-rc:
+3091         btrfs_i_size_write(dir, dir->i_size - name_len * 2);
+3092         dir->i_mtime = dir->i_ctime = CURRENT_TIME;
+3093         ret = btrfs_update_inode(trans, root, dir);
+
+[3.3:        BUG_ON(ret)]
+
+3094         if (ret)
+3095                 btrfs_abort_transaction(trans, root, ret);
+3096 out:
+3097         btrfs_free_path(path);
+3098         return ret;
+3099 }
+
+Josef, seems the global reserve was not enough, and it looks similar to
+the situation where ENOSPC is returned during truncating a file 0 on a
+full fs (ie. the recommend get-away step from a full fs).
+
+> And now I have a "frozen" (= status D) process "btrfs-transacti" (for a
+> different subvolume).
 > 
-> I've gone through all of the users of file_update_time and made them check for
-> errors with the exception of the fault code since it's complicated and I wasn't
-> quite sure what to do there, also Jan is going to be pushing the file time
-> updates into page_mkwrite for those who have it so that should satisfy btrfs and
-> make it not a big deal to check the file_update_time() return code in the
-> generic fault path. Thanks,
+> Is there something to do to fix that ?
 
-Any reason that atime updates ignore the return value?
+In your case only reboot. As stated above, 3.4 should handle this more
+gracefully.
 
-Otherwise looks fine,
 
-Reviewed-by: Christoph Hellwig <hch@lst.de>
+david

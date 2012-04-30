@@ -1,41 +1,42 @@
-From: Jan Schmidt <list.btrfs@jan-o-sch.net>
-Subject: [PATCH] Btrfs: remove call to btrfs_header_nritems with no effect
-Date: Mon, 30 Apr 2012 11:23:48 +0200
-Message-ID: <1335777828-23746-1-git-send-email-list.btrfs@jan-o-sch.net>
-To: chris.mason@oracle.com, linux-btrfs@vger.kernel.org
-Return-path: <linux-btrfs-owner@vger.kernel.org>
+From: Christian Brunner <christian@brunner-muc.de>
+Subject: Re: Ceph on btrfs 3.4rc
+Date: Mon, 30 Apr 2012 12:28:08 +0200
+Message-ID: <CAJafhzT8D9Hk0atMRWQpCK5Gr_=O+XqMEkPKQzCr351Gf+v3_Q@mail.gmail.com>
+References: <CAJafhzSVZ3+1ApgJU=sQu6gM62BeWVGG4mqFPNYRHx79czYJtQ@mail.gmail.com>
+	<CAFKYj4d2YvpttC-Z58-MY0ZC4tug3bQft-9z8_RRrrmJAm2T8A@mail.gmail.com>
+Mime-Version: 1.0
+Content-Type: text/plain; charset=ISO-8859-1
+Cc: linux-btrfs@vger.kernel.org, ceph-devel@vger.kernel.org
+To: tsuna <tsunanet@gmail.com>
+Return-path: <ceph-devel-owner@vger.kernel.org>
+In-Reply-To: <CAFKYj4d2YvpttC-Z58-MY0ZC4tug3bQft-9z8_RRrrmJAm2T8A@mail.gmail.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-This is a leftover from cleanup patch 559af821. Before the cleanup,
-btrfs_header_nritems was called inside an if condition. As it has no side
-effects we need to preserve here, it should simply be dropped.
+2012/4/29 tsuna <tsunanet@gmail.com>:
+> On Fri, Apr 20, 2012 at 8:09 AM, Christian Brunner
+> <christian@brunner-muc.de> wrote:
+>> After running ceph on XFS for some time, I decided to try btrfs agai=
+n.
+>> Performance with the current "for-linux-min" branch and big metadata
+>> is much better.
+>
+> I've heard that although performance from btrfs is better at first, i=
+t
+> degrades over time due to metadata fragmentation, whereas XFS'
+> performance starts off a little worse, but remains stable even after
+> weeks of heavy utilization. =A0Would be curious to hear your (or
+> others') feedback on that topic.
 
-Signed-off-by: Jan Schmidt <list.btrfs@jan-o-sch.net>
----
- fs/btrfs/ctree.c |    3 ---
- 1 files changed, 0 insertions(+), 3 deletions(-)
+Metadata fragmentation was a big problem (for us) in the past. With
+the "big metatdata feature" (mkfs.btrfs -l 64k -n 64k) these problems
+seem to be solved. We do not use it in production yet, but my stress
+test didn't show any degradation. The only remaining issues I've seen
+are these warnings.
 
-diff --git a/fs/btrfs/ctree.c b/fs/btrfs/ctree.c
-index e801f22..e93319d 100644
---- a/fs/btrfs/ctree.c
-+++ b/fs/btrfs/ctree.c
-@@ -994,8 +994,6 @@ static noinline int balance_level(struct btrfs_trans_handle *trans,
- 	    BTRFS_NODEPTRS_PER_BLOCK(root) / 4)
- 		return 0;
- 
--	btrfs_header_nritems(mid);
--
- 	left = read_node_slot(root, parent, pslot - 1);
- 	if (left) {
- 		btrfs_tree_lock(left);
-@@ -1025,7 +1023,6 @@ static noinline int balance_level(struct btrfs_trans_handle *trans,
- 		wret = push_node_left(trans, root, left, mid, 1);
- 		if (wret < 0)
- 			ret = wret;
--		btrfs_header_nritems(mid);
- 	}
- 
- 	/*
--- 
-1.7.3.4
-
+Regards,
+Christian
+--
+To unsubscribe from this list: send the line "unsubscribe ceph-devel" i=
+n
+the body of a message to majordomo@vger.kernel.org
+More majordomo info at  http://vger.kernel.org/majordomo-info.html

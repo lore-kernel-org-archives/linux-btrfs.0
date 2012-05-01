@@ -1,40 +1,43 @@
 From: Hubert Kario <kario@wit.edu.pl>
-Subject: [PATCH v2 0/5] Allow for quick removing of btrfs signature from block device
-Date: Tue,  1 May 2012 14:38:01 +0200
-Message-ID: <1335875886-12087-1-git-send-email-kario@wit.edu.pl>
-Cc: Hubert Kario <kario@wit.edu.pl>
+Subject: [PATCH v2 2/5] handle null pointers in btrfs_prepare_device
+Date: Tue,  1 May 2012 14:40:30 +0200
+Message-ID: <1335876033-12201-2-git-send-email-kario@wit.edu.pl>
+References: <1335876033-12201-1-git-send-email-kario@wit.edu.pl>
 To: linux-btrfs@vger.kernel.org
 Return-path: <linux-btrfs-owner@vger.kernel.org>
+In-Reply-To: <1335876033-12201-1-git-send-email-kario@wit.edu.pl>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-If there is a btrfs created on a raw block device (raw disk) and later there
-are created partitions and btrfs file systems created on partitions, subsequent
-`btrfs device scan` won't remove the btrfs signature from the raw block device.
+When calling the function from `btrfs device zero-super` we don't need
+the additional information returned and don't want the "SMALL VOLUME"
+warning printed.
 
-This patch series adds `btrfs device zero super <dev>` command to remove the
-btrfs signature from the device as well as fix few minor problems in
-btrfs_prepare_device function.
+Signed-off-by: Hubert Kario <kario@wit.edu.pl>
 
-This obsoletes my previous patch "btrfs: add command to zero out superblock".
-
-V1->V2 changes: better error reporting when there are problems with only one
-of the devices passed as parameters.
-
-Hubert Kario (5):
-  btrfs: add command to zero out superblock
-  handle null pointers in btrfs_prepare_device
-  Remove unused option in btrfs_prepare_device
-  better error handling in btrfs_prepare_device()
-  btrfs: remove unused variables
-
- btrfs-vol.c    |    2 +-
- cmds-device.c  |   45 ++++++++++++++++++++++++++++++++++++++++++++-
- man/btrfs.8.in |    7 +++++++
- mkfs.c         |   12 ++++++------
- utils.c        |   41 ++++++++++++++++++++++++-----------------
- utils.h        |    4 ++--
- 6 files changed, 84 insertions(+), 27 deletions(-)
-
+diff --git a/utils.c b/utils.c
+index ee7fa1b..6773be0 100644
+--- a/utils.c
++++ b/utils.c
+@@ -557,7 +557,7 @@ int btrfs_prepare_device(int fd, char *file, int zero_end, u64 *block_count_ret,
+ 	}
+ 	zero_end = 1;
+ 
+-	if (block_count < 1024 * 1024 * 1024 && !(*mixed)) {
++	if (mixed && block_count < 1024 * 1024 * 1024 && !(*mixed)) {
+ 		printf("SMALL VOLUME: forcing mixed metadata/data groups\n");
+ 		*mixed = 1;
+ 	}
+@@ -588,7 +588,9 @@ int btrfs_prepare_device(int fd, char *file, int zero_end, u64 *block_count_ret,
+ 			exit(1);
+ 		}
+ 	}
+-	*block_count_ret = block_count;
++
++	if (block_count_ret)
++		*block_count_ret = block_count;
+ 	return 0;
+ }
+ 
 -- 
 1.7.10
 

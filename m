@@ -1,54 +1,45 @@
-From: Hubert Kario <hka@qbs.com.pl>
-Subject: Re: [PATCH v2 0/5] Allow for quick removing of btrfs signature from block device
-Date: Tue, 01 May 2012 15:37:17 +0200
-Message-ID: <1769220.qV8MmucAeC@bursa01>
-References: <1335875886-12087-1-git-send-email-kario@wit.edu.pl> <20120501124337.GA21063@mother.jarsat.pl>
-Mime-Version: 1.0
-Content-Type: text/plain; charset=utf-8
-Cc: linux-btrfs@vger.kernel.org
-To: Tomasz Torcz <tomek@pipebreaker.pl>
+From: Josef Bacik <josef@redhat.com>
+Subject: [PATCH] Btrfs: fix page leak when allocing extent buffers
+Date: Tue,  1 May 2012 11:44:18 -0400
+Message-ID: <1335887058-6833-1-git-send-email-josef@redhat.com>
+To: linux-btrfs@vger.kernel.org, chris.mason@oracle.com
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <20120501124337.GA21063@mother.jarsat.pl>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Tuesday 01 of May 2012 14:43:37 Tomasz Torcz wrote:
-> On Tue, May 01, 2012 at 02:38:01PM +0200, Hubert Kario wrote:
-> > This patch series adds `btrfs device zero super <dev>` command to r=
-emove
-> > the btrfs signature from the device as well as fix few minor proble=
-ms in
-> > btrfs_prepare_device function.
->=20
->   Shouldn't you rather extend =E2=80=9Cwipefs=E2=80=9D from util-linu=
-x?
+If we happen to alloc a extent buffer and then alloc a page and notice that
+page is already attached to an extent buffer, we will only unlock it and
+free our existing eb.  Any pages currently attached to that eb will be
+properly freed, but we don't do the page_cache_release() on the page where
+we noticed the other extent buffer which can cause us to leak pages and I
+hope cause the weird issues we've been seeing in this area.  Thanks,
 
-wipefs v.2.21.1 does detect btrfs so there's no need to.
+Signed-off-by: Josef Bacik <josef@redhat.com>
+---
+ fs/btrfs/extent_io.c |    4 ++--
+ 1 files changed, 2 insertions(+), 2 deletions(-)
 
-I'd guess that most people will be thinking about btrfs RAID management=
- in LVM=20
-or MD terms, so the zero-superblock option should be available in the b=
-trfs=20
-tool proper (as similar option is avaiable in mdadm).
+diff --git a/fs/btrfs/extent_io.c b/fs/btrfs/extent_io.c
+index 0f239c68..836fc37 100644
+--- a/fs/btrfs/extent_io.c
++++ b/fs/btrfs/extent_io.c
+@@ -4121,6 +4121,7 @@ struct extent_buffer *alloc_extent_buffer(struct extent_io_tree *tree,
+ 			if (atomic_inc_not_zero(&exists->refs)) {
+ 				spin_unlock(&mapping->private_lock);
+ 				unlock_page(p);
++				page_cache_release(p);
+ 				mark_extent_buffer_accessed(exists);
+ 				goto free_eb;
+ 			}
+@@ -4200,8 +4201,7 @@ free_eb:
+ 			unlock_page(eb->pages[i]);
+ 	}
+ 
+-	if (!atomic_dec_and_test(&eb->refs))
+-		return exists;
++	WARN_ON(!atomic_dec_and_test(&eb->refs));
+ 	btrfs_release_extent_buffer(eb);
+ 	return exists;
+ }
+-- 
+1.7.7.6
 
-Adding it is trivial (look at my V1 patch) and does not introduce speci=
-al=20
-code.
-
-What's more, wipefs demages only the first superblock (so the fs is sti=
-ll=20
-mountable using btrfs-select-super -s 1 <dev>), while btrfs device zero=
--
-superblock removes all superblocks.
-
-Regards,
---=20
-Hubert Kario
-QBS - Quality Business Software
-02-656 Warszawa, ul. Ksawer=C3=B3w 30/85
-tel. +48 (22) 646-61-51, 646-74-24
-www.qbs.com.pl
---
-To unsubscribe from this list: send the line "unsubscribe linux-btrfs" =
-in
-the body of a message to majordomo@vger.kernel.org
-More majordomo info at  http://vger.kernel.org/majordomo-info.html

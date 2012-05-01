@@ -1,38 +1,32 @@
-From: Hubert Kario <kario@wit.edu.pl>
-Subject: [PATCH v2 5/5] btrfs: remove unused variables
-Date: Tue,  1 May 2012 14:41:27 +0200
-Message-ID: <1335876087-12248-2-git-send-email-kario@wit.edu.pl>
-References: <1335876087-12248-1-git-send-email-kario@wit.edu.pl>
+From: Tomasz Torcz <tomek@pipebreaker.pl>
+Subject: Re: [PATCH v2 0/5] Allow for quick removing of btrfs signature from
+ block device
+Date: Tue, 1 May 2012 14:43:37 +0200
+Message-ID: <20120501124337.GA21063@mother.jarsat.pl>
+References: <1335875886-12087-1-git-send-email-kario@wit.edu.pl>
+Mime-Version: 1.0
+Content-Type: text/plain; charset=utf-8
 To: linux-btrfs@vger.kernel.org
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <1335876087-12248-1-git-send-email-kario@wit.edu.pl>
+In-Reply-To: <1335875886-12087-1-git-send-email-kario@wit.edu.pl>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Signed-off-by: Hubert Kario <kario@wit.edu.pl>
+On Tue, May 01, 2012 at 02:38:01PM +0200, Hubert Kario wrote:
+> This patch series adds `btrfs device zero super <dev>` command to rem=
+ove the
+> btrfs signature from the device as well as fix few minor problems in
+> btrfs_prepare_device function.
 
-diff --git a/cmds-device.c b/cmds-device.c
-index a28752f..b1e70f9 100644
---- a/cmds-device.c
-+++ b/cmds-device.c
-@@ -261,8 +261,6 @@ static int cmd_zero_dev(int argc, char **argv)
- 	int arg_processed;
- 	int ret = 0;
- 	int n;
--	u64 device_len;
--	int mixed_mode_needed = 1; /* keep btrfs_prepare_device() quiet */
- 
- 	if( argc < 2 ) {
- 		usage(cmd_zero_dev_usage);
-@@ -278,8 +276,7 @@ static int cmd_zero_dev(int argc, char **argv)
- 			continue;
- 		}
- 
--		n = btrfs_prepare_device(fd, file, &device_len,
--					 &mixed_mode_needed);
-+		n = btrfs_prepare_device(fd, file, NULL, NULL);
- 		if (n) {
- 			fprintf(stderr, "Error when zeroing out %s\n", file);
- 			ret |= n;
--- 
-1.7.10
+  Shouldn't you rather extend =E2=80=9Cwipefs=E2=80=9D from util-linux?
 
+--=20
+Tomasz Torcz                                                       72->=
+|   80->|
+xmpp: zdzichubg@chrome.pl                                          72->=
+|   80->|
+
+--
+To unsubscribe from this list: send the line "unsubscribe linux-btrfs" =
+in
+the body of a message to majordomo@vger.kernel.org
+More majordomo info at  http://vger.kernel.org/majordomo-info.html

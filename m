@@ -1,45 +1,56 @@
 From: Josef Bacik <josef@redhat.com>
-Subject: [PATCH] Btrfs: fix page leak when allocing extent buffers
-Date: Tue,  1 May 2012 11:44:18 -0400
-Message-ID: <1335887058-6833-1-git-send-email-josef@redhat.com>
-To: linux-btrfs@vger.kernel.org, chris.mason@oracle.com
+Subject: Re: kernel BUG at fs/btrfs/extent_io.c:3982!
+Date: Tue, 1 May 2012 12:00:47 -0400
+Message-ID: <20120501160047.GA2050@localhost.localdomain>
+References: <4F848C62.6030100@sandia.gov>
+ <20120411190926.GE2506@localhost.localdomain>
+ <4F85E87E.90804@sandia.gov>
+Mime-Version: 1.0
+Content-Type: text/plain; charset=us-ascii
+Cc: Josef Bacik <josef@redhat.com>, linux-btrfs@vger.kernel.org
+To: Jim Schutt <jaschut@sandia.gov>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
+In-Reply-To: <4F85E87E.90804@sandia.gov>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-If we happen to alloc a extent buffer and then alloc a page and notice that
-page is already attached to an extent buffer, we will only unlock it and
-free our existing eb.  Any pages currently attached to that eb will be
-properly freed, but we don't do the page_cache_release() on the page where
-we noticed the other extent buffer which can cause us to leak pages and I
-hope cause the weird issues we've been seeing in this area.  Thanks,
+On Wed, Apr 11, 2012 at 02:24:30PM -0600, Jim Schutt wrote:
+> On 04/11/2012 01:09 PM, Josef Bacik wrote:
+> >On Tue, Apr 10, 2012 at 01:39:14PM -0600, Jim Schutt wrote:
+> >>Hi,
+> >>
+> >>I hit this BUG today.
+> >>
+> >>I'm running 3.3.1 merged with the ceph and btrfs bits for 3.4,
+> >>i.e. 3.3.1 +
+> >>   commit bc3f116fec194 "Btrfs: update the checks for mixed block groups with big metadata blocks"
+> >>   commit c666601a935b9 "rbd: move snap_rwsem to the device, rename to header_rwsem"
+> >>
+> >>The btrfs filesystem in question is backing a Ceph OSD under
+> >>a heavy write load.
+> >>
+> >>Here's the bug:
+> >>
+> >
+> >Can you give this a whirl and let me know how it goes?  If I'm right you should
+> >see a warning pop up in your messages.  Thanks,
+> 
+> OK, I've got my test running with your patch applied
+> to my previous kernel.
+> 
+> Do you expect your warning to only fire when my
+> previous kernel would have BUGged?  I ask because I've
+> only seen the BUG once, so it may be a low-probability
+> occurrence.
+> 
+> It seems like I should keep testing until I see either
+> your new warning or the BUG, right?
 
-Signed-off-by: Josef Bacik <josef@redhat.com>
----
- fs/btrfs/extent_io.c |    4 ++--
- 1 files changed, 2 insertions(+), 2 deletions(-)
+Hey Jim,
 
-diff --git a/fs/btrfs/extent_io.c b/fs/btrfs/extent_io.c
-index 0f239c68..836fc37 100644
---- a/fs/btrfs/extent_io.c
-+++ b/fs/btrfs/extent_io.c
-@@ -4121,6 +4121,7 @@ struct extent_buffer *alloc_extent_buffer(struct extent_io_tree *tree,
- 			if (atomic_inc_not_zero(&exists->refs)) {
- 				spin_unlock(&mapping->private_lock);
- 				unlock_page(p);
-+				page_cache_release(p);
- 				mark_extent_buffer_accessed(exists);
- 				goto free_eb;
- 			}
-@@ -4200,8 +4201,7 @@ free_eb:
- 			unlock_page(eb->pages[i]);
- 	}
- 
--	if (!atomic_dec_and_test(&eb->refs))
--		return exists;
-+	WARN_ON(!atomic_dec_and_test(&eb->refs));
- 	btrfs_release_extent_buffer(eb);
- 	return exists;
- }
--- 
-1.7.7.6
+I just sent a patch to the list
 
+[PATCH] Btrfs: fix page leak when allocing extent buffers 
+
+Could you try that and see if you can reproduce your problem?  Thanks,
+
+Josef

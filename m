@@ -1,31 +1,59 @@
-From: Henrik Kuhn <henrik.kuhn@origenis.de>
-Subject: Re: could not do orphan cleanup - openSUSE 12.1
-Date: Wed, 02 May 2012 14:41:56 +0200
-Message-ID: <4FA12B94.8050207@origenis.de>
-References: <4FA1063A.7080306@origenis.de> <20120502121626.GC6740@twin.jikos.cz>
+From: Martin <m_btrfs@ml1.co.uk>
+Subject: Re: btrfs across a mix of SSDs & HDDs
+Date: Wed, 02 May 2012 15:00:59 +0100
+Message-ID: <jnrems$tkh$1@dough.gmane.org>
+References: <jnpdud$ta9$1@dough.gmane.org> <jnq5os$tdn$1@dough.gmane.org> <CAG1y0sfMJ4TtOE3C6hTBH59ESZcomDs0uHJEpowC-8e=6s86cQ@mail.gmail.com> <jnqf0j$hcd$1@dough.gmane.org> <CAG1y0scNSit6oCvySUiP6RChx3_LLDY1QBML0BpGM-39etnZLQ@mail.gmail.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=ISO-8859-1; format=flowed
+Content-Type: text/plain; charset=ISO-8859-1
 To: linux-btrfs@vger.kernel.org
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <20120502121626.GC6740@twin.jikos.cz>
+In-Reply-To: <CAG1y0scNSit6oCvySUiP6RChx3_LLDY1QBML0BpGM-39etnZLQ@mail.gmail.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 05/02/2012 02:16 PM, David Sterba wrote:
-> On Wed, May 02, 2012 at 12:02:34PM +0200, Henrik Kuhn wrote:
->> I do observe a strange behavior upon booting of my openSUSE 12.1 system (
->> kernel 3.1.10-1.9-desktop; x86_64 ) with btrfsprogs-0.19-43.7.1.x86_64 utils
->> installed:
-> If you're using a kernel shipped by your distro, please open a bug there.
->
->
-> thanks,
-> david
-OK, see here https://bugzilla.novell.com/show_bug.cgi?id=760279
+Thanks for good comments.
 
-I wrote directly to this list in order to let the dev-team directly know 
-about a strange btrfs behavior, seen from the users side, of course.
-Nevertheless, perhaps this info is still valuable to further improve btrfs.
 
-regards,
-henrik
+>> Is the OP using Oracle Linux?
+> 
+> He didn't say. But he didn't say he WON'T be using oracle linux (or
+> other distro which supports btrfs) either. Plus the kernel can be
+> installed on top of RHEL/Centos 5 and 6, so he can easily choose
+> either the supported version, or the mainline version, each with its
+> own consequences.
+
+For further info:
+
+Nope, not using Oracle Linux. Then again, I'm reasonably distro
+agnostic. I'm also happy to compile my own kernels.
+
+And the system in question uses a HDD RAID and looks to be more IOPS
+bound rather than suffering actual IO data rate bound. The large
+directories certainly don't help! It's running postfix + courier-imap at
+the moment and I'm looking to revamp it for the gradually ever
+increasing workload. CPU and RAM usage is low on average. It serves 2x
+Gbit networks + internet users (3 NIC ports).
+
+Hence I'm considering the best way for an revamp/upgrade. SSDs would
+certainly help with the IOPS but I'm cautious about SSD wear-out for a
+system that constantly thrashes through a lot of data. I could just
+throw more disks at it to divide up the IO load.
+
+Multiple pairs of "HDD paired with SSD on md RAID 1 mirror" is a thought
+with ext4...
+
+bcache looks ideal to help but also looks too 'experimental'.
+
+And I was hoping that btrfs would help with handling the large
+directories and multi-user parallel accesses, especially so for being
+'mirrored' by btrfs itself (at the filesystem level) across 4 disks for
+example.
+
+Thoughts welcomed.
+
+
+Is btrfs development at the 'optimising' stage now, or is it all still
+very much a 'work in progress'?
+
+Regards,
+Martin
 

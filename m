@@ -1,7 +1,7 @@
 From: Josef Bacik <josef@redhat.com>
-Subject: [PATCH] Btrfs: do not check delalloc when updating disk_i_size
-Date: Wed,  2 May 2012 13:52:07 -0400
-Message-ID: <1335981127-14421-1-git-send-email-josef@redhat.com>
+Subject: [PATCH] Btrfs: do not check delalloc when updating disk_i_size V2
+Date: Wed,  2 May 2012 13:53:36 -0400
+Message-ID: <1335981216-14509-1-git-send-email-josef@redhat.com>
 To: linux-btrfs@vger.kernel.org
 Return-path: <linux-btrfs-owner@vger.kernel.org>
 List-ID: <linux-btrfs.vger.kernel.org>
@@ -25,14 +25,24 @@ Thanks,
 
 Signed-off-by: Josef Bacik <josef@redhat.com>
 ---
- fs/btrfs/ordered-data.c |   18 +++---------------
- 1 files changed, 3 insertions(+), 15 deletions(-)
+V1->V2: Sorry forgot to remove an unused variable.
+
+ fs/btrfs/ordered-data.c |   19 +++----------------
+ 1 files changed, 3 insertions(+), 16 deletions(-)
 
 diff --git a/fs/btrfs/ordered-data.c b/fs/btrfs/ordered-data.c
-index 9807750..6a0a994 100644
+index 9807750..9565c02 100644
 --- a/fs/btrfs/ordered-data.c
 +++ b/fs/btrfs/ordered-data.c
-@@ -785,14 +785,6 @@ int btrfs_ordered_update_i_size(struct inode *inode, u64 offset,
+@@ -751,7 +751,6 @@ int btrfs_ordered_update_i_size(struct inode *inode, u64 offset,
+ 				struct btrfs_ordered_extent *ordered)
+ {
+ 	struct btrfs_ordered_inode_tree *tree = &BTRFS_I(inode)->ordered_tree;
+-	struct extent_io_tree *io_tree = &BTRFS_I(inode)->io_tree;
+ 	u64 disk_i_size;
+ 	u64 new_i_size;
+ 	u64 i_size_test;
+@@ -785,14 +784,6 @@ int btrfs_ordered_update_i_size(struct inode *inode, u64 offset,
  	}
  
  	/*
@@ -47,7 +57,7 @@ index 9807750..6a0a994 100644
  	 * walk backward from this ordered extent to disk_i_size.
  	 * if we find an ordered extent then we can't update disk i_size
  	 * yet
-@@ -853,15 +845,11 @@ int btrfs_ordered_update_i_size(struct inode *inode, u64 offset,
+@@ -853,15 +844,11 @@ int btrfs_ordered_update_i_size(struct inode *inode, u64 offset,
  
  	/*
  	 * i_size_test is the end of a region after this ordered

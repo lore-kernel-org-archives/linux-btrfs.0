@@ -1,41 +1,50 @@
 From: David Sterba <dave@jikos.cz>
-Subject: Re: Errors in rebalancing RAID1 array after disk failure.
-Date: Wed, 2 May 2012 17:27:16 +0200
-Message-ID: <20120502152715.GG6740@twin.jikos.cz>
-References: <CADy=jfVRz5UuKcFkDXC9hwZnP8Z=E9NuF9p3hE6b0ZC06k7DWg@mail.gmail.com>
- <CADy=jfWC1vJs_TWt-EmvAN2Ybqw8kjN2tFV_vgAb-OKeGMpotg@mail.gmail.com>
- <CADy=jfV9pKJurcormuMK7KW54-DKSvYns-Ow-T_FEELGmFQ18Q@mail.gmail.com>
- <20120416134643.GA20982@twin.jikos.cz>
- <CADy=jfVh8ZvyyJTdBBFTVRSnBHka8sNrVUQcEx_ciROdB=pYhQ@mail.gmail.com>
- <CADy=jfW6rrSwPV6WvKVhcRYd67GMvB57ynSZOjPuDUnnssgZYg@mail.gmail.com>
- <CADy=jfV93jMa7DpN_tmQLQ9gOCjqOLgyDxv8=5tCMxr-b-m1QA@mail.gmail.com>
- <20120502145408.GE6740@twin.jikos.cz>
- <CADy=jfUGKH+fTfhFM-TDWxiFc_eM_4qwaeTESf2NV6rKUG8pww@mail.gmail.com>
+Subject: Re: Create subvolume from a directory?
+Date: Wed, 2 May 2012 18:33:37 +0200
+Message-ID: <20120502163337.GH6740@twin.jikos.cz>
+References: <loom.20120327T190041-268@post.gmane.org>
+ <4F734250.5030009@libero.it>
+ <4F73B9DC.3040402@cn.fujitsu.com>
+ <8026880.aVIK1HJLHr@bursa01>
 Reply-To: dave@jikos.cz
 Mime-Version: 1.0
-Content-Type: text/plain; charset=iso-8859-1
-Cc: dave@jikos.cz, linux-btrfs@vger.kernel.org
-To: "Marco L. Crociani" <marco.crociani@gmail.com>
+Content-Type: text/plain; charset=us-ascii
+Cc: Liu Bo <liubo2009@cn.fujitsu.com>, kreijack@inwind.it,
+	"Matthias G. Eckermann" <mge@suse.com>, Alex <alex@bpmit.com>,
+	linux-btrfs@vger.kernel.org
+To: Hubert Kario <hka@qbs.com.pl>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <CADy=jfUGKH+fTfhFM-TDWxiFc_eM_4qwaeTESf2NV6rKUG8pww@mail.gmail.com>
+In-Reply-To: <8026880.aVIK1HJLHr@bursa01>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Wed, May 02, 2012 at 04:59:03PM +0200, Marco L. Crociani wrote:
-> > On Thu, Apr 19, 2012 at 05:42:05PM +0200, Marco L. Crociani wrote:
-> > > Apr 19 17:38:41 evo kernel: [ =A0347.661964] =A0[<ffffffffa00b76a=
-c>] >
-> > > btrfs_ioctl_dev_info+0x15c/0x1a0 [btrfs]
-[...]
-> I was on 3.4-rc5!
+On Tue, May 01, 2012 at 07:09:21PM +0200, Hubert Kario wrote:
+> Let me rephrase it:
+> 
+> People don't want to be able to do:
+> 
+> mount /dev/lvm/btrfs /mnt/a -t btrfs -o subvol=volA
+> mount /dev/lvm/btrfs /mnt/b -t btrfs -o subvol=volB
+> cp --reflink=always /mnt/a/file /mnt/b
+> 
+> Just like you can't do hardlinks over `mount --bind` mountpoints, you 
+> shouldn't be able to cp reflink over mountpoints. That's expected as this 
+> *does* break VFS semantics.
 
-You really saw this crash with 3.4-rc5 ? The patch should be there.
-Anyway, your follow-up report was on top of 3.4-rc5, with different
-error.
+Proposed fix (incremental on top of the cross-subvol):
+
+--- a/fs/btrfs/ioctl.c
++++ b/fs/btrfs/ioctl.c
+@@ -2321,6 +2321,10 @@ static noinline long btrfs_ioctl_clone(struct file *file, unsigned long srcfd,
+                goto out_drop_write;
+        }
+
++       ret = -EXDEV;
++       if (src_file->f_path.mnt != file->f_path.mnt)
++               goto out_fput;
++
+        src = src_file->f_dentry->d_inode;
+
+        ret = -EINVAL;
 
 
 david
---
-To unsubscribe from this list: send the line "unsubscribe linux-btrfs" =
-in
-the body of a message to majordomo@vger.kernel.org
-More majordomo info at  http://vger.kernel.org/majordomo-info.html

@@ -1,105 +1,39 @@
-From: David Sterba <dsterba@suse.cz>
-Subject: Re: [PATCH v2 1/5] btrfs: add command to zero out superblock
-Date: Wed, 2 May 2012 16:48:22 +0200
-Message-ID: <20120502144822.GB7110@ds.suse.cz>
-References: <1335876033-12201-1-git-send-email-kario@wit.edu.pl>
- <20120502142843.GD6740@twin.jikos.cz>
-Reply-To: dsterba@suse.cz
+From: David Sterba <dave@jikos.cz>
+Subject: Re: Errors in rebalancing RAID1 array after disk failure.
+Date: Wed, 2 May 2012 16:54:08 +0200
+Message-ID: <20120502145408.GE6740@twin.jikos.cz>
+References: <CADy=jfVRz5UuKcFkDXC9hwZnP8Z=E9NuF9p3hE6b0ZC06k7DWg@mail.gmail.com>
+ <CADy=jfWC1vJs_TWt-EmvAN2Ybqw8kjN2tFV_vgAb-OKeGMpotg@mail.gmail.com>
+ <CADy=jfV9pKJurcormuMK7KW54-DKSvYns-Ow-T_FEELGmFQ18Q@mail.gmail.com>
+ <20120416134643.GA20982@twin.jikos.cz>
+ <CADy=jfVh8ZvyyJTdBBFTVRSnBHka8sNrVUQcEx_ciROdB=pYhQ@mail.gmail.com>
+ <CADy=jfW6rrSwPV6WvKVhcRYd67GMvB57ynSZOjPuDUnnssgZYg@mail.gmail.com>
+ <CADy=jfV93jMa7DpN_tmQLQ9gOCjqOLgyDxv8=5tCMxr-b-m1QA@mail.gmail.com>
+Reply-To: dave@jikos.cz
 Mime-Version: 1.0
-Content-Type: multipart/mixed; boundary="u3/rZRmxL6MmkK24"
-To: Hubert Kario <kario@wit.edu.pl>, linux-btrfs@vger.kernel.org
+Content-Type: text/plain; charset=us-ascii
+Cc: dave@jikos.cz, linux-btrfs@vger.kernel.org
+To: "Marco L. Crociani" <marco.crociani@gmail.com>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <20120502142843.GD6740@twin.jikos.cz>
+In-Reply-To: <CADy=jfV93jMa7DpN_tmQLQ9gOCjqOLgyDxv8=5tCMxr-b-m1QA@mail.gmail.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
+On Thu, Apr 19, 2012 at 05:42:05PM +0200, Marco L. Crociani wrote:
+> Apr 19 17:38:41 evo kernel: [  347.661915] Call Trace:
+> Apr 19 17:38:41 evo kernel: [  347.661964]  [<ffffffffa00b76ac>] > btrfs_ioctl_dev_info+0x15c/0x1a0 [btrfs]
+> Apr 19 17:38:41 evo kernel: [  347.662013]  [<ffffffffa00ba9b1>] > btrfs_ioctl+0x571/0x6c0 [btrfs]
+> Apr 19 17:38:41 evo kernel: [  347.662024]  [<ffffffff81193839>] > do_vfs_ioctl+0x99/0x330
+> Apr 19 17:38:41 evo kernel: [  347.662032]  [<ffffffff8118d345>] ?  > putname+0x35/0x50
+> Apr 19 17:38:41 evo kernel: [  347.662040]  [<ffffffff81193b71>] > sys_ioctl+0xa1/0xb0
+> Apr 19 17:38:41 evo kernel: [  347.662049]  [<ffffffff816691a9>] > system_call_fastpath+0x16/0x1b
 
---u3/rZRmxL6MmkK24
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
+Fixed by
+http://comments.gmane.org/gmane.comp.file-systems.btrfs/16302
 
-On Wed, May 02, 2012 at 04:28:43PM +0200, David Sterba wrote:
-> I had prototyped a similar utility (in perl, so nothing for progs
-> inclusion for now)
+reported earlier
+http://article.gmane.org/gmane.comp.file-systems.btrfs/16796
 
-attached.
+and it's part of 3.4-rc5.
+
 
 david
-
---u3/rZRmxL6MmkK24
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: attachment; filename=btrfs-dev-clear-sb
-
-#!/usr/bin/perl
-
-# clear btrfs signature from a device
-
-use Fcntl;
-
-use constant BTRFS_SUPER_INFO_OFFSET => 64 * 1024;
-use constant BTRFS_SUPER_INFO_SIZE => 4096;
-
-use constant BTRFS_SUPER_MIRROR_MAX => 3;
-use constant BTRFS_SUPER_MIRROR_SHIFT => 12;
-
-use constant BTRFS_MAGIC => "_BHRfS_M";
-use constant BTRFS_DEAD  => '_BHRf$_M';
-
-sub btrfs_sb_offset($) {
-	my $mirror =$_[0];
-	my $start = 16 * 1024;
-	if ($mirror>0) {
-		return $start << (BTRFS_SUPER_MIRROR_SHIFT * $mirror);
-	}
-	return BTRFS_SUPER_INFO_OFFSET;
-}
-
-my $dbg=1;
-my $savesb=0;
-
-# main
-my $dev=$ARGV[0];
-my $size;
-if(!-b $dev) {
-	print("Not a block device: $dev\n");
-	$size=(stat($dev))[7];
-} else {
-	$size=`blockdev --getsize64 "$dev"`;
-}
-sysopen(F, $dev, O_EXCL | O_RDWR) or die("Cannot open $dev exclusively: $!");
-print("Device size: $size\n") if($dbg);
-for(my $i=0;$i<6;$i++) {
-	my $off=btrfs_sb_offset($i);
-	if($off > $size) {
-		print("Offset for SB $i beyond EOF\n") if($dbg);
-		last;
-	}
-	print("Offset $i is $off\n") if($dbg);
-	sysseek(F, $off, 0);
-	sysread(F, $buf, BTRFS_SUPER_INFO_SIZE);
-	if($savesb) {
-		open(Q,">SB$i");
-		print Q ($buf);
-		close(Q);
-	}
-	my $sbmagic=substr($buf, 0x40, length(BTRFS_MAGIC));
-	print("SB magic: $sbmagic\n") if($dbg);
-	if(BTRFS_MAGIC eq $sbmagic) {
-		print("Found a valid signature of superblock $i\n");
-		sysseek(F, $off + 0x40, 0);
-		print("Clearing...\n");
-		syswrite(F, BTRFS_DEAD, length(BTRFS_DEAD));
-	} elsif(BTRFS_DEAD eq $sbmagic) {
-		print("Found a signature of a dead superblock $i\n");
-	} else {
-		print("Superblock $i does not look like a btrfs one\n");
-	}
-}
-close(F);
-print("Syncing dev\n");
-if (!-b $dev) {
-	system("fsync \'$dev\'");
-} else {
-	system("blockdev --flushbufs \'$dev\'");
-}
-
---u3/rZRmxL6MmkK24--

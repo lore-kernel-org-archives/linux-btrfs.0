@@ -1,67 +1,71 @@
-From: David Sterba <dave@jikos.cz>
-Subject: Re: [PATCH v2 1/5] btrfs: add command to zero out superblock
-Date: Wed, 2 May 2012 19:36:29 +0200
-Message-ID: <20120502173629.GI6740@twin.jikos.cz>
-References: <1335876033-12201-1-git-send-email-kario@wit.edu.pl>
- <20120502142843.GD6740@twin.jikos.cz>
- <2913005.FpWZk4H159@bursa01>
-Reply-To: dave@jikos.cz
-Mime-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Cc: dave@jikos.cz, linux-btrfs@vger.kernel.org
-To: Hubert Kario <hka@qbs.com.pl>
+From: Josef Bacik <josef@redhat.com>
+Subject: [PATCH] Btrfs: do not check delalloc when updating disk_i_size
+Date: Wed,  2 May 2012 13:52:07 -0400
+Message-ID: <1335981127-14421-1-git-send-email-josef@redhat.com>
+To: linux-btrfs@vger.kernel.org
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <2913005.FpWZk4H159@bursa01>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Wed, May 02, 2012 at 06:42:16PM +0200, Hubert Kario wrote:
-> A similar function in mdadm is called zero superblock so I just re used the 
-> name (according to the principle of least surprise). Users, even admins, 
-> generally don't read kernel code...
+We are checking delalloc to see if it is ok to update the i_size.  There are
+2 cases it stops us from updating
 
-I intended to point out that the functionality is there under different
-name, but the 'least surprise' and tool compatibility plays for
-'zero-superblock' naming.
+1) If there is delalloc between our current disk_i_size and this ordered
+extent
 
-> > I'm not sure if this is useful and sensible usecase, clearing superblock
-> > is a one-time action anyway, so it's more for the sake of tool
-> > flexibility.
-> 
-> Clearing superblock is not a light decision and should generally be performed 
-> just before formatting the partition with some other fs or physical volume for 
-> LVM. IMHO recoverability of "cleared" superblock is a function hardly anyone 
-> would use.
+2) If there is delalloc between our current ordered extent and the next
+ordered extent
 
-googled, a few users asking about recovering from md zero-superblock, and
-the solution was to recreate the array, md is said to be smart and
-recognize traces of previous array and will not destroy it if the
-parameters are same. Point for md, btrfs does not do this.
+These tests are racy however since we can set delalloc for these ranges at
+any time.  Also for the first case if we notice there is delalloc between
+disk_i_size and our ordered extent we will not update disk_i_size and assume
+that when that delalloc bit gets written out it will update everything
+properly.  However if we crash before that we will have file extents outside
+of our i_size, which is not good, so this test is dangerous as well as racy.
+Thanks,
 
-> > To your implementation: I think adding a function doing the superblock
-> > reset would be enough here. Something like this (in pseudocode):
-> > 
-> > for (i = 0 ; i < BTRFS_SUPER_MIRROR_MAX; i++) {
-> > 	bytenr = btrfs_sb_offset(i);
-> > 	"break if bytenr > device size"
-> > 	memset(superblock buffer, CLEARPATTERN, sizeof(...))
-> > }
-> > write_all_supers(root);
-> 
-> That's exactly what btrfs_prepare_device does. And it's a function run by btfs 
-> just before btrfs dev add and by mkfs. Duplicating its code would be a bad 
-> idea.
+Signed-off-by: Josef Bacik <josef@redhat.com>
+---
+ fs/btrfs/ordered-data.c |   18 +++---------------
+ 1 files changed, 3 insertions(+), 15 deletions(-)
 
-Not 'exactly' IMO:
+diff --git a/fs/btrfs/ordered-data.c b/fs/btrfs/ordered-data.c
+index 9807750..6a0a994 100644
+--- a/fs/btrfs/ordered-data.c
++++ b/fs/btrfs/ordered-data.c
+@@ -785,14 +785,6 @@ int btrfs_ordered_update_i_size(struct inode *inode, u64 offset,
+ 	}
+ 
+ 	/*
+-	 * we can't update the disk_isize if there are delalloc bytes
+-	 * between disk_i_size and  this ordered extent
+-	 */
+-	if (test_range_bit(io_tree, disk_i_size, offset - 1,
+-			   EXTENT_DELALLOC, 0, NULL)) {
+-		goto out;
+-	}
+-	/*
+ 	 * walk backward from this ordered extent to disk_i_size.
+ 	 * if we find an ordered extent then we can't update disk i_size
+ 	 * yet
+@@ -853,15 +845,11 @@ int btrfs_ordered_update_i_size(struct inode *inode, u64 offset,
+ 
+ 	/*
+ 	 * i_size_test is the end of a region after this ordered
+-	 * extent where there are no ordered extents.  As long as there
+-	 * are no delalloc bytes in this area, it is safe to update
+-	 * disk_i_size to the end of the region.
++	 * extent where there are no ordered extents, we can safely set
++	 * disk_i_size to this.
+ 	 */
+-	if (i_size_test > offset &&
+-	    !test_range_bit(io_tree, offset, i_size_test - 1,
+-			    EXTENT_DELALLOC, 0, NULL)) {
++	if (i_size_test > offset)
+ 		new_i_size = min_t(u64, i_size_test, i_size);
+-	}
+ 	BTRFS_I(inode)->disk_i_size = new_i_size;
+ 	ret = 0;
+ out:
+-- 
+1.7.7.6
 
-* calls TRIM/discard on the device
-* zeroes first 2 megabytes
-* zeroes all reachable superblocks
-* zeroes last 2 megabytes
-
-Too many undocumented and unobvious side-efects.
-
-Code duplication can be avoided by factoring the 'zero superblock' into
-a function and calling it from btrfs_prepare_device() .
-
-
-david

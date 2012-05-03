@@ -1,36 +1,66 @@
 From: Hubert Kario <hka@qbs.com.pl>
-Subject: Re: ran cppcheck and going to make cosmetic changes--where do I submit code?
-Date: Thu, 03 May 2012 15:20:46 +0200
-Message-ID: <47728123.8SHeb6gPSP@bursa01>
-References: <4FA282D7.9000203@gmail.com>
+Subject: Re: Create subvolume from a directory?
+Date: Thu, 03 May 2012 15:26:20 +0200
+Message-ID: <18314084.XgMbhzHaqD@bursa01>
+References: <loom.20120327T190041-268@post.gmane.org> <8026880.aVIK1HJLHr@bursa01> <20120502163337.GH6740@twin.jikos.cz>
 Mime-Version: 1.0
-Content-Type: multipart/signed; boundary="nextPart2073815.gpicXMlzvk"; micalg="sha256"; protocol="application/pkcs7-signature"
-Cc: linux-btrfs@vger.kernel.org
-To: Josh Marshall <joshua.r.marshall.1991@gmail.com>
+Content-Type: multipart/signed; boundary="nextPart1376718.uVskBq5Uyb"; micalg="sha256"; protocol="application/pkcs7-signature"
+Cc: Liu Bo <liubo2009@cn.fujitsu.com>, kreijack@inwind.it,
+	"Matthias G. Eckermann" <mge@suse.com>, Alex <alex@bpmit.com>,
+	linux-btrfs@vger.kernel.org
+To: dave@jikos.cz
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <4FA282D7.9000203@gmail.com>
+In-Reply-To: <20120502163337.GH6740@twin.jikos.cz>
 List-ID: <linux-btrfs.vger.kernel.org>
 
 
---nextPart2073815.gpicXMlzvk
+--nextPart1376718.uVskBq5Uyb
 Content-Transfer-Encoding: quoted-printable
 Content-Type: text/plain; charset="iso-8859-1"
 
-On Thursday 03 of May 2012 09:06:31 Josh Marshall wrote:
-> I ran cppcheck on btrfs and it looks like it says there could be a fe=
-w
-> cosmetic changes, such as reducing the scope of some variables.  I'm
-> guessing that it won't be too terrible if I do make the changes, but
-> where do I submit the code when I'm done?
+On Wednesday 02 of May 2012 18:33:37 David Sterba wrote:
+> On Tue, May 01, 2012 at 07:09:21PM +0200, Hubert Kario wrote:
+> > Let me rephrase it:
+> >=20
+> > People don't want to be able to do:
+> >=20
+> > mount /dev/lvm/btrfs /mnt/a -t btrfs -o subvol=3DvolA
+> > mount /dev/lvm/btrfs /mnt/b -t btrfs -o subvol=3DvolB
+> > cp --reflink=3Dalways /mnt/a/file /mnt/b
+> >=20
+> > Just like you can't do hardlinks over `mount --bind` mountpoints, y=
+ou
+> > shouldn't be able to cp reflink over mountpoints. That's expected a=
+s this
+> > *does* break VFS semantics.
+>=20
+> Proposed fix (incremental on top of the cross-subvol):
 
-You send the patches to this mailing list.
+I'm a noob as far as kernel development is concerned so take my comment=
+s for=20
+what they're worth.
+=20
+> --- a/fs/btrfs/ioctl.c
+> +++ b/fs/btrfs/ioctl.c
+> @@ -2321,6 +2321,10 @@ static noinline long btrfs_ioctl_clone(struct =
+file
+> *file, unsigned long srcfd, goto out_drop_write;
+>         }
+>=20
+> +       ret =3D -EXDEV;
+> +       if (src_file->f_path.mnt !=3D file->f_path.mnt)
 
-Look at `git format-patch` and `git send-email` as far as tools are con=
-cerned=20
-If yo're looking for tips for creating patches for Linux see at=20
-Documentation/SubmitChecklist and Documentation/SubmittingPatches in yo=
-ur=20
-Linux checkout.
+I'm not sure about this comparision. Is the f_path struct member used j=
+ust as=20
+reference to some general kernel structure?
+
+> +               goto out_fput;
+> +
+>         src =3D src_file->f_dentry->d_inode;
+>=20
+>         ret =3D -EINVAL;
+
+Other that that, looks OK.
 
 Regards,
 --=20
@@ -39,7 +69,7 @@ QBS - Quality Business Software
 02-656 Warszawa, ul. Ksawer=F3w 30/85
 tel. +48 (22) 646-61-51, 646-74-24
 www.qbs.com.pl
---nextPart2073815.gpicXMlzvk
+--nextPart1376718.uVskBq5Uyb
 Content-Type: application/pkcs7-signature; name="smime.p7s"
 Content-Disposition: attachment; filename="smime.p7s"
 Content-Transfer-Encoding: base64
@@ -78,14 +108,14 @@ dgmTm8dicjBi+ajvkonqDP3d2sm+yqpOld0+2HvEzYrPxCzg85H5WWCmTjR+bgbb04gFWi0e7P6X
 hGysv5O7TJTFOkZ4WnKM6QqUrpSaM9PC4eR7MYICHjCCAhoCAQEwXTBRMSowKAYDVQQLDCFRQlMg
 Q2xhc3MgMyBDZXJ0aWZpY2F0ZSBBdXRob3JpdHkxFjAUBgNVBAoMDVFCUyBKYW4gS3ViYW4xCzAJ
 BgNVBAYTAlBMAghgRNYwzIbzHzANBglghkgBZQMEAgEFAKCBkzAYBgkqhkiG9w0BCQMxCwYJKoZI
-hvcNAQcBMBwGCSqGSIb3DQEJBTEPFw0xMjA1MDMxMzIwNDZaMCgGCSqGSIb3DQEJDzEbMBkwCwYJ
-YIZIAWUDBAECMAoGCCqGSIb3DQMHMC8GCSqGSIb3DQEJBDEiBCBYhfGW4FZGA0Xc5XXPTGds23e3
-KoYu6Z5AJCknwDqqjTANBgkqhkiG9w0BAQEFAASCAQATCBCl7OKOZ4+i5PovRnhec4L01i1a2Utu
-oGBjk9cZt8PaPPLsLfDmhhkC6btNggGJgD2s1jYBtUex0Rzlec90VfnXMgdIst6IFmD0OSGvX6A4
-siA9SEioONKvQzf0ImwWe1zxpX0URDtJD6gyg07c3bQSYEIGG55+jh9YyOh2xbkKCZMhJmAH4Z5q
-CXFAtuP6nzjJAZ9ht7FAUtLx+csKDpA7eFVZlb3NS6O7xspi2t1W7W9GPZ8tHj7ISuUp2CLq/zNY
-ydGzWuEz+zYpqVZ/DEt3+WGGD5Q3vAB/2I67hSmBNP0DXStmH3LQW+obk/WP22CZ63wfr5LU8JqI
-xXdmAAAAAAAA
+hvcNAQcBMBwGCSqGSIb3DQEJBTEPFw0xMjA1MDMxMzI2MjBaMCgGCSqGSIb3DQEJDzEbMBkwCwYJ
+YIZIAWUDBAECMAoGCCqGSIb3DQMHMC8GCSqGSIb3DQEJBDEiBCDtFULqdEdFGzmCQZScamHRuS+g
+DYaspfqzAdwqqKTszzANBgkqhkiG9w0BAQEFAASCAQAHg/WVlz+qCMp/7Fq7m+SWvKeh+rdp/a1e
+XPHbSi2SZXpXKTgZqUQXYuq2GJye7TBQe1xzs+UfNdZbQyquKhrHaRcpTvcLZk+JB1dsABezgJV8
+UlKJkSAGO2/grggpZNDjlcrkyHx2ZmdJwF2ZCyZ50n5DsAMo/KIrILZ6RTUNI0unkYclg/nCE1RQ
+skFQiD98/feqQ2aeyhTQXLWO2WtO0eqqiI44bYlLUGeK6oExm82W/AlnQNrFWiBYe0Y08PL657mM
+DuLbiuD/pwcBX0GF7e2VsDBAIj+cxQH0uNjTr8yoQg89xm/BISUH4zY9to/HJ+7XS8JPnOQ2QGAm
+xfaLAAAAAAAA
 
---nextPart2073815.gpicXMlzvk--
+--nextPart1376718.uVskBq5Uyb--
 

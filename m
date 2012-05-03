@@ -1,94 +1,91 @@
 From: Hubert Kario <hka@qbs.com.pl>
-Subject: Re: [PATCH v2 1/5] btrfs: add command to zero out superblock
-Date: Thu, 03 May 2012 15:11:45 +0200
-Message-ID: <1405178.Vd8v8qs4AD@bursa01>
-References: <1335876033-12201-1-git-send-email-kario@wit.edu.pl> <2913005.FpWZk4H159@bursa01> <20120502173629.GI6740@twin.jikos.cz>
+Subject: Re: ran cppcheck and going to make cosmetic changes--where do I submit code?
+Date: Thu, 03 May 2012 15:20:46 +0200
+Message-ID: <47728123.8SHeb6gPSP@bursa01>
+References: <4FA282D7.9000203@gmail.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=iso-8859-1
+Content-Type: multipart/signed; boundary="nextPart2073815.gpicXMlzvk"; micalg="sha256"; protocol="application/pkcs7-signature"
 Cc: linux-btrfs@vger.kernel.org
-To: dave@jikos.cz
+To: Josh Marshall <joshua.r.marshall.1991@gmail.com>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <20120502173629.GI6740@twin.jikos.cz>
+In-Reply-To: <4FA282D7.9000203@gmail.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Wednesday 02 of May 2012 19:36:29 David Sterba wrote:
-> On Wed, May 02, 2012 at 06:42:16PM +0200, Hubert Kario wrote:
-> > > I'm not sure if this is useful and sensible usecase, clearing sup=
-erblock
-> > > is a one-time action anyway, so it's more for the sake of tool
-> > > flexibility.
-> >=20
-> > Clearing superblock is not a light decision and should generally be
-> > performed just before formatting the partition with some other fs o=
-r
-> > physical volume for LVM. IMHO recoverability of "cleared" superbloc=
-k is a
-> > function hardly anyone would use.
->=20
-> googled, a few users asking about recovering from md zero-superblock,=
- and
-> the solution was to recreate the array, md is said to be smart and
-> recognize traces of previous array and will not destroy it if the
-> parameters are same. Point for md, btrfs does not do this.
 
-nice, didn't know about this. Such functionality would be nice to have.
-But then I don't think that a "recreate the array if the parameters are=
- the=20
-same" is actually a good idea, lots of space for error. A pair of funct=
-ions:
+--nextPart2073815.gpicXMlzvk
+Content-Transfer-Encoding: quoted-printable
+Content-Type: text/plain; charset="iso-8859-1"
 
-btrfs dev zero-superblock
-btrfs dev restore-superblock
+On Thursday 03 of May 2012 09:06:31 Josh Marshall wrote:
+> I ran cppcheck on btrfs and it looks like it says there could be a fe=
+w
+> cosmetic changes, such as reducing the scope of some variables.  I'm
+> guessing that it won't be too terrible if I do make the changes, but
+> where do I submit the code when I'm done?
 
-would be a better solution IMO
-=20
-> > > To your implementation: I think adding a function doing the super=
-block
-> > > reset would be enough here. Something like this (in pseudocode):
-> > >=20
-> > > for (i =3D 0 ; i < BTRFS_SUPER_MIRROR_MAX; i++) {
-> > >=20
-> > > 	bytenr =3D btrfs_sb_offset(i);
-> > > 	"break if bytenr > device size"
-> > > 	memset(superblock buffer, CLEARPATTERN, sizeof(...))
-> > >=20
-> > > }
-> > > write_all_supers(root);
-> >=20
-> > That's exactly what btrfs_prepare_device does. And it's a function =
-run by
-> > btfs just before btrfs dev add and by mkfs. Duplicating its code wo=
-uld be
-> > a bad idea.
->=20
-> Not 'exactly' IMO:
->=20
-> * calls TRIM/discard on the device
-> * zeroes first 2 megabytes
-> * zeroes all reachable superblocks
-> * zeroes last 2 megabytes
->=20
-> Too many undocumented and unobvious side-efects.
+You send the patches to this mailing list.
 
-True. But close enough ;)
+Look at `git format-patch` and `git send-email` as far as tools are con=
+cerned=20
+If yo're looking for tips for creating patches for Linux see at=20
+Documentation/SubmitChecklist and Documentation/SubmittingPatches in yo=
+ur=20
+Linux checkout.
 
-> Code duplication can be avoided by factoring the 'zero superblock' in=
-to
-> a function and calling it from btrfs_prepare_device().
-
-Then there's also the "actually zero" vs "reversibly destroy" differenc=
-e but=20
-it's trivial to fix using a single option.
-
-Regards
+Regards,
 --=20
 Hubert Kario
 QBS - Quality Business Software
 02-656 Warszawa, ul. Ksawer=F3w 30/85
 tel. +48 (22) 646-61-51, 646-74-24
 www.qbs.com.pl
---
-To unsubscribe from this list: send the line "unsubscribe linux-btrfs" =
-in
-the body of a message to majordomo@vger.kernel.org
-More majordomo info at  http://vger.kernel.org/majordomo-info.html
+--nextPart2073815.gpicXMlzvk
+Content-Type: application/pkcs7-signature; name="smime.p7s"
+Content-Disposition: attachment; filename="smime.p7s"
+Content-Transfer-Encoding: base64
+
+MIAGCSqGSIb3DQEHAqCAMIACAQExDzANBglghkgBZQMEAgEFADCABgkqhkiG9w0BBwEAAKCCBsow
+ggbGMIIErqADAgECAghgRNYwzIbzHzANBgkqhkiG9w0BAQsFADBRMSowKAYDVQQLDCFRQlMgQ2xh
+c3MgMyBDZXJ0aWZpY2F0ZSBBdXRob3JpdHkxFjAUBgNVBAoMDVFCUyBKYW4gS3ViYW4xCzAJBgNV
+BAYTAlBMMB4XDTExMDUxNjEwMDUzMloXDTEyMDUxNjEwMDUzMlowgaYxHTAbBgkqhkiG9w0BCQEW
+DmhrYUBxYnMuY29tLnBsMRUwEwYDVQQDDAxIdWJlcnQgS2FyaW8xDzANBgNVBCoMBkh1YmVydDEO
+MAwGA1UEBAwFS2FyaW8xFzAVBgNVBAoMDlFCUyBKYW4gS3ViYcWEMREwDwYDVQQHDAhXYXJzemF3
+YTEUMBIGA1UECAwLbWF6b3dpZWNraWUxCzAJBgNVBAYTAlBMMIIBIjANBgkqhkiG9w0BAQEFAAOC
+AQ8AMIIBCgKCAQEAtmTUo4Y/Qnf6MzeQiOYc56cvVa1b3VJaZDGC3ZSj8rPlj68nHL/Tk9FCRI3S
+YlJ1efskI4j8zVlxKTLetPCEUqE3PO2UQ0OaFCpdcbZQ9yvVXUbEVNAZ5quE856LmQzQ33/Kvsek
+LEzfYfeLS1yjqrhqIUYblkycZT6wowsx70NfXtfSb6H9DDjX1u0WpU6jK8lLaphEA9vQB+zEfYQW
+raCY1E0auEiGbPfPNi3x0if/ckVuUYCwr7IJaQg4hcYXFhUuKcbbFebUDOl8L1oi/2QwxC83U87p
+an+2awtbCWD33Q+QwSRoHUuX6pQs0sPnZehh+PfdmAC9MkWAg8fXRwIDAQABo4ICSjCCAkYwUQYI
+KwYBBQUHAQEERTBDMEEGCCsGAQUFBzABhjVodHRwOi8vY2EucWJzLmNvbS5wbDo4MDgwL2VqYmNh
+L3B1YmxpY3dlYi9zdGF0dXMvb2NzcDAdBgNVHQ4EFgQUZ6aWItDHMTdc4y1LLdYvTB/kmhswDAYD
+VR0TAQH/BAIwADAfBgNVHSMEGDAWgBRThM4WgbPV3Ji/Qgr6taX1RUTbLDCB/QYDVR0fBIH1MIHy
+MIHvoIGVoIGShoGPaHR0cDovL2NhLnFicy5jb20ucGw6ODA4MC9lamJjYS9wdWJsaWN3ZWIvd2Vi
+ZGlzdC9jZXJ0ZGlzdD9jbWQ9Y3JsJmlzc3Vlcj1vdT1RQlMlMjBDbGFzcyUyMDMlMjBDZXJ0aWZp
+Y2F0ZSUyMEF1dGhvcml0eSxvPVFCUyUyMEphbiUyMEt1YmFuLGM9UEyiVaRTMFExKjAoBgNVBAsM
+IVFCUyBDbGFzcyAzIENlcnRpZmljYXRlIEF1dGhvcml0eTEWMBQGA1UECgwNUUJTIEphbiBLdWJh
+bjELMAkGA1UEBhMCUEwwDgYDVR0PAQH/BAQDAgSwMGIGA1UdJQRbMFkGCCsGAQUFBwMCBggrBgEF
+BQcDAwYIKwYBBQUHAwQGCisGAQQBgjcUAgIGCisGAQQBgjcKAwwGCisGAQQBgjcCARUGCisGAQQB
+gjcCARYGCSqGSIb3LwEBBTAvBgNVHREEKDAmgQ5oa2FAcWJzLmNvbS5wbIEUd2VibWFzdGVyQHFi
+cy5jb20ucGwwDQYJKoZIhvcNAQELBQADggIBAE2d0JelbaaQJRuxZxndox3YC6JbOU+rG2wtQ0NG
+rS2xtlqW3NnFrwj0Z9aCAJxFh1kD6HpeGqhx6QHILCIjjogJ4hJsge66B37oP+xd1SJVGHlpeyA/
+hS2Fj6r0YnTT6umy0i6tDO9lvbPewalfklVCwkjqnJsFiMI4qew7HY/Gc/GxHABjE2W9NeXtDDfq
+zxJ3LUXwuqVHF74EMO7N1mBgiGOM7yAVuOCGzpX86fgWFpLqRHKymuSj9VgIAa80eX3+LOZ3YYzc
+SAbY2TJbN1BmU5kfGQMTIceXzB8Inub1PfUQ7mrLhheq3UIt+3MaUtgfhi2Um1RPtxway6JtUpu+
+pDXHukM5vgYHRfIgfVE5jClLLeIv9ktjDpd5cGhhQjtzfeE+kaP8323xj2M+c2RJurcj2TGE48dj
+e3aGLK4a7VSd8fsGNgdOYjua3f29kRGX/O1hug+bRAd0WYYEjIZL/eB8EAm6k75B9IyGvdyXP5xu
+SxW4kRRj6cU22M8evhFJ6uM/Rljn3UESuob2m7hsloJVJbqDPUlvkqT8q26VLdiSoHY0vikw+oxq
+dgmTm8dicjBi+ajvkonqDP3d2sm+yqpOld0+2HvEzYrPxCzg85H5WWCmTjR+bgbb04gFWi0e7P6X
+hGysv5O7TJTFOkZ4WnKM6QqUrpSaM9PC4eR7MYICHjCCAhoCAQEwXTBRMSowKAYDVQQLDCFRQlMg
+Q2xhc3MgMyBDZXJ0aWZpY2F0ZSBBdXRob3JpdHkxFjAUBgNVBAoMDVFCUyBKYW4gS3ViYW4xCzAJ
+BgNVBAYTAlBMAghgRNYwzIbzHzANBglghkgBZQMEAgEFAKCBkzAYBgkqhkiG9w0BCQMxCwYJKoZI
+hvcNAQcBMBwGCSqGSIb3DQEJBTEPFw0xMjA1MDMxMzIwNDZaMCgGCSqGSIb3DQEJDzEbMBkwCwYJ
+YIZIAWUDBAECMAoGCCqGSIb3DQMHMC8GCSqGSIb3DQEJBDEiBCBYhfGW4FZGA0Xc5XXPTGds23e3
+KoYu6Z5AJCknwDqqjTANBgkqhkiG9w0BAQEFAASCAQATCBCl7OKOZ4+i5PovRnhec4L01i1a2Utu
+oGBjk9cZt8PaPPLsLfDmhhkC6btNggGJgD2s1jYBtUex0Rzlec90VfnXMgdIst6IFmD0OSGvX6A4
+siA9SEioONKvQzf0ImwWe1zxpX0URDtJD6gyg07c3bQSYEIGG55+jh9YyOh2xbkKCZMhJmAH4Z5q
+CXFAtuP6nzjJAZ9ht7FAUtLx+csKDpA7eFVZlb3NS6O7xspi2t1W7W9GPZ8tHj7ISuUp2CLq/zNY
+ydGzWuEz+zYpqVZ/DEt3+WGGD5Q3vAB/2I67hSmBNP0DXStmH3LQW+obk/WP22CZ63wfr5LU8JqI
+xXdmAAAAAAAA
+
+--nextPart2073815.gpicXMlzvk--
+

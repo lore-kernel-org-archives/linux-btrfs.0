@@ -1,133 +1,124 @@
-From: Josh Durgin <josh.durgin@dreamhost.com>
-Subject: Re: Ceph on btrfs 3.4rc
-Date: Thu, 03 May 2012 08:17:43 -0700
-Message-ID: <f35947dc064c7ff1a073b430a2d681f5@hq.newdream.net>
-References: <CAJafhzSVZ3+1ApgJU=sQu6gM62BeWVGG4mqFPNYRHx79czYJtQ@mail.gmail.com>
- <20120424152141.GB3326@localhost.localdomain>
- <Pine.LNX.4.64.1204240922040.29159@cobra.newdream.net>
- <CAJafhzSgaQ3sx=Af0Ru0CiwQH37V5y8jgjoTo_8yozcjo9rpPA@mail.gmail.com>
- <20120503141354.GC1914@localhost.localdomain>
+From: "Marco L. Crociani" <marco.crociani@gmail.com>
+Subject: Re: [PATCH] Btrfs: fix crash in scrub repair code when device is missing
+Date: Thu, 3 May 2012 21:33:04 +0200
+Message-ID: <CADy=jfUJeVGaMvfyPXF903nJjqJv0MktB_PKVTHaonppBg7a+g@mail.gmail.com>
+References: <1336037482-16199-1-git-send-email-sbehrens@giantdisaster.de>
 Mime-Version: 1.0
 Content-Type: text/plain; charset=UTF-8
-Cc: Christian Brunner <christian@brunner-muc.de>,
-	Sage Weil <sage@newdream.net>, <linux-btrfs@vger.kernel.org>,
-	<ceph-devel@vger.kernel.org>
-To: Josef Bacik <josef@redhat.com>
-Return-path: <ceph-devel-owner@vger.kernel.org>
-In-Reply-To: <20120503141354.GC1914@localhost.localdomain>
+Cc: linux-btrfs@vger.kernel.org
+To: Stefan Behrens <sbehrens@giantdisaster.de>
+Return-path: <linux-btrfs-owner@vger.kernel.org>
+In-Reply-To: <1336037482-16199-1-git-send-email-sbehrens@giantdisaster.de>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Thu, 3 May 2012 10:13:55 -0400, Josef Bacik <josef@redhat.com>
-wrote:
-> On Fri, Apr 27, 2012 at 01:02:08PM +0200, Christian Brunner wrote:
->> Am 24. April 2012 18:26 schrieb Sage Weil <sage@newdream.net>:
->> > On Tue, 24 Apr 2012, Josef Bacik wrote:
->> >> On Fri, Apr 20, 2012 at 05:09:34PM +0200, Christian Brunner wrote=
-:
->> >> > After running ceph on XFS for some time, I decided to try btrfs=
- again.
->> >> > Performance with the current "for-linux-min" branch and big met=
-adata
->> >> > is much better. The only problem (?) I'm still seeing is a warn=
-ing
->> >> > that seems to occur from time to time:
->> >
->> > Actually, before you do that... we have a new tool,
->> > test_filestore_workloadgen, that generates a ceph-osd-like workloa=
-d on the
->> > local file system. =C2=A0It's a subset of what a full OSD might do=
-, but if
->> > we're lucky it will be sufficient to reproduce this issue. =C2=A0S=
-omething like
->> >
->> > =C2=A0test_filestore_workloadgen --osd-data /foo --osd-journal /ba=
-r
->> >
->> > will hopefully do the trick.
->> >
->> > Christian, maybe you can see if that is able to trigger this warni=
-ng?
->> > You'll need to pull it from the current master branch; it wasn't i=
-n the
->> > last release.
->>
->> Trying to reproduce with test_filestore_workloadgen didn't work for
->> me. So here are some instructions on how to reproduce with a minimal
->> ceph setup.
->>
->> You will need a single system with two disks and a bit of memory.
->>
->> - Compile and install ceph (detailed instructions:
->> http://ceph.newdream.net/docs/master/ops/install/mkcephfs/)
->>
->> - For the test setup I've used two tmpfs files as journal devices. T=
-o
->> create these, do the following:
->>
->> # mkdir -p /ceph/temp
->> # mount -t tmpfs tmpfs /ceph/temp
->> # dd if=3D/dev/zero of=3D/ceph/temp/journal0 count=3D500 bs=3D1024k
->> # dd if=3D/dev/zero of=3D/ceph/temp/journal1 count=3D500 bs=3D1024k
->>
->> - Now you should create and mount btrfs. Here is what I did:
->>
->> # mkfs.btrfs -l 64k -n 64k /dev/sda
->> # mkfs.btrfs -l 64k -n 64k /dev/sdb
->> # mkdir /ceph/osd.000
->> # mkdir /ceph/osd.001
->> # mount -o noatime,space_cache,inode_cache,autodefrag /dev/sda /ceph=
-/osd.000
->> # mount -o noatime,space_cache,inode_cache,autodefrag /dev/sdb /ceph=
-/osd.001
->>
->> - Create /etc/ceph/ceph.conf similar to the attached ceph.conf. You
->> will probably have to change the btrfs devices and the hostname
->> (os39).
->>
->> - Create the ceph filesystems:
->>
->> # mkdir /ceph/mon
->> # mkcephfs -a -c /etc/ceph/ceph.conf
->>
->> - Start ceph (e.g. "service ceph start")
->>
->> - Now you should be able to use ceph - "ceph -s" will tell you about
->> the state of the ceph cluster.
->>
->> - "rbd create -size 100 testimg" will create an rbd image on the cep=
-h cluster.
->>
->=20
-> It's failing here
->=20
-> http://fpaste.org/e3BG/
+On Thu, May 3, 2012 at 11:31 AM, Stefan Behrens
+<sbehrens@giantdisaster.de> wrote:
+> Fix that when scrub tries to repair an I/O or checksum error and one =
+of
+> the devices containing the mirror is missing, it crashes in bio_add_p=
+age
+> because the bdev is a NULL pointer for missing devices.
+>
+> Reported-by: Marco L. Crociani <marco.crociani@gmail.com>
+> Signed-off-by: Stefan Behrens <sbehrens@giantdisaster.de>
+> ---
+> =C2=A0fs/btrfs/scrub.c | =C2=A0 =C2=A07 +++++++
+> =C2=A01 file changed, 7 insertions(+)
+>
+> diff --git a/fs/btrfs/scrub.c b/fs/btrfs/scrub.c
+> index b679bf6..7e487be 100644
+> --- a/fs/btrfs/scrub.c
+> +++ b/fs/btrfs/scrub.c
+> @@ -998,6 +998,7 @@ static int scrub_setup_recheck_block(struct scrub=
+_dev *sdev,
+> =C2=A0 =C2=A0 =C2=A0 =C2=A0 =C2=A0 =C2=A0 =C2=A0 =C2=A0 =C2=A0 =C2=A0=
+ =C2=A0 =C2=A0page =3D sblock->pagev + page_index;
+> =C2=A0 =C2=A0 =C2=A0 =C2=A0 =C2=A0 =C2=A0 =C2=A0 =C2=A0 =C2=A0 =C2=A0=
+ =C2=A0 =C2=A0page->logical =3D logical;
+> =C2=A0 =C2=A0 =C2=A0 =C2=A0 =C2=A0 =C2=A0 =C2=A0 =C2=A0 =C2=A0 =C2=A0=
+ =C2=A0 =C2=A0page->physical =3D bbio->stripes[mirror_index].physical;
+> + =C2=A0 =C2=A0 =C2=A0 =C2=A0 =C2=A0 =C2=A0 =C2=A0 =C2=A0 =C2=A0 =C2=A0=
+ =C2=A0 /* for missing devices, bdev is NULL */
+> =C2=A0 =C2=A0 =C2=A0 =C2=A0 =C2=A0 =C2=A0 =C2=A0 =C2=A0 =C2=A0 =C2=A0=
+ =C2=A0 =C2=A0page->bdev =3D bbio->stripes[mirror_index].dev->bdev;
+> =C2=A0 =C2=A0 =C2=A0 =C2=A0 =C2=A0 =C2=A0 =C2=A0 =C2=A0 =C2=A0 =C2=A0=
+ =C2=A0 =C2=A0page->mirror_num =3D mirror_index + 1;
+> =C2=A0 =C2=A0 =C2=A0 =C2=A0 =C2=A0 =C2=A0 =C2=A0 =C2=A0 =C2=A0 =C2=A0=
+ =C2=A0 =C2=A0page->page =3D alloc_page(GFP_NOFS);
+> @@ -1042,6 +1043,12 @@ static int scrub_recheck_block(struct btrfs_fs=
+_info *fs_info,
+> =C2=A0 =C2=A0 =C2=A0 =C2=A0 =C2=A0 =C2=A0 =C2=A0 =C2=A0struct scrub_p=
+age *page =3D sblock->pagev + page_num;
+> =C2=A0 =C2=A0 =C2=A0 =C2=A0 =C2=A0 =C2=A0 =C2=A0 =C2=A0DECLARE_COMPLE=
+TION_ONSTACK(complete);
+>
+> + =C2=A0 =C2=A0 =C2=A0 =C2=A0 =C2=A0 =C2=A0 =C2=A0 if (page->bdev =3D=
+=3D NULL) {
+> + =C2=A0 =C2=A0 =C2=A0 =C2=A0 =C2=A0 =C2=A0 =C2=A0 =C2=A0 =C2=A0 =C2=A0=
+ =C2=A0 page->io_error =3D 1;
+> + =C2=A0 =C2=A0 =C2=A0 =C2=A0 =C2=A0 =C2=A0 =C2=A0 =C2=A0 =C2=A0 =C2=A0=
+ =C2=A0 sblock->no_io_error_seen =3D 0;
+> + =C2=A0 =C2=A0 =C2=A0 =C2=A0 =C2=A0 =C2=A0 =C2=A0 =C2=A0 =C2=A0 =C2=A0=
+ =C2=A0 continue;
+> + =C2=A0 =C2=A0 =C2=A0 =C2=A0 =C2=A0 =C2=A0 =C2=A0 }
+> +
+> =C2=A0 =C2=A0 =C2=A0 =C2=A0 =C2=A0 =C2=A0 =C2=A0 =C2=A0BUG_ON(!page->=
+page);
+> =C2=A0 =C2=A0 =C2=A0 =C2=A0 =C2=A0 =C2=A0 =C2=A0 =C2=A0bio =3D bio_al=
+loc(GFP_NOFS, 1);
+> =C2=A0 =C2=A0 =C2=A0 =C2=A0 =C2=A0 =C2=A0 =C2=A0 =C2=A0if (!bio)
+> --
+> 1.7.10.1.362.g242cab3
+>
 
-2012-05-03 10:11:28.818308 7fcb5a0ee700 -- 127.0.0.1:0/1003269 <=3D=3D
-osd.1 127.0.0.1:6803/2379 3 =3D=3D=3D=3D osd_op_reply(3 rbd_info [call]=
- =3D -5
-(Input/output error)) v4 =3D=3D=3D=3D 107+0+0 (3948821281 0 0) 0x7fcb38=
-0009a0
-con 0x1cad3e0
+May  3 18:53:08 evo kernel: [ 5270.759254] btrfs: checksum error at
+logical 756637261824 on dev /dev/sda3, sector 881151024, root 259,
+inode 1821286, offset 325373952, length 4096, links 1 (path: [...])
+May  3 18:53:08 evo kernel: [ 5270.759286] btrfs: unable to fixup
+(regular) error at logical 756637261824 on dev /dev/sda3
 
-This is probably because the osd isn't finding the rbd class.
-Do you have 'rbd_cls.so' in /usr/lib64/rados-classes? Wherever
-rbd_cls.so is,
-try adding 'osd class dir =3D /path/to/rados-classes' to the [osd]
-section
-in your ceph.conf, and restarting the osds.
 
-If you set 'debug osd =3D 10' you should see '_load_class rbd' in the o=
-sd
-log
-when you try to create an rbd image.
+scrub device /dev/sda3 (id 1) status
+	scrub started at Thu May  3 17:30:35 2012, running for 6594 seconds
+	total bytes scrubbed: 568.65GB with 1 errors
+	error details: csum=3D1
+	corrected errors: 0, uncorrectable errors: 1, unverified errors: 0
+scrub device  (id 2) history
+	scrub started at Thu May  3 17:30:35 2012 and finished after 0 seconds
+	total bytes scrubbed: 0.00 with 0 errors
+scrub device /dev/sdb3 (id 3) status
+	scrub started at Thu May  3 17:30:35 2012, running for 6594 seconds
+	total bytes scrubbed: 536.66GB with 0 errors
 
-Autotools should be setting the default location correctly, but if
-you're
-running the osds in a chroot or something the path would be wrong.
+May  3 20:07:51 evo kernel: [ 9752.940360] btrfs: checksum error at
+logical 1284041527296 on dev /dev/sda3, sector 1907567464, root 259,
+inode 1327815, offset 1691832320, length 4096, links 1 (path: [...])
+May  3 20:07:51 evo kernel: [ 9752.940392] btrfs: unable to fixup
+(regular) error at logical 1284041527296 on dev /dev/sda3
+May  3 20:25:45 evo kernel: [10826.760001] btrfs: checksum error at
+logical 1378644791296 on dev /dev/sda3, sector 2092339464, root 259,
+inode 1759403, offset 767893504, length 4096, links 1 (path: [...])
+May  3 20:25:45 evo kernel: [10826.760025] btrfs: unable to fixup
+(regular) error at logical 1378644791296 on dev /dev/sda3
+May  3 20:27:04 evo kernel: [10905.612849] btrfs: checksum error at
+logical 1386199773184 on dev /dev/sda3, sector 2107095288, root 259,
+inode 1580366, offset 1526546432, length 4096, links 1 (path: [...])
+May  3 20:27:04 evo kernel: [10905.612881] btrfs: unable to fixup
+(regular) error at logical 1386199773184 on dev /dev/sda3
+May  3 20:29:46 evo kernel: [11067.396252] btrfs: checksum error at
+logical 1401913339904 on dev /dev/sda3, sector 2137785848, root 259,
+inode 1851460, offset 515543040, length 4096, links 1 (path: [...])
+May  3 20:29:46 evo kernel: [11067.408660] btrfs: unable to fixup
+(regular) error at logical 1401913339904 on dev /dev/sda3
 
-Josh
+That patch worked for me.
+Thanks!
+
+--=20
+Marco Lorenzo Crociani,
+marco.crociani@gmail.com
 --
-To unsubscribe from this list: send the line "unsubscribe ceph-devel" i=
-n
+To unsubscribe from this list: send the line "unsubscribe linux-btrfs" =
+in
 the body of a message to majordomo@vger.kernel.org
 More majordomo info at  http://vger.kernel.org/majordomo-info.html

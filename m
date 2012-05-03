@@ -1,44 +1,46 @@
-From: Alexander Block <ablock84@googlemail.com>
-Subject: [PATCH 1/1] btrfs: Fix mismatching struct members in ioctl.h
-Date: Thu,  3 May 2012 15:49:55 +0200
-Message-ID: <1336052995-22517-1-git-send-email-ablock84@googlemail.com>
-Cc: linux-btrfs@vger.kernel.org, mail@jan-o-sch.net,
-	Alexander Block <ablock84@googlemail.com>
-To: chris.mason@oracle.com
+From: Waxhead <waxhead@online.no>
+Subject: Re: Hot data Tracking
+Date: Thu, 03 May 2012 15:09:25 +0200
+Message-ID: <4FA28385.7040709@online.no>
+References: <4F35F365.8000602@googlemail.com> <20120221232445.GJ1046@twin.jikos.cz>
+Mime-Version: 1.0
+Content-Type: text/plain; charset=ISO-8859-1; format=flowed
+To: Timo Witte <timo.witte@googlemail.com>, linux-btrfs@vger.kernel.org
 Return-path: <linux-btrfs-owner@vger.kernel.org>
+In-Reply-To: <20120221232445.GJ1046@twin.jikos.cz>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Fix the size members of btrfs_ioctl_ino_path_args and
-btrfs_ioctl_logical_ino_args. The user space btrfs-progs utilities used
-__u64 and the kernel headers used __u32 before.
+David Sterba wrote:
+> On Sat, Feb 11, 2012 at 05:49:41AM +0100, Timo Witte wrote:
+>> What happened to the hot data tracking feature in btrfs? There are a lot
+>> of old patches from aug 2010, but it looks like the feature has been
+>> completly removed from the current version of btrfs. Is this feature
+>> still on the roadmap?
+> Removed? AFAIK it hasn't been ever merged, though it's be a nice
+> feature. There were suggestions to turn it into a generic API for any
+> filesystem to use, but this hasn't happened.
+>
+> The patches are quite independent and it was easy to refresh them on top
+> of current for-linus branch. A test run did not survive a "random"
+> xfstest, 013 this time, so I probably mismerged some bits. The patchset
+> lives in branch foreign/ibm/hotdatatrack in my git repo.
+>
+>
+> david
+>
+Someone recently mentioned bcache in another post who seems to cover 
+this subject fairly well. However would it not make sense if btrfs 
+actually was able to automatically take advantage of whatever disks is 
+added to the pool? For example if you have 10 disk of different size and 
+performance in a raid5/6 like configuration would it not be feasible if 
+btrfs automagically (option) could manage it's own cache? For example it 
+could reserve a chunk of free space as cache (based on how much data is 
+free) and stripe data over all disks (cache). When the filesystem 
+becomes idle or at set intervals it could empty the cache or 
+move/rebalance pending writes over to the original raid5/6 like setup.
+As far as I remember hot data tracking was all about moving the data 
+over to the fastest disk. Why not utilize all disks and benefit from 
+disks working together?
 
-Signed-off-by: Alexander Block <ablock84@googlemail.com>
----
- fs/btrfs/ioctl.h |    4 ++--
- 1 files changed, 2 insertions(+), 2 deletions(-)
-
-diff --git a/fs/btrfs/ioctl.h b/fs/btrfs/ioctl.h
-index 4f69028..086e6bd 100644
---- a/fs/btrfs/ioctl.h
-+++ b/fs/btrfs/ioctl.h
-@@ -252,7 +252,7 @@ struct btrfs_data_container {
- 
- struct btrfs_ioctl_ino_path_args {
- 	__u64				inum;		/* in */
--	__u32				size;		/* in */
-+	__u64				size;		/* in */
- 	__u64				reserved[4];
- 	/* struct btrfs_data_container	*fspath;	   out */
- 	__u64				fspath;		/* out */
-@@ -260,7 +260,7 @@ struct btrfs_ioctl_ino_path_args {
- 
- struct btrfs_ioctl_logical_ino_args {
- 	__u64				logical;	/* in */
--	__u32				size;		/* in */
-+	__u64				size;		/* in */
- 	__u64				reserved[4];
- 	/* struct btrfs_data_container	*inodes;	out   */
- 	__u64				inodes;
--- 
-1.7.3.4
+Svein Engelsgjerd
 

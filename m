@@ -1,173 +1,85 @@
-From: Josef Bacik <josef@redhat.com>
-Subject: Re: Ceph on btrfs 3.4rc
-Date: Thu, 3 May 2012 15:49:25 -0400
-Message-ID: <20120503194924.GC7313@localhost.localdomain>
-References: <CAJafhzSVZ3+1ApgJU=sQu6gM62BeWVGG4mqFPNYRHx79czYJtQ@mail.gmail.com>
- <20120424152141.GB3326@localhost.localdomain>
- <Pine.LNX.4.64.1204240922040.29159@cobra.newdream.net>
- <CAJafhzSgaQ3sx=Af0Ru0CiwQH37V5y8jgjoTo_8yozcjo9rpPA@mail.gmail.com>
- <20120503141354.GC1914@localhost.localdomain>
- <f35947dc064c7ff1a073b430a2d681f5@hq.newdream.net>
- <20120503152053.GA7313@localhost.localdomain>
- <1e9c626272411bb1fb403a3aa8aeced7@hq.newdream.net>
+From: Hubert Kario <hka@qbs.com.pl>
+Subject: Re: Hot data Tracking
+Date: Thu, 03 May 2012 23:58:15 +0200
+Message-ID: <1870258.Ysf9k76nss@bursa01>
+References: <4F35F365.8000602@googlemail.com> <20120221232445.GJ1046@twin.jikos.cz> <4FA28385.7040709@online.no>
 Mime-Version: 1.0
 Content-Type: text/plain; charset=iso-8859-1
-Cc: Josef Bacik <josef@redhat.com>,
-	Christian Brunner <christian@brunner-muc.de>,
-	Sage Weil <sage@newdream.net>, linux-btrfs@vger.kernel.org,
-	ceph-devel@vger.kernel.org
-To: Josh Durgin <josh.durgin@dreamhost.com>
-Return-path: <ceph-devel-owner@vger.kernel.org>
-In-Reply-To: <1e9c626272411bb1fb403a3aa8aeced7@hq.newdream.net>
+Cc: Timo Witte <timo.witte@googlemail.com>, linux-btrfs@vger.kernel.org
+To: Waxhead <waxhead@online.no>
+Return-path: <linux-btrfs-owner@vger.kernel.org>
+In-Reply-To: <4FA28385.7040709@online.no>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Thu, May 03, 2012 at 09:38:27AM -0700, Josh Durgin wrote:
-> On Thu, 3 May 2012 11:20:53 -0400, Josef Bacik <josef@redhat.com>
-> wrote:
-> > On Thu, May 03, 2012 at 08:17:43AM -0700, Josh Durgin wrote:
-> >> On Thu, 3 May 2012 10:13:55 -0400, Josef Bacik <josef@redhat.com>
-> >> wrote:
-> >> > On Fri, Apr 27, 2012 at 01:02:08PM +0200, Christian Brunner wrot=
-e:
-> >> >> Am 24. April 2012 18:26 schrieb Sage Weil <sage@newdream.net>:
-> >> >> > On Tue, 24 Apr 2012, Josef Bacik wrote:
-> >> >> >> On Fri, Apr 20, 2012 at 05:09:34PM +0200, Christian Brunner =
-wrote:
-> >> >> >> > After running ceph on XFS for some time, I decided to try =
-btrfs again.
-> >> >> >> > Performance with the current "for-linux-min" branch and bi=
-g metadata
-> >> >> >> > is much better. The only problem (?) I'm still seeing is a=
- warning
-> >> >> >> > that seems to occur from time to time:
-> >> >> >
-> >> >> > Actually, before you do that... we have a new tool,
-> >> >> > test_filestore_workloadgen, that generates a ceph-osd-like wo=
-rkload on the
-> >> >> > local file system. =A0It's a subset of what a full OSD might =
-do, but if
-> >> >> > we're lucky it will be sufficient to reproduce this issue. =A0=
-Something like
-> >> >> >
-> >> >> > =A0test_filestore_workloadgen --osd-data /foo --osd-journal /=
-bar
-> >> >> >
-> >> >> > will hopefully do the trick.
-> >> >> >
-> >> >> > Christian, maybe you can see if that is able to trigger this =
-warning?
-> >> >> > You'll need to pull it from the current master branch; it was=
-n't in the
-> >> >> > last release.
-> >> >>
-> >> >> Trying to reproduce with test_filestore_workloadgen didn't work=
- for
-> >> >> me. So here are some instructions on how to reproduce with a mi=
-nimal
-> >> >> ceph setup.
-> >> >>
-> >> >> You will need a single system with two disks and a bit of memor=
-y.
-> >> >>
-> >> >> - Compile and install ceph (detailed instructions:
-> >> >> http://ceph.newdream.net/docs/master/ops/install/mkcephfs/)
-> >> >>
-> >> >> - For the test setup I've used two tmpfs files as journal devic=
-es. To
-> >> >> create these, do the following:
-> >> >>
-> >> >> # mkdir -p /ceph/temp
-> >> >> # mount -t tmpfs tmpfs /ceph/temp
-> >> >> # dd if=3D/dev/zero of=3D/ceph/temp/journal0 count=3D500 bs=3D1=
-024k
-> >> >> # dd if=3D/dev/zero of=3D/ceph/temp/journal1 count=3D500 bs=3D1=
-024k
-> >> >>
-> >> >> - Now you should create and mount btrfs. Here is what I did:
-> >> >>
-> >> >> # mkfs.btrfs -l 64k -n 64k /dev/sda
-> >> >> # mkfs.btrfs -l 64k -n 64k /dev/sdb
-> >> >> # mkdir /ceph/osd.000
-> >> >> # mkdir /ceph/osd.001
-> >> >> # mount -o noatime,space_cache,inode_cache,autodefrag /dev/sda =
-/ceph/osd.000
-> >> >> # mount -o noatime,space_cache,inode_cache,autodefrag /dev/sdb =
-/ceph/osd.001
-> >> >>
-> >> >> - Create /etc/ceph/ceph.conf similar to the attached ceph.conf.=
- You
-> >> >> will probably have to change the btrfs devices and the hostname
-> >> >> (os39).
-> >> >>
-> >> >> - Create the ceph filesystems:
-> >> >>
-> >> >> # mkdir /ceph/mon
-> >> >> # mkcephfs -a -c /etc/ceph/ceph.conf
-> >> >>
-> >> >> - Start ceph (e.g. "service ceph start")
-> >> >>
-> >> >> - Now you should be able to use ceph - "ceph -s" will tell you =
-about
-> >> >> the state of the ceph cluster.
-> >> >>
-> >> >> - "rbd create -size 100 testimg" will create an rbd image on th=
-e ceph cluster.
-> >> >>
-> >> >
-> >> > It's failing here
-> >> >
-> >> > http://fpaste.org/e3BG/
-> >>
-> >> 2012-05-03 10:11:28.818308 7fcb5a0ee700 -- 127.0.0.1:0/1003269 <=3D=
-=3D
-> >> osd.1 127.0.0.1:6803/2379 3 =3D=3D=3D=3D osd_op_reply(3 rbd_info [=
-call] =3D -5
-> >> (Input/output error)) v4 =3D=3D=3D=3D 107+0+0 (3948821281 0 0) 0x7=
-fcb380009a0
-> >> con 0x1cad3e0
-> >>
-> >> This is probably because the osd isn't finding the rbd class.
-> >> Do you have 'rbd_cls.so' in /usr/lib64/rados-classes? Wherever
-> >> rbd_cls.so is,
-> >> try adding 'osd class dir =3D /path/to/rados-classes' to the [osd]
-> >> section
-> >> in your ceph.conf, and restarting the osds.
-> >>
-> >> If you set 'debug osd =3D 10' you should see '_load_class rbd' in =
-the osd
-> >> log
-> >> when you try to create an rbd image.
-> >>
-> >> Autotools should be setting the default location correctly, but if
-> >> you're
-> >> running the osds in a chroot or something the path would be wrong.
-> >>
+On Thursday 03 of May 2012 15:09:25 Waxhead wrote:
+> David Sterba wrote:
+> > On Sat, Feb 11, 2012 at 05:49:41AM +0100, Timo Witte wrote:
+> >> What happened to the hot data tracking feature in btrfs? There are=
+ a lot
+> >> of old patches from aug 2010, but it looks like the feature has be=
+en
+> >> completly removed from the current version of btrfs. Is this featu=
+re
+> >> still on the roadmap?
 > >=20
-> > Yeah all that was in the right place, I rebooted and I magically
-> > stopped getting
-> > that error, but now I'm getting this
+> > Removed? AFAIK it hasn't been ever merged, though it's be a nice
+> > feature. There were suggestions to turn it into a generic API for a=
+ny
+> > filesystem to use, but this hasn't happened.
 > >=20
-> > http://fpaste.org/OE92/
+> > The patches are quite independent and it was easy to refresh them o=
+n top
+> > of current for-linus branch. A test run did not survive a "random"
+> > xfstest, 013 this time, so I probably mismerged some bits. The patc=
+hset
+> > lives in branch foreign/ibm/hotdatatrack in my git repo.
 > >=20
-> > with that ping thing repeating over and over.  Thanks,
+> >=20
+> > david
 >=20
-> That just looks like the osd isn't running. If you restart the
-> osd with 'debug osd =3D 20' the osd log should tell us what's going o=
-n.
+> Someone recently mentioned bcache in another post who seems to cover
+> this subject fairly well.
 
-Ok that part was my fault, Duh I need to redo the tmpfs and mkcephfs st=
-uff after
-reboot.  But now I'm back to my original problem
+bcache does one very specific assertion that isn't met by btrfs: overwr=
+ing old=20
+data in a file writes data to the same place on the disk, same goes for=
+=20
+metadata. In other words, it won't work with COW file system.
 
-http://fpaste.org/PfwO/
+> However would it not make sense if btrfs
+> actually was able to automatically take advantage of whatever disks i=
+s
+> added to the pool? For example if you have 10 disk of different size =
+and
+> performance in a raid5/6 like configuration would it not be feasible =
+if
+> btrfs automagically (option) could manage it's own cache? For example=
+ it
+> could reserve a chunk of free space as cache (based on how much data =
+is
+> free) and stripe data over all disks (cache). When the filesystem
+> becomes idle or at set intervals it could empty the cache or
+> move/rebalance pending writes over to the original raid5/6 like setup=
+=2E
+> As far as I remember hot data tracking was all about moving the data
+> over to the fastest disk. Why not utilize all disks and benefit from
+> disks working together?
 
-I have the osd class dir =3D /usr/lib64/rados-classes thing set and lib=
-cls_rbd is
-in there, so I'm not sure what is wrong.  Thanks,
+=46or this to work, you need feature set that allows hot data movement =
+between=20
+disks and data restriping. Then such cache feature will use much of the=
+ same=20
+code.
 
-Josef
+Regards,
+--=20
+Hubert Kario
+QBS - Quality Business Software
+02-656 Warszawa, ul. Ksawer=F3w 30/85
+tel. +48 (22) 646-61-51, 646-74-24
+www.qbs.com.pl
 --
-To unsubscribe from this list: send the line "unsubscribe ceph-devel" i=
-n
+To unsubscribe from this list: send the line "unsubscribe linux-btrfs" =
+in
 the body of a message to majordomo@vger.kernel.org
 More majordomo info at  http://vger.kernel.org/majordomo-info.html

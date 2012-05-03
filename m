@@ -1,64 +1,47 @@
-From: Hugo Mills <hugo@carfax.org.uk>
-Subject: Re: How file store when using Btrfs on multi-devices? What happen
- when a device fail?
-Date: Thu, 3 May 2012 08:35:39 +0100
-Message-ID: <20120503073539.GD9860@carfax.org.uk>
-References: <CAGP-ymNoE1CtSTdYXJMgQ0k2HmRmDxq=zSxNE7pGonoTzrkNHw@mail.gmail.com>
- <CAG1y0sdkgJ9y=1Y=A+n8QAU73TKeBAej9GFJ26w7czOtDNzQ2g@mail.gmail.com>
-Mime-Version: 1.0
-Content-Type: multipart/signed; micalg=pgp-sha1;
-	protocol="application/pgp-signature"; boundary="tNQTSEo8WG/FKZ8E"
-Cc: Chu Duc Minh <chu.ducminh@gmail.com>, linux-btrfs@vger.kernel.org
-To: "Fajar A. Nugraha" <list@fajar.net>
+From: Stefan Behrens <sbehrens@giantdisaster.de>
+Subject: [PATCH] Btrfs: fix crash in scrub repair code when device is missing
+Date: Thu,  3 May 2012 11:31:22 +0200
+Message-ID: <1336037482-16199-1-git-send-email-sbehrens@giantdisaster.de>
+Cc: marco.crociani@gmail.com
+To: linux-btrfs@vger.kernel.org
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <CAG1y0sdkgJ9y=1Y=A+n8QAU73TKeBAej9GFJ26w7czOtDNzQ2g@mail.gmail.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
+Fix that when scrub tries to repair an I/O or checksum error and one of
+the devices containing the mirror is missing, it crashes in bio_add_page
+because the bdev is a NULL pointer for missing devices.
 
---tNQTSEo8WG/FKZ8E
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
+Reported-by: Marco L. Crociani <marco.crociani@gmail.com>
+Signed-off-by: Stefan Behrens <sbehrens@giantdisaster.de>
+---
+ fs/btrfs/scrub.c |    7 +++++++
+ 1 file changed, 7 insertions(+)
 
-On Thu, May 03, 2012 at 01:56:10PM +0700, Fajar A. Nugraha wrote:
-> On Thu, May 3, 2012 at 1:46 PM, Chu Duc Minh <chu.ducminh@gmail.com> wrote:
-> > Hi, i have some questions when using Btrfs on multi-devices:
-> > 1. a large file will always be stored wholely on a device or it may
-> > spread on some devices/partitions?
-> 
-> IIRC:
-> - in raid1 mode, it will be written on all disks (or was it TWO disks,
-> regarless how many device in a mirror? can't remember which).
-
-   Any given block of the file will appear on two disks. There's no
-guarantee that all the blocks of a file will be stored on the same two
-disks, though.
-
-> - in raid10 and raid0, it will always be spread, on a minimum of two devices
-
-   Again, any given block of a file will appear on precisely two disks
-(for RAID-10), or precisely one disk (for RAID-0). However, for a
-sufficiently large file (i.e. multiples of the stripe size, which is
-64KiB, I think), the blocks will be spread across all disks. If the
-file is highly fragmented, this is a statistical statement; if the
-file is contiguous, it is a guarantee.
-
-   Hugo.
-
+diff --git a/fs/btrfs/scrub.c b/fs/btrfs/scrub.c
+index b679bf6..7e487be 100644
+--- a/fs/btrfs/scrub.c
++++ b/fs/btrfs/scrub.c
+@@ -998,6 +998,7 @@ static int scrub_setup_recheck_block(struct scrub_dev *sdev,
+ 			page = sblock->pagev + page_index;
+ 			page->logical = logical;
+ 			page->physical = bbio->stripes[mirror_index].physical;
++			/* for missing devices, bdev is NULL */
+ 			page->bdev = bbio->stripes[mirror_index].dev->bdev;
+ 			page->mirror_num = mirror_index + 1;
+ 			page->page = alloc_page(GFP_NOFS);
+@@ -1042,6 +1043,12 @@ static int scrub_recheck_block(struct btrfs_fs_info *fs_info,
+ 		struct scrub_page *page = sblock->pagev + page_num;
+ 		DECLARE_COMPLETION_ONSTACK(complete);
+ 
++		if (page->bdev == NULL) {
++			page->io_error = 1;
++			sblock->no_io_error_seen = 0;
++			continue;
++		}
++
+ 		BUG_ON(!page->page);
+ 		bio = bio_alloc(GFP_NOFS, 1);
+ 		if (!bio)
 -- 
-=== Hugo Mills: hugo@... carfax.org.uk | darksatanic.net | lug.org.uk ===
-  PGP key: 515C238D from wwwkeys.eu.pgp.net or http://www.carfax.org.uk
-                   --- Ceci n'est pas une pipe:  | ---                   
+1.7.10.1.362.g242cab3
 
---tNQTSEo8WG/FKZ8E
-Content-Type: application/pgp-signature; name="signature.asc"
-Content-Description: Digital signature
-
------BEGIN PGP SIGNATURE-----
-Version: GnuPG v1.4.11 (GNU/Linux)
-
-iD8DBQFPojVLIKyzvlFcI40RAoPoAJ9EFKIfDrTXDisSUNKCAFl+ecycawCgmzF9
-7dGAkHpqLwolLkTsZkZCq0c=
-=6X47
------END PGP SIGNATURE-----
-
---tNQTSEo8WG/FKZ8E--

@@ -1,107 +1,64 @@
-From: Hugo Mills <hugo@carfax.org.uk>
+From: Olivier Doucet <webmaster@ajeux.com>
 Subject: Re: BTRFS Benchmarking
-Date: Fri, 4 May 2012 23:39:05 +0100
-Message-ID: <20120504223905.GH9860@carfax.org.uk>
+Date: Sat, 5 May 2012 01:15:39 +0200
+Message-ID: <CAPPqfY2aQO_y_TcFwUHUtJEOxZ6QP3XCPk5c86SUMpF31HwHCg@mail.gmail.com>
 References: <CAPPqfY0iGPjRDC0YG814uiv4+9jLU54w6D5Yh=okTqG7VtwXOA@mail.gmail.com>
+	<20120504223905.GH9860@carfax.org.uk>
 Mime-Version: 1.0
-Content-Type: multipart/signed; micalg=pgp-sha1;
-	protocol="application/pgp-signature"; boundary="h3LYUU6HlUDSAOzy"
-Cc: linux-btrfs@vger.kernel.org
-To: Olivier Doucet <webmaster@ajeux.com>
+Content-Type: text/plain; charset=ISO-8859-1
+To: Hugo Mills <hugo@carfax.org.uk>,
+	Olivier Doucet <webmaster@ajeux.com>,
+	linux-btrfs@vger.kernel.org
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <CAPPqfY0iGPjRDC0YG814uiv4+9jLU54w6D5Yh=okTqG7VtwXOA@mail.gmail.com>
+In-Reply-To: <20120504223905.GH9860@carfax.org.uk>
 List-ID: <linux-btrfs.vger.kernel.org>
 
+Hi,
 
---h3LYUU6HlUDSAOzy
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
+I uploaded the PDF on Dropbox that does not require login
+https://www.dropbox.com/s/5i8l0kmdutxj6pb/sysbench-sas3t-btrfs1.pdf
 
-On Fri, May 04, 2012 at 06:03:50PM +0200, Olivier Doucet wrote:
-> hello everyone,
-> 
-> I made an overall benchmark of BTRFS against EXT4 and XFS. I'm quite
-> unhappy with BTRFS results, so maybe tuning was not perfect.
-> 
-> http://www.slideshare.net/ezameku/btrfs-benchmark
-> 
-> All data is vectorial, so download the PDF and you can zoom ;)
-> 
-> If you have any feedback on how to improve BTRFS results (and others
-> fs too !), I would be glad to update my data.
-> 
-> Test protocol
-> Server : dual CPU Intel L5640 with HT enabled
-> Operating system : CentOS 6.2 (64bits version) with custom tools/kernels
-> Kernel : 3.3.0
-> Btrfs progs: version 0.19
-> Drive : Seagate 3TB drive (ST33000652SS) SAS attached via an LSI HBA.
-> Drive was accessed through LVM ;
-> 
-> MKFS options
-> BTRFS    : none
-> XFS         : none
-> EXT4       : none
-> 
-> Mount options
-> BTRFS          : "noatime,nodiratime"
-> BTRFS compress : "noatime,nodiratime,compress=lzo"
-> EXT4           : "noatime,nodiratime"
-> XFS            : "noatime,nodiratime"
-> 
-> Benchmark is done with Sysbench (fileio test).
-> Each benchmark was done for 60 seconds, and generated one point on the
-> graph each second (to see variations).
-> Right scale is block size.
-> 
-> Data read / written is from /dev/urandom, so cannot be compressed much
-> (that was expected behaviour).
-> 
-> All second pages has no legend, I'm sorry for that :
-> - data is 95 percentile aggregate.
-> - colours are the same.
 
-   Can you tell us what the unit of the Y-axis is? Is it MB/s or IOPs
-or time for a fixed amount data or... ?
+> =A0 Can you tell us what the unit of the Y-axis is? Is it MB/s or IOP=
+s
+> or time for a fixed amount data or... ?
+Unit is MB/s ;
+=46or each test, I gather speed every second.
+So for a particular test, there is 60 dots (for example, speed for
+BTRFS on 1 thread, blocksize=3D512b, sequential read).
+As 60 dots are not easy to read, I created second pages with one
+aggregated value as 95 percentile.
 
-   We've just been discussing this on IRC, and we've come up with two
-completely different interpretations of the data, so we're actually
-not sure how to interpret this.
+Sequential read results seems heavily altered by Linux pagecache. I
+wondered what would be the exact methodology to disable this
+optimization.
+But all FS were run in the exact same behaviour (bash scripted with
+umount / mount after each session).
 
-   For example, in the seqwr/512 test, is btrfs doing really well at
-small numbers of threads, getting steadily worse, or is it doing
-really badly, and improves hugely as the number of threads goes up?
 
-   Hugo.
+I provided access to the bash script I used and R script to create nice=
+ PDF.
+=46eel free to give me any feedback on how I could get results more acc=
+urate.
 
-> Overview of results
-> 
-> On sequential read, there is no variations between FS.
-> On sequential write, BTRFS has lower values than EXT4/XFS. On random
-> write also.
+https://github.com/odoucet/fs-benchs
 
-   I guess what we're after is -- is a lower value better or worse?
 
-   Thanks,
-   Hugo.
+> =A0 For example, in the seqwr/512 test, is btrfs doing really well at
+> small numbers of threads, getting steadily worse, or is it doing
+> really badly, and improves hugely as the number of threads goes up?
 
--- 
-=== Hugo Mills: hugo@... carfax.org.uk | darksatanic.net | lug.org.uk ===
-  PGP key: 515C238D from wwwkeys.eu.pgp.net or http://www.carfax.org.uk
-    --- SCSI is usually fixed by remembering that it needs three ---     
-        terminations: One at each end of the chain. And the goat.        
-                                                                         
+It is doing badly but improves when number of threads goes up.
 
---h3LYUU6HlUDSAOzy
-Content-Type: application/pgp-signature; name="signature.asc"
-Content-Description: Digital signature
 
------BEGIN PGP SIGNATURE-----
-Version: GnuPG v1.4.11 (GNU/Linux)
+I'll improve my benchmark results by adding self-explainable legends.
+I will be happy to discuss my methodology if you think something is
+wrong.
 
-iD8DBQFPpFqIIKyzvlFcI40RAkP1AJwPlbHR+reyIoLtEpV07WK6kZF0IQCcC7gJ
-6ArvNxQzSNi5l2D04n447Uk=
-=nXpt
------END PGP SIGNATURE-----
 
---h3LYUU6HlUDSAOzy--
+Olivier
+--
+To unsubscribe from this list: send the line "unsubscribe linux-btrfs" =
+in
+the body of a message to majordomo@vger.kernel.org
+More majordomo info at  http://vger.kernel.org/majordomo-info.html

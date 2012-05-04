@@ -1,47 +1,62 @@
-From: Chris Mason <chris.mason@oracle.com>
-Subject: Re: [BUG] sleeping function called from atomic context
-Date: Fri, 4 May 2012 11:50:45 -0400
-Message-ID: <20120504155045.GD25477@shiny>
-References: <4FA3AD0B.7040500@giantdisaster.de>
- <20120504132536.GA25477@shiny>
- <4FA3F3B0.6020902@giantdisaster.de>
+From: Olivier Doucet <webmaster@ajeux.com>
+Subject: BTRFS Benchmarking
+Date: Fri, 4 May 2012 18:03:50 +0200
+Message-ID: <CAPPqfY0iGPjRDC0YG814uiv4+9jLU54w6D5Yh=okTqG7VtwXOA@mail.gmail.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Cc: Linux Btrfs List <linux-btrfs@vger.kernel.org>
-To: Stefan Behrens <sbehrens@giantdisaster.de>
+Content-Type: text/plain; charset=ISO-8859-1
+To: linux-btrfs@vger.kernel.org
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <4FA3F3B0.6020902@giantdisaster.de>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Fri, May 04, 2012 at 05:20:16PM +0200, Stefan Behrens wrote:
-> On 5/4/2012 3:25 PM, Chris Mason wrote:
-> > On Fri, May 04, 2012 at 12:18:51PM +0200, Stefan Behrens wrote:
-> >> Looks like after "btrfs read error corrected" of chunk tree block while
-> >> reading the chunk tree in open_ctree(), we stay in atomic state (in
-> >> 3.4-rc5).
-> > 
-> > I'm having a hard time reproducing this here.  Do you have lockdep on?
-> > It might tell us which lock we're leaving around.
-> 
-> Next two tries with lockdep and with a reboot before the mount. For the
-> first one I was using dd(1) to damage (overwite) one mirror of the chunk
-> tree and the issue was there immediately. The second time with some
-> writes to the disk in degraded state and a remount with all disks
-> afterwards. This time umount was raising the issue.
-> 
-> And as Dave wrote, SLUB checks whether someone is in atomic state and
-> calls kmem_cache_alloc() with __GFP_WAIT. I see no reason for being in
-> atomic state at this point, that's the issue.
-> 
-> 
-> BUG: sleeping function called from invalid context at mm/slub.c:937
-> in_atomic(): 1, irqs_disabled(): 0, pid: 3650, name: mount
+hello everyone,
 
-Ok, what we need to do is make a non-blocking version of
-verify_parent_transid for the (likely) case where everything is ok.
-Pass it a gfp_mask arg and if it is a non-waiting call it needs to
-return -EAGAIN.
+I made an overall benchmark of BTRFS against EXT4 and XFS. I'm quite
+unhappy with BTRFS results, so maybe tuning was not perfect.
 
-I'll add it this weekend unless someone beats me to it.
+http://www.slideshare.net/ezameku/btrfs-benchmark
 
--chris
+All data is vectorial, so download the PDF and you can zoom ;)
+
+If you have any feedback on how to improve BTRFS results (and others
+fs too !), I would be glad to update my data.
+
+Test protocol
+Server : dual CPU Intel L5640 with HT enabled
+Operating system : CentOS 6.2 (64bits version) with custom tools/kernels
+Kernel : 3.3.0
+Btrfs progs: version 0.19
+Drive : Seagate 3TB drive (ST33000652SS) SAS attached via an LSI HBA.
+Drive was accessed through LVM ;
+
+MKFS options
+BTRFS    : none
+XFS         : none
+EXT4       : none
+
+Mount options
+BTRFS          : "noatime,nodiratime"
+BTRFS compress : "noatime,nodiratime,compress=lzo"
+EXT4           : "noatime,nodiratime"
+XFS            : "noatime,nodiratime"
+
+Benchmark is done with Sysbench (fileio test).
+Each benchmark was done for 60 seconds, and generated one point on the
+graph each second (to see variations).
+Right scale is block size.
+
+Data read / written is from /dev/urandom, so cannot be compressed much
+(that was expected behaviour).
+
+All second pages has no legend, I'm sorry for that :
+- data is 95 percentile aggregate.
+- colours are the same.
+
+
+Overview of results
+
+On sequential read, there is no variations between FS.
+On sequential write, BTRFS has lower values than EXT4/XFS. On random
+write also.
+
+
+Olivier

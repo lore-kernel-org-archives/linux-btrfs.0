@@ -1,18 +1,26 @@
-From: "Mrs. Mary Parker" <parker@googlemail.com>
-Subject: Dear Beloved
-Date: Fri, 04 May 2012 07:14:32 -0500
-Message-ID: <201205041215.q44AuTe3032494@mail.ucla.edu>
-Reply-To: maryparker01@rogers.com
+From: Anand Jain <Anand.Jain@oracle.com>
+Subject: Re: ran cppcheck and going to make cosmetic changes--where do I submit
+ code?
+Date: Fri, 04 May 2012 21:14:05 +0800
+Message-ID: <4FA3D61D.50703@oracle.com>
+References: <4FA282D7.9000203@gmail.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=US-ASCII
-To: Recipients <parker@googlemail.com>
+Content-Type: text/plain; charset=ISO-8859-1; format=flowed
+Cc: linux-btrfs@vger.kernel.org
+To: Josh Marshall <joshua.r.marshall.1991@gmail.com>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
+In-Reply-To: <4FA282D7.9000203@gmail.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Dear Beloved in Christ,
 
-I am Mrs.Mary Parker an aging widow suffering from long time illness. I have some funds I inherited from my late husband, the sum of 7.5 Million Pounds and I needed a very honest and God fearing Christian that will use the fund for God's work, I found your email address from the internet and decided to contact you. Please if you would be able to use the funds for the Lord's work, kindly reply me back.
 
-Yours in the Lord, 
+> where do I submit the code when I'm done?
+>
+> P.S. This is my first kernel project, so I'm going to need some direction.
 
-Mrs. Mary Parker
+  wiki page 'Writing patch for btrfs'  has this info
+  http://btrfs.ipv5.de/index.php?title=Writing_patch_for_btrfs
+
+good luck.
+
+-Anand

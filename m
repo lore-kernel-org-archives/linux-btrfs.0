@@ -1,35 +1,15 @@
-From: Lenz Grimmer <lenz@grimmer.com>
-Subject: Re: [ANN] btrfs.wiki.kernel.org with up-to-date content again
-Date: Thu, 10 May 2012 23:08:59 +0200
-Message-ID: <CAJAd_WHDGcyS1VfwC1UXtYhgHwC0gHEZUyUy3BTCuX6eP+ok+g@mail.gmail.com>
-References: <20120507154415.GF19331@twin.jikos.cz>
+From: Mrs Sabah Halif <mangrove@dephut.go.id>
+Subject: (unknown)
+Date: Sun, 6 May 2012 01:59:22 +0700 (WIT)
+Message-ID: <6892760.345591336244362205.JavaMail.root__30309.5183372081$1336702296$gmane$org@zm>
+Reply-To: Mrs Sabah Halif <sabah.halif12@hotmail.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=UTF-8
-To: linux-btrfs@vger.kernel.org
+Content-Type: text/plain; charset=utf-8
+To: undisclosed-recipients:;
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <20120507154415.GF19331@twin.jikos.cz>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Mon, May 7, 2012 at 5:44 PM, David Sterba <dave@jikos.cz> wrote:
 
-> the time of temporary wiki hosted at btrfs.ipv5.de is over, the conte=
-nt has
-> been migrated back to official site at
->
-> =C2=A0 =C2=A0 http://btrfs.wiki.kernel.org
->
-> (ipv5.de wiki is set to redirect there).
 
-Excellent, great job! Much appreciated. However,
-https://btrfs.wiki.kernel.org/index.php/Special:RecentChanges shows an
-alarming amount of new accounts (likely from spambots). Are there any
-plans to set up anti-spam measurements on this Wiki?
-
-Lenz
---
-=C2=A0Lenz Grimmer <lenz@grimmer.com> -=C2=A0 http://www.lenzg.net/
---
-To unsubscribe from this list: send the line "unsubscribe linux-btrfs" =
-in
-the body of a message to majordomo@vger.kernel.org
-More majordomo info at  http://vger.kernel.org/majordomo-info.html
+-- 
+Good day,my name is Mrs Sabah Halif  i have a business proposal please contact me for details.

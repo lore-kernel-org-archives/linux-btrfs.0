@@ -1,90 +1,44 @@
-From: Hugo Mills <hugo@carfax.org.uk>
-Subject: Re: btrfs device delete missing problem
-Date: Sat, 5 May 2012 11:48:51 +0100
-Message-ID: <20120505104851.GI9860@carfax.org.uk>
-References: <4FA48416.3070705@intellasoft.net>
+From: Mike Sampson <mike@sambodata.com>
+Subject: Is it possible to reclaim block groups once they are allocated to
+ data or metadata?
+Date: Sat, 5 May 2012 22:37:01 +1000
+Message-ID: <CALzgn9tppzTem57mD6ORK7SXCK2vM6hcsWxphdHLr4eNwFTPQg@mail.gmail.com>
 Mime-Version: 1.0
-Content-Type: multipart/signed; micalg=pgp-sha1;
-	protocol="application/pgp-signature"; boundary="MPkR1dXiUZqK+927"
-Cc: linux-btrfs@vger.kernel.org
-To: Mark Murawski <markm-lists@intellasoft.net>
+Content-Type: text/plain; charset=ISO-8859-1
+To: linux-btrfs@vger.kernel.org
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <4FA48416.3070705@intellasoft.net>
 List-ID: <linux-btrfs.vger.kernel.org>
 
+Hello list,
 
---MPkR1dXiUZqK+927
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
+recently reformatted my home partition from XFS to RAID1 btrfs. I used
+the default options to mkfs.btrfs except for enabling raid1 for data
+as well as metadata. Filesystem is made up of two 1TB drives.
 
-On Fri, May 04, 2012 at 09:36:22PM -0400, Mark Murawski wrote:
-> Using the latest mason git (and kernel 3.3.4)
-> 
-> stan {~} root# btrfs  filesystem show
-> Label: none  uuid: d71404d4-468e-47d5-8f06-3b65fa7776aa
->         Total devices 2 FS bytes used 7.09GB
->         devid    2 size 9.31GB used 9.09GB path /dev/sdd6
->         devid    1 size 9.31GB used 9.09GB path /dev/sdg6
-> 
-> Label: none  uuid: b142f575-df1c-4a57-8846-a43b979e2e09
->         Total devices 9 FS bytes used 1.35TB
->         devid    8 size 1.36TB used 1.07TB path /dev/sda
->         devid    7 size 1.36TB used 1.07TB path /dev/sde
->         devid    2 size 465.76GB used 134.00GB path /dev/sdb
->         devid    4 size 149.05GB used 0.00 path /dev/sdc
->         devid    9 size 465.76GB used 161.00GB path /dev/sdf
->         devid    3 size 149.05GB used 0.00 path /dev/sdh
->         devid    5 size 920.34GB used 616.03GB path /dev/sdd7
->         devid    6 size 920.34GB used 616.03GB path /dev/sdg7
->         *** Some devices missing
-> 
-> stan {~} root# btrfs device delete missing /storage
-> May  5 05:28:40 stan kernel: btrfs: relocating block group 0 flags 2
-> stan {~} root#
+mike@mercury (0) pts/3 ~ $ sudo btrfs filesystem show
+Label: none  uuid: f08a8896-e03e-4064-9b94-9342fb547e47
+	Total devices 2 FS bytes used 888.06GB
+	devid    1 size 931.51GB used 931.51GB path /dev/sdb1
+	devid    2 size 931.51GB used 931.49GB path /dev/sdc1
 
-   sync here, or btrfs fi sync /storage, or wait at least 30 seconds
-for everything to be written out to disk.
+Btrfs Btrfs v0.19
 
-> stan {~} root# btrfs  filesystem show
-> Label: none  uuid: d71404d4-468e-47d5-8f06-3b65fa7776aa
->         Total devices 2 FS bytes used 7.09GB
->         devid    1 size 9.31GB used 9.09GB path /dev/sdg6
->         devid    2 size 9.31GB used 9.09GB path /dev/sdd6
-> 
-> Label: none  uuid: b142f575-df1c-4a57-8846-a43b979e2e09
->         Total devices 9 FS bytes used 1.35TB
->         devid    3 size 149.05GB used 0.00 path /dev/sdh
->         devid    6 size 920.34GB used 616.03GB path /dev/sdg7
->         devid    9 size 465.76GB used 161.00GB path /dev/sdf
->         devid    7 size 1.36TB used 1.07TB path /dev/sde
->         devid    5 size 920.34GB used 616.03GB path /dev/sdd7
->         devid    4 size 149.05GB used 0.00 path /dev/sdc
->         devid    2 size 465.76GB used 134.00GB path /dev/sdb
->         devid    8 size 1.36TB used 1.07TB path /dev/sda
->         *** Some devices missing
+mike@mercury (0) pts/3 ~ $ btrfs filesystem df /home
+Data, RAID1: total=893.48GB, used=886.60GB
+Data: total=8.00MB, used=0.00
+System, RAID1: total=8.00MB, used=136.00KB
+System: total=4.00MB, used=0.00
+Metadata, RAID1: total=38.00GB, used=2.54GB
+Metadata: total=8.00MB, used=0.00
 
-   btrfs fi show doesn't go through the kernel to get its information
--- it simply reads the data on the disks directly. This means that if
-the kernel hasn't flushed changes to disk, btrfs fi show will be out
-of date, as you've got here.
+As can be seen I don't have a lot of free space left and while I am
+planning on adding more storage soon I would like to gain a little
+breathing room until I can do this. While I don't have a lot of space
+remaining in Data, RAID1 I do have a good chunk in Metadata, RAID1.
+2.5GB used out of 38GB. Does this excess become available
+automatically to the file system when the block groups in Data, RAID1
+are exhausted or, if not, is there a way to manually reallocate them?
 
-   Hugo.
+Regards,
 
--- 
-=== Hugo Mills: hugo@... carfax.org.uk | darksatanic.net | lug.org.uk ===
-  PGP key: 515C238D from wwwkeys.eu.pgp.net or http://www.carfax.org.uk
-   --- The English language has the mot juste for every occasion. ---    
-
---MPkR1dXiUZqK+927
-Content-Type: application/pgp-signature; name="signature.asc"
-Content-Description: Digital signature
-
------BEGIN PGP SIGNATURE-----
-Version: GnuPG v1.4.11 (GNU/Linux)
-
-iD8DBQFPpQWTIKyzvlFcI40RAqOzAJwJL4/cEtxPXAtv6pnSwiwRXq9SDQCfWsVq
-X1nXw/CUH76YG1lrNjbI07o=
-=8dRy
------END PGP SIGNATURE-----
-
---MPkR1dXiUZqK+927--
+Mike

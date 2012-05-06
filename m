@@ -1,51 +1,66 @@
-From: Chris Mason <chris.mason@oracle.com>
-Subject: [GIT PULL] Btrfs fixes
-Date: Sun, 6 May 2012 09:35:41 -0400
-Message-ID: <20120506133541.GB30809@shiny>
+From: Alexander Koch <lynix47@googlemail.com>
+Subject: btrfs-raid10 <-> btrfs-raid1 confusion
+Date: Sun, 06 May 2012 16:48:48 +0200
+Message-ID: <4FA68F50.60505@gmail.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-To: Linus Torvalds <torvalds@linux-foundation.org>,
-	linux-btrfs <linux-btrfs@vger.kernel.org>,
-	LKML <linux-kernel@vger.kernel.org>
-Return-path: <linux-kernel-owner@vger.kernel.org>
+Content-Type: text/plain; charset=ISO-8859-15
+To: linux-btrfs@vger.kernel.org
+Return-path: <linux-btrfs-owner@vger.kernel.org>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hi everyone,
+Greetings,
 
-The for-linus branch in the btrfs git repo has some fixes:
+until yesterday I was running a btrfs filesystem across two 2.0 TiB
+disks in RAID1 mode for both metadata and data without any problems.
 
-git://git.kernel.org/pub/scm/linux/kernel/git/mason/linux-btrfs.git for-linus
+As space was getting short I wanted to extend the filesystem by two
+additional drives lying around, which both are 1.0 TiB in size.
 
-The big ones here are a memory leak we introduced in rc1, and 
-a scheduling while atomic if the transid on disk doesn't match the
-transid we expected.  This happens for corrupt blocks, or out of date
-disks.
+Knowing little about the btrfs RAID implementation I thought I had to
+switch to RAID10 mode, which I was told is currently not possible (and
+later found out that it is indeed).
+Then I read this [1] mailing list post basically saying that, in the
+special case of four disks, btrfs-raid1 behaves exactly like RAID10.
 
-It also fixes up the ioctl definition for our ioctl to resolve logical
-inode numbers.  The __u32 was a merging error and doesn't match what we
-ship in the progs.
+So I added the two new disks to my existing filesystem
 
-Chris Mason (2) commits (+36/-17):
-    Btrfs: avoid sleeping in verify_parent_transid while atomic (+34/-17)
-    Btrfs: Add properly locking around add_root_to_dirty_list (+2/-0)
+    $ btrfs device add /dev/sde1 /dev/sdf1 /mnt/archive
 
-Stefan Behrens (1) commits (+7/-0):
-    Btrfs: fix crash in scrub repair code when device is missing
+and as the capacity reported by 'btrfs filesystem df' did not increase,
+I started a balancing run:
 
-Josef Bacik (1) commits (+2/-2):
-    Btrfs: fix page leak when allocing extent buffers
+    $ btrfs filesystem balance start /mnt/archive
 
-Alexander Block (1) commits (+2/-2):
-    btrfs: Fix mismatching struct members in ioctl.h
 
-Total: (5) commits (+47/-21)
+Waiting for the balancing run to finish (which will take much longer
+than I thought; still running) I found out that as of kernel 3.3
+changing the RAID level (aka restriping) is now possible: [2].
 
- fs/btrfs/ctree.c       |   28 +++++++++++++++++++---------
- fs/btrfs/disk-io.c     |   18 +++++++++++++-----
- fs/btrfs/disk-io.h     |    3 ++-
- fs/btrfs/extent-tree.c |    2 +-
- fs/btrfs/extent_io.c   |    4 ++--
- fs/btrfs/ioctl.h       |    4 ++--
- fs/btrfs/scrub.c       |    7 +++++++
- fs/btrfs/tree-log.c    |    2 +-
- 8 files changed, 47 insertions(+), 21 deletions(-)
+I got two questions now:
+
+1.) Is there really no difference between btrfs-raid1 and btrfs-raid10
+    in my case (2 x 2TiB, 2 x 1TiB disks)? Same degree of fault
+    tolerance?
+
+2.) Summing up the capacities reported by 'btrfs filesystem df' I only
+    get ~2.25 TiB for my filesystem, is that a realistic net size for
+    3 TiB gross?
+
+    $ btrfs filesystem df /mnt/archive
+    Data, RAID1: total=2.10TB, used=1.68TB
+    Data: total=8.00MB, used=0.00
+    System, RAID1: total=40.00MB, used=324.00KB
+    System: total=4.00MB, used=0.00
+    Metadata, RAID1: total=112.50GB, used=3.21GB
+    Metadata: total=8.00MB, used=0.00
+
+
+Thanks in advance for any advice!
+
+Regards,
+
+lynix
+
+
+[1] http://www.spinics.net/lists/linux-btrfs/msg15867.html
+[2] https://lkml.org/lkml/2012/1/17/381

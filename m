@@ -1,110 +1,192 @@
-From: Hugo Mills <hugo@carfax.org.uk>
-Subject: Re: btrfs-raid10 <-> btrfs-raid1 confusion
-Date: Sun, 6 May 2012 16:23:43 +0100
-Message-ID: <20120506152343.GL9860@carfax.org.uk>
-References: <4FA68F50.60505@gmail.com>
+From: Ilya Dryomov <idryomov@gmail.com>
+Subject: Re: balancing metadata fails with no space left on device
+Date: Sun, 6 May 2012 21:48:15 +0300
+Message-ID: <20120506184814.GA2932@zambezi.lan>
+References: <201205041835.39441.Martin@lichtvoll.de>
+ <201205041852.29290.Martin@lichtvoll.de>
+ <201205061319.38676.Martin@lichtvoll.de>
 Mime-Version: 1.0
-Content-Type: multipart/signed; micalg=pgp-sha1;
-	protocol="application/pgp-signature"; boundary="iAzLNm1y1mIRgolD"
+Content-Type: text/plain; charset=utf-8
 Cc: linux-btrfs@vger.kernel.org
-To: Alexander Koch <lynix47@googlemail.com>
+To: Martin Steigerwald <Martin@lichtvoll.de>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <4FA68F50.60505@gmail.com>
+In-Reply-To: <201205061319.38676.Martin@lichtvoll.de>
 List-ID: <linux-btrfs.vger.kernel.org>
 
+On Sun, May 06, 2012 at 01:19:38PM +0200, Martin Steigerwald wrote:
+> Am Freitag, 4. Mai 2012 schrieb Martin Steigerwald:
+> > Am Freitag, 4. Mai 2012 schrieb Martin Steigerwald:
+> > > Hi!
+> > >=20
+> > > merkaba:~> btrfs balance start -m /
+> > > ERROR: error during balancing '/' - No space left on device
+> > > There may be more info in syslog - try dmesg | tail
+> > > merkaba:~#19> dmesg | tail -22
+> > > [   62.918734] CPU0: Package power limit normal
+> > > [  525.229976] btrfs: relocating block group 20422066176 flags 1
+> > > [  526.940452] btrfs: found 3048 extents
+> > > [  528.803778] btrfs: found 3048 extents
+> [=E2=80=A6]
+> > > [  635.906517] btrfs: found 1 extents
+> > > [  636.038096] btrfs: 1 enospc errors during balance
+> > >=20
+> > >=20
+> > > merkaba:~> btrfs filesystem show
+> > > failed to read /dev/sr0
+> > > Label: 'debian'  uuid: [=E2=80=A6]
+> > >=20
+> > >         Total devices 1 FS bytes used 7.89GB
+> > >         devid    1 size 18.62GB used 17.58GB path /dev/dm-0
+> > >=20
+> > > Btrfs Btrfs v0.19
+> > > merkaba:~> btrfs filesystem df /
+> > > Data: total=3D15.52GB, used=3D7.31GB
+> > > System, DUP: total=3D32.00MB, used=3D4.00KB
+> > > System: total=3D4.00MB, used=3D0.00
+> > > Metadata, DUP: total=3D1.00GB, used=3D587.83MB
+> >=20
+> > I thought data tree might have been to big, so out of curiousity I
+> > tried a full balance. It shrunk the data tree but it failed as well=
+:
+> >=20
+> > merkaba:~> btrfs balance start /
+> > ERROR: error during balancing '/' - No space left on device
+> > There may be more info in syslog - try dmesg | tail
+> > merkaba:~#19> dmesg | tail -63
+> > [   89.306718] postgres (2876): /proc/2876/oom_adj is deprecated,
+> > please use /proc/2876/oom_score_adj instead.
+> > [  159.939728] btrfs: relocating block group 21994930176 flags 34
+> > [  160.010427] btrfs: relocating block group 21860712448 flags 1
+> > [  161.188104] btrfs: found 6 extents
+> > [  161.507388] btrfs: found 6 extents
+> [=E2=80=A6]
+> > [  335.897953] btrfs: relocating block group 1103101952 flags 1
+> > [  347.888295] btrfs: found 28458 extents
+> > [  352.736987] btrfs: found 28458 extents
+> > [  353.099659] btrfs: 1 enospc errors during balance
+> >=20
+> > merkaba:~> btrfs filesystem df /
+> > Data: total=3D10.00GB, used=3D7.31GB
+> > System, DUP: total=3D64.00MB, used=3D4.00KB
+> > System: total=3D4.00MB, used=3D0.00
+> > Metadata, DUP: total=3D1.12GB, used=3D587.20MB
+> >=20
+> > merkaba:~> btrfs filesystem show
+> > failed to read /dev/sr0
+> > Label: 'debian'  uuid: [=E2=80=A6]
+> >         Total devices 1 FS bytes used 7.88GB
+> >         devid    1 size 18.62GB used 12.38GB path /dev/dm-0
+> >=20
+> >=20
+> > For the sake of it I tried another time. It failed again:
+> >=20
+> > martin@merkaba:~> dmesg | tail -32
+> > [  353.099659] btrfs: 1 enospc errors during balance
+> > [  537.057375] btrfs: relocating block group 32833011712 flags 36
+> [=E2=80=A6]
+> > [  641.479140] btrfs: relocating block group 22062039040 flags 34
+> > [  641.695614] btrfs: relocating block group 22028484608 flags 34
+> > [  641.840179] btrfs: found 1 extents
+> > [  641.965843] btrfs: 1 enospc errors during balance
+> >=20
+> >=20
+> > merkaba:~#19> btrfs filesystem df /
+> > Data: total=3D10.00GB, used=3D7.31GB
+> > System, DUP: total=3D32.00MB, used=3D4.00KB
+> > System: total=3D4.00MB, used=3D0.00
+> > Metadata, DUP: total=3D1.12GB, used=3D586.74MB
+> > merkaba:~> btrfs filesystem show
+> > failed to read /dev/sr0
+> > Label: 'debian'  uuid: [=E2=80=A6]
+> >         Total devices 1 FS bytes used 7.88GB
+> >         devid    1 size 18.62GB used 12.32GB path /dev/dm-0
+> >=20
+> > Btrfs Btrfs v0.19
+> >=20
+> >=20
+> > Well, in order to be gentle to the SSD again I stop my experiments =
+now
+> > ;).
+>=20
+> I had subjective impression that the speed of the BTRFS filesystem=20
+> decreased after all these
+>=20
+> Anyway, after reading the a -musage hint by Ilya in thread
+>=20
+> Is it possible to reclaim block groups once they ar allocated to data=
+ or=20
+> metadata?
 
---iAzLNm1y1mIRgolD
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
+Currently there is no way to reclaim block groups other than performing
+a balance.  We will add a kernel thread for this in future, but a coupl=
+e
+of things have to be fixed before that can happen.
 
-On Sun, May 06, 2012 at 04:48:48PM +0200, Alexander Koch wrote:
-> Greetings,
-> 
-> until yesterday I was running a btrfs filesystem across two 2.0 TiB
-> disks in RAID1 mode for both metadata and data without any problems.
-> 
-> As space was getting short I wanted to extend the filesystem by two
-> additional drives lying around, which both are 1.0 TiB in size.
-> 
-> Knowing little about the btrfs RAID implementation I thought I had to
-> switch to RAID10 mode, which I was told is currently not possible (and
-> later found out that it is indeed).
-> Then I read this [1] mailing list post basically saying that, in the
-> special case of four disks, btrfs-raid1 behaves exactly like RAID10.
-> 
-> So I added the two new disks to my existing filesystem
-> 
->     $ btrfs device add /dev/sde1 /dev/sdf1 /mnt/archive
-> 
-> and as the capacity reported by 'btrfs filesystem df' did not increase,
+>=20
+>=20
+> I tried:
+>=20
+> merkaba:~> btrfs filesystem df /
+> Data: total=3D10.00GB, used=3D7.34GB
+> System, DUP: total=3D32.00MB, used=3D4.00KB
+> System: total=3D4.00MB, used=3D0.00
+> Metadata, DUP: total=3D1.12GB, used=3D586.39MB
+>=20
+> merkaba:~> btrfs balance start -musage=3D1 /=20
+> Done, had to relocate 2 out of 13 chunks
+>=20
+> merkaba:~> btrfs filesystem df /         =20
+> Data: total=3D10.00GB, used=3D7.34GB
+> System, DUP: total=3D32.00MB, used=3D4.00KB
+> System: total=3D4.00MB, used=3D0.00
+> Metadata, DUP: total=3D1.00GB, used=3D586.39MB
+>=20
+> So this worked.
+>=20
+> But I wasn=C2=B4t able to specify less than a Gig:
 
-   It won't -- "btrfs fi df" reports what's been allocated out of the
-raw pool. To check that the disks have been added, you need "btrfs fi
-show" (no parameters).
+A follow up to the -musage hint says that the argument it takes is the
+percentage.  That is -musage=3DX will balance out block groups that are
+less than X percent used.
 
-> I started a balancing run:
-> 
->     $ btrfs filesystem balance start /mnt/archive
-> 
-> Waiting for the balancing run to finish (which will take much longer
-> than I thought; still running) I found out that as of kernel 3.3
-> changing the RAID level (aka restriping) is now possible: [2].
+>=20
+> merkaba:~> btrfs balance start -musage=3D0.8 /
+> Invalid usage argument: 0.8
+> merkaba:~#1> btrfs balance start -musage=3D700M /
+> Invalid usage argument: 700M
+>=20
+>=20
+> When I try without usage I get the old behavior back:
+>=20
+> merkaba:~#1> btrfs balance start -m /         =20
+> ERROR: error during balancing '/' - No space left on device
+> There may be more info in syslog - try dmesg | tail
+>=20
+>=20
+> merkaba:~> btrfs balance start -musage=3D1 /  =20
+> Done, had to relocate 2 out of 13 chunks
+> merkaba:~> btrfs balance start -musage=3D1 /
+> Done, had to relocate 1 out of 12 chunks
+> merkaba:~> btrfs balance start -musage=3D1 /
+> Done, had to relocate 1 out of 12 chunks
+> merkaba:~> btrfs balance start -musage=3D1 /
+> Done, had to relocate 1 out of 12 chunks
+> merkaba:~> btrfs filesystem df /
+> Data: total=3D10.00GB, used=3D7.34GB
+> System, DUP: total=3D32.00MB, used=3D4.00KB
+> System: total=3D4.00MB, used=3D0.00
+> Metadata, DUP: total=3D1.00GB, used=3D586.41MB
 
-   It is indeed.
+Btrfs allocates space in chunks, in your case metadata chunks are
+probably 512M in size.  Naturally, having 586M busy you can't make that
+chunk go away, be it with or without auto-reclaim and usage filter
+accepting size as its input.
 
-> I got two questions now:
-> 
-> 1.) Is there really no difference between btrfs-raid1 and btrfs-raid10
->     in my case (2 x 2TiB, 2 x 1TiB disks)? Same degree of fault
->     tolerance?
+Thanks,
 
-   There's the same degree of fault tolerance -- you're guaranteed to
-be able to lose one disk from the array and still have all your data.
-
-   The data will be laid out in a different way on the disks, though.
-In your case, with four unevenly-sized disks, you will get the best
-usage out of the filesystem with RAID-1. With only 4 disks, RAID-10
-will run out of space when the smallest disk is full. (So, in your
-configuration, you'd still have only 2TB of space usable, rather
-defeating the point of having the new disks in the first place).
-
-> 2.) Summing up the capacities reported by 'btrfs filesystem df' I only
->     get ~2.25 TiB for my filesystem, is that a realistic net size for
->     3 TiB gross?
-
-   You're not comparing the right numbers here. "btrfs fi show" shows
-the raw available unallocated space that the filesystem has to play
-with. "btrfs fi df" shows only what it's allocated so far, and how
-much of the atllocation it has used -- in this case, because you've
-added new disks, there's quite a bit of free space unallocated still,
-so the numbers below won't add up to anything like 3TB.
-
->     $ btrfs filesystem df /mnt/archive
->     Data, RAID1: total=2.10TB, used=1.68TB
->     Data: total=8.00MB, used=0.00
->     System, RAID1: total=40.00MB, used=324.00KB
->     System: total=4.00MB, used=0.00
->     Metadata, RAID1: total=112.50GB, used=3.21GB
->     Metadata: total=8.00MB, used=0.00
-
-   Hugo.
-
--- 
-=== Hugo Mills: hugo@... carfax.org.uk | darksatanic.net | lug.org.uk ===
-  PGP key: 515C238D from wwwkeys.eu.pgp.net or http://www.carfax.org.uk
-  --- My doctor tells me that I have a malformed public-duty gland, ---  
-                and a natural deficiency in moral fibre.                 
-
---iAzLNm1y1mIRgolD
-Content-Type: application/pgp-signature; name="signature.asc"
-Content-Description: Digital signature
-
------BEGIN PGP SIGNATURE-----
-Version: GnuPG v1.4.11 (GNU/Linux)
-
-iD8DBQFPppd/IKyzvlFcI40RAqLLAJ9hyq5Uc2QhmtgELfk+T8ZZ8IZtJwCfWKXk
-GJ2pClrefqma668qFwt7vmI=
-=jMhL
------END PGP SIGNATURE-----
-
---iAzLNm1y1mIRgolD--
+		Ilya
+--
+To unsubscribe from this list: send the line "unsubscribe linux-btrfs" =
+in
+the body of a message to majordomo@vger.kernel.org
+More majordomo info at  http://vger.kernel.org/majordomo-info.html

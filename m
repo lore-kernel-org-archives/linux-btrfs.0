@@ -1,101 +1,98 @@
-From: Alexey Shvetsov <alexxy@gentoo.org>
-Subject: [linux-3.4] WARNING: at fs/btrfs/extent-tree.c:6219
- =?UTF-8?Q?btrfs=5Falloc=5Ffree=5Fblock+=30x=33=35=34/=30x=33=36=30=28=29?=
-Date: Sat, 05 May 2012 21:37:01 +0300
-Message-ID: <98ab61fb6c0f3db4f060f9cd970ba382@omrb.pnpi.spb.ru>
+From: Mike Sampson <mike@sambodata.com>
+Subject: Re: Is it possible to reclaim block groups once they are allocated to
+ data or metadata?
+Date: Sun, 6 May 2012 13:07:06 +1000
+Message-ID: <CALzgn9vCcMSEDQXWEwdZJuSeuv9WbK3T=YkQr+y2V=B_-+bWCQ@mail.gmail.com>
+References: <CALzgn9tppzTem57mD6ORK7SXCK2vM6hcsWxphdHLr4eNwFTPQg@mail.gmail.com>
+	<20120505125238.GJ9860@carfax.org.uk>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=UTF-8;
- format=flowed
-To: <linux-btrfs@vger.kernel.org>
+Content-Type: text/plain; charset=ISO-8859-1
+To: Hugo Mills <hugo@carfax.org.uk>, Mike Sampson <mike@sambodata.com>,
+	linux-btrfs@vger.kernel.org
 Return-path: <linux-btrfs-owner@vger.kernel.org>
+In-Reply-To: <20120505125238.GJ9860@carfax.org.uk>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hi all!
+On Sat, May 5, 2012 at 10:52 PM, Hugo Mills <hugo@carfax.org.uk> wrote:
+> On Sat, May 05, 2012 at 10:37:01PM +1000, Mike Sampson wrote:
+>> Hello list,
+>>
+>> recently reformatted my home partition from XFS to RAID1 btrfs. I us=
+ed
+>> the default options to mkfs.btrfs except for enabling raid1 for data
+>> as well as metadata. Filesystem is made up of two 1TB drives.
+>>
+>> mike@mercury (0) pts/3 ~ $ sudo btrfs filesystem show
+>> Label: none =A0uuid: f08a8896-e03e-4064-9b94-9342fb547e47
+>> =A0 =A0 =A0 Total devices 2 FS bytes used 888.06GB
+>> =A0 =A0 =A0 devid =A0 =A01 size 931.51GB used 931.51GB path /dev/sdb=
+1
+>> =A0 =A0 =A0 devid =A0 =A02 size 931.51GB used 931.49GB path /dev/sdc=
+1
+>>
+>> Btrfs Btrfs v0.19
+>>
+>> mike@mercury (0) pts/3 ~ $ btrfs filesystem df /home
+>> Data, RAID1: total=3D893.48GB, used=3D886.60GB
+>> Data: total=3D8.00MB, used=3D0.00
+>> System, RAID1: total=3D8.00MB, used=3D136.00KB
+>> System: total=3D4.00MB, used=3D0.00
+>> Metadata, RAID1: total=3D38.00GB, used=3D2.54GB
+>> Metadata: total=3D8.00MB, used=3D0.00
+>>
+>> As can be seen I don't have a lot of free space left and while I am
+>> planning on adding more storage soon I would like to gain a little
+>> breathing room until I can do this. While I don't have a lot of spac=
+e
+>> remaining in Data, RAID1 I do have a good chunk in Metadata, RAID1.
+>> 2.5GB used out of 38GB. Does this excess become available
+>> automatically to the file system when the block groups in Data, RAID=
+1
+>> are exhausted or, if not, is there a way to manually reallocate them=
+?
+>
+> =A0 Youre best bet at the moment is to try a partial balance of
+> metadata chunks:
+>
+> # btrfs balance start -m /home
+>
+> =A0 That will rewrite all of your metadata, putting it through the
+> allocator again, and removing the original allocated chunks. This
+> should have the effect of reducing the allocation of metadata chunks.
+>
+> =A0 You will need a 3.3 kernel, or later, and an up-to-date userspace
+> from cmason's git repository.
 
-Under high i/o load i always get many this warnings
+Gave this a shot and it did help.
 
-WARNING: at fs/btrfs/extent-tree.c:6219 
-btrfs_alloc_free_block+0x354/0x360()
-btrfs: block rsv returned -28
-------------[ cut here ]------------
-WARNING: at fs/btrfs/extent-tree.c:6219 
-btrfs_alloc_free_block+0x354/0x360()
-Hardware name: EP45-DS4
-Modules linked in:
-Hardware name: EP45-DS4
-  tun ath5k ath
-Modules linked in: i2c_i801 tun
-Pid: 31233, comm: btrfs-endio-wri Tainted: G        W    
-3.4.0-rc5-gentoo #2
-  ath5k ath i2c_i801
-Pid: 30807, comm: btrfs-endio-wri Tainted: G        W    
-3.4.0-rc5-gentoo #2
-Call Trace:
-Call Trace:
-  [<ffffffff8104779a>] warn_slowpath_common+0x7a/0xb0
-  [<ffffffff8104779a>] warn_slowpath_common+0x7a/0xb0
-  [<ffffffff810477e5>] warn_slowpath_null+0x15/0x20
-  [<ffffffff810477e5>] warn_slowpath_null+0x15/0x20
-  [<ffffffff813254a4>] btrfs_alloc_free_block+0x354/0x360
-  [<ffffffff813254a4>] btrfs_alloc_free_block+0x354/0x360
-  [<ffffffff81359c94>] ? read_extent_buffer+0xb4/0x110
-  [<ffffffff81070121>] ? get_parent_ip+0x11/0x50
-  [<ffffffff81359c94>] ? read_extent_buffer+0xb4/0x110
-  [<ffffffff810dd67a>] ? activate_page+0x8a/0xd0
-  [<ffffffff813139f0>] __btrfs_cow_block+0x130/0x4d0
-  [<ffffffff81a72495>] ? _raw_spin_unlock+0x15/0x40
-  [<ffffffff81313e87>] btrfs_cow_block+0xf7/0x1b0
-  [<ffffffff813139f0>] __btrfs_cow_block+0x130/0x4d0
-  [<ffffffff81317bf9>] btrfs_search_slot+0x199/0x920
-  [<ffffffff8132996f>] btrfs_lookup_csum+0x6f/0x170
-  [<ffffffff81313e87>] btrfs_cow_block+0xf7/0x1b0
-  [<ffffffff81317bf9>] btrfs_search_slot+0x199/0x920
-  [<ffffffff811105c7>] ? kmem_cache_alloc+0x97/0xb0
-  [<ffffffff8132996f>] btrfs_lookup_csum+0x6f/0x170
-  [<ffffffff811105c7>] ? kmem_cache_alloc+0x97/0xb0
-  [<ffffffff8132aa6c>] btrfs_csum_file_blocks+0xac/0x6a0
-  [<ffffffff8132aa6c>] btrfs_csum_file_blocks+0xac/0x6a0
-  [<ffffffff813381dd>] add_pending_csums.isra.44+0x3d/0x60
-  [<ffffffff8133ac3a>] btrfs_finish_ordered_io+0x26a/0x3b0
-  [<ffffffff8133ad95>] btrfs_writepage_end_io_hook+0x15/0x20
-  [<ffffffff813381dd>] add_pending_csums.isra.44+0x3d/0x60
-  [<ffffffff8133ac3a>] btrfs_finish_ordered_io+0x26a/0x3b0
-  [<ffffffff81356948>] end_extent_writepage+0x58/0x100
-  [<ffffffff811512fa>] ? bio_free+0x5a/0x60
-  [<ffffffff8133ad95>] btrfs_writepage_end_io_hook+0x15/0x20
-  [<ffffffff81356a54>] end_bio_extent_writepage+0x64/0x90
-  [<ffffffff81150158>] bio_endio+0x18/0x30
-  [<ffffffff8132d45c>] end_workqueue_fn+0x3c/0x50
-  [<ffffffff81356948>] end_extent_writepage+0x58/0x100
-  [<ffffffff811512fa>] ? bio_free+0x5a/0x60
-  [<ffffffff81363908>] worker_loop+0x148/0x560
-  [<ffffffff81356a54>] end_bio_extent_writepage+0x64/0x90
-  [<ffffffff81150158>] bio_endio+0x18/0x30
-  [<ffffffff81a714e8>] ? preempt_schedule+0x48/0x60
-  [<ffffffff813637c0>] ? btrfs_queue_worker+0x300/0x300
-  [<ffffffff8132d45c>] end_workqueue_fn+0x3c/0x50
-  [<ffffffff81363908>] worker_loop+0x148/0x560
-  [<ffffffff810637fe>] kthread+0x8e/0xa0
-  [<ffffffff813637c0>] ? btrfs_queue_worker+0x300/0x300
-  [<ffffffff810637fe>] kthread+0x8e/0xa0
-  [<ffffffff81a747a4>] kernel_thread_helper+0x4/0x10
-  [<ffffffff81a747a4>] kernel_thread_helper+0x4/0x10
-  [<ffffffff81063770>] ? kthread_freezable_should_stop+0x60/0x60
-  [<ffffffff81063770>] ? kthread_freezable_should_stop+0x60/0x60
-  [<ffffffff81a747a0>] ? gs_change+0x13/0x13
----[ end trace 0cba9c497fa7913f ]---
-  [<ffffffff81a747a0>] ? gs_change+0x13/0x13
----[ end trace 0cba9c497fa79140 ]---
+mike@mercury (0) pts/3 ~/.../btrfs-progs git:master $ uname -r
+3.3.4-2-ARCH
 
+mike@mercury (0) pts/3 ~/.../btrfs-progs git:master $ sudo ./btrfs
+balance start -m /home
 
--- 
-Best Regards,
-Alexey 'Alexxy' Shvetsov
-Petersburg Nuclear Physics Institute, NRC Kurchatov Institute, 
-Gatchina, Russia
-Department of Molecular and Radiation Biophysics
-Gentoo Team Ru
-Gentoo Linux Dev
-mailto:alexxyum@gmail.com
-mailto:alexxy@gentoo.org
-mailto:alexxy@omrb.pnpi.spb.ru
+Done, had to relocate 40 out of 934 chunks
+
+mike@mercury (0) pts/3 ~/.../btrfs-progs git:master $ ./btrfs
+filesystem df /home
+Data, RAID1: total=3D900.97GB, used=3D880.06GB
+Data: total=3D8.00MB, used=3D0.00
+System, RAID1: total=3D32.00MB, used=3D136.00KB
+System: total=3D4.00MB, used=3D0.00
+Metadata, RAID1: total=3D30.50GB, used=3D2.54GB
+
+There is now 8GB less in Metadata and I was able to delete some files
+as well to free up space. There is still a lot of wasted space in the
+metadata block groups. It seems that it allocates more metadata block
+groups than required for my filesystem. This will do until I am able
+to add a couple of devices to the system. Is there anyway to adjust
+the block group allocation strategy at filesystem creation?
+
+Thanks Hugo,
+
+Mike
+--
+To unsubscribe from this list: send the line "unsubscribe linux-btrfs" =
+in
+the body of a message to majordomo@vger.kernel.org
+More majordomo info at  http://vger.kernel.org/majordomo-info.html

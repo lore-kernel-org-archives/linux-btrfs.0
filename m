@@ -1,85 +1,65 @@
 From: Hullen@t-online.de (Helmut Hullen)
 Subject: Re: kernel 3.3.4 damages filesystem (?)
-Date: 07 May 2012 14:06:00 +0200
-Message-ID: <C8PC6cp9CXB@helmut.hullen.de>
-References: <CAG1y0sexbX2G0Kmb3RmzJN0hhN-UrE_cUSEUGLT_AYVkMXDgBA@mail.gmail.com>
+Date: 07 May 2012 14:15:00 +0200
+Message-ID: <C8PC6xN9CXB@helmut.hullen.de>
+References: <20120507105944.GD8938@carfax.org.uk>
 Reply-To: helmut@hullen.de
 Mime-Version: 1.0
-Content-Type: text/plain; charset=ISO-8859-1
+Content-Type: text/plain; charset=US-ASCII
 To: linux-btrfs@vger.kernel.org
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <CAG1y0sexbX2G0Kmb3RmzJN0hhN-UrE_cUSEUGLT_AYVkMXDgBA@mail.gmail.com>
+In-Reply-To: <20120507105944.GD8938@carfax.org.uk>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hallo, Fajar,
+Hallo, Hugo,
 
 Du meintest am 07.05.12:
 
->> For some months I run btrfs unter kernel 3.2.5 and 3.2.9, without
->> problems.
->>
 >> Yesterday I compiled kernel 3.3.4, and this morning I started the
 >> machine with this kernel. There may be some ugly problems.
-
-
->> Data, RAID0: total=3D5.29TB, used=3D4.29TB
-
-> Raid0? Yaiks!
-
-Why not?
-You know the price of 1 3-TByte disk?
-The data isn't irreproducible, in this case.
+>>
+>> Copying something into the btrfs "directory" worked well for some
+>> files, and then I got error messages (I've not copied them,
+>> something with "IO error" under Samba).
 
 [...]
 
->> May =A07 07:15:19 Arktur kernel: sd 5:0:0:0: rejecting I/O to offlin=
-e
->> device
->> May =A07 07:15:19 Arktur kernel: end_request: I/O error, dev
->> sdf, sector 0
->> May =A07 07:15:19 Arktur kernel: sd 5:0:0:0: rejecting
->> I/O to offline device
->> May =A07 07:15:19 Arktur kernel: lost page write
->> due to I/O error on sdf1
+>> Data, RAID0: total=5.29TB, used=4.29TB
+>> System, RAID1: total=8.00MB, used=352.00KB
+>> System: total=4.00MB, used=0.00
+>> Metadata, RAID1: total=149.00GB, used=5.00GB
+
+>>
+>> Label: 'MMedia'  uuid: 9adfdc84-0fbe-431b-bcb1-cabb6a915e91
+>> 	Total devices 3 FS bytes used 4.29TB
+>> 	devid    3 size 2.73TB used 1.98TB path /dev/sdi1
+>> 	devid    2 size 2.73TB used 1.94TB path /dev/sdf1
+>> 	devid    1 size 1.82TB used 1.63TB path /dev/sdc1
+>>
+>> Btrfs Btrfs v0.19
+>>
+>> =================== boot messages, kernel related ==============
+>>
+>> [boot with kernel 3.3.4]
+>> May  7 06:55:26 Arktur kernel: ata5: exception Emask 0x10 SAct 0x0
+>> SErr 0x10000 action 0xe frozen
+>> May  7 06:55:26 Arktur kernel: ata5: SError: { PHYRdyChg }
+>> May  7 06:55:26 Arktur kernel: ata5: hard resetting link
+
+>    This is a hardware error. You have a device that's either dead or
+> dying. (Given the number of errors, probably already dead).
+
+It seems to be undecided which status it has ...
+
+>> Can I repair the system? Or have I to copy it to a set of other
+>> disks?
+
+>    If you have RAID-1 or RAID-10 on both data and netadata, then you
+> _should_ in theory just be able to remove the dead disk (physically),
+> then btrfs dev add a new one, btrfs dev del missing, and balance.
 
 
-> That looks like a bad disk to me, and it shouldn't be related to the
-> kernel version you use.
-
-But why does it happen just when I change the kernel?
-(Yes - I know: Murphy works reliable ...)
-
-> Your best chance might be:
-> - unmount the fs
-> - get another disk to replace /dev/sdf, copy the content over with
-> dd_rescue. Ata resets can be a PITA, so you might be better of by
-> moving the failed disk to a usb external adapter, and du some
-> creative combination of plug-unplug and selectively skip bad sectors
-> manually (by passing "-s" to dd_rescue).
-
-Hmmm - I'll take a try ...
-
-
-> - reboot, with the bad disk unplugged
-> - (optional) run "btrfs filesystem scrub" (you might need to build
-> btrfs-progs manually from git source).
-
-Last time I'd tried this command (some months ago) it had produced a =20
-completely unusable system of disks/partitions ...
-
-
-> or simply read the entire fs
-> (e.g. using tar to /dev/null, or whatever). It should check the
-> checksum of all files and print out which files are damaged (either
-> in stdout or syslog).
-
-And that's the other try - I had to use it for another disk (also WD, =20
-but only 2 TByte - I could watch how it died ...).
+I haven't - I have a kind of copy/backup in the neighbourhood.
 
 Viele Gruesse!
 Helmut
---
-To unsubscribe from this list: send the line "unsubscribe linux-btrfs" =
-in
-the body of a message to majordomo@vger.kernel.org
-More majordomo info at  http://vger.kernel.org/majordomo-info.html

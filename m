@@ -1,31 +1,31 @@
-From: Hullen@t-online.de (Helmut Hullen)
-Subject: Re: kernel 3.3.4 damages filesystem (?)
-Date: 07 May 2012 20:25:00 +0200
-Message-ID: <C8PDD0cPCXB@helmut.hullen.de>
-References: <20120507180047.GG8938@carfax.org.uk>
-Reply-To: helmut@hullen.de
+From: Olivier Doucet <webmaster@ajeux.com>
+Subject: Re: BTRFS Benchmarking
+Date: Mon, 7 May 2012 20:42:45 +0200
+Message-ID: <CAPPqfY2zXkd0Qgd-UX5uaaWOF9vaeEs5yqo04SD9hjwmfGUq5Q@mail.gmail.com>
+References: <CAPPqfY0iGPjRDC0YG814uiv4+9jLU54w6D5Yh=okTqG7VtwXOA@mail.gmail.com>
+	<20120504160749.GA1915@localhost.localdomain>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=US-ASCII
-To: linux-btrfs@vger.kernel.org
+Content-Type: text/plain; charset=ISO-8859-1
+Cc: linux-btrfs@vger.kernel.org
+To: Josef Bacik <josef@redhat.com>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <20120507180047.GG8938@carfax.org.uk>
+In-Reply-To: <20120504160749.GA1915@localhost.localdomain>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hallo, Hugo,
+> Not what I've been seeing at all, but we've been working a lot in thi=
+s area
+> recently. =A0Please retest with btrfs-next. =A0Thanks,
 
-Du meintest am 07.05.12:
+Hi,
 
->> With a file system like ext2/3/4 I can work with several directories
->> which are mounted together, but (as said before) one broken disk
->> doesn't disturb the others.
+I tested again with kernel 3.3.4 ; I wondered if latest btrfs code is
+present in this release or not.
 
->    mkfs.btrfs -m raid1 -d single should give you that.
+Results are very similar with 3.3.4 compared to 3.3.0
 
-What's the difference to
-
-     mkfs.btrfs -m raid1 -d raid0
-
-(what I have used the last time)?
-
-Viele Gruesse!
-Helmut
+Olivier
+--
+To unsubscribe from this list: send the line "unsubscribe linux-btrfs" =
+in
+the body of a message to majordomo@vger.kernel.org
+More majordomo info at  http://vger.kernel.org/majordomo-info.html

@@ -1,115 +1,85 @@
-From: Hugo Mills <hugo@carfax.org.uk>
-Subject: Re: btrfs and 1 billion small files
-Date: Mon, 7 May 2012 12:39:28 +0100
-Message-ID: <20120507113928.GE8938@carfax.org.uk>
-References: <20120507105552.GC8938@carfax.org.uk>
- <1429905255.3406.1336389326378.JavaMail.root@zimbra.interconnessioni.it>
+From: Hullen@t-online.de (Helmut Hullen)
+Subject: Re: kernel 3.3.4 damages filesystem (?)
+Date: 07 May 2012 14:06:00 +0200
+Message-ID: <C8PC6cp9CXB@helmut.hullen.de>
+References: <CAG1y0sexbX2G0Kmb3RmzJN0hhN-UrE_cUSEUGLT_AYVkMXDgBA@mail.gmail.com>
+Reply-To: helmut@hullen.de
 Mime-Version: 1.0
-Content-Type: multipart/signed; micalg=pgp-sha1;
-	protocol="application/pgp-signature"; boundary="VdOwlNaOFKGAtAAV"
-Cc: linux-btrfs@vger.kernel.org
-To: Alessio Focardi <alessiof@gmail.com>
+Content-Type: text/plain; charset=ISO-8859-1
+To: linux-btrfs@vger.kernel.org
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <1429905255.3406.1336389326378.JavaMail.root@zimbra.interconnessioni.it>
+In-Reply-To: <CAG1y0sexbX2G0Kmb3RmzJN0hhN-UrE_cUSEUGLT_AYVkMXDgBA@mail.gmail.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
+Hallo, Fajar,
 
---VdOwlNaOFKGAtAAV
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
+Du meintest am 07.05.12:
 
-On Mon, May 07, 2012 at 01:15:26PM +0200, Alessio Focardi wrote:
-> > This is a lot more compact (as you can have several files' data in a
-> > single block), but by default will write two copies of each file,
-> > even
-> > on a single disk.
-> 
-> Great, no (or less) space wasted, then!
+>> For some months I run btrfs unter kernel 3.2.5 and 3.2.9, without
+>> problems.
+>>
+>> Yesterday I compiled kernel 3.3.4, and this morning I started the
+>> machine with this kernel. There may be some ugly problems.
 
-   Less space wasted -- you will still have empty bytes left at the
-end(*) of most metadata blocks, but you will definitely be packing in
-storage far more densely than otherwise.
 
-(*) Actually, the middle, but let's ignore that here.
+>> Data, RAID0: total=3D5.29TB, used=3D4.29TB
 
-> I will have a filesystem that's composed mostly of metadata blocks,
-> if I understand correctly. Will this create any problem?
+> Raid0? Yaiks!
 
-   Not that I'm aware of -- but you probably need to run proper tests
-of your likely behaviour just to see what it'll be like.
+Why not?
+You know the price of 1 3-TByte disk?
+The data isn't irreproducible, in this case.
 
-> >    So, if you want to use some form of redundancy (e.g. RAID-1), then
-> > that's great, and you need to do nothing unusual. However, if you
-> > want
-> > to maximise space usage at the expense of robustness in a device
-> > failure, then you need to ensure that you only keep one copy of your
-> > data. This will mean that you should format the filesystem with the
-> > -m
-> > single option.
-> 
-> 
-> That's a very clever suggestion, I'm preparing a test server right now: going to use the -m single option. Any other suggestion regarding format options?
-> 
-> pagesize? leafsize?
+[...]
 
-   I'm not sure about these -- some values of them definitely break
-things. I think they are required to be the same, and that you could
-take them up to 64k with no major problems, but do check that first
-with someone who actually knows.
+>> May =A07 07:15:19 Arktur kernel: sd 5:0:0:0: rejecting I/O to offlin=
+e
+>> device
+>> May =A07 07:15:19 Arktur kernel: end_request: I/O error, dev
+>> sdf, sector 0
+>> May =A07 07:15:19 Arktur kernel: sd 5:0:0:0: rejecting
+>> I/O to offline device
+>> May =A07 07:15:19 Arktur kernel: lost page write
+>> due to I/O error on sdf1
 
-   Having a larger pagesize/leafsize will reduce the depth of the
-trees, and will allow you to store more items in each tree block,
-which gives you less wastage again. I don't know what the drawbacks
-are, though.
 
-> > > XFS has a minimum block size of 512, but BTRFS is more modern and,
-> > > given the fact that is able to handle indexes on his own, it could
-> > > help us speed up file operations (could it?)
-> > 
-> >    Not sure what you mean by "handle indexes on its own". XFS will
-> > have its own set of indexes and file metadata -- it wouldn't be much
-> > of a filesystem if it didn't.
+> That looks like a bad disk to me, and it shouldn't be related to the
+> kernel version you use.
 
-> Yes, you are perfectly right; I tough that recreating a tree like
-> /d/u/m/m/y/ to store "dummy" would have been redundant since the
-> whole filesystem is based on trees - I don't have to "ls"
-> directories, we are using php to write and read files, I will have
-> to find a "compromise" between levels of directories and number of
-> files in each one of them.
+But why does it happen just when I change the kernel?
+(Yes - I know: Murphy works reliable ...)
 
-   The FS tree (which is the bit that stores the directory hierarchy
-and file metadata) is (broadly) a tree-structured index of inodes,
-ordered by inode number. Don't confuse the inode index structure with
-the directory structure -- they're totally different arrangements of
-the data. You may want to try looking at [1], which attempts to
-describe how the FS tree holds file data.
+> Your best chance might be:
+> - unmount the fs
+> - get another disk to replace /dev/sdf, copy the content over with
+> dd_rescue. Ata resets can be a PITA, so you might be better of by
+> moving the failed disk to a usb external adapter, and du some
+> creative combination of plug-unplug and selectively skip bad sectors
+> manually (by passing "-s" to dd_rescue).
 
-> May I ask you about compression? Would you use it in the scenario I
-> described?
+Hmmm - I'll take a try ...
 
-   I'm not sure if compression will apply to inline file data. Again,
-someone else may be able to answer; and you should probably test it
-with your own use-cases anyway.
 
-   Hugo.
+> - reboot, with the bad disk unplugged
+> - (optional) run "btrfs filesystem scrub" (you might need to build
+> btrfs-progs manually from git source).
 
-[1] http://btrfs.ipv5.de/index.php?title=Trees
+Last time I'd tried this command (some months ago) it had produced a =20
+completely unusable system of disks/partitions ...
 
--- 
-=== Hugo Mills: hugo@... carfax.org.uk | darksatanic.net | lug.org.uk ===
-  PGP key: 515C238D from wwwkeys.eu.pgp.net or http://www.carfax.org.uk
-              --- Welcome to Rivendell,  Mr Anderson... ---              
 
---VdOwlNaOFKGAtAAV
-Content-Type: application/pgp-signature; name="signature.asc"
-Content-Description: Digital signature
+> or simply read the entire fs
+> (e.g. using tar to /dev/null, or whatever). It should check the
+> checksum of all files and print out which files are damaged (either
+> in stdout or syslog).
 
------BEGIN PGP SIGNATURE-----
-Version: GnuPG v1.4.11 (GNU/Linux)
+And that's the other try - I had to use it for another disk (also WD, =20
+but only 2 TByte - I could watch how it died ...).
 
-iD8DBQFPp7RvIKyzvlFcI40RAjlNAKCPaV6iZKeiBTOH92f0d6abaR0GMACeJAnf
-roVDRjxUenBwZeN+YEvbxK4=
-=lNaz
------END PGP SIGNATURE-----
-
---VdOwlNaOFKGAtAAV--
+Viele Gruesse!
+Helmut
+--
+To unsubscribe from this list: send the line "unsubscribe linux-btrfs" =
+in
+the body of a message to majordomo@vger.kernel.org
+More majordomo info at  http://vger.kernel.org/majordomo-info.html

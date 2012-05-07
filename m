@@ -1,36 +1,61 @@
-From: Josef Bacik <josef@redhat.com>
-Subject: Re: BTRFS Benchmarking
-Date: Mon, 7 May 2012 15:06:02 -0400
-Message-ID: <20120507190601.GA3243@localhost.localdomain>
-References: <CAPPqfY0iGPjRDC0YG814uiv4+9jLU54w6D5Yh=okTqG7VtwXOA@mail.gmail.com>
- <20120504160749.GA1915@localhost.localdomain>
- <CAPPqfY2zXkd0Qgd-UX5uaaWOF9vaeEs5yqo04SD9hjwmfGUq5Q@mail.gmail.com>
+From: Daniel Lee <longinus00@gmail.com>
+Subject: Re: kernel 3.3.4 damages filesystem (?)
+Date: Mon, 07 May 2012 12:30:19 -0700
+Message-ID: <4FA822CB.9090008@gmail.com>
+References: <C8PD2qZuCXB@helmut.hullen.de>
+Reply-To: helmut@hullen.de
 Mime-Version: 1.0
-Content-Type: text/plain; charset=iso-8859-1
-Cc: Josef Bacik <josef@redhat.com>, linux-btrfs@vger.kernel.org
-To: Olivier Doucet <webmaster@ajeux.com>
+Content-Type: text/plain; charset=ISO-8859-1; format=flowed
+To: linux-btrfs@vger.kernel.org
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <CAPPqfY2zXkd0Qgd-UX5uaaWOF9vaeEs5yqo04SD9hjwmfGUq5Q@mail.gmail.com>
+In-Reply-To: <C8PD2qZuCXB@helmut.hullen.de>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Mon, May 07, 2012 at 08:42:45PM +0200, Olivier Doucet wrote:
-> > Not what I've been seeing at all, but we've been working a lot in t=
-his area
-> > recently. =A0Please retest with btrfs-next. =A0Thanks,
->=20
-> Hi,
->=20
-> I tested again with kernel 3.3.4 ; I wondered if latest btrfs code is
-> present in this release or not.
->=20
-> Results are very similar with 3.3.4 compared to 3.3.0
->=20
+On 05/07/2012 10:52 AM, Helmut Hullen wrote:
+> Hallo, Felix,
+>
+> Du meintest am 07.05.12:
+>
+>>> I'm just going back to ext4 - then one broken disk doesn't disturb
+>>> the contents of the other disks.
+>
+>> ?! If you use raid0 one broken disk will always disturb the contents
+>> of the other disks, that is what raid0 does, no matter what
+>> filesystem you use.
+>
+> Yes - I know. But btrfs promises that I can add bigger disks and delete
+> smaller disks "on the fly". For something like a video collection which
+> will grow on and on an interesting feature. And such a (big) collection
+> does need a "gradfather-father-son" backup, that's no critical data.
+>
+> With a file system like ext2/3/4 I can work with several directories
+> which are mounted together, but (as said before) one broken disk doesn't
+> disturb the others.
+>
 
-It's not, you need to clone the btrfs-next tree and test with that.
+How can you do that with ext2/3/4? If you mean create several different 
+filesystems and mount them separately then that's very different from 
+your current situation. What you did in this case is comparable to 
+creating a raid0 array out of your disks. I don't see how an ext 
+filesystem is going to work any better if one of the disks drops out 
+than with a btrfs filesystem. Using -d single isn't going to be of much 
+use in this case either because that's like spanning a lvm volume over 
+several disks and then putting ext over that, it's pretty 
+nondeterministic how much you'll actually save should a large chunk of 
+the filesystem suddenly disappear.
 
-Josef
---
-To unsubscribe from this list: send the line "unsubscribe linux-btrfs" =
-in
-the body of a message to majordomo@vger.kernel.org
-More majordomo info at  http://vger.kernel.org/majordomo-info.html
+It sounds like what you're thinking of is creating several separate ext 
+filesystems and then just mounting them separately. There's nothing 
+inherently special about doing this with ext, you can can do the same 
+thing with btrfs and it would amount to about the same level of 
+protection (potentially more if you consider [meta]data checksums 
+important but potentially less if you feel that ext is more robust for 
+whatever reason).
+
+If you want to survive losing a single disk without the (absolute) fear 
+of the whole filesystem breaking you have to have some sort of 
+redundancy either by separating filesystems or using some version of 
+raid other than raid0. I suppose the volume management of btrfs is sort 
+of confusing at the moment but when btrfs promises you can remove disks 
+"on the fly" it doesn't mean you can just unplug disks from a raid0 
+without telling btrfs to put that data elsewhere first.

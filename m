@@ -1,52 +1,45 @@
-From: cwillu <cwillu@cwillu.com>
+From: Martin Steigerwald <Martin@lichtvoll.de>
 Subject: Re: kernel 3.3.4 damages filesystem (?)
-Date: Mon, 7 May 2012 15:27:32 -0600
-Message-ID: <CAE5mzvgJy9VHROkY+AwNspdW5T3t4_bts9F5eWmNdxCH4FCwrA@mail.gmail.com>
-References: <4FA835D7.3040207@gmail.com>
-	<C8PDfzNPCXB@helmut.hullen.de>
+Date: Tue, 8 May 2012 00:07:51 +0200
+Message-ID: <201205080007.51704.Martin@lichtvoll.de>
+References: <C8PDRKGPCXB@helmut.hullen.de> (sfid-20120507_234447_689949_257B2EC7)
 Mime-Version: 1.0
-Content-Type: text/plain; charset=UTF-8
-Cc: linux-btrfs@vger.kernel.org
-To: helmut@hullen.de
+Content-Type: Text/Plain;
+  charset="iso-8859-1"
+To: linux-btrfs@vger.kernel.org, helmut@hullen.de
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <C8PDfzNPCXB@helmut.hullen.de>
+In-Reply-To: <C8PDRKGPCXB@helmut.hullen.de>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Mon, May 7, 2012 at 3:17 PM, Helmut Hullen <Hullen@t-online.de> wrot=
-e:
-> Hallo, Daniel,
->
-> Du meintest am 07.05.12:
->
->>> =C2=A0 =C2=A0mkfs.btrfs =C2=A0-m raid1 -d raid0
->>>
->>> with 3 disks gives me a "cluster" which looks like 1 disk/partition=
-/
->>> directory.
->>> If one disk fails nothing is usable.
->
->> How is that different from putting ext on top of a raid0?
->
-> Classic raid0 doesn't allow deleting/removing disks from a cluster.
->
->>> With ext2/3/4 I mount 2 disks/partitions into the first disk. If on=
-e
->>> disk fails the contents of the 2 other disks is still readable,
->
->> There is nothing that prevents you from using this strategy with
->> btrfs.
->
-> How?
-> I've tried many installations of btrfs, sometimes 1 disk failed, and
-> then the data on all other disks was inaccessible.
+Am Montag, 7. Mai 2012 schrieb Helmut Hullen:
+> > If you want to survive losing a single disk without the (absolute)
+> > fear of the whole filesystem breaking you have to have some sort of
+> > redundancy either by separating filesystems or using some version of
+> > raid other than raid0.
+> 
+> No - since some years I use a kind of outsourced backup. A copy of
+> all   data is on a bundle of disks somewhere in the neighbourhood. As
+> mentionend: the data isn't business critical, it's just "nice to
+> have". It's not worth something like raid1 or so (with twice the costs
+> of a non raid solution).
 
-"With ext2/3/4 I mount 2 disks/partitions into the first disk. If one
-disk fails the contents of the 2 other disks is still readable,"
+Thats not true when you use BTRFS RAID1 with three disks. BTRFS will only 
+store each chunk on two different drives then, not on all three. Such it is 
+not twice the cost, but given all three drives have the same capacity 
+about one and a half times the cost.
 
-There's nothing stopping you from using 3 btrfs filesystems mounted in
-the same way as you would 3 ext4 filesystems.
---
-To unsubscribe from this list: send the line "unsubscribe linux-btrfs" =
-in
-the body of a message to majordomo@vger.kernel.org
-More majordomo info at  http://vger.kernel.org/majordomo-info.html
+Consider the time to recover the files from the outsourced backup. Maybe it 
+does make up the money you would have to spend for one additional 
+harddisk.
+
+Anyway, I agree with the others responding to your post that this one 
+harddisk died and I do not see a kernel version related issue. Any striped 
+RAID 0 would have failed in that case.
+
+And you can use three BTRFS filesystems the same way as three Ext4 
+filesystems if you prefer such a setup if the time spent for restoring the 
+backup does not make up the cost for one additional disk for you.
+
+-- 
+Martin 'Helios' Steigerwald - http://www.Lichtvoll.de
+GPG: 03B0 0D6C 0040 0710 4AFA  B82F 991B EAAC A599 84C7

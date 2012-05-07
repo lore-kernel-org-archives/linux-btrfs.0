@@ -1,40 +1,39 @@
-From: Liu Bo <liubo2009@cn.fujitsu.com>
+From: Hullen@t-online.de (Helmut Hullen)
 Subject: Re: kernel 3.3.4 damages filesystem (?)
-Date: Mon, 07 May 2012 20:53:41 +0800
-Message-ID: <4FA7C5D5.60306@cn.fujitsu.com>
-References: <C8PBkd9uCXB@helmut.hullen.de>
+Date: 07 May 2012 15:34:00 +0200
+Message-ID: <C8PCDX9uCXB@helmut.hullen.de>
+References: <20120507105944.GD8938@carfax.org.uk>
+Reply-To: helmut@hullen.de
 Mime-Version: 1.0
-Content-Type: text/plain; charset=ISO-8859-1
-Cc: linux-btrfs@vger.kernel.org
-To: helmut@hullen.de
+Content-Type: text/plain; charset=US-ASCII
+To: linux-btrfs@vger.kernel.org
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <C8PBkd9uCXB@helmut.hullen.de>
+In-Reply-To: <20120507105944.GD8938@carfax.org.uk>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 05/07/2012 06:46 PM, Helmut Hullen wrote:
+Hallo, Hugo,
 
-> btrfs: error reading free space cache
-> BUG: unable to handle kernel NULL pointer dereference at 00000001
-> IP: [<c1295c36>] io_ctl_drop_pages+0x26/0x50
-> *pdpt = 0000000029712001 *pde = 0000000000000000
-> Oops: 0002 [#1]
+Du meintest am 07.05.12:
 
+>> =================== boot messages, kernel related ==============
+>>
+>> [boot with kernel 3.3.4]
+>> May  7 06:55:26 Arktur kernel: ata5: exception Emask 0x10 SAct 0x0
+>> SErr 0x10000 action 0xe frozen
+>> May  7 06:55:26 Arktur kernel: ata5: SError: { PHYRdyChg }
+>> May  7 06:55:26 Arktur kernel: ata5: hard resetting link
 
+[...]
 
-Could you please try this and show us the results?
+>    This is a hardware error. You have a device that's either dead or
+> dying. (Given the number of errors, probably already dead).
 
-diff --git a/fs/btrfs/free-space-cache.c b/fs/btrfs/free-space-cache.c
-index 202008e..ae514ad 100644
---- a/fs/btrfs/free-space-cache.c
-+++ b/fs/btrfs/free-space-cache.c
-@@ -296,7 +296,9 @@ static void io_ctl_free(struct io_ctl *io_ctl)
- static void io_ctl_unmap_page(struct io_ctl *io_ctl)
- {
- 	if (io_ctl->cur) {
--		kunmap(io_ctl->page);
-+		WARN_ON(!io_ctl->page);
-+		if (io_ctl->page)
-+			kunmap(io_ctl->page);
- 		io_ctl->cur = NULL;
- 		io_ctl->orig = NULL;
- 	}
+It's dead - R.I.P.
+
+I've tried it with a SATA-USB-adapter - that adapter produces dmesg  
+lines when connecting or disconnecting.
+
+And this special drive doesn't tell anything now. Shit.
+
+Viele Gruesse!
+Helmut

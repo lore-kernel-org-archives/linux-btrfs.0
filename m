@@ -1,50 +1,48 @@
-From: "vivo75@gmail.com" <vivo75@gmail.com>
+From: Alessio Focardi <alessiof@gmail.com>
 Subject: Re: btrfs and 1 billion small files
-Date: Mon, 07 May 2012 13:05:23 +0200
-Message-ID: <4FA7AC73.5080903@gmail.com>
-References: <711331964.2091.1336382892940.JavaMail.root@zimbra.interconnessioni.it>
+Date: Mon, 7 May 2012 13:15:26 +0200 (CEST)
+Message-ID: <1429905255.3406.1336389326378.JavaMail.root@zimbra.interconnessioni.it>
+References: <20120507105552.GC8938@carfax.org.uk>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=UTF-8; format=flowed
+Content-Type: text/plain; charset=utf-8
 Cc: linux-btrfs@vger.kernel.org
-To: Alessio Focardi <alessiof@gmail.com>
+To: Hugo Mills <hugo@carfax.org.uk>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <711331964.2091.1336382892940.JavaMail.root@zimbra.interconnessioni.it>
+In-Reply-To: <20120507105552.GC8938@carfax.org.uk>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Il 07/05/2012 11:28, Alessio Focardi ha scritto:
-> Hi,
->
-> I need some help in designing a storage structure for 1 billion of small files (<512 Bytes), and I was wondering how btrfs will fit in this scenario. Keep in mind that I never worked with btrfs - I just read some documentation and browsed this mailing list - so forgive me if my questions are silly! :X
-Are you *really* sure a database is *not* what are you looking for?
+> This is a lot more compact (as you can have several files' data in a
+> single block), but by default will write two copies of each file,
+> even
+> on a single disk.
 
-> On with the main questions, then:
->
-> - What's the advice to maximize disk capacity using such small files, even sacrificing some speed?
->
-> - Would you store all the files "flat", or would you build a hierarchical tree of directories to speed up file lookups? (basically duplicating the filesystem Btree indexes)
->
->
-> I tried to answer those questions, and here is what I found:
->
-> it seems that the smallest block size is 4K. So, in this scenario, if every file uses a full block I will end up with lots of space wasted. Wouldn't change much if block was 2K, anyhow.
->
-> I tough about compression, but is not clear to me the compression is handled at the file level or at the block level.
->
-> Also I read that there is a mode that uses blocks for shared storage of metadata and data, designed for small filesystems. Haven't found any other info about it.
->
->
-> Still is not yet clear to me if btrfs can fit my situation, would you recommend it over XFS?
->
-> XFS has a minimum block size of 512, but BTRFS is more modern and, given the fact that is able to handle indexes on his own, it could help us speed up file operations (could it?)
->
-> Thank you for any advice!
->
-> Alessio Focardi
-> ------------------
->
->
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+Great, no (or less) space wasted, then! I will have a filesystem that's composed mostly of metadata blocks, if I understand correctly. Will this create any problem? 
 
+>    So, if you want to use some form of redundancy (e.g. RAID-1), then
+> that's great, and you need to do nothing unusual. However, if you
+> want
+> to maximise space usage at the expense of robustness in a device
+> failure, then you need to ensure that you only keep one copy of your
+> data. This will mean that you should format the filesystem with the
+> -m
+> single option.
+
+
+That's a very clever suggestion, I'm preparing a test server right now: going to use the -m single option. Any other suggestion regarding format options?
+
+pagesize? leafsize?
+
+ 
+> > XFS has a minimum block size of 512, but BTRFS is more modern and,
+> > given the fact that is able to handle indexes on his own, it could
+> > help us speed up file operations (could it?)
+> 
+>    Not sure what you mean by "handle indexes on its own". XFS will
+> have its own set of indexes and file metadata -- it wouldn't be much
+> of a filesystem if it didn't.
+
+Yes, you are perfectly right; I tough that recreating a tree like /d/u/m/m/y/ to store "dummy" would have been redundant since the whole filesystem is based on trees - I don't have to "ls" directories, we are using php to write and read files, I will have to find a "compromise" between levels of directories and number of files in each one of them.
+
+May I ask you about compression? Would you use it in the scenario I described?
+
+Thank you for your help!

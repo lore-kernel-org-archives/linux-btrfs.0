@@ -1,34 +1,43 @@
-From: David Sterba <dave@jikos.cz>
-Subject: Re: [PATCH] Add missing printing newlines
-Date: Mon, 7 May 2012 09:23:51 +0200
-Message-ID: <20120507072351.GD19331@twin.jikos.cz>
-References: <1336369131-6330-1-git-send-email-daniel@quora.org>
-Reply-To: dave@jikos.cz
+From: Alessio Focardi <alessiof@gmail.com>
+Subject: btrfs and 1 billion small files
+Date: Mon, 7 May 2012 11:28:13 +0200 (CEST)
+Message-ID: <711331964.2091.1336382892940.JavaMail.root@zimbra.interconnessioni.it>
+References: <1913174825.1910.1336382310577.JavaMail.root@zimbra.interconnessioni.it>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Cc: Chris Mason <chris.mason@oracle.com>,
-	Josef Bacik <josef@redhat.com>, linux-btrfs@vger.kernel.org
-To: Daniel J Blueman <daniel@quora.org>
+Content-Type: text/plain; charset=utf-8
+To: linux-btrfs@vger.kernel.org
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <1336369131-6330-1-git-send-email-daniel@quora.org>
+In-Reply-To: <1913174825.1910.1336382310577.JavaMail.root@zimbra.interconnessioni.it>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Mon, May 07, 2012 at 01:38:51PM +0800, Daniel J Blueman wrote:
-> Fix BTRFS messages to print a newline where there should be one.
+Hi,
 
-Please prefix the patch subject line with 'btrfs: '
+I need some help in designing a storage structure for 1 billion of small files (<512 Bytes), and I was wondering how btrfs will fit in this scenario. Keep in mind that I never worked with btrfs - I just read some documentation and browsed this mailing list - so forgive me if my questions are silly! :X
 
-> --- a/fs/btrfs/super.c
-> +++ b/fs/btrfs/super.c
-> @@ -1501,7 +1501,7 @@ static int btrfs_interface_init(void)
->  static void btrfs_interface_exit(void)
->  {
->  	if (misc_deregister(&btrfs_misc) < 0)
-> -		printk(KERN_INFO "misc_deregister failed for control device");
-> +		printk(KERN_INFO "misc_deregister failed for control device\n");
 
-		printk(KERN_INFO "btrfs: misc_deregister failed for control device\n");
+On with the main questions, then:
 
-and here as well, otherwise ok, thanks.
+- What's the advice to maximize disk capacity using such small files, even sacrificing some speed?
 
-david
+- Would you store all the files "flat", or would you build a hierarchical tree of directories to speed up file lookups? (basically duplicating the filesystem Btree indexes)
+
+
+I tried to answer those questions, and here is what I found:
+
+it seems that the smallest block size is 4K. So, in this scenario, if every file uses a full block I will end up with lots of space wasted. Wouldn't change much if block was 2K, anyhow.
+
+I tough about compression, but is not clear to me the compression is handled at the file level or at the block level.
+
+Also I read that there is a mode that uses blocks for shared storage of metadata and data, designed for small filesystems. Haven't found any other info about it.
+
+
+Still is not yet clear to me if btrfs can fit my situation, would you recommend it over XFS?
+
+XFS has a minimum block size of 512, but BTRFS is more modern and, given the fact that is able to handle indexes on his own, it could help us speed up file operations (could it?)
+
+Thank you for any advice!
+
+Alessio Focardi
+------------------
+
+

@@ -1,77 +1,56 @@
-From: Hugo Mills <hugo@carfax.org.uk>
-Subject: Re: btrfs-raid10 <-> btrfs-raid1 confusion
-Date: Sun, 6 May 2012 21:17:06 +0100
-Message-ID: <20120506201706.GM9860@carfax.org.uk>
-References: <4FA68F50.60505@gmail.com>
- <20120506152343.GL9860@carfax.org.uk>
- <4FA6D5D0.5050501@gmail.com>
-Mime-Version: 1.0
-Content-Type: multipart/signed; micalg=pgp-sha1;
-	protocol="application/pgp-signature"; boundary="xtx0sNU5lZ46KfgK"
-Cc: linux-btrfs@vger.kernel.org
-To: Alexander Koch <lynix47@googlemail.com>
+From: Daniel J Blueman <daniel@quora.org>
+Subject: [PATCH] Add missing printing newlines
+Date: Mon,  7 May 2012 13:38:51 +0800
+Message-ID: <1336369131-6330-1-git-send-email-daniel@quora.org>
+Cc: "Josef Bacik" <josef@redhat.com>, linux-btrfs@vger.kernel.org,
+	Daniel J Blueman <daniel@quora.org>
+To: "Chris Mason" <chris.mason@oracle.com>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <4FA6D5D0.5050501@gmail.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
+Fix BTRFS messages to print a newline where there should be one.
 
---xtx0sNU5lZ46KfgK
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
+Signed-off-by: Daniel J Blueman <daniel@quora.org>
+---
+ fs/btrfs/super.c |    8 ++++----
+ 1 file changed, 4 insertions(+), 4 deletions(-)
 
-On Sun, May 06, 2012 at 09:49:36PM +0200, Alexander Koch wrote:
-> Thanks for clarifying things, Hugo :)
-> 
-> >    It won't -- "btrfs fi df" reports what's been allocated out of the
-> > raw pool. To check that the disks have been added, you need "btrfs fi
-> > show" (no parameters).
-> 
-> Okay, that gives me
-> 
->     Label: 'archive'  uuid: 3818eedb-5379-4c40-9d3d-bd91f60d9094
->         Total devices 4 FS bytes used 1.68TB
->         devid    4 size 931.51GB used 664.03GB path /dev/dm-10
->         devid    3 size 931.51GB used 664.03GB path /dev/dm-9
->         devid    2 size 1.82TB used 1.56TB path /dev/dm-8
->         devid    1 size 1.82TB used 1.56TB path /dev/dm-7
-> 
-> so I conclude all disks are successfully assigned to the raw pool for my
-> 'archive' volume.
-
-   Yes, that all looks good.
-
-> > You're not comparing the right numbers here. "btrfs fi show" shows
-> > the raw available unallocated space that the filesystem has to play
-> > with. "btrfs fi df" shows only what it's allocated so far, and how
-> > much of the atllocation it has used -- in this case, because you've
-> > added new disks, there's quite a bit of free space unallocated still,
-> > so the numbers below won't add up to anything like 3TB.
-> 
-> So how is the available space in the raw pool finally allocated to the
-> usable area? Must I manually enlarge the filesystem by issuing a
-> 'btrfs fi resize max /mountpoint' (like assigning space of a VG to a
-> logical volume in LVM) or is the space allocated automatically when the
-> filesystem gets filled with data?
-
-   The space is automatically allocated as it's needed.
-
-   Hugo.
-
+diff --git a/fs/btrfs/super.c b/fs/btrfs/super.c
+index c5f8fca..c99cb72 100644
+--- a/fs/btrfs/super.c
++++ b/fs/btrfs/super.c
+@@ -216,7 +216,7 @@ void __btrfs_abort_transaction(struct btrfs_trans_handle *trans,
+ 			       struct btrfs_root *root, const char *function,
+ 			       unsigned int line, int errno)
+ {
+-	WARN_ONCE(1, KERN_DEBUG "btrfs: Transaction aborted");
++	WARN_ONCE(1, KERN_DEBUG "btrfs: Transaction aborted\n");
+ 	trans->aborted = errno;
+ 	/* Nothing used. The other threads that have joined this
+ 	 * transaction may be able to continue. */
+@@ -511,11 +511,11 @@ int btrfs_parse_options(struct btrfs_root *root, char *options)
+ 			btrfs_set_opt(info->mount_opt, ENOSPC_DEBUG);
+ 			break;
+ 		case Opt_defrag:
+-			printk(KERN_INFO "btrfs: enabling auto defrag");
++			printk(KERN_INFO "btrfs: enabling auto defrag\n");
+ 			btrfs_set_opt(info->mount_opt, AUTO_DEFRAG);
+ 			break;
+ 		case Opt_recovery:
+-			printk(KERN_INFO "btrfs: enabling auto recovery");
++			printk(KERN_INFO "btrfs: enabling auto recovery\n");
+ 			btrfs_set_opt(info->mount_opt, RECOVERY);
+ 			break;
+ 		case Opt_skip_balance:
+@@ -1501,7 +1501,7 @@ static int btrfs_interface_init(void)
+ static void btrfs_interface_exit(void)
+ {
+ 	if (misc_deregister(&btrfs_misc) < 0)
+-		printk(KERN_INFO "misc_deregister failed for control device");
++		printk(KERN_INFO "misc_deregister failed for control device\n");
+ }
+ 
+ static int __init init_btrfs_fs(void)
 -- 
-=== Hugo Mills: hugo@... carfax.org.uk | darksatanic.net | lug.org.uk ===
-  PGP key: 515C238D from wwwkeys.eu.pgp.net or http://www.carfax.org.uk
-   --- Hey, Virtual Memory! Now I can have a *really big* ramdisk! ---   
+1.7.9.5
 
---xtx0sNU5lZ46KfgK
-Content-Type: application/pgp-signature; name="signature.asc"
-Content-Description: Digital signature
-
------BEGIN PGP SIGNATURE-----
-Version: GnuPG v1.4.11 (GNU/Linux)
-
-iD8DBQFPptxCIKyzvlFcI40RAtbxAKCnjeIvh8hfpn9485l6YwVsqBvssQCggm9M
-+ofLy+0Xdubg03tlsfxZzNk=
-=yAJF
------END PGP SIGNATURE-----
-
---xtx0sNU5lZ46KfgK--

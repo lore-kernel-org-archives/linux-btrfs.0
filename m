@@ -1,46 +1,52 @@
-From: "Fajar A. Nugraha" <list@fajar.net>
-Subject: Re: Can btrfs silently repair read-error in raid1
-Date: Tue, 8 May 2012 14:36:47 +0700
-Message-ID: <CAG1y0seZD1n5sckdFx=BAJa+KQguKd-Dj9_Ti1EhJRY0bE2B9Q@mail.gmail.com>
-References: <CAFvQSYTtcxdy=y4LiV6x8znDm+UD-or1TFMvLrUbad6d+cXqbQ@mail.gmail.com>
+From: Hullen@t-online.de (Helmut Hullen)
+Subject: Re: kernel 3.3.4 damages filesystem (?)
+Date: 08 May 2012 09:39:00 +0200
+Message-ID: <C8TEDWt9CXB@helmut.hullen.de>
+References: <201205080007.51704.Martin@lichtvoll.de>
+Reply-To: helmut@hullen.de
 Mime-Version: 1.0
-Content-Type: text/plain; charset=ISO-8859-1
-Cc: linux-btrfs@vger.kernel.org
-To: Clemens Eisserer <linuxhippy@gmail.com>
+Content-Type: text/plain; charset=US-ASCII
+To: linux-btrfs@vger.kernel.org
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <CAFvQSYTtcxdy=y4LiV6x8znDm+UD-or1TFMvLrUbad6d+cXqbQ@mail.gmail.com>
+In-Reply-To: <201205080007.51704.Martin@lichtvoll.de>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Tue, May 8, 2012 at 2:13 PM, Clemens Eisserer <linuxhippy@gmail.com> wrote:
-> Hi,
->
-> I have a quite unreliable SSD here which develops some bad blocks from
-> time to time which result in read-errors.
-> Once the block is written to again, its remapped internally and
-> everything is fine again for that block.
->
-> Would it be possible to create 2 btrfs partitions on that drive and
-> use it in RAID1 - with btrfs silently repairing read-errors when they
-> occur?
-> Would it require special settings, to not fallback to read-only mode
-> when a read-error occurs?
+Hallo, Martin,
 
-The problem would be how the SSD (and linux) behaves when it
-encounters bad blocks (not bad disks, which is easier).
+Du meintest am 08.05.12:
 
-If it does "oh, I can't read this block. I just return an error
-immediately", then it's good.
+>> No - since some years I use a kind of outsourced backup. A copy of
+>> all   data is on a bundle of disks somewhere in the neighbourhood.
+>> As mentionend: the data isn't business critical, it's just "nice to
+>> have". It's not worth something like raid1 or so (with twice the
+>> costs of a non raid solution).
 
-However, in most situation, it would be like "hmmm, I can't read this
-block, let me retry that again. What? still error? then lets retry it
-again, and again.", which could take several minutes for a single bad
-block. And during that time linux (the kernel) would do something like
-"hey, the disk is not responding. Why don't we try some stuff? Let's
-try resetting the link. If it doesn't work, try downgrading the link
-speed".
+> Thats not true when you use BTRFS RAID1 with three disks. BTRFS will
+> only store each chunk on two different drives then, not on all three.
+> Such it is not twice the cost, but given all three drives have the
+> same capacity about one and a half times the cost.
 
-In short, if you KNOW the SSD is already showing signs of bad blocks,
-better just throw it away.
+> Consider the time to recover the files from the outsourced backup.
+> Maybe it does make up the money you would have to spend for one
+> additional harddisk.
 
--- 
-Fajar
+I have considered it, many times. And the result is unchanged: no RAID1.  
+It doesn't replace a real backup.
+
+> Anyway, I agree with the others responding to your post that this one
+> harddisk died and I do not see a kernel version related issue. Any
+> striped RAID 0 would have failed in that case.
+
+Yes - I had written yesterday that the disk is dead. One of three disks.  
+I'm on the way restoring (from backup) the three disks.
+
+> And you can use three BTRFS filesystems the same way as three Ext4
+> filesystems if you prefer such a setup if the time spent for
+> restoring the backup does not make up the cost for one additional
+> disk for you.
+
+But where's the gain? If a disk fails I have a lot of tools for  
+repairing an ext2/3/4 system.
+
+Viele Gruesse!
+Helmut

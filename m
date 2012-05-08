@@ -1,52 +1,42 @@
-From: Hullen@t-online.de (Helmut Hullen)
+From: "Fajar A. Nugraha" <list@fajar.net>
 Subject: Re: kernel 3.3.4 damages filesystem (?)
-Date: 08 May 2012 09:39:00 +0200
-Message-ID: <C8TEDWt9CXB@helmut.hullen.de>
+Date: Tue, 8 May 2012 14:44:29 +0700
+Message-ID: <CAG1y0sfCN8qJ2hra0pu2H1HnsrwPNdWi=YG+nCDWAaJWT9e8oQ@mail.gmail.com>
 References: <201205080007.51704.Martin@lichtvoll.de>
-Reply-To: helmut@hullen.de
+	<C8TEDWt9CXB@helmut.hullen.de>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=US-ASCII
-To: linux-btrfs@vger.kernel.org
+Content-Type: text/plain; charset=ISO-8859-1
+Cc: linux-btrfs@vger.kernel.org
+To: helmut@hullen.de
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <201205080007.51704.Martin@lichtvoll.de>
+In-Reply-To: <C8TEDWt9CXB@helmut.hullen.de>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hallo, Martin,
+On Tue, May 8, 2012 at 2:39 PM, Helmut Hullen <Hullen@t-online.de> wrote:
 
-Du meintest am 08.05.12:
+>> And you can use three BTRFS filesystems the same way as three Ext4
+>> filesystems if you prefer such a setup if the time spent for
+>> restoring the backup does not make up the cost for one additional
+>> disk for you.
+>
+> But where's the gain? If a disk fails I have a lot of tools for
+> repairing an ext2/3/4 system.
 
->> No - since some years I use a kind of outsourced backup. A copy of
->> all   data is on a bundle of disks somewhere in the neighbourhood.
->> As mentionend: the data isn't business critical, it's just "nice to
->> have". It's not worth something like raid1 or so (with twice the
->> costs of a non raid solution).
+It won't work if you use it in RAID0 (e.g. with LVM spanning three
+disks, then use ext4 on top of the LV). Which is basically the same
+thing that you did (using btrfs in raid0 mode).
 
-> Thats not true when you use BTRFS RAID1 with three disks. BTRFS will
-> only store each chunk on two different drives then, not on all three.
-> Such it is not twice the cost, but given all three drives have the
-> same capacity about one and a half times the cost.
+As others said, if your only concern is "if a disk is dead, I want to
+be able to access data on other disks", then simply use btrfs as three
+different fs, mounted on three directories.
 
-> Consider the time to recover the files from the outsourced backup.
-> Maybe it does make up the money you would have to spend for one
-> additional harddisk.
+btrfs will shine when:
+- you need checksum and self-healing in raid10 mode
+- you have lots of small files
+- you have highly compressible content
+- you need snapshot/clone feature
 
-I have considered it, many times. And the result is unchanged: no RAID1.  
-It doesn't replace a real backup.
+Since you don't need either, IMHO it's actually better if you just use ext4.
 
-> Anyway, I agree with the others responding to your post that this one
-> harddisk died and I do not see a kernel version related issue. Any
-> striped RAID 0 would have failed in that case.
-
-Yes - I had written yesterday that the disk is dead. One of three disks.  
-I'm on the way restoring (from backup) the three disks.
-
-> And you can use three BTRFS filesystems the same way as three Ext4
-> filesystems if you prefer such a setup if the time spent for
-> restoring the backup does not make up the cost for one additional
-> disk for you.
-
-But where's the gain? If a disk fails I have a lot of tools for  
-repairing an ext2/3/4 system.
-
-Viele Gruesse!
-Helmut
+-- 
+Fajar

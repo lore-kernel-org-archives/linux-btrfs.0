@@ -1,78 +1,29 @@
-From: Miao Xie <miaox@cn.fujitsu.com>
-Subject: Re: [PATCH 2/4] Btrfs: fix deadlock on sb->s_umount when doing umount
-Date: Tue, 08 May 2012 18:38:01 +0800
-Message-ID: <4FA8F789.80208@cn.fujitsu.com>
-References: <4F98B9BC.7010905@gmail.com> <20120426114456.GN20982@twin.jikos.cz> <4F9A7B11.1020400@gmail.com> <20120430164139.GB6740@twin.jikos.cz>
-Reply-To: miaox@cn.fujitsu.com
+From: Clemens Eisserer <linuxhippy@gmail.com>
+Subject: Re: kernel 3.3.4 damages filesystem (?)
+Date: Tue, 8 May 2012 12:41:43 +0200
+Message-ID: <CAFvQSYTK1HAS+gK=SqvXngrESkG5J2nJh5r9FraVGfL7XzmoEQ@mail.gmail.com>
+References: <CAG1y0sfCN8qJ2hra0pu2H1HnsrwPNdWi=YG+nCDWAaJWT9e8oQ@mail.gmail.com>
+	<C8TEkB+PCXB@helmut.hullen.de>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=ISO-8859-1
-To: Miao Xie <miaoxie1984@gmail.com>,
-	Chris Mason <chris.mason@oracle.com>,
-	Tsutomu Itoh <t-itoh@jp.fujitsu.com>,
-	Linux Btrfs <linux-btrfs@vger.kernel.org>,
-	Linux FSDevel <linux-fsdevel@vger.kernel.org>
-Return-path: <linux-fsdevel-owner@vger.kernel.org>
-In-Reply-To: <20120430164139.GB6740@twin.jikos.cz>
+Content-Type: text/plain; charset=UTF-8
+To: helmut@hullen.de, linux-btrfs@vger.kernel.org
+Return-path: <linux-btrfs-owner@vger.kernel.org>
+In-Reply-To: <C8TEkB+PCXB@helmut.hullen.de>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Mon, 30 Apr 2012 18:41:39 +0200, David Sterba wrote:
-> On Fri, Apr 27, 2012 at 06:55:13PM +0800, Miao Xie wrote:
->> But I found you add a trylock for ->s_umount in cleaner_kthread(), this method
->> can fix the deadlock problem, I think. It may be introduced by the other patch,
->> could you send that patch to me? I found if we fail to trylock ->cleaner_mutex,
->> we will forget to unlock ->s_umount.
-> 
-> the unlock was not visible within the diff context, the full patch is:
-> 
-> --- a/fs/btrfs/disk-io.c
-> +++ b/fs/btrfs/disk-io.c
-> @@ -1578,11 +1578,13 @@ static int cleaner_kthread(void *arg)
->                 vfs_check_frozen(root->fs_info->sb, SB_FREEZE_WRITE);
-> 
->                 if (!(root->fs_info->sb->s_flags & MS_RDONLY) &&
-> +                       down_read_trylock(&root->fs_info->sb->s_umount) &&
->                     mutex_trylock(&root->fs_info->cleaner_mutex)) {
->                         btrfs_run_delayed_iputs(root);
->                         btrfs_clean_old_snapshots(root);
->                         mutex_unlock(&root->fs_info->cleaner_mutex);
->                         btrfs_run_defrag_inodes(root->fs_info);
-> +                       up_read(&root->fs_info->sb->s_umount);
->                 }
-> 
->                 if (freezing(current)) {
-> --- a/fs/btrfs/extent-tree.c
-> +++ b/fs/btrfs/extent-tree.c
-> @@ -3413,7 +3413,9 @@ static int shrink_delalloc(struct btrfs_
->                          max_reclaim >> PAGE_CACHE_SHIFT);
->         while (loops < 1024) {
->                 /* have the flusher threads jump in and do some IO */
-> -               smp_mb();
-> +               if (btrfs_fs_closing(root->fs_info))
-> +                       return -EAGAIN;
-> +
->                 nr_pages = min_t(unsigned long, nr_pages,
->                        root->fs_info->delalloc_bytes >> PAGE_CACHE_SHIFT);
->                 writeback_inodes_sb_nr_if_idle(root->fs_info->sb, nr_pages);
-> ---
-> 
-> after close_tree starts the "fs_closing" check will prevent further
-> calls to writeback. I don't remember from who the patch acutally comes
-> from (via irc), it was noted as a workaround for the cleaner deadlock
-> until it gets fully solved (re your patches
-> http://www.mail-archive.com/linux-btrfs@vger.kernel.org/msg13897.html
-> and reference to balance and scrub:
-> http://www.spinics.net/lists/linux-btrfs/msg14056.html
-> )
+Hi Helmut,
 
-Sorry, I forget to reply this mail.
+>> But where's the gain? If a disk fails I have a lot of tools for
+>> repairing an ext2/3/4 system.
 
-I think this method can not fix the problem safely because if the other
-background threads(not the cleaner) call shrink_delalloc(), the problem
-can still occur.
+Nope, when a disk in your ext4 raid0 array fails, you are just as doomed.
 
-Though trylock for the cleaner can not fix this problem, I think the cleaner
-still need trylock ->s_umount, in this way, we can stop the cleaner making
-lots of dirty pages when we do readonly remount or umount.
 
-Thanks
-Miao
+> But when I use ext2/3/4 I neither need RAID0 nor do I need LVM.
+
+You can use btrfs, without using its raid capabilities.
+Face it, you used an experimental filesystem and you configured it the
+wrong way.
+Btrfs is not the one to blame here.
+
+- Clemens

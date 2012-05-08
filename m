@@ -1,63 +1,88 @@
-From: Roman Mamedov <rm@romanrm.ru>
+From: Hubert Kario <hka@qbs.com.pl>
 Subject: Re: kernel 3.3.4 damages filesystem (?)
-Date: Wed, 9 May 2012 02:56:46 +0600
-Message-ID: <20120509025646.2894f7ea@natsu>
-References: <20120508200228.GM8938@carfax.org.uk>
-	<C8TGo1T9CXB@helmut.hullen.de>
+Date: Tue, 08 May 2012 23:42:10 +0200
+Message-ID: <5156602.piaP8M9t4d@bursa22>
+References: <C8TEkB+PCXB@helmut.hullen.de>
 Mime-Version: 1.0
-Content-Type: multipart/signed; micalg=PGP-SHA1;
- boundary="Sig_/zENJFH=kR2DmBq_jXCnKa=s"; protocol="application/pgp-signature"
-Cc: Hullen@t-online.de, linux-btrfs@vger.kernel.org
+Content-Type: text/plain; charset=iso-8859-1
+Cc: linux-btrfs@vger.kernel.org
 To: helmut@hullen.de
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <C8TGo1T9CXB@helmut.hullen.de>
+In-Reply-To: <C8TEkB+PCXB@helmut.hullen.de>
 List-ID: <linux-btrfs.vger.kernel.org>
 
---Sig_/zENJFH=kR2DmBq_jXCnKa=s
-Content-Type: text/plain; charset=US-ASCII
-Content-Transfer-Encoding: quoted-printable
+On Tuesday 08 of May 2012 12:00:00 Helmut Hullen wrote:
+> Hallo, Fajar,
+>=20
+> Du meintest am 08.05.12:
+> >>> And you can use three BTRFS filesystems the same way as three Ext=
+4
+> >>> filesystems if you prefer such a setup if the time spent for
+> >>> restoring the backup does not make up the cost for one additional
+> >>> disk for you.
+> >>=20
+> >> But where's the gain? If a disk fails I have a lot of tools for
+> >> repairing an ext2/3/4 system.
+> >=20
+> > It won't work if you use it in RAID0 (e.g. with LVM spanning three
+> > disks, then use ext4 on top of the LV).
+>=20
+> But when I use ext2/3/4 I neither need RAID0 nor do I need LVM.
+>=20
+> > As others said, if your only concern is "if a disk is dead, I want =
+to
+> > be able to access data on other disks", then simply use btrfs as
+> > three different fs, mounted on three directories.
+>=20
+> But then I don't need especially btrfs.
+>=20
+> > btrfs will shine when:
+> > - you need checksum and self-healing in raid10 mode
+> > - you have lots of small files
+> > - you have highly compressible content
+> > - you need snapshot/clone feature
+>=20
+> For my video collection (mpeg2) nothing fits ...
+>=20
+> The only advantage I see with btrfs is
+>=20
+>         adding a bigger disk
+>         deleting/removing a smaller disk
+>=20
+> with really simple commands.
 
-On 08 May 2012 22:19:00 +0200
-Hullen@t-online.de (Helmut Hullen) wrote:
+Playing the Devil's advocate here (not that I don't use The Other Linux=
+ FS=20
+;)
 
-> What I still hope (may be it's impossible): when 1 disk/partition fails, =
-=20
-> then the contents of the other disks is "somehow" restorable. And not =20
-> irreproducable.
+I don't see btrfs commands much different from
+pvcreate /dev/new-disk
+vgextend videos-volume-42 /dev/new-disk
+pvmove /dev/old-disk /dev/new-disk
+vgreduce videos-volume-42 /dev/old-disk
+resize2fs /dev/videos-volume-42/logical-volume
 
-You should look for file/directory-level tree merging, e.g. this FUSE based
-virtual FS:=20
+Unlike with shrinking, there's really no place for error. Messing up th=
+ose=20
+commands will give quite clear error messages and definetly won't destr=
+oy=20
+data (unless a hardware error occurs). And the FS on the LV is online a=
+ll=20
+the time, just like with btrfs.
 
-  https://romanrm.ru/en/mhddfs
+The only difference is that with btrfs you can both extend and shrink t=
+he FS=20
+online, with ext2/3/4 you can only extend online...
 
-Or various other unionfs'es, some of which are kernel-based.
-
-Regarding btrfs, AFAIK even "btrfs -d single" suggested above works not "per
-file", but per allocation extent, so in case of one disk failure you will l=
-ose
-random *parts* (extents) of random files, which in effect could mean no file
-in your whole file system will remain undamaged.
-
+Regards,
 --=20
-With respect,
-Roman
-
-~~~~~~~~~~~~~~~~~~~~~~~~~~~
-"Stallman had a printer,
-with code he could not see.
-So he began to tinker,
-and set the software free."
-
---Sig_/zENJFH=kR2DmBq_jXCnKa=s
-Content-Type: application/pgp-signature; name=signature.asc
-Content-Disposition: attachment; filename=signature.asc
-
------BEGIN PGP SIGNATURE-----
-Version: GnuPG v1.4.12 (GNU/Linux)
-
-iEYEARECAAYFAk+piI4ACgkQTLKSvz+PZwi9KwCbBE38hAKs5+4D4Us+nOPN2vus
-PZkAn0iLutwgAI5yNviWaVFcpcRSAT82
-=KfnH
------END PGP SIGNATURE-----
-
---Sig_/zENJFH=kR2DmBq_jXCnKa=s--
+Hubert Kario
+QBS - Quality Business Software
+02-656 Warszawa, ul. Ksawer=F3w 30/85
+tel. +48 (22) 646-61-51, 646-74-24
+www.qbs.com.pl
+--
+To unsubscribe from this list: send the line "unsubscribe linux-btrfs" =
+in
+the body of a message to majordomo@vger.kernel.org
+More majordomo info at  http://vger.kernel.org/majordomo-info.html

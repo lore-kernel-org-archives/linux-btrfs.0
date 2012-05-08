@@ -1,31 +1,50 @@
-From: David Sterba <dave@jikos.cz>
-Subject: Re: [PATCH 2/4] Btrfs: fix deadlock on sb->s_umount when doing umount
-Date: Tue, 8 May 2012 17:33:26 +0200
-Message-ID: <20120508153326.GI19331@twin.jikos.cz>
-References: <4F98B9BC.7010905@gmail.com>
- <20120426114456.GN20982@twin.jikos.cz>
- <4F9A7B11.1020400@gmail.com>
- <20120430164139.GB6740@twin.jikos.cz>
- <4FA8F789.80208@cn.fujitsu.com>
-Reply-To: dave@jikos.cz
+From: Martin <m_btrfs@ml1.co.uk>
+Subject: Re: btrfs and 1 billion small files
+Date: Tue, 08 May 2012 17:46:13 +0100
+Message-ID: <jobikm$j9b$1@dough.gmane.org>
+References: <711331964.2091.1336382892940.JavaMail.root@zimbra.interconnessioni.it> <4FA7AC73.5080903@gmail.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Cc: Miao Xie <miaoxie1984@gmail.com>,
-	Chris Mason <chris.mason@oracle.com>,
-	Tsutomu Itoh <t-itoh@jp.fujitsu.com>,
-	Linux Btrfs <linux-btrfs@vger.kernel.org>,
-	Linux FSDevel <linux-fsdevel@vger.kernel.org>
-To: Miao Xie <miaox@cn.fujitsu.com>
+Content-Type: text/plain; charset=UTF-8
+To: linux-btrfs@vger.kernel.org
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <4FA8F789.80208@cn.fujitsu.com>
+In-Reply-To: <4FA7AC73.5080903@gmail.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Tue, May 08, 2012 at 06:38:01PM +0800, Miao Xie wrote:
-> I think this method can not fix the problem safely because if the other
-> background threads(not the cleaner) call shrink_delalloc(), the problem
-> can still occur.
+On 07/05/12 12:05, vivo75@gmail.com wrote:
+> Il 07/05/2012 11:28, Alessio Focardi ha scritto:
+>> Hi,
+>>
+>> I need some help in designing a storage structure for 1 billion of
+>> small files (<512 Bytes), and I was wondering how btrfs will fit in
+>> this scenario. Keep in mind that I never worked with btrfs - I just
+>> read some documentation and browsed this mailing list - so forgive me
+>> if my questions are silly! :X
 
-And it does not indeed fix the problem completely, I found xfstests/269
-hung inside cleaner and defrag (mounted with autodefrag).
+> Are you *really* sure a database is *not* what are you looking for?
 
-david
+My thought also.
+
+
+Or:
+
+1 billion 512 byte files... Is that not a 512GByte HDD?
+
+With that, use a database to index your data by sector number and
+read/write your data direct to the disk?
+
+For that example, your database just holds filename, size, and sector.
+
+
+If your 512 byte files are written and accessed sequentially, then just
+use a HDD and address them by sector number from a database index. That
+then becomes your 'filesystem'.
+
+If you need fast random access, then use SSDs.
+
+
+Plausible?
+
+Regards,
+Martin
+
+

@@ -1,42 +1,55 @@
-From: Hullen@t-online.de (Helmut Hullen)
-Subject: Re: kernel 3.3.4 damages filesystem (?)
-Date: 08 May 2012 22:19:00 +0200
-Message-ID: <C8TGo1T9CXB@helmut.hullen.de>
-References: <20120508200228.GM8938@carfax.org.uk>
-Reply-To: helmut@hullen.de
+From: Chris Mason <chris.mason@oracle.com>
+Subject: Re: btrfs and 1 billion small files
+Date: Tue, 8 May 2012 16:54:39 -0400
+Message-ID: <20120508205439.GE11876@shiny>
+References: <1913174825.1910.1336382310577.JavaMail.root@zimbra.interconnessioni.it>
+ <711331964.2091.1336382892940.JavaMail.root@zimbra.interconnessioni.it>
+ <20120508123153.GS11876@shiny>
+ <jobitp$lju$1@dough.gmane.org>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=US-ASCII
-To: linux-btrfs@vger.kernel.org
+Content-Type: text/plain; charset=us-ascii
+Cc: linux-btrfs@vger.kernel.org
+To: Martin <m_btrfs@ml1.co.uk>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <20120508200228.GM8938@carfax.org.uk>
+In-Reply-To: <jobitp$lju$1@dough.gmane.org>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hallo, Hugo,
+On Tue, May 08, 2012 at 05:51:05PM +0100, Martin wrote:
+> On 08/05/12 13:31, Chris Mason wrote:
+> 
+> [...]
+> > A few people have already mentioned how btrfs will pack these small
+> > files into metadata blocks.  If you're running btrfs on a single disk,
+> 
+> [...]
+> > But the cost is increased CPU usage.  Btrfs hits memmove and memcpy
+> > pretty hard when you're using larger blocks.
+> > 
+> > I suggest using a 16K or 32K block size.  You can go up to 64K, it may
+> > work well if you have beefy CPUs.  Example for 16K:
+> > 
+> > mkfs.btrfs -l 16K -n 16K /dev/xxx
+> 
+> Is that still with "-s 4K" ?
 
-Du meintest am 08.05.12:
+Yes, the data sector size should still be the same as the page size.
 
->>> Otherwise if you remove a disk from a raid0 (doesn't matter if you
->>> have 2 or 5 or x disks in the fs, btrfs should stripe above all
->>> disks) your fs should be broken.
+> 
+> 
+> Might that help SSDs that work in 16kByte chunks?
 
->> Not with btrfs ... there it works even with
->>
->>   mkfs.btrfs -m raid1 -d raid0 ...
+Most ssds today work in much larger chunks, so the bulk of the benefit
+comes from better packing, and fewer extent records required to hold the
+same amount of metadata.
 
->    There is a big difference between "orderly and planned removal of
-> a hard disk", and "disk goes away with no warning".
+> 
+> And why are memmove and memcpy more heavily used?
+> 
+> Does that suggest better optimisation of the (meta)data, or just a
+> greater housekeeping overhead to shuffle data to new offsets?
 
-And I know the difference ...
+Inserting something into the middle of a block is more expensive because
+we have to shift left and right first.  The bigger the block, the more
+we have to shift.
 
-When I first called for help I searched the failure in another place  
-than in "disk is dead".
-
-> This is essentially the difference you've been talking about at cross-
-> purposes all day.
-
-What I still hope (may be it's impossible): when 1 disk/partition fails,  
-then the contents of the other disks is "somehow" restorable. And not  
-irreproducable.
-
-Viele Gruesse!
-Helmut
+-chris

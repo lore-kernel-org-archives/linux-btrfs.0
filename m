@@ -1,42 +1,47 @@
-From: Martin <m_btrfs@ml1.co.uk>
-Subject: Re: btrfs and 1 billion small files
-Date: Tue, 08 May 2012 17:51:05 +0100
-Message-ID: <jobitp$lju$1@dough.gmane.org>
-References: <1913174825.1910.1336382310577.JavaMail.root@zimbra.interconnessioni.it> <711331964.2091.1336382892940.JavaMail.root@zimbra.interconnessioni.it> <20120508123153.GS11876@shiny>
+From: Hullen@t-online.de (Helmut Hullen)
+Subject: Re: kernel 3.3.4 damages filesystem (?)
+Date: 08 May 2012 18:53:00 +0200
+Message-ID: <C8TFrQEeCXB@helmut.hullen.de>
+References: <4FA9232C.4020308@gmail.com>
+Reply-To: helmut@hullen.de
 Mime-Version: 1.0
-Content-Type: text/plain; charset=ISO-8859-1
+Content-Type: text/plain; charset=US-ASCII
 To: linux-btrfs@vger.kernel.org
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <20120508123153.GS11876@shiny>
+In-Reply-To: <4FA9232C.4020308@gmail.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 08/05/12 13:31, Chris Mason wrote:
+Hallo, Felix,
 
-[...]
-> A few people have already mentioned how btrfs will pack these small
-> files into metadata blocks.  If you're running btrfs on a single disk,
+Du meintest am 08.05.12:
 
-[...]
-> But the cost is increased CPU usage.  Btrfs hits memmove and memcpy
-> pretty hard when you're using larger blocks.
-> 
-> I suggest using a 16K or 32K block size.  You can go up to 64K, it may
-> work well if you have beefy CPUs.  Example for 16K:
-> 
-> mkfs.btrfs -l 16K -n 16K /dev/xxx
+>> Why should I use RAID0 with a bundle of ext2/3/4? Mounting on/in the
+>> directory tree does the job.
 
-Is that still with "-s 4K" ?
+> Nobody told you that you should do it. What EVERYBODY here is telling
+> you: The problem you have right now would be the same damn problem,
+> no matter what fs you would you. Every fs will be unusable if you
+> lose one disk in a raid0 setup. That's all what we are trying to tell
+> you for the last 15 mails :)
 
+> If you don't see any benefits using btrfs then simply don't  use it
 
-Might that help SSDs that work in 16kByte chunks?
+I still hope for a benefit when I use btrfs.
 
-And why are memmove and memcpy more heavily used?
+As I've written many times: I want a system for my video collection  
+which allows
 
-Does that suggest better optimisation of the (meta)data, or just a
-greater housekeeping overhead to shuffle data to new offsets?
+        adding a bigger disk
+        deleting/removing a smaller disk
 
+with simple commands.
 
-Regards,
-Martin
+btrfs seems to be able to do that (and I have tested this job many  
+times). But with my configuration "mkfs.btrfs -m raid1 -d raid0" I've  
+(again) seen that all data vanishes when 1 disk fails.
 
+I'll try Hugo's proposal "mkfs.btrfs -m raid1 -d single".
+And I hope that it doesn't make all disks unreadable when 1 disk fails.
 
+Viele Gruesse!
+Helmut

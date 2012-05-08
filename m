@@ -1,48 +1,40 @@
 From: Martin <m_btrfs@ml1.co.uk>
 Subject: Re: btrfs and 1 billion small files
-Date: Tue, 08 May 2012 17:46:13 +0100
-Message-ID: <jobikm$j9b$1@dough.gmane.org>
-References: <711331964.2091.1336382892940.JavaMail.root@zimbra.interconnessioni.it> <4FA7AC73.5080903@gmail.com>
+Date: Tue, 08 May 2012 17:51:05 +0100
+Message-ID: <jobitp$lju$1@dough.gmane.org>
+References: <1913174825.1910.1336382310577.JavaMail.root@zimbra.interconnessioni.it> <711331964.2091.1336382892940.JavaMail.root@zimbra.interconnessioni.it> <20120508123153.GS11876@shiny>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=UTF-8
+Content-Type: text/plain; charset=ISO-8859-1
 To: linux-btrfs@vger.kernel.org
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <4FA7AC73.5080903@gmail.com>
+In-Reply-To: <20120508123153.GS11876@shiny>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 07/05/12 12:05, vivo75@gmail.com wrote:
-> Il 07/05/2012 11:28, Alessio Focardi ha scritto:
->> Hi,
->>
->> I need some help in designing a storage structure for 1 billion of
->> small files (<512 Bytes), and I was wondering how btrfs will fit in
->> this scenario. Keep in mind that I never worked with btrfs - I just
->> read some documentation and browsed this mailing list - so forgive me
->> if my questions are silly! :X
+On 08/05/12 13:31, Chris Mason wrote:
 
-> Are you *really* sure a database is *not* what are you looking for?
+[...]
+> A few people have already mentioned how btrfs will pack these small
+> files into metadata blocks.  If you're running btrfs on a single disk,
 
-My thought also.
+[...]
+> But the cost is increased CPU usage.  Btrfs hits memmove and memcpy
+> pretty hard when you're using larger blocks.
+> 
+> I suggest using a 16K or 32K block size.  You can go up to 64K, it may
+> work well if you have beefy CPUs.  Example for 16K:
+> 
+> mkfs.btrfs -l 16K -n 16K /dev/xxx
 
-
-Or:
-
-1 billion 512 byte files... Is that not a 512GByte HDD?
-
-With that, use a database to index your data by sector number and
-read/write your data direct to the disk?
-
-For that example, your database just holds filename, size, and sector.
+Is that still with "-s 4K" ?
 
 
-If your 512 byte files are written and accessed sequentially, then just
-use a HDD and address them by sector number from a database index. That
-then becomes your 'filesystem'.
+Might that help SSDs that work in 16kByte chunks?
 
-If you need fast random access, then use SSDs.
+And why are memmove and memcpy more heavily used?
 
+Does that suggest better optimisation of the (meta)data, or just a
+greater housekeeping overhead to shuffle data to new offsets?
 
-Plausible?
 
 Regards,
 Martin

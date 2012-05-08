@@ -1,160 +1,137 @@
-From: Yuanhan Liu <yuanhan.liu@linux.intel.com>
-Subject: [PATCH] Btrfs: use ALIGN macro instead of open-coded expression
-Date: Tue,  8 May 2012 16:16:24 +0800
-Message-ID: <1336464984-30746-1-git-send-email-yuanhan.liu@linux.intel.com>
-Cc: linux-kernel@vger.kernel.org,
-	Yuanhan Liu <yuanhan.liu@linux.intel.com>
-To: chris.mason@oracle.com, linux-btrfs@vger.kernel.org
-Return-path: <linux-kernel-owner@vger.kernel.org>
+From: Daniel J Blueman <daniel@quora.org>
+Subject: 3.4-rc6: delayed alloc deadlock...
+Date: Tue, 8 May 2012 16:56:27 +0800
+Message-ID: <CAMVG2st1p8xkgOj7dknGSNtX5y42tv_tmnsUjZFQkMP3dXa9rw@mail.gmail.com>
+Mime-Version: 1.0
+Content-Type: text/plain; charset=ISO-8859-1
+Cc: Josef Bacik <josef@redhat.com>, Jeff Mahoney <jeffm@suse.com>,
+	Linux BTRFS <linux-btrfs@vger.kernel.org>
+To: Chris Mason <chris.mason@oracle.com>
+Return-path: <linux-btrfs-owner@vger.kernel.org>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-According to section 'Find open-coded helpers or macros' at
-https://btrfs.wiki.kernel.org/index.php/Cleanup_ideas, here
-in the patch we use ALIGN macro to do the alignment.
+Delayed allocation ref mutexes are taken [1] inside
+btrfs_commit_transaction. A later call fails and jumps to the
+cleanup_transaction label (transaction.c:1501) with these mutexes
+still held causing deadlock [2] when they are reacquired.
 
-Signed-off-by: Yuanhan Liu <yuanhan.liu@linux.intel.com>
----
- fs/btrfs/extent-tree.c |    4 ++--
- fs/btrfs/extent_io.c   |    9 ++++-----
- fs/btrfs/inode.c       |   15 +++++----------
- fs/btrfs/volumes.c     |    3 +--
- 4 files changed, 12 insertions(+), 19 deletions(-)
+Either we can introduce an earlier label (cleanup_transaction_lock)
+and function to unlock these mutexes or can tweak
+btrfs_destroy_delayed_refs to conditionally use mutex_try_lock.
 
-diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
-index 49fd7b6..9161dca 100644
---- a/fs/btrfs/extent-tree.c
-+++ b/fs/btrfs/extent-tree.c
-@@ -3280,7 +3280,7 @@ int btrfs_check_data_free_space(struct inode *inode, u64 bytes)
- 	int ret = 0, committed = 0, alloc_chunk = 1;
- 
- 	/* make sure bytes are sectorsize aligned */
--	bytes = (bytes + root->sectorsize - 1) & ~((u64)root->sectorsize - 1);
-+	bytes = ALIGN(bytes, root->sectorsize);
- 
- 	if (root == root->fs_info->tree_root ||
- 	    BTRFS_I(inode)->location.objectid == BTRFS_FREE_INO_OBJECTID) {
-@@ -3377,7 +3377,7 @@ void btrfs_free_reserved_data_space(struct inode *inode, u64 bytes)
- 	struct btrfs_space_info *data_sinfo;
- 
- 	/* make sure bytes are sectorsize aligned */
--	bytes = (bytes + root->sectorsize - 1) & ~((u64)root->sectorsize - 1);
-+	bytes = ALIGN(bytes, root->sectorsize);
- 
- 	data_sinfo = BTRFS_I(inode)->space_info;
- 	spin_lock(&data_sinfo->lock);
-diff --git a/fs/btrfs/extent_io.c b/fs/btrfs/extent_io.c
-index c9018a0..b1bc411 100644
---- a/fs/btrfs/extent_io.c
-+++ b/fs/btrfs/extent_io.c
-@@ -2653,7 +2653,7 @@ static int __extent_read_full_page(struct extent_io_tree *tree,
- 
- 		iosize = min(extent_map_end(em) - cur, end - cur + 1);
- 		cur_end = min(extent_map_end(em) - 1, end);
--		iosize = (iosize + blocksize - 1) & ~((u64)blocksize - 1);
-+		iosize = ALIGN(iosize, blocksize);
- 		if (this_bio_flag & EXTENT_BIO_COMPRESSED) {
- 			disk_io_size = em->block_len;
- 			sector = em->block_start >> 9;
-@@ -2950,7 +2950,7 @@ static int __extent_writepage(struct page *page, struct writeback_control *wbc,
- 		BUG_ON(extent_map_end(em) <= cur);
- 		BUG_ON(end < cur);
- 		iosize = min(extent_map_end(em) - cur, end - cur + 1);
--		iosize = (iosize + blocksize - 1) & ~((u64)blocksize - 1);
-+		iosize = ALIGN(iosize, blocksize);
- 		sector = (em->block_start + extent_offset) >> 9;
- 		bdev = em->bdev;
- 		block_start = em->block_start;
-@@ -3580,7 +3580,7 @@ int extent_invalidatepage(struct extent_io_tree *tree,
- 	u64 end = start + PAGE_CACHE_SIZE - 1;
- 	size_t blocksize = page->mapping->host->i_sb->s_blocksize;
- 
--	start += (offset + blocksize - 1) & ~(blocksize - 1);
-+	start += ALIGN(offset, blocksize);
- 	if (start > end)
- 		return 0;
- 
-@@ -3688,7 +3688,6 @@ static struct extent_map *get_extent_skip_holes(struct inode *inode,
- 						u64 last,
- 						get_extent_t *get_extent)
- {
--	u64 sectorsize = BTRFS_I(inode)->root->sectorsize;
- 	struct extent_map *em;
- 	u64 len;
- 
-@@ -3699,7 +3698,7 @@ static struct extent_map *get_extent_skip_holes(struct inode *inode,
- 		len = last - offset;
- 		if (len == 0)
- 			break;
--		len = (len + sectorsize - 1) & ~(sectorsize - 1);
-+		len = ALIGN(len, BTRFS_I(inode)->root->sectorsize);
- 		em = get_extent(inode, NULL, 0, offset, len, 0);
- 		if (IS_ERR_OR_NULL(em))
- 			return em;
-diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
-index 61b16c6..af5d6a9 100644
---- a/fs/btrfs/inode.c
-+++ b/fs/btrfs/inode.c
-@@ -228,8 +228,7 @@ static noinline int cow_file_range_inline(struct btrfs_trans_handle *trans,
- 	u64 isize = i_size_read(inode);
- 	u64 actual_end = min(end + 1, isize);
- 	u64 inline_len = actual_end - start;
--	u64 aligned_end = (end + root->sectorsize - 1) &
--			~((u64)root->sectorsize - 1);
-+	u64 aligned_end = ALIGN(end, root->sectorsize);
- 	u64 hint_byte;
- 	u64 data_len = inline_len;
- 	int ret;
-@@ -483,15 +482,13 @@ cont:
- 		 * up to a block size boundary so the allocator does sane
- 		 * things
- 		 */
--		total_compressed = (total_compressed + blocksize - 1) &
--			~(blocksize - 1);
-+		total_compressed = ALIGN(total_compressed, blocksize);
- 
- 		/*
- 		 * one last check to make sure the compression is really a
- 		 * win, compare the page count read with the blocks on disk
- 		 */
--		total_in = (total_in + PAGE_CACHE_SIZE - 1) &
--			~(PAGE_CACHE_SIZE - 1);
-+		total_in = ALIGN(total_in, PAGE_CACHE_SIZE);
- 		if (total_compressed >= total_in) {
- 			will_compress = 0;
- 		} else {
-@@ -5194,8 +5191,7 @@ again:
- 	} else if (found_type == BTRFS_FILE_EXTENT_INLINE) {
- 		size_t size;
- 		size = btrfs_file_extent_inline_len(leaf, item);
--		extent_end = (extent_start + size + root->sectorsize - 1) &
--			~((u64)root->sectorsize - 1);
-+		extent_end = ALIGN(extent_start + size, root->sectorsize);
- 	}
- 
- 	if (start >= extent_end) {
-@@ -5265,8 +5261,7 @@ again:
- 		copy_size = min_t(u64, PAGE_CACHE_SIZE - pg_offset,
- 				size - extent_offset);
- 		em->start = extent_start + extent_offset;
--		em->len = (copy_size + root->sectorsize - 1) &
--			~((u64)root->sectorsize - 1);
-+		em->len = ALIGN(copy_size, root->sectorsize);
- 		em->orig_start = EXTENT_MAP_INLINE;
- 		if (compress_type) {
- 			set_bit(EXTENT_FLAG_COMPRESSED, &em->flags);
-diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
-index 1411b99..e09aab3 100644
---- a/fs/btrfs/volumes.c
-+++ b/fs/btrfs/volumes.c
-@@ -3761,8 +3761,7 @@ static int __btrfs_map_block(struct btrfs_mapping_tree *map_tree, int rw,
- 	num_stripes = 1;
- 	stripe_index = 0;
- 	stripe_nr_orig = stripe_nr;
--	stripe_nr_end = (offset + *length + map->stripe_len - 1) &
--			(~(map->stripe_len - 1));
-+	stripe_nr_end = ALIGN(offset + *length, map->stripe_len);
- 	do_div(stripe_nr_end, map->stripe_len);
- 	stripe_end_offset = stripe_nr_end * map->stripe_len -
- 			    (offset + *length);
+What is the suggested approach?
+
+Thanks,
+  Daniel
+
+--- [1]
+
+btrfs_commit_transaction -> btrfs_run_delayed_refs ->
+run_clustered_refs -> btrfs_delayed_ref_lock -> struct
+btrfs_delayed_ref_head -> mutex
+
+--- [2]
+
+btrfs bad tree block start 0 39845888
+btrfs bad tree block start 0 39845888
+btrfs: run_one_delayed_ref returned -5
+WARNING: at fs/btrfs/super.c:219 __btrfs_abort_transaction+0xa6/0xc0 [btrfs]()
+Hardware name: Latitude E5420
+btrfs: Transaction aborted
+Modules linked in: brd nls_iso8859_1 nls_cp437 vfat fat dm_crypt
+dm_mod kvm_intel kvm coretemp binfmt_misc microcode uvcvideo
+videobuf2_core videodev videobuf2_vmalloc videobuf2_memops iwlwifi
+btrfs i915 cfbcopyarea cfbimgblt cfbfillrect video usb_storage
+Pid: 14985, comm: btrfs-endio-wri Tainted: G        W    3.4.0-rc6-debug #14
+Call Trace:
+ [<ffffffff8103c5ca>] warn_slowpath_common+0x7a/0xb0
+ [<ffffffff8103c6a1>] warn_slowpath_fmt+0x41/0x50
+ [<ffffffff8108e9cd>] ? __lock_release+0xad/0xd0
+ [<ffffffffa0094c76>] __btrfs_abort_transaction+0xa6/0xc0 [btrfs]
+ [<ffffffffa00a87a6>] btrfs_run_delayed_refs+0x296/0x300 [btrfs]
+ [<ffffffffa00b9ad7>] __btrfs_end_transaction+0xa7/0x360 [btrfs]
+ [<ffffffffa00b9df0>] btrfs_end_transaction+0x10/0x20 [btrfs]
+ [<ffffffffa00c049d>] btrfs_finish_ordered_io+0x17d/0x3b0 [btrfs]
+ [<ffffffff8108f505>] ? trace_hardirqs_on_caller+0x105/0x190
+ [<ffffffffa00c06e5>] btrfs_writepage_end_io_hook+0x15/0x20 [btrfs]
+ [<ffffffffa00dbbb8>] end_extent_writepage+0x58/0x100 [btrfs]
+ [<ffffffffa00dbcc4>] end_bio_extent_writepage+0x64/0x90 [btrfs]
+ [<ffffffff81147458>] bio_endio+0x18/0x30
+ [<ffffffffa00b1efc>] end_workqueue_fn+0x3c/0x50 [btrfs]
+ [<ffffffffa00e8cc6>] worker_loop+0x86/0x330 [btrfs]
+ [<ffffffffa00e8c40>] ? check_pending_worker_creates.isra.1+0xd0/0xd0 [btrfs]
+ [<ffffffff8105da6e>] kthread+0x8e/0xa0
+ [<ffffffff815b1b94>] kernel_thread_helper+0x4/0x10
+ [<ffffffff815b0259>] ? retint_restore_args+0xe/0xe
+ [<ffffffff8105d9e0>] ? __init_kthread_worker+0x70/0x70
+ [<ffffffff815b1b90>] ? gs_change+0xb/0xb
+---[ end trace df06b72f93439fa3 ]---
+BTRFS warning (device ram1): Aborting unused transaction.
+btrfs bad tree block start 0 39845888
+btrfs bad tree block start 0 39845888
+btrfs: run_one_delayed_ref returned -5
+BTRFS error (device ram1) in btrfs_run_delayed_refs:2454: IO failure
+btrfs is forced readonly
+BTRFS warning (device ram1): Skipping commit of aborted transaction.
+
+=============================================
+[ INFO: possible recursive locking detected ]
+3.4.0-rc6-debug #14 Tainted: G        W
+---------------------------------------------
+btrfs/18749 is trying to acquire lock:
+ (&head_ref->mutex){+.+...}, at: [<ffffffffa00b22a9>]
+btrfs_destroy_delayed_refs.isra.96+0xf9/0x210 [btrfs]
+
+but task is already holding lock:
+ (&head_ref->mutex){+.+...}, at: [<ffffffffa00fce07>]
+btrfs_delayed_ref_lock+0x37/0x140 [btrfs]
+
+other info that might help us debug this:
+ Possible unsafe locking scenario:
+
+       CPU0
+       ----
+  lock(&head_ref->mutex);
+  lock(&head_ref->mutex);
+
+ *** DEADLOCK ***
+
+ May be due to missing lock nesting notation
+
+3 locks held by btrfs/18749:
+ #0:  (&type->i_mutex_dir_key#4/1){+.+.+.}, at: [<ffffffffa00eb86e>]
+btrfs_mksubvol+0x4e/0x1a0 [btrfs]
+ #1:  (&fs_info->subvol_sem){++++..}, at: [<ffffffffa00eb927>]
+btrfs_mksubvol+0x107/0x1a0 [btrfs]
+ #2:  (&head_ref->mutex){+.+...}, at: [<ffffffffa00fce07>]
+btrfs_delayed_ref_lock+0x37/0x140 [btrfs]
+
+stack backtrace:
+Pid: 18749, comm: btrfs Tainted: G        W    3.4.0-rc6-debug #14
+Call Trace:
+ [<ffffffff8108b913>] print_deadlock_bug+0xf3/0x100
+ [<ffffffff8108bb02>] check_deadlock.isra.29+0x1e2/0x1f0
+ [<ffffffff8108d443>] validate_chain.isra.33+0x383/0x510
+ [<ffffffff8108dff8>] __lock_acquire+0x388/0x900
+ [<ffffffff8108ea95>] lock_acquire+0x55/0x70
+ [<ffffffffa00b22a9>] ? btrfs_destroy_delayed_refs.isra.96+0xf9/0x210 [btrfs]
+ [<ffffffff815ad38b>] mutex_lock_nested+0x6b/0x340
+ [<ffffffffa00b22a9>] ? btrfs_destroy_delayed_refs.isra.96+0xf9/0x210 [btrfs]
+ [<ffffffff8108e9cd>] ? __lock_release+0xad/0xd0
+ [<ffffffffa00b22a9>] btrfs_destroy_delayed_refs.isra.96+0xf9/0x210 [btrfs]
+ [<ffffffffa00b5682>] btrfs_cleanup_one_transaction+0x12/0x100 [btrfs]
+ [<ffffffffa00b8976>] cleanup_transaction+0x76/0xf0 [btrfs]
+ [<ffffffffa00b91f1>] btrfs_commit_transaction+0xf1/0x900 [btrfs]
+ [<ffffffff8105e250>] ? __init_waitqueue_head+0x60/0x60
+ [<ffffffffa00eb7eb>] create_snapshot.isra.46+0x1ab/0x1e0 [btrfs]
+ [<ffffffffa00eb955>] btrfs_mksubvol+0x135/0x1a0 [btrfs]
+ [<ffffffff811158e0>] ? files_lglock_local_lock+0x70/0x70
+ [<ffffffffa00ebaea>] btrfs_ioctl_snap_create_transid+0x12a/0x190 [btrfs]
+ [<ffffffffa00ec8b0>] btrfs_ioctl_snap_create_v2.constprop.57+0xe0/0xf0 [btrfs]
+ [<ffffffff815ae241>] ? __schedule+0x351/0x8b0
+ [<ffffffffa00eee39>] btrfs_ioctl+0x409/0x770 [btrfs]
+ [<ffffffff81128767>] do_vfs_ioctl+0x87/0x340
+ [<ffffffff81128a6a>] sys_ioctl+0x4a/0x80
+ [<ffffffff815b09a2>] system_call_fastpath+0x16/0x1b
 -- 
-1.7.7.6
+Daniel J Blueman

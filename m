@@ -1,83 +1,78 @@
-From: Hullen@t-online.de (Helmut Hullen)
-Subject: Re: failed disk
-Date: 09 May 2012 20:49:00 +0200
-Message-ID: <C8XJx4seCXB@helmut.hullen.de>
-References: <20120509153306.GR8938@carfax.org.uk>
-Reply-To: helmut@hullen.de
+From: Josef Bacik <josef@redhat.com>
+Subject: Re: Ceph on btrfs 3.4rc
+Date: Wed, 9 May 2012 16:25:54 -0400
+Message-ID: <20120509202554.GA1900@localhost.localdomain>
+References: <CAJafhzSVZ3+1ApgJU=sQu6gM62BeWVGG4mqFPNYRHx79czYJtQ@mail.gmail.com>
+ <20120424152141.GB3326@localhost.localdomain>
+ <Pine.LNX.4.64.1204240922040.29159@cobra.newdream.net>
+ <CAJafhzSgaQ3sx=Af0Ru0CiwQH37V5y8jgjoTo_8yozcjo9rpPA@mail.gmail.com>
+ <20120503141354.GC1914@localhost.localdomain>
+ <f35947dc064c7ff1a073b430a2d681f5@hq.newdream.net>
+ <20120503152053.GA7313@localhost.localdomain>
+ <1e9c626272411bb1fb403a3aa8aeced7@hq.newdream.net>
+ <20120503194924.GC7313@localhost.localdomain>
+ <CAJafhzR3PFKUGq6JutzeaF61X=kJ9x62fH62-BYAs0S=sa=P9A@mail.gmail.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=US-ASCII
-To: linux-btrfs@vger.kernel.org
-Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <20120509153306.GR8938@carfax.org.uk>
+Content-Type: text/plain; charset=iso-8859-1
+Cc: Josef Bacik <josef@redhat.com>,
+	Josh Durgin <josh.durgin@dreamhost.com>,
+	Sage Weil <sage@newdream.net>, linux-btrfs@vger.kernel.org,
+	ceph-devel@vger.kernel.org
+To: Christian Brunner <christian@brunner-muc.de>
+Return-path: <ceph-devel-owner@vger.kernel.org>
+In-Reply-To: <CAJafhzR3PFKUGq6JutzeaF61X=kJ9x62fH62-BYAs0S=sa=P9A@mail.gmail.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hallo, Hugo,
+On Fri, May 04, 2012 at 10:24:16PM +0200, Christian Brunner wrote:
+> 2012/5/3 Josef Bacik <josef@redhat.com>:
+> > On Thu, May 03, 2012 at 09:38:27AM -0700, Josh Durgin wrote:
+> >> On Thu, 3 May 2012 11:20:53 -0400, Josef Bacik <josef@redhat.com>
+> >> wrote:
+> >> > On Thu, May 03, 2012 at 08:17:43AM -0700, Josh Durgin wrote:
+> >> >
+> >> > Yeah all that was in the right place, I rebooted and I magically
+> >> > stopped getting
+> >> > that error, but now I'm getting this
+> >> >
+> >> > http://fpaste.org/OE92/
+> >> >
+> >> > with that ping thing repeating over and over. =A0Thanks,
+> >>
+> >> That just looks like the osd isn't running. If you restart the
+> >> osd with 'debug osd =3D 20' the osd log should tell us what's goin=
+g on.
+> >
+> > Ok that part was my fault, Duh I need to redo the tmpfs and mkcephf=
+s stuff after
+> > reboot. =A0But now I'm back to my original problem
+> >
+> > http://fpaste.org/PfwO/
+> >
+> > I have the osd class dir =3D /usr/lib64/rados-classes thing set and=
+ libcls_rbd is
+> > in there, so I'm not sure what is wrong. =A0Thanks,
+>=20
+> Thats really strange. Do you have the osd logs in /var/log/ceph? If
+> so, can you look if you find anything about "rbd" or "class" loading
+> in there?
+>=20
+> Another thing you should try is, whether you can access ceph with rad=
+os:
+>=20
+> # rados -p rbd ls
+> # rados -p rbd -i /proc/cpuinfo put testobj
+> # rados -p rbd -o - get testobj
+>
 
-Du meintest am 09.05.12:
+Ok weirdly ceph is trying to dlopen /usr/lib64/rados-classes/libcls_rbd=
+=2Eso but
+all I had was libcls_rbd.so.1 and libcls_rbd.so.1.0.0.  Symlink fixed t=
+hat part,
+I'll see if I can reproduce now.  Thanks,
 
->>>    As to the spurious "upgrade" of single to RAID-0, I thought Ilya
->>> had stopped it doing that. What kernel version are you running?
-
->> 3.2.9, self made.
-
->    OK, I'm pretty sure that's too old -- it will "upgrade" single to
-> RAID-0. You can probably turn it back to "single" using balance
-> filters:
-
-> # btrfs fi balance -dconvert=single /mountpoint
-
-> (You may want to write at least a little data to the FS first --
-> balance has some slightly odd behaviour on empty filesystems).
-
-"manana" ... the system is just running "balance" after "device delete".  
-And that may still need 4 ... 5 hours.
-
->>>    Out of interest, why did you do the device adds separately,
->>> instead of just this?
-
->> a) making the first 2 devices: I have tested both versions (one line
->> with 2 devices or 2 lines with 1 device); no big difference.
->>
->> But I had tested the option "-L" (labelling) too, and that makes
->> shit for the oneliner: both devices get the same label, and then
->> "findfs" finds none of them.
-
->    Umm... Yes, of course both devices will get the same label --
-> you're labelling the filesystem, not the devices. (Didn't we have
-> this argument some time ago?).
-
-Not with that special case (and that led me to misinterpreting the error  
-...).
-
->    I don't know what "findfs" is doing, that it can't find the
-> filesystem by label: you may need to run "sync" after mkfs, possibly.
-
-No - "findfs" works quite simple: if it finds 1 label then it tells the  
-partition.
-If it finds more or less labels it tells nothing.
-
->> b) third device: that's my usual test:
->>         make a cluster of 2 deivces
->>         fill them with data
->>         add a third device
->>         delete the smallest device
-
->    What are you testing? And by "delete" do you mean "btrfs dev
-> delete" or "pull the cable out"?
-
-First pure software delete. Tomorrow I'll reboot the system and look at  
-the results with
-
-        btrfs fi show
-
-It should tell only 2 devices (that's the part which seems to work as  
-described at least since kernel 3.2).
-
-By the way: it seems to be necessary running
-
-        btrfs fi balance ...
-
-after "btrfs device add ..." and after "btrfs device delete ...".
-
-Viele Gruesse!
-Helmut
+Josef
+--
+To unsubscribe from this list: send the line "unsubscribe ceph-devel" i=
+n
+the body of a message to majordomo@vger.kernel.org
+More majordomo info at  http://vger.kernel.org/majordomo-info.html

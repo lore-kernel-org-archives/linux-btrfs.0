@@ -1,76 +1,39 @@
-From: Chris Mason <chris.mason@oracle.com>
-Subject: Re: [PATCH 3/3] btrfs: extended inode refs
-Date: Wed, 9 May 2012 13:02:28 -0400
-Message-ID: <20120509170228.GA4025@shiny>
-References: <1333656543-4843-1-git-send-email-mfasheh@suse.de>
- <1333656543-4843-4-git-send-email-mfasheh@suse.de>
- <4F871808.3050309@jan-o-sch.net>
- <20120508225739.GW17950@wotan.suse.de>
+From: David Sterba <dave@jikos.cz>
+Subject: Re: [PATCH v2 1/5] btrfs: add command to zero out superblock
+Date: Wed, 9 May 2012 19:18:07 +0200
+Message-ID: <20120509171807.GO19331@twin.jikos.cz>
+References: <1335876033-12201-1-git-send-email-kario@wit.edu.pl>
+ <2913005.FpWZk4H159@bursa01>
+ <20120502173629.GI6740@twin.jikos.cz>
+ <1405178.Vd8v8qs4AD@bursa01>
+Reply-To: dave@jikos.cz
 Mime-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
-Cc: Jan Schmidt <list.btrfs@jan-o-sch.net>,
-	linux-btrfs@vger.kernel.org, Josef Bacik <josef@redhat.com>
-To: Mark Fasheh <mfasheh@suse.de>
+Cc: dave@jikos.cz, linux-btrfs@vger.kernel.org
+To: Hubert Kario <hka@qbs.com.pl>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <20120508225739.GW17950@wotan.suse.de>
+In-Reply-To: <1405178.Vd8v8qs4AD@bursa01>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Tue, May 08, 2012 at 03:57:39PM -0700, Mark Fasheh wrote:
-> Hi Jan, comments inline as usual!
+On Thu, May 03, 2012 at 03:11:45PM +0200, Hubert Kario wrote:
+> nice, didn't know about this. Such functionality would be nice to have.
+> But then I don't think that a "recreate the array if the parameters are the 
+> same" is actually a good idea, lots of space for error. A pair of functions:
 > 
-> > This function must not call free_extent_buffer(eb) in line 1306 after
-> > applying your patch set (immediately before the break). Second, I think
-> > we'd better add a blocking read lock on eb after incrementing it's
-> > refcount, because we need the current content to stay as it is. Both
-> > isn't part of your patches, but it might be easier if you make that
-> > bugfix change as a 3/4 patch within your set and turn this one into 4/4.
-> > If you don't like that, I'll send a separate patch for it. Don't miss
-> > the unlock if you do it ;-)
-> 
-> Ok, I think I was able to figure out and add the correct locking calls.
-> 
-> Basically I believe I need to wrap access around:
-> 
-> btrfs_tree_read_lock(eb);
-> btrfs_set_lock_blocking_rw(eb, BTRFS_READ_LOCK);
-> 
-> <read eb contents>
-> 
-> btrfs_tree_read_unlock_blocking(eb);
+> btrfs dev zero-superblock
+> btrfs dev restore-superblock
 
-You only need a blocking lock if you're scheduling.  Otherwise the
-spinlock variant is fine.
+As a user, I'm not sure what can I expect from the restore command. From
+where does it restore? Eg. a file?
 
-> > > +
-> > > +	while (1) {
-> > > +		ret = btrfs_find_one_extref(fs_root, inum, offset, path, &iref2,
-> > > +					    &offset);
-> > > +		if (ret < 0)
-> > > +			break;
-> > > +		if (ret) {
-> > > +			ret = found ? 0 : -ENOENT;
-> > > +			break;
-> > > +		}
-> > > +		++found;
-> > > +
-> > > +		slot = path->slots[0];
-> > > +		eb = path->nodes[0];
-> > > +		/* make sure we can use eb after releasing the path */
-> > > +		atomic_inc(&eb->refs);
-> > 
-> > You need a blocking read lock here, too. Grab it before releasing the path.
+As a tester I have use for a temporary clearing of a superblock on a
+device, then mount it with -o degraded, work work, and then undo
+clearing. So, my idea is like
 
-If you're calling btrfs_search_slot, it will give you a blocking lock
-on the leaf.  If you set path->leave_spinning before the call, you'll
-have a spinning lock on the leaf.
+  btrfs device zero-superblock --undo
 
-If you unlock a block that you got from a path (like eb =
-path->nodes[0]), the path structure has a flag for each level that
-indicates if that block was locked or not.  See btrfs_release_path().
-So, don't fiddle the locks without fiddling the paths.
+with the obvious sanity checks. A regular user would never need to call
+this.
 
-You can switch from spinning to/from blocking without touching the path, it
-figures that out.
 
--chris
-
+david

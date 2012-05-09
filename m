@@ -1,53 +1,47 @@
-From: Hubert Kario <hka@qbs.com.pl>
-Subject: Re: [PATCH v2 1/5] btrfs: add command to zero out superblock
-Date: Wed, 09 May 2012 19:23:47 +0200
-Message-ID: <5640951.VQCHRfAj9R@k85hala03>
-References: <1335876033-12201-1-git-send-email-kario@wit.edu.pl> <1405178.Vd8v8qs4AD@bursa01> <20120509171807.GO19331@twin.jikos.cz>
+From: David Sterba <dave@jikos.cz>
+Subject: Re: [RFC PATCH v2] Btrfs: improve space count for files with
+ fragments
+Date: Wed, 9 May 2012 19:29:16 +0200
+Message-ID: <20120509172916.GP19331@twin.jikos.cz>
+References: <1335422363-31198-1-git-send-email-liubo2009@cn.fujitsu.com>
+ <20120426171430.GP22794@shiny>
+ <4F99F9ED.6030106@cn.fujitsu.com>
+Reply-To: dave@jikos.cz
 Mime-Version: 1.0
-Content-Type: text/plain; charset=iso-8859-1
-Cc: linux-btrfs@vger.kernel.org
-To: dave@jikos.cz
+Content-Type: text/plain; charset=us-ascii
+Cc: Chris Mason <chris.mason@oracle.com>, linux-btrfs@vger.kernel.org
+To: Liu Bo <liubo2009@cn.fujitsu.com>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <20120509171807.GO19331@twin.jikos.cz>
+In-Reply-To: <4F99F9ED.6030106@cn.fujitsu.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Wednesday 09 of May 2012 19:18:07 David Sterba wrote:
-> On Thu, May 03, 2012 at 03:11:45PM +0200, Hubert Kario wrote:
-> > nice, didn't know about this. Such functionality would be nice to h=
-ave.
-> > But then I don't think that a "recreate the array if the parameters=
- are
-> > the
-> > same" is actually a good idea, lots of space for error. A pair of
-> > functions:
-> >=20
-> > btrfs dev zero-superblock
-> > btrfs dev restore-superblock
->=20
-> As a user, I'm not sure what can I expect from the restore command. F=
-rom
-> where does it restore? Eg. a file?
->=20
-> As a tester I have use for a temporary clearing of a superblock on a
-> device, then mount it with -o degraded, work work, and then undo
-> clearing. So, my idea is like
->=20
->   btrfs device zero-superblock --undo
->=20
-> with the obvious sanity checks. A regular user would never need to ca=
-ll
-> this.
+On Fri, Apr 27, 2012 at 09:44:13AM +0800, Liu Bo wrote:
+> Let's take the above case:
+> 0k              20k
+> | --- extent --- |
+>     | - A - |
+>     1k      19k
+> 
+> And we assume that this extent starts from disk_bytenr on its FS logical offset.
+> 
+> By splitting the [0k, 20k) extent, we'll get three delayed refs into the delayed-ref rbtree:
+> a) [0k, 20k),  in which only [disk_bytenr+1k, disk_bytenr+19k) will be freed at the end.
+> b) [0k, 1k),   which will _not_ allocate a new extent but use the remained space of [0k, 20k).
+> c) [19k, 20k), ditto.
+> 
+> And another ref [1k,19k) will get a new allocated space by our normal endio routine.
+> 
+> What I want is
+> free  [0k, 20k),  set this range DIRTY in the pinned_extents tree.
+> alloc [0k, 1k),   clear this range DIRTY in the pinned_extents tree.
+> alloc [19k, 20k), ditto.
+> 
+> However, in my stress test, this three refs may not be ordered by a)->b)->c), but b)->a)->c) instead.
+> That would be a problem, because it will confuse our space_info's counter: bytes_reserved, bytes_pinned.
 
-Yes, that's a better idea.
+Do you have an idea why the ordering may become broken? If it's a race,
+it might be better to fix it instead of adding a new bit to extent
+flags.
 
---=20
-Hubert Kario
-QBS - Quality Business Software
-02-656 Warszawa, ul. Ksawer=F3w 30/85
-tel. +48 (22) 646-61-51, 646-74-24
-www.qbs.com.pl
---
-To unsubscribe from this list: send the line "unsubscribe linux-btrfs" =
-in
-the body of a message to majordomo@vger.kernel.org
-More majordomo info at  http://vger.kernel.org/majordomo-info.html
+
+david

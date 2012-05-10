@@ -1,59 +1,111 @@
-From: Guido Winkelmann <guido-btrfs@thisisnotatest.de>
-Subject: Repairing corrupted filesystems
-Date: Thu, 10 May 2012 15:55:34 +0200
-Message-ID: <27281960.kxhTVsFkdY@pc10>
+From: Martin Steigerwald <Martin@lichtvoll.de>
+Subject: Re: balancing metadata fails with no space left on device
+Date: Thu, 10 May 2012 17:14:06 +0200
+Message-ID: <201205101714.06634.Martin@lichtvoll.de>
+References: <201205041835.39441.Martin@lichtvoll.de> <20120506184814.GA2932@zambezi.lan> <201205072119.35039.Martin@lichtvoll.de> (sfid-20120507_212056_161847_62ECC6F2)
 Mime-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
+Content-Type: Text/Plain; charset=utf-8
+Cc: Ilya Dryomov <idryomov@gmail.com>
 To: linux-btrfs@vger.kernel.org
 Return-path: <linux-btrfs-owner@vger.kernel.org>
+In-Reply-To: <201205072119.35039.Martin@lichtvoll.de>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hi,
+Am Montag, 7. Mai 2012 schrieb Martin Steigerwald:
+> Am Sonntag, 6. Mai 2012 schrieb Ilya Dryomov:
+> > On Sun, May 06, 2012 at 01:19:38PM +0200, Martin Steigerwald wrote:
+> > > Am Freitag, 4. Mai 2012 schrieb Martin Steigerwald:
+> > > > Am Freitag, 4. Mai 2012 schrieb Martin Steigerwald:
+[=E2=80=A6]
+> > > merkaba:~> btrfs balance start -musage=3D0.8 /
+> > > Invalid usage argument: 0.8
+> > > merkaba:~#1> btrfs balance start -musage=3D700M /
+> > > Invalid usage argument: 700M
+> > >=20
+> > >=20
+> > > When I try without usage I get the old behavior back:
+> > >=20
+> > > merkaba:~#1> btrfs balance start -m /
+> > > ERROR: error during balancing '/' - No space left on device
+> > > There may be more info in syslog - try dmesg | tail
+> > >=20
+> > >=20
+> > > merkaba:~> btrfs balance start -musage=3D1 /
+> > > Done, had to relocate 2 out of 13 chunks
+> > > merkaba:~> btrfs balance start -musage=3D1 /
+> > > Done, had to relocate 1 out of 12 chunks
+> > > merkaba:~> btrfs balance start -musage=3D1 /
+> > > Done, had to relocate 1 out of 12 chunks
+> > > merkaba:~> btrfs balance start -musage=3D1 /
+> > > Done, had to relocate 1 out of 12 chunks
+> > > merkaba:~> btrfs filesystem df /
+> > > Data: total=3D10.00GB, used=3D7.34GB
+> > > System, DUP: total=3D32.00MB, used=3D4.00KB
+> > > System: total=3D4.00MB, used=3D0.00
+> > > Metadata, DUP: total=3D1.00GB, used=3D586.41MB
+> >=20
+> > Btrfs allocates space in chunks, in your case metadata chunks are
+> > probably 512M in size.  Naturally, having 586M busy you can't make
+> > that chunk go away, be it with or without auto-reclaim and usage
+> > filter accepting size as its input.
+>=20
+> Hmmm, whatever it did tough: I believe I had the BTRFS performance go
+> down by a big margin by my playing around.
+>=20
+> I didn=C2=B4t to any measurements yet, but apt-cache search could so =
+much
+> slower as well as starting Iceweasel. The SSD tends to feel quite a b=
+it
+> more like a harddisk. (It still feels faster tough.)
+>=20
+> And startup time has also raised:
+>=20
+> martin@merkaba:~> systemd-analyze
+> Startup finished in 6058ms (kernel) + 9285ms (userspace) =3D 15344ms
+>=20
+> This has been about 8,5 seconds before.
+>=20
+> I can=C2=B4t prove that this is due to a slower BTRFS, but I highly s=
+uspect
+> it.
+>=20
+> So I think I learned that there is no guarentee that a BTRFS balance
+> improves the situation at all. It seemed to have worsened it a lot.
+>=20
+> Well it was just my experimenting around. I didn=C2=B4t have a real p=
+roblem
+> before and now I seemed I have to created me one.
+>=20
+> Now I wonder whether there would be a way to fix up the perceived
+> performance regression except of creating a new logical volume with
+> BTRFS, copying all the stuff to it and switching / to use the new
+> volume.
 
-I've got three servers here with corrupted btrfs filesystems. These servers 
-were/are part of a ceph cluster that was physically moved a few months ago. 
-The servers may have been incorrectly powered off without a proper shutdown 
-during the move, but that's hard to find out now. (It wasn't me who actually 
-moved them). The servers had 2 independent btrfs filesystems each (one per 
-physical disk). 
+I did it the redo the filesystem way:
 
-Out of the six total filesystems, 5 can now no longer be mounted. When trying 
-to, I get the following messages in dmesg:
+merkaba:~> systemd-analyze=20
+Startup finished in 6602ms (kernel) + 4246ms (userspace) =3D 10848ms
 
-device fsid cc5ec5e4-ba19-4ce9-aecc-17e1682a63aa devid 1 transid 551383 
-/dev/sdb5
-parent transid verify failed on 49468260352 wanted 24312 found 511537
-parent transid verify failed on 49468260352 wanted 24312 found 511537
-parent transid verify failed on 49468260352 wanted 24312 found 511537
-parent transid verify failed on 49468260352 wanted 24312 found 511537
-btrfs: open_ctree failed
+Thats not the about 8.5 I seen already, but it was the first start afte=
+r=20
+activating inode_cache + space_cache, as I didn=C2=B4t want to activate=
+ it on=20
+GRML 2011.12 3.1 kernel. The filesystem has been mounted with compress=3D=
+lzo=20
+from the beginning. Which also made in space usage.
 
-In #btrfs on IRC, someone suggested I try mounting with -o recovery, but that 
-did not change anything.
+Also Iceweasel and apt-cache are way faster now again. Almost instant.
 
-The last time the servers had the filesystems mounted, they were running with 
-Kernel 3.1.1, but I have since upgraded to 3.3.5. The filesystems were 
-originally created with the fairly old userspace tools that were shipped with 
-CentOS 6.
+Next time I use an other BTRFS filesystem than my / one for experiments=
+=20
+with balancing ;).
 
-I have tried running btrfsck from 
-git://git.kernel.org/pub/scm/linux/kernel/git/mason/btrfs-progs.git (checked 
-out yesterday), but that didn't change anything.
-I also tried btrfs-recover from the same repository. That did work, however 
-some mails from the ceph mailing list, like this one:
-http://article.gmane.org/gmane.comp.file-systems.ceph.devel/6219
-would suggest that just recovering the files from the filesystem would not do 
-the trick, and I really need to actually recover the actual filesystem.
-
-Is there something left I can do about this?
-
-Luckily, I did not yet have any important data on the ceph cluster of which I 
-did not have other copies, however I'd really like to know whether btrfs can 
-recover from this situation at all. Frankly, 5 out of 6 filesystems not 
-surviving an unclean shutdown looks like a rather discouraging statistic. In 
-fact, this the first time I have actually witnessed /any/ filesystem actually 
-die from an unclean shutdown... (Yeah, I know, anecdotes != data, but 
-still...)
-
-Regards,
-	Guido
+Thanks,
+--=20
+Martin 'Helios' Steigerwald - http://www.Lichtvoll.de
+GPG: 03B0 0D6C 0040 0710 4AFA  B82F 991B EAAC A599 84C7
+--
+To unsubscribe from this list: send the line "unsubscribe linux-btrfs" =
+in
+the body of a message to majordomo@vger.kernel.org
+More majordomo info at  http://vger.kernel.org/majordomo-info.html

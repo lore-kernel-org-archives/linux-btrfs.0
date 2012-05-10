@@ -1,44 +1,51 @@
-From: Martin Steigerwald <Martin@lichtvoll.de>
-Subject: Re: kernel 3.3.4 damages filesystem (?)
-Date: Thu, 10 May 2012 12:40:49 +0200
-Message-ID: <201205101240.49200.Martin@lichtvoll.de>
-References: <20120508200228.GM8938@carfax.org.uk> <20120509025646.2894f7ea@natsu> <4FAA8352.4020304@schleiser.de> (sfid-20120509_173342_317782_AFED1728)
+From: Hullen@t-online.de (Helmut Hullen)
+Subject: feature request (was: kernel 3.3.4 damages filesystem (?))
+Date: 10 May 2012 13:55:00 +0200
+Message-ID: <C8aMDSo9CXB@helmut.hullen.de>
+References: <201205101240.49200.Martin@lichtvoll.de>
+Reply-To: helmut@hullen.de
 Mime-Version: 1.0
-Content-Type: Text/Plain;
-  charset="iso-8859-1"
-Cc: Kaspar Schleiser <kaspar@schleiser.de>
+Content-Type: text/plain; charset=US-ASCII
 To: linux-btrfs@vger.kernel.org
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <4FAA8352.4020304@schleiser.de>
+In-Reply-To: <201205101240.49200.Martin@lichtvoll.de>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Am Mittwoch, 9. Mai 2012 schrieb Kaspar Schleiser:
-> Hi,
-> 
-> On 05/08/2012 10:56 PM, Roman Mamedov wrote:
-> > Regarding btrfs, AFAIK even "btrfs -d single" suggested above works
-> > not "per file", but per allocation extent, so in case of one disk
-> > failure you will lose random *parts* (extents) of random files,
-> > which in effect could mean no file in your whole file system will
-> > remain undamaged.
-> 
-> Maybe we should evaluate the possiblility of such a "one file gets on
-> one disk" feature.
-> 
-> Helmut Hullen has the use case: Many disks, totally non-critical but
-> nice-to-have data. If one disk dies, some *files* should lost, not some
-> *random parts of all files*.
-> 
-> This could be accomplished by some userspace-tool that moves stuff
-> around, combined with "file pinning"-support, that lets the user make
-> sure a specific file is on a specific disk.
+Hallo, Martin,
 
-Yeah, basically I think thats the whole point Helmut is trying to make.
+Du meintest am 10.05.12:
 
-I am not sure whether that should be in userspace. It could be just an 
-allocation mode like "raid0" or "single". Such as "single" as in one file 
-is really on one disk and thats it.
+[...]
 
--- 
-Martin 'Helios' Steigerwald - http://www.Lichtvoll.de
-GPG: 03B0 0D6C 0040 0710 4AFA  B82F 991B EAAC A599 84C7
+>> Maybe we should evaluate the possiblility of such a "one file gets
+>> on one disk" feature.
+>>
+>> Helmut Hullen has the use case: Many disks, totally non-critical but
+>> nice-to-have data. If one disk dies, some *files* should lost, not
+>> some *random parts of all files*.
+>>
+>> This could be accomplished by some userspace-tool that moves stuff
+>> around, combined with "file pinning"-support, that lets the user
+>> make sure a specific file is on a specific disk.
+
+> Yeah, basically I think thats the whole point Helmut is trying to
+> make.
+
+Yes - that's the feature which I miss ...
+
+> I am not sure whether that should be in userspace. It could be just
+> an allocation mode like "raid0" or "single". Such as "single" as in
+> one file is really on one disk and thats it.
+
+What I'm dreaming for:
+
+I have a bundle/cluster of (p.e.) 3 disks. When I remove 1 disk  
+(accidently/planned/because of disk failure) then I'd be very pleased  
+when the contents of the other disks is (mostly) still readable.
+
+It's no fun restoring Terabytes ...
+
+Yes - I know: that's no backup, that doesn't replace a backup.
+
+Viele Gruesse!
+Helmut

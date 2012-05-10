@@ -1,123 +1,44 @@
-From: Liu Bo <liubo2009@cn.fujitsu.com>
-Subject: [PATCH 2/2] Btrfs: use fastpath in extent state ops as much as possible
-Date: Thu, 10 May 2012 18:10:39 +0800
-Message-ID: <1336644639-21595-2-git-send-email-liubo2009@cn.fujitsu.com>
-References: <1336644639-21595-1-git-send-email-liubo2009@cn.fujitsu.com>
-To: <linux-btrfs@vger.kernel.org>
+From: Martin Steigerwald <Martin@lichtvoll.de>
+Subject: Re: kernel 3.3.4 damages filesystem (?)
+Date: Thu, 10 May 2012 12:40:49 +0200
+Message-ID: <201205101240.49200.Martin@lichtvoll.de>
+References: <20120508200228.GM8938@carfax.org.uk> <20120509025646.2894f7ea@natsu> <4FAA8352.4020304@schleiser.de> (sfid-20120509_173342_317782_AFED1728)
+Mime-Version: 1.0
+Content-Type: Text/Plain;
+  charset="iso-8859-1"
+Cc: Kaspar Schleiser <kaspar@schleiser.de>
+To: linux-btrfs@vger.kernel.org
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <1336644639-21595-1-git-send-email-liubo2009@cn.fujitsu.com>
+In-Reply-To: <4FAA8352.4020304@schleiser.de>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Fully utilize our extent state's new helper functions to use
-fastpath as much as possible.
+Am Mittwoch, 9. Mai 2012 schrieb Kaspar Schleiser:
+> Hi,
+> 
+> On 05/08/2012 10:56 PM, Roman Mamedov wrote:
+> > Regarding btrfs, AFAIK even "btrfs -d single" suggested above works
+> > not "per file", but per allocation extent, so in case of one disk
+> > failure you will lose random *parts* (extents) of random files,
+> > which in effect could mean no file in your whole file system will
+> > remain undamaged.
+> 
+> Maybe we should evaluate the possiblility of such a "one file gets on
+> one disk" feature.
+> 
+> Helmut Hullen has the use case: Many disks, totally non-critical but
+> nice-to-have data. If one disk dies, some *files* should lost, not some
+> *random parts of all files*.
+> 
+> This could be accomplished by some userspace-tool that moves stuff
+> around, combined with "file pinning"-support, that lets the user make
+> sure a specific file is on a specific disk.
 
-Signed-off-by: Liu Bo <liubo2009@cn.fujitsu.com>
----
- fs/btrfs/extent_io.c |   44 ++++++++++++++++++--------------------------
- 1 files changed, 18 insertions(+), 26 deletions(-)
+Yeah, basically I think thats the whole point Helmut is trying to make.
 
-diff --git a/fs/btrfs/extent_io.c b/fs/btrfs/extent_io.c
-index 198c2ba..f6e9191 100644
---- a/fs/btrfs/extent_io.c
-+++ b/fs/btrfs/extent_io.c
-@@ -570,10 +570,8 @@ hit_next:
- 		if (err)
- 			goto out;
- 		if (state->end <= end) {
--			clear_state_bit(tree, state, &bits, wake);
--			if (last_end == (u64)-1)
--				goto out;
--			start = last_end + 1;
-+			state = clear_state_bit(tree, state, &bits, wake);
-+			goto next;
- 		}
- 		goto search_again;
- 	}
-@@ -781,7 +779,6 @@ hit_next:
- 	 * Just lock what we found and keep going
- 	 */
- 	if (state->start == start && state->end <= end) {
--		struct rb_node *next_node;
- 		if (state->state & exclusive_bits) {
- 			*failed_start = state->start;
- 			err = -EEXIST;
-@@ -789,20 +786,15 @@ hit_next:
- 		}
- 
- 		set_state_bits(tree, state, &bits);
--
- 		cache_state(state, cached_state);
- 		merge_state(tree, state);
- 		if (last_end == (u64)-1)
- 			goto out;
--
- 		start = last_end + 1;
--		next_node = rb_next(&state->rb_node);
--		if (next_node && start < end && prealloc && !need_resched()) {
--			state = rb_entry(next_node, struct extent_state,
--					 rb_node);
--			if (state->start == start)
--				goto hit_next;
--		}
-+		state = next_state(state);
-+		if (start < end && state && state->start == start &&
-+		    !need_resched())
-+			goto hit_next;
- 		goto search_again;
- 	}
- 
-@@ -845,6 +837,10 @@ hit_next:
- 			if (last_end == (u64)-1)
- 				goto out;
- 			start = last_end + 1;
-+			state = next_state(state);
-+			if (start < end && state && state->start == start &&
-+			    !need_resched())
-+				goto hit_next;
- 		}
- 		goto search_again;
- 	}
-@@ -994,21 +990,14 @@ hit_next:
- 	 * Just lock what we found and keep going
- 	 */
- 	if (state->start == start && state->end <= end) {
--		struct rb_node *next_node;
--
- 		set_state_bits(tree, state, &bits);
--		clear_state_bit(tree, state, &clear_bits, 0);
-+		state = clear_state_bit(tree, state, &clear_bits, 0);
- 		if (last_end == (u64)-1)
- 			goto out;
--
- 		start = last_end + 1;
--		next_node = rb_next(&state->rb_node);
--		if (next_node && start < end && prealloc && !need_resched()) {
--			state = rb_entry(next_node, struct extent_state,
--					 rb_node);
--			if (state->start == start)
--				goto hit_next;
--		}
-+		if (start < end && state && state->start == start &&
-+		    !need_resched())
-+			goto hit_next;
- 		goto search_again;
- 	}
- 
-@@ -1042,10 +1031,13 @@ hit_next:
- 			goto out;
- 		if (state->end <= end) {
- 			set_state_bits(tree, state, &bits);
--			clear_state_bit(tree, state, &clear_bits, 0);
-+			state = clear_state_bit(tree, state, &clear_bits, 0);
- 			if (last_end == (u64)-1)
- 				goto out;
- 			start = last_end + 1;
-+			if (start < end && state && state->start == start &&
-+			    !need_resched())
-+				goto hit_next;
- 		}
- 		goto search_again;
- 	}
+I am not sure whether that should be in userspace. It could be just an 
+allocation mode like "raid0" or "single". Such as "single" as in one file 
+is really on one disk and thats it.
+
 -- 
-1.6.5.2
-
+Martin 'Helios' Steigerwald - http://www.Lichtvoll.de
+GPG: 03B0 0D6C 0040 0710 4AFA  B82F 991B EAAC A599 84C7

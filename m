@@ -1,115 +1,84 @@
-From: Hubert Kario <hka@qbs.com.pl>
-Subject: Re: btrfs RAID with enterprise SATA or SAS drives
-Date: Thu, 10 May 2012 21:58:37 +0200
-Message-ID: <1494795.CqqnWfNEaS@bursa22>
-References: <4FAAE94D.4010103@pocock.com.au>
+From: Hugo Mills <hugo@carfax.org.uk>
+Subject: Re: kernel 3.3.4 damages filesystem (?)
+Date: Thu, 10 May 2012 21:15:30 +0100
+Message-ID: <20120510201530.GS8938@carfax.org.uk>
+References: <20120508200228.GM8938@carfax.org.uk>
+ <4FAA8352.4020304@schleiser.de>
+ <201205101240.49200.Martin@lichtvoll.de>
+ <3868267.PxBJ7yCiiK@bursa22>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=iso-8859-1
-Cc: linux-btrfs@vger.kernel.org
-To: Daniel Pocock <daniel@pocock.com.au>
+Content-Type: multipart/signed; micalg=pgp-sha1;
+	protocol="application/pgp-signature"; boundary="im83/wVv0jiGQj4J"
+Cc: Martin Steigerwald <Martin@lichtvoll.de>,
+	linux-btrfs@vger.kernel.org, Kaspar Schleiser <kaspar@schleiser.de>
+To: Hubert Kario <hka@qbs.com.pl>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <4FAAE94D.4010103@pocock.com.au>
+In-Reply-To: <3868267.PxBJ7yCiiK@bursa22>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Wednesday 09 of May 2012 22:01:49 Daniel Pocock wrote:
-> There is various information about
-> - enterprise-class drives (either SAS or just enterprise SATA)
-> - the SCSI/SAS protocols themselves vs SATA
-> having more advanced features (e.g. for dealing with error conditions=
-)
-> than the average block device
->=20
-> For example, Adaptec recommends that such drives will work better wit=
-h
-> their hardware RAID cards:
->=20
-> http://ask.adaptec.com/cgi-bin/adaptec_tic.cfg/php/enduser/std_adp.ph=
-p?p_f
-> aqid=3D14596 "Desktop class disk drives have an error recovery featur=
-e that
-> will result in a continuous retry of the drive (read or write) when a=
-n
-> error is encountered, such as a bad sector. In a RAID array this can
-> cause the RAID controller to time-out while waiting for the drive to
-> respond."
->=20
-> and this blog:
-> http://www.adaptec.com/blog/?p=3D901
-> "major advantages to enterprise drives (TLER for one) ... opt for the
-> enterprise drives in a RAID environment no matter what the cost of th=
-e
-> drive over the desktop drive"
->=20
-> My question..
->=20
-> - does btrfs RAID1 actively use the more advanced features of these
-> drives, e.g. to work around errors without getting stuck on a bad blo=
-ck?
 
-There are no (short) timeouts that I know of
-=20
-> - if a non-RAID SAS card is used, does it matter which card is chosen=
-?
-> Does btrfs work equally well with all of them?
+--im83/wVv0jiGQj4J
+Content-Type: text/plain; charset=us-ascii
+Content-Disposition: inline
 
-If you're using btrfs RAID, you need a HBA, not a RAID card. If the RAI=
-D=20
-card can work as a HBA (usually labelled as JBOD mode) then you're good=
- to=20
-go.
+On Thu, May 10, 2012 at 09:43:58PM +0200, Hubert Kario wrote:
+> On Thursday 10 of May 2012 12:40:49 Martin Steigerwald wrote:
+> > Am Mittwoch, 9. Mai 2012 schrieb Kaspar Schleiser:
+> > > Hi,
+> > > 
+> > > On 05/08/2012 10:56 PM, Roman Mamedov wrote:
+> > > > Regarding btrfs, AFAIK even "btrfs -d single" suggested above works
+> > > > not "per file", but per allocation extent, so in case of one disk
+> > > > failure you will lose random *parts* (extents) of random files,
+> > > > which in effect could mean no file in your whole file system will
+> > > > remain undamaged.
+> > > 
+> > > Maybe we should evaluate the possiblility of such a "one file gets on
+> > > one disk" feature.
+> > > 
+> > > Helmut Hullen has the use case: Many disks, totally non-critical but
+> > > nice-to-have data. If one disk dies, some *files* should lost, not some
+> > > *random parts of all files*.
+> > > 
+> > > This could be accomplished by some userspace-tool that moves stuff
+> > > around, combined with "file pinning"-support, that lets the user make
+> > > sure a specific file is on a specific disk.
+> > 
+> > Yeah, basically I think thats the whole point Helmut is trying to make.
+> > 
+> > I am not sure whether that should be in userspace. It could be just an
+> > allocation mode like "raid0" or "single". Such as "single" as in one file
+> > is really on one disk and thats it.
+> 
+> I was thinking that "linear" would be good name for old style allocator.
 
-=46or example, HP CCISS controllers can't work in JBOD mode.
+   Please do distinguish between the replication level (e.g. "single",
+"RAID-1") and the allocator algorithm. These are distinct. Also, note
+that both of those work on the scale of chunks/block groups. There is
+a further consideration, which is the allocation of file data to block
+groups, which is a whole different thing again (and not something I
+know a great deal about), but which will also affect the desired
+outcome quite a lot.
 
-If you're using the RAID feature of the card, then you need to look at=20
-general Linux support, btrfs doesn't do anything other FS don't do with=
- the=20
-block devices.
-=20
-> - ignoring the better MTBF and seek times of these drives, do any of =
-the
-> other features passively contribute to a better RAID experience when
-> using btrfs?
+   Hugo.
 
-whatever they really have high MTBF values is debatable...
+-- 
+=== Hugo Mills: hugo@... carfax.org.uk | darksatanic.net | lug.org.uk ===
+  PGP key: 515C238D from wwwkeys.eu.pgp.net or http://www.carfax.org.uk
+   --- Anyone who claims their cryptographic protocol is secure is ---   
+         either a genius or a fool.  Given the genius/fool ratio         
+                 for our species,  the odds aren't good.                 
 
-seek times do matter very much to btrfs, fast CPU is also a good thing =
-to=20
-have with btrfs, especially if you want to use data compression, high n=
-ode=20
-or leaf sizes
+--im83/wVv0jiGQj4J
+Content-Type: application/pgp-signature; name="signature.asc"
+Content-Description: Digital signature
 
-> - for someone using SAS or enterprise SATA drives with Linux, I
-> understand btrfs gives the extra benefit of checksums, are there any
-> other specific benefits over using mdadm or dmraid?
+-----BEGIN PGP SIGNATURE-----
+Version: GnuPG v1.4.11 (GNU/Linux)
 
-Because btrfs knows when the drive is misbeheaving (because of checksum=
-s)=20
-and is returning bad data, it can detect problems much faster then RAID=
-=20
-(which doesn't use the reduncancy for checking if the data it's returni=
-ng is=20
-actually correct). Both hardware and software RAID implementations depe=
-nd on=20
-the drives to return IO errors. In effect, the data is safer on btrfs t=
-han=20
-regular RAID.
+iD8DBQFPrCHiIKyzvlFcI40RAnBTAJsFxiSUMtsXkR83ShjJNk9WJIUTDwCgjjjR
+U35NNmiK56IUlRYJZUN8oZc=
+=rOfs
+-----END PGP SIGNATURE-----
 
-Besides that online resize (both shrinking and extending) and (currentl=
-y not=20
-implemented) ability to set redundancy level on a per file basis.
-In other words, with btrfs you can have a file with RAID6 redundancy an=
-d a=20
-second one with RAID10 level of redundancy in single directory.
-
-Regards,
---=20
-Hubert Kario
-QBS - Quality Business Software
-02-656 Warszawa, ul. Ksawer=F3w 30/85
-tel. +48 (22) 646-61-51, 646-74-24
-www.qbs.com.pl
---
-To unsubscribe from this list: send the line "unsubscribe linux-btrfs" =
-in
-the body of a message to majordomo@vger.kernel.org
-More majordomo info at  http://vger.kernel.org/majordomo-info.html
+--im83/wVv0jiGQj4J--

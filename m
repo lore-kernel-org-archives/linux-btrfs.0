@@ -1,51 +1,63 @@
-From: Hullen@t-online.de (Helmut Hullen)
-Subject: feature request (was: kernel 3.3.4 damages filesystem (?))
-Date: 10 May 2012 13:55:00 +0200
-Message-ID: <C8aMDSo9CXB@helmut.hullen.de>
-References: <201205101240.49200.Martin@lichtvoll.de>
-Reply-To: helmut@hullen.de
+From: Chris Mason <chris.mason@oracle.com>
+Subject: Re: [PATCH 3/3] btrfs: extended inode refs
+Date: Thu, 10 May 2012 09:35:09 -0400
+Message-ID: <20120510133509.GB11859@shiny>
+References: <1333656543-4843-1-git-send-email-mfasheh@suse.de>
+ <1333656543-4843-4-git-send-email-mfasheh@suse.de>
+ <4F871808.3050309@jan-o-sch.net>
+ <20120508225739.GW17950@wotan.suse.de>
+ <20120509170228.GA4025@shiny>
+ <4FAB7B00.4090302@jan-o-sch.net>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=US-ASCII
-To: linux-btrfs@vger.kernel.org
+Content-Type: text/plain; charset=us-ascii
+Cc: Mark Fasheh <mfasheh@suse.de>, linux-btrfs@vger.kernel.org,
+	Josef Bacik <josef@redhat.com>
+To: Jan Schmidt <list.btrfs@jan-o-sch.net>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <201205101240.49200.Martin@lichtvoll.de>
+In-Reply-To: <4FAB7B00.4090302@jan-o-sch.net>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hallo, Martin,
+On Thu, May 10, 2012 at 10:23:28AM +0200, Jan Schmidt wrote:
+> On Wed, May 09, 2012 at 19:02 (+0200), Chris Mason wrote:
+> >>>> +
+> >>>> +	while (1) {
+> >>>> +		ret = btrfs_find_one_extref(fs_root, inum, offset, path, &iref2,
+> >>>> +					    &offset);
+> >>>> +		if (ret < 0)
+> >>>> +			break;
+> >>>> +		if (ret) {
+> >>>> +			ret = found ? 0 : -ENOENT;
+> >>>> +			break;
+> >>>> +		}
+> >>>> +		++found;
+> >>>> +
+> >>>> +		slot = path->slots[0];
+> >>>> +		eb = path->nodes[0];
+> >>>> +		/* make sure we can use eb after releasing the path */
+> >>>> +		atomic_inc(&eb->refs);
+> >>>
+> >>> You need a blocking read lock here, too. Grab it before releasing the path.
+> > 
+> > If you're calling btrfs_search_slot, it will give you a blocking lock
+> > on the leaf.  If you set path->leave_spinning before the call, you'll
+> > have a spinning lock on the leaf.
+> > 
+> > If you unlock a block that you got from a path (like eb =
+> > path->nodes[0]), the path structure has a flag for each level that
+> > indicates if that block was locked or not.  See btrfs_release_path().
+> > So, don't fiddle the locks without fiddling the paths.
+> > 
+> > You can switch from spinning to/from blocking without touching the path, it
+> > figures that out.
+> 
+> Note that we're releasing the path shortly after. My suggestion was to
+> grab an *additional* read lock after atomic_inc(&eb->refs) (probably
+> better extent_buffer_get(eb)) and before btrfs_path_release().
+> 
+> An alternative would be to set path->locks[0] to NULL, which would
+> btrfs_release_path prevent from unlocking it, kidnapping its lock for
+> our purpose. But I much prefer the open coded solution.
 
-Du meintest am 10.05.12:
+Thanks, I see now.
 
-[...]
-
->> Maybe we should evaluate the possiblility of such a "one file gets
->> on one disk" feature.
->>
->> Helmut Hullen has the use case: Many disks, totally non-critical but
->> nice-to-have data. If one disk dies, some *files* should lost, not
->> some *random parts of all files*.
->>
->> This could be accomplished by some userspace-tool that moves stuff
->> around, combined with "file pinning"-support, that lets the user
->> make sure a specific file is on a specific disk.
-
-> Yeah, basically I think thats the whole point Helmut is trying to
-> make.
-
-Yes - that's the feature which I miss ...
-
-> I am not sure whether that should be in userspace. It could be just
-> an allocation mode like "raid0" or "single". Such as "single" as in
-> one file is really on one disk and thats it.
-
-What I'm dreaming for:
-
-I have a bundle/cluster of (p.e.) 3 disks. When I remove 1 disk  
-(accidently/planned/because of disk failure) then I'd be very pleased  
-when the contents of the other disks is (mostly) still readable.
-
-It's no fun restoring Terabytes ...
-
-Yes - I know: that's no backup, that doesn't replace a backup.
-
-Viele Gruesse!
-Helmut
+-chris

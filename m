@@ -1,49 +1,62 @@
-From: Daniel Pocock <daniel@pocock.com.au>
-Subject: btrfs RAID with enterprise SATA or SAS drives
-Date: Wed, 09 May 2012 22:01:49 +0000
-Message-ID: <4FAAE94D.4010103@pocock.com.au>
+From: Liu Bo <liubo2009@cn.fujitsu.com>
+Subject: Re: [RFC PATCH v2] Btrfs: improve space count for files with fragments
+Date: Thu, 10 May 2012 09:11:11 +0800
+Message-ID: <4FAB15AF.5000907@cn.fujitsu.com>
+References: <1335422363-31198-1-git-send-email-liubo2009@cn.fujitsu.com> <20120426171430.GP22794@shiny> <4F99F9ED.6030106@cn.fujitsu.com> <20120509172916.GP19331@twin.jikos.cz>
 Mime-Version: 1.0
 Content-Type: text/plain; charset=ISO-8859-1
-To: linux-btrfs@vger.kernel.org
+Cc: Chris Mason <chris.mason@oracle.com>, linux-btrfs@vger.kernel.org
+To: David Sterba <dave@jikos.cz>
 Return-path: <linux-btrfs-owner@vger.kernel.org>
+In-Reply-To: <20120509172916.GP19331@twin.jikos.cz>
 List-ID: <linux-btrfs.vger.kernel.org>
 
+On 05/10/2012 01:29 AM, David Sterba wrote:
+
+> On Fri, Apr 27, 2012 at 09:44:13AM +0800, Liu Bo wrote:
+>> Let's take the above case:
+>> 0k              20k
+>> | --- extent --- |
+>>     | - A - |
+>>     1k      19k
+>>
+>> And we assume that this extent starts from disk_bytenr on its FS logical offset.
+>>
+>> By splitting the [0k, 20k) extent, we'll get three delayed refs into the delayed-ref rbtree:
+>> a) [0k, 20k),  in which only [disk_bytenr+1k, disk_bytenr+19k) will be freed at the end.
+>> b) [0k, 1k),   which will _not_ allocate a new extent but use the remained space of [0k, 20k).
+>> c) [19k, 20k), ditto.
+>>
+>> And another ref [1k,19k) will get a new allocated space by our normal endio routine.
+>>
+>> What I want is
+>> free  [0k, 20k),  set this range DIRTY in the pinned_extents tree.
+>> alloc [0k, 1k),   clear this range DIRTY in the pinned_extents tree.
+>> alloc [19k, 20k), ditto.
+>>
+>> However, in my stress test, this three refs may not be ordered by a)->b)->c), but b)->a)->c) instead.
+>> That would be a problem, because it will confuse our space_info's counter: bytes_reserved, bytes_pinned.
+> 
+> Do you have an idea why the ordering may become broken? If it's a race,
+> it might be better to fix it instead of adding a new bit to extent
+> flags.
+> 
 
 
-There is various information about
-- enterprise-class drives (either SAS or just enterprise SATA)
-- the SCSI/SAS protocols themselves vs SATA
-having more advanced features (e.g. for dealing with error conditions)
-than the average block device
+These refs are well managed in the delayed_ref rbtree, but processing these refs can be multi-threads,
+so the ordering is not ensured to be sequenced since the original design thinks each ref is independent.
 
-For example, Adaptec recommends that such drives will work better with
-their hardware RAID cards:
+Any thoughts? :)
 
-http://ask.adaptec.com/cgi-bin/adaptec_tic.cfg/php/enduser/std_adp.php?p_faqid=14596
-"Desktop class disk drives have an error recovery feature that will
-result in a continuous retry of the drive (read or write) when an error
-is encountered, such as a bad sector. In a RAID array this can cause the
-RAID controller to time-out while waiting for the drive to respond."
+thanks,
+liubo
 
-and this blog:
-http://www.adaptec.com/blog/?p=901
-"major advantages to enterprise drives (TLER for one) ... opt for the
-enterprise drives in a RAID environment no matter what the cost of the
-drive over the desktop drive"
+> 
+> david
+> --
+> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
+> the body of a message to majordomo@vger.kernel.org
+> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+> 
 
-My question..
-
-- does btrfs RAID1 actively use the more advanced features of these
-drives, e.g. to work around errors without getting stuck on a bad block?
-
-- if a non-RAID SAS card is used, does it matter which card is chosen?
-Does btrfs work equally well with all of them?
-
-- ignoring the better MTBF and seek times of these drives, do any of the
-other features passively contribute to a better RAID experience when
-using btrfs?
-
-- for someone using SAS or enterprise SATA drives with Linux, I
-understand btrfs gives the extra benefit of checksums, are there any
-other specific benefits over using mdadm or dmraid?
 

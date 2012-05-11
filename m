@@ -1,49 +1,53 @@
-From: Aaron Toponce <aaron.toponce@gmail.com>
+From: Berke Durak <berke.durak@gmail.com>
 Subject: Re: Minimum device size of 256 MiB?
-Date: Fri, 11 May 2012 14:50:32 -0600
-Message-ID: <20120511205032.GV21964@eightyeight.xmission.com>
+Date: Fri, 11 May 2012 17:02:51 -0400
+Message-ID: <CAALTfKCMUCjT0J2BfDZ1PwWQ9QKjCDk8WfE3tthdoq0Neg3PUA@mail.gmail.com>
 References: <CAALTfKDFhNgCuvuA3C+wYCBL2b-qZkNrwti_MbNn4Aiob+QdkQ@mail.gmail.com>
+	<20120511205032.GV21964@eightyeight.xmission.com>
 Mime-Version: 1.0
-Content-Type: multipart/signed; micalg=pgp-sha512;
-	protocol="application/pgp-signature"; boundary="IuJpT0rwbUevm2bB"
+Content-Type: text/plain; charset=UTF-8
 To: linux-btrfs@vger.kernel.org
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <CAALTfKDFhNgCuvuA3C+wYCBL2b-qZkNrwti_MbNn4Aiob+QdkQ@mail.gmail.com>
+In-Reply-To: <20120511205032.GV21964@eightyeight.xmission.com>
 List-ID: <linux-btrfs.vger.kernel.org>
 
+I think I may have found a workaround.
 
---IuJpT0rwbUevm2bB
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
+> One very interesting use of dm-zero is for creating "sparse" devices =
+in
+conjunction with dm-snapshot. A sparse device reports a device-size
+larger than the amount of actual storage space
+available for that device. A user can write data anywhere within the
+sparse device and read it back like a normal
+device. Reads to previously unwritten areas will return a zero'd
+buffer. When enough data has been written to fill up
+the actual storage space, the sparse device is deactivated. This can
+be very useful for testing device and filesystem
+limitations.
 
-On Fri, May 11, 2012 at 03:57:24PM -0400, Berke Durak wrote:
-> There seems to be a 256 MiB lower limit on device size : mkfs.btrfs
-> refuses to create a filesystem on a device that is smaller than that.
+I don't know if that would be useful for your crypto signature analysis=
+=2E
 
-I've noticed the same. I'm interested in researching the patterns the
-filesystem puts down on an encrypted container, but would like to use 1MB
-files as the block device for the filesystem. Looking for patterns in 256MB
-files is too expensive.
-
+On Fri, May 11, 2012 at 4:50 PM, Aaron Toponce <aaron.toponce@gmail.com=
+> wrote:
+> On Fri, May 11, 2012 at 03:57:24PM -0400, Berke Durak wrote:
+>> There seems to be a 256 MiB lower limit on device size : mkfs.btrfs
+>> refuses to create a filesystem on a device that is smaller than that=
+=2E
+>
+> I've noticed the same. I'm interested in researching the patterns the
+> filesystem puts down on an encrypted container, but would like to use=
+ 1MB
+> files as the block device for the filesystem. Looking for patterns in=
+ 256MB
+> files is too expensive.
+>
+> --
+> . o . =C2=A0 o . o =C2=A0 . . o =C2=A0 o . . =C2=A0 . o .
+> . . o =C2=A0 . o o =C2=A0 o . o =C2=A0 . o o =C2=A0 . . o
+> o o o =C2=A0 . o . =C2=A0 . o o =C2=A0 o o . =C2=A0 o o o
 --
-. o .   o . o   . . o   o . .   . o .
-. . o   . o o   o . o   . o o   . . o
-o o o   . o .   . o o   o o .   o o o
-
---IuJpT0rwbUevm2bB
-Content-Type: application/pgp-signature
-
------BEGIN PGP SIGNATURE-----
-Version: GnuPG v1.4.12 (GNU/Linux)
-Comment: http://ae7.st/s/pgp
-
-iQEcBAABCgAGBQJPrXuVAAoJEM55Ebf8BAiPfywH/iRI1880nvVCEczff4gmfd6X
-J2gElNaarPO1G4WQFq2ifQ4oVMq/Wqdq8igWZHJb7aZoJ2lSzMLP/OIC7/J2pasU
-XF4QPQBjYOYOTPC8DBZPGV/4c5qiOOb8tsSosUlXptye3ecMEQRWNnFPCpBpDDzA
-IZkM+1IkjEuxbidxg9FFTV3dAgciiLSLqEggiQs70je7gCTpsxEjd0Ubn6J6+Y8w
-xE9DYZrENdwjmDpEtrHVkQLLhSv860i1RAXBRLeMKbiLID8fOZ4uknvaBoEGk434
-8kwSGvoIDCU89dgql131TYe8wBUKiHE5H4kOc3jEV2aG6Mo7DNN23v5uMmRQFho=
-=FwMw
------END PGP SIGNATURE-----
-
---IuJpT0rwbUevm2bB--
+To unsubscribe from this list: send the line "unsubscribe linux-btrfs" =
+in
+the body of a message to majordomo@vger.kernel.org
+More majordomo info at  http://vger.kernel.org/majordomo-info.html

@@ -1,74 +1,119 @@
-From: "Kasatkin, Dmitry" <dmitry.kasatkin@intel.com>
-Subject: Re: [RFC] [PATCH 2/2] Btrfs: move over to use ->update_time
-Date: Fri, 11 May 2012 09:06:31 +0300
-Message-ID: <CALLzPKYBvUmCJp3WokkZjfryMfovsYVhrfggHfCmJ+3kb5pyQA@mail.gmail.com>
-References: <1332771031-3337-1-git-send-email-josef@redhat.com>
-	<1332771031-3337-2-git-send-email-josef@redhat.com>
-	<CALLzPKbs7ALeP9sM2OorMiMFCXGs26oPM9=EjBny0NiQi0orSQ@mail.gmail.com>
-	<20120404174300.GB2097@localhost.localdomain>
-	<1333561669.12904.0.camel@falcor>
-	<CALLzPKYvPqi=9dboZDh4Gm0Poouoa2ZY7K3hbhS9bmkiK6nFAQ@mail.gmail.com>
-	<20120404181622.GC2097@localhost.localdomain>
-	<20120409151605.GA6482@fieldses.org>
-	<20120410074801.GE11041@twin.jikos.cz>
-	<CALLzPKaiYkp15DnP2m+ZdX+zVpVDWPwU7Ct+MrsetAFYXYR0ig@mail.gmail.com>
-	<20120412113246.GC23876@twin.jikos.cz>
+From: Andrei Popa <andrei.popa@next-gen.ro>
+Subject: btrfs tools typo
+Date: Fri, 11 May 2012 12:26:16 +0300
+Message-ID: <1336728376.2215.13.camel@ierdnac-hp>
+Reply-To: andrei.popa@next-gen.ro
 Mime-Version: 1.0
-Content-Type: text/plain; charset=UTF-8
-To: dave@jikos.cz, "Kasatkin, Dmitry" <dmitry.kasatkin@intel.com>,
-	"J. Bruce Fields" <bfields@fieldses.org>,
-	Josef Bacik <josef@redhat.com>,
-	Mimi Zohar <zohar@linux.vnet.ibm.com>,
-	linux-fsdevel@vger.kernel.org, viro@zeniv.linux.org.uk,
-	linux-btrfs@vger.kernel.org, hch@infradead.org
-Return-path: <linux-fsdevel-owner@vger.kernel.org>
-In-Reply-To: <20120412113246.GC23876@twin.jikos.cz>
+Content-Type: multipart/signed; micalg="sha1"; protocol="application/x-pkcs7-signature";
+	boundary="=-ATAvV0K8tfQsk8o9aga/"
+To: linux-btrfs@vger.kernel.org
+Return-path: <linux-btrfs-owner@vger.kernel.org>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Thu, Apr 12, 2012 at 2:32 PM, David Sterba <dave@jikos.cz> wrote:
-> On Thu, Apr 12, 2012 at 02:09:08PM +0300, Kasatkin, Dmitry wrote:
->> Where is it? Can you please point out?
->
-> http://permalink.gmane.org/gmane.comp.file-systems.btrfs/16662
->
-> the relevant part:
->
-> -- a/fs/btrfs/super.c
-> +++ b/fs/btrfs/super.c
-> @@ -770,7 +770,7 @@ static int btrfs_fill_super(struct super_block *s=
-b,
-> =C2=A0#ifdef CONFIG_BTRFS_FS_POSIX_ACL
-> =C2=A0 =C2=A0 =C2=A0 =C2=A0sb->s_flags |=3D MS_POSIXACL;
-> =C2=A0#endif
-> -
-> + =C2=A0 =C2=A0 =C2=A0 sb->s_flags |=3D MS_I_VERSION;
-> =C2=A0 =C2=A0 =C2=A0 =C2=A0err =3D open_ctree(sb, fs_devices, (char *=
-)data);
-> =C2=A0 =C2=A0 =C2=A0 =C2=A0if (err) {
-> =C2=A0 =C2=A0 =C2=A0 =C2=A0 =C2=A0 =C2=A0 =C2=A0 =C2=A0printk("btrfs:=
- open_ctree failed\n");
 
-Hello,
+--=-ATAvV0K8tfQsk8o9aga/
+Content-Type: text/plain; charset="UTF-8"
+Content-Transfer-Encoding: quoted-printable
 
-=46YI:
+In the latest btrfs tools from git it's a typo:
 
-In fact just tried yesterday to use mount option "iversion" on 3.4-rc5
-and it seems to work without
- + =C2=A0 =C2=A0 =C2=A0 sb->s_flags |=3D MS_I_VERSION;
+ierdnac-hp ~ # btrfs|grep dafault
+    btrfs subvolume get-dafault <path>
+    btrfs subvolume set-dafault <subvolid> <path>
+ierdnac-hp ~ #=20
 
-I checked that following is really happening in btrfs_update_time():
+Andrei=20
+--=20
+Andrei Popa
+NOC Manager - Nextgen Communications
+0760 683 280
 
-	if (sync_it & S_VERSION)
-		inode_inc_iversion(inode);
+--=-ATAvV0K8tfQsk8o9aga/
+Content-Type: application/x-pkcs7-signature; name="smime.p7s"
+Content-Disposition: attachment; filename="smime.p7s"
+Content-Transfer-Encoding: base64
 
-I also put some prints to btrfs_mount and remount and see that
-MS_I_VERSION is not set there yet.
+MIAGCSqGSIb3DQEHAqCAMIACAQExCzAJBgUrDgMCGgUAMIAGCSqGSIb3DQEHAQAAoIIPJTCCBN0w
+ggPFoAMCAQICByAGBRZwAwIwDQYJKoZIhvcNAQEFBQAwOzELMAkGA1UEBhMCUk8xETAPBgNVBAoT
+CGNlcnRTSUdOMRkwFwYDVQQLExBjZXJ0U0lHTiBST09UIENBMB4XDTA2MDcwNzE4NDA1MloXDTE2
+MDcwNzE4NDA1MlowXDELMAkGA1UEBhMCUk8xETAPBgNVBAoTCGNlcnRTSUdOMRwwGgYDVQQLExNj
+ZXJ0U0lHTiBDQSBDbGFzcyAyMRwwGgYDVQQDExNjZXJ0U0lHTiBDQSBDbGFzcyAyMIIBIjANBgkq
+hkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAttkkYpv0fzjkaxRFMsbRnsxXabwLB8e1IA0mPCOyBjuj
+bIIcJ4QaChMAcmijOvUkAdbX+fPytFKo658TdnAoTCS3P6muA2cPgcyDxeCz2aBB6/The9HebBYB
+uvL27SkjV1hbuES0UtCxAHVFmrcaosjUalazsgbjzMf5ydIXt/TWBl3v214P5oczq/rxjBK0RNkN
+bOnKoFAF7S6WjVnaCGP+A0QRQplvMgHxIUrDTY6rT09yYRoO1MOnUdlXe0UnoYtqUsgoFc9rqGRI
+OgbsBYF1KmSdW8gk4E5UD4yUQuauiz7HnunbDBT3MOn66YKw1XeaXMHOMsFVuvWo9IsOtQIDAQAB
+o4IBwzCCAb8wMwYIKwYBBQUHAQEEJzAlMCMGCCsGAQUFBzABhhdodHRwOi8vb2NzcC5jZXJ0c2ln
+bi5ybzAPBgNVHRMBAf8EBTADAQH/MA4GA1UdDwEB/wQEAwIBhjBoBgNVHSMEYTBfgBTgjJvbJUmz
+8XyG1rJChwvQa6DZ5KE/pD0wOzELMAkGA1UEBhMCUk8xETAPBgNVBAoTCGNlcnRTSUdOMRkwFwYD
+VQQLExBjZXJ0U0lHTiBST09UIENBggYgBgUWcAIwHQYDVR0OBBYEFLeSQc7tPdGhSINOLoReF9jV
+C+BHMEkGA1UdIARCMEAwPgYLKwYBBAGBwzkBAQIwLzAtBggrBgEFBQcCARYhaHR0cDovL3d3dy5j
+ZXJ0c2lnbi5yby9yZXBvc2l0b3J5MIGSBgNVHR8EgYowgYcwgYSggYGgf4YfaHR0cDovL2NybC5j
+ZXJ0c2lnbi5yby9yb290LmNybIZcbGRhcDovL2xkYXAuY2VydHNpZ24ucm8vT1U9Y2VydFNJR04g
+Uk9PVCBDQSxPPWNlcnRTSUdOLEM9Uk8/Y2VydGlmaWNhdGVSZXZvY2F0aW9uTGlzdDtiaW5hcnkw
+DQYJKoZIhvcNAQEFBQADggEBAEDa2CUsKs4f3k+lItWflKN4BZLB9BBfxeJrhck0rezwWZVpfkJQ
+7bP+fhGUAjDTXNSurBB9K2nwNntkTCaoGG4IPT+u3R30QofE2g3gxyH38SvNCHpI5+2bCHw1mfj5
+mfcRTtbgF+zYigsQrSbohArJhe8flLUlQeDXWx3pGW2av2uXMgoeAMapeNSha5UuweeRqNN4GpaK
+mkdHT+n6ODXn6ogGjAkfgAKw341i1mmk5+r5LNgYJf+AuFIaQMNRqHP81JEhrOUFZTxoBz/sv7WS
+Nzj3/0qkcp542dNg7oQfrsB1mQ5z2yHsDnzut4roRdFWRGl41JNV/G7Tw9Iv2Z4wggUeMIIEBqAD
+AgECAgkgBgUWcAQCBVgwDQYJKoZIhvcNAQEFBQAwXDELMAkGA1UEBhMCUk8xETAPBgNVBAoTCGNl
+cnRTSUdOMRwwGgYDVQQLExNjZXJ0U0lHTiBDQSBDbGFzcyAyMRwwGgYDVQQDExNjZXJ0U0lHTiBD
+QSBDbGFzcyAyMB4XDTExMDkyODEyMTEzNFoXDTEyMDkyODEyMTEzNFowazELMAkGA1UEBhMCUk8x
+JjAkBgNVBAoMHVNDIE5FWFRHRU4gQ09NTVVOSUNBVElPTlMgU1JMMRQwEgYDVQQDDAtBbmRyZWkg
+UG9wYTEPMA0GA1UEKgwGQW5kcmVpMQ0wCwYDVQQEDARQb3BhMIGfMA0GCSqGSIb3DQEBAQUAA4GN
+ADCBiQKBgQDGrpQOcQPKhdF0IFaIlM5cHtlzCp4Pzh4CRinBhM+MJPXFe0k2EZq1zfHFPLuMrdoS
+Ic+TiBFo4QF5eAt7K4kegHWYLHaMq7bY+6FUyKRnfo++gvGmgPQj3FSINxlMj1rEBZTmYixGj7Bn
+FUe2ErvHErnciDxv126+pxsgTjHQVwIDAQABo4ICVjCCAlIwMwYIKwYBBQUHAQEEJzAlMCMGCCsG
+AQUFBzABhhdodHRwOi8vb2NzcC5jZXJ0c2lnbi5ybzAMBgNVHRMBAf8EAjAAMA4GA1UdDwEB/wQE
+AwIEsDBpBgNVHSMEYjBggBS3kkHO7T3RoUiDTi6EXhfY1QvgR6E/pD0wOzELMAkGA1UEBhMCUk8x
+ETAPBgNVBAoTCGNlcnRTSUdOMRkwFwYDVQQLExBjZXJ0U0lHTiBST09UIENBggcgBgUWcAMCMB0G
+A1UdDgQWBBTMEAGmcIocrVgYSojlugr43zgyAzBJBgNVHSAEQjBAMD4GCysGAQQBgcM5AQECMC8w
+LQYIKwYBBQUHAgEWIWh0dHA6Ly93d3cuY2VydHNpZ24ucm8vcmVwb3NpdG9yeTCBrwYDVR0fBIGn
+MIGkMIGhoIGeoIGbhiFodHRwOi8vY3JsLmNlcnRzaWduLnJvL2NsYXNzMi5jcmyGdmxkYXA6Ly9s
+ZGFwLmNlcnRzaWduLnJvL0NOPWNlcnRTSUdOIENBIENsYXNzIDIsT1U9Y2VydFNJR04gQ0EgQ2xh
+c3MgMixPPWNlcnRTSUdOLEM9Uk8/Y2VydGlmaWNhdGVSZXZvY2F0aW9uTGlzdDtiaW5hcnkwSwYD
+VR0RBEQwQqAnBgorBgEEAYI3FAIDoBkMF2FuZHJlaS5wb3BhQG5leHQtZ2VuLnJvgRdhbmRyZWku
+cG9wYUBuZXh0LWdlbi5ybzApBgNVHSUEIjAgBggrBgEFBQcDAgYKKwYBBAGCNxQCAgYIKwYBBQUH
+AwQwDQYJKoZIhvcNAQEFBQADggEBAIl6X8rLy3TYGmZkjidPE+FCqzU2pB0EiS1F7HlDPzYOlLzc
+WCgq1p/GjIwuBuRTucD/h8QwoR89uO7lTBIuNthjEUx/9ezXWJhaVAyz9JEdBhh83vD5z+5D+V0P
+yzh0dEA4g/bmMDs+7poRlz3vayKUTM7xW4SBXVr8l6EypmWa1QyurmcOCSbG6sTQEogEuxRWrEFL
+cyj/TmK/UC9MPmUJihT+dKMRx1qH2YkLGFLCuYXtjRnbdId6lhmQeNhdZw96dlJ35p1Pl4ayqQ7L
+qxLCckT3RtvwoFopzMAaZS5xc8nkRIMuss7XcPgRKX6dRHcEzpHFuxNvk/RFqyTKhGkwggUeMIIE
+BqADAgECAgkgBgUWcAQCBVgwDQYJKoZIhvcNAQEFBQAwXDELMAkGA1UEBhMCUk8xETAPBgNVBAoT
+CGNlcnRTSUdOMRwwGgYDVQQLExNjZXJ0U0lHTiBDQSBDbGFzcyAyMRwwGgYDVQQDExNjZXJ0U0lH
+TiBDQSBDbGFzcyAyMB4XDTExMDkyODEyMTEzNFoXDTEyMDkyODEyMTEzNFowazELMAkGA1UEBhMC
+Uk8xJjAkBgNVBAoMHVNDIE5FWFRHRU4gQ09NTVVOSUNBVElPTlMgU1JMMRQwEgYDVQQDDAtBbmRy
+ZWkgUG9wYTEPMA0GA1UEKgwGQW5kcmVpMQ0wCwYDVQQEDARQb3BhMIGfMA0GCSqGSIb3DQEBAQUA
+A4GNADCBiQKBgQDGrpQOcQPKhdF0IFaIlM5cHtlzCp4Pzh4CRinBhM+MJPXFe0k2EZq1zfHFPLuM
+rdoSIc+TiBFo4QF5eAt7K4kegHWYLHaMq7bY+6FUyKRnfo++gvGmgPQj3FSINxlMj1rEBZTmYixG
+j7BnFUe2ErvHErnciDxv126+pxsgTjHQVwIDAQABo4ICVjCCAlIwMwYIKwYBBQUHAQEEJzAlMCMG
+CCsGAQUFBzABhhdodHRwOi8vb2NzcC5jZXJ0c2lnbi5ybzAMBgNVHRMBAf8EAjAAMA4GA1UdDwEB
+/wQEAwIEsDBpBgNVHSMEYjBggBS3kkHO7T3RoUiDTi6EXhfY1QvgR6E/pD0wOzELMAkGA1UEBhMC
+Uk8xETAPBgNVBAoTCGNlcnRTSUdOMRkwFwYDVQQLExBjZXJ0U0lHTiBST09UIENBggcgBgUWcAMC
+MB0GA1UdDgQWBBTMEAGmcIocrVgYSojlugr43zgyAzBJBgNVHSAEQjBAMD4GCysGAQQBgcM5AQEC
+MC8wLQYIKwYBBQUHAgEWIWh0dHA6Ly93d3cuY2VydHNpZ24ucm8vcmVwb3NpdG9yeTCBrwYDVR0f
+BIGnMIGkMIGhoIGeoIGbhiFodHRwOi8vY3JsLmNlcnRzaWduLnJvL2NsYXNzMi5jcmyGdmxkYXA6
+Ly9sZGFwLmNlcnRzaWduLnJvL0NOPWNlcnRTSUdOIENBIENsYXNzIDIsT1U9Y2VydFNJR04gQ0Eg
+Q2xhc3MgMixPPWNlcnRTSUdOLEM9Uk8/Y2VydGlmaWNhdGVSZXZvY2F0aW9uTGlzdDtiaW5hcnkw
+SwYDVR0RBEQwQqAnBgorBgEEAYI3FAIDoBkMF2FuZHJlaS5wb3BhQG5leHQtZ2VuLnJvgRdhbmRy
+ZWkucG9wYUBuZXh0LWdlbi5ybzApBgNVHSUEIjAgBggrBgEFBQcDAgYKKwYBBAGCNxQCAgYIKwYB
+BQUHAwQwDQYJKoZIhvcNAQEFBQADggEBAIl6X8rLy3TYGmZkjidPE+FCqzU2pB0EiS1F7HlDPzYO
+lLzcWCgq1p/GjIwuBuRTucD/h8QwoR89uO7lTBIuNthjEUx/9ezXWJhaVAyz9JEdBhh83vD5z+5D
++V0Pyzh0dEA4g/bmMDs+7poRlz3vayKUTM7xW4SBXVr8l6EypmWa1QyurmcOCSbG6sTQEogEuxRW
+rEFLcyj/TmK/UC9MPmUJihT+dKMRx1qH2YkLGFLCuYXtjRnbdId6lhmQeNhdZw96dlJ35p1Pl4ay
+qQ7LqxLCckT3RtvwoFopzMAaZS5xc8nkRIMuss7XcPgRKX6dRHcEzpHFuxNvk/RFqyTKhGkxggJm
+MIICYgIBATBpMFwxCzAJBgNVBAYTAlJPMREwDwYDVQQKEwhjZXJ0U0lHTjEcMBoGA1UECxMTY2Vy
+dFNJR04gQ0EgQ2xhc3MgMjEcMBoGA1UEAxMTY2VydFNJR04gQ0EgQ2xhc3MgMgIJIAYFFnAEAgVY
+MAkGBSsOAwIaBQCgggFTMBgGCSqGSIb3DQEJAzELBgkqhkiG9w0BBwEwHAYJKoZIhvcNAQkFMQ8X
+DTEyMDUxMTA5MjYxNlowIwYJKoZIhvcNAQkEMRYEFIAlFM1F4rn9Z1Z7cK5mIdChfcfcMHgGCSsG
+AQQBgjcQBDFrMGkwXDELMAkGA1UEBhMCUk8xETAPBgNVBAoTCGNlcnRTSUdOMRwwGgYDVQQLExNj
+ZXJ0U0lHTiBDQSBDbGFzcyAyMRwwGgYDVQQDExNjZXJ0U0lHTiBDQSBDbGFzcyAyAgkgBgUWcAQC
+BVgwegYLKoZIhvcNAQkQAgsxa6BpMFwxCzAJBgNVBAYTAlJPMREwDwYDVQQKEwhjZXJ0U0lHTjEc
+MBoGA1UECxMTY2VydFNJR04gQ0EgQ2xhc3MgMjEcMBoGA1UEAxMTY2VydFNJR04gQ0EgQ2xhc3Mg
+MgIJIAYFFnAEAgVYMA0GCSqGSIb3DQEBAQUABIGAw+zJBiZSF2ObGmETXvuAnW2Hh5GK0JWHjTU9
+Vcc88gVmxdg5UDylZF5gQJSVonwqfDcZCV9YtzHPmiHcnbp9Bw6HutGDkP5BFjGFNugpzD0HW25L
+zLeuPA/VCGmXwKW9XI7+ZQg70ccggP5fF9FRPxvmr20POF71tP2vmx0bZNcAAAAAAAA=
 
-Somehow magically it gets set...
 
-- Dmitry
---
-To unsubscribe from this list: send the line "unsubscribe linux-fsdevel=
-" in
-the body of a message to majordomo@vger.kernel.org
-More majordomo info at  http://vger.kernel.org/majordomo-info.html
+--=-ATAvV0K8tfQsk8o9aga/--
+

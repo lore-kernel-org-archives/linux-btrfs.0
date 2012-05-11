@@ -1,87 +1,74 @@
-From: Duncan <1i5t5.duncan@cox.net>
-Subject: Re: btrfs RAID with enterprise SATA or SAS drives
-Date: Fri, 11 May 2012 02:18:24 +0000 (UTC)
-Message-ID: <pan.2012.05.11.02.18.22@cox.net>
-References: <4FAAE94D.4010103@pocock.com.au>
+From: "Kasatkin, Dmitry" <dmitry.kasatkin@intel.com>
+Subject: Re: [RFC] [PATCH 2/2] Btrfs: move over to use ->update_time
+Date: Fri, 11 May 2012 09:06:31 +0300
+Message-ID: <CALLzPKYBvUmCJp3WokkZjfryMfovsYVhrfggHfCmJ+3kb5pyQA@mail.gmail.com>
+References: <1332771031-3337-1-git-send-email-josef@redhat.com>
+	<1332771031-3337-2-git-send-email-josef@redhat.com>
+	<CALLzPKbs7ALeP9sM2OorMiMFCXGs26oPM9=EjBny0NiQi0orSQ@mail.gmail.com>
+	<20120404174300.GB2097@localhost.localdomain>
+	<1333561669.12904.0.camel@falcor>
+	<CALLzPKYvPqi=9dboZDh4Gm0Poouoa2ZY7K3hbhS9bmkiK6nFAQ@mail.gmail.com>
+	<20120404181622.GC2097@localhost.localdomain>
+	<20120409151605.GA6482@fieldses.org>
+	<20120410074801.GE11041@twin.jikos.cz>
+	<CALLzPKaiYkp15DnP2m+ZdX+zVpVDWPwU7Ct+MrsetAFYXYR0ig@mail.gmail.com>
+	<20120412113246.GC23876@twin.jikos.cz>
 Mime-Version: 1.0
 Content-Type: text/plain; charset=UTF-8
-To: linux-btrfs@vger.kernel.org
-Return-path: <linux-btrfs-owner@vger.kernel.org>
+To: dave@jikos.cz, "Kasatkin, Dmitry" <dmitry.kasatkin@intel.com>,
+	"J. Bruce Fields" <bfields@fieldses.org>,
+	Josef Bacik <josef@redhat.com>,
+	Mimi Zohar <zohar@linux.vnet.ibm.com>,
+	linux-fsdevel@vger.kernel.org, viro@zeniv.linux.org.uk,
+	linux-btrfs@vger.kernel.org, hch@infradead.org
+Return-path: <linux-fsdevel-owner@vger.kernel.org>
+In-Reply-To: <20120412113246.GC23876@twin.jikos.cz>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Daniel Pocock posted on Wed, 09 May 2012 22:01:49 +0000 as excerpted:
+On Thu, Apr 12, 2012 at 2:32 PM, David Sterba <dave@jikos.cz> wrote:
+> On Thu, Apr 12, 2012 at 02:09:08PM +0300, Kasatkin, Dmitry wrote:
+>> Where is it? Can you please point out?
+>
+> http://permalink.gmane.org/gmane.comp.file-systems.btrfs/16662
+>
+> the relevant part:
+>
+> -- a/fs/btrfs/super.c
+> +++ b/fs/btrfs/super.c
+> @@ -770,7 +770,7 @@ static int btrfs_fill_super(struct super_block *s=
+b,
+> =C2=A0#ifdef CONFIG_BTRFS_FS_POSIX_ACL
+> =C2=A0 =C2=A0 =C2=A0 =C2=A0sb->s_flags |=3D MS_POSIXACL;
+> =C2=A0#endif
+> -
+> + =C2=A0 =C2=A0 =C2=A0 sb->s_flags |=3D MS_I_VERSION;
+> =C2=A0 =C2=A0 =C2=A0 =C2=A0err =3D open_ctree(sb, fs_devices, (char *=
+)data);
+> =C2=A0 =C2=A0 =C2=A0 =C2=A0if (err) {
+> =C2=A0 =C2=A0 =C2=A0 =C2=A0 =C2=A0 =C2=A0 =C2=A0 =C2=A0printk("btrfs:=
+ open_ctree failed\n");
 
-> There is various information about
-> - enterprise-class drives (either SAS or just enterprise SATA)
-> - the SCSI/SAS protocols themselves vs SATA having more advanced
-> features (e.g. for dealing with error conditions)
-> than the average block device
+Hello,
 
-This isn't a direct answer to that, but expressing a bit of concern over 
-the implications of your question, that you're planning on using btrfs in 
-an enterprise class installation.
+=46YI:
 
-While various Enterprise Linux distributions do now officially "support" 
-btrfs, it's worth checking out exactly what that means in practice.
+In fact just tried yesterday to use mount option "iversion" on 3.4-rc5
+and it seems to work without
+ + =C2=A0 =C2=A0 =C2=A0 sb->s_flags |=3D MS_I_VERSION;
 
-Meanwhile, in mainline Linux kernel terms, btrfs remains very much an 
-experimental filesystem, as expressed by the kernel config option that 
-turns btrfs on.  It's still under very intensive development, with an 
-error-fixing btrfsck only recently available and still coming with its 
-own "may make the problems worse instead of fixing them" warning.  
-Testers willing to risk the chance of data loss implied by that 
-"experimental filesystem" label should be running the latest stable 
-kernel at the oldest, and preferably the rcs by rc5 or so, as new kernels 
-continue to fix problems in older btrfs code as well as introduce new 
-features and if you're running an older kernel, that means you're running 
-a kernel with known problems that are fixed in the latest kernel.
+I checked that following is really happening in btrfs_update_time():
 
-Experimental also has implications in terms of backups.  A good sysadmin 
-always has backups, but normally, the working copy can be considered the 
-primary copy, and there's backups of that.  On an experimental filesystem 
-under as intense continued development as btrfs, by contrast, it's best 
-to consider your btrfs copy an extra "throwaway" copy only intended for 
-testing.  You still have your primary copy, along with all the usual 
-backups, on something less experimental, since you never know when/where/
-how your btrfs testing will screw up its copy.
+	if (sync_it & S_VERSION)
+		inode_inc_iversion(inode);
 
-That's not normally the kind of filesystem "enterprise class" users are 
-looking for, unless of course they're doing longer term testing, with an 
-intent to actually deploy perhaps a year out, if the testing proves it 
-robust enough by then.
+I also put some prints to btrfs_mount and remount and see that
+MS_I_VERSION is not set there yet.
 
-And while it's still experimental ATM, btrfs /is/ fast improving.  It 
-/does/ now have a working fsck, even if it still comes with warnings, 
-and  reasonable feature-set build-out should be within a few more kernels 
-(raid5/6 mode is roadmapped for 3.5, and n-way-mirroring raid1/10 are 
-roadmapped after that, current "raid1" mode is only 2-way mirroring, 
-regardless of the number of drives).  After that, the focus should turn 
-toward full stabilization.  So while btrfs is currently intended for 
-testers only, by around the end of the year or early next, it will likely 
-be reasonably stable and ready for at least the more adventurous 
-conventional users.  Still, enterprise class users tend to be a 
-conservative bunch, and I'd be surprised if they really consider btrfs 
-ready before mid-year next year, at the earliest.
+Somehow magically it gets set...
 
-So if you're looking to test btrfs on enterprise-class hardware, great!  
-But do be aware of what you're getting into.  If you have an enterprise 
-distro which supports it too, even greater, but know what that actually 
-means.  Does it mean they support the same level of 9s uptime on it as 
-they normally do, or just that they're ready to accept payment to try and 
-recover things if something goes wrong?
-
-If that hasn't scared you off, and you've not read the wiki yet, that's 
-probably the next thing you should look at, as it answers a lot of 
-questions you may have, as well as some you wouldn't think to ask.  Being 
-a wiki, of course, your own contributions are welcome.  In particular, 
-you may well be able to cover some of the enterprise class viewpoint 
-questions your asking based on your own testing, once you get to that 
-point.
-
-https://btrfs.wiki.kernel.org/
-
--- 
-Duncan - List replies preferred.   No HTML msgs.
-"Every nonfree program has a lord, a master --
-and if you use the program, he is your master."  Richard Stallman
-
+- Dmitry
+--
+To unsubscribe from this list: send the line "unsubscribe linux-fsdevel=
+" in
+the body of a message to majordomo@vger.kernel.org
+More majordomo info at  http://vger.kernel.org/majordomo-info.html

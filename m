@@ -1,133 +1,49 @@
-From: Andrei Popa <andrei.popa@next-gen.ro>
-Subject: brfs-progs patches
-Date: Fri, 11 May 2012 13:12:56 +0300
-Message-ID: <1336731176.2215.24.camel@ierdnac-hp>
-Reply-To: andrei.popa@next-gen.ro
+From: Chris Samuel <chris@csamuel.org>
+Subject: Re: btrfs tools typo
+Date: Fri, 11 May 2012 22:53:52 +1000
+Message-ID: <201205112253.56187.chris@csamuel.org>
+References: <1336728376.2215.13.camel@ierdnac-hp>
 Mime-Version: 1.0
-Content-Type: multipart/signed; micalg="sha1"; protocol="application/x-pkcs7-signature";
-	boundary="=-369Dw0y+FqOm891pJ2hm"
-To: Hugo Mills <hugo@carfax.org.uk>, linux-btrfs@vger.kernel.org
+Content-Type: multipart/signed;
+  boundary="nextPart17143078.cc50n5482C";
+  protocol="application/pgp-signature";
+  micalg=pgp-sha1
+To: linux-btrfs@vger.kernel.org
 Return-path: <linux-btrfs-owner@vger.kernel.org>
+In-Reply-To: <1336728376.2215.13.camel@ierdnac-hp>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-
---=-369Dw0y+FqOm891pJ2hm
-Content-Type: text/plain; charset="UTF-8"
+--nextPart17143078.cc50n5482C
+Content-Type: Text/Plain;
+  charset="iso-8859-15"
 Content-Transfer-Encoding: quoted-printable
 
-Hello,
+On Friday 11 May 2012 19:26:16 Andrei Popa wrote:
 
-In the btrfs wiki
-( https://btrfs.wiki.kernel.org/index.php/Btrfs_source_repositories ) it
-says:
-"Hugo Mills maintains an "integration" branch of all the patches for the
-userspace tools that have been seen on the mailing list. There are two
-important branches in this repository. For "stable" commits that have
-been offered upstream, there's the for-chris branch. If you are writing
-patches for the userspace tools, you should probably develop against
-this branch [To make my life easier -Hugo]. This can be found with:
+> In the latest btrfs tools from git it's a typo:
 
-$ git clone http://git.darksatanic.net/repo/btrfs-progs-unstable.git
-$ cd btrfs-progs-unstable
-$ git checkout for-chris
-"
-This year the repository has not been updated at all, is or this
-information still valid or it should be removed from the wiki ?
+I'll send a patch now.
 
-There are some btrfs-progs patches send on the mailing-list which don't
-appear in Chris git for btrfs-progs.
-Does someone maintain a git tree with them ?
+=2D-=20
+ Chris Samuel  :  http://www.csamuel.org/  :  Melbourne, VIC
 
-Thanks,
-Andrei
+This email may come with a PGP signature as a file. Do not panic.
+=46or more info see: http://en.wikipedia.org/wiki/OpenPGP
 
+--nextPart17143078.cc50n5482C
+Content-Type: application/pgp-signature; name=signature.asc 
+Content-Description: This is a digitally signed message part.
 
---=-369Dw0y+FqOm891pJ2hm
-Content-Type: application/x-pkcs7-signature; name="smime.p7s"
-Content-Disposition: attachment; filename="smime.p7s"
-Content-Transfer-Encoding: base64
+-----BEGIN PGP SIGNATURE-----
+Version: GnuPG v1.4.11 (GNU/Linux)
 
-MIAGCSqGSIb3DQEHAqCAMIACAQExCzAJBgUrDgMCGgUAMIAGCSqGSIb3DQEHAQAAoIIPJTCCBN0w
-ggPFoAMCAQICByAGBRZwAwIwDQYJKoZIhvcNAQEFBQAwOzELMAkGA1UEBhMCUk8xETAPBgNVBAoT
-CGNlcnRTSUdOMRkwFwYDVQQLExBjZXJ0U0lHTiBST09UIENBMB4XDTA2MDcwNzE4NDA1MloXDTE2
-MDcwNzE4NDA1MlowXDELMAkGA1UEBhMCUk8xETAPBgNVBAoTCGNlcnRTSUdOMRwwGgYDVQQLExNj
-ZXJ0U0lHTiBDQSBDbGFzcyAyMRwwGgYDVQQDExNjZXJ0U0lHTiBDQSBDbGFzcyAyMIIBIjANBgkq
-hkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAttkkYpv0fzjkaxRFMsbRnsxXabwLB8e1IA0mPCOyBjuj
-bIIcJ4QaChMAcmijOvUkAdbX+fPytFKo658TdnAoTCS3P6muA2cPgcyDxeCz2aBB6/The9HebBYB
-uvL27SkjV1hbuES0UtCxAHVFmrcaosjUalazsgbjzMf5ydIXt/TWBl3v214P5oczq/rxjBK0RNkN
-bOnKoFAF7S6WjVnaCGP+A0QRQplvMgHxIUrDTY6rT09yYRoO1MOnUdlXe0UnoYtqUsgoFc9rqGRI
-OgbsBYF1KmSdW8gk4E5UD4yUQuauiz7HnunbDBT3MOn66YKw1XeaXMHOMsFVuvWo9IsOtQIDAQAB
-o4IBwzCCAb8wMwYIKwYBBQUHAQEEJzAlMCMGCCsGAQUFBzABhhdodHRwOi8vb2NzcC5jZXJ0c2ln
-bi5ybzAPBgNVHRMBAf8EBTADAQH/MA4GA1UdDwEB/wQEAwIBhjBoBgNVHSMEYTBfgBTgjJvbJUmz
-8XyG1rJChwvQa6DZ5KE/pD0wOzELMAkGA1UEBhMCUk8xETAPBgNVBAoTCGNlcnRTSUdOMRkwFwYD
-VQQLExBjZXJ0U0lHTiBST09UIENBggYgBgUWcAIwHQYDVR0OBBYEFLeSQc7tPdGhSINOLoReF9jV
-C+BHMEkGA1UdIARCMEAwPgYLKwYBBAGBwzkBAQIwLzAtBggrBgEFBQcCARYhaHR0cDovL3d3dy5j
-ZXJ0c2lnbi5yby9yZXBvc2l0b3J5MIGSBgNVHR8EgYowgYcwgYSggYGgf4YfaHR0cDovL2NybC5j
-ZXJ0c2lnbi5yby9yb290LmNybIZcbGRhcDovL2xkYXAuY2VydHNpZ24ucm8vT1U9Y2VydFNJR04g
-Uk9PVCBDQSxPPWNlcnRTSUdOLEM9Uk8/Y2VydGlmaWNhdGVSZXZvY2F0aW9uTGlzdDtiaW5hcnkw
-DQYJKoZIhvcNAQEFBQADggEBAEDa2CUsKs4f3k+lItWflKN4BZLB9BBfxeJrhck0rezwWZVpfkJQ
-7bP+fhGUAjDTXNSurBB9K2nwNntkTCaoGG4IPT+u3R30QofE2g3gxyH38SvNCHpI5+2bCHw1mfj5
-mfcRTtbgF+zYigsQrSbohArJhe8flLUlQeDXWx3pGW2av2uXMgoeAMapeNSha5UuweeRqNN4GpaK
-mkdHT+n6ODXn6ogGjAkfgAKw341i1mmk5+r5LNgYJf+AuFIaQMNRqHP81JEhrOUFZTxoBz/sv7WS
-Nzj3/0qkcp542dNg7oQfrsB1mQ5z2yHsDnzut4roRdFWRGl41JNV/G7Tw9Iv2Z4wggUeMIIEBqAD
-AgECAgkgBgUWcAQCBVgwDQYJKoZIhvcNAQEFBQAwXDELMAkGA1UEBhMCUk8xETAPBgNVBAoTCGNl
-cnRTSUdOMRwwGgYDVQQLExNjZXJ0U0lHTiBDQSBDbGFzcyAyMRwwGgYDVQQDExNjZXJ0U0lHTiBD
-QSBDbGFzcyAyMB4XDTExMDkyODEyMTEzNFoXDTEyMDkyODEyMTEzNFowazELMAkGA1UEBhMCUk8x
-JjAkBgNVBAoMHVNDIE5FWFRHRU4gQ09NTVVOSUNBVElPTlMgU1JMMRQwEgYDVQQDDAtBbmRyZWkg
-UG9wYTEPMA0GA1UEKgwGQW5kcmVpMQ0wCwYDVQQEDARQb3BhMIGfMA0GCSqGSIb3DQEBAQUAA4GN
-ADCBiQKBgQDGrpQOcQPKhdF0IFaIlM5cHtlzCp4Pzh4CRinBhM+MJPXFe0k2EZq1zfHFPLuMrdoS
-Ic+TiBFo4QF5eAt7K4kegHWYLHaMq7bY+6FUyKRnfo++gvGmgPQj3FSINxlMj1rEBZTmYixGj7Bn
-FUe2ErvHErnciDxv126+pxsgTjHQVwIDAQABo4ICVjCCAlIwMwYIKwYBBQUHAQEEJzAlMCMGCCsG
-AQUFBzABhhdodHRwOi8vb2NzcC5jZXJ0c2lnbi5ybzAMBgNVHRMBAf8EAjAAMA4GA1UdDwEB/wQE
-AwIEsDBpBgNVHSMEYjBggBS3kkHO7T3RoUiDTi6EXhfY1QvgR6E/pD0wOzELMAkGA1UEBhMCUk8x
-ETAPBgNVBAoTCGNlcnRTSUdOMRkwFwYDVQQLExBjZXJ0U0lHTiBST09UIENBggcgBgUWcAMCMB0G
-A1UdDgQWBBTMEAGmcIocrVgYSojlugr43zgyAzBJBgNVHSAEQjBAMD4GCysGAQQBgcM5AQECMC8w
-LQYIKwYBBQUHAgEWIWh0dHA6Ly93d3cuY2VydHNpZ24ucm8vcmVwb3NpdG9yeTCBrwYDVR0fBIGn
-MIGkMIGhoIGeoIGbhiFodHRwOi8vY3JsLmNlcnRzaWduLnJvL2NsYXNzMi5jcmyGdmxkYXA6Ly9s
-ZGFwLmNlcnRzaWduLnJvL0NOPWNlcnRTSUdOIENBIENsYXNzIDIsT1U9Y2VydFNJR04gQ0EgQ2xh
-c3MgMixPPWNlcnRTSUdOLEM9Uk8/Y2VydGlmaWNhdGVSZXZvY2F0aW9uTGlzdDtiaW5hcnkwSwYD
-VR0RBEQwQqAnBgorBgEEAYI3FAIDoBkMF2FuZHJlaS5wb3BhQG5leHQtZ2VuLnJvgRdhbmRyZWku
-cG9wYUBuZXh0LWdlbi5ybzApBgNVHSUEIjAgBggrBgEFBQcDAgYKKwYBBAGCNxQCAgYIKwYBBQUH
-AwQwDQYJKoZIhvcNAQEFBQADggEBAIl6X8rLy3TYGmZkjidPE+FCqzU2pB0EiS1F7HlDPzYOlLzc
-WCgq1p/GjIwuBuRTucD/h8QwoR89uO7lTBIuNthjEUx/9ezXWJhaVAyz9JEdBhh83vD5z+5D+V0P
-yzh0dEA4g/bmMDs+7poRlz3vayKUTM7xW4SBXVr8l6EypmWa1QyurmcOCSbG6sTQEogEuxRWrEFL
-cyj/TmK/UC9MPmUJihT+dKMRx1qH2YkLGFLCuYXtjRnbdId6lhmQeNhdZw96dlJ35p1Pl4ayqQ7L
-qxLCckT3RtvwoFopzMAaZS5xc8nkRIMuss7XcPgRKX6dRHcEzpHFuxNvk/RFqyTKhGkwggUeMIIE
-BqADAgECAgkgBgUWcAQCBVgwDQYJKoZIhvcNAQEFBQAwXDELMAkGA1UEBhMCUk8xETAPBgNVBAoT
-CGNlcnRTSUdOMRwwGgYDVQQLExNjZXJ0U0lHTiBDQSBDbGFzcyAyMRwwGgYDVQQDExNjZXJ0U0lH
-TiBDQSBDbGFzcyAyMB4XDTExMDkyODEyMTEzNFoXDTEyMDkyODEyMTEzNFowazELMAkGA1UEBhMC
-Uk8xJjAkBgNVBAoMHVNDIE5FWFRHRU4gQ09NTVVOSUNBVElPTlMgU1JMMRQwEgYDVQQDDAtBbmRy
-ZWkgUG9wYTEPMA0GA1UEKgwGQW5kcmVpMQ0wCwYDVQQEDARQb3BhMIGfMA0GCSqGSIb3DQEBAQUA
-A4GNADCBiQKBgQDGrpQOcQPKhdF0IFaIlM5cHtlzCp4Pzh4CRinBhM+MJPXFe0k2EZq1zfHFPLuM
-rdoSIc+TiBFo4QF5eAt7K4kegHWYLHaMq7bY+6FUyKRnfo++gvGmgPQj3FSINxlMj1rEBZTmYixG
-j7BnFUe2ErvHErnciDxv126+pxsgTjHQVwIDAQABo4ICVjCCAlIwMwYIKwYBBQUHAQEEJzAlMCMG
-CCsGAQUFBzABhhdodHRwOi8vb2NzcC5jZXJ0c2lnbi5ybzAMBgNVHRMBAf8EAjAAMA4GA1UdDwEB
-/wQEAwIEsDBpBgNVHSMEYjBggBS3kkHO7T3RoUiDTi6EXhfY1QvgR6E/pD0wOzELMAkGA1UEBhMC
-Uk8xETAPBgNVBAoTCGNlcnRTSUdOMRkwFwYDVQQLExBjZXJ0U0lHTiBST09UIENBggcgBgUWcAMC
-MB0GA1UdDgQWBBTMEAGmcIocrVgYSojlugr43zgyAzBJBgNVHSAEQjBAMD4GCysGAQQBgcM5AQEC
-MC8wLQYIKwYBBQUHAgEWIWh0dHA6Ly93d3cuY2VydHNpZ24ucm8vcmVwb3NpdG9yeTCBrwYDVR0f
-BIGnMIGkMIGhoIGeoIGbhiFodHRwOi8vY3JsLmNlcnRzaWduLnJvL2NsYXNzMi5jcmyGdmxkYXA6
-Ly9sZGFwLmNlcnRzaWduLnJvL0NOPWNlcnRTSUdOIENBIENsYXNzIDIsT1U9Y2VydFNJR04gQ0Eg
-Q2xhc3MgMixPPWNlcnRTSUdOLEM9Uk8/Y2VydGlmaWNhdGVSZXZvY2F0aW9uTGlzdDtiaW5hcnkw
-SwYDVR0RBEQwQqAnBgorBgEEAYI3FAIDoBkMF2FuZHJlaS5wb3BhQG5leHQtZ2VuLnJvgRdhbmRy
-ZWkucG9wYUBuZXh0LWdlbi5ybzApBgNVHSUEIjAgBggrBgEFBQcDAgYKKwYBBAGCNxQCAgYIKwYB
-BQUHAwQwDQYJKoZIhvcNAQEFBQADggEBAIl6X8rLy3TYGmZkjidPE+FCqzU2pB0EiS1F7HlDPzYO
-lLzcWCgq1p/GjIwuBuRTucD/h8QwoR89uO7lTBIuNthjEUx/9ezXWJhaVAyz9JEdBhh83vD5z+5D
-+V0Pyzh0dEA4g/bmMDs+7poRlz3vayKUTM7xW4SBXVr8l6EypmWa1QyurmcOCSbG6sTQEogEuxRW
-rEFLcyj/TmK/UC9MPmUJihT+dKMRx1qH2YkLGFLCuYXtjRnbdId6lhmQeNhdZw96dlJ35p1Pl4ay
-qQ7LqxLCckT3RtvwoFopzMAaZS5xc8nkRIMuss7XcPgRKX6dRHcEzpHFuxNvk/RFqyTKhGkxggJm
-MIICYgIBATBpMFwxCzAJBgNVBAYTAlJPMREwDwYDVQQKEwhjZXJ0U0lHTjEcMBoGA1UECxMTY2Vy
-dFNJR04gQ0EgQ2xhc3MgMjEcMBoGA1UEAxMTY2VydFNJR04gQ0EgQ2xhc3MgMgIJIAYFFnAEAgVY
-MAkGBSsOAwIaBQCgggFTMBgGCSqGSIb3DQEJAzELBgkqhkiG9w0BBwEwHAYJKoZIhvcNAQkFMQ8X
-DTEyMDUxMTEwMTI1NlowIwYJKoZIhvcNAQkEMRYEFP7z6E8YUzkXRccDTWQjIz9yyHwRMHgGCSsG
-AQQBgjcQBDFrMGkwXDELMAkGA1UEBhMCUk8xETAPBgNVBAoTCGNlcnRTSUdOMRwwGgYDVQQLExNj
-ZXJ0U0lHTiBDQSBDbGFzcyAyMRwwGgYDVQQDExNjZXJ0U0lHTiBDQSBDbGFzcyAyAgkgBgUWcAQC
-BVgwegYLKoZIhvcNAQkQAgsxa6BpMFwxCzAJBgNVBAYTAlJPMREwDwYDVQQKEwhjZXJ0U0lHTjEc
-MBoGA1UECxMTY2VydFNJR04gQ0EgQ2xhc3MgMjEcMBoGA1UEAxMTY2VydFNJR04gQ0EgQ2xhc3Mg
-MgIJIAYFFnAEAgVYMA0GCSqGSIb3DQEBAQUABIGAfgeKZbQTyRCZkO1zC9f7dZdywFew1jq+n1yu
-qc9P9gqQy0brV8RiR5/qWmkdfXegbAxxIsLiLqUJR/vVvCljS16dM8a8i4/E7igySlUNjHvr0TBH
-FNZ1vImCa4RMVRiWm1AWkYEh7wi1xu9XwfHBRF1n97LICXdSAiQJVn7woB0AAAAAAAA=
+iQEVAwUAT60L4I1yjaOTJg85AQLVdAf8CMCv9mHQGWLLGH7fKC30xuJ/YI4st6Kp
+pM+S85fW5DmwM0aV35b+0PTOVPlggCgO0kBOXglyBQfsxUxWfPDuc7HGk5sykP+q
+wq9FKL8Z6tq1SJwJI5FKlgwIat3A2uA2sZpwVqeUQhaLfKKeqJtFGIn1ENghXiK8
+RC/QlBXk7Uz6pKIPel6QxFsQtX1xyPKkSYx5Ed4VXo3O+vmUEG8XDGGSqjR9LBOg
+cQtFVvqxdtj6/ge6grlGz/zgNhNL4EY8YN+tj6lHVB+RsD7vM13BXLfJfHOJACjN
+8dbjZV9l1Rtb6Vo/s+IsB2nLiOs/r57ySvCwJVIJG5Hl+nkkP9aMsg==
+=gw5c
+-----END PGP SIGNATURE-----
 
-
---=-369Dw0y+FqOm891pJ2hm--
-
+--nextPart17143078.cc50n5482C--

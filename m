@@ -1,87 +1,124 @@
 From: Brendan Smithyman <smithyman@gmail.com>
 Subject: Re: Subdirectory creation on snapshot
-Date: Mon, 14 May 2012 10:11:01 -0700
-Message-ID: <687632B7-2461-496A-878C-2357B47128CF@gmail.com>
-References: <821DC50D-8451-4AD1-8CCA-DE1238D4788B@gmail.com> <20120509165802.GN19331@twin.jikos.cz> <F39B4ABB-65D7-467D-BB57-FD9EBB70F1FB@gmail.com> <20120514120852.GH25501@twin.jikos.cz> <20120514162707.GA24394@twin.jikos.cz>
+Date: Mon, 14 May 2012 10:15:12 -0700
+Message-ID: <AC9AF660-1E10-4B93-AE6A-AA662477D2AE@gmail.com>
+References: <821DC50D-8451-4AD1-8CCA-DE1238D4788B@gmail.com> <20120509165802.GN19331@twin.jikos.cz> <F39B4ABB-65D7-467D-BB57-FD9EBB70F1FB@gmail.com> <20120514120852.GH25501@twin.jikos.cz>
 Mime-Version: 1.0 (Apple Message framework v1278)
-Content-Type: multipart/signed; boundary="Apple-Mail=_3C98112C-7E75-40F9-B7C2-EFA37A5C5910"; protocol="application/pkcs7-signature"; micalg=sha1
-Cc: linux-btrfs@vger.kernel.org, miaox@cn.fujitsu.com
+Content-Type: multipart/signed; boundary="Apple-Mail=_8BD15163-32E9-4519-917F-2FB7FCF2077E"; protocol="application/pkcs7-signature"; micalg=sha1
+Cc: linux-btrfs@vger.kernel.org
 To: dave@jikos.cz
 Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <20120514162707.GA24394@twin.jikos.cz>
+In-Reply-To: <20120514120852.GH25501@twin.jikos.cz>
 List-ID: <linux-btrfs.vger.kernel.org>
 
 
---Apple-Mail=_3C98112C-7E75-40F9-B7C2-EFA37A5C5910
+--Apple-Mail=_8BD15163-32E9-4519-917F-2FB7FCF2077E
 Content-Transfer-Encoding: quoted-printable
 Content-Type: text/plain;
 	charset=us-ascii
 
 
-On 2012-05-14, at 9:27 AM, David Sterba wrote:
+On 2012-05-14, at 5:08 AM, David Sterba wrote:
 
-> On Mon, May 14, 2012 at 02:08:52PM +0200, David Sterba wrote:
->> Seems more like a bug, let's narrow down the conditions before we =
-look
->> into the code.
+> On Wed, May 09, 2012 at 10:38:30AM -0700, Brendan Smithyman wrote:
+>> If I understand you correctly, this would be the case with nested
+>> subvolumes; i.e., if subvolume A is exists within the directory tree
+>> subvolume B, and B is snapshotted.  I expected this, and it sounds
+>> totally consistent with my understanding of how btrfs subvolumes =
+work.
+>> However, the behaviour I'm seeing seems to be a different thing, so I
+>> just want to double-check:
 >=20
-> And already known bug (with a proposed fix, cc'd author):
+> I've read again your first post and indeed it's not the empty subvol
+> issue.
 >=20
-> http://www.spinics.net/lists/linux-btrfs/msg15195.html
+>> In my case I am executing the "btrfs subvolume snapshot @working
+>> newsnapshot" command (or something like it).  The "@working" =
+subvolume
+>> exists in the filesystem root, and does not contain any other
+>> subvolumes within its own subdirectory tree.  In the new subvolume,
+>> "newsnapshot", there is an entry called "@working" that is identified
+>> as inode number 2 as you say.  But this isn't due to a subvolume in
+>> the directory tree of the original "@working", since it still =
+happens,
+>> e.g., if it is the only subvolume on the system (apart from the root,
+>> of course).
 >=20
-> Quoting:
+> So I followed the steps to reproduce it with a 3.4 kernel, but I don't
+> see the duplicated @working anywhere.
 >=20
-> # mkfs.btrfs /dev/sda1
-> # mount /dev/sda1 /mnt
-> # mkdir /mnt/1
-> # cd /mnt/1
-> # btrfs subvolume snapshot /mnt snap0
-> # ll /mnt/1
-> total 0
-> drwxr-xr-x 1 root root 10 Jun 30 15:01 1
-> 			^^^
-> # ll /mnt/1/snap0/
-> total 0
-> drwxr-xr-x 1 root root 10 Jun 30 15:01 1
-> 			^^^
-> 			It is also 10, but...
-> # ll /mnt/1/snap0/1
-> total 0
-> [None]
-> # cd /mnt/1/snap0/1/snap0
-> [Enter a unexisted directory successfully]
-> ---
+> # btrfs subvol create @working
+> # ls @working
+> src/
+> # btrfs subvol snap @working 2012-05-14
+> # btrfs subvol snap @working test
+> # ls test/
+> src/
 >=20
-> Though there's a difference, that in your listing the @working (here
-> it'd be snap0) is present.
+> # btrfs subvol list .
+> ID 258 top level 5 path @working
+> ID 259 top level 5 path 2012-05-14
+> ID 260 top level 5 path test
 >=20
 >=20
+>> The naive assumption is that (excepting nested subvolumes), the
+>> snapshot should be indistinguishable from the original.  =
+Additionally,
+>> I'm a bit perplexed by the behaviour on some of my volumes and not
+>> others.
+>=20
+> Not a consistent behaviour then, so there's another factor.
+>=20
+> Please run stat on the test/@working directory, if it's the ino =3D=3D =
+2
+> (empty subvol) or not.
+
+It is inode =3D=3D 2.
+
+>=20
+> Do you do lot's of snapshots on the fs, or are there lots of data plus
+> the filesystem is ~80% full? I have a theory, that this can somehow
+> interact with background subvolume deletion: if a subvolume is deleted
+> from directory hierarchy, but just scheduled for deletion, reusing =
+it's
+> name could be incorrectly taken as part of the dir hierarchy to =
+snapshot
+> and thus the extra '@working' is created.
+
+Not a ton; I may have had half a dozen at one point while testing a =
+backup script, but they were all essentially identical.  Probably < 10 =
+in the history of the filesystem (it's quite new).  Data use is maybe =
+60% of the raw drive capacity IIRC; still lots of unallocated space for =
+new chunks.
+
+>=20
+> In your environment this would mean that there was a subvolume 'test',
+> then deleted, still in the queue for actual deletion. Slow snapshot
+> deletion may come from large number of them and this is even slower =
+when
+> the filesystem is fragmented or near full.
+>=20
+>> It's not a big deal, and I'm happy to take your word for it
+>> (or look at the code, if you'd be willing to point me in the right
+>> direction; I'm not averse to learning).  I just wanted to =
+double-check
+>> that we're talking about the same thing.
+>=20
+> Seems more like a bug, let's narrow down the conditions before we look
+> into the code.
+
+I just replied to your other email about the existing bug.
+
+Thanks,
+Brendan
+
+>=20
+>=20
+> thanks,
 > david
 
-Thanks David,
 
-Yes, it's looking similar, but perhaps not identical.  I checked, and =
-the "@working" directory inside the new snapshot has inode 2.  The =
-phantom directory shows up on ls, and can be removed by rmdir.
-
-However: since I sent the first email, I moved one of the volumes to =
-btrfs RAID1 from btrfs single on top of md raid.  I recreated the =
-filesystem (mkfs.btrfs -L reaper -m raid1 -d raid1 /dev/sdc1 /dev/sdd1) =
-at that time, and restored data from a backup.  The new filesystem is =
-not displaying the issues from before; it is now behaving in-line with =
-the SSD I mentioned in my first post, which was similarly set up from =
-the command line with mkfs.btrfs.
-
-The disks that *are* still showing the subdirectory creation issue were =
-both converted from ext4 (using old tools).  So perhaps that's a =
-direction to explore.
-
-Thanks for the help.
-
-Cheers,
-Brendan=
-
---Apple-Mail=_3C98112C-7E75-40F9-B7C2-EFA37A5C5910
+--Apple-Mail=_8BD15163-32E9-4519-917F-2FB7FCF2077E
 Content-Disposition: attachment;
 	filename=smime.p7s
 Content-Type: application/pkcs7-signature;
@@ -152,18 +189,18 @@ hsgBfl2VVH/dw6OHKw9jp97D46gHhE8HTwb3xC++47+CGwCVuyMeiKalpjGCA28wggNrAgEBMIGU
 MIGMMQswCQYDVQQGEwJJTDEWMBQGA1UEChMNU3RhcnRDb20gTHRkLjErMCkGA1UECxMiU2VjdXJl
 IERpZ2l0YWwgQ2VydGlmaWNhdGUgU2lnbmluZzE4MDYGA1UEAxMvU3RhcnRDb20gQ2xhc3MgMSBQ
 cmltYXJ5IEludGVybWVkaWF0ZSBDbGllbnQgQ0ECAwOPkjAJBgUrDgMCGgUAoIIBrzAYBgkqhkiG
-9w0BCQMxCwYJKoZIhvcNAQcBMBwGCSqGSIb3DQEJBTEPFw0xMjA1MTQxNzExMDJaMCMGCSqGSIb3
-DQEJBDEWBBSIM61HL425xrV04PvBewVyB6OjeDCBpQYJKwYBBAGCNxAEMYGXMIGUMIGMMQswCQYD
+9w0BCQMxCwYJKoZIhvcNAQcBMBwGCSqGSIb3DQEJBTEPFw0xMjA1MTQxNzE1MTNaMCMGCSqGSIb3
+DQEJBDEWBBSxUUaLKe5vojhYt3tXSpPvj6RCGTCBpQYJKwYBBAGCNxAEMYGXMIGUMIGMMQswCQYD
 VQQGEwJJTDEWMBQGA1UEChMNU3RhcnRDb20gTHRkLjErMCkGA1UECxMiU2VjdXJlIERpZ2l0YWwg
 Q2VydGlmaWNhdGUgU2lnbmluZzE4MDYGA1UEAxMvU3RhcnRDb20gQ2xhc3MgMSBQcmltYXJ5IElu
 dGVybWVkaWF0ZSBDbGllbnQgQ0ECAwOPkjCBpwYLKoZIhvcNAQkQAgsxgZeggZQwgYwxCzAJBgNV
 BAYTAklMMRYwFAYDVQQKEw1TdGFydENvbSBMdGQuMSswKQYDVQQLEyJTZWN1cmUgRGlnaXRhbCBD
 ZXJ0aWZpY2F0ZSBTaWduaW5nMTgwNgYDVQQDEy9TdGFydENvbSBDbGFzcyAxIFByaW1hcnkgSW50
-ZXJtZWRpYXRlIENsaWVudCBDQQIDA4+SMA0GCSqGSIb3DQEBAQUABIIBAKpln2D5E3ZqnNouX7Hh
-9zpV375wmRfyFwx9D1EhMl7pKJbOohJlYHgL+28zYmsvLdk7y1N+1v5nxynC6OL08gZTfAnQOW+f
-/1uQnArJ83ffNh+MljW1SjoFvoItPmhKvcMBdMpcx6aapnqvPxemlBgtJ9FgiQ/mpqLBOV5TLcdc
-C9ApIgUEjZip5XGzd7payYxXGR0+KGMlHpfz/cGMI8Jq23h0qie7iGV3DMovvNUaXt503nKzW+/W
-r4QvjVniEsSVGDFb1eURki3Z8Irdhgbtlkf3C42lctpJLNHHkP5tq0OuHzQBO34Sj8loO8ElaIrc
-0kd+D8aZNODuh/zpd4EAAAAAAAA=
+ZXJtZWRpYXRlIENsaWVudCBDQQIDA4+SMA0GCSqGSIb3DQEBAQUABIIBAK2/biKDpTNDtpIu63GY
+jToeaNuNNECRvw2DphUlDi7y5akYinUJKX8+z7PudVANwelsOsQvzXaD3frXYHBAD9azJLNcQHZm
+cNgFfDmOY+lzTQmSC0gkl0Zz6yNg5SMSA4ZLAGZerZ1Mb9NwdjTPFEblOJpkv+tldgbmneusAgSB
+71lK6IxfoV1xxr25qswWmdIjNTcs/N+S39gInO7bpA99D6+r0z/rbj7g9P5OdXeLzR0gEXMi4okt
+mEIEIj29c2QgfRIB7Sf8fcqa5k1MvzIvad0u2UQff8hYsfFeKtfH60nkUJ+t4hSxgk9bNNZ6q8Ee
+0ViJGUH1j5SLKoLVGkwAAAAAAAA=
 
---Apple-Mail=_3C98112C-7E75-40F9-B7C2-EFA37A5C5910--
+--Apple-Mail=_8BD15163-32E9-4519-917F-2FB7FCF2077E--

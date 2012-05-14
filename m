@@ -1,109 +1,58 @@
 From: Duncan <1i5t5.duncan@cox.net>
-Subject: Re: btrfs RAID with enterprise SATA or SAS drives
-Date: Mon, 14 May 2012 08:38:22 +0000 (UTC)
-Message-ID: <pan.2012.05.14.08.38.20@cox.net>
-References: <4FAAE94D.4010103@pocock.com.au>
-	<pan.2012.05.11.02.18.22@cox.net> <201205111858.05972.Martin@lichtvoll.de>
+Subject: Re: Minimum device size of 256 MiB?
+Date: Mon, 14 May 2012 09:01:43 +0000 (UTC)
+Message-ID: <pan.2012.05.14.09.01.43@cox.net>
+References: <CAALTfKDFhNgCuvuA3C+wYCBL2b-qZkNrwti_MbNn4Aiob+QdkQ@mail.gmail.com>
+	<20120511205032.GV21964@eightyeight.xmission.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset=UTF-8
 To: linux-btrfs@vger.kernel.org
 Return-path: <linux-btrfs-owner@vger.kernel.org>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Martin Steigerwald posted on Fri, 11 May 2012 18:58:05 +0200 as excerpt=
-ed:
+Aaron Toponce posted on Fri, 11 May 2012 14:50:32 -0600 as excerpted:
 
-Martin Steigerwald posted on Fri, 11 May 2012 18:58:05 +0200 as excerpt=
-ed:
+> On Fri, May 11, 2012 at 03:57:24PM -0400, Berke Durak wrote:
+>> There seems to be a 256 MiB lower limit on device size : mkfs.btrfs
+>> refuses to create a filesystem on a device that is smaller than that.
+> 
+> I've noticed the same. I'm interested in researching the patterns the
+> filesystem puts down on an encrypted container, but would like to use
+> 1MB files as the block device for the filesystem. Looking for patterns
+> in 256MB files is too expensive.
 
-> Am Freitag, 11. Mai 2012 schrieb Duncan:
->> Daniel Pocock posted on Wed, 09 May 2012 22:01:49 +0000 as excerpted=
-:
->> > There is various information about - enterprise-class drives
+You don't mention what kernels or how recent your btrfs-tools builds are, 
+but that has been fixed recently, I believe for the 3.3 kernels but 
+certainly for 3.4-rcs, as I have a 128 MB /boot on btrfs, here.
 
->> This isn't a direct answer to that, but expressing a bit of concern
->> over  the implications of your question, that you're planning on usi=
-ng
->> btrfs in an enterprise class installation.
+You can read about it in the wiki at btrfs.wiki.kernel.org, but 
+basically, btrfs' normal allocation pattern is separate data and metadata 
+"chunks", which on large enough filesystems are a gig each.  As the 
+filesystem shrinks, so does the chunk, but the chunksize minimum used to 
+be 256 MiB (or possibly 128 MiB, but you needed one data and one metadata 
+chunk, totaling 256 MiB but only half of it could be used).
 
->> [In] mainline Linux kernel terms, btrfs remains very much an
->> experimental filesystem
+With current kernels and tools, a filesystem below a gig in size defaults 
+to "mixed" mode, data and metadata mixed in the same chunk, and the 
+minimum size of the chunk has been eliminated or at least significantly 
+reduced, as well.  (I'm not sure if the minimum is tiny, now, say a MiB, 
+or eliminated entirely, but a 128 MiB filesystem works, I know that.)
 
->> On an experimental filesystem under as intense continued development=
- as
->> btrfs, by contrast, it's best to consider your btrfs copy an extra
->> "throwaway" copy only intended for testing.  You still have your
->> primary copy, along with all the usual backups, on something less
->> experimental, since you never know when/where/ how your btrfs testin=
-g
->> will screw up its copy.
->=20
-> Duncan, did you actually test BTRFS? Theory can=C2=B4t replace real l=
-ife
-> experience.
+Meanwhile, as the wiki states repeatedly, btrfs is still an experimental 
+filesystem, with enough changes going in that if you're not at least 
+using the latest stable kernel if not the -rcs, you're using old and 
+stale code that has known bugs compared to current.  Obviously, that 
+applies here, since you're obviously using stale code if you're still 
+running into this problem...
 
-I /had/ been waiting until the n-way-mirrored-raid1 roadmapped for afte=
-r
-raid5/6 mode (which should hit 3.5, I believe), but hardware issues
-intervened and I'm no longer using those older 4-way md/raid drives as
-primary.
+Unless of course you're running a new kernel and have run into a 
+different bug.  The mixed-chunk code /is/ quite new, after all, and could 
+have some bugs to work out.  But if you're running current and still 
+seeing a 256 MiB minimum, then you're definitely seeing a bug, as that's 
+supposed to be gone!
 
-And now that I have it, present personal experience does not contradict
-what I posted.  btrfs does indeed work reasonably well under reasonably
-good, non-stressful, conditions.  But my experience so far aligns quite
-well with the "consider the btrfs copy a throw-away copy, just in case"
-recommendation.  Just because it's a throw-away copy doesn't mean you'l=
-l
-have to have to resort to the "good" copy elsewhere, but it DOES hopefu=
-lly
-mean that you'll have both a "good" copy elsewhere, and a backup for th=
-at
-supposedly good copy, just in case btrfs does go bad,
-and that supposedly good primary copy, ends up not being good after all=
-=2E
-
-> From all of my personal BTRFS installations not one has gone corrupt =
--
-> and I have at least four, while more of them are in use at my employe=
-r.
-> Except maybe a scratch data BRTFS RAID 0 over lots of SATA disks. But
-> maybe it would have been fixable by btrfs-zero-log which I didn=C2=B4=
-t know
-> of back then. Another one needed a btrfs-zero-log, but that was quite
-> some time ago.
->=20
-> Some of the installations are in use for more than a year AFAIR.
->=20
-> While I would still be reluctant with deploying BTRFS for a customer =
-for
-> critical data
-
-This was actually my point in this thread.  If someone's asking questio=
-ns
-about enterprise quality hardware, they're not likely to run into some =
-of
-the bugs I've been having recently that have been exposed by hardware
-issues.  However, they're also far more likely to be considering btrfs =
-for
-a row-of-nines uptime application, which is, after all, where some of
-btrfs' features are normally found.  Regardless of whether btrfs is pas=
-t
-the "throw away data experimental class" stage or not, I think we both
-agree it isn't ready for row-of-nines-uptime applications just yet.  If
-he's just testing btrfs on such equipment for possible future
-row-of-nines-uptime deployment a year or possibly two out, great.  If h=
-e's
-looking at such a deployment two-months-out, no way, and it looks like =
-you
-agree.
-
---=20
+-- 
 Duncan - List replies preferred.   No HTML msgs.
 "Every nonfree program has a lord, a master --
 and if you use the program, he is your master."  Richard Stallman
 
---
-To unsubscribe from this list: send the line "unsubscribe linux-btrfs" =
-in
-the body of a message to majordomo@vger.kernel.org
-More majordomo info at  http://vger.kernel.org/majordomo-info.html

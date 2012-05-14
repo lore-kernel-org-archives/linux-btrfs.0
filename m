@@ -1,37 +1,30 @@
-From: Josef Bacik <josef@redhat.com>
-Subject: Re: Ceph on btrfs 3.4rc
-Date: Mon, 14 May 2012 10:20:48 -0400
-Message-ID: <20120514142048.GA3260@localhost.localdomain>
-References: <CAJafhzSVZ3+1ApgJU=sQu6gM62BeWVGG4mqFPNYRHx79czYJtQ@mail.gmail.com>
- <20120424152141.GB3326@localhost.localdomain>
- <Pine.LNX.4.64.1204240922040.29159@cobra.newdream.net>
- <CAJafhzSgaQ3sx=Af0Ru0CiwQH37V5y8jgjoTo_8yozcjo9rpPA@mail.gmail.com>
- <20120510203523.GD2061@localhost.localdomain>
- <20120511133124.GB2089@localhost.localdomain>
- <4FAD5B7E.5040801@tuxadero.com>
- <20120511191623.GB3503@localhost.localdomain>
- <4FB11479.8060408@tuxadero.com>
+From: David Sterba <dave@jikos.cz>
+Subject: Re: 3.4.0-rc6: WARNING: at fs/btrfs/super.c:219
+ __btrfs_abort_transaction+0xae/0xc0 [btrfs]()
+Date: Mon, 14 May 2012 17:05:09 +0200
+Message-ID: <20120514150509.GJ25501@twin.jikos.cz>
+References: <4FB10636.2010003@arndnet.de>
+Reply-To: dave@jikos.cz
 Mime-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
-Cc: Josef Bacik <josef@redhat.com>,
-	Christian Brunner <christian@brunner-muc.de>,
-	Sage Weil <sage@newdream.net>, linux-btrfs@vger.kernel.org,
-	ceph-devel@vger.kernel.org
-To: Martin Mailand <martin@tuxadero.com>
-Return-path: <linux-btrfs-owner@vger.kernel.org>
-In-Reply-To: <4FB11479.8060408@tuxadero.com>
+Cc: linux-btrfs@vger.kernel.org, linux-kernel@vger.kernel.org
+To: Arnd Hannemann <arnd@arndnet.de>
+Return-path: <linux-kernel-owner@vger.kernel.org>
+In-Reply-To: <4FB10636.2010003@arndnet.de>
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Mon, May 14, 2012 at 04:19:37PM +0200, Martin Mailand wrote:
-> Hi Josef,
-> 
-> Am 11.05.2012 21:16, schrieb Josef Bacik:
-> >Heh duh, sorry, try this one instead.  Thanks,
-> 
-> With this patch I got this Bug:
+On Mon, May 14, 2012 at 03:18:46PM +0200, Arnd Hannemann wrote:
+> I just got the following warning on a compressed btrfs filesystem, while writing on it
+> until no remaining space was available.
+> Looks like a bit verbose "disk full" message, is it expected behavior?
 
-Yeah Christian reported the same thing on Friday.  I'm going to work on a patch
-and actually run it here to make sure it doesn't blow up and then send it to the
-list when I think I've got something that works.  Thanks,
+Shouldn't be the case for regular ENOSPC (ie. when the space is reserved
+in advance and with the possibility to fail early). If the transaction
+is aborted, it means it's too late and there was some logic error.
 
-Josef
+Can you please describe more the fs and how did you fill it? Like single
+process or multiple, dd or whatever.
+
+
+thanks,
+david

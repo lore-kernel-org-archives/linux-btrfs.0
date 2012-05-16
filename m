@@ -1,107 +1,66 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx1.redhat.com ([209.132.183.28]:6613 "EHLO mx1.redhat.com"
+Received: from mort.rzone.de ([81.169.144.234]:50812 "EHLO mort.rzone.de"
 	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S965579Ab2ERR0w (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Fri, 18 May 2012 13:26:52 -0400
-Received: from int-mx11.intmail.prod.int.phx2.redhat.com (int-mx11.intmail.prod.int.phx2.redhat.com [10.5.11.24])
-	by mx1.redhat.com (8.14.4/8.14.4) with ESMTP id q4IHQqFJ027577
-	(version=TLSv1/SSLv3 cipher=DHE-RSA-AES256-SHA bits=256 verify=OK)
-	for <linux-btrfs@vger.kernel.org>; Fri, 18 May 2012 13:26:52 -0400
-Received: from localhost.localdomain.com (vpn-10-171.rdu.redhat.com [10.11.10.171])
-	by int-mx11.intmail.prod.int.phx2.redhat.com (8.14.4/8.14.4) with ESMTP id q4IHQpJx001990
-	for <linux-btrfs@vger.kernel.org>; Fri, 18 May 2012 13:26:52 -0400
-From: Josef Bacik <josef@redhat.com>
+	id S1757838Ab2EPQvJ (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Wed, 16 May 2012 12:51:09 -0400
+Received: from gargravarr.store (gargravarr.store [192.168.42.236])
+	by mort.rzone.de (Postfix) with ESMTP id 6978F240
+	for <linux-btrfs@vger.kernel.org>; Wed, 16 May 2012 18:51:08 +0200 (MEST)
+From: Stefan Behrens <sbehrens@giantdisaster.de>
 To: linux-btrfs@vger.kernel.org
-Subject: [PATCH] Btrfs: merge contigous regions when loading free space cache
-Date: Fri, 18 May 2012 13:26:50 -0400
-Message-Id: <1337362010-9281-1-git-send-email-josef@redhat.com>
+Subject: [RESEND PATCH] Btrfs: set ioprio of scrub readahead to idle
+Date: Wed, 16 May 2012 18:51:08 +0200
+Message-Id: <382895a74683dfed53d33dcbf1341ecf34e0019a.1337185546.git.sbehrens@giantdisaster.de>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-When we write out the free space cache we will write out everything that is
-in our in memory tree, and then we will just walk the pinned extents tree
-and write anything we see there.  The problem with this is that during
-normal operations the pinned extents will be merged back into the free space
-tree normally, and then we can allocate space from the merged areas and
-commit them to the tree log.  If we crash and replay the tree log we will
-crash again because the tree log will try to free up space from what looks
-like 2 seperate but contiguous entries, since one entry is from the original
-free space cache and the other was a pinned extent that was merged back.  To
-fix this we just need to walk the free space tree after we load it and merge
-contiguous entries back together.  This will keep the tree log stuff from
-breaking and it will make the allocator behave more nicely.  Thanks,
+Reduce ioprio class of scrub readahead threads to idle priority.
+This setting is fixed. This priority has shown the best performance
+during all measurements.
 
-Signed-off-by: Josef Bacik <josef@redhat.com>
+Signed-off-by: Stefan Behrens <sbehrens@giantdisaster.de>
 ---
- fs/btrfs/free-space-cache.c |   41 +++++++++++++++++++++++++++++++++++++++++
- 1 files changed, 41 insertions(+), 0 deletions(-)
+ fs/btrfs/ctree.h |    3 +++
+ fs/btrfs/reada.c |    5 +++++
+ 2 files changed, 8 insertions(+)
 
-diff --git a/fs/btrfs/free-space-cache.c b/fs/btrfs/free-space-cache.c
-index cecf8df..19a0d85 100644
---- a/fs/btrfs/free-space-cache.c
-+++ b/fs/btrfs/free-space-cache.c
-@@ -33,6 +33,8 @@
+diff --git a/fs/btrfs/ctree.h b/fs/btrfs/ctree.h
+index ec42a24..e6f772d 100644
+--- a/fs/btrfs/ctree.h
++++ b/fs/btrfs/ctree.h
+@@ -173,6 +173,9 @@ static int btrfs_csum_sizes[] = { 4, 0 };
+ #define BTRFS_FT_XATTR		8
+ #define BTRFS_FT_MAX		9
  
- static int link_free_space(struct btrfs_free_space_ctl *ctl,
- 			   struct btrfs_free_space *info);
-+static void unlink_free_space(struct btrfs_free_space_ctl *ctl,
-+			      struct btrfs_free_space *info);
++/* ioprio of readahead is set to idle */
++#define BTRFS_IOPRIO_READA (IOPRIO_PRIO_VALUE(IOPRIO_CLASS_IDLE, 0))
++
+ /*
+  * The key defines the order in the tree, and so it also defines (optimal)
+  * block layout.
+diff --git a/fs/btrfs/reada.c b/fs/btrfs/reada.c
+index ac5d010..48a4882 100644
+--- a/fs/btrfs/reada.c
++++ b/fs/btrfs/reada.c
+@@ -718,13 +718,18 @@ static void reada_start_machine_worker(struct btrfs_work *work)
+ {
+ 	struct reada_machine_work *rmw;
+ 	struct btrfs_fs_info *fs_info;
++	int old_ioprio;
  
- static struct inode *__lookup_free_space_inode(struct btrfs_root *root,
- 					       struct btrfs_path *path,
-@@ -584,6 +586,44 @@ static int io_ctl_read_bitmap(struct io_ctl *io_ctl,
- 	return 0;
+ 	rmw = container_of(work, struct reada_machine_work, work);
+ 	fs_info = rmw->fs_info;
+ 
+ 	kfree(rmw);
+ 
++	old_ioprio = IOPRIO_PRIO_VALUE(task_nice_ioclass(current),
++				       task_nice_ioprio(current));
++	set_task_ioprio(current, BTRFS_IOPRIO_READA);
+ 	__reada_start_machine(fs_info);
++	set_task_ioprio(current, old_ioprio);
  }
  
-+/*
-+ * Since we attach pinned extents after the fact we can have contiguous sections
-+ * of free space that are split up in entries.  This poses a problem with the
-+ * tree logging stuff since it could have allocated across what appears to be 2
-+ * entries since we would have merged the entries when adding the pinned extents
-+ * back to the free space cache.  So run through the space cache that we just
-+ * loaded and merge contiguous entries.  This will make the log replay stuff not
-+ * blow up and it will make for nicer allocator behavior.
-+ */
-+static void merge_space_tree(struct btrfs_free_space_ctl *ctl)
-+{
-+	struct btrfs_free_space *e, *prev = NULL;
-+	struct rb_node *n;
-+
-+again:
-+	spin_lock(&ctl->tree_lock);
-+	for (n = rb_first(&ctl->free_space_offset); n; n = rb_next(n)) {
-+		e = rb_entry(n, struct btrfs_free_space, offset_index);
-+		if (!prev)
-+			goto next;
-+		if (e->bitmap || prev->bitmap)
-+			goto next;
-+		if (prev->offset + prev->bytes == e->offset) {
-+			unlink_free_space(ctl, prev);
-+			unlink_free_space(ctl, e);
-+			prev->bytes += e->bytes;
-+			kmem_cache_free(btrfs_free_space_cachep, e);
-+			link_free_space(ctl, prev);
-+			prev = NULL;
-+			spin_unlock(&ctl->tree_lock);
-+			goto again;
-+		}
-+next:
-+		prev = e;
-+	}
-+	spin_unlock(&ctl->tree_lock);
-+}
-+
- int __load_free_space_cache(struct btrfs_root *root, struct inode *inode,
- 			    struct btrfs_free_space_ctl *ctl,
- 			    struct btrfs_path *path, u64 offset)
-@@ -726,6 +766,7 @@ int __load_free_space_cache(struct btrfs_root *root, struct inode *inode,
- 	}
- 
- 	io_ctl_drop_pages(&io_ctl);
-+	merge_space_tree(ctl);
- 	ret = 1;
- out:
- 	io_ctl_free(&io_ctl);
+ static void __reada_start_machine(struct btrfs_fs_info *fs_info)
 -- 
-1.7.7.6
+1.7.10.2
 

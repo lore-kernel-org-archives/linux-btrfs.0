@@ -1,262 +1,77 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mort.rzone.de ([81.169.144.234]:50807 "EHLO mort.rzone.de"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1757863Ab2EPQu7 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 16 May 2012 12:50:59 -0400
-Received: from gargravarr.store (gargravarr.store [192.168.42.236])
-	by mort.rzone.de (Postfix) with ESMTP id 2A02B23B
-	for <linux-btrfs@vger.kernel.org>; Wed, 16 May 2012 18:50:58 +0200 (MEST)
-From: Stefan Behrens <sbehrens@giantdisaster.de>
-To: linux-btrfs@vger.kernel.org
-Subject: [PATCH v3 1/3] Btrfs-progs: move open_file_or_dir() to utils.c
-Date: Wed, 16 May 2012 18:50:56 +0200
-Message-Id: <1337187058-560-2-git-send-email-sbehrens@giantdisaster.de>
+Received: from mail-bk0-f46.google.com ([209.85.214.46]:65091 "EHLO
+	mail-bk0-f46.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1753126Ab2EPRD4 (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>);
+	Wed, 16 May 2012 13:03:56 -0400
+Received: by bkcji2 with SMTP id ji2so824836bkc.19
+        for <linux-btrfs@vger.kernel.org>; Wed, 16 May 2012 10:03:55 -0700 (PDT)
+Message-ID: <1337187784.1525.6.camel@ierdnac-hp>
+Subject: Re: [PATCH v3 0/3] Btrfs-progs: support get/reset device stats via
+ ioctl
+From: Andrei Popa <ierdnah@gmail.com>
+Reply-To: ierdnah@gmail.com
+To: Stefan Behrens <sbehrens@giantdisaster.de>
+Cc: linux-btrfs@vger.kernel.org
+Date: Wed, 16 May 2012 20:03:04 +0300
 In-Reply-To: <1337187058-560-1-git-send-email-sbehrens@giantdisaster.de>
 References: <1337187058-560-1-git-send-email-sbehrens@giantdisaster.de>
+Content-Type: text/plain; charset="UTF-8"
+Mime-Version: 1.0
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-This is a preparation step to add support for device stats. The definition
-of the function open_file_or_dir() is moved from common.c to utils.c in
-order to be able to share some common code between scrub and the device
-stats in the following step. That common code uses open_file_or_dir().
-Since open_file_or_dir() makes use of the function dirfd(3), the required
-XOPEN version was raised from 6 to 7.
+Hi,
 
-Signed-off-by: Stefan Behrens <sbehrens@giantdisaster.de>
----
- Makefile         |    4 ++--
- btrfsctl.c       |   28 ----------------------------
- cmds-balance.c   |    1 +
- cmds-inspect.c   |    1 +
- cmds-subvolume.c |    1 +
- commands.h       |    3 ---
- common.c         |   46 ----------------------------------------------
- utils.c          |   31 +++++++++++++++++++++++++++++--
- utils.h          |    3 +++
- 9 files changed, 37 insertions(+), 81 deletions(-)
+It would be nice if this function could show the file names affected by
+errors, in case of a single, non-redundant drive, btrfs-progs should
+show what files are affected by errors.
+Then, an admin could restore only those files from backup.
 
-diff --git a/Makefile b/Makefile
-index 79818e6..fe2b432 100644
---- a/Makefile
-+++ b/Makefile
-@@ -39,8 +39,8 @@ all: version $(progs) manpages
- version:
- 	bash version.sh
- 
--btrfs: $(objects) btrfs.o help.o common.o $(cmds_objects)
--	$(CC) $(CFLAGS) -o btrfs btrfs.o help.o common.o $(cmds_objects) \
-+btrfs: $(objects) btrfs.o help.o $(cmds_objects)
-+	$(CC) $(CFLAGS) -o btrfs btrfs.o help.o $(cmds_objects) \
- 		$(objects) $(LDFLAGS) $(LIBS) -lpthread
- 
- calc-size: $(objects) calc-size.o
-diff --git a/btrfsctl.c b/btrfsctl.c
-index d45e2a7..f0584f3 100644
---- a/btrfsctl.c
-+++ b/btrfsctl.c
-@@ -63,34 +63,6 @@ static void print_usage(void)
- 	exit(1);
- }
- 
--static int open_file_or_dir(const char *fname)
--{
--	int ret;
--	struct stat st;
--	DIR *dirstream;
--	int fd;
--
--	ret = stat(fname, &st);
--	if (ret < 0) {
--		perror("stat:");
--		exit(1);
--	}
--	if (S_ISDIR(st.st_mode)) {
--		dirstream = opendir(fname);
--		if (!dirstream) {
--			perror("opendir");
--			exit(1);
--		}
--		fd = dirfd(dirstream);
--	} else {
--		fd = open(fname, O_RDWR);
--	}
--	if (fd < 0) {
--		perror("open");
--		exit(1);
--	}
--	return fd;
--}
- int main(int ac, char **av)
- {
- 	char *fname = NULL;
-diff --git a/cmds-balance.c b/cmds-balance.c
-index 38a7426..5793b5c 100644
---- a/cmds-balance.c
-+++ b/cmds-balance.c
-@@ -26,6 +26,7 @@
- #include "ctree.h"
- #include "ioctl.h"
- #include "volumes.h"
-+#include "utils.h"
- 
- #include "commands.h"
- 
-diff --git a/cmds-inspect.c b/cmds-inspect.c
-index 2f0228f..7a8785b 100644
---- a/cmds-inspect.c
-+++ b/cmds-inspect.c
-@@ -22,6 +22,7 @@
- 
- #include "kerncompat.h"
- #include "ioctl.h"
-+#include "utils.h"
- 
- #include "commands.h"
- 
-diff --git a/cmds-subvolume.c b/cmds-subvolume.c
-index 950fa8f..8ecd3f4 100644
---- a/cmds-subvolume.c
-+++ b/cmds-subvolume.c
-@@ -26,6 +26,7 @@
- 
- #include "kerncompat.h"
- #include "ioctl.h"
-+#include "utils.h"
- 
- #include "commands.h"
- 
-diff --git a/commands.h b/commands.h
-index a303a50..aea4cb1 100644
---- a/commands.h
-+++ b/commands.h
-@@ -79,9 +79,6 @@ void help_ambiguous_token(const char *arg, const struct cmd_group *grp);
- 
- void help_command_group(const struct cmd_group *grp, int argc, char **argv);
- 
--/* common.c */
--int open_file_or_dir(const char *fname);
--
- extern const struct cmd_group subvolume_cmd_group;
- extern const struct cmd_group filesystem_cmd_group;
- extern const struct cmd_group balance_cmd_group;
-diff --git a/common.c b/common.c
-deleted file mode 100644
-index 03f6570..0000000
---- a/common.c
-+++ /dev/null
-@@ -1,46 +0,0 @@
--/*
-- * This program is free software; you can redistribute it and/or
-- * modify it under the terms of the GNU General Public
-- * License v2 as published by the Free Software Foundation.
-- *
-- * This program is distributed in the hope that it will be useful,
-- * but WITHOUT ANY WARRANTY; without even the implied warranty of
-- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
-- * General Public License for more details.
-- *
-- * You should have received a copy of the GNU General Public
-- * License along with this program; if not, write to the
-- * Free Software Foundation, Inc., 59 Temple Place - Suite 330,
-- * Boston, MA 021110-1307, USA.
-- */
--
--#include <sys/types.h>
--#include <sys/stat.h>
--#include <dirent.h>
--#include <fcntl.h>
--
--int open_file_or_dir(const char *fname)
--{
--	int ret;
--	struct stat st;
--	DIR *dirstream;
--	int fd;
--
--	ret = stat(fname, &st);
--	if (ret < 0) {
--		return -1;
--	}
--	if (S_ISDIR(st.st_mode)) {
--		dirstream = opendir(fname);
--		if (!dirstream) {
--			return -2;
--		}
--		fd = dirfd(dirstream);
--	} else {
--		fd = open(fname, O_RDWR);
--	}
--	if (fd < 0) {
--		return -3;
--	}
--	return fd;
--}
-diff --git a/utils.c b/utils.c
-index ee7fa1b..6157115 100644
---- a/utils.c
-+++ b/utils.c
-@@ -16,8 +16,9 @@
-  * Boston, MA 021110-1307, USA.
-  */
- 
--#define _XOPEN_SOURCE 600
--#define __USE_XOPEN2K
-+#define _XOPEN_SOURCE 700
-+#define __USE_XOPEN2K8
-+#define __XOPEN2K8 /* due to an error in dirent.h, to get dirfd() */
- #include <stdio.h>
- #include <stdlib.h>
- #ifndef __CHECKER__
-@@ -1206,3 +1207,29 @@ scan_again:
- 	return 0;
- }
- 
-+int open_file_or_dir(const char *fname)
-+{
-+	int ret;
-+	struct stat st;
-+	DIR *dirstream;
-+	int fd;
-+
-+	ret = stat(fname, &st);
-+	if (ret < 0) {
-+		return -1;
-+	}
-+	if (S_ISDIR(st.st_mode)) {
-+		dirstream = opendir(fname);
-+		if (!dirstream) {
-+			return -2;
-+		}
-+		fd = dirfd(dirstream);
-+	} else {
-+		fd = open(fname, O_RDWR);
-+	}
-+	if (fd < 0) {
-+		return -3;
-+	}
-+	return fd;
-+}
-+
-diff --git a/utils.h b/utils.h
-index c5f55e1..e281002 100644
---- a/utils.h
-+++ b/utils.h
-@@ -19,6 +19,8 @@
- #ifndef __UTILS__
- #define __UTILS__
- 
-+#include "ctree.h"
-+
- #define BTRFS_MKFS_SYSTEM_GROUP_SIZE (4 * 1024 * 1024)
- 
- int make_btrfs(int fd, const char *device, const char *label,
-@@ -46,4 +48,5 @@ int check_label(char *input);
- int get_mountpt(char *dev, char *mntpt, size_t size);
- 
- int btrfs_scan_block_devices(int run_ioctl);
-+int open_file_or_dir(const char *fname);
- #endif
--- 
-1.7.10.2
+On Wed, 2012-05-16 at 18:50 +0200, Stefan Behrens wrote:
+> "btrfs device stats" is used to retrieve and print the device stats.
+> "btrfs device stats -z" is used to atomically retrieve, reset and
+> print the stats.
+> 
+> In order to share two utility functions between scrub and the dev stats
+> code, these two functions are moved to utils.c and renamed.
+> Since these functions are using open_file_or_dir(), and since the linking
+> against utils.o and common.o was different, open_file_or_dir() was moved
+> from common.c to utils.c. And since that function makes use of the
+> function dirfd(3), the required XOPEN version was raised from 6 to 7.
+> 
+> Changes v1->v2:
+> - Remove a verbose printf()
+> - Cast u64 to unsigned long long for printf()
+> - Update the man page
+> 
+> Changes v2->v3:
+> - Rebase on Chris' current master branch
+> - Split the patch into three seperate patches because after rebasing,
+>   open_file_or_dir() was moved and additional changes had been necessary
+> 
+> Stefan Behrens (3):
+>   Btrfs-progs: move open_file_or_dir() to utils.c
+>   Btrfs-progs: make two utility functions globally available
+>   Btrfs-progs: add command to get/reset device stats via ioctl
+> 
+>  Makefile         |    4 +-
+>  btrfsctl.c       |   28 --------------
+>  cmds-balance.c   |    1 +
+>  cmds-device.c    |  113 ++++++++++++++++++++++++++++++++++++++++++++++++++++++
+>  cmds-inspect.c   |    1 +
+>  cmds-scrub.c     |   72 +---------------------------------
+>  cmds-subvolume.c |    1 +
+>  commands.h       |    3 --
+>  common.c         |   46 ----------------------
+>  ctree.h          |    6 +++
+>  ioctl.h          |   27 +++++++++++++
+>  man/btrfs.8.in   |   14 +++++++
+>  print-tree.c     |    6 +++
+>  utils.c          |   97 +++++++++++++++++++++++++++++++++++++++++++++-
+>  utils.h          |    7 ++++
+>  15 files changed, 275 insertions(+), 151 deletions(-)
+>  delete mode 100644 common.c
+> 
+
 

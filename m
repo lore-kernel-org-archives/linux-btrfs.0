@@ -1,16 +1,16 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mort.rzone.de ([81.169.144.234]:50803 "EHLO mort.rzone.de"
+Received: from mort.rzone.de ([81.169.144.234]:50804 "EHLO mort.rzone.de"
 	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1756885Ab2EPQut (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	id S1756249Ab2EPQut (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
 	Wed, 16 May 2012 12:50:49 -0400
 Received: from gargravarr.store (gargravarr.store [192.168.42.236])
-	by mort.rzone.de (Postfix) with ESMTP id C1510239
+	by mort.rzone.de (Postfix) with ESMTP id B5391237
 	for <linux-btrfs@vger.kernel.org>; Wed, 16 May 2012 18:50:47 +0200 (MEST)
 From: Stefan Behrens <sbehrens@giantdisaster.de>
 To: linux-btrfs@vger.kernel.org
-Subject: [PATCH v3 3/3] Btrfs: read device stats on mount, write modified ones during commit
-Date: Wed, 16 May 2012 18:50:47 +0200
-Message-Id: <f7e60650b3463d028f86b38ef3e6aaf77efa665b.1337185201.git.sbehrens@giantdisaster.de>
+Subject: [PATCH v3 1/3] Btrfs: add device counters for detected IO and checksum errors
+Date: Wed, 16 May 2012 18:50:45 +0200
+Message-Id: <0072a9fd5bd99859983665e65b695b55cd186097.1337185201.git.sbehrens@giantdisaster.de>
 In-Reply-To: <cover.1337185201.git.sbehrens@giantdisaster.de>
 References: <cover.1337185201.git.sbehrens@giantdisaster.de>
 In-Reply-To: <cover.1337185201.git.sbehrens@giantdisaster.de>
@@ -18,428 +18,472 @@ References: <cover.1337185201.git.sbehrens@giantdisaster.de>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-The device statistics are written into the device tree with each
-transaction commit. Only modified statistics are written.
-When a filesystem is mounted, the device statistics for each involved
-device are read from the device tree and used to initialize the
-counters.
+The goal is to detect when drives start to get an increased error rate,
+when drives should be replaced soon. Therefore statistic counters are
+added that count IO errors (read, write and flush). Additionally, the
+software detected errors like checksum errors and corrupted blocks are
+counted.
 
 Signed-off-by: Stefan Behrens <sbehrens@giantdisaster.de>
 ---
- fs/btrfs/ctree.h       |   51 ++++++++++++
- fs/btrfs/disk-io.c     |    7 ++
- fs/btrfs/print-tree.c  |    3 +
- fs/btrfs/transaction.c |    4 +
- fs/btrfs/volumes.c     |  205 ++++++++++++++++++++++++++++++++++++++++++++++++
- fs/btrfs/volumes.h     |    9 +++
- 6 files changed, 279 insertions(+)
+ fs/btrfs/disk-io.c   |   18 ++++++++++---
+ fs/btrfs/extent_io.c |   27 +++++++++++++++++--
+ fs/btrfs/scrub.c     |   72 +++++++++++++++++++++++++++++++++++++++-----------
+ fs/btrfs/volumes.c   |   61 +++++++++++++++++++++++++++++++++++++++---
+ fs/btrfs/volumes.h   |   21 +++++++++++++++
+ 5 files changed, 174 insertions(+), 25 deletions(-)
 
-diff --git a/fs/btrfs/ctree.h b/fs/btrfs/ctree.h
-index ec42a24..1dd7651 100644
---- a/fs/btrfs/ctree.h
-+++ b/fs/btrfs/ctree.h
-@@ -823,6 +823,26 @@ struct btrfs_csum_item {
- 	u8 csum;
- } __attribute__ ((__packed__));
- 
-+struct btrfs_device_stats_item {
-+	/*
-+	 * grow this item struct at the end for future enhancements and keep
-+	 * the existing values unchanged
-+	 */
-+	__le64 cnt_write_io_errs; /* EIO or EREMOTEIO from lower layers */
-+	__le64 cnt_read_io_errs; /* EIO or EREMOTEIO from lower layers */
-+	__le64 cnt_flush_io_errs; /* EIO or EREMOTEIO from lower layers */
-+
-+	/* stats for indirect indications for I/O failures */
-+	__le64 cnt_corruption_errs; /* checksum error, bytenr error or
-+				     * contents is illegal: this is an
-+				     * indication that the block was damaged
-+				     * during read or write, or written to
-+				     * wrong location or read from wrong
-+				     * location */
-+	__le64 cnt_generation_errs; /* an indication that blocks have not
-+				     * been written */
-+} __attribute__ ((__packed__));
-+
- /* different types of block groups (and chunks) */
- #define BTRFS_BLOCK_GROUP_DATA		(1ULL << 0)
- #define BTRFS_BLOCK_GROUP_SYSTEM	(1ULL << 1)
-@@ -1508,6 +1528,12 @@ struct btrfs_ioctl_defrag_range_args {
- #define BTRFS_BALANCE_ITEM_KEY	248
- 
- /*
-+ * Persistantly stores the io stats in the device tree.
-+ * One key for all stats, (0, BTRFS_DEVICE_STATS_KEY, devid).
-+ */
-+#define BTRFS_DEVICE_STATS_KEY	249
-+
-+/*
-  * string items are for debugging.  They just store a short string of
-  * data in the FS
-  */
-@@ -2415,6 +2441,31 @@ static inline u32 btrfs_file_extent_inline_item_len(struct extent_buffer *eb,
- 	return btrfs_item_size(eb, e) - offset;
- }
- 
-+/* btrfs_device_stats_item */
-+BTRFS_SETGET_FUNCS(device_stats_cnt_write_io_errs,
-+		   struct btrfs_device_stats_item, cnt_write_io_errs, 64);
-+BTRFS_SETGET_FUNCS(device_stats_cnt_read_io_errs,
-+		   struct btrfs_device_stats_item, cnt_read_io_errs, 64);
-+BTRFS_SETGET_FUNCS(device_stats_cnt_flush_io_errs,
-+		   struct btrfs_device_stats_item, cnt_flush_io_errs, 64);
-+BTRFS_SETGET_FUNCS(device_stats_cnt_corruption_errs,
-+		   struct btrfs_device_stats_item, cnt_corruption_errs, 64);
-+BTRFS_SETGET_FUNCS(device_stats_cnt_generation_errs,
-+		   struct btrfs_device_stats_item, cnt_generation_errs, 64);
-+
-+BTRFS_SETGET_STACK_FUNCS(stack_device_stats_cnt_write_io_errs,
-+			 struct btrfs_device_stats_item, cnt_write_io_errs, 64);
-+BTRFS_SETGET_STACK_FUNCS(stack_device_stats_cnt_read_io_errs,
-+			 struct btrfs_device_stats_item, cnt_read_io_errs, 64);
-+BTRFS_SETGET_STACK_FUNCS(stack_device_stats_cnt_flush_io_errs,
-+			 struct btrfs_device_stats_item, cnt_flush_io_errs, 64);
-+BTRFS_SETGET_STACK_FUNCS(stack_device_stats_cnt_corruption_errs,
-+			 struct btrfs_device_stats_item, cnt_corruption_errs,
-+			 64);
-+BTRFS_SETGET_STACK_FUNCS(stack_device_stats_cnt_generation_errs,
-+			 struct btrfs_device_stats_item, cnt_generation_errs,
-+			 64);
-+
- static inline struct btrfs_fs_info *btrfs_sb(struct super_block *sb)
- {
- 	return sb->s_fs_info;
 diff --git a/fs/btrfs/disk-io.c b/fs/btrfs/disk-io.c
-index e123629..7ba08f7 100644
+index a7ffc88..e123629 100644
 --- a/fs/btrfs/disk-io.c
 +++ b/fs/btrfs/disk-io.c
-@@ -2353,6 +2353,13 @@ retry_root_backup:
- 	fs_info->generation = generation;
- 	fs_info->last_trans_committed = generation;
+@@ -2556,18 +2556,21 @@ recovery_tree_root:
  
-+	ret = btrfs_init_device_stats(fs_info);
-+	if (ret) {
-+		printk(KERN_ERR "btrfs: failed to init device_stats: %d\n",
-+		       ret);
-+		goto fail_block_groups;
-+	}
+ static void btrfs_end_buffer_write_sync(struct buffer_head *bh, int uptodate)
+ {
+-	char b[BDEVNAME_SIZE];
+-
+ 	if (uptodate) {
+ 		set_buffer_uptodate(bh);
+ 	} else {
++		struct btrfs_device *device = (struct btrfs_device *)
++			bh->b_private;
 +
- 	ret = btrfs_init_space_info(fs_info);
- 	if (ret) {
- 		printk(KERN_ERR "Failed to initial space info: %d\n", ret);
-diff --git a/fs/btrfs/print-tree.c b/fs/btrfs/print-tree.c
-index f38e452..a9e45e4 100644
---- a/fs/btrfs/print-tree.c
-+++ b/fs/btrfs/print-tree.c
-@@ -294,6 +294,9 @@ void btrfs_print_leaf(struct btrfs_root *root, struct extent_buffer *l)
- 			       btrfs_dev_extent_chunk_offset(l, dev_extent),
- 			       (unsigned long long)
- 			       btrfs_dev_extent_length(l, dev_extent));
-+		case BTRFS_DEVICE_STATS_KEY:
-+			printk(KERN_INFO "\t\tdevice stats\n");
-+			break;
- 		};
+ 		printk_ratelimited(KERN_WARNING "lost page write due to "
+-					"I/O error on %s\n",
+-				       bdevname(bh->b_bdev, b));
++				   "I/O error on %s\n", device->name);
+ 		/* note, we dont' set_buffer_write_io_error because we have
+ 		 * our own ways of dealing with the IO errors
+ 		 */
+ 		clear_buffer_uptodate(bh);
++		btrfs_device_stat_inc(&device->cnt_write_io_errs);
++		device->device_stats_dirty = 1;
++		btrfs_device_stat_print_on_error(device);
  	}
- }
-diff --git a/fs/btrfs/transaction.c b/fs/btrfs/transaction.c
-index 3642225..1722af0 100644
---- a/fs/btrfs/transaction.c
-+++ b/fs/btrfs/transaction.c
-@@ -28,6 +28,7 @@
- #include "locking.h"
- #include "tree-log.h"
- #include "inode-map.h"
-+#include "volumes.h"
+ 	unlock_buffer(bh);
+ 	put_bh(bh);
+@@ -2682,6 +2685,7 @@ static int write_dev_supers(struct btrfs_device *device,
+ 			set_buffer_uptodate(bh);
+ 			lock_buffer(bh);
+ 			bh->b_end_io = btrfs_end_buffer_write_sync;
++			bh->b_private = device;
+ 		}
  
- #define BTRFS_ROOT_TRANS_TAG 0
+ 		/*
+@@ -2740,6 +2744,12 @@ static int write_dev_flush(struct btrfs_device *device, int wait)
+ 		}
+ 		if (!bio_flagged(bio, BIO_UPTODATE)) {
+ 			ret = -EIO;
++			if (!bio_flagged(bio, BIO_EOPNOTSUPP)) {
++				btrfs_device_stat_inc(
++					&device->cnt_flush_io_errs);
++				device->device_stats_dirty = 1;
++				btrfs_device_stat_print_on_error(device);
++			}
+ 		}
  
-@@ -758,6 +759,9 @@ static noinline int commit_cowonly_roots(struct btrfs_trans_handle *trans,
- 	if (ret)
- 		return ret;
+ 		/* drop the reference from the wait == 0 run */
+diff --git a/fs/btrfs/extent_io.c b/fs/btrfs/extent_io.c
+index 2fb52c2..6cd9a55 100644
+--- a/fs/btrfs/extent_io.c
++++ b/fs/btrfs/extent_io.c
+@@ -1923,6 +1923,9 @@ int repair_io_failure(struct btrfs_mapping_tree *map_tree, u64 start,
+ 	if (!test_bit(BIO_UPTODATE, &bio->bi_flags)) {
+ 		/* try to remap that extent elsewhere? */
+ 		bio_put(bio);
++		btrfs_device_stat_inc(&dev->cnt_write_io_errs);
++		dev->device_stats_dirty = 1;
++		btrfs_device_stat_print_on_error(dev);
+ 		return -EIO;
+ 	}
  
-+	ret = btrfs_run_device_stats(trans, root->fs_info);
-+	BUG_ON(ret);
+@@ -2347,10 +2350,30 @@ static void end_bio_extent_readpage(struct bio *bio, int err)
+ 		if (uptodate && tree->ops && tree->ops->readpage_end_io_hook) {
+ 			ret = tree->ops->readpage_end_io_hook(page, start, end,
+ 							      state, mirror);
+-			if (ret)
++			if (ret) {
++				/* no IO indicated but software detected errors
++				 * in the block, either checksum errors or
++				 * issues with the contents */
++				int failed_mirror = (int)(uintptr_t)
++						    bio->bi_bdev;
++				struct btrfs_root *root =
++					BTRFS_I(page->mapping->host)->root;
++				struct btrfs_device *device;
 +
- 	while (!list_empty(&fs_info->dirty_cowonly_roots)) {
- 		next = fs_info->dirty_cowonly_roots.next;
- 		list_del_init(next);
-diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
-index 5f5a6ce..80d1a50 100644
---- a/fs/btrfs/volumes.c
-+++ b/fs/btrfs/volumes.c
-@@ -40,6 +40,8 @@ static int init_first_rw_device(struct btrfs_trans_handle *trans,
- 				struct btrfs_root *root,
- 				struct btrfs_device *device);
- static int btrfs_relocate_sys_chunks(struct btrfs_root *root);
-+static void __btrfs_reset_device_stats(struct btrfs_device *dev);
-+static void btrfs_device_stat_print_on_load(struct btrfs_device *device);
+ 				uptodate = 0;
+-			else
++				device = btrfs_find_device_for_logical(
++						root, start,
++						(int)failed_mirror);
++				if (device) {
++					btrfs_device_stat_inc(
++						&device->cnt_corruption_errs);
++					device->device_stats_dirty = 1;
++					btrfs_device_stat_print_on_error(
++						device);
++				}
++			} else {
+ 				clean_io_failure(start, page);
++			}
+ 		}
  
- static DEFINE_MUTEX(uuid_mutex);
- static LIST_HEAD(fs_uuids);
-@@ -362,6 +364,7 @@ static noinline int device_list_add(const char *path,
+ 		if (!uptodate && tree->ops && tree->ops->readpage_io_failed_hook) {
+diff --git a/fs/btrfs/scrub.c b/fs/btrfs/scrub.c
+index 7e487be..2795c94 100644
+--- a/fs/btrfs/scrub.c
++++ b/fs/btrfs/scrub.c
+@@ -50,7 +50,7 @@ struct scrub_dev;
+ struct scrub_page {
+ 	struct scrub_block	*sblock;
+ 	struct page		*page;
+-	struct block_device	*bdev;
++	struct btrfs_device	*dev;
+ 	u64			flags;  /* extent flags */
+ 	u64			generation;
+ 	u64			logical;
+@@ -86,6 +86,7 @@ struct scrub_block {
+ 		unsigned int	header_error:1;
+ 		unsigned int	checksum_error:1;
+ 		unsigned int	no_io_error_seen:1;
++		unsigned int	generation_error:1; /* also sets header_error */
+ 	};
+ };
+ 
+@@ -675,6 +676,9 @@ static int scrub_handle_errored_block(struct scrub_block *sblock_to_check)
+ 		sdev->stat.read_errors++;
+ 		sdev->stat.uncorrectable_errors++;
+ 		spin_unlock(&sdev->stat_lock);
++		btrfs_device_stat_inc(&sdev->dev->cnt_read_io_errs);
++		sdev->dev->device_stats_dirty = 1;
++		btrfs_device_stat_print_on_error(sdev->dev);
+ 		goto out;
+ 	}
+ 
+@@ -686,6 +690,9 @@ static int scrub_handle_errored_block(struct scrub_block *sblock_to_check)
+ 		sdev->stat.read_errors++;
+ 		sdev->stat.uncorrectable_errors++;
+ 		spin_unlock(&sdev->stat_lock);
++		btrfs_device_stat_inc(&sdev->dev->cnt_read_io_errs);
++		sdev->dev->device_stats_dirty = 1;
++		btrfs_device_stat_print_on_error(sdev->dev);
+ 		goto out;
+ 	}
+ 	BUG_ON(failed_mirror_index >= BTRFS_MAX_MIRRORS);
+@@ -699,6 +706,9 @@ static int scrub_handle_errored_block(struct scrub_block *sblock_to_check)
+ 		sdev->stat.read_errors++;
+ 		sdev->stat.uncorrectable_errors++;
+ 		spin_unlock(&sdev->stat_lock);
++		btrfs_device_stat_inc(&sdev->dev->cnt_read_io_errs);
++		sdev->dev->device_stats_dirty = 1;
++		btrfs_device_stat_print_on_error(sdev->dev);
+ 		goto out;
+ 	}
+ 
+@@ -725,12 +735,18 @@ static int scrub_handle_errored_block(struct scrub_block *sblock_to_check)
+ 		spin_unlock(&sdev->stat_lock);
+ 		if (__ratelimit(&_rs))
+ 			scrub_print_warning("i/o error", sblock_to_check);
++		btrfs_device_stat_inc(&sdev->dev->cnt_read_io_errs);
++		sdev->dev->device_stats_dirty = 1;
++		btrfs_device_stat_print_on_error(sdev->dev);
+ 	} else if (sblock_bad->checksum_error) {
+ 		spin_lock(&sdev->stat_lock);
+ 		sdev->stat.csum_errors++;
+ 		spin_unlock(&sdev->stat_lock);
+ 		if (__ratelimit(&_rs))
+ 			scrub_print_warning("checksum error", sblock_to_check);
++		btrfs_device_stat_inc(&sdev->dev->cnt_corruption_errs);
++		sdev->dev->device_stats_dirty = 1;
++		btrfs_device_stat_print_on_error(sdev->dev);
+ 	} else if (sblock_bad->header_error) {
+ 		spin_lock(&sdev->stat_lock);
+ 		sdev->stat.verify_errors++;
+@@ -738,6 +754,12 @@ static int scrub_handle_errored_block(struct scrub_block *sblock_to_check)
+ 		if (__ratelimit(&_rs))
+ 			scrub_print_warning("checksum/header error",
+ 					    sblock_to_check);
++		if (sblock_bad->generation_error)
++			btrfs_device_stat_inc(&sdev->dev->cnt_generation_errs);
++		else
++			btrfs_device_stat_inc(&sdev->dev->cnt_corruption_errs);
++		sdev->dev->device_stats_dirty = 1;
++		btrfs_device_stat_print_on_error(sdev->dev);
+ 	}
+ 
+ 	if (sdev->readonly)
+@@ -998,8 +1020,8 @@ static int scrub_setup_recheck_block(struct scrub_dev *sdev,
+ 			page = sblock->pagev + page_index;
+ 			page->logical = logical;
+ 			page->physical = bbio->stripes[mirror_index].physical;
+-			/* for missing devices, bdev is NULL */
+-			page->bdev = bbio->stripes[mirror_index].dev->bdev;
++			/* for missing devices, dev->bdev is NULL */
++			page->dev = bbio->stripes[mirror_index].dev;
+ 			page->mirror_num = mirror_index + 1;
+ 			page->page = alloc_page(GFP_NOFS);
+ 			if (!page->page) {
+@@ -1043,7 +1065,7 @@ static int scrub_recheck_block(struct btrfs_fs_info *fs_info,
+ 		struct scrub_page *page = sblock->pagev + page_num;
+ 		DECLARE_COMPLETION_ONSTACK(complete);
+ 
+-		if (page->bdev == NULL) {
++		if (page->dev->bdev == NULL) {
+ 			page->io_error = 1;
+ 			sblock->no_io_error_seen = 0;
+ 			continue;
+@@ -1053,7 +1075,7 @@ static int scrub_recheck_block(struct btrfs_fs_info *fs_info,
+ 		bio = bio_alloc(GFP_NOFS, 1);
+ 		if (!bio)
+ 			return -EIO;
+-		bio->bi_bdev = page->bdev;
++		bio->bi_bdev = page->dev->bdev;
+ 		bio->bi_sector = page->physical >> 9;
+ 		bio->bi_end_io = scrub_complete_bio_end_io;
+ 		bio->bi_private = &complete;
+@@ -1102,11 +1124,14 @@ static void scrub_recheck_block_checksum(struct btrfs_fs_info *fs_info,
+ 		h = (struct btrfs_header *)mapped_buffer;
+ 
+ 		if (sblock->pagev[0].logical != le64_to_cpu(h->bytenr) ||
+-		    generation != le64_to_cpu(h->generation) ||
+ 		    memcmp(h->fsid, fs_info->fsid, BTRFS_UUID_SIZE) ||
+ 		    memcmp(h->chunk_tree_uuid, fs_info->chunk_tree_uuid,
+-			   BTRFS_UUID_SIZE))
++			   BTRFS_UUID_SIZE)) {
+ 			sblock->header_error = 1;
++		} else if (generation != le64_to_cpu(h->generation)) {
++			sblock->header_error = 1;
++			sblock->generation_error = 1;
++		}
+ 		csum = h->csum;
+ 	} else {
+ 		if (!have_csum)
+@@ -1183,7 +1208,7 @@ static int scrub_repair_page_from_good_copy(struct scrub_block *sblock_bad,
+ 		bio = bio_alloc(GFP_NOFS, 1);
+ 		if (!bio)
+ 			return -EIO;
+-		bio->bi_bdev = page_bad->bdev;
++		bio->bi_bdev = page_bad->dev->bdev;
+ 		bio->bi_sector = page_bad->physical >> 9;
+ 		bio->bi_end_io = scrub_complete_bio_end_io;
+ 		bio->bi_private = &complete;
+@@ -1197,6 +1222,14 @@ static int scrub_repair_page_from_good_copy(struct scrub_block *sblock_bad,
+ 
+ 		/* this will also unplug the queue */
+ 		wait_for_completion(&complete);
++		if (!bio_flagged(bio, BIO_UPTODATE)) {
++			btrfs_device_stat_inc(
++				&page_bad->dev->cnt_write_io_errs);
++			page_bad->dev->device_stats_dirty = 1;
++			btrfs_device_stat_print_on_error(page_bad->dev);
++			bio_put(bio);
++			return -EIO;
++		}
+ 		bio_put(bio);
+ 	}
+ 
+@@ -1353,7 +1386,8 @@ static int scrub_checksum_super(struct scrub_block *sblock)
+ 	u64 mapped_size;
+ 	void *p;
+ 	u32 crc = ~(u32)0;
+-	int fail = 0;
++	int fail_gen = 0;
++	int fail_cor = 0;
+ 	u64 len;
+ 	int index;
+ 
+@@ -1364,13 +1398,13 @@ static int scrub_checksum_super(struct scrub_block *sblock)
+ 	memcpy(on_disk_csum, s->csum, sdev->csum_size);
+ 
+ 	if (sblock->pagev[0].logical != le64_to_cpu(s->bytenr))
+-		++fail;
++		++fail_cor;
+ 
+ 	if (sblock->pagev[0].generation != le64_to_cpu(s->generation))
+-		++fail;
++		++fail_gen;
+ 
+ 	if (memcmp(s->fsid, fs_info->fsid, BTRFS_UUID_SIZE))
+-		++fail;
++		++fail_cor;
+ 
+ 	len = BTRFS_SUPER_INFO_SIZE - BTRFS_CSUM_SIZE;
+ 	mapped_size = PAGE_SIZE - BTRFS_CSUM_SIZE;
+@@ -1395,9 +1429,9 @@ static int scrub_checksum_super(struct scrub_block *sblock)
+ 
+ 	btrfs_csum_final(crc, calculated_csum);
+ 	if (memcmp(calculated_csum, on_disk_csum, sdev->csum_size))
+-		++fail;
++		++fail_cor;
+ 
+-	if (fail) {
++	if (fail_cor + fail_gen) {
+ 		/*
+ 		 * if we find an error in a super block, we just report it.
+ 		 * They will get written with the next transaction commit
+@@ -1406,9 +1440,15 @@ static int scrub_checksum_super(struct scrub_block *sblock)
+ 		spin_lock(&sdev->stat_lock);
+ 		++sdev->stat.super_errors;
+ 		spin_unlock(&sdev->stat_lock);
++		if (fail_cor)
++			btrfs_device_stat_inc(&sdev->dev->cnt_corruption_errs);
++		else
++			btrfs_device_stat_inc(&sdev->dev->cnt_generation_errs);
++		sdev->dev->device_stats_dirty = 1;
++		btrfs_device_stat_print_on_error(sdev->dev);
+ 	}
+ 
+-	return fail;
++	return fail_cor + fail_gen;
+ }
+ 
+ static void scrub_block_get(struct scrub_block *sblock)
+@@ -1552,7 +1592,7 @@ static int scrub_pages(struct scrub_dev *sdev, u64 logical, u64 len,
  			return -ENOMEM;
  		}
- 		device->devid = devid;
-+		device->device_stats_valid = 0;
- 		device->work.func = pending_bios_fn;
- 		memcpy(device->uuid, disk_super->dev_item.uuid,
- 		       BTRFS_UUID_SIZE);
-@@ -4626,8 +4629,194 @@ error:
+ 		spage->sblock = sblock;
+-		spage->bdev = sdev->dev->bdev;
++		spage->dev = sdev->dev;
+ 		spage->flags = flags;
+ 		spage->generation = gen;
+ 		spage->logical = logical;
+diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
+index 1411b99..c458c74 100644
+--- a/fs/btrfs/volumes.c
++++ b/fs/btrfs/volumes.c
+@@ -23,6 +23,7 @@
+ #include <linux/random.h>
+ #include <linux/iocontext.h>
+ #include <linux/capability.h>
++#include <linux/ratelimit.h>
+ #include <linux/kthread.h>
+ #include <asm/div64.h>
+ #include "compat.h"
+@@ -4003,11 +4004,28 @@ int btrfs_rmap_block(struct btrfs_mapping_tree *map_tree,
+ 
+ static void btrfs_end_bio(struct bio *bio, int err)
+ {
+-	struct btrfs_bio *bbio = bio->bi_private;
++	struct btrfs_bio *bbio = (struct btrfs_bio *)
++		(((uintptr_t)bio->bi_private) & ~((uintptr_t)3));
+ 	int is_orig_bio = 0;
+ 
+-	if (err)
++	if (err) {
+ 		atomic_inc(&bbio->error);
++		if (err == -EIO || err == -EREMOTEIO) {
++			unsigned int dev_nr = ((uintptr_t)bio->bi_private) & 3;
++			struct btrfs_device *dev;
++
++			BUG_ON(dev_nr >= bbio->num_stripes);
++			dev = bbio->stripes[dev_nr].dev;
++			if (bio->bi_rw & WRITE)
++				btrfs_device_stat_inc(&dev->cnt_write_io_errs);
++			else
++				btrfs_device_stat_inc(&dev->cnt_read_io_errs);
++			if ((bio->bi_rw & WRITE_FLUSH) == WRITE_FLUSH)
++				btrfs_device_stat_inc(&dev->cnt_flush_io_errs);
++			dev->device_stats_dirty = 1;
++			btrfs_device_stat_print_on_error(dev);
++		}
++	}
+ 
+ 	if (bio == bbio->orig_bio)
+ 		is_orig_bio = 1;
+@@ -4148,7 +4166,9 @@ int btrfs_map_bio(struct btrfs_root *root, int rw, struct bio *bio,
+ 		} else {
+ 			bio = first_bio;
+ 		}
+-		bio->bi_private = bbio;
++		BUG_ON((((uintptr_t)bbio) & 3) != 0);
++		BUG_ON(dev_nr > 3);
++		bio->bi_private = (void *)(((uintptr_t)bbio) | dev_nr);
+ 		bio->bi_end_io = btrfs_end_bio;
+ 		bio->bi_sector = bbio->stripes[dev_nr].physical >> 9;
+ 		dev = bbio->stripes[dev_nr].dev;
+@@ -4509,6 +4529,28 @@ int btrfs_read_sys_array(struct btrfs_root *root)
  	return ret;
  }
  
-+static void __btrfs_reset_device_stats(struct btrfs_device *device)
++struct btrfs_device *btrfs_find_device_for_logical(struct btrfs_root *root,
++						   u64 logical, int mirror_num)
 +{
-+	btrfs_device_stat_reset(&device->cnt_write_io_errs);
-+	btrfs_device_stat_reset(&device->cnt_read_io_errs);
-+	btrfs_device_stat_reset(&device->cnt_flush_io_errs);
-+	btrfs_device_stat_reset(&device->cnt_corruption_errs);
-+	btrfs_device_stat_reset(&device->cnt_generation_errs);
-+}
-+
-+int btrfs_init_device_stats(struct btrfs_fs_info *fs_info)
-+{
-+	struct btrfs_key key;
-+	struct btrfs_key found_key;
-+	struct btrfs_root *dev_root = fs_info->dev_root;
-+	struct btrfs_fs_devices *fs_devices = fs_info->fs_devices;
-+	struct extent_buffer *eb;
-+	int slot;
-+	int ret = 0;
-+	struct btrfs_device *device;
-+	struct btrfs_path *path = NULL;
-+
-+	path = btrfs_alloc_path();
-+	if (!path) {
-+		ret = -ENOMEM;
-+		goto out;
-+	}
-+
-+	mutex_lock(&fs_devices->device_list_mutex);
-+	list_for_each_entry(device, &fs_devices->devices, dev_list) {
-+		int item_size;
-+		struct btrfs_device_stats_item *ptr;
-+
-+		key.objectid = 0;
-+		key.type = BTRFS_DEVICE_STATS_KEY;
-+		key.offset = device->devid;
-+		ret = btrfs_search_slot(NULL, dev_root, &key, path, 0, 0);
-+		if (ret) {
-+			printk(KERN_WARNING "btrfs: no device_stats entry found for device %s (devid %llu) (OK on first mount after mkfs)\n",
-+			       device->name, (unsigned long long)device->devid);
-+			__btrfs_reset_device_stats(device);
-+			device->device_stats_valid = 1;
-+			device->device_stats_dirty = 1;
-+			btrfs_release_path(path);
-+			continue;
-+		}
-+		slot = path->slots[0];
-+		eb = path->nodes[0];
-+		btrfs_item_key_to_cpu(eb, &found_key, slot);
-+		item_size = btrfs_item_size_nr(eb, slot);
-+
-+		ptr = btrfs_item_ptr(eb, slot,
-+				     struct btrfs_device_stats_item);
-+
-+		if (item_size >= 1 * sizeof(__le64))
-+			btrfs_device_stat_set(&device->cnt_write_io_errs,
-+				btrfs_device_stats_cnt_write_io_errs(eb, ptr));
-+		else
-+			btrfs_device_stat_reset(&device->cnt_write_io_errs);
-+		if (item_size >= 2 * sizeof(__le64))
-+			btrfs_device_stat_set(&device->cnt_read_io_errs,
-+				btrfs_device_stats_cnt_read_io_errs(eb, ptr));
-+		else
-+			btrfs_device_stat_reset(&device->cnt_read_io_errs);
-+		if (item_size >= 3 * sizeof(__le64))
-+			btrfs_device_stat_set(&device->cnt_flush_io_errs,
-+				btrfs_device_stats_cnt_flush_io_errs(eb, ptr));
-+		else
-+			btrfs_device_stat_reset(&device->cnt_flush_io_errs);
-+		if (item_size >= 4 * sizeof(__le64))
-+			btrfs_device_stat_set(&device->cnt_corruption_errs,
-+				btrfs_device_stats_cnt_corruption_errs(eb,
-+								       ptr));
-+		else
-+			btrfs_device_stat_reset(&device->cnt_corruption_errs);
-+		if (item_size >= 5 * sizeof(__le64))
-+			btrfs_device_stat_set(&device->cnt_generation_errs,
-+				btrfs_device_stats_cnt_generation_errs(eb,
-+								       ptr));
-+		else
-+			btrfs_device_stat_reset(&device->cnt_generation_errs);
-+
-+		btrfs_device_stat_print_on_load(device);
-+		device->device_stats_valid = 1;
-+		btrfs_release_path(path);
-+	}
-+	mutex_unlock(&fs_devices->device_list_mutex);
-+
-+out:
-+	btrfs_free_path(path);
-+	return ret < 0 ? ret : 0;
-+}
-+
-+static int update_device_stat_item(struct btrfs_trans_handle *trans,
-+				   struct btrfs_root *dev_root,
-+				   struct btrfs_device *device)
-+{
-+	struct btrfs_path *path;
-+	struct btrfs_key key;
-+	struct extent_buffer *eb;
-+	struct btrfs_device_stats_item *ptr;
++	struct btrfs_mapping_tree *map_tree = &root->fs_info->mapping_tree;
 +	int ret;
-+
-+	key.objectid = 0;
-+	key.type = BTRFS_DEVICE_STATS_KEY;
-+	key.offset = device->devid;
-+
-+	path = btrfs_alloc_path();
-+	BUG_ON(!path);
-+	ret = btrfs_search_slot(trans, dev_root, &key, path, 0, 1);
-+	if (ret < 0) {
-+		printk(KERN_WARNING "btrfs: error %d while searching for device_stats item for device %s!\n",
-+		       ret, device->name);
-+		goto out;
-+	}
-+
-+	if (0 == ret &&
-+	    btrfs_item_size_nr(path->nodes[0], path->slots[0]) < sizeof(*ptr)) {
-+		/* need to delete old one and insert a new one */
-+		ret = btrfs_del_item(trans, dev_root, path);
-+		if (0 != ret) {
-+			printk(KERN_WARNING "btrfs: delete too small device_stats item for device %s failed %d!\n",
-+			       device->name, ret);
-+			goto out;
-+		}
-+		ret = 1;
-+	}
-+
-+	if (1 == ret) {
-+		/* need to insert a new item */
-+		btrfs_release_path(path);
-+		ret = btrfs_insert_empty_item(trans, dev_root, path,
-+					      &key, sizeof(*ptr));
-+		if (ret < 0) {
-+			printk(KERN_WARNING "btrfs: insert device_stats item for device %s failed %d!\n",
-+			       device->name, ret);
-+			goto out;
-+		}
-+	}
-+
-+	eb = path->nodes[0];
-+	ptr = btrfs_item_ptr(eb, path->slots[0],
-+			     struct btrfs_device_stats_item);
-+	btrfs_set_device_stats_cnt_write_io_errs(eb, ptr,
-+		btrfs_device_stat_read(&device->cnt_write_io_errs));
-+	btrfs_set_device_stats_cnt_read_io_errs(eb, ptr,
-+		btrfs_device_stat_read(&device->cnt_read_io_errs));
-+	btrfs_set_device_stats_cnt_flush_io_errs(eb, ptr,
-+		btrfs_device_stat_read(&device->cnt_flush_io_errs));
-+	btrfs_set_device_stats_cnt_corruption_errs(eb, ptr,
-+		btrfs_device_stat_read(&device->cnt_corruption_errs));
-+	btrfs_set_device_stats_cnt_generation_errs(eb, ptr,
-+		btrfs_device_stat_read(&device->cnt_generation_errs));
-+	btrfs_mark_buffer_dirty(eb);
-+
-+out:
-+	btrfs_free_path(path);
-+	return ret;
-+}
-+
-+/*
-+ * called from commit_transaction. Writes all changed device stats to disk.
-+ */
-+int btrfs_run_device_stats(struct btrfs_trans_handle *trans,
-+			   struct btrfs_fs_info *fs_info)
-+{
-+	struct btrfs_root *dev_root = fs_info->dev_root;
-+	struct btrfs_fs_devices *fs_devices = fs_info->fs_devices;
++	u64 map_length = 0;
++	struct btrfs_bio *bbio = NULL;
 +	struct btrfs_device *device;
-+	int ret = 0;
 +
-+	mutex_lock(&fs_devices->device_list_mutex);
-+	list_for_each_entry(device, &fs_devices->devices, dev_list) {
-+		if (!device->device_stats_valid || !device->device_stats_dirty)
-+			continue;
-+
-+		ret = update_device_stat_item(trans, dev_root, device);
-+		if (!ret)
-+			device->device_stats_dirty = 0;
++	BUG_ON(mirror_num == 0);
++	ret = btrfs_map_block(map_tree, WRITE, logical, &map_length, &bbio,
++			      mirror_num);
++	if (ret) {
++		BUG_ON(bbio != NULL);
++		return NULL;
 +	}
-+	mutex_unlock(&fs_devices->device_list_mutex);
-+
-+	return ret;
++	BUG_ON(mirror_num != bbio->mirror_num);
++	device = bbio->stripes[mirror_num - 1].dev;
++	kfree(bbio);
++	return device;
 +}
 +
- void btrfs_device_stat_print_on_error(struct btrfs_device *device)
+ int btrfs_read_chunk_tree(struct btrfs_root *root)
  {
-+	if (!device->device_stats_valid)
-+		return;
- 	printk_ratelimited(KERN_ERR
- 			   "btrfs: bdev %s errs: wr %u, rd %u, flush %u, corrupt %u, gen %u\n",
- 			   device->name,
-@@ -4639,6 +4828,18 @@ void btrfs_device_stat_print_on_error(struct btrfs_device *device)
- 				&device->cnt_generation_errs));
+ 	struct btrfs_path *path;
+@@ -4583,3 +4625,16 @@ error:
+ 	btrfs_free_path(path);
+ 	return ret;
  }
- 
-+static void btrfs_device_stat_print_on_load(struct btrfs_device *device)
-+{
-+	printk(KERN_INFO "btrfs: bdev %s errs: wr %u, rd %u, flush %u,"
-+	       " corrupt %u, gen %u\n",
-+	       device->name,
-+	       btrfs_device_stat_read(&device->cnt_write_io_errs),
-+	       btrfs_device_stat_read(&device->cnt_read_io_errs),
-+	       btrfs_device_stat_read(&device->cnt_flush_io_errs),
-+	       btrfs_device_stat_read(&device->cnt_corruption_errs),
-+	       btrfs_device_stat_read(&device->cnt_generation_errs));
-+}
 +
- int btrfs_get_device_stats(struct btrfs_root *root,
- 			   struct btrfs_ioctl_get_device_stats *stats,
- 			   int reset_after_read)
-@@ -4654,6 +4855,10 @@ int btrfs_get_device_stats(struct btrfs_root *root,
- 		printk(KERN_WARNING
- 		       "btrfs: get device_stats failed, device not found\n");
- 		return -ENODEV;
-+	} else if (!dev->device_stats_valid) {
-+		printk(KERN_WARNING
-+		       "btrfs: get device_stats failed, not yet valid\n");
-+		return -ENODEV;
- 	} else if (reset_after_read) {
- 		if (stats->nr_items >= 1)
- 			stats->cnt_write_io_errs =
++void btrfs_device_stat_print_on_error(struct btrfs_device *device)
++{
++	printk_ratelimited(KERN_ERR
++			   "btrfs: bdev %s errs: wr %u, rd %u, flush %u, corrupt %u, gen %u\n",
++			   device->name,
++			   btrfs_device_stat_read(&device->cnt_write_io_errs),
++			   btrfs_device_stat_read(&device->cnt_read_io_errs),
++			   btrfs_device_stat_read(&device->cnt_flush_io_errs),
++			   btrfs_device_stat_read(&device->cnt_corruption_errs),
++			   btrfs_device_stat_read(
++				&device->cnt_generation_errs));
++}
 diff --git a/fs/btrfs/volumes.h b/fs/btrfs/volumes.h
-index e0b31f1..3134662 100644
+index bb6b03f..08afa6c 100644
 --- a/fs/btrfs/volumes.h
 +++ b/fs/btrfs/volumes.h
-@@ -108,6 +108,7 @@ struct btrfs_device {
+@@ -106,6 +106,14 @@ struct btrfs_device {
+ 	struct completion flush_wait;
+ 	int nobarriers;
  
- 	/* disk I/O failure stats. For detailed description refer to
- 	 * struct btrfs_device_stats_item in ctree.h */
-+	int device_stats_valid;
- 	int device_stats_dirty; /* counters need to be written to disk */
- 	atomic_t cnt_write_io_errs;
- 	atomic_t cnt_read_io_errs;
-@@ -291,6 +292,9 @@ int find_free_dev_extent(struct btrfs_device *device, u64 num_bytes,
++	/* disk I/O failure stats. For detailed description refer to
++	 * struct btrfs_device_stats_item in ctree.h */
++	int device_stats_dirty; /* counters need to be written to disk */
++	atomic_t cnt_write_io_errs;
++	atomic_t cnt_read_io_errs;
++	atomic_t cnt_flush_io_errs;
++	atomic_t cnt_corruption_errs;
++	atomic_t cnt_generation_errs;
+ };
+ 
+ struct btrfs_fs_devices {
+@@ -281,4 +289,17 @@ int btrfs_cancel_balance(struct btrfs_fs_info *fs_info);
+ int btrfs_chunk_readonly(struct btrfs_root *root, u64 chunk_offset);
+ int find_free_dev_extent(struct btrfs_device *device, u64 num_bytes,
  			 u64 *start, u64 *max_avail);
- struct btrfs_device *btrfs_find_device_for_logical(struct btrfs_root *root,
- 						   u64 logical, int mirror_num);
-+int btrfs_init_device_stats(struct btrfs_fs_info *fs_info);
-+int btrfs_run_device_stats(struct btrfs_trans_handle *trans,
-+			   struct btrfs_fs_info *fs_info);
- void btrfs_device_stat_print_on_error(struct btrfs_device *device);
- int btrfs_get_device_stats(struct btrfs_root *root,
- 			   struct btrfs_ioctl_get_device_stats *stats,
-@@ -315,4 +319,9 @@ static inline void btrfs_device_stat_reset(atomic_t *cnt)
- {
- 	atomic_set(cnt, 0);
- }
++struct btrfs_device *btrfs_find_device_for_logical(struct btrfs_root *root,
++						   u64 logical, int mirror_num);
++void btrfs_device_stat_print_on_error(struct btrfs_device *device);
 +
-+static inline void btrfs_device_stat_set(atomic_t *cnt, unsigned long val)
++static inline void btrfs_device_stat_inc(atomic_t *cnt)
 +{
-+	atomic_set(cnt, val);
++	atomic_inc(cnt);
++}
++
++static inline int btrfs_device_stat_read(atomic_t *cnt)
++{
++	return atomic_read(cnt);
 +}
  #endif
 -- 

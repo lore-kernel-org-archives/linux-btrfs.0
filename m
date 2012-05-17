@@ -1,235 +1,151 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx1.redhat.com ([209.132.183.28]:35679 "EHLO mx1.redhat.com"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1760349Ab2EPTUv (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 16 May 2012 15:20:51 -0400
-Date: Wed, 16 May 2012 15:20:36 -0400
-From: Josef Bacik <josef@redhat.com>
+Received: from einhorn.in-berlin.de ([192.109.42.8]:48927 "EHLO
+	einhorn.in-berlin.de" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1760949Ab2EQK3m (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>);
+	Thu, 17 May 2012 06:29:42 -0400
+Message-ID: <4FB4D30C.7030301@tuxadero.com>
+Date: Thu, 17 May 2012 12:29:32 +0200
+From: Martin Mailand <martin@tuxadero.com>
+Reply-To: martin@tuxadero.com
+MIME-Version: 1.0
 To: Josef Bacik <josef@redhat.com>
-Cc: Martin Mailand <martin@tuxadero.com>,
-        Christian Brunner <christian@brunner-muc.de>,
+CC: Christian Brunner <christian@brunner-muc.de>,
         Sage Weil <sage@newdream.net>, linux-btrfs@vger.kernel.org,
         ceph-devel@vger.kernel.org
 Subject: Re: Ceph on btrfs 3.4rc
-Message-ID: <20120516192035.GA1910@localhost.localdomain>
-References: <CAJafhzSVZ3+1ApgJU=sQu6gM62BeWVGG4mqFPNYRHx79czYJtQ@mail.gmail.com>
- <20120424152141.GB3326@localhost.localdomain>
- <Pine.LNX.4.64.1204240922040.29159@cobra.newdream.net>
- <CAJafhzSgaQ3sx=Af0Ru0CiwQH37V5y8jgjoTo_8yozcjo9rpPA@mail.gmail.com>
- <20120510203523.GD2061@localhost.localdomain>
- <20120511133124.GB2089@localhost.localdomain>
- <4FAD5B7E.5040801@tuxadero.com>
- <20120511191623.GB3503@localhost.localdomain>
- <4FB11479.8060408@tuxadero.com>
- <20120514142048.GA3260@localhost.localdomain>
-MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <20120514142048.GA3260@localhost.localdomain>
+References: <CAJafhzSVZ3+1ApgJU=sQu6gM62BeWVGG4mqFPNYRHx79czYJtQ@mail.gmail.com> <20120424152141.GB3326@localhost.localdomain> <Pine.LNX.4.64.1204240922040.29159@cobra.newdream.net> <CAJafhzSgaQ3sx=Af0Ru0CiwQH37V5y8jgjoTo_8yozcjo9rpPA@mail.gmail.com> <20120510203523.GD2061@localhost.localdomain> <20120511133124.GB2089@localhost.localdomain> <4FAD5B7E.5040801@tuxadero.com> <20120511191623.GB3503@localhost.localdomain> <4FB11479.8060408@tuxadero.com> <20120514142048.GA3260@localhost.localdomain> <20120516192035.GA1910@localhost.localdomain>
+In-Reply-To: <20120516192035.GA1910@localhost.localdomain>
+Content-Type: text/plain; charset=ISO-8859-1; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Mon, May 14, 2012 at 10:20:48AM -0400, Josef Bacik wrote:
-> On Mon, May 14, 2012 at 04:19:37PM +0200, Martin Mailand wrote:
-> > Hi Josef,
-> > 
-> > Am 11.05.2012 21:16, schrieb Josef Bacik:
-> > >Heh duh, sorry, try this one instead.  Thanks,
-> > 
-> > With this patch I got this Bug:
-> 
-> Yeah Christian reported the same thing on Friday.  I'm going to work on a patch
-> and actually run it here to make sure it doesn't blow up and then send it to the
-> list when I think I've got something that works.  Thanks,
-> 
+Hi Josef,
 
-Hrm ok so I finally got some time to try and debug it and let the test run a
-good long while (5 hours almost) and I couldn't hit either the original bug or
-the one you guys were hitting.  So either my extra little bit of locking did the
-trick or I get to keep my "Worst reproducer ever" award.  Can you guys give this
-one a whirl and if it panics send the entire dmesg since it should spit out a
-WARN_ON() to let me know what I thought was the problem was it.  Thanks,
+somehow I still get the kernel Bug messages, I used your patch from the 
+16th against rc7.
 
-Josef
+-martin
 
+Am 16.05.2012 21:20, schrieb Josef Bacik:
+> Hrm ok so I finally got some time to try and debug it and let the test run a
+> good long while (5 hours almost) and I couldn't hit either the original bug or
+> the one you guys were hitting.  So either my extra little bit of locking did the
+> trick or I get to keep my "Worst reproducer ever" award.  Can you guys give this
+> one a whirl and if it panics send the entire dmesg since it should spit out a
+> WARN_ON() to let me know what I thought was the problem was it.  Thanks,
 
-diff --git a/fs/btrfs/btrfs_inode.h b/fs/btrfs/btrfs_inode.h
-index 3771b85..559e716 100644
---- a/fs/btrfs/btrfs_inode.h
-+++ b/fs/btrfs/btrfs_inode.h
-@@ -57,9 +57,6 @@ struct btrfs_inode {
- 	/* used to order data wrt metadata */
- 	struct btrfs_ordered_inode_tree ordered_tree;
- 
--	/* for keeping track of orphaned inodes */
--	struct list_head i_orphan;
--
- 	/* list of all the delalloc inodes in the FS.  There are times we need
- 	 * to write all the delalloc pages to disk, and this list is used
- 	 * to walk them all.
-@@ -153,6 +150,7 @@ struct btrfs_inode {
- 	unsigned dummy_inode:1;
- 	unsigned in_defrag:1;
- 	unsigned delalloc_meta_reserved:1;
-+	unsigned has_orphan_item:1;
- 
- 	/*
- 	 * always compress this one file
-diff --git a/fs/btrfs/ctree.h b/fs/btrfs/ctree.h
-index ba8743b..72cdf98 100644
---- a/fs/btrfs/ctree.h
-+++ b/fs/btrfs/ctree.h
-@@ -1375,7 +1375,7 @@ struct btrfs_root {
- 	struct list_head root_list;
- 
- 	spinlock_t orphan_lock;
--	struct list_head orphan_list;
-+	atomic_t orphan_inodes;
- 	struct btrfs_block_rsv *orphan_block_rsv;
- 	int orphan_item_inserted;
- 	int orphan_cleanup_state;
-diff --git a/fs/btrfs/disk-io.c b/fs/btrfs/disk-io.c
-index 19f5b45..25dba7a 100644
---- a/fs/btrfs/disk-io.c
-+++ b/fs/btrfs/disk-io.c
-@@ -1153,7 +1153,6 @@ static void __setup_root(u32 nodesize, u32 leafsize, u32 sectorsize,
- 	root->orphan_block_rsv = NULL;
- 
- 	INIT_LIST_HEAD(&root->dirty_list);
--	INIT_LIST_HEAD(&root->orphan_list);
- 	INIT_LIST_HEAD(&root->root_list);
- 	spin_lock_init(&root->orphan_lock);
- 	spin_lock_init(&root->inode_lock);
-@@ -1166,6 +1165,7 @@ static void __setup_root(u32 nodesize, u32 leafsize, u32 sectorsize,
- 	atomic_set(&root->log_commit[0], 0);
- 	atomic_set(&root->log_commit[1], 0);
- 	atomic_set(&root->log_writers, 0);
-+	atomic_set(&root->orphan_inodes, 0);
- 	root->log_batch = 0;
- 	root->log_transid = 0;
- 	root->last_log_commit = 0;
-diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
-index 54ae3df..c0cff20 100644
---- a/fs/btrfs/inode.c
-+++ b/fs/btrfs/inode.c
-@@ -2104,12 +2104,12 @@ void btrfs_orphan_commit_root(struct btrfs_trans_handle *trans,
- 	struct btrfs_block_rsv *block_rsv;
- 	int ret;
- 
--	if (!list_empty(&root->orphan_list) ||
-+	if (atomic_read(&root->orphan_inodes) ||
- 	    root->orphan_cleanup_state != ORPHAN_CLEANUP_DONE)
- 		return;
- 
- 	spin_lock(&root->orphan_lock);
--	if (!list_empty(&root->orphan_list)) {
-+	if (atomic_read(&root->orphan_inodes)) {
- 		spin_unlock(&root->orphan_lock);
- 		return;
- 	}
-@@ -2166,8 +2166,8 @@ int btrfs_orphan_add(struct btrfs_trans_handle *trans, struct inode *inode)
- 		block_rsv = NULL;
- 	}
- 
--	if (list_empty(&BTRFS_I(inode)->i_orphan)) {
--		list_add(&BTRFS_I(inode)->i_orphan, &root->orphan_list);
-+	if (!BTRFS_I(inode)->has_orphan_item) {
-+		BTRFS_I(inode)->has_orphan_item = 1;
- #if 0
- 		/*
- 		 * For proper ENOSPC handling, we should do orphan
-@@ -2180,6 +2180,7 @@ int btrfs_orphan_add(struct btrfs_trans_handle *trans, struct inode *inode)
- 			insert = 1;
- #endif
- 		insert = 1;
-+		atomic_inc(&root->orphan_inodes);
- 	}
- 
- 	if (!BTRFS_I(inode)->orphan_meta_reserved) {
-@@ -2198,6 +2199,9 @@ int btrfs_orphan_add(struct btrfs_trans_handle *trans, struct inode *inode)
- 	if (insert >= 1) {
- 		ret = btrfs_insert_orphan_item(trans, root, btrfs_ino(inode));
- 		if (ret && ret != -EEXIST) {
-+			spin_lock(&root->orphan_lock);
-+			BTRFS_I(inode)->has_orphan_item = 0;
-+			spin_unlock(&root->orphan_lock);
- 			btrfs_abort_transaction(trans, root, ret);
- 			return ret;
- 		}
-@@ -2227,9 +2231,13 @@ int btrfs_orphan_del(struct btrfs_trans_handle *trans, struct inode *inode)
- 	int release_rsv = 0;
- 	int ret = 0;
- 
-+	/*
-+	 * evict_inode gets called without holding the i_mutex so we need to
-+	 * take the orphan lock to make sure we are safe in messing with these.
-+	 */
- 	spin_lock(&root->orphan_lock);
--	if (!list_empty(&BTRFS_I(inode)->i_orphan)) {
--		list_del_init(&BTRFS_I(inode)->i_orphan);
-+	if (BTRFS_I(inode)->has_orphan_item) {
-+		BTRFS_I(inode)->has_orphan_item = 0;
- 		delete_item = 1;
- 	}
- 
-@@ -2247,6 +2255,9 @@ int btrfs_orphan_del(struct btrfs_trans_handle *trans, struct inode *inode)
- 	if (release_rsv)
- 		btrfs_orphan_release_metadata(inode);
- 
-+	if (trans && delete_item)
-+		atomic_dec(&root->orphan_inodes);
-+
- 	return 0;
- }
- 
-@@ -2385,7 +2396,9 @@ int btrfs_orphan_cleanup(struct btrfs_root *root)
- 		 * the proper thing when we hit it
- 		 */
- 		spin_lock(&root->orphan_lock);
--		list_add(&BTRFS_I(inode)->i_orphan, &root->orphan_list);
-+		atomic_inc(&root->orphan_inodes);
-+		WARN_ON(BTRFS_I(inode)->has_orphan_item);
-+		BTRFS_I(inode)->has_orphan_item = 1;
- 		spin_unlock(&root->orphan_lock);
- 
- 		/* if we have links, this was a truncate, lets do that */
-@@ -3707,7 +3720,7 @@ void btrfs_evict_inode(struct inode *inode)
- 	btrfs_wait_ordered_range(inode, 0, (u64)-1);
- 
- 	if (root->fs_info->log_root_recovering) {
--		BUG_ON(!list_empty(&BTRFS_I(inode)->i_orphan));
-+		BUG_ON(!BTRFS_I(inode)->has_orphan_item);
- 		goto no_delete;
- 	}
- 
-@@ -6866,6 +6879,7 @@ struct inode *btrfs_alloc_inode(struct super_block *sb)
- 	ei->dummy_inode = 0;
- 	ei->in_defrag = 0;
- 	ei->delalloc_meta_reserved = 0;
-+	ei->has_orphan_item = 0;
- 	ei->force_compress = BTRFS_COMPRESS_NONE;
- 
- 	ei->delayed_node = NULL;
-@@ -6879,7 +6893,6 @@ struct inode *btrfs_alloc_inode(struct super_block *sb)
- 	mutex_init(&ei->log_mutex);
- 	mutex_init(&ei->delalloc_mutex);
- 	btrfs_ordered_inode_tree_init(&ei->ordered_tree);
--	INIT_LIST_HEAD(&ei->i_orphan);
- 	INIT_LIST_HEAD(&ei->delalloc_inodes);
- 	INIT_LIST_HEAD(&ei->ordered_operations);
- 	RB_CLEAR_NODE(&ei->rb_node);
-@@ -6924,13 +6937,11 @@ void btrfs_destroy_inode(struct inode *inode)
- 		spin_unlock(&root->fs_info->ordered_extent_lock);
- 	}
- 
--	spin_lock(&root->orphan_lock);
--	if (!list_empty(&BTRFS_I(inode)->i_orphan)) {
-+	if (BTRFS_I(inode)->has_orphan_item) {
- 		printk(KERN_INFO "BTRFS: inode %llu still on the orphan list\n",
- 		       (unsigned long long)btrfs_ino(inode));
--		list_del_init(&BTRFS_I(inode)->i_orphan);
-+		atomic_dec(&root->orphan_inodes);
- 	}
--	spin_unlock(&root->orphan_lock);
- 
- 	while (1) {
- 		ordered = btrfs_lookup_first_ordered_extent(inode, (u64)-1);
+[ 2868.813236] ------------[ cut here ]------------
+[ 2868.813297] kernel BUG at fs/btrfs/inode.c:2220!
+[ 2868.813355] invalid opcode: 0000 [#2] SMP
+[ 2868.813479] CPU 2
+[ 2868.813516] Modules linked in: btrfs zlib_deflate libcrc32c ext2 
+bonding coretemp ghash_clmulni_intel aesni_intel cryptd aes_x86_64 
+microcode psmouse serio_raw sb_edac edac_core joydev mei(C) ses ioatdma 
+enclosure mac_hid lp parport isci libsas scsi_transport_sas usbhid hid 
+ixgbe igb megaraid_sas dca mdio
+[ 2868.814871]
+[ 2868.814925] Pid: 5325, comm: ceph-osd Tainted: G      D  C 
+3.4.0-rc7+ #10 Supermicro X9SRi/X9SRi
+[ 2868.815108] RIP: 0010:[<ffffffffa02212f2>]  [<ffffffffa02212f2>] 
+btrfs_orphan_del+0xe2/0xf0 [btrfs]
+[ 2868.815236] RSP: 0018:ffff880296e89d18  EFLAGS: 00010282
+[ 2868.815294] RAX: 00000000fffffffe RBX: ffff88101ef3c390 RCX: 
+0000000000562497
+[ 2868.815355] RDX: 0000000000562496 RSI: ffff88101ef10000 RDI: 
+ffffea00407bc400
+[ 2868.815416] RBP: ffff880296e89d58 R08: 000060ef80000fd0 R09: 
+ffffffffa01f8c6a
+[ 2868.815476] R10: 0000000000000000 R11: 000000000000011d R12: 
+ffff880fdf602790
+[ 2868.815537] R13: ffff880fdf602400 R14: 0000000000000001 R15: 
+0000000000000001
+[ 2868.815598] FS:  00007f07d5512700(0000) GS:ffff88107fc40000(0000) 
+knlGS:0000000000000000
+[ 2868.815675] CS:  0010 DS: 0000 ES: 0000 CR0: 0000000080050033
+[ 2868.815734] CR2: 000000000ab16000 CR3: 000000082a6b2000 CR4: 
+00000000000407e0
+[ 2868.815796] DR0: 0000000000000000 DR1: 0000000000000000 DR2: 
+0000000000000000
+[ 2868.815858] DR3: 0000000000000000 DR6: 00000000ffff0ff0 DR7: 
+0000000000000400
+[ 2868.815920] Process ceph-osd (pid: 5325, threadinfo ffff880296e88000, 
+task ffff8810170616e0)
+[ 2868.815997] Stack:
+[ 2868.816049]  0c00000000000007 ffff88101ef12960 ffff880296e89d38 
+ffff88101ef12960
+[ 2868.816262]  0000000000000000 ffff880fdf602400 ffff88101ef3c390 
+ffff880b4ce2f260
+[ 2868.816485]  ffff880296e89e08 ffffffffa0225628 ffff88101ef3c390 
+0000000000000000
+[ 2868.816694] Call Trace:
+[ 2868.816755]  [<ffffffffa0225628>] btrfs_truncate+0x4d8/0x650 [btrfs]
+[ 2868.816817]  [<ffffffff81188afd>] ? path_lookupat+0x6d/0x750
+[ 2868.816880]  [<ffffffffa0227021>] btrfs_setattr+0xc1/0x1b0 [btrfs]
+[ 2868.816940]  [<ffffffff811955c3>] notify_change+0x183/0x320
+[ 2868.816998]  [<ffffffff8117889e>] do_truncate+0x5e/0xa0
+[ 2868.817056]  [<ffffffff81178a24>] sys_truncate+0x144/0x1b0
+[ 2868.817115]  [<ffffffff8165fd29>] system_call_fastpath+0x16/0x1b
+[ 2868.817173] Code: e8 4c 8b 75 f0 4c 8b 7d f8 c9 c3 66 0f 1f 44 00 00 
+80 bb 60 fe ff ff 84 75 b4 eb ae 0f 1f 44 00 00 48 89 df e8 50 73 fe ff 
+eb b8 <0f> 0b 66 66 66 2e 0f 1f 84 00 00 00 00 00 55 48 89 e5 48 83 ec
+[ 2868.819501] RIP  [<ffffffffa02212f2>] btrfs_orphan_del+0xe2/0xf0 [btrfs]
+[ 2868.819602]  RSP <ffff880296e89d18>
+[ 2868.819703] ---[ end trace 94d17b770b376c84 ]---
+[ 3249.857453] ------------[ cut here ]------------
+[ 3249.857481] kernel BUG at fs/btrfs/inode.c:2220!
+[ 3249.857506] invalid opcode: 0000 [#3] SMP
+[ 3249.857534] CPU 0
+[ 3249.857538] Modules linked in: btrfs zlib_deflate libcrc32c ext2 
+bonding coretemp ghash_clmulni_intel aesni_intel cryptd aes_x86_64 
+microcode psmouse serio_raw sb_edac edac_core joydev mei(C) ses ioatdma 
+enclosure mac_hid lp parport isci libsas scsi_transport_sas usbhid hid 
+ixgbe igb megaraid_sas dca mdio
+[ 3249.857721]
+[ 3249.857740] Pid: 5384, comm: ceph-osd Tainted: G      D  C 
+3.4.0-rc7+ #10 Supermicro X9SRi/X9SRi
+[ 3249.857791] RIP: 0010:[<ffffffffa02212f2>]  [<ffffffffa02212f2>] 
+btrfs_orphan_del+0xe2/0xf0 [btrfs]
+[ 3249.857847] RSP: 0018:ffff880abe8b5d18  EFLAGS: 00010282
+[ 3249.857873] RAX: 00000000fffffffe RBX: ffff8807eb8b6670 RCX: 
+000000000077a084
+[ 3249.857902] RDX: 000000000077a083 RSI: ffff88101ee497e0 RDI: 
+ffffea00407b9240
+[ 3249.857931] RBP: ffff880abe8b5d58 R08: 000060ef80000fd0 R09: 
+ffffffffa01f8c6a
+[ 3249.857959] R10: 0000000000000000 R11: 0000000000000153 R12: 
+ffff880d56825390
+[ 3249.857988] R13: ffff880d56825000 R14: 0000000000000001 R15: 
+0000000000000001
+[ 3249.858017] FS:  00007f06bd13b700(0000) GS:ffff88107fc00000(0000) 
+knlGS:0000000000000000
+[ 3249.858062] CS:  0010 DS: 0000 ES: 0000 CR0: 0000000080050033
+[ 3249.858088] CR2: 00000000043d2000 CR3: 0000000e7ebe5000 CR4: 
+00000000000407f0
+[ 3249.858117] DR0: 0000000000000000 DR1: 0000000000000000 DR2: 
+0000000000000000
+[ 3249.858146] DR3: 0000000000000000 DR6: 00000000ffff0ff0 DR7: 
+0000000000000400
+[ 3249.858175] Process ceph-osd (pid: 5384, threadinfo ffff880abe8b4000, 
+task ffff880eb7a596e0)
+[ 3249.858219] Stack:
+[ 3249.858239]  0c00000000000002 ffff88101ede4d70 ffff880abe8b5d38 
+ffff88101ede4d70
+[ 3249.858288]  0000000000000000 ffff880d56825000 ffff8807eb8b6670 
+ffff880546925e00
+[ 3249.858338]  ffff880abe8b5e08 ffffffffa0225628 ffff8807eb8b6670 
+0000000000000000
+[ 3249.858387] Call Trace:
+[ 3249.858415]  [<ffffffffa0225628>] btrfs_truncate+0x4d8/0x650 [btrfs]
+[ 3249.858445]  [<ffffffff81188afd>] ? path_lookupat+0x6d/0x750
+[ 3249.858477]  [<ffffffffa0227021>] btrfs_setattr+0xc1/0x1b0 [btrfs]
+[ 3249.858505]  [<ffffffff811955c3>] notify_change+0x183/0x320
+[ 3249.858533]  [<ffffffff8117889e>] do_truncate+0x5e/0xa0
+[ 3249.858559]  [<ffffffff81178a24>] sys_truncate+0x144/0x1b0
+[ 3249.858587]  [<ffffffff8165fd29>] system_call_fastpath+0x16/0x1b
+[ 3249.858614] Code: e8 4c 8b 75 f0 4c 8b 7d f8 c9 c3 66 0f 1f 44 00 00 
+80 bb 60 fe ff ff 84 75 b4 eb ae 0f 1f 44 00 00 48 89 df e8 50 73 fe ff 
+eb b8 <0f> 0b 66 66 66 2e 0f 1f 84 00 00 00 00 00 55 48 89 e5 48 83 ec
+[ 3249.858813] RIP  [<ffffffffa02212f2>] btrfs_orphan_del+0xe2/0xf0 [btrfs]
+[ 3249.858852]  RSP <ffff880abe8b5d18>
+[ 3249.859140] ---[ end trace 94d17b770b376c85 ]---

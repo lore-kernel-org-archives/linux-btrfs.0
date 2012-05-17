@@ -1,60 +1,105 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([222.73.24.84]:7889 "EHLO song.cn.fujitsu.com"
+Received: from cn.fujitsu.com ([222.73.24.84]:57636 "EHLO song.cn.fujitsu.com"
 	rhost-flags-OK-FAIL-OK-OK) by vger.kernel.org with ESMTP
-	id S1756991Ab2ERKDw (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Fri, 18 May 2012 06:03:52 -0400
+	id S1755273Ab2EQL44 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Thu, 17 May 2012 07:56:56 -0400
 Received: from mailserver.fnst.cn.fujitsu.com (tang.cn.fujitsu.com [127.0.0.1])
-	by tang.cn.fujitsu.com (8.14.3/8.13.1) with ESMTP id q4IA3lS1025150
-	for <linux-btrfs@vger.kernel.org>; Fri, 18 May 2012 18:03:48 +0800
-From: Liu Bo <liubo2009@cn.fujitsu.com>
-To: <linux-btrfs@vger.kernel.org>
-Subject: [PATCH 2/2] Btrfs: make sure that we've made everything in pinned tree clean
-Date: Fri, 18 May 2012 18:07:50 +0800
-Message-Id: <1337335671-24926-2-git-send-email-liubo2009@cn.fujitsu.com>
-In-Reply-To: <1337335671-24926-1-git-send-email-liubo2009@cn.fujitsu.com>
-References: <1337335671-24926-1-git-send-email-liubo2009@cn.fujitsu.com>
+	by tang.cn.fujitsu.com (8.14.3/8.13.1) with ESMTP id q4HBuqgZ005902
+	for <linux-btrfs@vger.kernel.org>; Thu, 17 May 2012 19:56:52 +0800
+Message-ID: <4FB4E72B.7020104@cn.fujitsu.com>
+Date: Thu, 17 May 2012 19:55:23 +0800
+From: Miao Xie <miaox@cn.fujitsu.com>
+Reply-To: miaox@cn.fujitsu.com
+MIME-Version: 1.0
+To: Linux Btrfs <linux-btrfs@vger.kernel.org>
+Subject: [PATCH 1/5] Btrfs: stop defrag the files automatically when doin
+ readonly remount or umount
+Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Since we have two trees for recording pinned extents, we need to go through
-both of them to make sure that we've done everything clean.
+If we remount the fs to be readonly or umount it, we should not continue
+defraging the files, it is because
+- the auto defragment will introduce lots of dirty pages, it breaks the rule
+  of a readonly file system.
+- it make the time of remount/umount become longer.
 
-Signed-off-by: Liu Bo <liubo2009@cn.fujitsu.com>
+Signed-off-by: Miao Xie <miaox@cn.fujitsu.com>
 ---
- fs/btrfs/disk-io.c |   11 +++++++++++
- 1 files changed, 11 insertions(+), 0 deletions(-)
+ fs/btrfs/disk-io.c |   12 +++++++-----
+ fs/btrfs/file.c    |    3 ++-
+ fs/btrfs/super.c   |    5 +++++
+ 3 files changed, 14 insertions(+), 6 deletions(-)
 
 diff --git a/fs/btrfs/disk-io.c b/fs/btrfs/disk-io.c
-index 046a737..144f019 100644
+index 20196f4..9a571f7 100644
 --- a/fs/btrfs/disk-io.c
 +++ b/fs/btrfs/disk-io.c
-@@ -3548,8 +3548,10 @@ static int btrfs_destroy_pinned_extent(struct btrfs_root *root,
- 	u64 start;
- 	u64 end;
- 	int ret;
-+	bool loop = true;
+@@ -1529,6 +1529,9 @@ static int cleaner_kthread(void *arg)
+ 	do {
+ 		vfs_check_frozen(root->fs_info->sb, SB_FREEZE_WRITE);
  
- 	unpin = pinned_extents;
-+again:
- 	while (1) {
- 		ret = find_first_extent_bit(unpin, 0, &start, &end,
- 					    EXTENT_DIRTY);
-@@ -3567,6 +3569,15 @@ static int btrfs_destroy_pinned_extent(struct btrfs_root *root,
- 		cond_resched();
- 	}
- 
-+	if (loop) {
-+		if (unpin == &root->fs_info->freed_extents[0])
-+			unpin = &root->fs_info->freed_extents[1];
-+		else
-+			unpin = &root->fs_info->freed_extents[0];
-+		loop = false;
-+		goto again;
-+	}
++		if (!down_read_trylock(&root->fs_info->sb->s_umount))
++			goto skip;
 +
- 	return 0;
- }
+ 		if (!(root->fs_info->sb->s_flags & MS_RDONLY) &&
+ 		    mutex_trylock(&root->fs_info->cleaner_mutex)) {
+ 			btrfs_run_delayed_iputs(root);
+@@ -1536,7 +1539,8 @@ static int cleaner_kthread(void *arg)
+ 			mutex_unlock(&root->fs_info->cleaner_mutex);
+ 			btrfs_run_defrag_inodes(root->fs_info);
+ 		}
+-
++		up_read(&root->fs_info->sb->s_umount);
++skip:
+ 		if (!try_to_freeze()) {
+ 			set_current_state(TASK_INTERRUPTIBLE);
+ 			if (!kthread_should_stop())
+@@ -3049,13 +3053,11 @@ int close_ctree(struct btrfs_root *root)
  
+ 	btrfs_scrub_cancel(root);
+ 
+-	/* wait for any defraggers to finish */
+-	wait_event(fs_info->transaction_wait,
+-		   (atomic_read(&fs_info->defrag_running) == 0));
+-
+ 	/* clear out the rbtree of defraggable inodes */
+ 	btrfs_run_defrag_inodes(fs_info);
+ 
++	BUG_ON(atomic_read(&fs_info->defrag_running));
++
+ 	/*
+ 	 * Here come 2 situations when btrfs is broken to flip readonly:
+ 	 *
+diff --git a/fs/btrfs/file.c b/fs/btrfs/file.c
+index d83260d..23364c1 100644
+--- a/fs/btrfs/file.c
++++ b/fs/btrfs/file.c
+@@ -230,7 +230,8 @@ int btrfs_run_defrag_inodes(struct btrfs_fs_info *fs_info)
+ 		first_ino = defrag->ino + 1;
+ 		rb_erase(&defrag->rb_node, &fs_info->defrag_inodes);
+ 
+-		if (btrfs_fs_closing(fs_info))
++		if (btrfs_fs_closing(fs_info) ||
++		    (fs_info->sb->s_flags & MS_RDONLY))
+ 			goto next_free;
+ 
+ 		spin_unlock(&fs_info->defrag_inodes_lock);
+diff --git a/fs/btrfs/super.c b/fs/btrfs/super.c
+index 84571d7..7deb00e 100644
+--- a/fs/btrfs/super.c
++++ b/fs/btrfs/super.c
+@@ -1151,6 +1151,11 @@ static int btrfs_remount(struct super_block *sb, int *flags, char *data)
+ 		ret = btrfs_commit_super(root);
+ 		if (ret)
+ 			goto restore;
++
++		/* clear out the rbtree of defraggable inodes */
++		btrfs_run_defrag_inodes(fs_info);
++
++		BUG_ON(atomic_read(&fs_info->defrag_running));
+ 	} else {
+ 		if (fs_info->fs_devices->rw_devices == 0)
+ 			ret = -EACCES;
 -- 
-1.6.5.2
-
+1.7.6.5

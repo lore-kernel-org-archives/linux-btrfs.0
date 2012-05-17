@@ -1,54 +1,281 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-gh0-f174.google.com ([209.85.160.174]:35235 "EHLO
-	mail-gh0-f174.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1754557Ab2EXJhT (ORCPT
+Received: from mailout-de.gmx.net ([213.165.64.23]:52938 "HELO
+	mailout-de.gmx.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with SMTP id S1761929Ab2EQNrL (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 24 May 2012 05:37:19 -0400
-Received: by ghrr11 with SMTP id r11so1730491ghr.19
-        for <linux-btrfs@vger.kernel.org>; Thu, 24 May 2012 02:37:19 -0700 (PDT)
+	Thu, 17 May 2012 09:47:11 -0400
+Message-ID: <4FB50177.2020503@gmx.net>
+Date: Thu, 17 May 2012 15:47:35 +0200
+From: Arne Jansen <sensille@gmx.net>
 MIME-Version: 1.0
-In-Reply-To: <4FBDCF35.6060409@tuxadero.com>
-References: <20120517194358.GA9846@dhcp231-144.rdu.redhat.com>
-	<CAJafhzTQJchdd600DiEnooUH-P9ZcLvW+oEczCMNskd+Ud4BmQ@mail.gmail.com>
-	<4FB56B21.7070800@tuxadero.com>
-	<20120518144759.GA1892@localhost.localdomain>
-	<4FB685C9.2050607@tuxadero.com>
-	<20120518190105.GB1892@localhost.localdomain>
-	<4FB9BDBA.2030806@cn.fujitsu.com>
-	<CAJafhzSmLC9yUwrxsJEz5vKYnfP0DSWdMnA0oXmLT_4CQFc1oQ@mail.gmail.com>
-	<20120522173344.GB1890@localhost.localdomain>
-	<CAJafhzQGHsSA6dUwOqTJERj7SgVmKFuVDHk5R+i7n0FuhUAj_g@mail.gmail.com>
-	<20120523150235.GB2127@localhost.localdomain>
-	<4FBD3681.5060000@tuxadero.com>
-	<4FBDCF35.6060409@tuxadero.com>
-Date: Thu, 24 May 2012 11:37:18 +0200
-Message-ID: <CAJafhzQukXh+-DyoKzcmPDU+Yh8nADywGmJ_0SA_efc9v7Nwgw@mail.gmail.com>
-Subject: Re: Ceph on btrfs 3.4rc
-From: Christian Brunner <christian@brunner-muc.de>
-To: linux-btrfs@vger.kernel.org, ceph-devel@vger.kernel.org
-Content-Type: text/plain; charset=ISO-8859-1
+To: linux-btrfs@vger.kernel.org
+Subject: Re: [PATCH 1/5] btrfs: extend readahead interface
+References: <cover.1334241664.git.sensille@gmx.net> <32d2d06e11e45bde2f092d647991b712d2e825b6.1334241664.git.sensille@gmx.net> <20120509144800.GL19331@twin.jikos.cz>
+In-Reply-To: <20120509144800.GL19331@twin.jikos.cz>
+Content-Type: text/plain; charset=ISO-8859-1; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Same thing here.
-
-I've tried really hard, but even after 12 hours I wasn't able to get a
-single warning from btrfs.
-
-I think you cracked it!
-
-Thanks,
-Christian
-
-2012/5/24 Martin Mailand <martin@tuxadero.com>:
-> Hi,
-> the ceph cluster is running under heavy load for the last 13 hours without a
-> problem, dmesg is empty and the performance is good.
+On 05/09/12 16:48, David Sterba wrote:
+> On Thu, Apr 12, 2012 at 05:54:38PM +0200, Arne Jansen wrote:
+>> @@ -97,30 +119,87 @@ struct reada_machine_work {
+>> +/*
+>> + * this is the default callback for readahead. It just descends into the
+>> + * tree within the range given at creation. if an error occurs, just cut
+>> + * this part of the tree
+>> + */
+>> +static void readahead_descend(struct btrfs_root *root, struct reada_control *rc,
+>> +			      u64 wanted_generation, struct extent_buffer *eb,
+>> +			      u64 start, int err, struct btrfs_key *top,
+>> +			      void *ctx)
+>> +{
+>> +	int nritems;
+>> +	u64 generation;
+>> +	int level;
+>> +	int i;
+>> +
+>> +	BUG_ON(err == -EAGAIN); /* FIXME: not yet implemented, don't cancel
+>> +				 * readahead with default callback */
+>> +
+>> +	if (err || eb == NULL) {
+>> +		/*
+>> +		 * this is the error case, the extent buffer has not been
+>> +		 * read correctly. We won't access anything from it and
+>> +		 * just cleanup our data structures. Effectively this will
+>> +		 * cut the branch below this node from read ahead.
+>> +		 */
+>> +		return;
+>> +	}
+>> +
+>> +	level = btrfs_header_level(eb);
+>> +	if (level == 0) {
+>> +		/*
+>> +		 * if this is a leaf, ignore the content.
+>> +		 */
+>> +		return;
+>> +	}
+>> +
+>> +	nritems = btrfs_header_nritems(eb);
+>> +	generation = btrfs_header_generation(eb);
+>> +
+>> +	/*
+>> +	 * if the generation doesn't match, just ignore this node.
+>> +	 * This will cut off a branch from prefetch. Alternatively one could
+>> +	 * start a new (sub-) prefetch for this branch, starting again from
+>> +	 * root.
+>> +	 */
+>> +	if (wanted_generation != generation)
+>> +		return;
 >
-> -martin
+> I think I saw passing wanted_generation = 0 somewheree, but cannot find
+> it now again. Is it an expected value for the default RA callback,
+> meaning eg.  'any generation I find' ?
+
+No. This here is just the default callback. You've seen
+wanted_generation = 0 in the droptree code, where a custom
+callback is set that doesn't check the generation.
+
 >
-> Am 23.05.2012 21:12, schrieb Martin Mailand:
+>> +
+>> +	for (i = 0; i<  nritems; i++) {
+>> +		u64 n_gen;
+>> +		struct btrfs_key key;
+>> +		struct btrfs_key next_key;
+>> +		u64 bytenr;
+>> +
+>> +		btrfs_node_key_to_cpu(eb,&key, i);
+>> +		if (i + 1<  nritems)
+>> +			btrfs_node_key_to_cpu(eb,&next_key, i + 1);
+>> +		else
+>> +			next_key = *top;
+>> +		bytenr = btrfs_node_blockptr(eb, i);
+>> +		n_gen = btrfs_node_ptr_generation(eb, i);
+>> +
+>> +		if (btrfs_comp_cpu_keys(&key,&rc->key_end)<  0&&
+>> +		    btrfs_comp_cpu_keys(&next_key,&rc->key_start)>  0)
+>> +			reada_add_block(rc, bytenr,&next_key,
+>> +					level - 1, n_gen, ctx);
+>> +	}
+>> +}
+>>
+>> @@ -142,65 +221,21 @@ static int __readahead_hook(struct btrfs_root *root, struct extent_buffer *eb,
+>>   	re->scheduled_for = NULL;
+>>   	spin_unlock(&re->lock);
+>>
+>> -	if (err == 0) {
+>> -		nritems = level ? btrfs_header_nritems(eb) : 0;
+>> -		generation = btrfs_header_generation(eb);
+>> -		/*
+>> -		 * FIXME: currently we just set nritems to 0 if this is a leaf,
+>> -		 * effectively ignoring the content. In a next step we could
+>> -		 * trigger more readahead depending from the content, e.g.
+>> -		 * fetch the checksums for the extents in the leaf.
+>> -		 */
+>> -	} else {
+>> +	/*
+>> +	 * call hooks for all registered readaheads
+>> +	 */
+>> +	list_for_each_entry(rec,&list, list) {
+>> +		btrfs_tree_read_lock(eb);
+>>   		/*
+>> -		 * this is the error case, the extent buffer has not been
+>> -		 * read correctly. We won't access anything from it and
+>> -		 * just cleanup our data structures. Effectively this will
+>> -		 * cut the branch below this node from read ahead.
+>> +		 * we set the lock to blocking, as the callback might want to
+>> +		 * sleep on allocations.
 >
->> this patch is running for 3 hours without a Bug and without the Warning.
->> I will let it run overnight and report tomorrow.
->> It looks very good ;-)
+> What about a more finer control given to the callbacks? The blocking
+> lock may be unnecessary if the callback does not sleep.
+
+I thought about that, but it would add a bit more complexity. So I
+decided for the simpler version in the first run. There is definitely
+room for optimization here.
+
+>
+> My idea is to add a field to 'struct reada_uptodate_ctx', preset with
+> BTRFS_READ_LOCK by default, but let the RA user to set it to its needs.
+
+The struct is only used in the special case the extent is already
+uptodate, to pass the parameters to the worker in this case. The
+user has no influence on that. It could either be stored per
+request in struct reada_extctl or per reada in struct reada_control.
+But this would also not be optimal. There better way would be to
+always pass a spinning lock and let the user change it to blocking
+if needed. The problem is that the user would need to pass the info
+back, as there's no single function that can unlock a spinning and
+a blocking read lock. I only had a short look at it and haven't found
+an easy way to build it.
+Or, just leave the locking completely to the user (the callback).
+
+>
+>>   		*/
+>> -		nritems = 0;
+>> -		generation = 0;
+>> +		btrfs_set_lock_blocking_rw(eb, BTRFS_READ_LOCK);
+>> +		rec->rc->callback(root, rec->rc, rec->generation, eb, start,
+>> +				  err,&re->top, rec->ctx);
+>> +		btrfs_tree_read_unlock_blocking(eb);
+>>   	}
+>>
+>> @@ -521,12 +593,87 @@ static void reada_control_release(struct kref *kref)
+>> +/*
+>> + * context to pass from reada_add_block to worker in case the extent is
+>> + * already uptodate in memory
+>> + */
+>> +struct reada_uptodate_ctx {
+>> +	struct btrfs_key	top;
+>> +	struct extent_buffer	*eb;
+>> +	struct reada_control	*rc;
+>> +	u64			logical;
+>> +	u64			generation;
+>> +	void			*ctx;
+>> +	struct btrfs_work	work;
+>
+> eg.
+>          int                     lock_type;
+> 	int                     want_lock_blocking;
+>
+>
+>> +};
+>> +
+>> +/* worker for immediate processing of uptodate blocks */
+>> +static void reada_add_block_uptodate(struct btrfs_work *work)
+>> +{
+>> +	struct reada_uptodate_ctx *ruc;
+>> +
+>> +	ruc = container_of(work, struct reada_uptodate_ctx, work);
+>> +
+>> +	btrfs_tree_read_lock(ruc->eb);
+>> +	/*
+>> +	 * we set the lock to blocking, as the callback might want to sleep
+>> +	 * on allocations.
+>> +	 */
+>> +	btrfs_set_lock_blocking_rw(ruc->eb, BTRFS_READ_LOCK);
+>
+> same here
+>
+>> +	ruc->rc->callback(ruc->rc->root, ruc->rc, ruc->generation, ruc->eb,
+>> +			 ruc->logical, 0,&ruc->top, ruc->ctx);
+>> +	btrfs_tree_read_unlock_blocking(ruc->eb);
+>> +
+>> +	reada_control_elem_put(ruc->rc);
+>> +	free_extent_buffer(ruc->eb);
+>> +	kfree(ruc);
+>> +}
+>> +
+>> @@ -886,17 +1074,18 @@ struct reada_control *btrfs_reada_add(struct btrfs_root *root,
+>>   		.offset = (u64)-1
+>>   	};
+>>
+>> -	rc = kzalloc(sizeof(*rc), GFP_NOFS);
+>> +	rc = btrfs_reada_alloc(parent, root, key_start, key_end, callback);
+>>   	if (!rc)
+>> -		return ERR_PTR(-ENOMEM);
+>> +		return -ENOMEM;
+>>
+>> -	rc->root = root;
+>> -	rc->key_start = *key_start;
+>> -	rc->key_end = *key_end;
+>> -	atomic_set(&rc->elems, 0);
+>> -	init_waitqueue_head(&rc->wait);
+>> -	kref_init(&rc->refcnt);
+>> -	kref_get(&rc->refcnt); /* one ref for having elements */
+>> +	if (rcp) {
+>> +		*rcp = rc;
+>> +		/*
+>> +		 * as we return the rc, get an addition ref on it for
+>                                                (additional)
+>
+>> +		 * the caller
+>> +		 */
+>> +		kref_get(&rc->refcnt);
+>> +	}
+>>
+>>   	node = btrfs_root_node(root);
+>>   	start = node->start;
+>> @@ -904,35 +1093,36 @@ struct reada_control *btrfs_reada_add(struct btrfs_root *root,
+>> +int btrfs_reada_wait(struct reada_control *rc)
+>>   {
+>> -	struct reada_control *rc = handle;
+>> +	struct btrfs_fs_info *fs_info = rc->root->fs_info;
+>> +	int i;
+>>
+>>   	while (atomic_read(&rc->elems)) {
+>>   		wait_event_timeout(rc->wait, atomic_read(&rc->elems) == 0,
+>> -				   5 * HZ);
+>> -		dump_devs(rc->root->fs_info, rc->elems<  10 ? 1 : 0);
+>> +				   1 * HZ);
+>
+> I think it's recommended to use msecs_to_jiffies instead of HZ.
+>
+>> +		dump_devs(fs_info, atomic_read(&rc->elems)<  10 ? 1 : 0);
+>> +		printk(KERN_DEBUG "reada_wait on %p: %d elems\n", rc,
+>> +			atomic_read(&rc->elems));
+>>   	}
+>>
+>> -	dump_devs(rc->root->fs_info, rc->elems<  10 ? 1 : 0);
+>> +	dump_devs(fs_info, atomic_read(&rc->elems)<  10 ? 1 : 0);
+>>
+>>   	kref_put(&rc->refcnt, reada_control_release);
+>>
+>>   	return 0;
+>>   }
+>
+> --
+>
+> The reference counting changed in a non-trivial way, I'd like to have
+> another look just at that to be sure, but from current review round it
+> looks ok.
+>
+> The RA changes look independet, do you intend to submit it earlier that
+> with the whole droptree? It'd get wider testing.
+
+Currently the only user of reada is scrub. It would gain some precision
+by this patch. The testing is a good argument, too.
+
+-Arne
+>
+>
+> david
+

@@ -1,46 +1,46 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mailout-de.gmx.net ([213.165.64.22]:57915 "HELO
-	mailout-de.gmx.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with SMTP id S967181Ab2EQPdL (ORCPT
+Received: from mail-lpp01m010-f46.google.com ([209.85.215.46]:57691 "EHLO
+	mail-lpp01m010-f46.google.com" rhost-flags-OK-OK-OK-OK)
+	by vger.kernel.org with ESMTP id S1754657Ab2EQQKZ (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 17 May 2012 11:33:11 -0400
-Message-ID: <4FB51A4E.6000501@gmx.net>
-Date: Thu, 17 May 2012 17:33:34 +0200
-From: Arne Jansen <sensille@gmx.net>
+	Thu, 17 May 2012 12:10:25 -0400
+Received: by lahd3 with SMTP id d3so1427900lah.19
+        for <linux-btrfs@vger.kernel.org>; Thu, 17 May 2012 09:10:23 -0700 (PDT)
+Message-ID: <4FB522EC.50305@gmail.com>
+Date: Thu, 17 May 2012 20:10:20 +0400
+From: "Sergey E. Kolesnikov" <rockingdemon@gmail.com>
 MIME-Version: 1.0
-To: Dan Carpenter <dan.carpenter@oracle.com>
-CC: linux-btrfs@vger.kernel.org
-Subject: Re: btrfs: initial readahead code and prototypes
-References: <20120517071446.GI14660@elgon.mountain> <4FB4FDC6.5070306@gmx.net> <20120517134613.GN16999@mwanda>
-In-Reply-To: <20120517134613.GN16999@mwanda>
-Content-Type: text/plain; charset=ISO-8859-1; format=flowed
+To: linux-btrfs@vger.kernel.org
+Subject: trim malfunction in linux 3.3.6
+Content-Type: text/plain; charset=UTF-8; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 05/17/12 15:46, Dan Carpenter wrote:
-> On Thu, May 17, 2012 at 03:31:50PM +0200, Arne Jansen wrote:
->> The assumption here is that if err == 0, eb is always != NULL. There's
->> even a tiny comment above the function stating this:
->>
->>        107              /* in case of err, eb might be NULL */
->>
->
-> Ah, right.  I missed the comment.
+Hello.
+I've been running Ubuntu 12.04 kernel and btrfs on two partitions of two 
+GPT partitioned SSDs. Rootfs was btrfs subvol "@" and homes were at 
+"@home". When I was batch trimming with "fstrim /" using Ubuntu's 
+standard kernel 3.2.0 - everything was fine. Then I compiled vanilla 
+3.3.6 kernel ad tried to fstrim again, fs got severely damaged.
 
-Thanks for doing this kind of sanity checking :)
+It seems that batch trim miscalculates ranges and trims some occupied 
+space. Can't say if GPT or other partitioning details matter.
 
--Arne
+I will try to provide any info possible, but fs is trimmed badly, and I 
+need this machine to be up and running, so will have to mkfs.btrfs again 
+and use 3.2.0 kernel.
 
->
->> This code changes significantly with the patch
->>
->> btrfs: extend readahead interface
->>
->> Where it is written in a more obvious way.
->
-> Cool.
->
-> regards,
-> dan carpenter
->
-
+Steps that caused corruption:
+1. Created partitions on two (say /dev/sd[ab]) SSD drives with about 1G 
+offset from the beginning (first partition is ext4 for /boot)
+2. mkfs.btrfs /dev/sd[ab]2
+3. created subvolumes "@" and "@home" for mountpoints "/" and "/home" 
+respectively
+4. installed xubuntu 12.04
+5. fstrim /
+6. everything is ok
+7. compiled and installed vanilla 3.3.6 kernel
+8. reboot into 3.3.6
+9. btrfs scrub - ok
+10. fstrim /
+11. fs got baaadly corrupted

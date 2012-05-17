@@ -1,54 +1,42 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([222.73.24.84]:20718 "EHLO song.cn.fujitsu.com"
+Received: from cn.fujitsu.com ([222.73.24.84]:54297 "EHLO song.cn.fujitsu.com"
 	rhost-flags-OK-FAIL-OK-OK) by vger.kernel.org with ESMTP
-	id S1751795Ab2ERDNk (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 17 May 2012 23:13:40 -0400
-Message-ID: <4FB5BE08.7030306@cn.fujitsu.com>
-Date: Fri, 18 May 2012 11:12:08 +0800
+	id S1752931Ab2EQL60 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Thu, 17 May 2012 07:58:26 -0400
+Received: from mailserver.fnst.cn.fujitsu.com (tang.cn.fujitsu.com [127.0.0.1])
+	by tang.cn.fujitsu.com (8.14.3/8.13.1) with ESMTP id q4HBwMbH005960
+	for <linux-btrfs@vger.kernel.org>; Thu, 17 May 2012 19:58:23 +0800
+Message-ID: <4FB4E785.4050902@cn.fujitsu.com>
+Date: Thu, 17 May 2012 19:56:53 +0800
 From: Miao Xie <miaox@cn.fujitsu.com>
 Reply-To: miaox@cn.fujitsu.com
 MIME-Version: 1.0
-To: Ilya Dryomov <idryomov@gmail.com>
-CC: Linux Btrfs <linux-btrfs@vger.kernel.org>
-Subject: Re: [PATCH 5/5] Btrfs: fix memory leak in btrfs_pause_balance()
-References: <4FB4E7FD.8050108@cn.fujitsu.com> <20120517152004.GC1934@zambezi.lan>
-In-Reply-To: <20120517152004.GC1934@zambezi.lan>
-Content-Type: text/plain; charset=ISO-8859-1
+To: Linux Btrfs <linux-btrfs@vger.kernel.org>
+Subject: [PATCH 2/5] Btrfs: count the chunks which will be relocated at first
+Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 	thu, 17 May 2012 18:20:04 +0300, Ilya Dryomov wrote:
-> On Thu, May 17, 2012 at 07:58:53PM +0800, Miao Xie wrote:
->> We forget to free fs_info->balance_ctl in the btrfs_pause_balance()
->> when umounting the fs.
->>
->> Signed-off-by: Miao Xie <miaox@cn.fujitsu.com>
->> ---
->>  fs/btrfs/volumes.c |    3 +++
->>  1 files changed, 3 insertions(+), 0 deletions(-)
->>
->> diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
->> index c536d52..fd7fe80 100644
->> --- a/fs/btrfs/volumes.c
->> +++ b/fs/btrfs/volumes.c
->> @@ -2937,6 +2937,9 @@ int btrfs_pause_balance(struct btrfs_fs_info *fs_info)
->>  		ret = -ENOTCONN;
->>  	}
->>  
->> +	if (btrfs_fs_closing(fs_info) && fs_info->balance_ctl)
->> +		unset_balance_control(fs_info);
->> +
->>  	mutex_unlock(&fs_info->balance_mutex);
->>  	return ret;
->>  }
-> 
-> It is kfree()'d in free_fs_info(), which should be called on unmount.
-> Am I missing something here ?
+the balance function should count the chunks which will be relocated at first,
+and then relocate those chunks one by one.
 
-It is my mistake. Sorry.
+Signed-off-by: Miao Xie <miaox@cn.fujitsu.com>
+---
+ fs/btrfs/volumes.c |    2 +-
+ 1 files changed, 1 insertions(+), 1 deletions(-)
 
-BTW I think freeing it in btrfs_pause_balance() is better because it is relative
-to the balance, or the readability will become worse.
-
-Thanks
-Miao
+diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
+index 759d024..91da8a2 100644
+--- a/fs/btrfs/volumes.c
++++ b/fs/btrfs/volumes.c
+@@ -2580,7 +2580,7 @@ again:
+ 
+ 		chunk = btrfs_item_ptr(leaf, slot, struct btrfs_chunk);
+ 
+-		if (!counting) {
++		if (counting) {
+ 			spin_lock(&fs_info->balance_lock);
+ 			bctl->stat.considered++;
+ 			spin_unlock(&fs_info->balance_lock);
+-- 
+1.7.6.5

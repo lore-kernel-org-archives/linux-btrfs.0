@@ -1,104 +1,91 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from frost.carfax.org.uk ([85.119.82.111]:34546 "EHLO
-	frost.carfax.org.uk" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1751591Ab2EQKoN (ORCPT
+Received: from mailout-de.gmx.net ([213.165.64.23]:57349 "HELO
+	mailout-de.gmx.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with SMTP id S1751931Ab2EQNb1 (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 17 May 2012 06:44:13 -0400
-Date: Thu, 17 May 2012 11:44:09 +0100
-From: Hugo Mills <hugo@carfax.org.uk>
-To: Peter Maloney <peter.maloney@brockmann-consult.de>
-Cc: linux-btrfs@vger.kernel.org
-Subject: Re: How can I create useful bug reports? Here are 50 lines of
- messages including Call Trace from a system crash.
-Message-ID: <20120517104409.GY8938@carfax.org.uk>
-References: <4FB4D262.8020407@brockmann-consult.de>
+	Thu, 17 May 2012 09:31:27 -0400
+Message-ID: <4FB4FDC6.5070306@gmx.net>
+Date: Thu, 17 May 2012 15:31:50 +0200
+From: Arne Jansen <sensille@gmx.net>
 MIME-Version: 1.0
-Content-Type: multipart/signed; micalg=pgp-sha1;
-	protocol="application/pgp-signature"; boundary="qie/H+CJBZigrS0F"
-In-Reply-To: <4FB4D262.8020407@brockmann-consult.de>
+To: Dan Carpenter <dan.carpenter@oracle.com>
+CC: linux-btrfs@vger.kernel.org
+Subject: Re: btrfs: initial readahead code and prototypes
+References: <20120517071446.GI14660@elgon.mountain>
+In-Reply-To: <20120517071446.GI14660@elgon.mountain>
+Content-Type: text/plain; charset=ISO-8859-1; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
+On 05/17/12 09:14, Dan Carpenter wrote:
+> Hi, I'm working on some new Smatch code and it complains about this
+> patch from last year. -Dan
+>
+> ----
+> This is a semi-automatic email about new static checker warnings.
+>
+> The patch 7414a03fbf9e: "btrfs: initial readahead code and
+> prototypes" from May 23, 2011, leads to the following Smatch
+> complaint:
+>
+> fs/btrfs/reada.c:147 __readahead_hook()
+> 	 error: we previously assumed 'eb' could be null (see line 122)
+>
+> fs/btrfs/reada.c
+>     121	
+>     122		if (eb)
+>                     ^^^^
+> Checked here.
+>
+>     123			level = btrfs_header_level(eb);
+>     124	
+>     125		/* find extent */
+>     126		spin_lock(&fs_info->reada_lock);
+>     127		re = radix_tree_lookup(&fs_info->reada_tree, index);
+>     128		if (re)
+>     129			kref_get(&re->refcnt);
+>     130		spin_unlock(&fs_info->reada_lock);
+>     131	
+>     132		if (!re)
+>     133			return -1;
+>     134	
+>     135		spin_lock(&re->lock);
+>     136		/*
+>     137		 * just take the full list from the extent. afterwards we
+>     138		 * don't need the lock anymore
+>     139		 */
+>     140		list_replace_init(&re->extctl,&list);
+>     141		for_dev = re->scheduled_for;
+>     142		re->scheduled_for = NULL;
+>     143		spin_unlock(&re->lock);
+>     144	
+>     145		if (err == 0) {
+>     146			nritems = level ? btrfs_header_nritems(eb) : 0;
+>                                    ^^^^^
+> Checked here again indirectly.
+>
+>     147			generation = btrfs_header_generation(eb);
+>                                       ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+> Dereferenced inside function without checking.
 
---qie/H+CJBZigrS0F
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
+The assumption here is that if err == 0, eb is always != NULL. There's
+even a tiny comment above the function stating this:
 
-On Thu, May 17, 2012 at 12:26:42PM +0200, Peter Maloney wrote:
-> I am using btrfs at home on my root system because I want to be able to
-> send useful bug reports when things go wrong.
-> 
-> And I have 3 questions:
-> 
-> What kernel should I be using?
+       107              /* in case of err, eb might be NULL */
 
-   One of:
+This code changes significantly with the patch
 
- - josef's "btrfs-next"[1],
- - Chris's main repo[2], or
- - kernel.org mainline -rc kernels[3].
+btrfs: extend readahead interface
 
-   The latter two will generally be carrying identical btrfs code. The
-first one is rather more experimental.
+Where it is written in a more obvious way.
 
-> And how do I create good bug reports? Is a "Call Trace" that I find in
-> /var/log/messages enough, or do I need to install some debug packages
-> and run some tools?
+-Arne
 
-   If you have a backtrace in /var/log/messages, yes, that's a good
-start. Generally, state what you did to get the error, whether it's
-repeatable, what kernel version you're using, and any error messages
-you got. If there's extra info needed, whoever picks it up will ask.
+>
+>     148			/*
+>     149			 * FIXME: currently we just set nritems to 0 if this is a leaf,
+>
+> regards,
+> dan carpenter
+>
 
-> Can someone also tell me how to find device error counts? (like what
-> ZFS's zpool status shows under the "read" and "write" columns, not
-> scrub/checksums on data, but the device errors)
-
-   We don't have those right now -- Stefan Behrens posted a patch here
-yesterday to keep track of them. :)
-
-> I am using version 3.4.0-rc7-1-default which I got using openSUSE KOTD.
-> Is that a good choice? It would be convenient to use these openSUSE
-> repositories.
-
-   Yes, that's reasonable.
-
-> Someone in the #btrfs IRC channel told me to use this:
-> git://git.kernel.org/pub/scm/linux/kernel/git/josef/btrfs-next.git
-> 
-> I managed to crash my system today with a USB stick that is defective.
-> (dd to the direct device hangs and causes it to change device names, eg.
-> from sdb to sdc.) I would like to properly report this so it can be
-> fixed. A bad disk should not take down the system.
-
-   Proper error handling is an ongoing work. It's a lot better than it
-used to be (back in 2.6.32 days, if you ran out of space, the whole
-system could come down :) ), but there's still quite a few things left
-to deal with. USB is distinctly unreliable, and seems to cause more
-problems than most other block stacks right now.
-
-   Hugo.
-
-[1] git://git.kernel.org/pub/scm/linux/kernel/git/josef/btrfs-next.git
-[2] git://git.kernel.org/pub/scm/linux/kernel/git/mason/linux-btrfs.git
-[3] git://git.kernel.org/pub/scm/linux/kernel/git/torvalds/linux.git
-
--- 
-=== Hugo Mills: hugo@... carfax.org.uk | darksatanic.net | lug.org.uk ===
-  PGP key: 515C238D from wwwkeys.eu.pgp.net or http://www.carfax.org.uk
-  --- "There's more than one way to do it" is not a commandment. It ---  
-                           is a dire warning.                            
-
---qie/H+CJBZigrS0F
-Content-Type: application/pgp-signature; name="signature.asc"
-Content-Description: Digital signature
-
------BEGIN PGP SIGNATURE-----
-Version: GnuPG v1.4.11 (GNU/Linux)
-
-iD8DBQFPtNZ5IKyzvlFcI40RAjnQAJ0ZreBcOehX9rrrh/w1iXohAWGn+QCfdzKd
-Z6BGD5V8LHOq9/JhopuS09U=
-=PpEu
------END PGP SIGNATURE-----
-
---qie/H+CJBZigrS0F--

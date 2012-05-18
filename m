@@ -1,59 +1,66 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-qc0-f174.google.com ([209.85.216.174]:62983 "EHLO
-	mail-qc0-f174.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1758139Ab2ERQJM (ORCPT
+Received: from mail1.trendhosting.net ([195.8.117.5]:35043 "EHLO
+	mail1.trendhosting.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1757479Ab2ERQTK (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Fri, 18 May 2012 12:09:12 -0400
-Received: by qcro28 with SMTP id o28so2089418qcr.19
-        for <linux-btrfs@vger.kernel.org>; Fri, 18 May 2012 09:09:11 -0700 (PDT)
-Message-ID: <1337357348.7927.5.camel@ayu>
-Subject: Re: SSD format/mount parameters questions
-From: Calvin Walton <calvin.walton@kepstin.ca>
-To: Tomasz Torcz <tomek@pipebreaker.pl>
-Cc: linux-btrfs@vger.kernel.org
-Date: Fri, 18 May 2012 12:09:08 -0400
-In-Reply-To: <20120518153258.GE24598@mother.jarsat.pl>
-References: <jp32u7$vlc$1@dough.gmane.org> <20120518070251.GA32766@panda>
-	 <CAFvQSYRK_jmakEYVYgLH5Ct1rCQO-tA6-kn6D_o+Mdy0pwCuXQ@mail.gmail.com>
-	 <20120518153258.GE24598@mother.jarsat.pl>
-Content-Type: text/plain; charset="UTF-8"
-Mime-Version: 1.0
+	Fri, 18 May 2012 12:19:10 -0400
+Message-ID: <4FB67679.3040205@pocock.com.au>
+Date: Fri, 18 May 2012 16:19:05 +0000
+From: Daniel Pocock <daniel@pocock.com.au>
+MIME-Version: 1.0
+To: Hubert Kario <hka@qbs.com.pl>
+CC: linux-btrfs@vger.kernel.org
+Subject: Re: btrfs RAID with RAID cards (thread renamed)
+References: <4FAAE94D.4010103@pocock.com.au> <1494795.CqqnWfNEaS@bursa22>
+In-Reply-To: <1494795.CqqnWfNEaS@bursa22>
+Content-Type: text/plain; charset=ISO-8859-1
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Fri, 2012-05-18 at 17:32 +0200, Tomasz Torcz wrote:
-> On Fri, May 18, 2012 at 05:08:33PM +0200, Clemens Eisserer wrote:
-> > > I would not buy anything else
-> > > than intel. I have about 26 of them for years now (both in servers and
-> > > workstations, several series), and never had an issue. Two of my
-> > > colleagues have OCZ, and both had to RMA them.
-> > 
-> > I guess it boils down wether you want intel also to rule the SSD
-> > market in the long term, as they do with PC processors...
-> > 
-> > Comparing intel SSDs with OCZ is not that fair, as OCZ has always been
-> > low-priced bleeding edge stuff.
+
+>> - if a non-RAID SAS card is used, does it matter which card is chosen?
+>> Does btrfs work equally well with all of them?
 > 
->   Looking into the controllers...
->   first there were bunch of different ones; Intel had it own design with
-> SSD 320.
->   Then come Sandforce; it got broadly used, despite sucking when used
-> with FDE. Even Intel started to used Sandforce - SSD 520. How's
-> reliabilty of Intel differs?
->   Latest fad is Marvell controller; again Intel joins the pack with SSD510.
+> If you're using btrfs RAID, you need a HBA, not a RAID card. If the RAID 
+> card can work as a HBA (usually labelled as JBOD mode) then you're good to 
+> go.
 > 
->   So, Intel is not that different anymore.
+> For example, HP CCISS controllers can't work in JBOD mode.
 
-The controllers themselves really aren't that interesting any more - an
-SSD controller is really just an ARM or MIPS core with some flash
-interfaces, a SATA interface, and some ram - running proprietary
-firmware.
+Would you know if they implement their own checksumming, similar to what
+btrfs does?  Or if someone uses SmartArray (CCISS) RAID1, then they
+simply don't get the full benefit of checksumming under any possible
+configuration?
 
-Several of the Marvell devices actually have completely different
-firmwares (e.g. Intel's firmware for Marvell devices was reportedly
-developed by them in-house), and Intel's Sandforce firmware has some
-customizations for improved reliability, at the expense of some speed.
+I've had a quick look at what is on the market, here are some observations:
 
--- 
-Calvin Walton <calvin.walton@kepstin.ca>
+- in many cases, IOPS (critical for SSDs) vary wildly: e.g.
+  - SATA-3 SSDs advertise up to 85k IOPS, so RAID1 needs 170k IOPS
+  - HP's standard HBAs don't support high IOPS
+  - HP Gen8 SmartArray (e.g. P420) claims up to 200k IOPS
+  - previous HP arrays (e.g. P212) support only 60k IOPS
+  - many vendors don't advertise the IOPS prominently - I had to Google
+the HP site to find those figures quoted in some PDFs, they don't quote
+them in the quickspecs or product summary tables
+
+- Adaptec now offers an SSD caching function in hardware, supposedly
+drop it in the machine and all disks respond faster
+  - how would this interact with btrfs checksumming?  E.g. I'm guessing
+it would be necessary to ensure that data from both spindles is not
+cached on the same SSD?
+  - I started thinking about the possibility that data is degraded on
+the mechanical disk but btrfs gets a good checksum read from the SSD and
+remains blissfully unaware that the real disk is failing, then the other
+disk goes completely offline one day, for whatever reason the data is
+not in the SSD cache and the sector can't be read reliably from the
+remaining physical disk - should such caching just be avoided or can it
+be managed from btrfs itself in a manner that is foolproof?
+
+How about the combination of btrfs/root/boot filesystems and grub?  Can
+they all play nicely together?  This seems to be one compelling factor
+with hardware RAID, the cards have a BIOS that can boot from any drive
+even if the other is offline.
+
+
+
 

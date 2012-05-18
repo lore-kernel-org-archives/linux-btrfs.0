@@ -1,112 +1,77 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from frost.carfax.org.uk ([85.119.82.111]:47704 "EHLO
-	frost.carfax.org.uk" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S933560Ab2ERN7o (ORCPT
+Received: from mail-ob0-f174.google.com ([209.85.214.174]:54954 "EHLO
+	mail-ob0-f174.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1753335Ab2ERLWA (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Fri, 18 May 2012 09:59:44 -0400
-Date: Fri, 18 May 2012 14:59:38 +0100
-From: Hugo Mills <hugo@carfax.org.uk>
-To: Alex Lyakas <alex.bolshoy.btrfs@gmail.com>
-Cc: linux-btrfs@vger.kernel.org
-Subject: Re: Newbie questions on some of btrfs code...
-Message-ID: <20120518135938.GC8938@carfax.org.uk>
-References: <CAHf9xvbp=FQwY1Pn9FDaMPdGqe-G4aSMeBK8kUAq-5Kry0YaTA@mail.gmail.com>
- <20120518115041.GZ8938@carfax.org.uk>
- <CAHf9xva5ux5VXbww2YMjORSSdhSKH7L6W5vbP-ZnxijiGK4fUw@mail.gmail.com>
+	Fri, 18 May 2012 07:22:00 -0400
+Received: by obbtb18 with SMTP id tb18so3832729obb.19
+        for <linux-btrfs@vger.kernel.org>; Fri, 18 May 2012 04:22:00 -0700 (PDT)
 MIME-Version: 1.0
-Content-Type: multipart/signed; micalg=pgp-sha1;
-	protocol="application/pgp-signature"; boundary="ds9maZbwT7uk2FVi"
-In-Reply-To: <CAHf9xva5ux5VXbww2YMjORSSdhSKH7L6W5vbP-ZnxijiGK4fUw@mail.gmail.com>
+Date: Fri, 18 May 2012 14:21:59 +0300
+Message-ID: <CAHf9xvbp=FQwY1Pn9FDaMPdGqe-G4aSMeBK8kUAq-5Kry0YaTA@mail.gmail.com>
+Subject: Newbie questions on some of btrfs code...
+From: Alex Lyakas <alex.bolshoy.btrfs@gmail.com>
+To: linux-btrfs@vger.kernel.org
+Content-Type: text/plain; charset=ISO-8859-1
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
+Greetings everybody,
+I have been studying some of the btrfs code and the developer
+documentation on the wiki. My primary interest at this point, is to be
+able to search within fs tree of a btrfs subvolume, which was created
+as a snapshot of another subvolume. For that I have been using the
+debug-tree tool plus the References.png diagram on the wiki. I realize
+that my knowledge of btrfs is very rudimentary at this point, so
+please bear with me.
 
---ds9maZbwT7uk2FVi
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
+# How can I navigate from EXTENT_DATA within the fs tree to
+appropriate CHUNK_ITEM in the chunk tree? I am basically trying to
+find where the file data resides on disk. For example, I have an
+EXTENT_DATA like this:
+        item 30 key (265 EXTENT_DATA 0) itemoff 888 itemsize 53
+                extent data disk byte 12648448 nr 8192
+                extent data offset 0 nr 8192 ram 8192
+                extent compression 0
+I can navigate from here to EXTENT_ITEM within the extent tree, using
+btrfs_file_extent_item::disk_bytenr/disk_num_bytes as key for search:
+        item 3 key (12648448 EXTENT_ITEM 8192) itemoff 3870 itemsize 53
+                extent refs 1 gen 8 flags 1
+                extent data backref root 5 objectid 265 offset 0 count 1
+But from there how can I reach the relevant CHUNK_ITEM?
 
-On Fri, May 18, 2012 at 04:32:09PM +0300, Alex Lyakas wrote:
-> Thank you, Hugo, for the detailed explanation. I am now able to find
-> the CHUNK_ITEMs and to successfully locate the file data on disk.
-> Can you maybe address several follow-up questions I have?
-> 
-> # When looking for CHUNK_ITEMs, should I check that their
-> btrfs_chunk::type==BTRFS_BLOCK_GROUP_DATA (and not SYSTEM/METADATA
-> etc)? Or file extent should always be mapped to BTRFS_BLOCK_GROUP_DATA
-> chunk?
+# Once I have reached the CHUNK_ITEM, I assume that
+btrfs_file_extent_item::offset/num_bytes fields will provide the exact
+location of the data on disk. Is that correct? For now I assume that
+btrfs was created on a single device and raid0 is used for data, so I
+totally ignore mirroring/striping at this point.
 
-   File extents will either be mapped to a data chunk, _or_ the file
-data will live inline in the metadata area, following the
-btrfs_extent_item. This is probably the trickiest piece of the on-disk
-data format to figure out, and I fear that I didn't document it well
-enough. Basically, it's non-obvious where inline extents are
-calculated, because there's all sorts of awkward-looking type casting
-to get to the data.
+# I have been trying to follow btrfs_fiemap(), which seems to do the
+job, but it looks like it returns the disk_bytenr/disk_num_bytes
+fields without following to CHUNK_ITEMs. Maybe I am wrong.
 
-> # It looks like I don't even need to bother with the extent tree at
-> this point, because from EXTENT_DATA in fs tree I can navigate
-> directly to CHUNK_ITEM in chunk tree, correct?
+Some general questions on the ctree code.
 
-   Mmm... possibly. Again, I'm not sure how this interacts with inline
-extents.
+# I saw that slot==0 is special. My understanding is that btrfs
+maintains the property that the parent of each node/leaf has a key
+pointing to that node/leaf, which must be equal to the key in the
+slot==0 of this node/leaf. That's what fixup_low_keys() tries to
+maintain. Is this correct?
 
-> # For replicating RAID levels, you said there will be multiple
-> CHUNK_ITEMs. How do I find them then? Should I know in advance how
-> much there should be, and look for them, considering only
-> btrfs_chunk::type==BTRFS_BLOCK_GROUP_DATA? (I don't bother for
-> replication at this point, though).
+# If my understanding in the previous bullet is correct: Is that the
+reason that in btrfs_prev_leaf() it is assumed that if there is a
+lesser key, btrfs_search_slot() will never bring us to the slot==0 of
+the current leaf?
 
-   Actually, thinking about it, there's a single CHUNK_ITEM, and the
-stripe[] array holds all of the per-disk allocations that correspond
-to that block group. So, for RAID-1, you'll have precisely two
-elements in the stripe[] array. Sorry for getting it wrong earlier.
+# btrfs_search_slot(): how can it happen that b becomes NULL, and we
+exit the while loop? (and set ret=1)
 
-> # If I find in the fs tree an EXTENT_DATA of type
-> BTRFS_FILE_EXTENT_PREALLOC, how should I treat it? What does it mean?
-> (BTRFS_FILE_EXTENT_INLINE are easy to treat).
+# btrfs_insert_empty_items(): if nr>1, then an array of keys is
+expected to be passed. But btrfs_search_slot() is searching only for
+the first key. What happens if the first key does not exist (as
+expected), but the next key in the array exists?
 
-   I don't know, sorry.
+# Do my questions make sense?
 
-> # One of my files has two EXTENT_DATAs, like this:
-> 	item 14 key (270 EXTENT_DATA 0) itemoff 1812 itemsize 53
-> 		extent data disk byte 432508928 nr 1474560
-> 		extent data offset 0 nr 1470464 ram 1474560
-> 		extent compression 0
-> 	item 15 key (270 EXTENT_DATA 1470464) itemoff 1759 itemsize 53
-> 		extent data disk byte 432082944 nr 126976
-> 		extent data offset 0 nr 126976 ram 126976
-> 		extent compression 0
-> Summing btrfs_file_extent_item::num_bytes gives
-> 1470464+126976=1597440. (I know that I should not be summing
-> btrfs_file_extent_item::disk_num_bytes, but num_bytes).
-> However, it's INODE_ITEM gives size of 1593360, which is less:
-> 	item 11 key (270 INODE_ITEM 0) itemoff 1970 itemsize 160
-> 		inode generation 26 size 1593360 block group 0 mode 100700 links 1
-> 
-> Is this a valid situation, or I should always consider size in
-> INODE_ITEM as the correct one?
-
-   Again, I don't know off the top of my head. It's been some time
-since I dug into these kinds of details, sorry.
-
-   Hugo.
-
--- 
-=== Hugo Mills: hugo@... carfax.org.uk | darksatanic.net | lug.org.uk ===
-  PGP key: 515C238D from wwwkeys.eu.pgp.net or http://www.carfax.org.uk
-      --- In my day, we didn't have fancy high numbers.  We had ---      
-               "nothing", "one", "twain" and "multitudes".               
-
---ds9maZbwT7uk2FVi
-Content-Type: application/pgp-signature; name="signature.asc"
-Content-Description: Digital signature
-
------BEGIN PGP SIGNATURE-----
-Version: GnuPG v1.4.11 (GNU/Linux)
-
-iD8DBQFPtlXKIKyzvlFcI40RAjT9AKC18yxEu4U8UrPULpOw8s1otlxcLwCgp+w6
-cckAa+kvOzDIoZdPYYiFYs8=
-=+zPp
------END PGP SIGNATURE-----
-
---ds9maZbwT7uk2FVi--
+Thanks!
+Alex.

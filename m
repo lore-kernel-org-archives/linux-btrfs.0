@@ -1,51 +1,62 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-we0-f174.google.com ([74.125.82.174]:40928 "EHLO
-	mail-we0-f174.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1761989Ab2EQPUJ (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 17 May 2012 11:20:09 -0400
-Received: by weyu7 with SMTP id u7so1229060wey.19
-        for <linux-btrfs@vger.kernel.org>; Thu, 17 May 2012 08:20:08 -0700 (PDT)
-Date: Thu, 17 May 2012 18:20:04 +0300
-From: Ilya Dryomov <idryomov@gmail.com>
-To: Miao Xie <miaox@cn.fujitsu.com>
-Cc: Linux Btrfs <linux-btrfs@vger.kernel.org>
-Subject: Re: [PATCH 5/5] Btrfs: fix memory leak in btrfs_pause_balance()
-Message-ID: <20120517152004.GC1934@zambezi.lan>
-References: <4FB4E7FD.8050108@cn.fujitsu.com>
+Received: from cn.fujitsu.com ([222.73.24.84]:26476 "EHLO song.cn.fujitsu.com"
+	rhost-flags-OK-FAIL-OK-OK) by vger.kernel.org with ESMTP
+	id S1030461Ab2ERCDN (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Thu, 17 May 2012 22:03:13 -0400
+Message-ID: <4FB5AD85.2020308@cn.fujitsu.com>
+Date: Fri, 18 May 2012 10:01:41 +0800
+From: Miao Xie <miaox@cn.fujitsu.com>
+Reply-To: miaox@cn.fujitsu.com
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <4FB4E7FD.8050108@cn.fujitsu.com>
+To: Ilya Dryomov <idryomov@gmail.com>
+CC: Linux Btrfs <linux-btrfs@vger.kernel.org>
+Subject: Re: [PATCH 2/5] Btrfs: count the chunks which will be relocated at
+ first
+References: <4FB4E785.4050902@cn.fujitsu.com> <20120517145856.GA1934@zambezi.lan>
+In-Reply-To: <20120517145856.GA1934@zambezi.lan>
+Content-Type: text/plain; charset=ISO-8859-1
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Thu, May 17, 2012 at 07:58:53PM +0800, Miao Xie wrote:
-> We forget to free fs_info->balance_ctl in the btrfs_pause_balance()
-> when umounting the fs.
+On Thu, 17 May 2012 17:58:56 +0300, Ilya Dryomov wrote:
+> On Thu, May 17, 2012 at 07:56:53PM +0800, Miao Xie wrote:
+>> the balance function should count the chunks which will be relocated at first,
+>> and then relocate those chunks one by one.
+>>
+>> Signed-off-by: Miao Xie <miaox@cn.fujitsu.com>
+>> ---
+>>  fs/btrfs/volumes.c |    2 +-
+>>  1 files changed, 1 insertions(+), 1 deletions(-)
+>>
+>> diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
+>> index 759d024..91da8a2 100644
+>> --- a/fs/btrfs/volumes.c
+>> +++ b/fs/btrfs/volumes.c
+>> @@ -2580,7 +2580,7 @@ again:
+>>  
+>>  		chunk = btrfs_item_ptr(leaf, slot, struct btrfs_chunk);
+>>  
+>> -		if (!counting) {
+>> +		if (counting) {
+>>  			spin_lock(&fs_info->balance_lock);
+>>  			bctl->stat.considered++;
+>>  			spin_unlock(&fs_info->balance_lock);
 > 
-> Signed-off-by: Miao Xie <miaox@cn.fujitsu.com>
-> ---
->  fs/btrfs/volumes.c |    3 +++
->  1 files changed, 3 insertions(+), 0 deletions(-)
+> __btrfs_balance() already calculates the approximate number of chunks
+> that will be relocated and stores that value in bctl->stat.expected.
+> The stat.considered counter OTOH is supposed to reflect the number of
+> chunks processed through balance filters and it is meant to be updated
+> at relocation pass, so AFAICS if (!counting) is the right test.
 > 
-> diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
-> index c536d52..fd7fe80 100644
-> --- a/fs/btrfs/volumes.c
-> +++ b/fs/btrfs/volumes.c
-> @@ -2937,6 +2937,9 @@ int btrfs_pause_balance(struct btrfs_fs_info *fs_info)
->  		ret = -ENOTCONN;
->  	}
->  
-> +	if (btrfs_fs_closing(fs_info) && fs_info->balance_ctl)
-> +		unset_balance_control(fs_info);
-> +
->  	mutex_unlock(&fs_info->balance_mutex);
->  	return ret;
->  }
+> What exactly are you trying to fix here ?
 
-It is kfree()'d in free_fs_info(), which should be called on unmount.
-Am I missing something here ?
+In fact this number reflect the number of all the chunks that may be relocated.
+So since we can know the approximate number of chunks that will be relocated
+before the relocation start, why can not we know it at the beginning?
 
-Thanks,
+And beside that, as a user, I am very strange that this counter is changed
+every time I get the status of the balance, it should be the fixed number
+since it reflect the number of all the chunks that may be relocated.
 
-		Ilya
+Thanks
+Miao

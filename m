@@ -1,46 +1,63 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([222.73.24.84]:20425 "EHLO song.cn.fujitsu.com"
-	rhost-flags-OK-FAIL-OK-OK) by vger.kernel.org with ESMTP
-	id S1756539Ab2EUCYR (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Sun, 20 May 2012 22:24:17 -0400
-Received: from mailserver.fnst.cn.fujitsu.com (tang.cn.fujitsu.com [127.0.0.1])
-	by tang.cn.fujitsu.com (8.14.3/8.13.1) with ESMTP id q4L2OENB032420
-	for <linux-btrfs@vger.kernel.org>; Mon, 21 May 2012 10:24:15 +0800
-From: Liu Bo <liubo2009@cn.fujitsu.com>
-To: <linux-btrfs@vger.kernel.org>
-Subject: [PATCH 1/2 v2] Btrfs: do not resize a seeding device
-Date: Mon, 21 May 2012 10:28:38 +0800
-Message-Id: <1337567319-1657-1-git-send-email-liubo2009@cn.fujitsu.com>
+Received: from plane.gmane.org ([80.91.229.3]:50495 "EHLO plane.gmane.org"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1750827Ab2ESEKG (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Sat, 19 May 2012 00:10:06 -0400
+Received: from list by plane.gmane.org with local (Exim 4.69)
+	(envelope-from <gcfb-btrfs-devel-moved1@m.gmane.org>)
+	id 1SVazU-0001MT-Qq
+	for linux-btrfs@vger.kernel.org; Sat, 19 May 2012 06:10:04 +0200
+Received: from rain.gmane.org ([80.91.229.7])
+        by main.gmane.org with esmtp (Gmexim 0.1 (Debian))
+        id 1AlnuQ-0007hv-00
+        for <linux-btrfs@vger.kernel.org>; Sat, 19 May 2012 06:10:04 +0200
+Received: from eternaleye+usenet by rain.gmane.org with local (Gmexim 0.1 (Debian))
+        id 1AlnuQ-0007hv-00
+        for <linux-btrfs@vger.kernel.org>; Sat, 19 May 2012 06:10:04 +0200
+To: linux-btrfs@vger.kernel.org
+From: Alex Elsayed <eternaleye+usenet@gmail.com>
+Subject: Re: [RFC PATCH 0/7] bcache: md conversion
+Date: Fri, 18 May 2012 19:35:11 -0700
+Message-ID: <jp70t0$4ru$2@dough.gmane.org>
+References: <20120511194327.25770.79292.stgit@dwillia2-linux.jf.intel.com>
+Mime-Version: 1.0
+Content-Type: text/plain; charset="ISO-8859-1"
+Cc: linux-bcache@vger.kernel.org
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Seeding devices are not supposed to change any more.
+Dan Williams wrote:
 
-Signed-off-by: Liu Bo <liubo2009@cn.fujitsu.com>
----
-v1->v2: use EINVAL instead, suggested by David Sterba
+> The consensus from LSF was that bcache need not invent a new interface
+> when md and dm can both do the job.  As mentioned in patch 7 this series
+> aims to be a minimal conversion.  Other refactoring items like
+> deprecating register_lock for mddev->reconfig_mutex are deferred.
+> 
+> This supports assembly of an already established cache array:
+> 
+> mdadm -A /dev/md/bcache /dev/sd[ab]
+> 
+> ...will create the /dev/md/bcache container and a subarray representing
+> the cache volume.  "Flash-only", or backing-device only volumes were not
+> tested.  "Create" support and hot-add/hot-remove come later.
+> 
+> Note:
+> * When attempting to test with small loopback devices (100MB), assembly
+>   soft locks in bcache_journal_read().  That hang went away with larger
+>   devices, so there seems to be minimum component device size that needs
+>   to be considered in the tooling.
 
- fs/btrfs/ioctl.c |    7 +++++++
- 1 files changed, 7 insertions(+), 0 deletions(-)
+Is there any plan to separate the on-disk layout (per-device headers, etc) 
+from the logic for the purpose of reuse? I can think of at least one case 
+where this would be extremely useful: integration in BtrFS.
 
-diff --git a/fs/btrfs/ioctl.c b/fs/btrfs/ioctl.c
-index f056469..ec2245d 100644
---- a/fs/btrfs/ioctl.c
-+++ b/fs/btrfs/ioctl.c
-@@ -1303,6 +1303,13 @@ static noinline int btrfs_ioctl_resize(struct btrfs_root *root,
- 		ret = -EINVAL;
- 		goto out_free;
- 	}
-+	if (device->fs_devices && device->fs_devices->seeding) {
-+		printk(KERN_INFO "btrfs: resizer unable to apply on "
-+		       "seeding device %s\n", device->name);
-+		ret = -EINVAL;
-+		goto out_free;
-+	}
-+
- 	if (!strcmp(sizestr, "max"))
- 		new_size = device->bdev->bd_inode->i_size;
- 	else {
--- 
-1.6.5.2
+BtrFS already has its own methods for making sure a group of devices are all 
+present when the filesystem is mounted, so it doesn't really need the 
+formatting of the backing device bcache does to prevent it from being 
+mounted solo. Putting bcache under BtrFS would be silly in the same way as 
+putting it under a raid array, but bcache can't be put on top of BtrFS.
+
+Logically, in looking at BtrFS' architecture, a cache would likely fit best 
+at the 'block group' level, which IIUC would be roughly equivalent to the 
+recommended 'over raid, under lvm' method of using bcache.
 

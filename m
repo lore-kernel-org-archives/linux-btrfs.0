@@ -1,13 +1,13 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mort.rzone.de ([81.169.144.234]:33907 "EHLO mort.rzone.de"
+Received: from mort.rzone.de ([81.169.144.234]:33905 "EHLO mort.rzone.de"
 	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1756229Ab2ETQGh (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	id S1756313Ab2ETQGh (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
 	Sun, 20 May 2012 12:06:37 -0400
 From: Jan Schmidt <list.btrfs@jan-o-sch.net>
 To: chris.mason@oracle.com, linux-btrfs@vger.kernel.org
-Subject: [PATCH 10/24] Btrfs: use the tree modification log for backref resolving
-Date: Sun, 20 May 2012 18:06:21 +0200
-Message-Id: <93d6e0d92c054e597050f443a71e1f1e83bc38a3.1337525292.git.list.btrfs@jan-o-sch.net>
+Subject: [PATCH 03/24] Btrfs: don't set for_cow parameter for tree block functions
+Date: Sun, 20 May 2012 18:06:14 +0200
+Message-Id: <0f706d09e6fec2c30d320e099971ec3f5e30e237.1337525292.git.list.btrfs@jan-o-sch.net>
 In-Reply-To: <cover.1337525292.git.list.btrfs@jan-o-sch.net>
 References: <cover.1337525292.git.list.btrfs@jan-o-sch.net>
 In-Reply-To: <cover.1337525292.git.list.btrfs@jan-o-sch.net>
@@ -15,183 +15,219 @@ References: <cover.1337525292.git.list.btrfs@jan-o-sch.net>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-This enables backref resolving on life trees while they are changing. This
-is a prerequisite for quota groups and just nice to have for everything
-else.
+Three callers of btrfs_free_tree_block or btrfs_alloc_tree_block passed
+parameter for_cow = 1. In fact, these two functions should never mark
+their tree modification operations as for_cow, because they can change
+the number of blocks referenced by a tree.
+
+Hence, we remove the extra for_cow parameter from these functions and
+make them pass a zero down.
 
 Signed-off-by: Jan Schmidt <list.btrfs@jan-o-sch.net>
 ---
- fs/btrfs/backref.c |   43 +++++++++++++++++++++++++++----------------
- fs/btrfs/backref.h |    3 ++-
- 2 files changed, 29 insertions(+), 17 deletions(-)
+ fs/btrfs/ctree.c       |   22 +++++++++++-----------
+ fs/btrfs/ctree.h       |    4 ++--
+ fs/btrfs/disk-io.c     |    2 +-
+ fs/btrfs/extent-tree.c |   10 +++++-----
+ fs/btrfs/ioctl.c       |    2 +-
+ 5 files changed, 20 insertions(+), 20 deletions(-)
 
-diff --git a/fs/btrfs/backref.c b/fs/btrfs/backref.c
-index e6c54d8..b63c2c5 100644
---- a/fs/btrfs/backref.c
-+++ b/fs/btrfs/backref.c
-@@ -241,6 +241,7 @@ add_parent:
-  */
- static int __resolve_indirect_ref(struct btrfs_fs_info *fs_info,
- 					int search_commit_root,
-+					u64 time_seq,
- 					struct __prelim_ref *ref,
- 					struct ulist *parents,
- 					const u64 *extent_item_pos)
-@@ -276,7 +277,7 @@ static int __resolve_indirect_ref(struct btrfs_fs_info *fs_info,
- 		goto out;
+diff --git a/fs/btrfs/ctree.c b/fs/btrfs/ctree.c
+index 4106264..56485b3 100644
+--- a/fs/btrfs/ctree.c
++++ b/fs/btrfs/ctree.c
+@@ -255,7 +255,7 @@ int btrfs_copy_root(struct btrfs_trans_handle *trans,
  
- 	path->lowest_level = level;
--	ret = btrfs_search_slot(NULL, root, &ref->key_for_search, path, 0, 0);
-+	ret = btrfs_search_old_slot(root, &ref->key_for_search, path, time_seq);
- 	pr_debug("search slot in root %llu (level %d, ref count %d) returned "
- 		 "%d for key (%llu %u %llu)\n",
- 		 (unsigned long long)ref->root_id, level, ref->count, ret,
-@@ -315,7 +316,7 @@ out:
-  * resolve all indirect backrefs from the list
-  */
- static int __resolve_indirect_refs(struct btrfs_fs_info *fs_info,
--				   int search_commit_root,
-+				   int search_commit_root, u64 time_seq,
- 				   struct list_head *head,
- 				   const u64 *extent_item_pos)
- {
-@@ -342,7 +343,8 @@ static int __resolve_indirect_refs(struct btrfs_fs_info *fs_info,
- 		if (ref->count == 0)
- 			continue;
- 		err = __resolve_indirect_ref(fs_info, search_commit_root,
--					     ref, parents, extent_item_pos);
-+					     time_seq, ref, parents,
-+					     extent_item_pos);
- 		if (err) {
- 			if (ret == 0)
- 				ret = err;
-@@ -762,7 +764,8 @@ static int __add_keyed_refs(struct btrfs_fs_info *fs_info,
-  */
- static int find_parent_nodes(struct btrfs_trans_handle *trans,
- 			     struct btrfs_fs_info *fs_info, u64 bytenr,
--			     u64 seq, struct ulist *refs, struct ulist *roots,
-+			     u64 delayed_ref_seq, u64 time_seq,
-+			     struct ulist *refs, struct ulist *roots,
- 			     const u64 *extent_item_pos)
- {
- 	struct btrfs_key key;
-@@ -825,7 +828,8 @@ again:
- 				btrfs_put_delayed_ref(&head->node);
- 				goto again;
- 			}
--			ret = __add_delayed_refs(head, seq, &prefs_delayed);
-+			ret = __add_delayed_refs(head, delayed_ref_seq,
-+						 &prefs_delayed);
- 			if (ret) {
- 				spin_unlock(&delayed_refs->lock);
- 				goto out;
-@@ -865,8 +869,8 @@ again:
- 	if (ret)
- 		goto out;
+ 	cow = btrfs_alloc_free_block(trans, root, buf->len, 0,
+ 				     new_root_objectid, &disk_key, level,
+-				     buf->start, 0, 1);
++				     buf->start, 0);
+ 	if (IS_ERR(cow))
+ 		return PTR_ERR(cow);
  
--	ret = __resolve_indirect_refs(fs_info, search_commit_root, &prefs,
--				      extent_item_pos);
-+	ret = __resolve_indirect_refs(fs_info, search_commit_root, time_seq,
-+				      &prefs, extent_item_pos);
- 	if (ret)
- 		goto out;
+@@ -467,7 +467,7 @@ static noinline int __btrfs_cow_block(struct btrfs_trans_handle *trans,
  
-@@ -956,7 +960,8 @@ static void free_leaf_list(struct ulist *blocks)
-  */
- static int btrfs_find_all_leafs(struct btrfs_trans_handle *trans,
- 				struct btrfs_fs_info *fs_info, u64 bytenr,
--				u64 seq, struct ulist **leafs,
-+				u64 delayed_ref_seq, u64 time_seq,
-+				struct ulist **leafs,
- 				const u64 *extent_item_pos)
+ 	cow = btrfs_alloc_free_block(trans, root, buf->len, parent_start,
+ 				     root->root_key.objectid, &disk_key,
+-				     level, search_start, empty_size, 1);
++				     level, search_start, empty_size);
+ 	if (IS_ERR(cow))
+ 		return PTR_ERR(cow);
+ 
+@@ -509,7 +509,7 @@ static noinline int __btrfs_cow_block(struct btrfs_trans_handle *trans,
+ 		rcu_assign_pointer(root->node, cow);
+ 
+ 		btrfs_free_tree_block(trans, root, buf, parent_start,
+-				      last_ref, 1);
++				      last_ref);
+ 		free_extent_buffer(buf);
+ 		add_root_to_dirty_list(root);
+ 	} else {
+@@ -525,7 +525,7 @@ static noinline int __btrfs_cow_block(struct btrfs_trans_handle *trans,
+ 					      trans->transid);
+ 		btrfs_mark_buffer_dirty(parent);
+ 		btrfs_free_tree_block(trans, root, buf, parent_start,
+-				      last_ref, 1);
++				      last_ref);
+ 	}
+ 	if (unlock_orig)
+ 		btrfs_tree_unlock(buf);
+@@ -987,7 +987,7 @@ static noinline int balance_level(struct btrfs_trans_handle *trans,
+ 		free_extent_buffer(mid);
+ 
+ 		root_sub_used(root, mid->len);
+-		btrfs_free_tree_block(trans, root, mid, 0, 1, 0);
++		btrfs_free_tree_block(trans, root, mid, 0, 1);
+ 		/* once for the root ptr */
+ 		free_extent_buffer_stale(mid);
+ 		return 0;
+@@ -1042,7 +1042,7 @@ static noinline int balance_level(struct btrfs_trans_handle *trans,
+ 			btrfs_tree_unlock(right);
+ 			del_ptr(trans, root, path, level + 1, pslot + 1);
+ 			root_sub_used(root, right->len);
+-			btrfs_free_tree_block(trans, root, right, 0, 1, 0);
++			btrfs_free_tree_block(trans, root, right, 0, 1);
+ 			free_extent_buffer_stale(right);
+ 			right = NULL;
+ 		} else {
+@@ -1084,7 +1084,7 @@ static noinline int balance_level(struct btrfs_trans_handle *trans,
+ 		btrfs_tree_unlock(mid);
+ 		del_ptr(trans, root, path, level + 1, pslot);
+ 		root_sub_used(root, mid->len);
+-		btrfs_free_tree_block(trans, root, mid, 0, 1, 0);
++		btrfs_free_tree_block(trans, root, mid, 0, 1);
+ 		free_extent_buffer_stale(mid);
+ 		mid = NULL;
+ 	} else {
+@@ -2129,7 +2129,7 @@ static noinline int insert_new_root(struct btrfs_trans_handle *trans,
+ 
+ 	c = btrfs_alloc_free_block(trans, root, root->nodesize, 0,
+ 				   root->root_key.objectid, &lower_key,
+-				   level, root->node->start, 0, 0);
++				   level, root->node->start, 0);
+ 	if (IS_ERR(c))
+ 		return PTR_ERR(c);
+ 
+@@ -2252,7 +2252,7 @@ static noinline int split_node(struct btrfs_trans_handle *trans,
+ 
+ 	split = btrfs_alloc_free_block(trans, root, root->nodesize, 0,
+ 					root->root_key.objectid,
+-					&disk_key, level, c->start, 0, 0);
++					&disk_key, level, c->start, 0);
+ 	if (IS_ERR(split))
+ 		return PTR_ERR(split);
+ 
+@@ -3004,7 +3004,7 @@ again:
+ 
+ 	right = btrfs_alloc_free_block(trans, root, root->leafsize, 0,
+ 					root->root_key.objectid,
+-					&disk_key, 0, l->start, 0, 0);
++					&disk_key, 0, l->start, 0);
+ 	if (IS_ERR(right))
+ 		return PTR_ERR(right);
+ 
+@@ -3804,7 +3804,7 @@ static noinline void btrfs_del_leaf(struct btrfs_trans_handle *trans,
+ 	root_sub_used(root, leaf->len);
+ 
+ 	extent_buffer_get(leaf);
+-	btrfs_free_tree_block(trans, root, leaf, 0, 1, 0);
++	btrfs_free_tree_block(trans, root, leaf, 0, 1);
+ 	free_extent_buffer_stale(leaf);
+ }
+ /*
+diff --git a/fs/btrfs/ctree.h b/fs/btrfs/ctree.h
+index ec42a24..e863188 100644
+--- a/fs/btrfs/ctree.h
++++ b/fs/btrfs/ctree.h
+@@ -2496,11 +2496,11 @@ struct extent_buffer *btrfs_alloc_free_block(struct btrfs_trans_handle *trans,
+ 					struct btrfs_root *root, u32 blocksize,
+ 					u64 parent, u64 root_objectid,
+ 					struct btrfs_disk_key *key, int level,
+-					u64 hint, u64 empty_size, int for_cow);
++					u64 hint, u64 empty_size);
+ void btrfs_free_tree_block(struct btrfs_trans_handle *trans,
+ 			   struct btrfs_root *root,
+ 			   struct extent_buffer *buf,
+-			   u64 parent, int last_ref, int for_cow);
++			   u64 parent, int last_ref);
+ struct extent_buffer *btrfs_init_new_buffer(struct btrfs_trans_handle *trans,
+ 					    struct btrfs_root *root,
+ 					    u64 bytenr, u32 blocksize,
+diff --git a/fs/btrfs/disk-io.c b/fs/btrfs/disk-io.c
+index a7ffc88..f433074 100644
+--- a/fs/btrfs/disk-io.c
++++ b/fs/btrfs/disk-io.c
+@@ -1252,7 +1252,7 @@ static struct btrfs_root *alloc_log_tree(struct btrfs_trans_handle *trans,
+ 
+ 	leaf = btrfs_alloc_free_block(trans, root, root->leafsize, 0,
+ 				      BTRFS_TREE_LOG_OBJECTID, NULL,
+-				      0, 0, 0, 0);
++				      0, 0, 0);
+ 	if (IS_ERR(leaf)) {
+ 		kfree(root);
+ 		return ERR_CAST(leaf);
+diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
+index 49fd7b6..b68eb7a 100644
+--- a/fs/btrfs/extent-tree.c
++++ b/fs/btrfs/extent-tree.c
+@@ -5217,7 +5217,7 @@ out:
+ void btrfs_free_tree_block(struct btrfs_trans_handle *trans,
+ 			   struct btrfs_root *root,
+ 			   struct extent_buffer *buf,
+-			   u64 parent, int last_ref, int for_cow)
++			   u64 parent, int last_ref)
  {
- 	struct ulist *tmp;
-@@ -971,8 +976,8 @@ static int btrfs_find_all_leafs(struct btrfs_trans_handle *trans,
- 		return -ENOMEM;
+ 	struct btrfs_block_group_cache *cache = NULL;
+ 	int ret;
+@@ -5227,7 +5227,7 @@ void btrfs_free_tree_block(struct btrfs_trans_handle *trans,
+ 					buf->start, buf->len,
+ 					parent, root->root_key.objectid,
+ 					btrfs_header_level(buf),
+-					BTRFS_DROP_DELAYED_REF, NULL, for_cow);
++					BTRFS_DROP_DELAYED_REF, NULL, 0);
+ 		BUG_ON(ret); /* -ENOMEM */
  	}
  
--	ret = find_parent_nodes(trans, fs_info, bytenr, seq, *leafs, tmp,
--				extent_item_pos);
-+	ret = find_parent_nodes(trans, fs_info, bytenr, delayed_ref_seq,
-+				time_seq, *leafs, tmp, extent_item_pos);
- 	ulist_free(tmp);
- 
- 	if (ret < 0 && ret != -ENOENT) {
-@@ -998,7 +1003,8 @@ static int btrfs_find_all_leafs(struct btrfs_trans_handle *trans,
-  */
- int btrfs_find_all_roots(struct btrfs_trans_handle *trans,
- 				struct btrfs_fs_info *fs_info, u64 bytenr,
--				u64 seq, struct ulist **roots)
-+				u64 delayed_ref_seq, u64 time_seq,
-+				struct ulist **roots)
+@@ -6249,7 +6249,7 @@ struct extent_buffer *btrfs_alloc_free_block(struct btrfs_trans_handle *trans,
+ 					struct btrfs_root *root, u32 blocksize,
+ 					u64 parent, u64 root_objectid,
+ 					struct btrfs_disk_key *key, int level,
+-					u64 hint, u64 empty_size, int for_cow)
++					u64 hint, u64 empty_size)
  {
- 	struct ulist *tmp;
- 	struct ulist_node *node = NULL;
-@@ -1014,8 +1020,8 @@ int btrfs_find_all_roots(struct btrfs_trans_handle *trans,
+ 	struct btrfs_key ins;
+ 	struct btrfs_block_rsv *block_rsv;
+@@ -6297,7 +6297,7 @@ struct extent_buffer *btrfs_alloc_free_block(struct btrfs_trans_handle *trans,
+ 					ins.objectid,
+ 					ins.offset, parent, root_objectid,
+ 					level, BTRFS_ADD_DELAYED_EXTENT,
+-					extent_op, for_cow);
++					extent_op, 0);
+ 		BUG_ON(ret); /* -ENOMEM */
+ 	}
+ 	return buf;
+@@ -6715,7 +6715,7 @@ static noinline int walk_up_proc(struct btrfs_trans_handle *trans,
+ 			       btrfs_header_owner(path->nodes[level + 1]));
  	}
  
- 	while (1) {
--		ret = find_parent_nodes(trans, fs_info, bytenr, seq,
--					tmp, *roots, NULL);
-+		ret = find_parent_nodes(trans, fs_info, bytenr, delayed_ref_seq,
-+					time_seq, tmp, *roots, NULL);
- 		if (ret < 0 && ret != -ENOENT) {
- 			ulist_free(tmp);
- 			ulist_free(*roots);
-@@ -1413,7 +1419,8 @@ int iterate_extent_inodes(struct btrfs_fs_info *fs_info,
- 	struct ulist *roots = NULL;
- 	struct ulist_node *ref_node = NULL;
- 	struct ulist_node *root_node = NULL;
--	struct seq_list seq_elem;
-+	struct seq_list seq_elem = {};
-+	struct seq_list tree_mod_seq_elem = {};
- 	struct btrfs_delayed_ref_root *delayed_refs = NULL;
- 
- 	pr_debug("resolving all inodes for extent %llu\n",
-@@ -1430,16 +1437,19 @@ int iterate_extent_inodes(struct btrfs_fs_info *fs_info,
- 		spin_lock(&delayed_refs->lock);
- 		btrfs_get_delayed_seq(delayed_refs, &seq_elem);
- 		spin_unlock(&delayed_refs->lock);
-+		btrfs_get_tree_mod_seq(fs_info, &tree_mod_seq_elem);
- 	}
- 
- 	ret = btrfs_find_all_leafs(trans, fs_info, extent_item_objectid,
--				   seq_elem.seq, &refs, &extent_item_pos);
-+				   seq_elem.seq, tree_mod_seq_elem.seq, &refs,
-+				   &extent_item_pos);
- 	if (ret)
- 		goto out;
- 
- 	while (!ret && (ref_node = ulist_next(refs, ref_node))) {
- 		ret = btrfs_find_all_roots(trans, fs_info, ref_node->val,
--						seq_elem.seq, &roots);
-+						seq_elem.seq,
-+						tree_mod_seq_elem.seq, &roots);
- 		if (ret)
- 			break;
- 		while (!ret && (root_node = ulist_next(roots, root_node))) {
-@@ -1457,6 +1467,7 @@ int iterate_extent_inodes(struct btrfs_fs_info *fs_info,
- 	ulist_free(roots);
+-	btrfs_free_tree_block(trans, root, eb, parent, wc->refs[level] == 1, 0);
++	btrfs_free_tree_block(trans, root, eb, parent, wc->refs[level] == 1);
  out:
- 	if (!search_commit_root) {
-+		btrfs_put_tree_mod_seq(fs_info, &tree_mod_seq_elem);
- 		btrfs_put_delayed_seq(delayed_refs, &seq_elem);
- 		btrfs_end_transaction(trans, fs_info->extent_root);
- 	}
-diff --git a/fs/btrfs/backref.h b/fs/btrfs/backref.h
-index 94ba1b2..c18d8ac 100644
---- a/fs/btrfs/backref.h
-+++ b/fs/btrfs/backref.h
-@@ -58,7 +58,8 @@ int paths_from_inode(u64 inum, struct inode_fs_paths *ipath);
+ 	wc->refs[level] = 0;
+ 	wc->flags[level] = 0;
+diff --git a/fs/btrfs/ioctl.c b/fs/btrfs/ioctl.c
+index 14f8e1f..7f3a913 100644
+--- a/fs/btrfs/ioctl.c
++++ b/fs/btrfs/ioctl.c
+@@ -367,7 +367,7 @@ static noinline int create_subvol(struct btrfs_root *root,
+ 		return PTR_ERR(trans);
  
- int btrfs_find_all_roots(struct btrfs_trans_handle *trans,
- 				struct btrfs_fs_info *fs_info, u64 bytenr,
--				u64 seq, struct ulist **roots);
-+				u64 delayed_ref_seq, u64 time_seq,
-+				struct ulist **roots);
- 
- struct btrfs_data_container *init_data_container(u32 total_bytes);
- struct inode_fs_paths *init_ipath(s32 total_bytes, struct btrfs_root *fs_root,
+ 	leaf = btrfs_alloc_free_block(trans, root, root->leafsize,
+-				      0, objectid, NULL, 0, 0, 0, 0);
++				      0, objectid, NULL, 0, 0, 0);
+ 	if (IS_ERR(leaf)) {
+ 		ret = PTR_ERR(leaf);
+ 		goto fail;
 -- 
 1.7.3.4
 

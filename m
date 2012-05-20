@@ -1,13 +1,13 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from ysabell.rzone.de ([81.169.144.237]:46301 "EHLO ysabell.rzone.de"
+Received: from mort.rzone.de ([81.169.144.234]:33917 "EHLO mort.rzone.de"
 	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1756484Ab2ETQGm (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Sun, 20 May 2012 12:06:42 -0400
+	id S1756331Ab2ETQGj (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Sun, 20 May 2012 12:06:39 -0400
 From: Jan Schmidt <list.btrfs@jan-o-sch.net>
 To: chris.mason@oracle.com, linux-btrfs@vger.kernel.org
-Subject: [PATCH 14/24] Btrfs: add helper for tree enumeration
-Date: Sun, 20 May 2012 18:06:25 +0200
-Message-Id: <56c0e15828bdeaad0215a5c3c48dda2c7d5b9c8d.1337525292.git.list.btrfs@jan-o-sch.net>
+Subject: [PATCH 22/24] Btrfs: hooks to reserve qgroup space
+Date: Sun, 20 May 2012 18:06:33 +0200
+Message-Id: <4c8c388161710ab0f502f942c18cf276bbca7ac3.1337525292.git.list.btrfs@jan-o-sch.net>
 In-Reply-To: <cover.1337525292.git.list.btrfs@jan-o-sch.net>
 References: <cover.1337525292.git.list.btrfs@jan-o-sch.net>
 In-Reply-To: <cover.1337525292.git.list.btrfs@jan-o-sch.net>
@@ -17,114 +17,109 @@ List-ID: <linux-btrfs.vger.kernel.org>
 
 From: Arne Jansen <sensille@gmx.net>
 
-Often no exact match is wanted but just the next lower or
-higher item. There's a lot of duplicated code throughout
-btrfs to deal with the corner cases. This patch adds a
-helper function that can facilitate searching.
+Like block reserves, reserve a small piece of space on each
+transaction start and for delalloc. These are the hooks that
+can actually return EDQUOT to the user.
+The amount of space reserved is tracked in the transaction
+handle.
 
 Signed-off-by: Arne Jansen <sensille@gmx.net>
 ---
- fs/btrfs/ctree.c |   72 ++++++++++++++++++++++++++++++++++++++++++++++++++++++
- fs/btrfs/ctree.h |    3 ++
- 2 files changed, 75 insertions(+), 0 deletions(-)
+ fs/btrfs/extent-tree.c |   12 ++++++++++++
+ fs/btrfs/transaction.c |   16 ++++++++++++++++
+ fs/btrfs/transaction.h |    1 +
+ 3 files changed, 29 insertions(+), 0 deletions(-)
 
-diff --git a/fs/btrfs/ctree.c b/fs/btrfs/ctree.c
-index 67d716e..bf6df35 100644
---- a/fs/btrfs/ctree.c
-+++ b/fs/btrfs/ctree.c
-@@ -2641,6 +2641,78 @@ done:
- }
+diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
+index a7f980b..855a3ff 100644
+--- a/fs/btrfs/extent-tree.c
++++ b/fs/btrfs/extent-tree.c
+@@ -4524,6 +4524,13 @@ int btrfs_delalloc_reserve_metadata(struct inode *inode, u64 num_bytes)
+ 	csum_bytes = BTRFS_I(inode)->csum_bytes;
+ 	spin_unlock(&BTRFS_I(inode)->lock);
  
- /*
-+ * helper to use instead of search slot if no exact match is needed but
-+ * instead the next or previous item should be returned.
-+ * When find_higher is true, the next higher item is returned, the next lower
-+ * otherwise.
-+ * When return_any and find_higher are both true, and no higher item is found,
-+ * return the next lower instead.
-+ * When return_any is true and find_higher is false, and no lower item is found,
-+ * return the next higher instead.
-+ * It returns 0 if any item is found, 1 if none is found (tree empty), and
-+ * < 0 on error
-+ */
-+int btrfs_search_slot_for_read(struct btrfs_root *root,
-+			       struct btrfs_key *key, struct btrfs_path *p,
-+			       int find_higher, int return_any)
-+{
-+	int ret;
-+	struct extent_buffer *leaf;
-+
-+again:
-+	ret = btrfs_search_slot(NULL, root, key, p, 0, 0);
-+	if (ret <= 0)
-+		return ret;
-+	/*
-+	 * a return value of 1 means the path is at the position where the
-+	 * item should be inserted. Normally this is the next bigger item,
-+	 * but in case the previous item is the last in a leaf, path points
-+	 * to the first free slot in the previous leaf, i.e. at an invalid
-+	 * item.
-+	 */
-+	leaf = p->nodes[0];
-+
-+	if (find_higher) {
-+		if (p->slots[0] >= btrfs_header_nritems(leaf)) {
-+			ret = btrfs_next_leaf(root, p);
-+			if (ret <= 0)
-+				return ret;
-+			if (!return_any)
-+				return 1;
-+			/*
-+			 * no higher item found, return the next
-+			 * lower instead
-+			 */
-+			return_any = 0;
-+			find_higher = 0;
-+			btrfs_release_path(p);
-+			goto again;
-+		}
-+	} else {
-+		if (p->slots[0] >= btrfs_header_nritems(leaf)) {
-+			/* we're sitting on an invalid slot */
-+			if (p->slots[0] == 0) {
-+				ret = btrfs_prev_leaf(root, p);
-+				if (ret <= 0)
-+					return ret;
-+				if (!return_any)
-+					return 1;
-+				/*
-+				 * no lower item found, return the next
-+				 * higher instead
-+				 */
-+				return_any = 0;
-+				find_higher = 1;
-+				btrfs_release_path(p);
-+				goto again;
-+			}
-+			--p->slots[0];
-+		}
++	if (root->fs_info->quota_enabled) {
++		ret = btrfs_qgroup_reserve(root, num_bytes +
++					   nr_extents * root->leafsize);
++		if (ret)
++			return ret;
 +	}
-+	return 0;
-+}
 +
-+/*
-  * adjust the pointers going up the tree, starting at level
-  * making sure the right key of each node is points to 'key'.
-  * This is used after shifting pointers to the left, so it stops
-diff --git a/fs/btrfs/ctree.h b/fs/btrfs/ctree.h
-index 3961b7e..283c992 100644
---- a/fs/btrfs/ctree.h
-+++ b/fs/btrfs/ctree.h
-@@ -2806,6 +2806,9 @@ int btrfs_search_slot(struct btrfs_trans_handle *trans, struct btrfs_root
- 		      ins_len, int cow);
- int btrfs_search_old_slot(struct btrfs_root *root, struct btrfs_key *key,
- 			  struct btrfs_path *p, u64 time_seq);
-+int btrfs_search_slot_for_read(struct btrfs_root *root,
-+			       struct btrfs_key *key, struct btrfs_path *p,
-+			       int find_higher, int return_any);
- int btrfs_realloc_node(struct btrfs_trans_handle *trans,
- 		       struct btrfs_root *root, struct extent_buffer *parent,
- 		       int start_slot, int cache_only, u64 *last_ret,
+ 	ret = reserve_metadata_bytes(root, block_rsv, to_reserve, flush);
+ 	if (ret) {
+ 		u64 to_free = 0;
+@@ -4601,6 +4608,11 @@ void btrfs_delalloc_release_metadata(struct inode *inode, u64 num_bytes)
+ 
+ 	trace_btrfs_space_reservation(root->fs_info, "delalloc",
+ 				      btrfs_ino(inode), to_free, 0);
++	if (root->fs_info->quota_enabled) {
++		btrfs_qgroup_free(root, num_bytes +
++					dropped * root->leafsize);
++	}
++
+ 	btrfs_block_rsv_release(root, &root->fs_info->delalloc_block_rsv,
+ 				to_free);
+ }
+diff --git a/fs/btrfs/transaction.c b/fs/btrfs/transaction.c
+index 2a5e75c..69b52bd 100644
+--- a/fs/btrfs/transaction.c
++++ b/fs/btrfs/transaction.c
+@@ -285,6 +285,7 @@ static struct btrfs_trans_handle *start_transaction(struct btrfs_root *root,
+ 	struct btrfs_transaction *cur_trans;
+ 	u64 num_bytes = 0;
+ 	int ret;
++	u64 qgroup_reserved = 0;
+ 
+ 	if (root->fs_info->fs_state & BTRFS_SUPER_FLAG_ERROR)
+ 		return ERR_PTR(-EROFS);
+@@ -303,6 +304,14 @@ static struct btrfs_trans_handle *start_transaction(struct btrfs_root *root,
+ 	 * the appropriate flushing if need be.
+ 	 */
+ 	if (num_items > 0 && root != root->fs_info->chunk_root) {
++		if (root->fs_info->quota_enabled &&
++		    is_fstree(root->root_key.objectid)) {
++			qgroup_reserved = num_items * root->leafsize;
++			ret = btrfs_qgroup_reserve(root, qgroup_reserved);
++			if (ret)
++				return ERR_PTR(ret);
++		}
++
+ 		num_bytes = btrfs_calc_trans_metadata_size(root, num_items);
+ 		ret = btrfs_block_rsv_add(root,
+ 					  &root->fs_info->trans_block_rsv,
+@@ -341,6 +350,7 @@ again:
+ 	h->block_rsv = NULL;
+ 	h->orig_rsv = NULL;
+ 	h->aborted = 0;
++	h->qgroup_reserved = qgroup_reserved;
+ 
+ 	smp_mb();
+ 	if (cur_trans->blocked && may_wait_transaction(root, type)) {
+@@ -507,6 +517,12 @@ static int __btrfs_end_transaction(struct btrfs_trans_handle *trans,
+ 	 * end_transaction. Subvolume quota depends on this.
+ 	 */
+ 	WARN_ON(trans->root != root);
++
++	if (trans->qgroup_reserved) {
++		btrfs_qgroup_free(root, trans->qgroup_reserved);
++		trans->qgroup_reserved = 0;
++	}
++
+ 	while (count < 2) {
+ 		unsigned long cur = trans->delayed_ref_updates;
+ 		trans->delayed_ref_updates = 0;
+diff --git a/fs/btrfs/transaction.h b/fs/btrfs/transaction.h
+index 0107294..addfa2d 100644
+--- a/fs/btrfs/transaction.h
++++ b/fs/btrfs/transaction.h
+@@ -49,6 +49,7 @@ struct btrfs_transaction {
+ struct btrfs_trans_handle {
+ 	u64 transid;
+ 	u64 bytes_reserved;
++	u64 qgroup_reserved;
+ 	unsigned long use_count;
+ 	unsigned long blocks_reserved;
+ 	unsigned long blocks_used;
 -- 
 1.7.3.4
 

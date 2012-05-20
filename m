@@ -1,13 +1,13 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from ysabell.rzone.de ([81.169.144.237]:46302 "EHLO ysabell.rzone.de"
+Received: from ysabell.rzone.de ([81.169.144.237]:46305 "EHLO ysabell.rzone.de"
 	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1756404Ab2ETQGk (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	id S1756411Ab2ETQGk (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
 	Sun, 20 May 2012 12:06:40 -0400
 From: Jan Schmidt <list.btrfs@jan-o-sch.net>
 To: chris.mason@oracle.com, linux-btrfs@vger.kernel.org
-Subject: [PATCH 13/24] Btrfs: qgroup on-disk format
-Date: Sun, 20 May 2012 18:06:24 +0200
-Message-Id: <8c93eb56f6e49f46d09bd6979098ad347cd4a786.1337525292.git.list.btrfs@jan-o-sch.net>
+Subject: [PATCH 17/24] Btrfs: qgroup state and initialization
+Date: Sun, 20 May 2012 18:06:28 +0200
+Message-Id: <008c695d681fa072ec50c87a41bb0b7a1bfbfc23.1337525292.git.list.btrfs@jan-o-sch.net>
 In-Reply-To: <cover.1337525292.git.list.btrfs@jan-o-sch.net>
 References: <cover.1337525292.git.list.btrfs@jan-o-sch.net>
 In-Reply-To: <cover.1337525292.git.list.btrfs@jan-o-sch.net>
@@ -17,182 +17,86 @@ List-ID: <linux-btrfs.vger.kernel.org>
 
 From: Arne Jansen <sensille@gmx.net>
 
-Not all features are in use by the current version
-and thus may change in the future.
+Add state to fs_info.
 
 Signed-off-by: Arne Jansen <sensille@gmx.net>
 ---
- fs/btrfs/ctree.h |  136 ++++++++++++++++++++++++++++++++++++++++++++++++++++++
- 1 files changed, 136 insertions(+), 0 deletions(-)
+ fs/btrfs/ctree.h   |   31 +++++++++++++++++++++++++++++++
+ fs/btrfs/disk-io.c |    7 +++++++
+ 2 files changed, 38 insertions(+), 0 deletions(-)
 
 diff --git a/fs/btrfs/ctree.h b/fs/btrfs/ctree.h
-index 6ba21b1..3961b7e 100644
+index 283c992..2b6f003 100644
 --- a/fs/btrfs/ctree.h
 +++ b/fs/btrfs/ctree.h
-@@ -91,6 +91,9 @@ struct btrfs_ordered_sum;
- /* for storing balance parameters in the root tree */
- #define BTRFS_BALANCE_OBJECTID -4ULL
+@@ -1102,6 +1102,7 @@ struct btrfs_fs_info {
+ 	struct btrfs_root *dev_root;
+ 	struct btrfs_root *fs_root;
+ 	struct btrfs_root *csum_root;
++	struct btrfs_root *quota_root;
  
-+/* holds quota configuration and tracking */
-+#define BTRFS_QUOTA_TREE_OBJECTID 8ULL
-+
- /* orhpan objectid for tracking unlinked/truncated files */
- #define BTRFS_ORPHAN_OBJECTID -5ULL
- 
-@@ -872,6 +875,72 @@ struct btrfs_block_group_item {
- 	__le64 flags;
- } __attribute__ ((__packed__));
- 
-+/*
-+ * is subvolume quota turned on?
-+ */
-+#define BTRFS_QGROUP_STATUS_FLAG_ON		(1ULL << 0)
-+/*
-+ * SCANNING is set during the initialization phase
-+ */
-+#define BTRFS_QGROUP_STATUS_FLAG_SCANNING	(1ULL << 1)
-+/*
-+ * Some qgroup entries are known to be out of date,
-+ * either because the configuration has changed in a way that
-+ * makes a rescan necessary, or because the fs has been mounted
-+ * with a non-qgroup-aware version.
-+ * Turning qouta off and on again makes it inconsistent, too.
-+ */
-+#define BTRFS_QGROUP_STATUS_FLAG_INCONSISTENT	(1ULL << 2)
-+
-+#define BTRFS_QGROUP_STATUS_VERSION        1
-+
-+struct btrfs_qgroup_status_item {
-+	__le64 version;
+ 	/* the log root tree is a directory of all the other log roots */
+ 	struct btrfs_root *log_root_tree;
+@@ -1354,6 +1355,29 @@ struct btrfs_fs_info {
+ #ifdef CONFIG_BTRFS_FS_CHECK_INTEGRITY
+ 	u32 check_integrity_print_mask;
+ #endif
 +	/*
-+	 * the generation is updated during every commit. As older
-+	 * versions of btrfs are not aware of qgroups, it will be
-+	 * possible to detect inconsistencies by checking the
-+	 * generation on mount time
++	 * quota information
 +	 */
-+	__le64 generation;
-+
-+	/* flag definitions see above */
-+	__le64 flags;
++	unsigned int quota_enabled:1;
 +
 +	/*
-+	 * only used during scanning to record the progress
-+	 * of the scan. It contains a logical address
++	 * quota_enabled only changes state after a commit. This holds the
++	 * next state.
 +	 */
-+	__le64 scan;
-+} __attribute__ ((__packed__));
++	unsigned int pending_quota_state:1;
 +
-+struct btrfs_qgroup_info_item {
-+	__le64 generation;
-+	__le64 rfer;
-+	__le64 rfer_cmpr;
-+	__le64 excl;
-+	__le64 excl_cmpr;
-+} __attribute__ ((__packed__));
++	/* is qgroup tracking in a consistent state? */
++	u64 qgroup_flags;
 +
-+/* flags definition for qgroup limits */
-+#define BTRFS_QGROUP_LIMIT_MAX_RFER	(1ULL << 0)
-+#define BTRFS_QGROUP_LIMIT_MAX_EXCL	(1ULL << 1)
-+#define BTRFS_QGROUP_LIMIT_RSV_RFER	(1ULL << 2)
-+#define BTRFS_QGROUP_LIMIT_RSV_EXCL	(1ULL << 3)
-+#define BTRFS_QGROUP_LIMIT_RFER_CMPR	(1ULL << 4)
-+#define BTRFS_QGROUP_LIMIT_EXCL_CMPR	(1ULL << 5)
++	/* holds configuration and tracking. Protected by qgroup_lock */
++	struct rb_root qgroup_tree;
++	spinlock_t qgroup_lock;
 +
-+struct btrfs_qgroup_limit_item {
-+	/*
-+	 * only updated when any of the other values change
-+	 */
-+	__le64 flags;
-+	__le64 max_rfer;
-+	__le64 max_excl;
-+	__le64 rsv_rfer;
-+	__le64 rsv_excl;
-+} __attribute__ ((__packed__));
++	/* list of dirty qgroups to be written at next commit */
++	struct list_head dirty_qgroups;
 +
- struct btrfs_space_info {
- 	u64 flags;
++	/* used by btrfs_qgroup_record_ref for an efficient tree traversal */
++	u64 qgroup_seq;
  
-@@ -1517,6 +1586,30 @@ struct btrfs_ioctl_defrag_range_args {
- #define BTRFS_BALANCE_ITEM_KEY	248
+ 	/* filesystem state */
+ 	u64 fs_state;
+@@ -3260,4 +3284,11 @@ void btrfs_get_tree_mod_seq(struct btrfs_fs_info *fs_info,
+ void btrfs_put_tree_mod_seq(struct btrfs_fs_info *fs_info,
+ 			    struct seq_list *elem);
  
- /*
-+ * Records the overall state of the qgroups.
-+ * There's only one instance of this key present,
-+ * (0, BTRFS_QGROUP_STATUS_KEY, 0)
-+ */
-+#define BTRFS_QGROUP_STATUS_KEY         240
-+/*
-+ * Records the currently used space of the qgroup.
-+ * One key per qgroup, (0, BTRFS_QGROUP_INFO_KEY, qgroupid).
-+ */
-+#define BTRFS_QGROUP_INFO_KEY           242
-+/*
-+ * Contains the user configured limits for the qgroup.
-+ * One key per qgroup, (0, BTRFS_QGROUP_LIMIT_KEY, qgroupid).
-+ */
-+#define BTRFS_QGROUP_LIMIT_KEY          244
-+/*
-+ * Records the child-parent relationship of qgroups. For
-+ * each relation, 2 keys are present:
-+ * (childid, BTRFS_QGROUP_RELATION_KEY, parentid)
-+ * (parentid, BTRFS_QGROUP_RELATION_KEY, childid)
-+ */
-+#define BTRFS_QGROUP_RELATION_KEY       246
-+
-+/*
-  * string items are for debugging.  They just store a short string of
-  * data in the FS
-  */
-@@ -2424,6 +2517,49 @@ static inline u32 btrfs_file_extent_inline_item_len(struct extent_buffer *eb,
- 	return btrfs_item_size(eb, e) - offset;
- }
++static inline int is_fstree(u64 rootid)
++{
++	if (rootid == BTRFS_FS_TREE_OBJECTID ||
++	    (s64)rootid >= (s64)BTRFS_FIRST_FREE_OBJECTID)
++		return 1;
++	return 0;
++}
+ #endif
+diff --git a/fs/btrfs/disk-io.c b/fs/btrfs/disk-io.c
+index 0c7ac16..d42ad71 100644
+--- a/fs/btrfs/disk-io.c
++++ b/fs/btrfs/disk-io.c
+@@ -2106,6 +2106,13 @@ int open_ctree(struct super_block *sb,
+ 	init_rwsem(&fs_info->cleanup_work_sem);
+ 	init_rwsem(&fs_info->subvol_sem);
  
-+/* btrfs_qgroup_status_item */
-+BTRFS_SETGET_FUNCS(qgroup_status_generation, struct btrfs_qgroup_status_item,
-+		   generation, 64);
-+BTRFS_SETGET_FUNCS(qgroup_status_version, struct btrfs_qgroup_status_item,
-+		   version, 64);
-+BTRFS_SETGET_FUNCS(qgroup_status_flags, struct btrfs_qgroup_status_item,
-+		   flags, 64);
-+BTRFS_SETGET_FUNCS(qgroup_status_scan, struct btrfs_qgroup_status_item,
-+		   scan, 64);
++	spin_lock_init(&fs_info->qgroup_lock);
++	fs_info->qgroup_tree = RB_ROOT;
++	INIT_LIST_HEAD(&fs_info->dirty_qgroups);
++	fs_info->qgroup_seq = 1;
++	fs_info->quota_enabled = 0;
++	fs_info->pending_quota_state = 0;
 +
-+/* btrfs_qgroup_info_item */
-+BTRFS_SETGET_FUNCS(qgroup_info_generation, struct btrfs_qgroup_info_item,
-+		   generation, 64);
-+BTRFS_SETGET_FUNCS(qgroup_info_rfer, struct btrfs_qgroup_info_item, rfer, 64);
-+BTRFS_SETGET_FUNCS(qgroup_info_rfer_cmpr, struct btrfs_qgroup_info_item,
-+		   rfer_cmpr, 64);
-+BTRFS_SETGET_FUNCS(qgroup_info_excl, struct btrfs_qgroup_info_item, excl, 64);
-+BTRFS_SETGET_FUNCS(qgroup_info_excl_cmpr, struct btrfs_qgroup_info_item,
-+		   excl_cmpr, 64);
-+
-+BTRFS_SETGET_STACK_FUNCS(stack_qgroup_info_generation,
-+			 struct btrfs_qgroup_info_item, generation, 64);
-+BTRFS_SETGET_STACK_FUNCS(stack_qgroup_info_rfer, struct btrfs_qgroup_info_item,
-+			 rfer, 64);
-+BTRFS_SETGET_STACK_FUNCS(stack_qgroup_info_rfer_cmpr,
-+			 struct btrfs_qgroup_info_item, rfer_cmpr, 64);
-+BTRFS_SETGET_STACK_FUNCS(stack_qgroup_info_excl, struct btrfs_qgroup_info_item,
-+			 excl, 64);
-+BTRFS_SETGET_STACK_FUNCS(stack_qgroup_info_excl_cmpr,
-+			 struct btrfs_qgroup_info_item, excl_cmpr, 64);
-+
-+/* btrfs_qgroup_limit_item */
-+BTRFS_SETGET_FUNCS(qgroup_limit_flags, struct btrfs_qgroup_limit_item,
-+		   flags, 64);
-+BTRFS_SETGET_FUNCS(qgroup_limit_max_rfer, struct btrfs_qgroup_limit_item,
-+		   max_rfer, 64);
-+BTRFS_SETGET_FUNCS(qgroup_limit_max_excl, struct btrfs_qgroup_limit_item,
-+		   max_excl, 64);
-+BTRFS_SETGET_FUNCS(qgroup_limit_rsv_rfer, struct btrfs_qgroup_limit_item,
-+		   rsv_rfer, 64);
-+BTRFS_SETGET_FUNCS(qgroup_limit_rsv_excl, struct btrfs_qgroup_limit_item,
-+		   rsv_excl, 64);
-+
- static inline struct btrfs_fs_info *btrfs_sb(struct super_block *sb)
- {
- 	return sb->s_fs_info;
+ 	btrfs_init_free_cluster(&fs_info->meta_alloc_cluster);
+ 	btrfs_init_free_cluster(&fs_info->data_alloc_cluster);
+ 
 -- 
 1.7.3.4
 

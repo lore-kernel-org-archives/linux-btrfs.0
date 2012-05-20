@@ -1,13 +1,13 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mort.rzone.de ([81.169.144.234]:33909 "EHLO mort.rzone.de"
+Received: from ysabell.rzone.de ([81.169.144.237]:46288 "EHLO ysabell.rzone.de"
 	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1756135Ab2ETQGh (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	id S1756152Ab2ETQGh (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
 	Sun, 20 May 2012 12:06:37 -0400
 From: Jan Schmidt <list.btrfs@jan-o-sch.net>
 To: chris.mason@oracle.com, linux-btrfs@vger.kernel.org
-Subject: [PATCH 11/24] Btrfs: fs_info variable for join_transaction
-Date: Sun, 20 May 2012 18:06:22 +0200
-Message-Id: <c50fa22945b3d8c49b96f781e2dead096fbc48da.1337525292.git.list.btrfs@jan-o-sch.net>
+Subject: [PATCH 05/24] Btrfs: dummy extent buffers for tree mod log
+Date: Sun, 20 May 2012 18:06:16 +0200
+Message-Id: <3d77abdd466abb242591516786a8fe414b8d5156.1337525292.git.list.btrfs@jan-o-sch.net>
 In-Reply-To: <cover.1337525292.git.list.btrfs@jan-o-sch.net>
 References: <cover.1337525292.git.list.btrfs@jan-o-sch.net>
 In-Reply-To: <cover.1337525292.git.list.btrfs@jan-o-sch.net>
@@ -15,98 +15,160 @@ References: <cover.1337525292.git.list.btrfs@jan-o-sch.net>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
+The tree modification log needs two ways to create dummy extent buffers,
+once by allocating a fresh one (to rebuild an old root) and once by
+cloning an existing one (to make private rewind modifications) to it.
+
 Signed-off-by: Jan Schmidt <list.btrfs@jan-o-sch.net>
 ---
- fs/btrfs/transaction.c |   37 +++++++++++++++++++------------------
- 1 files changed, 19 insertions(+), 18 deletions(-)
+ fs/btrfs/extent_io.c |   73 +++++++++++++++++++++++++++++++++++++++++++++----
+ fs/btrfs/extent_io.h |    3 ++
+ 2 files changed, 70 insertions(+), 6 deletions(-)
 
-diff --git a/fs/btrfs/transaction.c b/fs/btrfs/transaction.c
-index 3642225..eb2bd82 100644
---- a/fs/btrfs/transaction.c
-+++ b/fs/btrfs/transaction.c
-@@ -55,48 +55,49 @@ static noinline void switch_commit_root(struct btrfs_root *root)
- static noinline int join_transaction(struct btrfs_root *root, int nofail)
- {
- 	struct btrfs_transaction *cur_trans;
-+	struct btrfs_fs_info *fs_info = root->fs_info;
- 
--	spin_lock(&root->fs_info->trans_lock);
-+	spin_lock(&fs_info->trans_lock);
- loop:
- 	/* The file system has been taken offline. No new transactions. */
--	if (root->fs_info->fs_state & BTRFS_SUPER_FLAG_ERROR) {
--		spin_unlock(&root->fs_info->trans_lock);
-+	if (fs_info->fs_state & BTRFS_SUPER_FLAG_ERROR) {
-+		spin_unlock(&fs_info->trans_lock);
- 		return -EROFS;
- 	}
- 
--	if (root->fs_info->trans_no_join) {
-+	if (fs_info->trans_no_join) {
- 		if (!nofail) {
--			spin_unlock(&root->fs_info->trans_lock);
-+			spin_unlock(&fs_info->trans_lock);
- 			return -EBUSY;
- 		}
- 	}
- 
--	cur_trans = root->fs_info->running_transaction;
-+	cur_trans = fs_info->running_transaction;
- 	if (cur_trans) {
- 		if (cur_trans->aborted) {
--			spin_unlock(&root->fs_info->trans_lock);
-+			spin_unlock(&fs_info->trans_lock);
- 			return cur_trans->aborted;
- 		}
- 		atomic_inc(&cur_trans->use_count);
- 		atomic_inc(&cur_trans->num_writers);
- 		cur_trans->num_joined++;
--		spin_unlock(&root->fs_info->trans_lock);
-+		spin_unlock(&fs_info->trans_lock);
- 		return 0;
- 	}
--	spin_unlock(&root->fs_info->trans_lock);
-+	spin_unlock(&fs_info->trans_lock);
- 
- 	cur_trans = kmem_cache_alloc(btrfs_transaction_cachep, GFP_NOFS);
- 	if (!cur_trans)
- 		return -ENOMEM;
- 
--	spin_lock(&root->fs_info->trans_lock);
--	if (root->fs_info->running_transaction) {
-+	spin_lock(&fs_info->trans_lock);
-+	if (fs_info->running_transaction) {
- 		/*
- 		 * someone started a transaction after we unlocked.  Make sure
- 		 * to redo the trans_no_join checks above
- 		 */
- 		kmem_cache_free(btrfs_transaction_cachep, cur_trans);
--		cur_trans = root->fs_info->running_transaction;
-+		cur_trans = fs_info->running_transaction;
- 		goto loop;
- 	}
- 
-@@ -127,14 +128,14 @@ loop:
- 	INIT_LIST_HEAD(&cur_trans->delayed_refs.seq_head);
- 
- 	INIT_LIST_HEAD(&cur_trans->pending_snapshots);
--	list_add_tail(&cur_trans->list, &root->fs_info->trans_list);
-+	list_add_tail(&cur_trans->list, &fs_info->trans_list);
- 	extent_io_tree_init(&cur_trans->dirty_pages,
--			     root->fs_info->btree_inode->i_mapping);
--	root->fs_info->generation++;
--	cur_trans->transid = root->fs_info->generation;
--	root->fs_info->running_transaction = cur_trans;
-+			     fs_info->btree_inode->i_mapping);
-+	fs_info->generation++;
-+	cur_trans->transid = fs_info->generation;
-+	fs_info->running_transaction = cur_trans;
- 	cur_trans->aborted = 0;
--	spin_unlock(&root->fs_info->trans_lock);
-+	spin_unlock(&fs_info->trans_lock);
- 
- 	return 0;
+diff --git a/fs/btrfs/extent_io.c b/fs/btrfs/extent_io.c
+index 2fb52c2..4f4bcaa 100644
+--- a/fs/btrfs/extent_io.c
++++ b/fs/btrfs/extent_io.c
+@@ -3967,6 +3967,58 @@ static struct extent_buffer *__alloc_extent_buffer(struct extent_io_tree *tree,
+ 	return eb;
  }
+ 
++struct extent_buffer *btrfs_clone_extent_buffer(struct extent_buffer *src)
++{
++	unsigned long i;
++	struct page *p;
++	struct extent_buffer *new;
++	unsigned long num_pages = num_extent_pages(src->start, src->len);
++
++	new = __alloc_extent_buffer(NULL, src->start, src->len, GFP_ATOMIC);
++	if (new == NULL)
++		return NULL;
++
++	for (i = 0; i < num_pages; i++) {
++		p = alloc_page(GFP_ATOMIC);
++		BUG_ON(!p);
++		attach_extent_buffer_page(new, p);
++		WARN_ON(PageDirty(p));
++		SetPageUptodate(p);
++		new->pages[i] = p;
++	}
++
++	copy_extent_buffer(new, src, 0, 0, src->len);
++	set_bit(EXTENT_BUFFER_UPTODATE, &new->bflags);
++
++	return new;
++}
++
++struct extent_buffer *alloc_dummy_extent_buffer(u64 start, unsigned long len)
++{
++	struct extent_buffer *eb;
++	unsigned long num_pages = num_extent_pages(0, len);
++	unsigned long i;
++
++	eb = __alloc_extent_buffer(NULL, start, len, GFP_ATOMIC);
++	if (!eb)
++		return NULL;
++
++	for (i = 0; i < num_pages; i++) {
++		eb->pages[i] = alloc_page(GFP_ATOMIC);
++		if (!eb->pages[i])
++			goto err;
++	}
++	set_extent_buffer_uptodate(eb);
++	btrfs_set_header_nritems(eb, 0);
++
++	return eb;
++err:
++	for (i--; i > 0; i--)
++		__free_page(eb->pages[i]);
++	__free_extent_buffer(eb);
++	return NULL;
++}
++
+ static int extent_buffer_under_io(struct extent_buffer *eb)
+ {
+ 	return (atomic_read(&eb->io_pages) ||
+@@ -3978,7 +4030,8 @@ static int extent_buffer_under_io(struct extent_buffer *eb)
+  * Helper for releasing extent buffer page.
+  */
+ static void btrfs_release_extent_buffer_page(struct extent_buffer *eb,
+-						unsigned long start_idx)
++						unsigned long start_idx,
++						int mapped)
+ {
+ 	unsigned long index;
+ 	struct page *page;
+@@ -3992,7 +4045,7 @@ static void btrfs_release_extent_buffer_page(struct extent_buffer *eb,
+ 	do {
+ 		index--;
+ 		page = extent_buffer_page(eb, index);
+-		if (page) {
++		if (page && mapped) {
+ 			spin_lock(&page->mapping->private_lock);
+ 			/*
+ 			 * We do this since we'll remove the pages after we've
+@@ -4017,6 +4070,8 @@ static void btrfs_release_extent_buffer_page(struct extent_buffer *eb,
+ 			}
+ 			spin_unlock(&page->mapping->private_lock);
+ 
++		}
++		if (page) {
+ 			/* One for when we alloced the page */
+ 			page_cache_release(page);
+ 		}
+@@ -4026,12 +4081,18 @@ static void btrfs_release_extent_buffer_page(struct extent_buffer *eb,
+ /*
+  * Helper for releasing the extent buffer.
+  */
+-static inline void btrfs_release_extent_buffer(struct extent_buffer *eb)
++static inline void btrfs_release_extent_buffer(struct extent_buffer *eb,
++					       int mapped)
+ {
+-	btrfs_release_extent_buffer_page(eb, 0);
++	btrfs_release_extent_buffer_page(eb, 0, mapped);
+ 	__free_extent_buffer(eb);
+ }
+ 
++void free_cloned_extent_buffer(struct extent_buffer *eb)
++{
++	btrfs_release_extent_buffer(eb, 0);
++}
++
+ static void check_buffer_tree_ref(struct extent_buffer *eb)
+ {
+ 	/* the ref bit is tricky.  We have to make sure it is set
+@@ -4201,7 +4262,7 @@ free_eb:
+ 	}
+ 
+ 	WARN_ON(!atomic_dec_and_test(&eb->refs));
+-	btrfs_release_extent_buffer(eb);
++	btrfs_release_extent_buffer(eb, 1);
+ 	return exists;
+ }
+ 
+@@ -4245,7 +4306,7 @@ static void release_extent_buffer(struct extent_buffer *eb, gfp_t mask)
+ 		spin_unlock(&tree->buffer_lock);
+ 
+ 		/* Should be safe to release our pages at this point */
+-		btrfs_release_extent_buffer_page(eb, 0);
++		btrfs_release_extent_buffer_page(eb, 0, 1);
+ 
+ 		call_rcu(&eb->rcu_head, btrfs_release_extent_buffer_rcu);
+ 		return;
+diff --git a/fs/btrfs/extent_io.h b/fs/btrfs/extent_io.h
+index b516c3b..80dd65a 100644
+--- a/fs/btrfs/extent_io.h
++++ b/fs/btrfs/extent_io.h
+@@ -265,6 +265,9 @@ void set_page_extent_mapped(struct page *page);
+ 
+ struct extent_buffer *alloc_extent_buffer(struct extent_io_tree *tree,
+ 					  u64 start, unsigned long len);
++struct extent_buffer *alloc_dummy_extent_buffer(u64 start, unsigned long len);
++struct extent_buffer *btrfs_clone_extent_buffer(struct extent_buffer *src);
++void free_cloned_extent_buffer(struct extent_buffer *eb);
+ struct extent_buffer *find_extent_buffer(struct extent_io_tree *tree,
+ 					 u64 start, unsigned long len);
+ void free_extent_buffer(struct extent_buffer *eb);
 -- 
 1.7.3.4
 

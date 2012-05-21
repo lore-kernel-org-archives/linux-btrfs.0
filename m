@@ -1,57 +1,208 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-pb0-f46.google.com ([209.85.160.46]:58826 "EHLO
-	mail-pb0-f46.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1755546Ab2EYLbK convert rfc822-to-8bit (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Fri, 25 May 2012 07:31:10 -0400
-Received: by pbbrp8 with SMTP id rp8so1648739pbb.19
-        for <linux-btrfs@vger.kernel.org>; Fri, 25 May 2012 04:31:09 -0700 (PDT)
-MIME-Version: 1.0
-In-Reply-To: <CAB9VWqAcuCSE8=Kr6+P6vUPjY4TXNmz7ExHhQYSge=jcCoC+8A@mail.gmail.com>
-References: <CAB9VWqAcuCSE8=Kr6+P6vUPjY4TXNmz7ExHhQYSge=jcCoC+8A@mail.gmail.com>
-Date: Fri, 25 May 2012 13:31:09 +0200
-Message-ID: <CAB9VWqCTLAiwYV9XPoKp6HuCZ9hLHB-TU1WJ2MGxBS4s9w8Awg@mail.gmail.com>
-Subject: Re: [BUG] atime on ro snapshots is updated when it should not
-From: Alexander Block <ablock84@googlemail.com>
-To: linux-btrfs@vger.kernel.org
-Content-Type: text/plain; charset=ISO-8859-1
+Received: from cn.fujitsu.com ([222.73.24.84]:20425 "EHLO song.cn.fujitsu.com"
+	rhost-flags-OK-FAIL-OK-OK) by vger.kernel.org with ESMTP
+	id S1756634Ab2EUCYS (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Sun, 20 May 2012 22:24:18 -0400
+Received: from mailserver.fnst.cn.fujitsu.com (tang.cn.fujitsu.com [127.0.0.1])
+	by tang.cn.fujitsu.com (8.14.3/8.13.1) with ESMTP id q4L2OENC032420
+	for <linux-btrfs@vger.kernel.org>; Mon, 21 May 2012 10:24:15 +0800
+From: Liu Bo <liubo2009@cn.fujitsu.com>
+To: <linux-btrfs@vger.kernel.org>
+Subject: [PATCH 2/2 v2] Btrfs: resize all devices when we dont assign a specific device id
+Date: Mon, 21 May 2012 10:28:39 +0800
+Message-Id: <1337567319-1657-2-git-send-email-liubo2009@cn.fujitsu.com>
+In-Reply-To: <1337567319-1657-1-git-send-email-liubo2009@cn.fujitsu.com>
+References: <1337567319-1657-1-git-send-email-liubo2009@cn.fujitsu.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-David just pointed me to the update_time patches from Josef. When these
-get into the kernel, the RO snapshot + atime problem could be easily fixed.
+This patch fixes two bugs:
 
-Any idea when those get into the kernel?
+When we do not assigne a device id for the resizer,
+- it will only take one device to resize, which is supposed to apply on
+  all available devices.
+- it will take 'id 1' device as default, and this will cause a bug as we
+  may have removed the 'id 1' device from the filesystem.
 
-On Thu, May 24, 2012 at 7:12 PM, Alexander Block
-<ablock84@googlemail.com> wrote:
-> Hello,
->
-> if a snapshot was created with -r and thus is read only, accessing
-> files in it will update the atime. I would expect that atime is not
-> updated on ro snapshots.
->
-> I tried to find out where the ro check is missing. The problem seems
-> to be that the vfs is only checking the mount, super block and
-> i_flags.
-> As it has no clue about subvolumes, it never checks them. My temporary
-> solution for me to continue working is atm the patch at the end of
-> this mail.
-> Is anyone with more vfs experience able to fix this in a better way?
->
-> Thanks,
-> Alex.
->
-> diff --git a/fs/btrfs/ioctl.c b/fs/btrfs/ioctl.c
-> index 3524978..6f126e0 100644
-> --- a/fs/btrfs/ioctl.c
-> +++ b/fs/btrfs/ioctl.c
-> @@ -115,6 +115,10 @@ void btrfs_update_iflags(struct inode *inode)
->                inode->i_flags |= S_NOATIME;
->        if (ip->flags & BTRFS_INODE_DIRSYNC)
->                inode->i_flags |= S_DIRSYNC;
-> +
-> +       if (btrfs_root_readonly(ip->root)) {
-> +               inode->i_flags |= S_NOATIME;
-> +       }
->  }
+After this patch, we can find all available devices by searching the
+chunk tree and resize them:
+
+$ mkfs.btrfs /dev/sdb7
+$ mount /dev/sdb7 /mnt/btrfs/
+$ btrfs dev add /dev/sdb8 /mnt/btrfs/
+
+$ btrfs fi resize -100m /mnt/btrfs/
+then we can get from dmesg:
+btrfs: new size for /dev/sdb7 is 980844544
+btrfs: new size for /dev/sdb8 is 980844544
+
+$ btrfs fi resize max /mnt/btrfs
+then we can get from dmesg:
+btrfs: new size for /dev/sdb7 is 1085702144
+btrfs: new size for /dev/sdb8 is 1085702144
+
+$ btrfs fi resize 1:-100m /mnt/btrfs
+then we can get from dmesg:
+btrfs: resizing devid 1
+btrfs: new size for /dev/sdb7 is 980844544
+
+$ btrfs fi resize 1:-100m /mnt/btrfs
+then we can get from dmesg:
+btrfs: resizing devid 2
+btrfs: new size for /dev/sdb8 is 980844544
+
+Signed-off-by: Liu Bo <liubo2009@cn.fujitsu.com>
+---
+ fs/btrfs/ioctl.c |  101 ++++++++++++++++++++++++++++++++++++++++++++----------
+ 1 files changed, 83 insertions(+), 18 deletions(-)
+
+diff --git a/fs/btrfs/ioctl.c b/fs/btrfs/ioctl.c
+index ec2245d..d9a4fa8 100644
+--- a/fs/btrfs/ioctl.c
++++ b/fs/btrfs/ioctl.c
+@@ -1250,12 +1250,51 @@ out_ra:
+ 	return ret;
+ }
+ 
++static struct btrfs_device *get_avail_device(struct btrfs_root *root, u64 devid)
++{
++	struct btrfs_key key;
++	struct btrfs_path *path;
++	struct btrfs_dev_item *dev_item;
++	struct btrfs_device *device = NULL;
++	int ret;
++
++	path = btrfs_alloc_path();
++	if (!path)
++		return ERR_PTR(-ENOMEM);
++
++	key.objectid = BTRFS_DEV_ITEMS_OBJECTID;
++	key.offset = devid;
++	key.type = BTRFS_DEV_ITEM_KEY;
++
++	ret = btrfs_search_slot(NULL, root->fs_info->chunk_root, &key,
++				path, 0, 0);
++	if (ret < 0) {
++		device = ERR_PTR(ret);
++		goto out;
++	}
++	btrfs_item_key_to_cpu(path->nodes[0], &key, path->slots[0]);
++	if (key.objectid != BTRFS_DEV_ITEMS_OBJECTID ||
++	    key.type != BTRFS_DEV_ITEM_KEY) {
++		device = NULL;
++		goto out;
++	}
++	dev_item = btrfs_item_ptr(path->nodes[0], path->slots[0],
++				  struct btrfs_dev_item);
++	devid = btrfs_device_id(path->nodes[0], dev_item);
++
++	device = btrfs_find_device(root, devid, NULL, NULL);
++out:
++	btrfs_free_path(path);
++	return device;
++}
++
+ static noinline int btrfs_ioctl_resize(struct btrfs_root *root,
+ 					void __user *arg)
+ {
+-	u64 new_size;
++	u64 new_size = 0;
+ 	u64 old_size;
+-	u64 devid = 1;
++	u64 orig_new_size = 0;
++	u64 devid = (-1ULL);
+ 	struct btrfs_ioctl_vol_args *vol_args;
+ 	struct btrfs_trans_handle *trans;
+ 	struct btrfs_device *device = NULL;
+@@ -1263,6 +1302,8 @@ static noinline int btrfs_ioctl_resize(struct btrfs_root *root,
+ 	char *devstr = NULL;
+ 	int ret = 0;
+ 	int mod = 0;
++	int scan_all = 1;
++	int use_max = 0;
+ 
+ 	if (root->fs_info->sb->s_flags & MS_RDONLY)
+ 		return -EROFS;
+@@ -1295,8 +1336,31 @@ static noinline int btrfs_ioctl_resize(struct btrfs_root *root,
+ 		devid = simple_strtoull(devstr, &end, 10);
+ 		printk(KERN_INFO "btrfs: resizing devid %llu\n",
+ 		       (unsigned long long)devid);
++		scan_all = 0;
+ 	}
+-	device = btrfs_find_device(root, devid, NULL, NULL);
++
++	if (!strcmp(sizestr, "max")) {
++		use_max = 1;
++	} else {
++		if (sizestr[0] == '-') {
++			mod = -1;
++			sizestr++;
++		} else if (sizestr[0] == '+') {
++			mod = 1;
++			sizestr++;
++		}
++		orig_new_size = memparse(sizestr, NULL);
++		if (orig_new_size == 0) {
++			ret = -EINVAL;
++			goto out_free;
++		}
++	}
++
++	if (devid < (-1ULL))
++		device = btrfs_find_device(root, devid, NULL, NULL);
++	else
++		device = get_avail_device(root, 0);
++again:
+ 	if (!device) {
+ 		printk(KERN_INFO "btrfs: resizer unable to find device %llu\n",
+ 		       (unsigned long long)devid);
+@@ -1310,22 +1374,10 @@ static noinline int btrfs_ioctl_resize(struct btrfs_root *root,
+ 		goto out_free;
+ 	}
+ 
+-	if (!strcmp(sizestr, "max"))
++	if (use_max)
+ 		new_size = device->bdev->bd_inode->i_size;
+-	else {
+-		if (sizestr[0] == '-') {
+-			mod = -1;
+-			sizestr++;
+-		} else if (sizestr[0] == '+') {
+-			mod = 1;
+-			sizestr++;
+-		}
+-		new_size = memparse(sizestr, NULL);
+-		if (new_size == 0) {
+-			ret = -EINVAL;
+-			goto out_free;
+-		}
+-	}
++	else
++		new_size = orig_new_size;
+ 
+ 	old_size = device->total_bytes;
+ 
+@@ -1365,7 +1417,20 @@ static noinline int btrfs_ioctl_resize(struct btrfs_root *root,
+ 	} else if (new_size < old_size) {
+ 		ret = btrfs_shrink_device(device, new_size);
+ 	}
++	if (ret)
++		goto out_free;
+ 
++	if (scan_all) {
++		/* next available device */
++		device = get_avail_device(root, device->devid + 1);
++		if (!device)
++			goto out_free;
++		if (IS_ERR(device)) {
++			ret = PTR_ERR(device);
++			goto out_free;
++		}
++		goto again;
++	}
+ out_free:
+ 	kfree(vol_args);
+ out:
+-- 
+1.6.5.2
+

@@ -1,43 +1,51 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([222.73.24.84]:47848 "EHLO song.cn.fujitsu.com"
+Received: from cn.fujitsu.com ([222.73.24.84]:45197 "EHLO song.cn.fujitsu.com"
 	rhost-flags-OK-FAIL-OK-OK) by vger.kernel.org with ESMTP
-	id S1760001Ab2EQMAZ (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 17 May 2012 08:00:25 -0400
-Received: from mailserver.fnst.cn.fujitsu.com (tang.cn.fujitsu.com [127.0.0.1])
-	by tang.cn.fujitsu.com (8.14.3/8.13.1) with ESMTP id q4HC0LYg006047
-	for <linux-btrfs@vger.kernel.org>; Thu, 17 May 2012 20:00:23 +0800
-Message-ID: <4FB4E7FD.8050108@cn.fujitsu.com>
-Date: Thu, 17 May 2012 19:58:53 +0800
+	id S1751823Ab2EUFfh (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Mon, 21 May 2012 01:35:37 -0400
+Message-ID: <4FB9D3CD.8010303@cn.fujitsu.com>
+Date: Mon, 21 May 2012 13:34:05 +0800
 From: Miao Xie <miaox@cn.fujitsu.com>
 Reply-To: miaox@cn.fujitsu.com
 MIME-Version: 1.0
-To: Linux Btrfs <linux-btrfs@vger.kernel.org>
-Subject: [PATCH 5/5] Btrfs: fix memory leak in btrfs_pause_balance()
-Content-Type: text/plain; charset=UTF-8
+To: Linux Btrfs <linux-btrfs@vger.kernel.org>, sbehrens@giantdisaster.de
+Subject: Re: [PATCH 4/5] Btrfs: cancel the scrub when remounting a fs to ro
+References: <4FB4E7DD.8020802@cn.fujitsu.com> <20120518125207.GI24394@twin.jikos.cz>
+In-Reply-To: <20120518125207.GI24394@twin.jikos.cz>
+Content-Type: text/plain; charset=ISO-8859-1
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-We forget to free fs_info->balance_ctl in the btrfs_pause_balance()
-when umounting the fs.
+On Fri, 18 May 2012 14:52:07 +0200, David Sterba wrote:
+> On Thu, May 17, 2012 at 07:58:21PM +0800, Miao Xie wrote:
+>> --- a/fs/btrfs/super.c
+>> +++ b/fs/btrfs/super.c
+>> @@ -1151,6 +1151,8 @@ static int btrfs_remount(struct super_block *sb, int *flags, char *data)
+>>  		/* pause restriper - we want to resume on remount to r/w */
+>>  		btrfs_pause_balance(root->fs_info);
+>>  
+>> +		btrfs_scrub_cancel(root);
+> 
+> Can we possibly switch scrub to readonly instead ? I'm not sure what's
+> the 'least surprise here', whether to cancel everything on the
+> filesystem upon ro-remount or just the minimal set of operations (and
+> leave the rest running if possible).
 
-Signed-off-by: Miao Xie <miaox@cn.fujitsu.com>
----
- fs/btrfs/volumes.c |    3 +++
- 1 files changed, 3 insertions(+), 0 deletions(-)
+I don't think it is better to switch scrub to readonly soundlessly, because
+it is not the operation that the users expect if they don't choose the readonly
+mode.
 
-diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
-index c536d52..fd7fe80 100644
---- a/fs/btrfs/volumes.c
-+++ b/fs/btrfs/volumes.c
-@@ -2937,6 +2937,9 @@ int btrfs_pause_balance(struct btrfs_fs_info *fs_info)
- 		ret = -ENOTCONN;
- 	}
- 
-+	if (btrfs_fs_closing(fs_info) && fs_info->balance_ctl)
-+		unset_balance_control(fs_info);
-+
- 	mutex_unlock(&fs_info->balance_mutex);
- 	return ret;
- }
--- 
-1.7.6.5
+BTW, I think we needn't cancel the readonly scrub on the filesystem upon ro-remount.
+
+Thanks
+Miao
+
+> 
+> Looking at the scrub code, if dev->readonly is set, no repairs are done,
+> so the only concern is to wait for any outstanding IOs and then switch
+> to RO.
+> 
+> 
+> david
+> 
+

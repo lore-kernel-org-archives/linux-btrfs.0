@@ -1,266 +1,573 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mort.rzone.de ([81.169.144.234]:50816 "EHLO mort.rzone.de"
+Received: from cantor2.suse.de ([195.135.220.15]:54498 "EHLO mx2.suse.de"
 	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1753877Ab2EPQva (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 16 May 2012 12:51:30 -0400
-Received: from gargravarr.store (gargravarr.store [192.168.42.236])
-	by mort.rzone.de (Postfix) with ESMTP id E1058244
-	for <linux-btrfs@vger.kernel.org>; Wed, 16 May 2012 18:51:28 +0200 (MEST)
-From: Stefan Behrens <sbehrens@giantdisaster.de>
+	id S932077Ab2EUVtx (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Mon, 21 May 2012 17:49:53 -0400
+From: Mark Fasheh <mfasheh@suse.de>
 To: linux-btrfs@vger.kernel.org
-Subject: [PATCH v2] Btrfs-progs: make scrub IO priority configurable
-Date: Wed, 16 May 2012 18:51:28 +0200
-Message-Id: <1337187088-693-1-git-send-email-sbehrens@giantdisaster.de>
+Cc: Chris Mason <chris.mason@oracle.com>, Jan Schmidt <mail@jan-o-sch.net>,
+        Mark Fasheh <mfasheh@suse.com>, Mark Fasheh <mfasheh@suse.de>
+Subject: [PATCH 1/3] btrfs: extended inode refs
+Date: Mon, 21 May 2012 14:46:19 -0700
+Message-Id: <1337636781-12575-2-git-send-email-mfasheh@suse.de>
+In-Reply-To: <1337636781-12575-1-git-send-email-mfasheh@suse.de>
+References: <1337636781-12575-1-git-send-email-mfasheh@suse.de>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-The btrfs tool is changed in order to support command line parameters
-to configure the IO priority of the scrub tasks. Also the default is
-changed. The default IO priority for scrub is the idle class now.
+From: Mark Fasheh <mfasheh@suse.com>
 
-The behavior is the same as when one would type
-'ionice ... btrfs scrub start ...' or 'ionice ... btrfs scrub resume ...'
-(without this patch applied).
-The only reason for adding this to the btrfs tool is that it was not
-documented and not obvious that it worked like this, that all internal
-scrub tasks inherited the IO priority values of the btrfs tool that is
-starting or resuming the scrub operation.
+This patch adds basic support for extended inode refs. This includes support
+for link and unlink of the refs, which basically gets us support for rename
+as well.
 
-Note that after applying the patch it is no longer possible to set
-the IO priority using ionice since the btrfs tool always configures
-the priority in order to run in the idle class by default.
+Inode creation does not need changing - extended refs are only added after
+the ref array is full.
 
-Some basic performance measurements have been done with the goal to
-measure which IO priority for scrub gives the best overall disk data
-throughput. The kernel was configured to use the CFQ IO scheduler
-with default configuration and without support for throttling. The
-summary is, that the more the disk head movements are avoided, the
-faster the overall disk transfer capacity is, which is not really a
-big surprise. Therefore it makes sense that the best data throughput
-was measured setting the scrub IO priority and the scrub readahead
-IO priority to the idle class priority. Running with idle class IO
-priority means that scrub and scrub readahead IO is paused while
-other tasks access the disk. Doing the tasks one after the other
-instead of concurrently avoids many disk head movements. The
-overall data throughput of rotating disks is improved this way.
-
-However, if it is desired to have the scrub task done within a
-reasonable time, and if at the same time the filesystem is heavily
-loaded, the idle IO priority should be avoided. Otherwise the scrub
-operation will never take place and thus never terminate.
-
-The best effort IO priority class with the subclass 7 (the lowest
-one in the best effort class) is recommended in the case of always
-heavily loaded hard disks. If the filesystem is not loaded all the
-time and leaves some idle slots for scrub, the idle class IO priority
-is recommended. The idle class now is the default if the scrub
-operation is started with the btrfs-progs tools.
-
-Note that the patch that sets the scrub readahead IO priority to the
-idle class is a seperate patch, this needs to be done in the kernel.
-
-Signed-off-by: Stefan Behrens <sbehrens@giantdisaster.de>
+Signed-off-by: Mark Fasheh <mfasheh@suse.de>
 ---
-Changes v1->v2:
-- Rebase on Chris' current master branch
+ fs/btrfs/ctree.h      |   52 ++++++++--
+ fs/btrfs/hash.h       |   10 ++
+ fs/btrfs/inode-item.c |  279 +++++++++++++++++++++++++++++++++++++++++++++++--
+ fs/btrfs/inode.c      |   23 +++--
+ 4 files changed, 338 insertions(+), 26 deletions(-)
 
- cmds-scrub.c   |   40 +++++++++++++++++++++++++++++++++++++---
- man/btrfs.8.in |   23 ++++++++++++++++++-----
- 2 files changed, 55 insertions(+), 8 deletions(-)
-
-diff --git a/cmds-scrub.c b/cmds-scrub.c
-index c4503f4..0c82f76 100644
---- a/cmds-scrub.c
-+++ b/cmds-scrub.c
-@@ -22,6 +22,7 @@
- #include <sys/types.h>
- #include <sys/socket.h>
- #include <sys/un.h>
-+#include <sys/syscall.h>
- #include <poll.h>
- #include <sys/file.h>
- #include <uuid/uuid.h>
-@@ -58,6 +59,15 @@ struct scrub_stats {
- 	u64 canceled;
- };
+diff --git a/fs/btrfs/ctree.h b/fs/btrfs/ctree.h
+index 80b6486..3882813 100644
+--- a/fs/btrfs/ctree.h
++++ b/fs/btrfs/ctree.h
+@@ -143,6 +143,13 @@ struct btrfs_ordered_sum;
+  */
+ #define BTRFS_NAME_LEN 255
  
-+/* TBD: replace with #include "linux/ioprio.h" in some years */
-+#if !defined (IOPRIO_H)
-+#define IOPRIO_WHO_PROCESS 1
-+#define IOPRIO_CLASS_SHIFT 13
-+#define IOPRIO_PRIO_VALUE(class, data) \
-+		(((class) << IOPRIO_CLASS_SHIFT) | (data))
-+#define IOPRIO_CLASS_IDLE 3
-+#endif
++/*
++ * Theoretical limit is larger, but we keep this down to a sane
++ * value. That should limit greatly the possibility of collisions on
++ * inode ref items.
++ */
++#define BTRFS_LINK_MAX 65535U
 +
- struct scrub_progress {
- 	struct btrfs_ioctl_scrub_args scrub_args;
- 	int fd;
-@@ -67,6 +77,8 @@ struct scrub_progress {
- 	struct scrub_file_record *resumed;
- 	int ioctl_errno;
- 	pthread_mutex_t progress_mutex;
-+	int ioprio_class;
-+	int ioprio_classdata;
- };
+ /* 32 bytes in various csum fields */
+ #define BTRFS_CSUM_SIZE 32
  
- struct scrub_file_record {
-@@ -807,6 +819,14 @@ static void *scrub_one_dev(void *ctx)
- 	sp->stats.duration = 0;
- 	sp->stats.finished = 0;
+@@ -462,13 +469,16 @@ struct btrfs_super_block {
+ #define BTRFS_FEATURE_INCOMPAT_MIXED_GROUPS	(1ULL << 2)
+ #define BTRFS_FEATURE_INCOMPAT_COMPRESS_LZO	(1ULL << 3)
  
-+	ret = syscall(SYS_ioprio_set, IOPRIO_WHO_PROCESS, 0,
-+		      IOPRIO_PRIO_VALUE(sp->ioprio_class,
-+					sp->ioprio_classdata));
-+	if (ret)
-+		fprintf(stderr,
-+			"WARNING: setting ioprio failed: %s (ignored).\n",
-+			strerror(errno));
++#define BTRFS_FEATURE_INCOMPAT_EXTENDED_IREF	(1ULL << 6)
 +
- 	ret = ioctl(sp->fd, BTRFS_IOC_SCRUB, &sp->scrub_args);
- 	gettimeofday(&tv, NULL);
- 	sp->ret = ret;
-@@ -1077,6 +1097,8 @@ static int scrub_start(int argc, char **argv, int resume)
- 	int do_record = 1;
- 	int readonly = 0;
- 	int do_stats_per_dev = 0;
-+	int ioprio_class = IOPRIO_CLASS_IDLE;
-+	int ioprio_classdata = 0;
- 	int n_start = 0;
- 	int n_skip = 0;
- 	int n_resume = 0;
-@@ -1102,7 +1124,7 @@ static int scrub_start(int argc, char **argv, int resume)
- 	u64 devid;
+ #define BTRFS_FEATURE_COMPAT_SUPP		0ULL
+ #define BTRFS_FEATURE_COMPAT_RO_SUPP		0ULL
+ #define BTRFS_FEATURE_INCOMPAT_SUPP			\
+ 	(BTRFS_FEATURE_INCOMPAT_MIXED_BACKREF |		\
+ 	 BTRFS_FEATURE_INCOMPAT_DEFAULT_SUBVOL |	\
+ 	 BTRFS_FEATURE_INCOMPAT_MIXED_GROUPS |		\
+-	 BTRFS_FEATURE_INCOMPAT_COMPRESS_LZO)
++	 BTRFS_FEATURE_INCOMPAT_COMPRESS_LZO |		\
++	 BTRFS_FEATURE_INCOMPAT_EXTENDED_IREF)
  
- 	optind = 1;
--	while ((c = getopt(argc, argv, "BdqrR")) != -1) {
-+	while ((c = getopt(argc, argv, "BdqrRc:n:")) != -1) {
- 		switch (c) {
- 		case 'B':
- 			do_background = 0;
-@@ -1121,6 +1143,12 @@ static int scrub_start(int argc, char **argv, int resume)
- 		case 'R':
- 			print_raw = 1;
- 			break;
-+		case 'c':
-+			ioprio_class = (int)strtol(optarg, NULL, 10);
-+			break;
-+		case 'n':
-+			ioprio_classdata = (int)strtol(optarg, NULL, 10);
-+			break;
- 		case '?':
- 		default:
- 			usage(resume ? cmd_scrub_resume_usage :
-@@ -1229,6 +1257,8 @@ static int scrub_start(int argc, char **argv, int resume)
- 		sp[i].skip = 0;
- 		sp[i].scrub_args.end = (u64)-1ll;
- 		sp[i].scrub_args.flags = readonly ? BTRFS_SCRUB_READONLY : 0;
-+		sp[i].ioprio_class = ioprio_class;
-+		sp[i].ioprio_classdata = ioprio_classdata;
+ /*
+  * A leaf is full of items. offset and size tell us where to find
+@@ -615,6 +625,14 @@ struct btrfs_inode_ref {
+ 	/* name goes here */
+ } __attribute__ ((__packed__));
+ 
++struct btrfs_inode_extref {
++	__le64 parent_objectid;
++	__le64 index;
++	__le16 name_len;
++	__u8   name[0];
++	/* name goes here */
++} __attribute__ ((__packed__));
++
+ struct btrfs_timespec {
+ 	__le64 sec;
+ 	__le32 nsec;
+@@ -1400,6 +1418,7 @@ struct btrfs_ioctl_defrag_range_args {
+  */
+ #define BTRFS_INODE_ITEM_KEY		1
+ #define BTRFS_INODE_REF_KEY		12
++#define BTRFS_INODE_EXTREF_KEY		13
+ #define BTRFS_XATTR_ITEM_KEY		24
+ #define BTRFS_ORPHAN_ITEM_KEY		48
+ /* reserve 2-15 close to the inode for later flexibility */
+@@ -1701,6 +1720,13 @@ BTRFS_SETGET_STACK_FUNCS(block_group_flags,
+ BTRFS_SETGET_FUNCS(inode_ref_name_len, struct btrfs_inode_ref, name_len, 16);
+ BTRFS_SETGET_FUNCS(inode_ref_index, struct btrfs_inode_ref, index, 64);
+ 
++/* struct btrfs_inode_extref */
++BTRFS_SETGET_FUNCS(inode_extref_parent, struct btrfs_inode_extref,
++		   parent_objectid, 64);
++BTRFS_SETGET_FUNCS(inode_extref_name_len, struct btrfs_inode_extref,
++		   name_len, 16);
++BTRFS_SETGET_FUNCS(inode_extref_index, struct btrfs_inode_extref, index, 64);
++
+ /* struct btrfs_inode_item */
+ BTRFS_SETGET_FUNCS(inode_generation, struct btrfs_inode_item, generation, 64);
+ BTRFS_SETGET_FUNCS(inode_sequence, struct btrfs_inode_item, sequence, 64);
+@@ -2791,12 +2817,12 @@ int btrfs_del_inode_ref(struct btrfs_trans_handle *trans,
+ 			   struct btrfs_root *root,
+ 			   const char *name, int name_len,
+ 			   u64 inode_objectid, u64 ref_objectid, u64 *index);
+-struct btrfs_inode_ref *
+-btrfs_lookup_inode_ref(struct btrfs_trans_handle *trans,
+-			struct btrfs_root *root,
+-			struct btrfs_path *path,
+-			const char *name, int name_len,
+-			u64 inode_objectid, u64 ref_objectid, int mod);
++int btrfs_get_inode_ref_index(struct btrfs_trans_handle *trans,
++			      struct btrfs_root *root,
++			      struct btrfs_path *path,
++			      const char *name, int name_len,
++			      u64 inode_objectid, u64 ref_objectid, int mod,
++			      u64 *ret_index);
+ int btrfs_insert_empty_inode(struct btrfs_trans_handle *trans,
+ 			     struct btrfs_root *root,
+ 			     struct btrfs_path *path, u64 objectid);
+@@ -2804,6 +2830,18 @@ int btrfs_lookup_inode(struct btrfs_trans_handle *trans, struct btrfs_root
+ 		       *root, struct btrfs_path *path,
+ 		       struct btrfs_key *location, int mod);
+ 
++struct btrfs_inode_extref *
++btrfs_lookup_inode_extref(struct btrfs_trans_handle *trans,
++			  struct btrfs_root *root,
++			  struct btrfs_path *path,
++			  const char *name, int name_len,
++			  u64 inode_objectid, u64 ref_objectid, int ins_len,
++			  int cow);
++
++int find_name_in_ext_backref(struct btrfs_path *path, const char *name,
++			     int name_len,
++			     struct btrfs_inode_extref **extref_ret);
++
+ /* file-item.c */
+ int btrfs_del_csums(struct btrfs_trans_handle *trans,
+ 		    struct btrfs_root *root, u64 bytenr, u64 len);
+diff --git a/fs/btrfs/hash.h b/fs/btrfs/hash.h
+index db2ff97..1d98281 100644
+--- a/fs/btrfs/hash.h
++++ b/fs/btrfs/hash.h
+@@ -24,4 +24,14 @@ static inline u64 btrfs_name_hash(const char *name, int len)
+ {
+ 	return crc32c((u32)~1, name, len);
+ }
++
++/*
++ * Figure the key offset of an extended inode ref
++ */
++static inline u64 btrfs_extref_hash(u64 parent_objectid, const char *name,
++				    int len)
++{
++	return (u64) crc32c(parent_objectid, name, len);
++}
++
+ #endif
+diff --git a/fs/btrfs/inode-item.c b/fs/btrfs/inode-item.c
+index baa74f3..496fb1c 100644
+--- a/fs/btrfs/inode-item.c
++++ b/fs/btrfs/inode-item.c
+@@ -18,6 +18,7 @@
+ 
+ #include "ctree.h"
+ #include "disk-io.h"
++#include "hash.h"
+ #include "transaction.h"
+ 
+ static int find_name_in_backref(struct btrfs_path *path, const char *name,
+@@ -49,18 +50,56 @@ static int find_name_in_backref(struct btrfs_path *path, const char *name,
+ 	return 0;
+ }
+ 
+-struct btrfs_inode_ref *
++int find_name_in_ext_backref(struct btrfs_path *path, const char *name,
++			     int name_len,
++			     struct btrfs_inode_extref **extref_ret)
++{
++	struct extent_buffer *leaf;
++	struct btrfs_inode_extref *extref;
++	unsigned long ptr;
++	unsigned long name_ptr;
++	u32 item_size;
++	u32 cur_offset = 0;
++	int ref_name_len;
++
++	leaf = path->nodes[0];
++	item_size = btrfs_item_size_nr(leaf, path->slots[0]);
++	ptr = btrfs_item_ptr_offset(leaf, path->slots[0]);
++
++	/*
++	 * Search all extended backrefs in this item. We're only
++	 * looking through any collisions so most of the time this is
++	 * just going to compare against one buffer. If all is well,
++	 * we'll return success and the inode ref object.
++	 */
++	while (cur_offset < item_size) {
++		extref = (struct btrfs_inode_extref *) (ptr + cur_offset);
++		name_ptr = (unsigned long)(&extref->name);
++		ref_name_len = btrfs_inode_extref_name_len(leaf, extref);
++
++		if (ref_name_len == name_len
++		    && (memcmp_extent_buffer(leaf, name, name_ptr, name_len) == 0)) {
++			if (extref_ret)
++				*extref_ret = extref;
++			return 1;
++		}
++
++		cur_offset += ref_name_len + sizeof(*extref);
++	}
++	return 0;
++}
++
++static struct btrfs_inode_ref *
+ btrfs_lookup_inode_ref(struct btrfs_trans_handle *trans,
+-			struct btrfs_root *root,
+-			struct btrfs_path *path,
+-			const char *name, int name_len,
+-			u64 inode_objectid, u64 ref_objectid, int mod)
++		       struct btrfs_root *root,
++		       struct btrfs_path *path,
++		       const char *name, int name_len,
++		       u64 inode_objectid, u64 ref_objectid, int ins_len,
++		       int cow)
+ {
++	int ret;
+ 	struct btrfs_key key;
+ 	struct btrfs_inode_ref *ref;
+-	int ins_len = mod < 0 ? -1 : 0;
+-	int cow = mod != 0;
+-	int ret;
+ 
+ 	key.objectid = inode_objectid;
+ 	key.type = BTRFS_INODE_REF_KEY;
+@@ -76,20 +115,156 @@ btrfs_lookup_inode_ref(struct btrfs_trans_handle *trans,
+ 	return ref;
+ }
+ 
+-int btrfs_del_inode_ref(struct btrfs_trans_handle *trans,
++struct btrfs_inode_extref *
++btrfs_lookup_inode_extref(struct btrfs_trans_handle *trans,
++			  struct btrfs_root *root,
++			  struct btrfs_path *path,
++			  const char *name, int name_len,
++			  u64 inode_objectid, u64 ref_objectid, int ins_len,
++			  int cow)
++{
++	int ret;
++	struct btrfs_key key;
++	struct btrfs_inode_extref *extref;
++
++	key.objectid = inode_objectid;
++	key.type = BTRFS_INODE_EXTREF_KEY;
++	key.offset = btrfs_extref_hash(ref_objectid, name, name_len);
++
++	ret = btrfs_search_slot(trans, root, &key, path, ins_len, cow);
++	if (ret < 0)
++		return ERR_PTR(ret);
++	if (ret > 0)
++		return NULL;
++	if (!find_name_in_ext_backref(path, name, name_len, &extref))
++		return NULL;
++	return extref;
++}
++
++int btrfs_get_inode_ref_index(struct btrfs_trans_handle *trans,
++			      struct btrfs_root *root,
++			      struct btrfs_path *path,
++			      const char *name, int name_len,
++			      u64 inode_objectid, u64 ref_objectid, int mod,
++			      u64 *ret_index)
++{
++	struct btrfs_inode_ref *ref1;
++	struct btrfs_inode_extref *extref;
++	int ins_len = mod < 0 ? -1 : 0;
++	int cow = mod != 0;
++
++	ref1 = btrfs_lookup_inode_ref(trans, root, path, name, name_len,
++				      inode_objectid, ref_objectid, ins_len,
++				      cow);
++	if (IS_ERR(ref1))
++		return PTR_ERR(ref1);
++
++	if (ref1 != NULL) {
++		*ret_index = btrfs_inode_ref_index(path->nodes[0], ref1);
++		return 0;
++	}
++
++	btrfs_release_path(path);
++
++	extref = btrfs_lookup_inode_extref(trans, root, path, name,
++					   name_len, inode_objectid,
++					   ref_objectid, ins_len, cow);
++	if (IS_ERR(extref))
++		return PTR_ERR(extref);
++
++	if (extref) {
++		*ret_index = btrfs_inode_extref_index(path->nodes[0], extref);
++		return 0;
++	}
++
++	return -ENOENT;
++}
++
++int btrfs_del_inode_extref(struct btrfs_trans_handle *trans,
+ 			   struct btrfs_root *root,
+ 			   const char *name, int name_len,
+ 			   u64 inode_objectid, u64 ref_objectid, u64 *index)
+ {
+ 	struct btrfs_path *path;
+ 	struct btrfs_key key;
++	struct btrfs_inode_extref *extref;
++	struct extent_buffer *leaf;
++	int ret;
++	int del_len = name_len + sizeof(*extref);
++	unsigned long ptr;
++	unsigned long item_start;
++	u32 item_size;
++
++	key.objectid = inode_objectid;
++	btrfs_set_key_type(&key, BTRFS_INODE_EXTREF_KEY);
++	key.offset = btrfs_extref_hash(ref_objectid, name, name_len);
++
++	path = btrfs_alloc_path();
++	if (!path)
++		return -ENOMEM;
++
++	path->leave_spinning = 1;
++
++	ret = btrfs_search_slot(trans, root, &key, path, -1, 1);
++	if (ret > 0)
++		ret = -ENOENT;
++	if (ret < 0)
++		goto out;
++
++	/*
++	 * Sanity check - did we find the right item for this name?
++	 * This should always succeed so error here will make the FS
++	 * readonly.
++	 */
++	if (!find_name_in_ext_backref(path, name, name_len, &extref)) {
++		btrfs_std_error(root->fs_info, -ENOENT);
++		ret = -EROFS;
++		goto out;
++	}
++
++	leaf = path->nodes[0];
++	item_size = btrfs_item_size_nr(leaf, path->slots[0]);
++	if (index)
++		*index = btrfs_inode_extref_index(leaf, extref);
++
++	if (del_len == item_size) {
++		/*
++		 * Common case only one ref in the item, remove the
++		 * whole item.
++		 */
++		ret = btrfs_del_item(trans, root, path);
++		goto out;
++	}
++
++	ptr = (unsigned long)extref;
++	item_start = btrfs_item_ptr_offset(leaf, path->slots[0]);
++
++	memmove_extent_buffer(leaf, ptr, ptr + del_len,
++			      item_size - (ptr + del_len - item_start));
++
++	ret = btrfs_truncate_item(trans, root, path,
++				  item_size - del_len, 1);
++
++out:
++	btrfs_free_path(path);
++
++	return ret;
++}
++
++int btrfs_del_inode_ref(struct btrfs_trans_handle *trans,
++			struct btrfs_root *root,
++			const char *name, int name_len,
++			u64 inode_objectid, u64 ref_objectid, u64 *index)
++{
++	struct btrfs_path *path;
++	struct btrfs_key key;
+ 	struct btrfs_inode_ref *ref;
+ 	struct extent_buffer *leaf;
+ 	unsigned long ptr;
+ 	unsigned long item_start;
+ 	u32 item_size;
+ 	u32 sub_item_len;
+-	int ret;
++	int ret, search_ext_refs = 0;
+ 	int del_len = name_len + sizeof(*ref);
+ 
+ 	key.objectid = inode_objectid;
+@@ -105,12 +280,14 @@ int btrfs_del_inode_ref(struct btrfs_trans_handle *trans,
+ 	ret = btrfs_search_slot(trans, root, &key, path, -1, 1);
+ 	if (ret > 0) {
+ 		ret = -ENOENT;
++		search_ext_refs = 1;
+ 		goto out;
+ 	} else if (ret < 0) {
+ 		goto out;
  	}
- 
- 	if (!n_start && !n_resume) {
-@@ -1478,13 +1508,15 @@ out:
+ 	if (!find_name_in_backref(path, name, name_len, &ref)) {
+ 		ret = -ENOENT;
++		search_ext_refs = 1;
+ 		goto out;
+ 	}
+ 	leaf = path->nodes[0];
+@@ -132,6 +309,75 @@ int btrfs_del_inode_ref(struct btrfs_trans_handle *trans,
+ 				  item_size - sub_item_len, 1);
+ out:
+ 	btrfs_free_path(path);
++
++	if (search_ext_refs) {
++		/*
++		 * No refs were found, or we could not find the
++		 * name in our ref array. Find and remove the extended
++		 * inode ref then.
++		 */
++		return btrfs_del_inode_extref(trans, root, name, name_len,
++					      inode_objectid, ref_objectid, index);
++	}
++
++	return ret;
++}
++
++/*
++ * btrfs_insert_inode_extref() - Inserts an extended inode ref into a tree.
++ *
++ * The caller must have checked against BTRFS_LINK_MAX already.
++ */
++static int btrfs_insert_inode_extref(struct btrfs_trans_handle *trans,
++				     struct btrfs_root *root,
++				     const char *name, int name_len,
++				     u64 inode_objectid, u64 ref_objectid, u64 index)
++{
++	struct btrfs_inode_extref *extref;
++	int ret;
++	int ins_len = name_len + sizeof(*extref);
++	unsigned long ptr;
++	struct btrfs_path *path;
++	struct btrfs_key key;
++	struct extent_buffer *leaf;
++	struct btrfs_item *item;
++
++	key.objectid = inode_objectid;
++	key.type = BTRFS_INODE_EXTREF_KEY;
++	key.offset = btrfs_extref_hash(ref_objectid, name, name_len);
++
++	path = btrfs_alloc_path();
++	if (!path)
++		return -ENOMEM;
++
++	path->leave_spinning = 1;
++	ret = btrfs_insert_empty_item(trans, root, path, &key,
++				      ins_len);
++	if (ret == -EEXIST) {
++		if (find_name_in_ext_backref(path, name, name_len, NULL))
++			goto out;
++
++		ret = btrfs_extend_item(trans, root, path, ins_len);
++	}
++	if (ret < 0)
++		goto out;
++
++	leaf = path->nodes[0];
++	item = btrfs_item_nr(leaf, path->slots[0]);
++	ptr = (unsigned long)btrfs_item_ptr(leaf, path->slots[0], char);
++	ptr += btrfs_item_size(leaf, item) - ins_len;
++	extref = (struct btrfs_inode_extref *)ptr;
++
++	btrfs_set_inode_extref_name_len(path->nodes[0], extref, name_len);
++	btrfs_set_inode_extref_index(path->nodes[0], extref, index);
++	btrfs_set_inode_extref_parent(path->nodes[0], extref, ref_objectid);
++
++	ptr = (unsigned long)&extref->name;
++	write_extent_buffer(path->nodes[0], name, ptr, name_len);
++	btrfs_mark_buffer_dirty(path->nodes[0]);
++
++out:
++	btrfs_free_path(path);
+ 	return ret;
  }
  
- static const char * const cmd_scrub_start_usage[] = {
--	"btrfs scrub start [-Bdqr] <path>|<device>",
-+	"btrfs scrub start Bdqr] [-c ioprio_class -n ioprio_classdata] <path>|<device>\n",
- 	"Start a new scrub",
- 	"",
- 	"-B     do not background",
- 	"-d     stats per device (-B only)",
- 	"-q     be quiet",
- 	"-r     read only mode",
-+	"-c     set ioprio class (see ionice(1) manpage)",
-+	"-n     set ioprio classdata (see ionice(1) manpage)",
- 	NULL
- };
+@@ -189,6 +435,19 @@ int btrfs_insert_inode_ref(struct btrfs_trans_handle *trans,
  
-@@ -1550,13 +1582,15 @@ again:
+ out:
+ 	btrfs_free_path(path);
++
++	if (ret == -EMLINK) {
++		struct btrfs_super_block *disk_super = root->fs_info->super_copy;
++		/* We ran out of space in the ref array. Need to
++		 * add an extended ref. */
++		if (btrfs_super_incompat_flags(disk_super)
++		    & BTRFS_FEATURE_INCOMPAT_EXTENDED_IREF)
++			ret = btrfs_insert_inode_extref(trans, root, name,
++							name_len,
++							inode_objectid,
++							ref_objectid, index);
++	}
++
+ 	return ret;
  }
  
- static const char * const cmd_scrub_resume_usage[] = {
--	"btrfs scrub resume [-Bdqr] <path>|<device>",
-+	"btrfs scrub resume [-Bdqr] [-c ioprio_class -n ioprio_classdata] <path>|<device>\n",
- 	"Resume previously canceled or interrupted scrub",
- 	"",
- 	"-B     do not background",
- 	"-d     stats per device (-B only)",
- 	"-q     be quiet",
- 	"-r     read only mode",
-+	"-c     set ioprio class (see ionice(1) manpage)",
-+	"-n     set ioprio classdata (see ionice(1) manpage)",
- 	NULL
- };
+diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
+index 892b347..5ce89e4 100644
+--- a/fs/btrfs/inode.c
++++ b/fs/btrfs/inode.c
+@@ -2689,7 +2689,6 @@ static struct btrfs_trans_handle *__unlink_start_trans(struct inode *dir,
+ 	struct btrfs_trans_handle *trans;
+ 	struct btrfs_root *root = BTRFS_I(dir)->root;
+ 	struct btrfs_path *path;
+-	struct btrfs_inode_ref *ref;
+ 	struct btrfs_dir_item *di;
+ 	struct inode *inode = dentry->d_inode;
+ 	u64 index;
+@@ -2803,17 +2802,17 @@ static struct btrfs_trans_handle *__unlink_start_trans(struct inode *dir,
+ 	}
+ 	btrfs_release_path(path);
  
-diff --git a/man/btrfs.8.in b/man/btrfs.8.in
-index be478e0..ccb2225 100644
---- a/man/btrfs.8.in
-+++ b/man/btrfs.8.in
-@@ -39,11 +39,11 @@ btrfs \- control a btrfs filesystem
- .PP
- \fBbtrfs\fP \fBdevice delete\fP\fI <device> [<device>...] <path> \fP
- .PP
--\fBbtrfs\fP \fBscrub start\fP [-Bdqru] {\fI<path>\fP|\fI<device>\fP}
-+\fBbtrfs\fP \fBscrub start\fP [-Bdqru] [-c ioprio_class -n ioprio_classdata] {\fI<path>\fP|\fI<device>\fP}
- .PP
- \fBbtrfs\fP \fBscrub cancel\fP {\fI<path>\fP|\fI<device>\fP}
- .PP
--\fBbtrfs\fP \fBscrub resume\fP [-Bdqru] {\fI<path>\fP|\fI<device>\fP}
-+\fBbtrfs\fP \fBscrub resume\fP [-Bdqru] [-c ioprio_class -n ioprio_classdata] {\fI<path>\fP|\fI<device>\fP}
- .PP
- \fBbtrfs\fP \fBscrub status\fP [-d] {\fI<path>\fP|\fI<device>\fP}
- .PP
-@@ -230,12 +230,16 @@ Finally, if \fB--all-devices\fP is passed, all the devices under /dev are
- scanned.
- .TP
+-	ref = btrfs_lookup_inode_ref(trans, root, path,
+-				dentry->d_name.name, dentry->d_name.len,
+-				ino, dir_ino, 0);
+-	if (IS_ERR(ref)) {
+-		err = PTR_ERR(ref);
++	ret = btrfs_get_inode_ref_index(trans, root, path, dentry->d_name.name,
++					dentry->d_name.len, ino, dir_ino, 0,
++					&index);
++	if (ret) {
++		err = ret;
+ 		goto out;
+ 	}
+-	BUG_ON(!ref);
++
+ 	if (check_path_shared(root, path))
+ 		goto out;
+-	index = btrfs_inode_ref_index(path->nodes[0], ref);
++
+ 	btrfs_release_path(path);
  
--\fBscrub start\fP [-Bdqru] {\fI<path>\fP|\fI<device>\fP}
-+\fBscrub start\fP [-Bdqru] [-c ioprio_class -n ioprio_classdata] {\fI<path>\fP|\fI<device>\fP}
- Start a scrub on all devices of the filesystem identified by \fI<path>\fR or on
- a single \fI<device>\fR. Without options, scrub is started as a background
- process. Progress can be obtained with the \fBscrub status\fR command. Scrubbing
- involves reading all data from all disks and verifying checksums. Errors are
- corrected along the way if possible.
-+.IP
-+The default IO priority of scrub is the idle class. The priority can be configured similar to the
-+.BR ionice (1)
-+syntax.
- .RS
+ 	/*
+@@ -4484,6 +4483,12 @@ static struct inode *btrfs_new_inode(struct btrfs_trans_handle *trans,
+ 	btrfs_set_key_type(&key[0], BTRFS_INODE_ITEM_KEY);
+ 	key[0].offset = 0;
  
- \fIOptions\fR
-@@ -249,6 +253,14 @@ Quiet. Omit error messages and statistics.
- Read only mode. Do not attempt to correct anything.
- .IP -u 5
- Scrub unused space as well. (NOT IMPLEMENTED)
-+.IP -c 5
-+Set IO priority class (see
-+.BR ionice (1)
-+manpage).
-+.IP -n 5
-+Set IO priority classdata (see
-+.BR ionice (1)
-+manpage).
- .RE
- .TP
++	/*
++	 * Start new inodes with an inode_ref. This is slightly more
++	 * efficient for small numbers of hard links since they will
++	 * be packed into one item. Extended refs will kick in if we
++	 * add more hard links than can fit in the ref item.
++	 */
+ 	key[1].objectid = objectid;
+ 	btrfs_set_key_type(&key[1], BTRFS_INODE_REF_KEY);
+ 	key[1].offset = ref_objectid;
+@@ -4777,7 +4782,7 @@ static int btrfs_link(struct dentry *old_dentry, struct inode *dir,
+ 	if (root->objectid != BTRFS_I(inode)->root->objectid)
+ 		return -EXDEV;
  
-@@ -260,7 +272,7 @@ If a \fI<device>\fR is given, the corresponding filesystem is found and
- \fBscrub cancel\fP behaves as if it was called on that filesystem.
- .TP
+-	if (inode->i_nlink == ~0U)
++	if (inode->i_nlink >= BTRFS_LINK_MAX)
+ 		return -EMLINK;
  
--\fBscrub resume\fP [-Bdqru] {\fI<path>\fP|\fI<device>\fP}
-+\fBscrub resume\fP [-Bdqru] [-c ioprio_class -n ioprio_classdata] {\fI<path>\fP|\fI<device>\fP}
- Resume a canceled or interrupted scrub cycle on the filesystem identified by
- \fI<path>\fR or on a given \fI<device>\fR. Does not start a new scrub if the
- last scrub finished successfully.
-@@ -319,4 +331,5 @@ and not suitable for any uses other than benchmarking and review.
- Please refer to the btrfs wiki http://btrfs.wiki.kernel.org for
- further details.
- .SH SEE ALSO
--.BR mkfs.btrfs (8)
-+.BR mkfs.btrfs (8),
-+.BR ionice (1)
+ 	err = btrfs_set_inode_index(dir, &index);
 -- 
-1.7.10.2
+1.7.7
 

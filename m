@@ -1,67 +1,68 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-ob0-f174.google.com ([209.85.214.174]:59795 "EHLO
-	mail-ob0-f174.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1751455Ab2EUKFJ convert rfc822-to-8bit (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 21 May 2012 06:05:09 -0400
-Received: by obbtb18 with SMTP id tb18so7923566obb.19
-        for <linux-btrfs@vger.kernel.org>; Mon, 21 May 2012 03:05:09 -0700 (PDT)
+Received: from brockman.in8.de ([85.214.220.56]:59668 "EHLO mail.in8.de"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1757698Ab2EUKoM (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Mon, 21 May 2012 06:44:12 -0400
+Message-ID: <4FBA1C7B.8000308@jan-o-sch.net>
+Date: Mon, 21 May 2012 12:44:11 +0200
+From: Jan Schmidt <list.btrfs@jan-o-sch.net>
 MIME-Version: 1.0
-In-Reply-To: <4FBA0BF1.1000901@cn.fujitsu.com>
-References: <CAHf9xvbp=FQwY1Pn9FDaMPdGqe-G4aSMeBK8kUAq-5Kry0YaTA@mail.gmail.com>
-	<20120518115041.GZ8938@carfax.org.uk>
-	<CAHf9xva5ux5VXbww2YMjORSSdhSKH7L6W5vbP-ZnxijiGK4fUw@mail.gmail.com>
-	<4FB9A188.9090403@cn.fujitsu.com>
-	<CAHf9xvZ8+ZXFLRM5R_xjekQOsf2Xaj0UEANMVW5BBJ2YjjhGuw@mail.gmail.com>
-	<4FBA0BF1.1000901@cn.fujitsu.com>
-Date: Mon, 21 May 2012 13:05:09 +0300
-Message-ID: <CAHf9xvZDwjSJvJnaX9qmYyXJoM4t=E2zi=eH0bZpknYFpsAsjw@mail.gmail.com>
+To: Alex Lyakas <alex.bolshoy.btrfs@gmail.com>
+CC: linux-btrfs@vger.kernel.org
 Subject: Re: Newbie questions on some of btrfs code...
-From: Alex Lyakas <alex.bolshoy.btrfs@gmail.com>
-To: Liu Bo <liubo2009@cn.fujitsu.com>
-Cc: linux-btrfs@vger.kernel.org
+References: <CAHf9xvbp=FQwY1Pn9FDaMPdGqe-G4aSMeBK8kUAq-5Kry0YaTA@mail.gmail.com>
+In-Reply-To: <CAHf9xvbp=FQwY1Pn9FDaMPdGqe-G4aSMeBK8kUAq-5Kry0YaTA@mail.gmail.com>
 Content-Type: text/plain; charset=ISO-8859-1
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hi Liu,
-thanks for the clarifications.
+Hi Alex,
 
-I did not understand the dd example of yours, though.
+On Fri, May 18, 2012 at 13:21 (+0200), Alex Lyakas wrote:
+> Some general questions on the ctree code.
+> 
+> # I saw that slot==0 is special. My understanding is that btrfs
+> maintains the property that the parent of each node/leaf has a key
+> pointing to that node/leaf, which must be equal to the key in the
+> slot==0 of this node/leaf. That's what fixup_low_keys() tries to
+> maintain. Is this correct?
 
-> So for the following situation:
->>       item 23 key (266 EXTENT_DATA 4096) itemoff 2269 itemsize 53
->>               extent data disk byte 0 nr 0
->>               extent data offset 0 nr 4096 ram 8192
->>               extent compression 0
->
-> As your case, after the first 'size 5' inline extent is written,
-> "nr 4096 < ram 8192" could come from:
-> 1) dd if=/dev/zero of=/mnt/btrfs/foobar bs=1k seek=12 count=4 conv=notrunc;sync
-> 2) dd if=/dev/zero of=/mnt/btrfs/foobar bs=1k seek=8 count=4 conv=notrunc;sync
->
-> 1) makes
->>       item 23 key (266 EXTENT_DATA 4096) itemoff 2269 itemsize 53
->>               extent data disk byte 0 nr 0
->>               extent data offset 0 nr 8192 ram 8192
->>               extent compression 0
->
-> 2) makes
->>       item 23 key (266 EXTENT_DATA 4096) itemoff 2269 itemsize 53
->>               extent data disk byte 0 nr 0
->>               extent data offset 0 nr 4096 ram 8192
->>               extent compression 0
+Yes. I'm not 100% sure if the key in the parent node must match exactly
+the first key of the child node. It is probably allowed that it's less
+or equal than the first key. It is guaranteed to be larger than the
+largest of the previous (left) node, though.
 
-You talk about the "ram_bytes" field. But do I need to look at it, if
-I don't use compression or another encoding? Shouldn't I always look
-at btrfs_file_extent_item::offset/num_bytes for the real data, and at
-btrfs_file_extent_item::disk_bytenr/disk_num_bytes for finding
-CHUNK_ITEM? Any reason I should be aware of "ram_bytes" field?
+And yes, that's what fixup_low_keys is correcting.
 
-The first dd created a 4k extent at offset 12k. How did we end up with
-"nr 8192 ram 8192" and offset 4k?
-The second dd added a 4k extent at 8k offset. But still EXTENT_DATA
-has 4k offset.
-So now we should have have twp 4k extents or one 8k extent. What am I missing?
+> # If my understanding in the previous bullet is correct: Is that the
+> reason that in btrfs_prev_leaf() it is assumed that if there is a
+> lesser key, btrfs_search_slot() will never bring us to the slot==0 of
+> the current leaf?
 
-Alex.
+It's quite straight: We look for a key smaller than the first (slot 0)
+of the current leaf. If we find the current leaf again (because
+btrfs_search_slot returns the place where such a key would have be
+inserted), then there's no previous leaf. No preconditions or
+assumptions on nodes in levels needed.
+
+> # btrfs_search_slot(): how can it happen that b becomes NULL, and we
+> exit the while loop? (and set ret=1)
+
+Good question, probably a leftover. b can't be NULL in the beginning,
+because there's always a root node and a commit_root. b
+setup_nodes_for_search only sets b NULL when it returns EAGAIN. And the
+regular loop exit is in the "if (level == 0)" path.
+
+> # btrfs_insert_empty_items(): if nr>1, then an array of keys is
+> expected to be passed. But btrfs_search_slot() is searching only for
+> the first key. What happens if the first key does not exist (as
+> expected), but the next key in the array exists?
+
+The reason here is that key ordering == insertion order. That function
+only has two callers: once from log replay (where either all the items
+from the log will exist in the leaf or none) and once from inode.c,
+inserting INODE_ITEM and INODE_REF, which never come without the other.
+But you are right, there seems to be no safety net in this function, a
+comment might be useful.
+
+-Jan

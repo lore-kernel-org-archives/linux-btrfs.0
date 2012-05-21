@@ -1,605 +1,322 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cantor2.suse.de ([195.135.220.15]:54503 "EHLO mx2.suse.de"
+Received: from cantor2.suse.de ([195.135.220.15]:54496 "EHLO mx2.suse.de"
 	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S932361Ab2EUVty (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 21 May 2012 17:49:54 -0400
+	id S932198Ab2EUVtx (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Mon, 21 May 2012 17:49:53 -0400
 From: Mark Fasheh <mfasheh@suse.de>
 To: linux-btrfs@vger.kernel.org
 Cc: Chris Mason <chris.mason@oracle.com>, Jan Schmidt <mail@jan-o-sch.net>,
-        Mark Fasheh <mfasheh@suse.com>, Mark Fasheh <mfasheh@suse.de>
-Subject: [PATCH 2/3] btrfs: extended inode refs
-Date: Mon, 21 May 2012 14:46:20 -0700
-Message-Id: <1337636781-12575-3-git-send-email-mfasheh@suse.de>
-In-Reply-To: <1337636781-12575-1-git-send-email-mfasheh@suse.de>
-References: <1337636781-12575-1-git-send-email-mfasheh@suse.de>
+        Mark Fasheh <mfasheh@suse.de>
+Subject: [PATCH 0/3] btrfs: extended inode refs
+Date: Mon, 21 May 2012 14:46:18 -0700
+Message-Id: <1337636781-12575-1-git-send-email-mfasheh@suse.de>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
+Currently btrfs has a limitation on the maximum number of hard links an
+inode can have. Specifically, links are stored in an array of ref
+items:
+
+struct btrfs_inode_ref {
+	__le64 index;
+	__le16 name_len;
+	/* name goes here */
+} __attribute__ ((__packed__));
+
+The ref arrays are found via key triple:
+
+(inode objectid, BTRFS_INODE_EXTREF_KEY, parent dir objectid)
+
+Since items can not exceed the size of a leaf, the total number of links
+that can be stored for a given inode / parent dir pair is limited to under
+4k. This works fine for the most common case of few to only a handful of
+links. Once the link count gets higher however, we begin to return EMLINK.
+
+
+The following patches fix this situation by introducing a new ref item:
+
+struct btrfs_inode_extref {
+	__le64 parent_objectid;
+	__le64 index;
+	__le16 name_len;
+	__u8   name[0];
+	/* name goes here */
+} __attribute__ ((__packed__));
+
+Extended refs use a different addressing scheme. Extended ref keys
+look like:
+
+(inode objectid, BTRFS_INODE_EXTREF_KEY, hash)
+
+Where hash is defined as a function of the parent objectid and link name.
+
+This effectively fixes the limitation, though we have a slightly less
+efficient packing of link data. To keep the best of both worlds then, I
+implemented the following behavior:
+
+Extended refs don't replace the existing ref array. An inode gets an
+extended ref for a given link _only_ after the ref array has been filled.  So
+the most common cases shouldn't actually see any difference in performance
+or disk usage as they'll never get to the point where we're using an
+extended ref.
+
+It's important while reading the patches however that there's still the
+possibility that we can have a set of operations that grow out an inode ref
+array (adding some extended refs) and then remove only the refs in the
+array.  I don't really see this being common but it's a case we always have
+to consider when coding these changes.
+
+Extended refs handle the case of a hash collision by storing items with the
+same key in an array just like the dir item code. This means we have to
+search an array on rare occasion.
+
+Testing wise, the basic namespace operations work well (link, unlink, etc).
+The rest has gotten less debugging (and I really don't have a great way of
+testing the code in tree-log.c)
+
+
+Finally, these patches are based off Linux v3.3.
+	--Mark
+
+Changes from the first version of this patch:
+
+Thanks to Jan Schmidt for giving it a very nice review. Most of the changes
+are from his suggestions.
+
+- Implemented collision handling.
+
+- Standardized naming of extended ref variables (extref).
+
+- moved hashing code to hash.h and gave the function a better name
+  (btrfs_extref_hash).
+
+- A few cleanups of error handling.
+
+- Fixed a bug where btrfs_find_one_extref() was erroneously incrementing the
+  extref offset before returning it.
+
+- Moved btrfs_find_one_extref() into backref.c. This means that backref.c no
+  longer has to include tree-log.h.
+
+- Fixed a bug in iref_to_path() where we were looking for extended refs
+  (this actually lead to other bugs). Since iref_to_path() only deals with
+  directory inodes we would never have an extended ref.
+
+- added some explicit locking calls in the backref.c changes
+
+- Instead of adding a second iterate function for extended refs, I fixed up
+  iterate_irefs_t arguments to take the raw information from whatever ref
+  version we're coming from. This removed a bunch of duplicated code.
+
+- I am actually including a patch to btrfs-progs with this drop. :)
+
+
+
 From: Mark Fasheh <mfasheh@suse.com>
 
-Teach tree-log.c about extended inode refs. In particular, we have to adjust
-the behavior of inode ref replay as well as log tree recovery to account for
-the existence of extended refs.
+[PATCH] btrfs-progs: basic support for extended inode refs
+
+This patch adds enough mkfs support to turn on the superblock flag and
+btrfs-debug-tree support so that we can visualize the state of extended refs
+on disk.
 
 Signed-off-by: Mark Fasheh <mfasheh@suse.de>
 ---
- fs/btrfs/backref.c  |   68 +++++++++++
- fs/btrfs/backref.h  |    5 +
- fs/btrfs/tree-log.c |  308 +++++++++++++++++++++++++++++++++++++++++---------
- fs/btrfs/tree-log.h |    1 +
- 4 files changed, 326 insertions(+), 56 deletions(-)
+ ctree.h      |   27 ++++++++++++++++++++++++++-
+ mkfs.c       |   14 +++++++++-----
+ print-tree.c |   44 ++++++++++++++++++++++++++++++++++++++++++++
+ 3 files changed, 79 insertions(+), 6 deletions(-)
 
-diff --git a/fs/btrfs/backref.c b/fs/btrfs/backref.c
-index 0436c12..c97240a 100644
---- a/fs/btrfs/backref.c
-+++ b/fs/btrfs/backref.c
-@@ -857,6 +857,74 @@ static int inode_ref_info(u64 inum, u64 ioff, struct btrfs_root *fs_root,
- 				found_key);
- }
+diff --git a/ctree.h b/ctree.h
+index 6545c50..ebf38fe 100644
+--- a/ctree.h
++++ b/ctree.h
+@@ -115,6 +115,13 @@ struct btrfs_trans_handle;
+  */
+ #define BTRFS_NAME_LEN 255
  
-+int btrfs_find_one_extref(struct btrfs_root *root, u64 inode_objectid,
-+			  u64 start_off, struct btrfs_path *path,
-+			  struct btrfs_inode_extref **ret_extref,
-+			  u64 *found_off)
-+{
-+	int ret, slot;
-+	struct btrfs_key key;
-+	struct btrfs_key found_key;
-+	struct btrfs_inode_extref *extref;
-+	struct extent_buffer *leaf;
-+	unsigned long ptr;
++/*
++ * Theoretical limit is larger, but we keep this down to a sane
++ * value. That should limit greatly the possibility of collisions on
++ * inode ref items.
++ */
++#define	BTRFS_LINK_MAX	65535U
 +
-+	key.objectid = inode_objectid;
-+	btrfs_set_key_type(&key, BTRFS_INODE_EXTREF_KEY);
-+	key.offset = start_off;
-+
-+	ret = btrfs_search_slot(NULL, root, &key, path, 0, 0);
-+	if (ret < 0)
-+		return ret;
-+
-+	while (1) {
-+		leaf = path->nodes[0];
-+		slot = path->slots[0];
-+		if (slot >= btrfs_header_nritems(leaf)) {
-+			/*
-+			 * If the item at offset is not found,
-+			 * btrfs_search_slot will point us to the slot
-+			 * where it should be inserted. In our case
-+			 * that will be the slot directly before the
-+			 * next INODE_REF_KEY_V2 item. In the case
-+			 * that we're pointing to the last slot in a
-+			 * leaf, we must move one leaf over.
-+			 */
-+			ret = btrfs_next_leaf(root, path);
-+			if (ret) {
-+				if (ret >= 1)
-+					ret = -ENOENT;
-+				break;
-+			}
-+			continue;
-+		}
-+
-+		btrfs_item_key_to_cpu(leaf, &found_key, slot);
-+
-+		/*
-+		 * Check that we're still looking at an extended ref key for
-+		 * this particular objectid. If we have different
-+		 * objectid or type then there are no more to be found
-+		 * in the tree and we can exit.
-+		 */
-+		ret = -ENOENT;
-+		if (found_key.objectid != inode_objectid)
-+			break;
-+		if (btrfs_key_type(&found_key) != BTRFS_INODE_EXTREF_KEY)
-+			break;
-+
-+		ret = 0;
-+		ptr = btrfs_item_ptr_offset(leaf, path->slots[0]);
-+		extref = (struct btrfs_inode_extref *)ptr;
-+		*ret_extref = extref;
-+		if (found_off)
-+			*found_off = found_key.offset;
-+		break;
-+	}
-+
-+	return ret;
-+}
+ /* 32 bytes in various csum fields */
+ #define BTRFS_CSUM_SIZE 32
+ 
+@@ -412,6 +419,7 @@ struct btrfs_super_block {
+ #define BTRFS_FEATURE_INCOMPAT_DEFAULT_SUBVOL	(1ULL << 1)
+ #define BTRFS_FEATURE_INCOMPAT_MIXED_GROUPS	(1ULL << 2)
+ #define BTRFS_FEATURE_INCOMPAT_COMPRESS_LZO	(1ULL << 3)
 +
  /*
-  * this iterates to turn a btrfs_inode_ref into a full filesystem path. elements
-  * of the path are separated by '/' and the path is guaranteed to be
-diff --git a/fs/btrfs/backref.h b/fs/btrfs/backref.h
-index d00dfa9..8586d1b 100644
---- a/fs/btrfs/backref.h
-+++ b/fs/btrfs/backref.h
-@@ -64,4 +64,9 @@ struct inode_fs_paths *init_ipath(s32 total_bytes, struct btrfs_root *fs_root,
- 					struct btrfs_path *path);
- void free_ipath(struct inode_fs_paths *ipath);
+  * some patches floated around with a second compression method
+  * lets save that incompat here for when they do get in
+@@ -426,6 +434,7 @@ struct btrfs_super_block {
+  */
+ #define BTRFS_FEATURE_INCOMPAT_BIG_METADATA     (1ULL << 5)
  
-+int btrfs_find_one_extref(struct btrfs_root *root, u64 inode_objectid,
-+			  u64 start_off, struct btrfs_path *path,
-+			  struct btrfs_inode_extref **ret_extref,
-+			  u64 *found_off);
-+
- #endif
-diff --git a/fs/btrfs/tree-log.c b/fs/btrfs/tree-log.c
-index 966cc74..1e812dd 100644
---- a/fs/btrfs/tree-log.c
-+++ b/fs/btrfs/tree-log.c
-@@ -23,8 +23,10 @@
- #include "disk-io.h"
- #include "locking.h"
- #include "print-tree.h"
-+#include "backref.h"
- #include "compat.h"
- #include "tree-log.h"
-+#include "hash.h"
++#define BTRFS_FEATURE_INCOMPAT_EXTENDED_IREF   (1ULL << 6)
  
- /* magic values for the inode_only field in btrfs_log_inode:
-  *
-@@ -751,10 +753,10 @@ static noinline int backref_in_log(struct btrfs_root *log,
- 	unsigned long ptr;
- 	unsigned long ptr_end;
- 	unsigned long name_ptr;
--	int found_name_len;
- 	int item_size;
- 	int ret;
- 	int match = 0;
-+	int found_name_len;
- 
- 	path = btrfs_alloc_path();
- 	if (!path)
-@@ -764,8 +766,16 @@ static noinline int backref_in_log(struct btrfs_root *log,
- 	if (ret != 0)
- 		goto out;
- 
--	item_size = btrfs_item_size_nr(path->nodes[0], path->slots[0]);
- 	ptr = btrfs_item_ptr_offset(path->nodes[0], path->slots[0]);
-+
-+	if (key->type == BTRFS_INODE_EXTREF_KEY) {
-+		if (find_name_in_ext_backref(path, name, namelen, NULL))
-+			match = 1;
-+
-+		goto out;
-+	}
-+
-+	item_size = btrfs_item_size_nr(path->nodes[0], path->slots[0]);
- 	ptr_end = ptr + item_size;
- 	while (ptr < ptr_end) {
- 		ref = (struct btrfs_inode_ref *)ptr;
-@@ -786,6 +796,50 @@ out:
- 	return match;
- }
- 
-+static int extref_get_fields(struct extent_buffer *eb, int slot,
-+			     u32 *namelen, char **name, u64 *index,
-+			     u64 *parent_objectid)
-+{
-+	struct btrfs_inode_extref *extref;
-+
-+	extref = (struct btrfs_inode_extref *)btrfs_item_ptr_offset(eb, slot);
-+
-+	*namelen = btrfs_inode_extref_name_len(eb, extref);
-+	*name = kmalloc(*namelen, GFP_NOFS);
-+	if (*name == NULL)
-+		return -ENOMEM;
-+
-+	read_extent_buffer(eb, *name, (unsigned long)&extref->name,
-+			   *namelen);
-+
-+	*index = btrfs_inode_extref_index(eb, extref);
-+	if (parent_objectid)
-+		*parent_objectid = btrfs_inode_extref_parent(eb, extref);
-+
-+	return 0;
-+}
-+
-+static int ref_get_fields(struct btrfs_key *key, struct extent_buffer *eb,
-+			  int slot, u32 *namelen, char **name, u64 *index,
-+			  u64 *parent_objectid)
-+{
-+	struct btrfs_inode_ref *ref;
-+
-+	ref = (struct btrfs_inode_ref *)btrfs_item_ptr_offset(eb, slot);
-+
-+	*namelen = btrfs_inode_ref_name_len(eb, ref);
-+	*name = kmalloc(*namelen, GFP_NOFS);	
-+	if (*name == NULL)
-+		return -ENOMEM;
-+
-+	read_extent_buffer(eb, *name, (unsigned long)(ref + 1), *namelen);
-+
-+	*index = btrfs_inode_ref_index(eb, ref);
-+	if (parent_objectid)
-+		*parent_objectid = key->offset;
-+
-+	return 0;
-+}
+ #define BTRFS_FEATURE_COMPAT_SUPP		0ULL
+ #define BTRFS_FEATURE_COMPAT_RO_SUPP		0ULL
+@@ -434,7 +443,8 @@ struct btrfs_super_block {
+ 	 BTRFS_FEATURE_INCOMPAT_DEFAULT_SUBVOL |	\
+ 	 BTRFS_FEATURE_INCOMPAT_COMPRESS_LZO |		\
+ 	 BTRFS_FEATURE_INCOMPAT_BIG_METADATA |		\
+-	 BTRFS_FEATURE_INCOMPAT_MIXED_GROUPS)
++	 BTRFS_FEATURE_INCOMPAT_MIXED_GROUPS |		\
++	 BTRFS_FEATURE_INCOMPAT_EXTENDED_IREF)
  
  /*
-  * replay one inode back reference item found in the log tree.
-@@ -801,15 +855,25 @@ static noinline int add_inode_ref(struct btrfs_trans_handle *trans,
- 				  struct btrfs_key *key)
- {
- 	struct btrfs_inode_ref *ref;
-+	struct btrfs_inode_extref *extref;
- 	struct btrfs_dir_item *di;
-+	struct btrfs_key search_key;
- 	struct inode *dir;
- 	struct inode *inode;
- 	unsigned long ref_ptr;
- 	unsigned long ref_end;
- 	char *name;
-+	char *victim_name;
- 	int namelen;
-+	int victim_name_len;
- 	int ret;
- 	int search_done = 0;
-+	int log_ref_ver = 0;
-+	u64 parent_objectid;
-+	u64 inode_objectid;
-+	u64 ref_index;
-+	struct extent_buffer *leaf;
-+	int ref_struct_size;
+  * A leaf is full of items. offset and size tell us where to find
+@@ -573,6 +583,13 @@ struct btrfs_inode_ref {
+ 	/* name goes here */
+ } __attribute__ ((__packed__));
  
- 	/*
- 	 * it is possible that we didn't log all the parent directories
-@@ -817,32 +881,44 @@ static noinline int add_inode_ref(struct btrfs_trans_handle *trans,
- 	 * copy the back ref in.  The link count fixup code will take
- 	 * care of the rest
- 	 */
--	dir = read_one_inode(root, key->offset);
++struct btrfs_inode_extref {
++	__le64 parent_objectid;
++	__le64 index;
++	__le16 name_len;
++	__u8   name[0]; /* name goes here */
++} __attribute__ ((__packed__));
 +
-+
-+	ref_ptr = btrfs_item_ptr_offset(eb, slot);
-+	ref_end = ref_ptr + btrfs_item_size_nr(eb, slot);
-+
-+	if (key->type == BTRFS_INODE_EXTREF_KEY) {	
-+		ref_struct_size = sizeof(*extref);
-+		log_ref_ver = 1;
-+
-+		ret = extref_get_fields(eb, slot, &namelen, &name, &ref_index,
-+					&parent_objectid);
-+		if (ret)
-+			return ret;
-+	} else {
-+		ref_struct_size = sizeof(*ref);
-+
-+		ret = ref_get_fields(key, eb, slot, &namelen, &name,
-+				     &ref_index, &parent_objectid);
-+		if (ret)
-+			return -ENOMEM;
-+	}
-+
-+	inode_objectid = key->objectid;
-+
-+	dir = read_one_inode(root, parent_objectid);
- 	if (!dir)
- 		return -ENOENT;
+ struct btrfs_timespec {
+ 	__le64 sec;
+ 	__le32 nsec;
+@@ -866,6 +883,7 @@ struct btrfs_root {
+  */
+ #define BTRFS_INODE_ITEM_KEY		1
+ #define BTRFS_INODE_REF_KEY		12
++#define BTRFS_INODE_EXTREF_KEY		13
+ #define BTRFS_XATTR_ITEM_KEY		24
+ #define BTRFS_ORPHAN_ITEM_KEY		48
  
--	inode = read_one_inode(root, key->objectid);
-+	inode = read_one_inode(root, inode_objectid);
- 	if (!inode) {
- 		iput(dir);
- 		return -EIO;
- 	}
+@@ -1145,6 +1163,13 @@ BTRFS_SETGET_FUNCS(inode_ref_name_len, struct btrfs_inode_ref, name_len, 16);
+ BTRFS_SETGET_STACK_FUNCS(stack_inode_ref_name_len, struct btrfs_inode_ref, name_len, 16);
+ BTRFS_SETGET_FUNCS(inode_ref_index, struct btrfs_inode_ref, index, 64);
  
--	ref_ptr = btrfs_item_ptr_offset(eb, slot);
--	ref_end = ref_ptr + btrfs_item_size_nr(eb, slot);
--
- again:
--	ref = (struct btrfs_inode_ref *)ref_ptr;
--
--	namelen = btrfs_inode_ref_name_len(eb, ref);
--	name = kmalloc(namelen, GFP_NOFS);
--	BUG_ON(!name);
--
--	read_extent_buffer(eb, name, (unsigned long)(ref + 1), namelen);
--
- 	/* if we already have a perfect match, we're done */
- 	if (inode_in_dir(root, path, btrfs_ino(dir), btrfs_ino(inode),
--			 btrfs_inode_ref_index(eb, ref),
--			 name, namelen)) {
-+			 ref_index, name, namelen)) {
- 		goto out;
- 	}
++/* struct btrfs_inode_extref */
++BTRFS_SETGET_FUNCS(inode_extref_parent, struct btrfs_inode_extref,
++		   parent_objectid, 64);
++BTRFS_SETGET_FUNCS(inode_extref_name_len, struct btrfs_inode_extref,
++		   name_len, 16);
++BTRFS_SETGET_FUNCS(inode_extref_index, struct btrfs_inode_extref, index, 64);
++
+ /* struct btrfs_inode_item */
+ BTRFS_SETGET_FUNCS(inode_generation, struct btrfs_inode_item, generation, 64);
+ BTRFS_SETGET_FUNCS(inode_sequence, struct btrfs_inode_item, sequence, 64);
+diff --git a/mkfs.c b/mkfs.c
+index c531ef2..5c18a6d 100644
+--- a/mkfs.c
++++ b/mkfs.c
+@@ -1225,6 +1225,9 @@ int main(int ac, char **av)
+ 	u64 source_dir_size = 0;
+ 	char *pretty_buf;
  
-@@ -857,19 +933,23 @@ again:
- 	if (search_done)
- 		goto insert;
- 
--	ret = btrfs_search_slot(NULL, root, key, path, 0, 0);
-+	/* Search old style refs */
-+	search_key.objectid = inode_objectid;
-+	search_key.type = BTRFS_INODE_REF_KEY;
-+	search_key.offset = parent_objectid;
++	struct btrfs_super_block *super;
++	u64 flags;
 +
-+	ret = btrfs_search_slot(NULL, root, &search_key, path, 0, 0);
- 	if (ret == 0) {
--		char *victim_name;
--		int victim_name_len;
- 		struct btrfs_inode_ref *victim_ref;
- 		unsigned long ptr;
- 		unsigned long ptr_end;
--		struct extent_buffer *leaf = path->nodes[0];
-+
-+		leaf = path->nodes[0];
- 
- 		/* are we trying to overwrite a back ref for the root directory
- 		 * if so, just jump out, we're done
- 		 */
--		if (key->objectid == key->offset)
-+		if (search_key.objectid == search_key.offset)
- 			goto out_nowrite;
- 
- 		/* check all the names in this back reference to see
-@@ -889,7 +969,7 @@ again:
- 					   (unsigned long)(victim_ref + 1),
- 					   victim_name_len);
- 
--			if (!backref_in_log(log, key, victim_name,
-+			if (!backref_in_log(log, &search_key, victim_name,
- 					    victim_name_len)) {
- 				btrfs_inc_nlink(inode);
- 				btrfs_release_path(path);
-@@ -902,19 +982,60 @@ again:
- 			ptr = (unsigned long)(victim_ref + 1) + victim_name_len;
- 		}
- 		BUG_ON(ret);
--
--		/*
--		 * NOTE: we have searched root tree and checked the
--		 * coresponding ref, it does not need to check again.
--		 */
--		search_done = 1;
- 	}
- 	btrfs_release_path(path);
- 
-+	/* Same search but for extended refs */
-+	extref = btrfs_lookup_inode_extref(NULL, root, path, name, namelen,
-+					   inode_objectid, parent_objectid, 0,
-+					   0);
-+	if (!IS_ERR_OR_NULL(extref)) {
-+		u32 item_size;
-+		u32 cur_offset = 0;
-+		unsigned long base;
-+
-+		leaf = path->nodes[0];
-+
-+		item_size = btrfs_item_size_nr(leaf, path->slots[0]);
-+		base = btrfs_item_ptr_offset(leaf, path->slots[0]);
-+
-+		while (cur_offset < item_size) {
-+			extref = (struct btrfs_inode_extref *)base + cur_offset;
-+
-+			victim_name_len = btrfs_inode_extref_name_len(eb, extref);
-+			victim_name = kmalloc(namelen, GFP_NOFS);
-+			leaf = path->nodes[0];
-+			read_extent_buffer(eb, name, (unsigned long)&extref->name, namelen);
-+
-+			search_key.objectid = inode_objectid;
-+			search_key.type = BTRFS_INODE_EXTREF_KEY;
-+			search_key.offset = btrfs_extref_hash(parent_objectid,
-+							      name, namelen);
-+			if (!backref_in_log(log, &search_key, victim_name,
-+					    victim_name_len)) {
-+				btrfs_inc_nlink(inode);
-+				btrfs_release_path(path);
-+
-+				ret = btrfs_unlink_inode(trans, root, dir,
-+							 inode, victim_name,
-+							 victim_name_len);
-+			}
-+			kfree(victim_name);
-+			BUG_ON(ret);
-+
-+			cur_offset += victim_name_len + sizeof(*extref);
-+		}
-+	}
-+
-+	/*
-+	 * NOTE: we have searched root tree and checked the
-+	 * coresponding refs, it does not need to be checked again.
-+	 */
-+	search_done = 1;
-+
- 	/* look for a conflicting sequence number */
- 	di = btrfs_lookup_dir_index_item(trans, root, path, btrfs_ino(dir),
--					 btrfs_inode_ref_index(eb, ref),
--					 name, namelen, 0);
-+					 ref_index, name, namelen, 0);
- 	if (di && !IS_ERR(di)) {
- 		ret = drop_one_dir_item(trans, root, path, dir, di);
- 		BUG_ON(ret);
-@@ -932,17 +1053,25 @@ again:
- 
- insert:
- 	/* insert our name */
--	ret = btrfs_add_link(trans, dir, inode, name, namelen, 0,
--			     btrfs_inode_ref_index(eb, ref));
-+	ret = btrfs_add_link(trans, dir, inode, name, namelen, 0, ref_index);
+ 	while(1) {
+ 		int c;
+ 		c = getopt_long(ac, av, "A:b:l:n:s:m:d:L:r:VM", long_options,
+@@ -1426,13 +1429,14 @@ raid_groups:
+ 	ret = create_data_reloc_tree(trans, root);
  	BUG_ON(ret);
  
- 	btrfs_update_inode(trans, root, inode);
+-	if (mixed) {
+-		struct btrfs_super_block *super = &root->fs_info->super_copy;
+-		u64 flags = btrfs_super_incompat_flags(super);
++	super = &root->fs_info->super_copy;
++	flags = btrfs_super_incompat_flags(super);
++	flags |= BTRFS_FEATURE_INCOMPAT_EXTENDED_IREF;
  
- out:
--	ref_ptr = (unsigned long)(ref + 1) + namelen;
-+	ref_ptr = (unsigned long)(ref_ptr + ref_struct_size) + namelen;
- 	kfree(name);
--	if (ref_ptr < ref_end)
-+	if (ref_ptr < ref_end) {
-+		if (log_ref_ver) {
-+			ret = extref_get_fields(eb, slot, &namelen, &name,
-+						&ref_index, NULL);
-+		} else {
-+			ret = ref_get_fields(key, eb, slot, &namelen, &name,
-+					     &ref_index, NULL);
-+		}
-+		BUG_ON(ret);
- 		goto again;
-+	}
++	if (mixed)
+ 		flags |= BTRFS_FEATURE_INCOMPAT_MIXED_GROUPS;
+-		btrfs_set_super_incompat_flags(super, flags);
+-	}
++
++	btrfs_set_super_incompat_flags(super, flags);
  
- 	/* finally write the back reference in the inode */
- 	ret = overwrite_item(trans, root, path, eb, slot, key);
-@@ -965,25 +1094,52 @@ static int insert_orphan_item(struct btrfs_trans_handle *trans,
- 	return ret;
+ 	printf("fs created label %s on %s\n\tnodesize %u leafsize %u "
+ 	    "sectorsize %u size %s\n",
+diff --git a/print-tree.c b/print-tree.c
+index fc134c0..6012df8 100644
+--- a/print-tree.c
++++ b/print-tree.c
+@@ -55,6 +55,42 @@ static int print_dir_item(struct extent_buffer *eb, struct btrfs_item *item,
+ 	return 0;
  }
  
-+static int count_inode_extrefs(struct btrfs_root *root,
-+			       struct inode *inode, struct btrfs_path *path)
++static int print_inode_extref_item(struct extent_buffer *eb,
++				   struct btrfs_item *item,
++				   struct btrfs_inode_extref *extref)
 +{
-+	int ret;
-+	int name_len;
-+	unsigned int nlink = 0;
-+	u32 item_size;
-+	u32 cur_offset = 0;
-+	u64 inode_objectid = btrfs_ino(inode);
-+	u64 offset = 0;
-+	unsigned long ptr;
-+	struct btrfs_inode_extref *extref;
-+	struct extent_buffer *leaf;
- 
--/*
-- * There are a few corners where the link count of the file can't
-- * be properly maintained during replay.  So, instead of adding
-- * lots of complexity to the log code, we just scan the backrefs
-- * for any file that has been through replay.
-- *
-- * The scan will update the link count on the inode to reflect the
-- * number of back refs found.  If it goes down to zero, the iput
-- * will free the inode.
-- */
--static noinline int fixup_inode_link_count(struct btrfs_trans_handle *trans,
--					   struct btrfs_root *root,
--					   struct inode *inode)
-+	while (1) {
-+		ret = btrfs_find_one_extref(root, inode_objectid, offset, path,
-+					    &extref, &offset);
-+		if (ret)
-+			break;
++	u32 total;
++	u32 cur = 0;
++	u32 len;
++	u32 name_len = 0;
++	u64 index = 0;
++	u64 parent_objid;
++	char namebuf[BTRFS_NAME_LEN];
 +
-+		leaf = path->nodes[0];
-+		item_size = btrfs_item_size_nr(leaf, path->slots[0]);
-+		ptr = btrfs_item_ptr_offset(leaf, path->slots[0]);
++	total = btrfs_item_size(eb, item);
 +
-+		while (cur_offset < item_size) {
-+			extref = (struct btrfs_inode_extref *) (ptr + cur_offset);
-+			name_len = btrfs_inode_extref_name_len(leaf, extref);
++	while (cur < total) {
++		index = btrfs_inode_extref_index(eb, extref);
++		name_len = btrfs_inode_extref_name_len(eb, extref);
++		parent_objid = btrfs_inode_extref_parent(eb, extref);
 +
-+			nlink++;
++		len = (name_len <= sizeof(namebuf))? name_len: sizeof(namebuf);
 +
-+			cur_offset += name_len + sizeof(*extref);
-+		}
++		read_extent_buffer(eb, namebuf, (unsigned long)(extref->name), len);
 +
-+		offset++;
++		printf("\t\tinode extref index %llu parent %llu namelen %u "
++		       "name: %.*s\n",
++		       (unsigned long long)index,
++		       (unsigned long long)parent_objid,
++		       name_len, len, namebuf);
++
++		len = sizeof(*extref) + name_len;
++		extref = (struct btrfs_inode_extref *)((char *)extref + len);
++		cur += len;
 +	}
-+	btrfs_release_path(path);
-+
-+	return nlink;
++	return 0;
 +}
 +
-+static int count_inode_refs(struct btrfs_root *root,
-+			       struct inode *inode, struct btrfs_path *path)
+ static int print_inode_ref_item(struct extent_buffer *eb, struct btrfs_item *item,
+ 				struct btrfs_inode_ref *ref)
  {
--	struct btrfs_path *path;
- 	int ret;
- 	struct btrfs_key key;
--	u64 nlink = 0;
-+	unsigned int nlink = 0;
- 	unsigned long ptr;
- 	unsigned long ptr_end;
- 	int name_len;
-@@ -993,10 +1149,6 @@ static noinline int fixup_inode_link_count(struct btrfs_trans_handle *trans,
- 	key.type = BTRFS_INODE_REF_KEY;
- 	key.offset = (u64)-1;
- 
--	path = btrfs_alloc_path();
--	if (!path)
--		return -ENOMEM;
--
- 	while (1) {
- 		ret = btrfs_search_slot(NULL, root, &key, path, 0, 0);
- 		if (ret < 0)
-@@ -1030,6 +1182,45 @@ static noinline int fixup_inode_link_count(struct btrfs_trans_handle *trans,
- 		btrfs_release_path(path);
- 	}
- 	btrfs_release_path(path);
-+
-+	return nlink;
-+}
-+
-+/*
-+ * There are a few corners where the link count of the file can't
-+ * be properly maintained during replay.  So, instead of adding
-+ * lots of complexity to the log code, we just scan the backrefs
-+ * for any file that has been through replay.
-+ *
-+ * The scan will update the link count on the inode to reflect the
-+ * number of back refs found.  If it goes down to zero, the iput
-+ * will free the inode.
-+ */
-+static noinline int fixup_inode_link_count(struct btrfs_trans_handle *trans,
-+					   struct btrfs_root *root,
-+					   struct inode *inode)
-+{
-+	struct btrfs_path *path;
-+	int ret;
-+	u64 nlink = 0;
-+	u64 ino = btrfs_ino(inode);
-+
-+	path = btrfs_alloc_path();
-+	if (!path)
-+		return -ENOMEM;
-+
-+	ret = count_inode_refs(root, inode, path);
-+	if (ret < 0)
-+		goto out;
-+
-+	nlink = ret;
-+
-+	ret = count_inode_extrefs(root, inode, path);
-+	if (ret < 0)
-+		goto out;
-+
-+	nlink += ret;
-+
- 	if (nlink != inode->i_nlink) {
- 		set_nlink(inode, nlink);
- 		btrfs_update_inode(trans, root, inode);
-@@ -1045,9 +1236,10 @@ static noinline int fixup_inode_link_count(struct btrfs_trans_handle *trans,
- 		ret = insert_orphan_item(trans, root, ino);
- 		BUG_ON(ret);
- 	}
--	btrfs_free_path(path);
- 
--	return 0;
-+out:
-+	btrfs_free_path(path);
-+	return ret;
- }
- 
- static noinline int fixup_inode_link_counts(struct btrfs_trans_handle *trans,
-@@ -1689,6 +1881,10 @@ static int replay_one_buffer(struct btrfs_root *log, struct extent_buffer *eb,
- 			ret = add_inode_ref(wc->trans, root, log, path,
- 					    eb, i, &key);
- 			BUG_ON(ret && ret != -ENOENT);
-+		} else if (key.type == BTRFS_INODE_EXTREF_KEY) {
-+			ret = add_inode_ref(wc->trans, root, log, path,
-+					    eb, i, &key);
-+			BUG_ON(ret && ret != -ENOENT);
- 		} else if (key.type == BTRFS_EXTENT_DATA_KEY) {
- 			ret = replay_one_extent(wc->trans, root, path,
- 						eb, i, &key);
-diff --git a/fs/btrfs/tree-log.h b/fs/btrfs/tree-log.h
-index 2270ac5..a935a8c 100644
---- a/fs/btrfs/tree-log.h
-+++ b/fs/btrfs/tree-log.h
-@@ -49,4 +49,5 @@ void btrfs_record_unlink_dir(struct btrfs_trans_handle *trans,
- int btrfs_log_new_name(struct btrfs_trans_handle *trans,
- 			struct inode *inode, struct inode *old_dir,
- 			struct dentry *parent);
-+
- #endif
+@@ -285,6 +321,9 @@ static void print_key_type(u8 type)
+ 	case BTRFS_INODE_REF_KEY:
+ 		printf("INODE_REF");
+ 		break;
++	case BTRFS_INODE_EXTREF_KEY:
++		printf("INODE_EXTREF");
++		break;
+ 	case BTRFS_DIR_ITEM_KEY:
+ 		printf("DIR_ITEM");
+ 		break;
+@@ -454,6 +493,7 @@ void btrfs_print_leaf(struct btrfs_root *root, struct extent_buffer *l)
+ 	struct btrfs_extent_data_ref *dref;
+ 	struct btrfs_shared_data_ref *sref;
+ 	struct btrfs_inode_ref *iref;
++	struct btrfs_inode_extref *iref2;
+ 	struct btrfs_dev_extent *dev_extent;
+ 	struct btrfs_disk_key disk_key;
+ 	struct btrfs_root_item root_item;
+@@ -492,6 +532,10 @@ void btrfs_print_leaf(struct btrfs_root *root, struct extent_buffer *l)
+ 			iref = btrfs_item_ptr(l, i, struct btrfs_inode_ref);
+ 			print_inode_ref_item(l, item, iref);
+ 			break;
++		case BTRFS_INODE_EXTREF_KEY:
++			iref2 = btrfs_item_ptr(l, i, struct btrfs_inode_extref);
++			print_inode_extref_item(l, item, iref2);
++			break;
+ 		case BTRFS_DIR_ITEM_KEY:
+ 		case BTRFS_DIR_INDEX_KEY:
+ 		case BTRFS_XATTR_ITEM_KEY:
 -- 
 1.7.7
 

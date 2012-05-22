@@ -1,16 +1,16 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mort.rzone.de ([81.169.144.234]:50806 "EHLO mort.rzone.de"
+Received: from ysabell.rzone.de ([81.169.144.237]:11028 "EHLO ysabell.rzone.de"
 	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1757838Ab2EPQu7 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 16 May 2012 12:50:59 -0400
+	id S1758081Ab2EVKy1 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Tue, 22 May 2012 06:54:27 -0400
 Received: from gargravarr.store (gargravarr.store [192.168.42.236])
-	by mort.rzone.de (Postfix) with ESMTP id 2282323A
-	for <linux-btrfs@vger.kernel.org>; Wed, 16 May 2012 18:50:58 +0200 (MEST)
+	by ysabell.rzone.de (Postfix) with ESMTP id AD9612BF
+	for <linux-btrfs@vger.kernel.org>; Tue, 22 May 2012 12:54:26 +0200 (MEST)
 From: Stefan Behrens <sbehrens@giantdisaster.de>
 To: linux-btrfs@vger.kernel.org
-Subject: [PATCH v3 0/3] Btrfs-progs: support get/reset device stats via ioctl
-Date: Wed, 16 May 2012 18:50:55 +0200
-Message-Id: <1337187058-560-1-git-send-email-sbehrens@giantdisaster.de>
+Subject: [PATCH v4 0/3] Btrfs-progs: support get/reset device stats via ioctl
+Date: Tue, 22 May 2012 12:54:23 +0200
+Message-Id: <1337684066-18129-1-git-send-email-sbehrens@giantdisaster.de>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
@@ -35,6 +35,9 @@ Changes v2->v3:
 - Split the patch into three seperate patches because after rebasing,
   open_file_or_dir() was moved and additional changes had been necessary
 
+Changes v2->v3:
+- Add padding at end of ioctl structure
+
 Stefan Behrens (3):
   Btrfs-progs: move open_file_or_dir() to utils.c
   Btrfs-progs: make two utility functions globally available
@@ -50,12 +53,12 @@ Stefan Behrens (3):
  commands.h       |    3 --
  common.c         |   46 ----------------------
  ctree.h          |    6 +++
- ioctl.h          |   27 +++++++++++++
+ ioctl.h          |   28 ++++++++++++++
  man/btrfs.8.in   |   14 +++++++
  print-tree.c     |    6 +++
  utils.c          |   97 +++++++++++++++++++++++++++++++++++++++++++++-
  utils.h          |    7 ++++
- 15 files changed, 275 insertions(+), 151 deletions(-)
+ 15 files changed, 276 insertions(+), 151 deletions(-)
  delete mode 100644 common.c
 
 -- 

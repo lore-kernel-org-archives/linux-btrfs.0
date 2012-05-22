@@ -1,63 +1,79 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from plane.gmane.org ([80.91.229.3]:50495 "EHLO plane.gmane.org"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1750827Ab2ESEKG (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Sat, 19 May 2012 00:10:06 -0400
-Received: from list by plane.gmane.org with local (Exim 4.69)
-	(envelope-from <gcfb-btrfs-devel-moved1@m.gmane.org>)
-	id 1SVazU-0001MT-Qq
-	for linux-btrfs@vger.kernel.org; Sat, 19 May 2012 06:10:04 +0200
-Received: from rain.gmane.org ([80.91.229.7])
-        by main.gmane.org with esmtp (Gmexim 0.1 (Debian))
-        id 1AlnuQ-0007hv-00
-        for <linux-btrfs@vger.kernel.org>; Sat, 19 May 2012 06:10:04 +0200
-Received: from eternaleye+usenet by rain.gmane.org with local (Gmexim 0.1 (Debian))
-        id 1AlnuQ-0007hv-00
-        for <linux-btrfs@vger.kernel.org>; Sat, 19 May 2012 06:10:04 +0200
-To: linux-btrfs@vger.kernel.org
-From: Alex Elsayed <eternaleye+usenet@gmail.com>
-Subject: Re: [RFC PATCH 0/7] bcache: md conversion
-Date: Fri, 18 May 2012 19:35:11 -0700
-Message-ID: <jp70t0$4ru$2@dough.gmane.org>
-References: <20120511194327.25770.79292.stgit@dwillia2-linux.jf.intel.com>
-Mime-Version: 1.0
-Content-Type: text/plain; charset="ISO-8859-1"
-Cc: linux-bcache@vger.kernel.org
+Received: from cn.fujitsu.com ([222.73.24.84]:22446 "EHLO song.cn.fujitsu.com"
+	rhost-flags-OK-FAIL-OK-OK) by vger.kernel.org with ESMTP
+	id S1752881Ab2EVBiZ (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Mon, 21 May 2012 21:38:25 -0400
+Message-ID: <4FBAEF1E.4050706@cn.fujitsu.com>
+Date: Tue, 22 May 2012 09:42:54 +0800
+From: Liu Bo <liubo2009@cn.fujitsu.com>
+MIME-Version: 1.0
+To: Alex Lyakas <alex.bolshoy.btrfs@gmail.com>
+CC: linux-btrfs@vger.kernel.org
+Subject: Re: Newbie questions on some of btrfs code...
+References: <CAHf9xvbp=FQwY1Pn9FDaMPdGqe-G4aSMeBK8kUAq-5Kry0YaTA@mail.gmail.com>	<20120518115041.GZ8938@carfax.org.uk>	<CAHf9xva5ux5VXbww2YMjORSSdhSKH7L6W5vbP-ZnxijiGK4fUw@mail.gmail.com>	<4FB9A188.9090403@cn.fujitsu.com>	<CAHf9xvZ8+ZXFLRM5R_xjekQOsf2Xaj0UEANMVW5BBJ2YjjhGuw@mail.gmail.com>	<4FBA0BF1.1000901@cn.fujitsu.com> <CAHf9xvZDwjSJvJnaX9qmYyXJoM4t=E2zi=eH0bZpknYFpsAsjw@mail.gmail.com>
+In-Reply-To: <CAHf9xvZDwjSJvJnaX9qmYyXJoM4t=E2zi=eH0bZpknYFpsAsjw@mail.gmail.com>
+Content-Type: text/plain; charset=ISO-8859-1
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Dan Williams wrote:
+On 05/21/2012 06:05 PM, Alex Lyakas wrote:
 
-> The consensus from LSF was that bcache need not invent a new interface
-> when md and dm can both do the job.  As mentioned in patch 7 this series
-> aims to be a minimal conversion.  Other refactoring items like
-> deprecating register_lock for mddev->reconfig_mutex are deferred.
+> Hi Liu,
+> thanks for the clarifications.
 > 
-> This supports assembly of an already established cache array:
+> I did not understand the dd example of yours, though.
 > 
-> mdadm -A /dev/md/bcache /dev/sd[ab]
+>> So for the following situation:
+>>>       item 23 key (266 EXTENT_DATA 4096) itemoff 2269 itemsize 53
+>>>               extent data disk byte 0 nr 0
+>>>               extent data offset 0 nr 4096 ram 8192
+>>>               extent compression 0
+>> As your case, after the first 'size 5' inline extent is written,
+>> "nr 4096 < ram 8192" could come from:
+>> 1) dd if=/dev/zero of=/mnt/btrfs/foobar bs=1k seek=12 count=4 conv=notrunc;sync
+>> 2) dd if=/dev/zero of=/mnt/btrfs/foobar bs=1k seek=8 count=4 conv=notrunc;sync
+>>
+>> 1) makes
+>>>       item 23 key (266 EXTENT_DATA 4096) itemoff 2269 itemsize 53
+>>>               extent data disk byte 0 nr 0
+>>>               extent data offset 0 nr 8192 ram 8192
+>>>               extent compression 0
+>> 2) makes
+>>>       item 23 key (266 EXTENT_DATA 4096) itemoff 2269 itemsize 53
+>>>               extent data disk byte 0 nr 0
+>>>               extent data offset 0 nr 4096 ram 8192
+>>>               extent compression 0
 > 
-> ...will create the /dev/md/bcache container and a subarray representing
-> the cache volume.  "Flash-only", or backing-device only volumes were not
-> tested.  "Create" support and hot-add/hot-remove come later.
+> You talk about the "ram_bytes" field. But do I need to look at it, if
+> I don't use compression or another encoding? Shouldn't I always look
+> at btrfs_file_extent_item::offset/num_bytes for the real data, and at
+> btrfs_file_extent_item::disk_bytenr/disk_num_bytes for finding
+> CHUNK_ITEM? Any reason I should be aware of "ram_bytes" field?
 > 
-> Note:
-> * When attempting to test with small loopback devices (100MB), assembly
->   soft locks in bcache_journal_read().  That hang went away with larger
->   devices, so there seems to be minimum component device size that needs
->   to be considered in the tooling.
 
-Is there any plan to separate the on-disk layout (per-device headers, etc) 
-from the logic for the purpose of reuse? I can think of at least one case 
-where this would be extremely useful: integration in BtrFS.
+> The first dd created a 4k extent at offset 12k. How did we end up with
+> "nr 8192 ram 8192" and offset 4k?
+> The second dd added a 4k extent at 8k offset. But still EXTENT_DATA
+> has 4k offset.
+> So now we should have have twp 4k extents or one 8k extent. What am I missing?
+> 
+> Alex.
+> 
 
-BtrFS already has its own methods for making sure a group of devices are all 
-present when the filesystem is mounted, so it doesn't really need the 
-formatting of the backing device bcache does to prevent it from being 
-mounted solo. Putting bcache under BtrFS would be silly in the same way as 
-putting it under a raid array, but bcache can't be put on top of BtrFS.
 
-Logically, in looking at BtrFS' architecture, a cache would likely fit best 
-at the 'block group' level, which IIUC would be roughly equivalent to the 
-recommended 'over raid, under lvm' method of using bcache.
+As I mentioned, disk_bytenr == 0 means dummy extents, which we have not yet allocate
+a range of space for it.
 
+After your first 'size=5' inline extent, we'll start allocating extents from _4096_, cause
+it is _4k aligned_.
+
+>> 1) dd if=/dev/zero of=/mnt/btrfs/foobar bs=1k seek=12 count=4 conv=notrunc;sync
+: we need a dummy extent for [4k, 12k], which starts from 4096, and nr is 8192
+
+>> 2) dd if=/dev/zero of=/mnt/btrfs/foobar bs=1k seek=8 count=4 conv=notrunc;sync
+: we break [4k, 12k] into a dummy one [4k, 8k] and a real one [8k, 12k].
+
+More details, plz refer to btrfs_drop_extents();
+
+thanks,
+liubo

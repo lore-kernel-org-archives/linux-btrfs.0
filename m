@@ -1,59 +1,39 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from plane.gmane.org ([80.91.229.3]:55631 "EHLO plane.gmane.org"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1757172Ab2EVVrz (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 22 May 2012 17:47:55 -0400
-Received: from list by plane.gmane.org with local (Exim 4.69)
-	(envelope-from <gcfb-btrfs-devel-moved1@m.gmane.org>)
-	id 1SWwvo-0003YN-T3
-	for linux-btrfs@vger.kernel.org; Tue, 22 May 2012 23:47:52 +0200
-Received: from cpc4-stap10-2-0-cust490.12-2.cable.virginmedia.com ([217.137.143.235])
-        by main.gmane.org with esmtp (Gmexim 0.1 (Debian))
-        id 1AlnuQ-0007hv-00
-        for <linux-btrfs@vger.kernel.org>; Tue, 22 May 2012 23:47:52 +0200
-Received: from m_btrfs by cpc4-stap10-2-0-cust490.12-2.cable.virginmedia.com with local (Gmexim 0.1 (Debian))
-        id 1AlnuQ-0007hv-00
-        for <linux-btrfs@vger.kernel.org>; Tue, 22 May 2012 23:47:52 +0200
+Received: from sed198n136.SEDSystems.ca ([198.169.180.136]:23163 "EHLO
+	sed198n136.sedsystems.ca" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1757770Ab2EVV7Q (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>);
+	Tue, 22 May 2012 17:59:16 -0400
+Received: from barney.sedsystems.ca (barney [198.169.180.121])
+	by sed198n136.sedsystems.ca  with ESMTP id q4MLj4Bm027843
+	(version=TLSv1/SSLv3 cipher=DHE-DSS-AES256-SHA bits=256 verify=NOT)
+	for <linux-btrfs@vger.kernel.org>; Tue, 22 May 2012 15:45:04 -0600 (CST)
+Received: from [198.169.180.30] (sed198n30.SEDSystems.ca [198.169.180.30])
+	by barney.sedsystems.ca (8.13.1/8.13.1) with ESMTP id q4MLj4XF022866
+	for <linux-btrfs@vger.kernel.org>; Tue, 22 May 2012 15:45:04 -0600
+Message-ID: <4FBC082D.9020707@sedsystems.ca>
+Date: Tue, 22 May 2012 15:42:05 -0600
+From: Henry Bakker <bakker@sedsystems.ca>
+MIME-Version: 1.0
 To: linux-btrfs@vger.kernel.org
-From: Martin <m_btrfs@ml1.co.uk>
-Subject: SSD erase state and reducing SSD wear
-Date: Tue, 22 May 2012 22:47:42 +0100
-Message-ID: <jph1hu$2tq$1@dough.gmane.org>
-Mime-Version: 1.0
-Content-Type: text/plain; charset=windows-1252
+Subject: Could btrfs-restore be extended to also restore file dates?
+Content-Type: text/plain; charset=ISO-8859-1
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-I've got two recent examples of SSDs. Their pristine state from the
-manufacturer shows:
+Any possibility of getting btrfs-restore to also restore the files
+timestamp?
 
+I'm doing a restore right now as I had one btrfs partition blow up and
+I'm noting that the timestamps are marking all the restored files as
+new. It would be nice to be able to do a quick compare of file dates to
+determine any changed files that may be newer on the restore vs the
+backup. (I can save full file compares for when the server is not being
+actively used.)
 
-Device Model:     OCZ-VERTEX3
+I do realize it is possible that there could be other issues, but for
+quickly determining potential issues this could be useful.
 
-# hexdump -C /dev/sdd
-00000000  00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
-|................|
-*
-1bf2976000
-
-
-Device Model:     OCZ VERTEX PLUS
-(OCZ VERTEX 2E)
-
-# hexdump -C /dev/sdd
-00000000 ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff
-|................|
-*
-df99e6000
-
-
-
-What's a good way to test what state they get erased to from a TRIM
-operation?
-
-Can btrfs detect the erase state and pad unused space in filesystem
-writes with the same value so as to reduce SSD wear?
-
-Regards,
-Martin
-
+I do realize that there may be technical reasons for the current
+behavior, so at the very least this is suggestion for future
+functionality even if it doesn't help me.

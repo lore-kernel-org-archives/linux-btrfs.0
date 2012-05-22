@@ -1,91 +1,52 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from plane.gmane.org ([80.91.229.3]:38053 "EHLO plane.gmane.org"
+Received: from brockman.in8.de ([85.214.220.56]:34295 "EHLO mail.in8.de"
 	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1752053Ab2EVVaw (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 22 May 2012 17:30:52 -0400
-Received: from list by plane.gmane.org with local (Exim 4.69)
-	(envelope-from <gcfb-btrfs-devel-moved1@m.gmane.org>)
-	id 1SWwfI-0004Bg-L8
-	for linux-btrfs@vger.kernel.org; Tue, 22 May 2012 23:30:48 +0200
-Received: from cpc4-stap10-2-0-cust490.12-2.cable.virginmedia.com ([217.137.143.235])
-        by main.gmane.org with esmtp (Gmexim 0.1 (Debian))
-        id 1AlnuQ-0007hv-00
-        for <linux-btrfs@vger.kernel.org>; Tue, 22 May 2012 23:30:48 +0200
-Received: from m_btrfs by cpc4-stap10-2-0-cust490.12-2.cable.virginmedia.com with local (Gmexim 0.1 (Debian))
-        id 1AlnuQ-0007hv-00
-        for <linux-btrfs@vger.kernel.org>; Tue, 22 May 2012 23:30:48 +0200
-To: linux-btrfs@vger.kernel.org
-From: Martin <m_btrfs@ml1.co.uk>
-Subject: Re: SSD format/mount parameters questions
-Date: Tue, 22 May 2012 22:30:34 +0100
-Message-ID: <jph0hq$r2r$1@dough.gmane.org>
-References: <jp32u7$vlc$1@dough.gmane.org> <20120518070251.GA32766@panda> (sfid-20120518_121930_821794_9A426EAB) <201205191936.36655.Martin@lichtvoll.de>
-Mime-Version: 1.0
+	id S1752629Ab2EVWIq (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Tue, 22 May 2012 18:08:46 -0400
+Message-ID: <4FBC0E6A.3070101@jan-o-sch.net>
+Date: Wed, 23 May 2012 00:08:42 +0200
+From: Jan Schmidt <list.btrfs@jan-o-sch.net>
+MIME-Version: 1.0
+To: Alex Lyakas <alex.bolshoy.btrfs@gmail.com>
+CC: linux-btrfs@vger.kernel.org
+Subject: Re: Newbie questions on some of btrfs code...
+References: <CAHf9xvbp=FQwY1Pn9FDaMPdGqe-G4aSMeBK8kUAq-5Kry0YaTA@mail.gmail.com>	<4FBA1C7B.8000308@jan-o-sch.net> <CAHf9xvbdcp1VRny+Pc0q8nxXYqZ3e5OkKC4MCGXqO-HyLnd5cA@mail.gmail.com>
+In-Reply-To: <CAHf9xvbdcp1VRny+Pc0q8nxXYqZ3e5OkKC4MCGXqO-HyLnd5cA@mail.gmail.com>
 Content-Type: text/plain; charset=ISO-8859-1
-In-Reply-To: <201205191936.36655.Martin@lichtvoll.de>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 19/05/12 18:36, Martin Steigerwald wrote:
-> Am Freitag, 18. Mai 2012 schrieb Sander:
->> Martin wrote (ao):
->>> Are there any format/mount parameters that should be set for using
->>> btrfs on SSDs (other than the "ssd" mount option)?
+On 22.05.2012 10:07, Alex Lyakas wrote:
+>>> # If my understanding in the previous bullet is correct: Is that the
+>>> reason that in btrfs_prev_leaf() it is assumed that if there is a
+>>> lesser key, btrfs_search_slot() will never bring us to the slot==0 of
+>>> the current leaf?
 >>
->> If possible, format the whole device, do not partition the ssd. This
->> will guarantee proper allignment.
+>> It's quite straight: We look for a key smaller than the first (slot 0)
+>> of the current leaf. If we find the current leaf again (because
+>> btrfs_search_slot returns the place where such a key would have be
+>> inserted), then there's no previous leaf. No preconditions or
+>> assumptions on nodes in levels needed.
 > 
-> Current partitioning tools align at 1 MiB unless otherwise specified.
-> 
-> And then thats only the alignment of the start of the filesystem.
-> 
-> Not the granularity that the filesystem itself uses to align its writes.
-> 
-> And then its not clear to me what effect proper alignment will actually 
-> have given the intelligent nature of SSD firmwares.
+> Let's say that slot[0] of the current leaf (A) has key=10. And let's
+> say that its parent node (N) has key=5 (and not 10). Let's say we have
+> a previous leaf (B), whose last slot has key=2.
+> If such tree is valid, then: btrfs_prev_leaf() will search for key==9.
+> Then btrfs_search_slot() would bring us node N and leaf A again,
+> wouldn't it? Because key(N)<=9. So we will receive leaf A back, and
+> will think that there is no previous leaf, while there is.
+> What am I missing here?
 
-That's what I'm trying to untangle rather than just trusting to "magic".
-I'm also not so convinced about the "SSD firmwares" being quite so
-"intelligent"...
+It wouldn't. btrfs_search_slot always sets up the path such that it
+points to the position where such an key would be inserted. And we never
+insert at the beginning of a leaf. So in your example, this would be at
+the end of leaf B: your path object will have nodes[1] = N, nodes[0] = B
+and slots[0] = number_of_slots_used_in_B + 1.
 
+Your example sounds like a good explanation why the key in the parent
+node should really be an exact match. It sounds reasonable that it's not
+allowed to be <= than the first key of its child. If it was, extra
+lookups would be required to setup the path correctly for your example
+above (which I haven't seen so far).
 
-So far, the only clear indications are that a number of SSDs have a
-performance 'sweet spot' when you use 16kByte blocks for data transfer.
-
-Practicalities for the SSD internal structure strongly suggest that they
-work in chunks of data greater than 4kBytes.
-
-4kByte operation is a strong driver for SSD manufacturers, but what
-compromises do they make to accommodate that?
-
-
-And for btrfs:
-
-Extents are aligned to "sector size" boundaries (4kBytes default).
-
-And there is a comment that setting larger sector sizes increases the
-CPU overhead in btrfs due to the larger memory moves needed for making
-inserts into the trees.
-
-If the SSD is going to do a read-modify-write on anything smaller than
-16kBytes in any case, might btrfs just as well use that chunk size to
-good advantage in the first place?
-
-So, what is most significant?
-
-
-Also:
-
-btrfs has a big advantage of using checksumming and COW. However, ext4
-is more mature, similarly uses extents, and also allows specifying a
-large "delayed allocation" time to merge multiple writes if you're happy
-your system is safely on a UPS...
-
-
-I'm not too worried about this for MLC SSDs, but it is something that is
-of concern for the yet shorter modify-erase count lifespan of TLC SSDs.
-
-
-Regards,
-Martin
-
+-Jan

@@ -1,52 +1,94 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from brockman.in8.de ([85.214.220.56]:34295 "EHLO mail.in8.de"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1752629Ab2EVWIq (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 22 May 2012 18:08:46 -0400
-Message-ID: <4FBC0E6A.3070101@jan-o-sch.net>
-Date: Wed, 23 May 2012 00:08:42 +0200
-From: Jan Schmidt <list.btrfs@jan-o-sch.net>
+Received: from cn.fujitsu.com ([222.73.24.84]:30456 "EHLO song.cn.fujitsu.com"
+	rhost-flags-OK-FAIL-OK-OK) by vger.kernel.org with ESMTP
+	id S1754446Ab2EWBYR (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Tue, 22 May 2012 21:24:17 -0400
+Message-ID: <4FBC3BEB.5010703@cn.fujitsu.com>
+Date: Wed, 23 May 2012 09:22:51 +0800
+From: Miao Xie <miaox@cn.fujitsu.com>
+Reply-To: miaox@cn.fujitsu.com
 MIME-Version: 1.0
-To: Alex Lyakas <alex.bolshoy.btrfs@gmail.com>
-CC: linux-btrfs@vger.kernel.org
-Subject: Re: Newbie questions on some of btrfs code...
-References: <CAHf9xvbp=FQwY1Pn9FDaMPdGqe-G4aSMeBK8kUAq-5Kry0YaTA@mail.gmail.com>	<4FBA1C7B.8000308@jan-o-sch.net> <CAHf9xvbdcp1VRny+Pc0q8nxXYqZ3e5OkKC4MCGXqO-HyLnd5cA@mail.gmail.com>
-In-Reply-To: <CAHf9xvbdcp1VRny+Pc0q8nxXYqZ3e5OkKC4MCGXqO-HyLnd5cA@mail.gmail.com>
-Content-Type: text/plain; charset=ISO-8859-1
+To: Tim Chen <tim.c.chen@linux.intel.com>
+CC: Linux Btrfs <linux-btrfs@vger.kernel.org>
+Subject: Re: warnings met in introduce extent buffer cache for each i-node
+ patch
+References: <1337705694.3796.181.camel@schen9-DESK>
+In-Reply-To: <1337705694.3796.181.camel@schen9-DESK>
+Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 22.05.2012 10:07, Alex Lyakas wrote:
->>> # If my understanding in the previous bullet is correct: Is that the
->>> reason that in btrfs_prev_leaf() it is assumed that if there is a
->>> lesser key, btrfs_search_slot() will never bring us to the slot==0 of
->>> the current leaf?
->>
->> It's quite straight: We look for a key smaller than the first (slot 0)
->> of the current leaf. If we find the current leaf again (because
->> btrfs_search_slot returns the place where such a key would have be
->> inserted), then there's no previous leaf. No preconditions or
->> assumptions on nodes in levels needed.
+On Tue, 22 May 2012 09:54:54 -0700, Tim Chen wrote:
+> Miao,
 > 
-> Let's say that slot[0] of the current leaf (A) has key=10. And let's
-> say that its parent node (N) has key=5 (and not 10). Let's say we have
-> a previous leaf (B), whose last slot has key=2.
-> If such tree is valid, then: btrfs_prev_leaf() will search for key==9.
-> Then btrfs_search_slot() would bring us node N and leaf A again,
-> wouldn't it? Because key(N)<=9. So we will receive leaf A back, and
-> will think that there is no previous leaf, while there is.
-> What am I missing here?
+> I was trying out your patch on scalability testing for BTRFS on v3.3
+> kernel.
+> http://www.mail-archive.com/linux-btrfs@vger.kernel.org/msg14930.html
+> 
+> However, I ran into a lot of warnings (see the dmesg below).  Wonder if
+> you have a more up to date version of this patch?
+> 
+> In addition, I have to do this modification to fix a warning in your
+> original patch.
 
-It wouldn't. btrfs_search_slot always sets up the path such that it
-points to the position where such an key would be inserted. And we never
-insert at the beginning of a leaf. So in your example, this would be at
-the end of leaf B: your path object will have nodes[1] = N, nodes[0] = B
-and slots[0] = number_of_slots_used_in_B + 1.
+Thanks for your test, This patch still has some problem, I'm improve it
+now. I will send the new one soon.
 
-Your example sounds like a good explanation why the key in the parent
-node should really be an exact match. It sounds reasonable that it's not
-allowed to be <= than the first key of its child. If it was, extra
-lookups would be required to setup the path correctly for your example
-above (which I haven't seen so far).
+Thanks again
+Miao
 
--Jan
+> 
+> diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
+> index 892b347..e0210c9 100644
+> --- a/fs/btrfs/inode.c
+> +++ b/fs/btrfs/inode.c
+> @@ -4608,7 +4613,7 @@ fail_dir_item:
+>                 int err;
+> 
+>                 err = btrfs_del_inode_ref(trans, root, name, name_len,
+> -                                         ino, parent_ino, &local_index);
+> +                                         inode, parent_ino, &local_index);
+>         }
+>         return ret;
+>  }
+> 
+> Thanks.
+> Tim
+> 
+> 
+> May 22 09:23:57 bigbox kernel: [56455.532138] ------------[ cut here ]------------
+> May 22 09:23:57 bigbox kernel: [56455.532146] NG: at fs/btrfs/extent_io.c:3795 free_extent_buffer+0x31/6455.532189] Hardware name: PRIMEQUEST 1800E2
+> May 22 09:23:57 bigbox kernel: [56455.53nked in: scsi_ram lockd nf_conntrack_ipv4 nf_defrag_ipv4 xtfat ioatdma i2c_i801 i7core_edac e1000e microcode edac_core i2c_core igb iTCO_wdt iTCO_vendor_support dca uinput sunrpc usb_stortsas mptscsih mptbase scsi_transport_sas [last unloaded: scsi_wait_sca55.532431] Pid: 4399, comm: btrfs-endio-wri Tainted: G        W    3.3.0c-scsiram-btrfs2+ #30
+> May 22 09:23:57 bigbox kernel: [56455.532486] Call Trace:
+> May 22 09:23:57 bigbox kernel: [56455. [<ffffffff8105471f>] warn_slowpath_common+0x7f/0xc0
+> May 22 09:23:57 bigbox kernel: [5645]  [<ffffffff8105477a>] warn_slowpath_null+0x1a/0x20
+> May 22 09:23:57 bigbox kernel: [56455.53220]  [<ffffffff813004b1>] free_extent_buffer+0x31/0x40
+> May 22 09:23:57 bigbox kernel: ]  [<ffffffff812c0f97>] read_block_for_search+0x117/0x3d0
+> May 22 09:23:57 bigbox kernel: 32559]  [<ffffffff812c0857>] ? generic_bin_search.constprop.4+0[<ffffffff812be27d>] ? unlock_up+0x15d/0x190
+> May 22 09:23:57 bigbox kernel: [56455.5ffff812c31c1>] btrfs_search_slot+0x241/0x720
+> May 22 09:23:57 bigbox kernel: [56455.5326fff812c3adc>] btrfs_search_slot_for_inode+0x43c/0x910
+> May 22 09:23:57 bigbox kernel: [56455.532fffffff812d5f04>] btrfs_lookup_file_extent+0x54/0x70
+> May 22 09:23:57 bigbox kernel: [56455.532646ffff812f097c>] btrfs_drop_extents+0xec/0x940
+> May 22 09:23:57 bigbox kernel: [56455.532662] fff81084eec>] ? try_to_wake_up+0x1bc/0x2b0
+> May 22 09:23:57 bigbox kernel: [56455.53268 [<ffffffff812facef>] ? set_state_bits+0x3f/0x80
+> May 22 09:23:57 bigbox kernel: [56455fff8116228c>] ? kmem_cache_alloc+0x10c/0x140
+> May 22 09:23:57 bigbox kernel: [56455.532713]  [<ffffffff812be2ca>] ? btrfs_alloc_path+0x1a/0x20
+> May 22 09:23:57 bigbox kernel: [5645532]  [<ffffffff812e3713>] insert_reserved_file_extent.constpr13+0x73/0x270
+> May 22 09:23:57 bigbox kernel: [56455.532746]  [<ffffffff812df6eb>] ? join_transactio0x2b/0x2b0
+> May 22 09:23:57 bigbox kernel: [56455.532759]  [<ffffffff812e1224>] ? start_transaction+0x94/0x320
+> May 22 09:23:57 bigbox kernel: [56455.532774]  [<ffffffff812e6cca>] btrfinish_ordered_io+0x2ca/0x320
+> May 22 09:23:57 bigbox kernel: [56455.532793]  [<ffffffff812e6d6d>age_end_io_hook+0x4d/0xc0
+> May 22 09:23:57 bigbox kernel: [56455.532813]  [<ffffffff812fed>] <ffffffff811a94ef>] ? bio_free+0x5f/0x70
+> May 22 09:23:57 bigbox kernel: [56455.532837] fff811a817d>] bio_endio+0x1d/0x40
+> May 22 09:23:57 bigbox kernel: [56455.532869]  [<ffffffff812d9846>] end_workqueue_fn+0x56/0x140
+> May 22 09:23:57 bigbox kernel: [56455.532886]  [<ffffffff8130aeb8>] worker_loop+0x148/0x580
+> May 22 09:23:57 bigbox kernel: [56455.532898]  [<ffffffff8130ad70>] ? btrfs_queue_worker+0x2e0/0x2e0
+> May 22 09:23:57 bigbox kernel: [56455.532915]  [<ffffffff81076473>] kthread+0x93/0xa0
+> May 22 09:23:57 bigbox kernel: [56455.532929]  [<ffffffff81678be4>] kernel_thread_helper+0x4/0x10
+> May 22 09:23:57 bigbox kernel: [56455.532944]  [<fffffffff3/0x13
+> May 22 09:23:57 bigbox kernel: [56455.532972] ---[ end trace a7919e7f17c42adb ]---
+> May 22 09:23:57 bigbox kernel: [56455.532985] ------------[ cut here ]------------
+> 
+> 
+> 
+

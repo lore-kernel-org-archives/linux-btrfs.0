@@ -1,94 +1,52 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([222.73.24.84]:30456 "EHLO song.cn.fujitsu.com"
-	rhost-flags-OK-FAIL-OK-OK) by vger.kernel.org with ESMTP
-	id S1754446Ab2EWBYR (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 22 May 2012 21:24:17 -0400
-Message-ID: <4FBC3BEB.5010703@cn.fujitsu.com>
-Date: Wed, 23 May 2012 09:22:51 +0800
-From: Miao Xie <miaox@cn.fujitsu.com>
-Reply-To: miaox@cn.fujitsu.com
-MIME-Version: 1.0
-To: Tim Chen <tim.c.chen@linux.intel.com>
-CC: Linux Btrfs <linux-btrfs@vger.kernel.org>
-Subject: Re: warnings met in introduce extent buffer cache for each i-node
- patch
-References: <1337705694.3796.181.camel@schen9-DESK>
-In-Reply-To: <1337705694.3796.181.camel@schen9-DESK>
-Content-Type: text/plain; charset=UTF-8
+Received: from mx1.redhat.com ([209.132.183.28]:55988 "EHLO mx1.redhat.com"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1751660Ab2EWUIu (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Wed, 23 May 2012 16:08:50 -0400
+Received: from int-mx02.intmail.prod.int.phx2.redhat.com (int-mx02.intmail.prod.int.phx2.redhat.com [10.5.11.12])
+	by mx1.redhat.com (8.14.4/8.14.4) with ESMTP id q4NK8oi8032670
+	(version=TLSv1/SSLv3 cipher=DHE-RSA-AES256-SHA bits=256 verify=OK)
+	for <linux-btrfs@vger.kernel.org>; Wed, 23 May 2012 16:08:50 -0400
+Received: from localhost.localdomain.com (vpn-11-155.rdu.redhat.com [10.11.11.155])
+	by int-mx02.intmail.prod.int.phx2.redhat.com (8.13.8/8.13.8) with ESMTP id q4NK8nib018848
+	for <linux-btrfs@vger.kernel.org>; Wed, 23 May 2012 16:08:50 -0400
+From: Josef Bacik <josef@redhat.com>
+To: linux-btrfs@vger.kernel.org
+Subject: [PATCH] Btrfs: fall back to non-inline if we don't have enough space
+Date: Wed, 23 May 2012 16:08:49 -0400
+Message-Id: <1337803729-9651-1-git-send-email-josef@redhat.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Tue, 22 May 2012 09:54:54 -0700, Tim Chen wrote:
-> Miao,
-> 
-> I was trying out your patch on scalability testing for BTRFS on v3.3
-> kernel.
-> http://www.mail-archive.com/linux-btrfs@vger.kernel.org/msg14930.html
-> 
-> However, I ran into a lot of warnings (see the dmesg below).  Wonder if
-> you have a more up to date version of this patch?
-> 
-> In addition, I have to do this modification to fix a warning in your
-> original patch.
+If cow_file_range_inline fails with ENOSPC we abort the transaction which
+isn't very nice.  This really shouldn't be happening anyways but there's no
+sense in making it a horrible error when we can easily just go allocate
+normal data space for this stuff.  Thanks,
 
-Thanks for your test, This patch still has some problem, I'm improve it
-now. I will send the new one soon.
+Signed-off-by: Josef Bacik <josef@redhat.com>
+---
+ fs/btrfs/inode.c |    5 ++++-
+ 1 files changed, 4 insertions(+), 1 deletions(-)
 
-Thanks again
-Miao
-
-> 
-> diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
-> index 892b347..e0210c9 100644
-> --- a/fs/btrfs/inode.c
-> +++ b/fs/btrfs/inode.c
-> @@ -4608,7 +4613,7 @@ fail_dir_item:
->                 int err;
-> 
->                 err = btrfs_del_inode_ref(trans, root, name, name_len,
-> -                                         ino, parent_ino, &local_index);
-> +                                         inode, parent_ino, &local_index);
->         }
->         return ret;
->  }
-> 
-> Thanks.
-> Tim
-> 
-> 
-> May 22 09:23:57 bigbox kernel: [56455.532138] ------------[ cut here ]------------
-> May 22 09:23:57 bigbox kernel: [56455.532146] NG: at fs/btrfs/extent_io.c:3795 free_extent_buffer+0x31/6455.532189] Hardware name: PRIMEQUEST 1800E2
-> May 22 09:23:57 bigbox kernel: [56455.53nked in: scsi_ram lockd nf_conntrack_ipv4 nf_defrag_ipv4 xtfat ioatdma i2c_i801 i7core_edac e1000e microcode edac_core i2c_core igb iTCO_wdt iTCO_vendor_support dca uinput sunrpc usb_stortsas mptscsih mptbase scsi_transport_sas [last unloaded: scsi_wait_sca55.532431] Pid: 4399, comm: btrfs-endio-wri Tainted: G        W    3.3.0c-scsiram-btrfs2+ #30
-> May 22 09:23:57 bigbox kernel: [56455.532486] Call Trace:
-> May 22 09:23:57 bigbox kernel: [56455. [<ffffffff8105471f>] warn_slowpath_common+0x7f/0xc0
-> May 22 09:23:57 bigbox kernel: [5645]  [<ffffffff8105477a>] warn_slowpath_null+0x1a/0x20
-> May 22 09:23:57 bigbox kernel: [56455.53220]  [<ffffffff813004b1>] free_extent_buffer+0x31/0x40
-> May 22 09:23:57 bigbox kernel: ]  [<ffffffff812c0f97>] read_block_for_search+0x117/0x3d0
-> May 22 09:23:57 bigbox kernel: 32559]  [<ffffffff812c0857>] ? generic_bin_search.constprop.4+0[<ffffffff812be27d>] ? unlock_up+0x15d/0x190
-> May 22 09:23:57 bigbox kernel: [56455.5ffff812c31c1>] btrfs_search_slot+0x241/0x720
-> May 22 09:23:57 bigbox kernel: [56455.5326fff812c3adc>] btrfs_search_slot_for_inode+0x43c/0x910
-> May 22 09:23:57 bigbox kernel: [56455.532fffffff812d5f04>] btrfs_lookup_file_extent+0x54/0x70
-> May 22 09:23:57 bigbox kernel: [56455.532646ffff812f097c>] btrfs_drop_extents+0xec/0x940
-> May 22 09:23:57 bigbox kernel: [56455.532662] fff81084eec>] ? try_to_wake_up+0x1bc/0x2b0
-> May 22 09:23:57 bigbox kernel: [56455.53268 [<ffffffff812facef>] ? set_state_bits+0x3f/0x80
-> May 22 09:23:57 bigbox kernel: [56455fff8116228c>] ? kmem_cache_alloc+0x10c/0x140
-> May 22 09:23:57 bigbox kernel: [56455.532713]  [<ffffffff812be2ca>] ? btrfs_alloc_path+0x1a/0x20
-> May 22 09:23:57 bigbox kernel: [5645532]  [<ffffffff812e3713>] insert_reserved_file_extent.constpr13+0x73/0x270
-> May 22 09:23:57 bigbox kernel: [56455.532746]  [<ffffffff812df6eb>] ? join_transactio0x2b/0x2b0
-> May 22 09:23:57 bigbox kernel: [56455.532759]  [<ffffffff812e1224>] ? start_transaction+0x94/0x320
-> May 22 09:23:57 bigbox kernel: [56455.532774]  [<ffffffff812e6cca>] btrfinish_ordered_io+0x2ca/0x320
-> May 22 09:23:57 bigbox kernel: [56455.532793]  [<ffffffff812e6d6d>age_end_io_hook+0x4d/0xc0
-> May 22 09:23:57 bigbox kernel: [56455.532813]  [<ffffffff812fed>] <ffffffff811a94ef>] ? bio_free+0x5f/0x70
-> May 22 09:23:57 bigbox kernel: [56455.532837] fff811a817d>] bio_endio+0x1d/0x40
-> May 22 09:23:57 bigbox kernel: [56455.532869]  [<ffffffff812d9846>] end_workqueue_fn+0x56/0x140
-> May 22 09:23:57 bigbox kernel: [56455.532886]  [<ffffffff8130aeb8>] worker_loop+0x148/0x580
-> May 22 09:23:57 bigbox kernel: [56455.532898]  [<ffffffff8130ad70>] ? btrfs_queue_worker+0x2e0/0x2e0
-> May 22 09:23:57 bigbox kernel: [56455.532915]  [<ffffffff81076473>] kthread+0x93/0xa0
-> May 22 09:23:57 bigbox kernel: [56455.532929]  [<ffffffff81678be4>] kernel_thread_helper+0x4/0x10
-> May 22 09:23:57 bigbox kernel: [56455.532944]  [<fffffffff3/0x13
-> May 22 09:23:57 bigbox kernel: [56455.532972] ---[ end trace a7919e7f17c42adb ]---
-> May 22 09:23:57 bigbox kernel: [56455.532985] ------------[ cut here ]------------
-> 
-> 
-> 
+diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
+index cd51968..46d8732 100644
+--- a/fs/btrfs/inode.c
++++ b/fs/btrfs/inode.c
+@@ -257,10 +257,13 @@ static noinline int cow_file_range_inline(struct btrfs_trans_handle *trans,
+ 	ret = insert_inline_extent(trans, root, inode, start,
+ 				   inline_len, compressed_size,
+ 				   compress_type, compressed_pages);
+-	if (ret) {
++	if (ret && ret != -ENOSPC) {
+ 		btrfs_abort_transaction(trans, root, ret);
+ 		return ret;
++	} else if (ret == -ENOSPC) {
++		return 1;
+ 	}
++
+ 	btrfs_delalloc_release_metadata(inode, end + 1 - start);
+ 	btrfs_drop_extent_cache(inode, start, aligned_end - 1, 0);
+ 	return 0;
+-- 
+1.7.7.6
 

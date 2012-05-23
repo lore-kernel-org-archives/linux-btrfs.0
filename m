@@ -1,101 +1,232 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mo-p00-ob.rzone.de ([81.169.146.161]:47108 "EHLO
-	mo-p00-ob.rzone.de" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1750819Ab2EUPBo (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 21 May 2012 11:01:44 -0400
-Message-ID: <4FBA57BC.9080407@giantdisaster.de>
-Date: Mon, 21 May 2012 16:57:00 +0200
-From: Stefan Behrens <sbehrens@giantdisaster.de>
+Received: from smtp208.alice.it ([82.57.200.104]:47572 "EHLO smtp208.alice.it"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1752677Ab2EWFVV (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Wed, 23 May 2012 01:21:21 -0400
+Message-ID: <4FBC73C6.5030708@libero.it>
+Date: Wed, 23 May 2012 07:21:10 +0200
+From: Goffredo Baroncelli <kreijack@libero.it>
+Reply-To: kreijack@inwind.it
 MIME-Version: 1.0
-To: linux-btrfs@vger.kernel.org
-CC: David Sterba <dave@jikos.cz>
-Subject: Re: [PATCH v3 3/3] Btrfs: read device stats on mount, write modified
- ones during commit
-References: <cover.1337185201.git.sbehrens@giantdisaster.de> <f7e60650b3463d028f86b38ef3e6aaf77efa665b.1337185201.git.sbehrens@giantdisaster.de> <20120518115719.GH24394@twin.jikos.cz>
-In-Reply-To: <20120518115719.GH24394@twin.jikos.cz>
+To: Liu Bo <liubo2009@cn.fujitsu.com>
+CC: linux-btrfs@vger.kernel.org
+Subject: Re: [PATCH 2/2] Btrfs: resize all devices when we dont assign a specific
+ device id
+References: <1337256489-20887-1-git-send-email-liubo2009@cn.fujitsu.com> <1337256489-20887-2-git-send-email-liubo2009@cn.fujitsu.com>
+In-Reply-To: <1337256489-20887-2-git-send-email-liubo2009@cn.fujitsu.com>
 Content-Type: text/plain; charset=ISO-8859-1
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Fri, 18 May 2012 13:57:19 +0200, David Sterba wrote:
-> On Wed, May 16, 2012 at 06:50:47PM +0200, Stefan Behrens wrote:
->> --- a/fs/btrfs/ctree.h
->> +++ b/fs/btrfs/ctree.h
->> @@ -823,6 +823,26 @@ struct btrfs_csum_item {
->>  	u8 csum;
->>  } __attribute__ ((__packed__));
->>  
->> +struct btrfs_device_stats_item {
->> +	/*
->> +	 * grow this item struct at the end for future enhancements and keep
->> +	 * the existing values unchanged
->> +	 */
->> +	__le64 cnt_write_io_errs; /* EIO or EREMOTEIO from lower layers */
->> +	__le64 cnt_read_io_errs; /* EIO or EREMOTEIO from lower layers */
->> +	__le64 cnt_flush_io_errs; /* EIO or EREMOTEIO from lower layers */
->> +
->> +	/* stats for indirect indications for I/O failures */
->> +	__le64 cnt_corruption_errs; /* checksum error, bytenr error or
->> +				     * contents is illegal: this is an
->> +				     * indication that the block was damaged
->> +				     * during read or write, or written to
->> +				     * wrong location or read from wrong
->> +				     * location */
->> +	__le64 cnt_generation_errs; /* an indication that blocks have not
->> +				     * been written */
+Hi
+
+On 05/17/2012 02:08 PM, Liu Bo wrote:
+> This patch fixes two bugs:
 > 
-> A few spare u64 would come handy in the future. Currently there are 5,
-> so add like 7 or 11. We might be interested in collecting more types of
-> stats, ore more fine-grained.
+> When we do not assigne a device id for the resizer,
+> - it will only take one device to resize, which is supposed to apply on
+>   all available devices.
+> - it will take 'id 1' device as default, and this will cause a bug as we
+>   may have removed the 'id 1' device from the filesystem.
 > 
-> I see the comment above about enhancing the structure, but then you need
-> to version this stucture. Let's say this kernel at version 3.5 add this
-> structre as you propose it now, and kernel 3.6 adds another item
-> 'cnt_exploded'.
-
-The size of the item is part of the information that is stored on disk.
-This is used to downgrade and upgrade the item, and to support
-downgrading and upgrading the kernel.
-
-In btrfs_init_device_stats(), where the items are read from disk while
-mounting, if the read item is too small, the missing statistic members
-at the end are filled with zero. If the item is larger than expected,
-the additional values are ignored.
-And in update_device_stat_item(), where the items are written to disk
-with each commit (only if they have been modified), if the disk item is
-too small, it is removed and replaced by a larger one. If the disk item
-is larger than expected, the additional values are ignored and not modified.
-
-The ioctl() works similar. In the user mode, the max number of statistic
-members is set before the ioctl(). The kernel code uses this parameter
-to determine, how much values to write and at the end replaces it with
-the number of values written. Then the btrfs tool prints all the values
-that it knows by name, but at most the number of values that the kernel
-has set.
-
-If I compare this solution to the one that just pads the item size to a
-well known size, the disadvantage are the extra lines of code. The
-advantage is that no limit at all is set.
-
-Rereading the code, I recognized that I will need to send a v4. The
-ioctl structure needs to be padded, or copy_to_user(..., sizeof(struct
-...)) would overwrite memory when the kernel struct is grown and the
-btrfs tool is old.
+> After this patch, we can find all available devices by searching the
+> chunk tree and resize them:
 
 
-> Accessing the 3.6-created image with a 3.5 will be ok (older kernel will
-> not touch the new items).
+I am not sure that this is a sane default for all resizing.
+
+If the user want to resize to MAX, I agree that it is a sane default,
+but when the user want to shrink or enlarge of a fixed quantity, the
+user should specific the dev id. Because the shrinking and or the
+enlarging should be evaluated case by case.
+
+My suggestion is to change the code at kernel level so in case of
+multi-volume file-system the user *has* to specify the device to shrink
+and/or enlarge.
+Should be the user space btrfs tool to handle the check and the growing
+(i.e: if the new size is max, automatically grow all the device up to
+max; otherwise the user should specific the device to shrink and/or
+enlarge).
+
+BR
+Goffredo
+
+
 > 
-> Accessing the 3.5-created image with a 3.6 will be problematic, as the
-> kernel would try to access ->cnt_exploded .
+> $ mkfs.btrfs /dev/sdb7
+> $ mount /dev/sdb7 /mnt/btrfs/
+> $ btrfs dev add /dev/sdb8 /mnt/btrfs/
 > 
-> So, either the 3.6 kernel needs to know not to touch the missing item
-> (ie. via reading the struct version from somewhere, stored on disk).
+> $ btrfs fi resize -100m /mnt/btrfs/
+> then we can get from dmesg:
+> btrfs: new size for /dev/sdb7 is 980844544
+> btrfs: new size for /dev/sdb8 is 980844544
 > 
-> Or, there are spare items, which are zeroed in versions that do not use
-> them and naturally used otherwise, but when new kernel uses old image,
-> it finds zeros (and will be safe).
+> $ btrfs fi resize max /mnt/btrfs
+> then we can get from dmesg:
+> btrfs: new size for /dev/sdb7 is 1085702144
+> btrfs: new size for /dev/sdb8 is 1085702144
 > 
->> +} __attribute__ ((__packed__));
->> +
+> $ btrfs fi resize 1:-100m /mnt/btrfs
+> then we can get from dmesg:
+> btrfs: resizing devid 1
+> btrfs: new size for /dev/sdb7 is 980844544
+> 
+> $ btrfs fi resize 1:-100m /mnt/btrfs
+> then we can get from dmesg:
+> btrfs: resizing devid 2
+> btrfs: new size for /dev/sdb8 is 980844544
+> 
+> Signed-off-by: Liu Bo <liubo2009@cn.fujitsu.com>
+> ---
+>  fs/btrfs/ioctl.c |  101 ++++++++++++++++++++++++++++++++++++++++++++----------
+>  1 files changed, 83 insertions(+), 18 deletions(-)
+> 
+> diff --git a/fs/btrfs/ioctl.c b/fs/btrfs/ioctl.c
+> index ec2245d..d9a4fa8 100644
+> --- a/fs/btrfs/ioctl.c
+> +++ b/fs/btrfs/ioctl.c
+> @@ -1250,12 +1250,51 @@ out_ra:
+>  	return ret;
+>  }
+>  
+> +static struct btrfs_device *get_avail_device(struct btrfs_root *root, u64 devid)
+> +{
+> +	struct btrfs_key key;
+> +	struct btrfs_path *path;
+> +	struct btrfs_dev_item *dev_item;
+> +	struct btrfs_device *device = NULL;
+> +	int ret;
+> +
+> +	path = btrfs_alloc_path();
+> +	if (!path)
+> +		return ERR_PTR(-ENOMEM);
+> +
+> +	key.objectid = BTRFS_DEV_ITEMS_OBJECTID;
+> +	key.offset = devid;
+> +	key.type = BTRFS_DEV_ITEM_KEY;
+> +
+> +	ret = btrfs_search_slot(NULL, root->fs_info->chunk_root, &key,
+> +				path, 0, 0);
+> +	if (ret < 0) {
+> +		device = ERR_PTR(ret);
+> +		goto out;
+> +	}
+> +	btrfs_item_key_to_cpu(path->nodes[0], &key, path->slots[0]);
+> +	if (key.objectid != BTRFS_DEV_ITEMS_OBJECTID ||
+> +	    key.type != BTRFS_DEV_ITEM_KEY) {
+> +		device = NULL;
+> +		goto out;
+> +	}
+> +	dev_item = btrfs_item_ptr(path->nodes[0], path->slots[0],
+> +				  struct btrfs_dev_item);
+> +	devid = btrfs_device_id(path->nodes[0], dev_item);
+> +
+> +	device = btrfs_find_device(root, devid, NULL, NULL);
+> +out:
+> +	btrfs_free_path(path);
+> +	return device;
+> +}
+> +
+>  static noinline int btrfs_ioctl_resize(struct btrfs_root *root,
+>  					void __user *arg)
+>  {
+> -	u64 new_size;
+> +	u64 new_size = 0;
+>  	u64 old_size;
+> -	u64 devid = 1;
+> +	u64 orig_new_size = 0;
+> +	u64 devid = (-1ULL);
+>  	struct btrfs_ioctl_vol_args *vol_args;
+>  	struct btrfs_trans_handle *trans;
+>  	struct btrfs_device *device = NULL;
+> @@ -1263,6 +1302,8 @@ static noinline int btrfs_ioctl_resize(struct btrfs_root *root,
+>  	char *devstr = NULL;
+>  	int ret = 0;
+>  	int mod = 0;
+> +	int scan_all = 1;
+> +	int use_max = 0;
+>  
+>  	if (root->fs_info->sb->s_flags & MS_RDONLY)
+>  		return -EROFS;
+> @@ -1295,8 +1336,31 @@ static noinline int btrfs_ioctl_resize(struct btrfs_root *root,
+>  		devid = simple_strtoull(devstr, &end, 10);
+>  		printk(KERN_INFO "btrfs: resizing devid %llu\n",
+>  		       (unsigned long long)devid);
+> +		scan_all = 0;
+>  	}
+> -	device = btrfs_find_device(root, devid, NULL, NULL);
+> +
+> +	if (!strcmp(sizestr, "max")) {
+> +		use_max = 1;
+> +	} else {
+> +		if (sizestr[0] == '-') {
+> +			mod = -1;
+> +			sizestr++;
+> +		} else if (sizestr[0] == '+') {
+> +			mod = 1;
+> +			sizestr++;
+> +		}
+> +		orig_new_size = memparse(sizestr, NULL);
+> +		if (orig_new_size == 0) {
+> +			ret = -EINVAL;
+> +			goto out_free;
+> +		}
+> +	}
+> +
+> +	if (devid < (-1ULL))
+> +		device = btrfs_find_device(root, devid, NULL, NULL);
+> +	else
+> +		device = get_avail_device(root, 0);
+> +again:
+>  	if (!device) {
+>  		printk(KERN_INFO "btrfs: resizer unable to find device %llu\n",
+>  		       (unsigned long long)devid);
+> @@ -1310,22 +1374,10 @@ static noinline int btrfs_ioctl_resize(struct btrfs_root *root,
+>  		goto out_free;
+>  	}
+>  
+> -	if (!strcmp(sizestr, "max"))
+> +	if (use_max)
+>  		new_size = device->bdev->bd_inode->i_size;
+> -	else {
+> -		if (sizestr[0] == '-') {
+> -			mod = -1;
+> -			sizestr++;
+> -		} else if (sizestr[0] == '+') {
+> -			mod = 1;
+> -			sizestr++;
+> -		}
+> -		new_size = memparse(sizestr, NULL);
+> -		if (new_size == 0) {
+> -			ret = -EINVAL;
+> -			goto out_free;
+> -		}
+> -	}
+> +	else
+> +		new_size = orig_new_size;
+>  
+>  	old_size = device->total_bytes;
+>  
+> @@ -1365,7 +1417,20 @@ static noinline int btrfs_ioctl_resize(struct btrfs_root *root,
+>  	} else if (new_size < old_size) {
+>  		ret = btrfs_shrink_device(device, new_size);
+>  	}
+> +	if (ret)
+> +		goto out_free;
+>  
+> +	if (scan_all) {
+> +		/* next available device */
+> +		device = get_avail_device(root, device->devid + 1);
+> +		if (!device)
+> +			goto out_free;
+> +		if (IS_ERR(device)) {
+> +			ret = PTR_ERR(device);
+> +			goto out_free;
+> +		}
+> +		goto again;
+> +	}
+>  out_free:
+>  	kfree(vol_args);
+>  out:
+

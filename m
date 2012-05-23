@@ -1,82 +1,149 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from twin.jikos.cz ([89.185.236.188]:42751 "EHLO twin.jikos.cz"
+Received: from twin.jikos.cz ([89.185.236.188]:43397 "EHLO twin.jikos.cz"
 	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1755030Ab2EWOBH (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 23 May 2012 10:01:07 -0400
-Date: Wed, 23 May 2012 16:00:29 +0200
+	id S1754881Ab2EWOcy (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Wed, 23 May 2012 10:32:54 -0400
+Date: Wed, 23 May 2012 16:32:52 +0200
 From: David Sterba <dave@jikos.cz>
 To: Stefan Behrens <sbehrens@giantdisaster.de>
 Cc: linux-btrfs@vger.kernel.org
-Subject: Re: [PATCH v4 1/3] Btrfs: add device counters for detected IO and
- checksum errors
-Message-ID: <20120523140029.GN24394@twin.jikos.cz>
+Subject: Re: [PATCH v4 2/3] Btrfs: add ioctl to get and reset the device stats
+Message-ID: <20120523143252.GO24394@twin.jikos.cz>
 Reply-To: dave@jikos.cz
 References: <cover.1337682115.git.sbehrens@giantdisaster.de>
- <0072a9fd5bd99859983665e65b695b55cd186097.1337682115.git.sbehrens@giantdisaster.de>
+ <184b49b6254fcc638e365a98d204ff6284d2963b.1337682115.git.sbehrens@giantdisaster.de>
 MIME-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <0072a9fd5bd99859983665e65b695b55cd186097.1337682115.git.sbehrens@giantdisaster.de>
+In-Reply-To: <184b49b6254fcc638e365a98d204ff6284d2963b.1337682115.git.sbehrens@giantdisaster.de>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Tue, May 22, 2012 at 12:53:47PM +0200, Stefan Behrens wrote:
->  		 */
->  		clear_buffer_uptodate(bh);
-> +		btrfs_device_stat_inc(&device->cnt_write_io_errs);
-> +		device->device_stats_dirty = 1;
-> +		btrfs_device_stat_print_on_error(device);
-
-this sequence repeats several times (with a slight change), IMHO it asks
-for a helper.
-
-void stat_inc(... *device, atomic_inc *cnt) {
-	atomic_inc(cntr);
-	device->device_stats_dirty = 1;
-	btrfs_device_stat_print_on_error(device);
-}
-
-usage:
-
-stat_inc(device, &device->cnt_write_io_errs);
-
-I think it's unavoidable to leave out the 'device' parameter without a
-macro trickery, but as there are only 2 params, it don't it's needed.
-
-
->  static void btrfs_end_bio(struct bio *bio, int err)
->  {
-> -	struct btrfs_bio *bbio = bio->bi_private;
-> +	struct btrfs_bio *bbio = (struct btrfs_bio *)
-> +		(((uintptr_t)bio->bi_private) & ~((uintptr_t)3));
-
-I suggest do use a helper for all the "var & 3" places, and comment why
-is it so and what are the limitations. I can see from the code below
-that it encodes number of devices and fails for > 3.
-
->  	int is_orig_bio = 0;
+On Tue, May 22, 2012 at 12:53:48PM +0200, Stefan Behrens wrote:
+> An ioctl interface is added to get the device statistic counters.
+> A second ioctl is added to atomically get and reset these counters.
+> 
+> Signed-off-by: Stefan Behrens <sbehrens@giantdisaster.de>
+> ---
+>  fs/btrfs/ioctl.c   |   26 ++++++++++++++++++++
+>  fs/btrfs/ioctl.h   |   28 +++++++++++++++++++++
+>  fs/btrfs/volumes.c |   69 ++++++++++++++++++++++++++++++++++++++++++++++++++++
+>  fs/btrfs/volumes.h |   13 ++++++++++
+>  4 files changed, 136 insertions(+)
+> 
+> diff --git a/fs/btrfs/ioctl.c b/fs/btrfs/ioctl.c
+> index 14f8e1f..19d2244 100644
+> --- a/fs/btrfs/ioctl.c
+> +++ b/fs/btrfs/ioctl.c
+> @@ -3424,6 +3446,10 @@ long btrfs_ioctl(struct file *file, unsigned int
+>  		return btrfs_ioctl_balance_ctl(root, arg);
+>  	case BTRFS_IOC_BALANCE_PROGRESS:
+>  		return btrfs_ioctl_balance_progress(root, argp);
+> +	case BTRFS_IOC_GET_DEVICE_STATS:
+> +		return btrfs_ioctl_get_device_stats(root, argp, 0);
+> +	case BTRFS_IOC_GET_AND_RESET_DEVICE_STATS:
+> +		return btrfs_ioctl_get_device_stats(root, argp, 1);
+>  	}
 >  
-> -	if (err)
-> +	if (err) {
->  		atomic_inc(&bbio->error);
-> +		if (err == -EIO || err == -EREMOTEIO) {
-> +			unsigned int dev_nr = ((uintptr_t)bio->bi_private) & 3;
+>  	return -ENOTTY;
+> diff --git a/fs/btrfs/ioctl.h b/fs/btrfs/ioctl.h
+> index 086e6bd..f1c1196 100644
+> --- a/fs/btrfs/ioctl.h
+> +++ b/fs/btrfs/ioctl.h
+> @@ -266,6 +266,30 @@ struct btrfs_ioctl_logical_ino_args {
+>  	__u64				inodes;
+>  };
+>  
+> +#define BTRFS_IOCTL_GET_DEVICE_STATS_MAX_NR_ITEMS	5
 
-eg.
+The check at the end of btrfs_get_device_stats() should use this number:
 
-unsigned int dev_nr = bio_private_to_nr_dev(bio);
-
-> @@ -4148,7 +4166,9 @@ int btrfs_map_bio(struct btrfs_root *root, int rw, struct bio *bio,
->  		} else {
->  			bio = first_bio;
->  		}
-> -		bio->bi_private = bbio;
-> +		BUG_ON((((uintptr_t)bbio) & 3) != 0);
-> +		BUG_ON(dev_nr > 3);
-> +		bio->bi_private = (void *)(((uintptr_t)bbio) | dev_nr);
->  		bio->bi_end_io = btrfs_end_bio;
->  		bio->bi_sector = bbio->stripes[dev_nr].physical >> 9;
->  		dev = bbio->stripes[dev_nr].dev;
+> +       if (stats->nr_items > 5)
+> +               stats->nr_items = 5;
+> +       return 0;
+> +}
 
 
-otherwise ok,
+> +struct btrfs_ioctl_get_device_stats {
+> +	__u64 devid;				/* in */
+> +	__u64 nr_items;				/* in/out */
+> +
+> +	/* out values: */
+> +
+> +	/* disk I/O failure stats */
+> +	__u64 cnt_write_io_errs; /* EIO or EREMOTEIO from lower layers */
+> +	__u64 cnt_read_io_errs; /* EIO or EREMOTEIO from lower layers */
+> +	__u64 cnt_flush_io_errs; /* EIO or EREMOTEIO from lower layers */
+> +
+> +	/* stats for indirect indications for I/O failures */
+> +	__u64 cnt_corruption_errs; /* checksum error, bytenr error or
+> +				    * contents is illegal: this is an
+> +				    * indication that the block was damaged
+> +				    * during read or write, or written to
+> +				    * wrong location or read from wrong
+> +				    * location */
+> +	__u64 cnt_generation_errs; /* an indication that blocks have not
+> +				    * been written */
+> +	__u64 unused[121]; /* pad to 1k */
+> +};
+
+Padding has landed, and thanks for the explanation in the V3, I see how
+the compatibility works.
+
+> +
+>  #define BTRFS_IOC_SNAP_CREATE _IOW(BTRFS_IOCTL_MAGIC, 1, \
+>  				   struct btrfs_ioctl_vol_args)
+>  #define BTRFS_IOC_DEFRAG _IOW(BTRFS_IOCTL_MAGIC, 2, \
+> @@ -330,5 +354,9 @@ struct btrfs_ioctl_logical_ino_args {
+>  					struct btrfs_ioctl_ino_path_args)
+>  #define BTRFS_IOC_LOGICAL_INO _IOWR(BTRFS_IOCTL_MAGIC, 36, \
+>  					struct btrfs_ioctl_ino_path_args)
+> +#define BTRFS_IOC_GET_DEVICE_STATS _IOWR(BTRFS_IOCTL_MAGIC, 52, \
+> +					 struct btrfs_ioctl_get_device_stats)
+> +#define BTRFS_IOC_GET_AND_RESET_DEVICE_STATS _IOWR(BTRFS_IOCTL_MAGIC, 53, \
+> +					 struct btrfs_ioctl_get_device_stats)
+
+I think that 'reset device' should go into the structure, besides the
+ioctl number there is no difference.
+
+Then the permission check will look like:
+
+> @@ -3042,6 +3042,28 @@ static long btrfs_ioctl_scrub_progress(struct btrfs_root *root,
+>  	return ret;
+>  }
+>  
+> +static long btrfs_ioctl_get_device_stats(struct btrfs_root *root,
+> +					 void __user *arg, int reset_after_read)
+
+					 void __user *arg)
+
+> +{
+> +	struct btrfs_ioctl_get_device_stats *sa;
+> +	int ret;
+> +
+> +	sa = memdup_user(arg, sizeof(*sa));
+> +	if (IS_ERR(sa))
+> +		return PTR_ERR(sa);
+> +
+> +	if (reset_after_read && !capable(CAP_SYS_ADMIN))
+
+	if (sa->reset_after_read && !capable(CAP_SYS_ADMIN)) {
+		kfree(sa);
+
+> +		return -EPERM;
+
+	}
+> +
+> +	ret = btrfs_get_device_stats(root, sa, reset_after_read);
+> +
+> +	if (copy_to_user(arg, sa, sizeof(*sa)))
+> +		ret = -EFAULT;
+> +
+> +	kfree(sa);
+> +	return ret;
+> +}
+
+So the EINVAL could come earlier than EPERM, but I don't think it's a
+problem.
+
+
 david

@@ -1,89 +1,63 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from 173-166-109-252-newengland.hfc.comcastbusiness.net ([173.166.109.252]:59440
-	"EHLO bombadil.infradead.org" rhost-flags-OK-OK-OK-OK)
-	by vger.kernel.org with ESMTP id S1753387Ab2EYPSz (ORCPT
+Received: from mail-pb0-f46.google.com ([209.85.160.46]:54235 "EHLO
+	mail-pb0-f46.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1756056Ab2EYPZV (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Fri, 25 May 2012 11:18:55 -0400
-Date: Fri, 25 May 2012 11:18:54 -0400
-From: Christoph Hellwig <hch@infradead.org>
-To: Stefan Behrens <sbehrens@giantdisaster.de>
-Cc: linux-btrfs@vger.kernel.org, linux-fsdevel@vger.kernel.org,
-        linux-kernel@vger.kernel.org
-Subject: Re: [PATCH v5 0/3] Btrfs: add IO error device stats
-Message-ID: <20120525151854.GA23362@infradead.org>
-References: <1337954770-10086-1-git-send-email-sbehrens@giantdisaster.de>
+	Fri, 25 May 2012 11:25:21 -0400
+Received: by pbbrp8 with SMTP id rp8so1895078pbb.19
+        for <linux-btrfs@vger.kernel.org>; Fri, 25 May 2012 08:25:21 -0700 (PDT)
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <1337954770-10086-1-git-send-email-sbehrens@giantdisaster.de>
+In-Reply-To: <CAB9VWqAF1Ur-Mg1g2Qae3e4CvhnY_-89i8_7sWsGYHG=4=DUHg@mail.gmail.com>
+References: <CAB9VWqAF1Ur-Mg1g2Qae3e4CvhnY_-89i8_7sWsGYHG=4=DUHg@mail.gmail.com>
+Date: Fri, 25 May 2012 17:25:21 +0200
+Message-ID: <CAB9VWqBsLJ0QVSrUvig0fQe7vyx-3CV7e8QhQkGEb0CG-UqRkQ@mail.gmail.com>
+Subject: Re: Btrfs, snapshots and atime problems
+From: Alexander Block <ablock84@googlemail.com>
+To: linux-btrfs@vger.kernel.org
+Content-Type: text/plain; charset=ISO-8859-1
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Can you explain why the device error counters should be in a filesystem
-instead of generic block layer code?
+On Fri, May 25, 2012 at 5:15 PM, Alexander Block
+<ablock84@googlemail.com> wrote:
+> Hello,
+>
+> I would like to start a discussion on atime in Btrfs (and possibly
+> other filesystems with snapshot support).
+>
+> As atime is updated on every access of a file or directory, we get
+> many changes to the trees in btrfs that as always trigger cow
+> operations. This is no problem as long as the changed tree blocks are
+> not shared by other subvolumes. Performance is also not a problem, no
+> matter if shared or not (thanks to relatime which is the default).
+> The problems start when someone starts to use snapshots. If you for
+> example snapshot your root and continue working on your root, after
+> some time big parts of the tree will be cowed and unshared. In the
+> worst case, the whole tree gets unshared and thus takes up the double
+> space. Normally, a user would expect to only use extra space for a
+> tree if he changes something.
+> A worst case scenario would be if someone took regular snapshots for
+> backup purposes and later greps the contents of all snapshots to find
+> a specific file. This would touch all inodes in all trees and thus
+> make big parts of the trees unshared.
+>
+> relatime (which is the default) reduces this problem a little bit, as
+> it by default only updates atime once a day. This means, if anyone
+> wants to test this problem, mount with relatime disabled or change the
+> system date before you try to update atime (that's the way i tested
+> it).
+>
+> As a solution, I would suggest to make noatime the default for btrfs.
+> I'm however not sure if it is allowed in linux to have different
+> default mount options for different filesystem types. I know this
+> discussion pops up every few years (last time it resulted in making
+> relatime the default). But this is a special case for btrfs. atime is
+> already bad on other filesystems, but it's much much worse in btrfs.
+>
+> Alex.
 
-On Fri, May 25, 2012 at 04:06:07PM +0200, Stefan Behrens wrote:
-> Changes v1-v2:
-> - Remove restriction that BTRFS_IOC_GET_DEVICE_STATS is a privileged
->   operation
-> - Cast u64 to unsigned long long for printf()
-> 
-> Changes v2-v3:
-> - Rebased on Chris' current master
-> 
-> Changes v3-v4:
-> - Add padding at end of ioctl structure
-> 
-> Changes v4-v5:
-> - The statistic members in the ioctl are now organized as an array of
->   64 bit values. Symbolic names for the array indexes are defined in
->   an enum, which also defines the max value. This change makes it
->   easier to add new statistic members in the future
-> - Give ins_len = -1 to btrfs_search_slot() when an item might get
->   deleted
-> - Introduce a helper function for the repeated sequence stat_int() +
->   dirty = 1 + stat_print()
-> - Introduce a helper function for the code that shares the bio
->   bi_private member for two pieces of information
-> 
-> The goal is to detect when drives start to get an increased error rate,
-> when drives should be replaced soon. Therefore statistic counters are
-> added that count IO errors (read, write and flush). Additionally, the
-> software detected errors like checksum errors and corrupted blocks are
-> counted.
-> 
-> An ioctl interface is added to get the device statistic counters.
-> A second ioctl is added to atomically get and reset these counters.
-> 
-> The device statistics are written into the device tree with each
-> transaction commit. Only modified statistics are written.
-> When a filesystem is mounted, the device statistics for each involved
-> device are read from the device tree and used to initialize the
-> counters.
-> 
-> A patch for the btrfs-progs world will also be sent.
-> 
-> Stefan Behrens (3):
->   Btrfs: add device counters for detected IO and checksum errors
->   Btrfs: add ioctl to get and reset the device stats
->   Btrfs: read device stats on mount, write modified ones during commit
-> 
->  fs/btrfs/ctree.h       |   38 ++++++
->  fs/btrfs/disk-io.c     |   20 +++-
->  fs/btrfs/extent_io.c   |   18 ++-
->  fs/btrfs/ioctl.c       |   26 +++++
->  fs/btrfs/ioctl.h       |   33 ++++++
->  fs/btrfs/print-tree.c  |    3 +
->  fs/btrfs/scrub.c       |   65 ++++++++---
->  fs/btrfs/transaction.c |    4 +
->  fs/btrfs/volumes.c     |  304 +++++++++++++++++++++++++++++++++++++++++++++++-
->  fs/btrfs/volumes.h     |   52 +++++++++
->  10 files changed, 539 insertions(+), 24 deletions(-)
-> 
-> -- 
-> 1.7.10.2
-> 
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
----end quoted text---
+An additional note. The RO subvolume + atime patch that I sent out
+recently may reduce the problems in the described worst case if RO
+snapshots were used. It would however still have the same problems
+in the case / is snapshotted and you continue working on / (which is
+the typical usage for snapshots i think).

@@ -1,95 +1,69 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx1.redhat.com ([209.132.183.28]:32669 "EHLO mx1.redhat.com"
+Received: from mx1.redhat.com ([209.132.183.28]:11193 "EHLO mx1.redhat.com"
 	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1757723Ab2EYDJv (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 24 May 2012 23:09:51 -0400
+	id S1753370Ab2EYDJn (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Thu, 24 May 2012 23:09:43 -0400
 From: Asias He <asias@redhat.com>
 To: linux-kernel@vger.kernel.org, linux-btrfs@vger.kernel.org
-Cc: Asias He <asias@redhat.com>, Jens Axboe <axboe@kernel.dk>,
-        Chris Mason <chris.mason@oracle.com>
-Subject: [PATCH 2/2] block: Drop dead function blk_abort_queue()
-Date: Fri, 25 May 2012 11:10:22 +0800
-Message-Id: <1337915422-24988-2-git-send-email-asias@redhat.com>
-In-Reply-To: <1337915422-24988-1-git-send-email-asias@redhat.com>
-References: <1337915422-24988-1-git-send-email-asias@redhat.com>
+Cc: Asias He <asias@redhat.com>, Chris Mason <chris.mason@oracle.com>,
+        Jens Axboe <axboe@kernel.dk>
+Subject: [PATCH 1/2] btrfs: Drop unused function btrfs_abort_devices()
+Date: Fri, 25 May 2012 11:10:21 +0800
+Message-Id: <1337915422-24988-1-git-send-email-asias@redhat.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-This function is only used by btrfs code in btrfs_abort_devices()
-(seems in a wrong way). However, btrfs_abort_devices() is not used
-anywhere. Let's remove the dead code to avoid any confusion.
+1) This function is not used anywhere.
 
-Cc: Jens Axboe <axboe@kernel.dk>
-Cc: linux-kernel@vger.kernel.org
+2) Using the blk_abort_queue() to abort the queue seems not correct.
+blk_abort_queue() is used for timeout handling (block/blk-timeout.c).
+
 Cc: Chris Mason <chris.mason@oracle.com>
 Cc: linux-btrfs@vger.kernel.org
+Cc: Jens Axboe <axboe@kernel.dk>
+Cc: linux-kernel@vger.kernel.org
 Signed-off-by: Asias He <asias@redhat.com>
 ---
- block/blk-timeout.c    |   41 -----------------------------------------
- include/linux/blkdev.h |    1 -
- 2 files changed, 42 deletions(-)
+ fs/btrfs/disk-io.c |   13 -------------
+ fs/btrfs/disk-io.h |    1 -
+ 2 files changed, 14 deletions(-)
 
-diff --git a/block/blk-timeout.c b/block/blk-timeout.c
-index 7803548..6e4744c 100644
---- a/block/blk-timeout.c
-+++ b/block/blk-timeout.c
-@@ -197,44 +197,3 @@ void blk_add_timer(struct request *req)
- 		mod_timer(&q->timeout, expiry);
+diff --git a/fs/btrfs/disk-io.c b/fs/btrfs/disk-io.c
+index e1fe74a..3521866 100644
+--- a/fs/btrfs/disk-io.c
++++ b/fs/btrfs/disk-io.c
+@@ -2902,19 +2902,6 @@ int write_ctree_super(struct btrfs_trans_handle *trans,
+ 	return ret;
  }
  
--/**
-- * blk_abort_queue -- Abort all request on given queue
-- * @queue:	pointer to queue
-- *
-- */
--void blk_abort_queue(struct request_queue *q)
+-/* Kill all outstanding I/O */
+-void btrfs_abort_devices(struct btrfs_root *root)
 -{
--	unsigned long flags;
--	struct request *rq, *tmp;
--	LIST_HEAD(list);
--
--	/*
--	 * Not a request based block device, nothing to abort
--	 */
--	if (!q->request_fn)
--		return;
--
--	spin_lock_irqsave(q->queue_lock, flags);
--
--	elv_abort_queue(q);
--
--	/*
--	 * Splice entries to local list, to avoid deadlocking if entries
--	 * get readded to the timeout list by error handling
--	 */
--	list_splice_init(&q->timeout_list, &list);
--
--	list_for_each_entry_safe(rq, tmp, &list, timeout_list)
--		blk_abort_request(rq);
--
--	/*
--	 * Occasionally, blk_abort_request() will return without
--	 * deleting the element from the list. Make sure we add those back
--	 * instead of leaving them on the local stack list.
--	 */
--	list_splice(&list, &q->timeout_list);
--
--	spin_unlock_irqrestore(q->queue_lock, flags);
--
+-	struct list_head *head;
+-	struct btrfs_device *dev;
+-	mutex_lock(&root->fs_info->fs_devices->device_list_mutex);
+-	head = &root->fs_info->fs_devices->devices;
+-	list_for_each_entry_rcu(dev, head, dev_list) {
+-		blk_abort_queue(dev->bdev->bd_disk->queue);
+-	}
+-	mutex_unlock(&root->fs_info->fs_devices->device_list_mutex);
 -}
--EXPORT_SYMBOL_GPL(blk_abort_queue);
-diff --git a/include/linux/blkdev.h b/include/linux/blkdev.h
-index 4d4ac24..dcd9738 100644
---- a/include/linux/blkdev.h
-+++ b/include/linux/blkdev.h
-@@ -809,7 +809,6 @@ extern bool __blk_end_request_err(struct request *rq, int error);
- extern void blk_complete_request(struct request *);
- extern void __blk_complete_request(struct request *);
- extern void blk_abort_request(struct request *);
--extern void blk_abort_queue(struct request_queue *);
- extern void blk_unprep_request(struct request *);
+-
+ void btrfs_free_fs_root(struct btrfs_fs_info *fs_info, struct btrfs_root *root)
+ {
+ 	spin_lock(&fs_info->fs_roots_radix_lock);
+diff --git a/fs/btrfs/disk-io.h b/fs/btrfs/disk-io.h
+index ab1830a..05b3fab 100644
+--- a/fs/btrfs/disk-io.h
++++ b/fs/btrfs/disk-io.h
+@@ -89,7 +89,6 @@ int btrfs_add_log_tree(struct btrfs_trans_handle *trans,
+ int btrfs_cleanup_transaction(struct btrfs_root *root);
+ void btrfs_cleanup_one_transaction(struct btrfs_transaction *trans,
+ 				  struct btrfs_root *root);
+-void btrfs_abort_devices(struct btrfs_root *root);
  
- /*
+ #ifdef CONFIG_DEBUG_LOCK_ALLOC
+ void btrfs_init_lockdep(void);
 -- 
 1.7.10.2
 

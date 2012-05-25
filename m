@@ -1,208 +1,307 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([222.73.24.84]:20425 "EHLO song.cn.fujitsu.com"
-	rhost-flags-OK-FAIL-OK-OK) by vger.kernel.org with ESMTP
-	id S1756634Ab2EUCYS (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Sun, 20 May 2012 22:24:18 -0400
-Received: from mailserver.fnst.cn.fujitsu.com (tang.cn.fujitsu.com [127.0.0.1])
-	by tang.cn.fujitsu.com (8.14.3/8.13.1) with ESMTP id q4L2OENC032420
-	for <linux-btrfs@vger.kernel.org>; Mon, 21 May 2012 10:24:15 +0800
-From: Liu Bo <liubo2009@cn.fujitsu.com>
-To: <linux-btrfs@vger.kernel.org>
-Subject: [PATCH 2/2 v2] Btrfs: resize all devices when we dont assign a specific device id
-Date: Mon, 21 May 2012 10:28:39 +0800
-Message-Id: <1337567319-1657-2-git-send-email-liubo2009@cn.fujitsu.com>
-In-Reply-To: <1337567319-1657-1-git-send-email-liubo2009@cn.fujitsu.com>
-References: <1337567319-1657-1-git-send-email-liubo2009@cn.fujitsu.com>
+Received: from mx1.redhat.com ([209.132.183.28]:32322 "EHLO mx1.redhat.com"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1751411Ab2EYOJr (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Fri, 25 May 2012 10:09:47 -0400
+Received: from int-mx09.intmail.prod.int.phx2.redhat.com (int-mx09.intmail.prod.int.phx2.redhat.com [10.5.11.22])
+	by mx1.redhat.com (8.14.4/8.14.4) with ESMTP id q4PE9l0i030915
+	(version=TLSv1/SSLv3 cipher=DHE-RSA-AES256-SHA bits=256 verify=OK)
+	for <linux-btrfs@vger.kernel.org>; Fri, 25 May 2012 10:09:47 -0400
+Received: from localhost.localdomain.com (vpn-8-136.rdu.redhat.com [10.11.8.136])
+	by int-mx09.intmail.prod.int.phx2.redhat.com (8.14.4/8.14.4) with ESMTP id q4PE9kBl023507
+	for <linux-btrfs@vger.kernel.org>; Fri, 25 May 2012 10:09:46 -0400
+From: Josef Bacik <josef@redhat.com>
+To: linux-btrfs@vger.kernel.org
+Subject: [PATCH] Btrfs: convert the inode bit field to use the actual bit operations
+Date: Fri, 25 May 2012 10:09:45 -0400
+Message-Id: <1337954985-3425-1-git-send-email-josef@redhat.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-This patch fixes two bugs:
+Miao pointed this out while I was working on an orphan problem that messing
+with a bitfield where different ranges are protected by different locks
+doesn't work out right.  Turns out we've been doing this forever where we
+have different parts of the bit field protected by either no lock at all or
+different locks which could cause all sorts of weird problems including the
+issue I was hitting.  So instead make a runtime_flags thing that we use the
+normal bit operations on that are all atomic so we can keep having our
+no/different locking for the different flags and then make force_compress
+it's own thing so it can be treated normally.  Thanks,
 
-When we do not assigne a device id for the resizer,
-- it will only take one device to resize, which is supposed to apply on
-  all available devices.
-- it will take 'id 1' device as default, and this will cause a bug as we
-  may have removed the 'id 1' device from the filesystem.
-
-After this patch, we can find all available devices by searching the
-chunk tree and resize them:
-
-$ mkfs.btrfs /dev/sdb7
-$ mount /dev/sdb7 /mnt/btrfs/
-$ btrfs dev add /dev/sdb8 /mnt/btrfs/
-
-$ btrfs fi resize -100m /mnt/btrfs/
-then we can get from dmesg:
-btrfs: new size for /dev/sdb7 is 980844544
-btrfs: new size for /dev/sdb8 is 980844544
-
-$ btrfs fi resize max /mnt/btrfs
-then we can get from dmesg:
-btrfs: new size for /dev/sdb7 is 1085702144
-btrfs: new size for /dev/sdb8 is 1085702144
-
-$ btrfs fi resize 1:-100m /mnt/btrfs
-then we can get from dmesg:
-btrfs: resizing devid 1
-btrfs: new size for /dev/sdb7 is 980844544
-
-$ btrfs fi resize 1:-100m /mnt/btrfs
-then we can get from dmesg:
-btrfs: resizing devid 2
-btrfs: new size for /dev/sdb8 is 980844544
-
-Signed-off-by: Liu Bo <liubo2009@cn.fujitsu.com>
+Signed-off-by: Josef Bacik <josef@redhat.com>
 ---
- fs/btrfs/ioctl.c |  101 ++++++++++++++++++++++++++++++++++++++++++++----------
- 1 files changed, 83 insertions(+), 18 deletions(-)
+ fs/btrfs/btrfs_inode.h   |   30 ++++++++++++++++--------------
+ fs/btrfs/delayed-inode.c |    4 ++--
+ fs/btrfs/disk-io.c       |    3 ++-
+ fs/btrfs/extent-tree.c   |   11 ++++++-----
+ fs/btrfs/file.c          |   12 ++++++------
+ fs/btrfs/inode.c         |   28 ++++++++++++----------------
+ 6 files changed, 44 insertions(+), 44 deletions(-)
 
-diff --git a/fs/btrfs/ioctl.c b/fs/btrfs/ioctl.c
-index ec2245d..d9a4fa8 100644
---- a/fs/btrfs/ioctl.c
-+++ b/fs/btrfs/ioctl.c
-@@ -1250,12 +1250,51 @@ out_ra:
- 	return ret;
- }
+diff --git a/fs/btrfs/btrfs_inode.h b/fs/btrfs/btrfs_inode.h
+index 3771b85..6265edb 100644
+--- a/fs/btrfs/btrfs_inode.h
++++ b/fs/btrfs/btrfs_inode.h
+@@ -24,6 +24,19 @@
+ #include "ordered-data.h"
+ #include "delayed-inode.h"
  
-+static struct btrfs_device *get_avail_device(struct btrfs_root *root, u64 devid)
-+{
-+	struct btrfs_key key;
-+	struct btrfs_path *path;
-+	struct btrfs_dev_item *dev_item;
-+	struct btrfs_device *device = NULL;
-+	int ret;
++/*
++ * ordered_data_close is set by truncate when a file that used
++ * to have good data has been truncated to zero.  When it is set
++ * the btrfs file release call will add this inode to the
++ * ordered operations list so that we make sure to flush out any
++ * new data the application may have written before commit.
++ */
++#define BTRFS_INODE_ORDERED_DATA_CLOSE		0
++#define BTRFS_INODE_ORPHAN_META_RESERVED	1
++#define BTRFS_INODE_DUMMY			2
++#define BTRFS_INODE_IN_DEFRAG			3
++#define BTRFS_INODE_DELALLOC_META_RESERVED	4
 +
-+	path = btrfs_alloc_path();
-+	if (!path)
-+		return ERR_PTR(-ENOMEM);
-+
-+	key.objectid = BTRFS_DEV_ITEMS_OBJECTID;
-+	key.offset = devid;
-+	key.type = BTRFS_DEV_ITEM_KEY;
-+
-+	ret = btrfs_search_slot(NULL, root->fs_info->chunk_root, &key,
-+				path, 0, 0);
-+	if (ret < 0) {
-+		device = ERR_PTR(ret);
-+		goto out;
-+	}
-+	btrfs_item_key_to_cpu(path->nodes[0], &key, path->slots[0]);
-+	if (key.objectid != BTRFS_DEV_ITEMS_OBJECTID ||
-+	    key.type != BTRFS_DEV_ITEM_KEY) {
-+		device = NULL;
-+		goto out;
-+	}
-+	dev_item = btrfs_item_ptr(path->nodes[0], path->slots[0],
-+				  struct btrfs_dev_item);
-+	devid = btrfs_device_id(path->nodes[0], dev_item);
-+
-+	device = btrfs_find_device(root, devid, NULL, NULL);
-+out:
-+	btrfs_free_path(path);
-+	return device;
-+}
-+
- static noinline int btrfs_ioctl_resize(struct btrfs_root *root,
- 					void __user *arg)
- {
--	u64 new_size;
-+	u64 new_size = 0;
- 	u64 old_size;
--	u64 devid = 1;
-+	u64 orig_new_size = 0;
-+	u64 devid = (-1ULL);
- 	struct btrfs_ioctl_vol_args *vol_args;
- 	struct btrfs_trans_handle *trans;
- 	struct btrfs_device *device = NULL;
-@@ -1263,6 +1302,8 @@ static noinline int btrfs_ioctl_resize(struct btrfs_root *root,
- 	char *devstr = NULL;
- 	int ret = 0;
- 	int mod = 0;
-+	int scan_all = 1;
-+	int use_max = 0;
+ /* in memory btrfs inode */
+ struct btrfs_inode {
+ 	/* which subvolume this inode belongs to */
+@@ -78,6 +91,8 @@ struct btrfs_inode {
+ 	/* the space_info for where this inode's data allocations are done */
+ 	struct btrfs_space_info *space_info;
  
- 	if (root->fs_info->sb->s_flags & MS_RDONLY)
- 		return -EROFS;
-@@ -1295,8 +1336,31 @@ static noinline int btrfs_ioctl_resize(struct btrfs_root *root,
- 		devid = simple_strtoull(devstr, &end, 10);
- 		printk(KERN_INFO "btrfs: resizing devid %llu\n",
- 		       (unsigned long long)devid);
-+		scan_all = 0;
- 	}
--	device = btrfs_find_device(root, devid, NULL, NULL);
++	unsigned long runtime_flags;
 +
-+	if (!strcmp(sizestr, "max")) {
-+		use_max = 1;
-+	} else {
-+		if (sizestr[0] == '-') {
-+			mod = -1;
-+			sizestr++;
-+		} else if (sizestr[0] == '+') {
-+			mod = 1;
-+			sizestr++;
-+		}
-+		orig_new_size = memparse(sizestr, NULL);
-+		if (orig_new_size == 0) {
-+			ret = -EINVAL;
-+			goto out_free;
-+		}
-+	}
-+
-+	if (devid < (-1ULL))
-+		device = btrfs_find_device(root, devid, NULL, NULL);
-+	else
-+		device = get_avail_device(root, 0);
-+again:
- 	if (!device) {
- 		printk(KERN_INFO "btrfs: resizer unable to find device %llu\n",
- 		       (unsigned long long)devid);
-@@ -1310,22 +1374,10 @@ static noinline int btrfs_ioctl_resize(struct btrfs_root *root,
- 		goto out_free;
- 	}
+ 	/* full 64 bit generation number, struct vfs_inode doesn't have a big
+ 	 * enough field for this.
+ 	 */
+@@ -142,22 +157,9 @@ struct btrfs_inode {
+ 	unsigned reserved_extents;
  
--	if (!strcmp(sizestr, "max"))
-+	if (use_max)
- 		new_size = device->bdev->bd_inode->i_size;
--	else {
--		if (sizestr[0] == '-') {
--			mod = -1;
--			sizestr++;
--		} else if (sizestr[0] == '+') {
--			mod = 1;
--			sizestr++;
--		}
--		new_size = memparse(sizestr, NULL);
--		if (new_size == 0) {
--			ret = -EINVAL;
--			goto out_free;
--		}
+ 	/*
+-	 * ordered_data_close is set by truncate when a file that used
+-	 * to have good data has been truncated to zero.  When it is set
+-	 * the btrfs file release call will add this inode to the
+-	 * ordered operations list so that we make sure to flush out any
+-	 * new data the application may have written before commit.
+-	 */
+-	unsigned ordered_data_close:1;
+-	unsigned orphan_meta_reserved:1;
+-	unsigned dummy_inode:1;
+-	unsigned in_defrag:1;
+-	unsigned delalloc_meta_reserved:1;
+-
+-	/*
+ 	 * always compress this one file
+ 	 */
+-	unsigned force_compress:4;
++	unsigned force_compress;
+ 
+ 	struct btrfs_delayed_node *delayed_node;
+ 
+diff --git a/fs/btrfs/delayed-inode.c b/fs/btrfs/delayed-inode.c
+index bcd40c7..c18d044 100644
+--- a/fs/btrfs/delayed-inode.c
++++ b/fs/btrfs/delayed-inode.c
+@@ -669,8 +669,8 @@ static int btrfs_delayed_inode_reserve_metadata(
+ 		return ret;
+ 	} else if (src_rsv == &root->fs_info->delalloc_block_rsv) {
+ 		spin_lock(&BTRFS_I(inode)->lock);
+-		if (BTRFS_I(inode)->delalloc_meta_reserved) {
+-			BTRFS_I(inode)->delalloc_meta_reserved = 0;
++		if (test_and_clear_bit(BTRFS_INODE_DELALLOC_META_RESERVED,
++				       &BTRFS_I(inode)->runtime_flags)) {
+ 			spin_unlock(&BTRFS_I(inode)->lock);
+ 			release = true;
+ 			goto migrate;
+diff --git a/fs/btrfs/disk-io.c b/fs/btrfs/disk-io.c
+index 19f5b45..0cf8ef2 100644
+--- a/fs/btrfs/disk-io.c
++++ b/fs/btrfs/disk-io.c
+@@ -2001,7 +2001,8 @@ int open_ctree(struct super_block *sb,
+ 	BTRFS_I(fs_info->btree_inode)->root = tree_root;
+ 	memset(&BTRFS_I(fs_info->btree_inode)->location, 0,
+ 	       sizeof(struct btrfs_key));
+-	BTRFS_I(fs_info->btree_inode)->dummy_inode = 1;
++	set_bit(BTRFS_INODE_DUMMY,
++		&BTRFS_I(fs_info->btree_inode)->runtime_flags);
+ 	insert_inode_hash(fs_info->btree_inode);
+ 
+ 	spin_lock_init(&fs_info->block_group_cache_lock);
+diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
+index 59ae191..1902726 100644
+--- a/fs/btrfs/extent-tree.c
++++ b/fs/btrfs/extent-tree.c
+@@ -4355,10 +4355,9 @@ static unsigned drop_outstanding_extent(struct inode *inode)
+ 	BTRFS_I(inode)->outstanding_extents--;
+ 
+ 	if (BTRFS_I(inode)->outstanding_extents == 0 &&
+-	    BTRFS_I(inode)->delalloc_meta_reserved) {
++	    test_and_clear_bit(BTRFS_INODE_DELALLOC_META_RESERVED,
++			       &BTRFS_I(inode)->runtime_flags))
+ 		drop_inode_space = 1;
+-		BTRFS_I(inode)->delalloc_meta_reserved = 0;
 -	}
-+	else
-+		new_size = orig_new_size;
  
- 	old_size = device->total_bytes;
- 
-@@ -1365,7 +1417,20 @@ static noinline int btrfs_ioctl_resize(struct btrfs_root *root,
- 	} else if (new_size < old_size) {
- 		ret = btrfs_shrink_device(device, new_size);
+ 	/*
+ 	 * If we have more or the same amount of outsanding extents than we have
+@@ -4465,7 +4464,8 @@ int btrfs_delalloc_reserve_metadata(struct inode *inode, u64 num_bytes)
+ 	 * Add an item to reserve for updating the inode when we complete the
+ 	 * delalloc io.
+ 	 */
+-	if (!BTRFS_I(inode)->delalloc_meta_reserved) {
++	if (!test_bit(BTRFS_INODE_DELALLOC_META_RESERVED,
++		      &BTRFS_I(inode)->runtime_flags)) {
+ 		nr_extents++;
+ 		extra_reserve = 1;
  	}
-+	if (ret)
-+		goto out_free;
+@@ -4511,7 +4511,8 @@ int btrfs_delalloc_reserve_metadata(struct inode *inode, u64 num_bytes)
  
-+	if (scan_all) {
-+		/* next available device */
-+		device = get_avail_device(root, device->devid + 1);
-+		if (!device)
-+			goto out_free;
-+		if (IS_ERR(device)) {
-+			ret = PTR_ERR(device);
-+			goto out_free;
-+		}
-+		goto again;
-+	}
- out_free:
- 	kfree(vol_args);
- out:
+ 	spin_lock(&BTRFS_I(inode)->lock);
+ 	if (extra_reserve) {
+-		BTRFS_I(inode)->delalloc_meta_reserved = 1;
++		set_bit(BTRFS_INODE_DELALLOC_META_RESERVED,
++			&BTRFS_I(inode)->runtime_flags);
+ 		nr_extents--;
+ 	}
+ 	BTRFS_I(inode)->reserved_extents += nr_extents;
+diff --git a/fs/btrfs/file.c b/fs/btrfs/file.c
+index c9e2bf5..cdc68ff 100644
+--- a/fs/btrfs/file.c
++++ b/fs/btrfs/file.c
+@@ -103,7 +103,7 @@ static void __btrfs_add_inode_defrag(struct inode *inode,
+ 			goto exists;
+ 		}
+ 	}
+-	BTRFS_I(inode)->in_defrag = 1;
++	set_bit(BTRFS_INODE_IN_DEFRAG, &BTRFS_I(inode)->runtime_flags);
+ 	rb_link_node(&defrag->rb_node, parent, p);
+ 	rb_insert_color(&defrag->rb_node, &root->fs_info->defrag_inodes);
+ 	return;
+@@ -131,7 +131,7 @@ int btrfs_add_inode_defrag(struct btrfs_trans_handle *trans,
+ 	if (btrfs_fs_closing(root->fs_info))
+ 		return 0;
+ 
+-	if (BTRFS_I(inode)->in_defrag)
++	if (test_bit(BTRFS_INODE_IN_DEFRAG, &BTRFS_I(inode)->runtime_flags))
+ 		return 0;
+ 
+ 	if (trans)
+@@ -148,7 +148,7 @@ int btrfs_add_inode_defrag(struct btrfs_trans_handle *trans,
+ 	defrag->root = root->root_key.objectid;
+ 
+ 	spin_lock(&root->fs_info->defrag_inodes_lock);
+-	if (!BTRFS_I(inode)->in_defrag)
++	if (!test_bit(BTRFS_INODE_IN_DEFRAG, &BTRFS_I(inode)->runtime_flags))
+ 		__btrfs_add_inode_defrag(inode, defrag);
+ 	else
+ 		kfree(defrag);
+@@ -252,7 +252,7 @@ int btrfs_run_defrag_inodes(struct btrfs_fs_info *fs_info)
+ 			goto next;
+ 
+ 		/* do a chunk of defrag */
+-		BTRFS_I(inode)->in_defrag = 0;
++		clear_bit(BTRFS_INODE_IN_DEFRAG, &BTRFS_I(inode)->runtime_flags);
+ 		range.start = defrag->last_offset;
+ 		num_defrag = btrfs_defrag_file(inode, NULL, &range, defrag->transid,
+ 					       defrag_batch);
+@@ -1465,8 +1465,8 @@ int btrfs_release_file(struct inode *inode, struct file *filp)
+ 	 * flush down new bytes that may have been written if the
+ 	 * application were using truncate to replace a file in place.
+ 	 */
+-	if (BTRFS_I(inode)->ordered_data_close) {
+-		BTRFS_I(inode)->ordered_data_close = 0;
++	if (test_and_clear_bit(BTRFS_INODE_ORDERED_DATA_CLOSE,
++			       &BTRFS_I(inode)->runtime_flags)) {
+ 		btrfs_add_ordered_operation(NULL, BTRFS_I(inode)->root, inode);
+ 		if (inode->i_size > BTRFS_ORDERED_OPERATIONS_FLUSH_LIMIT)
+ 			filemap_flush(inode->i_mapping);
+diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
+index 54ae3df..2a5ca50 100644
+--- a/fs/btrfs/inode.c
++++ b/fs/btrfs/inode.c
+@@ -2182,10 +2182,9 @@ int btrfs_orphan_add(struct btrfs_trans_handle *trans, struct inode *inode)
+ 		insert = 1;
+ 	}
+ 
+-	if (!BTRFS_I(inode)->orphan_meta_reserved) {
+-		BTRFS_I(inode)->orphan_meta_reserved = 1;
++	if (!test_and_set_bit(BTRFS_INODE_ORPHAN_META_RESERVED,
++			      &BTRFS_I(inode)->runtime_flags))
+ 		reserve = 1;
+-	}
+ 	spin_unlock(&root->orphan_lock);
+ 
+ 	/* grab metadata reservation from transaction handle */
+@@ -2233,10 +2232,9 @@ int btrfs_orphan_del(struct btrfs_trans_handle *trans, struct inode *inode)
+ 		delete_item = 1;
+ 	}
+ 
+-	if (BTRFS_I(inode)->orphan_meta_reserved) {
+-		BTRFS_I(inode)->orphan_meta_reserved = 0;
++	if (test_and_clear_bit(BTRFS_INODE_ORPHAN_META_RESERVED,
++			       &BTRFS_I(inode)->runtime_flags))
+ 		release_rsv = 1;
+-	}
+ 	spin_unlock(&root->orphan_lock);
+ 
+ 	if (trans && delete_item) {
+@@ -3642,7 +3640,8 @@ static int btrfs_setsize(struct inode *inode, loff_t newsize)
+ 		 * any new writes get down to disk quickly.
+ 		 */
+ 		if (newsize == 0)
+-			BTRFS_I(inode)->ordered_data_close = 1;
++			set_bit(BTRFS_INODE_ORDERED_DATA_CLOSE,
++				&BTRFS_I(inode)->runtime_flags);
+ 
+ 		/* we don't support swapfiles, so vmtruncate shouldn't fail */
+ 		truncate_setsize(inode, newsize);
+@@ -4102,7 +4101,7 @@ static struct inode *new_simple_dir(struct super_block *s,
+ 
+ 	BTRFS_I(inode)->root = root;
+ 	memcpy(&BTRFS_I(inode)->location, key, sizeof(*key));
+-	BTRFS_I(inode)->dummy_inode = 1;
++	set_bit(BTRFS_INODE_DUMMY, &BTRFS_I(inode)->runtime_flags);
+ 
+ 	inode->i_ino = BTRFS_EMPTY_SUBVOL_DIR_OBJECTID;
+ 	inode->i_op = &btrfs_dir_ro_inode_operations;
+@@ -4406,7 +4405,7 @@ int btrfs_write_inode(struct inode *inode, struct writeback_control *wbc)
+ 	int ret = 0;
+ 	bool nolock = false;
+ 
+-	if (BTRFS_I(inode)->dummy_inode)
++	if (test_bit(BTRFS_INODE_DUMMY, &BTRFS_I(inode)->runtime_flags))
+ 		return 0;
+ 
+ 	if (btrfs_fs_closing(root->fs_info) && btrfs_is_free_space_inode(root, inode))
+@@ -4439,7 +4438,7 @@ int btrfs_dirty_inode(struct inode *inode)
+ 	struct btrfs_trans_handle *trans;
+ 	int ret;
+ 
+-	if (BTRFS_I(inode)->dummy_inode)
++	if (test_bit(BTRFS_INODE_DUMMY, &BTRFS_I(inode)->runtime_flags))
+ 		return 0;
+ 
+ 	trans = btrfs_join_transaction(root);
+@@ -6724,7 +6723,8 @@ static int btrfs_truncate(struct inode *inode)
+ 	 * using truncate to replace the contents of the file will
+ 	 * end up with a zero length file after a crash.
+ 	 */
+-	if (inode->i_size == 0 && BTRFS_I(inode)->ordered_data_close)
++	if (inode->i_size == 0 && test_bit(BTRFS_INODE_ORDERED_DATA_CLOSE,
++					   &BTRFS_I(inode)->runtime_flags))
+ 		btrfs_add_ordered_operation(trans, root, inode);
+ 
+ 	while (1) {
+@@ -6861,11 +6861,7 @@ struct inode *btrfs_alloc_inode(struct super_block *sb)
+ 	ei->outstanding_extents = 0;
+ 	ei->reserved_extents = 0;
+ 
+-	ei->ordered_data_close = 0;
+-	ei->orphan_meta_reserved = 0;
+-	ei->dummy_inode = 0;
+-	ei->in_defrag = 0;
+-	ei->delalloc_meta_reserved = 0;
++	ei->runtime_flags = 0;
+ 	ei->force_compress = BTRFS_COMPRESS_NONE;
+ 
+ 	ei->delayed_node = NULL;
 -- 
-1.6.5.2
+1.7.7.6
 

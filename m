@@ -1,97 +1,262 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-ob0-f174.google.com ([209.85.214.174]:33381 "EHLO
-	mail-ob0-f174.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1752128Ab2EZR6M (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Sat, 26 May 2012 13:58:12 -0400
-Received: by obbtb18 with SMTP id tb18so2918292obb.19
-        for <linux-btrfs@vger.kernel.org>; Sat, 26 May 2012 10:58:12 -0700 (PDT)
-From: Shawn Bohrer <shawn.bohrer@gmail.com>
-To: Chris Mason <chris.mason@oracle.com>
-Cc: linux-btrfs@vger.kernel.org, Shawn Bohrer <shawn.bohrer@gmail.com>
-Subject: [PATCH] btrfs-progs: Update resize documentation
-Date: Sat, 26 May 2012 12:57:55 -0500
-Message-Id: <1338055075-19030-1-git-send-email-shawn.bohrer@gmail.com>
+Received: from ysabell.rzone.de ([81.169.144.237]:47898 "EHLO ysabell.rzone.de"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1752927Ab2EYOHT (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Fri, 25 May 2012 10:07:19 -0400
+Received: from gargravarr.store (gargravarr.store [192.168.42.236])
+	by ysabell.rzone.de (Postfix) with ESMTP id 8DAAB3E0
+	for <linux-btrfs@vger.kernel.org>; Fri, 25 May 2012 16:07:18 +0200 (MEST)
+From: Stefan Behrens <sbehrens@giantdisaster.de>
+To: linux-btrfs@vger.kernel.org
+Subject: [PATCH v5 1/3] Btrfs-progs: move open_file_or_dir() to utils.c
+Date: Fri, 25 May 2012 16:07:16 +0200
+Message-Id: <1337954838-10140-2-git-send-email-sbehrens@giantdisaster.de>
+In-Reply-To: <1337954838-10140-1-git-send-email-sbehrens@giantdisaster.de>
+References: <1337954838-10140-1-git-send-email-sbehrens@giantdisaster.de>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-The btrfs filesystem resize command defaults to only resizing the
-filesystem for devid 1, and must have a devid passed in to resize the
-filesystem for the other devices in the filesystem.
+This is a preparation step to add support for device stats. The definition
+of the function open_file_or_dir() is moved from common.c to utils.c in
+order to be able to share some common code between scrub and the device
+stats in the following step. That common code uses open_file_or_dir().
+Since open_file_or_dir() makes use of the function dirfd(3), the required
+XOPEN version was raised from 6 to 7.
 
-Additionally the documentation lacked information on how to actually
-resize the underlying partition so this provides a little more detail.
-
-Signed-off-by: Shawn Bohrer <shawn.bohrer@gmail.com>
+Signed-off-by: Stefan Behrens <sbehrens@giantdisaster.de>
 ---
- cmds-filesystem.c |    4 ++--
- man/btrfs.8.in    |   17 +++++++++++------
- 2 files changed, 13 insertions(+), 8 deletions(-)
+ Makefile         |    4 ++--
+ btrfsctl.c       |   28 ----------------------------
+ cmds-balance.c   |    1 +
+ cmds-inspect.c   |    1 +
+ cmds-subvolume.c |    1 +
+ commands.h       |    3 ---
+ common.c         |   46 ----------------------------------------------
+ utils.c          |   31 +++++++++++++++++++++++++++++--
+ utils.h          |    3 +++
+ 9 files changed, 37 insertions(+), 81 deletions(-)
 
-diff --git a/cmds-filesystem.c b/cmds-filesystem.c
-index 1f53d1c..00e4310 100644
---- a/cmds-filesystem.c
-+++ b/cmds-filesystem.c
-@@ -456,10 +456,10 @@ static int cmd_defrag(int argc, char **argv)
+diff --git a/Makefile b/Makefile
+index 79818e6..fe2b432 100644
+--- a/Makefile
++++ b/Makefile
+@@ -39,8 +39,8 @@ all: version $(progs) manpages
+ version:
+ 	bash version.sh
+ 
+-btrfs: $(objects) btrfs.o help.o common.o $(cmds_objects)
+-	$(CC) $(CFLAGS) -o btrfs btrfs.o help.o common.o $(cmds_objects) \
++btrfs: $(objects) btrfs.o help.o $(cmds_objects)
++	$(CC) $(CFLAGS) -o btrfs btrfs.o help.o $(cmds_objects) \
+ 		$(objects) $(LDFLAGS) $(LIBS) -lpthread
+ 
+ calc-size: $(objects) calc-size.o
+diff --git a/btrfsctl.c b/btrfsctl.c
+index d45e2a7..f0584f3 100644
+--- a/btrfsctl.c
++++ b/btrfsctl.c
+@@ -63,34 +63,6 @@ static void print_usage(void)
+ 	exit(1);
  }
  
- static const char * const cmd_resize_usage[] = {
--	"btrfs filesystem resize [+/-]<newsize>[gkm]|max <path>",
-+	"btrfs filesystem resize [devid:][+/-]<newsize>[gkm]|[devid:]max <path>",
- 	"Resize a filesystem",
- 	"If 'max' is passed, the filesystem will occupy all available space",
--	"on the device.",
-+	"on the device 'devid'.",
- 	NULL
- };
+-static int open_file_or_dir(const char *fname)
+-{
+-	int ret;
+-	struct stat st;
+-	DIR *dirstream;
+-	int fd;
+-
+-	ret = stat(fname, &st);
+-	if (ret < 0) {
+-		perror("stat:");
+-		exit(1);
+-	}
+-	if (S_ISDIR(st.st_mode)) {
+-		dirstream = opendir(fname);
+-		if (!dirstream) {
+-			perror("opendir");
+-			exit(1);
+-		}
+-		fd = dirfd(dirstream);
+-	} else {
+-		fd = open(fname, O_RDWR);
+-	}
+-	if (fd < 0) {
+-		perror("open");
+-		exit(1);
+-	}
+-	return fd;
+-}
+ int main(int ac, char **av)
+ {
+ 	char *fname = NULL;
+diff --git a/cmds-balance.c b/cmds-balance.c
+index 38a7426..5793b5c 100644
+--- a/cmds-balance.c
++++ b/cmds-balance.c
+@@ -26,6 +26,7 @@
+ #include "ctree.h"
+ #include "ioctl.h"
+ #include "volumes.h"
++#include "utils.h"
  
-diff --git a/man/btrfs.8.in b/man/btrfs.8.in
-index be478e0..8066039 100644
---- a/man/btrfs.8.in
-+++ b/man/btrfs.8.in
-@@ -19,7 +19,7 @@ btrfs \- control a btrfs filesystem
- .PP
- \fBbtrfs\fP \fBfilesystem sync\fP\fI <path> \fP
- .PP
--\fBbtrfs\fP \fBfilesystem resize\fP\fI [+/\-]<size>[gkm]|max <filesystem>\fP
-+\fBbtrfs\fP \fBfilesystem resize\fP\fI [devid:][+/\-]<size>[gkm]|[devid:]max <filesystem>\fP
- .PP
- \fBbtrfs\fP \fBfilesystem label\fP\fI <dev> [newlabel]\fP
- .PP
-@@ -166,23 +166,28 @@ Force a sync for the filesystem identified by \fI<path>\fR.
- .\" Some wording are extracted by the resize2fs man page
- .\"
+ #include "commands.h"
  
--\fBfilesystem resize\fR\fI [+/\-]<size>[gkm]|max <path>\fR
--Resize a filesystem identified by \fI<path>\fR.
-+\fBfilesystem resize\fR\fI [devid:][+/\-]<size>[gkm]|[devid:]max <path>\fR
-+Resize a filesystem identified by \fI<path>\fR for the underlying device
-+\fIdevid\fR.  The \fIdevid\fR can be found with \fBbtrfs filesystem show\fR and
-+defaults to 1 if not specified.
- The \fI<size>\fR parameter specifies the new size of the filesystem.
- If the prefix \fI+\fR or \fI\-\fR is present the size is increased or decreased
- by the quantity \fI<size>\fR.
- If no units are specified, the unit of the \fI<size>\fR parameter defaults to
- bytes. Optionally, the size parameter may be suffixed by one of the following
--the units designators: 'K', 'M', or 'G', kilobytes, megabytes, or gigabytes,
-+the unit designators: 'K', 'M', or 'G', kilobytes, megabytes, or gigabytes,
- respectively.
+diff --git a/cmds-inspect.c b/cmds-inspect.c
+index 2f0228f..7a8785b 100644
+--- a/cmds-inspect.c
++++ b/cmds-inspect.c
+@@ -22,6 +22,7 @@
  
- If 'max' is passed, the filesystem will occupy all available space on the
--volume(s).
-+device \fIdevid\fR.
+ #include "kerncompat.h"
+ #include "ioctl.h"
++#include "utils.h"
  
- The \fBresize\fR command \fBdoes not\fR manipulate the size of underlying
- partition.  If you wish to enlarge/reduce a filesystem, you must make sure you
- can expand the partition before enlarging the filesystem and shrink the
--partition after reducing the size of the filesystem.
-+partition after reducing the size of the filesystem.  This can done using
-+\fBfdisk(8)\fR or \fBparted(8)\fR to delete the existing partition and recreate
-+it with the new desired size.  When recreating the partition make sure to use
-+the same starting disk cylinder as before.
- .TP
+ #include "commands.h"
  
- \fBbtrfs\fP \fBfilesystem label\fP\fI <dev> [newlabel]\fP
+diff --git a/cmds-subvolume.c b/cmds-subvolume.c
+index 950fa8f..8ecd3f4 100644
+--- a/cmds-subvolume.c
++++ b/cmds-subvolume.c
+@@ -26,6 +26,7 @@
+ 
+ #include "kerncompat.h"
+ #include "ioctl.h"
++#include "utils.h"
+ 
+ #include "commands.h"
+ 
+diff --git a/commands.h b/commands.h
+index a303a50..aea4cb1 100644
+--- a/commands.h
++++ b/commands.h
+@@ -79,9 +79,6 @@ void help_ambiguous_token(const char *arg, const struct cmd_group *grp);
+ 
+ void help_command_group(const struct cmd_group *grp, int argc, char **argv);
+ 
+-/* common.c */
+-int open_file_or_dir(const char *fname);
+-
+ extern const struct cmd_group subvolume_cmd_group;
+ extern const struct cmd_group filesystem_cmd_group;
+ extern const struct cmd_group balance_cmd_group;
+diff --git a/common.c b/common.c
+deleted file mode 100644
+index 03f6570..0000000
+--- a/common.c
++++ /dev/null
+@@ -1,46 +0,0 @@
+-/*
+- * This program is free software; you can redistribute it and/or
+- * modify it under the terms of the GNU General Public
+- * License v2 as published by the Free Software Foundation.
+- *
+- * This program is distributed in the hope that it will be useful,
+- * but WITHOUT ANY WARRANTY; without even the implied warranty of
+- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+- * General Public License for more details.
+- *
+- * You should have received a copy of the GNU General Public
+- * License along with this program; if not, write to the
+- * Free Software Foundation, Inc., 59 Temple Place - Suite 330,
+- * Boston, MA 021110-1307, USA.
+- */
+-
+-#include <sys/types.h>
+-#include <sys/stat.h>
+-#include <dirent.h>
+-#include <fcntl.h>
+-
+-int open_file_or_dir(const char *fname)
+-{
+-	int ret;
+-	struct stat st;
+-	DIR *dirstream;
+-	int fd;
+-
+-	ret = stat(fname, &st);
+-	if (ret < 0) {
+-		return -1;
+-	}
+-	if (S_ISDIR(st.st_mode)) {
+-		dirstream = opendir(fname);
+-		if (!dirstream) {
+-			return -2;
+-		}
+-		fd = dirfd(dirstream);
+-	} else {
+-		fd = open(fname, O_RDWR);
+-	}
+-	if (fd < 0) {
+-		return -3;
+-	}
+-	return fd;
+-}
+diff --git a/utils.c b/utils.c
+index ee7fa1b..6157115 100644
+--- a/utils.c
++++ b/utils.c
+@@ -16,8 +16,9 @@
+  * Boston, MA 021110-1307, USA.
+  */
+ 
+-#define _XOPEN_SOURCE 600
+-#define __USE_XOPEN2K
++#define _XOPEN_SOURCE 700
++#define __USE_XOPEN2K8
++#define __XOPEN2K8 /* due to an error in dirent.h, to get dirfd() */
+ #include <stdio.h>
+ #include <stdlib.h>
+ #ifndef __CHECKER__
+@@ -1206,3 +1207,29 @@ scan_again:
+ 	return 0;
+ }
+ 
++int open_file_or_dir(const char *fname)
++{
++	int ret;
++	struct stat st;
++	DIR *dirstream;
++	int fd;
++
++	ret = stat(fname, &st);
++	if (ret < 0) {
++		return -1;
++	}
++	if (S_ISDIR(st.st_mode)) {
++		dirstream = opendir(fname);
++		if (!dirstream) {
++			return -2;
++		}
++		fd = dirfd(dirstream);
++	} else {
++		fd = open(fname, O_RDWR);
++	}
++	if (fd < 0) {
++		return -3;
++	}
++	return fd;
++}
++
+diff --git a/utils.h b/utils.h
+index c5f55e1..e281002 100644
+--- a/utils.h
++++ b/utils.h
+@@ -19,6 +19,8 @@
+ #ifndef __UTILS__
+ #define __UTILS__
+ 
++#include "ctree.h"
++
+ #define BTRFS_MKFS_SYSTEM_GROUP_SIZE (4 * 1024 * 1024)
+ 
+ int make_btrfs(int fd, const char *device, const char *label,
+@@ -46,4 +48,5 @@ int check_label(char *input);
+ int get_mountpt(char *dev, char *mntpt, size_t size);
+ 
+ int btrfs_scan_block_devices(int run_ioctl);
++int open_file_or_dir(const char *fname);
+ #endif
 -- 
-1.7.7.6
+1.7.10.2
 

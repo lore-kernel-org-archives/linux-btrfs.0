@@ -1,91 +1,73 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from plane.gmane.org ([80.91.229.3]:36889 "EHLO plane.gmane.org"
+Received: from smtp-4.hut.fi ([130.233.228.94]:35765 "EHLO smtp-4.hut.fi"
 	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1750886Ab2EZHc0 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Sat, 26 May 2012 03:32:26 -0400
-Received: from list by plane.gmane.org with local (Exim 4.69)
-	(envelope-from <gcfb-btrfs-devel-moved1@m.gmane.org>)
-	id 1SYBU8-00079J-UH
-	for linux-btrfs@vger.kernel.org; Sat, 26 May 2012 09:32:24 +0200
-Received: from ip68-231-22-224.ph.ph.cox.net ([68.231.22.224])
-        by main.gmane.org with esmtp (Gmexim 0.1 (Debian))
-        id 1AlnuQ-0007hv-00
-        for <linux-btrfs@vger.kernel.org>; Sat, 26 May 2012 09:32:24 +0200
-Received: from 1i5t5.duncan by ip68-231-22-224.ph.ph.cox.net with local (Gmexim 0.1 (Debian))
-        id 1AlnuQ-0007hv-00
-        for <linux-btrfs@vger.kernel.org>; Sat, 26 May 2012 09:32:24 +0200
+	id S1754181Ab2EZSyl (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Sat, 26 May 2012 14:54:41 -0400
+Received: from localhost (katosiko.hut.fi [130.233.228.115])
+	by smtp-4.hut.fi (8.13.6/8.12.10) with ESMTP id q4QIMJiQ011113
+	for <linux-btrfs@vger.kernel.org>; Sat, 26 May 2012 21:22:19 +0300
+Received: from smtp-4.hut.fi ([130.233.228.94])
+ by localhost (katosiko.hut.fi [130.233.228.115]) (amavisd-new, port 10024)
+ with LMTP id 25685-1330 for <linux-btrfs@vger.kernel.org>;
+ Sat, 26 May 2012 21:22:18 +0300 (EEST)
+Received: from kosh.localdomain (kosh.hut.fi [130.233.228.12])
+	by smtp-4.hut.fi (8.13.6/8.12.10) with ESMTP id q4QIMDik011108
+	for <linux-btrfs@vger.kernel.org>; Sat, 26 May 2012 21:22:13 +0300
+Date: Sat, 26 May 2012 21:22:12 +0300
+From: Sami Liedes <sami.liedes@iki.fi>
 To: linux-btrfs@vger.kernel.org
-From: Duncan <1i5t5.duncan@cox.net>
-Subject: Re: Cant mount multi-subvolume via fstab
-Date: Sat, 26 May 2012 07:32:14 +0000 (UTC)
-Message-ID: <pan.2012.05.26.07.32.14@cox.net>
-References: <20120523120002.79a23bed@hercules.fisnuc.intranet.ufba.br>
-	<4FBD1F05.4080000@libero.it> <20120524233315.GA2838@matrix>
-Mime-Version: 1.0
-Content-Type: text/plain; charset=UTF-8
+Subject: Will big metadata blocks fix # of hardlinks?
+Message-ID: <20120526182211.GA16059@sli.dy.fi>
+MIME-Version: 1.0
+Content-Type: multipart/signed; micalg=pgp-sha512;
+	protocol="application/pgp-signature"; boundary="jRHKVT23PllUwdXP"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Rogerio Bastos posted on Thu, 24 May 2012 20:33:16 -0300 as excerpted:
 
-> On Wed, May 23, 2012 at 07:31:49PM +0200, Goffredo Baroncelli wrote:
->> Hi Rogerio,
->> 
->> On 05/23/2012 05:00 PM, Rogerio Bastos wrote:
->> > Hi,
->> > 
->> > I'm trying mount many subvolume during boot via fstab:
->> > 
->> > UUID=xxx /usr btrfs subvol=usr,ro,nodev 0 0 UUID=xxx /home btrfs
->> > subvol=home,nodev,nosuid 0 0 UUID=xxx /var btrfs subvol=var,nodev 0 0
->> > UUID=xxx /var/tmp btrfs subvol=var-tmp,nodev,noexec,nosuid 0 0
->> > 
->> > But only the first one is mounted. When try to mount the others
->> > subvolumes, I get this error:
->> 
->> I did some tests. It seems that the problem is that you want to mount
->> different subvolumes *of the same filesystem* (/dev/sda3) both in RO
->> (first entry) and RW (the other entries).
->> 
->> Please try to removing the 'RO' for the first entry, and let know us
->> what happens.
-> 
-> You are right, without RO I can mount all subvolume.
+--jRHKVT23PllUwdXP
+Content-Type: text/plain; charset=us-ascii
+Content-Disposition: inline
 
-If you need the different rw/ro mounts you can use mount --bind.  There's 
-a bit of a catch, however, in that an initial mount --bind will always 
-have the same ro/rw as the original mount.  You thus have to mount it 
-with a mount-bind, then do a remount, to change that.
+Hi!
 
-I do something similar here, not with btrfs (which I tried but had 
-problems with, I'll let it mature a few kernels and try again) but with 
-some mount-binds into a chroot, before I start the app (named aka bind) I 
-run in it.
+I see that Linux 3.4 supports bigger metadata blocks for btrfs.
 
-My fstab has entries like this:
+Will using them allow a bigger number of hardlinks on a single file
+(i.e. the bug that has bitten at least git users on Debian[1,2], and
+BackupPC[3])? As far as I understand correctly, the problem has been
+that the hard links are stored in the same metadata block with some
+other metadata, so the size of the block is an inherent limitation?
 
-/etc/bind  /m/cbind/etc/bind  none  bind,ro,noexec,nodev,noatime  0 0
-/var/bind  /m/cbind/var/bind  none  bind,rw,noexec,nodev,noatime  0 0
+If so, I think it would be worth for me to try Btrfs again :)
 
-But they're on the same source filesystem so the mount -a mounts them 
-both the same (rw in my case).  I thus have an initscript "stub" that 
-runs between the localmount initscript and the named/bind initscript, 
-that does a mount -o,remount.  Since they're setup with the correct 
-options in fstab and the initial mount simply ignores them, a simple 
-remount gives me the correct options, with ro/rw now kernel enforced.
+	Sami
 
-So while a direct btrfs subvolume mount won't track ro/rw separately, a 
-mount-bind, followed by an appropriate remount, should.
 
-But I'd not try that for btrfs specific mount options, autodefrag, 
-nodatacow, etc, as I'm not sure how btrfs would react to that.  Just 
-generic options such as rw/rw, exec/noexec, etc, which I believe are 
-enforced at the block layer, not the filesystem layer itself.
+[1] http://permalink.gmane.org/gmane.comp.file-systems.btrfs/13603
+[2] http://bugs.debian.org/cgi-bin/bugreport.cgi?bug=642603
+[3] https://bugzilla.kernel.org/show_bug.cgi?id=15762
 
-See the mount (8) manpage for more on bind-mounts.
+--jRHKVT23PllUwdXP
+Content-Type: application/pgp-signature; name="signature.asc"
+Content-Description: Digital signature
 
--- 
-Duncan - List replies preferred.   No HTML msgs.
-"Every nonfree program has a lord, a master --
-and if you use the program, he is your master."  Richard Stallman
+-----BEGIN PGP SIGNATURE-----
+Version: GnuPG v1.4.12 (GNU/Linux)
 
+iQIcBAEBCgAGBQJPwR9TAAoJEKLT589SE0a04ywP/3ixetAAHqBwACzHMDNdzx7G
+yKPzsxZaeSWtU7zDxBx0yQ4vLv3Xtg9//vWB1lRGhxDCE8zZZUJX2DuD0i9RMsKA
+K2QAKZO55eZPbJhcsQ5hWHFYQ/B2wnQY8TLZJuPEExg/dkkjiIBBJJOekuIBFJFu
+k44A0k+1P2pfSDpAmkgsvQQKo10CAobX9rKdRP4XLiXsrwHS1rJI/Ovf4VSGfSOb
+7l2APwYRAOtOcYhGExd4c4ZTOcltmmji3yrUgCwkDla94vvwRAL3E4R6LDL7dq+v
+YJe8CKEBseh6tYWRttTDewxfmsl5QSGQFbPZcGoAwYP8eUgFgEwlm+qWTr9qUNFk
+aCcsK6kkborznl0KT+TWoYvyqoYrms1nf+HGRtjUqBW+ZLjDxAd1BYTZod/iKz/N
+vAp4Q4zYkPpQlL9H0PoTGYTHFBZNQZ01BnmkUNWrZ4ZO5wnTTCP2Z7/fDJaVjwTS
+45LLp0ctGW3s4G4pFwb13jkJhWjqhVmqDYsWT8LIncu1otBF4OZmIKW+w84fzllD
+vdvoT+mYF9f5OnmFa17tJGUG0tEL55lF1ZoCyUb57cHJJFk338Pix3JH7lPguJ2T
+WmZ6TDwhOhZDKIO105qIuy2gkIfSxtchMfscnCXHwHU3Wb2BpWyPjQGmnaqjy7n5
++NTablW1ng+acFQAnIMn
+=g9pN
+-----END PGP SIGNATURE-----
+
+--jRHKVT23PllUwdXP--

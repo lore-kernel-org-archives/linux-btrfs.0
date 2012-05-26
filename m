@@ -1,28 +1,28 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail.windriver.com ([147.11.1.11]:54750 "EHLO
-	mail.windriver.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1755308Ab2EYX2R (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Fri, 25 May 2012 19:28:17 -0400
-Date: Fri, 25 May 2012 19:28:11 -0400
-From: Paul Gortmaker <paul.gortmaker@windriver.com>
-To: <chris.mason@oracle.com>
-CC: <linux-btrfs@vger.kernel.org>, <linux-kernel@vger.kernel.org>
-Subject: Re: [PATCH] btrfs: fixup module.h usage as required
-Message-ID: <20120525232811.GA31497@windriver.com>
+Received: from jeru.org ([195.216.214.75]:37076 "EHLO jeru.org"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1752158Ab2EZKHR (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Sat, 26 May 2012 06:07:17 -0400
+Date: Sat, 26 May 2012 11:52:44 +0200
+From: Xavier Nicollet <nicollet@jeru.org>
+To: linux-btrfs@vger.kernel.org
+Subject: Re: atime and filesystems with snapshots (especially Btrfs)
+Message-ID: <20120526095244.GD12396@jeru.org>
+Reply-To: nicollet@jeru.org
+References: <CAB9VWqAUkHH2xBXZ+edTSCffiLtEXamfugKrPZ6T0Py92kyZdA@mail.gmail.com>
+ <20120525154249.GC2082@localhost.localdomain>
 MIME-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
+Content-Type: text/plain; charset=iso-8859-15
+In-Reply-To: <20120525154249.GC2082@localhost.localdomain>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hi Chris,
+Le 25 May 2012 ? 11:42, Josef Bacik a écrit:
+> Just mount with -o noatime, there's no chance of turning something like that on
+> by default since it will break some applications (notably mutt).  Thanks,
 
-This fairly trivial patch missed the 3.4 merge window:
+I've just updated the wiki:
+https://btrfs.wiki.kernel.org/index.php/Mount_options#Performance
 
-http://lkml.indiana.edu/hypermail/linux/kernel/1202.3/00764.html
-
-Do you have it queued for the 3.5 merge window now in play, or
-would you rather I push the changeset myself directly?
-
-Thanks,
-Paul.
+-- 
+Xavier Nicollet

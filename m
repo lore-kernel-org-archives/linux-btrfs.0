@@ -1,38 +1,38 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from smtp11.hushmail.com ([65.39.178.133]:33767 "EHLO
+Received: from smtp11.hushmail.com ([65.39.178.133]:35312 "EHLO
 	smtp11.hushmail.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1752143Ab2E0Pvr (ORCPT
+	with ESMTP id S1752143Ab2E0QEw (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Sun, 27 May 2012 11:51:47 -0400
+	Sun, 27 May 2012 12:04:52 -0400
 Received: from smtp11.hushmail.com (localhost.localdomain [127.0.0.1])
-	by smtp11.hushmail.com (Postfix) with SMTP id 0A7691CC0EB
-	for <linux-btrfs@vger.kernel.org>; Sun, 27 May 2012 15:45:24 +0000 (UTC)
+	by smtp11.hushmail.com (Postfix) with SMTP id 60A0D1CC0F2
+	for <linux-btrfs@vger.kernel.org>; Sun, 27 May 2012 16:04:51 +0000 (UTC)
 Received: from smtp.hushmail.com (w8.hushmail.com [65.39.178.52])
 	by smtp11.hushmail.com (Postfix) with ESMTP
-	for <linux-btrfs@vger.kernel.org>; Sun, 27 May 2012 15:45:23 +0000 (UTC)
+	for <linux-btrfs@vger.kernel.org>; Sun, 27 May 2012 16:04:51 +0000 (UTC)
 MIME-Version: 1.0
-Date: Sun, 27 May 2012 07:45:23 -0800
-To: linux-btrfs@vger.kernel.org
-Subject: [RFC PATCH] Decrease Metadata Fragment Using A Caterpillar Band Method
+Date: Sun, 27 May 2012 08:04:50 -0800
+To: "linux-btrfs" <linux-btrfs@vger.kernel.org>
+Subject: [RFC PATCH] Decrease Metadata Fragment By Using a Caterpillar Band Method(intro modified)
 From: "WeiFeng Liu" <weifeng.liu@hushmail.com>
 Content-Type: text/plain; charset="UTF-8"
-Message-Id: <20120527154523.9775014DBDE@smtp.hushmail.com>
+Message-Id: <20120527160451.105DE14DBDE@smtp.hushmail.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-	I made an attempt to partly decrease fragment by using a preallocated
+I made an attempt to partly decrease fragment by using a preallocated
 area of multiple size of a std blocksize for a tree block when it is COWed.
-	The basic idea is that if any a tree block need to be created, 
+    The basic idea is that if any a tree block need to be created,
 we offer, say, 2 or 4 multiples of a std blocksize for it, then use the
 first block in the continuous blocks. When this block need a cow in the
 future, a new free block in these continuous blocks is grabbed, and
 the old one is freed for next cow. In the most ideal condition only 2
 continuous blocks are kept for any times of cowing a block -- image a
-caterpillar band by which my method is named. 
-	Following graphic demostrate the way in the real world by using a area
-of 4 multipled std blocksize. The reason I use 4 rather than 2 blocks is that 
+caterpillar band by which my method is named.
+    Following graphic demostrates the way in the real world by using a area
+of 4 multipled std blocksize. The reason I use 4 rather than 2 blocks is that
 we can pick up another free block in the area if the old one is not freed
-before it can be used in a cow, this give some tolerance to avoid always to
+before it can be used in a cow, this gives some tolerance to avoid always to
 create a new caterpillar instantly if an old block is occupied.
 
 A --> B --> C --> D -->|
@@ -41,10 +41,10 @@ A --> B --> C --> D -->|
 |---------<------------|
 
 
-Pros: 
+Pros:
 1 Lower computing and searching cost when alloc a tree block.
-2 In cows of a block based on finite compact blocks like a ca in theory,
-and thereby decrease the chances of fragment.
+2 Infinite cows of a block based on finite compact blocks like a caterpillar
+band, in theory, and thereby decrease the chances of fragment.
 
 Cons:
 1 Acquire more space for metadata and not suit for user data, obviously.
@@ -68,8 +68,8 @@ block in the created caterpillar and give index 0 for the block.
 Discard a block that is in a caterpillar, the whole caterpillar can be freed
 if no other block is occupied or needed in the caterpillar.
 
-By the time, little tests havw done for the initial patch, both further reviews
-and buf-fixs are needed before mature if there are some interesting appeared on
+By the time, little tests have done for the initial patch, both further reviews
+and bug-fixs are needed before mature if there are some interesting appeared on
 it.
 
 signed-off-by WeiFeng Liu 523f28f9b3d9c710cacc31dbba644efb1678cf62

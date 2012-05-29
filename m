@@ -1,58 +1,74 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-yx0-f174.google.com ([209.85.213.174]:48664 "EHLO
-	mail-yx0-f174.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1752511Ab2E2XT7 (ORCPT
+Received: from mail-qc0-f174.google.com ([209.85.216.174]:63662 "EHLO
+	mail-qc0-f174.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1753189Ab2E2XYl (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 29 May 2012 19:19:59 -0400
-Received: by yenm10 with SMTP id m10so2584384yen.19
-        for <linux-btrfs@vger.kernel.org>; Tue, 29 May 2012 16:19:59 -0700 (PDT)
+	Tue, 29 May 2012 19:24:41 -0400
+Received: by qcro28 with SMTP id o28so2271796qcr.19
+        for <linux-btrfs@vger.kernel.org>; Tue, 29 May 2012 16:24:40 -0700 (PDT)
+Message-ID: <4FC55AB7.3000903@gmail.com>
+Date: Tue, 29 May 2012 19:24:39 -0400
+From: Maxim Mikheev <mikhmv@gmail.com>
 MIME-Version: 1.0
-In-Reply-To: <4FC55846.1060407@gmail.com>
-References: <4FC54A5D.8000600@gmail.com>
-	<4FC55846.1060407@gmail.com>
-Date: Tue, 29 May 2012 17:19:59 -0600
-Message-ID: <CAE5mzvi_eGGL4aPTx3JAzK1F2iXGxf7x+RoZOiEqSAueQ16_Mw@mail.gmail.com>
-Subject: Re: Help with recover data
-From: cwillu <cwillu@cwillu.com>
-To: Felix Blanke <felixblanke@gmail.com>
-Cc: Maxim Mikheev <mikhmv@gmail.com>, linux-btrfs@vger.kernel.org
-Content-Type: text/plain; charset=UTF-8
+To: cwillu <cwillu@cwillu.com>
+CC: linux-btrfs@vger.kernel.org
+Subject: Re: Help with data recovering
+References: <4FC54A5D.8000600@gmail.com> <4FC55043.4050004@gmail.com> <CAE5mzvg_gLxkYhE1h7aunvvYHgsKjpo2xfLqv4A++S=UAOiySw@mail.gmail.com>
+In-Reply-To: <CAE5mzvg_gLxkYhE1h7aunvvYHgsKjpo2xfLqv4A++S=UAOiySw@mail.gmail.com>
+Content-Type: text/plain; charset=UTF-8; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Tue, May 29, 2012 at 5:14 PM, Felix Blanke <felixblanke@gmail.com> wrote:
->
->
-> On 5/30/12 12:14 AM, Maxim Mikheev wrote:
->>
->> Hi Everyone,
->>
->> I recently decided to use btrfs. It works perfectly for a week even
->> under heavy load. Yesterday I destroyed backups as cannot afford to have
->> ~10TB in backups. I decided to switch on Btrfs because it was announced
->> that it stable already
->> I need to recover ~5TB data, this data is important and I do not have
->> backups....
->>
->
-> Just out of curiosity: Who announced that BTRFS is stable already?! The
-> kernel says something different and there is still no 100% working fsck for
-> btrfs. Imho it is far away from being stable :)
->
-> And btw: Even it would be stable, allways keep backups for important data
-> ffs! I don't understand why there are still technical experienced people who
-> don't do backups :/ Imho if you don't do backups from a portion of data they
-> are considered not to be important.
+Thank you for your answer.
 
-Some distros do offer support, but that's usually in the sense of "if
-you have a support contract (and are on qualified hardware and using
-it in a supported configuration), we'll help you fix what breaks (and
-we're confident we can)", rather than a claim that things will never
-break.
 
-I expect (but haven't actually checked recently) that such distros
-actively backport btrfs fixes to their supported kernels (btrfs in
-Distro X's 3.2 kernel may have fixes that Distro Y's 3.2 kernel does
-not, etc), which can lead to unfortunate misunderstandings; we don't
-have enough information yet to determine whether that's the case here
-though.
+The system kernel was and now:
+Linux s0 3.4.0-030400-generic #201205210521 SMP Mon May 21 09:22:02 UTC 
+2012 x86_64 x86_64 x86_64 GNU/Linux
+
+the raid was created by:
+mkfs.btrfs /dev/sdb /dev/sdc /dev/sdd /dev/sde /dev/sdf
+
+Disk are connected through RocketRaid 2670.
+
+for mounting I used line in fstab:
+UUID=c9776e19-37eb-4f9c-bd6b-04e8dde97682    /tank        btrfs    
+defaults,compress=lzo    0    1
+
+On machine was running several Virtual machines. Only one was actively 
+using disks.
+
+VM has active several threads:
+1. 2 threads reading big files (50GB each)
+2. reading from 50 files and writing one big file
+3. The kernel panic happens when I run another program with 30 threads 
+of reading/writing of small files.
+
+Virtual Machine accessed to underline btrfs through 9-p file system 
+which actively used xattr.
+
+After reboot system was in this stage.
+
+I hope that btrfsck --repair will not make it worse, It is now running.
+
+.................................
+Backups, you everytime need them when you don't have.....
+We was urgently need extra space and planed to buy new disks soon.....
+
+
+On 05/29/2012 07:11 PM, cwillu wrote:
+> I can't help much at the moment, but the following will help sort things out:
+>
+> Can you provide as much detail as possible about how things were
+> configured at the time of the failure?  Raid levels used, kernel
+> versions at the time of the failure, how the disks are connected,
+> general description of the activity on the disk and the nature of its
+> contents (all large files? rootfs? mail spools?)  What you were
+> thinking at the time you decided that you couldn't afford backups? As
+> much detail as possible on what all you've tried since the failure to
+> recover things?
+>
+> It's likely the data is fine (if currently inaccessible), but
+> obviously things are in a fragile state, and the important thing right
+> now is to not make things worse: a recoverable situation may otherwise
+> turn into an irrecoverable one.

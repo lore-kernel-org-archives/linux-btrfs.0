@@ -1,64 +1,101 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-pz0-f46.google.com ([209.85.210.46]:41464 "EHLO
-	mail-pz0-f46.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1751810Ab2E2ODG convert rfc822-to-8bit (ORCPT
+Received: from fgwmail6.fujitsu.co.jp ([192.51.44.36]:51225 "EHLO
+	fgwmail6.fujitsu.co.jp" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1752009Ab2E2JLW (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 29 May 2012 10:03:06 -0400
+	Tue, 29 May 2012 05:11:22 -0400
+Received: from m2.gw.fujitsu.co.jp (unknown [10.0.50.72])
+	by fgwmail6.fujitsu.co.jp (Postfix) with ESMTP id 2EC0B3EE0B5
+	for <linux-btrfs@vger.kernel.org>; Tue, 29 May 2012 18:11:21 +0900 (JST)
+Received: from smail (m2 [127.0.0.1])
+	by outgoing.m2.gw.fujitsu.co.jp (Postfix) with ESMTP id 1482945DE58
+	for <linux-btrfs@vger.kernel.org>; Tue, 29 May 2012 18:11:21 +0900 (JST)
+Received: from s2.gw.fujitsu.co.jp (s2.gw.fujitsu.co.jp [10.0.50.92])
+	by m2.gw.fujitsu.co.jp (Postfix) with ESMTP id EBA9C45DE52
+	for <linux-btrfs@vger.kernel.org>; Tue, 29 May 2012 18:11:20 +0900 (JST)
+Received: from s2.gw.fujitsu.co.jp (localhost.localdomain [127.0.0.1])
+	by s2.gw.fujitsu.co.jp (Postfix) with ESMTP id CDA751DB8041
+	for <linux-btrfs@vger.kernel.org>; Tue, 29 May 2012 18:11:20 +0900 (JST)
+Received: from m1000.s.css.fujitsu.com (m1000.s.css.fujitsu.com [10.240.81.136])
+	by s2.gw.fujitsu.co.jp (Postfix) with ESMTP id 65A3E1DB8042
+	for <linux-btrfs@vger.kernel.org>; Tue, 29 May 2012 18:11:20 +0900 (JST)
+Message-Id: <201205290910.AA00001@FM-323941448.jp.fujitsu.com>
+From: Tsutomu Itoh <t-itoh@jp.fujitsu.com>
+Date: Tue, 29 May 2012 18:10:13 +0900
+To: linux-btrfs@vger.kernel.org
+Cc: chris.mason@oracle.com
+Subject: [PATCH] Btrfs: return value of btrfs_read_buffer is checked correctly
 MIME-Version: 1.0
-In-Reply-To: <4FC48570.404@panasas.com>
-References: <CAB9VWqAUkHH2xBXZ+edTSCffiLtEXamfugKrPZ6T0Py92kyZdA@mail.gmail.com>
-	<4FC48570.404@panasas.com>
-Date: Tue, 29 May 2012 16:03:05 +0200
-Message-ID: <CAB9VWqAN40ObJ9=CMP1BvupfGJN9NYTuWLTpcrsBwTd6ifz=-A@mail.gmail.com>
-Subject: Re: atime and filesystems with snapshots (especially Btrfs)
-From: Alexander Block <ablock84@googlemail.com>
-To: Boaz Harrosh <bharrosh@panasas.com>
-Cc: linux-btrfs@vger.kernel.org, linux-fsdevel@vger.kernel.org,
-        linux-kernel@vger.kernel.org
-Content-Type: text/plain; charset=ISO-8859-1
+Content-Type: text/plain; charset=us-ascii
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Tue, May 29, 2012 at 10:14 AM, Boaz Harrosh <bharrosh@panasas.com> wrote:
->
-> Sounds like a real problem. I would suggest a few remedies.
-> 1. Make a filesystem persistent parameter that says noatime/relatime/atime
->   So the default if not specified on mount is taken as a property of
->   the FS (mkfs can set it)
-That would be possible. But again, I'm not sure if it is allowed for
-one fs type to
-differ from all the other filesystems in its default behavior.
-> 2. The snapshot program should check and complain if it is on, and recommend
->   an off. Since the problem only starts with a snapshot.
-That would definitely cause awareness for the problem and many people would
-probably switch to noatime on mount.
-> 3. If space availability drops under some threshold, disable atime. As you said
->   this is catastrophic in this case. So user can always search and delete files.
->   In fact if the IO was only because of atime, it should be a soft error, warned,
->   and ignored.
-It would be hard to determine a good threshold. This really depends on the way
-snapshots are used.
->
-> But perhaps the true solution is to put atime on a side table, so only the atime
-> info gets COW and not the all MetaData
-This would definitely reduce the problem to a minimum. But it may be harder
-to implement as it sounds. You would either have to keep 2 trees per subvolume
-(one for the fs and one for atime) or share one tree for all subvols.
-I don't think
-2 trees per subvolume would be acceptable, but I'm not sure. A shared tree
-would require to implement some kind of custom refcounting for the items, as
-changes to one fs tree should not change atime of the other and thus create
-new items on demand. It would probably also require snapshot origin tracking,
-because on a freshly snapshotted subvolume, no atime entries would exist at
-all and must be read from the parent/origin.
->
-> Just my $0.017
-> Boaz
->
->> Alex.
->> --
->> To unsubscribe from this list: send the line "unsubscribe linux-fsdevel" in
->> the body of a message to majordomo@vger.kernel.org
->> More majordomo info at  http://vger.kernel.org/majordomo-info.html
->
->
+btrfs_read_buffer() has the possibility of returning the error.
+Therefore, I add the code in which the return value of btrfs_read_buffer()
+is checked.
+
+Signed-off-by: Tsutomu Itoh <t-itoh@jp.fujitsu.com>
+---
+ fs/btrfs/ctree.c    |    6 +++++-
+ fs/btrfs/tree-log.c |   16 +++++++++++++---
+ 2 files changed, 18 insertions(+), 4 deletions(-)
+
+diff --git a/fs/btrfs/ctree.c b/fs/btrfs/ctree.c
+index 4106264..c1af717 100644
+--- a/fs/btrfs/ctree.c
++++ b/fs/btrfs/ctree.c
+@@ -739,7 +739,11 @@ int btrfs_realloc_node(struct btrfs_trans_handle *trans,
+ 				if (!cur)
+ 					return -EIO;
+ 			} else if (!uptodate) {
+-				btrfs_read_buffer(cur, gen);
++				err = btrfs_read_buffer(cur, gen);
++				if (err) {
++					free_extent_buffer(cur);
++					return err;
++				}
+ 			}
+ 		}
+ 		if (search_start == 0)
+diff --git a/fs/btrfs/tree-log.c b/fs/btrfs/tree-log.c
+index eb1ae90..6f22a4f 100644
+--- a/fs/btrfs/tree-log.c
++++ b/fs/btrfs/tree-log.c
+@@ -1628,7 +1628,9 @@ static int replay_one_buffer(struct btrfs_root *log, struct extent_buffer *eb,
+ 	int i;
+ 	int ret;
+ 
+-	btrfs_read_buffer(eb, gen);
++	ret = btrfs_read_buffer(eb, gen);
++	if (ret)
++		return ret;
+ 
+ 	level = btrfs_header_level(eb);
+ 
+@@ -1749,7 +1751,11 @@ static noinline int walk_down_log_tree(struct btrfs_trans_handle *trans,
+ 
+ 			path->slots[*level]++;
+ 			if (wc->free) {
+-				btrfs_read_buffer(next, ptr_gen);
++				ret = btrfs_read_buffer(next, ptr_gen);
++				if (ret) {
++					free_extent_buffer(next);
++					return ret;
++				}
+ 
+ 				btrfs_tree_lock(next);
+ 				btrfs_set_lock_blocking(next);
+@@ -1766,7 +1772,11 @@ static noinline int walk_down_log_tree(struct btrfs_trans_handle *trans,
+ 			free_extent_buffer(next);
+ 			continue;
+ 		}
+-		btrfs_read_buffer(next, ptr_gen);
++		ret = btrfs_read_buffer(next, ptr_gen);
++		if (ret) {
++			free_extent_buffer(next);
++			return ret;
++		}
+ 
+ 		WARN_ON(*level <= 0);
+ 		if (path->nodes[*level-1])
+

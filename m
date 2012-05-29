@@ -1,74 +1,37 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-bk0-f46.google.com ([209.85.214.46]:55231 "EHLO
-	mail-bk0-f46.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1753193Ab2E2HSv (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 29 May 2012 03:18:51 -0400
-Received: by bkcji2 with SMTP id ji2so2713641bkc.19
-        for <linux-btrfs@vger.kernel.org>; Tue, 29 May 2012 00:18:50 -0700 (PDT)
-Message-ID: <1338275871.2271.13.camel@ierdnac-hp>
-Subject: [btrfs-progs] btrfs fi df output
-From: Andrei Popa <ierdnah@gmail.com>
-Reply-To: ierdnah@gmail.com
-To: linux-btrfs@vger.kernel.org
-Date: Tue, 29 May 2012 10:17:51 +0300
-Content-Type: text/plain; charset="UTF-8"
-Mime-Version: 1.0
+Received: from twin.jikos.cz ([89.185.236.188]:36311 "EHLO twin.jikos.cz"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1750696Ab2E2LT2 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Tue, 29 May 2012 07:19:28 -0400
+Date: Tue, 29 May 2012 13:18:33 +0200
+From: David Sterba <dave@jikos.cz>
+To: Li Zefan <lizefan@huawei.com>
+Cc: bruce@untroubled.org, linux-btrfs@vger.kernel.org
+Subject: Re: Make existing snapshots read-only?
+Message-ID: <20120529111833.GU24394@twin.jikos.cz>
+Reply-To: dave@jikos.cz
+References: <20120528183700.GA9588@untroubled.org>
+ <4FC41AEA.2040905@huawei.com>
+MIME-Version: 1.0
+Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <4FC41AEA.2040905@huawei.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hello,
+On Tue, May 29, 2012 at 08:40:10AM +0800, Li Zefan wrote:
+> > Is there any way to mark existing snapshots as read-only? Making new
+> > ones read-only is easy enough, but what about existing ones?
+> 
+> We have code in the kernel side, so what we need to do is to update btrfs-progs,
+> which is trivial.
 
-I have a question regarding "btrfs filesystem df"output.
-# btrfs fi df /mnt/test
-Data: total=3.01GB, used=512.19MB
-System, DUP: total=8.00MB, used=4.00KB
-System: total=4.00MB, used=0.00                             <= What this
-means? For what is used? I've never seen this incremented
-Metadata, DUP: total=2.50GB, used=676.00KB
-Metadata: total=8.00MB, used=0.00                        <= the same
-question
+Well, I don't like that it's even possible to turn a RO snapshot to a RW
+one. What was the rationale behind this back then? Besides, I think that
+it could break assumptions in the backref code.
 
-I have kernel 3.3.6 and btrfs-tools from git.
-#mkfs.btrfs /dev/mapper/vg-lvtest
-#mount /dev/mapper/vg-lvtest /mnt/test
-#dd if=/dev/zero of=/mnt/test/test.file bs=1M count=512 conv=fdatasync
-# btrfs fi df /mnt/test
-Data: total=3.01GB, used=512.19MB
-System, DUP: total=8.00MB, used=4.00KB
-System: total=4.00MB, used=0.00
-Metadata, DUP: total=2.50GB, used=676.00KB
-Metadata: total=8.00MB, used=0.00
-ierdnac-hp ~ # 
-#umount /mnt/test
+If it's only a one-way operation from a regular subvol -> RO subvol,
+this sounds reasonable to me. If the opposite direction is allowed, then
+I'd not call it 'read-only' but "unwritable on-request".
 
-These two chunks are the ones that appear below in btrfs-debug-tree ?
-Which ones ? In the three there is one 4MB andthree 8MB, one with 2
-stripes.
 
-#btrfs-debug-tree /dev/mapper/vg-lvtest 
-chunk tree
-leaf 20979712 items 12 free space 2557 generation 5 owner 3
-fs uuid 6accfaf3-c88a-462e-85fc-35513d0b43d6
-chunk uuid 65f22206-a9dd-4053-a660-61bc4ee0be12
-	item 0 key (DEV_ITEMS DEV_ITEM 1) itemoff 3897 itemsize 98
-		dev item devid 1 total_bytes 116912029696 bytes used 8627683328
-	item 1 key (FIRST_CHUNK_TREE CHUNK_ITEM 0) itemoff 3817 itemsize 80
-		chunk length 4194304 owner 2 type 2 num_stripes 1
-			stripe 0 devid 1 offset 0
-	item 2 key (FIRST_CHUNK_TREE CHUNK_ITEM 4194304) itemoff 3737 itemsize
-80
-		chunk length 8388608 owner 2 type 4 num_stripes 1
-			stripe 0 devid 1 offset 4194304
-	item 3 key (FIRST_CHUNK_TREE CHUNK_ITEM 12582912) itemoff 3657 itemsize
-80
-		chunk length 8388608 owner 2 type 1 num_stripes 1
-			stripe 0 devid 1 offset 12582912
-	item 4 key (FIRST_CHUNK_TREE CHUNK_ITEM 20971520) itemoff 3545 itemsize
-112
-		chunk length 8388608 owner 2 type 34 num_stripes 2
-			stripe 0 devid 1 offset 20971520
-			stripe 1 devid 1 offset 29360128
-
-Thanks
-
+david

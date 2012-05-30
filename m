@@ -1,68 +1,67 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-yw0-f46.google.com ([209.85.213.46]:43374 "EHLO
-	mail-yw0-f46.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S932423Ab2E3JKQ convert rfc822-to-8bit (ORCPT
+Received: from mail-ee0-f46.google.com ([74.125.83.46]:49918 "EHLO
+	mail-ee0-f46.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1750903Ab2E3UjT (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 30 May 2012 05:10:16 -0400
-Received: by yhmm54 with SMTP id m54so3040353yhm.19
-        for <linux-btrfs@vger.kernel.org>; Wed, 30 May 2012 02:10:16 -0700 (PDT)
+	Wed, 30 May 2012 16:39:19 -0400
+Received: by eeit10 with SMTP id t10so81449eei.19
+        for <linux-btrfs@vger.kernel.org>; Wed, 30 May 2012 13:39:18 -0700 (PDT)
 MIME-Version: 1.0
-Date: Wed, 30 May 2012 11:10:15 +0200
-Message-ID: <CAP4s+CE4z+wG++TV-T1Er9cSoiFfecJN175S0_g7ERRrAV96BQ@mail.gmail.com>
-Subject: Btrfsck stuck when checking fs roots
-From: Joan <aseques@gmail.com>
-To: linux-btrfs@vger.kernel.org
+From: Catalin Iacob <iacobcatalin@gmail.com>
+Date: Wed, 30 May 2012 22:38:57 +0200
+Message-ID: <CAHg_5go6zYdWUspTxRSWNFTtrxxr1=AZh2OaT3GW_wGwnV1Y7g@mail.gmail.com>
+Subject: Very slow mount
+To: linux-btrfs <linux-btrfs@vger.kernel.org>
 Content-Type: text/plain; charset=ISO-8859-1
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hello i've a data partition in my system formated as btrfs,  I can
-mount the partition without problems, but from time to time I've some
-lockings in the disk that force me to reboot the system.
-Lately I have been having problems when unmounting the disk too
+Hi everybody,
 
-I have been running for several weeks the kernel 3.3.1, and my
-btrfs-tools are version 0.19+20120328-1 (from debian wheezy)
+[Resent without big dmesg attachment which vger doesn't seem to like,
+lots of excuses if you get it twice]
 
-This is the output I am getting from btrfsck, and it always ends up
-aborting the "checking fs roots" part.
+I'm using Btrfs as my root filesystem since November 2011 on openSUSE
+12.1. It started on openSUSE's 3.1 kernel, then I stared compiling the
+kernel myself and went through 3.2, 3.3 and 3.4. Since the beginning I
+had noatime,compress=lzo as mount options. Over time I've added some
+more so now I'm using:
+noatime,space_cache,inode_cache,autodefrag,compress=lzo.
 
+Mount has always been slow, around or more than 10 seconds. Initially
+I thought it's just the way things are and Btrfs is slow when mounting
+but then I saw [1] where Calvin Watson says his Btrfs mounts in 0.5
+seconds. I want that as well :).
 
-$ btrfsck /dev/sda1
-....................
-ref mismatch on [2188599418880 2072576] extent item 1, found 0
-Incorrect local backref count on 2188599418880 root 261 owner 26476652
-offset 0 found 0 wanted 1 back 0x6b3435e8
-backpointer mismatch on [2188599418880 2072576]
-owner ref check failed [2188599418880 2072576]
-ref mismatch on [2188877869056 4231168] extent item 1, found 0
-Incorrect local backref count on 2188877869056 root 261 owner 26476649
-offset 0 found 0 wanted 1 back 0x97bc7798
-backpointer mismatch on [2188877869056 4231168]
-owner ref check failed [2188877869056 4231168]
-ref mismatch on [2188882100224 3911680] extent item 1, found 0
-Incorrect local backref count on 2188882100224 root 261 owner 26476654
-offset 0 found 0 wanted 1 back 0x97bc7840
-backpointer mismatch on [2188882100224 3911680]
-owner ref check failed [2188882100224 3911680]
-ref mismatch on [2188886011904 1798144] extent item 1, found 0
-Incorrect local backref count on 2188886011904 root 261 owner 26476657
-offset 0 found 0 wanted 1 back 0x97bc78e8
-backpointer mismatch on [2188886011904 1798144]
-owner ref check failed [2188886011904 1798144]
-ref mismatch on [2188900532224 1875968] extent item 1, found 0
-Incorrect local backref count on 2188900532224 root 261 owner 26476659
-offset 0 found 0 wanted 1 back 0x97bc7b70
-backpointer mismatch on [2188900532224 1875968]
-owner ref check failed [2188900532224 1875968]
-ref mismatch on [2188902408192 2080768] extent item 1, found 0
-Incorrect local backref count on 2188902408192 root 261 owner 26476664
-offset 0 found 0 wanted 1 back 0x97bc7c18
-backpointer mismatch on [2188902408192 2080768]
-owner ref check failed [2188902408192 2080768]
-Errors found in extent allocation tree
-checking fs roots
-Aborted
+My dmesg after hitting Alt-Sysrq-w a few times while waiting for the
+mount command from the initrd on kernel 3.4.0 is at:
+https://gist.github.com/2838536
+It starts mounting at 3.490979 and the next kernel message is at 19.506051.
 
-Is there anything I can do to force a check only in this part while
-getting more debug?
+openSUSE has snapper which takes snapshots every hour therefore there
+were quite some snapshots made on this filesystem during its lifetime.
+
+Some more data:
+
+catalin@linux-vo6z:~/btrfs-progs> sudo ./btrfs fi df /
+Data: total=169.01GB, used=107.23GB
+System, DUP: total=8.00MB, used=28.00KB
+System: total=4.00MB, used=0.00
+Metadata, DUP: total=7.12GB, used=3.77GB
+Metadata: total=8.00MB, used=0.00
+
+catalin@linux-vo6z:~/btrfs-progs> sudo ./btrfs fi show
+root's password:
+failed to read /dev/sr0
+Label: none  uuid: 440b735b-1171-4dd3-a058-d88c89325391
+       Total devices 1 FS bytes used 111.00GB
+       devid    1 size 251.47GB used 183.29GB path /dev/sda8
+
+Btrfs Btrfs v0.19
+
+I can test whatever patches you provide or give more information if needed.
+
+Thanks,
+Catalin
+
+[1] http://permalink.gmane.org/gmane.comp.file-systems.btrfs/16697

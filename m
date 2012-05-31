@@ -1,57 +1,86 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx1.redhat.com ([209.132.183.28]:34571 "EHLO mx1.redhat.com"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1754388Ab2EaSQC (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 31 May 2012 14:16:02 -0400
-Date: Thu, 31 May 2012 14:15:55 -0400
-From: Josef Bacik <josef@redhat.com>
-To: Al Viro <viro@ZenIV.linux.org.uk>
-Cc: Miao Xie <miaox@cn.fujitsu.com>,
-        Linux Fsdevel <linux-fsdevel@vger.kernel.org>,
-        Linux Btrfs <linux-btrfs@vger.kernel.org>,
-        Chris Mason <chris.mason@oracle.com>
-Subject: Re: [PATCH 2/2] Btrfs: fix wrong the mount information in /proc
-Message-ID: <20120531181555.GF2080@localhost.localdomain>
-References: <4FC7470A.7020005@cn.fujitsu.com>
- <20120531143605.GE11775@ZenIV.linux.org.uk>
- <20120531155304.GF11775@ZenIV.linux.org.uk>
+Received: from cn.fujitsu.com ([222.73.24.84]:36724 "EHLO song.cn.fujitsu.com"
+	rhost-flags-OK-FAIL-OK-OK) by vger.kernel.org with ESMTP
+	id S1751462Ab2EaK1E (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Thu, 31 May 2012 06:27:04 -0400
+Message-ID: <4FC7470A.7020005@cn.fujitsu.com>
+Date: Thu, 31 May 2012 18:25:14 +0800
+From: Miao Xie <miaox@cn.fujitsu.com>
+Reply-To: miaox@cn.fujitsu.com
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <20120531155304.GF11775@ZenIV.linux.org.uk>
+To: Linux Fsdevel <linux-fsdevel@vger.kernel.org>,
+        Linux Btrfs <linux-btrfs@vger.kernel.org>
+CC: Chris Mason <chris.mason@oracle.com>
+Subject: [PATCH 2/2] Btrfs: fix wrong the mount information in /proc
+Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Thu, May 31, 2012 at 04:53:04PM +0100, Al Viro wrote:
-> On Thu, May 31, 2012 at 03:36:05PM +0100, Al Viro wrote:
-> > On Thu, May 31, 2012 at 06:25:14PM +0800, Miao Xie wrote:
-> > > +#include "../mount.h"
-> > 
-> > No.
-> > 
-> > > +	struct mount *r = real_mount(mnt);
-> > 
-> > And even more so.  Find a way to do that without layering violations or
-> > live with the current behaviour.
-> > 
-> > Both patches NAKed with extreme prejudice.  Don't bring them back, you
-> > are *not* going to get them in.  Any filesystem code that wants to do
-> > that kind of thing is seriously out of luck.
-> 
-> BTW, resulting behaviour is bogus, regardless of layering violations  -
-> note that device_list_add() renames existing btrfs_device.  *And* does so
-> without holding ->device_list_mutex, so your patch would've cheerfully
-> walked right into strcmp() vs. kfree() races.  And while the order of
-> kfree vs. reassignment in device_list_add() is clearly wrong, flipping it
-> won't fix that problem.
-> 
-> Try to formulate the rules for names you are generating - when do they
-> change, what can we say about two mounts by comparing these names,
-> when can two that used to give different names start giving the same
-> and vice versa.  You won't be happy with the result.
+If we remove the disk that is specified when mounting, the mount information
+in /proc can not be updated. It will make us can not add that disk back into
+the filesystem. This patch fix this problem by implement the show_devname()
+interface and choose the name of the device with minimum device id to show.
 
-I'm fixing this up right now and then I'll also fix the show_devname thing, we
-can just keep track of which device mount() was called with so that we can print
-that out and then if that device is ever removed we can just print out something
-different.  Thanks,
+Signed-off-by: Miao Xie <miaox@cn.fujitsu.com>
+---
+ fs/btrfs/super.c |   31 +++++++++++++++++++++++++++++++
+ 1 files changed, 31 insertions(+), 0 deletions(-)
 
-Josef
+diff --git a/fs/btrfs/super.c b/fs/btrfs/super.c
+index c5f8fca..99e5671 100644
+--- a/fs/btrfs/super.c
++++ b/fs/btrfs/super.c
+@@ -41,6 +41,7 @@
+ #include <linux/slab.h>
+ #include <linux/cleancache.h>
+ #include <linux/ratelimit.h>
++#include "../mount.h"
+ #include "compat.h"
+ #include "delayed-inode.h"
+ #include "ctree.h"
+@@ -892,6 +893,35 @@ static int btrfs_show_options(struct seq_file *seq, struct dentry *dentry)
+ 	return 0;
+ }
+ 
++static int btrfs_show_devname(struct seq_file *m, struct vfsmount *mnt)
++{
++	struct btrfs_fs_info *fs_info = btrfs_sb(mnt->mnt_sb);
++	struct mount *r = real_mount(mnt);
++	struct btrfs_fs_devices *cur_devices;
++	struct btrfs_device *dev;
++	struct list_head *head;
++	struct btrfs_device *first_dev = NULL;
++
++	mutex_lock(&fs_info->fs_devices->device_list_mutex);
++	cur_devices = fs_info->fs_devices;
++	while (cur_devices) {
++		head = &cur_devices->devices;
++		list_for_each_entry(dev, head, dev_list) {
++			if (!strcmp(r->mnt_devname, dev->name)) {
++				seq_escape(m, r->mnt_devname, " \t\n\\");
++				goto out;
++			}
++			if (!first_dev || dev->devid < first_dev->devid)
++				first_dev = dev;
++		}
++		cur_devices = cur_devices->seed;
++	}
++	seq_escape(m, first_dev->name, " \t\n\\");
++out:
++	mutex_unlock(&fs_info->fs_devices->device_list_mutex);
++	return 0;
++}
++
+ static int btrfs_test_super(struct super_block *s, void *data)
+ {
+ 	struct btrfs_fs_info *p = data;
+@@ -1467,6 +1497,7 @@ static const struct super_operations btrfs_super_ops = {
+ 	.put_super	= btrfs_put_super,
+ 	.sync_fs	= btrfs_sync_fs,
+ 	.show_options	= btrfs_show_options,
++	.show_devname	= btrfs_show_devname,
+ 	.write_inode	= btrfs_write_inode,
+ 	.dirty_inode	= btrfs_fs_dirty_inode,
+ 	.alloc_inode	= btrfs_alloc_inode,
+-- 
+1.7.6.5

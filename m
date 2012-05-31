@@ -1,103 +1,53 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from ysabell.rzone.de ([81.169.144.237]:56278 "EHLO ysabell.rzone.de"
+Received: from mx1.redhat.com ([209.132.183.28]:35055 "EHLO mx1.redhat.com"
 	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1752647Ab2EZK7v (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Sat, 26 May 2012 06:59:51 -0400
-From: Jan Schmidt <list.btrfs@jan-o-sch.net>
-To: chris.mason@oracle.com, linux-btrfs@vger.kernel.org
-Subject: [PATCH v2 00/15] Btrfs: tree modification log
-Date: Sat, 26 May 2012 12:59:34 +0200
-Message-Id: <cover.1338027552.git.list.btrfs@jan-o-sch.net>
+	id S1757520Ab2EaPOi (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Thu, 31 May 2012 11:14:38 -0400
+Received: from int-mx09.intmail.prod.int.phx2.redhat.com (int-mx09.intmail.prod.int.phx2.redhat.com [10.5.11.22])
+	by mx1.redhat.com (8.14.4/8.14.4) with ESMTP id q4VFEcPc021531
+	(version=TLSv1/SSLv3 cipher=DHE-RSA-AES256-SHA bits=256 verify=OK)
+	for <linux-btrfs@vger.kernel.org>; Thu, 31 May 2012 11:14:38 -0400
+Received: from localhost.localdomain.com (vpn-8-248.rdu.redhat.com [10.11.8.248])
+	by int-mx09.intmail.prod.int.phx2.redhat.com (8.14.4/8.14.4) with ESMTP id q4VFEbnA020580
+	for <linux-btrfs@vger.kernel.org>; Thu, 31 May 2012 11:14:37 -0400
+From: Josef Bacik <josef@redhat.com>
+To: linux-btrfs@vger.kernel.org
+Subject: [PATCH] Btrfs: make sure to unblock the transaction when cleaning it up
+Date: Thu, 31 May 2012 11:14:37 -0400
+Message-Id: <1338477277-5793-1-git-send-email-josef@redhat.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Chris: Please pull
+When a transaction aborts we can get stuck in places where tasks are waiting
+for the transaction to become unblocked.  So we need to unblock the
+transaction and wake up any waiters so they can exit properly.  Thanks,
 
-	git://git.jan-o-sch.net/btrfs-unstable for-chris
+Signed-off-by: Josef Bacik <josef@redhat.com>
+---
+ fs/btrfs/transaction.c |    7 +++++++
+ 1 files changed, 7 insertions(+), 0 deletions(-)
 
-for 3.5, it's a major improvement for the backref resolver and a good
-base to build qgroups and "btrfs send" onto. And, besides all other, its
-implications on existing code outside backref.c are very small, mostly
-added lines with no effect outside the backref resolver.
-
-This patch set is to provide reliable backref resolving on busy trees.
-The previous attempts to block certain tree modifications while we're
-resolving backrefs all ended up in (dead-) locking nightmares. What we
-now do is we record all the changes we make to fs trees while backref
-resolving is in progress into a tree modification log. During backref
-resolving we then merge the current state of the tree with the recorded
-modifications to get a consistent previous state of the tree.
-
-The first three commits are plain bug fixes, but the tree mod log
-cannot function without them. So they're included in this patch set.
-To only these three fixes, you can pull
-
-	git://git.jan-o-sch.net/btrfs-unstable 3.5-fixes
-
-For the whole tree modification log, pull
-
-	git://git.jan-o-sch.net/btrfs-unstable tree-mod-log-v2
-
-The tree-mod-log-v2 head is a stable alias for "for-chris".
-
-Both branches are based on the current for-linus branch from Chris'
-repository. Checked with xfstests (fails 254 273 275, which i claim has
-nothing to do with this patch set) and hammered on the filesystem with
-fs_mark while resolving backrefs in a loop.
-
-I removed the qgroups patch series still contained in v1 because I
-realized that the fs_mark tests I was doing weren't sufficient. When
-testing qgroups with fsstress only for a few seconds, the accounting
-breaks. Nothing really bad happens, but quota patches that don't get
-quotas right are of litte use. A new qgroup patch set might come out
-soon, but it won't make it into 3.5. There's a branch in my git repo
-called tree-mod-log-quota-v1+fixes holding the current qgroup state.
-
-Test it, break it, report it :-)
-
--Jan
-
---
-Changes v1->v2:
-- qgroups patches removed
-- ulist realloc bugfix added (reported by Alexander Block)
-- btrfs_find_parent_nodes bugfix (reported by Alexander Block)
-- various smaller bugs in the v1 patch set fixed (reported by Alexander
-  Block, Tsutomu Itoh and myself)
---
-
-Jan Schmidt (15):
-  Btrfs: ulist realloc bugfix
-  Btrfs: bugfix in btrfs_find_parent_nodes
-  Btrfs: bugfix: ignore the wrong key for indirect tree block backrefs
-  Btrfs: look into the extent during find_all_leafs
-  Btrfs: don't set for_cow parameter for tree block functions
-  Btrfs: move struct seq_list to ctree.h
-  Btrfs: dummy extent buffers for tree mod log
-  Btrfs: add tree mod log to fs_info
-  Btrfs: add tree modification log functions
-  Btrfs: put all block modifications into the tree mod log
-  Btrfs: add del_ptr and insert_ptr modifications to the tree mod log
-  Btrfs: add btrfs_search_old_slot
-  Btrfs: use the tree modification log for backref resolving
-  Btrfs: fs_info variable for join_transaction
-  Btrfs: tree mod log sanity checks in join_transaction
-
- fs/btrfs/backref.c     |  465 +++++++++++++++++++---------
- fs/btrfs/backref.h     |    3 +-
- fs/btrfs/ctree.c       |  831 ++++++++++++++++++++++++++++++++++++++++++++++--
- fs/btrfs/ctree.h       |   27 ++-
- fs/btrfs/delayed-ref.h |    5 -
- fs/btrfs/disk-io.c     |    7 +-
- fs/btrfs/extent-tree.c |   10 +-
- fs/btrfs/extent_io.c   |   80 +++++-
- fs/btrfs/extent_io.h   |    3 +
- fs/btrfs/ioctl.c       |    2 +-
- fs/btrfs/transaction.c |   46 ++-
- fs/btrfs/ulist.c       |   23 +-
- fs/btrfs/ulist.h       |    9 +-
- 13 files changed, 1286 insertions(+), 225 deletions(-)
-
+diff --git a/fs/btrfs/transaction.c b/fs/btrfs/transaction.c
+index 7aed0e8..1715afb 100644
+--- a/fs/btrfs/transaction.c
++++ b/fs/btrfs/transaction.c
+@@ -1204,9 +1204,16 @@ static void cleanup_transaction(struct btrfs_trans_handle *trans,
+ 	WARN_ON(trans->use_count > 1);
+ 
+ 	spin_lock(&root->fs_info->trans_lock);
++	cur_trans->blocked = 0;
+ 	list_del_init(&cur_trans->list);
++	if (root->fs_info->running_transaction == cur_trans) {
++		root->fs_info->running_transaction = NULL;
++		root->fs_info->trans_no_join = 0;
++	}
+ 	spin_unlock(&root->fs_info->trans_lock);
+ 
++	wake_up(&root->fs_info->transaction_wait);
++
+ 	btrfs_cleanup_one_transaction(trans->transaction, root);
+ 
+ 	put_transaction(cur_trans);
 -- 
-1.7.3.4
+1.7.7.6
 

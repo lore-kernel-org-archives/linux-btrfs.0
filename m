@@ -1,89 +1,90 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from tulsa-1.icequake.net ([65.38.17.15]:42482 "EHLO
-	mail.icequake.net" rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org
-	with ESMTP id S933193Ab2FAOs4 (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Fri, 1 Jun 2012 10:48:56 -0400
-Received: from localhost (aurora [127.0.0.1])
-	by mail.icequake.net (Postfix) with ESMTP id 2590CFCB2
-	for <linux-btrfs@vger.kernel.org>; Fri,  1 Jun 2012 09:39:02 -0500 (CDT)
-Received: from mail.icequake.net ([127.0.0.1])
-	by localhost (aurora.icequake.net [127.0.0.1]) (amavisd-new, port 10024)
-	with ESMTP id 9TqgD0TKP8G5 for <linux-btrfs@vger.kernel.org>;
-	Fri,  1 Jun 2012 09:38:59 -0500 (CDT)
-Received: from localhost (ma65636d0.tmodns.net [208.54.86.166])
-	by mail.icequake.net (Postfix) with ESMTPSA id 088FCFCAD
-	for <linux-btrfs@vger.kernel.org>; Fri,  1 Jun 2012 09:38:58 -0500 (CDT)
-Date: Fri, 1 Jun 2012 09:38:57 -0500
-From: "Ryan C. Underwood" <nemesis-lists@icequake.net>
-To: linux-btrfs@vger.kernel.org
-Subject: Re: Several unhappy btrfs's after RAID meltdown
-Message-ID: <20120601143857.GB25227@localhost.localdomain>
-Reply-To: nemesis@icequake.net
-References: <20120205184128.GC18806@localhost.localdomain>
- <20120207033945.GA5639@localhost.localdomain>
- <pan.2012.02.07.09.53.58@cox.net>
- <20120207140431.GB5639@localhost.localdomain>
- <CAKcLGm9mLhwc1ZFp=ingR814X77QetX3LOkSqxdbussjj2gykQ@mail.gmail.com>
- <20120207154225.GD5639@localhost.localdomain>
- <20120207174645.GE5639@localhost.localdomain>
- <20120207174907.GF5639@localhost.localdomain>
- <20120212163134.GA15216@localhost.localdomain>
+Received: from mail-vb0-f46.google.com ([209.85.212.46]:62184 "EHLO
+	mail-vb0-f46.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1756626Ab2FAIxj convert rfc822-to-8bit (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Fri, 1 Jun 2012 04:53:39 -0400
+Received: by vbbff1 with SMTP id ff1so1154200vbb.19
+        for <linux-btrfs@vger.kernel.org>; Fri, 01 Jun 2012 01:53:38 -0700 (PDT)
 MIME-Version: 1.0
-Content-Type: multipart/signed; micalg=pgp-sha1;
-	protocol="application/pgp-signature"; boundary="NDin8bjvE/0mNLFQ"
-In-Reply-To: <20120212163134.GA15216@localhost.localdomain>
+From: Randall Mason <randall@mason.ch>
+Date: Fri, 1 Jun 2012 11:53:18 +0300
+Message-ID: <CADP2XCmhPX9HyLn6XWs4jgDHhHj8S1-G8PrZo50m4pRRXVft7A@mail.gmail.com>
+Subject: Uncorrectable errors on newly extended volume
+To: linux-btrfs@vger.kernel.org
+Content-Type: text/plain; charset=ISO-8859-1
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
+I'm having a problem with a newly extended btrfs volume.  It is
+running on debian testing with an almost stock 3.1.0 kernel with a
+little bit of patches to get it compiling for my LaCie Network Space
+v2 'Classic' (http://lacie.nas-central.org/wiki/Category:Network_Space_2).
+ It's been working perfectly for about a year and a half with just the
+internal sda2 and I've had luck with extending disks before so I added
+a 3TB usb drive.  My dad wanted to backup his computer so I gave him
+an SMB share and he copied everything using Windows Vista's internal
+copy to it.  The copy checked out by comparing sized and file/folder
+counts, but we didn't verify anything else.  He is now needing to
+restore the backup and he is getting zero sized files.  I checked the
+some of the same files on the NAS itself and I get:
+> ERROR: cannot read `<filename>' (Input/output error)
 
---NDin8bjvE/0mNLFQ
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
-Content-Transfer-Encoding: quoted-printable
+I checked my kernel logs to see what the deal was and I didn't see
+anything that makes sense so I ran a scrub:
+sudo /sbin/btrfs scrub status .
+> scrub status for 3a29a904-ad28-4e2a-8e80-df29d8d5fafc
+>         scrub started at Thu May 31 10:15:39 2012 and finished after 27581 seconds
+>         total bytes scrubbed: 1.00TB with 23929636 errors
+>         error details: csum=23929636
+>         corrected errors: 0, uncorrectable errors: 23929636, unverified errors: 0
 
+These are the most frequent lines in the kern.log:
+>   1189 <datetime> <hostname> kernel: scrub_fixup: <number> callbacks suppressed
+>   1442 <datetime> <hostname> kernel: btrfs_readpage_end_io_hook: <number> callbacks suppressed
+>  11900 <datetime> <hostname> kernel: btrfs: unable to fixup at <number>
+>  14538 <datetime> <hostname> kernel: btrfs csum failed ino <number> off <number> csum <number> private <number>
+> 237549 <datetime> <hostname> kernel: bio too big device sdb1 (<number> > <number>)
 
-I made a little bit of progress recovering this mess, seems
-btrfs-progs has improved since I last tried.
+Many are from the scrub that I ran after I was getting I/O errors, but
+all of the non-scrub related errors were happening before I ran a
+scrub.  If you need more info, my kern.log run through 7z is 322kB,
+but I don't know if that will help.  I rebooted the device out of
+desperation to see if it would help and when it came back up the btrfs
+volume wouldn't mount using the origional sda2, but mounted fine when
+I mounted the sdb1:
+> May 31 10:05:48 eeyore kernel: device fsid 3a29a904-ad28-4e2a-8e80-df29d8d5fafc devid 1 transid 132729 /dev/sda2
+> May 31 10:05:48 eeyore kernel: btrfs: failed to read chunk tree on sda2
+> May 31 10:05:48 eeyore kernel: btrfs: open_ctree failed
+Trying "mount /dev/sdb1 /var/lib/btrfs" worked:
+> May 31 10:11:14 eeyore kernel: device fsid 3a29a904-ad28-4e2a-8e80-df29d8d5fafc devid 2 transid 132729 /dev/sdb1
+Then a mount -a worked to get /home mounted again.
 
-# ./btrfs-find-root /dev/mapper/tr5ut-vicep--library
-[..]
-Well block 317865713664 seems great, but generation doesn't match, have=3D5=
-74372, want=3D575931
-Well block 317874491392 seems great, but generation doesn't match, have=3D5=
-75930, want=3D575931
-Found tree root at 317874626560
+So, the question:  What went wrong?  Is there any hope of getting my
+Dad's data back?  How should I proceed from here?  Delete the volume
+and start from scratch?  Is btrfs not compatible with the size of
+disk/volume on this architecture?  Is the external disk broken?
+Should I use a different filesystem?  Why were there no indications of
+error when copying?  If worse comes to worse, how can I tell which
+files are bad?  Can scrub go through and unlink the bad files?
 
-Seems like this is a good sign that btrfs-find-root was able to find
-the root.
+Thanks for such a great file system and thanks for any help you can give.
 
-But I'm still stuck on this trying to run btrfs-restore:
+--
+Randall Mason
+randall@mason.ch
 
-# ./btrfs-restore -v -i -u 1 -t 317874626560 /dev/mapper/tr5ut-vicep--libra=
-ry .
-checksum verify failed on 317874630656 wanted 8E19212D found FFFFFFA6
-checksum verify failed on 317874630656 wanted 8E19212D found FFFFFFA6
-checksum verify failed on 317874630656 wanted 491D9C1A found FFFFFFA6
-checksum verify failed on 317874630656 wanted 8E19212D found FFFFFFA6
-Csum didn't match
-btrfs-restore: disk-io.c:441:
-find_and_setup_root: Assertion `!(ret)' failed.
-Aborted
+Here is some more information that may help:
 
-It seems like -i should ignore the csum mismatch, what am I missing?
+fstab:
+> UUID=3a29a904-ad28-4e2a-8e80-df29d8d5fafc /var/lib/btrfs  btrfs   defaults                0 0
+> UUID=3a29a904-ad28-4e2a-8e80-df29d8d5fafc /home           btrfs   defaults,subvol=current 0 0
 
---=20
-Ryan C. Underwood, <nemesis@icequake.net>
+sudo /sbin/btrfs filesystem show /dev/sdb1
+> Label: none  uuid: 3a29a904-ad28-4e2a-8e80-df29d8d5fafc
+>         Total devices 2 FS bytes used 1.04TB
+>         devid    2 size 2.73TB used 185.50GB path /dev/sdb1
+>         devid    1 size 922.19GB used 922.19GB path /dev/sda2
+> Btrfs Btrfs v0.19
 
---NDin8bjvE/0mNLFQ
-Content-Type: application/pgp-signature; name="signature.asc"
-Content-Description: Digital signature
-
------BEGIN PGP SIGNATURE-----
-Version: GnuPG v1.4.11 (GNU/Linux)
-
-iD8DBQFPyNQBIonHnh+67jkRAqGpAKCC1T8g+Yhij4nDlueYkP9VgZxJoQCeIL13
-a0xgnIb8mOqdMAKiHRYuWKM=
-=IJor
------END PGP SIGNATURE-----
-
---NDin8bjvE/0mNLFQ--
+dpkg -l | grep -i btrfs
+> ii  btrfs-tools                           0.19+20120328-1                    Checksumming Copy on Write Filesystem utilities

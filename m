@@ -1,63 +1,89 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-qa0-f46.google.com ([209.85.216.46]:43980 "EHLO
-	mail-qa0-f46.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1759416Ab2EXV2n (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 24 May 2012 17:28:43 -0400
-Received: by qadb17 with SMTP id b17so4488757qad.19
-        for <linux-btrfs@vger.kernel.org>; Thu, 24 May 2012 14:28:43 -0700 (PDT)
+Received: from tulsa-1.icequake.net ([65.38.17.15]:42482 "EHLO
+	mail.icequake.net" rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org
+	with ESMTP id S933193Ab2FAOs4 (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Fri, 1 Jun 2012 10:48:56 -0400
+Received: from localhost (aurora [127.0.0.1])
+	by mail.icequake.net (Postfix) with ESMTP id 2590CFCB2
+	for <linux-btrfs@vger.kernel.org>; Fri,  1 Jun 2012 09:39:02 -0500 (CDT)
+Received: from mail.icequake.net ([127.0.0.1])
+	by localhost (aurora.icequake.net [127.0.0.1]) (amavisd-new, port 10024)
+	with ESMTP id 9TqgD0TKP8G5 for <linux-btrfs@vger.kernel.org>;
+	Fri,  1 Jun 2012 09:38:59 -0500 (CDT)
+Received: from localhost (ma65636d0.tmodns.net [208.54.86.166])
+	by mail.icequake.net (Postfix) with ESMTPSA id 088FCFCAD
+	for <linux-btrfs@vger.kernel.org>; Fri,  1 Jun 2012 09:38:58 -0500 (CDT)
+Date: Fri, 1 Jun 2012 09:38:57 -0500
+From: "Ryan C. Underwood" <nemesis-lists@icequake.net>
+To: linux-btrfs@vger.kernel.org
+Subject: Re: Several unhappy btrfs's after RAID meltdown
+Message-ID: <20120601143857.GB25227@localhost.localdomain>
+Reply-To: nemesis@icequake.net
+References: <20120205184128.GC18806@localhost.localdomain>
+ <20120207033945.GA5639@localhost.localdomain>
+ <pan.2012.02.07.09.53.58@cox.net>
+ <20120207140431.GB5639@localhost.localdomain>
+ <CAKcLGm9mLhwc1ZFp=ingR814X77QetX3LOkSqxdbussjj2gykQ@mail.gmail.com>
+ <20120207154225.GD5639@localhost.localdomain>
+ <20120207174645.GE5639@localhost.localdomain>
+ <20120207174907.GF5639@localhost.localdomain>
+ <20120212163134.GA15216@localhost.localdomain>
 MIME-Version: 1.0
-Date: Thu, 24 May 2012 23:28:42 +0200
-Message-ID: <CAG-aW05GkhWBC+ee_6iu8uRDnTQYZCCkB1+oz3bU64=1CjV4jA@mail.gmail.com>
-Subject: Btrfs and more compression algorithms
-From: Matt <jackdachef@gmail.com>
-To: Chris Mason <chris.mason@oracle.com>, Josef Bacik <josef@redhat.com>
-Cc: linux-btrfs <linux-btrfs@vger.kernel.org>
-Content-Type: text/plain; charset=ISO-8859-1
+Content-Type: multipart/signed; micalg=pgp-sha1;
+	protocol="application/pgp-signature"; boundary="NDin8bjvE/0mNLFQ"
+In-Reply-To: <20120212163134.GA15216@localhost.localdomain>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hi Chris, Hi Josef,
 
-Hi Btrfs-List and all other Btrfs-devs that I've forgot,
-
-
-is there a chance we'll see a xz file-compression support in Btrfs
-anytime soon ?
-
-I'm sure folks have been waiting for additional compression support
-besides gzip and lzo (bzip2 seems out of question due to its slowness,
-there's pbzip2 but that's not included in the kernel).
-
-This would be a really nice bonus due to the processors getting faster
-and SSD usage is more and more widespread - add an efficient
-implementation and
-
-we would have a fast, extremely efficient and feature-rich filesystem.
-
-My current situation is that several of my harddrives are almost
-completely full - even with forced gzip-compression - so I thought I'd
-asked whether there was any change in the near future ahead.
-There's fusecompress but that probably wouldn't end up being as stable
-as a btrfs with xz/lzma-support.
+--NDin8bjvE/0mNLFQ
+Content-Type: text/plain; charset=us-ascii
+Content-Disposition: inline
+Content-Transfer-Encoding: quoted-printable
 
 
-Thanks for your consideration and your work on Btrfs !
+I made a little bit of progress recovering this mess, seems
+btrfs-progs has improved since I last tried.
 
-It got significantly more stable compared to the past :)
+# ./btrfs-find-root /dev/mapper/tr5ut-vicep--library
+[..]
+Well block 317865713664 seems great, but generation doesn't match, have=3D5=
+74372, want=3D575931
+Well block 317874491392 seems great, but generation doesn't match, have=3D5=
+75930, want=3D575931
+Found tree root at 317874626560
 
-(I use it mainly for some small backup hdds;
+Seems like this is a good sign that btrfs-find-root was able to find
+the root.
 
-a troublesome usage however is still suspending-to-ram/to-disk
-regularly and with that the partition [I have a dedicated partition
-for the portage-tarball of Gentoo Linux]
-where the filesystem seems to take some damage where it can't be
-written to anymore via rsync (or other programs). The bash session
-hangs (and nothing gets written to the partition).
-Running scrub revealed no issues. I haven't had a chance to test it
-yet with the new btrfs-progs - haven't suspended meanwhile)
+But I'm still stuck on this trying to run btrfs-restore:
 
+# ./btrfs-restore -v -i -u 1 -t 317874626560 /dev/mapper/tr5ut-vicep--libra=
+ry .
+checksum verify failed on 317874630656 wanted 8E19212D found FFFFFFA6
+checksum verify failed on 317874630656 wanted 8E19212D found FFFFFFA6
+checksum verify failed on 317874630656 wanted 491D9C1A found FFFFFFA6
+checksum verify failed on 317874630656 wanted 8E19212D found FFFFFFA6
+Csum didn't match
+btrfs-restore: disk-io.c:441:
+find_and_setup_root: Assertion `!(ret)' failed.
+Aborted
 
-Kind Regards
+It seems like -i should ignore the csum mismatch, what am I missing?
 
-Matt
+--=20
+Ryan C. Underwood, <nemesis@icequake.net>
+
+--NDin8bjvE/0mNLFQ
+Content-Type: application/pgp-signature; name="signature.asc"
+Content-Description: Digital signature
+
+-----BEGIN PGP SIGNATURE-----
+Version: GnuPG v1.4.11 (GNU/Linux)
+
+iD8DBQFPyNQBIonHnh+67jkRAqGpAKCC1T8g+Yhij4nDlueYkP9VgZxJoQCeIL13
+a0xgnIb8mOqdMAKiHRYuWKM=
+=IJor
+-----END PGP SIGNATURE-----
+
+--NDin8bjvE/0mNLFQ--

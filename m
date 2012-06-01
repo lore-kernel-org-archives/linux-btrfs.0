@@ -1,100 +1,77 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx1.redhat.com ([209.132.183.28]:16860 "EHLO mx1.redhat.com"
+Received: from mx1.redhat.com ([209.132.183.28]:9351 "EHLO mx1.redhat.com"
 	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1754623Ab2FAN4A (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Fri, 1 Jun 2012 09:56:00 -0400
+	id S1759929Ab2FAN4B (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Fri, 1 Jun 2012 09:56:01 -0400
 Received: from int-mx11.intmail.prod.int.phx2.redhat.com (int-mx11.intmail.prod.int.phx2.redhat.com [10.5.11.24])
-	by mx1.redhat.com (8.14.4/8.14.4) with ESMTP id q51Du0Md030207
+	by mx1.redhat.com (8.14.4/8.14.4) with ESMTP id q51Du1e7032265
 	(version=TLSv1/SSLv3 cipher=DHE-RSA-AES256-SHA bits=256 verify=OK)
-	for <linux-btrfs@vger.kernel.org>; Fri, 1 Jun 2012 09:56:00 -0400
+	for <linux-btrfs@vger.kernel.org>; Fri, 1 Jun 2012 09:56:01 -0400
 Received: from localhost.localdomain.com (vpn-9-98.rdu.redhat.com [10.11.9.98])
-	by int-mx11.intmail.prod.int.phx2.redhat.com (8.14.4/8.14.4) with ESMTP id q51Dtwni031587
-	for <linux-btrfs@vger.kernel.org>; Fri, 1 Jun 2012 09:55:59 -0400
+	by int-mx11.intmail.prod.int.phx2.redhat.com (8.14.4/8.14.4) with ESMTP id q51Dtwnk031587
+	for <linux-btrfs@vger.kernel.org>; Fri, 1 Jun 2012 09:56:01 -0400
 From: Josef Bacik <josef@redhat.com>
 To: linux-btrfs@vger.kernel.org
-Subject: [PATCH 2/7] Btrfs: fix locking in btrfs_destroy_delayed_refs
-Date: Fri,  1 Jun 2012 09:55:50 -0400
-Message-Id: <1338558955-4944-3-git-send-email-josef@redhat.com>
+Subject: [PATCH 4/7] Btrfs: wake up transaction waiters when aborting a transaction
+Date: Fri,  1 Jun 2012 09:55:52 -0400
+Message-Id: <1338558955-4944-5-git-send-email-josef@redhat.com>
 In-Reply-To: <1338558955-4944-1-git-send-email-josef@redhat.com>
 References: <1338558955-4944-1-git-send-email-josef@redhat.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-The transaction abort stuff was throwing warnings from the list debugging
-code because we do a list_del_init outside of the delayed_refs spin lock.
-The delayed refs locking makes baby Jesus cry so it's not hard to get wrong,
-but we need to take the ref head mutex to make sure it's not being processed
-currently, and so if it is we need to drop the spin lock and then take and
-drop the mutex and do the search again.  If we can take the mutex then we
-can safely remove the head from the list and carry on.  Now when the
-transaction aborts I don't get the list debugging warnings.  Thanks,
+I was getting lots of hung tasks and a NULL pointer dereference because we
+are not cleaning up the transaction properly when it aborts.  First we need
+to reset the running_transaction to NULL so we don't get a bad dereference
+for any start_transaction callers after this.  Also we cannot rely on
+waitqueue_active() since it's just a list_empty(), so just call wake_up()
+directly since that will do the barrier for us and such.  Thanks,
 
 Signed-off-by: Josef Bacik <josef@redhat.com>
 ---
- fs/btrfs/disk-io.c |   30 +++++++++++++++++-------------
- 1 files changed, 17 insertions(+), 13 deletions(-)
+ fs/btrfs/disk-io.c     |    9 +++------
+ fs/btrfs/transaction.c |    4 ++++
+ 2 files changed, 7 insertions(+), 6 deletions(-)
 
 diff --git a/fs/btrfs/disk-io.c b/fs/btrfs/disk-io.c
-index b0d49e2..0224c25 100644
+index 0224c25..050db9b 100644
 --- a/fs/btrfs/disk-io.c
 +++ b/fs/btrfs/disk-io.c
-@@ -3395,7 +3395,6 @@ int btrfs_destroy_delayed_refs(struct btrfs_transaction *trans,
+@@ -3584,16 +3584,13 @@ void btrfs_cleanup_one_transaction(struct btrfs_transaction *cur_trans,
+ 	/* FIXME: cleanup wait for commit */
+ 	cur_trans->in_commit = 1;
+ 	cur_trans->blocked = 1;
+-	if (waitqueue_active(&root->fs_info->transaction_blocked_wait))
+-		wake_up(&root->fs_info->transaction_blocked_wait);
++	wake_up(&root->fs_info->transaction_blocked_wait);
  
- 	delayed_refs = &trans->delayed_refs;
+ 	cur_trans->blocked = 0;
+-	if (waitqueue_active(&root->fs_info->transaction_wait))
+-		wake_up(&root->fs_info->transaction_wait);
++	wake_up(&root->fs_info->transaction_wait);
  
--again:
- 	spin_lock(&delayed_refs->lock);
- 	if (delayed_refs->num_entries == 0) {
- 		spin_unlock(&delayed_refs->lock);
-@@ -3403,31 +3402,36 @@ again:
- 		return ret;
- 	}
+ 	cur_trans->commit_done = 1;
+-	if (waitqueue_active(&cur_trans->commit_wait))
+-		wake_up(&cur_trans->commit_wait);
++	wake_up(&cur_trans->commit_wait);
  
--	node = rb_first(&delayed_refs->root);
--	while (node) {
-+	while ((node = rb_first(&delayed_refs->root)) != NULL) {
- 		ref = rb_entry(node, struct btrfs_delayed_ref_node, rb_node);
--		node = rb_next(node);
--
--		ref->in_tree = 0;
--		rb_erase(&ref->rb_node, &delayed_refs->root);
--		delayed_refs->num_entries--;
+ 	btrfs_destroy_pending_snapshots(cur_trans);
  
- 		atomic_set(&ref->refs, 1);
- 		if (btrfs_delayed_ref_is_head(ref)) {
- 			struct btrfs_delayed_ref_head *head;
+diff --git a/fs/btrfs/transaction.c b/fs/btrfs/transaction.c
+index 7aed0e8..4e6f63e 100644
+--- a/fs/btrfs/transaction.c
++++ b/fs/btrfs/transaction.c
+@@ -1205,6 +1205,10 @@ static void cleanup_transaction(struct btrfs_trans_handle *trans,
  
- 			head = btrfs_delayed_node_to_head(ref);
--			spin_unlock(&delayed_refs->lock);
--			mutex_lock(&head->mutex);
-+			if (!mutex_trylock(&head->mutex)) {
-+				atomic_inc(&ref->refs);
-+				spin_unlock(&delayed_refs->lock);
-+
-+				/* Need to wait for the delayed ref to run */
-+				mutex_lock(&head->mutex);
-+				mutex_unlock(&head->mutex);
-+				btrfs_put_delayed_ref(ref);
-+
-+				continue;
-+			}
-+
- 			kfree(head->extent_op);
- 			delayed_refs->num_heads--;
- 			if (list_empty(&head->cluster))
- 				delayed_refs->num_heads_ready--;
- 			list_del_init(&head->cluster);
--			mutex_unlock(&head->mutex);
--			btrfs_put_delayed_ref(ref);
--			goto again;
- 		}
-+		ref->in_tree = 0;
-+		rb_erase(&ref->rb_node, &delayed_refs->root);
-+		delayed_refs->num_entries--;
-+
- 		spin_unlock(&delayed_refs->lock);
- 		btrfs_put_delayed_ref(ref);
+ 	spin_lock(&root->fs_info->trans_lock);
+ 	list_del_init(&cur_trans->list);
++	if (cur_trans == root->fs_info->running_transaction) {
++		root->fs_info->running_transaction = NULL;
++		root->fs_info->trans_no_join = 0;
++	}
+ 	spin_unlock(&root->fs_info->trans_lock);
  
+ 	btrfs_cleanup_one_transaction(trans->transaction, root);
 -- 
 1.7.7.6
 

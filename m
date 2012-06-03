@@ -1,98 +1,80 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-vb0-f46.google.com ([209.85.212.46]:63840 "EHLO
-	mail-vb0-f46.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S933207Ab2FBNoW (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Sat, 2 Jun 2012 09:44:22 -0400
-Received: by vbbff1 with SMTP id ff1so1792069vbb.19
-        for <linux-btrfs@vger.kernel.org>; Sat, 02 Jun 2012 06:44:21 -0700 (PDT)
-Message-ID: <4FCA189F.9050000@gmail.com>
-Date: Sat, 02 Jun 2012 09:43:59 -0400
-From: Maxim Mikheev <mikhmv@gmail.com>
+Received: from smtp-1.hut.fi ([130.233.228.91]:57712 "EHLO smtp-1.hut.fi"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1755159Ab2FCXgi (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Sun, 3 Jun 2012 19:36:38 -0400
+Date: Mon, 4 Jun 2012 02:36:25 +0300
+From: Sami Liedes <sami.liedes@iki.fi>
+To: linux-btrfs@vger.kernel.org, linux-fsdevel@vger.kernel.org
+Subject: Non-root can create, but not delete, btrfs snapshots?
+Message-ID: <20120603233624.GB8079@sli.dy.fi>
 MIME-Version: 1.0
-To: linux-btrfs@vger.kernel.org
-Subject: Re: Help with data recovering
-References: <4FC54A5D.8000600@gmail.com> <4FC55043.4050004@gmail.com> <CAE5mzvg_gLxkYhE1h7aunvvYHgsKjpo2xfLqv4A++S=UAOiySw@mail.gmail.com> <4FC55AB7.3000903@gmail.com> <CAE5mzvjYA-ojJWK8yqTbY6DZCoqcP9B_U2RwYGiahkp3C9t67g@mail.gmail.com> <4FC6D128.60308@gmail.com> <CAGJTRcibT_pufU4tKqbBpBfm8QiuW=dhQ8BAGzQnpxMCa-dOCQ@mail.gmail.com>
-In-Reply-To: <CAGJTRcibT_pufU4tKqbBpBfm8QiuW=dhQ8BAGzQnpxMCa-dOCQ@mail.gmail.com>
-Content-Type: text/plain; charset=ISO-8859-1; format=flowed
+Content-Type: multipart/signed; micalg=pgp-sha512;
+	protocol="application/pgp-signature"; boundary="0ntfKIWw70PvrIHh"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Repair was not helpful.
-Is any other ways to get access to data?
 
-Please help....
+--0ntfKIWw70PvrIHh
+Content-Type: text/plain; charset=us-ascii
+Content-Disposition: inline
+Content-Transfer-Encoding: quoted-printable
 
-On 05/30/2012 11:15 PM, Michael K wrote:
->
-> Let it run to completion. There is little you can do other than hope 
-> and wait.
->
-> On May 30, 2012 9:02 PM, "Maxim Mikheev" <mikhmv@gmail.com 
-> <mailto:mikhmv@gmail.com>> wrote:
->
->     btrfsck --repair running already for 26 hours.
->
->     Is it have sense to wait more?
->
->     Thanks
->
->     On 05/29/2012 07:36 PM, cwillu wrote:
->
->         On Tue, May 29, 2012 at 5:24 PM, Maxim
->         Mikheev<mikhmv@gmail.com <mailto:mikhmv@gmail.com>>  wrote:
->
->             Thank you for your answer.
->
->
->             The system kernel was and now:
->
->             Linux s0 3.4.0-030400-generic #201205210521 SMP Mon May 21
->             09:22:02 UTC 2012
->             x86_64 x86_64 x86_64 GNU/Linux
->
->             the raid was created by:
->             mkfs.btrfs /dev/sdb /dev/sdc /dev/sdd /dev/sde /dev/sdf
->
->             Disk are connected through RocketRaid 2670.
->
->             for mounting I used line in fstab:
->             UUID=c9776e19-37eb-4f9c-bd6b-04e8dde97682    /tank      
->              btrfs
->              defaults,compress=lzo    0    1
->
->             On machine was running several Virtual machines. Only one
->             was actively using
->             disks.
->
->             VM has active several threads:
->             1. 2 threads reading big files (50GB each)
->             2. reading from 50 files and writing one big file
->             3. The kernel panic happens when I run another program
->             with 30 threads of
->             reading/writing of small files.
->
->             Virtual Machine accessed to underline btrfs through 9-p
->             file system which
->             actively used xattr.
->
->             After reboot system was in this stage.
->
->             I hope that btrfsck --repair will not make it worse, It is
->             now running.
->
->         **twitch**
->
->         Well, I also hope it won't make it worse.  Do not cancel it
->         now, let
->         it finish (aborting it will  make things worse), but I suggest
->         waiting
->         until a few more people have weighed in before attempting anything
->         beyond that.
->
->     --
->     To unsubscribe from this list: send the line "unsubscribe
->     linux-btrfs" in
->     the body of a message to majordomo@vger.kernel.org
->     <mailto:majordomo@vger.kernel.org>
->     More majordomo info at http://vger.kernel.org/majordomo-info.html
->
+Hi!
+
+I noticed that a non-root user is able to create (but not delete)
+snapshots of a root btrfs filesystem on kernel 3.4.0.
+
+I'm not sure I understand the security model correctly, but letting
+unprivileged users create snapshots of the entire filesystem seems...
+wrong. Is this intentional?
+
+------------------------------------------------------------
+~/test$ ls -la
+total 0
+drwxr-xr-x 1 sliedes sliedes    0 Jun  4 02:28 .
+drwxr-xr-x 1 sliedes sliedes 7352 Jun  4 02:27 ..
+~/test$ whoami
+sliedes
+~/test$ groups
+sliedes dialout cdrom floppy audio src video plugdev kvm wireshark sbox
+~/test$ btrfs subvolume snapshot / newsnap
+Create a snapshot of '/' in './newsnap'
+~/test$ ls -la
+total 32
+drwxr-xr-x 1 sliedes sliedes   14 Jun  4 02:28 .
+drwxr-xr-x 1 sliedes sliedes 7352 Jun  4 02:27 ..
+drwxr-xr-x 1 root    root     336 Jun  2 05:32 newsnap
+~/test$ btrfs subvolume delete newsnap
+Delete subvolume '/home/sliedes/test/newsnap'
+ERROR: cannot delete '/home/sliedes/test/newsnap' - Operation not permitted
+~/test$ sudo btrfs subvolume delete newsnap
+Delete subvolume '/home/sliedes/test/newsnap'
+~/test$=20
+------------------------------------------------------------
+
+	Sami
+
+--0ntfKIWw70PvrIHh
+Content-Type: application/pgp-signature; name="signature.asc"
+Content-Description: Digital signature
+
+-----BEGIN PGP SIGNATURE-----
+Version: GnuPG v1.4.12 (GNU/Linux)
+
+iQIcBAEBCgAGBQJPy/T4AAoJEKLT589SE0a08gUQAMT/xcNj4KYUZmSHYW6izwm/
+bo/u5zZPfvbpiKIkjdyj7e5NeM59zKCHXO83yRxBiQxeAqxA0OeKKBk5r2NMPIAO
+n6QV2IZuWMkavXCEhvXRA5UZOxWDHfhmp/USs4nwDxOdqVUYvBVnCcN4fpR8dspg
+Jmlopsak6geIfZ86PbtzjmH4rYz95n9VrE+IfH4C0ianQaIHjs08KmJwN+epYFan
+AFulPStD4A/g8QrVZB8y8VSCzy7oaXrbb0s+UBUXV0ZsHeWlnCNkWPruJaIBT11N
+XJgPWdGHSfuF3J4TPhMrUkKQBh4w5QeX/wZMm9fPDXdclaxDVLBZuwN/ypYhKbyn
+Qg8o6GeCk85/pdaRhcYWvq63Xy1rMAvJDjCS4+HgR3tmgrS/i0Hy4LM6lQNlCkCi
+GEgpWYcoBzL6mjIERz3GH7WqVkJr42HhwT9ZV1Gpbg5DM4g2kScO4B9U3mhL06W8
+94bLD1/0EUtTi3VNx9+R1r05iWxI/ZPxa05GNTrewQhJLV7UhZYQqmelVaYu1E+/
+QwtzMmSo24XXtmnaXE1yzbPjxSXeubMYI2u7Y+ZWB9NosV7M9gt4rZkT7ke/A/qY
+p/xGlrhd6Gl7frjTY8WmkarqmR6IXNCUk4KLEYJtHBQ/UoYwhfvsiJdzdhDcmyx6
+HK1A6wZ7NeKe9NaFMwSf
+=pSkV
+-----END PGP SIGNATURE-----
+
+--0ntfKIWw70PvrIHh--

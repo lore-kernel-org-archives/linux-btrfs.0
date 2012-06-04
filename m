@@ -1,71 +1,64 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from tulsa-1.icequake.net ([65.38.17.15]:50499 "EHLO
-	mail.icequake.net" rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org
-	with ESMTP id S1757203Ab2FDOzI (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Mon, 4 Jun 2012 10:55:08 -0400
-Date: Mon, 4 Jun 2012 09:54:59 -0500
-From: "Ryan C. Underwood" <nemesis-lists@icequake.net>
-To: Maxim Mikheev <mikhmv@gmail.com>
-Cc: Arne Jansen <sensille@gmx.net>, Liu Bo <liubo2009@cn.fujitsu.com>,
-        linux-btrfs@vger.kernel.org, Jan Schmidt <list.btrfs@jan-o-sch.net>
-Subject: Re: Help with data recovering
-Message-ID: <20120604145459.GI25227@localhost.localdomain>
-Reply-To: nemesis@icequake.net
-References: <4FCA189F.9050000@gmail.com>
- <4FCC0DD7.9050807@cn.fujitsu.com>
- <4FCC12BA.9070701@gmail.com>
- <4FCC1A6F.8050805@cn.fujitsu.com>
- <4FCC1AE1.8050802@gmail.com>
- <4FCC2496.6070805@cn.fujitsu.com>
- <4FCC6F44.2030503@gmx.net>
- <4FCC9C63.7000605@gmail.com>
- <4FCC9CD5.2050309@gmx.net>
- <4FCC9F6C.5090305@gmail.com>
+Received: from mail-vc0-f174.google.com ([209.85.220.174]:43516 "EHLO
+	mail-vc0-f174.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1754187Ab2FDPBV (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Mon, 4 Jun 2012 11:01:21 -0400
+Received: by vcbf11 with SMTP id f11so2495012vcb.19
+        for <linux-btrfs@vger.kernel.org>; Mon, 04 Jun 2012 08:01:21 -0700 (PDT)
+Message-ID: <4FCCCDBF.9080309@gmail.com>
+Date: Mon, 04 Jun 2012 11:01:19 -0400
+From: Maxim Mikheev <mikhmv@gmail.com>
 MIME-Version: 1.0
-Content-Type: multipart/signed; micalg=pgp-sha1;
-	protocol="application/pgp-signature"; boundary="Encpt1P6Mxii2VuT"
-In-Reply-To: <4FCC9F6C.5090305@gmail.com>
+To: Stefan Behrens <sbehrens@giantdisaster.de>
+CC: linux-btrfs@vger.kernel.org
+Subject: Re: Help with recover data
+References: <4FC54A5D.8000600@gmail.com> <4FCCA8E3.7080209@giantdisaster.de> <4FCCA983.50400@gmail.com> <4FCCB20A.7010300@giantdisaster.de> <4FCCC176.1020007@gmail.com>
+In-Reply-To: <4FCCC176.1020007@gmail.com>
+Content-Type: text/plain; charset=ISO-8859-1; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
+After looking on Kernel.log, looks like I had raid card failure and data 
+was not stored properly on one of disks (/dev/sde).
+Btrfs didn't recognized disk failure and keep trying to write data until 
+reboot.
 
---Encpt1P6Mxii2VuT
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
-Content-Transfer-Encoding: quoted-printable
+Some other tests after reboot shows that /dev/sde has generation 9095 
+and other 4 disks have 9096.
 
+This case shows that btrfs does not recognize and does not handle such 
+errors. It probably need to be included as RAID cards can fail....
 
-On Mon, Jun 04, 2012 at 07:43:40AM -0400, Maxim Mikheev wrote:
-> alternate copy you wish to use. In the following example we ask for
-> using the superblock copy #2 of /dev/sda7:
->=20
-> # ./btrfsck -s 2 /dev/sd7
->=20
-> -----------------------------------------
-> but it gave me:
-> $ sudo btrfsck -s 2 /dev/sdb
-> btrfsck: invalid option -- 's'
-> usage: btrfsck dev
-> Btrfs Btrfs v0.19
->=20
-> What can I do more?
+But more important, that btrfs cannot recover automatically when one 
+disk lost some data.
 
-I have found that due to an error in getopt_long() usage, btrfsck does
-not accept the short-form option.  Use --super instead.
+The next question how to roll back to generation 9095?
 
---=20
-Ryan C. Underwood, <nemesis@icequake.net>
-
---Encpt1P6Mxii2VuT
-Content-Type: application/pgp-signature; name="signature.asc"
-Content-Description: Digital signature
-
------BEGIN PGP SIGNATURE-----
-Version: GnuPG v1.4.11 (GNU/Linux)
-
-iD8DBQFPzMxDIonHnh+67jkRAvE5AKCzqv1crEvwzWRHOwT3797kMeSy2ACeIC8H
-BIUcaiyD3976IuFxlMPnByQ=
-=Vyk0
------END PGP SIGNATURE-----
-
---Encpt1P6Mxii2VuT--
+On 06/04/2012 10:08 AM, Maxim Mikheev wrote:
+> Disks were connected to RocketRaid 2760 directly as JBOD.
+>
+> There is no LVM, MD or encryption. I used plain disks directly.
+>
+> The file system was 55% full (1.7TB from 3TB for each disk).
+>
+> Logs are attached.
+> The error happens at May 29, 13:55.
+>
+> Log contain errors on May 27 for ZFS, It is why I decided to switch to 
+> btrfs. On the moment of failure, no ZFS was installed in the system.
+>
+>
+> On 06/04/2012 09:03 AM, Stefan Behrens wrote:
+>> On Mon, 04 Jun 2012 08:26:43 -0400, Maxim Mikheev wrote:
+>>> It was a kernel panic from btrfs.
+>>> I had around 40 parallel processes of reading/writing.
+>> Do you have a stack trace for this kernel panic, something with the term
+>> "BUG", "WARNING" and/or "Call Trace" in /var/log/kern.log or
+>> /var/log/syslog (or in the old /var/log/syslog.?.gz 
+>> /var/log/kern.log.?.gz)?
+>>
+>> And are the disks connected via USB or how?
+>>
+>> Is there an MD, LVM or encryption layer below btrfs in your setup?
+>>
+>> Was the filesystem almost full?

@@ -1,78 +1,69 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-vc0-f174.google.com ([209.85.220.174]:38541 "EHLO
-	mail-vc0-f174.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1756918Ab2FDMht (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Mon, 4 Jun 2012 08:37:49 -0400
-Received: by vcbf11 with SMTP id f11so2390908vcb.19
-        for <linux-btrfs@vger.kernel.org>; Mon, 04 Jun 2012 05:37:49 -0700 (PDT)
-Message-ID: <4FCCAC1A.8040204@gmail.com>
-Date: Mon, 04 Jun 2012 08:37:46 -0400
-From: Maxim Mikheev <mikhmv@gmail.com>
+Received: from mail-yx0-f174.google.com ([209.85.213.174]:41257 "EHLO
+	mail-yx0-f174.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1752530Ab2FDMjR (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Mon, 4 Jun 2012 08:39:17 -0400
+Received: by yenm10 with SMTP id m10so2932857yen.19
+        for <linux-btrfs@vger.kernel.org>; Mon, 04 Jun 2012 05:39:16 -0700 (PDT)
 MIME-Version: 1.0
-To: Hugo Mills <hugo@carfax.org.uk>, Liu Bo <liubo2009@cn.fujitsu.com>,
+Date: Mon, 4 Jun 2012 15:39:16 +0300
+Message-ID: <CAHf9xvYX+3sjJL3anEQD0TJLbBiSsF4Pu1aBwVjeTofNmxFMpw@mail.gmail.com>
+Subject: inquiry on btrfs send/receive
+From: Alex Lyakas <alex.bolshoy.btrfs@gmail.com>
+To: Jan Schmidt <list.btrfs@jan-o-sch.net>, ablock84@googlemail.com,
         linux-btrfs@vger.kernel.org
-Subject: Re: Help with data recovering
-References: <4FCC1AE1.8050802@gmail.com> <4FCC2496.6070805@cn.fujitsu.com> <4FCC6F44.2030503@gmx.net> <4FCC9C63.7000605@gmail.com> <4FCC9CD5.2050309@gmx.net> <4FCC9F6C.5090305@gmail.com> <20120604114901.GA15986@carfax.org.uk> <4FCCA39C.8060409@gmail.com> <20120604121134.GB15986@carfax.org.uk> <4FCCA9E6.3030209@gmail.com> <20120604123431.GC15986@carfax.org.uk>
-In-Reply-To: <20120604123431.GC15986@carfax.org.uk>
-Content-Type: text/plain; charset=ISO-8859-1; format=flowed
+Content-Type: text/plain; charset=ISO-8859-1
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-I used only one volume.
+Hi Jan, Alex,
 
-I will work through your suggestion.
+I have seen some discussions about btrfs send/receive functionality
+being developed by you. I have also been interested in this. I spent
+some time coding a prototype doing something like Alex described in
+http://www.spinics.net/lists/linux-btrfs/msg16175.html, i.e., walking
+over FS tree and pulling those items that have transid/generation
+larger than a particular value. I realized though, that there are many
+issues with that approach, and also probably there are many issues I
+am not aware of. Some of the issues I realized:
 
-Is any other options here?
+# How does one track changes in generic INODE_ITEM properties, like
+"mode" or "uid/gid"? Whenever such property gets changed, INODE_ITEM
+gets stamped with a new transid, but do we need to compare it with the
+previous version on the receive side to realize what has changed?
+# File size - is it required, again, to compare vs previous size, to
+realize file truncation? (file grow perhaps can be realized via new
+EXTENT_DATAs)
+# What should be done if INODE_ITEM::flags change (e.g., inode gets
+nodatacow/nodatasum flags set). What should be done at receive side?
+# How does one track deletion of INODE_ITEMs? Or, deletion and
+re-creation of a INODE_ITEM with the same inode number? (I saw that
+inode_cache mount option allows to re-use inode numbers, so I think it
+can happen.) Does this mean that on receive side, it is required to
+compare contents of each directory vs previous version?
+# What should be done with INODE_ITEMs like block/char device, FIFO or a socket?
+# XATTR_ITEMs: although they have a transid stamp, again, need to
+track deletion/re-creation of them. Again by comparing?
+# INODE_REFs: these seem most tough to me, because they don't have
+transid stamps. How such scenario can be handled: an INODE_ITEM had
+two INODE_REFs with names N1 and N2. But now on the send side, both
+those INODE_REFs were deleted and INODE_REFs N3 and N4 were created.
+Does that mean we need to always compare all INODE_REFs for each
+INODE_ITEM, or we perhaps can use DIR_ITEMs/DIR_INDEXs of parent
+INODE_ITEM to detect changes in INODE_REFs?
 
-On 06/04/2012 08:34 AM, Hugo Mills wrote:
-> [trimmed Arne&  Jan from cc by request]
->
-> On Mon, Jun 04, 2012 at 08:28:22AM -0400, Maxim Mikheev wrote:
->> adding -v, as an example:
->> sudo btrfs-find-root -v -v -v -v -v /dev/sdb
->>
->> didn't change output at all.
->     OK, then all I can suggest is what I said below -- work through the
-> potential tree roots in order from largest generation id to smallest.
-> Given that it's not reporting any trees, though, I'm not certain that
-> you'll get any success with it.
->
->     Did you have your data in a subvolume?
->
->     Hugo.
->
->> On 06/04/2012 08:11 AM, Hugo Mills wrote:
->>> On Mon, Jun 04, 2012 at 08:01:32AM -0400, Maxim Mikheev wrote:
->>>> Thank you for helping.
->>>     I'm not sure I can be of much help, but there were a few things
->>> missing from the earlier conversation that I wanted to check the
->>> details of.
->>>
->>>> ~$ uname -a
->>>> Linux s0 3.4.0-030400-generic #201205210521 SMP Mon May 21 09:22:02
->>>> UTC 2012 x86_64 x86_64 x86_64 GNU/Linux
->>>>
->>>> I compiled progs from recent git (week or two ago). I can compile it
->>>> again if there updates.
->>>     No, that should be recent enough. I don't think there have been any
->>> major updates since then.
->>>
->>>> The output of btrfs-find-root is pretty long and below:
->>>> max@s0:~$ sudo btrfs-find-root /dev/sdb
->>>> Super think's the tree root is at 5532762525696, chunk root 20979712
->>>> Well block 619435147264 seems great, but generation doesn't match,
->>>> have=8746, want=9096
->>>     This is not long enough, unfortunately. At least some of these
->>> should have a list of trees before them. At the moment, it's not
->>> reporting any trees at all. (At least, it should be doing this unless
->>> Chris took that line of code out). Do you get anything extra from
->>> adding a few -v options to the command?
->>>
->>>     I would suggest, in the absence of any better ideas, sorting this
->>> list by the "have=" value, and systematically working down from the
->>> largest to the smallest, running btrfs-restore -t $n for each one
->>> (where $n is corresponding block number).
->>>
->>>     Hugo.
-> [snip]
->
+All in all, it looks like the approach of navigating the FS tree and
+trying to *understand* specifically which modifications were
+performed, is quite error-prone. And I am sure there are modifications
+I am not aware about.
+
+I was wondering, what state your work is in? Is it possible to look at
+some code or prototype, to understand what approach have you taken, or
+perhaps an overall description of the approach?
+
+Jan, I saw that you provided some new code for backref resolving. Can
+you give a hint of how is that related to the send/receive
+functionality?
+
+Thanks,
+Alex.

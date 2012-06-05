@@ -1,67 +1,199 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx1.fusionio.com ([66.114.96.30]:58000 "EHLO mx1.fusionio.com"
+Received: from mx1.redhat.com ([209.132.183.28]:22394 "EHLO mx1.redhat.com"
 	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1754038Ab2F2NFN (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Fri, 29 Jun 2012 09:05:13 -0400
-Date: Fri, 29 Jun 2012 09:05:10 -0400
-From: Chris Mason <chris.mason@fusionio.com>
-To: Miao Xie <miaox@cn.fujitsu.com>
-CC: Josef Bacik <JBacik@fusionio.com>,
-        "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
-Subject: Re: [PATCH] Btrfs: fix dio write vs buffered read race V2
-Message-ID: <20120629130510.GY17638@shiny>
-References: <1340718176-4999-1-git-send-email-jbacik@fusionio.com>
- <4FEBD0EC.6070802@cn.fujitsu.com>
- <20120628123422.GB1729@localhost.localdomain>
- <4FED107B.9020308@cn.fujitsu.com>
-MIME-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-In-Reply-To: <4FED107B.9020308@cn.fujitsu.com>
+	id S1755651Ab2FESQf (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Tue, 5 Jun 2012 14:16:35 -0400
+Received: from int-mx11.intmail.prod.int.phx2.redhat.com (int-mx11.intmail.prod.int.phx2.redhat.com [10.5.11.24])
+	by mx1.redhat.com (8.14.4/8.14.4) with ESMTP id q55IGZgP029866
+	(version=TLSv1/SSLv3 cipher=DHE-RSA-AES256-SHA bits=256 verify=OK)
+	for <linux-btrfs@vger.kernel.org>; Tue, 5 Jun 2012 14:16:35 -0400
+Received: from localhost.localdomain.com (vpn-8-242.rdu.redhat.com [10.11.8.242])
+	by int-mx11.intmail.prod.int.phx2.redhat.com (8.14.4/8.14.4) with ESMTP id q55IGY5n018779
+	for <linux-btrfs@vger.kernel.org>; Tue, 5 Jun 2012 14:16:35 -0400
+From: Josef Bacik <josef@redhat.com>
+To: linux-btrfs@vger.kernel.org
+Subject: [PATCH 2/2] Btrfs: implement ->show_devname
+Date: Tue,  5 Jun 2012 14:16:33 -0400
+Message-Id: <1338920193-7843-2-git-send-email-josef@redhat.com>
+In-Reply-To: <1338920193-7843-1-git-send-email-josef@redhat.com>
+References: <1338920193-7843-1-git-send-email-josef@redhat.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Thu, Jun 28, 2012 at 08:18:35PM -0600, Miao Xie wrote:
-> On Thu, 28 Jun 2012 08:34:23 -0400, Josef Bacik wrote:
-> > On Wed, Jun 27, 2012 at 09:35:08PM -0600, Miao Xie wrote:
-> >> On Tue, 26 Jun 2012 09:42:56 -0400, Josef Bacik wrote:
-> >>> From: Josef Bacik <josef@redhat.com>
-> >>>
-> >>> Miao pointed out there's a problem with mixing dio writes and buffered
-> >>> reads.  If the read happens between us invalidating the page range and
-> >>> actually locking the extent we can bring in pages into page cache.  Then
-> >>> once the write finishes if somebody tries to read again it will just find
-> >>> uptodate pages and we'll read stale data.  So we need to lock the extent and
-> >>> check for uptodate bits in the range.  If there are uptodate bits we need to
-> >>> unlock and invalidate again.  This will keep this race from happening since
-> >>> we will hold the extent locked until we create the ordered extent, and then
-> >>> teh read side always waits for ordered extents.  Thanks,
-> >>
-> >> This patch still can not work well. It is because we don't update i_size in time.
-> >> 	Writer		Worker		Reader
-> >> 	lock_extent
-> >> 	do direct io
-> >> 	end io
-> >> 			finish io
-> >> 			unlock_extent
-> >> 					lock_extent
-> >> 					check the pos is beyond EOF or not
-> >> 					  beyond EOF, zero the page and set it uptodate
-> >> 					unlock_extent
-> >> 	update i_size
-> >>
-> >> So I think we must update the i_size in time, and I wrote a small patch to do it:
-> >>
-> > 
-> > We should probably be updating i_size when we create an extent past EOF in the
-> > write stuff, not during endio, I will work this out and fold it into my patch.
-> > Good catch.
-> 
-> It is better that update i_size in endio, I think. because during endio, we are sure that
-> the data is flushed into the disk successfully, and can update i_size at ease. and if the
-> error happens when flushing the data into the disk, we also needn't reset i_size.
+Because btrfs can remove the device that was mounted we need to have a
+->show_devname so that in this case we can print out some other device in
+the file system to /proc/mount.  We keep track of what device we called
+mount() with so that we can print out the correct one if it is still
+available, but otherwise we just pick the first device that has the lowest
+device id.  This was inspired (and copied in the case of btrfs_show_devname)
+from Miao Xie's patch.  Thanks,
 
-I think the i_size update should happen sooner.  The rest of the
-filesystems work that way, and it will have fewer interaction problems
-with the VM.
+Signed-off-by: Josef Bacik <josef@redhat.com>
+---
+ fs/btrfs/super.c   |   43 ++++++++++++++++++++++++++++++++++++++++---
+ fs/btrfs/volumes.c |    9 ++++++---
+ fs/btrfs/volumes.h |    5 ++++-
+ 3 files changed, 50 insertions(+), 7 deletions(-)
 
--chris
+diff --git a/fs/btrfs/super.c b/fs/btrfs/super.c
+index 85cef50..2f36f28 100644
+--- a/fs/btrfs/super.c
++++ b/fs/btrfs/super.c
+@@ -54,6 +54,7 @@
+ #include "version.h"
+ #include "export.h"
+ #include "compression.h"
++#include "rcu-string.h"
+ 
+ #define CREATE_TRACE_POINTS
+ #include <trace/events/btrfs.h>
+@@ -647,7 +648,7 @@ static int btrfs_parse_early_options(const char *options, fmode_t flags,
+ 				goto out;
+ 			}
+ 			error = btrfs_scan_one_device(device_name,
+-					flags, holder, fs_devices);
++					flags, holder, fs_devices, 0);
+ 			kfree(device_name);
+ 			if (error)
+ 				goto out;
+@@ -1034,7 +1035,7 @@ static struct dentry *btrfs_mount(struct file_system_type *fs_type, int flags,
+ 		return root;
+ 	}
+ 
+-	error = btrfs_scan_one_device(device_name, mode, fs_type, &fs_devices);
++	error = btrfs_scan_one_device(device_name, mode, fs_type, &fs_devices, 1);
+ 	if (error)
+ 		return ERR_PTR(error);
+ 
+@@ -1448,7 +1449,7 @@ static long btrfs_control_ioctl(struct file *file, unsigned int cmd,
+ 	switch (cmd) {
+ 	case BTRFS_IOC_SCAN_DEV:
+ 		ret = btrfs_scan_one_device(vol->name, FMODE_READ,
+-					    &btrfs_fs_type, &fs_devices);
++					    &btrfs_fs_type, &fs_devices, 0);
+ 		break;
+ 	}
+ 
+@@ -1472,12 +1473,48 @@ static int btrfs_unfreeze(struct super_block *sb)
+ 	return 0;
+ }
+ 
++static int btrfs_show_devname(struct seq_file *m, struct dentry *root)
++{
++	struct btrfs_fs_info *fs_info = btrfs_sb(root->d_sb);
++	struct btrfs_fs_devices *cur_devices;
++	struct btrfs_device *dev, *first_dev = NULL;
++	struct list_head *head;
++	struct rcu_string *name;
++
++	mutex_lock(&fs_info->fs_devices->device_list_mutex);
++	cur_devices = fs_info->fs_devices;
++	while (cur_devices) {
++		head = &cur_devices->devices;
++		list_for_each_entry(dev, head, dev_list) {
++			if (dev->mounted) {
++				first_dev = dev;
++				goto out;
++			}
++			if (!first_dev || dev->devid < first_dev->devid)
++				first_dev = dev;
++		}
++		cur_devices = cur_devices->seed;
++	}
++out:
++	if (first_dev) {
++		rcu_read_lock();
++		name = rcu_dereference(first_dev->name);
++		seq_escape(m, name->str, " \t\n\\");
++		rcu_read_unlock();
++	} else {
++		WARN_ON(1);
++	}
++	mutex_unlock(&fs_info->fs_devices->device_list_mutex);
++	return 0;
++}
++
+ static const struct super_operations btrfs_super_ops = {
+ 	.drop_inode	= btrfs_drop_inode,
+ 	.evict_inode	= btrfs_evict_inode,
+ 	.put_super	= btrfs_put_super,
+ 	.sync_fs	= btrfs_sync_fs,
+ 	.show_options	= btrfs_show_options,
++	.show_devname	= btrfs_show_devname,
+ 	.write_inode	= btrfs_write_inode,
+ 	.alloc_inode	= btrfs_alloc_inode,
+ 	.destroy_inode	= btrfs_destroy_inode,
+diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
+index 1eaa495..5e72fea 100644
+--- a/fs/btrfs/volumes.c
++++ b/fs/btrfs/volumes.c
+@@ -331,7 +331,8 @@ static void pending_bios_fn(struct btrfs_work *work)
+ 
+ static noinline int device_list_add(const char *path,
+ 			   struct btrfs_super_block *disk_super,
+-			   u64 devid, struct btrfs_fs_devices **fs_devices_ret)
++			   u64 devid, struct btrfs_fs_devices **fs_devices_ret,
++			   int mount)
+ {
+ 	struct btrfs_device *device;
+ 	struct btrfs_fs_devices *fs_devices;
+@@ -405,6 +406,7 @@ static noinline int device_list_add(const char *path,
+ 		}
+ 	}
+ 
++	device->mounted = mount;
+ 	if (found_transid > fs_devices->latest_trans) {
+ 		fs_devices->latest_devid = devid;
+ 		fs_devices->latest_trans = found_transid;
+@@ -562,6 +564,7 @@ static int __btrfs_close_devices(struct btrfs_fs_devices *fs_devices)
+ 		if (device->can_discard)
+ 			fs_devices->num_can_discard--;
+ 
++		device->mounted = 0;
+ 		new_device = kmalloc(sizeof(*new_device), GFP_NOFS);
+ 		BUG_ON(!new_device); /* -ENOMEM */
+ 		memcpy(new_device, device, sizeof(*new_device));
+@@ -730,7 +733,7 @@ int btrfs_open_devices(struct btrfs_fs_devices *fs_devices,
+ }
+ 
+ int btrfs_scan_one_device(const char *path, fmode_t flags, void *holder,
+-			  struct btrfs_fs_devices **fs_devices_ret)
++			  struct btrfs_fs_devices **fs_devices_ret, int mount)
+ {
+ 	struct btrfs_super_block *disk_super;
+ 	struct block_device *bdev;
+@@ -765,7 +768,7 @@ int btrfs_scan_one_device(const char *path, fmode_t flags, void *holder,
+ 		printk(KERN_INFO "device fsid %pU ", disk_super->fsid);
+ 	printk(KERN_CONT "devid %llu transid %llu %s\n",
+ 	       (unsigned long long)devid, (unsigned long long)transid, path);
+-	ret = device_list_add(path, disk_super, devid, fs_devices_ret);
++	ret = device_list_add(path, disk_super, devid, fs_devices_ret, mount);
+ 
+ 	brelse(bh);
+ error_close:
+diff --git a/fs/btrfs/volumes.h b/fs/btrfs/volumes.h
+index 74366f2..c766902 100644
+--- a/fs/btrfs/volumes.h
++++ b/fs/btrfs/volumes.h
+@@ -107,6 +107,9 @@ struct btrfs_device {
+ 	struct completion flush_wait;
+ 	int nobarriers;
+ 
++	/* Set if mount() was called with this device */
++	int mounted;
++
+ 	/* disk I/O failure stats. For detailed description refer to
+ 	 * enum btrfs_dev_stat_values in ioctl.h */
+ 	int dev_stats_valid;
+@@ -264,7 +267,7 @@ int btrfs_map_bio(struct btrfs_root *root, int rw, struct bio *bio,
+ int btrfs_open_devices(struct btrfs_fs_devices *fs_devices,
+ 		       fmode_t flags, void *holder);
+ int btrfs_scan_one_device(const char *path, fmode_t flags, void *holder,
+-			  struct btrfs_fs_devices **fs_devices_ret);
++			  struct btrfs_fs_devices **fs_devices_ret, int mount);
+ int btrfs_close_devices(struct btrfs_fs_devices *fs_devices);
+ void btrfs_close_extra_devices(struct btrfs_fs_devices *fs_devices);
+ int btrfs_add_device(struct btrfs_trans_handle *trans,
+-- 
+1.7.7.6
+

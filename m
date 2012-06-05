@@ -1,54 +1,33 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from magic.merlins.org ([209.81.13.136]:36880 "EHLO
-	mail1.merlins.org" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1755820Ab2FEMXf (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Tue, 5 Jun 2012 08:23:35 -0400
-Date: Tue, 5 Jun 2012 04:54:08 -0700
-From: Marc MERLIN <marc@merlins.org>
-To: Chris Samuel <chris@csamuel.org>
-Cc: linux-btrfs@vger.kernel.org
-Subject: Re: Recovering a file from a snapshot without duplicating its blocks
- (--reflink across devs?)
-Message-ID: <20120605115408.GD7572@merlins.org>
-References: <20120605030100.GA7572@merlins.org>
- <4FCD803A.2070906@csamuel.org>
+Received: from mail-we0-f174.google.com ([74.125.82.174]:48903 "EHLO
+	mail-we0-f174.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1757870Ab2FENyP convert rfc822-to-8bit (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Tue, 5 Jun 2012 09:54:15 -0400
+Received: by weyu7 with SMTP id u7so3589369wey.19
+        for <linux-btrfs@vger.kernel.org>; Tue, 05 Jun 2012 06:54:14 -0700 (PDT)
+From: Diego Calleja <diegocg@gmail.com>
+To: "Alexander E. Patrakov" <patrakov@gmail.com>
+Cc: "Kok, Auke-jan H" <auke-jan.h.kok@intel.com>,
+        Peeters Simon <peeters.simon@gmail.com>,
+        systemd-devel@lists.freedesktop.org, linux-btrfs@vger.kernel.org
+Subject: Re: [systemd-devel] systemd-udevd: excessive I/O usage
+Date: Tue, 05 Jun 2012 15:49:20 +0200
+Message-ID: <1791638.Q7YQnvvX5y@fedora16>
+In-Reply-To: <CAN_LGv0RcA5y6Dyq25_poWxhwxoS7X6CGi71czrJji0E6NHzzg@mail.gmail.com>
+References: <CAKyAS7vw6pPz56Y9DeyUQLVeuXq4G2WogEWm+5gANesC0ME35g@mail.gmail.com> <CABsxX9JBsOX7sFYvmSjdq5N8pXPDrSv3V4DaRszKdpnBK_KxEA@mail.gmail.com> <CAN_LGv0RcA5y6Dyq25_poWxhwxoS7X6CGi71czrJji0E6NHzzg@mail.gmail.com>
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <4FCD803A.2070906@csamuel.org>
+Content-Type: text/plain; charset="iso-8859-1"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Tue, Jun 05, 2012 at 01:42:50PM +1000, Chris Samuel wrote:
-> On 05/06/12 13:01, Marc MERLIN wrote:
-> 
-> > First I though, I sure would be nice if I could take btrfs to reference
-> > the same blocks from the snapshot to my current image.
-> > But, --reflink failed across devices nodes, so I was forced to
-> > copy/duplicate the blocks (36GB).
-> 
-> Patches for this were posted over a year ago, but it was NAK'd by
-> Christoph Hellwig.  I don't know if it's got any further since then. :-(
-> 
-> Patch description:
-> 
->  http://www.spinics.net/lists/linux-btrfs/msg09226.html
-> 
-> NAK:
-> 
->  http://www.spinics.net/lists/linux-btrfs/msg09229.html
+[resend, for some reason kmail formatted the previous message with html]
 
-Thanks for that.
+On Martes, 5 de junio de 2012 09:50:56 Alexander E. Patrakov escribió:
+> Result: boot from ext4 takes less than 15 seconds, while boot from
+> btrfs takes 9 minutes (or 5 minutes if I disable readahead - the data
+> file is not valid anyway on btrfs).
 
-So, I'm not sure how common my use case is, but obviously for cases were
-recovering a huge file is important, like disk images, being able to
-re-link blocks without copying would be fantastic.
-
-So here's my vote for that.
-
-Thanks,
-Marc
--- 
-"A mouse is a device used to point at the xterm you want to type in" - A.S.R.
-Microsoft is to operating systems ....
-                                      .... what McDonalds is to gourmet cooking
-Home page: http://marc.merlins.org/
+I also had this problem. It turns out that btrfs was creating the 
+space cache from scratch (which takes several minutes) on each boot,
+for some reason. I added the space_cache mount option to fstab,
+and now my system boots fast. I suggest trying it.

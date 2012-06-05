@@ -1,9 +1,9 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from perches-mx.perches.com ([206.117.179.246]:50190 "EHLO
+Received: from perches-mx.perches.com ([206.117.179.246]:33074 "EHLO
 	labridge.com" rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-	id S1753315Ab2FEXnP (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 5 Jun 2012 19:43:15 -0400
-Message-ID: <1338939792.11962.4.camel@joe2Laptop>
+	id S1752136Ab2FEXsM (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Tue, 5 Jun 2012 19:48:12 -0400
+Message-ID: <1338940089.11962.7.camel@joe2Laptop>
 Subject: Re: [PATCH 0/8] Rework KERN_<LEVEL>
 From: Joe Perches <joe@perches.com>
 To: Kay Sievers <kay@vrfy.org>
@@ -12,7 +12,7 @@ Cc: Andrew Morton <akpm@linux-foundation.org>,
         linux-arm-kernel@lists.infradead.org, linux-btrfs@vger.kernel.org,
         linux-kernel@vger.kernel.org, devel@driverdev.osuosl.org,
         alsa-devel@alsa-project.org
-Date: Tue, 05 Jun 2012 16:43:12 -0700
+Date: Tue, 05 Jun 2012 16:48:09 -0700
 In-Reply-To: <CAPXgP13J+8-dPpZkSfh9sM3xXujC2Rb9tJaOvGoEPghgdr8jiw@mail.gmail.com>
 References: <cover.1338889066.git.joe@perches.com>
 	 <20120605142826.d92316a0.akpm@linux-foundation.org>
@@ -28,21 +28,10 @@ Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
 On Wed, 2012-06-06 at 01:39 +0200, Kay Sievers wrote:
-> On Wed, Jun 6, 2012 at 1:35 AM, Joe Perches <joe@perches.com> wrote:
-> > On Tue, 2012-06-05 at 16:29 -0700, Andrew Morton wrote:
-> >> What about writes starting with \001n?  AFACIT, that will be stripped
-> >> away and the printk level will be altered.  This is new behavior.
-> >
-> > Nope.
-> >
-> > # echo "\001Hello Andrew" > /dev/kmsg
-> > /dev/kmsg has
-> > 12,774,2462339252;\001Hello Andrew
-> 
 > Try "echo -e"? The stuff is copied verbatim otherwise.
 
-# echo -e "\001Hello Kay" > /dev/kmsg
-gives
-12,776,3046752764;\x01Hello Kay
+btw: I didn't change the devkmsg_writev function
+which does the decoding of any "<n>" prefix for
+printk_emit.
 
 

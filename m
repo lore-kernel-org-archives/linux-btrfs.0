@@ -1,178 +1,173 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mailout-de.gmx.net ([213.165.64.23]:56136 "HELO
-	mailout-de.gmx.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with SMTP id S1757850Ab2FQSmR (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Sun, 17 Jun 2012 14:42:17 -0400
-Message-ID: <1339958534.1424.6.camel@apu.local>
-Subject: Patch: Add subvol current-generation command
-From: Fabian Deutsch <fabian.deutsch@gmx.de>
-To: linux-btrfs@vger.kernel.org
-Date: Sun, 17 Jun 2012 20:42:14 +0200
-Content-Type: multipart/mixed; boundary="=-1dQ+4lg2volhID9WDtmE"
-Mime-Version: 1.0
+Received: from perches-mx.perches.com ([206.117.179.246]:51856 "EHLO
+	labridge.com" rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
+	id S1753536Ab2FEJrb (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Tue, 5 Jun 2012 05:47:31 -0400
+From: Joe Perches <joe@perches.com>
+To: Linus Torvalds <torvalds@linux-foundation.org>,
+        Chris Mason <chris.mason@oracle.com>
+Cc: Andrew Morton <akpm@linux-foundation.org>, Kay Sievers <kay@vrfy.org>,
+        linux-btrfs@vger.kernel.org, linux-kernel@vger.kernel.org
+Subject: [PATCH 4/8] btrfs: Use printk_get_level and printk_skip_level, add __printf, fix fallout
+Date: Tue,  5 Jun 2012 02:46:33 -0700
+Message-Id: <982bca290e82702d3b89c98022e16311fd6fa371.1338889066.git.joe@perches.com>
+In-Reply-To: <cover.1338889066.git.joe@perches.com>
+References: <cover.1338889066.git.joe@perches.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
+Use the generic printk_get_level function to search a message
+for a kern_level.  Add __printf to verify format and arguments.
+Fix a few messages that had mismatches in format and arguments.
+Add #ifdef CONFIG_PRINTK blocks to shrink the object size a bit
+when not using printk.
 
---=-1dQ+4lg2volhID9WDtmE
-Content-Type: text/plain; charset="UTF-8"
-Content-Transfer-Encoding: 7bit
-
-Hey,
-
-this is my first patch against something related to btrfs. The attached
-patch adds the subvol current-generation command to retrieve the current
-generation of the given subvol. This is inteded to be used with the
-subvol find-new command.
-
-After writing this patch I noticed that Sean Reifschneider already
-sugested something similar in 2010 [1]. His patch reminded me of adding
-a part to the manpage.
-
-Thanks and Greetings
-fabian
-
---
-[1] http://markmail.org/thread/iztosuxysjt4zx2b
-
---=-1dQ+4lg2volhID9WDtmE
-Content-Disposition: attachment;
-	filename="0001-btrfs-Add-subvol-current-generation-command.patch"
-Content-Type: text/x-patch;
-	name="0001-btrfs-Add-subvol-current-generation-command.patch";
-	charset="UTF-8"
-Content-Transfer-Encoding: 8bit
-
->From d7fd192b7e013701560e9abba7a01bb7dbaade18 Mon Sep 17 00:00:00 2001
-From: Fabian Deutsch <fabian.deutsch@gmx.de>
-Date: Sat, 16 Jun 2012 22:50:57 +0200
-Subject: [PATCH] btrfs: Add subvol current-generation command
-
-Add a command (current-generation) to get the current generation of a subvolume. This is useful in combination with find-new.
-
-Signed-off-by: Fabian Deutsch <fabian.deutsch@gmx.de>
+Signed-off-by: Joe Perches <joe@perches.com>
 ---
- btrfs-list.c     |    7 +++++++
- cmds-subvolume.c |   43 +++++++++++++++++++++++++++++++++++++++++++
- man/btrfs.8.in   |    8 ++++++++
- 3 Dateien geändert, 58 Zeilen hinzugefügt(+)
+ fs/btrfs/ctree.h      |   13 +++++++++++++
+ fs/btrfs/disk-io.c    |    2 +-
+ fs/btrfs/relocation.c |    2 +-
+ fs/btrfs/super.c      |   41 +++++++++++++++++++++++++++++++++++------
+ 4 files changed, 50 insertions(+), 8 deletions(-)
 
-diff --git a/btrfs-list.c b/btrfs-list.c
-index 5f4a9be..ccbaf44 100644
---- a/btrfs-list.c
-+++ b/btrfs-list.c
-@@ -799,6 +799,13 @@ static int print_one_extent(int fd, struct btrfs_ioctl_search_header *sh,
- 	return 0;
- }
- 
-+u64 current_generation(int fd, u64 root_id)
+diff --git a/fs/btrfs/ctree.h b/fs/btrfs/ctree.h
+index 0236d03..590b519 100644
+--- a/fs/btrfs/ctree.h
++++ b/fs/btrfs/ctree.h
+@@ -3046,10 +3046,22 @@ ssize_t btrfs_listxattr(struct dentry *dentry, char *buffer, size_t size);
+ /* super.c */
+ int btrfs_parse_options(struct btrfs_root *root, char *options);
+ int btrfs_sync_fs(struct super_block *sb, int wait);
++
++#ifdef CONFIG_PRINTK
++__printf(2, 3)
+ void btrfs_printk(struct btrfs_fs_info *fs_info, const char *fmt, ...);
++#else
++static inline __printf(2, 3)
++void btrfs_printk(struct btrfs_fs_info *fs_info, const char *fmt, ...)
 +{
-+	u64 max_found = 0;
-+	max_found = find_root_gen(fd);
-+	return max_found;
 +}
++#endif
 +
- int find_updated_files(int fd, u64 root_id, u64 oldest_gen)
- {
- 	int ret;
-diff --git a/cmds-subvolume.c b/cmds-subvolume.c
-index 950fa8f..2a185b1 100644
---- a/cmds-subvolume.c
-+++ b/cmds-subvolume.c
-@@ -31,6 +31,7 @@
- 
- /* btrfs-list.c */
- int list_subvols(int fd, int print_parent, int get_default);
-+u64 current_generation(int fd, u64 root_id);
- int find_updated_files(int fd, u64 root_id, u64 oldest_gen);
- 
- static const char * const subvolume_cmd_group_usage[] = {
-@@ -512,6 +513,47 @@ static int cmd_find_new(int argc, char **argv)
- 	return 0;
- }
++__printf(5, 6)
+ void __btrfs_std_error(struct btrfs_fs_info *fs_info, const char *function,
+ 		     unsigned int line, int errno, const char *fmt, ...);
  
 +
-+static const char * const cmd_current_generation_usage[] = {
-+	"btrfs subvolume current-generation <path>",
-+	"Get the current generation of the filesystem",
-+	NULL
-+};
-+
-+static int cmd_current_generation(int argc, char **argv)
-+{
-+	int fd;
-+	int ret;
-+	char *subvol;
-+	u64 current_gen;
-+
-+	if (check_argc_exact(argc, 2))
-+		usage(cmd_current_generation_usage);
-+
-+	subvol = argv[1];
-+
-+	ret = test_issubvolume(subvol);
-+	if (ret < 0) {
-+		fprintf(stderr, "ERROR: error accessing '%s'\n", subvol);
-+		return 12;
-+	}
-+	if (!ret) {
-+		fprintf(stderr, "ERROR: '%s' is not a subvolume\n", subvol);
-+		return 13;
-+	}
-+
-+	fd = open_file_or_dir(subvol);
-+	if (fd < 0) {
-+		fprintf(stderr, "ERROR: can't access '%s'\n", subvol);
-+		return 12;
-+	}
-+	current_gen = current_generation(fd, 0);
-+
-+	fprintf(stdout, "%llu\n", current_gen);
-+
-+	return 0;
-+}
-+
- const struct cmd_group subvolume_cmd_group = {
- 	subvolume_cmd_group_usage, NULL, {
- 		{ "create", cmd_subvol_create, cmd_subvol_create_usage, NULL, 0 },
-@@ -523,6 +565,7 @@ const struct cmd_group subvolume_cmd_group = {
- 		{ "set-default", cmd_subvol_set_default,
- 			cmd_subvol_set_default_usage, NULL, 0 },
- 		{ "find-new", cmd_find_new, cmd_find_new_usage, NULL, 0 },
-+		{ "current-generation", cmd_current_generation, cmd_current_generation_usage, NULL, 0 },
- 		{ 0, 0, 0, 0, 0 }
+ void __btrfs_abort_transaction(struct btrfs_trans_handle *trans,
+ 			       struct btrfs_root *root, const char *function,
+ 			       unsigned int line, int errno);
+@@ -3073,6 +3085,7 @@ do {								\
+ 			  (errno), fmt, ##args);		\
+ } while (0)
+ 
++__printf(5, 6)
+ void __btrfs_panic(struct btrfs_fs_info *fs_info, const char *function,
+ 		   unsigned int line, int errno, const char *fmt, ...);
+ 
+diff --git a/fs/btrfs/disk-io.c b/fs/btrfs/disk-io.c
+index 7ae51de..f02bba5 100644
+--- a/fs/btrfs/disk-io.c
++++ b/fs/btrfs/disk-io.c
+@@ -1113,7 +1113,7 @@ void clean_tree_block(struct btrfs_trans_handle *trans, struct btrfs_root *root,
+ 				spin_unlock(&root->fs_info->delalloc_lock);
+ 				btrfs_panic(root->fs_info, -EOVERFLOW,
+ 					  "Can't clear %lu bytes from "
+-					  " dirty_mdatadata_bytes (%lu)",
++					  " dirty_mdatadata_bytes (%llu)",
+ 					  buf->len,
+ 					  root->fs_info->dirty_metadata_bytes);
+ 			}
+diff --git a/fs/btrfs/relocation.c b/fs/btrfs/relocation.c
+index 646ee21..790f492 100644
+--- a/fs/btrfs/relocation.c
++++ b/fs/btrfs/relocation.c
+@@ -1242,7 +1242,7 @@ static int __must_check __add_reloc_root(struct btrfs_root *root)
+ 		kfree(node);
+ 		btrfs_panic(root->fs_info, -EEXIST, "Duplicate root found "
+ 			    "for start=%llu while inserting into relocation "
+-			    "tree\n");
++			    "tree\n", node->bytenr);
  	}
- };
-diff --git a/man/btrfs.8.in b/man/btrfs.8.in
-index be478e0..3c71f57 100644
---- a/man/btrfs.8.in
-+++ b/man/btrfs.8.in
-@@ -25,6 +25,8 @@ btrfs \- control a btrfs filesystem
- .PP
- \fBbtrfs\fP \fBfilesystem defrag\fP\fI [options] <file>|<dir> [<file>|<dir>...]\fP
- .PP
-+\fBbtrfs\fP \fBsubvolume current-generation\fP\fI <subvolume>\fP
-+.PP
- \fBbtrfs\fP \fBsubvolume find-new\fP\fI <subvolume> <last_gen>\fP
- .PP
- \fBbtrfs\fP \fBfilesystem balance\fP\fI <path> \fP
-@@ -154,6 +156,12 @@ The start position and the number of bytes to deframention can be specified by \
- NOTE: defragmenting with kernels up to 2.6.37 will unlink COW-ed copies of data, don't 
- use it if you use snapshots, have de-duplicated your data or made copies with 
- \fBcp --reflink\fP.
-+.TP
+ 
+ 	list_add_tail(&root->root_list, &rc->reloc_roots);
+diff --git a/fs/btrfs/super.c b/fs/btrfs/super.c
+index 96eb9fe..a84529d 100644
+--- a/fs/btrfs/super.c
++++ b/fs/btrfs/super.c
+@@ -124,6 +124,7 @@ static void btrfs_handle_error(struct btrfs_fs_info *fs_info)
+ 	}
+ }
+ 
++#ifdef CONFIG_PRINTK
+ /*
+  * __btrfs_std_error decodes expected errors from the caller and
+  * invokes the approciate error response.
+@@ -166,7 +167,7 @@ void __btrfs_std_error(struct btrfs_fs_info *fs_info, const char *function,
+ 	va_end(args);
+ }
+ 
+-const char *logtypes[] = {
++static const char *logtypes[] = {
+ 	"emergency",
+ 	"alert",
+ 	"critical",
+@@ -184,22 +185,50 @@ void btrfs_printk(struct btrfs_fs_info *fs_info, const char *fmt, ...)
+ 	struct va_format vaf;
+ 	va_list args;
+ 	const char *type = logtypes[4];
++	int kern_level;
+ 
+ 	va_start(args, fmt);
+ 
+-	if (fmt[0] == '<' && isdigit(fmt[1]) && fmt[2] == '>') {
+-		memcpy(lvl, fmt, 3);
+-		lvl[3] = '\0';
+-		fmt += 3;
+-		type = logtypes[fmt[1] - '0'];
++	kern_level = printk_get_level(fmt);
++	if (kern_level) {
++		size_t size = printk_skip_level(fmt)  - fmt;
++		memcpy(lvl, fmt,  size);
++		lvl[size] = '\0';
++		fmt += size;
++		type = logtypes[kern_level - '0'];
+ 	} else
+ 		*lvl = '\0';
+ 
+ 	vaf.fmt = fmt;
+ 	vaf.va = &args;
 +
-+\fBsubvolume current-generation\fR\fI <subvolume>\fR
-+Return the current generation used in subvolume \fI<subvolume>\fR. This number can be used with the \fBsubvolume find-new\fR command.
-+.TP
+ 	printk("%sBTRFS %s (device %s): %pV", lvl, type, sb->s_id, &vaf);
 +
- \fBsubvolume find-new\fR\fI <subvolume> <last_gen>\fR
- List the recently modified files in a subvolume, after \fI<last_gen>\fR ID.
- .TP
++	va_end(args);
+ }
+ 
++#else
++
++void __btrfs_std_error(struct btrfs_fs_info *fs_info, const char *function,
++		       unsigned int line, int errno, const char *fmt, ...)
++{
++	struct super_block *sb = fs_info->sb;
++
++	/*
++	 * Special case: if the error is EROFS, and we're already
++	 * under MS_RDONLY, then it is safe here.
++	 */
++	if (errno == -EROFS && (sb->s_flags & MS_RDONLY))
++		return;
++
++	/* Don't go through full error handling during mount */
++	if (sb->s_flags & MS_BORN) {
++		save_error_info(fs_info);
++		btrfs_handle_error(fs_info);
++	}
++}
++#endif
++
+ /*
+  * We only mark the transaction aborted and then set the file system read-only.
+  * This will prevent new transactions from starting or trying to join this
 -- 
-1.7.10.4
-
-
---=-1dQ+4lg2volhID9WDtmE--
+1.7.8.111.gad25c.dirty
 

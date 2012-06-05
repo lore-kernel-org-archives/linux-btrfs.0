@@ -1,94 +1,58 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-lpp01m010-f46.google.com ([209.85.215.46]:57035 "EHLO
-	mail-lpp01m010-f46.google.com" rhost-flags-OK-OK-OK-OK)
-	by vger.kernel.org with ESMTP id S1751647Ab2FDSh5 convert rfc822-to-8bit
-	(ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 4 Jun 2012 14:37:57 -0400
-Received: by lahd3 with SMTP id d3so3203743lah.19
-        for <linux-btrfs@vger.kernel.org>; Mon, 04 Jun 2012 11:37:55 -0700 (PDT)
+Received: from magic.merlins.org ([209.81.13.136]:54387 "EHLO
+	mail1.merlins.org" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1757733Ab2FEDBF (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Mon, 4 Jun 2012 23:01:05 -0400
+Received: from [186.101.14.83] (port=51936 helo=gandalfthegreat.merlins.org)
+	by mail1.merlins.org with esmtpa (Exim 4.77 #2)
+	id 1Sbk12-0008DK-0i by authid <merlins.org> with srv_auth_plain
+	for <linux-btrfs@vger.kernel.org>; Mon, 04 Jun 2012 20:01:04 -0700
+Received: from merlin by gandalfthegreat.merlins.org with local (Exim 4.77)
+	(envelope-from <merlin@gandalfthegreat.merlins.org>)
+	id 1Sbk0y-000566-Qp
+	for linux-btrfs@vger.kernel.org; Mon, 04 Jun 2012 20:01:00 -0700
+Date: Mon, 4 Jun 2012 20:01:00 -0700
+From: Marc MERLIN <marc@merlins.org>
+To: linux-btrfs@vger.kernel.org
+Subject: Recovering a file from a snapshot without duplicating its blocks
+ (--reflink across devs?)
+Message-ID: <20120605030100.GA7572@merlins.org>
 MIME-Version: 1.0
-In-Reply-To: <4FCCF882.5080500@gmail.com>
-References: <4FCC9C63.7000605@gmail.com>
-	<4FCC9CD5.2050309@gmx.net>
-	<4FCC9F6C.5090305@gmail.com>
-	<20120604114901.GA15986@carfax.org.uk>
-	<4FCCA39C.8060409@gmail.com>
-	<20120604121134.GB15986@carfax.org.uk>
-	<4FCCA9E6.3030209@gmail.com>
-	<20120604123431.GC15986@carfax.org.uk>
-	<4FCCE125.7000004@gmail.com>
-	<20120604170422.GD15986@carfax.org.uk>
-	<20120604170936.GE15986@carfax.org.uk>
-	<CAGJTRcg7bwR0ASCLshQYj42erPa5cLV5R3NvWe335m05_R7rJA@mail.gmail.com>
-	<4FCCF882.5080500@gmail.com>
-Date: Mon, 4 Jun 2012 13:37:55 -0500
-Message-ID: <CAGJTRciBERUNgRvgx4f4Ns+F2QBwPKUTZ25QCj9LW_=W-4ZoRg@mail.gmail.com>
-Subject: Re: Help with data recovering
-From: Michael <mike@draftx.net>
-To: Maxim Mikheev <mikhmv@gmail.com>
-Cc: Hugo Mills <hugo@carfax.org.uk>, Liu Bo <liubo2009@cn.fujitsu.com>,
-        linux-btrfs@vger.kernel.org
-Content-Type: text/plain; charset=ISO-8859-1
+Content-Type: text/plain; charset=us-ascii
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Below is what you used? So you have RAID 0 for data, RAID 1 for
-metadata. This doesn't help any, but a point of info.
-# Create a filesystem across four drives (metadata mirrored, data striped)
-mkfs.btrfs /dev/sdb /dev/sdc /dev/sdd /dev/sde
+I hit a problem on my laptop, I had about 40GB free, and I screwed up a
+36GB virtualbox image.
+No biggie, I have netapp style snapshots, so I deleted my messed up VM
+image, and figured I only had to copy the last image from my hourly
+snapshot.
 
+First I though, I sure would be nice if I could take btrfs to reference
+the same blocks from the snapshot to my current image.
+But, --reflink failed across devices nodes, so I was forced to
+copy/duplicate the blocks (36GB).
 
-Just to make sure I understand correctly: This FS with critical info
-used a non-production filesystem, in RAID 0(no redundancy), with no
-backups.
+Then, by getting down to less than 10GB free, I got into the dark
+corners of the btrfs code where writes would just hang, or take 10H to
+copy an extra 1GB, while copiously hanging the system.
 
-Another option I found(and I am no authority on the subject) is to use
-btrfs.restore with -i
--i: Ignore errors. Normally the restore tool exits immediately for any
-error. This option forces it to keep going if it can, usually this
-results in some missing data.
-Again, this can be destructive, and it would be very smart to make
-block level copies of everything.
+In the end, I never was able to recover the system without copying the
+snapshot VM image to 3rd party storage, deleting the snapshot, then
+getting enough blocks of free space, and finally being able to copy my
+36GB image back on my /home partition.
 
-On Mon, Jun 4, 2012 at 1:03 PM, Maxim Mikheev <mikhmv@gmail.com> wrote:
-> It was a RAID0 unfortunately.
->
->
-> On 06/04/2012 02:02 PM, Michael wrote:
->>
->> If he has it in a RAID 1, could he manually fail the bad disk and try
->> it from there? Obviously this could be harmful, so a dd copy would be
->> a VERY good idea(truthfully, that should have been the first thing
->> that was done).
->> Michael
->>
->> On Mon, Jun 4, 2012 at 12:09 PM, Hugo Mills<hugo@carfax.org.uk>  wrote:
->>>
->>> On Mon, Jun 04, 2012 at 06:04:22PM +0100, Hugo Mills wrote:
->>>>
->>>>    I'm out of ideas.
->>>
->>>   ... but that's not to say that someone else may have some ideas. I
->>> wouldn't get your hopes up too much, though.
->>>
->>>>    At this point, though, you're probably looking at somebody writing
->>>> custom code to scan the FS and attempt to find and retrieve anything
->>>> that's recoverable.
->>>>
->>>>    You might try writing a tool to scan all the disks for useful
->>>> fragments of old trees, and see if you can find some of the tree roots
->>>> independently of the tree of tree roots (which clearly isn't
->>>> particularly functional right now). You might try simply scanning the
->>>> disks looking for your lost data, and try to reconstruct as much of it
->>>> as you can from that. You could try to find a company specialising in
->>>> data recovery and pay them to try to get your data back. Or you might
->>>> just have to accept that the data's gone and work on reconstructing
->>>> it.
->>>
->>>   Hugo.
->>>
->>> --
->>> === Hugo Mills: hugo@... carfax.org.uk | darksatanic.net | lug.org.uk ===
->>>  PGP key: 515C238D from wwwkeys.eu.pgp.net or http://www.carfax.org.uk
->>>  --- A linked list is still a binary tree.  Just a very unbalanced ---
->>>                             one.  -- dragon
+This was very slow and painful and required power cycle my laptop more
+than once while it was very close to being fully hung (in real life, it
+was just unusable and stuck on disk IO but not fully hung).
+Was there a better way?
+
+I had 3.2.16 at the time and now have 3.4.0.
+
+Thanks,
+Marc
+-- 
+"A mouse is a device used to point at the xterm you want to type in" - A.S.R.
+Microsoft is to operating systems ....
+                                      .... what McDonalds is to gourmet cooking
+Home page: http://marc.merlins.org/

@@ -1,38 +1,67 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx1.redhat.com ([209.132.183.28]:54128 "EHLO mx1.redhat.com"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1759597Ab2FAMq1 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Fri, 1 Jun 2012 08:46:27 -0400
-Date: Fri, 1 Jun 2012 08:46:14 -0400
-From: Josef Bacik <josef@redhat.com>
-To: Liu Bo <liubo2009@cn.fujitsu.com>
-Cc: Josef Bacik <josef@redhat.com>, linux-btrfs@vger.kernel.org
-Subject: Re: [PATCH 2/4] Btrfs: track transaction aborted across the fs_info
-Message-ID: <20120601124613.GB2652@localhost.localdomain>
-References: <1338494656-12232-1-git-send-email-josef@redhat.com>
- <1338494656-12232-2-git-send-email-josef@redhat.com>
- <4FC8196D.8010407@cn.fujitsu.com>
+Received: from mail-ob0-f174.google.com ([209.85.214.174]:65010 "EHLO
+	mail-ob0-f174.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1753262Ab2FEQVk (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Tue, 5 Jun 2012 12:21:40 -0400
+Received: by obbtb18 with SMTP id tb18so8947074obb.19
+        for <linux-btrfs@vger.kernel.org>; Tue, 05 Jun 2012 09:21:40 -0700 (PDT)
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <4FC8196D.8010407@cn.fujitsu.com>
+Date: Tue, 5 Jun 2012 12:21:40 -0400
+Message-ID: <CAOUOUDzAEe8mZwrtqaFyQ1B9B8AFOhxyv5X70uQCPbVzYk8v+g@mail.gmail.com>
+Subject: PATCH: btrfs defrag ioctl, override extent count and size checks
+ compression enabled.
+From: Andrew Mahone <andrew.mahone@gmail.com>
+To: linux-btrfs@vger.kernel.org
+Content-Type: multipart/mixed; boundary=14dae9399835a6b2c704c1bc0b4b
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Fri, Jun 01, 2012 at 09:22:53AM +0800, Liu Bo wrote:
-> On 06/01/2012 04:04 AM, Josef Bacik wrote:
-> 
-> > If we abort a transaction during the commit phase we can have people who
-> > start new transactions because we nave no way of signaling to them that
-> > something went wrong.  So add a trans_aborted flag to the fs_info so the
-> > start transaction code can be notified that the last transaction was aborted
-> > and it needs to return an error.  Thanks,
-> > 
-> 
-> 
-> We already have a (root->fs_info->fs_state & BTRFS_SUPER_FLAG_ERROR),
-> why don't just use that?
-> 
+--14dae9399835a6b2c704c1bc0b4b
+Content-Type: text/plain; charset=ISO-8859-1
 
-Ah I missed all of that, will do, thanks,
+I noticed a few days ago that btrfs fi defrag -cXXX can not be used to
+compress files unless they are fragmented. The attached patch passes
+the compression flag to should_defrag_range, where it disables the
+adjacent-extent and extent size checks if set. The inline/sparse
+extent check is not modified - I assumed it would not be useful to
+compress inline extents.
 
-Josef
+-- 
+Andrew Mahone
+andrew DOT mahone AT gmail DOT com\
+
+--14dae9399835a6b2c704c1bc0b4b
+Content-Type: application/octet-stream; name="btrfs_defrag_compress.patch"
+Content-Disposition: attachment; filename="btrfs_defrag_compress.patch"
+Content-Transfer-Encoding: base64
+X-Attachment-Id: f_h3369d8r0
+
+ZGlmZiAtLWdpdCBhL2ZzL2J0cmZzL2lvY3RsLmMgYi9mcy9idHJmcy9pb2N0bC5jCmluZGV4IDEy
+MjFhMzkuLjQ5Zjc5MDMgMTAwNjQ0Ci0tLSBhL2ZzL2J0cmZzL2lvY3RsLmMKKysrIGIvZnMvYnRy
+ZnMvaW9jdGwuYwpAQCAtODEyLDcgKzgxMiw3IEBAIHN0YXRpYyBpbnQgY2hlY2tfYWRqYWNlbnRf
+ZXh0ZW50cyhzdHJ1Y3QgaW5vZGUgKmlub2RlLCBzdHJ1Y3QgZXh0ZW50X21hcCAqZW0pCiAKIHN0
+YXRpYyBpbnQgc2hvdWxkX2RlZnJhZ19yYW5nZShzdHJ1Y3QgaW5vZGUgKmlub2RlLCB1NjQgc3Rh
+cnQsIHU2NCBsZW4sCiAJCQkgICAgICAgaW50IHRocmVzaCwgdTY0ICpsYXN0X2xlbiwgdTY0ICpz
+a2lwLAotCQkJICAgICAgIHU2NCAqZGVmcmFnX2VuZCkKKwkJCSAgICAgICB1NjQgKmRlZnJhZ19l
+bmQsIGludCBjb21wcmVzcykKIHsKIAlzdHJ1Y3QgZXh0ZW50X2lvX3RyZWUgKmlvX3RyZWUgPSAm
+QlRSRlNfSShpbm9kZSktPmlvX3RyZWU7CiAJc3RydWN0IGV4dGVudF9tYXAgKmVtID0gTlVMTDsK
+QEAgLTg1Myw3ICs4NTMsNyBAQCBzdGF0aWMgaW50IHNob3VsZF9kZWZyYWdfcmFuZ2Uoc3RydWN0
+IGlub2RlICppbm9kZSwgdTY0IHN0YXJ0LCB1NjQgbGVuLAogCX0KIAogCS8qIElmIHdlIGhhdmUg
+bm90aGluZyB0byBtZXJnZSB3aXRoIHVzLCBqdXN0IHNraXAuICovCi0JaWYgKGNoZWNrX2FkamFj
+ZW50X2V4dGVudHMoaW5vZGUsIGVtKSkgeworCWlmICghY29tcHJlc3MgJiYgY2hlY2tfYWRqYWNl
+bnRfZXh0ZW50cyhpbm9kZSwgZW0pKSB7CiAJCXJldCA9IDA7CiAJCWdvdG8gb3V0OwogCX0KQEAg
+LTg2MSw3ICs4NjEsOCBAQCBzdGF0aWMgaW50IHNob3VsZF9kZWZyYWdfcmFuZ2Uoc3RydWN0IGlu
+b2RlICppbm9kZSwgdTY0IHN0YXJ0LCB1NjQgbGVuLAogCS8qCiAJICogd2UgaGl0IGEgcmVhbCBl
+eHRlbnQsIGlmIGl0IGlzIGJpZyBkb24ndCBib3RoZXIgZGVmcmFnZ2luZyBpdCBhZ2FpbgogCSAq
+LwotCWlmICgoKmxhc3RfbGVuID09IDAgfHwgKmxhc3RfbGVuID49IHRocmVzaCkgJiYgZW0tPmxl
+biA+PSB0aHJlc2gpCisJaWYgKCFjb21wcmVzcyAmJgorCSAgICAoKmxhc3RfbGVuID09IDAgfHwg
+Kmxhc3RfbGVuID49IHRocmVzaCkgJiYgZW0tPmxlbiA+PSB0aHJlc2gpCiAJCXJldCA9IDA7CiAK
+IG91dDoKQEAgLTExNDMsNyArMTE0NCw4IEBAIGludCBidHJmc19kZWZyYWdfZmlsZShzdHJ1Y3Qg
+aW5vZGUgKmlub2RlLCBzdHJ1Y3QgZmlsZSAqZmlsZSwKIAogCQlpZiAoIXNob3VsZF9kZWZyYWdf
+cmFuZ2UoaW5vZGUsICh1NjQpaSA8PCBQQUdFX0NBQ0hFX1NISUZULAogCQkJCQkgUEFHRV9DQUNI
+RV9TSVpFLCBleHRlbnRfdGhyZXNoLAotCQkJCQkgJmxhc3RfbGVuLCAmc2tpcCwgJmRlZnJhZ19l
+bmQpKSB7CisJCQkJCSAmbGFzdF9sZW4sICZza2lwLCAmZGVmcmFnX2VuZCwKKwkJCQkJIHJhbmdl
+LT5mbGFncyAmIEJUUkZTX0RFRlJBR19SQU5HRV9DT01QUkVTUykpIHsKIAkJCXVuc2lnbmVkIGxv
+bmcgbmV4dDsKIAkJCS8qCiAJCQkgKiB0aGUgc2hvdWxkX2RlZnJhZyBmdW5jdGlvbiB0ZWxscyB1
+cyBob3cgbXVjaCB0byBza2lwCg==
+--14dae9399835a6b2c704c1bc0b4b--

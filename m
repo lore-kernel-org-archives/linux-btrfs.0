@@ -1,126 +1,69 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from frost.carfax.org.uk ([85.119.82.111]:43151 "EHLO
-	frost.carfax.org.uk" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1751117Ab2FETJ3 (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Tue, 5 Jun 2012 15:09:29 -0400
-Received: from ruthven.local ([10.73.18.16] helo=ruthven.carfax.org.uk)
-	by frost.carfax.org.uk with esmtp (Exim 4.72)
-	(envelope-from <hrm@carfax.org.uk>)
-	id 1Sbz86-0003oK-Ad
-	for linux-btrfs@vger.kernel.org; Tue, 05 Jun 2012 19:09:26 +0000
-Received: from hrm by ruthven.carfax.org.uk with local (Exim 4.77)
-	(envelope-from <hrm@carfax.org.uk>)
-	id 1Sbz85-0001th-Jj
-	for linux-btrfs@vger.kernel.org; Tue, 05 Jun 2012 20:09:21 +0100
-Date: Tue, 5 Jun 2012 20:09:21 +0100
-From: Hugo Mills <hugo@carfax.org.uk>
-To: Btrfs mailing list <linux-btrfs@vger.kernel.org>
-Subject: New btrfs-progs integration branch
-Message-ID: <20120605190921.GM15986@carfax.org.uk>
+Received: from mail-gg0-f174.google.com ([209.85.161.174]:48425 "EHLO
+	mail-gg0-f174.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1751895Ab2FEVWN (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Tue, 5 Jun 2012 17:22:13 -0400
+Received: by gglu4 with SMTP id u4so4441414ggl.19
+        for <linux-btrfs@vger.kernel.org>; Tue, 05 Jun 2012 14:22:12 -0700 (PDT)
 MIME-Version: 1.0
-Content-Type: multipart/signed; micalg=pgp-sha1;
-	protocol="application/pgp-signature"; boundary="2YJj5f1P6Th4nBRw"
+In-Reply-To: <CAB9VWqCPHP7My9wH1pp1cXevm_T7R+mWrtgj+mprJApPhqViKA@mail.gmail.com>
+References: <CAHf9xvYX+3sjJL3anEQD0TJLbBiSsF4Pu1aBwVjeTofNmxFMpw@mail.gmail.com>
+	<CAB9VWqAoc=+9B5FLtVbDY8xWeRt+O8oJ79BQKtdhOMjMAYu2eA@mail.gmail.com>
+	<CAGEjNMf5hU4wteJepU5h4r=HXs_Anf_RGawHpphq=ft76Raw=Q@mail.gmail.com>
+	<CAB9VWqAbh1GEbbvbm0MjOPCocX3K7B5yVynH1VYMWV-rN_CZ7Q@mail.gmail.com>
+	<CAHf9xvYUW1jbJCirNSde_A78-_K_5x+kGoOV_hQ-0O51UxuhXA@mail.gmail.com>
+	<CAB9VWqCPHP7My9wH1pp1cXevm_T7R+mWrtgj+mprJApPhqViKA@mail.gmail.com>
+Date: Wed, 6 Jun 2012 00:22:12 +0300
+Message-ID: <CAHf9xvZ_GM2Ra+8QhKCHTY92uUGQLByYm+d-j-a_+bU+QbvvRA@mail.gmail.com>
+Subject: Re: inquiry on btrfs send/receive
+From: Alex Lyakas <alex.bolshoy.btrfs@gmail.com>
+To: Alexander Block <ablock84@googlemail.com>
+Cc: shyam btrfs <shyam.btrfs@gmail.com>,
+        Jan Schmidt <list.btrfs@jan-o-sch.net>, linux-btrfs@vger.kernel.org
+Content-Type: text/plain; charset=ISO-8859-1
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
+On Tue, Jun 5, 2012 at 12:16 PM, Alexander Block
+<ablock84@googlemail.com> wrote:
+> On Mon, Jun 4, 2012 at 7:33 PM, Alex Lyakas
+> <alex.bolshoy.btrfs@gmail.com> wrote:
+>>
+>> Yes, I also noticed that sometimes transid gets bumped up, but there
+>> is no actual change.
+>>
+>> So let's say you identify that a particular part of the tree is not
+>> shared anymore, and, say, eventually you get to a particular leaf
+>> within that part of the tree. How would you detect that, say, a
+>> particular INODE_ITEM (or, more difficult, an INODE_REF) is missing
+>> from that leaf WRT to previous tree?
+>>
+>> The property you described perhaps suggests another method to find
+>> leafs, in which *something* has changed. (Although within a leaf, does
+>> it make sense to decode all items and to look at their transid - those
+>> that have them - to filter out even more?) And yes, perhaps, looking
+>> at transid alone will bring more such potential leafs into
+>> consideration.
+>>
+>> However, how does this property help to determine *what* actually has
+>> changed between the two trees? Like, for example, being able to tell
+>> over which range of keys there possibly was a change, and iterate
+>> within that range?
+> When doing incremental sends, we always have two trees at hand. One
+> where we know that it is already on the receiving side (we did already
+> send it) and the one that we want to send now. To find the changes, we
+> simply compare those trees. If an items misses on one tree, we know
+> it's either new or deleted (depending on the tree the item lies in).
+>
+> I would suggest you to not put too much work into send. As already
+> said, the btrfs send/receive patches are close to be posted to the
+> mailing list. It's currently reviewed and when I get a "looks good now",
+> I'll post it.
+>>
+>> Alex.
 
---2YJj5f1P6Th4nBRw
-Content-Type: text/plain; charset=iso-8859-1
-Content-Disposition: inline
-Content-Transfer-Encoding: quoted-printable
+Thanks for the update, Alex. Efficiently comparing the trees is the
+crux of what we were looking into.
 
-   I've just pushed out a new integration branch to my git repo. This
-is purely bugfix patches -- there are no new features in this issue of
-the integration branch. I've got a stack of about a dozen more patches
-with new features in them still to go. I'll be working on those
-tomorrow. As always, there's minimal testing involved here, but it
-does at least compile on my system(*).
-
-   The branch is fetchable with git from:
-
-http://git.darksatanic.net/repo/btrfs-progs-unstable.git/ integration-20120=
-605
-
-   And viewable in human-readable form at:
-
-http://git.darksatanic.net/cgi/gitweb.cgi?p=3Dbtrfs-progs-unstable.git
-
-   Shortlog is below.
-
-   Hugo.
-
-(*) "I don't care about works-on-my-machine. We are not shipping your
-machine!"
-
-----
-
-Akira Fujita (1):
-      Btrfs-progs: Fix manual of btrfs command
-
-Chris Samuel (1):
-      Fix "set-dafault" typo in cmds-subvolume.c
-
-Csaba T=F3th (1):
-      mkfs.btrfs on ARM
-
-Goffredo Baroncelli (1):
-      scrub_fs_info( ) file handle leaking
-
-Hubert Kario (2):
-      Fix segmentation fault when opening invalid file system
-      man: fix btrfs man page formatting
-
-Jan Kara (1):
-      mkfs: Handle creation of filesystem larger than the first device
-
-Jim Meyering (5):
-      btrfs_scan_one_dir: avoid use-after-free on error path
-      mkfs: use strdup in place of strlen,malloc,strcpy sequence
-      restore: don't corrupt stack for a zero-length command-line argument
-      avoid several strncpy-induced buffer overruns
-      mkfs: avoid heap-buffer-read-underrun for zero-length "size" arg
-
-Josef Bacik (3):
-      Btrfs-progs: make btrfsck aware of free space inodes
-      Btrfs-progs: make btrfs filesystem show <uuid> actually work
-      btrfs-progs: enforce block count on all devices in mkfs
-
-Miao Xie (3):
-      Btrfs-progs: fix btrfsck's snapshot wrong "unresolved refs"
-      Btrfs-progs, btrfs-corrupt-block: fix the wrong usage
-      Btrfs-progs, btrfs-map-logical: Fix typo in usage
-
-Phillip Susi (2):
-      btrfs-progs: removed extraneous whitespace from mkfs man page
-      btrfs-progs: document --rootdir mkfs switch
-
-Sergei Trofimovich (2):
-      Makefile: use $(CC) as a compilers instead of $(CC)/gcc
-      Makefile: use $(MAKE) instead of hardcoded 'make'
-
-Shawn Bohrer (1):
-      btrfs-progs: Update resize documentation
-
-Wang Sheng-Hui (1):
-      btrfs-progs: cleanup: remove the redundant BTRFS_CSUM_TYPE_CRC32 macr=
-o def
-
---=20
-=3D=3D=3D Hugo Mills: hugo@... carfax.org.uk | darksatanic.net | lug.org.uk=
- =3D=3D=3D
-  PGP key: 515C238D from wwwkeys.eu.pgp.net or http://www.carfax.org.uk
-     --- Great oxymorons of the world, no.  5: Manifesto Promise ---    =20
-
---2YJj5f1P6Th4nBRw
-Content-Type: application/pgp-signature; name="signature.asc"
-Content-Description: Digital signature
-
------BEGIN PGP SIGNATURE-----
-Version: GnuPG v1.4.12 (GNU/Linux)
-
-iD8DBQFPzllhIKyzvlFcI40RAjvDAKCAXWG1ONYYEr65J/dtJffACGPtuwCePK9z
-ky0zucf5oBYuWXcbWjm20Wc=
-=lGFG
------END PGP SIGNATURE-----
-
---2YJj5f1P6Th4nBRw--
+Thanks,
+Alex.

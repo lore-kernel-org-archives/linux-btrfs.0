@@ -1,67 +1,62 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-ob0-f174.google.com ([209.85.214.174]:65010 "EHLO
-	mail-ob0-f174.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1753262Ab2FEQVk (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Tue, 5 Jun 2012 12:21:40 -0400
-Received: by obbtb18 with SMTP id tb18so8947074obb.19
-        for <linux-btrfs@vger.kernel.org>; Tue, 05 Jun 2012 09:21:40 -0700 (PDT)
+Received: from smtp11.hushmail.com ([65.39.178.133]:43993 "EHLO
+	smtp11.hushmail.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1753441Ab2FGOq0 (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Thu, 7 Jun 2012 10:46:26 -0400
+Received: from smtp11.hushmail.com (localhost.localdomain [127.0.0.1])
+	by smtp11.hushmail.com (Postfix) with SMTP id 81C7A1CC436
+	for <linux-btrfs@vger.kernel.org>; Thu,  7 Jun 2012 14:46:24 +0000 (UTC)
+Received: from smtp.hushmail.com (w5.hushmail.com [65.39.178.80])
+	by smtp11.hushmail.com (Postfix) with ESMTP
+	for <linux-btrfs@vger.kernel.org>; Thu,  7 Jun 2012 14:46:22 +0000 (UTC)
 MIME-Version: 1.0
-Date: Tue, 5 Jun 2012 12:21:40 -0400
-Message-ID: <CAOUOUDzAEe8mZwrtqaFyQ1B9B8AFOhxyv5X70uQCPbVzYk8v+g@mail.gmail.com>
-Subject: PATCH: btrfs defrag ioctl, override extent count and size checks
- compression enabled.
-From: Andrew Mahone <andrew.mahone@gmail.com>
-To: linux-btrfs@vger.kernel.org
-Content-Type: multipart/mixed; boundary=14dae9399835a6b2c704c1bc0b4b
+Date: Thu, 07 Jun 2012 06:46:22 -0800
+To: "linux-btrfs" <linux-btrfs@vger.kernel.org>
+Subject: Two questions about update_global_block_rsv()
+From: "WeiFeng Liu" <weifeng.liu@hushmail.com>
+Content-Type: text/plain; charset="UTF-8"
+Message-Id: <20120607144622.96FFDE674A@smtp.hushmail.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
---14dae9399835a6b2c704c1bc0b4b
-Content-Type: text/plain; charset=ISO-8859-1
+Help two questions about update_global_block_rsv()
 
-I noticed a few days ago that btrfs fi defrag -cXXX can not be used to
-compress files unless they are fragmented. The attached patch passes
-the compression flag to should_defrag_range, where it disables the
-adjacent-extent and extent size checks if set. The inline/sparse
-extent check is not modified - I assumed it would not be useful to
-compress inline extents.
+update_global_block_rsv(fs_info) {
 
--- 
-Andrew Mahone
-andrew DOT mahone AT gmail DOT com\
+...
+block_rsv = &fs_info->global_block_rsv;
+sinfo = block_rsv->space_info;
 
---14dae9399835a6b2c704c1bc0b4b
-Content-Type: application/octet-stream; name="btrfs_defrag_compress.patch"
-Content-Disposition: attachment; filename="btrfs_defrag_compress.patch"
-Content-Transfer-Encoding: base64
-X-Attachment-Id: f_h3369d8r0
+num_bytes = sinfo->bytes_used + sinfo->bytes_pinned +
+            sinfo->bytes_reserved + sinfo->bytes_readonly +
+            sinfo->bytes_may_use;
+ 
+if (sinfo->total_bytes > num_bytes) {
+		num_bytes = sinfo->total_bytes - num_bytes;
+		block_rsv->reserved += num_bytes;
+		sinfo->bytes_may_use += num_bytes;
+}
+...
+}
 
-ZGlmZiAtLWdpdCBhL2ZzL2J0cmZzL2lvY3RsLmMgYi9mcy9idHJmcy9pb2N0bC5jCmluZGV4IDEy
-MjFhMzkuLjQ5Zjc5MDMgMTAwNjQ0Ci0tLSBhL2ZzL2J0cmZzL2lvY3RsLmMKKysrIGIvZnMvYnRy
-ZnMvaW9jdGwuYwpAQCAtODEyLDcgKzgxMiw3IEBAIHN0YXRpYyBpbnQgY2hlY2tfYWRqYWNlbnRf
-ZXh0ZW50cyhzdHJ1Y3QgaW5vZGUgKmlub2RlLCBzdHJ1Y3QgZXh0ZW50X21hcCAqZW0pCiAKIHN0
-YXRpYyBpbnQgc2hvdWxkX2RlZnJhZ19yYW5nZShzdHJ1Y3QgaW5vZGUgKmlub2RlLCB1NjQgc3Rh
-cnQsIHU2NCBsZW4sCiAJCQkgICAgICAgaW50IHRocmVzaCwgdTY0ICpsYXN0X2xlbiwgdTY0ICpz
-a2lwLAotCQkJICAgICAgIHU2NCAqZGVmcmFnX2VuZCkKKwkJCSAgICAgICB1NjQgKmRlZnJhZ19l
-bmQsIGludCBjb21wcmVzcykKIHsKIAlzdHJ1Y3QgZXh0ZW50X2lvX3RyZWUgKmlvX3RyZWUgPSAm
-QlRSRlNfSShpbm9kZSktPmlvX3RyZWU7CiAJc3RydWN0IGV4dGVudF9tYXAgKmVtID0gTlVMTDsK
-QEAgLTg1Myw3ICs4NTMsNyBAQCBzdGF0aWMgaW50IHNob3VsZF9kZWZyYWdfcmFuZ2Uoc3RydWN0
-IGlub2RlICppbm9kZSwgdTY0IHN0YXJ0LCB1NjQgbGVuLAogCX0KIAogCS8qIElmIHdlIGhhdmUg
-bm90aGluZyB0byBtZXJnZSB3aXRoIHVzLCBqdXN0IHNraXAuICovCi0JaWYgKGNoZWNrX2FkamFj
-ZW50X2V4dGVudHMoaW5vZGUsIGVtKSkgeworCWlmICghY29tcHJlc3MgJiYgY2hlY2tfYWRqYWNl
-bnRfZXh0ZW50cyhpbm9kZSwgZW0pKSB7CiAJCXJldCA9IDA7CiAJCWdvdG8gb3V0OwogCX0KQEAg
-LTg2MSw3ICs4NjEsOCBAQCBzdGF0aWMgaW50IHNob3VsZF9kZWZyYWdfcmFuZ2Uoc3RydWN0IGlu
-b2RlICppbm9kZSwgdTY0IHN0YXJ0LCB1NjQgbGVuLAogCS8qCiAJICogd2UgaGl0IGEgcmVhbCBl
-eHRlbnQsIGlmIGl0IGlzIGJpZyBkb24ndCBib3RoZXIgZGVmcmFnZ2luZyBpdCBhZ2FpbgogCSAq
-LwotCWlmICgoKmxhc3RfbGVuID09IDAgfHwgKmxhc3RfbGVuID49IHRocmVzaCkgJiYgZW0tPmxl
-biA+PSB0aHJlc2gpCisJaWYgKCFjb21wcmVzcyAmJgorCSAgICAoKmxhc3RfbGVuID09IDAgfHwg
-Kmxhc3RfbGVuID49IHRocmVzaCkgJiYgZW0tPmxlbiA+PSB0aHJlc2gpCiAJCXJldCA9IDA7CiAK
-IG91dDoKQEAgLTExNDMsNyArMTE0NCw4IEBAIGludCBidHJmc19kZWZyYWdfZmlsZShzdHJ1Y3Qg
-aW5vZGUgKmlub2RlLCBzdHJ1Y3QgZmlsZSAqZmlsZSwKIAogCQlpZiAoIXNob3VsZF9kZWZyYWdf
-cmFuZ2UoaW5vZGUsICh1NjQpaSA8PCBQQUdFX0NBQ0hFX1NISUZULAogCQkJCQkgUEFHRV9DQUNI
-RV9TSVpFLCBleHRlbnRfdGhyZXNoLAotCQkJCQkgJmxhc3RfbGVuLCAmc2tpcCwgJmRlZnJhZ19l
-bmQpKSB7CisJCQkJCSAmbGFzdF9sZW4sICZza2lwLCAmZGVmcmFnX2VuZCwKKwkJCQkJIHJhbmdl
-LT5mbGFncyAmIEJUUkZTX0RFRlJBR19SQU5HRV9DT01QUkVTUykpIHsKIAkJCXVuc2lnbmVkIGxv
-bmcgbmV4dDsKIAkJCS8qCiAJCQkgKiB0aGUgc2hvdWxkX2RlZnJhZyBmdW5jdGlvbiB0ZWxscyB1
-cyBob3cgbXVjaCB0byBza2lwCg==
---14dae9399835a6b2c704c1bc0b4b--
+1. I don't quite understand the lines:
+	block_rsv->reserved += num_bytes;
+	sinfo->bytes_may_use += num_bytes;
+	
+why aren't they like these?
+	block_rsv->reserved = num_bytes;
+	sinfo->bytes_may_use = num_bytes;
+
+assuming that nothing else is changed, and we just call
+update_global_block_rsv() for several times, then block_rsv->reserved will
+increase constantly, and so sinfo->bytes_may_use; can anyone tell me what it
+means? I mean if nothing else is changed the two variables should keep their
+values unchanged also, is that right? a bit puzzlement to me.
+
+2. Is the meaning of sinfo->bytes_may_use that bytes which is available for use
+or that bytes which will likely/unlikely be used?
+
+thanks
+
+WeiFeng Liu
+

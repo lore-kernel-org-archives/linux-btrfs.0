@@ -1,51 +1,38 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mailout05.t-online.de ([194.25.134.82]:52395 "EHLO
-	mailout05.t-online.de" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1753985Ab2FFTOR (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Wed, 6 Jun 2012 15:14:17 -0400
-Date: 06 Jun 2012 21:13:00 +0200
-From: Hullen@t-online.de (Helmut Hullen)
-To: linux-btrfs@vger.kernel.org
-Message-ID: <CAMnMZB9CXB@helmut.hullen.de>
-In-Reply-To: <20120606131458.GN15986@carfax.org.uk>
-Subject: Re: New btrfs-progs integration branch
+Received: from acsinet15.oracle.com ([141.146.126.227]:27566 "EHLO
+	acsinet15.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1752874Ab2FGBE4 (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Wed, 6 Jun 2012 21:04:56 -0400
+Date: Wed, 6 Jun 2012 21:04:48 -0400
+From: Chris Mason <chris.mason@oracle.com>
+To: linux-btrfs <linux-btrfs@vger.kernel.org>,
+        "linux-fsdevel@vger.kernel.org" <linux-fsdevel@vger.kernel.org>
+Cc: chris.mason@fusionio.com
+Subject: Leaving Oracle
+Message-ID: <20120607010448.GA26531@shiny>
 MIME-Version: 1.0
-Content-Type: text/plain; charset=US-ASCII
-Reply-To: helmut@hullen.de
+Content-Type: text/plain; charset=us-ascii
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hallo, Hugo,
+Hello everyone,
 
-Du meintest am 06.06.12:
+Oracle has been a fantastic place to work, and I really appreciate their
+support for my projects.  But, I've decided to take a new position at
+Fusion-io.  I will start the new job on Monday, June 11.
 
->>>    The branch is fetchable with git from:
->>
->>> http://git.darksatanic.net/repo/btrfs-progs-unstable.git/
->>> integration-20120605
+>From a Btrfs point of view, very little will change.  I'll still
+maintain Btrfs and will continue all of my Btrfs development in the
+open.  Oracle will still use Btrfs in their Oracle Linux products, and
+I'll work with all of the distros using Btrfs in production.
 
->> gcc   convert.o   -o convert
->> convert.o: In function `btrfs_item_key':
->> /tmp/btrfs-progs-unstable/ctree.h:1404: undefined reference to
->> `read_extent_buffer' convert.o:
+Fusion-io really believes in open source, and I'm excited to help
+them shape the future of high performance storage.
 
-[...]
-Solved - thanks for your help!
+chris.mason@oracle.com will probably stop working this Friday June 8th.
+chris.mason@fusionio.com will be my new email address.
 
-You have changed the Makefile;
+Just let me know if you have any questions.
 
-        make convert
+-chris
 
-does not more work, it has changed to
-
-        make btrfs-convert
-
-
--------------------------------
-
-You can find the slackware binary at
-
-  <http://helmut.hullen.de/filebox/Linux/slackware/ap/btrfs-progs-20120606-i486-1hln.txz>
-
-Viele Gruesse!
-Helmut

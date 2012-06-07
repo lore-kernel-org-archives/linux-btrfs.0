@@ -1,108 +1,191 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-qa0-f49.google.com ([209.85.216.49]:63286 "EHLO
-	mail-qa0-f49.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1753310Ab2FGD1E (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Wed, 6 Jun 2012 23:27:04 -0400
-Received: by qabj40 with SMTP id j40so248078qab.1
-        for <linux-btrfs@vger.kernel.org>; Wed, 06 Jun 2012 20:27:02 -0700 (PDT)
-Message-ID: <4FD01F85.9020405@gmail.com>
-Date: Wed, 06 Jun 2012 23:27:01 -0400
-From: Maxim Mikheev <mikhmv@gmail.com>
+Received: from mail-vc0-f174.google.com ([209.85.220.174]:54180 "EHLO
+	mail-vc0-f174.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1751681Ab2FGJOO convert rfc822-to-8bit (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Thu, 7 Jun 2012 05:14:14 -0400
+Received: by vcbf11 with SMTP id f11so181612vcb.19
+        for <linux-btrfs@vger.kernel.org>; Thu, 07 Jun 2012 02:14:13 -0700 (PDT)
 MIME-Version: 1.0
-To: Michael <mike@draftx.net>
-CC: Hugo Mills <hugo@carfax.org.uk>, Liu Bo <liubo2009@cn.fujitsu.com>,
-        linux-btrfs@vger.kernel.org
-Subject: Re: Help with data recovering
-References: <4FCC9C63.7000605@gmail.com> <4FCC9CD5.2050309@gmx.net> <4FCC9F6C.5090305@gmail.com> <20120604114901.GA15986@carfax.org.uk> <4FCCA39C.8060409@gmail.com> <20120604121134.GB15986@carfax.org.uk> <4FCCA9E6.3030209@gmail.com> <20120604123431.GC15986@carfax.org.uk> <4FCCE125.7000004@gmail.com> <20120604170422.GD15986@carfax.org.uk> <20120604170936.GE15986@carfax.org.uk> <CAGJTRcg7bwR0ASCLshQYj42erPa5cLV5R3NvWe335m05_R7rJA@mail.gmail.com> <4FCCF882.5080500@gmail.com> <CAGJTRciBERUNgRvgx4f4Ns+F2QBwPKUTZ25QCj9LW_=W-4ZoRg@mail.gmail.com> <4FCF8485.4080802@gmail.com>
-In-Reply-To: <4FCF8485.4080802@gmail.com>
-Content-Type: text/plain; charset=ISO-8859-1; format=flowed
+In-Reply-To: <CADP2XCmhPX9HyLn6XWs4jgDHhHj8S1-G8PrZo50m4pRRXVft7A@mail.gmail.com>
+References: <CADP2XCmhPX9HyLn6XWs4jgDHhHj8S1-G8PrZo50m4pRRXVft7A@mail.gmail.com>
+From: Randall Mason <lists@mason.ch>
+Date: Thu, 7 Jun 2012 12:13:53 +0300
+Message-ID: <CADP2XCmzvf2x10L=Cn8Wvod=2hST0ZrQ16Nu4EaYraJ1JKZyrQ@mail.gmail.com>
+Subject: Re: Uncorrectable errors on newly extended volume
+To: linux-btrfs@vger.kernel.org
+Content-Type: text/plain; charset=ISO-8859-1
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hi Everyone,
+Helmut Hullen <Hullen <at> t-online.de> writes:
 
-Is it possible to extract specific file instead of downloading everything?
+> Du meintest am 01.06.12:
+>
+> > I'm having a problem with a newly extended btrfs volume.  It is
+> > running on debian testing with an almost stock 3.1.0 kernel with a
+> > little bit of patches
+>
+> You should use a newer kernel, p.e. 3.3.7 or 3.4
 
-Thanks
+Hello!
+I've just upgraded to 3.4.0 from git.kernel.org and I'm still running
+into problems.  I checked the Problems FAQ and there doesn't seem to
+be anything that matches my problem.  Here's a set of errors when I
+try to rsync to the volume in question:
+I run:
+rmason@<btrfsHost>:~$ sudo rsync -avH -e "ssh -4" --delete --progress
+--inplace root@<otherHost>.mason.ch:/home/randall/ /home/randall/
+root@<otherHost>.mason.ch's password:
+receiving incremental file list
+anime/[SFS] Break Blade [BD 1920x1080 x264 FLAC][BG]/[SFS] Break Blade
+- 02v2 [BD 1920x1080 x264 FLAC][BG].mkv
+     2165440   0%    1.96MB/s    0:28:24
+rsync: write failed on "/home/randall/anime/[SFS] Break Blade [BD
+1920x1080 x264 FLAC][BG]/[SFS] Break Blade - 02v2 [BD 1920x1080 x264
+FLAC][BG].mkv": Input/output error (5)
+rsync error: error in file IO (code 11) at receiver.c(322) [receiver=3.0.9]
+rsync: connection unexpectedly closed (11135 bytes received so far) [generator]
+rsync error: error in rsync protocol data stream (code 12) at
+io.c(605) [generator=3.0.9]
 
-On 06/06/2012 12:25 PM, Maxim Mikheev wrote:
-> Option -i was helpful.
-> Some date was restored.
->
-> during restoring some files I got message "ret is -3". This files has 
-> 0 size.
-> Can anyone tell me what is code "-3" mean. Is it recoverable?
->
-> So basically data is on harddrives but not completely available.
-> the questions is: Is it possible to btrfs push to roll back on several 
-> generations?
->
-> Thanks
->
-> On 06/04/2012 02:37 PM, Michael wrote:
->> Below is what you used? So you have RAID 0 for data, RAID 1 for
->> metadata. This doesn't help any, but a point of info.
->> # Create a filesystem across four drives (metadata mirrored, data 
->> striped)
->> mkfs.btrfs /dev/sdb /dev/sdc /dev/sdd /dev/sde
->>
->>
->> Just to make sure I understand correctly: This FS with critical info
->> used a non-production filesystem, in RAID 0(no redundancy), with no
->> backups.
->>
->> Another option I found(and I am no authority on the subject) is to use
->> btrfs.restore with -i
->> -i: Ignore errors. Normally the restore tool exits immediately for any
->> error. This option forces it to keep going if it can, usually this
->> results in some missing data.
->> Again, this can be destructive, and it would be very smart to make
->> block level copies of everything.
->>
->> On Mon, Jun 4, 2012 at 1:03 PM, Maxim Mikheev<mikhmv@gmail.com>  wrote:
->>> It was a RAID0 unfortunately.
->>>
->>>
->>> On 06/04/2012 02:02 PM, Michael wrote:
->>>> If he has it in a RAID 1, could he manually fail the bad disk and try
->>>> it from there? Obviously this could be harmful, so a dd copy would be
->>>> a VERY good idea(truthfully, that should have been the first thing
->>>> that was done).
->>>> Michael
->>>>
->>>> On Mon, Jun 4, 2012 at 12:09 PM, Hugo Mills<hugo@carfax.org.uk>    
->>>> wrote:
->>>>> On Mon, Jun 04, 2012 at 06:04:22PM +0100, Hugo Mills wrote:
->>>>>>     I'm out of ideas.
->>>>>    ... but that's not to say that someone else may have some ideas. I
->>>>> wouldn't get your hopes up too much, though.
->>>>>
->>>>>>     At this point, though, you're probably looking at somebody 
->>>>>> writing
->>>>>> custom code to scan the FS and attempt to find and retrieve anything
->>>>>> that's recoverable.
->>>>>>
->>>>>>     You might try writing a tool to scan all the disks for useful
->>>>>> fragments of old trees, and see if you can find some of the tree 
->>>>>> roots
->>>>>> independently of the tree of tree roots (which clearly isn't
->>>>>> particularly functional right now). You might try simply scanning 
->>>>>> the
->>>>>> disks looking for your lost data, and try to reconstruct as much 
->>>>>> of it
->>>>>> as you can from that. You could try to find a company 
->>>>>> specialising in
->>>>>> data recovery and pay them to try to get your data back. Or you 
->>>>>> might
->>>>>> just have to accept that the data's gone and work on reconstructing
->>>>>> it.
->>>>>    Hugo.
->>>>>
->>>>> -- 
->>>>> === Hugo Mills: hugo@... carfax.org.uk | darksatanic.net | 
->>>>> lug.org.uk ===
->>>>>   PGP key: 515C238D from wwwkeys.eu.pgp.net or 
->>>>> http://www.carfax.org.uk
->>>>>   --- A linked list is still a binary tree.  Just a very 
->>>>> unbalanced ---
->>>>>                              one.  -- dragon
+I tail messages.log during the rsync command and this is what I get:
+Jun  7 04:42:51 <btrfsHost> kernel: btrfs csum failed ino 1258837 off
+2052096 csum 2566472073 private 2923703033
+Jun  7 04:42:51 <btrfsHost> kernel: btrfs csum failed ino 1258837 off
+2052096 csum 2566472073 private 2923703033
+Jun  7 04:42:51 <btrfsHost> kernel: btrfs csum failed ino 1258837 off
+2138112 csum 2566472073 private 214370805
+Jun  7 04:42:51 <btrfsHost> kernel: btrfs csum failed ino 1258837 off
+2408448 csum 2566472073 private 3284052016
+Jun  7 04:42:51 <btrfsHost> kernel: btrfs csum failed ino 1258837 off
+2674688 csum 2566472073 private 669053144
+Jun  7 04:42:51 <btrfsHost> kernel: btrfs csum failed ino 1258837 off
+2940928 csum 2566472073 private 2266756296
+Jun  7 04:42:51 <btrfsHost> kernel: btrfs csum failed ino 1258837 off
+3211264 csum 2566472073 private 3658566492
+Jun  7 04:42:51 <btrfsHost> kernel: btrfs csum failed ino 1258837 off
+3477504 csum 2566472073 private 4196274894
+Jun  7 04:42:51 <btrfsHost> kernel: btrfs csum failed ino 1258837 off
+3743744 csum 2566472073 private 2836083845
+Jun  7 04:42:51 <btrfsHost> kernel: btrfs csum failed ino 1258837 off
+4014080 csum 2566472073 private 2057760174
+Jun  7 04:42:56 <btrfsHost> kernel: btrfs_readpage_end_io_hook: 334
+callbacks suppressed
+Jun  7 04:42:56 <btrfsHost> kernel: btrfs csum failed ino 1258837 off
+93687808 csum 2566472073 private 3122689738
+Jun  7 04:42:56 <btrfsHost> kernel: btrfs csum failed ino 1258837 off
+93954048 csum 2566472073 private 2432138128
+Jun  7 04:42:56 <btrfsHost> kernel: btrfs csum failed ino 1258837 off
+94220288 csum 2566472073 private 176960849
+Jun  7 04:42:56 <btrfsHost> kernel: btrfs csum failed ino 1258837 off
+94490624 csum 2566472073 private 3686755414
+Jun  7 04:42:56 <btrfsHost> kernel: btrfs csum failed ino 1258837 off
+94756864 csum 2566472073 private 3413998024
+Jun  7 04:42:56 <btrfsHost> kernel: btrfs csum failed ino 1258837 off
+95023104 csum 2566472073 private 1213584997
+Jun  7 04:42:56 <btrfsHost> kernel: btrfs csum failed ino 1258837 off
+95293440 csum 2566472073 private 3260773985
+Jun  7 04:42:56 <btrfsHost> kernel: btrfs csum failed ino 1258837 off
+95559680 csum 2566472073 private 859919222
+Jun  7 04:42:56 <btrfsHost> kernel: btrfs csum failed ino 1258837 off
+95825920 csum 2566472073 private 330759519
+Jun  7 04:42:56 <btrfsHost> kernel: btrfs csum failed ino 1258837 off
+96096256 csum 2566472073 private 2517217076
+Jun  7 04:43:01 <btrfsHost> kernel: btrfs_readpage_end_io_hook: 503
+callbacks suppressed
+Jun  7 04:43:01 <btrfsHost> kernel: btrfs csum failed ino 1258837 off
+231006208 csum 2566472073 private 4003729605
+Jun  7 04:43:01 <btrfsHost> kernel: btrfs csum failed ino 1258837 off
+231272448 csum 2566472073 private 3631855256
+Jun  7 04:43:01 <btrfsHost> kernel: btrfs csum failed ino 1258837 off
+231542784 csum 2566472073 private 610953759
+Jun  7 04:43:01 <btrfsHost> kernel: btrfs csum failed ino 1258837 off
+231809024 csum 2566472073 private 3113324635
+Jun  7 04:43:01 <btrfsHost> kernel: btrfs csum failed ino 1258837 off
+232075264 csum 2566472073 private 3907299018
+Jun  7 04:43:01 <btrfsHost> kernel: btrfs csum failed ino 1258837 off
+232345600 csum 2566472073 private 4261889602
+Jun  7 04:43:01 <btrfsHost> kernel: btrfs csum failed ino 1258837 off
+232611840 csum 2566472073 private 2892910093
+Jun  7 04:43:01 <btrfsHost> kernel: btrfs csum failed ino 1258837 off
+232878080 csum 2566472073 private 3857339386
+Jun  7 04:43:01 <btrfsHost> kernel: btrfs csum failed ino 1258837 off
+233148416 csum 2566472073 private 3410895248
+Jun  7 04:43:01 <btrfsHost> kernel: btrfs csum failed ino 1258837 off
+233414656 csum 2566472073 private 4090819852
+Jun  7 04:43:06 <btrfsHost> kernel: btrfs_readpage_end_io_hook: 508
+callbacks suppressed
+Jun  7 04:43:06 <btrfsHost> kernel: btrfs csum failed ino 1258837 off
+369664000 csum 2566472073 private 1949454837
+Jun  7 04:43:06 <btrfsHost> kernel: btrfs csum failed ino 1258837 off
+369930240 csum 2566472073 private 2867367336
+Jun  7 04:43:06 <btrfsHost> kernel: btrfs csum failed ino 1258837 off
+370200576 csum 2566472073 private 299690505
+Jun  7 04:43:06 <btrfsHost> kernel: btrfs csum failed ino 1258837 off
+370466816 csum 2566472073 private 2449128099
+Jun  7 04:43:06 <btrfsHost> kernel: btrfs csum failed ino 1258837 off
+370733056 csum 2566472073 private 3831761403
+Jun  7 04:43:06 <btrfsHost> kernel: btrfs csum failed ino 1258837 off
+371003392 csum 2566472073 private 594867053
+Jun  7 04:43:06 <btrfsHost> kernel: btrfs csum failed ino 1258837 off
+371269632 csum 2566472073 private 2391764021
+Jun  7 04:43:06 <btrfsHost> kernel: btrfs csum failed ino 1258837 off
+371535872 csum 2566472073 private 1250201429
+Jun  7 04:43:06 <btrfsHost> kernel: btrfs csum failed ino 1258837 off
+371806208 csum 2566472073 private 3704878237
+Jun  7 04:43:06 <btrfsHost> kernel: btrfs csum failed ino 1258837 off
+372072448 csum 2566472073 private 1588417531
+Jun  7 04:43:11 <btrfsHost> kernel: btrfs_readpage_end_io_hook: 515
+callbacks suppressed
+Jun  7 04:43:11 <btrfsHost> kernel: btrfs csum failed ino 1258837 off
+510197760 csum 2566472073 private 1297006436
+Jun  7 04:43:11 <btrfsHost> kernel: btrfs csum failed ino 1258837 off
+510464000 csum 2566472073 private 1281951163
+Jun  7 04:43:11 <btrfsHost> kernel: btrfs csum failed ino 1258837 off
+510730240 csum 2566472073 private 1649630795
+Jun  7 04:43:11 <btrfsHost> kernel: btrfs csum failed ino 1258837 off
+511000576 csum 2566472073 private 621478547
+Jun  7 04:43:11 <btrfsHost> kernel: btrfs csum failed ino 1258837 off
+511266816 csum 2566472073 private 709499052
+Jun  7 04:43:11 <btrfsHost> kernel: btrfs csum failed ino 1258837 off
+511533056 csum 2566472073 private 1772067950
+Jun  7 04:43:11 <btrfsHost> kernel: btrfs csum failed ino 1258837 off
+511803392 csum 2566472073 private 4181868570
+Jun  7 04:43:11 <btrfsHost> kernel: btrfs csum failed ino 1258837 off
+512069632 csum 2566472073 private 3607792064
+Jun  7 04:43:11 <btrfsHost> kernel: btrfs csum failed ino 1258837 off
+512335872 csum 2566472073 private 3698346856
+Jun  7 04:43:11 <btrfsHost> kernel: btrfs csum failed ino 1258837 off
+512606208 csum 2566472073 private 2503998955
+Jun  7 04:43:16 <btrfsHost> kernel: btrfs_readpage_end_io_hook: 500
+callbacks suppressed
+Jun  7 04:43:16 <btrfsHost> kernel: btrfs csum failed ino 1258837 off
+646713344 csum 2566472073 private 37706649
+Jun  7 04:43:16 <btrfsHost> kernel: btrfs csum failed ino 1258837 off
+646979584 csum 2566472073 private 3463060199
+Jun  7 04:43:16 <btrfsHost> kernel: btrfs csum failed ino 1258837 off
+647249920 csum 2566472073 private 2139594835
+Jun  7 04:43:16 <btrfsHost> kernel: btrfs csum failed ino 1258837 off
+647516160 csum 2566472073 private 369916444
+Jun  7 04:43:16 <btrfsHost> kernel: btrfs csum failed ino 1258837 off
+647782400 csum 2566472073 private 1041024394
+Jun  7 04:43:16 <btrfsHost> kernel: btrfs csum failed ino 1258837 off
+648052736 csum 2566472073 private 1131002593
+Jun  7 04:43:16 <btrfsHost> kernel: btrfs csum failed ino 1258837 off
+648318976 csum 2566472073 private 3304466401
+Jun  7 04:43:16 <btrfsHost> kernel: btrfs csum failed ino 1258837 off
+648585216 csum 2566472073 private 2262830394
+Jun  7 04:43:16 <btrfsHost> kernel: btrfs csum failed ino 1258837 off
+648855552 csum 2566472073 private 93740949
+Jun  7 04:43:16 <btrfsHost> kernel: btrfs csum failed ino 1258837 off
+649121792 csum 2566472073 private 2413285993
+
+And I make sure that that file is exactly the file that's being transferred:
+sudo find /home/randall/ -inum 1258837
+/home/randall/anime/[SFS] Break Blade [BD 1920x1080 x264
+FLAC][BG]/[SFS] Break Blade - 02v2 [BD 1920x1080 x264 FLAC][BG].mkv
+
+Any more help would be appreciated.  Why is this happening, and how
+can I get my data back?
+
+-Randall Mason

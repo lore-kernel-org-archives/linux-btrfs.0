@@ -1,77 +1,63 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from fgwmail6.fujitsu.co.jp ([192.51.44.36]:48526 "EHLO
-	fgwmail6.fujitsu.co.jp" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1756462Ab2FZDZl (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 25 Jun 2012 23:25:41 -0400
-Received: from m2.gw.fujitsu.co.jp (unknown [10.0.50.72])
-	by fgwmail6.fujitsu.co.jp (Postfix) with ESMTP id E2E613EE0B6
-	for <linux-btrfs@vger.kernel.org>; Tue, 26 Jun 2012 12:25:40 +0900 (JST)
-Received: from smail (m2 [127.0.0.1])
-	by outgoing.m2.gw.fujitsu.co.jp (Postfix) with ESMTP id C889845DE53
-	for <linux-btrfs@vger.kernel.org>; Tue, 26 Jun 2012 12:25:40 +0900 (JST)
-Received: from s2.gw.fujitsu.co.jp (s2.gw.fujitsu.co.jp [10.0.50.92])
-	by m2.gw.fujitsu.co.jp (Postfix) with ESMTP id B321345DD78
-	for <linux-btrfs@vger.kernel.org>; Tue, 26 Jun 2012 12:25:40 +0900 (JST)
-Received: from s2.gw.fujitsu.co.jp (localhost.localdomain [127.0.0.1])
-	by s2.gw.fujitsu.co.jp (Postfix) with ESMTP id A71621DB803C
-	for <linux-btrfs@vger.kernel.org>; Tue, 26 Jun 2012 12:25:40 +0900 (JST)
-Received: from m1000.s.css.fujitsu.com (m1000.s.css.fujitsu.com [10.240.81.136])
-	by s2.gw.fujitsu.co.jp (Postfix) with ESMTP id 5BAC71DB803A
-	for <linux-btrfs@vger.kernel.org>; Tue, 26 Jun 2012 12:25:40 +0900 (JST)
-Message-Id: <201206260325.AA00003@FM-323941448.jp.fujitsu.com>
-From: Tsutomu Itoh <t-itoh@jp.fujitsu.com>
-Date: Tue, 26 Jun 2012 12:25:22 +0900
-To: chris.mason@fusionio.com
-Cc: linux-btrfs@vger.kernel.org
-Subject: [PATCH] Btrfs: return error of btrfs_update_inode() to caller
+Received: from mail-ey0-f174.google.com ([209.85.215.174]:40636 "EHLO
+	mail-ey0-f174.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1751112Ab2FGT7G (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Thu, 7 Jun 2012 15:59:06 -0400
+Received: by eaak11 with SMTP id k11so444146eaa.19
+        for <linux-btrfs@vger.kernel.org>; Thu, 07 Jun 2012 12:59:05 -0700 (PDT)
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
+From: Catalin Iacob <iacobcatalin@gmail.com>
+Date: Thu, 7 Jun 2012 21:58:44 +0200
+Message-ID: <CAHg_5gpyMpa2HcRc+tSrbbEyWCcyrFOHfzK5w0N-TXABgCenYA@mail.gmail.com>
+Subject: New WARNING at fs/btrfs/extent_map.c:226 unpin_extent_cache with
+ kernel 3.5-rc1
+To: linux-btrfs <linux-btrfs@vger.kernel.org>
+Content-Type: text/plain; charset=ISO-8859-1
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-We didn't check error of btrfs_update_inode(), but that error looks
-easy to bubble back up.
+I just booted into a current git kernel and got 6 of these in about
+1h30min of usage
 
-Signed-off-by: Tsutomu Itoh <t-itoh@jp.fujitsu.com>
----
- fs/btrfs/inode.c    |    2 +-
- fs/btrfs/tree-log.c |    4 ++--
- 2 files changed, 3 insertions(+), 3 deletions(-)
+[  559.556879] ------------[ cut here ]------------
+[  559.556913] WARNING: at fs/btrfs/extent_map.c:226
+unpin_extent_cache+0x5f/0xb0 [btrfs]()
+[  559.556915] Hardware name: K53E
+[  559.556956] Modules linked in: fuse xt_limit af_packet ip6t_REJECT
+nf_conntrack_ipv6 nf_defrag_ipv6 ip6table_raw xt_NOTRACK ipt_REJECT
+iptable_raw iptable_filter ip6table_mangle nf_conntrack_netbios_ns
+nf_conntrack_broadcast nf_conntrack_ipv4 nf_defrag_ipv4 ip_tables
+xt_conntrack nf_conntrack ip6table_filter ip6_tables x_tables
+cpufreq_conservative cpufreq_userspace cpufreq_powersave acpi_cpufreq
+mperf arc4 rtl8192ce rtl8192c_common rtlwifi mac80211
+snd_hda_codec_hdmi snd_hda_codec_realtek snd_hda_intel snd_hda_codec
+snd_hwdep snd_pcm snd_timer cfg80211 asus_nb_wmi asus_wmi snd sr_mod
+soundcore cdrom uvcvideo snd_page_alloc sparse_keymap pci_hotplug
+videobuf2_core sg rfkill serio_raw videodev videobuf2_vmalloc
+videobuf2_memops coretemp atl1c joydev pcspkr battery lpc_ich
+microcode wmi ac mei i2c_i801 xhci_hcd autofs4 btrfs zlib_deflate i915
+drm_kms_helper drm i2c_algo_bit thermal video processor button
+thermal_sys
+[  559.556961] Pid: 2589, comm: btrfs-endio-wri Not tainted
+3.5.0-rc1-catalin-00110-g71fae7e #20
+[  559.556962] Call Trace:
+[  559.556971]  [<ffffffff8103e11f>] warn_slowpath_common+0x7f/0xc0
+[  559.556974]  [<ffffffff8103e17a>] warn_slowpath_null+0x1a/0x20
+[  559.556991]  [<ffffffffa016970f>] unpin_extent_cache+0x5f/0xb0 [btrfs]
+[  559.557006]  [<ffffffffa015eb82>] btrfs_finish_ordered_io+0x362/0x3c0 [btrfs]
+[  559.557022]  [<ffffffffa015ebf5>] finish_ordered_fn+0x15/0x20 [btrfs]
+[  559.557038]  [<ffffffffa0189200>] worker_loop+0xa0/0x300 [btrfs]
+[  559.557053]  [<ffffffffa0189160>] ?
+check_pending_worker_creates.isra.1+0xe0/0xe0 [btrfs]
+[  559.557058]  [<ffffffff81061433>] kthread+0x93/0xa0
+[  559.557063]  [<ffffffff815b08e4>] kernel_thread_helper+0x4/0x10
+[  559.557066]  [<ffffffff810613a0>] ? kthread_freezable_should_stop+0x70/0x70
+[  559.557069]  [<ffffffff815b08e0>] ? gs_change+0x13/0x13
+[  559.557071] ---[ end trace ced3cc4ce35eb913 ]---
 
-diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
-index 4a4f2d5..7a5d42e 100644
---- a/fs/btrfs/inode.c
-+++ b/fs/btrfs/inode.c
-@@ -2833,7 +2833,7 @@ err:
- 	inode_inc_iversion(inode);
- 	inode_inc_iversion(dir);
- 	inode->i_ctime = dir->i_mtime = dir->i_ctime = CURRENT_TIME;
--	btrfs_update_inode(trans, root, dir);
-+	ret = btrfs_update_inode(trans, root, dir);
- out:
- 	return ret;
- }
-diff --git a/fs/btrfs/tree-log.c b/fs/btrfs/tree-log.c
-index 2017d0f..6551ed4 100644
---- a/fs/btrfs/tree-log.c
-+++ b/fs/btrfs/tree-log.c
-@@ -637,7 +637,7 @@ static noinline int replay_one_extent(struct btrfs_trans_handle *trans,
- 	}
- 
- 	inode_set_bytes(inode, saved_nbytes);
--	btrfs_update_inode(trans, root, inode);
-+	ret = btrfs_update_inode(trans, root, inode);
- out:
- 	if (inode)
- 		iput(inode);
-@@ -1130,7 +1130,7 @@ static noinline int link_to_fixup_dir(struct btrfs_trans_handle *trans,
- 	btrfs_release_path(path);
- 	if (ret == 0) {
- 		btrfs_inc_nlink(inode);
--		btrfs_update_inode(trans, root, inode);
-+		ret = btrfs_update_inode(trans, root, inode);
- 	} else if (ret == -EEXIST) {
- 		ret = 0;
- 	} else {
-
+I didn't see these in 3.4 or previous kernels. However, despite of
+these, it seems to me that the latency of the desktop has improved,
+with previous kernels it was quite bad during IO. With 3.5 I got
+*some* seconds when other windows barely worked during a big git pull
+but I'm quite sure this kernel is smoother than older ones so thanks
+for your work!

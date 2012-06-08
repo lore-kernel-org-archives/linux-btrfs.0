@@ -1,71 +1,75 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from smtp207.alice.it ([82.57.200.103]:54553 "EHLO smtp207.alice.it"
+Received: from mx1.redhat.com ([209.132.183.28]:61429 "EHLO mx1.redhat.com"
 	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1755178Ab2FHTMw (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Fri, 8 Jun 2012 15:12:52 -0400
-From: Goffredo Baroncelli <kreijack@inwind.it>
+	id S1755355Ab2FHT0i (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Fri, 8 Jun 2012 15:26:38 -0400
+Received: from int-mx11.intmail.prod.int.phx2.redhat.com (int-mx11.intmail.prod.int.phx2.redhat.com [10.5.11.24])
+	by mx1.redhat.com (8.14.4/8.14.4) with ESMTP id q58JQb5O002861
+	(version=TLSv1/SSLv3 cipher=DHE-RSA-AES256-SHA bits=256 verify=OK)
+	for <linux-btrfs@vger.kernel.org>; Fri, 8 Jun 2012 15:26:37 -0400
+Received: from localhost.localdomain.com (vpn-8-48.rdu.redhat.com [10.11.8.48])
+	by int-mx11.intmail.prod.int.phx2.redhat.com (8.14.4/8.14.4) with ESMTP id q58JQaEv030551
+	for <linux-btrfs@vger.kernel.org>; Fri, 8 Jun 2012 15:26:37 -0400
+From: Josef Bacik <josef@redhat.com>
 To: linux-btrfs@vger.kernel.org
-Cc: Stefan Behrens <sbehrens@giantdisaster.de>
-Subject: [RFC][btrfs-progs] add command btrfs filesystem info
-Date: Fri,  8 Jun 2012 21:12:43 +0200
-Message-Id: <1339182766-15292-1-git-send-email-kreijack@inwind.it>
+Subject: [PATCH] Btrfs: keep inode pinned when compressing writes
+Date: Fri,  8 Jun 2012 15:26:36 -0400
+Message-Id: <1339183596-14065-1-git-send-email-josef@redhat.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hi all
+A user reported lots of problems using compression on the new code and it
+turns out part of the problem was that igrab() was failing when we added a
+new ordered extent.  This is because when writing out an inode under
+compression we immediately return without actually doing anything to the
+pages, and then in another thread at some point down the line actually do
+the ordered dance.  The problem is between the point that we start writeback
+and we actually add the ordered extent we could be trying to reclaim the
+inode, which makes igrab() return NULL.  So we need to do an igrab() when we
+create the async extent and then drop it when we are done with it.  This
+makes sure we stay pinned in memory until the ordered extent can get a
+reference on it and we are good to go.  With this patch we no longer panic
+in btrfs_finish_ordered_io().  Thanks,
 
-the aim of this patch is to add the command "btrfs filesystem info" to 
-show some filesystem information. Example:
+Signed-off-by: Josef Bacik <josef@redhat.com>
+---
+ fs/btrfs/inode.c |    8 ++++++--
+ 1 files changed, 6 insertions(+), 2 deletions(-)
 
-$ sudo btrfs-progs/btrfs filesystem info /mnt/test
-Path: /mnt/test
-Max ID: 4
-UUID: 1c7e4ba6-aebc-4b39-90ef-c61315fb74d1
-
-Num devices: 3
-  Dev ID: 2
-  UUID: cdbda186-735e-49cd-babc-e84fffdb4105
-  Bytes used: 511705088
-  Total bytes: 1667235840
-  Path: /dev/loop1
-  Dev ID: 3
-  UUID: a4cebf4e-f760-49a7-b960-142b2c14d9e6
-  Bytes used: 0
-  Total bytes: 1111490560
-  Path: /dev/loop2
-  Dev ID: 4
-  UUID: 61bd5825-f86e-4708-8a5b-f48764b5c3a5
-  Bytes used: 0
-  Total bytes: 1111490560
-  Path: /dev/loop3
-
-I make that because it is not so trivial to get these information otherwise.
-
-To get the information, I made public and used: scrub_device_info() and 
-scrub_fs_info(). So, I moved the functions to the file utils.c changing 
-scrub_ to get_. I was inspired by a patch of Stefan Behrens.
-
-Next enhancements:
-- remove the root privileges to launch the command (require change in
-kernel space)
-- show also the label of the filesystem (same as above)
-
-Please review; as usual, comments are welcome.
-
-You can pull the changes from the reposiotry
-	http://cassiopea.homelinux.net/git/btrfs-progs-unstable.git
-branch 
-	filesystem-info
-
-BR
-G.Baroncelli
-
- Makefile          |    8 +++---
- cmds-filesystem.c |   59 ++++++++++++++++++++++++++++++++++++++++++++
- cmds-scrub.c      |   72 +-----------------------------------------------------
- man/btrfs.8.in    |    8 ++++++
- utils.c           |   68 +++++++++++++++++++++++++++++++++++++++++++++++++++
- utils.h           |    4 +++
- 6 files changed, 145 insertions(+), 74 deletions(-)
-
+diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
+index 51b9971..293c018 100644
+--- a/fs/btrfs/inode.c
++++ b/fs/btrfs/inode.c
+@@ -986,8 +986,10 @@ static noinline void async_cow_start(struct btrfs_work *work)
+ 	compress_file_range(async_cow->inode, async_cow->locked_page,
+ 			    async_cow->start, async_cow->end, async_cow,
+ 			    &num_added);
+-	if (num_added == 0)
++	if (num_added == 0) {
++		iput(async_cow->inode);
+ 		async_cow->inode = NULL;
++	}
+ }
+ 
+ /*
+@@ -1020,6 +1022,8 @@ static noinline void async_cow_free(struct btrfs_work *work)
+ {
+ 	struct async_cow *async_cow;
+ 	async_cow = container_of(work, struct async_cow, work);
++	if (async_cow->inode)
++		iput(async_cow->inode);
+ 	kfree(async_cow);
+ }
+ 
+@@ -1038,7 +1042,7 @@ static int cow_file_range_async(struct inode *inode, struct page *locked_page,
+ 	while (start < end) {
+ 		async_cow = kmalloc(sizeof(*async_cow), GFP_NOFS);
+ 		BUG_ON(!async_cow); /* -ENOMEM */
+-		async_cow->inode = inode;
++		async_cow->inode = igrab(inode);
+ 		async_cow->root = root;
+ 		async_cow->locked_page = locked_page;
+ 		async_cow->start = start;
+-- 
+1.7.7.6
 

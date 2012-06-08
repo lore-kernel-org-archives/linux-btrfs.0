@@ -1,74 +1,45 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from twin.jikos.cz ([89.185.236.188]:58197 "EHLO twin.jikos.cz"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1751450Ab2FGKVl (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 7 Jun 2012 06:21:41 -0400
-Date: Thu, 7 Jun 2012 12:21:37 +0200
-From: David Sterba <dave@jikos.cz>
-To: Randall Mason <randall@mason.ch>
-Cc: linux-btrfs@vger.kernel.org
-Subject: Re: Uncorrectable errors on newly extended volume
-Message-ID: <20120607102137.GF32402@twin.jikos.cz>
-Reply-To: dave@jikos.cz
-References: <CADP2XCmhPX9HyLn6XWs4jgDHhHj8S1-G8PrZo50m4pRRXVft7A@mail.gmail.com>
+Received: from mail-lb0-f174.google.com ([209.85.217.174]:64107 "EHLO
+	mail-lb0-f174.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1758958Ab2FHA55 (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Thu, 7 Jun 2012 20:57:57 -0400
+Received: by lbbgm6 with SMTP id gm6so991096lbb.19
+        for <linux-btrfs@vger.kernel.org>; Thu, 07 Jun 2012 17:57:56 -0700 (PDT)
 MIME-Version: 1.0
-Content-Type: text/plain; charset=iso-8859-1
-In-Reply-To: <CADP2XCmhPX9HyLn6XWs4jgDHhHj8S1-G8PrZo50m4pRRXVft7A@mail.gmail.com>
+Date: Thu, 7 Jun 2012 20:57:55 -0400
+Message-ID: <CACfbfuUvZHCWiFuiZpBiw1G59W35gttSd9XV4tJhBSAn1_-p-w@mail.gmail.com>
+Subject: USB drives going away and causing problems for btrfs
+From: Marco Ceppi <ceppi.marco@gmail.com>
+To: linux-btrfs@vger.kernel.org
+Content-Type: text/plain; charset=ISO-8859-1
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Fri, Jun 01, 2012 at 11:53:18AM +0300, Randall Mason wrote:
-> sudo /sbin/btrfs scrub status .
-> > scrub status for 3a29a904-ad28-4e2a-8e80-df29d8d5fafc
-> >         scrub started at Thu May 31 10:15:39 2012 and finished after 27581 seconds
-> >         total bytes scrubbed: 1.00TB with 23929636 errors
-> >         error details: csum=23929636
-> >         corrected errors: 0, uncorrectable errors: 23929636, unverified errors: 0
-[...]
-> 
-> These are the most frequent lines in the kern.log:
-> >   1189 <datetime> <hostname> kernel: scrub_fixup: <number> callbacks suppressed
-> >   1442 <datetime> <hostname> kernel: btrfs_readpage_end_io_hook: <number> callbacks suppressed
-> >  11900 <datetime> <hostname> kernel: btrfs: unable to fixup at <number>
-> >  14538 <datetime> <hostname> kernel: btrfs csum failed ino <number> off <number> csum <number> private <number>
+I have three hard-drives attached to a media pc via USB (yes, this is
+far from idea and I'm procuring the hardware to resolve this). As USB
+seems to be crap in general (or something is not working) the drives
+get dropped from time to time. In past times this hasn't been an
+issue. I was able to force umount the stale mount point and re-mount
+with the new device names (/dev/sdb, /dev/sdc, /deb/sdd being
+re-written to /dev/sdd, sde, sdf). However, this evening when this
+happened the drives wouldn't come back up. After speaking with
+darkwing in the the #btrfs room it looks as though the metadata is
+corrupt. I've gathered all the logs I could of the incident and
+aftermath in hopes that it will help lead developers to better error
+handling when poor fools, such as myself, attach large drives via USB.
 
-> > 237549 <datetime> <hostname> kernel: bio too big device sdb1 (<number> > <number>)
+Kernel log of the dropping incident: http://paste.ubuntu.com/1029622/
+btrfsck: http://paste.ubuntu.com/1029589/
+btrfs-debug-tree after a reboot: http://paste.ubuntu.com/1029635/
+btrfs fi show: http://paste.ubuntu.com/1029638/
 
-As was reported via IRC in the past, this message could appear when a
-disk is connected via USB and makes a device group with other disks in
-the filesystem connected normally. The bio size is not same for the
-disks and the write requests may get dropped. This explains the high
-number of csum failures, and I'm afraid the data are lost.
+Linux media-pc 3.4.0-4-generic #9~precise1-Ubuntu SMP Tue Jun 5
+01:25:26 UTC 2012 x86_64 x86_64 x86_64 GNU/Linux
+btrfs-tools  0.19+20120421-0daily6~bzr457~precise1
 
-I think that the issue could be more general, once I put an old IDE
-disk with a new 4k sector 2TB disk into the same filesystem. I don't
-remember what happened next (power failure or forced reboot), but when I
-mounted the filesystem I was not able to remove the 2TB disk from the
-set and saw csum problems plus the 'bio too big' message. It was quite
-some time ago and I think it was a 3.1 based kernel with the known bug
-when flushing data to multiple devices. I wasn't able to reproduce the
-bug though.
+Running btrfsck with the --super options and --repair yielded the same
+results. If there are any additional logs I could provide or questions
+i could answer let me know.
 
-> So, the question:  What went wrong?  Is there any hope of getting my
-> Dad's data back?  How should I proceed from here?  Delete the volume
-> and start from scratch?  Is btrfs not compatible with the size of
-> disk/volume on this architecture?  Is the external disk broken?
-> Should I use a different filesystem?  Why were there no indications of
-> error when copying?  If worse comes to worse, how can I tell which
-> files are bad?  Can scrub go through and unlink the bad files?
-
-> > UUID=3a29a904-ad28-4e2a-8e80-df29d8d5fafc /var/lib/btrfs  btrfs   defaults                0 0
-> > UUID=3a29a904-ad28-4e2a-8e80-df29d8d5fafc /home           btrfs   defaults,subvol=current 0 0
-> 
-> sudo /sbin/btrfs filesystem show /dev/sdb1
-> > Label: none  uuid: 3a29a904-ad28-4e2a-8e80-df29d8d5fafc
-> >         Total devices 2 FS bytes used 1.04TB
-> >         devid    2 size 2.73TB used 185.50GB path /dev/sdb1
-> >         devid    1 size 922.19GB used 922.19GB path /dev/sda2
-
-so it's 3TB and 1TB disks, isn't there some issue with >2TB disks? I
-think this could be a bug, so either adapt to different disk
-characteristics of the disk or forbid to add the device.
-
-
-david
+Thanks,
+Marco Ceppi

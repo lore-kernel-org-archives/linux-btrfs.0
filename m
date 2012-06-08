@@ -1,59 +1,103 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx1.redhat.com ([209.132.183.28]:65049 "EHLO mx1.redhat.com"
+Received: from smtp207.alice.it ([82.57.200.103]:54556 "EHLO smtp207.alice.it"
 	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1759913Ab2FAN4A (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Fri, 1 Jun 2012 09:56:00 -0400
-Received: from int-mx11.intmail.prod.int.phx2.redhat.com (int-mx11.intmail.prod.int.phx2.redhat.com [10.5.11.24])
-	by mx1.redhat.com (8.14.4/8.14.4) with ESMTP id q51DtxTL032257
-	(version=TLSv1/SSLv3 cipher=DHE-RSA-AES256-SHA bits=256 verify=OK)
-	for <linux-btrfs@vger.kernel.org>; Fri, 1 Jun 2012 09:55:59 -0400
-Received: from localhost.localdomain.com (vpn-9-98.rdu.redhat.com [10.11.9.98])
-	by int-mx11.intmail.prod.int.phx2.redhat.com (8.14.4/8.14.4) with ESMTP id q51Dtwnh031587
-	for <linux-btrfs@vger.kernel.org>; Fri, 1 Jun 2012 09:55:59 -0400
-From: Josef Bacik <josef@redhat.com>
+	id S1755326Ab2FHTMw (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Fri, 8 Jun 2012 15:12:52 -0400
+From: Goffredo Baroncelli <kreijack@inwind.it>
 To: linux-btrfs@vger.kernel.org
-Subject: [PATCH 1/7] Btrfs: pass locked_page into extent_clear_unlock_delalloc if theres an error
-Date: Fri,  1 Jun 2012 09:55:49 -0400
-Message-Id: <1338558955-4944-2-git-send-email-josef@redhat.com>
-In-Reply-To: <1338558955-4944-1-git-send-email-josef@redhat.com>
-References: <1338558955-4944-1-git-send-email-josef@redhat.com>
+Cc: Stefan Behrens <sbehrens@giantdisaster.de>,
+        Goffredo Baroncelli <kreijack@inwind.it>
+Subject: [PATCH 2/3] Add btrfs filesystem info command.
+Date: Fri,  8 Jun 2012 21:12:45 +0200
+Message-Id: <1339182766-15292-3-git-send-email-kreijack@inwind.it>
+In-Reply-To: <1339182766-15292-1-git-send-email-kreijack@inwind.it>
+References: <1339182766-15292-1-git-send-email-kreijack@inwind.it>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-While doing my enospc work I got a transaction abortion that resulted in a
-panic when we tried to unlock_page() an already unlocked page.  This is
-because we aren't calling extent_clear_unlock_delalloc with the locked page
-so it was unlocking all the pages in the range.  This is wrong since
-__extent_writepage expects to have the page locked still unless we return
-*page_started as 1.  This should keep us from panicing.  Thanks,
-
-Signed-off-by: Josef Bacik <josef@redhat.com>
+Add btrfs filesystem info command, which is capable to show some
+btrfs filesystem information.
 ---
- fs/btrfs/inode.c |    4 ++--
- 1 files changed, 2 insertions(+), 2 deletions(-)
+ cmds-filesystem.c |   59 +++++++++++++++++++++++++++++++++++++++++++++++++++++
+ 1 file changed, 59 insertions(+)
 
-diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
-index 46d8732..e91f985 100644
---- a/fs/btrfs/inode.c
-+++ b/fs/btrfs/inode.c
-@@ -830,7 +830,7 @@ static noinline int cow_file_range(struct inode *inode,
- 	if (IS_ERR(trans)) {
- 		extent_clear_unlock_delalloc(inode,
- 			     &BTRFS_I(inode)->io_tree,
--			     start, end, NULL,
-+			     start, end, locked_page,
- 			     EXTENT_CLEAR_UNLOCK_PAGE |
- 			     EXTENT_CLEAR_UNLOCK |
- 			     EXTENT_CLEAR_DELALLOC |
-@@ -963,7 +963,7 @@ out:
- out_unlock:
- 	extent_clear_unlock_delalloc(inode,
- 		     &BTRFS_I(inode)->io_tree,
--		     start, end, NULL,
-+		     start, end, locked_page,
- 		     EXTENT_CLEAR_UNLOCK_PAGE |
- 		     EXTENT_CLEAR_UNLOCK |
- 		     EXTENT_CLEAR_DELALLOC |
+diff --git a/cmds-filesystem.c b/cmds-filesystem.c
+index 1f53d1c..9acc715 100644
+--- a/cmds-filesystem.c
++++ b/cmds-filesystem.c
+@@ -519,6 +519,64 @@ static int cmd_label(int argc, char **argv)
+ 		return get_label(argv[1]);
+ }
+ 
++static const char * const cmd_info_usage[] = {
++	"btrfs filesystem info <path>",
++	"Get filesystem information",
++	NULL
++};
++
++static int cmd_info(int argc, char **argv){
++
++	struct btrfs_ioctl_fs_info_args 	fi_args;
++	struct btrfs_ioctl_dev_info_args 	*di_ret=NULL;
++	int    					ret,i;
++	char					uuidbuf[37];
++	int					fd;
++
++	if( argc != 2){
++		fprintf(stderr, "ERROR: missing argument\n");
++		return 102;
++	}
++
++	fd = open_file_or_dir(argv[1]);
++	if( fd < 0 ){
++		fprintf(stderr, "ERROR: cannot open '%s'\n", argv[1]);
++		return 103;
++	}
++
++	ret = get_fs_info(fd, argv[1], &fi_args, &di_ret);
++	if( ret ){
++		int e = errno;
++		fprintf(stderr, "ERROR: cannot get information about '%s'\n",
++			argv[1]);
++		fprintf(stderr, "ERROR: errno=%d, error=%s\n",
++			e, strerror(e) );
++		close(fd);
++		if(di_ret != NULL )
++			free(di_ret);
++		return 104;
++	}
++
++	printf("Path: %s\n",argv[1]);
++	printf("Max ID: %llu\n", fi_args.max_id);
++	uuid_unparse(fi_args.fsid, uuidbuf);
++	printf("UUID: %s\n", uuidbuf);
++
++	printf("\nNum devices: %llu\n", fi_args.num_devices);
++	for( i = 0 ; i < fi_args.num_devices ; i++ ){
++		printf("  Dev ID: %llu\n", di_ret[i].devid);
++		uuid_unparse(di_ret[i].uuid, uuidbuf);
++		printf("  UUID: %s\n", uuidbuf);
++		printf("  Bytes used: %llu\n", di_ret[i].bytes_used );
++		printf("  Total bytes: %llu\n", di_ret[i].total_bytes );
++		printf("  Path: %s\n", di_ret[i].path);
++	}
++
++	close(fd);
++	free(di_ret);
++	return 0;
++}
++
+ const struct cmd_group filesystem_cmd_group = {
+ 	filesystem_cmd_group_usage, NULL, {
+ 		{ "df", cmd_df, cmd_df_usage, NULL, 0 },
+@@ -528,6 +586,7 @@ const struct cmd_group filesystem_cmd_group = {
+ 		{ "balance", cmd_balance, NULL, &balance_cmd_group, 1 },
+ 		{ "resize", cmd_resize, cmd_resize_usage, NULL, 0 },
+ 		{ "label", cmd_label, cmd_label_usage, NULL, 0 },
++		{ "info", cmd_info, cmd_info_usage, NULL, 0 },
+ 		{ 0, 0, 0, 0, 0 },
+ 	}
+ };
 -- 
-1.7.7.6
+1.7.10
 

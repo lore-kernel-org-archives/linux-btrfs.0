@@ -1,60 +1,70 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail.linuxfoundation.org ([140.211.169.12]:35630 "EHLO
-	mail.linuxfoundation.org" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S932112Ab2FIA16 (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Fri, 8 Jun 2012 20:27:58 -0400
-Date: Fri, 8 Jun 2012 17:28:42 -0700
-From: Andrew Morton <akpm@linux-foundation.org>
-To: Linus Torvalds <torvalds@linux-foundation.org>
-Cc: "Kirill A. Shutemov" <kirill.shutemov@linux.intel.com>,
-        Al Viro <viro@zeniv.linux.org.uk>, Boaz Harrosh <bharrosh@panasas.com>,
-        Tao Ma <boyu.mt@taobao.com>, Nick Piggin <npiggin@kernel.dk>,
-        "Dmitry V. Levin" <ldv@altlinux.org>,
-        v9fs-developer@lists.sourceforge.net, linux-kernel@vger.kernel.org,
-        linux-fsdevel@vger.kernel.org, linux-afs@lists.infradead.org,
-        linux-btrfs@vger.kernel.org, ceph-devel@vger.kernel.org,
-        linux-cifs@vger.kernel.org, samba-technical@lists.samba.org,
-        codalist@telemann.coda.cs.cmu.edu, ecryptfs@vger.kernel.org,
-        osd-dev@open-osd.org, linux-ext4@vger.kernel.org,
-        fuse-devel@lists.sourceforge.net, linux-mtd@lists.infradead.org,
-        jfs-discussion@lists.sourceforge.net, logfs@logfs.org,
-        linux-nfs@vger.kernel.org, linux-nilfs@vger.kernel.org,
-        linux-ntfs-dev@lists.sourceforge.net, ocfs2-devel@oss.oracle.com,
-        reiserfs-devel@vger.kernel.org
-Subject: Re: [RFC, PATCH, RESEND] fs: push rcu_barrier() from
- deactivate_locked_super() to filesystems
-Message-Id: <20120608172842.9826b5cd.akpm@linux-foundation.org>
-In-Reply-To: <CA+55aFw5k3daxeoZb9H1HGcOCWjPF+d7inSbf0QHmG-atp4reQ@mail.gmail.com>
-References: <1339191663-17693-1-git-send-email-kirill.shutemov@linux.intel.com>
-	<20120608150253.e42464a6.akpm@linux-foundation.org>
-	<20120608221446.GA18250@otc-wbsnb-06>
-	<20120608152550.258d6a30.akpm@linux-foundation.org>
-	<20120608222734.GT30000@ZenIV.linux.org.uk>
-	<20120608153120.b722d7c3.akpm@linux-foundation.org>
-	<20120608233127.GB18981@otc-wbsnb-06>
-	<20120608163751.7a8ec2bc.akpm@linux-foundation.org>
-	<CA+55aFw5k3daxeoZb9H1HGcOCWjPF+d7inSbf0QHmG-atp4reQ@mail.gmail.com>
-Mime-Version: 1.0
-Content-Type: text/plain; charset=US-ASCII
+Received: from smtp209.alice.it ([82.57.200.105]:42580 "EHLO smtp209.alice.it"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1750734Ab2FIFfk (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Sat, 9 Jun 2012 01:35:40 -0400
+Message-ID: <4FD2E0AA.5040900@libero.it>
+Date: Sat, 09 Jun 2012 07:35:38 +0200
+From: Goffredo Baroncelli <kreijack@libero.it>
+Reply-To: kreijack@inwind.it
+MIME-Version: 1.0
+To: Lennert Buytenhek <buytenh@wantstofly.org>
+CC: linux-btrfs@vger.kernel.org, Miao Xie <miaox@cn.fujitsu.com>,
+        Josef Bacik <josef@redhat.com>
+Subject: Re: problem re-adding original mount block device on multi-device
+ fs
+References: <20120608044210.GY725@wantstofly.org>
+In-Reply-To: <20120608044210.GY725@wantstofly.org>
+Content-Type: text/plain; charset=ISO-8859-1
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Fri, 8 Jun 2012 16:46:47 -0700 Linus Torvalds <torvalds@linux-foundation.org> wrote:
-
-> Of course, if you just mean having a VFS wrapper that does
+On 06/08/2012 06:42 AM, Lennert Buytenhek wrote:
+> (please CC on replies, I'm not subscribed to the list)
 > 
->     static void vfs_inode_kmem_cache_destroy(struct kmem_cache *cachep)
->     {
->         rcu_barrier();
->         kmem_cache_destroy(cachep);
->     }
+> Hi!
 > 
-> then we could do that. Not much better than what Kirill's patch did,
-> but at least we could have that comment in just one single place.
+> This fails:
+> 
+> 	# mkfs.btrfs /dev/sd[bcde]
+> 	# mount /dev/sdb /mnt/x
+> 	# btrfs device delete /dev/sdb /mnt/x
+> 	# btrfs device add /dev/sdb /mnt/x
+> 	/dev/sdb is mounted
+> 	#
+> 
+> It seems that I have to unmount and remount the fs using another
+> constituent block device before I can re-add the original block
+> device that the filesystem was mounted with:
+> 
+> 	# umount /mnt/x
+> 	# mount /dev/sdb /mnt/x
+> 	mount: wrong fs type, bad option, bad superblock on /dev/sdb,
+> 	       missing codepage or helper program, or other error
+> 	       In some cases useful info is found in syslog - try
+> 	       dmesg | tail or so
+> 	# mount /dev/sdc /mnt/x
+> 	# btrfs device add /dev/sdb /mnt/x
+> 	#
+> 
+> This is on up-to-date F17, kernel 3.4.0(-1.fc17) with btrfs-progs
+> 0.19(-18.fc17).
 
-That's conceptually what I meant.  But it has the problem that new and
-out-of-tree filesystems might forget to do it.  Which is why I suggest
-adding a kmem_cache* argument to unregister_filesystem() for this.
+Give a look to this patche:
 
-It's a bit awkward, and the fs can pass in NULL if it knows what it's
-doing.  But it's reliable.
+[PATCH 2/2] Btrfs: fix wrong the mount information in /proc
+
+This should address (even without solving) this kind of problem.
+
+
+> 
+> 
+> thanks,
+> Lennert
+> --
+> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
+> the body of a message to majordomo@vger.kernel.org
+> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+> .
+> 
+

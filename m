@@ -1,111 +1,140 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from acsinet15.oracle.com ([141.146.126.227]:50780 "EHLO
-	acsinet15.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1757942Ab2FZGJS (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 26 Jun 2012 02:09:18 -0400
-Received: from ucsinet21.oracle.com (ucsinet21.oracle.com [156.151.31.93])
-	by acsinet15.oracle.com (Sentrion-MTA-4.2.2/Sentrion-MTA-4.2.2) with ESMTP id q5Q69G61011215
-	(version=TLSv1/SSLv3 cipher=DHE-RSA-AES256-SHA bits=256 verify=OK)
-	for <linux-btrfs@vger.kernel.org>; Tue, 26 Jun 2012 06:09:16 GMT
-Received: from acsmt356.oracle.com (acsmt356.oracle.com [141.146.40.156])
-	by ucsinet21.oracle.com (8.14.4+Sun/8.14.4) with ESMTP id q5Q69FRu002039
-	(version=TLSv1/SSLv3 cipher=DHE-RSA-AES256-SHA bits=256 verify=NO)
-	for <linux-btrfs@vger.kernel.org>; Tue, 26 Jun 2012 06:09:15 GMT
-Received: from abhmt117.oracle.com (abhmt117.oracle.com [141.146.116.69])
-	by acsmt356.oracle.com (8.12.11.20060308/8.12.11) with ESMTP id q5Q69FOi029881
-	for <linux-btrfs@vger.kernel.org>; Tue, 26 Jun 2012 01:09:15 -0500
-Message-ID: <4FE95146.2030707@oracle.com>
-Date: Tue, 26 Jun 2012 14:05:58 +0800
-From: Anand Jain <Anand.Jain@oracle.com>
+Received: from mail-ob0-f174.google.com ([209.85.214.174]:63499 "EHLO
+	mail-ob0-f174.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1752482Ab2FIPpT convert rfc822-to-8bit (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Sat, 9 Jun 2012 11:45:19 -0400
+Received: by obbtb18 with SMTP id tb18so4041397obb.19
+        for <linux-btrfs@vger.kernel.org>; Sat, 09 Jun 2012 08:45:18 -0700 (PDT)
 MIME-Version: 1.0
-To: linux-btrfs <linux-btrfs@vger.kernel.org>
-Subject: [Report] corrupted root csum tree result in segfault.
-Content-Type: text/plain; charset=ISO-8859-1; format=flowed
+In-Reply-To: <cover.1338027552.git.list.btrfs@jan-o-sch.net>
+References: <cover.1338027552.git.list.btrfs@jan-o-sch.net>
+Date: Sat, 9 Jun 2012 18:45:18 +0300
+Message-ID: <CAHf9xvYKnBZ88TBNWV4JkoYbhft-HGeQAHv2vCXBrVM-bMabFg@mail.gmail.com>
+Subject: Re: [PATCH v2 00/15] Btrfs: tree modification log
+From: Alex Lyakas <alex.bolshoy.btrfs@gmail.com>
+To: Jan Schmidt <list.btrfs@jan-o-sch.net>
+Cc: linux-btrfs@vger.kernel.org
+Content-Type: text/plain; charset=ISO-8859-1
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
+Hi Jan,
+
+I have been reading through the code of this change. Since my
+understanding of the ctree mechanics is quite limited at this point, I
+was wondering whether you can give some overall perspective.
+
+I understand that you added hooks in the code that does raw tree
+changes, to record them in an in-memory structure, giving them a
+time_seq stamp.
+
+You say that using this mechanism, it is possible to get a consistent
+tree. Do you mean by this -  a tree like it was before the current
+transaction has begun? What is not consistent that callers of the
+regular btrfs_search_slot() can get back? When one should consider
+using btrfs_search_old_slot() vs regular btrfs_search_slot()? Also, is
+there any relation between the time_seq stamps and the transaction
+stamps? What example can I do, to actually see (and better understand)
+the effect of your code?
+
+Hope I am asking right questions.
+
+Thanks,
+Alex.
 
 
-
-# mkfs.btrfs /dev/sdd && btrfs-debug-tree -R /dev/sdd | egrep checksum
-
-::
-checksum tree key (CSUM_TREE ROOT_ITEM 0) 29376512 level 0
-
-# btrfs-corrupt-block -l 29376512 /dev/sdd
-mirror 1 logical 29376512 physical 37765120 device /dev/sdd
-corrupting 29376512 copy 1
-mirror 2 logical 29376512 physical 145113088 device /dev/sdd
-corrupting 29376512 copy 2
-# btrfsck /dev/sdd
-Check tree block failed, want=29376512, have=0
-Check tree block failed, want=29376512, have=0
-Check tree block failed, want=29376512, have=0
-Check tree block failed, want=29376512, have=0
-Check tree block failed, want=29376512, have=0
-read block failed check_tree_block
-Couldn't setup csum tree
-checking extents
-Check tree block failed, want=29376512, have=0
-Check tree block failed, want=29376512, have=0
-Check tree block failed, want=29376512, have=0
-Check tree block failed, want=29376512, have=0
-Check tree block failed, want=29376512, have=0
-read block failed check_tree_block  <---- !!
-Segmentation fault (core dumped)  <--- !!
-#
-----------------
-
-
-read_tree_block frees buf and returns NULL
-----------------
-struct extent_buffer *read_tree_block(struct btrfs_root *root, u64 bytenr,
-                                      u32 blocksize, u64 parent_transid)
-{
-::
-
-         while (1) {
-::
-                 if (ignore) {
-                         if (check_tree_block(root, eb))
-                                 printk("read block failed check_tree_block\n"); <----
-                         else
-                                 printk("Csum didn't match\n");
-                         break;
-                 }
-::
-         }
-         free_extent_buffer(eb);
-         return NULL;
-}
-----------------
-
-we don't check if the buf is NULL and fails with
-Segmentation faults in add_root_to_pending
----------------------
-static int check_extents(struct btrfs_trans_handle *trans,
-                          struct btrfs_root *root, int repair)
-{
-
-::
-                         buf = read_tree_block(root->fs_info->tree_root,
-                                               btrfs_root_bytenr(&ri),
-                                               btrfs_level_size(root,
-                                                btrfs_root_level(&ri)), 0);   <--- buf is NULL
-
-                         add_root_to_pending(buf, bits, bits_nr, &extent_cache,
-                                             &pending, &seen, &reada, &nodes,
-                                             &found_key);
-
-                         free_extent_buffer(buf);
-                 }
------------------------
-
-
-Seems like the simple fix is to redirect btrfsck user to use
---init-csum-tree when csum root is corrupted
-
-thanks
-Anand
-
+On Sat, May 26, 2012 at 1:59 PM, Jan Schmidt <list.btrfs@jan-o-sch.net> wrote:
+> Chris: Please pull
+>
+>        git://git.jan-o-sch.net/btrfs-unstable for-chris
+>
+> for 3.5, it's a major improvement for the backref resolver and a good
+> base to build qgroups and "btrfs send" onto. And, besides all other, its
+> implications on existing code outside backref.c are very small, mostly
+> added lines with no effect outside the backref resolver.
+>
+> This patch set is to provide reliable backref resolving on busy trees.
+> The previous attempts to block certain tree modifications while we're
+> resolving backrefs all ended up in (dead-) locking nightmares. What we
+> now do is we record all the changes we make to fs trees while backref
+> resolving is in progress into a tree modification log. During backref
+> resolving we then merge the current state of the tree with the recorded
+> modifications to get a consistent previous state of the tree.
+>
+> The first three commits are plain bug fixes, but the tree mod log
+> cannot function without them. So they're included in this patch set.
+> To only these three fixes, you can pull
+>
+>        git://git.jan-o-sch.net/btrfs-unstable 3.5-fixes
+>
+> For the whole tree modification log, pull
+>
+>        git://git.jan-o-sch.net/btrfs-unstable tree-mod-log-v2
+>
+> The tree-mod-log-v2 head is a stable alias for "for-chris".
+>
+> Both branches are based on the current for-linus branch from Chris'
+> repository. Checked with xfstests (fails 254 273 275, which i claim has
+> nothing to do with this patch set) and hammered on the filesystem with
+> fs_mark while resolving backrefs in a loop.
+>
+> I removed the qgroups patch series still contained in v1 because I
+> realized that the fs_mark tests I was doing weren't sufficient. When
+> testing qgroups with fsstress only for a few seconds, the accounting
+> breaks. Nothing really bad happens, but quota patches that don't get
+> quotas right are of litte use. A new qgroup patch set might come out
+> soon, but it won't make it into 3.5. There's a branch in my git repo
+> called tree-mod-log-quota-v1+fixes holding the current qgroup state.
+>
+> Test it, break it, report it :-)
+>
+> -Jan
+>
+> --
+> Changes v1->v2:
+> - qgroups patches removed
+> - ulist realloc bugfix added (reported by Alexander Block)
+> - btrfs_find_parent_nodes bugfix (reported by Alexander Block)
+> - various smaller bugs in the v1 patch set fixed (reported by Alexander
+>  Block, Tsutomu Itoh and myself)
+> --
+>
+> Jan Schmidt (15):
+>  Btrfs: ulist realloc bugfix
+>  Btrfs: bugfix in btrfs_find_parent_nodes
+>  Btrfs: bugfix: ignore the wrong key for indirect tree block backrefs
+>  Btrfs: look into the extent during find_all_leafs
+>  Btrfs: don't set for_cow parameter for tree block functions
+>  Btrfs: move struct seq_list to ctree.h
+>  Btrfs: dummy extent buffers for tree mod log
+>  Btrfs: add tree mod log to fs_info
+>  Btrfs: add tree modification log functions
+>  Btrfs: put all block modifications into the tree mod log
+>  Btrfs: add del_ptr and insert_ptr modifications to the tree mod log
+>  Btrfs: add btrfs_search_old_slot
+>  Btrfs: use the tree modification log for backref resolving
+>  Btrfs: fs_info variable for join_transaction
+>  Btrfs: tree mod log sanity checks in join_transaction
+>
+>  fs/btrfs/backref.c     |  465 +++++++++++++++++++---------
+>  fs/btrfs/backref.h     |    3 +-
+>  fs/btrfs/ctree.c       |  831 ++++++++++++++++++++++++++++++++++++++++++++++--
+>  fs/btrfs/ctree.h       |   27 ++-
+>  fs/btrfs/delayed-ref.h |    5 -
+>  fs/btrfs/disk-io.c     |    7 +-
+>  fs/btrfs/extent-tree.c |   10 +-
+>  fs/btrfs/extent_io.c   |   80 +++++-
+>  fs/btrfs/extent_io.h   |    3 +
+>  fs/btrfs/ioctl.c       |    2 +-
+>  fs/btrfs/transaction.c |   46 ++-
+>  fs/btrfs/ulist.c       |   23 +-
+>  fs/btrfs/ulist.h       |    9 +-
+>  13 files changed, 1286 insertions(+), 225 deletions(-)
+>
+> --
+> 1.7.3.4
+>
+> --
+> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
+> the body of a message to majordomo@vger.kernel.org
+> More majordomo info at  http://vger.kernel.org/majordomo-info.html

@@ -1,40 +1,31 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from xp-ob.rzone.de ([81.169.146.141]:60249 "EHLO xp-ob.rzone.de"
+Received: from smtp209.alice.it ([82.57.200.105]:58786 "EHLO smtp209.alice.it"
 	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1753003Ab2FHSae (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Fri, 8 Jun 2012 14:30:34 -0400
-Received: from pizpot.store ([192.168.43.236])
-	by jored.store (jored xp4) (RZmta 29.10 OK)
-	with ESMTP id 600d4eo589N255 for <linux-btrfs@vger.kernel.org>;
-	Fri, 8 Jun 2012 20:00:18 +0200 (CEST)
-From: Stefan Behrens <sbehrens@giantdisaster.de>
+	id S1751563Ab2FIGYe (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Sat, 9 Jun 2012 02:24:34 -0400
+From: Goffredo Baroncelli <kreijack@inwind.it>
 To: linux-btrfs@vger.kernel.org
-Subject: [PATCH] Btrfs-progs: remove btrfsctl, btrfs-show and btrfs-vol from default build
-Date: Fri,  8 Jun 2012 20:00:17 +0200
-Message-Id: <1339178417-26051-1-git-send-email-sbehrens@giantdisaster.de>
+Cc: Stefan Behrens <sbehrens@giantdisaster.de>
+Subject: [PATCH][btrfs-progs] Removing btrfsctl, btrfs-vol, btrfs-show
+Date: Sat,  9 Jun 2012 08:24:18 +0200
+Message-Id: <1339223060-6256-1-git-send-email-kreijack@inwind.it>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Remove btrfsctl, btrfs-show and btrfs-vol from "all" target of Makefile.
+With the commit 002d021c (committed October 2011)
+btrfsctl, btrfs-vol, btrfs-show were declared deprecated.
+The last patches related to these commands are dated December 2010.
 
-Signed-off-by: Stefan Behrens <sbehrens@giantdisaster.de>
----
- Makefile |    2 +-
- 1 file changed, 1 insertion(+), 1 deletion(-)
+These tools are replaced by the "btrfs" tool in all the
+functionality.
 
-diff --git a/Makefile b/Makefile
-index aaf1381..79e7a56 100644
---- a/Makefile
-+++ b/Makefile
-@@ -18,7 +18,7 @@ bindir = $(prefix)/bin
- LIBS=-luuid
- RESTORE_LIBS=-lz
- 
--progs = btrfsctl mkfs.btrfs btrfs-debug-tree btrfs-show btrfs-vol btrfsck \
-+progs = mkfs.btrfs btrfs-debug-tree btrfsck \
- 	btrfs btrfs-map-logical btrfs-image btrfs-zero-log btrfs-convert \
- 	btrfs-find-root btrfs-restore btrfstune
- 
--- 
-1.7.10.4
+Stefan Behrens yesterday issued a patch which removes these programs
+from Makefile. I think that it is a time to remove these program at all.
 
+You can pull this patch also from 
+	http://cassiopea.homelinux.net/git/btrfs-progs-unstable.git
+branch
+	remove-old
+
+BR
+G.Baroncelli

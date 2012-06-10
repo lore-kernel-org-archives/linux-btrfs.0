@@ -1,285 +1,96 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mo-p00-ob.rzone.de ([81.169.146.160]:17544 "EHLO
-	mo-p00-ob.rzone.de" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1756810Ab2FHHaA (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Fri, 8 Jun 2012 03:30:00 -0400
-Message-ID: <4FD1A9FA.9060509@giantdisaster.de>
-Date: Fri, 08 Jun 2012 09:30:02 +0200
-From: Stefan Behrens <sbehrens@giantdisaster.de>
+Received: from csamuel.org ([74.50.50.137]:48187 "EHLO csamuel.org"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1752235Ab2FJIqp (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Sun, 10 Jun 2012 04:46:45 -0400
+Received: from localhost (localhost [127.0.0.1])
+	by csamuel.org (Postfix) with ESMTP id EE73840857
+	for <linux-btrfs@vger.kernel.org>; Sun, 10 Jun 2012 18:46:44 +1000 (EST)
+Received: from csamuel.org ([127.0.0.1])
+ by localhost (csamuel.org [127.0.0.1]) (amavisd-maia, port 10024) with LMTP
+ id 29381-01 for <linux-btrfs@vger.kernel.org>;
+ Sun, 10 Jun 2012 18:46:44 +1000 (EST)
+Received: from quad.localnet (ppp59-167-127-196.static.internode.on.net [59.167.127.196])
+	by csamuel.org (Postfix) with ESMTPS id 8A52340856
+	for <linux-btrfs@vger.kernel.org>; Sun, 10 Jun 2012 18:46:44 +1000 (EST)
+From: Chris Samuel <chris@csamuel.org>
+To: linux-btrfs@vger.kernel.org
+Subject: Re: [PATCH] Removing btrfsctl, btrfs-vol, btrfs-show
+Date: Sun, 10 Jun 2012 18:46:38 +1000
+References: <1339223060-6256-1-git-send-email-kreijack@inwind.it> <1339223060-6256-2-git-send-email-kreijack@inwind.it>
+In-Reply-To: <1339223060-6256-2-git-send-email-kreijack@inwind.it>
 MIME-Version: 1.0
-To: kreijack@inwind.it
-CC: Goffredo Baroncelli <kreijack@libero.it>, linux-btrfs@vger.kernel.org
-Subject: Re: [PATCH v5 1/3] Btrfs-progs: move open_file_or_dir() to utils.c
-References: <1337954838-10140-1-git-send-email-sbehrens@giantdisaster.de> <1337954838-10140-2-git-send-email-sbehrens@giantdisaster.de> <4FD10331.3010606@libero.it>
-In-Reply-To: <4FD10331.3010606@libero.it>
-Content-Type: text/plain; charset=ISO-8859-1
+Content-Type: multipart/signed;
+  boundary="nextPart1413009.Om2tHbuGP9";
+  protocol="application/pgp-signature";
+  micalg=pgp-sha1
+Message-Id: <201206101846.41496.chris@csamuel.org>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Thu, 07 Jun 2012 21:38:25 +0200, Goffredo Baroncelli wrote:
-> Hi Stefan,
-> 
-> On 05/25/2012 04:07 PM, Stefan Behrens wrote:
->> This is a preparation step to add support for device stats. The definition
->> of the function open_file_or_dir() is moved from common.c to utils.c in
->> order to be able to share some common code between scrub and the device
->> stats in the following step. That common code uses open_file_or_dir().
->> Since open_file_or_dir() makes use of the function dirfd(3), the required
->> XOPEN version was raised from 6 to 7.
->>
->> Signed-off-by: Stefan Behrens <sbehrens@giantdisaster.de>
->> ---
->>  Makefile         |    4 ++--
->>  btrfsctl.c       |   28 ----------------------------
->>  cmds-balance.c   |    1 +
->>  cmds-inspect.c   |    1 +
->>  cmds-subvolume.c |    1 +
->>  commands.h       |    3 ---
->>  common.c         |   46 ----------------------------------------------
->>  utils.c          |   31 +++++++++++++++++++++++++++++--
->>  utils.h          |    3 +++
->>  9 files changed, 37 insertions(+), 81 deletions(-)
->>
->> diff --git a/Makefile b/Makefile
->> index 79818e6..fe2b432 100644
->> --- a/Makefile
->> +++ b/Makefile
->> @@ -39,8 +39,8 @@ all: version $(progs) manpages
->>  version:
->>  	bash version.sh
->>  
->> -btrfs: $(objects) btrfs.o help.o common.o $(cmds_objects)
->> -	$(CC) $(CFLAGS) -o btrfs btrfs.o help.o common.o $(cmds_objects) \
->> +btrfs: $(objects) btrfs.o help.o $(cmds_objects)
->> +	$(CC) $(CFLAGS) -o btrfs btrfs.o help.o $(cmds_objects) \
->>  		$(objects) $(LDFLAGS) $(LIBS) -lpthread
->>  
->>  calc-size: $(objects) calc-size.o
->> diff --git a/btrfsctl.c b/btrfsctl.c
->> index d45e2a7..f0584f3 100644
->> --- a/btrfsctl.c
->> +++ b/btrfsctl.c
->> @@ -63,34 +63,6 @@ static void print_usage(void)
->>  	exit(1);
->>  }
->>  
->> -static int open_file_or_dir(const char *fname)
->> -{
->> -	int ret;
->> -	struct stat st;
->> -	DIR *dirstream;
->> -	int fd;
->> -
->> -	ret = stat(fname, &st);
->> -	if (ret < 0) {
->> -		perror("stat:");
->> -		exit(1);
->> -	}
->> -	if (S_ISDIR(st.st_mode)) {
->> -		dirstream = opendir(fname);
->> -		if (!dirstream) {
->> -			perror("opendir");
->> -			exit(1);
->> -		}
->> -		fd = dirfd(dirstream);
->> -	} else {
->> -		fd = open(fname, O_RDWR);
->> -	}
->> -	if (fd < 0) {
->> -		perror("open");
->> -		exit(1);
->> -	}
->> -	return fd;
->> -}
-> 
-> I suppose that you want to remove open_file_or_dir() from btrfsctl.c and
-> use the one provided by utils.c (or common.c). However I have to point
-> out that these two function are a bit different: the first one does
-> exit() in case of error; the second one returns an error.
-> 
-> In any case I think that it is time to deprecate and remove btrfsctl.
-> 
-> BR
-> Goffredo
+--nextPart1413009.Om2tHbuGP9
+Content-Type: Text/Plain;
+  charset="iso-8859-15"
+Content-Transfer-Encoding: quoted-printable
 
-Hi Goffredo,
+On Saturday 09 June 2012 16:24:19 Goffredo Baroncelli wrote:
 
-Yes, I was aware of this difference but did not want to spend _any_
-additional effort in the deprecated btrfsctl tool. Maybe it would have
-been better to just disable its default build in the Makefile.
+> This commit removes all the related code.
 
-Does anybody have any objections against removing the btrfsctl,
-btrfs-show and btrfs-vol tools from the "all" target of Makefile?
+This doesn't seem to apply cleanly with patch (though git am
+seems to apply it OK) to the git repo master from:
+
+git://git.kernel.org/pub/scm/linux/kernel/git/mason/btrfs-progs.git
+
+=46YI patch complains thus:
+
+patching file INSTALL
+patching file Makefile
+patching file btrfs-show.c
+patching file btrfs-vol.c
+patching file btrfsctl.c
+patching file Makefile
+Hunk #1 FAILED at 6.
+Hunk #2 FAILED at 17.
+2 out of 2 hunks FAILED -- saving rejects to file Makefile.rej
+patching file btrfs-image.8.in
+Hunk #1 FAILED at 31.
+1 out of 1 hunk FAILED -- saving rejects to file btrfs-image.8.in.rej
+The next patch would delete the file btrfs-show.8.in,
+which does not exist!  Assume -R? [n]=20
+Apply anyway? [n]=20
+Skipping patch.
+1 out of 1 hunk ignored
+patching file btrfsck.8.in
+Hunk #1 FAILED at 14.
+1 out of 1 hunk FAILED -- saving rejects to file btrfsck.8.in.rej
+The next patch would delete the file btrfsctl.8.in,
+which does not exist!  Assume -R? [n]=20
+Apply anyway? [n]=20
+Skipping patch.
+1 out of 1 hunk ignored
 
 
->>  int main(int ac, char **av)
->>  {
->>  	char *fname = NULL;
->> diff --git a/cmds-balance.c b/cmds-balance.c
->> index 38a7426..5793b5c 100644
->> --- a/cmds-balance.c
->> +++ b/cmds-balance.c
->> @@ -26,6 +26,7 @@
->>  #include "ctree.h"
->>  #include "ioctl.h"
->>  #include "volumes.h"
->> +#include "utils.h"
->>  
->>  #include "commands.h"
->>  
->> diff --git a/cmds-inspect.c b/cmds-inspect.c
->> index 2f0228f..7a8785b 100644
->> --- a/cmds-inspect.c
->> +++ b/cmds-inspect.c
->> @@ -22,6 +22,7 @@
->>  
->>  #include "kerncompat.h"
->>  #include "ioctl.h"
->> +#include "utils.h"
->>  
->>  #include "commands.h"
->>  
->> diff --git a/cmds-subvolume.c b/cmds-subvolume.c
->> index 950fa8f..8ecd3f4 100644
->> --- a/cmds-subvolume.c
->> +++ b/cmds-subvolume.c
->> @@ -26,6 +26,7 @@
->>  
->>  #include "kerncompat.h"
->>  #include "ioctl.h"
->> +#include "utils.h"
->>  
->>  #include "commands.h"
->>  
->> diff --git a/commands.h b/commands.h
->> index a303a50..aea4cb1 100644
->> --- a/commands.h
->> +++ b/commands.h
->> @@ -79,9 +79,6 @@ void help_ambiguous_token(const char *arg, const struct cmd_group *grp);
->>  
->>  void help_command_group(const struct cmd_group *grp, int argc, char **argv);
->>  
->> -/* common.c */
->> -int open_file_or_dir(const char *fname);
->> -
->>  extern const struct cmd_group subvolume_cmd_group;
->>  extern const struct cmd_group filesystem_cmd_group;
->>  extern const struct cmd_group balance_cmd_group;
->> diff --git a/common.c b/common.c
->> deleted file mode 100644
->> index 03f6570..0000000
->> --- a/common.c
->> +++ /dev/null
->> @@ -1,46 +0,0 @@
->> -/*
->> - * This program is free software; you can redistribute it and/or
->> - * modify it under the terms of the GNU General Public
->> - * License v2 as published by the Free Software Foundation.
->> - *
->> - * This program is distributed in the hope that it will be useful,
->> - * but WITHOUT ANY WARRANTY; without even the implied warranty of
->> - * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
->> - * General Public License for more details.
->> - *
->> - * You should have received a copy of the GNU General Public
->> - * License along with this program; if not, write to the
->> - * Free Software Foundation, Inc., 59 Temple Place - Suite 330,
->> - * Boston, MA 021110-1307, USA.
->> - */
->> -
->> -#include <sys/types.h>
->> -#include <sys/stat.h>
->> -#include <dirent.h>
->> -#include <fcntl.h>
->> -
->> -int open_file_or_dir(const char *fname)
->> -{
->> -	int ret;
->> -	struct stat st;
->> -	DIR *dirstream;
->> -	int fd;
->> -
->> -	ret = stat(fname, &st);
->> -	if (ret < 0) {
->> -		return -1;
->> -	}
->> -	if (S_ISDIR(st.st_mode)) {
->> -		dirstream = opendir(fname);
->> -		if (!dirstream) {
->> -			return -2;
->> -		}
->> -		fd = dirfd(dirstream);
->> -	} else {
->> -		fd = open(fname, O_RDWR);
->> -	}
->> -	if (fd < 0) {
->> -		return -3;
->> -	}
->> -	return fd;
->> -}
->> diff --git a/utils.c b/utils.c
->> index ee7fa1b..6157115 100644
->> --- a/utils.c
->> +++ b/utils.c
->> @@ -16,8 +16,9 @@
->>   * Boston, MA 021110-1307, USA.
->>   */
->>  
->> -#define _XOPEN_SOURCE 600
->> -#define __USE_XOPEN2K
->> +#define _XOPEN_SOURCE 700
->> +#define __USE_XOPEN2K8
->> +#define __XOPEN2K8 /* due to an error in dirent.h, to get dirfd() */
->>  #include <stdio.h>
->>  #include <stdlib.h>
->>  #ifndef __CHECKER__
->> @@ -1206,3 +1207,29 @@ scan_again:
->>  	return 0;
->>  }
->>  
->> +int open_file_or_dir(const char *fname)
->> +{
->> +	int ret;
->> +	struct stat st;
->> +	DIR *dirstream;
->> +	int fd;
->> +
->> +	ret = stat(fname, &st);
->> +	if (ret < 0) {
->> +		return -1;
->> +	}
->> +	if (S_ISDIR(st.st_mode)) {
->> +		dirstream = opendir(fname);
->> +		if (!dirstream) {
->> +			return -2;
->> +		}
->> +		fd = dirfd(dirstream);
->> +	} else {
->> +		fd = open(fname, O_RDWR);
->> +	}
->> +	if (fd < 0) {
->> +		return -3;
->> +	}
->> +	return fd;
->> +}
->> +
->> diff --git a/utils.h b/utils.h
->> index c5f55e1..e281002 100644
->> --- a/utils.h
->> +++ b/utils.h
->> @@ -19,6 +19,8 @@
->>  #ifndef __UTILS__
->>  #define __UTILS__
->>  
->> +#include "ctree.h"
->> +
->>  #define BTRFS_MKFS_SYSTEM_GROUP_SIZE (4 * 1024 * 1024)
->>  
->>  int make_btrfs(int fd, const char *device, const char *label,
->> @@ -46,4 +48,5 @@ int check_label(char *input);
->>  int get_mountpt(char *dev, char *mntpt, size_t size);
->>  
->>  int btrfs_scan_block_devices(int run_ioctl);
->> +int open_file_or_dir(const char *fname);
->>  #endif
-> 
+=2D-=20
+ Chris Samuel  :  http://www.csamuel.org/  :  Melbourne, VIC
+
+This email may come with a PGP signature as a file. Do not panic.
+=46or more info see: http://en.wikipedia.org/wiki/OpenPGP
+
+--nextPart1413009.Om2tHbuGP9
+Content-Type: application/pgp-signature; name=signature.asc 
+Content-Description: This is a digitally signed message part.
+
+-----BEGIN PGP SIGNATURE-----
+Version: GnuPG v1.4.11 (GNU/Linux)
+
+iQEVAwUAT9Re741yjaOTJg85AQIp1QgAoNdeMoAfHV4e792bqbEbvNhIsHuu6aFs
+zX/UKqALV+KRya28EN/rB3gpeUBzN5hVYxzeq9iXZFcN8LuUKGDpJHqNzFPyQWD8
++h8aB16UuV1UmY3Nr2wDquJ656PIV5YhxLaNgzjikg4FyUAnKtUJHr2DwTFUa2Tq
+uEdW22MQ75PCpPdn52LnVNe92jXZYLcjO9zeTmHUv65FhqtsWxG/CsBdOkgODX7i
+PaKp4buYO1wxuHfchKN3ryYEyoP46pLAogXitCeVq5I4/P5aE3R2Hi0fYjEQDJbb
+iLt0Vsifrmoe2nhd+jUYW6hbXD4za81d0HJ6/GCRbeqVblwlgqLa5g==
+=qBEh
+-----END PGP SIGNATURE-----
+
+--nextPart1413009.Om2tHbuGP9--

@@ -1,82 +1,185 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx1.redhat.com ([209.132.183.28]:50743 "EHLO mx1.redhat.com"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1756834Ab2FHT07 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Fri, 8 Jun 2012 15:26:59 -0400
-Received: from int-mx11.intmail.prod.int.phx2.redhat.com (int-mx11.intmail.prod.int.phx2.redhat.com [10.5.11.24])
-	by mx1.redhat.com (8.14.4/8.14.4) with ESMTP id q58JQxAP008310
-	(version=TLSv1/SSLv3 cipher=DHE-RSA-AES256-SHA bits=256 verify=OK)
-	for <linux-btrfs@vger.kernel.org>; Fri, 8 Jun 2012 15:26:59 -0400
-Received: from localhost.localdomain.com (vpn-8-48.rdu.redhat.com [10.11.8.48])
-	by int-mx11.intmail.prod.int.phx2.redhat.com (8.14.4/8.14.4) with ESMTP id q58JQwjY030608
-	for <linux-btrfs@vger.kernel.org>; Fri, 8 Jun 2012 15:26:58 -0400
-From: Josef Bacik <josef@redhat.com>
-To: linux-btrfs@vger.kernel.org
-Subject: [PATCH] Btrfs: call filemap_fdatawrite twice for compression
-Date: Fri,  8 Jun 2012 15:26:58 -0400
-Message-Id: <1339183618-14136-1-git-send-email-josef@redhat.com>
+Received: from szxga01-in.huawei.com ([119.145.14.64]:46991 "EHLO
+	szxga01-in.huawei.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1750825Ab2FKIKS (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>);
+	Mon, 11 Jun 2012 04:10:18 -0400
+Message-ID: <4FD5A657.5060504@huawei.com>
+Date: Mon, 11 Jun 2012 16:03:35 +0800
+From: Li Zefan <lizefan@huawei.com>
+MIME-Version: 1.0
+To: "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
+CC: LKML <linux-kernel@vger.kernel.org>
+Subject: [PATCH] Btrfs: fix defrag regression
+Content-Type: text/plain; charset="GB2312"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-I removed this in an earlier commit and I was wrong.  Because compression
-can return from filemap_fdatawrite() without having actually set any of it's
-pages as writeback() it can make filemap_fdatawait() do essentially nothing,
-and then we won't find any ordered extents because they may not have been
-created yet.  So not only does this make fsync() completely useless, but it
-will also screw up if you truncate on a non-page aligned offset since we
-zero out the end and then wait on ordered extents and then call drop caches.
-We can drop the cache before the io completes and then we try to unpin the
-extent we just wrote we won't find it and everything goes sideways.  So fix
-this by putting it back and put a giant comment there to keep me from trying
-to remove it in the future.  Thanks,
+If a file has 3 small extents:
 
-Signed-off-by: Josef Bacik <josef@redhat.com>
+| ext1 | ext2 | ext3 |
+
+Running "btrfs fi defrag" will only defrag the last two extents, if those
+extent mappings hasn't been read into memory from disk.
+
+This bug was introduced by commit 17ce6ef8d731af5edac8c39e806db4c7e1f6956f
+("Btrfs: add a check to decide if we should defrag the range")
+
+The cause is, that commit looked into previous and next extents using
+lookup_extent_mapping() only.
+
+While at it, remove the code that checks the previous extent, since
+it's sufficient to check the next extent.
+
+Signed-off-by: Li Zefan <lizefan@huawei.com>
 ---
- fs/btrfs/ordered-data.c |   24 +++++++++++++++++++++++-
- 1 files changed, 23 insertions(+), 1 deletions(-)
+ fs/btrfs/ioctl.c |   97 +++++++++++++++++++++++++++---------------------------
+ 1 file changed, 49 insertions(+), 48 deletions(-)
 
-diff --git a/fs/btrfs/ordered-data.c b/fs/btrfs/ordered-data.c
-index 9e138cd..49cacdb 100644
---- a/fs/btrfs/ordered-data.c
-+++ b/fs/btrfs/ordered-data.c
-@@ -611,6 +611,7 @@ void btrfs_start_ordered_extent(struct inode *inode,
-  */
- void btrfs_wait_ordered_range(struct inode *inode, u64 start, u64 len)
- {
-+	struct btrfs_root *root = BTRFS_I(inode)->root;
- 	u64 end;
- 	u64 orig_end;
- 	struct btrfs_ordered_extent *ordered;
-@@ -627,7 +628,28 @@ void btrfs_wait_ordered_range(struct inode *inode, u64 start, u64 len)
- 	/* start IO across the range first to instantiate any delalloc
- 	 * extents
- 	 */
--	filemap_write_and_wait_range(inode->i_mapping, start, orig_end);
-+	filemap_fdatawrite_range(inode->i_mapping, start, orig_end);
-+
-+	/*
-+	 * So with compression we will find and lock a dirty page and clear the
-+	 * first one as dirty, setup an async extent, and immediately return
-+	 * with the entire range locked but with nobody actually marked with
-+	 * writeback.  So we can't just filemap_write_and_wait_range() and
-+	 * expect it to work since it will just kick off a thread to do the
-+	 * actual work.  So we need to call filemap_fdatawrite_range _again_
-+	 * since it will wait on the page lock, which won't be unlocked until
-+	 * after the pages have been marked as writeback and so we're good to go
-+	 * from there.  We have to do this otherwise we'll miss the ordered
-+	 * extents and that results in badness.  Please Josef, do not think you
-+	 * know better and pull this out at some point in the future, it is
-+	 * right and you are wrong.
-+	 */
-+	if (btrfs_test_opt(root, COMPRESS) ||
-+	    (BTRFS_I(inode)->force_compress) ||
-+	    (BTRFS_I(inode)->flags & BTRFS_INODE_COMPRESS))
-+		filemap_fdatawrite_range(inode->i_mapping, start, orig_end);
-+
-+	filemap_fdatawait_range(inode->i_mapping, start, orig_end);
+diff --git a/fs/btrfs/ioctl.c b/fs/btrfs/ioctl.c
+index 24b776c..ac910f2 100644
+--- a/fs/btrfs/ioctl.c
++++ b/fs/btrfs/ioctl.c
+@@ -785,39 +785,57 @@ none:
+ 	return -ENOENT;
+ }
  
- 	end = orig_end;
- 	found = 0;
+-/*
+- * Validaty check of prev em and next em:
+- * 1) no prev/next em
+- * 2) prev/next em is an hole/inline extent
+- */
+-static int check_adjacent_extents(struct inode *inode, struct extent_map *em)
++static struct extent_map *defrag_lookup_extent(struct inode *inode, u64 start)
+ {
+ 	struct extent_map_tree *em_tree = &BTRFS_I(inode)->extent_tree;
+-	struct extent_map *prev = NULL, *next = NULL;
+-	int ret = 0;
++	struct extent_io_tree *io_tree = &BTRFS_I(inode)->io_tree;
++	struct extent_map *em;
++	u64 len = PAGE_CACHE_SIZE;
+ 
++	/*
++	 * hopefully we have this extent in the tree already, try without
++	 * the full extent lock
++	 */
+ 	read_lock(&em_tree->lock);
+-	prev = lookup_extent_mapping(em_tree, em->start - 1, (u64)-1);
+-	next = lookup_extent_mapping(em_tree, em->start + em->len, (u64)-1);
++	em = lookup_extent_mapping(em_tree, start, len);
+ 	read_unlock(&em_tree->lock);
+ 
+-	if ((!prev || prev->block_start >= EXTENT_MAP_LAST_BYTE) &&
+-	    (!next || next->block_start >= EXTENT_MAP_LAST_BYTE))
+-		ret = 1;
+-	free_extent_map(prev);
+-	free_extent_map(next);
++	if (!em) {
++		/* get the big lock and read metadata off disk */
++		lock_extent(io_tree, start, start + len - 1);
++		em = btrfs_get_extent(inode, NULL, 0, start, len, 0);
++		unlock_extent(io_tree, start, start + len - 1);
+ 
++		if (IS_ERR(em))
++			return NULL;
++	}
++
++	return em;
++}
++
++static bool defrag_check_next_extent(struct inode *inode, struct extent_map *em)
++{
++	struct extent_map *next;
++	bool ret = true;
++
++	/* this is the last extent */
++	if (em->start + em->len >= i_size_read(inode))
++		return false;
++
++	next = defrag_lookup_extent(inode, em->start + em->len);
++	if (!next || next->block_start >= EXTENT_MAP_LAST_BYTE)
++		ret = false;
++
++	free_extent_map(next);
+ 	return ret;
+ }
+ 
+-static int should_defrag_range(struct inode *inode, u64 start, u64 len,
+-			       int thresh, u64 *last_len, u64 *skip,
+-			       u64 *defrag_end)
++static int should_defrag_range(struct inode *inode, u64 start, int thresh,
++			       u64 *last_len, u64 *skip, u64 *defrag_end)
+ {
+-	struct extent_io_tree *io_tree = &BTRFS_I(inode)->io_tree;
+-	struct extent_map *em = NULL;
+-	struct extent_map_tree *em_tree = &BTRFS_I(inode)->extent_tree;
++	struct extent_map *em;
+ 	int ret = 1;
++	bool next_mergeable = true;
+ 
+ 	/*
+ 	 * make sure that once we start defragging an extent, we keep on
+@@ -828,23 +846,9 @@ static int should_defrag_range(struct inode *inode, u64 start, u64 len,
+ 
+ 	*skip = 0;
+ 
+-	/*
+-	 * hopefully we have this extent in the tree already, try without
+-	 * the full extent lock
+-	 */
+-	read_lock(&em_tree->lock);
+-	em = lookup_extent_mapping(em_tree, start, len);
+-	read_unlock(&em_tree->lock);
+-
+-	if (!em) {
+-		/* get the big lock and read metadata off disk */
+-		lock_extent(io_tree, start, start + len - 1);
+-		em = btrfs_get_extent(inode, NULL, 0, start, len, 0);
+-		unlock_extent(io_tree, start, start + len - 1);
+-
+-		if (IS_ERR(em))
+-			return 0;
+-	}
++	em = defrag_lookup_extent(inode, start);
++	if (!em)
++		return 0;
+ 
+ 	/* this will cover holes, and inline extents */
+ 	if (em->block_start >= EXTENT_MAP_LAST_BYTE) {
+@@ -852,18 +856,15 @@ static int should_defrag_range(struct inode *inode, u64 start, u64 len,
+ 		goto out;
+ 	}
+ 
+-	/* If we have nothing to merge with us, just skip. */
+-	if (check_adjacent_extents(inode, em)) {
+-		ret = 0;
+-		goto out;
+-	}
++	next_mergeable = defrag_check_next_extent(inode, em);
+ 
+ 	/*
+-	 * we hit a real extent, if it is big don't bother defragging it again
++	 * we hit a real extent, if it is big or the next extent is not a
++	 * real extent, don't bother defragging it
+ 	 */
+-	if ((*last_len == 0 || *last_len >= thresh) && em->len >= thresh)
++	if ((*last_len == 0 || *last_len >= thresh) &&
++	    (em->len >= thresh || !next_mergeable))
+ 		ret = 0;
+-
+ out:
+ 	/*
+ 	 * last_len ends up being a counter of how many bytes we've defragged.
+@@ -1142,8 +1143,8 @@ int btrfs_defrag_file(struct inode *inode, struct file *file,
+ 			break;
+ 
+ 		if (!should_defrag_range(inode, (u64)i << PAGE_CACHE_SHIFT,
+-					 PAGE_CACHE_SIZE, extent_thresh,
+-					 &last_len, &skip, &defrag_end)) {
++					 extent_thresh, &last_len, &skip,
++					 &defrag_end)) {
+ 			unsigned long next;
+ 			/*
+ 			 * the should_defrag function tells us how much to skip
 -- 
-1.7.7.6
-
+1.7.9.7

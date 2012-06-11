@@ -1,215 +1,125 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([222.73.24.84]:50312 "EHLO song.cn.fujitsu.com"
-	rhost-flags-OK-FAIL-OK-OK) by vger.kernel.org with ESMTP
-	id S1755537Ab2FOBnH (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 14 Jun 2012 21:43:07 -0400
-Message-ID: <4FDA94EF.9030601@cn.fujitsu.com>
-Date: Fri, 15 Jun 2012 09:50:39 +0800
-From: Liu Bo <liubo2009@cn.fujitsu.com>
-MIME-Version: 1.0
-To: David Sterba <dave@jikos.cz>
-CC: linux-btrfs@vger.kernel.org
-Subject: Re: [PATCH 3/4] Btrfs: use large extent range for read and its endio
-References: <1339582751-32029-1-git-send-email-liubo2009@cn.fujitsu.com> <1339582751-32029-4-git-send-email-liubo2009@cn.fujitsu.com> <20120614161239.GU32402@twin.jikos.cz>
-In-Reply-To: <20120614161239.GU32402@twin.jikos.cz>
-Content-Type: text/plain; charset=ISO-8859-1
+Received: from mx1.redhat.com ([209.132.183.28]:45607 "EHLO mx1.redhat.com"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1754926Ab2FKOQs (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Mon, 11 Jun 2012 10:16:48 -0400
+Received: from int-mx10.intmail.prod.int.phx2.redhat.com (int-mx10.intmail.prod.int.phx2.redhat.com [10.5.11.23])
+	by mx1.redhat.com (8.14.4/8.14.4) with ESMTP id q5BEGmjl030484
+	(version=TLSv1/SSLv3 cipher=DHE-RSA-AES256-SHA bits=256 verify=OK)
+	for <linux-btrfs@vger.kernel.org>; Mon, 11 Jun 2012 10:16:48 -0400
+Received: from localhost.localdomain.com (vpn-8-163.rdu.redhat.com [10.11.8.163])
+	by int-mx10.intmail.prod.int.phx2.redhat.com (8.14.4/8.14.4) with ESMTP id q5BEGlkg017576
+	for <linux-btrfs@vger.kernel.org>; Mon, 11 Jun 2012 10:16:47 -0400
+From: Josef Bacik <josef@redhat.com>
+To: linux-btrfs@vger.kernel.org
+Subject: [PATCH] Btrfs: call filemap_fdatawrite twice for compression V2
+Date: Mon, 11 Jun 2012 10:16:47 -0400
+Message-Id: <1339424207-6224-1-git-send-email-josef@redhat.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 06/15/2012 12:12 AM, David Sterba wrote:
+I removed this in an earlier commit and I was wrong.  Because compression
+can return from filemap_fdatawrite() without having actually set any of it's
+pages as writeback() it can make filemap_fdatawait() do essentially nothing,
+and then we won't find any ordered extents because they may not have been
+created yet.  So not only does this make fsync() completely useless, but it
+will also screw up if you truncate on a non-page aligned offset since we
+zero out the end and then wait on ordered extents and then call drop caches.
+We can drop the cache before the io completes and then we try to unpin the
+extent we just wrote we won't find it and everything goes sideways.  So fix
+this by putting it back and put a giant comment there to keep me from trying
+to remove it in the future.  Thanks,
 
-> On Wed, Jun 13, 2012 at 06:19:10PM +0800, Liu Bo wrote:
->> we use larger extent state range for both readpages and read endio, so that
->> we can lock or unlock less and avoid most of split ops, then we'll reduce write
->> locks taken at endio time.
->>
->> Signed-off-by: Liu Bo <liubo2009@cn.fujitsu.com>
->> ---
->>  fs/btrfs/extent_io.c |  201 +++++++++++++++++++++++++++++++++++++++++++++-----
->>  1 files changed, 182 insertions(+), 19 deletions(-)
->>
->> diff --git a/fs/btrfs/extent_io.c b/fs/btrfs/extent_io.c
->> index 081fe13..bb66e3c 100644
->> --- a/fs/btrfs/extent_io.c
->> +++ b/fs/btrfs/extent_io.c
->> @@ -2258,18 +2258,26 @@ static void end_bio_extent_readpage(struct bio *bio, int err)
->>  	struct bio_vec *bvec_end = bio->bi_io_vec + bio->bi_vcnt - 1;
->>  	struct bio_vec *bvec = bio->bi_io_vec;
->>  	struct extent_io_tree *tree;
->> +	struct extent_state *cached = NULL;
->>  	u64 start;
->>  	u64 end;
->>  	int whole_page;
->>  	int mirror;
->>  	int ret;
->> +	u64 up_start, up_end, un_start, un_end;
->> +	int up_first, un_first;
->> +	int for_uptodate[bio->bi_vcnt];
-> 
-> The array size depends on an argument, compiler will handle it by
-> dynamically expanding the stackframe. What is the expected maximum value
-> for bi_vcnt ? There's no hard limit AFAICS, the value gets incremented
-> on each page in the bio. If the function is called from the worker
-> thread, it's not much of a problem even for values like 128.
-> 
-> Alternate way to avoid over-limit stack consumption is to declare an
-> array to hold a fair number of items (eg. 16), and fall back to kmalloc
-> otherwise.
-> 
+Signed-off-by: Josef Bacik <josef@redhat.com>
+---
+V1->V2: force_compress doesn't stay set the entire time and even though it
+should be fine this way I'd rather not having something this fragile in place
+that can cause corruption it somebody happens to do it wrong, so add a flag so
+we know we have async extents on this inode.
+ fs/btrfs/btrfs_inode.h  |    1 +
+ fs/btrfs/inode.c        |   15 +++++++++------
+ fs/btrfs/ordered-data.c |   22 +++++++++++++++++++++-
+ 3 files changed, 31 insertions(+), 7 deletions(-)
 
-
-hmm, you're right.  I'm going to use kmalloc with KERNEL_ATOMIC.
-
-
->> +	int i = 0;
->> +
->> +	up_start = un_start = (u64)-1;
->> +	up_end = un_end = 0;
->> +	up_first = un_first = 1;
->>  
->>  	if (err)
->>  		uptodate = 0;
->>  
->>  	do {
->>  		struct page *page = bvec->bv_page;
->> -		struct extent_state *cached = NULL;
->>  
->>  		pr_debug("end_bio_extent_readpage: bi_vcnt=%d, idx=%d, err=%d, "
->>  			 "mirror=%ld\n", bio->bi_vcnt, bio->bi_idx, err,
->> @@ -2352,7 +2412,7 @@ static void end_bio_extent_readpage(struct bio *bio, int err)
->>  			}
->>  			unlock_page(page);
->>  		} else {
->> -			if (uptodate) {
->> +			if (for_uptodate[i++]) {
->>  				check_page_uptodate(tree, page);
->>  			} else {
->>  				clearpageuptodate(page);
->> @@ -2360,6 +2420,7 @@ static void end_bio_extent_readpage(struct bio *bio, int err)
->>  			}
->>  			check_page_locked(tree, page);
->>  		}
->> +		++bvec;
-> 
-> can you please move the i++ increments here? From reading the code it's
-> not clear on first sight if the sideeffects are ok.
-> 
-
-
-Sure, will update it.
-
->>  	} while (bvec <= bvec_end);
->>  
->>  	bio_put(bio);
->> @@ -2554,6 +2615,8 @@ static int __extent_read_full_page(struct extent_io_tree *tree,
->>  
->>  	end = page_end;
->>  	while (1) {
->> +		if (range_lock)
->> +			break;
-> 
-> with range_lock set, this is equivalent to calling
-> 
-> 2896	set_page_extent_mapped(page);
-> 
-> (plus the cleancache code), a few lines above. Is this inteded? It's
-> actually called with '1' from a single place, process_batch_pages().
-> 
-
-
-Yeah, I want to skip the lock part, since I've already locked this range of extent.
-After that, we'll have a continuous range of extent for read.
-
-
->>  		lock_extent(tree, start, end);
->>  		ordered = btrfs_lookup_ordered_extent(inode, start);
->>  		if (!ordered)
->> @@ -3497,6 +3560,59 @@ int extent_writepages(struct extent_io_tree *tree,
->>  	return ret;
->>  }
->>  
->> +struct page_list {
->> +	struct page *page;
->> +	struct list_head list;
->> +};
->> +
->> +static int process_batch_pages(struct extent_io_tree *tree,
->> +			       struct address_space *mapping,
->> +			       struct list_head *lock_pages, int *page_cnt,
->> +			       u64 lock_start, u64 lock_end,
->> +				get_extent_t get_extent, struct bio **bio,
->> +				unsigned long *bio_flags)
->> +{
->> +	u64 page_start;
->> +	struct page_list *plist;
->> +
->> +	while (1) {
->> +		struct btrfs_ordered_extent *ordered = NULL;
->> +
->> +		lock_extent(tree, lock_start, lock_end);
->> +		page_start = lock_start;
->> +		while (page_start < lock_end) {
->> +			ordered = btrfs_lookup_ordered_extent(mapping->host,
->> +							      page_start);
->> +			if (ordered) {
->> +				page_start = ordered->file_offset;
->> +				break;
->> +			}
->> +			page_start += PAGE_CACHE_SIZE;
->> +		}
->> +		if (!ordered)
->> +			break;
-> 
-> You're leaving the range [lock_start, lock_end) locked after taking this
-> branch. Intended?
-> 
-
-
-Yeah, this is what it should be.
-Usually we do:
-
-o  lock the range that is going to be sent to read (at read_page)
-o  set the range uptodate and unlock it (at end_io)
-
-
->> +		unlock_extent(tree, lock_start, lock_end);
->> +		btrfs_start_ordered_extent(mapping->host, ordered, 1);
->> +		btrfs_put_ordered_extent(ordered);
->> +	}
->> +
->> +	plist = NULL;
->> +	while (!list_empty(lock_pages)) {
->> +		plist = list_entry(lock_pages->prev, struct page_list, list);
->> +
->> +		__extent_read_full_page(tree, plist->page, get_extent,
->> +					bio, 0, bio_flags, 1);
->> +		page_cache_release(plist->page);
->> +		list_del(&plist->list);
->> +		plist->page = NULL;
-> 
-> you can drop this assignment
-> 
-
-
-Sure.
-
-Thanks a lot for reviewing! :)
-
-
-thanks,
-liubo
-
->> +		kfree(plist);
->> +		(*page_cnt)--;
->> +	}
->> +
->> +	WARN_ON((*page_cnt));
->> +	return 0;
->> +}
->> +
->>  int extent_readpages(struct extent_io_tree *tree,
->>  		     struct address_space *mapping,
->>  		     struct list_head *pages, unsigned nr_pages,
-> 
-
+diff --git a/fs/btrfs/btrfs_inode.h b/fs/btrfs/btrfs_inode.h
+index e616f887..12394a9 100644
+--- a/fs/btrfs/btrfs_inode.h
++++ b/fs/btrfs/btrfs_inode.h
+@@ -37,6 +37,7 @@
+ #define BTRFS_INODE_IN_DEFRAG			3
+ #define BTRFS_INODE_DELALLOC_META_RESERVED	4
+ #define BTRFS_INODE_HAS_ORPHAN_ITEM		5
++#define BTRFS_INODE_HAS_ASYNC_EXTENT		6
+ 
+ /* in memory btrfs inode */
+ struct btrfs_inode {
+diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
+index 293c018..aef3054 100644
+--- a/fs/btrfs/inode.c
++++ b/fs/btrfs/inode.c
+@@ -1398,20 +1398,23 @@ static int run_delalloc_range(struct inode *inode, struct page *locked_page,
+ 	int ret;
+ 	struct btrfs_root *root = BTRFS_I(inode)->root;
+ 
+-	if (BTRFS_I(inode)->flags & BTRFS_INODE_NODATACOW)
++	if (BTRFS_I(inode)->flags & BTRFS_INODE_NODATACOW) {
+ 		ret = run_delalloc_nocow(inode, locked_page, start, end,
+ 					 page_started, 1, nr_written);
+-	else if (BTRFS_I(inode)->flags & BTRFS_INODE_PREALLOC)
++	} else if (BTRFS_I(inode)->flags & BTRFS_INODE_PREALLOC) {
+ 		ret = run_delalloc_nocow(inode, locked_page, start, end,
+ 					 page_started, 0, nr_written);
+-	else if (!btrfs_test_opt(root, COMPRESS) &&
+-		 !(BTRFS_I(inode)->force_compress) &&
+-		 !(BTRFS_I(inode)->flags & BTRFS_INODE_COMPRESS))
++	} else if (!btrfs_test_opt(root, COMPRESS) &&
++		   !(BTRFS_I(inode)->force_compress) &&
++		   !(BTRFS_I(inode)->flags & BTRFS_INODE_COMPRESS)) {
+ 		ret = cow_file_range(inode, locked_page, start, end,
+ 				      page_started, nr_written, 1);
+-	else
++	} else {
++		set_bit(BTRFS_INODE_HAS_ASYNC_EXTENT,
++			&BTRFS_I(inode)->runtime_flags);
+ 		ret = cow_file_range_async(inode, locked_page, start, end,
+ 					   page_started, nr_written);
++	}
+ 	return ret;
+ }
+ 
+diff --git a/fs/btrfs/ordered-data.c b/fs/btrfs/ordered-data.c
+index 9e138cd..643335a 100644
+--- a/fs/btrfs/ordered-data.c
++++ b/fs/btrfs/ordered-data.c
+@@ -627,7 +627,27 @@ void btrfs_wait_ordered_range(struct inode *inode, u64 start, u64 len)
+ 	/* start IO across the range first to instantiate any delalloc
+ 	 * extents
+ 	 */
+-	filemap_write_and_wait_range(inode->i_mapping, start, orig_end);
++	filemap_fdatawrite_range(inode->i_mapping, start, orig_end);
++
++	/*
++	 * So with compression we will find and lock a dirty page and clear the
++	 * first one as dirty, setup an async extent, and immediately return
++	 * with the entire range locked but with nobody actually marked with
++	 * writeback.  So we can't just filemap_write_and_wait_range() and
++	 * expect it to work since it will just kick off a thread to do the
++	 * actual work.  So we need to call filemap_fdatawrite_range _again_
++	 * since it will wait on the page lock, which won't be unlocked until
++	 * after the pages have been marked as writeback and so we're good to go
++	 * from there.  We have to do this otherwise we'll miss the ordered
++	 * extents and that results in badness.  Please Josef, do not think you
++	 * know better and pull this out at some point in the future, it is
++	 * right and you are wrong.
++	 */
++	if (test_bit(BTRFS_INODE_HAS_ASYNC_EXTENT,
++		     &BTRFS_I(inode)->runtime_flags))
++		filemap_fdatawrite_range(inode->i_mapping, start, orig_end);
++
++	filemap_fdatawait_range(inode->i_mapping, start, orig_end);
+ 
+ 	end = orig_end;
+ 	found = 0;
+-- 
+1.7.7.6
 

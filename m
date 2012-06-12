@@ -1,44 +1,30 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from v002983.home.net.pl ([212.85.107.189]:42341 "HELO
-	v002983.home.net.pl" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with SMTP id S1752372Ab2FLOsP convert rfc822-to-8bit (ORCPT
+Received: from cdptpa-omtalb.mail.rr.com ([75.180.132.120]:12754 "EHLO
+	cdptpa-omtalb.mail.rr.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1752671Ab2FLO6B (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 12 Jun 2012 10:48:15 -0400
-From: Hubert Kario <hka@qbs.com.pl>
-To: Alex <alex@bpmit.com>
-Cc: linux-btrfs@vger.kernel.org
-Subject: Re: KVM on top of BTRFS
-Date: Tue, 12 Jun 2012 16:48:12 +0200
-Message-ID: <5750408.cQYfZEkS7F@k85hala03>
-In-Reply-To: <loom.20120612T013031-188@post.gmane.org>
-References: <1339456922.32583.YahooMailNeo@web160802.mail.bf1.yahoo.com> <loom.20120612T013031-188@post.gmane.org>
+	Tue, 12 Jun 2012 10:58:01 -0400
+Received: from when.localnet (unknown [IPv6:2001:470:e4a9:1:5e26:aff:fe21:a162])
+	(using TLSv1 with cipher ECDHE-RSA-AES256-SHA (256/256 bits))
+	(No client certificate requested)
+	by skull.electronsweatshop.com (Postfix) with ESMTPSA id 182DB458E7
+	for <linux-btrfs@vger.kernel.org>; Tue, 12 Jun 2012 10:57:58 -0400 (EDT)
+From: Randy Barlow <randy@electronsweatshop.com>
+To: "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
+Subject: Re: Bug in btrfs-debug-tree for two  or more devices.
+Date: Tue, 12 Jun 2012 10:57:57 -0400
+Message-ID: <1379818.8vajKikOe7@when>
+In-Reply-To: <24763ECA27C26742BD79B0D67389CD0E071B3067@MTW02MBX05.mindtree.com>
+References: <24763ECA27C26742BD79B0D67389CD0E071B3067@MTW02MBX05.mindtree.com>
 MIME-Version: 1.0
-Content-Type: text/plain; charset="iso-8859-1"
+Content-Type: text/plain; charset="us-ascii"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Monday 11 of June 2012 23:53:34 Alex wrote:
-> Matthew Hawn <steamraven <at> yahoo.com> writes:
-> > What are the recommendations for running KVM images on BTRFS systems using
-> 
-> Install:
-> virt-install --connect qemu:///system -n china -r 256 --disk
-> path=/var/lib/libvirt/images/china.img,size=4 -c
-> /home/alex/debian-testing-amd64-CD-1.iso --vnc --noautoconsole --os-type
-> linux --os-variant debianwheezy --accelerate --network=bridge:br0 --hvm
-> 
-> This runs much slower than expected - have done many debian bare minimum
-> installs like this before. Can't hear any disk thrashing. Doesn't appear to
-> be CPU or memory bound - will double check.
+On Tuesday, June 12, 2012 06:53:00 AM Santosh Hosamani wrote:
+> Kernel 3.0.13.0.27-default
 
->From what I heard, this is caused by slow KVM CD virtualisation.
+This kernel is very old for btrfs. Can you try with at least Linux 3.4?
 
-Try to install it and do some tests then.
-
-Regards,
---
-Hubert Kario
-QBS - Quality Business Software
-02-656 Warszawa, ul. Ksawerów 30/85
-tel. +48 (22) 646-61-51, 646-74-24
-www.qbs.com.pl
+-- 
+R

@@ -1,52 +1,99 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from acsinet15.oracle.com ([141.146.126.227]:46170 "EHLO
-	acsinet15.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1751293Ab2FZGlf (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 26 Jun 2012 02:41:35 -0400
-Date: Tue, 26 Jun 2012 09:41:22 +0300
-From: Dan Carpenter <dan.carpenter@oracle.com>
-To: santosh prasad nayak <santoshprasadnayak@gmail.com>
-Cc: Josef Bacik <jbacik@fusionio.com>, "Chris L. Mason" <clmason@fusionio.com>,
-        "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>,
-        "kernel-janitors@vger.kernel.org" <kernel-janitors@vger.kernel.org>
-Subject: Re: [patch v2] Btrfs: fix error handling in __add_reloc_root()
-Message-ID: <20120626064122.GQ5390@mwanda>
-References: <4FE473F6.5000109@fusionio.com>
- <20120625111048.GA10393@elgon.mountain>
- <20120625133956.GA2499@localhost.localdomain>
- <20120625135344.GN5390@mwanda>
- <CAOD=uF4h5pqfU3u=fVZu74kEP=HLFQWd2+qPRrT69Jtjn+11bw@mail.gmail.com>
-MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <CAOD=uF4h5pqfU3u=fVZu74kEP=HLFQWd2+qPRrT69Jtjn+11bw@mail.gmail.com>
+Received: from mx1.redhat.com ([209.132.183.28]:63937 "EHLO mx1.redhat.com"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1752624Ab2FLTuo (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Tue, 12 Jun 2012 15:50:44 -0400
+Received: from int-mx01.intmail.prod.int.phx2.redhat.com (int-mx01.intmail.prod.int.phx2.redhat.com [10.5.11.11])
+	by mx1.redhat.com (8.14.4/8.14.4) with ESMTP id q5CJoiNO025931
+	(version=TLSv1/SSLv3 cipher=DHE-RSA-AES256-SHA bits=256 verify=OK)
+	for <linux-btrfs@vger.kernel.org>; Tue, 12 Jun 2012 15:50:44 -0400
+Received: from localhost.localdomain.com (vpn-8-117.rdu.redhat.com [10.11.8.117])
+	by int-mx01.intmail.prod.int.phx2.redhat.com (8.13.8/8.13.8) with ESMTP id q5CJogVX024975
+	for <linux-btrfs@vger.kernel.org>; Tue, 12 Jun 2012 15:50:43 -0400
+From: Josef Bacik <josef@redhat.com>
+To: linux-btrfs@vger.kernel.org
+Subject: [PATCH 2/2] Btrfs: implement ->show_devname V2
+Date: Tue, 12 Jun 2012 15:50:42 -0400
+Message-Id: <1339530642-13862-2-git-send-email-josef@redhat.com>
+In-Reply-To: <1339530642-13862-1-git-send-email-josef@redhat.com>
+References: <1339530642-13862-1-git-send-email-josef@redhat.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Tue, Jun 26, 2012 at 06:51:39AM +0530, santosh prasad nayak wrote:
-> I am also facing similar issue while applying this patch.
-> 
-> [santosh@localhost linux-next]$ sudo git am mail_Dan.txt
-> Patch format detection failed.
-> [santosh@localhost linux-next]$
-> 
+Because btrfs can remove the device that was mounted we need to have a
+->show_devname so that in this case we can print out some other device in
+the file system to /proc/mount.  So if there are multiple devices in a btrfs
+file system we will just print the device with the lowest devid that we can
+find.  This will make everything consistent and deal with device removal
+properly.  The drawback is if you mount with a device that is higher than
+the lowest devicd it won't show up as the mounted device in /proc/mounts,
+but this is a small price to pay. This was inspired by Miao Xie's patch.
+Thanks,
 
-The problem is not on my end.  It made it to marc.info without
-getting corrupted.  Marc.info strips out the From: and Subject:
-headers so you'd have to add them in manually.
+Signed-off-by: Josef Bacik <josef@redhat.com>
+---
+V1->V2: Dropped the mounted tracking stuff since it doesn't work right if you
+mount the same thing twice
+ fs/btrfs/super.c |   33 +++++++++++++++++++++++++++++++++
+ 1 files changed, 33 insertions(+), 0 deletions(-)
 
-1) Save this file:
-http://marc.info/?l=kernel-janitors&m=134062314509635&q=raw
-
-2) Edit the file and add these two lines add the top:
-
-From: Dan Carpenter <dan.carpenter@oracle.com>
-Subject: [patch v2] Btrfs: fix error handling in __add_reloc_root()
-
-3) $ git am /home/dcarpenter/tmp/html2/btrfs_raw.txt
-Applying: Btrfs: fix error handling in __add_reloc_root()
-
-regards,
-dan carpenter
-
+diff --git a/fs/btrfs/super.c b/fs/btrfs/super.c
+index 85cef50..0874dba 100644
+--- a/fs/btrfs/super.c
++++ b/fs/btrfs/super.c
+@@ -54,6 +54,7 @@
+ #include "version.h"
+ #include "export.h"
+ #include "compression.h"
++#include "rcu-string.h"
+ 
+ #define CREATE_TRACE_POINTS
+ #include <trace/events/btrfs.h>
+@@ -1472,12 +1473,44 @@ static int btrfs_unfreeze(struct super_block *sb)
+ 	return 0;
+ }
+ 
++static int btrfs_show_devname(struct seq_file *m, struct dentry *root)
++{
++	struct btrfs_fs_info *fs_info = btrfs_sb(root->d_sb);
++	struct btrfs_fs_devices *cur_devices;
++	struct btrfs_device *dev, *first_dev = NULL;
++	struct list_head *head;
++	struct rcu_string *name;
++
++	mutex_lock(&fs_info->fs_devices->device_list_mutex);
++	cur_devices = fs_info->fs_devices;
++	while (cur_devices) {
++		head = &cur_devices->devices;
++		list_for_each_entry(dev, head, dev_list) {
++			if (!first_dev || dev->devid < first_dev->devid)
++				first_dev = dev;
++		}
++		cur_devices = cur_devices->seed;
++	}
++
++	if (first_dev) {
++		rcu_read_lock();
++		name = rcu_dereference(first_dev->name);
++		seq_escape(m, name->str, " \t\n\\");
++		rcu_read_unlock();
++	} else {
++		WARN_ON(1);
++	}
++	mutex_unlock(&fs_info->fs_devices->device_list_mutex);
++	return 0;
++}
++
+ static const struct super_operations btrfs_super_ops = {
+ 	.drop_inode	= btrfs_drop_inode,
+ 	.evict_inode	= btrfs_evict_inode,
+ 	.put_super	= btrfs_put_super,
+ 	.sync_fs	= btrfs_sync_fs,
+ 	.show_options	= btrfs_show_options,
++	.show_devname	= btrfs_show_devname,
+ 	.write_inode	= btrfs_write_inode,
+ 	.alloc_inode	= btrfs_alloc_inode,
+ 	.destroy_inode	= btrfs_destroy_inode,
+-- 
+1.7.7.6
 

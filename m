@@ -1,15 +1,15 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx1.redhat.com ([209.132.183.28]:16443 "EHLO mx1.redhat.com"
+Received: from mx1.redhat.com ([209.132.183.28]:33849 "EHLO mx1.redhat.com"
 	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1753349Ab2FLNZK (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 12 Jun 2012 09:25:10 -0400
-Date: Tue, 12 Jun 2012 09:25:08 -0400
+	id S1751354Ab2FLNnV (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Tue, 12 Jun 2012 09:43:21 -0400
+Date: Tue, 12 Jun 2012 09:43:19 -0400
 From: Josef Bacik <josef@redhat.com>
 To: Zach Brown <zab@zabbo.net>
 Cc: Josef Bacik <josef@redhat.com>, linux-btrfs@vger.kernel.org,
         wfg@linux.intel.com
 Subject: Re: [PATCH] Btrfs: use rcu to protect device->name V2
-Message-ID: <20120612132507.GB1565@localhost.localdomain>
+Message-ID: <20120612134318.GD1565@localhost.localdomain>
 References: <1339421426-1921-1-git-send-email-josef@redhat.com>
  <4FD65ECA.1030502@zabbo.net>
 MIME-Version: 1.0
@@ -54,7 +54,23 @@ On Mon, Jun 11, 2012 at 02:10:34PM -0700, Zach Brown wrote:
 > device names..)
 > 
 
-Yeah I agree I just didn't feel like figuring out how to make a macro work with
-printk args ;).  Thanks,
+Oh and now I remember why I didn't do this (other than being terribly lazy), all
+the call sites are too different, and there's no simple way to figure out which
+arg is the device name so I can do the derefence properly.  We'd need to change
+all of the messages to have a unified format so that it could just be something
+like
+
+#define device_name_printk(dev, level, fmt, ...) do {		\
+	struct rcu_string *name;				\
+								\
+	rcu_read_lock();					\
+	name = rcu_dereference(dev->name);			\
+	printk(level "%s: " fmt, name->str, ##__VA_ARGS__);	\
+	rcu_read_unlock();					\
+	} while (0)
+
+and I'm not even sure if that would work out right with the args.  Do we really
+want to force everybody to this one convention?  If the answer is yes then
+damnit I don't wanna because it's tedious ;).  Thanks,
 
 Josef

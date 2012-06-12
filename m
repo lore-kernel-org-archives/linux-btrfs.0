@@ -1,109 +1,44 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cantor2.suse.de ([195.135.220.15]:57228 "EHLO mx2.suse.de"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1752019Ab2FLOVA (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 12 Jun 2012 10:21:00 -0400
-From: Jan Kara <jack@suse.cz>
-To: Al Viro <viro@ZenIV.linux.org.uk>
-Cc: LKML <linux-kernel@vger.kernel.org>, linux-fsdevel@suse.cz,
-        Jan Kara <jack@suse.cz>, Chris Mason <chris.mason@oracle.com>,
-        linux-btrfs@vger.kernel.org
-Subject: [PATCH 11/27] btrfs: Push mnt_want_write() outside of i_mutex
-Date: Tue, 12 Jun 2012 16:20:32 +0200
-Message-Id: <1339510848-16992-12-git-send-email-jack@suse.cz>
-In-Reply-To: <1339510848-16992-1-git-send-email-jack@suse.cz>
-References: <1339510848-16992-1-git-send-email-jack@suse.cz>
+Received: from v002983.home.net.pl ([212.85.107.189]:42341 "HELO
+	v002983.home.net.pl" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with SMTP id S1752372Ab2FLOsP convert rfc822-to-8bit (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>);
+	Tue, 12 Jun 2012 10:48:15 -0400
+From: Hubert Kario <hka@qbs.com.pl>
+To: Alex <alex@bpmit.com>
+Cc: linux-btrfs@vger.kernel.org
+Subject: Re: KVM on top of BTRFS
+Date: Tue, 12 Jun 2012 16:48:12 +0200
+Message-ID: <5750408.cQYfZEkS7F@k85hala03>
+In-Reply-To: <loom.20120612T013031-188@post.gmane.org>
+References: <1339456922.32583.YahooMailNeo@web160802.mail.bf1.yahoo.com> <loom.20120612T013031-188@post.gmane.org>
+MIME-Version: 1.0
+Content-Type: text/plain; charset="iso-8859-1"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-When mnt_want_write() starts to handle freezing it will get a full lock
-semantics requiring proper lock ordering. So push mnt_want_write() call
-consistently outside of i_mutex.
+On Monday 11 of June 2012 23:53:34 Alex wrote:
+> Matthew Hawn <steamraven <at> yahoo.com> writes:
+> > What are the recommendations for running KVM images on BTRFS systems using
+> 
+> Install:
+> virt-install --connect qemu:///system -n china -r 256 --disk
+> path=/var/lib/libvirt/images/china.img,size=4 -c
+> /home/alex/debian-testing-amd64-CD-1.iso --vnc --noautoconsole --os-type
+> linux --os-variant debianwheezy --accelerate --network=bridge:br0 --hvm
+> 
+> This runs much slower than expected - have done many debian bare minimum
+> installs like this before. Can't hear any disk thrashing. Doesn't appear to
+> be CPU or memory bound - will double check.
 
-CC: Chris Mason <chris.mason@oracle.com>
-CC: linux-btrfs@vger.kernel.org
-Signed-off-by: Jan Kara <jack@suse.cz>
----
- fs/btrfs/ioctl.c |   23 +++++++++++------------
- 1 files changed, 11 insertions(+), 12 deletions(-)
+>From what I heard, this is caused by slow KVM CD virtualisation.
 
-diff --git a/fs/btrfs/ioctl.c b/fs/btrfs/ioctl.c
-index 24b776c..440655b 100644
---- a/fs/btrfs/ioctl.c
-+++ b/fs/btrfs/ioctl.c
-@@ -192,6 +192,10 @@ static int btrfs_ioctl_setflags(struct file *file, void __user *arg)
- 	if (!inode_owner_or_capable(inode))
- 		return -EACCES;
- 
-+	ret = mnt_want_write_file(file);
-+	if (ret)
-+		return ret;
-+
- 	mutex_lock(&inode->i_mutex);
- 
- 	ip_oldflags = ip->flags;
-@@ -206,10 +210,6 @@ static int btrfs_ioctl_setflags(struct file *file, void __user *arg)
- 		}
- 	}
- 
--	ret = mnt_want_write_file(file);
--	if (ret)
--		goto out_unlock;
--
- 	if (flags & FS_SYNC_FL)
- 		ip->flags |= BTRFS_INODE_SYNC;
- 	else
-@@ -272,9 +272,9 @@ static int btrfs_ioctl_setflags(struct file *file, void __user *arg)
- 		inode->i_flags = i_oldflags;
- 	}
- 
--	mnt_drop_write_file(file);
-  out_unlock:
- 	mutex_unlock(&inode->i_mutex);
-+	mnt_drop_write_file(file);
- 	return ret;
- }
- 
-@@ -640,6 +640,10 @@ static noinline int btrfs_mksubvol(struct path *parent,
- 	struct dentry *dentry;
- 	int error;
- 
-+	error = mnt_want_write(parent->mnt);
-+	if (error)
-+		return error;
-+
- 	mutex_lock_nested(&dir->i_mutex, I_MUTEX_PARENT);
- 
- 	dentry = lookup_one_len(name, parent->dentry, namelen);
-@@ -651,13 +655,9 @@ static noinline int btrfs_mksubvol(struct path *parent,
- 	if (dentry->d_inode)
- 		goto out_dput;
- 
--	error = mnt_want_write(parent->mnt);
--	if (error)
--		goto out_dput;
--
- 	error = btrfs_may_create(dir, dentry);
- 	if (error)
--		goto out_drop_write;
-+		goto out_dput;
- 
- 	down_read(&BTRFS_I(dir)->root->fs_info->subvol_sem);
- 
-@@ -675,12 +675,11 @@ static noinline int btrfs_mksubvol(struct path *parent,
- 		fsnotify_mkdir(dir, dentry);
- out_up_read:
- 	up_read(&BTRFS_I(dir)->root->fs_info->subvol_sem);
--out_drop_write:
--	mnt_drop_write(parent->mnt);
- out_dput:
- 	dput(dentry);
- out_unlock:
- 	mutex_unlock(&dir->i_mutex);
-+	mnt_drop_write(parent->mnt);
- 	return error;
- }
- 
--- 
-1.7.1
+Try to install it and do some tests then.
 
+Regards,
+--
+Hubert Kario
+QBS - Quality Business Software
+02-656 Warszawa, ul. Ksawerów 30/85
+tel. +48 (22) 646-61-51, 646-74-24
+www.qbs.com.pl

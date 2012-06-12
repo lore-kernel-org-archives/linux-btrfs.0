@@ -1,108 +1,79 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from li9-11.members.linode.com ([67.18.176.11]:49398 "EHLO
-	imap.thunk.org" rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1754059Ab2FLTPb (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 12 Jun 2012 15:15:31 -0400
-Date: Tue, 12 Jun 2012 15:15:27 -0400
-From: "Ted Ts'o" <tytso@mit.edu>
-To: kreijack@inwind.it
-Cc: linux-btrfs <linux-btrfs@vger.kernel.org>,
-        Liu Bo <liubo2009@cn.fujitsu.com>
-Subject: Re: Btrfs and data nocow per inode basis
-Message-ID: <20120612191527.GA11966@thunk.org>
-References: <4FD442F1.7040008@inwind.it>
- <4FD77F45.3060000@libero.it>
- <20120612183209.GC1803@thunk.org>
+Received: from frost.carfax.org.uk ([85.119.82.111]:41407 "EHLO
+	frost.carfax.org.uk" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1752807Ab2FLUGy (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>);
+	Tue, 12 Jun 2012 16:06:54 -0400
+Date: Tue, 12 Jun 2012 21:06:50 +0100
+From: Hugo Mills <hugo@carfax.org.uk>
+To: Santosh Hosamani <Santosh_Hosamani@mindtree.com>
+Cc: "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
+Subject: Re: Bug in btrfs-debug-tree for two  or more devices.
+Message-ID: <20120612200650.GA28932@carfax.org.uk>
+References: <24763ECA27C26742BD79B0D67389CD0E071B3067@MTW02MBX05.mindtree.com>
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <20120612183209.GC1803@thunk.org>
+Content-Type: multipart/signed; micalg=pgp-sha1;
+	protocol="application/pgp-signature"; boundary="UlVJffcvxoiEqYs2"
+In-Reply-To: <24763ECA27C26742BD79B0D67389CD0E071B3067@MTW02MBX05.mindtree.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-It appears the NOCOW_FL flag is currently a no-op in the 3.2 kernel?
 
-<tytso.root@tytso-glaptop.cam.corp.google.com> {/mnt}  
-2062# grep /mnt /proc/mounts 
-/dev/mapper/funarg-btrfs /mnt btrfs rw,relatime,space_cache 0 0
-<tytso.root@tytso-glaptop.cam.corp.google.com> {/mnt}  
-2063# sync ; filefrag -v a
-Filesystem type is: 9123683e
-File size of a is 32768 (8 blocks, blocksize 4096)
- ext logical physical expected length flags
-   0       0     3096               8 eof
-a: 1 extent found
-<tytso.root@tytso-glaptop.cam.corp.google.com> {/mnt}  
-2064# dd if=/dev/zero of=a bs=32k conv=notrunc,nocreat count=1 
-1+0 records in
-1+0 records out
-32768 bytes (33 kB) copied, 0.000119266 s, 275 MB/s
-<tytso.root@tytso-glaptop.cam.corp.google.com> {/mnt}  
-2065# sync ; filefrag -v a
-Filesystem type is: 9123683e
-File size of a is 32768 (8 blocks, blocksize 4096)
- ext logical physical expected length flags
-   0       0     3088               8 eof
-a: 1 extent found
-<tytso.root@tytso-glaptop.cam.corp.google.com> {/mnt}  
-2066# lsattr a
----------------C a
+--UlVJffcvxoiEqYs2
+Content-Type: text/plain; charset=us-ascii
+Content-Disposition: inline
 
-I've attached the patch which I was going to commit, but when I tested
-it, it appears the flag is being set and displayed correctly, but
-btrfs doesn't appear to be honoring it.
+On Tue, Jun 12, 2012 at 06:53:00AM +0000, Santosh Hosamani wrote:
+> 
+> Hi btrfs folks,
+>                 I am working on btrfs filesystem on how it manages the free space. And found out btrfs maintain a ctree which manages the physical location of the chunks and stripes of the filesystem.
+> Btrfs-debug-tree also gives the information on the chunk tree
+> 
+> I created btrfs on single device and two device.I have attached the output of both on running btrfs-debug-tree.
+> For single device sum of all the length in the chunks will add upto the total used bytes which is expected behavior.
+> 
+> But for two devices sum of all lengths in the chunks does not add to the total bytes .Am I missing something .
 
-Anyway want to explain what's going on?
+   Without actually seeing the details of your technique and
+expectations, I shall make a guess that you're not accounting for the
+double-counting of RAID-1 metadata. In other words, you will find that
+all of the metadata device extents (or chunks) will appear twice --
+once on each device.
 
-						- Ted
+   Actually, this isn't quite right either -- what you really need to
+do is look at the RAID-1, RAID-10 and DUP bits in the chunk flags, add
+up all of those chunks, divide by two, and then add in the remaining
+(RAID-0 and single) chunks. That total should then add up to the total
+value of allocated space that you get from the output of "btrfs fi df".
 
-diff --git a/lib/e2p/pf.c b/lib/e2p/pf.c
-index f03193c..69181e7 100644
---- a/lib/e2p/pf.c
-+++ b/lib/e2p/pf.c
-@@ -49,6 +49,7 @@ static struct flags_name flags_array[] = {
- 	{ EXT2_TOPDIR_FL, "T", "Top_of_Directory_Hierarchies" },
- 	{ EXT4_EXTENTS_FL, "e", "Extents" },
- 	{ EXT4_HUGE_FILE_FL, "h", "Huge_file" },
-+	{ FS_NOCOW_FL, "C", "Huge_file" },
- 	{ 0, NULL, NULL }
- };
- 
-diff --git a/lib/ext2fs/ext2_fs.h b/lib/ext2fs/ext2_fs.h
-index f46a1a9..fb3f7cc 100644
---- a/lib/ext2fs/ext2_fs.h
-+++ b/lib/ext2fs/ext2_fs.h
-@@ -301,6 +301,7 @@ struct ext2_dx_countlimit {
- #define EXT4_EXTENTS_FL 		0x00080000 /* Inode uses extents */
- #define EXT4_EA_INODE_FL	        0x00200000 /* Inode used for large EA */
- /* EXT4_EOFBLOCKS_FL 0x00400000 was here */
-+#define FS_NOCOW_FL			0x00800000 /* Do not cow file */
- #define EXT4_SNAPFILE_FL		0x01000000  /* Inode is a snapshot */
- #define EXT4_SNAPFILE_DELETED_FL	0x04000000  /* Snapshot is being deleted */
- #define EXT4_SNAPFILE_SHRUNK_FL		0x08000000  /* Snapshot shrink has completed */
-diff --git a/misc/chattr.1.in b/misc/chattr.1.in
-index 92f6d70..18b44bd 100644
---- a/misc/chattr.1.in
-+++ b/misc/chattr.1.in
-@@ -64,6 +64,10 @@ this file compresses data before storing them on the disk.  Note: please
- make sure to read the bugs and limitations section at the end of this
- document.
- .PP
-+A file with the 'C' attribute set will not be subject to copy-on-write
-+updates.  This flag is only supported on file systems which perform
-+copy-on-write, obviously.
-+.PP
- When a directory with the `D' attribute set is modified,
- the changes are written synchronously on the disk; this is equivalent to
- the `dirsync' mount option applied to a subset of the files.
-diff --git a/misc/chattr.c b/misc/chattr.c
-index 8a2d61f..141ea6e 100644
---- a/misc/chattr.c
-+++ b/misc/chattr.c
-@@ -107,6 +107,7 @@ static const struct flags_char flags_array[] = {
- 	{ EXT2_UNRM_FL, 'u' },
- 	{ EXT2_NOTAIL_FL, 't' },
- 	{ EXT2_TOPDIR_FL, 'T' },
-+	{ FS_NOCOW_FL, 'C' },
- 	{ 0, 0 }
- };
- 
+> Also I notice that for the second device the superblock location 0x10000 is not considered as used .
+> 
+> I would be really grateful if you folks can answer my query.
+> 
+> I hav run these tests on SLES11-sp2-x86
+> Kernel 3.0.13.0.27-default
+
+   This is pretty old, but shouldn't affect the results. It will cause
+reliability problems if you try running it seriously.
+
+   Hugo.
+
+-- 
+=== Hugo Mills: hugo@... carfax.org.uk | darksatanic.net | lug.org.uk ===
+  PGP key: 515C238D from wwwkeys.eu.pgp.net or http://www.carfax.org.uk
+   --- "There's a Martian war machine outside -- they want to talk ---   
+                to you about a cure for the common cold."                
+
+--UlVJffcvxoiEqYs2
+Content-Type: application/pgp-signature; name="signature.asc"
+Content-Description: Digital signature
+
+-----BEGIN PGP SIGNATURE-----
+Version: GnuPG v1.4.12 (GNU/Linux)
+
+iD8DBQFP16FaIKyzvlFcI40RAnzLAJ90i5rqqU8IQ62N2DtnwPrD3+CnQgCggrj6
+8EooXXlJ7N/VR1ghviTSLJk=
+=Dnvu
+-----END PGP SIGNATURE-----
+
+--UlVJffcvxoiEqYs2--

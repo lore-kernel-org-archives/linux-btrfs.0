@@ -1,39 +1,62 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([222.73.24.84]:49658 "EHLO song.cn.fujitsu.com"
-	rhost-flags-OK-FAIL-OK-OK) by vger.kernel.org with ESMTP
-	id S1751702Ab2FMItZ (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 13 Jun 2012 04:49:25 -0400
-From: Liu Bo <liubo2009@cn.fujitsu.com>
-To: <linux-ext4@vger.kernel.org>
-Cc: <linux-btrfs@vger.kernel.org>, <rm@romanrm.ru>
-Subject: [PATCH v2] E2fsprogs: add missing usage for No_COW
-Date: Wed, 13 Jun 2012 16:56:42 +0800
-Message-Id: <1339577802-31343-1-git-send-email-liubo2009@cn.fujitsu.com>
+Received: from smtp2-2.tng.de ([213.178.66.96]:57610 "EHLO smtp2-2.tng.de"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1750987Ab2FMMxu (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Wed, 13 Jun 2012 08:53:50 -0400
+Received: from smtp.tng.de (proxy03.mailcluster.tng.de [82.97.146.17])
+	by smtp2-2.tng.de (Postfix) with ESMTP id 3ED829C185
+	for <linux-btrfs@vger.kernel.org>; Wed, 13 Jun 2012 14:15:34 +0200 (CEST)
+Received: from [213.178.67.139] (myrmidia.tng.de [213.178.67.139])
+	by smtp.tng.de (Postfix) with ESMTPSA id 2B5D520479
+	for <linux-btrfs@vger.kernel.org>; Wed, 13 Jun 2012 14:15:34 +0200 (CEST)
+Message-ID: <4FD88465.3020303@ki.tng.de>
+Date: Wed, 13 Jun 2012 14:15:33 +0200
+From: Jan-Hendrik Palic <billgotchy@ki.tng.de>
+MIME-Version: 1.0
+To: linux-btrfs@vger.kernel.org
+Subject: Computing size of snapshots approximatly
+Content-Type: text/plain; charset=ISO-8859-1; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Add the missing usage for No_COW since we've supported No_COW flag.
+Hi,
 
-Signed-off-by: Liu Bo <liubo2009@cn.fujitsu.com>
----
-v1->v2: sort options alphabetically, thanks to Roman Mamedov.
+we using on a server several lvm volumes with btrfs. We want to use 
+nightly build snapshots for some days as an alternative to backups.
 
- misc/chattr.c |    2 +-
- 1 files changed, 1 insertions(+), 1 deletions(-)
+Now I want to get the size of the snapshots in detail. Therefore I 
+played with
 
-diff --git a/misc/chattr.c b/misc/chattr.c
-index 141ea6e..24254cc 100644
---- a/misc/chattr.c
-+++ b/misc/chattr.c
-@@ -83,7 +83,7 @@ static unsigned long sf;
- static void usage(void)
- {
- 	fprintf(stderr,
--		_("Usage: %s [-RVf] [-+=AacDdeijsSu] [-v version] files...\n"),
-+		_("Usage: %s [-RVf] [-+=AaCcDdeijsSu] [-v version] files...\n"),
- 		program_name);
- 	exit(1);
- }
--- 
-1.6.5.2
+   btrfs subvolume find-new $snapshot $gen-id.
 
+And I know, that this is quite complicated and not implemented. 
+Therefore I try to go my own way:
+
+Now assume there are two snapshots of one subvolume, snap1 and snap2. 
+Further get the find-new informations of these snapshots with $gen-id=1 
+and save them into different files. A diff of these files shows the 
+changes between snap1 and snap2, right?
+
+Ok.
+
+There are three operations on a filesystem, I think,
+
+1. copy a file on the filesystem
+2. change a file on the filesystem
+3. delete a file on the filesystem
+
+Am I right to assume, that operation 1 and 2 are not change much the 
+size of a snapshot and the delete operation let increase the size of a 
+snapshot in the size of the deleted files?
+
+If it is so, it would be enough for me to get the deletions of files 
+between two snapshots and their size. But is there another way to get 
+these informations beside btrfs subvolume find-new? Perhaps it makes 
+sense to use ioctl for it? What about the send/receive feature, which is 
+upcoming?
+
+Are there any hints?
+
+Many thanks in advance.
+
+Jan

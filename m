@@ -1,49 +1,98 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from twin.jikos.cz ([89.185.236.188]:36386 "EHLO twin.jikos.cz"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1753549Ab2FLW6x (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 12 Jun 2012 18:58:53 -0400
-Date: Wed, 13 Jun 2012 00:58:45 +0200
-From: David Sterba <dave@jikos.cz>
-To: Santosh Hosamani <Santosh_Hosamani@mindtree.com>
-Cc: "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
-Subject: Re: Bug in btrfs-debug-tree for two  or more devices.
-Message-ID: <20120612225845.GK32402@twin.jikos.cz>
-Reply-To: dave@jikos.cz
-References: <24763ECA27C26742BD79B0D67389CD0E071B3067@MTW02MBX05.mindtree.com>
+Received: from lsd-gw.ic.unicamp.br ([143.106.7.165]:55496 "EHLO
+	boneca.lsd.ic.unicamp.br" rhost-flags-OK-OK-OK-FAIL)
+	by vger.kernel.org with ESMTP id S1750938Ab2FMET0 (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>);
+	Wed, 13 Jun 2012 00:19:26 -0400
+From: Alexandre Oliva <oliva@lsd.ic.unicamp.br>
+To: Greg Kroah-Hartman <gregkh@linuxfoundation.org>
+Cc: Josef Bacik <josef@redhat.com>, Chris Mason <chris.mason@oracle.com>,
+        stable@vger.kernel.org, linux-btrfs@vger.kernel.org,
+        ceph-devel@vger.kernel.org
+Subject: ceph-on-btrfs inline-cow regression fix for 3.4.3
+Date: Wed, 13 Jun 2012 00:46:26 -0300
+Message-ID: <orvcivvppp.fsf@livre.localdomain>
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <24763ECA27C26742BD79B0D67389CD0E071B3067@MTW02MBX05.mindtree.com>
+Content-Type: multipart/mixed; boundary="=-=-="
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Tue, Jun 12, 2012 at 06:53:00AM +0000, Santosh Hosamani wrote:
-> 
-> Hi btrfs folks,
->                 I am working on btrfs filesystem on how it manages the free space. And found out btrfs maintain a ctree which manages the physical location of the chunks and stripes of the filesystem.
-> Btrfs-debug-tree also gives the information on the chunk tree
-> 
-> I created btrfs on single device and two device.I have attached the output of both on running btrfs-debug-tree.
-> For single device sum of all the length in the chunks will add upto the total used bytes which is expected behavior.
-> 
-> But for two devices sum of all lengths in the chunks does not add to the total bytes .Am I missing something .
-> Also I notice that for the second device the superblock location 0x10000 is not considered as used .
-> 
-> I would be really grateful if you folks can answer my query.
-> 
-> I hav run these tests on SLES11-sp2-x86
-> Kernel 3.0.13.0.27-default
+--=-=-=
 
-Your observation about non-excluded superblock is correct and this is a
-known bug fixed in following maintenance update of SLES.
+Hi, Greg,
 
-If you're using a distribution kernel, please file a bug at the distro
-bug tracker (http://bugzilla.novell.com).
+There's a btrfs regression in 3.4 that's causing a lot of grief to
+ceph-on-btrfs users like myself.  This small and nice patch cures it.
+It's in Linus' master already.  I've been running it on top of 3.4.2,
+and it would be very convenient for me if this could be in 3.4.3.
 
-The SLES kernel receives regular backports of btrfs fixes and features
-from upstream, but keeps the version at 3.0.x which confuses the
-upstream community ready to point you to the latest kernel released.
+Although the patch mentions ENOSPC, the fix has nothing to do with disk
+full conditions; it's more along the lines of not finding enough room
+for inline data contents and/or failing to split the btree nodes to make
+room for it.  I don't know that anyone knows for sure, but without this
+patch what we get is a horrible error, that can only be fixed with a
+reboot.  Yeah, not even umount&&mount will make the filesystem writable
+again.  The fix makes us return an error condition in this case, that
+callers are prepared to deal with.
+
+I know btrfs hasn't had maintenance fixes in stable series, but Chris
+Mason tells me the only reason is that nobody stepped up to do so.
+Given my interest, I might as well give it a try ;-)
+
+Thanks,
 
 
-thanks,
-david
+--=-=-=
+Content-Type: text/x-diff
+Content-Disposition: inline;
+ filename=0001-Btrfs-fall-back-to-non-inline-if-we-don-t-have-enoug.patch
+
+>From 2adcac1a7331d93a17285804819caa96070b231f Mon Sep 17 00:00:00 2001
+From: Josef Bacik <josef@redhat.com>
+Date: Wed, 23 May 2012 16:10:14 -0400
+Subject: [PATCH] Btrfs: fall back to non-inline if we don't have enough space
+
+If cow_file_range_inline fails with ENOSPC we abort the transaction which
+isn't very nice.  This really shouldn't be happening anyways but there's no
+sense in making it a horrible error when we can easily just go allocate
+normal data space for this stuff.  Thanks,
+
+Signed-off-by: Josef Bacik <josef@redhat.com>
+---
+ fs/btrfs/inode.c |    5 ++++-
+ 1 files changed, 4 insertions(+), 1 deletions(-)
+
+diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
+index 0298928..92df0a5 100644
+--- a/fs/btrfs/inode.c
++++ b/fs/btrfs/inode.c
+@@ -257,10 +257,13 @@ static noinline int cow_file_range_inline(struct btrfs_trans_handle *trans,
+ 	ret = insert_inline_extent(trans, root, inode, start,
+ 				   inline_len, compressed_size,
+ 				   compress_type, compressed_pages);
+-	if (ret) {
++	if (ret && ret != -ENOSPC) {
+ 		btrfs_abort_transaction(trans, root, ret);
+ 		return ret;
++	} else if (ret == -ENOSPC) {
++		return 1;
+ 	}
++
+ 	btrfs_delalloc_release_metadata(inode, end + 1 - start);
+ 	btrfs_drop_extent_cache(inode, start, aligned_end - 1, 0);
+ 	return 0;
+-- 
+1.7.7.6
+
+
+--=-=-=
+
+
+
+-- 
+Alexandre Oliva, freedom fighter    http://FSFLA.org/~lxoliva/
+You must be the change you wish to see in the world. -- Gandhi
+Be Free! -- http://FSFLA.org/   FSF Latin America board member
+Free Software Evangelist      Red Hat Brazil Compiler Engineer
+
+--=-=-=--

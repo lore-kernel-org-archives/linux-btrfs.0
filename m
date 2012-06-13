@@ -1,83 +1,75 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mailout-de.gmx.net ([213.165.64.22]:39955 "HELO
-	mailout-de.gmx.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with SMTP id S1751784Ab2FMHV3 (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 13 Jun 2012 03:21:29 -0400
-Message-ID: <4FD83F75.5000600@gmx.net>
-Date: Wed, 13 Jun 2012 09:21:25 +0200
-From: Arne Jansen <sensille@gmx.net>
-MIME-Version: 1.0
-To: C Anthony Risinger <anthony@xtfx.me>
-CC: Matthew Hawn <steamraven@yahoo.com>, linux-btrfs@vger.kernel.org
+Received: from plane.gmane.org ([80.91.229.3]:53249 "EHLO plane.gmane.org"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1750793Ab2FMHXX (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Wed, 13 Jun 2012 03:23:23 -0400
+Received: from list by plane.gmane.org with local (Exim 4.69)
+	(envelope-from <gcfb-btrfs-devel-moved1@m.gmane.org>)
+	id 1SehvD-0004u6-IV
+	for linux-btrfs@vger.kernel.org; Wed, 13 Jun 2012 09:23:19 +0200
+Received: from ip68-231-22-224.ph.ph.cox.net ([68.231.22.224])
+        by main.gmane.org with esmtp (Gmexim 0.1 (Debian))
+        id 1AlnuQ-0007hv-00
+        for <linux-btrfs@vger.kernel.org>; Wed, 13 Jun 2012 09:23:19 +0200
+Received: from 1i5t5.duncan by ip68-231-22-224.ph.ph.cox.net with local (Gmexim 0.1 (Debian))
+        id 1AlnuQ-0007hv-00
+        for <linux-btrfs@vger.kernel.org>; Wed, 13 Jun 2012 09:23:19 +0200
+To: linux-btrfs@vger.kernel.org
+From: Duncan <1i5t5.duncan@cox.net>
 Subject: Re: Moving top level to a subvolume
-References: <1339183466.55421.YahooMailNeo@web160803.mail.bf1.yahoo.com> <4FD2552D.20003@gmx.net> <CAGAVQTGctBTEKTCvhNbAsw7zMg5NfBm8n=Kf=wULKRNm5LQSjQ@mail.gmail.com>
-In-Reply-To: <CAGAVQTGctBTEKTCvhNbAsw7zMg5NfBm8n=Kf=wULKRNm5LQSjQ@mail.gmail.com>
-Content-Type: text/plain; charset=ISO-8859-1
+Date: Wed, 13 Jun 2012 07:23:04 +0000 (UTC)
+Message-ID: <pan.2012.06.13.07.23.04@cox.net>
+References: <1339183466.55421.YahooMailNeo@web160803.mail.bf1.yahoo.com>
+	<pan.2012.06.12.01.53.23@cox.net> <1477951.uUzcAEg64Z@when>
+	<CAG1y0sfRE502A1vEGyNUz9O9XdNZ+iu4bKs0=OKsWGtoSZKT_w@mail.gmail.com>
+Mime-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 13.06.2012 09:04, C Anthony Risinger wrote:
-> On Fri, Jun 8, 2012 at 2:40 PM, Arne Jansen <sensille@gmx.net> wrote:
->> On 06/08/2012 09:24 PM, Matthew Hawn wrote:
->>> I just converted my root filesystem to btrfs with btrfs-convert.  However, since I am running Ubuntu, I would like to have the same subvolume structure as a default install,. How do I move the top-level subvolume (where all my files currently are) to another subvolume?
->>
->> Just snapshot the root subvol and continue working in the snapshot.
-> 
-> ... yeah but that solution totally sucks when you:
-> 
-> a) have a lot of data
-> b) need to do this via script
-> c) ???
-> 
-> ... because in a), data will *copied* the slow way, and in b) you
-> leave a bunch of junk laying around in the old root that will rot
-> unless you `rm -rf` it ... and idk about you, but issuing what is very
-> near to that command on someone else's machine -- via script -- makes
-> me REALLY uneasy ;-)
+Fajar A. Nugraha posted on Wed, 13 Jun 2012 08:49:47 +0700 as excerpted:
 
-well, don't put data in the top level in the first place. Yes, you have
-to remove the content of the subvol / by rm -rf, but I don't really see
-the problem with it.
-What I don't understand is why you think data will be copied.
+> As for "lose their filesystems", are there recent ones that uses one of
+> the three distros above, and is purely btrfs "fault"? The ones I can
+> remember (from the post to this list) were broken on earlier kernels, or
+> caused by bad disks.
 
-> 
-> i have asked this exact question at least 4 times specifically, and
-> referenced it probably 8-10, in the last 3 years or more.  i needed it
-> then.  i still need it now.  but since i never got an answer up/down
-> or around, i gave up and told people to `rm -rf`themselves ...
-> 
-> http://markmail.org/message/7hj5ioqrztkeerqv
-> 
-> ... that's from May of 2010, but i don't think it's the first.
-> 
-> so, would it possible to implement this, or could someone kindly (and
-> briefly!) explain why it cannot be done?
+I tried btrfs during the 3.4 cycle for a bit, and didn't lose the whole 
+filesystem, but definitely found it not upto my usual standard of 
+robustness, my previous and back to now filesystem, Chris's former 
+project, reiserfs.
 
-The default subvol ('/') has the special number 5 and is expected to
-always be around. All other subvols get numbers starting with 256.
-Creating a new 5 and internally renumbering the old 5 isn't easy, because
-each tree block has an owner recorded in it. Also, all backreferences
-have the root number in them. If you have to touch each tree block, you
-can as well choose the snapshot/rm -rf approach.
+My system's old and has a bit of a problem with overheating in the 
+Phoenix summer, so has been suffering SATA resets (not the disk, the sata 
+chipset most likely, and/or issues with the graphics overheating since 
+I'm using an AMD 8xxx chipset with AGPGART split between IOMMU for 
+storage I/O and graphics) and full system freezes.
 
-> 
-> 1. people install stuff to the top-level
-> 2. top-level is unmanageable
-> 3. ^^^^ problem
-> 
-> in my case i wrote an initramfs hook that implemented rollback
-> functionality, but there was not way for me to cleanly -- and safely
-> -- "rotate" the user's setup to one that DOES NOT have user items in
-> the top-level volume.
+Not only did I have way more stuff disappearing or being zeroed out than 
+on reiserfs (in default data=ordered mode), but in one case I had a 
+segment disappear out of the middle of a file, and in another, I had 
+firefox's crash-resume-file /content/ show up as what SHOULD have been an 
+entirely unrelated configuration file.
 
-Can't instead add code to the installer that warns a user if he wants
-to install into the default subvol?
-Or you could hack mkfs.btrfs to always create an additional subvol.
-Even making / readonly except for creating mountpoint could be possible.
-Just some random ideas...
+Naturally I had backups to restore from, and if it wasn't for the 
+freezes, it would have likely been fine, but it's exactly this sort of 
+corner-case that filesystems need to be able to deal with, and what 
+bothered me wasn't disappearing or zeroed out last few seconds of work 
+with well documented explanations, but having random segments of files 
+that I hadn't changed (whether the app was rewriting them with the same 
+data's another question) in some time disappear, and having one file's 
+content show up with an entirely unrelated name.  I thought that's the 
+sort of thing btrfs checksums were supposed to detect and effectively 
+zero out, but...
 
--Arne
+I decided that's /too/ experimental for me ATM, especially with not-quite-
+stable hardware (it's worth noting that I survived bad memory and the 
+related crashes on reiserfs, without /that/ sort of damage, at least not 
+since data=ordered mode!), so am back on reiserfs for now, anyway.  I'll 
+likely try again next year sometime...
 
-> 
+-- 
+Duncan - List replies preferred.   No HTML msgs.
+"Every nonfree program has a lord, a master --
+and if you use the program, he is your master."  Richard Stallman
 

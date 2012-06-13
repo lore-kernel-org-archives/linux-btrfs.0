@@ -1,33 +1,28 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx1.fusionio.com ([66.114.96.30]:43064 "EHLO mx1.fusionio.com"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1753975Ab2FMOdY (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 13 Jun 2012 10:33:24 -0400
-Date: Wed, 13 Jun 2012 10:33:21 -0400
-From: Chris Mason <chris.mason@fusionio.com>
-To: Alexandre Oliva <oliva@lsd.ic.unicamp.br>
-CC: Greg Kroah-Hartman <gregkh@linuxfoundation.org>,
-        Josef Bacik <josef@redhat.com>, Chris Mason <chris.mason@oracle.com>,
-        "stable@vger.kernel.org" <stable@vger.kernel.org>,
-        "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>,
-        "ceph-devel@vger.kernel.org" <ceph-devel@vger.kernel.org>
-Subject: Re: ceph-on-btrfs inline-cow regression fix for 3.4.3
-Message-ID: <20120613143320.GA374@shiny>
-References: <orvcivvppp.fsf@livre.localdomain>
+Received: from li9-11.members.linode.com ([67.18.176.11]:49648 "EHLO
+	imap.thunk.org" rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1753229Ab2FMTo7 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Wed, 13 Jun 2012 15:44:59 -0400
+Date: Wed, 13 Jun 2012 15:44:55 -0400
+From: "Ted Ts'o" <tytso@mit.edu>
+To: Liu Bo <liubo2009@cn.fujitsu.com>
+Cc: linux-ext4@vger.kernel.org, linux-btrfs@vger.kernel.org, rm@romanrm.ru
+Subject: Re: [PATCH v2] E2fsprogs: add missing usage for No_COW
+Message-ID: <20120613194455.GA17990@thunk.org>
+References: <1339577802-31343-1-git-send-email-liubo2009@cn.fujitsu.com>
 MIME-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-In-Reply-To: <orvcivvppp.fsf@livre.localdomain>
+Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <1339577802-31343-1-git-send-email-liubo2009@cn.fujitsu.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Tue, Jun 12, 2012 at 09:46:26PM -0600, Alexandre Oliva wrote:
-> Hi, Greg,
+On Wed, Jun 13, 2012 at 04:56:42PM +0800, Liu Bo wrote:
+> Add the missing usage for No_COW since we've supported No_COW flag.
 > 
-> There's a btrfs regression in 3.4 that's causing a lot of grief to
-> ceph-on-btrfs users like myself.  This small and nice patch cures it.
-> It's in Linus' master already.  I've been running it on top of 3.4.2,
-> and it would be very convenient for me if this could be in 3.4.3.
+> Signed-off-by: Liu Bo <liubo2009@cn.fujitsu.com>
 
-Ack, this can definitely to go 3.4-stable.  Thanks Alexandre.
+Applied, although I changed the commit desciption to read:
 
--chris
+    chattr: add the -C option to the usage message
+
+    	    	       	      	     - Ted

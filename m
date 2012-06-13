@@ -1,44 +1,39 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from Transportmtw02.mindtree.com ([119.226.208.136]:1242 "EHLO
-	transportmtw01.mindtree.com" rhost-flags-OK-OK-OK-FAIL)
-	by vger.kernel.org with ESMTP id S1751201Ab2FMIsb convert rfc822-to-8bit
-	(ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 13 Jun 2012 04:48:31 -0400
-From: Santosh Hosamani <Santosh_Hosamani@mindtree.com>
-To: Randy Barlow <randy@electronsweatshop.com>,
-        "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
-Subject: RE: Bug in btrfs-debug-tree for two  or more devices.
-Date: Wed, 13 Jun 2012 08:43:01 +0000
-Message-ID: <24763ECA27C26742BD79B0D67389CD0E071B34C6@MTW02MBX05.mindtree.com>
-References: <24763ECA27C26742BD79B0D67389CD0E071B3067@MTW02MBX05.mindtree.com>
- <1379818.8vajKikOe7@when>
-In-Reply-To: <1379818.8vajKikOe7@when>
-Content-Type: text/plain; charset="us-ascii"
-MIME-Version: 1.0
+Received: from cn.fujitsu.com ([222.73.24.84]:49658 "EHLO song.cn.fujitsu.com"
+	rhost-flags-OK-FAIL-OK-OK) by vger.kernel.org with ESMTP
+	id S1751702Ab2FMItZ (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Wed, 13 Jun 2012 04:49:25 -0400
+From: Liu Bo <liubo2009@cn.fujitsu.com>
+To: <linux-ext4@vger.kernel.org>
+Cc: <linux-btrfs@vger.kernel.org>, <rm@romanrm.ru>
+Subject: [PATCH v2] E2fsprogs: add missing usage for No_COW
+Date: Wed, 13 Jun 2012 16:56:42 +0800
+Message-Id: <1339577802-31343-1-git-send-email-liubo2009@cn.fujitsu.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
+Add the missing usage for No_COW since we've supported No_COW flag.
 
+Signed-off-by: Liu Bo <liubo2009@cn.fujitsu.com>
+---
+v1->v2: sort options alphabetically, thanks to Roman Mamedov.
 
------Original Message-----
-From: linux-btrfs-owner@vger.kernel.org [mailto:linux-btrfs-owner@vger.kernel.org] On Behalf Of Randy Barlow
-Sent: Tuesday, June 12, 2012 8:28 PM
-To: linux-btrfs@vger.kernel.org
-Subject: Re: Bug in btrfs-debug-tree for two or more devices.
+ misc/chattr.c |    2 +-
+ 1 files changed, 1 insertions(+), 1 deletions(-)
 
-On Tuesday, June 12, 2012 06:53:00 AM Santosh Hosamani wrote:
-> Kernel 3.0.13.0.27-default
+diff --git a/misc/chattr.c b/misc/chattr.c
+index 141ea6e..24254cc 100644
+--- a/misc/chattr.c
++++ b/misc/chattr.c
+@@ -83,7 +83,7 @@ static unsigned long sf;
+ static void usage(void)
+ {
+ 	fprintf(stderr,
+-		_("Usage: %s [-RVf] [-+=AacDdeijsSu] [-v version] files...\n"),
++		_("Usage: %s [-RVf] [-+=AaCcDdeijsSu] [-v version] files...\n"),
+ 		program_name);
+ 	exit(1);
+ }
+-- 
+1.6.5.2
 
-This kernel is very old for btrfs. Can you try with at least Linux 3.4?
-
-I have installed 3.4.2 kernel but still I am facing the same issue.May be my understanding of calculating the used block may be wrong.
-If someone could help me in understanding .It would be great.
-
---
-R
---
-To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in the body of a message to majordomo@vger.kernel.org More majordomo info at  http://vger.kernel.org/majordomo-info.html
-
-________________________________
-
-http://www.mindtree.com/email/disclaimer.html

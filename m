@@ -1,98 +1,63 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([222.73.24.84]:42428 "EHLO song.cn.fujitsu.com"
-	rhost-flags-OK-FAIL-OK-OK) by vger.kernel.org with ESMTP
-	id S1755021Ab2FNDMS (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 13 Jun 2012 23:12:18 -0400
-Message-ID: <4FD9563E.5020906@cn.fujitsu.com>
-Date: Thu, 14 Jun 2012 11:10:54 +0800
-From: Miao Xie <miaox@cn.fujitsu.com>
-Reply-To: miaox@cn.fujitsu.com
-MIME-Version: 1.0
+Received: from twin.jikos.cz ([89.185.236.188]:33983 "EHLO twin.jikos.cz"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1755420Ab2FNKmc (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Thu, 14 Jun 2012 06:42:32 -0400
+Date: Thu, 14 Jun 2012 12:42:27 +0200
+From: David Sterba <dave@jikos.cz>
 To: Josef Bacik <josef@redhat.com>
-CC: linux-btrfs@vger.kernel.org
-Subject: Re: [PATCH 2/2] Btrfs: implement ->show_devname V2
-References: <1339530642-13862-1-git-send-email-josef@redhat.com> <1339530642-13862-2-git-send-email-josef@redhat.com>
-In-Reply-To: <1339530642-13862-2-git-send-email-josef@redhat.com>
-Content-Type: text/plain; charset=UTF-8
+Cc: Stefan Behrens <sbehrens@giantdisaster.de>, linux-btrfs@vger.kernel.org
+Subject: Re: [PATCH 1/2] Btrfs: use rcu to protect device->name V2
+Message-ID: <20120614104227.GQ32402@twin.jikos.cz>
+Reply-To: dave@jikos.cz
+References: <1339530642-13862-1-git-send-email-josef@redhat.com>
+ <20120612223526.GJ32402@twin.jikos.cz>
+ <20120613131426.GA2186@localhost.localdomain>
+ <4FD89A53.1060704@giantdisaster.de>
+ <20120613135103.GA5461@localhost.localdomain>
+MIME-Version: 1.0
+Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <20120613135103.GA5461@localhost.localdomain>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 	tue, 12 Jun 2012 15:50:42 -0400, Josef Bacik wrote:
-> Because btrfs can remove the device that was mounted we need to have a
-> ->show_devname so that in this case we can print out some other device in
-> the file system to /proc/mount.  So if there are multiple devices in a btrfs
-> file system we will just print the device with the lowest devid that we can
-> find.  This will make everything consistent and deal with device removal
-> properly.  The drawback is if you mount with a device that is higher than
-> the lowest devicd it won't show up as the mounted device in /proc/mounts,
-> but this is a small price to pay. This was inspired by Miao Xie's patch.
-> Thanks,
+On Wed, Jun 13, 2012 at 09:51:03AM -0400, Josef Bacik wrote:
+> On Wed, Jun 13, 2012 at 03:49:07PM +0200, Stefan Behrens wrote:
+> > The last sentence of chapter 2 of Documentation/CodingStyle is quite
+> > unambiguous. Here is the full quote of that chapter:
+> > 
+> >                 Chapter 2: Breaking long lines and strings
+> > 
+> > Coding style is all about readability and maintainability using commonly
+> > available tools.
+> > 
+> > The limit on the length of lines is 80 columns and this is a strongly
+> > preferred limit.
+> > 
+> > Statements longer than 80 columns will be broken into sensible chunks,
+> > unless
+> > exceeding 80 columns significantly increases readability and does not hide
+> > information. Descendants are always substantially shorter than the
+> > parent and
+> > are placed substantially to the right. The same applies to function headers
+> > with a long argument list. However, never break user-visible strings such as
+> > printk messages, because that breaks the ability to grep for them.
 > 
-> Signed-off-by: Josef Bacik <josef@redhat.com>
+> Ah never seen that part of it, I will leave them alone then.  Thanks,
 
-Reviewed-by: Miao Xie <miaox@cn.fujitsu.com>
+Added not so long ago
 
-> ---
-> V1->V2: Dropped the mounted tracking stuff since it doesn't work right if you
-> mount the same thing twice
->  fs/btrfs/super.c |   33 +++++++++++++++++++++++++++++++++
->  1 files changed, 33 insertions(+), 0 deletions(-)
-> 
-> diff --git a/fs/btrfs/super.c b/fs/btrfs/super.c
-> index 85cef50..0874dba 100644
-> --- a/fs/btrfs/super.c
-> +++ b/fs/btrfs/super.c
-> @@ -54,6 +54,7 @@
->  #include "version.h"
->  #include "export.h"
->  #include "compression.h"
-> +#include "rcu-string.h"
->  
->  #define CREATE_TRACE_POINTS
->  #include <trace/events/btrfs.h>
-> @@ -1472,12 +1473,44 @@ static int btrfs_unfreeze(struct super_block *sb)
->  	return 0;
->  }
->  
-> +static int btrfs_show_devname(struct seq_file *m, struct dentry *root)
-> +{
-> +	struct btrfs_fs_info *fs_info = btrfs_sb(root->d_sb);
-> +	struct btrfs_fs_devices *cur_devices;
-> +	struct btrfs_device *dev, *first_dev = NULL;
-> +	struct list_head *head;
-> +	struct rcu_string *name;
-> +
-> +	mutex_lock(&fs_info->fs_devices->device_list_mutex);
-> +	cur_devices = fs_info->fs_devices;
-> +	while (cur_devices) {
-> +		head = &cur_devices->devices;
-> +		list_for_each_entry(dev, head, dev_list) {
-> +			if (!first_dev || dev->devid < first_dev->devid)
-> +				first_dev = dev;
-> +		}
-> +		cur_devices = cur_devices->seed;
-> +	}
-> +
-> +	if (first_dev) {
-> +		rcu_read_lock();
-> +		name = rcu_dereference(first_dev->name);
-> +		seq_escape(m, name->str, " \t\n\\");
-> +		rcu_read_unlock();
-> +	} else {
-> +		WARN_ON(1);
-> +	}
-> +	mutex_unlock(&fs_info->fs_devices->device_list_mutex);
-> +	return 0;
-> +}
-> +
->  static const struct super_operations btrfs_super_ops = {
->  	.drop_inode	= btrfs_drop_inode,
->  	.evict_inode	= btrfs_evict_inode,
->  	.put_super	= btrfs_put_super,
->  	.sync_fs	= btrfs_sync_fs,
->  	.show_options	= btrfs_show_options,
-> +	.show_devname	= btrfs_show_devname,
->  	.write_inode	= btrfs_write_inode,
->  	.alloc_inode	= btrfs_alloc_inode,
->  	.destroy_inode	= btrfs_destroy_inode,
+commit 6f76b6fcaa6025bc9b2c00e055c7ccd39730568d
+Author: Josh Triplett <josh@joshtriplett.org>
+Date:   Wed Aug 3 12:19:07 2011 -0700
+
+    CodingStyle: Document the exception of not splitting user-visible strings, for grepping
+
+    Patch reviewers now recommend not splitting long user-visible strings,
+    such as printk messages, even if they exceed 80 columns.  This avoids
+    breaking grep.  However, that recommendation did not actually appear
+    anywhere in Documentation/CodingStyle.
+
+    See, for example, the thread at
+      http://news.gmane.org/find-root.php?message_id=%3c1312215262.11635.15.camel%40Joe%2dLaptop%3e
 

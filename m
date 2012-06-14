@@ -1,119 +1,98 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx1.redhat.com ([209.132.183.28]:50698 "EHLO mx1.redhat.com"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1753885Ab2FMNvI (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 13 Jun 2012 09:51:08 -0400
-Date: Wed, 13 Jun 2012 09:51:03 -0400
-From: Josef Bacik <josef@redhat.com>
-To: Stefan Behrens <sbehrens@giantdisaster.de>
-Cc: Josef Bacik <josef@redhat.com>, linux-btrfs@vger.kernel.org
-Subject: Re: [PATCH 1/2] Btrfs: use rcu to protect device->name V2
-Message-ID: <20120613135103.GA5461@localhost.localdomain>
-References: <1339530642-13862-1-git-send-email-josef@redhat.com>
- <20120612223526.GJ32402@twin.jikos.cz>
- <20120613131426.GA2186@localhost.localdomain>
- <4FD89A53.1060704@giantdisaster.de>
+Received: from cn.fujitsu.com ([222.73.24.84]:42428 "EHLO song.cn.fujitsu.com"
+	rhost-flags-OK-FAIL-OK-OK) by vger.kernel.org with ESMTP
+	id S1755021Ab2FNDMS (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Wed, 13 Jun 2012 23:12:18 -0400
+Message-ID: <4FD9563E.5020906@cn.fujitsu.com>
+Date: Thu, 14 Jun 2012 11:10:54 +0800
+From: Miao Xie <miaox@cn.fujitsu.com>
+Reply-To: miaox@cn.fujitsu.com
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <4FD89A53.1060704@giantdisaster.de>
+To: Josef Bacik <josef@redhat.com>
+CC: linux-btrfs@vger.kernel.org
+Subject: Re: [PATCH 2/2] Btrfs: implement ->show_devname V2
+References: <1339530642-13862-1-git-send-email-josef@redhat.com> <1339530642-13862-2-git-send-email-josef@redhat.com>
+In-Reply-To: <1339530642-13862-2-git-send-email-josef@redhat.com>
+Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Wed, Jun 13, 2012 at 03:49:07PM +0200, Stefan Behrens wrote:
-> On Wed, 13 Jun 2012 09:14:27 -0400, Josef Bacik wrote:
-> > On Wed, Jun 13, 2012 at 12:35:26AM +0200, David Sterba wrote:
-> >> On Tue, Jun 12, 2012 at 03:50:41PM -0400, Josef Bacik wrote:
-> >>> @@ -4694,8 +4716,11 @@ int btrfs_init_dev_stats(struct btrfs_fs_info *fs_info)
-> >>>  		key.offset = device->devid;
-> >>>  		ret = btrfs_search_slot(NULL, dev_root, &key, path, 0, 0);
-> >>>  		if (ret) {
-> >>> -			printk(KERN_WARNING "btrfs: no dev_stats entry found for device %s (devid %llu) (OK on first mount after mkfs)\n",
-> >>> -			       device->name, (unsigned long long)device->devid);
-> >>> +			printk_in_rcu(KERN_WARNING "btrfs: no dev_stats entry "
-> >>> +				      "found for device %s (devid %llu) (OK on"
-> >>> +				      " first mount after mkfs)\n",
-> >>
-> >> breaking printk strings hurts when grepping for a message
-> >>
-> >>> +				      rcu_str_deref(device->name),
-> >>> +				      (unsigned long long)device->devid);
-> >>>  			__btrfs_reset_dev_stats(device);
-> >>>  			device->dev_stats_valid = 1;
-> >>>  			btrfs_release_path(path);
-> >>> @@ -4747,8 +4772,9 @@ static int update_dev_stat_item(struct btrfs_trans_handle *trans,
-> >>>  	BUG_ON(!path);
-> >>>  	ret = btrfs_search_slot(trans, dev_root, &key, path, -1, 1);
-> >>>  	if (ret < 0) {
-> >>> -		printk(KERN_WARNING "btrfs: error %d while searching for dev_stats item for device %s!\n",
-> >>> -		       ret, device->name);
-> >>> +		printk_in_rcu(KERN_WARNING "btrfs: error %d while searching "
-> >>> +			      "for dev_stats item for device %s!\n", ret,
-> >>
-> >> and here as well
-> >>
-> >>> +			      rcu_str_deref(device->name));
-> >>>  		goto out;
-> >>>  	}
-> >>>  
-> >>> @@ -4757,8 +4783,9 @@ static int update_dev_stat_item(struct btrfs_trans_handle *trans,
-> >>>  		/* need to delete old one and insert a new one */
-> >>>  		ret = btrfs_del_item(trans, dev_root, path);
-> >>>  		if (ret != 0) {
-> >>> -			printk(KERN_WARNING "btrfs: delete too small dev_stats item for device %s failed %d!\n",
-> >>> -			       device->name, ret);
-> >>> +			printk_in_rcu(KERN_WARNING "btrfs: delete too small "
-> >>> +				      "dev_stats item for device %s failed %d!\n",
-> >>
-> >> here
-> >>
-> >>> +				      rcu_str_deref(device->name), ret);
-> >>>  			goto out;
-> >>>  		}
-> >>>  		ret = 1;
-> >>> @@ -4770,8 +4797,9 @@ static int update_dev_stat_item(struct btrfs_trans_handle *trans,
-> >>>  		ret = btrfs_insert_empty_item(trans, dev_root, path,
-> >>>  					      &key, sizeof(*ptr));
-> >>>  		if (ret < 0) {
-> >>> -			printk(KERN_WARNING "btrfs: insert dev_stats item for device %s failed %d!\n",
-> >>> -			       device->name, ret);
-> >>> +			printk_in_rcu(KERN_WARNING "btrfs: insert dev_stats "
-> >>> +				      "item for device %s failed %d!\n",
-> >>
-> >> here
-> >>
-> >>> +				      rcu_str_deref(device->name), ret);
-> >>>  			goto out;
-> >>>  		}
-> >>>  	}
-> >>
-> >> mostly minor things, but please fix them.
-> >>
-> > 
-> > I'm breaking them for the 80 char limit, it happens for all long messages, we're
-> > all used to it.  I'll fix up the other things.  Thanks,
-> > 
-> > Josef
+On 	tue, 12 Jun 2012 15:50:42 -0400, Josef Bacik wrote:
+> Because btrfs can remove the device that was mounted we need to have a
+> ->show_devname so that in this case we can print out some other device in
+> the file system to /proc/mount.  So if there are multiple devices in a btrfs
+> file system we will just print the device with the lowest devid that we can
+> find.  This will make everything consistent and deal with device removal
+> properly.  The drawback is if you mount with a device that is higher than
+> the lowest devicd it won't show up as the mounted device in /proc/mounts,
+> but this is a small price to pay. This was inspired by Miao Xie's patch.
+> Thanks,
 > 
-> The last sentence of chapter 2 of Documentation/CodingStyle is quite
-> unambiguous. Here is the full quote of that chapter:
-> 
->                 Chapter 2: Breaking long lines and strings
-> 
-> Coding style is all about readability and maintainability using commonly
-> available tools.
-> 
-> The limit on the length of lines is 80 columns and this is a strongly
-> preferred limit.
-> 
-> Statements longer than 80 columns will be broken into sensible chunks,
-> unless
-> exceeding 80 columns significantly increases readability and does not hide
-> information. Descendants are always substantially shorter than the
-> parent and
-> are placed substantially to the right. The same applies to function headers
-> with a long argument list. However, never break user-visible strings such as
-> printk messages, because that breaks the ability to grep for them.
+> Signed-off-by: Josef Bacik <josef@redhat.com>
 
-Ah never seen that part of it, I will leave them alone then.  Thanks,
+Reviewed-by: Miao Xie <miaox@cn.fujitsu.com>
 
-Josef
+> ---
+> V1->V2: Dropped the mounted tracking stuff since it doesn't work right if you
+> mount the same thing twice
+>  fs/btrfs/super.c |   33 +++++++++++++++++++++++++++++++++
+>  1 files changed, 33 insertions(+), 0 deletions(-)
+> 
+> diff --git a/fs/btrfs/super.c b/fs/btrfs/super.c
+> index 85cef50..0874dba 100644
+> --- a/fs/btrfs/super.c
+> +++ b/fs/btrfs/super.c
+> @@ -54,6 +54,7 @@
+>  #include "version.h"
+>  #include "export.h"
+>  #include "compression.h"
+> +#include "rcu-string.h"
+>  
+>  #define CREATE_TRACE_POINTS
+>  #include <trace/events/btrfs.h>
+> @@ -1472,12 +1473,44 @@ static int btrfs_unfreeze(struct super_block *sb)
+>  	return 0;
+>  }
+>  
+> +static int btrfs_show_devname(struct seq_file *m, struct dentry *root)
+> +{
+> +	struct btrfs_fs_info *fs_info = btrfs_sb(root->d_sb);
+> +	struct btrfs_fs_devices *cur_devices;
+> +	struct btrfs_device *dev, *first_dev = NULL;
+> +	struct list_head *head;
+> +	struct rcu_string *name;
+> +
+> +	mutex_lock(&fs_info->fs_devices->device_list_mutex);
+> +	cur_devices = fs_info->fs_devices;
+> +	while (cur_devices) {
+> +		head = &cur_devices->devices;
+> +		list_for_each_entry(dev, head, dev_list) {
+> +			if (!first_dev || dev->devid < first_dev->devid)
+> +				first_dev = dev;
+> +		}
+> +		cur_devices = cur_devices->seed;
+> +	}
+> +
+> +	if (first_dev) {
+> +		rcu_read_lock();
+> +		name = rcu_dereference(first_dev->name);
+> +		seq_escape(m, name->str, " \t\n\\");
+> +		rcu_read_unlock();
+> +	} else {
+> +		WARN_ON(1);
+> +	}
+> +	mutex_unlock(&fs_info->fs_devices->device_list_mutex);
+> +	return 0;
+> +}
+> +
+>  static const struct super_operations btrfs_super_ops = {
+>  	.drop_inode	= btrfs_drop_inode,
+>  	.evict_inode	= btrfs_evict_inode,
+>  	.put_super	= btrfs_put_super,
+>  	.sync_fs	= btrfs_sync_fs,
+>  	.show_options	= btrfs_show_options,
+> +	.show_devname	= btrfs_show_devname,
+>  	.write_inode	= btrfs_write_inode,
+>  	.alloc_inode	= btrfs_alloc_inode,
+>  	.destroy_inode	= btrfs_destroy_inode,
+

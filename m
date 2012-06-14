@@ -1,40 +1,57 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([222.73.24.84]:57823 "EHLO song.cn.fujitsu.com"
+Received: from cn.fujitsu.com ([222.73.24.84]:59460 "EHLO song.cn.fujitsu.com"
 	rhost-flags-OK-FAIL-OK-OK) by vger.kernel.org with ESMTP
-	id S1751208Ab2FNIQG (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 14 Jun 2012 04:16:06 -0400
+	id S1752034Ab2FNIQD (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Thu, 14 Jun 2012 04:16:03 -0400
 From: Liu Bo <liubo2009@cn.fujitsu.com>
 To: <chris.mason@fusionio.com>
 Cc: <linux-btrfs@vger.kernel.org>
-Subject: [PATCH 07/10 trival] Btrfs: fix typo in btrfs_finish_ordered_io
-Date: Thu, 14 Jun 2012 16:23:23 +0800
-Message-Id: <1339662206-5307-8-git-send-email-liubo2009@cn.fujitsu.com>
+Subject: [PATCH 05/10 RESEND] Btrfs: make sure that we've made everything in pinned tree clean
+Date: Thu, 14 Jun 2012 16:23:21 +0800
+Message-Id: <1339662206-5307-6-git-send-email-liubo2009@cn.fujitsu.com>
 In-Reply-To: <1339662206-5307-1-git-send-email-liubo2009@cn.fujitsu.com>
 References: <1339662206-5307-1-git-send-email-liubo2009@cn.fujitsu.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Fix typo errors in comments of btrfs_finish_ordered_io.
+Since we have two trees for recording pinned extents, we need to go through
+both of them to make sure that we've done everything clean.
 
 Signed-off-by: Liu Bo <liubo2009@cn.fujitsu.com>
 ---
- fs/btrfs/inode.c |    4 ++--
- 1 files changed, 2 insertions(+), 2 deletions(-)
+ fs/btrfs/disk-io.c |   11 +++++++++++
+ 1 files changed, 11 insertions(+), 0 deletions(-)
 
-diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
-index bc66330..3bb6b25 100644
---- a/fs/btrfs/inode.c
-+++ b/fs/btrfs/inode.c
-@@ -1929,8 +1929,8 @@ out:
- 				      ordered_extent->len - 1, NULL, GFP_NOFS);
+diff --git a/fs/btrfs/disk-io.c b/fs/btrfs/disk-io.c
+index 1030cff..61deaa6 100644
+--- a/fs/btrfs/disk-io.c
++++ b/fs/btrfs/disk-io.c
+@@ -3553,8 +3553,10 @@ static int btrfs_destroy_pinned_extent(struct btrfs_root *root,
+ 	u64 start;
+ 	u64 end;
+ 	int ret;
++	bool loop = true;
  
- 	/*
--	 * This needs to be dont to make sure anybody waiting knows we are done
--	 * upating everything for this ordered extent.
-+	 * This needs to be done to make sure anybody waiting knows we are done
-+	 * updating everything for this ordered extent.
- 	 */
- 	btrfs_remove_ordered_extent(inode, ordered_extent);
+ 	unpin = pinned_extents;
++again:
+ 	while (1) {
+ 		ret = find_first_extent_bit(unpin, 0, &start, &end,
+ 					    EXTENT_DIRTY);
+@@ -3572,6 +3574,15 @@ static int btrfs_destroy_pinned_extent(struct btrfs_root *root,
+ 		cond_resched();
+ 	}
+ 
++	if (loop) {
++		if (unpin == &root->fs_info->freed_extents[0])
++			unpin = &root->fs_info->freed_extents[1];
++		else
++			unpin = &root->fs_info->freed_extents[0];
++		loop = false;
++		goto again;
++	}
++
+ 	return 0;
+ }
  
 -- 
 1.6.5.2

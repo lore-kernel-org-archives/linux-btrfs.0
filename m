@@ -1,56 +1,53 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([222.73.24.84]:59460 "EHLO song.cn.fujitsu.com"
+Received: from cn.fujitsu.com ([222.73.24.84]:57823 "EHLO song.cn.fujitsu.com"
 	rhost-flags-OK-FAIL-OK-OK) by vger.kernel.org with ESMTP
-	id S1752075Ab2FNIQB (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 14 Jun 2012 04:16:01 -0400
+	id S1751899Ab2FNIQA (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Thu, 14 Jun 2012 04:16:00 -0400
 From: Liu Bo <liubo2009@cn.fujitsu.com>
 To: <chris.mason@fusionio.com>
 Cc: <linux-btrfs@vger.kernel.org>
-Subject: [GIT PULL][PATCH 00/10] bug-fixes and cleanups
-Date: Thu, 14 Jun 2012 16:23:16 +0800
-Message-Id: <1339662206-5307-1-git-send-email-liubo2009@cn.fujitsu.com>
+Subject: [PATCH 02/10] Btrfs: fix missing inherited flag in rename
+Date: Thu, 14 Jun 2012 16:23:18 +0800
+Message-Id: <1339662206-5307-3-git-send-email-liubo2009@cn.fujitsu.com>
+In-Reply-To: <1339662206-5307-1-git-send-email-liubo2009@cn.fujitsu.com>
+References: <1339662206-5307-1-git-send-email-liubo2009@cn.fujitsu.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hi Chris,
+When we move a file into a directory with compression flag, we need to
+inherite BTRFS_INODE_COMPRESS and clear BTRFS_INODE_NOCOMPRESS as well.
+But if we move a file into a directory without compression flag, we need
+to clear both of them.
 
-Here are some bug-fixes and cleanups, you can pull it from
+It is the way how our setflags deals with compression flag, so keep
+the same behaviour here.
 
-         git://github.com/liubogithub/btrfs-work.git for-chris
+Signed-off-by: Liu Bo <liubo2009@cn.fujitsu.com>
+---
+ fs/btrfs/inode.c |    9 ++++++---
+ 1 files changed, 6 insertions(+), 3 deletions(-)
 
-
-There are two patches for setflags/getflags, in which we did not set compress
-flags properly.
-
-And four patches focus on error handling side.
-
-Besides, three trival cleanups and an update for MAINTAINERS are also included.
-
-I've run through xfstests and everything looks good.
-
-
-Liu Bo (9):
-  Btrfs: remove unused FS_NOCOMP_FL check in setflags and getflags
-  Btrfs: fix missing inherited flag in rename
-  Btrfs: do not resize a seeding device
-  Btrfs: avoid memory leak of extent state in error handling routine
-  Btrfs: make sure that we've made everything in pinned tree clean
-  Btrfs: fix typo in btrfs_finish_ordered_io
-  Btrfs: fix typo in cow_file_range_async
-  Btrfs: update MAINTAINERS info for BTRFS FILE SYSTEM
-  Btrfs: use wrapper page_offset
-
-Miao Xie (1):
-  Btrfs: destroy the items of the delayed inodes in error handling
-    routine
-
- MAINTAINERS              |    4 ++--
- fs/btrfs/delayed-inode.c |   18 ++++++++++++++++++
- fs/btrfs/delayed-inode.h |    3 +++
- fs/btrfs/disk-io.c       |   21 ++++++++++++++++++++-
- fs/btrfs/extent_io.c     |   20 ++++++++++----------
- fs/btrfs/inode.c         |   17 ++++++++++-------
- fs/btrfs/ioctl.c         |   24 +++++++++++-------------
- fs/btrfs/relocation.c    |    2 +-
- 8 files changed, 75 insertions(+), 34 deletions(-)
+diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
+index 92df0a5..bc66330 100644
+--- a/fs/btrfs/inode.c
++++ b/fs/btrfs/inode.c
+@@ -7082,10 +7082,13 @@ static void fixup_inode_flags(struct inode *dir, struct inode *inode)
+ 	else
+ 		b_inode->flags &= ~BTRFS_INODE_NODATACOW;
+ 
+-	if (b_dir->flags & BTRFS_INODE_COMPRESS)
++	if (b_dir->flags & BTRFS_INODE_COMPRESS) {
+ 		b_inode->flags |= BTRFS_INODE_COMPRESS;
+-	else
+-		b_inode->flags &= ~BTRFS_INODE_COMPRESS;
++		b_inode->flags &= ~BTRFS_INODE_NOCOMPRESS;
++	} else {
++		b_inode->flags &= ~(BTRFS_INODE_COMPRESS |
++				    BTRFS_INODE_NOCOMPRESS);
++	}
+ }
+ 
+ static int btrfs_rename(struct inode *old_dir, struct dentry *old_dentry,
+-- 
+1.6.5.2
 

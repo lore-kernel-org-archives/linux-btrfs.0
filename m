@@ -1,34 +1,65 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from lulu.zabbo.net ([69.168.54.52]:52798 "EHLO lulu.zabbo.net"
+Received: from xp-ob.rzone.de ([81.169.146.136]:55370 "EHLO xp-ob.rzone.de"
 	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S932111Ab2FNQbu (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 14 Jun 2012 12:31:50 -0400
-Received: from [192.168.242.10] (50-193-208-193-static.hfc.comcastbusiness.net [50.193.208.193])
-	(using TLSv1 with cipher DHE-RSA-CAMELLIA256-SHA (256/256 bits))
-	(No client certificate requested)
-	by lulu.zabbo.net (Postfix) with ESMTPSA id EC2932216CB
-	for <linux-btrfs@vger.kernel.org>; Thu, 14 Jun 2012 09:31:49 -0700 (PDT)
-Message-ID: <4FDA11F5.6050703@zabbo.net>
-Date: Thu, 14 Jun 2012 09:31:49 -0700
-From: Zach Brown <zab@zabbo.net>
-MIME-Version: 1.0
+	id S1754116Ab2FNOme (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Thu, 14 Jun 2012 10:42:34 -0400
+Received: from pizpot.store ([192.168.43.236])
+	by jorabe.store (jorabe xp1) (RZmta 29.13 OK)
+	with ESMTP id X0788bo5EARWiO for <linux-btrfs@vger.kernel.org>;
+	Thu, 14 Jun 2012 16:42:31 +0200 (CEST)
+From: Stefan Behrens <sbehrens@giantdisaster.de>
 To: linux-btrfs@vger.kernel.org
-Subject: Re: Question, Does BTRFS provide a read speed increase with RAID1
-References: <CACCfv7q83FYmrcVO3TwMwX2HmNZpkdO=uJOTtR1X9E7_wUWz9w@mail.gmail.com> <4FD9AAA0.2040802@gmx.net> <20120614095232.GL32402@twin.jikos.cz>
-In-Reply-To: <20120614095232.GL32402@twin.jikos.cz>
-Content-Type: text/plain; charset=ISO-8859-1; format=flowed
+Subject: [PATCH] Btrfs: don't count I/O statistic read errors for missing devices
+Date: Thu, 14 Jun 2012 16:42:31 +0200
+Message-Id: <1339684951-11688-1-git-send-email-sbehrens@giantdisaster.de>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
+It is normal behaviour of the low level btrfs function btrfs_map_bio()
+to complete a bio with -EIO if the device is missing, instead of just
+preventing the bio creation in an earlier step.
+This used to cause I/O statistic read error increments and annoying
+printk_ratelimited messages. This commit fixes the issue.
 
-> I'd like to find a better mirror selection hint that would work well on
-> avearage and will get back to it someday, unless somebody else wants to
-> continue experimenting here.
+Signed-off-by: Stefan Behrens <sbehrens@giantdisaster.de>
+Reported-by: Carey Underwood <cwillu@cwillu.com>
+---
+ fs/btrfs/volumes.c |   22 ++++++++++++----------
+ 1 file changed, 12 insertions(+), 10 deletions(-)
 
-Well, for some context you can see what the existing kernel raid 
-implementations do:
+diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
+index 7782020..19b51ad 100644
+--- a/fs/btrfs/volumes.c
++++ b/fs/btrfs/volumes.c
+@@ -4045,16 +4045,18 @@ static void btrfs_end_bio(struct bio *bio, int err)
+ 
+ 			BUG_ON(stripe_index >= bbio->num_stripes);
+ 			dev = bbio->stripes[stripe_index].dev;
+-			if (bio->bi_rw & WRITE)
+-				btrfs_dev_stat_inc(dev,
+-						   BTRFS_DEV_STAT_WRITE_ERRS);
+-			else
+-				btrfs_dev_stat_inc(dev,
+-						   BTRFS_DEV_STAT_READ_ERRS);
+-			if ((bio->bi_rw & WRITE_FLUSH) == WRITE_FLUSH)
+-				btrfs_dev_stat_inc(dev,
+-						   BTRFS_DEV_STAT_FLUSH_ERRS);
+-			btrfs_dev_stat_print_on_error(dev);
++			if (dev->bdev) {
++				if (bio->bi_rw & WRITE)
++					btrfs_dev_stat_inc(dev,
++						BTRFS_DEV_STAT_WRITE_ERRS);
++				else
++					btrfs_dev_stat_inc(dev,
++						BTRFS_DEV_STAT_READ_ERRS);
++				if ((bio->bi_rw & WRITE_FLUSH) == WRITE_FLUSH)
++					btrfs_dev_stat_inc(dev,
++						BTRFS_DEV_STAT_FLUSH_ERRS);
++				btrfs_dev_stat_print_on_error(dev);
++			}
+ 		}
+ 	}
+ 
+-- 
+1.7.10.4
 
-	drivers/md/raid1.c:read_balance()
-	drivers/md/dm-raid1.c:do_reads()
-
-- z

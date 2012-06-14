@@ -1,44 +1,39 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
 Received: from cn.fujitsu.com ([222.73.24.84]:41423 "EHLO song.cn.fujitsu.com"
 	rhost-flags-OK-FAIL-OK-OK) by vger.kernel.org with ESMTP
-	id S1752225Ab2FNIQC (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 14 Jun 2012 04:16:02 -0400
+	id S1752506Ab2FNIQF (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Thu, 14 Jun 2012 04:16:05 -0400
 From: Liu Bo <liubo2009@cn.fujitsu.com>
 To: <chris.mason@fusionio.com>
 Cc: <linux-btrfs@vger.kernel.org>
-Subject: [PATCH 03/10 RESEND] Btrfs: do not resize a seeding device
-Date: Thu, 14 Jun 2012 16:23:19 +0800
-Message-Id: <1339662206-5307-4-git-send-email-liubo2009@cn.fujitsu.com>
+Subject: [PATCH 08/10 trival] Btrfs: fix typo in cow_file_range_async
+Date: Thu, 14 Jun 2012 16:23:24 +0800
+Message-Id: <1339662206-5307-9-git-send-email-liubo2009@cn.fujitsu.com>
 In-Reply-To: <1339662206-5307-1-git-send-email-liubo2009@cn.fujitsu.com>
 References: <1339662206-5307-1-git-send-email-liubo2009@cn.fujitsu.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Seeding devices are not supposed to change any more.
+It should be 10 * 1024 * 1024.
 
 Signed-off-by: Liu Bo <liubo2009@cn.fujitsu.com>
 ---
- fs/btrfs/ioctl.c |    7 +++++++
- 1 files changed, 7 insertions(+), 0 deletions(-)
+ fs/btrfs/inode.c |    2 +-
+ 1 files changed, 1 insertions(+), 1 deletions(-)
 
-diff --git a/fs/btrfs/ioctl.c b/fs/btrfs/ioctl.c
-index 57380ee..5ff79fd 100644
---- a/fs/btrfs/ioctl.c
-+++ b/fs/btrfs/ioctl.c
-@@ -1295,6 +1295,13 @@ static noinline int btrfs_ioctl_resize(struct btrfs_root *root,
- 		ret = -EINVAL;
- 		goto out_free;
- 	}
-+	if (device->fs_devices && device->fs_devices->seeding) {
-+		printk(KERN_INFO "btrfs: resizer unable to apply on "
-+		       "seeding device %s\n", device->name);
-+		ret = -EINVAL;
-+		goto out_free;
-+	}
-+
- 	if (!strcmp(sizestr, "max"))
- 		new_size = device->bdev->bd_inode->i_size;
- 	else {
+diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
+index 3bb6b25..da2fd8e 100644
+--- a/fs/btrfs/inode.c
++++ b/fs/btrfs/inode.c
+@@ -1031,7 +1031,7 @@ static int cow_file_range_async(struct inode *inode, struct page *locked_page,
+ 	struct btrfs_root *root = BTRFS_I(inode)->root;
+ 	unsigned long nr_pages;
+ 	u64 cur_end;
+-	int limit = 10 * 1024 * 1042;
++	int limit = 10 * 1024 * 1024;
+ 
+ 	clear_extent_bit(&BTRFS_I(inode)->io_tree, start, end, EXTENT_LOCKED,
+ 			 1, 0, NULL, GFP_NOFS);
 -- 
 1.6.5.2
 

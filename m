@@ -1,134 +1,47 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail.next-gen.ro ([188.173.1.46]:36458 "EHLO mail.next-gen.ro"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1752229Ab2FOLOm (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Fri, 15 Jun 2012 07:14:42 -0400
-Message-ID: <1339758813.24514.7.camel@ierdnac-hp>
+Received: from mail-bk0-f46.google.com ([209.85.214.46]:55006 "EHLO
+	mail-bk0-f46.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1756984Ab2FOO26 (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>);
+	Fri, 15 Jun 2012 10:28:58 -0400
+Received: by bkcji2 with SMTP id ji2so2450988bkc.19
+        for <linux-btrfs@vger.kernel.org>; Fri, 15 Jun 2012 07:28:57 -0700 (PDT)
+Message-ID: <1339770469.24514.22.camel@ierdnac-hp>
 Subject: Re: [PATCH] Btrfs: add "nocompress" mount option
-From: Andrei Popa <andrei.popa@next-gen.ro>
-Reply-To: andrei.popa@next-gen.ro
+From: Andrei Popa <ierdnah@gmail.com>
+Reply-To: ierdnah@gmail.com
 To: dave@jikos.cz
 Cc: linux-btrfs@vger.kernel.org, arnd@arndnet.de
-Date: Fri, 15 Jun 2012 14:13:33 +0300
+Date: Fri, 15 Jun 2012 17:27:49 +0300
 In-Reply-To: <20120615105006.GV32402@twin.jikos.cz>
 References: <1339754209.2212.22.camel@ierdnac-hp>
 	 <20120615105006.GV32402@twin.jikos.cz>
-Content-Type: multipart/signed; micalg="sha1"; protocol="application/x-pkcs7-signature";
-	boundary="=-ceIRist6+8FhgKQKTlWV"
+Content-Type: text/plain; charset="UTF-8"
 Mime-Version: 1.0
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-
---=-ceIRist6+8FhgKQKTlWV
-Content-Type: text/plain; charset="UTF-8"
-Content-Transfer-Encoding: quoted-printable
-
-On Fri, 2012-06-15 at 12:50 +0200, David Sterba wrote:=20
-> that takes a different approach: setting compression to '=3Dno' disables
-> compression. I prefer this over adding an extra option to disable. This
-> way there's no confusion if the compression is on or off.
->=20
+On Fri, 2012-06-15 at 12:50 +0200, David Sterba wrote:
 >   mount -o compress,nocompress /dev /mnt
->=20
+> 
 > Is it on or off? Yeah we can document that nocompress has higher
 > priority. But then I can't turn a nocompress option back to compress via
 > remount. This is possible with Arnd's patch.
 
-Ok, how can we get his patch merged ?
+This happens for space_cache mount option:
+ierdnac-hp ~ # mount -o remount,space_cache,nospace_cache /mnt/btrfs/
 
-Thanks=20
---=20
-Andrei Popa
-NOC Manager - Nextgen Communications
-0760 683 280
+Also there are mount option that can't be enabled/disabled by remount
+like:
+nobarrier - > "barrier" mount option doesn't exists
+ssd -> "nossd" doesn't exists
+noacl, user_subvol_rm_allowed, autodefrag, inode_cache, check_int,
+check_int_data.
 
---=-ceIRist6+8FhgKQKTlWV
-Content-Type: application/x-pkcs7-signature; name="smime.p7s"
-Content-Disposition: attachment; filename="smime.p7s"
-Content-Transfer-Encoding: base64
+For some of these(ex: nossd,barrier) I think it would be usefull to have
+the reverse action.
+What do you think ?
 
-MIAGCSqGSIb3DQEHAqCAMIACAQExCzAJBgUrDgMCGgUAMIAGCSqGSIb3DQEHAQAAoIIPJTCCBN0w
-ggPFoAMCAQICByAGBRZwAwIwDQYJKoZIhvcNAQEFBQAwOzELMAkGA1UEBhMCUk8xETAPBgNVBAoT
-CGNlcnRTSUdOMRkwFwYDVQQLExBjZXJ0U0lHTiBST09UIENBMB4XDTA2MDcwNzE4NDA1MloXDTE2
-MDcwNzE4NDA1MlowXDELMAkGA1UEBhMCUk8xETAPBgNVBAoTCGNlcnRTSUdOMRwwGgYDVQQLExNj
-ZXJ0U0lHTiBDQSBDbGFzcyAyMRwwGgYDVQQDExNjZXJ0U0lHTiBDQSBDbGFzcyAyMIIBIjANBgkq
-hkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAttkkYpv0fzjkaxRFMsbRnsxXabwLB8e1IA0mPCOyBjuj
-bIIcJ4QaChMAcmijOvUkAdbX+fPytFKo658TdnAoTCS3P6muA2cPgcyDxeCz2aBB6/The9HebBYB
-uvL27SkjV1hbuES0UtCxAHVFmrcaosjUalazsgbjzMf5ydIXt/TWBl3v214P5oczq/rxjBK0RNkN
-bOnKoFAF7S6WjVnaCGP+A0QRQplvMgHxIUrDTY6rT09yYRoO1MOnUdlXe0UnoYtqUsgoFc9rqGRI
-OgbsBYF1KmSdW8gk4E5UD4yUQuauiz7HnunbDBT3MOn66YKw1XeaXMHOMsFVuvWo9IsOtQIDAQAB
-o4IBwzCCAb8wMwYIKwYBBQUHAQEEJzAlMCMGCCsGAQUFBzABhhdodHRwOi8vb2NzcC5jZXJ0c2ln
-bi5ybzAPBgNVHRMBAf8EBTADAQH/MA4GA1UdDwEB/wQEAwIBhjBoBgNVHSMEYTBfgBTgjJvbJUmz
-8XyG1rJChwvQa6DZ5KE/pD0wOzELMAkGA1UEBhMCUk8xETAPBgNVBAoTCGNlcnRTSUdOMRkwFwYD
-VQQLExBjZXJ0U0lHTiBST09UIENBggYgBgUWcAIwHQYDVR0OBBYEFLeSQc7tPdGhSINOLoReF9jV
-C+BHMEkGA1UdIARCMEAwPgYLKwYBBAGBwzkBAQIwLzAtBggrBgEFBQcCARYhaHR0cDovL3d3dy5j
-ZXJ0c2lnbi5yby9yZXBvc2l0b3J5MIGSBgNVHR8EgYowgYcwgYSggYGgf4YfaHR0cDovL2NybC5j
-ZXJ0c2lnbi5yby9yb290LmNybIZcbGRhcDovL2xkYXAuY2VydHNpZ24ucm8vT1U9Y2VydFNJR04g
-Uk9PVCBDQSxPPWNlcnRTSUdOLEM9Uk8/Y2VydGlmaWNhdGVSZXZvY2F0aW9uTGlzdDtiaW5hcnkw
-DQYJKoZIhvcNAQEFBQADggEBAEDa2CUsKs4f3k+lItWflKN4BZLB9BBfxeJrhck0rezwWZVpfkJQ
-7bP+fhGUAjDTXNSurBB9K2nwNntkTCaoGG4IPT+u3R30QofE2g3gxyH38SvNCHpI5+2bCHw1mfj5
-mfcRTtbgF+zYigsQrSbohArJhe8flLUlQeDXWx3pGW2av2uXMgoeAMapeNSha5UuweeRqNN4GpaK
-mkdHT+n6ODXn6ogGjAkfgAKw341i1mmk5+r5LNgYJf+AuFIaQMNRqHP81JEhrOUFZTxoBz/sv7WS
-Nzj3/0qkcp542dNg7oQfrsB1mQ5z2yHsDnzut4roRdFWRGl41JNV/G7Tw9Iv2Z4wggUeMIIEBqAD
-AgECAgkgBgUWcAQCBVgwDQYJKoZIhvcNAQEFBQAwXDELMAkGA1UEBhMCUk8xETAPBgNVBAoTCGNl
-cnRTSUdOMRwwGgYDVQQLExNjZXJ0U0lHTiBDQSBDbGFzcyAyMRwwGgYDVQQDExNjZXJ0U0lHTiBD
-QSBDbGFzcyAyMB4XDTExMDkyODEyMTEzNFoXDTEyMDkyODEyMTEzNFowazELMAkGA1UEBhMCUk8x
-JjAkBgNVBAoMHVNDIE5FWFRHRU4gQ09NTVVOSUNBVElPTlMgU1JMMRQwEgYDVQQDDAtBbmRyZWkg
-UG9wYTEPMA0GA1UEKgwGQW5kcmVpMQ0wCwYDVQQEDARQb3BhMIGfMA0GCSqGSIb3DQEBAQUAA4GN
-ADCBiQKBgQDGrpQOcQPKhdF0IFaIlM5cHtlzCp4Pzh4CRinBhM+MJPXFe0k2EZq1zfHFPLuMrdoS
-Ic+TiBFo4QF5eAt7K4kegHWYLHaMq7bY+6FUyKRnfo++gvGmgPQj3FSINxlMj1rEBZTmYixGj7Bn
-FUe2ErvHErnciDxv126+pxsgTjHQVwIDAQABo4ICVjCCAlIwMwYIKwYBBQUHAQEEJzAlMCMGCCsG
-AQUFBzABhhdodHRwOi8vb2NzcC5jZXJ0c2lnbi5ybzAMBgNVHRMBAf8EAjAAMA4GA1UdDwEB/wQE
-AwIEsDBpBgNVHSMEYjBggBS3kkHO7T3RoUiDTi6EXhfY1QvgR6E/pD0wOzELMAkGA1UEBhMCUk8x
-ETAPBgNVBAoTCGNlcnRTSUdOMRkwFwYDVQQLExBjZXJ0U0lHTiBST09UIENBggcgBgUWcAMCMB0G
-A1UdDgQWBBTMEAGmcIocrVgYSojlugr43zgyAzBJBgNVHSAEQjBAMD4GCysGAQQBgcM5AQECMC8w
-LQYIKwYBBQUHAgEWIWh0dHA6Ly93d3cuY2VydHNpZ24ucm8vcmVwb3NpdG9yeTCBrwYDVR0fBIGn
-MIGkMIGhoIGeoIGbhiFodHRwOi8vY3JsLmNlcnRzaWduLnJvL2NsYXNzMi5jcmyGdmxkYXA6Ly9s
-ZGFwLmNlcnRzaWduLnJvL0NOPWNlcnRTSUdOIENBIENsYXNzIDIsT1U9Y2VydFNJR04gQ0EgQ2xh
-c3MgMixPPWNlcnRTSUdOLEM9Uk8/Y2VydGlmaWNhdGVSZXZvY2F0aW9uTGlzdDtiaW5hcnkwSwYD
-VR0RBEQwQqAnBgorBgEEAYI3FAIDoBkMF2FuZHJlaS5wb3BhQG5leHQtZ2VuLnJvgRdhbmRyZWku
-cG9wYUBuZXh0LWdlbi5ybzApBgNVHSUEIjAgBggrBgEFBQcDAgYKKwYBBAGCNxQCAgYIKwYBBQUH
-AwQwDQYJKoZIhvcNAQEFBQADggEBAIl6X8rLy3TYGmZkjidPE+FCqzU2pB0EiS1F7HlDPzYOlLzc
-WCgq1p/GjIwuBuRTucD/h8QwoR89uO7lTBIuNthjEUx/9ezXWJhaVAyz9JEdBhh83vD5z+5D+V0P
-yzh0dEA4g/bmMDs+7poRlz3vayKUTM7xW4SBXVr8l6EypmWa1QyurmcOCSbG6sTQEogEuxRWrEFL
-cyj/TmK/UC9MPmUJihT+dKMRx1qH2YkLGFLCuYXtjRnbdId6lhmQeNhdZw96dlJ35p1Pl4ayqQ7L
-qxLCckT3RtvwoFopzMAaZS5xc8nkRIMuss7XcPgRKX6dRHcEzpHFuxNvk/RFqyTKhGkwggUeMIIE
-BqADAgECAgkgBgUWcAQCBVgwDQYJKoZIhvcNAQEFBQAwXDELMAkGA1UEBhMCUk8xETAPBgNVBAoT
-CGNlcnRTSUdOMRwwGgYDVQQLExNjZXJ0U0lHTiBDQSBDbGFzcyAyMRwwGgYDVQQDExNjZXJ0U0lH
-TiBDQSBDbGFzcyAyMB4XDTExMDkyODEyMTEzNFoXDTEyMDkyODEyMTEzNFowazELMAkGA1UEBhMC
-Uk8xJjAkBgNVBAoMHVNDIE5FWFRHRU4gQ09NTVVOSUNBVElPTlMgU1JMMRQwEgYDVQQDDAtBbmRy
-ZWkgUG9wYTEPMA0GA1UEKgwGQW5kcmVpMQ0wCwYDVQQEDARQb3BhMIGfMA0GCSqGSIb3DQEBAQUA
-A4GNADCBiQKBgQDGrpQOcQPKhdF0IFaIlM5cHtlzCp4Pzh4CRinBhM+MJPXFe0k2EZq1zfHFPLuM
-rdoSIc+TiBFo4QF5eAt7K4kegHWYLHaMq7bY+6FUyKRnfo++gvGmgPQj3FSINxlMj1rEBZTmYixG
-j7BnFUe2ErvHErnciDxv126+pxsgTjHQVwIDAQABo4ICVjCCAlIwMwYIKwYBBQUHAQEEJzAlMCMG
-CCsGAQUFBzABhhdodHRwOi8vb2NzcC5jZXJ0c2lnbi5ybzAMBgNVHRMBAf8EAjAAMA4GA1UdDwEB
-/wQEAwIEsDBpBgNVHSMEYjBggBS3kkHO7T3RoUiDTi6EXhfY1QvgR6E/pD0wOzELMAkGA1UEBhMC
-Uk8xETAPBgNVBAoTCGNlcnRTSUdOMRkwFwYDVQQLExBjZXJ0U0lHTiBST09UIENBggcgBgUWcAMC
-MB0GA1UdDgQWBBTMEAGmcIocrVgYSojlugr43zgyAzBJBgNVHSAEQjBAMD4GCysGAQQBgcM5AQEC
-MC8wLQYIKwYBBQUHAgEWIWh0dHA6Ly93d3cuY2VydHNpZ24ucm8vcmVwb3NpdG9yeTCBrwYDVR0f
-BIGnMIGkMIGhoIGeoIGbhiFodHRwOi8vY3JsLmNlcnRzaWduLnJvL2NsYXNzMi5jcmyGdmxkYXA6
-Ly9sZGFwLmNlcnRzaWduLnJvL0NOPWNlcnRTSUdOIENBIENsYXNzIDIsT1U9Y2VydFNJR04gQ0Eg
-Q2xhc3MgMixPPWNlcnRTSUdOLEM9Uk8/Y2VydGlmaWNhdGVSZXZvY2F0aW9uTGlzdDtiaW5hcnkw
-SwYDVR0RBEQwQqAnBgorBgEEAYI3FAIDoBkMF2FuZHJlaS5wb3BhQG5leHQtZ2VuLnJvgRdhbmRy
-ZWkucG9wYUBuZXh0LWdlbi5ybzApBgNVHSUEIjAgBggrBgEFBQcDAgYKKwYBBAGCNxQCAgYIKwYB
-BQUHAwQwDQYJKoZIhvcNAQEFBQADggEBAIl6X8rLy3TYGmZkjidPE+FCqzU2pB0EiS1F7HlDPzYO
-lLzcWCgq1p/GjIwuBuRTucD/h8QwoR89uO7lTBIuNthjEUx/9ezXWJhaVAyz9JEdBhh83vD5z+5D
-+V0Pyzh0dEA4g/bmMDs+7poRlz3vayKUTM7xW4SBXVr8l6EypmWa1QyurmcOCSbG6sTQEogEuxRW
-rEFLcyj/TmK/UC9MPmUJihT+dKMRx1qH2YkLGFLCuYXtjRnbdId6lhmQeNhdZw96dlJ35p1Pl4ay
-qQ7LqxLCckT3RtvwoFopzMAaZS5xc8nkRIMuss7XcPgRKX6dRHcEzpHFuxNvk/RFqyTKhGkxggJm
-MIICYgIBATBpMFwxCzAJBgNVBAYTAlJPMREwDwYDVQQKEwhjZXJ0U0lHTjEcMBoGA1UECxMTY2Vy
-dFNJR04gQ0EgQ2xhc3MgMjEcMBoGA1UEAxMTY2VydFNJR04gQ0EgQ2xhc3MgMgIJIAYFFnAEAgVY
-MAkGBSsOAwIaBQCgggFTMBgGCSqGSIb3DQEJAzELBgkqhkiG9w0BBwEwHAYJKoZIhvcNAQkFMQ8X
-DTEyMDYxNTExMTMzM1owIwYJKoZIhvcNAQkEMRYEFOVFxKDO6/N4UIl/VuX6IcE/u6m7MHgGCSsG
-AQQBgjcQBDFrMGkwXDELMAkGA1UEBhMCUk8xETAPBgNVBAoTCGNlcnRTSUdOMRwwGgYDVQQLExNj
-ZXJ0U0lHTiBDQSBDbGFzcyAyMRwwGgYDVQQDExNjZXJ0U0lHTiBDQSBDbGFzcyAyAgkgBgUWcAQC
-BVgwegYLKoZIhvcNAQkQAgsxa6BpMFwxCzAJBgNVBAYTAlJPMREwDwYDVQQKEwhjZXJ0U0lHTjEc
-MBoGA1UECxMTY2VydFNJR04gQ0EgQ2xhc3MgMjEcMBoGA1UEAxMTY2VydFNJR04gQ0EgQ2xhc3Mg
-MgIJIAYFFnAEAgVYMA0GCSqGSIb3DQEBAQUABIGAQLgfZ35VpPBLc2uaeotm+kUTphmFGiMgjP9V
-ExmmKHWCvK+090ALl+av9GnYijkU9wZMfPXTr77DsdroLnuIyeO3ap1469mbtIPWAQJIwAykQXHm
-h3gakpl4xIopQA815WPLgM8cB6M3y4TYe0jrqY4lVn9si5auvy4AYXgb0XkAAAAAAAA=
+Andrei
 
-
---=-ceIRist6+8FhgKQKTlWV--
 

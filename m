@@ -1,52 +1,265 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-wi0-f178.google.com ([209.85.212.178]:55129 "EHLO
-	mail-wi0-f178.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1750892Ab2FPMie (ORCPT
+Received: from mail-we0-f174.google.com ([74.125.82.174]:63886 "EHLO
+	mail-we0-f174.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1750930Ab2FPMn7 (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Sat, 16 Jun 2012 08:38:34 -0400
-Received: by mail-wi0-f178.google.com with SMTP id hn6so435356wib.1
-        for <linux-btrfs@vger.kernel.org>; Sat, 16 Jun 2012 05:38:33 -0700 (PDT)
+	Sat, 16 Jun 2012 08:43:59 -0400
+Received: by weyu7 with SMTP id u7so2639092wey.19
+        for <linux-btrfs@vger.kernel.org>; Sat, 16 Jun 2012 05:43:58 -0700 (PDT)
+Message-ID: <1339850570.1544.17.camel@ierdnac-hp>
+Subject: Re: [PATCH] Btrfs: Fix NOCOW file attribute
 From: Andrei Popa <andrei.popa@i-neo.ro>
+Reply-To: andrei.popa@i-neo.ro
 To: linux-btrfs@vger.kernel.org
-Cc: Andrei Popa <andrei.popa@i-neo.ro>
-Subject: [PATCH] Btrfs: Fix NOCOW file attribute
-Date: Sat, 16 Jun 2012 15:37:12 +0300
-Message-Id: <1339850232-25584-2-git-send-email-andrei.popa@i-neo.ro>
-In-Reply-To: <1339850232-25584-1-git-send-email-andrei.popa@i-neo.ro>
+Date: Sat, 16 Jun 2012 15:42:50 +0300
+In-Reply-To: <1339850232-25584-2-git-send-email-andrei.popa@i-neo.ro>
 References: <1339850232-25584-1-git-send-email-andrei.popa@i-neo.ro>
+	 <1339850232-25584-2-git-send-email-andrei.popa@i-neo.ro>
+Content-Type: multipart/signed; micalg="sha512";
+	protocol="application/x-pkcs7-signature";
+	boundary="=-64gHrj96/xHQjKqYPas8"
+Mime-Version: 1.0
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Adds BTRFS_INODE_NODATASUM to inode flags when setting NOCOW for a file (chattr +C file).
-In btrfs, NOCOW implies NODATASUM and without setting NODATASUM, btrfs doesn't honour correctly the NOCOW attribute.
 
-Signed-off-by: Andrei Popa <andrei.popa@i-neo.ro>
----
- fs/btrfs/ioctl.c |    4 ++--
- 1 files changed, 2 insertions(+), 2 deletions(-)
+--=-64gHrj96/xHQjKqYPas8
+Content-Type: text/plain; charset="UTF-8"
+Content-Transfer-Encoding: quoted-printable
 
-diff --git a/fs/btrfs/ioctl.c b/fs/btrfs/ioctl.c
-index 0e92e57..8a7be76 100644
---- a/fs/btrfs/ioctl.c
-+++ b/fs/btrfs/ioctl.c
-@@ -139,7 +139,7 @@ void btrfs_inherit_iflags(struct inode *inode, struct inode *dir)
- 	}
- 
- 	if (flags & BTRFS_INODE_NODATACOW)
--		BTRFS_I(inode)->flags |= BTRFS_INODE_NODATACOW;
-+		BTRFS_I(inode)->flags |= BTRFS_INODE_NODATACOW | BTRFS_INODE_NODATASUM;
- 
- 	btrfs_update_iflags(inode);
- }
-@@ -236,7 +236,7 @@ static int btrfs_ioctl_setflags(struct file *file, void __user *arg)
- 	else
- 		ip->flags &= ~BTRFS_INODE_DIRSYNC;
- 	if (flags & FS_NOCOW_FL)
--		ip->flags |= BTRFS_INODE_NODATACOW;
-+		ip->flags |= BTRFS_INODE_NODATACOW | BTRFS_INODE_NODATASUM;
- 	else
- 		ip->flags &= ~BTRFS_INODE_NODATACOW;
- 
--- 
-1.7.3.4
+Hi,
+
+I've used the following to test the patch:
+rm a
+touch a
+chattr +C a
+dd if=3D/dev/zero of=3Da bs=3D32k conv=3Dnotrunc,nocreat count=3D1
+sync
+filefrag -v a
+dd if=3D/dev/zero of=3Da bs=3D32k conv=3Dnotrunc,nocreat count=3D1
+sync
+filefrag -v a
+
+Before the patch:
+ierdnac-hp btrfs # ./test
++ rm a
++ touch a
++ chattr +C a
++ dd if=3D/dev/zero of=3Da bs=3D32k conv=3Dnotrunc,nocreat count=3D1
++ sync
++ filefrag -v a
+Filesystem type is: 9123683e
+File size of a is 32768 (8 blocks, blocksize 4096)
+ext logical physical expected length flags
+   0       0  1473536               8 eof
+a: 1 extent found
++ dd if=3D/dev/zero of=3Da bs=3D32k conv=3Dnotrunc,nocreat count=3D1
++ sync
++ filefrag -v a
+Filesystem type is: 9123683e
+File size of a is 32768 (8 blocks, blocksize 4096)
+ext logical physical expected length flags
+   0       0  1473560               8 eof
+a: 1 extent found
+ierdnac-hp btrfs #=20
+
+After the patch:
+ierdnac-hp btrfs # ./test
++ rm a
++ touch a
++ chattr +C a
++ dd if=3D/dev/zero of=3Da bs=3D32k conv=3Dnotrunc,nocreat count=3D1
+1+0 records in
+1+0 records out
+32768 bytes (33 kB) copied, 3.651e-05 s, 898 MB/s
++ sync
++ filefrag -v a
+Filesystem type is: 9123683e
+File size of a is 32768 (8 blocks, blocksize 4096)
+ext logical physical expected length flags
+   0       0  1473560               8 eof
+a: 1 extent found
++ dd if=3D/dev/zero of=3Da bs=3D32k conv=3Dnotrunc,nocreat count=3D1
+1+0 records in
+1+0 records out
+32768 bytes (33 kB) copied, 4.6666e-05 s, 702 MB/s
++ sync
++ filefrag -v a
+Filesystem type is: 9123683e
+File size of a is 32768 (8 blocks, blocksize 4096)
+ext logical physical expected length flags
+   0       0  1473560               8 eof
+a: 1 extent found
+ierdnac-hp btrfs #=20
+
+My question is what is the expected behaviour for setting the chattr
+after the file is filed with bytes like this:
+rm a
+touch a
+# chattr +C a -> before chattr was here and we move it below
+dd if=3D/dev/zero of=3Da bs=3D32k conv=3Dnotrunc,nocreat count=3D1
+sync
+filefrag -v a
+chattr +C a
+dd if=3D/dev/zero of=3Da bs=3D32k conv=3Dnotrunc,nocreat count=3D1
+sync
+filefrag -v a
+
+Because in this case btrfs doesn't honour the NOCOW attribute:
++ rm a
++ touch a
++ dd if=3D/dev/zero of=3Da bs=3D32k conv=3Dnotrunc,nocreat count=3D1
+1+0 records in
+1+0 records out
+32768 bytes (33 kB) copied, 3.5127e-05 s, 933 MB/s
++ sync
++ filefrag -v a
+Filesystem type is: 9123683e
+File size of a is 32768 (8 blocks, blocksize 4096)
+ext logical physical expected length flags
+   0       0  1473544               8 eof
+a: 1 extent found
++ chattr +C a
++ dd if=3D/dev/zero of=3Da bs=3D32k conv=3Dnotrunc,nocreat count=3D1
+1+0 records in
+1+0 records out
+32768 bytes (33 kB) copied, 3.4169e-05 s, 959 MB/s
++ sync
++ filefrag -v a
+Filesystem type is: 9123683e
+File size of a is 32768 (8 blocks, blocksize 4096)
+ext logical physical expected length flags
+   0       0  1473536               8 eof
+a: 1 extent found
+
+It's supposed to honour the NOCOW attribute or not ?
+
+On Sat, 2012-06-16 at 15:37 +0300, Andrei Popa wrote:
+> Adds BTRFS_INODE_NODATASUM to inode flags when setting NOCOW for a file (=
+chattr +C file).
+> In btrfs, NOCOW implies NODATASUM and without setting NODATASUM, btrfs do=
+esn't honour correctly the NOCOW attribute.
+>=20
+> Signed-off-by: Andrei Popa <andrei.popa@i-neo.ro>
+> ---
+>  fs/btrfs/ioctl.c |    4 ++--
+>  1 files changed, 2 insertions(+), 2 deletions(-)
+>=20
+> diff --git a/fs/btrfs/ioctl.c b/fs/btrfs/ioctl.c
+> index 0e92e57..8a7be76 100644
+> --- a/fs/btrfs/ioctl.c
+> +++ b/fs/btrfs/ioctl.c
+> @@ -139,7 +139,7 @@ void btrfs_inherit_iflags(struct inode *inode, struct=
+ inode *dir)
+>  	}
+> =20
+>  	if (flags & BTRFS_INODE_NODATACOW)
+> -		BTRFS_I(inode)->flags |=3D BTRFS_INODE_NODATACOW;
+> +		BTRFS_I(inode)->flags |=3D BTRFS_INODE_NODATACOW | BTRFS_INODE_NODATAS=
+UM;
+> =20
+>  	btrfs_update_iflags(inode);
+>  }
+> @@ -236,7 +236,7 @@ static int btrfs_ioctl_setflags(struct file *file, vo=
+id __user *arg)
+>  	else
+>  		ip->flags &=3D ~BTRFS_INODE_DIRSYNC;
+>  	if (flags & FS_NOCOW_FL)
+> -		ip->flags |=3D BTRFS_INODE_NODATACOW;
+> +		ip->flags |=3D BTRFS_INODE_NODATACOW | BTRFS_INODE_NODATASUM;
+>  	else
+>  		ip->flags &=3D ~BTRFS_INODE_NODATACOW;
+> =20
+
+--=20
+Andrei Popa
+(+4) 0741.57.80.90
+
+--=-64gHrj96/xHQjKqYPas8
+Content-Type: application/x-pkcs7-signature; name="smime.p7s"
+Content-Disposition: attachment; filename="smime.p7s"
+Content-Transfer-Encoding: base64
+
+MIAGCSqGSIb3DQEHAqCAMIACAQExDzANBglghkgBZQMEAgMFADCABgkqhkiG9w0BBwEAAKCCDu0w
+ggSdMIIDhaADAgECAhA0PekrrCc0/4/LNJT7zHBUMA0GCSqGSIb3DQEBBQUAMG8xCzAJBgNVBAYT
+AlNFMRQwEgYDVQQKEwtBZGRUcnVzdCBBQjEmMCQGA1UECxMdQWRkVHJ1c3QgRXh0ZXJuYWwgVFRQ
+IE5ldHdvcmsxIjAgBgNVBAMTGUFkZFRydXN0IEV4dGVybmFsIENBIFJvb3QwHhcNMDUwNjA3MDgw
+OTEwWhcNMjAwNTMwMTA0ODM4WjCBrjELMAkGA1UEBhMCVVMxCzAJBgNVBAgTAlVUMRcwFQYDVQQH
+Ew5TYWx0IExha2UgQ2l0eTEeMBwGA1UEChMVVGhlIFVTRVJUUlVTVCBOZXR3b3JrMSEwHwYDVQQL
+ExhodHRwOi8vd3d3LnVzZXJ0cnVzdC5jb20xNjA0BgNVBAMTLVVUTi1VU0VSRmlyc3QtQ2xpZW50
+IEF1dGhlbnRpY2F0aW9uIGFuZCBFbWFpbDCCASIwDQYJKoZIhvcNAQEBBQADggEPADCCAQoCggEB
+ALI5haTyfatBO2JGN67NwWB1vDll+UoaR6K5zEjMapjVTTUZuaRC5c5J4oovHnzSMQfHTrSDZJ0u
+KdWiZMSFvYVRNXmkTmiQexx6pJKoF/KYFfKTzMmkMpW7DE8wvZigC4vlbhuiRvp4vKJvq1lepS/P
+ytptqi/rrKGzaqq3Lmc1i3nhHmmI4uZGzaCl6r4LznY6eg6b6vzaJ1s9cx8i5khhxkzzabGoLhu2
+1DEgLLyCio6kDqXXiUP8FlqvHXHXEVnauocNr/rz4cLwpMVnjNbWVDreCqS6A3ezZcj9HtN0YqoY
+ymiTHqGFfvVHZcv4TVcodNI0/zC27vZiMBSMLOsCAwEAAaOB9DCB8TAfBgNVHSMEGDAWgBStvZh6
+NLQm9/rEJlTvA73gJMtUGjAdBgNVHQ4EFgQUiYJnfcSdJnAAS7RQSHzePa4Ebn0wDgYDVR0PAQH/
+BAQDAgEGMA8GA1UdEwEB/wQFMAMBAf8wEQYDVR0gBAowCDAGBgRVHSAAMEQGA1UdHwQ9MDswOaA3
+oDWGM2h0dHA6Ly9jcmwudXNlcnRydXN0LmNvbS9BZGRUcnVzdEV4dGVybmFsQ0FSb290LmNybDA1
+BggrBgEFBQcBAQQpMCcwJQYIKwYBBQUHMAGGGWh0dHA6Ly9vY3NwLnVzZXJ0cnVzdC5jb20wDQYJ
+KoZIhvcNAQEFBQADggEBAAG8nONjKLDzMQHC33vdYqABnSMxD5ySc1NR6h9M+tafxMovZ354Mw90
+FrmRh5H1iib6ZHAA2B75CwRiUIeTgdTa9SPbNLuFVrRwNG54gzcehRzFERWSX4cXvaxq/fHC0cyJ
+X7F88D5R8jXzfOxgmGs6K+Dv37N9huu1G/Vb7KJ8mBPXAFC50S1z3gN4dOEFhTFey5q5nZTGuZQ3
+dXLcRPtn6PD6JR5Sp9ol6UfgoMc8oE6xCjb7d0if75eK+7T+45QUqIO8XC0/0mBxYO7CcYIM6Yg2
+49ogtKOgbKqWS7iAjnXKSQf2OxS639wF2Z/b4LLmTaB4JufnLW5/X8YeiBUwggUaMIIEAqADAgEC
+AhBtGeqnGU9qMyLmIjJ6qnHeMA0GCSqGSIb3DQEBBQUAMIGuMQswCQYDVQQGEwJVUzELMAkGA1UE
+CBMCVVQxFzAVBgNVBAcTDlNhbHQgTGFrZSBDaXR5MR4wHAYDVQQKExVUaGUgVVNFUlRSVVNUIE5l
+dHdvcmsxITAfBgNVBAsTGGh0dHA6Ly93d3cudXNlcnRydXN0LmNvbTE2MDQGA1UEAxMtVVROLVVT
+RVJGaXJzdC1DbGllbnQgQXV0aGVudGljYXRpb24gYW5kIEVtYWlsMB4XDTExMDQyODAwMDAwMFoX
+DTIwMDUzMDEwNDgzOFowgZMxCzAJBgNVBAYTAkdCMRswGQYDVQQIExJHcmVhdGVyIE1hbmNoZXN0
+ZXIxEDAOBgNVBAcTB1NhbGZvcmQxGjAYBgNVBAoTEUNPTU9ETyBDQSBMaW1pdGVkMTkwNwYDVQQD
+EzBDT01PRE8gQ2xpZW50IEF1dGhlbnRpY2F0aW9uIGFuZCBTZWN1cmUgRW1haWwgQ0EwggEiMA0G
+CSqGSIb3DQEBAQUAA4IBDwAwggEKAoIBAQCShIRbS1eY1F4vi6ThQMijU1hfZmXxMk73nzJ9VdB4
+TFW3QpTg+SdxB8XGaaS5MsTxQBqQzCdWYn8XtXFpruUgG+TLY15gyqJB9mrho/+43x9IbWVDjCou
+K2M4d9+xF6zC2oIC1tQyatRnbyATj1w1+uVUgK/YcQodNwoCUFNslR2pEBS0mZVZEjH/CaLSTNxS
+297iQAFbSGjdxUq04O0kHzqvcV8H46y/FDuwJXFoPfQP1hdYRhWBPGiLi4MPbXohV+Y0sNsyfuNK
+4aVScmQmkU6lkg//4LFg/RpvaFGZY40ai6XMQpubfSJj06mg/M6ekN9EGfRcWzW6FvOnm//BAgMB
+AAGjggFLMIIBRzAfBgNVHSMEGDAWgBSJgmd9xJ0mcABLtFBIfN49rgRufTAdBgNVHQ4EFgQUehNO
+AHRbxnhjZCfBL+KgW7x5xXswDgYDVR0PAQH/BAQDAgEGMBIGA1UdEwEB/wQIMAYBAf8CAQAwEQYD
+VR0gBAowCDAGBgRVHSAAMFgGA1UdHwRRME8wTaBLoEmGR2h0dHA6Ly9jcmwudXNlcnRydXN0LmNv
+bS9VVE4tVVNFUkZpcnN0LUNsaWVudEF1dGhlbnRpY2F0aW9uYW5kRW1haWwuY3JsMHQGCCsGAQUF
+BwEBBGgwZjA9BggrBgEFBQcwAoYxaHR0cDovL2NydC51c2VydHJ1c3QuY29tL1VUTkFkZFRydXN0
+Q2xpZW50X0NBLmNydDAlBggrBgEFBQcwAYYZaHR0cDovL29jc3AudXNlcnRydXN0LmNvbTANBgkq
+hkiG9w0BAQUFAAOCAQEAhda+eFdVbTN/RFL+QtUGqAEDgIr7DbL9Sr/2r0FJ9RtaxdKtG3NuPukm
+fOZMmMEwKN/L+0I8oSU+CnXW0D05hmbRoZu1TZtvryhsHa/l6nRaqNqxwPF1ei+eupN5yv7ikR5W
+dLL4jdPgQ3Ib7Y/9YDkgR/uLrzplSDyYPaUlv73vYOBJ5RbI6z9Dg/Dg7g3B080zX5vQvWBqszv+
++tTJOjwf7Zv/m0kzvkIpOYPuM2kugp1FTahp2oAbHj3SGl18R5mlmwhtEpmG1l1XBxunML5LSUS4
+kH7K0Xk467Qz+qA6XSZYnmFVGLQh1ZnV4ENAQjC+6qXnlNKw/vN1+X9u5zCCBSowggQSoAMCAQIC
+EQCC1iLWCNlC//08NoDW0yDKMA0GCSqGSIb3DQEBBQUAMIGTMQswCQYDVQQGEwJHQjEbMBkGA1UE
+CBMSR3JlYXRlciBNYW5jaGVzdGVyMRAwDgYDVQQHEwdTYWxmb3JkMRowGAYDVQQKExFDT01PRE8g
+Q0EgTGltaXRlZDE5MDcGA1UEAxMwQ09NT0RPIENsaWVudCBBdXRoZW50aWNhdGlvbiBhbmQgU2Vj
+dXJlIEVtYWlsIENBMB4XDTExMDczMDAwMDAwMFoXDTEyMDcyOTIzNTk1OVowJTEjMCEGCSqGSIb3
+DQEJARYUYW5kcmVpLnBvcGFAaS1uZW8ucm8wggEiMA0GCSqGSIb3DQEBAQUAA4IBDwAwggEKAoIB
+AQDC7/8Wo7gDAqT2EkXadu9fEj4lW88MRYTy3axwSw8xnKZjAEK7opewFhj+a5VgXwS5yTSfbBl1
+8wwSoApW2trvCZeUHJvQ0XTXJvfEzCjz8vJkqUu/3qNBLkxWQGq/7ZIDF7oi8fUi8qUQJutfMl9O
+qfjscSAhCsbBy/Z2y3cijVVSkOJSpe7YTfO8FeOEGOR0xf2AiZ2K/4kJHNRB94L6Np7AgzAWaK/I
+7kRVjnaR2ToltdvwVEwpCyLAIwdhb/M7HfpiB4pdx3zUagnF3deK+2/DpbqxkBVzIb/Jl9tC8qA5
+kqcxtRBqGBQsQyj9ixaAXuxnozgl/hYulf2fcMLRAgMBAAGjggHkMIIB4DAfBgNVHSMEGDAWgBR6
+E04AdFvGeGNkJ8Ev4qBbvHnFezAdBgNVHQ4EFgQUNOswJ18cdPpt45Hjk7cuY+8mZIcwDgYDVR0P
+AQH/BAQDAgWgMAwGA1UdEwEB/wQCMAAwIAYDVR0lBBkwFwYIKwYBBQUHAwQGCysGAQQBsjEBAwUC
+MBEGCWCGSAGG+EIBAQQEAwIFIDBGBgNVHSAEPzA9MDsGDCsGAQQBsjEBAgEBATArMCkGCCsGAQUF
+BwIBFh1odHRwczovL3NlY3VyZS5jb21vZG8ubmV0L0NQUzBXBgNVHR8EUDBOMEygSqBIhkZodHRw
+Oi8vY3JsLmNvbW9kb2NhLmNvbS9DT01PRE9DbGllbnRBdXRoZW50aWNhdGlvbmFuZFNlY3VyZUVt
+YWlsQ0EuY3JsMIGIBggrBgEFBQcBAQR8MHowUgYIKwYBBQUHMAKGRmh0dHA6Ly9jcnQuY29tb2Rv
+Y2EuY29tL0NPTU9ET0NsaWVudEF1dGhlbnRpY2F0aW9uYW5kU2VjdXJlRW1haWxDQS5jcnQwJAYI
+KwYBBQUHMAGGGGh0dHA6Ly9vY3NwLmNvbW9kb2NhLmNvbTAfBgNVHREEGDAWgRRhbmRyZWkucG9w
+YUBpLW5lby5ybzANBgkqhkiG9w0BAQUFAAOCAQEAO7mdp0TD7EDtK8g3pBvTLB6RyFeN9kuskL9y
+V7LSd3XMRM6nFQXDXY44mTMBKfMqIxzWdO8TNvkuBDeUsRS2XpgoHmaVYXrYOZbtTHsbDjYvOOG4
+PtTqF3gvUooC3a7TylM3TdIAm4I3DFKxDDh3uJGh7d+G1tgjC0iCEh/xquZLpj/B3Mahp8QWODWb
+u6Nzql/2ar8cz66JGjEjrOcSTB+zKVN6YY8o1JscMYsjKe1g4Dq0kq3NkFpSvgBzerdT7Au5haLY
++vw6WZwhMPjLdWRqd8Lk5vB0PGNOU1HpoQhsE8Wd0dr5t8S3lTnWmlHy4G6+H1XmwSkm8RxHEjAt
+DzGCAmEwggJdAgEBMIGpMIGTMQswCQYDVQQGEwJHQjEbMBkGA1UECBMSR3JlYXRlciBNYW5jaGVz
+dGVyMRAwDgYDVQQHEwdTYWxmb3JkMRowGAYDVQQKExFDT01PRE8gQ0EgTGltaXRlZDE5MDcGA1UE
+AxMwQ09NT0RPIENsaWVudCBBdXRoZW50aWNhdGlvbiBhbmQgU2VjdXJlIEVtYWlsIENBAhEAgtYi
+1gjZQv/9PDaA1tMgyjANBglghkgBZQMEAgMFAKCBiTAYBgkqhkiG9w0BCQMxCwYJKoZIhvcNAQcB
+MBwGCSqGSIb3DQEJBTEPFw0xMjA2MTYxMjQyNTBaME8GCSqGSIb3DQEJBDFCBEAwOomhpThOjiTr
+fwhkb7gcIdfBUAZd8/53gTb9i8KySlaHcoOu3g1ovAdrbCxNDcPQN0EtAMDy0OLYBygFIr2uMA0G
+CSqGSIb3DQEBAQUABIIBAANgoS0w/dys82TrT0BY3DW9TfDtGd+A+YS2E3q3mQLk0On0+l5gXXQx
+Igo9H4Hm11zJM8/UmNqXmQHfi+2i28MNl4OIato1WVehOw59rwZOrI3Fu7eLd1Q+bhXUiYji68eC
+1LcFhxV9dOTZHXQwUV7Djlv1ETh/Bwl7QlJl0Gfr6XzaN1Ox8NWmCjhdLPDQWMLBvSWhZX2IHaWs
+14bjCRT/509Ua0UEYd6RsgpSGEzaBGpzmQVTfZJsghERZ8AbH3clZlM2aPBmTFmSryWN7IqFvKZ5
+ELViGrcpJ7vWKP67S3FLTpGGOdXVQjwVWRFAp8SCqlMyvbXC9GnkhOt+1hwAAAAAAAA=
+
+
+--=-64gHrj96/xHQjKqYPas8--
 

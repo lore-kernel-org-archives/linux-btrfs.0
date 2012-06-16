@@ -1,57 +1,89 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.fusionio.com ([66.114.96.31]:37084 "EHLO mx2.fusionio.com"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1757324Ab2FPAVX (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Fri, 15 Jun 2012 20:21:23 -0400
-Date: Fri, 15 Jun 2012 20:21:19 -0400
-From: Chris Mason <chris.mason@fusionio.com>
-To: Linus Torvalds <torvalds@linux-foundation.org>
-CC: "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>,
-        "linux-kernel@vger.kernel.org" <linux-kernel@vger.kernel.org>
-Subject: Re: [GIT PULL] Btrfs updates
-Message-ID: <20120616002119.GI19150@shiny>
-References: <20120615180957.GE19150@shiny>
- <CA+55aFzD3P=DxzqhtRC6jRi9kwHiWRJo=yvyY=WnhYnhXvFi0w@mail.gmail.com>
+Received: from mail-gg0-f174.google.com ([209.85.161.174]:43315 "EHLO
+	mail-gg0-f174.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1756345Ab2FPLQa (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>);
+	Sat, 16 Jun 2012 07:16:30 -0400
+Received: by gglu4 with SMTP id u4so2937808ggl.19
+        for <linux-btrfs@vger.kernel.org>; Sat, 16 Jun 2012 04:16:30 -0700 (PDT)
 MIME-Version: 1.0
-Content-Type: text/plain; charset="utf-8"
-In-Reply-To: <CA+55aFzD3P=DxzqhtRC6jRi9kwHiWRJo=yvyY=WnhYnhXvFi0w@mail.gmail.com>
+From: rupert THURNER <rupert.thurner@gmail.com>
+Date: Sat, 16 Jun 2012 13:16:09 +0200
+Message-ID: <CAJs9aZ9gsM-hcH-YJpgN6f_YEHrcdJfm808TuCLRKWd1qEGXwg@mail.gmail.com>
+Subject: cannot remove files: "rm" gives "no space left on device", 3.2.0-24, ubuntu
+To: linux-btrfs@vger.kernel.org
+Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Fri, Jun 15, 2012 at 05:57:42PM -0600, Linus Torvalds wrote:
-> On Fri, Jun 15, 2012 at 11:09 AM, Chris Mason <chris.mason@fusionio.com> wrote:
-> >
-> > Please pull my for-linus branch:
-> >
-> > git://git.kernel.org/pub/scm/linux/kernel/git/mason/linux-btrfs.git for-linus
-> 
-> This seems to introduce a new warning:
-> 
->   In file included from fs/btrfs/ctree.c:22:0:
->   fs/btrfs/ctree.c: In function ‘btrfs_search_old_slot’:
->   fs/btrfs/ctree.h:2117:240: warning: ‘old_generation’ may be used
-> uninitialized in this function [-Wmaybe-uninitialized]
->   fs/btrfs/ctree.c:1178:6: note: ‘old_generation’ was declared here
-> 
-> which looks like just gcc being unable to see that it is only used
-> when set, but it's still annoying. I'd suggest initializing it to 0
-> just to shut up the compiler. Ok?
-> 
+how would i be able to delete something off this btrfs partition
+again? i saw the following messages in the archives which seem to be a
+little similar ... except a reboot and therfor a remount did not help:
+* http://article.gmane.org/gmane.linux.kernel/1265666/match=enospc
 
-Yes, this does look like noise.  It is only used when old_root is set,
-but it'll be really easy to add bugs there later.
+rt@tv:~$ rm -rf /media/388gb-data/.Trash-1000/info/foto.trashinfo
+rm: cannot remove `/media/388gb-data/.Trash-1000/info/foto.trashinfo':
+No space left on device
 
-I've pushed two commits out, the second one is a printk cast on 32 bit
-machines.  Neither of these are fatal but they are in for-linus:
+rt@tv:~$ btrfs filesystem df /media/388gb-data/
+Data: total=260.59GB, used=254.56GB
+System: total=32.00MB, used=24.00KB
+Metadata: total=128.00GB, used=120.01GB
 
-git://git.kernel.org/pub/scm/linux/kernel/git/mason/linux-btrfs.git for-linus
+rt@tv:~$ sudo btrfs filesystem show /dev/sda6
+failed to read /dev/sr0
+Label: '388gb-data'  uuid: 19223a9e-7840-4798-8ee4-02b5bf9c2899
+	Total devices 1 FS bytes used 374.56GB
+	devid    1 size 388.62GB used 388.62GB path /dev/sda6
 
-Chris Mason (2) commits (+3/-2):
-    Btrfs: cast devid to unsigned long long for printk %llu (+2/-1)
-    Btrfs: init old_generation in get_old_root (+1/-1)
+rt@tv:~$ uname -a
+Linux tv 3.2.0-24-generic #39-Ubuntu SMP Mon May 21 16:51:22 UTC 2012
+i686 i686 i386 GNU/Linux
 
-Total: (2) commits (+3/-2)
+the only snapshot is the one created during converting from ext4:
+$ sudo btrfs subvolume list /media/388gb-data/
+ID 256 top level 5 path ext2_saved
 
- fs/btrfs/ctree.c |    2 +-
- fs/btrfs/ioctl.c |    3 ++-
- 2 files changed, 3 insertions(+), 2 deletions(-)
+
+open("/usr/lib/locale/locale-archive", O_RDONLY|O_LARGEFILE|O_CLOEXEC) = 3
+fstat64(3, {st_mode=S_IFREG|0644, st_size=4480528, ...}) = 0
+mmap2(NULL, 262144, PROT_READ, MAP_PRIVATE, 3, 0x2bd) = 0xb7553000
+mmap2(NULL, 4096, PROT_READ, MAP_PRIVATE, 3, 0x43a) = 0xb7552000
+close(3)                                = 0
+ioctl(0, SNDCTL_TMR_TIMEBASE or TCGETS, {B38400 opost isig icanon echo ...}) = 0
+lstat64("/", {st_mode=S_IFDIR|0755, st_size=4096, ...}) = 0
+fstatat64(AT_FDCWD,
+"/media/388gb-data/.Trash-1000/info/foto.trashinfo",
+{st_mode=S_IFREG|0644, st_size=56, ...}, AT_SYMLINK_NOFOLLOW) = 0
+unlinkat(AT_FDCWD,
+"/media/388gb-data/.Trash-1000/info/foto.trashinfo", 0) = -1 ENOSPC
+(No space left on device)
+open("/usr/share/locale/locale.alias", O_RDONLY|O_CLOEXEC) = 3
+fstat64(3, {st_mode=S_IFREG|0644, st_size=2570, ...}) = 0
+mmap2(NULL, 4096, PROT_READ|PROT_WRITE, MAP_PRIVATE|MAP_ANONYMOUS, -1,
+0) = 0xb7551000
+read(3, "# Locale name alias data base.\n#"..., 4096) = 2570
+read(3, "", 4096)                       = 0
+close(3)                                = 0
+munmap(0xb7551000, 4096)                = 0
+open("/usr/share/locale/en/LC_MESSAGES/coreutils.mo", O_RDONLY) = -1
+ENOENT (No such file or directory)
+open("/usr/share/locale-langpack/en/LC_MESSAGES/coreutils.mo", O_RDONLY) = 3
+fstat64(3, {st_mode=S_IFREG|0644, st_size=619, ...}) = 0
+mmap2(NULL, 619, PROT_READ, MAP_PRIVATE, 3, 0) = 0xb7551000
+close(3)                                = 0
+write(2, "rm: ", 4rm: )                     = 4
+write(2, "cannot remove `/media/388gb-data"..., 65cannot remove
+`/media/388gb-data/.Trash-1000/info/foto.trashinfo') = 65
+open("/usr/share/locale/en/LC_MESSAGES/libc.mo", O_RDONLY) = -1 ENOENT
+(No such file or directory)
+open("/usr/share/locale-langpack/en/LC_MESSAGES/libc.mo", O_RDONLY) =
+-1 ENOENT (No such file or directory)
+write(2, ": No space left on device", 25: No space left on device) = 25
+write(2, "\n", 1
+)                       = 1
+_llseek(0, 0, 0xbfe0d210, SEEK_CUR)     = -1 ESPIPE (Illegal seek)
+close(0)                                = 0
+
+
+rupert

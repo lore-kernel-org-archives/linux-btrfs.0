@@ -1,132 +1,178 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from fgwmail5.fujitsu.co.jp ([192.51.44.35]:50608 "EHLO
-	fgwmail5.fujitsu.co.jp" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1755359Ab2FUX6R (ORCPT
+Received: from mailout-de.gmx.net ([213.165.64.23]:56136 "HELO
+	mailout-de.gmx.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with SMTP id S1757850Ab2FQSmR (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 21 Jun 2012 19:58:17 -0400
-Received: from m4.gw.fujitsu.co.jp (unknown [10.0.50.74])
-	by fgwmail5.fujitsu.co.jp (Postfix) with ESMTP id A3D863EE081
-	for <linux-btrfs@vger.kernel.org>; Fri, 22 Jun 2012 08:58:15 +0900 (JST)
-Received: from smail (m4 [127.0.0.1])
-	by outgoing.m4.gw.fujitsu.co.jp (Postfix) with ESMTP id 8A1D845DE51
-	for <linux-btrfs@vger.kernel.org>; Fri, 22 Jun 2012 08:58:15 +0900 (JST)
-Received: from s4.gw.fujitsu.co.jp (s4.gw.fujitsu.co.jp [10.0.50.94])
-	by m4.gw.fujitsu.co.jp (Postfix) with ESMTP id 7210B45DE50
-	for <linux-btrfs@vger.kernel.org>; Fri, 22 Jun 2012 08:58:15 +0900 (JST)
-Received: from s4.gw.fujitsu.co.jp (localhost.localdomain [127.0.0.1])
-	by s4.gw.fujitsu.co.jp (Postfix) with ESMTP id 659A71DB8037
-	for <linux-btrfs@vger.kernel.org>; Fri, 22 Jun 2012 08:58:15 +0900 (JST)
-Received: from m1000.s.css.fujitsu.com (m1000.s.css.fujitsu.com [10.240.81.136])
-	by s4.gw.fujitsu.co.jp (Postfix) with ESMTP id 1BF3EE18001
-	for <linux-btrfs@vger.kernel.org>; Fri, 22 Jun 2012 08:58:15 +0900 (JST)
-Message-ID: <4FE3B4FE.2040202@jp.fujitsu.com>
-Date: Fri, 22 Jun 2012 08:57:50 +0900
-From: Tsutomu Itoh <t-itoh@jp.fujitsu.com>
-MIME-Version: 1.0
-To: Liu Bo <liubo2009@cn.fujitsu.com>
-CC: linux-btrfs@vger.kernel.org
-Subject: Re: [PATCH 4/4] Btrfs: do not set subvolume flags in readonly mode
-References: <1340279297-3964-1-git-send-email-liubo2009@cn.fujitsu.com> <1340279297-3964-4-git-send-email-liubo2009@cn.fujitsu.com>
-In-Reply-To: <1340279297-3964-4-git-send-email-liubo2009@cn.fujitsu.com>
-Content-Type: text/plain; charset=ISO-2022-JP
+	Sun, 17 Jun 2012 14:42:17 -0400
+Message-ID: <1339958534.1424.6.camel@apu.local>
+Subject: Patch: Add subvol current-generation command
+From: Fabian Deutsch <fabian.deutsch@gmx.de>
+To: linux-btrfs@vger.kernel.org
+Date: Sun, 17 Jun 2012 20:42:14 +0200
+Content-Type: multipart/mixed; boundary="=-1dQ+4lg2volhID9WDtmE"
+Mime-Version: 1.0
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-(2012/06/21 20:48), Liu Bo wrote:
-> $ mkfs.btrfs /dev/sdb7
-> $ btrfstune -S1 /dev/sdb7
-> $ mount /dev/sdb7 /mnt/btrfs
-> mount: block device /dev/sdb7 is write-protected, mounting read-only
-> $ btrfs dev add /dev/sdb8 /mnt/btrfs/
-> 
-> Now we get a btrfs in which mnt flags has readonly but sb flags does
-> not.  So for those ioctls that only check sb flags with MS_RDONLY, it
-> is going to be a problem.
-> Setting subvolume flags is such an ioctl, we should use mnt_want_write_file()
-> to check RO flags.
-> 
-> Signed-off-by: Liu Bo <liubo2009@cn.fujitsu.com>
-> ---
->   fs/btrfs/ioctl.c |   27 ++++++++++++++++++---------
->   1 files changed, 18 insertions(+), 9 deletions(-)
-> 
-> diff --git a/fs/btrfs/ioctl.c b/fs/btrfs/ioctl.c
-> index df4c04d..ae29737 100644
-> --- a/fs/btrfs/ioctl.c
-> +++ b/fs/btrfs/ioctl.c
-> @@ -1519,29 +1519,35 @@ static noinline int btrfs_ioctl_subvol_setflags(struct file *file,
->   	u64 flags;
->   	int ret = 0;
->   
-> -	if (root->fs_info->sb->s_flags & MS_RDONLY)
-> -		return -EROFS;
-> +	ret = mnt_want_write_file(file);
-> +	if (ret)
-> +		goto out;
->   
-> +	ret = -EINVAL;
->   	if (btrfs_ino(inode) != BTRFS_FIRST_FREE_OBJECTID)
-> -		return -EINVAL;
-> +		goto out_drop_write;
->   
-> +	ret = -EFAULT;
->   	if (copy_from_user(&flags, arg, sizeof(flags)))
-> -		return -EFAULT;
-> +		goto out_drop_write;
->   
-> +	ret = -EINVAL;
->   	if (flags & BTRFS_SUBVOL_CREATE_ASYNC)
-> -		return -EINVAL;
-> +		goto out_drop_write;
->   
-> +	ret = -EOPNOTSUPP;
->   	if (flags & ~BTRFS_SUBVOL_RDONLY)
-> -		return -EOPNOTSUPP;
-> +		goto out_drop_write;
->   
-> +	ret = -EACCES;
->   	if (!inode_owner_or_capable(inode))
-> -		return -EACCES;
-> +		goto out_drop_write;
 
-I think that
+--=-1dQ+4lg2volhID9WDtmE
+Content-Type: text/plain; charset="UTF-8"
+Content-Transfer-Encoding: 7bit
 
-	if (!inode_owner_or_capable(inode)) {
-		ret = -EACCES;
-		goto out_drop_write;
-	}
+Hey,
 
-is better than
+this is my first patch against something related to btrfs. The attached
+patch adds the subvol current-generation command to retrieve the current
+generation of the given subvol. This is inteded to be used with the
+subvol find-new command.
 
-	ret = -EACCES;
-	if (!inode_owner_or_capable(inode))
-		goto out_drop_write;
+After writing this patch I noticed that Sean Reifschneider already
+sugested something similar in 2010 [1]. His patch reminded me of adding
+a part to the manpage.
 
-Thanks,
-Tsutomu
+Thanks and Greetings
+fabian
 
->   
->   	down_write(&root->fs_info->subvol_sem);
->   
->   	/* nothing to do */
->   	if (!!(flags & BTRFS_SUBVOL_RDONLY) == btrfs_root_readonly(root))
-> -		goto out;
-> +		goto out_drop_sem;
->   
->   	root_flags = btrfs_root_flags(&root->root_item);
->   	if (flags & BTRFS_SUBVOL_RDONLY)
-> @@ -1564,8 +1570,11 @@ static noinline int btrfs_ioctl_subvol_setflags(struct file *file,
->   out_reset:
->   	if (ret)
->   		btrfs_set_root_flags(&root->root_item, root_flags);
-> -out:
-> +out_drop_sem:
->   	up_write(&root->fs_info->subvol_sem);
-> +out_drop_write:
-> +	mnt_drop_write_file(file);
-> +out:
->   	return ret;
->   }
->   
-> 
+--
+[1] http://markmail.org/thread/iztosuxysjt4zx2b
+
+--=-1dQ+4lg2volhID9WDtmE
+Content-Disposition: attachment;
+	filename="0001-btrfs-Add-subvol-current-generation-command.patch"
+Content-Type: text/x-patch;
+	name="0001-btrfs-Add-subvol-current-generation-command.patch";
+	charset="UTF-8"
+Content-Transfer-Encoding: 8bit
+
+>From d7fd192b7e013701560e9abba7a01bb7dbaade18 Mon Sep 17 00:00:00 2001
+From: Fabian Deutsch <fabian.deutsch@gmx.de>
+Date: Sat, 16 Jun 2012 22:50:57 +0200
+Subject: [PATCH] btrfs: Add subvol current-generation command
+
+Add a command (current-generation) to get the current generation of a subvolume. This is useful in combination with find-new.
+
+Signed-off-by: Fabian Deutsch <fabian.deutsch@gmx.de>
+---
+ btrfs-list.c     |    7 +++++++
+ cmds-subvolume.c |   43 +++++++++++++++++++++++++++++++++++++++++++
+ man/btrfs.8.in   |    8 ++++++++
+ 3 Dateien geändert, 58 Zeilen hinzugefügt(+)
+
+diff --git a/btrfs-list.c b/btrfs-list.c
+index 5f4a9be..ccbaf44 100644
+--- a/btrfs-list.c
++++ b/btrfs-list.c
+@@ -799,6 +799,13 @@ static int print_one_extent(int fd, struct btrfs_ioctl_search_header *sh,
+ 	return 0;
+ }
+ 
++u64 current_generation(int fd, u64 root_id)
++{
++	u64 max_found = 0;
++	max_found = find_root_gen(fd);
++	return max_found;
++}
++
+ int find_updated_files(int fd, u64 root_id, u64 oldest_gen)
+ {
+ 	int ret;
+diff --git a/cmds-subvolume.c b/cmds-subvolume.c
+index 950fa8f..2a185b1 100644
+--- a/cmds-subvolume.c
++++ b/cmds-subvolume.c
+@@ -31,6 +31,7 @@
+ 
+ /* btrfs-list.c */
+ int list_subvols(int fd, int print_parent, int get_default);
++u64 current_generation(int fd, u64 root_id);
+ int find_updated_files(int fd, u64 root_id, u64 oldest_gen);
+ 
+ static const char * const subvolume_cmd_group_usage[] = {
+@@ -512,6 +513,47 @@ static int cmd_find_new(int argc, char **argv)
+ 	return 0;
+ }
+ 
++
++static const char * const cmd_current_generation_usage[] = {
++	"btrfs subvolume current-generation <path>",
++	"Get the current generation of the filesystem",
++	NULL
++};
++
++static int cmd_current_generation(int argc, char **argv)
++{
++	int fd;
++	int ret;
++	char *subvol;
++	u64 current_gen;
++
++	if (check_argc_exact(argc, 2))
++		usage(cmd_current_generation_usage);
++
++	subvol = argv[1];
++
++	ret = test_issubvolume(subvol);
++	if (ret < 0) {
++		fprintf(stderr, "ERROR: error accessing '%s'\n", subvol);
++		return 12;
++	}
++	if (!ret) {
++		fprintf(stderr, "ERROR: '%s' is not a subvolume\n", subvol);
++		return 13;
++	}
++
++	fd = open_file_or_dir(subvol);
++	if (fd < 0) {
++		fprintf(stderr, "ERROR: can't access '%s'\n", subvol);
++		return 12;
++	}
++	current_gen = current_generation(fd, 0);
++
++	fprintf(stdout, "%llu\n", current_gen);
++
++	return 0;
++}
++
+ const struct cmd_group subvolume_cmd_group = {
+ 	subvolume_cmd_group_usage, NULL, {
+ 		{ "create", cmd_subvol_create, cmd_subvol_create_usage, NULL, 0 },
+@@ -523,6 +565,7 @@ const struct cmd_group subvolume_cmd_group = {
+ 		{ "set-default", cmd_subvol_set_default,
+ 			cmd_subvol_set_default_usage, NULL, 0 },
+ 		{ "find-new", cmd_find_new, cmd_find_new_usage, NULL, 0 },
++		{ "current-generation", cmd_current_generation, cmd_current_generation_usage, NULL, 0 },
+ 		{ 0, 0, 0, 0, 0 }
+ 	}
+ };
+diff --git a/man/btrfs.8.in b/man/btrfs.8.in
+index be478e0..3c71f57 100644
+--- a/man/btrfs.8.in
++++ b/man/btrfs.8.in
+@@ -25,6 +25,8 @@ btrfs \- control a btrfs filesystem
+ .PP
+ \fBbtrfs\fP \fBfilesystem defrag\fP\fI [options] <file>|<dir> [<file>|<dir>...]\fP
+ .PP
++\fBbtrfs\fP \fBsubvolume current-generation\fP\fI <subvolume>\fP
++.PP
+ \fBbtrfs\fP \fBsubvolume find-new\fP\fI <subvolume> <last_gen>\fP
+ .PP
+ \fBbtrfs\fP \fBfilesystem balance\fP\fI <path> \fP
+@@ -154,6 +156,12 @@ The start position and the number of bytes to deframention can be specified by \
+ NOTE: defragmenting with kernels up to 2.6.37 will unlink COW-ed copies of data, don't 
+ use it if you use snapshots, have de-duplicated your data or made copies with 
+ \fBcp --reflink\fP.
++.TP
++
++\fBsubvolume current-generation\fR\fI <subvolume>\fR
++Return the current generation used in subvolume \fI<subvolume>\fR. This number can be used with the \fBsubvolume find-new\fR command.
++.TP
++
+ \fBsubvolume find-new\fR\fI <subvolume> <last_gen>\fR
+ List the recently modified files in a subvolume, after \fI<last_gen>\fR ID.
+ .TP
+-- 
+1.7.10.4
+
+
+--=-1dQ+4lg2volhID9WDtmE--
 

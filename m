@@ -1,49 +1,69 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx3.sophos.com ([216.47.234.212]:38389 "EHLO mx3.sophos.com"
+Received: from twin.jikos.cz ([89.185.236.188]:33836 "EHLO twin.jikos.cz"
 	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1756805Ab2FRJhT convert rfc822-to-8bit (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 18 Jun 2012 05:37:19 -0400
-Received: from mx3.sophos.com (localhost.localdomain [127.0.0.1])
-	by localhost (Postfix) with SMTP id 6CFCC1883EF
-	for <linux-btrfs@vger.kernel.org>; Mon, 18 Jun 2012 10:29:48 +0100 (BST)
-Received: from ABN-EXCH1A.green.sophos (unknown [10.100.70.61])
-	by mx3.sophos.com (Postfix) with ESMTPS id 139F61883E8
-	for <linux-btrfs@vger.kernel.org>; Mon, 18 Jun 2012 10:29:48 +0100 (BST)
-From: David Pottage <David.Pottage@Sophos.com>
-To: "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
-Subject: Is Btrfs stable in a big storage server?
-Date: Mon, 18 Jun 2012 09:29:45 +0000
-Message-ID: <E33B72079F3EBA4C91E325F2AE20429508F456@abn-exch1b.green.sophos>
-References: <E33B72079F3EBA4C91E325F2AE20429508E837@abn-exch1b.green.sophos>
-In-Reply-To: <E33B72079F3EBA4C91E325F2AE20429508E837@abn-exch1b.green.sophos>
-Content-Type: text/plain; charset="us-ascii"
+	id S1751133Ab2FRLuY (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Mon, 18 Jun 2012 07:50:24 -0400
+Date: Mon, 18 Jun 2012 13:50:21 +0200
+From: David Sterba <dave@jikos.cz>
+To: Andrei Popa <andrei.popa@i-neo.ro>
+Cc: linux-btrfs@vger.kernel.org
+Subject: Re: [PATCH] Btrfs: Fix NOCOW file attribute
+Message-ID: <20120618115021.GX32402@twin.jikos.cz>
+Reply-To: dave@jikos.cz
+References: <1339850232-25584-1-git-send-email-andrei.popa@i-neo.ro>
+ <1339850232-25584-2-git-send-email-andrei.popa@i-neo.ro>
 MIME-Version: 1.0
+Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <1339850232-25584-2-git-send-email-andrei.popa@i-neo.ro>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-I am looking for the opinions on how stable btrfs is when used with a big server with lots of discs, but no fancy file system usage.
+On Sat, Jun 16, 2012 at 03:37:12PM +0300, Andrei Popa wrote:
+> Adds BTRFS_INODE_NODATASUM to inode flags when setting NOCOW for a file (chattr +C file).
+> In btrfs, NOCOW implies NODATASUM and without setting NODATASUM, btrfs doesn't honour correctly the NOCOW attribute.
+> 
+> Signed-off-by: Andrei Popa <andrei.popa@i-neo.ro>
+> ---
+>  fs/btrfs/ioctl.c |    4 ++--
+>  1 files changed, 2 insertions(+), 2 deletions(-)
+> 
+> diff --git a/fs/btrfs/ioctl.c b/fs/btrfs/ioctl.c
+> index 0e92e57..8a7be76 100644
+> --- a/fs/btrfs/ioctl.c
+> +++ b/fs/btrfs/ioctl.c
+> @@ -139,7 +139,7 @@ void btrfs_inherit_iflags(struct inode *inode, struct inode *dir)
+>  	}
+>  
+>  	if (flags & BTRFS_INODE_NODATACOW)
+> -		BTRFS_I(inode)->flags |= BTRFS_INODE_NODATACOW;
+> +		BTRFS_I(inode)->flags |= BTRFS_INODE_NODATACOW | BTRFS_INODE_NODATASUM;
+>  
+>  	btrfs_update_iflags(inode);
+>  }
+> @@ -236,7 +236,7 @@ static int btrfs_ioctl_setflags(struct file *file, void __user *arg)
+>  	else
+>  		ip->flags &= ~BTRFS_INODE_DIRSYNC;
+>  	if (flags & FS_NOCOW_FL)
+> -		ip->flags |= BTRFS_INODE_NODATACOW;
+> +		ip->flags |= BTRFS_INODE_NODATACOW | BTRFS_INODE_NODATASUM;
+>  	else
+>  		ip->flags &= ~BTRFS_INODE_NODATACOW;
+>  
 
-I have read the warnings about btrfs being experimental, and that I should have tested backups elsewhere.
+you cannot switch on NODATASUM for a file that already has extents that
+are checksummed. The invariant here is that either all the extents or
+none are checksummed.
 
-I am working on a project to set-up a backup server that will store approximately 100 Tb of files. The average file size is around 10 Mb, but there is a lot of variability. The files are compressible on average by 50%. The anticipated workload will see files written with transparent zlib compression, occasionally read, and never modified or deleted. I don't plan to create snapshots.
+Setting NODATASUM is safe only on a zero sized file, that's what you saw
+in your test.
 
-I have purchased a big storage server (1) with 24 3Tb hard drives. I was considering creating a single btrfs volume spanning all the drives, with no raid, lvm or suchlike below btrfs. The server will run Ubuntu Precise, with the latest stable kernel (from kernel.org). (I don't plan to use btrfs for any system volumes)
-
-Do you think btrfs will be stable under this workload? The data will be backed up elsewhere, but considering the massive amount of data, it will take over a month to populate the server over Gigabit Ethernet, and I don't want to do it a second time if btrfs corrupts the data.
-
-Also, I would like to use Raid-5 on the file data, but I understand that those patches are not yet integrated. Is there an estimate of when they will be in? (realize that it would be just an estimate, but it would be nice to have an idea).
-
-Thank you.
-
-(1) http://www.supermicro.nl/products/system/4U/6047/SSG-6047R-E1R36N.cfm
-
---
-David Pottage
-Sophos Labs, Abingdon
+Theoretically it's possible to add/remove all checksums from a given
+file, but it's a potentially longtime operation, the file has to be in
+some intermediate state where the checksums partially exist but have to
+be ignored (for the csum->nocsum) until the file is fully converted,
+this brings more special cases to extent handling, it has to survive
+power failure and remain consistent, and probably needs to be restarted
+after next mount.
 
 
-________________________________
-
-Sophos Limited, The Pentagon, Abingdon Science Park, Abingdon, OX14 3YP, United Kingdom.
-Company Reg No 2096520. VAT Reg No GB 991 2418 08.
+david

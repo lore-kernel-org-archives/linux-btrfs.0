@@ -1,43 +1,58 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from smtp206.alice.it ([82.57.200.102]:38147 "EHLO smtp206.alice.it"
+Received: from twin.jikos.cz ([89.185.236.188]:34739 "EHLO twin.jikos.cz"
 	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1751355Ab2FOQ4a (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Fri, 15 Jun 2012 12:56:30 -0400
-Message-ID: <4FDB6943.2030601@libero.it>
-Date: Fri, 15 Jun 2012 18:56:35 +0200
-From: Goffredo Baroncelli <kreijack@libero.it>
-Reply-To: kreijack@inwind.it
-MIME-Version: 1.0
-To: Andrei Popa <ierdnah@gmail.com>, linux-btrfs@vger.kernel.org,
-        arnd@arndnet.de
+	id S1750756Ab2FRM3D (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Mon, 18 Jun 2012 08:29:03 -0400
+Date: Mon, 18 Jun 2012 14:28:57 +0200
+From: David Sterba <dave@jikos.cz>
+To: Andrei Popa <ierdnah@gmail.com>
+Cc: dave@jikos.cz, linux-btrfs@vger.kernel.org, arnd@arndnet.de
 Subject: Re: [PATCH] Btrfs: add "nocompress" mount option
-References: <1339754209.2212.22.camel@ierdnac-hp> <20120615105006.GV32402@twin.jikos.cz>
-In-Reply-To: <20120615105006.GV32402@twin.jikos.cz>
-Content-Type: text/plain; charset=ISO-8859-1
+Message-ID: <20120618122857.GZ32402@twin.jikos.cz>
+Reply-To: dave@jikos.cz
+References: <1339754209.2212.22.camel@ierdnac-hp>
+ <20120615105006.GV32402@twin.jikos.cz>
+ <1339770469.24514.22.camel@ierdnac-hp>
+MIME-Version: 1.0
+Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <1339770469.24514.22.camel@ierdnac-hp>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 06/15/2012 12:50 PM, David Sterba wrote:
-> I prefer this over adding an extra option to disable. This
-> way there's no confusion if the compression is on or off.
+On Fri, Jun 15, 2012 at 05:27:49PM +0300, Andrei Popa wrote:
+> On Fri, 2012-06-15 at 12:50 +0200, David Sterba wrote:
+> >   mount -o compress,nocompress /dev /mnt
+> > 
+> > Is it on or off? Yeah we can document that nocompress has higher
+> > priority. But then I can't turn a nocompress option back to compress via
+> > remount. This is possible with Arnd's patch.
 > 
->   mount -o compress,nocompress /dev /mnt
-
-The confusion still exists if an user does:
-
-	mount -o compress,compress=no /dev /mnt
-
-However I prefer the form "compress=" because already exists the option
-"compress=lzo|zlib".
-
-BR
-G.Baroncelli
-
+> This happens for space_cache mount option:
+> ierdnac-hp ~ # mount -o remount,space_cache,nospace_cache /mnt/btrfs/
 > 
-> Is it on or off? Yeah we can document that nocompress has higher
-> priority. But then I can't turn a nocompress option back to compress via
-> remount. This is possible with Arnd's patch.
-> 
-> 
-> david
+> Also there are mount option that can't be enabled/disabled by remount
+> like:
+> nobarrier - > "barrier" mount option doesn't exists
+> ssd -> "nossd" doesn't exists
+> noacl, user_subvol_rm_allowed, autodefrag, inode_cache, check_int,
+> check_int_data.
 
+I'm not against having options with a simple 'no' prefix, but it seems
+more fit for a "on/off" type of options, like ssd/nossd. The compression
+takes more values.
+
+> For some of these(ex: nossd,barrier) I think it would be usefull to have
+> the reverse action.
+> What do you think ?
+
+The style of mount options seems to
+
+* have sane defaults
+* not listed in mount options
+* have reverting counterparts (when applicable)
+
+These are more recommendations than some hard rules, as eg. space_cache
+is default, but listed in mount options, and I don't find this harmful.
+
+
+david

@@ -1,101 +1,77 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from smtp205.alice.it ([82.57.200.101]:55732 "EHLO smtp205.alice.it"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1752353Ab2FTRGe (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 20 Jun 2012 13:06:34 -0400
-Message-ID: <4FE20319.8080507@libero.it>
-Date: Wed, 20 Jun 2012 19:06:33 +0200
-From: Goffredo Baroncelli <kreijack@libero.it>
-Reply-To: kreijack@inwind.it
-MIME-Version: 1.0
-To: Chris Mason <chris.mason@fusionio.com>, "H. Peter Anvin" <hpa@zytor.com>,
-        "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
-Subject: Re: Device names
-References: <4FDFC807.2080209@zytor.com> <20120619235129.GB4102@shiny> <4FE1128B.5080004@zytor.com> <20120620133754.GE4102@shiny>
-In-Reply-To: <20120620133754.GE4102@shiny>
-Content-Type: text/plain; charset=ISO-8859-1
+Received: from mail-qc0-f174.google.com ([209.85.216.174]:51791 "EHLO
+	mail-qc0-f174.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1750754Ab2FSOWt (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>);
+	Tue, 19 Jun 2012 10:22:49 -0400
+Received: by qcro28 with SMTP id o28so3528506qcr.19
+        for <linux-btrfs@vger.kernel.org>; Tue, 19 Jun 2012 07:22:48 -0700 (PDT)
+Message-ID: <1340115766.3403.19.camel@cwalton-XPS-8300>
+Subject: Re: Subvolumes and /proc/self/mountinfo
+From: Calvin Walton <calvin.walton@kepstin.ca>
+To: "H. Peter Anvin" <hpa@zytor.com>
+Cc: linux-btrfs@vger.kernel.org
+Date: Tue, 19 Jun 2012 10:22:46 -0400
+In-Reply-To: <4FDFCA43.2070407@zytor.com>
+References: <4FDFCA43.2070407@zytor.com>
+Content-Type: text/plain; charset="UTF-8"
+Mime-Version: 1.0
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 06/20/2012 03:37 PM, Chris Mason wrote:
-> On Tue, Jun 19, 2012 at 06:00:11PM -0600, H. Peter Anvin wrote:
->> On 06/19/2012 04:51 PM, Chris Mason wrote:
->>>
->>> At mount time, we go through and verify the path names still belong to
->>> the filesystem you thought they belonged to.  The bdev is locked during
->>> the verification, so it won't be able to go away or change.
->>>
->>> This is a long way of saying right we don't spit out device numbers.
->>> Even device numbers can change.  We can easily add a uuid based listing,
->>> which I think is what you want.
->>>
->>
->> No, I want to find the actual devices.  I know I can get the UUID, but
->> scanning all the block devices in the system looking for that UUID is a
->> nonstarter.
->>
->> Device path names can change while the system is operating (and, worse,
->> are dependent on namespace changes and chroot); device *numbers* cannot
->> as long as the device is in use (e.g. mounted.)  They can indeed change
->> while not in use, of course.
+On Mon, 2012-06-18 at 17:39 -0700, H. Peter Anvin wrote:
+> I'm trying to figure out an algorithm from taking an arbitrary mounted
+> btrfs directory and break it down into:
 > 
-> Ok, my two choices for exporting this to you are a /sys/btrfs kind of
-> directory (representing the mounted filesystems) or an ioctl.  Which one
-> is most usable for you?
-
-As short term solution, I suggest to update the BTRFS_IOC_DEV_INFO to
-export also the major:minor pair. This should be a minor change and
-also should be backward compatible (there is a lot of space in the
-struct btrfs_ioctl_dev_info_args )
-
-diff --git a/fs/btrfs/ioctl.c b/fs/btrfs/ioctl.c
-index 14f8e1f..79fdd83 100644
---- a/fs/btrfs/ioctl.c
-+++ b/fs/btrfs/ioctl.c
-@@ -2261,6 +2261,8 @@ static long btrfs_ioctl_dev_info(struct btrfs_root
-*root,
-        di_args->devid = dev->devid;
-        di_args->bytes_used = dev->bytes_used;
-        di_args->total_bytes = dev->total_bytes;
-+       di_args->major = imajor(dev->bdev->bd_inode);
-+       di_args->minor = iminor(dev->bdev->bd_inode);
-        memcpy(di_args->uuid, dev->uuid, sizeof(di_args->uuid));
-        if (dev->name)
-                strncpy(di_args->path, dev->name, sizeof(di_args->path));
-diff --git a/fs/btrfs/ioctl.h b/fs/btrfs/ioctl.h
-index 086e6bd..7afa688 100644
---- a/fs/btrfs/ioctl.h
-+++ b/fs/btrfs/ioctl.h
-@@ -98,7 +98,9 @@ struct btrfs_ioctl_dev_info_args {
-        __u8 uuid[BTRFS_UUID_SIZE];             /* in/out */
-        __u64 bytes_used;                       /* out */
-        __u64 total_bytes;                      /* out */
--       __u64 unused[379];                      /* pad to 4k */
-+       __u64 major;                            /* out */
-+       __u64 minor;                            /* out */
-+       __u64 unused[377];                      /* pad to 4k */
-        __u8 path[BTRFS_DEVICE_PATH_NAME_MAX];  /* out */
- };
-
-
-
-As long term solution, exporting all this kind of information in
-/sys/btrfs/... could be a more robust solution, which could simplify the
-"backward compatible" problem.
-
-Only my 2¢...
-
-GB
-
+> <device(s), subvolume, subpath>
 > 
-> You want to map from /some_dir to a definitive list of devices you need
-> to find in syslinux to later boot off that FS, right?
+> where, keep in mind, <subpath> may not actually be part of the mount.
 > 
-> -chris
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
-> .
+> /proc/self/mountinfo seems to have some of that information, however, it
+> does not appear to distinguish between non-default subvolumes and
+> directories.  At the same time, once I have mounted a subvolume I see
+> its name in the root btrfs directory even if I didn't access it.
 > 
+> Questions, thus:
+> 
+> a. Are subvolumes always part of the "root" namespace?
+
+Yes. There is only one namespace in btrfs that all files, directories,
+and subvolumes are contained in.
+
+> If so, is it the
+> mounted root, the default subvolume, or subvolume 0 which always exposes
+> these other subvolumes?
+
+All subvolumes are accessible from the volume mounted when you use -o
+subvolid=0. (Note that 0 is not the real ID of the root volume, it's
+just a shortcut for mounting it.)
+
+The 'default' subvolume can be arbitrarily changed to any subvolume by a
+user; the result is equivalent to having a file-system default
+'subvolid=' value that's used when none is specified by the user.
+
+> Are there disambiguation rules so that if I
+> have /btrfs/root/blah and "blah" is both a subvolume and a directory (I
+> presume that can happen?)
+
+This cannot happen; see my first answer.
+
+> b. Are there better ways (walking the tree using BTRFS_IOC_TREE_SEARCH?)
+> to accomplish this than using /proc/self/mountinfo?
+
+I'm not sure; you might want to look into how the 
+  btrfs subvolume list <path>
+tool reads the list of subvolumes. (Note that this tool lists the
+subvolume paths relative to the root, and the <path> parameter is only
+used to determine which btrfs filesystem you're looking at.)
+
+Unless it has changed recently, mounting a subvolume by path on btrfs is
+(almost) the same as mounting the root volume, then doing a bind mount
+like "mount --bind /mnt/subvolume/path /mnt". This used to not even
+bother checking if you were attempting to mount a directory or
+subvolume.
+
+-- 
+Calvin Walton <calvin.walton@kepstin.ca>
 

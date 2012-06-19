@@ -1,77 +1,38 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-qc0-f174.google.com ([209.85.216.174]:51791 "EHLO
-	mail-qc0-f174.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1750754Ab2FSOWt (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 19 Jun 2012 10:22:49 -0400
-Received: by qcro28 with SMTP id o28so3528506qcr.19
-        for <linux-btrfs@vger.kernel.org>; Tue, 19 Jun 2012 07:22:48 -0700 (PDT)
-Message-ID: <1340115766.3403.19.camel@cwalton-XPS-8300>
+Received: from terminus.zytor.com ([198.137.202.10]:56953 "EHLO mail.zytor.com"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1750800Ab2FSXgH (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Tue, 19 Jun 2012 19:36:07 -0400
+Message-ID: <4FE10CDF.5050102@zytor.com>
+Date: Tue, 19 Jun 2012 16:35:59 -0700
+From: "H. Peter Anvin" <hpa@zytor.com>
+MIME-Version: 1.0
+To: Calvin Walton <calvin.walton@kepstin.ca>
+CC: linux-btrfs@vger.kernel.org
 Subject: Re: Subvolumes and /proc/self/mountinfo
-From: Calvin Walton <calvin.walton@kepstin.ca>
-To: "H. Peter Anvin" <hpa@zytor.com>
-Cc: linux-btrfs@vger.kernel.org
-Date: Tue, 19 Jun 2012 10:22:46 -0400
-In-Reply-To: <4FDFCA43.2070407@zytor.com>
-References: <4FDFCA43.2070407@zytor.com>
-Content-Type: text/plain; charset="UTF-8"
-Mime-Version: 1.0
+References: <4FDFCA43.2070407@zytor.com> <1340115766.3403.19.camel@cwalton-XPS-8300>
+In-Reply-To: <1340115766.3403.19.camel@cwalton-XPS-8300>
+Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Mon, 2012-06-18 at 17:39 -0700, H. Peter Anvin wrote:
-> I'm trying to figure out an algorithm from taking an arbitrary mounted
-> btrfs directory and break it down into:
+On 06/19/2012 07:22 AM, Calvin Walton wrote:
 > 
-> <device(s), subvolume, subpath>
+> All subvolumes are accessible from the volume mounted when you use -o
+> subvolid=0. (Note that 0 is not the real ID of the root volume, it's
+> just a shortcut for mounting it.)
 > 
-> where, keep in mind, <subpath> may not actually be part of the mount.
-> 
-> /proc/self/mountinfo seems to have some of that information, however, it
-> does not appear to distinguish between non-default subvolumes and
-> directories.  At the same time, once I have mounted a subvolume I see
-> its name in the root btrfs directory even if I didn't access it.
-> 
-> Questions, thus:
-> 
-> a. Are subvolumes always part of the "root" namespace?
 
-Yes. There is only one namespace in btrfs that all files, directories,
-and subvolumes are contained in.
+Could you clarify this bit?  Specifically, what is the real ID of the
+root volume, then?
 
-> If so, is it the
-> mounted root, the default subvolume, or subvolume 0 which always exposes
-> these other subvolumes?
+I found that after having set the default subvolume to something other
+than the root, and then mounting it without the -o subvol= option, then
+the subvolume name does *not* show in /proc/self/mountinfo; the same
+happens if a subvolume is mounted by -o subvolid= rather than -o subvol=.
 
-All subvolumes are accessible from the volume mounted when you use -o
-subvolid=0. (Note that 0 is not the real ID of the root volume, it's
-just a shortcut for mounting it.)
+Is this a bug?  This would seem to give the worst of both worlds in
+terms of actually knowing what the underlying filesystem path would end
+up looking like.
 
-The 'default' subvolume can be arbitrarily changed to any subvolume by a
-user; the result is equivalent to having a file-system default
-'subvolid=' value that's used when none is specified by the user.
-
-> Are there disambiguation rules so that if I
-> have /btrfs/root/blah and "blah" is both a subvolume and a directory (I
-> presume that can happen?)
-
-This cannot happen; see my first answer.
-
-> b. Are there better ways (walking the tree using BTRFS_IOC_TREE_SEARCH?)
-> to accomplish this than using /proc/self/mountinfo?
-
-I'm not sure; you might want to look into how the 
-  btrfs subvolume list <path>
-tool reads the list of subvolumes. (Note that this tool lists the
-subvolume paths relative to the root, and the <path> parameter is only
-used to determine which btrfs filesystem you're looking at.)
-
-Unless it has changed recently, mounting a subvolume by path on btrfs is
-(almost) the same as mounting the root volume, then doing a bind mount
-like "mount --bind /mnt/subvolume/path /mnt". This used to not even
-bother checking if you were attempting to mount a directory or
-subvolume.
-
--- 
-Calvin Walton <calvin.walton@kepstin.ca>
-
+	-hpa

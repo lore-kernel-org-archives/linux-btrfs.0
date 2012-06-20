@@ -1,54 +1,90 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-pz0-f46.google.com ([209.85.210.46]:54828 "EHLO
-	mail-pz0-f46.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1753531Ab2FTGbM convert rfc822-to-8bit (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 20 Jun 2012 02:31:12 -0400
-Received: by dady13 with SMTP id y13so9412417dad.19
-        for <linux-btrfs@vger.kernel.org>; Tue, 19 Jun 2012 23:31:11 -0700 (PDT)
-MIME-Version: 1.0
-In-Reply-To: <4FE141DB.1080308@zytor.com>
-References: <20120619234919.GA4102@shiny>
-	<CBFTB8kPCXB@helmut.hullen.de>
-	<CAE5mzvitiXX9N=qjM=xRgqhHQ9kY6WHXa4jWKGs6xRNOtd7uEA@mail.gmail.com>
-	<4FE141DB.1080308@zytor.com>
-Date: Wed, 20 Jun 2012 13:31:11 +0700
-Message-ID: <CAG1y0sd6RcFwdUN1tMvpSUA0UyX0N0Q32DvFE-jN9ktL9pr4Dg@mail.gmail.com>
-Subject: Re: Subvolumes and /proc/self/mountinfo
-From: "Fajar A. Nugraha" <list@fajar.net>
+Received: from mx1.fusionio.com ([66.114.96.30]:58759 "EHLO mx1.fusionio.com"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1751284Ab2FTNec (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Wed, 20 Jun 2012 09:34:32 -0400
+Date: Wed, 20 Jun 2012 09:34:29 -0400
+From: Chris Mason <chris.mason@fusionio.com>
 To: "H. Peter Anvin" <hpa@zytor.com>
-Cc: linux-btrfs@vger.kernel.org
-Content-Type: text/plain; charset=ISO-8859-1
+CC: "Chris L. Mason" <clmason@fusionio.com>,
+        "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
+Subject: Re: Subvolumes and /proc/self/mountinfo
+Message-ID: <20120620133429.GD4102@shiny>
+References: <4FDFCA43.2070407@zytor.com>
+ <20120619234919.GA4102@shiny>
+ <4FE11365.3010802@zytor.com>
+MIME-Version: 1.0
+Content-Type: text/plain; charset="us-ascii"
+In-Reply-To: <4FE11365.3010802@zytor.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Wed, Jun 20, 2012 at 10:22 AM, H. Peter Anvin <hpa@zytor.com> wrote:
-> a. Make a snapshot of the current root;
-> b. Mount said snapshot;
-> c. Install the new distro on the snapshot;
-> d. Change the bootloader configuration *inside* the snapshot to point
->   to the snapshot as the root;
-> e. Install the bootloader on the snapshot, thereby making the boot
->   block point to it and making it "live".
+On Tue, Jun 19, 2012 at 06:03:49PM -0600, H. Peter Anvin wrote:
+> On 06/19/2012 04:49 PM, Chris Mason wrote:
+> > On Mon, Jun 18, 2012 at 06:39:31PM -0600, H. Peter Anvin wrote:
+> >> I'm trying to figure out an algorithm from taking an arbitrary mounted
+> >> btrfs directory and break it down into:
+> >>
+> >> <device(s), subvolume, subpath>
+> >>
+> >> where, keep in mind, <subpath> may not actually be part of the mount.
+> > 
+> > Do you want an API for this, or is it enough to wander through /dev/disk
+> > style symlinks?
+> > 
+> > The big reason it isn't here yet is because Kay had this neat patch to
+> > blkid and udev to just put all the info you need into /dev/btrfs (or
+> > some other suitable location).  It would allow you to see which devices
+> > belong to which filesystems etc.
+> > 
+> 
+> I want an algorithm, it doesn't have an API per se.  I would really like
+> to avoid relying on blkid and udev for this, though... that is pretty
+> much a nonstarter.
+> 
+> If the answer is to walk the tree then I'm fine with that.
 
+Ok, fair enough.
 
-IMHO a more elegant solution would be similar to what
-(open)solaris/indiana does: make the boot parts (bootloader,
-configuration) as a separate area, separate from root snapshots. In
-solaris case IIRC this is will br /rpool/grub.
+> 
+> > subvolumes may become disconnected from the root namespace.  In this
+> > case we can find it just by the subvol id, and mount it into an
+> > arbitrary directory.
+> 
+> OK, so it sounds like the best thing is actually to record the subvolume
+> *number* (ID) where (in my case) Syslinux is installed. This is actually
+> a good thing because the fewer O(n) strings I have to stick into the
+> boot block the better.
 
-A similar approach should be implementable in linux, at least on
-certain configurations, since if you put /boot as part of "/" (thus,
-also on btrfs), AND you don't change the default subvolume, AND the
-roots are on their own subvolume, the paths to vmlinuz and initrd on
-grub.cfg will have subvols name in it. So it's possible to have a
-single grub.cfg having several entries that points to different
-subvols. So you don't need to install a new bootloader to make a
-particular subvol live, you only need to select it from the boot menu.
+Right, the subvolume number doesn't change over the life of the subvol,
+regardless of the path that was used for mounting the subvol.  So all
+you need is that number (64 bits) and the filename relative to the
+subvol root and you're set.
 
-I'm doing this currently with ubuntu precise, but with
-manually-created grub.cfg though. Still haven't found a way to manage
-this automatically.
+We'll have to add an ioctl for that.
 
--- 
-Fajar
+Finding the path relative to the subvol is easy, just walk backwards up
+the directory chain (cd ..) until you get to inode number 256.  All the
+subvol roots have inode number 256.
+
+> 
+> >> b. Are there better ways (walking the tree using BTRFS_IOC_TREE_SEARCH?)
+> >> to accomplish this than using /proc/self/mountinfo?
+> > 
+> > Not yet, but I'm definitely open to adding them.  Lets just hash out
+> > what you need and we'll either go through Kay's stuff or add ioctls for
+> > you.
+> 
+> Well, I'd be interested in what Kay's stuff actually does.  Other than
+> that, I would suggest adding a pair of ioctls that when executed on an
+> arbitrary btrfs inode returns the corresponding subvolume and one which
+> returns the path relative to the subvolume root.
+
+udev already scans block devices as they appear.  When it finds btrfs,
+it calls the btrfs dev scan ioctl for that one device.  It also reads in
+the FS uuid and the device uuid and puts them into a tree.
+
+Very simple stuff, but it gets rid of the need to manually call btrfs
+dev scan yourself.
+
+-chris

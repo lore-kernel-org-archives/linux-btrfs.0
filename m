@@ -1,40 +1,58 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([222.73.24.84]:59077 "EHLO song.cn.fujitsu.com"
+Received: from cn.fujitsu.com ([222.73.24.84]:31326 "EHLO song.cn.fujitsu.com"
 	rhost-flags-OK-FAIL-OK-OK) by vger.kernel.org with ESMTP
-	id S1752607Ab2FZDuP (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 25 Jun 2012 23:50:15 -0400
+	id S1759363Ab2FULj4 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Thu, 21 Jun 2012 07:39:56 -0400
+Received: from fnstmail02.fnst.cn.fujitsu.com (tang.cn.fujitsu.com [127.0.0.1])
+	by tang.cn.fujitsu.com (8.14.3/8.13.1) with ESMTP id q5LBdrwc016704
+	for <linux-btrfs@vger.kernel.org>; Thu, 21 Jun 2012 19:39:53 +0800
 From: Liu Bo <liubo2009@cn.fujitsu.com>
 To: <linux-btrfs@vger.kernel.org>
-Cc: <jbacik@fusionio.com>
-Subject: [PATCH] Btrfs: fix wrong check during log recovery
-Date: Tue, 26 Jun 2012 11:59:09 +0800
-Message-Id: <1340683149-19940-1-git-send-email-liubo2009@cn.fujitsu.com>
+Subject: [PATCH 2/4] Btrfs: remove redundant r/o check for superblock
+Date: Thu, 21 Jun 2012 19:48:15 +0800
+Message-Id: <1340279297-3964-2-git-send-email-liubo2009@cn.fujitsu.com>
+In-Reply-To: <1340279297-3964-1-git-send-email-liubo2009@cn.fujitsu.com>
+References: <1340279297-3964-1-git-send-email-liubo2009@cn.fujitsu.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-When we're evicting an inode during log recovery, we need to ensure that the inode
-is not in orphan state any more, which means inode's run_time flags has _no_
-BTRFS_INODE_HAS_ORPHAN_ITEM.  Thus, the BUG_ON was triggered because of a wrong
-check for the flags.
+mnt_want_write() and mnt_want_write_file() will check sb->s_flags with
+MS_RDONLY, and we don't need to do it ourselves.
 
 Signed-off-by: Liu Bo <liubo2009@cn.fujitsu.com>
 ---
- fs/btrfs/inode.c |    2 +-
- 1 files changed, 1 insertions(+), 1 deletions(-)
+ fs/btrfs/ioctl.c |    7 -------
+ 1 files changed, 0 insertions(+), 7 deletions(-)
 
-diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
-index 3f2c8cb..1e25847 100644
---- a/fs/btrfs/inode.c
-+++ b/fs/btrfs/inode.c
-@@ -3754,7 +3754,7 @@ void btrfs_evict_inode(struct inode *inode)
- 	btrfs_wait_ordered_range(inode, 0, (u64)-1);
+diff --git a/fs/btrfs/ioctl.c b/fs/btrfs/ioctl.c
+index b5e946e..069cd85 100644
+--- a/fs/btrfs/ioctl.c
++++ b/fs/btrfs/ioctl.c
+@@ -1379,14 +1379,10 @@ static noinline int btrfs_ioctl_snap_create_transid(struct file *file,
+ 						    u64 *transid,
+ 						    bool readonly)
+ {
+-	struct btrfs_root *root = BTRFS_I(fdentry(file)->d_inode)->root;
+ 	struct file *src_file;
+ 	int namelen;
+ 	int ret = 0;
  
- 	if (root->fs_info->log_root_recovering) {
--		BUG_ON(!test_bit(BTRFS_INODE_HAS_ORPHAN_ITEM,
-+		BUG_ON(test_bit(BTRFS_INODE_HAS_ORPHAN_ITEM,
- 				 &BTRFS_I(inode)->runtime_flags));
- 		goto no_delete;
- 	}
+-	if (root->fs_info->sb->s_flags & MS_RDONLY)
+-		return -EROFS;
+-
+ 	ret = mnt_want_write_file(file);
+ 	if (ret)
+ 		goto out;
+@@ -3265,9 +3261,6 @@ static long btrfs_ioctl_balance(struct file *file, void __user *arg)
+ 	if (!capable(CAP_SYS_ADMIN))
+ 		return -EPERM;
+ 
+-	if (fs_info->sb->s_flags & MS_RDONLY)
+-		return -EROFS;
+-
+ 	ret = mnt_want_write(file->f_path.mnt);
+ 	if (ret)
+ 		return ret;
 -- 
 1.6.5.2
 

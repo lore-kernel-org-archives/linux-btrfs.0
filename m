@@ -1,41 +1,250 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from terminus.zytor.com ([198.137.202.10]:51162 "EHLO mail.zytor.com"
+Received: from mx2.fusionio.com ([66.114.96.31]:47668 "EHLO mx2.fusionio.com"
 	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1751644Ab2FURLX (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 21 Jun 2012 13:11:23 -0400
-Message-ID: <4FE355AE.9030305@zytor.com>
-Date: Thu, 21 Jun 2012 10:11:10 -0700
-From: "H. Peter Anvin" <hpa@zytor.com>
+	id S1759669Ab2FUSt6 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Thu, 21 Jun 2012 14:49:58 -0400
+Received: from mail1.int.fusionio.com (mail1.int.fusionio.com [10.101.1.21]) by mx2.fusionio.com with ESMTP id aqsjsjHTf3kRTxCQ (version=TLSv1 cipher=AES128-SHA bits=128 verify=NO) for <linux-btrfs@vger.kernel.org>; Thu, 21 Jun 2012 12:49:57 -0600 (MDT)
+From: Josef Bacik <jbacik@fusionio.com>
+To: <linux-btrfs@vger.kernel.org>
+Subject: [PATCH] Btrfs: flush delayed inodes if we're short on space
+Date: Thu, 21 Jun 2012 14:54:35 -0400
+Message-ID: <1340304875-8111-1-git-send-email-jbacik@fusionio.com>
 MIME-Version: 1.0
-To: kreijack@inwind.it
-CC: Goffredo Baroncelli <kreijack@libero.it>, cwillu <cwillu@cwillu.com>,
-        helmut@hullen.de, linux-btrfs@vger.kernel.org
-Subject: Re: R: Re: Subvolumes and /proc/self/mountinfo
-References: <32353828.234981340193742067.JavaMail.defaultUser@defaultHost> <4FE1EE52.20002@zytor.com> <4FE1FB9B.1090203@libero.it> <4FE20B3D.5060704@zytor.com> <4FE21134.9090501@libero.it> <4FE2455E.2090007@zytor.com> <4FE2B576.3030301@libero.it> <4FE323DB.1070507@zytor.com> <4FE35473.4050005@libero.it>
-In-Reply-To: <4FE35473.4050005@libero.it>
-Content-Type: text/plain; charset=UTF-8
+Content-Type: text/plain
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 06/21/2012 10:05 AM, Goffredo Baroncelli wrote:
-> On 06/21/2012 03:38 PM, H. Peter Anvin wrote:
->>> But if /boot has to be in a separate filesystem, which is the point to
->>>> support btrfs at all ? Does make sense to support only a subset of btrfs
->>>> features ?
->>>>
->> Yes, and that's another good reason for /boot: btrfs supports that kind
->> of policy (e.g. "no compression or encryption in this subtree.")
-> 
-> But what about large disk ? Syslinux is able to handle large disk ? Or
-> it uses BIOS interrupt?
+Those crazy gentoo guys have been complaining about ENOSPC errors on their
+portage volumes.  This is because doing things like untar tends to create
+lots of new files which will soak up all the reservation space in the
+delayed inodes.  Usually this gets papered over by the fact that we will try
+and commit the transaction, however if this happens in the wrong spot or we
+choose not to commit the transaction you will be screwed.  So add the
+ability to expclitly flush delayed inodes to free up space.  Please test
+this out guys to make sure it works since as usual I cannot reproduce.
+Thanks,
 
-It uses the firmware.. how well the firmware can handle large disks is
-another matter.
-	-hpa
+Signed-off-by: Josef Bacik <jbacik@fusionio.com>
+---
+ fs/btrfs/delayed-inode.c |   22 ++++++++++--
+ fs/btrfs/delayed-inode.h |    2 +
+ fs/btrfs/extent-tree.c   |   91 ++++++++++++++++++++++++++++------------------
+ 3 files changed, 76 insertions(+), 39 deletions(-)
 
-
-
+diff --git a/fs/btrfs/delayed-inode.c b/fs/btrfs/delayed-inode.c
+index 2399f40..21d91a8 100644
+--- a/fs/btrfs/delayed-inode.c
++++ b/fs/btrfs/delayed-inode.c
+@@ -1113,8 +1113,8 @@ static int btrfs_update_delayed_inode(struct btrfs_trans_handle *trans,
+  * Returns < 0 on error and returns with an aborted transaction with any
+  * outstanding delayed items cleaned up.
+  */
+-int btrfs_run_delayed_items(struct btrfs_trans_handle *trans,
+-			    struct btrfs_root *root)
++static int __btrfs_run_delayed_items(struct btrfs_trans_handle *trans,
++				     struct btrfs_root *root, int nr)
+ {
+ 	struct btrfs_root *curr_root = root;
+ 	struct btrfs_delayed_root *delayed_root;
+@@ -1122,6 +1122,7 @@ int btrfs_run_delayed_items(struct btrfs_trans_handle *trans,
+ 	struct btrfs_path *path;
+ 	struct btrfs_block_rsv *block_rsv;
+ 	int ret = 0;
++	bool count = (nr > 0);
+ 
+ 	if (trans->aborted)
+ 		return -EIO;
+@@ -1137,7 +1138,7 @@ int btrfs_run_delayed_items(struct btrfs_trans_handle *trans,
+ 	delayed_root = btrfs_get_delayed_root(root);
+ 
+ 	curr_node = btrfs_first_delayed_node(delayed_root);
+-	while (curr_node) {
++	while (curr_node && (!count || (count && nr--))) {
+ 		curr_root = curr_node->root;
+ 		ret = btrfs_insert_delayed_items(trans, path, curr_root,
+ 						 curr_node);
+@@ -1149,6 +1150,7 @@ int btrfs_run_delayed_items(struct btrfs_trans_handle *trans,
+ 						path, curr_node);
+ 		if (ret) {
+ 			btrfs_release_delayed_node(curr_node);
++			curr_node = NULL;
+ 			btrfs_abort_transaction(trans, root, ret);
+ 			break;
+ 		}
+@@ -1158,12 +1160,26 @@ int btrfs_run_delayed_items(struct btrfs_trans_handle *trans,
+ 		btrfs_release_delayed_node(prev_node);
+ 	}
+ 
++	if (curr_node)
++		btrfs_release_delayed_node(curr_node);
+ 	btrfs_free_path(path);
+ 	trans->block_rsv = block_rsv;
+ 
+ 	return ret;
+ }
+ 
++int btrfs_run_delayed_items(struct btrfs_trans_handle *trans,
++			    struct btrfs_root *root)
++{
++	return __btrfs_run_delayed_items(trans, root, -1);
++}
++
++int btrfs_run_delayed_items_nr(struct btrfs_trans_handle *trans,
++			       struct btrfs_root *root, int nr)
++{
++	return __btrfs_run_delayed_items(trans, root, nr);
++}
++
+ static int __btrfs_commit_inode_delayed_items(struct btrfs_trans_handle *trans,
+ 					      struct btrfs_delayed_node *node)
+ {
+diff --git a/fs/btrfs/delayed-inode.h b/fs/btrfs/delayed-inode.h
+index f5aa402..4f808e1 100644
+--- a/fs/btrfs/delayed-inode.h
++++ b/fs/btrfs/delayed-inode.h
+@@ -107,6 +107,8 @@ int btrfs_inode_delayed_dir_index_count(struct inode *inode);
+ 
+ int btrfs_run_delayed_items(struct btrfs_trans_handle *trans,
+ 			    struct btrfs_root *root);
++int btrfs_run_delayed_items_nr(struct btrfs_trans_handle *trans,
++			       struct btrfs_root *root, int nr);
+ 
+ void btrfs_balance_delayed_items(struct btrfs_root *root);
+ 
+diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
+index 4b5a1e1..727b2ee 100644
+--- a/fs/btrfs/extent-tree.c
++++ b/fs/btrfs/extent-tree.c
+@@ -3727,6 +3727,55 @@ commit:
+ 	return btrfs_commit_transaction(trans, root);
+ }
+ 
++enum flush_state {
++	FLUSH_DELALLOC		=	1,
++	FLUSH_DELALLOC_WAIT	=	2,
++	FLUSH_DELAYED_ITEMS_NR	=	3,
++	FLUSH_DELAYED_ITEMS	=	4,
++	COMMIT_TRANS		=	5,
++};
++
++static int flush_space(struct btrfs_root *root,
++		       struct btrfs_space_info *space_info, u64 num_bytes,
++		       u64 orig_bytes, int *state)
++{
++	struct btrfs_trans_handle *trans;
++	struct btrfs_block_rsv *global_rsv = &root->fs_info->global_block_rsv;
++	int nr;
++	int ret;
++
++	switch (*state) {
++	case FLUSH_DELALLOC:
++	case FLUSH_DELALLOC_WAIT:
++		ret = shrink_delalloc(root, num_bytes,
++				      *state == FLUSH_DELALLOC_WAIT);
++		if (ret > 0)
++			ret = 0;
++		break;
++	case FLUSH_DELAYED_ITEMS_NR:
++	case FLUSH_DELAYED_ITEMS:
++		nr = (*state == FLUSH_DELAYED_ITEMS_NR) ? 10 : -1;
++
++		trans = btrfs_join_transaction(root);
++		if (IS_ERR(trans)) {
++			ret = PTR_ERR(trans);
++			break;
++		}
++		ret = btrfs_run_delayed_items_nr(trans, root, nr);
++		btrfs_end_transaction(trans, root);
++		break;
++	case COMMIT_TRANS:
++		ret = may_commit_transaction(root, space_info, orig_bytes, 0);
++		break;
++	default:
++		ret = -ENOSPC;
++		break;
++	}
++
++	if (!ret)
++		(*state)++;
++	return ret;
++}
+ /**
+  * reserve_metadata_bytes - try to reserve bytes from the block_rsv's space
+  * @root - the root we're allocating for
+@@ -3748,11 +3797,10 @@ static int reserve_metadata_bytes(struct btrfs_root *root,
+ 	struct btrfs_space_info *space_info = block_rsv->space_info;
+ 	u64 used;
+ 	u64 num_bytes = orig_bytes;
+-	int retries = 0;
++	int flush_state = FLUSH_DELALLOC;
+ 	int ret = 0;
+-	bool committed = false;
+ 	bool flushing = false;
+-	bool wait_ordered = false;
++	bool committed = false;
+ 
+ again:
+ 	ret = 0;
+@@ -3811,9 +3859,8 @@ again:
+ 		 * amount plus the amount of bytes that we need for this
+ 		 * reservation.
+ 		 */
+-		wait_ordered = true;
+ 		num_bytes = used - space_info->total_bytes +
+-			(orig_bytes * (retries + 1));
++			(orig_bytes * 2);
+ 	}
+ 
+ 	if (ret) {
+@@ -3866,8 +3913,6 @@ again:
+ 			trace_btrfs_space_reservation(root->fs_info,
+ 				"space_info", space_info->flags, orig_bytes, 1);
+ 			ret = 0;
+-		} else {
+-			wait_ordered = true;
+ 		}
+ 	}
+ 
+@@ -3886,36 +3931,10 @@ again:
+ 	if (!ret || !flush)
+ 		goto out;
+ 
+-	/*
+-	 * We do synchronous shrinking since we don't actually unreserve
+-	 * metadata until after the IO is completed.
+-	 */
+-	ret = shrink_delalloc(root, num_bytes, wait_ordered);
+-	if (ret < 0)
+-		goto out;
+-
+-	ret = 0;
+-
+-	/*
+-	 * So if we were overcommitted it's possible that somebody else flushed
+-	 * out enough space and we simply didn't have enough space to reclaim,
+-	 * so go back around and try again.
+-	 */
+-	if (retries < 2) {
+-		wait_ordered = true;
+-		retries++;
+-		goto again;
+-	}
+-
+-	ret = -ENOSPC;
+-	if (committed)
+-		goto out;
+-
+-	ret = may_commit_transaction(root, space_info, orig_bytes, 0);
+-	if (!ret) {
+-		committed = true;
++	ret = flush_space(root, space_info, num_bytes, orig_bytes,
++			  &flush_state);
++	if (!ret)
+ 		goto again;
+-	}
+ 
+ out:
+ 	if (flushing) {
 -- 
-H. Peter Anvin, Intel Open Source Technology Center
-I work for Intel.  I don't speak on their behalf.
+1.7.7.6
 

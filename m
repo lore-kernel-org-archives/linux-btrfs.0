@@ -1,47 +1,96 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([222.73.24.84]:19865 "EHLO song.cn.fujitsu.com"
+Received: from cn.fujitsu.com ([222.73.24.84]:31326 "EHLO song.cn.fujitsu.com"
 	rhost-flags-OK-FAIL-OK-OK) by vger.kernel.org with ESMTP
-	id S1759352Ab2FULj5 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	id S1759370Ab2FULj5 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
 	Thu, 21 Jun 2012 07:39:57 -0400
 Received: from fnstmail02.fnst.cn.fujitsu.com (tang.cn.fujitsu.com [127.0.0.1])
-	by tang.cn.fujitsu.com (8.14.3/8.13.1) with ESMTP id q5LBdrBj016703
-	for <linux-btrfs@vger.kernel.org>; Thu, 21 Jun 2012 19:39:53 +0800
+	by tang.cn.fujitsu.com (8.14.3/8.13.1) with ESMTP id q5LBdrwd016704
+	for <linux-btrfs@vger.kernel.org>; Thu, 21 Jun 2012 19:39:54 +0800
 From: Liu Bo <liubo2009@cn.fujitsu.com>
 To: <linux-btrfs@vger.kernel.org>
-Subject: [PATCH 3/4] Btrfs: use mnt_want_write_file instead of mnt_want_write
-Date: Thu, 21 Jun 2012 19:48:16 +0800
-Message-Id: <1340279297-3964-3-git-send-email-liubo2009@cn.fujitsu.com>
+Subject: [PATCH 4/4] Btrfs: do not set subvolume flags in readonly mode
+Date: Thu, 21 Jun 2012 19:48:17 +0800
+Message-Id: <1340279297-3964-4-git-send-email-liubo2009@cn.fujitsu.com>
 In-Reply-To: <1340279297-3964-1-git-send-email-liubo2009@cn.fujitsu.com>
 References: <1340279297-3964-1-git-send-email-liubo2009@cn.fujitsu.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-mnt_want_write_file is faster when file has been opened for write.
+$ mkfs.btrfs /dev/sdb7
+$ btrfstune -S1 /dev/sdb7
+$ mount /dev/sdb7 /mnt/btrfs
+mount: block device /dev/sdb7 is write-protected, mounting read-only
+$ btrfs dev add /dev/sdb8 /mnt/btrfs/
+
+Now we get a btrfs in which mnt flags has readonly but sb flags does
+not.  So for those ioctls that only check sb flags with MS_RDONLY, it
+is going to be a problem.
+Setting subvolume flags is such an ioctl, we should use mnt_want_write_file()
+to check RO flags.
 
 Signed-off-by: Liu Bo <liubo2009@cn.fujitsu.com>
 ---
- fs/btrfs/ioctl.c |    4 ++--
- 1 files changed, 2 insertions(+), 2 deletions(-)
+ fs/btrfs/ioctl.c |   27 ++++++++++++++++++---------
+ 1 files changed, 18 insertions(+), 9 deletions(-)
 
 diff --git a/fs/btrfs/ioctl.c b/fs/btrfs/ioctl.c
-index 069cd85..df4c04d 100644
+index df4c04d..ae29737 100644
 --- a/fs/btrfs/ioctl.c
 +++ b/fs/btrfs/ioctl.c
-@@ -3261,7 +3261,7 @@ static long btrfs_ioctl_balance(struct file *file, void __user *arg)
- 	if (!capable(CAP_SYS_ADMIN))
- 		return -EPERM;
+@@ -1519,29 +1519,35 @@ static noinline int btrfs_ioctl_subvol_setflags(struct file *file,
+ 	u64 flags;
+ 	int ret = 0;
  
--	ret = mnt_want_write(file->f_path.mnt);
+-	if (root->fs_info->sb->s_flags & MS_RDONLY)
+-		return -EROFS;
 +	ret = mnt_want_write_file(file);
- 	if (ret)
- 		return ret;
++	if (ret)
++		goto out;
  
-@@ -3331,7 +3331,7 @@ out_bargs:
- out:
- 	mutex_unlock(&fs_info->balance_mutex);
- 	mutex_unlock(&fs_info->volume_mutex);
--	mnt_drop_write(file->f_path.mnt);
++	ret = -EINVAL;
+ 	if (btrfs_ino(inode) != BTRFS_FIRST_FREE_OBJECTID)
+-		return -EINVAL;
++		goto out_drop_write;
+ 
++	ret = -EFAULT;
+ 	if (copy_from_user(&flags, arg, sizeof(flags)))
+-		return -EFAULT;
++		goto out_drop_write;
+ 
++	ret = -EINVAL;
+ 	if (flags & BTRFS_SUBVOL_CREATE_ASYNC)
+-		return -EINVAL;
++		goto out_drop_write;
+ 
++	ret = -EOPNOTSUPP;
+ 	if (flags & ~BTRFS_SUBVOL_RDONLY)
+-		return -EOPNOTSUPP;
++		goto out_drop_write;
+ 
++	ret = -EACCES;
+ 	if (!inode_owner_or_capable(inode))
+-		return -EACCES;
++		goto out_drop_write;
+ 
+ 	down_write(&root->fs_info->subvol_sem);
+ 
+ 	/* nothing to do */
+ 	if (!!(flags & BTRFS_SUBVOL_RDONLY) == btrfs_root_readonly(root))
+-		goto out;
++		goto out_drop_sem;
+ 
+ 	root_flags = btrfs_root_flags(&root->root_item);
+ 	if (flags & BTRFS_SUBVOL_RDONLY)
+@@ -1564,8 +1570,11 @@ static noinline int btrfs_ioctl_subvol_setflags(struct file *file,
+ out_reset:
+ 	if (ret)
+ 		btrfs_set_root_flags(&root->root_item, root_flags);
+-out:
++out_drop_sem:
+ 	up_write(&root->fs_info->subvol_sem);
++out_drop_write:
 +	mnt_drop_write_file(file);
++out:
  	return ret;
  }
  

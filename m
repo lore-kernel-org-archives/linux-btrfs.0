@@ -1,52 +1,44 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from terminus.zytor.com ([198.137.202.10]:49530 "EHLO mail.zytor.com"
+Received: from mx2.fusionio.com ([66.114.96.31]:51754 "EHLO mx2.fusionio.com"
 	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1759660Ab2FUNiw (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 21 Jun 2012 09:38:52 -0400
-Message-ID: <4FE323DB.1070507@zytor.com>
-Date: Thu, 21 Jun 2012 06:38:35 -0700
-From: "H. Peter Anvin" <hpa@zytor.com>
+	id S1753920Ab2FUPrb (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Thu, 21 Jun 2012 11:47:31 -0400
+Date: Thu, 21 Jun 2012 11:47:28 -0400
+From: Chris Mason <chris.mason@fusionio.com>
+To: <torvalds@linux-foundation.org>,
+        Kernel development list <linux-kernel@vger.kernel.org>,
+        <linux-btrfs@vger.kernel.org>
+Subject: [GIT PULL] Btrfs updates
+Message-ID: <20120621154728.GF19507@shiny>
 MIME-Version: 1.0
-To: kreijack@inwind.it
-CC: Goffredo Baroncelli <kreijack@libero.it>, cwillu <cwillu@cwillu.com>,
-        helmut@hullen.de, linux-btrfs@vger.kernel.org
-Subject: Re: R: Re: Subvolumes and /proc/self/mountinfo
-References: <32353828.234981340193742067.JavaMail.defaultUser@defaultHost> <4FE1EE52.20002@zytor.com> <4FE1FB9B.1090203@libero.it> <4FE20B3D.5060704@zytor.com> <4FE21134.9090501@libero.it> <4FE2455E.2090007@zytor.com> <4FE2B576.3030301@libero.it>
-In-Reply-To: <4FE2B576.3030301@libero.it>
-Content-Type: text/plain; charset=UTF-8
+Content-Type: text/plain; charset="us-ascii"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 06/20/2012 10:47 PM, Goffredo Baroncelli wrote:
-> 
-> This leads to have a separately /boot filesystem. In this case I agree
-> with you: make sense that the kernel is near the bootloader files.
-> 
-> But if /boot has to be in a separate filesystem, which is the point to
-> support btrfs at all ? Does make sense to support only a subset of btrfs
-> features ?
-> 
+Hi Linus,
 
-Yes, and that's another good reason for /boot: btrfs supports that kind
-of policy (e.g. "no compression or encryption in this subtree.")
+Please grab my for-linus branch:
 
->>
->>> Now we have the possibility to move the kernel near the modules, and
->>> this could lead some interesting possibility: think about different
->>> linux installations, with an own kernel version and an own modules
->>> version; what are the reasons to put together under /boot different
->>> kernel which potential conflicting names ? de facto standard ?
->>> historical reasons ? Nothing wrong here; but also the idea to moving the
->>> kernel under /lib/modules is not so wrong.
->>
->> No, it is completely, totally and very very seriously wrong.
-> 
-> When a bootloader (and the bioses) will be able to address the whole
-> diskS, this will change.. Not now
-> 
+git://git.kernel.org/pub/scm/linux/kernel/git/mason/linux-btrfs.git for-linus
 
-People have said that for 15 years.  The reality is that firmware will
-always be behind the curve, and *that's ok*, we just need to deal with it.
+This is a small pull with btrfs fixes.  The biggest of the bunch is
+another fix for the new backref walking code.
 
-	-hpa
+We're still hammering out one btrfs dio vs buffered reads problem, but
+that one will have to wait for the next rc.
 
+Josef Bacik (2) commits (+3/-2):
+    Btrfs: delay iput with async extents (+2/-2)
+    Btrfs: add a missing spin_lock (+1/-0)
+
+Alexander Block (2) commits (+59/-44):
+    Btrfs: don't assume to be on the correct extent in add_all_parents (+52/-42)
+    Btrfs: introduce btrfs_next_old_item (+7/-2)
+
+Total: (4) commits (+62/-46)
+
+ fs/btrfs/backref.c |   94 +++++++++++++++++++++++++++++-----------------------
+ fs/btrfs/ctree.h   |    9 +++--
+ fs/btrfs/disk-io.c |    1 +
+ fs/btrfs/inode.c   |    4 +--
+ 4 files changed, 62 insertions(+), 46 deletions(-)

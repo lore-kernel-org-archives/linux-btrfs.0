@@ -1,58 +1,41 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from smtp205.alice.it ([82.57.200.101]:37507 "EHLO smtp205.alice.it"
+Received: from terminus.zytor.com ([198.137.202.10]:51162 "EHLO mail.zytor.com"
 	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1759912Ab2FURFh (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 21 Jun 2012 13:05:37 -0400
-Message-ID: <4FE3546F.4010701@libero.it>
-Date: Thu, 21 Jun 2012 19:05:51 +0200
-From: Goffredo Baroncelli <kreijack@libero.it>
-Reply-To: kreijack@inwind.it
+	id S1751644Ab2FURLX (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Thu, 21 Jun 2012 13:11:23 -0400
+Message-ID: <4FE355AE.9030305@zytor.com>
+Date: Thu, 21 Jun 2012 10:11:10 -0700
+From: "H. Peter Anvin" <hpa@zytor.com>
 MIME-Version: 1.0
-To: Martin Steigerwald <Martin@lichtvoll.de>
-CC: linux-btrfs@vger.kernel.org, "H. Peter Anvin" <hpa@zytor.com>,
-        cwillu <cwillu@cwillu.com>, helmut@hullen.de
+To: kreijack@inwind.it
+CC: Goffredo Baroncelli <kreijack@libero.it>, cwillu <cwillu@cwillu.com>,
+        helmut@hullen.de, linux-btrfs@vger.kernel.org
 Subject: Re: R: Re: Subvolumes and /proc/self/mountinfo
-References: <32353828.234981340193742067.JavaMail.defaultUser@defaultHost> <4FE2455E.2090007@zytor.com> <4FE2B576.3030301@libero.it> (sfid-20120621_090410_016018_05466806) <201206211346.40683.Martin@lichtvoll.de>
-In-Reply-To: <201206211346.40683.Martin@lichtvoll.de>
+References: <32353828.234981340193742067.JavaMail.defaultUser@defaultHost> <4FE1EE52.20002@zytor.com> <4FE1FB9B.1090203@libero.it> <4FE20B3D.5060704@zytor.com> <4FE21134.9090501@libero.it> <4FE2455E.2090007@zytor.com> <4FE2B576.3030301@libero.it> <4FE323DB.1070507@zytor.com> <4FE35473.4050005@libero.it>
+In-Reply-To: <4FE35473.4050005@libero.it>
 Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 06/21/2012 01:46 PM, Martin Steigerwald wrote:
-> Am Donnerstag, 21. Juni 2012 schrieb Goffredo Baroncelli:
->>>
->>>
->>>> Now we have the possibility to move the kernel near the modules, and
->>>> this could lead some interesting possibility: think about different
->>>> linux installations, with an own kernel version and an own modules
->>>> version; what are the reasons to put together under /boot different
->>>> kernel which potential conflicting names ? de facto standard ?
->>>> historical reasons ? Nothing wrong here; but also the idea to moving
->>>> the kernel under /lib/modules is not so wrong.
->>>
->>>
->>>
->>> No, it is completely, totally and very very seriously wrong.
->>
->> When a bootloader (and the bioses) will be able to address the whole
->> diskS, this will change.. Not now
+On 06/21/2012 10:05 AM, Goffredo Baroncelli wrote:
+> On 06/21/2012 03:38 PM, H. Peter Anvin wrote:
+>>> But if /boot has to be in a separate filesystem, which is the point to
+>>>> support btrfs at all ? Does make sense to support only a subset of btrfs
+>>>> features ?
+>>>>
+>> Yes, and that's another good reason for /boot: btrfs supports that kind
+>> of policy (e.g. "no compression or encryption in this subtree.")
 > 
-> Why not the other way around? /boot/modules-3.4 or so.
-> 
-> But either way, these are different discussions. H. Peter´s question was, 
-> if I understood correctly, whether to use subvolid or path?
-> 
+> But what about large disk ? Syslinux is able to handle large disk ? Or
+> it uses BIOS interrupt?
 
-For which ?
-If you want to point the bootloader subvolume (where the 2nd stage
-relies), I suggest subvolid=. If you need to point to the kernel
-(bzImage/initrd) *for my setup* it would be useful to use the path.
-Unfortunately these two requirements are in contrast.
+It uses the firmware.. how well the firmware can handle large disks is
+another matter.
+	-hpa
 
-> I tend to lean towards subvolid.
 
-> 
-> Ciao,
-Ciao
-Goffredo
+
+-- 
+H. Peter Anvin, Intel Open Source Technology Center
+I work for Intel.  I don't speak on their behalf.
 

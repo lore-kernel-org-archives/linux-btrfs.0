@@ -1,42 +1,30 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from lulu.zabbo.net ([69.168.54.52]:42830 "EHLO lulu.zabbo.net"
+Received: from mx2.fusionio.com ([66.114.96.31]:55326 "EHLO mx2.fusionio.com"
 	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1759893Ab2FUTdJ (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 21 Jun 2012 15:33:09 -0400
-Received: from [192.168.242.10] (50-193-208-193-static.hfc.comcastbusiness.net [50.193.208.193])
-	(using TLSv1 with cipher DHE-RSA-CAMELLIA256-SHA (256/256 bits))
-	(No client certificate requested)
-	by lulu.zabbo.net (Postfix) with ESMTPSA id 70F2E2216DB
-	for <linux-btrfs@vger.kernel.org>; Thu, 21 Jun 2012 12:33:08 -0700 (PDT)
-Message-ID: <4FE376F3.5030609@zabbo.net>
-Date: Thu, 21 Jun 2012 12:33:07 -0700
-From: Zach Brown <zab@zabbo.net>
+	id S1755635Ab2FUUF7 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Thu, 21 Jun 2012 16:05:59 -0400
+From: Josef Bacik <jbacik@fusionio.com>
+To: <linux-btrfs@vger.kernel.org>, <harald@redhat.com>
+Subject: [RFC] A way to tell if all the devices in a file system are available
+Date: Thu, 21 Jun 2012 16:10:29 -0400
+Message-ID: <1340309431-9972-1-git-send-email-jbacik@fusionio.com>
 MIME-Version: 1.0
-To: linux-btrfs@vger.kernel.org
-Subject: Re: [PATCH] Btrfs: flush delayed inodes if we're short on space
-References: <1340304875-8111-1-git-send-email-jbacik@fusionio.com>
-In-Reply-To: <1340304875-8111-1-git-send-email-jbacik@fusionio.com>
-Content-Type: text/plain; charset=ISO-8859-1; format=flowed
+Content-Type: text/plain
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
+Harald Hoyer has had this as a feature request for ages and I've finally gotten
+around to hacking something up.  This is probably going to get bikeshedded to
+death, bring it on, I'm not married to any of the behaviors in these patches, I
+just want to get the ball rolling so we can have something in place for 3.6.
 
-> +	case FLUSH_DELAYED_ITEMS_NR:
-> +	case FLUSH_DELAYED_ITEMS:
-> +		nr = (*state == FLUSH_DELAYED_ITEMS_NR) ? 10 : -1;
+Basically all I've done is saved how many devices the super block thinks we have
+into the fs_devices struct whenever we scan a device.  Then all we have to do
+for the IOCTL is compare how many devices the fs_devices struct has in it to how
+many we think we need.
 
-This 10 seemed awfully magical so I read a bit more.
+The command itself just spits out 0 for yay we're ready and 1 for boo no we're
+not.  This makes it easier for Harald to do his multi-device btrfs support in
+dracut.  Thanks,
 
-It appears to be an attempt to pop back up into reserve_metadata_bytes()
-to see if the caller has been satisfied before continuing on to apply
-all the delayed items.
-
-The magic number seems awfully clumsy.  It'll either do too much work or
-will blow through all the delayed items, depending on the load.  Is it
-too hard to have btrfs_run_delayed_items() check for the callers
-reservation and return if there's a chance that it'll be satisfied?
-
-Am I missing something?  Over-thinking a rare path as the initial steps
-will tend to free up space most of the time?
-
-- z
+Josef

@@ -1,62 +1,45 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mo-p00-ob.rzone.de ([81.169.146.162]:54454 "EHLO
-	mo-p00-ob.rzone.de" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1756100Ab2FVRVa (ORCPT
+Received: from mail-we0-f174.google.com ([74.125.82.174]:63427 "EHLO
+	mail-we0-f174.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1753254Ab2FVSOO (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Fri, 22 Jun 2012 13:21:30 -0400
-Message-ID: <4FE4A99A.3090000@giantdisaster.de>
-Date: Fri, 22 Jun 2012 19:21:30 +0200
-From: Stefan Behrens <sbehrens@giantdisaster.de>
-MIME-Version: 1.0
-To: David Sterba <dsterba@suse.cz>, chris.mason@fusionio.com,
-        linux-btrfs@vger.kernel.org
-Subject: Re: [PATCH] btrfs: join DEV_STATS ioctls to one
-References: <1340368239-8152-1-git-send-email-dsterba@suse.cz> <4FE49CC4.6030606@giantdisaster.de> <20120622170216.GA28144@twin.jikos.cz>
-In-Reply-To: <20120622170216.GA28144@twin.jikos.cz>
-Content-Type: text/plain; charset=ISO-8859-1; format=flowed
+	Fri, 22 Jun 2012 14:14:14 -0400
+Received: by weyu7 with SMTP id u7so1390120wey.19
+        for <linux-btrfs@vger.kernel.org>; Fri, 22 Jun 2012 11:14:13 -0700 (PDT)
+From: Ilya Dryomov <idryomov@gmail.com>
+To: linux-btrfs@vger.kernel.org
+Cc: Chris Mason <chris.mason@fusionio.com>, idryomov@gmail.com,
+        David Sterba <dsterba@suse.cz>
+Subject: [PATCH] Btrfs: do not ignore errors from btrfs_cleanup_fs_roots() when mounting
+Date: Fri, 22 Jun 2012 21:14:13 +0300
+Message-Id: <1340388853-20897-1-git-send-email-idryomov@gmail.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 06/22/2012 19:02 +0200, David Sterba wrote:
-> On Fri, Jun 22, 2012 at 06:26:44PM +0200, Stefan Behrens wrote:
->> I still do not understand your reason and the benefit of your change.
->> The reset command and the read command are two completely different
->> operations. Therefore I assigned two different ioctl commands. Then you
->> can use strace to see which command is sent, and you can also grep the
->> sources without additional effort.
->
-> I'll try better.
->
-> I see the primary purpose to read the device stats.  A standalone stats
-> reset ioctl does not make much sense, so it should go along with reading
-> the last state and then reset. So far ok.
->
-> .From implementation and interface POV, the reset is a hint how I want
-> to read the stats, not directly the command.
->
-> The switch whether to do the reset or not, as currently implemented, has
-> to set the ioctl number, while I'd expect to set a flag.
->
-> Other concerns are about future adding more flags or reading them back
-> from kernel. I don't have examples, this is what I base on my experience
-> that such things happen and then I can only scratch my head 'why didn't
-> I add just one more byte there'. Spare bytes avoid some of backward
-> compatibility problems.
->
-> As for strace, it could be taught to be verbose and descriptive about
-> ioctls arguments (the 3rd parameter). Quick example is
->
-> $ strace stty sane
-> ...
-> ioctl(0, SNDCTL_TMR_TIMEBASE or SNDRV_TIMER_IOCTL_NEXT_DEVICE or TCGETS, {B38400 opost isig icanon echo ...}) = 0
-> ...
->
-> Currently, strace does not know about btrfs-specific ioctls, eg snapshot:
->
-> ioctl(3, 0x50009417, 0x7ffff4ae8850)    = 0
->
->
-> david
+There used to be a BUG_ON(ret) there before EH patch (79787eaa) went in.
+Bail out with EINVAL.
 
-OK. Then let's do it your way. I will prepare the patch to adapt the 
-btrfs-progs side, unless you have already created one.
+Cc: David Sterba <dsterba@suse.cz>
+Signed-off-by: Ilya Dryomov <idryomov@gmail.com>
+---
+ fs/btrfs/disk-io.c |    4 ++--
+ 1 files changed, 2 insertions(+), 2 deletions(-)
+
+diff --git a/fs/btrfs/disk-io.c b/fs/btrfs/disk-io.c
+index f06db81..77872da 100644
+--- a/fs/btrfs/disk-io.c
++++ b/fs/btrfs/disk-io.c
+@@ -2461,8 +2461,8 @@ retry_root_backup:
+ 
+ 	if (!(sb->s_flags & MS_RDONLY)) {
+ 		ret = btrfs_cleanup_fs_roots(fs_info);
+-		if (ret) {
+-			}
++		if (ret)
++			goto fail_trans_kthread;
+ 
+ 		ret = btrfs_recover_relocation(tree_root);
+ 		if (ret < 0) {
+-- 
+1.7.9.1
+

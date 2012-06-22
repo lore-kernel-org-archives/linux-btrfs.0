@@ -1,58 +1,40 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-gh0-f174.google.com ([209.85.160.174]:52490 "EHLO
-	mail-gh0-f174.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1755305Ab2FZS20 convert rfc822-to-8bit (ORCPT
+Received: from mail-wg0-f44.google.com ([74.125.82.44]:60185 "EHLO
+	mail-wg0-f44.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1751561Ab2FVSNE (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 26 Jun 2012 14:28:26 -0400
-Received: by ghrr11 with SMTP id r11so238648ghr.19
-        for <linux-btrfs@vger.kernel.org>; Tue, 26 Jun 2012 11:28:25 -0700 (PDT)
-MIME-Version: 1.0
-In-Reply-To: <CAK43AWthZ5Y3Rjkp6EduXO17J7Paz7SHYj_qOUbpwHyVQ_JKRQ@mail.gmail.com>
-References: <CAK43AWvAeKzhR2pdpTxMLA=66BK6ErLBCVzPB3Cyy7X+_EjZEA@mail.gmail.com>
-	<CANZ96zW4BX4jXP+ZBj2380QJ3gB_yOWa6VgFn9gHBeDq1qc4Lg@mail.gmail.com>
-	<CAK43AWthZ5Y3Rjkp6EduXO17J7Paz7SHYj_qOUbpwHyVQ_JKRQ@mail.gmail.com>
-Date: Tue, 26 Jun 2012 11:28:23 -0700
-Message-ID: <CAK43AWtSfiQ2qWjMEAWVagh0yPkpdpqmw69bvph9sMvdCgtbPg@mail.gmail.com>
-Subject: Re: System Policy for Filenames
-From: Aaron Peterson <myusualnickname@gmail.com>
+	Fri, 22 Jun 2012 14:13:04 -0400
+Received: by wgbdr13 with SMTP id dr13so2058818wgb.1
+        for <linux-btrfs@vger.kernel.org>; Fri, 22 Jun 2012 11:13:02 -0700 (PDT)
+From: Ilya Dryomov <idryomov@gmail.com>
 To: linux-btrfs@vger.kernel.org
-Content-Type: text/plain; charset=ISO-8859-1
+Cc: Chris Mason <chris.mason@fusionio.com>, idryomov@gmail.com
+Subject: [PATCH] Btrfs: do not return EINVAL instead of ENOMEM from open_ctree()
+Date: Fri, 22 Jun 2012 21:13:01 +0300
+Message-Id: <1340388781-20791-1-git-send-email-idryomov@gmail.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Billy,
+When bailing from open_ctree() err is returned, not ret.
 
-Thank you! I will look into FUSE.
+Signed-off-by: Ilya Dryomov <idryomov@gmail.com>
+---
+ fs/btrfs/disk-io.c |    2 +-
+ 1 files changed, 1 insertions(+), 1 deletions(-)
 
-Ultimately, I want my / to be mounted with these rules,  I will need a
-boot loader to be able to handle it.
+diff --git a/fs/btrfs/disk-io.c b/fs/btrfs/disk-io.c
+index e1890b1..f06db81 100644
+--- a/fs/btrfs/disk-io.c
++++ b/fs/btrfs/disk-io.c
+@@ -2244,7 +2244,7 @@ int open_ctree(struct super_block *sb,
+ 	ret |= btrfs_start_workers(&fs_info->caching_workers);
+ 	ret |= btrfs_start_workers(&fs_info->readahead_workers);
+ 	if (ret) {
+-		ret = -ENOMEM;
++		err = -ENOMEM;
+ 		goto fail_sb_buffer;
+ 	}
+ 
+-- 
+1.7.9.1
 
- I am wondering if filesystem software has hooks for AppArmor or
-SELinux, or some other Linux Security Module would be appropriated to
-add to filesystem code?
-
- Also, I tried joining a linux-fsdev mailing list, but it appears to be defunct.
-
-Oh, This is interesting:
-http://www.dwheeler.com/essays/fixing-unix-linux-filenames.html
-
-
- -AP
->
->
-> On Tue, Jun 26, 2012 at 11:03 AM, Billy Crook <billycrook@gmail.com> wrote:
->> On Fri, Jun 22, 2012 at 4:06 AM, Aaron Peterson
->> <myusualnickname@gmail.com> wrote:
->>>  I would like to make a system policy that restricts the characters
->>> used in a filename, tests filenames by regular expression, and
->>> enforces case-insensitive-compatible exclusivity.
->>>
->>> Where should I start?
->>
->> I would find a filesystem-agnostic mailinglist.  None of these
->> objectives appear to have anything to do with btrfs.  There is
->> probably a generic fs layer that would be the appropriate place for
->> this, if not FUSE.
->>
->> You might also consider forcing users to access the fs through SAMBA
->> which has similar capabilities already.

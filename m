@@ -1,44 +1,175 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from smtp208.alice.it ([82.57.200.104]:56870 "EHLO smtp208.alice.it"
+Received: from smtp209.alice.it ([82.57.200.105]:51466 "EHLO smtp209.alice.it"
 	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1754408Ab2FTUPY (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 20 Jun 2012 16:15:24 -0400
-Message-ID: <4FE22F64.3010101@inwind.it>
-Date: Wed, 20 Jun 2012 22:15:32 +0200
-From: Goffredo Baroncelli <kreijack@inwind.it>
+	id S1751561Ab2FVSMi (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Fri, 22 Jun 2012 14:12:38 -0400
+Message-ID: <4FE4B5A4.90603@libero.it>
+Date: Fri, 22 Jun 2012 20:12:52 +0200
+From: Goffredo Baroncelli <kreijack@libero.it>
 Reply-To: kreijack@inwind.it
 MIME-Version: 1.0
-To: Alexander Block <ablock84@googlemail.com>
-CC: Calvin Walton <calvin.walton@kepstin.ca>, linux-btrfs@vger.kernel.org,
-        dave@jikos.cz, hch@infradead.org, linux-fsdevel@vger.kernel.org,
-        chris.mason@fusionio.com, linux-kernel@vger.kernel.org
-Subject: Re: [PATCH] Allow cross subvolume reflinks (2nd attempt)
-References: <1340188512-5761-1-git-send-email-ablock84@googlemail.com> <4FE205CF.9020509@libero.it> <CAB9VWqB8z_faPNRJo8+9JWsQFDe507iTxwQK4sctUYGF9zCL4Q@mail.gmail.com> <1340215644.6961.12.camel@cwalton-XPS-8300> <4FE2125A.5080806@libero.it> <CAB9VWqAF5QS6BppN7Xei6JGsDU9ThBpcipk4r=PCwzu8c2AKgQ@mail.gmail.com>
-In-Reply-To: <CAB9VWqAF5QS6BppN7Xei6JGsDU9ThBpcipk4r=PCwzu8c2AKgQ@mail.gmail.com>
+To: Josef Bacik <jbacik@fusionio.com>
+CC: linux-btrfs@vger.kernel.org, harald@redhat.com
+Subject: Re: [PATCH] Btrfs: add DEVICE_READY ioctl
+References: <1340309431-9972-1-git-send-email-jbacik@fusionio.com> <1340309431-9972-2-git-send-email-jbacik@fusionio.com>
+In-Reply-To: <1340309431-9972-2-git-send-email-jbacik@fusionio.com>
 Content-Type: text/plain; charset=ISO-8859-1
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 06/20/2012 10:05 PM, Alexander Block wrote:
-> On Wed, Jun 20, 2012 at 8:11 PM, Goffredo Baroncelli <kreijack@libero.it> wrote:
->>
->> Yes please, could someone explain the reason behind this decision ? May
->> be there are valid reasons, I am asking only to know which ones ?
->>
-> The reason is that at the moment no user visible operations span mount
-> boundaries
-> and there were discussion on whether this should be allowed for the
-> clone ioctl or
-> not. 
-
-Yes, I understood the same. But nobody was able to explain why .
-
-For the moment, I would already be happy to have cross subvolume reflinks
-> which do not span mount points, this would already be much more as we have at
-> the moment.
-
-This is reasonable.
-
-> .
+On 06/21/2012 10:10 PM, Josef Bacik wrote:
+> This will be used in conjunction with btrfs device ready <dev>.  This is
+> needed for initrd's to have a nice and lightweight way to tell if all of the
+> devices needed for a file system are in the cache currently.  This keeps
+> them from having to do mount+sleep loops waiting for devices to show up.
+> Thanks,
 > 
+> Signed-off-by: Josef Bacik <jbacik@fusionio.com>
+> ---
+>  fs/btrfs/ioctl.h   |    3 ++-
+>  fs/btrfs/super.c   |    7 +++++++
+>  fs/btrfs/volumes.c |    9 ++++++++-
+>  fs/btrfs/volumes.h |    1 +
+>  4 files changed, 18 insertions(+), 2 deletions(-)
+> 
+> diff --git a/fs/btrfs/ioctl.h b/fs/btrfs/ioctl.h
+> index 497c530..34317cf 100644
+> --- a/fs/btrfs/ioctl.h
+> +++ b/fs/btrfs/ioctl.h
+> @@ -363,5 +363,6 @@ struct btrfs_ioctl_get_dev_stats {
+>  				      struct btrfs_ioctl_get_dev_stats)
+>  #define BTRFS_IOC_GET_AND_RESET_DEV_STATS _IOWR(BTRFS_IOCTL_MAGIC, 53, \
+>  					struct btrfs_ioctl_get_dev_stats)
+> -
+> +#define BTRFS_IOC_DEVICES_READY _IOW(BTRFS_IOCTL_MAGIC, 54, \
+> +				     struct btrfs_ioctl_vol_args)
+
+What is the purpose of the ioctl args ? This could confuses the user (as
+programmer). However IIRC for the other ioctls without argument the same
+policy was applied.Maybe a better name than btrfs_ioctl_vol_args would
+help, like btrfs_generic_ioctl.
+
+Anyway, I suggest to return not a boolean value but a pair of integers:
+both the number of devices registered and the total number of devices.
+Better would be the dev-id found and the dev-id missing. This could help
+a lot the diagnostic of mount problem.
+
+Finally I am starting to think that we should definitely switch to a
+/sys/btrfs style of interface
+
+think something like:
+
+/sys/btrfs/<fs-uuid>/<dev-uuid>/present
+                               size
+                               space-occuped
+                               number-of-error
+                               [...]
+
+/sys/btrfs/<fs-uuid>/<subvolume-id>/read-only
+                                    compressed
+                                    raid-mode
+                                    path
+                                    [...]
+
+/sys/btrfs/<fs-uuid>/label
+                     mounted
+                     read-only
+                     compressed
+                     raid-mode
+                     [...]
+
+
+>  #endif
+> diff --git a/fs/btrfs/super.c b/fs/btrfs/super.c
+> index 23fc7e8..347ccd8 100644
+> --- a/fs/btrfs/super.c
+> +++ b/fs/btrfs/super.c
+> @@ -1458,6 +1458,13 @@ static long btrfs_control_ioctl(struct file *file, unsigned int cmd,
+>  		ret = btrfs_scan_one_device(vol->name, FMODE_READ,
+>  					    &btrfs_fs_type, &fs_devices);
+>  		break;
+> +	case BTRFS_IOC_DEVICES_READY:
+> +		ret = btrfs_scan_one_device(vol->name, FMODE_READ,
+> +					    &btrfs_fs_type, &fs_devices);
+> +		if (ret)
+> +			break;
+> +		ret = !(fs_devices->num_devices == fs_devices->total_devices);
+> +		break;
+>  	}
+>  
+>  	kfree(vol);
+> diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
+> index 3f292cf..a505627 100644
+> --- a/fs/btrfs/volumes.c
+> +++ b/fs/btrfs/volumes.c
+> @@ -429,6 +429,7 @@ static struct btrfs_fs_devices *clone_fs_devices(struct btrfs_fs_devices *orig)
+>  	mutex_init(&fs_devices->device_list_mutex);
+>  	fs_devices->latest_devid = orig->latest_devid;
+>  	fs_devices->latest_trans = orig->latest_trans;
+> +	fs_devices->total_devices = orig->total_devices;
+>  	memcpy(fs_devices->fsid, orig->fsid, sizeof(fs_devices->fsid));
+>  
+>  	/* We have held the volume lock, it is safe to get the devices. */
+> @@ -739,6 +740,7 @@ int btrfs_scan_one_device(const char *path, fmode_t flags, void *holder,
+>  	int ret;
+>  	u64 devid;
+>  	u64 transid;
+> +	u64 total_devices;
+>  
+>  	flags |= FMODE_EXCL;
+>  	bdev = blkdev_get_by_path(path, flags, holder);
+> @@ -760,6 +762,7 @@ int btrfs_scan_one_device(const char *path, fmode_t flags, void *holder,
+>  	disk_super = (struct btrfs_super_block *)bh->b_data;
+>  	devid = btrfs_stack_device_id(&disk_super->dev_item);
+>  	transid = btrfs_super_generation(disk_super);
+> +	total_devices = btrfs_super_num_devices(disk_super);
+>  	if (disk_super->label[0])
+>  		printk(KERN_INFO "device label %s ", disk_super->label);
+>  	else
+> @@ -767,7 +770,8 @@ int btrfs_scan_one_device(const char *path, fmode_t flags, void *holder,
+>  	printk(KERN_CONT "devid %llu transid %llu %s\n",
+>  	       (unsigned long long)devid, (unsigned long long)transid, path);
+>  	ret = device_list_add(path, disk_super, devid, fs_devices_ret);
+> -
+> +	if (!ret && fs_devices_ret)
+> +		(*fs_devices_ret)->total_devices = total_devices;
+>  	brelse(bh);
+>  error_close:
+>  	mutex_unlock(&uuid_mutex);
+> @@ -1433,6 +1437,7 @@ int btrfs_rm_device(struct btrfs_root *root, char *device_path)
+>  	list_del_rcu(&device->dev_list);
+>  
+>  	device->fs_devices->num_devices--;
+> +	device->fs_devices->total_devices--;
+>  
+>  	if (device->missing)
+>  		root->fs_info->fs_devices->missing_devices--;
+> @@ -1550,6 +1555,7 @@ static int btrfs_prepare_sprout(struct btrfs_root *root)
+>  	fs_devices->seeding = 0;
+>  	fs_devices->num_devices = 0;
+>  	fs_devices->open_devices = 0;
+> +	fs_devices->total_devices = 0;
+>  	fs_devices->seed = seed_devices;
+>  
+>  	generate_random_uuid(fs_devices->fsid);
+> @@ -1749,6 +1755,7 @@ int btrfs_init_new_device(struct btrfs_root *root, char *device_path)
+>  	root->fs_info->fs_devices->num_devices++;
+>  	root->fs_info->fs_devices->open_devices++;
+>  	root->fs_info->fs_devices->rw_devices++;
+> +	root->fs_info->fs_devices->total_devices++;
+>  	if (device->can_discard)
+>  		root->fs_info->fs_devices->num_can_discard++;
+>  	root->fs_info->fs_devices->total_rw_bytes += device->total_bytes;
+> diff --git a/fs/btrfs/volumes.h b/fs/btrfs/volumes.h
+> index 74366f2..a3c5d5c 100644
+> --- a/fs/btrfs/volumes.h
+> +++ b/fs/btrfs/volumes.h
+> @@ -126,6 +126,7 @@ struct btrfs_fs_devices {
+>  	u64 missing_devices;
+>  	u64 total_rw_bytes;
+>  	u64 num_can_discard;
+> +	u64 total_devices;
+>  	struct block_device *latest_bdev;
+>  
+>  	/* all of the devices in the FS, protected by a mutex
 

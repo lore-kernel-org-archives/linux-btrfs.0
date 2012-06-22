@@ -1,44 +1,57 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from plane.gmane.org ([80.91.229.3]:42084 "EHLO plane.gmane.org"
+Received: from brockman.in8.de ([85.214.220.56]:45778 "EHLO mail.in8.de"
 	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1757844Ab2FVKuI (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Fri, 22 Jun 2012 06:50:08 -0400
-Received: from list by plane.gmane.org with local (Exim 4.69)
-	(envelope-from <gcfb-btrfs-devel-moved1@m.gmane.org>)
-	id 1Si1RE-0002Im-Rj
-	for linux-btrfs@vger.kernel.org; Fri, 22 Jun 2012 12:50:04 +0200
-Received: from 78-32-127-104.static.enta.net ([78-32-127-104.static.enta.net])
-        by main.gmane.org with esmtp (Gmexim 0.1 (Debian))
-        id 1AlnuQ-0007hv-00
-        for <linux-btrfs@vger.kernel.org>; Fri, 22 Jun 2012 12:50:04 +0200
-Received: from alex by 78-32-127-104.static.enta.net with local (Gmexim 0.1 (Debian))
-        id 1AlnuQ-0007hv-00
-        for <linux-btrfs@vger.kernel.org>; Fri, 22 Jun 2012 12:50:04 +0200
-To: linux-btrfs@vger.kernel.org
-From: Alex <alex@bpmit.com>
-Subject: Debian RT kernel
-Date: Fri, 22 Jun 2012 10:49:52 +0000 (UTC)
-Message-ID: <loom.20120622T123511-621@post.gmane.org>
-Mime-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
+	id S1755044Ab2FVLAy (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Fri, 22 Jun 2012 07:00:54 -0400
+Message-ID: <4FE45064.4090104@jan-o-sch.net>
+Date: Fri, 22 Jun 2012 13:00:52 +0200
+From: Jan Schmidt <list.btrfs@jan-o-sch.net>
+MIME-Version: 1.0
+To: chris.mason@fusionio.com, linux-btrfs <linux-btrfs@vger.kernel.org>
+Subject: Deadlock in ctree.c?
+Content-Type: text/plain; charset=ISO-8859-1
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Note to self: if wanting to test btrfsck and give self a scare don't introduce
-the RT version of the same kernel into a (working perfectly) but not
-backed-up-to-the-minute btrfs install.
+While debugging my tree mod log, after several hours of successful iteration I
+finally reached a dead lock. I got stacks with btrfs_next_leaf and
+push_leaf_left and looked into those.
 
-Thanks. That is all.
+If I'm not mistaken, there is at least one deadlock situation between those two
+(I'm currently thinking about a second one). Basically, the problem is that
+btrfs_next_leaf has a leaf locked and wants a lock for the next (right) leaf,
+while push_leaf_left has a lock on another leaf and wants a lock for the
+previous (left) leaf.
 
-In other news, KVM on btrfs: I'm finding the guests a little slow now I have two
-guests (file not LVM) on KVM. Mainly due to heavy fragmentation I think. Still
-using default mounts though.
+Assume that we've got two roots (subvolumes), both referencing the same two
+leafs in two really small trees:
 
-Any ideas when I autodefrag will make it into the default mounts?
-Is autodefrag responsible for the corruptions being fixed in 3.5; followed the
-commits and I don't think so but I should ask.
+          r1     r2
+          |  \ /  |
+          |   X   |
+          |  / \  |
+          l1     l2
 
-Thank you.
+Commented pseudo code that is meant to summarize the relevant code from ctree.c:
 
+Thread A in push_leaf_left, path is currently r2->l2:
+	btrfs_assert_tree_locked(path->nodes[1]); /* r2 */
+	/* also holds a lock at path->nodes[0] -> l2 */
+	left = read_node_slot(root, path->nodes[1], slot - 1); /* l1 */
+	btrfs_tree_lock(left);
+-> blocking to get lock on l1
 
+Thread B in btrfs_next_leaf, path is currently r1->l1:
+        path->keep_locks = 1;
+	btrfs_search_slot(...); /* locks r1, l1 */
+        level = 1;
+        while ...
+                slot = path->slots[level] + 1;
+                next = read_block_for_search(... slot ...);
+                btrfs_tree_read_lock(next); /* l2 */
+-> blocking to get lock on l2
 
+Any ideas on this one? Preferably hints to why I'm wrong :-)
+
+Thanks!
+-Jan

@@ -1,36 +1,60 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from brockman.in8.de ([85.214.220.56]:53365 "EHLO mail.in8.de"
+Received: from twin.jikos.cz ([89.185.236.188]:60035 "EHLO twin.jikos.cz"
 	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1756110Ab2FVO05 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Fri, 22 Jun 2012 10:26:57 -0400
-Message-ID: <4FE480B0.50201@jan-o-sch.net>
-Date: Fri, 22 Jun 2012 16:26:56 +0200
-From: Jan Schmidt <list.btrfs@jan-o-sch.net>
+	id S1753620Ab2FVRCd (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Fri, 22 Jun 2012 13:02:33 -0400
+Date: Fri, 22 Jun 2012 19:02:16 +0200
+From: David Sterba <dave@jikos.cz>
+To: Stefan Behrens <sbehrens@giantdisaster.de>
+Cc: David Sterba <dsterba@suse.cz>, chris.mason@fusionio.com,
+        linux-btrfs@vger.kernel.org
+Subject: Re: [PATCH] btrfs: join DEV_STATS ioctls to one
+Message-ID: <20120622170216.GA28144@twin.jikos.cz>
+Reply-To: dave@jikos.cz
+References: <1340368239-8152-1-git-send-email-dsterba@suse.cz>
+ <4FE49CC4.6030606@giantdisaster.de>
 MIME-Version: 1.0
-To: Josef Bacik <jbacik@fusionio.com>,
-        linux-btrfs <linux-btrfs@vger.kernel.org>
-CC: "Chris L. Mason" <clmason@fusionio.com>
-Subject: Re: Deadlock in ctree.c?
-References: <4FE45064.4090104@jan-o-sch.net> <4FE47372.6070101@fusionio.com> <4FE47563.8090102@jan-o-sch.net> <4FE47FD6.9010205@fusionio.com>
-In-Reply-To: <4FE47FD6.9010205@fusionio.com>
-Content-Type: text/plain; charset=ISO-8859-1
+Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <4FE49CC4.6030606@giantdisaster.de>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Fri, June 22, 2012 at 16:23 (+0200), Josef Bacik wrote:
-> On 06/22/2012 09:38 AM, Jan Schmidt wrote:
->> On Fri, June 22, 2012 at 15:30 (+0200), Josef Bacik wrote:
->>> l2 shouldn't be locked anymore, if we're in push_leaf_left it's because we
->>> cow'ed l2 and are holding a lock on it, so really it has a lock on l2' and the
->>> btrfs_next_leaf is trying to get a lock on l2 which it should be free to do.
->>
->> Each tree block is cowed only once per transaction, right? Lets assume l2 was
->> cowed before any of the above threads started, we should end up with a lock on
->> l2 even in push_leaf_left, because should_cow_block returns 0.
->>
-> 
-> Except you'd never get to l2 in the case that it had already been cow'ed.  Thanks,
+On Fri, Jun 22, 2012 at 06:26:44PM +0200, Stefan Behrens wrote:
+> I still do not understand your reason and the benefit of your change.
+> The reset command and the read command are two completely different
+> operations. Therefore I assigned two different ioctl commands. Then you
+> can use strace to see which command is sent, and you can also grep the
+> sources without additional effort.
 
-Thank you :-) That's the missing bit.
+I'll try better.
 
--Jan
+I see the primary purpose to read the device stats.  A standalone stats
+reset ioctl does not make much sense, so it should go along with reading
+the last state and then reset. So far ok.
+
+.From implementation and interface POV, the reset is a hint how I want
+to read the stats, not directly the command.
+
+The switch whether to do the reset or not, as currently implemented, has
+to set the ioctl number, while I'd expect to set a flag.
+
+Other concerns are about future adding more flags or reading them back
+from kernel. I don't have examples, this is what I base on my experience
+that such things happen and then I can only scratch my head 'why didn't
+I add just one more byte there'. Spare bytes avoid some of backward
+compatibility problems.
+
+As for strace, it could be taught to be verbose and descriptive about
+ioctls arguments (the 3rd parameter). Quick example is
+
+$ strace stty sane
+...
+ioctl(0, SNDCTL_TMR_TIMEBASE or SNDRV_TIMER_IOCTL_NEXT_DEVICE or TCGETS, {B38400 opost isig icanon echo ...}) = 0
+...
+
+Currently, strace does not know about btrfs-specific ioctls, eg snapshot:
+
+ioctl(3, 0x50009417, 0x7ffff4ae8850)    = 0
+
+
+david

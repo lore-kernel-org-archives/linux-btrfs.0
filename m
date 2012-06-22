@@ -1,35 +1,38 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from lulu.zabbo.net ([69.168.54.52]:56297 "EHLO lulu.zabbo.net"
+Received: from mx1.redhat.com ([209.132.183.28]:4426 "EHLO mx1.redhat.com"
 	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1760295Ab2FUVKM (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 21 Jun 2012 17:10:12 -0400
-Received: from [192.168.242.10] (50-193-208-193-static.hfc.comcastbusiness.net [50.193.208.193])
-	(using TLSv1 with cipher DHE-RSA-CAMELLIA256-SHA (256/256 bits))
-	(No client certificate requested)
-	by lulu.zabbo.net (Postfix) with ESMTPSA id F28942216DB
-	for <linux-btrfs@vger.kernel.org>; Thu, 21 Jun 2012 14:10:11 -0700 (PDT)
-Message-ID: <4FE38DB3.2090306@zabbo.net>
-Date: Thu, 21 Jun 2012 14:10:11 -0700
-From: Zach Brown <zab@zabbo.net>
+	id S1762044Ab2FVKeG (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Fri, 22 Jun 2012 06:34:06 -0400
+Message-ID: <4FE44A17.9070109@redhat.com>
+Date: Fri, 22 Jun 2012 12:33:59 +0200
+From: Harald Hoyer <harald@redhat.com>
 MIME-Version: 1.0
-To: "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
-Subject: Re: [PATCH] Btrfs: flush delayed inodes if we're short on space
-References: <1340304875-8111-1-git-send-email-jbacik@fusionio.com> <4FE376F3.5030609@zabbo.net> <4FE37F3C.2020102@fusionio.com>
-In-Reply-To: <4FE37F3C.2020102@fusionio.com>
-Content-Type: text/plain; charset=ISO-8859-1; format=flowed
+To: Josef Bacik <jbacik@fusionio.com>
+CC: linux-btrfs@vger.kernel.org
+Subject: Re: [RFC] A way to tell if all the devices in a file system are available
+References: <1340309431-9972-1-git-send-email-jbacik@fusionio.com>
+In-Reply-To: <1340309431-9972-1-git-send-email-jbacik@fusionio.com>
+Content-Type: text/plain; charset=ISO-8859-15
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
+On 06/21/2012 10:10 PM, Josef Bacik wrote:
+> Harald Hoyer has had this as a feature request for ages and I've finally gotten
+> around to hacking something up.  This is probably going to get bikeshedded to
+> death, bring it on, I'm not married to any of the behaviors in these patches, I
+> just want to get the ball rolling so we can have something in place for 3.6.
+> 
+> Basically all I've done is saved how many devices the super block thinks we have
+> into the fs_devices struct whenever we scan a device.  Then all we have to do
+> for the IOCTL is compare how many devices the fs_devices struct has in it to how
+> many we think we need.
+> 
+> The command itself just spits out 0 for yay we're ready and 1 for boo no we're
+> not.  This makes it easier for Harald to do his multi-device btrfs support in
+> dracut.  Thanks,
+> 
+> Josef
+> 
 
-> Ugh sorry I just dug this patch out from last week and forgot I had just
-> picked an arbitrary number to make sure it was working. You are correct,
-> what I _meant_ to do (and will do after I respond) was calculate how
-> much we wanted to flush and then divide that by how much the delayed
-> inodes reserve and then multiply it by 2 for good measure.
+Exactly what I need! Thanks! Would be really usefu!
 
-I guess that's as good a place as any to start :)
-
-It'd be nice to see some data on how often this actually stops the full
-run.  If it doesn't, just pitch the whole _NR path entirely?
-
-- z

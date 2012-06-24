@@ -1,137 +1,70 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([222.73.24.84]:27307 "EHLO song.cn.fujitsu.com"
-	rhost-flags-OK-FAIL-OK-OK) by vger.kernel.org with ESMTP
-	id S1752203Ab2FUMJG (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 21 Jun 2012 08:09:06 -0400
-Received: from fnstmail02.fnst.cn.fujitsu.com (tang.cn.fujitsu.com [127.0.0.1])
-	by tang.cn.fujitsu.com (8.14.3/8.13.1) with ESMTP id q5LC93V6017749
-	for <linux-btrfs@vger.kernel.org>; Thu, 21 Jun 2012 20:09:03 +0800
-From: Liu Bo <liubo2009@cn.fujitsu.com>
-To: <linux-btrfs@vger.kernel.org>
-Subject: [PATCH] Btrfs-progs: fix unresolved refs bug of btrfsck
-Date: Thu, 21 Jun 2012 20:17:28 +0800
-Message-Id: <1340281048-4133-1-git-send-email-liubo2009@cn.fujitsu.com>
+Received: from mail-bk0-f46.google.com ([209.85.214.46]:41559 "EHLO
+	mail-bk0-f46.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1751036Ab2FXVU3 (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>);
+	Sun, 24 Jun 2012 17:20:29 -0400
+Received: by bkcji2 with SMTP id ji2so2680230bkc.19
+        for <linux-btrfs@vger.kernel.org>; Sun, 24 Jun 2012 14:20:28 -0700 (PDT)
+From: Alexander Block <ablock84@googlemail.com>
+To: linux-btrfs@vger.kernel.org
+Cc: Alexander Block <ablock84@googlemail.com>
+Subject: [PATCH 0/5] introduce btrfs filesystem property command
+Date: Sun, 24 Jun 2012 23:20:03 +0200
+Message-Id: <1340572808-30281-1-git-send-email-ablock84@googlemail.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-$ btrfs sub snap /mnt/ /mnt/s1
-$ btrfs sub snap /mnt/ /mnt/s2
-$ btrfsck disk
+This patchset introduces the btrfs filesystem property command. It is the
+result of a discussion we had on IRC. I tried to make the properties
+interface as generic and extensible as possible. Comments are welcome.
 
-then we'll get several "unresolved ref" info, which is not expected.
+Currently the command looks like this:
+btrfs fi prop /path/to/object [name[=value]]
 
-The cause is that when we make a snapshot, we won't insert root ref/backref
-for the snapshot, and btrfsck will report errors.
+Some people may prefer other forms. For example I got suggestions for
+these forms:
+btrfs set/get /path/to/object [name [value]]
+btrfs prop /pach/to/object [name[=value]] (and also without the =)
 
-This is a btrfsck bug, since our metadata is all right, so we make such a rule:
-When the src has the ref/backref on A, src's snapshot also has the ref/backref
-on A.
+I'm open to more suggestions and a discussion on this. I'm definitely
+for removing the fi[lesystem] prefix but I'm neutral to the other 
+suggestions made so far.
 
-Signed-off-by: Liu Bo <liubo2009@cn.fujitsu.com>
----
- btrfsck.c |   82 +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
- 1 files changed, 82 insertions(+), 0 deletions(-)
+For now, I've implemented three properties:
+1. read-only. Usable on subvolumes to toggle the read-only flags.
+2. label. I looked through btrfs to find good examples of things that
+   could be moved to the new properties interface and the filesystem
+   label looked like a good one. There are for sure more, but that is
+   something for later (and maybe for someone else). I would suggest 
+   to move everthing that makes sense over to the props interface and 
+   mark the old interfaces as deprecated. Comments on this are welcome.
 
-diff --git a/btrfsck.c b/btrfsck.c
-index 7aac736..3a2b4ec 100644
---- a/btrfsck.c
-+++ b/btrfsck.c
-@@ -1439,6 +1439,76 @@ static int merge_root_recs(struct btrfs_root *root,
- 	return 0;
- }
- 
-+/*
-+ * 1: a snapshot,
-+ * 0: not.
-+ */
-+static int check_snapshot(struct btrfs_root *root, u64 ref_root, u64 *root_ret)
-+{
-+	struct btrfs_root *tree_root = root->fs_info->tree_root;
-+	struct btrfs_key key;
-+	struct btrfs_path path;
-+	struct extent_buffer *leaf;
-+	int ret = 0;
-+
-+	*root_ret = 0;
-+
-+	btrfs_init_path(&path);
-+
-+	key.offset = 0;
-+	key.objectid = ref_root;
-+	key.type = BTRFS_ROOT_ITEM_KEY;
-+	ret = btrfs_search_slot(NULL, tree_root, &key, &path, 0, 0);
-+	BUG_ON(ret < 0);
-+
-+	leaf = path.nodes[0];
-+	btrfs_item_key_to_cpu(leaf, &key, path.slots[0]);
-+	if (key.type != BTRFS_ROOT_ITEM_KEY) {
-+		ret = -ENOENT;
-+		goto out;
-+	}
-+	if (key.offset == 0) {
-+		ret = 0;
-+		goto out;
-+	}
-+
-+	/* key.offset is non-zero, a snapshot */
-+	path.slots[0]++;
-+	while (1) {
-+		leaf = path.nodes[0];
-+		if (path.slots[0] >= btrfs_header_nritems(leaf)) {
-+			ret = btrfs_next_leaf(tree_root, &path);
-+			if (ret != 0)
-+				break;
-+			leaf = path.nodes[0];
-+		}
-+		btrfs_item_key_to_cpu(leaf, &key, path.slots[0]);
-+		if (key.type == BTRFS_ROOT_BACKREF_KEY) {
-+			*root_ret = key.offset;
-+			break;
-+		}
-+		path.slots[0]++;
-+	}
-+
-+out:
-+	btrfs_release_path(tree_root, &path);
-+	return ret;
-+}
-+
-+static void update_backref(struct root_record *rec, struct root_backref *ref,
-+			u64 ref_root)
-+{
-+	struct root_backref *backref;
-+
-+	list_for_each_entry(backref, &rec->backrefs, list) {
-+		if (backref->ref_root == ref_root) {
-+			ref->found_back_ref = backref->found_back_ref;
-+			ref->found_forward_ref = backref->found_forward_ref;
-+			break;
-+		}
-+	}
-+}
-+
- static int check_root_refs(struct btrfs_root *root,
- 			   struct cache_tree *root_cache)
- {
-@@ -1511,6 +1581,18 @@ static int check_root_refs(struct btrfs_root *root,
- 				backref->errors |= REF_ERR_NO_DIR_ITEM;
- 			if (!backref->found_dir_index)
- 				backref->errors |= REF_ERR_NO_DIR_INDEX;
-+			if (!backref->found_back_ref &&
-+			    !backref->found_forward_ref) {
-+				u64 ref_root_objectid = 0;
-+				int is_snap = 0;
-+
-+				is_snap = check_snapshot(root,
-+							 backref->ref_root,
-+							 &ref_root_objectid);
-+				if (is_snap && ref_root_objectid)
-+					update_backref(rec, backref,
-+						       ref_root_objectid);
-+			}
- 			if (!backref->found_back_ref)
- 				backref->errors |= REF_ERR_NO_ROOT_BACKREF;
- 			if (!backref->found_forward_ref)
+Alex.
+
+Alexander Block (5):
+  Btrfs-progs: add BTRFS_IOC_SUBVOL_GET/SETFLAGS to ioctl.h
+  Btrfs-progs: move skip_prefix and prefixcmp to utils.c
+  Btrfs-progs: let get_label return the label instead of of printing it
+  Btrfs-progs: make filesystem_cmd_group non const
+  Btrfs-progs: introduce btrfs filesystem property command
+
+ Makefile          |    3 +-
+ btrfs.c           |   19 +--
+ btrfslabel.c      |   13 +-
+ btrfslabel.h      |    4 +-
+ cmds-filesystem.c |  115 +++++++++++++-
+ commands.h        |    9 +-
+ help.c            |    2 +
+ ioctl.h           |    2 +
+ props.c           |  460 +++++++++++++++++++++++++++++++++++++++++++++++++++++
+ props.h           |   45 ++++++
+ utils.c           |   15 ++
+ utils.h           |    3 +
+ 12 files changed, 659 insertions(+), 31 deletions(-)
+ create mode 100644 props.c
+ create mode 100644 props.h
+
 -- 
-1.6.5.2
+1.7.10
 

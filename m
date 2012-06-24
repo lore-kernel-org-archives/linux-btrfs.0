@@ -1,364 +1,41 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from smtp206.alice.it ([82.57.200.102]:43476 "EHLO smtp206.alice.it"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1751854Ab2FEUMk (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 5 Jun 2012 16:12:40 -0400
-Message-ID: <4FCE682D.2010204@inwind.it>
-Date: Tue, 05 Jun 2012 22:12:29 +0200
-From: Goffredo Baroncelli <kreijack@inwind.it>
-Reply-To: kreijack@inwind.it
-MIME-Version: 1.0
-To: Hugo Mills <hugo@carfax.org.uk>, linux-btrfs <linux-btrfs@vger.kernel.org>
-Subject: Re: [btrfs-progs] [bug][patch V2] Leaking file handle in scrub_fs_info()
-References: <4F96F44B.8000400@libero.it> <20120605110107.GF15986@carfax.org.uk> <4FCE414A.10106@libero.it> <20120605181910.GL15986@carfax.org.uk>
-In-Reply-To: <20120605181910.GL15986@carfax.org.uk>
-Content-Type: text/plain; charset=ISO-8859-1
+Received: from mail-bk0-f46.google.com ([209.85.214.46]:41559 "EHLO
+	mail-bk0-f46.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1751036Ab2FXVUb (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>);
+	Sun, 24 Jun 2012 17:20:31 -0400
+Received: by mail-bk0-f46.google.com with SMTP id ji2so2680230bkc.19
+        for <linux-btrfs@vger.kernel.org>; Sun, 24 Jun 2012 14:20:30 -0700 (PDT)
+From: Alexander Block <ablock84@googlemail.com>
+To: linux-btrfs@vger.kernel.org
+Cc: Alexander Block <ablock84@googlemail.com>
+Subject: [PATCH 1/5] Btrfs-progs: add BTRFS_IOC_SUBVOL_GET/SETFLAGS to ioctl.h
+Date: Sun, 24 Jun 2012 23:20:04 +0200
+Message-Id: <1340572808-30281-2-git-send-email-ablock84@googlemail.com>
+In-Reply-To: <1340572808-30281-1-git-send-email-ablock84@googlemail.com>
+References: <1340572808-30281-1-git-send-email-ablock84@googlemail.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hi Hugo,
+Btrfs send/receive needs this ioctl to make a subvolume
+r/o after it was received.
+---
+ ioctl.h |    2 ++
+ 1 file changed, 2 insertions(+)
 
-On 06/05/2012 08:19 PM, Hugo Mills wrote:
-> On Tue, Jun 05, 2012 at 07:26:34PM +0200, Goffredo Baroncelli
-> wrote:
->> Hi Hugo,
->> 
->> I was not able to reproduce your error with my repository: I
->> pulled it without problem.
-> 
-> Well, I'd have normally written it off as a corrupt local repo at 
-> this end -- except that David Sterba said he'd also seen a similar 
-> problem pulling from your repo.
-> 
->> However, enclosed you can find the patch (as attachment) with the
->> Jan suggestions about the spaces. You can pull the patch also
->> from my repo ( same branch: fd-leaking). Moreover I inserted the
->> patch as inlined. Hoping that helps.
-> 
-> Not really. Your mailer is breaking things (there's a wrapped line 
-> in there, and it's heavily whitespace-damaged). Could you *please* 
-> learn to use git send-email? Every single patch of yours that I've 
-> seen on the mailing list is badly broken, and takes an age to get
-> it to the point where "git am" will look at it cleanly. It's
-> incredibly frustrating. This time around, I think I've managed to
-> get it to work OK, but it's taken me 10 minutes of buggering
-> around, and I'm getting irritable, which isn't a good thing when
-> I'm meant to be having a quiet relaxing week off work...
-
-I perfectly understand what means loosing 10 minutes instead of 1
-seconds :-)
-
-But was you able to use the patch "attached" (not the one inlined ) ?
-
-
-
-> 
-> Hugo.
-> 
->> --------------------
->> 
->> commit b73abc9465d3a105b5f8f464f2867543a638e5e2 Author: Goffredo
->> Baroncelli <kreijack@inwind.it> Date:   Tue Jun 5 19:11:06 2012
->> +0200
->> 
->> scrub_fs_info( ) file handle leaking
->> 
->> The function scrub_fs_info( ) closes and reopen a file handle 
->> passed as argument, when a caller uses the file handle even after
->> the call. The function scrub_fs_info( ) is updated to remove the
->> file handle argument, and instead uses a private own file
->> handle. The callers are updated to not pass the argument.
->> 
->> 
->> diff --git a/cmds-scrub.c b/cmds-scrub.c index c4503f4..6313e02
->> 100644 --- a/cmds-scrub.c +++ b/cmds-scrub.c @@ -979,19 +979,26
->> @@ static int scrub_device_info(int fd, u64 devid, return ret ?
->> -errno : 0; }
->> 
->> -static int scrub_fs_info(int fd, char *path, +static int
->> scrub_fs_info(char *path, struct btrfs_ioctl_fs_info_args
->> *fi_args, struct btrfs_ioctl_dev_info_args **di_ret) { int ret =
->> 0; int ndevs = 0; int i = 1; +       int fd; struct
->> btrfs_fs_devices *fs_devices_mnt = NULL; struct
->> btrfs_ioctl_dev_info_args *di_args; char mp[BTRFS_PATH_NAME_MAX +
->> 1];
->> 
->> memset(fi_args, 0, sizeof(*fi_args));
->> 
->> +       fd  = open_file_or_dir(path); +       if (fd < 0) { +
->> fprintf(stderr, "ERROR: can't access to '%s'\n", path); +
->> return -1; +       } + ret = ioctl(fd, BTRFS_IOC_FS_INFO,
->> fi_args); if (ret && errno == EINVAL) { /* path is no mounted
->> btrfs. try if it's a device */ @@ -1010,28 +1017,36 @@ static int
->> scrub_fs_info(int fd, char *path, if (fd < 0) return -errno; }
->> else if (ret) { +               close(fd); return -errno; }
->> 
->> -       if (!fi_args->num_devices) +       if
->> (!fi_args->num_devices) { +               close(fd); return 0; +
->> }
->> 
->> di_args = *di_ret = malloc(fi_args->num_devices *
->> sizeof(*di_args)); -       if (!di_args) +       if (!di_args) { 
->> +               close(fd); return -errno; +       }
->> 
->> for (; i <= fi_args->max_id; ++i) { BUG_ON(ndevs >=
->> fi_args->num_devices); ret = scrub_device_info(fd, i,
->> &di_args[ndevs]); if (ret == -ENODEV) continue; -
->> if (ret) +               if (ret) { +
->> close(fd); return ret; +               } ++ndevs; }
->> 
->> BUG_ON(ndevs == 0);
->> 
->> +       close(fd); return 0; }
->> 
->> @@ -1155,7 +1170,7 @@ static int scrub_start(int argc, char
->> **argv, int resume) return 12; }
->> 
->> -       ret = scrub_fs_info(fdmnt, path, &fi_args, &di_args); +
->> ret = scrub_fs_info(path, &fi_args, &di_args); if (ret) { 
->> ERR(!do_quiet, "ERROR: getting dev info for scrub failed: " 
->> "%s\n", strerror(-ret)); @@ -1586,7 +1601,6 @@ static int
->> cmd_scrub_status(int argc, char **argv) .sun_family = AF_UNIX, 
->> }; int ret; -       int fdmnt; int i; int print_raw = 0; int
->> do_stats_per_dev = 0; @@ -1615,13 +1629,7 @@ static int
->> cmd_scrub_status(int argc, char **argv)
->> 
->> path = argv[optind];
->> 
->> -       fdmnt = open_file_or_dir(path); -       if (fdmnt < 0) { 
->> -               fprintf(stderr, "ERROR: can't access to '%s'\n",
->> path); -               return 12; -       } - -       ret =
->> scrub_fs_info(fdmnt, path, &fi_args, &di_args); +       ret =
->> scrub_fs_info(path, &fi_args, &di_args); if (ret) { 
->> fprintf(stderr, "ERROR: getting dev info for scrub failed: " 
->> "%s\n", strerror(-ret)); @@ -1698,7 +1706,6 @@ static int
->> cmd_scrub_status(int argc, char **argv) out: 
->> free_history(past_scrubs); free(di_args); -       close(fdmnt); 
->> if (fdres > -1) close(fdres);
->> 
->> 
->> 
->> 
->> 
->> 
->> On 06/05/2012 01:01 PM, Hugo Mills wrote:
->>> Hi, Goffredo,
->>> 
->>> I'm trying to do a new integration branch, and the patch inline
->>> in the text is corrupt (plus it has a massively verbose commit
->>> message):
->>> 
->>> Applying: Leaking file handle in scrub_fs_info() fatal: corrupt
->>> patch at line 74 Patch failed at 0001 Leaking file handle in
->>> scrub_fs_info()
->>> 
->>> Normally, I'd use your git repo to get round the fact that
->>> every single patch you send by mail is whitespace-damaged,
->>> but:
->>> 
->>> error: Unable to find 337bfb3250203a66b953ffcf7804418cb7c72052
->>> under
->>> http://cassiopea.homelinux.net/git/btrfs-progs-unstable.git 
->>> Cannot obtain needed commit
->>> 337bfb3250203a66b953ffcf7804418cb7c72052 while processing
->>> commit ee3832b47a4b1d1dce8d1cacc802db32901b8c45. error: Fetch
->>> failed.
->>> 
->>> Plus Jan had some suggested tweaks regarding whitespace --
->>> could you re-roll the patch and maybe see what you can do to
->>> fix your git repo? (Or at least use git-send-email to send the
->>> patch so it doesn't get mangled).
->>> 
->>> Thanks, Hugo.
->>> 
->>> On Tue, Apr 24, 2012 at 08:43:23PM +0200, Goffredo Baroncelli
->>> wrote:
->>>> I was giving a look to the function scrub_fs_info( ), and to
->>>> me it seems that could be a potential file handle leaking
->>>> problem.
->>>> 
->>>> 
->>>> In fact:
->>>> 
->>>> static int scrub_fs_info(int fd, char *path, struct
->>>> btrfs_ioctl_fs_info_args *fi_args, struct
->>>> btrfs_ioctl_dev_info_args **di_ret) {
->>>> 
->>>> [...]
->>>> 
->>>> ret = ioctl(fd, BTRFS_IOC_FS_INFO, fi_args); if (ret && errno
->>>> == EINVAL) { /* path is no mounted btrfs. try if it's a
->>>> device */ [...] close(fd);			<--- Here the file handle is 
->>>> closed
->>>> 
->>>> fd = open_file_or_dir(mp);	<--- then it is re-opened if (fd <
->>>> 0) return -errno; } else if (ret) { return -errno; } [...]
->>>> 
->>>> But in the rest of the function: a) the file handle is not
->>>> closed b) the (new) file handle isn't returned
->>>> 
->>>> The function "scrub_fs_info()" is called from the functions 
->>>> 1) cmd_scrub_status(), which doesn't use the file handle
->>>> after the call to the cmd_scrub_status() [except for a
->>>> close()]. So no problem at all. 2) scrub_start(), which uses
->>>> the file handle after the call to the cmd_scrub_status()
->>>> functions.
->>>> 
->>>> My suggestions is to change scrub_fs_info() to accept only
->>>> the path. Then it open (and closes) its own (and private) the
->>>> file descriptor.
->>>> 
->>>> Instead scrub_start(), opens a file descriptor after the call
->>>> to the scrub_fs_info() function.
->>>> 
->>>> What do you think ?
->>>> 
->>>> BR G.Baroncelli
->>>> 
->>>> You can pull the patch below from
->>>> 
->>>> http://cassiopea.homelinux.net/git/btrfs-progs-unstable.git
->>>> 
->>>> branch
->>>> 
->>>> fd-leaking
->>>> 
->>>> -----
->>>> 
->>>> diff --git a/cmds-scrub.c b/cmds-scrub.c index
->>>> c4503f4..486768c 100644 --- a/cmds-scrub.c +++
->>>> b/cmds-scrub.c @@ -979,19 +979,26 @@ static int
->>>> scrub_device_info(int fd, u64 devid, return ret ? -errno :
->>>> 0; }
->>>> 
->>>> -static int scrub_fs_info(int fd, char *path, +static int
->>>> scrub_fs_info( char *path, struct btrfs_ioctl_fs_info_args
->>>> *fi_args, struct btrfs_ioctl_dev_info_args **di_ret) { int
->>>> ret = 0; int ndevs = 0; int i = 1; +	int fd; struct
->>>> btrfs_fs_devices *fs_devices_mnt = NULL; struct
->>>> btrfs_ioctl_dev_info_args *di_args; char
->>>> mp[BTRFS_PATH_NAME_MAX + 1];
->>>> 
->>>> memset(fi_args, 0, sizeof(*fi_args));
->>>> 
->>>> +	fd  = open_file_or_dir(path); +	if (fd < 0) { +
->>>> fprintf(stderr, "ERROR: can't access to '%s'\n", path); +
->>>> return -1; +	} + ret = ioctl(fd, BTRFS_IOC_FS_INFO,
->>>> fi_args); if (ret && errno == EINVAL) { /* path is no mounted
->>>> btrfs. try if it's a device */ @@ -1010,28 +1017,36 @@ static
->>>> int scrub_fs_info(int fd, char *path, if (fd < 0) return
->>>> -errno; } else if (ret) { +		close(fd); return -errno; }
->>>> 
->>>> -	if (!fi_args->num_devices) +	if (!fi_args->num_devices){ +
->>>> close(fd); return 0; +	}
->>>> 
->>>> di_args = *di_ret = malloc(fi_args->num_devices *
->>>> sizeof(*di_args)); -	if (!di_args) +	if (!di_args){ +
->>>> close(fd); return -errno; +	}
->>>> 
->>>> for (; i <= fi_args->max_id; ++i) { BUG_ON(ndevs >=
->>>> fi_args->num_devices); ret = scrub_device_info(fd, i,
->>>> &di_args[ndevs]); if (ret == -ENODEV) continue; -		if (ret) +
->>>> if (ret){ +			close(fd); return ret; +		} ++ndevs; }
->>>> 
->>>> BUG_ON(ndevs == 0);
->>>> 
->>>> +	close(fd); return 0; }
->>>> 
->>>> @@ -1155,7 +1170,7 @@ static int scrub_start(int argc, char
->>>> **argv, int resume) return 12; }
->>>> 
->>>> -	ret = scrub_fs_info(fdmnt, path, &fi_args, &di_args); +	ret
->>>> = scrub_fs_info(path, &fi_args, &di_args); if (ret) { 
->>>> ERR(!do_quiet, "ERROR: getting dev info for scrub failed: " 
->>>> "%s\n", strerror(-ret)); @@ -1586,7 +1601,6 @@ static int
->>>> cmd_scrub_status(int argc, char **argv) .sun_family =
->>>> AF_UNIX, }; int ret; -	int fdmnt; int i; int print_raw = 0; 
->>>> int do_stats_per_dev = 0; @@ -1615,13 +1629,7 @@ static int
->>>> cmd_scrub_status(int argc, char **argv)
->>>> 
->>>> path = argv[optind];
->>>> 
->>>> -	fdmnt = open_file_or_dir(path); -	if (fdmnt < 0) { -
->>>> fprintf(stderr, "ERROR: can't access to '%s'\n", path); -
->>>> return 12; -	} - -	ret = scrub_fs_info(fdmnt, path, &fi_args,
->>>> &di_args); +	ret = scrub_fs_info(path, &fi_args, &di_args); 
->>>> if (ret) { fprintf(stderr, "ERROR: getting dev info for scrub
->>>> failed: " "%s\n", strerror(-ret)); @@ -1698,7 +1706,6 @@
->>>> static int cmd_scrub_status(int argc, char **argv) out: 
->>>> free_history(past_scrubs); free(di_args); -	close(fdmnt); if
->>>> (fdres > -1) close(fdres);
->>>> 
->>>> 
->>>> 
->>>> 
->>>> 
->>>> 
->>> 
->> 
-> 
->> diff --git a/cmds-scrub.c b/cmds-scrub.c index c4503f4..6313e02
->> 100644 --- a/cmds-scrub.c +++ b/cmds-scrub.c @@ -979,19 +979,26
->> @@ static int scrub_device_info(int fd, u64 devid, return ret ?
->> -errno : 0; }
->> 
->> -static int scrub_fs_info(int fd, char *path, +static int
->> scrub_fs_info(char *path, struct btrfs_ioctl_fs_info_args
->> *fi_args, struct btrfs_ioctl_dev_info_args **di_ret) { int ret =
->> 0; int ndevs = 0; int i = 1; +	int fd; struct btrfs_fs_devices
->> *fs_devices_mnt = NULL; struct btrfs_ioctl_dev_info_args
->> *di_args; char mp[BTRFS_PATH_NAME_MAX + 1];
->> 
->> memset(fi_args, 0, sizeof(*fi_args));
->> 
->> +	fd  = open_file_or_dir(path); +	if (fd < 0) { +
->> fprintf(stderr, "ERROR: can't access to '%s'\n", path); +		return
->> -1; +	} + ret = ioctl(fd, BTRFS_IOC_FS_INFO, fi_args); if (ret &&
->> errno == EINVAL) { /* path is no mounted btrfs. try if it's a
->> device */ @@ -1010,28 +1017,36 @@ static int scrub_fs_info(int
->> fd, char *path, if (fd < 0) return -errno; } else if (ret) { +
->> close(fd); return -errno; }
->> 
->> -	if (!fi_args->num_devices) +	if (!fi_args->num_devices) { +
->> close(fd); return 0; +	}
->> 
->> di_args = *di_ret = malloc(fi_args->num_devices *
->> sizeof(*di_args)); -	if (!di_args) +	if (!di_args) { +
->> close(fd); return -errno; +	}
->> 
->> for (; i <= fi_args->max_id; ++i) { BUG_ON(ndevs >=
->> fi_args->num_devices); ret = scrub_device_info(fd, i,
->> &di_args[ndevs]); if (ret == -ENODEV) continue; -		if (ret) +		if
->> (ret) { +			close(fd); return ret; +		} ++ndevs; }
->> 
->> BUG_ON(ndevs == 0);
->> 
->> +	close(fd); return 0; }
->> 
->> @@ -1155,7 +1170,7 @@ static int scrub_start(int argc, char
->> **argv, int resume) return 12; }
->> 
->> -	ret = scrub_fs_info(fdmnt, path, &fi_args, &di_args); +	ret =
->> scrub_fs_info(path, &fi_args, &di_args); if (ret) { 
->> ERR(!do_quiet, "ERROR: getting dev info for scrub failed: " 
->> "%s\n", strerror(-ret)); @@ -1586,7 +1601,6 @@ static int
->> cmd_scrub_status(int argc, char **argv) .sun_family = AF_UNIX, 
->> }; int ret; -	int fdmnt; int i; int print_raw = 0; int
->> do_stats_per_dev = 0; @@ -1615,13 +1629,7 @@ static int
->> cmd_scrub_status(int argc, char **argv)
->> 
->> path = argv[optind];
->> 
->> -	fdmnt = open_file_or_dir(path); -	if (fdmnt < 0) { -
->> fprintf(stderr, "ERROR: can't access to '%s'\n", path); -		return
->> 12; -	} - -	ret = scrub_fs_info(fdmnt, path, &fi_args,
->> &di_args); +	ret = scrub_fs_info(path, &fi_args, &di_args); if
->> (ret) { fprintf(stderr, "ERROR: getting dev info for scrub
->> failed: " "%s\n", strerror(-ret)); @@ -1698,7 +1706,6 @@ static
->> int cmd_scrub_status(int argc, char **argv) out: 
->> free_history(past_scrubs); free(di_args); -	close(fdmnt); if
->> (fdres > -1) close(fdres);
->> 
-> 
-> 
+diff --git a/ioctl.h b/ioctl.h
+index f2e5d8d..d6311f6 100644
+--- a/ioctl.h
++++ b/ioctl.h
+@@ -312,6 +312,8 @@ struct btrfs_ioctl_logical_ino_args {
+ 				    struct btrfs_ioctl_space_args)
+ #define BTRFS_IOC_SNAP_CREATE_V2 _IOW(BTRFS_IOCTL_MAGIC, 23, \
+ 				   struct btrfs_ioctl_vol_args_v2)
++#define BTRFS_IOC_SUBVOL_GETFLAGS _IOW(BTRFS_IOCTL_MAGIC, 25, __u64)
++#define BTRFS_IOC_SUBVOL_SETFLAGS _IOW(BTRFS_IOCTL_MAGIC, 26, __u64)
+ #define BTRFS_IOC_SCRUB _IOWR(BTRFS_IOCTL_MAGIC, 27, \
+ 				struct btrfs_ioctl_scrub_args)
+ #define BTRFS_IOC_SCRUB_CANCEL _IO(BTRFS_IOCTL_MAGIC, 28)
+-- 
+1.7.10
 

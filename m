@@ -1,70 +1,47 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mondschein.lichtvoll.de ([194.150.191.11]:41658 "EHLO
-	mail.lichtvoll.de" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1753476Ab2FXPCF convert rfc822-to-8bit (ORCPT
+Received: from mail-wi0-f172.google.com ([209.85.212.172]:56074 "EHLO
+	mail-wi0-f172.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1752167Ab2FYD2A convert rfc822-to-8bit (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Sun, 24 Jun 2012 11:02:05 -0400
-Received: from merkaba.localnet (ppp-93-104-153-232.dynamic.mnet-online.de [93.104.153.232])
-	by mail.lichtvoll.de (Postfix) with ESMTPSA id B7B28187
-	for <linux-btrfs@vger.kernel.org>; Sun, 24 Jun 2012 17:02:04 +0200 (CEST)
-From: Martin Steigerwald <Martin@lichtvoll.de>
-To: linux-btrfs@vger.kernel.org
-Subject: Re: kernel got struck while scrubbing BTRFS with node- and leafsize 32768
-Date: Sun, 24 Jun 2012 17:02:01 +0200
-References: <201206162223.20392.Martin@lichtvoll.de> <201206162238.23317.Martin@lichtvoll.de> <201206162239.07546.Martin@lichtvoll.de> (sfid-20120616_224354_198852_C67F1640)
-In-Reply-To: <201206162239.07546.Martin@lichtvoll.de>
+	Sun, 24 Jun 2012 23:28:00 -0400
+Received: by wibhm11 with SMTP id hm11so2520906wib.1
+        for <linux-btrfs@vger.kernel.org>; Sun, 24 Jun 2012 20:27:59 -0700 (PDT)
 MIME-Version: 1.0
-Content-Type: Text/Plain;
-  charset="utf-8"
-Message-Id: <201206241702.01678.Martin@lichtvoll.de>
+In-Reply-To: <201206162223.20392.Martin@lichtvoll.de>
+References: <201206162223.20392.Martin@lichtvoll.de>
+From: Chester <somethingsome2000@gmail.com>
+Date: Sun, 24 Jun 2012 22:27:39 -0500
+Message-ID: <CAAE6i0hruv7t-cXCbGwCvqsVW2AfBnvEbrZUf4=YraHBgsgYVQ@mail.gmail.com>
+Subject: Re: kernel got struck while scrubbing BTRFS with node- and leafsize 32768
+To: Martin Steigerwald <Martin@lichtvoll.de>
+Cc: linux-btrfs@vger.kernel.org
+Content-Type: text/plain; charset=ISO-8859-1
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Am Samstag, 16. Juni 2012 schrieb Martin Steigerwald:
-> Am Samstag, 16. Juni 2012 schrieb Martin Steigerwald:
-> > Am Samstag, 16. Juni 2012 schrieb Martin Steigerwald:
-> > > merkaba:~> date ; btrfs scrub status /mnt/amazon-daten
-> > > Sa 16. Jun 22:06:33 CEST 2012
-> > > scrub status for bd94ea73-6e77-4c81-b053-2401b4f52b3e
-> > > 
-> > >         scrub started at Sat Jun 16 21:44:09 2012, running for 1341
-> > > 
-> > > seconds total bytes scrubbed: 90.30GB with 0 errors
-> > > merkaba:~> date ; btrfs scrub cancel /mnt/amazon-daten
-> > > Sa 16. Jun 22:06:47 CEST 2012
-> > > [â€¦ hangs here â€¦]
-> > 
-> > btrfs-readahead is stuck:
-> > 
-> > merkaba:~> ps aux | egrep "(USER| D)"
-> > USER       PID %CPU %MEM    VSZ   RSS TTY      STAT START   TIME
-> > COMMAND root     11920  0.0  0.0      0     0 ?        D    21:46
-> > 0:00 [btrfs-readahead] root     13649  0.0  0.0  10544   396 pts/0
-> > D+   22:06   0:00 btrfs scrub cancel /mnt/amazon-daten root     16309
-> > 0.0  0.0   9816   948 pts/1    S+   22:24   0:00 egrep (USER| D)
-> > 
-> > I created a bug report with a
-> > 
-> > kern.log including echo t > /proc/sysrq-trigger with stuck readahead
-> 
-> There we go:
-> 
-> Bug 43491 - BTRFS hangs while scrubbing with node- and leafsize 32768
-> https://bugzilla.kernel.org/show_bug.cgi?id=43491
+On Sat, Jun 16, 2012 at 3:23 PM, Martin Steigerwald <Martin@lichtvoll.de> wrote:
+>
+>
+> [251818.022631] ------------[ cut here ]------------
+> [251818.022714] WARNING: at
+>
+> /media/data/mattems/src/linux-2.6-3.4.1/debian/build/source_amd64_none/fs/btrfs/extent_io.c:4522
+> read_extent_buffer+0x43/0xf0 [btrfs]()
+> [251818.022723] Hardware name: 42433WG
+> [251818.022727] Modules linked in: rose usb_storage uas rfcomm bnep btusb
 
-With 3.5-rc3 it scrubbed the whole disk now:
+I don't think btrfs supported big blocks until recently. Something
+like 3.3 or 3.4.. Anything from 2.6 would definitely not cut it.
 
-merkaba:~> btrfs scrub status /mnt/amazon-daten
-scrub status for [â€¦]
-        scrub started at Sun Jun 24 15:02:15 2012 and finished after 6271 seconds
-        total bytes scrubbed: 369.34GB with 0 errors
-merkaba:~>
-
-Thus closing.
-
-Will reopen, should it occur again.
-
-Thanks,
--- 
-Martin 'Helios' Steigerwald - http://www.Lichtvoll.de
-GPG: 03B0 0D6C 0040 0710 4AFA  B82F 991B EAAC A599 84C7
+> Data is not critically important, but I do not like to loose it either.
+> Thus
+> at least two copies.
+>
+> Thanks,
+> --
+> Martin 'Helios' Steigerwald - http://www.Lichtvoll.de
+> GPG: 03B0 0D6C 0040 0710 4AFA  B82F 991B EAAC A599 84C7
+> --
+> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
+> the body of a message to majordomo@vger.kernel.org
+> More majordomo info at  http://vger.kernel.org/majordomo-info.html

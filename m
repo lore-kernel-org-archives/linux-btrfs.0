@@ -1,36 +1,59 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-ey0-f174.google.com ([209.85.215.174]:55622 "EHLO
-	mail-ey0-f174.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1754866Ab2FYSnh convert rfc822-to-8bit (ORCPT
+Received: from mondschein.lichtvoll.de ([194.150.191.11]:37278 "EHLO
+	mail.lichtvoll.de" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1753172Ab2FYSsx convert rfc822-to-8bit (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 25 Jun 2012 14:43:37 -0400
-Received: by eaak11 with SMTP id k11so1350239eaa.19
-        for <linux-btrfs@vger.kernel.org>; Mon, 25 Jun 2012 11:43:36 -0700 (PDT)
-MIME-Version: 1.0
-In-Reply-To: <CAJ8bbvtJG_=grkgdJ_Bk68QHt0eE5DghHwZNTeEGhd_PBof=sw@mail.gmail.com>
-References: <CAJ8bbvtJG_=grkgdJ_Bk68QHt0eE5DghHwZNTeEGhd_PBof=sw@mail.gmail.com>
-Date: Mon, 25 Jun 2012 19:43:36 +0100
-Message-ID: <CAJ8bbvtN_8vY3x0LzNFC7kBChSvRruaaes+Oi2oUE6BmSob+LQ@mail.gmail.com>
-Subject: Re: seeking advice
-From: Maciej Sujkowski <maciej@sujkowski.org>
+	Mon, 25 Jun 2012 14:48:53 -0400
+Received: from merkaba.localnet (ppp-88-217-126-64.dynamic.mnet-online.de [88.217.126.64])
+	by mail.lichtvoll.de (Postfix) with ESMTPSA id 9092B195
+	for <linux-btrfs@vger.kernel.org>; Mon, 25 Jun 2012 20:48:52 +0200 (CEST)
+From: Martin Steigerwald <Martin@lichtvoll.de>
 To: linux-btrfs@vger.kernel.org
-Content-Type: text/plain; charset=ISO-8859-1
+Subject: Re: 3.5-rc4: BTRFS unmountable after hard lockup
+Date: Mon, 25 Jun 2012 20:48:51 +0200
+References: <201206252029.34545.Martin@lichtvoll.de> (sfid-20120625_204005_007114_552D1AD6)
+In-Reply-To: <201206252029.34545.Martin@lichtvoll.de>
+MIME-Version: 1.0
+Content-Type: Text/Plain;
+  charset="utf-8"
+Message-Id: <201206252048.52022.Martin@lichtvoll.de>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hello
+Am Montag, 25. Juni 2012 schrieb Martin Steigerwald:
+> Hi!
+> 
+> I got a X server / drm related crash or hard lockup. After I rebooted I
+> tried to mount the BTRFS on my esata disk. It has big metadata
+> (mkfs.btrfs -l 32768 -n 32768).
+> 
+> 
+> I got:
+> 
+[â€¦ backtrace â€¦]
 
-Maybe someone will be able to help.
+> BTRFS was not mounted. After trying to mount again, I got:
+> 
+> merkaba:~> ps aux | grep " D" | grep -v grep
+> root      3446  0.0  0.0      0     0 ?        D    20:22   0:00
+> [btrfs-transacti] root      4666  0.0  0.0  18640  1184 tty1     D+  
+> 20:24   0:00 mount /mnt/amazon-daten
+> 
+> Any hints how to get my disk mounted?
+> 
+> I have a fairly recent backup, but I would prefer when I do not have to
+> replay it. Its one of my expectations for a file system: be safe on
+> sudden write interruptions like power loss or crash.
 
-I have 2 unusable instances of btrfs.
+Well, I wanted to have back my disk ASAP. So I just tried that btrfs-zero-
+log mantra again.
 
-1. when I did a re-size (stretch) I had a power lost and now btrfs system
-is not detected on the drive (tried find-root, restore, btrfsck, btrfs show
-and maybe something else - can't remember as it was some time ago
-2. I did btrfsck -repair on another device and now it show incorrect
-amount of space (the difference is really huge) and when i try to mount it
-there is kernel bug. btrfsck detects some errors but can't fix it.
+It worked. Hopefully the backtrace still gives you a clue on what has 
+happened. I thought these kind of errors where gone now.
 
-Any suggestion appreciated.
+(Yeah, I know its still experimentalâ€¦ no indoctrination requested;-)
 
-MS
+Thanks,
+-- 
+Martin 'Helios' Steigerwald - http://www.Lichtvoll.de
+GPG: 03B0 0D6C 0040 0710 4AFA  B82F 991B EAAC A599 84C7

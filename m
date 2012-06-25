@@ -1,14 +1,14 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx1.fusionio.com ([66.114.96.30]:45680 "EHLO mx1.fusionio.com"
+Received: from mx1.fusionio.com ([66.114.96.30]:35058 "EHLO mx1.fusionio.com"
 	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1752113Ab2FYTKn (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 25 Jun 2012 15:10:43 -0400
-Date: Mon, 25 Jun 2012 15:10:40 -0400
+	id S1754760Ab2FYT0g (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Mon, 25 Jun 2012 15:26:36 -0400
+Date: Mon, 25 Jun 2012 15:26:32 -0400
 From: Josef Bacik <jbacik@fusionio.com>
 To: Alex Lyakas <alex.bolshoy.btrfs@gmail.com>
 CC: "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
 Subject: Re: fio reports data corruption with btrfs
-Message-ID: <20120625191039.GE7404@localhost.localdomain>
+Message-ID: <20120625192632.GF7404@localhost.localdomain>
 References: <CAHf9xvafQugP2c_3_rxNAn55TgF_GiCM7udNS6yLEqVfPD1_wg@mail.gmail.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
@@ -39,7 +39,11 @@ On Mon, Jun 25, 2012 at 12:30:34PM -0600, Alex Lyakas wrote:
 > parallel.
 > 
 
-Mount options?  I'm running the test now, I'll let you know if I can reproduce.
-Thanks,
+So we think it may be enospc, so try btrfs-next
+
+git://git.kernel.org/pub/scm/linux/kernel/git/josef/btrfs-next.git
+
+which has an enospc fix related to creating a crapptone of files.  Let me know
+if that helps.  Thanks,
 
 Josef

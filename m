@@ -1,49 +1,51 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx1.fusionio.com ([66.114.96.30]:35058 "EHLO mx1.fusionio.com"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1754760Ab2FYT0g (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 25 Jun 2012 15:26:36 -0400
-Date: Mon, 25 Jun 2012 15:26:32 -0400
-From: Josef Bacik <jbacik@fusionio.com>
-To: Alex Lyakas <alex.bolshoy.btrfs@gmail.com>
-CC: "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
-Subject: Re: fio reports data corruption with btrfs
-Message-ID: <20120625192632.GF7404@localhost.localdomain>
-References: <CAHf9xvafQugP2c_3_rxNAn55TgF_GiCM7udNS6yLEqVfPD1_wg@mail.gmail.com>
+Received: from mail.profihost.ag ([85.158.179.208]:55233 "EHLO
+	mail.profihost.ag" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1750820Ab2FYTdN (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>);
+	Mon, 25 Jun 2012 15:33:13 -0400
+Message-ID: <4FE8BCF5.4080605@profihost.ag>
+Date: Mon, 25 Jun 2012 21:33:09 +0200
+From: Stefan Priebe <s.priebe@profihost.ag>
 MIME-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-In-Reply-To: <CAHf9xvafQugP2c_3_rxNAn55TgF_GiCM7udNS6yLEqVfPD1_wg@mail.gmail.com>
+To: Josef Bacik <jbacik@fusionio.com>
+CC: "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
+Subject: Re: btrfs deadlock in 3.5-rc3
+References: <4FE58366.8000302@profihost.ag> <4FE862D7.3060005@fusionio.com> <4FE870DF.90308@profihost.ag> <20120625142048.GB7404@localhost.localdomain> <4FE8796E.9030300@profihost.ag> <20120625144807.GC7404@localhost.localdomain> <4FE8A21E.7050104@profihost.ag> <20120625180252.GD7404@localhost.localdomain> <4FE8ADBA.20505@profihost.ag>
+In-Reply-To: <4FE8ADBA.20505@profihost.ag>
+Content-Type: text/plain; charset=ISO-8859-1; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Mon, Jun 25, 2012 at 12:30:34PM -0600, Alex Lyakas wrote:
-> Greetings everybody,
-> 
-> I am running a fio test on btrfs compiled from
-> git://git.kernel.org/pub/scm/linux/kernel/git/mason/linux-btrfs.git,
-> up to commit:
-> cb77fcd88569cd2b7b25ecd4086ea932a53be9b3 Btrfs: delay iput with async extents
-> including this commit.
-> 
-> Below is a fio configuration file, and later fio textual output.
-> Here:
-> https://docs.google.com/folder/d/0B1AuaIB8xZtbNTRuSW1zVGozWFE/edit
-> are "expected" vs "received" mismatch reports. Strangely, when I read
-> the mismatched block from the file reported as corrupted by fio, I
-> receive data different both from "expected" and "received" blocks that
-> fio reports. I added one such file (job0.1.0.88576.now) to the
-> pastebin as well.
-> 
-> If you think that my fio configuration file is faulty, please let me
-> know. fio version is 1.59. The idea is to run 10 io processes in
-> parallel.
-> 
+With v3.4 the same. Can't go back more as this really results in very 
+fast corruption. Any ideas how to debug?
 
-So we think it may be enospc, so try btrfs-next
+Stefan
 
-git://git.kernel.org/pub/scm/linux/kernel/git/josef/btrfs-next.git
+Am 25.06.2012 20:28, schrieb Stefan Priebe:
+> Am 25.06.2012 20:02, schrieb Josef Bacik:
+>>>   >  Can you turn that off and see if you
+>>>> can still reproduce the deadlock?  If so sysrq+w again, if not then
+>>>> I know where
+>>>> to look ;).  Thanks,
+>>> without discard i can't reproduce but random write speed with ceph
+>>> without discard is a LOT slower (around 8000 iops/s instead of
+>>> 13000iops/s). So i don't know if it is discard or if i'm just not able
+>>> to trigger it.
+>>>
+>>
+>> Ouch, what kind of drive goes faster with discard _on_?  Anyway it
+>> looks like
+>> we're waiting for the discard to come back, so either its your drive
+>> or theres a
+>> bug in the block layer.  Maybe try an older kernel and see if it's
+>> broken there,
+>> and then bisect it down?  Thanks,
+>
+> Intel 520 series SSD. I can't try an older kernel version as ceph
+> crashes with them pretty fast due to other bugs which where fixed with
+> 3.5-rc1.
+>
+> Greets
+> Stefan
 
-which has an enospc fix related to creating a crapptone of files.  Let me know
-if that helps.  Thanks,
-
-Josef

@@ -1,32 +1,52 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail.profihost.ag ([85.158.179.208]:60369 "EHLO
-	mail.profihost.ag" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1751079Ab2FZUTV (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 26 Jun 2012 16:19:21 -0400
-Message-ID: <4FEA1945.7050906@profihost.ag>
-Date: Tue, 26 Jun 2012 22:19:17 +0200
-From: Stefan Priebe <s.priebe@profihost.ag>
-MIME-Version: 1.0
-To: Josef Bacik <jbacik@fusionio.com>
+Received: from mx2.fusionio.com ([66.114.96.31]:53954 "EHLO mx2.fusionio.com"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1750809Ab2FZUTy (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Tue, 26 Jun 2012 16:19:54 -0400
+Date: Tue, 26 Jun 2012 16:19:51 -0400
+From: Josef Bacik <jbacik@fusionio.com>
+To: "Nathan A. Mourey II" <nmoureyii@ne.rr.com>
 CC: "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
-Subject: Re: btrfs deadlock in 3.5-rc3
-References: <4FE8796E.9030300@profihost.ag> <20120625144807.GC7404@localhost.localdomain> <4FE8A21E.7050104@profihost.ag> <20120625180252.GD7404@localhost.localdomain> <4FE8ADBA.20505@profihost.ag> <4FE8BCF5.4080605@profihost.ag> <20120625201151.GG7404@localhost.localdomain> <4FE8C80F.2040009@profihost.ag> <20120625202310.GH7404@localhost.localdomain> <4FE9E7BC.1020104@profihost.ag> <20120626201418.GA24953@localhost.localdomain>
-In-Reply-To: <20120626201418.GA24953@localhost.localdomain>
-Content-Type: text/plain; charset=ISO-8859-1; format=flowed
+Subject: Re: btrfs oops with kernel 3.5-rc4
+Message-ID: <20120626201950.GB24953@localhost.localdomain>
+References: <1340741359.2226.5.camel@athena>
+MIME-Version: 1.0
+Content-Type: text/plain; charset="us-ascii"
+In-Reply-To: <1340741359.2226.5.camel@athena>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Am 26.06.2012 22:14, schrieb Josef Bacik:
-> I can't reproduce so I'm going to have to figure out a way to debug it through
-> you, as soon as I think of something I will let you know.  Thanks,
->
+On Tue, Jun 26, 2012 at 02:09:19PM -0600, Nathan A. Mourey II wrote:
+> Oops with kernel v3.5-rc4.  This error produced while:
+> 
+> emerge --sync &&  emerge --update --newuse --deep --with-bdeps=y @world && emerge --depclean && revdep-rebuild
+> and 
+> stress --cpu 1 --io 8 -d 8  --vm 4  -t 8h
+> 
+> ver_linux.sh was ran on stable v3.4.4 system.  
+> 
+> Linux peach.example.com 3.4.4 #2 SMP Sun Jun 24 20:38:42 EDT 2012 i686
+> Intel(R) Pentium(R) 4 CPU 2.80GHz GenuineIntel GNU/Linux
+> 
+>  Gnu C                  4.5.3
+>  Gnu make               3.82
+>  binutils               2.21.1
+>  util-linux             ./ver_linux: line 23: fdformat: command not found
+>  mount                  support
+>  module-init-tools      found
+>  quota-tools            3.17.
+>  Linux C Library        2.14.1
+>  Dynamic linker (ldd)   2.14.1
+>  Procps                 3.2.8
+>  Kbd                    1.15.3wip
+>  Sh-utils               8.14
+>  Modules Loaded         ext3 jbd ehci_hcd
+> 
 
-Thanks. You mentioned that discard shouldn't have any positive effects 
-on a SSD.
+Can you gdb btrfs.ko and do 
 
-May i see a sideffect? I mean with discard 13.000 IOPs in ceph without 
-discard just 6000-9000 IOPs could this be real or might this just happen 
-due to the bug i see?
+list *(btrfs_finish_ordered_io+0x22)
 
-Stefan
+please?  And are you running compression by chance?  Thanks,
+
+Josef

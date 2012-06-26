@@ -1,63 +1,65 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx1.fusionio.com ([66.114.96.30]:59520 "EHLO mx1.fusionio.com"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1757004Ab2FZNmO (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 26 Jun 2012 09:42:14 -0400
-Date: Tue, 26 Jun 2012 09:42:12 -0400
-From: Josef Bacik <jbacik@fusionio.com>
-To: David Sterba <dave@jikos.cz>
-CC: Tsutomu Itoh <t-itoh@jp.fujitsu.com>,
-        "Chris L. Mason" <clmason@fusionio.com>,
-        "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>,
-        Josef Bacik <JBacik@fusionio.com>
-Subject: Re: [PATCH] Btrfs: check return value of btrfs_set_extent_delalloc()
-Message-ID: <20120626134211.GC2046@localhost.localdomain>
-References: <201206260322.AA00002@FM-323941448.jp.fujitsu.com>
- <20120626132653.GS28144@twin.jikos.cz>
+Received: from fgwmail6.fujitsu.co.jp ([192.51.44.36]:48459 "EHLO
+	fgwmail6.fujitsu.co.jp" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1755873Ab2FZDWt (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>);
+	Mon, 25 Jun 2012 23:22:49 -0400
+Received: from m3.gw.fujitsu.co.jp (unknown [10.0.50.73])
+	by fgwmail6.fujitsu.co.jp (Postfix) with ESMTP id 3D2553EE0BC
+	for <linux-btrfs@vger.kernel.org>; Tue, 26 Jun 2012 12:22:48 +0900 (JST)
+Received: from smail (m3 [127.0.0.1])
+	by outgoing.m3.gw.fujitsu.co.jp (Postfix) with ESMTP id 2568C45DEAD
+	for <linux-btrfs@vger.kernel.org>; Tue, 26 Jun 2012 12:22:48 +0900 (JST)
+Received: from s3.gw.fujitsu.co.jp (s3.gw.fujitsu.co.jp [10.0.50.93])
+	by m3.gw.fujitsu.co.jp (Postfix) with ESMTP id 0CA6145DE7E
+	for <linux-btrfs@vger.kernel.org>; Tue, 26 Jun 2012 12:22:48 +0900 (JST)
+Received: from s3.gw.fujitsu.co.jp (localhost.localdomain [127.0.0.1])
+	by s3.gw.fujitsu.co.jp (Postfix) with ESMTP id 012B11DB803E
+	for <linux-btrfs@vger.kernel.org>; Tue, 26 Jun 2012 12:22:48 +0900 (JST)
+Received: from ml14.s.css.fujitsu.com (ml14.s.css.fujitsu.com [10.240.81.134])
+	by s3.gw.fujitsu.co.jp (Postfix) with ESMTP id AF9D31DB803B
+	for <linux-btrfs@vger.kernel.org>; Tue, 26 Jun 2012 12:22:47 +0900 (JST)
+Message-Id: <201206260322.AA00002@FM-323941448.jp.fujitsu.com>
+From: Tsutomu Itoh <t-itoh@jp.fujitsu.com>
+Date: Tue, 26 Jun 2012 12:22:10 +0900
+To: chris.mason@fusionio.com
+Cc: linux-btrfs@vger.kernel.org
+Subject: [PATCH] Btrfs: check return value of btrfs_set_extent_delalloc()
 MIME-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-In-Reply-To: <20120626132653.GS28144@twin.jikos.cz>
+Content-Type: text/plain; charset=us-ascii
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Tue, Jun 26, 2012 at 07:26:53AM -0600, David Sterba wrote:
-> On Tue, Jun 26, 2012 at 12:22:10PM +0900, Tsutomu Itoh wrote:
-> > btrfs_set_extent_delalloc() has the possibility of returning the error.
-> > So I add the code in which the return value of btrfs_set_extent_delalloc()
-> > is checked.
-> 
-> The caller is cluster_pages_for_defrag, the only error I see returned
-> via __set_extent_bit is -EEXIST, other errors BUG directly or via
-> extent_io_tree_panic() .
-> 
-> If the error happens, then the [page_start,page_end-1] is already set
-> for delalloc, that's probably a bug and should be caught.
-> 
-> There are two more unchecked calls to btrfs_set_extent_delalloc:
-> 
-> inode.c:btrfs_writepage_fixup_worker
-> 
-> 1729         btrfs_set_extent_delalloc(inode, page_start, page_end, &cached_state);
-> 1730         ClearPageChecked(page);
-> 1731         set_page_dirty(page);
-> 
-> IIRC from the days full of fixup worker fun, the reason why this is safe
-> to ignore is because the call chain leading here is exactly due to missing
-> delalloc bits on the page.
-> 
-> relocation.c:relocate_file_extent_cluster
-> 
-> 3034                 btrfs_set_extent_delalloc(inode, page_start, page_end, NULL);
-> 3035                 set_page_dirty(page);
-> 
-> hmm relocation ... :)
-> 
-> 
-> Anyway, I'd like to let Josef take another look at your patch.
->
+btrfs_set_extent_delalloc() has the possibility of returning the error.
+So I add the code in which the return value of btrfs_set_extent_delalloc()
+is checked.
 
-Even better, we clear delalloc right before doing the set and we have the pages
-locked, so theres no way we can get EEXIST here, so I'll just drop this patch.
-Thanks Dave,
+Signed-off-by: Tsutomu Itoh <t-itoh@jp.fujitsu.com>
+---
+ fs/btrfs/ioctl.c |    7 +++++--
+ 1 files changed, 5 insertions(+), 2 deletions(-)
 
-Josef 
+diff --git a/fs/btrfs/ioctl.c b/fs/btrfs/ioctl.c
+index 0e92e57..95e27d6 100644
+--- a/fs/btrfs/ioctl.c
++++ b/fs/btrfs/ioctl.c
+@@ -1016,13 +1016,16 @@ again:
+ 	}
+ 
+ 
+-	btrfs_set_extent_delalloc(inode, page_start, page_end - 1,
+-				  &cached_state);
++	ret = btrfs_set_extent_delalloc(inode, page_start, page_end - 1,
++					&cached_state);
+ 
+ 	unlock_extent_cached(&BTRFS_I(inode)->io_tree,
+ 			     page_start, page_end - 1, &cached_state,
+ 			     GFP_NOFS);
+ 
++	if (ret)
++		goto out;
++
+ 	for (i = 0; i < i_done; i++) {
+ 		clear_page_dirty_for_io(pages[i]);
+ 		ClearPageChecked(pages[i]);
+

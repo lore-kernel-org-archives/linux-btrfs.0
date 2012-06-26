@@ -1,52 +1,48 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.fusionio.com ([66.114.96.31]:53954 "EHLO mx2.fusionio.com"
+Received: from mx2.fusionio.com ([66.114.96.31]:49187 "EHLO mx2.fusionio.com"
 	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1750809Ab2FZUTy (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 26 Jun 2012 16:19:54 -0400
-Date: Tue, 26 Jun 2012 16:19:51 -0400
+	id S1751989Ab2FZUsD (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Tue, 26 Jun 2012 16:48:03 -0400
+Date: Tue, 26 Jun 2012 16:48:00 -0400
 From: Josef Bacik <jbacik@fusionio.com>
-To: "Nathan A. Mourey II" <nmoureyii@ne.rr.com>
-CC: "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
-Subject: Re: btrfs oops with kernel 3.5-rc4
-Message-ID: <20120626201950.GB24953@localhost.localdomain>
-References: <1340741359.2226.5.camel@athena>
+To: Stefan Priebe <s.priebe@profihost.ag>
+CC: Josef Bacik <JBacik@fusionio.com>,
+        "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
+Subject: Re: btrfs deadlock in 3.5-rc3
+Message-ID: <20120626204759.GC24953@localhost.localdomain>
+References: <4FE8A21E.7050104@profihost.ag>
+ <20120625180252.GD7404@localhost.localdomain>
+ <4FE8ADBA.20505@profihost.ag>
+ <4FE8BCF5.4080605@profihost.ag>
+ <20120625201151.GG7404@localhost.localdomain>
+ <4FE8C80F.2040009@profihost.ag>
+ <20120625202310.GH7404@localhost.localdomain>
+ <4FE9E7BC.1020104@profihost.ag>
+ <20120626201418.GA24953@localhost.localdomain>
+ <4FEA1945.7050906@profihost.ag>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
-In-Reply-To: <1340741359.2226.5.camel@athena>
+In-Reply-To: <4FEA1945.7050906@profihost.ag>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Tue, Jun 26, 2012 at 02:09:19PM -0600, Nathan A. Mourey II wrote:
-> Oops with kernel v3.5-rc4.  This error produced while:
+On Tue, Jun 26, 2012 at 02:19:17PM -0600, Stefan Priebe wrote:
+> Am 26.06.2012 22:14, schrieb Josef Bacik:
+> > I can't reproduce so I'm going to have to figure out a way to debug it through
+> > you, as soon as I think of something I will let you know.  Thanks,
+> >
 > 
-> emerge --sync &&  emerge --update --newuse --deep --with-bdeps=y @world && emerge --depclean && revdep-rebuild
-> and 
-> stress --cpu 1 --io 8 -d 8  --vm 4  -t 8h
+> Thanks. You mentioned that discard shouldn't have any positive effects 
+> on a SSD.
 > 
-> ver_linux.sh was ran on stable v3.4.4 system.  
-> 
-> Linux peach.example.com 3.4.4 #2 SMP Sun Jun 24 20:38:42 EDT 2012 i686
-> Intel(R) Pentium(R) 4 CPU 2.80GHz GenuineIntel GNU/Linux
-> 
->  Gnu C                  4.5.3
->  Gnu make               3.82
->  binutils               2.21.1
->  util-linux             ./ver_linux: line 23: fdformat: command not found
->  mount                  support
->  module-init-tools      found
->  quota-tools            3.17.
->  Linux C Library        2.14.1
->  Dynamic linker (ldd)   2.14.1
->  Procps                 3.2.8
->  Kbd                    1.15.3wip
->  Sh-utils               8.14
->  Modules Loaded         ext3 jbd ehci_hcd
+> May i see a sideffect? I mean with discard 13.000 IOPs in ceph without 
+> discard just 6000-9000 IOPs could this be real or might this just happen 
+> due to the bug i see?
 > 
 
-Can you gdb btrfs.ko and do 
-
-list *(btrfs_finish_ordered_io+0x22)
-
-please?  And are you running compression by chance?  Thanks,
+Beats me, it would seem to me that discard would make things slower since we
+have to wait for the commit to discard everybody, but who knows, stranger things
+have happened.  Can you reproduce 2 more times and get sysrq+w each time so I
+have a few different outputs to compare, maybe I'm missing something.  Thanks,
 
 Josef

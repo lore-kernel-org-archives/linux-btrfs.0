@@ -1,158 +1,51 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mo-p00-ob.rzone.de ([81.169.146.161]:63744 "EHLO
-	mo-p00-ob.rzone.de" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1757328Ab2FVQ0r (ORCPT
+Received: from mondschein.lichtvoll.de ([194.150.191.11]:42181 "EHLO
+	mail.lichtvoll.de" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1756054Ab2FZM2t convert rfc822-to-8bit (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Fri, 22 Jun 2012 12:26:47 -0400
-Message-ID: <4FE49CC4.6030606@giantdisaster.de>
-Date: Fri, 22 Jun 2012 18:26:44 +0200
-From: Stefan Behrens <sbehrens@giantdisaster.de>
+	Tue, 26 Jun 2012 08:28:49 -0400
+From: Martin Steigerwald <Martin@lichtvoll.de>
+To: Liu Bo <liubo2009@cn.fujitsu.com>
+Subject: Re: 3.5-rc4: BTRFS unmountable after hard lockup
+Date: Tue, 26 Jun 2012 14:28:47 +0200
+Cc: David Sterba <dave@jikos.cz>, linux-btrfs@vger.kernel.org,
+        jbacik@fusionio.com
+References: <201206252029.34545.Martin@lichtvoll.de> <20120625221826.GM28144@twin.jikos.cz> <4FE930D5.3050505@cn.fujitsu.com> (sfid-20120626_104254_916758_98D246E0)
+In-Reply-To: <4FE930D5.3050505@cn.fujitsu.com>
 MIME-Version: 1.0
-To: David Sterba <dsterba@suse.cz>
-CC: chris.mason@fusionio.com, linux-btrfs@vger.kernel.org
-Subject: Re: [PATCH] btrfs: join DEV_STATS ioctls to one
-References: <1340368239-8152-1-git-send-email-dsterba@suse.cz>
-In-Reply-To: <1340368239-8152-1-git-send-email-dsterba@suse.cz>
-Content-Type: text/plain; charset=ISO-8859-1
+Content-Type: Text/Plain;
+  charset="iso-8859-1"
+Message-Id: <201206261428.48262.Martin@lichtvoll.de>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Fri, 22 Jun 2012 14:30:39 +0200, David Sterba wrote:
-> Hi Chris,
+Am Dienstag, 26. Juni 2012 schrieb Liu Bo:
+> On 06/26/2012 06:18 AM, David Sterba wrote:
+> > 3756         if (root->fs_info->log_root_recovering) {
+> > 3757                 BUG_ON(!test_bit(BTRFS_INODE_HAS_ORPHAN_ITEM,
+> > 3758                                 &BTRFS_I(inode)->runtime_flags)); 
+> > 3759                 goto no_delete;
+> > 3760         }
+> > 
+> > and it happened during log replay, as you found already, fixable by
+> > running the zero-log utility. Another way is to mount read-only, this
+> > skips log replay.
+> > 
+> > I think there could be a logic error, as this probably happens only
+> > during log replay when the orphan bit is not in sync with link count,
+> > but I saw that this should be handled in the fixup_inode_link_counts
+> > call path. CCing Josef, if he has an idea.
 > 
-> please consider this patch for 3.5-rc before it goes final. Thanks.
+> It is a logic error, but mostly a finger wrong from Josef IMO... :)
 > 
-> From: David Sterba <dsterba@suse.cz>
-> 
-> Commit c11d2c236cc260b36 (Btrfs: add ioctl to get and reset the device
-> stats) introduced two ioctls doing almost the same thing distinguished
-> by just the ioctl number which encodes "do reset after read". I have
-> suggested
-> 
-> http://www.mail-archive.com/linux-btrfs@vger.kernel.org/msg16604.html
-> 
-> to implement it via the ioctl args. This hasn't happen, and I think we
-> should use a more clean way to pass flags and should not waste ioctl
-> numbers.
-> 
-> CC: Stefan Behrens <sbehrens@giantdisaster.de>
-> Signed-off-by: David Sterba <dsterba@suse.cz>
-> ---
->  fs/btrfs/ioctl.c   |   16 ++++++++--------
->  fs/btrfs/ioctl.h   |    6 ++++--
->  fs/btrfs/volumes.c |    5 ++---
->  fs/btrfs/volumes.h |    3 +--
->  4 files changed, 15 insertions(+), 15 deletions(-)
-> 
-> diff --git a/fs/btrfs/ioctl.c b/fs/btrfs/ioctl.c
-> index 0e92e57..670c5d2 100644
-> --- a/fs/btrfs/ioctl.c
-> +++ b/fs/btrfs/ioctl.c
-> @@ -3063,19 +3063,21 @@ static long btrfs_ioctl_scrub_progress(struct btrfs_root *root,
->  }
->  
->  static long btrfs_ioctl_get_dev_stats(struct btrfs_root *root,
-> -				      void __user *arg, int reset_after_read)
-> +				      void __user *arg)
->  {
->  	struct btrfs_ioctl_get_dev_stats *sa;
->  	int ret;
->  
-> -	if (reset_after_read && !capable(CAP_SYS_ADMIN))
-> -		return -EPERM;
-> -
->  	sa = memdup_user(arg, sizeof(*sa));
->  	if (IS_ERR(sa))
->  		return PTR_ERR(sa);
->  
-> -	ret = btrfs_get_dev_stats(root, sa, reset_after_read);
-> +	if ((sa->flags & BTRFS_DEV_STATS_RESET) && !capable(CAP_SYS_ADMIN)) {
-> +		kfree(sa);
-> +		return -EPERM;
-> +	}
-> +
-> +	ret = btrfs_get_dev_stats(root, sa);
->  
->  	if (copy_to_user(arg, sa, sizeof(*sa)))
->  		ret = -EFAULT;
-> @@ -3473,9 +3475,7 @@ long btrfs_ioctl(struct file *file, unsigned int
->  	case BTRFS_IOC_BALANCE_PROGRESS:
->  		return btrfs_ioctl_balance_progress(root, argp);
->  	case BTRFS_IOC_GET_DEV_STATS:
-> -		return btrfs_ioctl_get_dev_stats(root, argp, 0);
-> -	case BTRFS_IOC_GET_AND_RESET_DEV_STATS:
-> -		return btrfs_ioctl_get_dev_stats(root, argp, 1);
-> +		return btrfs_ioctl_get_dev_stats(root, argp);
->  	}
->  
->  	return -ENOTTY;
-> diff --git a/fs/btrfs/ioctl.h b/fs/btrfs/ioctl.h
-> index 497c530..c4089c5 100644
-> --- a/fs/btrfs/ioctl.h
-> +++ b/fs/btrfs/ioctl.h
-> @@ -285,9 +285,13 @@ enum btrfs_dev_stat_values {
->  	BTRFS_DEV_STAT_VALUES_MAX
->  };
->  
-> +/* Reset statistics after reading; needs SYS_ADMIN capability */
-> +#define	BTRFS_DEV_STATS_RESET		(1ULL << 0)
-> +
->  struct btrfs_ioctl_get_dev_stats {
->  	__u64 devid;				/* in */
->  	__u64 nr_items;				/* in/out */
-> +	__u64 flags;				/* in/out */
->  
->  	/* out values: */
->  	__u64 values[BTRFS_DEV_STAT_VALUES_MAX];
-> @@ -361,7 +365,5 @@ struct btrfs_ioctl_get_dev_stats {
->  					struct btrfs_ioctl_ino_path_args)
->  #define BTRFS_IOC_GET_DEV_STATS _IOWR(BTRFS_IOCTL_MAGIC, 52, \
->  				      struct btrfs_ioctl_get_dev_stats)
-> -#define BTRFS_IOC_GET_AND_RESET_DEV_STATS _IOWR(BTRFS_IOCTL_MAGIC, 53, \
-> -					struct btrfs_ioctl_get_dev_stats)
->  
->  #endif
-> diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
-> index 8a3d259..661e6ca 100644
-> --- a/fs/btrfs/volumes.c
-> +++ b/fs/btrfs/volumes.c
-> @@ -4871,8 +4871,7 @@ static void btrfs_dev_stat_print_on_load(struct btrfs_device *dev)
->  }
->  
->  int btrfs_get_dev_stats(struct btrfs_root *root,
-> -			struct btrfs_ioctl_get_dev_stats *stats,
-> -			int reset_after_read)
-> +			struct btrfs_ioctl_get_dev_stats *stats)
->  {
->  	struct btrfs_device *dev;
->  	struct btrfs_fs_devices *fs_devices = root->fs_info->fs_devices;
-> @@ -4890,7 +4889,7 @@ int btrfs_get_dev_stats(struct btrfs_root *root,
->  		printk(KERN_WARNING
->  		       "btrfs: get dev_stats failed, not yet valid\n");
->  		return -ENODEV;
-> -	} else if (reset_after_read) {
-> +	} else if (stats->flags & BTRFS_DEV_STATS_RESET) {
->  		for (i = 0; i < BTRFS_DEV_STAT_VALUES_MAX; i++) {
->  			if (stats->nr_items > i)
->  				stats->values[i] =
-> diff --git a/fs/btrfs/volumes.h b/fs/btrfs/volumes.h
-> index 74366f2..e673589 100644
-> --- a/fs/btrfs/volumes.h
-> +++ b/fs/btrfs/volumes.h
-> @@ -292,8 +292,7 @@ struct btrfs_device *btrfs_find_device_for_logical(struct btrfs_root *root,
->  void btrfs_dev_stat_print_on_error(struct btrfs_device *device);
->  void btrfs_dev_stat_inc_and_print(struct btrfs_device *dev, int index);
->  int btrfs_get_dev_stats(struct btrfs_root *root,
-> -			struct btrfs_ioctl_get_dev_stats *stats,
-> -			int reset_after_read);
-> +			struct btrfs_ioctl_get_dev_stats *stats);
->  int btrfs_init_dev_stats(struct btrfs_fs_info *fs_info);
->  int btrfs_run_dev_stats(struct btrfs_trans_handle *trans,
->  			struct btrfs_fs_info *fs_info);
-> 
+> I'll send a patch for it.
 
-I still do not understand your reason and the benefit of your change.
-The reset command and the read command are two completely different
-operations. Therefore I assigned two different ioctl commands. Then you
-can use strace to see which command is sent, and you can also grep the
-sources without additional effort.
+Thanks for looking into it. 
+
+Since my BTRFS is up and running again I can´t test a patch easily however.
+I´d have to unplug the disk or crash my laptop several times to trigger it
+again I bet.
+
+-- 
+Martin 'Helios' Steigerwald - http://www.Lichtvoll.de
+GPG: 03B0 0D6C 0040 0710 4AFA  B82F 991B EAAC A599 84C7

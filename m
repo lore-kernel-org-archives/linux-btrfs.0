@@ -1,31 +1,44 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-gh0-f174.google.com ([209.85.160.174]:55120 "EHLO
-	mail-gh0-f174.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1753605Ab2F0M2W (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 27 Jun 2012 08:28:22 -0400
-Received: by ghrr11 with SMTP id r11so821563ghr.19
-        for <linux-btrfs@vger.kernel.org>; Wed, 27 Jun 2012 05:28:22 -0700 (PDT)
+Received: from mx2.fusionio.com ([66.114.96.31]:53353 "EHLO mx2.fusionio.com"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1752872Ab2F0Na3 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Wed, 27 Jun 2012 09:30:29 -0400
+Date: Wed, 27 Jun 2012 09:30:26 -0400
+From: Josef Bacik <jbacik@fusionio.com>
+To: Stefan Priebe - Profihost AG <s.priebe@profihost.ag>
+CC: Josef Bacik <JBacik@fusionio.com>,
+        "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
+Subject: Re: btrfs deadlock in 3.5-rc3
+Message-ID: <20120627133025.GA1673@localhost.localdomain>
+References: <4FE8ADBA.20505@profihost.ag>
+ <4FE8BCF5.4080605@profihost.ag>
+ <20120625201151.GG7404@localhost.localdomain>
+ <4FE8C80F.2040009@profihost.ag>
+ <20120625202310.GH7404@localhost.localdomain>
+ <4FE9E7BC.1020104@profihost.ag>
+ <20120626201418.GA24953@localhost.localdomain>
+ <4FEA1945.7050906@profihost.ag>
+ <20120626204759.GC24953@localhost.localdomain>
+ <4FEA9E63.50000@profihost.ag>
 MIME-Version: 1.0
-In-Reply-To: <4FEAF872.10507@grimmer.com>
-References: <4FEAF872.10507@grimmer.com>
-Date: Wed, 27 Jun 2012 06:20:14 -0600
-Message-ID: <CAE5mzvhc-6S6AdY5uDxVqEegiTY_Sa3uFS-=1Ckit2T7rY4GOg@mail.gmail.com>
-Subject: Re: Error compiling btrfs-tools from git (undefined reference to `pthread_create')
-From: cwillu <cwillu@cwillu.com>
-To: Lenz Grimmer <lenz@grimmer.com>
-Cc: Btrfs mailing list <linux-btrfs@vger.kernel.org>
-Content-Type: text/plain; charset=UTF-8
+Content-Type: text/plain; charset="us-ascii"
+In-Reply-To: <4FEA9E63.50000@profihost.ag>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Wed, Jun 27, 2012 at 6:11 AM, Lenz Grimmer <lenz@grimmer.com> wrote:
-> On Ubuntu 11.10 "Oneiric" with gcc 4.6.1, compiling the btrfs tools from git
-> fails for me with the following error:
+On Tue, Jun 26, 2012 at 11:47:15PM -0600, Stefan Priebe - Profihost AG wrote:
+> Yes i will do so. Right now i was trying to compare discard with non 
+> discard with this simple command:
+> for i in `seq 0 1 1000`; do dd if=/dev/zero of=t_$i bs=4M count=1; rm 
+> t_$i; done;
+> 
+> But i hit a new bug:
+> 
 
-Which git repo?
-git://git.kernel.org/pub/scm/linux/kernel/git/mason/btrfs-progs.git
-builds on ubuntu just fine (just checked on a fresh checkout), and
-likewise the integration repo (but note that the integration repo's
-master branch is not useful to build; you need to check out one of the
-actual integration branches as described on the wiki).
+Can you gdb btrfs.ko and do 
+
+list *(btrfs_finish_ordered_io+0x23)
+
+and what are your mount options?  Thanks,
+
+Josef

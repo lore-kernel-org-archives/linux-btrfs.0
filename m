@@ -1,91 +1,75 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-wi0-f172.google.com ([209.85.212.172]:38838 "EHLO
-	mail-wi0-f172.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1754433Ab2F0MGE (ORCPT
+Received: from mail-we0-f174.google.com ([74.125.82.174]:62579 "EHLO
+	mail-we0-f174.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1754433Ab2F0MLh (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 27 Jun 2012 08:06:04 -0400
-Received: by wibhm11 with SMTP id hm11so5236524wib.1
-        for <linux-btrfs@vger.kernel.org>; Wed, 27 Jun 2012 05:06:02 -0700 (PDT)
-Message-ID: <4FEAF723.1070601@grimmer.com>
-Date: Wed, 27 Jun 2012 14:05:55 +0200
+	Wed, 27 Jun 2012 08:11:37 -0400
+Received: by werb10 with SMTP id b10so215182wer.19
+        for <linux-btrfs@vger.kernel.org>; Wed, 27 Jun 2012 05:11:36 -0700 (PDT)
+Message-ID: <4FEAF872.10507@grimmer.com>
+Date: Wed, 27 Jun 2012 14:11:30 +0200
 From: Lenz Grimmer <lenz@grimmer.com>
 MIME-Version: 1.0
 To: Btrfs mailing list <linux-btrfs@vger.kernel.org>
-Subject: btrfs  filesystem defragment exits with non-zero return code (20)
- upon success
+Subject: Error compiling btrfs-tools from git (undefined reference to `pthread_create')
 Content-Type: multipart/signed; micalg=pgp-sha1;
  protocol="application/pgp-signature";
- boundary="------------enig2A9378DD2F458D58574119BE"
+ boundary="------------enigAAC75723E1BE2E7402694CD3"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
 This is an OpenPGP/MIME signed message (RFC 2440 and 3156)
---------------enig2A9378DD2F458D58574119BE
+--------------enigAAC75723E1BE2E7402694CD3
 Content-Type: text/plain; charset=UTF-8
 Content-Transfer-Encoding: quoted-printable
 
-Hi,
+On Ubuntu 11.10 "Oneiric" with gcc 4.6.1, compiling the btrfs tools from =
+git
+fails for me with the following error:
 
-running "btrfs filesystem defrag" somehow always returns a non-zero exit =
-code,
-even when it succeeds:
+[lenz@metis btrfs-progs]% make
+bash version.sh
+gcc -lpthread -g -Werror -Os -o btrfs btrfs.o btrfs_cmds.o scrub.o \
+		ctree.o disk-io.o radix-tree.o extent-tree.o print-tree.o root-tree.o
+dir-item.o file-item.o inode-item.o inode-map.o crc32c.o rbtree.o
+extent-cache.o extent_io.o volumes.o utils.o btrfs-list.o btrfslabel.o  -=
+luuid
+scrub.o: In function `scrub_start':
+/space/tmp/btrfs-progs/scrub.c:1342: undefined reference to `pthread_crea=
+te'
+/space/tmp/btrfs-progs/scrub.c:1360: undefined reference to `pthread_crea=
+te'
+/space/tmp/btrfs-progs/scrub.c:1374: undefined reference to `pthread_join=
+'
+/space/tmp/btrfs-progs/scrub.c:1430: undefined reference to `pthread_canc=
+el'
+/space/tmp/btrfs-progs/scrub.c:1432: undefined reference to `pthread_join=
+'
+collect2: ld returned 1 exit status
+make: *** [btrfs] Error 1
 
-[lenz@metis btrfs-progs]% sudo ./btrfs filesystem defrag -v /mnt
-/mnt
-Btrfs v0.19-102-g2482539-dirty
-[lenz@metis btrfs-progs]% echo $?
-20
-[lenz@metis btrfs-progs]% sudo ./btrfs filesystem defrag -v /dev/loop0
-/dev/loop0
-ERROR: defrag failed on /dev/loop0 - Invalid argument
-Btrfs v0.19-102-g2482539-dirty
-total 1 failures
-[lenz@metis btrfs-progs]% echo $?
-1
-[lenz@metis btrfs-progs]% sudo ./btrfs filesystem defrag -v /dev/loop0 /d=
-ev/loop1
-/dev/loop0
-ERROR: defrag failed on /dev/loop0 - Invalid argument
-/dev/loop1
-ERROR: defrag failed on /dev/loop1 - Invalid argument
-Btrfs v0.19-102-g2482539-dirty
-total 2 failures
-[lenz@metis btrfs-progs]% echo $?
-1
-[lenz@metis btrfs-progs]% sudo ./btrfs filesystem defrag -v /tmp
-/tmp
-ERROR: defrag failed on /tmp - Inappropriate ioctl for device
-Btrfs v0.19-102-g2482539-dirty
-total 1 failures
-[lenz@metis btrfs-progs]% echo $?
-1
+The following change fixed this for me, not sure if it's the appropriate =
+approach:
 
-I'm no C programmer, but looking at the end of the do_defrag function in
-btrfs_cmds.c, I wonder if the last "return errors + 20" is correct? In ca=
-se
-that errors is greater than zero, the function would be left via the exit=
-(1)
-anyway, wouldn't it? In that case, wouldn't "return 0" at the end be more=
+diff --git a/Makefile b/Makefile
+index edee1a0..9e3a06f 100644
+--- a/Makefile
++++ b/Makefile
+@@ -1,6 +1,6 @@
+ CC =3D gcc
+ AM_CFLAGS =3D -Wall -D_FILE_OFFSET_BITS=3D64 -D_FORTIFY_SOURCE=3D2
+-CFLAGS =3D -g -Werror -Os
++CFLAGS =3D -g -Werror -Os -pthread
+ objects =3D ctree.o disk-io.o radix-tree.o extent-tree.o print-tree.o \
+          root-tree.o dir-item.o file-item.o inode-item.o \
+          inode-map.o crc32c.o rbtree.o extent-cache.o extent_io.o \
 
-appropriate?
-
-[SNIP]
-  if (errors) {
-    fprintf(stderr, "total %d failures\n", errors);
-    exit(1);
-  }
-
-  free(av);
-  return errors + 20;
-[SNIP]
-
-Thanks!
 
 --=20
   Lenz Grimmer <lenz@grimmer.com> - http://www.lenzg.net/
 
 
---------------enig2A9378DD2F458D58574119BE
+--------------enigAAC75723E1BE2E7402694CD3
 Content-Type: application/pgp-signature; name="signature.asc"
 Content-Description: OpenPGP digital signature
 Content-Disposition: attachment; filename="signature.asc"
@@ -93,9 +77,9 @@ Content-Disposition: attachment; filename="signature.asc"
 -----BEGIN PGP SIGNATURE-----
 Version: GnuPG v1.4.11 (GNU/Linux)
 
-iEYEARECAAYFAk/q9yQACgkQSVDhKrJykfJKOQCdEd+Fu2Aen1Sgo6wYLN+5pt+d
-obQAn2ouXW1xLGotVzoefirqxxa+1Hu9
-=j3lQ
+iEYEARECAAYFAk/q+HIACgkQSVDhKrJykfK9mQCeOS1B094gk26D+PbQfZlVrqa0
+2f4An1KiQTGFhJLCfR6RaOVf4mwmx84x
+=yfBv
 -----END PGP SIGNATURE-----
 
---------------enig2A9378DD2F458D58574119BE--
+--------------enigAAC75723E1BE2E7402694CD3--

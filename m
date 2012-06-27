@@ -1,50 +1,52 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mort.rzone.de ([81.169.144.234]:12977 "EHLO mort.rzone.de"
+Received: from ysabell.rzone.de ([81.169.144.237]:24270 "EHLO ysabell.rzone.de"
 	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1757181Ab2F0RZB (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	id S1756291Ab2F0RZB (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
 	Wed, 27 Jun 2012 13:25:01 -0400
 From: Jan Schmidt <list.btrfs@jan-o-sch.net>
 To: chris.mason@fusionio.com, linux-btrfs@vger.kernel.org
-Subject: [PATCH 6/7] Btrfs: fix tree mod log rewind of ADD operations
-Date: Wed, 27 Jun 2012 19:24:58 +0200
-Message-Id: <1340817899-16343-7-git-send-email-list.btrfs@jan-o-sch.net>
-In-Reply-To: <1340817899-16343-1-git-send-email-list.btrfs@jan-o-sch.net>
-References: <1340817899-16343-1-git-send-email-list.btrfs@jan-o-sch.net>
+Subject: [PATCH 0/7] Btrfs: fixes for 3.5-rc5
+Date: Wed, 27 Jun 2012 19:24:52 +0200
+Message-Id: <1340817899-16343-1-git-send-email-list.btrfs@jan-o-sch.net>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-When a MOD_LOG_KEY_ADD operation is rewinded, we remove the key from the
-tree block. If its not the last key, removal involves a move operation.
-This move operation was explicitly done before this commit.
+Hi Chris,
 
-However, at insertion time, there's a move operation before the actual
-addition to make room for the new key, which is recorded in the tree mod
-log as well. This means, we must drop the move operation when rewinding the
-add operation, because the next operation we'll be rewinding will be the
-corresponding MOD_LOG_MOVE_KEYS operation.
+I expect this to be my last fixup set for the 3.5 series. All seven
+fixes are pretty small, five of them for the tree mod log (3-7), one
+generic for backref walking (2) and one fixing a starvation issue when
+waiting for more delayed refs (1).
 
-Signed-off-by: Jan Schmidt <list.btrfs@jan-o-sch.net>
----
- fs/btrfs/ctree.c |    6 +-----
- 1 files changed, 1 insertions(+), 5 deletions(-)
+You can pull my patches based on your current for-linus from
 
-diff --git a/fs/btrfs/ctree.c b/fs/btrfs/ctree.c
-index e005d9b..b98f860 100644
---- a/fs/btrfs/ctree.c
-+++ b/fs/btrfs/ctree.c
-@@ -1094,11 +1094,7 @@ __tree_mod_log_rewind(struct extent_buffer *eb, u64 time_seq,
- 						      tm->generation);
- 			break;
- 		case MOD_LOG_KEY_ADD:
--			if (tm->slot != n - 1) {
--				o_dst = btrfs_node_key_ptr_offset(tm->slot);
--				o_src = btrfs_node_key_ptr_offset(tm->slot + 1);
--				memmove_extent_buffer(eb, o_dst, o_src, p_size);
--			}
-+			/* if a move operation is needed it's in the log */
- 			n--;
- 			break;
- 		case MOD_LOG_MOVE_KEYS:
+	git://git.jan-o-sch.net/btrfs-unstable for-chris
+
+I've run through xfstests as usual. All my backref walking tests are
+succeeding now.
+
+Even the qgroups patch set looks pretty good on top of these. If things
+go well, I'll publish that patch series as soon as the current rc is
+out, so there'll be plenty of time before 3.6.
+
+Thanks,
+-Jan
+
+Jan Schmidt (7):
+  Btrfs: avoid waiting for delayed refs when we must not
+  Btrfs: support root level changes in __resolve_indirect_ref
+  Btrfs: fix tree mod log for root replacements at leaf level
+  Btrfs: always put insert_ptr modifications into the tree mod log
+  Btrfs: leave critical region in btrfs_find_all_roots as soon as
+    possible
+  Btrfs: fix tree mod log rewind of ADD operations
+  Btrfs: resolve tree mod log locking issue in btrfs_next_leaf
+
+ fs/btrfs/backref.c     |   15 +++++++----
+ fs/btrfs/ctree.c       |   60 ++++++++++++++++++++++++++++--------------------
+ fs/btrfs/extent-tree.c |   11 ++++----
+ 3 files changed, 50 insertions(+), 36 deletions(-)
+
 -- 
 1.7.3.4
 

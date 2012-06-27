@@ -1,130 +1,155 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from magic.merlins.org ([209.81.13.136]:42735 "EHLO
-	mail1.merlins.org" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1753821Ab2F0BiS (ORCPT
+Received: from mail-vb0-f46.google.com ([209.85.212.46]:64668 "EHLO
+	mail-vb0-f46.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1753386Ab2F0Dqp (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 26 Jun 2012 21:38:18 -0400
-Received: from merlin by mail1.merlins.org with local (Exim 4.77 #2)
-	id 1SjhD0-00012K-5C
-	for <linux-btrfs@vger.kernel.org>; Tue, 26 Jun 2012 18:38:18 -0700
-Date: Tue, 26 Jun 2012 18:38:18 -0700
-From: Marc MERLIN <marc@merlins.org>
-To: linux-btrfs@vger.kernel.org
-Subject: Re: Long btrfs hangs during suspend to RAM / BTRFS warning (device dm-0): Aborting unused transaction
-Message-ID: <20120627013818.GA3556@merlins.org>
-References: <20120626193637.GA27856@merlins.org>
+	Tue, 26 Jun 2012 23:46:45 -0400
+Received: by vbbff1 with SMTP id ff1so422388vbb.19
+        for <linux-btrfs@vger.kernel.org>; Tue, 26 Jun 2012 20:46:44 -0700 (PDT)
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <20120626193637.GA27856@merlins.org>
+Date: Wed, 27 Jun 2012 13:16:44 +0930
+Message-ID: <CACCfv7qEa-hVmNEB6DMy9khGfjcyPuLk27M1ue4VMDwgv9++FQ@mail.gmail.com>
+Subject: WARNING: at fs/btrfs/free-space-cache.c:1887 after hard shutdown.
+From: Jordan Windsor <jordanw2@gmail.com>
+To: linux-btrfs@vger.kernel.org
+Content-Type: text/plain; charset=ISO-8859-1
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Tue, Jun 26, 2012 at 12:36:37PM -0700, Marc MERLIN wrote:
-> I was fine with btrfs until 3.2.16, but when going to 3.4 or 3.4.4, I'm
-> having my system randomly not wanting to suspend to RAM.
-> 
-> My suspend light started flashing but the system wasn't suspending.
-> I was able to unlock X, run top, saw that btrfs-delalloc-??? was taking
-> 98% CPU, and any command that touched disk hung 
-> (so I could log in, but would not get a shell).
-> 
-> I did the sysrq commands, which took a long time to work (they stacked
-> up with nothing happening and maybe 10mn later, the system unhung itself
-> and they ran, maybe too late, not sure).
-> 
-> Interestingly the system did go to sleep and resumed ok after that, it
-> just took 20mn to get there.
-> 
-> It's all pasted below.
-> 
-> gandalfthegreat:~# btrfs fi show
-> Label: 'btrfs_pool1'  uuid: 873d526c-e911-4234-af1b-239889cd143d
-> 	Total devices 1 FS bytes used 214.44GB
-> 	devid    1 size 231.02GB used 231.02GB path /dev/dm-0
-> 
-> Btrfs Btrfs v0.19
-> gandalfthegreat:~# 
+Hello,
+My computer locked up and I had to press the reset button.
+Ever since then I can't mount the btrfs filesystem, here's the output:
 
-Now, I'm also seeing these below and I have this again (86% CPU):
- 6076 root      20   0     0    0    0 R   86  0.0  29:40.11 btrfs-delalloc-    
+[   37.645583] ------------[ cut here ]------------
+[   37.645598] WARNING: at fs/btrfs/free-space-cache.c:1887
+btrfs_remove_free_space+0x329/0x350 [btrfs]()
+[   37.645600] Modules linked in: btrfs zlib_deflate libcrc32c ext4
+jbd2 mbcache crc16 snd_hda_codec_realtek rc_dib0700_rc5 mt2266
+dvb_usb_dib0700 dib3000mc dib8000 dib0070 dib7000m dib7000p
+dibx000_common dib0090 dvb_usb dvb_core rc_core microcode joydev
+usb_storage uas coretemp acpi_cpufreq mperf ppdev nvidia(PO) 8139too
+8139cp mii iTCO_wdt i2c_i801 i2c_core iTCO_vendor_support serio_raw
+i7core_edac edac_core evdev pcspkr processor parport_pc parport
+snd_hda_intel snd_hda_codec snd_hwdep snd_pcm snd_page_alloc snd_timer
+snd soundcore button reiserfs aes_x86_64 cryptd aes_generic xts
+gf128mul dm_crypt dm_mod usbhid hid sr_mod sd_mod cdrom pata_jmicron
+pata_acpi uhci_hcd ata_piix ata_generic ahci libahci libata ehci_hcd
+crc32c_intel usbcore scsi_mod usb_common floppy
+[   37.645651] Pid: 304, comm: mount Tainted: P           O 3.4.4-2-ck #1
+[   37.645653] Call Trace:
+[   37.645659]  [<ffffffff810515cf>] warn_slowpath_common+0x7f/0xc0
+[   37.645662]  [<ffffffff8105162a>] warn_slowpath_null+0x1a/0x20
+[   37.645670]  [<ffffffffa0f4a159>] btrfs_remove_free_space+0x329/0x350 [btrfs]
+[   37.645674]  [<ffffffff81073bb0>] ? abort_exclusive_wait+0xb0/0xb0
+[   37.645682]  [<ffffffffa0efaa6f>]
+btrfs_alloc_logged_file_extent+0x1bf/0x1e0 [btrfs]
+[   37.645688]  [<ffffffffa0ee7bfa>] ? btrfs_free_path+0x2a/0x40 [btrfs]
+[   37.645697]  [<ffffffffa0f44c5e>] replay_one_extent+0x5be/0x620 [btrfs]
+[   37.645701]  [<ffffffff81179f55>] ? iput+0x105/0x210
+[   37.645710]  [<ffffffffa0f4549b>] replay_one_buffer+0x27b/0x350 [btrfs]
+[   37.645719]  [<ffffffffa0f302bd>] ? alloc_extent_buffer+0x9d/0x5c0 [btrfs]
+[   37.645728]  [<ffffffffa0f42d92>] walk_down_log_tree+0x202/0x3c0 [btrfs]
+[   37.645736]  [<ffffffffa0f42fed>] walk_log_tree+0x9d/0x1f0 [btrfs]
+[   37.645745]  [<ffffffffa0f46f4b>] btrfs_recover_log_trees+0x21b/0x3a0 [btrfs]
+[   37.645754]  [<ffffffffa0f45220>] ? replay_one_dir_item+0xe0/0xe0 [btrfs]
+[   37.645763]  [<ffffffffa0f0883d>] open_ctree+0x14ed/0x1ac0 [btrfs]
+[   37.645767]  [<ffffffff8121e101>] ? disk_name+0x61/0xc0
+[   37.645773]  [<ffffffffa0ee5836>] btrfs_mount+0x5b6/0x6a0 [btrfs]
+[   37.645776]  [<ffffffff8113f400>] ? alloc_pages_current+0xb0/0x120
+[   37.645780]  [<ffffffff81163533>] mount_fs+0x43/0x1b0
+[   37.645783]  [<ffffffff8117d740>] vfs_kern_mount+0x70/0x100
+[   37.645786]  [<ffffffff8117dc64>] do_kern_mount+0x54/0x110
+[   37.645788]  [<ffffffff8117f55a>] do_mount+0x26a/0x850
+[   37.645791]  [<ffffffff81101e1e>] ? __get_free_pages+0xe/0x50
+[   37.645794]  [<ffffffff8117f15a>] ? copy_mount_options+0x3a/0x180
+[   37.645797]  [<ffffffff8117fc7d>] sys_mount+0x8d/0xe0
+[   37.645801]  [<ffffffff814626e9>] system_call_fastpath+0x16/0x1b
+[   37.645802] ---[ end trace 98bf42a1cdef3f88 ]---
+[   37.645812] ------------[ cut here ]------------
+[   37.646716] kernel BUG at fs/btrfs/extent-tree.c:6107!
+[   37.647722] invalid opcode: 0000 [#1] PREEMPT SMP
+[   37.648763] CPU 1
+[   37.649156] Modules linked in: btrfs zlib_deflate libcrc32c ext4
+jbd2 mbcache crc16 snd_hda_codec_realtek rc_dib0700_rc5 mt2266
+dvb_usb_dib0700 dib3000mc dib8000 dib0070 dib7000m dib7000p
+dibx000_common dib0090 dvb_usb dvb_core rc_core microcode joydev
+usb_storage uas coretemp acpi_cpufreq mperf ppdev nvidia(PO) 8139too
+8139cp mii iTCO_wdt i2c_i801 i2c_core iTCO_vendor_support serio_raw
+i7core_edac edac_core evdev pcspkr processor parport_pc parport
+snd_hda_intel snd_hda_codec snd_hwdep snd_pcm snd_page_alloc snd_timer
+snd soundcore button reiserfs aes_x86_64 cryptd aes_generic xts
+gf128mul dm_crypt dm_mod usbhid hid sr_mod sd_mod cdrom pata_jmicron
+pata_acpi uhci_hcd ata_piix ata_generic ahci libahci libata ehci_hcd
+crc32c_intel usbcore scsi_mod usb_common floppy
+[   37.665300]
+[   37.665591] Pid: 304, comm: mount Tainted: P        W  O 3.4.4-2-ck #1
+[   37.666973] RIP: 0010:[<ffffffffa0efaa77>]  [<ffffffffa0efaa77>]
+btrfs_alloc_logged_file_extent+0x1c7/0x1e0 [btrfs]
+[   37.669058] RSP: 0018:ffff880118649748  EFLAGS: 00010282
+[   37.670098] RAX: 00000000ffffffea RBX: ffff88010ff1a000 RCX: 000000000000000e
+[   37.671495] RDX: 0000000000000000 RSI: 0000000000000046 RDI: ffff88010fef6840
+[   37.672892] RBP: ffff8801186497c8 R08: 0000000000000000 R09: 0000000000000000
+[   37.674289] R10: 0000000000000000 R11: 0000000000000000 R12: ffff880118649883
+[   37.675687] R13: 0000000000000000 R14: 00000019cf4be000 R15: ffff88010fc95800
+[   37.731396] FS:  00007fb10edfb740(0000) GS:ffff88011fc40000(0000)
+knlGS:0000000000000000
+[   37.788242] CS:  0010 DS: 0000 ES: 0000 CR0: 000000008005003b
+[   37.788243] CR2: 00007f5b18c9c15c CR3: 0000000110a7d000 CR4: 00000000000007e0
+[   37.788245] DR0: 0000000000000000 DR1: 0000000000000000 DR2: 0000000000000000
+[   37.788247] DR3: 0000000000000000 DR6: 00000000ffff0ff0 DR7: 0000000000000400
+[   37.788249] Process mount (pid: 304, threadinfo ffff880118648000,
+task ffff880118a8d620)
+[   37.788250] Stack:
+[   37.788251]  0000000000000001 0000000000015000 ffff880118649778
+ffffffffa0ee7bfa
+[   37.788253]  000000002ee71000 000000000013ffbd 0000000000000005
+ffff8801149dc000
+[   37.788256]  0000000000015000 00ff880114ac62f0 a800000019cf4be0
+ffff88010fc95800
+[   37.788258] Call Trace:
+[   37.788264]  [<ffffffffa0ee7bfa>] ? btrfs_free_path+0x2a/0x40 [btrfs]
+[   37.788272]  [<ffffffffa0f44c5e>] replay_one_extent+0x5be/0x620 [btrfs]
+[   37.788275]  [<ffffffff81179f55>] ? iput+0x105/0x210
+[   37.788283]  [<ffffffffa0f4549b>] replay_one_buffer+0x27b/0x350 [btrfs]
+[   37.788292]  [<ffffffffa0f302bd>] ? alloc_extent_buffer+0x9d/0x5c0 [btrfs]
+[   37.788300]  [<ffffffffa0f42d92>] walk_down_log_tree+0x202/0x3c0 [btrfs]
+[   37.788309]  [<ffffffffa0f42fed>] walk_log_tree+0x9d/0x1f0 [btrfs]
+[   37.788317]  [<ffffffffa0f46f4b>] btrfs_recover_log_trees+0x21b/0x3a0 [btrfs]
+[   37.788326]  [<ffffffffa0f45220>] ? replay_one_dir_item+0xe0/0xe0 [btrfs]
+[   37.788334]  [<ffffffffa0f0883d>] open_ctree+0x14ed/0x1ac0 [btrfs]
+[   37.788338]  [<ffffffff8121e101>] ? disk_name+0x61/0xc0
+[   37.788343]  [<ffffffffa0ee5836>] btrfs_mount+0x5b6/0x6a0 [btrfs]
+[   37.788346]  [<ffffffff8113f400>] ? alloc_pages_current+0xb0/0x120
+[   37.788348]  [<ffffffff81163533>] mount_fs+0x43/0x1b0
+[   37.788351]  [<ffffffff8117d740>] vfs_kern_mount+0x70/0x100
+[   37.788353]  [<ffffffff8117dc64>] do_kern_mount+0x54/0x110
+[   37.788355]  [<ffffffff8117f55a>] do_mount+0x26a/0x850
+[   37.788358]  [<ffffffff81101e1e>] ? __get_free_pages+0xe/0x50
+[   37.788360]  [<ffffffff8117f15a>] ? copy_mount_options+0x3a/0x180
+[   37.788362]  [<ffffffff8117fc7d>] sys_mount+0x8d/0xe0
+[   37.788365]  [<ffffffff814626e9>] system_call_fastpath+0x16/0x1b
+[   37.788366] Code: 0b 0f 1f 00 48 8d bb 80 00 00 00 e8 24 63 ff ff
+85 c0 74 1d 48 8b 55 c0 4c 89 f6 48 89 df e8 c1 f3 04 00 85 c0 0f 84
+29 ff ff ff <0f> 0b 0f 0b 0f 0b 0f 0b 0f 0b 66 66 66 66 66 66 2e 0f 1f
+84 00
+[   37.788382] RIP  [<ffffffffa0efaa77>]
+btrfs_alloc_logged_file_extent+0x1c7/0x1e0 [btrfs]
+[   37.788389]  RSP <ffff880118649748>
+[   37.788468] ---[ end trace 98bf42a1cdef3f89 ]---
+[   38.955216] Adding 6143996k swap on /dev/sda4.  Priority:-1
+extents:1 across:6143996k
+[   41.323339] 8139too 0000:03:03.0: eth0: link up, 100Mbps,
+full-duplex, lpa 0x45E1
+[   51.993170] eth0: no IPv6 routers present
+[   60.972748] NVRM: Your system is not currently configured to drive
+a VGA console
+[   60.972755] NVRM: on the primary VGA device. The NVIDIA Linux graphics driver
+[   60.972760] NVRM: requires the use of a text-mode VGA console. Use
+of other console
+[   60.972764] NVRM: drivers including, but not limited to, vesafb,
+may result in
+[   60.972767] NVRM: corruption and stability problems, and is not supported.
+[   63.862595] fuse init (API version 7.18)
+[   69.223888] EXT4-fs (sda1): re-mounted. Opts: commit=0
 
-How bad is it, doctor?  I think I'll be going back to 3.2.16 for now though.
-
-[100415.369301] BTRFS warning (device dm-0): Aborting unused transaction.
-[100415.739337] BTRFS warning (device dm-0): Aborting unused transaction.
-[100416.093839] BTRFS warning (device dm-0): Aborting unused transaction.
-[100416.433245] BTRFS warning (device dm-0): Aborting unused transaction.
-[100709.352445] usb 1-5: USB disconnect, device number 8
-[100710.197602] thinkpad_acpi: EC reports that Thermal Table has changed
-[100710.199954] ACPI: \_SB_.GDCK - undocking
-[100711.358679] wlan0: deauthenticating from 00:24:6c:67:03:d1 by local choice (reason=3)
-[100713.044214] e1000e 0000:00:19.0: irq 46 for MSI/MSI-X
-[101447.801190] btrfs no csum found for inode 3910588 start 5144576
-[101447.802277] btrfs csum failed ino 3910588 off 5144576 csum 2096800889 private 0
-[101447.957161] btrfs no csum found for inode 3910588 start 5996544
-[101447.957990] btrfs csum failed ino 3910588 off 5996544 csum 2096800889 private 0
-[101447.960459] btrfs no csum found for inode 3910588 start 6062080
-[101447.961351] btrfs csum failed ino 3910588 off 6062080 csum 2096800889 private 0
-[101447.962459] btrfs no csum found for inode 3910588 start 6225920
-[101447.963543] btrfs csum failed ino 3910588 off 6225920 csum 2096800889 private 0
-[101447.964369] btrfs no csum found for inode 3910588 start 6291456
-[101447.965045] btrfs csum failed ino 3910588 off 6291456 csum 2096800889 private 0
-[101447.966406] btrfs no csum found for inode 3910588 start 6356992
-[101447.967392] btrfs csum failed ino 3910588 off 6356992 csum 2123070294 private 0
-[101448.088912] btrfs no csum found for inode 3910588 start 6553600
-[101448.088971] btrfs no csum found for inode 3910588 start 6586368
-[101448.090058] btrfs csum failed ino 3910588 off 6586368 csum 2096800889 private 0
-[101448.090305] btrfs csum failed ino 3910588 off 6553600 csum 4253301504 private 0
-[101448.093231] btrfs no csum found for inode 3910588 start 6717440
-[101448.094269] btrfs csum failed ino 3910588 off 6717440 csum 2096800889 private 0
-[101448.096104] btrfs no csum found for inode 3910588 start 6848512
-[101448.097002] btrfs csum failed ino 3910588 off 6848512 csum 3282939717 private 0
-[101448.098249] btrfs no csum found for inode 3910588 start 6946816
-[101448.101561] btrfs no csum found for inode 3910588 start 7045120
-[101448.106352] btrfs no csum found for inode 3910588 start 7176192
-[101448.108224] btrfs no csum found for inode 3910588 start 7241728
-[101448.111133] btrfs no csum found for inode 3910588 start 7307264
-[101448.127081] btrfs no csum found for inode 3910588 start 7569408
-[101448.144351] btrfs no csum found for inode 3910588 start 7864320
-[101448.155857] btrfs no csum found for inode 3910588 start 8060928
-[101448.165868] btrfs no csum found for inode 3910588 start 8257536
-[101448.175275] btrfs no csum found for inode 3910588 start 8454144
-[101448.176087] btrfs no csum found for inode 3910588 start 8552448
-[101448.180927] btrfs no csum found for inode 3910588 start 8847360
-[101448.183489] btrfs no csum found for inode 3910588 start 8978432
-[101448.192909] btrfs no csum found for inode 3910588 start 9371648
-[101448.198959] btrfs no csum found for inode 3910588 start 9568256
-[101448.413716] btrfs no csum found for inode 3910588 start 5439488
-[101448.413996] btrfs no csum found for inode 3910588 start 5537792
-[101448.414379] btrfs no csum found for inode 3910588 start 5603328
-[101448.416386] btrfs no csum found for inode 3910588 start 5734400
-[101448.424108] btrfs no csum found for inode 3910588 start 5799936
-[101448.721649] btrfs no csum found for inode 3910588 start 9699328
-[101448.737377] btrfs no csum found for inode 3910588 start 9863168
-[101448.743929] btrfs no csum found for inode 3910588 start 10027008
-[101448.753186] btrfs no csum found for inode 3910588 start 10158080
-[101448.762406] btrfs no csum found for inode 3910588 start 10256384
-[101448.765143] btrfs no csum found for inode 3910588 start 10354688
-[102230.473794] BTRFS warning (device dm-0): Aborting unused transaction.
-[102231.154304] BTRFS warning (device dm-0): Aborting unused transaction.
-[102231.816380] BTRFS warning (device dm-0): Aborting unused transaction.
-[102231.845170] btrfs no csum found for inode 3910562 start 0
-[102231.855415] btrfs_readpage_end_io_hook: 26 callbacks suppressed
-[102231.855418] btrfs csum failed ino 3910562 off 0 csum 3145117582 private 0
-[102231.999555] btrfs no csum found for inode 3910588 start 294912
-[102232.009479] btrfs csum failed ino 3910588 off 294912 csum 697692408 private 0
-[102232.142602] btrfs no csum found for inode 3910588 start 360448
-[102232.142661] btrfs no csum found for inode 3910588 start 393216
-[102232.157527] btrfs csum failed ino 3910588 off 360448 csum 66868660 private 0
-[102232.158415] btrfs csum failed ino 3910588 off 393216 csum 230387419 private 0
-[102232.968939] BTRFS warning (device dm-0): Aborting unused transaction.
-[102234.107914] BTRFS warning (device dm-0): Aborting unused transaction.
-[102235.218139] BTRFS warning (device dm-0): Aborting unused transaction.
-
-Thanks,
-Marc
--- 
-"A mouse is a device used to point at the xterm you want to type in" - A.S.R.
-Microsoft is to operating systems ....
-                                      .... what McDonalds is to gourmet cooking
-Home page: http://marc.merlins.org/  
+Thanks.

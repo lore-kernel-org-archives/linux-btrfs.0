@@ -1,33 +1,50 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.fusionio.com ([66.114.96.31]:56740 "EHLO mx2.fusionio.com"
+Received: from mort.rzone.de ([81.169.144.234]:12977 "EHLO mort.rzone.de"
 	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1756086Ab2F0Qpj (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 27 Jun 2012 12:45:39 -0400
-Date: Wed, 27 Jun 2012 12:45:36 -0400
-From: Josef Bacik <jbacik@fusionio.com>
-To: Chester <somethingsome2000@gmail.com>
-CC: Josef Bacik <JBacik@fusionio.com>,
-        linux-btrfs <linux-btrfs@vger.kernel.org>
-Subject: Re: btrfs volume suddenly becomes read-only
-Message-ID: <20120627164535.GA2940@localhost.localdomain>
-References: <CAAE6i0jGqbOcRbhEYQiLdSUyxaKkFZKQTqb82shaSYdF9jFEqg@mail.gmail.com>
- <CAAE6i0jcfJvBq_JJhO-DVWqBrtEJe1nA7t8k-fqF0BtQY15N4w@mail.gmail.com>
- <CAAE6i0hxv2t0-df+JLtCTC7k8VKTuH-DkUQ7saOSGWSKEV7C2Q@mail.gmail.com>
- <CAAE6i0i7etUgKgGEAzDR6BSruz4AWhaw-0_zvHxwqDAQnyBQ3g@mail.gmail.com>
- <20120627134723.GB2819@localhost.localdomain>
- <CAAE6i0iN_nv+NfLZ7Tb7e-QVT2oxb7tUC-wnkHdQRxM9sxENiw@mail.gmail.com>
-MIME-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-In-Reply-To: <CAAE6i0iN_nv+NfLZ7Tb7e-QVT2oxb7tUC-wnkHdQRxM9sxENiw@mail.gmail.com>
+	id S1757181Ab2F0RZB (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Wed, 27 Jun 2012 13:25:01 -0400
+From: Jan Schmidt <list.btrfs@jan-o-sch.net>
+To: chris.mason@fusionio.com, linux-btrfs@vger.kernel.org
+Subject: [PATCH 6/7] Btrfs: fix tree mod log rewind of ADD operations
+Date: Wed, 27 Jun 2012 19:24:58 +0200
+Message-Id: <1340817899-16343-7-git-send-email-list.btrfs@jan-o-sch.net>
+In-Reply-To: <1340817899-16343-1-git-send-email-list.btrfs@jan-o-sch.net>
+References: <1340817899-16343-1-git-send-email-list.btrfs@jan-o-sch.net>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Wed, Jun 27, 2012 at 10:32:22AM -0600, Chester wrote:
-> Hey Josef, the btrfsck was dirty. Here it is pasted inline.
-> 
-> 
+When a MOD_LOG_KEY_ADD operation is rewinded, we remove the key from the
+tree block. If its not the last key, removal involves a move operation.
+This move operation was explicitly done before this commit.
 
-Ok, do btrfsck --repair on the device (the device must be unmounted) and
-hopefully it will fix everything.  Thanks,
+However, at insertion time, there's a move operation before the actual
+addition to make room for the new key, which is recorded in the tree mod
+log as well. This means, we must drop the move operation when rewinding the
+add operation, because the next operation we'll be rewinding will be the
+corresponding MOD_LOG_MOVE_KEYS operation.
 
-Josef
+Signed-off-by: Jan Schmidt <list.btrfs@jan-o-sch.net>
+---
+ fs/btrfs/ctree.c |    6 +-----
+ 1 files changed, 1 insertions(+), 5 deletions(-)
+
+diff --git a/fs/btrfs/ctree.c b/fs/btrfs/ctree.c
+index e005d9b..b98f860 100644
+--- a/fs/btrfs/ctree.c
++++ b/fs/btrfs/ctree.c
+@@ -1094,11 +1094,7 @@ __tree_mod_log_rewind(struct extent_buffer *eb, u64 time_seq,
+ 						      tm->generation);
+ 			break;
+ 		case MOD_LOG_KEY_ADD:
+-			if (tm->slot != n - 1) {
+-				o_dst = btrfs_node_key_ptr_offset(tm->slot);
+-				o_src = btrfs_node_key_ptr_offset(tm->slot + 1);
+-				memmove_extent_buffer(eb, o_dst, o_src, p_size);
+-			}
++			/* if a move operation is needed it's in the log */
+ 			n--;
+ 			break;
+ 		case MOD_LOG_MOVE_KEYS:
+-- 
+1.7.3.4
+

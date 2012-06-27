@@ -1,155 +1,85 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-vb0-f46.google.com ([209.85.212.46]:64668 "EHLO
-	mail-vb0-f46.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1753386Ab2F0Dqp (ORCPT
+Received: from magic.merlins.org ([209.81.13.136]:44637 "EHLO
+	mail1.merlins.org" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1754645Ab2F0FUN (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 26 Jun 2012 23:46:45 -0400
-Received: by vbbff1 with SMTP id ff1so422388vbb.19
-        for <linux-btrfs@vger.kernel.org>; Tue, 26 Jun 2012 20:46:44 -0700 (PDT)
-MIME-Version: 1.0
-Date: Wed, 27 Jun 2012 13:16:44 +0930
-Message-ID: <CACCfv7qEa-hVmNEB6DMy9khGfjcyPuLk27M1ue4VMDwgv9++FQ@mail.gmail.com>
-Subject: WARNING: at fs/btrfs/free-space-cache.c:1887 after hard shutdown.
-From: Jordan Windsor <jordanw2@gmail.com>
+	Wed, 27 Jun 2012 01:20:13 -0400
+Received: from merlin by mail1.merlins.org with local (Exim 4.77 #2)
+	id 1Sjkfk-0001Hh-Cf
+	for <linux-btrfs@vger.kernel.org>; Tue, 26 Jun 2012 22:20:12 -0700
+Date: Tue, 26 Jun 2012 22:20:12 -0700
+From: Marc MERLIN <marc@merlins.org>
 To: linux-btrfs@vger.kernel.org
-Content-Type: text/plain; charset=ISO-8859-1
+Subject: Re: Long btrfs hangs during suspend to RAM / BTRFS warning (device dm-0): Aborting unused transaction
+Message-ID: <20120627052012.GA32533@merlins.org>
+References: <20120626193637.GA27856@merlins.org> <20120627013818.GA3556@merlins.org>
+MIME-Version: 1.0
+Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <20120627013818.GA3556@merlins.org>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hello,
-My computer locked up and I had to press the reset button.
-Ever since then I can't mount the btrfs filesystem, here's the output:
+On Tue, Jun 26, 2012 at 06:38:18PM -0700, Marc MERLIN wrote:
+> Now, I'm also seeing these below and I have this again (86% CPU):
+>  6076 root      20   0     0    0    0 R   86  0.0  29:40.11 btrfs-delalloc-    
+> 
+> How bad is it, doctor?  I think I'll be going back to 3.2.16 for now though.
 
-[   37.645583] ------------[ cut here ]------------
-[   37.645598] WARNING: at fs/btrfs/free-space-cache.c:1887
-btrfs_remove_free_space+0x329/0x350 [btrfs]()
-[   37.645600] Modules linked in: btrfs zlib_deflate libcrc32c ext4
-jbd2 mbcache crc16 snd_hda_codec_realtek rc_dib0700_rc5 mt2266
-dvb_usb_dib0700 dib3000mc dib8000 dib0070 dib7000m dib7000p
-dibx000_common dib0090 dvb_usb dvb_core rc_core microcode joydev
-usb_storage uas coretemp acpi_cpufreq mperf ppdev nvidia(PO) 8139too
-8139cp mii iTCO_wdt i2c_i801 i2c_core iTCO_vendor_support serio_raw
-i7core_edac edac_core evdev pcspkr processor parport_pc parport
-snd_hda_intel snd_hda_codec snd_hwdep snd_pcm snd_page_alloc snd_timer
-snd soundcore button reiserfs aes_x86_64 cryptd aes_generic xts
-gf128mul dm_crypt dm_mod usbhid hid sr_mod sd_mod cdrom pata_jmicron
-pata_acpi uhci_hcd ata_piix ata_generic ahci libahci libata ehci_hcd
-crc32c_intel usbcore scsi_mod usb_common floppy
-[   37.645651] Pid: 304, comm: mount Tainted: P           O 3.4.4-2-ck #1
-[   37.645653] Call Trace:
-[   37.645659]  [<ffffffff810515cf>] warn_slowpath_common+0x7f/0xc0
-[   37.645662]  [<ffffffff8105162a>] warn_slowpath_null+0x1a/0x20
-[   37.645670]  [<ffffffffa0f4a159>] btrfs_remove_free_space+0x329/0x350 [btrfs]
-[   37.645674]  [<ffffffff81073bb0>] ? abort_exclusive_wait+0xb0/0xb0
-[   37.645682]  [<ffffffffa0efaa6f>]
-btrfs_alloc_logged_file_extent+0x1bf/0x1e0 [btrfs]
-[   37.645688]  [<ffffffffa0ee7bfa>] ? btrfs_free_path+0x2a/0x40 [btrfs]
-[   37.645697]  [<ffffffffa0f44c5e>] replay_one_extent+0x5be/0x620 [btrfs]
-[   37.645701]  [<ffffffff81179f55>] ? iput+0x105/0x210
-[   37.645710]  [<ffffffffa0f4549b>] replay_one_buffer+0x27b/0x350 [btrfs]
-[   37.645719]  [<ffffffffa0f302bd>] ? alloc_extent_buffer+0x9d/0x5c0 [btrfs]
-[   37.645728]  [<ffffffffa0f42d92>] walk_down_log_tree+0x202/0x3c0 [btrfs]
-[   37.645736]  [<ffffffffa0f42fed>] walk_log_tree+0x9d/0x1f0 [btrfs]
-[   37.645745]  [<ffffffffa0f46f4b>] btrfs_recover_log_trees+0x21b/0x3a0 [btrfs]
-[   37.645754]  [<ffffffffa0f45220>] ? replay_one_dir_item+0xe0/0xe0 [btrfs]
-[   37.645763]  [<ffffffffa0f0883d>] open_ctree+0x14ed/0x1ac0 [btrfs]
-[   37.645767]  [<ffffffff8121e101>] ? disk_name+0x61/0xc0
-[   37.645773]  [<ffffffffa0ee5836>] btrfs_mount+0x5b6/0x6a0 [btrfs]
-[   37.645776]  [<ffffffff8113f400>] ? alloc_pages_current+0xb0/0x120
-[   37.645780]  [<ffffffff81163533>] mount_fs+0x43/0x1b0
-[   37.645783]  [<ffffffff8117d740>] vfs_kern_mount+0x70/0x100
-[   37.645786]  [<ffffffff8117dc64>] do_kern_mount+0x54/0x110
-[   37.645788]  [<ffffffff8117f55a>] do_mount+0x26a/0x850
-[   37.645791]  [<ffffffff81101e1e>] ? __get_free_pages+0xe/0x50
-[   37.645794]  [<ffffffff8117f15a>] ? copy_mount_options+0x3a/0x180
-[   37.645797]  [<ffffffff8117fc7d>] sys_mount+0x8d/0xe0
-[   37.645801]  [<ffffffff814626e9>] system_call_fastpath+0x16/0x1b
-[   37.645802] ---[ end trace 98bf42a1cdef3f88 ]---
-[   37.645812] ------------[ cut here ]------------
-[   37.646716] kernel BUG at fs/btrfs/extent-tree.c:6107!
-[   37.647722] invalid opcode: 0000 [#1] PREEMPT SMP
-[   37.648763] CPU 1
-[   37.649156] Modules linked in: btrfs zlib_deflate libcrc32c ext4
-jbd2 mbcache crc16 snd_hda_codec_realtek rc_dib0700_rc5 mt2266
-dvb_usb_dib0700 dib3000mc dib8000 dib0070 dib7000m dib7000p
-dibx000_common dib0090 dvb_usb dvb_core rc_core microcode joydev
-usb_storage uas coretemp acpi_cpufreq mperf ppdev nvidia(PO) 8139too
-8139cp mii iTCO_wdt i2c_i801 i2c_core iTCO_vendor_support serio_raw
-i7core_edac edac_core evdev pcspkr processor parport_pc parport
-snd_hda_intel snd_hda_codec snd_hwdep snd_pcm snd_page_alloc snd_timer
-snd soundcore button reiserfs aes_x86_64 cryptd aes_generic xts
-gf128mul dm_crypt dm_mod usbhid hid sr_mod sd_mod cdrom pata_jmicron
-pata_acpi uhci_hcd ata_piix ata_generic ahci libahci libata ehci_hcd
-crc32c_intel usbcore scsi_mod usb_common floppy
-[   37.665300]
-[   37.665591] Pid: 304, comm: mount Tainted: P        W  O 3.4.4-2-ck #1
-[   37.666973] RIP: 0010:[<ffffffffa0efaa77>]  [<ffffffffa0efaa77>]
-btrfs_alloc_logged_file_extent+0x1c7/0x1e0 [btrfs]
-[   37.669058] RSP: 0018:ffff880118649748  EFLAGS: 00010282
-[   37.670098] RAX: 00000000ffffffea RBX: ffff88010ff1a000 RCX: 000000000000000e
-[   37.671495] RDX: 0000000000000000 RSI: 0000000000000046 RDI: ffff88010fef6840
-[   37.672892] RBP: ffff8801186497c8 R08: 0000000000000000 R09: 0000000000000000
-[   37.674289] R10: 0000000000000000 R11: 0000000000000000 R12: ffff880118649883
-[   37.675687] R13: 0000000000000000 R14: 00000019cf4be000 R15: ffff88010fc95800
-[   37.731396] FS:  00007fb10edfb740(0000) GS:ffff88011fc40000(0000)
-knlGS:0000000000000000
-[   37.788242] CS:  0010 DS: 0000 ES: 0000 CR0: 000000008005003b
-[   37.788243] CR2: 00007f5b18c9c15c CR3: 0000000110a7d000 CR4: 00000000000007e0
-[   37.788245] DR0: 0000000000000000 DR1: 0000000000000000 DR2: 0000000000000000
-[   37.788247] DR3: 0000000000000000 DR6: 00000000ffff0ff0 DR7: 0000000000000400
-[   37.788249] Process mount (pid: 304, threadinfo ffff880118648000,
-task ffff880118a8d620)
-[   37.788250] Stack:
-[   37.788251]  0000000000000001 0000000000015000 ffff880118649778
-ffffffffa0ee7bfa
-[   37.788253]  000000002ee71000 000000000013ffbd 0000000000000005
-ffff8801149dc000
-[   37.788256]  0000000000015000 00ff880114ac62f0 a800000019cf4be0
-ffff88010fc95800
-[   37.788258] Call Trace:
-[   37.788264]  [<ffffffffa0ee7bfa>] ? btrfs_free_path+0x2a/0x40 [btrfs]
-[   37.788272]  [<ffffffffa0f44c5e>] replay_one_extent+0x5be/0x620 [btrfs]
-[   37.788275]  [<ffffffff81179f55>] ? iput+0x105/0x210
-[   37.788283]  [<ffffffffa0f4549b>] replay_one_buffer+0x27b/0x350 [btrfs]
-[   37.788292]  [<ffffffffa0f302bd>] ? alloc_extent_buffer+0x9d/0x5c0 [btrfs]
-[   37.788300]  [<ffffffffa0f42d92>] walk_down_log_tree+0x202/0x3c0 [btrfs]
-[   37.788309]  [<ffffffffa0f42fed>] walk_log_tree+0x9d/0x1f0 [btrfs]
-[   37.788317]  [<ffffffffa0f46f4b>] btrfs_recover_log_trees+0x21b/0x3a0 [btrfs]
-[   37.788326]  [<ffffffffa0f45220>] ? replay_one_dir_item+0xe0/0xe0 [btrfs]
-[   37.788334]  [<ffffffffa0f0883d>] open_ctree+0x14ed/0x1ac0 [btrfs]
-[   37.788338]  [<ffffffff8121e101>] ? disk_name+0x61/0xc0
-[   37.788343]  [<ffffffffa0ee5836>] btrfs_mount+0x5b6/0x6a0 [btrfs]
-[   37.788346]  [<ffffffff8113f400>] ? alloc_pages_current+0xb0/0x120
-[   37.788348]  [<ffffffff81163533>] mount_fs+0x43/0x1b0
-[   37.788351]  [<ffffffff8117d740>] vfs_kern_mount+0x70/0x100
-[   37.788353]  [<ffffffff8117dc64>] do_kern_mount+0x54/0x110
-[   37.788355]  [<ffffffff8117f55a>] do_mount+0x26a/0x850
-[   37.788358]  [<ffffffff81101e1e>] ? __get_free_pages+0xe/0x50
-[   37.788360]  [<ffffffff8117f15a>] ? copy_mount_options+0x3a/0x180
-[   37.788362]  [<ffffffff8117fc7d>] sys_mount+0x8d/0xe0
-[   37.788365]  [<ffffffff814626e9>] system_call_fastpath+0x16/0x1b
-[   37.788366] Code: 0b 0f 1f 00 48 8d bb 80 00 00 00 e8 24 63 ff ff
-85 c0 74 1d 48 8b 55 c0 4c 89 f6 48 89 df e8 c1 f3 04 00 85 c0 0f 84
-29 ff ff ff <0f> 0b 0f 0b 0f 0b 0f 0b 0f 0b 66 66 66 66 66 66 2e 0f 1f
-84 00
-[   37.788382] RIP  [<ffffffffa0efaa77>]
-btrfs_alloc_logged_file_extent+0x1c7/0x1e0 [btrfs]
-[   37.788389]  RSP <ffff880118649748>
-[   37.788468] ---[ end trace 98bf42a1cdef3f89 ]---
-[   38.955216] Adding 6143996k swap on /dev/sda4.  Priority:-1
-extents:1 across:6143996k
-[   41.323339] 8139too 0000:03:03.0: eth0: link up, 100Mbps,
-full-duplex, lpa 0x45E1
-[   51.993170] eth0: no IPv6 routers present
-[   60.972748] NVRM: Your system is not currently configured to drive
-a VGA console
-[   60.972755] NVRM: on the primary VGA device. The NVIDIA Linux graphics driver
-[   60.972760] NVRM: requires the use of a text-mode VGA console. Use
-of other console
-[   60.972764] NVRM: drivers including, but not limited to, vesafb,
-may result in
-[   60.972767] NVRM: corruption and stability problems, and is not supported.
-[   63.862595] fuse init (API version 7.18)
-[   69.223888] EXT4-fs (sda1): re-mounted. Opts: commit=0
+Back to 3.2.16, I'm now seeing this:
+[  840.516733] INFO: task VirtualBox:6818 blocked for more than 120 seconds.
+[  840.516735] "echo 0 > /proc/sys/kernel/hung_task_timeout_secs" disables this message.
+[  840.516736] VirtualBox      D ffff8801fd134080     0  6818   6758 0x00000080
+[  840.516740]  ffff8801fd134080 0000000000000086 0000000000000050 ffff880202e7f100
+[  840.516744]  0000000000013580 ffff8801c6f0dfd8 ffff8801c6f0dfd8 ffff8801fd134080
+[  840.516748]  ffff8801c6f0da68 ffff8801c6f0da68 ffff88020a4e22f0 ffff88023bc13e08
+[  840.516752] Call Trace:
+[  840.516755]  [<ffffffff810b5c67>] ? __lock_page+0x66/0x66
+[  840.516758]  [<ffffffff8134aea4>] ? io_schedule+0x58/0x6f
+[  840.516761]  [<ffffffff810b5c6d>] ? sleep_on_page+0x6/0xa
+[  840.516764]  [<ffffffff8134b1e5>] ? __wait_on_bit_lock+0x3c/0x85
+[  840.516767]  [<ffffffff810b5c62>] ? __lock_page+0x61/0x66
+[  840.516770]  [<ffffffff81060051>] ? autoremove_wake_function+0x2a/0x2a
+[  840.516785]  [<ffffffffa01838d7>] ? extent_write_cache_pages.isra.13.constprop.22+0xf6/0x278 [btrfs]
+[  840.516789]  [<ffffffff810ec9cb>] ? __cache_free.isra.40+0x19/0x1a7
+[  840.516792]  [<ffffffff8134ed52>] ? sub_preempt_count+0x83/0x94
+[  840.516795]  [<ffffffff8134c2dd>] ? _raw_spin_unlock+0x24/0x30
+[  840.516811]  [<ffffffffa0183c4b>] ? extent_writepages+0x40/0x57 [btrfs]
+[  840.516826]  [<ffffffffa0177f5f>] ? __btrfs_buffered_write+0x2bb/0x2dc [btrfs]
+[  840.516841]  [<ffffffffa016e88a>] ? uncompress_inline.isra.44+0x116/0x116 [btrfs]
+[  840.516844]  [<ffffffff810b6aaf>] ? __filemap_fdatawrite_range+0x4b/0x50
+[  840.516847]  [<ffffffff810b6ad9>] ? filemap_write_and_wait_range+0x25/0x4d
+[  840.516863]  [<ffffffffa01782ce>] ? btrfs_file_aio_write+0x34e/0x490 [btrfs]
+[  840.516866]  [<ffffffff8103e092>] ? get_parent_ip+0x9/0x1b
+[  840.516882]  [<ffffffffa0177f80>] ? __btrfs_buffered_write+0x2dc/0x2dc [btrfs]
+[  840.516886]  [<ffffffff8112f19c>] ? aio_rw_vect_retry+0x70/0x18e
+[  840.516888]  [<ffffffff8112f12c>] ? aio_fsync+0x22/0x22
+[  840.516891]  [<ffffffff8112fbc7>] ? aio_run_iocb+0x72/0x11c
+[  840.516894]  [<ffffffff81130d9a>] ? do_io_submit+0x6a4/0x7f9
+[  840.516898]  [<ffffffff813508d2>] ? system_call_fastpath+0x16/0x1b
+[ 1187.553635] btrfs: unlinked 8 orphans
+[ 3810.200064] e1000e 0000:00:19.0: BAR 0: set to [mem 0xfc000000-0xfc01ffff] (PCI address [0xfc000000-0xfc01ffff])
+[ 3810.200071] e1000e 0000:00:19.0: BAR 1: set to [mem 0xfc025000-0xfc025fff] (PCI address [0xfc025000-0xfc025fff])
+[ 3810.200076] e1000e 0000:00:19.0: BAR 2: set to [io  0x1840-0x185f] (PCI address [0x1840-0x185f])
+[ 3810.200093] e1000e 0000:00:19.0: restoring config space at offset 0xf (was 0x100, writing 0x10b)
+[ 3810.200115] e1000e 0000:00:19.0: restoring config space at offset 0x1 (was 0x100000, writing 0x100107)
+[ 3810.200147] e1000e 0000:00:19.0: PME# disabled
+[ 3810.200224] e1000e 0000:00:19.0: irq 45 for MSI/MSI-X
+[ 4671.144685] iwlwifi 0000:03:00.0: Tx aggregation enabled on ra = 2c:b0:5d:3c:7d:f1 tid = 1
+[ 4799.384107] btrfs: unlinked 8 orphans
+[ 8436.512513] btrfs: unlinked 7 orphans
+[11350.749850] btrfs no csum found for inode 3909426 start 0
+[11350.750697] btrfs csum failed ino 3909426 off 0 csum 1419704114 private 0
+[11652.088805] btrfs no csum found for inode 3910848 start 0
+[11652.089524] btrfs csum failed ino 3910848 off 0 csum 3145117582 private 0
 
-Thanks.
+My firefox and chrome profiles were corrupted, so I had to restore them from an old snapshot.
+
+I can't prove it, but it looks like my corruption happened right at the same
+time than I rebooted to 3.4.4.
+
+Marc
+-- 
+"A mouse is a device used to point at the xterm you want to type in" - A.S.R.
+Microsoft is to operating systems ....
+                                      .... what McDonalds is to gourmet cooking
+Home page: http://marc.merlins.org/  

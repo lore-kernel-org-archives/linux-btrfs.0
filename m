@@ -1,171 +1,152 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([222.73.24.84]:4688 "EHLO song.cn.fujitsu.com"
-	rhost-flags-OK-FAIL-OK-OK) by vger.kernel.org with ESMTP
-	id S1757508Ab2FZGIh (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 26 Jun 2012 02:08:37 -0400
-Message-ID: <4FE95195.3080402@cn.fujitsu.com>
-Date: Tue, 26 Jun 2012 14:07:17 +0800
-From: Miao Xie <miaox@cn.fujitsu.com>
-Reply-To: miaox@cn.fujitsu.com
+Received: from mx2.fusionio.com ([66.114.96.31]:60182 "EHLO mx2.fusionio.com"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1751252Ab2F1NEY (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Thu, 28 Jun 2012 09:04:24 -0400
+From: Josef Bacik <jbacik@fusionio.com>
+To: <linux-btrfs@vger.kernel.org>, <miaox@cn.fujitsu.com>
+Subject: [PATCH] Btrfs: fix dio write vs buffered read race V3
+Date: Thu, 28 Jun 2012 09:09:04 -0400
+Message-ID: <1340888944-9471-1-git-send-email-jbacik@fusionio.com>
 MIME-Version: 1.0
-To: Chris Mason <chris.mason@fusionio.com>
-CC: Josef Bacik <jbacik@fusionio.com>,
-        Linux Btrfs <linux-btrfs@vger.kernel.org>
-Subject: [PATCH V2] Btrfs: fix old data problem caused by aio vs dio
-Content-Type: text/plain; charset=UTF-8
+Content-Type: text/plain
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-The 209th case of xfstests failed because of the race between aio and dio. The
-detail reason is following:
-	Task1		Task2			Btrfs-worker
-			invalidate pages
-	read pages
-			do direct io
-			invalidate pages fail*
-						finish ordered io
-	read data from
-	pages
+From: Josef Bacik <josef@redhat.com>
 
-* This step failed because the kernel found the ordered extent object that
-covered the pages and thought the pages were still under busy. And then Task1
-read the old data from those pages.
+Miao pointed out there's a problem with mixing dio writes and buffered
+reads.  If the read happens between us invalidating the page range and
+actually locking the extent we can bring in pages into page cache.  Then
+once the write finishes if somebody tries to read again it will just find
+uptodate pages and we'll read stale data.  So we need to lock the extent and
+check for uptodate bits in the range.  If there are uptodate bits we need to
+unlock and invalidate again.  This will keep this race from happening since
+we will hold the extent locked until we create the ordered extent, and then
+teh read side always waits for ordered extents.  There was also a race in
+how we updated i_size, previously we were relying on the generic DIO stuff
+to adjust the i_size after the DIO had completed, but this happens outside
+of the extent lock which means reads could come in and not see the updated
+i_size.  So instead move this work into where we create the extents, and
+then this way the update ordered i_size stuff works properly in the endio
+handlers.  Thanks,
 
-This patch fixes the above problem by updating the existed pages directly.
-
-Signed-off-by: Miao Xie <miaox@cn.fujitsu.com>
+Signed-off-by: Josef Bacik <josef@redhat.com>
 ---
- fs/btrfs/file.c  |   91 ++++++++++++++++++++++++++++++++++++++++++++++++++++++
- fs/btrfs/inode.c |    1 +
- 2 files changed, 92 insertions(+), 0 deletions(-)
+V2->V3: update the i_size as we add extents past the current i_size so the
+updates are done under the extent lock.
+
+ fs/btrfs/file.c  |   13 ------------
+ fs/btrfs/inode.c |   55 +++++++++++++++++++++++++++++++++++++++++++++++++----
+ 2 files changed, 50 insertions(+), 18 deletions(-)
 
 diff --git a/fs/btrfs/file.c b/fs/btrfs/file.c
-index 876cddd..fc0f485 100644
+index 70dc8ca..9aa01ec 100644
 --- a/fs/btrfs/file.c
 +++ b/fs/btrfs/file.c
-@@ -18,6 +18,7 @@
+@@ -1334,7 +1334,6 @@ static ssize_t __btrfs_direct_write(struct kiocb *iocb,
+ 				    loff_t *ppos, size_t count, size_t ocount)
+ {
+ 	struct file *file = iocb->ki_filp;
+-	struct inode *inode = fdentry(file)->d_inode;
+ 	struct iov_iter i;
+ 	ssize_t written;
+ 	ssize_t written_buffered;
+@@ -1344,18 +1343,6 @@ static ssize_t __btrfs_direct_write(struct kiocb *iocb,
+ 	written = generic_file_direct_write(iocb, iov, &nr_segs, pos, ppos,
+ 					    count, ocount);
  
- #include <linux/fs.h>
- #include <linux/pagemap.h>
-+#include <linux/pagevec.h>
- #include <linux/highmem.h>
- #include <linux/time.h>
- #include <linux/init.h>
-@@ -1328,6 +1329,91 @@ static noinline ssize_t __btrfs_buffered_write(struct file *file,
- 	return num_written ? num_written : ret;
- }
- 
-+static void btrfs_dio_update_existed_pages(struct inode *inode,
-+					   struct iov_iter *it,
-+					   loff_t pos, size_t size)
-+{
-+	struct address_space *mapping = inode->i_mapping;
-+	struct pagevec pvec;
-+	pgoff_t index;
-+	pgoff_t end;
-+	size_t copied;
-+	loff_t copy_pos = pos;
-+	int offset = pos & (PAGE_CACHE_SIZE - 1);
-+	int i;
-+
-+	BUG_ON(pos & (PAGE_CACHE_SIZE - 1));
-+	BUG_ON(size & (PAGE_CACHE_SIZE - 1));
-+
-+	pagevec_init(&pvec, 0);
-+	index = pos >> PAGE_CACHE_SHIFT;
-+	end = (pos + size - 1) >> PAGE_CACHE_SHIFT;
-+
-+	while (index <= end && pagevec_lookup(&pvec, mapping, index,
-+			min(end - index, (pgoff_t)PAGEVEC_SIZE - 1) + 1)) {
-+		i = 0;
-+		while (i < pagevec_count(&pvec)) {
-+			struct page *page = pvec.pages[i];
-+			size_t count = min_t(size_t, PAGE_CACHE_SIZE - offset,
-+					     size);
-+
-+			index = page->index;
-+			if (index > end)
-+				break;
-+
-+			lock_page(page);
-+			WARN_ON(page->index != index);
-+			BUG_ON(PageDirty(page));
-+			BUG_ON(PageWriteback(page));
-+
-+			if (page->mapping != mapping) {
-+				unlock_page(page);
-+				i++;
-+				continue;
-+			}
-+
-+			if (!PageUptodate(page)) {
-+				unlock_page(page);
-+				i++;
-+				continue;
-+			}
-+
-+			if ((index << PAGE_CACHE_SHIFT) > copy_pos) {
-+				copied = (index << PAGE_CACHE_SHIFT) - copy_pos;
-+				iov_iter_advance(it, copied);
-+				offset = 0;
-+				size -= copied;
-+				count = min_t(size_t, PAGE_CACHE_SIZE, size);
-+			}
-+
-+			pagefault_disable();
-+			copied = iov_iter_copy_from_user_atomic(page, it,
-+								offset,
-+								count);
-+			pagefault_enable();
-+			flush_dcache_page(page);
-+
-+			if (copied < count)
-+				copied = 0;
-+
-+			iov_iter_advance(it, copied);
-+			size -= copied;
-+			copy_pos += copied;
-+
-+			if (unlikely(copied < PAGE_CACHE_SIZE - offset)) {
-+				offset += copied;
-+			} else {
-+				offset = 0;
-+				i++;
-+			}
-+			unlock_page(page);
-+		}
-+		pagevec_release(&pvec);
-+		cond_resched();
-+		index++;
-+	}
-+}
-+
- static ssize_t __btrfs_direct_write(struct kiocb *iocb,
- 				    const struct iovec *iov,
- 				    unsigned long nr_segs, loff_t pos,
-@@ -1356,6 +1442,11 @@ static ssize_t __btrfs_direct_write(struct kiocb *iocb,
- 		mark_inode_dirty(inode);
- 	}
- 
-+	if (written > 0) {
-+		iov_iter_init(&i, iov, nr_segs, count, 0);
-+		btrfs_dio_update_existed_pages(inode, &i, pos, written);
-+	}
-+
+-	/*
+-	 * the generic O_DIRECT will update in-memory i_size after the
+-	 * DIOs are done.  But our endio handlers that update the on
+-	 * disk i_size never update past the in memory i_size.  So we
+-	 * need one more update here to catch any additions to the
+-	 * file
+-	 */
+-	if (inode->i_size != BTRFS_I(inode)->disk_i_size) {
+-		btrfs_ordered_update_i_size(inode, inode->i_size, NULL);
+-		mark_inode_dirty(inode);
+-	}
+-
  	if (written < 0 || written == count)
  		return written;
  
 diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
-index 3f2c8cb..6de67a5 100644
+index 9d8c45d..d455a87 100644
 --- a/fs/btrfs/inode.c
 +++ b/fs/btrfs/inode.c
-@@ -6350,6 +6350,7 @@ static ssize_t check_direct_IO(struct btrfs_root *root, int rw, struct kiocb *io
- out:
- 	return retval;
- }
+@@ -5876,8 +5876,17 @@ map:
+ 	bh_result->b_size = len;
+ 	bh_result->b_bdev = em->bdev;
+ 	set_buffer_mapped(bh_result);
+-	if (create && !test_bit(EXTENT_FLAG_PREALLOC, &em->flags))
+-		set_buffer_new(bh_result);
++	if (create) {
++		if (!test_bit(EXTENT_FLAG_PREALLOC, &em->flags))
++			set_buffer_new(bh_result);
 +
- static ssize_t btrfs_direct_IO(int rw, struct kiocb *iocb,
- 			const struct iovec *iov, loff_t offset,
- 			unsigned long nr_segs)
++		/*
++		 * Need to update the i_size under the extent lock so buffered
++		 * readers will get the updated i_size when we unlock.
++		 */
++		if (start + len > i_size_read(inode))
++			i_size_write(inode, start + len);
++	}
+ 
+ 	free_extent_map(em);
+ 
+@@ -6360,12 +6369,48 @@ static ssize_t btrfs_direct_IO(int rw, struct kiocb *iocb,
+ 		 */
+ 		ordered = btrfs_lookup_ordered_range(inode, lockstart,
+ 						     lockend - lockstart + 1);
+-		if (!ordered)
++
++		/*
++		 * We need to make sure there are no buffered pages in this
++		 * range either, we could have raced between the invalidate in
++		 * generic_file_direct_write and locking the extent.  The
++		 * invalidate needs to happen so that reads after a write do not
++		 * get stale data.
++		 */
++		if (!ordered && (!writing ||
++		    !test_range_bit(&BTRFS_I(inode)->io_tree,
++				    lockstart, lockend, EXTENT_UPTODATE, 0,
++				    cached_state)))
+ 			break;
++
+ 		unlock_extent_cached(&BTRFS_I(inode)->io_tree, lockstart, lockend,
+ 				     &cached_state, GFP_NOFS);
+-		btrfs_start_ordered_extent(inode, ordered, 1);
+-		btrfs_put_ordered_extent(ordered);
++
++		if (ordered) {
++			btrfs_start_ordered_extent(inode, ordered, 1);
++			btrfs_put_ordered_extent(ordered);
++		} else {
++			/* Screw you mmap */
++			ret = filemap_write_and_wait_range(file->f_mapping,
++							   lockstart,
++							   lockend);
++			if (ret)
++				goto out;
++
++			/*
++			 * If we found a page that couldn't be invalidated just
++			 * fall back to buffered.
++			 */
++			ret = invalidate_inode_pages2_range(file->f_mapping,
++					lockstart >> PAGE_CACHE_SHIFT,
++					lockend >> PAGE_CACHE_SHIFT);
++			if (ret) {
++				if (ret == -EBUSY)
++					ret = 0;
++				goto out;
++			}
++		}
++
+ 		cond_resched();
+ 	}
+ 
 -- 
-1.7.6.5
+1.7.7.6
+

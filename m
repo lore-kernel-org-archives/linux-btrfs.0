@@ -1,68 +1,60 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from frost.carfax.org.uk ([85.119.82.111]:38857 "EHLO
-	frost.carfax.org.uk" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1755383Ab2F2O3U (ORCPT
+Received: from mail-vc0-f174.google.com ([209.85.220.174]:54512 "EHLO
+	mail-vc0-f174.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S932140Ab2F2QPL convert rfc822-to-8bit (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Fri, 29 Jun 2012 10:29:20 -0400
-Date: Fri, 29 Jun 2012 15:29:17 +0100
-From: Hugo Mills <hugo@carfax.org.uk>
-To: Richard Cooper <richard@richardcooper.net>
-Cc: linux-btrfs@vger.kernel.org
-Subject: Re: Kernel panic from "btrfs subvolume delete"
-Message-ID: <20120629142916.GL25572@carfax.org.uk>
-References: <B53F1BEB-C285-4A01-A61A-4B324CB6FA7F@richardcooper.net>
- <CAG1y0seoS2c7d=jQgrZNF0aAJPrgTKbL1v6JzFigCk9ZMZ7H+w@mail.gmail.com>
- <1E782A38-6632-406F-A5BB-D42E78F5AAE3@richardcooper.net>
+	Fri, 29 Jun 2012 12:15:11 -0400
+Received: by vcbf11 with SMTP id f11so2419682vcb.19
+        for <linux-btrfs@vger.kernel.org>; Fri, 29 Jun 2012 09:15:10 -0700 (PDT)
 MIME-Version: 1.0
-Content-Type: multipart/signed; micalg=pgp-sha1;
-	protocol="application/pgp-signature"; boundary="/jkxxxtAhYIHVDuh"
-In-Reply-To: <1E782A38-6632-406F-A5BB-D42E78F5AAE3@richardcooper.net>
+In-Reply-To: <20120629130437.GB1834@localhost.localdomain>
+References: <CACCfv7qEa-hVmNEB6DMy9khGfjcyPuLk27M1ue4VMDwgv9++FQ@mail.gmail.com>
+	<20120627134857.GC2819@localhost.localdomain>
+	<CACCfv7oOU3-S5iNJqCd084-WK5WE=gBdwkOhd1tqF0udN7pw7Q@mail.gmail.com>
+	<4FED3FA2.2060300@csamuel.org>
+	<CACCfv7ovrSTJpD8+N-Vxb+hz6DqX7xpaxAxukC_0kLGAE6tGGQ@mail.gmail.com>
+	<20120629130437.GB1834@localhost.localdomain>
+Date: Sat, 30 Jun 2012 01:45:09 +0930
+Message-ID: <CACCfv7ogX5Ha-5i2AoydRA8MYTTLrbdJOca70K1exCrr6NjNaw@mail.gmail.com>
+Subject: Re: WARNING: at fs/btrfs/free-space-cache.c:1887 after hard shutdown.
+From: Jordan Windsor <jordanw2@gmail.com>
+To: Josef Bacik <jbacik@fusionio.com>
+Cc: Chris Samuel <chris@csamuel.org>,
+        "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
+Content-Type: text/plain; charset=ISO-8859-1
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
+On Fri, Jun 29, 2012 at 10:34 PM, Josef Bacik <jbacik@fusionio.com> wrote:
+> On Fri, Jun 29, 2012 at 12:35:01AM -0600, Jordan Windsor wrote:
+>> On Fri, Jun 29, 2012 at 3:09 PM, Chris Samuel <chris@csamuel.org> wrote:
+>> > On 29/06/12 15:36, Jordan Windsor wrote:
+>> >
+>> >> I get the same problem with linux-mainline from AUR (latest)
+>> >
+>> > What does uname -a say ?
+>> >
+>> > cheers!
+>> > Chris
+>> > --
+>> >  Chris Samuel  :  http://www.csamuel.org/  :  Melbourne, VIC
+>> >
+>> >
+>>
+>> Hello,
+>> It says:
+>> Linux archpc 3.5.0-1-mainline #1 SMP PREEMPT Fri Jun 29 02:09:43 CST
+>> 2012 x86_64 GNU/Linux
+>>
+>
+> Oh crap I'm sorry I thought this was in mainline already but it's not, it's in
+> btrfs-next, pull down this git tree and you should be good to go
+>
+> git://git.kernel.org/pub/scm/linux/kernel/git/josef/btrfs-next.git
+>
+> Thanks,
+>
+> Josef
 
---/jkxxxtAhYIHVDuh
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
-
-On Fri, Jun 29, 2012 at 03:23:13PM +0100, Richard Cooper wrote:
-> 
-> On 29 Jun 2012, at 11:42, Fajar A. Nugraha wrote:
-> >> What should I do now? Do I need to upgrade to a more recent btrfs?
-> > 
-> > Yep
-> > 
-> >> If so, how?
-> > 
-> > https://blogs.oracle.com/linux/entry/oracle_unbreakable_enterprise_kernel_release
-> > http://elrepo.org/tiki/kernel-ml
-> 
-> Perfect, thank you! I was looking for a mainline kernel yum repo but my google-fu was failing me. That looks like just what I need.
-> 
-> I've installed kernel v3.4.4 from http://elrepo.org/tiki/kernel-ml and that seems to have fixed my kernel panic. I'm still using the default Cent OS 6 versions of the btrfs userspace programs (v0.19). Any reason why that might be a bad idea?
-
-   You miss out on new features (like scrub and btrfsck). Note that
-"0.19" could actually be any version from the last 3 years or so. Most
-distributions these days are putting a date in their package names --
-anything from 20120328 or so is good.
-
-   Hugo.
-
--- 
-=== Hugo Mills: hugo@... carfax.org.uk | darksatanic.net | lug.org.uk ===
-  PGP key: 515C238D from wwwkeys.eu.pgp.net or http://www.carfax.org.uk
-   --- Charting the inexorable advance of Western syphilisation... ---   
-
---/jkxxxtAhYIHVDuh
-Content-Type: application/pgp-signature; name="signature.asc"
-Content-Description: Digital signature
-
------BEGIN PGP SIGNATURE-----
-Version: GnuPG v1.4.12 (GNU/Linux)
-
-iD8DBQFP7bu8IKyzvlFcI40RAlviAKDGETqMrEzpZ6piSigStlX5NSn0+ACdETwl
-GZVah+SpKLpohNvjwXNRDmU=
-=VURS
------END PGP SIGNATURE-----
-
---/jkxxxtAhYIHVDuh--
+Hello,
+I got it working now thanks!

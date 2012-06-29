@@ -1,101 +1,79 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-wi0-f172.google.com ([209.85.212.172]:49853 "EHLO
-	mail-wi0-f172.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1751946Ab2F2Iq6 (ORCPT
+Received: from mail6.webfaction.com ([74.55.86.74]:42570 "EHLO
+	smtp.webfaction.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1753113Ab2F2KaZ convert rfc822-to-8bit (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Fri, 29 Jun 2012 04:46:58 -0400
-Received: by wibhm11 with SMTP id hm11so696530wib.1
-        for <linux-btrfs@vger.kernel.org>; Fri, 29 Jun 2012 01:46:56 -0700 (PDT)
-Message-ID: <4FED6B7D.5000800@grimmer.com>
-Date: Fri, 29 Jun 2012 10:46:53 +0200
-From: Lenz Grimmer <lenz@grimmer.com>
-MIME-Version: 1.0
-To: cwillu <cwillu@cwillu.com>
-CC: Btrfs mailing list <linux-btrfs@vger.kernel.org>
-Subject: Re: Error compiling btrfs-tools from git (undefined reference to
- `pthread_create')
-References: <4FEAF872.10507@grimmer.com> <CAE5mzvhc-6S6AdY5uDxVqEegiTY_Sa3uFS-=1Ckit2T7rY4GOg@mail.gmail.com>
-In-Reply-To: <CAE5mzvhc-6S6AdY5uDxVqEegiTY_Sa3uFS-=1Ckit2T7rY4GOg@mail.gmail.com>
-Content-Type: multipart/signed; micalg=pgp-sha1;
- protocol="application/pgp-signature";
- boundary="------------enig8C04FA6A352DEB169497FAB5"
+	Fri, 29 Jun 2012 06:30:25 -0400
+Received: from mac-mini.config (87-194-60-202.bethere.co.uk [87.194.60.202])
+	by smtp.webfaction.com (Postfix) with ESMTP id 68EAB211FA24
+	for <linux-btrfs@vger.kernel.org>; Fri, 29 Jun 2012 05:11:31 -0500 (CDT)
+From: Richard Cooper <richard@richardcooper.net>
+Content-Type: text/plain; charset=us-ascii
+Subject: Kernel panic from "btrfs subvolume delete"
+Date: Fri, 29 Jun 2012 11:11:29 +0100
+Message-Id: <B53F1BEB-C285-4A01-A61A-4B324CB6FA7F@richardcooper.net>
+To: linux-btrfs@vger.kernel.org
+Mime-Version: 1.0 (Apple Message framework v1084)
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-This is an OpenPGP/MIME signed message (RFC 2440 and 3156)
---------------enig8C04FA6A352DEB169497FAB5
-Content-Type: text/plain; charset=UTF-8
-Content-Transfer-Encoding: quoted-printable
+Hi All,
 
-Hi,
+I have two machines where I've been testing various btrfs based backup strategies. They are both Cent OS 6 with the standard kernel and btrfs-progs RPMs from the CentOS repos.
 
-thank you for your reply.
+- kernel-2.6.32-220.17.1.el6.x86_64
+- btrfs-progs-0.19-12.el6.x86_64
 
-On 06/27/2012 02:20 PM, cwillu wrote:
-> On Wed, Jun 27, 2012 at 6:11 AM, Lenz Grimmer <lenz@grimmer.com> wrote:=
+Both are currently in a state when trying to delete a subvolume results in the following kernel panic.
 
->> On Ubuntu 11.10 "Oneiric" with gcc 4.6.1, compiling the btrfs tools fr=
-om git
->> fails for me with the following error:
->=20
-> Which git repo?
-> git://git.kernel.org/pub/scm/linux/kernel/git/mason/btrfs-progs.git
-> builds on ubuntu just fine (just checked on a fresh checkout), and
-> likewise the integration repo (but note that the integration repo's
-> master branch is not useful to build; you need to check out one of the
-> actual integration branches as described on the wiki).
+----------
 
-That's likely the issue - the following commands reproduce the compile er=
-ror
-for me:
+[root@backup2 ~]# btrfs subvolume delete /srv/backup_history/2012-06-28-1342
+Delete subvolume '/srv/backup_history/2012-06-28-1342'
+[root@backup2 ~]# 
+Message from syslogd@backup2 at Jun 29 08:53:06 ...
+ kernel:------------[ cut here ]------------
 
-git clone http://git.darksatanic.net/repo/btrfs-progs-unstable.git btrfs-=
-progs
-cd btrfs-progs
-make
-[...]
-gcc -lpthread -g -Werror -Os -o btrfs btrfs.o btrfs_cmds.o scrub.o \
-		ctree.o disk-io.o radix-tree.o extent-tree.o print-tree.o root-tree.o
-dir-item.o file-item.o inode-item.o inode-map.o crc32c.o rbtree.o
-extent-cache.o extent_io.o volumes.o utils.o btrfs-list.o btrfslabel.o  -=
-luuid
-scrub.o: In function `scrub_start':
-/space/tmp/btrfs-progs/scrub.c:1342: undefined reference to `pthread_crea=
-te'
-/space/tmp/btrfs-progs/scrub.c:1360: undefined reference to `pthread_crea=
-te'
-/space/tmp/btrfs-progs/scrub.c:1374: undefined reference to `pthread_join=
-'
-/space/tmp/btrfs-progs/scrub.c:1430: undefined reference to `pthread_canc=
-el'
-/space/tmp/btrfs-progs/scrub.c:1432: undefined reference to `pthread_join=
-'
-collect2: ld returned 1 exit status
+Message from syslogd@backup2 at Jun 29 08:53:06 ...
+ kernel:invalid opcode: 0000 [#1] SMP 
 
+Message from syslogd@backup2 at Jun 29 08:53:06 ...
+ kernel:last sysfs file: /sys/devices/virtual/block/md1/md/metadata_version
 
-However, using the integration-20120605 branch compiles fine. Thanks and =
-sorry
-for the noise!
+Message from syslogd@backup2 at Jun 29 08:53:06 ...
+ kernel:Stack:
 
-Bye,
-	LenZ
---=20
-  Lenz Grimmer <lenz@grimmer.com> - http://www.lenzg.net/
+Message from syslogd@backup2 at Jun 29 08:53:06 ...
+ kernel:Call Trace:
+
+Message from syslogd@backup2 at Jun 29 08:53:06 ...
+ kernel:Code: 89 ef e8 84 f5 fe ff 48 89 df 89 45 d8 e8 99 86 fe ff 8b 45 d8 48 8b 5d e0 4c 8b 65 e8 4c 8b 6d f0 4c 8b 75 f8 c9 c3 0f 0b eb fe <0f> 0b eb fe 0f 0b 66 2e 0f 1f 84 00 00 00 00 00 eb f4 66 66 66 
+
+Message from syslogd@backup2 at Jun 29 08:53:06 ...
+ kernel:Kernel panic - not syncing: Fatal exception
+
+----------
+
+Sometimes the kernel:last sysfs file line says "/sys/kernel/kexec_crash_loaded" instead.
+
+My setup is that /srv is a btrfs sat on /dev/md4 which is a 4 drive software RAID5 array. /srv/backups/data is a subvolume containing 65GB worth of test data. I've "btrfs subvolume snapshot"ed that data to a few new subvolumes under  /srv/backup_history/. Now whenever I try to delete any of the snapshots on either machine I get a kernel panic.
+
+btrfsck look like this:
+
+[root@backup2 ~]# btrfsck /dev/md4
+found 72254246912 bytes used err is 0
+total csum bytes: 66815432
+total tree bytes: 3835244544
+total fs tree bytes: 3581440000
+btree space waste bytes: 1187313778
+file data blocks allocated: 68419002368
+ referenced 68418383872
+Btrfs Btrfs v0.19
 
 
+What should I do now? Do I need to upgrade to a more recent btrfs? If so, how? Can I provide any more information to help debug and fix the problem?
 
+Regards,
 
---------------enig8C04FA6A352DEB169497FAB5
-Content-Type: application/pgp-signature; name="signature.asc"
-Content-Description: OpenPGP digital signature
-Content-Disposition: attachment; filename="signature.asc"
+- Rich
 
------BEGIN PGP SIGNATURE-----
-Version: GnuPG v1.4.11 (GNU/Linux)
-
-iEYEARECAAYFAk/ta30ACgkQSVDhKrJykfJlAQCfYK4ETkupcmlqypsssBEjsL1R
-pFAAn3ECV/Xrkl8LKbclGTYLNAkbotHy
-=lEN/
------END PGP SIGNATURE-----
-
---------------enig8C04FA6A352DEB169497FAB5--

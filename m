@@ -1,57 +1,61 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-vc0-f174.google.com ([209.85.220.174]:51681 "EHLO
-	mail-vc0-f174.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1755734Ab2GAPAI convert rfc822-to-8bit (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Sun, 1 Jul 2012 11:00:08 -0400
-Received: by vcbf11 with SMTP id f11so3111294vcb.19
-        for <linux-btrfs@vger.kernel.org>; Sun, 01 Jul 2012 08:00:07 -0700 (PDT)
-MIME-Version: 1.0
-From: Markus Rothe <markus@unixforces.net>
-Date: Sun, 1 Jul 2012 16:59:36 +0200
-Message-ID: <CALi3HZrwGO9=X3RG5FfN_04jW0F7T=405pVy4BXZg_6hE4W6XQ@mail.gmail.com>
-Subject: Strange directories in /
+Received: from mailout11.t-online.de ([194.25.134.85]:55089 "EHLO
+	mailout11.t-online.de" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S932123Ab2GAPG7 (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Sun, 1 Jul 2012 11:06:59 -0400
+Date: 01 Jul 2012 17:06:00 +0200
+From: Hullen@t-online.de (Helmut Hullen)
 To: linux-btrfs@vger.kernel.org
-Content-Type: text/plain; charset=UTF-8
+Message-ID: <CC03PBLeCXB@helmut.hullen.de>
+In-Reply-To: <CALi3HZrwGO9=X3RG5FfN_04jW0F7T=405pVy4BXZg_6hE4W6XQ@mail.gmail.com>
+Subject: Re: Strange directories in /
+MIME-Version: 1.0
+Content-Type: text/plain; charset=US-ASCII
+Reply-To: helmut@hullen.de
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hello,
+Hallo, Markus,
 
-I am running btrfs for a few months now. I just realized that I have a
-few strange directories in /
+Du meintest am 01.07.12:
 
-% ls / -1
-?
-???J??
- QӇ??
-PL????
-PR????
-bin
-boot
-dev
-etc
-home
-lib
-lib32
-lib64
-lost+found
-media
-mnt
-opt
-proc
-p?c'??
-root
-run
-sbin
-sys
-tmp
-usr
-var
-??????
+> I am running btrfs for a few months now. I just realized that I have
+> a few strange directories in /
 
-Is this a known problem? I have absolutely no idea where these
-directories come from.
+> % ls / -1
+> ?
+> ???J??
+>  Q???
+> PL????
+> PR????
+> bin
+> boot
+> dev
+> etc
+> home
+> lib
+> lib32
+> lib64
+> lost+found
+> media
+> mnt
+> opt
+> proc
+> p?c'??
+> root
+> run
+> sbin
+> sys
+> tmp
+> usr
+> var
+> ??????
 
-Best regards,
+> Is this a known problem? I have absolutely no idea where these
+> directories come from.
 
-Markus
+That are no (real) directories, that is a damaged file system. Look for  
+your backup.
+
+Viele Gruesse!
+Helmut

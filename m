@@ -1,41 +1,50 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from twin.jikos.cz ([89.185.236.188]:59914 "EHLO twin.jikos.cz"
+Received: from mx2.fusionio.com ([66.114.96.31]:48281 "EHLO mx2.fusionio.com"
 	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1752286Ab2GBQKS (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 2 Jul 2012 12:10:18 -0400
-Date: Mon, 2 Jul 2012 18:10:11 +0200
-From: David Sterba <dave@jikos.cz>
-To: Chris Mason <chris.mason@fusionio.com>,
-        "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>,
-        jbacik@fusionio.com
-Subject: Re: xfstests/224 lockup/slowdown (was: Please hammer my for-linus
- branch)
-Message-ID: <20120702161011.GE5326@twin.jikos.cz>
-Reply-To: dave@jikos.cz
+	id S1754940Ab2GBURk (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Mon, 2 Jul 2012 16:17:40 -0400
+Received: from mail1.int.fusionio.com (mail1.int.fusionio.com [10.101.1.21]) by mx2.fusionio.com with ESMTP id Ek2HOgkLLplVtdx0 (version=TLSv1 cipher=AES128-SHA bits=128 verify=NO) for <linux-btrfs@vger.kernel.org>; Mon, 02 Jul 2012 14:17:39 -0600 (MDT)
+Date: Mon, 2 Jul 2012 16:17:37 -0400
+From: Chris Mason <chris.mason@fusionio.com>
+To: "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
+Subject: Re: Please hammer my for-linus branch
+Message-ID: <20120702201737.GX17638@shiny>
 References: <20120701012259.GM17638@shiny>
- <20120702141052.GC5326@twin.jikos.cz>
- <20120702143453.GD5326@twin.jikos.cz>
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <20120702143453.GD5326@twin.jikos.cz>
+Content-Type: text/plain; charset="us-ascii"
+In-Reply-To: <20120701012259.GM17638@shiny>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Mon, Jul 02, 2012 at 04:34:53PM +0200, David Sterba wrote:
-> Bisection in progress.
+On Sat, Jun 30, 2012 at 09:22:59PM -0400, Chris Mason wrote:
+> Hi everyone,
+> 
+> I've got a nice set of fixes from Josef, Jan, Ilya and others in my
+> for-linus branch:
+> 
+> git://git.kernel.org/pub/scm/linux/kernel/git/mason/linux-btrfs.git for-linus
+> 
+> Some of the changes are fixes for the tree logging code, so I ran some
+> extra crash runs against them Friday night.
+> 
+> I ended up with a new crash in the tree log directory deletion replay
+> code, so I didn't send out the pull request to Linus.
+> 
+> It isn't clear yet if the new crash is because I was testing differently
+> or if it is a regression.  I'm nailing it down this weekend, but please
+> give my for-linus a shot.
 
-commit cae76522b19735c576803bec273f49062aa418ab
-Author: Josef Bacik <jbacik@fusionio.com>
-Date:   Thu Jun 21 14:05:49 2012 -0400
+Ok, I've just rebased for-linus.  I've dropped Josef's enospc patch,
+which should fix the regression Dave hit.  I've also added a fix for my
+log replay crash, which was definitely an old bug.  The delayed
+directory operations were queuing up the changes made during replay, and
+it was confusing the replay code.
 
-    Btrfs: flush delayed inodes if we're short on space
+Looks like there's a fix pending from Liu Bo, but I'll let Daniel test
+that before pulling it in as well.
 
-    Those crazy gentoo guys have been complaining about ENOSPC errors on their
-    portage volumes.  This is because doing things like untar tends to create
-    lots of new files which will soak up all the reservation space in the
-    delayed inodes.  Usually this gets papered over by the fact that we will try
-    and commit the transaction, however if this happens in the wrong spot or we
-    choose not to commit the transaction you will be screwed.  So add the
-    ability to expclitly flush delayed inodes to free up space.  Please test
-    this out guys to make sure it works since as usual I cannot reproduce.
-    Thanks,
+Thanks everyone.
+
+-chris
+
+

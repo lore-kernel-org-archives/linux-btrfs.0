@@ -1,68 +1,50 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([222.73.24.84]:24781 "EHLO song.cn.fujitsu.com"
-	rhost-flags-OK-FAIL-OK-OK) by vger.kernel.org with ESMTP
-	id S1751108Ab2GGHdM (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Sat, 7 Jul 2012 03:33:12 -0400
-Message-ID: <4FF7E8A7.5030705@cn.fujitsu.com>
-Date: Sat, 07 Jul 2012 15:43:35 +0800
-From: Liu Bo <liubo2009@cn.fujitsu.com>
+Received: from terminus.zytor.com ([198.137.202.10]:35099 "EHLO mail.zytor.com"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1751252Ab2GBP72 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Mon, 2 Jul 2012 11:59:28 -0400
+Message-ID: <4FF1C557.2040705@zytor.com>
+Date: Mon, 02 Jul 2012 08:59:19 -0700
+From: "H. Peter Anvin" <hpa@zytor.com>
 MIME-Version: 1.0
-To: Chris Mason <chris.mason@fusionio.com>
-CC: Zach Brown <zab@zabbo.net>,
-        "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
-Subject: Re: [PATCH 1/4] Btrfs: use radix tree for checksum
-References: <1339582751-32029-1-git-send-email-liubo2009@cn.fujitsu.com> <1339582751-32029-2-git-send-email-liubo2009@cn.fujitsu.com> <4FD8BAC9.2020108@zabbo.net> <4FD9437C.3070009@cn.fujitsu.com> <20120706153701.GP7159@shiny>
-In-Reply-To: <20120706153701.GP7159@shiny>
-Content-Type: text/plain; charset=ISO-8859-1
+To: Hugo Mills <hugo@carfax.org.uk>, Chris Mason <chris.mason@fusionio.com>,
+        "Chris L. Mason" <clmason@fusionio.com>,
+        Marios Titas <redneb8888@gmail.com>,
+        linux-btrfs <linux-btrfs@vger.kernel.org>
+Subject: Re: Feature request: true RAID-1 mode
+References: <4FE1F9E4.5090301@zytor.com> <CAAdM646jbr3+5stVTkX=E2Rb2SVWoMKyptr4Bv5g5-6O_6Uq4g@mail.gmail.com> <20120621005048.GA19507@shiny> <670f2f56-9918-4463-ad89-780ba80bfecc@email.android.com> <20120625152142.GD17638@shiny> <4FE8A3D9.3060400@zytor.com> <20120625225424.GG25572@carfax.org.uk> <4FE8EDA1.5090004@zytor.com>
+In-Reply-To: <4FE8EDA1.5090004@zytor.com>
+Content-Type: text/plain; charset=UTF-8; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 07/06/2012 11:37 PM, Chris Mason wrote:
+On 06/25/2012 04:00 PM, H. Peter Anvin wrote:
+>
+> I am aware of that, and it is not a problem... the one-device
+> bootloader can find out *which* disk it is talking to by comparing
+> uuids, and the btrfs data structures will tell it how to find the data
+> on that specific disk.  It does of course mean the bootloader needs to
+> be aware of the multidisk nature of btrfs, but that isn't a problem in
+> itself.
+>
 
-> On Wed, Jun 13, 2012 at 07:50:52PM -0600, Liu Bo wrote:
->> On 06/14/2012 12:07 AM, Zach Brown wrote:
->>
->>>>   int set_state_private(struct extent_io_tree *tree, u64 start, u64
->>>> private)
->>>>   {
->>> [...]
->>>> +    ret = radix_tree_insert(&tree->csum, (unsigned long)start,
->>>> +                   (void *)((unsigned long)private<<  1));
->>> Will this fail for 64bit files on 32bit hosts?
->>
->> In theory it will fail, but crc32c return u32, so private will be originally u32,
->> and it'd be ok on 32bit hosts.
-> 
-> The (unsigned long)start part looks wrong though.  This is the byte offset
-> from 0, so on a 32 bit machine you won't be able to have large files.
-> 
-> The page cache also has this limitation, but it gains extra bits
-> counting page indexes instead of byte indexes.
-> 
+So, also, let me address the question why we should care about a 
+one-device bootloader.  It is quite common, especially in fileservers, 
+for a subset of the boot devices to be inaccessible by the firmware, due 
+to bugs, boot time concerns (spinning up all the media in the firmware 
+is SLOW) or just plain lack of support of plug-in cards.  As such, the 
+reliable thing to do is to make sure that any disk being seen is enough 
+to bring up the system; since this is such a small amount of data with 
+modern standards, there is just no reason to do anything less robust.
 
+Once the kernel comes up it has all the device drivers, of course.
 
-I see.
-
-> I've made that change here and I'm benchmarking it on my big flash ;)
-> 
+	-hpa
 
 
-Thanks a lot. :)
+-- 
+H. Peter Anvin, Intel Open Source Technology Center
+I work for Intel.  I don't speak on their behalf.
 
-I must note that this patchset is still very initial, and this week I've fixed
-a deadlock bug hidden in the 4th patch (it can be triggered by xfstests 208).
-
-I'm planning to set up a worker thread or just use 'endio_meta' thread for merge_state
-and do more tuning work to lessen writer lock.
-
-thanks,
-liubo
-
-> -chris
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
-> 
 
 

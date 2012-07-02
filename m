@@ -1,52 +1,47 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from acsinet15.oracle.com ([141.146.126.227]:51654 "EHLO
-	acsinet15.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1752274Ab2G3IQT (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 30 Jul 2012 04:16:19 -0400
-Date: Mon, 30 Jul 2012 11:16:10 +0300
-From: Dan Carpenter <dan.carpenter@oracle.com>
-To: Chris Mason <chris.mason@fusionio.com>, Arne Jansen <sensille@gmx.net>
-Cc: linux-btrfs@vger.kernel.org, kernel-janitors@vger.kernel.org
-Subject: [patch 2/2] Btrfs: fix some error codes in btrfs_qgroup_inherit()
-Message-ID: <20120730081610.GD15702@elgon.mountain>
+Received: from cn.fujitsu.com ([222.73.24.84]:26347 "EHLO song.cn.fujitsu.com"
+	rhost-flags-OK-FAIL-OK-OK) by vger.kernel.org with ESMTP
+	id S1752375Ab2GBBaD (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Sun, 1 Jul 2012 21:30:03 -0400
+Message-ID: <4FF0FBE1.4000303@cn.fujitsu.com>
+Date: Mon, 02 Jul 2012 09:39:45 +0800
+From: Liu Bo <liubo2009@cn.fujitsu.com>
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
+To: Ilya Dryomov <idryomov@gmail.com>
+CC: linux-btrfs@vger.kernel.org
+Subject: Re: [PATCH 2/3] Btrfs-progs: make get default report correctly
+References: <1340964038-32584-1-git-send-email-liubo2009@cn.fujitsu.com> <1340964038-32584-2-git-send-email-liubo2009@cn.fujitsu.com> <20120629103643.GB1877@zambezi.lan>
+In-Reply-To: <20120629103643.GB1877@zambezi.lan>
+Content-Type: text/plain; charset=ISO-8859-1
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-These are returning zero when it should be returning a negative error
-code.
+On 06/29/2012 06:36 PM, Ilya Dryomov wrote:
 
-Signed-off-by: Dan Carpenter <dan.carpenter@oracle.com>
----
-Applies to linux-next.
+> On Fri, Jun 29, 2012 at 06:00:37PM +0800, Liu Bo wrote:
+>> We have both set-default and get-default, but actually our get-default
+>> does not show which one is the default one.
+>>
+>> This patch plus the kernel side patch fix this.
+> 
+> Are you referring to the fact that get-default in Chris' btrfs-progs
+> master lists all subvolumes instead of showing the default one?  If so,
+> I fixed that problem a while ago, patch is in Hugo's integration branch.
+> 
 
-diff --git a/fs/btrfs/qgroup.c b/fs/btrfs/qgroup.c
-index b650155..38b42e7 100644
---- a/fs/btrfs/qgroup.c
-+++ b/fs/btrfs/qgroup.c
-@@ -1371,8 +1371,10 @@ int btrfs_qgroup_inherit(struct btrfs_trans_handle *trans,
- 
- 	if (srcid) {
- 		srcgroup = find_qgroup_rb(fs_info, srcid);
--		if (!srcgroup)
-+		if (!srcgroup) {
-+			ret = -EINVAL;
- 			goto unlock;
-+		}
- 		dstgroup->rfer = srcgroup->rfer - level_size;
- 		dstgroup->rfer_cmpr = srcgroup->rfer_cmpr - level_size;
- 		srcgroup->excl = level_size;
-@@ -1381,8 +1383,10 @@ int btrfs_qgroup_inherit(struct btrfs_trans_handle *trans,
- 		qgroup_dirty(fs_info, srcgroup);
- 	}
- 
--	if (!inherit)
-+	if (!inherit) {
-+		ret = -EINVAL;
- 		goto unlock;
-+	}
- 
- 	i_qgroups = (u64 *)(inherit + 1);
- 	for (i = 0; i < inherit->num_qgroups; ++i) {
+
+So can you please show me a link about your patch?
+
+thanks,
+liubo
+
+> Thanks,
+> 
+> 		Ilya
+> --
+> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
+> the body of a message to majordomo@vger.kernel.org
+> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+> 
+
+

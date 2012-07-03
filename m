@@ -1,202 +1,48 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cantor2.suse.de ([195.135.220.15]:40884 "EHLO mx2.suse.de"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S932073Ab2GCCre (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 2 Jul 2012 22:47:34 -0400
-Date: Tue, 3 Jul 2012 12:47:27 +1000
-From: NeilBrown <neilb@suse.de>
-To: Kerin Millar <kerframil@gmail.com>
-Cc: linux-raid@vger.kernel.org, linux-btrfs@vger.kernel.org
-Subject: Re: raid10 make_request failure during iozone benchmark upon btrfs
-Message-ID: <20120703124727.6e2232d1@notabene.brown>
-In-Reply-To: <4FF2554D.2040300@gmail.com>
-References: <4FF108A8.6090606@gmail.com>
-	<20120702125227.179c4343@notabene.brown>
-	<4FF10E71.2090501@gmail.com>
-	<20120703113943.3e4c43ad@notabene.brown>
-	<4FF2554D.2040300@gmail.com>
-Mime-Version: 1.0
-Content-Type: multipart/signed; micalg=PGP-SHA1;
- boundary="Sig_/oFYIo4/0pUi2NDTUibc8/KB"; protocol="application/pgp-signature"
+Received: from acsinet15.oracle.com ([141.146.126.227]:42000 "EHLO
+	acsinet15.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S932097Ab2GCEI7 (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Tue, 3 Jul 2012 00:08:59 -0400
+Received: from acsinet21.oracle.com (acsinet21.oracle.com [141.146.126.237])
+	by acsinet15.oracle.com (Sentrion-MTA-4.2.2/Sentrion-MTA-4.2.2) with ESMTP id q6348vHl031142
+	(version=TLSv1/SSLv3 cipher=DHE-RSA-AES256-SHA bits=256 verify=OK)
+	for <linux-btrfs@vger.kernel.org>; Tue, 3 Jul 2012 04:08:58 GMT
+Received: from acsmt356.oracle.com (acsmt356.oracle.com [141.146.40.156])
+	by acsinet21.oracle.com (8.14.4+Sun/8.14.4) with ESMTP id q6348vKO027541
+	(version=TLSv1/SSLv3 cipher=DHE-RSA-AES256-SHA bits=256 verify=NO)
+	for <linux-btrfs@vger.kernel.org>; Tue, 3 Jul 2012 04:08:57 GMT
+Received: from abhmt102.oracle.com (abhmt102.oracle.com [141.146.116.54])
+	by acsmt356.oracle.com (8.12.11.20060308/8.12.11) with ESMTP id q6348v6q011214
+	for <linux-btrfs@vger.kernel.org>; Mon, 2 Jul 2012 23:08:57 -0500
+From: Anand jain <Anand.Jain@oracle.com>
+To: linux-btrfs@vger.kernel.org
+Cc: Anand Jain <anand.jain@oracle.com>
+Subject: [PATCH] btrfs read error corrected message floods the console during recovery
+Date: Tue,  3 Jul 2012 12:05:21 +0800
+Message-Id: <1341288321-2749-1-git-send-email-Anand.Jain@oracle.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
---Sig_/oFYIo4/0pUi2NDTUibc8/KB
-Content-Type: text/plain; charset=US-ASCII
-Content-Transfer-Encoding: quoted-printable
+From: Anand Jain <anand.jain@oracle.com>
 
-On Tue, 03 Jul 2012 03:13:33 +0100 Kerin Millar <kerframil@gmail.com> wrote:
+Changing printk_in_rcu to printk_ratelimited_in_rcu will suffice
+---
+ fs/btrfs/extent_io.c |    2 +-
+ 1 files changed, 1 insertions(+), 1 deletions(-)
 
-> Hi,
->=20
-> On 03/07/2012 02:39, NeilBrown wrote:
->=20
-> [snip]
->=20
->  >>> Could you please double check that you are running a kernel with
->  >>>
->  >>> commit aba336bd1d46d6b0404b06f6915ed76150739057
->  >>> Author: NeilBrown<neilb@suse.de>
->  >>> Date:   Thu May 31 15:39:11 2012 +1000
->  >>>
->  >>>       md: raid1/raid10: fix problem with merge_bvec_fn
->  >>>
->  >>> in it?
->  >>
->  >> I am indeed. I searched the list beforehand and noticed the patch in
->  >> question. Not sure which -rc it landed in but I checked my source tree
->  >> and it's definitely in there.
->  >>
->  >> Cheers,
->  >>
->  >> --Kerin
->  >
->  > Thanks.
->  > Looking at it again I see that it is definitely a different bug, that =
-patch
->  > wouldn't affect it.
->  >
->  > But I cannot see what could possibly be causing the problem.
->  > You have a 256K chunk size, so requests should be limited to 512 secto=
-rs
->  > aligned at a 512-sector boundary.
->  > However all the requests that a causing errors are 512 sectors long, b=
-ut
->  > aligned on a 256-sector boundary (which is not also 512-sector).  This=
- is
->  > wrong.
->=20
-> I see.
->=20
->  >
->  > It could be that btrfs is submitting bad requests, but I think it alwa=
-ys uses
->  > bio_add_page, and bio_add_page appears to do the right thing.
->  > It could be that dm-linear is causing problem, but it seems to correct=
-ly after
->  > the underlying device for alignment, and reports that alignment to
->  > bio_add_page.
->  > It could be that md/raid10 is the problem but I cannot find any fault =
-in
->  > raid10_mergeable_bvec - performs much the same tests that the
->  > raid01 make_request function does.
->  >
->  > So it is a mystery.
->  >
->  > Is this failure repeatable?
->=20
-> Yes, it's reproducible with 100% consistency. Furthermore, I tried to
-> use the btrfs volume as a store for the package manager, so as to try
-> with a 'realistic' workload. Many of these errors were triggered
-> immediately upon invoking the package manager. In case it matters, the
-> package manager is portage (in Gentoo Linux) and the directory structure
-> entails a shallow directory depth with a large number of distributed
-> small files. I haven't been able to reproduce with xfs, ext4 or reiserfs.
->=20
->  >
->  > If so, could you please insert
->  >     WARN_ON_ONCE(1);
->  > in drivers/md/raid10.c where it prints out the message: just after the
->  > "bad_map:" label.
->  >
->  > Also, in raid10_mergeable_bvec, insert
->  >     WARN_ON_ONCE(max<  0);
->  > just before
->  > 		if (max<  0)
->  > 			/* bio_add cannot handle a negative return */
->  > 			max =3D 0;
->  >
->  > and then see if either of those generate a warning, and post the full =
-stack
->  > trace  if they do.
->=20
-> OK. I ran iozone again on a fresh filesystem, mounted with the default
-> options. Here's the trace that appears, just before the first
-> make_request_bug message:
->=20
-> WARNING: at drivers/md/raid10.c:1094 make_request+0xda5/0xe20()
-> Hardware name: ProLiant MicroServer
-> Modules linked in: btrfs zlib_deflate lzo_compress kvm_amd kvm sp5100_tco=
- i2c_piix4
-> Pid: 1031, comm: btrfs-submit-1 Not tainted 3.5.0-rc5 #3
-> Call Trace:
-> [<ffffffff81031987>] ? warn_slowpath_common+0x67/0xa0
-> [<ffffffff81442b45>] ? make_request+0xda5/0xe20
-> [<ffffffff81460b34>] ? __split_and_process_bio+0x2d4/0x600
-> [<ffffffff81063429>] ? set_next_entity+0x29/0x60
-> [<ffffffff810652c3>] ? pick_next_task_fair+0x63/0x140
-> [<ffffffff81450b7f>] ? md_make_request+0xbf/0x1e0
-> [<ffffffff8123d12f>] ? generic_make_request+0xaf/0xe0
-> [<ffffffff8123d1c3>] ? submit_bio+0x63/0xe0
-> [<ffffffff81040abd>] ? try_to_del_timer_sync+0x7d/0x120
-> [<ffffffffa016839a>] ? run_scheduled_bios+0x23a/0x520 [btrfs]
-> [<ffffffffa0170e40>] ? worker_loop+0x120/0x520 [btrfs]
-> [<ffffffffa0170d20>] ? btrfs_queue_worker+0x2e0/0x2e0 [btrfs]
-> [<ffffffff810520c5>] ? kthread+0x85/0xa0
-> [<ffffffff815441f4>] ? kernel_thread_helper+0x4/0x10
-> [<ffffffff81052040>] ? kthread_freezable_should_stop+0x60/0x60
-> [<ffffffff815441f0>] ? gs_change+0xb/0xb
->=20
-> Cheers,
->=20
-> --Kerin
+diff --git a/fs/btrfs/extent_io.c b/fs/btrfs/extent_io.c
+index aaa12c1..5ad8743 100644
+--- a/fs/btrfs/extent_io.c
++++ b/fs/btrfs/extent_io.c
+@@ -1918,7 +1918,7 @@ int repair_io_failure(struct btrfs_mapping_tree *map_tree, u64 start,
+ 		return -EIO;
+ 	}
+ 
+-	printk_in_rcu(KERN_INFO "btrfs read error corrected: ino %lu off %llu "
++	printk_ratelimited_in_rcu(KERN_INFO "btrfs read error corrected: ino %lu off %llu "
+ 		      "(dev %s sector %llu)\n", page->mapping->host->i_ino,
+ 		      start, rcu_str_deref(dev->name), sector);
+ 
+-- 
+1.7.1
 
-Thanks.  Looks like it is a btrfs bug - so a big "hello" to linux-btrfs :-)
-
-The symptom is that iozone on btrfs on md/raid10 can result in
-
-[  919.893454] md/raid10:md0: make_request bug: can't convert block across =
-chunks or bigger than 256k 6653500160 256
-[  919.893465] btrfs: bdev /dev/mapper/vg0-test errs: wr 1, rd 0, flush 0, =
-corrupt 0, gen 0
-
-
-i.e. RAID10 has a 256K chunk size, but is getting 256K requests which overl=
-ap
-two chunks - the last half of one chunk and the first half of the next.
-That isn't allowed and raid10_mergeable_bvec, called by bio_add_page, should
-prevent it.
-
-However btrfs_map_bio() sets ->bi_sector to a new value without verifying
-that the resulting bio is still acceptable - which it isn't.
-
-The core problem is that you cannot build a bio for one location, then use =
-it
-freely at another location.
-md/raid1 handles this by checking each addition to a bio against all the
-possible location that it might read/write it.  Maybe btrfs could do the
-same.
-Alternately we could work with Kent Overstreet (of bcache fame) to remove t=
-he
-restriction that the fs must make the bio compatible with the device -
-instead requiring the device to split bios when needed, and making it easy =
-to
-do that (currently it is not easy).
-And there are probably other alternative.
-
-Thanks,
-NeilBrown
-
---Sig_/oFYIo4/0pUi2NDTUibc8/KB
-Content-Type: application/pgp-signature; name=signature.asc
-Content-Disposition: attachment; filename=signature.asc
-
------BEGIN PGP SIGNATURE-----
-Version: GnuPG v2.0.18 (GNU/Linux)
-
-iQIVAwUBT/JdPznsnt1WYoG5AQKoBw//YRb104dMq0mn1bZPUcIFnAUMKYvQiM1A
-BXSmPZFiEUhgKY1FIT9yqZwUbxCPKPqStiPQ8dBAKEDnwmVj4Jbx5qRlUhwyjxxe
-VPnh26UuC0wMWLhIGj94BBGHYX5536kpIxmHKfG591/mKs3XTygbmP1p9OomHvzg
-slILyHibyF2TXrkDRAKZVgug2MZ9Xvtz5vN+95+v6TADhKdR30hVaCl2dCALasyw
-iUVPR2jEfN8zas3JV7iU3hnxOHLDhoGtf9FOEIAEn/+pVyaEYuUbPcgdzPX1faCb
-7EL2BuL0yeNn6jesqNIAuY+GBpqU/u/Tl2ENZXZQ5+DdOXEPfmM+AOaYmg4hB/eh
-f+Wmn1C2TMlsh+ieENKVqX7vO168H0PYodDh6nEuIXEISVwjPrLTGYhaSU33c7Fh
-VShnvAkkAGo844c4spvzRuyjC4+fnu9yUdnwC7ieFrLTo0c0UgJfVVmKAEgKG39v
-ud0JC5iQlCHWB7kTGuJ0iniseLMD3oDX3D69Jz2rR5H5Hl1fAoHW3nTfv0XeXdZt
-ydYTQCqvcllcoMeznGB3NJocYwEKaTY9X4/yMgyLItqUQXVL0IFJkM83SCOy9Tun
-ukBdLDGGUxm1+nzrqHk9B7WwBHyktJ49qcJ9zIj8VzCcFIAdt9RlhFVaVI4+FJsq
-8+mo8jBLYMs=
-=WbOU
------END PGP SIGNATURE-----
-
---Sig_/oFYIo4/0pUi2NDTUibc8/KB--

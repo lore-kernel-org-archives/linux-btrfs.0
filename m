@@ -1,37 +1,61 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from brockman.in8.de ([85.214.220.56]:41522 "EHLO mail.in8.de"
+Received: from mx1.fusionio.com ([66.114.96.30]:36122 "EHLO mx1.fusionio.com"
 	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1755009Ab2GCOf0 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 3 Jul 2012 10:35:26 -0400
-Received: from [172.24.1.213] (unknown [192.166.201.94])
-	(using TLSv1 with cipher DHE-RSA-AES256-SHA (256/256 bits))
-	(No client certificate requested)
-	by mail.in8.de (Postfix) with ESMTPSA id 499866AC26F
-	for <linux-btrfs@vger.kernel.org>; Tue,  3 Jul 2012 16:35:25 +0200 (CEST)
-Message-ID: <4FF3032D.1010007@jan-o-sch.net>
-Date: Tue, 03 Jul 2012 16:35:25 +0200
-From: Jan Schmidt <list.btrfs@jan-o-sch.net>
+	id S1754763Ab2GCPIo (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Tue, 3 Jul 2012 11:08:44 -0400
+Date: Tue, 3 Jul 2012 11:08:41 -0400
+From: Chris Mason <chris.mason@fusionio.com>
+To: NeilBrown <neilb@suse.de>
+CC: Kerin Millar <kerframil@gmail.com>,
+        "linux-raid@vger.kernel.org" <linux-raid@vger.kernel.org>,
+        "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
+Subject: Re: raid10 make_request failure during iozone benchmark upon btrfs
+Message-ID: <20120703150841.GE14928@shiny>
+References: <4FF108A8.6090606@gmail.com>
+ <20120702125227.179c4343@notabene.brown>
+ <4FF10E71.2090501@gmail.com>
+ <20120703113943.3e4c43ad@notabene.brown>
+ <4FF2554D.2040300@gmail.com>
+ <20120703124727.6e2232d1@notabene.brown>
 MIME-Version: 1.0
-To: linux-btrfs@vger.kernel.org
-Subject: Re: btrfs GPF in read_extent_buffer() while scrubbing with kernel
- 3.4.2
-References: <20120702230121.GD12755@sli.dy.fi> <4FF2EF68.6090401@jan-o-sch.net> <20120703135824.GA8908@sli.dy.fi>
-In-Reply-To: <20120703135824.GA8908@sli.dy.fi>
-Content-Type: text/plain; charset=ISO-8859-1
+Content-Type: text/plain; charset="us-ascii"
+In-Reply-To: <20120703124727.6e2232d1@notabene.brown>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 03.07.2012 15:58, Sami Liedes wrote:
-> I think I might try setting up that netconsole to see if there are any
-> interesting console messages before the oops... As I said, I also was
-> able to reproduce this on 3.4.4, so ATM I assume I'm able to reproduce
-> this at will.
+On Mon, Jul 02, 2012 at 08:47:27PM -0600, NeilBrown wrote:
+> Thanks.  Looks like it is a btrfs bug - so a big "hello" to linux-btrfs :-)
+> 
+> The symptom is that iozone on btrfs on md/raid10 can result in
+> 
+> [  919.893454] md/raid10:md0: make_request bug: can't convert block across chunks or bigger than 256k 6653500160 256
+> [  919.893465] btrfs: bdev /dev/mapper/vg0-test errs: wr 1, rd 0, flush 0, corrupt 0, gen 0
+> 
+> 
+> i.e. RAID10 has a 256K chunk size, but is getting 256K requests which overlap
+> two chunks - the last half of one chunk and the first half of the next.
+> That isn't allowed and raid10_mergeable_bvec, called by bio_add_page, should
+> prevent it.
+> 
+> However btrfs_map_bio() sets ->bi_sector to a new value without verifying
+> that the resulting bio is still acceptable - which it isn't.
+> 
+> The core problem is that you cannot build a bio for one location, then use it
+> freely at another location.
+> md/raid1 handles this by checking each addition to a bio against all the
+> possible location that it might read/write it.  Maybe btrfs could do the
+> same.
+> Alternately we could work with Kent Overstreet (of bcache fame) to remove the
+> restriction that the fs must make the bio compatible with the device -
+> instead requiring the device to split bios when needed, and making it easy to
+> do that (currently it is not easy).
+> And there are probably other alternative.
 
-That would be helpful. It's good that it's reproducible. Please paste the entire
-output if possible.
+In this case btrfs should really break the bio down to smaller chunks
+and hand feed the lower layers.  There are corners where we think the
+device can go a certain size and then later on figure out we were just
+too optimistic.  So we should deal with it by breaking the bio up and
+then lowering our max.
 
-If there's nothing immediately useful in there, I'll try to make up some
-debugging patches for that problem.
+-chris
 
-Thanks!
--Jan

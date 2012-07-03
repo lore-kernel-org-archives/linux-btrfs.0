@@ -1,70 +1,92 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from smtp-2.hut.fi ([130.233.228.92]:51140 "EHLO smtp-2.hut.fi"
+Received: from smtp-4.hut.fi ([130.233.228.94]:40064 "EHLO smtp-4.hut.fi"
 	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1756303Ab2GCNOl (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 3 Jul 2012 09:14:41 -0400
-Received: from localhost (katosiko.hut.fi [130.233.228.115])
-	by smtp-2.hut.fi (8.13.6/8.12.10) with ESMTP id q63DEdlJ004123
-	for <linux-btrfs@vger.kernel.org>; Tue, 3 Jul 2012 16:14:39 +0300
-Received: from smtp-2.hut.fi ([130.233.228.92])
- by localhost (katosiko.hut.fi [130.233.228.115]) (amavisd-new, port 10024)
- with LMTP id 01739-1218 for <linux-btrfs@vger.kernel.org>;
- Tue,  3 Jul 2012 16:14:39 +0300 (EEST)
-Received: from kosh.localdomain (kosh.hut.fi [130.233.228.12])
-	by smtp-2.hut.fi (8.13.6/8.12.10) with ESMTP id q63DEVQb004116
-	for <linux-btrfs@vger.kernel.org>; Tue, 3 Jul 2012 16:14:31 +0300
-Date: Tue, 3 Jul 2012 16:14:30 +0300
+	id S1751358Ab2GCN6k (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Tue, 3 Jul 2012 09:58:40 -0400
+Date: Tue, 3 Jul 2012 16:58:25 +0300
 From: Sami Liedes <sami.liedes@iki.fi>
-To: linux-btrfs@vger.kernel.org
+To: Jan Schmidt <list.btrfs@jan-o-sch.net>
+Cc: linux-btrfs@vger.kernel.org
 Subject: Re: btrfs GPF in read_extent_buffer() while scrubbing with kernel
  3.4.2
-Message-ID: <20120703131430.GA8825@sli.dy.fi>
+Message-ID: <20120703135824.GA8908@sli.dy.fi>
 References: <20120702230121.GD12755@sli.dy.fi>
+ <4FF2EF68.6090401@jan-o-sch.net>
 MIME-Version: 1.0
 Content-Type: multipart/signed; micalg=pgp-sha512;
-	protocol="application/pgp-signature"; boundary="qMm9M+Fa2AknHoGS"
-In-Reply-To: <20120702230121.GD12755@sli.dy.fi>
+	protocol="application/pgp-signature"; boundary="GvXjxJ+pjyke8COw"
+In-Reply-To: <4FF2EF68.6090401@jan-o-sch.net>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
 
---qMm9M+Fa2AknHoGS
+--GvXjxJ+pjyke8COw
 Content-Type: text/plain; charset=us-ascii
 Content-Disposition: inline
+Content-Transfer-Encoding: quoted-printable
 
-On Tue, Jul 03, 2012 at 02:01:21AM +0300, Sami Liedes wrote:
-> I just got this oops on a computer running 3.4.2.
+On Tue, Jul 03, 2012 at 03:11:04PM +0200, Jan Schmidt wrote:
+> > The oops is transcribed from photos, so it may contain some errors. I
+>=20
+> You did *what*? :-) Uploading a photo would be fine, just in case that's =
+easier
+> for you the next time.
 
-I now repeated this on 3.4.4. Merely running a "btrfs scrub start /"
-causes this after a couple of minutes of running. This time I didn't
-run "btrfs scrub status /" in a loop, so that's not the cause. And
-judging from the two tries and two crashes, this seems very
-repeatable.
+Nah, it's sometimes refreshing to do something that doesn't take too
+much thinking for a while. Besides I fault myself for not having had
+netconsole logging on that machine and needed to punish myself for
+that omission ;)
 
-The backtrace is basically exactly the same as with 3.4.4.
+> That's looking strange.
+>=20
+> I checked the readahead code again: It deliberately skips locking and uses
+> btrfs_node_key with a counter variable. This means, we might end up readi=
+ng a
+> key that's no longer actually there. However, it only operates on nodes of
+> trees, not leaves. Node entries have a fixed size, so no matter what chan=
+ges in
+> the node, you won't reach behind the end of that node with an index that =
+was
+> valid the moment before.
+>=20
+> As far as I see it, that algorithm is safe. It could miss some keys or do=
+ some
+> extra work that's not strictly required, but it should never reach a GPF =
+=66rom
+> btrfs_node_key.
+>=20
+> If no other ideas come up, I'd try memtesting that machine.
+
+Ran a full pass of memtest86+ v4.20, with no errors found. Also the
+machine works very well in all other respects under heavy load.
+
+I think I might try setting up that netconsole to see if there are any
+interesting console messages before the oops... As I said, I also was
+able to reproduce this on 3.4.4, so ATM I assume I'm able to reproduce
+this at will.
 
 	Sami
 
---qMm9M+Fa2AknHoGS
+--GvXjxJ+pjyke8COw
 Content-Type: application/pgp-signature; name="signature.asc"
 Content-Description: Digital signature
 
 -----BEGIN PGP SIGNATURE-----
 Version: GnuPG v1.4.12 (GNU/Linux)
 
-iQIcBAEBCgAGBQJP8vA1AAoJEKLT589SE0a0VD0QANY6zmplnAPVFgyTxoIfYLPW
-cfgsldXzEpeTOCixvI0B9skuGPpmeUfYObYMz0heTTeYWtJDsCzWjQTF2PyMxdy7
-pnLpbCQ/cZWS5b//v8J8MYqqn5L01I7Iwr+vFdjiesLSgpM39ogvPozs+q4upXCA
-tBNFty8edoblVVD8nWt1s+RmCnJysnlhVn+4hx3/jbEcqaP/1XlOdE/8fBc3zmUk
-CcN/pNM9dFav9VOyCCJ2EEzSzHuj/b6W51GLUOKKk9KCyB9RflqjzbHhrMK4cxcg
-yhRTXlc5rhbzDC1odBpOxB40NVNSCSwjUCp/yp6wvRx3vqvrl4ztlJ+GpLgdgSJJ
-xFvXa9N1afwXGgZND7Gv3rNv75P2BkA1/QfgFi5rOTNbSr7Y4HI1iZCNv0FWeaWt
-aoc9xHTByb3rIE4FYBQjfqqNDtjEj8uvzCgKJKZqeGPrptl86b/6fjYBYIqfHhAQ
-S64EwaNfMD12WfaBqPZ/+S9PXPcU6DGgS1VL5kWj/Q9pNK8l9qXdUMJtVFDZfrjo
-xToXYe3GmLUZxnLGXB51YtgdHxyIBwrT2Z80drQRp8lbZVn4b1sP+9NnXg2GzFDs
-1AvhpOx0uCRuFLbIQx1pHwdp+BTegi2BC427YMptpp0ILuE1H4ljFC8Bfudt6qFo
-dXEqeER09aEfzJcVJ36u
-=f0b+
+iQIcBAEBCgAGBQJP8vqAAAoJEKLT589SE0a0hSAP/AlPqGzfb1KL2ftYY+JQgWHy
+oyX4aWB5fmPbesnTJK6snvF2S4gaWR7mkGC6KS+OGNKdXTGkPOz4+RZHEumuNk0I
+hm0qAd5GcDPTH9MdBiuwe5mJXkvyAZ2L3Qk80JSotKqrVpT1fV1Duue/LHwQ5150
+M2paGUsYi89zPrpR6Oqh0g4SYl13wvrDxiSiLMR8gAclXF2pefA4v+lfZNb9gPOJ
+TyYpRafHUgy/jmeHO0V24FzZm21RUrCZdt1bdNNk7N2pZuuIKDwKORDwyY4CIdPO
+3+HAY+DdWYIiW1YsK6KKN+w3pxkQhDzJY7bU7QiO9GhMQCft7w7wVv8n4LR+DpUa
+uhet7r7XbTcUSczs4bl0ZUlwKziKqSLLGzoIBYzyPR0ZBddJRUp+LuIz80yRb0fS
+mAl6yOm5FYW+CGActG+VTsDddLZDoyQa7catkwHpGXwK/z84LLN3+6tgsVNRCLnc
+eSH6XSpdQreFGH+gUxehlby4z6POwXoCHFBd/szPqoGbekM9kEMX27s6NF44JY0n
+gm7giVxo6zfpXRZXTr75EeV0aH1q/CbhXBjtmnA+Fk12gdmUgUtv8Tlif+hFz2M6
+7zRpz36dlUTqy5CnwOvokyC6DxAsV7jl8G2PP9EBV3ggiisS9WUW1/Jju1xLcMFl
+VRj/Bv4CmIYDveztUnbs
+=XAWZ
 -----END PGP SIGNATURE-----
 
---qMm9M+Fa2AknHoGS--
+--GvXjxJ+pjyke8COw--

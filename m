@@ -1,54 +1,68 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from twin.jikos.cz ([89.185.236.188]:34697 "EHLO twin.jikos.cz"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1750839Ab2GDNnE (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 4 Jul 2012 09:43:04 -0400
-Date: Wed, 4 Jul 2012 15:42:58 +0200
-From: David Sterba <dave@jikos.cz>
-To: "Fajar A. Nugraha" <list@fajar.net>
-Cc: Hugo Mills <hugo@carfax.org.uk>,
+Received: from ipmail06.adl6.internode.on.net ([150.101.137.145]:42994 "EHLO
+	ipmail06.adl6.internode.on.net" rhost-flags-OK-OK-OK-OK)
+	by vger.kernel.org with ESMTP id S1750759Ab2GDDZw (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>);
+	Tue, 3 Jul 2012 23:25:52 -0400
+Date: Wed, 4 Jul 2012 13:25:47 +1000
+From: Dave Chinner <david@fromorbit.com>
+To: Zach Brown <zab@zabbo.net>, Hugo Mills <hugo@carfax.org.uk>,
         =?iso-8859-1?Q?Sw=E2mi?= Petaramesh <swami@petaramesh.org>,
         linux-btrfs@vger.kernel.org
 Subject: Re: BTRFS fsck apparent errors
-Message-ID: <20120704134258.GL5326@twin.jikos.cz>
-Reply-To: dave@jikos.cz
+Message-ID: <20120704032547.GE19223@dastard>
 References: <4FF30B55.6060205@petaramesh.org>
  <20120703152208.GA28701@carfax.org.uk>
- <CAG1y0scaAqck=LYJdfhQa02BsrnBM7=24RFG5j00pb0QSdn1LA@mail.gmail.com>
+ <20120703155212.GG5326@twin.jikos.cz>
+ <4FF31D41.8070907@zabbo.net>
+ <20120703173742.GH5326@twin.jikos.cz>
 MIME-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <CAG1y0scaAqck=LYJdfhQa02BsrnBM7=24RFG5j00pb0QSdn1LA@mail.gmail.com>
+In-Reply-To: <20120703173742.GH5326@twin.jikos.cz>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Wed, Jul 04, 2012 at 07:40:05AM +0700, Fajar A. Nugraha wrote:
-> Are there any known btrfs regression in 3.4? I'm using 3.4.0-3-generic
-> from a ppa, but a normal mount - umount cycle seems MUCH longer
-> compared to how it was on 3.2, and iostat shows the disk is
-> read-IOPS-bound
-
-Is it just mount/umount without any other activity? Is the fs
-fragmented (or aged), almost full, has lots of files?
-
+On Tue, Jul 03, 2012 at 07:37:42PM +0200, David Sterba wrote:
+> On Tue, Jul 03, 2012 at 09:26:41AM -0700, Zach Brown wrote:
+> > On 07/03/2012 08:52 AM, David Sterba wrote:
+> > >--- a/btrfsck.c
+> > >+++ b/btrfsck.c
+> > >@@ -3474,6 +3474,7 @@ static struct option long_options[] = {
+> > >         { "repair", 0, NULL, 0 },
+> > >         { "init-csum-tree", 0, NULL, 0 },
+> > >         { "init-extent-tree", 0, NULL, 0 },
+> > >+       { "force", 0, NULL, 0 },
+> > 
+> > If we were to run with this, I think it should be called something other
+> > than force.  fsck.ext* has trained people to think that 'forcing' a fsck
+> > means doing a full repair pass even if the fs thinks that it was shut
+> > down cleanly.
 > 
-> # time mount LABEL=WD-root
-> 
-> real	0m10.400s
-> user	0m0.000s
-> sys	0m0.060s
-> 
-> # time umount /media/WD-root/
-> 
-> real	0m22.419s
-> user	0m0.000s
-> sys	0m0.064s
-> 
-> # /proc/10142/stack  <--- the PID of umount process
+> Agreed, it's not a good name and was rather a quick aid to myself, I
+> didn't put much thinking into the user interface as I usually do :)
 
-The process(es) actually doing the work are the btrfs workers, usual
-sucspects are btrfs-cache (free space cache) or btrfs-ino (inode cache)
-that are writing the cache states back to disk.
-I'm using iotop to observe such things.
+xfs_repair uses:
 
+       -d     Repair  dangerously.  Allow  xfs_repair  to  repair an
+	      XFS filesystem mounted read only. This is typically
+	      done on a root fileystem from single user mode,
+	      immediately followed by a reboot.
 
-david
+> > --read-only would be good if fsck was taught to not even try to write in
+> > this mode.
+> 
+> read-only mode is default and (hopefully) does no writes to the device,
+> this would require the --repair option so what you propose is sort of a
+> sanity check, right?
+
+If you run fsck/reapir on a mounted filesystem, and it changes the
+block device (i.e. fixes something) the mounted filesystem does not
+know about it and so may use stale metadata and bad things will
+happen. That's why it's called "dangerous". ;)
+
+Cheers,
+
+Dave.
+-- 
+Dave Chinner
+david@fromorbit.com

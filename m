@@ -1,243 +1,167 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([222.73.24.84]:32243 "EHLO song.cn.fujitsu.com"
-	rhost-flags-OK-FAIL-OK-OK) by vger.kernel.org with ESMTP
-	id S1755660Ab2GaE60 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 31 Jul 2012 00:58:26 -0400
-Message-ID: <501765E4.5080107@cn.fujitsu.com>
-Date: Tue, 31 Jul 2012 12:58:12 +0800
-From: Liu Bo <liubo2009@cn.fujitsu.com>
+Received: from mail-gg0-f174.google.com ([209.85.161.174]:62942 "EHLO
+	mail-gg0-f174.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1752642Ab2GDHaA (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Wed, 4 Jul 2012 03:30:00 -0400
+Received: by gglu4 with SMTP id u4so6151932ggl.19
+        for <linux-btrfs@vger.kernel.org>; Wed, 04 Jul 2012 00:30:00 -0700 (PDT)
+From: chandan r <chandanrmail@gmail.com>
+To: linux-btrfs@vger.kernel.org
+Subject: [PATCH] Btrfs: Add code to support file creation time.
+Date: Wed, 04 Jul 2012 12:48:07 +0530
+Message-ID: <87ipe43sgg.fsf@gmail.com>
 MIME-Version: 1.0
-To: Kyle Gates <kylegates@gmail.com>
-CC: linux-btrfs@vger.kernel.org
-Subject: Re: balance disables nodatacow
-References: <CA+M2DjmS0xB8zinvELi5SBg1QRxabvHfpd1MqJxqCB65qq1ceA@mail.gmail.com>	<50173C37.9090607@cn.fujitsu.com> <CA+M2Dj=oG_1QZKn1Y3wncmCw=dmLF9psBH6PPhe1Xha5-P=h9A@mail.gmail.com>
-In-Reply-To: <CA+M2Dj=oG_1QZKn1Y3wncmCw=dmLF9psBH6PPhe1Xha5-P=h9A@mail.gmail.com>
-Content-Type: text/plain; charset=UTF-8
+Content-Type: text/plain
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 07/31/2012 12:35 PM, Kyle Gates wrote:
+This patch adds a new member to the 'struct btrfs_inode' structure to hold
+the file creation time.
 
-> On Mon, Jul 30, 2012 at 9:00 PM, Liu Bo <liubo2009@cn.fujitsu.com> wrote:
->> On 07/31/2012 03:55 AM, Kyle Gates wrote:
->>
->>> I have a 3 disk raid1 filesystem mounted with nodatacow. I have a
->>> folder in said filesystem with the 'C' NOCOW & 'Z' Not_Compressed
->>> flags set for good measure. I then copy in a large file and proceed to
->>> make random modifications. Filefrag shows no additional extents
->>> created, good so far. A big thank you to the those devs who got that
->>> working.
->>> However, after a balance run (which crashed btw), modifications to the
->>> file result in increasing extent counts, ie. no longer obeying
->>> nodatacow mount option nor the 'C' flag.
->>> I realize that a balance will cow the data but it should not disable
->>> the ability to make nodatacow inline changes to a file.
->>>
->>> I'm currently running 3.5.0 mainline Ubuntu kernel with the latest
->>> master of btrfs-progs from a ppa.
->>>
->>
->> hmm, I want to know if your 3.5.0 mainline ubuntu kernel has the commit:
->>
->> Btrfs: make btrfs's allocation smoothly with preallocation
->>
->> This commit may help you out of trouble.
->> Please let us know the result.
->>
->> thanks,
->> liubo
->>
->>> Thank you.
->>> Kyle Gates
-> I didn't have that commit before but I do now:
-> Linux home 3.5.0-999-generic #201207290405 SMP Sun Jul 29 08:13:26 UTC
-> 2012 i686 athlon i386 GNU/Linux
-> 
-> One of my disk is having some issues though. I got this why running a
-> balance which is now hung:
-> 
+Signed-off-by: chandan <chandanrmail@gmail.com>
+---
+ fs/btrfs/btrfs_inode.h   |  3 +++
+ fs/btrfs/ctree.h         |  8 ++++++++
+ fs/btrfs/delayed-inode.c | 10 +++++++++-
+ fs/btrfs/inode.c         | 25 ++++++++++++++++++++++---
+ 4 files changed, 42 insertions(+), 4 deletions(-)
 
-
-oops, I know where goes wrong.  I should have noticed it, sorry Kyle.
-
-We've not merged the following patch into mainline:
-
-Btrfs: allow delayed refs to be merged V2
-(link: https://patchwork.kernel.org/patch/1197821/)
-
-So could you please apply the patch and test it again?
-
-thanks,
-liubo
-
-> Jul 30 23:26:38 home kernel: [ 3809.072508] btrfs: found 43 extents
-> Jul 30 23:26:41 home kernel: [ 3811.987119] btrfs: found 43 extents
-> Jul 30 23:26:41 home kernel: [ 3812.264800] btrfs: relocating block
-> group 1270947512320 flags 17
-> Jul 30 23:26:55 home kernel: [ 3825.690152] ata3.00: exception Emask
-> 0x0 SAct 0x0 SErr 0x0 action 0x0
-> Jul 30 23:26:55 home kernel: [ 3825.690161] ata3.00: BMDMA stat 0x64
-> Jul 30 23:26:55 home kernel: [ 3825.690166] ata3.00: failed command:
-> READ DMA EXT
-> Jul 30 23:26:55 home kernel: [ 3825.690174] ata3.00: cmd
-> 25/00:00:00:44:2d/00:04:0c:00:00/e0 tag 0 dma 524288 in
-> Jul 30 23:26:55 home kernel: [ 3825.690174]          res
-> 51/40:00:bd:45:2d/40:00:0c:00:00/e0 Emask 0x9 (media error)
-> Jul 30 23:26:55 home kernel: [ 3825.690177] ata3.00: status: { DRDY ERR }
-> Jul 30 23:26:55 home kernel: [ 3825.690180] ata3.00: error: { UNC }
-> Jul 30 23:26:55 home kernel: [ 3825.712355] ata3.00: configured for UDMA/133
-> Jul 30 23:26:55 home kernel: [ 3825.712396] sd 2:0:0:0: [sdd]
-> Unhandled sense code
-> Jul 30 23:26:55 home kernel: [ 3825.712400] sd 2:0:0:0: [sdd]
-> Jul 30 23:26:55 home kernel: [ 3825.712402] Result: hostbyte=DID_OK
-> driverbyte=DRIVER_SENSE
-> Jul 30 23:26:55 home kernel: [ 3825.712405] sd 2:0:0:0: [sdd]
-> Jul 30 23:26:55 home kernel: [ 3825.712408] Sense Key : Medium Error
-> [current] [descriptor]
-> Jul 30 23:26:55 home kernel: [ 3825.712412] Descriptor sense data with
-> sense descriptors (in hex):
-> Jul 30 23:26:55 home kernel: [ 3825.712414]         72 03 11 04 00 00
-> 00 0c 00 0a 80 00 00 00 00 00
-> Jul 30 23:26:55 home kernel: [ 3825.712424]         0c 2d 45 bd
-> Jul 30 23:26:55 home kernel: [ 3825.712429] sd 2:0:0:0: [sdd]
-> Jul 30 23:26:55 home kernel: [ 3825.712433] Add. Sense: Unrecovered
-> read error - auto reallocate failed
-> Jul 30 23:26:55 home kernel: [ 3825.712437] sd 2:0:0:0: [sdd] CDB:
-> Jul 30 23:26:55 home kernel: [ 3825.712439] Read(10): 28 00 0c 2d 44
-> 00 00 04 00 00
-> Jul 30 23:26:55 home kernel: [ 3825.712448] end_request: I/O error,
-> dev sdd, sector 204293565
-> Jul 30 23:26:55 home kernel: [ 3825.712453] btrfs: bdev /dev/sdd6
-> errs: wr 0, rd 70, flush 0, corrupt 0, gen 0
-> Jul 30 23:26:55 home kernel: [ 3825.712457] btrfs: bdev /dev/sdd6
-> errs: wr 0, rd 71, flush 0, corrupt 0, gen 0
-> Jul 30 23:26:55 home kernel: [ 3825.712463] btrfs: bdev /dev/sdd6
-> errs: wr 0, rd 72, flush 0, corrupt 0, gen 0
-> Jul 30 23:26:55 home kernel: [ 3825.712466] btrfs: bdev /dev/sdd6
-> errs: wr 0, rd 73, flush 0, corrupt 0, gen 0
-> Jul 30 23:26:55 home kernel: [ 3825.712470] btrfs: bdev /dev/sdd6
-> errs: wr 0, rd 74, flush 0, corrupt 0, gen 0
-> Jul 30 23:26:55 home kernel: [ 3825.712484] ata3: EH complete
-> Jul 30 23:29:10 home kernel: [ 3960.660091] INFO: task btrfs:4600
-> blocked for more than 120 seconds.
-> Jul 30 23:29:10 home kernel: [ 3960.660099] "echo 0 >
-> /proc/sys/kernel/hung_task_timeout_secs" disables this message.
-> Jul 30 23:29:10 home kernel: [ 3960.660102] btrfs           D f8540aba
->     0  4600   4598 0x00000000
-> Jul 30 23:29:10 home kernel: [ 3960.660109]  c5d2dc20 00000082
-> c5d2dc28 f8540aba f55da048 c185f220 c198f080 c198f080
-> Jul 30 23:29:10 home kernel: [ 3960.660116]  d3e86224 0000037a
-> f73f0080 cabe8000 f51cb2c0 00000000 00000000 f6dea000
-> Jul 30 23:29:10 home kernel: [ 3960.660122]  f52f8800 0000db6b
-> 00000000 00000000 00000004 00000000 00000001 cabe8000
-> Jul 30 23:29:10 home kernel: [ 3960.660128] Call Trace:
-> Jul 30 23:29:10 home kernel: [ 3960.660207]  [<f8540aba>] ?
-> reserve_metadata_bytes.isra.70+0x31a/0x590 [btrfs]
-> Jul 30 23:29:10 home kernel: [ 3960.660217]  [<c1094d28>] ?
-> ktime_get_ts+0xb8/0xe0
-> Jul 30 23:29:10 home kernel: [ 3960.660225]  [<c15dabd3>] schedule+0x23/0x60
-> Jul 30 23:29:10 home kernel: [ 3960.660229]  [<c15dac88>] io_schedule+0x78/0xb0
-> Jul 30 23:29:10 home kernel: [ 3960.660237]  [<c110772d>] sleep_on_page+0xd/0x20
-> Jul 30 23:29:10 home kernel: [ 3960.660241]  [<c15d9777>]
-> __wait_on_bit_lock+0x47/0x90
-> Jul 30 23:29:10 home kernel: [ 3960.660244]  [<c1107720>] ?
-> __lock_page+0x80/0x80
-> Jul 30 23:29:10 home kernel: [ 3960.660248]  [<c1107718>] __lock_page+0x78/0x80
-> Jul 30 23:29:10 home kernel: [ 3960.660255]  [<c1068e00>] ?
-> autoremove_wake_function+0x50/0x50
-> Jul 30 23:29:10 home kernel: [ 3960.660259]  [<c110782d>]
-> find_lock_page+0x5d/0x70
-> Jul 30 23:29:10 home kernel: [ 3960.660292]  [<f859912d>]
-> relocate_file_extent_cluster+0x17d/0x3e0 [btrfs]
-> Jul 30 23:29:10 home kernel: [ 3960.660316]  [<f8599486>]
-> relocate_data_extent.isra.47+0xf6/0x120 [btrfs]
-> Jul 30 23:29:10 home kernel: [ 3960.660339]  [<f859c695>]
-> relocate_block_group+0x295/0x5a0 [btrfs]
-> Jul 30 23:29:10 home kernel: [ 3960.660363]  [<f859cb32>]
-> btrfs_relocate_block_group+0x192/0x2e0 [btrfs]
-> Jul 30 23:29:10 home kernel: [ 3960.660386]  [<f8576ec9>]
-> btrfs_relocate_chunk.isra.50+0x59/0x3c0 [btrfs]
-> Jul 30 23:29:10 home kernel: [ 3960.660408]  [<f85764ca>] ?
-> should_balance_chunk.isra.54+0x3a/0x350 [btrfs]
-> Jul 30 23:29:10 home kernel: [ 3960.660431]  [<f857351e>] ?
-> free_extent_buffer+0x2e/0x80 [btrfs]
-> Jul 30 23:29:10 home kernel: [ 3960.660453]  [<f857bf19>]
-> __btrfs_balance+0x389/0x470 [btrfs]
-> Jul 30 23:29:10 home kernel: [ 3960.660476]  [<f857c384>]
-> btrfs_balance+0x384/0x560 [btrfs]
-> Jul 30 23:29:10 home kernel: [ 3960.660482]  [<c11457a1>] ?
-> kmem_cache_alloc_trace+0x111/0x140
-> Jul 30 23:29:10 home kernel: [ 3960.660504]  [<f858493d>]
-> btrfs_ioctl_balance+0xed/0x380 [btrfs]
-> Jul 30 23:29:10 home kernel: [ 3960.660528]  [<f85864b1>]
-> btrfs_ioctl+0x561/0x890 [btrfs]
-> Jul 30 23:29:10 home kernel: [ 3960.660551]  [<f8585f50>] ?
-> update_ioctl_balance_args+0x2c0/0x2c0 [btrfs]
-> Jul 30 23:29:10 home kernel: [ 3960.660558]  [<c116565f>]
-> do_vfs_ioctl+0x7f/0x2f0
-> Jul 30 23:29:10 home kernel: [ 3960.660562]  [<c116593f>] sys_ioctl+0x6f/0x80
-> Jul 30 23:29:10 home kernel: [ 3960.660570]  [<c15e29df>]
-> sysenter_do_call+0x12/0x28
-> Jul 30 23:31:10 home kernel: [ 4080.660090] INFO: task btrfs:4600
-> blocked for more than 120 seconds.
-> Jul 30 23:31:10 home kernel: [ 4080.660098] "echo 0 >
-> /proc/sys/kernel/hung_task_timeout_secs" disables this message.
-> Jul 30 23:31:10 home kernel: [ 4080.660101] btrfs           D f8540aba
->     0  4600   4598 0x00000000
-> Jul 30 23:31:10 home kernel: [ 4080.660107]  c5d2dc20 00000082
-> c5d2dc28 f8540aba f55da048 c185f220 c198f080 c198f080
-> Jul 30 23:31:10 home kernel: [ 4080.660114]  d3e86224 0000037a
-> f73f0080 cabe8000 f51cb2c0 00000000 00000000 f6dea000
-> Jul 30 23:31:10 home kernel: [ 4080.660121]  f52f8800 0000db6b
-> 00000000 00000000 00000004 00000000 00000001 cabe8000
-> Jul 30 23:31:10 home kernel: [ 4080.660127] Call Trace:
-> Jul 30 23:31:10 home kernel: [ 4080.660203]  [<f8540aba>] ?
-> reserve_metadata_bytes.isra.70+0x31a/0x590 [btrfs]
-> Jul 30 23:31:10 home kernel: [ 4080.660212]  [<c1094d28>] ?
-> ktime_get_ts+0xb8/0xe0
-> Jul 30 23:31:10 home kernel: [ 4080.660220]  [<c15dabd3>] schedule+0x23/0x60
-> Jul 30 23:31:10 home kernel: [ 4080.660224]  [<c15dac88>] io_schedule+0x78/0xb0
-> Jul 30 23:31:10 home kernel: [ 4080.660232]  [<c110772d>] sleep_on_page+0xd/0x20
-> Jul 30 23:31:10 home kernel: [ 4080.660236]  [<c15d9777>]
-> __wait_on_bit_lock+0x47/0x90
-> Jul 30 23:31:10 home kernel: [ 4080.660240]  [<c1107720>] ?
-> __lock_page+0x80/0x80
-> Jul 30 23:31:10 home kernel: [ 4080.660243]  [<c1107718>] __lock_page+0x78/0x80
-> Jul 30 23:31:10 home kernel: [ 4080.660250]  [<c1068e00>] ?
-> autoremove_wake_function+0x50/0x50
-> Jul 30 23:31:10 home kernel: [ 4080.660254]  [<c110782d>]
-> find_lock_page+0x5d/0x70
-> Jul 30 23:31:10 home kernel: [ 4080.660287]  [<f859912d>]
-> relocate_file_extent_cluster+0x17d/0x3e0 [btrfs]
-> Jul 30 23:31:10 home kernel: [ 4080.660310]  [<f8599486>]
-> relocate_data_extent.isra.47+0xf6/0x120 [btrfs]
-> Jul 30 23:31:10 home kernel: [ 4080.660334]  [<f859c695>]
-> relocate_block_group+0x295/0x5a0 [btrfs]
-> Jul 30 23:31:10 home kernel: [ 4080.660358]  [<f859cb32>]
-> btrfs_relocate_block_group+0x192/0x2e0 [btrfs]
-> Jul 30 23:31:10 home kernel: [ 4080.660381]  [<f8576ec9>]
-> btrfs_relocate_chunk.isra.50+0x59/0x3c0 [btrfs]
-> Jul 30 23:31:10 home kernel: [ 4080.660403]  [<f85764ca>] ?
-> should_balance_chunk.isra.54+0x3a/0x350 [btrfs]
-> Jul 30 23:31:10 home kernel: [ 4080.660426]  [<f857351e>] ?
-> free_extent_buffer+0x2e/0x80 [btrfs]
-> Jul 30 23:31:10 home kernel: [ 4080.660448]  [<f857bf19>]
-> __btrfs_balance+0x389/0x470 [btrfs]
-> Jul 30 23:31:10 home kernel: [ 4080.660471]  [<f857c384>]
-> btrfs_balance+0x384/0x560 [btrfs]
-> Jul 30 23:31:10 home kernel: [ 4080.660477]  [<c11457a1>] ?
-> kmem_cache_alloc_trace+0x111/0x140
-> Jul 30 23:31:10 home kernel: [ 4080.660500]  [<f858493d>]
-> btrfs_ioctl_balance+0xed/0x380 [btrfs]
-> Jul 30 23:31:10 home kernel: [ 4080.660523]  [<f85864b1>]
-> btrfs_ioctl+0x561/0x890 [btrfs]
-> Jul 30 23:31:10 home kernel: [ 4080.660546]  [<f8585f50>] ?
-> update_ioctl_balance_args+0x2c0/0x2c0 [btrfs]
-> Jul 30 23:31:10 home kernel: [ 4080.660554]  [<c116565f>]
-> do_vfs_ioctl+0x7f/0x2f0
-> Jul 30 23:31:10 home kernel: [ 4080.660558]  [<c116593f>] sys_ioctl+0x6f/0x80
-> Jul 30 23:31:10 home kernel: [ 4080.660565]  [<c15e29df>]
-> sysenter_do_call+0x12/0x28
-> 
-
+diff --git a/fs/btrfs/btrfs_inode.h b/fs/btrfs/btrfs_inode.h
+index 12394a9..b761456 100644
+--- a/fs/btrfs/btrfs_inode.h
++++ b/fs/btrfs/btrfs_inode.h
+@@ -162,6 +162,9 @@ struct btrfs_inode {
+ 
+ 	struct btrfs_delayed_node *delayed_node;
+ 
++	/* File creation time. */
++	struct timespec i_otime;
++
+ 	struct inode vfs_inode;
+ };
+ 
+diff --git a/fs/btrfs/ctree.h b/fs/btrfs/ctree.h
+index fa5c45b..4ce172f 100644
+--- a/fs/btrfs/ctree.h
++++ b/fs/btrfs/ctree.h
+@@ -1816,6 +1816,14 @@ btrfs_inode_ctime(struct btrfs_inode_item *inode_item)
+ 	return (struct btrfs_timespec *)ptr;
+ }
+ 
++static inline struct btrfs_timespec *
++btrfs_inode_otime(struct btrfs_inode_item *inode_item)
++{
++	unsigned long ptr = (unsigned long)inode_item;
++	ptr += offsetof(struct btrfs_inode_item, otime);
++	return (struct btrfs_timespec *)ptr;
++}
++
+ BTRFS_SETGET_FUNCS(timespec_sec, struct btrfs_timespec, sec, 64);
+ BTRFS_SETGET_FUNCS(timespec_nsec, struct btrfs_timespec, nsec, 32);
+ 
+diff --git a/fs/btrfs/delayed-inode.c b/fs/btrfs/delayed-inode.c
+index 21d91a8..63726967 100644
+--- a/fs/btrfs/delayed-inode.c
++++ b/fs/btrfs/delayed-inode.c
+@@ -1742,6 +1742,11 @@ static void fill_stack_inode_item(struct btrfs_trans_handle *trans,
+ 				     inode->i_ctime.tv_sec);
+ 	btrfs_set_stack_timespec_nsec(btrfs_inode_ctime(inode_item),
+ 				      inode->i_ctime.tv_nsec);
++
++	btrfs_set_stack_timespec_sec(btrfs_inode_otime(inode_item),
++				BTRFS_I(inode)->i_otime.tv_sec);
++	btrfs_set_stack_timespec_nsec(btrfs_inode_otime(inode_item),
++				BTRFS_I(inode)->i_otime.tv_nsec);
+ }
+ 
+ int btrfs_fill_inode(struct inode *inode, u32 *rdev)
+@@ -1787,6 +1792,10 @@ int btrfs_fill_inode(struct inode *inode, u32 *rdev)
+ 	inode->i_ctime.tv_sec = btrfs_stack_timespec_sec(tspec);
+ 	inode->i_ctime.tv_nsec = btrfs_stack_timespec_nsec(tspec);
+ 
++	tspec = btrfs_inode_otime(inode_item);
++	BTRFS_I(inode)->i_otime.tv_sec = btrfs_stack_timespec_sec(tspec);
++	BTRFS_I(inode)->i_otime.tv_nsec = btrfs_stack_timespec_nsec(tspec);
++
+ 	inode->i_generation = BTRFS_I(inode)->generation;
+ 	BTRFS_I(inode)->index_cnt = (u64)-1;
+ 
+@@ -1912,4 +1921,3 @@ void btrfs_destroy_delayed_inodes(struct btrfs_root *root)
+ 		btrfs_release_delayed_node(prev_node);
+ 	}
+ }
+-
+diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
+index 0d507e6..145a2ed 100644
+--- a/fs/btrfs/inode.c
++++ b/fs/btrfs/inode.c
+@@ -2581,6 +2581,10 @@ static void btrfs_read_locked_inode(struct inode *inode)
+ 	inode->i_ctime.tv_sec = btrfs_timespec_sec(leaf, tspec);
+ 	inode->i_ctime.tv_nsec = btrfs_timespec_nsec(leaf, tspec);
+ 
++	tspec = btrfs_inode_otime(inode_item);
++	BTRFS_I(inode)->i_otime.tv_sec = btrfs_timespec_sec(leaf, tspec);
++	BTRFS_I(inode)->i_otime.tv_nsec = btrfs_timespec_nsec(leaf, tspec);
++
+ 	inode_set_bytes(inode, btrfs_inode_nbytes(leaf, inode_item));
+ 	BTRFS_I(inode)->generation = btrfs_inode_generation(leaf, inode_item);
+ 	inode->i_version = btrfs_inode_sequence(leaf, inode_item);
+@@ -2665,6 +2669,11 @@ static void fill_inode_item(struct btrfs_trans_handle *trans,
+ 	btrfs_set_timespec_nsec(leaf, btrfs_inode_ctime(item),
+ 				inode->i_ctime.tv_nsec);
+ 
++	btrfs_set_timespec_sec(leaf, btrfs_inode_otime(item),
++			BTRFS_I(inode)->i_otime.tv_sec);
++	btrfs_set_timespec_nsec(leaf, btrfs_inode_otime(item),
++				BTRFS_I(inode)->i_otime.tv_nsec);
++
+ 	btrfs_set_inode_nbytes(leaf, item, inode_get_bytes(inode));
+ 	btrfs_set_inode_generation(leaf, item, BTRFS_I(inode)->generation);
+ 	btrfs_set_inode_sequence(leaf, item, inode->i_version);
+@@ -2846,7 +2855,7 @@ int btrfs_unlink_inode(struct btrfs_trans_handle *trans,
+ 	}
+ 	return ret;
+ }
+-		
++
+ 
+ /* helper to check if there is any shared block in the path */
+ static int check_path_shared(struct btrfs_root *root,
+@@ -4151,7 +4160,11 @@ static struct inode *new_simple_dir(struct super_block *s,
+ 	inode->i_op = &btrfs_dir_ro_inode_operations;
+ 	inode->i_fop = &simple_dir_operations;
+ 	inode->i_mode = S_IFDIR | S_IRUGO | S_IWUSR | S_IXUGO;
+-	inode->i_mtime = inode->i_atime = inode->i_ctime = CURRENT_TIME;
++	BTRFS_I(inode)->i_otime
++		= inode->i_mtime
++		= inode->i_atime
++		= inode->i_ctime
++		= CURRENT_TIME;
+ 
+ 	return inode;
+ }
+@@ -4687,7 +4700,11 @@ static struct inode *btrfs_new_inode(struct btrfs_trans_handle *trans,
+ 
+ 	inode_init_owner(inode, dir, mode);
+ 	inode_set_bytes(inode, 0);
+-	inode->i_mtime = inode->i_atime = inode->i_ctime = CURRENT_TIME;
++	BTRFS_I(inode)->i_otime
++		= inode->i_mtime
++		= inode->i_atime
++		= inode->i_ctime
++		= CURRENT_TIME;
+ 	inode_item = btrfs_item_ptr(path->nodes[0], path->slots[0],
+ 				  struct btrfs_inode_item);
+ 	fill_inode_item(trans, path->nodes[0], inode_item, inode);
+@@ -6960,6 +6977,8 @@ struct inode *btrfs_alloc_inode(struct super_block *sb)
+ 
+ 	ei->delayed_node = NULL;
+ 
++	ei->i_otime.tv_sec = ei->i_otime.tv_nsec = 0;
++
+ 	inode = &ei->vfs_inode;
+ 	extent_map_tree_init(&ei->extent_tree);
+ 	extent_io_tree_init(&ei->io_tree, &inode->i_data);
+-- 
+1.7.11
 

@@ -1,40 +1,36 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from twin.jikos.cz ([89.185.236.188]:34798 "EHLO twin.jikos.cz"
+Received: from brockman.in8.de ([85.214.220.56]:33806 "EHLO mail.in8.de"
 	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1752963Ab2GDNxZ (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 4 Jul 2012 09:53:25 -0400
-Date: Wed, 4 Jul 2012 15:53:05 +0200
-From: David Sterba <dave@jikos.cz>
-To: Marc MERLIN <marc@merlins.org>
-Cc: linux-btrfs@vger.kernel.org
-Subject: Re: 3.4.4: BUG: Bad rss-counter state x
-Message-ID: <20120704135305.GM5326@twin.jikos.cz>
-Reply-To: dave@jikos.cz
-References: <20120704050555.GB6807@merlins.org>
+	id S1753121Ab2GDNxg (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Wed, 4 Jul 2012 09:53:36 -0400
+Message-ID: <4FF44ADE.8000207@jan-o-sch.net>
+Date: Wed, 04 Jul 2012 15:53:34 +0200
+From: Jan Schmidt <list.btrfs@jan-o-sch.net>
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <20120704050555.GB6807@merlins.org>
+To: ziegler@uni-freiburg.de
+CC: Josef Bacik <jbacik@fusionio.com>,
+        "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
+Subject: Re: kmem_cache_destroy called for cache that still has objects
+References: <E1Slh32-0005X2-JH@tux00.mathematik.uni-freiburg.de> <4FF1C140.3070705@jan-o-sch.net>
+In-Reply-To: <4FF1C140.3070705@jan-o-sch.net>
+Content-Type: text/plain; charset=ISO-8859-1
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hi,
+Hi Martin,
 
-On Tue, Jul 03, 2012 at 10:05:55PM -0700, Marc MERLIN wrote:
-> Since I heard absolutely nothing on my last but and corruption report, I'm
-> not sure if they are useful or wanted (please let me know).
+On 02.07.2012 17:41, Jan Schmidt wrote:
+> I'm recently seeing such buffer leaks as well. It's always about tree blocks,
+> and it's always just two or three refs left for a buffer. I can somehow
+> reproduce it and will be looking into it probably tomorrow. (May still be
+> unrelated, of course.)
 
-They are, both useful and wanted, thanks.
+Okay, I've tracked my buffer leak down. It's most likely unrelated to yours, as
+you need Chris' current for-linus for that to occur. Second, you need to trigger
+a lot of tree mod log operations (i.e. by calling "btrfs inspect-internal" while
+modifying the trees).
 
-> The last thing I've seen with 3.4.4 is this:
-> kernel: [116130.309667] btrfs: unlinked 25 orphans
-> kernel: [117951.440823] BUG: Bad rss-counter state mm:ffff8801e2a4c080 idx:1 val:-1
-> kernel: [117951.440832] BUG: Bad rss-counter state mm:ffff8801e2a4c080 idx:2 val:1
-> kernel: [119720.558186] btrfs: unlinked 12 orphans
+I'm sending a fix for the problem I found. However, there's no obvious
+reproducer for your problem yet. Can you reproduce it?
 
-This is not a btrfs bug, first hit for 'bug rss-counter' pointed me to
-
-http://comments.gmane.org/gmane.linux.kernel/1316358 (kernel 3.4.2)
-->
-https://lkml.org/lkml/2012/6/9/47
-
-david
+-Jan

@@ -1,82 +1,56 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
 Received: from mail-bk0-f46.google.com ([209.85.214.46]:41824 "EHLO
 	mail-bk0-f46.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1752950Ab2GDNkF (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Wed, 4 Jul 2012 09:40:05 -0400
-Received: by bkwj10 with SMTP id j10so2633865bkw.19
-        for <linux-btrfs@vger.kernel.org>; Wed, 04 Jul 2012 06:40:04 -0700 (PDT)
+	with ESMTP id S1752887Ab2GDNkK (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Wed, 4 Jul 2012 09:40:10 -0400
+Received: by mail-bk0-f46.google.com with SMTP id j10so2633865bkw.19
+        for <linux-btrfs@vger.kernel.org>; Wed, 04 Jul 2012 06:40:10 -0700 (PDT)
 From: Alexander Block <ablock84@googlemail.com>
 To: linux-btrfs@vger.kernel.org
 Cc: Alexander Block <ablock84@googlemail.com>
-Subject: [RFC PATCH 0/6] Experimental btrfs send/receive (btrfs-progs)
-Date: Wed,  4 Jul 2012 15:39:28 +0200
-Message-Id: <1341409174-13619-1-git-send-email-ablock84@googlemail.com>
+Subject: [RFC PATCH 3/6] Btrfs-progs: print inode transid and dir item data field in debug-tree
+Date: Wed,  4 Jul 2012 15:39:31 +0200
+Message-Id: <1341409174-13619-4-git-send-email-ablock84@googlemail.com>
+In-Reply-To: <1341409174-13619-1-git-send-email-ablock84@googlemail.com>
+References: <1341409174-13619-1-git-send-email-ablock84@googlemail.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hello all,
+Add printing of inode transid and dir item data field.
 
-This is the user space side of btrfs send/receive.
+Signed-off-by: Alexander Block <ablock84@googlemail.com>
+---
+ print-tree.c |    9 ++++++++-
+ 1 file changed, 8 insertions(+), 1 deletion(-)
 
-You can apply them manually or use my git repo:
-
-git://github.com/ablock84/btrfs-progs.git (branch send)
-
-The branch is based on Hugo's integration-20120605 branch. I had to add a temporary
-commit to fix a bug introduced in one of the strncpy/overflow patches that got into
-btrfs-progs. This fix is not part of the btrfs send/receive patchset, but you'll
-probably need it if you want to base on the integration branch. I hope this is not
-required in the future when a new integration branch comes out.
-
-Example usage:
-
-Multiple snapshots at once:
-btrfs send /mnt/snap[123] > snap123.btrfs
-
-Single snapshot with manual parent:
-btrfs send -p /mnt/snap3 /mnt/snap4 > snap4.btrfs
-
-Receive both streams:
-btrfs receive /mnt2 < snap123.btrfs
-btrfs receive /mnt2 < snap4.btrfs
-
-(Please give suggestions for a file extension)
-
-Please read the kernel side email as well, especially the warnings!
-
-Alex.
-
-Alexander Block (6):
-  Btrfs-progs: add BTRFS_IOC_SUBVOL_GET/SETFLAGS to ioctl.h
-  Btrfs-progs: update ioctl.h to support clone range ioctl
-  Btrfs-progs: print inode transid and dir item data field in
-    debug-tree
-  Btrfs-progs: update btrfs-progs for subvol uuid+times support
-  Btrfs-progs: update ioctl.h to support btrfs send ioctl
-  Btrfs-progs: add btrfs send/receive commands
-
- Makefile       |    7 +-
- btrfs.c        |    2 +
- cmds-receive.c |  910 ++++++++++++++++++++++++++++++++++++++++++++++++++++++++
- cmds-send.c    |  677 +++++++++++++++++++++++++++++++++++++++++
- commands.h     |    4 +
- ctree.h        |   40 ++-
- ioctl.h        |   35 ++-
- print-tree.c   |   88 ++++--
- send-stream.c  |  480 ++++++++++++++++++++++++++++++
- send-stream.h  |   58 ++++
- send-utils.c   |  337 +++++++++++++++++++++
- send-utils.h   |   69 +++++
- send.h         |  132 ++++++++
- 13 files changed, 2815 insertions(+), 24 deletions(-)
- create mode 100644 cmds-receive.c
- create mode 100644 cmds-send.c
- create mode 100644 send-stream.c
- create mode 100644 send-stream.h
- create mode 100644 send-utils.c
- create mode 100644 send-utils.h
- create mode 100644 send.h
-
+diff --git a/print-tree.c b/print-tree.c
+index fc134c0..1377732 100644
+--- a/print-tree.c
++++ b/print-tree.c
+@@ -48,6 +48,12 @@ static int print_dir_item(struct extent_buffer *eb, struct btrfs_item *item,
+ 		read_extent_buffer(eb, namebuf, (unsigned long)(di + 1), len);
+ 		printf("\t\tnamelen %u datalen %u name: %.*s\n",
+ 		       name_len, data_len, len, namebuf);
++		if (data_len) {
++			len = (data_len <= sizeof(namebuf))? data_len: sizeof(namebuf);
++			read_extent_buffer(eb, namebuf,
++				(unsigned long)(di + 1) + name_len, len);
++			printf("\t\tdata %.*s\n", len, namebuf);
++		}
+ 		len = sizeof(*di) + name_len + data_len;
+ 		di = (struct btrfs_dir_item *)((char *)di + len);
+ 		cur += len;
+@@ -481,8 +487,9 @@ void btrfs_print_leaf(struct btrfs_root *root, struct extent_buffer *l)
+ 		switch (type) {
+ 		case BTRFS_INODE_ITEM_KEY:
+ 			ii = btrfs_item_ptr(l, i, struct btrfs_inode_item);
+-			printf("\t\tinode generation %llu size %llu block group %llu mode %o links %u\n",
++			printf("\t\tinode generation %llu transid %llu size %llu block group %llu mode %o links %u\n",
+ 			       (unsigned long long)btrfs_inode_generation(l, ii),
++			       (unsigned long long)btrfs_inode_transid(l, ii),
+ 			       (unsigned long long)btrfs_inode_size(l, ii),
+ 			       (unsigned long long)btrfs_inode_block_group(l,ii),
+ 			       btrfs_inode_mode(l, ii),
 -- 
 1.7.10
 

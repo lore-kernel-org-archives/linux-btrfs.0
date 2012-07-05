@@ -1,37 +1,35 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from twin.jikos.cz ([89.185.236.188]:40974 "EHLO twin.jikos.cz"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S932428Ab2GDXbH (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 4 Jul 2012 19:31:07 -0400
-Date: Thu, 5 Jul 2012 01:31:02 +0200
-From: David Sterba <dave@jikos.cz>
-To: Alexander Block <ablock84@googlemail.com>
-Cc: Alex Lyakas <alex.bolshoy.btrfs@gmail.com>, linux-btrfs@vger.kernel.org
-Subject: Re: [RFC PATCH 5/7] Btrfs: add btrfs_compare_trees function
-Message-ID: <20120704233102.GP5326@twin.jikos.cz>
-Reply-To: dave@jikos.cz
-References: <1341409108-13567-1-git-send-email-ablock84@googlemail.com>
- <1341409108-13567-6-git-send-email-ablock84@googlemail.com>
- <CAHf9xvZpRpB8FrgqfPG-s5N4UKUwGAzSsRVeWbQ6GLfwKQOHcA@mail.gmail.com>
- <CAB9VWqCLC-2Kj-N5U-ZRrVjgrrTpRJze2fUBiNzaZQxyFCdvfg@mail.gmail.com>
+Received: from mail-pb0-f46.google.com ([209.85.160.46]:37348 "EHLO
+	mail-pb0-f46.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1751182Ab2GELvu (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Thu, 5 Jul 2012 07:51:50 -0400
+Received: by pbbrp8 with SMTP id rp8so12675070pbb.19
+        for <linux-btrfs@vger.kernel.org>; Thu, 05 Jul 2012 04:51:49 -0700 (PDT)
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <CAB9VWqCLC-2Kj-N5U-ZRrVjgrrTpRJze2fUBiNzaZQxyFCdvfg@mail.gmail.com>
+In-Reply-To: <1341409108-13567-5-git-send-email-ablock84@googlemail.com>
+References: <1341409108-13567-1-git-send-email-ablock84@googlemail.com>
+	<1341409108-13567-5-git-send-email-ablock84@googlemail.com>
+Date: Thu, 5 Jul 2012 13:51:49 +0200
+Message-ID: <CAB9VWqA4GpC8BHiKbYzX+=GhTvj_wSGH0ByfYtpbP8Ww9aAdRQ@mail.gmail.com>
+Subject: Re: [RFC PATCH 4/7] Btrfs: introduce subvol uuids and times
+From: Alexander Block <ablock84@googlemail.com>
+To: linux-btrfs@vger.kernel.org
+Cc: Alexander Block <ablock84@googlemail.com>
+Content-Type: text/plain; charset=ISO-8859-1
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Wed, Jul 04, 2012 at 10:18:34PM +0200, Alexander Block wrote:
-> > It might be worth to note in the comment, that tmp_buff should be
-> > large enough to hold the item from the left tree. Can it happen that
-> > the right tree has a different leafsize?
-> >
-> This function is only to be used for for the tree compare function and
-> there we allocate a buffer of root->leafsize, so definitely all items
-> should fit. As far as I know, Chris (please correct me if I'm wrong)
-> once guaranteed that ALL trees in a FS will have the same leaf size
-> and this will ever be the case.
+On Wed, Jul 4, 2012 at 3:38 PM, Alexander Block <ablock84@googlemail.com> wrote:
+> This patch introduces uuids for subvolumes.
+> [...]
+Stefan and Jan pointed out a problem with this patch that would result
+in read_extent_buffer calls that read beyond the leaf size when an old
+root item is found at the end of a leaf. I pushed a fix to github that
+tries to replace read_extent_buffer calls with a new helper function
+(btrfs_read_root_item). The patch also adds a __le64 reserved[8] field
+to the root_item struct, which means that when you apply that fix all
+your extra information in the root items will get lost on next mount.
 
-Not only leaves are of the same size in all trees, but also nodes, since
-the metadata bigblocks patches.
-
-david
+As already said in the cover letter, I will not send patches to the
+list before it's worth for version 2. Such fixes are only found in my
+git repo and will later be squashed together for v2.

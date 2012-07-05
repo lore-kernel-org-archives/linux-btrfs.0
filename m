@@ -1,55 +1,70 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from magic.merlins.org ([209.81.13.136]:59698 "EHLO
-	mail1.merlins.org" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1754727Ab2GEOeS (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Thu, 5 Jul 2012 10:34:18 -0400
-Date: Thu, 5 Jul 2012 07:34:17 -0700
-From: Marc MERLIN <marc@merlins.org>
-To: Liu Bo <liubo2009@cn.fujitsu.com>
-Cc: linux-btrfs@vger.kernel.org
-Subject: Re: Long btrfs hangs during suspend to RAM / BTRFS warning (device dm-0): Aborting unused transaction
-Message-ID: <20120705143417.GB21630@merlins.org>
-References: <20120626193637.GA27856@merlins.org> <20120626193637.GA27856@merlins.org> <20120627013818.GA3556@merlins.org> <20120627052012.GA32533@merlins.org> <20120629123624.GS7472@merlins.org> <20120702195820.GA10655@merlins.org> <4FF3DB87.5090405@cn.fujitsu.com> <20120704151556.GD6807@merlins.org> <4FF595D8.6040509@cn.fujitsu.com>
+Received: from mail-pb0-f46.google.com ([209.85.160.46]:49258 "EHLO
+	mail-pb0-f46.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1752032Ab2GEQvX (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Thu, 5 Jul 2012 12:51:23 -0400
+Received: by pbbrp8 with SMTP id rp8so13040204pbb.19
+        for <linux-btrfs@vger.kernel.org>; Thu, 05 Jul 2012 09:51:23 -0700 (PDT)
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <4FF595D8.6040509@cn.fujitsu.com>
+Date: Thu, 5 Jul 2012 18:51:22 +0200
+Message-ID: <CAB9VWqCnbd-Mqo6Po408uqhbbSyg=W4Huiqs61HLxc8=nkdQdQ@mail.gmail.com>
+Subject: [RFC] Btrfs "sendshots" and hidden snapshots
+From: Alexander Block <ablock84@googlemail.com>
+To: linux-btrfs@vger.kernel.org
+Content-Type: text/plain; charset=ISO-8859-1
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Thu, Jul 05, 2012 at 09:25:44PM +0800, Liu Bo wrote:
-> On 07/04/2012 11:15 PM, Marc MERLIN wrote:
-> I'd expect to get some info from the following one, but I fails.
-> 
-> Is it reproducible on your box?
+Hello all,
 
-It was reproducible when I reported it, but not anymore now. I couldn't stay
-in a state where I was getting hangs and corruption.
+in IRC we had a discussion on how we could solve sending live
+subvolumes and how to send subvolumes without the need to
+administrate/keep old snapshots for incremental sends. One of the
+ideas was to introduce "sendshots", which are basically snapshots
+where no refs are counted for file data. This means, that when file
+data is changed in the sendshot origin, we do not consume extra space
+for two copies of the data. We would only have the metadata
+duplicated.
 
-I had problems with btrfs-delalloc- taking most of the CPU and deadlocking
-the machine for minutes or even over half an hour. I'm pretty sure it was
-related to the fact that I only had 10GB free on my partition (including
-lots of snapshots).
-Now that I'm back to >40GB free, I haven't had the problem come back.
+For the initial btrfs send we could do this:
+1. Create a hidden read-only snapshot of the subvolume to send. Hidden
+means that it's not referenced by any subvolume. It is however still a
+normal snapshot (not a sendshot!). Hidden snapshots are not possible
+atm so we would have to implement that. This step allows us to send
+read-write subvolumes, because we have a freezed version of it.
+2. Send this new snapshot.
+3. When we're done with sending, create a "sendshot" from the snapshot
+and delete the invisible snapshot. As an alternative, we could convert
+the invisible snapshot to a sendshot...but not sure if that would be
+easy to implement.
 
-How about these I reported:
-[102231.845170] btrfs no csum found for inode 3910562 start 0
-[102231.855415] btrfs_readpage_end_io_hook: 26 callbacks suppressed
-[102231.855418] btrfs csum failed ino 3910562 off 0 csum 3145117582 private 0
-[102231.999555] btrfs no csum found for inode 3910588 start 294912
-[102232.009479] btrfs csum failed ino 3910588 off 294912 csum 697692408 private 0
-[102232.142602] btrfs no csum found for inode 3910588 start 360448
-[102232.142661] btrfs no csum found for inode 3910588 start 393216
-[102232.968939] BTRFS warning (device dm-0): Aborting unused transaction.
-[102234.107914] BTRFS warning (device dm-0): Aborting unused transaction.
-[102235.218139] BTRFS warning (device dm-0): Aborting unused transaction.
+When we later do an incremental send we can do this:
+1. Do the same as point 1. from above.
+2. Determine which of the previous sendshots is the correct one for
+the incremental send. We could use some magic auto detection here or
+the user has to specify it by himself.
+3. Use the hidden snapshot from 1. and the determined sendshot from 2.
+to find the incremental changes and do the send.
+4. Do the same as point 3. from above.
 
-I know I got corruption since I saw some of my files being damaged, but 
-are they useful in any way, or not so much?
+Every incremental send will add a new sendshot for later use. To avoid
+having millions of such sendshots after some time, btrfs-progs would
+need to delete old ones. That's something the user needs 100% control
+of, as only he knows which ones can be deleted. He could either delete
+them by hand or let btrfs send do that automatically with a parameter
+that for example says how much sendshots to keep.
 
-Thanks,
-Marc
--- 
-"A mouse is a device used to point at the xterm you want to type in" - A.S.R.
-Microsoft is to operating systems ....
-                                      .... what McDonalds is to gourmet cooking
-Home page: http://marc.merlins.org/  
+The above steps would already make the use of btrfs send/receive a bit
+easier. The next step would be to implement a network protocol that
+allows on-the-fly sending/receiving without piping to a file
+in-between. The protocol would allow the sending and receiving side to
+agree on the sendshot to use for the incremental send. It would also
+allow the sending side to do all the sendshot cleanups on its own,
+because it would know which state is present on the receiving side.
+
+What do you guys think? Problem is, I probably won't be able to
+implement this due to missing time for the rest of this year...going
+on a world trip and I don't know when I'm back :)
+So, if anyone wants too take this idea and implement it, feel free to do so :)
+
+Alex.

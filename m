@@ -1,44 +1,88 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx1.fusionio.com ([66.114.96.30]:36291 "EHLO mx1.fusionio.com"
+Received: from smtp205.alice.it ([82.57.200.101]:37263 "EHLO smtp205.alice.it"
 	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1752240Ab2GEUHl (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 5 Jul 2012 16:07:41 -0400
-Date: Thu, 5 Jul 2012 16:07:38 -0400
-From: Chris Mason <chris.mason@fusionio.com>
-To: Hugo Mills <hugo@carfax.org.uk>
-CC: "Chris L. Mason" <clmason@fusionio.com>,
-        "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
-Subject: Re: btrfs-progs branch updated
-Message-ID: <20120705200738.GF7159@shiny>
-References: <20120705200122.GE7159@shiny>
- <20120705200614.GD28701@carfax.org.uk>
+	id S932197Ab2GEWeU (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Thu, 5 Jul 2012 18:34:20 -0400
+Message-ID: <4FF61669.9080605@libero.it>
+Date: Fri, 06 Jul 2012 00:34:17 +0200
+From: Goffredo Baroncelli <kreijack@libero.it>
+Reply-To: kreijack@inwind.it
 MIME-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-In-Reply-To: <20120705200614.GD28701@carfax.org.uk>
+To: Alexander Block <ablock84@googlemail.com>
+CC: linux-btrfs@vger.kernel.org
+Subject: Re: [RFC] Btrfs "sendshots" and hidden snapshots
+References: <CAB9VWqCnbd-Mqo6Po408uqhbbSyg=W4Huiqs61HLxc8=nkdQdQ@mail.gmail.com>
+In-Reply-To: <CAB9VWqCnbd-Mqo6Po408uqhbbSyg=W4Huiqs61HLxc8=nkdQdQ@mail.gmail.com>
+Content-Type: text/plain; charset=ISO-8859-1
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Thu, Jul 05, 2012 at 02:06:14PM -0600, Hugo Mills wrote:
-> On Thu, Jul 05, 2012 at 04:01:22PM -0400, Chris Mason wrote:
-> > Hi everyone,
-> > 
-> > I've updated the master branch with the pending stable btrfs-progs
-> > commit that should make the 0.20 release.
-> > 
-> > Thanks to Hugh for helping to queue up a few of them.  We'll have more
->                ^ that's an o, not an h. :)
-
-Really sorry! I do know that but mistyped it.
-
+On 07/05/2012 06:51 PM, Alexander Block wrote:
+> Hello all,
 > 
-> > frequent releases from here as we pull in the major new features going
-> > into progs (raid5/6, send/receive, quotas, fsck improvements).
+> in IRC we had a discussion on how we could solve sending live
+> subvolumes and how to send subvolumes without the need to
+> administrate/keep old snapshots for incremental sends. One of the
+> ideas was to introduce "sendshots", which are basically snapshots
+> where no refs are counted for file data. This means, that when file
+> data is changed in the sendshot origin, we do not consume extra space
+> for two copies of the data. We would only have the metadata
+> duplicated.
 > 
->    I've still got a stack of new feature patches sitting here that
-> mostly apply OK to integration. I'll try to filter out the ones
-> already applied and put together another stack in approximately
-> kernel-feature order.
+> For the initial btrfs send we could do this:
+> 1. Create a hidden read-only snapshot of the subvolume to send. Hidden
+> means that it's not referenced by any subvolume. It is however still a
+> normal snapshot (not a sendshot!). Hidden snapshots are not possible
+> atm so we would have to implement that. This step allows us to send
+> read-write subvolumes, because we have a freezed version of it.
 
-Great, thanks again.
+Why we should want/need an hidden snapshot ? We could put this kind of
+hidden snapshot under a directory dot-prefixed (like /.hidden-subvolumes)
 
--chris
+> 2. Send this new snapshot.
+> 3. When we're done with sending, create a "sendshot" from the snapshot
+> and delete the invisible snapshot. As an alternative, we could convert
+> the invisible snapshot to a sendshot...but not sure if that would be
+> easy to implement.
+> 
+> When we later do an incremental send we can do this:
+> 1. Do the same as point 1. from above.
+> 2. Determine which of the previous sendshots is the correct one for
+> the incremental send. We could use some magic auto detection here or
+> the user has to specify it by himself.
+> 3. Use the hidden snapshot from 1. and the determined sendshot from 2.
+> to find the incremental changes and do the send.
+
+I can understand how a sendshot could be used to compute the metadata
+delta. But how compute the data delta ?
+
+> 4. Do the same as point 3. from above.
+> 
+> Every incremental send will add a new sendshot for later use. To avoid
+> having millions of such sendshots after some time, btrfs-progs would
+> need to delete old ones. That's something the user needs 100% control
+> of, as only he knows which ones can be deleted. He could either delete
+> them by hand or let btrfs send do that automatically with a parameter
+> that for example says how much sendshots to keep.
+> 
+> The above steps would already make the use of btrfs send/receive a bit
+> easier. The next step would be to implement a network protocol that
+> allows on-the-fly sending/receiving without piping to a file
+> in-between. The protocol would allow the sending and receiving side to
+> agree on the sendshot to use for the incremental send. It would also
+> allow the sending side to do all the sendshot cleanups on its own,
+> because it would know which state is present on the receiving side.
+> 
+> What do you guys think? Problem is, I probably won't be able to
+> implement this due to missing time for the rest of this year...going
+> on a world trip and I don't know when I'm back :)
+> So, if anyone wants too take this idea and implement it, feel free to do so :)
+> 
+> Alex.
+> --
+> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
+> the body of a message to majordomo@vger.kernel.org
+> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+> .
+> 
+

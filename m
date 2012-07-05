@@ -1,58 +1,87 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-pb0-f46.google.com ([209.85.160.46]:53863 "EHLO
-	mail-pb0-f46.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1755838Ab2GETnh (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Thu, 5 Jul 2012 15:43:37 -0400
-Received: by pbbrp8 with SMTP id rp8so13252496pbb.19
-        for <linux-btrfs@vger.kernel.org>; Thu, 05 Jul 2012 12:43:36 -0700 (PDT)
+Received: from mx2.fusionio.com ([66.114.96.31]:33819 "EHLO mx2.fusionio.com"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1751062Ab2GETzQ (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Thu, 5 Jul 2012 15:55:16 -0400
+Date: Thu, 5 Jul 2012 15:55:13 -0400
+From: Chris Mason <chris.mason@fusionio.com>
+To: Linus Torvalds <torvalds@linux-foundation.org>,
+        Btrfs mailing list <linux-btrfs@vger.kernel.org>,
+        <linux-kernel@vger.kernel.org>
+Subject: [GIT PULL] Btrfs updates
+Message-ID: <20120705195513.GD7159@shiny>
 MIME-Version: 1.0
-In-Reply-To: <20120705192444.GA7950@zambezi.lan>
-References: <1341409108-13567-1-git-send-email-ablock84@googlemail.com>
-	<1341409108-13567-5-git-send-email-ablock84@googlemail.com>
-	<4FF5C9F2.903@zabbo.net>
-	<CAB9VWqAoKXCU4T93_aMSC_2rgcQT7MVWVVaVPMhvHrG7sDVStQ@mail.gmail.com>
-	<4FF5CCD0.5000107@zabbo.net>
-	<20120705183343.GA5403@zambezi.lan>
-	<4FF5DEF4.3060104@zabbo.net>
-	<20120705185949.GB5403@zambezi.lan>
-	<4FF5E485.2040107@zabbo.net>
-	<CAB9VWqAH_NFxDNY=B-=-K+PwQ6ycEfwCVPyusx1rM+cxjzcA=g@mail.gmail.com>
-	<20120705192444.GA7950@zambezi.lan>
-Date: Thu, 5 Jul 2012 21:43:36 +0200
-Message-ID: <CAB9VWqBHJEtdURCm+6kk4cVo1nHrWX--AWwwD2_brsqEPLPKEA@mail.gmail.com>
-Subject: Re: [RFC PATCH 4/7] Btrfs: introduce subvol uuids and times
-From: Alexander Block <ablock84@googlemail.com>
-To: Ilya Dryomov <idryomov@gmail.com>
-Cc: Zach Brown <zab@zabbo.net>, linux-btrfs@vger.kernel.org
-Content-Type: text/plain; charset=ISO-8859-1
+Content-Type: text/plain; charset="us-ascii"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Thu, Jul 5, 2012 at 9:24 PM, Ilya Dryomov <idryomov@gmail.com> wrote:
-> On Thu, Jul 05, 2012 at 09:18:41PM +0200, Alexander Block wrote:
->> On Thu, Jul 5, 2012 at 9:01 PM, Zach Brown <zab@zabbo.net> wrote:
->> > On 07/05/2012 11:59 AM, Ilya Dryomov wrote:
->> >
->> >> What if you are on a big-endian machine with a big-endian kernel and
->> >> userspace?  Everything on-disk should be little-endian, so if you are
->> >> going to write stuff you got from userspace to disk, at some point you
->> >> have to make sure you are writing out bytes in the right order.
->> >>
->> >> Alex already does that, so my remarks are moot ;)
->> >
->> >
->> > Yeah, indeed, we were only talking about the ioctl interface crossing
->> > the user<->kernel barrier :).
->> >
->> I decided to not use __leXX variables in the new btrfs_ioctl_timespec
->> structure because as most arguments found ioctls are currently in cpu
->> dependent endianess. The kernel will then do the endianess conversion
->> as it already did with struct timespec.
->
-> That's exactly the point of adding btrfs_ioctl_timespec instead of just
-> copying btrfs_timespec definition.
-Pushed to kernel and user space repos.
->
-> Thanks,
->
->                 Ilya
+Hi Linus
+
+I held off on my rc5 pull because I hit an oops during log recovery
+after a crash.  I wanted to make sure it wasn't a regression because
+we have some logging fixes in here.
+
+It turns out that a commit during the merge window just made it much
+more likely to trigger directory logging instead of full commits, which
+exposed an old bug.
+
+Please grab my for-linus branch:
+
+git://git.kernel.org/pub/scm/linux/kernel/git/mason/linux-btrfs.git for-linus
+
+The new backref walking code got some additional fixes.  This should
+be the final set of them.
+
+Josef fixed up a corner where our O_DIRECT writes and buffered reads
+could expose old file contents (not stale, just not the most recent).
+He and Liu Bo fixed crashes during tree log recover as well.
+
+Ilya fixed errors while we resume disk balancing operations on readonly
+mounts.
+
+Jan Schmidt (7) commits (+50/-36):
+    Btrfs: leave critical region in btrfs_find_all_roots as soon as possible (+1/-2)
+    Btrfs: always put insert_ptr modifications into the tree mod log (+7/-7)
+    Btrfs: resolve tree mod log locking issue in btrfs_next_leaf (+12/-0)
+    Btrfs: fix tree mod log for root replacements at leaf level (+15/-13)
+    Btrfs: support root level changes in __resolve_indirect_ref (+8/-4)
+    Btrfs: avoid waiting for delayed refs when we must not (+6/-5)
+    Btrfs: fix tree mod log rewind of ADD operations (+1/-5)
+
+Josef Bacik (3) commits (+116/-111):
+    Btrfs: hold a ref on the inode during writepages (+14/-0)
+    Btrfs: fix tree log remove space corner case (+52/-93)
+    Btrfs: fix dio write vs buffered read race (+50/-18)
+
+Ilya Dryomov (2) commits (+73/-43):
+    Btrfs: resume balance on rw (re)mounts properly (+47/-18)
+    Btrfs: restore restriper state on all mounts (+26/-25)
+
+Stefan Behrens (1) commits (+12/-10):
+    Btrfs: don't count I/O statistic read errors for missing devices
+
+Liu Bo (1) commits (+1/-1):
+    Btrfs: fix wrong check during log recovery
+
+Alexander Block (1) commits (+1/-1):
+    Btrfs: use _IOR for BTRFS_IOC_SUBVOL_GETFLAGS
+
+Chris Mason (1) commits (+6/-0):
+    Btrfs: run delayed directory updates during log replay
+
+Total: (16) commits (+259/-202)
+
+ fs/btrfs/backref.c          |  15 +++--
+ fs/btrfs/ctree.c            |  60 ++++++++++--------
+ fs/btrfs/disk-io.c          |  34 +++++++----
+ fs/btrfs/extent-tree.c      |  11 ++--
+ fs/btrfs/extent_io.c        |  14 +++++
+ fs/btrfs/file.c             |  13 ----
+ fs/btrfs/free-space-cache.c | 145 ++++++++++++++++----------------------------
+ fs/btrfs/inode.c            |  57 +++++++++++++++--
+ fs/btrfs/ioctl.h            |   2 +-
+ fs/btrfs/super.c            |   4 ++
+ fs/btrfs/tree-log.c         |   6 ++
+ fs/btrfs/volumes.c          |  95 +++++++++++++++++------------
+ fs/btrfs/volumes.h          |   3 +-
+ 13 files changed, 258 insertions(+), 201 deletions(-)

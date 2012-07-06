@@ -1,15 +1,17 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from smtp-2.hut.fi ([130.233.228.92]:59110 "EHLO smtp-2.hut.fi"
+Received: from smtp-2.hut.fi ([130.233.228.92]:33637 "EHLO smtp-2.hut.fi"
 	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1756005Ab2GFVqi (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Fri, 6 Jul 2012 17:46:38 -0400
-Date: Sat, 7 Jul 2012 00:41:29 +0300
+	id S1750698Ab2GFXoM (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Fri, 6 Jul 2012 19:44:12 -0400
+Date: Sat, 7 Jul 2012 02:44:05 +0300
 From: Sami Liedes <sami.liedes@iki.fi>
-To: Jan Schmidt <list.btrfs@jan-o-sch.net>, linux-btrfs@vger.kernel.org
+To: Jan Schmidt <list.btrfs@jan-o-sch.net>
+Cc: linux-btrfs@vger.kernel.org
 Subject: Re: btrfs GPF in read_extent_buffer() while scrubbing with kernel
  3.4.2
-Message-ID: <20120706214129.GA8933@sli.dy.fi>
-References: <4FF42876.8010309@jan-o-sch.net>
+Message-ID: <20120706234405.GB8933@sli.dy.fi>
+References: <20120704001713.GA8986@sli.dy.fi>
+ <4FF42876.8010309@jan-o-sch.net>
  <20120704160340.GA9770@sli.dy.fi>
  <4FF47168.9010405@jan-o-sch.net>
  <20120704202452.GA8996@sli.dy.fi>
@@ -18,55 +20,58 @@ References: <4FF42876.8010309@jan-o-sch.net>
  <4FF6C12A.10305@jan-o-sch.net>
  <20120706143350.GA10427@sli.dy.fi>
  <4FF6FF8C.4010007@jan-o-sch.net>
- <20120706195923.GA10687@sli.dy.fi>
 MIME-Version: 1.0
-Content-Type: multipart/signed; micalg=pgp-sha512;
-	protocol="application/pgp-signature"; boundary="+QahgC5+KEYLbs62"
-In-Reply-To: <20120706195923.GA10687@sli.dy.fi>
+Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <4FF6FF8C.4010007@jan-o-sch.net>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
+[Retry: I think this mail didn't make it to the list, probably because
+of the 73 kilobyte attached log. Here's a URL to the file:]
 
---+QahgC5+KEYLbs62
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
-
-On Fri, Jul 06, 2012 at 10:59:24PM +0300, Sami Liedes wrote:
-> I think I might try running it overnight with KMEMCHECK to see if it
-> reports something. But for now, what there's in the log:
-
-My KMEMCHECK kernel didn't even boot (due to some weird KMEMCHECK/ACPI
-interaction), so I won't pursue this idea further at the moment...
-
-> * lots of checksum mismatch [234], no 1s
-
-One thing to notice from the logs, too, is that the device seems to
-always be dm-6, the second device of the filesystem. This never seems
-to happen to dm-5. There are 1583 lines of "btrfs: dm-6 checksum
-verify failed".
+   http://www.niksula.hut.fi/~sliedes/btrfs-scrub-debug.log.gz
 
 	Sami
 
---+QahgC5+KEYLbs62
-Content-Type: application/pgp-signature; name="signature.asc"
-Content-Description: Digital signature
 
------BEGIN PGP SIGNATURE-----
-Version: GnuPG v1.4.12 (GNU/Linux)
+------------------------------------------------------------
+On Fri, Jul 06, 2012 at 05:09:00PM +0200, Jan Schmidt wrote:
+> Oh I see. root->node can be NULL during mount. Please add this on top:
 
-iQIcBAEBCgAGBQJP91uJAAoJEKLT589SE0a0HvAQAMTlvqbRuxOOVbZGTMCyQvyp
-x5L21SXm9pK5GoqUftAEdU3WdkfSd6VuA+Xb0qaMMGitByBY8+T9UqI9LyxwN58C
-ixChQlpb8kk++wTjAYkeU+WoETFWWNf1jibrBDetl0xKNuZ1sO4df6FhN6Zyg3si
-fg+G+HCVvswXTlJEddwlXt7mcjOf2sQxw1agI6oInToOuxa3EWGBzX449rtxMKVk
-YE/bmSN7KSrPFMl6fMUva/qpuWy6jI0msOlWy+n9G0AfNNvw+V8kfNbpbJAp6j7n
-hZQ8Rv0pKaroIiQw/lmBA3QoptjdSZKkBwCR6ktNTcugqci9jfmpNZGIqIvEjMPC
-jmYNLZMXKjUPvDCR1UGx/aaRcSOCTjfYRbei2I8x5Br/+DW/cM7w6saiYNBxluyk
-xi2V6s1tWXOEvPImwi6UkAsbTyBfOD8EKM6nrmYR4qjgwYFurD2tTSuKQMeLH98h
-+Tf2B1Xt7Q+5pOJoARPacJL1SWAwJDx8VehH2F5fvmZNqyT0qNTcEWxqqhDa/EHI
-9ikGy9+g8X8ZQNZvTQ144c8hLz7uQEown21ir/1p30RR+1HsvIkhaNHwbaLYGpiV
-oKRsVVLSvlKPSzupD7cFP6EFNLj8DTmms1ewJJdIQJRNP9FgAAUFLJqdlUeFC06E
-6w8508D34f7tudI5a+Wk
-=9hDe
------END PGP SIGNATURE-----
+Ok. So, ran it with DEBUG_PAGEALLOC and slub debugging on. This time
+it took half an hour to crash, and there's _lots_ of checksum mismatch
+[234] messages even before the crash. gzipped dmesg attached.
 
---+QahgC5+KEYLbs62--
+At 781 seconds there's an "irq 17: nobody cared". That's a known bug
+with this (and other Asus) motherboards and happens every now and
+then. I doubt it has anything to do with this.
+
+I think I might try running it overnight with KMEMCHECK to see if it
+reports something. But for now, what there's in the log:
+
+* lots of checksum mismatch [234], no 1s
+
+* a fair number of "csum_tree_block: [0-9]+ callbacks suppressed"
+  lines
+
+* two "btrfs: node seems invalid now. checksum ok = 1" messages, one
+  at 1499 seconds and another just before the crash at 1973
+
+* Just before the crash:
+  btrfs: invalid parameters for read_extent_buffer: start (32771) > eb->len (32768). eb start is 2261163409408, level 100, generation 4412718571037421157, nritems 538968254. len param 17. debug 2/989/538968254/4412718571037421157/0x0/0/0x0/0x0
+
+* the oopses
+
+> > By the way, something seems to be untabifying your patches. I don't
+> > know if it's on my side or yours, but at least some other patches I
+> > receive via linux-btrfs contain tabs. Doing a M-x tabify in emacs
+> > mostly makes them apply cleanly for me.
+> 
+> Oh, I'm sorry. Should have been on my side. I hope it's better with the current
+> diff?
+
+Yes. No problem :)
+
+[See attachment for dmesg log.]
+
+	Sami

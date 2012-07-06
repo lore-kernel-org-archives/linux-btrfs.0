@@ -1,16 +1,14 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.fusionio.com ([66.114.96.31]:55381 "EHLO mx2.fusionio.com"
+Received: from smtp-2.hut.fi ([130.233.228.92]:59110 "EHLO smtp-2.hut.fi"
 	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1750906Ab2GFPTF (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Fri, 6 Jul 2012 11:19:05 -0400
-Date: Fri, 6 Jul 2012 11:19:02 -0400
-From: Chris Mason <chris.mason@fusionio.com>
-To: Jan Schmidt <list.btrfs@jan-o-sch.net>
-CC: "Chris L. Mason" <clmason@fusionio.com>,
-        "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
+	id S1756005Ab2GFVqi (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Fri, 6 Jul 2012 17:46:38 -0400
+Date: Sat, 7 Jul 2012 00:41:29 +0300
+From: Sami Liedes <sami.liedes@iki.fi>
+To: Jan Schmidt <list.btrfs@jan-o-sch.net>, linux-btrfs@vger.kernel.org
 Subject: Re: btrfs GPF in read_extent_buffer() while scrubbing with kernel
  3.4.2
-Message-ID: <20120706151902.GO7159@shiny>
+Message-ID: <20120706214129.GA8933@sli.dy.fi>
 References: <4FF42876.8010309@jan-o-sch.net>
  <20120704160340.GA9770@sli.dy.fi>
  <4FF47168.9010405@jan-o-sch.net>
@@ -19,56 +17,56 @@ References: <4FF42876.8010309@jan-o-sch.net>
  <20120705234739.GA9736@sli.dy.fi>
  <4FF6C12A.10305@jan-o-sch.net>
  <20120706143350.GA10427@sli.dy.fi>
- <20120706144030.GL7159@shiny>
- <4FF6FE0A.2090204@jan-o-sch.net>
+ <4FF6FF8C.4010007@jan-o-sch.net>
+ <20120706195923.GA10687@sli.dy.fi>
 MIME-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-In-Reply-To: <4FF6FE0A.2090204@jan-o-sch.net>
+Content-Type: multipart/signed; micalg=pgp-sha512;
+	protocol="application/pgp-signature"; boundary="+QahgC5+KEYLbs62"
+In-Reply-To: <20120706195923.GA10687@sli.dy.fi>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Fri, Jul 06, 2012 at 09:02:34AM -0600, Jan Schmidt wrote:
-> On Fri, July 06, 2012 at 16:40 (+0200), Chris Mason wrote:
-> > On Fri, Jul 06, 2012 at 08:33:51AM -0600, Sami Liedes wrote:
-> >> On Fri, Jul 06, 2012 at 12:42:50PM +0200, Jan Schmidt wrote:
-> >>> I've no good idea at the moment how to go on. It might help to get a feeling if
-> >>> it's shifting around at least a little bit or really constant in the timing of
-> >>> occurrence. So can you please apply the next patch on top of the other two and
-> >>> give it some more failure tries? The "checksum mismatch [1234]" line will be of
-> >>> most interest. I'm also curious what the additional debug variables will say in
-> >>> the extended version of the very first printk. You can leave out the stack
-> >>> traces if you like, they won't matter much anyway.
-> >>
-> >> Ok. Also turned on CONFIG_DEBUG_PAGEALLOC and CONFIG_SLUB_DEBUG_ON as
-> >> suggested by Chris Mason.
-> >>
-> >> With those and the latest patch, there's an oops already at boot. I
-> >> don't have netconsole yet at that point, but here's the important
-> >> parts (sure I can capture it fully if you need).
-> >>
-> >> By the way, something seems to be untabifying your patches. I don't
-> >> know if it's on my side or yours, but at least some other patches I
-> >> receive via linux-btrfs contain tabs. Doing a M-x tabify in emacs
-> >> mostly makes them apply cleanly for me.
-> >>
-> >> 	Sami
-> >>
-> >>
-> >> ------------------------------------------------------------
-> >> btrfs: disk space caching is enabled
-> >> BUG: unable to handle kernel NULL pointer dereference at 0000000000000150
-> >> IP: [<ffffffffa0223568>] check_node+0x138/0x250 [btrfs]
-> > 
-> > This isn't from any of the new debugging.  Can you please try it on an
-> > unpatched kernel?
-> 
-> You're confusing that with check_leaf. I added check_node along the way, see my
-> mail from Thu, July 05, 2012 at 15:41 (+0200). I'd really like to add something
-> similar for the 3.6 series.
-> 
-> Checking for the null pointer dereference.
 
-Sorry, I wasn't clear.  I meant it wasn't from slab debug or
-DEBUG_PAGEALLOC, so it must be new in your patches ;)
+--+QahgC5+KEYLbs62
+Content-Type: text/plain; charset=us-ascii
+Content-Disposition: inline
 
--chris
+On Fri, Jul 06, 2012 at 10:59:24PM +0300, Sami Liedes wrote:
+> I think I might try running it overnight with KMEMCHECK to see if it
+> reports something. But for now, what there's in the log:
+
+My KMEMCHECK kernel didn't even boot (due to some weird KMEMCHECK/ACPI
+interaction), so I won't pursue this idea further at the moment...
+
+> * lots of checksum mismatch [234], no 1s
+
+One thing to notice from the logs, too, is that the device seems to
+always be dm-6, the second device of the filesystem. This never seems
+to happen to dm-5. There are 1583 lines of "btrfs: dm-6 checksum
+verify failed".
+
+	Sami
+
+--+QahgC5+KEYLbs62
+Content-Type: application/pgp-signature; name="signature.asc"
+Content-Description: Digital signature
+
+-----BEGIN PGP SIGNATURE-----
+Version: GnuPG v1.4.12 (GNU/Linux)
+
+iQIcBAEBCgAGBQJP91uJAAoJEKLT589SE0a0HvAQAMTlvqbRuxOOVbZGTMCyQvyp
+x5L21SXm9pK5GoqUftAEdU3WdkfSd6VuA+Xb0qaMMGitByBY8+T9UqI9LyxwN58C
+ixChQlpb8kk++wTjAYkeU+WoETFWWNf1jibrBDetl0xKNuZ1sO4df6FhN6Zyg3si
+fg+G+HCVvswXTlJEddwlXt7mcjOf2sQxw1agI6oInToOuxa3EWGBzX449rtxMKVk
+YE/bmSN7KSrPFMl6fMUva/qpuWy6jI0msOlWy+n9G0AfNNvw+V8kfNbpbJAp6j7n
+hZQ8Rv0pKaroIiQw/lmBA3QoptjdSZKkBwCR6ktNTcugqci9jfmpNZGIqIvEjMPC
+jmYNLZMXKjUPvDCR1UGx/aaRcSOCTjfYRbei2I8x5Br/+DW/cM7w6saiYNBxluyk
+xi2V6s1tWXOEvPImwi6UkAsbTyBfOD8EKM6nrmYR4qjgwYFurD2tTSuKQMeLH98h
++Tf2B1Xt7Q+5pOJoARPacJL1SWAwJDx8VehH2F5fvmZNqyT0qNTcEWxqqhDa/EHI
+9ikGy9+g8X8ZQNZvTQ144c8hLz7uQEown21ir/1p30RR+1HsvIkhaNHwbaLYGpiV
+oKRsVVLSvlKPSzupD7cFP6EFNLj8DTmms1ewJJdIQJRNP9FgAAUFLJqdlUeFC06E
+6w8508D34f7tudI5a+Wk
+=9hDe
+-----END PGP SIGNATURE-----
+
+--+QahgC5+KEYLbs62--

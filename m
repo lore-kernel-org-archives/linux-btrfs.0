@@ -1,16 +1,17 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.fusionio.com ([66.114.96.31]:44168 "EHLO mx2.fusionio.com"
+Received: from mx2.fusionio.com ([66.114.96.31]:43284 "EHLO mx2.fusionio.com"
 	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S932483Ab2GEN0K (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 5 Jul 2012 09:26:10 -0400
-Date: Thu, 5 Jul 2012 09:26:06 -0400
+	id S1753561Ab2GFU7Y (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Fri, 6 Jul 2012 16:59:24 -0400
+Date: Fri, 6 Jul 2012 16:59:20 -0400
 From: Josef Bacik <jbacik@fusionio.com>
-To: Daniel J Blueman <daniel@quora.org>
+To: <sensille@gmx.net>
 CC: Liu Bo <liubo2009@cn.fujitsu.com>, "Chris L. Mason" <clmason@fusionio.com>,
         Josef Bacik <JBacik@fusionio.com>,
-        Linux BTRFS <linux-btrfs@vger.kernel.org>
+        Linux BTRFS <linux-btrfs@vger.kernel.org>,
+        Daniel J Blueman <daniel@quora.org>, <list.btrfs@jan-o-sch.net>
 Subject: Re: Please hammer my for-linus branch
-Message-ID: <20120705132606.GA3289@localhost.localdomain>
+Message-ID: <20120706205920.GE31489@localhost.localdomain>
 References: <CAMVG2stz6ED4D-YzST7V59jFsDS0gcB4cXrVd8ZTpXohRZh6Hw@mail.gmail.com>
  <CAMVG2st-qr+PpTUQB=wQ-_21h=d86=aDayb7FvFSSZf4ZyRVhQ@mail.gmail.com>
  <4FF3D27F.4070402@cn.fujitsu.com>
@@ -55,6 +56,29 @@ On Wed, Jul 04, 2012 at 12:53:54AM -0600, Daniel J Blueman wrote:
 > the fio workload file [2] in the same dir.
 > 
 
-Wow I hit this straight away, I will look into it, thanks!
+Well that was a huge pain in the ass, you are going to have to tell me how to
+fix this Arne or fix it yourself.  The problem was introduced here
+
+00f04b88791ff49dc64ada18819d40a5b0671709
+
+The problem is we no longer merge delayed refs on the fs trees anymore, and
+somehow we end up with this sequence of events
+
+alloc block
+add backref for some random block
+remove implicit backref
+add implicit backref back <-- I'm not entirely sure why/how this happens, I just
+			assume its some relocate magic
+run refs
+
+because we do the sequence thing we go to add the implicit backref and panic
+because we find there is one already there, and that's not supposed to happen
+with tree blocks.  If we had run the remove first we would have been fine or if
+we had just merged the delayed refs they would have cancelled each other out and
+we would have been fine.  In order to test this theory I took the seq
+comparisons out of comp_entry in delayed-refs.c and the test has been running
+for about 20 minutes, before it would die in less than 30 seconds.  So why is
+this needed?  I assume you need it for something, but I figure its easier for
+you to fix this than for me to go figure out what it's used for.  Thanks,
 
 Josef

@@ -1,28 +1,24 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from frost.carfax.org.uk ([85.119.82.111]:56175 "EHLO
-	frost.carfax.org.uk" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1752976Ab2GIUZc (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Mon, 9 Jul 2012 16:25:32 -0400
-Date: Mon, 9 Jul 2012 21:25:30 +0100
-From: Hugo Mills <hugo@carfax.org.uk>
+Received: from mail-we0-f174.google.com ([74.125.82.174]:37742 "EHLO
+	mail-we0-f174.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1753791Ab2GIVwe (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Mon, 9 Jul 2012 17:52:34 -0400
+Received: by weyx8 with SMTP id x8so1589967wey.19
+        for <linux-btrfs@vger.kernel.org>; Mon, 09 Jul 2012 14:52:33 -0700 (PDT)
+Date: Tue, 10 Jul 2012 00:52:34 +0300
+From: Ilya Dryomov <idryomov@gmail.com>
 To: Jan Engelhardt <jengelh@inai.de>
-Cc: linux-btrfs@vger.kernel.org
+Cc: Hugo Mills <hugo@carfax.org.uk>, linux-btrfs@vger.kernel.org
 Subject: Re: btrfs fi df won't show total=
-Message-ID: <20120709202530.GH28701@carfax.org.uk>
+Message-ID: <20120709215234.GA1942@zambezi.lan>
 References: <alpine.LNX.2.01.1207092111360.16359@frira.zrqbmnf.qr>
  <20120709192500.GG28701@carfax.org.uk>
  <alpine.LNX.2.01.1207092204450.23294@frira.zrqbmnf.qr>
 MIME-Version: 1.0
-Content-Type: multipart/signed; micalg=pgp-sha1;
-	protocol="application/pgp-signature"; boundary="qVHblb/y9DPlgkHs"
+Content-Type: text/plain; charset=us-ascii
 In-Reply-To: <alpine.LNX.2.01.1207092204450.23294@frira.zrqbmnf.qr>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
-
-
---qVHblb/y9DPlgkHs
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
 
 On Mon, Jul 09, 2012 at 10:06:24PM +0200, Jan Engelhardt wrote:
 > 
@@ -60,33 +56,11 @@ On Mon, Jul 09, 2012 at 10:06:24PM +0200, Jan Engelhardt wrote:
 > Metadata, RAID10: total=112.00GiB, used=1.38GiB
 > Metadata: total=foo, used=bar
 
-   The lines without the RAID marker are there as a result of the way
-that mkfs works -- it creates stub chunks which are never used, and
-then upgrades to the required RAID level immediately afterwards.
+mkfs creates those non-raid chunks for a pretty stupid reason, they
+really shouldn't be there if you create a raid10 fs.  Balance does the
+right thing and removes them.  Fixing this along with another mkfs
+annoyance related to this one is on my TODO list.
 
-   The balance (any balance, not just a conversion) processes these
-chunks as well as all the other chunks in the FS, and rewrites all of
-the data in them (all 0 bytes of it) somewhere else, removing the
-originals.
+Thanks,
 
-   Hugo.
-
--- 
-=== Hugo Mills: hugo@... carfax.org.uk | darksatanic.net | lug.org.uk ===
-  PGP key: 515C238D from wwwkeys.eu.pgp.net or http://www.carfax.org.uk
-   --- Well, you don't get to be a kernel hacker simply by looking ---   
-                    good in Speedos. -- Rusty Russell                    
-
---qVHblb/y9DPlgkHs
-Content-Type: application/pgp-signature; name="signature.asc"
-Content-Description: Digital signature
-
------BEGIN PGP SIGNATURE-----
-Version: GnuPG v1.4.12 (GNU/Linux)
-
-iD8DBQFP+z46IKyzvlFcI40RAoojAJ4zI78K9PeEdWhLQMzuVI0CS8SdZQCgmTXV
-WpI742nIwfGXpf158Jo3tCE=
-=5Une
------END PGP SIGNATURE-----
-
---qVHblb/y9DPlgkHs--
+		Ilya

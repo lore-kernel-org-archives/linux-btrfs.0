@@ -1,50 +1,33 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail2.unitix.de ([176.9.2.175]:53007 "EHLO mail2.unitix.de"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1752246Ab2GIWXI (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 9 Jul 2012 18:23:08 -0400
-Received: from [192.168.1.64] (77-216.eduroam.rwth-aachen.de [134.61.77.216])
-	(using TLSv1 with cipher DHE-RSA-AES256-SHA (256/256 bits))
-	(No client certificate requested)
-	by mail2.unitix.de (Postfix) with ESMTPSA id C945A655D
-	for <linux-btrfs@vger.kernel.org>; Tue, 10 Jul 2012 00:23:05 +0200 (CEST)
-Message-ID: <4FFB59BF.1050104@arndnet.de>
-Date: Tue, 10 Jul 2012 00:22:55 +0200
-From: Arnd Hannemann <arnd@arndnet.de>
+Received: from mail-pb0-f46.google.com ([209.85.160.46]:61310 "EHLO
+	mail-pb0-f46.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1751042Ab2GIWtN (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Mon, 9 Jul 2012 18:49:13 -0400
+Received: by pbbrp8 with SMTP id rp8so19923241pbb.19
+        for <linux-btrfs@vger.kernel.org>; Mon, 09 Jul 2012 15:49:13 -0700 (PDT)
 MIME-Version: 1.0
-To: linux-btrfs@vger.kernel.org
-Subject: 3.5.0-rc6: btrfs and LVM snapshots -> wrong devicename in /proc/mounts
-Content-Type: text/plain; charset=ISO-8859-15
+In-Reply-To: <4FFB59BF.1050104@arndnet.de>
+References: <4FFB59BF.1050104@arndnet.de>
+Date: Mon, 9 Jul 2012 16:49:13 -0600
+Message-ID: <CAE5mzvizLBtMbVmGfQc1HYve8BoFk+G93j2B=1759JWLH_4w+w@mail.gmail.com>
+Subject: Re: 3.5.0-rc6: btrfs and LVM snapshots -> wrong devicename in /proc/mounts
+From: cwillu <cwillu@cwillu.com>
+To: Arnd Hannemann <arnd@arndnet.de>
+Cc: linux-btrfs@vger.kernel.org
+Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hi,
+On Mon, Jul 9, 2012 at 4:22 PM, Arnd Hannemann <arnd@arndnet.de> wrote:
+> Hi,
+>
+> using btrfs with LVM snapshots seems to be confusing /proc/mounts
+> After mounting a snapshot of an original filesystem, the devicename of the
+> original filesystem is overwritten with that of the snapshot in /proc/mounts.
 
-using btrfs with LVM snapshots seems to be confusing /proc/mounts
-After mounting a snapshot of an original filesystem, the devicename of the
-original filesystem is overwritten with that of the snapshot in /proc/mounts.
+If the lvm snapshot is visible to btrfs (i.e., btrfs dev scan), it
+will appear as another device which belongs to the original filesystem
+with a duplicate devid.  This might result in bad things happening, or
+possibly just hilarity.
 
-Steps to reproduce:
-
-arnd@kallisto:/mnt$ sudo mount /dev/vg0/original /mnt/original
-[  107.041432] device fsid 5c3e8ca2-da56-4ade-9fef-103a6a8a70c2 devid 1 transid 4 /dev/mapper/vg0-original
-[  107.044691] btrfs: no dev_stats entry found for device /dev/mapper/vg0-original (devid 1) (OK on first mount after mkfs)
-
-arnd@kallisto:/mnt$ cat /proc/mounts  | grep /mnt
-/dev/mapper/vg0-original /mnt/original btrfs rw,relatime,ssd,space_cache 0 0
-
-arnd@kallisto:/mnt$ sudo lvcreate -L 10M --snap --name snapshot /dev/vg0/original
-arnd@kallisto:/mnt$ sudo mount /dev/vg0/testsnap /mnt/testsnap
-[  215.432281] device fsid 5c3e8ca2-da56-4ade-9fef-103a6a8a70c2 devid 1 transid 4 /dev/mapper/vg0-testsnap
-
-arnd@kallisto:/mnt$ cat /proc/mounts  | grep /mnt
-/dev/mapper/vg0-testsnap /mnt/original btrfs rw,relatime,ssd,space_cache 0 0
-/dev/mapper/vg0-testsnap /mnt/testsnap btrfs rw,relatime,ssd,space_cache 0 0
-
-arnd@kallisto:/mnt$ sudo umount /dev/vg0/testsnap
-arnd@kallisto:/mnt$ cat /proc/mounts | grep /mnt
-/dev/mapper/vg0-testsnap /mnt/original btrfs rw,relatime,ssd,space_cache 0 0
-
-
-Best regards,
-Arnd
+You have a backup that isn't just an lvm snapshot, right?

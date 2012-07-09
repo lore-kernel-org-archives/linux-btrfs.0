@@ -1,43 +1,43 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-ob0-f174.google.com ([209.85.214.174]:48492 "EHLO
-	mail-ob0-f174.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1751559Ab2GIS7N (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Mon, 9 Jul 2012 14:59:13 -0400
-Received: by obbuo13 with SMTP id uo13so20928275obb.19
-        for <linux-btrfs@vger.kernel.org>; Mon, 09 Jul 2012 11:59:12 -0700 (PDT)
+Received: from seven.medozas.de ([5.9.24.206]:43013 "EHLO seven.medozas.de"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1751316Ab2GITOG (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Mon, 9 Jul 2012 15:14:06 -0400
+Received: from localhost (localhost [127.0.0.1])
+	by seven.medozas.de (Postfix) with ESMTP id 1124F96A07E7
+	for <linux-btrfs@vger.kernel.org>; Mon,  9 Jul 2012 21:14:03 +0200 (CEST)
+Date: Mon, 9 Jul 2012 21:14:03 +0200 (CEST)
+From: Jan Engelhardt <jengelh@inai.de>
+To: linux-btrfs@vger.kernel.org
+Subject: btrfs fi df won't show total=
+Message-ID: <alpine.LNX.2.01.1207092111360.16359@frira.zrqbmnf.qr>
 MIME-Version: 1.0
-In-Reply-To: <1341409174-13619-7-git-send-email-ablock84@googlemail.com>
-References: <1341409174-13619-1-git-send-email-ablock84@googlemail.com>
-	<1341409174-13619-7-git-send-email-ablock84@googlemail.com>
-Date: Mon, 9 Jul 2012 21:59:12 +0300
-Message-ID: <CAHf9xvZqQRBZraH4jGu+mRXQFk1aqKaCKMJno=ubypd2rYkicA@mail.gmail.com>
-Subject: Re: [RFC PATCH 6/6] Btrfs-progs: add btrfs send/receive commands
-From: Alex Lyakas <alex.bolshoy.btrfs@gmail.com>
-To: Alexander Block <ablock84@googlemail.com>
-Cc: linux-btrfs@vger.kernel.org
-Content-Type: text/plain; charset=ISO-8859-1
+Content-Type: TEXT/PLAIN; charset=US-ASCII
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hi Alexander,
 
-I studied all the kernel + user code, and I have a long list of questions.
+On openSUSE_12.1 with Btrfs v0.19+20120406, the following can be
+observed: after a change of the profiles, total=,used= is no
+longer shown:
 
-Meanwhile, I want to report two small bugs:
 
-# BTRFS_SEND_C_MKNOD command: the receive path expects
-BTRFS_SEND_A_MODE, but kernel doesn't send it. So currently it errors.
-It looks like kernel need to send it, otherwise how do we know which
-kind of mknod to create.
+20:49 mmsrv1:~ # btrfs fi df /top.srv/
+Data, RAID10: total=152.00GiB, used=121.07GiB
+System, RAID1: total=40.00MiB, used=44.00KiB
+System: total=4.00MiB, used=0.00
+Metadata, RAID1: total=112.00GiB, used=1.30GiB
+Metadata: total=8.00MiB, used=0.00
+20:50 mmsrv1:~ # btrfs fi bal start -mconvert=raid10 -sconvert=raid10 
+/top.srv/
+Refusing to explicitly operate on system chunks.
+Pass --force if you really want to do that.
+20:52 mmsrv1:~ # btrfs fi bal start -mconvert=raid10 -sconvert=raid10 
+--force /top.srv/
+...
+21:10 mmsrv1:~ # btrfs fi df /top.srv/
+Data, RAID10: total=156.00GiB, used=124.35GiB
+System, RAID10: total=128.00MiB, used=48.00KiB
+System: total=4.00MiB, used=0.00
+Metadata, RAID10: total=112.00GiB, used=1.38GiB
 
-# BTRFS_SEND_C_LINK -> process_link()
-ret = link(lnk, full_path); ==> I think it should be the other way
-around, the old path comes first and then the new path. Otherwise, it
-fails.
-
-If you prefer, I can send you patches for those.
-
-I will keep playing with your code & let you know what else I find.
-
-Thanks!
-Alex.

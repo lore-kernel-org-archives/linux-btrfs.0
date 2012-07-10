@@ -1,84 +1,71 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.fusionio.com ([66.114.96.31]:43284 "EHLO mx2.fusionio.com"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1753561Ab2GFU7Y (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Fri, 6 Jul 2012 16:59:24 -0400
-Date: Fri, 6 Jul 2012 16:59:20 -0400
-From: Josef Bacik <jbacik@fusionio.com>
-To: <sensille@gmx.net>
-CC: Liu Bo <liubo2009@cn.fujitsu.com>, "Chris L. Mason" <clmason@fusionio.com>,
-        Josef Bacik <JBacik@fusionio.com>,
-        Linux BTRFS <linux-btrfs@vger.kernel.org>,
-        Daniel J Blueman <daniel@quora.org>, <list.btrfs@jan-o-sch.net>
-Subject: Re: Please hammer my for-linus branch
-Message-ID: <20120706205920.GE31489@localhost.localdomain>
-References: <CAMVG2stz6ED4D-YzST7V59jFsDS0gcB4cXrVd8ZTpXohRZh6Hw@mail.gmail.com>
- <CAMVG2st-qr+PpTUQB=wQ-_21h=d86=aDayb7FvFSSZf4ZyRVhQ@mail.gmail.com>
- <4FF3D27F.4070402@cn.fujitsu.com>
- <CAMVG2suP+-1JORm-k1nYx0n7hcE2DHa_fSOhdW=s2pov1NO50Q@mail.gmail.com>
+Received: from mail-wg0-f44.google.com ([74.125.82.44]:49510 "EHLO
+	mail-wg0-f44.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1754775Ab2GJMSU (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>);
+	Tue, 10 Jul 2012 08:18:20 -0400
+Received: by wgbdr13 with SMTP id dr13so12450342wgb.1
+        for <linux-btrfs@vger.kernel.org>; Tue, 10 Jul 2012 05:18:18 -0700 (PDT)
 MIME-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-In-Reply-To: <CAMVG2suP+-1JORm-k1nYx0n7hcE2DHa_fSOhdW=s2pov1NO50Q@mail.gmail.com>
+In-Reply-To: <4FF12190.9090005@cn.fujitsu.com>
+References: <CAMVG2stz6ED4D-YzST7V59jFsDS0gcB4cXrVd8ZTpXohRZh6Hw@mail.gmail.com>
+	<4FF12190.9090005@cn.fujitsu.com>
+Date: Tue, 10 Jul 2012 20:18:18 +0800
+Message-ID: <CAMVG2stBLy9U6GyLty=EsNrPKbEasLsnF5rcQW2EO0DOtOK0Og@mail.gmail.com>
+Subject: Re: Please hammer my for-linus branch
+From: Daniel J Blueman <daniel@quora.org>
+To: Liu Bo <liubo2009@cn.fujitsu.com>
+Cc: Chris Mason <chris.mason@fusionio.com>,
+        Linux BTRFS <linux-btrfs@vger.kernel.org>,
+        Josef Bacik <jbacik@fusionio.com>
+Content-Type: text/plain; charset=ISO-8859-1
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Wed, Jul 04, 2012 at 12:53:54AM -0600, Daniel J Blueman wrote:
-> On 4 July 2012 13:19, Liu Bo <liubo2009@cn.fujitsu.com> wrote:
-> > On 07/04/2012 11:37 AM, Daniel J Blueman wrote:
-> >>> Hi everyone,
-> >>>
-> >>> I've got a nice set of fixes from Josef, Jan, Ilya and others in my
-> >>> for-linus branch:
-> >>>
-> >>> git://git.kernel.org/pub/scm/linux/kernel/git/mason/linux-btrfs.git for-linus
-> >>>
-> >>> Some of the changes are fixes for the tree logging code, so I ran some
-> >>> extra crash runs against them Friday night.
-> >>>
-> >>> I ended up with a new crash in the tree log directory deletion replay
-> >>> code, so I didn't send out the pull request to Linus.
-> >>>
-> >>> It isn't clear yet if the new crash is because I was testing differently
-> >>> or if it is a regression.  I'm nailing it down this weekend, but please
-> >>> give my for-linus a shot.
-> >>
-> >> I consistently run into this assertion [1] while running a fio
-> >> workload on a fresh RAID10 filesystem with a balance running.
-> >>
-> >> Let me know if you need steps to reproduce, debug etc.
-> >
-> > Seems that additional condition does not catch the bug.
-> >
-> > Plz show us the steps to reproduce, I'll try to reproduce it locally and nail it down.
-> 
-> The reproducer auto-generated from my test [1] consistently hits the
-> spot here; config @ http://quora.org/2012/kconfig-btrfs . You'll need
-> the fio workload file [2] in the same dir.
-> 
+On 2 July 2012 12:20, Liu Bo <liubo2009@cn.fujitsu.com> wrote:
+> On 07/02/2012 11:35 AM, Daniel J Blueman wrote:
+>
+>>> Hi everyone,
+>>>
+>>> I've got a nice set of fixes from Josef, Jan, Ilya and others in my
+>>> for-linus branch:
+>>>
+>>> git://git.kernel.org/pub/scm/linux/kernel/git/mason/linux-btrfs.git for-linus
+>>>
+>>> Some of the changes are fixes for the tree logging code, so I ran some
+>>> extra crash runs against them Friday night.
+>>>
+>>> I ended up with a new crash in the tree log directory deletion replay
+>>> code, so I didn't send out the pull request to Linus.
+>>>
+>>> It isn't clear yet if the new crash is because I was testing differently
+>>> or if it is a regression.  I'm nailing it down this weekend, but please
+>>> give my for-linus a shot.
+>>
+>> With this branch (3.4.0), my test has consistently been hitting the
+>> BUG_ON(owner < BTRFS_FIRST_FREE_OBJECTID) in
+>> insert_inline_extent_backref [1]. This is followed by a string of
+>> other issues [2] and a hard lockup, so I used netconsole to collect
+>> this.
+>>
+>> I'm preparing my btrfs test for xfstests integration, but can slip you
+>> it if interested. It hits this case in ~30s.
+>>
+>
+>
+> IMO the BUG_ON is meant to avoid to mix 'log tree' in, it should be:
+>
+> BUG_ON(owner < BTRFS_FIRST_FREE_OBJECTID && root_objectid == BTRFS_TREE_LOG_OBJECTID);
+>
+> This should help you, can you give it a try?
 
-Well that was a huge pain in the ass, you are going to have to tell me how to
-fix this Arne or fix it yourself.  The problem was introduced here
+Bo, this did address the assertion I was tripping, so looks good from
+here; it allowed me to report the second (different) assertion of
+course.
 
-00f04b88791ff49dc64ada18819d40a5b0671709
+If you still think the fix is sound, is it a good idea for 3.5-rc7?
 
-The problem is we no longer merge delayed refs on the fs trees anymore, and
-somehow we end up with this sequence of events
-
-alloc block
-add backref for some random block
-remove implicit backref
-add implicit backref back <-- I'm not entirely sure why/how this happens, I just
-			assume its some relocate magic
-run refs
-
-because we do the sequence thing we go to add the implicit backref and panic
-because we find there is one already there, and that's not supposed to happen
-with tree blocks.  If we had run the remove first we would have been fine or if
-we had just merged the delayed refs they would have cancelled each other out and
-we would have been fine.  In order to test this theory I took the seq
-comparisons out of comp_entry in delayed-refs.c and the test has been running
-for about 20 minutes, before it would die in less than 30 seconds.  So why is
-this needed?  I assume you need it for something, but I figure its easier for
-you to fix this than for me to go figure out what it's used for.  Thanks,
-
-Josef
+Thanks,
+  Daniel
+-- 
+Daniel J Blueman

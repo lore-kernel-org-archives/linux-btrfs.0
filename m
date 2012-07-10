@@ -1,164 +1,129 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from moutng.kundenserver.de ([212.227.17.10]:56067 "EHLO
+Received: from moutng.kundenserver.de ([212.227.126.171]:52071 "EHLO
 	moutng.kundenserver.de" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1754684Ab2GJJNk (ORCPT
+	with ESMTP id S1753338Ab2GJLI6 (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 10 Jul 2012 05:13:40 -0400
-Date: Tue, 10 Jul 2012 11:13:38 +0200 (CEST)
+	Tue, 10 Jul 2012 07:08:58 -0400
+Date: Tue, 10 Jul 2012 13:08:55 +0200 (CEST)
 From: "haveaniceday@cv-sv.de" <haveaniceday@cv-sv.de>
 Reply-To: "haveaniceday@cv-sv.de" <haveaniceday@cv-sv.de>
 To: Anand Jain <Anand.Jain@oracle.com>
 Cc: linux-btrfs@vger.kernel.org
-Message-ID: <1462124570.240756.1341911618590.JavaMail.open-xchange@email.1und1.de>
-In-Reply-To: <4FFBCC1A.8020800@oracle.com>
-References: <4FF9B07C.8090209@cv-sv.de> <4FFA52BC.9010401@oracle.com> <4FFB4BB4.4080408@cv-sv.de> <4FFBCC1A.8020800@oracle.com>
+Message-ID: <333721177.250041.1341918535801.JavaMail.open-xchange@email.1und1.de>
+In-Reply-To: <1462124570.240756.1341911618590.JavaMail.open-xchange@email.1und1.de>
+References: <4FF9B07C.8090209@cv-sv.de> <4FFA52BC.9010401@oracle.com> <4FFB4BB4.4080408@cv-sv.de> <4FFBCC1A.8020800@oracle.com> <1462124570.240756.1341911618590.JavaMail.open-xchange@email.1und1.de>
 Subject: Re: btrfsck crashes
 MIME-Version: 1.0
 Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-
-
-
-Anand Jain <Anand.Jain@oracle.com> hat am 10. Juli 2012 um 08:30 geschrieben:
-
->
-> Christian,
->
->   line # is still confusing to me as well. patch was to avoid seg
->   fault when csum_root node is null and it might not be the case
->   here then.
->
->   (If the original problem stack-trace has remained the same
->   which is as below)..
-
-Hi Anand,
-
-I have used git clone
-git://git.kernel.org/pub/scm/linux/kernel/git/mason/btrfs-progs.git
-
-The stack looks now like below.  I expect the first "0" in path->nodes
- generates the problem.
-(gdb) p path->nodes
-$2 = {0x0, 0x27ad82e0, 0x3893a930, 0x3dc24f0, 0x75efa0, 0x0, 0x0, 0x0}
-
-
-
-speedy:/tmp/btrfs/btrfs-progs # gdb ./btrfsck
-GNU gdb (GDB) SUSE (7.3-41.1.2)
-Copyright (C) 2011 Free Software Foundation, Inc.
-License GPLv3+: GNU GPL version 3 or later <http://gnu.org/licenses/gpl.html>
-This is free software: you are free to change and redistribute it.
-There is NO WARRANTY, to the extent permitted by law.  Type "show copying"
-and "show warranty" for details.
-This GDB was configured as "x86_64-suse-linux".
-For bug reporting instructions, please see:
-<http://www.gnu.org/software/gdb/bugs/>...
-Reading symbols from /tmp/btrfs/btrfs-progs/btrfsck...done.
-(gdb) r /dev/md3
-Starting program: /tmp/btrfs/btrfs-progs/btrfsck /dev/md3
-Missing separate debuginfo for /lib64/ld-linux-x86-64.so.2
-Try: zypper install -C
-"debuginfo(build-id)=f20c99249f5a5776e1377d3bd728502e3f455a3f"
-Missing separate debuginfo for /lib64/libuuid.so.1
-Try: zypper install -C
-"debuginfo(build-id)=24ae727f9cd5fb29f81b0f965859d3cf4668bf17"
-Missing separate debuginfo for /lib64/libc.so.6
-Try: zypper install -C
-"debuginfo(build-id)=7b169b1db50384b70e3e4b4884cd56432d5de796"
-checking extents
-checksum verify failed on 2327654400 wanted 73CDE79C found 72
-checksum verify failed on 2327654400 wanted 73CDE79C found 72
-checksum verify failed on 2327654400 wanted 73CDE79C found 72
-checksum verify failed on 2327654400 wanted 73CDE79C found 72
+This code should detect the problem without SIGSEGV but a Assertition.
+...
 Csum didn't match
-owner ref check failed [2327654400 4096]
-ref mismatch on [101138354176 98304] extent item 1, found 0
-Incorrect local backref count on 101138354176 root 5 owner 1867898 offset 0
-found 0 wanted 1 back 0x19e025d0
-backpointer mismatch on [101138354176 98304]
-owner ref check failed [101138354176 98304]
-ref mismatch on [101138452480 106496] extent item 1, found 0
-Incorrect local backref count on 101138452480 root 5 owner 1867899 offset 0
-found 0 wanted 1 back 0x19e02610
-backpointer mismatch on [101138452480 106496]
-owner ref check failed [101138452480 106496]
-ref mismatch on [101138558976 8192] extent item 1, found 0
-Incorrect local backref count on 101138558976 root 5 owner 1867901 offset 0
-found 0 wanted 1 back 0x5a60f90
-backpointer mismatch on [101138558976 8192]
-owner ref check failed [101138558976 8192]
-ref mismatch on [101138567168 16384] extent item 1, found 0
-Incorrect local backref count on 101138567168 root 5 owner 1867902 offset 0
-found 0 wanted 1 back 0x5a60fd0
-backpointer mismatch on [101138567168 16384]
-owner ref check failed [101138567168 16384]
-ref mismatch on [101138583552 16384] extent item 1, found 0
-Incorrect local backref count on 101138583552 root 5 owner 1867903 offset 0
-found 0 wanted 1 back 0x19e04420
-backpointer mismatch on [101138583552 16384]
-owner ref check failed [101138583552 16384]
-Errors found in extent allocation tree
+btrfsck: btrfsck.c:1177: walk_down_tree: Assertion `!(1)' failed.
+Aborted
+...
+
+
+--- btrfsck.c   2012-07-10 10:23:24.781622144 +0200
++++ btrfsck.c   2012-07-10 12:59:00.120146266 +0200
+@@ -1173,7 +1173,7 @@
+                WARN_ON(*level >= BTRFS_MAX_LEVEL);
+                cur = path->nodes[*level];
+
+-               if (btrfs_header_level(cur) != *level)
++               if (! cur || btrfs_header_level(cur) != *level)
+                        WARN_ON(1);
+
+                if (path->slots[*level] >= btrfs_header_nritems(cur))
+
+ I tried to skip this error with the code below. The next errors reported are
+also below.
+
+
+--- btrfsck.c   2012-07-10 10:23:24.781622144 +0200
++++ btrfsck.c   2012-07-10 12:36:51.995996771 +0200
+@@ -1173,8 +1173,13 @@
+                WARN_ON(*level >= BTRFS_MAX_LEVEL);
+                cur = path->nodes[*level];
+
+-               if (btrfs_header_level(cur) != *level)
+-                       WARN_ON(1);
++               if (cur != 0 ) {
++                       if ( btrfs_header_level(cur) != *level)
++                               WARN_ON(1);
++               }else {
++                       fprintf(stderr, "CVCV path->nodes[*level] is 0!\n");
++                       break;
++               }
+
+                if (path->slots[*level] >= btrfs_header_nritems(cur))
+                        break;
+@@ -1213,7 +1218,11 @@
+                path->slots[*level] = 0;
+        }
+ out:
++       if ( path->nodes[*level] != 0 ){
+        path->slots[*level] = btrfs_header_nritems(path->nodes[*level]);
++       } else {
++       path->slots[*level] = 0;
++       }
+        return 0;
+ }
+
+Next errors I get are:
+
+....
 checking fs roots
 checksum verify failed on 2327654400 wanted 73CDE79C found 72
 checksum verify failed on 2327654400 wanted 73CDE79C found 72
 checksum verify failed on 2327654400 wanted 73CDE79C found 72
 checksum verify failed on 2327654400 wanted 73CDE79C found 72
 Csum didn't match
-
-Program received signal SIGSEGV, Segmentation fault.
-0x0000000000402264 in btrfs_header_level (eb=0x0) at ctree.h:1540
-1540    BTRFS_SETGET_HEADER_FUNCS(header_level, struct btrfs_header, level, 8);
-(gdb) bt
-#0  0x0000000000402264 in btrfs_header_level (eb=0x0) at ctree.h:1540
-#1  0x000000000040531f in walk_down_tree (root=0x6f6c540, path=0x7fffffffde70,
-wc=0x7fffffffdf40,
-    level=0x7fffffffdf00) at btrfsck.c:1176
-#2  0x0000000000406bf6 in check_fs_root (root=0x6f6c540,
-root_cache=0x7fffffffe0c0, wc=0x7fffffffdf40)
-    at btrfsck.c:1702
-#3  0x0000000000406ecb in check_fs_roots (root=0x75ee00,
-root_cache=0x7fffffffe0c0) at btrfsck.c:1773
-#4  0x000000000040b49c in main (ac=1, av=0x7fffffffe1f8) at btrfsck.c:3576
-(gdb) l
-1535    BTRFS_SETGET_HEADER_FUNCS(header_generation, struct btrfs_header,
-1536                              generation, 64);
-1537    BTRFS_SETGET_HEADER_FUNCS(header_owner, struct btrfs_header, owner, 64);
-1538    BTRFS_SETGET_HEADER_FUNCS(header_nritems, struct btrfs_header, nritems,
-32);
-1539    BTRFS_SETGET_HEADER_FUNCS(header_flags, struct btrfs_header, flags, 64);
-1540    BTRFS_SETGET_HEADER_FUNCS(header_level, struct btrfs_header, level, 8);
-1541
-1542    static inline int btrfs_header_flag(struct extent_buffer *eb, u64 flag)
-1543    {
-1544            return (btrfs_header_flags(eb) & flag) == flag;
-(gdb) up
-#1  0x000000000040531f in walk_down_tree (root=0x6f6c540, path=0x7fffffffde70,
-wc=0x7fffffffdf40,
-    level=0x7fffffffdf00) at btrfsck.c:1176
-1176                    if (btrfs_header_level(cur) != *level)
-(gdb) l
-1171            while (*level >= 0) {
-1172                    WARN_ON(*level < 0);
-1173                    WARN_ON(*level >= BTRFS_MAX_LEVEL);
-1174                    cur = path->nodes[*level];
-1175
-1176                    if (btrfs_header_level(cur) != *level)
-1177                            WARN_ON(1);
-1178
-1179                    if (path->slots[*level] >= btrfs_header_nritems(cur))
-1180                            break;
-(gdb) p cur
-$1 = (struct extent_buffer *) 0x0
-(gdb) p path->nodes
-$2 = {0x0, 0x27ad82e0, 0x3893a930, 0x3dc24f0, 0x75efa0, 0x0, 0x0, 0x0}
-(gdb) p *level
-$3 = 0
-(gdb)
-
-Best regards,
-Christian
-
-
-
+CVCV path->nodes[*level] is 0!
+root 5 inode 265 errors 2000
+        unresolved ref dir 2658782 index 3 namelen 12 name aquota.group filetype
+0 error 3
+        unresolved ref dir 2914579 index 3 namelen 12 name aquota.group filetype
+0 error 3
+root 5 inode 266 errors 2000
+        unresolved ref dir 2658782 index 4 namelen 11 name aquota.user filetype
+0 error 3
+        unresolved ref dir 2914579 index 4 namelen 11 name aquota.user filetype
+0 error 3
+root 5 inode 285 errors 2000
+        unresolved ref dir 2658783 index 3 namelen 3 name awk filetype 0 error 3
+        unresolved ref dir 2914580 index 3 namelen 3 name awk filetype 0 error 3
+root 5 inode 286 errors 2000
+        unresolved ref dir 2658783 index 16 namelen 3 name csh filetype 0 error
+3
+        unresolved ref dir 2914580 index 16 namelen 3 name csh filetype 0 error
+3
+root 5 inode 287 errors 2000
+        unresolved ref dir 2658783 index 27 namelen 13 name dnsdomainname
+filetype 0 error 3
+        unresolved ref dir 2914580 index 27 namelen 13 name dnsdomainname
+filetype 0 error 3
+root 5 inode 288 errors 2000
+        unresolved ref dir 2658783 index 28 namelen 10 name domainname filetype
+0 error 3
+        unresolved ref dir 2914580 index 28 namelen 10 name domainname filetype
+0 error 3
+root 5 inode 289 errors 2000
+        unresolved ref dir 2658783 index 34 namelen 2 name ex filetype 0 error 3
+        unresolved ref dir 2914580 index 34 namelen 2 name ex filetype 0 error 3
+root 5 inode 290 errors 2000
+        unresolved ref dir 2658783 index 48 namelen 2 name ip filetype 0 error 3
+        unresolved ref dir 2914580 index 48 namelen 2 name ip filetype 0 error 3
+root 5 inode 291 errors 2000
+        unresolved ref dir 2658783 index 54 namelen 3 name ksh filetype 0 error
+3
+        unresolved ref dir 2914580 index 54 namelen 3 name ksh filetype 0 error
+3
+root 5 inode 292 errors 2000
+        unresolved ref dir 2658783 index 63 namelen 4 name mail filetype 0 error
+3
+        unresolved ref dir 2914580 index 63 namelen 4 name mail filetype 0 error
+3
+...

@@ -1,141 +1,324 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from rcsinet15.oracle.com ([148.87.113.117]:18229 "EHLO
-	rcsinet15.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1756196Ab2GKHRD (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 11 Jul 2012 03:17:03 -0400
-Message-ID: <4FFD278D.20804@oracle.com>
-Date: Wed, 11 Jul 2012 15:13:17 +0800
-From: Anand Jain <Anand.Jain@oracle.com>
+Received: from szxga02-in.huawei.com ([119.145.14.65]:16610 "EHLO
+	szxga02-in.huawei.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1751498Ab2GJCWu (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Mon, 9 Jul 2012 22:22:50 -0400
+Message-ID: <4FFB91EB.9070305@huawei.com>
+Date: Tue, 10 Jul 2012 10:22:35 +0800
+From: Li Zefan <lizefan@huawei.com>
 MIME-Version: 1.0
-To: "haveaniceday@cv-sv.de" <haveaniceday@cv-sv.de>
-CC: linux-btrfs@vger.kernel.org
-Subject: Re: btrfsck crashes
-References: <4FF9B07C.8090209@cv-sv.de> <4FFA52BC.9010401@oracle.com> <4FFB4BB4.4080408@cv-sv.de> <4FFBCC1A.8020800@oracle.com> <1462124570.240756.1341911618590.JavaMail.open-xchange@email.1und1.de> <333721177.250041.1341918535801.JavaMail.open-xchange@email.1und1.de>
-In-Reply-To: <333721177.250041.1341918535801.JavaMail.open-xchange@email.1und1.de>
-Content-Type: text/plain; charset=UTF-8; format=flowed
+To: "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
+Subject: [PATCH] Btrfs: rewrite BTRFS_SETGET_FUNCS
+Content-Type: text/plain; charset="GB2312"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
+BTRFS_SETGET_FUNCS macro is used to generate btrfs_set_foo() and
+btrfs_foo() functions, which read and write specific fields in the
+extent buffer.
 
+The total number of set/get functions is ~200, but in fact we only
+need 8 functions: 2 for u8 field, 2 for u16, 2 for u32 and 2 for u64.
 
-  If this is a deliberate corruption can you pls share the test-case ?
-  if not have you tried mount with recovery and the scrub. ? scrub
-  would be preferred choice over btrfsck.
+It results in redunction of ~37K bytes.
 
+   text    data     bss     dec     hex filename
+ 629661   12489     216  642366   9cd3e fs/btrfs/btrfs.o.orig
+ 592637   12489     216  605342   93c9e fs/btrfs/btrfs.o
 
+Signed-off-by: Li Zefan <lizefan@huawei.com>
+---
+ fs/btrfs/ctree.h        |   53 +++++++++++--
+ fs/btrfs/struct-funcs.c |  196 ++++++++++++++++++++++++-----------------------
+ 2 files changed, 146 insertions(+), 103 deletions(-)
 
-On 10/07/12 19:08, haveaniceday@cv-sv.de wrote:
-> This code should detect the problem without SIGSEGV but a Assertition.
-> ...
-> Csum didn't match
-> btrfsck: btrfsck.c:1177: walk_down_tree: Assertion `!(1)' failed.
-> Aborted
-> ...
->
->
-> --- btrfsck.c   2012-07-10 10:23:24.781622144 +0200
-> +++ btrfsck.c   2012-07-10 12:59:00.120146266 +0200
-> @@ -1173,7 +1173,7 @@
->                  WARN_ON(*level>= BTRFS_MAX_LEVEL);
->                  cur = path->nodes[*level];
->
-> -               if (btrfs_header_level(cur) != *level)
-> +               if (! cur || btrfs_header_level(cur) != *level)
->                          WARN_ON(1);
->
->                  if (path->slots[*level]>= btrfs_header_nritems(cur))
->
->   I tried to skip this error with the code below. The next errors reported are
-> also below.
->
->
-> --- btrfsck.c   2012-07-10 10:23:24.781622144 +0200
-> +++ btrfsck.c   2012-07-10 12:36:51.995996771 +0200
-> @@ -1173,8 +1173,13 @@
->                  WARN_ON(*level>= BTRFS_MAX_LEVEL);
->                  cur = path->nodes[*level];
->
-> -               if (btrfs_header_level(cur) != *level)
-> -                       WARN_ON(1);
-> +               if (cur != 0 ) {
-> +                       if ( btrfs_header_level(cur) != *level)
-> +                               WARN_ON(1);
-> +               }else {
-> +                       fprintf(stderr, "CVCV path->nodes[*level] is 0!\n");
-> +                       break;
-> +               }
->
->                  if (path->slots[*level]>= btrfs_header_nritems(cur))
->                          break;
-> @@ -1213,7 +1218,11 @@
->                  path->slots[*level] = 0;
->          }
->   out:
-> +       if ( path->nodes[*level] != 0 ){
->          path->slots[*level] = btrfs_header_nritems(path->nodes[*level]);
-> +       } else {
-> +       path->slots[*level] = 0;
-> +       }
->          return 0;
->   }
->
-> Next errors I get are:
->
-> ....
-> checking fs roots
-> checksum verify failed on 2327654400 wanted 73CDE79C found 72
-> checksum verify failed on 2327654400 wanted 73CDE79C found 72
-> checksum verify failed on 2327654400 wanted 73CDE79C found 72
-> checksum verify failed on 2327654400 wanted 73CDE79C found 72
-> Csum didn't match
-> CVCV path->nodes[*level] is 0!
-> root 5 inode 265 errors 2000
->          unresolved ref dir 2658782 index 3 namelen 12 name aquota.group filetype
-> 0 error 3
->          unresolved ref dir 2914579 index 3 namelen 12 name aquota.group filetype
-> 0 error 3
-> root 5 inode 266 errors 2000
->          unresolved ref dir 2658782 index 4 namelen 11 name aquota.user filetype
-> 0 error 3
->          unresolved ref dir 2914579 index 4 namelen 11 name aquota.user filetype
-> 0 error 3
-> root 5 inode 285 errors 2000
->          unresolved ref dir 2658783 index 3 namelen 3 name awk filetype 0 error 3
->          unresolved ref dir 2914580 index 3 namelen 3 name awk filetype 0 error 3
-> root 5 inode 286 errors 2000
->          unresolved ref dir 2658783 index 16 namelen 3 name csh filetype 0 error
-> 3
->          unresolved ref dir 2914580 index 16 namelen 3 name csh filetype 0 error
-> 3
-> root 5 inode 287 errors 2000
->          unresolved ref dir 2658783 index 27 namelen 13 name dnsdomainname
-> filetype 0 error 3
->          unresolved ref dir 2914580 index 27 namelen 13 name dnsdomainname
-> filetype 0 error 3
-> root 5 inode 288 errors 2000
->          unresolved ref dir 2658783 index 28 namelen 10 name domainname filetype
-> 0 error 3
->          unresolved ref dir 2914580 index 28 namelen 10 name domainname filetype
-> 0 error 3
-> root 5 inode 289 errors 2000
->          unresolved ref dir 2658783 index 34 namelen 2 name ex filetype 0 error 3
->          unresolved ref dir 2914580 index 34 namelen 2 name ex filetype 0 error 3
-> root 5 inode 290 errors 2000
->          unresolved ref dir 2658783 index 48 namelen 2 name ip filetype 0 error 3
->          unresolved ref dir 2914580 index 48 namelen 2 name ip filetype 0 error 3
-> root 5 inode 291 errors 2000
->          unresolved ref dir 2658783 index 54 namelen 3 name ksh filetype 0 error
-> 3
->          unresolved ref dir 2914580 index 54 namelen 3 name ksh filetype 0 error
-> 3
-> root 5 inode 292 errors 2000
->          unresolved ref dir 2658783 index 63 namelen 4 name mail filetype 0 error
-> 3
->          unresolved ref dir 2914580 index 63 namelen 4 name mail filetype 0 error
-> 3
-> ...
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+diff --git a/fs/btrfs/ctree.h b/fs/btrfs/ctree.h
+index 6761490..e262362 100644
+--- a/fs/btrfs/ctree.h
++++ b/fs/btrfs/ctree.h
+@@ -1623,13 +1623,54 @@ static inline void btrfs_init_map_token (struct btrfs_map_token *token)
+ 			    offsetof(type, member),			\
+ 			   sizeof(((type *)0)->member)))
+ 
+-#ifndef BTRFS_SETGET_FUNCS
++#define DECLARE_BTRFS_SETGET_BITS(bits)					\
++u##bits btrfs_get_token_##bits(struct extent_buffer *eb, void *ptr,	\
++			       unsigned long off,			\
++			       struct btrfs_map_token *token);		\
++void btrfs_set_token_##bits(struct extent_buffer *eb, void *ptr,	\
++			    unsigned long off, u##bits val,		\
++			    struct btrfs_map_token *token);		\
++static inline u##bits btrfs_get_##bits(struct extent_buffer *eb, void *ptr, \
++				       unsigned long off)		\
++{									\
++	return btrfs_get_token_##bits(eb, ptr, off, NULL);		\
++}									\
++static inline void btrfs_set_##bits(struct extent_buffer *eb, void *ptr, \
++				    unsigned long off, u##bits val)	\
++{									\
++	btrfs_set_token_##bits(eb, ptr, off, val, NULL);		\
++}
++
++DECLARE_BTRFS_SETGET_BITS(8)
++DECLARE_BTRFS_SETGET_BITS(16)
++DECLARE_BTRFS_SETGET_BITS(32)
++DECLARE_BTRFS_SETGET_BITS(64)
++
+ #define BTRFS_SETGET_FUNCS(name, type, member, bits)			\
+-u##bits btrfs_##name(struct extent_buffer *eb, type *s);		\
+-u##bits btrfs_token_##name(struct extent_buffer *eb, type *s, struct btrfs_map_token *token);		\
+-void btrfs_set_token_##name(struct extent_buffer *eb, type *s, u##bits val, struct btrfs_map_token *token);\
+-void btrfs_set_##name(struct extent_buffer *eb, type *s, u##bits val);
+-#endif
++static inline u##bits btrfs_##name(struct extent_buffer *eb, type *s)	\
++{									\
++	BUILD_BUG_ON(sizeof(u##bits) != sizeof(((type *)0))->member);	\
++	return btrfs_get_##bits(eb, s, offsetof(type, member));		\
++}									\
++static inline void btrfs_set_##name(struct extent_buffer *eb, type *s,	\
++				    u##bits val)			\
++{									\
++	BUILD_BUG_ON(sizeof(u##bits) != sizeof(((type *)0))->member);	\
++	btrfs_set_##bits(eb, s, offsetof(type, member), val);		\
++}									\
++static inline u##bits btrfs_token_##name(struct extent_buffer *eb, type *s, \
++					 struct btrfs_map_token *token)	\
++{									\
++	BUILD_BUG_ON(sizeof(u##bits) != sizeof(((type *)0))->member);	\
++	return btrfs_get_token_##bits(eb, s, offsetof(type, member), token); \
++}									\
++static inline void btrfs_set_token_##name(struct extent_buffer *eb,	\
++					  type *s, u##bits val,		\
++					  struct btrfs_map_token *token) \
++{									\
++	BUILD_BUG_ON(sizeof(u##bits) != sizeof(((type *)0))->member);	\
++	btrfs_set_token_##bits(eb, s, offsetof(type, member), val, token); \
++}
+ 
+ #define BTRFS_SETGET_HEADER_FUNCS(name, type, member, bits)		\
+ static inline u##bits btrfs_##name(struct extent_buffer *eb)		\
+diff --git a/fs/btrfs/struct-funcs.c b/fs/btrfs/struct-funcs.c
+index c6ffa58..1f4ede9 100644
+--- a/fs/btrfs/struct-funcs.c
++++ b/fs/btrfs/struct-funcs.c
+@@ -17,15 +17,27 @@
+  */
+ 
+ #include <linux/highmem.h>
++#include <asm/unaligned.h>
+ 
+-/* this is some deeply nasty code.  ctree.h has a different
+- * definition for this BTRFS_SETGET_FUNCS macro, behind a #ifndef
++#include "ctree.h"
++
++static inline u8 get_unaligned_le8(const void *p)
++{
++	return *(u8 *)p;
++}
++
++static inline void put_unaligned_le8(u8 val, void *p)
++{
++	*(u8 *)p = val;
++}
++
++/*
++ * this is some deeply nasty code.
+  *
+  * The end result is that anyone who #includes ctree.h gets a
+- * declaration for the btrfs_set_foo functions and btrfs_foo functions
+- *
+- * This file declares the macros and then #includes ctree.h, which results
+- * in cpp creating the function here based on the template below.
++ * declaration for the btrfs_set_foo functions and btrfs_foo functions,
++ * which are wappers of btrfs_set_token_#bits functions and
++ * btrfs_get_token_#bits functions, which are defined in this file.
+  *
+  * These setget functions do all the extent_buffer related mapping
+  * required to efficiently read and write specific fields in the extent
+@@ -33,103 +45,93 @@
+  * an unsigned long offset into the extent buffer which has been
+  * cast to a specific type.  This gives us all the gcc type checking.
+  *
+- * The extent buffer api is used to do all the kmapping and page
+- * spanning work required to get extent buffers in highmem and have
+- * a metadata blocksize different from the page size.
+- *
+- * The macro starts with a simple function prototype declaration so that
+- * sparse won't complain about it being static.
++ * The extent buffer api is used to do the page spanning work required to
++ * have a metadata blocksize different from the page size.
+  */
+ 
+-#define BTRFS_SETGET_FUNCS(name, type, member, bits)			\
+-u##bits btrfs_##name(struct extent_buffer *eb, type *s);		\
+-void btrfs_set_##name(struct extent_buffer *eb, type *s, u##bits val);	\
+-void btrfs_set_token_##name(struct extent_buffer *eb, type *s, u##bits val, struct btrfs_map_token *token);	\
+-u##bits btrfs_token_##name(struct extent_buffer *eb,				\
+-			   type *s, struct btrfs_map_token *token)	\
++#define DEFINE_BTRFS_SETGET_BITS(bits)					\
++u##bits btrfs_get_token_##bits(struct extent_buffer *eb, void *ptr,	\
++			       unsigned long off,			\
++			       struct btrfs_map_token *token)		\
+ {									\
+-	unsigned long part_offset = (unsigned long)s;			\
+-	unsigned long offset = part_offset + offsetof(type, member);	\
+-	type *p;							\
+-	int err;						\
+-	char *kaddr;						\
+-	unsigned long map_start;				\
+-	unsigned long map_len;					\
+-	unsigned long mem_len = sizeof(((type *)0)->member);	\
+-	u##bits res;						\
+-	if (token && token->kaddr && token->offset <= offset &&	\
+-	    token->eb == eb &&					\
+-	   (token->offset + PAGE_CACHE_SIZE >= offset + mem_len)) { \
+-		kaddr = token->kaddr;				\
+-		p = (type *)(kaddr + part_offset - token->offset);  \
+-		res = le##bits##_to_cpu(p->member);		\
+-		return res;					\
+-	}							\
+-	err = map_private_extent_buffer(eb, offset,		\
+-			mem_len,				\
+-			&kaddr, &map_start, &map_len);		\
+-	if (err) {						\
+-		__le##bits leres;				\
+-		read_eb_member(eb, s, type, member, &leres);	\
+-		return le##bits##_to_cpu(leres);		\
+-	}							\
+-	p = (type *)(kaddr + part_offset - map_start);		\
+-	res = le##bits##_to_cpu(p->member);			\
+-	if (token) {						\
+-		token->kaddr = kaddr;				\
+-		token->offset = map_start;			\
+-		token->eb = eb;					\
+-	}							\
+-	return res;						\
++	unsigned long part_offset = (unsigned long)ptr;			\
++	unsigned long offset = part_offset + off;			\
++	void *p;							\
++	int err;							\
++	char *kaddr;							\
++	unsigned long map_start;					\
++	unsigned long map_len;						\
++	int size = sizeof(u##bits);					\
++	u##bits res;							\
++									\
++	if (token && token->kaddr && token->offset <= offset &&		\
++	    token->eb == eb &&						\
++	   (token->offset + PAGE_CACHE_SIZE >= offset + size)) {	\
++		kaddr = token->kaddr;					\
++		p = kaddr + part_offset - token->offset;		\
++		res = get_unaligned_le##bits(p + off);			\
++		return res;						\
++	}								\
++	err = map_private_extent_buffer(eb, offset, size,		\
++					&kaddr, &map_start, &map_len);	\
++	if (err) {							\
++		__le##bits leres;					\
++									\
++		read_extent_buffer(eb, &leres, offset, size);		\
++		return le##bits##_to_cpu(leres);			\
++	}								\
++	p = kaddr + part_offset - map_start;				\
++	res = get_unaligned_le##bits(p + off);				\
++	if (token) {							\
++		token->kaddr = kaddr;					\
++		token->offset = map_start;				\
++		token->eb = eb;						\
++	}								\
++	return res;							\
+ }									\
+-void btrfs_set_token_##name(struct extent_buffer *eb,				\
+-			    type *s, u##bits val, struct btrfs_map_token *token)		\
++void btrfs_set_token_##bits(struct extent_buffer *eb,			\
++			    void *ptr, unsigned long off, u##bits val,	\
++			    struct btrfs_map_token *token)		\
+ {									\
+-	unsigned long part_offset = (unsigned long)s;			\
+-	unsigned long offset = part_offset + offsetof(type, member);	\
+-	type *p;							\
+-	int err;						\
+-	char *kaddr;						\
+-	unsigned long map_start;				\
+-	unsigned long map_len;					\
+-	unsigned long mem_len = sizeof(((type *)0)->member);	\
+-	if (token && token->kaddr && token->offset <= offset &&	\
+-	    token->eb == eb &&					\
+-	   (token->offset + PAGE_CACHE_SIZE >= offset + mem_len)) { \
+-		kaddr = token->kaddr;				\
+-		p = (type *)(kaddr + part_offset - token->offset);  \
+-		p->member = cpu_to_le##bits(val);		\
+-		return;						\
+-	}							\
+-	err = map_private_extent_buffer(eb, offset,		\
+-			mem_len,				\
+-			&kaddr, &map_start, &map_len);		\
+-	if (err) {						\
+-		__le##bits val2;				\
+-		val2 = cpu_to_le##bits(val);			\
+-		write_eb_member(eb, s, type, member, &val2);	\
+-		return;						\
+-	}							\
+-	p = (type *)(kaddr + part_offset - map_start);		\
+-	p->member = cpu_to_le##bits(val);			\
+-	if (token) {						\
+-		token->kaddr = kaddr;				\
+-		token->offset = map_start;			\
+-		token->eb = eb;					\
+-	}							\
+-}								\
+-void btrfs_set_##name(struct extent_buffer *eb,			\
+-		      type *s, u##bits val)			\
+-{								\
+-	btrfs_set_token_##name(eb, s, val, NULL);		\
+-}								\
+-u##bits btrfs_##name(struct extent_buffer *eb,			\
+-		      type *s)					\
+-{								\
+-	return btrfs_token_##name(eb, s, NULL);			\
+-}								\
++	unsigned long part_offset = (unsigned long)ptr;			\
++	unsigned long offset = part_offset + off;			\
++	void *p;							\
++	int err;							\
++	char *kaddr;							\
++	unsigned long map_start;					\
++	unsigned long map_len;						\
++	int size = sizeof(u##bits);					\
++									\
++	if (token && token->kaddr && token->offset <= offset &&		\
++	    token->eb == eb &&						\
++	   (token->offset + PAGE_CACHE_SIZE >= offset + size)) { 	\
++		kaddr = token->kaddr;					\
++		p = kaddr + part_offset - token->offset;		\
++		put_unaligned_le##bits(val, p + off);			\
++		return;							\
++	}								\
++	err = map_private_extent_buffer(eb, offset, size,		\
++			&kaddr, &map_start, &map_len);			\
++	if (err) {							\
++		__le##bits val2;					\
++									\
++		val2 = cpu_to_le##bits(val);				\
++		write_extent_buffer(eb, &val2, offset, size);		\
++		return;							\
++	}								\
++	p = kaddr + part_offset - map_start;				\
++	put_unaligned_le##bits(val, p + off);				\
++	if (token) {							\
++		token->kaddr = kaddr;					\
++		token->offset = map_start;				\
++		token->eb = eb;						\
++	}								\
++}
+ 
+-#include "ctree.h"
++DEFINE_BTRFS_SETGET_BITS(8)
++DEFINE_BTRFS_SETGET_BITS(16)
++DEFINE_BTRFS_SETGET_BITS(32)
++DEFINE_BTRFS_SETGET_BITS(64)
+ 
+ void btrfs_node_key(struct extent_buffer *eb,
+ 		    struct btrfs_disk_key *disk_key, int nr)
+-- 
+1.7.9.7

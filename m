@@ -1,159 +1,632 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from szxga01-in.huawei.com ([119.145.14.64]:59199 "EHLO
-	szxga01-in.huawei.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1751608Ab2GJCWG (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Mon, 9 Jul 2012 22:22:06 -0400
-Message-ID: <4FFB9193.6040306@huawei.com>
-Date: Tue, 10 Jul 2012 10:21:07 +0800
-From: Li Zefan <lizefan@huawei.com>
+Received: from smtp-2.hut.fi ([130.233.228.92]:55573 "EHLO smtp-2.hut.fi"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1751198Ab2GJEQk (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Tue, 10 Jul 2012 00:16:40 -0400
+Date: Tue, 10 Jul 2012 07:16:27 +0300
+From: Sami Liedes <sami.liedes@iki.fi>
+To: Arne Jansen <sensille@gmx.net>
+Cc: Jan Schmidt <list.btrfs@jan-o-sch.net>, linux-btrfs@vger.kernel.org
+Subject: Re: btrfs GPF in read_extent_buffer() while scrubbing with kernel
+ 3.4.2
+Message-ID: <20120710041625.GA8909@sli.dy.fi>
+References: <20120704160340.GA9770@sli.dy.fi>
+ <4FF47168.9010405@jan-o-sch.net>
+ <20120704202452.GA8996@sli.dy.fi>
+ <4FF5998D.8020205@jan-o-sch.net>
+ <20120705234739.GA9736@sli.dy.fi>
+ <4FF6C12A.10305@jan-o-sch.net>
+ <20120706143350.GA10427@sli.dy.fi>
+ <4FF6FF8C.4010007@jan-o-sch.net>
+ <20120706234405.GB8933@sli.dy.fi>
+ <4FFA9EEB.7060008@gmx.net>
 MIME-Version: 1.0
-To: "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
-Subject: [PATCH] Btrfs: kill free_space pointer from inode structure
-Content-Type: text/plain; charset="GB2312"
+Content-Type: multipart/signed; micalg=pgp-sha512;
+	protocol="application/pgp-signature"; boundary="XsQoSWH+UP9D9v3l"
+In-Reply-To: <4FFA9EEB.7060008@gmx.net>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Inodes always allocate free space with BTRFS_BLOCK_GROUP_DATA type,
-which means every inode has the same BTRFS_I(inode)->free_space pointer.
 
-This shrinks struct btrfs_inode by 4 bytes (or 8 bytes on 64 bits).
+--XsQoSWH+UP9D9v3l
+Content-Type: text/plain; charset=us-ascii
+Content-Disposition: inline
+Content-Transfer-Encoding: quoted-printable
 
-Signed-off-by: Li Zefan <lizefan@huawei.com>
----
- fs/btrfs/btrfs_inode.h |    3 ---
- fs/btrfs/ctree.h       |    3 ++-
- fs/btrfs/extent-tree.c |   20 ++++++++------------
- fs/btrfs/inode.c       |    3 ---
- 4 files changed, 10 insertions(+), 19 deletions(-)
+On Mon, Jul 09, 2012 at 11:05:47AM +0200, Arne Jansen wrote:
+> > * Just before the crash:
+> >   btrfs: invalid parameters for read_extent_buffer: start (32771) > eb-=
+>len (32768). eb start is 2261163409408, level 100, generation 441271857103=
+7421157, nritems 538968254. len param 17. debug 2/989/538968254/44127185710=
+37421157/0x0/0/0x0/0x0
+> >=20
+>=20
+> At a first glance: the generation converted to ascii is: "ent() =3D=3D",
+> so someone is patching the memory with ascii text, possibly C source.
+> It might be interesting to dump the full contents of the eb, to get
+> a clue on the source of the data.
 
-diff --git a/fs/btrfs/btrfs_inode.h b/fs/btrfs/btrfs_inode.h
-index 12394a9..0b18b74 100644
---- a/fs/btrfs/btrfs_inode.h
-+++ b/fs/btrfs/btrfs_inode.h
-@@ -87,9 +87,6 @@ struct btrfs_inode {
- 	/* node for the red-black tree that links inodes in subvolume root */
- 	struct rb_node rb_node;
- 
--	/* the space_info for where this inode's data allocations are done */
--	struct btrfs_space_info *space_info;
--
- 	unsigned long runtime_flags;
- 
- 	/* full 64 bit generation number, struct vfs_inode doesn't have a big
-diff --git a/fs/btrfs/ctree.h b/fs/btrfs/ctree.h
-index fa5c45b..6761490 100644
---- a/fs/btrfs/ctree.h
-+++ b/fs/btrfs/ctree.h
-@@ -1240,6 +1240,8 @@ struct btrfs_fs_info {
- 	 */
- 	struct list_head space_info;
- 
-+	struct btrfs_space_info *data_sinfo;
-+
- 	struct reloc_control *reloc_ctl;
- 
- 	spinlock_t delalloc_lock;
-@@ -2607,7 +2609,6 @@ int btrfs_remove_block_group(struct btrfs_trans_handle *trans,
- 			     struct btrfs_root *root, u64 group_start);
- u64 btrfs_reduce_alloc_profile(struct btrfs_root *root, u64 flags);
- u64 btrfs_get_alloc_profile(struct btrfs_root *root, int data);
--void btrfs_set_inode_space_info(struct btrfs_root *root, struct inode *ionde);
- void btrfs_clear_space_info_full(struct btrfs_fs_info *info);
- int btrfs_check_data_free_space(struct inode *inode, u64 bytes);
- void btrfs_free_reserved_data_space(struct inode *inode, u64 bytes);
-diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
-index bbab3ff..b1336f5 100644
---- a/fs/btrfs/extent-tree.c
-+++ b/fs/btrfs/extent-tree.c
-@@ -3133,6 +3133,8 @@ static int update_space_info(struct btrfs_fs_info *info, u64 flags,
- 	init_waitqueue_head(&found->wait);
- 	*space_info = found;
- 	list_add_rcu(&found->list, &info->space_info);
-+	if (flags & BTRFS_BLOCK_GROUP_DATA)
-+		info->data_sinfo = found;
- 	return 0;
- }
- 
-@@ -3262,12 +3264,6 @@ u64 btrfs_get_alloc_profile(struct btrfs_root *root, int data)
- 	return get_alloc_profile(root, flags);
- }
- 
--void btrfs_set_inode_space_info(struct btrfs_root *root, struct inode *inode)
--{
--	BTRFS_I(inode)->space_info = __find_space_info(root->fs_info,
--						       BTRFS_BLOCK_GROUP_DATA);
--}
--
- /*
-  * This will check the space that the inode allocates from to make sure we have
-  * enough space for bytes.
-@@ -3276,6 +3272,7 @@ int btrfs_check_data_free_space(struct inode *inode, u64 bytes)
- {
- 	struct btrfs_space_info *data_sinfo;
- 	struct btrfs_root *root = BTRFS_I(inode)->root;
-+	struct btrfs_fs_info *fs_info = root->fs_info;
- 	u64 used;
- 	int ret = 0, committed = 0, alloc_chunk = 1;
- 
-@@ -3288,7 +3285,7 @@ int btrfs_check_data_free_space(struct inode *inode, u64 bytes)
- 		committed = 1;
+I changed the code to dump the contents of the eb struct at the point
+where that error (btrfs: invalid parameters...) is printed, at the
+"checksum mismatch 4" site and at the "node seems invalid now" site.
+Now I have a big log of 1795 corrupted ebs. So far nothing that looks
+remotely like ascii text, though. But I have two different versions of
+the eb that caused that warning, a less corrupted one and a more
+corrupted one:
+
+------------------------------------------------------------
+btrfs: --- start eb contents at ffff8801b13cc4c8 ---
+btrfs: ffff8801b13cc4c8: 00 80 e4 66 09 02 00 00 00 80 00 00 00 00 00 00  .=
+=2E.f............
+btrfs: ffff8801b13cc4d8: 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00  .=
+=2E..............
+btrfs: ffff8801b13cc4e8: 20 00 00 00 00 00 00 00 30 00 d7 10 02 88 ff ff   =
+=2E......0.......
+btrfs: ffff8801b13cc4f8: 02 02 00 00 03 00 00 00 06 00 00 00 00 00 00 00  .=
+=2E..............
+btrfs: ffff8801b13cc508: 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00  .=
+=2E..............
+btrfs: ffff8801b13cc518: 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00  .=
+=2E..............
+btrfs: ffff8801b13cc528: 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00  .=
+=2E..............
+btrfs: ffff8801b13cc538: 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00  .=
+=2E..............
+btrfs: ffff8801b13cc548: 00 00 10 00 00 00 00 00 00 00 00 00 00 00 00 00  .=
+=2E..............
+btrfs: ffff8801b13cc558: 58 c5 3c b1 01 88 ff ff 58 c5 3c b1 01 88 ff ff  X=
+=2E<.....X.<.....
+btrfs: ffff8801b13cc568: 00 00 00 00 00 00 00 00 70 c5 3c b1 01 88 ff ff  .=
+=2E......p.<.....
+btrfs: ffff8801b13cc578: 70 c5 3c b1 01 88 ff ff 00 00 00 00 00 00 00 00  p=
+=2E<.............
+btrfs: ffff8801b13cc588: 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00  .=
+=2E..............
+btrfs: ffff8801b13cc598: 80 5f 9a 06 00 ea ff ff 00 86 9b 06 00 ea ff ff  .=
+_..............
+btrfs: ffff8801b13cc5a8: 40 4c 9a 06 00 ea ff ff 80 66 9a 06 00 ea ff ff  @=
+L.......f......
+btrfs: ffff8801b13cc5b8: 80 eb 9b 06 00 ea ff ff 40 05 a2 06 00 ea ff ff  .=
+=2E......@.......
+btrfs: ffff8801b13cc5c8: 40 e1 9b 06 00 ea ff ff 80 c4 9c 06 00 ea ff ff  @=
+=2E..............
+btrfs: ffff8801b13cc5d8: 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00  .=
+=2E..............
+btrfs: ffff8801b13cc5e8: 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00  .=
+=2E..............
+btrfs: ffff8801b13cc5f8: 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00  .=
+=2E..............
+btrfs: ffff8801b13cc608: 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00  .=
+=2E..............
+btrfs: ffff8801b13cc618: 98 c5 3c b1 01 88 ff ff 00 00 00 00 00 00 00 00  .=
+=2E<.............
+btrfs: ffff8801b13cc628: 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00  .=
+=2E..............
+btrfs: ffff8801b13cc638: 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00  .=
+=2E..............
+btrfs: ffff8801b13cc648: 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00  .=
+=2E..............
+btrfs: ffff8801b13cc658: 00 00 00 00 00 00 00 00                          .=
+=2E......
+btrfs: --- end eb contents at ffff8801b13cc4c8 ---
+btrfs: dm-6 checksum verify failed on 2239404212224 wanted B5F632BC found 3=
+579FB59 level 160
+btrfs: node seems invalid now. checksum ok =3D 1
+btrfs: --- start eb contents at ffff8801b13cc4c8 ---
+[... identical dump to above ...]
+btrfs: --- end eb contents at ffff8801b13cc4c8 ---
+btrfs: invalid parameters for read_extent_buffer: start (32771) > eb->len (=
+32768). eb start is 2239404212224, level 160, generation 471655338404958724=
+9, nritems 295705211. len param 17. debug 2/989/295705211/47165533840495872=
+49/0x0/0/0x0/0x0
+btrfs: --- start eb contents at ffff8801b13cc4c8 ---
+btrfs: ffff8801b13cc4c8: 00 80 e4 66 09 02 00 00 00 80 00 00 00 00 00 00  .=
+=2E.f............
+btrfs: ffff8801b13cc4d8: 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00  .=
+=2E..............
+btrfs: ffff8801b13cc4e8: 20 00 00 00 00 00 00 00 30 00 d7 10 02 88 ff ff   =
+=2E......0.......
+btrfs: ffff8801b13cc4f8: 02 02 00 00 03 00 00 00 06 00 00 00 00 00 00 00  .=
+=2E..............
+btrfs: ffff8801b13cc508: 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00  .=
+=2E..............
+btrfs: ffff8801b13cc518: 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00  .=
+=2E..............
+btrfs: ffff8801b13cc528: 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00  .=
+=2E..............
+btrfs: ffff8801b13cc538: 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00  .=
+=2E..............
+btrfs: ffff8801b13cc548: 00 00 10 00 00 00 00 00 00 00 00 00 00 00 00 00  .=
+=2E..............
+btrfs: ffff8801b13cc558: 58 c5 3c b1 01 88 ff ff 58 c5 3c b1 01 88 ff ff  X=
+=2E<.....X.<.....
+btrfs: ffff8801b13cc568: 00 00 00 00 00 00 00 00 70 c5 3c b1 01 88 ff ff  .=
+=2E......p.<.....
+btrfs: ffff8801b13cc578: 70 c5 3c b1 01 88 ff ff 00 00 00 00 00 00 00 00  p=
+=2E<.............
+btrfs: ffff8801b13cc588: 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00  .=
+=2E..............
+btrfs: ffff8801b13cc598: 80 5f 9a 06 00 ea ff ff 00 86 9b 06 00 ea ff ff  .=
+_..............
+btrfs: ffff8801b13cc5a8: 40 4c 9a 06 00 ea ff ff 80 66 9a 06 00 ea ff ff  @=
+L.......f......
+btrfs: ffff8801b13cc5b8: 80 eb 9b 06 00 ea ff ff 40 05 a2 06 00 ea ff ff  .=
+=2E......@.......
+btrfs: ffff8801b13cc5c8: 40 e1 9b 06 00 ea ff ff 80 c4 9c 06 00 ea ff ff  @=
+=2E..............
+btrfs: ffff8801b13cc5d8: 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00  .=
+=2E..............
+btrfs: ffff8801b13cc5e8: 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00  .=
+=2E..............
+btrfs: ffff8801b13cc5f8: 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00  .=
+=2E..............
+btrfs: ffff8801b13cc608: 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00  .=
+=2E..............
+btrfs: ffff8801b13cc618: 98 c5 3c b1 01 88 ff ff 02 00 00 00 00 00 00 00  .=
+=2E<.............
+btrfs: ffff8801b13cc628: dd 03 00 00 00 00 00 00 7b 1a a0 11 00 00 00 00  .=
+=2E......{.......
+btrfs: ffff8801b13cc638: 31 34 71 3c 50 90 74 41 00 00 00 00 00 00 00 00  1=
+4q<P.tA........
+btrfs: ffff8801b13cc648: 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00  .=
+=2E..............
+btrfs: ffff8801b13cc658: 00 00 00 00 00 00 00 00                          .=
+=2E......
+btrfs: --- end eb contents at ffff8801b13cc4c8 ---
+------------[ cut here ]------------
+WARNING: at fs/btrfs/extent_io.c:4533 read_extent_buffer+0x1ef/0x220 [btrfs=
+]()
+Hardware name: System Product Name
+Modules linked in: <omitted> [last unloaded: scsi_wait_scan]
+Pid: 25829, comm: btrfs-endio-met Tainted: G        W    3.4.4+btrfsdebug3+=
+ #4
+[...]
+------------------------------------------------------------
+
+Here's the difference (lines reordered from diff to make comparing
+easier):
+
+------------------------------------------------------------
+-btrfs: ffff8801b13cc618: 98 c5 3c b1 01 88 ff ff 00 00 00 00 00 00 00 00  =
+=2E.<.............
++btrfs: ffff8801b13cc618: 98 c5 3c b1 01 88 ff ff 02 00 00 00 00 00 00 00  =
+=2E.<.............
+-btrfs: ffff8801b13cc628: 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00  =
+=2E...............
++btrfs: ffff8801b13cc628: dd 03 00 00 00 00 00 00 7b 1a a0 11 00 00 00 00  =
+=2E.......{.......
+-btrfs: ffff8801b13cc638: 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00  =
+=2E...............
++btrfs: ffff8801b13cc638: 31 34 71 3c 50 90 74 41 00 00 00 00 00 00 00 00  =
+14q<P.tA........
+------------------------------------------------------------
+
+If there's one pattern that catches eye in the dumps, it's that in
+many places where the same eb is dumped multiple times due to multiple
+"checksum mismatch 4"s, there are bytes at offsets 0x30 and 0x31 that
+always seem to have the same value and both separately increase
+between the dumps, usually(?) by two. Then that might be normal, I
+haven't looked at what should be at a struct eb :) There are some
+instances where they wrap, for example
+
+f8 f8 -> fa fa -> fc fc -> fe fe -> 00 00 -> 02 02 -> ...,
+
+with no other changes visible in the corrupted ebs. But that is by no
+means the only change in the struct eb contents that can be observed,
+only the most obvious pattern.
+
+For example, here's a 11-long string of eb contents. First the dmesg:
+
+------------------------------------------------------------
+btrfs: dm-6 checksum verify failed on 1127200522240 wanted 7712C045 found C=
+593E2D6 level 2
+btrfs: checksum mismatch 4 on 1127200522240
+[DUMP 1]
+btrfs: dm-6 checksum verify failed on 1127200522240 wanted 7712C045 found C=
+593E2D6 level 2
+btrfs: checksum mismatch 4 on 1127200522240
+[DUMP 2]
+btrfs: dm-6 checksum verify failed on 1127200522240 wanted 7712C045 found C=
+593E2D6 level 2
+btrfs: checksum mismatch 4 on 1127200522240
+[DUMP 3]
+btrfs: dm-6 checksum verify failed on 1127200522240 wanted 7712C045 found C=
+593E2D6 level 2
+btrfs: checksum mismatch 4 on 1127200522240
+[DUMP 4]
+btrfs: dm-6 checksum verify failed on 1127200522240 wanted 7712C045 found C=
+593E2D6 level 2
+btrfs: checksum mismatch 4 on 1127200522240
+[DUMP 5]
+btrfs: dm-6 checksum verify failed on 1127200522240 wanted 7712C045 found C=
+593E2D6 level 2
+btrfs: checksum mismatch 4 on 1127200522240
+[DUMP 6]
+btrfs: dm-6 checksum verify failed on 1127200522240 wanted 7712C045 found C=
+593E2D6 level 2
+btrfs: checksum mismatch 4 on 1127200522240
+[DUMP 7]
+btrfs: dm-6 checksum verify failed on 1127200522240 wanted 7712C045 found C=
+593E2D6 level 2
+btrfs: checksum mismatch 4 on 1127200522240
+[DUMP 8]
+btrfs: dm-6 checksum verify failed on 1127200522240 wanted 7712C045 found C=
+593E2D6 level 2
+btrfs: checksum mismatch 4 on 1127200522240
+[DUMP 9]
+btrfs: dm-6 checksum verify failed on 1127200522240 wanted 7712C045 found C=
+593E2D6 level 2
+btrfs: checksum mismatch 4 on 1127200522240
+[DUMP 10]
+btrfs: dm-6 checksum verify failed on 1127200522240 wanted 7712C045 found C=
+593E2D6 level 2
+btrfs: checksum mismatch 4 on 1127200522240
+[DUMP 11]
+------------------------------------------------------------
+
+Where DUMP 1 contents (file cc1.txt if you'd want to apply the diffs
+below) is
+
+------------------------------------------------------------
+btrfs: --- start eb contents at ffff8801cafbacc0 ---
+btrfs: ffff8801cafbacc0: 00 00 63 72 06 01 00 00 00 80 00 00 00 00 00 00  .=
+=2Ecr............
+btrfs: ffff8801cafbacd0: 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00  .=
+=2E..............
+btrfs: ffff8801cafbace0: 35 00 00 00 00 00 00 00 30 00 d7 10 02 88 ff ff  5=
+=2E......0.......
+btrfs: ffff8801cafbacf0: 13 13 00 00 03 00 00 00 00 00 00 00 00 00 00 00  .=
+=2E..............
+btrfs: ffff8801cafbad00: 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00  .=
+=2E..............
+btrfs: ffff8801cafbad10: 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00  .=
+=2E..............
+btrfs: ffff8801cafbad20: 22 1c 00 00 00 00 00 00 00 00 00 00 00 00 00 00  "=
+=2E..............
+btrfs: ffff8801cafbad30: 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00  .=
+=2E..............
+btrfs: ffff8801cafbad40: 00 00 10 00 00 00 00 00 04 04 00 00 00 00 00 00  .=
+=2E..............
+btrfs: ffff8801cafbad50: 50 ad fb ca 01 88 ff ff 50 ad fb ca 01 88 ff ff  P=
+=2E......P.......
+btrfs: ffff8801cafbad60: 02 02 00 00 00 00 00 00 68 ad fb ca 01 88 ff ff  .=
+=2E......h.......
+btrfs: ffff8801cafbad70: 68 ad fb ca 01 88 ff ff 00 00 00 00 00 00 00 00  h=
+=2E..............
+btrfs: ffff8801cafbad80: 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00  .=
+=2E..............
+btrfs: ffff8801cafbad90: 00 a2 20 08 00 ea ff ff c0 2a f4 07 00 ea ff ff  .=
+=2E ......*......
+btrfs: ffff8801cafbada0: 00 ac 89 07 00 ea ff ff c0 42 79 07 00 ea ff ff  .=
+=2E.......By.....
+btrfs: ffff8801cafbadb0: 80 af 77 07 00 ea ff ff 40 37 49 08 00 ea ff ff  .=
+=2Ew.....@7I.....
+btrfs: ffff8801cafbadc0: 80 6d f3 07 00 ea ff ff c0 a7 e8 07 00 ea ff ff  .=
+m..............
+btrfs: ffff8801cafbadd0: 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00  .=
+=2E..............
+btrfs: ffff8801cafbade0: 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00  .=
+=2E..............
+btrfs: ffff8801cafbadf0: 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00  .=
+=2E..............
+btrfs: ffff8801cafbae00: 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00  .=
+=2E..............
+btrfs: ffff8801cafbae10: 90 ad fb ca 01 88 ff ff 00 00 00 00 00 00 00 00  .=
+=2E..............
+btrfs: ffff8801cafbae20: 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00  .=
+=2E..............
+btrfs: ffff8801cafbae30: 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00  .=
+=2E..............
+btrfs: ffff8801cafbae40: 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00  .=
+=2E..............
+btrfs: ffff8801cafbae50: 00 00 00 00 00 00 00 00                          .=
+=2E......
+btrfs: --- end eb contents at ffff8801cafbacc0 ---
+------------------------------------------------------------
+
+And the successive diffs are
+
+------------------------------------------------------------
+--- cc1.txt	2012-07-10 06:57:21.564665577 +0300
++++ cc2.txt	2012-07-10 06:59:10.272634578 +0300
+@@ -2,7 +2,7 @@
+ btrfs: ffff8801cafbacc0: 00 00 63 72 06 01 00 00 00 80 00 00 00 00 00 00  =
+=2E.cr............
+ btrfs: ffff8801cafbacd0: 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00  =
+=2E...............
+ btrfs: ffff8801cafbace0: 35 00 00 00 00 00 00 00 30 00 d7 10 02 88 ff ff  =
+5.......0.......
+-btrfs: ffff8801cafbacf0: 13 13 00 00 03 00 00 00 00 00 00 00 00 00 00 00  =
+=2E...............
++btrfs: ffff8801cafbacf0: 15 15 00 00 03 00 00 00 00 00 00 00 00 00 00 00  =
+=2E...............
+ btrfs: ffff8801cafbad00: 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00  =
+=2E...............
+ btrfs: ffff8801cafbad10: 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00  =
+=2E...............
+ btrfs: ffff8801cafbad20: 22 1c 00 00 00 00 00 00 00 00 00 00 00 00 00 00  =
+"...............
+@@ -20,9 +20,9 @@
+ btrfs: ffff8801cafbade0: 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00  =
+=2E...............
+ btrfs: ffff8801cafbadf0: 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00  =
+=2E...............
+ btrfs: ffff8801cafbae00: 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00  =
+=2E...............
+-btrfs: ffff8801cafbae10: 90 ad fb ca 01 88 ff ff 00 00 00 00 00 00 00 00  =
+=2E...............
+-btrfs: ffff8801cafbae20: 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00  =
+=2E...............
+-btrfs: ffff8801cafbae30: 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00  =
+=2E...............
++btrfs: ffff8801cafbae10: 90 ad fb ca 01 88 ff ff 01 00 00 00 00 00 00 00  =
+=2E...............
++btrfs: ffff8801cafbae20: 4d 00 00 00 00 00 00 00 4e 00 00 00 00 00 00 00  =
+M.......N.......
++btrfs: ffff8801cafbae30: 07 78 02 00 00 00 00 00 00 00 00 00 00 00 00 00  =
+=2Ex..............
+ btrfs: ffff8801cafbae40: 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00  =
+=2E...............
+ btrfs: ffff8801cafbae50: 00 00 00 00 00 00 00 00                          =
+=2E.......
+ btrfs: --- end eb contents at ffff8801cafbacc0 ---
+--- cc2.txt	2012-07-10 06:59:10.272634578 +0300
++++ cc3.txt	2012-07-10 06:59:10.016634663 +0300
+@@ -2,7 +2,7 @@
+ btrfs: ffff8801cafbacc0: 00 00 63 72 06 01 00 00 00 80 00 00 00 00 00 00  =
+=2E.cr............
+ btrfs: ffff8801cafbacd0: 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00  =
+=2E...............
+ btrfs: ffff8801cafbace0: 35 00 00 00 00 00 00 00 30 00 d7 10 02 88 ff ff  =
+5.......0.......
+-btrfs: ffff8801cafbacf0: 15 15 00 00 03 00 00 00 00 00 00 00 00 00 00 00  =
+=2E...............
++btrfs: ffff8801cafbacf0: 17 17 00 00 03 00 00 00 00 00 00 00 00 00 00 00  =
+=2E...............
+ btrfs: ffff8801cafbad00: 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00  =
+=2E...............
+ btrfs: ffff8801cafbad10: 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00  =
+=2E...............
+ btrfs: ffff8801cafbad20: 22 1c 00 00 00 00 00 00 00 00 00 00 00 00 00 00  =
+"...............
+--- cc3.txt	2012-07-10 06:59:10.016634663 +0300
++++ cc4.txt	2012-07-10 06:59:09.752634749 +0300
+@@ -2,7 +2,7 @@
+ btrfs: ffff8801cafbacc0: 00 00 63 72 06 01 00 00 00 80 00 00 00 00 00 00  =
+=2E.cr............
+ btrfs: ffff8801cafbacd0: 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00  =
+=2E...............
+ btrfs: ffff8801cafbace0: 35 00 00 00 00 00 00 00 30 00 d7 10 02 88 ff ff  =
+5.......0.......
+-btrfs: ffff8801cafbacf0: 17 17 00 00 03 00 00 00 00 00 00 00 00 00 00 00  =
+=2E...............
++btrfs: ffff8801cafbacf0: 19 19 00 00 03 00 00 00 00 00 00 00 00 00 00 00  =
+=2E...............
+ btrfs: ffff8801cafbad00: 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00  =
+=2E...............
+ btrfs: ffff8801cafbad10: 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00  =
+=2E...............
+ btrfs: ffff8801cafbad20: 22 1c 00 00 00 00 00 00 00 00 00 00 00 00 00 00  =
+"...............
+--- cc4.txt	2012-07-10 06:59:09.752634749 +0300
++++ cc5.txt	2012-07-10 06:59:09.504634831 +0300
+@@ -2,7 +2,7 @@
+ btrfs: ffff8801cafbacc0: 00 00 63 72 06 01 00 00 00 80 00 00 00 00 00 00  =
+=2E.cr............
+ btrfs: ffff8801cafbacd0: 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00  =
+=2E...............
+ btrfs: ffff8801cafbace0: 35 00 00 00 00 00 00 00 30 00 d7 10 02 88 ff ff  =
+5.......0.......
+-btrfs: ffff8801cafbacf0: 19 19 00 00 03 00 00 00 00 00 00 00 00 00 00 00  =
+=2E...............
++btrfs: ffff8801cafbacf0: 1b 1b 00 00 03 00 00 00 00 00 00 00 00 00 00 00  =
+=2E...............
+ btrfs: ffff8801cafbad00: 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00  =
+=2E...............
+ btrfs: ffff8801cafbad10: 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00  =
+=2E...............
+ btrfs: ffff8801cafbad20: 22 1c 00 00 00 00 00 00 00 00 00 00 00 00 00 00  =
+"...............
+--- cc5.txt	2012-07-10 06:59:09.504634831 +0300
++++ cc6.txt	2012-07-10 06:59:09.240634917 +0300
+@@ -2,7 +2,7 @@
+ btrfs: ffff8801cafbacc0: 00 00 63 72 06 01 00 00 00 80 00 00 00 00 00 00  =
+=2E.cr............
+ btrfs: ffff8801cafbacd0: 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00  =
+=2E...............
+ btrfs: ffff8801cafbace0: 35 00 00 00 00 00 00 00 30 00 d7 10 02 88 ff ff  =
+5.......0.......
+-btrfs: ffff8801cafbacf0: 1b 1b 00 00 03 00 00 00 00 00 00 00 00 00 00 00  =
+=2E...............
++btrfs: ffff8801cafbacf0: 1d 1d 00 00 03 00 00 00 00 00 00 00 00 00 00 00  =
+=2E...............
+ btrfs: ffff8801cafbad00: 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00  =
+=2E...............
+ btrfs: ffff8801cafbad10: 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00  =
+=2E...............
+ btrfs: ffff8801cafbad20: 22 1c 00 00 00 00 00 00 00 00 00 00 00 00 00 00  =
+"...............
+--- cc6.txt	2012-07-10 06:59:09.240634917 +0300
++++ cc7.txt	2012-07-10 06:59:08.944635015 +0300
+@@ -2,7 +2,7 @@
+ btrfs: ffff8801cafbacc0: 00 00 63 72 06 01 00 00 00 80 00 00 00 00 00 00  =
+=2E.cr............
+ btrfs: ffff8801cafbacd0: 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00  =
+=2E...............
+ btrfs: ffff8801cafbace0: 35 00 00 00 00 00 00 00 30 00 d7 10 02 88 ff ff  =
+5.......0.......
+-btrfs: ffff8801cafbacf0: 1d 1d 00 00 03 00 00 00 00 00 00 00 00 00 00 00  =
+=2E...............
++btrfs: ffff8801cafbacf0: 1f 1f 00 00 03 00 00 00 00 00 00 00 00 00 00 00  =
+=2E...............
+ btrfs: ffff8801cafbad00: 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00  =
+=2E...............
+ btrfs: ffff8801cafbad10: 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00  =
+=2E...............
+ btrfs: ffff8801cafbad20: 22 1c 00 00 00 00 00 00 00 00 00 00 00 00 00 00  =
+"...............
+--- cc7.txt	2012-07-10 06:59:08.944635015 +0300
++++ cc8.txt	2012-07-10 06:59:08.656635109 +0300
+@@ -2,7 +2,7 @@
+ btrfs: ffff8801cafbacc0: 00 00 63 72 06 01 00 00 00 80 00 00 00 00 00 00  =
+=2E.cr............
+ btrfs: ffff8801cafbacd0: 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00  =
+=2E...............
+ btrfs: ffff8801cafbace0: 35 00 00 00 00 00 00 00 30 00 d7 10 02 88 ff ff  =
+5.......0.......
+-btrfs: ffff8801cafbacf0: 1f 1f 00 00 03 00 00 00 00 00 00 00 00 00 00 00  =
+=2E...............
++btrfs: ffff8801cafbacf0: 21 21 00 00 03 00 00 00 00 00 00 00 00 00 00 00  =
+!!..............
+ btrfs: ffff8801cafbad00: 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00  =
+=2E...............
+ btrfs: ffff8801cafbad10: 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00  =
+=2E...............
+ btrfs: ffff8801cafbad20: 22 1c 00 00 00 00 00 00 00 00 00 00 00 00 00 00  =
+"...............
+--- cc8.txt	2012-07-10 06:59:08.656635109 +0300
++++ cc9.txt	2012-07-10 06:59:08.328635216 +0300
+@@ -2,7 +2,7 @@
+ btrfs: ffff8801cafbacc0: 00 00 63 72 06 01 00 00 00 80 00 00 00 00 00 00  =
+=2E.cr............
+ btrfs: ffff8801cafbacd0: 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00  =
+=2E...............
+ btrfs: ffff8801cafbace0: 35 00 00 00 00 00 00 00 30 00 d7 10 02 88 ff ff  =
+5.......0.......
+-btrfs: ffff8801cafbacf0: 21 21 00 00 03 00 00 00 00 00 00 00 00 00 00 00  =
+!!..............
++btrfs: ffff8801cafbacf0: 23 23 00 00 03 00 00 00 00 00 00 00 00 00 00 00  =
+##..............
+ btrfs: ffff8801cafbad00: 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00  =
+=2E...............
+ btrfs: ffff8801cafbad10: 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00  =
+=2E...............
+ btrfs: ffff8801cafbad20: 22 1c 00 00 00 00 00 00 00 00 00 00 00 00 00 00  =
+"...............
+--- cc9.txt	2012-07-10 06:59:08.328635216 +0300
++++ cc10.txt	2012-07-10 06:58:33.180646115 +0300
+@@ -2,7 +2,7 @@
+ btrfs: ffff8801cafbacc0: 00 00 63 72 06 01 00 00 00 80 00 00 00 00 00 00  =
+=2E.cr............
+ btrfs: ffff8801cafbacd0: 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00  =
+=2E...............
+ btrfs: ffff8801cafbace0: 35 00 00 00 00 00 00 00 30 00 d7 10 02 88 ff ff  =
+5.......0.......
+-btrfs: ffff8801cafbacf0: 23 23 00 00 03 00 00 00 00 00 00 00 00 00 00 00  =
+##..............
++btrfs: ffff8801cafbacf0: 25 25 00 00 03 00 00 00 00 00 00 00 00 00 00 00  =
+%%..............
+ btrfs: ffff8801cafbad00: 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00  =
+=2E...............
+ btrfs: ffff8801cafbad10: 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00  =
+=2E...............
+ btrfs: ffff8801cafbad20: 22 1c 00 00 00 00 00 00 00 00 00 00 00 00 00 00  =
+"...............
+--- cc10.txt	2012-07-10 06:58:33.180646115 +0300
++++ cc11.txt	2012-07-10 06:58:41.340643696 +0300
+@@ -2,7 +2,7 @@
+ btrfs: ffff8801cafbacc0: 00 00 63 72 06 01 00 00 00 80 00 00 00 00 00 00  =
+=2E.cr............
+ btrfs: ffff8801cafbacd0: 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00  =
+=2E...............
+ btrfs: ffff8801cafbace0: 35 00 00 00 00 00 00 00 30 00 d7 10 02 88 ff ff  =
+5.......0.......
+-btrfs: ffff8801cafbacf0: 25 25 00 00 03 00 00 00 00 00 00 00 00 00 00 00  =
+%%..............
++btrfs: ffff8801cafbacf0: 27 27 00 00 03 00 00 00 00 00 00 00 00 00 00 00  =
+''..............
+ btrfs: ffff8801cafbad00: 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00  =
+=2E...............
+ btrfs: ffff8801cafbad10: 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00  =
+=2E...............
+ btrfs: ffff8801cafbad20: 22 1c 00 00 00 00 00 00 00 00 00 00 00 00 00 00  =
+"...............
+------------------------------------------------------------
+
+And since it's of course possible there's something wrong with my
+modifications, here's the patch I used:
+
+------------------------------------------------------------
+diff --git a/fs/btrfs/extent_io.c b/fs/btrfs/extent_io.c
+index 7452ecb..aadb82c 100644
+--- a/fs/btrfs/extent_io.c
++++ b/fs/btrfs/extent_io.c
+@@ -4527,6 +4527,9 @@ void read_extent_buffer(struct extent_buffer *eb, voi=
+d *dstv,
+ 			len,
+ 			eb->debug[0], eb->debug[1], eb->debug[2], eb->debug[3],
+ 			eb->debug[4], eb->debug[5], eb->debug[6], eb->debug[7]);
++		printk(KERN_ERR "btrfs: --- start eb contents at %p ---\n", eb);
++		print_hex_dump(KERN_ERR, "btrfs: ", DUMP_PREFIX_ADDRESS, 16, 1, eb, size=
+of(*eb), true);
++		printk(KERN_ERR "btrfs: --- end eb contents at %p ---\n", eb);
+ 		WARN_ON(1);
  	}
- 
--	data_sinfo = BTRFS_I(inode)->space_info;
-+	data_sinfo = fs_info->data_sinfo;
- 	if (!data_sinfo)
- 		goto alloc;
- 
-@@ -3329,10 +3326,9 @@ alloc:
- 					goto commit_trans;
- 			}
- 
--			if (!data_sinfo) {
--				btrfs_set_inode_space_info(root, inode);
--				data_sinfo = BTRFS_I(inode)->space_info;
--			}
-+			if (!data_sinfo)
-+				data_sinfo = fs_info->data_sinfo;
-+
- 			goto again;
- 		}
- 
-@@ -3379,7 +3375,7 @@ void btrfs_free_reserved_data_space(struct inode *inode, u64 bytes)
- 	/* make sure bytes are sectorsize aligned */
- 	bytes = (bytes + root->sectorsize - 1) & ~((u64)root->sectorsize - 1);
- 
--	data_sinfo = BTRFS_I(inode)->space_info;
-+	data_sinfo = root->fs_info->data_sinfo;
- 	spin_lock(&data_sinfo->lock);
- 	data_sinfo->bytes_may_use -= bytes;
- 	trace_btrfs_space_reservation(root->fs_info, "space_info",
-diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
-index 0d507e6..b189dd8 100644
---- a/fs/btrfs/inode.c
-+++ b/fs/btrfs/inode.c
-@@ -4077,7 +4077,6 @@ static int btrfs_init_locked_inode(struct inode *inode, void *p)
- 	struct btrfs_iget_args *args = p;
- 	inode->i_ino = args->ino;
- 	BTRFS_I(inode)->root = args->root;
--	btrfs_set_inode_space_info(args->root, inode);
- 	return 0;
- }
- 
-@@ -4662,7 +4661,6 @@ static struct inode *btrfs_new_inode(struct btrfs_trans_handle *trans,
- 	BTRFS_I(inode)->root = root;
- 	BTRFS_I(inode)->generation = trans->transid;
- 	inode->i_generation = BTRFS_I(inode)->generation;
--	btrfs_set_inode_space_info(root, inode);
- 
- 	if (S_ISDIR(mode))
- 		owner = 0;
-@@ -6939,7 +6937,6 @@ struct inode *btrfs_alloc_inode(struct super_block *sb)
- 		return NULL;
- 
- 	ei->root = NULL;
--	ei->space_info = NULL;
- 	ei->generation = 0;
- 	ei->last_trans = 0;
- 	ei->last_sub_trans = 0;
--- 
-1.7.9.7
+ 	WARN_ON(start + len > eb->start + eb->len);
+diff --git a/fs/btrfs/reada.c b/fs/btrfs/reada.c
+index ea81bd4..663d6c4 100644
+--- a/fs/btrfs/reada.c
++++ b/fs/btrfs/reada.c
+@@ -130,9 +130,13 @@ static int __readahead_hook(struct btrfs_root *root, s=
+truct extent_buffer *eb,
+ 		kref_get(&re->refcnt);
+ 	spin_unlock(&fs_info->reada_lock);
+=20
+-	if (!err && btrfs_csum_tree_block(root, eb))
++	if (!err && btrfs_csum_tree_block(root, eb)) {
+ 		printk(KERN_ERR "btrfs: checksum mismatch 4 on %llu\n",
+ 			eb->start);
++		printk(KERN_ERR "btrfs: --- start eb contents at %p ---\n", eb);
++		print_hex_dump(KERN_ERR, "btrfs: ", DUMP_PREFIX_ADDRESS, 16, 1, eb, size=
+of(*eb), true);
++		printk(KERN_ERR "btrfs: --- end eb contents at %p ---\n", eb);
++	}
+=20
+ 	if (!re)
+ 		return -1;
+@@ -150,9 +154,14 @@ static int __readahead_hook(struct btrfs_root *root, s=
+truct extent_buffer *eb,
+ 	if (err =3D=3D 0) {
+ 		nritems =3D level ? btrfs_header_nritems(eb) : 0;
+ 		if (level > BTRFS_MAX_LEVEL ||
+-		    nritems > BTRFS_NODEPTRS_PER_BLOCK(root))
++		    nritems > BTRFS_NODEPTRS_PER_BLOCK(root)) {
+ 			printk(KERN_ERR "btrfs: node seems invalid now. checksum ok =3D %d\n",
+ 				btrfs_csum_tree_block(root, eb));
++			printk(KERN_ERR "btrfs: --- start eb contents at %p ---\n", eb);
++			print_hex_dump(KERN_ERR, "btrfs: ", DUMP_PREFIX_ADDRESS, 16, 1, eb, siz=
+eof(*eb), true);
++			printk(KERN_ERR "btrfs: --- end eb contents at %p ---\n", eb);
++		=09
++		}
+ 		generation =3D btrfs_header_generation(eb);
+ 		/*
+ 		 * FIXME: currently we just set nritems to 0 if this is a leaf,
+
+------------------------------------------------------------
+
+	Sami
+
+--XsQoSWH+UP9D9v3l
+Content-Type: application/pgp-signature; name="signature.asc"
+Content-Description: Digital signature
+
+-----BEGIN PGP SIGNATURE-----
+Version: GnuPG v1.4.12 (GNU/Linux)
+
+iQIcBAEBCgAGBQJP+6yZAAoJEKLT589SE0a0CGAP/11fPpArVUhd5Oyan9JnHo6C
+hRdgRpxyVDVWjyFR402DEO6tuVlbTHukRCJ7btfUMo2k3iw2gdhay8ft/DCQSFfF
+JZ3xZAX6eKQ2XrDhyHMSVC28TyZUDQ3Ea2k9HzeNuMSJInlKjOW5elwhCyDsNpKP
+9kYR/Sm85X6c64d3f6oWj+KEH/aLmp1SyQ3jEzFhttTTwMRyfVS4WHwOxGh2hu+4
+ssqPTYKQkn5riMFFdc/rgfP8jinorUv7sOhQBstmhl0/x11f0fIOJnfLTgKKU72H
+coeM8KWK7pxI6vo07OLAjD9GhSSOGXSN+4FtakQ1WDShO/plylB6liR02LKvpaM4
+4z//2nOUqU8AWmhB0cpOw9k46sLCwlzT+wpTXI3TTxQua9DWaGZyu+NYB1OrNeFP
+FxAq1k3NoI0T2k9uZufGHJZBAd85H8tznV1ndKltijWK7Cyms+dyz4MbXBMGw/ei
+I/M1INx0sfWyTiF1VEUlY8OAW5Cngt9oIHoVBRCmgyTIXL5ad6q2JQDbtblpZXHC
+QgqSvCvsloXA0b7bhlRt08bHSbvIBEKsRD1abBPd42HzHS8X87x/nDVzI4Z4v2pD
+7/99ea3LIRCZvFVB0rMz8YRSDdqUbW2ucPaExSUVqQbxFO7F40rhxuN0b7Fl6qw+
+BkGcYThW1P2w/zlrTeh8
+=5DLl
+-----END PGP SIGNATURE-----
+
+--XsQoSWH+UP9D9v3l--

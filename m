@@ -1,30 +1,21 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mailout-de.gmx.net ([213.165.64.23]:36379 "HELO
+Received: from mailout-de.gmx.net ([213.165.64.22]:53652 "HELO
 	mailout-de.gmx.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with SMTP id S1752430Ab2GJGFp (ORCPT
+	with SMTP id S1751928Ab2GJG5U (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 10 Jul 2012 02:05:45 -0400
-Message-ID: <4FFBC636.30804@gmx.net>
-Date: Tue, 10 Jul 2012 08:05:42 +0200
+	Tue, 10 Jul 2012 02:57:20 -0400
+Message-ID: <4FFBD24E.2050902@gmx.net>
+Date: Tue, 10 Jul 2012 08:57:18 +0200
 From: Arne Jansen <sensille@gmx.net>
 MIME-Version: 1.0
 To: Jan Schmidt <list.btrfs@jan-o-sch.net>, linux-btrfs@vger.kernel.org
-Subject: Re: btrfs GPF in read_extent_buffer() while scrubbing with kernel
- 3.4.2
+Subject: Re: *** GMX Spamverdacht *** Re: btrfs GPF in read_extent_buffer()
+ while scrubbing with kernel 3.4.2
 References: <20120704160340.GA9770@sli.dy.fi> <4FF47168.9010405@jan-o-sch.net> <20120704202452.GA8996@sli.dy.fi> <4FF5998D.8020205@jan-o-sch.net> <20120705234739.GA9736@sli.dy.fi> <4FF6C12A.10305@jan-o-sch.net> <20120706143350.GA10427@sli.dy.fi> <4FF6FF8C.4010007@jan-o-sch.net> <20120706234405.GB8933@sli.dy.fi> <4FFA9EEB.7060008@gmx.net> <20120710041625.GA8909@sli.dy.fi>
 In-Reply-To: <20120710041625.GA8909@sli.dy.fi>
 Content-Type: text/plain; charset=ISO-8859-1
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
-
-Thanks for doing this, I'll start looking into it right away.
-One thing though: it's probably not the contents of struct eb
-that's being corrupted, but the data the eb points to. See for
-example read_extent_buffer to see how to access it. Sorry for
-being unclear on this.
-
-Thanks,
-Arne
 
 On 10.07.2012 06:16, Sami Liedes wrote:
 > On Mon, Jul 09, 2012 at 11:05:47AM +0200, Arne Jansen wrote:
@@ -73,6 +64,9 @@ On 10.07.2012 06:16, Sami Liedes wrote:
 > btrfs: ffff8801b13cc638: 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00  ................
 > btrfs: ffff8801b13cc648: 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00  ................
 > btrfs: ffff8801b13cc658: 00 00 00 00 00 00 00 00                          ........
+
+this one looks good so far.
+
 > btrfs: --- end eb contents at ffff8801b13cc4c8 ---
 > btrfs: dm-6 checksum verify failed on 2239404212224 wanted B5F632BC found 3579FB59 level 160
 > btrfs: node seems invalid now. checksum ok = 1
@@ -127,6 +121,9 @@ On 10.07.2012 06:16, Sami Liedes wrote:
 > -btrfs: ffff8801b13cc638: 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00  ................
 > +btrfs: ffff8801b13cc638: 31 34 71 3c 50 90 74 41 00 00 00 00 00 00 00 00  14q<P.tA........
 > ------------------------------------------------------------
+
+The diff is just the eb->debug[] Jan added.
+
 > 
 > If there's one pattern that catches eye in the dumps, it's that in
 > many places where the same eb is dumped multiple times due to multiple
@@ -137,6 +134,10 @@ On 10.07.2012 06:16, Sami Liedes wrote:
 > instances where they wrap, for example
 > 
 > f8 f8 -> fa fa -> fc fc -> fe fe -> 00 00 -> 02 02 -> ...,
+
+this is the spinlock to protect the refcnt, so some reference taking/releasing
+has been going on.
+
 > 
 > with no other changes visible in the corrupted ebs. But that is by no
 > means the only change in the struct eb contents that can be observed,
@@ -225,6 +226,9 @@ On 10.07.2012 06:16, Sami Liedes wrote:
 >  btrfs: ffff8801cafbace0: 35 00 00 00 00 00 00 00 30 00 d7 10 02 88 ff ff  5.......0.......
 > -btrfs: ffff8801cafbacf0: 13 13 00 00 03 00 00 00 00 00 00 00 00 00 00 00  ................
 > +btrfs: ffff8801cafbacf0: 15 15 00 00 03 00 00 00 00 00 00 00 00 00 00 00  ................
+
+the spinlock
+
 >  btrfs: ffff8801cafbad00: 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00  ................
 >  btrfs: ffff8801cafbad10: 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00  ................
 >  btrfs: ffff8801cafbad20: 22 1c 00 00 00 00 00 00 00 00 00 00 00 00 00 00  "...............
@@ -238,6 +242,9 @@ On 10.07.2012 06:16, Sami Liedes wrote:
 > +btrfs: ffff8801cafbae10: 90 ad fb ca 01 88 ff ff 01 00 00 00 00 00 00 00  ................
 > +btrfs: ffff8801cafbae20: 4d 00 00 00 00 00 00 00 4e 00 00 00 00 00 00 00  M.......N.......
 > +btrfs: ffff8801cafbae30: 07 78 02 00 00 00 00 00 00 00 00 00 00 00 00 00  .x..............
+
+and eb->debug
+
 >  btrfs: ffff8801cafbae40: 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00  ................
 >  btrfs: ffff8801cafbae50: 00 00 00 00 00 00 00 00                          ........
 >  btrfs: --- end eb contents at ffff8801cafbacc0 ---
@@ -341,6 +348,15 @@ On 10.07.2012 06:16, Sami Liedes wrote:
 >  btrfs: ffff8801cafbad10: 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00  ................
 >  btrfs: ffff8801cafbad20: 22 1c 00 00 00 00 00 00 00 00 00 00 00 00 00 00  "...............
 > ------------------------------------------------------------
+
+All spinlocks.
+
+I'll go through this again with Jan to see if his eb->debug might give
+any clue here. It might be good to have a look at the contents of the
+pages though, as written in the previous mail.
+
+-Arne
+
 > 
 > And since it's of course possible there's something wrong with my
 > modifications, here's the patch I used:

@@ -1,108 +1,45 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from magic.merlins.org ([209.81.13.136]:49727 "EHLO
-	mail1.merlins.org" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1751531Ab2G0Smm (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Fri, 27 Jul 2012 14:42:42 -0400
-Date: Fri, 27 Jul 2012 11:42:39 -0700
-From: Marc MERLIN <marc@merlins.org>
-To: Chris Mason <chris.mason@fusionio.com>,
-        "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
-Subject: Re: How can btrfs take 23sec to stat 23K files from an SSD?
-Message-ID: <20120727184238.GA6713@merlins.org>
-References: <20120722185848.GA10089@merlins.org>
- <201207222135.11159.Martin@lichtvoll.de>
- <20120202124241.GW16796@shiny>
- <20120718220446.GB3888@merlins.org>
- <20120722185848.GA10089@merlins.org>
- <201207222135.11159.Martin@lichtvoll.de>
- <20120722204428.GC3925@merlins.org>
- <20120722224145.GC12951@merlins.org>
- <20120723064202.GB6931@merlins.org>
- <20120727110835.GA6933@shiny>
-MIME-Version: 1.0
+Received: from plane.gmane.org ([80.91.229.3]:48649 "EHLO plane.gmane.org"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1752332Ab2GLArz (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Wed, 11 Jul 2012 20:47:55 -0400
+Received: from list by plane.gmane.org with local (Exim 4.69)
+	(envelope-from <gcfb-btrfs-devel-moved1@m.gmane.org>)
+	id 1Sp7ZS-0007jp-7O
+	for linux-btrfs@vger.kernel.org; Thu, 12 Jul 2012 02:47:54 +0200
+Received: from 174-126-51-102.cpe.cableone.net ([174.126.51.102])
+        by main.gmane.org with esmtp (Gmexim 0.1 (Debian))
+        id 1AlnuQ-0007hv-00
+        for <linux-btrfs@vger.kernel.org>; Thu, 12 Jul 2012 02:47:54 +0200
+Received: from DaninFuchs by 174-126-51-102.cpe.cableone.net with local (Gmexim 0.1 (Debian))
+        id 1AlnuQ-0007hv-00
+        for <linux-btrfs@vger.kernel.org>; Thu, 12 Jul 2012 02:47:54 +0200
+To: linux-btrfs@vger.kernel.org
+From: Skylar Burtenshaw <DaninFuchs@Gmail.com>
+Subject: Re: Can't mount, power failure - recoverable?
+Date: Thu, 12 Jul 2012 00:47:43 +0000 (UTC)
+Message-ID: <loom.20120712T024213-79@post.gmane.org>
+References: <loom.20120317T051243-551@post.gmane.org> <20120317121832.GF19217@shiny> <loom.20120317T193619-962@post.gmane.org>
+Mime-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <20120727110835.GA6933@shiny>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Fri, Jul 27, 2012 at 07:08:35AM -0400, Chris Mason wrote:
-> On Mon, Jul 23, 2012 at 12:42:03AM -0600, Marc MERLIN wrote:
-> > 
-> > 22 seconds for 15K files on an SSD is super slow and being 5 times
-> > slower than a spinning disk with the same data.
-> > What's going on?
+Skylar Burtenshaw <daninfuchs <at> gmail.com> writes:
+
 > 
-> Hi Marc,
+> Chris Mason <chris.mason <at> oracle.com> writes:
 > 
-> The easiest way to figure out is with latencytop.  I'd either run the
-> latencytop gui or use the latencytop -c patch which sends a text dump to
-> the console.
+> > Which kernel was used during the power outage?
+> The kernel in use was 2.6.38 or so. Didn't write that down, but I'm fairly
+> certain it was .38 or .37 - sorry I can't be more precise.
 > 
-> This is assuming that you're not pegged at 100% CPU...
+> Here's the trace. Mount attempt using 3.2.0;
 > 
-> https://oss.oracle.com/~mason/latencytop.patch
 
-Thanks for the patch, and yes I can confirm I'm definitely not pegged on CPU 
-(not even close and I get the same problem with unencrypted filesystem, actually
-du -sh is exactly the same speed on encrypted and unecrypted).
 
-Here's the result I think you were looking for. I'm not good at reading this,
-but hopefully it tells you something useful :)
+I suppose at this point the filesystem is probably beyond repair, correct? I'm
+building a new chassis for this server, because my other array is beginning to
+fill, and coming dangerously near full. Any chance of recovery at this point?
 
-The full run is here if that helps:
-http://marc.merlins.org/tmp/latencytop.txt
 
-Process du (6748) Total: 4280.5 msec
-	Reading directory content	 15.2 msec         11.0 %
-		sleep_on_page wait_on_page_bit read_extent_buffer_pages 
-		btree_read_extent_buffer_pages.constprop.110 read_tree_block 
-		read_block_for_search.isra.32 btrfs_next_leaf 
-		btrfs_real_readdir vfs_readdir sys_getdents system_call_fastpath 
-	[sleep_on_page]	 13.5 msec         88.2 %
-		sleep_on_page wait_on_page_bit read_extent_buffer_pages 
-		btree_read_extent_buffer_pages.constprop.110 read_tree_block 
-		read_block_for_search.isra.32 btrfs_search_slot 
-		btrfs_lookup_csum __btrfs_lookup_bio_sums 
-		btrfs_lookup_bio_sums btrfs_submit_compressed_read btrfs_submit_bio_hook 
-	Page fault	 12.9 msec          0.6 %
-		sleep_on_page_killable wait_on_page_bit_killable 
-		__lock_page_or_retry filemap_fault __do_fault handle_pte_fault 
-		handle_mm_fault do_page_fault page_fault 
-	Executing a program	  7.1 msec          0.2 %
-		sleep_on_page_killable __lock_page_killable 
-		generic_file_aio_read do_sync_read vfs_read kernel_read 
-		prepare_binprm do_execve_common.isra.27 do_execve sys_execve 
-		stub_execve 
-
-Process du (6748) Total: 9517.4 msec
-	[sleep_on_page]	 23.0 msec         82.8 %
-		sleep_on_page wait_on_page_bit read_extent_buffer_pages 
-		btree_read_extent_buffer_pages.constprop.110 read_tree_block 
-		read_block_for_search.isra.32 btrfs_search_slot 
-		btrfs_lookup_inode btrfs_iget btrfs_lookup_dentry btrfs_lookup 
-		__lookup_hash 
-	Reading directory content	 13.2 msec         17.2 %
-		sleep_on_page wait_on_page_bit read_extent_buffer_pages 
-		btree_read_extent_buffer_pages.constprop.110 read_tree_block 
-		read_block_for_search.isra.32 btrfs_search_slot 
-		btrfs_real_readdir vfs_readdir sys_getdents system_call_fastpath 
-
-Process du (6748) Total: 9524.0 msec
-	[sleep_on_page]	 17.1 msec         88.5 %
-		sleep_on_page wait_on_page_bit read_extent_buffer_pages 
-		btree_read_extent_buffer_pages.constprop.110 read_tree_block 
-		read_block_for_search.isra.32 btrfs_search_slot 
-		btrfs_lookup_inode btrfs_iget btrfs_lookup_dentry btrfs_lookup 
-		__lookup_hash 
-	Reading directory content	 16.0 msec         11.5 %
-		sleep_on_page wait_on_page_bit read_extent_buffer_pages 
-		btree_read_extent_buffer_pages.constprop.110 read_tree_block 
-		read_block_for_search.isra.32 btrfs_search_slot 
-		btrfs_real_readdir vfs_readdir sys_getdents system_call_fastpath 
-
--- 
-"A mouse is a device used to point at the xterm you want to type in" - A.S.R.
-Microsoft is to operating systems ....
-                                      .... what McDonalds is to gourmet cooking
-Home page: http://marc.merlins.org/

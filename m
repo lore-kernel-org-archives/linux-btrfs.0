@@ -1,14 +1,14 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from ysabell.rzone.de ([81.169.144.237]:33258 "EHLO ysabell.rzone.de"
+Received: from ysabell.rzone.de ([81.169.144.237]:33256 "EHLO ysabell.rzone.de"
 	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S933596Ab2GLJnx (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 12 Jul 2012 05:43:53 -0400
+	id S933595Ab2GLJnw (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Thu, 12 Jul 2012 05:43:52 -0400
 From: Jan Schmidt <list.btrfs@jan-o-sch.net>
 To: chris.mason@fusionio.com, linux-btrfs@vger.kernel.org
 Cc: sensille@gmx.net
-Subject: [PATCH v1 15/15] Btrfs: add qgroup inheritance
-Date: Thu, 12 Jul 2012 11:43:47 +0200
-Message-Id: <6f72c7e20dbaea55f04546de69586c84a3654503.1342083345.git.list.btrfs@jan-o-sch.net>
+Subject: [PATCH v1 11/15] Btrfs: quota tree support and startup
+Date: Thu, 12 Jul 2012 11:43:43 +0200
+Message-Id: <bcef60f249034f69e89e544461cbfecb68975595.1342083345.git.list.btrfs@jan-o-sch.net>
 In-Reply-To: <cover.1342083345.git.list.btrfs@jan-o-sch.net>
 References: <cover.1342083345.git.list.btrfs@jan-o-sch.net>
 In-Reply-To: <cover.1342083345.git.list.btrfs@jan-o-sch.net>
@@ -18,259 +18,181 @@ List-ID: <linux-btrfs.vger.kernel.org>
 
 From: Arne Jansen <sensille@gmx.net>
 
-When creating a subvolume or snapshot, it is necessary
-to initialize the qgroup account with a copy of some
-other (tracking) qgroup. This patch adds parameters
-to the ioctls to pass the information from which qgroup
-to inherit.
+Init the quota tree along with the others on open_ctree
+and close_ctree. Add the quota tree to the list of well
+known trees in btrfs_read_fs_root_no_name.
 
 Signed-off-by: Arne Jansen <sensille@gmx.net>
 ---
- fs/btrfs/ioctl.c       |   59 ++++++++++++++++++++++++++++++++++-------------
- fs/btrfs/ioctl.h       |   11 ++++++++-
- fs/btrfs/transaction.c |    8 ++++++
- fs/btrfs/transaction.h |    1 +
- 4 files changed, 61 insertions(+), 18 deletions(-)
+ fs/btrfs/ctree.h   |    1 +
+ fs/btrfs/disk-io.c |   47 +++++++++++++++++++++++++++++++++++++++++------
+ 2 files changed, 42 insertions(+), 6 deletions(-)
 
-diff --git a/fs/btrfs/ioctl.c b/fs/btrfs/ioctl.c
-index 55a7283..1dffd0a 100644
---- a/fs/btrfs/ioctl.c
-+++ b/fs/btrfs/ioctl.c
-@@ -336,7 +336,8 @@ static noinline int btrfs_ioctl_fitrim(struct file *file, void __user *arg)
- static noinline int create_subvol(struct btrfs_root *root,
- 				  struct dentry *dentry,
- 				  char *name, int namelen,
--				  u64 *async_transid)
-+				  u64 *async_transid,
-+				  struct btrfs_qgroup_inherit **inherit)
- {
- 	struct btrfs_trans_handle *trans;
- 	struct btrfs_key key;
-@@ -368,6 +369,11 @@ static noinline int create_subvol(struct btrfs_root *root,
- 	if (IS_ERR(trans))
- 		return PTR_ERR(trans);
- 
-+	ret = btrfs_qgroup_inherit(trans, root->fs_info, 0, objectid,
-+				   inherit ? *inherit : NULL);
-+	if (ret)
-+		goto fail;
-+
- 	leaf = btrfs_alloc_free_block(trans, root, root->leafsize,
- 				      0, objectid, NULL, 0, 0, 0);
- 	if (IS_ERR(leaf)) {
-@@ -484,7 +490,7 @@ fail:
- 
- static int create_snapshot(struct btrfs_root *root, struct dentry *dentry,
- 			   char *name, int namelen, u64 *async_transid,
--			   bool readonly)
-+			   bool readonly, struct btrfs_qgroup_inherit **inherit)
- {
- 	struct inode *inode;
- 	struct btrfs_pending_snapshot *pending_snapshot;
-@@ -502,6 +508,10 @@ static int create_snapshot(struct btrfs_root *root, struct dentry *dentry,
- 	pending_snapshot->dentry = dentry;
- 	pending_snapshot->root = root;
- 	pending_snapshot->readonly = readonly;
-+	if (inherit) {
-+		pending_snapshot->inherit = *inherit;
-+		*inherit = NULL;	/* take responsibility to free it */
+diff --git a/fs/btrfs/ctree.h b/fs/btrfs/ctree.h
+index ccba9b6..2ba03b9 100644
+--- a/fs/btrfs/ctree.h
++++ b/fs/btrfs/ctree.h
+@@ -2967,6 +2967,7 @@ static inline void free_fs_info(struct btrfs_fs_info *fs_info)
+ 	kfree(fs_info->chunk_root);
+ 	kfree(fs_info->dev_root);
+ 	kfree(fs_info->csum_root);
++	kfree(fs_info->quota_root);
+ 	kfree(fs_info->super_copy);
+ 	kfree(fs_info->super_for_commit);
+ 	kfree(fs_info);
+diff --git a/fs/btrfs/disk-io.c b/fs/btrfs/disk-io.c
+index eca0549..87d9391 100644
+--- a/fs/btrfs/disk-io.c
++++ b/fs/btrfs/disk-io.c
+@@ -1472,6 +1472,9 @@ struct btrfs_root *btrfs_read_fs_root_no_name(struct btrfs_fs_info *fs_info,
+ 		return fs_info->dev_root;
+ 	if (location->objectid == BTRFS_CSUM_TREE_OBJECTID)
+ 		return fs_info->csum_root;
++	if (location->objectid == BTRFS_QUOTA_TREE_OBJECTID)
++		return fs_info->quota_root ? fs_info->quota_root :
++					     ERR_PTR(-ENOENT);
+ again:
+ 	spin_lock(&fs_info->fs_roots_radix_lock);
+ 	root = radix_tree_lookup(&fs_info->fs_roots_radix,
+@@ -1899,6 +1902,10 @@ static void free_root_pointers(struct btrfs_fs_info *info, int chunk_root)
+ 	free_extent_buffer(info->extent_root->commit_root);
+ 	free_extent_buffer(info->csum_root->node);
+ 	free_extent_buffer(info->csum_root->commit_root);
++	if (info->quota_root) {
++		free_extent_buffer(info->quota_root->node);
++		free_extent_buffer(info->quota_root->commit_root);
 +	}
  
- 	trans = btrfs_start_transaction(root->fs_info->extent_root, 5);
- 	if (IS_ERR(trans)) {
-@@ -635,7 +645,8 @@ static inline int btrfs_may_create(struct inode *dir, struct dentry *child)
- static noinline int btrfs_mksubvol(struct path *parent,
- 				   char *name, int namelen,
- 				   struct btrfs_root *snap_src,
--				   u64 *async_transid, bool readonly)
-+				   u64 *async_transid, bool readonly,
-+				   struct btrfs_qgroup_inherit **inherit)
- {
- 	struct inode *dir  = parent->dentry->d_inode;
- 	struct dentry *dentry;
-@@ -666,11 +677,11 @@ static noinline int btrfs_mksubvol(struct path *parent,
- 		goto out_up_read;
- 
- 	if (snap_src) {
--		error = create_snapshot(snap_src, dentry,
--					name, namelen, async_transid, readonly);
-+		error = create_snapshot(snap_src, dentry, name, namelen,
-+					async_transid, readonly, inherit);
- 	} else {
- 		error = create_subvol(BTRFS_I(dir)->root, dentry,
--				      name, namelen, async_transid);
-+				      name, namelen, async_transid, inherit);
- 	}
- 	if (!error)
- 		fsnotify_mkdir(dir, dentry);
-@@ -1379,11 +1390,9 @@ out:
- }
- 
- static noinline int btrfs_ioctl_snap_create_transid(struct file *file,
--						    char *name,
--						    unsigned long fd,
--						    int subvol,
--						    u64 *transid,
--						    bool readonly)
-+				char *name, unsigned long fd, int subvol,
-+				u64 *transid, bool readonly,
-+				struct btrfs_qgroup_inherit **inherit)
- {
- 	struct btrfs_root *root = BTRFS_I(fdentry(file)->d_inode)->root;
- 	struct file *src_file;
-@@ -1407,7 +1416,7 @@ static noinline int btrfs_ioctl_snap_create_transid(struct file *file,
- 
- 	if (subvol) {
- 		ret = btrfs_mksubvol(&file->f_path, name, namelen,
--				     NULL, transid, readonly);
-+				     NULL, transid, readonly, inherit);
- 	} else {
- 		struct inode *src_inode;
- 		src_file = fget(fd);
-@@ -1426,7 +1435,7 @@ static noinline int btrfs_ioctl_snap_create_transid(struct file *file,
- 		}
- 		ret = btrfs_mksubvol(&file->f_path, name, namelen,
- 				     BTRFS_I(src_inode)->root,
--				     transid, readonly);
-+				     transid, readonly, inherit);
- 		fput(src_file);
- 	}
- out:
-@@ -1446,7 +1455,7 @@ static noinline int btrfs_ioctl_snap_create(struct file *file,
- 
- 	ret = btrfs_ioctl_snap_create_transid(file, vol_args->name,
- 					      vol_args->fd, subvol,
--					      NULL, false);
-+					      NULL, false, NULL);
- 
- 	kfree(vol_args);
- 	return ret;
-@@ -1460,6 +1469,7 @@ static noinline int btrfs_ioctl_snap_create_v2(struct file *file,
- 	u64 transid = 0;
- 	u64 *ptr = NULL;
- 	bool readonly = false;
-+	struct btrfs_qgroup_inherit *inherit = NULL;
- 
- 	vol_args = memdup_user(arg, sizeof(*vol_args));
- 	if (IS_ERR(vol_args))
-@@ -1467,7 +1477,8 @@ static noinline int btrfs_ioctl_snap_create_v2(struct file *file,
- 	vol_args->name[BTRFS_SUBVOL_NAME_MAX] = '\0';
- 
- 	if (vol_args->flags &
--	    ~(BTRFS_SUBVOL_CREATE_ASYNC | BTRFS_SUBVOL_RDONLY)) {
-+	    ~(BTRFS_SUBVOL_CREATE_ASYNC | BTRFS_SUBVOL_RDONLY |
-+	      BTRFS_SUBVOL_QGROUP_INHERIT)) {
- 		ret = -EOPNOTSUPP;
- 		goto out;
- 	}
-@@ -1476,10 +1487,21 @@ static noinline int btrfs_ioctl_snap_create_v2(struct file *file,
- 		ptr = &transid;
- 	if (vol_args->flags & BTRFS_SUBVOL_RDONLY)
- 		readonly = true;
-+	if (vol_args->flags & BTRFS_SUBVOL_QGROUP_INHERIT) {
-+		if (vol_args->size > PAGE_CACHE_SIZE) {
-+			ret = -EINVAL;
-+			goto out;
-+		}
-+		inherit = memdup_user(vol_args->qgroup_inherit, vol_args->size);
-+		if (IS_ERR(inherit)) {
-+			ret = PTR_ERR(inherit);
-+			goto out;
-+		}
+ 	info->tree_root->node = NULL;
+ 	info->tree_root->commit_root = NULL;
+@@ -1908,6 +1915,10 @@ static void free_root_pointers(struct btrfs_fs_info *info, int chunk_root)
+ 	info->extent_root->commit_root = NULL;
+ 	info->csum_root->node = NULL;
+ 	info->csum_root->commit_root = NULL;
++	if (info->quota_root) {
++		info->quota_root->node = NULL;
++		info->quota_root->commit_root = NULL;
 +	}
  
- 	ret = btrfs_ioctl_snap_create_transid(file, vol_args->name,
--					      vol_args->fd, subvol,
--					      ptr, readonly);
-+					      vol_args->fd, subvol, ptr,
-+					      readonly, &inherit);
+ 	if (chunk_root) {
+ 		free_extent_buffer(info->chunk_root->node);
+@@ -1938,6 +1949,7 @@ int open_ctree(struct super_block *sb,
+ 	struct btrfs_root *csum_root;
+ 	struct btrfs_root *chunk_root;
+ 	struct btrfs_root *dev_root;
++	struct btrfs_root *quota_root;
+ 	struct btrfs_root *log_tree_root;
+ 	int ret;
+ 	int err = -EINVAL;
+@@ -1949,9 +1961,10 @@ int open_ctree(struct super_block *sb,
+ 	csum_root = fs_info->csum_root = btrfs_alloc_root(fs_info);
+ 	chunk_root = fs_info->chunk_root = btrfs_alloc_root(fs_info);
+ 	dev_root = fs_info->dev_root = btrfs_alloc_root(fs_info);
++	quota_root = fs_info->quota_root = btrfs_alloc_root(fs_info);
  
- 	if (ret == 0 && ptr &&
- 	    copy_to_user(arg +
-@@ -1488,6 +1510,7 @@ static noinline int btrfs_ioctl_snap_create_v2(struct file *file,
- 		ret = -EFAULT;
- out:
- 	kfree(vol_args);
-+	kfree(inherit);
- 	return ret;
- }
- 
-@@ -3588,6 +3611,8 @@ long btrfs_ioctl(struct file *file, unsigned int
- 		return btrfs_ioctl_snap_create_v2(file, argp, 0);
- 	case BTRFS_IOC_SUBVOL_CREATE:
- 		return btrfs_ioctl_snap_create(file, argp, 1);
-+	case BTRFS_IOC_SUBVOL_CREATE_V2:
-+		return btrfs_ioctl_snap_create_v2(file, argp, 1);
- 	case BTRFS_IOC_SNAP_DESTROY:
- 		return btrfs_ioctl_snap_destroy(file, argp);
- 	case BTRFS_IOC_SUBVOL_GETFLAGS:
-diff --git a/fs/btrfs/ioctl.h b/fs/btrfs/ioctl.h
-index 9dd50c4..cdda57f 100644
---- a/fs/btrfs/ioctl.h
-+++ b/fs/btrfs/ioctl.h
-@@ -32,6 +32,7 @@ struct btrfs_ioctl_vol_args {
- 
- #define BTRFS_SUBVOL_CREATE_ASYNC	(1ULL << 0)
- #define BTRFS_SUBVOL_RDONLY		(1ULL << 1)
-+#define BTRFS_SUBVOL_QGROUP_INHERIT	(1ULL << 2)
- #define BTRFS_FSID_SIZE 16
- #define BTRFS_UUID_SIZE 16
- 
-@@ -64,7 +65,13 @@ struct btrfs_ioctl_vol_args_v2 {
- 	__s64 fd;
- 	__u64 transid;
- 	__u64 flags;
--	__u64 unused[4];
-+	union {
-+		struct {
-+			__u64 size;
-+			struct btrfs_qgroup_inherit __user *qgroup_inherit;
-+		};
-+		__u64 unused[4];
-+	};
- 	char name[BTRFS_SUBVOL_NAME_MAX + 1];
- };
- 
-@@ -382,6 +389,8 @@ struct btrfs_ioctl_qgroup_create_args {
- #define BTRFS_IOC_WAIT_SYNC  _IOW(BTRFS_IOCTL_MAGIC, 22, __u64)
- #define BTRFS_IOC_SNAP_CREATE_V2 _IOW(BTRFS_IOCTL_MAGIC, 23, \
- 				   struct btrfs_ioctl_vol_args_v2)
-+#define BTRFS_IOC_SUBVOL_CREATE_V2 _IOW(BTRFS_IOCTL_MAGIC, 24, \
-+				   struct btrfs_ioctl_vol_args_v2)
- #define BTRFS_IOC_SUBVOL_GETFLAGS _IOR(BTRFS_IOCTL_MAGIC, 25, __u64)
- #define BTRFS_IOC_SUBVOL_SETFLAGS _IOW(BTRFS_IOCTL_MAGIC, 26, __u64)
- #define BTRFS_IOC_SCRUB _IOWR(BTRFS_IOCTL_MAGIC, 27, \
-diff --git a/fs/btrfs/transaction.c b/fs/btrfs/transaction.c
-index f1e29fb..1272839 100644
---- a/fs/btrfs/transaction.c
-+++ b/fs/btrfs/transaction.c
-@@ -990,6 +990,14 @@ static noinline int create_pending_snapshot(struct btrfs_trans_handle *trans,
- 		}
+ 	if (!tree_root || !extent_root || !csum_root ||
+-	    !chunk_root || !dev_root) {
++	    !chunk_root || !dev_root || !quota_root) {
+ 		err = -ENOMEM;
+ 		goto fail;
  	}
+@@ -2441,6 +2454,17 @@ retry_root_backup:
+ 		goto recovery_tree_root;
+ 	csum_root->track_dirty = 1;
  
-+	ret = btrfs_qgroup_inherit(trans, fs_info, root->root_key.objectid,
-+				   objectid, pending->inherit);
-+	kfree(pending->inherit);
++	ret = find_and_setup_root(tree_root, fs_info,
++				  BTRFS_QUOTA_TREE_OBJECTID, quota_root);
 +	if (ret) {
-+		pending->error = ret;
-+		goto fail;
++		kfree(quota_root);
++		quota_root = fs_info->quota_root = NULL;
++	} else {
++		quota_root->track_dirty = 1;
++		fs_info->quota_enabled = 1;
++		fs_info->pending_quota_state = 1;
 +	}
 +
- 	key.objectid = objectid;
- 	key.offset = (u64)-1;
- 	key.type = BTRFS_ROOT_ITEM_KEY;
-diff --git a/fs/btrfs/transaction.h b/fs/btrfs/transaction.h
-index 2759e05..cca315d 100644
---- a/fs/btrfs/transaction.h
-+++ b/fs/btrfs/transaction.h
-@@ -73,6 +73,7 @@ struct btrfs_pending_snapshot {
- 	struct dentry *dentry;
- 	struct btrfs_root *root;
- 	struct btrfs_root *snap;
-+	struct btrfs_qgroup_inherit *inherit;
- 	/* block reservation for the operation */
- 	struct btrfs_block_rsv block_rsv;
- 	/* extra metadata reseration for relocation */
+ 	fs_info->generation = generation;
+ 	fs_info->last_trans_committed = generation;
+ 
+@@ -2500,6 +2524,9 @@ retry_root_backup:
+ 			       " integrity check module %s\n", sb->s_id);
+ 	}
+ #endif
++	ret = btrfs_read_qgroup_config(fs_info);
++	if (ret)
++		goto fail_trans_kthread;
+ 
+ 	/* do not make disk changes in broken FS */
+ 	if (btrfs_super_log_root(disk_super) != 0 &&
+@@ -2510,7 +2537,7 @@ retry_root_backup:
+ 			printk(KERN_WARNING "Btrfs log replay required "
+ 			       "on RO media\n");
+ 			err = -EIO;
+-			goto fail_trans_kthread;
++			goto fail_qgroup;
+ 		}
+ 		blocksize =
+ 		     btrfs_level_size(tree_root,
+@@ -2519,7 +2546,7 @@ retry_root_backup:
+ 		log_tree_root = btrfs_alloc_root(fs_info);
+ 		if (!log_tree_root) {
+ 			err = -ENOMEM;
+-			goto fail_trans_kthread;
++			goto fail_qgroup;
+ 		}
+ 
+ 		__setup_root(nodesize, leafsize, sectorsize, stripesize,
+@@ -2559,7 +2586,7 @@ retry_root_backup:
+ 			printk(KERN_WARNING
+ 			       "btrfs: failed to recover relocation\n");
+ 			err = -EINVAL;
+-			goto fail_trans_kthread;
++			goto fail_qgroup;
+ 		}
+ 	}
+ 
+@@ -2569,10 +2596,10 @@ retry_root_backup:
+ 
+ 	fs_info->fs_root = btrfs_read_fs_root_no_name(fs_info, &location);
+ 	if (!fs_info->fs_root)
+-		goto fail_trans_kthread;
++		goto fail_qgroup;
+ 	if (IS_ERR(fs_info->fs_root)) {
+ 		err = PTR_ERR(fs_info->fs_root);
+-		goto fail_trans_kthread;
++		goto fail_qgroup;
+ 	}
+ 
+ 	if (sb->s_flags & MS_RDONLY)
+@@ -2596,6 +2623,8 @@ retry_root_backup:
+ 
+ 	return 0;
+ 
++fail_qgroup:
++	btrfs_free_qgroup_config(fs_info);
+ fail_trans_kthread:
+ 	kthread_stop(fs_info->transaction_kthread);
+ fail_cleaner:
+@@ -3194,6 +3223,8 @@ int close_ctree(struct btrfs_root *root)
+ 	fs_info->closing = 2;
+ 	smp_mb();
+ 
++	btrfs_free_qgroup_config(root->fs_info);
++
+ 	if (fs_info->delalloc_bytes) {
+ 		printk(KERN_INFO "btrfs: at unmount delalloc count %llu\n",
+ 		       (unsigned long long)fs_info->delalloc_bytes);
+@@ -3213,6 +3244,10 @@ int close_ctree(struct btrfs_root *root)
+ 	free_extent_buffer(fs_info->dev_root->commit_root);
+ 	free_extent_buffer(fs_info->csum_root->node);
+ 	free_extent_buffer(fs_info->csum_root->commit_root);
++	if (fs_info->quota_root) {
++		free_extent_buffer(fs_info->quota_root->node);
++		free_extent_buffer(fs_info->quota_root->commit_root);
++	}
+ 
+ 	btrfs_free_block_groups(fs_info);
+ 
 -- 
 1.7.3.4
 

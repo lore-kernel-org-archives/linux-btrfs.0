@@ -1,47 +1,64 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-yw0-f46.google.com ([209.85.213.46]:42896 "EHLO
-	mail-yw0-f46.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1753337Ab2GLF5P (ORCPT
+Received: from mail-bk0-f46.google.com ([209.85.214.46]:56693 "EHLO
+	mail-bk0-f46.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1752759Ab2GLH7o (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 12 Jul 2012 01:57:15 -0400
-Received: by yhmm54 with SMTP id m54so2351702yhm.19
-        for <linux-btrfs@vger.kernel.org>; Wed, 11 Jul 2012 22:57:15 -0700 (PDT)
-MIME-Version: 1.0
-In-Reply-To: <CAHZ_AjtMe2s+-LpmLNf1rtn7QBtsWk+ANhX9AUDsbCEMDsorOg@mail.gmail.com>
-References: <CAHZ_AjtMe2s+-LpmLNf1rtn7QBtsWk+ANhX9AUDsbCEMDsorOg@mail.gmail.com>
-Date: Thu, 12 Jul 2012 12:57:14 +0700
-Message-ID: <CAG1y0sdiujR5hjXWAL0i5C5M9VG9i_bkoiagZ7h1Bwpuc-S7fw@mail.gmail.com>
-Subject: Re: file system corruption removal / documentation quandry
-From: "Fajar A. Nugraha" <list@fajar.net>
-To: eric gisse <jowr.pi@gmail.com>
-Cc: linux-btrfs <linux-btrfs@vger.kernel.org>
-Content-Type: text/plain; charset=ISO-8859-1
+	Thu, 12 Jul 2012 03:59:44 -0400
+Received: by bkwj10 with SMTP id j10so1868610bkw.19
+        for <linux-btrfs@vger.kernel.org>; Thu, 12 Jul 2012 00:59:43 -0700 (PDT)
+Message-ID: <1342079966.26081.36.camel@ierdnac-hp>
+Subject: Re: btrfs fi df won't show total=
+From: Andrei Popa <ierdnah@gmail.com>
+Reply-To: ierdnah@gmail.com
+To: Ilya Dryomov <idryomov@gmail.com>
+Cc: Jan Engelhardt <jengelh@inai.de>, Hugo Mills <hugo@carfax.org.uk>,
+        linux-btrfs@vger.kernel.org
+Date: Thu, 12 Jul 2012 10:59:26 +0300
+In-Reply-To: <20120709215234.GA1942@zambezi.lan>
+References: <alpine.LNX.2.01.1207092111360.16359@frira.zrqbmnf.qr>
+	 <20120709192500.GG28701@carfax.org.uk>
+	 <alpine.LNX.2.01.1207092204450.23294@frira.zrqbmnf.qr>
+	 <20120709215234.GA1942@zambezi.lan>
+Content-Type: text/plain; charset="UTF-8"
+Mime-Version: 1.0
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Thu, Jul 12, 2012 at 12:13 PM, eric gisse <jowr.pi@gmail.com> wrote:
+On Tue, 2012-07-10 at 00:52 +0300, Ilya Dryomov wrote: 
+> mkfs creates those non-raid chunks for a pretty stupid reason, they
+> really shouldn't be there if you create a raid10 fs.  Balance does the
+> right thing and removes them.  Fixing this along with another mkfs
+> annoyance related to this one is on my TODO list.
 
-> Basically, phoronix showed there is a --repair option. After enabling
-> snapshotting and playing around with the various discussed options, I
-> discovered that --repair and no special mount options was sufficient
-> to get the files removable.
+Hi Ilya,
 
-I'm curious, whether running it directly on newer kernel (e.g. latest
-ubuntu kernel-ppa/mainline) will be able to "solve" the problem, even
-without btrfsck.
+I've also studied this bug and found where the problem is, if this will
+help you:
 
-Also note that if by "snapshotting" you mean "create LVM snapshots",
-then you might be in for another surprise, as btrfs doesn't play nice
-with block devices with the same fs UUID. Don't rely on that as backup
-option.
+In mkfs.c, "make_root_dir" function creates the first system and
+metadata chunk:
+        ret = btrfs_make_block_group(trans, root, bytes_used,
+                                     BTRFS_BLOCK_GROUP_SYSTEM,
+                                     BTRFS_FIRST_CHUNK_TREE_OBJECTID,
+                                     0, BTRFS_MKFS_SYSTEM_GROUP_SIZE);
+....
+                ret = btrfs_alloc_chunk(trans,
+root->fs_info->extent_root,
+                                        &chunk_start, &chunk_size,
+                                        BTRFS_BLOCK_GROUP_METADATA |
+                                        BTRFS_BLOCK_GROUP_DATA);
+                BUG_ON(ret);
+                ret = btrfs_make_block_group(trans, root, 0,
+                                             BTRFS_BLOCK_GROUP_METADATA
+|
+                                             BTRFS_BLOCK_GROUP_DATA,
 
->
-> Now what I'm hoping for is better documentation on btrfsck even if it
-> just boils down to a brief enumeration of the options as that would be
-> better than nothing which is what we have now. Do I need to file a bug
-> or is this sufficient?
+BTRFS_FIRST_CHUNK_TREE_OBJECTID,
+                                             chunk_start, chunk_size);
 
-Edit https://btrfs.wiki.kernel.org/index.php/Btrfsck ?
+And these chunks are created again in "create_raid_groups" function.
+Both functions, "make_root_dir" and "create_raid_groups" are called from
+"main" function.
 
--- 
-Fajar
+Andrei 
+

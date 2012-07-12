@@ -1,162 +1,53 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mta-2.ms.rz.rwth-aachen.de ([134.130.7.73]:59036 "EHLO
-	mta-2.ms.rz.rwth-aachen.de" rhost-flags-OK-OK-OK-OK)
-	by vger.kernel.org with ESMTP id S1752808Ab2GLJR5 (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 12 Jul 2012 05:17:57 -0400
-MIME-version: 1.0
-Received: from mx-out-1.rwth-aachen.de ([134.130.5.186])
- by mta-2.ms.rz.RWTH-Aachen.de
- (Sun Java(tm) System Messaging Server 6.3-7.04 (built Sep 26 2008))
- with ESMTP id <0M71000LYJ5VVJI0@mta-2.ms.rz.RWTH-Aachen.de> for
- linux-btrfs@vger.kernel.org; Thu, 12 Jul 2012 11:17:55 +0200 (CEST)
-Received: from [137.226.154.136] ([unknown] [137.226.154.136])
- by relay-auth-2.ms.rz.rwth-aachen.de
- (Sun Java(tm) System Messaging Server 7.0-3.01 64bit (built Dec  9 2008))
- with ESMTPA id <0M71007EZJ5VQK90@relay-auth-2.ms.rz.rwth-aachen.de> for
- linux-btrfs@vger.kernel.org; Thu, 12 Jul 2012 11:17:55 +0200 (CEST)
-Message-id: <4FFE9647.3000707@umic.rwth-aachen.de>
-Date: Thu, 12 Jul 2012 11:17:59 +0200
-From: Bernd Kohler <kohler@umic.rwth-aachen.de>
-Reply-to: kohler@umic.rwth-aachen.de
-To: linux-btrfs@vger.kernel.org
-Subject: btrfs benchmark
-Content-type: multipart/signed; protocol="application/pkcs7-signature";
- micalg=sha1; boundary=------------ms010605010108090907010405
+Received: from cn.fujitsu.com ([222.73.24.84]:45365 "EHLO song.cn.fujitsu.com"
+	rhost-flags-OK-FAIL-OK-OK) by vger.kernel.org with ESMTP
+	id S1030371Ab2GLKcL (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Thu, 12 Jul 2012 06:32:11 -0400
+Message-ID: <4FFEAA42.1020809@cn.fujitsu.com>
+Date: Thu, 12 Jul 2012 18:43:14 +0800
+From: Liu Bo <liubo2009@cn.fujitsu.com>
+MIME-Version: 1.0
+To: kohler@umic.rwth-aachen.de
+CC: linux-btrfs@vger.kernel.org
+Subject: Re: btrfs benchmark
+References: <4FFE9647.3000707@umic.rwth-aachen.de>
+In-Reply-To: <4FFE9647.3000707@umic.rwth-aachen.de>
+Content-Type: text/plain; charset=ISO-8859-1
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-This is a cryptographically signed message in MIME format.
+On 07/12/2012 05:17 PM, Bernd Kohler wrote:
 
---------------ms010605010108090907010405
-Content-Type: text/plain; charset=ISO-8859-1
-Content-Transfer-Encoding: quoted-printable
-
-Hi @ all,
-
-in the last edition of the german Linux-Magazin, there has been an
-article about Linux filesystem performance test - the article is titled
-"Formel Storage - Linux-Dateisystem im Leistungstest".
-
-The author of this article, Mr Michael Kromer provides his benchmark
-script on link [1] and as btrfs is mentioned there, I felt free to
-publish this here ;)
-
-best
-
-Bernd Kohler
+> Hi @ all,
+> 
+> in the last edition of the german Linux-Magazin, there has been an
+> article about Linux filesystem performance test - the article is titled
+> "Formel Storage - Linux-Dateisystem im Leistungstest".
+> 
+> The author of this article, Mr Michael Kromer provides his benchmark
+> script on link [1] and as btrfs is mentioned there, I felt free to
+> publish this here ;)
+> 
 
 
 
 
-[1]
-http://medozas.de/2012-lm-fs-benchmark.tar.gz
+Thank you very much, I'm playing with it now.
 
---=20
-UMIC - RWTH Aachen
-http://www.umic.rwth-aachen.de
+thanks,
+liubo
 
-Mies-van-der-Rohe Str. 15
-52074 Aachen
-
-Tel.:   +49 241 80 20791
-Fax:    +49 241 80 22731
-E-Mail: kohler@umic.rwth-aachen.de
-
-The future started 6/6/12
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-0100 1001 0101 0000 0111 0110 0011 0110
+> best
+> 
+> Bernd Kohler
+> 
+> 
+> 
+> 
+> [1]
+> http://medozas.de/2012-lm-fs-benchmark.tar.gz
+> 
 
 
 
---------------ms010605010108090907010405
-Content-Type: application/pkcs7-signature; name="smime.p7s"
-Content-Transfer-Encoding: base64
-Content-Disposition: attachment; filename="smime.p7s"
-Content-Description: S/MIME Cryptographic Signature
 
-MIAGCSqGSIb3DQEHAqCAMIACAQExCzAJBgUrDgMCGgUAMIAGCSqGSIb3DQEHAQAAoIIOGzCC
-BCEwggMJoAMCAQICAgDHMA0GCSqGSIb3DQEBBQUAMHExCzAJBgNVBAYTAkRFMRwwGgYDVQQK
-ExNEZXV0c2NoZSBUZWxla29tIEFHMR8wHQYDVQQLExZULVRlbGVTZWMgVHJ1c3QgQ2VudGVy
-MSMwIQYDVQQDExpEZXV0c2NoZSBUZWxla29tIFJvb3QgQ0EgMjAeFw0wNjEyMTkxMDI5MDBa
-Fw0xOTA2MzAyMzU5MDBaMFoxCzAJBgNVBAYTAkRFMRMwEQYDVQQKEwpERk4tVmVyZWluMRAw
-DgYDVQQLEwdERk4tUEtJMSQwIgYDVQQDExtERk4tVmVyZWluIFBDQSBHbG9iYWwgLSBHMDEw
-ggEiMA0GCSqGSIb3DQEBAQUAA4IBDwAwggEKAoIBAQDpm8NnhfkNrvWNVMOWUDU9YuluTO2U
-1wBblSJ01CDrNI/W7MAxBAuZgeKmFNJSoCgjhIt0iQReW+DieMF4yxbLKDU5ey2QRdDtoAB6
-fL9KDhsAw4bpXCsxEXsM84IkQ4wcOItqaACa7txPeKvSxhObdq3u3ibo7wGvdA/BCaL2a869
-080UME/15eOkyGKbghoDJzANAmVgTe3RCSMqljVYJ9N2xnG2kB3E7f81hn1vM7PbD8URwoqD
-oZRdQWvY0hD1TP3KUazZve+Sg7va64sWVlZDz+HVEz2mHycwzUlU28kTNJpxdcVs6qcLmPkh
-nSevPqM5OUhqjK3JmfvDEvK9AgMBAAGjgdkwgdYwcAYDVR0fBGkwZzBloGOgYYZfaHR0cDov
-L3BraS50ZWxlc2VjLmRlL2NnaS1iaW4vc2VydmljZS9hZl9Eb3dubG9hZEFSTC5jcmw/LWNy
-bF9mb3JtYXQ9WF81MDkmLWlzc3Vlcj1EVF9ST09UX0NBXzIwHQYDVR0OBBYEFEm3xs/oPR9/
-6kR7Eyn38QpwPt5kMB8GA1UdIwQYMBaAFDHDeRu69VPXF+CJei0XbAqzK50zMA4GA1UdDwEB
-/wQEAwIBBjASBgNVHRMBAf8ECDAGAQH/AgECMA0GCSqGSIb3DQEBBQUAA4IBAQA74Vp3wEgX
-3KkY7IGvWonwvSiSpspZGBJw7Cjy565/lizn8l0ZMfYTK3S9vYCyufdnyTmieTvhERHua3iR
-M347XyYndVNljjNj7s9zw7CSI0khUHUjoR8Y4pSFPT8z6XcgjaK95qGFKUD2P3MyWA0Ja6ba
-hWzAP7uNZmRWJE6uDT8yNQFb6YyC2XJZT7GGhfF0hVblw/hc843uR7NTBXDn5U2KaYMo4RMJ
-hp5eyOpYHgwf+aTUWgRo/Sg+iwK2WLX2oSw3VwBnqyNojWOl75lrXP1LVvarQIc01BGSbOyH
-xQoLBzNytG8MHVQs2FHHzL8w00Ny8TK/jM5JY6gA9/IcMIIE6DCCA9CgAwIBAgIECfJ04DAN
-BgkqhkiG9w0BAQUFADBaMQswCQYDVQQGEwJERTETMBEGA1UEChMKREZOLVZlcmVpbjEQMA4G
-A1UECxMHREZOLVBLSTEkMCIGA1UEAxMbREZOLVZlcmVpbiBQQ0EgR2xvYmFsIC0gRzAxMB4X
-DTA3MDIxNDExNDkzOFoXDTE5MDIxMzAwMDAwMFowXjELMAkGA1UEBhMCREUxFDASBgNVBAoT
-C1JXVEggQWFjaGVuMRcwFQYDVQQDEw5SV1RIIEFhY2hlbiBDQTEgMB4GCSqGSIb3DQEJARYR
-Y2FAcnd0aC1hYWNoZW4uZGUwggEiMA0GCSqGSIb3DQEBAQUAA4IBDwAwggEKAoIBAQC4MAhk
-48jcelLfNUI5kvMv+CF54xJnL4x/cJQnN2NId6CJ3fqs0siO2exIACfzdjxOUpQ6ZFOn5pdT
-vTi7stnk8WAaP/d9LFd8k9Gbxjh7xh3L+0a3ac+/tHJcX564ntUxGtVGMuShEoUaZUT5fw97
-TL36UJ8OqXLrqpdAKcFKaJ+pgRp2gTLj4MNUMPjA4GlstpjoLnT++qFm7t/ZS92/E3OqNJUw
-HH6C35vSroVscmg+a7XxT6U4JO99MYxNcTIMzhPS9Ytp+302w7i51daBjr0hFGPK0nLSV6gv
-77zBSFJ7AVGJJxBSUzDn0xkDLYvZwqaeYkj8kDB2oSeRyfGjAgMBAAGjggGwMIIBrDAPBgNV
-HRMBAf8EBTADAQH/MAsGA1UdDwQEAwIBBjAdBgNVHQ4EFgQUbtU+wBwvcck8v0lO72pVSOzR
-8jgwHwYDVR0jBBgwFoAUSbfGz+g9H3/qRHsTKffxCnA+3mQwHAYDVR0RBBUwE4ERY2FAcnd0
-aC1hYWNoZW4uZGUwgYgGA1UdHwSBgDB+MD2gO6A5hjdodHRwOi8vY2RwMS5wY2EuZGZuLmRl
-L2dsb2JhbC1yb290LWNhL3B1Yi9jcmwvY2FjcmwuY3JsMD2gO6A5hjdodHRwOi8vY2RwMi5w
-Y2EuZGZuLmRlL2dsb2JhbC1yb290LWNhL3B1Yi9jcmwvY2FjcmwuY3JsMIGiBggrBgEFBQcB
-AQSBlTCBkjBHBggrBgEFBQcwAoY7aHR0cDovL2NkcDEucGNhLmRmbi5kZS9nbG9iYWwtcm9v
-dC1jYS9wdWIvY2FjZXJ0L2NhY2VydC5jcnQwRwYIKwYBBQUHMAKGO2h0dHA6Ly9jZHAyLnBj
-YS5kZm4uZGUvZ2xvYmFsLXJvb3QtY2EvcHViL2NhY2VydC9jYWNlcnQuY3J0MA0GCSqGSIb3
-DQEBBQUAA4IBAQAXh37GLAscIHrVqQYrG5P/dYULxAseU6xuXKnSpVTnMWVFf1TtN/p2D+8X
-TKtl/A4WlYa9np+ONblWcS1nJsuYf7N9wrO4zCEcVBNLIAHCY3ZXG+IoNHwgXqSYqXHzrAQZ
-jkSJr1RfbFE4njUy0nNhtC51HX0ongWfqODc6z7aF9we20615Mh8Kk8uox4XgjLLV/UjPVlw
-RAnuYIeF0wycvQ6jz/PJMuOrXShpqejpaiRXqKx8oPXAlCcnoqRLlQc1L0iwQHBn0Em6tDmM
-Hcahbf9SBOWiZ8+O0av4ly8CQ95okz9hto9UErXUIzNea2AQXBtlIyLLKgVuYPf4i3IyMIIF
-BjCCA+6gAwIBAgIHEsixbM/zMDANBgkqhkiG9w0BAQUFADBeMQswCQYDVQQGEwJERTEUMBIG
-A1UEChMLUldUSCBBYWNoZW4xFzAVBgNVBAMTDlJXVEggQWFjaGVuIENBMSAwHgYJKoZIhvcN
-AQkBFhFjYUByd3RoLWFhY2hlbi5kZTAeFw0xMTEwMjcxMDM1MDhaFw0xNDEwMjYxMDM1MDha
-MGUxCzAJBgNVBAYTAkRFMRQwEgYDVQQKEwtSV1RIIEFhY2hlbjEpMCcGA1UECxMgVU1JQyBS
-ZXNlYXJjaCBDZW50cmUgUldUSCBBYWNoZW4xFTATBgNVBAMTDEJlcm5kIEtvaGxlcjCCASIw
-DQYJKoZIhvcNAQEBBQADggEPADCCAQoCggEBANJtMwFqmb/1e+ZomvsMQeXmenSpu5Lutgpw
-UHwRdbiCHl6/qyycwJGsbBYkrc798FETwbxa/DLrSktk+QbgG/IorKIC1XnlmAtcUlQN4dP1
-9ggKTXjSy36BolgyonjLdXIR3iWOGrNHIR6N0vc8aoRVpeCK2b/j/XMkt8VKTCTlDxPZ1PWj
-Pxoxmtcqu+4e6EMkxSiG/34zND2qXAQgNfLzK3kZzbFIo8xq8SKQvy8Ofwdki2Ce3eurgRI3
-Ultj17GBKJqD7zlT51rntJXiVdZ9Bj19IQ2pyXaCX+DAKKGCSxvMr+Dj2L8rAmG+YHAz1y6s
-4dVwrV2E9qFiLul5pJUCAwEAAaOCAcAwggG8MAkGA1UdEwQCMAAwCwYDVR0PBAQDAgXgMCkG
-A1UdJQQiMCAGCCsGAQUFBwMCBggrBgEFBQcDBAYKKwYBBAGCNxQCAjAdBgNVHQ4EFgQUFMTE
-XPFwMM5VaCsH9KlcdzvYjNUwHwYDVR0jBBgwFoAUbtU+wBwvcck8v0lO72pVSOzR8jgwJQYD
-VR0RBB4wHIEaa29obGVyQHVtaWMucnd0aC1hYWNoZW4uZGUweQYDVR0fBHIwcDA2oDSgMoYw
-aHR0cDovL2NkcDEucGNhLmRmbi5kZS9yd3RoLWNhL3B1Yi9jcmwvY2FjcmwuY3JsMDagNKAy
-hjBodHRwOi8vY2RwMi5wY2EuZGZuLmRlL3J3dGgtY2EvcHViL2NybC9jYWNybC5jcmwwgZQG
-CCsGAQUFBwEBBIGHMIGEMEAGCCsGAQUFBzAChjRodHRwOi8vY2RwMS5wY2EuZGZuLmRlL3J3
-dGgtY2EvcHViL2NhY2VydC9jYWNlcnQuY3J0MEAGCCsGAQUFBzAChjRodHRwOi8vY2RwMi5w
-Y2EuZGZuLmRlL3J3dGgtY2EvcHViL2NhY2VydC9jYWNlcnQuY3J0MA0GCSqGSIb3DQEBBQUA
-A4IBAQCPpwZ22zQ8fxDyeHwvq8sypO58qJf7ZBfRptJi0HMdhAZV9xwzbd+Fz/g13dt0ktm2
-4Ha5d2vulFqGDP4RfoNadXQLWpa1ZSOuDmFmsIzIPcL1FAan0Q4A9llTKfG8fda+bosqI76n
-T0QMMltEc5Tg5/HSZvfR/zDtwaqDru6XQzyvUbVp52c9Ga0LNoxqKOSx+z9vTOciroyqknwF
-Mige8o/qfVk2Asmqno48DdFp+M1qtqNovrlN/YCPVipeRjl53rfFalneOP6sXCZsZIgF3gX+
-onMvosdZCilqQ7Jdu0PZ0+kDzI/WDEzXuhIO4pyZfIHS9EHjrDbPqWE89y9DMYIDVTCCA1EC
-AQEwaTBeMQswCQYDVQQGEwJERTEUMBIGA1UEChMLUldUSCBBYWNoZW4xFzAVBgNVBAMTDlJX
-VEggQWFjaGVuIENBMSAwHgYJKoZIhvcNAQkBFhFjYUByd3RoLWFhY2hlbi5kZQIHEsixbM/z
-MDAJBgUrDgMCGgUAoIIBwTAYBgkqhkiG9w0BCQMxCwYJKoZIhvcNAQcBMBwGCSqGSIb3DQEJ
-BTEPFw0xMjA3MTIwOTE3NTlaMCMGCSqGSIb3DQEJBDEWBBRxd9qeyjDRmYXgCW+6+UaMMHBC
-7TBsBgkqhkiG9w0BCQ8xXzBdMAsGCWCGSAFlAwQBKjALBglghkgBZQMEAQIwCgYIKoZIhvcN
-AwcwDgYIKoZIhvcNAwICAgCAMA0GCCqGSIb3DQMCAgFAMAcGBSsOAwIHMA0GCCqGSIb3DQMC
-AgEoMHgGCSsGAQQBgjcQBDFrMGkwXjELMAkGA1UEBhMCREUxFDASBgNVBAoTC1JXVEggQWFj
-aGVuMRcwFQYDVQQDEw5SV1RIIEFhY2hlbiBDQTEgMB4GCSqGSIb3DQEJARYRY2FAcnd0aC1h
-YWNoZW4uZGUCBxLIsWzP8zAwegYLKoZIhvcNAQkQAgsxa6BpMF4xCzAJBgNVBAYTAkRFMRQw
-EgYDVQQKEwtSV1RIIEFhY2hlbjEXMBUGA1UEAxMOUldUSCBBYWNoZW4gQ0ExIDAeBgkqhkiG
-9w0BCQEWEWNhQHJ3dGgtYWFjaGVuLmRlAgcSyLFsz/MwMA0GCSqGSIb3DQEBAQUABIIBAEom
-BiUmHJ7yVNlj1Xkj+LUB1KkR1SJ1+cH4j9tqgw/bdhOX86KMljeqgAavsvryT5rfw5QPSwrD
-5uFtSUeAQEWi5gx4CtYjYStzIJBGfF8BNQ/QTv5mKT1aN10FL/IpcLie7eyLKCPr9VvZgd/s
-gNCQgAIGs5gEu4C9scbwIx3iU7sMA7UfkX6IgvHrpscN33eNYbDu5+0An36wd8XznCsjr9LA
-Qgu/kvpxu91O65wZNYKu9xf4DZpupSPyQzgmwHn/jYhNKtIfFMtcT1zDN7zob3+ZzJverYqx
-FK3BPnKytysl2y3KPkNPME7iJ50h6uKEipiHkaKfI21GKkB71psAAAAAAAA=
---------------ms010605010108090907010405--

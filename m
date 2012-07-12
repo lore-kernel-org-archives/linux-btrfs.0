@@ -1,14 +1,14 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mort.rzone.de ([81.169.144.234]:20051 "EHLO mort.rzone.de"
+Received: from ysabell.rzone.de ([81.169.144.237]:33253 "EHLO ysabell.rzone.de"
 	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S933455Ab2GLJnt (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 12 Jul 2012 05:43:49 -0400
+	id S933590Ab2GLJnv (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Thu, 12 Jul 2012 05:43:51 -0400
 From: Jan Schmidt <list.btrfs@jan-o-sch.net>
 To: chris.mason@fusionio.com, linux-btrfs@vger.kernel.org
 Cc: sensille@gmx.net
-Subject: [PATCH v1 13/15] Btrfs: hooks to reserve qgroup space
-Date: Thu, 12 Jul 2012 11:43:45 +0200
-Message-Id: <c556723794b3487a79de1ecd6354975b1389f5ff.1342083345.git.list.btrfs@jan-o-sch.net>
+Subject: [PATCH v1 06/15] Btrfs: added helper to create new trees
+Date: Thu, 12 Jul 2012 11:43:38 +0200
+Message-Id: <20897f5c86b9d2b77baea1d48eda7fa4ac217279.1342083345.git.list.btrfs@jan-o-sch.net>
 In-Reply-To: <cover.1342083345.git.list.btrfs@jan-o-sch.net>
 References: <cover.1342083345.git.list.btrfs@jan-o-sch.net>
 In-Reply-To: <cover.1342083345.git.list.btrfs@jan-o-sch.net>
@@ -18,109 +18,128 @@ List-ID: <linux-btrfs.vger.kernel.org>
 
 From: Arne Jansen <sensille@gmx.net>
 
-Like block reserves, reserve a small piece of space on each
-transaction start and for delalloc. These are the hooks that
-can actually return EDQUOT to the user.
-The amount of space reserved is tracked in the transaction
-handle.
+This creates a brand new tree. Will be used to create
+the quota tree.
 
 Signed-off-by: Arne Jansen <sensille@gmx.net>
 ---
- fs/btrfs/extent-tree.c |   12 ++++++++++++
- fs/btrfs/transaction.c |   16 ++++++++++++++++
- fs/btrfs/transaction.h |    1 +
- 3 files changed, 29 insertions(+), 0 deletions(-)
+ fs/btrfs/disk-io.c |   78 +++++++++++++++++++++++++++++++++++++++++++++++++++-
+ fs/btrfs/disk-io.h |    6 ++++
+ 2 files changed, 83 insertions(+), 1 deletions(-)
 
-diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
-index c08337a..2ce16f9 100644
---- a/fs/btrfs/extent-tree.c
-+++ b/fs/btrfs/extent-tree.c
-@@ -4565,6 +4565,13 @@ int btrfs_delalloc_reserve_metadata(struct inode *inode, u64 num_bytes)
- 	csum_bytes = BTRFS_I(inode)->csum_bytes;
- 	spin_unlock(&BTRFS_I(inode)->lock);
- 
-+	if (root->fs_info->quota_enabled) {
-+		ret = btrfs_qgroup_reserve(root, num_bytes +
-+					   nr_extents * root->leafsize);
-+		if (ret)
-+			return ret;
-+	}
-+
- 	ret = reserve_metadata_bytes(root, block_rsv, to_reserve, flush);
- 	if (ret) {
- 		u64 to_free = 0;
-@@ -4643,6 +4650,11 @@ void btrfs_delalloc_release_metadata(struct inode *inode, u64 num_bytes)
- 
- 	trace_btrfs_space_reservation(root->fs_info, "delalloc",
- 				      btrfs_ino(inode), to_free, 0);
-+	if (root->fs_info->quota_enabled) {
-+		btrfs_qgroup_free(root, num_bytes +
-+					dropped * root->leafsize);
-+	}
-+
- 	btrfs_block_rsv_release(root, &root->fs_info->delalloc_block_rsv,
- 				to_free);
+diff --git a/fs/btrfs/disk-io.c b/fs/btrfs/disk-io.c
+index 19a39e1..6fc243e 100644
+--- a/fs/btrfs/disk-io.c
++++ b/fs/btrfs/disk-io.c
+@@ -1225,6 +1225,82 @@ static struct btrfs_root *btrfs_alloc_root(struct btrfs_fs_info *fs_info)
+ 	return root;
  }
-diff --git a/fs/btrfs/transaction.c b/fs/btrfs/transaction.c
-index 21c768c..f1e29fb 100644
---- a/fs/btrfs/transaction.c
-+++ b/fs/btrfs/transaction.c
-@@ -295,6 +295,7 @@ static struct btrfs_trans_handle *start_transaction(struct btrfs_root *root,
- 	struct btrfs_transaction *cur_trans;
- 	u64 num_bytes = 0;
- 	int ret;
-+	u64 qgroup_reserved = 0;
  
- 	if (root->fs_info->fs_state & BTRFS_SUPER_FLAG_ERROR)
- 		return ERR_PTR(-EROFS);
-@@ -313,6 +314,14 @@ static struct btrfs_trans_handle *start_transaction(struct btrfs_root *root,
- 	 * the appropriate flushing if need be.
- 	 */
- 	if (num_items > 0 && root != root->fs_info->chunk_root) {
-+		if (root->fs_info->quota_enabled &&
-+		    is_fstree(root->root_key.objectid)) {
-+			qgroup_reserved = num_items * root->leafsize;
-+			ret = btrfs_qgroup_reserve(root, qgroup_reserved);
-+			if (ret)
-+				return ERR_PTR(ret);
-+		}
++struct btrfs_root *btrfs_create_tree(struct btrfs_trans_handle *trans,
++				     struct btrfs_fs_info *fs_info,
++				     u64 objectid)
++{
++	struct extent_buffer *leaf;
++	struct btrfs_root *tree_root = fs_info->tree_root;
++	struct btrfs_root *root;
++	struct btrfs_key key;
++	int ret = 0;
++	u64 bytenr;
 +
- 		num_bytes = btrfs_calc_trans_metadata_size(root, num_items);
- 		ret = btrfs_block_rsv_add(root,
- 					  &root->fs_info->trans_block_rsv,
-@@ -351,6 +360,7 @@ again:
- 	h->block_rsv = NULL;
- 	h->orig_rsv = NULL;
- 	h->aborted = 0;
-+	h->qgroup_reserved = qgroup_reserved;
- 	h->delayed_ref_elem.seq = 0;
- 	INIT_LIST_HEAD(&h->qgroup_ref_list);
- 
-@@ -524,6 +534,12 @@ static int __btrfs_end_transaction(struct btrfs_trans_handle *trans,
- 	 * end_transaction. Subvolume quota depends on this.
- 	 */
- 	WARN_ON(trans->root != root);
++	root = btrfs_alloc_root(fs_info);
++	if (!root)
++		return ERR_PTR(-ENOMEM);
 +
-+	if (trans->qgroup_reserved) {
-+		btrfs_qgroup_free(root, trans->qgroup_reserved);
-+		trans->qgroup_reserved = 0;
++	__setup_root(tree_root->nodesize, tree_root->leafsize,
++		     tree_root->sectorsize, tree_root->stripesize,
++		     root, fs_info, objectid);
++	root->root_key.objectid = objectid;
++	root->root_key.type = BTRFS_ROOT_ITEM_KEY;
++	root->root_key.offset = 0;
++
++	leaf = btrfs_alloc_free_block(trans, root, root->leafsize,
++				      0, objectid, NULL, 0, 0, 0);
++	if (IS_ERR(leaf)) {
++		ret = PTR_ERR(leaf);
++		goto fail;
 +	}
 +
- 	while (count < 2) {
- 		unsigned long cur = trans->delayed_ref_updates;
- 		trans->delayed_ref_updates = 0;
-diff --git a/fs/btrfs/transaction.h b/fs/btrfs/transaction.h
-index 16ba008..2759e05 100644
---- a/fs/btrfs/transaction.h
-+++ b/fs/btrfs/transaction.h
-@@ -50,6 +50,7 @@ struct btrfs_transaction {
- struct btrfs_trans_handle {
- 	u64 transid;
- 	u64 bytes_reserved;
-+	u64 qgroup_reserved;
- 	unsigned long use_count;
- 	unsigned long blocks_reserved;
- 	unsigned long blocks_used;
++	bytenr = leaf->start;
++	memset_extent_buffer(leaf, 0, 0, sizeof(struct btrfs_header));
++	btrfs_set_header_bytenr(leaf, leaf->start);
++	btrfs_set_header_generation(leaf, trans->transid);
++	btrfs_set_header_backref_rev(leaf, BTRFS_MIXED_BACKREF_REV);
++	btrfs_set_header_owner(leaf, objectid);
++	root->node = leaf;
++
++	write_extent_buffer(leaf, fs_info->fsid,
++			    (unsigned long)btrfs_header_fsid(leaf),
++			    BTRFS_FSID_SIZE);
++	write_extent_buffer(leaf, fs_info->chunk_tree_uuid,
++			    (unsigned long)btrfs_header_chunk_tree_uuid(leaf),
++			    BTRFS_UUID_SIZE);
++	btrfs_mark_buffer_dirty(leaf);
++
++	root->commit_root = btrfs_root_node(root);
++	root->track_dirty = 1;
++
++
++	root->root_item.flags = 0;
++	root->root_item.byte_limit = 0;
++	btrfs_set_root_bytenr(&root->root_item, leaf->start);
++	btrfs_set_root_generation(&root->root_item, trans->transid);
++	btrfs_set_root_level(&root->root_item, 0);
++	btrfs_set_root_refs(&root->root_item, 1);
++	btrfs_set_root_used(&root->root_item, leaf->len);
++	btrfs_set_root_last_snapshot(&root->root_item, 0);
++	btrfs_set_root_dirid(&root->root_item, 0);
++	root->root_item.drop_level = 0;
++
++	key.objectid = objectid;
++	key.type = BTRFS_ROOT_ITEM_KEY;
++	key.offset = 0;
++	ret = btrfs_insert_root(trans, tree_root, &key, &root->root_item);
++	if (ret)
++		goto fail;
++
++	btrfs_tree_unlock(leaf);
++
++fail:
++	if (ret)
++		return ERR_PTR(ret);
++
++	return root;
++}
++
+ static struct btrfs_root *alloc_log_tree(struct btrfs_trans_handle *trans,
+ 					 struct btrfs_fs_info *fs_info)
+ {
+@@ -3260,7 +3336,7 @@ int btrfs_read_buffer(struct extent_buffer *buf, u64 parent_transid)
+ 	return btree_read_extent_buffer_pages(root, buf, 0, parent_transid);
+ }
+ 
+-static int btree_lock_page_hook(struct page *page, void *data,
++int btree_lock_page_hook(struct page *page, void *data,
+ 				void (*flush_fn)(void *))
+ {
+ 	struct inode *inode = page->mapping->host;
+diff --git a/fs/btrfs/disk-io.h b/fs/btrfs/disk-io.h
+index 05b3fab..95e147e 100644
+--- a/fs/btrfs/disk-io.h
++++ b/fs/btrfs/disk-io.h
+@@ -89,6 +89,12 @@ int btrfs_add_log_tree(struct btrfs_trans_handle *trans,
+ int btrfs_cleanup_transaction(struct btrfs_root *root);
+ void btrfs_cleanup_one_transaction(struct btrfs_transaction *trans,
+ 				  struct btrfs_root *root);
++void btrfs_abort_devices(struct btrfs_root *root);
++struct btrfs_root *btrfs_create_tree(struct btrfs_trans_handle *trans,
++				     struct btrfs_fs_info *fs_info,
++				     u64 objectid);
++int btree_lock_page_hook(struct page *page, void *data,
++				void (*flush_fn)(void *));
+ 
+ #ifdef CONFIG_DEBUG_LOCK_ALLOC
+ void btrfs_init_lockdep(void);
 -- 
 1.7.3.4
 

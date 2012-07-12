@@ -1,14 +1,14 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from ysabell.rzone.de ([81.169.144.237]:33257 "EHLO ysabell.rzone.de"
+Received: from mort.rzone.de ([81.169.144.234]:20048 "EHLO mort.rzone.de"
 	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S933357Ab2GLJnw (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 12 Jul 2012 05:43:52 -0400
+	id S933449Ab2GLJnt (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Thu, 12 Jul 2012 05:43:49 -0400
 From: Jan Schmidt <list.btrfs@jan-o-sch.net>
 To: chris.mason@fusionio.com, linux-btrfs@vger.kernel.org
 Cc: sensille@gmx.net
-Subject: [PATCH v1 14/15] Btrfs: add qgroup ioctls
-Date: Thu, 12 Jul 2012 11:43:46 +0200
-Message-Id: <5d13a37bd5327220e13329943d1228acfbe5934a.1342083345.git.list.btrfs@jan-o-sch.net>
+Subject: [PATCH v1 08/15] Btrfs: Test code to change the order of delayed-ref processing
+Date: Thu, 12 Jul 2012 11:43:40 +0200
+Message-Id: <709c0486b9fe9586736b108b7233bbce0300cfa5.1342083345.git.list.btrfs@jan-o-sch.net>
 In-Reply-To: <cover.1342083345.git.list.btrfs@jan-o-sch.net>
 References: <cover.1342083345.git.list.btrfs@jan-o-sch.net>
 In-Reply-To: <cover.1342083345.git.list.btrfs@jan-o-sch.net>
@@ -18,261 +18,91 @@ List-ID: <linux-btrfs.vger.kernel.org>
 
 From: Arne Jansen <sensille@gmx.net>
 
-Ioctls to control the qgroup feature like adding and
-removing qgroups and assigning qgroups.
+Normally delayed refs get processed in ascending bytenr order. This
+correlates in most cases to the order added. To expose dependencies
+on this order, we start to process the tree in the middle instead of
+the beginning.
+This code is only effective when SCRAMBLE_DELAYED_REFS is defined.
 
 Signed-off-by: Arne Jansen <sensille@gmx.net>
 ---
- fs/btrfs/ioctl.c |  185 ++++++++++++++++++++++++++++++++++++++++++++++++++++++
- fs/btrfs/ioctl.h |   27 ++++++++
- 2 files changed, 212 insertions(+), 0 deletions(-)
+ fs/btrfs/extent-tree.c |   49 ++++++++++++++++++++++++++++++++++++++++++++++++
+ 1 files changed, 49 insertions(+), 0 deletions(-)
 
-diff --git a/fs/btrfs/ioctl.c b/fs/btrfs/ioctl.c
-index 0e92e57..55a7283 100644
---- a/fs/btrfs/ioctl.c
-+++ b/fs/btrfs/ioctl.c
-@@ -3390,6 +3390,183 @@ out:
- 	return ret;
+diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
+index 94ce79f..b13f1fb 100644
+--- a/fs/btrfs/extent-tree.c
++++ b/fs/btrfs/extent-tree.c
+@@ -34,6 +34,8 @@
+ #include "locking.h"
+ #include "free-space-cache.h"
+ 
++#undef SCRAMBLE_DELAYED_REFS
++
+ /*
+  * control flags for do_chunk_alloc's force field
+  * CHUNK_ALLOC_NO_FORCE means to only allocate a chunk
+@@ -2364,6 +2366,49 @@ static void wait_for_more_refs(struct btrfs_fs_info *fs_info,
+ 	spin_lock(&delayed_refs->lock);
  }
  
-+static long btrfs_ioctl_quota_ctl(struct btrfs_root *root, void __user *arg)
++#ifdef SCRAMBLE_DELAYED_REFS
++/*
++ * Normally delayed refs get processed in ascending bytenr order. This
++ * correlates in most cases to the order added. To expose dependencies on this
++ * order, we start to process the tree in the middle instead of the beginning
++ */
++static u64 find_middle(struct rb_root *root)
 +{
-+	struct btrfs_ioctl_quota_ctl_args *sa;
-+	struct btrfs_trans_handle *trans = NULL;
-+	int ret;
-+	int err;
++	struct rb_node *n = root->rb_node;
++	struct btrfs_delayed_ref_node *entry;
++	int alt = 1;
++	u64 middle;
++	u64 first = 0, last = 0;
 +
-+	if (!capable(CAP_SYS_ADMIN))
-+		return -EPERM;
-+
-+	if (root->fs_info->sb->s_flags & MS_RDONLY)
-+		return -EROFS;
-+
-+	sa = memdup_user(arg, sizeof(*sa));
-+	if (IS_ERR(sa))
-+		return PTR_ERR(sa);
-+
-+	if (sa->cmd != BTRFS_QUOTA_CTL_RESCAN) {
-+		trans = btrfs_start_transaction(root, 2);
-+		if (IS_ERR(trans)) {
-+			ret = PTR_ERR(trans);
-+			goto out;
-+		}
++	n = rb_first(root);
++	if (n) {
++		entry = rb_entry(n, struct btrfs_delayed_ref_node, rb_node);
++		first = entry->bytenr;
 +	}
-+
-+	switch (sa->cmd) {
-+	case BTRFS_QUOTA_CTL_ENABLE:
-+		ret = btrfs_quota_enable(trans, root->fs_info);
-+		break;
-+	case BTRFS_QUOTA_CTL_DISABLE:
-+		ret = btrfs_quota_disable(trans, root->fs_info);
-+		break;
-+	case BTRFS_QUOTA_CTL_RESCAN:
-+		ret = btrfs_quota_rescan(root->fs_info);
-+		break;
-+	default:
-+		ret = -EINVAL;
-+		break;
++	n = rb_last(root);
++	if (n) {
++		entry = rb_entry(n, struct btrfs_delayed_ref_node, rb_node);
++		last = entry->bytenr;
 +	}
++	n = root->rb_node;
 +
-+	if (copy_to_user(arg, sa, sizeof(*sa)))
-+		ret = -EFAULT;
++	while (n) {
++		entry = rb_entry(n, struct btrfs_delayed_ref_node, rb_node);
++		WARN_ON(!entry->in_tree);
 +
-+	if (trans) {
-+		err = btrfs_commit_transaction(trans, root);
-+		if (err && !ret)
-+			ret = err;
++		middle = entry->bytenr;
++
++		if (alt)
++			n = n->rb_left;
++		else
++			n = n->rb_right;
++
++		alt = 1 - alt;
 +	}
-+
-+out:
-+	kfree(sa);
-+	return ret;
++	return middle;
 +}
++#endif
 +
-+static long btrfs_ioctl_qgroup_assign(struct btrfs_root *root, void __user *arg)
-+{
-+	struct btrfs_ioctl_qgroup_assign_args *sa;
-+	struct btrfs_trans_handle *trans;
-+	int ret;
-+	int err;
-+
-+	if (!capable(CAP_SYS_ADMIN))
-+		return -EPERM;
-+
-+	if (root->fs_info->sb->s_flags & MS_RDONLY)
-+		return -EROFS;
-+
-+	sa = memdup_user(arg, sizeof(*sa));
-+	if (IS_ERR(sa))
-+		return PTR_ERR(sa);
-+
-+	trans = btrfs_join_transaction(root);
-+	if (IS_ERR(trans)) {
-+		ret = PTR_ERR(trans);
-+		goto out;
-+	}
-+
-+	/* FIXME: check if the IDs really exist */
-+	if (sa->assign) {
-+		ret = btrfs_add_qgroup_relation(trans, root->fs_info,
-+						sa->src, sa->dst);
-+	} else {
-+		ret = btrfs_del_qgroup_relation(trans, root->fs_info,
-+						sa->src, sa->dst);
-+	}
-+
-+	err = btrfs_end_transaction(trans, root);
-+	if (err && !ret)
-+		ret = err;
-+
-+out:
-+	kfree(sa);
-+	return ret;
-+}
-+
-+static long btrfs_ioctl_qgroup_create(struct btrfs_root *root, void __user *arg)
-+{
-+	struct btrfs_ioctl_qgroup_create_args *sa;
-+	struct btrfs_trans_handle *trans;
-+	int ret;
-+	int err;
-+
-+	if (!capable(CAP_SYS_ADMIN))
-+		return -EPERM;
-+
-+	if (root->fs_info->sb->s_flags & MS_RDONLY)
-+		return -EROFS;
-+
-+	sa = memdup_user(arg, sizeof(*sa));
-+	if (IS_ERR(sa))
-+		return PTR_ERR(sa);
-+
-+	trans = btrfs_join_transaction(root);
-+	if (IS_ERR(trans)) {
-+		ret = PTR_ERR(trans);
-+		goto out;
-+	}
-+
-+	/* FIXME: check if the IDs really exist */
-+	if (sa->create) {
-+		ret = btrfs_create_qgroup(trans, root->fs_info, sa->qgroupid,
-+					  NULL);
-+	} else {
-+		ret = btrfs_remove_qgroup(trans, root->fs_info, sa->qgroupid);
-+	}
-+
-+	err = btrfs_end_transaction(trans, root);
-+	if (err && !ret)
-+		ret = err;
-+
-+out:
-+	kfree(sa);
-+	return ret;
-+}
-+
-+static long btrfs_ioctl_qgroup_limit(struct btrfs_root *root, void __user *arg)
-+{
-+	struct btrfs_ioctl_qgroup_limit_args *sa;
-+	struct btrfs_trans_handle *trans;
-+	int ret;
-+	int err;
-+	u64 qgroupid;
-+
-+	if (!capable(CAP_SYS_ADMIN))
-+		return -EPERM;
-+
-+	if (root->fs_info->sb->s_flags & MS_RDONLY)
-+		return -EROFS;
-+
-+	sa = memdup_user(arg, sizeof(*sa));
-+	if (IS_ERR(sa))
-+		return PTR_ERR(sa);
-+
-+	trans = btrfs_join_transaction(root);
-+	if (IS_ERR(trans)) {
-+		ret = PTR_ERR(trans);
-+		goto out;
-+	}
-+
-+	qgroupid = sa->qgroupid;
-+	if (!qgroupid) {
-+		/* take the current subvol as qgroup */
-+		qgroupid = root->root_key.objectid;
-+	}
-+
-+	/* FIXME: check if the IDs really exist */
-+	ret = btrfs_limit_qgroup(trans, root->fs_info, qgroupid, &sa->lim);
-+
-+	err = btrfs_end_transaction(trans, root);
-+	if (err && !ret)
-+		ret = err;
-+
-+out:
-+	kfree(sa);
-+	return ret;
-+}
-+
- long btrfs_ioctl(struct file *file, unsigned int
- 		cmd, unsigned long arg)
- {
-@@ -3476,6 +3653,14 @@ long btrfs_ioctl(struct file *file, unsigned int
- 		return btrfs_ioctl_get_dev_stats(root, argp, 0);
- 	case BTRFS_IOC_GET_AND_RESET_DEV_STATS:
- 		return btrfs_ioctl_get_dev_stats(root, argp, 1);
-+	case BTRFS_IOC_QUOTA_CTL:
-+		return btrfs_ioctl_quota_ctl(root, argp);
-+	case BTRFS_IOC_QGROUP_ASSIGN:
-+		return btrfs_ioctl_qgroup_assign(root, argp);
-+	case BTRFS_IOC_QGROUP_CREATE:
-+		return btrfs_ioctl_qgroup_create(root, argp);
-+	case BTRFS_IOC_QGROUP_LIMIT:
-+		return btrfs_ioctl_qgroup_limit(root, argp);
- 	}
+ /*
+  * this starts processing the delayed reference count updates and
+  * extent insertions we have queued up so far.  count can be
+@@ -2406,6 +2451,10 @@ again:
+ 	consider_waiting = 0;
+ 	spin_lock(&delayed_refs->lock);
  
- 	return -ENOTTY;
-diff --git a/fs/btrfs/ioctl.h b/fs/btrfs/ioctl.h
-index a8a2230..9dd50c4 100644
---- a/fs/btrfs/ioctl.h
-+++ b/fs/btrfs/ioctl.h
-@@ -319,6 +319,25 @@ struct btrfs_ioctl_get_dev_stats {
- 	__u64 unused[128 - 2 - BTRFS_DEV_STAT_VALUES_MAX]; /* pad to 1k */
- };
- 
-+#define BTRFS_QUOTA_CTL_ENABLE	1
-+#define BTRFS_QUOTA_CTL_DISABLE	2
-+#define BTRFS_QUOTA_CTL_RESCAN	3
-+struct btrfs_ioctl_quota_ctl_args {
-+	__u64 cmd;
-+	__u64 status;
-+};
++#ifdef SCRAMBLE_DELAYED_REFS
++	delayed_refs->run_delayed_start = find_middle(&delayed_refs->root);
++#endif
 +
-+struct btrfs_ioctl_qgroup_assign_args {
-+	__u64 assign;
-+	__u64 src;
-+	__u64 dst;
-+};
-+
-+struct btrfs_ioctl_qgroup_create_args {
-+	__u64 create;
-+	__u64 qgroupid;
-+};
-+
- #define BTRFS_IOC_SNAP_CREATE _IOW(BTRFS_IOCTL_MAGIC, 1, \
- 				   struct btrfs_ioctl_vol_args)
- #define BTRFS_IOC_DEFRAG _IOW(BTRFS_IOCTL_MAGIC, 2, \
-@@ -388,4 +407,12 @@ struct btrfs_ioctl_get_dev_stats {
- #define BTRFS_IOC_GET_AND_RESET_DEV_STATS _IOWR(BTRFS_IOCTL_MAGIC, 53, \
- 					struct btrfs_ioctl_get_dev_stats)
- 
-+#define BTRFS_IOC_QUOTA_CTL _IOWR(BTRFS_IOCTL_MAGIC, 40, \
-+			       struct btrfs_ioctl_quota_ctl_args)
-+#define BTRFS_IOC_QGROUP_ASSIGN _IOW(BTRFS_IOCTL_MAGIC, 41, \
-+			       struct btrfs_ioctl_qgroup_assign_args)
-+#define BTRFS_IOC_QGROUP_CREATE _IOW(BTRFS_IOCTL_MAGIC, 42, \
-+			       struct btrfs_ioctl_qgroup_create_args)
-+#define BTRFS_IOC_QGROUP_LIMIT _IOR(BTRFS_IOCTL_MAGIC, 43, \
-+			       struct btrfs_ioctl_qgroup_limit_args)
- #endif
+ 	if (count == 0) {
+ 		count = delayed_refs->num_entries * 2;
+ 		run_most = 1;
 -- 
 1.7.3.4
 

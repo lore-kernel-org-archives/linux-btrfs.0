@@ -1,30 +1,47 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.fusionio.com ([66.114.96.31]:60961 "EHLO mx2.fusionio.com"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1752596Ab2GISQ2 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 9 Jul 2012 14:16:28 -0400
-Date: Mon, 9 Jul 2012 14:16:24 -0400
-From: Chris Mason <chris.mason@fusionio.com>
-To: Shawn Landden <shawnlandden@gmail.com>
-CC: "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
-Subject: Re: [PATCH] fix unaligned memory accesses (Closes: #656955)
-Message-ID: <20120709181624.GU7159@shiny>
-References: <1341625062-13044-1-git-send-email-shawnlandden@gmail.com>
+Received: from mondschein.lichtvoll.de ([194.150.191.11]:56023 "EHLO
+	mail.lichtvoll.de" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1751535Ab2GOOFD (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>);
+	Sun, 15 Jul 2012 10:05:03 -0400
+From: Martin Steigerwald <Martin@lichtvoll.de>
+To: linux-btrfs@vger.kernel.org,
+        "haveaniceday@cv-sv.de" <haveaniceday@cv-sv.de>
+Subject: Re: btrfsck crashes
+Date: Sun, 15 Jul 2012 16:05:00 +0200
+Cc: Anand Jain <Anand.Jain@oracle.com>
+References: <4FF9B07C.8090209@cv-sv.de> <4FFD278D.20804@oracle.com> <209200388.295540.1341995780489.JavaMail.open-xchange@email.1und1.de> (sfid-20120711_103927_662447_62FDD5CB)
+In-Reply-To: <209200388.295540.1341995780489.JavaMail.open-xchange@email.1und1.de>
 MIME-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-In-Reply-To: <1341625062-13044-1-git-send-email-shawnlandden@gmail.com>
+Content-Type: Text/Plain;
+  charset="utf-8"
+Message-Id: <201207151605.01189.Martin@lichtvoll.de>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Fri, Jul 06, 2012 at 07:37:42PM -0600, Shawn Landden wrote:
-> From: Shawn Landen <shawnlandden@gmail.com>
+Am Mittwoch, 11. Juli 2012 schrieb haveaniceday@cv-sv.de:
+> PS: I would bet that my kind of usage is a very good stress test for
+> btrfs.
 > 
-> Fix creation of volumes using mkfs.btrfs on armv5.
+> - large file system "/backup" btrfs with compress enabled.
+> 
+> Content of the file system:
+> - ./server1 .... /server5  as directories
+> - for each server the directory has a structure like this:
+>   backup-YYYY-DD-MM-HH:M
+>   New backups are created with:
+>   rsync -axvH --link-dest=/backup/server'n'/backup-...(old, last dir)..
+>   server:/   /backup/server'n'/backup-YYY-.../.
+> 
+> This generates files with a large number of hard links.
 
-[ use memcpy instead of direct structure accesses ]
+I am using
 
-Thanks for the patch.  This should be a problem in the way gcc is run.
-The kernel uses the same functions without memcpy, so there must be a
-way to get gcc to turn the unaligned access into something arch safe.
+btrfs subvolume snapshot -r
 
--chris
+after a rsync backup for exact this case.
+
+Ciao,
+-- 
+Martin 'Helios' Steigerwald - http://www.Lichtvoll.de
+GPG: 03B0 0D6C 0040 0710 4AFA  B82F 991B EAAC A599 84C7

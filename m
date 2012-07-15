@@ -1,44 +1,45 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mailout09.t-online.de ([194.25.134.84]:44279 "EHLO
-	mailout09.t-online.de" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1750807Ab2GOFpv (ORCPT
+Received: from mondschein.lichtvoll.de ([194.150.191.11]:48728 "EHLO
+	mail.lichtvoll.de" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1751973Ab2GOOIv convert rfc822-to-8bit (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Sun, 15 Jul 2012 01:45:51 -0400
-Date: 15 Jul 2012 07:20:00 +0200
-From: Hullen@t-online.de (Helmut Hullen)
-To: linux-btrfs@vger.kernel.org
-Message-ID: <CCthSbPuCXB@helmut.hullen.de>
-In-Reply-To: <CAF7mNP4oQ=sSXf-gVSMF2Xq89OL25L7HnWL4MbqSONxr8=RRTQ@mail.gmail.com>
-Subject: Re: bug: raid10 filesystem has suddenly ceased to mount
+	Sun, 15 Jul 2012 10:08:51 -0400
+From: Martin Steigerwald <Martin@lichtvoll.de>
+To: linux-btrfs@vger.kernel.org, kohler@umic.rwth-aachen.de
+Subject: Re: btrfs benchmark
+Date: Sun, 15 Jul 2012 16:08:49 +0200
+References: <4FFE9647.3000707@umic.rwth-aachen.de> (sfid-20120712_165433_761444_AFEF05FB)
+In-Reply-To: <4FFE9647.3000707@umic.rwth-aachen.de>
 MIME-Version: 1.0
-Content-Type: text/plain; charset=US-ASCII
-Reply-To: helmut@hullen.de
+Content-Type: Text/Plain;
+  charset="utf-8"
+Message-Id: <201207151608.50106.Martin@lichtvoll.de>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hallo, ????,
+Am Donnerstag, 12. Juli 2012 schrieb Bernd Kohler:
+> Hi @ all,
 
-Du meintest am 14.07.12:
+Hi!
 
-> The problem is that the BTRFS raid10 filesystem without any
-> understandable cause refuses to mount.
+> in the last edition of the german Linux-Magazin, there has been an
+> article about Linux filesystem performance test - the article is titled
+> "Formel Storage - Linux-Dateisystem im Leistungstest".
+> 
+> The author of this article, Mr Michael Kromer provides his benchmark
+> script on link [1] and as btrfs is mentioned there, I felt free to
+> publish this here ;)
 
-> Here is dmesg output:
-> [77847.845540] device label linux-btrfs-raid10 devid 3 transid 45639
-> /dev/sdc1 [77848.633912] btrfs: allowing degraded mounts
-> [77848.633917] btrfs: enabling auto defrag
-> [77848.633919] btrfs: use lzo compression
-> [77848.633922] btrfs: turning on flush-on-commit
-> [77848.658879] parent transid verify failed on 2363592273920 wanted
-> 31596 found 25250
-> [77848.659060] parent transid verify failed on 2363592273920 wanted
-> 31596 found 25250
+If thats the same article I remember currently, the author made some 
+choices I did not understand. Like for example disabling write caches of 
+the drives that have being testing. But could be that I refer to another 
+article in there. Can´t check right now, cause I do not have the issue at 
+hand at home.
 
-[...]
+> [1]
+> http://medozas.de/2012-lm-fs-benchmark.tar.gz
 
-Sounds familiar ...
-
-Re-install your backup.
-
-Viele Gruesse!
-Helmut
+Thanks,
+-- 
+Martin 'Helios' Steigerwald - http://www.Lichtvoll.de
+GPG: 03B0 0D6C 0040 0710 4AFA  B82F 991B EAAC A599 84C7

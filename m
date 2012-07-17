@@ -1,71 +1,37 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from smtp206.alice.it ([82.57.200.102]:60987 "EHLO smtp206.alice.it"
+Received: from cantor2.suse.de ([195.135.220.15]:59915 "EHLO mx2.suse.de"
 	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1751789Ab2GaVQ7 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 31 Jul 2012 17:16:59 -0400
-Message-ID: <50184B40.8010508@libero.it>
-Date: Tue, 31 Jul 2012 23:16:48 +0200
-From: Goffredo Baroncelli <kreijack@libero.it>
-Reply-To: kreijack@inwind.it
-MIME-Version: 1.0
-To: Liu Bo <liubo2009@cn.fujitsu.com>
-CC: linux-btrfs@vger.kernel.org
-Subject: Re: [PATCH 3/3] Btrfs-progs: list snapshots by generation
-References: <1343713776-14232-1-git-send-email-liubo2009@cn.fujitsu.com> <1343713776-14232-3-git-send-email-liubo2009@cn.fujitsu.com>
-In-Reply-To: <1343713776-14232-3-git-send-email-liubo2009@cn.fujitsu.com>
-Content-Type: text/plain; charset=ISO-8859-1
+	id S1754516Ab2GQKST (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Tue, 17 Jul 2012 06:18:19 -0400
+From: David Sterba <dsterba@suse.cz>
+To: linux-btrfs@vger.kernel.org
+Cc: chris.mason@fusionio.com, David Sterba <dsterba@suse.cz>
+Subject: [PATCH] btrfs-progs: mkfs: create root directory with 755 permissions
+Date: Tue, 17 Jul 2012 12:18:10 +0200
+Message-Id: <1342520290-23803-1-git-send-email-dsterba@suse.cz>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hi Bo,
+That's what all other mkfs do and there's no reason for 0555.
 
-On 07/31/2012 07:49 AM, Liu Bo wrote:
-> The idea is that we usually use snapshot to backup/restore our data, and the
-> common way can be a cron script which makes lots of snapshots, so we can end
-> up with spending some time to find the latest snapshot to restore.
-> 
-> This adds a feature for 'btrfs subvolume list' to let it list snapshots by their
-> _created_ generation.
-> 
-> What we need to do is just to list them in descending order and get the latest
-> snapshot.  What's more, we can find the oldest snapshot as well by listing
-> snapshots in ascending order.
-> 
-> Signed-off-by: Liu Bo <liubo2009@cn.fujitsu.com>
-> ---
->  btrfs-list.c     |  176 ++++++++++++++++++++++++++++++++++++++++++++++++++++--
->  cmds-subvolume.c |   19 +++++-
->  2 files changed, 185 insertions(+), 10 deletions(-)
-> 
-[....]
->  
->  static const char * const cmd_subvol_list_usage[] = {
-> -	"btrfs subvolume list [-p] <path>",
-> +	"btrfs subvolume list [-ps] <path>",
->  	"List subvolumes (and snapshots)",
->  	"",
-> -	"-p     print parent ID",
-> +	"-p           print parent ID",
-> +	"-s value     list snapshots with generation in ascending/descending order",
-> +	"             (1: ascending, 0: descending)",
+Signed-off-by: David Sterba <dsterba@suse.cz>
+---
+ utils.c |    2 +-
+ 1 files changed, 1 insertions(+), 1 deletions(-)
 
-Please change the user interface. I suggest something like:
-
--s|-S		list snapshots with generation in ascending|descending
-		order	
-
-Or better
-
--s		sort by generation
--P		sort by path
--r		reverse the sort order
-
-
-Anyway, whichever your choice will be, please remember to update the man
-page too.
-
->  	NULL
->  };
-
-[...]
+diff --git a/utils.c b/utils.c
+index aade9e2..cfe7c49 100644
+--- a/utils.c
++++ b/utils.c
+@@ -614,7 +614,7 @@ int btrfs_make_root_dir(struct btrfs_trans_handle *trans,
+ 	btrfs_set_stack_inode_size(&inode_item, 0);
+ 	btrfs_set_stack_inode_nlink(&inode_item, 1);
+ 	btrfs_set_stack_inode_nbytes(&inode_item, root->leafsize);
+-	btrfs_set_stack_inode_mode(&inode_item, S_IFDIR | 0555);
++	btrfs_set_stack_inode_mode(&inode_item, S_IFDIR | 0755);
+ 	btrfs_set_stack_timespec_sec(&inode_item.atime, now);
+ 	btrfs_set_stack_timespec_nsec(&inode_item.atime, 0);
+ 	btrfs_set_stack_timespec_sec(&inode_item.ctime, now);
+-- 
+1.7.9
 

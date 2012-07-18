@@ -1,102 +1,74 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-ob0-f174.google.com ([209.85.214.174]:58892 "EHLO
-	mail-ob0-f174.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1755199Ab2GRRpV convert rfc822-to-8bit (ORCPT
+Received: from magic.merlins.org ([209.81.13.136]:50993 "EHLO
+	mail1.merlins.org" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1751530Ab2GRSBL (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 18 Jul 2012 13:45:21 -0400
-Received: by obbuo13 with SMTP id uo13so2426703obb.19
-        for <linux-btrfs@vger.kernel.org>; Wed, 18 Jul 2012 10:45:20 -0700 (PDT)
-MIME-Version: 1.0
-Date: Wed, 18 Jul 2012 20:45:20 +0300
-Message-ID: <CAHf9xvbz92KdUrXHhEFyEqwFhA97yTw7=10YC8YyCMxDZ20_Yw@mail.gmail.com>
-Subject: btrfs send/receive: if new inode ino is less than its new directory
- ino, incorrect path is sent
-From: Alex Lyakas <alex.bolshoy.btrfs@gmail.com>
-To: Alexander Block <ablock84@googlemail.com>
+	Wed, 18 Jul 2012 14:01:11 -0400
+Date: Wed, 18 Jul 2012 11:01:10 -0700
+From: Marc MERLIN <marc@merlins.org>
+To: Liu Bo <liubo2009@cn.fujitsu.com>
 Cc: linux-btrfs@vger.kernel.org
-Content-Type: text/plain; charset=UTF-8
+Subject: Re: Long btrfs hangs during suspend to RAM / BTRFS warning (device
+Message-ID: <20120718180110.GC16899@merlins.org>
+References: <20120626193637.GA27856@merlins.org> <20120626193637.GA27856@merlins.org> <20120627013818.GA3556@merlins.org> <20120627052012.GA32533@merlins.org> <20120629123624.GS7472@merlins.org> <20120702195820.GA10655@merlins.org> <4FF3DB87.5090405@cn.fujitsu.com> <20120704151556.GD6807@merlins.org> <4FF595D8.6040509@cn.fujitsu.com> <20120705143417.GB21630@merlins.org>
+MIME-Version: 1.0
+Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <20120705143417.GB21630@merlins.org>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hi Alexander,
-I am testing different scenarios in order to better understand the
-non-trivial magic of
-get_cur_path()/will_overwrite_ref()/did_overwrite_ref()/did_overwrite_first_ref().
-I hit the following issue, when testing full-send:
+On Thu, Jul 05, 2012 at 07:34:17AM -0700, Marc MERLIN wrote:
+> On Thu, Jul 05, 2012 at 09:25:44PM +0800, Liu Bo wrote:
+> > On 07/04/2012 11:15 PM, Marc MERLIN wrote:
+> > I'd expect to get some info from the following one, but I fails.
+> > 
+> > Is it reproducible on your box?
+> 
+> It was reproducible when I reported it, but not anymore now. I couldn't stay
+> in a state where I was getting hangs and corruption.
+> 
+> I had problems with btrfs-delalloc- taking most of the CPU and deadlocking
+> the machine for minutes or even over half an hour. I'm pretty sure it was
+> related to the fact that I only had 10GB free on my partition (including
+> lots of snapshots).
+> Now that I'm back to >40GB free, I haven't had the problem come back.
+> 
+> How about these I reported:
+> [102231.845170] btrfs no csum found for inode 3910562 start 0
+> [102231.855415] btrfs_readpage_end_io_hook: 26 callbacks suppressed
+> [102231.855418] btrfs csum failed ino 3910562 off 0 csum 3145117582 private 0
+> [102231.999555] btrfs no csum found for inode 3910588 start 294912
+> [102232.009479] btrfs csum failed ino 3910588 off 294912 csum 697692408 private 0
+> [102232.142602] btrfs no csum found for inode 3910588 start 360448
+> [102232.142661] btrfs no csum found for inode 3910588 start 393216
+> [102232.968939] BTRFS warning (device dm-0): Aborting unused transaction.
+> [102234.107914] BTRFS warning (device dm-0): Aborting unused transaction.
+> [102235.218139] BTRFS warning (device dm-0): Aborting unused transaction.
+> 
+> I know I got corruption since I saw some of my files being damaged, but 
+> are they useful in any way, or not so much?
 
-This is my source subvolume (inode numbers are written):
-tree -A  --inodes --noreport /mnt/src/tmp/
-/mnt/src/tmp/
-└── [    270]  dir2
-    └── [    268]  file1_nod
+Just to put a lid (maybe) on that thread, I now think that it's very
+possible my btrfs hangs when the drive was almost full (10GB remaining
+though) were due to my Crucial RealSSD C300, which has just mostly died
+yesterday after (I think) the firmware got too many problems trying to remap
+blocks (garbage collection) since I wasn't using TRIM.
+(yes, I had the latest 007 firmware on the SSD).
 
-As you see, the ino(file1_nod) < ino(dir2). It is very easy to
-achieve: first create the file, then the dir, and then move the file
-to dir.
+I don't know that the SSD caused the corruption I saw in some files and that
+went away when I dropped the latest btrfs snapshot, but at this point I'm
+pretty sure that the SSD went into emergency garbage collection mode when
+its space was running low, and in turn was causing btrfs to hang.
 
-During send the following happens (I augmented the send code with many prints):
+Sorry for the most likely false alarm (except for snapshot corruption which
+is likely btrfs related).
 
-file1_nod is sent first. Since its a new inode, it is sent as an
-orphan. When recording its reference, __record_new_ref() calls
-get_cur_path() for its parent (270). Then __get_cur_name_and_parent()
-is called on 270, which calls is_inode_existent(), which calls
-get_cur_inode_state(), and the state of the parent is "will_create".
-So __get_cur_name_and_parent() creates an orphan name for it, and
-finally the new reference for 268 is recorded as:
-o270-136-0/file1_nod:
+I'll post another message about no TRIM with dmcrypt and possible ensuing
+SSD problems.
 
-[changed_cb:4102] key(256 INODE_ITEM 0) : NEW
-[changed_cb:4102] key(256 INODE_REF 256) : NEW
-[changed_cb:4102] key(268 INODE_ITEM 0) : NEW
-[send_create_inode:2407] NEW ino(268,135) type=0100000, path=[o268-135-0]
-[changed_cb:4102] key(268 INODE_REF 270) : NEW
-[get_cur_inode_state:1475] (270,136): L(EX,136)
-R(NE,18446744072099047770) sp=268 ==> will_create
-[is_inode_existent:1498] (270,136): NOT existent
-[__get_cur_name_and_parent:1918] ino(270,136) not existent => unique
-name [o270-136-0]
-[get_cur_path:2051] ino(0,0) cur_path=[o270-136-0]
-[__record_new_ref:2911] record new ref [o270-136-0/file1_nod]
-
-Then process_recorded_refs() sees that 268 is still orphan, so it
-sends "rename" to its valid place, but the problem is that its parent
-dir was not sent yet (and its parent dir is also an orphan):
-[process_recorded_refs:2601] ino(268,135): start with refs
-[28118.347602] [process_recorded_refs:2651] ino(268,135): new=1,
-did_overwrite_first_ref=0, is_orphan=1, valid_path=[o268-135-0]
-[28118.347605] [process_recorded_refs:2701] ino(268,135): is orphan,
-move it: [o268-135-0]=>[o270-136-0/file1_nod]
-[28118.347610] [process_recorded_refs:2837] checking dir(270,136)
-[28118.347612] [process_recorded_refs:2869] ino(268,135) done with refs
-
-Now the parent dir is processed:
-[changed_cb:4102] key(270 INODE_ITEM 0) : NEW
-[send_create_inode:2407] NEW ino(270,136) type=040000, path=[o270-136-0]
-[changed_cb:4102] key(270 INODE_REF 256) : NEW
-[get_cur_path:2051] ino(256,133) cur_path=[]
-[__record_new_ref:2911] record new ref [dir2]
-[process_recorded_refs:2601] ino(270,136): start with refs
-[process_recorded_refs:2651] ino(270,136): new=1,
-did_overwrite_first_ref=0, is_orphan=1, valid_path=[o270-136-0]
-[process_recorded_refs:2701] ino(270,136): is orphan, move it:
-[o270-136-0]=>[dir2]
-[process_recorded_refs:2837] checking dir(256,133)
-[get_cur_inode_state:1475] (256,133): L(EX,133)
-R(NE,18446612135413283512) sp=270 ==> did_create
-[process_recorded_refs:2869] ino(270,136) done with refs
-
-Nothing special here, the parent is first sent as an orphan, and then
-renamed to its valid name, but it's too late.
-
-During receive:
-ERROR: rename o268-135-0 -> o270-136-0/file1_nod failed. No such file
-or directory
-
-I am not yet sure where is the proper place to fix this, I just wanted
-to report it first. Basically, I think that when sending any kind of
-A_PATH, it is needed to ensure that path components exist, either as
-orphan or real path (by sending them out-of-order if needed?). But I
-am not yet sure where is the core place that should ensure this.
-
-Thanks,
-Alex.
+Marc
+-- 
+"A mouse is a device used to point at the xterm you want to type in" - A.S.R.
+Microsoft is to operating systems ....
+                                      .... what McDonalds is to gourmet cooking
+Home page: http://marc.merlins.org/  

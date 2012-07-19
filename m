@@ -1,92 +1,379 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-wi0-f178.google.com ([209.85.212.178]:38579 "EHLO
-	mail-wi0-f178.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1754383Ab2GKCBe (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 10 Jul 2012 22:01:34 -0400
-Received: by wibhr14 with SMTP id hr14so594935wib.1
-        for <linux-btrfs@vger.kernel.org>; Tue, 10 Jul 2012 19:01:33 -0700 (PDT)
+Received: from cn.fujitsu.com ([222.73.24.84]:8267 "EHLO song.cn.fujitsu.com"
+	rhost-flags-OK-FAIL-OK-OK) by vger.kernel.org with ESMTP
+	id S1751091Ab2GSJYo (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Thu, 19 Jul 2012 05:24:44 -0400
+Received: from fnstmail02.fnst.cn.fujitsu.com (tang.cn.fujitsu.com [127.0.0.1])
+	by tang.cn.fujitsu.com (8.14.3/8.13.1) with ESMTP id q6J9Ofqd016453
+	for <linux-btrfs@vger.kernel.org>; Thu, 19 Jul 2012 17:24:41 +0800
+Message-ID: <5007D240.60404@cn.fujitsu.com>
+Date: Thu, 19 Jul 2012 17:24:16 +0800
+From: Liu Bo <liubo2009@cn.fujitsu.com>
 MIME-Version: 1.0
-In-Reply-To: <4FFCD8DA.3000009@cn.fujitsu.com>
-References: <CAMVG2stz6ED4D-YzST7V59jFsDS0gcB4cXrVd8ZTpXohRZh6Hw@mail.gmail.com>
-	<4FF12190.9090005@cn.fujitsu.com>
-	<CAMVG2stBLy9U6GyLty=EsNrPKbEasLsnF5rcQW2EO0DOtOK0Og@mail.gmail.com>
-	<4FFCD8DA.3000009@cn.fujitsu.com>
-Date: Wed, 11 Jul 2012 10:01:33 +0800
-Message-ID: <CAMVG2svXOrfA=TRQPKWVDPWGTYfKrJ3AoNPFLiNmNqjKk5d5GA@mail.gmail.com>
-Subject: Re: Please hammer my for-linus branch
-From: Daniel J Blueman <daniel@quora.org>
-To: Liu Bo <liubo2009@cn.fujitsu.com>
-Cc: Chris Mason <chris.mason@fusionio.com>,
-        Linux BTRFS <linux-btrfs@vger.kernel.org>,
-        Josef Bacik <jbacik@fusionio.com>
-Content-Type: text/plain; charset=ISO-8859-1
+To: Linux Btrfs <linux-btrfs@vger.kernel.org>
+Subject: [PATCH] Xfstests/254: add more cases for testing btrfs snapshot in
+ 254
+Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 11 July 2012 09:37, Liu Bo <liubo2009@cn.fujitsu.com> wrote:
-> On 07/10/2012 08:18 PM, Daniel J Blueman wrote:
->
->> On 2 July 2012 12:20, Liu Bo <liubo2009@cn.fujitsu.com> wrote:
->>> On 07/02/2012 11:35 AM, Daniel J Blueman wrote:
->>>
->>>>> Hi everyone,
->>>>>
->>>>> I've got a nice set of fixes from Josef, Jan, Ilya and others in my
->>>>> for-linus branch:
->>>>>
->>>>> git://git.kernel.org/pub/scm/linux/kernel/git/mason/linux-btrfs.git for-linus
->>>>>
->>>>> Some of the changes are fixes for the tree logging code, so I ran some
->>>>> extra crash runs against them Friday night.
->>>>>
->>>>> I ended up with a new crash in the tree log directory deletion replay
->>>>> code, so I didn't send out the pull request to Linus.
->>>>>
->>>>> It isn't clear yet if the new crash is because I was testing differently
->>>>> or if it is a regression.  I'm nailing it down this weekend, but please
->>>>> give my for-linus a shot.
->>>> With this branch (3.4.0), my test has consistently been hitting the
->>>> BUG_ON(owner < BTRFS_FIRST_FREE_OBJECTID) in
->>>> insert_inline_extent_backref [1]. This is followed by a string of
->>>> other issues [2] and a hard lockup, so I used netconsole to collect
->>>> this.
->>>>
->>>> I'm preparing my btrfs test for xfstests integration, but can slip you
->>>> it if interested. It hits this case in ~30s.
->>>>
->>>
->>> IMO the BUG_ON is meant to avoid to mix 'log tree' in, it should be:
->>>
->>> BUG_ON(owner < BTRFS_FIRST_FREE_OBJECTID && root_objectid == BTRFS_TREE_LOG_OBJECTID);
->>>
->>> This should help you, can you give it a try?
->>
->> Bo, this did address the assertion I was tripping, so looks good from
->> here; it allowed me to report the second (different) assertion of
->> course.
->>
->> If you still think the fix is sound, is it a good idea for 3.5-rc7?
->
->
-> Hi Daniel,
->
-> I'm sorry but it is not ready yet, as it does not catch the root cause of the bug.
->
-> Josef has found that the bug comes from disabling merging delayed refs and is working on the bug
-> with Arne.  As the root cause has been found, the bug will be fixed soon IMO.
+From: Zhou Bo <zhoub-fnst@cn.fujitsu.com>
 
-Now I see the two issues are connected.
+This patch adds more cases in 254 for testing btrfs snapshot.
 
-> Btw, while testing with your great test scripts, I also post patches for two bugs, which may have address your
-> other issues.  Their links are
->
-> http://www.spinics.net/lists/linux-btrfs/msg17761.html
-> http://www.spinics.net/lists/linux-btrfs/msg17764.html
+Signed-off-by: Zhou Bo <zhoub-fnst@cn.fujitsu.com>
+---
+ 254 |  321 ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++-
+ 1 files changed, 317 insertions(+), 4 deletions(-)
 
-Great work indeed!
-
-Thanks Bo,
-  Daniel
+diff --git a/254 b/254
+index 7b74a02..9c320d0 100755
+--- a/254
++++ b/254
+@@ -23,13 +23,14 @@
+ #
+ # creator
+ owner=josef@redhat.com
+-
++owner=zhoub-fnst@cn.fujitsu.com
++n=0
+ seq=`basename $0`
+ echo "QA output created by $seq"
+ 
+ here=`pwd`
+ tmp=/tmp/$$
+-status=1	# failure is the default!
++status=0	# success is the default!
+ 
+ _cleanup()
+ {
+@@ -47,7 +48,7 @@ _supported_fs btrfs
+ _supported_os Linux
+ _require_scratch
+ 
+-_scratch_mkfs > /dev/null 2>&1
++_scratch_mkfs_sized `expr 1024 \* 1024 \* 1024` > /dev/null 2>&1
+ _scratch_mount
+ 
+ # First test basic snapshotting
+@@ -105,4 +106,316 @@ _scratch_remount
+ echo "List root dir"
+ ls $SCRATCH_MNT
+ 
+-status=0 ; exit
++# The following is added in 2012/07/12, add more cases for testing snapshot 
++
++_prepare_snapshot()
++{
++	_scratch_remount > /dev/null
++	btrfs sub snap $SCRATCH_MNT $SCRATCH_MNT/basesnapshot > /dev/null 2>>$here/$seq.full
++	btrfs sub snap -r $SCRATCH_MNT $SCRATCH_MNT/readonlysnapshot > /dev/null 2>>$here/$seq.full
++	_scratch_unmount > /dev/null 2>>$here/$seq.full
++	VALID_SUBVOLUME="basesnapshot"
++	VALID_RO_SUBVOLUME="readonlysnapshot"
++	SNAPSHOTSTR="snapshot"
++	FILE1="file1-"
++	FILE2="file2-"
++	MVFILE2="newfile2-"
++	DIR1="dir1-"
++	DIR2="dir2-"
++	MVDIR2="newdir2-"
++	MVSNAPSHOT="mvsnapshot-"
++	SRCSUBVOL="srcsubvol-"
++}
++
++_parse_options()
++{
++	SOURCE_TARGET="$1"
++	case $SOURCE_TARGET in
++		"1")
++			SOURCE_SUBVOLUME="$VALID_SUBVOLUME"
++			;;
++	esac
++	SOURCE_READ="$2"
++	case $SOURCE_READ in
++		"1")
++			SOURCE_SUBVOLUME="$VALID_RO_SUBVOLUME"
++			;;
++	esac
++	DESTINATION_TARGET="$3"
++	case $DESTINATION_TARGET in
++		"1")
++			DESTINATION_SUBVOLUME=$SNAPSHOTSTR$n
++			;;
++	esac
++	DESTINATION_READ="$4"
++	case $DESTINATION_READ in
++		"1")
++			SNAPSHOTOPT_STR="-r"
++			;;
++		"2")
++			SNAPSHOTOPT_STR=""
++			;;
++	esac
++	MOUNT_OPT="$5"
++	case $MOUNT_OPT in
++		"1")
++			MOUNT_OPT_STR=""
++			;;
++		"2")
++			MOUNT_OPT_STR="-r"
++			;;
++		"3")
++			MOUNT_OPT_STR="-o nodatacow"
++			;;
++	esac
++	FILE_OPERATION_OPT="$6"
++	SNAPSHOT_ACTION_OPT="$7"
++	TEST_DIR1=$DIR1$n
++	TEST_DIR2=$DIR2$n
++	TEST_MVDIR2=$MVDIR2$n
++	TEST_FILE1=$FILE1$n
++	TEST_FILE2=$FILE2$n
++	TEST_MVFILE2=$MVFILE2$n
++	TEST_MVSNAPSHOT=$MVSNAPSHOT$n
++	SRC_SUBVOLUME=$SRCSUBVOL$n
++	n=$[n+1]
++}
++
++_create_file()
++{
++	mkdir $SRC_SUBVOLUME/$TEST_DIR1 $SRC_SUBVOLUME/$TEST_DIR2 > /dev/null
++	touch $SRC_SUBVOLUME/$TEST_FILE1 $SRC_SUBVOLUME/$TEST_FILE2 > /dev/null
++}
++
++_do_file_operation()
++{
++	btrfs filesystem balance $SCRATCH_MNT > /dev/null 2>&1 &
++	rm -rf $SRC_SUBVOLUME/$TEST_DIR1 $SRC_SUBVOLUME/$TEST_FILE1 > /dev/null
++	mv $SRC_SUBVOLUME/$TEST_DIR2 $SRC_SUBVOLUME/$TEST_MVDIR2 > /dev/null
++	mv $SRC_SUBVOLUME/$TEST_FILE2 $SRC_SUBVOLUME/$TEST_MVFILE2 > /dev/null
++}
++
++_do_snapshot_action()
++{
++	if [ "$SNAPSHOT_ACTION_OPT" == 2 ];then
++		btrfs subvolume delete $DESTINATION_SUBVOLUME > /dev/null 2>>$here/$seq.full
++	fi
++	if [ "$SNAPSHOT_ACTION_OPT" == 3 ];then
++		mv $DESTINATION_SUBVOLUME $TEST_MVSNAPSHOT > /dev/null 2>>$here/$seq.full
++	fi
++}
++
++_check_snapshot()
++{
++	if [ "$SNAPSHOT_ACTION_OPT" == 2 ];then
++		if [ -d "$DESTINATION_SUBVOLUME" ];then
++			echo "case $n fails, deleting snapshot fails." >> $here/$seq.full
++			status=1
++		fi
++	fi
++	if [ "$SNAPSHOT_ACTION_OPT" == 3 ];then
++		if [ ! -d "$TEST_MVSNAPSHOT" ];then
++			echo "case $n fails, renaming snapshot fails." >> $here/$seq.full
++			status=1
++		fi
++	fi
++
++}
++
++_check_file()
++{
++	cd $DESTINATION_SUBVOLUME
++	if [ "$FILE_OPERATION_OPT" == 2 ];then
++		if [ -d "$TEST_DIR1" ];then
++			echo "case $n fails, before snapshot we delete dir in src, but it exists in snap" >> $here/$seq.full
++			status=1
++		fi
++		if [ -f "$TEST_FILE1" ];then
++			echo "case $n fails, before snapshot we delete file in src, but it exists in snap" >> $here/$seq.full
++			status=1
++		fi
++		if [ -d "$TEST_DIR2" -o ! -d "$TEST_MVDIR2" ];then
++			echo "case $n fails, before snapshot we rename dir in src, but it remains in snap" >> $here/$seq.full
++			status=1
++
++		fi
++		if [ -f "$TEST_FILE2" -o ! -f "$TEST_MVFILE2" ];then
++			echo "case $n fails, before snapshot we rename file in src,but it remains in snap" >> $here/$seq.full
++			status=1
++		fi
++
++	else
++		if [ ! -d "$TEST_DIR1" ];then
++			echo "case $n fails, after snapshot we delete dir in src, but it does't exist in snap" >> $here/$seq.full
++			status=1
++		fi
++		if [ ! -f "$TEST_FILE1" ];then
++			echo "case $n fails, after snapshot we delete file in src, but it does't exist in snap" >> $here/$seq.full
++			status=1
++
++		fi
++		if [ ! -d "$TEST_DIR2" -o -d "$TEST_MVDIR2" ];then
++			echo "case $n fails, after snapshot we rename dir in src, but it also changes in snap" >> $here/$seq.full
++			status=1
++		fi
++		if [ ! -f "$TEST_FILE2" -o -f "$TEST_MVFILE2" ];then
++			echo "case $n fails, after snapshot we rename file in src, but it also changes in snap" >> $here/$seq.full
++			status=1
++		fi
++	fi
++	btrfs filesystem balance cancel $SCRATCH_MNT > /dev/null 2>&1
++	wait 
++	cd ..
++}
++
++_test_snapshot_ro()
++{
++	btrfs sub snap $SNAPSHOTOPT_STR $SOURCE_SUBVOLUME $DESTINATION_SUBVOLUME > /dev/null 2>&1
++	if [ "$?" == 0  ];then
++		if [ "$MOUNT_OPT" != 1 ];then
++			echo "case $n fails, btrfs snapshot fails." >> $here/$seq.full
++			status=1
++		else
++			if [ "$DESTINATION_READ" == 1 ];then
++				if [ -w "$DESTINATION_SUBVOLUME" ];then
++					echo "case $n fails, snapshot should be readonly." >> $here/$seq.full
++					status=1
++				fi
++			else
++				if [ ! -w "$DESTINATION_SUBVOLUME" ];then
++					echo  "case $n fails, snapshot should be writable." >> $here/$seq.full
++					status=1
++				fi
++			fi
++		fi
++		
++	fi
++}
++
++_test_snapshot_operation()
++{	
++	btrfs sub create $SRC_SUBVOLUME > /dev/null 2>>$here/$seq.full
++	_create_file
++	if [ "$FILE_OPERATION_OPT" == 2 ];then
++		_do_file_operation
++	fi
++	btrfs sub snap $SRC_SUBVOLUME $DESTINATION_SUBVOLUME > /dev/null 2>>$here/$seq.full
++	if [ "$?" == 0 ];then
++		if [ "$FILE_OPERATION_OPT" == 3 ];then
++			_do_file_operation
++		fi 
++		if [ "$FILE_OPERATION_OPT" -eq "2" -o "$FILE_OPERATION_OPT" -eq "3" ];then
++			_check_file
++		fi
++		_do_snapshot_action
++		_check_snapshot
++	else
++		status=1
++		echo "case $n fails, btrfs snapshot fails." >> $here/$seq.full
++	fi
++}
++
++_test_process()
++{
++	_scratch_mount "$MOUNT_OPT_STR"
++	cd $SCRATCH_MNT
++	if [ "$FILE_OPERATION_OPT" == 0 ];then
++			_test_snapshot_ro
++	else
++			_test_snapshot_operation
++	fi
++	cd ~
++	_scratch_unmount 
++	_check_test_fs 
++	if [ "$?" != 0 ];then
++		echo "case $n fails, btrfsck fails." >> $here/$seq.full
++		status=1
++	fi
++}
++
++rm -rf $here/$seq.full
++_prepare_snapshot
++
++# Src subvol | Src readonly | Des subvol | Des readonly | Mount opt | File operation | Snap operation
++
++# case 1	
++# Valid Src | RO | Valid Des | RO | Default | Nothing | Create
++_parse_options 1 1 1 1 1 0 0
++_test_process
++
++# case 2
++# Valid Src | RO | Valid Des | Writable | Default | Nothing | Create
++_parse_options 1 1 1 2 1 0 0
++_test_process
++
++# case 3
++# Valid Src | Writable | Valid Des | RO | Default | Nothing | Create
++_parse_options 1 2 1 1 1 0 0
++_test_process
++
++# case 4
++# Valid Src | Writable | Valid Des | Writable | Default | Nothing | Create
++_parse_options 1 2 1 2 1 0 0
++_test_process
++
++# case 5
++# Valid Src | RO | Valid Des | RO | -r | Nothing | Create
++_parse_options 1 1 1 1 2 0 0
++_test_process
++
++# case 6
++# Valid Src | RO | Valid Des | Writable | -r | Nothing | Create
++_parse_options 1 1 1 2 2 0 0
++_test_process
++
++# case 7
++# Valid Src | Writable | Valid Des | RO | -r | Nothing | Create
++_parse_options 1 2 1 1 2 0 0
++_test_process
++
++# case 8
++# Valid Src | Writable | Valid Des | Writable | -r | Nothing | Create
++_parse_options 1 2 1 2 2 0 0
++_test_process
++
++# case 9
++# Valid Src | Writable | Valid Des | Writable | Default | Before snap | Delete
++_parse_options 1 2 1 2 1 2 2
++_test_process
++
++# case 10
++# Valid Src | Writable | Valid Des | Writable | Default | Before snap | Rename
++_parse_options 1 2 1 2 1 2 3
++_test_process
++
++# case 11
++# Valid Src | Writable | Valid Des | Writable | Default | After snap | Delete
++_parse_options 1 2 1 2 1 3 2
++_test_process
++
++# case 12
++# Valid Src | Writable | Valid Des | Writable | Default | After snap | Rename
++_parse_options 1 2 1 2 1 3 3
++_test_process
++
++# case 13
++# Valid Src | Writable | Valid Des | Writable | no datacow | Before snap | Delete
++_parse_options 1 2 1 2 3 2 2
++_test_process
++
++# case 14
++# Valid Src | Writable | Valid Des | Writable | no datacow | Before snap | Rename
++_parse_options 1 2 1 2 3 2 3
++_test_process
++
++# case 15
++# Valid Src | Writable | Valid Des | Writable | no datacow | After snap | Delete
++_parse_options 1 2 1 2 3 3 2
++_test_process
++
++# case 16
++# Valid Src | Writable | Valid Des | Writable | no datacow | After snap | Rename
++_parse_options 1 2 1 2 3 3 3
++_test_process
++
++exit
 -- 
-Daniel J Blueman
+1.6.0.6
+

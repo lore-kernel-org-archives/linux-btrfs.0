@@ -1,72 +1,56 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-ob0-f174.google.com ([209.85.214.174]:34767 "EHLO
-	mail-ob0-f174.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1753466Ab2GRMjP (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 18 Jul 2012 08:39:15 -0400
-Received: by obbuo13 with SMTP id uo13so2080641obb.19
-        for <linux-btrfs@vger.kernel.org>; Wed, 18 Jul 2012 05:39:14 -0700 (PDT)
+Received: from cn.fujitsu.com ([222.73.24.84]:9353 "EHLO song.cn.fujitsu.com"
+	rhost-flags-OK-FAIL-OK-OK) by vger.kernel.org with ESMTP
+	id S1750743Ab2GSBLc (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Wed, 18 Jul 2012 21:11:32 -0400
+Message-ID: <50075EAA.9030806@cn.fujitsu.com>
+Date: Thu, 19 Jul 2012 09:11:06 +0800
+From: Liu Bo <liubo2009@cn.fujitsu.com>
 MIME-Version: 1.0
-In-Reply-To: <5006A5E8.4050907@cn.fujitsu.com>
-References: <1341919719-13825-1-git-send-email-liubo2009@cn.fujitsu.com>
-	<CAHf9xvZmDPTqSHK3b2WLH1jhkQo4RqpMqPpX7i1wzh2CHuDZWg@mail.gmail.com>
-	<5006A5E8.4050907@cn.fujitsu.com>
-Date: Wed, 18 Jul 2012 15:39:14 +0300
-Message-ID: <CAHf9xvYb8TAw3VMccRZzWuDF2N+arWvNuAXkApSxRmuRMUNexQ@mail.gmail.com>
-Subject: Re: [PATCH 1/2] Btrfs: fix btrfs_is_free_space_inode to recognize
- btree inode
-From: Alex Lyakas <alex.bolshoy.btrfs@gmail.com>
-To: Liu Bo <liubo2009@cn.fujitsu.com>
-Cc: linux-btrfs@vger.kernel.org
+To: David Sterba <dave@jikos.cz>
+CC: linux-btrfs@vger.kernel.org, chris.mason@fusionio.com, JBacik@fusionio.com
+Subject: Re: [PATCH v3] Btrfs: improve multi-thread buffer read
+References: <1342461925-22495-1-git-send-email-liubo2009@cn.fujitsu.com> <20120718115735.GI11226@twin.jikos.cz>
+In-Reply-To: <20120718115735.GI11226@twin.jikos.cz>
 Content-Type: text/plain; charset=ISO-8859-1
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Wed, Jul 18, 2012 at 3:02 PM, Liu Bo <liubo2009@cn.fujitsu.com> wrote:
-> On 07/18/2012 06:02 PM, Alex Lyakas wrote:
->
-> More or less.
->
-> As its name shows, a free space inode's data (you name it extents) consists of
-> free space info, meanwhile, a free space inode is issued to a block group,
-> so the free space info actually stands for free space in the block group:
->
-> |<-    a block group len    ->|
-> |----vvv----vvv-------vvv-----|
->
-> 'v' : occupied.
-> '-' : available. (free space)
->
-> these free space info are indexed in a rbtree in memory, and each entry has [start, len].
+On 07/18/2012 07:57 PM, David Sterba wrote:
 
-Thanks, it makes sense with what I saw in the code, just could not
-figure how this free-space inode's data is being read into memory.
+> On Mon, Jul 16, 2012 at 02:05:25PM -0400, Liu Bo wrote:
+>> v2->v3: adopt kernel native pagevec instead of kmalloc.
+> 
+> Do we really use the pagevec features here? It looks more like a fancy
+> way to employ a simple array ...
+> 
+> And with a simple array we could use 16 page pointers covering 16 * 4k =
+> 64k bytes which looks more friendly than 14 * 4K = 56K (available in a
+> pagevec). This may have a negative effect on the troughput, but I
+> haven't measured that. Can you please benchmark it against pagevec?
+> 
 
->
->> Also, I don't see anywhere BTRFS_BTREE_INODE_OBJECTID in the tree root
->> tree. So what is this "btree inode" that you mention?
->>
->
->
-> The code refers to disk_io.c, in the function 'open_ctree()' you can see the definition.
->
 
-I saw it there, but not on disk. So now I see that it's kind of a
-special "top" inode, used for ... something, and this inode is not
-stored anywhere on-disk.
+Thanks for the advice.
 
-Thanks, now I understand your patch. Also, I understand now that
-FREE_INO items sit in the subvolume file tree (and perhaps also in the
-root tree), because they need to track free inos for distinct ino
-spaces.
+Yes, it is a simple array that is needed.
 
-> Basically btree inode's data stands for btrfs's metadata, I think you can find something
-> in btrfs's wiki page?
+Indeed I even tried 128 page array, with which I can get the biggest improvement on my box.
+Basically in range [1, 128], the more pages in the array, the bigger improvement we'll get.
 
->
->
-> And thanks for your energy on btrfs! :)
+But as Chris suggested, my test is really a race case in practical use, half of improvement
+is somehow enough, so we turn to use pagevec struct because it is closer to how we solve
+similar problems in other parts of the kernel.
 
-Thanks for helping.
+thanks,
+liubo
 
-Alex.
+> 
+> david
+> --
+> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
+> the body of a message to majordomo@vger.kernel.org
+> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+> 
+
+

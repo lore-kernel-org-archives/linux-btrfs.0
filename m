@@ -1,16 +1,14 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([222.73.24.84]:8267 "EHLO song.cn.fujitsu.com"
+Received: from cn.fujitsu.com ([222.73.24.84]:1734 "EHLO song.cn.fujitsu.com"
 	rhost-flags-OK-FAIL-OK-OK) by vger.kernel.org with ESMTP
-	id S1751091Ab2GSJYo (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 19 Jul 2012 05:24:44 -0400
-Received: from fnstmail02.fnst.cn.fujitsu.com (tang.cn.fujitsu.com [127.0.0.1])
-	by tang.cn.fujitsu.com (8.14.3/8.13.1) with ESMTP id q6J9Ofqd016453
-	for <linux-btrfs@vger.kernel.org>; Thu, 19 Jul 2012 17:24:41 +0800
-Message-ID: <5007D240.60404@cn.fujitsu.com>
-Date: Thu, 19 Jul 2012 17:24:16 +0800
+	id S1750854Ab2GSK1e (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Thu, 19 Jul 2012 06:27:34 -0400
+Message-ID: <5007E0FB.9040208@cn.fujitsu.com>
+Date: Thu, 19 Jul 2012 18:27:07 +0800
 From: Liu Bo <liubo2009@cn.fujitsu.com>
 MIME-Version: 1.0
-To: Linux Btrfs <linux-btrfs@vger.kernel.org>
+To: xfs-oss <xfs@oss.sgi.com>
+CC: Linux Btrfs <linux-btrfs@vger.kernel.org>
 Subject: [PATCH] Xfstests/254: add more cases for testing btrfs snapshot in
  254
 Content-Type: text/plain; charset=UTF-8
@@ -376,4 +374,9 @@ index 7b74a02..9c320d0 100755
 +exit
 -- 
 1.6.0.6
+
+--
+To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
+the body of a message to majordomo@vger.kernel.org
+More majordomo info at  http://vger.kernel.org/majordomo-info.html
 

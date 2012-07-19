@@ -1,50 +1,34 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mondschein.lichtvoll.de ([194.150.191.11]:36126 "EHLO
-	mail.lichtvoll.de" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1751132Ab2GSOTk (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 19 Jul 2012 10:19:40 -0400
-From: Martin Steigerwald <Martin@lichtvoll.de>
-To: linux-btrfs@vger.kernel.org
-Subject: Re: Very slow samba file transfer speed... any ideas ?
-Date: Thu, 19 Jul 2012 16:19:38 +0200
-Cc: Shavi N <shavi64@gmail.com>, Bernhard Redl <bernhard@stinkt.kicks-ass.org>
-References: <CALa9hx1ojpNEYOr8-pLbcm3Y80+GNaeJBtnEugh-BZF4OkpAHw@mail.gmail.com> <201207191304.03829.Martin@lichtvoll.de> <CALa9hx0C8-PpDRFr9fZMtDW95=56XGYHQMnPt5nXOS=2r=tQUA@mail.gmail.com> (sfid-20120719_154602_474303_FE97A31F)
-In-Reply-To: <CALa9hx0C8-PpDRFr9fZMtDW95=56XGYHQMnPt5nXOS=2r=tQUA@mail.gmail.com>
+Received: from kivu.grabeuh.com ([212.85.152.17]:46028 "EHLO kivu.grabeuh.com"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1751239Ab2GSOtn (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Thu, 19 Jul 2012 10:49:43 -0400
+Received: from localhost (localhost [127.0.0.1])
+	by kivu.grabeuh.com (Postfix) with ESMTP id F17F3800152
+	for <linux-btrfs@vger.kernel.org>; Thu, 19 Jul 2012 16:49:40 +0200 (CEST)
+Received: from kivu.grabeuh.com ([127.0.0.1])
+	by localhost (kivu.grabeuh.com [127.0.0.1]) (amavisd-new, port 10024)
+	with LMTP id 9KIrFSdZ2Kyj for <linux-btrfs@vger.kernel.org>;
+	Thu, 19 Jul 2012 16:49:34 +0200 (CEST)
+Received: from [127.0.0.1] (nawak.grabeuh.com [212.85.154.15])
+	(using TLSv1 with cipher DHE-RSA-AES256-SHA (256/256 bits))
+	(No client certificate requested)
+	(Authenticated sender: jim)
+	by kivu.grabeuh.com (Postfix) with ESMTPSA id AD43DC5DD57
+	for <linux-btrfs@vger.kernel.org>; Thu, 19 Jul 2012 16:49:34 +0200 (CEST)
+Message-ID: <50081E7E.6080202@liotier.org>
+Date: Thu, 19 Jul 2012 16:49:34 +0200
+From: Jean-Marc Liotier <jm@liotier.org>
 MIME-Version: 1.0
-Content-Type: Text/Plain;
-  charset="windows-1252"
-Message-Id: <201207191619.39100.Martin@lichtvoll.de>
+To: linux-btrfs@vger.kernel.org
+Subject: State of "Hot data tracking and moving to faster devices" functionality
+ ?
+Content-Type: text/plain; charset=ISO-8859-1; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Am Donnerstag, 19. Juli 2012 schrieb Shavi N:
-> Hi,
-
-Hi Shavi,
-
-> Thanks.
-> 
-> This is the output:
-> btrfs:
-> $ dd if=/dev/zero of=/mnt/shared/misc/temp_file bs=1M count=1400
-> 1400+0 records in
-> 1400+0 records out
-> 1468006400 bytes (1.5 GB) copied, 1.56841 s, 936 MB/s
->
-> ext4:
-> $ dd if=/dev/zero of=/mnt/500/VirutalBox_VMs/thor/thor-data/temp_file
-> bs=1M count=1400
-> 1400+0 records in
-> 1400+0 records out
-> 1468006400 bytes (1.5 GB) copied, 4.98993 s, 294 MB/s
-
-Did you actually read and understand my mail?
-
-Do you really think that your local disks is/are yielding that 
-transferrate? (Unless you are using BTRFS RAID 0/10 on lots of disks.)
-
-Thanks,
--- 
-Martin 'Helios' Steigerwald - http://www.Lichtvoll.de
-GPG: 03B0 0D6C 0040 0710 4AFA  B82F 991B EAAC A599 84C7
+https://btrfs.wiki.kernel.org/index.php?title=Main_Page advertises "Hot 
+data tracking and moving to faster devices" but as far as I could find 
+(http://permalink.gmane.org/gmane.comp.file-systems.btrfs/15884) the 
+patches have never been merged. What is known about the future of this 
+sort of performance enhancement in BTRFS ?

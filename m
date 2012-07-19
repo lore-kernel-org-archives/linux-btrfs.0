@@ -1,34 +1,37 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from kivu.grabeuh.com ([212.85.152.17]:46028 "EHLO kivu.grabeuh.com"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1751239Ab2GSOtn (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 19 Jul 2012 10:49:43 -0400
-Received: from localhost (localhost [127.0.0.1])
-	by kivu.grabeuh.com (Postfix) with ESMTP id F17F3800152
-	for <linux-btrfs@vger.kernel.org>; Thu, 19 Jul 2012 16:49:40 +0200 (CEST)
-Received: from kivu.grabeuh.com ([127.0.0.1])
-	by localhost (kivu.grabeuh.com [127.0.0.1]) (amavisd-new, port 10024)
-	with LMTP id 9KIrFSdZ2Kyj for <linux-btrfs@vger.kernel.org>;
-	Thu, 19 Jul 2012 16:49:34 +0200 (CEST)
-Received: from [127.0.0.1] (nawak.grabeuh.com [212.85.154.15])
-	(using TLSv1 with cipher DHE-RSA-AES256-SHA (256/256 bits))
-	(No client certificate requested)
-	(Authenticated sender: jim)
-	by kivu.grabeuh.com (Postfix) with ESMTPSA id AD43DC5DD57
-	for <linux-btrfs@vger.kernel.org>; Thu, 19 Jul 2012 16:49:34 +0200 (CEST)
-Message-ID: <50081E7E.6080202@liotier.org>
-Date: Thu, 19 Jul 2012 16:49:34 +0200
-From: Jean-Marc Liotier <jm@liotier.org>
+Received: from mail-bk0-f46.google.com ([209.85.214.46]:64118 "EHLO
+	mail-bk0-f46.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1751014Ab2GSU6t (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>);
+	Thu, 19 Jul 2012 16:58:49 -0400
 MIME-Version: 1.0
-To: linux-btrfs@vger.kernel.org
-Subject: State of "Hot data tracking and moving to faster devices" functionality
- ?
-Content-Type: text/plain; charset=ISO-8859-1; format=flowed
+In-Reply-To: <50045DD4.3090305@oberhumer.com>
+References: <1326414530-10789-1-git-send-email-andi@firstfloor.org>
+	<4F16DFB0.2060404@oberhumer.com>
+	<50045DD4.3090305@oberhumer.com>
+Date: Thu, 19 Jul 2012 22:58:47 +0200
+Message-ID: <CAFLxGvwZJF1r30h26sJxu_dHF05LRjR5WSDPxFL3YBg9oR+o6A@mail.gmail.com>
+Subject: Re: ANNOUNCE: linux-kernel-lzo-20120716 - update LZO
+From: richard -rw- weinberger <richard.weinberger@gmail.com>
+To: "Markus F.X.J. Oberhumer" <markus@oberhumer.com>
+Cc: linux-kernel@vger.kernel.org, Andi Kleen <andi@firstfloor.org>,
+        chris.mason@oracle.com, linux-btrfs@vger.kernel.org,
+        Nitin Gupta <ngupta@vflare.org>,
+        Richard Purdie <rpurdie@openedhand.com>
+Content-Type: text/plain; charset=ISO-8859-1
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-https://btrfs.wiki.kernel.org/index.php?title=Main_Page advertises "Hot 
-data tracking and moving to faster devices" but as far as I could find 
-(http://permalink.gmane.org/gmane.comp.file-systems.btrfs/15884) the 
-patches have never been merged. What is known about the future of this 
-sort of performance enhancement in BTRFS ?
+Hi!
+
+On Mon, Jul 16, 2012 at 8:30 PM, Markus F.X.J. Oberhumer
+<markus@oberhumer.com> wrote:
+> I encourage all compression users to test and benchmark this new version,
+> and I also would ask some official LZO maintainer to convert the updated
+> source files into a GIT commit and possibly push it to Linus or linux-next.
+
+You could also send a patch yourself. :-)
+
+-- 
+Thanks,
+//richard

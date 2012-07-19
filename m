@@ -1,61 +1,65 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from moutng.kundenserver.de ([212.227.17.8]:60413 "EHLO
-	moutng.kundenserver.de" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1751156Ab2GKIgW (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 11 Jul 2012 04:36:22 -0400
-Date: Wed, 11 Jul 2012 10:36:20 +0200 (CEST)
-From: "haveaniceday@cv-sv.de" <haveaniceday@cv-sv.de>
-Reply-To: "haveaniceday@cv-sv.de" <haveaniceday@cv-sv.de>
-To: Anand Jain <Anand.Jain@oracle.com>
-Cc: linux-btrfs@vger.kernel.org
-Message-ID: <209200388.295540.1341995780489.JavaMail.open-xchange@email.1und1.de>
-In-Reply-To: <4FFD278D.20804@oracle.com>
-References: <4FF9B07C.8090209@cv-sv.de> <4FFA52BC.9010401@oracle.com> <4FFB4BB4.4080408@cv-sv.de> <4FFBCC1A.8020800@oracle.com> <1462124570.240756.1341911618590.JavaMail.open-xchange@email.1und1.de> <333721177.250041.1341918535801.JavaMail.open-xchange@email.1und1.de> <4FFD278D.20804@oracle.com>
-Subject: Re: btrfsck crashes
-MIME-Version: 1.0
-Content-Type: text/plain; charset=UTF-8
+Received: from cn.fujitsu.com ([222.73.24.84]:11007 "EHLO song.cn.fujitsu.com"
+	rhost-flags-OK-FAIL-OK-OK) by vger.kernel.org with ESMTP
+	id S1753660Ab2GQKw4 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Tue, 17 Jul 2012 06:52:56 -0400
+Received: from fnstmail02.fnst.cn.fujitsu.com (tang.cn.fujitsu.com [127.0.0.1])
+	by tang.cn.fujitsu.com (8.14.3/8.13.1) with ESMTP id q6HAqrO4006948
+	for <linux-btrfs@vger.kernel.org>; Tue, 17 Jul 2012 18:52:53 +0800
+From: Liu Bo <liubo2009@cn.fujitsu.com>
+To: <linux-btrfs@vger.kernel.org>
+Subject: [PATCH] Btrfs: cleanup for unused ref cache stuff
+Date: Thu, 19 Jul 2012 18:52:43 +0800
+Message-Id: <1342695163-28312-1-git-send-email-liubo2009@cn.fujitsu.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
+As ref cache has been removed from btrfs, there is no user on
+its lock and its check.
 
-Anand Jain <Anand.Jain@oracle.com> hat am 11. Juli 2012 um 09:13 geschrieben:
+Signed-off-by: Liu Bo <liubo2009@cn.fujitsu.com>
+---
+ fs/btrfs/ctree.h   |    3 ---
+ fs/btrfs/disk-io.c |    5 -----
+ 2 files changed, 0 insertions(+), 8 deletions(-)
 
->
->
->   If this is a deliberate corruption can you pls share the test-case ?
-No. It's a real life corruption on a file system used to back up some servers.
+diff --git a/fs/btrfs/ctree.h b/fs/btrfs/ctree.h
+index 84ac723..df031fb 100644
+--- a/fs/btrfs/ctree.h
++++ b/fs/btrfs/ctree.h
+@@ -1256,9 +1256,6 @@ struct btrfs_fs_info {
+ 	struct rb_root defrag_inodes;
+ 	atomic_t defrag_running;
+ 
+-	spinlock_t ref_cache_lock;
+-	u64 total_ref_cache_size;
+-
+ 	/*
+ 	 * these three are in extended format (availability of single
+ 	 * chunks is denoted by BTRFS_AVAIL_ALLOC_BIT_SINGLE bit, other
+diff --git a/fs/btrfs/disk-io.c b/fs/btrfs/disk-io.c
+index 047f637..6975ece 100644
+--- a/fs/btrfs/disk-io.c
++++ b/fs/btrfs/disk-io.c
+@@ -1910,7 +1910,6 @@ int open_ctree(struct super_block *sb,
+ 	INIT_LIST_HEAD(&fs_info->caching_block_groups);
+ 	spin_lock_init(&fs_info->delalloc_lock);
+ 	spin_lock_init(&fs_info->trans_lock);
+-	spin_lock_init(&fs_info->ref_cache_lock);
+ 	spin_lock_init(&fs_info->fs_roots_radix_lock);
+ 	spin_lock_init(&fs_info->delayed_iput_lock);
+ 	spin_lock_init(&fs_info->defrag_inodes_lock);
+@@ -3116,10 +3115,6 @@ int close_ctree(struct btrfs_root *root)
+ 		printk(KERN_INFO "btrfs: at unmount delalloc count %llu\n",
+ 		       (unsigned long long)fs_info->delalloc_bytes);
+ 	}
+-	if (fs_info->total_ref_cache_size) {
+-		printk(KERN_INFO "btrfs: at umount reference cache size %llu\n",
+-		       (unsigned long long)fs_info->total_ref_cache_size);
+-	}
+ 
+ 	free_extent_buffer(fs_info->extent_root->node);
+ 	free_extent_buffer(fs_info->extent_root->commit_root);
+-- 
+1.6.5.2
 
-That's also why basics like aquota,awk etc. are found.
-
-But I expect it would be very hard to make a reproducible test case with error.
-(Usage: see  PS: below.)
-
->   if not have you tried mount with recovery and the scrub. ? scrub>   would be
-> preferred choice over btrfsck.
-I can scrub this file system.
-But isn't it a good test to try some recovery? A stable btrfs later should
-manage  corruptions like this SIGSEGV and data loss.
-I expect a real life recover could cover more strange things than the test cases
-:)
-
-So it's your/ btrfs supporters choice. How far we should follow this issue.
-I did in between an image of the corrupted file system, so multiple recovery
-tries are possible.
-
-Best regards,
-Christian
-
-PS: I would bet that my kind of usage is a very good stress test for btrfs.
-
-- large file system "/backup" btrfs with compress enabled.
-
-Content of the file system:
-- ./server1 .... /server5  as directories
-- for each server the directory has a structure like this:
-  backup-YYYY-DD-MM-HH:M
-  New backups are created with:
-  rsync -axvH --link-dest=/backup/server'n'/backup-...(old, last dir)..
-  server:/   /backup/server'n'/backup-YYY-.../.
-
-This generates files with a large number of hard links.

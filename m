@@ -1,35 +1,41 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-gg0-f174.google.com ([209.85.161.174]:38879 "EHLO
-	mail-gg0-f174.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1751297Ab2GTMTV (ORCPT
+Received: from mondschein.lichtvoll.de ([194.150.191.11]:55540 "EHLO
+	mail.lichtvoll.de" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1753394Ab2GTM6N convert rfc822-to-8bit (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Fri, 20 Jul 2012 08:19:21 -0400
-Received: by gglu4 with SMTP id u4so3875426ggl.19
-        for <linux-btrfs@vger.kernel.org>; Fri, 20 Jul 2012 05:19:20 -0700 (PDT)
-MIME-Version: 1.0
-In-Reply-To: <CALa9hx2-YTbRatm5k4POH4M_erSOouHW_EzSK2Bb8PXBTuGbXQ@mail.gmail.com>
-References: <CALa9hx1ojpNEYOr8-pLbcm3Y80+GNaeJBtnEugh-BZF4OkpAHw@mail.gmail.com>
-	<201207191619.39100.Martin@lichtvoll.de>
-	<CALa9hx2kjgvNYD_8=z5Mt=q=kSRW_6uR5pr_uF-BQ6=CPknvCw@mail.gmail.com>
-	<201207201115.42483.Martin@lichtvoll.de>
-	<500923E5.6040609@hosman.xs4all.nl>
-	<CALa9hx2-YTbRatm5k4POH4M_erSOouHW_EzSK2Bb8PXBTuGbXQ@mail.gmail.com>
-Date: Fri, 20 Jul 2012 19:19:20 +0700
-Message-ID: <CAG1y0sctAbPmM0euuAZp8dVVLkbrHkqY0y=2Gtu2PnDiywyg8Q@mail.gmail.com>
+	Fri, 20 Jul 2012 08:58:13 -0400
+From: Martin Steigerwald <Martin@lichtvoll.de>
+To: linux-btrfs@vger.kernel.org
 Subject: Re: Very slow samba file transfer speed... any ideas ?
-From: "Fajar A. Nugraha" <list@fajar.net>
-To: Shavi N <shavi64@gmail.com>
-Cc: Remco Hosman <remco@hosman.xs4all.nl>, linux-btrfs@vger.kernel.org
-Content-Type: text/plain; charset=ISO-8859-1
+Date: Fri, 20 Jul 2012 14:58:11 +0200
+Cc: Remco Hosman <remco@hosman.xs4all.nl>
+References: <CALa9hx1ojpNEYOr8-pLbcm3Y80+GNaeJBtnEugh-BZF4OkpAHw@mail.gmail.com> <201207201115.42483.Martin@lichtvoll.de> <500923E5.6040609@hosman.xs4all.nl> (sfid-20120720_113234_810772_6AF30F06)
+In-Reply-To: <500923E5.6040609@hosman.xs4all.nl>
+MIME-Version: 1.0
+Content-Type: Text/Plain;
+  charset="utf-8"
+Message-Id: <201207201458.12018.Martin@lichtvoll.de>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Fri, Jul 20, 2012 at 5:23 PM, Shavi N <shavi64@gmail.com> wrote:
-> Hence I'm asking.. I know that I get fast copy/write speeds on the
-> btrfs volume from real life situations,
+Am Freitag, 20. Juli 2012 schrieb Remco Hosman:
+> > 11 really fast 15000rpm FC / SAS disks could possibly do 936 MB/s.
+> > But regular 7200rpm SATA disks depending to the on disk location
+> > might be as slow as 40-50 MB/s – just try fio disk-zone-profile on
+> > one if you do not believe this – and then even with 11 disks 936
+> > MB/s is out of reach.
+> 
+> My BTRFS array consists of 5 WD Green 2T disks. each of them goes a
+> bit  over 100MB/sec on sequential read/write.
 
-How did you know that? So far none of your posted test result have
-shown that btrfs vol in your system is FAST.
+I tested 2 WD Green 1,5 TB and each of them goes about 90-100 MB/s at the 
+beginning of the disk and about 40-50 MB/s at the end of the disk.
 
+So did you run fio disk-zone-profile on the whole disk and made a graph?
+
+If not, I do not believe your figures.
+
+Thanks,
 -- 
-Fajar
+Martin 'Helios' Steigerwald - http://www.Lichtvoll.de
+GPG: 03B0 0D6C 0040 0710 4AFA  B82F 991B EAAC A599 84C7

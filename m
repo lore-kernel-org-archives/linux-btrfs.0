@@ -1,52 +1,68 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.fusionio.com ([66.114.96.31]:60631 "EHLO mx2.fusionio.com"
+Received: from mx2.fusionio.com ([66.114.96.31]:58060 "EHLO mx2.fusionio.com"
 	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1751705Ab2GTSi7 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Fri, 20 Jul 2012 14:38:59 -0400
-Date: Fri, 20 Jul 2012 14:38:55 -0400
-From: Chris Mason <chris.mason@fusionio.com>
-To: Josef Bacik <jbacik@fusionio.com>
-CC: Zach Brown <zab@zabbo.net>,
-        "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
-Subject: Re: [PATCH] Btrfs-progs: detect if the disk we are formatting is a
- ssd
-Message-ID: <20120720183855.GL18878@shiny.int.fusionio.com>
-References: <1342797098-6493-1-git-send-email-jbacik@fusionio.com>
- <20120720181859.GE3889@lenny.home.zabbo.net>
- <20120720182056.GE2118@localhost.localdomain>
+	id S1751985Ab2GTUWf (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Fri, 20 Jul 2012 16:22:35 -0400
+Received: from mail1.int.fusionio.com (mail1.int.fusionio.com [10.101.1.21]) by mx2.fusionio.com with ESMTP id JYS4EOf2F8sWpaq6 (version=TLSv1 cipher=AES128-SHA bits=128 verify=NO) for <linux-btrfs@vger.kernel.org>; Fri, 20 Jul 2012 14:22:34 -0600 (MDT)
+From: Josef Bacik <jbacik@fusionio.com>
+To: <linux-btrfs@vger.kernel.org>
+Subject: [PATCH] Btrfs: lock the transition from dirty to writeback for an eb
+Date: Fri, 20 Jul 2012 16:27:31 -0400
+Message-ID: <1342816051-10003-1-git-send-email-jbacik@fusionio.com>
 MIME-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-In-Reply-To: <20120720182056.GE2118@localhost.localdomain>
+Content-Type: text/plain
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Fri, Jul 20, 2012 at 12:20:56PM -0600, Josef Bacik wrote:
-> On Fri, Jul 20, 2012 at 12:18:59PM -0600, Zach Brown wrote:
-> > > +static int is_ssd(const char *file)
-> > > +{
-> > > +	char *dev = strrchr(file, '/');
-> > 
-> >  [ ... ]
-> > 
-> > > +	snprintf(path, PATH_MAX, "/sys/block/%s/queue/rotational", dev);
-> > > +	fd = open(path, O_RDONLY);
-> > 
-> > Hmm, this doesn't seem right.  The last path component can have nothing
-> > to do with the underlying device name.  And /sys/block doesn't have
-> > entries for partition devices.
-> > 
-> > After some poking around (and hints from Eric), it looks like the thing
-> > to do is stat the file to find that it's a block device and then use
-> > blkid_devno_to_wholedisk().  That parses the link from
-> > /sys/dev/block/$maj:$min to find the containing device.
-> > 
-> > Then it'll work for partitions and nutty udev vanity symlinks.
-> > 
-> 
-> Partitions are for losers.
+There is a small window where an eb can have no IO bits set on it, which
+could potentially result in extent_buffer_under_io() returning false when we
+want it to return true, which could result in not fun things happening.  So
+in order to protect this case we need to hold the refs_lock when we make
+this transition to make sure we get reliable results out of
+extent_buffer_udner_io().  Thanks,
+Btrfs: lock the transition from dirty to writeback for an eb
 
-Winners make a separate /boot, even when using syslinux to boot directly
-off btrfs (syslinux is awesome everyone, switch now).
+There is a small window where an eb can have no IO bits set on it, which
+could potentially result in extent_buffer_under_io() returning false when we
+want it to return true, which could result in not fun things happening.  So
+in order to protect this case we need to hold the refs_lock when we make
+this transition to make sure we get reliable results out of
+extent_buffer_udner_io().  Thanks,
 
--chris
+Signed-off-by: Josef Bacik <jbacik@fusionio.com>
+---
+ fs/btrfs/extent_io.c |    9 +++++++++
+ 1 files changed, 9 insertions(+), 0 deletions(-)
+
+diff --git a/fs/btrfs/extent_io.c b/fs/btrfs/extent_io.c
+index 20440ea..669219b 100644
+--- a/fs/btrfs/extent_io.c
++++ b/fs/btrfs/extent_io.c
+@@ -3077,8 +3077,15 @@ static int lock_extent_buffer_for_io(struct extent_buffer *eb,
+ 		}
+ 	}
+ 
++	/*
++	 * We need to do this to prevent races in people who check if the eb is
++	 * under IO since we can end up having no IO bits set for a short period
++	 * of time.
++	 */
++	spin_lock(&eb->refs_lock);
+ 	if (test_and_clear_bit(EXTENT_BUFFER_DIRTY, &eb->bflags)) {
+ 		set_bit(EXTENT_BUFFER_WRITEBACK, &eb->bflags);
++		spin_unlock(&eb->refs_lock);
+ 		btrfs_set_header_flag(eb, BTRFS_HEADER_FLAG_WRITTEN);
+ 		spin_lock(&fs_info->delalloc_lock);
+ 		if (fs_info->dirty_metadata_bytes >= eb->len)
+@@ -3087,6 +3094,8 @@ static int lock_extent_buffer_for_io(struct extent_buffer *eb,
+ 			WARN_ON(1);
+ 		spin_unlock(&fs_info->delalloc_lock);
+ 		ret = 1;
++	} else {
++		spin_unlock(&eb->refs_lock);
+ 	}
+ 
+ 	btrfs_tree_unlock(eb);
+-- 
+1.7.7.6
 

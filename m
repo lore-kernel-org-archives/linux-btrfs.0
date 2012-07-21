@@ -1,109 +1,132 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-yx0-f174.google.com ([209.85.213.174]:49700 "EHLO
-	mail-yx0-f174.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1751520Ab2GTWQ6 (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Fri, 20 Jul 2012 18:16:58 -0400
-Received: by yenl2 with SMTP id l2so4473869yen.19
-        for <linux-btrfs@vger.kernel.org>; Fri, 20 Jul 2012 15:16:58 -0700 (PDT)
-From: Mitch Harder <mitch.harder@sabayonlinux.org>
-To: linux-btrfs@vger.kernel.org
-Cc: Mitch Harder <mitch.harder@sabayonlinux.org>
-Subject: [PATCH v3 1/1] Btrfs: Check INCOMPAT flags on remount and add helper function
-Date: Fri, 20 Jul 2012 17:16:41 -0500
-Message-Id: <1342822601-18340-2-git-send-email-mitch.harder@sabayonlinux.org>
-In-Reply-To: <1342822601-18340-1-git-send-email-mitch.harder@sabayonlinux.org>
-References: <1342822601-18340-1-git-send-email-mitch.harder@sabayonlinux.org>
+Received: from cn.fujitsu.com ([222.73.24.84]:7436 "EHLO song.cn.fujitsu.com"
+	rhost-flags-OK-FAIL-OK-OK) by vger.kernel.org with ESMTP
+	id S1751682Ab2GUDno (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Fri, 20 Jul 2012 23:43:44 -0400
+From: Liu Bo <liubo2009@cn.fujitsu.com>
+To: <linux-btrfs@vger.kernel.org>
+Cc: <chris.mason@fusionio.com>, <jbacik@fusionio.com>, <dave@jikos.cz>,
+        <zab@zabbo.net>
+Subject: [PATCH v5] Btrfs: improve multi-thread buffer read
+Date: Sat, 21 Jul 2012 11:43:09 +0800
+Message-Id: <1342842189-13287-1-git-send-email-liubo2009@cn.fujitsu.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-In support of the recently added capability to remount with lzo
-compression, provide a helper function to check the compression
-INCOMPAT flags when remounting with lzo compression, and set
-the flags if necessary.
+While testing with my buffer read fio jobs[1], I find that btrfs does not
+perform well enough.
 
-Also, implement the new helper function when defragmenting with
-explicit lzo compression.
+Here is a scenario in fio jobs:
 
-Signed-off-by: Mitch Harder <mitch.harder@sabayonlinux.org>
+We have 4 threads, "t1 t2 t3 t4", starting to buffer read a same file,
+and all of them will race on add_to_page_cache_lru(), and if one thread
+successfully puts its page into the page cache, it takes the responsibility
+to read the page's data.
+
+And what's more, reading a page needs a period of time to finish, in which
+other threads can slide in and process rest pages:
+
+     t1          t2          t3          t4
+   add Page1
+   read Page1  add Page2
+     |         read Page2  add Page3
+     |            |        read Page3  add Page4
+     |            |           |        read Page4
+-----|------------|-----------|-----------|--------
+     v            v           v           v
+    bio          bio         bio         bio
+
+Now we have four bios, each of which holds only one page since we need to
+maintain consecutive pages in bio.  Thus, we can end up with far more bios
+than we need.
+
+Here we're going to
+a) delay the real read-page section and
+b) try to put more pages into page cache.
+
+With that said, we can make each bio hold more pages and reduce the number
+of bios we need.
+
+Here is some numbers taken from fio results:
+         w/o patch                 w patch
+       -------------  --------  ---------------
+READ:    745MB/s        +25%       934MB/s
+
+[1]:
+[global]
+group_reporting
+thread
+numjobs=4
+bs=32k
+rw=read
+ioengine=sync
+directory=/mnt/btrfs/
+
+[READ]
+filename=foobar
+size=2000M
+invalidate=1
+
+Signed-off-by: Liu Bo <liubo2009@cn.fujitsu.com>
 ---
+v4->v5: avoid another ref inc on page.
+v3->v4: adopt a simple page array instead of pagevec to avoid side effect
+        that may be brought by pagevec_release().
+v2->v3: adopt kernel native pagevec instead of kmalloc.
+v1->v2: if we fail to make a allocation, just fall back to the old way to
+        read page.
 
-v1->v2
-- Remove extraneous formatting change.
-v2->v3
-- Consolidate into a single patch
-- Convert helper function to a static inline function.
+ fs/btrfs/extent_io.c |   29 ++++++++++++++++++++++++-----
+ 1 files changed, 24 insertions(+), 5 deletions(-)
 
- fs/btrfs/ctree.h |   13 +++++++++++++
- fs/btrfs/ioctl.c |    7 +------
- fs/btrfs/super.c |    1 +
- 3 files changed, 15 insertions(+), 6 deletions(-)
-
-diff --git a/fs/btrfs/ctree.h b/fs/btrfs/ctree.h
-index a0ee2f8..3a1a700 100644
---- a/fs/btrfs/ctree.h
-+++ b/fs/btrfs/ctree.h
-@@ -3103,6 +3103,19 @@ void __btrfs_abort_transaction(struct btrfs_trans_handle *trans,
- 			       struct btrfs_root *root, const char *function,
- 			       unsigned int line, int errno);
+diff --git a/fs/btrfs/extent_io.c b/fs/btrfs/extent_io.c
+index 01c21b6..9055e9b 100644
+--- a/fs/btrfs/extent_io.c
++++ b/fs/btrfs/extent_io.c
+@@ -3557,19 +3557,38 @@ int extent_readpages(struct extent_io_tree *tree,
+ 	struct bio *bio = NULL;
+ 	unsigned page_idx;
+ 	unsigned long bio_flags = 0;
++	struct page *pagepool[16];
++	struct page *page;
++	int i = 0;
++	int nr = 0;
  
-+static inline void btrfs_chk_lzo_incompat(struct btrfs_root *root)
-+{
-+	struct btrfs_super_block *disk_super;
-+	u64 features;
+ 	for (page_idx = 0; page_idx < nr_pages; page_idx++) {
+-		struct page *page = list_entry(pages->prev, struct page, lru);
++		page = list_entry(pages->prev, struct page, lru);
+ 
+ 		prefetchw(&page->flags);
+ 		list_del(&page->lru);
+-		if (!add_to_page_cache_lru(page, mapping,
++		if (add_to_page_cache_lru(page, mapping,
+ 					page->index, GFP_NOFS)) {
+-			__extent_read_full_page(tree, page, get_extent,
+-						&bio, 0, &bio_flags);
++			page_cache_release(page);
++			continue;
+ 		}
+-		page_cache_release(page);
 +
-+	disk_super = root->fs_info->super_copy;
-+	features = btrfs_super_incompat_flags(disk_super);
-+	if (!(features & BTRFS_FEATURE_INCOMPAT_COMPRESS_LZO)) {
-+		features |= BTRFS_FEATURE_INCOMPAT_COMPRESS_LZO;
-+		btrfs_set_super_incompat_flags(disk_super, features);
++		pagepool[nr++] = page;
++		if (nr < ARRAY_SIZE(pagepool))
++			continue;
++		for (i = 0; i < nr; i++) {
++			__extent_read_full_page(tree, pagepool[i], get_extent,
++					&bio, 0, &bio_flags);
++			page_cache_release(pagepool[i]);
++		}
++		nr = 0;
+ 	}
++	for (i = 0; i < nr; i++) {
++		__extent_read_full_page(tree, pagepool[i], get_extent,
++					&bio, 0, &bio_flags);
++		page_cache_release(pagepool[i]);
 +	}
-+}
 +
- #define btrfs_abort_transaction(trans, root, errno)		\
- do {								\
- 	__btrfs_abort_transaction(trans, root, __func__,	\
-diff --git a/fs/btrfs/ioctl.c b/fs/btrfs/ioctl.c
-index 17facea..d5fd69e 100644
---- a/fs/btrfs/ioctl.c
-+++ b/fs/btrfs/ioctl.c
-@@ -1042,11 +1042,9 @@ int btrfs_defrag_file(struct inode *inode, struct file *file,
- 		      u64 newer_than, unsigned long max_to_defrag)
- {
- 	struct btrfs_root *root = BTRFS_I(inode)->root;
--	struct btrfs_super_block *disk_super;
- 	struct file_ra_state *ra = NULL;
- 	unsigned long last_index;
- 	u64 isize = i_size_read(inode);
--	u64 features;
- 	u64 last_len = 0;
- 	u64 skip = 0;
- 	u64 defrag_end = 0;
-@@ -1233,11 +1231,8 @@ int btrfs_defrag_file(struct inode *inode, struct file *file,
- 		mutex_unlock(&inode->i_mutex);
- 	}
- 
--	disk_super = root->fs_info->super_copy;
--	features = btrfs_super_incompat_flags(disk_super);
- 	if (range->compress_type == BTRFS_COMPRESS_LZO) {
--		features |= BTRFS_FEATURE_INCOMPAT_COMPRESS_LZO;
--		btrfs_set_super_incompat_flags(disk_super, features);
-+		btrfs_chk_lzo_incompat(root);
- 	}
- 
- 	ret = defrag_count;
-diff --git a/fs/btrfs/super.c b/fs/btrfs/super.c
-index 26da344..32c2bd9 100644
---- a/fs/btrfs/super.c
-+++ b/fs/btrfs/super.c
-@@ -401,6 +401,7 @@ int btrfs_parse_options(struct btrfs_root *root, char *options)
- 				compress_type = "lzo";
- 				info->compress_type = BTRFS_COMPRESS_LZO;
- 				btrfs_set_opt(info->mount_opt, COMPRESS);
-+				btrfs_chk_lzo_incompat(root);
- 			} else if (strncmp(args[0].from, "no", 2) == 0) {
- 				compress_type = "no";
- 				info->compress_type = BTRFS_COMPRESS_NONE;
+ 	BUG_ON(!list_empty(pages));
+ 	if (bio)
+ 		return submit_one_bio(READ, bio, 0, bio_flags);
 -- 
-1.7.8.6
+1.6.5.2
 

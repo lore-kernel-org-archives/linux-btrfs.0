@@ -1,167 +1,104 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([222.73.24.84]:60506 "EHLO song.cn.fujitsu.com"
-	rhost-flags-OK-FAIL-OK-OK) by vger.kernel.org with ESMTP
-	id S1752284Ab2GXKkN (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 24 Jul 2012 06:40:13 -0400
-Received: from fnstmail02.fnst.cn.fujitsu.com (tang.cn.fujitsu.com [127.0.0.1])
-	by tang.cn.fujitsu.com (8.14.3/8.13.1) with ESMTP id q6OAeAET006620
-	for <linux-btrfs@vger.kernel.org>; Tue, 24 Jul 2012 18:40:12 +0800
-From: Liu Bo <liubo2009@cn.fujitsu.com>
-To: <linux-btrfs@vger.kernel.org>
-Subject: [PATCH 2/2] Btrfs-progs: show generation in command btrfs subvol list
-Date: Tue, 24 Jul 2012 18:39:24 +0800
-Message-Id: <1343126364-27919-2-git-send-email-liubo2009@cn.fujitsu.com>
-In-Reply-To: <1343126364-27919-1-git-send-email-liubo2009@cn.fujitsu.com>
-References: <1343126364-27919-1-git-send-email-liubo2009@cn.fujitsu.com>
+Received: from twin.jikos.cz ([89.185.236.188]:55607 "EHLO twin.jikos.cz"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1753534Ab2GXMLy (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Tue, 24 Jul 2012 08:11:54 -0400
+Date: Tue, 24 Jul 2012 14:11:50 +0200
+From: David Sterba <dave@jikos.cz>
+To: Mitch Harder <mitch.harder@sabayonlinux.org>
+Cc: linux-btrfs@vger.kernel.org
+Subject: Re: [PATCH v3 1/1] Btrfs: Check INCOMPAT flags on remount and add
+ helper function
+Message-ID: <20120724121150.GG17430@twin.jikos.cz>
+Reply-To: dave@jikos.cz
+References: <1342822601-18340-1-git-send-email-mitch.harder@sabayonlinux.org>
+ <1342822601-18340-2-git-send-email-mitch.harder@sabayonlinux.org>
+MIME-Version: 1.0
+Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <1342822601-18340-2-git-send-email-mitch.harder@sabayonlinux.org>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-This adds the ability to show root's generation when we use btrfs subvol list.
+We don't need a helper for every incompatibility bit, let's do it in a
+more generic way as suggested below [modulo syntax errors]:
 
-Signed-off-by: Liu Bo <liubo2009@cn.fujitsu.com>
----
- btrfs-list.c |   61 ++++++++++++++++++++++++++++++++++++++++++++++++++++-----
- 1 files changed, 55 insertions(+), 6 deletions(-)
+On Fri, Jul 20, 2012 at 05:16:41PM -0500, Mitch Harder wrote:
+> --- a/fs/btrfs/ctree.h
+> +++ b/fs/btrfs/ctree.h
+> @@ -3103,6 +3103,19 @@ void __btrfs_abort_transaction(struct btrfs_trans_handle *trans,
+>  			       struct btrfs_root *root, const char *function,
+>  			       unsigned int line, int errno);
+>  
+> +static inline void btrfs_chk_lzo_incompat(struct btrfs_root *root)
+> +{
 
-diff --git a/btrfs-list.c b/btrfs-list.c
-index ac6507a..05360dc 100644
---- a/btrfs-list.c
-+++ b/btrfs-list.c
-@@ -57,6 +57,9 @@ struct root_info {
- 	/* the dir id we're in from ref_tree */
- 	u64 dir_id;
- 
-+	/* generation when the root is created or last updated */
-+	u64 gen;
-+
- 	/* path from the subvol we live in to this root, including the
- 	 * root's name.  This is null until we do the extra lookup ioctl.
- 	 */
-@@ -194,6 +197,19 @@ static int add_root(struct root_lookup *root_lookup,
- 	return 0;
- }
- 
-+static int update_root(struct root_lookup *root_lookup, u64 root_id, u64 gen)
-+{
-+	struct root_info *ri;
-+
-+	ri = tree_search(&root_lookup->root, root_id);
-+	if (!ri || ri->root_id != root_id) {
-+		fprintf(stderr, "could not find subvol %llu\n", root_id);
-+		return -ENOENT;
-+	}
-+	ri->gen = gen;
-+	return 0;
-+}
-+
- /*
-  * for a given root_info, search through the root_lookup tree to construct
-  * the full path name to it.
-@@ -615,11 +631,15 @@ static int __list_subvol_search(int fd, struct root_lookup *root_lookup)
- 	struct btrfs_ioctl_search_key *sk = &args.key;
- 	struct btrfs_ioctl_search_header *sh;
- 	struct btrfs_root_ref *ref;
-+	struct btrfs_root_item *ri;
- 	unsigned long off = 0;
- 	int name_len;
- 	char *name;
- 	u64 dir_id;
-+	u8 type;
-+	u64 gen = 0;
- 	int i;
-+	int get_gen = 0;
- 
- 	root_lookup_init(root_lookup);
- 	memset(&args, 0, sizeof(args));
-@@ -644,6 +664,7 @@ static int __list_subvol_search(int fd, struct root_lookup *root_lookup)
- 	sk->max_offset = (u64)-1;
- 	sk->max_transid = (u64)-1;
- 
-+again:
- 	/* just a big number, doesn't matter much */
- 	sk->nr_items = 4096;
- 
-@@ -665,7 +686,7 @@ static int __list_subvol_search(int fd, struct root_lookup *root_lookup)
- 			sh = (struct btrfs_ioctl_search_header *)(args.buf +
- 								  off);
- 			off += sizeof(*sh);
--			if (sh->type == BTRFS_ROOT_BACKREF_KEY) {
-+			if (!get_gen && sh->type == BTRFS_ROOT_BACKREF_KEY) {
- 				ref = (struct btrfs_root_ref *)(args.buf + off);
- 				name_len = btrfs_stack_root_ref_name_len(ref);
- 				name = (char *)(ref + 1);
-@@ -673,6 +694,11 @@ static int __list_subvol_search(int fd, struct root_lookup *root_lookup)
- 
- 				add_root(root_lookup, sh->objectid, sh->offset,
- 					 dir_id, name, name_len);
-+			} else if (get_gen && sh->type == BTRFS_ROOT_ITEM_KEY) {
-+				ri = (struct btrfs_root_item *)(args.buf + off);
-+				gen = btrfs_root_generation(ri);
-+
-+				update_root(root_lookup, sh->objectid, gen);
- 			}
- 
- 			off += sh->len;
-@@ -689,17 +715,38 @@ static int __list_subvol_search(int fd, struct root_lookup *root_lookup)
- 		/* this iteration is done, step forward one root for the next
- 		 * ioctl
- 		 */
--		if (sk->min_type < BTRFS_ROOT_BACKREF_KEY) {
--			sk->min_type = BTRFS_ROOT_BACKREF_KEY;
-+		if (get_gen)
-+			type = BTRFS_ROOT_ITEM_KEY;
-+		else
-+			type = BTRFS_ROOT_BACKREF_KEY;
-+
-+		if (sk->min_type < type) {
-+			sk->min_type = type;
- 			sk->min_offset = 0;
- 		} else  if (sk->min_objectid < BTRFS_LAST_FREE_OBJECTID) {
- 			sk->min_objectid++;
--			sk->min_type = BTRFS_ROOT_BACKREF_KEY;
-+			sk->min_type = type;
- 			sk->min_offset = 0;
- 		} else
- 			break;
- 	}
- 
-+	if (!get_gen) {
-+		memset(&args, 0, sizeof(args));
-+
-+		sk->tree_id = 1;
-+		sk->max_type = BTRFS_ROOT_ITEM_KEY;
-+		sk->min_type = BTRFS_ROOT_ITEM_KEY;
-+
-+		sk->min_objectid = BTRFS_FIRST_FREE_OBJECTID;
-+
-+		sk->max_objectid = BTRFS_LAST_FREE_OBJECTID;
-+		sk->max_offset = (u64)-1;
-+		sk->max_transid = (u64)-1;
-+
-+		get_gen = 1;
-+		goto again;
-+	}
- 	return 0;
- }
- 
-@@ -781,13 +828,15 @@ int list_subvols(int fd, int print_parent, int get_default)
- 
- 		resolve_root(&root_lookup, entry, &parent_id, &level, &path);
- 		if (print_parent) {
--			printf("ID %llu parent %llu top level %llu path %s\n",
-+			printf("ID %llu gen %llu parent %llu top level %llu path %s\n",
- 				(unsigned long long)entry->root_id,
-+				(unsigned long long)entry->gen,
- 				(unsigned long long)parent_id,
- 				(unsigned long long)level, path);
- 		} else {
--			printf("ID %llu top level %llu path %s\n",
-+			printf("ID %llu gen %llu top level %llu path %s\n",
- 				(unsigned long long)entry->root_id,
-+				(unsigned long long)entry->gen,
- 				(unsigned long long)level, path);
- 		}
- 
--- 
-1.6.5.2
+btrfs_set_fs_incompat(struct btrfs_fs_info *fs_info, u64 flag) {
 
+> +	struct btrfs_super_block *disk_super;
+> +	u64 features;
+> +
+> +	disk_super = root->fs_info->super_copy;
+
+   	disk_super = fs_info->super_copy;
+
+> +	features = btrfs_super_incompat_flags(disk_super);
+> +	if (!(features & BTRFS_FEATURE_INCOMPAT_COMPRESS_LZO)) {
+> +		features |= BTRFS_FEATURE_INCOMPAT_COMPRESS_LZO;
+
+	if (!(features & flag)) {
+		features |= BTRFS_FEATURE_INCOMPAT_COMPRESS_LZO;
+
+> +		btrfs_set_super_incompat_flags(disk_super, features);
+> +	}
+> +}
+> +
+>  #define btrfs_abort_transaction(trans, root, errno)		\
+>  do {								\
+>  	__btrfs_abort_transaction(trans, root, __func__,	\
+> diff --git a/fs/btrfs/ioctl.c b/fs/btrfs/ioctl.c
+> index 17facea..d5fd69e 100644
+> --- a/fs/btrfs/ioctl.c
+> +++ b/fs/btrfs/ioctl.c
+> @@ -1042,11 +1042,9 @@ int btrfs_defrag_file(struct inode *inode, struct file *file,
+>  		      u64 newer_than, unsigned long max_to_defrag)
+>  {
+>  	struct btrfs_root *root = BTRFS_I(inode)->root;
+> -	struct btrfs_super_block *disk_super;
+>  	struct file_ra_state *ra = NULL;
+>  	unsigned long last_index;
+>  	u64 isize = i_size_read(inode);
+> -	u64 features;
+>  	u64 last_len = 0;
+>  	u64 skip = 0;
+>  	u64 defrag_end = 0;
+> @@ -1233,11 +1231,8 @@ int btrfs_defrag_file(struct inode *inode, struct file *file,
+>  		mutex_unlock(&inode->i_mutex);
+>  	}
+>  
+> -	disk_super = root->fs_info->super_copy;
+> -	features = btrfs_super_incompat_flags(disk_super);
+>  	if (range->compress_type == BTRFS_COMPRESS_LZO) {
+> -		features |= BTRFS_FEATURE_INCOMPAT_COMPRESS_LZO;
+> -		btrfs_set_super_incompat_flags(disk_super, features);
+> +		btrfs_chk_lzo_incompat(root);
+
+		btrfs_set_fs_incompat(fs_info, BTRFS_FEATURE_INCOMPAT_COMPRESS_LZO);
+
+>  	}
+>  
+>  	ret = defrag_count;
+> diff --git a/fs/btrfs/super.c b/fs/btrfs/super.c
+> index 26da344..32c2bd9 100644
+> --- a/fs/btrfs/super.c
+> +++ b/fs/btrfs/super.c
+> @@ -401,6 +401,7 @@ int btrfs_parse_options(struct btrfs_root *root, char *options)
+>  				compress_type = "lzo";
+>  				info->compress_type = BTRFS_COMPRESS_LZO;
+>  				btrfs_set_opt(info->mount_opt, COMPRESS);
+> +				btrfs_chk_lzo_incompat(root);
+
+				btrfs_set_fs_incompat(fs_info, BTRFS_FEATURE_INCOMPAT_COMPRESS_LZO);
+
+>  			} else if (strncmp(args[0].from, "no", 2) == 0) {
+>  				compress_type = "no";
+>  				info->compress_type = BTRFS_COMPRESS_NONE;

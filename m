@@ -1,55 +1,40 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-yw0-f46.google.com ([209.85.213.46]:38082 "EHLO
-	mail-yw0-f46.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1755667Ab2GXU1W (ORCPT
+Received: from mail-lb0-f174.google.com ([209.85.217.174]:41652 "EHLO
+	mail-lb0-f174.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1754130Ab2GYAji (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 24 Jul 2012 16:27:22 -0400
-Received: by yhmm54 with SMTP id m54so7140065yhm.19
-        for <linux-btrfs@vger.kernel.org>; Tue, 24 Jul 2012 13:27:22 -0700 (PDT)
+	Tue, 24 Jul 2012 20:39:38 -0400
+Received: by lbbgm6 with SMTP id gm6so239682lbb.19
+        for <linux-btrfs@vger.kernel.org>; Tue, 24 Jul 2012 17:39:37 -0700 (PDT)
 MIME-Version: 1.0
-In-Reply-To: <CAHf9xvaTESntqF_tpKL8CUJGig5vh+Dsh3rH136MpCGCGd1geg@mail.gmail.com>
-References: <1341409174-13619-1-git-send-email-ablock84@googlemail.com>
-	<1341409174-13619-7-git-send-email-ablock84@googlemail.com>
-	<CAHf9xvZqQRBZraH4jGu+mRXQFk1aqKaCKMJno=ubypd2rYkicA@mail.gmail.com>
-	<CAHf9xvaTESntqF_tpKL8CUJGig5vh+Dsh3rH136MpCGCGd1geg@mail.gmail.com>
-Date: Tue, 24 Jul 2012 22:27:22 +0200
-Message-ID: <CAB9VWqBco7__Gjby0j-JjOnd1h7Fh5ECq7BW4U1ubE=boQr0eg@mail.gmail.com>
-Subject: Re: [RFC PATCH 6/6] Btrfs-progs: add btrfs send/receive commands
-From: Alexander Block <ablock84@googlemail.com>
-To: Alex Lyakas <alex.bolshoy.btrfs@gmail.com>
-Cc: linux-btrfs@vger.kernel.org
+Date: Tue, 24 Jul 2012 20:39:36 -0400
+Message-ID: <CAAdM644Xs1Vq-Sw4ZacGz_gBrURHzEhhs4drXJC+dMtP0DhSiw@mail.gmail.com>
+Subject: No/bad auto-detection of fs type for small volumes (related to mixed metadata/data?)
+From: Marios Titas <redneb8888@gmail.com>
+To: btrfs <linux-btrfs@vger.kernel.org>
 Content-Type: text/plain; charset=ISO-8859-1
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Thu, Jul 19, 2012 at 3:25 PM, Alex Lyakas
-<alex.bolshoy.btrfs@gmail.com> wrote:
-> +static int process_link(const char *path, const char *lnk, void *user)
-> +{
-> +       int ret;
-> +       struct btrfs_receive *r = user;
-> +       char *full_path = path_cat(r->full_subvol_path, path);
-> +
-> +       if (g_verbose >= 1)
-> +               fprintf(stderr, "link %s -> %s\n", path, lnk);
-> +
-> +       ret = link(lnk, full_path);
-> +       if (ret < 0) {
-> +               ret = -errno;
-> +               fprintf(stderr, "ERROR: link %s -> %s failed. %s\n", path,
-> +                               lnk, strerror(-ret));
-> +       }
->
-> Actually it has to be:
-> char *full_link_path = path_cat(r->full_subvol_path, lnk);
-> ...
-> ret = link(full_path/*oldpath*/, full_link_path/*newpath*/);
-> ...
-> free(full_link_path);
->
-> Thanks,
-> Alex.
+When I create a btrfs volume of size strictly less than 256 MiB then if I do
+    mount /dev/sdb1 /mnt/test
+the kernel tries unsuccessfully to do the mount with many other file systems
+before successfully trying with btrfs. For volumes of size larger than
+or equal to
+256 MiB it just mounts the volume without doing that. Why is this discrepancy?
 
-Actually, the pathes got mixed up in-kernel. You'll find a pushed fix
-in the kernel repo. I also pushed a fix to btrfs-progs containing the
-full_link_path. Thanks again :)
+Another possibly related symptom is that the volume does not appear in
+/dev/disk/by-label and /dev/disk/by-uuid at all. This means that it is
+impossible
+to mount the volume by uuid or label.
+
+To make sure that this isn't a udev bug, I booted my system with init=/bin/bash
+in the kernel command line, and then I tried again to mount the
+volume. This time
+it would not mount it at all unless I explicitly specified the fs
+type. On the other
+hand, it could mount larger volumes without any issues.
+
+All the experiments were done in an initially zeroed out disk. I am
+using 3.4.6 kernel
+with btrfs from 3.5 and the latest btrfs-progs from git.

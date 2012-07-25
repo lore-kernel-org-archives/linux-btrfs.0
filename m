@@ -1,82 +1,89 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
 Received: from cn.fujitsu.com ([222.73.24.84]:1352 "EHLO song.cn.fujitsu.com"
 	rhost-flags-OK-FAIL-OK-OK) by vger.kernel.org with ESMTP
-	id S1751974Ab2GYF7m (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 25 Jul 2012 01:59:42 -0400
+	id S1751574Ab2GYF7l (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Wed, 25 Jul 2012 01:59:41 -0400
 Received: from fnstmail02.fnst.cn.fujitsu.com (tang.cn.fujitsu.com [127.0.0.1])
-	by tang.cn.fujitsu.com (8.14.3/8.13.1) with ESMTP id q6P5xWH0005253
-	for <linux-btrfs@vger.kernel.org>; Wed, 25 Jul 2012 13:59:40 +0800
+	by tang.cn.fujitsu.com (8.14.3/8.13.1) with ESMTP id q6P5xWGw005253
+	for <linux-btrfs@vger.kernel.org>; Wed, 25 Jul 2012 13:59:39 +0800
 From: Liu Bo <liubo2009@cn.fujitsu.com>
 To: <linux-btrfs@vger.kernel.org>
-Subject: [PATCH 3/6 v3][RFC] Btrfs: break clear_state_bit into two parts
-Date: Wed, 25 Jul 2012 13:58:39 +0800
-Message-Id: <1343195922-31405-4-git-send-email-liubo2009@cn.fujitsu.com>
+Subject: [PATCH 1/6 v3][RFC] Btrfs: merge adjacent states as much as possible
+Date: Wed, 25 Jul 2012 13:58:37 +0800
+Message-Id: <1343195922-31405-2-git-send-email-liubo2009@cn.fujitsu.com>
 In-Reply-To: <1343195922-31405-1-git-send-email-liubo2009@cn.fujitsu.com>
 References: <1343195922-31405-1-git-send-email-liubo2009@cn.fujitsu.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-clear_state_bit() can be broken into two parts:
-1) a part for clearing bits,
-2) a part for freeing the state or merging it with adjacent ones.
-
-And the first one does not need to touch the tree, so holding read locks
-is enough, and this gives us the oppotunity to rework tree's lock with
-rwlock.
+In order to reduce write locks, we do merge_state as much as much as possible.
 
 Signed-off-by: Liu Bo <liubo2009@cn.fujitsu.com>
 ---
- fs/btrfs/extent_io.c |   22 ++++++++++++++++++----
- 1 files changed, 18 insertions(+), 4 deletions(-)
+ fs/btrfs/extent_io.c |   47 +++++++++++++++++++++++++++--------------------
+ 1 files changed, 27 insertions(+), 20 deletions(-)
 
 diff --git a/fs/btrfs/extent_io.c b/fs/btrfs/extent_io.c
-index 4c6dd85..a84d904 100644
+index 01c21b6..1858d86 100644
 --- a/fs/btrfs/extent_io.c
 +++ b/fs/btrfs/extent_io.c
-@@ -425,11 +425,10 @@ static struct extent_state *next_state(struct extent_state *state)
-  * If no bits are set on the state struct after clearing things, the
-  * struct is freed and removed from the tree
-  */
--static struct extent_state *clear_state_bit(struct extent_io_tree *tree,
--					    struct extent_state *state,
--					    int *bits, int wake)
-+static int __clear_state_bit(struct extent_io_tree *tree,
-+			     struct extent_state *state,
-+			     int *bits, int wake)
- {
--	struct extent_state *next;
- 	int bits_to_clear = *bits & ~EXTENT_CTLBITS;
+@@ -275,29 +275,36 @@ static void merge_state(struct extent_io_tree *tree,
+ 	if (state->state & (EXTENT_IOBITS | EXTENT_BOUNDARY))
+ 		return;
  
- 	if ((bits_to_clear & EXTENT_DIRTY) && (state->state & EXTENT_DIRTY)) {
-@@ -441,6 +440,14 @@ static struct extent_state *clear_state_bit(struct extent_io_tree *tree,
- 	state->state &= ~bits_to_clear;
- 	if (wake)
- 		wake_up(&state->wq);
-+	return 0;
-+}
+-	other_node = rb_prev(&state->rb_node);
+-	if (other_node) {
++	while (1) {
++		other_node = rb_prev(&state->rb_node);
++		if (!other_node)
++			break;
+ 		other = rb_entry(other_node, struct extent_state, rb_node);
+-		if (other->end == state->start - 1 &&
+-		    other->state == state->state) {
+-			merge_cb(tree, state, other);
+-			state->start = other->start;
+-			other->tree = NULL;
+-			rb_erase(&other->rb_node, &tree->state);
+-			free_extent_state(other);
+-		}
++		if (other->end != state->start - 1 ||
++		    other->state != state->state)
++			break;
 +
-+static struct extent_state *
-+try_free_or_merge_state(struct extent_io_tree *tree, struct extent_state *state)
-+{
-+	struct extent_state *next = NULL;
++		merge_cb(tree, state, other);
++		state->start = other->start;
++		other->tree = NULL;
++		rb_erase(&other->rb_node, &tree->state);
++		free_extent_state(other);
+ 	}
+-	other_node = rb_next(&state->rb_node);
+-	if (other_node) {
 +
- 	if (state->state == 0) {
- 		next = next_state(state);
- 		if (state->tree) {
-@@ -457,6 +464,13 @@ static struct extent_state *clear_state_bit(struct extent_io_tree *tree,
- 	return next;
++	while (1) {
++		other_node = rb_next(&state->rb_node);
++		if (!other_node)
++			break;
+ 		other = rb_entry(other_node, struct extent_state, rb_node);
+-		if (other->start == state->end + 1 &&
+-		    other->state == state->state) {
+-			merge_cb(tree, state, other);
+-			state->end = other->end;
+-			other->tree = NULL;
+-			rb_erase(&other->rb_node, &tree->state);
+-			free_extent_state(other);
+-		}
++		if (other->start != state->end + 1 ||
++		    other->state != state->state)
++			break;
++
++		merge_cb(tree, state, other);
++		state->end = other->end;
++		other->tree = NULL;
++		rb_erase(&other->rb_node, &tree->state);
++		free_extent_state(other);
+ 	}
  }
  
-+static struct extent_state *clear_state_bit(struct extent_io_tree *tree,
-+			   struct extent_state *state, int *bits, int wake)
-+{
-+	__clear_state_bit(tree, state, bits, wake);
-+	return try_free_or_merge_state(tree, state);
-+}
-+
- static struct extent_state *
- alloc_extent_state_atomic(struct extent_state *prealloc)
- {
 -- 
 1.6.5.2
 

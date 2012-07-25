@@ -1,40 +1,74 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-pb0-f46.google.com ([209.85.160.46]:33488 "EHLO
-	mail-pb0-f46.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1751082Ab2GYEp3 (ORCPT
+Received: from frost.carfax.org.uk ([85.119.82.111]:45801 "EHLO
+	frost.carfax.org.uk" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S932818Ab2GYIgs (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 25 Jul 2012 00:45:29 -0400
-Received: by pbbrp8 with SMTP id rp8so771017pbb.19
-        for <linux-btrfs@vger.kernel.org>; Tue, 24 Jul 2012 21:45:29 -0700 (PDT)
+	Wed, 25 Jul 2012 04:36:48 -0400
+Date: Wed, 25 Jul 2012 09:36:44 +0100
+From: Hugo Mills <hugo@carfax.org.uk>
+To: Marios Titas <redneb8888@gmail.com>
+Cc: btrfs <linux-btrfs@vger.kernel.org>
+Subject: Re: No/bad auto-detection of fs type for small volumes (related to
+ mixed metadata/data?)
+Message-ID: <20120725083644.GC30007@carfax.org.uk>
+References: <CAAdM644Xs1Vq-Sw4ZacGz_gBrURHzEhhs4drXJC+dMtP0DhSiw@mail.gmail.com>
 MIME-Version: 1.0
-In-Reply-To: <CA+WRLO-rXZ7FvjpUbC7F8x2Dqr0j=YnZ5OtTvXbc_uBoXR92OA@mail.gmail.com>
-References: <CA+WRLO-rXZ7FvjpUbC7F8x2Dqr0j=YnZ5OtTvXbc_uBoXR92OA@mail.gmail.com>
-Date: Wed, 25 Jul 2012 11:45:29 +0700
-Message-ID: <CAG1y0sfSnebyE01uG9V3MP3YZAKtcrVg8FwZfbsGdpXQAVikLQ@mail.gmail.com>
-Subject: Re: Upgrading from 2.6.38, how?
-From: "Fajar A. Nugraha" <list@fajar.net>
-To: Gareth Pye <gareth@cerberos.id.au>
-Cc: linux-btrfs <linux-btrfs@vger.kernel.org>
-Content-Type: text/plain; charset=ISO-8859-1
+Content-Type: multipart/signed; micalg=pgp-sha1;
+	protocol="application/pgp-signature"; boundary="z4+8/lEcDcG5Ke9S"
+In-Reply-To: <CAAdM644Xs1Vq-Sw4ZacGz_gBrURHzEhhs4drXJC+dMtP0DhSiw@mail.gmail.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Wed, Jul 25, 2012 at 11:39 AM, Gareth Pye <gareth@cerberos.id.au> wrote:
-> My proposed upgrade method is:
-> Boot from a live CD with the latest kernel I can find so I can do a few tests:
->  A - run the fsck in read only mode to confirm things look good
->  B - mount read only, confirm that I can read files well
->  C - mount read write, confirm working
-> Install latest OS, upgrade to latest kernel, then repeat above steps.
->
-> Any likely hiccups with the above procedure and suggested alternatives?
 
-I'd simply install the new OS on a new partition/subvol. This is what
-I did when upgrading from natty -> oneiric -> precise.
+--z4+8/lEcDcG5Ke9S
+Content-Type: text/plain; charset=us-ascii
+Content-Disposition: inline
 
-IIRC there are some incompatibilites (e.g. space/inode cache disk
-format?) but newer kernels will just do the right thing, drop the old
-cache and create a new one.
+On Tue, Jul 24, 2012 at 08:39:36PM -0400, Marios Titas wrote:
+> When I create a btrfs volume of size strictly less than 256 MiB then if I do
+>     mount /dev/sdb1 /mnt/test
+> the kernel tries unsuccessfully to do the mount with many other file systems
+> before successfully trying with btrfs. For volumes of size larger than
+> or equal to
+> 256 MiB it just mounts the volume without doing that. Why is this discrepancy?
+
+   Are you using the --mixed option when creating the filesystem? If
+not, you should do with something that small.
+
+   Hugo.
+
+> Another possibly related symptom is that the volume does not appear in
+> /dev/disk/by-label and /dev/disk/by-uuid at all. This means that it is
+> impossible
+> to mount the volume by uuid or label.
+> 
+> To make sure that this isn't a udev bug, I booted my system with init=/bin/bash
+> in the kernel command line, and then I tried again to mount the
+> volume. This time
+> it would not mount it at all unless I explicitly specified the fs
+> type. On the other
+> hand, it could mount larger volumes without any issues.
+> 
+> All the experiments were done in an initially zeroed out disk. I am
+> using 3.4.6 kernel
+> with btrfs from 3.5 and the latest btrfs-progs from git.
 
 -- 
-Fajar
+=== Hugo Mills: hugo@... carfax.org.uk | darksatanic.net | lug.org.uk ===
+  PGP key: 515C238D from wwwkeys.eu.pgp.net or http://www.carfax.org.uk
+         --- In theory, theory and practice are the same. In ---         
+                      practice,  they're different.                      
+
+--z4+8/lEcDcG5Ke9S
+Content-Type: application/pgp-signature; name="signature.asc"
+Content-Description: Digital signature
+
+-----BEGIN PGP SIGNATURE-----
+Version: GnuPG v1.4.12 (GNU/Linux)
+
+iD8DBQFQD7AcIKyzvlFcI40RAtXBAJ9UIg141NnccXKZyYbustrGCUu6LwCgrjAE
+3mVWaAqISHXjWUgoupeKj0E=
+=ic6G
+-----END PGP SIGNATURE-----
+
+--z4+8/lEcDcG5Ke9S--

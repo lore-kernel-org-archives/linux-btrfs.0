@@ -1,18 +1,21 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-yw0-f46.google.com ([209.85.213.46]:47319 "EHLO
-	mail-yw0-f46.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1755181Ab2GYKl5 (ORCPT
+Received: from mail-yx0-f174.google.com ([209.85.213.174]:57295 "EHLO
+	mail-yx0-f174.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1756483Ab2GYKwA (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 25 Jul 2012 06:41:57 -0400
-Received: by yhmm54 with SMTP id m54so516554yhm.19
-        for <linux-btrfs@vger.kernel.org>; Wed, 25 Jul 2012 03:41:57 -0700 (PDT)
+	Wed, 25 Jul 2012 06:52:00 -0400
+Received: by yenl2 with SMTP id l2so523734yen.19
+        for <linux-btrfs@vger.kernel.org>; Wed, 25 Jul 2012 03:51:55 -0700 (PDT)
 MIME-Version: 1.0
-In-Reply-To: <500D43A7.1010801@gmx.net>
-References: <1341409174-13619-1-git-send-email-ablock84@googlemail.com>
-	<500D43A7.1010801@gmx.net>
-Date: Wed, 25 Jul 2012 12:41:56 +0200
-Message-ID: <CAB9VWqAGTOttaz722LnMiufPNUZaLQU7epAdGFejK9gssuHnRg@mail.gmail.com>
-Subject: Re: [RFC PATCH 0/6] Experimental btrfs send/receive (btrfs-progs)
+In-Reply-To: <500E38E8.60609@gmx.net>
+References: <1341409108-13567-1-git-send-email-ablock84@googlemail.com>
+	<1341409108-13567-5-git-send-email-ablock84@googlemail.com>
+	<50042BB8.4060904@gmx.net>
+	<CAB9VWqAqiVKC3rBEYcUzF58UVYtnniOTQQ_gLAEAOUOWofArXw@mail.gmail.com>
+	<500E38E8.60609@gmx.net>
+Date: Wed, 25 Jul 2012 12:51:54 +0200
+Message-ID: <CAB9VWqA1y1Kza1v+FYVxYx6KOO=5oPQoFi__CPqC+d-QooLVLg@mail.gmail.com>
+Subject: Re: [RFC PATCH 4/7] Btrfs: introduce subvol uuids and times
 From: Alexander Block <ablock84@googlemail.com>
 To: Arne Jansen <sensille@gmx.net>
 Cc: linux-btrfs@vger.kernel.org
@@ -20,79 +23,97 @@ Content-Type: text/plain; charset=ISO-8859-1
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Mon, Jul 23, 2012 at 2:29 PM, Arne Jansen <sensille@gmx.net> wrote:
-> On 04.07.2012 15:39, Alexander Block wrote:
->> Hello all,
->>
->> This is the user space side of btrfs send/receive.
->>
->> You can apply them manually or use my git repo:
->>
->> git://github.com/ablock84/btrfs-progs.git (branch send)
->>
->> The branch is based on Hugo's integration-20120605 branch. I had to add a temporary
->> commit to fix a bug introduced in one of the strncpy/overflow patches that got into
->> btrfs-progs. This fix is not part of the btrfs send/receive patchset, but you'll
->> probably need it if you want to base on the integration branch. I hope this is not
->> required in the future when a new integration branch comes out.
->>
->> Example usage:
->>
->> Multiple snapshots at once:
->> btrfs send /mnt/snap[123] > snap123.btrfs
+On Tue, Jul 24, 2012 at 7:55 AM, Arne Jansen <sensille@gmx.net> wrote:
+> On 23.07.2012 21:41, Alexander Block wrote:
+>> On Mon, Jul 16, 2012 at 4:56 PM, Arne Jansen <sensille@gmx.net> wrote:
+>>> On 04.07.2012 15:38, Alexander Block wrote:
+>>>> +
+>>>> +     ret = btrfs_update_root(trans, root->fs_info->tree_root,
+>>>> +                             &root->root_key, &root->root_item);
+>>>> +     if (ret < 0) {
+>>>> +             goto out;
+>>>
+>>> are you leaking a trans handle here?
+>>>
+>> btrfs_update_root is aborting the transaction in case of failure. Do I
+>> still need to call end_transaction?
 >
-> a) Do we really want a single token command here, not
-> btrfs filesystem send or subvol send?
-In my opinion the single token is easier to type and remember. But if
-enough speaks for normal subcommands this can be changed (but by
-someone else as I'm running out of time).
-> b) zfs makes sure stdout is not a tty, to prevent flooding
-> your console. This kinda makes sense.
-This makes sense. But again, this has to be done by someone else.
+> It's your handle, you should free it.
+Ahh...I thought abort_transaction already frees the handle. Fixed.
 >
->>
->> Single snapshot with manual parent:
->> btrfs send -p /mnt/snap3 /mnt/snap4 > snap4.btrfs
->>
->> Receive both streams:
->> btrfs receive /mnt2 < snap123.btrfs
->> btrfs receive /mnt2 < snap4.btrfs
->>
->> (Please give suggestions for a file extension)
->>
->> Please read the kernel side email as well, especially the warnings!
->>
->> Alex.
->>
->> Alexander Block (6):
->>   Btrfs-progs: add BTRFS_IOC_SUBVOL_GET/SETFLAGS to ioctl.h
->>   Btrfs-progs: update ioctl.h to support clone range ioctl
->>   Btrfs-progs: print inode transid and dir item data field in
->>     debug-tree
->>   Btrfs-progs: update btrfs-progs for subvol uuid+times support
->>   Btrfs-progs: update ioctl.h to support btrfs send ioctl
->>   Btrfs-progs: add btrfs send/receive commands
->>
->>  Makefile       |    7 +-
->>  btrfs.c        |    2 +
->>  cmds-receive.c |  910 ++++++++++++++++++++++++++++++++++++++++++++++++++++++++
->>  cmds-send.c    |  677 +++++++++++++++++++++++++++++++++++++++++
->>  commands.h     |    4 +
->>  ctree.h        |   40 ++-
->>  ioctl.h        |   35 ++-
->>  print-tree.c   |   88 ++++--
->>  send-stream.c  |  480 ++++++++++++++++++++++++++++++
->>  send-stream.h  |   58 ++++
->>  send-utils.c   |  337 +++++++++++++++++++++
->>  send-utils.h   |   69 +++++
->>  send.h         |  132 ++++++++
->>  13 files changed, 2815 insertions(+), 24 deletions(-)
->>  create mode 100644 cmds-receive.c
->>  create mode 100644 cmds-send.c
->>  create mode 100644 send-stream.c
->>  create mode 100644 send-stream.h
->>  create mode 100644 send-utils.c
->>  create mode 100644 send-utils.h
->>  create mode 100644 send.h
->>
+> ...
 >
+>>>>
+>>>> +struct btrfs_ioctl_received_subvol_args {
+>>>> +     char    uuid[BTRFS_UUID_SIZE];  /* in */
+>>>> +     __u64   stransid;               /* in */
+>>>> +     __u64   rtransid;               /* out */
+>>>> +     struct timespec stime;          /* in */
+>>>> +     struct timespec rtime;          /* out */
+>>>> +     __u64   reserved[16];
+>>>
+>>> What is this reserved used for? I don't see a mechanism that could be
+>>> used to signal that there are useful information here, other than
+>>> using a different ioctl.
+>>>
+>> The reserved is a result of a suggestion made by David. I can remove
+>> it again if you want...
+>
+> I don't argue against some reserved space, I only have problems to
+> see how you can make use of them in the future when there's no way
+> to signal that they contain valid information. I should be sufficient
+> to define the reserved values to be 0 at the moment.
+Misunderstood that. Now I see the problem :) I've added a flags field
+before the reserved fields. It's unused for now but can later be used
+to signal that new fields are used.
+>
+>>>> +};
+>>>> +
+>>>>  #define BTRFS_IOC_SNAP_CREATE _IOW(BTRFS_IOCTL_MAGIC, 1, \
+>>>>                                  struct btrfs_ioctl_vol_args)
+>>>>  #define BTRFS_IOC_DEFRAG _IOW(BTRFS_IOCTL_MAGIC, 2, \
+>>>> @@ -359,6 +368,10 @@ struct btrfs_ioctl_get_dev_stats {
+>>>>                                       struct btrfs_ioctl_ino_path_args)
+>>>>  #define BTRFS_IOC_LOGICAL_INO _IOWR(BTRFS_IOCTL_MAGIC, 36, \
+>>>>                                       struct btrfs_ioctl_ino_path_args)
+>>>> +
+>>>> +#define BTRFS_IOC_SET_RECEIVED_SUBVOL _IOWR(BTRFS_IOCTL_MAGIC, 37, \
+>>>> +                             struct btrfs_ioctl_received_subvol_args)
+>>>> +
+>>>>  #define BTRFS_IOC_GET_DEV_STATS _IOWR(BTRFS_IOCTL_MAGIC, 52, \
+>>>>                                     struct btrfs_ioctl_get_dev_stats)
+>>>>  #define BTRFS_IOC_GET_AND_RESET_DEV_STATS _IOWR(BTRFS_IOCTL_MAGIC, 53, \
+>>>> diff --git a/fs/btrfs/root-tree.c b/fs/btrfs/root-tree.c
+>>>> index 24fb8ce..17d638e 100644
+>>>> --- a/fs/btrfs/root-tree.c
+>>>> +++ b/fs/btrfs/root-tree.c
+>>>> @@ -16,6 +16,7 @@
+>>>>   * Boston, MA 021110-1307, USA.
+>>>>   */
+>>>>
+>>>> +#include <linux/uuid.h>
+>>>>  #include "ctree.h"
+>>>>  #include "transaction.h"
+>>>>  #include "disk-io.h"
+>>>> @@ -25,6 +26,9 @@
+>>>>   * lookup the root with the highest offset for a given objectid.  The key we do
+>>>>   * find is copied into 'key'.  If we find something return 0, otherwise 1, < 0
+>>>>   * on error.
+>>>> + * We also check if the root was once mounted with an older kernel. If we detect
+>>>> + * this, the new fields coming after 'level' get overwritten with zeros so to
+>>>> + * invalidate the fields.
+>>>
+>>> ... "This is detected by a mismatch of the 2 generation fields" ... or something
+>>> like that.
+>>>
+>> The current version (found in git only) has this new function which is
+>> called in find_last_root:
+>> void btrfs_read_root_item(struct btrfs_root *root,
+>>                        struct extent_buffer *eb, int slot,
+>>                        struct btrfs_root_item *item)
+>>
+>> The comment above this function explains what happens.
+>
+> ok. Please regard most of my comments as an expression of my thoughts while
+> reading it. So they mark places where it might be useful to add comments
+> to make it easier for the next reader :)

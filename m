@@ -1,91 +1,65 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from frost.carfax.org.uk ([85.119.82.111]:54787 "EHLO
-	frost.carfax.org.uk" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S932927Ab2GYOAm (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 25 Jul 2012 10:00:42 -0400
-Date: Wed, 25 Jul 2012 15:00:36 +0100
-From: Hugo Mills <hugo@carfax.org.uk>
-To: Alexander Block <ablock84@googlemail.com>
-Cc: Arne Jansen <sensille@gmx.net>, linux-btrfs@vger.kernel.org
-Subject: Re: [RFC PATCH 0/6] Experimental btrfs send/receive (btrfs-progs)
-Message-ID: <20120725140036.GE30007@carfax.org.uk>
-References: <1341409174-13619-1-git-send-email-ablock84@googlemail.com>
- <500D43A7.1010801@gmx.net>
- <CAB9VWqAGTOttaz722LnMiufPNUZaLQU7epAdGFejK9gssuHnRg@mail.gmail.com>
-MIME-Version: 1.0
-Content-Type: multipart/signed; micalg=pgp-sha1;
-	protocol="application/pgp-signature"; boundary="CGDBiGfvSTbxKZlW"
-In-Reply-To: <CAB9VWqAGTOttaz722LnMiufPNUZaLQU7epAdGFejK9gssuHnRg@mail.gmail.com>
+Received: from mga09.intel.com ([134.134.136.24]:39255 "EHLO mga09.intel.com"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S933484Ab2GYPK5 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Wed, 25 Jul 2012 11:10:57 -0400
+From: Artem Bityutskiy <artem.bityutskiy@linux.intel.com>
+To: Al Viro <viro@ZenIV.linux.org.uk>
+Cc: Linux Kernel Maling List <linux-kernel@vger.kernel.org>,
+        Linux FS Maling List <linux-fsdevel@vger.kernel.org>,
+        Artem Bityutskiy <artem.bityutskiy@linux.intel.com>,
+        Chris Mason <chris.mason@fusionio.com>, linux-btrfs@vger.kernel.org
+Subject: [PATCH 08/16] btrfs: nuke pdflush from comments
+Date: Wed, 25 Jul 2012 18:12:06 +0300
+Message-Id: <1343229134-29487-9-git-send-email-artem.bityutskiy@linux.intel.com>
+In-Reply-To: <1343229134-29487-1-git-send-email-artem.bityutskiy@linux.intel.com>
+References: <1343229134-29487-1-git-send-email-artem.bityutskiy@linux.intel.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
+From: Artem Bityutskiy <artem.bityutskiy@linux.intel.com>
 
---CGDBiGfvSTbxKZlW
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
+The pdflush thread is long gone, so this patch removes references to pdflush
+from btrfs comments.
 
-On Wed, Jul 25, 2012 at 12:41:56PM +0200, Alexander Block wrote:
-> On Mon, Jul 23, 2012 at 2:29 PM, Arne Jansen <sensille@gmx.net> wrote:
-> > On 04.07.2012 15:39, Alexander Block wrote:
-> >> Hello all,
-> >>
-> >> This is the user space side of btrfs send/receive.
-> >>
-> >> You can apply them manually or use my git repo:
-> >>
-> >> git://github.com/ablock84/btrfs-progs.git (branch send)
-> >>
-> >> The branch is based on Hugo's integration-20120605 branch. I had to add a temporary
-> >> commit to fix a bug introduced in one of the strncpy/overflow patches that got into
-> >> btrfs-progs. This fix is not part of the btrfs send/receive patchset, but you'll
-> >> probably need it if you want to base on the integration branch. I hope this is not
-> >> required in the future when a new integration branch comes out.
-> >>
-> >> Example usage:
-> >>
-> >> Multiple snapshots at once:
-> >> btrfs send /mnt/snap[123] > snap123.btrfs
-> >
-> > a) Do we really want a single token command here, not
-> > btrfs filesystem send or subvol send?
-> In my opinion the single token is easier to type and remember. But if
-> enough speaks for normal subcommands this can be changed (but by
-> someone else as I'm running out of time).
+Cc: Chris Mason <chris.mason@fusionio.com>
+Cc: linux-btrfs@vger.kernel.org
+Signed-off-by: Artem Bityutskiy <artem.bityutskiy@linux.intel.com>
+---
 
-   Since everything else is two commands, yes, I think we need it for
-consistency. (And, since it's a publically-visible interface, for
-acceptance of the patches -- we don't want to be changing the way the
-commands work after the fact).
+I expect this patch to be merged via Al Viro's VFS tree.
 
-> > b) zfs makes sure stdout is not a tty, to prevent flooding
-> > your console. This kinda makes sense.
-> This makes sense. But again, this has to be done by someone else.
+ fs/btrfs/inode.c        |    3 ++-
+ fs/btrfs/ordered-data.c |    2 +-
+ 2 files changed, 3 insertions(+), 2 deletions(-)
 
-   Can you keep a brief list of such cleanups/features and dump it on
-the wiki as a proposed project when your time does run out, please.
-That way the details don't get lost, and they can be found by other
-people and dealt with independently.
-
-   Hugo.
-
+diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
+index a7d1921..ca8b759 100644
+--- a/fs/btrfs/inode.c
++++ b/fs/btrfs/inode.c
+@@ -324,7 +324,8 @@ static noinline int add_async_extent(struct async_cow *cow,
+  * If this code finds it can't get good compression, it puts an
+  * entry onto the work queue to write the uncompressed bytes.  This
+  * makes sure that both compressed inodes and uncompressed inodes
+- * are written in the same order that pdflush sent them down.
++ * are written in the same order that the flusher thread sent them
++ * down.
+  */
+ static noinline int compress_file_range(struct inode *inode,
+ 					struct page *locked_page,
+diff --git a/fs/btrfs/ordered-data.c b/fs/btrfs/ordered-data.c
+index 643335a..051c7fe 100644
+--- a/fs/btrfs/ordered-data.c
++++ b/fs/btrfs/ordered-data.c
+@@ -596,7 +596,7 @@ void btrfs_start_ordered_extent(struct inode *inode,
+ 	/*
+ 	 * pages in the range can be dirty, clean or writeback.  We
+ 	 * start IO on any dirty ones so the wait doesn't stall waiting
+-	 * for pdflush to find them
++	 * for the flusher thread to find them
+ 	 */
+ 	if (!test_bit(BTRFS_ORDERED_DIRECT, &entry->flags))
+ 		filemap_fdatawrite_range(inode->i_mapping, start, end);
 -- 
-=== Hugo Mills: hugo@... carfax.org.uk | darksatanic.net | lug.org.uk ===
-  PGP key: 515C238D from wwwkeys.eu.pgp.net or http://www.carfax.org.uk
-    --- Turning,  pages turning in the widening bath, / The spine ---    
-        cannot bear the humidity. / Books fall apart; the binding        
-            cannot hold. / Page 129 is loosed upon the world.            
+1.7.10
 
---CGDBiGfvSTbxKZlW
-Content-Type: application/pgp-signature; name="signature.asc"
-Content-Description: Digital signature
-
------BEGIN PGP SIGNATURE-----
-Version: GnuPG v1.4.12 (GNU/Linux)
-
-iD8DBQFQD/wDIKyzvlFcI40RAs8oAJwLvTlZ3faGHrrGZWZ44lCha3qehQCcD/vy
-lPcy/OhweOpX+hb1s0M0ATw=
-=Hmb9
------END PGP SIGNATURE-----
-
---CGDBiGfvSTbxKZlW--

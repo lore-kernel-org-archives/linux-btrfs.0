@@ -1,119 +1,76 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-yx0-f174.google.com ([209.85.213.174]:57295 "EHLO
-	mail-yx0-f174.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1756483Ab2GYKwA (ORCPT
+Received: from mailhost.fernuni-hagen.de ([132.176.114.94]:62206 "EHLO
+	mailhost.FernUni-Hagen.de" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1756498Ab2GYKy0 (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 25 Jul 2012 06:52:00 -0400
-Received: by yenl2 with SMTP id l2so523734yen.19
-        for <linux-btrfs@vger.kernel.org>; Wed, 25 Jul 2012 03:51:55 -0700 (PDT)
+	Wed, 25 Jul 2012 06:54:26 -0400
+Received: from mailstore.fernuni-hagen.de ([132.176.114.185])
+	by mailhost.FernUni-Hagen.de with esmtp (Exim 4.69)
+	(envelope-from <q6753817@mailstore.FernUni-Hagen.de>)
+	id 1Stz1o-0000cV-JV
+	for linux-btrfs@vger.kernel.org; Wed, 25 Jul 2012 12:41:16 +0200
+Received: from [85.158.138.21] (account q6753817@mailstore.fernuni-hagen.de)
+  by mailstore.fernuni-hagen.de (CommuniGate Pro WebUser 5.0.2)
+  with HTTP id 48902846 for linux-btrfs@vger.kernel.org; Wed, 25 Jul 2012 12:41:15 +0200
+From: "Guenther Rasch" <Guenther.Rasch@FernUni-Hagen.de>
+Subject: Question about btrfs metadata structure
+To: linux-btrfs@vger.kernel.org
+Date: Wed, 25 Jul 2012 12:41:15 +0200
+Message-ID: <web-48902846@mailstore.fernuni-hagen.de>
 MIME-Version: 1.0
-In-Reply-To: <500E38E8.60609@gmx.net>
-References: <1341409108-13567-1-git-send-email-ablock84@googlemail.com>
-	<1341409108-13567-5-git-send-email-ablock84@googlemail.com>
-	<50042BB8.4060904@gmx.net>
-	<CAB9VWqAqiVKC3rBEYcUzF58UVYtnniOTQQ_gLAEAOUOWofArXw@mail.gmail.com>
-	<500E38E8.60609@gmx.net>
-Date: Wed, 25 Jul 2012 12:51:54 +0200
-Message-ID: <CAB9VWqA1y1Kza1v+FYVxYx6KOO=5oPQoFi__CPqC+d-QooLVLg@mail.gmail.com>
-Subject: Re: [RFC PATCH 4/7] Btrfs: introduce subvol uuids and times
-From: Alexander Block <ablock84@googlemail.com>
-To: Arne Jansen <sensille@gmx.net>
-Cc: linux-btrfs@vger.kernel.org
-Content-Type: text/plain; charset=ISO-8859-1
+Content-Type: text/plain; charset=US-ASCII;
+	format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Tue, Jul 24, 2012 at 7:55 AM, Arne Jansen <sensille@gmx.net> wrote:
-> On 23.07.2012 21:41, Alexander Block wrote:
->> On Mon, Jul 16, 2012 at 4:56 PM, Arne Jansen <sensille@gmx.net> wrote:
->>> On 04.07.2012 15:38, Alexander Block wrote:
->>>> +
->>>> +     ret = btrfs_update_root(trans, root->fs_info->tree_root,
->>>> +                             &root->root_key, &root->root_item);
->>>> +     if (ret < 0) {
->>>> +             goto out;
->>>
->>> are you leaking a trans handle here?
->>>
->> btrfs_update_root is aborting the transaction in case of failure. Do I
->> still need to call end_transaction?
->
-> It's your handle, you should free it.
-Ahh...I thought abort_transaction already frees the handle. Fixed.
->
-> ...
->
->>>>
->>>> +struct btrfs_ioctl_received_subvol_args {
->>>> +     char    uuid[BTRFS_UUID_SIZE];  /* in */
->>>> +     __u64   stransid;               /* in */
->>>> +     __u64   rtransid;               /* out */
->>>> +     struct timespec stime;          /* in */
->>>> +     struct timespec rtime;          /* out */
->>>> +     __u64   reserved[16];
->>>
->>> What is this reserved used for? I don't see a mechanism that could be
->>> used to signal that there are useful information here, other than
->>> using a different ioctl.
->>>
->> The reserved is a result of a suggestion made by David. I can remove
->> it again if you want...
->
-> I don't argue against some reserved space, I only have problems to
-> see how you can make use of them in the future when there's no way
-> to signal that they contain valid information. I should be sufficient
-> to define the reserved values to be 0 at the moment.
-Misunderstood that. Now I see the problem :) I've added a flags field
-before the reserved fields. It's unused for now but can later be used
-to signal that new fields are used.
->
->>>> +};
->>>> +
->>>>  #define BTRFS_IOC_SNAP_CREATE _IOW(BTRFS_IOCTL_MAGIC, 1, \
->>>>                                  struct btrfs_ioctl_vol_args)
->>>>  #define BTRFS_IOC_DEFRAG _IOW(BTRFS_IOCTL_MAGIC, 2, \
->>>> @@ -359,6 +368,10 @@ struct btrfs_ioctl_get_dev_stats {
->>>>                                       struct btrfs_ioctl_ino_path_args)
->>>>  #define BTRFS_IOC_LOGICAL_INO _IOWR(BTRFS_IOCTL_MAGIC, 36, \
->>>>                                       struct btrfs_ioctl_ino_path_args)
->>>> +
->>>> +#define BTRFS_IOC_SET_RECEIVED_SUBVOL _IOWR(BTRFS_IOCTL_MAGIC, 37, \
->>>> +                             struct btrfs_ioctl_received_subvol_args)
->>>> +
->>>>  #define BTRFS_IOC_GET_DEV_STATS _IOWR(BTRFS_IOCTL_MAGIC, 52, \
->>>>                                     struct btrfs_ioctl_get_dev_stats)
->>>>  #define BTRFS_IOC_GET_AND_RESET_DEV_STATS _IOWR(BTRFS_IOCTL_MAGIC, 53, \
->>>> diff --git a/fs/btrfs/root-tree.c b/fs/btrfs/root-tree.c
->>>> index 24fb8ce..17d638e 100644
->>>> --- a/fs/btrfs/root-tree.c
->>>> +++ b/fs/btrfs/root-tree.c
->>>> @@ -16,6 +16,7 @@
->>>>   * Boston, MA 021110-1307, USA.
->>>>   */
->>>>
->>>> +#include <linux/uuid.h>
->>>>  #include "ctree.h"
->>>>  #include "transaction.h"
->>>>  #include "disk-io.h"
->>>> @@ -25,6 +26,9 @@
->>>>   * lookup the root with the highest offset for a given objectid.  The key we do
->>>>   * find is copied into 'key'.  If we find something return 0, otherwise 1, < 0
->>>>   * on error.
->>>> + * We also check if the root was once mounted with an older kernel. If we detect
->>>> + * this, the new fields coming after 'level' get overwritten with zeros so to
->>>> + * invalidate the fields.
->>>
->>> ... "This is detected by a mismatch of the 2 generation fields" ... or something
->>> like that.
->>>
->> The current version (found in git only) has this new function which is
->> called in find_last_root:
->> void btrfs_read_root_item(struct btrfs_root *root,
->>                        struct extent_buffer *eb, int slot,
->>                        struct btrfs_root_item *item)
->>
->> The comment above this function explains what happens.
->
-> ok. Please regard most of my comments as an expression of my thoughts while
-> reading it. So they mark places where it might be useful to add comments
-> to make it easier for the next reader :)
+Hi!
+
+I'm writing my bsc thesis about btrfs and I'm analyzing 
+the
+btrfs metadata structure at the moment.
+
+I'm using fedora 17 with kernel 3.4 and btrfs-prog from 
+your
+git-repository. For an overview I use "btrfs-debug-tree" 
+and
+here are my questions:
+
+The root tree contains some inode_items, but I don't 
+understand
+the meaning of them:
+item 4 key (ROOT_TREE_DIR INODE_ITEM 0) itemoff 3101 
+itemsize 160
+inode generation 3 size 0 block group 0 mode 40555 links 1
+
+item 5 key (ROOT_TREE_DIR INODE_REF 6) itemoff 3089 
+itemsize 12
+inode ref index 0 namelen 2 name: ..
+
+The key for an inode_item is objectid=ROOT_TREE_DIR. 
+ROOT-TREE-DIR is the inode-Nr.?
+What does offset=6 regarding INODE_REF mean? --> item 5
+
+Also placed in the root tree, I've found entries of
+(FREE_SPACE UNTYPED ....)
+What does UNTYPED mean in this context and the offset is
+the logical address of a block group (I guess...)? This
+item has a pointer to an inode_item, is that right?
+
+And last question about this entries:
+item 2 key (FS_TREE INODE_REF 6) itemoff 3500 itemsize 17
+  inode ref index 0 namelen 7 name: default
+...
+item 6 key (ROOT_TREE_DIR DIR_ITEM 2378154706) itemoff 
+3052 itemsize 37
+  location key (FS_TREE ROOT_ITEM 18446744073709551615) 
+type 2
+  namelen 7 datalen 0 name: default
+
+There is an INODE_REF (again, offset 6...?) pointing to
+which inode? I cannot find some...
+What's about that offset in location key (FS_TREE....)
+
+Thx in advance for your patience and answers!
+
+Regards
+Guenther

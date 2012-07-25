@@ -1,40 +1,47 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-gh0-f174.google.com ([209.85.160.174]:34446 "EHLO
-	mail-gh0-f174.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1751394Ab2GYRON (ORCPT
+Received: from mail-yw0-f46.google.com ([209.85.213.46]:60488 "EHLO
+	mail-yw0-f46.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1750722Ab2GYRUc (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 25 Jul 2012 13:14:13 -0400
-Received: by ghrr11 with SMTP id r11so973300ghr.19
-        for <linux-btrfs@vger.kernel.org>; Wed, 25 Jul 2012 10:14:12 -0700 (PDT)
+	Wed, 25 Jul 2012 13:20:32 -0400
+Received: by yhmm54 with SMTP id m54so963765yhm.19
+        for <linux-btrfs@vger.kernel.org>; Wed, 25 Jul 2012 10:20:32 -0700 (PDT)
 MIME-Version: 1.0
-In-Reply-To: <CAHf9xvYr2w0S+5U0HNtg73PkXq9CwUO_7pRONoeK4QzC0BTdWQ@mail.gmail.com>
-References: <1341409174-13619-1-git-send-email-ablock84@googlemail.com>
-	<500D43A7.1010801@gmx.net>
-	<CAB9VWqAGTOttaz722LnMiufPNUZaLQU7epAdGFejK9gssuHnRg@mail.gmail.com>
-	<20120725140036.GE30007@carfax.org.uk>
-	<CAB9VWqBMe_8b3yD53XEkJoegbaqDAD-sinrE3ed3rYT0eyZDpA@mail.gmail.com>
-	<CAHf9xvYr2w0S+5U0HNtg73PkXq9CwUO_7pRONoeK4QzC0BTdWQ@mail.gmail.com>
-Date: Wed, 25 Jul 2012 19:14:11 +0200
-Message-ID: <CAB9VWqA_EfnC767192UV3un95wpbLWta5rDOfdMbr2iZw6WWiA@mail.gmail.com>
-Subject: Re: [RFC PATCH 0/6] Experimental btrfs send/receive (btrfs-progs)
-From: Alexander Block <ablock84@googlemail.com>
-To: Alex Lyakas <alex.bolshoy.btrfs@gmail.com>
+In-Reply-To: <CAB9VWqBEXs_EE=avjqXq4708HpGWeWYJGK8esshR4fTC4+G9Gg@mail.gmail.com>
+References: <1341409108-13567-1-git-send-email-ablock84@googlemail.com>
+	<1341409108-13567-8-git-send-email-ablock84@googlemail.com>
+	<CAHf9xvbKfbSQNx_Bz39-NBk2QvPZLAgWc_7+HLDpj1s45R6C6g@mail.gmail.com>
+	<CAB9VWqBEXs_EE=avjqXq4708HpGWeWYJGK8esshR4fTC4+G9Gg@mail.gmail.com>
+Date: Wed, 25 Jul 2012 20:20:32 +0300
+Message-ID: <CAHf9xvbLMaHpxuGR=3596dwF=ttgrgUQFhcEe9qvsZOtAtf3MA@mail.gmail.com>
+Subject: Re: [RFC PATCH 7/7] Btrfs: introduce BTRFS_IOC_SEND for btrfs
+ send/receive (part 2)
+From: Alex Lyakas <alex.bolshoy.btrfs@gmail.com>
+To: Alexander Block <ablock84@googlemail.com>
 Cc: linux-btrfs@vger.kernel.org
 Content-Type: text/plain; charset=ISO-8859-1
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Wed, Jul 25, 2012 at 7:10 PM, Alex Lyakas
-<alex.bolshoy.btrfs@gmail.com> wrote:
-> Alexander,
-> can you pls let know like a day or two before you run out of time?
-> I have compiled a list of questions, but also want to do more testing
-> before I publish them all.
-My flight goes on 6. August...after that I don't know when I'm back. I
-try my best to work on the most important issues until then, but time
-is very limited already now due to the preparations I need to take
-care of.
->
-> Thanks for your work,
-> Alex.
->
+Alexander,
+
+>> Same is true for BTRFS_FILE_EXTENT_PREALLOC extents, I think. Those
+>> also don't contain real data.
+>> So something like:
+>> if (left_disknr == 0 || left_type == BTRFS_FILE_EXTENT_REG) {
+>>         ret = 1;
+>>         goto out;
+>> }
+> Do you mean "|| left_type == BTRFS_FILE_EXTENT_PREALLOC"?
+
+I see your point about bytenr==0, I missed that on the parent tree it
+can be something else.
+
+As for PREALLOC: can it happen that on differential send we see extent
+of type BTRFS_FILE_EXTENT_PREALLOC? And can it happen that parent had
+some real data extent in that place? I don't know the answer, but if
+yes, then we must treat PREALLOC as normal extent. So this case is
+similar to bytenr==0.
+
+Thanks,
+Alex.

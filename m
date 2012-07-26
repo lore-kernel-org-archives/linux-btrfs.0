@@ -1,212 +1,46 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.fusionio.com ([66.114.96.31]:44372 "EHLO mx2.fusionio.com"
+Received: from twin.jikos.cz ([89.185.236.188]:42333 "EHLO twin.jikos.cz"
 	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1752331Ab2GZVJb (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 26 Jul 2012 17:09:31 -0400
-Date: Thu, 26 Jul 2012 17:09:25 -0400
-From: Chris Mason <chris.mason@fusionio.com>
-To: Linus Torvalds <torvalds@linux-foundation.org>,
-        "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>,
-        "linux-kernel@vger.kernel.org" <linux-kernel@vger.kernel.org>
-CC: Josef Bacik <jbacik@fusionio.com>
-Subject: [GIT PULL] a large btrfs update
-Message-ID: <20120726210925.GD17928@shiny>
+	id S1752673Ab2GZVKH (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Thu, 26 Jul 2012 17:10:07 -0400
+Date: Thu, 26 Jul 2012 23:09:59 +0200
+From: David Sterba <dave@jikos.cz>
+To: cbay@alwaysdata.com
+Cc: linux-btrfs@vger.kernel.org, jbacik@fusionio.com
+Subject: Re: mkfs devices ordering relevant with devices of different sizes?
+Message-ID: <20120726210959.GK17430@twin.jikos.cz>
+Reply-To: dave@jikos.cz
+References: <juos5r$2tp$1@dough.gmane.org>
 MIME-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
+Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <juos5r$2tp$1@dough.gmane.org>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hi Linus,
+On Wed, Jul 25, 2012 at 03:26:20PM +0200, Cyril B.  wrote:
+> When creating a filesystem with devices of different sizes, the resulting 
+> filesystem total size depends on the device order specified to mkfs. When 
+> the smaller device is specified first, the second (larger) device is seen as 
+> the same size as the first. This doesn't occur when the order is reversed.
+> 
+> It's confusing. Is this expected? I'm using the latest btrfs-progs and Linux 
+> 3.5.
 
-Since this has a conflict, I've split it into two branches.
+Confusing it is, caused by this commit
 
-# against 3.5, my diffstat is based on this branch
-git://git.kernel.org/pub/scm/linux/kernel/git/mason/linux-btrfs.git for-linus
+Author:     Josef Bacik <josef@redhat.com>
+AuthorDate: Wed Mar 28 14:20:52 2012 -0400
+Commit:     Chris Mason <chris.mason@fusionio.com>
+CommitDate: Tue Jul 3 16:27:46 2012 -0400
 
-# against your git as of today
-git://git.kernel.org/pub/scm/linux/kernel/git/mason/linux-btrfs.git for-linus-merged
+    btrfs-progs: enforce block count on all devices in mkfs
 
-for-linus-merged has an extra commit on top as well that changes the
-btrfs send/receive code to Al's new dentry_open.  It's a small commit,
-and my guess is that you'll cherry pick it and do your own merge.
+    I had a test that creates a 7gig raid1 device but it was ending up wonky
+    because the second device that gets added is the full size of the disk
+    instead of the limited size.  So enforce the limited size on all disks
+    passed in at mkfs time, otherwise our threshold calculations end up wonky
+    when doing chunk allocations.  Thanks,
+---
 
-I will be on vacation next week, but Josef Bacik is in charge of dealing
-with any problems and sending fixes.  He has git trees on kernel.org, so
-there won't be any problems sending things in.
 
-This pull request is very large, and the two main features in here have
-been under testing/devel for quite a while.
-
-We have subvolume quotas from the strato developers.  This enables full
-tracking of how many blocks are allocated to each subvolume (and all
-snapshots) and you can set limits on a per-subvolume basis.  You can
-also create quota groups and toss multiple subvolumes into a big group.
-It's everything you need to be a web hosting company and give each user
-their own subvolume.
-
-The userland side of the quotas is being refreshed, they'll send out
-details on where to grab it soon.
-
-Next is the kernel side of btrfs send/receive from Alexander Block.
-This leverages the same infrastructure as the quota code to figure out
-relationships between blocks and their owners.  It can then compute the
-difference between two snapshots and sends the diffs in a neutral format
-into userland.
-
-The basic model:
-
-	create a snapshot
-	send that snapshot as the initial backup
-	make changes
-	create a second snapshot
-	send the incremental as a backup
-	delete the first snapshot
-	(use the second snapshot for the next incremental)
-
-The receive portion is all in userland, and in the 'next' branch of my
-btrfs-progs repo.
-
-There's still some work to do in terms of optimizing the send side from
-kernel to userland.  The really important part is figuring out how two
-snapshots are different, and this is where we are concentrating right
-now.  The initial send of a dataset is a little slower than tar, but the
-incremental sends are dramatically faster than what rsync can do.
-
-On top of all of that, we have a nice queue of fixes, cleanups and
-optimizations.
-
-Liu Bo (13) commits (+120/-67):
-    Btrfs: check write access to mount earlier while creating snapshots (+11/-11)
-    Btrfs: fix a bug of writting free space cache during balance (+21/-3)
-    Btrfs: fix btrfs_is_free_space_inode to recognize btree inode (+4/-2)
-    Btrfs: fix typo in cow_file_range_async and async_cow_submit (+2/-2)
-    Btrfs: make btrfs's allocation smoothly with preallocation (+3/-1)
-    Btrfs: use mnt_want_write_file instead of mnt_want_write (+2/-2)
-    Btrfs: do not set subvolume flags in readonly mode (+28/-14)
-    Btrfs: kill root from btrfs_is_free_space_inode (+16/-15)
-    Btrfs: do not abort transaction in prealloc case (+5/-1)
-    Btrfs: remove redundant r/o check for superblock (+0/-7)
-    Btrfs: add ro notification to dump_space_info (+3/-3)
-    Btrfs: improve multi-thread buffer read (+24/-5)
-    Btrfs: do not count in readonly bytes (+1/-1)
-
-Arne Jansen (12) commits (+2488/-26):
-    Btrfs: Test code to change the order of delayed-ref processing (+49/-0)
-    Btrfs: check the root passed to btrfs_end_transaction (+12/-0)
-    Btrfs: qgroup implementation and prototypes (+1681/-1)
-    Btrfs: added helper to create new trees (+83/-1)
-    Btrfs: add helper for tree enumeration (+77/-0)
-    Btrfs: qgroup state and initialization (+31/-0)
-    Btrfs: add helper for tree enumeration (+75/-0)
-    Btrfs: quota tree support and startup (+42/-6)
-    Btrfs: hooks to reserve qgroup space (+29/-0)
-    Btrfs: add qgroup inheritance (+61/-18)
-    Btrfs: qgroup on-disk format (+136/-0)
-    Btrfs: add qgroup ioctls (+212/-0)
-
-Josef Bacik (8) commits (+160/-133):
-    Btrfs: don't return true in releasepage unless we actually freed the eb (+5/-4)
-    Btrfs: lock the transition from dirty to writeback for an eb (+9/-0)
-    Btrfs: flush delayed inodes if we're short on space (+83/-38)
-    Btrfs: fix potential race in extent buffer freeing (+3/-6)
-    Btrfs: change how we indicate we're adding csums (+18/-15)
-    Btrfs: rework shrink_delalloc (+24/-57)
-    Btrfs: add DEVICE_READY ioctl (+18/-2)
-    Btrfs: remove ->dirty_inode (+0/-11)
-
-Jan Schmidt (5) commits (+295/-225):
-    Btrfs: join tree mod log code with the code holding back delayed refs (+240/-219)
-    Btrfs: hooks for qgroup to record delayed refs (+36/-6)
-    Btrfs: fix buffer leak in btrfs_next_old_leaf (+1/-0)
-    Btrfs: fix buffer leak in btrfs_next_old_leaf (+1/-0)
-    Btrfs: call the qgroup accounting functions (+17/-0)
-
-Alexander Block (5) commits (+5465/-21):
-    Btrfs: introduce BTRFS_IOC_SEND for btrfs send/receive (+4717/-1)
-    Btrfs: introduce subvol uuids and times (+292/-15)
-    Btrfs: don't update atime on RO subvolumes (+7/-0)
-    Btrfs: add btrfs_compare_trees function (+440/-0)
-    Btrfs: make iref_to_path non static (+9/-5)
-
-Chris Mason (5) commits (+22/-9):
-    Btrfs: call the ordered free operation without any locks held (+8/-1)
-    Btrfs: don't wait around for new log writers on an SSD (+2/-1)
-    Btrfs: add a barrier before a waitqueue_active check (+1/-0)
-    Btrfs: reduce calls to wake_up on uncontended locks (+9/-5)
-    Btrfs: uninit variable fixes in send/receive (+2/-2)
-
-Stefan Behrens (3) commits (+9/-4):
-    Btrfs: avoid I/O repair BUG() from btree_read_extent_buffer_pages() (+1/-1)
-    Btrfs: remove unwanted printk() for btrfs device I/O stats (+0/-3)
-    Btrfs: suppress printk() if all device I/O stats are zero (+8/-0)
-
-Li Zefan (3) commits (+159/-122):
-    Btrfs: kill free_space pointer from inode structure (+10/-19)
-    Btrfs: zero unused bytes in inode item (+3/-0)
-    Btrfs: rewrite BTRFS_SETGET_FUNCS (+146/-103)
-
-Ilya Dryomov (2) commits (+3/-3):
-    Btrfs: do not ignore errors from btrfs_cleanup_fs_roots() when mounting (+2/-2)
-    Btrfs: do not return EINVAL instead of ENOMEM from open_ctree() (+1/-1)
-
-Dan Carpenter (2) commits (+4/-3):
-    Btrfs: small naming cleanup in join_transaction() (+2/-2)
-    Btrfs: fix error handling in __add_reloc_root() (+2/-1)
-
-David Sterba (2) commits (+23/-18):
-    btrfs: allow cross-subvolume file clone (+8/-3)
-    btrfs: join DEV_STATS ioctls to one (+15/-15)
-
-Arnd Hannemann (1) commits (+8/-1):
-    Btrfs: allow mount -o remount,compress=no
-
-Anand Jain (1) commits (+1/-1):
-    btrfs read error corrected message floods the console during recovery
-
-Mitch Harder (1) commits (+20/-14):
-    Btrfs: Check INCOMPAT flags on remount and add helper function
-
-Tsutomu Itoh (1) commits (+3/-3):
-    Btrfs: return error of btrfs_update_inode() to caller
-
-Andrew Mahone (1) commits (+5/-3):
-    btrfs: ignore unfragmented file checks in defrag when compression enabled - rebased
-
-Total: (65) commits
-
- fs/btrfs/Makefile           |    2 +-
- fs/btrfs/async-thread.c     |    9 +-
- fs/btrfs/backref.c          |   40 +-
- fs/btrfs/backref.h          |    7 +-
- fs/btrfs/btrfs_inode.h      |   14 +-
- fs/btrfs/check-integrity.c  |    7 +-
- fs/btrfs/ctree.c            |  775 +++++++-
- fs/btrfs/ctree.h            |  368 +++-
- fs/btrfs/delayed-inode.c    |   23 +-
- fs/btrfs/delayed-inode.h    |    2 +
- fs/btrfs/delayed-ref.c      |   56 +-
- fs/btrfs/delayed-ref.h      |   62 +-
- fs/btrfs/disk-io.c          |  150 +-
- fs/btrfs/disk-io.h          |    6 +
- fs/btrfs/extent-tree.c      |  358 ++--
- fs/btrfs/extent_io.c        |   58 +-
- fs/btrfs/file-item.c        |    4 +-
- fs/btrfs/free-space-cache.c |    2 +-
- fs/btrfs/inode.c            |   42 +-
- fs/btrfs/ioctl.c            |  471 ++++-
- fs/btrfs/ioctl.h            |   97 +-
- fs/btrfs/locking.c          |   14 +-
- fs/btrfs/qgroup.c           | 1571 +++++++++++++++
- fs/btrfs/relocation.c       |    3 +-
- fs/btrfs/root-tree.c        |  107 +-
- fs/btrfs/send.c             | 4570 +++++++++++++++++++++++++++++++++++++++++++
- fs/btrfs/send.h             |  133 ++
- fs/btrfs/struct-funcs.c     |  196 +-
- fs/btrfs/super.c            |   28 +-
- fs/btrfs/transaction.c      |  101 +-
- fs/btrfs/transaction.h      |   12 +
- fs/btrfs/tree-log.c         |    4 +-
- fs/btrfs/volumes.c          |   25 +-
- fs/btrfs/volumes.h          |    4 +-
- fs/inode.c                  |    2 +
- 35 files changed, 8690 insertions(+), 633 deletions(-)
+david

@@ -1,42 +1,32 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-we0-f174.google.com ([74.125.82.174]:46447 "EHLO
-	mail-we0-f174.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1753914Ab2GZWBi (ORCPT
+Received: from mailhost.fernuni-hagen.de ([132.176.114.94]:47731 "EHLO
+	mailhost.FernUni-Hagen.de" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1751113Ab2G0HHP (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 26 Jul 2012 18:01:38 -0400
+	Fri, 27 Jul 2012 03:07:15 -0400
+Received: from mailstore.fernuni-hagen.de ([132.176.114.185])
+	by mailhost.FernUni-Hagen.de with esmtp (Exim 4.69)
+	(envelope-from <q6753817@mailstore.FernUni-Hagen.de>)
+	id 1Suedl-0000xH-Qo
+	for linux-btrfs@vger.kernel.org; Fri, 27 Jul 2012 09:07:13 +0200
+Received: from [85.158.137.195] (account q6753817@mailstore.fernuni-hagen.de)
+  by mailstore.fernuni-hagen.de (CommuniGate Pro WebUser 5.0.2)
+  with HTTP id 48919273 for linux-btrfs@vger.kernel.org; Fri, 27 Jul 2012 09:07:12 +0200
+From: "Guenther Rasch" <Guenther.Rasch@FernUni-Hagen.de>
+Subject: Re: Question about btrfs metadata structure
+To: linux-btrfs@vger.kernel.org
+Date: Fri, 27 Jul 2012 09:07:12 +0200
+Message-ID: <web-48919273@mailstore.fernuni-hagen.de>
+In-Reply-To: <web-48902846@mailstore.fernuni-hagen.de>
+References: <web-48902846@mailstore.fernuni-hagen.de>
 MIME-Version: 1.0
-In-Reply-To: <20120726210925.GD17928@shiny>
-References: <20120726210925.GD17928@shiny>
-From: Linus Torvalds <torvalds@linux-foundation.org>
-Date: Thu, 26 Jul 2012 15:01:15 -0700
-Message-ID: <CA+55aFyY-wVYZYp=m3YpUi-tf0ctHPTu9rrei21VOaf2aVroLQ@mail.gmail.com>
-Subject: Re: [GIT PULL] a large btrfs update
-To: Chris Mason <chris.mason@fusionio.com>,
-        Linus Torvalds <torvalds@linux-foundation.org>,
-        "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>,
-        "linux-kernel@vger.kernel.org" <linux-kernel@vger.kernel.org>,
-        Josef Bacik <jbacik@fusionio.com>
-Content-Type: text/plain; charset=ISO-8859-1
+Content-Type: text/plain; charset="ISO-8859-1"; format="flowed"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Thu, Jul 26, 2012 at 2:09 PM, Chris Mason <chris.mason@fusionio.com> wrote:
->
-> for-linus-merged has an extra commit on top as well that changes the
-> btrfs send/receive code to Al's new dentry_open.  It's a small commit,
-> and my guess is that you'll cherry pick it and do your own merge.
+Hi,
 
-Indeed. And I dd the semantic merge differently from what you had
-done, more like what Al did for XFS in commit 765927b2d508 (see the
-fairly equivalent case in fs/xfs/xfs_ioctl.c).
+closed by my debug output from btrfs-debug-tree regarding
+my question above...
 
-IOW, instead of doing the unnecessary mntget() (and then undoing it
-with the path_put()), I just let dentry_open() get the references it
-needs, and then just dput() the dentry in the caller (to match the
-dget() done by d_obtain_alias()). No need to mess with the mnt
-refcounts, since dentry_open() will get whatever refcount it needs.
-
-But while it compiles, I haven't actually *tested* the btrfs
-BTRFS_IOC_SEND send/receive path, so please do double-check my merge.
-
-                Linus
+Günther

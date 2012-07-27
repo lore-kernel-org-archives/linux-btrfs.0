@@ -1,50 +1,50 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mo-p00-ob.rzone.de ([81.169.146.162]:37023 "EHLO
-	mo-p00-ob.rzone.de" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1751316Ab2G0LkI (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Fri, 27 Jul 2012 07:40:08 -0400
-Message-ID: <50127E14.8050503@giantdisaster.de>
-Date: Fri, 27 Jul 2012 13:40:04 +0200
-From: Stefan Behrens <sbehrens@giantdisaster.de>
+Received: from mx2.fusionio.com ([66.114.96.31]:39494 "EHLO mx2.fusionio.com"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1751004Ab2G0MFc (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Fri, 27 Jul 2012 08:05:32 -0400
+Date: Fri, 27 Jul 2012 08:05:29 -0400
+From: Josef Bacik <jbacik@fusionio.com>
+To: David Sterba <dave@jikos.cz>
+CC: "cbay@alwaysdata.com" <cbay@alwaysdata.com>,
+        "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>,
+        Josef Bacik <JBacik@fusionio.com>
+Subject: Re: mkfs devices ordering relevant with devices of different sizes?
+Message-ID: <20120727120529.GA13442@localhost.localdomain>
+References: <juos5r$2tp$1@dough.gmane.org>
+ <20120726210959.GK17430@twin.jikos.cz>
 MIME-Version: 1.0
-To: Nageswara R Sastry <nasastry@in.ibm.com>
-CC: linux-btrfs@vger.kernel.org, chandanrmail@gmail.com
-Subject: Re: [PATCH] btrfs-progs: btrfs-image.c: Added NULL pointer check.
-References: <1343385254-8299-1-git-send-email-nasastry@in.ibm.com> <50127701.7040603@giantdisaster.de>
-In-Reply-To: <50127701.7040603@giantdisaster.de>
-Content-Type: text/plain; charset=ISO-8859-1
+Content-Type: text/plain; charset="us-ascii"
+In-Reply-To: <20120726210959.GK17430@twin.jikos.cz>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Fri, 27 Jul 2012 13:09:53 +0200, Stefan Behrens wrote:
-> On Fri, 27 Jul 2012 16:04:14 +0530, Nageswara R Sastry wrote:
->> Check for the return value of 'open_ctree()' before dereferencing it.
->>
->> Signed-off-by: Nageswara R Sastry <nasastry@in.ibm.com>
->> ---
->>  btrfs-image.c | 1 +
->>  1 file changed, 1 insertion(+)
->>
->> diff --git a/btrfs-image.c b/btrfs-image.c
->> index f2bbcc8..2a33a55 100644
->> --- a/btrfs-image.c
->> +++ b/btrfs-image.c
->> @@ -491,6 +491,7 @@ static int create_metadump(const char *input, FILE *out, int num_threads,
->>  	int ret;
->>  
->>  	root = open_ctree(input, 0, 0);
->> +	BUG_ON(!root);
->>  	BUG_ON(root->nodesize != root->leafsize);
->>  
->>  	ret = metadump_init(&metadump, root, out, num_threads,
->>
+On Thu, Jul 26, 2012 at 03:09:59PM -0600, David Sterba wrote:
+> On Wed, Jul 25, 2012 at 03:26:20PM +0200, Cyril B.  wrote:
+> > When creating a filesystem with devices of different sizes, the resulting 
+> > filesystem total size depends on the device order specified to mkfs. When 
+> > the smaller device is specified first, the second (larger) device is seen as 
+> > the same size as the first. This doesn't occur when the order is reversed.
+> > 
+> > It's confusing. Is this expected? I'm using the latest btrfs-progs and Linux 
+> > 3.5.
 > 
-> In general, explicit BUG_ON() checks for a NULL pointer are not added to
-> the Linux kernel if the pointer is dereferenced afterwards. When the
-> NULL area is accessed, you get a general protection fault including the
-> call trace and a dump of all registers. Adding explicit BUG_ON(ptr !=
-> NULL) adds overhead without bringing any additional information.
+> Confusing it is, caused by this commit
+> 
+> Author:     Josef Bacik <josef@redhat.com>
+> AuthorDate: Wed Mar 28 14:20:52 2012 -0400
+> Commit:     Chris Mason <chris.mason@fusionio.com>
+> CommitDate: Tue Jul 3 16:27:46 2012 -0400
+> 
+>     btrfs-progs: enforce block count on all devices in mkfs
+> 
+>     I had a test that creates a 7gig raid1 device but it was ending up wonky
+>     because the second device that gets added is the full size of the disk
+>     instead of the limited size.  So enforce the limited size on all disks
+>     passed in at mkfs time, otherwise our threshold calculations end up wonky
+>     when doing chunk allocations.  Thanks,
 
-Please ignore and excuse my noise from before. Your patch is for
-btrfs-progs, not for the kernel.
+Ooops, that's definitely not what I intended, I will fix that up right away,
+sorry about that.  Thanks,
+
+Josef

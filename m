@@ -1,42 +1,133 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-gg0-f174.google.com ([209.85.161.174]:50673 "EHLO
-	mail-gg0-f174.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1752459Ab2G1WUX (ORCPT
+Received: from mail-ob0-f174.google.com ([209.85.214.174]:42651 "EHLO
+	mail-ob0-f174.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1753021Ab2G2PGW (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Sat, 28 Jul 2012 18:20:23 -0400
-Received: by gglu4 with SMTP id u4so4067956ggl.19
-        for <linux-btrfs@vger.kernel.org>; Sat, 28 Jul 2012 15:20:23 -0700 (PDT)
-From: Mitch Harder <mitch.harder@sabayonlinux.org>
-To: linux-btrfs@vger.kernel.org
-Cc: Mitch Harder <mitch.harder@sabayonlinux.org>
-Subject: [PATCH 1/1] Btrfs: Explicitly include vmalloc.h in send.c
-Date: Sat, 28 Jul 2012 17:20:03 -0500
-Message-Id: <1343514003-10942-2-git-send-email-mitch.harder@sabayonlinux.org>
-In-Reply-To: <1343514003-10942-1-git-send-email-mitch.harder@sabayonlinux.org>
-References: <1343514003-10942-1-git-send-email-mitch.harder@sabayonlinux.org>
+	Sun, 29 Jul 2012 11:06:22 -0400
+Received: by obbuo13 with SMTP id uo13so7505297obb.19
+        for <linux-btrfs@vger.kernel.org>; Sun, 29 Jul 2012 08:06:21 -0700 (PDT)
+MIME-Version: 1.0
+In-Reply-To: <CAB9VWqAPvjyQ3EhcZQC59b0qcGr3QFozP60A0q+=FiRv3wxgbg@mail.gmail.com>
+References: <CAHf9xvbz92KdUrXHhEFyEqwFhA97yTw7=10YC8YyCMxDZ20_Yw@mail.gmail.com>
+	<CAB9VWqDS+zVku2diCYh08k=V_iT10fssRpEFcw9p8rn+dtaQqg@mail.gmail.com>
+	<CAHf9xvbaWkM8EqeBA-z1HaFV56vtMfWjpZDp+OfUGu88nsOzug@mail.gmail.com>
+	<CAHf9xvaj+uzWc39Hp5SLaVfevhwqvNXY9eWBY0Q-yT=7yPgS-w@mail.gmail.com>
+	<CAB9VWqDj5c2Ds=zthKdUPfNyGELgaTmfj9UHf4uvqxMs4--9+Q@mail.gmail.com>
+	<CAB9VWqAv-86CtAgitTD0BBaifomMGVsGZEnhaMsZ4DNV8DndFA@mail.gmail.com>
+	<CAHf9xvYApp7yEmX7BCi1Y3Ut7hX2VDxAkJgAxNp-FtkQCBiXUQ@mail.gmail.com>
+	<CAB9VWqAPvjyQ3EhcZQC59b0qcGr3QFozP60A0q+=FiRv3wxgbg@mail.gmail.com>
+Date: Sun, 29 Jul 2012 18:06:21 +0300
+Message-ID: <CAHf9xvYEazzF16k_QEUCtr9YhrZBXLH5ZzE0p9pozXxBeMiCYw@mail.gmail.com>
+Subject: Re: btrfs send/receive: if new inode ino is less than its new
+ directory ino, incorrect path is sent
+From: Alex Lyakas <alex.bolshoy.btrfs@gmail.com>
+To: Alexander Block <ablock84@googlemail.com>
+Cc: linux-btrfs@vger.kernel.org
+Content-Type: text/plain; charset=ISO-8859-1
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Certain architectures or platforms or combinations of CONFIG options
-require an explicit #include <linux/vmalloc.h>.
+Alexander,
+yes, I will re-test and let you know. Expect to hear from me this week.
+Do you plan to merge this "for-alex" branch into some "mainline"
+branch, before you take off?
 
-Signed-off-by: Mitch Harder <mitch.harder@sabayonlinux.org>
----
- fs/btrfs/send.c |    1 +
- 1 files changed, 1 insertions(+), 0 deletions(-)
+Thanks,
+Alex.
 
-diff --git a/fs/btrfs/send.c b/fs/btrfs/send.c
-index bf232c8..118e76d 100644
---- a/fs/btrfs/send.c
-+++ b/fs/btrfs/send.c
-@@ -25,6 +25,7 @@
- #include <linux/posix_acl_xattr.h>
- #include <linux/radix-tree.h>
- #include <linux/crc32c.h>
-+#include <linux/vmalloc.h>
- 
- #include "send.h"
- #include "backref.h"
--- 
-1.7.8.6
 
+On Sat, Jul 28, 2012 at 12:56 PM, Alexander Block
+<ablock84@googlemail.com> wrote:
+> On Fri, Jul 27, 2012 at 4:37 PM, Alex Lyakas
+> <alex.bolshoy.btrfs@gmail.com> wrote:
+>> Hi Alexander,
+>> your solution is simple and elegant. I this this issue is solved now. Thanks!
+>> Two minor issues:
+>> 1)
+>> /*
+>>  * We need some special handling for inodes that get processed before the parent
+>>  * directory got created. See process_all_refs for details.
+>>  * This function does the check if we already created the dir out of order.
+>>  */
+>> /*
+>>  * Only creates the inode if it is:
+>>  * 1. Not a directory
+>>  * 2. Or a directory which was not created already due to out of order
+>>  *    directories. See did_create_dir and process_all_refs for details.
+>>  */
+>>
+>> These comments tell to look at process_all_refs(), while we should
+>> look at process_recorded_refs().
+>>
+>> 2)
+>>                  * We can however not delete the orphan in case the inode relies
+>>                  * in a directory that was not created yet (see
+>>                  * __record_new_ref)
+>>                  */
+>> This part should be removed, because your new solution does not work this way.
+> Whoops...corrected all comments.
+>>
+>>
+>> If you find, time, pls look at the two attached scripts.
+>>
+>> btrfs_test_1.sh:
+>> it tries to explore the is_first_ref() issue and founds a problem.
+>> Proposed patch - compare also the (dir,gen) tuple and only the name:
+>>
+>> diff --git a/fs/btrfs/send.c b/fs/btrfs/send.c
+>> index 68e504c..b83ec5f 100644
+>> --- a/fs/btrfs/send.c
+>> +++ b/fs/btrfs/send.c
+>> @@ -1597,7 +1597,7 @@ out:
+>>
+>>  static int is_first_ref(struct send_ctx *sctx,
+>>                         struct btrfs_root *root,
+>> -                       u64 ino, u64 dir,
+>> +                       u64 ino, u64 dir, u64 dir_gen,
+>>                         const char *name, int name_len)
+>>  {
+>>         int ret;
+>> @@ -1613,6 +1613,11 @@ static int is_first_ref(struct send_ctx *sctx,
+>>         if (ret < 0)
+>>                 goto out;
+>>
+>> +       if (dir != tmp_dir || dir_gen != tmp_dir_gen) {
+>> +               ret = 0;
+>> +               goto out;
+>> +       }
+>> +
+>>         if (name_len != fs_path_len(tmp_name)) {
+>>                 ret = 0;
+>>                 goto out;
+>> @@ -2834,7 +2839,7 @@ verbose_printk("btrfs: process_recorded_refs
+>> %llu\n", sctx->cur_ino);
+>>                         goto out;
+>>                 if (ret) {
+>>                         ret = is_first_ref(sctx, sctx->parent_root,
+>> -                                       ow_inode, cur->dir, cur->name,
+>> +                                       ow_inode, cur->dir,
+>> cur->dir_gen, cur->name,
+>>                                         cur->name_len);
+>>                         if (ret < 0)
+>>                                 goto out;
+>>
+> I did not apply the patch but instead added a check for dir != tmp_dir
+> only. The reason to not check for gen is that I have a rule in my
+> mind: I only pass the generation number to functions where I want to
+> know the *current* state. is_first_ref is for permanent state, the
+> return value never changes while sending. I could however not
+> reproduce the problem with test_1.sh, but it should fix it.
+>>
+>> btrfs_test_2.sh
+>> The last test exposes an interesting issue: when a directory has a
+>> deleted reference recorded, this deleted reference is not added to the
+>> 'check_dirs' list. As a result, the upper directory (already
+>> orphanized) is not rmdir'd.
+> You'll find a commit in my repo to fix this. The problem was, that
+> moved directories do not get into the delete_refs loop and thus the
+> parent of the old location is never added to the check_dirs list.
+> I have force pushed to for-alex, if you have time I'd be happy if you
+> test again :)
+>>
+>> Thanks,
+>> Alex.

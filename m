@@ -1,133 +1,37 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-ob0-f174.google.com ([209.85.214.174]:42651 "EHLO
-	mail-ob0-f174.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1753021Ab2G2PGW (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Sun, 29 Jul 2012 11:06:22 -0400
-Received: by obbuo13 with SMTP id uo13so7505297obb.19
-        for <linux-btrfs@vger.kernel.org>; Sun, 29 Jul 2012 08:06:21 -0700 (PDT)
-MIME-Version: 1.0
-In-Reply-To: <CAB9VWqAPvjyQ3EhcZQC59b0qcGr3QFozP60A0q+=FiRv3wxgbg@mail.gmail.com>
-References: <CAHf9xvbz92KdUrXHhEFyEqwFhA97yTw7=10YC8YyCMxDZ20_Yw@mail.gmail.com>
-	<CAB9VWqDS+zVku2diCYh08k=V_iT10fssRpEFcw9p8rn+dtaQqg@mail.gmail.com>
-	<CAHf9xvbaWkM8EqeBA-z1HaFV56vtMfWjpZDp+OfUGu88nsOzug@mail.gmail.com>
-	<CAHf9xvaj+uzWc39Hp5SLaVfevhwqvNXY9eWBY0Q-yT=7yPgS-w@mail.gmail.com>
-	<CAB9VWqDj5c2Ds=zthKdUPfNyGELgaTmfj9UHf4uvqxMs4--9+Q@mail.gmail.com>
-	<CAB9VWqAv-86CtAgitTD0BBaifomMGVsGZEnhaMsZ4DNV8DndFA@mail.gmail.com>
-	<CAHf9xvYApp7yEmX7BCi1Y3Ut7hX2VDxAkJgAxNp-FtkQCBiXUQ@mail.gmail.com>
-	<CAB9VWqAPvjyQ3EhcZQC59b0qcGr3QFozP60A0q+=FiRv3wxgbg@mail.gmail.com>
-Date: Sun, 29 Jul 2012 18:06:21 +0300
-Message-ID: <CAHf9xvYEazzF16k_QEUCtr9YhrZBXLH5ZzE0p9pozXxBeMiCYw@mail.gmail.com>
-Subject: Re: btrfs send/receive: if new inode ino is less than its new
- directory ino, incorrect path is sent
-From: Alex Lyakas <alex.bolshoy.btrfs@gmail.com>
-To: Alexander Block <ablock84@googlemail.com>
-Cc: linux-btrfs@vger.kernel.org
-Content-Type: text/plain; charset=ISO-8859-1
+Received: from plane.gmane.org ([80.91.229.3]:54488 "EHLO plane.gmane.org"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1753352Ab2G2TFM (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Sun, 29 Jul 2012 15:05:12 -0400
+Received: from list by plane.gmane.org with local (Exim 4.69)
+	(envelope-from <gcfb-btrfs-devel-moved1@m.gmane.org>)
+	id 1SvYnc-000148-VU
+	for linux-btrfs@vger.kernel.org; Sun, 29 Jul 2012 21:05:09 +0200
+Received: from 176.50.240-63.xdsl.ab.ru ([176.50.240-63.xdsl.ab.ru])
+        by main.gmane.org with esmtp (Gmexim 0.1 (Debian))
+        id 1AlnuQ-0007hv-00
+        for <linux-btrfs@vger.kernel.org>; Sun, 29 Jul 2012 21:05:08 +0200
+Received: from ksee.zelgadis by 176.50.240-63.xdsl.ab.ru with local (Gmexim 0.1 (Debian))
+        id 1AlnuQ-0007hv-00
+        for <linux-btrfs@vger.kernel.org>; Sun, 29 Jul 2012 21:05:08 +0200
+To: linux-btrfs@vger.kernel.org
+From: Konstantin Dmitriev <ksee.zelgadis@gmail.com>
+Subject: Re: severe hardlink bug
+Date: Sun, 29 Jul 2012 19:02:30 +0000 (UTC)
+Message-ID: <loom.20120729T205902-38@post.gmane.org>
+References: <20100124015138.092c4959@simplux> <201001240909.44753.kreijack@libero.it> <20100124140837.5efcd526@simplux> <201001241415.47519.kreijack@inwind.it> <20100124142711.4afe8a81@simplux>
+Mime-Version: 1.0
+Content-Type: text/plain; charset=us-ascii
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Alexander,
-yes, I will re-test and let you know. Expect to hear from me this week.
-Do you plan to merge this "for-alex" branch into some "mainline"
-branch, before you take off?
+Dipl.-Ing. Michael Niederle <mniederle <at> gmx.at> writes:
 
-Thanks,
-Alex.
+> I reinstalled over 700 packages - plt-scheme beeing the only one failing due to
+> the btrfs link restriction.
+> 
 
+I have hit the same issue - tried to run BackupPC with a pool on btrfs
+filesystem. After some time the error of "too many links (31)" appeared to me.
+Now I'm forced to migrate to some other filesystem...
 
-On Sat, Jul 28, 2012 at 12:56 PM, Alexander Block
-<ablock84@googlemail.com> wrote:
-> On Fri, Jul 27, 2012 at 4:37 PM, Alex Lyakas
-> <alex.bolshoy.btrfs@gmail.com> wrote:
->> Hi Alexander,
->> your solution is simple and elegant. I this this issue is solved now. Thanks!
->> Two minor issues:
->> 1)
->> /*
->>  * We need some special handling for inodes that get processed before the parent
->>  * directory got created. See process_all_refs for details.
->>  * This function does the check if we already created the dir out of order.
->>  */
->> /*
->>  * Only creates the inode if it is:
->>  * 1. Not a directory
->>  * 2. Or a directory which was not created already due to out of order
->>  *    directories. See did_create_dir and process_all_refs for details.
->>  */
->>
->> These comments tell to look at process_all_refs(), while we should
->> look at process_recorded_refs().
->>
->> 2)
->>                  * We can however not delete the orphan in case the inode relies
->>                  * in a directory that was not created yet (see
->>                  * __record_new_ref)
->>                  */
->> This part should be removed, because your new solution does not work this way.
-> Whoops...corrected all comments.
->>
->>
->> If you find, time, pls look at the two attached scripts.
->>
->> btrfs_test_1.sh:
->> it tries to explore the is_first_ref() issue and founds a problem.
->> Proposed patch - compare also the (dir,gen) tuple and only the name:
->>
->> diff --git a/fs/btrfs/send.c b/fs/btrfs/send.c
->> index 68e504c..b83ec5f 100644
->> --- a/fs/btrfs/send.c
->> +++ b/fs/btrfs/send.c
->> @@ -1597,7 +1597,7 @@ out:
->>
->>  static int is_first_ref(struct send_ctx *sctx,
->>                         struct btrfs_root *root,
->> -                       u64 ino, u64 dir,
->> +                       u64 ino, u64 dir, u64 dir_gen,
->>                         const char *name, int name_len)
->>  {
->>         int ret;
->> @@ -1613,6 +1613,11 @@ static int is_first_ref(struct send_ctx *sctx,
->>         if (ret < 0)
->>                 goto out;
->>
->> +       if (dir != tmp_dir || dir_gen != tmp_dir_gen) {
->> +               ret = 0;
->> +               goto out;
->> +       }
->> +
->>         if (name_len != fs_path_len(tmp_name)) {
->>                 ret = 0;
->>                 goto out;
->> @@ -2834,7 +2839,7 @@ verbose_printk("btrfs: process_recorded_refs
->> %llu\n", sctx->cur_ino);
->>                         goto out;
->>                 if (ret) {
->>                         ret = is_first_ref(sctx, sctx->parent_root,
->> -                                       ow_inode, cur->dir, cur->name,
->> +                                       ow_inode, cur->dir,
->> cur->dir_gen, cur->name,
->>                                         cur->name_len);
->>                         if (ret < 0)
->>                                 goto out;
->>
-> I did not apply the patch but instead added a check for dir != tmp_dir
-> only. The reason to not check for gen is that I have a rule in my
-> mind: I only pass the generation number to functions where I want to
-> know the *current* state. is_first_ref is for permanent state, the
-> return value never changes while sending. I could however not
-> reproduce the problem with test_1.sh, but it should fix it.
->>
->> btrfs_test_2.sh
->> The last test exposes an interesting issue: when a directory has a
->> deleted reference recorded, this deleted reference is not added to the
->> 'check_dirs' list. As a result, the upper directory (already
->> orphanized) is not rmdir'd.
-> You'll find a commit in my repo to fix this. The problem was, that
-> moved directories do not get into the delete_refs loop and thus the
-> parent of the old location is never added to the check_dirs list.
-> I have force pushed to for-alex, if you have time I'd be happy if you
-> test again :)
->>
->> Thanks,
->> Alex.

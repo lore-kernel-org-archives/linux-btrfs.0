@@ -1,66 +1,39 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from rcsinet15.oracle.com ([148.87.113.117]:16535 "EHLO
+Received: from rcsinet15.oracle.com ([148.87.113.117]:50848 "EHLO
 	rcsinet15.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1752466Ab2G3IKu (ORCPT
+	with ESMTP id S1752455Ab2G3IPt (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 30 Jul 2012 04:10:50 -0400
-Date: Mon, 30 Jul 2012 11:10:44 +0300
+	Mon, 30 Jul 2012 04:15:49 -0400
+Date: Mon, 30 Jul 2012 11:15:43 +0300
 From: Dan Carpenter <dan.carpenter@oracle.com>
-To: Chris Mason <chris.mason@fusionio.com>,
-        Alexander Block <ablock84@googlemail.com>
+To: Chris Mason <chris.mason@fusionio.com>, Arne Jansen <sensille@gmx.net>
 Cc: linux-btrfs@vger.kernel.org, kernel-janitors@vger.kernel.org
-Subject: [patch] Btrfs: fix some endian bugs handling the root times
-Message-ID: <20120730081043.GA15702@elgon.mountain>
+Subject: [patch 1/2] Btrfs: checking for NULL instead of IS_ERR
+Message-ID: <20120730081542.GC15702@elgon.mountain>
 MIME-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-"trans->transid" is cpu endian but we want to store the data as little
-endian.  "item->ctime.nsec" is only 32 bits, not 64.
+add_qgroup_rb() never returns NULL, only error pointers.
 
 Signed-off-by: Dan Carpenter <dan.carpenter@oracle.com>
 ---
 Applies to linux-next.
 
-diff --git a/fs/btrfs/ioctl.c b/fs/btrfs/ioctl.c
-index 43f0012..a1fbca0 100644
---- a/fs/btrfs/ioctl.c
-+++ b/fs/btrfs/ioctl.c
-@@ -424,7 +424,7 @@ static noinline int create_subvol(struct btrfs_root *root,
- 	uuid_le_gen(&new_uuid);
- 	memcpy(root_item.uuid, new_uuid.b, BTRFS_UUID_SIZE);
- 	root_item.otime.sec = cpu_to_le64(cur_time.tv_sec);
--	root_item.otime.nsec = cpu_to_le64(cur_time.tv_nsec);
-+	root_item.otime.nsec = cpu_to_le32(cur_time.tv_nsec);
- 	root_item.ctime = root_item.otime;
- 	btrfs_set_root_ctransid(&root_item, trans->transid);
- 	btrfs_set_root_otransid(&root_item, trans->transid);
-diff --git a/fs/btrfs/transaction.c b/fs/btrfs/transaction.c
-index 7ac7cdc..7208ada 100644
---- a/fs/btrfs/transaction.c
-+++ b/fs/btrfs/transaction.c
-@@ -1061,7 +1061,7 @@ static noinline int create_pending_snapshot(struct btrfs_trans_handle *trans,
- 	memcpy(new_root_item->parent_uuid, root->root_item.uuid,
- 			BTRFS_UUID_SIZE);
- 	new_root_item->otime.sec = cpu_to_le64(cur_time.tv_sec);
--	new_root_item->otime.nsec = cpu_to_le64(cur_time.tv_nsec);
-+	new_root_item->otime.nsec = cpu_to_le32(cur_time.tv_nsec);
- 	btrfs_set_root_otransid(new_root_item, trans->transid);
- 	memset(&new_root_item->stime, 0, sizeof(new_root_item->stime));
- 	memset(&new_root_item->rtime, 0, sizeof(new_root_item->rtime));
-diff --git a/fs/btrfs/root-tree.c b/fs/btrfs/root-tree.c
-index 6bb465c..10d8e4d 100644
---- a/fs/btrfs/root-tree.c
-+++ b/fs/btrfs/root-tree.c
-@@ -544,8 +544,8 @@ void btrfs_update_root_times(struct btrfs_trans_handle *trans,
- 	struct timespec ct = CURRENT_TIME;
+diff --git a/fs/btrfs/qgroup.c b/fs/btrfs/qgroup.c
+index bc424ae..b650155 100644
+--- a/fs/btrfs/qgroup.c
++++ b/fs/btrfs/qgroup.c
+@@ -1364,8 +1364,10 @@ int btrfs_qgroup_inherit(struct btrfs_trans_handle *trans,
+ 	spin_lock(&fs_info->qgroup_lock);
  
- 	spin_lock(&root->root_times_lock);
--	item->ctransid = trans->transid;
-+	item->ctransid = cpu_to_le64(trans->transid);
- 	item->ctime.sec = cpu_to_le64(ct.tv_sec);
--	item->ctime.nsec = cpu_to_le64(ct.tv_nsec);
-+	item->ctime.nsec = cpu_to_le32(ct.tv_nsec);
- 	spin_unlock(&root->root_times_lock);
- }
+ 	dstgroup = add_qgroup_rb(fs_info, objectid);
+-	if (!dstgroup)
++	if (IS_ERR(dstgroup)) {
++		ret = PTR_ERR(dstgroup);
+ 		goto unlock;
++	}
+ 
+ 	if (srcid) {
+ 		srcgroup = find_qgroup_rb(fs_info, srcid);

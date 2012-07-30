@@ -1,120 +1,76 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-yw0-f46.google.com ([209.85.213.46]:65499 "EHLO
-	mail-yw0-f46.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1753113Ab2G3H4I (ORCPT
+Received: from mail-gh0-f174.google.com ([209.85.160.174]:61267 "EHLO
+	mail-gh0-f174.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1753178Ab2G3LaA (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 30 Jul 2012 03:56:08 -0400
-Received: by yhmm54 with SMTP id m54so4503811yhm.19
-        for <linux-btrfs@vger.kernel.org>; Mon, 30 Jul 2012 00:56:08 -0700 (PDT)
-MIME-Version: 1.0
-Date: Mon, 30 Jul 2012 09:56:07 +0200
-Message-ID: <CAJtBfr-ndERMvhG2dEwKJVsUe++sqGk_ZU=0gHDr3vbZLSyo_w@mail.gmail.com>
-Subject: subvolumes: default and IDs
-From: Florian Lindner <mailinglists@xgm.de>
-To: linux-btrfs@vger.kernel.org
-Content-Type: text/plain; charset=ISO-8859-1
+	Mon, 30 Jul 2012 07:30:00 -0400
+Received: by ghrr11 with SMTP id r11so4663372ghr.19
+        for <linux-btrfs@vger.kernel.org>; Mon, 30 Jul 2012 04:29:59 -0700 (PDT)
+Message-ID: <1343647796.6064.12.camel@ayu>
+Subject: Re: subvolumes: default and IDs
+From: Calvin Walton <calvin.walton@kepstin.ca>
+To: Florian Lindner <mailinglists@xgm.de>
+Cc: linux-btrfs@vger.kernel.org
+Date: Mon, 30 Jul 2012 07:29:56 -0400
+In-Reply-To: <CAJtBfr-ndERMvhG2dEwKJVsUe++sqGk_ZU=0gHDr3vbZLSyo_w@mail.gmail.com>
+References: <CAJtBfr-ndERMvhG2dEwKJVsUe++sqGk_ZU=0gHDr3vbZLSyo_w@mail.gmail.com>
+Content-Type: text/plain; charset="UTF-8"
+Mime-Version: 1.0
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hey!
+On Mon, 2012-07-30 at 09:56 +0200, Florian Lindner wrote:
+> Hey!
+> 
+> I recently starting playing with btrfs and subvolume, but it has left
+> me puzzled:
 
-I recently starting playing with btrfs and subvolume, but it has left
-me puzzled:
-Distribution is Archlinux, Kernel is 3.4.6.
+> root@horus /mnt/test # btrfs subvolume get-default .
+> ID 256 top level 5 path sv1
+> ID 259 top level 5 path sv2
+> <<<
+> 
+> What is the default subvolume now? How can I tell?
 
->>>
-root@horus /mnt # mkfs.btrfs -L test /dev/sdb1
+It looks like there's currently a bug in btrfs-progs - the 'get-default'
+command is actually doing a 'list' instead of printing the default. With
+any luck it's just a little error in the command-line parsing and should
+be easy to fix...
 
-WARNING! - Btrfs Btrfs v0.19 IS EXPERIMENTAL
-WARNING! - see http://btrfs.wiki.kernel.org before using
+> >>>
+> root@horus /mnt # btrfs subvolume set-default 5 test
+> root@horus /mnt # umount test && /mnt # mount /dev/sdb1 test
+> root@horus /mnt # ls test
+> sv1/  sv2/
+> <<<
+> 
+> Ok, 5 seems to be the root subvolume id. Is it always like that? I
+> remembered to have read somewhere it was 0 ? (which makes a kind of
+> more sense for me)
 
-fs created label test on /dev/sdb1
-        nodesize 4096 leafsize 4096 sectorsize 4096 size 2.73TB
-Btrfs Btrfs v0.19
-root@horus /mnt # mount /dev/sdb1 test
-root@horus /mnt # cd test
-root@horus /mnt/test # btrfs subvolume create sv1
-Create subvolume './sv1'
-root@horus /mnt/test # btrfs subvolume create sv2
-Create subvolume './sv2'
-root@horus /mnt/test # touch sv1/sv1.file
-root@horus /mnt/test # touch sv2/sv2.file
-root@horus /mnt/test # btrfs subvolume get-default .
-ID 256 top level 5 path sv1
-ID 259 top level 5 path sv2
-<<<
+The internal ID of the root subvolume is 5, yes. I don't know whether
+this is a current implementation detail and subject to change, or if it
+will permanently stay that way. I *think* it's part of the disk format,
+and it permanent.
 
-What is the default subvolume now? How can I tell?
+In either case, the subvol id '0' is treated as an alias for 'the
+original root subvolume', and the two can be used interchangeably in the
+mount command. I always find '0' just a bit easier to remember :)
 
->>>
-root@horus /mnt/test # btrfs subvolume set-default 259 .
-root@horus /mnt/test # btrfs subvolume get-default .
-ID 256 top level 5 path sv1
-ID 259 top level 5 path sv2
-<<<
+> >>>
+> root@horus /mnt # btrfs subvolume set-default 0 test
+> root@horus /mnt # umount test && mount /dev/sdb1 test
+> root@horus /mnt # ls test
+> sv1.file
+> <<<
+> 
+> set-default 0 seems to do nothing but does not produce an error
+> either.
 
-Seems to have changed nothing....?
+Looks like you've found another bug (or maybe just a missing feature);
+it would be nice if this command allows you to use '0' as an alias for
+the root subvolume.
 
->>>
-root@horus /mnt/test # cd ..
-root@horus /mnt # umount test && mount /dev/sdb1 test
-root@horus /mnt # ls test
-sv2.file
-<<<
+-- 
+Calvin Walton <calvin.walton@kepstin.ca>
 
-Ah, sv2 seems to be default, like I had set it.
-
->>>
-root@horus /mnt # btrfs subvolume set-default 5 test
-root@horus /mnt # umount test && /mnt # mount /dev/sdb1 test
-root@horus /mnt # ls test
-sv1/  sv2/
-<<<
-
-Ok, 5 seems to be the root subvolume id. Is it always like that? I
-remembered to have read somewhere it was 0 ? (which makes a kind of
-more sense for me)
-
->>>
-root@horus /mnt # btrfs subvolume set-default 256 test
-root@horus /mnt # umount test && mount /dev/sdb1 test
-root@horus /mnt # ls test
-sv1.file
-<<<
-
-Fine! But:
-
->>>
-root@horus /mnt # btrfs subvolume set-default 0 test
-root@horus /mnt # umount test && mount /dev/sdb1 test
-root@horus /mnt # ls test
-sv1.file
-<<<
-
-set-default 0 seems to do nothing but does not produce an error
-either. What about subvolume 0? Still I can do:
-
->>>
-root@horus /mnt # umount test
-root@horus /mnt # mount -o subvolid=0 /dev/sdb1 test
-root@horus /mnt # ls test
-sv1/  sv2/
-<<<
-
-Ok, here 0 as subvolid works. What about subvolid=5?
-
->>>
-root@horus /mnt # umount test
-root@horus /mnt # mount -o subvolid=5 /dev/sdb1 test
-root@horus /mnt # ls test
-sv1/  sv2/
-<<<
-
-Works too.
-
-Sorry for the lengthy posting, but writing this posting has puzzled me
-even more I was yesterday. I hope someone could shed some light on it.
-
-Thanks!
-
-Florian

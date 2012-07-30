@@ -1,85 +1,59 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from rcsinet15.oracle.com ([148.87.113.117]:39401 "EHLO
-	rcsinet15.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1753062Ab2G3PtO (ORCPT
+Received: from mail-ob0-f174.google.com ([209.85.214.174]:39291 "EHLO
+	mail-ob0-f174.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1754955Ab2G3RfJ (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 30 Jul 2012 11:49:14 -0400
-Date: Mon, 30 Jul 2012 11:39:35 -0400
-From: Konrad Rzeszutek Wilk <konrad.wilk@oracle.com>
-To: majianpeng <majianpeng@gmail.com>
-Cc: axboe <axboe@kernel.dk>, "chris.mason" <chris.mason@fusionio.com>,
-        viro <viro@ZenIV.linux.org.uk>, tytso <tytso@mit.edu>,
-        "adilger.kernel" <adilger.kernel@dilger.ca>,
-        shaggy <shaggy@kernel.org>, mfasheh <mfasheh@suse.com>,
-        jlbec <jlbec@evilplan.org>, bpm <bpm@sgi.com>,
-        elder <elder@kernel.org>, linux-kernel <linux-kernel@vger.kernel.org>,
-        linux-btrfs <linux-btrfs@vger.kernel.org>,
-        linux-fsdevel <linux-fsdevel@vger.kernel.org>,
-        linux-ext4 <linux-ext4@vger.kernel.org>,
-        jfs-discussion <jfs-discussion@lists.sourceforge.net>,
-        ocfs2-devel <ocfs2-devel@oss.oracle.com>, xfs <xfs@oss.sgi.com>
-Subject: Re: [PATCH 0/8] Set bi_rw when alloc bio before call bio_add_page.
-Message-ID: <20120730153935.GE4547@phenom.dumpdata.com>
-References: <201207301514247032532@gmail.com>
+	Mon, 30 Jul 2012 13:35:09 -0400
+Received: by obbuo13 with SMTP id uo13so9266158obb.19
+        for <linux-btrfs@vger.kernel.org>; Mon, 30 Jul 2012 10:35:08 -0700 (PDT)
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <201207301514247032532@gmail.com>
+In-Reply-To: <CAB9VWqAPvjyQ3EhcZQC59b0qcGr3QFozP60A0q+=FiRv3wxgbg@mail.gmail.com>
+References: <CAHf9xvbz92KdUrXHhEFyEqwFhA97yTw7=10YC8YyCMxDZ20_Yw@mail.gmail.com>
+	<CAB9VWqDS+zVku2diCYh08k=V_iT10fssRpEFcw9p8rn+dtaQqg@mail.gmail.com>
+	<CAHf9xvbaWkM8EqeBA-z1HaFV56vtMfWjpZDp+OfUGu88nsOzug@mail.gmail.com>
+	<CAHf9xvaj+uzWc39Hp5SLaVfevhwqvNXY9eWBY0Q-yT=7yPgS-w@mail.gmail.com>
+	<CAB9VWqDj5c2Ds=zthKdUPfNyGELgaTmfj9UHf4uvqxMs4--9+Q@mail.gmail.com>
+	<CAB9VWqAv-86CtAgitTD0BBaifomMGVsGZEnhaMsZ4DNV8DndFA@mail.gmail.com>
+	<CAHf9xvYApp7yEmX7BCi1Y3Ut7hX2VDxAkJgAxNp-FtkQCBiXUQ@mail.gmail.com>
+	<CAB9VWqAPvjyQ3EhcZQC59b0qcGr3QFozP60A0q+=FiRv3wxgbg@mail.gmail.com>
+Date: Mon, 30 Jul 2012 20:35:08 +0300
+Message-ID: <CAHf9xvaccCm3GgHQ_Vj=1gZvecQJDbPhQC-shdODfYPx8QRVwQ@mail.gmail.com>
+Subject: Re: btrfs send/receive: if new inode ino is less than its new
+ directory ino, incorrect path is sent
+From: Alex Lyakas <alex.bolshoy.btrfs@gmail.com>
+To: Alexander Block <ablock84@googlemail.com>
+Cc: linux-btrfs@vger.kernel.org
+Content-Type: text/plain; charset=ISO-8859-1
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Mon, Jul 30, 2012 at 03:14:28PM +0800, majianpeng wrote:
-> When exec bio_alloc, the bi_rw is zero.But after calling bio_add_page,
+Hi,
+> I did not apply the patch but instead added a check for dir != tmp_dir
+> only. The reason to not check for gen is that I have a rule in my
+> mind: I only pass the generation number to functions where I want to
+> know the *current* state. is_first_ref is for permanent state, the
+> return value never changes while sending. I could however not
+> reproduce the problem with test_1.sh, but it should fix it.
 
-What about submit_bio? That sets the bi_rw as well?
-> it will use bi_rw.
-> Fox example, in functiion __bio_add_page,it will call merge_bvec_fn().
+I understand. I was not sure about dir_gen either. Since you call this
+function to check the permanent state in a particular root, it does
+not make sense to compare the generation.
 
-function.
-> The merge_bvec_fn of raid456 will use the bi_rw to judge the merge.
-> >> if ((bvm->bi_rw & 1) == WRITE)
-> >> return biovec->bv_len; /* always allow writes to be mergeable */
+>>
+>> btrfs_test_2.sh
+>> The last test exposes an interesting issue: when a directory has a
+>> deleted reference recorded, this deleted reference is not added to the
+>> 'check_dirs' list. As a result, the upper directory (already
+>> orphanized) is not rmdir'd.
+> You'll find a commit in my repo to fix this. The problem was, that
+> moved directories do not get into the delete_refs loop and thus the
+> parent of the old location is never added to the check_dirs list.
+> I have force pushed to for-alex, if you have time I'd be happy if you
+> test again :)
+Thanks. It fixes the issue.
 
-So what does that mean? Without this patch what happens?
+...and pls expect another mail from me with a long list of questions I
+accumulated:)
 
-> 
-> 
-> Jianpeng Ma (8):
-
-Can you collapse all of this in just one patch?
-
->   Evalue bio->bi_rw after calling bio_alloc() and before calling
-
-It is 'evaluate'
->     bio_add_page().
->   Evalue bio->bi_rw after calling bio_alloc() and before calling    
->     bio_add_page().
->   Evalue bio->bi_rw after calling bio_alloc() and before calling    
->     bio_add_page().
->   Evalue bio->bi_rw after calling bio_alloc() and before calling    
->     bio_add_page().
->   Evalue bio->bi_rw after calling bio_alloc() and before calling    
->     bio_add_page().
->   Evalue bio->bi_rw after calling bio_alloc() and before calling    
->     bio_add_page().
->   Evalue bio->bi_rw after calling bio_alloc() and before calling    
->     bio_add_page().
->   Evalue bio->bi_rw after calling bio_alloc() and before calling    
->     bio_add_page().
-> 
->  block/blk-lib.c                     |    1 +
->  drivers/block/xen-blkback/blkback.c |    1 +
-
-I am not really sure if that is correct. Does 'submit_bio' not do the
-job properly?
-
->  fs/btrfs/check-integrity.c          |    1 +
->  fs/direct-io.c                      |    1 +
->  fs/ext4/page-io.c                   |    1 +
->  fs/jfs/jfs_metapage.c               |    1 +
->  fs/ocfs2/cluster/heartbeat.c        |    8 +++++---
->  fs/xfs/xfs_aops.c                   |    2 ++
->  fs/xfs/xfs_buf.c                    |    1 +
->  9 files changed, 14 insertions(+), 3 deletions(-)
-> 
-> -- 
-> 1.7.9.5
+Thanks!
+Alex.

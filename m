@@ -1,68 +1,120 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mga09.intel.com ([134.134.136.24]:39255 "EHLO mga09.intel.com"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S933404Ab2GYPK4 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 25 Jul 2012 11:10:56 -0400
-From: Artem Bityutskiy <artem.bityutskiy@linux.intel.com>
-To: Al Viro <viro@ZenIV.linux.org.uk>
-Cc: Linux Kernel Maling List <linux-kernel@vger.kernel.org>,
-        Linux FS Maling List <linux-fsdevel@vger.kernel.org>,
-        Artem Bityutskiy <artem.bityutskiy@linux.intel.com>,
-        Chris Mason <chris.mason@fusionio.com>, linux-btrfs@vger.kernel.org
-Subject: [PATCH 07/16] btrfs: nuke write_super from comments
-Date: Wed, 25 Jul 2012 18:12:05 +0300
-Message-Id: <1343229134-29487-8-git-send-email-artem.bityutskiy@linux.intel.com>
-In-Reply-To: <1343229134-29487-1-git-send-email-artem.bityutskiy@linux.intel.com>
-References: <1343229134-29487-1-git-send-email-artem.bityutskiy@linux.intel.com>
+Received: from mail-yw0-f46.google.com ([209.85.213.46]:65499 "EHLO
+	mail-yw0-f46.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1753113Ab2G3H4I (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>);
+	Mon, 30 Jul 2012 03:56:08 -0400
+Received: by yhmm54 with SMTP id m54so4503811yhm.19
+        for <linux-btrfs@vger.kernel.org>; Mon, 30 Jul 2012 00:56:08 -0700 (PDT)
+MIME-Version: 1.0
+Date: Mon, 30 Jul 2012 09:56:07 +0200
+Message-ID: <CAJtBfr-ndERMvhG2dEwKJVsUe++sqGk_ZU=0gHDr3vbZLSyo_w@mail.gmail.com>
+Subject: subvolumes: default and IDs
+From: Florian Lindner <mailinglists@xgm.de>
+To: linux-btrfs@vger.kernel.org
+Content-Type: text/plain; charset=ISO-8859-1
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-From: Artem Bityutskiy <artem.bityutskiy@linux.intel.com>
+Hey!
 
-The '->write_super' superblock method is gone, and this patch removes all the
-references to 'write_super' from btrfs.
+I recently starting playing with btrfs and subvolume, but it has left
+me puzzled:
+Distribution is Archlinux, Kernel is 3.4.6.
 
-Cc: Chris Mason <chris.mason@fusionio.com>
-Cc: linux-btrfs@vger.kernel.org
-Signed-off-by: Artem Bityutskiy <artem.bityutskiy@linux.intel.com>
----
+>>>
+root@horus /mnt # mkfs.btrfs -L test /dev/sdb1
 
-I expect this patch to be merged via Al Viro's VFS tree.
+WARNING! - Btrfs Btrfs v0.19 IS EXPERIMENTAL
+WARNING! - see http://btrfs.wiki.kernel.org before using
 
- fs/btrfs/super.c   |    4 ----
- fs/btrfs/volumes.c |    4 ----
- 2 files changed, 8 deletions(-)
+fs created label test on /dev/sdb1
+        nodesize 4096 leafsize 4096 sectorsize 4096 size 2.73TB
+Btrfs Btrfs v0.19
+root@horus /mnt # mount /dev/sdb1 test
+root@horus /mnt # cd test
+root@horus /mnt/test # btrfs subvolume create sv1
+Create subvolume './sv1'
+root@horus /mnt/test # btrfs subvolume create sv2
+Create subvolume './sv2'
+root@horus /mnt/test # touch sv1/sv1.file
+root@horus /mnt/test # touch sv2/sv2.file
+root@horus /mnt/test # btrfs subvolume get-default .
+ID 256 top level 5 path sv1
+ID 259 top level 5 path sv2
+<<<
 
-diff --git a/fs/btrfs/super.c b/fs/btrfs/super.c
-index e239915..ad31627 100644
---- a/fs/btrfs/super.c
-+++ b/fs/btrfs/super.c
-@@ -100,10 +100,6 @@ static void __save_error_info(struct btrfs_fs_info *fs_info)
- 	fs_info->fs_state = BTRFS_SUPER_FLAG_ERROR;
- }
- 
--/* NOTE:
-- *	We move write_super stuff at umount in order to avoid deadlock
-- *	for umount hold all lock.
-- */
- static void save_error_info(struct btrfs_fs_info *fs_info)
- {
- 	__save_error_info(fs_info);
-diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
-index ecaad40..9f2416c 100644
---- a/fs/btrfs/volumes.c
-+++ b/fs/btrfs/volumes.c
-@@ -1738,10 +1738,6 @@ int btrfs_init_new_device(struct btrfs_root *root, char *device_path)
- 
- 	device->fs_devices = root->fs_info->fs_devices;
- 
--	/*
--	 * we don't want write_supers to jump in here with our device
--	 * half setup
--	 */
- 	mutex_lock(&root->fs_info->fs_devices->device_list_mutex);
- 	list_add_rcu(&device->dev_list, &root->fs_info->fs_devices->devices);
- 	list_add(&device->dev_alloc_list,
--- 
-1.7.10
+What is the default subvolume now? How can I tell?
 
+>>>
+root@horus /mnt/test # btrfs subvolume set-default 259 .
+root@horus /mnt/test # btrfs subvolume get-default .
+ID 256 top level 5 path sv1
+ID 259 top level 5 path sv2
+<<<
+
+Seems to have changed nothing....?
+
+>>>
+root@horus /mnt/test # cd ..
+root@horus /mnt # umount test && mount /dev/sdb1 test
+root@horus /mnt # ls test
+sv2.file
+<<<
+
+Ah, sv2 seems to be default, like I had set it.
+
+>>>
+root@horus /mnt # btrfs subvolume set-default 5 test
+root@horus /mnt # umount test && /mnt # mount /dev/sdb1 test
+root@horus /mnt # ls test
+sv1/  sv2/
+<<<
+
+Ok, 5 seems to be the root subvolume id. Is it always like that? I
+remembered to have read somewhere it was 0 ? (which makes a kind of
+more sense for me)
+
+>>>
+root@horus /mnt # btrfs subvolume set-default 256 test
+root@horus /mnt # umount test && mount /dev/sdb1 test
+root@horus /mnt # ls test
+sv1.file
+<<<
+
+Fine! But:
+
+>>>
+root@horus /mnt # btrfs subvolume set-default 0 test
+root@horus /mnt # umount test && mount /dev/sdb1 test
+root@horus /mnt # ls test
+sv1.file
+<<<
+
+set-default 0 seems to do nothing but does not produce an error
+either. What about subvolume 0? Still I can do:
+
+>>>
+root@horus /mnt # umount test
+root@horus /mnt # mount -o subvolid=0 /dev/sdb1 test
+root@horus /mnt # ls test
+sv1/  sv2/
+<<<
+
+Ok, here 0 as subvolid works. What about subvolid=5?
+
+>>>
+root@horus /mnt # umount test
+root@horus /mnt # mount -o subvolid=5 /dev/sdb1 test
+root@horus /mnt # ls test
+sv1/  sv2/
+<<<
+
+Works too.
+
+Sorry for the lengthy posting, but writing this posting has puzzled me
+even more I was yesterday. I hope someone could shed some light on it.
+
+Thanks!
+
+Florian

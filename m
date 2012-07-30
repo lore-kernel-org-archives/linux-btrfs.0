@@ -1,69 +1,61 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-pb0-f46.google.com ([209.85.160.46]:37978 "EHLO
-	mail-pb0-f46.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1754908Ab2G3URb (ORCPT
+Received: from ipmail06.adl6.internode.on.net ([150.101.137.145]:64300 "EHLO
+	ipmail06.adl6.internode.on.net" rhost-flags-OK-OK-OK-OK)
+	by vger.kernel.org with ESMTP id S1754599Ab2G3VmT (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 30 Jul 2012 16:17:31 -0400
-Received: by pbbrp8 with SMTP id rp8so10362207pbb.19
-        for <linux-btrfs@vger.kernel.org>; Mon, 30 Jul 2012 13:17:31 -0700 (PDT)
+	Mon, 30 Jul 2012 17:42:19 -0400
+Date: Tue, 31 Jul 2012 07:42:13 +1000
+From: Dave Chinner <david@fromorbit.com>
+To: majianpeng <majianpeng@gmail.com>
+Cc: axboe <axboe@kernel.dk>, "konrad.wilk" <konrad.wilk@oracle.com>,
+        "chris.mason" <chris.mason@fusionio.com>,
+        viro <viro@ZenIV.linux.org.uk>, tytso <tytso@mit.edu>,
+        "adilger.kernel" <adilger.kernel@dilger.ca>,
+        shaggy <shaggy@kernel.org>, mfasheh <mfasheh@suse.com>,
+        jlbec <jlbec@evilplan.org>, bpm <bpm@sgi.com>,
+        elder <elder@kernel.org>,
+        jfs-discussion <jfs-discussion@lists.sourceforge.net>,
+        linux-kernel <linux-kernel@vger.kernel.org>, xfs <xfs@oss.sgi.com>,
+        linux-btrfs <linux-btrfs@vger.kernel.org>,
+        linux-fsdevel <linux-fsdevel@vger.kernel.org>,
+        linux-ext4 <linux-ext4@vger.kernel.org>,
+        ocfs2-devel <ocfs2-devel@oss.oracle.com>
+Subject: Re: [PATCH 0/8] Set bi_rw when alloc bio before call bio_add_page.
+Message-ID: <20120730214213.GF2877@dastard>
+References: <201207301514247032532@gmail.com>
 MIME-Version: 1.0
-In-Reply-To: <CAHf9xvaccCm3GgHQ_Vj=1gZvecQJDbPhQC-shdODfYPx8QRVwQ@mail.gmail.com>
-References: <CAHf9xvbz92KdUrXHhEFyEqwFhA97yTw7=10YC8YyCMxDZ20_Yw@mail.gmail.com>
-	<CAB9VWqDS+zVku2diCYh08k=V_iT10fssRpEFcw9p8rn+dtaQqg@mail.gmail.com>
-	<CAHf9xvbaWkM8EqeBA-z1HaFV56vtMfWjpZDp+OfUGu88nsOzug@mail.gmail.com>
-	<CAHf9xvaj+uzWc39Hp5SLaVfevhwqvNXY9eWBY0Q-yT=7yPgS-w@mail.gmail.com>
-	<CAB9VWqDj5c2Ds=zthKdUPfNyGELgaTmfj9UHf4uvqxMs4--9+Q@mail.gmail.com>
-	<CAB9VWqAv-86CtAgitTD0BBaifomMGVsGZEnhaMsZ4DNV8DndFA@mail.gmail.com>
-	<CAHf9xvYApp7yEmX7BCi1Y3Ut7hX2VDxAkJgAxNp-FtkQCBiXUQ@mail.gmail.com>
-	<CAB9VWqAPvjyQ3EhcZQC59b0qcGr3QFozP60A0q+=FiRv3wxgbg@mail.gmail.com>
-	<CAHf9xvaccCm3GgHQ_Vj=1gZvecQJDbPhQC-shdODfYPx8QRVwQ@mail.gmail.com>
-Date: Mon, 30 Jul 2012 22:17:30 +0200
-Message-ID: <CAB9VWqD9DYmLZ_5amskPSZwwBHu-Q+zYcQRuVcLdkPkwoKjfpw@mail.gmail.com>
-Subject: Re: btrfs send/receive: if new inode ino is less than its new
- directory ino, incorrect path is sent
-From: Alexander Block <ablock84@googlemail.com>
-To: Alex Lyakas <alex.bolshoy.btrfs@gmail.com>
-Cc: linux-btrfs@vger.kernel.org
-Content-Type: text/plain; charset=ISO-8859-1
+Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <201207301514247032532@gmail.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Mon, Jul 30, 2012 at 7:35 PM, Alex Lyakas
-<alex.bolshoy.btrfs@gmail.com> wrote:
-> Hi,
->> I did not apply the patch but instead added a check for dir != tmp_dir
->> only. The reason to not check for gen is that I have a rule in my
->> mind: I only pass the generation number to functions where I want to
->> know the *current* state. is_first_ref is for permanent state, the
->> return value never changes while sending. I could however not
->> reproduce the problem with test_1.sh, but it should fix it.
->
-> I understand. I was not sure about dir_gen either. Since you call this
-> function to check the permanent state in a particular root, it does
-> not make sense to compare the generation.
->
->>>
->>> btrfs_test_2.sh
->>> The last test exposes an interesting issue: when a directory has a
->>> deleted reference recorded, this deleted reference is not added to the
->>> 'check_dirs' list. As a result, the upper directory (already
->>> orphanized) is not rmdir'd.
->> You'll find a commit in my repo to fix this. The problem was, that
->> moved directories do not get into the delete_refs loop and thus the
->> parent of the old location is never added to the check_dirs list.
->> I have force pushed to for-alex, if you have time I'd be happy if you
->> test again :)
-> Thanks. It fixes the issue.
->
-> ...and pls expect another mail from me with a long list of questions I
-> accumulated:)
-Do you have more bugs that you found or only questions? If you have
-more bugs, it would be good if you could separate them from the mail
-and probably send it earlier.
+On Mon, Jul 30, 2012 at 03:14:28PM +0800, majianpeng wrote:
+> When exec bio_alloc, the bi_rw is zero.But after calling bio_add_page,
+> it will use bi_rw.
+> Fox example, in functiion __bio_add_page,it will call merge_bvec_fn().
+> The merge_bvec_fn of raid456 will use the bi_rw to judge the merge.
+> >> if ((bvm->bi_rw & 1) == WRITE)
+> >> return biovec->bv_len; /* always allow writes to be mergeable */
 
-Regarding your earlier question: Yes, for-alex is meant to go upstream
-before I leave. It will become for-chris and with a final pull
-request.
->
-> Thanks!
-> Alex.
+So if bio_add_page() requires bi_rw to be set, then shouldn't it be
+set up for every caller? I noticed there are about 50 call sites for
+bio_add_page(), and you've only touched about 10 of them. Indeed, I
+notice that the RAID0/1 code uses bio_add_page, and as that can be
+stacked on top of RAID456, it also needs to set bi_rw correctly.
+As a result, your patch set is nowhere near complete, not does it
+document that bio_add_page requires that bi_rw be set before calling
+(which is the new API requirement, AFAICT).
+
+So, my question is whether the RAID456 code is doing something
+valid.  That write optimisation is clearly not enabled for a
+significant amount of code and filesystems, so the first thing to do
+is quantify the benefit of the optimisation. I can't evalute the
+merit of this change without data telling me it is worthwhile, and
+it's a lot of code to churn for no benefit....
+
+Cheers,
+
+Dave.
+-- 
+Dave Chinner
+david@fromorbit.com

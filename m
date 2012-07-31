@@ -1,44 +1,57 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from karen.lavabit.com ([72.249.41.33]:42094 "EHLO karen.lavabit.com"
+Received: from len.romanrm.net ([176.31.121.172]:54292 "EHLO len.romanrm.net"
 	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1754916Ab2GaD0m (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 30 Jul 2012 23:26:42 -0400
-Received: from a.earth.lavabit.com (a.earth.lavabit.com [192.168.111.10])
-	by karen.lavabit.com (Postfix) with ESMTP id A232F11B9B5
-	for <linux-btrfs@vger.kernel.org>; Mon, 30 Jul 2012 22:26:42 -0500 (CDT)
-Received: from lavabit.com (99-101-148-183.lightspeed.wepbfl.sbcglobal.net [99.101.148.183])
-	by lavabit.com with ESMTP id RHM6PEV7J6D4
-	for <linux-btrfs@vger.kernel.org>; Mon, 30 Jul 2012 22:26:42 -0500
-Message-ID: <36321.99.101.148.183.1343705202.squirrel@lavabit.com>
-Date: Mon, 30 Jul 2012 23:26:42 -0400 (EDT)
-Subject: filesystem finder / fixer
-From: serialhex@lavabit.com
-To: linux-btrfs@vger.kernel.org
-MIME-Version: 1.0
-Content-Type: text/plain; charset=US-ASCII
+	id S1751710Ab2GaFcu (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Tue, 31 Jul 2012 01:32:50 -0400
+Date: Tue, 31 Jul 2012 11:32:47 +0600
+From: Roman Mamedov <rm@romanrm.ru>
+To: serialhex@lavabit.com
+Cc: linux-btrfs@vger.kernel.org
+Subject: Re: filesystem finder / fixer
+Message-ID: <20120731113247.11aab72a@natsu>
+In-Reply-To: <36321.99.101.148.183.1343705202.squirrel@lavabit.com>
+References: <36321.99.101.148.183.1343705202.squirrel@lavabit.com>
+Mime-Version: 1.0
+Content-Type: multipart/signed; micalg=PGP-SHA1;
+ boundary="Sig_/q2WnfXzMY73ojdjPNGUIRBx"; protocol="application/pgp-signature"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hi all, so I've filled out an awesome ID10T form this weekend (all
-starting with a forded update) and completely annialated my partitions...
-I was running btrfs and was wondering 2 things:
+--Sig_/q2WnfXzMY73ojdjPNGUIRBx
+Content-Type: text/plain; charset=US-ASCII
+Content-Transfer-Encoding: quoted-printable
 
-1) is there a tool to help me recover data from my fs? I don't have a
-backup of my partition table and so I have about 500GB of space where a
-few partitionns might reside... GPT partitions mind you
+On Mon, 30 Jul 2012 23:26:42 -0400 (EDT)
+serialhex@lavabit.com wrote:
 
-...and...
+> 1) is there a tool to help me recover data from my fs? I don't have a
+> backup of my partition table and so I have about 500GB of space where a
+> few partitionns might reside... GPT partitions mind you
 
-2) if no such tool yet exsists, what do I need to learn to make one? I
-know C/C++ okayish... and filesystems are *REALLY FREAKING COOL* to me, so
-if someone can point me in a good direction / mentor me or something that
-would be awesome!
+If you only lost the partition table, there's a tool (strangely)named
+TestDisk, which can find the actual partitions on disk and restore it.
+Don't know if it supports GPT and BTRFS, though.
 
-...or I could just suffer. Though I'm probably going to do that anyway...
-thanks in advance!!!
+--=20
+With respect,
+Roman
 
-Justin
+~~~~~~~~~~~~~~~~~~~~~~~~~~~
+"Stallman had a printer,
+with code he could not see.
+So he began to tinker,
+and set the software free."
 
-github.com/serialhex snt frum my awesum ansroid... txt mite b rong
+--Sig_/q2WnfXzMY73ojdjPNGUIRBx
+Content-Type: application/pgp-signature; name=signature.asc
+Content-Disposition: attachment; filename=signature.asc
 
+-----BEGIN PGP SIGNATURE-----
+Version: GnuPG v1.4.12 (GNU/Linux)
 
+iEYEARECAAYFAlAXbf8ACgkQTLKSvz+PZwi8AACffna78iZJpqghUitrxnSeYxrx
+AOwAn3fWX1pa9XkiXTbngMym6eXfnyTA
+=lsy7
+-----END PGP SIGNATURE-----
+
+--Sig_/q2WnfXzMY73ojdjPNGUIRBx--

@@ -1,68 +1,137 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from karen.lavabit.com ([72.249.41.33]:46505 "EHLO karen.lavabit.com"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1751581Ab2GaNid (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 31 Jul 2012 09:38:33 -0400
-Received: from a.earth.lavabit.com (a.earth.lavabit.com [192.168.111.10])
-	by karen.lavabit.com (Postfix) with ESMTP id AC3DC11B98B
-	for <linux-btrfs@vger.kernel.org>; Tue, 31 Jul 2012 08:38:32 -0500 (CDT)
-Received: from lavabit.com (70-88-36-65-miami-fl.hfc.comcastbusiness.net [70.88.36.65])
-	by lavabit.com with ESMTP id CL13DND81MPP
-	for <linux-btrfs@vger.kernel.org>; Tue, 31 Jul 2012 08:38:32 -0500
-Message-ID: <62481.70.88.36.65.1343741912.squirrel@lavabit.com>
-In-Reply-To: <1343731366.6064.28.camel@ayu>
-References: <36321.99.101.148.183.1343705202.squirrel@lavabit.com>
-    <1343731366.6064.28.camel@ayu>
-Date: Tue, 31 Jul 2012 09:38:32 -0400 (EDT)
-Subject: Re: filesystem finder / fixer
-From: serialhex@lavabit.com
-To: linux-btrfs@vger.kernel.org
+Received: from mail-qc0-f174.google.com ([209.85.216.174]:48601 "EHLO
+	mail-qc0-f174.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1755649Ab2GaQcG (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>);
+	Tue, 31 Jul 2012 12:32:06 -0400
+Received: by qcro28 with SMTP id o28so3855634qcr.19
+        for <linux-btrfs@vger.kernel.org>; Tue, 31 Jul 2012 09:32:05 -0700 (PDT)
 MIME-Version: 1.0
-Content-Type: text/plain; charset=US-ASCII
+Date: Tue, 31 Jul 2012 19:32:05 +0300
+Message-ID: <CAHf9xvaGUfK0TWTacsT9i=85etzM_-aD1dC-dNVdJYws0K10tQ@mail.gmail.com>
+Subject: Questions and notes about send/receive
+From: Alex Lyakas <alex.bolshoy.btrfs@gmail.com>
+To: Alexander Block <ablock84@googlemail.com>
+Cc: linux-btrfs@vger.kernel.org
+Content-Type: text/plain; charset=ISO-8859-1
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-> On Mon, 2012-07-30 at 23:26 -0400, serialhex@lavabit.com wrote:
->> Hi all, so I've filled out an awesome ID10T form this weekend (all
->> starting with a forded update) and completely annialated my
->> partitions...
->> I was running btrfs and was wondering 2 things:
->>
->> 1) is there a tool to help me recover data from my fs? I don't have a
->> backup of my partition table and so I have about 500GB of space where a
->> few partitionns might reside... GPT partitions mind you
->
-> One of the nice things about GPT is that it stores a backup partition
-> table in a second spot near the end of the disk. It may be possible to
-> recover it.
->
-> Try running 'gdisk' on your drive, then hit 'r' to switch to recovery
-> mode. Try the 'c' recovery command to load the backup partition table
-> from disk.
-> More details and some other things you might want to try are at
-> http://www.rodsbooks.com/gdisk/repairing.html
->
+Hi Alexander,
+I relooked at my list of questions, and it seems that there are more
+general questions, and more focused questions. So here I list the
+"more focused" ones. I really appreciate if you can address them. I
+hope it's ok that I opened a separate thread for them. So here goes...
 
-i've already tried some of the recovery options... i'm going to try the
-MBR recovery later on, but i doubt that will work.  i typically do a lot
-of the data recovery at the place where i work, but it's all windows-based
-stuff and thus very easy (i use a bunch of linuxy tools... because they
-rock!)  unfortunately, i havn't found anything that will work with btrfs,
-which is why i was asking for direction for a fs-finder (scan the drive,
-look for data structures, pull out data) or what i need to learn to build
-one.  i've never worked on something like that, but i wouldnt mind doing
-it (i'd need help of course, but that's what the community is for).  :)
+iterate_dir_item(): tmp_path is not used
 
-> This wouldn't have been a major problem if you had backups in the first
-> place :)
-> --
-> Calvin Walton <calvin.walton@kepstin.ca>
+name_cache_insert(): if radix_tree_insert() fails, should we free the nce_head?
 
-you know, i scold people for not having backups, and my latest backup is
-3+months old... :'(  being a hypocrite sucks!!  :P
+__get_cur_name_and_parent()
+if name_cache_insert() fails, should we free the nce?
 
-thanks!
-Justin
+__get_cur_name_and_parent()
+if is_inode_existent() is false, and we generate unique name, we don't
+set *parent_ino/*parent_gen....I guess it's ok, it just looked strange
+when it showed up in my prints.
 
+btrfs_ioctl_send()
+struct file *filp = NULL; => this is not used
 
+btrfs_ioctl_set_received_subvol()
+if we fail to commit the transaction, should we rollback the in-memory
+values that we set, like stransid/rtransid etc? or they get rolled
+back automatically somehow (I need to study the transaction
+subsystem).
 
+process_recorded_refs():
+		/*
+		 * If the inode is still orphan, unlink the orphan. This may
+		 * happen when a previous inode did overwrite the first ref
+		 * of this inode and no new refs were added for the current
+		 * inode.
+		 */
+This comment is partially misleading, I think. It implies that the
+orphan inode will be deleted. But it may happen that it will only be
+unlinked, because another hardlink to it remains (one of my tests goes
+through this path - inode is orphanized, then orphan unlinked, but
+another hardlink exists).
+
+btrfs-progs::read_and_process_cmd()
+		if (strstr(path, ".bak_1.log")) {
+			ret = 0;
+		}
+this block is some leftover?
+
+__get_cur_name_and_parent()
+if we decided to call get_first_ref() on the send_root (due to ino <
+sctx->send_progress), do we really need to call did_overwrite_ref()?
+Because it will just lookup the send root again. I mean if we know
+that this inode has been already handled, then it's not an orphan
+anymore, so no need for this additional check. If my understanding is
+wrong, pls give some small example?
+
+process_recorded_refs():
+why we need to call did_overwrite_first_ref(), and not just call
+get_cur_path()? It looks like we need this only to set the is_orphan
+flag? Because, otherwise, get_cur_path() already does the
+overwrite_first_ref logic, and will return the correct path. Is my
+understanding correct? (I ran some tests and looks correct to me).
+
+find_extent_clone():
+	/*
+	 * Now collect all backrefs.
+	 */
+	extent_item_pos = logical - found_key.objectid;
+Is my understanding correct that extent_item_pos will now be equal to
+btrfs_file_extent_offset(eb, fi)?
+
+process_recorded_refs():
+if (ret == inode_state_did_create ||
+    ret == inode_state_no_change) {
+			/* TODO delayed utimes */
+			ret = send_utimes(sctx, un->val, un->aux);
+This code results in UTIMES sent twice for a parent dir of new inode:
+once because parent_dir gets changed (stamped with a transid) and
+second time because of this code. Is this fine? Also what "TODO
+delayed utimes" means?
+
+process_recorded_refs():
+if (un->val > sctx->cur_ino)
+	continue;
+This skips some directories. Is this because we will anyhow attend to
+them later because of their ino?
+
+is_extent_unchanged()
+		/*
+		 * Check if we have the same extent.
+		 */
+		if (left_disknr + left_offset_fixed !=
+				right_disknr + right_offset) {
+			ret = 0;
+			goto out;
+		}
+should also check: left_disknr == right_disknr for extra safety?
+Because disknr is what really defines the extent.
+
+is_extent_unchanged():
+		/*
+		 * Are we at extent 8? If yes, we know the extent is changed.
+		 * This may only happen on the first iteration.
+		 */
+		if (found_key.offset + right_len < ekey->offset) {
+			ret = 0;
+			goto out;
+		}
+Should it be:
+if (found_key.offset + right_len <= ekey->offset) {
+?
+Because in this case right extent is not overlapping also.
+
+struct btrfs_root_item:
+what is the difference between existing "generation" field that you
+mimic in generation_v2 and "ctransid"? (I know I need to study the
+root tree code).
+
+Thank you,
+Alex.

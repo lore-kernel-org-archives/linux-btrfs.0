@@ -1,70 +1,122 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-ob0-f174.google.com ([209.85.214.174]:57470 "EHLO
-	mail-ob0-f174.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1751233Ab2GaThu (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 31 Jul 2012 15:37:50 -0400
-Received: by obbuo13 with SMTP id uo13so11037378obb.19
-        for <linux-btrfs@vger.kernel.org>; Tue, 31 Jul 2012 12:37:49 -0700 (PDT)
+Received: from mx2.fusionio.com ([66.114.96.31]:41853 "EHLO mx2.fusionio.com"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1751139Ab2GaU2q (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Tue, 31 Jul 2012 16:28:46 -0400
+Received: from mail1.int.fusionio.com (mail1.int.fusionio.com [10.101.1.21]) by mx2.fusionio.com with ESMTP id QrP749nINPwxnuHb (version=TLSv1 cipher=AES128-SHA bits=128 verify=NO) for <linux-btrfs@vger.kernel.org>; Tue, 31 Jul 2012 14:28:44 -0600 (MDT)
+From: Josef Bacik <jbacik@fusionio.com>
+To: <linux-btrfs@vger.kernel.org>
+Subject: [PATCH] Btrfs: unlock extent when the dio completes for reads
+Date: Tue, 31 Jul 2012 16:33:47 -0400
+Message-ID: <1343766827-6674-1-git-send-email-jbacik@fusionio.com>
 MIME-Version: 1.0
-Date: Tue, 31 Jul 2012 14:37:49 -0500
-Message-ID: <CAKcLGm-JYUUTc+NodFHFi2SLpE7=JSwRigygt5x8xgy_bYzzoQ@mail.gmail.com>
-Subject: Btrfs Intermittent ENOSPC Issues
-From: Mitch Harder <mitch.harder@sabayonlinux.org>
-To: linux-btrfs <linux-btrfs@vger.kernel.org>
-Content-Type: text/plain; charset=ISO-8859-1
+Content-Type: text/plain
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-I've been working on running down intermittent ENOSPC issues.
+A deadlock in xfstests 113 was uncovered by commit
 
-I can only seem to replicate ENOSPC errors when running zlib
-compression.  However, I have been seeing similar ENOSPC errors to a
-lesser extent when playing with the LZ4HC patches.
+d187663ef24cd3d033f0cbf2867e70b36a3a90b8
 
-I apologize for not following up on this sooner, but I had drifted
-away from using zlib, and didn't notice there was still an issue.
+This is because we would not return EIOCBQUEUED for short AIO reads, instead
+we'd wait for the DIO to complete and then return the amount of data we
+transferred, which would allow our stuff to unlock the remaning amount.  But
+with this change this no longer happens, so if we have a short AIO read (for
+example if we try to read past EOF), we could leave the section from EOF to
+the end of where we tried to read locked.  To fix this we need to store the
+end of the region we've locked in our locked state bit and then only unlock
+when the dio has finished completely.  This makes sure we always unlock the
+entire range we locked when reading.  Before this patch we would hang when
+running 113, no this no longer happens.  Thanks to Zach Brown for the idea,
 
-My test case involves un-archiving linux git sources to a freshly
-formatted btrfs partition, mounted with compress-force=zlib.  I am
-using a 16 GB partition on a 250 GB Western Digital SATA Hard Disk.
-My current kernel is x86_64 linux-3.5.0 merged with Chris' for-linus
-branch (for 3.6_rc).  This includes Josef's "Btrfs: flush delayed
-inodes if we're short on space" patch.
+Signed-off-by: Josef Bacik <jbacik@fusionio.com>
+---
+ fs/btrfs/inode.c |   35 +++++++++++++++++++++++++++++------
+ 1 files changed, 29 insertions(+), 6 deletions(-)
 
-I haven't isolated a root cause, but here's the feedback I have so far.
+diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
+index 48bdfd2..c2f9300 100644
+--- a/fs/btrfs/inode.c
++++ b/fs/btrfs/inode.c
+@@ -5810,9 +5810,6 @@ static int btrfs_get_blocks_direct(struct inode *inode, sector_t iblock,
+ 	if (!create && (em->block_start == EXTENT_MAP_HOLE ||
+ 			test_bit(EXTENT_FLAG_PREALLOC, &em->flags))) {
+ 		free_extent_map(em);
+-		/* DIO will do one hole at a time, so just unlock a sector */
+-		unlock_extent(&BTRFS_I(inode)->io_tree, start,
+-			      start + root->sectorsize - 1);
+ 		return 0;
+ 	}
+ 
+@@ -5961,8 +5958,6 @@ static void btrfs_endio_direct_read(struct bio *bio, int err)
+ 		bvec++;
+ 	} while (bvec <= bvec_end);
+ 
+-	unlock_extent(&BTRFS_I(inode)->io_tree, dip->logical_offset,
+-		      dip->logical_offset + dip->bytes - 1);
+ 	bio->bi_private = dip->private;
+ 
+ 	kfree(dip->csums);
+@@ -6340,6 +6335,26 @@ static ssize_t check_direct_IO(struct btrfs_root *root, int rw, struct kiocb *io
+ out:
+ 	return retval;
+ }
++
++static void btrfs_direct_read_iodone(struct kiocb *iocb, loff_t offset,
++				     ssize_t bytes, void *private, int ret,
++				     bool is_async)
++{
++	struct inode *inode = iocb->ki_filp->f_mapping->host;
++	u64 lockend;
++
++	if (get_state_private(&BTRFS_I(inode)->io_tree, offset, &lockend)) {
++		WARN_ON(1);
++		goto out;
++	}
++
++	unlock_extent(&BTRFS_I(inode)->io_tree, offset, lockend);
++out:
++	if (is_async)
++		aio_complete(iocb, ret, 0);
++	inode_dio_done(inode);
++}
++
+ static ssize_t btrfs_direct_IO(int rw, struct kiocb *iocb,
+ 			const struct iovec *iov, loff_t offset,
+ 			unsigned long nr_segs)
+@@ -6353,6 +6368,7 @@ static ssize_t btrfs_direct_IO(int rw, struct kiocb *iocb,
+ 	int writing = rw & WRITE;
+ 	int write_bits = 0;
+ 	size_t count = iov_length(iov, nr_segs);
++	dio_iodone_t *iodone = NULL;
+ 
+ 	if (check_direct_IO(BTRFS_I(inode)->root, rw, iocb, iov,
+ 			    offset, nr_segs)) {
+@@ -6438,6 +6454,9 @@ static ssize_t btrfs_direct_IO(int rw, struct kiocb *iocb,
+ 					 1, 0, &cached_state, GFP_NOFS);
+ 			goto out;
+ 		}
++	} else {
++		set_state_private(&BTRFS_I(inode)->io_tree, lockstart, lockend);
++		iodone = btrfs_direct_read_iodone;
+ 	}
+ 
+ 	free_extent_state(cached_state);
+@@ -6445,9 +6464,13 @@ static ssize_t btrfs_direct_IO(int rw, struct kiocb *iocb,
+ 
+ 	ret = __blockdev_direct_IO(rw, iocb, inode,
+ 		   BTRFS_I(inode)->root->fs_info->fs_devices->latest_bdev,
+-		   iov, offset, nr_segs, btrfs_get_blocks_direct, NULL,
++		   iov, offset, nr_segs, btrfs_get_blocks_direct, iodone,
+ 		   btrfs_submit_direct, 0);
+ 
++	/* If we're reading we will be unlocked by the iodone call */
++	if (!writing)
++		goto out;
++
+ 	if (ret < 0 && ret != -EIOCBQUEUED) {
+ 		clear_extent_bit(&BTRFS_I(inode)->io_tree, offset,
+ 			      offset + iov_length(iov, nr_segs) - 1,
+-- 
+1.7.7.6
 
-(1)  My test case won't generate ENOSPC issues with lzo compression or
-no compression.
-
-(2)  I've inserted some trace_printk debugging statements to trace
-back the call stack, and the ENOSPC errors only seem to occur on a new
-transaction: vfs_create -> btrfs_create -> btrfs_start_transaction ->
-start_transaction -> btrfs_block_rsv_add -> reserve_metadata_bytes.
-
-(3)  The ENOSPC condition will usually clear in a few seconds,
-allowing writes to proceed.
-
-(4)  I've added a loop to the reserve_metadata_bytes() function to
-loop back with 'flush_state = FLUSH_DELALLOC (1)' for 1024 retries.
-This reduces and/or eliminates the ENOSPC errors, as if we're waiting
-on something else that is trying to complete.
-
-(5)  I've been heavily debugging the reserve_metadata_bytes()
-function, and I'm seeing problems with the way
-space_info->bytes_may_use is handled.  The space_info->bytes_may_use
-value is important in determining if we're in an over-commit state.
-But space_info->bytes_may_use value is often increased arbitrarily
-without any mechanism for correcting the value.  Subsequently,
-space_info->bytes_may_use quickly increases in size to the point where
-we are always in fallback allocation as if we're overcommitted.  In my
-trials, it was hard to capture a point where space_info->bytes_may_use
-wasn't larger than the available size.
-
-(6)  Even though reserve_metadata_bytes() is almost always in fallback
-overcommitted mode, it is still working pretty well, and I've
-developed the perception that the problem is something that needs to
-finish elsewhere.
-
-Sorry for not having a patch to fix the issue.  I'll try to keep
-banging on it as time allows.

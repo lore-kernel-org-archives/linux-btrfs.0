@@ -1,34 +1,164 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from smtp04.smtpout.orange.fr ([80.12.242.126]:31737 "EHLO
-	smtp.smtpout.orange.fr" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1753827Ab2G3Mny (ORCPT
+Received: from mail-pb0-f46.google.com ([209.85.160.46]:62449 "EHLO
+	mail-pb0-f46.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1753026Ab2GaA21 (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 30 Jul 2012 08:43:54 -0400
-Message-ID: <50168185.9030100@petaramesh.org>
-Date: Mon, 30 Jul 2012 14:43:49 +0200
-From: =?UTF-8?B?U3fDom1pIFBldGFyYW1lc2g=?= <swami@petaramesh.org>
+	Mon, 30 Jul 2012 20:28:27 -0400
+Received: by pbbrp8 with SMTP id rp8so10687207pbb.19
+        for <linux-btrfs@vger.kernel.org>; Mon, 30 Jul 2012 17:28:27 -0700 (PDT)
 MIME-Version: 1.0
-To: Calvin Walton <calvin.walton@kepstin.ca>
-CC: Florian Lindner <mailinglists@xgm.de>, linux-btrfs@vger.kernel.org
+In-Reply-To: <CAJtBfr-ndERMvhG2dEwKJVsUe++sqGk_ZU=0gHDr3vbZLSyo_w@mail.gmail.com>
+References: <CAJtBfr-ndERMvhG2dEwKJVsUe++sqGk_ZU=0gHDr3vbZLSyo_w@mail.gmail.com>
+Date: Tue, 31 Jul 2012 02:28:27 +0200
+Message-ID: <CA+=FuiXoO_QfRf2-YgYLVu3HUoKHST_4V_8DKtAGY8Epq2e=JA@mail.gmail.com>
 Subject: Re: subvolumes: default and IDs
-References: <CAJtBfr-ndERMvhG2dEwKJVsUe++sqGk_ZU=0gHDr3vbZLSyo_w@mail.gmail.com> <1343647796.6064.12.camel@ayu>
-In-Reply-To: <1343647796.6064.12.camel@ayu>
-Content-Type: text/plain; charset=UTF-8
+From: Alexander Karbstein <alexander.karbstein@gmail.com>
+To: linux-btrfs@vger.kernel.org
+Content-Type: text/plain; charset=ISO-8859-1
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Le 30/07/2012 13:29, Calvin Walton a écrit :
-> It looks like there's currently a bug in btrfs-progs - the 'get-default'
-> command is actually doing a 'list' instead of printing the default. With
-> any luck it's just a little error in the command-line parsing and should
-> be easy to fix...
+Hi Florian,
 
-I've fallen upon this one as well.
+in case you would like to have some code references, to better
+understand how it works:
+1. Why is the default subvolid=5?
+The trees in Btrfs all are referenced in the root tree by their
+OBJECTIDs. You can find the definitions("magic numbers") for the
+"main" trees in ctree.h:
+For example, the main FS tree (you have one FS tree per subvolume) is
+defined like this:
+#define BTRFS_FS_TREE_OBJECTID 5ULL
+==> subvolid=5
 
-That's typically the kind of bug that makes one wonder to what extent
-the software has ever been tested, and doubt it's anything close to
-production quality... :-/
+2. Why can I mount with -o subvolid=0 succesfully, albeit the default
+FS tree has subvolid=5?
+Have a look at: linux/fs/btrfs/super.c
+In early mount options parser: btrfs_parse_early_options
+Snippet:
+         case Opt_subvolid:
+                        intarg = 0;
+                        error = match_int(&args[0], &intarg);
+                        if (!error) {
+                                /* we want the original fs_tree */
+/*Here is the trick ==> */              if (!intarg)
+                                        *subvol_objectid =
+                                           BTRFS_FS_TREE_OBJECTID;
+                                else
+                                        *subvol_objectid = intarg;
+                        }
+                        break;
+==> So, if intarg is still 0 after the match_int line, it will use
+BTRFS_FS_TREE_OBJECTID (which we know from 1. being 5ULL) when
+mounting.
 
--- 
-Swâmi Petaramesh <swami@petaramesh.org> http://petaramesh.org PGP 9076E32E
+Best Regards,
+Alex
 
+2012/7/30 Florian Lindner <mailinglists@xgm.de>:
+> Hey!
+>
+> I recently starting playing with btrfs and subvolume, but it has left
+> me puzzled:
+> Distribution is Archlinux, Kernel is 3.4.6.
+>
+>>>>
+> root@horus /mnt # mkfs.btrfs -L test /dev/sdb1
+>
+> WARNING! - Btrfs Btrfs v0.19 IS EXPERIMENTAL
+> WARNING! - see http://btrfs.wiki.kernel.org before using
+>
+> fs created label test on /dev/sdb1
+>         nodesize 4096 leafsize 4096 sectorsize 4096 size 2.73TB
+> Btrfs Btrfs v0.19
+> root@horus /mnt # mount /dev/sdb1 test
+> root@horus /mnt # cd test
+> root@horus /mnt/test # btrfs subvolume create sv1
+> Create subvolume './sv1'
+> root@horus /mnt/test # btrfs subvolume create sv2
+> Create subvolume './sv2'
+> root@horus /mnt/test # touch sv1/sv1.file
+> root@horus /mnt/test # touch sv2/sv2.file
+> root@horus /mnt/test # btrfs subvolume get-default .
+> ID 256 top level 5 path sv1
+> ID 259 top level 5 path sv2
+> <<<
+>
+> What is the default subvolume now? How can I tell?
+>
+>>>>
+> root@horus /mnt/test # btrfs subvolume set-default 259 .
+> root@horus /mnt/test # btrfs subvolume get-default .
+> ID 256 top level 5 path sv1
+> ID 259 top level 5 path sv2
+> <<<
+>
+> Seems to have changed nothing....?
+>
+>>>>
+> root@horus /mnt/test # cd ..
+> root@horus /mnt # umount test && mount /dev/sdb1 test
+> root@horus /mnt # ls test
+> sv2.file
+> <<<
+>
+> Ah, sv2 seems to be default, like I had set it.
+>
+>>>>
+> root@horus /mnt # btrfs subvolume set-default 5 test
+> root@horus /mnt # umount test && /mnt # mount /dev/sdb1 test
+> root@horus /mnt # ls test
+> sv1/  sv2/
+> <<<
+>
+> Ok, 5 seems to be the root subvolume id. Is it always like that? I
+> remembered to have read somewhere it was 0 ? (which makes a kind of
+> more sense for me)
+>
+>>>>
+> root@horus /mnt # btrfs subvolume set-default 256 test
+> root@horus /mnt # umount test && mount /dev/sdb1 test
+> root@horus /mnt # ls test
+> sv1.file
+> <<<
+>
+> Fine! But:
+>
+>>>>
+> root@horus /mnt # btrfs subvolume set-default 0 test
+> root@horus /mnt # umount test && mount /dev/sdb1 test
+> root@horus /mnt # ls test
+> sv1.file
+> <<<
+>
+> set-default 0 seems to do nothing but does not produce an error
+> either. What about subvolume 0? Still I can do:
+>
+>>>>
+> root@horus /mnt # umount test
+> root@horus /mnt # mount -o subvolid=0 /dev/sdb1 test
+> root@horus /mnt # ls test
+> sv1/  sv2/
+> <<<
+>
+> Ok, here 0 as subvolid works. What about subvolid=5?
+>
+>>>>
+> root@horus /mnt # umount test
+> root@horus /mnt # mount -o subvolid=5 /dev/sdb1 test
+> root@horus /mnt # ls test
+> sv1/  sv2/
+> <<<
+>
+> Works too.
+>
+> Sorry for the lengthy posting, but writing this posting has puzzled me
+> even more I was yesterday. I hope someone could shed some light on it.
+>
+> Thanks!
+>
+> Florian
+> --
+> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
+> the body of a message to majordomo@vger.kernel.org
+> More majordomo info at  http://vger.kernel.org/majordomo-info.html

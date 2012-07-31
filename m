@@ -1,191 +1,52 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([222.73.24.84]:4111 "EHLO song.cn.fujitsu.com"
-	rhost-flags-OK-FAIL-OK-OK) by vger.kernel.org with ESMTP
-	id S1755605Ab2GaHTS (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 31 Jul 2012 03:19:18 -0400
-Message-ID: <501786C5.1060905@cn.fujitsu.com>
-Date: Tue, 31 Jul 2012 15:18:29 +0800
-From: Miao Xie <miaox@cn.fujitsu.com>
-Reply-To: miaox@cn.fujitsu.com
-MIME-Version: 1.0
-To: Linux Btrfs <linux-btrfs@vger.kernel.org>
-CC: Seto Hidetoshi <seto.hidetoshi@jp.fujitsu.com>,
-        David Sterba <dave@jikos.cz>
-Subject: [PATCH V2 2/2] Btrfs: fix the snapshot that should not exist
-Content-Type: text/plain; charset=UTF-8
+Received: from mail-gh0-f174.google.com ([209.85.160.174]:49585 "EHLO
+	mail-gh0-f174.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1755758Ab2GaKmt (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>);
+	Tue, 31 Jul 2012 06:42:49 -0400
+Received: by ghrr11 with SMTP id r11so5849963ghr.19
+        for <linux-btrfs@vger.kernel.org>; Tue, 31 Jul 2012 03:42:49 -0700 (PDT)
+Message-ID: <1343731366.6064.28.camel@ayu>
+Subject: Re: filesystem finder / fixer
+From: Calvin Walton <calvin.walton@kepstin.ca>
+To: serialhex@lavabit.com
+Cc: linux-btrfs@vger.kernel.org
+Date: Tue, 31 Jul 2012 06:42:46 -0400
+In-Reply-To: <36321.99.101.148.183.1343705202.squirrel@lavabit.com>
+References: <36321.99.101.148.183.1343705202.squirrel@lavabit.com>
+Content-Type: text/plain; charset="UTF-8"
+Mime-Version: 1.0
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-The snapshot should be the image of the fs tree before it was created,
-so the metadata of the snapshot should not exist in the its tree. But now, we
-found the directory item and directory name index is in both the snapshot tree
-and the fs tree. It introduces some problems and makes the users feel strange:
+On Mon, 2012-07-30 at 23:26 -0400, serialhex@lavabit.com wrote:
+> Hi all, so I've filled out an awesome ID10T form this weekend (all
+> starting with a forded update) and completely annialated my partitions...
+> I was running btrfs and was wondering 2 things:
+> 
+> 1) is there a tool to help me recover data from my fs? I don't have a
+> backup of my partition table and so I have about 500GB of space where a
+> few partitionns might reside... GPT partitions mind you
 
- # mkfs.btrfs /dev/sda1
- # mount /dev/sda1 /mnt
- # mkdir /mnt/1
- # cd /mnt/1
- # btrfs subvolume snapshot /mnt snap0
- # ls -a /mnt/1/snap0/1
- .	..	[no other file/dir]
+One of the nice things about GPT is that it stores a backup partition
+table in a second spot near the end of the disk. It may be possible to
+recover it.
 
- # ll /mnt/1/snap0/
- total 0
- drwxr-xr-x 1 root root 10 Ju1 24 12:11 1
-			^^^
-			There is no file/dir in it, but it's size is 10
+Try running 'gdisk' on your drive, then hit 'r' to switch to recovery
+mode. Try the 'c' recovery command to load the backup partition table
+from disk.
+More details and some other things you might want to try are at
+http://www.rodsbooks.com/gdisk/repairing.html
 
- # cd /mnt/1/snap0/1/snap0
- [Enter a unexisted directory successfully...]
+Do keep in mind that if you have the space, you should make an image of
+your disk before trying any recovery tools. If you don't have the space,
+then you should buy, say, an external USB drive to *make* the space, and
+use it for backups once you're done recovering your data (if that's
+possible.)
 
-There is nothing in the directory 1 in snap0, but btrfs told the length of
-this directory is 10. Beside that, we can enter an unexisted directory, it is
-very strange to the users.
+This wouldn't have been a major problem if you had backups in the first
+place :)
 
- # btrfs subvolume snapshot /mnt/1/snap0 /mnt/snap1
- # ll /mnt/1/snap0/1/
- total 0
- [None]
- # ll /mnt/snap1/1/
- total 0
- drwxr-xr-x 1 root root 0 Ju1 24 12:14 snap0
-
-And the source of snap1 did have any directory in Directory 1, but snap1 have
-a snap0, it is different between the source and the snapshot.
-
-So I think we should insert directory item and directory name index and update
-the parent inode as the last step of snapshot creation, and do not leave the
-useless metadata in the file tree.
-
-Signed-off-by: Miao Xie <miaox@cn.fujitsu.com>
----
-Changelog v1 -> v2:
-- Add comment to explain why we need deal with the delayed items after
-  snapshot creation and why this operation do not corrupt the metadata.
-- Move dropping dput() to patch 1/2
----
- fs/btrfs/transaction.c |   66 +++++++++++++++++++++++++++++++++++++----------
- 1 files changed, 52 insertions(+), 14 deletions(-)
-
-diff --git a/fs/btrfs/transaction.c b/fs/btrfs/transaction.c
-index 4d579fe..c3251e2 100644
---- a/fs/btrfs/transaction.c
-+++ b/fs/btrfs/transaction.c
-@@ -922,6 +922,8 @@ static noinline int create_pending_snapshot(struct btrfs_trans_handle *trans,
- 	struct btrfs_root *parent_root;
- 	struct btrfs_block_rsv *rsv;
- 	struct inode *parent_inode;
-+	struct btrfs_path *path;
-+	struct btrfs_dir_item *dir_item;
- 	struct dentry *parent;
- 	struct dentry *dentry;
- 	struct extent_buffer *tmp;
-@@ -932,6 +934,12 @@ static noinline int create_pending_snapshot(struct btrfs_trans_handle *trans,
- 	u64 objectid;
- 	u64 root_flags;
- 
-+	path = btrfs_alloc_path();
-+	if (!path) {
-+		ret = pending->error = -ENOMEM;
-+		goto path_alloc_fail;
-+	}
-+
- 	new_root_item = kmalloc(sizeof(*new_root_item), GFP_NOFS);
- 	if (!new_root_item) {
- 		ret = pending->error = -ENOMEM;
-@@ -973,22 +981,20 @@ static noinline int create_pending_snapshot(struct btrfs_trans_handle *trans,
- 	 */
- 	ret = btrfs_set_inode_index(parent_inode, &index);
- 	BUG_ON(ret); /* -ENOMEM */
--	ret = btrfs_insert_dir_item(trans, parent_root,
--				dentry->d_name.name, dentry->d_name.len,
--				parent_inode, &key,
--				BTRFS_FT_DIR, index);
--	if (ret == -EEXIST) {
-+
-+	/* check if there is a file/dir which has the same name. */
-+	dir_item = btrfs_lookup_dir_item(NULL, parent_root, path,
-+					 btrfs_ino(parent_inode),
-+					 dentry->d_name.name,
-+					 dentry->d_name.len, 0);
-+	if (dir_item != NULL && !IS_ERR(dir_item)) {
- 		pending->error = -EEXIST;
- 		goto fail;
--	} else if (ret) {
-+	} else if (IS_ERR(dir_item)) {
-+		ret = PTR_ERR(dir_item);
- 		goto abort_trans;
- 	}
--
--	btrfs_i_size_write(parent_inode, parent_inode->i_size +
--					 dentry->d_name.len * 2);
--	ret = btrfs_update_inode(trans, parent_root, parent_inode);
--	if (ret)
--		goto abort_trans;
-+	btrfs_release_path(path);
- 
- 	/*
- 	 * pull in the delayed directory update
-@@ -1062,12 +1068,29 @@ static noinline int create_pending_snapshot(struct btrfs_trans_handle *trans,
- 	ret = btrfs_reloc_post_snapshot(trans, pending);
- 	if (ret)
- 		goto abort_trans;
-+
-+	ret = btrfs_insert_dir_item(trans, parent_root,
-+				    dentry->d_name.name, dentry->d_name.len,
-+				    parent_inode, &key,
-+				    BTRFS_FT_DIR, index);
-+	/* We have check then name at the beginning, so it is impossible. */
-+	BUG_ON(ret == -EEXIST);
-+	if (ret)
-+		goto abort_trans;
-+
-+	btrfs_i_size_write(parent_inode, parent_inode->i_size +
-+					 dentry->d_name.len * 2);
-+	ret = btrfs_update_inode(trans, parent_root, parent_inode);
-+	if (ret)
-+		goto abort_trans;
- fail:
- 	dput(parent);
- 	trans->block_rsv = rsv;
- no_free_objectid:
- 	kfree(new_root_item);
- root_item_alloc_fail:
-+	btrfs_free_path(path);
-+path_alloc_fail:
- 	btrfs_block_rsv_release(root, &pending->block_rsv, (u64)-1);
- 	return ret;
- 
-@@ -1385,13 +1408,28 @@ int btrfs_commit_transaction(struct btrfs_trans_handle *trans,
- 	 */
- 	mutex_lock(&root->fs_info->reloc_mutex);
- 
--	ret = btrfs_run_delayed_items(trans, root);
-+	/*
-+	 * We needn't worry about the delayed items because we will
-+	 * deal with them in create_pending_snapshot(), which is the
-+	 * core function of the snapshot creation.
-+	 */
-+	ret = create_pending_snapshots(trans, root->fs_info);
- 	if (ret) {
- 		mutex_unlock(&root->fs_info->reloc_mutex);
- 		goto cleanup_transaction;
- 	}
- 
--	ret = create_pending_snapshots(trans, root->fs_info);
-+	/*
-+	 * We insert the dir indexes of the snapshots and update the inode
-+	 * of the snapshots' parents after the snapshot creation, so there
-+	 * are some delayed items which are not dealt with. Now deal with
-+	 * them.
-+	 *
-+	 * We needn't worry that this operation will corrupt the snapshots,
-+	 * because all the tree which are snapshoted will be forced to COW
-+	 * the nodes and leaves.
-+	 */
-+	ret = btrfs_run_delayed_items(trans, root);
- 	if (ret) {
- 		mutex_unlock(&root->fs_info->reloc_mutex);
- 		goto cleanup_transaction;
 -- 
-1.7.6.5
+Calvin Walton <calvin.walton@kepstin.ca>
+

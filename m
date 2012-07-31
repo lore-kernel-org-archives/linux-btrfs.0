@@ -1,44 +1,55 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail2.unitix.de ([176.9.2.175]:52905 "EHLO mail2.unitix.de"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1751549Ab2GIVSi (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 9 Jul 2012 17:18:38 -0400
-From: Arnd Hannemann <arnd@arndnet.de>
+Received: from mail-wi0-f178.google.com ([209.85.212.178]:52328 "EHLO
+	mail-wi0-f178.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1751166Ab2GaRUR (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>);
+	Tue, 31 Jul 2012 13:20:17 -0400
+Received: by wibhr14 with SMTP id hr14so3127427wib.1
+        for <linux-btrfs@vger.kernel.org>; Tue, 31 Jul 2012 10:20:16 -0700 (PDT)
+From: Alexander Karbstein <alexander.karbstein@gmail.com>
 To: linux-btrfs@vger.kernel.org
-Cc: chris.mason@fusionio.com, Arnd Hannemann <arnd@arndnet.de>
-Subject: [PATCH] btrfs-progs: btrfs-image: don't segfault if no root is found
-Date: Mon,  9 Jul 2012 23:18:28 +0200
-Message-Id: <1341868709-7411-1-git-send-email-arnd@arndnet.de>
+Cc: Alexander Karbstein <alexander.karbstein@gmail.com>
+Subject: [PATCH V2] Btrfs-progs: Enabled setting root subvolume with subvolid=0
+Date: Tue, 31 Jul 2012 19:11:21 +0200
+Message-Id: <1343754681-4454-2-git-send-email-alexander.karbstein@gmail.com>
+In-Reply-To: <50173463.5060405@cn.fujitsu.com>
+References: <50173463.5060405@cn.fujitsu.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Error reporting is already done, so just return if root is NULL,
-instead of segfaulting:
+The command btrfs subvolume set-default 0 /path/to/fs changed the
+default subvolume to whatever subvolume was currently mounted on
+/path/to/fs. This patch changes this behaviour to set the default
+subvolume to BTRFS_FS_TREE_OBJECTID in case the user asks for
+subvolid=0
 
-Program received signal SIGSEGV, Segmentation fault.
-0x000000000042cd34 in create_metadump (input=0x7fffffffe847 "/usr/share", out=0x63e010, num_threads=0, compress_level=0)
-    at btrfs-image.c:494
-494		BUG_ON(root->nodesize != root->leafsize);
-    at btrfs-image.c:494
-
-Signed-off-by: Arnd Hannemann <arnd@arndnet.de>
+Signed-off-by: Alexander Karbstein <alexander.karbstein@gmail.com>
 ---
- btrfs-image.c |    2 ++
- 1 file changed, 2 insertions(+)
+ cmds-subvolume.c |    4 ++++
+ 1 files changed, 4 insertions(+), 0 deletions(-)
 
-diff --git a/btrfs-image.c b/btrfs-image.c
-index f2bbcc8..fec51d8 100644
---- a/btrfs-image.c
-+++ b/btrfs-image.c
-@@ -491,6 +491,8 @@ static int create_metadump(const char *input, FILE *out, int num_threads,
- 	int ret;
+diff --git a/cmds-subvolume.c b/cmds-subvolume.c
+index 3508ce6..8f8c918 100644
+--- a/cmds-subvolume.c
++++ b/cmds-subvolume.c
+@@ -25,6 +25,7 @@
+ #include <limits.h>
  
- 	root = open_ctree(input, 0, 0);
-+	if (!root)
-+		return 1;
- 	BUG_ON(root->nodesize != root->leafsize);
+ #include "kerncompat.h"
++#include "ctree.h"
+ #include "ioctl.h"
  
- 	ret = metadump_init(&metadump, root, out, num_threads,
+ #include "commands.h"
+@@ -464,6 +465,9 @@ static int cmd_subvol_set_default(int argc, char **argv)
+ 		fprintf(stderr, "ERROR: invalid tree id (%s)\n",subvolid);
+ 		return 30;
+ 	}
++	/* Using the original root fs tree */
++	if (objectid == 0ULL)
++		objectid = BTRFS_FS_TREE_OBJECTID;
+ 	ret = ioctl(fd, BTRFS_IOC_DEFAULT_SUBVOL, &objectid);
+ 	e = errno;
+ 	close(fd);
 -- 
-1.7.9.5
+1.7.2.5
 

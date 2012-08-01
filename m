@@ -1,175 +1,224 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from rcsinet15.oracle.com ([148.87.113.117]:21719 "EHLO
-	rcsinet15.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1754915Ab2HAMCd (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Wed, 1 Aug 2012 08:02:33 -0400
-Received: from acsinet22.oracle.com (acsinet22.oracle.com [141.146.126.238])
-	by rcsinet15.oracle.com (Sentrion-MTA-4.2.2/Sentrion-MTA-4.2.2) with ESMTP id q71C2Wsq018462
-	(version=TLSv1/SSLv3 cipher=DHE-RSA-AES256-SHA bits=256 verify=OK)
-	for <linux-btrfs@vger.kernel.org>; Wed, 1 Aug 2012 12:02:32 GMT
-Received: from acsmt357.oracle.com (acsmt357.oracle.com [141.146.40.157])
-	by acsinet22.oracle.com (8.14.4+Sun/8.14.4) with ESMTP id q71C2VSK013103
-	(version=TLSv1/SSLv3 cipher=DHE-RSA-AES256-SHA bits=256 verify=NO)
-	for <linux-btrfs@vger.kernel.org>; Wed, 1 Aug 2012 12:02:32 GMT
-Received: from abhmt117.oracle.com (abhmt117.oracle.com [141.146.116.69])
-	by acsmt357.oracle.com (8.12.11.20060308/8.12.11) with ESMTP id q71C2VnN019387
-	for <linux-btrfs@vger.kernel.org>; Wed, 1 Aug 2012 07:02:31 -0500
-From: Anand jain <Anand.Jain@oracle.com>
-To: linux-btrfs@vger.kernel.org
-Cc: Anand Jain <anand.jain@oracle.com>
-Subject: [PATCH] Btrfs-progs: show crtime in the snapshot list
-Date: Wed,  1 Aug 2012 20:01:21 +0800
-Message-Id: <1343822481-26707-2-git-send-email-Anand.Jain@oracle.com>
-In-Reply-To: <1343822481-26707-1-git-send-email-Anand.Jain@oracle.com>
-References: <1343822481-26707-1-git-send-email-Anand.Jain@oracle.com>
+Received: from mail-pb0-f46.google.com ([209.85.160.46]:63932 "EHLO
+	mail-pb0-f46.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1752782Ab2HAMJw (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Wed, 1 Aug 2012 08:09:52 -0400
+MIME-Version: 1.0
+Date: Wed, 1 Aug 2012 14:09:52 +0200
+Message-ID: <CAB9VWqAcwCTDi=pV03CpuXaG0kCE6bT1+NbJJJUdzuwVdR-e-Q@mail.gmail.com>
+Subject: btrfs send/receive review by vfs folks
+From: Alexander Block <ablock84@googlemail.com>
+To: linux-fsdevel@vger.kernel.org
+Cc: linux-btrfs@vger.kernel.org
+Content-Type: text/plain; charset=ISO-8859-1
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-From: Anand Jain <anand.jain@oracle.com>
+Hello,
 
+I'm sending this to fsdevel as we're using vfs functions to open
+inodes and read/write from them in btrfs send/receive and a review by
+vfs folks would probably be a good thing here. I extracted the vfs
+related functions from the current version and copied them into this
+mail below.
 
-Signed-off-by: Anand <anand.jain@oracle.com>
----
- btrfs-list.c |   45 ++++++++++++++++++++++++++++++++++++---------
- 1 files changed, 36 insertions(+), 9 deletions(-)
+write_buf:
+Used to write the stream to a user space supplied pipe. Please note
+the ERESTARTSYS comment there, I need some help here as I don't know
+how to handle that correctly. If I ignore the return value, it loops
+forever. If I bail out to user space, it reenters the ioctl and starts
+from the beginning (which is really bad). I have two possible
+solutions in my mind.
+1. Store some kind of state in the ioctl arguments so that we can
+continue where we stopped when the ioctl reenters. This would however
+complicate the code a lot.
+2. Spawn a thread when the ioctl is called and leave the ioctl
+immediately. I don't know if ERESTARTSYS can happen in vfs_xxx calls
+if they happen from a non syscall thread.
 
-diff --git a/btrfs-list.c b/btrfs-list.c
-index c6bfb1e..2102d00 100644
---- a/btrfs-list.c
-+++ b/btrfs-list.c
-@@ -60,6 +60,9 @@ struct root_info {
- 	/* generation when the root is created or last updated */
- 	u64 gen;
- 
-+	/* creation time of this root in sec*/
-+	time_t otime;
-+
- 	/* path from the subvol we live in to this root, including the
- 	 * root's name.  This is null until we do the extra lookup ioctl.
- 	 */
-@@ -185,7 +188,7 @@ static struct root_info *tree_search(struct rb_root *root, u64 root_id)
-  */
- static int add_root(struct root_lookup *root_lookup,
- 		    u64 root_id, u64 ref_tree, u64 dir_id, char *name,
--		    int name_len, u64 *gen)
-+		    int name_len, u64 *gen, time_t ot)
- {
- 	struct root_info *ri;
- 	struct rb_node *ret;
-@@ -205,6 +208,7 @@ static int add_root(struct root_lookup *root_lookup,
- 		ri->name[name_len] = 0;
- 	if (gen)
- 		ri->gen = *gen;
-+	ri->otime = ot;
- 
- 	ret = tree_insert(&root_lookup->root, root_id, ref_tree, gen,
- 			  &ri->rb_node);
-@@ -215,7 +219,8 @@ static int add_root(struct root_lookup *root_lookup,
- 	return 0;
- }
- 
--static int update_root(struct root_lookup *root_lookup, u64 root_id, u64 gen)
-+static int update_root(struct root_lookup *root_lookup, u64 root_id, u64 gen,
-+			time_t ot)
- {
- 	struct root_info *ri;
- 
-@@ -225,6 +230,7 @@ static int update_root(struct root_lookup *root_lookup, u64 root_id, u64 gen)
- 		return -ENOENT;
- 	}
- 	ri->gen = gen;
-+	ri->otime = ot;
- 	return 0;
- }
- 
-@@ -658,6 +664,7 @@ static int __list_subvol_search(int fd, struct root_lookup *root_lookup)
- 	u64 gen = 0;
- 	int i;
- 	int get_gen = 0;
-+	time_t	t;
- 
- 	root_lookup_init(root_lookup);
- 	memset(&args, 0, sizeof(args));
-@@ -711,12 +718,16 @@ again:
- 				dir_id = btrfs_stack_root_ref_dirid(ref);
- 
- 				add_root(root_lookup, sh->objectid, sh->offset,
--					 dir_id, name, name_len, NULL);
-+					 dir_id, name, name_len, NULL, 0);
- 			} else if (get_gen && sh->type == BTRFS_ROOT_ITEM_KEY) {
- 				ri = (struct btrfs_root_item *)(args.buf + off);
- 				gen = btrfs_root_generation(ri);
-+				if(ri->generation == ri->generation_v2)
-+					t = ri->otime.sec;
-+				else
-+					t = 0;
- 
--				update_root(root_lookup, sh->objectid, gen);
-+				update_root(root_lookup, sh->objectid, gen, t);
- 			}
- 
- 			off += sh->len;
-@@ -805,14 +816,21 @@ static int __list_snapshot_search(int fd, struct root_lookup *root_lookup)
- 		 * read the root_ref item it contains
- 		 */
- 		for (i = 0; i < sk->nr_items; i++) {
-+			struct btrfs_root_item *item;
-+			time_t	t;
- 			sh = (struct btrfs_ioctl_search_header *)(args.buf +
- 								  off);
- 			off += sizeof(*sh);
- 			if (sh->type == BTRFS_ROOT_ITEM_KEY && sh->offset) {
-+				item = (struct btrfs_root_item *)(args.buf + off);
-+				if(item->generation == item->generation_v2)
-+					t = item->otime.sec;
-+				else
-+					t = 0;
- 				gen = sh->offset;
- 
- 				add_root(root_lookup, sh->objectid, 0,
--					 0, NULL, 0, &gen);
-+					 0, NULL, 0, &gen, t);
- 			}
- 			off += sh->len;
- 
-@@ -981,24 +999,33 @@ int list_snapshots(int fd, int print_parent, int order)
- 		u64 level;
- 		u64 parent_id;
- 		char *path;
-+		time_t t;
-+		char tstr[256];
- 
- 		entry_snap = rb_entry(n, struct root_info, rb_node);
- 		entry = tree_search(&root_lookup.root, entry_snap->root_id);
- 
- 		resolve_root(&root_lookup, entry, &parent_id, &level, &path);
-+		t = entry->otime;
-+		if(t)
-+			strftime(tstr,256,"%Y-%m-%d %X",localtime(&t));
-+		else
-+			strcpy(tstr,"-");
- 		if (print_parent) {
--			printf("ID %llu gen %llu cgen %llu parent %llu top level %llu path %s\n",
-+			printf("ID %llu gen %llu cgen %llu parent %llu top level %llu "
-+				"crtime %s path %s\n",
- 				(unsigned long long)entry->root_id,
- 				(unsigned long long)entry->gen,
- 				(unsigned long long)entry_snap->gen,
- 				(unsigned long long)parent_id,
--				(unsigned long long)level, path);
-+				(unsigned long long)level, tstr, path);
- 		} else {
--			printf("ID %llu gen %llu cgen %llu top level %llu path %s\n",
-+			printf("ID %llu gen %llu cgen %llu top level %llu "
-+				"crtime %s path %s\n",
- 				(unsigned long long)entry->root_id,
- 				(unsigned long long)entry->gen,
- 				(unsigned long long)entry_snap->gen,
--				(unsigned long long)level, path);
-+				(unsigned long long)level, tstr, path);
- 		}
- 
- 		free(path);
--- 
-1.7.1
+Comments/Help would be really appreciated here.
 
+open_cur_inode_file:
+Opens the currently processed inode for reading. Bails out in case it
+is already open. This function is called multiple times per inode,
+it's called once per extent.
+
+close_cur_inode_file:
+Closes the filp that was opened by open_cur_inode_file. It is called
+when the current inode is done processing.
+
+send_write:
+Used for changed extents that needs to be sent to user space. The len
+is limited to 48k and thus called multiple times with different
+offsets per extent. It first uses vfs_read to read from the file and
+then TLV_PUT_XXX to write the data to the user space pipe.
+The TLV_PUT_XXX macros perform calls to write_buf. In case something
+fails there, these macros do a goto to tlv_put_failure.
+The same ERESTARTSYS logic as in write_buf will probably be needed
+here for the vfs_read calls.
+
+[...]
+static int write_buf(struct send_ctx *sctx, const void *buf, u32 len)
+{
+	int ret;
+	mm_segment_t old_fs;
+	u32 pos = 0;
+
+	old_fs = get_fs();
+	set_fs(KERNEL_DS);
+
+	while (pos < len) {
+		ret = vfs_write(sctx->send_filp, (char *)buf + pos, len - pos,
+				&sctx->send_off);
+		/* TODO handle that correctly */
+		/*if (ret == -ERESTARTSYS) {
+			continue;
+		}*/
+		if (ret < 0)
+			goto out;
+		if (ret == 0) {
+			ret = -EIO;
+			goto out;
+		}
+		pos += ret;
+	}
+
+	ret = 0;
+
+out:
+	set_fs(old_fs);
+	return ret;
+}
+[...]
+/*
+ * Called for regular files when sending extents data. Opens a struct file
+ * to read from the file.
+ */
+static int open_cur_inode_file(struct send_ctx *sctx)
+{
+	int ret = 0;
+	struct btrfs_key key;
+	struct path path;
+	struct inode *inode;
+	struct dentry *dentry;
+	struct file *filp;
+	int new = 0;
+
+	if (sctx->cur_inode_filp)
+		goto out;
+
+	key.objectid = sctx->cur_ino;
+	key.type = BTRFS_INODE_ITEM_KEY;
+	key.offset = 0;
+
+	inode = btrfs_iget(sctx->send_root->fs_info->sb, &key, sctx->send_root,
+			&new);
+	if (IS_ERR(inode)) {
+		ret = PTR_ERR(inode);
+		goto out;
+	}
+
+	dentry = d_obtain_alias(inode);
+	inode = NULL;
+	if (IS_ERR(dentry)) {
+		ret = PTR_ERR(dentry);
+		goto out;
+	}
+
+	path.mnt = sctx->mnt;
+	path.dentry = dentry;
+	filp = dentry_open(&path, O_RDONLY | O_LARGEFILE, current_cred());
+	dput(dentry);
+	dentry = NULL;
+	if (IS_ERR(filp)) {
+		ret = PTR_ERR(filp);
+		goto out;
+	}
+	sctx->cur_inode_filp = filp;
+
+out:
+	/*
+	 * no xxxput required here as every vfs op
+	 * does it by itself on failure
+	 */
+	return ret;
+}
+
+/*
+ * Closes the struct file that was created in open_cur_inode_file
+ */
+static int close_cur_inode_file(struct send_ctx *sctx)
+{
+	int ret = 0;
+
+	if (!sctx->cur_inode_filp)
+		goto out;
+
+	ret = filp_close(sctx->cur_inode_filp, NULL);
+	sctx->cur_inode_filp = NULL;
+
+out:
+	return ret;
+}
+[...]
+/*
+ * Read some bytes from the current inode/file and send a write command to
+ * user space.
+ */
+static int send_write(struct send_ctx *sctx, u64 offset, u32 len)
+{
+	int ret = 0;
+	struct fs_path *p;
+	loff_t pos = offset;
+	int num_read = 0;
+	mm_segment_t old_fs;
+
+	p = fs_path_alloc(sctx);
+	if (!p)
+		return -ENOMEM;
+
+	/*
+	 * vfs normally only accepts user space buffers for security reasons.
+	 * we only read from the file and also only provide the read_buf buffer
+	 * to vfs. As this buffer does not come from a user space call, it's
+	 * ok to temporary allow kernel space buffers.
+	 */
+	old_fs = get_fs();
+	set_fs(KERNEL_DS);
+
+verbose_printk("btrfs: send_write offset=%llu, len=%d\n", offset, len);
+
+	ret = open_cur_inode_file(sctx);
+	if (ret < 0)
+		goto out;
+
+	ret = vfs_read(sctx->cur_inode_filp, sctx->read_buf, len, &pos);
+	if (ret < 0)
+		goto out;
+	num_read = ret;
+	if (!num_read)
+		goto out;
+
+	ret = begin_cmd(sctx, BTRFS_SEND_C_WRITE);
+	if (ret < 0)
+		goto out;
+
+	ret = get_cur_path(sctx, sctx->cur_ino, sctx->cur_inode_gen, p);
+	if (ret < 0)
+		goto out;
+
+	TLV_PUT_PATH(sctx, BTRFS_SEND_A_PATH, p);
+	TLV_PUT_U64(sctx, BTRFS_SEND_A_FILE_OFFSET, offset);
+	TLV_PUT(sctx, BTRFS_SEND_A_DATA, sctx->read_buf, num_read);
+
+	ret = send_cmd(sctx);
+
+tlv_put_failure:
+out:
+	fs_path_free(sctx, p);
+	set_fs(old_fs);
+	if (ret < 0)
+		return ret;
+	return num_read;
+}
+[...]

@@ -1,16 +1,14 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mailout-de.gmx.net ([213.165.64.22]:57647 "HELO
-	mailout-de.gmx.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with SMTP id S1753692Ab2HAN5B (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Wed, 1 Aug 2012 09:57:01 -0400
-Message-ID: <501935AA.8050600@gmx.net>
-Date: Wed, 01 Aug 2012 15:56:58 +0200
-From: Arne Jansen <sensille@gmx.net>
+Received: from mo-p00-ob.rzone.de ([81.169.146.162]:25008 "EHLO
+	mo-p00-ob.rzone.de" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1754976Ab2HAOb4 (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Wed, 1 Aug 2012 10:31:56 -0400
+Message-ID: <50193DDA.20504@giantdisaster.de>
+Date: Wed, 01 Aug 2012 16:31:54 +0200
+From: Stefan Behrens <sbehrens@giantdisaster.de>
 MIME-Version: 1.0
 To: Liu Bo <liub.liubo@gmail.com>
-CC: Jan Schmidt <list.btrfs@jan-o-sch.net>,
-        Stefan Behrens <sbehrens@giantdisaster.de>,
-        linux-btrfs@vger.kernel.org
+CC: Jan Schmidt <list.btrfs@jan-o-sch.net>, linux-btrfs@vger.kernel.org
 Subject: Re: [PATCH v2] Btrfs: remove superblock writing after fatal error
 References: <1343821552-28726-1-git-send-email-sbehrens@giantdisaster.de> <50191AD3.9080401@gmail.com> <50192A11.3060109@jan-o-sch.net> <50192FCE.30006@gmail.com>
 In-Reply-To: <50192FCE.30006@gmail.com>
@@ -18,7 +16,7 @@ Content-Type: text/plain; charset=ISO-8859-1
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 01.08.2012 15:31, Liu Bo wrote:
+On Wed, 01 Aug 2012 21:31:58 +0800, Liu Bo wrote:
 > On 08/01/2012 09:07 PM, Jan Schmidt wrote:
 >> On Wed, August 01, 2012 at 14:02 (+0200), Liu Bo wrote:
 >>> On 08/01/2012 07:45 PM, Stefan Behrens wrote:
@@ -64,17 +62,9 @@ On 01.08.2012 15:31, Liu Bo wrote:
 > 
 > I'm just wondering if we can roll everything back well, why do we need fsck?
 
-Mostly for undetected errors.
-
-> 
-> thanks,
-> liubo
-> 
->> -Jan
->>
-> 
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
-
+If the disks support barriers, we roll everything back very well. The
+most recent superblock on the disks always defines a consistent
+filesystem state. There are only two remaining filesystem consistency
+issues left that can cause inconsistent states, one is the one that the
+patch in this email addresses, and the second one is that the error
+result from barrier_all_devices() is ignored (which I want to change next).

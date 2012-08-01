@@ -1,63 +1,182 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-pb0-f46.google.com ([209.85.160.46]:42567 "EHLO
+Received: from mail-pb0-f46.google.com ([209.85.160.46]:63049 "EHLO
 	mail-pb0-f46.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1750737Ab2HAMnm (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Wed, 1 Aug 2012 08:43:42 -0400
-Received: by pbbrp8 with SMTP id rp8so1049789pbb.19
-        for <linux-btrfs@vger.kernel.org>; Wed, 01 Aug 2012 05:43:42 -0700 (PDT)
-Message-ID: <5019247A.8030500@gmail.com>
-Date: Wed, 01 Aug 2012 20:43:38 +0800
-From: Liu Bo <liub.liubo@gmail.com>
+	with ESMTP id S1751084Ab2HAMyU (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Wed, 1 Aug 2012 08:54:20 -0400
+Received: by pbbrp8 with SMTP id rp8so1062751pbb.19
+        for <linux-btrfs@vger.kernel.org>; Wed, 01 Aug 2012 05:54:20 -0700 (PDT)
 MIME-Version: 1.0
-To: Anand jain <Anand.Jain@oracle.com>
-CC: linux-btrfs@vger.kernel.org
-Subject: Re: [PATCH] add crtime to the snapshot list
-References: <1343822481-26707-1-git-send-email-Anand.Jain@oracle.com>
-In-Reply-To: <1343822481-26707-1-git-send-email-Anand.Jain@oracle.com>
+In-Reply-To: <CAHf9xvay-hCgrG_Aabu9y17C=9FGa1PmPLF25Qe9442gSN6MMw@mail.gmail.com>
+References: <1341409108-13567-1-git-send-email-ablock84@googlemail.com>
+	<1341409108-13567-8-git-send-email-ablock84@googlemail.com>
+	<CAHf9xvay-hCgrG_Aabu9y17C=9FGa1PmPLF25Qe9442gSN6MMw@mail.gmail.com>
+Date: Wed, 1 Aug 2012 14:54:19 +0200
+Message-ID: <CAB9VWqDso4gz-ePQVz9WMZZUgCz-FSa5Yc2Gga1UKtdkjndtdw@mail.gmail.com>
+Subject: Re: [RFC PATCH 7/7] Btrfs: introduce BTRFS_IOC_SEND for btrfs
+ send/receive (part 2)
+From: Alexander Block <ablock84@googlemail.com>
+To: Alex Lyakas <alex.bolshoy.btrfs@gmail.com>
+Cc: linux-btrfs@vger.kernel.org
 Content-Type: text/plain; charset=ISO-8859-1
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 08/01/2012 08:01 PM, Anand jain wrote:
-> From: Anand <anand.jain@oracle.com>
-> 
->  This patch adds creation-time to the snapshot list display,
->  which would help user to better manage the snapshots when
->  number of snapshots grow substantially. This patch is developed
->  and on top of the send/receive btrfs and btrfs-progs repo at 
->   git://github.com/ablock84/linux-btrfs.git (send-v2)
->   git://github.com/ablock84/btrfs-progs.git (send-v2)
->  respectively.
-> 
+On Mon, Jul 23, 2012 at 5:17 PM, Alex Lyakas
+<alex.bolshoy.btrfs@gmail.com> wrote:
+> Hi Alexander,
+> I did some testing of the case where same inode, but with a different
+> generation, exists both in send_root and in parent_root.
+> I know that this can happen primarily when "inode_cache" option is
+> enabled. So first I just tested some differential sends, where parent
+> and root are unrelated subvolumes. Here are some issues:
+>
+> 1) The top subvolume inode (ino=BTRFS_FIRST_FREE_OBJECTID) is treated
+> also as deleted + recreated. So the code goes into process_all_refs()
+> path and does several strange things, such as trying to orphanize the
+> top inode. Also get_cur_path() always returns "" for the top subvolume
+> (without checking whether it is an orphan).  Another complication for
+> the top inode is that its parent dir is itself.
+> I made the following fix:
+> @@ -3782,7 +3972,13 @@ static int changed_inode(struct send_ctx *sctx,
+>
+>                 right_gen = btrfs_inode_generation(sctx->right_path->nodes[0],
+>                                 right_ii);
+> -               if (left_gen != right_gen)
+> +               if (left_gen != right_gen && sctx->cur_ino !=
+> BTRFS_FIRST_FREE_OBJECTID)
+>                         sctx->cur_inode_new_gen = 1;
+>
+> So basically, don't try to delete and re-create it, but treat it like
+> a change. Since the top subvolume inode is S_IFDIR, and dir can have
+> only one hardlink (and hopefully it is always ".."), we will never
+> need to change anything for this INODE_REF. I also added:
+>
+> @@ -2526,6 +2615,14 @@ static int process_recorded_refs(struct send_ctx *sctx)
+>         int did_overwrite = 0;
+>         int is_orphan = 0;
+>
+> +       BUG_ON(sctx->cur_ino <= BTRFS_FIRST_FREE_OBJECTID);
+I applied both fixes to for-chris now.
+>
+> 2) After I fixed this, I hit another issue, where inodes under the top
+> subvolume dir, attempt to rmdir() the top dir, while iterating over
+> check_dirs in process_recorded_refs(), because (top_dir_ino,
+> top_dir_gen) indicate that it was deleted. So I added:
+>
+> @@ -2714,10 +2857,19 @@ verbose_printk("btrfs: process_recorded_refs
+> %llu\n", sctx->cur_ino);
+>          */
+>         ULIST_ITER_INIT(&uit);
+>         while ((un = ulist_next(check_dirs, &uit))) {
+> +               /* Do not attempt to rmdir it the top subvolume dir */
+> +               if (un->val == BTRFS_FIRST_FREE_OBJECTID)
+> +                       continue;
+> +
+>                 if (un->val > sctx->cur_ino)
+>                         continue;
+I applied a similar fix by adding a check to can_rmdir. The way you
+suggested would also skip utime updates for the top dir.
+>
+> 3) process_recorded_refs() always increments the send_progress:
+>         /*
+>          * Current inode is now at it's new position, so we must increase
+>          * send_progress
+>          */
+>         sctx->send_progress = sctx->cur_ino + 1;
+>
+> However, in the changed_inode() path I am testing, process_all_refs()
+> is called twice with the same inode (once for deleted inode, once for
+> the recreated inode), so after the first call, send_progress is
+> incremented and doesn't match the inode anymore. I don't think I hit
+> any issues because of this, just that it's confusing.
+I fixed this issue some days ago.
+>
+> 4)
+>
+>> +/*
+>> + * Record and process all refs at once. Needed when an inode changes the
+>> + * generation number, which means that it was deleted and recreated.
+>> + */
+>> +static int process_all_refs(struct send_ctx *sctx,
+>> +                           enum btrfs_compare_tree_result cmd)
+>> +{
+>> +       int ret;
+>> +       struct btrfs_root *root;
+>> +       struct btrfs_path *path;
+>> +       struct btrfs_key key;
+>> +       struct btrfs_key found_key;
+>> +       struct extent_buffer *eb;
+>> +       int slot;
+>> +       iterate_inode_ref_t cb;
+>> +
+>> +       path = alloc_path_for_send();
+>> +       if (!path)
+>> +               return -ENOMEM;
+>> +
+>> +       if (cmd == BTRFS_COMPARE_TREE_NEW) {
+>> +               root = sctx->send_root;
+>> +               cb = __record_new_ref;
+>> +       } else if (cmd == BTRFS_COMPARE_TREE_DELETED) {
+>> +               root = sctx->parent_root;
+>> +               cb = __record_deleted_ref;
+>> +       } else {
+>> +               BUG();
+>> +       }
+>> +
+>> +       key.objectid = sctx->cmp_key->objectid;
+>> +       key.type = BTRFS_INODE_REF_KEY;
+>> +       key.offset = 0;
+>> +       while (1) {
+>> +               ret = btrfs_search_slot_for_read(root, &key, path, 1, 0);
+>> +               if (ret < 0) {
+>> +                       btrfs_release_path(path);
+>> +                       goto out;
+>> +               }
+>> +               if (ret) {
+>> +                       btrfs_release_path(path);
+>> +                       break;
+>> +               }
+>> +
+>> +               eb = path->nodes[0];
+>> +               slot = path->slots[0];
+>> +               btrfs_item_key_to_cpu(eb, &found_key, slot);
+>> +
+>> +               if (found_key.objectid != key.objectid ||
+>> +                   found_key.type != key.type) {
+>> +                       btrfs_release_path(path);
+>> +                       break;
+>> +               }
+>> +
+>> +               ret = iterate_inode_ref(sctx, sctx->parent_root, path,
+>> +                               &found_key, 0, cb, sctx);
+>
+> Shouldn't it be the root that you calculated eariler and not
+> sctx->parent_root? I guess in this case it doesn't matter, because
+> "resolve" is 0, and the passed root is only used for resolve. But
+> still confusing.
+You're right, atm it does not matter which root we use here. It is
+more correct to pass 'root' instead of parent_root.
+>
+> 5) When I started testing with "inode_cache" enabled, I hit another
+> issue. When this mount option is enabled, then FREE_INO and FREE_SPACE
+> items now appear in the file tree. As a result, the code tries to
+> create the FREE_INO item with an orphan name, then tries to find its
+> INODE_REF, but fails because it has no INODE_REFs. So
+>
+> @@ -3923,6 +4127,13 @@ static int changed_cb(struct btrfs_root *left_root,
+>         int ret = 0;
+>         struct send_ctx *sctx = ctx;
+>
+> +       /* Ignore non-FS objects */
+> +       if (key->objectid == BTRFS_FREE_INO_OBJECTID ||
+> +               key->objectid == BTRFS_FREE_SPACE_OBJECTID)
+> +               return 0;
+>
+> makes sense?
+Yepp. I however added it after the finish_inode_if_needed call. The
+call is still required to finish the previous inode.
+>
+> Thanks,
+> Alex.
 
-Hi Arand,
-
-Can you please also post the patch itself here?
-
-thanks,
-liubo
-
->  Further this patch has the dependency on the following patches
->   Liu Bo:
->    [PATCH 2/3 RESEND] Btrfs-progs: show generation in command btrfs subvol list
->    [PATCH 3/3] Btrfs-progs: list snapshots by generation
-> 
->  Eg output:
->    #btrfs su list -s 1 /btrfs
->    ID 258 gen 39 cgen 6 top level 5 crtime 2012-07-27 17:43:55 path ss1
->    ID 260 gen 8 cgen 8 top level 5 crtime 2012-07-27 17:47:51 path ss2
->    ID 263 gen 16 cgen 16 top level 5 crtime 2012-07-29 00:50:19 path ss3
->    ID 264 gen 25 cgen 25 top level 5 crtime 2012-07-30 09:56:50 path sv1/.snap
-> 
-> Anand Jain (1):
->   Btrfs-progs: show crtime in the snapshot list
-> 
->  btrfs-list.c |   45 ++++++++++++++++++++++++++++++++++++---------
->  1 files changed, 36 insertions(+), 9 deletions(-)
-> 
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
-> 
-
+Thanks again. Pushed to for-chris.

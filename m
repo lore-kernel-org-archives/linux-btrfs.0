@@ -1,56 +1,186 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([222.73.24.84]:1169 "EHLO song.cn.fujitsu.com"
+Received: from cn.fujitsu.com ([222.73.24.84]:31533 "EHLO song.cn.fujitsu.com"
 	rhost-flags-OK-FAIL-OK-OK) by vger.kernel.org with ESMTP
-	id S1750780Ab2HBEaQ (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 2 Aug 2012 00:30:16 -0400
-Message-ID: <501A0221.4060204@cn.fujitsu.com>
-Date: Thu, 02 Aug 2012 12:29:21 +0800
+	id S1750786Ab2HBEkZ (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Thu, 2 Aug 2012 00:40:25 -0400
+Message-ID: <501A047F.5030103@cn.fujitsu.com>
+Date: Thu, 02 Aug 2012 12:39:27 +0800
 From: Miao Xie <miaox@cn.fujitsu.com>
 Reply-To: miaox@cn.fujitsu.com
 MIME-Version: 1.0
-To: Fengguang Wu <fengguang.wu@intel.com>
-CC: kernel-janitors@vger.kernel.org, linux-btrfs@vger.kernel.org
-Subject: Re: [josef-btrfs:master 9/11] fs/btrfs/transaction.c:1118:6: warning:
- 'parent' may be used uninitialized in this function
-References: <20120802023123.GA10533@localhost>
-In-Reply-To: <20120802023123.GA10533@localhost>
-Content-Type: text/plain; charset=ISO-8859-1
+To: Linux Btrfs <linux-btrfs@vger.kernel.org>
+CC: Josef Bacik <jbacik@fusionio.com>, Wu Fengguang <fengguang.wu@intel.com>,
+        Seto Hidetoshi <seto.hidetoshi@jp.fujitsu.com>,
+        David Sterba <dave@jikos.cz>
+Subject: [PATCH V3 1/2] Btrfs: fix error path in create_pending_snapshot()
+Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Thu, 2 Aug 2012 10:31:23 +0800, Fengguang Wu wrote:
-> There are new compile warnings show up in
-> 
-> tree:   git://git.kernel.org/pub/scm/linux/kernel/git/josef/btrfs-next.git master
-> head:   8e1163044779e90662e96887cdd692c1594146ad
-> commit: dd817e81e81bbb83b63317b169d0e57a5d7ae0e1 [9/11] Btrfs: fix error path in create_pending_snapshot()
-> config: x86_64-randconfig-h031 (attached as .config)
-> 
-> All error/warnings:
-> 
-> fs/btrfs/transaction.c: In function 'create_pending_snapshot':
-> fs/btrfs/transaction.c:1118:6: warning: 'parent' may be used uninitialized in this function [-Wmaybe-uninitialized]
-> fs/btrfs/transaction.c:1119:19: warning: 'rsv' may be used uninitialized in this function [-Wmaybe-uninitialized]
-> 
-> vim +1118 fs/btrfs/transaction.c
->   1115		if (ret)
->   1116			goto abort_trans;
->   1117	fail:
->> 1118		dput(parent);
->   1119		trans->block_rsv = rsv;
->   1120	no_free_objectid:
->   1121		kfree(new_root_item);
+This patch fixes the following problem:
+- If we failed to deal with the delayed dir items, we should abort transaction,
+  just as its comment said. Fix it.
+- If root reference or root back reference insertion failed, we should
+  abort transaction. Fix it.
+- Fix the double free problem of pending->inherit.
+- Do not restore the trans->rsv if we doesn't change it.
+- make the error path more clearly.
 
-The patch I sent before is based on the v3.5.0, not Chris's latest for-linus branch, so...
+Signed-off-by: Miao Xie <miaox@cn.fujitsu.com>
+---
+Changelog v2 -> v3:
+- rebase on the latest for-linus branch
+- fix double free problem of pending->inherit
 
-I will send new patches to fix it. Thanks for your report.
+Changelog v1 -> v2:
+- fix double dput() when aborting transaction. In the previous version of the
+  patches, this problem was fixed in the second patch, it is not good because
+  this problem is the bug of the patch in fact.
+---
+ fs/btrfs/transaction.c |   40 +++++++++++++++++-----------------------
+ 1 files changed, 17 insertions(+), 23 deletions(-)
 
-Miao
-
-> 
-> ---
-> 0-DAY kernel build testing backend         Open Source Technology Centre
-> Fengguang Wu <wfg@linux.intel.com>                     Intel Corporation
-> 
-
-
+diff --git a/fs/btrfs/transaction.c b/fs/btrfs/transaction.c
+index 7ac7cdc..4e9c106 100644
+--- a/fs/btrfs/transaction.c
++++ b/fs/btrfs/transaction.c
+@@ -962,18 +962,16 @@ static noinline int create_pending_snapshot(struct btrfs_trans_handle *trans,
+ 	u64 root_flags;
+ 	uuid_le new_uuid;
+ 
+-	rsv = trans->block_rsv;
+-
+ 	new_root_item = kmalloc(sizeof(*new_root_item), GFP_NOFS);
+ 	if (!new_root_item) {
+ 		ret = pending->error = -ENOMEM;
+-		goto fail;
++		goto root_item_alloc_fail;
+ 	}
+ 
+ 	ret = btrfs_find_free_objectid(tree_root, &objectid);
+ 	if (ret) {
+ 		pending->error = ret;
+-		goto fail;
++		goto no_free_objectid;
+ 	}
+ 
+ 	btrfs_reloc_pre_snapshot(trans, pending, &to_reserve);
+@@ -983,22 +981,22 @@ static noinline int create_pending_snapshot(struct btrfs_trans_handle *trans,
+ 						  to_reserve);
+ 		if (ret) {
+ 			pending->error = ret;
+-			goto fail;
++			goto no_free_objectid;
+ 		}
+ 	}
+ 
+ 	ret = btrfs_qgroup_inherit(trans, fs_info, root->root_key.objectid,
+ 				   objectid, pending->inherit);
+-	kfree(pending->inherit);
+ 	if (ret) {
+ 		pending->error = ret;
+-		goto fail;
++		goto no_free_objectid;
+ 	}
+ 
+ 	key.objectid = objectid;
+ 	key.offset = (u64)-1;
+ 	key.type = BTRFS_ROOT_ITEM_KEY;
+ 
++	rsv = trans->block_rsv;
+ 	trans->block_rsv = &pending->block_rsv;
+ 
+ 	dentry = pending->dentry;
+@@ -1018,17 +1016,16 @@ static noinline int create_pending_snapshot(struct btrfs_trans_handle *trans,
+ 				BTRFS_FT_DIR, index);
+ 	if (ret == -EEXIST) {
+ 		pending->error = -EEXIST;
+-		dput(parent);
+ 		goto fail;
+ 	} else if (ret) {
+-		goto abort_trans_dput;
++		goto abort_trans;
+ 	}
+ 
+ 	btrfs_i_size_write(parent_inode, parent_inode->i_size +
+ 					 dentry->d_name.len * 2);
+ 	ret = btrfs_update_inode(trans, parent_root, parent_inode);
+ 	if (ret)
+-		goto abort_trans_dput;
++		goto abort_trans;
+ 
+ 	/*
+ 	 * pull in the delayed directory update
+@@ -1037,10 +1034,8 @@ static noinline int create_pending_snapshot(struct btrfs_trans_handle *trans,
+ 	 * snapshot
+ 	 */
+ 	ret = btrfs_run_delayed_items(trans, root);
+-	if (ret) { /* Transaction aborted */
+-		dput(parent);
+-		goto fail;
+-	}
++	if (ret)	/* Transaction aborted */
++		goto abort_trans;
+ 
+ 	record_root_in_trans(trans, root);
+ 	btrfs_set_root_last_snapshot(&root->root_item, trans->transid);
+@@ -1073,7 +1068,7 @@ static noinline int create_pending_snapshot(struct btrfs_trans_handle *trans,
+ 	if (ret) {
+ 		btrfs_tree_unlock(old);
+ 		free_extent_buffer(old);
+-		goto abort_trans_dput;
++		goto abort_trans;
+ 	}
+ 
+ 	btrfs_set_lock_blocking(old);
+@@ -1083,7 +1078,7 @@ static noinline int create_pending_snapshot(struct btrfs_trans_handle *trans,
+ 	btrfs_tree_unlock(old);
+ 	free_extent_buffer(old);
+ 	if (ret)
+-		goto abort_trans_dput;
++		goto abort_trans;
+ 
+ 	/* see comments in should_cow_block() */
+ 	root->force_cow = 1;
+@@ -1096,7 +1091,7 @@ static noinline int create_pending_snapshot(struct btrfs_trans_handle *trans,
+ 	btrfs_tree_unlock(tmp);
+ 	free_extent_buffer(tmp);
+ 	if (ret)
+-		goto abort_trans_dput;
++		goto abort_trans;
+ 
+ 	/*
+ 	 * insert root back/forward references
+@@ -1105,9 +1100,8 @@ static noinline int create_pending_snapshot(struct btrfs_trans_handle *trans,
+ 				 parent_root->root_key.objectid,
+ 				 btrfs_ino(parent_inode), index,
+ 				 dentry->d_name.name, dentry->d_name.len);
+-	dput(parent);
+ 	if (ret)
+-		goto fail;
++		goto abort_trans;
+ 
+ 	key.offset = (u64)-1;
+ 	pending->snap = btrfs_read_fs_root_no_name(root->fs_info, &key);
+@@ -1119,15 +1113,15 @@ static noinline int create_pending_snapshot(struct btrfs_trans_handle *trans,
+ 	ret = btrfs_reloc_post_snapshot(trans, pending);
+ 	if (ret)
+ 		goto abort_trans;
+-	ret = 0;
+ fail:
+-	kfree(new_root_item);
++	dput(parent);
+ 	trans->block_rsv = rsv;
++no_free_objectid:
++	kfree(new_root_item);
++root_item_alloc_fail:
+ 	btrfs_block_rsv_release(root, &pending->block_rsv, (u64)-1);
+ 	return ret;
+ 
+-abort_trans_dput:
+-	dput(parent);
+ abort_trans:
+ 	btrfs_abort_transaction(trans, root, ret);
+ 	goto fail;
+-- 
+1.7.6.5

@@ -1,61 +1,44 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from magic.merlins.org ([209.81.13.136]:57720 "EHLO
-	mail1.merlins.org" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1753995Ab2HBO0r (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Thu, 2 Aug 2012 10:26:47 -0400
-Date: Thu, 2 Aug 2012 07:26:46 -0700
-From: Marc MERLIN <marc@merlins.org>
-To: linux-btrfs@vger.kernel.org, jbacik@fusionio.com
-Subject: Re: BTRFS crash on mount with 3.4.4
-Message-ID: <20120802142646.GA31880@merlins.org>
-References: <20120731180412.GA10520@merlins.org> <20120801010104.GA7089@merlins.org> <20120802134003.GP17430@twin.jikos.cz>
+Received: from licorne.daevel.fr ([178.32.94.222]:56640 "EHLO
+	licorne.daevel.fr" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1751013Ab2HBQSN (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Thu, 2 Aug 2012 12:18:13 -0400
+Received: from 89-156-116-126.rev.numericable.fr ([89.156.116.126] helo=[192.168.0.10])
+	by licorne.daevel.fr with esmtpsa (TLS1.0:RSA_AES_256_CBC_SHA1:32)
+	(Exim 4.72)
+	(envelope-from <btrfs.list@daevel.fr>)
+	id 1Swy6F-0000I7-FA
+	for linux-btrfs@vger.kernel.org; Thu, 02 Aug 2012 18:18:11 +0200
+Message-ID: <501AA842.5080300@daevel.fr>
+Date: Thu, 02 Aug 2012 18:18:10 +0200
+From: Olivier Bonvalet <btrfs.list@daevel.fr>
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <20120802134003.GP17430@twin.jikos.cz>
+To: linux-btrfs@vger.kernel.org
+Subject: Re: kernel BUG at fs/btrfs/extent-tree.c:5038 (linux 3.4.7)
+References: <501987FF.9080304@daevel.fr> <20120802132259.GO17430@twin.jikos.cz> <501A836F.90506@daevel.fr> <20120802135354.GQ17430@twin.jikos.cz>
+In-Reply-To: <20120802135354.GQ17430@twin.jikos.cz>
+Content-Type: text/plain; charset=ISO-8859-1; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Thu, Aug 02, 2012 at 03:40:03PM +0200, David Sterba wrote:
-> On Tue, Jul 31, 2012 at 06:01:04PM -0700, Marc MERLIN wrote:
-> > On Tue, Jul 31, 2012 at 11:04:12AM -0700, Marc MERLIN wrote:
-> > > My kernel crashed for some other reason, and now I can't mount my btrfs
-> > > filesystem.
-> > > I don't care about the data, it's backed up.
-> > > 
-> > > I'll compile a 3.5 kernel, but is there any info you'd like off that
-> > > filesystem to see why btrfs is crashing on mount?
-> > 
-> > On the plus side, 3.5 mounted the filesystem:
-> > [  183.069179] device label btrfs_pool1 devid 1 transid 20769 /dev/mapper/test
-> > [  183.087805] btrfs: disk space caching is enabled
-> > [  183.224784] btrfs: no dev_stats entry found for device /dev/mapper/test (devid 1) (OK on first mount after mkfs)
-> > [  186.277795] Btrfs detected SSD devices, enabling SSD mode
-> > [  188.477443] btrfs: unlinked 6 orphans
-> > [  188.477451] btrfs: truncated 1 orphans
-> > [  411.837015] btrfs: unlinked 13 orphans
-> > [  414.373500] btrfs: unlinked 35 orphans
-> 
-> there's this commit in 3.5 that looks like it fixed the problem:
-> 
-> Author:     Josef Bacik <jbacik@fusionio.com>
-> AuthorDate: Wed Jun 27 15:10:56 2012 -0400
-> 
->     Btrfs: fix tree log remove space corner case
-> 
->     The tree log stuff can have allocated space that we end up having split
->     across a bitmap and a real extent.  The free space code does not deal with
->     this, it assumes that if it finds an extent or bitmap entry that the entire
->     range must fall within the entry it finds.  This isn't necessarily the case,
->     so rework the remove function so it can handle this case properly.  This
->     fixed two panics the user hit, first in the case where the space was
->     initially in a bitmap and then in an extent entry, and then the reverse
->     case.  Thanks,
+On 02/08/2012 15:53, David Sterba wrote:
+> On Thu, Aug 02, 2012 at 03:41:03PM +0200, Olivier Bonvalet wrote:
+>> Yes... it's a copy from my /var/log/kern.log. Is it really "disabled" ?
+>
+> I was mistaken, it really is enabled unconditionally in ctree.h:55.
+> Josef says that the V0 extent refs are not used for a long time, so the
+> question is how did they appear in your filesystem. Did you switch to a
+> new kernel from a very old one?
+>
+>
+> david
+> --
+> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
+> the body of a message to majordomo@vger.kernel.org
+> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+>
 
-Indeed. Thanks for finding this David and thanks for writing this Josef :)
+mmm I have upgraded that system every two months, but the first setup is 
+from april 2011 I think.
 
-Marc
--- 
-"A mouse is a device used to point at the xterm you want to type in" - A.S.R.
-Microsoft is to operating systems ....
-                                      .... what McDonalds is to gourmet cooking
-Home page: http://marc.merlins.org/  
+Should I start a "scrub" on all that systems installed a long time ago ?

@@ -1,48 +1,48 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.fusionio.com ([66.114.96.31]:42694 "EHLO mx2.fusionio.com"
+Received: from mx2.fusionio.com ([66.114.96.31]:42698 "EHLO mx2.fusionio.com"
 	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1752533Ab2HBOU4 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 2 Aug 2012 10:20:56 -0400
-Received: from mail1.int.fusionio.com (mail1.int.fusionio.com [10.101.1.21]) by mx2.fusionio.com with ESMTP id 3SdOzKV9oXTHODCX (version=TLSv1 cipher=AES128-SHA bits=128 verify=NO) for <linux-btrfs@vger.kernel.org>; Thu, 02 Aug 2012 08:20:55 -0600 (MDT)
+	id S1753620Ab2HBOVM (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Thu, 2 Aug 2012 10:21:12 -0400
+Received: from mail1.int.fusionio.com (mail1.int.fusionio.com [10.101.1.21]) by mx2.fusionio.com with ESMTP id UgiM2vdIA2tX2uoi (version=TLSv1 cipher=AES128-SHA bits=128 verify=NO) for <linux-btrfs@vger.kernel.org>; Thu, 02 Aug 2012 08:21:11 -0600 (MDT)
 From: Josef Bacik <jbacik@fusionio.com>
 To: <linux-btrfs@vger.kernel.org>
-Subject: [PATCH] Btrfs: do not use missing devices when showing devname
-Date: Thu, 2 Aug 2012 10:25:58 -0400
-Message-ID: <1343917558-1883-1-git-send-email-jbacik@fusionio.com>
+Subject: [PATCH] Btrfs: do not strdup non existent strings
+Date: Thu, 2 Aug 2012 10:26:14 -0400
+Message-ID: <1343917574-1919-1-git-send-email-jbacik@fusionio.com>
 MIME-Version: 1.0
 Content-Type: text/plain
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-If you do the following
-
-mkfs.btrfs /dev/sdb /dev/sdc
-rmmod btrfs
-dd if=/dev/zero of=/dev/sdb bs=1M count=1
-mount -o degraded /dev/sdc /mnt/btrfs-test
-
-the box will panic trying to deref the name for the missing dev since it is
-the lower numbered devid.  So fix show_devname to not use missing devices.
-Thanks,
+When we close devices we add back empty devices for some reason that escapes
+me.  In the case of a missing dev we don't allocate an rcu_string for it's
+name, so check to see if the device has a name and if it doesn't don't
+bother strdup()'ing it.  Thanks,
 
 Signed-off-by: Josef Bacik <jbacik@fusionio.com>
 ---
- fs/btrfs/super.c |    2 ++
- 1 files changed, 2 insertions(+), 0 deletions(-)
+ fs/btrfs/volumes.c |    8 +++++---
+ 1 files changed, 5 insertions(+), 3 deletions(-)
 
-diff --git a/fs/btrfs/super.c b/fs/btrfs/super.c
-index fa61ef5..ffcfe49 100644
---- a/fs/btrfs/super.c
-+++ b/fs/btrfs/super.c
-@@ -1505,6 +1505,8 @@ static int btrfs_show_devname(struct seq_file *m, struct dentry *root)
- 	while (cur_devices) {
- 		head = &cur_devices->devices;
- 		list_for_each_entry(dev, head, dev_list) {
-+			if (dev->missing)
-+				continue;
- 			if (!first_dev || dev->devid < first_dev->devid)
- 				first_dev = dev;
- 		}
+diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
+index 3821302..0b1e69d 100644
+--- a/fs/btrfs/volumes.c
++++ b/fs/btrfs/volumes.c
+@@ -568,9 +568,11 @@ static int __btrfs_close_devices(struct btrfs_fs_devices *fs_devices)
+ 		memcpy(new_device, device, sizeof(*new_device));
+ 
+ 		/* Safe because we are under uuid_mutex */
+-		name = rcu_string_strdup(device->name->str, GFP_NOFS);
+-		BUG_ON(device->name && !name); /* -ENOMEM */
+-		rcu_assign_pointer(new_device->name, name);
++		if (device->name) {
++			name = rcu_string_strdup(device->name->str, GFP_NOFS);
++			BUG_ON(device->name && !name); /* -ENOMEM */
++			rcu_assign_pointer(new_device->name, name);
++		}
+ 		new_device->bdev = NULL;
+ 		new_device->writeable = 0;
+ 		new_device->in_fs_metadata = 0;
 -- 
 1.7.7.6
 

@@ -1,57 +1,70 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from twin.jikos.cz ([89.185.236.188]:50308 "EHLO twin.jikos.cz"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1754755Ab2HBNkY (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 2 Aug 2012 09:40:24 -0400
-Date: Thu, 2 Aug 2012 15:40:03 +0200
-From: David Sterba <dave@jikos.cz>
-To: Marc MERLIN <marc@merlins.org>
-Cc: linux-btrfs@vger.kernel.org, jbacik@fusionio.com
-Subject: Re: BTRFS crash on mount with 3.4.4
-Message-ID: <20120802134003.GP17430@twin.jikos.cz>
-Reply-To: dave@jikos.cz
-References: <20120731180412.GA10520@merlins.org>
- <20120801010104.GA7089@merlins.org>
+Received: from licorne.daevel.fr ([178.32.94.222]:55581 "EHLO
+	licorne.daevel.fr" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1754492Ab2HBNlG (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Thu, 2 Aug 2012 09:41:06 -0400
+Received: from 89-156-116-126.rev.numericable.fr ([89.156.116.126] helo=[192.168.0.10])
+	by licorne.daevel.fr with esmtpsa (TLS1.0:RSA_AES_256_CBC_SHA1:32)
+	(Exim 4.72)
+	(envelope-from <btrfs.list@daevel.fr>)
+	id 1SwveC-0007Dw-Fy
+	for linux-btrfs@vger.kernel.org; Thu, 02 Aug 2012 15:41:04 +0200
+Message-ID: <501A836F.90506@daevel.fr>
+Date: Thu, 02 Aug 2012 15:41:03 +0200
+From: Olivier Bonvalet <btrfs.list@daevel.fr>
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <20120801010104.GA7089@merlins.org>
+To: linux-btrfs@vger.kernel.org
+Subject: Re: kernel BUG at fs/btrfs/extent-tree.c:5038 (linux 3.4.7)
+References: <501987FF.9080304@daevel.fr> <20120802132259.GO17430@twin.jikos.cz>
+In-Reply-To: <20120802132259.GO17430@twin.jikos.cz>
+Content-Type: text/plain; charset=ISO-8859-1; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Tue, Jul 31, 2012 at 06:01:04PM -0700, Marc MERLIN wrote:
-> On Tue, Jul 31, 2012 at 11:04:12AM -0700, Marc MERLIN wrote:
-> > My kernel crashed for some other reason, and now I can't mount my btrfs
-> > filesystem.
-> > I don't care about the data, it's backed up.
-> > 
-> > I'll compile a 3.5 kernel, but is there any info you'd like off that
-> > filesystem to see why btrfs is crashing on mount?
-> 
-> On the plus side, 3.5 mounted the filesystem:
-> [  183.069179] device label btrfs_pool1 devid 1 transid 20769 /dev/mapper/test
-> [  183.087805] btrfs: disk space caching is enabled
-> [  183.224784] btrfs: no dev_stats entry found for device /dev/mapper/test (devid 1) (OK on first mount after mkfs)
-> [  186.277795] Btrfs detected SSD devices, enabling SSD mode
-> [  188.477443] btrfs: unlinked 6 orphans
-> [  188.477451] btrfs: truncated 1 orphans
-> [  411.837015] btrfs: unlinked 13 orphans
-> [  414.373500] btrfs: unlinked 35 orphans
+On 02/08/2012 15:22, David Sterba wrote:
+> On Wed, Aug 01, 2012 at 09:48:15PM +0200, Olivier Bonvalet wrote:
+>> I have some trouble with a btrfs filesystem.
+>> As you can see in logs, there is lines which are from btrfs (I
+>> supposed), then some warnings at fs/btrfs/extent-tree.c, and finally a
+>> "kernel BUG" at fs/btrfs/extent-tree.c:5038.
+>
+> Did you really see this BUG ? It comes from some unused and disabled code:
+>
+> 5036 #ifdef BTRFS_COMPAT_EXTENT_TREE_V0
+> 5037         if (item_size<  sizeof(*ei)) {
+> 5038                 BUG_ON(found_extent || extent_slot != path->slots[0]);
+> ^^^^
+>
+> 5039                 ret = convert_extent_item_v0(trans, extent_root, path,
+> 5040                                              owner_objectid, 0);
+> 5041                 if (ret<  0)
+> 5042                         goto abort;
+> 5043
+> 5044                 btrfs_release_path(path);
+> 5045                 path->leave_spinning = 1;
+> 5046
+> 5047                 key.objectid = bytenr;
+> 5048                 key.type = BTRFS_EXTENT_ITEM_KEY;
+> 5049                 key.offset = num_bytes;
+> 5050
+> 5051                 ret = btrfs_search_slot(trans, extent_root,&key, path,
+> 5052                                         -1, 1);
+> 5053                 if (ret) {
+> 5054                         printk(KERN_ERR "umm, got %d back from search"
+> 5055                                ", was looking for %llu\n", ret,
+> 5056                                (unsigned long long)bytenr);
+> 5057                         btrfs_print_leaf(extent_root, path->nodes[0]);
+> 5058                 }
+> 5059                 if (ret<  0)
+> 5060                         goto abort;
+> 5061                 extent_slot = path->slots[0];
+> 5062                 leaf = path->nodes[0];
+> 5063                 item_size = btrfs_item_size_nr(leaf, extent_slot);
+> 5064         }
+> 5065 #endif
+>
+>
+> david
+>
 
-there's this commit in 3.5 that looks like it fixed the problem:
-
-Author:     Josef Bacik <jbacik@fusionio.com>
-AuthorDate: Wed Jun 27 15:10:56 2012 -0400
-
-    Btrfs: fix tree log remove space corner case
-
-    The tree log stuff can have allocated space that we end up having split
-    across a bitmap and a real extent.  The free space code does not deal with
-    this, it assumes that if it finds an extent or bitmap entry that the entire
-    range must fall within the entry it finds.  This isn't necessarily the case,
-    so rework the remove function so it can handle this case properly.  This
-    fixed two panics the user hit, first in the case where the space was
-    initially in a bitmap and then in an extent entry, and then the reverse
-    case.  Thanks,
----
-
-david
+Yes... it's a copy from my /var/log/kern.log. Is it really "disabled" ?

@@ -1,48 +1,135 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.fusionio.com ([66.114.96.31]:42698 "EHLO mx2.fusionio.com"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1753620Ab2HBOVM (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 2 Aug 2012 10:21:12 -0400
-Received: from mail1.int.fusionio.com (mail1.int.fusionio.com [10.101.1.21]) by mx2.fusionio.com with ESMTP id UgiM2vdIA2tX2uoi (version=TLSv1 cipher=AES128-SHA bits=128 verify=NO) for <linux-btrfs@vger.kernel.org>; Thu, 02 Aug 2012 08:21:11 -0600 (MDT)
-From: Josef Bacik <jbacik@fusionio.com>
-To: <linux-btrfs@vger.kernel.org>
-Subject: [PATCH] Btrfs: do not strdup non existent strings
-Date: Thu, 2 Aug 2012 10:26:14 -0400
-Message-ID: <1343917574-1919-1-git-send-email-jbacik@fusionio.com>
+Received: from mail-vb0-f46.google.com ([209.85.212.46]:39690 "EHLO
+	mail-vb0-f46.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1750786Ab2HBPGj (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Thu, 2 Aug 2012 11:06:39 -0400
+Received: by vbbff1 with SMTP id ff1so8203351vbb.19
+        for <linux-btrfs@vger.kernel.org>; Thu, 02 Aug 2012 08:06:38 -0700 (PDT)
 MIME-Version: 1.0
-Content-Type: text/plain
+In-Reply-To: <501A84CA.10604@gmx.net>
+References: <1343821552-28726-1-git-send-email-sbehrens@giantdisaster.de>
+	<50191AD3.9080401@gmail.com>
+	<50192A11.3060109@jan-o-sch.net>
+	<50192FCE.30006@gmail.com>
+	<50193DDA.20504@giantdisaster.de>
+	<501A56E3.3080401@giantdisaster.de>
+	<501A583D.8030600@gmail.com>
+	<501A61ED.3000908@gmx.net>
+	<501A65B9.5060004@gmail.com>
+	<501A6731.4000405@gmx.net>
+	<501A6B0D.6050303@gmail.com>
+	<501A84CA.10604@gmx.net>
+Date: Thu, 2 Aug 2012 09:06:38 -0600
+Message-ID: <CAE5mzvgLZhH7HWH9w4N9Bk4m_h04m6r_NPmovPrNnnVuKFHtjQ@mail.gmail.com>
+Subject: Re: [PATCH v2] Btrfs: remove superblock writing after fatal error
+From: cwillu <cwillu@cwillu.com>
+To: Arne Jansen <sensille@gmx.net>
+Cc: Liu Bo <liub.liubo@gmail.com>, Stefan Behrens <sbehrens@giantdisaster.de>,
+        Jan Schmidt <list.btrfs@jan-o-sch.net>, linux-btrfs@vger.kernel.org
+Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-When we close devices we add back empty devices for some reason that escapes
-me.  In the case of a missing dev we don't allocate an rcu_string for it's
-name, so check to see if the device has a name and if it doesn't don't
-bother strdup()'ing it.  Thanks,
+On Thu, Aug 2, 2012 at 7:46 AM, Arne Jansen <sensille@gmx.net> wrote:
+> On 02.08.2012 13:57, Liu Bo wrote:
+>> On 08/02/2012 07:40 PM, Arne Jansen wrote:
+>>> On 02.08.2012 13:34, Liu Bo wrote:
+>>>> On 08/02/2012 07:18 PM, Arne Jansen wrote:
+>>>>> On 02.08.2012 12:36, Liu Bo wrote:
+>>>>>> On 08/02/2012 06:30 PM, Stefan Behrens wrote:
+>>>>>>> On Wed, 01 Aug 2012 16:31:54 +0200, Stefan Behrens wrote:
+>>>>>>>> On Wed, 01 Aug 2012 21:31:58 +0800, Liu Bo wrote:
+>>>>>>>>> On 08/01/2012 09:07 PM, Jan Schmidt wrote:
+>>>>>>>>>> On Wed, August 01, 2012 at 14:02 (+0200), Liu Bo wrote:
+>>>>>>>>>>> On 08/01/2012 07:45 PM, Stefan Behrens wrote:
+>>>>>>>>>>>> With commit acce952b0, btrfs was changed to flag the filesystem with
+>>>>>>>>>>>> BTRFS_SUPER_FLAG_ERROR and switch to read-only mode after a fatal
+>>>>>>>>>>>> error happened like a write I/O errors of all mirrors.
+>>>>>>>>>>>> In such situations, on unmount, the superblock is written in
+>>>>>>>>>>>> btrfs_error_commit_super(). This is done with the intention to be able
+>>>>>>>>>>>> to evaluate the error flag on the next mount. A warning is printed
+>>>>>>>>>>>> in this case during the next mount and the log tree is ignored.
+>>>>>>>>>>>>
+>>>>>>>>>>>> The issue is that it is possible that the superblock points to a root
+>>>>>>>>>>>> that was not written (due to write I/O errors).
+>>>>>>>>>>>> The result is that the filesystem cannot be mounted. btrfsck also does
+>>>>>>>>>>>> not start and all the other btrfs-progs tools fail to start as well.
+>>>>>>>>>>>> However, mount -o recovery is working well and does the right things
+>>>>>>>>>>>> to recover the filesystem (i.e., don't use the log root, clear the
+>>>>>>>>>>>> free space cache and use the next mountable root that is stored in the
+>>>>>>>>>>>> root backup array).
+>>>>>>>>>>>>
+>>>>>>>>>>>> This patch removes the writing of the superblock when
+>>>>>>>>>>>> BTRFS_SUPER_FLAG_ERROR is set, and removes the handling of the error
+>>>>>>>>>>>> flag in the mount function.
+>>>>>>>>>>>>
+>>>>>>>>>>>
+>>>>>>>>>>> Yes, I have to admit that this can be a serious problem.
+>>>>>>>>>>>
+>>>>>>>>>>> But we'll need to send the error flag stored in the super block into
+>>>>>>>>>>> disk in the future so that the next mount can find it unstable and do
+>>>>>>>>>>> fsck by itself maybe.
+>>>>>>>>>>
+>>>>>>>>>> Hum, that's possible. However, I neither see
+>>>>>>>>>>
+>>>>>>>>>> a) a safe way to get that flag to disk
+>>>>>>>>>>
+>>>>>>>>>> nor
+>>>>>>>>>>
+>>>>>>>>>> b) a situation where this flag would help. When we abort a transaction, we just
+>>>>>>>>>> roll everything back to the last commit, i.e. a consistent state. So if we stop
+>>>>>>>>>> writing a potentially corrupt super block, we should be fine anyway. Or am I
+>>>>>>>>>> missing something?
+>>>>>>>>>>
+>>>>>>>>>
+>>>>>>>>> I'm just wondering if we can roll everything back well, why do we need fsck?
+>>>>>>>>
+>>>>>>>> If the disks support barriers, we roll everything back very well. The
+>>>>>>>> most recent superblock on the disks always defines a consistent
+>>>>>>>> filesystem state. There are only two remaining filesystem consistency
+>>>>>>>> issues left that can cause inconsistent states, one is the one that the
+>>>>>>>> patch in this email addresses, and the second one is that the error
+>>>>>>>> result from barrier_all_devices() is ignored (which I want to change next).
+>>>>>>>
+>>>>>>> Hi Liu Bo,
+>>>>>>>
+>>>>>>> Do you have any remaining objections to that patch?
+>>>>>>>
+>>>>>>
+>>>>>> Hi Stefan,
+>>>>>>
+>>>>>> Still I have another question:
+>>>>>>
+>>>>>> Our metadata can be flushed into disk if we reach the limit, 32k, so we
+>>>>>> can end up with updated metadata and the latest superblock if we do not
+>>>>>> write the current super block.
+>>>>>
+>>>>> The old metadata stays valid until the new superblock is written,
+>>>>> so no problem here, or maybe I don't understand your question :)
+>>>>>
+>>>>
+>>>> Yeah, Arne, you're right :)
+>>>>
+>>>> But for undetected and unexpected errors as Arne had mentioned,  I want
+>>>> to keep the error flag which is able to inform users that this FS is
+>>>> recommended (but not must) to do fsck at least.
+>>>
+>>> How about storing the flag in a different location than the superblock?
+>>> If the fs is in an unknown state, every write potentially makes it only
+>>> worse.
+>>>
+>>
+>> IMO it does not make sense if we don't write the flag into disk, and on
+>> ext4's side, it just tries to write the super block.
+>>
+>> Anyway, for now, our error flag has only been stored in memory, so what
+>> about just keep it until we find a graceful way?
+>
+> Yeah, we need this patch to restore consistency. We can define a fixed
+> area on disk (e.g. behind the superblock) where we can write the flag
+> to without risking the superblock.
 
-Signed-off-by: Josef Bacik <jbacik@fusionio.com>
----
- fs/btrfs/volumes.c |    8 +++++---
- 1 files changed, 5 insertions(+), 3 deletions(-)
-
-diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
-index 3821302..0b1e69d 100644
---- a/fs/btrfs/volumes.c
-+++ b/fs/btrfs/volumes.c
-@@ -568,9 +568,11 @@ static int __btrfs_close_devices(struct btrfs_fs_devices *fs_devices)
- 		memcpy(new_device, device, sizeof(*new_device));
- 
- 		/* Safe because we are under uuid_mutex */
--		name = rcu_string_strdup(device->name->str, GFP_NOFS);
--		BUG_ON(device->name && !name); /* -ENOMEM */
--		rcu_assign_pointer(new_device->name, name);
-+		if (device->name) {
-+			name = rcu_string_strdup(device->name->str, GFP_NOFS);
-+			BUG_ON(device->name && !name); /* -ENOMEM */
-+			rcu_assign_pointer(new_device->name, name);
-+		}
- 		new_device->bdev = NULL;
- 		new_device->writeable = 0;
- 		new_device->in_fs_metadata = 0;
--- 
-1.7.7.6
-
+Is there a reason btrfs_error_commit_super couldn't do the as treelog:
+update only the first superblock via max_mirrors=1?  I'd expect that
+fsck, -o recovery and so forth should all handle this correctly
+already, and we even have documentation that discusses it.

@@ -1,634 +1,1727 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-gh0-f174.google.com ([209.85.160.174]:60736 "EHLO
-	mail-gh0-f174.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1752930Ab2HBAVx (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Wed, 1 Aug 2012 20:21:53 -0400
-Received: by ghrr11 with SMTP id r11so1540657ghr.19
-        for <linux-btrfs@vger.kernel.org>; Wed, 01 Aug 2012 17:21:52 -0700 (PDT)
+Received: from mga01.intel.com ([192.55.52.88]:59001 "EHLO mga01.intel.com"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1752689Ab2HBCb2 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Wed, 1 Aug 2012 22:31:28 -0400
+Date: Thu, 2 Aug 2012 10:31:23 +0800
+From: Fengguang Wu <fengguang.wu@intel.com>
+To: Miao Xie <miaox@cn.fujitsu.com>
+Cc: kernel-janitors@vger.kernel.org, linux-btrfs@vger.kernel.org
+Subject: [josef-btrfs:master 9/11] fs/btrfs/transaction.c:1118:6: warning:
+ 'parent' may be used uninitialized in this function
+Message-ID: <20120802023123.GA10533@localhost>
 MIME-Version: 1.0
-In-Reply-To: <1343852708-24009-1-git-send-email-jbacik@fusionio.com>
-References: <1343852708-24009-1-git-send-email-jbacik@fusionio.com>
-Date: Wed, 1 Aug 2012 19:21:52 -0500
-Message-ID: <CAKcLGm-gow-BgowGmW+kzpZZHPme3Ltr-A4NmnSA+SYdPGwdzw@mail.gmail.com>
-Subject: Re: [PATCH] Btrfs: barrier before waitqueue_active
-From: Mitch Harder <mitch.harder@sabayonlinux.org>
-To: Josef Bacik <jbacik@fusionio.com>
-Cc: linux-btrfs@vger.kernel.org
-Content-Type: text/plain; charset=ISO-8859-1
+Content-Type: multipart/mixed; boundary="8t9RHnE3ZwKMSgU+"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Wed, Aug 1, 2012 at 3:25 PM, Josef Bacik <jbacik@fusionio.com> wrote:
-> We need an smb_mb() before waitqueue_active to avoid missing wakeups.
-> Before Mitch was hitting a deadlock between the ordered flushers and the
-> transaction commit because the ordered flushers were waiting for more refs
-> and were never woken up, so those smp_mb()'s are the most important.
-> Everything else I added for correctness sake and to avoid getting bitten by
-> this again somewhere else.  Thanks,
->
 
-This patch seems to make it tougher to hit a deadlock, but I'm still
-encountering intermittent deadlocks using this patch when running
-multiple rsync threads.
+--8t9RHnE3ZwKMSgU+
+Content-Type: text/plain; charset=us-ascii
+Content-Disposition: inline
 
-I've also tested "Patch 2", and that has me hitting a deadlock even
-quicker (when starting several copying threads).
+Hi Miao,
 
-I also found a slight performance hit using this patch.  On a 3.4.6
-kernel (merged with the 3.5_rc for-linus branch), I would typically
-complete my rsync test in ~265 seconds.  Also, I can't recall hitting
-a deadlock on the 3.4.6 kernel (with 3.5_rc for-linus).  When using
-this patch, the test would take ~310 seconds (when it didn't hit a
-deadlock).
+There are new compile warnings show up in
 
-Here's the Delayed Tasks (Ctrl-SysRq-W) when using JUST this patch:
+tree:   git://git.kernel.org/pub/scm/linux/kernel/git/josef/btrfs-next.git master
+head:   8e1163044779e90662e96887cdd692c1594146ad
+commit: dd817e81e81bbb83b63317b169d0e57a5d7ae0e1 [9/11] Btrfs: fix error path in create_pending_snapshot()
+config: x86_64-randconfig-h031 (attached as .config)
 
-[ 1568.794030] SysRq : Show Blocked State
-[ 1568.794101]   task                        PC stack   pid father
-[ 1568.794123] btrfs-endio-wri D ffff88012579c000     0  3845      2 0x00000000
-[ 1568.794128]  ffff8801254f3c20 0000000000000046 ffff8801254f2000
-ffff8801241b5a80
-[ 1568.794132]  0000000000012280 ffff8801254f3fd8 0000000000012280
-0000000000004000
-[ 1568.794136]  ffff8801254f3fd8 0000000000012280 ffff880129af16a0
-ffff8801241b5a80
-[ 1568.794140] Call Trace:
-[ 1568.794179]  [<ffffffffa0068785>] ? memcpy_extent_buffer+0x159/0x17a [btrfs]
-[ 1568.794200]  [<ffffffffa0082ab7>] ? find_ref_head+0xa3/0xc6 [btrfs]
-[ 1568.794220]  [<ffffffffa008343c>] ? btrfs_find_ref_cluster+0xdd/0x117 [btrfs]
-[ 1568.794225]  [<ffffffff8162d58c>] schedule+0x64/0x66
-[ 1568.794241]  [<ffffffffa003fc86>] btrfs_run_delayed_refs+0x269/0x3f0 [btrfs]
-[ 1568.794246]  [<ffffffff8104b10e>] ? wake_up_bit+0x2a/0x2a
-[ 1568.794265]  [<ffffffffa004fdc4>] __btrfs_end_transaction+0xca/0x283 [btrfs]
-[ 1568.794283]  [<ffffffffa004ffda>] btrfs_end_transaction+0x15/0x17 [btrfs]
-[ 1568.794302]  [<ffffffffa00555da>] btrfs_finish_ordered_io+0x2e4/0x334 [btrfs]
-[ 1568.794306]  [<ffffffff8103b980>] ? run_timer_softirq+0x2d4/0x2d4
-[ 1568.794325]  [<ffffffffa005563f>] finish_ordered_fn+0x15/0x17 [btrfs]
-[ 1568.794344]  [<ffffffffa0070ef8>] worker_loop+0x188/0x4e0 [btrfs]
-[ 1568.794365]  [<ffffffffa0070d70>] ? btrfs_queue_worker+0x275/0x275 [btrfs]
-[ 1568.794384]  [<ffffffffa0070d70>] ? btrfs_queue_worker+0x275/0x275 [btrfs]
-[ 1568.794387]  [<ffffffff8104ac37>] kthread+0x89/0x91
-[ 1568.794391]  [<ffffffff8162fd74>] kernel_thread_helper+0x4/0x10
-[ 1568.794395]  [<ffffffff8104abae>] ? kthread_freezable_should_stop+0x57/0x57
-[ 1568.794398]  [<ffffffff8162fd70>] ? gs_change+0xb/0xb
-[ 1568.794400] btrfs-transacti D ffff88009912ba50     0  3851      2 0x00000000
-[ 1568.794403]  ffff8801241cfc70 0000000000000046 ffff8801241ce000
-ffff8801248cda80
-[ 1568.794407]  0000000000012280 ffff8801241cffd8 0000000000012280
-0000000000004000
-[ 1568.794411]  ffff8801241cffd8 0000000000012280 ffff8801254b8000
-ffff8801248cda80
-[ 1568.794415] Call Trace:
-[ 1568.794436]  [<ffffffffa0066646>] ? extent_writepages+0x53/0x5d [btrfs]
-[ 1568.794455]  [<ffffffffa005357b>] ?
-uncompress_inline.clone.33+0x15f/0x15f [btrfs]
-[ 1568.794459]  [<ffffffff810c9ada>] ? pagevec_lookup_tag+0x24/0x2e
-[ 1568.794478]  [<ffffffffa0052e0e>] ? btrfs_writepages+0x27/0x29 [btrfs]
-[ 1568.794481]  [<ffffffff810c90b1>] ? do_writepages+0x20/0x29
-[ 1568.794485]  [<ffffffff8162d58c>] schedule+0x64/0x66
-[ 1568.794505]  [<ffffffffa0061547>]
-btrfs_start_ordered_extent+0xde/0xfa [btrfs]
-[ 1568.794508]  [<ffffffff8104b10e>] ? wake_up_bit+0x2a/0x2a
-[ 1568.794529]  [<ffffffffa0061984>] ?
-btrfs_lookup_first_ordered_extent+0x65/0x99 [btrfs]
-[ 1568.794549]  [<ffffffffa0061a6a>] btrfs_wait_ordered_range+0xb2/0xda [btrfs]
-[ 1568.794569]  [<ffffffffa0061bcc>]
-btrfs_run_ordered_operations+0x13a/0x1c1 [btrfs]
-[ 1568.794587]  [<ffffffffa004f5f5>]
-btrfs_commit_transaction+0x287/0x960 [btrfs]
-[ 1568.794606]  [<ffffffffa00502b1>] ? start_transaction+0x2d5/0x310 [btrfs]
-[ 1568.794609]  [<ffffffff8104b10e>] ? wake_up_bit+0x2a/0x2a
-[ 1568.794627]  [<ffffffffa004913b>] transaction_kthread+0x187/0x258 [btrfs]
-[ 1568.794644]  [<ffffffffa0048fb4>] ? btrfs_alloc_root+0x42/0x42 [btrfs]
-[ 1568.794661]  [<ffffffffa0048fb4>] ? btrfs_alloc_root+0x42/0x42 [btrfs]
-[ 1568.794664]  [<ffffffff8104ac37>] kthread+0x89/0x91
-[ 1568.794668]  [<ffffffff8162fd74>] kernel_thread_helper+0x4/0x10
-[ 1568.794671]  [<ffffffff8104abae>] ? kthread_freezable_should_stop+0x57/0x57
-[ 1568.794674]  [<ffffffff8162fd70>] ? gs_change+0xb/0xb
-[ 1568.794676] flush-btrfs-1   D ffff88012579c000     0  3857      2 0x00000000
-[ 1568.794680]  ffff880037125670 0000000000000046 ffff880037124000
-ffff8801254b8000
-[ 1568.794684]  0000000000012280 ffff880037125fd8 0000000000012280
-0000000000004000
-[ 1568.794687]  ffff880037125fd8 0000000000012280 ffffffff81c13410
-ffff8801254b8000
-[ 1568.794691] Call Trace:
-[ 1568.794711]  [<ffffffffa0082ab7>] ? find_ref_head+0xa3/0xc6 [btrfs]
-[ 1568.794731]  [<ffffffffa008343c>] ? btrfs_find_ref_cluster+0xdd/0x117 [btrfs]
-[ 1568.794735]  [<ffffffff8162d58c>] schedule+0x64/0x66
-[ 1568.794750]  [<ffffffffa003fc86>] btrfs_run_delayed_refs+0x269/0x3f0 [btrfs]
-[ 1568.794754]  [<ffffffff8104b10e>] ? wake_up_bit+0x2a/0x2a
-[ 1568.794772]  [<ffffffffa004fdc4>] __btrfs_end_transaction+0xca/0x283 [btrfs]
-[ 1568.794790]  [<ffffffffa004ffda>] btrfs_end_transaction+0x15/0x17 [btrfs]
-[ 1568.794809]  [<ffffffffa005607e>] cow_file_range+0x3fa/0x453 [btrfs]
-[ 1568.794829]  [<ffffffffa00635a6>] ? __set_extent_bit+0x3ce/0x403 [btrfs]
-[ 1568.794848]  [<ffffffffa00569d7>] run_delalloc_range+0xbc/0x38f [btrfs]
-[ 1568.794868]  [<ffffffffa006485f>] ?
-find_lock_delalloc_range.clone.26+0x18b/0x1b0 [btrfs]
-[ 1568.794889]  [<ffffffffa0065d1d>] __extent_writepage+0x200/0x600 [btrfs]
-[ 1568.794909]  [<ffffffffa006528d>] ? end_extent_writepage+0x5b/0x5b [btrfs]
-[ 1568.794913]  [<ffffffff810bf853>] ? find_get_pages_tag+0xf8/0x134
-[ 1568.794934]  [<ffffffffa00662e4>]
-extent_write_cache_pages.clone.16.clone.29+0x1c7/0x30c [btrfs]
-[ 1568.794952]  [<ffffffffa0051c2f>] ? __btrfs_submit_bio_done+0x1d/0x1d [btrfs]
-[ 1568.794971]  [<ffffffffa0051c12>] ? btrfs_submit_bio_hook+0x122/0x122 [btrfs]
-[ 1568.794991]  [<ffffffffa0062284>] ? submit_one_bio+0x8d/0x97 [btrfs]
-[ 1568.795011]  [<ffffffffa006663b>] extent_writepages+0x48/0x5d [btrfs]
-[ 1568.795023]  [<ffffffffa005357b>] ?
-uncompress_inline.clone.33+0x15f/0x15f [btrfs]
-[ 1568.795023]  [<ffffffffa0052e0e>] btrfs_writepages+0x27/0x29 [btrfs]
-[ 1568.795023]  [<ffffffff810c90b1>] do_writepages+0x20/0x29
-[ 1568.795023]  [<ffffffff8112e343>]
-__writeback_single_inode.clone.22+0x48/0x11c
-[ 1568.795023]  [<ffffffff8112e8ab>] writeback_sb_inodes+0x1f0/0x332
-[ 1568.795023]  [<ffffffff8112ea65>] __writeback_inodes_wb+0x78/0xb9
-[ 1568.795023]  [<ffffffff8112ebec>] wb_writeback+0x146/0x23e
-[ 1568.795023]  [<ffffffff81121cfd>] ? get_nr_inodes+0x48/0x5f
-[ 1568.795023]  [<ffffffff8112f48a>] wb_do_writeback+0x154/0x1b0
-[ 1568.795023]  [<ffffffff8112f574>] bdi_writeback_thread+0x8e/0x1f1
-[ 1568.795023]  [<ffffffff8112f4e6>] ? wb_do_writeback+0x1b0/0x1b0
-[ 1568.795023]  [<ffffffff8112f4e6>] ? wb_do_writeback+0x1b0/0x1b0
-[ 1568.795023]  [<ffffffff8104ac37>] kthread+0x89/0x91
-[ 1568.795023]  [<ffffffff8162fd74>] kernel_thread_helper+0x4/0x10
-[ 1568.795023]  [<ffffffff8104abae>] ? kthread_freezable_should_stop+0x57/0x57
-[ 1568.795023]  [<ffffffff8162fd70>] ? gs_change+0xb/0xb
-[ 1568.795023] btrfs-endio-wri D ffff88012579c000     0  3899      2 0x00000000
-[ 1568.795023]  ffff880124ea5c20 0000000000000046 ffff880124ea4000
-ffff8800a3015a80
-[ 1568.795023]  0000000000012280 ffff880124ea5fd8 0000000000012280
-0000000000004000
-[ 1568.795023]  ffff880124ea5fd8 0000000000012280 ffff8800a30143e0
-ffff8800a3015a80
-[ 1568.795023] Call Trace:
-[ 1568.795023]  [<ffffffffa0068785>] ? memcpy_extent_buffer+0x159/0x17a [btrfs]
-[ 1568.795023]  [<ffffffffa0082ab7>] ? find_ref_head+0xa3/0xc6 [btrfs]
-[ 1568.795023]  [<ffffffffa008343c>] ? btrfs_find_ref_cluster+0xdd/0x117 [btrfs]
-[ 1568.795023]  [<ffffffff8162d58c>] schedule+0x64/0x66
-[ 1568.795023]  [<ffffffffa003fc86>] btrfs_run_delayed_refs+0x269/0x3f0 [btrfs]
-[ 1568.795023]  [<ffffffff8104b10e>] ? wake_up_bit+0x2a/0x2a
-[ 1568.795023]  [<ffffffffa004fdc4>] __btrfs_end_transaction+0xca/0x283 [btrfs]
-[ 1568.795023]  [<ffffffffa004ffda>] btrfs_end_transaction+0x15/0x17 [btrfs]
-[ 1568.795023]  [<ffffffffa00555da>] btrfs_finish_ordered_io+0x2e4/0x334 [btrfs]
-[ 1568.795023]  [<ffffffff8103b980>] ? run_timer_softirq+0x2d4/0x2d4
-[ 1568.795023]  [<ffffffffa005563f>] finish_ordered_fn+0x15/0x17 [btrfs]
-[ 1568.795023]  [<ffffffffa0070ef8>] worker_loop+0x188/0x4e0 [btrfs]
-[ 1568.795023]  [<ffffffffa0070d70>] ? btrfs_queue_worker+0x275/0x275 [btrfs]
-[ 1568.795023]  [<ffffffff8104ac37>] kthread+0x89/0x91
-[ 1568.795023]  [<ffffffff8162fd74>] kernel_thread_helper+0x4/0x10
-[ 1568.795023]  [<ffffffff8104abae>] ? kthread_freezable_should_stop+0x57/0x57
-[ 1568.795023]  [<ffffffff8162fd70>] ? gs_change+0xb/0xb
-[ 1568.795023] rsync           D 0000000000000000     0  3996   3989 0x00000000
-[ 1568.795023]  ffff88010cd05ca8 0000000000000082 ffff88010cd04000
-ffff88011368ad40
-[ 1568.795023]  0000000000012280 ffff88010cd05fd8 0000000000012280
-0000000000004000
-[ 1568.795023]  ffff88010cd05fd8 0000000000012280 ffffffff81c13410
-ffff88011368ad40
-[ 1568.795023] Call Trace:
-[ 1568.795023]  [<ffffffffa003cb51>] ? get_alloc_profile+0x4e/0x50 [btrfs]
-[ 1568.795023]  [<ffffffffa003cb82>] ? btrfs_get_alloc_profile+0x2f/0x31 [btrfs]
-[ 1568.795023]  [<ffffffffa003db7f>] ?
-reserve_metadata_bytes.clone.57+0x339/0x66c [btrfs]
-[ 1568.795023]  [<ffffffff8162d58c>] schedule+0x64/0x66
-[ 1568.795023]  [<ffffffffa004ee57>]
-wait_current_trans.clone.26+0xac/0xdd [btrfs]
-[ 1568.795023]  [<ffffffff8104b10e>] ? wake_up_bit+0x2a/0x2a
-[ 1568.795023]  [<ffffffffa0050157>] start_transaction+0x17b/0x310 [btrfs]
-[ 1568.795023]  [<ffffffffa0050553>] btrfs_start_transaction+0x13/0x15 [btrfs]
-[ 1568.795023]  [<ffffffffa005126d>] __unlink_start_trans+0x94/0x404 [btrfs]
-[ 1568.795023]  [<ffffffff810384a3>] ? inode_capable+0x15/0x1a
-[ 1568.795023]  [<ffffffff81116127>] ? generic_permission+0x1a5/0x209
-[ 1568.795023]  [<ffffffffa00577bb>] btrfs_unlink+0x2c/0xac [btrfs]
-[ 1568.795023]  [<ffffffff81116c8f>] vfs_unlink+0x78/0xdd
-[ 1568.795023]  [<ffffffff811189e8>] do_unlinkat+0xe6/0x178
-[ 1568.795023]  [<ffffffff8110de68>] ? fput+0x1e8/0x1f7
-[ 1568.795023]  [<ffffffff8110ac43>] ? filp_close+0x70/0x7b
-[ 1568.795023]  [<ffffffff81119c7c>] sys_unlink+0x16/0x18
-[ 1568.795023]  [<ffffffff8162ec92>] system_call_fastpath+0x16/0x1b
-[ 1568.795023] rsync           D 0000000000000000     0  3997   3993 0x00000000
-[ 1568.795023]  ffff88010cd07ca8 0000000000000082 ffff88010cd06000
-ffff880109a816a0
-[ 1568.795023]  0000000000012280 ffff88010cd07fd8 0000000000012280
-0000000000004000
-[ 1568.795023]  ffff88010cd07fd8 0000000000012280 ffff880129af16a0
-ffff880109a816a0
-[ 1568.795023] Call Trace:
-[ 1568.795023]  [<ffffffffa003cb51>] ? get_alloc_profile+0x4e/0x50 [btrfs]
-[ 1568.795023]  [<ffffffffa003cb82>] ? btrfs_get_alloc_profile+0x2f/0x31 [btrfs]
-[ 1568.795023]  [<ffffffffa003db7f>] ?
-reserve_metadata_bytes.clone.57+0x339/0x66c [btrfs]
-[ 1568.795023]  [<ffffffff8162d58c>] schedule+0x64/0x66
-[ 1568.795023]  [<ffffffffa004ee57>]
-wait_current_trans.clone.26+0xac/0xdd [btrfs]
-[ 1568.795023]  [<ffffffff8104b10e>] ? wake_up_bit+0x2a/0x2a
-[ 1568.795023]  [<ffffffffa0050157>] start_transaction+0x17b/0x310 [btrfs]
-[ 1568.795023]  [<ffffffffa0050553>] btrfs_start_transaction+0x13/0x15 [btrfs]
-[ 1568.795023]  [<ffffffffa005126d>] __unlink_start_trans+0x94/0x404 [btrfs]
-[ 1568.795023]  [<ffffffff810384a3>] ? inode_capable+0x15/0x1a
-[ 1568.795023]  [<ffffffff81116127>] ? generic_permission+0x1a5/0x209
-[ 1568.795023]  [<ffffffffa00577bb>] btrfs_unlink+0x2c/0xac [btrfs]
-[ 1568.795023]  [<ffffffff81116c8f>] vfs_unlink+0x78/0xdd
-[ 1568.795023]  [<ffffffff811189e8>] do_unlinkat+0xe6/0x178
-[ 1568.795023]  [<ffffffff8110de68>] ? fput+0x1e8/0x1f7
-[ 1568.795023]  [<ffffffff8110ac43>] ? filp_close+0x70/0x7b
-[ 1568.795023]  [<ffffffff81119c7c>] sys_unlink+0x16/0x18
-[ 1568.795023]  [<ffffffff8162ec92>] system_call_fastpath+0x16/0x1b
-[ 1568.795023] rsync           D 0000000000000000     0  3998   3991 0x00000000
-[ 1568.795023]  ffff88011f6f1ca8 0000000000000082 ffff88011f6f0000
-ffff880125d55a80
-[ 1568.795023]  0000000000012280 ffff88011f6f1fd8 0000000000012280
-0000000000004000
-[ 1568.795023]  ffff88011f6f1fd8 0000000000012280 ffff880129af16a0
-ffff880125d55a80
-[ 1568.795023] Call Trace:
-[ 1568.795023]  [<ffffffffa003cb51>] ? get_alloc_profile+0x4e/0x50 [btrfs]
-[ 1568.795023]  [<ffffffffa003cb82>] ? btrfs_get_alloc_profile+0x2f/0x31 [btrfs]
-[ 1568.795023]  [<ffffffffa003db7f>] ?
-reserve_metadata_bytes.clone.57+0x339/0x66c [btrfs]
-[ 1568.795023]  [<ffffffff8162d58c>] schedule+0x64/0x66
-[ 1568.795023]  [<ffffffffa004ee57>]
-wait_current_trans.clone.26+0xac/0xdd [btrfs]
-[ 1568.795023]  [<ffffffff8104b10e>] ? wake_up_bit+0x2a/0x2a
-[ 1568.795023]  [<ffffffffa0050157>] start_transaction+0x17b/0x310 [btrfs]
-[ 1568.795023]  [<ffffffffa0050553>] btrfs_start_transaction+0x13/0x15 [btrfs]
-[ 1568.795023]  [<ffffffffa005126d>] __unlink_start_trans+0x94/0x404 [btrfs]
-[ 1568.795023]  [<ffffffff810384a3>] ? inode_capable+0x15/0x1a
-[ 1568.795023]  [<ffffffff81116127>] ? generic_permission+0x1a5/0x209
-[ 1568.795023]  [<ffffffffa00577bb>] btrfs_unlink+0x2c/0xac [btrfs]
-[ 1568.795023]  [<ffffffff81116c8f>] vfs_unlink+0x78/0xdd
-[ 1568.795023]  [<ffffffff811189e8>] do_unlinkat+0xe6/0x178
-[ 1568.795023]  [<ffffffff8110de68>] ? fput+0x1e8/0x1f7
-[ 1568.795023]  [<ffffffff8110ac43>] ? filp_close+0x70/0x7b
-[ 1568.795023]  [<ffffffff81119c7c>] sys_unlink+0x16/0x18
-[ 1568.795023]  [<ffffffff8162ec92>] system_call_fastpath+0x16/0x1b
-[ 1568.795023] rsync           D 0000000000000000     0  3999   3994 0x00000000
-[ 1568.795023]  ffff88011f6f3ca8 0000000000000086 ffff88011f6f2000
-ffff880109a843e0
-[ 1568.795023]  0000000000012280 ffff88011f6f3fd8 0000000000012280
-0000000000004000
-[ 1568.795023]  ffff88011f6f3fd8 0000000000012280 ffff880129af16a0
-ffff880109a843e0
-[ 1568.795023] Call Trace:
-[ 1568.795023]  [<ffffffffa003cb51>] ? get_alloc_profile+0x4e/0x50 [btrfs]
-[ 1568.795023]  [<ffffffffa003cb82>] ? btrfs_get_alloc_profile+0x2f/0x31 [btrfs]
-[ 1568.795023]  [<ffffffffa003db7f>] ?
-reserve_metadata_bytes.clone.57+0x339/0x66c [btrfs]
-[ 1568.795023]  [<ffffffff8162d58c>] schedule+0x64/0x66
-[ 1568.795023]  [<ffffffffa004ee57>]
-wait_current_trans.clone.26+0xac/0xdd [btrfs]
-[ 1568.795023]  [<ffffffff8104b10e>] ? wake_up_bit+0x2a/0x2a
-[ 1568.795023]  [<ffffffffa0050157>] start_transaction+0x17b/0x310 [btrfs]
-[ 1568.795023]  [<ffffffffa0050553>] btrfs_start_transaction+0x13/0x15 [btrfs]
-[ 1568.795023]  [<ffffffffa005126d>] __unlink_start_trans+0x94/0x404 [btrfs]
-[ 1568.795023]  [<ffffffff810384a3>] ? inode_capable+0x15/0x1a
-[ 1568.795023]  [<ffffffff81116127>] ? generic_permission+0x1a5/0x209
-[ 1568.795023]  [<ffffffffa00577bb>] btrfs_unlink+0x2c/0xac [btrfs]
-[ 1568.795023]  [<ffffffff81116c8f>] vfs_unlink+0x78/0xdd
-[ 1568.795023]  [<ffffffff811189e8>] do_unlinkat+0xe6/0x178
-[ 1568.795023]  [<ffffffff8110de68>] ? fput+0x1e8/0x1f7
-[ 1568.795023]  [<ffffffff8110ac43>] ? filp_close+0x70/0x7b
-[ 1568.795023]  [<ffffffff81119c7c>] sys_unlink+0x16/0x18
-[ 1568.795023]  [<ffffffff8162ec92>] system_call_fastpath+0x16/0x1b
-[ 1568.795023] rsync           D 0000000000000000     0  4000   3990 0x00000000
-[ 1568.795023]  ffff88011cbb9ca8 0000000000000086 ffff88011cbb8000
-ffff880109a80000
-[ 1568.795023]  0000000000012280 ffff88011cbb9fd8 0000000000012280
-0000000000004000
-[ 1568.795023]  ffff88011cbb9fd8 0000000000012280 ffff88011368ad40
-ffff880109a80000
-[ 1568.795023] Call Trace:
-[ 1568.795023]  [<ffffffffa003cb51>] ? get_alloc_profile+0x4e/0x50 [btrfs]
-[ 1568.795023]  [<ffffffffa003cb82>] ? btrfs_get_alloc_profile+0x2f/0x31 [btrfs]
-[ 1568.795023]  [<ffffffffa003db7f>] ?
-reserve_metadata_bytes.clone.57+0x339/0x66c [btrfs]
-[ 1568.795023]  [<ffffffff8162d58c>] schedule+0x64/0x66
-[ 1568.795023]  [<ffffffffa004ee57>]
-wait_current_trans.clone.26+0xac/0xdd [btrfs]
-[ 1568.795023]  [<ffffffff8104b10e>] ? wake_up_bit+0x2a/0x2a
-[ 1568.795023]  [<ffffffffa0050157>] start_transaction+0x17b/0x310 [btrfs]
-[ 1568.795023]  [<ffffffffa0050553>] btrfs_start_transaction+0x13/0x15 [btrfs]
-[ 1568.795023]  [<ffffffffa005126d>] __unlink_start_trans+0x94/0x404 [btrfs]
-[ 1568.795023]  [<ffffffff810384a3>] ? inode_capable+0x15/0x1a
-[ 1568.795023]  [<ffffffff81116127>] ? generic_permission+0x1a5/0x209
-[ 1568.795023]  [<ffffffffa00577bb>] btrfs_unlink+0x2c/0xac [btrfs]
-[ 1568.795023]  [<ffffffff81116c8f>] vfs_unlink+0x78/0xdd
-[ 1568.795023]  [<ffffffff811189e8>] do_unlinkat+0xe6/0x178
-[ 1568.795023]  [<ffffffff8110de68>] ? fput+0x1e8/0x1f7
-[ 1568.795023]  [<ffffffff8110ac43>] ? filp_close+0x70/0x7b
-[ 1568.795023]  [<ffffffff81119c7c>] sys_unlink+0x16/0x18
-[ 1568.795023]  [<ffffffff8162ec92>] system_call_fastpath+0x16/0x1b
-[ 1568.795023] rsync           D 0000000000000000     0  4001   3992 0x00000000
-[ 1568.795023]  ffff88011cbbbca8 0000000000000086 ffff88011cbba000
-ffff8801254b96a0
-[ 1568.795023]  0000000000012280 ffff88011cbbbfd8 0000000000012280
-0000000000004000
-[ 1568.795023]  ffff88011cbbbfd8 0000000000012280 ffff880129af16a0
-ffff8801254b96a0
-[ 1568.795023] Call Trace:
-[ 1568.795023]  [<ffffffffa003cb51>] ? get_alloc_profile+0x4e/0x50 [btrfs]
-[ 1568.795023]  [<ffffffffa003cb82>] ? btrfs_get_alloc_profile+0x2f/0x31 [btrfs]
-[ 1568.795023]  [<ffffffffa005012e>] ? start_transaction+0x152/0x310 [btrfs]
-[ 1568.795023]  [<ffffffff8162d58c>] schedule+0x64/0x66
-[ 1568.795023]  [<ffffffffa004ee57>]
-wait_current_trans.clone.26+0xac/0xdd [btrfs]
-[ 1568.795023]  [<ffffffff8104b10e>] ? wake_up_bit+0x2a/0x2a
-[ 1568.795023]  [<ffffffffa0050157>] start_transaction+0x17b/0x310 [btrfs]
-[ 1568.795023]  [<ffffffffa0050553>] btrfs_start_transaction+0x13/0x15 [btrfs]
-[ 1568.795023]  [<ffffffffa005126d>] __unlink_start_trans+0x94/0x404 [btrfs]
-[ 1568.795023]  [<ffffffff810384a3>] ? inode_capable+0x15/0x1a
-[ 1568.795023]  [<ffffffff81116127>] ? generic_permission+0x1a5/0x209
-[ 1568.795023]  [<ffffffffa00577bb>] btrfs_unlink+0x2c/0xac [btrfs]
-[ 1568.795023]  [<ffffffff81116c8f>] vfs_unlink+0x78/0xdd
-[ 1568.795023]  [<ffffffff811189e8>] do_unlinkat+0xe6/0x178
-[ 1568.795023]  [<ffffffff8110de68>] ? fput+0x1e8/0x1f7
-[ 1568.795023]  [<ffffffff8110ac43>] ? filp_close+0x70/0x7b
-[ 1568.795023]  [<ffffffff81119c7c>] sys_unlink+0x16/0x18
-[ 1568.795023]  [<ffffffff8162ec92>] system_call_fastpath+0x16/0x1b
-[ 1568.795023] rsync           D 0000000000000000     0  4002   3995 0x00000000
-[ 1568.795023]  ffff88011dd67ca8 0000000000000082 ffff88011dd66000
-ffff88012885da80
-[ 1568.795023]  0000000000012280 ffff88011dd67fd8 0000000000012280
-0000000000004000
-[ 1568.795023]  ffff88011dd67fd8 0000000000012280 ffffffff81c13410
-ffff88012885da80
-[ 1568.795023] Call Trace:
-[ 1568.795023]  [<ffffffffa003cb51>] ? get_alloc_profile+0x4e/0x50 [btrfs]
-[ 1568.795023]  [<ffffffffa003cb82>] ? btrfs_get_alloc_profile+0x2f/0x31 [btrfs]
-[ 1568.795023]  [<ffffffffa003db7f>] ?
-reserve_metadata_bytes.clone.57+0x339/0x66c [btrfs]
-[ 1568.795023]  [<ffffffff8162d58c>] schedule+0x64/0x66
-[ 1568.795023]  [<ffffffffa004ee57>]
-wait_current_trans.clone.26+0xac/0xdd [btrfs]
-[ 1568.795023]  [<ffffffff8104b10e>] ? wake_up_bit+0x2a/0x2a
-[ 1568.795023]  [<ffffffffa0050157>] start_transaction+0x17b/0x310 [btrfs]
-[ 1568.795023]  [<ffffffffa0050553>] btrfs_start_transaction+0x13/0x15 [btrfs]
-[ 1568.795023]  [<ffffffffa005126d>] __unlink_start_trans+0x94/0x404 [btrfs]
-[ 1568.795023]  [<ffffffff810384a3>] ? inode_capable+0x15/0x1a
-[ 1568.795023]  [<ffffffff81116127>] ? generic_permission+0x1a5/0x209
-[ 1568.795023]  [<ffffffffa00577bb>] btrfs_unlink+0x2c/0xac [btrfs]
-[ 1568.795023]  [<ffffffff81116c8f>] vfs_unlink+0x78/0xdd
-[ 1568.795023]  [<ffffffff811189e8>] do_unlinkat+0xe6/0x178
-[ 1568.795023]  [<ffffffff8110de68>] ? fput+0x1e8/0x1f7
-[ 1568.795023]  [<ffffffff8110ac43>] ? filp_close+0x70/0x7b
-[ 1568.795023]  [<ffffffff81119c7c>] sys_unlink+0x16/0x18
-[ 1568.795023]  [<ffffffff8162ec92>] system_call_fastpath+0x16/0x1b
-[ 1568.795023] rsync           D 0000000000000000     0  4004   3998 0x00000000
-[ 1568.795023]  ffff88011a9adb68 0000000000000086 ffff88011a9ac000
-ffff8801248cad40
-[ 1568.795023]  0000000000012280 ffff88011a9adfd8 0000000000012280
-0000000000004000
-[ 1568.795023]  ffff88011a9adfd8 0000000000012280 ffff880109a816a0
-ffff8801248cad40
-[ 1568.795023] Call Trace:
-[ 1568.795023]  [<ffffffffa003cb51>] ? get_alloc_profile+0x4e/0x50 [btrfs]
-[ 1568.795023]  [<ffffffffa003cb82>] ? btrfs_get_alloc_profile+0x2f/0x31 [btrfs]
-[ 1568.795023]  [<ffffffffa003db7f>] ?
-reserve_metadata_bytes.clone.57+0x339/0x66c [btrfs]
-[ 1568.795023]  [<ffffffff8162d58c>] schedule+0x64/0x66
-[ 1568.795023]  [<ffffffffa004ee57>]
-wait_current_trans.clone.26+0xac/0xdd [btrfs]
-[ 1568.795023]  [<ffffffff8104b10e>] ? wake_up_bit+0x2a/0x2a
-[ 1568.795023]  [<ffffffffa0050157>] start_transaction+0x17b/0x310 [btrfs]
-[ 1568.795023]  [<ffffffff8105136f>] ? in_group_p+0x31/0x33
-[ 1568.795023]  [<ffffffffa0050553>] btrfs_start_transaction+0x13/0x15 [btrfs]
-[ 1568.795023]  [<ffffffffa005b47d>] btrfs_create+0x3a/0x1e0 [btrfs]
-[ 1568.795023]  [<ffffffff8111ff3d>] ? d_splice_alias+0xcc/0xd8
-[ 1568.795023]  [<ffffffff81116a86>] vfs_create+0x9c/0xf5
-[ 1568.795023]  [<ffffffff81118e62>] do_last+0x2b9/0x807
-[ 1568.795023]  [<ffffffff811194af>] path_openat+0xcc/0x37f
-[ 1568.795023]  [<ffffffff81119864>] do_filp_open+0x3d/0x89
-[ 1568.795023]  [<ffffffff810fe9b0>] ? kmem_cache_alloc+0x31/0x104
-[ 1568.795023]  [<ffffffff81123bb4>] ? alloc_fd+0x74/0x103
-[ 1568.795023]  [<ffffffff8110c09d>] do_sys_open+0x10f/0x1a1
-[ 1568.795023]  [<ffffffff8110c150>] sys_open+0x21/0x23
-[ 1568.795023]  [<ffffffff8162ec92>] system_call_fastpath+0x16/0x1b
-[ 1568.795023] rsync           D 0000000000000000     0  4006   3997 0x00000000
-[ 1568.795023]  ffff88011475dbb8 0000000000000086 ffff88011475c000
-ffff880128995a80
-[ 1568.795023]  0000000000012280 ffff88011475dfd8 0000000000012280
-0000000000004000
-[ 1568.795023]  ffff88011475dfd8 0000000000012280 ffffffff81c13410
-ffff880128995a80
-[ 1568.795023] Call Trace:
-[ 1568.795023]  [<ffffffffa003cb51>] ? get_alloc_profile+0x4e/0x50 [btrfs]
-[ 1568.795023]  [<ffffffffa003cb82>] ? btrfs_get_alloc_profile+0x2f/0x31 [btrfs]
-[ 1568.795023]  [<ffffffffa003db7f>] ?
-reserve_metadata_bytes.clone.57+0x339/0x66c [btrfs]
-[ 1568.795023]  [<ffffffff8162d58c>] schedule+0x64/0x66
-[ 1568.795023]  [<ffffffffa004ee57>]
-wait_current_trans.clone.26+0xac/0xdd [btrfs]
-[ 1568.795023]  [<ffffffff8104b10e>] ? wake_up_bit+0x2a/0x2a
-[ 1568.795023]  [<ffffffffa0050157>] start_transaction+0x17b/0x310 [btrfs]
-[ 1568.795023]  [<ffffffff81116008>] ? generic_permission+0x86/0x209
-[ 1568.795023]  [<ffffffffa0050553>] btrfs_start_transaction+0x13/0x15 [btrfs]
-[ 1568.795023]  [<ffffffffa005a8d0>] btrfs_rename+0x1bd/0x5af [btrfs]
-[ 1568.795023]  [<ffffffff81116127>] ? generic_permission+0x1a5/0x209
-[ 1568.795023]  [<ffffffff81116e9f>] ? vfs_rename+0xbe/0x3df
-[ 1568.795023]  [<ffffffff8111705d>] vfs_rename+0x27c/0x3df
-[ 1568.795023]  [<ffffffff8111a072>] sys_renameat+0x1ac/0x259
-[ 1568.795023]  [<ffffffff81122f26>] ? notify_change+0x2a2/0x2b8
-[ 1568.795023]  [<ffffffff811197e3>] ? user_path_at_empty+0x61/0x92
-[ 1568.795023]  [<ffffffff81124e45>] ? mntput_no_expire+0x3f/0x138
-[ 1568.795023]  [<ffffffff81124f68>] ? mntput+0x2a/0x2c
-[ 1568.795023]  [<ffffffff811156a6>] ? path_put+0x22/0x26
-[ 1568.795023]  [<ffffffff8111a13a>] sys_rename+0x1b/0x1d
-[ 1568.795023]  [<ffffffff8162ec92>] system_call_fastpath+0x16/0x1b
-[ 1568.795023] rsync           D 0000000000000000     0  4007   3996 0x00000000
-[ 1568.795023]  ffff88010c7cdbb8 0000000000000086 ffff88010c7cc000
-ffff8801289916a0
-[ 1568.795023]  0000000000012280 ffff88010c7cdfd8 0000000000012280
-0000000000004000
-[ 1568.795023]  ffff88010c7cdfd8 0000000000012280 ffff880129af16a0
-ffff8801289916a0
-[ 1568.795023] Call Trace:
-[ 1568.795023]  [<ffffffffa003cb51>] ? get_alloc_profile+0x4e/0x50 [btrfs]
-[ 1568.795023]  [<ffffffffa003cb82>] ? btrfs_get_alloc_profile+0x2f/0x31 [btrfs]
-[ 1568.795023]  [<ffffffffa003db7f>] ?
-reserve_metadata_bytes.clone.57+0x339/0x66c [btrfs]
-[ 1568.795023]  [<ffffffff8162d58c>] schedule+0x64/0x66
-[ 1568.795023]  [<ffffffffa004ee57>]
-wait_current_trans.clone.26+0xac/0xdd [btrfs]
-[ 1568.795023]  [<ffffffff8104b10e>] ? wake_up_bit+0x2a/0x2a
-[ 1568.795023]  [<ffffffffa0050157>] start_transaction+0x17b/0x310 [btrfs]
-[ 1568.795023]  [<ffffffffa0050553>] btrfs_start_transaction+0x13/0x15 [btrfs]
-[ 1568.795023]  [<ffffffffa005a8d0>] btrfs_rename+0x1bd/0x5af [btrfs]
-[ 1568.795023]  [<ffffffff81116127>] ? generic_permission+0x1a5/0x209
-[ 1568.795023]  [<ffffffff81116e9f>] ? vfs_rename+0xbe/0x3df
-[ 1568.795023]  [<ffffffff8111705d>] vfs_rename+0x27c/0x3df
-[ 1568.795023]  [<ffffffff8111a072>] sys_renameat+0x1ac/0x259
-[ 1568.795023]  [<ffffffff81122f26>] ? notify_change+0x2a2/0x2b8
-[ 1568.795023]  [<ffffffff811197e3>] ? user_path_at_empty+0x61/0x92
-[ 1568.795023]  [<ffffffff81124e45>] ? mntput_no_expire+0x3f/0x138
-[ 1568.795023]  [<ffffffff81124f68>] ? mntput+0x2a/0x2c
-[ 1568.795023]  [<ffffffff811156a6>] ? path_put+0x22/0x26
-[ 1568.795023]  [<ffffffff8111a13a>] sys_rename+0x1b/0x1d
-[ 1568.795023]  [<ffffffff8162ec92>] system_call_fastpath+0x16/0x1b
-[ 1568.795023] rsync           D 0000000000000000     0  4008   4001 0x00000000
-[ 1568.795023]  ffff88011ae33bb8 0000000000000086 ffff88011ae32000
-ffff8801296a2d40
-[ 1568.795023]  0000000000012280 ffff88011ae33fd8 0000000000012280
-0000000000004000
-[ 1568.795023]  ffff88011ae33fd8 0000000000012280 ffff880128995a80
-ffff8801296a2d40
-[ 1568.795023] Call Trace:
-[ 1568.795023]  [<ffffffffa003cb51>] ? get_alloc_profile+0x4e/0x50 [btrfs]
-[ 1568.795023]  [<ffffffffa003cb82>] ? btrfs_get_alloc_profile+0x2f/0x31 [btrfs]
-[ 1568.795023]  [<ffffffffa003db7f>] ?
-reserve_metadata_bytes.clone.57+0x339/0x66c [btrfs]
-[ 1568.795023]  [<ffffffff8162d58c>] schedule+0x64/0x66
-[ 1568.795023]  [<ffffffffa004ee57>]
-wait_current_trans.clone.26+0xac/0xdd [btrfs]
-[ 1568.795023]  [<ffffffff8104b10e>] ? wake_up_bit+0x2a/0x2a
-[ 1568.795023]  [<ffffffffa0050157>] start_transaction+0x17b/0x310 [btrfs]
-[ 1568.795023]  [<ffffffff81116008>] ? generic_permission+0x86/0x209
-[ 1568.795023]  [<ffffffffa0050553>] btrfs_start_transaction+0x13/0x15 [btrfs]
-[ 1568.795023]  [<ffffffffa005a8d0>] btrfs_rename+0x1bd/0x5af [btrfs]
-[ 1568.795023]  [<ffffffff81116127>] ? generic_permission+0x1a5/0x209
-[ 1568.795023]  [<ffffffff81116e9f>] ? vfs_rename+0xbe/0x3df
-[ 1568.795023]  [<ffffffff8111705d>] vfs_rename+0x27c/0x3df
-[ 1568.795023]  [<ffffffff8111a072>] sys_renameat+0x1ac/0x259
-[ 1568.795023]  [<ffffffff81122f26>] ? notify_change+0x2a2/0x2b8
-[ 1568.795023]  [<ffffffff811197e3>] ? user_path_at_empty+0x61/0x92
-[ 1568.795023]  [<ffffffff81124e45>] ? mntput_no_expire+0x3f/0x138
-[ 1568.795023]  [<ffffffff81124f68>] ? mntput+0x2a/0x2c
-[ 1568.795023]  [<ffffffff811156a6>] ? path_put+0x22/0x26
-[ 1568.795023]  [<ffffffff8111a13a>] sys_rename+0x1b/0x1d
-[ 1568.795023]  [<ffffffff8162ec92>] system_call_fastpath+0x16/0x1b
-[ 1568.795023] Sched Debug Version: v0.10, 3.5.0-baseline+ #1
-[ 1568.795023] ktime                                   : 1568797.341765
-[ 1568.795023] sched_clk                               : 1568905.405572
-[ 1568.795023] cpu_clk                                 : 1568795.023448
-[ 1568.795023] jiffies                                 : 4296236090
-[ 1568.795023] sched_clock_stable                      : 0
-[ 1568.795023]
-[ 1568.795023] sysctl_sched
-[ 1568.795023]   .sysctl_sched_latency                    : 12.000000
-[ 1568.795023]   .sysctl_sched_min_granularity            : 1.500000
-[ 1568.795023]   .sysctl_sched_wakeup_granularity         : 2.000000
-[ 1568.795023]   .sysctl_sched_child_runs_first           : 0
-[ 1568.795023]   .sysctl_sched_features                   : 24119
-[ 1568.795023]   .sysctl_sched_tunable_scaling            : 1 (logaritmic)
-[ 1568.795023]
-[ 1568.795023] cpu#0, 2666.627 MHz
-[ 1568.795023]   .nr_running                    : 0
-[ 1568.795023]   .load                          : 0
-[ 1568.795023]   .nr_switches                   : 2092841
-[ 1568.795023]   .nr_load_updates               : 319578
-[ 1568.795023]   .nr_uninterruptible            : -79
-[ 1568.795023]   .next_balance                  : 4296.235984
-[ 1568.795023]   .curr->pid                     : 0
-[ 1568.795023]   .clock                         : 1568792.396031
-[ 1568.795023]   .cpu_load[0]                   : 0
-[ 1568.795023]   .cpu_load[1]                   : 0
-[ 1568.795023]   .cpu_load[2]                   : 0
-[ 1568.795023]   .cpu_load[3]                   : 0
-[ 1568.795023]   .cpu_load[4]                   : 0
-[ 1568.795023]   .yld_count                     : 21
-[ 1568.795023]   .sched_count                   : 2345950
-[ 1568.795023]   .sched_goidle                  : 683438
-[ 1568.795023]   .avg_idle                      : 1000000
-[ 1568.795023]   .ttwu_count                    : 1179205
-[ 1568.795023]   .ttwu_local                    : 432796
-[ 1568.795023]
-[ 1568.795023] cfs_rq[0]:/
-[ 1568.795023]   .exec_clock                    : 122611.778679
-[ 1568.795023]   .MIN_vruntime                  : 0.000001
-[ 1568.795023]   .min_vruntime                  : 155427.205936
-[ 1568.795023]   .max_vruntime                  : 0.000001
-[ 1568.795023]   .spread                        : 0.000000
-[ 1568.795023]   .spread0                       : 0.000000
-[ 1568.795023]   .nr_spread_over                : 817
-[ 1568.795023]   .nr_running                    : 0
-[ 1568.795023]   .load                          : 0
-[ 1568.795023]   .load_avg                      : 0.000000
-[ 1568.795023]   .load_period                   : 0.000000
-[ 1568.795023]   .load_contrib                  : 0
-[ 1568.795023]   .load_tg                       : 0
-[ 1568.795023]
-[ 1568.795023] rt_rq[0]:
-[ 1568.795023]   .rt_nr_running                 : 0
-[ 1568.795023]   .rt_throttled                  : 0
-[ 1568.795023]   .rt_time                       : 0.000000
-[ 1568.795023]   .rt_runtime                    : 950.000000
-[ 1568.795023]
-[ 1568.795023] runnable tasks:
-[ 1568.795023]             task   PID         tree-key  switches  prio
-    exec-runtime         sum-exec        sum-sleep
-[ 1568.795023] ----------------------------------------------------------------------------------------------------------
-[ 1568.795023]
-[ 1568.795023] cpu#1, 2666.627 MHz
-[ 1568.795023]   .nr_running                    : 0
-[ 1568.795023]   .load                          : 0
-[ 1568.795023]   .nr_switches                   : 2079916
-[ 1568.795023]   .nr_load_updates               : 319982
-[ 1568.795023]   .nr_uninterruptible            : 94
-[ 1568.795023]   .next_balance                  : 4296.235484
-[ 1568.795023]   .curr->pid                     : 0
-[ 1568.795023]   .clock                         : 1568784.396001
-[ 1568.795023]   .cpu_load[0]                   : 0
-[ 1568.795023]   .cpu_load[1]                   : 0
-[ 1568.795023]   .cpu_load[2]                   : 0
-[ 1568.795023]   .cpu_load[3]                   : 0
-[ 1568.795023]   .cpu_load[4]                   : 0
-[ 1568.795023]   .yld_count                     : 4
-[ 1568.795023]   .sched_count                   : 2308965
-[ 1568.795023]   .sched_goidle                  : 690586
-[ 1568.795023]   .avg_idle                      : 1000000
-[ 1568.795023]   .ttwu_count                    : 1159413
-[ 1568.795023]   .ttwu_local                    : 419527
-[ 1568.795023]
-[ 1568.795023] cfs_rq[1]:/autogroup-12
-[ 1568.795023]   .exec_clock                    : 320.130894
-[ 1568.795023]   .MIN_vruntime                  : 0.000001
-[ 1568.795023]   .min_vruntime                  : 1163.780537
-[ 1568.795023]   .max_vruntime                  : 0.000001
-[ 1568.795023]   .spread                        : 0.000000
-[ 1568.795023]   .spread0                       : -154263.425399
-[ 1568.795023]   .nr_spread_over                : 178
-[ 1568.795023]   .nr_running                    : 0
-[ 1568.795023]   .load                          : 0
-[ 1568.795023]   .load_avg                      : 2559.999744
-[ 1568.795023]   .load_period                   : 5.241463
-[ 1568.795023]   .load_contrib                  : 488
-[ 1568.795023]   .load_tg                       : 488
-[ 1568.795023]   .se->exec_start                : 1568778.912838
-[ 1568.795023]   .se->vruntime                  : 183270.984759
-[ 1568.795023]   .se->sum_exec_runtime          : 320.130894
-[ 1568.795023]   .se->statistics.wait_start     : 0.000000
-[ 1568.795023]   .se->statistics.sleep_start    : 0.000000
-[ 1568.795023]   .se->statistics.block_start    : 0.000000
-[ 1568.795023]   .se->statistics.sleep_max      : 0.000000
-[ 1568.795023]   .se->statistics.block_max      : 0.000000
-[ 1568.795023]   .se->statistics.exec_max       : 1.000806
-[ 1568.795023]   .se->statistics.slice_max      : 0.030516
-[ 1568.795023]   .se->statistics.wait_max       : 2.745282
-[ 1568.795023]   .se->statistics.wait_sum       : 8.576517
-[ 1568.795023]   .se->statistics.wait_count     : 1446
-[ 1568.795023]   .se->load.weight               : 2
-[ 1568.795023]
-[ 1568.795023] cfs_rq[1]:/
-[ 1568.795023]   .exec_clock                    : 120018.151379
-[ 1568.795023]   .MIN_vruntime                  : 0.000001
-[ 1568.795023]   .min_vruntime                  : 183276.982041
-[ 1568.795023]   .max_vruntime                  : 0.000001
-[ 1568.795023]   .spread                        : 0.000000
-[ 1568.795023]   .spread0                       : 27849.776105
-[ 1568.795023]   .nr_spread_over                : 1197
-[ 1568.795023]   .nr_running                    : 0
-[ 1568.795023]   .load                          : 0
-[ 1568.795023]   .load_avg                      : 0.000000
-[ 1568.795023]   .load_period                   : 0.000000
-[ 1568.795023]   .load_contrib                  : 0
-[ 1568.795023]   .load_tg                       : 0
-[ 1568.795023]
-[ 1568.795023] rt_rq[1]:
-[ 1568.795023]   .rt_nr_running                 : 0
-[ 1568.795023]   .rt_throttled                  : 0
-[ 1568.795023]   .rt_time                       : 0.000000
-[ 1568.795023]   .rt_runtime                    : 950.000000
-[ 1568.795023]
-[ 1568.795023] runnable tasks:
-[ 1568.795023]             task   PID         tree-key  switches  prio
-    exec-runtime         sum-exec        sum-sleep
-[ 1568.795023] ----------------------------------------------------------------------------------------------------------
-[ 1568.795023]
+All error/warnings:
+
+fs/btrfs/transaction.c: In function 'create_pending_snapshot':
+fs/btrfs/transaction.c:1118:6: warning: 'parent' may be used uninitialized in this function [-Wmaybe-uninitialized]
+fs/btrfs/transaction.c:1119:19: warning: 'rsv' may be used uninitialized in this function [-Wmaybe-uninitialized]
+
+vim +1118 fs/btrfs/transaction.c
+  1115		if (ret)
+  1116			goto abort_trans;
+  1117	fail:
+> 1118		dput(parent);
+  1119		trans->block_rsv = rsv;
+  1120	no_free_objectid:
+  1121		kfree(new_root_item);
+
+---
+0-DAY kernel build testing backend         Open Source Technology Centre
+Fengguang Wu <wfg@linux.intel.com>                     Intel Corporation
+
+--8t9RHnE3ZwKMSgU+
+Content-Type: text/plain; charset=us-ascii
+Content-Disposition: attachment; filename=".config"
+
+#
+# Automatically generated file; DO NOT EDIT.
+# Linux/x86_64 3.5.0 Kernel Configuration
+#
+CONFIG_64BIT=y
+# CONFIG_X86_32 is not set
+CONFIG_X86_64=y
+CONFIG_X86=y
+CONFIG_INSTRUCTION_DECODER=y
+CONFIG_OUTPUT_FORMAT="elf64-x86-64"
+CONFIG_ARCH_DEFCONFIG="arch/x86/configs/x86_64_defconfig"
+CONFIG_LOCKDEP_SUPPORT=y
+CONFIG_STACKTRACE_SUPPORT=y
+CONFIG_HAVE_LATENCYTOP_SUPPORT=y
+CONFIG_MMU=y
+CONFIG_NEED_DMA_MAP_STATE=y
+CONFIG_NEED_SG_DMA_LENGTH=y
+# CONFIG_GENERIC_ISA_DMA is not set
+CONFIG_GENERIC_BUG=y
+CONFIG_GENERIC_BUG_RELATIVE_POINTERS=y
+CONFIG_GENERIC_HWEIGHT=y
+# CONFIG_ARCH_MAY_HAVE_PC_FDC is not set
+# CONFIG_RWSEM_GENERIC_SPINLOCK is not set
+CONFIG_RWSEM_XCHGADD_ALGORITHM=y
+CONFIG_GENERIC_CALIBRATE_DELAY=y
+CONFIG_ARCH_HAS_CPU_RELAX=y
+CONFIG_ARCH_HAS_DEFAULT_IDLE=y
+CONFIG_ARCH_HAS_CACHE_LINE_SIZE=y
+CONFIG_ARCH_HAS_CPU_AUTOPROBE=y
+CONFIG_HAVE_SETUP_PER_CPU_AREA=y
+CONFIG_NEED_PER_CPU_EMBED_FIRST_CHUNK=y
+CONFIG_NEED_PER_CPU_PAGE_FIRST_CHUNK=y
+CONFIG_ARCH_HIBERNATION_POSSIBLE=y
+CONFIG_ARCH_SUSPEND_POSSIBLE=y
+CONFIG_ZONE_DMA32=y
+CONFIG_AUDIT_ARCH=y
+CONFIG_ARCH_SUPPORTS_OPTIMIZED_INLINING=y
+CONFIG_ARCH_SUPPORTS_DEBUG_PAGEALLOC=y
+CONFIG_X86_64_SMP=y
+CONFIG_X86_HT=y
+CONFIG_ARCH_HWEIGHT_CFLAGS="-fcall-saved-rdi -fcall-saved-rsi -fcall-saved-rdx -fcall-saved-rcx -fcall-saved-r8 -fcall-saved-r9 -fcall-saved-r10 -fcall-saved-r11"
+CONFIG_ARCH_CPU_PROBE_RELEASE=y
+CONFIG_ARCH_SUPPORTS_UPROBES=y
+CONFIG_DEFCONFIG_LIST="/lib/modules/$UNAME_RELEASE/.config"
+CONFIG_HAVE_IRQ_WORK=y
+CONFIG_IRQ_WORK=y
+CONFIG_BUILDTIME_EXTABLE_SORT=y
+
+#
+# General setup
+#
+CONFIG_EXPERIMENTAL=y
+CONFIG_INIT_ENV_ARG_LIMIT=32
+CONFIG_CROSS_COMPILE=""
+CONFIG_LOCALVERSION=""
+CONFIG_LOCALVERSION_AUTO=y
+CONFIG_HAVE_KERNEL_GZIP=y
+CONFIG_HAVE_KERNEL_BZIP2=y
+CONFIG_HAVE_KERNEL_LZMA=y
+CONFIG_HAVE_KERNEL_XZ=y
+CONFIG_HAVE_KERNEL_LZO=y
+# CONFIG_KERNEL_GZIP is not set
+# CONFIG_KERNEL_BZIP2 is not set
+# CONFIG_KERNEL_LZMA is not set
+CONFIG_KERNEL_XZ=y
+# CONFIG_KERNEL_LZO is not set
+CONFIG_DEFAULT_HOSTNAME="(none)"
+CONFIG_SWAP=y
+CONFIG_SYSVIPC=y
+# CONFIG_POSIX_MQUEUE is not set
+CONFIG_BSD_PROCESS_ACCT=y
+CONFIG_BSD_PROCESS_ACCT_V3=y
+# CONFIG_FHANDLE is not set
+# CONFIG_TASKSTATS is not set
+# CONFIG_AUDIT is not set
+CONFIG_HAVE_GENERIC_HARDIRQS=y
+
+#
+# IRQ subsystem
+#
+CONFIG_GENERIC_HARDIRQS=y
+CONFIG_GENERIC_IRQ_PROBE=y
+CONFIG_GENERIC_IRQ_SHOW=y
+CONFIG_GENERIC_PENDING_IRQ=y
+CONFIG_IRQ_FORCED_THREADING=y
+CONFIG_SPARSE_IRQ=y
+CONFIG_CLOCKSOURCE_WATCHDOG=y
+CONFIG_ARCH_CLOCKSOURCE_DATA=y
+CONFIG_GENERIC_TIME_VSYSCALL=y
+CONFIG_GENERIC_CLOCKEVENTS=y
+CONFIG_GENERIC_CLOCKEVENTS_BUILD=y
+CONFIG_GENERIC_CLOCKEVENTS_BROADCAST=y
+CONFIG_GENERIC_CLOCKEVENTS_MIN_ADJUST=y
+CONFIG_GENERIC_CMOS_UPDATE=y
+
+#
+# Timers subsystem
+#
+CONFIG_TICK_ONESHOT=y
+# CONFIG_NO_HZ is not set
+CONFIG_HIGH_RES_TIMERS=y
+
+#
+# RCU Subsystem
+#
+CONFIG_TREE_PREEMPT_RCU=y
+CONFIG_PREEMPT_RCU=y
+CONFIG_RCU_FANOUT=64
+CONFIG_RCU_FANOUT_LEAF=16
+# CONFIG_RCU_FANOUT_EXACT is not set
+CONFIG_TREE_RCU_TRACE=y
+CONFIG_RCU_BOOST=y
+CONFIG_RCU_BOOST_PRIO=1
+CONFIG_RCU_BOOST_DELAY=500
+CONFIG_IKCONFIG=y
+CONFIG_LOG_BUF_SHIFT=17
+CONFIG_HAVE_UNSTABLE_SCHED_CLOCK=y
+CONFIG_CGROUPS=y
+# CONFIG_CGROUP_DEBUG is not set
+# CONFIG_CGROUP_FREEZER is not set
+CONFIG_CGROUP_DEVICE=y
+CONFIG_CPUSETS=y
+CONFIG_PROC_PID_CPUSET=y
+# CONFIG_CGROUP_CPUACCT is not set
+CONFIG_RESOURCE_COUNTERS=y
+# CONFIG_CGROUP_MEM_RES_CTLR is not set
+# CONFIG_CGROUP_PERF is not set
+CONFIG_CGROUP_SCHED=y
+CONFIG_FAIR_GROUP_SCHED=y
+# CONFIG_CFS_BANDWIDTH is not set
+# CONFIG_RT_GROUP_SCHED is not set
+CONFIG_BLK_CGROUP=y
+# CONFIG_DEBUG_BLK_CGROUP is not set
+# CONFIG_CHECKPOINT_RESTORE is not set
+CONFIG_NAMESPACES=y
+# CONFIG_UTS_NS is not set
+# CONFIG_IPC_NS is not set
+CONFIG_PID_NS=y
+CONFIG_NET_NS=y
+CONFIG_SCHED_AUTOGROUP=y
+# CONFIG_SYSFS_DEPRECATED is not set
+# CONFIG_RELAY is not set
+CONFIG_BLK_DEV_INITRD=y
+CONFIG_INITRAMFS_SOURCE=""
+CONFIG_RD_GZIP=y
+# CONFIG_RD_BZIP2 is not set
+# CONFIG_RD_LZMA is not set
+# CONFIG_RD_XZ is not set
+# CONFIG_RD_LZO is not set
+# CONFIG_CC_OPTIMIZE_FOR_SIZE is not set
+CONFIG_ANON_INODES=y
+CONFIG_EXPERT=y
+CONFIG_UID16=y
+CONFIG_KALLSYMS=y
+CONFIG_KALLSYMS_ALL=y
+CONFIG_HOTPLUG=y
+CONFIG_PRINTK=y
+CONFIG_BUG=y
+# CONFIG_ELF_CORE is not set
+# CONFIG_PCSPKR_PLATFORM is not set
+CONFIG_HAVE_PCSPKR_PLATFORM=y
+# CONFIG_BASE_FULL is not set
+CONFIG_FUTEX=y
+# CONFIG_EPOLL is not set
+CONFIG_SIGNALFD=y
+CONFIG_TIMERFD=y
+CONFIG_EVENTFD=y
+# CONFIG_SHMEM is not set
+CONFIG_AIO=y
+CONFIG_EMBEDDED=y
+CONFIG_HAVE_PERF_EVENTS=y
+CONFIG_PERF_USE_VMALLOC=y
+
+#
+# Kernel Performance Events And Counters
+#
+CONFIG_PERF_EVENTS=y
+CONFIG_DEBUG_PERF_USE_VMALLOC=y
+# CONFIG_VM_EVENT_COUNTERS is not set
+CONFIG_SLUB_DEBUG=y
+# CONFIG_COMPAT_BRK is not set
+# CONFIG_SLAB is not set
+CONFIG_SLUB=y
+# CONFIG_SLOB is not set
+# CONFIG_PROFILING is not set
+CONFIG_HAVE_OPROFILE=y
+CONFIG_OPROFILE_NMI_TIMER=y
+CONFIG_KPROBES=y
+# CONFIG_JUMP_LABEL is not set
+CONFIG_HAVE_EFFICIENT_UNALIGNED_ACCESS=y
+CONFIG_KRETPROBES=y
+CONFIG_HAVE_IOREMAP_PROT=y
+CONFIG_HAVE_KPROBES=y
+CONFIG_HAVE_KRETPROBES=y
+CONFIG_HAVE_OPTPROBES=y
+CONFIG_HAVE_ARCH_TRACEHOOK=y
+CONFIG_HAVE_DMA_ATTRS=y
+CONFIG_USE_GENERIC_SMP_HELPERS=y
+CONFIG_GENERIC_SMP_IDLE_THREAD=y
+CONFIG_HAVE_REGS_AND_STACK_ACCESS_API=y
+CONFIG_HAVE_DMA_API_DEBUG=y
+CONFIG_HAVE_HW_BREAKPOINT=y
+CONFIG_HAVE_MIXED_BREAKPOINTS_REGS=y
+CONFIG_HAVE_USER_RETURN_NOTIFIER=y
+CONFIG_HAVE_PERF_EVENTS_NMI=y
+CONFIG_HAVE_ARCH_JUMP_LABEL=y
+CONFIG_ARCH_HAVE_NMI_SAFE_CMPXCHG=y
+CONFIG_HAVE_ALIGNED_STRUCT_PAGE=y
+CONFIG_HAVE_CMPXCHG_LOCAL=y
+CONFIG_HAVE_CMPXCHG_DOUBLE=y
+CONFIG_ARCH_WANT_OLD_COMPAT_IPC=y
+CONFIG_HAVE_ARCH_SECCOMP_FILTER=y
+CONFIG_SECCOMP_FILTER=y
+
+#
+# GCOV-based kernel profiling
+#
+# CONFIG_GCOV_KERNEL is not set
+# CONFIG_HAVE_GENERIC_DMA_COHERENT is not set
+CONFIG_RT_MUTEXES=y
+CONFIG_BASE_SMALL=1
+CONFIG_MODULES=y
+CONFIG_MODULE_FORCE_LOAD=y
+CONFIG_MODULE_UNLOAD=y
+# CONFIG_MODULE_FORCE_UNLOAD is not set
+# CONFIG_MODVERSIONS is not set
+# CONFIG_MODULE_SRCVERSION_ALL is not set
+CONFIG_STOP_MACHINE=y
+CONFIG_BLOCK=y
+# CONFIG_BLK_DEV_BSG is not set
+# CONFIG_BLK_DEV_BSGLIB is not set
+# CONFIG_BLK_DEV_INTEGRITY is not set
+# CONFIG_BLK_DEV_THROTTLING is not set
+
+#
+# Partition Types
+#
+# CONFIG_PARTITION_ADVANCED is not set
+CONFIG_MSDOS_PARTITION=y
+CONFIG_BLOCK_COMPAT=y
+
+#
+# IO Schedulers
+#
+CONFIG_IOSCHED_NOOP=y
+# CONFIG_IOSCHED_DEADLINE is not set
+CONFIG_IOSCHED_CFQ=m
+CONFIG_CFQ_GROUP_IOSCHED=y
+CONFIG_DEFAULT_NOOP=y
+CONFIG_DEFAULT_IOSCHED="noop"
+# CONFIG_INLINE_SPIN_TRYLOCK is not set
+# CONFIG_INLINE_SPIN_TRYLOCK_BH is not set
+# CONFIG_INLINE_SPIN_LOCK is not set
+# CONFIG_INLINE_SPIN_LOCK_BH is not set
+# CONFIG_INLINE_SPIN_LOCK_IRQ is not set
+# CONFIG_INLINE_SPIN_LOCK_IRQSAVE is not set
+CONFIG_UNINLINE_SPIN_UNLOCK=y
+# CONFIG_INLINE_SPIN_UNLOCK_BH is not set
+# CONFIG_INLINE_SPIN_UNLOCK_IRQ is not set
+# CONFIG_INLINE_SPIN_UNLOCK_IRQRESTORE is not set
+# CONFIG_INLINE_READ_TRYLOCK is not set
+# CONFIG_INLINE_READ_LOCK is not set
+# CONFIG_INLINE_READ_LOCK_BH is not set
+# CONFIG_INLINE_READ_LOCK_IRQ is not set
+# CONFIG_INLINE_READ_LOCK_IRQSAVE is not set
+# CONFIG_INLINE_READ_UNLOCK is not set
+# CONFIG_INLINE_READ_UNLOCK_BH is not set
+# CONFIG_INLINE_READ_UNLOCK_IRQ is not set
+# CONFIG_INLINE_READ_UNLOCK_IRQRESTORE is not set
+# CONFIG_INLINE_WRITE_TRYLOCK is not set
+# CONFIG_INLINE_WRITE_LOCK is not set
+# CONFIG_INLINE_WRITE_LOCK_BH is not set
+# CONFIG_INLINE_WRITE_LOCK_IRQ is not set
+# CONFIG_INLINE_WRITE_LOCK_IRQSAVE is not set
+# CONFIG_INLINE_WRITE_UNLOCK is not set
+# CONFIG_INLINE_WRITE_UNLOCK_BH is not set
+# CONFIG_INLINE_WRITE_UNLOCK_IRQ is not set
+# CONFIG_INLINE_WRITE_UNLOCK_IRQRESTORE is not set
+# CONFIG_MUTEX_SPIN_ON_OWNER is not set
+CONFIG_FREEZER=y
+
+#
+# Processor type and features
+#
+CONFIG_ZONE_DMA=y
+CONFIG_SMP=y
+CONFIG_X86_MPPARSE=y
+CONFIG_X86_EXTENDED_PLATFORM=y
+CONFIG_SCHED_OMIT_FRAME_POINTER=y
+CONFIG_PARAVIRT_GUEST=y
+CONFIG_PARAVIRT_TIME_ACCOUNTING=y
+CONFIG_XEN=y
+# CONFIG_XEN_PRIVILEGED_GUEST is not set
+CONFIG_XEN_MAX_DOMAIN_MEMORY=500
+CONFIG_XEN_SAVE_RESTORE=y
+CONFIG_XEN_DEBUG_FS=y
+CONFIG_KVM_CLOCK=y
+CONFIG_KVM_GUEST=y
+CONFIG_PARAVIRT=y
+# CONFIG_PARAVIRT_SPINLOCKS is not set
+CONFIG_PARAVIRT_CLOCK=y
+# CONFIG_PARAVIRT_DEBUG is not set
+CONFIG_NO_BOOTMEM=y
+CONFIG_MEMTEST=y
+# CONFIG_MK8 is not set
+# CONFIG_MPSC is not set
+# CONFIG_MCORE2 is not set
+# CONFIG_MATOM is not set
+CONFIG_GENERIC_CPU=y
+CONFIG_X86_INTERNODE_CACHE_SHIFT=6
+CONFIG_X86_CMPXCHG=y
+CONFIG_X86_L1_CACHE_SHIFT=6
+CONFIG_X86_XADD=y
+CONFIG_X86_WP_WORKS_OK=y
+CONFIG_X86_TSC=y
+CONFIG_X86_CMPXCHG64=y
+CONFIG_X86_CMOV=y
+CONFIG_X86_MINIMUM_CPU_FAMILY=64
+CONFIG_X86_DEBUGCTLMSR=y
+# CONFIG_PROCESSOR_SELECT is not set
+CONFIG_CPU_SUP_INTEL=y
+CONFIG_CPU_SUP_AMD=y
+CONFIG_CPU_SUP_CENTAUR=y
+CONFIG_HPET_TIMER=y
+CONFIG_HPET_EMULATE_RTC=y
+# CONFIG_DMI is not set
+CONFIG_SWIOTLB=y
+CONFIG_IOMMU_HELPER=y
+# CONFIG_MAXSMP is not set
+CONFIG_NR_CPUS=8
+# CONFIG_SCHED_SMT is not set
+CONFIG_SCHED_MC=y
+CONFIG_IRQ_TIME_ACCOUNTING=y
+# CONFIG_PREEMPT_NONE is not set
+# CONFIG_PREEMPT_VOLUNTARY is not set
+CONFIG_PREEMPT=y
+CONFIG_PREEMPT_COUNT=y
+CONFIG_X86_LOCAL_APIC=y
+CONFIG_X86_IO_APIC=y
+CONFIG_X86_REROUTE_FOR_BROKEN_BOOT_IRQS=y
+# CONFIG_X86_MCE is not set
+CONFIG_I8K=m
+CONFIG_MICROCODE=m
+CONFIG_MICROCODE_INTEL=y
+# CONFIG_MICROCODE_AMD is not set
+CONFIG_MICROCODE_OLD_INTERFACE=y
+# CONFIG_X86_MSR is not set
+CONFIG_X86_CPUID=m
+CONFIG_ARCH_PHYS_ADDR_T_64BIT=y
+CONFIG_ARCH_DMA_ADDR_T_64BIT=y
+# CONFIG_DIRECT_GBPAGES is not set
+CONFIG_NUMA=y
+# CONFIG_NUMA_EMU is not set
+CONFIG_NODES_SHIFT=6
+CONFIG_ARCH_SPARSEMEM_ENABLE=y
+CONFIG_ARCH_SPARSEMEM_DEFAULT=y
+CONFIG_ARCH_SELECT_MEMORY_MODEL=y
+CONFIG_ARCH_MEMORY_PROBE=y
+CONFIG_ILLEGAL_POINTER_VALUE=0xdead000000000000
+CONFIG_SELECT_MEMORY_MODEL=y
+CONFIG_SPARSEMEM_MANUAL=y
+CONFIG_SPARSEMEM=y
+CONFIG_NEED_MULTIPLE_NODES=y
+CONFIG_HAVE_MEMORY_PRESENT=y
+CONFIG_SPARSEMEM_EXTREME=y
+CONFIG_SPARSEMEM_VMEMMAP_ENABLE=y
+CONFIG_SPARSEMEM_ALLOC_MEM_MAP_TOGETHER=y
+# CONFIG_SPARSEMEM_VMEMMAP is not set
+CONFIG_HAVE_MEMBLOCK=y
+CONFIG_HAVE_MEMBLOCK_NODE_MAP=y
+CONFIG_ARCH_DISCARD_MEMBLOCK=y
+CONFIG_MEMORY_HOTPLUG=y
+CONFIG_MEMORY_HOTPLUG_SPARSE=y
+# CONFIG_MEMORY_HOTREMOVE is not set
+CONFIG_PAGEFLAGS_EXTENDED=y
+CONFIG_SPLIT_PTLOCK_CPUS=999999
+CONFIG_COMPACTION=y
+CONFIG_MIGRATION=y
+CONFIG_PHYS_ADDR_T_64BIT=y
+CONFIG_ZONE_DMA_FLAG=1
+CONFIG_BOUNCE=y
+CONFIG_VIRT_TO_BUS=y
+CONFIG_MMU_NOTIFIER=y
+# CONFIG_KSM is not set
+CONFIG_DEFAULT_MMAP_MIN_ADDR=4096
+CONFIG_TRANSPARENT_HUGEPAGE=y
+# CONFIG_TRANSPARENT_HUGEPAGE_ALWAYS is not set
+CONFIG_TRANSPARENT_HUGEPAGE_MADVISE=y
+# CONFIG_CROSS_MEMORY_ATTACH is not set
+# CONFIG_CLEANCACHE is not set
+# CONFIG_FRONTSWAP is not set
+# CONFIG_X86_CHECK_BIOS_CORRUPTION is not set
+CONFIG_X86_RESERVE_LOW=64
+CONFIG_MTRR=y
+CONFIG_MTRR_SANITIZER=y
+CONFIG_MTRR_SANITIZER_ENABLE_DEFAULT=0
+CONFIG_MTRR_SANITIZER_SPARE_REG_NR_DEFAULT=1
+CONFIG_X86_PAT=y
+CONFIG_ARCH_USES_PG_UNCACHED=y
+# CONFIG_ARCH_RANDOM is not set
+CONFIG_SECCOMP=y
+CONFIG_CC_STACKPROTECTOR=y
+CONFIG_HZ_100=y
+# CONFIG_HZ_250 is not set
+# CONFIG_HZ_300 is not set
+# CONFIG_HZ_1000 is not set
+CONFIG_HZ=100
+CONFIG_SCHED_HRTICK=y
+# CONFIG_KEXEC is not set
+CONFIG_CRASH_DUMP=y
+CONFIG_PHYSICAL_START=0x1000000
+CONFIG_RELOCATABLE=y
+CONFIG_PHYSICAL_ALIGN=0x1000000
+CONFIG_HOTPLUG_CPU=y
+CONFIG_COMPAT_VDSO=y
+# CONFIG_CMDLINE_BOOL is not set
+CONFIG_ARCH_ENABLE_MEMORY_HOTPLUG=y
+CONFIG_ARCH_ENABLE_MEMORY_HOTREMOVE=y
+CONFIG_USE_PERCPU_NUMA_NODE_ID=y
+
+#
+# Power management and ACPI options
+#
+# CONFIG_SUSPEND is not set
+CONFIG_HIBERNATE_CALLBACKS=y
+# CONFIG_HIBERNATION is not set
+CONFIG_PM_SLEEP=y
+CONFIG_PM_SLEEP_SMP=y
+CONFIG_PM_AUTOSLEEP=y
+# CONFIG_PM_WAKELOCKS is not set
+CONFIG_PM_RUNTIME=y
+CONFIG_PM=y
+CONFIG_PM_DEBUG=y
+CONFIG_PM_ADVANCED_DEBUG=y
+CONFIG_PM_SLEEP_DEBUG=y
+# CONFIG_PM_TRACE_RTC is not set
+# CONFIG_SFI is not set
+
+#
+# CPU Frequency scaling
+#
+CONFIG_CPU_FREQ=y
+CONFIG_CPU_FREQ_TABLE=m
+CONFIG_CPU_FREQ_STAT=m
+# CONFIG_CPU_FREQ_STAT_DETAILS is not set
+# CONFIG_CPU_FREQ_DEFAULT_GOV_PERFORMANCE is not set
+CONFIG_CPU_FREQ_DEFAULT_GOV_POWERSAVE=y
+# CONFIG_CPU_FREQ_DEFAULT_GOV_USERSPACE is not set
+# CONFIG_CPU_FREQ_DEFAULT_GOV_ONDEMAND is not set
+# CONFIG_CPU_FREQ_DEFAULT_GOV_CONSERVATIVE is not set
+# CONFIG_CPU_FREQ_GOV_PERFORMANCE is not set
+CONFIG_CPU_FREQ_GOV_POWERSAVE=y
+CONFIG_CPU_FREQ_GOV_USERSPACE=m
+# CONFIG_CPU_FREQ_GOV_ONDEMAND is not set
+CONFIG_CPU_FREQ_GOV_CONSERVATIVE=m
+
+#
+# x86 CPU frequency scaling drivers
+#
+CONFIG_X86_P4_CLOCKMOD=m
+
+#
+# shared options
+#
+CONFIG_X86_SPEEDSTEP_LIB=m
+CONFIG_CPU_IDLE=y
+CONFIG_CPU_IDLE_GOV_LADDER=y
+# CONFIG_ARCH_NEEDS_CPU_IDLE_COUPLED is not set
+# CONFIG_INTEL_IDLE is not set
+
+#
+# Memory power savings
+#
+# CONFIG_I7300_IDLE is not set
+
+#
+# Bus options (PCI etc.)
+#
+# CONFIG_PCI is not set
+# CONFIG_ARCH_SUPPORTS_MSI is not set
+# CONFIG_ISA_DMA_API is not set
+# CONFIG_PCCARD is not set
+
+#
+# Executable file formats / Emulations
+#
+CONFIG_BINFMT_ELF=y
+CONFIG_COMPAT_BINFMT_ELF=y
+CONFIG_ARCH_BINFMT_ELF_RANDOMIZE_PIE=y
+# CONFIG_HAVE_AOUT is not set
+CONFIG_BINFMT_MISC=m
+CONFIG_IA32_EMULATION=y
+# CONFIG_IA32_AOUT is not set
+CONFIG_X86_X32=y
+CONFIG_COMPAT=y
+CONFIG_COMPAT_FOR_U64_ALIGNMENT=y
+CONFIG_SYSVIPC_COMPAT=y
+CONFIG_KEYS_COMPAT=y
+CONFIG_HAVE_TEXT_POKE_SMP=y
+CONFIG_X86_DEV_DMA_OPS=y
+CONFIG_NET=y
+
+#
+# Networking options
+#
+# CONFIG_PACKET is not set
+CONFIG_UNIX=y
+# CONFIG_UNIX_DIAG is not set
+# CONFIG_NET_KEY is not set
+# CONFIG_INET is not set
+# CONFIG_NETWORK_SECMARK is not set
+# CONFIG_NETWORK_PHY_TIMESTAMPING is not set
+# CONFIG_NETFILTER is not set
+# CONFIG_ATM is not set
+# CONFIG_BRIDGE is not set
+# CONFIG_VLAN_8021Q is not set
+# CONFIG_DECNET is not set
+# CONFIG_LLC2 is not set
+# CONFIG_IPX is not set
+# CONFIG_ATALK is not set
+# CONFIG_X25 is not set
+# CONFIG_LAPB is not set
+# CONFIG_WAN_ROUTER is not set
+# CONFIG_PHONET is not set
+# CONFIG_IEEE802154 is not set
+# CONFIG_NET_SCHED is not set
+# CONFIG_DCB is not set
+# CONFIG_DNS_RESOLVER is not set
+# CONFIG_BATMAN_ADV is not set
+# CONFIG_OPENVSWITCH is not set
+CONFIG_RPS=y
+CONFIG_RFS_ACCEL=y
+CONFIG_XPS=y
+# CONFIG_NETPRIO_CGROUP is not set
+CONFIG_BQL=y
+# CONFIG_BPF_JIT is not set
+
+#
+# Network testing
+#
+# CONFIG_HAMRADIO is not set
+# CONFIG_CAN is not set
+# CONFIG_IRDA is not set
+# CONFIG_BT is not set
+CONFIG_WIRELESS=y
+# CONFIG_CFG80211 is not set
+# CONFIG_LIB80211 is not set
+
+#
+# CFG80211 needs to be enabled for MAC80211
+#
+# CONFIG_WIMAX is not set
+# CONFIG_RFKILL is not set
+# CONFIG_NET_9P is not set
+# CONFIG_CAIF is not set
+# CONFIG_NFC is not set
+CONFIG_HAVE_BPF_JIT=y
+
+#
+# Device Drivers
+#
+
+#
+# Generic Driver Options
+#
+CONFIG_UEVENT_HELPER_PATH=""
+# CONFIG_DEVTMPFS is not set
+# CONFIG_STANDALONE is not set
+# CONFIG_PREVENT_FIRMWARE_BUILD is not set
+CONFIG_FW_LOADER=m
+CONFIG_FIRMWARE_IN_KERNEL=y
+CONFIG_EXTRA_FIRMWARE=""
+CONFIG_DEBUG_DRIVER=y
+# CONFIG_DEBUG_DEVRES is not set
+# CONFIG_SYS_HYPERVISOR is not set
+# CONFIG_GENERIC_CPU_DEVICES is not set
+# CONFIG_DMA_SHARED_BUFFER is not set
+# CONFIG_CONNECTOR is not set
+# CONFIG_MTD is not set
+CONFIG_PARPORT=m
+CONFIG_PARPORT_PC=m
+CONFIG_PARPORT_PC_FIFO=y
+# CONFIG_PARPORT_PC_SUPERIO is not set
+# CONFIG_PARPORT_GSC is not set
+# CONFIG_PARPORT_AX88796 is not set
+CONFIG_PARPORT_1284=y
+CONFIG_BLK_DEV=y
+# CONFIG_PARIDE is not set
+# CONFIG_BLK_DEV_COW_COMMON is not set
+# CONFIG_BLK_DEV_LOOP is not set
+
+#
+# DRBD disabled because PROC_FS, INET or CONNECTOR not selected
+#
+# CONFIG_BLK_DEV_NBD is not set
+# CONFIG_BLK_DEV_RAM is not set
+# CONFIG_CDROM_PKTCDVD is not set
+# CONFIG_ATA_OVER_ETH is not set
+CONFIG_XEN_BLKDEV_FRONTEND=y
+# CONFIG_BLK_DEV_HD is not set
+
+#
+# Misc devices
+#
+# CONFIG_SENSORS_LIS3LV02D is not set
+# CONFIG_ENCLOSURE_SERVICES is not set
+CONFIG_VMWARE_BALLOON=m
+CONFIG_C2PORT=m
+# CONFIG_C2PORT_DURAMAR_2150 is not set
+
+#
+# EEPROM support
+#
+# CONFIG_EEPROM_93CX6 is not set
+
+#
+# Texas Instruments shared transport line discipline
+#
+
+#
+# Altera FPGA firmware download module
+#
+CONFIG_HAVE_IDE=y
+CONFIG_IDE=m
+
+#
+# Please see Documentation/ide/ide.txt for help/info on IDE drives
+#
+CONFIG_IDE_XFER_MODE=y
+CONFIG_IDE_TIMINGS=y
+CONFIG_IDE_ATAPI=y
+# CONFIG_BLK_DEV_IDE_SATA is not set
+# CONFIG_IDE_GD is not set
+CONFIG_BLK_DEV_IDECD=m
+# CONFIG_BLK_DEV_IDECD_VERBOSE_ERRORS is not set
+# CONFIG_BLK_DEV_IDETAPE is not set
+CONFIG_IDE_TASK_IOCTL=y
+
+#
+# IDE chipset support/bugfixes
+#
+# CONFIG_IDE_GENERIC is not set
+CONFIG_BLK_DEV_PLATFORM=m
+CONFIG_BLK_DEV_CMD640=m
+# CONFIG_BLK_DEV_CMD640_ENHANCED is not set
+# CONFIG_BLK_DEV_IDEDMA is not set
+
+#
+# SCSI device support
+#
+CONFIG_SCSI_MOD=y
+# CONFIG_RAID_ATTRS is not set
+# CONFIG_SCSI is not set
+# CONFIG_SCSI_DMA is not set
+# CONFIG_SCSI_NETLINK is not set
+# CONFIG_ATA is not set
+# CONFIG_MD is not set
+CONFIG_MACINTOSH_DRIVERS=y
+# CONFIG_NETDEVICES is not set
+# CONFIG_ISDN is not set
+
+#
+# Input device support
+#
+CONFIG_INPUT=y
+CONFIG_INPUT_FF_MEMLESS=m
+CONFIG_INPUT_POLLDEV=m
+# CONFIG_INPUT_SPARSEKMAP is not set
+# CONFIG_INPUT_MATRIXKMAP is not set
+
+#
+# Userland interfaces
+#
+# CONFIG_INPUT_MOUSEDEV is not set
+CONFIG_INPUT_JOYDEV=m
+# CONFIG_INPUT_EVDEV is not set
+CONFIG_INPUT_EVBUG=m
+
+#
+# Input Device Drivers
+#
+CONFIG_INPUT_KEYBOARD=y
+CONFIG_KEYBOARD_ATKBD=y
+# CONFIG_KEYBOARD_LKKBD is not set
+# CONFIG_KEYBOARD_NEWTON is not set
+# CONFIG_KEYBOARD_OPENCORES is not set
+# CONFIG_KEYBOARD_STOWAWAY is not set
+# CONFIG_KEYBOARD_SUNKBD is not set
+# CONFIG_KEYBOARD_OMAP4 is not set
+# CONFIG_KEYBOARD_XTKBD is not set
+CONFIG_INPUT_MOUSE=y
+CONFIG_MOUSE_PS2=m
+# CONFIG_MOUSE_PS2_ALPS is not set
+# CONFIG_MOUSE_PS2_LOGIPS2PP is not set
+CONFIG_MOUSE_PS2_SYNAPTICS=y
+# CONFIG_MOUSE_PS2_TRACKPOINT is not set
+# CONFIG_MOUSE_PS2_ELANTECH is not set
+# CONFIG_MOUSE_PS2_SENTELIC is not set
+# CONFIG_MOUSE_PS2_TOUCHKIT is not set
+CONFIG_MOUSE_SERIAL=m
+CONFIG_MOUSE_VSXXXAA=m
+# CONFIG_INPUT_JOYSTICK is not set
+CONFIG_INPUT_TABLET=y
+CONFIG_INPUT_TOUCHSCREEN=y
+# CONFIG_TOUCHSCREEN_AD7879 is not set
+# CONFIG_TOUCHSCREEN_CYTTSP_CORE is not set
+CONFIG_TOUCHSCREEN_DYNAPRO=m
+CONFIG_TOUCHSCREEN_HAMPSHIRE=m
+# CONFIG_TOUCHSCREEN_FUJITSU is not set
+CONFIG_TOUCHSCREEN_GUNZE=m
+# CONFIG_TOUCHSCREEN_ELO is not set
+CONFIG_TOUCHSCREEN_WACOM_W8001=m
+CONFIG_TOUCHSCREEN_MTOUCH=m
+CONFIG_TOUCHSCREEN_INEXIO=m
+CONFIG_TOUCHSCREEN_MK712=m
+# CONFIG_TOUCHSCREEN_PENMOUNT is not set
+CONFIG_TOUCHSCREEN_TOUCHRIGHT=m
+# CONFIG_TOUCHSCREEN_TOUCHWIN is not set
+# CONFIG_TOUCHSCREEN_TOUCHIT213 is not set
+# CONFIG_TOUCHSCREEN_TSC_SERIO is not set
+# CONFIG_INPUT_MISC is not set
+CONFIG_INPUT_XEN_KBDDEV_FRONTEND=m
+
+#
+# Hardware I/O ports
+#
+CONFIG_SERIO=y
+CONFIG_SERIO_I8042=y
+# CONFIG_SERIO_SERPORT is not set
+CONFIG_SERIO_CT82C710=m
+CONFIG_SERIO_PARKBD=m
+CONFIG_SERIO_LIBPS2=y
+CONFIG_SERIO_RAW=m
+CONFIG_SERIO_ALTERA_PS2=m
+CONFIG_SERIO_PS2MULT=m
+# CONFIG_GAMEPORT is not set
+
+#
+# Character devices
+#
+# CONFIG_VT is not set
+# CONFIG_UNIX98_PTYS is not set
+# CONFIG_LEGACY_PTYS is not set
+# CONFIG_SERIAL_NONSTANDARD is not set
+# CONFIG_N_GSM is not set
+# CONFIG_TRACE_SINK is not set
+CONFIG_DEVKMEM=y
+
+#
+# Serial drivers
+#
+CONFIG_SERIAL_8250=y
+CONFIG_SERIAL_8250_CONSOLE=y
+CONFIG_FIX_EARLYCON_MEM=y
+CONFIG_SERIAL_8250_NR_UARTS=4
+CONFIG_SERIAL_8250_RUNTIME_UARTS=4
+CONFIG_SERIAL_8250_EXTENDED=y
+# CONFIG_SERIAL_8250_MANY_PORTS is not set
+# CONFIG_SERIAL_8250_SHARE_IRQ is not set
+# CONFIG_SERIAL_8250_DETECT_IRQ is not set
+# CONFIG_SERIAL_8250_RSA is not set
+
+#
+# Non-8250 serial port support
+#
+CONFIG_SERIAL_CORE=y
+CONFIG_SERIAL_CORE_CONSOLE=y
+CONFIG_SERIAL_TIMBERDALE=m
+CONFIG_SERIAL_ALTERA_JTAGUART=m
+CONFIG_SERIAL_ALTERA_UART=m
+CONFIG_SERIAL_ALTERA_UART_MAXPORTS=4
+CONFIG_SERIAL_ALTERA_UART_BAUDRATE=115200
+# CONFIG_SERIAL_XILINX_PS_UART is not set
+CONFIG_TTY_PRINTK=y
+CONFIG_PRINTER=m
+# CONFIG_LP_CONSOLE is not set
+# CONFIG_PPDEV is not set
+CONFIG_HVC_DRIVER=y
+CONFIG_HVC_IRQ=y
+CONFIG_HVC_XEN=y
+CONFIG_HVC_XEN_FRONTEND=y
+CONFIG_IPMI_HANDLER=m
+CONFIG_IPMI_PANIC_EVENT=y
+CONFIG_IPMI_PANIC_STRING=y
+# CONFIG_IPMI_DEVICE_INTERFACE is not set
+CONFIG_IPMI_SI=m
+# CONFIG_IPMI_WATCHDOG is not set
+CONFIG_IPMI_POWEROFF=m
+# CONFIG_HW_RANDOM is not set
+# CONFIG_NVRAM is not set
+# CONFIG_R3964 is not set
+CONFIG_MWAVE=m
+# CONFIG_RAW_DRIVER is not set
+CONFIG_HANGCHECK_TIMER=m
+CONFIG_TCG_TPM=y
+CONFIG_TCG_TIS=y
+CONFIG_TCG_NSC=m
+# CONFIG_TCG_ATMEL is not set
+CONFIG_TELCLOCK=m
+# CONFIG_I2C is not set
+# CONFIG_SPI is not set
+CONFIG_HSI=m
+CONFIG_HSI_BOARDINFO=y
+
+#
+# HSI clients
+#
+CONFIG_HSI_CHAR=m
+
+#
+# PPS support
+#
+# CONFIG_PPS is not set
+
+#
+# PPS generators support
+#
+
+#
+# PTP clock support
+#
+
+#
+# Enable Device Drivers -> PPS to see the PTP clock options.
+#
+CONFIG_ARCH_WANT_OPTIONAL_GPIOLIB=y
+# CONFIG_GPIOLIB is not set
+CONFIG_W1=m
+
+#
+# 1-wire Bus Masters
+#
+CONFIG_W1_MASTER_DS1WM=m
+
+#
+# 1-wire Slaves
+#
+CONFIG_W1_SLAVE_THERM=m
+CONFIG_W1_SLAVE_SMEM=m
+CONFIG_W1_SLAVE_DS2408=m
+CONFIG_W1_SLAVE_DS2423=m
+# CONFIG_W1_SLAVE_DS2431 is not set
+CONFIG_W1_SLAVE_DS2433=m
+CONFIG_W1_SLAVE_DS2433_CRC=y
+# CONFIG_W1_SLAVE_DS2760 is not set
+CONFIG_W1_SLAVE_DS2780=m
+CONFIG_W1_SLAVE_DS2781=m
+# CONFIG_W1_SLAVE_DS28E04 is not set
+CONFIG_W1_SLAVE_BQ27000=m
+CONFIG_POWER_SUPPLY=y
+# CONFIG_POWER_SUPPLY_DEBUG is not set
+# CONFIG_PDA_POWER is not set
+CONFIG_TEST_POWER=m
+# CONFIG_BATTERY_DS2780 is not set
+# CONFIG_BATTERY_DS2781 is not set
+# CONFIG_BATTERY_BQ27x00 is not set
+# CONFIG_CHARGER_MAX8903 is not set
+CONFIG_POWER_AVS=y
+CONFIG_HWMON=m
+CONFIG_HWMON_VID=m
+# CONFIG_HWMON_DEBUG_CHIP is not set
+
+#
+# Native drivers
+#
+# CONFIG_SENSORS_F71805F is not set
+CONFIG_SENSORS_F71882FG=m
+CONFIG_SENSORS_IBMAEM=m
+CONFIG_SENSORS_IBMPEX=m
+CONFIG_SENSORS_IT87=m
+CONFIG_SENSORS_NTC_THERMISTOR=m
+CONFIG_SENSORS_PC87360=m
+# CONFIG_SENSORS_PC87427 is not set
+CONFIG_SENSORS_SMSC47M1=m
+CONFIG_SENSORS_SMSC47B397=m
+CONFIG_SENSORS_SCH56XX_COMMON=m
+CONFIG_SENSORS_SCH5627=m
+# CONFIG_SENSORS_SCH5636 is not set
+# CONFIG_SENSORS_VIA_CPUTEMP is not set
+# CONFIG_SENSORS_VT1211 is not set
+# CONFIG_SENSORS_W83627HF is not set
+# CONFIG_SENSORS_W83627EHF is not set
+CONFIG_SENSORS_APPLESMC=m
+# CONFIG_THERMAL is not set
+CONFIG_WATCHDOG=y
+CONFIG_WATCHDOG_CORE=y
+# CONFIG_WATCHDOG_NOWAYOUT is not set
+
+#
+# Watchdog Device Drivers
+#
+CONFIG_SOFT_WATCHDOG=m
+# CONFIG_ACQUIRE_WDT is not set
+CONFIG_ADVANTECH_WDT=m
+# CONFIG_F71808E_WDT is not set
+# CONFIG_SC520_WDT is not set
+CONFIG_SBC_FITPC2_WATCHDOG=m
+# CONFIG_EUROTECH_WDT is not set
+# CONFIG_IB700_WDT is not set
+CONFIG_IBMASR=m
+CONFIG_WAFER_WDT=m
+# CONFIG_IT8712F_WDT is not set
+CONFIG_IT87_WDT=m
+# CONFIG_SC1200_WDT is not set
+# CONFIG_PC87413_WDT is not set
+CONFIG_60XX_WDT=m
+CONFIG_SBC8360_WDT=m
+# CONFIG_CPU5_WDT is not set
+# CONFIG_SMSC_SCH311X_WDT is not set
+CONFIG_SMSC37B787_WDT=m
+# CONFIG_W83627HF_WDT is not set
+CONFIG_W83697HF_WDT=m
+# CONFIG_W83697UG_WDT is not set
+CONFIG_W83877F_WDT=m
+# CONFIG_W83977F_WDT is not set
+# CONFIG_MACHZ_WDT is not set
+# CONFIG_SBC_EPX_C3_WATCHDOG is not set
+CONFIG_XEN_WDT=m
+CONFIG_SSB_POSSIBLE=y
+
+#
+# Sonics Silicon Backplane
+#
+CONFIG_SSB=m
+CONFIG_SSB_SDIOHOST_POSSIBLE=y
+# CONFIG_SSB_SDIOHOST is not set
+CONFIG_SSB_SILENT=y
+CONFIG_BCMA_POSSIBLE=y
+
+#
+# Broadcom specific AMBA
+#
+CONFIG_BCMA=m
+CONFIG_BCMA_DRIVER_GMAC_CMN=y
+# CONFIG_BCMA_DEBUG is not set
+
+#
+# Multifunction device drivers
+#
+CONFIG_MFD_CORE=m
+# CONFIG_MFD_SM501 is not set
+CONFIG_HTC_PASIC3=m
+# CONFIG_MFD_TMIO is not set
+# CONFIG_ABX500_CORE is not set
+# CONFIG_REGULATOR is not set
+# CONFIG_MEDIA_SUPPORT is not set
+
+#
+# Graphics support
+#
+# CONFIG_DRM is not set
+# CONFIG_VGASTATE is not set
+# CONFIG_VIDEO_OUTPUT_CONTROL is not set
+CONFIG_FB=m
+CONFIG_FIRMWARE_EDID=y
+# CONFIG_FB_DDC is not set
+# CONFIG_FB_BOOT_VESA_SUPPORT is not set
+CONFIG_FB_CFB_FILLRECT=m
+CONFIG_FB_CFB_COPYAREA=m
+CONFIG_FB_CFB_IMAGEBLIT=m
+# CONFIG_FB_CFB_REV_PIXELS_IN_BYTE is not set
+CONFIG_FB_SYS_FILLRECT=m
+CONFIG_FB_SYS_COPYAREA=m
+CONFIG_FB_SYS_IMAGEBLIT=m
+CONFIG_FB_FOREIGN_ENDIAN=y
+CONFIG_FB_BOTH_ENDIAN=y
+# CONFIG_FB_BIG_ENDIAN is not set
+# CONFIG_FB_LITTLE_ENDIAN is not set
+CONFIG_FB_SYS_FOPS=m
+# CONFIG_FB_WMT_GE_ROPS is not set
+CONFIG_FB_DEFERRED_IO=y
+CONFIG_FB_HECUBA=m
+# CONFIG_FB_SVGALIB is not set
+# CONFIG_FB_MACMODES is not set
+# CONFIG_FB_BACKLIGHT is not set
+# CONFIG_FB_MODE_HELPERS is not set
+# CONFIG_FB_TILEBLITTING is not set
+
+#
+# Frame buffer hardware drivers
+#
+CONFIG_FB_ARC=m
+# CONFIG_FB_VGA16 is not set
+CONFIG_FB_N411=m
+# CONFIG_FB_HGA is not set
+# CONFIG_FB_S1D13XXX is not set
+CONFIG_FB_TMIO=m
+CONFIG_FB_TMIO_ACCELL=y
+CONFIG_FB_VIRTUAL=m
+CONFIG_XEN_FBDEV_FRONTEND=m
+CONFIG_FB_METRONOME=m
+# CONFIG_FB_BROADSHEET is not set
+# CONFIG_FB_AUO_K190X is not set
+# CONFIG_EXYNOS_VIDEO is not set
+# CONFIG_BACKLIGHT_LCD_SUPPORT is not set
+CONFIG_LOGO=y
+# CONFIG_LOGO_LINUX_MONO is not set
+# CONFIG_LOGO_LINUX_VGA16 is not set
+CONFIG_LOGO_LINUX_CLUT224=y
+CONFIG_SOUND=m
+CONFIG_SOUND_OSS_CORE=y
+CONFIG_SOUND_OSS_CORE_PRECLAIM=y
+CONFIG_SND=m
+CONFIG_SND_TIMER=m
+CONFIG_SND_PCM=m
+CONFIG_SND_RAWMIDI=m
+CONFIG_SND_JACK=y
+CONFIG_SND_SEQUENCER=m
+# CONFIG_SND_SEQ_DUMMY is not set
+CONFIG_SND_OSSEMUL=y
+CONFIG_SND_MIXER_OSS=m
+# CONFIG_SND_PCM_OSS is not set
+# CONFIG_SND_SEQUENCER_OSS is not set
+CONFIG_SND_HRTIMER=m
+# CONFIG_SND_SEQ_HRTIMER_DEFAULT is not set
+# CONFIG_SND_DYNAMIC_MINORS is not set
+# CONFIG_SND_SUPPORT_OLD_API is not set
+# CONFIG_SND_VERBOSE_PRINTK is not set
+# CONFIG_SND_DEBUG is not set
+CONFIG_SND_DMA_SGBUF=y
+CONFIG_SND_RAWMIDI_SEQ=m
+# CONFIG_SND_OPL3_LIB_SEQ is not set
+# CONFIG_SND_OPL4_LIB_SEQ is not set
+# CONFIG_SND_SBAWE_SEQ is not set
+# CONFIG_SND_EMU10K1_SEQ is not set
+CONFIG_SND_MPU401_UART=m
+CONFIG_SND_DRIVERS=y
+# CONFIG_SND_DUMMY is not set
+CONFIG_SND_ALOOP=m
+CONFIG_SND_VIRMIDI=m
+# CONFIG_SND_MTPAV is not set
+# CONFIG_SND_MTS64 is not set
+# CONFIG_SND_SERIAL_U16550 is not set
+CONFIG_SND_MPU401=m
+# CONFIG_SND_PORTMAN2X4 is not set
+CONFIG_SND_SOC=m
+# CONFIG_SND_SOC_ALL_CODECS is not set
+# CONFIG_SND_SIMPLE_CARD is not set
+# CONFIG_SOUND_PRIME is not set
+
+#
+# HID support
+#
+CONFIG_HID=m
+CONFIG_HIDRAW=y
+# CONFIG_UHID is not set
+# CONFIG_HID_GENERIC is not set
+
+#
+# Special HID drivers
+#
+# CONFIG_USB_ARCH_HAS_OHCI is not set
+# CONFIG_USB_ARCH_HAS_EHCI is not set
+# CONFIG_USB_ARCH_HAS_XHCI is not set
+CONFIG_USB_SUPPORT=y
+# CONFIG_USB_ARCH_HAS_HCD is not set
+# CONFIG_USB_OTG_WHITELIST is not set
+# CONFIG_USB_OTG_BLACKLIST_HUB is not set
+# CONFIG_USB_HCD_BCMA is not set
+# CONFIG_USB_HCD_SSB is not set
+
+#
+# NOTE: USB_STORAGE depends on SCSI but BLK_DEV_SD may
+#
+# CONFIG_USB_GADGET is not set
+
+#
+# OTG and related infrastructure
+#
+CONFIG_MMC=m
+CONFIG_MMC_DEBUG=y
+CONFIG_MMC_UNSAFE_RESUME=y
+# CONFIG_MMC_CLKGATE is not set
+
+#
+# MMC/SD/SDIO Card Drivers
+#
+CONFIG_MMC_BLOCK=m
+CONFIG_MMC_BLOCK_MINORS=8
+# CONFIG_MMC_BLOCK_BOUNCE is not set
+# CONFIG_SDIO_UART is not set
+# CONFIG_MMC_TEST is not set
+
+#
+# MMC/SD/SDIO Host Controller Drivers
+#
+# CONFIG_MMC_SDHCI is not set
+# CONFIG_MEMSTICK is not set
+CONFIG_NEW_LEDS=y
+CONFIG_LEDS_CLASS=m
+
+#
+# LED drivers
+#
+CONFIG_LEDS_OT200=m
+# CONFIG_LEDS_TRIGGERS is not set
+
+#
+# LED Triggers
+#
+CONFIG_ACCESSIBILITY=y
+CONFIG_EDAC=y
+
+#
+# Reporting subsystems
+#
+CONFIG_EDAC_DEBUG=y
+# CONFIG_EDAC_MM_EDAC is not set
+CONFIG_RTC_LIB=y
+CONFIG_RTC_CLASS=y
+CONFIG_RTC_HCTOSYS=y
+CONFIG_RTC_HCTOSYS_DEVICE="rtc0"
+CONFIG_RTC_DEBUG=y
+
+#
+# RTC interfaces
+#
+# CONFIG_RTC_INTF_SYSFS is not set
+CONFIG_RTC_INTF_DEV=y
+CONFIG_RTC_INTF_DEV_UIE_EMUL=y
+# CONFIG_RTC_DRV_TEST is not set
+
+#
+# SPI RTC drivers
+#
+
+#
+# Platform RTC drivers
+#
+CONFIG_RTC_DRV_CMOS=m
+CONFIG_RTC_DRV_DS1286=m
+# CONFIG_RTC_DRV_DS1511 is not set
+CONFIG_RTC_DRV_DS1553=m
+# CONFIG_RTC_DRV_DS1742 is not set
+CONFIG_RTC_DRV_STK17TA8=m
+CONFIG_RTC_DRV_M48T86=m
+# CONFIG_RTC_DRV_M48T35 is not set
+# CONFIG_RTC_DRV_M48T59 is not set
+# CONFIG_RTC_DRV_MSM6242 is not set
+# CONFIG_RTC_DRV_BQ4802 is not set
+CONFIG_RTC_DRV_RP5C01=m
+CONFIG_RTC_DRV_V3020=m
+
+#
+# on-CPU RTC drivers
+#
+# CONFIG_DMADEVICES is not set
+# CONFIG_AUXDISPLAY is not set
+# CONFIG_UIO is not set
+
+#
+# Virtio drivers
+#
+# CONFIG_VIRTIO_BALLOON is not set
+# CONFIG_VIRTIO_MMIO is not set
+
+#
+# Microsoft Hyper-V guest support
+#
+
+#
+# Xen driver support
+#
+# CONFIG_XEN_BALLOON is not set
+# CONFIG_XEN_DEV_EVTCHN is not set
+# CONFIG_XENFS is not set
+# CONFIG_XEN_SYS_HYPERVISOR is not set
+CONFIG_XEN_XENBUS_FRONTEND=y
+CONFIG_XEN_GNTDEV=m
+# CONFIG_XEN_GRANT_DEV_ALLOC is not set
+CONFIG_XEN_PRIVCMD=m
+# CONFIG_STAGING is not set
+# CONFIG_X86_PLATFORM_DEVICES is not set
+
+#
+# Hardware Spinlock drivers
+#
+CONFIG_CLKEVT_I8253=y
+CONFIG_CLKBLD_I8253=y
+# CONFIG_IOMMU_SUPPORT is not set
+
+#
+# Remoteproc drivers (EXPERIMENTAL)
+#
+
+#
+# Rpmsg drivers (EXPERIMENTAL)
+#
+# CONFIG_VIRT_DRIVERS is not set
+# CONFIG_PM_DEVFREQ is not set
+# CONFIG_EXTCON is not set
+# CONFIG_MEMORY is not set
+# CONFIG_IIO is not set
+
+#
+# Firmware Drivers
+#
+# CONFIG_EDD is not set
+CONFIG_FIRMWARE_MEMMAP=y
+# CONFIG_DELL_RBU is not set
+CONFIG_DCDBAS=m
+# CONFIG_ISCSI_IBFT_FIND is not set
+CONFIG_GOOGLE_FIRMWARE=y
+
+#
+# Google Firmware Drivers
+#
+
+#
+# File systems
+#
+CONFIG_DCACHE_WORD_ACCESS=y
+CONFIG_EXT2_FS=m
+# CONFIG_EXT2_FS_XATTR is not set
+# CONFIG_EXT2_FS_XIP is not set
+# CONFIG_EXT3_FS is not set
+# CONFIG_EXT4_FS is not set
+CONFIG_REISERFS_FS=m
+CONFIG_REISERFS_CHECK=y
+CONFIG_REISERFS_FS_XATTR=y
+CONFIG_REISERFS_FS_POSIX_ACL=y
+CONFIG_REISERFS_FS_SECURITY=y
+CONFIG_JFS_FS=m
+# CONFIG_JFS_POSIX_ACL is not set
+CONFIG_JFS_SECURITY=y
+CONFIG_JFS_DEBUG=y
+CONFIG_JFS_STATISTICS=y
+# CONFIG_XFS_FS is not set
+CONFIG_GFS2_FS=m
+CONFIG_BTRFS_FS=m
+CONFIG_BTRFS_FS_POSIX_ACL=y
+# CONFIG_BTRFS_FS_CHECK_INTEGRITY is not set
+CONFIG_NILFS2_FS=m
+CONFIG_FS_POSIX_ACL=y
+CONFIG_FILE_LOCKING=y
+CONFIG_FSNOTIFY=y
+# CONFIG_DNOTIFY is not set
+CONFIG_INOTIFY_USER=y
+CONFIG_FANOTIFY=y
+CONFIG_FANOTIFY_ACCESS_PERMISSIONS=y
+CONFIG_QUOTA=y
+# CONFIG_QUOTA_NETLINK_INTERFACE is not set
+# CONFIG_PRINT_QUOTA_WARNING is not set
+# CONFIG_QUOTA_DEBUG is not set
+CONFIG_QUOTA_TREE=m
+# CONFIG_QFMT_V1 is not set
+CONFIG_QFMT_V2=m
+CONFIG_QUOTACTL=y
+CONFIG_QUOTACTL_COMPAT=y
+# CONFIG_AUTOFS4_FS is not set
+CONFIG_FUSE_FS=m
+CONFIG_CUSE=m
+
+#
+# Caches
+#
+CONFIG_FSCACHE=m
+CONFIG_FSCACHE_DEBUG=y
+CONFIG_CACHEFILES=m
+CONFIG_CACHEFILES_DEBUG=y
+
+#
+# CD-ROM/DVD Filesystems
+#
+CONFIG_ISO9660_FS=m
+# CONFIG_JOLIET is not set
+CONFIG_ZISOFS=y
+# CONFIG_UDF_FS is not set
+
+#
+# DOS/FAT/NT Filesystems
+#
+CONFIG_FAT_FS=m
+# CONFIG_MSDOS_FS is not set
+CONFIG_VFAT_FS=m
+CONFIG_FAT_DEFAULT_CODEPAGE=437
+CONFIG_FAT_DEFAULT_IOCHARSET="iso8859-1"
+# CONFIG_NTFS_FS is not set
+
+#
+# Pseudo filesystems
+#
+# CONFIG_PROC_FS is not set
+CONFIG_SYSFS=y
+CONFIG_HUGETLBFS=y
+CONFIG_HUGETLB_PAGE=y
+# CONFIG_CONFIGFS_FS is not set
+# CONFIG_MISC_FILESYSTEMS is not set
+CONFIG_NETWORK_FILESYSTEMS=y
+CONFIG_NLS=m
+CONFIG_NLS_DEFAULT="iso8859-1"
+# CONFIG_NLS_CODEPAGE_437 is not set
+CONFIG_NLS_CODEPAGE_737=m
+# CONFIG_NLS_CODEPAGE_775 is not set
+CONFIG_NLS_CODEPAGE_850=m
+CONFIG_NLS_CODEPAGE_852=m
+# CONFIG_NLS_CODEPAGE_855 is not set
+# CONFIG_NLS_CODEPAGE_857 is not set
+CONFIG_NLS_CODEPAGE_860=m
+# CONFIG_NLS_CODEPAGE_861 is not set
+# CONFIG_NLS_CODEPAGE_862 is not set
+# CONFIG_NLS_CODEPAGE_863 is not set
+CONFIG_NLS_CODEPAGE_864=m
+CONFIG_NLS_CODEPAGE_865=m
+CONFIG_NLS_CODEPAGE_866=m
+CONFIG_NLS_CODEPAGE_869=m
+# CONFIG_NLS_CODEPAGE_936 is not set
+# CONFIG_NLS_CODEPAGE_950 is not set
+# CONFIG_NLS_CODEPAGE_932 is not set
+CONFIG_NLS_CODEPAGE_949=m
+CONFIG_NLS_CODEPAGE_874=m
+CONFIG_NLS_ISO8859_8=m
+CONFIG_NLS_CODEPAGE_1250=m
+CONFIG_NLS_CODEPAGE_1251=m
+# CONFIG_NLS_ASCII is not set
+# CONFIG_NLS_ISO8859_1 is not set
+CONFIG_NLS_ISO8859_2=m
+CONFIG_NLS_ISO8859_3=m
+CONFIG_NLS_ISO8859_4=m
+CONFIG_NLS_ISO8859_5=m
+CONFIG_NLS_ISO8859_6=m
+# CONFIG_NLS_ISO8859_7 is not set
+CONFIG_NLS_ISO8859_9=m
+CONFIG_NLS_ISO8859_13=m
+CONFIG_NLS_ISO8859_14=m
+# CONFIG_NLS_ISO8859_15 is not set
+CONFIG_NLS_KOI8_R=m
+CONFIG_NLS_KOI8_U=m
+CONFIG_NLS_MAC_ROMAN=m
+CONFIG_NLS_MAC_CELTIC=m
+CONFIG_NLS_MAC_CENTEURO=m
+# CONFIG_NLS_MAC_CROATIAN is not set
+# CONFIG_NLS_MAC_CYRILLIC is not set
+CONFIG_NLS_MAC_GAELIC=m
+# CONFIG_NLS_MAC_GREEK is not set
+CONFIG_NLS_MAC_ICELAND=m
+# CONFIG_NLS_MAC_INUIT is not set
+CONFIG_NLS_MAC_ROMANIAN=m
+# CONFIG_NLS_MAC_TURKISH is not set
+# CONFIG_NLS_UTF8 is not set
+
+#
+# Kernel hacking
+#
+CONFIG_TRACE_IRQFLAGS_SUPPORT=y
+CONFIG_PRINTK_TIME=y
+CONFIG_DEFAULT_MESSAGE_LOGLEVEL=4
+# CONFIG_ENABLE_WARN_DEPRECATED is not set
+# CONFIG_ENABLE_MUST_CHECK is not set
+CONFIG_FRAME_WARN=2048
+CONFIG_MAGIC_SYSRQ=y
+# CONFIG_STRIP_ASM_SYMS is not set
+# CONFIG_READABLE_ASM is not set
+# CONFIG_UNUSED_SYMBOLS is not set
+CONFIG_DEBUG_FS=y
+CONFIG_HEADERS_CHECK=y
+CONFIG_DEBUG_SECTION_MISMATCH=y
+CONFIG_DEBUG_KERNEL=y
+# CONFIG_DEBUG_SHIRQ is not set
+# CONFIG_LOCKUP_DETECTOR is not set
+# CONFIG_HARDLOCKUP_DETECTOR is not set
+# CONFIG_PANIC_ON_OOPS is not set
+CONFIG_PANIC_ON_OOPS_VALUE=0
+CONFIG_DETECT_HUNG_TASK=y
+CONFIG_DEFAULT_HUNG_TASK_TIMEOUT=120
+CONFIG_BOOTPARAM_HUNG_TASK_PANIC=y
+CONFIG_BOOTPARAM_HUNG_TASK_PANIC_VALUE=1
+# CONFIG_DEBUG_OBJECTS is not set
+# CONFIG_SLUB_DEBUG_ON is not set
+# CONFIG_SLUB_STATS is not set
+# CONFIG_DEBUG_KMEMLEAK is not set
+# CONFIG_DEBUG_PREEMPT is not set
+# CONFIG_DEBUG_RT_MUTEXES is not set
+# CONFIG_RT_MUTEX_TESTER is not set
+CONFIG_DEBUG_SPINLOCK=y
+CONFIG_DEBUG_MUTEXES=y
+CONFIG_DEBUG_LOCK_ALLOC=y
+CONFIG_PROVE_LOCKING=y
+# CONFIG_PROVE_RCU is not set
+CONFIG_SPARSE_RCU_POINTER=y
+CONFIG_LOCKDEP=y
+CONFIG_LOCK_STAT=y
+# CONFIG_DEBUG_LOCKDEP is not set
+CONFIG_TRACE_IRQFLAGS=y
+# CONFIG_DEBUG_ATOMIC_SLEEP is not set
+CONFIG_DEBUG_LOCKING_API_SELFTESTS=y
+CONFIG_STACKTRACE=y
+CONFIG_DEBUG_STACK_USAGE=y
+# CONFIG_DEBUG_KOBJECT is not set
+CONFIG_DEBUG_BUGVERBOSE=y
+# CONFIG_DEBUG_INFO is not set
+CONFIG_DEBUG_VM=y
+# CONFIG_DEBUG_VIRTUAL is not set
+CONFIG_DEBUG_WRITECOUNT=y
+# CONFIG_DEBUG_MEMORY_INIT is not set
+CONFIG_DEBUG_LIST=y
+CONFIG_TEST_LIST_SORT=y
+# CONFIG_DEBUG_SG is not set
+CONFIG_DEBUG_NOTIFIERS=y
+# CONFIG_DEBUG_CREDENTIALS is not set
+CONFIG_ARCH_WANT_FRAME_POINTERS=y
+CONFIG_FRAME_POINTER=y
+# CONFIG_BOOT_PRINTK_DELAY is not set
+CONFIG_RCU_TORTURE_TEST=m
+CONFIG_RCU_CPU_STALL_TIMEOUT=60
+CONFIG_RCU_CPU_STALL_VERBOSE=y
+CONFIG_RCU_CPU_STALL_INFO=y
+CONFIG_RCU_TRACE=y
+CONFIG_KPROBES_SANITY_TEST=y
+# CONFIG_BACKTRACE_SELF_TEST is not set
+CONFIG_DEBUG_BLOCK_EXT_DEVT=y
+# CONFIG_DEBUG_FORCE_WEAK_PER_CPU is not set
+CONFIG_DEBUG_PER_CPU_MAPS=y
+CONFIG_LKDTM=m
+# CONFIG_CPU_NOTIFIER_ERROR_INJECT is not set
+# CONFIG_FAULT_INJECTION is not set
+# CONFIG_DEBUG_PAGEALLOC is not set
+CONFIG_USER_STACKTRACE_SUPPORT=y
+CONFIG_HAVE_FUNCTION_TRACER=y
+CONFIG_HAVE_FUNCTION_GRAPH_TRACER=y
+CONFIG_HAVE_FUNCTION_GRAPH_FP_TEST=y
+CONFIG_HAVE_FUNCTION_TRACE_MCOUNT_TEST=y
+CONFIG_HAVE_DYNAMIC_FTRACE=y
+CONFIG_HAVE_FTRACE_MCOUNT_RECORD=y
+CONFIG_HAVE_SYSCALL_TRACEPOINTS=y
+CONFIG_HAVE_C_RECORDMCOUNT=y
+CONFIG_TRACING_SUPPORT=y
+# CONFIG_FTRACE is not set
+CONFIG_BUILD_DOCSRC=y
+# CONFIG_DYNAMIC_DEBUG is not set
+CONFIG_DMA_API_DEBUG=y
+# CONFIG_ATOMIC64_SELFTEST is not set
+# CONFIG_SAMPLES is not set
+CONFIG_HAVE_ARCH_KGDB=y
+CONFIG_KGDB=y
+# CONFIG_KGDB_SERIAL_CONSOLE is not set
+CONFIG_KGDB_TESTS=y
+CONFIG_KGDB_TESTS_ON_BOOT=y
+CONFIG_KGDB_TESTS_BOOT_STRING="V1F100"
+CONFIG_KGDB_LOW_LEVEL_TRAP=y
+CONFIG_KGDB_KDB=y
+CONFIG_HAVE_ARCH_KMEMCHECK=y
+# CONFIG_KMEMCHECK is not set
+# CONFIG_TEST_KSTRTOX is not set
+CONFIG_STRICT_DEVMEM=y
+# CONFIG_X86_VERBOSE_BOOTUP is not set
+CONFIG_EARLY_PRINTK=y
+CONFIG_DEBUG_STACKOVERFLOW=y
+CONFIG_X86_PTDUMP=y
+CONFIG_DEBUG_RODATA=y
+CONFIG_DEBUG_RODATA_TEST=y
+# CONFIG_DEBUG_SET_MODULE_RONX is not set
+CONFIG_DEBUG_NX_TEST=m
+# CONFIG_DEBUG_TLBFLUSH is not set
+# CONFIG_IOMMU_STRESS is not set
+CONFIG_HAVE_MMIOTRACE_SUPPORT=y
+# CONFIG_X86_DECODER_SELFTEST is not set
+CONFIG_IO_DELAY_TYPE_0X80=0
+CONFIG_IO_DELAY_TYPE_0XED=1
+CONFIG_IO_DELAY_TYPE_UDELAY=2
+CONFIG_IO_DELAY_TYPE_NONE=3
+# CONFIG_IO_DELAY_0X80 is not set
+# CONFIG_IO_DELAY_0XED is not set
+CONFIG_IO_DELAY_UDELAY=y
+# CONFIG_IO_DELAY_NONE is not set
+CONFIG_DEFAULT_IO_DELAY_TYPE=2
+# CONFIG_DEBUG_BOOT_PARAMS is not set
+# CONFIG_CPA_DEBUG is not set
+CONFIG_OPTIMIZE_INLINING=y
+# CONFIG_DEBUG_STRICT_USER_COPY_CHECKS is not set
+# CONFIG_DEBUG_NMI_SELFTEST is not set
+
+#
+# Security options
+#
+CONFIG_KEYS=y
+# CONFIG_TRUSTED_KEYS is not set
+CONFIG_ENCRYPTED_KEYS=y
+# CONFIG_KEYS_DEBUG_PROC_KEYS is not set
+CONFIG_SECURITY_DMESG_RESTRICT=y
+CONFIG_SECURITY=y
+CONFIG_SECURITYFS=y
+CONFIG_SECURITY_NETWORK=y
+CONFIG_SECURITY_PATH=y
+# CONFIG_SECURITY_TOMOYO is not set
+# CONFIG_SECURITY_APPARMOR is not set
+CONFIG_SECURITY_YAMA=y
+CONFIG_INTEGRITY=y
+CONFIG_INTEGRITY_SIGNATURE=y
+CONFIG_IMA=y
+CONFIG_IMA_MEASURE_PCR_IDX=10
+CONFIG_EVM=y
+CONFIG_DEFAULT_SECURITY_YAMA=y
+# CONFIG_DEFAULT_SECURITY_DAC is not set
+CONFIG_DEFAULT_SECURITY="yama"
+CONFIG_CRYPTO=y
+
+#
+# Crypto core or helper
+#
+# CONFIG_CRYPTO_FIPS is not set
+CONFIG_CRYPTO_ALGAPI=y
+CONFIG_CRYPTO_ALGAPI2=y
+CONFIG_CRYPTO_AEAD=m
+CONFIG_CRYPTO_AEAD2=y
+CONFIG_CRYPTO_BLKCIPHER=y
+CONFIG_CRYPTO_BLKCIPHER2=y
+CONFIG_CRYPTO_HASH=y
+CONFIG_CRYPTO_HASH2=y
+CONFIG_CRYPTO_RNG=y
+CONFIG_CRYPTO_RNG2=y
+CONFIG_CRYPTO_PCOMP2=y
+CONFIG_CRYPTO_MANAGER=y
+CONFIG_CRYPTO_MANAGER2=y
+# CONFIG_CRYPTO_USER is not set
+# CONFIG_CRYPTO_MANAGER_DISABLE_TESTS is not set
+CONFIG_CRYPTO_GF128MUL=m
+CONFIG_CRYPTO_NULL=m
+# CONFIG_CRYPTO_PCRYPT is not set
+CONFIG_CRYPTO_WORKQUEUE=y
+CONFIG_CRYPTO_CRYPTD=m
+CONFIG_CRYPTO_AUTHENC=m
+CONFIG_CRYPTO_TEST=m
+CONFIG_CRYPTO_ABLK_HELPER_X86=m
+CONFIG_CRYPTO_GLUE_HELPER_X86=m
+
+#
+# Authenticated Encryption with Associated Data
+#
+# CONFIG_CRYPTO_CCM is not set
+CONFIG_CRYPTO_GCM=m
+CONFIG_CRYPTO_SEQIV=m
+
+#
+# Block modes
+#
+CONFIG_CRYPTO_CBC=y
+CONFIG_CRYPTO_CTR=m
+# CONFIG_CRYPTO_CTS is not set
+CONFIG_CRYPTO_ECB=m
+CONFIG_CRYPTO_LRW=m
+CONFIG_CRYPTO_PCBC=m
+CONFIG_CRYPTO_XTS=m
+
+#
+# Hash modes
+#
+CONFIG_CRYPTO_HMAC=y
+CONFIG_CRYPTO_XCBC=m
+CONFIG_CRYPTO_VMAC=m
+
+#
+# Digest
+#
+CONFIG_CRYPTO_CRC32C=m
+# CONFIG_CRYPTO_CRC32C_INTEL is not set
+CONFIG_CRYPTO_GHASH=m
+# CONFIG_CRYPTO_MD4 is not set
+CONFIG_CRYPTO_MD5=y
+CONFIG_CRYPTO_MICHAEL_MIC=m
+# CONFIG_CRYPTO_RMD128 is not set
+# CONFIG_CRYPTO_RMD160 is not set
+CONFIG_CRYPTO_RMD256=m
+# CONFIG_CRYPTO_RMD320 is not set
+CONFIG_CRYPTO_SHA1=y
+# CONFIG_CRYPTO_SHA1_SSSE3 is not set
+CONFIG_CRYPTO_SHA256=y
+# CONFIG_CRYPTO_SHA512 is not set
+# CONFIG_CRYPTO_TGR192 is not set
+CONFIG_CRYPTO_WP512=m
+# CONFIG_CRYPTO_GHASH_CLMUL_NI_INTEL is not set
+
+#
+# Ciphers
+#
+CONFIG_CRYPTO_AES=y
+# CONFIG_CRYPTO_AES_X86_64 is not set
+# CONFIG_CRYPTO_AES_NI_INTEL is not set
+CONFIG_CRYPTO_ANUBIS=m
+CONFIG_CRYPTO_ARC4=m
+CONFIG_CRYPTO_BLOWFISH=m
+CONFIG_CRYPTO_BLOWFISH_COMMON=m
+# CONFIG_CRYPTO_BLOWFISH_X86_64 is not set
+CONFIG_CRYPTO_CAMELLIA=m
+# CONFIG_CRYPTO_CAMELLIA_X86_64 is not set
+CONFIG_CRYPTO_CAST5=m
+CONFIG_CRYPTO_CAST6=m
+# CONFIG_CRYPTO_DES is not set
+# CONFIG_CRYPTO_FCRYPT is not set
+# CONFIG_CRYPTO_KHAZAD is not set
+# CONFIG_CRYPTO_SALSA20 is not set
+CONFIG_CRYPTO_SALSA20_X86_64=m
+CONFIG_CRYPTO_SEED=m
+CONFIG_CRYPTO_SERPENT=m
+# CONFIG_CRYPTO_SERPENT_SSE2_X86_64 is not set
+CONFIG_CRYPTO_SERPENT_AVX_X86_64=m
+# CONFIG_CRYPTO_TEA is not set
+# CONFIG_CRYPTO_TWOFISH is not set
+CONFIG_CRYPTO_TWOFISH_COMMON=m
+CONFIG_CRYPTO_TWOFISH_X86_64=m
+CONFIG_CRYPTO_TWOFISH_X86_64_3WAY=m
+CONFIG_CRYPTO_TWOFISH_AVX_X86_64=m
+
+#
+# Compression
+#
+CONFIG_CRYPTO_DEFLATE=m
+# CONFIG_CRYPTO_ZLIB is not set
+CONFIG_CRYPTO_LZO=m
+
+#
+# Random Number Generation
+#
+CONFIG_CRYPTO_ANSI_CPRNG=m
+# CONFIG_CRYPTO_USER_API_HASH is not set
+# CONFIG_CRYPTO_USER_API_SKCIPHER is not set
+# CONFIG_CRYPTO_HW is not set
+CONFIG_HAVE_KVM=y
+# CONFIG_VIRTUALIZATION is not set
+# CONFIG_BINARY_PRINTF is not set
+
+#
+# Library routines
+#
+CONFIG_BITREVERSE=y
+CONFIG_GENERIC_STRNCPY_FROM_USER=y
+CONFIG_GENERIC_STRNLEN_USER=y
+CONFIG_GENERIC_FIND_FIRST_BIT=y
+CONFIG_GENERIC_PCI_IOMAP=y
+CONFIG_GENERIC_IOMAP=y
+CONFIG_GENERIC_IO=y
+CONFIG_CRC_CCITT=m
+CONFIG_CRC16=m
+# CONFIG_CRC_T10DIF is not set
+# CONFIG_CRC_ITU_T is not set
+CONFIG_CRC32=y
+CONFIG_CRC32_SELFTEST=y
+# CONFIG_CRC32_SLICEBY8 is not set
+# CONFIG_CRC32_SLICEBY4 is not set
+CONFIG_CRC32_SARWATE=y
+# CONFIG_CRC32_BIT is not set
+CONFIG_CRC7=m
+CONFIG_LIBCRC32C=m
+CONFIG_CRC8=m
+CONFIG_ZLIB_INFLATE=y
+CONFIG_ZLIB_DEFLATE=m
+CONFIG_LZO_COMPRESS=m
+CONFIG_LZO_DECOMPRESS=m
+CONFIG_XZ_DEC=m
+# CONFIG_XZ_DEC_X86 is not set
+# CONFIG_XZ_DEC_POWERPC is not set
+CONFIG_XZ_DEC_IA64=y
+# CONFIG_XZ_DEC_ARM is not set
+CONFIG_XZ_DEC_ARMTHUMB=y
+# CONFIG_XZ_DEC_SPARC is not set
+CONFIG_XZ_DEC_BCJ=y
+# CONFIG_XZ_DEC_TEST is not set
+CONFIG_DECOMPRESS_GZIP=y
+CONFIG_HAS_IOMEM=y
+CONFIG_HAS_IOPORT=y
+CONFIG_HAS_DMA=y
+CONFIG_CPUMASK_OFFSTACK=y
+CONFIG_CPU_RMAP=y
+CONFIG_DQL=y
+CONFIG_NLATTR=y
+CONFIG_AVERAGE=y
+CONFIG_CLZ_TAB=y
+CONFIG_CORDIC=m
+# CONFIG_DDR is not set
+CONFIG_MPILIB=y
+CONFIG_SIGNATURE=y
+
+--8t9RHnE3ZwKMSgU+--

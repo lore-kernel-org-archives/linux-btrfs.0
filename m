@@ -1,45 +1,48 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from brockman.in8.de ([85.214.220.56]:59598 "EHLO mail.in8.de"
+Received: from mx2.fusionio.com ([66.114.96.31]:42694 "EHLO mx2.fusionio.com"
 	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1752974Ab2HBO2L (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 2 Aug 2012 10:28:11 -0400
-Message-ID: <501A8E7A.6070601@jan-o-sch.net>
-Date: Thu, 02 Aug 2012 16:28:10 +0200
-From: Jan Schmidt <list.btrfs@jan-o-sch.net>
+	id S1752533Ab2HBOU4 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Thu, 2 Aug 2012 10:20:56 -0400
+Received: from mail1.int.fusionio.com (mail1.int.fusionio.com [10.101.1.21]) by mx2.fusionio.com with ESMTP id 3SdOzKV9oXTHODCX (version=TLSv1 cipher=AES128-SHA bits=128 verify=NO) for <linux-btrfs@vger.kernel.org>; Thu, 02 Aug 2012 08:20:55 -0600 (MDT)
+From: Josef Bacik <jbacik@fusionio.com>
+To: <linux-btrfs@vger.kernel.org>
+Subject: [PATCH] Btrfs: do not use missing devices when showing devname
+Date: Thu, 2 Aug 2012 10:25:58 -0400
+Message-ID: <1343917558-1883-1-git-send-email-jbacik@fusionio.com>
 MIME-Version: 1.0
-To: Liu Bo <liub.liubo@gmail.com>
-CC: Arne Jansen <sensille@gmx.net>, linux-btrfs <linux-btrfs@vger.kernel.org>,
-        "Behrens, Stefan" <sbehrens@strato-rz.de>
-Subject: Re: [PATCH v2] Btrfs: remove superblock writing after fatal error
-References: <1343821552-28726-1-git-send-email-sbehrens@giantdisaster.de> <50191AD3.9080401@gmail.com> <50192A11.3060109@jan-o-sch.net> <50192FCE.30006@gmail.com> <50193DDA.20504@giantdisaster.de> <501A56E3.3080401@giantdisaster.de> <501A583D.8030600@gmail.com> <501A61ED.3000908@gmx.net> <501A65B9.5060004@gmail.com> <501A6731.4000405@gmx.net> <501A6B0D.6050303@gmail.com> <501A84CA.10604@gmx.net>
-In-Reply-To: <501A84CA.10604@gmx.net>
-Content-Type: text/plain; charset=ISO-8859-1
+Content-Type: text/plain
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Thu, August 02, 2012 at 15:46 (+0200), Arne Jansen wrote:
-> On 02.08.2012 13:57, Liu Bo wrote:
->> Anyway, for now, our error flag has only been stored in memory, so what
->> about just keep it until we find a graceful way?
-> 
-> Yeah, we need this patch to restore consistency. We can define a fixed
-> area on disk (e.g. behind the superblock) where we can write the flag
-> to without risking the superblock.
+If you do the following
 
-At least we all agree that we need this patch, fine.
+mkfs.btrfs /dev/sdb /dev/sdc
+rmmod btrfs
+dd if=/dev/zero of=/dev/sdb bs=1M count=1
+mount -o degraded /dev/sdc /mnt/btrfs-test
 
-We don't yet agree that we need a place to store a "please consider fsck" flag.
-Can I please get one concrete example in which situation we
-
-a) do detect the user should really do a file system check AND
-b) do not abort the transaction to clean the mess up?
-
-(An example on how we could fail transaction cleanup is also accepted).
-
-If such a situation doesn't exist, there's no need for this flag. The fact that
-ext has such a flag doesn't convince me, probably because I know nothing about
-ext. I can imagine that they can detect file system errors without the ability
-to return to a potentially older consistent state.
-
+the box will panic trying to deref the name for the missing dev since it is
+the lower numbered devid.  So fix show_devname to not use missing devices.
 Thanks,
--Jan
+
+Signed-off-by: Josef Bacik <jbacik@fusionio.com>
+---
+ fs/btrfs/super.c |    2 ++
+ 1 files changed, 2 insertions(+), 0 deletions(-)
+
+diff --git a/fs/btrfs/super.c b/fs/btrfs/super.c
+index fa61ef5..ffcfe49 100644
+--- a/fs/btrfs/super.c
++++ b/fs/btrfs/super.c
+@@ -1505,6 +1505,8 @@ static int btrfs_show_devname(struct seq_file *m, struct dentry *root)
+ 	while (cur_devices) {
+ 		head = &cur_devices->devices;
+ 		list_for_each_entry(dev, head, dev_list) {
++			if (dev->missing)
++				continue;
+ 			if (!first_dev || dev->devid < first_dev->devid)
+ 				first_dev = dev;
+ 		}
+-- 
+1.7.7.6
+

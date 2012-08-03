@@ -1,236 +1,852 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([222.73.24.84]:35523 "EHLO song.cn.fujitsu.com"
-	rhost-flags-OK-FAIL-OK-OK) by vger.kernel.org with ESMTP
-	id S1751268Ab2HCBya (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 2 Aug 2012 21:54:30 -0400
-Message-ID: <501B2F20.7080903@cn.fujitsu.com>
-Date: Fri, 03 Aug 2012 09:53:36 +0800
-From: Miao Xie <miaox@cn.fujitsu.com>
-Reply-To: miaox@cn.fujitsu.com
+Received: from mail-yw0-f46.google.com ([209.85.213.46]:60383 "EHLO
+	mail-yw0-f46.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1751056Ab2HCHLc (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Fri, 3 Aug 2012 03:11:32 -0400
+Received: by yhmm54 with SMTP id m54so457159yhm.19
+        for <linux-btrfs@vger.kernel.org>; Fri, 03 Aug 2012 00:11:32 -0700 (PDT)
 MIME-Version: 1.0
-To: Linux Btrfs <linux-btrfs@vger.kernel.org>,
-        Josef Bacik <jbacik@fusionio.com>,
-        Wu Fengguang <fengguang.wu@intel.com>,
-        Seto Hidetoshi <seto.hidetoshi@jp.fujitsu.com>,
-        David Sterba <dave@jikos.cz>
-Subject: Re: [PATCH V3 2/2] Btrfs: fix the snapshot that should not exist
-References: <501A04CE.9090408@cn.fujitsu.com> <20120802114631.GM17430@twin.jikos.cz>
-In-Reply-To: <20120802114631.GM17430@twin.jikos.cz>
+Date: Fri, 3 Aug 2012 09:11:31 +0200
+Message-ID: <CAB9VWqBANPS9eQ6reVDBsE-cssp_sEPK2aDAXyQHLtHkBXV_BA@mail.gmail.com>
+Subject: wait_for_more_refs not waking up
+From: Alexander Block <ablock84@googlemail.com>
+To: linux-btrfs@vger.kernel.org
 Content-Type: text/plain; charset=ISO-8859-1
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Thu, 2 Aug 2012 13:46:31 +0200, David Sterba wrote:
-> Hi,
-> 
-> appologies for late reply,
-> 
-> On Thu, Aug 02, 2012 at 12:40:46PM +0800, Miao Xie wrote:
->> Changelog v1 -> v2:
->> - add comment to explain why we need deal with the delayed items after
->>   snapshot creation and why this operation do not corrupt the metadata.
-> 
-> I'm sorry, the comment did not fix the bug :)
-> 
-> The subvol stress is able to hit this:
-> 
-> [ 2360.444321] ------------[ cut here ]------------
-> [ 2360.448019] kernel BUG at fs/btrfs/extent-tree.c:6047!
-> [ 2360.448019] invalid opcode: 0000 [#1] SMP
-> [ 2360.448019] CPU 0
-> [ 2360.448019] Modules linked in: btrfs aoe [last unloaded: btrfs]
-> [ 2360.448019]
-> [ 2360.448019] Pid: 8212, comm: btrfs Not tainted 3.5.0-default+ #170 Intel Corporation Santa Rosa platform/Matanzas
-> [ 2360.448019] RIP: 0010:[<ffffffffa00f62a1>]  [<ffffffffa00f62a1>] run_clustered_refs+0xa11/0xa20 [btrfs]
-> [ 2360.448019] RSP: 0018:ffff88003eca1a68  EFLAGS: 00010246
-> [ 2360.448019] RAX: 00000000000007ff RBX: ffff880017a694c8 RCX: ffff88003eca1a08
-> [ 2360.448019] RDX: ffff880028aa9000 RSI: 00000000000007fe RDI: ffff880064223cf0
-> [ 2360.448019] RBP: ffff88003eca1b48 R08: 00000000000007ff R09: ffff88003eca19f8
-> [ 2360.448019] R10: ffff88002435d1e8 R11: 0000000000000000 R12: ffff880025d66d28
-> [ 2360.448019] R13: ffff880038640000 R14: ffff8800778dfa88 R15: ffff880060f010d0
-> [ 2360.448019] FS:  00007f3289f35740(0000) GS:ffff88007dc00000(0000) knlGS:0000000000000000
-> [ 2360.448019] CS:  0010 DS: 0000 ES: 0000 CR0: 000000008005003b
-> [ 2360.448019] CR2: ffffffffff600400 CR3: 000000002e112000 CR4: 00000000000007f0
-> [ 2360.448019] DR0: 0000000000000000 DR1: 0000000000000000 DR2: 0000000000000000
-> [ 2360.448019] DR3: 0000000000000000 DR6: 00000000ffff0ff0 DR7: 0000000000000400
-> [ 2360.448019] Process btrfs (pid: 8212, threadinfo ffff88003eca0000, task ffff88001d834200)
-> [ 2360.448019] Stack:
-> [ 2360.448019]  0000000000000000 0000000000000000 0000000000000001 0000000000000000
-> [ 2360.448019]  00000000000007ed ffff88002435d1e8 000000003eca1b18 0000000000000000
-> [ 2360.448019]  0000000000000770 0000000000000000 000000005cb1e000 ffff88003eca1c08
-> [ 2360.448019] Call Trace:
-> [ 2360.448019]  [<ffffffffa00f6479>] btrfs_run_delayed_refs+0x1c9/0x550 [btrfs]
-> [ 2360.448019]  [<ffffffff810a4d15>] ? trace_hardirqs_on_caller+0x155/0x1d0
-> [ 2360.448019]  [<ffffffffa00e306a>] ? btrfs_free_path+0x2a/0x40 [btrfs]
-> [ 2360.448019]  [<ffffffffa015c741>] ? btrfs_run_delayed_items+0xf1/0x160 [btrfs]
-> [ 2360.448019]  [<ffffffffa0108a15>] btrfs_commit_transaction+0x605/0xb00 [btrfs]
-> [ 2360.448019]  [<ffffffff8109e70d>] ? lock_release_holdtime+0x3d/0x1c0
-> [ 2360.448019]  [<ffffffffa013fc88>] ? btrfs_mksubvol+0x298/0x360 [btrfs]
-> [ 2360.448019]  [<ffffffff8106d210>] ? wake_up_bit+0x40/0x40
-> [ 2360.448019]  [<ffffffff8137d88e>] ? do_raw_spin_unlock+0x5e/0xb0
-> [ 2360.448019]  [<ffffffffa013fd48>] btrfs_mksubvol+0x358/0x360 [btrfs]
-> [ 2360.448019]  [<ffffffffa013fe5a>] btrfs_ioctl_snap_create_transid+0x10a/0x190 [btrfs]
-> [ 2360.448019]  [<ffffffffa014005d>] btrfs_ioctl_snap_create_v2.clone.0+0xfd/0x110 [btrfs]
-> [ 2360.448019]  [<ffffffffa01419ee>] btrfs_ioctl+0x48e/0x1340 [btrfs]
-> [ 2360.448019]  [<ffffffff818f0f00>] ? do_page_fault+0x2d0/0x580
-> [ 2360.448019]  [<ffffffff818eca70>] ? _raw_spin_unlock_irq+0x30/0x50
-> [ 2360.448019]  [<ffffffff81078463>] ? finish_task_switch+0x83/0xf0
-> [ 2360.448019]  [<ffffffff81161d08>] do_vfs_ioctl+0x98/0x560
-> [ 2360.448019]  [<ffffffff818ed215>] ? retint_swapgs+0x13/0x1b
-> [ 2360.448019]  [<ffffffff8116221f>] sys_ioctl+0x4f/0x80
-> [ 2360.448019]  [<ffffffff818f56e9>] system_call_fastpath+0x16/0x1b
-> [ 2360.448019] Code: 8b 76 40 48 89 d7 48 89 55 a0 e8 2b 74 ff ff 83 f8 17 0f 87 1e ff ff ff 0f 0b 80 fa b2 0f 84 b4 f8 ff ff 0f 0b 0f 0b 0f 0b 0f 0b <0f> 0b 0f 0b 0f 0b 0f 0b 0f 1f 80 00 00 00 00 55 48 89 e5 41 57
-> [ 2360.448019] RIP  [<ffffffffa00f62a1>] run_clustered_refs+0xa11/0xa20 [btrfs]
-> [ 2360.448019]  RSP <ffff88003eca1a68>
-> [ 2360.814508] ---[ end trace 555a16cac3620ccb ]---
-> [ 2360.820398] note: btrfs[8212] exited with preempt_count 1
-> [ 2360.827072] BUG: sleeping function called from invalid context at kernel/rwsem.c:20
-> [ 2360.836047] in_atomic(): 1, irqs_disabled(): 0, pid: 8212, name: btrfs
-> [ 2360.843859] INFO: lockdep is turned off.
-> [ 2360.849021] Pid: 8212, comm: btrfs Tainted: G      D      3.5.0-default+ #170
-> [ 2360.849022] Call Trace:
-> [ 2360.849027]  [<ffffffff8107a40c>] __might_sleep+0xfc/0x130
-> [ 2360.849030]  [<ffffffff818ea0f6>] down_read+0x26/0xa0
-> [ 2360.849034]  [<ffffffff810b416b>] acct_collect+0x4b/0x1b0
-> [ 2360.849038]  [<ffffffff8104c838>] do_exit+0x718/0x9a0
-> [ 2360.849041]  [<ffffffff81049a26>] ? kmsg_dump+0x26/0x140
-> [ 2360.849043]  [<ffffffff818ee0c0>] oops_end+0xb0/0xf0
-> [ 2360.849046]  [<ffffffff81005a7b>] die+0x5b/0x90
-> [ 2360.849048]  [<ffffffff818ed9a4>] do_trap+0xc4/0x170
-> [ 2360.849052]  [<ffffffff810030a5>] do_invalid_op+0x95/0xb0
-> [ 2360.849067]  [<ffffffffa00f62a1>] ? run_clustered_refs+0xa11/0xa20 [btrfs]
-> [ 2360.849071]  [<ffffffff813779dd>] ? trace_hardirqs_off_thunk+0x3a/0x3c
-> [ 2360.849073]  [<ffffffff818ed260>] ? restore_args+0x30/0x30
-> [ 2360.849076]  [<ffffffff818f674b>] invalid_op+0x1b/0x20
-> [ 2360.849087]  [<ffffffffa00f62a1>] ? run_clustered_refs+0xa11/0xa20 [btrfs]
-> [ 2360.849097]  [<ffffffffa00f5f2b>] ? run_clustered_refs+0x69b/0xa20 [btrfs]
-> [ 2360.849108]  [<ffffffffa00f6479>] btrfs_run_delayed_refs+0x1c9/0x550 [btrfs]
-> [ 2360.849110]  [<ffffffff810a4d15>] ? trace_hardirqs_on_caller+0x155/0x1d0
-> [ 2360.849119]  [<ffffffffa00e306a>] ? btrfs_free_path+0x2a/0x40 [btrfs]
-> [ 2360.849133]  [<ffffffffa015c741>] ? btrfs_run_delayed_items+0xf1/0x160 [btrfs]
-> [ 2360.849145]  [<ffffffffa0108a15>] btrfs_commit_transaction+0x605/0xb00 [btrfs]
-> [ 2360.849148]  [<ffffffff8109e70d>] ? lock_release_holdtime+0x3d/0x1c0
-> [ 2360.849161]  [<ffffffffa013fc88>] ? btrfs_mksubvol+0x298/0x360 [btrfs]
-> [ 2360.849164]  [<ffffffff8106d210>] ? wake_up_bit+0x40/0x40
-> [ 2360.849166]  [<ffffffff8137d88e>] ? do_raw_spin_unlock+0x5e/0xb0
-> [ 2360.849180]  [<ffffffffa013fd48>] btrfs_mksubvol+0x358/0x360 [btrfs]
-> [ 2360.849194]  [<ffffffffa013fe5a>] btrfs_ioctl_snap_create_transid+0x10a/0x190 [btrfs]
-> [ 2360.849207]  [<ffffffffa014005d>] btrfs_ioctl_snap_create_v2.clone.0+0xfd/0x110 [btrfs]
-> [ 2360.849221]  [<ffffffffa01419ee>] btrfs_ioctl+0x48e/0x1340 [btrfs]
-> [ 2360.849224]  [<ffffffff818f0f00>] ? do_page_fault+0x2d0/0x580
-> [ 2360.849226]  [<ffffffff818eca70>] ? _raw_spin_unlock_irq+0x30/0x50
-> [ 2360.849229]  [<ffffffff81078463>] ? finish_task_switch+0x83/0xf0
-> [ 2360.849231]  [<ffffffff81161d08>] do_vfs_ioctl+0x98/0x560
-> [ 2360.849234]  [<ffffffff818ed215>] ? retint_swapgs+0x13/0x1b
-> [ 2360.849236]  [<ffffffff8116221f>] sys_ioctl+0x4f/0x80
-> [ 2360.849239]  [<ffffffff818f56e9>] system_call_fastpath+0x16/0x1b
-> [ 2360.849255] BUG: scheduling while atomic: btrfs/8212/0x10000002
-> [ 2360.849256] INFO: lockdep is turned off.
-> [ 2360.849257] Modules linked in: btrfs aoe [last unloaded: btrfs]
-> [ 2360.849261] Pid: 8212, comm: btrfs Tainted: G      D      3.5.0-default+ #170
-> [ 2360.849262] Call Trace:
-> [ 2360.849262]  [<ffffffff81078318>] __schedule_bug+0x68/0x90
-> [ 2360.849265]  [<ffffffff818eafcc>] __schedule+0x73c/0x810
-> [ 2360.849268]  [<ffffffff8107b48a>] __cond_resched+0x2a/0x40
-> [ 2360.849270]  [<ffffffff818eb121>] _cond_resched+0x31/0x40
-> [ 2360.849273]  [<ffffffff81128e13>] unmap_single_vma+0x493/0x750
-> [ 2360.849276]  [<ffffffff811100b0>] ? lru_deactivate_fn+0x1e0/0x1e0
-> [ 2360.849279]  [<ffffffff810a4be0>] ? trace_hardirqs_on_caller+0x20/0x1d0
-> [ 2360.849281]  [<ffffffff8112986c>] unmap_vmas+0x3c/0x60
-> [ 2360.849284]  [<ffffffff81130de1>] exit_mmap+0x81/0x140
-> [ 2360.849287]  [<ffffffff81043824>] mmput+0x74/0x130
-> [ 2360.849289]  [<ffffffff8104a520>] exit_mm+0x100/0x120
-> [ 2360.849292]  [<ffffffff8104c858>] do_exit+0x738/0x9a0
-> [ 2360.849294]  [<ffffffff81049a26>] ? kmsg_dump+0x26/0x140
-> [ 2360.849297]  [<ffffffff818ee0c0>] oops_end+0xb0/0xf0
-> [ 2360.849299]  [<ffffffff81005a7b>] die+0x5b/0x90
-> [ 2360.849301]  [<ffffffff818ed9a4>] do_trap+0xc4/0x170
-> [ 2360.849304]  [<ffffffff810030a5>] do_invalid_op+0x95/0xb0
-> [ 2360.849307]  [<ffffffffa00f62a1>] ? run_clustered_refs+0xa11/0xa20 [btrfs]
-> [ 2360.849317]  [<ffffffff813779dd>] ? trace_hardirqs_off_thunk+0x3a/0x3c
-> [ 2360.849320]  [<ffffffff818ed260>] ? restore_args+0x30/0x30
-> [ 2360.849322]  [<ffffffff818f674b>] invalid_op+0x1b/0x20
-> [ 2360.849325]  [<ffffffffa00f62a1>] ? run_clustered_refs+0xa11/0xa20 [btrfs]
-> [ 2360.849335]  [<ffffffffa00f5f2b>] ? run_clustered_refs+0x69b/0xa20 [btrfs]
-> [ 2360.849346]  [<ffffffffa00f6479>] btrfs_run_delayed_refs+0x1c9/0x550 [btrfs]
-> [ 2360.849356]  [<ffffffff810a4d15>] ? trace_hardirqs_on_caller+0x155/0x1d0
-> [ 2360.849358]  [<ffffffffa00e306a>] ? btrfs_free_path+0x2a/0x40 [btrfs]
-> [ 2360.849367]  [<ffffffffa015c741>] ? btrfs_run_delayed_items+0xf1/0x160 [btrfs]
-> [ 2360.849380]  [<ffffffffa0108a15>] btrfs_commit_transaction+0x605/0xb00 [btrfs]
-> [ 2360.849393]  [<ffffffff8109e70d>] ? lock_release_holdtime+0x3d/0x1c0
-> [ 2360.849395]  [<ffffffffa013fc88>] ? btrfs_mksubvol+0x298/0x360 [btrfs]
-> [ 2360.849409]  [<ffffffff8106d210>] ? wake_up_bit+0x40/0x40
-> [ 2360.849411]  [<ffffffff8137d88e>] ? do_raw_spin_unlock+0x5e/0xb0
-> [ 2360.849413]  [<ffffffffa013fd48>] btrfs_mksubvol+0x358/0x360 [btrfs]
-> [ 2360.849427]  [<ffffffffa013fe5a>] btrfs_ioctl_snap_create_transid+0x10a/0x190 [btrfs]
-> [ 2360.849441]  [<ffffffffa014005d>] btrfs_ioctl_snap_create_v2.clone.0+0xfd/0x110 [btrfs]
-> [ 2360.849455]  [<ffffffffa01419ee>] btrfs_ioctl+0x48e/0x1340 [btrfs]
-> [ 2360.849469]  [<ffffffff818f0f00>] ? do_page_fault+0x2d0/0x580
-> [ 2360.849471]  [<ffffffff818eca70>] ? _raw_spin_unlock_irq+0x30/0x50
-> [ 2360.849473]  [<ffffffff81078463>] ? finish_task_switch+0x83/0xf0
-> [ 2360.849476]  [<ffffffff81161d08>] do_vfs_ioctl+0x98/0x560
-> [ 2360.849478]  [<ffffffff818ed215>] ? retint_swapgs+0x13/0x1b
-> [ 2360.849481]  [<ffffffff8116221f>] sys_ioctl+0x4f/0x80
-> [ 2360.849483]  [<ffffffff818f56e9>] system_call_fastpath+0x16/0x1b
-> 
-> fs/btrfs/extent-tree.c:6047
-> 
-> 6046         if (parent > 0) {
-> 6047                 BUG_ON(!(flags & BTRFS_BLOCK_FLAG_FULL_BACKREF));
-> 6048                 btrfs_set_extent_inline_ref_type(leaf, iref,
-> 6049                                                  BTRFS_SHARED_BLOCK_REF_KEY);
-> 6050                 btrfs_set_extent_inline_ref_offset(leaf, iref, parent);
-> 6051         } else {
-> 6052                 btrfs_set_extent_inline_ref_type(leaf, iref,
-> 6053                                                  BTRFS_TREE_BLOCK_REF_KEY);
-> 6054                 btrfs_set_extent_inline_ref_offset(leaf, iref, root_objectid);
-> 6055         }
+I got a deadlock happening while creating a snapshot and ordered
+writes are pending. I can reproduce it 100% using btrfs send/receive.
+It happens when I receive a set of streams on a freshly created FS. I
+think I can exclude send/receive as the source of the problem as it
+happens while receiving, even when rebooting between send and receive.
+Receive does not depend on any extra kernel support and only uses
+normal vfs syscalls.
 
-This bug is similar to the one which is reported by Daniel J Blueman a month ago. And
-Josef have fixed it, but the patch has not been merged into for-linus branch till now.
-Did you applied that patch?
+I tried to bisect and found that reverting commit cf874d73 "Btrfs:
+hooks for qgroup to record delayed refs" avoids the deadlock. I can
+however not see why it does so. Reverting only parts of the commit
+either changes nothing or triggers BUGs in quota code due to wrong
+accounting.
 
-> 
-> Currently for-linux hangs early during the test, so I applied V3 patches on top
-> of 3.5.
-> 
-> The filesystem is freshly created, the load is to simultaneously unpack large tar,
-> snapshot the fs, delete random snapshot, looped rm of the untarred dir. Crashes after
-> some minutes, reliably.
+>From my debugging so far, I see that one btrfs-endio-writer thread is
+hanging in wait_for_more_refs. It either never wakes up or the
+condition never gets true.
+The snapshot ioctl is hanging in btrfs_start_ordered_extent, waiting
+for BTRFS_ORDERED_COMPLETE. This flag should be triggered by
+btrfs_remove_ordered_extent, which is called by
+btrfs_finish_ordered_io. This function is queued into the worker
+threads by btrfs_writepage_end_io_hook. I added a lot of debugging
+into this and found out that the call to btrfs_finish_ordered_io is
+queued correctly, but never gets processed. I suspect that the worker
+threads are busy waiting (wait_for_more_refs?) and thus unable to
+process it.
 
-Could you send the test tool to me? I want to look into it.
+Having "Btrfs: barrier before waitqueue_active V2" applied does not
+change anything here. I found a place where a wakeup is probably
+missing: btrfs_get_tree_mod_seq. If I add a wakeup there, behavior
+changes and I get the deadlock some received snapshots later (but not
+always).
 
-Thanks
-Miao
+I tried to understand when a wakeup should occur and I'm not sure if
+the way it is implemented currently is reliable. The wait statement in
+wait_for_more_refs is:
 
-> 
-> Fsck spits lots of errors:
-> 
-> ref mismatch on [1133031424 4096] extent item 1, found 0
-> Backref 1133031424 root 5 not referenced back 0x7d1f40
-> Incorrect global backref count on 1133031424 found 1 wanted 0
-> backpointer mismatch on [1133031424 4096]
-> owner ref check failed [1133031424 4096]
-> 
-> ref mismatch on [11213131776 16384] extent item 1, found 0
-> Incorrect local backref count on 11213131776 root 5 owner 34509 offset 0 found 0 wanted 1 back 0x1424d8e0
-> backpointer mismatch on [11213131776 16384]
-> owner ref check failed [11213131776 16384]
-> 
-> fs tree 260 refs 6 not found
->         unresolved ref root 263 dir 256 index 4 namelen 14 name snap2748615355 error 600
->         unresolved ref root 267 dir 256 index 4 namelen 14 name snap2748615355 error 600
->         unresolved ref root 269 dir 256 index 4 namelen 14 name snap2748615355 error 600
->         unresolved ref root 273 dir 256 index 4 namelen 14 name snap2748615355 error 600
->         unresolved ref root 274 dir 256 index 4 namelen 14 name snap2748615355 error 600
->         unresolved ref root 276 dir 256 index 4 namelen 14 name snap2748615355 error 600
-> 
-> 
-> I've asked Josef to pull those patches out of btrfs-next, feel free to send me any testing
-> version if you can't reproduce it on your side.
-> 
-> 
-> david
-> 
+        wait_event(fs_info->tree_mod_seq_wait,
+                   num_refs != delayed_refs->num_entries ||
+                   fs_info->tree_mod_seq_list.next != first_seq);
 
+I see some possible problems here:
+1. update_existing_ref is not changing num_entries in all cases, so
+the wait condition does not get true. Not sure if this is important as
+I don't even know what wait_for_more_refs is waiting for. Also, what
+happens if an entry gets deleted and a new one added immediately? Will
+num_entries stay the same?
+2. What happens if an entry in tree_mod_seq_list is removed+freed and
+immediately after that a new entry is allocated and added. May it
+happen that the newly allocated ref lies at the same place in memory?
+If yes, the condition will stay false in that case.
+3. btrfs_get_tree_mod_seq is adding new elements to the tail, but the
+condition is checking for changes to the head.
+4. btrfs_put_tree_mod_seq is deleting entries from the middle of
+tree_mod_seq_list. I see the same problems as with 3. here.
 
+[  136.389129] btrfs-worker-1  S 0000000000000000  6576  2612      2 0x00000000
+[  136.389129]  ffff88001e0bfd40 0000000000000046 ffff88001f957000
+ffff88001e0bffd8
+[  136.389129]  ffff88001e0bffd8 ffff88001e0bffd8 ffff88001f826000
+ffff88001f957000
+[  136.389129]  0000000000000286 ffff88001e0bfd80 ffffffff81fe2e00
+ffffffff81fe2e00
+[  136.389129] Call Trace:
+[  136.389129]  [<ffffffff81869934>] schedule+0x24/0x70
+[  136.389129]  [<ffffffff818674ca>] schedule_timeout+0x13a/0x230
+[  136.389129]  [<ffffffff81049a20>] ? usleep_range+0x40/0x40
+[  136.389129]  [<ffffffff81303fe6>] ? get_next_work+0x12c/0x12c
+[  136.389129]  [<ffffffff813042b7>] worker_loop+0x2d1/0x333
+[  136.389129]  [<ffffffff81303fe6>] ? get_next_work+0x12c/0x12c
+[  136.389129]  [<ffffffff8105ddce>] kthread+0x8e/0xa0
+[  136.389129]  [<ffffffff818738a4>] kernel_thread_helper+0x4/0x10
+[  136.389129]  [<ffffffff8186af19>] ? retint_restore_args+0xe/0xe
+[  136.389129]  [<ffffffff8105dd40>] ? __init_kthread_worker+0x70/0x70
+[  136.389129]  [<ffffffff818738a0>] ? gs_change+0xb/0xb
+[  136.389129] btrfs-genwork-1 S 0000000000000000  6576  2613      2 0x00000000
+[  136.389129]  ffff88001e2c1d40 0000000000000046 ffff88001fa05000
+ffff88001e2c1fd8
+[  136.389129]  ffff88001e2c1fd8 ffff88001e2c1fd8 ffff88001f957000
+ffff88001fa05000
+[  136.389129]  0000000000000286 ffff88001e2c1d80 ffffffff81fe2e00
+ffffffff81fe2e00
+[  136.389129] Call Trace:
+[  136.389129]  [<ffffffff81869934>] schedule+0x24/0x70
+[  136.389129]  [<ffffffff818674ca>] schedule_timeout+0x13a/0x230
+[  136.389129]  [<ffffffff81049a20>] ? usleep_range+0x40/0x40
+[  136.389129]  [<ffffffff81303fe6>] ? get_next_work+0x12c/0x12c
+[  136.389129]  [<ffffffff813042b7>] worker_loop+0x2d1/0x333
+[  136.389129]  [<ffffffff81303fe6>] ? get_next_work+0x12c/0x12c
+[  136.389129]  [<ffffffff8105ddce>] kthread+0x8e/0xa0
+[  136.389129]  [<ffffffff818738a4>] kernel_thread_helper+0x4/0x10
+[  136.389129]  [<ffffffff8186af19>] ? retint_restore_args+0xe/0xe
+[  136.389129]  [<ffffffff8105dd40>] ? __init_kthread_worker+0x70/0x70
+[  136.389129]  [<ffffffff818738a0>] ? gs_change+0xb/0xb
+[  136.389129] btrfs-submit-1  S 0000000000000000  6576  2614      2 0x00000000
+[  136.389129]  ffff88001d511d40 0000000000000046 ffff88001d4a5000
+ffff88001d511fd8
+[  136.389129]  ffff88001d511fd8 ffff88001d511fd8 ffff88001e0f2000
+ffff88001d4a5000
+[  136.389129]  0000000000000286 ffff88001d511d80 ffffffff81fe2e00
+ffffffff81fe2e00
+[  136.389129] Call Trace:
+[  136.389129]  [<ffffffff81869934>] schedule+0x24/0x70
+[  136.389129]  [<ffffffff818674ca>] schedule_timeout+0x13a/0x230
+[  136.389129]  [<ffffffff81049a20>] ? usleep_range+0x40/0x40
+[  136.389129]  [<ffffffff81303fe6>] ? get_next_work+0x12c/0x12c
+[  136.389129]  [<ffffffff813042b7>] worker_loop+0x2d1/0x333
+[  136.389129]  [<ffffffff81303fe6>] ? get_next_work+0x12c/0x12c
+[  136.389129]  [<ffffffff8105ddce>] kthread+0x8e/0xa0
+[  136.389129]  [<ffffffff818738a4>] kernel_thread_helper+0x4/0x10
+[  136.389129]  [<ffffffff8186af19>] ? retint_restore_args+0xe/0xe
+[  136.389129]  [<ffffffff8105dd40>] ? __init_kthread_worker+0x70/0x70
+[  136.389129]  [<ffffffff818738a0>] ? gs_change+0xb/0xb
+[  136.389129] btrfs-delalloc- S 0000000000000000  6576  2615      2 0x00000000
+[  136.389129]  ffff88001e2cbd40 0000000000000046 ffff88001e362000
+ffff88001e2cbfd8
+[  136.389129]  ffff88001e2cbfd8 ffff88001e2cbfd8 ffff88001e0f3000
+ffff88001e362000
+[  136.389129]  0000000000000286 ffff88001e2cbd80 ffffffff81fe2e00
+ffffffff81fe2e00
+[  136.389129] Call Trace:
+[  136.389129]  [<ffffffff81869934>] schedule+0x24/0x70
+[  136.389129]  [<ffffffff818674ca>] schedule_timeout+0x13a/0x230
+[  136.389129]  [<ffffffff81049a20>] ? usleep_range+0x40/0x40
+[  136.389129]  [<ffffffff81303fe6>] ? get_next_work+0x12c/0x12c
+[  136.389129]  [<ffffffff813042b7>] worker_loop+0x2d1/0x333
+[  136.389129]  [<ffffffff81303fe6>] ? get_next_work+0x12c/0x12c
+[  136.389129]  [<ffffffff8105ddce>] kthread+0x8e/0xa0
+[  136.389129]  [<ffffffff818738a4>] kernel_thread_helper+0x4/0x10
+[  136.389129]  [<ffffffff8186af19>] ? retint_restore_args+0xe/0xe
+[  136.389129]  [<ffffffff8105dd40>] ? __init_kthread_worker+0x70/0x70
+[  136.389129]  [<ffffffff818738a0>] ? gs_change+0xb/0xb
+[  136.389129] btrfs-fixup-1   S 0000000000000000  6576  2616      2 0x00000000
+[  136.389129]  ffff88001d4a9d40 0000000000000046 ffff88001fa1a000
+ffff88001d4a9fd8
+[  136.389129]  ffff88001d4a9fd8 ffff88001d4a9fd8 ffff88001d4a5000
+ffff88001fa1a000
+[  136.389129]  0000000000000286 ffff88001d4a9d80 ffffffff81fe2e00
+ffffffff81fe2e00
+[  136.389129] Call Trace:
+[  136.389129]  [<ffffffff81869934>] schedule+0x24/0x70
+[  136.389129]  [<ffffffff818674ca>] schedule_timeout+0x13a/0x230
+[  136.389129]  [<ffffffff81049a20>] ? usleep_range+0x40/0x40
+[  136.389129]  [<ffffffff81303fe6>] ? get_next_work+0x12c/0x12c
+[  136.389129]  [<ffffffff813042b7>] worker_loop+0x2d1/0x333
+[  136.389129]  [<ffffffff81303fe6>] ? get_next_work+0x12c/0x12c
+[  136.389129]  [<ffffffff8105ddce>] kthread+0x8e/0xa0
+[  136.389129]  [<ffffffff818738a4>] kernel_thread_helper+0x4/0x10
+[  136.389129]  [<ffffffff8186af19>] ? retint_restore_args+0xe/0xe
+[  136.389129]  [<ffffffff8105dd40>] ? __init_kthread_worker+0x70/0x70
+[  136.389129]  [<ffffffff818738a0>] ? gs_change+0xb/0xb
+[  136.389129] btrfs-endio-1   S 0000000000000000  6576  2617      2 0x00000000
+[  136.389129]  ffff88001e04dd40 0000000000000046 ffff88001e1a8000
+ffff88001e04dfd8
+[  136.389129]  ffff88001e04dfd8 ffff88001e04dfd8 ffff88001e0f4000
+ffff88001e1a8000
+[  136.389129]  0000000000000286 ffff88001e04dd80 ffffffff81fe2e00
+ffffffff81fe2e00
+[  136.389129] Call Trace:
+[  136.389129]  [<ffffffff81869934>] schedule+0x24/0x70
+[  136.389129]  [<ffffffff818674ca>] schedule_timeout+0x13a/0x230
+[  136.389129]  [<ffffffff81049a20>] ? usleep_range+0x40/0x40
+[  136.389129]  [<ffffffff81303fe6>] ? get_next_work+0x12c/0x12c
+[  136.389129]  [<ffffffff813042b7>] worker_loop+0x2d1/0x333
+[  136.389129]  [<ffffffff81303fe6>] ? get_next_work+0x12c/0x12c
+[  136.389129]  [<ffffffff8105ddce>] kthread+0x8e/0xa0
+[  136.389129]  [<ffffffff818738a4>] kernel_thread_helper+0x4/0x10
+[  136.389129]  [<ffffffff8186af19>] ? retint_restore_args+0xe/0xe
+[  136.389129]  [<ffffffff8105dd40>] ? __init_kthread_worker+0x70/0x70
+[  136.389129]  [<ffffffff818738a0>] ? gs_change+0xb/0xb
+[  136.389129] btrfs-endio-met S 0000000000000000  6024  2618      2 0x00000000
+[  136.389129]  ffff88001e029d40 0000000000000046 ffff88001e0f0000
+ffff88001e029fd8
+[  136.389129]  ffff88001e029fd8 ffff88001e029fd8 ffffffff81e13440
+ffff88001e0f0000
+[  136.389129]  0000000000000286 ffff88001e029d80 ffffffff81fe2e00
+ffffffff81fe2e00
+[  136.389129] Call Trace:
+[  136.389129]  [<ffffffff81869934>] schedule+0x24/0x70
+[  136.389129]  [<ffffffff818674ca>] schedule_timeout+0x13a/0x230
+[  136.389129]  [<ffffffff81049a20>] ? usleep_range+0x40/0x40
+[  136.389129]  [<ffffffff81303fe6>] ? get_next_work+0x12c/0x12c
+[  136.389129]  [<ffffffff813042b7>] worker_loop+0x2d1/0x333
+[  136.389129]  [<ffffffff8105ddce>] kthread+0x8e/0xa0
+[  136.389129]  [<ffffffff818738a4>] kernel_thread_helper+0x4/0x10
+[  136.389129]  [<ffffffff8186af19>] ? retint_restore_args+0xe/0xe
+[  136.389129]  [<ffffffff8105dd40>] ? __init_kthread_worker+0x70/0x70
+[  136.389129]  [<ffffffff818738a0>] ? gs_change+0xb/0xb
+[  136.389129] btrfs-endio-met S 0000000000000000  6576  2619      2 0x00000000
+[  136.389129]  ffff88001e115d40 0000000000000046 ffff88001e0f1000
+ffff88001e115fd8
+[  136.389129]  ffff88001e115fd8 ffff88001e115fd8 ffff88001e0f5000
+ffff88001e0f1000
+[  136.389129]  0000000000000286 ffff88001e115d80 ffffffff81fe2e00
+ffffffff81fe2e00
+[  136.389129] Call Trace:
+[  136.389129]  [<ffffffff81869934>] schedule+0x24/0x70
+[  136.389129]  [<ffffffff818674ca>] schedule_timeout+0x13a/0x230
+[  136.389129]  [<ffffffff81049a20>] ? usleep_range+0x40/0x40
+[  136.389129]  [<ffffffff81303fe6>] ? get_next_work+0x12c/0x12c
+[  136.389129]  [<ffffffff813042b7>] worker_loop+0x2d1/0x333
+[  136.389129]  [<ffffffff81303fe6>] ? get_next_work+0x12c/0x12c
+[  136.389129]  [<ffffffff8105ddce>] kthread+0x8e/0xa0
+[  136.389129]  [<ffffffff818738a4>] kernel_thread_helper+0x4/0x10
+[  136.389129]  [<ffffffff8186af19>] ? retint_restore_args+0xe/0xe
+[  136.389129]  [<ffffffff8105dd40>] ? __init_kthread_worker+0x70/0x70
+[  136.389129]  [<ffffffff818738a0>] ? gs_change+0xb/0xb
+[  136.389129] btrfs-endio-wri S 0000000000000000  6576  2620      2 0x00000000
+[  136.389129]  ffff88001d505d40 0000000000000046 ffff88001e0f2000
+ffff88001d505fd8
+[  136.389129]  ffff88001d505fd8 ffff88001d505fd8 ffff88001fa05000
+ffff88001e0f2000
+[  136.389129]  0000000000000286 ffff88001d505d80 ffffffff81fe2e00
+ffffffff81fe2e00
+[  136.389129] Call Trace:
+[  136.389129]  [<ffffffff81869934>] schedule+0x24/0x70
+[  136.389129]  [<ffffffff818674ca>] schedule_timeout+0x13a/0x230
+[  136.389129]  [<ffffffff81049a20>] ? usleep_range+0x40/0x40
+[  136.389129]  [<ffffffff81303fe6>] ? get_next_work+0x12c/0x12c
+[  136.389129]  [<ffffffff813042b7>] worker_loop+0x2d1/0x333
+[  136.389129]  [<ffffffff81303fe6>] ? get_next_work+0x12c/0x12c
+[  136.389129]  [<ffffffff8105ddce>] kthread+0x8e/0xa0
+[  136.389129]  [<ffffffff818738a4>] kernel_thread_helper+0x4/0x10
+[  136.389129]  [<ffffffff8186af19>] ? retint_restore_args+0xe/0xe
+[  136.389129]  [<ffffffff8105dd40>] ? __init_kthread_worker+0x70/0x70
+[  136.389129]  [<ffffffff818738a0>] ? gs_change+0xb/0xb
+[  136.389129] btrfs-freespace S 0000000000000000  6576  2621      2 0x00000000
+[  136.389129]  ffff88001d4f9d40 0000000000000046 ffff88001e0f3000
+ffff88001d4f9fd8
+[  136.389129]  ffff88001d4f9fd8 ffff88001d4f9fd8 ffff88001fa1a000
+ffff88001e0f3000
+[  136.389129]  0000000000000286 ffff88001d4f9d80 ffffffff81fe2e00
+ffffffff81fe2e00
+[  136.389129] Call Trace:
+[  136.389129]  [<ffffffff81869934>] schedule+0x24/0x70
+[  136.389129]  [<ffffffff818674ca>] schedule_timeout+0x13a/0x230
+[  136.389129]  [<ffffffff81049a20>] ? usleep_range+0x40/0x40
+[  136.389129]  [<ffffffff81303fe6>] ? get_next_work+0x12c/0x12c
+[  136.389129]  [<ffffffff813042b7>] worker_loop+0x2d1/0x333
+[  136.389129]  [<ffffffff81303fe6>] ? get_next_work+0x12c/0x12c
+[  136.389129]  [<ffffffff8105ddce>] kthread+0x8e/0xa0
+[  136.389129]  [<ffffffff818738a4>] kernel_thread_helper+0x4/0x10
+[  136.389129]  [<ffffffff8186af19>] ? retint_restore_args+0xe/0xe
+[  136.389129]  [<ffffffff8105dd40>] ? __init_kthread_worker+0x70/0x70
+[  136.389129]  [<ffffffff818738a0>] ? gs_change+0xb/0xb
+[  136.389129] btrfs-delayed-m S 0000000000000000  6576  2622      2 0x00000000
+[  136.389129]  ffff88001d4d1d40 0000000000000046 ffff88001e0f4000
+ffff88001d4d1fd8
+[  136.389129]  ffff88001d4d1fd8 ffff88001d4d1fd8 ffff88001e0f1000
+ffff88001e0f4000
+[  136.389129]  0000000000000286 ffff88001d4d1d80 ffffffff81fe2e00
+ffffffff81fe2e00
+[  136.389129] Call Trace:
+[  136.389129]  [<ffffffff81869934>] schedule+0x24/0x70
+[  136.389129]  [<ffffffff818674ca>] schedule_timeout+0x13a/0x230
+[  136.389129]  [<ffffffff81049a20>] ? usleep_range+0x40/0x40
+[  136.389129]  [<ffffffff81303fe6>] ? get_next_work+0x12c/0x12c
+[  136.389129]  [<ffffffff813042b7>] worker_loop+0x2d1/0x333
+[  136.389129]  [<ffffffff81303fe6>] ? get_next_work+0x12c/0x12c
+[  136.389129]  [<ffffffff8105ddce>] kthread+0x8e/0xa0
+[  136.389129]  [<ffffffff818738a4>] kernel_thread_helper+0x4/0x10
+[  136.389129]  [<ffffffff8186af19>] ? retint_restore_args+0xe/0xe
+[  136.389129]  [<ffffffff8105dd40>] ? __init_kthread_worker+0x70/0x70
+[  136.389129]  [<ffffffff818738a0>] ? gs_change+0xb/0xb
+[  136.389129] btrfs-cache-1   S 0000000000000000  6576  2623      2 0x00000000
+[  136.389129]  ffff88001d7d3d40 0000000000000046 ffff88001e0f5000
+ffff88001d7d3fd8
+[  136.389129]  ffff88001d7d3fd8 ffff88001d7d3fd8 ffff88001e362000
+ffff88001e0f5000
+[  136.389129]  0000000000000286 ffff88001d7d3d80 ffffffff81fe2e00
+ffffffff81fe2e00
+[  136.389129] Call Trace:
+[  136.389129]  [<ffffffff81869934>] schedule+0x24/0x70
+[  136.389129]  [<ffffffff818674ca>] schedule_timeout+0x13a/0x230
+[  136.389129]  [<ffffffff81049a20>] ? usleep_range+0x40/0x40
+[  136.389129]  [<ffffffff81303fe6>] ? get_next_work+0x12c/0x12c
+[  136.389129]  [<ffffffff813042b7>] worker_loop+0x2d1/0x333
+[  136.389129]  [<ffffffff81303fe6>] ? get_next_work+0x12c/0x12c
+[  136.389129]  [<ffffffff8105ddce>] kthread+0x8e/0xa0
+[  136.389129]  [<ffffffff818738a4>] kernel_thread_helper+0x4/0x10
+[  136.389129]  [<ffffffff8186af19>] ? retint_restore_args+0xe/0xe
+[  136.389129]  [<ffffffff8105dd40>] ? __init_kthread_worker+0x70/0x70
+[  136.389129]  [<ffffffff818738a0>] ? gs_change+0xb/0xb
+[  136.389129] btrfs-readahead S 0000000000000000  6576  2624      2 0x00000000
+[  136.389129]  ffff88001c979d40 0000000000000046 ffff88001e0f6000
+ffff88001c979fd8
+[  136.389129]  ffff88001c979fd8 ffff88001c979fd8 ffffffff81e13440
+ffff88001e0f6000
+[  136.389129]  0000000000000286 ffff88001c979d80 ffffffff81fe2e00
+ffffffff81fe2e00
+[  136.389129] Call Trace:
+[  136.389129]  [<ffffffff81869934>] schedule+0x24/0x70
+[  136.389129]  [<ffffffff818674ca>] schedule_timeout+0x13a/0x230
+[  136.389129]  [<ffffffff81049a20>] ? usleep_range+0x40/0x40
+[  136.389129]  [<ffffffff81303fe6>] ? get_next_work+0x12c/0x12c
+[  136.389129]  [<ffffffff813042b7>] worker_loop+0x2d1/0x333
+[  136.389129]  [<ffffffff81303fe6>] ? get_next_work+0x12c/0x12c
+[  136.389129]  [<ffffffff8105ddce>] kthread+0x8e/0xa0
+[  136.389129]  [<ffffffff818738a4>] kernel_thread_helper+0x4/0x10
+[  136.389129]  [<ffffffff8186af19>] ? retint_restore_args+0xe/0xe
+[  136.389129]  [<ffffffff8105dd40>] ? __init_kthread_worker+0x70/0x70
+[  136.389129]  [<ffffffff818738a0>] ? gs_change+0xb/0xb
+[  136.389129] btrfs-cleaner   S 0000000000000000  6520  2625      2 0x00000000
+[  136.389129]  ffff88001c8d9e50 0000000000000046 ffff88001e0f7000
+ffff88001c8d9fd8
+[  136.389129]  ffff88001c8d9fd8 ffff88001c8d9fd8 ffffffff81e13440
+ffff88001e0f7000
+[  136.389129]  ffff88001c8d9e50 ffff88001e0f7000 ffff88001f96d000
+ffffffff812bee58
+[  136.389129] Call Trace:
+[  136.389129]  [<ffffffff812bee58>] ? end_workqueue_fn+0x80/0x80
+[  136.389129]  [<ffffffff81869934>] schedule+0x24/0x70
+[  136.389129]  [<ffffffff812bef31>] cleaner_kthread+0xd9/0x10a
+[  136.389129]  [<ffffffff8105ddce>] kthread+0x8e/0xa0
+[  136.389129]  [<ffffffff818738a4>] kernel_thread_helper+0x4/0x10
+[  136.389129]  [<ffffffff8186af19>] ? retint_restore_args+0xe/0xe
+[  136.389129]  [<ffffffff8105dd40>] ? __init_kthread_worker+0x70/0x70
+[  136.389129]  [<ffffffff818738a0>] ? gs_change+0xb/0xb
+[  136.389129] btrfs-transacti S 0000000000000000  6608  2626      2 0x00000000
+[  136.389129]  ffff88001e195d60 0000000000000046 ffff88001fa03000
+ffff88001e195fd8
+[  136.389129]  ffff88001e195fd8 ffff88001e195fd8 ffff88001e0f7000
+ffff88001fa03000
+[  136.389129]  0000000000000282 ffff88001e195da0 ffffffff81fe2e00
+ffffffff81fe2e00
+[  136.389129] Call Trace:
+[  136.389129]  [<ffffffff81869934>] schedule+0x24/0x70
+[  136.389129]  [<ffffffff818674ca>] schedule_timeout+0x13a/0x230
+[  136.389129]  [<ffffffff81049a20>] ? usleep_range+0x40/0x40
+[  136.389129]  [<ffffffff812bef62>] ? cleaner_kthread+0x10a/0x10a
+[  136.389129]  [<ffffffff812bf17a>] transaction_kthread+0x218/0x249
+[  136.389129]  [<ffffffff8105ddce>] kthread+0x8e/0xa0
+[  136.389129]  [<ffffffff818738a4>] kernel_thread_helper+0x4/0x10
+[  136.389129]  [<ffffffff8186af19>] ? retint_restore_args+0xe/0xe
+[  136.389129]  [<ffffffff8105dd40>] ? __init_kthread_worker+0x70/0x70
+[  136.389129]  [<ffffffff818738a0>] ? gs_change+0xb/0xb
+[  136.389129] btrfs-worker-1  S 0000000000000000  5328  2628      2 0x00000000
+[  136.389129]  ffff88001e1f9d40 0000000000000046 ffff88001e342000
+ffff88001e1f9fd8
+[  136.389129]  ffff88001e1f9fd8 ffff88001e1f9fd8 ffff88001b149000
+ffff88001e342000
+[  136.389129]  0000000000000286 ffff88001e1f9d80 ffffffff81fe2e00
+ffffffff81fe2e00
+[  136.389129] Call Trace:
+[  136.389129]  [<ffffffff81869934>] schedule+0x24/0x70
+[  136.389129]  [<ffffffff818674ca>] schedule_timeout+0x13a/0x230
+[  136.389129]  [<ffffffff81049a20>] ? usleep_range+0x40/0x40
+[  136.389129]  [<ffffffff81303fe6>] ? get_next_work+0x12c/0x12c
+[  136.389129]  [<ffffffff813042b7>] worker_loop+0x2d1/0x333
+[  136.389129]  [<ffffffff8105ddce>] kthread+0x8e/0xa0
+[  136.389129]  [<ffffffff818738a4>] kernel_thread_helper+0x4/0x10
+[  136.389129]  [<ffffffff8186af19>] ? retint_restore_args+0xe/0xe
+[  136.389129]  [<ffffffff8105dd40>] ? __init_kthread_worker+0x70/0x70
+[  136.389129]  [<ffffffff818738a0>] ? gs_change+0xb/0xb
+[  136.389129] btrfs-genwork-1 S 0000000000000000  6064  2629      2 0x00000000
+[  136.389129]  ffff88001c80fd40 0000000000000046 ffff88001e343000
+ffff88001c80ffd8
+[  136.389129]  ffff88001c80ffd8 ffff88001c80ffd8 ffff88000f5a0000
+ffff88001e343000
+[  136.389129]  0000000000000286 ffff88001c80fd80 ffffffff81fe2e00
+ffffffff81fe2e00
+[  136.389129] Call Trace:
+[  136.389129]  [<ffffffff81869934>] schedule+0x24/0x70
+[  136.389129]  [<ffffffff818674ca>] schedule_timeout+0x13a/0x230
+[  136.389129]  [<ffffffff81049a20>] ? usleep_range+0x40/0x40
+[  136.389129]  [<ffffffff81303fe6>] ? get_next_work+0x12c/0x12c
+[  136.389129]  [<ffffffff813042b7>] worker_loop+0x2d1/0x333
+[  136.389129]  [<ffffffff8105ddce>] kthread+0x8e/0xa0
+[  136.389129]  [<ffffffff818738a4>] kernel_thread_helper+0x4/0x10
+[  136.389129]  [<ffffffff8186af19>] ? retint_restore_args+0xe/0xe
+[  136.389129]  [<ffffffff8105dd40>] ? __init_kthread_worker+0x70/0x70
+[  136.389129]  [<ffffffff818738a0>] ? gs_change+0xb/0xb
+[  136.389129] btrfs-submit-1  S 0000000000000000  5264  2630      2 0x00000000
+[  136.389129]  ffff88001d7d9d40 0000000000000046 ffff88001e344000
+ffff88001d7d9fd8
+[  136.389129]  ffff88001d7d9fd8 ffff88001d7d9fd8 ffff88001e342000
+ffff88001e344000
+[  136.389129]  0000000000000286 ffff88001d7d9d80 ffffffff81fe2e00
+ffffffff81fe2e00
+[  136.389129] Call Trace:
+[  136.389129]  [<ffffffff81869934>] schedule+0x24/0x70
+[  136.389129]  [<ffffffff818674ca>] schedule_timeout+0x13a/0x230
+[  136.389129]  [<ffffffff81049a20>] ? usleep_range+0x40/0x40
+[  136.389129]  [<ffffffff81303fe6>] ? get_next_work+0x12c/0x12c
+[  136.389129]  [<ffffffff813042b7>] worker_loop+0x2d1/0x333
+[  136.389129]  [<ffffffff8105ddce>] kthread+0x8e/0xa0
+[  136.389129]  [<ffffffff818738a4>] kernel_thread_helper+0x4/0x10
+[  136.389129]  [<ffffffff8186af19>] ? retint_restore_args+0xe/0xe
+[  136.389129]  [<ffffffff8105dd40>] ? __init_kthread_worker+0x70/0x70
+[  136.389129]  [<ffffffff818738a0>] ? gs_change+0xb/0xb
+[  136.389129] btrfs-delalloc- S 0000000000000000  6576  2631      2 0x00000000
+[  136.389129]  ffff88001c973d40 0000000000000046 ffff88001e345000
+ffff88001c973fd8
+[  136.389129]  ffff88001c973fd8 ffff88001c973fd8 ffffffff81e13440
+ffff88001e345000
+[  136.389129]  0000000000000286 ffff88001c973d80 ffffffff81fe2e00
+ffffffff81fe2e00
+[  136.389129] Call Trace:
+[  136.389129]  [<ffffffff81869934>] schedule+0x24/0x70
+[  136.389129]  [<ffffffff818674ca>] schedule_timeout+0x13a/0x230
+[  136.389129]  [<ffffffff81049a20>] ? usleep_range+0x40/0x40
+[  136.389129]  [<ffffffff81303fe6>] ? get_next_work+0x12c/0x12c
+[  136.389129]  [<ffffffff813042b7>] worker_loop+0x2d1/0x333
+[  136.389129]  [<ffffffff81303fe6>] ? get_next_work+0x12c/0x12c
+[  136.389129]  [<ffffffff8105ddce>] kthread+0x8e/0xa0
+[  136.389129]  [<ffffffff818738a4>] kernel_thread_helper+0x4/0x10
+[  136.389129]  [<ffffffff8186af19>] ? retint_restore_args+0xe/0xe
+[  136.389129]  [<ffffffff8105dd40>] ? __init_kthread_worker+0x70/0x70
+[  136.389129]  [<ffffffff818738a0>] ? gs_change+0xb/0xb
+[  136.389129] btrfs-fixup-1   S 0000000000000000  6576  2632      2 0x00000000
+[  136.389129]  ffff88001d7ffd40 0000000000000046 ffff88001e346000
+ffff88001d7fffd8
+[  136.389129]  ffff88001d7fffd8 ffff88001d7fffd8 ffff88001e345000
+ffff88001e346000
+[  136.389129]  0000000000000286 ffff88001d7ffd80 ffffffff81fe2e00
+ffffffff81fe2e00
+[  136.389129] Call Trace:
+[  136.389129]  [<ffffffff81869934>] schedule+0x24/0x70
+[  136.389129]  [<ffffffff818674ca>] schedule_timeout+0x13a/0x230
+[  136.389129]  [<ffffffff81049a20>] ? usleep_range+0x40/0x40
+[  136.389129]  [<ffffffff81303fe6>] ? get_next_work+0x12c/0x12c
+[  136.389129]  [<ffffffff813042b7>] worker_loop+0x2d1/0x333
+[  136.389129]  [<ffffffff81303fe6>] ? get_next_work+0x12c/0x12c
+[  136.389129]  [<ffffffff8105ddce>] kthread+0x8e/0xa0
+[  136.389129]  [<ffffffff818738a4>] kernel_thread_helper+0x4/0x10
+[  136.389129]  [<ffffffff8186af19>] ? retint_restore_args+0xe/0xe
+[  136.389129]  [<ffffffff8105dd40>] ? __init_kthread_worker+0x70/0x70
+[  136.389129]  [<ffffffff818738a0>] ? gs_change+0xb/0xb
+[  136.389129] btrfs-endio-1   S 0000000000000000  6576  2633      2 0x00000000
+[  136.389129]  ffff88001c975d40 0000000000000046 ffff88001e347000
+ffff88001c975fd8
+[  136.389129]  ffff88001c975fd8 ffff88001c975fd8 ffff88001e346000
+ffff88001e347000
+[  136.389129]  0000000000000286 ffff88001c975d80 ffffffff81fe2e00
+ffffffff81fe2e00
+[  136.389129] Call Trace:
+[  136.389129]  [<ffffffff81869934>] schedule+0x24/0x70
+[  136.389129]  [<ffffffff818674ca>] schedule_timeout+0x13a/0x230
+[  136.389129]  [<ffffffff81049a20>] ? usleep_range+0x40/0x40
+[  136.389129]  [<ffffffff81303fe6>] ? get_next_work+0x12c/0x12c
+[  136.389129]  [<ffffffff813042b7>] worker_loop+0x2d1/0x333
+[  136.389129]  [<ffffffff81303fe6>] ? get_next_work+0x12c/0x12c
+[  136.389129]  [<ffffffff8105ddce>] kthread+0x8e/0xa0
+[  136.389129]  [<ffffffff818738a4>] kernel_thread_helper+0x4/0x10
+[  136.389129]  [<ffffffff8186af19>] ? retint_restore_args+0xe/0xe
+[  136.389129]  [<ffffffff8105dd40>] ? __init_kthread_worker+0x70/0x70
+[  136.389129]  [<ffffffff818738a0>] ? gs_change+0xb/0xb
+[  136.389129] btrfs-endio-met S 0000000000000000  6192  2634      2 0x00000000
+[  136.389129]  ffff88001d763d40 0000000000000046 ffff88001d768000
+ffff88001d763fd8
+[  136.389129]  ffff88001d763fd8 ffff88001d763fd8 ffff88001e302000
+ffff88001d768000
+[  136.389129]  0000000000000286 ffff88001d763d80 ffffffff81fe2e00
+ffffffff81fe2e00
+[  136.389129] Call Trace:
+[  136.389129]  [<ffffffff81869934>] schedule+0x24/0x70
+[  136.389129]  [<ffffffff818674ca>] schedule_timeout+0x13a/0x230
+[  136.389129]  [<ffffffff81049a20>] ? usleep_range+0x40/0x40
+[  136.389129]  [<ffffffff81303fe6>] ? get_next_work+0x12c/0x12c
+[  136.389129]  [<ffffffff813042b7>] worker_loop+0x2d1/0x333
+[  136.389129]  [<ffffffff8105ddce>] kthread+0x8e/0xa0
+[  136.389129]  [<ffffffff818738a4>] kernel_thread_helper+0x4/0x10
+[  136.389129]  [<ffffffff8186af19>] ? retint_restore_args+0xe/0xe
+[  136.389129]  [<ffffffff8105dd40>] ? __init_kthread_worker+0x70/0x70
+[  136.389129]  [<ffffffff818738a0>] ? gs_change+0xb/0xb
+[  136.389129] btrfs-endio-met S 0000000000000000  6576  2635      2 0x00000000
+[  136.389129]  ffff88001d755d40 0000000000000046 ffff88001d769000
+ffff88001d755fd8
+[  136.389129]  ffff88001d755fd8 ffff88001d755fd8 ffff88001d76e000
+ffff88001d769000
+[  136.389129]  0000000000000286 ffff88001d755d80 ffffffff81fe2e00
+ffffffff81fe2e00
+[  136.389129] Call Trace:
+[  136.389129]  [<ffffffff81869934>] schedule+0x24/0x70
+[  136.389129]  [<ffffffff818674ca>] schedule_timeout+0x13a/0x230
+[  136.389129]  [<ffffffff81049a20>] ? usleep_range+0x40/0x40
+[  136.389129]  [<ffffffff81303fe6>] ? get_next_work+0x12c/0x12c
+[  136.389129]  [<ffffffff813042b7>] worker_loop+0x2d1/0x333
+[  136.389129]  [<ffffffff81303fe6>] ? get_next_work+0x12c/0x12c
+[  136.389129]  [<ffffffff8105ddce>] kthread+0x8e/0xa0
+[  136.389129]  [<ffffffff818738a4>] kernel_thread_helper+0x4/0x10
+[  136.389129]  [<ffffffff8186af19>] ? retint_restore_args+0xe/0xe
+[  136.389129]  [<ffffffff8105dd40>] ? __init_kthread_worker+0x70/0x70
+[  136.389129]  [<ffffffff818738a0>] ? gs_change+0xb/0xb
+[  136.389129] btrfs-endio-wri D 0000000000000000  3456  2636      2 0x00000000
+[  136.389129]  ffff88001e061b20 0000000000000046 ffff88001d76a000
+ffff88001e061fd8
+[  136.389129]  ffff88001e061fd8 ffff88001e061fd8 ffffffff81e13440
+ffff88001d76a000
+[  136.389129]  ffff88001e061b30 ffff88001d76a000 0000000000e1a000
+ffffffff81303fe6
+[  136.389129] Call Trace:
+[  136.389129]  [<ffffffff81303fe6>] ? get_next_work+0x12c/0x12c
+[  136.389129]  [<ffffffff81869934>] schedule+0x24/0x70
+[  136.389129]  [<ffffffff812a2efb>] wait_for_more_refs+0x10c/0x166
+[  136.389129]  [<ffffffff8105e7d0>] ? __init_waitqueue_head+0x60/0x60
+[  136.389129]  [<ffffffff812a328c>] btrfs_run_delayed_refs+0x211/0x415
+[  136.389129]  [<ffffffff812c66c8>] __btrfs_end_transaction+0x176/0x3ee
+[  136.389129]  [<ffffffff812a6bc9>] ? btrfs_block_rsv_release+0x7a/0x7c
+[  136.389129]  [<ffffffff812c696a>] btrfs_end_transaction+0x2a/0x3f
+[  136.389129]  [<ffffffff812d0396>] btrfs_finish_ordered_io+0x651/0x6d7
+[  136.389129]  [<ffffffff81303fe6>] ? get_next_work+0x12c/0x12c
+[  136.389129]  [<ffffffff812d044a>] finish_ordered_fn+0x2e/0x30
+[  136.389129]  [<ffffffff81304090>] worker_loop+0xaa/0x333
+[  136.389129]  [<ffffffff8105ddce>] kthread+0x8e/0xa0
+[  136.389129]  [<ffffffff818738a4>] kernel_thread_helper+0x4/0x10
+[  136.389129]  [<ffffffff8186af19>] ? retint_restore_args+0xe/0xe
+[  136.389129]  [<ffffffff8105dd40>] ? __init_kthread_worker+0x70/0x70
+[  136.389129]  [<ffffffff818738a0>] ? gs_change+0xb/0xb
+[  136.389129] btrfs-freespace S 0000000000000000  5640  2637      2 0x00000000
+[  136.389129]  ffff88001c891d40 0000000000000046 ffff88001d76b000
+ffff88001c891fd8
+[  136.389129]  ffff88001c891fd8 ffff88001c891fd8 ffff88001e302000
+ffff88001d76b000
+[  136.389129]  0000000000000286 ffff88001c891d80 ffffffff81fe2e00
+ffffffff81fe2e00
+[  136.389129] Call Trace:
+[  136.389129]  [<ffffffff81869934>] schedule+0x24/0x70
+[  136.389129]  [<ffffffff818674ca>] schedule_timeout+0x13a/0x230
+[  136.389129]  [<ffffffff81049a20>] ? usleep_range+0x40/0x40
+[  136.389129]  [<ffffffff81303fe6>] ? get_next_work+0x12c/0x12c
+[  136.389129]  [<ffffffff813042b7>] worker_loop+0x2d1/0x333
+[  136.389129]  [<ffffffff8105ddce>] kthread+0x8e/0xa0
+[  136.389129]  [<ffffffff818738a4>] kernel_thread_helper+0x4/0x10
+[  136.389129]  [<ffffffff8186af19>] ? retint_restore_args+0xe/0xe
+[  136.389129]  [<ffffffff8105dd40>] ? __init_kthread_worker+0x70/0x70
+[  136.389129]  [<ffffffff818738a0>] ? gs_change+0xb/0xb
+[  136.389129] btrfs-delayed-m S 0000000000000000  4096  2638      2 0x00000000
+[  136.389129]  ffff88001c8efd40 0000000000000046 ffff88001d76c000
+ffff88001c8effd8
+[  136.389129]  ffff88001c8effd8 ffff88001c8effd8 ffff88001e302000
+ffff88001d76c000
+[  136.389129]  0000000000000286 ffff88001c8efd80 ffffffff81fe2e00
+ffffffff81fe2e00
+[  136.389129] Call Trace:
+[  136.389129]  [<ffffffff81869934>] schedule+0x24/0x70
+[  136.389129]  [<ffffffff818674ca>] schedule_timeout+0x13a/0x230
+[  136.389129]  [<ffffffff81049a20>] ? usleep_range+0x40/0x40
+[  136.389129]  [<ffffffff81303fe6>] ? get_next_work+0x12c/0x12c
+[  136.389129]  [<ffffffff813042b7>] worker_loop+0x2d1/0x333
+[  136.389129]  [<ffffffff8105ddce>] kthread+0x8e/0xa0
+[  136.389129]  [<ffffffff818738a4>] kernel_thread_helper+0x4/0x10
+[  136.389129]  [<ffffffff8186af19>] ? retint_restore_args+0xe/0xe
+[  136.389129]  [<ffffffff8105dd40>] ? __init_kthread_worker+0x70/0x70
+[  136.389129]  [<ffffffff818738a0>] ? gs_change+0xb/0xb
+[  136.389129] btrfs-cache-1   S 0000000000000000  6248  2639      2 0x00000000
+[  136.389129]  ffff88001c86dd40 0000000000000046 ffff88001d76d000
+ffff88001c86dfd8
+[  136.389129]  ffff88001c86dfd8 ffff88001c86dfd8 ffff88001f826000
+ffff88001d76d000
+[  136.389129]  0000000000000286 ffff88001c86dd80 ffffffff81fe2e00
+ffffffff81fe2e00
+[  136.389129] Call Trace:
+[  136.389129]  [<ffffffff81869934>] schedule+0x24/0x70
+[  136.389129]  [<ffffffff818674ca>] schedule_timeout+0x13a/0x230
+[  136.389129]  [<ffffffff81049a20>] ? usleep_range+0x40/0x40
+[  136.389129]  [<ffffffff81303fe6>] ? get_next_work+0x12c/0x12c
+[  136.389129]  [<ffffffff813042b7>] worker_loop+0x2d1/0x333
+[  136.389129]  [<ffffffff8105ddce>] kthread+0x8e/0xa0
+[  136.389129]  [<ffffffff818738a4>] kernel_thread_helper+0x4/0x10
+[  136.389129]  [<ffffffff8186af19>] ? retint_restore_args+0xe/0xe
+[  136.389129]  [<ffffffff8105dd40>] ? __init_kthread_worker+0x70/0x70
+[  136.389129]  [<ffffffff818738a0>] ? gs_change+0xb/0xb
+[  136.389129] btrfs-readahead S 0000000000000000  6576  2640      2 0x00000000
+[  136.389129]  ffff88001d7b9d40 0000000000000046 ffff88001d76e000
+ffff88001d7b9fd8
+[  136.389129]  ffff88001d7b9fd8 ffff88001d7b9fd8 ffff88001e347000
+ffff88001d76e000
+[  136.389129]  0000000000000286 ffff88001d7b9d80 ffffffff81fe2e00
+ffffffff81fe2e00
+[  136.389129] Call Trace:
+[  136.389129]  [<ffffffff81869934>] schedule+0x24/0x70
+[  136.389129]  [<ffffffff818674ca>] schedule_timeout+0x13a/0x230
+[  136.389129]  [<ffffffff81049a20>] ? usleep_range+0x40/0x40
+[  136.389129]  [<ffffffff81303fe6>] ? get_next_work+0x12c/0x12c
+[  136.389129]  [<ffffffff813042b7>] worker_loop+0x2d1/0x333
+[  136.389129]  [<ffffffff81303fe6>] ? get_next_work+0x12c/0x12c
+[  136.389129]  [<ffffffff8105ddce>] kthread+0x8e/0xa0
+[  136.389129]  [<ffffffff818738a4>] kernel_thread_helper+0x4/0x10
+[  136.389129]  [<ffffffff8186af19>] ? retint_restore_args+0xe/0xe
+[  136.389129]  [<ffffffff8105dd40>] ? __init_kthread_worker+0x70/0x70
+[  136.389129]  [<ffffffff818738a0>] ? gs_change+0xb/0xb
+[  136.389129] btrfs-cleaner   S 0000000000000000  6784  2641      2 0x00000000
+[  136.389129]  ffff88001c8f5e50 0000000000000046 ffff88001d76f000
+ffff88001c8f5fd8
+[  136.389129]  ffff88001c8f5fd8 ffff88001c8f5fd8 ffffffff81e13440
+ffff88001d76f000
+[  136.389129]  ffff88001c8f5e50 ffff88001d76f000 ffff88001e356000
+ffffffff812bee58
+[  136.389129] Call Trace:
+[  136.389129]  [<ffffffff812bee58>] ? end_workqueue_fn+0x80/0x80
+[  136.389129]  [<ffffffff81869934>] schedule+0x24/0x70
+[  136.389129]  [<ffffffff812bef31>] cleaner_kthread+0xd9/0x10a
+[  136.389129]  [<ffffffff8105ddce>] kthread+0x8e/0xa0
+[  136.389129]  [<ffffffff818738a4>] kernel_thread_helper+0x4/0x10
+[  136.389129]  [<ffffffff8186af19>] ? retint_restore_args+0xe/0xe
+[  136.389129]  [<ffffffff8105dd40>] ? __init_kthread_worker+0x70/0x70
+[  136.389129]  [<ffffffff818738a0>] ? gs_change+0xb/0xb
+[  136.389129] btrfs-transacti D 0000000000000000  3192  2642      2 0x00000000
+[  136.389129]  ffff88001d6b5c00 0000000000000046 ffff88001e341000
+ffff88001d6b5fd8
+[  136.389129]  ffff88001d6b5fd8 ffff88001d6b5fd8 ffffffff81e13440
+ffff88001e341000
+[  136.389129]  ffff88001d6b5c10 ffff88001e341000 ffff88001e356000
+ffffffff812bef62
+[  136.389129] Call Trace:
+[  136.389129]  [<ffffffff812bef62>] ? cleaner_kthread+0x10a/0x10a
+[  136.389129]  [<ffffffff81869934>] schedule+0x24/0x70
+[  136.389129]  [<ffffffff812a2efb>] wait_for_more_refs+0x10c/0x166
+[  136.389129]  [<ffffffff8105e7d0>] ? __init_waitqueue_head+0x60/0x60
+[  136.389129]  [<ffffffff812a328c>] btrfs_run_delayed_refs+0x211/0x415
+[  136.389129]  [<ffffffff818688a9>] ? mutex_unlock+0x9/0x10
+[  136.389129]  [<ffffffff812e7b7d>] ? btrfs_run_ordered_operations+0x1fb/0x202
+[  136.389129]  [<ffffffff812c84d7>] btrfs_commit_transaction+0x12f/0xe7e
+[  136.389129]  [<ffffffff812c4db7>] ? sb_start_intwrite+0x22/0x24
+[  136.389129]  [<ffffffff8105e7d0>] ? __init_waitqueue_head+0x60/0x60
+[  136.389129]  [<ffffffff812bf0c9>] transaction_kthread+0x167/0x249
+[  136.389129]  [<ffffffff8105ddce>] kthread+0x8e/0xa0
+[  136.389129]  [<ffffffff818738a4>] kernel_thread_helper+0x4/0x10
+[  136.389129]  [<ffffffff8186af19>] ? retint_restore_args+0xe/0xe
+[  136.389129]  [<ffffffff8105dd40>] ? __init_kthread_worker+0x70/0x70
+[  136.389129]  [<ffffffff818738a0>] ? gs_change+0xb/0xb
+[  136.389129] flush-8:32      S 0000000000000000  6032  2644      2 0x00000000
+[  136.389129]  ffff88001e217e30 0000000000000046 ffff88001e303000
+ffff88001e217fd8
+[  136.389129]  ffff88001e217fd8 ffff88001e217fd8 ffff88001e302000
+ffff88001e303000
+[  136.389129]  0000000000000000 0000000000000000 ffff88001e303000
+ffff88001e651970
+[  136.389129] Call Trace:
+[  136.389129]  [<ffffffff81869934>] schedule+0x24/0x70
+[  136.389129]  [<ffffffff8115eac5>] bdi_writeback_thread+0x155/0x230
+[  136.389129]  [<ffffffff8115e970>] ? wb_do_writeback+0x1f0/0x1f0
+[  136.389129]  [<ffffffff8105ddce>] kthread+0x8e/0xa0
+[  136.389129]  [<ffffffff818738a4>] kernel_thread_helper+0x4/0x10
+[  136.389129]  [<ffffffff8186af19>] ? retint_restore_args+0xe/0xe
+[  136.389129]  [<ffffffff8105dd40>] ? __init_kthread_worker+0x70/0x70
+[  136.389129]  [<ffffffff818738a0>] ? gs_change+0xb/0xb
+[  136.389129] flush-btrfs-2   S 0000000000000000  1600  2645      2 0x00000000
+[  136.389129]  ffff88001e17fd70 0000000000000046 ffff88001e305000
+ffff88001e17ffd8
+[  136.389129]  ffff88001e17ffd8 ffff88001e17ffd8 ffffffff81e13440
+ffff88001e305000
+[  136.389129]  0000000000000286 ffff88001e17fdb0 ffffffff81fe2e00
+ffffffff81fe2e00
+[  136.389129] Call Trace:
+[  136.389129]  [<ffffffff81869934>] schedule+0x24/0x70
+[  136.389129]  [<ffffffff818674ca>] schedule_timeout+0x13a/0x230
+[  136.389129]  [<ffffffff81049a20>] ? usleep_range+0x40/0x40
+[  136.389129]  [<ffffffff8115ead9>] bdi_writeback_thread+0x169/0x230
+[  136.389129]  [<ffffffff8115e970>] ? wb_do_writeback+0x1f0/0x1f0
+[  136.389129]  [<ffffffff8105ddce>] kthread+0x8e/0xa0
+[  136.389129]  [<ffffffff818738a4>] kernel_thread_helper+0x4/0x10
+[  136.389129]  [<ffffffff8186af19>] ? retint_restore_args+0xe/0xe
+[  136.389129]  [<ffffffff8105dd40>] ? __init_kthread_worker+0x70/0x70
+[  136.389129]  [<ffffffff818738a0>] ? gs_change+0xb/0xb
+[  136.389129] btrfs-worker-2  S 0000000000000000  5328  2646      2 0x00000000
+[  136.389129]  ffff88001e0a3d40 0000000000000046 ffff88001e1ba000
+ffff88001e0a3fd8
+[  136.389129]  ffff88001e0a3fd8 ffff88001e0a3fd8 ffff88001e342000
+ffff88001e1ba000
+[  136.389129]  0000000000000286 ffff88001e0a3d80 ffffffff81fe2e00
+ffffffff81fe2e00
+[  136.389129] Call Trace:
+[  136.389129]  [<ffffffff81869934>] schedule+0x24/0x70
+[  136.389129]  [<ffffffff818674ca>] schedule_timeout+0x13a/0x230
+[  136.389129]  [<ffffffff81049a20>] ? usleep_range+0x40/0x40
+[  136.389129]  [<ffffffff81303fe6>] ? get_next_work+0x12c/0x12c
+[  136.389129]  [<ffffffff813042b7>] worker_loop+0x2d1/0x333
+[  136.389129]  [<ffffffff8105ddce>] kthread+0x8e/0xa0
+[  136.389129]  [<ffffffff818738a4>] kernel_thread_helper+0x4/0x10
+[  136.389129]  [<ffffffff8186af19>] ? retint_restore_args+0xe/0xe
+[  136.389129]  [<ffffffff8105dd40>] ? __init_kthread_worker+0x70/0x70
+[  136.389129]  [<ffffffff818738a0>] ? gs_change+0xb/0xb
+[  136.389129] btrfs-endio-wri S 0000000000000000  3496  2647      2 0x00000000
+[  136.389129]  ffff88001e385d40 0000000000000046 ffff88001d4f5000
+ffff88001e385fd8
+[  136.389129]  ffff88001e385fd8 ffff88001e385fd8 ffff88001d76a000
+ffff88001d4f5000
+[  136.389129]  0000000000000286 ffff88001e385d80 ffffffff81fe2e00
+ffffffff81fe2e00
+[  136.389129] Call Trace:
+[  136.389129]  [<ffffffff81869934>] schedule+0x24/0x70
+[  136.389129]  [<ffffffff818674ca>] schedule_timeout+0x13a/0x230
+[  136.389129]  [<ffffffff81049a20>] ? usleep_range+0x40/0x40
+[  136.389129]  [<ffffffff81303fe6>] ? get_next_work+0x12c/0x12c
+[  136.389129]  [<ffffffff813042b7>] worker_loop+0x2d1/0x333
+[  136.389129]  [<ffffffff8105ddce>] kthread+0x8e/0xa0
+[  136.389129]  [<ffffffff818738a4>] kernel_thread_helper+0x4/0x10
+[  136.389129]  [<ffffffff8186af19>] ? retint_restore_args+0xe/0xe
+[  136.389129]  [<ffffffff8105dd40>] ? __init_kthread_worker+0x70/0x70
+[  136.389129]  [<ffffffff818738a0>] ? gs_change+0xb/0xb
+[  136.389129] btrfs-endio-wri S 0000000000000000  3888  2648      2 0x00000000
+[  136.389129]  ffff88001e3bfd40 0000000000000046 ffff88001c852000
+ffff88001e3bffd8
+[  136.389129]  ffff88001e3bffd8 ffff88001e3bffd8 ffff88001d76a000
+ffff88001c852000
+[  136.389129]  0000000000000286 ffff88001e3bfd80 ffffffff81fe2e00
+ffffffff81fe2e00
+[  136.389129] Call Trace:
+[  136.389129]  [<ffffffff81869934>] schedule+0x24/0x70
+[  136.389129]  [<ffffffff818674ca>] schedule_timeout+0x13a/0x230
+[  136.389129]  [<ffffffff81049a20>] ? usleep_range+0x40/0x40
+[  136.389129]  [<ffffffff81303fe6>] ? get_next_work+0x12c/0x12c
+[  136.389129]  [<ffffffff813042b7>] worker_loop+0x2d1/0x333
+[  136.389129]  [<ffffffff8105ddce>] kthread+0x8e/0xa0
+[  136.389129]  [<ffffffff818738a4>] kernel_thread_helper+0x4/0x10
+[  136.389129]  [<ffffffff8186af19>] ? retint_restore_args+0xe/0xe
+[  136.389129]  [<ffffffff8105dd40>] ? __init_kthread_worker+0x70/0x70
+[  136.389129]  [<ffffffff818738a0>] ? gs_change+0xb/0xb
+[  136.389129] btrfs-worker-3  S 0000000000000000  5712  2649      2 0x00000000
+[  136.389129]  ffff88001b6cbd40 0000000000000046 ffff88001e00b000
+ffff88001b6cbfd8
+[  136.389129]  ffff88001b6cbfd8 ffff88001b6cbfd8 ffff88001e344000
+ffff88001e00b000
+[  136.389129]  0000000000000286 ffff88001b6cbd80 ffffffff81fe2e00
+ffffffff81fe2e00
+[  136.389129] Call Trace:
+[  136.389129]  [<ffffffff81869934>] schedule+0x24/0x70
+[  136.389129]  [<ffffffff818674ca>] schedule_timeout+0x13a/0x230
+[  136.389129]  [<ffffffff81049a20>] ? usleep_range+0x40/0x40
+[  136.389129]  [<ffffffff81303fe6>] ? get_next_work+0x12c/0x12c
+[  136.389129]  [<ffffffff813042b7>] worker_loop+0x2d1/0x333
+[  136.389129]  [<ffffffff8105ddce>] kthread+0x8e/0xa0
+[  136.389129]  [<ffffffff818738a4>] kernel_thread_helper+0x4/0x10
+[  136.389129]  [<ffffffff8186af19>] ? retint_restore_args+0xe/0xe
+[  136.389129]  [<ffffffff8105dd40>] ? __init_kthread_worker+0x70/0x70
+[  136.389129]  [<ffffffff818738a0>] ? gs_change+0xb/0xb
+[  136.389129] btrfs-delayed-m S 0000000000000000  5680  2650      2 0x00000000
+[  136.389129]  ffff880016223d40 0000000000000046 ffff88001e20d000
+ffff880016223fd8
+[  136.389129]  ffff880016223fd8 ffff880016223fd8 ffff88001e302000
+ffff88001e20d000
+[  136.389129]  0000000000000286 ffff880016223d80 ffffffff81fe2e00
+ffffffff81fe2e00
+[  136.389129] Call Trace:
+[  136.389129]  [<ffffffff81869934>] schedule+0x24/0x70
+[  136.389129]  [<ffffffff818674ca>] schedule_timeout+0x13a/0x230
+[  136.389129]  [<ffffffff81049a20>] ? usleep_range+0x40/0x40
+[  136.389129]  [<ffffffff81303fe6>] ? get_next_work+0x12c/0x12c
+[  136.389129]  [<ffffffff813042b7>] worker_loop+0x2d1/0x333
+[  136.389129]  [<ffffffff8105ddce>] kthread+0x8e/0xa0
+[  136.389129]  [<ffffffff818738a4>] kernel_thread_helper+0x4/0x10
+[  136.389129]  [<ffffffff8186af19>] ? retint_restore_args+0xe/0xe
+[  136.389129]  [<ffffffff8105dd40>] ? __init_kthread_worker+0x70/0x70
+[  136.389129]  [<ffffffff818738a0>] ? gs_change+0xb/0xb
+[  136.389129] btrfs-delayed-m S 0000000000000000  4416  2651      2 0x00000000
+[  136.389129]  ffff880006599d40 0000000000000046 ffff88000f5a0000
+ffff880006599fd8
+[  136.389129]  ffff880006599fd8 ffff880006599fd8 ffff88001e302000
+ffff88000f5a0000
+[  136.389129]  0000000000000286 ffff880006599d80 ffffffff81fe2e00
+ffffffff81fe2e00
+[  136.389129] Call Trace:
+[  136.389129]  [<ffffffff81869934>] schedule+0x24/0x70
+[  136.389129]  [<ffffffff818674ca>] schedule_timeout+0x13a/0x230
+[  136.389129]  [<ffffffff81049a20>] ? usleep_range+0x40/0x40
+[  136.389129]  [<ffffffff81303fe6>] ? get_next_work+0x12c/0x12c
+[  136.389129]  [<ffffffff813042b7>] worker_loop+0x2d1/0x333
+[  136.389129]  [<ffffffff8105ddce>] kthread+0x8e/0xa0
+[  136.389129]  [<ffffffff818738a4>] kernel_thread_helper+0x4/0x10
+[  136.389129]  [<ffffffff8186af19>] ? retint_restore_args+0xe/0xe
+[  136.389129]  [<ffffffff8105dd40>] ? __init_kthread_worker+0x70/0x70
+[  136.389129]  [<ffffffff818738a0>] ? gs_change+0xb/0xb
+[  136.389129] btrfs           D 0000000000000003  2536  2652   2564 0x00000000
+[  136.389129]  ffff880013f3ba38 0000000000000046 ffff88001b149000
+ffff880013f3bfd8
+[  136.389129]  ffff880013f3bfd8 ffff880013f3bfd8 ffff88001d76a000
+ffff88001b149000
+[  136.389129]  ffff880013f3ba48 0000000000000000 0000000000000003
+ffff88001dc25a60
+[  136.389129] Call Trace:
+[  136.389129]  [<ffffffff81869934>] schedule+0x24/0x70
+[  136.389129]  [<ffffffff812e7d88>] btrfs_start_ordered_extent+0x204/0x22a
+[  136.389129]  [<ffffffff8105e7d0>] ? __init_waitqueue_head+0x60/0x60
+[  136.389129]  [<ffffffff812e78fb>] btrfs_wait_ordered_extents+0x1ef/0x276
+[  136.389129]  [<ffffffff8105e7d0>] ? __init_waitqueue_head+0x60/0x60
+[  136.389129]  [<ffffffff812c8814>] btrfs_commit_transaction+0x46c/0xe7e
+[  136.389129]  [<ffffffff8105e7d0>] ? __init_waitqueue_head+0x60/0x60
+[  136.389129]  [<ffffffff81304fed>] ? spin_unlock+0x18/0x1a
+[  136.389129]  [<ffffffff81307700>] create_snapshot+0x1cb/0x290
+[  136.389129]  [<ffffffff81307afd>] ? btrfs_mksubvol+0xe6/0x1d5
+[  136.389129]  [<ffffffff81307b4b>] btrfs_mksubvol+0x134/0x1d5
+[  136.389129]  [<ffffffff81135340>] ? fget_raw+0xd0/0xd0
+[  136.389129]  [<ffffffff813097d1>] btrfs_ioctl_snap_create_transid+0x194/0x1bc
+[  136.389129]  [<ffffffff813099f3>] btrfs_ioctl_snap_create_v2+0x15f/0x1cd
+[  136.389129]  [<ffffffff81367931>] ? avc_has_perm_flags+0x101/0x1a0
+[  136.389129]  [<ffffffff8130ef89>] btrfs_ioctl+0x390/0x75f
+[  136.389129]  [<ffffffff811466e7>] do_vfs_ioctl+0x97/0x580
+[  136.389129]  [<ffffffff81368675>] ?
+inode_has_perm.isra.27.constprop.67+0x25/0x30
+[  136.389129]  [<ffffffff8136905f>] ? file_has_perm+0x8f/0xa0
+[  136.389129]  [<ffffffff81872747>] ? sysret_check+0x1b/0x56
+[  136.389129]  [<ffffffff81146c69>] sys_ioctl+0x99/0xa0
+[  136.389129]  [<ffffffff81872722>] system_call_fastpath+0x16/0x1b
+[  136.389129]
+[  136.389129] Showing all locks held in the system:
+[  136.389129] 1 lock held by getty/2557:
+[  136.389129]  #0:  (&tty->atomic_read_lock){+.+...}, at:
+[<ffffffff81439de0>] n_tty_read+0x5c0/0x890
+[  136.389129] 1 lock held by getty/2558:
+[  136.389129]  #0:  (&tty->atomic_read_lock){+.+...}, at:
+[<ffffffff81439de0>] n_tty_read+0x5c0/0x890
+[  136.389129] 1 lock held by getty/2559:
+[  136.389129]  #0:  (&tty->atomic_read_lock){+.+...}, at:
+[<ffffffff81439de0>] n_tty_read+0x5c0/0x890
+[  136.389129] 1 lock held by getty/2560:
+[  136.389129]  #0:  (&tty->atomic_read_lock){+.+...}, at:
+[<ffffffff81439de0>] n_tty_read+0x5c0/0x890
+[  136.389129] 1 lock held by getty/2561:
+[  136.389129]  #0:  (&tty->atomic_read_lock){+.+...}, at:
+[<ffffffff81439de0>] n_tty_read+0x5c0/0x890
+[  136.389129] 1 lock held by getty/2562:
+[  136.389129]  #0:  (&tty->atomic_read_lock){+.+...}, at:
+[<ffffffff81439de0>] n_tty_read+0x5c0/0x890
+[  136.389129] 1 lock held by btrfs-endio-wri/2636:
+[  136.389129]  #0:  (sb_internal){.+.+..}, at: [<ffffffff812c4db7>]
+sb_start_intwrite+0x22/0x24
+[  136.389129] 2 locks held by btrfs-transacti/2642:
+[  136.389129]  #0:  (&fs_info->transaction_kthread_mutex){+.+...},
+at: [<ffffffff812befa1>] transaction_kthread+0x3f/0x249
+[  136.389129]  #1:  (sb_internal){.+.+..}, at: [<ffffffff812c4db7>]
+sb_start_intwrite+0x22/0x24
+[  136.389129] 4 locks held by btrfs/2652:
+[  136.389129]  #0:  (sb_writers#9){.+.+.+}, at: [<ffffffff81152b43>]
+mnt_want_write_file+0x23/0x50
+[  136.389129]  #1:  (&type->i_mutex_dir_key#4/1){+.+.+.}, at:
+[<ffffffff81307a5f>] btrfs_mksubvol+0x48/0x1d5
+[  136.389129]  #2:  (&fs_info->subvol_sem){+++++.}, at:
+[<ffffffff81307afd>] btrfs_mksubvol+0xe6/0x1d5
+[  136.389129]  #3:  (sb_internal){.+.+..}, at: [<ffffffff812c4db7>]
+sb_start_intwrite+0x22/0x24
+[  136.389129]
+[  136.389129] =============================================
+[  136.389129]

@@ -1,14 +1,14 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from acsinet15.oracle.com ([141.146.126.227]:44887 "EHLO
-	acsinet15.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1752847Ab2HCJve (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Fri, 3 Aug 2012 05:51:34 -0400
+Received: from rcsinet15.oracle.com ([148.87.113.117]:46626 "EHLO
+	rcsinet15.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1752867Ab2HCJvf (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Fri, 3 Aug 2012 05:51:35 -0400
 From: Anand jain <Anand.Jain@oracle.com>
 To: linux-btrfs@vger.kernel.org
 Cc: Ilya Dryomov <idryomov@gmail.com>
-Subject: [PATCH 4/9] Btrfs-progs: nuke redundant zeroing in __list_subvol_search()
-Date: Fri,  3 Aug 2012 17:48:53 +0800
-Message-Id: <1343987338-10612-6-git-send-email-Anand.Jain@oracle.com>
+Subject: [PATCH 5/9] Btrfs-progs: bring 'subvol get-default' back in
+Date: Fri,  3 Aug 2012 17:48:54 +0800
+Message-Id: <1343987338-10612-7-git-send-email-Anand.Jain@oracle.com>
 In-Reply-To: <1343987338-10612-1-git-send-email-Anand.Jain@oracle.com>
 References: <1343822481-26707-1-git-send-email-Anand.Jain@oracle.com>
  <1343987338-10612-1-git-send-email-Anand.Jain@oracle.com>
@@ -17,28 +17,140 @@ List-ID: <linux-btrfs.vger.kernel.org>
 
 From: Ilya Dryomov <idryomov@gmail.com>
 
-There's no need to zero out things twice.
+Commit bab2c565 accidentally broke 'subvol get-default' command by
+removing almost all of the underlying code.  Bring it back with some
+fixes and improvements.
 
 Signed-off-by: Ilya Dryomov <idryomov@gmail.com>
 ---
- btrfs-list.c |    4 ----
- 1 files changed, 0 insertions(+), 4 deletions(-)
+ btrfs-list.c |   81 +++++++++++++++++++++++++++++++++++++++++++++++++++++++++-
+ ctree.h      |    2 +
+ 2 files changed, 82 insertions(+), 1 deletions(-)
 
 diff --git a/btrfs-list.c b/btrfs-list.c
-index 5c21cac..911b238 100644
+index 911b238..f2a6e19 100644
 --- a/btrfs-list.c
 +++ b/btrfs-list.c
-@@ -570,10 +570,6 @@ static int __list_subvol_search(int fd, struct root_lookup *root_lookup)
- 	root_lookup_init(root_lookup);
- 	memset(&args, 0, sizeof(args));
+@@ -554,6 +554,60 @@ build:
+ 	return full;
+ }
  
--	root_lookup_init(root_lookup);
--
--	memset(&args, 0, sizeof(args));
--
- 	/* search in the tree of tree roots */
- 	sk->tree_id = 1;
++static int get_default_subvolid(int fd, u64 *default_id)
++{
++	struct btrfs_ioctl_search_args args;
++	struct btrfs_ioctl_search_key *sk = &args.key;
++	struct btrfs_ioctl_search_header *sh;
++	u64 found = 0;
++	int ret;
++
++	memset(&args, 0, sizeof(args));
++
++	/*
++	 * search for a dir item with a name 'default' in the tree of
++	 * tree roots, it should point us to a default root
++	 */
++	sk->tree_id = 1;
++
++	/* don't worry about ancient format and request only one item */
++	sk->nr_items = 1;
++
++	sk->max_objectid = BTRFS_ROOT_TREE_DIR_OBJECTID;
++	sk->min_objectid = BTRFS_ROOT_TREE_DIR_OBJECTID;
++	sk->max_type = BTRFS_DIR_ITEM_KEY;
++	sk->min_type = BTRFS_DIR_ITEM_KEY;
++	sk->max_offset = (u64)-1;
++	sk->max_transid = (u64)-1;
++
++	ret = ioctl(fd, BTRFS_IOC_TREE_SEARCH, &args);
++	if (ret < 0)
++		return ret;
++
++	/* the ioctl returns the number of items it found in nr_items */
++	if (sk->nr_items == 0)
++		goto out;
++
++	sh = (struct btrfs_ioctl_search_header *)args.buf;
++
++	if (sh->type == BTRFS_DIR_ITEM_KEY) {
++		struct btrfs_dir_item *di;
++		int name_len;
++		char *name;
++
++		di = (struct btrfs_dir_item *)(sh + 1);
++		name_len = btrfs_stack_dir_name_len(di);
++		name = (char *)(di + 1);
++
++		if (!strncmp("default", name, name_len))
++			found = btrfs_disk_key_objectid(&di->location);
++	}
++
++out:
++	*default_id = found;
++	return 0;
++}
++
+ static int __list_subvol_search(int fd, struct root_lookup *root_lookup)
+ {
+ 	int ret;
+@@ -667,12 +721,32 @@ static int __list_subvol_fill_paths(int fd, struct root_lookup *root_lookup)
+ 	return 0;
+ }
  
+-int list_subvols(int fd, int print_parent)
++int list_subvols(int fd, int print_parent, int get_default)
+ {
+ 	struct root_lookup root_lookup;
+ 	struct rb_node *n;
++	u64 default_id;
+ 	int ret;
+ 
++	if (get_default) {
++		ret = get_default_subvolid(fd, &default_id);
++		if (ret) {
++			fprintf(stderr, "ERROR: can't perform the search - %s\n",
++				strerror(errno));
++			return ret;
++		}
++		if (default_id == 0) {
++			fprintf(stderr, "ERROR: 'default' dir item not found\n");
++			return ret;
++		}
++
++		/* no need to resolve roots if FS_TREE is default */
++		if (default_id == BTRFS_FS_TREE_OBJECTID) {
++			printf("ID 5 (FS_TREE)\n");
++			return ret;
++		}
++	}
++
+ 	ret = __list_subvol_search(fd, &root_lookup);
+ 	if (ret) {
+ 		fprintf(stderr, "ERROR: can't perform the search - %s\n",
+@@ -700,6 +774,11 @@ int list_subvols(int fd, int print_parent)
+ 		char *path;
+ 
+ 		entry = rb_entry(n, struct root_info, rb_node);
++		if (get_default && entry->root_id != default_id) {
++			n = rb_prev(n);
++			continue;
++		}
++
+ 		resolve_root(&root_lookup, entry, &parent_id, &level, &path);
+ 		if (print_parent) {
+ 			printf("ID %llu parent %llu top level %llu path %s\n",
+diff --git a/ctree.h b/ctree.h
+index 07691c7..32b591c 100644
+--- a/ctree.h
++++ b/ctree.h
+@@ -1459,6 +1459,8 @@ BTRFS_SETGET_FUNCS(dir_type, struct btrfs_dir_item, type, 8);
+ BTRFS_SETGET_FUNCS(dir_name_len, struct btrfs_dir_item, name_len, 16);
+ BTRFS_SETGET_FUNCS(dir_transid, struct btrfs_dir_item, transid, 64);
+ 
++BTRFS_SETGET_STACK_FUNCS(stack_dir_name_len, struct btrfs_dir_item, name_len, 16);
++
+ static inline void btrfs_dir_item_key(struct extent_buffer *eb,
+ 				      struct btrfs_dir_item *item,
+ 				      struct btrfs_disk_key *key)
 -- 
 1.7.1
 

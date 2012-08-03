@@ -1,175 +1,52 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from acsinet15.oracle.com ([141.146.126.227]:44931 "EHLO
-	acsinet15.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1753099Ab2HCJvm (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Fri, 3 Aug 2012 05:51:42 -0400
+Received: from rcsinet15.oracle.com ([148.87.113.117]:46708 "EHLO
+	rcsinet15.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1753164Ab2HCJvo (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Fri, 3 Aug 2012 05:51:44 -0400
+Received: from ucsinet21.oracle.com (ucsinet21.oracle.com [156.151.31.93])
+	by rcsinet15.oracle.com (Sentrion-MTA-4.2.2/Sentrion-MTA-4.2.2) with ESMTP id q739phk5026485
+	(version=TLSv1/SSLv3 cipher=DHE-RSA-AES256-SHA bits=256 verify=OK)
+	for <linux-btrfs@vger.kernel.org>; Fri, 3 Aug 2012 09:51:44 GMT
+Received: from acsmt358.oracle.com (acsmt358.oracle.com [141.146.40.158])
+	by ucsinet21.oracle.com (8.14.4+Sun/8.14.4) with ESMTP id q739ph3C001257
+	(version=TLSv1/SSLv3 cipher=DHE-RSA-AES256-SHA bits=256 verify=NO)
+	for <linux-btrfs@vger.kernel.org>; Fri, 3 Aug 2012 09:51:43 GMT
+Received: from abhmt119.oracle.com (abhmt119.oracle.com [141.146.116.71])
+	by acsmt358.oracle.com (8.12.11.20060308/8.12.11) with ESMTP id q739pgpZ002423
+	for <linux-btrfs@vger.kernel.org>; Fri, 3 Aug 2012 04:51:42 -0500
 From: Anand jain <Anand.Jain@oracle.com>
 To: linux-btrfs@vger.kernel.org
-Cc: Liu Bo <liubo2009@cn.fujitsu.com>
-Subject: [PATCH 6/9] Btrfs-progs: show generation in command btrfs subvol list
-Date: Fri,  3 Aug 2012 17:48:55 +0800
-Message-Id: <1343987338-10612-8-git-send-email-Anand.Jain@oracle.com>
+Cc: Anand Jain <anand.jain@oracle.com>
+Subject: [PATCH 9/9] Btrfs-progs: fix the btrfs subvol list path last char
+Date: Fri,  3 Aug 2012 17:48:58 +0800
+Message-Id: <1343987338-10612-11-git-send-email-Anand.Jain@oracle.com>
 In-Reply-To: <1343987338-10612-1-git-send-email-Anand.Jain@oracle.com>
 References: <1343822481-26707-1-git-send-email-Anand.Jain@oracle.com>
  <1343987338-10612-1-git-send-email-Anand.Jain@oracle.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-From: Liu Bo <liubo2009@cn.fujitsu.com>
+From: Anand Jain <anand.jain@oracle.com>
 
-This adds the ability to show root's modification generation when we use
-btrfs subvol list.
 
-NOTE:
-Like file's atime and ctime, root's generation also has 'creation generation'
-and 'modification generation'.
-The generation that we're going to show is 'modification generation', and the
-next patch is going to show 'creation generation'.
-
-Signed-off-by: Liu Bo <liubo2009@cn.fujitsu.com>
+Signed-off-by: Anand Jain <anand.jain@oracle.com>
 ---
- btrfs-list.c |   61 ++++++++++++++++++++++++++++++++++++++++++++++++++++-----
- 1 files changed, 55 insertions(+), 6 deletions(-)
+ btrfs-list.c |    2 +-
+ 1 files changed, 1 insertions(+), 1 deletions(-)
 
 diff --git a/btrfs-list.c b/btrfs-list.c
-index f2a6e19..0592055 100644
+index e0cb782..6e83b31 100644
 --- a/btrfs-list.c
 +++ b/btrfs-list.c
-@@ -57,6 +57,9 @@ struct root_info {
- 	/* the dir id we're in from ref_tree */
- 	u64 dir_id;
- 
-+	/* generation when the root is created or last updated */
-+	u64 gen;
-+
- 	/* path from the subvol we live in to this root, including the
- 	 * root's name.  This is null until we do the extra lookup ioctl.
- 	 */
-@@ -194,6 +197,19 @@ static int add_root(struct root_lookup *root_lookup,
- 	return 0;
- }
- 
-+static int update_root(struct root_lookup *root_lookup, u64 root_id, u64 gen)
-+{
-+	struct root_info *ri;
-+
-+	ri = tree_search(&root_lookup->root, root_id);
-+	if (!ri || ri->root_id != root_id) {
-+		fprintf(stderr, "could not find subvol %llu\n", root_id);
-+		return -ENOENT;
-+	}
-+	ri->gen = gen;
-+	return 0;
-+}
-+
- /*
-  * for a given root_info, search through the root_lookup tree to construct
-  * the full path name to it.
-@@ -615,11 +631,15 @@ static int __list_subvol_search(int fd, struct root_lookup *root_lookup)
- 	struct btrfs_ioctl_search_key *sk = &args.key;
- 	struct btrfs_ioctl_search_header *sh;
- 	struct btrfs_root_ref *ref;
-+	struct btrfs_root_item *ri;
- 	unsigned long off = 0;
- 	int name_len;
- 	char *name;
- 	u64 dir_id;
-+	u8 type;
-+	u64 gen = 0;
- 	int i;
-+	int get_gen = 0;
- 
- 	root_lookup_init(root_lookup);
- 	memset(&args, 0, sizeof(args));
-@@ -644,6 +664,7 @@ static int __list_subvol_search(int fd, struct root_lookup *root_lookup)
- 	sk->max_offset = (u64)-1;
- 	sk->max_transid = (u64)-1;
- 
-+again:
- 	/* just a big number, doesn't matter much */
- 	sk->nr_items = 4096;
- 
-@@ -665,7 +686,7 @@ static int __list_subvol_search(int fd, struct root_lookup *root_lookup)
- 			sh = (struct btrfs_ioctl_search_header *)(args.buf +
- 								  off);
- 			off += sizeof(*sh);
--			if (sh->type == BTRFS_ROOT_BACKREF_KEY) {
-+			if (!get_gen && sh->type == BTRFS_ROOT_BACKREF_KEY) {
- 				ref = (struct btrfs_root_ref *)(args.buf + off);
- 				name_len = btrfs_stack_root_ref_name_len(ref);
- 				name = (char *)(ref + 1);
-@@ -673,6 +694,11 @@ static int __list_subvol_search(int fd, struct root_lookup *root_lookup)
- 
- 				add_root(root_lookup, sh->objectid, sh->offset,
- 					 dir_id, name, name_len);
-+			} else if (get_gen && sh->type == BTRFS_ROOT_ITEM_KEY) {
-+				ri = (struct btrfs_root_item *)(args.buf + off);
-+				gen = btrfs_root_generation(ri);
-+
-+				update_root(root_lookup, sh->objectid, gen);
- 			}
- 
- 			off += sh->len;
-@@ -689,17 +715,38 @@ static int __list_subvol_search(int fd, struct root_lookup *root_lookup)
- 		/* this iteration is done, step forward one root for the next
- 		 * ioctl
- 		 */
--		if (sk->min_type < BTRFS_ROOT_BACKREF_KEY) {
--			sk->min_type = BTRFS_ROOT_BACKREF_KEY;
-+		if (get_gen)
-+			type = BTRFS_ROOT_ITEM_KEY;
-+		else
-+			type = BTRFS_ROOT_BACKREF_KEY;
-+
-+		if (sk->min_type < type) {
-+			sk->min_type = type;
- 			sk->min_offset = 0;
- 		} else  if (sk->min_objectid < BTRFS_LAST_FREE_OBJECTID) {
- 			sk->min_objectid++;
--			sk->min_type = BTRFS_ROOT_BACKREF_KEY;
-+			sk->min_type = type;
- 			sk->min_offset = 0;
- 		} else
- 			break;
- 	}
- 
-+	if (!get_gen) {
-+		memset(&args, 0, sizeof(args));
-+
-+		sk->tree_id = 1;
-+		sk->max_type = BTRFS_ROOT_ITEM_KEY;
-+		sk->min_type = BTRFS_ROOT_ITEM_KEY;
-+
-+		sk->min_objectid = BTRFS_FIRST_FREE_OBJECTID;
-+
-+		sk->max_objectid = BTRFS_LAST_FREE_OBJECTID;
-+		sk->max_offset = (u64)-1;
-+		sk->max_transid = (u64)-1;
-+
-+		get_gen = 1;
-+		goto again;
-+	}
- 	return 0;
- }
- 
-@@ -781,13 +828,15 @@ int list_subvols(int fd, int print_parent, int get_default)
- 
- 		resolve_root(&root_lookup, entry, &parent_id, &level, &path);
- 		if (print_parent) {
--			printf("ID %llu parent %llu top level %llu path %s\n",
-+			printf("ID %llu gen %llu parent %llu top level %llu path %s\n",
- 				(unsigned long long)entry->root_id,
-+				(unsigned long long)entry->gen,
- 				(unsigned long long)parent_id,
- 				(unsigned long long)level, path);
- 		} else {
--			printf("ID %llu top level %llu path %s\n",
-+			printf("ID %llu gen %llu top level %llu path %s\n",
- 				(unsigned long long)entry->root_id,
-+				(unsigned long long)entry->gen,
- 				(unsigned long long)level, path);
- 		}
- 
+@@ -205,7 +205,7 @@ static int add_root(struct root_lookup *root_lookup,
+ 	if (name)
+ 		strncpy(ri->name, name, name_len);
+ 	if (name_len > 0)
+-		ri->name[name_len-1] = 0;
++		ri->name[name_len] = '\0';
+ 	if (gen)
+ 		ri->gen = *gen;
+ 	ri->otime = ot;
 -- 
 1.7.1
 

@@ -1,103 +1,58 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from rcsinet15.oracle.com ([148.87.113.117]:46589 "EHLO
+Received: from rcsinet15.oracle.com ([148.87.113.117]:46605 "EHLO
 	rcsinet15.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1752532Ab2HCJvb (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Fri, 3 Aug 2012 05:51:31 -0400
+	with ESMTP id S1752532Ab2HCJvd (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Fri, 3 Aug 2012 05:51:33 -0400
 From: Anand jain <Anand.Jain@oracle.com>
 To: linux-btrfs@vger.kernel.org
-Cc: Ilya Dryomov <idryomov@gmail.com>
-Subject: [PATCH 3/9] Btrfs-progs: refactor resolve_root() function a bit
-Date: Fri,  3 Aug 2012 17:48:52 +0800
-Message-Id: <1343987338-10612-5-git-send-email-Anand.Jain@oracle.com>
+Cc: Liu Bo <liubo2009@cn.fujitsu.com>
+Subject: [PATCH 2/9] Btrfs-progs: search subvolumes with proper objectid
+Date: Fri,  3 Aug 2012 17:48:51 +0800
+Message-Id: <1343987338-10612-4-git-send-email-Anand.Jain@oracle.com>
 In-Reply-To: <1343987338-10612-1-git-send-email-Anand.Jain@oracle.com>
 References: <1343822481-26707-1-git-send-email-Anand.Jain@oracle.com>
  <1343987338-10612-1-git-send-email-Anand.Jain@oracle.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-From: Ilya Dryomov <idryomov@gmail.com>
+From: Liu Bo <liubo2009@cn.fujitsu.com>
 
-Don't pass a pointer to root_id to resolve_root().  It's always the same as
-ri->root_id, passing a pointer hints that root_id can somehow change which is
-not true.
+Btrfs's subvolume/snapshot is limited to
+[BTRFS_FIRST_FREE_OBJECTID, BTRFS_LAST_FREE_OBJECTID], so just apply the range.
 
-Signed-off-by: Ilya Dryomov <idryomov@gmail.com>
+Signed-off-by: Liu Bo <liubo2009@cn.fujitsu.com>
 ---
- btrfs-list.c |   21 ++++++++++-----------
- 1 files changed, 10 insertions(+), 11 deletions(-)
+ btrfs-list.c |    6 ++++--
+ 1 files changed, 4 insertions(+), 2 deletions(-)
 
 diff --git a/btrfs-list.c b/btrfs-list.c
-index 680dd03..5c21cac 100644
+index 35e6139..680dd03 100644
 --- a/btrfs-list.c
 +++ b/btrfs-list.c
-@@ -202,7 +202,7 @@ static int add_root(struct root_lookup *root_lookup,
-  * in by lookup_ino_path
-  */
- static int resolve_root(struct root_lookup *rl, struct root_info *ri,
--			u64 *root_id, u64 *parent_id, u64 *top_id, char **path)
-+			u64 *parent_id, u64 *top_id, char **path)
- {
- 	char *full_path = NULL;
- 	int len = 0;
-@@ -256,7 +256,6 @@ static int resolve_root(struct root_lookup *rl, struct root_info *ri,
- 		}
- 	}
+@@ -585,11 +585,13 @@ static int __list_subvol_search(int fd, struct root_lookup *root_lookup)
+ 	sk->max_type = BTRFS_ROOT_BACKREF_KEY;
+ 	sk->min_type = BTRFS_ROOT_BACKREF_KEY;
  
--	*root_id = ri->root_id;
- 	*path = full_path;
++	sk->min_objectid = BTRFS_FIRST_FREE_OBJECTID;
++
+ 	/*
+ 	 * set all the other params to the max, we'll take any objectid
+ 	 * and any trans
+ 	 */
+-	sk->max_objectid = (u64)-1;
++	sk->max_objectid = BTRFS_LAST_FREE_OBJECTID;
+ 	sk->max_offset = (u64)-1;
+ 	sk->max_transid = (u64)-1;
  
- 	return 0;
-@@ -700,23 +699,23 @@ int list_subvols(int fd, int print_parent)
- 	n = rb_last(&root_lookup.root);
- 	while (n) {
- 		struct root_info *entry;
--		u64 root_id;
- 		u64 level;
- 		u64 parent_id;
- 		char *path;
-+
- 		entry = rb_entry(n, struct root_info, rb_node);
--		resolve_root(&root_lookup, entry, &root_id, &parent_id,
--				&level, &path);
-+		resolve_root(&root_lookup, entry, &parent_id, &level, &path);
- 		if (print_parent) {
- 			printf("ID %llu parent %llu top level %llu path %s\n",
--				(unsigned long long)root_id,
-+				(unsigned long long)entry->root_id,
- 				(unsigned long long)parent_id,
- 				(unsigned long long)level, path);
- 		} else {
- 			printf("ID %llu top level %llu path %s\n",
--				(unsigned long long)root_id,
-+				(unsigned long long)entry->root_id,
- 				(unsigned long long)level, path);
- 		}
-+
- 		free(path);
- 		n = rb_prev(n);
- 	}
-@@ -922,17 +921,17 @@ char *path_for_root(int fd, u64 root)
- 	n = rb_last(&root_lookup.root);
- 	while (n) {
- 		struct root_info *entry;
--		u64 root_id;
- 		u64 parent_id;
- 		u64 level;
- 		char *path;
-+
- 		entry = rb_entry(n, struct root_info, rb_node);
--		resolve_root(&root_lookup, entry, &root_id, &parent_id, &level,
--				&path);
--		if (root_id == root)
-+		resolve_root(&root_lookup, entry, &parent_id, &level, &path);
-+		if (entry->root_id == root)
- 			ret_path = path;
- 		else
- 			free(path);
-+
- 		n = rb_prev(n);
- 	}
- 
+@@ -641,7 +643,7 @@ static int __list_subvol_search(int fd, struct root_lookup *root_lookup)
+ 		if (sk->min_type < BTRFS_ROOT_BACKREF_KEY) {
+ 			sk->min_type = BTRFS_ROOT_BACKREF_KEY;
+ 			sk->min_offset = 0;
+-		} else  if (sk->min_objectid < (u64)-1) {
++		} else  if (sk->min_objectid < BTRFS_LAST_FREE_OBJECTID) {
+ 			sk->min_objectid++;
+ 			sk->min_type = BTRFS_ROOT_BACKREF_KEY;
+ 			sk->min_offset = 0;
 -- 
 1.7.1
 

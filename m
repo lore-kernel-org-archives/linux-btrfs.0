@@ -1,21 +1,16 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mondschein.lichtvoll.de ([194.150.191.11]:41745 "EHLO
+Received: from mondschein.lichtvoll.de ([194.150.191.11]:33922 "EHLO
 	mail.lichtvoll.de" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1753441Ab2HEKzu (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Sun, 5 Aug 2012 06:55:50 -0400
-Received: from merkaba.localnet (ppp-93-104-157-132.dynamic.mnet-online.de [93.104.157.132])
-	by mail.lichtvoll.de (Postfix) with ESMTPSA id EE19C1D9
-	for <linux-btrfs@vger.kernel.org>; Sun,  5 Aug 2012 12:55:48 +0200 (CEST)
-From: Martin Steigerwald <Martin@lichtvoll.de>
-To: linux-btrfs@vger.kernel.org
+	with ESMTP id S1754288Ab2HEK4O (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Sun, 5 Aug 2012 06:56:14 -0400
+To: linux-btrfs@vger.kernel.org, Florian Lindner <mailinglists@xgm.de>
 Subject: Re: filesystem show still has stale filesystem
-Date: Sun, 5 Aug 2012 12:55:48 +0200
-References: <CAJtBfr9mX-T8+-nGAvkinaO3yEw20zjRdab=4vjukwZTj0nR7w@mail.gmail.com> (sfid-20120805_125303_144829_D3718806)
-In-Reply-To: <CAJtBfr9mX-T8+-nGAvkinaO3yEw20zjRdab=4vjukwZTj0nR7w@mail.gmail.com>
+From: Martin Steigerwald <Martin@lichtvoll.de>
+Date: Sun, 5 Aug 2012 12:56:13 +0200
 MIME-Version: 1.0
 Content-Type: Text/Plain;
   charset="iso-8859-1"
-Message-Id: <201208051255.48466.Martin@lichtvoll.de>
+Message-Id: <201208051256.13695.Martin@lichtvoll.de>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 

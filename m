@@ -1,61 +1,32 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.fusionio.com ([66.114.96.31]:38478 "EHLO mx2.fusionio.com"
+Received: from mx2.fusionio.com ([66.114.96.31]:52398 "EHLO mx2.fusionio.com"
 	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1752836Ab2HFTle (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 6 Aug 2012 15:41:34 -0400
-Received: from mail1.int.fusionio.com (mail1.int.fusionio.com [10.101.1.21]) by mx2.fusionio.com with ESMTP id 5EB7CJhT3Gy3HAoh (version=TLSv1 cipher=AES128-SHA bits=128 verify=NO) for <linux-btrfs@vger.kernel.org>; Mon, 06 Aug 2012 13:41:33 -0600 (MDT)
-From: Josef Bacik <jbacik@fusionio.com>
-To: <linux-btrfs@vger.kernel.org>
-Subject: [PATCH] Btrfs: increase the size of the free space cache
-Date: Mon, 6 Aug 2012 15:46:38 -0400
-Message-ID: <1344282398-1453-1-git-send-email-jbacik@fusionio.com>
+	id S1754216Ab2HFUKl (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Mon, 6 Aug 2012 16:10:41 -0400
+Date: Mon, 6 Aug 2012 16:10:38 -0400
+From: Chris Mason <chris.mason@fusionio.com>
+To: Alexander Block <ablock84@googlemail.com>
+CC: "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
+Subject: Re: wait_for_more_refs not waking up
+Message-ID: <20120806201038.GE8417@shiny>
+References: <CAB9VWqBANPS9eQ6reVDBsE-cssp_sEPK2aDAXyQHLtHkBXV_BA@mail.gmail.com>
 MIME-Version: 1.0
-Content-Type: text/plain
+Content-Type: text/plain; charset="us-ascii"
+In-Reply-To: <CAB9VWqBANPS9eQ6reVDBsE-cssp_sEPK2aDAXyQHLtHkBXV_BA@mail.gmail.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Arne was complaining about the space cache having mismatching generation
-numbers when debugging a deadlock.  This is because we can run out of space
-in our preallocated range for our space cache if you have a pretty
-fragmented amount of space in your pinned space.  So just increase the
-amount of space we preallocate for space cache so we can be sure to have
-enough space.  This will only really affect data ranges since their the only
-chunks that end up larger than 256MB.  Thanks,
+On Fri, Aug 03, 2012 at 01:11:31AM -0600, Alexander Block wrote:
+> I got a deadlock happening while creating a snapshot and ordered
+> writes are pending. I can reproduce it 100% using btrfs send/receive.
+> It happens when I receive a set of streams on a freshly created FS. I
+> think I can exclude send/receive as the source of the problem as it
+> happens while receiving, even when rebooting between send and receive.
+> Receive does not depend on any extra kernel support and only uses
+> normal vfs syscalls.
 
-Signed-off-by: Josef Bacik <jbacik@fusionio.com>
----
- fs/btrfs/extent-tree.c |   15 +++++++--------
- 1 files changed, 7 insertions(+), 8 deletions(-)
+Are you seeing this one on the git tree I sent to Linus?  I triggered
+this once and then haven't seen it since I put in the barrier before the
+waitqueue active check.
 
-diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
-index 45c69c4..55d33b8 100644
---- a/fs/btrfs/extent-tree.c
-+++ b/fs/btrfs/extent-tree.c
-@@ -3007,17 +3007,16 @@ again:
- 	}
- 	spin_unlock(&block_group->lock);
- 
--	num_pages = (int)div64_u64(block_group->key.offset, 1024 * 1024 * 1024);
-+	/*
-+	 * Try to preallocate enough space based on how big the block group is.
-+	 * Keep in mind this has to include any pinned space which could end up
-+	 * taking up quite a bit since it's not folded into the other space
-+	 * cache.
-+	 */
-+	num_pages = (int)div64_u64(block_group->key.offset, 256 * 1024 * 1024);
- 	if (!num_pages)
- 		num_pages = 1;
- 
--	/*
--	 * Just to make absolutely sure we have enough space, we're going to
--	 * preallocate 12 pages worth of space for each block group.  In
--	 * practice we ought to use at most 8, but we need extra space so we can
--	 * add our header and have a terminator between the extents and the
--	 * bitmaps.
--	 */
- 	num_pages *= 16;
- 	num_pages *= PAGE_CACHE_SIZE;
- 
--- 
-1.7.7.6
-
+-chris

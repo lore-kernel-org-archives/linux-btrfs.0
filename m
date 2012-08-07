@@ -1,40 +1,47 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from magic.merlins.org ([209.81.13.136]:56014 "EHLO
-	mail1.merlins.org" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1751184Ab2HGRks (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Tue, 7 Aug 2012 13:40:48 -0400
-Received: from merlin by mail1.merlins.org with local (Exim 4.77 #2)
-	id 1Synlv-0003xK-MV
-	for <linux-btrfs@vger.kernel.org>; Tue, 07 Aug 2012 10:40:47 -0700
-Date: Tue, 7 Aug 2012 10:40:47 -0700
-From: Marc MERLIN <marc@merlins.org>
-To: linux-btrfs@vger.kernel.org
-Subject: btrfs panic in 3.5.0
-Message-ID: <20120807174047.GE24635@merlins.org>
+Received: from mailout-de.gmx.net ([213.165.64.23]:37490 "HELO
+	mailout-de.gmx.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with SMTP id S1755991Ab2HGSOB (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Tue, 7 Aug 2012 14:14:01 -0400
+Message-ID: <50215AFF.1080800@gmx.net>
+Date: Tue, 07 Aug 2012 20:14:23 +0200
+From: Arne Jansen <sensille@gmx.net>
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
+To: Marc MERLIN <marc@merlins.org>
+CC: linux-btrfs@vger.kernel.org
+Subject: Re: btrfs panic in 3.5.0
+References: <20120807174047.GE24635@merlins.org>
+In-Reply-To: <20120807174047.GE24635@merlins.org>
+Content-Type: text/plain; charset=ISO-8859-1
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Unfortunately I only have a screenshot.
+On 08/07/2012 07:40 PM, Marc MERLIN wrote:
+> Unfortunately I only have a screenshot.
+> 
+> Apparently the panic was in 
+> btrfs_set_lock_blocking_rw
+> with a RIP in btrfs_cow_block
+> 
 
-Apparently the panic was in 
-btrfs_set_lock_blocking_rw
-with a RIP in btrfs_cow_block
+Can you please resolve btrfs_cow_block+0x3b to a line number?
 
-Screenshot here:
-http://marc.merlins.org/tmp/btrfs_oops.jpg
+gdb btrfs.ko
+(gdb) info line *btrfs_cow_block+0x3b
 
-Because the display looks a bit messed up, I can't tell if the ata error
-happened before or after the oops.
+Thanks,
+Arne
 
-System rebooted ok.
+> Screenshot here:
+> http://marc.merlins.org/tmp/btrfs_oops.jpg
+> 
+> Because the display looks a bit messed up, I can't tell if the ata error
+> happened before or after the oops.
+> 
+> System rebooted ok.
+> 
+> Was there a better way to get this ooops if I didn't have serial console?
+> 
+> Marc
+> 
 
-Was there a better way to get this ooops if I didn't have serial console?
-
-Marc
--- 
-"A mouse is a device used to point at the xterm you want to type in" - A.S.R.
-Microsoft is to operating systems ....
-                                      .... what McDonalds is to gourmet cooking
-Home page: http://marc.merlins.org/  

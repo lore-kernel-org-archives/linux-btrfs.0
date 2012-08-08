@@ -1,40 +1,73 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from csamuel.org ([74.50.50.137]:51191 "EHLO csamuel.org"
+Received: from cantor2.suse.de ([195.135.220.15]:60912 "EHLO mx2.suse.de"
 	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1757248Ab2HHLgT (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 8 Aug 2012 07:36:19 -0400
-Received: from localhost (localhost [127.0.0.1])
-	by csamuel.org (Postfix) with ESMTP id 2DCA44086A
-	for <linux-btrfs@vger.kernel.org>; Wed,  8 Aug 2012 21:36:19 +1000 (EST)
-Received: from csamuel.org ([127.0.0.1])
- by localhost (csamuel.org [127.0.0.1]) (amavisd-maia, port 10024) with LMTP
- id 01508-01 for <linux-btrfs@vger.kernel.org>;
- Wed,  8 Aug 2012 21:36:19 +1000 (EST)
-Received: from [IPv6:2001:44b8:41b4:e400:211:50ff:fe0a:f395] (2001-44b8-41b4-e400-0211-50ff-fe0a-f395.static.ipv6.internode.on.net [IPv6:2001:44b8:41b4:e400:211:50ff:fe0a:f395])
-	by csamuel.org (Postfix) with ESMTPSA id B78DE40869
-	for <linux-btrfs@vger.kernel.org>; Wed,  8 Aug 2012 21:36:17 +1000 (EST)
-Message-ID: <50224F1F.3030801@csamuel.org>
-Date: Wed, 08 Aug 2012 21:35:59 +1000
-From: Chris Samuel <chris@csamuel.org>
+	id S964926Ab2HHNio (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Wed, 8 Aug 2012 09:38:44 -0400
+Date: Wed, 8 Aug 2012 15:38:41 +0200
+From: David Sterba <dsterba@suse.cz>
+To: Miao Xie <miaox@cn.fujitsu.com>
+Cc: Josef Bacik <jbacik@fusionio.com>,
+        Linux Btrfs <linux-btrfs@vger.kernel.org>,
+        Wu Fengguang <fengguang.wu@intel.com>,
+        Seto Hidetoshi <seto.hidetoshi@jp.fujitsu.com>,
+        David Sterba <dave@jikos.cz>
+Subject: Re: [PATCH V3 2/2] Btrfs: fix the snapshot that should not exist
+Message-ID: <20120808133841.GC5873@ds.suse.cz>
+Reply-To: dsterba@suse.cz
+References: <501A04CE.9090408@cn.fujitsu.com>
+ <20120802114631.GM17430@twin.jikos.cz>
+ <501B2F20.7080903@cn.fujitsu.com>
+ <20120803210301.GK2263@localhost.localdomain>
+ <501CB8D8.2010405@cn.fujitsu.com>
 MIME-Version: 1.0
-To: linux-btrfs@vger.kernel.org
-Subject: Re: severe hardlink bug
-References: <20100124015138.092c4959@simplux> <201001240909.44753.kreijack@libero.it> <20100124140837.5efcd526@simplux> <201001241415.47519.kreijack@inwind.it> <20100124142711.4afe8a81@simplux> <loom.20120729T205902-38@post.gmane.org> <501649E3.6010600@jan-o-sch.net> <loom.20120808T083450-852@post.gmane.org>
-In-Reply-To: <loom.20120808T083450-852@post.gmane.org>
-Content-Type: text/plain; charset=ISO-8859-1; format=flowed
+Content-Type: multipart/mixed; boundary="YiEDa0DAkWCtVeE4"
+In-Reply-To: <501CB8D8.2010405@cn.fujitsu.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 08/08/2012 04:37 PM, Konstantin Dmitriev wrote:
 
-> Unfortunately I cannot afford to have unstable patched kernel on the production
-> server.
+--YiEDa0DAkWCtVeE4
+Content-Type: text/plain; charset=us-ascii
+Content-Disposition: inline
 
-I'd suggest that using btrfs for production servers is probably a bit 
-brave (no matter what Oracle say), and what you've found illustrates the 
-point rather well I'm afraid..
+On Sat, Aug 04, 2012 at 01:53:28PM +0800, Miao Xie wrote:
+> But I'm not sure these two bugs is the same, so I need the test tool
+> of David to look into it.
 
-cheers,
-Chris
--- 
-  Chris Samuel  :  http://www.csamuel.org/  :  Melbourne, VIC
+Attached. It's a set of scripts and has a few assumptions hardcoded,
+like where the tar srouce is and the name of extracted directory, so
+it'll need a few tweaks. Also the actions are started inside a tmux
+session for convenience.
+
+The expected stress load is to generate lots of files and directories,
+snapshot create and delete and rm of the untarred directory. The 'rm'
+step is delayed a few minutes so the tar generates enough data. On some
+hosts the rm phase is fast and will clean the untar directory too
+quickly.
+
+
+david
+
+--YiEDa0DAkWCtVeE4
+Content-Type: application/octet-stream
+Content-Disposition: attachment; filename="test-subvol.tgz"
+Content-Transfer-Encoding: base64
+
+H4sIAApoIlAAA+1YW2/TMBTu6/wrDl0FG+A1di6VVvVhAh4BicsTm1iaOMRaLlXsrgUKv53j
+pCMttw6pKwz8SVVq5djnxMffZx9roTRV0/FlmfU7NwQHMfB9fHLX56xuM8+rn0t0GHeY4wWu
+7/GOw/jA8Tvg31RAq5gqHVYAnVhpUY3DX9iJSu0ioN1Cr+R/RhNJ42TrPjbln/Ggw9hg4Lju
+gAcm/54zCDrgbD2SH+A/z//+nf5YFn2VEjXyySyVmYDjYVySPRGlJYxGIziPQy3Oyd5YV4mC
+BC3Ue5ysHOIEeh/ZMT36RPZUJsQEeorEZSHIn/4qi+tilf+aU1WEE1qFRVzm2/Oxkf8+b/Sf
+M+b4AfLfd1EGLP93gFX+MxLh70oDwIhAw/lmfYBZHFeMrxu9FyfPHj9/unzQXkT2olHv4CB6
+wA4PrSbcBqzx3234H4tsqxqwkf8Dv93/ueF/wHy7/+8E6/v/G6AxdHusC2dw9y5ETWNdEswS
+QZJnytiaxv2FSqfJIhVhDJQdfiMauJiEFqgCaGkl4a/DKv8NE3Qutu5jA/8Zd722/mPMnP9d
+x/J/J2j5T/YhL6eFnpSy0A8hx4mBsVjSmBCZwJtGGkZw7x6cDUGnoliWCXVHqHvCJBOhEvhi
+LjVJJCH56KpKSEUlUDpiWRVhLuC8QsnIZHEBFCsJ5/yQ1IKTd40OJfjP2GNViqkJtZGkxQI+
+Qu0wCoui1FiMFDHk70FFlZxoNQTjdAifCNH5dA6FmFEllJJlYcSKKjDLfflFXy1mOEg5A6pX
+3h47QC9gLYCmg5pkUv+0ywSCAOjlVeia0XeioFg/hXCKH3ba7V5nlBS6jU4yZ7iMYf1ofv3B
+jlgdznI4/+tw3+30vzEkr4es0zALpQYPclkMofHBPYy5LSOhyoFWmN28L9DGVJJDI/3dZYZC
+rcMobZO06spuDzvA2vmvXa5b9bHx/OfyVv+5a/Q/cB2r/7tAq/8/OfsNPsAclbOEz/3HJ69O
+3r58/vrFoycv+zN5ISciliHFJZPqPDvCeTxC6wWYCZ1b9t4KrN//1hvd1n1svP9Hzq/f/3sc
+j4GW/ztAy/8693jussS1sLCwsLCwsLCwsLD4F/EFkEmXCAAoAAA=
+
+--YiEDa0DAkWCtVeE4--

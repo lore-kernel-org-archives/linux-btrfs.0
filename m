@@ -1,73 +1,61 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cantor2.suse.de ([195.135.220.15]:60912 "EHLO mx2.suse.de"
+Received: from twin.jikos.cz ([89.185.236.188]:44761 "EHLO twin.jikos.cz"
 	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S964926Ab2HHNio (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 8 Aug 2012 09:38:44 -0400
-Date: Wed, 8 Aug 2012 15:38:41 +0200
-From: David Sterba <dsterba@suse.cz>
-To: Miao Xie <miaox@cn.fujitsu.com>
-Cc: Josef Bacik <jbacik@fusionio.com>,
-        Linux Btrfs <linux-btrfs@vger.kernel.org>,
-        Wu Fengguang <fengguang.wu@intel.com>,
-        Seto Hidetoshi <seto.hidetoshi@jp.fujitsu.com>,
-        David Sterba <dave@jikos.cz>
-Subject: Re: [PATCH V3 2/2] Btrfs: fix the snapshot that should not exist
-Message-ID: <20120808133841.GC5873@ds.suse.cz>
-Reply-To: dsterba@suse.cz
-References: <501A04CE.9090408@cn.fujitsu.com>
- <20120802114631.GM17430@twin.jikos.cz>
- <501B2F20.7080903@cn.fujitsu.com>
- <20120803210301.GK2263@localhost.localdomain>
- <501CB8D8.2010405@cn.fujitsu.com>
+	id S1757287Ab2HHOqE (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Wed, 8 Aug 2012 10:46:04 -0400
+Date: Wed, 8 Aug 2012 16:45:57 +0200
+From: David Sterba <dave@jikos.cz>
+To: Olivier Bonvalet <btrfs.list@daevel.fr>
+Cc: Chris Samuel <chris@csamuel.org>, linux-btrfs@vger.kernel.org
+Subject: Re: kernel BUG at fs/btrfs/extent-tree.c:5038 (linux 3.4.7)
+Message-ID: <20120808144557.GW17430@twin.jikos.cz>
+Reply-To: dave@jikos.cz
+References: <501987FF.9080304@daevel.fr>
+ <20120802132259.GO17430@twin.jikos.cz>
+ <501A836F.90506@daevel.fr>
+ <20120802135354.GQ17430@twin.jikos.cz>
+ <501AA842.5080300@daevel.fr>
+ <501C53B7.30601@daevel.fr>
+ <501E3578.4030809@csamuel.org>
+ <501E7F23.3040401@daevel.fr>
 MIME-Version: 1.0
-Content-Type: multipart/mixed; boundary="YiEDa0DAkWCtVeE4"
-In-Reply-To: <501CB8D8.2010405@cn.fujitsu.com>
+Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <501E7F23.3040401@daevel.fr>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
+On Sun, Aug 05, 2012 at 04:11:47PM +0200, Olivier Bonvalet wrote:
+> On 05/08/2012 10:57, Chris Samuel wrote:
+> > On 08/04/2012 08:41 AM, Olivier Bonvalet wrote:
+> > 
+> >> Is there something I can do to fix that ? (the mount
+> >> option "recovery" didn't help here)
+> > 
+> > I've seen someone (perhaps Marc Merlin) report that the
+> > 3.5.x kernel was able to mount a filesystem that 3.4.x
+> > couldn't, so it might be worth a shot here!
+> 
+> Thanks for the idea, but same result :
+> 
+> Aug  5 16:10:12 backup2 kernel: [   58.630481] device fsid a5dfe512-c8a3-46f0-bc8c-6365b8eccdcb devid 1 transid 110425 /dev/mapper/vg--backupplug-backup
+> Aug  5 16:10:12 backup2 kernel: [   58.631346] btrfs: force zlib compression
+> Aug  5 16:10:12 backup2 kernel: [   58.631357] btrfs: not using ssd allocation scheme
+> Aug  5 16:10:12 backup2 kernel: [   58.631366] btrfs: enabling auto recovery
+> Aug  5 16:10:12 backup2 kernel: [   58.670972] btrfs: no dev_stats entry found for device /dev/mapper/vg--backupplug-backup (devid 1) (OK on first mount after mkfs)
+> Aug  5 16:10:12 backup2 kernel: [   58.674758] parent transid verify failed on 615015833600 wanted 110423 found 110424
+> Aug  5 16:10:12 backup2 kernel: [   58.675090] parent transid verify failed on 615015833600 wanted 110423 found 110424
+> Aug  5 16:10:12 backup2 kernel: [   58.675523] btrfs read error corrected: ino 1 off 615015833600 (dev /dev/mapper/vg--backupplug-backup sector 1209083504)
 
---YiEDa0DAkWCtVeE4
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
+This looks strange, the the corrupted block belongs to metadata, I
+assume you have the DUP profile, so there is a good copy that can be
+used instead, the error message confirms that, but ...
 
-On Sat, Aug 04, 2012 at 01:53:28PM +0800, Miao Xie wrote:
-> But I'm not sure these two bugs is the same, so I need the test tool
-> of David to look into it.
+> Aug  5 16:10:12 backup2 kernel: [   58.675536] Failed to read block groups: -5
 
-Attached. It's a set of scripts and has a few assumptions hardcoded,
-like where the tar srouce is and the name of extracted directory, so
-it'll need a few tweaks. Also the actions are started inside a tmux
-session for convenience.
+... ? -5 means EIO, which is returned when a block cannot be read, so
+unless there's a different reason for it, this looks like a missed
+oportunity to fix an error and continue.
 
-The expected stress load is to generate lots of files and directories,
-snapshot create and delete and rm of the untarred directory. The 'rm'
-step is delayed a few minutes so the tar generates enough data. On some
-hosts the rm phase is fast and will clean the untar directory too
-quickly.
+The same error messages are present in the logs from 3.4 version.
 
-
-david
-
---YiEDa0DAkWCtVeE4
-Content-Type: application/octet-stream
-Content-Disposition: attachment; filename="test-subvol.tgz"
-Content-Transfer-Encoding: base64
-
-H4sIAApoIlAAA+1YW2/TMBTu6/wrDl0FG+A1di6VVvVhAh4BicsTm1iaOMRaLlXsrgUKv53j
-pCMttw6pKwz8SVVq5djnxMffZx9roTRV0/FlmfU7NwQHMfB9fHLX56xuM8+rn0t0GHeY4wWu
-7/GOw/jA8Tvg31RAq5gqHVYAnVhpUY3DX9iJSu0ioN1Cr+R/RhNJ42TrPjbln/Ggw9hg4Lju
-gAcm/54zCDrgbD2SH+A/z//+nf5YFn2VEjXyySyVmYDjYVySPRGlJYxGIziPQy3Oyd5YV4mC
-BC3Ue5ysHOIEeh/ZMT36RPZUJsQEeorEZSHIn/4qi+tilf+aU1WEE1qFRVzm2/Oxkf8+b/Sf
-M+b4AfLfd1EGLP93gFX+MxLh70oDwIhAw/lmfYBZHFeMrxu9FyfPHj9/unzQXkT2olHv4CB6
-wA4PrSbcBqzx3234H4tsqxqwkf8Dv93/ueF/wHy7/+8E6/v/G6AxdHusC2dw9y5ETWNdEswS
-QZJnytiaxv2FSqfJIhVhDJQdfiMauJiEFqgCaGkl4a/DKv8NE3Qutu5jA/8Zd722/mPMnP9d
-x/J/J2j5T/YhL6eFnpSy0A8hx4mBsVjSmBCZwJtGGkZw7x6cDUGnoliWCXVHqHvCJBOhEvhi
-LjVJJCH56KpKSEUlUDpiWRVhLuC8QsnIZHEBFCsJ5/yQ1IKTd40OJfjP2GNViqkJtZGkxQI+
-Qu0wCoui1FiMFDHk70FFlZxoNQTjdAifCNH5dA6FmFEllJJlYcSKKjDLfflFXy1mOEg5A6pX
-3h47QC9gLYCmg5pkUv+0ywSCAOjlVeia0XeioFg/hXCKH3ba7V5nlBS6jU4yZ7iMYf1ofv3B
-jlgdznI4/+tw3+30vzEkr4es0zALpQYPclkMofHBPYy5LSOhyoFWmN28L9DGVJJDI/3dZYZC
-rcMobZO06spuDzvA2vmvXa5b9bHx/OfyVv+5a/Q/cB2r/7tAq/8/OfsNPsAclbOEz/3HJ69O
-3r58/vrFoycv+zN5ISciliHFJZPqPDvCeTxC6wWYCZ1b9t4KrN//1hvd1n1svP9Hzq/f/3sc
-j4GW/ztAy/8693jussS1sLCwsLCwsLCwsLD4F/EFkEmXCAAoAAA=
-
---YiEDa0DAkWCtVeE4--
+> Aug  5 16:10:12 backup2 kernel: [   58.704720] btrfs: open_ctree failed

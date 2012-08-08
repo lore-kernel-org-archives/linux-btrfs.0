@@ -1,38 +1,37 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from twin.jikos.cz ([89.185.236.188]:45327 "EHLO twin.jikos.cz"
+Received: from twin.jikos.cz ([89.185.236.188]:45495 "EHLO twin.jikos.cz"
 	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1758633Ab2HHPNZ (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 8 Aug 2012 11:13:25 -0400
-Date: Wed, 8 Aug 2012 17:13:20 +0200
+	id S1758663Ab2HHPVF (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Wed, 8 Aug 2012 11:21:05 -0400
+Date: Wed, 8 Aug 2012 17:20:59 +0200
 From: David Sterba <dave@jikos.cz>
-To: Josef Bacik <jbacik@fusionio.com>
-Cc: linux-btrfs@vger.kernel.org
-Subject: Re: [PATCH] Btrfs: don't allocate a seperate csums array for direct
- reads
-Message-ID: <20120808151320.GX17430@twin.jikos.cz>
+To: Alexander Block <ablock84@googlemail.com>
+Cc: Josef Bacik <jbacik@fusionio.com>,
+        "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
+Subject: Re: [PATCH] Btrfs: remove mnt_want_write call in btrfs_mksubvol
+Message-ID: <20120808152059.GY17430@twin.jikos.cz>
 Reply-To: dave@jikos.cz
-References: <1344027115-31893-1-git-send-email-jbacik@fusionio.com>
+References: <1343949380-15398-1-git-send-email-ablock84@googlemail.com>
+ <20120803211317.GA10080@localhost.localdomain>
+ <CAB9VWqAU5THN7Lb9Y35pGBr1ewmtYmqsX6B-x7Lx3BiAUW4FgQ@mail.gmail.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <1344027115-31893-1-git-send-email-jbacik@fusionio.com>
+In-Reply-To: <CAB9VWqAU5THN7Lb9Y35pGBr1ewmtYmqsX6B-x7Lx3BiAUW4FgQ@mail.gmail.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Fri, Aug 03, 2012 at 04:51:55PM -0400, Josef Bacik wrote:
-> We've been allocating a big array for csums instead of storing them in the
-> io_tree like we do for buffered reads because previously we were locking the
-> entire range, so we didn't have an extent state for each sector of the
-> range.  But now that we do the range locking as we map the buffers we can
-> limit the mapping lenght to sectorsize and use the private part of the
-> io_tree for our csums.  This allows us to avoid an extra memory allocation
-> for direct reads which could incur latency.  Thanks,
+On Sat, Aug 04, 2012 at 01:39:25AM +0200, Alexander Block wrote:
+> On Fri, Aug 3, 2012 at 11:13 PM, Josef Bacik <jbacik@fusionio.com> wrote:
+> > I'm confused, this isn't here in btrfs-next, so is this a problem still?
+>
+> It's in linus current master. Lio Bo moved the call out of
+> btrfs_mksubvol into the caller. Later a commit from Jan Kara tried to
+> move the call inside mksubvol below i_mutex. If I understand the logs
+> correctly, It was then merged incorrectly.
 
-This assumes the checksum value fits into the private state, ie
-sizeof(csum) == 4, sizeof(private) == 8. There are 32 bytes reserved for
-csum bytes, someday another algo will land, and will have to reintroduce
-the kmalloc in some way, but there will be more code changes needed. The
-assumptions about csum of u32 type are widespread. Getting rid of the
-kmalloc is a good idea, I think we should take this patch for now.
-
+How should we resolve this? The patch has to be pulled via a separate
+branch, based on top of linus/master, as cmason/for-linus does not have
+the clashing freezer patches. And I do want to see the fix in master
+rather soon as it makes testing tedious.
 
 david

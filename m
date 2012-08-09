@@ -1,79 +1,140 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([222.73.24.84]:35246 "EHLO song.cn.fujitsu.com"
-	rhost-flags-OK-FAIL-OK-OK) by vger.kernel.org with ESMTP
-	id S1751942Ab2HUGnv (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 21 Aug 2012 02:43:51 -0400
-Message-ID: <50332993.1000902@cn.fujitsu.com>
-Date: Tue, 21 Aug 2012 14:24:19 +0800
-From: Miao Xie <miaox@cn.fujitsu.com>
-Reply-To: miaox@cn.fujitsu.com
+Received: from mx2.fusionio.com ([66.114.96.31]:50314 "EHLO mx2.fusionio.com"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1758359Ab2HISEI (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Thu, 9 Aug 2012 14:04:08 -0400
+Date: Thu, 9 Aug 2012 14:04:05 -0400
+From: Chris Mason <chris.mason@fusionio.com>
+To: Miao Xie <miaox@cn.fujitsu.com>
+CC: Linux Btrfs <linux-btrfs@vger.kernel.org>, David Sterba <dave@jikos.cz>
+Subject: Re: [RFC PATCH] Btrfs: fix full backref problem when inserting
+ shared block reference
+Message-ID: <20120809180405.GC32103@shiny>
+References: <50232A19.2010704@cn.fujitsu.com>
 MIME-Version: 1.0
-To: Linux Btrfs <linux-btrfs@vger.kernel.org>, David Sterba <dave@jikos.cz>
-Subject: Re: [RFC PATCH] Btrfs: fix full backref problem when inserting shared
- block reference
-References: <50232A19.2010704@cn.fujitsu.com> <20120809064802.GB17430@twin.jikos.cz> <20120809072129.GC17430@twin.jikos.cz>
-In-Reply-To: <20120809072129.GC17430@twin.jikos.cz>
-Content-Type: text/plain; charset=ISO-8859-1
+Content-Type: text/plain; charset="us-ascii"
+In-Reply-To: <50232A19.2010704@cn.fujitsu.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Thu, 9 Aug 2012 09:21:29 +0200, David Sterba wrote:
-> On Thu, Aug 09, 2012 at 08:48:02AM +0200, David Sterba wrote:
->> and down, no problems so far, and the "wikipedia" test-subvol stresstest
->> that caused trouble to one of your patches is also ok. I'll do some more
->> testing on other machines and will report problems eventually.
+On Wed, Aug 08, 2012 at 09:10:17PM -0600, Miao Xie wrote:
+> If we create several snapshots at the same time, the following BUG_ON() will be
+> triggered.
 > 
-> So it won't be so easy :)
+> 	kernel BUG at fs/btrfs/extent-tree.c:6047!
 > 
-> The test generated 15+ G of data, ~500 snapshots, then umount and fsck:
-> 
-> lots of
-> 
-> ref mismatch on [9655283712 4096] extent item 1, found 0
-> Incorrect local backref count on 9655283712 root 5 owner 589776 offset 110592 found 0 wanted 1 back 0x86badf0
-> backpointer mismatch on [9655283712 4096]
-> owner ref check failed [9655283712 4096]
+> Steps to reproduce:
+>  # mkfs.btrfs <partition>
+>  # mount <partition> <mnt>
+>  # cd <mnt>
+>  # for ((i=0;i<2400;i++)); do touch long_name_to_make_tree_more_deep$i; done
+>  # for ((i=0; i<4; i++))
+>  > do
+>  > mkdir $i
+>  > for ((j=0; j<200; j++))
+>  > do
+>  > btrfs sub snap . $i/$j
+>  > done &
+>  > done
 
-By debuging, I found it should be a bug of btrfsck.
-Could you try this patch?
+snapshot creation has a critical section.  Once we copy a given root to
+its snapshot, we're not allowed to change it until the transaction
+is fully committed.
 
-Thanks
-Miao
+This means that if you're taking a snapshot of root A and storing the
+directory item of the snapshot in root A, you can only do it once per
+transaction with getting into trouble.
 
->From 77e9bcaae464354c0b0176631ba51374e3d31cfc Mon Sep 17 00:00:00 2001
-From: Miao Xie <miaox@cn.fujitsu.com>
-Date: Tue, 21 Aug 2012 14:16:27 +0800
-Subject: [PATCH] Btrfs-progs: fix wrong return value of check_owner_ref()
+Looks like the code doesn't enforce this though.  Dave, could you please
+give this a try:
 
-If we find the block by seach corresponding fs tree, we should return 0,
-and tell the caller we pass the check.
-
-Signed-off-by: Miao Xie <miaox@cn.fujitsu.com>
----
- btrfsck.c |    2 +-
- 1 files changed, 1 insertions(+), 1 deletions(-)
-
-diff --git a/btrfsck.c b/btrfsck.c
-index 4e91769..57e7b57 100644
---- a/btrfsck.c
-+++ b/btrfsck.c
-@@ -1954,7 +1954,7 @@ static int check_owner_ref(struct btrfs_root *root,
+diff --git a/fs/btrfs/ctree.c b/fs/btrfs/ctree.c
+index fcc8c21..9e7c621 100644
+--- a/fs/btrfs/ctree.c
++++ b/fs/btrfs/ctree.c
+@@ -1324,6 +1324,8 @@ noinline int btrfs_cow_block(struct btrfs_trans_handle *trans,
+ 	u64 search_start;
+ 	int ret;
  
- 	if (buf->start == btrfs_node_blockptr(path.nodes[level + 1],
- 					      path.slots[level + 1]))
--		rec->owner_ref_checked = 1;
-+		found = 1;
++	WARN_ON(root->danger_transid == trans->transid);
++
+ 	if (trans->transaction != root->fs_info->running_transaction) {
+ 		printk(KERN_CRIT "trans %llu running %llu\n",
+ 		       (unsigned long long)trans->transid,
+diff --git a/fs/btrfs/ctree.h b/fs/btrfs/ctree.h
+index 0d195b5..35b5603 100644
+--- a/fs/btrfs/ctree.h
++++ b/fs/btrfs/ctree.h
+@@ -1490,6 +1490,12 @@ struct btrfs_root {
+ 	u64 objectid;
+ 	u64 last_trans;
  
- 	btrfs_release_path(ref_root, &path);
- 	return found ? 0 : 1;
--- 
-1.7.6.5
-
-> and then
-> 
-> checking fs roots
-> root 2854 inode 233882 errors 2500
-> root 2880 inode 271639 errors 2200
-> 
-> and it's not finished yet, other types of error may pop up.
-
++	/*
++	 * the last transaction that took a snapshot of this
++	 * root.  We're only allowed one snapshot per root per transaction
++	 */
++	u64 snapshot_trans;
++
+ 	/* data allocations are done in sectorsize units */
+ 	u32 sectorsize;
+ 
+@@ -1550,6 +1556,13 @@ struct btrfs_root {
+ 
+ 	int force_cow;
+ 
++	/*
++	 * this marks the critical section of snapshot creation.  If we
++	 * make any changes to a root after this critical section starts,
++	 * we corrupt the FS.  It is checked by btrfs_cow_block
++	 */
++	u64 danger_transid;
++
+ 	spinlock_t root_times_lock;
+ };
+ 
+diff --git a/fs/btrfs/ioctl.c b/fs/btrfs/ioctl.c
+index 9df50fa..b20d835 100644
+--- a/fs/btrfs/ioctl.c
++++ b/fs/btrfs/ioctl.c
+@@ -524,13 +524,28 @@ static int create_snapshot(struct btrfs_root *root, struct dentry *dentry,
+ 		pending_snapshot->inherit = *inherit;
+ 		*inherit = NULL;	/* take responsibility to free it */
+ 	}
+-
++again:
+ 	trans = btrfs_start_transaction(root->fs_info->extent_root, 5);
+ 	if (IS_ERR(trans)) {
+ 		ret = PTR_ERR(trans);
+ 		goto fail;
+ 	}
+ 
++	/* we're only allowed to snapshot a given root once per transaction */
++	spin_lock(&root->fs_info->trans_lock);
++	if (root->snapshot_trans == trans->transid) {
++		spin_unlock(&root->fs_info->trans_lock);
++		ret = btrfs_commit_transaction(trans, root->fs_info->extent_root);
++		if (ret)
++			goto fail;
++		goto again;
++	}
++
++	root->snapshot_trans = trans->transid;
++
++	spin_unlock(&root->fs_info->trans_lock);
++
++
+ 	ret = btrfs_snap_reserve_metadata(trans, pending_snapshot);
+ 	BUG_ON(ret);
+ 
+diff --git a/fs/btrfs/transaction.c b/fs/btrfs/transaction.c
+index 27c2600..4507421 100644
+--- a/fs/btrfs/transaction.c
++++ b/fs/btrfs/transaction.c
+@@ -1093,6 +1093,7 @@ static noinline int create_pending_snapshot(struct btrfs_trans_handle *trans,
+ 
+ 	/* see comments in should_cow_block() */
+ 	root->force_cow = 1;
++	root->danger_transid = trans->transid;
+ 	smp_wmb();
+ 
+ 	btrfs_set_root_node(new_root_item, tmp);

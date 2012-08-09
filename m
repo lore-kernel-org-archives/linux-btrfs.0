@@ -1,46 +1,86 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([222.73.24.84]:19742 "EHLO song.cn.fujitsu.com"
-	rhost-flags-OK-FAIL-OK-OK) by vger.kernel.org with ESMTP
-	id S1754215Ab2HID3n (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 8 Aug 2012 23:29:43 -0400
-Message-ID: <50232E79.1060408@cn.fujitsu.com>
-Date: Thu, 09 Aug 2012 11:28:57 +0800
-From: Miao Xie <miaox@cn.fujitsu.com>
-Reply-To: miaox@cn.fujitsu.com
+Received: from mailout-de.gmx.net ([213.165.64.23]:50915 "HELO
+	mailout-de.gmx.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with SMTP id S1754749Ab2HIGmE (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Thu, 9 Aug 2012 02:42:04 -0400
+Message-ID: <50235BB8.7080000@gmx.net>
+Date: Thu, 09 Aug 2012 08:42:00 +0200
+From: Arne Jansen <sensille@gmx.net>
 MIME-Version: 1.0
-To: dsterba@suse.cz
-CC: Josef Bacik <jbacik@fusionio.com>,
-        Linux Btrfs <linux-btrfs@vger.kernel.org>,
-        Wu Fengguang <fengguang.wu@intel.com>,
-        Seto Hidetoshi <seto.hidetoshi@jp.fujitsu.com>,
-        David Sterba <dave@jikos.cz>
-Subject: Re: [PATCH V3 2/2] Btrfs: fix the snapshot that should not exist
-References: <501A04CE.9090408@cn.fujitsu.com> <20120802114631.GM17430@twin.jikos.cz> <501B2F20.7080903@cn.fujitsu.com> <20120803210301.GK2263@localhost.localdomain> <501CB8D8.2010405@cn.fujitsu.com> <20120808133841.GC5873@ds.suse.cz>
-In-Reply-To: <20120808133841.GC5873@ds.suse.cz>
+To: Marc MERLIN <marc@merlins.org>
+CC: linux-btrfs@vger.kernel.org
+Subject: Re: btrfs panic in 3.5.0
+References: <20120807174047.GE24635@merlins.org> <50215AFF.1080800@gmx.net> <20120807184736.GA22686@merlins.org> <20120809025211.GA12014@merlins.org>
+In-Reply-To: <20120809025211.GA12014@merlins.org>
 Content-Type: text/plain; charset=ISO-8859-1
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Wed, 8 Aug 2012 15:38:41 +0200, David Sterba wrote:
-> On Sat, Aug 04, 2012 at 01:53:28PM +0800, Miao Xie wrote:
->> But I'm not sure these two bugs is the same, so I need the test tool
->> of David to look into it.
+On 09.08.2012 04:52, Marc MERLIN wrote:
+> On Tue, Aug 07, 2012 at 11:47:36AM -0700, Marc MERLIN wrote:
+>> On Tue, Aug 07, 2012 at 08:14:23PM +0200, Arne Jansen wrote:
+>>> On 08/07/2012 07:40 PM, Marc MERLIN wrote:
+>>>> Unfortunately I only have a screenshot.
+>>>>
+>>>> Apparently the panic was in 
+>>>> btrfs_set_lock_blocking_rw
+>>>> with a RIP in btrfs_cow_block
+>>>
+>>> Can you please resolve btrfs_cow_block+0x3b to a line number?
+>>>
+>>> gdb btrfs.ko
+>>> (gdb) info line *btrfs_cow_block+0x3b
+>>
+>> So, I'm not very good at this, sorry if I'm doing it wrong:
+>> gandalfthegreat:~# gdb /lib/modules/3.5.0-amd64-preempt-noide-20120410/kernel/fs/btrfs/btrfs.ko
+>> Reading symbols from /lib/modules/3.5.0-amd64-preempt-noide-20120410/kernel/fs/btrfs/btrfs.ko...(no debugging symbols found)...done.
+>> (gdb) info line *btrfs_cow_block+0x3b
+>> No line number information available for address 0x9a6e
+>>
+>> Mmmh, it seems that I'm missing a kernel option that adds symbols in modules?
+>>
+>> I can add it for my next kernel compile. Do you have the config option name
+>> off hand?
+>>
+>> I put my module here if that helps:
+>> http://marc.merlins.org/tmp/btrfs.ko
 > 
-> Attached. It's a set of scripts and has a few assumptions hardcoded,
-> like where the tar srouce is and the name of extracted directory, so
-> it'll need a few tweaks. Also the actions are started inside a tmux
-> session for convenience.
+> I felt bad for having a kernel without debug symbols it seems, so I looked
+> at my kernel config and I do have:
+> CONFIG_DEBUG_BUGVERBOSE=y
+> CONFIG_DEBUG_INFO=y
+> # CONFIG_DEBUG_INFO_REDUCED is not set
 > 
-> The expected stress load is to generate lots of files and directories,
-> snapshot create and delete and rm of the untarred directory. The 'rm'
-> step is delayed a few minutes so the tar generates enough data. On some
-> hosts the rm phase is fast and will clean the untar directory too
-> quickly.
+> Any idea what else I'm missing to provide better debug info if I have a
+> problem again?
+> 
+> And is it reasonably easy to take the .ko apparently without line numbers,
+> like the one I gave you, and infer the line of code for a function offset?
 
-Thanks.
+The .ko is fine. It crashes here:
 
-I find this bug you reported is not introduced by my patch, it is a old bug.
-I have sent a RFC patch, I'll be very appreciated if you can get any comment.
+noinline int btrfs_cow_block(struct btrfs_trans_handle *trans,
+                    struct btrfs_root *root, struct extent_buffer *buf,
+                    struct extent_buffer *parent, int parent_slot,
+                    struct extent_buffer **cow_ret)
+{
+        u64 search_start;
+        int ret;
 
-Regards
-Miao
+        if (trans->transaction != root->fs_info->running_transaction) {
+                printk(KERN_CRIT "trans %llu running %llu\n",
+                       (unsigned long long)trans->transid,
+                       (unsigned long long)
+                       root->fs_info->running_transaction->transid);
+                                                          ^^
+
+                WARN_ON(1);
+        }
+
+fs_info->running_transaction is probably NULL.
+
+
+> 
+> Thanks,
+> Marc
+

@@ -1,71 +1,103 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-pb0-f46.google.com ([209.85.160.46]:54874 "EHLO
-	mail-pb0-f46.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1750987Ab2HAMRw (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Wed, 1 Aug 2012 08:17:52 -0400
+Received: from cn.fujitsu.com ([222.73.24.84]:47880 "EHLO song.cn.fujitsu.com"
+	rhost-flags-OK-FAIL-OK-OK) by vger.kernel.org with ESMTP
+	id S1752979Ab2HIDLE (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Wed, 8 Aug 2012 23:11:04 -0400
+Message-ID: <50232A19.2010704@cn.fujitsu.com>
+Date: Thu, 09 Aug 2012 11:10:17 +0800
+From: Miao Xie <miaox@cn.fujitsu.com>
+Reply-To: miaox@cn.fujitsu.com
 MIME-Version: 1.0
-In-Reply-To: <20120730081043.GA15702@elgon.mountain>
-References: <20120730081043.GA15702@elgon.mountain>
-Date: Wed, 1 Aug 2012 14:17:52 +0200
-Message-ID: <CAB9VWqACDZoSM7ihQ5mwup+w_LX1rG6G5BOJGz6hC6qKbsDciA@mail.gmail.com>
-Subject: Re: [patch] Btrfs: fix some endian bugs handling the root times
-From: Alexander Block <ablock84@googlemail.com>
-To: Dan Carpenter <dan.carpenter@oracle.com>
-Cc: Chris Mason <chris.mason@fusionio.com>, linux-btrfs@vger.kernel.org,
-        kernel-janitors@vger.kernel.org
-Content-Type: text/plain; charset=ISO-8859-1
+To: Linux Btrfs <linux-btrfs@vger.kernel.org>
+CC: David Sterba <dave@jikos.cz>
+Subject: [RFC PATCH] Btrfs: fix full backref problem when inserting shared
+  block reference
+Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Mon, Jul 30, 2012 at 10:10 AM, Dan Carpenter
-<dan.carpenter@oracle.com> wrote:
-> "trans->transid" is cpu endian but we want to store the data as little
-> endian.  "item->ctime.nsec" is only 32 bits, not 64.
->
-> Signed-off-by: Dan Carpenter <dan.carpenter@oracle.com>
-> ---
-> Applies to linux-next.
->
-> diff --git a/fs/btrfs/ioctl.c b/fs/btrfs/ioctl.c
-> index 43f0012..a1fbca0 100644
-> --- a/fs/btrfs/ioctl.c
-> +++ b/fs/btrfs/ioctl.c
-> @@ -424,7 +424,7 @@ static noinline int create_subvol(struct btrfs_root *root,
->         uuid_le_gen(&new_uuid);
->         memcpy(root_item.uuid, new_uuid.b, BTRFS_UUID_SIZE);
->         root_item.otime.sec = cpu_to_le64(cur_time.tv_sec);
-> -       root_item.otime.nsec = cpu_to_le64(cur_time.tv_nsec);
-> +       root_item.otime.nsec = cpu_to_le32(cur_time.tv_nsec);
->         root_item.ctime = root_item.otime;
->         btrfs_set_root_ctransid(&root_item, trans->transid);
->         btrfs_set_root_otransid(&root_item, trans->transid);
-> diff --git a/fs/btrfs/transaction.c b/fs/btrfs/transaction.c
-> index 7ac7cdc..7208ada 100644
-> --- a/fs/btrfs/transaction.c
-> +++ b/fs/btrfs/transaction.c
-> @@ -1061,7 +1061,7 @@ static noinline int create_pending_snapshot(struct btrfs_trans_handle *trans,
->         memcpy(new_root_item->parent_uuid, root->root_item.uuid,
->                         BTRFS_UUID_SIZE);
->         new_root_item->otime.sec = cpu_to_le64(cur_time.tv_sec);
-> -       new_root_item->otime.nsec = cpu_to_le64(cur_time.tv_nsec);
-> +       new_root_item->otime.nsec = cpu_to_le32(cur_time.tv_nsec);
->         btrfs_set_root_otransid(new_root_item, trans->transid);
->         memset(&new_root_item->stime, 0, sizeof(new_root_item->stime));
->         memset(&new_root_item->rtime, 0, sizeof(new_root_item->rtime));
-> diff --git a/fs/btrfs/root-tree.c b/fs/btrfs/root-tree.c
-> index 6bb465c..10d8e4d 100644
-> --- a/fs/btrfs/root-tree.c
-> +++ b/fs/btrfs/root-tree.c
-> @@ -544,8 +544,8 @@ void btrfs_update_root_times(struct btrfs_trans_handle *trans,
->         struct timespec ct = CURRENT_TIME;
->
->         spin_lock(&root->root_times_lock);
-> -       item->ctransid = trans->transid;
-> +       item->ctransid = cpu_to_le64(trans->transid);
->         item->ctime.sec = cpu_to_le64(ct.tv_sec);
-> -       item->ctime.nsec = cpu_to_le64(ct.tv_nsec);
-> +       item->ctime.nsec = cpu_to_le32(ct.tv_nsec);
->         spin_unlock(&root->root_times_lock);
->  }
+If we create several snapshots at the same time, the following BUG_ON() will be
+triggered.
 
-Thanks. I will include this patch in the next send/receive pull request.
+	kernel BUG at fs/btrfs/extent-tree.c:6047!
+
+Steps to reproduce:
+ # mkfs.btrfs <partition>
+ # mount <partition> <mnt>
+ # cd <mnt>
+ # for ((i=0;i<2400;i++)); do touch long_name_to_make_tree_more_deep$i; done
+ # for ((i=0; i<4; i++))
+ > do
+ > mkdir $i
+ > for ((j=0; j<200; j++))
+ > do
+ > btrfs sub snap . $i/$j
+ > done &
+ > done
+
+The reason is:
+Before transaction commit, some operations changed the fs tree and new tree
+blocks were allocated because of COW. We used the implicit non-shared back
+reference for those newly allocated tree blocks because they were not shared by
+two or more trees.
+
+And then we created the first snapshot for the fs tree, according to the back
+reference rules, we also used implicit back refs for the child tree blocks of
+the root node of the fs tree, now those child nodes/leaves were shared by two
+trees.
+
+Then We didn't deal with the delayed references, and continued to change the fs
+tree(created the second snapshot and inserted the dir item of the new snapshot
+into the fs tree). According to the rules of the back reference, we added full
+back refs for those tree blocks whose parents have be shared by two trees.
+Now some newly allocated tree blocks had two types of the references.
+
+As we know, the delayed reference system handles these delayed references from
+back to front, and the full delayed reference is inserted after the implicit
+ones. So when we dealt with the back references of those newly allocated tree
+blocks, the full references was dealt with at first. And if the first reference
+is a shared back reference and the tree block that the reference points to is
+newly allocated, It would be considered as a tree block which is shared by two
+or more trees when it is allocated and should be a full back reference not a
+implicit one, the flag of its reference also should be set to FULL_BACKREF.
+But in fact, it was a non-shared tree block with a implicit reference at
+beginning, so it was not compulsory to set the flags to FULL_BACKREF. So BUG_ON
+was triggered.
+
+We have several methods to fix this bug:
+1. deal with delayed references after the snapshot is created and before we
+   change the source tree of the snapshot. This is the easiest and safest way.
+2. modify the sort method of the delayed reference tree, make the full delayed
+   references be inserted before the implicit ones. It is also very easy, but
+   I don't know if it will introduce some problems or not.
+3. modify select_delayed_ref() and make it select the implicit delayed reference
+   at first. This way is not so good because it may wastes CPU time if we have
+   lots of delayed references.
+4. set the flags to FULL_BACKREF, this method is a little complex comparing with
+   the 1st way. 
+
+I chose the 1st way to fix it.
+
+Signed-off-by: Miao Xie <miaox@cn.fujitsu.com>
+---
+ fs/btrfs/transaction.c |    5 +++++
+ 1 files changed, 5 insertions(+), 0 deletions(-)
+
+diff --git a/fs/btrfs/transaction.c b/fs/btrfs/transaction.c
+index 7ac7cdc..2eafbd2 100644
+--- a/fs/btrfs/transaction.c
++++ b/fs/btrfs/transaction.c
+@@ -1119,6 +1119,11 @@ static noinline int create_pending_snapshot(struct btrfs_trans_handle *trans,
+ 	ret = btrfs_reloc_post_snapshot(trans, pending);
+ 	if (ret)
+ 		goto abort_trans;
++
++	ret = btrfs_run_delayed_refs(trans, root, (unsigned long)-1);
++	if (ret)
++		goto abort_trans;
++
+ 	ret = 0;
+ fail:
+ 	kfree(new_root_item);
+-- 
+1.7.6.5

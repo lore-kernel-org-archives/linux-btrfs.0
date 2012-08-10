@@ -1,41 +1,60 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-yw0-f46.google.com ([209.85.213.46]:36390 "EHLO
-	mail-yw0-f46.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1754905Ab2HNHt0 (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 14 Aug 2012 03:49:26 -0400
-Received: by yhmm54 with SMTP id m54so93198yhm.19
-        for <linux-btrfs@vger.kernel.org>; Tue, 14 Aug 2012 00:49:26 -0700 (PDT)
-Message-ID: <502A02F5.50909@gmail.com>
-Date: Tue, 14 Aug 2012 15:49:09 +0800
-From: Wang Sheng-Hui <shhuiw@gmail.com>
-MIME-Version: 1.0
-To: chris.mason@fusionio.com, linux-btrfs@vger.kernel.org
-Subject: [PATCH] btrfs-progs: correct the comment for extent_io.c/clear_extent_bits
-Content-Type: text/plain; charset=ISO-8859-1
+Received: from xp-ob.rzone.de ([81.169.146.136]:64545 "EHLO xp-ob.rzone.de"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1759786Ab2HJO6X (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Fri, 10 Aug 2012 10:58:23 -0400
+Received: from pizpot.store ([192.168.43.236])
+	by jored.store (jored xp3) (RZmta 30.8 OK) with ESMTP id p02ae7o7AB9mnr
+	for <linux-btrfs@vger.kernel.org>;
+	Fri, 10 Aug 2012 16:58:21 +0200 (CEST)
+From: Stefan Behrens <sbehrens@giantdisaster.de>
+To: linux-btrfs@vger.kernel.org
+Subject: [PATCH] Btrfs: fix that repair code is spuriously executed for transid failures
+Date: Fri, 10 Aug 2012 16:58:21 +0200
+Message-Id: <1344610701-13816-1-git-send-email-sbehrens@giantdisaster.de>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-It should be "clear" instead of "set" for clear_extent_bits.
+If verify_parent_transid() fails for all mirrors, the current code
+calls repair_io_failure() anyway which means:
+- that the disk block is rewritten without repairing anything and
+- that a kernel log message is printed which misleadingly claims
+  that a read error was corrected.
 
-Signed-off-by: Wang Sheng-Hui <shhuiw@gmail.com>
+This is an example:
+parent transid verify failed on 615015833600 wanted 110423 found 110424
+parent transid verify failed on 615015833600 wanted 110423 found 110424
+btrfs read error corrected: ino 1 off 615015833600 (dev /dev/...)
+
+It is wrong to ignore the results from verify_parent_transid() and to
+call repair_eb_io_failure() when the verification of the transids failed.
+This commit fixes the issue.
+
+Signed-off-by: Stefan Behrens <sbehrens@giantdisaster.de>
 ---
- extent_io.c |    2 +-
- 1 files changed, 1 insertions(+), 1 deletions(-)
+ fs/btrfs/disk-io.c | 8 ++++++--
+ 1 file changed, 6 insertions(+), 2 deletions(-)
 
-diff --git a/extent_io.c b/extent_io.c
-index ebb35b2..638ee0e 100644
---- a/extent_io.c
-+++ b/extent_io.c
-@@ -195,7 +195,7 @@ static int clear_state_bit(struct extent_io_tree *tree,
- }
+diff --git a/fs/btrfs/disk-io.c b/fs/btrfs/disk-io.c
+index 3c4c439..29c69e6 100644
+--- a/fs/btrfs/disk-io.c
++++ b/fs/btrfs/disk-io.c
+@@ -377,9 +377,13 @@ static int btree_read_extent_buffer_pages(struct btrfs_root *root,
+ 		ret = read_extent_buffer_pages(io_tree, eb, start,
+ 					       WAIT_COMPLETE,
+ 					       btree_get_extent, mirror_num);
+-		if (!ret && !verify_parent_transid(io_tree, eb,
++		if (!ret) {
++			if (!verify_parent_transid(io_tree, eb,
+ 						   parent_transid, 0))
+-			break;
++				break;
++			else
++				ret = -EIO;
++		}
  
- /*
-- * set some bits on a range in the tree.
-+ * clear some bits on a range in the tree.
-  */
- int clear_extent_bits(struct extent_io_tree *tree, u64 start,
- 		      u64 end, int bits, gfp_t mask)
+ 		/*
+ 		 * This buffer's crc is fine, but its contents are corrupted, so
 -- 
-1.7.1
+1.7.11.4
 

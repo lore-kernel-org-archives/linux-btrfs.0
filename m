@@ -1,97 +1,56 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx1.fusionio.com ([66.114.96.30]:50715 "EHLO mx1.fusionio.com"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1758125Ab2HINQ1 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 9 Aug 2012 09:16:27 -0400
-Date: Thu, 9 Aug 2012 09:16:24 -0400
-From: Chris Mason <chris.mason@fusionio.com>
-To: Josef Bacik <JBacik@fusionio.com>
-CC: "Chris L. Mason" <clmason@fusionio.com>, Miao Xie <miaox@cn.fujitsu.com>,
-        Linux Btrfs <linux-btrfs@vger.kernel.org>,
-        David Sterba <dave@jikos.cz>
-Subject: Re: [RFC PATCH] Btrfs: fix full backref problem when inserting
- shared block reference
-Message-ID: <20120809131624.GF4185@shiny>
-References: <50232A19.2010704@cn.fujitsu.com>
- <20120809122319.GG2141@localhost.localdomain>
- <20120809131109.GE4185@shiny>
- <20120809131247.GH2141@localhost.localdomain>
+Received: from cn.fujitsu.com ([222.73.24.84]:50694 "EHLO song.cn.fujitsu.com"
+	rhost-flags-OK-FAIL-OK-OK) by vger.kernel.org with ESMTP
+	id S1754345Ab2HJKi7 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Fri, 10 Aug 2012 06:38:59 -0400
+Message-ID: <5024E496.4040702@cn.fujitsu.com>
+Date: Fri, 10 Aug 2012 18:38:14 +0800
+From: Miao Xie <miaox@cn.fujitsu.com>
+Reply-To: miaox@cn.fujitsu.com
 MIME-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-In-Reply-To: <20120809131247.GH2141@localhost.localdomain>
+To: Linux Btrfs <linux-btrfs@vger.kernel.org>, David Sterba <dave@jikos.cz>
+Subject: Re: [RFC PATCH] Btrfs: fix full backref problem when inserting shared
+ block reference
+References: <50232A19.2010704@cn.fujitsu.com> <20120809064802.GB17430@twin.jikos.cz> <20120809072129.GC17430@twin.jikos.cz>
+In-Reply-To: <20120809072129.GC17430@twin.jikos.cz>
+Content-Type: text/plain; charset=ISO-8859-1
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Thu, Aug 09, 2012 at 07:12:47AM -0600, Josef Bacik wrote:
-> On Thu, Aug 09, 2012 at 07:11:09AM -0600, Chris L. Mason wrote:
-> > On Thu, Aug 09, 2012 at 06:23:19AM -0600, Josef Bacik wrote:
-> > > On Wed, Aug 08, 2012 at 09:10:17PM -0600, Miao Xie wrote:
-> > > > If we create several snapshots at the same time, the following BUG_ON() will be
-> > > > triggered.
-> > > > 
-> > > > 	kernel BUG at fs/btrfs/extent-tree.c:6047!
-> > > > 
-> > > > Steps to reproduce:
-> > > >  # mkfs.btrfs <partition>
-> > > >  # mount <partition> <mnt>
-> > > >  # cd <mnt>
-> > > >  # for ((i=0;i<2400;i++)); do touch long_name_to_make_tree_more_deep$i; done
-> > > >  # for ((i=0; i<4; i++))
-> > > >  > do
-> > > >  > mkdir $i
-> > > >  > for ((j=0; j<200; j++))
-> > > >  > do
-> > > >  > btrfs sub snap . $i/$j
-> > > >  > done &
-> > > >  > done
-> > > > 
-> > > > The reason is:
-> > > > Before transaction commit, some operations changed the fs tree and new tree
-> > > > blocks were allocated because of COW. We used the implicit non-shared back
-> > > > reference for those newly allocated tree blocks because they were not shared by
-> > > > two or more trees.
-> > > > 
-> > > > And then we created the first snapshot for the fs tree, according to the back
-> > > > reference rules, we also used implicit back refs for the child tree blocks of
-> > > > the root node of the fs tree, now those child nodes/leaves were shared by two
-> > > > trees.
-> > > > 
-> > > > Then We didn't deal with the delayed references, and continued to change the fs
-> > > > tree(created the second snapshot and inserted the dir item of the new snapshot
-> > > > into the fs tree). According to the rules of the back reference, we added full
-> > > > back refs for those tree blocks whose parents have be shared by two trees.
-> > > > Now some newly allocated tree blocks had two types of the references.
-> > > > 
-> > > > As we know, the delayed reference system handles these delayed references from
-> > > > back to front, and the full delayed reference is inserted after the implicit
-> > > > ones. So when we dealt with the back references of those newly allocated tree
-> > > > blocks, the full references was dealt with at first. And if the first reference
-> > > > is a shared back reference and the tree block that the reference points to is
-> > > > newly allocated, It would be considered as a tree block which is shared by two
-> > > > or more trees when it is allocated and should be a full back reference not a
-> > > > implicit one, the flag of its reference also should be set to FULL_BACKREF.
-> > > > But in fact, it was a non-shared tree block with a implicit reference at
-> > > > beginning, so it was not compulsory to set the flags to FULL_BACKREF. So BUG_ON
-> > > > was triggered.
-> > > > 
-> > > > We have several methods to fix this bug:
-> > > > 1. deal with delayed references after the snapshot is created and before we
-> > > >    change the source tree of the snapshot. This is the easiest and safest way.
-> > > > 2. modify the sort method of the delayed reference tree, make the full delayed
-> > > >    references be inserted before the implicit ones. It is also very easy, but
-> > > >    I don't know if it will introduce some problems or not.
-> > > 
-> > > Thanks for tracking this down, FWIW I like option 2 the most, it would be
-> > > intereseting to see if it does actually introduce new issues.  Thanks,
-> > 
-> > For this release, I like the current patch ;)  Great job tracking it
-> > down Miao.
-> > 
+On Thu, 9 Aug 2012 09:21:29 +0200, David Sterba wrote:
+> On Thu, Aug 09, 2012 at 08:48:02AM +0200, David Sterba wrote:
+>> and down, no problems so far, and the "wikipedia" test-subvol stresstest
+>> that caused trouble to one of your patches is also ok. I'll do some more
+>> testing on other machines and will report problems eventually.
 > 
-> Well sure it's much cleaner, but it appears to not work right?
+> So it won't be so easy :)
+> 
+> The test generated 15+ G of data, ~500 snapshots, then umount and fsck:
+> 
+> lots of
+> 
+> ref mismatch on [9655283712 4096] extent item 1, found 0
+> Incorrect local backref count on 9655283712 root 5 owner 589776 offset 110592 found 0 wanted 1 back 0x86badf0
+> backpointer mismatch on [9655283712 4096]
+> owner ref check failed [9655283712 4096]
+> 
+> and then
+> 
+> checking fs roots
+> root 2854 inode 233882 errors 2500
+> root 2880 inode 271639 errors 2200
+> 
+> and it's not finished yet, other types of error may pop up.
 
-I'm not sure if those are from a different bug.  I'll try to reproduce
-as well.
 
--chris
+Could you try Arne's patch?
+
+[PATCH v2] Btrfs: fix race in run_clustered_refs
+http://marc.info/?l=linux-btrfs&m=134449329717830&w=2
+
+I run test for several times with this patch, and the problem didn't happen.
+So it seems this patch can fix the above problem.
+
+Regards
+Miao
 

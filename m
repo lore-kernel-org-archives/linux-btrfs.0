@@ -1,15 +1,16 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from aristotle.killerwolves.net ([182.160.128.151]:51132 "EHLO
+Received: from aristotle.killerwolves.net ([182.160.128.151]:39363 "EHLO
 	aristotle.killerwolves.net" rhost-flags-OK-OK-OK-OK)
-	by vger.kernel.org with ESMTP id S1750937Ab2HLKkD (ORCPT
+	by vger.kernel.org with ESMTP id S1750828Ab2HLKxH (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Sun, 12 Aug 2012 06:40:03 -0400
-Message-ID: <502785AD.9080904@killerwolves.net>
-Date: Sun, 12 Aug 2012 20:30:05 +1000
+	Sun, 12 Aug 2012 06:53:07 -0400
+Message-ID: <50278B56.9040903@killerwolves.net>
+Date: Sun, 12 Aug 2012 20:54:14 +1000
 From: Ben Peddell <klightspeed@killerwolves.net>
 MIME-Version: 1.0
 To: linux-btrfs@vger.kernel.org
-Subject: [PATCH] Fix unaligned pointer accesses of btrfs_key->offset
+Subject: [PATCH] Fix unaligned pointer accesses of btrfs_key->offset (try
+ 2)
 Content-Type: text/plain; charset=ISO-8859-1
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
@@ -30,6 +31,8 @@ potentially occur in the filesystem driver, causing internal corruption.
 
 This patch works around the two unaligned accesses of key->offset through
 a pointer by giving find_next_chunk an aligned pointer.
+
+Signed-off-by: Ben Peddell <bpeddell@killerwolves.net>
 
 ---
  volumes.c |    8 ++++++--

@@ -1,42 +1,67 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-qa0-f53.google.com ([209.85.216.53]:37543 "EHLO
-	mail-qa0-f53.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1750985Ab2HMEtq (ORCPT
+Received: from mail.robertbuhren.de ([91.190.225.190]:40469 "EHLO
+	mail.robertbuhren.de" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1751006Ab2HMK3e (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 13 Aug 2012 00:49:46 -0400
-Received: by qaas11 with SMTP id s11so1619970qaa.19
-        for <linux-btrfs@vger.kernel.org>; Sun, 12 Aug 2012 21:49:45 -0700 (PDT)
+	Mon, 13 Aug 2012 06:29:34 -0400
+Received: from localhost (localhost [127.0.0.1])
+	by mail.robertbuhren.de (Postfix) with ESMTP id 9EFE26B2DC
+	for <linux-btrfs@vger.kernel.org>; Mon, 13 Aug 2012 12:23:11 +0200 (CEST)
+Received: from mail.robertbuhren.de ([127.0.0.1])
+	by localhost (mail.robertbuhren.de [127.0.0.1]) (amavisd-new, port 10024)
+	with ESMTP id Zy5d5oaV1MCY for <linux-btrfs@vger.kernel.org>;
+	Mon, 13 Aug 2012 12:22:59 +0200 (CEST)
+Received: from [192.168.2.2] (a89-182-199-186.net-htp.de [89.182.199.186])
+	by mail.robertbuhren.de (Postfix) with ESMTPSA id 67AE16B2DB
+	for <linux-btrfs@vger.kernel.org>; Mon, 13 Aug 2012 12:22:59 +0200 (CEST)
+Message-ID: <5028D57F.5090803@robertbuhren.de>
+Date: Mon, 13 Aug 2012 12:22:55 +0200
+From: Robert Buhren <robert@robertbuhren.de>
 MIME-Version: 1.0
-In-Reply-To: <COL113-DS2059BCB791EE611DDBA0A5B0B00@phx.gbl>
-References: <5027DDFC.60504@pocock.com.au>
-	<CAG1y0scy=6NByQ9DBF_9m6MrmNrYe1WvX9-JkmbEUKWjd77w8Q@mail.gmail.com>
-	<COL113-DS2059BCB791EE611DDBA0A5B0B00@phx.gbl>
-Date: Mon, 13 Aug 2012 11:49:45 +0700
-Message-ID: <CAG1y0sdP1D_ecJ4XGyMGLYDpFoRc_Mkf0zRy0Zet6KpgfZW5VA@mail.gmail.com>
-Subject: Re: raw partition or LV for btrfs?
-From: "Fajar A. Nugraha" <list@fajar.net>
-To: Kyle Gates <kylegates@hotmail.com>
-Cc: Daniel Pocock <daniel@pocock.com.au>, linux-btrfs@vger.kernel.org
-Content-Type: text/plain; charset=ISO-8859-1
+To: linux-btrfs@vger.kernel.org
+Subject: Testing new send/receive: "ERROR: could not resolve root_id for"
+Content-Type: text/plain; charset=ISO-8859-1; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Mon, Aug 13, 2012 at 11:19 AM, Kyle Gates <kylegates@hotmail.com> wrote:
-> Also, I think the current grub2 has lzo support.
+Hello,
 
-You're right
+i wanted to test the new send/receive feature and i can't manage to send 
+a snapshot to a file. I always get the error
+"ERROR: could not resolve root_id for".
 
-grub2 (1.99-18) unstable; urgency=low
+I'm using kernel 3.6-rc1 and the latest btrfs progs from git.
 
-  [ Colin Watson ]
-...
-  * Backport from upstream:
-    - Add support for LZO compression in btrfs (LP: #727535).
+This is what i'm doing:
 
-so Ubuntu has it since precise, which is roughly the time I switched
-to zfs for rootfs :P
+mount -o subvolid=0,discard,compress=lzo /dev/sda4 /mnt/ROOT_BTRFS
 
-Thanks for letting us know about that.
+[root@robert-laptop mnt]# /home/robert/ArchLinux/btrfs-progs/btrfs 
+subvolume list ROOT_BTRFS/
+ID 256 top level 5 path btrfs_root <--- my rootfs subvolume
+ID 265 top level 5 path btrfs_root-11082012-0023      <--- a "normal" 
+snapshot"
+ID 268 top level 5 path root_send <--- a read only snapshot i try to use 
+with send
 
--- 
-Fajar
+[root@robert-laptop ~]# cd /mnt/ROOT_BTRFS/
+[root@robert-laptop ROOT_BTRFS]# 
+/home/robert/ArchLinux/btrfs-progs/btrfs send root_send > outROOT
+At subvol root_send
+ERROR: could not resolve root_id for /mnt/ROOT_BTRFS/root_send
+
+Am i somehow misunderstanding how the send/receive feature should work? 
+My idea is to send the "root_send" snapshot to a file and then replay 
+that file later on a backup btrfs partition. Once i've done that i can 
+just send incremental differences to the backup partition. Is that how 
+"send/receive" is supposed to work?
+
+If you need further information just tell me.
+
+Thanks in advance,
+
+Robert
+
+
+PS: Please respond to my email address as i'm not subscribed to the list.
+

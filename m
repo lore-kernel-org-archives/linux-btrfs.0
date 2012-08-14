@@ -1,49 +1,42 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from bar.sig21.net ([80.81.252.164]:45879 "EHLO bar.sig21.net"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1755792Ab2HNM66 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 14 Aug 2012 08:58:58 -0400
-Date: Tue, 14 Aug 2012 14:39:37 +0200
-From: Johannes Stezenbach <js@sig21.net>
-To: "Markus F.X.J. Oberhumer" <markus@oberhumer.com>
-Cc: linux-kernel@vger.kernel.org, Andi Kleen <andi@firstfloor.org>,
-        chris.mason@fusionio.com, linux-btrfs@vger.kernel.org,
-        Nitin Gupta <ngupta@vflare.org>,
-        Richard Purdie <rpurdie@openedhand.com>,
-        richard -rw- weinberger <richard.weinberger@gmail.com>,
-        linux-arm-kernel@lists.infradead.org
-Subject: Re: [GIT PULL] Update LZO compression
-Message-ID: <20120814123937.GA14756@sig21.net>
-References: <50299142.2030504@oberhumer.com>
+Received: from mail-wi0-f178.google.com ([209.85.212.178]:53766 "EHLO
+	mail-wi0-f178.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1755192Ab2HNNFy (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>);
+	Tue, 14 Aug 2012 09:05:54 -0400
+Message-ID: <502A4BB2.6000404@gmail.com>
+Date: Tue, 14 Aug 2012 14:59:30 +0200
+From: Marco Stornelli <marco.stornelli@gmail.com>
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <50299142.2030504@oberhumer.com>
+To: liub.liubo@gmail.com
+CC: linux-btrfs@vger.kernel.org, linux-fsdevel@vger.kernel.org
+Subject: Re: [PATCH RFC] Btrfs: fix deadlock between sys_sync and freeze
+References: <1344920474-10014-1-git-send-email-liub.liubo@gmail.com>
+In-Reply-To: <1344920474-10014-1-git-send-email-liub.liubo@gmail.com>
+Content-Type: text/plain; charset=ISO-8859-15; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Tue, Aug 14, 2012 at 01:44:02AM +0200, Markus F.X.J. Oberhumer wrote:
-> On 2012-07-16 20:30, Markus F.X.J. Oberhumer wrote:
-> >
-> > As stated in the README this version is significantly faster (typically more
-> > than 2 times faster!) than the current version, has been thoroughly tested on
-> > x86_64/i386/powerpc platforms and is intended to get included into the
-> > official Linux 3.6 or 3.7 release.
-> >
-> > I encourage all compression users to test and benchmark this new version,
-> > and I also would ask some official LZO maintainer to convert the updated
-> > source files into a GIT commit and possibly push it to Linus or linux-next.
+Il 14/08/2012 07:01, liub.liubo@gmail.com ha scritto:
+> From: Liu Bo <bo.li.liu@oracle.com>
+>
+> I found this while testing xfstests 068, the story is
+>
+>      t1                                            t2
+>    sys_sync                                    thaw_super
+>      iterate_supers
+>        down_read(sb->s_umount)                   down_write(sb->s_umount) --->wait for t1
+>        sync_fs (with wait mode)
+>          start_transaction
+>            sb_start_intwrite --------------------> wait for t2 to set s_writers.frozen to SB_UNFROZEN
+>
+> In this patch, I add an helper sb_start_intwrite_trylock() and use it before we
+> start_transaction in sync_fs() with wait mode so that we won't hit the deadlock.
+>
 
-Sorry for not reporting earlier, but I didn't have time to do real
-benchmarks, just a quick test on ARM926EJ-S using barebox,
-and found in the new version decompression is slower:
-http://lists.infradead.org/pipermail/barebox/2012-July/008268.html
+IMHO, we should avoid to call the sync operation on a frozen fs. The 
+freeze operation, indeed, already include a sync operation. According to 
+man page, no other operation should modify the fs after the freeze. So 
+for me the modification is inside sync_filesystem (and sync_one_sb).
 
-BTW, do you have userspace code matching the old and new
-lzo versions?  It would be easier to benchmark.
-
-Unfortunately I cannot claim high confidence in my benchmark results
-due to missing time to do it properly, it would be useful if
-someone else could do some benchmarks on ARM before merging this.
-
-
-Johannes
+Marco

@@ -1,81 +1,46 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-gg0-f174.google.com ([209.85.161.174]:64743 "EHLO
-	mail-gg0-f174.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1751684Ab2HNFCe (ORCPT
+Received: from rcsinet15.oracle.com ([148.87.113.117]:30341 "EHLO
+	rcsinet15.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1752837Ab2HNGDK (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 14 Aug 2012 01:02:34 -0400
-From: <liub.liubo@gmail.com>
-To: <linux-btrfs@vger.kernel.org>
-Cc: <linux-fsdevel@vger.kernel.org>
-Subject: [PATCH RFC] Btrfs: fix deadlock between sys_sync and freeze
-Date: Tue, 14 Aug 2012 13:01:14 +0800
-Message-Id: <1344920474-10014-1-git-send-email-liub.liubo@gmail.com>
+	Tue, 14 Aug 2012 02:03:10 -0400
+Received: from acsinet22.oracle.com (acsinet22.oracle.com [141.146.126.238])
+	by rcsinet15.oracle.com (Sentrion-MTA-4.2.2/Sentrion-MTA-4.2.2) with ESMTP id q7E638qY024340
+	(version=TLSv1/SSLv3 cipher=DHE-RSA-AES256-SHA bits=256 verify=OK)
+	for <linux-btrfs@vger.kernel.org>; Tue, 14 Aug 2012 06:03:09 GMT
+Received: from acsmt357.oracle.com (acsmt357.oracle.com [141.146.40.157])
+	by acsinet22.oracle.com (8.14.4+Sun/8.14.4) with ESMTP id q7E638Dh025834
+	(version=TLSv1/SSLv3 cipher=DHE-RSA-AES256-SHA bits=256 verify=NO)
+	for <linux-btrfs@vger.kernel.org>; Tue, 14 Aug 2012 06:03:08 GMT
+Received: from abhmt118.oracle.com (abhmt118.oracle.com [141.146.116.70])
+	by acsmt357.oracle.com (8.12.11.20060308/8.12.11) with ESMTP id q7E638lF009611
+	for <linux-btrfs@vger.kernel.org>; Tue, 14 Aug 2012 01:03:08 -0500
+From: Anand jain <Anand.Jain@oracle.com>
+To: linux-btrfs@vger.kernel.org
+Cc: Anand Jain <anand.jain@oracle.com>
+Subject: [PATCH] get uuid of subvol and snapshot
+Date: Tue, 14 Aug 2012 14:04:05 +0800
+Message-Id: <1344924246-24192-1-git-send-email-Anand.Jain@oracle.com>
+In-Reply-To: <1343987338-10612-1-git-send-email-Anand.Jain@oracle.com>
+References: <1343987338-10612-1-git-send-email-Anand.Jain@oracle.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-From: Liu Bo <bo.li.liu@oracle.com>
+From: Anand Jain <anand.jain@oracle.com>
 
-I found this while testing xfstests 068, the story is
+ This patch is on top the patch-set titled 
+ 'Include otime in the snapshot list' sent by me before.
 
-    t1                                            t2
-  sys_sync                                    thaw_super
-    iterate_supers
-      down_read(sb->s_umount)                   down_write(sb->s_umount) --->wait for t1
-      sync_fs (with wait mode)
-        start_transaction
-          sb_start_intwrite --------------------> wait for t2 to set s_writers.frozen to SB_UNFROZEN
+ To show the uuid of the subvol and snapshots.
 
-In this patch, I add an helper sb_start_intwrite_trylock() and use it before we
-start_transaction in sync_fs() with wait mode so that we won't hit the deadlock.
+btrfs su list -u /btrfs1
+ID 256 gen 6 top level 5 uuid 4b7188e4-7d48-f247-b956-1a260b721e1d path sv1
+ID 259 gen 6 top level 5 uuid 3cf8931a-de31-5545-8ede-435d25fe3c3f path sv1/.snapshot/ss1
 
-Signed-off-by: Liu Bo <bo.li.liu@oracle.com>
----
- fs/btrfs/super.c   |   15 +++++++++++++++
- include/linux/fs.h |    5 +++++
- 2 files changed, 20 insertions(+), 0 deletions(-)
+Anand Jain (1):
+  add -u to show subvol uuid
 
-diff --git a/fs/btrfs/super.c b/fs/btrfs/super.c
-index f2eb24c..1e04b41 100644
---- a/fs/btrfs/super.c
-+++ b/fs/btrfs/super.c
-@@ -847,6 +847,21 @@ int btrfs_sync_fs(struct super_block *sb, int wait)
- 		return 0;
- 	}
- 
-+	/*
-+	 * sys_sync can cause an ABBA deadlock with freeze/thaw
-+	 * o freeze_super()   grabs s_umount lock and set sb to SB_FREEZE_FS.
-+	 * o thaw_super()     grabs s_umount lock and set sb to SB_UNFROZEN.
-+	 * o iterate_supers() grabs s_umount lock, and sync fs, during which
-+	 *                    we need to do sb_start_intwrite() in starting a
-+	 *                    new transaction.
-+	 * so iterate_supers() will wait for thaw_super() to reset sb's frozen
-+	 * state, while thaw_super() will wait for iterate_supers() to drop the
-+	 * s_umount lock.  This is an ABBA deadlock.
-+	 */
-+	if (!sb_start_intwrite_trylock(sb))
-+		return 0;
-+	sb_end_intwrite(sb);
-+
- 	btrfs_wait_ordered_extents(root, 0, 0);
- 
- 	trans = btrfs_start_transaction(root, 0);
-diff --git a/include/linux/fs.h b/include/linux/fs.h
-index aa11047..8a3efd0 100644
---- a/include/linux/fs.h
-+++ b/include/linux/fs.h
-@@ -1700,6 +1700,11 @@ static inline void sb_start_intwrite(struct super_block *sb)
- 	__sb_start_write(sb, SB_FREEZE_FS, true);
- }
- 
-+static inline int sb_start_intwrite_trylock(struct super_block *sb)
-+{
-+	return __sb_start_write(sb, SB_FREEZE_FS, false);
-+}
-+
- 
- extern bool inode_owner_or_capable(const struct inode *inode);
- 
--- 
-1.7.7.6
+ btrfs-list.c     |  148 ++++++++++++++++++++++++++++++++++++++++++------------
+ cmds-subvolume.c |   14 +++--
+ 2 files changed, 124 insertions(+), 38 deletions(-)
 

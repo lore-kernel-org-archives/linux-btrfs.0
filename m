@@ -1,50 +1,78 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-yw0-f46.google.com ([209.85.213.46]:64783 "EHLO
-	mail-yw0-f46.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1750911Ab2HNOux (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 14 Aug 2012 10:50:53 -0400
-Received: by yhmm54 with SMTP id m54so509970yhm.19
-        for <linux-btrfs@vger.kernel.org>; Tue, 14 Aug 2012 07:50:52 -0700 (PDT)
+Received: from cantor2.suse.de ([195.135.220.15]:53056 "EHLO mx2.suse.de"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1751572Ab2HNQvm (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Tue, 14 Aug 2012 12:51:42 -0400
+Date: Tue, 14 Aug 2012 09:51:40 -0700
+From: Mark Fasheh <mfasheh@suse.de>
+To: Jan Schmidt <list.btrfs@jan-o-sch.net>
+Cc: linux-btrfs@vger.kernel.org, Chris Mason <chris.mason@fusionio.com>
+Subject: Re: [PATCH 1/3] btrfs: extended inode refs
+Message-ID: <20120814165140.GC15159@wotan.suse.de>
+Reply-To: Mark Fasheh <mfasheh@suse.de>
+References: <1344452147-19409-1-git-send-email-mfasheh@suse.de> <1344452147-19409-2-git-send-email-mfasheh@suse.de> <502A1B3B.3050804@jan-o-sch.net>
 MIME-Version: 1.0
-In-Reply-To: <CAG1y0seKBE-LMJq+G1ioB5Ls3PCD6rUiqd+5O-EpWSsDV1eOHg@mail.gmail.com>
-References: <5027DDFC.60504@pocock.com.au>
-	<CAG1y0scy=6NByQ9DBF_9m6MrmNrYe1WvX9-JkmbEUKWjd77w8Q@mail.gmail.com>
-	<502A529B.8060201@pocock.com.au>
-	<CAG1y0sdEePQbRUwvmbCqGMxfPqwCiUKxWcuxczFFEhtait1sNQ@mail.gmail.com>
-	<CAE5mzvj_xX6dZVSd3joi9Pgn-yxiRA3Aa+Aqam3gj-VCbQ6C=Q@mail.gmail.com>
-	<CAG1y0seKBE-LMJq+G1ioB5Ls3PCD6rUiqd+5O-EpWSsDV1eOHg@mail.gmail.com>
-Date: Tue, 14 Aug 2012 08:50:52 -0600
-Message-ID: <CAE5mzvhi72fVrL0aDc3ArLkoqv6TEZQA5E6uJNZ9eGXiaULUNQ@mail.gmail.com>
-Subject: Re: raw partition or LV for btrfs?
-From: cwillu <cwillu@cwillu.com>
-To: "Fajar A. Nugraha" <list@fajar.net>
-Cc: Daniel Pocock <daniel@pocock.com.au>, linux-btrfs@vger.kernel.org
-Content-Type: text/plain; charset=UTF-8
+Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <502A1B3B.3050804@jan-o-sch.net>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Tue, Aug 14, 2012 at 8:21 AM, Fajar A. Nugraha <list@fajar.net> wrote:
-> On Tue, Aug 14, 2012 at 9:09 PM, cwillu <cwillu@cwillu.com> wrote:
->>>> If I understand correctly, if I don't use LVM, then such move and resize
->>>> operations can't be done for an online filesystem and it has more risk.
->>>
->>> You can resize, add, and remove devices from btrfs online without the
->>> need for LVM. IIRC LVM has finer granularity though, you can do
->>> something like "move only the first 10GB now, I'll move the rest
->>> later".
->>
->> You can certainly resize the filesystem itself, but without lvm I
->> don't believe you can resize the underlying partition online.
->
-> I'm pretty sure you can do that with parted. At least, when your
-> version of parted is NOT 2.2.
+On Tue, Aug 14, 2012 at 11:32:43AM +0200, Jan Schmidt wrote:
+> On Wed, August 08, 2012 at 20:55 (+0200), Mark Fasheh wrote:
+> > +/*
+> > + * btrfs_insert_inode_extref() - Inserts an extended inode ref into a tree.
+> > + *
+> > + * The caller must have checked against BTRFS_LINK_MAX already.
+> > + */
+> > +static int btrfs_insert_inode_extref(struct btrfs_trans_handle *trans,
+> > +				     struct btrfs_root *root,
+> > +				     const char *name, int name_len,
+> > +				     u64 inode_objectid, u64 ref_objectid, u64 index)
+> > +{
+> > +	struct btrfs_inode_extref *extref;
+> > +	int ret;
+> > +	int ins_len = name_len + sizeof(*extref);
+> > +	unsigned long ptr;
+> > +	struct btrfs_path *path;
+> > +	struct btrfs_key key;
+> > +	struct extent_buffer *leaf;
+> > +	struct btrfs_item *item;
+> > +
+> > +	key.objectid = inode_objectid;
+> > +	key.type = BTRFS_INODE_EXTREF_KEY;
+> > +	key.offset = btrfs_extref_hash(ref_objectid, name, name_len);
+> > +
+> > +	path = btrfs_alloc_path();
+> > +	if (!path)
+> > +		return -ENOMEM;
+> > +
+> > +	path->leave_spinning = 1;
+> > +	ret = btrfs_insert_empty_item(trans, root, path, &key,
+> > +				      ins_len);
+> > +	if (ret == -EEXIST) {
+> > +		if (btrfs_find_name_in_ext_backref(path, name, name_len, NULL))
+> > +			goto out;
+> > +
+> > +		btrfs_extend_item(trans, root, path, ins_len);
+> > +	}
+> > +	if (ret < 0)
+> > +		goto out;
+> 
+> This doesn't look right. Did you actually test it? I haven't, but I claim that
+> with this version of the patch, you won't be able to add a hash collision link.
+> 
+> Jeff changed btrfs_extend_item from int to void in March, so we're no longer
+> setting ret there. I suggest adding "ret = 0" within the EEXIST-block.
 
-block/ioctl.c:blkdev_reread_part calls into
-block/partition-generic.c:rescan_partitions, which fails out early
-with EBUSY if block/partition-generic.c:drop_partitions sees a
-non-zero bdev->bd_part_count, which is a count of the open partition
-bdev's.
+Doh, yeah I didn't test collisions on this version of the patch (as you can
+obviously see, I messed up the merge of Jeff's change).
 
-Calvin mentions below that this may be changing shortly, but I'm going
-to claim to be right on this one.
+
+> The rest of this patch looks good to me.
+
+Awesome, I'll send the above as a fix to this patch series (I have at least
+one other fix to send soon too)
+	--Mark
+
+--
+Mark Fasheh

@@ -1,31 +1,62 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mho-01-ewr.mailhop.org ([204.13.248.71]:30117 "EHLO
-	mho-01-ewr.mailhop.org" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1755403Ab2HORTf convert rfc822-to-8bit (ORCPT
+Received: from licorne.daevel.fr ([178.32.94.222]:58606 "EHLO
+	licorne.daevel.fr" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1754805Ab2HOR2H (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 15 Aug 2012 13:19:35 -0400
-Date: Wed, 15 Aug 2012 19:19:30 +0200
-From: =?iso-8859-1?Q?Llu=EDs?= Batlle i Rossell <viric@viric.name>
-To: Kyle Gates <kylegates@hotmail.com>
-Cc: "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
-Subject: Re: State of nocow file attribute
-Message-ID: <20120815171930.GI25996@vicerveza.homeunix.net>
-References: <20120815101229.GH25996@vicerveza.homeunix.net>
- <COL113-W11E89280DE29846698B431B0B60@phx.gbl>
+	Wed, 15 Aug 2012 13:28:07 -0400
+Received: from luuna.daevel.fr ([82.67.37.138] helo=[192.168.1.50])
+	by licorne.daevel.fr with esmtpsa (TLS1.0:RSA_AES_256_CBC_SHA1:32)
+	(Exim 4.72)
+	(envelope-from <btrfs.list@daevel.fr>)
+	id 1T1hO1-0008RF-Vn
+	for linux-btrfs@vger.kernel.org; Wed, 15 Aug 2012 19:28:06 +0200
+Message-ID: <502BDC30.8060409@daevel.fr>
+Date: Wed, 15 Aug 2012 19:28:16 +0200
+From: Olivier Bonvalet <btrfs.list@daevel.fr>
 MIME-Version: 1.0
-Content-Type: text/plain; charset=iso-8859-1
-In-Reply-To: <COL113-W11E89280DE29846698B431B0B60@phx.gbl>
+To: linux-btrfs@vger.kernel.org
+Subject: Can't umount a read-only FS ?
+Content-Type: text/plain; charset=ISO-8859-1
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Wed, Aug 15, 2012 at 08:05:11AM -0500, Kyle Gates wrote:
-> > Is there really a fix upstream for that? Do nocow attribute on files work for
-> > anyone already?
-> 
-> IIRC the nocow attribute seems to work if the volume is mounted with "nodatasum"
+Hi,
 
-Shouldn't nocow mean also nodatasum *only for that file*? I find it a bit
-useless, to require whole fs nodatasum for per-file nocow to work.
+I have a strange problem with a btrfs partition : after an error, btrfs was forced readonly.
 
-Thank you,
-Lluís.
+So I try to umount it, to launch btrfsck, but it doesn't work :
+
+root! sofia:~# umount /backup/
+root! sofia:~# btrfsck /dev/vg-sofia/backup
+/dev/vg-sofia/backup is currently mounted. Aborting.
+root! sofia:~# umount /backup/
+umount: /backup/: not mounted
+root! sofia:~# btrfsck /dev/vg-sofia/backup
+/dev/vg-sofia/backup is currently mounted. Aborting.
+root! sofia:~#
+
+
+
+And I can't remount it :
+
+root! sofia:~# mount /backup/
+mount: /dev/mapper/vg--sofia-backup already mounted or /backup busy
+
+
+
+Or access to the content :
+
+root! sofia:~# ls /backup/
+root! sofia:~#
+
+
+
+
+It's on a v3.4.7 kernel, with btrfs-tools version 0.19+20120328-7 (from Debian unstable).
+
+What should I do ? Reboot ?
+
+
+Thanks,
+
+Olivier

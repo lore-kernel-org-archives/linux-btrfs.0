@@ -1,41 +1,31 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from plane.gmane.org ([80.91.229.3]:54411 "EHLO plane.gmane.org"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1755868Ab2HOQpH (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 15 Aug 2012 12:45:07 -0400
-Received: from list by plane.gmane.org with local (Exim 4.69)
-	(envelope-from <gcfb-btrfs-devel-moved1@m.gmane.org>)
-	id 1T1giO-0007MB-7d
-	for linux-btrfs@vger.kernel.org; Wed, 15 Aug 2012 18:45:04 +0200
-Received: from static-206-126-220-193.bertramwireless.com ([206.126.220.193])
-        by main.gmane.org with esmtp (Gmexim 0.1 (Debian))
-        id 1AlnuQ-0007hv-00
-        for <linux-btrfs@vger.kernel.org>; Wed, 15 Aug 2012 18:45:04 +0200
-Received: from anthony by static-206-126-220-193.bertramwireless.com with local (Gmexim 0.1 (Debian))
-        id 1AlnuQ-0007hv-00
-        for <linux-btrfs@vger.kernel.org>; Wed, 15 Aug 2012 18:45:04 +0200
-To: linux-btrfs@vger.kernel.org
-From: Anthony Plack <anthony@oddllc.com>
-Subject: Re: kernel BUG at =?utf-8?b?ZnMvYnRyZnMvZXh0ZW50X2lvLmM6MTg4NA==?= - BTRFS
-Date: Wed, 15 Aug 2012 16:07:37 +0000 (UTC)
-Message-ID: <loom.20120815T180535-735@post.gmane.org>
-References: <1C74CEFB-327D-44F9-8311-E0C1148C6F0B@oddllc.com> <502BC75F.9060803@giantdisaster.de>
-Mime-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
+Received: from mho-01-ewr.mailhop.org ([204.13.248.71]:30117 "EHLO
+	mho-01-ewr.mailhop.org" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1755403Ab2HORTf convert rfc822-to-8bit (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>);
+	Wed, 15 Aug 2012 13:19:35 -0400
+Date: Wed, 15 Aug 2012 19:19:30 +0200
+From: =?iso-8859-1?Q?Llu=EDs?= Batlle i Rossell <viric@viric.name>
+To: Kyle Gates <kylegates@hotmail.com>
+Cc: "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
+Subject: Re: State of nocow file attribute
+Message-ID: <20120815171930.GI25996@vicerveza.homeunix.net>
+References: <20120815101229.GH25996@vicerveza.homeunix.net>
+ <COL113-W11E89280DE29846698B431B0B60@phx.gbl>
+MIME-Version: 1.0
+Content-Type: text/plain; charset=iso-8859-1
+In-Reply-To: <COL113-W11E89280DE29846698B431B0B60@phx.gbl>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Stefan Behrens <sbehrens <at> giantdisaster.de> writes:
-
+On Wed, Aug 15, 2012 at 08:05:11AM -0500, Kyle Gates wrote:
+> > Is there really a fix upstream for that? Do nocow attribute on files work for
+> > anyone already?
 > 
-> This issue is already fixed with commit c0901581 which 
-> is part of Linux 3.6 RC1:
-> 
+> IIRC the nocow attribute seems to work if the volume is mounted with "nodatasum"
 
-Absolutely awesome... was just looking there.
+Shouldn't nocow mean also nodatasum *only for that file*? I find it a bit
+useless, to require whole fs nodatasum for per-file nocow to work.
 
-Thanks.
-
-Anthony Plack
-
-
+Thank you,
+Lluís.

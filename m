@@ -1,69 +1,102 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-ob0-f174.google.com ([209.85.214.174]:61842 "EHLO
-	mail-ob0-f174.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1754805Ab2HOR3M (ORCPT
+Received: from rcsinet15.oracle.com ([148.87.113.117]:26748 "EHLO
+	rcsinet15.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1754350Ab2HOOHH (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 15 Aug 2012 13:29:12 -0400
-Received: by obbuo13 with SMTP id uo13so2452725obb.19
-        for <linux-btrfs@vger.kernel.org>; Wed, 15 Aug 2012 10:29:11 -0700 (PDT)
-MIME-Version: 1.0
-In-Reply-To: <1344975738-1415-1-git-send-email-jbacik@fusionio.com>
-References: <1344975738-1415-1-git-send-email-jbacik@fusionio.com>
-Date: Wed, 15 Aug 2012 12:29:11 -0500
-Message-ID: <CAKcLGm9rra1v8t5rRB2DAw0YM0QC+JHMTZK=uzMOXOv9hAZfMw@mail.gmail.com>
-Subject: Re: [PATCH] Btrfs: do not allocate chunks as agressively
-From: Mitch Harder <mitch.harder@sabayonlinux.org>
-To: Josef Bacik <jbacik@fusionio.com>
-Cc: linux-btrfs@vger.kernel.org
-Content-Type: text/plain; charset=ISO-8859-1
+	Wed, 15 Aug 2012 10:07:07 -0400
+Received: from acsinet22.oracle.com (acsinet22.oracle.com [141.146.126.238])
+	by rcsinet15.oracle.com (Sentrion-MTA-4.2.2/Sentrion-MTA-4.2.2) with ESMTP id q7FE75sg024830
+	(version=TLSv1/SSLv3 cipher=DHE-RSA-AES256-SHA bits=256 verify=OK)
+	for <linux-btrfs@vger.kernel.org>; Wed, 15 Aug 2012 14:07:06 GMT
+Received: from acsmt358.oracle.com (acsmt358.oracle.com [141.146.40.158])
+	by acsinet22.oracle.com (8.14.4+Sun/8.14.4) with ESMTP id q7FE75nb015018
+	(version=TLSv1/SSLv3 cipher=DHE-RSA-AES256-SHA bits=256 verify=NO)
+	for <linux-btrfs@vger.kernel.org>; Wed, 15 Aug 2012 14:07:05 GMT
+Received: from abhmt102.oracle.com (abhmt102.oracle.com [141.146.116.54])
+	by acsmt358.oracle.com (8.12.11.20060308/8.12.11) with ESMTP id q7FE75FJ030543
+	for <linux-btrfs@vger.kernel.org>; Wed, 15 Aug 2012 09:07:05 -0500
+From: Liu Bo <bo.li.liu@oracle.com>
+To: linux-btrfs@vger.kernel.org
+Subject: [PATCH] Btrfs: update delayed ref's tracepoints to show sequence
+Date: Wed, 15 Aug 2012 22:05:50 +0800
+Message-Id: <1345039550-2111-1-git-send-email-bo.li.liu@oracle.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Tue, Aug 14, 2012 at 3:22 PM, Josef Bacik <jbacik@fusionio.com> wrote:
-> Swinging this pendulum back the other way.  We've been allocating chunks up
-> to 2% of the disk no matter how much we actually have allocated.  So instead
-> fix this calculation to only allocate chunks if we have more than 80% of the
-> space available allocated.  Please test this as it will likely cause all
-> sorts of ENOSPC problems to pop up suddenly.  Thanks,
->
-> Signed-off-by: Josef Bacik <jbacik@fusionio.com>
+We've added a new field 'sequence' to delayed ref node, so update related
+tracepoints.
 
-I've been testing this patch with my multiple rsync test (On a 3.5.1
-kernel merged with for-linus).
+Signed-off-by: Liu Bo <bo.li.liu@oracle.com>
+---
+ include/trace/events/btrfs.h |   14 ++++++++++----
+ 1 files changed, 10 insertions(+), 4 deletions(-)
 
-I tested without compression, and with lzo compression, and I haven't
-run into any ENOSPC issues.  I still have ENOSPC issues with zlib,
-with or without this patch.
+diff --git a/include/trace/events/btrfs.h b/include/trace/events/btrfs.h
+index 91b91e8..54fab04 100644
+--- a/include/trace/events/btrfs.h
++++ b/include/trace/events/btrfs.h
+@@ -445,6 +445,7 @@ TRACE_EVENT(btrfs_delayed_tree_ref,
+ 		__field(	u64,  ref_root		)
+ 		__field(	int,  level		)
+ 		__field(	int,  type		)
++		__field(	u64,  seq		)
+ 	),
+ 
+ 	TP_fast_assign(
+@@ -455,17 +456,19 @@ TRACE_EVENT(btrfs_delayed_tree_ref,
+ 		__entry->ref_root	= full_ref->root;
+ 		__entry->level		= full_ref->level;
+ 		__entry->type		= ref->type;
++		__entry->seq		= ref->seq;
+ 	),
+ 
+ 	TP_printk("bytenr = %llu, num_bytes = %llu, action = %s, "
+ 		  "parent = %llu(%s), ref_root = %llu(%s), level = %d, "
+-		  "type = %s",
++		  "type = %s, seq = %llu",
+ 		  (unsigned long long)__entry->bytenr,
+ 		  (unsigned long long)__entry->num_bytes,
+ 		  show_ref_action(__entry->action),
+ 		  show_root_type(__entry->parent),
+ 		  show_root_type(__entry->ref_root),
+-		  __entry->level, show_ref_type(__entry->type))
++		  __entry->level, show_ref_type(__entry->type),
++		  (unsigned long long)__entry->seq)
+ );
+ 
+ TRACE_EVENT(btrfs_delayed_data_ref,
+@@ -485,6 +488,7 @@ TRACE_EVENT(btrfs_delayed_data_ref,
+ 		__field(	u64,  owner		)
+ 		__field(	u64,  offset		)
+ 		__field(	int,  type		)
++		__field(	u64,  seq		)
+ 	),
+ 
+ 	TP_fast_assign(
+@@ -496,11 +500,12 @@ TRACE_EVENT(btrfs_delayed_data_ref,
+ 		__entry->owner		= full_ref->objectid;
+ 		__entry->offset		= full_ref->offset;
+ 		__entry->type		= ref->type;
++		__entry->seq		= ref->seq;
+ 	),
+ 
+ 	TP_printk("bytenr = %llu, num_bytes = %llu, action = %s, "
+ 		  "parent = %llu(%s), ref_root = %llu(%s), owner = %llu, "
+-		  "offset = %llu, type = %s",
++		  "offset = %llu, type = %s, seq = %llu",
+ 		  (unsigned long long)__entry->bytenr,
+ 		  (unsigned long long)__entry->num_bytes,
+ 		  show_ref_action(__entry->action),
+@@ -508,7 +513,8 @@ TRACE_EVENT(btrfs_delayed_data_ref,
+ 		  show_root_type(__entry->ref_root),
+ 		  (unsigned long long)__entry->owner,
+ 		  (unsigned long long)__entry->offset,
+-		  show_ref_type(__entry->type))
++		  show_ref_type(__entry->type),
++		  (unsigned long long)__entry->seq)
+ );
+ 
+ TRACE_EVENT(btrfs_delayed_ref_head,
+-- 
+1.7.7.6
 
-I made a series of  runs with and without this patch (on an
-uncompressed, newly formatted partition), and some of the results were
-not what I anticipated.
-
-1) I found that *MORE* metadata space was being allocated with this
-patch than when using an unpatched baseline kernel.  The total
-allocated space was exactly the same in each run (I saw a slight
-variation in the amount of used Metadata).
-
-On the unpatched baseline kernel, at the end of the run, the 'btrfs fi
-df' command would show:
-
-# btrfs fi df /mnt/benchmark/
-Data: total=10.01GB, used=6.99GB
-System: total=4.00MB, used=4.00KB
-Metadata: total=776.00MB, used=481.38MB
-
-With this patch applied, the 'btrfs fi df' command would show:
-
-# btrfs fi df /mnt/benchmark/
-Data: total=10.01GB, used=6.99GB
-System: total=4.00MB, used=4.00KB
-Metadata: total=1.01GB, used=480.94MB
-
-
-2)  The multiple rsync's would run significantly faster with the patched kernel.
-
-Unpatched baseline kernel:  Time to run 7 rysncs:  348.3 sec (+/- 9.7 sec)
-Patched kernel: Time to run 7 rsyncs:  316.6 sec (+/- 6.5 sec)
-
-Perhaps the extra allocated metadata space made things run better, or
-perhaps something else was going on.

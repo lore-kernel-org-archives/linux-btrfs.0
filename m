@@ -1,84 +1,115 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from rcsinet15.oracle.com ([148.87.113.117]:17735 "EHLO
-	rcsinet15.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1754299Ab2HPGMN (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 16 Aug 2012 02:12:13 -0400
-Received: from ucsinet21.oracle.com (ucsinet21.oracle.com [156.151.31.93])
-	by rcsinet15.oracle.com (Sentrion-MTA-4.2.2/Sentrion-MTA-4.2.2) with ESMTP id q7G6CC0m014507
-	(version=TLSv1/SSLv3 cipher=DHE-RSA-AES256-SHA bits=256 verify=OK)
-	for <linux-btrfs@vger.kernel.org>; Thu, 16 Aug 2012 06:12:13 GMT
-Received: from acsmt358.oracle.com (acsmt358.oracle.com [141.146.40.158])
-	by ucsinet21.oracle.com (8.14.4+Sun/8.14.4) with ESMTP id q7G6CCHF025661
-	(version=TLSv1/SSLv3 cipher=DHE-RSA-AES256-SHA bits=256 verify=NO)
-	for <linux-btrfs@vger.kernel.org>; Thu, 16 Aug 2012 06:12:12 GMT
-Received: from abhmt117.oracle.com (abhmt117.oracle.com [141.146.116.69])
-	by acsmt358.oracle.com (8.12.11.20060308/8.12.11) with ESMTP id q7G6CBvr012414
-	for <linux-btrfs@vger.kernel.org>; Thu, 16 Aug 2012 01:12:11 -0500
-From: Liu Bo <bo.li.liu@oracle.com>
-To: linux-btrfs@vger.kernel.org
-Subject: [PATCH v2 2/2] Btrfs: use helper for logical resolve
-Date: Thu, 16 Aug 2012 14:10:52 +0800
-Message-Id: <1345097452-7939-2-git-send-email-bo.li.liu@oracle.com>
-In-Reply-To: <1345097452-7939-1-git-send-email-bo.li.liu@oracle.com>
-References: <1345097452-7939-1-git-send-email-bo.li.liu@oracle.com>
+Received: from [193.170.194.20] ([193.170.194.20]:41925 "EHLO mail.servus.at"
+	rhost-flags-FAIL-FAIL-OK-OK) by vger.kernel.org with ESMTP
+	id S1753347Ab2HPG1y (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Thu, 16 Aug 2012 02:27:54 -0400
+Message-ID: <502C92C3.7090701@oberhumer.com>
+Date: Thu, 16 Aug 2012 08:27:15 +0200
+From: "Markus F.X.J. Oberhumer" <markus@oberhumer.com>
+MIME-Version: 1.0
+To: Johannes Stezenbach <js@sig21.net>
+CC: linux-kernel@vger.kernel.org, Andi Kleen <andi@firstfloor.org>,
+        chris.mason@fusionio.com, linux-btrfs@vger.kernel.org,
+        Nitin Gupta <ngupta@vflare.org>,
+        Richard Purdie <rpurdie@openedhand.com>,
+        richard -rw- weinberger <richard.weinberger@gmail.com>,
+        linux-arm-kernel@lists.infradead.org
+Subject: Re: [GIT PULL] Update LZO compression
+References: <50299142.2030504@oberhumer.com> <20120814123937.GA14756@sig21.net> <502B8FE3.7080501@oberhumer.com> <20120815144539.GA8300@sig21.net>
+In-Reply-To: <20120815144539.GA8300@sig21.net>
+Content-Type: text/plain; charset=ISO-8859-1
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-We already have a helper, iterate_inodes_from_logical(), for logical resolve,
-so just use it.
+On 2012-08-15 16:45, Johannes Stezenbach wrote:
+> On Wed, Aug 15, 2012 at 02:02:43PM +0200, Markus F.X.J. Oberhumer wrote:
+>> On 2012-08-14 14:39, Johannes Stezenbach wrote:
+>>> On Tue, Aug 14, 2012 at 01:44:02AM +0200, Markus F.X.J. Oberhumer wrote:
+>>>> On 2012-07-16 20:30, Markus F.X.J. Oberhumer wrote:
+>>>>>
+>>>>> As stated in the README this version is significantly faster (typically more
+>>>>> than 2 times faster!) than the current version, has been thoroughly tested on
+>>>>> x86_64/i386/powerpc platforms and is intended to get included into the
+>>>>> official Linux 3.6 or 3.7 release.
+>>>>>
+>>>>> I encourage all compression users to test and benchmark this new version,
+>>>>> and I also would ask some official LZO maintainer to convert the updated
+>>>>> source files into a GIT commit and possibly push it to Linus or linux-next.
+>>>
+>>> Sorry for not reporting earlier, but I didn't have time to do real
+>>> benchmarks, just a quick test on ARM926EJ-S using barebox,
+>>> and found in the new version decompression is slower:
+>>> http://lists.infradead.org/pipermail/barebox/2012-July/008268.html
+>>
+>> I can only guess, but maybe your ARM cpu does not have an efficient
+>> implementation of {get,put}_unaligned().
+> 
+> Yes, ARMv5 cannot do unaligned access.  ARMv6+ could, but
+> I think the Linux kernel normally traps it for debug,
+> all ARM seem to use generic {get,put}_unaligned() implementation
+> which use byte access and shift.
 
-Signed-off-by: Liu Bo <bo.li.liu@oracle.com>
----
-v1->v2: patch -EINVAL to -ENOENT to keep the behaviour, thanks to Jan.
+Hmm - I could imagine that we're wasting a lot of possible speed gain
+by not exploiting that feature on ARMv6+.
 
- fs/btrfs/ioctl.c |   19 +++----------------
- 1 files changed, 3 insertions(+), 16 deletions(-)
+>> Could you please try the following patch and test if you can see
+>> any significant speed difference?
+> 
+> It isn't.  I made the attached quick hack userspace code
+> using ARM kernel headers and barebox unlzop code.
+> (new == your new code, old == linux-3.5 git, test == new + your suggested change)
+> (sorry I had no time to clean it up)
 
-diff --git a/fs/btrfs/ioctl.c b/fs/btrfs/ioctl.c
-index 405b279..be51870 100644
---- a/fs/btrfs/ioctl.c
-+++ b/fs/btrfs/ioctl.c
-@@ -3210,12 +3210,9 @@ static long btrfs_ioctl_logical_to_ino(struct btrfs_root *root,
- {
- 	int ret = 0;
- 	int size;
--	u64 extent_item_pos;
--	u64 flags = 0;
- 	struct btrfs_ioctl_logical_ino_args *loi;
- 	struct btrfs_data_container *inodes = NULL;
- 	struct btrfs_path *path = NULL;
--	struct btrfs_key key;
- 
- 	if (!capable(CAP_SYS_ADMIN))
- 		return -EPERM;
-@@ -3241,23 +3238,13 @@ static long btrfs_ioctl_logical_to_ino(struct btrfs_root *root,
- 		goto out;
- 	}
- 
--	ret = extent_from_logical(root->fs_info, loi->logical, path, &key,
--				  &flags);
--	btrfs_release_path(path);
--
--	if (flags & BTRFS_EXTENT_FLAG_TREE_BLOCK)
-+	ret = iterate_inodes_from_logical(loi->logical, root->fs_info, path,
-+					  build_ino_list, inodes);
-+	if (ret == -EINVAL)
- 		ret = -ENOENT;
- 	if (ret < 0)
- 		goto out;
- 
--	extent_item_pos = loi->logical - key.objectid;
--	ret = iterate_extent_inodes(root->fs_info, key.objectid,
--					extent_item_pos, 0, build_ino_list,
--					inodes);
--
--	if (ret < 0)
--		goto out;
--
- 	ret = copy_to_user((void *)(unsigned long)loi->inodes,
- 			   (void *)(unsigned long)inodes, size);
- 	if (ret)
+My suggested COPY4 replacement probably has a lot of load stalls - maybe some
+ARM expert could have a look and suggest a more efficient implementation.
+
+In any case, I still would like to see the new code in linux-next because
+of the huge improvements on other modern CPUs.
+
+Cheers,
+Markus
+
+> 
+> I compressed a Linux Image with lzop (lzop <arch/arm/boot/Image >lzoimage)
+> and timed uncompression:
+> 
+> # time ./unlzopold <lzoimage >/dev/null
+> real    0m 0.29s
+> user    0m 0.19s
+> sys     0m 0.10s
+> # time ./unlzopold <lzoimage >/dev/null
+> real    0m 0.29s
+> user    0m 0.20s
+> sys     0m 0.09s
+> # time ./unlzopnew <lzoimage >/dev/null
+> real    0m 0.41s
+> user    0m 0.30s
+> sys     0m 0.10s
+> # time ./unlzopnew <lzoimage >/dev/null
+> real    0m 0.40s
+> user    0m 0.30s
+> sys     0m 0.10s
+> # time ./unlzopnew <lzoimage >/dev/null
+> real    0m 0.40s
+> user    0m 0.29s
+> sys     0m 0.11s
+> # time ./unlzoptest <lzoimage >/dev/null
+> real    0m 0.39s
+> user    0m 0.28s
+> sys     0m 0.11s
+> # time ./unlzoptest <lzoimage >/dev/null
+> real    0m 0.39s
+> user    0m 0.27s
+> sys     0m 0.11s
+> # time ./unlzoptest <lzoimage >/dev/null
+> real    0m 0.39s
+> user    0m 0.27s
+> sys     0m 0.11s
+> 
+> FWIW I also checked the sha1sum to confirm the Image uncompressed OK.
+> 
+> 
+> Johannes
+
 -- 
-1.7.7.6
-
+Markus Oberhumer, <markus@oberhumer.com>, http://www.oberhumer.com/

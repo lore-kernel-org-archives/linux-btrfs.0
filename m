@@ -1,57 +1,69 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from rcsinet15.oracle.com ([148.87.113.117]:19440 "EHLO
-	rcsinet15.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1756787Ab2HQBrB (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 16 Aug 2012 21:47:01 -0400
-Message-ID: <502DA230.6010202@oracle.com>
-Date: Fri, 17 Aug 2012 09:45:20 +0800
-From: Liu Bo <bo.li.liu@oracle.com>
-MIME-Version: 1.0
-To: =?ISO-8859-1?Q?Llu=EDs_Batlle_i_Rossell?= <viric@viric.name>
-CC: Btrfs mailing list <linux-btrfs@vger.kernel.org>,
-        David Sterba <dave@jikos.cz>
-Subject: Re: State of nocow file attribute
+Received: from twin.jikos.cz ([89.185.236.188]:58294 "EHLO twin.jikos.cz"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1751417Ab2HQO75 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Fri, 17 Aug 2012 10:59:57 -0400
+Date: Fri, 17 Aug 2012 16:59:42 +0200
+From: David Sterba <dave@jikos.cz>
+To: Liu Bo <bo.li.liu@oracle.com>
+Cc: =?iso-8859-1?Q?Llu=EDs?= Batlle i Rossell <viric@viric.name>,
+        Btrfs mailing list <linux-btrfs@vger.kernel.org>,
+        David Sterba <dave@jikos.cz>, andrei.popa@i-neo.ro
+Message-ID: <20120817145940.GI17430@twin.jikos.cz>
+Reply-To: dave@jikos.cz
 References: <20120815101229.GH25996@vicerveza.homeunix.net>
-In-Reply-To: <20120815101229.GH25996@vicerveza.homeunix.net>
-Content-Type: text/plain; charset=ISO-8859-1
+ <502DA230.6010202@oracle.com>
+MIME-Version: 1.0
+Content-Type: text/plain; charset=iso-8859-1
+In-Reply-To: <502DA230.6010202@oracle.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 08/15/2012 06:12 PM, Lluís Batlle i Rossell wrote:
-> Hello,
+On Fri, Aug 17, 2012 at 09:45:20AM +0800, Liu Bo wrote:
+> On 08/15/2012 06:12 PM, Lluís Batlle i Rossell wrote:
+> > some time ago we discussed on #btrfs that the nocow attribute for files wasn't
+> > working (around 3.3 or 3.4 kernels). That was evident by files fragmenting even
+> > with the attribute set.
+> > 
+> > Chris mentioned to find a fix quickly for that, and posted some lines of change
+> > into irc. But recently someone mentioned that 3.6-rc looks like still not
+> > respecting nocow for files.
+> > 
+> > Is there really a fix upstream for that? Do nocow attribute on files work for
+> > anyone already?
+> > 
 > 
-> some time ago we discussed on #btrfs that the nocow attribute for files wasn't
-> working (around 3.3 or 3.4 kernels). That was evident by files fragmenting even
-> with the attribute set.
+> Dave had post a patch to fix it but only enabling NOCOW with zero sized file.
 > 
-> Chris mentioned to find a fix quickly for that, and posted some lines of change
-> into irc. But recently someone mentioned that 3.6-rc looks like still not
-> respecting nocow for files.
+> FYI, the patch is http://article.gmane.org/gmane.comp.file-systems.btrfs/17351
 > 
-> Is there really a fix upstream for that? Do nocow attribute on files work for
-> anyone already?
+> With the patch, you don't need to mount with nodatacow any more :)
 > 
+> And why it is only for only zero sized file:
+> http://permalink.gmane.org/gmane.comp.file-systems.btrfs/18046
 
-Hi Lluís,
+the original patch http://permalink.gmane.org/gmane.comp.file-systems.btrfs/18031
+did two things, the reasoning why it is not allowed to set nodatasum in
+general applies only to the second hunk but this
 
-Dave had post a patch to fix it but only enabling NOCOW with zero sized file.
+@@ -139,7 +139,7 @@ void btrfs_inherit_iflags(struct inode *inode, struct inode *dir)
+ 	}
 
-FYI, the patch is http://article.gmane.org/gmane.comp.file-systems.btrfs/17351
+ 	if (flags & BTRFS_INODE_NODATACOW)
+-		BTRFS_I(inode)->flags |= BTRFS_INODE_NODATACOW;
++		BTRFS_I(inode)->flags |= BTRFS_INODE_NODATACOW | BTRFS_INODE_NODATASUM;
 
-With the patch, you don't need to mount with nodatacow any more :)
+ 	btrfs_update_iflags(inode);
+ }
+---
 
-And why it is only for only zero sized file:
-http://permalink.gmane.org/gmane.comp.file-systems.btrfs/18046
+is sufficient to create nocow files via a directory with NOCOW attribute
+set, and all new files will inherit it (they are automatically
+zero-sized so it's safe). This usecase is similar to setting the
+COMPRESS attribute on a directory and all new files will inherit the
+flag.
 
-thanks,
-liubo
+If Andrei wants to resend just this particular hunk, I'm giving it my ACK.
 
-> Regards,
-> Lluís.
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
-> 
 
+david

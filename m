@@ -1,103 +1,76 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.fusionio.com ([66.114.96.31]:52662 "EHLO mx2.fusionio.com"
+Received: from mx1.fusionio.com ([66.114.96.30]:60814 "EHLO mx1.fusionio.com"
 	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1757298Ab2HPUah (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 16 Aug 2012 16:30:37 -0400
-Received: from mail1.int.fusionio.com (mail1.int.fusionio.com [10.101.1.21]) by mx2.fusionio.com with ESMTP id urrQjQKjGn5VDJMH (version=TLSv1 cipher=AES128-SHA bits=128 verify=NO) for <linux-btrfs@vger.kernel.org>; Thu, 16 Aug 2012 14:30:36 -0600 (MDT)
+	id S1758784Ab2HQS2u (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Fri, 17 Aug 2012 14:28:50 -0400
+Date: Fri, 17 Aug 2012 14:28:46 -0400
 From: Josef Bacik <jbacik@fusionio.com>
-To: <linux-btrfs@vger.kernel.org>
-Subject: [PATCH] Btrfs: fix possible corruption when fsyncing written prealloced extents
-Date: Thu, 16 Aug 2012 16:35:46 -0400
-Message-ID: <1345149346-1456-1-git-send-email-jbacik@fusionio.com>
+To: Mitch Harder <mitch.harder@sabayonlinux.org>
+CC: Josef Bacik <JBacik@fusionio.com>,
+        "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
+Subject: Re: [PATCH] Btrfs: do not allocate chunks as agressively
+Message-ID: <20120817182846.GD2133@localhost.localdomain>
+References: <1344975738-1415-1-git-send-email-jbacik@fusionio.com>
+ <CAKcLGm9rra1v8t5rRB2DAw0YM0QC+JHMTZK=uzMOXOv9hAZfMw@mail.gmail.com>
 MIME-Version: 1.0
-Content-Type: text/plain
+Content-Type: text/plain; charset="us-ascii"
+In-Reply-To: <CAKcLGm9rra1v8t5rRB2DAw0YM0QC+JHMTZK=uzMOXOv9hAZfMw@mail.gmail.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-While working on my fsync patch my fsync tester kept hitting mismatching
-md5sums when I would randomly write to a prealloc'ed region, syncfs() and
-then write to the prealloced region some more and then fsync() and then
-immediately reboot.  This is because the tree logging code will skip writing
-csums for file extents who's generation is less than the current running
-transaction.  When we mark extents as written we haven't been updating their
-generation so they were always being skipped.  This wouldn't happen if you
-were to preallocate and then write in the same transaction, but if you for
-example prealloced a VM you could definitely run into this problem.  This
-patch makes my fsync tester happy again.  Thanks,
+On Wed, Aug 15, 2012 at 11:29:11AM -0600, Mitch Harder wrote:
+> On Tue, Aug 14, 2012 at 3:22 PM, Josef Bacik <jbacik@fusionio.com> wrote:
+> > Swinging this pendulum back the other way.  We've been allocating chunks up
+> > to 2% of the disk no matter how much we actually have allocated.  So instead
+> > fix this calculation to only allocate chunks if we have more than 80% of the
+> > space available allocated.  Please test this as it will likely cause all
+> > sorts of ENOSPC problems to pop up suddenly.  Thanks,
+> >
+> > Signed-off-by: Josef Bacik <jbacik@fusionio.com>
+> 
+> I've been testing this patch with my multiple rsync test (On a 3.5.1
+> kernel merged with for-linus).
+> 
+> I tested without compression, and with lzo compression, and I haven't
+> run into any ENOSPC issues.  I still have ENOSPC issues with zlib,
+> with or without this patch.
+> 
+> I made a series of  runs with and without this patch (on an
+> uncompressed, newly formatted partition), and some of the results were
+> not what I anticipated.
+> 
+> 1) I found that *MORE* metadata space was being allocated with this
+> patch than when using an unpatched baseline kernel.  The total
+> allocated space was exactly the same in each run (I saw a slight
+> variation in the amount of used Metadata).
+> 
+> On the unpatched baseline kernel, at the end of the run, the 'btrfs fi
+> df' command would show:
+> 
+> # btrfs fi df /mnt/benchmark/
+> Data: total=10.01GB, used=6.99GB
+> System: total=4.00MB, used=4.00KB
+> Metadata: total=776.00MB, used=481.38MB
+> 
+> With this patch applied, the 'btrfs fi df' command would show:
+> 
+> # btrfs fi df /mnt/benchmark/
+> Data: total=10.01GB, used=6.99GB
+> System: total=4.00MB, used=4.00KB
+> Metadata: total=1.01GB, used=480.94MB
+> 
+> 
+> 2)  The multiple rsync's would run significantly faster with the patched kernel.
+> 
+> Unpatched baseline kernel:  Time to run 7 rysncs:  348.3 sec (+/- 9.7 sec)
+> Patched kernel: Time to run 7 rsyncs:  316.6 sec (+/- 6.5 sec)
+> 
+> Perhaps the extra allocated metadata space made things run better, or
+> perhaps something else was going on.
 
-Signed-off-by: Josef Bacik <jbacik@fusionio.com>
----
- fs/btrfs/file.c |   12 ++++++++++++
- 1 files changed, 12 insertions(+), 0 deletions(-)
+Well that's odd, I wonder if we're doing the limited dance more often.  Once
+I've finished my fsync work I'll come back to this.  I know for sure in my
+tests it's allocating chunks way too often, so I imagine your test is just
+tickling a different aspect of the chunk allocator.  Thanks,
 
-diff --git a/fs/btrfs/file.c b/fs/btrfs/file.c
-index 5caf285..b7c885c 100644
---- a/fs/btrfs/file.c
-+++ b/fs/btrfs/file.c
-@@ -935,12 +935,16 @@ again:
- 			btrfs_set_item_key_safe(trans, root, path, &new_key);
- 			fi = btrfs_item_ptr(leaf, path->slots[0],
- 					    struct btrfs_file_extent_item);
-+			btrfs_set_file_extent_generation(leaf, fi,
-+							 trans->transid);
- 			btrfs_set_file_extent_num_bytes(leaf, fi,
- 							extent_end - end);
- 			btrfs_set_file_extent_offset(leaf, fi,
- 						     end - orig_offset);
- 			fi = btrfs_item_ptr(leaf, path->slots[0] - 1,
- 					    struct btrfs_file_extent_item);
-+			btrfs_set_file_extent_generation(leaf, fi,
-+							 trans->transid);
- 			btrfs_set_file_extent_num_bytes(leaf, fi,
- 							end - other_start);
- 			btrfs_mark_buffer_dirty(leaf);
-@@ -958,12 +962,16 @@ again:
- 					    struct btrfs_file_extent_item);
- 			btrfs_set_file_extent_num_bytes(leaf, fi,
- 							start - key.offset);
-+			btrfs_set_file_extent_generation(leaf, fi,
-+							 trans->transid);
- 			path->slots[0]++;
- 			new_key.offset = start;
- 			btrfs_set_item_key_safe(trans, root, path, &new_key);
- 
- 			fi = btrfs_item_ptr(leaf, path->slots[0],
- 					    struct btrfs_file_extent_item);
-+			btrfs_set_file_extent_generation(leaf, fi,
-+							 trans->transid);
- 			btrfs_set_file_extent_num_bytes(leaf, fi,
- 							other_end - start);
- 			btrfs_set_file_extent_offset(leaf, fi,
-@@ -991,12 +999,14 @@ again:
- 		leaf = path->nodes[0];
- 		fi = btrfs_item_ptr(leaf, path->slots[0] - 1,
- 				    struct btrfs_file_extent_item);
-+		btrfs_set_file_extent_generation(leaf, fi, trans->transid);
- 		btrfs_set_file_extent_num_bytes(leaf, fi,
- 						split - key.offset);
- 
- 		fi = btrfs_item_ptr(leaf, path->slots[0],
- 				    struct btrfs_file_extent_item);
- 
-+		btrfs_set_file_extent_generation(leaf, fi, trans->transid);
- 		btrfs_set_file_extent_offset(leaf, fi, split - orig_offset);
- 		btrfs_set_file_extent_num_bytes(leaf, fi,
- 						extent_end - split);
-@@ -1056,12 +1066,14 @@ again:
- 			   struct btrfs_file_extent_item);
- 		btrfs_set_file_extent_type(leaf, fi,
- 					   BTRFS_FILE_EXTENT_REG);
-+		btrfs_set_file_extent_generation(leaf, fi, trans->transid);
- 		btrfs_mark_buffer_dirty(leaf);
- 	} else {
- 		fi = btrfs_item_ptr(leaf, del_slot - 1,
- 			   struct btrfs_file_extent_item);
- 		btrfs_set_file_extent_type(leaf, fi,
- 					   BTRFS_FILE_EXTENT_REG);
-+		btrfs_set_file_extent_generation(leaf, fi, trans->transid);
- 		btrfs_set_file_extent_num_bytes(leaf, fi,
- 						extent_end - key.offset);
- 		btrfs_mark_buffer_dirty(leaf);
--- 
-1.7.7.6
-
+Josef

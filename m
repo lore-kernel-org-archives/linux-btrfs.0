@@ -1,78 +1,71 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mailout-de.gmx.net ([213.165.64.22]:41000 "HELO
-	mailout-de.gmx.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with SMTP id S1752747Ab2HSO7H (ORCPT
+Received: from mail1.trendhosting.net ([195.8.117.5]:33459 "EHLO
+	mail1.trendhosting.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1753734Ab2HSQCb (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Sun, 19 Aug 2012 10:59:07 -0400
-Message-ID: <5030FF4C.8080103@gmx.net>
-Date: Sun, 19 Aug 2012 16:59:24 +0200
-From: Arne Jansen <sensille@gmx.net>
+	Sun, 19 Aug 2012 12:02:31 -0400
+Message-ID: <50310E11.1010902@pocock.com.au>
+Date: Sun, 19 Aug 2012 18:02:25 +0200
+From: Daniel Pocock <daniel@pocock.com.au>
 MIME-Version: 1.0
-To: Robert Buhren <robert@robertbuhren.de>
-CC: linux-btrfs@vger.kernel.org, Alexander Block <ablock84@googlemail.com>
-Subject: Re: Testing new send/receive: "ERROR: could not resolve root_id for"
-References: <5028D57F.5090803@robertbuhren.de>
-In-Reply-To: <5028D57F.5090803@robertbuhren.de>
+To: Hugo Mills <hugo@carfax.org.uk>, linux-btrfs@vger.kernel.org
+Subject: Re: fail to mount after first reboot
+References: <5030F351.6030807@pocock.com.au> <20120819141513.GE30735@carfax.org.uk> <5030F92A.4030309@pocock.com.au> <20120819145124.GF30735@carfax.org.uk>
+In-Reply-To: <20120819145124.GF30735@carfax.org.uk>
 Content-Type: text/plain; charset=ISO-8859-1
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-The problem here is that you nest multiple mounts of the same fs.
-This confuses find_mount_root which determines the upper-level
-mount as the mountpoint instead of the lower-level one.
-It does that because it searches upwards for the first change in
-the fsid. As you nested the name fs, the fsid does not change when
-it crosses the boundary, so it misses the mountpoint.
 
-What is the accepted way to find a mountpoint? I've seen lots of
-code that searches the mnttab, is there a more convenient way?
 
--Arne
+On 19/08/12 16:51, Hugo Mills wrote:
+> On Sun, Aug 19, 2012 at 02:33:14PM +0000, Daniel Pocock wrote:
+>> On 19/08/12 14:15, Hugo Mills wrote:
+>>> On Sun, Aug 19, 2012 at 02:08:17PM +0000, Daniel Pocock wrote:
+>>>> I created a 1TB RAID1.  So far it is just for testing, no important data
+>>>> on there.
+>>>>
+>>>> After a reboot, I tried to mount it again
+>>>>
+>>>> # mount /dev/mapper/vg00-btrfsvol0_0 /mnt/btrfs0
+>>>> mount: wrong fs type, bad option, bad superblock on
+>>>> /dev/mapper/vg00-btrfsvol0_0,
+>>>>        missing codepage or helper program, or other error
+>>>>        In some cases useful info is found in syslog - try
+>>>>        dmesg | tail  or so
+>>>
+>>>    With multi-volume btrfs filesystems, you have to run "btrfs dev
+>>> scan" before trying to mount it. Usually, the distribution will do
+>>> this in the initrd (if you've installed its btrfs-progs package).
+>>
+>> I'm running Debian, I've just updated the system from squeeze to wheezy
+>> (with 3.2 kernel) so I could try btrfs and do other QA testing on wheezy
+>> (as it is in the beta phase now)
+>>
+>> I already had the btrfs-tools package installed, before creating the
+>> filesystem.  So it appears Debian doesn't have an init script
+>>
+>> It does have /lib/udev/rules.d/60-btrfs.rules:
+>> SUBSYSTEM!="block", GOTO="btrfs_end"
+>> ACTION!="add|change", GOTO="btrfs_end"
+>> ENV{ID_FS_TYPE}!="btrfs", GOTO="btrfs_end"
+>> RUN+="/sbin/modprobe btrfs"
+>> RUN+="/sbin/btrfs device scan $env{DEVNAME}"
+>>
+>> LABEL="btrfs_end"
+>>
+>> but I'm guessing that isn't any use to my logical volumes that are
+>> activated early in the boot sequence?
+>>
+>> Could I be having this problem because I put my btrfs on logical volumes?
+> 
+>    Possibly. You may need the "Device mapper uevents" option in the
+> kernel (CONFIG_DM_UEVENT) to trigger that udev rule when you enable
+> your VG(s). Not sure if it's available/enabled in your kernel.
+> 
 
-On 08/13/2012 12:22 PM, Robert Buhren wrote:
-> Hello,
-> 
-> i wanted to test the new send/receive feature and i can't manage to send
-> a snapshot to a file. I always get the error
-> "ERROR: could not resolve root_id for".
-> 
-> I'm using kernel 3.6-rc1 and the latest btrfs progs from git.
-> 
-> This is what i'm doing:
-> 
-> mount -o subvolid=0,discard,compress=lzo /dev/sda4 /mnt/ROOT_BTRFS
-> 
-> [root@robert-laptop mnt]# /home/robert/ArchLinux/btrfs-progs/btrfs
-> subvolume list ROOT_BTRFS/
-> ID 256 top level 5 path btrfs_root <--- my rootfs subvolume
-> ID 265 top level 5 path btrfs_root-11082012-0023      <--- a "normal"
-> snapshot"
-> ID 268 top level 5 path root_send <--- a read only snapshot i try to use
-> with send
-> 
-> [root@robert-laptop ~]# cd /mnt/ROOT_BTRFS/
-> [root@robert-laptop ROOT_BTRFS]#
-> /home/robert/ArchLinux/btrfs-progs/btrfs send root_send > outROOT
-> At subvol root_send
-> ERROR: could not resolve root_id for /mnt/ROOT_BTRFS/root_send
-> 
-> Am i somehow misunderstanding how the send/receive feature should work?
-> My idea is to send the "root_send" snapshot to a file and then replay
-> that file later on a backup btrfs partition. Once i've done that i can
-> just send incremental differences to the backup partition. Is that how
-> "send/receive" is supposed to work?
-> 
-> If you need further information just tell me.
-> 
-> Thanks in advance,
-> 
-> Robert
-> 
-> 
-> PS: Please respond to my email address as i'm not subscribed to the list.
-> 
-> -- 
-> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+I've created a Debian bug report for the issue:
 
+  http://bugs.debian.org/cgi-bin/bugreport.cgi?bug=685311
+
+Thanks for the quick feedback about this

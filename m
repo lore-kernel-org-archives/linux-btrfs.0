@@ -1,157 +1,41 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from xp-ob.rzone.de ([81.169.146.140]:48343 "EHLO xp-ob.rzone.de"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1754380Ab2HTL5S (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 20 Aug 2012 07:57:18 -0400
-From: Jan Schmidt <list.btrfs@jan-o-sch.net>
-To: Robert Buhren <robert@robertbuhren.de>
-Cc: linux-btrfs@vger.kernel.org, Alexander Block <ablock84@googlemail.com>,
-        Arne Jansen <sensille@gmx.net>
-Subject: [PATCH] Btrfs-progs: replace find_mount_root from send code
-Date: Mon, 20 Aug 2012 13:57:15 +0200
-Message-Id: <1345463835-26636-1-git-send-email-list.btrfs@jan-o-sch.net>
-In-Reply-To: <5028D57F.5090803@robertbuhren.de>
-References: <5028D57F.5090803@robertbuhren.de>
+Received: from mail-yw0-f46.google.com ([209.85.213.46]:47563 "EHLO
+	mail-yw0-f46.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1753096Ab2HTQWe convert rfc822-to-8bit (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>);
+	Mon, 20 Aug 2012 12:22:34 -0400
+Received: by yhmm54 with SMTP id m54so5160110yhm.19
+        for <linux-btrfs@vger.kernel.org>; Mon, 20 Aug 2012 09:22:33 -0700 (PDT)
+From: Curtis Jones <curtis.jones@gmail.com>
+Content-Type: text/plain; charset=us-ascii
+Subject: btrfs and mdadm raid 6
+Message-Id: <8AE790DA-04B5-4407-A5FE-D0AC4560B415@gmail.com>
+Date: Mon, 20 Aug 2012 12:22:31 -0400
+To: linux-btrfs@vger.kernel.org
+Mime-Version: 1.0 (Mac OS X Mail 6.0 \(1485\))
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hi Robert,
+Hi. I'm considering an imminent switch from ext4 to btrfs and I'm hoping that someone can lend me advice before I do something unsupported.
 
-i made a quick patch, can you please give it a try? Can be applied with
-"git am --scissors".
+I have a software raid 6 array configured via mdadm. It was sitting at 8 x 3TB until I recently doubled that, grew the array and found that ext4 doesn't want to resize. So, I'm looking to:
 
-Thanks,
--Jan
+	1. convert from ext4 to btrfs
+	2. grow the fs to the full array size
 
--- >8 --
+My concerns are:
 
-find_mount_root had the problem that it tried to conclude from a file system
-path to a mount point, taking the fsid as an indicator. This only works if
-no two subvolumes (sharing the same btrfs fsid) are mounted in the same
-hierarchy.
+	1. is btrfs-convert on /dev/md0 stable/reliable/tested/not-a-stupid-thing-to-do?
+	2. based on the reading I've done, resizing btrfs is supported. can you confirm?
+	3. there aren't any known compatibility or other issues with running btrfs on top of mdadm (raid 6)
+	4. any other caveats I might want to consider?
 
-Now instead, we're parsing /etc/mtab and look for the longest match.
+I just upgraded from kernel v3.5.1 to v3.5.2 and I have the btrfs-tools (v0.19) compiled straight from git.
 
-Signed-off-by: Jan Schmidt <list.btrfs@jan-o-sch.net>
----
- cmds-send.c |   88 ++++++++++++++---------------------------------------------
- 1 files changed, 21 insertions(+), 67 deletions(-)
+Any words of wisdom would be appreciated.
 
-diff --git a/cmds-send.c b/cmds-send.c
-index 8a0c110..41ea523 100644
---- a/cmds-send.c
-+++ b/cmds-send.c
-@@ -28,6 +28,7 @@
- #include <sys/types.h>
- #include <sys/ioctl.h>
- #include <libgen.h>
-+#include <mntent.h>
- 
- #include <uuid/uuid.h>
- 
-@@ -55,82 +56,35 @@ struct btrfs_send {
- 
- int find_mount_root(const char *path, char **mount_root)
- {
--	int ret;
--	char *cur;
--	char fsid[BTRFS_FSID_SIZE];
-+	FILE *mnttab;
- 	int fd;
--	struct stat st;
--	char *tmp;
--	char *dup = NULL;
--
--	struct btrfs_ioctl_fs_info_args args;
-+	struct mntent *ent;
-+	int len;
-+	int longest_matchlen = 0;
-+	char *longest_match = NULL;
- 
- 	fd = open(path, O_RDONLY | O_NOATIME);
--	if (fd < 0) {
--		ret = -errno;
--		goto out;
--	}
--
--	ret = fstat(fd, &st);
--	if (fd < 0) {
--		ret = -errno;
--		goto out;
--	}
--	if (!S_ISDIR(st.st_mode)) {
--		ret = -ENOTDIR;
--		goto out;
--	}
--
--	ret = ioctl(fd, BTRFS_IOC_FS_INFO, &args);
--	if (fd < 0) {
--		ret = -errno;
--		goto out;
--	}
--	memcpy(fsid, args.fsid, BTRFS_FSID_SIZE);
-+	if (fd < 0)
-+		return -errno;
- 	close(fd);
--	fd = -1;
- 
--	cur = strdup(path);
--
--	while (1) {
--		dup = strdup(cur);
--		tmp = dirname(dup);
--
--		if (!tmp)
--			break;
--		fd = open(tmp, O_RDONLY | O_NOATIME);
--		if (fd < 0) {
--			ret = -errno;
--			goto out;
-+	mnttab = fopen("/etc/mtab", "r");
-+	while ((ent = getmntent(mnttab))) {
-+		len = strlen(ent->mnt_dir);
-+		if (strncmp(ent->mnt_dir, path, len) == 0) {
-+			/* match found */
-+			if (longest_matchlen < len) {
-+				free(longest_match);
-+				longest_matchlen = len;
-+				longest_match = strdup(ent->mnt_dir);
-+			}
- 		}
--
--		ret = ioctl(fd, BTRFS_IOC_FS_INFO, &args);
--		close(fd);
--		fd = -1;
--		if (ret < 0)
--			break;
--		if (memcmp(fsid, args.fsid, BTRFS_FSID_SIZE) != 0)
--			break;
--
--		free(cur);
--		cur = strdup(tmp);
--		free(dup);
--		dup = NULL;
--		if (strcmp(cur, "/") == 0)
--			break;
--		if (strcmp(cur, ".") == 0)
--			break;
- 	}
- 
--	ret = 0;
--	*mount_root = realpath(cur, NULL);
-+	*mount_root = realpath(longest_match, NULL);
-+	free(longest_match);
- 
--out:
--	if (dup)
--		free(dup);
--	if (fd != -1)
--		close(fd);
--	return ret;
-+	return 0;
- }
- 
- static int get_root_id(struct btrfs_send *s, const char *path, u64 *root_id)
--- 
-1.7.1
+Thanks!
+
+--
+Curtis Jones
 

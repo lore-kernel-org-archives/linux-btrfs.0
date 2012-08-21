@@ -1,27 +1,38 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from csamuel.org ([74.50.50.137]:56331 "EHLO csamuel.org"
+Received: from csamuel.org ([74.50.50.137]:60781 "EHLO csamuel.org"
 	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1755167Ab2HUBVo (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 20 Aug 2012 21:21:44 -0400
-Message-ID: <5032E297.3050006@csamuel.org>
-Date: Tue, 21 Aug 2012 11:21:27 +1000
+	id S1751841Ab2HUByD (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Mon, 20 Aug 2012 21:54:03 -0400
+Message-ID: <5032EA29.2060002@csamuel.org>
+Date: Tue, 21 Aug 2012 11:53:45 +1000
 From: Chris Samuel <chris@csamuel.org>
 MIME-Version: 1.0
-To: Curtis Jones <curtis.jones@gmail.com>
-CC: "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
-Subject: Re: btrfs and mdadm raid 6
-References: <8AE790DA-04B5-4407-A5FE-D0AC4560B415@gmail.com> <20120820230603.1ba1afca@natsu> <2D811613-9EF6-4C5E-84A3-CB0E8D425B0B@gmail.com>
-In-Reply-To: <2D811613-9EF6-4C5E-84A3-CB0E8D425B0B@gmail.com>
+To: Chris Mason <chris.mason@fusionio.com>,
+        Linus Torvalds <torvalds@linux-foundation.org>,
+        Linux Btrfs List <linux-btrfs@vger.kernel.org>,
+        "linux-kernel@vger.kernel.org" <linux-kernel@vger.kernel.org>
+Subject: Re: [GIT PULL 1/2] Btrfs fixes
+References: <20120809155029.GA29278@shiny>
+In-Reply-To: <20120809155029.GA29278@shiny>
 Content-Type: text/plain; charset=ISO-8859-1
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 21/08/12 08:24, Curtis Jones wrote:
+On 10/08/12 01:50, Chris Mason wrote:
 
-> You mentioned that btrfs was going to set aside a ton of space
-> for metadata. Is that entirely due to going ext4 -> btrfs?
+> Hi everyone,
+> 
+> This first pull is the bulk of our changes for the next rc.  It is
+> against the 3.5 kernel so people testing the new features have a stable
+> point to work against.  This was tested against Linus' current tree as
+> well.
+[...]
 
-No, I believe that's a regression in btrfs in recent kernels..
+This pull request with a whole heap of btrfs fixes (46 commits) appears
+not to have been merged yet, does anyone know if it was rejected or just
+missed ?
 
+cheers,
+Chris
 -- 
  Chris Samuel  :  http://www.csamuel.org/  :  Melbourne, VIC

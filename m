@@ -1,49 +1,77 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from twin.jikos.cz ([89.185.236.188]:52927 "EHLO twin.jikos.cz"
+Received: from twin.jikos.cz ([89.185.236.188]:53426 "EHLO twin.jikos.cz"
 	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1751846Ab2HUPgd (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 21 Aug 2012 11:36:33 -0400
-Date: Tue, 21 Aug 2012 17:36:18 +0200
+	id S1752330Ab2HUQAX (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Tue, 21 Aug 2012 12:00:23 -0400
+Date: Tue, 21 Aug 2012 18:00:19 +0200
 From: David Sterba <dave@jikos.cz>
-To: C Anthony Risinger <anthony@xtfx.me>
-Cc: dg1727 <dg1727@hushmail.com>, linux-btrfs@vger.kernel.org
-Subject: Re: How to get Btrfs on 2nd partition of USB HDD to automount as
- read/write
-Message-ID: <20120821153618.GM17430@twin.jikos.cz>
+To: Not Zippy <notzippy@gmail.com>
+Cc: linux-btrfs@vger.kernel.org
+Subject: Re: Computer crash, btrfs partition errors
+Message-ID: <20120821160019.GN17430@twin.jikos.cz>
 Reply-To: dave@jikos.cz
-References: <20120819195147.6EA7EA6E3F@smtp.hushmail.com>
- <CAGAVQTEvYtgzPP9rjt=rnYi9yNpMRXjj86TzG-kiUio7uOMPHA@mail.gmail.com>
+References: <CANDob0+VQ0UJJaDS89CGK5YNXys40SWgWMgeTjeZoca4teVEUw@mail.gmail.com>
+ <CANDob0+XEHbYmp2PF-UW1EXRP6YbKw3Fn00th8u9A2R7XdCrJg@mail.gmail.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <CAGAVQTEvYtgzPP9rjt=rnYi9yNpMRXjj86TzG-kiUio7uOMPHA@mail.gmail.com>
+In-Reply-To: <CANDob0+XEHbYmp2PF-UW1EXRP6YbKw3Fn00th8u9A2R7XdCrJg@mail.gmail.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Sun, Aug 19, 2012 at 03:05:11PM -0500, C Anthony Risinger wrote:
-> On Sun, Aug 19, 2012 at 2:51 PM, dg1727 <dg1727@hushmail.com> wrote:
-> > permissions of the directories in /dev are drwx------ for the NTFS
-> > and dr-xr-xr-x for the Btrfs.
-> >
-> > How can the OS be set up so that the Btrfs will automount
-> > read/write?
+Hi,
+
+On Fri, Aug 17, 2012 at 09:02:07PM -0700, Not Zippy wrote:
+> My sabayon box locked up while doing a repo sync, now I am getting the
+> following errors on one directory on my btrfs partition
+
+Can you be more specific how did you get to the state?
+Did you see any related error messages in syslog (from the lockup or
+from normal fs use that leads to the following errors)?
+
+> rm: cannot remove
+> ?system.2/.repo/projects/packages/wallpapers/HoloSpiral.git/refs?:
+> Directory not empty
+> rm: cannot remove
+> ?system.2/.repo/projects/packages/wallpapers/HoloSpiral.git/hooks?:
+> Stale NFS file handle
+> rm: cannot remove
+> ?system.2/.repo/projects/packages/wallpapers/HoloSpiral.git/HEAD?:
+> Stale NFS file handle
+
+So this is a ESTALE error code. If I understand correctly the ?..? marks
+around the filename, the names of the files can be obtained but
+subsequent stat fails.
+
+> Doing a btrfsck fails with the following error
+> # btrfsck /dev/sda2
+> checking extents
+> leaf parent key incorrect 46329503744
+> bad block 46329503744
+> owner ref check failed [46329503744 4096]
+> Errors found in extent allocation tree
+
+One of the blocks is corrupted, in a way that prevents the file(s) to be
+removed, from the fsck log there's bad link between leaf and it parent
+node plus some refcounting mismatches. As it's the 'extent allocation
+tree', fsck should be able to repair this type of error.
+
+> checking fs roots
+> btrfsck: btrfsck.c:394: process_inode_item: Assertion `!(rec->ino !=
+> key->objectid || rec->refs > 1)' failed.
+> Aborted
 > 
-> try:
+> Kernel
+> Linux homeu1 3.5.0-sabayon
+> btrfs
+> Btrfs Btrfs v0.19-dirty
 > 
-> chmod u+w /path/to/btrfs/mount
-> 
-> ... for whatever reason mkfs.btrfs created new subvolumes (but not
-> snapshots!) with 555 perms, which essentially says "writable to nobody
-> at all" ... IIRC, this was changed within the last year or so.
+> Can this be repaired ? The drive is still mountable and I have moved
+> all other files to another drive so I could wipe it but I was
+> wondering if repairing was an option as well..
 
-The issue with subvols pemr 0700 was indeed fixed, on the kernel side.
-
-The problem with missing 'w' (ie mode 555) on a freshly mkfs'ed image is
-still present and it's the user-space tools (mkfs) proble. Patch has
-been sent some time ago
-
-http://www.spinics.net/lists/linux-btrfs/msg17909.html
-
-The workaround is to chmod as you suggested and is permanent once done.
+If you still have the image around, please try 'btrfsck --repair' on it,
+and use the latest source version from cmason's repository, unless your
+distro ships it (can't tell from the version string).
 
 
 david

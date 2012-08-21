@@ -1,67 +1,49 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail.servus.at ([193.170.194.20]:57255 "EHLO mail.servus.at"
+Received: from twin.jikos.cz ([89.185.236.188]:52927 "EHLO twin.jikos.cz"
 	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1751666Ab2HUPV6 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 21 Aug 2012 11:21:58 -0400
-Message-ID: <5033A78E.3080703@oberhumer.com>
-Date: Tue, 21 Aug 2012 17:21:50 +0200
-From: "Markus F.X.J. Oberhumer" <markus@oberhumer.com>
+	id S1751846Ab2HUPgd (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Tue, 21 Aug 2012 11:36:33 -0400
+Date: Tue, 21 Aug 2012 17:36:18 +0200
+From: David Sterba <dave@jikos.cz>
+To: C Anthony Risinger <anthony@xtfx.me>
+Cc: dg1727 <dg1727@hushmail.com>, linux-btrfs@vger.kernel.org
+Subject: Re: How to get Btrfs on 2nd partition of USB HDD to automount as
+ read/write
+Message-ID: <20120821153618.GM17430@twin.jikos.cz>
+Reply-To: dave@jikos.cz
+References: <20120819195147.6EA7EA6E3F@smtp.hushmail.com>
+ <CAGAVQTEvYtgzPP9rjt=rnYi9yNpMRXjj86TzG-kiUio7uOMPHA@mail.gmail.com>
 MIME-Version: 1.0
-To: linux-kernel@vger.kernel.org
-CC: Andi Kleen <andi@firstfloor.org>, chris.mason@fusionio.com,
-        linux-btrfs@vger.kernel.org, Nitin Gupta <ngupta@vflare.org>,
-        richard -rw- weinberger <richard.weinberger@gmail.com>,
-        Johannes Stezenbach <js@sig21.net>
-Subject: [GIT PULL v2] Update LZO compression
-Content-Type: text/plain; charset=ISO-8859-1
+Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <CAGAVQTEvYtgzPP9rjt=rnYi9yNpMRXjj86TzG-kiUio7uOMPHA@mail.gmail.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hi all,
+On Sun, Aug 19, 2012 at 03:05:11PM -0500, C Anthony Risinger wrote:
+> On Sun, Aug 19, 2012 at 2:51 PM, dg1727 <dg1727@hushmail.com> wrote:
+> > permissions of the directories in /dev are drwx------ for the NTFS
+> > and dr-xr-xr-x for the Btrfs.
+> >
+> > How can the OS be set up so that the Btrfs will automount
+> > read/write?
+> 
+> try:
+> 
+> chmod u+w /path/to/btrfs/mount
+> 
+> ... for whatever reason mkfs.btrfs created new subvolumes (but not
+> snapshots!) with 555 perms, which essentially says "writable to nobody
+> at all" ... IIRC, this was changed within the last year or so.
 
-as suggested on the mailing list I have converted the updated LZO
-code into git, so please pull my "lzo-update" branch from
+The issue with subvols pemr 0700 was indeed fixed, on the kernel side.
 
-  git://github.com/markus-oberhumer/linux.git lzo-update
+The problem with missing 'w' (ie mode 555) on a freshly mkfs'ed image is
+still present and it's the user-space tools (mkfs) proble. Patch has
+been sent some time ago
 
-You can browse the branch at
+http://www.spinics.net/lists/linux-btrfs/msg17909.html
 
-  https://github.com/markus-oberhumer/linux/compare/lzo-update
-
-I'd ask some official kernel maintainer for review and to push this into
-linux-next so that it will hopefully land in the 3.7 release.
-
-Share and enjoy,
-Markus
-
-Signed-off-by: Markus F.X.J. Oberhumer <markus@oberhumer.com>
+The workaround is to chmod as you suggested and is permanent once done.
 
 
-[ Changes in v2: Optimize code for CPUs with inefficient unaligned
-  access => significant speed increase on ARM ]
-
-
-On 2012-07-16 20:30, Markus F.X.J. Oberhumer wrote:
-> Hi all,
->
-> I finally have prepared a small package that updates the LZO version
-> in the Linux kernel. Please get it from:
->
-> http://www.oberhumer.com/opensource/lzo/download/Testing/linux-kernel-lzo-20120716.tar.gz
->
-> As stated in the README this version is significantly faster (typically more
-> than 2 times faster!) than the current version, has been thoroughly tested on
-> x86_64/i386/powerpc platforms and is intended to get included into the
-> official Linux 3.6 or 3.7 release.
->
-> I encourage all compression users to test and benchmark this new version,
-> and I also would ask some official LZO maintainer to convert the updated
-> source files into a GIT commit and possibly push it to Linus or linux-next.
->
-> Share and enjoy,
-> Markus
->
-> Signed-off-by: Markus F.X.J. Oberhumer" <markus@oberhumer.com>
-
--- 
-Markus Oberhumer, <markus@oberhumer.com>, http://www.oberhumer.com/
+david

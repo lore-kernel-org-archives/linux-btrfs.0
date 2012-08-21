@@ -1,38 +1,36 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from csamuel.org ([74.50.50.137]:60781 "EHLO csamuel.org"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1751841Ab2HUByD (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 20 Aug 2012 21:54:03 -0400
-Message-ID: <5032EA29.2060002@csamuel.org>
-Date: Tue, 21 Aug 2012 11:53:45 +1000
-From: Chris Samuel <chris@csamuel.org>
+Received: from mail-we0-f174.google.com ([74.125.82.174]:51234 "EHLO
+	mail-we0-f174.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1751841Ab2HUB4V (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>);
+	Mon, 20 Aug 2012 21:56:21 -0400
 MIME-Version: 1.0
-To: Chris Mason <chris.mason@fusionio.com>,
-        Linus Torvalds <torvalds@linux-foundation.org>,
+In-Reply-To: <5032EA29.2060002@csamuel.org>
+References: <20120809155029.GA29278@shiny> <5032EA29.2060002@csamuel.org>
+From: Linus Torvalds <torvalds@linux-foundation.org>
+Date: Mon, 20 Aug 2012 18:55:59 -0700
+Message-ID: <CA+55aFxQiV2iHYQ3NVm=9K=9i6mBo1zwMuvXNrpwnLQwpsRx3A@mail.gmail.com>
+Subject: Re: [GIT PULL 1/2] Btrfs fixes
+To: Chris Samuel <chris@csamuel.org>
+Cc: Chris Mason <chris.mason@fusionio.com>,
         Linux Btrfs List <linux-btrfs@vger.kernel.org>,
         "linux-kernel@vger.kernel.org" <linux-kernel@vger.kernel.org>
-Subject: Re: [GIT PULL 1/2] Btrfs fixes
-References: <20120809155029.GA29278@shiny>
-In-Reply-To: <20120809155029.GA29278@shiny>
 Content-Type: text/plain; charset=ISO-8859-1
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 10/08/12 01:50, Chris Mason wrote:
+On Mon, Aug 20, 2012 at 6:53 PM, Chris Samuel <chris@csamuel.org> wrote:
+>
+> This pull request with a whole heap of btrfs fixes (46 commits) appears
+> not to have been merged yet, does anyone know if it was rejected or just
+> missed ?
 
-> Hi everyone,
-> 
-> This first pull is the bulk of our changes for the next rc.  It is
-> against the 3.5 kernel so people testing the new features have a stable
-> point to work against.  This was tested against Linus' current tree as
-> well.
-[...]
+Read my -rc2 release notes.
 
-This pull request with a whole heap of btrfs fixes (46 commits) appears
-not to have been merged yet, does anyone know if it was rejected or just
-missed ?
+TL;DR: I rejected big pull requests that didn't convince me. Make a
+damn good case for it, or send minimal fixes instead.
 
-cheers,
-Chris
--- 
- Chris Samuel  :  http://www.csamuel.org/  :  Melbourne, VIC
+I'm tried of these "oops, what we sent you for -rc1 wasn't ready, so
+here's a thousand lines of changes" crap.
+
+             Linus

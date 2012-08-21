@@ -1,43 +1,41 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-we0-f174.google.com ([74.125.82.174]:40027 "EHLO
-	mail-we0-f174.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1758133Ab2HUQvT (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 21 Aug 2012 12:51:19 -0400
-Received: by weyx8 with SMTP id x8so12432wey.19
-        for <linux-btrfs@vger.kernel.org>; Tue, 21 Aug 2012 09:51:18 -0700 (PDT)
-MIME-Version: 1.0
-In-Reply-To: <20120821160019.GN17430@twin.jikos.cz>
-References: <CANDob0+VQ0UJJaDS89CGK5YNXys40SWgWMgeTjeZoca4teVEUw@mail.gmail.com>
- <CANDob0+XEHbYmp2PF-UW1EXRP6YbKw3Fn00th8u9A2R7XdCrJg@mail.gmail.com> <20120821160019.GN17430@twin.jikos.cz>
-From: Not Zippy <notzippy@gmail.com>
-Date: Tue, 21 Aug 2012 09:50:58 -0700
-Message-ID: <CANDob0LpwsWP=jcyMkxZor0_6AnFeHY6zt-Sp6V0HH+Pd2SH=w@mail.gmail.com>
-Subject: Re: Computer crash, btrfs partition errors
-To: dave@jikos.cz, Not Zippy <notzippy@gmail.com>, linux-btrfs@vger.kernel.org
-Content-Type: text/plain; charset=ISO-8859-1
+Received: from plane.gmane.org ([80.91.229.3]:52892 "EHLO plane.gmane.org"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1751256Ab2HUTLp (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Tue, 21 Aug 2012 15:11:45 -0400
+Received: from list by plane.gmane.org with local (Exim 4.69)
+	(envelope-from <gcfb-btrfs-devel-moved1@m.gmane.org>)
+	id 1T3trc-0005rf-M5
+	for linux-btrfs@vger.kernel.org; Tue, 21 Aug 2012 21:11:44 +0200
+Received: from xpc1.ast.cam.ac.uk ([131.111.68.219])
+        by main.gmane.org with esmtp (Gmexim 0.1 (Debian))
+        id 1AlnuQ-0007hv-00
+        for <linux-btrfs@vger.kernel.org>; Tue, 21 Aug 2012 21:11:44 +0200
+Received: from jeremy by xpc1.ast.cam.ac.uk with local (Gmexim 0.1 (Debian))
+        id 1AlnuQ-0007hv-00
+        for <linux-btrfs@vger.kernel.org>; Tue, 21 Aug 2012 21:11:44 +0200
+To: linux-btrfs@vger.kernel.org
+From: Jeremy Sanders <jeremy@jeremysanders.net>
+Subject: Re: btrfs and mdadm raid 6
+Date: Tue, 21 Aug 2012 20:11:34 +0100
+Message-ID: <k10mh6$6ja$1@ger.gmane.org>
+References: <8AE790DA-04B5-4407-A5FE-D0AC4560B415@gmail.com>
+Mime-Version: 1.0
+Content-Type: text/plain; charset="ISO-8859-1"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hi
+Curtis Jones wrote:
 
-Thanks for the analysis, unfortunately I get the same assert error
-when I attempt to run the repair from the compiled source.
+> 1. is btrfs-convert on /dev/md0
+> stable/reliable/tested/not-a-stupid-thing-to-do? 2. based on the reading
+> I've done, resizing btrfs is supported. can you confirm? 3. there aren't
+> any known compatibility or other issues with running btrfs on top of mdadm
+> (raid 6) 4. any other caveats I might want to consider?
 
-# ./work/builds/btrfs-progs/btrfsck
-usage: btrfsck dev
-Btrfs Btrfs v0.19
+We've been running btrfs on mdadm for a year or so with no problems (it was 
+a fresh file system, though).
 
-# ./work/builds/btrfs-progs/btrfsck --repair /dev/sda2
-enabling repair mode
-checking extents
-leaf parent key incorrect 46329503744
-bad block 46329503744
-owner ref check failed [46329503744 4096]
-repair deleting extent record: key 46329503744 168 4096
-adding new tree backref on start 46329503744 len 4096 parent 256 root 256
-repaired damaged extent references
-checking fs roots
-btrfsck: btrfsck.c:397: process_inode_item: Assertion `!(rec->ino !=
-key->objectid || rec->refs > 1)' failed.
-Aborted
+Jeremy
+
+

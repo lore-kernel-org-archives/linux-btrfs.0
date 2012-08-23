@@ -1,72 +1,102 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from rcsinet15.oracle.com ([148.87.113.117]:46136 "EHLO
-	rcsinet15.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1751333Ab2HWCMK (ORCPT
+Received: from acsinet15.oracle.com ([141.146.126.227]:48895 "EHLO
+	acsinet15.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1752203Ab2HWI7D (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 22 Aug 2012 22:12:10 -0400
-From: bo.li.liu@oracle.com
+	Thu, 23 Aug 2012 04:59:03 -0400
+Received: from ucsinet22.oracle.com (ucsinet22.oracle.com [156.151.31.94])
+	by acsinet15.oracle.com (Sentrion-MTA-4.2.2/Sentrion-MTA-4.2.2) with ESMTP id q7N8x012024078
+	(version=TLSv1/SSLv3 cipher=DHE-RSA-AES256-SHA bits=256 verify=OK)
+	for <linux-btrfs@vger.kernel.org>; Thu, 23 Aug 2012 08:59:01 GMT
+Received: from acsmt358.oracle.com (acsmt358.oracle.com [141.146.40.158])
+	by ucsinet22.oracle.com (8.14.4+Sun/8.14.4) with ESMTP id q7N8x0WO007044
+	(version=TLSv1/SSLv3 cipher=DHE-RSA-AES256-SHA bits=256 verify=NO)
+	for <linux-btrfs@vger.kernel.org>; Thu, 23 Aug 2012 08:59:00 GMT
+Received: from abhmt115.oracle.com (abhmt115.oracle.com [141.146.116.67])
+	by acsmt358.oracle.com (8.12.11.20060308/8.12.11) with ESMTP id q7N8wxIL023376
+	for <linux-btrfs@vger.kernel.org>; Thu, 23 Aug 2012 03:58:59 -0500
+From: Liu Bo <bo.li.liu@oracle.com>
 To: linux-btrfs@vger.kernel.org
-Cc: dave@jikos.cz
-Subject: [PATCH v2] Btrfs: fix a dio write regression
-Date: Thu, 23 Aug 2012 10:10:38 +0800
-Message-Id: <1345687838-18002-1-git-send-email-bo.li.liu@oracle.com>
+Subject: [PATCH] Btrfs-progs: add options to change size in logical to inode transition
+Date: Thu, 23 Aug 2012 16:56:28 +0800
+Message-Id: <1345712189-6455-1-git-send-email-bo.li.liu@oracle.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-From: Liu Bo <bo.li.liu@oracle.com>
-
-This bug is introduced by commit 3b8bde746f6f9bd36a9f05f5f3b6e334318176a9
-(Btrfs: lock extents as we map them in DIO).
-
-In dio write, we should unlock the section which we didn't do IO on in case that
-we fall back to buffered write.  But we need to not only unlock the section
-but also cleanup reserved space for the section.
-
-This bug was found while running xfstests 133, with this 133 no longer complains.
+Add an option 's' to set size in logical to inode transition, then we are able
+to read all the refs to the logical address.
 
 Signed-off-by: Liu Bo <bo.li.liu@oracle.com>
 ---
-v1->v2: apply style comments from David Sterba.
+ cmds-inspect.c |   18 ++++++++++++------
+ 1 files changed, 12 insertions(+), 6 deletions(-)
 
- fs/btrfs/inode.c |   24 ++++++++++++++++++++----
- 1 files changed, 20 insertions(+), 4 deletions(-)
-
-diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
-index 7131fac..ea6a4ee 100644
---- a/fs/btrfs/inode.c
-+++ b/fs/btrfs/inode.c
-@@ -5993,11 +5993,27 @@ unlock:
- 	 * in the case of read we need to unlock only the end area that we
- 	 * aren't using if there is any left over space.
- 	 */
--	if (lockstart < lockend)
--		clear_extent_bit(&BTRFS_I(inode)->io_tree, lockstart, lockend,
--				 unlock_bits, 1, 0, &cached_state, GFP_NOFS);
--	else
-+	if (lockstart < lockend) {
-+		if (create && len < lockend - lockstart) {
-+			clear_extent_bit(&BTRFS_I(inode)->io_tree, lockstart,
-+					 lockstart + len - 1, unlock_bits, 1, 0,
-+					 &cached_state, GFP_NOFS);
-+			/*
-+			 * Beside unlock, we also need to cleanup reserved space
-+			 * for the left range by attaching EXTENT_DO_ACCOUNTING.
-+			 */
-+			clear_extent_bit(&BTRFS_I(inode)->io_tree,
-+					 lockstart + len, lockend,
-+					 unlock_bits | EXTENT_DO_ACCOUNTING,
-+					 1, 0, NULL, GFP_NOFS);
-+		} else {
-+			clear_extent_bit(&BTRFS_I(inode)->io_tree, lockstart,
-+					 lockend, unlock_bits, 1, 0,
-+					 &cached_state, GFP_NOFS);
-+		}
-+	} else {
- 		free_extent_state(cached_state);
-+	}
+diff --git a/cmds-inspect.c b/cmds-inspect.c
+index 2f0228f..be5e588 100644
+--- a/cmds-inspect.c
++++ b/cmds-inspect.c
+@@ -115,7 +115,7 @@ static int cmd_inode_resolve(int argc, char **argv)
+ }
  
- 	free_extent_map(em);
+ static const char * const cmd_logical_resolve_usage[] = {
+-	"btrfs inspect-internal logical-resolve [-Pv] <logical> <path>",
++	"btrfs inspect-internal logical-resolve [-Pv] [-s size] <logical> <path>",
+ 	"Get file system paths for the given logical address",
+ 	NULL
+ };
+@@ -130,12 +130,13 @@ static int cmd_logical_resolve(int argc, char **argv)
+ 	int bytes_left;
+ 	struct btrfs_ioctl_logical_ino_args loi;
+ 	struct btrfs_data_container *inodes;
++	u64 size = 4096;
+ 	char full_path[4096];
+ 	char *path_ptr;
  
+ 	optind = 1;
+ 	while (1) {
+-		int c = getopt(argc, argv, "Pv");
++		int c = getopt(argc, argv, "Pvs:");
+ 		if (c < 0)
+ 			break;
+ 
+@@ -146,6 +147,9 @@ static int cmd_logical_resolve(int argc, char **argv)
+ 		case 'v':
+ 			verbose = 1;
+ 			break;
++		case 's':
++			size = atoll(optarg);
++			break;
+ 		default:
+ 			usage(cmd_logical_resolve_usage);
+ 		}
+@@ -154,12 +158,13 @@ static int cmd_logical_resolve(int argc, char **argv)
+ 	if (check_argc_exact(argc - optind, 2))
+ 		usage(cmd_logical_resolve_usage);
+ 
+-	inodes = malloc(4096);
++	size = max(size, 4096);
++	inodes = malloc(size);
+ 	if (!inodes)
+ 		return 1;
+ 
+ 	loi.logical = atoll(argv[optind]);
+-	loi.size = 4096;
++	loi.size = size;
+ 	loi.inodes = (u64)inodes;
+ 
+ 	fd = open_file_or_dir(argv[optind+1]);
+@@ -176,8 +181,9 @@ static int cmd_logical_resolve(int argc, char **argv)
+ 	}
+ 
+ 	if (verbose)
+-		printf("ioctl ret=%d, bytes_left=%lu, bytes_missing=%lu, "
+-			"cnt=%d, missed=%d\n", ret,
++		printf("ioctl ret=%d, total_size=%llu, bytes_left=%lu, "
++			"bytes_missing=%lu, cnt=%d, missed=%d\n",
++			ret, size,
+ 			(unsigned long)inodes->bytes_left,
+ 			(unsigned long)inodes->bytes_missing,
+ 			inodes->elem_cnt, inodes->elem_missed);
 -- 
 1.7.7.6
 

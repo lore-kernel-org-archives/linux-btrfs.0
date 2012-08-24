@@ -1,317 +1,45 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from acsinet15.oracle.com ([141.146.126.227]:40148 "EHLO
-	acsinet15.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1750837Ab2HYKgx (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Sat, 25 Aug 2012 06:36:53 -0400
-Received: from ucsinet21.oracle.com (ucsinet21.oracle.com [156.151.31.93])
-	by acsinet15.oracle.com (Sentrion-MTA-4.2.2/Sentrion-MTA-4.2.2) with ESMTP id q7PAaoA1012057
-	(version=TLSv1/SSLv3 cipher=DHE-RSA-AES256-SHA bits=256 verify=OK)
-	for <linux-btrfs@vger.kernel.org>; Sat, 25 Aug 2012 10:36:51 GMT
-Received: from acsmt357.oracle.com (acsmt357.oracle.com [141.146.40.157])
-	by ucsinet21.oracle.com (8.14.4+Sun/8.14.4) with ESMTP id q7PAaniV016039
-	(version=TLSv1/SSLv3 cipher=DHE-RSA-AES256-SHA bits=256 verify=NO)
-	for <linux-btrfs@vger.kernel.org>; Sat, 25 Aug 2012 10:36:50 GMT
-Received: from abhmt109.oracle.com (abhmt109.oracle.com [141.146.116.61])
-	by acsmt357.oracle.com (8.12.11.20060308/8.12.11) with ESMTP id q7PAanBa004148
-	for <linux-btrfs@vger.kernel.org>; Sat, 25 Aug 2012 05:36:49 -0500
-Message-ID: <5038AACA.2090804@oracle.com>
-Date: Sat, 25 Aug 2012 18:36:58 +0800
-From: Liu Bo <bo.li.liu@oracle.com>
+Received: from mx2.fusionio.com ([66.114.96.31]:48738 "EHLO mx2.fusionio.com"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1753481Ab2HXSq1 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Fri, 24 Aug 2012 14:46:27 -0400
+Received: from mail1.int.fusionio.com (mail1.int.fusionio.com [10.101.1.21]) by mx2.fusionio.com with ESMTP id bjoo04J0w48DOO7E (version=TLSv1 cipher=AES128-SHA bits=128 verify=NO) for <linux-btrfs@vger.kernel.org>; Fri, 24 Aug 2012 12:46:26 -0600 (MDT)
+From: Josef Bacik <jbacik@fusionio.com>
+To: <linux-btrfs@vger.kernel.org>
+Subject: [PATCH] Btrfs: only warn if we hit an error when doing the tree logging
+Date: Fri, 24 Aug 2012 14:51:38 -0400
+Message-ID: <1345834298-1877-1-git-send-email-jbacik@fusionio.com>
 MIME-Version: 1.0
-To: linux-btrfs@vger.kernel.org
-Subject: Re: [PATCH 1/2] Btrfs: use flag EXTENT_DEFRAG for snapshot-aware
- defrag
-References: <1345719694-21250-1-git-send-email-bo.li.liu@oracle.com> <20120824173447.GE17430@twin.jikos.cz>
-In-Reply-To: <20120824173447.GE17430@twin.jikos.cz>
-Content-Type: text/plain; charset=ISO-8859-1
+Content-Type: text/plain
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 08/25/2012 01:34 AM, David Sterba wrote:
-> On Thu, Aug 23, 2012 at 07:01:33PM +0800, Liu Bo wrote:
->> We're going to use this flag EXTENT_DEFRAG to indicate which range
->> belongs to
->> defragment so that we can implement snapshow-aware defrag:
->>
->> We set the EXTENT_DEFRAG flag when dirtying the extents that need
->> defragmented, so later on writeback thread can differentiate between
->> normal writeback and writeback started by defragmentation.
->>
->> Signed-off-by: Liu Bo <bo.li.liu@oracle.com>
->> ---
->>  fs/btrfs/extent_io.c        |   11 +++++++++--
->>  fs/btrfs/extent_io.h        |   29 ++++++++++++++---------------
->>  fs/btrfs/file.c             |    4 ++--
->>  fs/btrfs/free-space-cache.c |    7 ++++---
->>  fs/btrfs/inode.c            |   20 ++++++++++++--------
->>  fs/btrfs/ioctl.c            |    8 ++++----
->>  6 files changed, 45 insertions(+), 34 deletions(-)
->>
->> diff --git a/fs/btrfs/extent_io.c b/fs/btrfs/extent_io.c
->> index bb25e89..f03ceff 100644
->> --- a/fs/btrfs/extent_io.c
->> +++ b/fs/btrfs/extent_io.c
->> @@ -1143,6 +1143,14 @@ int set_extent_delalloc(struct extent_io_tree *tree, u64 start, u64 end,
->>  			      NULL, cached_state, mask);
->>  }
->>  
->> +int set_extent_defrag(struct extent_io_tree *tree, u64 start, u64 end,
->> +		      struct extent_state **cached_state, gfp_t mask)
->> +{
->> +	return set_extent_bit(tree, start, end,
->> +			      EXTENT_DELALLOC | EXTENT_UPTODATE | EXTENT_DEFRAG,
->> +			      NULL, cached_state, mask);
->> +}
->> +
->>  int clear_extent_dirty(struct extent_io_tree *tree, u64 start, u64 end,
->>  		       gfp_t mask)
->>  {
->> @@ -3700,8 +3708,7 @@ int try_release_extent_mapping(struct extent_map_tree *map,
->>  			}
->>  			if (!test_range_bit(tree, em->start,
->>  					    extent_map_end(em) - 1,
->> -					    EXTENT_LOCKED | EXTENT_WRITEBACK,
->> -					    0, NULL)) {
->> +					    EXTENT_LOCKED, 0, NULL)) {
->>  				remove_extent_mapping(map, em);
->>  				/* once for the rb tree */
->>  				free_extent_map(em);
->> diff --git a/fs/btrfs/extent_io.h b/fs/btrfs/extent_io.h
->> index 25900af..d9dee94 100644
->> --- a/fs/btrfs/extent_io.h
->> +++ b/fs/btrfs/extent_io.h
->> @@ -5,21 +5,18 @@
->>  
->>  /* bits for the extent state */
->>  #define EXTENT_DIRTY 1
->> -#define EXTENT_WRITEBACK (1 << 1)
->> -#define EXTENT_UPTODATE (1 << 2)
->> -#define EXTENT_LOCKED (1 << 3)
->> -#define EXTENT_NEW (1 << 4)
->> -#define EXTENT_DELALLOC (1 << 5)
->> -#define EXTENT_DEFRAG (1 << 6)
->> -#define EXTENT_DEFRAG_DONE (1 << 7)
->> -#define EXTENT_BUFFER_FILLED (1 << 8)
->> -#define EXTENT_BOUNDARY (1 << 9)
->> -#define EXTENT_NODATASUM (1 << 10)
->> -#define EXTENT_DO_ACCOUNTING (1 << 11)
->> -#define EXTENT_FIRST_DELALLOC (1 << 12)
->> -#define EXTENT_NEED_WAIT (1 << 13)
->> -#define EXTENT_DAMAGED (1 << 14)
->> -#define EXTENT_IOBITS (EXTENT_LOCKED | EXTENT_WRITEBACK)
->> +#define EXTENT_UPTODATE (1 << 1)
->> +#define EXTENT_LOCKED (1 << 2)
->> +#define EXTENT_NEW (1 << 3)
->> +#define EXTENT_DELALLOC (1 << 4)
->> +#define EXTENT_DEFRAG (1 << 5)
->> +#define EXTENT_BOUNDARY (1 << 6)
->> +#define EXTENT_NODATASUM (1 << 7)
->> +#define EXTENT_DO_ACCOUNTING (1 << 8)
->> +#define EXTENT_FIRST_DELALLOC (1 << 9)
->> +#define EXTENT_NEED_WAIT (1 << 10)
->> +#define EXTENT_DAMAGED (1 << 11)
->> +#define EXTENT_IOBITS (EXTENT_LOCKED)
-> 
-> Uh, please don't do that, the values are used only for in-memory
-> accounting and we do not care about their real values. You create a hole
-> in the number sequence, removing EXTENT_WRITEBACK, EXTENT_DEFRAG_DONE
-> and EXTENT_BUFFER_FILLED, fine, so put there a comment instead. We can
-> reuse the value anytime later.
-> 
-> Also I'd like to hear why it's safe to remove the WRITEBACK flag. It's
-> embedded inside the IOBITS flag that is checked in many places, so if you
-> remove it the condition would be more relaxed and some code can be
-> unexpectedly executed.
-> 
-> On the other hand, the WRITEBACK flag is not set anywhere, either
-> directly or via IOBITS, so it's probably a leftover (like the other
-> flags you remove).
-> 
+I hit this a couple times while working on my fsync patch (all my bugs, not
+normal operation), but with my new stuff we could have new errors from cases
+I have not encountered, so instead of BUG()'ing we should be WARN()'ing so
+that we are notified there is a problem but the user doesn't lose their
+data.  We can easily commit the transaction in the case that the tree
+logging fails and still be fine, so let's try and be as nice to the user as
+possible.  Thanks,
 
-Yeah, it might be some historical reasons why WRITEBACK flag is kept till now.
+Signed-off-by: Josef Bacik <jbacik@fusionio.com>
+---
+ fs/btrfs/tree-log.c |    2 +-
+ 1 files changed, 1 insertions(+), 1 deletions(-)
 
-> So, I'd rather see a separate patch that just removes the unused bits,
-> and then patch that adds the snapshot-aware defrag logic, this is more
-> friendly to testing.
-> 
-
-hmm, make sense, I'll make a separated patch.
-
-> 
->>  #define EXTENT_CTLBITS (EXTENT_DO_ACCOUNTING | EXTENT_FIRST_DELALLOC)
->>  
->>  /*
->> @@ -235,6 +232,8 @@ int convert_extent_bit(struct extent_io_tree *tree, u64 start, u64 end,
->>  		       int bits, int clear_bits, gfp_t mask);
->>  int set_extent_delalloc(struct extent_io_tree *tree, u64 start, u64 end,
->>  			struct extent_state **cached_state, gfp_t mask);
->> +int set_extent_defrag(struct extent_io_tree *tree, u64 start, u64 end,
->> +		      struct extent_state **cached_state, gfp_t mask);
->>  int find_first_extent_bit(struct extent_io_tree *tree, u64 start,
->>  			  u64 *start_ret, u64 *end_ret, int bits);
->>  struct extent_state *find_first_extent_bit_state(struct extent_io_tree *tree,
->> diff --git a/fs/btrfs/file.c b/fs/btrfs/file.c
->> index 9aa01ec..c172868 100644
->> --- a/fs/btrfs/file.c
->> +++ b/fs/btrfs/file.c
->> @@ -1173,8 +1173,8 @@ again:
->>  
->>  		clear_extent_bit(&BTRFS_I(inode)->io_tree, start_pos,
->>  				  last_pos - 1, EXTENT_DIRTY | EXTENT_DELALLOC |
->> -				  EXTENT_DO_ACCOUNTING, 0, 0, &cached_state,
->> -				  GFP_NOFS);
->> +				  EXTENT_DO_ACCOUNTING | EXTENT_DEFRAG,
->> +				  0, 0, &cached_state, GFP_NOFS);
->>  		unlock_extent_cached(&BTRFS_I(inode)->io_tree,
->>  				     start_pos, last_pos - 1, &cached_state,
->>  				     GFP_NOFS);
->> diff --git a/fs/btrfs/free-space-cache.c b/fs/btrfs/free-space-cache.c
->> index 6b10acf..53ff2da 100644
->> --- a/fs/btrfs/free-space-cache.c
->> +++ b/fs/btrfs/free-space-cache.c
->> @@ -1023,7 +1023,8 @@ int __btrfs_write_out_cache(struct btrfs_root *root, struct inode *inode,
->>  	ret = btrfs_search_slot(trans, root, &key, path, 0, 1);
->>  	if (ret < 0) {
->>  		clear_extent_bit(&BTRFS_I(inode)->io_tree, 0, inode->i_size - 1,
->> -				 EXTENT_DIRTY | EXTENT_DELALLOC, 0, 0, NULL,
->> +				 EXTENT_DIRTY | EXTENT_DELALLOC | EXTENT_DEFRAG,
->> +				 0, 0, NULL,
-> 
-> This does not make much sense to me, why do you need to clear DEFRAG for
-> the free space inode?
-> 
-
-...Actually I didn't notice this, I just did grep for clear_extent_bit and add that flag...
-
->>  				 GFP_NOFS);
->>  		goto out;
->>  	}
->> @@ -1037,8 +1038,8 @@ int __btrfs_write_out_cache(struct btrfs_root *root, struct inode *inode,
->>  		    found_key.offset != offset) {
->>  			clear_extent_bit(&BTRFS_I(inode)->io_tree, 0,
->>  					 inode->i_size - 1,
->> -					 EXTENT_DIRTY | EXTENT_DELALLOC, 0, 0,
->> -					 NULL, GFP_NOFS);
->> +					 EXTENT_DIRTY | EXTENT_DELALLOC |
->> +					 EXTENT_DEFRAG, 0, 0, NULL, GFP_NOFS);
->>  			btrfs_release_path(path);
->>  			goto out;
->>  		}
->> diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
->> index ea6a4ee..85bc35f 100644
->> --- a/fs/btrfs/inode.c
->> +++ b/fs/btrfs/inode.c
->> @@ -3529,7 +3529,8 @@ again:
->>  	}
->>  
->>  	clear_extent_bit(&BTRFS_I(inode)->io_tree, page_start, page_end,
->> -			  EXTENT_DIRTY | EXTENT_DELALLOC | EXTENT_DO_ACCOUNTING,
->> +			  EXTENT_DIRTY | EXTENT_DELALLOC |
->> +			  EXTENT_DO_ACCOUNTING | EXTENT_DEFRAG,
->>  			  0, 0, &cached_state, GFP_NOFS);
->>  
->>  	ret = btrfs_set_extent_delalloc(inode, page_start, page_end,
->> @@ -5996,7 +5997,8 @@ unlock:
->>  	if (lockstart < lockend) {
->>  		if (create && len < lockend - lockstart) {
->>  			clear_extent_bit(&BTRFS_I(inode)->io_tree, lockstart,
->> -					 lockstart + len - 1, unlock_bits, 1, 0,
->> +					 lockstart + len - 1,
->> +					 unlock_bits | EXTENT_DEFRAG, 1, 0,
-> 
-> this
-> 
->>  					 &cached_state, GFP_NOFS);
->>  			/*
->>  			 * Beside unlock, we also need to cleanup reserved space
->> @@ -6004,8 +6006,8 @@ unlock:
->>  			 */
->>  			clear_extent_bit(&BTRFS_I(inode)->io_tree,
->>  					 lockstart + len, lockend,
->> -					 unlock_bits | EXTENT_DO_ACCOUNTING,
->> -					 1, 0, NULL, GFP_NOFS);
->> +					 unlock_bits | EXTENT_DO_ACCOUNTING |
->> +					 EXTENT_DEFRAG, 1, 0, NULL, GFP_NOFS);
-> 
-> and this come from the patch that fixes the DIO problem (Btrfs: fix a
-> dio write regression), right? Please mention that, makes reviewer's life
-> easier :)
-> 
-
-I'm so sorry, Dave, I should write a NOTE in front of the patchset.
-
-
->>  		} else {
->>  			clear_extent_bit(&BTRFS_I(inode)->io_tree, lockstart,
->>  					 lockend, unlock_bits, 1, 0,
->> @@ -6570,8 +6572,8 @@ static void btrfs_invalidatepage(struct page *page, unsigned long offset)
->>  		 */
->>  		clear_extent_bit(tree, page_start, page_end,
->>  				 EXTENT_DIRTY | EXTENT_DELALLOC |
->> -				 EXTENT_LOCKED | EXTENT_DO_ACCOUNTING, 1, 0,
->> -				 &cached_state, GFP_NOFS);
->> +				 EXTENT_LOCKED | EXTENT_DO_ACCOUNTING |
->> +				 EXTENT_DEFRAG, 1, 0, &cached_state, GFP_NOFS);
->>  		/*
->>  		 * whoever cleared the private bit is responsible
->>  		 * for the finish_ordered_io
->> @@ -6587,7 +6589,8 @@ static void btrfs_invalidatepage(struct page *page, unsigned long offset)
->>  	}
->>  	clear_extent_bit(tree, page_start, page_end,
->>  		 EXTENT_LOCKED | EXTENT_DIRTY | EXTENT_DELALLOC |
->> -		 EXTENT_DO_ACCOUNTING, 1, 1, &cached_state, GFP_NOFS);
->> +		 EXTENT_DO_ACCOUNTING | EXTENT_DEFRAG, 1, 1,
->> +		 &cached_state, GFP_NOFS);
->>  	__btrfs_releasepage(page, GFP_NOFS);
->>  
->>  	ClearPageChecked(page);
->> @@ -6683,7 +6686,8 @@ again:
->>  	 * prepare_pages in the normal write path.
->>  	 */
->>  	clear_extent_bit(&BTRFS_I(inode)->io_tree, page_start, page_end,
->> -			  EXTENT_DIRTY | EXTENT_DELALLOC | EXTENT_DO_ACCOUNTING,
->> +			  EXTENT_DIRTY | EXTENT_DELALLOC |
->> +			  EXTENT_DO_ACCOUNTING | EXTENT_DEFRAG,
->>  			  0, 0, &cached_state, GFP_NOFS);
->>  
->>  	ret = btrfs_set_extent_delalloc(inode, page_start, page_end,
->> diff --git a/fs/btrfs/ioctl.c b/fs/btrfs/ioctl.c
->> index a1fbca0..9449b84 100644
->> --- a/fs/btrfs/ioctl.c
->> +++ b/fs/btrfs/ioctl.c
->> @@ -1022,8 +1022,8 @@ again:
->>  			 page_start, page_end - 1, 0, &cached_state);
->>  	clear_extent_bit(&BTRFS_I(inode)->io_tree, page_start,
->>  			  page_end - 1, EXTENT_DIRTY | EXTENT_DELALLOC |
->> -			  EXTENT_DO_ACCOUNTING, 0, 0, &cached_state,
->> -			  GFP_NOFS);
->> +			  EXTENT_DO_ACCOUNTING | EXTENT_DEFRAG, 0, 0,
->> +			  &cached_state, GFP_NOFS);
->>  
->>  	if (i_done != page_cnt) {
->>  		spin_lock(&BTRFS_I(inode)->lock);
->> @@ -1034,8 +1034,8 @@ again:
->>  	}
->>  
->>  
->> -	btrfs_set_extent_delalloc(inode, page_start, page_end - 1,
->> -				  &cached_state);
->> +	set_extent_defrag(&BTRFS_I(inode)->io_tree, page_start, page_end - 1,
->> +			  &cached_state, GFP_NOFS);
->>  
->>  	unlock_extent_cached(&BTRFS_I(inode)->io_tree,
->>  			     page_start, page_end - 1, &cached_state,
->> ---
-> 
-> otherwise looks ok.
-> 
-
-Thanks for reviewing this! :)
-
-thanks,
-liubo
-
-> david
-> 
+diff --git a/fs/btrfs/tree-log.c b/fs/btrfs/tree-log.c
+index 5190cd6..b5b6323 100644
+--- a/fs/btrfs/tree-log.c
++++ b/fs/btrfs/tree-log.c
+@@ -3346,7 +3346,7 @@ int btrfs_log_inode_parent(struct btrfs_trans_handle *trans,
+ end_trans:
+ 	dput(old_parent);
+ 	if (ret < 0) {
+-		BUG_ON(ret != -ENOSPC);
++		WARN_ON(ret != -ENOSPC);
+ 		root->fs_info->last_trans_log_full_commit = trans->transid;
+ 		ret = 1;
+ 	}
+-- 
+1.7.7.6
 

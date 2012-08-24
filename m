@@ -1,109 +1,58 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from smtp206.alice.it ([82.57.200.102]:37269 "EHLO smtp206.alice.it"
+Received: from twin.jikos.cz ([89.185.236.188]:44896 "EHLO twin.jikos.cz"
 	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1759495Ab2HXN7H (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Fri, 24 Aug 2012 09:59:07 -0400
-Received: from venice.bhome (151.24.44.165) by smtp206.alice.it (8.6.023.02) (authenticated as kreijack@alice.it)
-        id 500F3F95054669C2 for linux-btrfs@vger.kernel.org; Fri, 24 Aug 2012 15:59:06 +0200
-Subject: [PATCH v1 4/4] Btrfs sysfs support documentation.
-To: linux-btrfs@vger.kernel.org
-From: Goffredo Baroncelli <kreijack@inwind.it>
-Date: Fri, 24 Aug 2012 15:59:50 +0200
-Message-ID: <20120824135935.20478.6629.stgit@venice.bhome>
-In-Reply-To: <20120824135322.20478.88578.stgit@venice.bhome>
-References: <20120824135322.20478.88578.stgit@venice.bhome>
+	id S1754172Ab2HXOKw (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Fri, 24 Aug 2012 10:10:52 -0400
+Date: Fri, 24 Aug 2012 16:10:49 +0200
+From: David Sterba <dave@jikos.cz>
+To: Not Zippy <notzippy@gmail.com>
+Cc: dave@jikos.cz, linux-btrfs@vger.kernel.org
+Subject: Re: Computer crash, btrfs partition errors
+Message-ID: <20120824141049.GZ17430@twin.jikos.cz>
+Reply-To: dave@jikos.cz
+References: <CANDob0+VQ0UJJaDS89CGK5YNXys40SWgWMgeTjeZoca4teVEUw@mail.gmail.com>
+ <CANDob0+XEHbYmp2PF-UW1EXRP6YbKw3Fn00th8u9A2R7XdCrJg@mail.gmail.com>
+ <20120821160019.GN17430@twin.jikos.cz>
+ <CANDob0LpwsWP=jcyMkxZor0_6AnFeHY6zt-Sp6V0HH+Pd2SH=w@mail.gmail.com>
+ <20120822143705.GR17430@twin.jikos.cz>
+ <CANDob0J40BuLhJ2g0Et+-Gq0Nu6V=QkgLfTPGRT5rQUQpBRQaA@mail.gmail.com>
+ <CANDob0+b2nPF7eRQ6wuQ0SwyuO2NDvfUM_R1-bbVRZ1FiHX0pQ@mail.gmail.com>
 MIME-Version: 1.0
-Content-Type: text/plain; charset="utf-8"
+Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <CANDob0+b2nPF7eRQ6wuQ0SwyuO2NDvfUM_R1-bbVRZ1FiHX0pQ@mail.gmail.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Update of the Documentation/filesystes/btrfs.txt file.
+On Wed, Aug 22, 2012 at 10:19:13AM -0700, Not Zippy wrote:
+> The full output of the btrfs-debug-tree is 190MB compressed, did you
+> want it still ?
 
-Signed-off-by: Goffredo Baroncelli <kreijack@inwind.it>
----
- 0 files changed
+That's not the biggest one I've received :) (2.5G xz compressed) Please
+note that it contains filenames, so you may want to filter them out
+with
 
-diff --git a/Documentation/filesystems/btrfs.txt b/Documentation/filesystems/btrfs.txt
-index 7671352..35840ab 100644
---- a/Documentation/filesystems/btrfs.txt
-+++ b/Documentation/filesystems/btrfs.txt
-@@ -89,3 +89,78 @@ btrfsck: do a limited check of the FS extent trees.
- btrfs-debug-tree: print all of the FS metadata in text form.  Example:
- 
- 	btrfs-debug-tree /dev/sda2 >& big_output_file
-+
-+
-+
-+	SYSFS SUPPORT
-+	=============
-+
-+If the option CONFIG_BTRFS_FS_SYSFS is enabled, BTRFS exports some 
-+information via the sysfs filesystem.
-+Todate these information are read-only.
-+
-+The information exported are related to both the devices and the filesystems.
-+When a devices is registred (for example via the btrfs filesystem scan 
-+command), BTRFS creates the following entries under /sys/fs/btrfs:
-+
-+/sys/fs/btrfs:
-+
-+	- devices			-> information per device basis
-+	- filesystem			-> information per filesystem basis
-+
-+/sys/fs/btrfs/devices/<device-UUID>:
-+
-+	- bytes_used
-+	- devid
-+	- disk_total_bytes
-+	- fsid				-> fielsystem UUID
-+	- generation
-+	- major				[*]
-+	- minor				[*]
-+	- missing
-+	- name				-> device name (eg: /dev/sda)
-+	- total_bytes
-+	- write_errors			-> error info
-+	- corruption_errors		-> error info
-+	- read_errors			-> error info
-+	- generation_errors		-> error info
-+	- flush_errors			-> error info
-+	- writeable
-+
-+[*] These information are available only after the mounting of the
-+filesystem.
-+
-+/sys/fs/btrfs/filesystem/<filesystem-UUID>/fs_info:
-+
-+	- balance_cancel_req		-> balance status information
-+	- balance_pause_req		-> balance status information
-+	- balance_running		-> balance status information
-+	- fs_state
-+	- generation
-+	- label				-> label of the filesystem
-+	- last_trans_committed
-+	- scrub_cancel_req		-> scrub status information
-+	- scrub_pause_req		-> scrub status information
-+	- scrubs_paused			-> scrub status information
-+	- scrubs_running		-> scrub status information
-+
-+/sys/fs/btrfs/filesystem/<filesystem-UUID>/fs_devices:
-+
-+	- latest_devid
-+	- latest_trans
-+	- missing_devices
-+	- num_can_discard
-+	- open_devices
-+	- opened
-+	- rw_devices
-+	- seeding
-+	- total_rw_bytes
-+
-+The filesystems information are split in two section (fs_info and fs_devices)
-+because the fs_devices entries are available after the scan of the device(s),
-+but the fs_info entries are available only after the mount of the 
-+filesystem.
-+
-+The link between the filesystem and the device(s) is the fsid == 
-+filesystem-UUID.
-+
+sed -e 's/\(.* name: \).*/\1FILENAME/'
 
+(though sometimes the filename can be useful to give further hints).
+
+> As far as the conditions, I was running a repo sync which I had
+> CTRL-Z, I then got distracted and mistakenly started the sync again
+> (not sure if you are familiar with repo command, it spawns git
+> processes to checkout project). The crash did not occur immediately
+> but it was probably within 2 minutes of me starting this second repo
+> sync. The lock up was bad enough that BUSIER did not reboot the PC, I
+> had to power down.
+
+Thanks. Does not seem to be doing anything special and uncommon. The
+hard power off could have caught the filesystem in some intermediate
+state (ie. a bug to resolve, this should not happen) or the disk wrote
+bad data. smartctl may show if there are hard erros on the disk.
+
+> After the patch to btrfsck, I got this error:
+> 
+> # ./work/builds/btrfs-progs/btrfsck --repair /dev/sda2
+[...]
+
+I'm afraid that the corrupted block confuses fsck too much.
+
+david

@@ -1,56 +1,39 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx1.fusionio.com ([66.114.96.30]:58070 "EHLO mx1.fusionio.com"
+Received: from mx2.fusionio.com ([66.114.96.31]:55947 "EHLO mx2.fusionio.com"
 	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1759645Ab2HXSlU (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Fri, 24 Aug 2012 14:41:20 -0400
-Received: from mail1.int.fusionio.com (mail1.int.fusionio.com [10.101.1.21]) by mx1.fusionio.com with ESMTP id NWBICmKmu5dPF2No (version=TLSv1 cipher=AES128-SHA bits=128 verify=NO) for <linux-btrfs@vger.kernel.org>; Fri, 24 Aug 2012 12:41:19 -0600 (MDT)
-From: Josef Bacik <jbacik@fusionio.com>
-To: <linux-btrfs@vger.kernel.org>
-Subject: [PATCH] Btrfs: fix deadlock with freeze and sync
-Date: Fri, 24 Aug 2012 14:46:31 -0400
-Message-ID: <1345833991-1601-1-git-send-email-jbacik@fusionio.com>
+	id S1752223Ab2HXSmL (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Fri, 24 Aug 2012 14:42:11 -0400
+Received: from mail1.int.fusionio.com (mail1.int.fusionio.com [10.101.1.21]) by mx2.fusionio.com with ESMTP id VWFRZSHbT6ZhwW1x (version=TLSv1 cipher=AES128-SHA bits=128 verify=NO) for <linux-btrfs@vger.kernel.org>; Fri, 24 Aug 2012 12:42:10 -0600 (MDT)
+Date: Fri, 24 Aug 2012 14:42:08 -0400
+From: Chris Mason <chris.mason@fusionio.com>
+To: Josef Bacik <jbacik@fusionio.com>
+CC: "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
+Subject: Re: [PATCH] Btrfs: turbo charge fsync
+Message-ID: <20120824184208.GA22819@shiny>
+References: <1345833808-1539-1-git-send-email-jbacik@fusionio.com>
 MIME-Version: 1.0
-Content-Type: text/plain
+Content-Type: text/plain; charset="us-ascii"
+In-Reply-To: <1345833808-1539-1-git-send-email-jbacik@fusionio.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-We can deadlock with freeze right now because we unconditionally start a
-transaction in our ->sync_fs() call.  To fix this just check and see if we
-have a running transaction to commit.  This saves us from the deadlock
-because at this point we'll have the umount sem for the sb so we're safe
-from freezes coming in after we've done our check.  With this patch the
-freeze xfstests no longer deadlocks.  Thanks,
+On Fri, Aug 24, 2012 at 12:43:28PM -0600, Josef Bacik wrote:
+> 
+>                 Original        Patched
+> SATA drive      82KB/s          140KB/s
+> Fusion drive    431KB/s         2532KB/s
+> 
+> So around 2-6 times faster depending on your hardware.  There are a few
+> corner cases, for example if you truncate at all we have to do it the old
+> way since there is no way to be sure what is in the log is ok.  This
+> probably could be done smarter, but if you write-fsync-truncate-write-fsync
+> you deserve what you get.  All this work is in RAM of course so if your
+> inode gets evicted from cache and you read it in and fsync it we'll do it
+> the slow way if we are still in the same transaction that we last modified
+> the inode in.
 
-Signed-off-by: Josef Bacik <jbacik@fusionio.com>
----
- fs/btrfs/super.c |   12 +++++++++---
- 1 files changed, 9 insertions(+), 3 deletions(-)
+I think I sent Liubo down the wrong path on this one, and Josef and I
+banged out some ideas for a different (hopefully less complex) way to
+solve the problem.  Josef, these results look fantastic.
 
-diff --git a/fs/btrfs/super.c b/fs/btrfs/super.c
-index 7b65fe8..950accc 100644
---- a/fs/btrfs/super.c
-+++ b/fs/btrfs/super.c
-@@ -849,11 +849,17 @@ int btrfs_sync_fs(struct super_block *sb, int wait)
- 
- 	btrfs_wait_ordered_extents(root, 0, 0);
- 
--	trans = btrfs_start_transaction(root, 0);
-+	spin_lock(&fs_info->trans_lock);
-+	if (!fs_info->running_transaction) {
-+		spin_unlock(&fs_info->trans_lock);
-+		return 0;
-+	}
-+	spin_unlock(&fs_info->trans_lock);
-+
-+	trans = btrfs_join_transaction(root);
- 	if (IS_ERR(trans))
- 		return PTR_ERR(trans);
--	ret = btrfs_commit_transaction(trans, root);
--	return ret;
-+	return btrfs_commit_transaction(trans, root);
- }
- 
- static int btrfs_show_options(struct seq_file *seq, struct dentry *dentry)
--- 
-1.7.7.6
-
+-chris

@@ -1,49 +1,109 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([222.73.24.84]:64589 "EHLO song.cn.fujitsu.com"
+Received: from cn.fujitsu.com ([222.73.24.84]:61663 "EHLO song.cn.fujitsu.com"
 	rhost-flags-OK-FAIL-OK-OK) by vger.kernel.org with ESMTP
-	id S1755346Ab2HXBmK (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 23 Aug 2012 21:42:10 -0400
-Message-ID: <5036DBD6.4040301@cn.fujitsu.com>
-Date: Fri, 24 Aug 2012 09:41:42 +0800
+	id S1755554Ab2HXDQl (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Thu, 23 Aug 2012 23:16:41 -0400
+Message-ID: <5036F1FB.80205@cn.fujitsu.com>
+Date: Fri, 24 Aug 2012 11:16:11 +0800
 From: Miao Xie <miaox@cn.fujitsu.com>
 Reply-To: miaox@cn.fujitsu.com
 MIME-Version: 1.0
 To: Linux Btrfs <linux-btrfs@vger.kernel.org>, xfs@oss.sgi.com
 CC: anand.jain@oracle.com
-Subject: [PATCH 2/3] xfstests: fix double set for SCRATCH_DEV when SCRATCH_DEV_POOL
- is set
+Subject: [PATCH 3/3] xfstests: fix wrong number of the required devices and
+ add independent device check for case 265
 Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-check script has moved the first device of SCRATCH_DEV_POOL and used it to set
-SCRATCH_DEV. But the case 265 does the same thing again when it includes
-common.rc. Fix it by setting SCRATCH_DEV just by check script.
+Case 265 need 4 devices to test RAID10, so we need 4 or more devices not 2.
+and it is better that these 4 devices are independent devices, especially
+the 2nd last one, so we add independent device check to check the devices
+in SCRATCH_DEV_POOL.
 
 Signed-off-by: Miao Xie <miaox@cn.fujitsu.com>
 ---
- common.config |    5 +++--
- 1 files changed, 3 insertions(+), 2 deletions(-)
+ 265       |    1 +
+ README    |    4 ++--
+ common.rc |   22 +++++++++++++++++++---
+ 3 files changed, 22 insertions(+), 5 deletions(-)
 
-diff --git a/common.config b/common.config
-index 7bed1c5..a35954b 100644
---- a/common.config
-+++ b/common.config
-@@ -232,12 +232,13 @@ fi
+diff --git a/265 b/265
+index ec8410c..947e65b 100755
+--- a/265
++++ b/265
+@@ -51,6 +51,7 @@ _supported_fs btrfs
+ _supported_os Linux
+ _require_scratch
+ _require_scratch_dev_pool
++_require_independent_scratch_dev_pool
+ _require_deletable_scratch_dev_pool
  
- # a btrfs tester will set only SCRATCH_DEV_POOL, we will put first of its dev
- # to SCRATCH_DEV and rest to SCRATCH_DEV_POOL to maintain the backward compatibility
--if [ ! -z "$SCRATCH_DEV_POOL" ]; then
-+if [ "$iam" == "check" -a ! -z "$SCRATCH_DEV_POOL" ]; then
-     if [ ! -z "$SCRATCH_DEV" ]; then
-         echo "common.config: Error: \$SCRATCH_DEV should be unset when \$SCRATCH_DEV_POOL is set"
-         exit 1
-     fi
--    SCRATCH_DEV=`echo $SCRATCH_DEV_POOL | awk '{print $1}'`
-+    # the user may forget to export SCRATCH_DEV when he/she set SCRATCH_DEV_POOL.
-+    export SCRATCH_DEV=`echo $SCRATCH_DEV_POOL | awk '{print $1}'`
-     SCRATCH_DEV_POOL=`echo $SCRATCH_DEV_POOL | awk '{ for (i = 2; i <= NF; i++) print $i}'`
- fi
+ # Test cases related to raid in btrfs
+diff --git a/README b/README
+index d81ede9..bb10dba 100644
+--- a/README
++++ b/README
+@@ -38,7 +38,7 @@ Preparing system for tests (IRIX and Linux):
+               not be run.
+               (SCRATCH and TEST must be two DIFFERENT partitions)
+               OR
+-        - for btrfs only: some btrfs test cases will need 3 or more independent
++        - for btrfs only: some btrfs test cases will need 4 or more independent
+               SCRATCH disks which should be set using SCRATCH_DEV_POOL (for eg:
+               SCRATCH_DEV_POOL="/dev/sda /dev/sdb /dev/sdc") with which
+               SCRATCH_DEV should be unused by the tester, and for the legacy
+@@ -50,7 +50,7 @@ Preparing system for tests (IRIX and Linux):
+         - setenv TEST_DIR "mount point of TEST PARTITION"   
+        	- optionally:
+              - setenv SCRATCH_DEV "device containing SCRATCH PARTITION" OR
+-               (btrfs only) setenv SCRATCH_DEV_POOL "to 3 or more SCRATCH disks for
++               (btrfs only) setenv SCRATCH_DEV_POOL "to 4 or more SCRATCH disks for
+                testing btrfs raid concepts"
+              - setenv SCRATCH_MNT "mount point for SCRATCH PARTITION"
+              - setenv TAPE_DEV "tape device for testing xfsdump"
+diff --git a/common.rc b/common.rc
+index 602513a..ede25fe 100644
+--- a/common.rc
++++ b/common.rc
+@@ -1699,12 +1699,14 @@ _require_scratch_dev_pool()
+ 		_notrun "this test requires a valid \$SCRATCH_DEV_POOL"
+ 	fi
  
+-	# btrfs test case needs 2 or more scratch_dev_pool; other FS not sure
++	# btrfs test case needs 4 or more scratch_dev_pool; other FS not sure
+ 	# so fail it
++	# common.config has moved the first device to SCRATCH_DEV, so
++	# SCRATCH_DEV_POOL should have 3 or more disks.
+ 	case $FSTYP in
+ 	btrfs)
+-		if [ "`echo $SCRATCH_DEV_POOL|wc -w`" -lt 2 ]; then
+-			_notrun "btrfs and this test needs 2 or more disks in SCRATCH_DEV_POOL"
++		if [ "`echo $SCRATCH_DEV_POOL|wc -w`" -lt 3 ]; then
++			_notrun "btrfs and this test needs 4 or more disks in SCRATCH_DEV_POOL"
+ 		fi
+ 	;;
+ 	*)
+@@ -1746,6 +1748,20 @@ _require_deletable_scratch_dev_pool()
+ 	done
+ }
+ 
++# We will check if the device is independent device.
++_require_independent_scratch_dev_pool()
++{
++	local i
++	local dev
++	for i in $SCRATCH_DEV_POOL; do
++		dev=${i/*\//}
++		[[ ! $dev == md* && $dev == *[0-9] ]] && \
++			_notrun "$i is not a independent device"
++		[[ $dev == md* && $dev == md[0-9]*p[0-9]* ]] && \
++			_notrun "$i is not a independent device"
++	done
++}
++
+ # We check for btrfs and (optionally) features of the btrfs command
+ _require_btrfs()
+ {
 -- 
 1.7.6.5

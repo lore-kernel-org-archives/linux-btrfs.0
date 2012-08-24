@@ -1,31 +1,65 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from twin.jikos.cz ([89.185.236.188]:44410 "EHLO twin.jikos.cz"
+Received: from smtp208.alice.it ([82.57.200.104]:58348 "EHLO smtp208.alice.it"
 	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1754172Ab2HXNfx (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Fri, 24 Aug 2012 09:35:53 -0400
-Date: Fri, 24 Aug 2012 15:33:48 +0200
-From: David Sterba <dave@jikos.cz>
-To: Robert Buhren <robert@robertbuhren.de>
-Cc: Jan Schmidt <list.btrfs@jan-o-sch.net>, linux-btrfs@vger.kernel.org,
-        Alexander Block <ablock84@googlemail.com>,
-        Arne Jansen <sensille@gmx.net>
-Subject: Re: [PATCH] Btrfs-progs: replace find_mount_root from send code
-Message-ID: <20120824133348.GY17430@twin.jikos.cz>
-Reply-To: dave@jikos.cz
-References: <5028D57F.5090803@robertbuhren.de>
- <1345463835-26636-1-git-send-email-list.btrfs@jan-o-sch.net>
- <5035EFDE.4090404@robertbuhren.de>
+	id S1759477Ab2HXN5U (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Fri, 24 Aug 2012 09:57:20 -0400
+Subject: [PATCH v1 0/4] BTRFS sysfs support
+To: linux-btrfs@vger.kernel.org
+From: Goffredo Baroncelli <kreijack@inwind.it>
+Cc: Stefan Behrens <sbehrens@giantdisaster.de>
+Date: Fri, 24 Aug 2012 15:58:01 +0200
+Message-ID: <20120824135322.20478.88578.stgit@venice.bhome>
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <5035EFDE.4090404@robertbuhren.de>
+Content-Type: text/plain; charset="utf-8"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Thu, Aug 23, 2012 at 10:54:54AM +0200, Robert Buhren wrote:
-> I'm on linux-3.6-rc2 and btrfs-progs from git.
+Hi all,
+The following series restores the BTRFS sysfs support. My idea is to
+exporting some information via sysfs to get rid of some ioctl(s) which
+are particular solution of a more general problem: exporting information
+from kernel space to user space.
 
-Please try it with Chris' for-linus branch, it contains a fair portion
-of send-related fixes and from brief look they may be related to the
-errors you see.
+These patches export basically the fields of the following structure:
+- btrfs_device
+- btrfs_fs_info
+- btrfs_fs_devices
 
-david
+You can read more about which information are exported reading the
+patch which contains an update of the btrfs.txt file (the last one).
+
+The goal of this attempt is to collect comments relating to
+which information we should export and which not or the sysfs structure.
+
+For now these information are read-only. In the future we could 
+consider the idea to allow updates: for example to change the 
+label of a filesystem.
+
+Comments are welcome.
+BR
+G.Baroncelli
+
+
+Changelog:
+
+v0:	First issue
+v1:	Source cleanup and replacing of the printk with pr_info/pr_warn/
+        pr_crit
+
+---
+
+Goffredo Baroncelli (4):
+      Add support for sysfs to btrfs.
+      Add hook for sysfs to btrfs.
+      Add a new Kconfig section to enable or disable the sysfs.
+      Btrfs sysfs support documentation.
+
+
+ fs/btrfs/Kconfig   |    9 
+ fs/btrfs/super.c   |    4 
+ fs/btrfs/sysfs.c   |  938 ++++++++++++++++++++++++++++++++++++++++++++++++++++
+ fs/btrfs/sysfs.h   |   31 ++
+ fs/btrfs/volumes.c |   10 -
+ 5 files changed, 986 insertions(+), 6 deletions(-)
+ create mode 100644 fs/btrfs/sysfs.h
+

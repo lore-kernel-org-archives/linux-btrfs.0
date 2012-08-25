@@ -1,154 +1,42 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-pb0-f46.google.com ([209.85.160.46]:64202 "EHLO
-	mail-pb0-f46.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1750732Ab2HYGX0 (ORCPT
+Received: from mail.robertbuhren.de ([91.190.225.190]:33072 "EHLO
+	mail.robertbuhren.de" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1756035Ab2HYIYt (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Sat, 25 Aug 2012 02:23:26 -0400
-Received: by pbbrr13 with SMTP id rr13so4663012pbb.19
-        for <linux-btrfs@vger.kernel.org>; Fri, 24 Aug 2012 23:23:25 -0700 (PDT)
+	Sat, 25 Aug 2012 04:24:49 -0400
+Message-ID: <50388BBF.70903@robertbuhren.de>
+Date: Sat, 25 Aug 2012 10:24:31 +0200
+From: Robert Buhren <robert@robertbuhren.de>
 MIME-Version: 1.0
-In-Reply-To: <50378C73.7040901@oracle.com>
-References: <5020D84E.4010900@oracle.com>
-	<CAHf9xvbMRyzXbhDtUUcqimA6+RCNCnvE=TtsU5k4PAGcnz3akQ@mail.gmail.com>
-	<50378C73.7040901@oracle.com>
-Date: Sat, 25 Aug 2012 08:23:25 +0200
-Message-ID: <CAB9VWqCHdh_-TSPovszJVCz4R2s8B6zOjA5mJ87Q=xKB+sKZPQ@mail.gmail.com>
-Subject: Re: [RFC PATCH 0/5] btrfs-progs: snapshot diff function
-From: Alexander Block <ablock84@googlemail.com>
-To: jeff.liu@oracle.com
-Cc: Alex Lyakas <alex.bolshoy.btrfs@gmail.com>,
-        "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
-Content-Type: text/plain; charset=ISO-8859-1
+To: Jan Schmidt <list.btrfs@jan-o-sch.net>, linux-btrfs@vger.kernel.org,
+        Alexander Block <ablock84@googlemail.com>,
+        Arne Jansen <sensille@gmx.net>
+Subject: Re: [PATCH] Btrfs-progs: replace find_mount_root from send code
+References: <5028D57F.5090803@robertbuhren.de> <1345463835-26636-1-git-send-email-list.btrfs@jan-o-sch.net> <5035EFDE.4090404@robertbuhren.de> <20120824133348.GY17430@twin.jikos.cz>
+In-Reply-To: <20120824133348.GY17430@twin.jikos.cz>
+Content-Type: text/plain; charset=ISO-8859-1; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Fri, Aug 24, 2012 at 4:15 PM, Jeff Liu <jeff.liu@oracle.com> wrote:
-> Hi Alex,
+On 24.08.2012 15:33, David Sterba wrote:
+> On Thu, Aug 23, 2012 at 10:54:54AM +0200, Robert Buhren wrote:
+>> I'm on linux-3.6-rc2 and btrfs-progs from git.
+> Please try it with Chris' for-linus branch, it contains a fair portion
+> of send-related fixes and from brief look they may be related to the
+> errors you see.
 >
-> Thanks for taking a look.
->
-> On 08/24/2012 09:09 PM, Alex Lyakas wrote:
->
->> Hi Jeff,
->> how do you see this snapshot-diff functionality vs the send/receive
->> functionality that was recently added? I think that the binary stream
->> that the send code produces, can be interpreted by printing out text
->> messages, which will essentially give the same information (although
->> much more detailed) as your snapshot-diff tool.
->
-> send/receive has not yet implemented when I working on this feature(back to the end of last year).
-> looks there really has some duplicate efforts.
->
-> Just as you said, the produced stream of send need to interpret to show readable info, if the binary stream is
-> became huge enough, maybe that will make some silly user crying like me :).
-> Also, it is mainly focus on backup purpose IMHO, please correct me if I missing something in this point.
->
-> The diff utility is designed to list any changes between two snapshots in a straightforward way consider the command interface,
-> it also can be improved to show the differences at a given time range.
->
-> But sure, send/receive is just awesome, if we can introduce a interpreted script which do same thing to
-> make end user's life easier, that would be fine.
->
-> Thanks,
-> -Jeff
->
->> Apologies if I somehow misunderstood what your snapshot-diff code does.
->>
->> Thanks,
->> Alex.
->>
->>
->> On Tue, Aug 7, 2012 at 11:56 AM, Jeff Liu <jeff.liu@oracle.com> wrote:
->>> Hello,
->>>
->>> I've done a prototype implementation of snapshot diff utility many months ago.
->>> It was originally meant to analyze the differences between two snapshots which are
->>> inherited from the same subvolume/snapshot.
->>>
->>> Moreover, the upstream LXC userland tools has been released with a dedicated template
->>> to create new containers combine with btrfs subvolume/snapshot create function, so this
->>> path set might be useful if someone is suffering from a broken container guest(it was
->>> cloned from a health one in previous but it does not work with some configurations now).
->>> In this case, this feature could works as an assistant to help investigating the root
->>> cause by listing those changed files from the snapshot that the container resides.
->>>
->>> This patch set works to three kinds of change for now.
->>> - new_file: new created files at the destination snapshot.
->>>
->>> - removed_file: those files are still resides on source subvolume/snapshot but they have
->>>                 been removed from the destination.
->>>
->>> - updated_file: files are resides on both subvolumes/snapshots, but they might be changed.
->>>
->>> Currently, the user could do diff business on any two subvolumes/snapshots, if the destination
->>> snapshot is not inherited from the same subvolume/snapshot upon the source one, he must be
->>> surprised by the results, so it's better to improve it with pre-check for that if possible.
->>>
->>> Another issue is,
->>> - if we created some new files or updated some existing files under the source snapshot,
->>>   they will be marked as REMOVED/UPDATED out of the source from the destination snapshot's
->>>   point of view, so the results might looks a bit strange.
->>>
->>>
->>> A quick demo:
->>> root@kdev:/btrfs# btrfs subvolume diff-snapshot one two
->>> [REMOVED REGFILE] one/regfile_in_one objectid 264 transid 50
->>> [REMOVED DIR] one/dir_02_at_one objectid 262 transid 36
->>> [REMOVED REGFILE] one/dir_02_at_one/file_at_dir02_one objectid 263 transid 37
->>> [REMOVED DIR] one/dir_at_one objectid 258 transid 29
->>> [REMOVED REGFILE] one/dir_at_one/file_02_at_one_dir objectid 260 transid 32
->>> [REMOVED REGFILE] one/dir_at_one/file_03_at_one_dir objectid 261 transid 35
->>> [REMOVED REGFILE] one/dir_at_one/file_at_one_dir objectid 259 transid 30
->>> [REMOVED REGFILE] one/file_at_one objectid 257 transid 26
->>> [NEW REGFILE] two/regfile_in_two objectid 265 transid 50
->>> [NEW DIR] two/dir_at_two objectid 262 transid 40
->>> [NEW REGFILE] two/dir_at_two/file01_at_dir_of_two objectid 263 transid 41
->>> [NEW SYMLINK] two/dir_at_two/passwd objectid 264 transid 42
->>> [NEW REGFILE] two/file_02 objectid 258 transid 23
->>> [NEW REGFILE] two/file_03 objectid 270 transid 68
->>> [NEW REGFILE] two/file_04 objectid 275 transid 68
->>>
->>>
->>> Any comments are appreciated!
->>>
->>> Thanks,
->>> -Jeff
->>>
->>>
->>>  Makefile         |    2 +-
->>>  btrfs-list.c     |    3 +-
->>>  cmds-subvolume.c |   90 +++++
->>>  diff-snapshot.c  | 1026 ++++++++++++++++++++++++++++++++++++++++++++++++++++++
->>>  diff-snapshot.h  |   47 +++
->>>  5 files changed, 1165 insertions(+), 3 deletions(-)
->>>
->>>
->>>
->>>
->>>
->>>
->>>
->>>
->>> --
->>> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
->>> the body of a message to majordomo@vger.kernel.org
->>> More majordomo info at  http://vger.kernel.org/majordomo-info.html
->> --
->> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
->> the body of a message to majordomo@vger.kernel.org
->> More majordomo info at  http://vger.kernel.org/majordomo-info.html
->
->
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+> david
+Hi David,
 
-My idea was to introduce new "instructions" to the stream later which
-could be activated using a flag in the ioctl structure. These
-instructions would not be real instruction but diff statements. They
-would contain the plain results as given by btrfs_compare_trees. So we
-would have the information which tree items were
-added/removed/changed. As an alternative, this could be a new ioctl.
+i just tried it with a kernel from the "for-linus" branch. But i still 
+get the same error.
+Just to be sure:
+You ment this branch: 
+http://git.kernel.org/?p=linux/kernel/git/mason/linux-btrfs.git;a=shortlog;h=refs/heads/for-linus
 
-Greetings from Ko Tao :)
+right?
+
+
+Regards,
+
+Robert

@@ -1,62 +1,56 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail1.trendhosting.net ([195.8.117.5]:55548 "EHLO
-	mail1.trendhosting.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1751957Ab2H0Oxa (ORCPT
+Received: from rcsinet15.oracle.com ([148.87.113.117]:48833 "EHLO
+	rcsinet15.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1751653Ab2H0Pbu (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 27 Aug 2012 10:53:30 -0400
-Received: from localhost (localhost [127.0.0.1])
-	by mail1.trendhosting.net (Postfix) with ESMTP id DD5D71511F
-	for <linux-btrfs@vger.kernel.org>; Mon, 27 Aug 2012 16:43:27 +0100 (BST)
-Received: from mail1.trendhosting.net ([127.0.0.1])
-	by localhost (thp003.trendhosting.net [127.0.0.1]) (amavisd-new, port 10024)
-	with LMTP id h2hwoTGO8sB1 for <linux-btrfs@vger.kernel.org>;
-	Mon, 27 Aug 2012 16:43:21 +0100 (BST)
-Message-ID: <503B89E1.7030809@pocock.com.au>
-Date: Mon, 27 Aug 2012 16:53:21 +0200
-From: Daniel Pocock <daniel@pocock.com.au>
+	Mon, 27 Aug 2012 11:31:50 -0400
+Message-ID: <503B92DD.4010804@oracle.com>
+Date: Mon, 27 Aug 2012 23:31:41 +0800
+From: Liu Bo <bo.li.liu@oracle.com>
 MIME-Version: 1.0
-To: linux-btrfs@vger.kernel.org
-Subject: Re: interaction with hardware RAID?
-References: <5034BD0D.8050706@pocock.com.au>
-In-Reply-To: <5034BD0D.8050706@pocock.com.au>
+To: Stefan Behrens <sbehrens@giantdisaster.de>
+CC: tubalcane@earthlink.net, linux-btrfs@vger.kernel.org
+Subject: Re: crash while trying to access corrupt fs
+References: <alpine.LFD.2.02.1208261605440.5416@bubblegum> <503B561A.1060203@giantdisaster.de>
+In-Reply-To: <503B561A.1060203@giantdisaster.de>
 Content-Type: text/plain; charset=ISO-8859-1
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
+On 08/27/2012 07:12 PM, Stefan Behrens wrote:
+> On Sun, 26 Aug 2012 16:07:33 -0400 (EDT), tubalcane wrote:
+>> I'm primarily interested in the block level checksums of files and the
+>> scrubbing
+>> feature to detect corrupt files.  Currently I use ext4 and create and keep
+>> md5sums of everything which is tedious but I care about my data (quadruple
+>> backups including offsite)
+>>
+[...]
+>> Aug 25 11:37:24 bubblegum kernel: [ 1183.835479]  [<ffffffffa04d344a>]
+>> btrfs_find_device_for_logical+0x4a/0xa0 [btrfs]
+>> Aug 25 11:37:24 bubblegum kernel: [ 1183.836717]  [<ffffffffa04c6955>]
+>> end_bio_extent_readpage+0x105/0xa80 [btrfs]
+>> Aug 25 11:37:24 bubblegum kernel: [ 1183.837938]  [<ffffffff81173569>] ?
+>> kfree+0x139/0x160
+>> Aug 25 11:37:24 bubblegum kernel: [ 1183.839157]  [<ffffffff811baaad>]
+>> bio_endio+0x1d/0x40
+>> Aug 25 11:37:24 bubblegum kernel: [ 1183.840395]  [<ffffffffa049be81>]
+>> end_workqueue_fn+0x41/0x50 [btrfs]
+>> Aug 25 11:37:24 bubblegum kernel: [ 1183.841635]  [<ffffffffa04d4d46>]
+>> worker_loop+0x136/0x580 [btrfs]
+> 
+> That crash is a bug which I have introduced with the IO error stats. It can happen after checksum errors are detected.
+> I'll send a patch to (temporarily) remove the counting for checksum errors in the IO error stats.
 
-Just following up on this... does anyone know if any of this is
-technically feasible even if not implemented/supported today?
+Just out of curiosity, isn't it fixable due to your design, Stefan?
+Why not try to fix the bug?
 
-Also, do any hardware RAID1 implementations offer something like the
-full btrfs checksum functionality?
+thanks,
+liubo
 
-I've seen HP promoting their `Advanced Data Mirroring' in new Smart
-Array products, but I've got no idea if that is just a marketing
-gimmick, like the way they use the name `Advanced Data Guard' as a
-moniker for RAID6
-
-Looking around in Google, I was pleasantly disturbed to find so many web
-sites (including some vendors) using the term `checksum' to refer to a
-parity bit
-
-On 22/08/12 13:05, Daniel Pocock wrote:
-> 
-> 
-> 
-> It is well documented that btrfs data recovery (after silent corruption)
-> is dependent on the use of btrfs's own RAID1.
-> 
-> However, I'm curious about whether any hardware RAID vendors are
-> contemplating ways to integrate more closely with btrfs, for example,
-> such that when btrfs detects a bad checksum, it would be able to ask the
-> hardware RAID controller to return all alternate copies of the block.
-> 
-> Is this technically possible within any hardware RAID device today, even
-> though not implemented in btrfs?
-> 
-> Has there been any suggestion that vendors would support this in future,
-> presumably for the benefit of btrfs, ZFS and other checksumming filesystems?
 > --
 > To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
 > the body of a message to majordomo@vger.kernel.org
 > More majordomo info at  http://vger.kernel.org/majordomo-info.html
+> 
+

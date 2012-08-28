@@ -1,213 +1,123 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from smtp206.alice.it ([82.57.200.102]:59392 "EHLO smtp206.alice.it"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1755080Ab2HaVg4 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Fri, 31 Aug 2012 17:36:56 -0400
-Message-ID: <50412EA7.7090005@libero.it>
-Date: Fri, 31 Aug 2012 23:37:43 +0200
-From: Goffredo Baroncelli <kreijack@libero.it>
-Reply-To: kreijack@inwind.it
+Received: from smtprelay05.ispgateway.de ([80.67.31.93]:45550 "EHLO
+	smtprelay05.ispgateway.de" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1752302Ab2H1T6X (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>);
+	Tue, 28 Aug 2012 15:58:23 -0400
+Received: from [84.145.154.32] (helo=hermione.invalid)
+	by smtprelay05.ispgateway.de with esmtpsa (TLSv1:AES128-SHA:128)
+	(Exim 4.68)
+	(envelope-from <berberic@fmi.uni-passau.de>)
+	id 1T6Rq9-0002z0-Ka
+	for linux-btrfs@vger.kernel.org; Tue, 28 Aug 2012 21:52:45 +0200
+Received: from berberic by hermione.invalid with local (Exim 4.80)
+	(envelope-from <berberic@fmi.uni-passau.de>)
+	id 1T6Rq8-0005Zs-Nt
+	for linux-btrfs@vger.kernel.org; Tue, 28 Aug 2012 21:52:44 +0200
+Date: Tue, 28 Aug 2012 21:52:44 +0200
+From: M G Berberich <btrfs@oss.m-berberich.de>
+To: linux-btrfs@vger.kernel.org
+Subject: =?utf-8?B?4oCcQnVn4oCdLXJlcG9ydA==?= =?utf-8?Q?=3A?= inconsistency
+ kernel <-> tools
+Message-ID: <20120828195244.GA15021@invalid>
 MIME-Version: 1.0
-To: Yan Zheng <zheng.yan@oracle.com>
-CC: M G Berberich <btrfs@oss.m-berberich.de>, linux-btrfs@vger.kernel.org,
-        Chris Mason <chris.mason@oracle.com>
-Subject: =?UTF-8?B?W0JUUkZTLVBST0dTXVtCVUddW1BBVENIXSBJbmNvcnJlY3QgZGV0ZWM=?=
- =?UTF-8?B?dGlvbiBvZiBhIHJlbW92ZWQgZGV2aWNlICBbd2FzIFJlOiDigJxCdWfigJ0tcmU=?=
- =?UTF-8?B?cG9ydDogaW5jb25zaXN0ZW5jeSBrZXJuZWwgPC0+IHRvb2xzXQ==?=
-References: <20120828195244.GA15021@invalid> <503FAFF5.80204@libero.it> <50410BBE.6030601@libero.it>
-In-Reply-To: <50410BBE.6030601@libero.it>
-Content-Type: multipart/mixed;
- boundary="------------040101030603060502000604"
+Content-Type: text/plain; charset=utf-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-This is a multi-part message in MIME format.
---------------040101030603060502000604
-Content-Type: text/plain; charset=UTF-8; format=flowed
-Content-Transfer-Encoding: 7bit
+Hello,
 
-Hi all, Yan,
+We had set up a btrfs-fs over 6 hot-plugable SAS-disks for
+testing and got it into a state where kernel and btrfs-tools do not
+agree any more about the state of the filesystem.
 
-On 08/31/2012 09:08 PM, Goffredo Baroncelli wrote:
-> However making a test I found both the behaviours: sometime the removed
-> disk disappears from the output of "btrfs fi show" and sometime not...
->
-> May be that there is a bug somewhere...
+We do not remember exaclty what we did, but roughly it was something
+like this (on the running system). THIS IS FROM MEMORY!
+
+(1) pulled out one disk
+(2) removed disk from btrfs
+(3) rebalanced btrfs
+(4) pulled out another disk
+(5) removed disk from btrfs
+(6) rebalanced btrfs
+
+This went fine sofar.
+
+(7) reinserted disk (and rebooted)
+    At some point before reboot the first 10 sectors of one disk
+    were zeroed to test if the disk gets removed from the btrfs.
+
+Now btrfs-tools showed:
+
+---------------------------------------------------------------------------
+# btrfs fi show                      
+failed to read /dev/sr0
+Label: 'BTRFS_RAID'  uuid: 807193fd-17de-4088-9a54-3e7cacdc89db
+        Total devices 6 FS bytes used 3.07GB
+        devid    4 size 931.00GB used 75.00GB path /dev/sdf
+        devid    5 size 931.00GB used 324.03GB path /dev/sde
+        devid    6 size 931.00GB used 83.03GB path /dev/sdd
+        devid    3 size 931.00GB used 326.03GB path /dev/sdc
+        devid    2 size 931.00GB used 326.03GB path /dev/sdb
+        devid    1 size 931.00GB used 324.04GB path /dev/sda
+
+Btrfs Btrfs v0.19
+---------------------------------------------------------------------------
+
+As far as we can tell, only four of the disks are considered part of
+the btrfs by kernel. There were only four “btrfs: bdev”-lines in dmesg
+and only four disks took part in balancing. “btrfs device scan” says:
+
+  unable to scan the device '/dev/sdd' - Device or resource busy
+
+and balance does not balance theses two devices (of 6)
+
+It was neither possible to remove the disk from the btrfs via “btrfs
+device delete” nor adding them via “btrfs device add”.
+
+(8) a colleague swaped the two disk
+
+Now btrfs-tools showed:
+
+---------------------------------------------------------------------------
+# btrfs fi show
+failed to read /dev/sr0
+Label: 'BTRFS_RAID'  uuid: 807193fd-17de-4088-9a54-3e7cacdc89db
+        Total devices 5 FS bytes used 3.01GB
+        devid    6 size 931.00GB used 83.03GB path /dev/sdf
+        devid    4 size 931.00GB used 75.00GB path /dev/sdd
+        devid    5 size 931.00GB used 325.03GB path /dev/sde
+        devid    3 size 931.00GB used 326.03GB path /dev/sdc
+        devid    2 size 931.00GB used 325.03GB path /dev/sdb
+        devid    1 size 931.51GB used 326.04GB path /dev/sda
+
+Btrfs Btrfs v0.19
+---------------------------------------------------------------------------
+
+Claiming the btrfs has 5 disk, but listing 6 disks out of 5 (6 of 5).
+
+He finally managed to get the btrfs complete again by overwriting the
+first 100G of the two disk. After this the btrfs-tools (correctly)
+stated a filesystem with 4 disk and it was possible to add the two
+disk again.
 
 
-I became crazy looking at this bug. I found that a debian package raises 
-the bug, but when I compiled the source by hand the bug disappeared... 
-Finally I discovered that this bug depends by an uninitialized variable; 
-this lead to the unpredictable behaviour.
+Assumption:
+kernel and btrfs do not share the same view of the filesystem.
 
-The problem is that when a device is removed, the function 
-btrfs_read_dev_super() should ignore it. In fact the kernel clear the 
-magic number in the *first* superblock. However the function 
-btrfs_read_dev_super() checks also the backup superblocks and when it 
-found a valid one, the function returns success.
+In this state commands to repair the filesystem do not work, because
+they are either rejected by the tools or by the kernel.
 
-Lukely (?) this function fails very often because the fsid of the backup 
-superblock are checked against an uninitialized buffer. However when 
-this check has success this device is considered suitable even tough it 
-was removed.
+A tool that allows a disk/partition to be marked as not-a-btrfs-part
+would be nice.
 
-The BUG is in the function btrfs_read_dev_super():
+A “/proc/btrfs” showing the kernels view of the filesystem would be
+usefull.
 
-
-int btrfs_read_dev_super(int fd, struct btrfs_super_block *sb, u64 
-sb_bytenr)
-{
-         u8 fsid[BTRFS_FSID_SIZE];
-[...]
-
-line 933:
-
-         for (i = 0; i < BTRFS_SUPER_MIRROR_MAX; i++) {
-                 bytenr = btrfs_sb_offset(i);
-                 ret = pread64(fd, &buf, sizeof(buf), bytenr);
-                 if (ret < sizeof(buf))
-                         break;
-
-                 if (btrfs_super_bytenr(&buf) != bytenr ||
-                     strncmp((char *)(&buf.magic), BTRFS_MAGIC,
-                             sizeof(buf.magic)))
-                         continue;
-
-                 if (i == 0)
-                         memcpy(fsid, buf.fsid, sizeof(fsid));
-                 else if (memcmp(fsid, buf.fsid, sizeof(fsid)))
-                         continue;
-
-                 if (btrfs_super_generation(&buf) > transid) {
-                         memcpy(sb, &buf, sizeof(*sb));
-                         transid = btrfs_super_generation(&buf);
-                 }
-         }
-
-
-When a device is removed, the *first* superblock magic field is zeroed 
-so the first check "strncmp((char *)(&buf.magic), BTRFS_MAGIC,..." fails 
-, "i" is increased, and the "continue" statement is execute.
-Then the check "memcmp(fsid...." became unreliable in the next iteration 
-because the fsid variable is not initialized.
-
-To me the test is unclear: what is the purpose to continue when the 
-superblocks (the original one and its backup) refer to different fsid: 
-there is something wrong which require an user decision...
-May be that Yan added this check (see commit 
-50860d6e31c28cf4789ef099729dfbce2108620a ) to converting from different 
-format ? Yan do you remember something about this code ?
-
-The enclosed patch corrects the initialization of the fsid variable; 
-morover if the fsid are different between the superblocks (the original 
-one and its backup) the function fails because the device cannot be 
-trusted. Finally it is handled the special case when the magic fields is 
-zeroed in the *first* superblock. In this case the device is skipped.
-
-BR
-G.Baroncelli
+	MfG
+	bmg
 
 -- 
-Signed-off-by: Goffredo Baroncelli <kreijack@inwind.it>
-
-diff --git a/disk-io.c b/disk-io.c
-index b21a87f..82fc3b8 100644
---- a/disk-io.c
-+++ b/disk-io.c
-@@ -910,6 +910,7 @@ struct btrfs_root *open_ctree_fd(int fp, const char 
-*path, u64 sb_bytenr,
-  int btrfs_read_dev_super(int fd, struct btrfs_super_block *sb, u64 
-sb_bytenr)
-  {
-  	u8 fsid[BTRFS_FSID_SIZE];
-+	int fsid_is_initialized = 0;
-  	struct btrfs_super_block buf;
-  	int i;
-  	int ret;
-@@ -936,15 +937,26 @@ int btrfs_read_dev_super(int fd, struct 
-btrfs_super_block *sb, u64 sb_bytenr)
-  		if (ret < sizeof(buf))
-  			break;
-
--		if (btrfs_super_bytenr(&buf) != bytenr ||
--		    strncmp((char *)(&buf.magic), BTRFS_MAGIC,
-+		if (btrfs_super_bytenr(&buf) != bytenr )
-+			continue;
-+		/* if magic is NULL, the device was removed */
-+		if (buf.magic == 0 && i==0)
-+			return -1;
-+		if (strncmp((char *)(&buf.magic), BTRFS_MAGIC,
-  			    sizeof(buf.magic)))
-  			continue;
-
--		if (i == 0)
-+		if (!fsid_is_initialized){
-  			memcpy(fsid, buf.fsid, sizeof(fsid));
--		else if (memcmp(fsid, buf.fsid, sizeof(fsid)))
--			continue;
-+			fsid_is_initialized = 1;
-+		} else if (memcmp(fsid, buf.fsid, sizeof(fsid))) {
-+			/*
-+			 * the superblocks (the original one and
-+			 * its backups) contain data of different
-+			 * filesystems -> the disk cannot be trusted
-+			 */
-+			return -1;
-+		}
-
-  		if (btrfs_super_generation(&buf) > transid) {
-  			memcpy(sb, &buf, sizeof(*sb));
-
---------------040101030603060502000604
-Content-Type: text/x-patch;
- name="btrfs_read_dev_super-bug.patch"
-Content-Transfer-Encoding: 7bit
-Content-Disposition: inline;
- filename="btrfs_read_dev_super-bug.patch"
-
-diff --git a/disk-io.c b/disk-io.c
-index b21a87f..82fc3b8 100644
---- a/disk-io.c
-+++ b/disk-io.c
-@@ -910,6 +910,7 @@ struct btrfs_root *open_ctree_fd(int fp, const char *path, u64 sb_bytenr,
- int btrfs_read_dev_super(int fd, struct btrfs_super_block *sb, u64 sb_bytenr)
- {
- 	u8 fsid[BTRFS_FSID_SIZE];
-+	int fsid_is_initialized = 0;
- 	struct btrfs_super_block buf;
- 	int i;
- 	int ret;
-@@ -936,15 +937,26 @@ int btrfs_read_dev_super(int fd, struct btrfs_super_block *sb, u64 sb_bytenr)
- 		if (ret < sizeof(buf))
- 			break;
- 
--		if (btrfs_super_bytenr(&buf) != bytenr ||
--		    strncmp((char *)(&buf.magic), BTRFS_MAGIC,
-+		if (btrfs_super_bytenr(&buf) != bytenr )
-+			continue;
-+		/* if magic is NULL, the device was removed */
-+		if (buf.magic == 0 && i==0)
-+			return -1;
-+		if (strncmp((char *)(&buf.magic), BTRFS_MAGIC,
- 			    sizeof(buf.magic)))
- 			continue;
- 
--		if (i == 0)
-+		if (!fsid_is_initialized){
- 			memcpy(fsid, buf.fsid, sizeof(fsid));
--		else if (memcmp(fsid, buf.fsid, sizeof(fsid)))
--			continue;
-+			fsid_is_initialized = 1;
-+		} else if (memcmp(fsid, buf.fsid, sizeof(fsid))) {
-+			/* 
-+			 * the superblocks (the original one and
-+			 * its backups) contain data of different
-+			 * filesystems -> the disk cannot be trusted
-+			 */
-+			return -1;
-+		}
- 
- 		if (btrfs_super_generation(&buf) > transid) {
- 			memcpy(sb, &buf, sizeof(*sb));
-
---------------040101030603060502000604--
+„Des is völlig wurscht, was heut beschlos- | M G Berberich
+ sen wird: I bin sowieso dagegn!“          | berberic@fmi.uni-passau.de
+(SPD-Stadtrat Kurt Schindler; Regensburg)  | www.fmi.uni-passau.de/~berberic

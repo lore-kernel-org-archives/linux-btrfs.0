@@ -1,40 +1,96 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.fusionio.com ([66.114.96.31]:40165 "EHLO mx2.fusionio.com"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1754322Ab2H0W3Z (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 27 Aug 2012 18:29:25 -0400
-Date: Mon, 27 Aug 2012 18:29:22 -0400
-From: Josef Bacik <jbacik@fusionio.com>
-To: Sage Weil <sage@inktank.com>
-CC: Josef Bacik <JBacik@fusionio.com>,
-        "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
-Subject: Re: [PATCH] Btrfs: pass lockdep rwsem metadata to async commit
- transaction
-Message-ID: <20120827222922.GA3310@localhost.localdomain>
-References: <alpine.DEB.2.00.1208241439490.26910@cobra.newdream.net>
- <alpine.DEB.2.00.1208241545040.26910@cobra.newdream.net>
- <20120826211349.GA2305@localhost.localdomain>
- <alpine.DEB.2.00.1208271446580.26910@cobra.newdream.net>
+Received: from acsinet15.oracle.com ([141.146.126.227]:27234 "EHLO
+	acsinet15.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1755091Ab2H1AWK (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>);
+	Mon, 27 Aug 2012 20:22:10 -0400
+Message-ID: <503C0F2A.9040308@oracle.com>
+Date: Tue, 28 Aug 2012 08:22:02 +0800
+From: Liu Bo <bo.li.liu@oracle.com>
 MIME-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-In-Reply-To: <alpine.DEB.2.00.1208271446580.26910@cobra.newdream.net>
+To: Josef Bacik <jbacik@fusionio.com>
+CC: "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
+Subject: Re: [PATCH 2/2] Btrfs: improve fsync by filtering extents that we
+ want
+References: <1346086340-14776-1-git-send-email-bo.li.liu@oracle.com> <1346086340-14776-2-git-send-email-bo.li.liu@oracle.com> <20120827171240.GC4048@localhost.localdomain>
+In-Reply-To: <20120827171240.GC4048@localhost.localdomain>
+Content-Type: text/plain; charset=ISO-8859-1
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Mon, Aug 27, 2012 at 04:05:37PM -0600, Sage Weil wrote:
-> On Sun, 26 Aug 2012, Josef Bacik wrote:
-> > On Fri, Aug 24, 2012 at 04:47:56PM -0600, Sage Weil wrote:
-> > > Sadly, now I hit another one:
-> > >
-> > 
-> > Oh haha you need to set current->journal_info to the trans you have before you
-> > call commit_transaction in do_async_commit.  Thanks,
+On 08/28/2012 01:12 AM, Josef Bacik wrote:
+> On Mon, Aug 27, 2012 at 10:52:20AM -0600, Liu Bo wrote:
+>> This is based on Josef's "Btrfs: turbo charge fsync".
+>>
+>> The above Josef's patch performs very good in random sync write test,
+>> because we won't have too much extents to merge.
+>>
+>> However, it does not performs good on the test:
+>> dd if=/dev/zero of=foobar bs=4k count=12500 oflag=sync
+>>
+>> The reason is when we do sequencial sync write, we need to merge the
+>> current extent just with the previous one, so that we can get accumulated
+>> extents to log:
+>>
+>> A(4k) --> AA(8k) --> AAA(12k) --> AAAA(16k) ...
+>>
+>> So we'll have to flush more and more checksum into log tree, which is the
+>> bottleneck according to my tests.
+>>
+>> But we can avoid this by telling fsync the real extents that are needed
+>> to be logged.
+>>
+>> With this, I did the above dd sync write test (size=50m),
+>>
+>>          w/o (orig)   w/ (josef's)   w/ (this)
+>> SATA      104KB/s       109KB/s       121KB/s
+>> ramdisk   1.5MB/s       1.5MB/s       10.7MB/s (613%)
+>>
+>> Signed-off-by: Liu Bo <bo.li.liu@oracle.com>
+>> ---
+>>  fs/btrfs/extent_map.c |   20 ++++++++++++++++++++
+>>  fs/btrfs/extent_map.h |    2 ++
+>>  fs/btrfs/inode.c      |    1 +
+>>  fs/btrfs/tree-log.c   |    6 +++---
+>>  4 files changed, 26 insertions(+), 3 deletions(-)
+>>
+>> diff --git a/fs/btrfs/extent_map.c b/fs/btrfs/extent_map.c
+>> index 1fe82cf..ac606f0 100644
+>> --- a/fs/btrfs/extent_map.c
+>> +++ b/fs/btrfs/extent_map.c
+>> @@ -203,6 +203,8 @@ static void try_merge_map(struct extent_map_tree *tree, struct extent_map *em)
+>>  			em->block_start = merge->block_start;
+>>  			merge->in_tree = 0;
+>>  			if (merge->generation > em->generation) {
+>> +				em->mod_start = em->start;
+>> +				em->mod_len = em->len;
 > 
-> Ah, makes sense.  But now...
->
+> Shouldn't this be
+> 
+> em->mod_start = merge->start;
+> em->mod_len += merge_len;
+> 
 
-Um so I don't think we need to be holding cleanup_work_sem() in
-run_delayed_iputs(), it's meant to protect the running of the orphan cleanup.
-So just remove it in btrfs_run_delayed_iputs() and see how that goes?  Thanks,
+They just do the same thing.
 
-Josef
+There is already a 
+em->start = merge->start;
+em->len += merge_len
+
+>>  				em->generation = merge->generation;
+>>  				list_move(&em->list, &tree->modified_extents);
+>>  			}
+>> @@ -222,6 +224,7 @@ static void try_merge_map(struct extent_map_tree *tree, struct extent_map *em)
+>>  		rb_erase(&merge->rb_node, &tree->map);
+>>  		merge->in_tree = 0;
+>>  		if (merge->generation > em->generation) {
+>> +			em->mod_len = em->len;
+> 
+> And this should be em->mod_len += em->len?
+> 
+
+No, em->len has already contained the merge's len.
+
+thanks,
+liubo
+

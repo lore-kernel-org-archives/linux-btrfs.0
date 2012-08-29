@@ -1,111 +1,183 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-pb0-f46.google.com ([209.85.160.46]:38868 "EHLO
-	mail-pb0-f46.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1754878Ab2HPOZa (ORCPT
+Received: from rcsinet15.oracle.com ([148.87.113.117]:51722 "EHLO
+	rcsinet15.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1751522Ab2H2IoT (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 16 Aug 2012 10:25:30 -0400
-Received: by pbbrr13 with SMTP id rr13so1658680pbb.19
-        for <linux-btrfs@vger.kernel.org>; Thu, 16 Aug 2012 07:25:30 -0700 (PDT)
-Message-ID: <502D02D0.6080800@gmail.com>
-Date: Thu, 16 Aug 2012 22:25:20 +0800
-From: Wang Sheng-Hui <shhuiw@gmail.com>
-MIME-Version: 1.0
-To: Arne Jansen <sensille@gmx.net>
-CC: linux-btrfs@vger.kernel.org
-Subject: Re: [PATCH] btrfs-progs: trivial code style fix in root-tree.c
-References: <502CF2F0.7020601@gmail.com> <502CF450.50405@gmx.net> <502CF50C.9090006@gmail.com> <502CF602.8070105@gmx.net>
-In-Reply-To: <502CF602.8070105@gmx.net>
-Content-Type: text/plain; charset=UTF-8
+	Wed, 29 Aug 2012 04:44:19 -0400
+Received: from ucsinet21.oracle.com (ucsinet21.oracle.com [156.151.31.93])
+	by rcsinet15.oracle.com (Sentrion-MTA-4.2.2/Sentrion-MTA-4.2.2) with ESMTP id q7T8iHkv002344
+	(version=TLSv1/SSLv3 cipher=DHE-RSA-AES256-SHA bits=256 verify=OK)
+	for <linux-btrfs@vger.kernel.org>; Wed, 29 Aug 2012 08:44:18 GMT
+Received: from acsmt358.oracle.com (acsmt358.oracle.com [141.146.40.158])
+	by ucsinet21.oracle.com (8.14.4+Sun/8.14.4) with ESMTP id q7T8iHEG003879
+	(version=TLSv1/SSLv3 cipher=DHE-RSA-AES256-SHA bits=256 verify=NO)
+	for <linux-btrfs@vger.kernel.org>; Wed, 29 Aug 2012 08:44:17 GMT
+Received: from abhmt120.oracle.com (abhmt120.oracle.com [141.146.116.72])
+	by acsmt358.oracle.com (8.12.11.20060308/8.12.11) with ESMTP id q7T8iHaX003744
+	for <linux-btrfs@vger.kernel.org>; Wed, 29 Aug 2012 03:44:17 -0500
+From: Anand jain <Anand.Jain@oracle.com>
+To: linux-btrfs@vger.kernel.org
+Subject: [PATCH] Btrfs-progs: Add get/set label ioctl
+Date: Wed, 29 Aug 2012 16:46:01 +0800
+Message-Id: <1346229961-635-2-git-send-email-Anand.Jain@oracle.com>
+In-Reply-To: <1346229961-635-1-git-send-email-Anand.Jain@oracle.com>
+References: <1346229961-635-1-git-send-email-Anand.Jain@oracle.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 2012年08月16日 21:30, Arne Jansen wrote:
-> On 16.08.2012 15:26, Wang Sheng-Hui wrote:
->> On 2012年08月16日 21:23, Arne Jansen wrote:
->>> On 16.08.2012 15:17, Wang Sheng-Hui wrote:
->>>> Add code indent to the bad styled statements.
->>>>
->>>> Signed-off-by: Wang Sheng-Hui <shhuiw@gmail.com>
->>>> ---
->>>>  root-tree.c |   10 ++++------
->>>>  1 files changed, 4 insertions(+), 6 deletions(-)
->>>>
->>>> diff --git a/root-tree.c b/root-tree.c
->>>> index 782472c..39cfef6 100644
->>>> --- a/root-tree.c
->>>> +++ b/root-tree.c
->>>> @@ -182,12 +182,10 @@ int btrfs_del_root(struct btrfs_trans_handle *trans, struct btrfs_root *root,
->>>>  	if (ret < 0)
->>>>  		goto out;
->>>>  	if (ret) {
->>>> -btrfs_print_leaf(root, path->nodes[0]);
->>>> -printk("failed to del %llu %u %llu\n",
->>>> -	(unsigned long long)key->objectid,
->>>> -	key->type,
->>>> -	(unsigned long long)key->offset);
->>>> -
->>>
->>> I guess Alexander intentionally put in the bad indentation
->>> to remind him to remove this code before submitting the
->>> patch :)
->>>
->>>> +		btrfs_print_leaf(root, path->nodes[0]);
->>>> +		printk("failed to del %llu %u %llu\n",
->>>> +			(unsigned long long)key->objectid, key->type,
->>>> +			(unsigned long long)key->offset);
->>>>  	}
->>
->> When I saw the BUG_ON, I wonder do we still need the above branch statement.
->> It looks just to be helpful for debug - give out some info, right? 
-> 
-> Yes. So either we delete it completely or we move the BUG_ON
-> into the block as a BUG_ON(1) and add a "Btrfs: "-prefix to the
-> printk.
-> On the other hand, I just saw this is progs, so I think it can
-> just be deleted.
-> 
->>
->>>>  	BUG_ON(ret != 0);
->>>>  	leaf = path->nodes[0];
->>>
->>
-> 
+From: Anand Jain <anand.jain@oracle.com>
 
-Patch regenerated. Please check it. Thanks,
-
->From 2150cb3a3f75416b56a5eb9311fd0d4aa5aaaed5 Mon Sep 17 00:00:00 2001
-From: Wang Sheng-Hui <shhuiw@gmail.com>
-Date: Thu, 16 Aug 2012 22:23:07 +0800
-Subject: [PATCH] btrfs-progs: code cleanup for root-tree.c/btrfs_del_root
-
-Remove the redundant if check on the condition ret > 0.
-Leave BUG_ON check here.
-
-Signed-off-by: Wang Sheng-Hui <shhuiw@gmail.com>
+Signed-off-by: Anand Jain <anand.jain@oracle.com>
 ---
- root-tree.c |    8 --------
- 1 files changed, 0 insertions(+), 8 deletions(-)
+ btrfslabel.c |   90 ++++++++++++++++++++++++++++++++++++++--------------------
+ ioctl.h      |    2 +
+ utils.h      |    1 +
+ 3 files changed, 62 insertions(+), 31 deletions(-)
 
-diff --git a/root-tree.c b/root-tree.c
-index 782472c..4578514 100644
---- a/root-tree.c
-+++ b/root-tree.c
-@@ -181,14 +181,6 @@ int btrfs_del_root(struct btrfs_trans_handle *trans, struct btrfs_root *root,
- 	ret = btrfs_search_slot(trans, root, key, path, -1, 1);
- 	if (ret < 0)
- 		goto out;
--	if (ret) {
--btrfs_print_leaf(root, path->nodes[0]);
--printk("failed to del %llu %u %llu\n",
--	(unsigned long long)key->objectid,
--	key->type,
--	(unsigned long long)key->offset);
+diff --git a/btrfslabel.c b/btrfslabel.c
+index bf73802..3676db0 100644
+--- a/btrfslabel.c
++++ b/btrfslabel.c
+@@ -51,6 +51,10 @@ static void change_label_unmounted(char *dev, char *nLabel)
+        struct btrfs_root *root;
+        struct btrfs_trans_handle *trans;
+ 
++       if(check_mounted(dev)) {
++         fprintf(stderr, "ERROR: dev is mounted, use mount point\n");
++         return;
++       }
+        /* Open the super_block at the default location
+         * and as read-write.
+         */
+@@ -67,10 +71,57 @@ static void change_label_unmounted(char *dev, char *nLabel)
+        close_ctree(root);
+ }
+ 
++static void set_fs_label(char *mnt, char *label)
++{
++	int fd, e=0;
++	char fslabel[BTRFS_LABEL_SIZE+1];
++
++	memset(fslabel, 0, BTRFS_LABEL_SIZE+1);
++	strncpy(fslabel,label,BTRFS_LABEL_SIZE);
++
++	fd = open(mnt, O_RDONLY| O_NOATIME);
++	if (fd < 0) {
++		fprintf(stderr, "ERROR: Open %s failed\n", mnt);
++		return;
++	}
++
++	if(ioctl(fd, BTRFS_IOC_SET_LABEL, fslabel) < 0) {
++		e = errno;
++		fprintf(stderr, "ERROR: get label failed, %s\n",
++			strerror(e));
++	}
++	close(fd);
++}
++
++static void get_fs_label(char *path)
++{
++	int fd, e=0;
++	char label[BTRFS_LABEL_SIZE+1];
++
++	fd = open(path, O_RDONLY| O_NOATIME);
++	if (fd < 0) {
++		fprintf(stderr, "ERROR: Open %s failed\n", path);
++		return;
++	}
++
++	if(ioctl(fd, BTRFS_IOC_GET_LABEL, label) < 0) {
++		e = errno;
++		fprintf(stderr, "ERROR: get label failed, %s\n",
++			strerror(e));
++		return;
++	}
++	printf("%s\n",label);
++	close(fd);
++}
++
+ static void get_label_unmounted(char *dev)
+ {
+        struct btrfs_root *root;
+ 
++       if(check_mounted(dev)) {
++         fprintf(stderr, "ERROR: dev is mounted, use mount point\n");
++         return;
++       }
+        /* Open the super_block at the default location
+         * and as read-only.
+         */
+@@ -84,41 +135,18 @@ static void get_label_unmounted(char *dev)
+ 
+ int get_label(char *btrfs_dev)
+ {
 -
+-	int ret;
+-	ret = check_mounted(btrfs_dev);
+-	if (ret < 0)
+-	{
+-	       fprintf(stderr, "FATAL: error checking %s mount status\n", btrfs_dev);
+-	       return -1;
 -	}
- 	BUG_ON(ret != 0);
- 	leaf = path->nodes[0];
- 	ri = btrfs_item_ptr(leaf, path->slots[0], struct btrfs_root_item);
+-
+-	if(ret != 0)
+-	{
+-	       fprintf(stderr, "FATAL: the filesystem has to be unmounted\n");
+-	       return -2;
+-	}
+-	get_label_unmounted(btrfs_dev);
++	if(is_existing_blk_or_reg_file(btrfs_dev))
++		get_label_unmounted(btrfs_dev);
++	else
++		get_fs_label(btrfs_dev);
+ 	return 0;
+ }
+ 
+-
+ int set_label(char *btrfs_dev, char *nLabel)
+ {
+-
+-	int ret;
+-	ret = check_mounted(btrfs_dev);
+-	if (ret < 0)
+-	{
+-	       fprintf(stderr, "FATAL: error checking %s mount status\n", btrfs_dev);
+-	       return -1;
+-	}
+-
+-	if(ret != 0)
+-	{
+-	       fprintf(stderr, "FATAL: the filesystem has to be unmounted\n");
+-	       return -2;
+-	}
+-	change_label_unmounted(btrfs_dev, nLabel);
++	if(is_existing_blk_or_reg_file(btrfs_dev))
++		change_label_unmounted(btrfs_dev, nLabel);
++	else
++		set_fs_label(btrfs_dev, nLabel);
+ 	return 0;
+ }
+diff --git a/ioctl.h b/ioctl.h
+index d6f3d07..7e1dcda 100644
+--- a/ioctl.h
++++ b/ioctl.h
+@@ -370,4 +370,6 @@ struct btrfs_ioctl_clone_range_args {
+ 				struct btrfs_ioctl_received_subvol_args)
+ #define BTRFS_IOC_SEND _IOW(BTRFS_IOCTL_MAGIC, 38, struct btrfs_ioctl_send_args)
+ 
++#define BTRFS_IOC_GET_LABEL _IOR(BTRFS_IOCTL_MAGIC, 53, __u64)
++#define BTRFS_IOC_SET_LABEL _IOW(BTRFS_IOCTL_MAGIC, 54, __u64)
+ #endif
+diff --git a/utils.h b/utils.h
+index c147c12..ba088fe 100644
+--- a/utils.h
++++ b/utils.h
+@@ -48,4 +48,5 @@ int check_label(char *input);
+ int get_mountpt(char *dev, char *mntpt, size_t size);
+ 
+ int btrfs_scan_block_devices(int run_ioctl);
++int is_existing_blk_or_reg_file(const char* filename);
+ #endif
 -- 
 1.7.1
-
 

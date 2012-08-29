@@ -1,175 +1,66 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([222.73.24.84]:26308 "EHLO song.cn.fujitsu.com"
+Received: from cn.fujitsu.com ([222.73.24.84]:29977 "EHLO song.cn.fujitsu.com"
 	rhost-flags-OK-FAIL-OK-OK) by vger.kernel.org with ESMTP
-	id S1752475Ab2H2GRj (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 29 Aug 2012 02:17:39 -0400
-Message-ID: <503DB3E8.1000308@cn.fujitsu.com>
-Date: Wed, 29 Aug 2012 14:17:12 +0800
+	id S1750986Ab2H2GVY (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Wed, 29 Aug 2012 02:21:24 -0400
+Message-ID: <503DB4B4.3080001@cn.fujitsu.com>
+Date: Wed, 29 Aug 2012 14:20:36 +0800
 From: Miao Xie <miaox@cn.fujitsu.com>
 Reply-To: miaox@cn.fujitsu.com
 MIME-Version: 1.0
-To: Linux Kernel <linux-kernel@vger.kernel.org>,
-        Linux Btrfs <linux-btrfs@vger.kernel.org>,
-        Linux Fsdevel <linux-fsdevel@vger.kernel.org>,
-        Linux Ext4 <linux-ext4@vger.kernel.org>
-CC: viro <viro@zeniv.linux.org.uk>, Christoph Hellwig <hch@infradead.org>,
-        Kamal Mostafa <kamal@canonical.com>
-Subject: [PATCH 1/2 RESEND] vfs: re-implement writeback_inodes_sb(_nr)_if_idle()
- and rename them
-Content-Type: text/plain; charset=UTF-8
+To: Stefan Behrens <sbehrens@giantdisaster.de>
+CC: Linux Btrfs List <linux-btrfs@vger.kernel.org>,
+        David Sterba <dave@jikos.cz>
+Subject: Re: [BUG] btrfs dev del causes 'possible circular locking dependency
+ detected'
+References: <5023D916.6030707@giantdisaster.de> <20120809160157.GF17430@twin.jikos.cz> <5023E8DC.50702@giantdisaster.de>
+In-Reply-To: <5023E8DC.50702@giantdisaster.de>
+Content-Type: text/plain; charset=ISO-8859-1
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-writeback_inodes_sb(_nr)_if_idle() is re-implemented by replacing down_read()
-with down_read_trylock() because
-- If ->s_umount is write locked, then the sb is not idle. That is
-  writeback_inodes_sb(_nr)_if_idle() needn't wait for the lock.
-- writeback_inodes_sb(_nr)_if_idle() grabs s_umount lock when it want to start
-  writeback, it may bring us deadlock problem when doing umount.
-  (Ex. Btrfs has such a problem, see the following URL
-       http://marc.info/?l=linux-btrfs&m=133540923510561&w=2)
+On Thu, 09 Aug 2012 18:44:12 +0200, Stefan Behrens wrote:
+> On Thu, 9 Aug 2012 18:01:57 +0200, David Sterba wrote:
+>> On Thu, Aug 09, 2012 at 05:36:54PM +0200, Stefan Behrens wrote:
+>>> Aug  9 16:02:21 qvarne kernel: [  543.479460] -> #2 (&fs_info->cleaner_mutex){+.+...}:
+>>> Aug  9 16:02:21 qvarne kernel: [  543.541341]        [<ffffffff810da005>] lock_acquire+0x95/0x150
+>>> Aug  9 16:02:21 qvarne kernel: [  543.612269]        [<ffffffff819259a1>] mutex_lock_nested+0x71/0x360
+>>> Aug  9 16:02:21 qvarne kernel: [  543.688396]        [<ffffffffa00da06f>] btrfs_commit_super+0x1f/0x100 [btrfs]
+>>> Aug  9 16:02:21 qvarne kernel: [  543.773884]        [<ffffffffa00db8a8>] close_ctree+0x318/0x360 [btrfs]
+>>> Aug  9 16:02:21 qvarne kernel: [  543.853132]        [<ffffffffa00b3da4>] btrfs_put_super+0x14/0x20 [btrfs]
+>>> Aug  9 16:02:21 qvarne kernel: [  543.934459]        [<ffffffff8118ce6d>] generic_shutdown_super+0x5d/0xf0
+>>> Aug  9 16:02:21 qvarne kernel: [  544.014747]        [<ffffffff8118cf91>] kill_anon_super+0x11/0x20
+>>> Aug  9 16:02:21 qvarne kernel: [  544.087756]        [<ffffffffa00b7405>] btrfs_kill_super+0x15/0x90 [btrfs]
+>>> Aug  9 16:02:21 qvarne kernel: [  544.170124]        [<ffffffff8118d1bd>] deactivate_locked_super+0x3d/0x70
+>>> Aug  9 16:02:21 qvarne kernel: [  544.251452]        [<ffffffff8118dcf9>] deactivate_super+0x49/0x70
+>>> Aug  9 16:02:21 qvarne kernel: [  544.325500]        [<ffffffff811a8eae>] mntput_no_expire+0xfe/0x160
+>>> Aug  9 16:02:21 qvarne kernel: [  544.400588]        [<ffffffff811a9c69>] sys_umount+0x69/0x3a0
+>>> Aug  9 16:02:21 qvarne kernel: [  544.469435]        [<ffffffff81931162>] system_call_fastpath+0x16/0x1b
+>>> Aug  9 16:02:21 qvarne kernel: [  544.547644]
+>>> Aug  9 16:02:21 qvarne kernel: [  544.547644] -> #1 (&type->s_umount_key#31){+++++.}:
+>>> Aug  9 16:02:21 qvarne kernel: [  544.608588]        [<ffffffff810da005>] lock_acquire+0x95/0x150
+>>> Aug  9 16:02:21 qvarne kernel: [  544.679516]        [<ffffffff81926ca7>] down_read+0x47/0x8e
+>>> Aug  9 16:02:21 qvarne kernel: [  544.746283]        [<ffffffff811b3ae8>] writeback_inodes_sb_nr_if_idle+0x38/0x60
+>>
+>> this matches the "umount vs cleaner vs writeback_idle" deadlock pattern, Miao sent
+>> patches some time ago, I've tested them succesfully, but they're not
+>> merged upstream.
+>>
+>> http://thread.gmane.org/gmane.linux.file-systems/63900
+>> vfs: re-implement writeback_inodes_sb(_nr)_if_idle() and rename them
+>>
+>> http://thread.gmane.org/gmane.comp.file-systems.btrfs/17040
+>> [PATCH 2/2] Btrfs: flush all the dirty pages if try_to_writeback_inodes_sb_nr() fails
+> 
+> After applying these two patches from Miao Xie, logcheck does not
+> complain anymore.
+> 
+> Could we start a second attempt to add these VFS, ext4 and btrfs changes?
+> 
 
-The name of these two functions is cumbersome, so rename them to
-try_to_writeback_inodes_sb(_nr).
+Sorry to reply late. I'm busy to debug some problems recently.
+I have re-sent this patchset today, and hope it will be received as soon as possible.
 
-This idea came from Christoph Hellwig.
-Some code is from the patch of Kamal Mostafa.
+Thanks
+Miao
 
-Signed-off-by: Miao Xie <miaox@cn.fujitsu.com>
----
-Many users who use btrfs met the deadlock problem caused by writeback_inodes_sb(_nr)_if_idle(),
-so I send this patch again and hope it will be received as soon as possible if nobody objects.
----
- fs/btrfs/extent-tree.c    |    4 ++--
- fs/ext4/inode.c           |    2 +-
- fs/fs-writeback.c         |   45 ++++++++++++++++++++-------------------------
- include/linux/writeback.h |    6 +++---
- 4 files changed, 26 insertions(+), 31 deletions(-)
-
-diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
-index 4e1b153..175d802 100644
---- a/fs/btrfs/extent-tree.c
-+++ b/fs/btrfs/extent-tree.c
-@@ -3706,8 +3706,8 @@ static void shrink_delalloc(struct btrfs_root *root, u64 to_reclaim, u64 orig,
- 	while (delalloc_bytes && loops < 3) {
- 		max_reclaim = min(delalloc_bytes, to_reclaim);
- 		nr_pages = max_reclaim >> PAGE_CACHE_SHIFT;
--		writeback_inodes_sb_nr_if_idle(root->fs_info->sb, nr_pages,
--					       WB_REASON_FS_FREE_SPACE);
-+		try_to_writeback_inodes_sb_nr(root->fs_info->sb, nr_pages,
-+					      WB_REASON_FS_FREE_SPACE);
- 
- 		spin_lock(&space_info->lock);
- 		if (space_info->bytes_used + space_info->bytes_reserved +
-diff --git a/fs/ext4/inode.c b/fs/ext4/inode.c
-index dff171c..33ff5b5 100644
---- a/fs/ext4/inode.c
-+++ b/fs/ext4/inode.c
-@@ -2476,7 +2476,7 @@ static int ext4_nonda_switch(struct super_block *sb)
- 	 * start pushing delalloc when 1/2 of free blocks are dirty.
- 	 */
- 	if (free_blocks < 2 * dirty_blocks)
--		writeback_inodes_sb_if_idle(sb, WB_REASON_FS_FREE_SPACE);
-+		try_to_writeback_inodes_sb(sb, WB_REASON_FS_FREE_SPACE);
- 
- 	return 0;
- }
-diff --git a/fs/fs-writeback.c b/fs/fs-writeback.c
-index be3efc4..20a3509 100644
---- a/fs/fs-writeback.c
-+++ b/fs/fs-writeback.c
-@@ -1316,7 +1316,6 @@ void writeback_inodes_sb_nr(struct super_block *sb,
- 	bdi_queue_work(sb->s_bdi, &work);
- 	wait_for_completion(&done);
- }
--EXPORT_SYMBOL(writeback_inodes_sb_nr);
- 
- /**
-  * writeback_inodes_sb	-	writeback dirty inodes from given super_block
-@@ -1334,47 +1333,43 @@ void writeback_inodes_sb(struct super_block *sb, enum wb_reason reason)
- EXPORT_SYMBOL(writeback_inodes_sb);
- 
- /**
-- * writeback_inodes_sb_if_idle	-	start writeback if none underway
-+ * try_to_writeback_inodes_sb_nr - try to start writeback if none underway
-  * @sb: the superblock
-- * @reason: reason why some writeback work was initiated
-+ * @nr: the number of pages to write
-+ * @reason: the reason of writeback
-  *
-- * Invoke writeback_inodes_sb if no writeback is currently underway.
-+ * Invoke writeback_inodes_sb_nr if no writeback is currently underway.
-  * Returns 1 if writeback was started, 0 if not.
-  */
--int writeback_inodes_sb_if_idle(struct super_block *sb, enum wb_reason reason)
-+int try_to_writeback_inodes_sb_nr(struct super_block *sb,
-+				  unsigned long nr,
-+				  enum wb_reason reason)
- {
--	if (!writeback_in_progress(sb->s_bdi)) {
--		down_read(&sb->s_umount);
--		writeback_inodes_sb(sb, reason);
--		up_read(&sb->s_umount);
-+	if (writeback_in_progress(sb->s_bdi))
- 		return 1;
--	} else
-+
-+	if (!down_read_trylock(&sb->s_umount))
- 		return 0;
-+
-+	writeback_inodes_sb_nr(sb, nr, reason);
-+	up_read(&sb->s_umount);
-+	return 1;
- }
--EXPORT_SYMBOL(writeback_inodes_sb_if_idle);
-+EXPORT_SYMBOL(try_to_writeback_inodes_sb_nr);
- 
- /**
-- * writeback_inodes_sb_nr_if_idle	-	start writeback if none underway
-+ * try_to_writeback_inodes_sb - try to start writeback if none underway
-  * @sb: the superblock
-- * @nr: the number of pages to write
-  * @reason: reason why some writeback work was initiated
-  *
-- * Invoke writeback_inodes_sb if no writeback is currently underway.
-+ * Implement by try_to_writeback_inodes_sb_nr()
-  * Returns 1 if writeback was started, 0 if not.
-  */
--int writeback_inodes_sb_nr_if_idle(struct super_block *sb,
--				   unsigned long nr,
--				   enum wb_reason reason)
-+int try_to_writeback_inodes_sb(struct super_block *sb, enum wb_reason reason)
- {
--	if (!writeback_in_progress(sb->s_bdi)) {
--		down_read(&sb->s_umount);
--		writeback_inodes_sb_nr(sb, nr, reason);
--		up_read(&sb->s_umount);
--		return 1;
--	} else
--		return 0;
-+	return try_to_writeback_inodes_sb_nr(sb, get_nr_dirty_pages(), reason);
- }
--EXPORT_SYMBOL(writeback_inodes_sb_nr_if_idle);
-+EXPORT_SYMBOL(try_to_writeback_inodes_sb);
- 
- /**
-  * sync_inodes_sb	-	sync sb inode pages
-diff --git a/include/linux/writeback.h b/include/linux/writeback.h
-index 50c3e8f..ecdd0e0 100644
---- a/include/linux/writeback.h
-+++ b/include/linux/writeback.h
-@@ -87,9 +87,9 @@ int inode_wait(void *);
- void writeback_inodes_sb(struct super_block *, enum wb_reason reason);
- void writeback_inodes_sb_nr(struct super_block *, unsigned long nr,
- 							enum wb_reason reason);
--int writeback_inodes_sb_if_idle(struct super_block *, enum wb_reason reason);
--int writeback_inodes_sb_nr_if_idle(struct super_block *, unsigned long nr,
--							enum wb_reason reason);
-+int try_to_writeback_inodes_sb(struct super_block *, enum wb_reason reason);
-+int try_to_writeback_inodes_sb_nr(struct super_block *, unsigned long nr,
-+				  enum wb_reason reason);
- void sync_inodes_sb(struct super_block *);
- long writeback_inodes_wb(struct bdi_writeback *wb, long nr_pages,
- 				enum wb_reason reason);
--- 
-1.6.5.2

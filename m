@@ -1,66 +1,121 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([222.73.24.84]:29977 "EHLO song.cn.fujitsu.com"
-	rhost-flags-OK-FAIL-OK-OK) by vger.kernel.org with ESMTP
-	id S1750986Ab2H2GVY (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 29 Aug 2012 02:21:24 -0400
-Message-ID: <503DB4B4.3080001@cn.fujitsu.com>
-Date: Wed, 29 Aug 2012 14:20:36 +0800
-From: Miao Xie <miaox@cn.fujitsu.com>
-Reply-To: miaox@cn.fujitsu.com
-MIME-Version: 1.0
-To: Stefan Behrens <sbehrens@giantdisaster.de>
-CC: Linux Btrfs List <linux-btrfs@vger.kernel.org>,
-        David Sterba <dave@jikos.cz>
-Subject: Re: [BUG] btrfs dev del causes 'possible circular locking dependency
- detected'
-References: <5023D916.6030707@giantdisaster.de> <20120809160157.GF17430@twin.jikos.cz> <5023E8DC.50702@giantdisaster.de>
-In-Reply-To: <5023E8DC.50702@giantdisaster.de>
-Content-Type: text/plain; charset=ISO-8859-1
+Received: from rcsinet15.oracle.com ([148.87.113.117]:18162 "EHLO
+	rcsinet15.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1751726Ab2H2HJ2 (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>);
+	Wed, 29 Aug 2012 03:09:28 -0400
+From: Liu Bo <bo.li.liu@oracle.com>
+To: linux-btrfs@vger.kernel.org
+Cc: jbacik@fusionio.com
+Subject: [PATCH 1/2] Btrfs: fix a bug in checking whether a inode is already in log
+Date: Wed, 29 Aug 2012 15:07:55 +0800
+Message-Id: <1346224076-17573-1-git-send-email-bo.li.liu@oracle.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Thu, 09 Aug 2012 18:44:12 +0200, Stefan Behrens wrote:
-> On Thu, 9 Aug 2012 18:01:57 +0200, David Sterba wrote:
->> On Thu, Aug 09, 2012 at 05:36:54PM +0200, Stefan Behrens wrote:
->>> Aug  9 16:02:21 qvarne kernel: [  543.479460] -> #2 (&fs_info->cleaner_mutex){+.+...}:
->>> Aug  9 16:02:21 qvarne kernel: [  543.541341]        [<ffffffff810da005>] lock_acquire+0x95/0x150
->>> Aug  9 16:02:21 qvarne kernel: [  543.612269]        [<ffffffff819259a1>] mutex_lock_nested+0x71/0x360
->>> Aug  9 16:02:21 qvarne kernel: [  543.688396]        [<ffffffffa00da06f>] btrfs_commit_super+0x1f/0x100 [btrfs]
->>> Aug  9 16:02:21 qvarne kernel: [  543.773884]        [<ffffffffa00db8a8>] close_ctree+0x318/0x360 [btrfs]
->>> Aug  9 16:02:21 qvarne kernel: [  543.853132]        [<ffffffffa00b3da4>] btrfs_put_super+0x14/0x20 [btrfs]
->>> Aug  9 16:02:21 qvarne kernel: [  543.934459]        [<ffffffff8118ce6d>] generic_shutdown_super+0x5d/0xf0
->>> Aug  9 16:02:21 qvarne kernel: [  544.014747]        [<ffffffff8118cf91>] kill_anon_super+0x11/0x20
->>> Aug  9 16:02:21 qvarne kernel: [  544.087756]        [<ffffffffa00b7405>] btrfs_kill_super+0x15/0x90 [btrfs]
->>> Aug  9 16:02:21 qvarne kernel: [  544.170124]        [<ffffffff8118d1bd>] deactivate_locked_super+0x3d/0x70
->>> Aug  9 16:02:21 qvarne kernel: [  544.251452]        [<ffffffff8118dcf9>] deactivate_super+0x49/0x70
->>> Aug  9 16:02:21 qvarne kernel: [  544.325500]        [<ffffffff811a8eae>] mntput_no_expire+0xfe/0x160
->>> Aug  9 16:02:21 qvarne kernel: [  544.400588]        [<ffffffff811a9c69>] sys_umount+0x69/0x3a0
->>> Aug  9 16:02:21 qvarne kernel: [  544.469435]        [<ffffffff81931162>] system_call_fastpath+0x16/0x1b
->>> Aug  9 16:02:21 qvarne kernel: [  544.547644]
->>> Aug  9 16:02:21 qvarne kernel: [  544.547644] -> #1 (&type->s_umount_key#31){+++++.}:
->>> Aug  9 16:02:21 qvarne kernel: [  544.608588]        [<ffffffff810da005>] lock_acquire+0x95/0x150
->>> Aug  9 16:02:21 qvarne kernel: [  544.679516]        [<ffffffff81926ca7>] down_read+0x47/0x8e
->>> Aug  9 16:02:21 qvarne kernel: [  544.746283]        [<ffffffff811b3ae8>] writeback_inodes_sb_nr_if_idle+0x38/0x60
->>
->> this matches the "umount vs cleaner vs writeback_idle" deadlock pattern, Miao sent
->> patches some time ago, I've tested them succesfully, but they're not
->> merged upstream.
->>
->> http://thread.gmane.org/gmane.linux.file-systems/63900
->> vfs: re-implement writeback_inodes_sb(_nr)_if_idle() and rename them
->>
->> http://thread.gmane.org/gmane.comp.file-systems.btrfs/17040
->> [PATCH 2/2] Btrfs: flush all the dirty pages if try_to_writeback_inodes_sb_nr() fails
-> 
-> After applying these two patches from Miao Xie, logcheck does not
-> complain anymore.
-> 
-> Could we start a second attempt to add these VFS, ext4 and btrfs changes?
-> 
+This is based on Josef's "Btrfs: turbo charge fsync".
 
-Sorry to reply late. I'm busy to debug some problems recently.
-I have re-sent this patchset today, and hope it will be received as soon as possible.
+The current btrfs checks if an inode is in log by comparing
+root's last_log_commit to inode's last_sub_trans[2].
 
-Thanks
-Miao
+But the problem is that this root->last_log_commit is shared among
+inodes.
+
+Say we have N inodes to be logged, after the first inode,
+root's last_log_commit is updated and the N-1 remained files will
+be skipped.
+
+This fixes the bug by keeping a local copy of root's last_log_commit
+inside each inode and this local copy will be maintained itself.
+
+[1]: we regard each log transaction as a subset of btrfs's transaction,
+i.e. sub_trans
+
+Signed-off-by: Liu Bo <bo.li.liu@oracle.com>
+---
+ fs/btrfs/btrfs_inode.h |   14 ++++++--------
+ fs/btrfs/inode.c       |    2 ++
+ fs/btrfs/transaction.h |    1 +
+ fs/btrfs/tree-log.c    |    1 +
+ 4 files changed, 10 insertions(+), 8 deletions(-)
+
+diff --git a/fs/btrfs/btrfs_inode.h b/fs/btrfs/btrfs_inode.h
+index 7c7bf81..ed8ca7c 100644
+--- a/fs/btrfs/btrfs_inode.h
++++ b/fs/btrfs/btrfs_inode.h
+@@ -144,6 +144,9 @@ struct btrfs_inode {
+ 	/* flags field from the on disk inode */
+ 	u32 flags;
+ 
++	/* a local copy of root's last_log_commit */
++	unsigned long last_log_commit;
++
+ 	/*
+ 	 * Counters to keep track of the number of extent item's we may use due
+ 	 * to delalloc and such.  outstanding_extents is the number of extent
+@@ -203,15 +206,10 @@ static inline bool btrfs_is_free_space_inode(struct inode *inode)
+ 
+ static inline int btrfs_inode_in_log(struct inode *inode, u64 generation)
+ {
+-	struct btrfs_root *root = BTRFS_I(inode)->root;
+-	int ret = 0;
+-
+-	mutex_lock(&root->log_mutex);
+ 	if (BTRFS_I(inode)->logged_trans == generation &&
+-	    BTRFS_I(inode)->last_sub_trans <= root->last_log_commit)
+-		ret = 1;
+-	mutex_unlock(&root->log_mutex);
+-	return ret;
++	    BTRFS_I(inode)->last_sub_trans <= BTRFS_I(inode)->last_log_commit)
++		return 1;
++	return 0;
+ }
+ 
+ #endif
+diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
+index 8879e46e..8fb6cb7 100644
+--- a/fs/btrfs/inode.c
++++ b/fs/btrfs/inode.c
+@@ -6757,6 +6757,7 @@ again:
+ 
+ 	BTRFS_I(inode)->last_trans = root->fs_info->generation;
+ 	BTRFS_I(inode)->last_sub_trans = BTRFS_I(inode)->root->log_transid;
++	BTRFS_I(inode)->last_log_commit = BTRFS_I(inode)->root->last_log_commit;
+ 
+ 	unlock_extent_cached(io_tree, page_start, page_end, &cached_state, GFP_NOFS);
+ 
+@@ -7010,6 +7011,7 @@ struct inode *btrfs_alloc_inode(struct super_block *sb)
+ 	ei->csum_bytes = 0;
+ 	ei->index_cnt = (u64)-1;
+ 	ei->last_unlink_trans = 0;
++	ei->last_log_commit = 0;
+ 
+ 	spin_lock_init(&ei->lock);
+ 	ei->outstanding_extents = 0;
+diff --git a/fs/btrfs/transaction.h b/fs/btrfs/transaction.h
+index e8b8416..1a138bf 100644
+--- a/fs/btrfs/transaction.h
++++ b/fs/btrfs/transaction.h
+@@ -88,6 +88,7 @@ static inline void btrfs_set_inode_last_trans(struct btrfs_trans_handle *trans,
+ {
+ 	BTRFS_I(inode)->last_trans = trans->transaction->transid;
+ 	BTRFS_I(inode)->last_sub_trans = BTRFS_I(inode)->root->log_transid;
++	BTRFS_I(inode)->last_log_commit = BTRFS_I(inode)->root->last_log_commit;
+ }
+ 
+ int btrfs_end_transaction(struct btrfs_trans_handle *trans,
+diff --git a/fs/btrfs/tree-log.c b/fs/btrfs/tree-log.c
+index e70cdad..03af7f7 100644
+--- a/fs/btrfs/tree-log.c
++++ b/fs/btrfs/tree-log.c
+@@ -3185,6 +3185,7 @@ next_slot:
+ 		}
+ 	}
+ 	BTRFS_I(inode)->logged_trans = trans->transid;
++	BTRFS_I(inode)->last_log_commit = BTRFS_I(inode)->last_sub_trans;
+ out_unlock:
+ 	mutex_unlock(&BTRFS_I(inode)->log_mutex);
+ 
+-- 
+1.7.7.6
 

@@ -1,185 +1,102 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([222.73.24.84]:20181 "EHLO song.cn.fujitsu.com"
+Received: from cn.fujitsu.com ([222.73.24.84]:5165 "EHLO song.cn.fujitsu.com"
 	rhost-flags-OK-FAIL-OK-OK) by vger.kernel.org with ESMTP
-	id S1750845Ab2H2EMS (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 29 Aug 2012 00:12:18 -0400
-Received: from fnstmail02.fnst.cn.fujitsu.com (tang.cn.fujitsu.com [127.0.0.1])
-	by tang.cn.fujitsu.com (8.14.3/8.13.1) with ESMTP id q7T4CHCn031814
-	for <linux-btrfs@vger.kernel.org>; Wed, 29 Aug 2012 12:12:17 +0800
-Message-ID: <503D9688.4040700@cn.fujitsu.com>
-Date: Wed, 29 Aug 2012 12:11:52 +0800
+	id S1751000Ab2H2EMl (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Wed, 29 Aug 2012 00:12:41 -0400
+Message-ID: <503D969F.9040806@cn.fujitsu.com>
+Date: Wed, 29 Aug 2012 12:12:15 +0800
 From: Miao Xie <miaox@cn.fujitsu.com>
 Reply-To: miaox@cn.fujitsu.com
 MIME-Version: 1.0
 To: Linux Btrfs <linux-btrfs@vger.kernel.org>
-Subject: [PATCH V3 1/7 RESEND] Btrfs: fix error path in create_pending_snapshot()
+CC: David Sterba <dave@jikos.cz>
+Subject: [PATCH 2/7 RESEND] Btrfs: fix full backref problem when inserting
+ shared block reference
 Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-This patch fixes the following problem:
-- If we failed to deal with the delayed dir items, we should abort transaction,
-  just as its comment said. Fix it.
-- If root reference or root back reference insertion failed, we should
-  abort transaction. Fix it.
-- Fix the double free problem of pending->inherit.
-- Do not restore the trans->rsv if we doesn't change it.
-- make the error path more clearly.
+If we create several snapshots at the same time, the following BUG_ON() will be
+triggered.
+
+	kernel BUG at fs/btrfs/extent-tree.c:6047!
+
+Steps to reproduce:
+ # mkfs.btrfs <partition>
+ # mount <partition> <mnt>
+ # cd <mnt>
+ # for ((i=0;i<2400;i++)); do touch long_name_to_make_tree_more_deep$i; done
+ # for ((i=0; i<4; i++))
+ > do
+ > mkdir $i
+ > for ((j=0; j<200; j++))
+ > do
+ > btrfs sub snap . $i/$j
+ > done &
+ > done
+
+The reason is:
+Before transaction commit, some operations changed the fs tree and new tree
+blocks were allocated because of COW. We used the implicit non-shared back
+reference for those newly allocated tree blocks because they were not shared by
+two or more trees.
+
+And then we created the first snapshot for the fs tree, according to the back
+reference rules, we also used implicit back refs for the child tree blocks of
+the root node of the fs tree, now those child nodes/leaves were shared by two
+trees.
+
+Then We didn't deal with the delayed references, and continued to change the fs
+tree(created the second snapshot and inserted the dir item of the new snapshot
+into the fs tree). According to the rules of the back reference, we added full
+back refs for those tree blocks whose parents have be shared by two trees.
+Now some newly allocated tree blocks had two types of the references.
+
+As we know, the delayed reference system handles these delayed references from
+back to front, and the full delayed reference is inserted after the implicit
+ones. So when we dealt with the back references of those newly allocated tree
+blocks, the full references was dealt with at first. And if the first reference
+is a shared back reference and the tree block that the reference points to is
+newly allocated, It would be considered as a tree block which is shared by two
+or more trees when it is allocated and should be a full back reference not a
+implicit one, the flag of its reference also should be set to FULL_BACKREF.
+But in fact, it was a non-shared tree block with a implicit reference at
+beginning, so it was not compulsory to set the flags to FULL_BACKREF. So BUG_ON
+was triggered.
+
+We have several methods to fix this bug:
+1. deal with delayed references after the snapshot is created and before we
+   change the source tree of the snapshot. This is the easiest and safest way.
+2. modify the sort method of the delayed reference tree, make the full delayed
+   references be inserted before the implicit ones. It is also very easy, but
+   I don't know if it will introduce some problems or not.
+3. modify select_delayed_ref() and make it select the implicit delayed reference
+   at first. This way is not so good because it may wastes CPU time if we have
+   lots of delayed references.
+4. set the flags to FULL_BACKREF, this method is a little complex comparing with
+   the 1st way.
+
+I chose the 1st way to fix it.
 
 Signed-off-by: Miao Xie <miaox@cn.fujitsu.com>
 ---
-Changelog v2 -> v3:
-- rebase on the latest for-linus branch
-- fix double free problem of pending->inherit
-
-Changelog v1 -> v2:
-- fix double dput() when aborting transaction.
----
- fs/btrfs/transaction.c |   40 +++++++++++++++++-----------------------
- 1 files changed, 17 insertions(+), 23 deletions(-)
+ fs/btrfs/transaction.c |    4 ++++
+ 1 files changed, 4 insertions(+), 0 deletions(-)
 
 diff --git a/fs/btrfs/transaction.c b/fs/btrfs/transaction.c
-index 3ee8d58..b259d22f2 100644
+index b259d22f2..8bd2511 100644
 --- a/fs/btrfs/transaction.c
 +++ b/fs/btrfs/transaction.c
-@@ -962,18 +962,16 @@ static noinline int create_pending_snapshot(struct btrfs_trans_handle *trans,
- 	u64 root_flags;
- 	uuid_le new_uuid;
- 
--	rsv = trans->block_rsv;
--
- 	new_root_item = kmalloc(sizeof(*new_root_item), GFP_NOFS);
- 	if (!new_root_item) {
- 		ret = pending->error = -ENOMEM;
--		goto fail;
-+		goto root_item_alloc_fail;
- 	}
- 
- 	ret = btrfs_find_free_objectid(tree_root, &objectid);
- 	if (ret) {
- 		pending->error = ret;
--		goto fail;
-+		goto no_free_objectid;
- 	}
- 
- 	btrfs_reloc_pre_snapshot(trans, pending, &to_reserve);
-@@ -983,22 +981,22 @@ static noinline int create_pending_snapshot(struct btrfs_trans_handle *trans,
- 						  to_reserve);
- 		if (ret) {
- 			pending->error = ret;
--			goto fail;
-+			goto no_free_objectid;
- 		}
- 	}
- 
- 	ret = btrfs_qgroup_inherit(trans, fs_info, root->root_key.objectid,
- 				   objectid, pending->inherit);
--	kfree(pending->inherit);
- 	if (ret) {
- 		pending->error = ret;
--		goto fail;
-+		goto no_free_objectid;
- 	}
- 
- 	key.objectid = objectid;
- 	key.offset = (u64)-1;
- 	key.type = BTRFS_ROOT_ITEM_KEY;
- 
-+	rsv = trans->block_rsv;
- 	trans->block_rsv = &pending->block_rsv;
- 
- 	dentry = pending->dentry;
-@@ -1018,10 +1016,9 @@ static noinline int create_pending_snapshot(struct btrfs_trans_handle *trans,
- 				BTRFS_FT_DIR, index);
- 	if (ret == -EEXIST) {
- 		pending->error = -EEXIST;
--		dput(parent);
- 		goto fail;
- 	} else if (ret) {
--		goto abort_trans_dput;
-+		goto abort_trans;
- 	}
- 
- 	btrfs_i_size_write(parent_inode, parent_inode->i_size +
-@@ -1029,7 +1026,7 @@ static noinline int create_pending_snapshot(struct btrfs_trans_handle *trans,
- 	parent_inode->i_mtime = parent_inode->i_ctime = CURRENT_TIME;
- 	ret = btrfs_update_inode(trans, parent_root, parent_inode);
- 	if (ret)
--		goto abort_trans_dput;
-+		goto abort_trans;
- 
- 	/*
- 	 * pull in the delayed directory update
-@@ -1038,10 +1035,8 @@ static noinline int create_pending_snapshot(struct btrfs_trans_handle *trans,
- 	 * snapshot
- 	 */
- 	ret = btrfs_run_delayed_items(trans, root);
--	if (ret) { /* Transaction aborted */
--		dput(parent);
--		goto fail;
--	}
-+	if (ret)	/* Transaction aborted */
-+		goto abort_trans;
- 
- 	record_root_in_trans(trans, root);
- 	btrfs_set_root_last_snapshot(&root->root_item, trans->transid);
-@@ -1074,7 +1069,7 @@ static noinline int create_pending_snapshot(struct btrfs_trans_handle *trans,
- 	if (ret) {
- 		btrfs_tree_unlock(old);
- 		free_extent_buffer(old);
--		goto abort_trans_dput;
-+		goto abort_trans;
- 	}
- 
- 	btrfs_set_lock_blocking(old);
-@@ -1084,7 +1079,7 @@ static noinline int create_pending_snapshot(struct btrfs_trans_handle *trans,
- 	btrfs_tree_unlock(old);
- 	free_extent_buffer(old);
- 	if (ret)
--		goto abort_trans_dput;
-+		goto abort_trans;
- 
- 	/* see comments in should_cow_block() */
- 	root->force_cow = 1;
-@@ -1097,7 +1092,7 @@ static noinline int create_pending_snapshot(struct btrfs_trans_handle *trans,
- 	btrfs_tree_unlock(tmp);
- 	free_extent_buffer(tmp);
- 	if (ret)
--		goto abort_trans_dput;
-+		goto abort_trans;
- 
- 	/*
- 	 * insert root back/forward references
-@@ -1106,9 +1101,8 @@ static noinline int create_pending_snapshot(struct btrfs_trans_handle *trans,
- 				 parent_root->root_key.objectid,
- 				 btrfs_ino(parent_inode), index,
- 				 dentry->d_name.name, dentry->d_name.len);
--	dput(parent);
- 	if (ret)
--		goto fail;
-+		goto abort_trans;
- 
- 	key.offset = (u64)-1;
- 	pending->snap = btrfs_read_fs_root_no_name(root->fs_info, &key);
-@@ -1120,15 +1114,15 @@ static noinline int create_pending_snapshot(struct btrfs_trans_handle *trans,
+@@ -1114,6 +1114,10 @@ static noinline int create_pending_snapshot(struct btrfs_trans_handle *trans,
  	ret = btrfs_reloc_post_snapshot(trans, pending);
  	if (ret)
  		goto abort_trans;
--	ret = 0;
++
++	ret = btrfs_run_delayed_refs(trans, root, (unsigned long)-1);
++	if (ret)
++		goto abort_trans;
  fail:
--	kfree(new_root_item);
-+	dput(parent);
+ 	dput(parent);
  	trans->block_rsv = rsv;
-+no_free_objectid:
-+	kfree(new_root_item);
-+root_item_alloc_fail:
- 	btrfs_block_rsv_release(root, &pending->block_rsv, (u64)-1);
- 	return ret;
- 
--abort_trans_dput:
--	dput(parent);
- abort_trans:
- 	btrfs_abort_transaction(trans, root, ret);
- 	goto fail;
 -- 
 1.7.6.5

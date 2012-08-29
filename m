@@ -1,101 +1,185 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx1.fusionio.com ([66.114.96.30]:43763 "EHLO mx1.fusionio.com"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1751982Ab2H1Ry3 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 28 Aug 2012 13:54:29 -0400
-Date: Tue, 28 Aug 2012 13:54:26 -0400
-From: Josef Bacik <jbacik@fusionio.com>
-To: Liu Bo <bo.li.liu@oracle.com>
-CC: Josef Bacik <JBacik@fusionio.com>,
-        "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
-Subject: Re: [PATCH 2/2] Btrfs: improve fsync by filtering extents that we
- want
-Message-ID: <20120828175426.GB2177@localhost.localdomain>
-References: <1346086340-14776-1-git-send-email-bo.li.liu@oracle.com>
- <1346086340-14776-2-git-send-email-bo.li.liu@oracle.com>
- <20120827171240.GC4048@localhost.localdomain>
- <503C0F2A.9040308@oracle.com>
+Received: from cn.fujitsu.com ([222.73.24.84]:20181 "EHLO song.cn.fujitsu.com"
+	rhost-flags-OK-FAIL-OK-OK) by vger.kernel.org with ESMTP
+	id S1750845Ab2H2EMS (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Wed, 29 Aug 2012 00:12:18 -0400
+Received: from fnstmail02.fnst.cn.fujitsu.com (tang.cn.fujitsu.com [127.0.0.1])
+	by tang.cn.fujitsu.com (8.14.3/8.13.1) with ESMTP id q7T4CHCn031814
+	for <linux-btrfs@vger.kernel.org>; Wed, 29 Aug 2012 12:12:17 +0800
+Message-ID: <503D9688.4040700@cn.fujitsu.com>
+Date: Wed, 29 Aug 2012 12:11:52 +0800
+From: Miao Xie <miaox@cn.fujitsu.com>
+Reply-To: miaox@cn.fujitsu.com
 MIME-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-In-Reply-To: <503C0F2A.9040308@oracle.com>
+To: Linux Btrfs <linux-btrfs@vger.kernel.org>
+Subject: [PATCH V3 1/7 RESEND] Btrfs: fix error path in create_pending_snapshot()
+Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Mon, Aug 27, 2012 at 06:22:02PM -0600, Liu Bo wrote:
-> On 08/28/2012 01:12 AM, Josef Bacik wrote:
-> > On Mon, Aug 27, 2012 at 10:52:20AM -0600, Liu Bo wrote:
-> >> This is based on Josef's "Btrfs: turbo charge fsync".
-> >>
-> >> The above Josef's patch performs very good in random sync write test,
-> >> because we won't have too much extents to merge.
-> >>
-> >> However, it does not performs good on the test:
-> >> dd if=/dev/zero of=foobar bs=4k count=12500 oflag=sync
-> >>
-> >> The reason is when we do sequencial sync write, we need to merge the
-> >> current extent just with the previous one, so that we can get accumulated
-> >> extents to log:
-> >>
-> >> A(4k) --> AA(8k) --> AAA(12k) --> AAAA(16k) ...
-> >>
-> >> So we'll have to flush more and more checksum into log tree, which is the
-> >> bottleneck according to my tests.
-> >>
-> >> But we can avoid this by telling fsync the real extents that are needed
-> >> to be logged.
-> >>
-> >> With this, I did the above dd sync write test (size=50m),
-> >>
-> >>          w/o (orig)   w/ (josef's)   w/ (this)
-> >> SATA      104KB/s       109KB/s       121KB/s
-> >> ramdisk   1.5MB/s       1.5MB/s       10.7MB/s (613%)
-> >>
-> >> Signed-off-by: Liu Bo <bo.li.liu@oracle.com>
-> >> ---
-> >>  fs/btrfs/extent_map.c |   20 ++++++++++++++++++++
-> >>  fs/btrfs/extent_map.h |    2 ++
-> >>  fs/btrfs/inode.c      |    1 +
-> >>  fs/btrfs/tree-log.c   |    6 +++---
-> >>  4 files changed, 26 insertions(+), 3 deletions(-)
-> >>
-> >> diff --git a/fs/btrfs/extent_map.c b/fs/btrfs/extent_map.c
-> >> index 1fe82cf..ac606f0 100644
-> >> --- a/fs/btrfs/extent_map.c
-> >> +++ b/fs/btrfs/extent_map.c
-> >> @@ -203,6 +203,8 @@ static void try_merge_map(struct extent_map_tree *tree, struct extent_map *em)
-> >>  			em->block_start = merge->block_start;
-> >>  			merge->in_tree = 0;
-> >>  			if (merge->generation > em->generation) {
-> >> +				em->mod_start = em->start;
-> >> +				em->mod_len = em->len;
-> > 
-> > Shouldn't this be
-> > 
-> > em->mod_start = merge->start;
-> > em->mod_len += merge_len;
-> > 
-> 
-> They just do the same thing.
-> 
-> There is already a 
-> em->start = merge->start;
-> em->len += merge_len
-> 
-> >>  				em->generation = merge->generation;
-> >>  				list_move(&em->list, &tree->modified_extents);
-> >>  			}
-> >> @@ -222,6 +224,7 @@ static void try_merge_map(struct extent_map_tree *tree, struct extent_map *em)
-> >>  		rb_erase(&merge->rb_node, &tree->map);
-> >>  		merge->in_tree = 0;
-> >>  		if (merge->generation > em->generation) {
-> >> +			em->mod_len = em->len;
-> > 
-> > And this should be em->mod_len += em->len?
-> > 
-> 
-> No, em->len has already contained the merge's len.
->
+This patch fixes the following problem:
+- If we failed to deal with the delayed dir items, we should abort transaction,
+  just as its comment said. Fix it.
+- If root reference or root back reference insertion failed, we should
+  abort transaction. Fix it.
+- Fix the double free problem of pending->inherit.
+- Do not restore the trans->rsv if we doesn't change it.
+- make the error path more clearly.
 
-Duh right sorry.  Thanks,
+Signed-off-by: Miao Xie <miaox@cn.fujitsu.com>
+---
+Changelog v2 -> v3:
+- rebase on the latest for-linus branch
+- fix double free problem of pending->inherit
 
-Josef
+Changelog v1 -> v2:
+- fix double dput() when aborting transaction.
+---
+ fs/btrfs/transaction.c |   40 +++++++++++++++++-----------------------
+ 1 files changed, 17 insertions(+), 23 deletions(-)
+
+diff --git a/fs/btrfs/transaction.c b/fs/btrfs/transaction.c
+index 3ee8d58..b259d22f2 100644
+--- a/fs/btrfs/transaction.c
++++ b/fs/btrfs/transaction.c
+@@ -962,18 +962,16 @@ static noinline int create_pending_snapshot(struct btrfs_trans_handle *trans,
+ 	u64 root_flags;
+ 	uuid_le new_uuid;
+ 
+-	rsv = trans->block_rsv;
+-
+ 	new_root_item = kmalloc(sizeof(*new_root_item), GFP_NOFS);
+ 	if (!new_root_item) {
+ 		ret = pending->error = -ENOMEM;
+-		goto fail;
++		goto root_item_alloc_fail;
+ 	}
+ 
+ 	ret = btrfs_find_free_objectid(tree_root, &objectid);
+ 	if (ret) {
+ 		pending->error = ret;
+-		goto fail;
++		goto no_free_objectid;
+ 	}
+ 
+ 	btrfs_reloc_pre_snapshot(trans, pending, &to_reserve);
+@@ -983,22 +981,22 @@ static noinline int create_pending_snapshot(struct btrfs_trans_handle *trans,
+ 						  to_reserve);
+ 		if (ret) {
+ 			pending->error = ret;
+-			goto fail;
++			goto no_free_objectid;
+ 		}
+ 	}
+ 
+ 	ret = btrfs_qgroup_inherit(trans, fs_info, root->root_key.objectid,
+ 				   objectid, pending->inherit);
+-	kfree(pending->inherit);
+ 	if (ret) {
+ 		pending->error = ret;
+-		goto fail;
++		goto no_free_objectid;
+ 	}
+ 
+ 	key.objectid = objectid;
+ 	key.offset = (u64)-1;
+ 	key.type = BTRFS_ROOT_ITEM_KEY;
+ 
++	rsv = trans->block_rsv;
+ 	trans->block_rsv = &pending->block_rsv;
+ 
+ 	dentry = pending->dentry;
+@@ -1018,10 +1016,9 @@ static noinline int create_pending_snapshot(struct btrfs_trans_handle *trans,
+ 				BTRFS_FT_DIR, index);
+ 	if (ret == -EEXIST) {
+ 		pending->error = -EEXIST;
+-		dput(parent);
+ 		goto fail;
+ 	} else if (ret) {
+-		goto abort_trans_dput;
++		goto abort_trans;
+ 	}
+ 
+ 	btrfs_i_size_write(parent_inode, parent_inode->i_size +
+@@ -1029,7 +1026,7 @@ static noinline int create_pending_snapshot(struct btrfs_trans_handle *trans,
+ 	parent_inode->i_mtime = parent_inode->i_ctime = CURRENT_TIME;
+ 	ret = btrfs_update_inode(trans, parent_root, parent_inode);
+ 	if (ret)
+-		goto abort_trans_dput;
++		goto abort_trans;
+ 
+ 	/*
+ 	 * pull in the delayed directory update
+@@ -1038,10 +1035,8 @@ static noinline int create_pending_snapshot(struct btrfs_trans_handle *trans,
+ 	 * snapshot
+ 	 */
+ 	ret = btrfs_run_delayed_items(trans, root);
+-	if (ret) { /* Transaction aborted */
+-		dput(parent);
+-		goto fail;
+-	}
++	if (ret)	/* Transaction aborted */
++		goto abort_trans;
+ 
+ 	record_root_in_trans(trans, root);
+ 	btrfs_set_root_last_snapshot(&root->root_item, trans->transid);
+@@ -1074,7 +1069,7 @@ static noinline int create_pending_snapshot(struct btrfs_trans_handle *trans,
+ 	if (ret) {
+ 		btrfs_tree_unlock(old);
+ 		free_extent_buffer(old);
+-		goto abort_trans_dput;
++		goto abort_trans;
+ 	}
+ 
+ 	btrfs_set_lock_blocking(old);
+@@ -1084,7 +1079,7 @@ static noinline int create_pending_snapshot(struct btrfs_trans_handle *trans,
+ 	btrfs_tree_unlock(old);
+ 	free_extent_buffer(old);
+ 	if (ret)
+-		goto abort_trans_dput;
++		goto abort_trans;
+ 
+ 	/* see comments in should_cow_block() */
+ 	root->force_cow = 1;
+@@ -1097,7 +1092,7 @@ static noinline int create_pending_snapshot(struct btrfs_trans_handle *trans,
+ 	btrfs_tree_unlock(tmp);
+ 	free_extent_buffer(tmp);
+ 	if (ret)
+-		goto abort_trans_dput;
++		goto abort_trans;
+ 
+ 	/*
+ 	 * insert root back/forward references
+@@ -1106,9 +1101,8 @@ static noinline int create_pending_snapshot(struct btrfs_trans_handle *trans,
+ 				 parent_root->root_key.objectid,
+ 				 btrfs_ino(parent_inode), index,
+ 				 dentry->d_name.name, dentry->d_name.len);
+-	dput(parent);
+ 	if (ret)
+-		goto fail;
++		goto abort_trans;
+ 
+ 	key.offset = (u64)-1;
+ 	pending->snap = btrfs_read_fs_root_no_name(root->fs_info, &key);
+@@ -1120,15 +1114,15 @@ static noinline int create_pending_snapshot(struct btrfs_trans_handle *trans,
+ 	ret = btrfs_reloc_post_snapshot(trans, pending);
+ 	if (ret)
+ 		goto abort_trans;
+-	ret = 0;
+ fail:
+-	kfree(new_root_item);
++	dput(parent);
+ 	trans->block_rsv = rsv;
++no_free_objectid:
++	kfree(new_root_item);
++root_item_alloc_fail:
+ 	btrfs_block_rsv_release(root, &pending->block_rsv, (u64)-1);
+ 	return ret;
+ 
+-abort_trans_dput:
+-	dput(parent);
+ abort_trans:
+ 	btrfs_abort_transaction(trans, root, ret);
+ 	goto fail;
+-- 
+1.7.6.5

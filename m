@@ -1,102 +1,159 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([222.73.24.84]:5165 "EHLO song.cn.fujitsu.com"
+Received: from cn.fujitsu.com ([222.73.24.84]:58706 "EHLO song.cn.fujitsu.com"
 	rhost-flags-OK-FAIL-OK-OK) by vger.kernel.org with ESMTP
-	id S1751000Ab2H2EMl (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 29 Aug 2012 00:12:41 -0400
-Message-ID: <503D969F.9040806@cn.fujitsu.com>
-Date: Wed, 29 Aug 2012 12:12:15 +0800
+	id S1751000Ab2H2EM6 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Wed, 29 Aug 2012 00:12:58 -0400
+Message-ID: <503D96B2.2070402@cn.fujitsu.com>
+Date: Wed, 29 Aug 2012 12:12:34 +0800
 From: Miao Xie <miaox@cn.fujitsu.com>
 Reply-To: miaox@cn.fujitsu.com
 MIME-Version: 1.0
 To: Linux Btrfs <linux-btrfs@vger.kernel.org>
 CC: David Sterba <dave@jikos.cz>
-Subject: [PATCH 2/7 RESEND] Btrfs: fix full backref problem when inserting
- shared block reference
+Subject: [PATCH 3/7] Btrfs: fix file extent discount problem in the snapshot
 Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-If we create several snapshots at the same time, the following BUG_ON() will be
-triggered.
-
-	kernel BUG at fs/btrfs/extent-tree.c:6047!
+If a snapshot is created while we are writing some data into the file,
+the i_size of the corresponding file in the snapshot will be wrong, it will
+be beyond the end of the last file extent. And btrfsck will report:
+  root 256 inode 257 errors 100
 
 Steps to reproduce:
  # mkfs.btrfs <partition>
  # mount <partition> <mnt>
  # cd <mnt>
- # for ((i=0;i<2400;i++)); do touch long_name_to_make_tree_more_deep$i; done
+ # dd if=/dev/zero of=tmpfile bs=4M count=1024 &
  # for ((i=0; i<4; i++))
  > do
- > mkdir $i
- > for ((j=0; j<200; j++))
- > do
- > btrfs sub snap . $i/$j
- > done &
+ > btrfs sub snap . $i
  > done
 
-The reason is:
-Before transaction commit, some operations changed the fs tree and new tree
-blocks were allocated because of COW. We used the implicit non-shared back
-reference for those newly allocated tree blocks because they were not shared by
-two or more trees.
+This because the algorithm of disk_i_size update is wrong. Though there are
+some ordered extents behind the current one which we use to update disk_i_size,
+it doesn't mean those extents will be dealt with in the same transaction. So
+We shouldn't use the offset of those extents to update disk_i_size. Or we will
+get the wrong i_size in the snapshot.
 
-And then we created the first snapshot for the fs tree, according to the back
-reference rules, we also used implicit back refs for the child tree blocks of
-the root node of the fs tree, now those child nodes/leaves were shared by two
-trees.
-
-Then We didn't deal with the delayed references, and continued to change the fs
-tree(created the second snapshot and inserted the dir item of the new snapshot
-into the fs tree). According to the rules of the back reference, we added full
-back refs for those tree blocks whose parents have be shared by two trees.
-Now some newly allocated tree blocks had two types of the references.
-
-As we know, the delayed reference system handles these delayed references from
-back to front, and the full delayed reference is inserted after the implicit
-ones. So when we dealt with the back references of those newly allocated tree
-blocks, the full references was dealt with at first. And if the first reference
-is a shared back reference and the tree block that the reference points to is
-newly allocated, It would be considered as a tree block which is shared by two
-or more trees when it is allocated and should be a full back reference not a
-implicit one, the flag of its reference also should be set to FULL_BACKREF.
-But in fact, it was a non-shared tree block with a implicit reference at
-beginning, so it was not compulsory to set the flags to FULL_BACKREF. So BUG_ON
-was triggered.
-
-We have several methods to fix this bug:
-1. deal with delayed references after the snapshot is created and before we
-   change the source tree of the snapshot. This is the easiest and safest way.
-2. modify the sort method of the delayed reference tree, make the full delayed
-   references be inserted before the implicit ones. It is also very easy, but
-   I don't know if it will introduce some problems or not.
-3. modify select_delayed_ref() and make it select the implicit delayed reference
-   at first. This way is not so good because it may wastes CPU time if we have
-   lots of delayed references.
-4. set the flags to FULL_BACKREF, this method is a little complex comparing with
-   the 1st way.
-
-I chose the 1st way to fix it.
+We fix this problem by recording the max real i_size. If we find there is a
+ordered extent which is in front of the current one and doesn't complete, we
+will record the end of the current one into that ordered extent. Surely, if
+the current extent holds the end of other extent(it must be greater than
+the current one because it is behind the current one), we will record the
+number that the current extent holds. In this way, we can exclude the ordered
+extents that may not be dealth with in the same transaction, and be easy to
+know the real disk_i_size.
 
 Signed-off-by: Miao Xie <miaox@cn.fujitsu.com>
 ---
- fs/btrfs/transaction.c |    4 ++++
- 1 files changed, 4 insertions(+), 0 deletions(-)
+ fs/btrfs/ordered-data.c |   62 +++++++++++++---------------------------------
+ fs/btrfs/ordered-data.h |    7 +++++
+ 2 files changed, 25 insertions(+), 44 deletions(-)
 
-diff --git a/fs/btrfs/transaction.c b/fs/btrfs/transaction.c
-index b259d22f2..8bd2511 100644
---- a/fs/btrfs/transaction.c
-+++ b/fs/btrfs/transaction.c
-@@ -1114,6 +1114,10 @@ static noinline int create_pending_snapshot(struct btrfs_trans_handle *trans,
- 	ret = btrfs_reloc_post_snapshot(trans, pending);
- 	if (ret)
- 		goto abort_trans;
+diff --git a/fs/btrfs/ordered-data.c b/fs/btrfs/ordered-data.c
+index 643335a..2eb79cc 100644
+--- a/fs/btrfs/ordered-data.c
++++ b/fs/btrfs/ordered-data.c
+@@ -775,7 +775,6 @@ int btrfs_ordered_update_i_size(struct inode *inode, u64 offset,
+ 	struct btrfs_ordered_inode_tree *tree = &BTRFS_I(inode)->ordered_tree;
+ 	u64 disk_i_size;
+ 	u64 new_i_size;
+-	u64 i_size_test;
+ 	u64 i_size = i_size_read(inode);
+ 	struct rb_node *node;
+ 	struct rb_node *prev = NULL;
+@@ -835,55 +834,30 @@ int btrfs_ordered_update_i_size(struct inode *inode, u64 offset,
+ 			break;
+ 		if (test->file_offset >= i_size)
+ 			break;
+-		if (test->file_offset >= disk_i_size)
++		if (test->file_offset >= disk_i_size) {
++			/*
++			 * we don't update disk_i_size now, so record this
++			 * undealt i_size. Or we will not know the real
++			 * i_size.
++			 */
++			if (test->outstanding_isize < offset)
++				test->outstanding_isize = offset;
++			if (ordered &&
++			    ordered->outstanding_isize >
++			    test->outstanding_isize)
++				test->outstanding_isize =
++						ordered->outstanding_isize;
+ 			goto out;
+-	}
+-	new_i_size = min_t(u64, offset, i_size);
+-
+-	/*
+-	 * at this point, we know we can safely update i_size to at least
+-	 * the offset from this ordered extent.  But, we need to
+-	 * walk forward and see if ios from higher up in the file have
+-	 * finished.
+-	 */
+-	if (ordered) {
+-		node = rb_next(&ordered->rb_node);
+-	} else {
+-		if (prev)
+-			node = rb_next(prev);
+-		else
+-			node = rb_first(&tree->tree);
+-	}
+-
+-	/*
+-	 * We are looking for an area between our current extent and the next
+-	 * ordered extent to update the i_size to.  There are 3 cases here
+-	 *
+-	 * 1) We don't actually have anything and we can update to i_size.
+-	 * 2) We have stuff but they already did their i_size update so again we
+-	 * can just update to i_size.
+-	 * 3) We have an outstanding ordered extent so the most we can update
+-	 * our disk_i_size to is the start of the next offset.
+-	 */
+-	i_size_test = i_size;
+-	for (; node; node = rb_next(node)) {
+-		test = rb_entry(node, struct btrfs_ordered_extent, rb_node);
+-
+-		if (test_bit(BTRFS_ORDERED_UPDATED_ISIZE, &test->flags))
+-			continue;
+-		if (test->file_offset > offset) {
+-			i_size_test = test->file_offset;
+-			break;
+ 		}
+ 	}
++	new_i_size = min_t(u64, offset, i_size);
+ 
+ 	/*
+-	 * i_size_test is the end of a region after this ordered
+-	 * extent where there are no ordered extents, we can safely set
+-	 * disk_i_size to this.
++	 * Some ordered extents may completed before the current one, and
++	 * we hold the real i_size in ->outstanding_isize.
+ 	 */
+-	if (i_size_test > offset)
+-		new_i_size = min_t(u64, i_size_test, i_size);
++	if (ordered && ordered->outstanding_isize > new_i_size)
++		new_i_size = min_t(u64, ordered->outstanding_isize, i_size);
+ 	BTRFS_I(inode)->disk_i_size = new_i_size;
+ 	ret = 0;
+ out:
+diff --git a/fs/btrfs/ordered-data.h b/fs/btrfs/ordered-data.h
+index e03c560..c2443a4 100644
+--- a/fs/btrfs/ordered-data.h
++++ b/fs/btrfs/ordered-data.h
+@@ -96,6 +96,13 @@ struct btrfs_ordered_extent {
+ 	/* number of bytes that still need writing */
+ 	u64 bytes_left;
+ 
++	/*
++	 * the end of the ordered extent which is behind it but
++	 * didn't update disk_i_size. Please see the comment of
++	 * btrfs_ordered_update_i_size();
++	 */
++	u64 outstanding_isize;
 +
-+	ret = btrfs_run_delayed_refs(trans, root, (unsigned long)-1);
-+	if (ret)
-+		goto abort_trans;
- fail:
- 	dput(parent);
- 	trans->block_rsv = rsv;
+ 	/* flags (described above) */
+ 	unsigned long flags;
+ 
 -- 
 1.7.6.5

@@ -1,140 +1,198 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.fusionio.com ([66.114.96.31]:50314 "EHLO mx2.fusionio.com"
+Received: from smtp205.alice.it ([82.57.200.101]:46393 "EHLO smtp205.alice.it"
 	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1758359Ab2HISEI (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 9 Aug 2012 14:04:08 -0400
-Date: Thu, 9 Aug 2012 14:04:05 -0400
-From: Chris Mason <chris.mason@fusionio.com>
-To: Miao Xie <miaox@cn.fujitsu.com>
-CC: Linux Btrfs <linux-btrfs@vger.kernel.org>, David Sterba <dave@jikos.cz>
-Subject: Re: [RFC PATCH] Btrfs: fix full backref problem when inserting
- shared block reference
-Message-ID: <20120809180405.GC32103@shiny>
-References: <50232A19.2010704@cn.fujitsu.com>
+	id S1754013Ab2H3SYG (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Thu, 30 Aug 2012 14:24:06 -0400
+Message-ID: <503FAFF5.80204@libero.it>
+Date: Thu, 30 Aug 2012 20:24:53 +0200
+From: Goffredo Baroncelli <kreijack@libero.it>
+Reply-To: kreijack@inwind.it
 MIME-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-In-Reply-To: <50232A19.2010704@cn.fujitsu.com>
+To: M G Berberich <btrfs@oss.m-berberich.de>
+CC: linux-btrfs@vger.kernel.org, Hubert Kario <kario@wit.edu.pl>
+Subject: Re: =?UTF-8?B?4oCcQnVn4oCdLXJlcG9ydDogaW5jb25zaXN0ZW5jeSBrZXJuZWw=?=
+ =?UTF-8?B?IDwtPiB0b29scw==?=
+References: <20120828195244.GA15021@invalid>
+In-Reply-To: <20120828195244.GA15021@invalid>
+Content-Type: text/plain; charset=UTF-8; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Wed, Aug 08, 2012 at 09:10:17PM -0600, Miao Xie wrote:
-> If we create several snapshots at the same time, the following BUG_ON() will be
-> triggered.
-> 
-> 	kernel BUG at fs/btrfs/extent-tree.c:6047!
-> 
-> Steps to reproduce:
->  # mkfs.btrfs <partition>
->  # mount <partition> <mnt>
->  # cd <mnt>
->  # for ((i=0;i<2400;i++)); do touch long_name_to_make_tree_more_deep$i; done
->  # for ((i=0; i<4; i++))
->  > do
->  > mkdir $i
->  > for ((j=0; j<200; j++))
->  > do
->  > btrfs sub snap . $i/$j
->  > done &
->  > done
+On 08/28/2012 09:52 PM, M G Berberich wrote:
+> Hello,
+>
+> We had set up a btrfs-fs over 6 hot-plugable SAS-disks for
+> testing and got it into a state where kernel and btrfs-tools do not
+> agree any more about the state of the filesystem.
+>
+> We do not remember exaclty what we did, but roughly it was something
+> like this (on the running system). THIS IS FROM MEMORY!
+>
+> (1) pulled out one disk
+> (2) removed disk from btrfs
+> (3) rebalanced btrfs
+> (4) pulled out another disk
+> (5) removed disk from btrfs
+> (6) rebalanced btrfs
+>
+> This went fine sofar.
+>
+> (7) reinserted disk (and rebooted)
+>      At some point before reboot the first 10 sectors of one disk
+>      were zeroed to test if the disk gets removed from the btrfs.
 
-snapshot creation has a critical section.  Once we copy a given root to
-its snapshot, we're not allowed to change it until the transaction
-is fully committed.
+IIRC the superblock is not placed at the beginning of the disk. On the 
+basis of [1] it should be near the 64KB (around the sector #128)
 
-This means that if you're taking a snapshot of root A and storing the
-directory item of the snapshot in root A, you can only do it once per
-transaction with getting into trouble.
 
-Looks like the code doesn't enforce this though.  Dave, could you please
-give this a try:
+[1] 
+https://btrfs.wiki.kernel.org/index.php/User:Wtachi/On-disk_Format#Superblock
+>
+> Now btrfs-tools showed:
+>
+> ---------------------------------------------------------------------------
+> # btrfs fi show
+> failed to read /dev/sr0
+> Label: 'BTRFS_RAID'  uuid: 807193fd-17de-4088-9a54-3e7cacdc89db
+>          Total devices 6 FS bytes used 3.07GB
+>          devid    4 size 931.00GB used 75.00GB path /dev/sdf
+>          devid    5 size 931.00GB used 324.03GB path /dev/sde
+>          devid    6 size 931.00GB used 83.03GB path /dev/sdd
+>          devid    3 size 931.00GB used 326.03GB path /dev/sdc
+>          devid    2 size 931.00GB used 326.03GB path /dev/sdb
+>          devid    1 size 931.00GB used 324.04GB path /dev/sda
 
-diff --git a/fs/btrfs/ctree.c b/fs/btrfs/ctree.c
-index fcc8c21..9e7c621 100644
---- a/fs/btrfs/ctree.c
-+++ b/fs/btrfs/ctree.c
-@@ -1324,6 +1324,8 @@ noinline int btrfs_cow_block(struct btrfs_trans_handle *trans,
- 	u64 search_start;
- 	int ret;
- 
-+	WARN_ON(root->danger_transid == trans->transid);
-+
- 	if (trans->transaction != root->fs_info->running_transaction) {
- 		printk(KERN_CRIT "trans %llu running %llu\n",
- 		       (unsigned long long)trans->transid,
-diff --git a/fs/btrfs/ctree.h b/fs/btrfs/ctree.h
-index 0d195b5..35b5603 100644
---- a/fs/btrfs/ctree.h
-+++ b/fs/btrfs/ctree.h
-@@ -1490,6 +1490,12 @@ struct btrfs_root {
- 	u64 objectid;
- 	u64 last_trans;
- 
-+	/*
-+	 * the last transaction that took a snapshot of this
-+	 * root.  We're only allowed one snapshot per root per transaction
-+	 */
-+	u64 snapshot_trans;
-+
- 	/* data allocations are done in sectorsize units */
- 	u32 sectorsize;
- 
-@@ -1550,6 +1556,13 @@ struct btrfs_root {
- 
- 	int force_cow;
- 
-+	/*
-+	 * this marks the critical section of snapshot creation.  If we
-+	 * make any changes to a root after this critical section starts,
-+	 * we corrupt the FS.  It is checked by btrfs_cow_block
-+	 */
-+	u64 danger_transid;
-+
- 	spinlock_t root_times_lock;
- };
- 
-diff --git a/fs/btrfs/ioctl.c b/fs/btrfs/ioctl.c
-index 9df50fa..b20d835 100644
---- a/fs/btrfs/ioctl.c
-+++ b/fs/btrfs/ioctl.c
-@@ -524,13 +524,28 @@ static int create_snapshot(struct btrfs_root *root, struct dentry *dentry,
- 		pending_snapshot->inherit = *inherit;
- 		*inherit = NULL;	/* take responsibility to free it */
- 	}
--
-+again:
- 	trans = btrfs_start_transaction(root->fs_info->extent_root, 5);
- 	if (IS_ERR(trans)) {
- 		ret = PTR_ERR(trans);
- 		goto fail;
- 	}
- 
-+	/* we're only allowed to snapshot a given root once per transaction */
-+	spin_lock(&root->fs_info->trans_lock);
-+	if (root->snapshot_trans == trans->transid) {
-+		spin_unlock(&root->fs_info->trans_lock);
-+		ret = btrfs_commit_transaction(trans, root->fs_info->extent_root);
-+		if (ret)
-+			goto fail;
-+		goto again;
-+	}
-+
-+	root->snapshot_trans = trans->transid;
-+
-+	spin_unlock(&root->fs_info->trans_lock);
-+
-+
- 	ret = btrfs_snap_reserve_metadata(trans, pending_snapshot);
- 	BUG_ON(ret);
- 
-diff --git a/fs/btrfs/transaction.c b/fs/btrfs/transaction.c
-index 27c2600..4507421 100644
---- a/fs/btrfs/transaction.c
-+++ b/fs/btrfs/transaction.c
-@@ -1093,6 +1093,7 @@ static noinline int create_pending_snapshot(struct btrfs_trans_handle *trans,
- 
- 	/* see comments in should_cow_block() */
- 	root->force_cow = 1;
-+	root->danger_transid = trans->transid;
- 	smp_wmb();
- 
- 	btrfs_set_root_node(new_root_item, tmp);
+"btrfs filesystem show" shows the content of the disks, which could be 
+unrelated to the kernel status. Pay attention that if the data is not 
+flushed to the disk the report of "btrfs fi show" could be unreliable.
+
+I posted few days ago a patch which adds the sysfs support to btrfs. 
+With this support it is possible to know the real state of the disks.
+
+For example I have a filesystem with 4 disks (note "Total devices 4"):
+
+   ghigo@emulato:~$ sudo btrfs fi show
+   Label: 'btrfs3'  uuid: 2a66286d-63e9-4ed5-b347-5af5e4ada814
+	Total devices 4 FS bytes used 284.00KB
+	devid    4 size 100.00GB used 8.01GB path /dev/vdj
+	devid    3 size 100.00GB used 6.04GB path /dev/vdi
+	devid    5 size 100.00GB used 0.00 path /dev/vdh
+	devid    1 size 100.00GB used 7.05GB path /dev/vdg
+
+   Btrfs Btrfs v0.19
+
+My sysfs interface says that the filesystem is composed by 4 disks:
+
+   ghigo@emulato:~$ cat /sys/fs/btrfs/filesystems/2a66286d-
+   63e9-4ed5b347-5af5e4ada814/fs_devices/open_devices
+   4
+
+Then I remove 1 disk
+
+   ghigo@emulato:~$ sudo btrfs dev del /dev/vdi  /mnt/btrfs3/
+
+Now the sysfs interface says:
+
+   ghigo@emulato:~$ cat /sys/fs/btrfs/filesystems/2a66286d-
+   63e9-4ed5b347-5af5e4ada814/fs_devices/open_devices
+   3
+
+But "btrfs filesystem show" says (note still "Total devices 4"):
+
+   ghigo@emulato:~$ sudo btrfs fi show
+   failed to read /dev/sr0
+   Label: 'btrfs3'  uuid: 2a66286d-63e9-4ed5-b347-5af5e4ada814
+	Total devices 4 FS bytes used 92.00KB
+	devid    4 size 100.00GB used 7.00GB path /dev/vdj
+	devid    3 size 100.00GB used 6.04GB path /dev/vdi
+	devid    5 size 100.00GB used 5.06GB path /dev/vdh
+	devid    1 size 100.00GB used 6.08GB path /dev/vdg
+
+   Btrfs Btrfs v0.19
+
+Then I do a sync
+
+   ghigo@emulato:~$ sync
+   ghigo@emulato:~$ sudo btrfs fi show
+   failed to read /dev/sr0
+   Label: 'btrfs3'  uuid: 2a66286d-63e9-4ed5-b347-5af5e4ada814
+	Total devices 3 FS bytes used 92.00KB
+	devid    4 size 100.00GB used 7.00GB path /dev/vdj
+	devid    3 size 100.00GB used 6.04GB path /dev/vdi
+	devid    5 size 100.00GB used 5.06GB path /dev/vdh
+	devid    1 size 100.00GB used 6.08GB path /dev/vdg
+
+   Btrfs Btrfs v0.19
+
+(note "Total devices 3")
+
+And magically the filesystem is now composed by three disks. However 4 
+physical devices are show. This because the disk /dev/vdi superblock 
+says that the disk is still valid (after the "btrfs device del" the disk 
+is not touched any more)
+
+In the past Hubert posted a patch [2] to clear a btrfs superblock. A 
+further enhancement of the "btrfs device del" could be to reset 
+automatically the first superblock (leaving the backup ones unaffected).
+
+
+
+[2] http://permalink.gmane.org/gmane.comp.file-systems.btrfs/17065
+>
+> Btrfs Btrfs v0.19
+> ---------------------------------------------------------------------------
+>
+> As far as we can tell, only four of the disks are considered part of
+> the btrfs by kernel. There were only four “btrfs: bdev”-lines in dmesg
+> and only four disks took part in balancing. “btrfs device scan” says:
+>
+>    unable to scan the device '/dev/sdd' - Device or resource busy
+>
+> and balance does not balance theses two devices (of 6)
+>
+> It was neither possible to remove the disk from the btrfs via “btrfs
+> device delete” nor adding them via “btrfs device add”.
+>
+> (8) a colleague swaped the two disk
+>
+> Now btrfs-tools showed:
+>
+> ---------------------------------------------------------------------------
+> # btrfs fi show
+> failed to read /dev/sr0
+> Label: 'BTRFS_RAID'  uuid: 807193fd-17de-4088-9a54-3e7cacdc89db
+>          Total devices 5 FS bytes used 3.01GB
+>          devid    6 size 931.00GB used 83.03GB path /dev/sdf
+>          devid    4 size 931.00GB used 75.00GB path /dev/sdd
+>          devid    5 size 931.00GB used 325.03GB path /dev/sde
+>          devid    3 size 931.00GB used 326.03GB path /dev/sdc
+>          devid    2 size 931.00GB used 325.03GB path /dev/sdb
+>          devid    1 size 931.51GB used 326.04GB path /dev/sda
+>
+> Btrfs Btrfs v0.19
+> ---------------------------------------------------------------------------
+>
+> Claiming the btrfs has 5 disk, but listing 6 disks out of 5 (6 of 5).
+>
+> He finally managed to get the btrfs complete again by overwriting the
+> first 100G of the two disk. After this the btrfs-tools (correctly)
+> stated a filesystem with 4 disk and it was possible to add the two
+> disk again.
+>
+>
+> Assumption:
+> kernel and btrfs do not share the same view of the filesystem.
+>
+> In this state commands to repair the filesystem do not work, because
+> they are either rejected by the tools or by the kernel.
+>
+> A tool that allows a disk/partition to be marked as not-a-btrfs-part
+> would be nice.
+>
+> A “/proc/btrfs” showing the kernels view of the filesystem would be
+> usefull.
+>
+> 	MfG
+> 	bmg
+>
+

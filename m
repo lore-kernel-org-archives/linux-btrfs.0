@@ -1,66 +1,139 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cobra.newdream.net ([66.33.216.30]:43162 "EHLO
+Received: from cobra.newdream.net ([66.33.216.30]:43165 "EHLO
 	cobra.newdream.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1752706Ab2H3W0W (ORCPT
+	with ESMTP id S1752730Ab2H3W0W (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
 	Thu, 30 Aug 2012 18:26:22 -0400
 From: Sage Weil <sage@inktank.com>
 To: linux-btrfs@vger.kernel.org
 Cc: Sage Weil <sage@inktank.com>
-Subject: [PATCH 1/3] Btrfs: pass lockdep rwsem metadata to async commit transaction
-Date: Thu, 30 Aug 2012 15:26:15 -0700
-Message-Id: <1346365577-9405-2-git-send-email-sage@inktank.com>
+Subject: [PATCH 3/3] Btrfs: do not take cleanup_work_sem in btrfs_run_delayed_iputs()
+Date: Thu, 30 Aug 2012 15:26:17 -0700
+Message-Id: <1346365577-9405-4-git-send-email-sage@inktank.com>
 In-Reply-To: <1346365577-9405-1-git-send-email-sage@inktank.com>
 References: <1346365577-9405-1-git-send-email-sage@inktank.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-The freeze rwsem is taken by sb_start_intwrite() and dropped during the
-commit_ or end_transaction().  In the async case, that happens in a worker
-thread.  Tell lockdep the calling thread is releasing ownership of the
-rwsem and the async thread is picking it up.
+Josef has suggested that this is not necessary.  Removing it also avoids
+this lockdep splat (after the new sb_internal locking stuff was added):
 
-XFS plays the same trick in fs/xfs/xfs_aops.c.
+[  604.090449] ======================================================
+[  604.114819] [ INFO: possible circular locking dependency detected ]
+[  604.139262] 3.6.0-rc2-ceph-00144-g463b030 #1 Not tainted
+[  604.162193] -------------------------------------------------------
+[  604.186139] btrfs-cleaner/6669 is trying to acquire lock:
+[  604.209555]  (sb_internal#2){.+.+..}, at: [<ffffffffa0042b84>] start_transaction+0x124/0x430 [btrfs]
+[  604.257100]
+[  604.257100] but task is already holding lock:
+[  604.300366]  (&fs_info->cleanup_work_sem){.+.+..}, at: [<ffffffffa0048002>] btrfs_run_delayed_iputs+0x72/0x130 [btrfs]
+[  604.352989]
+[  604.352989] which lock already depends on the new lock.
+[  604.352989]
+[  604.427104]
+[  604.427104] the existing dependency chain (in reverse order) is:
+[  604.478493]
+[  604.478493] -> #1 (&fs_info->cleanup_work_sem){.+.+..}:
+[  604.529313]        [<ffffffff810b2c82>] lock_acquire+0xa2/0x140
+[  604.559621]        [<ffffffff81632b69>] down_read+0x39/0x4e
+[  604.589382]        [<ffffffffa004db98>] btrfs_lookup_dentry+0x218/0x550 [btrfs]
+[  604.596161] btrfs: unlinked 1 orphans
+[  604.675002]        [<ffffffffa006aadd>] create_subvol+0x62d/0x690 [btrfs]
+[  604.708859]        [<ffffffffa006d666>] btrfs_mksubvol.isra.52+0x346/0x3a0 [btrfs]
+[  604.772466]        [<ffffffffa006d7f2>] btrfs_ioctl_snap_create_transid+0x132/0x190 [btrfs]
+[  604.842245]        [<ffffffffa006d8ae>] btrfs_ioctl_snap_create+0x5e/0x80 [btrfs]
+[  604.912852]        [<ffffffffa00708ae>] btrfs_ioctl+0x138e/0x1990 [btrfs]
+[  604.951888]        [<ffffffff8118e9b8>] do_vfs_ioctl+0x98/0x560
+[  604.989961]        [<ffffffff8118ef11>] sys_ioctl+0x91/0xa0
+[  605.026628]        [<ffffffff8163d569>] system_call_fastpath+0x16/0x1b
+[  605.064404]
+[  605.064404] -> #0 (sb_internal#2){.+.+..}:
+[  605.126832]        [<ffffffff810b25e8>] __lock_acquire+0x1ac8/0x1b90
+[  605.163671]        [<ffffffff810b2c82>] lock_acquire+0xa2/0x140
+[  605.200228]        [<ffffffff8117dac6>] __sb_start_write+0xc6/0x1b0
+[  605.236818]        [<ffffffffa0042b84>] start_transaction+0x124/0x430 [btrfs]
+[  605.274029]        [<ffffffffa00431a3>] btrfs_start_transaction+0x13/0x20 [btrfs]
+[  605.340520]        [<ffffffffa004ccfa>] btrfs_evict_inode+0x19a/0x330 [btrfs]
+[  605.378720]        [<ffffffff811972c8>] evict+0xb8/0x1c0
+[  605.416057]        [<ffffffff811974d5>] iput+0x105/0x210
+[  605.452373]        [<ffffffffa0048082>] btrfs_run_delayed_iputs+0xf2/0x130 [btrfs]
+[  605.521627]        [<ffffffffa003b5e1>] cleaner_kthread+0xa1/0x120 [btrfs]
+[  605.560520]        [<ffffffff810791ee>] kthread+0xae/0xc0
+[  605.598094]        [<ffffffff8163e744>] kernel_thread_helper+0x4/0x10
+[  605.636499]
+[  605.636499] other info that might help us debug this:
+[  605.636499]
+[  605.736504]  Possible unsafe locking scenario:
+[  605.736504]
+[  605.801931]        CPU0                    CPU1
+[  605.835126]        ----                    ----
+[  605.867093]   lock(&fs_info->cleanup_work_sem);
+[  605.898594]                                lock(sb_internal#2);
+[  605.931954]                                lock(&fs_info->cleanup_work_sem);
+[  605.965359]   lock(sb_internal#2);
+[  605.994758]
+[  605.994758]  *** DEADLOCK ***
+[  605.994758]
+[  606.075281] 2 locks held by btrfs-cleaner/6669:
+[  606.104528]  #0:  (&fs_info->cleaner_mutex){+.+...}, at: [<ffffffffa003b5d5>] cleaner_kthread+0x95/0x120 [btrfs]
+[  606.165626]  #1:  (&fs_info->cleanup_work_sem){.+.+..}, at: [<ffffffffa0048002>] btrfs_run_delayed_iputs+0x72/0x130 [btrfs]
+[  606.231297]
+[  606.231297] stack backtrace:
+[  606.287723] Pid: 6669, comm: btrfs-cleaner Not tainted 3.6.0-rc2-ceph-00144-g463b030 #1
+[  606.347823] Call Trace:
+[  606.376184]  [<ffffffff8162a77c>] print_circular_bug+0x1fb/0x20c
+[  606.409243]  [<ffffffff810b25e8>] __lock_acquire+0x1ac8/0x1b90
+[  606.441343]  [<ffffffffa0042b84>] ? start_transaction+0x124/0x430 [btrfs]
+[  606.474583]  [<ffffffff810b2c82>] lock_acquire+0xa2/0x140
+[  606.505934]  [<ffffffffa0042b84>] ? start_transaction+0x124/0x430 [btrfs]
+[  606.539429]  [<ffffffff8132babd>] ? do_raw_spin_unlock+0x5d/0xb0
+[  606.571719]  [<ffffffff8117dac6>] __sb_start_write+0xc6/0x1b0
+[  606.603498]  [<ffffffffa0042b84>] ? start_transaction+0x124/0x430 [btrfs]
+[  606.637405]  [<ffffffffa0042b84>] ? start_transaction+0x124/0x430 [btrfs]
+[  606.670165]  [<ffffffff81172e75>] ? kmem_cache_alloc+0xb5/0x160
+[  606.702144]  [<ffffffffa0042b84>] start_transaction+0x124/0x430 [btrfs]
+[  606.735562]  [<ffffffffa00256a6>] ? block_rsv_add_bytes+0x56/0x80 [btrfs]
+[  606.769861]  [<ffffffffa00431a3>] btrfs_start_transaction+0x13/0x20 [btrfs]
+[  606.804575]  [<ffffffffa004ccfa>] btrfs_evict_inode+0x19a/0x330 [btrfs]
+[  606.838756]  [<ffffffff81634c6b>] ? _raw_spin_unlock+0x2b/0x40
+[  606.872010]  [<ffffffff811972c8>] evict+0xb8/0x1c0
+[  606.903800]  [<ffffffff811974d5>] iput+0x105/0x210
+[  606.935416]  [<ffffffffa0048082>] btrfs_run_delayed_iputs+0xf2/0x130 [btrfs]
+[  606.970510]  [<ffffffffa003b5d5>] ? cleaner_kthread+0x95/0x120 [btrfs]
+[  607.005648]  [<ffffffffa003b5e1>] cleaner_kthread+0xa1/0x120 [btrfs]
+[  607.040724]  [<ffffffffa003b540>] ? btrfs_destroy_delayed_refs.isra.102+0x220/0x220 [btrfs]
+[  607.104740]  [<ffffffff810791ee>] kthread+0xae/0xc0
+[  607.137119]  [<ffffffff810b379d>] ? trace_hardirqs_on+0xd/0x10
+[  607.169797]  [<ffffffff8163e744>] kernel_thread_helper+0x4/0x10
+[  607.202472]  [<ffffffff81635430>] ? retint_restore_args+0x13/0x13
+[  607.235884]  [<ffffffff81079140>] ? flush_kthread_work+0x1a0/0x1a0
+[  607.268731]  [<ffffffff8163e740>] ? gs_change+0x13/0x13
 
 Signed-off-by: Sage Weil <sage@inktank.com>
 ---
- fs/btrfs/transaction.c |   16 ++++++++++++++++
- 1 file changed, 16 insertions(+)
+ fs/btrfs/inode.c |    2 --
+ 1 file changed, 2 deletions(-)
 
-diff --git a/fs/btrfs/transaction.c b/fs/btrfs/transaction.c
-index 17be3de..efc41a5 100644
---- a/fs/btrfs/transaction.c
-+++ b/fs/btrfs/transaction.c
-@@ -1228,6 +1228,14 @@ static void do_async_commit(struct work_struct *work)
- 	struct btrfs_async_commit *ac =
- 		container_of(work, struct btrfs_async_commit, work.work);
+diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
+index 6e8f416..d3f2e6a 100644
+--- a/fs/btrfs/inode.c
++++ b/fs/btrfs/inode.c
+@@ -2118,7 +2118,6 @@ void btrfs_run_delayed_iputs(struct btrfs_root *root)
+ 	if (empty)
+ 		return;
  
-+	/*
-+	 * We've got freeze protection passed with the transaction.
-+	 * Tell lockdep about it.
-+	 */
-+	rwsem_acquire_read(
-+		&ac->root->fs_info->sb->s_writers.lock_map[SB_FREEZE_FS-1],
-+		0, 1, _THIS_IP_);
-+
- 	btrfs_commit_transaction(ac->newtrans, ac->root);
- 	kfree(ac);
+-	down_read(&root->fs_info->cleanup_work_sem);
+ 	spin_lock(&fs_info->delayed_iput_lock);
+ 	list_splice_init(&fs_info->delayed_iputs, &list);
+ 	spin_unlock(&fs_info->delayed_iput_lock);
+@@ -2129,7 +2128,6 @@ void btrfs_run_delayed_iputs(struct btrfs_root *root)
+ 		iput(delayed->inode);
+ 		kfree(delayed);
+ 	}
+-	up_read(&root->fs_info->cleanup_work_sem);
  }
-@@ -1257,6 +1265,14 @@ int btrfs_commit_transaction_async(struct btrfs_trans_handle *trans,
- 	atomic_inc(&cur_trans->use_count);
  
- 	btrfs_end_transaction(trans, root);
-+
-+	/*
-+	 * Tell lockdep we've released the freeze rwsem, since the
-+	 * async commit thread will be the one to unlock it.
-+	 */
-+	rwsem_release(&root->fs_info->sb->s_writers.lock_map[SB_FREEZE_FS-1],
-+		      1, _THIS_IP_);
-+
- 	schedule_delayed_work(&ac->work, 0);
- 
- 	/* wait for transaction to start and unblock */
+ enum btrfs_orphan_cleanup_state {
 -- 
 1.7.9.5
 

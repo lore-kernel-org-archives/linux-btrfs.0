@@ -1,81 +1,79 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from acsinet15.oracle.com ([141.146.126.227]:50768 "EHLO
+Received: from acsinet15.oracle.com ([141.146.126.227]:50773 "EHLO
 	acsinet15.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1750992Ab2HaFii (ORCPT
+	with ESMTP id S1751180Ab2HaFik (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Fri, 31 Aug 2012 01:38:38 -0400
-Received: from ucsinet22.oracle.com (ucsinet22.oracle.com [156.151.31.94])
-	by acsinet15.oracle.com (Sentrion-MTA-4.2.2/Sentrion-MTA-4.2.2) with ESMTP id q7V5cZkM019048
+	Fri, 31 Aug 2012 01:38:40 -0400
+Received: from ucsinet21.oracle.com (ucsinet21.oracle.com [156.151.31.93])
+	by acsinet15.oracle.com (Sentrion-MTA-4.2.2/Sentrion-MTA-4.2.2) with ESMTP id q7V5cbbU019070
 	(version=TLSv1/SSLv3 cipher=DHE-RSA-AES256-SHA bits=256 verify=OK)
-	for <linux-btrfs@vger.kernel.org>; Fri, 31 Aug 2012 05:38:36 GMT
-Received: from acsmt356.oracle.com (acsmt356.oracle.com [141.146.40.156])
-	by ucsinet22.oracle.com (8.14.4+Sun/8.14.4) with ESMTP id q7V5cZLk018229
+	for <linux-btrfs@vger.kernel.org>; Fri, 31 Aug 2012 05:38:38 GMT
+Received: from acsmt357.oracle.com (acsmt357.oracle.com [141.146.40.157])
+	by ucsinet21.oracle.com (8.14.4+Sun/8.14.4) with ESMTP id q7V5cb1J016617
 	(version=TLSv1/SSLv3 cipher=DHE-RSA-AES256-SHA bits=256 verify=NO)
-	for <linux-btrfs@vger.kernel.org>; Fri, 31 Aug 2012 05:38:35 GMT
+	for <linux-btrfs@vger.kernel.org>; Fri, 31 Aug 2012 05:38:37 GMT
 Received: from abhmt105.oracle.com (abhmt105.oracle.com [141.146.116.57])
-	by acsmt356.oracle.com (8.12.11.20060308/8.12.11) with ESMTP id q7V5cYRV023923
-	for <linux-btrfs@vger.kernel.org>; Fri, 31 Aug 2012 00:38:34 -0500
+	by acsmt357.oracle.com (8.12.11.20060308/8.12.11) with ESMTP id q7V5caUv015285
+	for <linux-btrfs@vger.kernel.org>; Fri, 31 Aug 2012 00:38:36 -0500
 From: Liu Bo <bo.li.liu@oracle.com>
 To: linux-btrfs@vger.kernel.org
-Subject: [PATCH 1/6] Btrfs: fix a bug of per-file nocow
-Date: Fri, 31 Aug 2012 13:36:54 +0800
-Message-Id: <1346391419-4278-2-git-send-email-bo.li.liu@oracle.com>
+Subject: [PATCH 2/6] Btrfs: cleanup for unused ref cache stuff
+Date: Fri, 31 Aug 2012 13:36:55 +0800
+Message-Id: <1346391419-4278-3-git-send-email-bo.li.liu@oracle.com>
 In-Reply-To: <1346391419-4278-1-git-send-email-bo.li.liu@oracle.com>
 References: <1346391419-4278-1-git-send-email-bo.li.liu@oracle.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Users report a bug, the reproducer is:
-$ mkfs.btrfs /dev/loop0
-$ mount /dev/loop0 /mnt/btrfs/
-$ mkdir /mnt/btrfs/dir
-$ chattr +C /mnt/btrfs/dir/
-$ dd if=/dev/zero of=/mnt/btrfs/dir/foo bs=4K count=10;
-$ lsattr /mnt/btrfs/dir/foo
----------------C- /mnt/btrfs/dir/foo
-$ filefrag /mnt/btrfs/dir/foo
-/mnt/btrfs/dir/foo: 1 extent found    ---> an extent
-$ dd if=/dev/zero of=/mnt/btrfs/dir/foo bs=4K count=1 seek=5 conv=notrunc,nocreat; sync
-$ filefrag /mnt/btrfs/dir/foo
-/mnt/btrfs/dir/foo: 3 extents found   ---> with nocow, btrfs breaks the extent into three parts
+From: liubo <liubo2009@cn.fujitsu.com>
 
-The new created file should not only inherit the NODATACOW flag, but also
-honor NODATASUM flag, because we must do COW on a file extent with checksum.
+As ref cache has been removed from btrfs, there is no user on
+its lock and its check.
 
+Signed-off-by: Liu Bo <liubo2009@cn.fujitsu.com>
 Signed-off-by: Liu Bo <bo.li.liu@oracle.com>
 ---
- fs/btrfs/inode.c |    3 +--
- fs/btrfs/ioctl.c |    3 ++-
- 2 files changed, 3 insertions(+), 3 deletions(-)
+ fs/btrfs/ctree.h   |    3 ---
+ fs/btrfs/disk-io.c |    5 -----
+ 2 files changed, 0 insertions(+), 8 deletions(-)
 
-diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
-index b2c3514..9bce6e9 100644
---- a/fs/btrfs/inode.c
-+++ b/fs/btrfs/inode.c
-@@ -4720,8 +4720,7 @@ static struct inode *btrfs_new_inode(struct btrfs_trans_handle *trans,
- 	if (S_ISREG(mode)) {
- 		if (btrfs_test_opt(root, NODATASUM))
- 			BTRFS_I(inode)->flags |= BTRFS_INODE_NODATASUM;
--		if (btrfs_test_opt(root, NODATACOW) ||
--		    (BTRFS_I(dir)->flags & BTRFS_INODE_NODATACOW))
-+		if (btrfs_test_opt(root, NODATACOW))
- 			BTRFS_I(inode)->flags |= BTRFS_INODE_NODATACOW;
+diff --git a/fs/btrfs/ctree.h b/fs/btrfs/ctree.h
+index 0d195b5..4ae593c 100644
+--- a/fs/btrfs/ctree.h
++++ b/fs/btrfs/ctree.h
+@@ -1366,9 +1366,6 @@ struct btrfs_fs_info {
+ 	struct rb_root defrag_inodes;
+ 	atomic_t defrag_running;
+ 
+-	spinlock_t ref_cache_lock;
+-	u64 total_ref_cache_size;
+-
+ 	/*
+ 	 * these three are in extended format (availability of single
+ 	 * chunks is denoted by BTRFS_AVAIL_ALLOC_BIT_SINGLE bit, other
+diff --git a/fs/btrfs/disk-io.c b/fs/btrfs/disk-io.c
+index 22e98e0..bcd1703 100644
+--- a/fs/btrfs/disk-io.c
++++ b/fs/btrfs/disk-io.c
+@@ -2000,7 +2000,6 @@ int open_ctree(struct super_block *sb,
+ 	INIT_LIST_HEAD(&fs_info->caching_block_groups);
+ 	spin_lock_init(&fs_info->delalloc_lock);
+ 	spin_lock_init(&fs_info->trans_lock);
+-	spin_lock_init(&fs_info->ref_cache_lock);
+ 	spin_lock_init(&fs_info->fs_roots_radix_lock);
+ 	spin_lock_init(&fs_info->delayed_iput_lock);
+ 	spin_lock_init(&fs_info->defrag_inodes_lock);
+@@ -3211,10 +3210,6 @@ int close_ctree(struct btrfs_root *root)
+ 		printk(KERN_INFO "btrfs: at unmount delalloc count %llu\n",
+ 		       (unsigned long long)fs_info->delalloc_bytes);
  	}
+-	if (fs_info->total_ref_cache_size) {
+-		printk(KERN_INFO "btrfs: at umount reference cache size %llu\n",
+-		       (unsigned long long)fs_info->total_ref_cache_size);
+-	}
  
-diff --git a/fs/btrfs/ioctl.c b/fs/btrfs/ioctl.c
-index 00ddf22..7390b25 100644
---- a/fs/btrfs/ioctl.c
-+++ b/fs/btrfs/ioctl.c
-@@ -141,7 +141,8 @@ void btrfs_inherit_iflags(struct inode *inode, struct inode *dir)
- 	}
- 
- 	if (flags & BTRFS_INODE_NODATACOW)
--		BTRFS_I(inode)->flags |= BTRFS_INODE_NODATACOW;
-+		BTRFS_I(inode)->flags |= BTRFS_INODE_NODATACOW |
-+					 BTRFS_INODE_NODATASUM;
- 
- 	btrfs_update_iflags(inode);
- }
+ 	free_extent_buffer(fs_info->extent_root->node);
+ 	free_extent_buffer(fs_info->extent_root->commit_root);
 -- 
 1.7.7.6
 

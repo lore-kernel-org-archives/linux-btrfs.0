@@ -1,47 +1,71 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx1.fusionio.com ([66.114.96.30]:53648 "EHLO mx1.fusionio.com"
+Received: from len.romanrm.net ([176.31.121.172]:41593 "EHLO len.romanrm.net"
 	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1753109Ab2HaABD (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 30 Aug 2012 20:01:03 -0400
-Date: Thu, 30 Aug 2012 20:01:01 -0400
-From: Chris Mason <chris.mason@fusionio.com>
-To: Josef Bacik <jbacik@fusionio.com>
-CC: Martin Steigerwald <Martin@lichtvoll.de>,
-        "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>,
+	id S1750846Ab2HaFCh (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Fri, 31 Aug 2012 01:02:37 -0400
+Date: Fri, 31 Aug 2012 11:02:34 +0600
+From: Roman Mamedov <rm@romanrm.ru>
+To: Martin Steigerwald <Martin@lichtvoll.de>
+Cc: linux-btrfs@vger.kernel.org, Josef Bacik <jbacik@fusionio.com>,
         Mitch Harder <mitch.harder@sabayonlinux.org>
 Subject: Re: Varying Leafsize and Nodesize in Btrfs
-Message-ID: <20120831000101.GB5888@shiny.msi.event>
+Message-ID: <20120831110234.031e23ee@natsu>
+In-Reply-To: <201208302334.49399.Martin@lichtvoll.de>
 References: <CAKcLGm_MKEdTiHFBd-b-v2sN5gJmgFRqsykzWRXTVqUw4O6Acw@mail.gmail.com>
- <20120830162512.GA2879@localhost.localdomain>
- <201208302334.49399.Martin@lichtvoll.de>
- <20120830215008.GB2879@localhost.localdomain>
-MIME-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-In-Reply-To: <20120830215008.GB2879@localhost.localdomain>
+	<20120830162512.GA2879@localhost.localdomain>
+	<201208302334.49399.Martin@lichtvoll.de>
+Mime-Version: 1.0
+Content-Type: multipart/signed; micalg=PGP-SHA1;
+ boundary="Sig_/R=i2kfVrveG5jRI/2UbdRHY"; protocol="application/pgp-signature"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Thu, Aug 30, 2012 at 03:50:08PM -0600, Josef Bacik wrote:
-> On Thu, Aug 30, 2012 at 03:34:49PM -0600, Martin Steigerwald wrote:
-> > I wonder what a good value for SSD might be. I tend to not use anymore 
-> > than 16k, but thats just some gut feeling right now. Nothing based on a 
-> > well-founded explaination.
-> >
-> 
-> 32k really starts to depend on your workload.  Generally speaking everybody will
-> be faster with 16k, but 32k starts to depend on your workload and hardware, and
-> then anything about 64k really starts to hurt with memmove().  With this sort of
-> thing SSD vs not isn't going to make much of a difference, erase blocks tend to
-> be several megs in size so you aren't going to get anywhere close to avoiding
-> the internal RMW cycle inside the ssd.  Thanks,
+--Sig_/R=i2kfVrveG5jRI/2UbdRHY
+Content-Type: text/plain; charset=US-ASCII
+Content-Transfer-Encoding: quoted-printable
 
-I almost made 16k the default, but the problem is that it does increase
-lock contention because bigger nodes mean fewer locks.  You can see this
-with dbench and compilebench, especially early in the FS life.
+On Thu, 30 Aug 2012 23:34:49 +0200
+Martin Steigerwald <Martin@lichtvoll.de> wrote:
 
-My goal is to make the cow step of btrfs_search_slot really atomic, so
-we don't have to switch to a blocking lock.  That will really fix a lot
-of contention problems.
+> I wanted to ask about 32k either.
+>=20
+> I used 32k on one 2,5 inch external esata disk. But I never measured=20
+> anything so far.
+>=20
+> I wonder what a good value for SSD might be. I tend to not use anymore=20
+> than 16k, but thats just some gut feeling right now. Nothing based on a=20
+> well-founded explaination.
 
--chris
+If you look closely at https://oss.oracle.com/~mason/blocksizes/ , you will
+notice that 16K delivers almost all of the 32K's performance gains in "Read=
+",
+while not suffering from slowdowns that 32K shows in "Create" and "Delete".
 
+I have chosen 16K for my new /home partition (on an SSD+HDD mdadm RAID1).
+But what disappointed me at the time, is that one can't seem to have a "mix=
+ed"
+allocation FS with non-default leaf/node sizes.
+
+--=20
+With respect,
+Roman
+
+~~~~~~~~~~~~~~~~~~~~~~~~~~~
+"Stallman had a printer,
+with code he could not see.
+So he began to tinker,
+and set the software free."
+
+--Sig_/R=i2kfVrveG5jRI/2UbdRHY
+Content-Type: application/pgp-signature; name=signature.asc
+Content-Disposition: attachment; filename=signature.asc
+
+-----BEGIN PGP SIGNATURE-----
+Version: GnuPG v1.4.12 (GNU/Linux)
+
+iEYEARECAAYFAlBARWoACgkQTLKSvz+PZwiK+gCeI72syQypXyxvJhh15OXC/Thl
+LTwAni/iXZNcj96Z7gLfXWaTxVHUxDop
+=xhQu
+-----END PGP SIGNATURE-----
+
+--Sig_/R=i2kfVrveG5jRI/2UbdRHY--

@@ -1,166 +1,145 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([222.73.24.84]:19567 "EHLO song.cn.fujitsu.com"
-	rhost-flags-OK-FAIL-OK-OK) by vger.kernel.org with ESMTP
-	id S1751651Ab2HJFbg convert rfc822-to-8bit (ORCPT
+Received: from rcsinet15.oracle.com ([148.87.113.117]:51689 "EHLO
+	rcsinet15.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1750992Ab2HaFmW (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Fri, 10 Aug 2012 01:31:36 -0400
-Received: from fnstmail02.fnst.cn.fujitsu.com (tang.cn.fujitsu.com [127.0.0.1])
-	by tang.cn.fujitsu.com (8.14.3/8.13.1) with ESMTP id q7A5VY0X026111
-	for <linux-btrfs@vger.kernel.org>; Fri, 10 Aug 2012 13:31:34 +0800
-Message-ID: <50249C8A.5010902@cn.fujitsu.com>
-Date: Fri, 10 Aug 2012 13:30:50 +0800
-From: Miao Xie <miaox@cn.fujitsu.com>
-Reply-To: miaox@cn.fujitsu.com
-MIME-Version: 1.0
-To: Linux Btrfs <linux-btrfs@vger.kernel.org>
-Subject: [PATCH 1/2] Btrfs: fix several compile warning
-Content-Type: text/plain; charset=UTF-8
+	Fri, 31 Aug 2012 01:42:22 -0400
+Received: from acsinet21.oracle.com (acsinet21.oracle.com [141.146.126.237])
+	by rcsinet15.oracle.com (Sentrion-MTA-4.2.2/Sentrion-MTA-4.2.2) with ESMTP id q7V5gLfe028433
+	(version=TLSv1/SSLv3 cipher=DHE-RSA-AES256-SHA bits=256 verify=OK)
+	for <linux-btrfs@vger.kernel.org>; Fri, 31 Aug 2012 05:42:22 GMT
+Received: from acsmt358.oracle.com (acsmt358.oracle.com [141.146.40.158])
+	by acsinet21.oracle.com (8.14.4+Sun/8.14.4) with ESMTP id q7V5gLgD000447
+	(version=TLSv1/SSLv3 cipher=DHE-RSA-AES256-SHA bits=256 verify=NO)
+	for <linux-btrfs@vger.kernel.org>; Fri, 31 Aug 2012 05:42:21 GMT
+Received: from abhmt108.oracle.com (abhmt108.oracle.com [141.146.116.60])
+	by acsmt358.oracle.com (8.12.11.20060308/8.12.11) with ESMTP id q7V5gL5A029745
+	for <linux-btrfs@vger.kernel.org>; Fri, 31 Aug 2012 00:42:21 -0500
+From: Liu Bo <bo.li.liu@oracle.com>
+To: linux-btrfs@vger.kernel.org
+Subject: [PATCH v3] Btrfs-progs: add options to change bufsize in logical to inode translation
+Date: Fri, 31 Aug 2012 13:40:44 +0800
+Message-Id: <1346391644-4450-1-git-send-email-bo.li.liu@oracle.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-This patch fixed the following warning:
-cmds-send.c:464:6: warning: ‘ret' may be used uninitialized in this function [-Wuninitialized]
-crc32c.c:121:1: warning: control reaches end of non-void function [-Wreturn-type]
-send-utils.c:69:11: warning: ‘comp' may be used uninitialized in this function [-Wuninitialized]
-send-utils.c:126:6: warning: ‘comp' may be used uninitialized in this function [-Wuninitialized]
-send-utils.c:99:22: warning: ‘entry' may be used uninitialized in this function [-Wuninitialized]
-btrfs.c:261:2: warning: implicit declaration of function ‘crc32c_optimization_init' [-Wimplicit-function-declaration]
-btrfs.c:105:2: warning: ‘cmd' may be used uninitialized in this function [-Wuninitialized]
-restore.c:435:12: warning: ignoring return value of ‘ftruncate', declared with attribute warn_unused_result [-Wunused-result]
+Add an option 's' to set bufsize in logical to inode transition, then we are able
+to read all the refs to the logical address.
+Meanwhile, set a max value 64k for the bufsize.
 
-Signed-off-by: Miao Xie <miaox@cn.fujitsu.com>
+Signed-off-by: Liu Bo <bo.li.liu@oracle.com>
 ---
- btrfs.c      |    3 ++-
- cmds-send.c  |    2 ++
- crc32c.c     |    4 ++--
- crc32c.h     |    2 +-
- restore.c    |    8 +++++---
- send-utils.c |    4 ++++
- 6 files changed, 16 insertions(+), 7 deletions(-)
+v2->v3: - use 64k as the upper limit
+        - document command's options
 
-diff --git a/btrfs.c b/btrfs.c
-index e9d54f8..ed99994 100644
---- a/btrfs.c
-+++ b/btrfs.c
-@@ -19,6 +19,7 @@
- #include <stdlib.h>
- #include <string.h>
+ cmds-inspect.c |   23 +++++++++++++++++------
+ man/btrfs.8.in |    7 +++++--
+ 2 files changed, 22 insertions(+), 8 deletions(-)
+
+diff --git a/cmds-inspect.c b/cmds-inspect.c
+index 2f0228f..42f16fc 100644
+--- a/cmds-inspect.c
++++ b/cmds-inspect.c
+@@ -115,8 +115,13 @@ static int cmd_inode_resolve(int argc, char **argv)
+ }
  
-+#include "crc32c.h"
- #include "commands.h"
- #include "version.h"
+ static const char * const cmd_logical_resolve_usage[] = {
+-	"btrfs inspect-internal logical-resolve [-Pv] <logical> <path>",
++	"btrfs inspect-internal logical-resolve [-Pv] [-s bufsize] <logical> <path>",
+ 	"Get file system paths for the given logical address",
++	"-P          skip the path resolving and print the inodes instead",
++	"-v          verbose mode",
++	"-s bufsize  set inode container's size. This is used to increase inode",
++	"            container's size in case it is not enough to read all the ",
++	"            resolved results. The max value one can set is 64k",
+ 	NULL
+ };
  
-@@ -93,7 +94,7 @@ static int parse_one_token(const char *arg, const struct cmd_group *grp,
- static const struct cmd_struct *
- parse_command_token(const char *arg, const struct cmd_group *grp)
- {
--	const struct cmd_struct *cmd;
-+	const struct cmd_struct *cmd = NULL;
+@@ -130,12 +135,13 @@ static int cmd_logical_resolve(int argc, char **argv)
+ 	int bytes_left;
+ 	struct btrfs_ioctl_logical_ino_args loi;
+ 	struct btrfs_data_container *inodes;
++	u64 size = 4096;
+ 	char full_path[4096];
+ 	char *path_ptr;
  
- 	switch(parse_one_token(arg, grp, &cmd)) {
- 	case -1:
-diff --git a/cmds-send.c b/cmds-send.c
-index 8a0c110..3d15d26 100644
---- a/cmds-send.c
-+++ b/cmds-send.c
-@@ -541,6 +541,7 @@ int cmd_send_start(int argc, char **argv)
+ 	optind = 1;
+ 	while (1) {
+-		int c = getopt(argc, argv, "Pv");
++		int c = getopt(argc, argv, "Pvs:");
+ 		if (c < 0)
+ 			break;
  
- 	subvol = realpath(argv[optind], NULL);
- 	if (!subvol) {
-+		ret = -errno;
- 		fprintf(stderr, "ERROR: unable to resolve %s\n", argv[optind]);
- 		goto out;
+@@ -146,6 +152,9 @@ static int cmd_logical_resolve(int argc, char **argv)
+ 		case 'v':
+ 			verbose = 1;
+ 			break;
++		case 's':
++			size = atoll(optarg);
++			break;
+ 		default:
+ 			usage(cmd_logical_resolve_usage);
+ 		}
+@@ -154,12 +163,13 @@ static int cmd_logical_resolve(int argc, char **argv)
+ 	if (check_argc_exact(argc - optind, 2))
+ 		usage(cmd_logical_resolve_usage);
+ 
+-	inodes = malloc(4096);
++	size = min(size, 64 * 1024);
++	inodes = malloc(size);
+ 	if (!inodes)
+ 		return 1;
+ 
+ 	loi.logical = atoll(argv[optind]);
+-	loi.size = 4096;
++	loi.size = size;
+ 	loi.inodes = (u64)inodes;
+ 
+ 	fd = open_file_or_dir(argv[optind+1]);
+@@ -176,8 +186,9 @@ static int cmd_logical_resolve(int argc, char **argv)
  	}
-@@ -565,6 +566,7 @@ int cmd_send_start(int argc, char **argv)
- 	for (i = optind; i < argc; i++) {
- 		subvol = realpath(argv[i], NULL);
- 		if (!subvol) {
-+			ret = -errno;
- 			fprintf(stderr, "ERROR: unable to resolve %s\n", argv[i]);
- 			goto out;
- 		}
-diff --git a/crc32c.c b/crc32c.c
-index a761a1d..c285d6e 100644
---- a/crc32c.c
-+++ b/crc32c.c
-@@ -113,7 +113,7 @@ void crc32c_intel_probe(void)
- 	}
- }
  
--int crc32c_optimization_init(void)
-+void crc32c_optimization_init(void)
- {
- 	crc32c_intel_probe();
- 	if (crc32c_intel_available)
-@@ -121,7 +121,7 @@ int crc32c_optimization_init(void)
- }
- #else
+ 	if (verbose)
+-		printf("ioctl ret=%d, bytes_left=%lu, bytes_missing=%lu, "
+-			"cnt=%d, missed=%d\n", ret,
++		printf("ioctl ret=%d, total_size=%llu, bytes_left=%lu, "
++			"bytes_missing=%lu, cnt=%d, missed=%d\n",
++			ret, size,
+ 			(unsigned long)inodes->bytes_left,
+ 			(unsigned long)inodes->bytes_missing,
+ 			inodes->elem_cnt, inodes->elem_missed);
+diff --git a/man/btrfs.8.in b/man/btrfs.8.in
+index 4b0a9f9..941efd0 100644
+--- a/man/btrfs.8.in
++++ b/man/btrfs.8.in
+@@ -50,7 +50,7 @@ btrfs \- control a btrfs filesystem
+ \fBbtrfs\fP \fBinspect-internal inode-resolve\fP [-v] \fI<inode>\fP \fI<path>\fP
+ .PP
+ \fBbtrfs\fP \fBinspect-internal logical-resolve\fP
+-[-Pv] \fI<logical>\fP \fI<path>\fP
++[-Pv] [-s size] \fI<logical>\fP \fI<path>\fP
+ .PP
+ \fBbtrfs\fP \fBhelp|\-\-help|\-h \fP\fI\fP
+ .PP
+@@ -307,7 +307,7 @@ verbose mode. print count of returned paths and ioctl() return value
+ .RE
+ .TP
  
--int crc32c_optimization_init(void)
-+void crc32c_optimization_init(void)
- {
- }
+-\fBinspect-internal logical-resolve\fP [-Pv] \fI<logical>\fP \fI<path>\fP
++\fBinspect-internal logical-resolve\fP [-Pv] [-s bufsize] \fI<logical>\fP \fI<path>\fP
+ Resolves a <logical> address in the filesystem mounted at <path> to all inodes.
+ By default, each inode is then resolved to a file system path (similar to the
+ \fBinode-resolve\fP subcommand).
+@@ -318,6 +318,9 @@ By default, each inode is then resolved to a file system path (similar to the
+ skip the path resolving and print the inodes instead
+ .IP -v 5
+ verbose mode. print count of returned paths and all ioctl() return values
++.IP -s bufsize 5
++set inode container's size. This is used to increase inode container's size in case it is
++not enough to read all the resolved results. The max value one can set is 64k.
+ .RE
  
-diff --git a/crc32c.h b/crc32c.h
-index 27f298a..7f12e77 100644
---- a/crc32c.h
-+++ b/crc32c.h
-@@ -22,7 +22,7 @@
- #include "kerncompat.h"
- 
- u32 crc32c_le(u32 seed, unsigned char const *data, size_t length);
--int crc32c_optimization_init(void);
-+void crc32c_optimization_init(void);
- 
- #define crc32c(seed, data, length) crc32c_le(seed, (unsigned char const *)data, length)
- #define btrfs_crc32c crc32c
-diff --git a/restore.c b/restore.c
-index d1ac542..b9e5381 100644
---- a/restore.c
-+++ b/restore.c
-@@ -385,7 +385,6 @@ static int copy_file(struct btrfs_root *root, int fd, struct btrfs_key *key,
- 					/* No more leaves to search */
- 					btrfs_free_path(path);
- 					goto set_size;
--					return 0;
- 				}
- 				leaf = path->nodes[0];
- 			} while (!leaf);
-@@ -431,8 +430,11 @@ next:
- 
- 	btrfs_free_path(path);
- set_size:
--	if (found_size)
--		ftruncate(fd, (loff_t)found_size);
-+	if (found_size) {
-+		ret = ftruncate(fd, (loff_t)found_size);
-+		if (ret)
-+			return ret;
-+	}
- 	return 0;
- }
- 
-diff --git a/send-utils.c b/send-utils.c
-index a43d47e..af495a0 100644
---- a/send-utils.c
-+++ b/send-utils.c
-@@ -62,6 +62,8 @@ static struct rb_node *tree_insert(struct rb_root *root,
- 			entry = rb_entry(parent, struct subvol_info,
- 					rb_path_node);
- 			comp = strcmp(entry->path, si->path);
-+		} else {
-+			BUG();
- 		}
- 
- 		if (comp < 0)
-@@ -120,6 +122,8 @@ static struct subvol_info *tree_search(struct rb_root *root,
- 		} else if (type == subvol_search_by_path) {
- 			entry = rb_entry(n, struct subvol_info, rb_path_node);
- 			comp = strcmp(entry->path, path);
-+		} else {
-+			BUG();
- 		}
- 		if (comp < 0)
- 			n = n->rb_left;
+ .SH EXIT STATUS
 -- 
-1.7.6.5
+1.7.7.6
+

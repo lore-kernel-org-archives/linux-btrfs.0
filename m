@@ -1,82 +1,104 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from acsinet15.oracle.com ([141.146.126.227]:50806 "EHLO
-	acsinet15.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1751180Ab2HaFir (ORCPT
+Received: from rcsinet15.oracle.com ([148.87.113.117]:20411 "EHLO
+	rcsinet15.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1751227Ab2HaFik (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Fri, 31 Aug 2012 01:38:47 -0400
+	Fri, 31 Aug 2012 01:38:40 -0400
 Received: from acsinet21.oracle.com (acsinet21.oracle.com [141.146.126.237])
-	by acsinet15.oracle.com (Sentrion-MTA-4.2.2/Sentrion-MTA-4.2.2) with ESMTP id q7V5cjJP019133
+	by rcsinet15.oracle.com (Sentrion-MTA-4.2.2/Sentrion-MTA-4.2.2) with ESMTP id q7V5cdxp025952
 	(version=TLSv1/SSLv3 cipher=DHE-RSA-AES256-SHA bits=256 verify=OK)
-	for <linux-btrfs@vger.kernel.org>; Fri, 31 Aug 2012 05:38:46 GMT
+	for <linux-btrfs@vger.kernel.org>; Fri, 31 Aug 2012 05:38:40 GMT
 Received: from acsmt358.oracle.com (acsmt358.oracle.com [141.146.40.158])
-	by acsinet21.oracle.com (8.14.4+Sun/8.14.4) with ESMTP id q7V5cjqW026186
+	by acsinet21.oracle.com (8.14.4+Sun/8.14.4) with ESMTP id q7V5cdkg026091
 	(version=TLSv1/SSLv3 cipher=DHE-RSA-AES256-SHA bits=256 verify=NO)
-	for <linux-btrfs@vger.kernel.org>; Fri, 31 Aug 2012 05:38:45 GMT
+	for <linux-btrfs@vger.kernel.org>; Fri, 31 Aug 2012 05:38:39 GMT
 Received: from abhmt105.oracle.com (abhmt105.oracle.com [141.146.116.57])
-	by acsmt358.oracle.com (8.12.11.20060308/8.12.11) with ESMTP id q7V5cjSo027921
-	for <linux-btrfs@vger.kernel.org>; Fri, 31 Aug 2012 00:38:45 -0500
+	by acsmt358.oracle.com (8.12.11.20060308/8.12.11) with ESMTP id q7V5cdVW027887
+	for <linux-btrfs@vger.kernel.org>; Fri, 31 Aug 2012 00:38:39 -0500
 From: Liu Bo <bo.li.liu@oracle.com>
 To: linux-btrfs@vger.kernel.org
-Subject: [PATCH 6/6] Btrfs: use larger limit for translation of logical to inode
-Date: Fri, 31 Aug 2012 13:36:59 +0800
-Message-Id: <1346391419-4278-7-git-send-email-bo.li.liu@oracle.com>
+Subject: [PATCH 3/6] Btrfs: update delayed ref's tracepoints to show sequence
+Date: Fri, 31 Aug 2012 13:36:56 +0800
+Message-Id: <1346391419-4278-4-git-send-email-bo.li.liu@oracle.com>
 In-Reply-To: <1346391419-4278-1-git-send-email-bo.li.liu@oracle.com>
 References: <1346391419-4278-1-git-send-email-bo.li.liu@oracle.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-This is the change of the kernel side.
-
-Translation of logical to inode used to have an upper limit 4k on
-inode container's size, but the limit is not large enough for a data
-with a great many of refs, so when resolving logical address,
-we can end up with
-"ioctl ret=0, bytes_left=0, bytes_missing=19944, cnt=510, missed=2493"
-
-This changes to regard 64k as the upper limit and use vmalloc instead of
-kmalloc to get memory more easily.
+We've added a new field 'sequence' to delayed ref node, so update related
+tracepoints.
 
 Signed-off-by: Liu Bo <bo.li.liu@oracle.com>
 ---
- fs/btrfs/backref.c |    2 +-
- fs/btrfs/ioctl.c   |    4 ++--
- 2 files changed, 3 insertions(+), 3 deletions(-)
+ include/trace/events/btrfs.h |   14 ++++++++++----
+ 1 files changed, 10 insertions(+), 4 deletions(-)
 
-diff --git a/fs/btrfs/backref.c b/fs/btrfs/backref.c
-index 4e80ba3..fb72931 100644
---- a/fs/btrfs/backref.c
-+++ b/fs/btrfs/backref.c
-@@ -1583,7 +1583,7 @@ struct btrfs_data_container *init_data_container(u32 total_bytes)
- 	size_t alloc_bytes;
+diff --git a/include/trace/events/btrfs.h b/include/trace/events/btrfs.h
+index 91b91e8..54fab04 100644
+--- a/include/trace/events/btrfs.h
++++ b/include/trace/events/btrfs.h
+@@ -445,6 +445,7 @@ TRACE_EVENT(btrfs_delayed_tree_ref,
+ 		__field(	u64,  ref_root		)
+ 		__field(	int,  level		)
+ 		__field(	int,  type		)
++		__field(	u64,  seq		)
+ 	),
  
- 	alloc_bytes = max_t(size_t, total_bytes, sizeof(*data));
--	data = kmalloc(alloc_bytes, GFP_NOFS);
-+	data = vmalloc(alloc_bytes);
- 	if (!data)
- 		return ERR_PTR(-ENOMEM);
+ 	TP_fast_assign(
+@@ -455,17 +456,19 @@ TRACE_EVENT(btrfs_delayed_tree_ref,
+ 		__entry->ref_root	= full_ref->root;
+ 		__entry->level		= full_ref->level;
+ 		__entry->type		= ref->type;
++		__entry->seq		= ref->seq;
+ 	),
  
-diff --git a/fs/btrfs/ioctl.c b/fs/btrfs/ioctl.c
-index 7544134..2a303d5 100644
---- a/fs/btrfs/ioctl.c
-+++ b/fs/btrfs/ioctl.c
-@@ -3236,7 +3236,7 @@ static long btrfs_ioctl_logical_to_ino(struct btrfs_root *root,
- 		goto out;
- 	}
+ 	TP_printk("bytenr = %llu, num_bytes = %llu, action = %s, "
+ 		  "parent = %llu(%s), ref_root = %llu(%s), level = %d, "
+-		  "type = %s",
++		  "type = %s, seq = %llu",
+ 		  (unsigned long long)__entry->bytenr,
+ 		  (unsigned long long)__entry->num_bytes,
+ 		  show_ref_action(__entry->action),
+ 		  show_root_type(__entry->parent),
+ 		  show_root_type(__entry->ref_root),
+-		  __entry->level, show_ref_type(__entry->type))
++		  __entry->level, show_ref_type(__entry->type),
++		  (unsigned long long)__entry->seq)
+ );
  
--	size = min_t(u32, loi->size, 4096);
-+	size = min_t(u32, loi->size, 64 * 1024);
- 	inodes = init_data_container(size);
- 	if (IS_ERR(inodes)) {
- 		ret = PTR_ERR(inodes);
-@@ -3258,7 +3258,7 @@ static long btrfs_ioctl_logical_to_ino(struct btrfs_root *root,
+ TRACE_EVENT(btrfs_delayed_data_ref,
+@@ -485,6 +488,7 @@ TRACE_EVENT(btrfs_delayed_data_ref,
+ 		__field(	u64,  owner		)
+ 		__field(	u64,  offset		)
+ 		__field(	int,  type		)
++		__field(	u64,  seq		)
+ 	),
  
- out:
- 	btrfs_free_path(path);
--	kfree(inodes);
-+	vfree(inodes);
- 	kfree(loi);
+ 	TP_fast_assign(
+@@ -496,11 +500,12 @@ TRACE_EVENT(btrfs_delayed_data_ref,
+ 		__entry->owner		= full_ref->objectid;
+ 		__entry->offset		= full_ref->offset;
+ 		__entry->type		= ref->type;
++		__entry->seq		= ref->seq;
+ 	),
  
- 	return ret;
+ 	TP_printk("bytenr = %llu, num_bytes = %llu, action = %s, "
+ 		  "parent = %llu(%s), ref_root = %llu(%s), owner = %llu, "
+-		  "offset = %llu, type = %s",
++		  "offset = %llu, type = %s, seq = %llu",
+ 		  (unsigned long long)__entry->bytenr,
+ 		  (unsigned long long)__entry->num_bytes,
+ 		  show_ref_action(__entry->action),
+@@ -508,7 +513,8 @@ TRACE_EVENT(btrfs_delayed_data_ref,
+ 		  show_root_type(__entry->ref_root),
+ 		  (unsigned long long)__entry->owner,
+ 		  (unsigned long long)__entry->offset,
+-		  show_ref_type(__entry->type))
++		  show_ref_type(__entry->type),
++		  (unsigned long long)__entry->seq)
+ );
+ 
+ TRACE_EVENT(btrfs_delayed_ref_head,
 -- 
 1.7.7.6
 

@@ -1,61 +1,55 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from frost.carfax.org.uk ([85.119.82.111]:39912 "EHLO
-	frost.carfax.org.uk" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1751275Ab2H3ShL (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 30 Aug 2012 14:37:11 -0400
-Date: Thu, 30 Aug 2012 19:37:06 +0100
-From: Hugo Mills <hugo@carfax.org.uk>
-To: kreijack@inwind.it
-Cc: M G Berberich <btrfs@oss.m-berberich.de>, linux-btrfs@vger.kernel.org,
-        Hubert Kario <kario@wit.edu.pl>
-Subject: Re: =?utf-8?B?4oCcQnVn4oCdLXJlcG9ydA==?= =?utf-8?Q?=3A?=
- inconsistency kernel <-> tools
-Message-ID: <20120830183706.GB21990@carfax.org.uk>
-References: <20120828195244.GA15021@invalid>
- <503FAFF5.80204@libero.it>
+Received: from smtp206.alice.it ([82.57.200.102]:54137 "EHLO smtp206.alice.it"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1754570Ab2HaTHz (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Fri, 31 Aug 2012 15:07:55 -0400
+Message-ID: <50410BBE.6030601@libero.it>
+Date: Fri, 31 Aug 2012 21:08:46 +0200
+From: Goffredo Baroncelli <kreijack@libero.it>
+Reply-To: kreijack@inwind.it
 MIME-Version: 1.0
-Content-Type: multipart/signed; micalg=pgp-sha1;
-	protocol="application/pgp-signature"; boundary="i9LlY+UWpKt15+FH"
+To: M G Berberich <btrfs@oss.m-berberich.de>
+CC: linux-btrfs@vger.kernel.org, Hubert Kario <kario@wit.edu.pl>
+Subject: Re: =?UTF-8?B?4oCcQnVn4oCdLXJlcG9ydDogaW5jb25zaXN0ZW5jeSBrZXJuZWw=?=
+ =?UTF-8?B?IDwtPiB0b29scw==?=
+References: <20120828195244.GA15021@invalid> <503FAFF5.80204@libero.it>
 In-Reply-To: <503FAFF5.80204@libero.it>
+Content-Type: text/plain; charset=UTF-8; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
+On 08/30/2012 08:24 PM, Goffredo Baroncelli wrote:
+>
+> And magically the filesystem is now composed by three disks. However 4
+> physical devices are show. This because the disk /dev/vdi superblock
+> says that the disk is still valid (after the "btrfs device del" the disk
+> is not touched any more)
 
---i9LlY+UWpKt15+FH
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
+I have to correct myself. When a device is removed its superblock is 
+zero-ed (from btrfs_rm_device():
 
-On Thu, Aug 30, 2012 at 08:24:53PM +0200, Goffredo Baroncelli wrote:
-> On 08/28/2012 09:52 PM, M G Berberich wrote:
-> >(7) reinserted disk (and rebooted)
-> >     At some point before reboot the first 10 sectors of one disk
-> >     were zeroed to test if the disk gets removed from the btrfs.
-> 
-> IIRC the superblock is not placed at the beginning of the disk. On
-> the basis of [1] it should be near the 64KB (around the sector #128)
+[...]
+         /*
+          * at this point, the device is zero sized.  We want to
+          * remove it from the devices list and zero out the old super
+          */
+         if (clear_super) {
+                 /* make sure this device isn't detected as part of
+                  * the FS anymore
+                  */
+                 memset(&disk_super->magic, 0, sizeof(disk_super->magic));
+                 set_buffer_dirty(bh);
+                 sync_dirty_buffer(bh);
+         }
+[...]
 
-   Just for the record, the first is at 64KiB; each subsequent one is
-shifted 12 bits left (256MiB, 1TiB, 4EiB, 16ZiB, 64YiB).
 
-   Hugo.
+clear_super is set to true when the device is writeable.
 
--- 
-=== Hugo Mills: hugo@... carfax.org.uk | darksatanic.net | lug.org.uk ===
-  PGP key: 515C238D from wwwkeys.eu.pgp.net or http://www.carfax.org.uk
-      --- This chap Anon is writing some perfectly lovely stuff ---      
-                             at the moment.                              
 
---i9LlY+UWpKt15+FH
-Content-Type: application/pgp-signature; name="signature.asc"
-Content-Description: Digital signature
 
------BEGIN PGP SIGNATURE-----
-Version: GnuPG v1.4.12 (GNU/Linux)
+However making a test I found both the behaviours: sometime the removed 
+disk disappears from the output of "btrfs fi show" and sometime not...
 
-iD8DBQFQP7LSIKyzvlFcI40RAonmAJ9K3B2s/HIMq/6ii97acudHgzF2HwCgly2h
-d3oXWBE0AY0JvuAsMMBvyAM=
-=v6P5
------END PGP SIGNATURE-----
+May be that there is a bug somewhere...
 
---i9LlY+UWpKt15+FH--

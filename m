@@ -1,49 +1,46 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-iy0-f174.google.com ([209.85.210.174]:59419 "EHLO
-	mail-iy0-f174.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1751723Ab2IBBEN (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Sat, 1 Sep 2012 21:04:13 -0400
-Received: by iahk25 with SMTP id k25so2919343iah.19
-        for <linux-btrfs@vger.kernel.org>; Sat, 01 Sep 2012 18:04:12 -0700 (PDT)
+Received: from twin.jikos.cz ([89.185.236.188]:36524 "EHLO twin.jikos.cz"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1750923Ab2IBFZn (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Sun, 2 Sep 2012 01:25:43 -0400
+Date: Sun, 2 Sep 2012 07:25:37 +0200
+From: David Sterba <dave@jikos.cz>
+To: Ben Wreder <benwreder@hotmail.com>
+Cc: linux-btrfs@vger.kernel.org
+Subject: Re: Tail packing
+Message-ID: <20120902052537.GF17430@twin.jikos.cz>
+Reply-To: dave@jikos.cz
+References: <DUB117-W3224DDE372041F789CA47FB5A60@phx.gbl>
 MIME-Version: 1.0
-In-Reply-To: <CAGJTRcgXRRRoxycOwFurWjK2N6DXfC0v1ZhrMkSx+zi1NACM5w@mail.gmail.com>
-References: <CAGDaZ_oFzakgBC+NzK4X3J9yL0Q5YfZVKk671QKN0xHAMgPN7g@mail.gmail.com>
- <CAGDaZ_p2dXLr6rOZewXUEWYKV4b=dW9OZj4yXG4qPoUax2a8CA@mail.gmail.com>
- <CAGJTRciVqG=CqP4gR4gpz2bmFYORS6ExAT_nDbau2NuCJyipeg@mail.gmail.com>
- <CAGDaZ_qm+Z7ptRdp-kJx_AJgcJ+bjWX7OZ5O1ang7sbJ_Y_f-w@mail.gmail.com>
- <CAE5mzvgp1LAaYrMyjbAKZVRyKcaoWAZwQVBfGQQUZh+6+w9Rvw@mail.gmail.com>
- <CAGDaZ_pZvOTCtMkq8+w6wJKpSuBzpntbjTLKBHqGuzpycUndjw@mail.gmail.com> <CAGJTRcgXRRRoxycOwFurWjK2N6DXfC0v1ZhrMkSx+zi1NACM5w@mail.gmail.com>
-From: Shentino <shentino@gmail.com>
-Date: Sat, 1 Sep 2012 18:03:32 -0700
-Message-ID: <CAGDaZ_qD-RHvZk31GYZRTAjUNJ4dTm1wXk1kQELE2p+=xG3yzA@mail.gmail.com>
-Subject: Re: rfc: fuzz testing by direct writes to device
-To: Michael <mike@draftx.net>
-Cc: cwillu <cwillu@cwillu.com>, linux-btrfs@vger.kernel.org
-Content-Type: text/plain; charset=UTF-8
+Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <DUB117-W3224DDE372041F789CA47FB5A60@phx.gbl>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-This whole subject was also about using sed to corrupt-o-magic a
-file's data on disk.
+On Fri, Aug 31, 2012 at 04:40:36PM +0200, Ben Wreder wrote:
+> The disk format description implies that btrfs should be able to
+> support tail packing. I just did some experimentation, and while small
+> files are packed, it seems that files occupying more than one block
+> are not. For example, a lot of 32769-byte files will end up taking
+> over 36KB on average (a small excess due to the metadata itself).
+> 
+> So just to confirm - btrfs does not currently support tail-packing, is that correct?
 
-Is this an acceptable method for testing?
+Currently it's not the reiserfs-style tail packing. The feature is
+advertised as "Space-efficient packing of small files", as Josef
+replied, if a file fits into a leaf block, it's stored into the metadata
+blocks. The limit is 3916 bytes for 4k blocks, without compression. If
+compression is on, the 'small file' size limit is even higher for
+moderately compressible files. An example where this could apply is a
+maildir, and IIRC this was why reiserfs was chosen on mail servers.
 
-On Sat, Sep 1, 2012 at 4:49 PM, Michael <mike@draftx.net> wrote:
-> It should not. It is always preferred that you dd your drive onto
-> another disk just in case though.
->
-> On Sat, Sep 1, 2012 at 5:31 PM, Shentino <shentino@gmail.com> wrote:
->> On Sat, Sep 1, 2012 at 1:59 PM, cwillu <cwillu@cwillu.com> wrote:
->>> You still haven't said which kernel you were running; the thing to do
->>> is try the very latest rc (if not btrfs-next).
->>
->> Sorry about that!
->>
->> I thought I included it.
->>
->> 3.3.8
->>
->> Hmm...seems it's been EOL'ed.  I need to yell at my distro.
->>
->> In the meantime, will mounting a btrfs filesystem with a new kernel
->> render it unmountable by older kernels?
+> If so, is it a planned feature?
+
+Not that I'm aware of, everybody seems to be fine with the current
+state. I think it is possible to implement the tail-packing in a
+non-intrusive way, but I'm not sure if the data-space savings would balance
+the additional metadata consumption plus the overhead for b-tree
+access/COW/locking when using the inline data.
+
+
+david

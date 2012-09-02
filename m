@@ -1,77 +1,57 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from twin.jikos.cz ([89.185.236.188]:34913 "EHLO twin.jikos.cz"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1751564Ab2I3V5t (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Sun, 30 Sep 2012 17:57:49 -0400
-Date: Sun, 30 Sep 2012 23:57:44 +0200
-From: David Sterba <dave@jikos.cz>
-To: Adam Ryczkowski <adam.ryczkowski@statystyka.net>
-Cc: linux-btrfs@vger.kernel.org
-Subject: Re: Btrfsck: "root 256 inode 581419 errors 100". Can I heal this
- file system?
-Message-ID: <20120930215744.GJ14582@twin.jikos.cz>
-Reply-To: dave@jikos.cz
-References: <5067759C.4090302@statystyka.net>
+Received: from mail-pb0-f46.google.com ([209.85.160.46]:55190 "EHLO
+	mail-pb0-f46.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1754780Ab2IBVUz (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Sun, 2 Sep 2012 17:20:55 -0400
+Received: by pbbrr13 with SMTP id rr13so7200820pbb.19
+        for <linux-btrfs@vger.kernel.org>; Sun, 02 Sep 2012 14:20:54 -0700 (PDT)
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <5067759C.4090302@statystyka.net>
+Date: Sun, 2 Sep 2012 17:20:54 -0400
+Message-ID: <CAPL5yKea2mRae+29i_TK3Nj4dhgCDFDiJxDfHX=r0QywNQnEgQ@mail.gmail.com>
+Subject: Segregate metadata to SSD?
+From: Dan Merillat <dan.merillat@gmail.com>
+To: BTRFS Mailing list <linux-btrfs@vger.kernel.org>
+Content-Type: text/plain; charset=ISO-8859-1
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Sun, Sep 30, 2012 at 12:26:36AM +0200, Adam Ryczkowski wrote:
-> I was using this btrfs file system on kernel 3.6 rc4 and rc5 and 3.5.4 on
-> Mint 13 (which is based on Ubuntu 12.04). Now, I found the following output
-> of btrfsck /dev/sda8 (which was of course off-line at that time):
-> >checking extents
-> >checking fs roots
-> >root 256 inode 581419 errors 100
+Is it possible to weight the allocations of data/system/metadata so
+that data goes on large, slow drives while system/metadata goes on a
+fast SSD?  I don't have exact numbers, but I'd guess a vast majority
+of seeks during operation are lookups of tiny bits of data, while data
+reads&writes are done in much larger chunks.
 
-If I'm reading fsck.c right, it means that there are missing extents at
-the end of the file, ie some unaccounted range.
+Obviously a database load would be a different balance, but for most
+systems it would seem to be a rather vast improvement.
 
-Please run 'filefrag -vb mountpoint/@/var/cache/hald/fdi-cache', save
-the last line, and add the 2nd and last numbers
+Data: total=5625880576k (5.24TB), used=5455806964k (5.08TB)
+System, DUP: total=32768k (32.00MB), used=724k (724.00KB)
+System: total=4096k (4.00MB), used=0k (0.00)
+Metadata, DUP: total=117291008k (111.86GB), used=13509540k (12.88GB)
 
-  22 1046528 52330076 63340363   2048 eof
-     ^^^^^^^                     ^^^^
+Out of my nearly 6tb setup I could trivially accelerate the whole
+thing with a 128mb SSD.
 
-multiply by 1024 and this will give end of the accounted extents. Next,
-run 'stat' on the file to find it's size. Tell me those numbers and I'll
-tell you if your filesystem is broken :)
-
-I think the error comes from a truncate that made extents and file size
-disagree and this can be further observed by reading the file beyond the
-last extent. In ideal case it returns zeros in that range, or refuse to
-read anything due to missing checksum.
-
-Do you recall any unclean shutdown? As it's a cache of a system(!d)
-service, the file will be probably open for a long time and will last
-out to all unexpected shutdowns.
-
-> I understand, that the line "root 256 inode 581419 errors 100" tries to tell
-> me, that there is a problem with inode 581419. (Which happen to be
-> mountpoint/@/var/cache/hald/fdi-cache; I use btrfs as a root file system for
-> Linux mint 13). I pulled the recent btrfs-tools from Ubuntu 12.10
-> (https://launchpad.net/ubuntu/quantal/+package/btrfs-tools; version
-> 0.19+20120328-7ubuntu1 <https://launchpad.net/ubuntu/quantal/+source/btrfs-tools/0.19+20120328-7ubuntu1>).
-> The btrfsck doesn't make the error disapear. I don't experience any problems
-> with the file system, but maybe I am only lucky.
-
-Not sure here, it's fsck after all, but the particular error could be
-fixed by resetting the inode size to the last extent end or adding a
-preallocated range for the gap.
-
-> Is there any way to heal the file system?
-> 
-> I can read the file just fine. But I can't confirm if the contents are valid
-> though; they definitely don't look random. Would deleting the file help? Or
-> re-writing it?
-
-If it's a cache, the application will be able to recreate it if you
-delete it. Howver I'm not sure if this would not provoke a runtime bug.
-
-Maybe other developers would like to investigate, so please do not
-delete it yet. Otherwise, 'rm', or 'truncate -s0 file; rm file' should work.
+On a side note,  that's a nearly 10:1 metadata overusage and I've
+never had more than 3
+snapshots at a given time - current, rollback1, rollback2 - I think it
+grew that large during a
+rebalance.  Aside from that, I could get away with a tiny 64gb SSD.
 
 
-david
+pretty_sizes was too granular to use in monitoring scripts, so:
+diff --git a/cmds-filesystem.c b/cmds-filesystem.c
+index b1457de..dc5fea6 100644
+--- a/cmds-filesystem.c
++++ b/cmds-filesystem.c
+@@ -145,8 +145,9 @@ static int cmd_df(int argc, char **argv)
+
+                total_bytes = pretty_sizes(sargs->spaces[i].total_bytes);
+                used_bytes = pretty_sizes(sargs->spaces[i].used_bytes);
+-               printf("%s: total=%s, used=%s\n", description, total_bytes,
+-                      used_bytes);
++               printf("%s: total=%ldk (%s), used=%ldk (%s)\n", description,
++                       sargs->spaces[i].total_bytes/1024, total_bytes,
++                       sargs->spaces[i].used_bytes/1024, used_bytes);
+        }
+        free(sargs);

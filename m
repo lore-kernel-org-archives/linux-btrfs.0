@@ -1,42 +1,55 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from szxga01-in.huawei.com ([119.145.14.64]:60458 "EHLO
-	szxga01-in.huawei.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1755467Ab2ICBX0 (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Sun, 2 Sep 2012 21:23:26 -0400
-Message-ID: <5044067E.7000607@huawei.com>
-Date: Mon, 3 Sep 2012 09:23:10 +0800
-From: Li Zefan <lizefan@huawei.com>
+Received: from ducie-dc1.codethink.co.uk ([37.128.190.40]:37964 "EHLO
+	ducie-dc1.codethink.co.uk" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S932174Ab2ICOdE (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Mon, 3 Sep 2012 10:33:04 -0400
+Received: from [192.168.24.208] (droopy.dyn.ducie.codethink.co.uk [192.168.24.208])
+	by ducie-dc1.codethink.co.uk (Postfix) with ESMTPSA id DF27F4625C4
+	for <linux-btrfs@vger.kernel.org>; Mon,  3 Sep 2012 15:25:39 +0100 (BST)
+Message-ID: <5044BD53.5080106@codethink.co.uk>
+Date: Mon, 03 Sep 2012 15:23:15 +0100
+From: Sam Thursfield <sam.thursfield@codethink.co.uk>
 MIME-Version: 1.0
-To: <dave@jikos.cz>
-CC: Ben Wreder <benwreder@hotmail.com>, <linux-btrfs@vger.kernel.org>
-Subject: Re: Tail packing
-References: <DUB117-W3224DDE372041F789CA47FB5A60@phx.gbl> <20120902052537.GF17430@twin.jikos.cz>
-In-Reply-To: <20120902052537.GF17430@twin.jikos.cz>
-Content-Type: text/plain; charset="ISO-8859-1"
+To: linux-btrfs@vger.kernel.org
+Subject: Advice on FS corruption
+Content-Type: text/plain; charset=ISO-8859-1; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 2012/9/2 13:25, David Sterba wrote:
-> On Fri, Aug 31, 2012 at 04:40:36PM +0200, Ben Wreder wrote:
->> The disk format description implies that btrfs should be able to
->> support tail packing. I just did some experimentation, and while small
->> files are packed, it seems that files occupying more than one block
->> are not. For example, a lot of 32769-byte files will end up taking
->> over 36KB on average (a small excess due to the metadata itself).
->>
->> So just to confirm - btrfs does not currently support tail-packing, is that correct?
-> 
-> Currently it's not the reiserfs-style tail packing. The feature is
-> advertised as "Space-efficient packing of small files", as Josef
-> replied, if a file fits into a leaf block, it's stored into the metadata
-> blocks. The limit is 3916 bytes for 4k blocks, without compression. If
-> compression is on, the 'small file' size limit is even higher for
-> moderately compressible files.
+Hi
 
-If the actual size of the file is > 3916 bytes, no matter how compressible it is,
-it won't be inlined.
+I've been running btrfs in various VMs for a while, and periodically 
+I've experienced corruption in the filesystems being used. None of the 
+data is important, but I'd like to track down how the corruption 
+occurred in the first place.
 
-> An example where this could apply is a
-> maildir, and IIRC this was why reiserfs was chosen on mail servers.
-> 
+Trying to mount any of the corrupt filesystems fails with an error of 
+this form:
 
+[   47.805146] device label baserock devid 1 transid 90 /dev/sdb1
+[   47.810073] btrfs: disk space caching is enabled
+[   47.817261] parent transid verify failed on 1636728832 wanted 76 found 95
+[   47.818081] parent transid verify failed on 1636728832 wanted 76 found 95
+[   47.818522] Failed to read block groups: -5
+[   47.826103] btrfs: open_ctree failed
+
+This is with Linux master as of 29/Aug/2012, so including the latest 
+'for-linus' branch from the btrfs tree. Attempts to run btrfs-debug-tree 
+on the disk images fail with the same error, and btrfsck segfaults.
+
+I've not yet been able to reliably reproduce the cause of the 
+corruption, but I know that in at least one case the VM was compiling 
+code and then had a forced power-off. However, in at least one case the 
+corruption appeared after a clean shut down. I have a suspicion that it 
+may be linked with suspending the host machine and thus causing weird 
+things to happen to time in the VM's universe, since btrfs has been 
+working fine with the same kernel in a VM on a machine that is never 
+suspended or powered off, but I've not yet managed to prove anything.
+
+I'll keep trying to reproduce the issue, in the mean time I'm interested 
+how common this sort of issue is and if anyone has any tips for 
+repairing the image, or if there is work in progress to prevent or fix 
+the corruption.
+
+Thanks
+Sam

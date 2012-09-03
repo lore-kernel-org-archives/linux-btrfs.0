@@ -1,34 +1,27 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-qa0-f53.google.com ([209.85.216.53]:50044 "EHLO
-	mail-qa0-f53.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1756292Ab2ICQbR (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Mon, 3 Sep 2012 12:31:17 -0400
-Received: by qaas11 with SMTP id s11so2273836qaa.19
-        for <linux-btrfs@vger.kernel.org>; Mon, 03 Sep 2012 09:31:17 -0700 (PDT)
+Received: from twin.jikos.cz ([89.185.236.188]:53571 "EHLO twin.jikos.cz"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1756495Ab2ICQuc (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Mon, 3 Sep 2012 12:50:32 -0400
+Date: Mon, 3 Sep 2012 18:49:06 +0200
+From: David Sterba <dave@jikos.cz>
+To: Li Zefan <lizefan@huawei.com>
+Cc: dave@jikos.cz, Ben Wreder <benwreder@hotmail.com>,
+        linux-btrfs@vger.kernel.org
+Subject: Re: Tail packing
+Message-ID: <20120903164906.GJ17430@twin.jikos.cz>
+Reply-To: dave@jikos.cz
+References: <DUB117-W3224DDE372041F789CA47FB5A60@phx.gbl>
+ <20120902052537.GF17430@twin.jikos.cz>
+ <5044067E.7000607@huawei.com>
 MIME-Version: 1.0
-Date: Mon, 3 Sep 2012 09:31:16 -0700
-Message-ID: <CAPF83mvX6ueqaR62bvRygapGtw6RPuSTo1+oeYUrYAD0MPsULA@mail.gmail.com>
-Subject: Btrfs-Progs integration branch question
-From: Suman C <schakrava@gmail.com>
-To: linux-btrfs@vger.kernel.org
-Content-Type: text/plain; charset=ISO-8859-1
+Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <5044067E.7000607@huawei.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hi,
+On Mon, Sep 03, 2012 at 09:23:10AM +0800, Li Zefan wrote:
+> If the actual size of the file is > 3916 bytes, no matter how compressible it is,
+> it won't be inlined.
 
-I would like to get the latest btrfs-progs code. To me, Chris Mason's
-repo at git://git.kernel.org/pub/scm/linux/kernel/git/mason/btrfs-progs.git
-seems latest but obviously its missing the last several patches I see
-in the mailing list. I also tried Hugo Mills' integration repo at
-http://git.darksatanic.net/repo/btrfs-progs-unstable.git and unless I
-am looking at it wrong, it seems behind.
-
-Can someone please point me to the latest process that is followed for
-testing/developing recent btrfs-progs?
-
-I am trying to integrate the quota patch from August 10th by Jan
-Schmidt and getting conflicts when I git apply.
-
-Thanks
-Suman
+You're right, sorry for misinformation.

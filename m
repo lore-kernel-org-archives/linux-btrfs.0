@@ -1,45 +1,51 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-qc0-f174.google.com ([209.85.216.174]:57886 "EHLO
-	mail-qc0-f174.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1752762Ab2IBNow (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Sun, 2 Sep 2012 09:44:52 -0400
-Received: by qcro28 with SMTP id o28so2957457qcr.19
-        for <linux-btrfs@vger.kernel.org>; Sun, 02 Sep 2012 06:44:51 -0700 (PDT)
-MIME-Version: 1.0
-Date: Sun, 2 Sep 2012 21:44:51 +0800
-Message-ID: <CAPgLHd_8pn9p_U1ui4_rJixarTV7V7zoUOH_WFvx8oHrH9qpaQ@mail.gmail.com>
-Subject: [PATCH] Btrfs: fix possible memory leak in scrub_setup_recheck_block()
-From: Wei Yongjun <weiyj.lk@gmail.com>
-To: chris.mason@fusionio.com
-Cc: yongjun_wei@trendmicro.com.cn, linux-btrfs@vger.kernel.org
-Content-Type: text/plain; charset=ISO-8859-1
+Received: from smtp1-g21.free.fr ([212.27.42.1]:59236 "EHLO smtp1-g21.free.fr"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1757187Ab2IDQlp (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Tue, 4 Sep 2012 12:41:45 -0400
+From: Gabriel de Perthuis <g2p.code+btrfs@gmail.com>
+To: linux-btrfs@vger.kernel.org
+Cc: Gabriel de Perthuis <g2p.code+btrfs@gmail.com>
+Subject: [PATCH] Warn when skipping snapshots created with older kernels.
+Date: Tue,  4 Sep 2012 18:40:58 +0200
+Message-Id: <1346776858-6208-1-git-send-email-g2p.code+btrfs@gmail.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-From: Wei Yongjun <yongjun_wei@trendmicro.com.cn>
+This message is more explicit than "ERROR: could not resolve root_id",
+the message that will be shown immediately before `btrfs send` bails.
 
-bbio has been malloced in btrfs_map_block() and should be
-freed before leaving from the error handling cases.
+Also skip invalid high OIDs.
 
-spatch with a semantic match is used to found this problem.
-(http://coccinelle.lip6.fr/)
-
-Signed-off-by: Wei Yongjun <yongjun_wei@trendmicro.com.cn>
+Signed-off-by: Gabriel de Perthuis <g2p.code+btrfs@gmail.com>
 ---
- fs/btrfs/scrub.c | 1 +
- 1 file changed, 1 insertion(+)
+ send-utils.c | 6 ++++++
+ 1 file changed, 6 insertions(+)
 
-diff --git a/fs/btrfs/scrub.c b/fs/btrfs/scrub.c
-index b223620..4e9eafe 100644
---- a/fs/btrfs/scrub.c
-+++ b/fs/btrfs/scrub.c
-@@ -1029,6 +1029,7 @@ static int scrub_setup_recheck_block(struct scrub_dev *sdev,
- 				spin_lock(&sdev->stat_lock);
- 				sdev->stat.malloc_errors++;
- 				spin_unlock(&sdev->stat_lock);
-+				kfree(bbio);
- 				return -ENOMEM;
- 			}
- 			sblock->page_count++;
-
+diff --git a/send-utils.c b/send-utils.c
+index a43d47e..386aeb3 100644
+--- a/send-utils.c
++++ b/send-utils.c
+@@ -224,6 +224,7 @@ int subvol_uuid_search_init(int mnt_fd, struct subvol_uuid_search *s)
+ 
+ 			if ((sh->objectid != 5 &&
+ 			    sh->objectid < BTRFS_FIRST_FREE_OBJECTID) ||
++			    sh->objectid >= BTRFS_LAST_FREE_OBJECTID ||
+ 			    sh->objectid == BTRFS_FREE_INO_OBJECTID)
+ 				goto skip;
+ 
+@@ -231,6 +232,11 @@ int subvol_uuid_search_init(int mnt_fd, struct subvol_uuid_search *s)
+ 				/* older kernels don't have uuids+times */
+ 				if (sh->len < sizeof(root_item)) {
+ 					root_item_valid = 0;
++					fprintf(stderr,
++					        "Ignoring subvolume id %llu, "
++					        "btrfs send needs snapshots "
++					        "created with kernel 3.6+\n",
++					        sh->objectid);
+ 					goto skip;
+ 				}
+ 				root_item_ptr = (struct btrfs_root_item *)
+-- 
+1.7.12.117.gdc24c27
 

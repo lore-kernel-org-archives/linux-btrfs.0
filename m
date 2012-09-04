@@ -1,50 +1,38 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx1.fusionio.com ([66.114.96.30]:59381 "EHLO mx1.fusionio.com"
+Received: from mx1.fusionio.com ([66.114.96.30]:46532 "EHLO mx1.fusionio.com"
 	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S932323Ab2IDPMk (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 4 Sep 2012 11:12:40 -0400
-Date: Tue, 4 Sep 2012 11:12:35 -0400
+	id S1753512Ab2IDQMH (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Tue, 4 Sep 2012 12:12:07 -0400
+Date: Tue, 4 Sep 2012 12:12:03 -0400
 From: Chris Mason <chris.mason@fusionio.com>
-To: "christophe.varoqui@opensvc.com" <christophe.varoqui@opensvc.com>
-CC: "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
-Subject: Re: [ANNOUNCE] opensvc btrfs send/receive driver
-Message-ID: <20120904151235.GC2358@shiny.int.fusionio.com>
-References: <1346768600.27224.29.camel@lapoo.opensvc.com>
+To: Jan Schmidt <list.btrfs@jan-o-sch.net>
+CC: Suman C <schakrava@gmail.com>,
+        "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>,
+        "Chris L. Mason" <clmason@fusionio.com>
+Subject: Re: Btrfs-Progs integration branch question
+Message-ID: <20120904161203.GB4013@shiny.int.fusionio.com>
+References: <CAPF83mvX6ueqaR62bvRygapGtw6RPuSTo1+oeYUrYAD0MPsULA@mail.gmail.com>
+ <5045C881.40402@jan-o-sch.net>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
-In-Reply-To: <1346768600.27224.29.camel@lapoo.opensvc.com>
+In-Reply-To: <5045C881.40402@jan-o-sch.net>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Tue, Sep 04, 2012 at 08:23:20AM -0600, Christophe Varoqui wrote:
-> Hi list,
+On Tue, Sep 04, 2012 at 03:23:13AM -0600, Jan Schmidt wrote:
+> On Mon, September 03, 2012 at 18:31 (+0200), Suman C wrote:
+> > I am trying to integrate the quota patch from August 10th by Jan
+> > Schmidt and getting conflicts when I git apply.
 > 
-> OpenSVC >= 120904.1516 now contains a replication driver for the btrfs
-> send/receive mecanism. This new driver adds up to the zfs, rsync, dds,
-> netapp, datacore and drbd existing drivers.
+> I've rebased it on top of Chris' current master, you can pull from
 > 
-> It is no more mature than btrfs send/receive itself, so don't use in
-> production clusters for now.
-
-Great, thanks for wiring this up.
-
-> - btrfs receive is easily confused when looking for a subvol parent id :
-> for now opensvc has to mount the ID5 root vol
-> on /opt/opensvc/var/btrfs/<label> and uses a flat/root-level snapshot
-> hosting. If the btrfs feature matures we want to move to a .osvcsnap/
-> dedicated subvol mounted in /opt/opensvc/var/btrfs/<label>.osvcnap/
-> instead to not expose the whole btrfs structure. Some failure scenarios
-> I tested included "receive in a subvol" and "receive in a subdir"
-
-Yes, I'm changing the receive code to be more flexible on where it
-receives things.
-
+> 	git://git.jan-o-sch.net/btrfs-progs qgroup
 > 
-> - some kernel stacks and hangs when off-roading (trying to delete a
-> parent subvol for example) ... most on btrfs_get_token_64+0x90/0xca .
-> Let me know if you are interested in the details.
+> if you like.
+> 
+> Chris: probably saves you some minutes too if you just pull that one :-)
 
-Definitely interested.  There are a number of fixes for send/receive in
-my send-recv branch.  These will go into the next merge window.
+Thanks Jan, your qgroup branch is now in my master on kernel.org.
 
 -chris
+

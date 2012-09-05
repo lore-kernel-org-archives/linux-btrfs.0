@@ -1,60 +1,46 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from smtp1-g21.free.fr ([212.27.42.1]:48825 "EHLO smtp1-g21.free.fr"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1751340Ab2IEHuV (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 5 Sep 2012 03:50:21 -0400
-From: Gabriel de Perthuis <g2p.code+btrfs@gmail.com>
-To: Jan Schmidt <list.btrfs@jan-o-sch.net>, linux-btrfs@vger.kernel.org
-Cc: Gabriel de Perthuis <g2p.code+btrfs@gmail.com>
-Subject: [PATCH] warn when skipping snapshots created with older
-Date: Wed,  5 Sep 2012 09:50:05 +0200
-Message-Id: <1346831405-24095-1-git-send-email-g2p.code+btrfs@gmail.com>
-References: <5046D3A0.6060402@jan-o-sch.net>
-In-Reply-To: <5046D3A0.6060402@jan-o-sch.net>
+Received: from mail-qa0-f46.google.com ([209.85.216.46]:39715 "EHLO
+	mail-qa0-f46.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1750886Ab2IEGiu (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Wed, 5 Sep 2012 02:38:50 -0400
+Received: by qaas11 with SMTP id s11so4194167qaa.19
+        for <linux-btrfs@vger.kernel.org>; Tue, 04 Sep 2012 23:38:50 -0700 (PDT)
+MIME-Version: 1.0
+Date: Wed, 5 Sep 2012 14:38:49 +0800
+Message-ID: <CAPgLHd_OU1_aJPO-nt6ZtHjCDH77vyvEeeXjQ7AcTypH_3bH1Q@mail.gmail.com>
+Subject: [PATCH] Btrfs: use list_move_tail instead of list_del/list_add_tail
+From: Wei Yongjun <weiyj.lk@gmail.com>
+To: chris.mason@fusionio.com
+Cc: yongjun_wei@trendmicro.com.cn, linux-btrfs@vger.kernel.org
+Content-Type: text/plain; charset=ISO-8859-1
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Thanks, I fixed the objectid test.
-Apply with --scissors.
+From: Wei Yongjun <yongjun_wei@trendmicro.com.cn>
 
--- >8 --
-Subject: [PATCH] btrfs send: warn when skipping snapshots created with older
- kernels.
+Using list_move_tail() instead of list_del() + list_add_tail().
 
-This message is more explicit than "ERROR: could not resolve root_id",
-the message that will be shown immediately before `btrfs send` bails.
+spatch with a semantic match is used to found this problem.
+(http://coccinelle.lip6.fr/)
 
-Also skip invalid high OIDs, to prevent spurious warnings.
-
-Signed-off-by: Gabriel de Perthuis <g2p.code+btrfs@gmail.com>
+Signed-off-by: Wei Yongjun <yongjun_wei@trendmicro.com.cn>
 ---
- send-utils.c | 7 ++++++-
- 1 file changed, 6 insertions(+), 1 deletion(-)
+ fs/btrfs/send.c | 3 +--
+ 1 file changed, 1 insertion(+), 2 deletions(-)
 
-diff --git a/send-utils.c b/send-utils.c
-index a43d47e..03ca72a 100644
---- a/send-utils.c
-+++ b/send-utils.c
-@@ -224,13 +224,18 @@ int subvol_uuid_search_init(int mnt_fd, struct subvol_uuid_search *s)
+diff --git a/fs/btrfs/send.c b/fs/btrfs/send.c
+index fb5ffe9..fbea0de 100644
+--- a/fs/btrfs/send.c
++++ b/fs/btrfs/send.c
+@@ -1792,8 +1792,7 @@ static struct name_cache_entry *name_cache_search(struct send_ctx *sctx,
  
- 			if ((sh->objectid != 5 &&
- 			    sh->objectid < BTRFS_FIRST_FREE_OBJECTID) ||
--			    sh->objectid == BTRFS_FREE_INO_OBJECTID)
-+			    sh->objectid > BTRFS_LAST_FREE_OBJECTID)
- 				goto skip;
+ static void name_cache_used(struct send_ctx *sctx, struct name_cache_entry *nce)
+ {
+-	list_del(&nce->list);
+-	list_add_tail(&nce->list, &sctx->name_cache_list);
++	list_move_tail(&nce->list, &sctx->name_cache_list);
+ }
  
- 			if (sh->type == BTRFS_ROOT_ITEM_KEY) {
- 				/* older kernels don't have uuids+times */
- 				if (sh->len < sizeof(root_item)) {
- 					root_item_valid = 0;
-+					fprintf(stderr,
-+					        "Ignoring subvolume id %llu, "
-+					        "btrfs send needs snapshots "
-+					        "created with kernel 3.6+\n",
-+					        sh->objectid);
- 					goto skip;
- 				}
- 				root_item_ptr = (struct btrfs_root_item *)
--- 
-1.7.12.117.gdc24c27
+ static void name_cache_clean_unused(struct send_ctx *sctx)
+
 

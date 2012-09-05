@@ -1,66 +1,72 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from rcsinet15.oracle.com ([148.87.113.117]:33224 "EHLO
-	rcsinet15.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1751926Ab2INGBS (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Fri, 14 Sep 2012 02:01:18 -0400
-From: Anand jain <Anand.Jain@oracle.com>
+Received: from e6.ny.us.ibm.com ([32.97.182.146]:48465 "EHLO e6.ny.us.ibm.com"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1758398Ab2IEJV2 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Wed, 5 Sep 2012 05:21:28 -0400
+Received: from /spool/local
+	by e6.ny.us.ibm.com with IBM ESMTP SMTP Gateway: Authorized Use Only! Violators will be prosecuted
+	for <linux-btrfs@vger.kernel.org> from <wuzhy@linux.vnet.ibm.com>;
+	Wed, 5 Sep 2012 05:21:27 -0400
+From: Zhi Yong Wu <wuzhy@linux.vnet.ibm.com>
 To: linux-btrfs@vger.kernel.org
-Cc: kreijack@libero.it, chris.mason@fusionio.com, hugo@carfax.org.uk
-Subject: [PATCH 1/1] Btrfs-progs: Update btrfs man page to indicate label for a mounted fs can be changed
-Date: Fri, 14 Sep 2012 14:03:19 +0800
-Message-Id: <1347602599-7541-1-git-send-email-Anand.Jain@oracle.com>
-In-Reply-To: <503FB090.6030108@libero.it>
-References: <503FB090.6030108@libero.it>
+Cc: linux-kernel@vger.kernel.org, linuxram@linux.vnet.ibm.com,
+        Zhi Yong Wu <wuzhy@linux.vnet.ibm.com>
+Subject: [PATCH v2 2/2] btrfs-progs: Fix up memory leakage
+Date: Wed,  5 Sep 2012 17:21:07 +0800
+Message-Id: <1346836867-1060-3-git-send-email-wuzhy@linux.vnet.ibm.com>
+In-Reply-To: <1346836867-1060-1-git-send-email-wuzhy@linux.vnet.ibm.com>
+References: <1346836867-1060-1-git-send-email-wuzhy@linux.vnet.ibm.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-From: Anand Jain <anand.jain@oracle.com>
+  Some code pathes forget to free memory on exit.
 
-Signed-off-by: Anand Jain <anand.jain@oracle.com>
+Changelog from v1:
+  Fix the variable is used uncorrectly. [Ram Pai]
+
+Signed-off-by: Zhi Yong Wu <wuzhy@linux.vnet.ibm.com>
 ---
- man/btrfs.8.in |   14 ++++++--------
- 1 files changed, 6 insertions(+), 8 deletions(-)
+ cmds-filesystem.c |    6 ++++--
+ 1 files changed, 4 insertions(+), 2 deletions(-)
 
-diff --git a/man/btrfs.8.in b/man/btrfs.8.in
-index 4b0a9f9..0258d87 100644
---- a/man/btrfs.8.in
-+++ b/man/btrfs.8.in
-@@ -25,7 +25,7 @@ btrfs \- control a btrfs filesystem
- .PP
- \fBbtrfs\fP \fBfilesystem resize\fP\fI [devid:][+/\-]<size>[gkm]|[devid:]max <filesystem>\fP
- .PP
--\fBbtrfs\fP \fBfilesystem label\fP\fI <dev> [newlabel]\fP
-+\fBbtrfs\fP \fBfilesystem label\fP\fI <dev>|<path> [newlabel]\fP
- .PP
- \fBbtrfs\fP \fBsubvolume find-new\fP\fI <subvolume> <last_gen>\fP
- .PP
-@@ -197,8 +197,8 @@ it with the new desired size.  When recreating the partition make sure to use
- the same starting disk cylinder as before.
- .TP
+diff --git a/cmds-filesystem.c b/cmds-filesystem.c
+index e62c4fd..9c43d35 100644
+--- a/cmds-filesystem.c
++++ b/cmds-filesystem.c
+@@ -47,7 +47,7 @@ static const char * const cmd_df_usage[] = {
  
--\fBfilesystem label\fP\fI <dev> [newlabel]\fP
--Show or update the label of a filesystem. \fI<dev>\fR is used to identify the
-+\fBfilesystem label\fP\fI <dev>|<path> [newlabel]\fP
-+Show or update the label of a filesystem. \fI<dev>|<path>\fR is used to identify the
- filesystem. 
- If a \fInewlabel\fR optional argument is passed, the label is changed. The
- following constraints exist for a label:
-@@ -207,11 +207,9 @@ following constraints exist for a label:
- .IP
- - the label shall not  contain the '/' or '\\' characters.
+ static int cmd_df(int argc, char **argv)
+ {
+-	struct btrfs_ioctl_space_args *sargs;
++	struct btrfs_ioctl_space_args *sargs, *sargs_orig;
+ 	u64 count = 0, i;
+ 	int ret;
+ 	int fd;
+@@ -65,7 +65,7 @@ static int cmd_df(int argc, char **argv)
+ 		return 12;
+ 	}
  
--NOTE: Currently there are the following limitations:
--.IP
--- the filesystem has to be unmounted
--.IP
--- the filesystem should not have more than one device.
-+Note: 
-+As of now a btrfs filesystem containing more than one device must be
-+mounted to change its filesystem label.
- .TP
+-	sargs = malloc(sizeof(struct btrfs_ioctl_space_args));
++	sargs_orig = sargs = malloc(sizeof(struct btrfs_ioctl_space_args));
+ 	if (!sargs)
+ 		return -ENOMEM;
  
- \fBfilesystem show\fR [--all-devices|<uuid>|<label>]\fR
+@@ -83,6 +83,7 @@ static int cmd_df(int argc, char **argv)
+ 	}
+ 	if (!sargs->total_spaces) {
+ 		close(fd);
++		free(sargs);
+ 		return 0;
+ 	}
+ 
+@@ -92,6 +93,7 @@ static int cmd_df(int argc, char **argv)
+ 			(count * sizeof(struct btrfs_ioctl_space_info)));
+ 	if (!sargs) {
+ 		close(fd);
++		free(sargs_orig);
+ 		return -ENOMEM;
+ 	}
+ 
 -- 
-1.7.1
+1.7.6.5
 

@@ -1,60 +1,60 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mo-p05-ob.rzone.de ([81.169.146.181]:40112 "EHLO
-	mo-p05-ob.rzone.de" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1751226Ab2IEEW7 (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Wed, 5 Sep 2012 00:22:59 -0400
-Message-ID: <5046D3A0.6060402@jan-o-sch.net>
-Date: Wed, 05 Sep 2012 06:22:56 +0200
-From: Jan Schmidt <list.btrfs@jan-o-sch.net>
-MIME-Version: 1.0
-To: Gabriel de Perthuis <g2p.code+btrfs@gmail.com>
-CC: linux-btrfs@vger.kernel.org
-Subject: Re: [PATCH] Warn when skipping snapshots created with older kernels.
-References: <1346776858-6208-1-git-send-email-g2p.code+btrfs@gmail.com>
-In-Reply-To: <1346776858-6208-1-git-send-email-g2p.code+btrfs@gmail.com>
-Content-Type: text/plain; charset=ISO-8859-1
+Received: from smtp1-g21.free.fr ([212.27.42.1]:48825 "EHLO smtp1-g21.free.fr"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1751340Ab2IEHuV (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Wed, 5 Sep 2012 03:50:21 -0400
+From: Gabriel de Perthuis <g2p.code+btrfs@gmail.com>
+To: Jan Schmidt <list.btrfs@jan-o-sch.net>, linux-btrfs@vger.kernel.org
+Cc: Gabriel de Perthuis <g2p.code+btrfs@gmail.com>
+Subject: [PATCH] warn when skipping snapshots created with older
+Date: Wed,  5 Sep 2012 09:50:05 +0200
+Message-Id: <1346831405-24095-1-git-send-email-g2p.code+btrfs@gmail.com>
+References: <5046D3A0.6060402@jan-o-sch.net>
+In-Reply-To: <5046D3A0.6060402@jan-o-sch.net>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Tue, September 04, 2012 at 18:40 (+0200), Gabriel de Perthuis wrote:
-> This message is more explicit than "ERROR: could not resolve root_id",
-> the message that will be shown immediately before `btrfs send` bails.
-> 
-> Also skip invalid high OIDs.
-> 
-> Signed-off-by: Gabriel de Perthuis <g2p.code+btrfs@gmail.com>
-> ---
->  send-utils.c | 6 ++++++
->  1 file changed, 6 insertions(+)
-> 
-> diff --git a/send-utils.c b/send-utils.c
-> index a43d47e..386aeb3 100644
-> --- a/send-utils.c
-> +++ b/send-utils.c
-> @@ -224,6 +224,7 @@ int subvol_uuid_search_init(int mnt_fd, struct subvol_uuid_search *s)
->  
->  			if ((sh->objectid != 5 &&
->  			    sh->objectid < BTRFS_FIRST_FREE_OBJECTID) ||
-> +			    sh->objectid >= BTRFS_LAST_FREE_OBJECTID ||
->  			    sh->objectid == BTRFS_FREE_INO_OBJECTID)
->  				goto skip;
+Thanks, I fixed the objectid test.
+Apply with --scissors.
 
-Should be "sh->objectid > BTRFS_LAST_FREE_OBJECTID" (not ">=") and we should
-drop the explicit check for BTRFS_FREE_INO_OBJECTID then, because that one is
-not between first-free and last-free.
+-- >8 --
+Subject: [PATCH] btrfs send: warn when skipping snapshots created with older
+ kernels.
 
-> @@ -231,6 +232,11 @@ int subvol_uuid_search_init(int mnt_fd, struct subvol_uuid_search *s)
->  				/* older kernels don't have uuids+times */
->  				if (sh->len < sizeof(root_item)) {
->  					root_item_valid = 0;
-> +					fprintf(stderr,
-> +					        "Ignoring subvolume id %llu, "
-> +					        "btrfs send needs snapshots "
-> +					        "created with kernel 3.6+\n",
-> +					        sh->objectid);
->  					goto skip;
->  				}
->  				root_item_ptr = (struct btrfs_root_item *)
+This message is more explicit than "ERROR: could not resolve root_id",
+the message that will be shown immediately before `btrfs send` bails.
 
-Makes sense. Thanks,
--Jan
+Also skip invalid high OIDs, to prevent spurious warnings.
+
+Signed-off-by: Gabriel de Perthuis <g2p.code+btrfs@gmail.com>
+---
+ send-utils.c | 7 ++++++-
+ 1 file changed, 6 insertions(+), 1 deletion(-)
+
+diff --git a/send-utils.c b/send-utils.c
+index a43d47e..03ca72a 100644
+--- a/send-utils.c
++++ b/send-utils.c
+@@ -224,13 +224,18 @@ int subvol_uuid_search_init(int mnt_fd, struct subvol_uuid_search *s)
+ 
+ 			if ((sh->objectid != 5 &&
+ 			    sh->objectid < BTRFS_FIRST_FREE_OBJECTID) ||
+-			    sh->objectid == BTRFS_FREE_INO_OBJECTID)
++			    sh->objectid > BTRFS_LAST_FREE_OBJECTID)
+ 				goto skip;
+ 
+ 			if (sh->type == BTRFS_ROOT_ITEM_KEY) {
+ 				/* older kernels don't have uuids+times */
+ 				if (sh->len < sizeof(root_item)) {
+ 					root_item_valid = 0;
++					fprintf(stderr,
++					        "Ignoring subvolume id %llu, "
++					        "btrfs send needs snapshots "
++					        "created with kernel 3.6+\n",
++					        sh->objectid);
+ 					goto skip;
+ 				}
+ 				root_item_ptr = (struct btrfs_root_item *)
+-- 
+1.7.12.117.gdc24c27
+

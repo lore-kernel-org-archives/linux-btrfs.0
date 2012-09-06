@@ -1,47 +1,52 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-iy0-f174.google.com ([209.85.210.174]:35099 "EHLO
-	mail-iy0-f174.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1751388Ab2IFGlT (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Thu, 6 Sep 2012 02:41:19 -0400
-Message-ID: <5048458A.1030604@gmail.com>
-Date: Thu, 06 Sep 2012 14:41:14 +0800
+Received: from mail-ie0-f174.google.com ([209.85.223.174]:42730 "EHLO
+	mail-ie0-f174.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1751799Ab2IFGlI (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Thu, 6 Sep 2012 02:41:08 -0400
+Message-ID: <5048457E.6050002@gmail.com>
+Date: Thu, 06 Sep 2012 14:41:02 +0800
 From: Wang Sheng-Hui <shhuiw@gmail.com>
 MIME-Version: 1.0
 To: chris.mason@fusionio.com, linux-btrfs@vger.kernel.org,
         linux-kernel@vger.kernel.org
-Subject: PATCH 3/3] btrfs: set extent-tree.c/add_excluded_extent as void
+Subject: [PATCH 2/3] btrfs: remove unnecessary -ENOMEM BUG_ON check in extent-tree.c/btrfs_alloc_logged_file_extent
 Content-Type: text/plain; charset=ISO-8859-1
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-The memory allocation failure will be catched in set_extent_bits.
-Always return 0 is useless for its callers.
+The memory allocation failure is BUG_ON in add_excluded_extent
+(following the code path). No need to BUG_ON -ENOMEM inside
+btrfs_alloc_logged_file_extent.
 
 Signed-off-by: Wang Sheng-Hui <shhuiw@gmail.com>
 ---
- fs/btrfs/extent-tree.c |    3 +--
- 1 files changed, 1 insertions(+), 2 deletions(-)
+ fs/btrfs/extent-tree.c |    6 ++----
+ 1 files changed, 2 insertions(+), 4 deletions(-)
 
 diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
-index 9b9a6fa..3a295ff 100644
+index 95492cc..9b9a6fa 100644
 --- a/fs/btrfs/extent-tree.c
 +++ b/fs/btrfs/extent-tree.c
-@@ -209,7 +209,7 @@ block_group_cache_tree_search(struct btrfs_fs_info *info, u64 bytenr,
- 	return ret;
- }
+@@ -6207,8 +6207,7 @@ int btrfs_alloc_logged_file_extent(struct btrfs_trans_handle *trans,
+ 		mutex_lock(&caching_ctl->mutex);
  
--static int add_excluded_extent(struct btrfs_root *root,
-+static void add_excluded_extent(struct btrfs_root *root,
- 			       u64 start, u64 num_bytes)
- {
- 	u64 end = start + num_bytes - 1;
-@@ -217,7 +217,6 @@ static int add_excluded_extent(struct btrfs_root *root,
- 			start, end, EXTENT_UPTODATE, GFP_NOFS);
- 	set_extent_bits(&root->fs_info->freed_extents[1],
- 			start, end, EXTENT_UPTODATE, GFP_NOFS);
--	return 0;
- }
+ 		if (start >= caching_ctl->progress) {
+-			ret = add_excluded_extent(root, start, num_bytes);
+-			BUG_ON(ret); /* -ENOMEM */
++			add_excluded_extent(root, start, num_bytes);
+ 		} else if (start + num_bytes <= caching_ctl->progress) {
+ 			ret = btrfs_remove_free_space(block_group,
+ 						      start, num_bytes);
+@@ -6222,8 +6221,7 @@ int btrfs_alloc_logged_file_extent(struct btrfs_trans_handle *trans,
+ 			start = caching_ctl->progress;
+ 			num_bytes = ins->objectid + ins->offset -
+ 				    caching_ctl->progress;
+-			ret = add_excluded_extent(root, start, num_bytes);
+-			BUG_ON(ret); /* -ENOMEM */
++			add_excluded_extent(root, start, num_bytes);
+ 		}
  
- static void free_excluded_extents(struct btrfs_root *root,
+ 		mutex_unlock(&caching_ctl->mutex);
 -- 
 1.7.1
+

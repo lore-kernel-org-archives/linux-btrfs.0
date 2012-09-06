@@ -1,81 +1,66 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-ie0-f174.google.com ([209.85.223.174]:42730 "EHLO
-	mail-ie0-f174.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1750999Ab2IFGkw (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Thu, 6 Sep 2012 02:40:52 -0400
-Message-ID: <50484569.8080709@gmail.com>
-Date: Thu, 06 Sep 2012 14:40:41 +0800
-From: Wang Sheng-Hui <shhuiw@gmail.com>
-MIME-Version: 1.0
-To: chris.mason@fusionio.com, linux-btrfs@vger.kernel.org,
+Received: from twin.jikos.cz ([89.185.236.188]:41299 "EHLO twin.jikos.cz"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1752837Ab2IFKJ3 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Thu, 6 Sep 2012 06:09:29 -0400
+Date: Thu, 6 Sep 2012 12:09:23 +0200
+From: David Sterba <dave@jikos.cz>
+To: Wang Sheng-Hui <shhuiw@gmail.com>
+Cc: chris.mason@fusionio.com, linux-btrfs@vger.kernel.org,
         linux-kernel@vger.kernel.org
-Subject: [PATCH 1/3] btrfs: remove unnecessary -ENOMEM BUG_ON check in extent-tree.c/exclude_super_stripes
-Content-Type: text/plain; charset=ISO-8859-1
+Subject: Re: [PATCH 1/3] btrfs: remove unnecessary -ENOMEM BUG_ON check in
+ extent-tree.c/exclude_super_stripes
+Message-ID: <20120906100923.GO17430@twin.jikos.cz>
+Reply-To: dave@jikos.cz
+References: <50484569.8080709@gmail.com>
+MIME-Version: 1.0
+Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <50484569.8080709@gmail.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-The memory allocation failure is BUG_ON in add_excluded_extent (following
-the code path) and btrfs_rmap_block. No need to BUG_ON -ENOMEM inside
-exclude_super_stripes itself.
+On Thu, Sep 06, 2012 at 02:40:41PM +0800, Wang Sheng-Hui wrote:
+> The memory allocation failure is BUG_ON in add_excluded_extent (following
+> the code path) and btrfs_rmap_block. No need to BUG_ON -ENOMEM inside
+> exclude_super_stripes itself.
 
-Its return value is always 0, and useless for its callers. Set it as void
-instead 0-returned.
+No please.
 
-Signed-off-by: Wang Sheng-Hui <shhuiw@gmail.com>
----
- fs/btrfs/extent-tree.c |   20 +++++++-------------
- 1 files changed, 7 insertions(+), 13 deletions(-)
+> Its return value is always 0, and useless for its callers. Set it as void
+> instead 0-returned.
 
-diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
-index ba58024..95492cc 100644
---- a/fs/btrfs/extent-tree.c
-+++ b/fs/btrfs/extent-tree.c
-@@ -234,39 +234,33 @@ static void free_excluded_extents(struct btrfs_root *root,
- 			  start, end, EXTENT_UPTODATE, GFP_NOFS);
- }
- 
--static int exclude_super_stripes(struct btrfs_root *root,
-+static void exclude_super_stripes(struct btrfs_root *root,
- 				 struct btrfs_block_group_cache *cache)
- {
- 	u64 bytenr;
- 	u64 *logical;
- 	int stripe_len;
--	int i, nr, ret;
-+	int i, nr;
- 
- 	if (cache->key.objectid < BTRFS_SUPER_INFO_OFFSET) {
- 		stripe_len = BTRFS_SUPER_INFO_OFFSET - cache->key.objectid;
- 		cache->bytes_super += stripe_len;
--		ret = add_excluded_extent(root, cache->key.objectid,
--					  stripe_len);
--		BUG_ON(ret); /* -ENOMEM */
-+		add_excluded_extent(root, cache->key.objectid, stripe_len);
- 	}
- 
- 	for (i = 0; i < BTRFS_SUPER_MIRROR_MAX; i++) {
- 		bytenr = btrfs_sb_offset(i);
--		ret = btrfs_rmap_block(&root->fs_info->mapping_tree,
--				       cache->key.objectid, bytenr,
--				       0, &logical, &nr, &stripe_len);
--		BUG_ON(ret); /* -ENOMEM */
-+		btrfs_rmap_block(&root->fs_info->mapping_tree,
-+				 cache->key.objectid, bytenr,
-+				 0, &logical, &nr, &stripe_len);
- 
- 		while (nr--) {
- 			cache->bytes_super += stripe_len;
--			ret = add_excluded_extent(root, logical[nr],
--						  stripe_len);
--			BUG_ON(ret); /* -ENOMEM */
-+			add_excluded_extent(root, logical[nr], stripe_len);
- 		}
- 
- 		kfree(logical);
- 	}
--	return 0;
- }
- 
- static struct btrfs_caching_control *
--- 
-1.7.1
+btrfs_rmap_block itself contains a BUG_ON:
+
+3980 int btrfs_rmap_block(struct btrfs_mapping_tree *map_tree,
+3981                      u64 chunk_start, u64 physical, u64 devid,
+3982                      u64 **logical, int *naddrs, int *stripe_len)
+3983 {
+3984         struct extent_map_tree *em_tree = &map_tree->map_tree;
+3985         struct extent_map *em;
+3986         struct map_lookup *map;
+3987         u64 *buf;
+3988         u64 bytenr;
+3989         u64 length;
+3990         u64 stripe_nr;
+3991         int i, j, nr = 0;
+3992
+3993         read_lock(&em_tree->lock);
+3994         em = lookup_extent_mapping(em_tree, chunk_start, 1);
+3995         read_unlock(&em_tree->lock);
+3996
+3997         BUG_ON(!em || em->start != chunk_start);
+
+And this should be turned into an 'return error', thus giving a non-zero return
+code that should be handled in the callers.
+
+Eg. this patch attempts to do that
+http://www.mail-archive.com/linux-btrfs@vger.kernel.org/msg15470.html
+
+but has not been merged due to incorrect fix inside exclude_super_stripes
+(introduced in the patch).
+
+The same objection for return code cleanups will hold for any function that
+returns 0 but is full of BUG_ONs.
+
+
+david

@@ -1,73 +1,44 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from twin.jikos.cz ([89.185.236.188]:41489 "EHLO twin.jikos.cz"
+Received: from mx2.fusionio.com ([66.114.96.31]:52858 "EHLO mx2.fusionio.com"
 	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1753446Ab2IFKTg (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 6 Sep 2012 06:19:36 -0400
-Date: Thu, 6 Sep 2012 12:19:30 +0200
-From: David Sterba <dave@jikos.cz>
-To: Wang Sheng-Hui <shhuiw@gmail.com>
-Cc: chris.mason@fusionio.com, linux-btrfs@vger.kernel.org,
-        linux-kernel@vger.kernel.org
-Subject: Re: [PATCH 2/3] btrfs: remove unnecessary -ENOMEM BUG_ON check in
- extent-tree.c/btrfs_alloc_logged_file_extent
-Message-ID: <20120906101930.GP17430@twin.jikos.cz>
-Reply-To: dave@jikos.cz
-References: <5048457E.6050002@gmail.com>
+	id S1755199Ab2IFNL4 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Thu, 6 Sep 2012 09:11:56 -0400
+Date: Thu, 6 Sep 2012 09:11:53 -0400
+From: Josef Bacik <jbacik@fusionio.com>
+To: Liu Bo <bo.li.liu@oracle.com>
+CC: "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>,
+        "dave@jikos.cz" <dave@jikos.cz>
+Subject: Re: [PATCH v2 2/2] Btrfs: snapshot-aware defrag
+Message-ID: <20120906131153.GB18438@localhost.localdomain>
+References: <1346893852-9815-1-git-send-email-bo.li.liu@oracle.com>
+ <1346893852-9815-2-git-send-email-bo.li.liu@oracle.com>
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <5048457E.6050002@gmail.com>
+Content-Type: text/plain; charset="us-ascii"
+In-Reply-To: <1346893852-9815-2-git-send-email-bo.li.liu@oracle.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Thu, Sep 06, 2012 at 02:41:02PM +0800, Wang Sheng-Hui wrote:
-> The memory allocation failure is BUG_ON in add_excluded_extent
-> (following the code path). No need to BUG_ON -ENOMEM inside
-> btrfs_alloc_logged_file_extent.
-
-This indirectly calls __set_extent_bit that does BUG_ON on memory
-allocation failures. This type of error condition is hard to fix, as it
-usually needs to do non-trivial cleanups in the function before
-returning -ENOMEM, so the easiset way to "handle" it is to do BUG_ON and
-then separately deal with it in another patch (so it does not mix with
-the original patch).
-
-Your patches remove (from my POV) useful marks that we have an error
-condition to handle, not to hide it.
-
-So, NAK from me for anything that looks like this. I'm of course glad to
-look at patches that replace the BUG_ON with proper error handling :)
-
-
-david
-
+On Wed, Sep 05, 2012 at 07:10:52PM -0600, Liu Bo wrote:
+> This comes from one of btrfs's project ideas,
+> As we defragment files, we break any sharing from other snapshots.
+> The balancing code will preserve the sharing, and defrag needs to grow this
+> as well.
 > 
-> Signed-off-by: Wang Sheng-Hui <shhuiw@gmail.com>
+> Now we're able to fill the blank with this patch, in which we make full use of
+> backref walking stuff.
+> 
+> Here is the basic idea,
+> o  set the writeback ranges started by defragment with flag EXTENT_DEFRAG
+> o  at endio, after we finish updating fs tree, we use backref walking to find
+>    all parents of the ranges and re-link them with the new COWed file layout by
+>    adding corresponding backrefs.
+> 
+> Original-Signed-off-by: Li Zefan <lizf@cn.fujitsu.com>
+> Signed-off-by: Liu Bo <bo.li.liu@oracle.com>
 > ---
->  fs/btrfs/extent-tree.c |    6 ++----
->  1 files changed, 2 insertions(+), 4 deletions(-)
+> v2: rebase against the latest btrfs-repo
 > 
-> diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
-> index 95492cc..9b9a6fa 100644
-> --- a/fs/btrfs/extent-tree.c
-> +++ b/fs/btrfs/extent-tree.c
-> @@ -6207,8 +6207,7 @@ int btrfs_alloc_logged_file_extent(struct btrfs_trans_handle *trans,
->  		mutex_lock(&caching_ctl->mutex);
->  
->  		if (start >= caching_ctl->progress) {
-> -			ret = add_excluded_extent(root, start, num_bytes);
-> -			BUG_ON(ret); /* -ENOMEM */
-> +			add_excluded_extent(root, start, num_bytes);
 
->  		} else if (start + num_bytes <= caching_ctl->progress) {
->  			ret = btrfs_remove_free_space(block_group,
->  						      start, num_bytes);
-> @@ -6222,8 +6221,7 @@ int btrfs_alloc_logged_file_extent(struct btrfs_trans_handle *trans,
->  			start = caching_ctl->progress;
->  			num_bytes = ins->objectid + ins->offset -
->  				    caching_ctl->progress;
-> -			ret = add_excluded_extent(root, start, num_bytes);
-> -			BUG_ON(ret); /* -ENOMEM */
-> +			add_excluded_extent(root, start, num_bytes);
->  		}
->  
->  		mutex_unlock(&caching_ctl->mutex);
+Heh well it doesn't apply onto btrfs-next, try again please :).  Thanks,
+
+Josef

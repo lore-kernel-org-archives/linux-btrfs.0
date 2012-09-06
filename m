@@ -1,58 +1,52 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from acsinet15.oracle.com ([141.146.126.227]:36926 "EHLO
-	acsinet15.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1756083Ab2IFO2P (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Thu, 6 Sep 2012 10:28:15 -0400
-Date: Thu, 6 Sep 2012 22:26:24 +0800
-From: Liu Bo <bo.li.liu@oracle.com>
-To: Josef Bacik <jbacik@fusionio.com>
-Cc: "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>,
-        "dave@jikos.cz" <dave@jikos.cz>
-Subject: Re: [PATCH v2 2/2] Btrfs: snapshot-aware defrag
-Message-ID: <20120906142624.GB18524@liubo>
-References: <1346893852-9815-1-git-send-email-bo.li.liu@oracle.com>
- <1346893852-9815-2-git-send-email-bo.li.liu@oracle.com>
- <20120906131153.GB18438@localhost.localdomain>
+Received: from mx1.fusionio.com ([66.114.96.30]:35230 "EHLO mx1.fusionio.com"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1759858Ab2IFUqe (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Thu, 6 Sep 2012 16:46:34 -0400
+Received: from mail1.int.fusionio.com (mail1.int.fusionio.com [10.101.1.21]) by mx1.fusionio.com with ESMTP id yD1JRE8HXxfbexzx (version=TLSv1 cipher=AES128-SHA bits=128 verify=NO) for <linux-btrfs@vger.kernel.org>; Thu, 06 Sep 2012 14:46:33 -0600 (MDT)
+From: Josef Bacik <jbacik@fusionio.com>
+To: <linux-btrfs@vger.kernel.org>
+Subject: [PATCH] Btrfs: wait on async pages when shrinking delalloc
+Date: Thu, 6 Sep 2012 16:51:56 -0400
+Message-ID: <1346964716-12070-1-git-send-email-jbacik@fusionio.com>
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <20120906131153.GB18438@localhost.localdomain>
+Content-Type: text/plain
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Thu, Sep 06, 2012 at 09:11:53AM -0400, Josef Bacik wrote:
-> On Wed, Sep 05, 2012 at 07:10:52PM -0600, Liu Bo wrote:
-> > This comes from one of btrfs's project ideas,
-> > As we defragment files, we break any sharing from other snapshots.
-> > The balancing code will preserve the sharing, and defrag needs to grow this
-> > as well.
-> > 
-> > Now we're able to fill the blank with this patch, in which we make full use of
-> > backref walking stuff.
-> > 
-> > Here is the basic idea,
-> > o  set the writeback ranges started by defragment with flag EXTENT_DEFRAG
-> > o  at endio, after we finish updating fs tree, we use backref walking to find
-> >    all parents of the ranges and re-link them with the new COWed file layout by
-> >    adding corresponding backrefs.
-> > 
-> > Original-Signed-off-by: Li Zefan <lizf@cn.fujitsu.com>
-> > Signed-off-by: Liu Bo <bo.li.liu@oracle.com>
-> > ---
-> > v2: rebase against the latest btrfs-repo
-> > 
-> 
-> Heh well it doesn't apply onto btrfs-next, try again please :).  Thanks,
-> 
+Mitch reported a problem where you could get an ENOSPC error when untarring
+a kernel git tree onto a 16gb file system with compress-force=zlib.  This is
+because compression is a huge pain, it will return from ->writepages()
+without having actually created any ordered extents.  To get around this we
+check to see if the async submit counter is up, and if it is wait until it
+drops to 0 before doing our normal ordered wait dance.  With this patch I
+can now untar a kernel git tree onto a 16gb file system without getting
+ENOSPC errors.  Thanks,
 
-It's weird but I just pulled btrfs-next and applied it well...
+Signed-off-by: Josef Bacik <jbacik@fusionio.com>
+---
+ fs/btrfs/extent-tree.c |    8 ++++++++
+ 1 files changed, 8 insertions(+), 0 deletions(-)
 
-Can you please try it again?
+diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
+index b6b33e4..4bb546da 100644
+--- a/fs/btrfs/extent-tree.c
++++ b/fs/btrfs/extent-tree.c
+@@ -3697,6 +3697,14 @@ static void shrink_delalloc(struct btrfs_root *root, u64 to_reclaim, u64 orig,
+ 		writeback_inodes_sb_nr_if_idle(root->fs_info->sb, nr_pages,
+ 					       WB_REASON_FS_FREE_SPACE);
+ 
++		/*
++		 * We need to wait for the async pages to actually start before
++		 * we do anything.
++		 */
++		if (atomic_read(&root->fs_info->async_delalloc_pages))
++			wait_event(root->fs_info->async_submit_wait,
++			  !atomic_read(&root->fs_info->async_delalloc_pages));
++
+ 		spin_lock(&space_info->lock);
+ 		if (space_info->bytes_used + space_info->bytes_reserved +
+ 		    space_info->bytes_pinned + space_info->bytes_readonly +
+-- 
+1.7.7.6
 
-thanks,
-liubo
-
-> Josef
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html

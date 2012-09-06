@@ -1,142 +1,166 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([222.73.24.84]:24575 "EHLO song.cn.fujitsu.com"
+Received: from cn.fujitsu.com ([222.73.24.84]:59826 "EHLO song.cn.fujitsu.com"
 	rhost-flags-OK-FAIL-OK-OK) by vger.kernel.org with ESMTP
-	id S1758128Ab2IFKov (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 6 Sep 2012 06:44:51 -0400
+	id S1758115Ab2IFLAI (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Thu, 6 Sep 2012 07:00:08 -0400
 Received: from fnstmail02.fnst.cn.fujitsu.com (tang.cn.fujitsu.com [127.0.0.1])
-	by tang.cn.fujitsu.com (8.14.3/8.13.1) with ESMTP id q86A247h017547
-	for <linux-btrfs@vger.kernel.org>; Thu, 6 Sep 2012 18:02:07 +0800
-Message-ID: <5048748F.2070601@cn.fujitsu.com>
-Date: Thu, 06 Sep 2012 18:01:51 +0800
+	by tang.cn.fujitsu.com (8.14.3/8.13.1) with ESMTP id q86A1Y9X017507
+	for <linux-btrfs@vger.kernel.org>; Thu, 6 Sep 2012 18:01:34 +0800
+Message-ID: <50487471.2020403@cn.fujitsu.com>
+Date: Thu, 06 Sep 2012 18:01:21 +0800
 From: Miao Xie <miaox@cn.fujitsu.com>
 Reply-To: miaox@cn.fujitsu.com
 MIME-Version: 1.0
 To: Linux Btrfs <linux-btrfs@vger.kernel.org>
-Subject: [PATCH V4 04/12] Btrfs: use a slab for ordered extents allocation
+Subject: [PATCH V4 03/12] Btrfs: fix file extent discount problem in the,
+ snapshot
 Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 In-Reply-To: <50487434.1010305@cn.fujitsu.com>
 
-The ordered extent allocation is in the fast path of the IO, so use a slab
-to improve the speed of the allocation.
+If a snapshot is created while we are writing some data into the file,
+the i_size of the corresponding file in the snapshot will be wrong, it will
+be beyond the end of the last file extent. And btrfsck will report:
+  root 256 inode 257 errors 100
 
- "Size of the struct is 280, so this will fall into the size-512 bucket,
-  giving 8 objects per page, while own slab will pack 14 objects into a page.
+Steps to reproduce:
+ # mkfs.btrfs <partition>
+ # mount <partition> <mnt>
+ # cd <mnt>
+ # dd if=/dev/zero of=tmpfile bs=4M count=1024 &
+ # for ((i=0; i<4; i++))
+ > do
+ > btrfs sub snap . $i
+ > done
 
-  Another benefit I see is to check for leaked objects when the module is
-  removed (and the cache destroy takes place)."
-						-- David Sterba
+This because the algorithm of disk_i_size update is wrong. Though there are
+some ordered extents behind the current one which we use to update disk_i_size,
+it doesn't mean those extents will be dealt with in the same transaction. So
+We shouldn't use the offset of those extents to update disk_i_size. Or we will
+get the wrong i_size in the snapshot.
+
+We fix this problem by recording the max real i_size. If we find there is a
+ordered extent which is in front of the current one and doesn't complete, we
+will record the end of the current one into that ordered extent. Surely, if
+the current extent holds the end of other extent(it must be greater than
+the current one because it is behind the current one), we will record the
+number that the current extent holds. In this way, we can exclude the ordered
+extents that may not be dealth with in the same transaction, and be easy to
+know the real disk_i_size.
 
 Signed-off-by: Miao Xie <miaox@cn.fujitsu.com>
 ---
 Changelog v1 -> v4:
-- just change the changelog of this patch.
+- No change.
 ---
- fs/btrfs/ordered-data.c |   23 +++++++++++++++++++++--
- fs/btrfs/ordered-data.h |    2 ++
- fs/btrfs/super.c        |    9 ++++++++-
- 3 files changed, 31 insertions(+), 3 deletions(-)
+ fs/btrfs/ordered-data.c |   62 +++++++++++++---------------------------------
+ fs/btrfs/ordered-data.h |    7 +++++
+ 2 files changed, 25 insertions(+), 44 deletions(-)
 
 diff --git a/fs/btrfs/ordered-data.c b/fs/btrfs/ordered-data.c
-index 2eb79cc..4ae1014 100644
+index 643335a..2eb79cc 100644
 --- a/fs/btrfs/ordered-data.c
 +++ b/fs/btrfs/ordered-data.c
-@@ -25,6 +25,8 @@
- #include "btrfs_inode.h"
- #include "extent_io.h"
- 
-+static struct kmem_cache *btrfs_ordered_extent_cache;
-+
- static u64 entry_end(struct btrfs_ordered_extent *entry)
- {
- 	if (entry->file_offset + entry->len < entry->file_offset)
-@@ -187,7 +189,7 @@ static int __btrfs_add_ordered_extent(struct inode *inode, u64 file_offset,
- 	struct btrfs_ordered_extent *entry;
- 
- 	tree = &BTRFS_I(inode)->ordered_tree;
--	entry = kzalloc(sizeof(*entry), GFP_NOFS);
-+	entry = kmem_cache_zalloc(btrfs_ordered_extent_cache, GFP_NOFS);
- 	if (!entry)
- 		return -ENOMEM;
- 
-@@ -421,7 +423,7 @@ void btrfs_put_ordered_extent(struct btrfs_ordered_extent *entry)
- 			list_del(&sum->list);
- 			kfree(sum);
+@@ -775,7 +775,6 @@ int btrfs_ordered_update_i_size(struct inode *inode, u64 offset,
+ 	struct btrfs_ordered_inode_tree *tree = &BTRFS_I(inode)->ordered_tree;
+ 	u64 disk_i_size;
+ 	u64 new_i_size;
+-	u64 i_size_test;
+ 	u64 i_size = i_size_read(inode);
+ 	struct rb_node *node;
+ 	struct rb_node *prev = NULL;
+@@ -835,55 +834,30 @@ int btrfs_ordered_update_i_size(struct inode *inode, u64 offset,
+ 			break;
+ 		if (test->file_offset >= i_size)
+ 			break;
+-		if (test->file_offset >= disk_i_size)
++		if (test->file_offset >= disk_i_size) {
++			/*
++			 * we don't update disk_i_size now, so record this
++			 * undealt i_size. Or we will not know the real
++			 * i_size.
++			 */
++			if (test->outstanding_isize < offset)
++				test->outstanding_isize = offset;
++			if (ordered &&
++			    ordered->outstanding_isize >
++			    test->outstanding_isize)
++				test->outstanding_isize =
++						ordered->outstanding_isize;
+ 			goto out;
+-	}
+-	new_i_size = min_t(u64, offset, i_size);
+-
+-	/*
+-	 * at this point, we know we can safely update i_size to at least
+-	 * the offset from this ordered extent.  But, we need to
+-	 * walk forward and see if ios from higher up in the file have
+-	 * finished.
+-	 */
+-	if (ordered) {
+-		node = rb_next(&ordered->rb_node);
+-	} else {
+-		if (prev)
+-			node = rb_next(prev);
+-		else
+-			node = rb_first(&tree->tree);
+-	}
+-
+-	/*
+-	 * We are looking for an area between our current extent and the next
+-	 * ordered extent to update the i_size to.  There are 3 cases here
+-	 *
+-	 * 1) We don't actually have anything and we can update to i_size.
+-	 * 2) We have stuff but they already did their i_size update so again we
+-	 * can just update to i_size.
+-	 * 3) We have an outstanding ordered extent so the most we can update
+-	 * our disk_i_size to is the start of the next offset.
+-	 */
+-	i_size_test = i_size;
+-	for (; node; node = rb_next(node)) {
+-		test = rb_entry(node, struct btrfs_ordered_extent, rb_node);
+-
+-		if (test_bit(BTRFS_ORDERED_UPDATED_ISIZE, &test->flags))
+-			continue;
+-		if (test->file_offset > offset) {
+-			i_size_test = test->file_offset;
+-			break;
  		}
--		kfree(entry);
-+		kmem_cache_free(btrfs_ordered_extent_cache, entry);
  	}
- }
++	new_i_size = min_t(u64, offset, i_size);
  
-@@ -958,3 +960,20 @@ void btrfs_add_ordered_operation(struct btrfs_trans_handle *trans,
- 	}
- 	spin_unlock(&root->fs_info->ordered_extent_lock);
- }
-+
-+int __init ordered_data_init(void)
-+{
-+	btrfs_ordered_extent_cache = kmem_cache_create("btrfs_ordered_extent",
-+				     sizeof(struct btrfs_ordered_extent), 0,
-+				     SLAB_RECLAIM_ACCOUNT | SLAB_MEM_SPREAD,
-+				     NULL);
-+	if (!btrfs_ordered_extent_cache)
-+		return -ENOMEM;
-+	return 0;
-+}
-+
-+void ordered_data_exit(void)
-+{
-+	if (btrfs_ordered_extent_cache)
-+		kmem_cache_destroy(btrfs_ordered_extent_cache);
-+}
+ 	/*
+-	 * i_size_test is the end of a region after this ordered
+-	 * extent where there are no ordered extents, we can safely set
+-	 * disk_i_size to this.
++	 * Some ordered extents may completed before the current one, and
++	 * we hold the real i_size in ->outstanding_isize.
+ 	 */
+-	if (i_size_test > offset)
+-		new_i_size = min_t(u64, i_size_test, i_size);
++	if (ordered && ordered->outstanding_isize > new_i_size)
++		new_i_size = min_t(u64, ordered->outstanding_isize, i_size);
+ 	BTRFS_I(inode)->disk_i_size = new_i_size;
+ 	ret = 0;
+ out:
 diff --git a/fs/btrfs/ordered-data.h b/fs/btrfs/ordered-data.h
-index c2443a4..d1ddaef 100644
+index e03c560..c2443a4 100644
 --- a/fs/btrfs/ordered-data.h
 +++ b/fs/btrfs/ordered-data.h
-@@ -192,4 +192,6 @@ void btrfs_add_ordered_operation(struct btrfs_trans_handle *trans,
- 				 struct inode *inode);
- void btrfs_wait_ordered_extents(struct btrfs_root *root,
- 				int nocow_only, int delay_iput);
-+int __init ordered_data_init(void);
-+void ordered_data_exit(void);
- #endif
-diff --git a/fs/btrfs/super.c b/fs/btrfs/super.c
-index 073c236..48e53d6 100644
---- a/fs/btrfs/super.c
-+++ b/fs/btrfs/super.c
-@@ -1595,10 +1595,14 @@ static int __init init_btrfs_fs(void)
- 	if (err)
- 		goto free_extent_io;
+@@ -96,6 +96,13 @@ struct btrfs_ordered_extent {
+ 	/* number of bytes that still need writing */
+ 	u64 bytes_left;
  
--	err = btrfs_delayed_inode_init();
-+	err = ordered_data_init();
- 	if (err)
- 		goto free_extent_map;
- 
-+	err = btrfs_delayed_inode_init();
-+	if (err)
-+		goto free_ordered_data;
++	/*
++	 * the end of the ordered extent which is behind it but
++	 * didn't update disk_i_size. Please see the comment of
++	 * btrfs_ordered_update_i_size();
++	 */
++	u64 outstanding_isize;
 +
- 	err = btrfs_interface_init();
- 	if (err)
- 		goto free_delayed_inode;
-@@ -1616,6 +1620,8 @@ unregister_ioctl:
- 	btrfs_interface_exit();
- free_delayed_inode:
- 	btrfs_delayed_inode_exit();
-+free_ordered_data:
-+	ordered_data_exit();
- free_extent_map:
- 	extent_map_exit();
- free_extent_io:
-@@ -1632,6 +1638,7 @@ static void __exit exit_btrfs_fs(void)
- {
- 	btrfs_destroy_cachep();
- 	btrfs_delayed_inode_exit();
-+	ordered_data_exit();
- 	extent_map_exit();
- 	extent_io_exit();
- 	btrfs_interface_exit();
+ 	/* flags (described above) */
+ 	unsigned long flags;
+ 
 -- 
 1.7.6.5

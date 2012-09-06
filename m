@@ -1,166 +1,68 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([222.73.24.84]:59826 "EHLO song.cn.fujitsu.com"
+Received: from cn.fujitsu.com ([222.73.24.84]:24575 "EHLO song.cn.fujitsu.com"
 	rhost-flags-OK-FAIL-OK-OK) by vger.kernel.org with ESMTP
-	id S1758115Ab2IFLAI (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 6 Sep 2012 07:00:08 -0400
+	id S1758039Ab2IFKou (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Thu, 6 Sep 2012 06:44:50 -0400
 Received: from fnstmail02.fnst.cn.fujitsu.com (tang.cn.fujitsu.com [127.0.0.1])
-	by tang.cn.fujitsu.com (8.14.3/8.13.1) with ESMTP id q86A1Y9X017507
-	for <linux-btrfs@vger.kernel.org>; Thu, 6 Sep 2012 18:01:34 +0800
-Message-ID: <50487471.2020403@cn.fujitsu.com>
-Date: Thu, 06 Sep 2012 18:01:21 +0800
+	by tang.cn.fujitsu.com (8.14.3/8.13.1) with ESMTP id q86A0XCg017429
+	for <linux-btrfs@vger.kernel.org>; Thu, 6 Sep 2012 18:00:34 +0800
+Message-ID: <50487434.1010305@cn.fujitsu.com>
+Date: Thu, 06 Sep 2012 18:00:20 +0800
 From: Miao Xie <miaox@cn.fujitsu.com>
 Reply-To: miaox@cn.fujitsu.com
 MIME-Version: 1.0
 To: Linux Btrfs <linux-btrfs@vger.kernel.org>
-Subject: [PATCH V4 03/12] Btrfs: fix file extent discount problem in the,
- snapshot
+Subject: [PATCH V4 0/12] random bug fixes
 Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
-In-Reply-To: <50487434.1010305@cn.fujitsu.com>
 
-If a snapshot is created while we are writing some data into the file,
-the i_size of the corresponding file in the snapshot will be wrong, it will
-be beyond the end of the last file extent. And btrfsck will report:
-  root 256 inode 257 errors 100
+This patchset contains 12 bug-fix patches.
+- 01-03, 05-09 fix some bugs of the snapshot creation.
+- 04 just improves the memory allocation of the ordered data extent object.
+- 10 fixes a bug of the tree log that we forgot to protect ->log_batch.
+- 11 improve error path handle, makes it show more information to the users
+- 12 fixes the problem that fallocate() reserved less space than it need.
 
-Steps to reproduce:
- # mkfs.btrfs <partition>
- # mount <partition> <mnt>
- # cd <mnt>
- # dd if=/dev/zero of=tmpfile bs=4M count=1024 &
- # for ((i=0; i<4; i++))
- > do
- > btrfs sub snap . $i
- > done
+And in this patchset, 06, 09-12 are new patches. The others are old ones,
+but I updated them according to the comment of David. Thanks, David.
 
-This because the algorithm of disk_i_size update is wrong. Though there are
-some ordered extents behind the current one which we use to update disk_i_size,
-it doesn't mean those extents will be dealt with in the same transaction. So
-We shouldn't use the offset of those extents to update disk_i_size. Or we will
-get the wrong i_size in the snapshot.
+In order to avoid the confusion of the version number, I marked all the patches
+as V4 (The version number of the old version is confused, the version number
+of two patches is v3, the others is v1).
 
-We fix this problem by recording the max real i_size. If we find there is a
-ordered extent which is in front of the current one and doesn't complete, we
-will record the end of the current one into that ordered extent. Surely, if
-the current extent holds the end of other extent(it must be greater than
-the current one because it is behind the current one), we will record the
-number that the current extent holds. In this way, we can exclude the ordered
-extents that may not be dealth with in the same transaction, and be easy to
-know the real disk_i_size.
+Beside that, we can pull this patchset from the URL
 
-Signed-off-by: Miao Xie <miaox@cn.fujitsu.com>
+	git://github.com/miaoxie/linux-btrfs.git for-merge
+
+Thanks
+Miao
 ---
-Changelog v1 -> v4:
-- No change.
----
- fs/btrfs/ordered-data.c |   62 +++++++++++++---------------------------------
- fs/btrfs/ordered-data.h |    7 +++++
- 2 files changed, 25 insertions(+), 44 deletions(-)
+Miao Xie (12):
+      Btrfs: fix error path in create_pending_snapshot()
+      Btrfs: fix full backref problem when inserting shared block reference
+      Btrfs: fix file extent discount problem in the snapshot
+      Btrfs: use a slab for ordered extents allocation
+      Btrfs: fix wrong orphan count of the fs/file tree
+      Btrfs: add a new "type" field into the block reservation structure
+      Btrfs: fix corrupted metadata in the snapshot
+      Btrfs: fix the snapshot that should not exist
+      Btrfs: fix wrong size for the reservation of the snapshot creation
+      Btrfs: fix unprotected ->log_batch
+      Btrfs: output more information when aborting a unused transaction handle
+      Btrfs: fix wrong size for the reservation when doing file pre-allocation.
 
-diff --git a/fs/btrfs/ordered-data.c b/fs/btrfs/ordered-data.c
-index 643335a..2eb79cc 100644
---- a/fs/btrfs/ordered-data.c
-+++ b/fs/btrfs/ordered-data.c
-@@ -775,7 +775,6 @@ int btrfs_ordered_update_i_size(struct inode *inode, u64 offset,
- 	struct btrfs_ordered_inode_tree *tree = &BTRFS_I(inode)->ordered_tree;
- 	u64 disk_i_size;
- 	u64 new_i_size;
--	u64 i_size_test;
- 	u64 i_size = i_size_read(inode);
- 	struct rb_node *node;
- 	struct rb_node *prev = NULL;
-@@ -835,55 +834,30 @@ int btrfs_ordered_update_i_size(struct inode *inode, u64 offset,
- 			break;
- 		if (test->file_offset >= i_size)
- 			break;
--		if (test->file_offset >= disk_i_size)
-+		if (test->file_offset >= disk_i_size) {
-+			/*
-+			 * we don't update disk_i_size now, so record this
-+			 * undealt i_size. Or we will not know the real
-+			 * i_size.
-+			 */
-+			if (test->outstanding_isize < offset)
-+				test->outstanding_isize = offset;
-+			if (ordered &&
-+			    ordered->outstanding_isize >
-+			    test->outstanding_isize)
-+				test->outstanding_isize =
-+						ordered->outstanding_isize;
- 			goto out;
--	}
--	new_i_size = min_t(u64, offset, i_size);
--
--	/*
--	 * at this point, we know we can safely update i_size to at least
--	 * the offset from this ordered extent.  But, we need to
--	 * walk forward and see if ios from higher up in the file have
--	 * finished.
--	 */
--	if (ordered) {
--		node = rb_next(&ordered->rb_node);
--	} else {
--		if (prev)
--			node = rb_next(prev);
--		else
--			node = rb_first(&tree->tree);
--	}
--
--	/*
--	 * We are looking for an area between our current extent and the next
--	 * ordered extent to update the i_size to.  There are 3 cases here
--	 *
--	 * 1) We don't actually have anything and we can update to i_size.
--	 * 2) We have stuff but they already did their i_size update so again we
--	 * can just update to i_size.
--	 * 3) We have an outstanding ordered extent so the most we can update
--	 * our disk_i_size to is the start of the next offset.
--	 */
--	i_size_test = i_size;
--	for (; node; node = rb_next(node)) {
--		test = rb_entry(node, struct btrfs_ordered_extent, rb_node);
--
--		if (test_bit(BTRFS_ORDERED_UPDATED_ISIZE, &test->flags))
--			continue;
--		if (test->file_offset > offset) {
--			i_size_test = test->file_offset;
--			break;
- 		}
- 	}
-+	new_i_size = min_t(u64, offset, i_size);
- 
- 	/*
--	 * i_size_test is the end of a region after this ordered
--	 * extent where there are no ordered extents, we can safely set
--	 * disk_i_size to this.
-+	 * Some ordered extents may completed before the current one, and
-+	 * we hold the real i_size in ->outstanding_isize.
- 	 */
--	if (i_size_test > offset)
--		new_i_size = min_t(u64, i_size_test, i_size);
-+	if (ordered && ordered->outstanding_isize > new_i_size)
-+		new_i_size = min_t(u64, ordered->outstanding_isize, i_size);
- 	BTRFS_I(inode)->disk_i_size = new_i_size;
- 	ret = 0;
- out:
-diff --git a/fs/btrfs/ordered-data.h b/fs/btrfs/ordered-data.h
-index e03c560..c2443a4 100644
---- a/fs/btrfs/ordered-data.h
-+++ b/fs/btrfs/ordered-data.h
-@@ -96,6 +96,13 @@ struct btrfs_ordered_extent {
- 	/* number of bytes that still need writing */
- 	u64 bytes_left;
- 
-+	/*
-+	 * the end of the ordered extent which is behind it but
-+	 * didn't update disk_i_size. Please see the comment of
-+	 * btrfs_ordered_update_i_size();
-+	 */
-+	u64 outstanding_isize;
-+
- 	/* flags (described above) */
- 	unsigned long flags;
- 
--- 
-1.7.6.5
+ fs/btrfs/ctree.h         |   18 ++++++--
+ fs/btrfs/delayed-inode.c |    5 +-
+ fs/btrfs/disk-io.c       |   17 ++++---
+ fs/btrfs/extent-tree.c   |   14 +++---
+ fs/btrfs/file.c          |    8 ++--
+ fs/btrfs/inode.c         |   33 ++++++++------
+ fs/btrfs/ioctl.c         |    5 +-
+ fs/btrfs/ordered-data.c  |   85 ++++++++++++++++-------------------
+ fs/btrfs/ordered-data.h  |    9 ++++
+ fs/btrfs/relocation.c    |    3 +-
+ fs/btrfs/super.c         |   17 ++++++-
+ fs/btrfs/transaction.c   |  108 ++++++++++++++++++++++++++++++---------------
+ fs/btrfs/tree-log.c      |   12 ++---
+ 13 files changed, 203 insertions(+), 131 deletions(-)

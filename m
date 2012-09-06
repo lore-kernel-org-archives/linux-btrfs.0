@@ -1,60 +1,72 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.fusionio.com ([66.114.96.31]:47904 "EHLO mx2.fusionio.com"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1754649Ab2IER6J (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 5 Sep 2012 13:58:09 -0400
-Date: Wed, 5 Sep 2012 13:58:05 -0400
-From: Josef Bacik <jbacik@fusionio.com>
-To: David Sterba <dave@jikos.cz>
-CC: Miao Xie <miaox@cn.fujitsu.com>, Linux Btrfs <linux-btrfs@vger.kernel.org>
-Subject: Re: [PATCH 6/7] Btrfs: fix corrupted metadata in the snapshot
-Message-ID: <20120905175805.GA1895@localhost.localdomain>
-References: <503D96DC.7050701@cn.fujitsu.com>
- <20120905163205.GN17430@twin.jikos.cz>
+Received: from cn.fujitsu.com ([222.73.24.84]:1697 "EHLO song.cn.fujitsu.com"
+	rhost-flags-OK-FAIL-OK-OK) by vger.kernel.org with ESMTP
+	id S1754820Ab2IFBIk (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Wed, 5 Sep 2012 21:08:40 -0400
+Received: from fnstmail02.fnst.cn.fujitsu.com (tang.cn.fujitsu.com [127.0.0.1])
+	by tang.cn.fujitsu.com (8.14.3/8.13.1) with ESMTP id q8618aam013528
+	for <linux-btrfs@vger.kernel.org>; Thu, 6 Sep 2012 09:08:36 +0800
+Message-ID: <5047F787.2080705@cn.fujitsu.com>
+Date: Thu, 06 Sep 2012 09:08:23 +0800
+From: Miao Xie <miaox@cn.fujitsu.com>
+Reply-To: miaox@cn.fujitsu.com
 MIME-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-In-Reply-To: <20120905163205.GN17430@twin.jikos.cz>
+To: Linux Btrfs <linux-btrfs@vger.kernel.org>
+Subject: Re: [PATCH 4/7] Btrfs: use a slab for ordered extents allocation
+References: <503D96C2.7000802@cn.fujitsu.com> <20120905161619.GM17430@twin.jikos.cz>
+In-Reply-To: <20120905161619.GM17430@twin.jikos.cz>
+Content-Type: text/plain; charset=ISO-8859-1
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Wed, Sep 05, 2012 at 10:32:05AM -0600, David Sterba wrote:
-> On Wed, Aug 29, 2012 at 12:13:16PM +0800, Miao Xie wrote:
-> > When we delete a inode, we will remove all the delayed items including delayed
-> > inode update, and then truncate all the relative metadata. If there is lots of
-> > metadata, we will end the current transaction, and start a new transaction to
-> > truncate the left metadata. In this way, we will leave a inode item that its
-> > link counter is > 0, and also may leave some directory index items in fs/file tree
-> > after the current transaction ends. In other words, the metadata in this fs/file tree
-> > is inconsistent. If we create a snapshot for this tree now, we will find a inode with
-> > corrupted metadata in the new snapshot, and we won't continue to drop the left metadata,
-> > because its link counter is not 0.
-> > 
-> > We fix this problem by updating the inode item before the current transaction ends.
+On Wed, 5 Sep 2012 18:16:19 +0200, David Sterba wrote:
+> On Wed, Aug 29, 2012 at 12:12:50PM +0800, Miao Xie wrote:
+>> The ordered extent allocation is in the fast path of the IO, so use a slab
+>> to improve the speed of the allocation.
 > 
-> A comment before the while() says
+> Good. Size of the struct is 280, so this will fall into the size-512
+> bucket, giving 8 objects per page, while own slab will pack 14 objects
+> into a page.
 > 
-> 3780         /*
-> 3781          * This is a bit simpler than btrfs_truncate since
-> 3782          *
-> 3783          * 1) We've already reserved our space for our orphan item in the
-> 3784          *    unlink.
-> 3785          * 2) We're going to delete the inode item, so we don't need to update
-> 3786          *    it at all.
-> 3787          *
-> 3788          * So we just need to reserve some slack space in case we add bytes when
-> 3789          * doing the truncate.
-> 3790          */
+> Another benefit I see is to check for leaked objects when the
+> module is removed (and the cache destroy takes place).
 > 
-> Point 2 states that the inode update is not needed, but as you write in the
-> changelog it can lead to inconsistent metadata. I can't say either way, but
-> rather would like to hear Josef's oppinion on that, as the comment and related
-> code comes from
-> 4289a667a0d7c6b134898cac7bfbe950267c305c
-> (Btrfs: fix how we reserve space for deleting inodes)
+>> Signed-off-by: Miao Xie <miaox@cn.fujitsu.com>
+>> ---
+>>  fs/btrfs/ordered-data.c |   23 +++++++++++++++++++++--
+>>  fs/btrfs/ordered-data.h |    2 ++
+>>  fs/btrfs/super.c        |    9 ++++++++-
+>>  3 files changed, 31 insertions(+), 3 deletions(-)
+>>
+>> diff --git a/fs/btrfs/ordered-data.c b/fs/btrfs/ordered-data.c
+>> index 2eb79cc..a07ae77 100644
+>> --- a/fs/btrfs/ordered-data.c
+>> +++ b/fs/btrfs/ordered-data.c
+>> @@ -958,3 +960,20 @@ void btrfs_add_ordered_operation(struct btrfs_trans_handle *trans,
+>>  	}
+>>  	spin_unlock(&root->fs_info->ordered_extent_lock);
+>>  }
+>> +
+>> +int __init ordered_data_init(void)
+>> +{
+>> +	ordered_extent_cache = kmem_cache_create("ordered_extent",
+> 
+> Please use the 'btrfs_' prefix, ie. 'btrfs_ordered_extent'
+
+Thanks for your review. I'll update this patch by your advice.
+
+Regards
+Miao
+
+> 
+>> +				sizeof(struct btrfs_ordered_extent), 0,
+>> +				SLAB_RECLAIM_ACCOUNT | SLAB_MEM_SPREAD,
+>> +				NULL);
+>> +	if (!ordered_extent_cache)
+>> +		return -ENOMEM;
+>> +	return 0;
+>> +}
+>> +
 > 
 
-Yeah I was wrong and Miao is right, we need to update the inode if we stop the
-transaction just for consistency sake.  We're not quite doing the right thing
-for enospc here but thats a problem for a later date.  Thanks,
 
-Josef

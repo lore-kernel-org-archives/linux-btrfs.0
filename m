@@ -1,61 +1,66 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
 Received: from cn.fujitsu.com ([222.73.24.84]:14691 "EHLO song.cn.fujitsu.com"
 	rhost-flags-OK-FAIL-OK-OK) by vger.kernel.org with ESMTP
-	id S1757635Ab2IFKot (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 6 Sep 2012 06:44:49 -0400
+	id S1757475Ab2IFKou (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Thu, 6 Sep 2012 06:44:50 -0400
 Received: from fnstmail02.fnst.cn.fujitsu.com (tang.cn.fujitsu.com [127.0.0.1])
-	by tang.cn.fujitsu.com (8.14.3/8.13.1) with ESMTP id q86A59AY017666
-	for <linux-btrfs@vger.kernel.org>; Thu, 6 Sep 2012 18:05:12 +0800
-Message-ID: <50487549.5040206@cn.fujitsu.com>
-Date: Thu, 06 Sep 2012 18:04:57 +0800
+	by tang.cn.fujitsu.com (8.14.3/8.13.1) with ESMTP id q86A49NT017616
+	for <linux-btrfs@vger.kernel.org>; Thu, 6 Sep 2012 18:04:14 +0800
+Message-ID: <5048750C.1030007@cn.fujitsu.com>
+Date: Thu, 06 Sep 2012 18:03:56 +0800
 From: Miao Xie <miaox@cn.fujitsu.com>
 Reply-To: miaox@cn.fujitsu.com
 MIME-Version: 1.0
 To: Linux Btrfs <linux-btrfs@vger.kernel.org>
-Subject: [PATCH V4 12/12] Btrfs: fix wrong size for the reservation when doing,
- file pre-allocation.
+Subject: [PATCH V4 09/12] Btrfs: fix wrong size for the reservation of the,
+ snapshot creation
 Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 In-Reply-To: <50487434.1010305@cn.fujitsu.com>
 
-When we ran fsstress(a program in xfstests), the filesystem hung up when it
-is full. It was because the space reserved in btrfs_fallocate() was wrong,
-btrfs_fallocate() just used the size of the pre-allocation to reserve the
-space, didn't took the block size aligning into account, so the size of
-the reserved space was less than the allocated space, it caused the over
-reserve problem and made the filesystem hung up when invoking cow_file_range().
-Fix it.
+We should insert/update 6 items(root ref, root backref, dir item, dir index,
+root item and parent inode) when creating a snapshot, not 5 items, fix it.
 
 Signed-off-by: Miao Xie <miaox@cn.fujitsu.com>
 ---
 Changelog v1 -> v4:
 - new patch.
 ---
- fs/btrfs/file.c |    4 ++--
- 1 files changed, 2 insertions(+), 2 deletions(-)
+ fs/btrfs/extent-tree.c |    6 +++---
+ fs/btrfs/ioctl.c       |    2 +-
+ 2 files changed, 4 insertions(+), 4 deletions(-)
 
-diff --git a/fs/btrfs/file.c b/fs/btrfs/file.c
-index af888da..1a5f76b 100644
---- a/fs/btrfs/file.c
-+++ b/fs/btrfs/file.c
-@@ -1640,7 +1640,7 @@ static long btrfs_fallocate(struct file *file, int mode,
- 	 * Make sure we have enough space before we do the
- 	 * allocation.
+diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
+index 840bfee..a010234 100644
+--- a/fs/btrfs/extent-tree.c
++++ b/fs/btrfs/extent-tree.c
+@@ -4418,10 +4418,10 @@ int btrfs_snap_reserve_metadata(struct btrfs_trans_handle *trans,
+ 	struct btrfs_block_rsv *src_rsv = get_block_rsv(trans, root);
+ 	struct btrfs_block_rsv *dst_rsv = &pending->block_rsv;
+ 	/*
+-	 * two for root back/forward refs, two for directory entries
+-	 * and one for root of the snapshot.
++	 * two for root back/forward refs, two for directory entries,
++	 * one for root of the snapshot and one for parent inode.
  	 */
--	ret = btrfs_check_data_free_space(inode, len);
-+	ret = btrfs_check_data_free_space(inode, alloc_end - alloc_start + 1);
- 	if (ret)
- 		return ret;
- 
-@@ -1747,7 +1747,7 @@ static long btrfs_fallocate(struct file *file, int mode,
- out:
- 	mutex_unlock(&inode->i_mutex);
- 	/* Let go of our reservation. */
--	btrfs_free_reserved_data_space(inode, len);
-+	btrfs_free_reserved_data_space(inode, alloc_end - alloc_start + 1);
- 	return ret;
+-	u64 num_bytes = btrfs_calc_trans_metadata_size(root, 5);
++	u64 num_bytes = btrfs_calc_trans_metadata_size(root, 6);
+ 	dst_rsv->space_info = src_rsv->space_info;
+ 	return block_rsv_migrate_bytes(src_rsv, dst_rsv, num_bytes);
  }
+diff --git a/fs/btrfs/ioctl.c b/fs/btrfs/ioctl.c
+index 3a16327..9384a2a 100644
+--- a/fs/btrfs/ioctl.c
++++ b/fs/btrfs/ioctl.c
+@@ -526,7 +526,7 @@ static int create_snapshot(struct btrfs_root *root, struct dentry *dentry,
+ 		*inherit = NULL;	/* take responsibility to free it */
+ 	}
  
+-	trans = btrfs_start_transaction(root->fs_info->extent_root, 5);
++	trans = btrfs_start_transaction(root->fs_info->extent_root, 6);
+ 	if (IS_ERR(trans)) {
+ 		ret = PTR_ERR(trans);
+ 		goto fail;
 -- 
 1.7.6.5

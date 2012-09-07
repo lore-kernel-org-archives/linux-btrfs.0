@@ -1,42 +1,61 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from ysabell.rzone.de ([81.169.144.237]:63103 "EHLO ysabell.rzone.de"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1751250Ab2IGWBN (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Fri, 7 Sep 2012 18:01:13 -0400
+Received: from mailout-de.gmx.net ([213.165.64.22]:36356 "HELO
+	mailout-de.gmx.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with SMTP id S1751250Ab2IGWDw (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Fri, 7 Sep 2012 18:03:52 -0400
+Message-ID: <504A6F67.3060506@gmx.net>
+Date: Sat, 08 Sep 2012 00:04:23 +0200
 From: Arne Jansen <sensille@gmx.net>
-To: chris.mason@fusionio.com, linux-btrfs@vger.kernel.org
-Cc: philipp.andreas@gmail.com
-Subject: [PATCH] Btrfs: btrfs_qgroup_inherit wrongly returns an error
-Date: Sat,  8 Sep 2012 00:01:10 +0200
-Message-Id: <1347055270-12090-1-git-send-email-sensille@gmx.net>
+MIME-Version: 1.0
+To: Andreas Philipp <philipp.andreas@gmail.com>
+CC: linux-btrfs <linux-btrfs@vger.kernel.org>
+Subject: Re: Cannot create subvolume with quota enabled
+References: <504A4CBF.7000605@gmail.com>
+In-Reply-To: <504A4CBF.7000605@gmail.com>
+Content-Type: text/plain; charset=ISO-8859-1
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-When using the V1-version of the snap/subvol creation ioctl
-btrfs_qgroup_inherit wrongly returns an error because no inherit parameter
-is given. Fix the return value.
+Hi Andreas,
 
-Signed-off-by: Arne Jansen <sensille@gmx.net>
----
- fs/btrfs/qgroup.c |    4 +---
- 1 files changed, 1 insertions(+), 3 deletions(-)
+On 09/07/2012 09:36 PM, Andreas Philipp wrote:
+> Hi,
+> 
+> The following steps reproduce the error. My kernel is 3.6-rc4 and 
+> btrfs-progs are at commit 89fe5b5f666c247aa3173745fb87c710f3a71a4a
+> from 
+> git://git.kernel.org/pub/scm/linux/kernel/git/mason/btrfs-progs.git
+>
+> 
+master.
+> 
+> thor ~ # mkfs.btrfs -L test /dev/vg1/test
+> 
+> WARNING! - Btrfs Btrfs v0.19 IS EXPERIMENTAL WARNING! - see
+> http://btrfs.wiki.kernel.org before using
+> 
+> fs created label test on /dev/vg1/test nodesize 4096 leafsize 4096
+> sectorsize 4096 size 20.00GB Btrfs Btrfs v0.19 thor ~ # mount
+> /dev/vg1/test /mnt/tmp thor ~ # btrfs quota enable /mnt/tmp thor ~
+> # btrfs subvolume create /mnt/tmp/test Create subvolume
+> '/mnt/tmp/test' ERROR: cannot create subvolume - Invalid argument
 
-diff --git a/fs/btrfs/qgroup.c b/fs/btrfs/qgroup.c
-index 38b42e7..090405d 100644
---- a/fs/btrfs/qgroup.c
-+++ b/fs/btrfs/qgroup.c
-@@ -1383,10 +1383,8 @@ int btrfs_qgroup_inherit(struct btrfs_trans_handle *trans,
- 		qgroup_dirty(fs_info, srcgroup);
- 	}
- 
--	if (!inherit) {
--		ret = -EINVAL;
-+	if (!inherit)
- 		goto unlock;
--	}
- 
- 	i_qgroups = (u64 *)(inherit + 1);
- 	for (i = 0; i < inherit->num_qgroups; ++i) {
--- 
-1.7.3.4
+Thanks for giving quota a try. I sent a fix separately with
+the subject
+
+[PATCH] Btrfs: btrfs_qgroup_inherit wrongly returns an error
+
+Could you please see if it fixes the problem?
+
+Thanks,
+Arne
+> 
+> Please, do not hesitate to contact me for any further information
+> etc.
+> 
+> Thanks, Andreas -- To unsubscribe from this list: send the line
+> "unsubscribe linux-btrfs" in the body of a message to
+> majordomo@vger.kernel.org More majordomo info at
+> http://vger.kernel.org/majordomo-info.html
+> 
 

@@ -1,61 +1,49 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mailout-de.gmx.net ([213.165.64.22]:36356 "HELO
-	mailout-de.gmx.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with SMTP id S1751250Ab2IGWDw (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Fri, 7 Sep 2012 18:03:52 -0400
-Message-ID: <504A6F67.3060506@gmx.net>
-Date: Sat, 08 Sep 2012 00:04:23 +0200
-From: Arne Jansen <sensille@gmx.net>
-MIME-Version: 1.0
-To: Andreas Philipp <philipp.andreas@gmail.com>
-CC: linux-btrfs <linux-btrfs@vger.kernel.org>
-Subject: Re: Cannot create subvolume with quota enabled
-References: <504A4CBF.7000605@gmail.com>
-In-Reply-To: <504A4CBF.7000605@gmail.com>
-Content-Type: text/plain; charset=ISO-8859-1
+Received: from acsinet15.oracle.com ([141.146.126.227]:43576 "EHLO
+	acsinet15.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1754544Ab2IHCDa (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Fri, 7 Sep 2012 22:03:30 -0400
+From: Liu Bo <bo.li.liu@oracle.com>
+To: linux-btrfs@vger.kernel.org
+Cc: jbacik@fusionio.com, dave@jikos.cz
+Subject: [PATCH v2 0/6] bug-fixes and cleanup
+Date: Sat,  8 Sep 2012 10:01:24 +0800
+Message-Id: <1347069690-30223-1-git-send-email-bo.li.liu@oracle.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hi Andreas,
+From: Liu Bo <liub.liubo@gmail.com>
 
-On 09/07/2012 09:36 PM, Andreas Philipp wrote:
-> Hi,
-> 
-> The following steps reproduce the error. My kernel is 3.6-rc4 and 
-> btrfs-progs are at commit 89fe5b5f666c247aa3173745fb87c710f3a71a4a
-> from 
-> git://git.kernel.org/pub/scm/linux/kernel/git/mason/btrfs-progs.git
->
-> 
-master.
-> 
-> thor ~ # mkfs.btrfs -L test /dev/vg1/test
-> 
-> WARNING! - Btrfs Btrfs v0.19 IS EXPERIMENTAL WARNING! - see
-> http://btrfs.wiki.kernel.org before using
-> 
-> fs created label test on /dev/vg1/test nodesize 4096 leafsize 4096
-> sectorsize 4096 size 20.00GB Btrfs Btrfs v0.19 thor ~ # mount
-> /dev/vg1/test /mnt/tmp thor ~ # btrfs quota enable /mnt/tmp thor ~
-> # btrfs subvolume create /mnt/tmp/test Create subvolume
-> '/mnt/tmp/test' ERROR: cannot create subvolume - Invalid argument
+This is a collection of some posted patches.
 
-Thanks for giving quota a try. I sent a fix separately with
-the subject
+It is also available in
+	git://github.com/liubogithub/btrfs-work.git for-chris
 
-[PATCH] Btrfs: btrfs_qgroup_inherit wrongly returns an error
+v1->v2: patch 1 (Btrfs: fix a bug of per-file nocow) is the only one to
+        update since we missed the regular file check while others
+        remain unchanged.
 
-Could you please see if it fixes the problem?
+Liu Bo (5):
+  Btrfs: fix a bug of per-file nocow
+  Btrfs: update delayed ref's tracepoints to show sequence
+  Btrfs: fix a bug in parsing return value in logical resolve
+  Btrfs: use helper for logical resolve
+  Btrfs: use larger limit for translation of logical to inode
 
-Thanks,
-Arne
-> 
-> Please, do not hesitate to contact me for any further information
-> etc.
-> 
-> Thanks, Andreas -- To unsubscribe from this list: send the line
-> "unsubscribe linux-btrfs" in the body of a message to
-> majordomo@vger.kernel.org More majordomo info at
-> http://vger.kernel.org/majordomo-info.html
-> 
+liubo (1):
+  Btrfs: cleanup for unused ref cache stuff
+
+ fs/btrfs/backref.c           |   26 +++++++++++++++++---------
+ fs/btrfs/backref.h           |    3 ++-
+ fs/btrfs/ctree.h             |    3 ---
+ fs/btrfs/disk-io.c           |    5 -----
+ fs/btrfs/inode.c             |    3 +--
+ fs/btrfs/ioctl.c             |   28 ++++++++++------------------
+ fs/btrfs/scrub.c             |   14 ++++++++------
+ fs/btrfs/send.c              |    7 ++++---
+ include/trace/events/btrfs.h |   14 ++++++++++----
+ 9 files changed, 52 insertions(+), 51 deletions(-)
+
+-- 
+1.7.7.6
 

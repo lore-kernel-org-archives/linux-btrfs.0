@@ -1,93 +1,205 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from acsinet15.oracle.com ([141.146.126.227]:43589 "EHLO
-	acsinet15.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1755464Ab2IHCDf (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Fri, 7 Sep 2012 22:03:35 -0400
+Received: from rcsinet15.oracle.com ([148.87.113.117]:44690 "EHLO
+	rcsinet15.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1754544Ab2IHCDh (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Fri, 7 Sep 2012 22:03:37 -0400
 From: Liu Bo <bo.li.liu@oracle.com>
 To: linux-btrfs@vger.kernel.org
 Cc: jbacik@fusionio.com, dave@jikos.cz
-Subject: [PATCH v2 3/6] Btrfs: update delayed ref's tracepoints to show sequence
-Date: Sat,  8 Sep 2012 10:01:27 +0800
-Message-Id: <1347069690-30223-4-git-send-email-bo.li.liu@oracle.com>
+Subject: [PATCH v2 4/6] Btrfs: fix a bug in parsing return value in logical resolve
+Date: Sat,  8 Sep 2012 10:01:28 +0800
+Message-Id: <1347069690-30223-5-git-send-email-bo.li.liu@oracle.com>
 In-Reply-To: <1347069690-30223-1-git-send-email-bo.li.liu@oracle.com>
 References: <1347069690-30223-1-git-send-email-bo.li.liu@oracle.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-We've added a new field 'sequence' to delayed ref node, so update related
-tracepoints.
+From: Liu Bo <liub.liubo@gmail.com>
 
-Signed-off-by: Liu Bo <bo.li.liu@oracle.com>
+In logical resolve, we parse extent_from_logical()'s 'ret' as a kind of flag.
+
+It is possible to lose our errors because
+(-EXXXX & BTRFS_EXTENT_FLAG_TREE_BLOCK) is true.
+
+I'm not sure if it is on purpose, it just looks too hacky if it is.
+I'd rather use a real flag and a 'ret' to catch errors.
+
+Acked-by: Jan Schmidt <list.btrfs@jan-o-sch.net>
+Signed-off-by: Liu Bo <liub.liubo@gmail.com>
 ---
- include/trace/events/btrfs.h |   14 ++++++++++----
- 1 files changed, 10 insertions(+), 4 deletions(-)
+ fs/btrfs/backref.c |   24 ++++++++++++++++--------
+ fs/btrfs/backref.h |    3 ++-
+ fs/btrfs/ioctl.c   |    6 ++++--
+ fs/btrfs/scrub.c   |   14 ++++++++------
+ fs/btrfs/send.c    |    7 ++++---
+ 5 files changed, 34 insertions(+), 20 deletions(-)
 
-diff --git a/include/trace/events/btrfs.h b/include/trace/events/btrfs.h
-index 91b91e8..54fab04 100644
---- a/include/trace/events/btrfs.h
-+++ b/include/trace/events/btrfs.h
-@@ -445,6 +445,7 @@ TRACE_EVENT(btrfs_delayed_tree_ref,
- 		__field(	u64,  ref_root		)
- 		__field(	int,  level		)
- 		__field(	int,  type		)
-+		__field(	u64,  seq		)
- 	),
+diff --git a/fs/btrfs/backref.c b/fs/btrfs/backref.c
+index ff6475f..4e80ba3 100644
+--- a/fs/btrfs/backref.c
++++ b/fs/btrfs/backref.c
+@@ -1193,7 +1193,8 @@ char *btrfs_iref_to_path(struct btrfs_root *fs_root, struct btrfs_path *path,
+  * tree blocks and <0 on error.
+  */
+ int extent_from_logical(struct btrfs_fs_info *fs_info, u64 logical,
+-			struct btrfs_path *path, struct btrfs_key *found_key)
++			struct btrfs_path *path, struct btrfs_key *found_key,
++			u64 *flags_ret)
+ {
+ 	int ret;
+ 	u64 flags;
+@@ -1237,10 +1238,17 @@ int extent_from_logical(struct btrfs_fs_info *fs_info, u64 logical,
+ 		 (unsigned long long)found_key->objectid,
+ 		 (unsigned long long)found_key->offset,
+ 		 (unsigned long long)flags, item_size);
+-	if (flags & BTRFS_EXTENT_FLAG_TREE_BLOCK)
+-		return BTRFS_EXTENT_FLAG_TREE_BLOCK;
+-	if (flags & BTRFS_EXTENT_FLAG_DATA)
+-		return BTRFS_EXTENT_FLAG_DATA;
++
++	WARN_ON(!flags_ret);
++	if (flags_ret) {
++		if (flags & BTRFS_EXTENT_FLAG_TREE_BLOCK)
++			*flags_ret = BTRFS_EXTENT_FLAG_TREE_BLOCK;
++		else if (flags & BTRFS_EXTENT_FLAG_DATA)
++			*flags_ret = BTRFS_EXTENT_FLAG_DATA;
++		else
++			BUG_ON(1);
++		return 0;
++	}
  
- 	TP_fast_assign(
-@@ -455,17 +456,19 @@ TRACE_EVENT(btrfs_delayed_tree_ref,
- 		__entry->ref_root	= full_ref->root;
- 		__entry->level		= full_ref->level;
- 		__entry->type		= ref->type;
-+		__entry->seq		= ref->seq;
- 	),
+ 	return -EIO;
+ }
+@@ -1432,15 +1440,15 @@ int iterate_inodes_from_logical(u64 logical, struct btrfs_fs_info *fs_info,
+ {
+ 	int ret;
+ 	u64 extent_item_pos;
++	u64 flags = 0;
+ 	struct btrfs_key found_key;
+ 	int search_commit_root = path->search_commit_root;
  
- 	TP_printk("bytenr = %llu, num_bytes = %llu, action = %s, "
- 		  "parent = %llu(%s), ref_root = %llu(%s), level = %d, "
--		  "type = %s",
-+		  "type = %s, seq = %llu",
- 		  (unsigned long long)__entry->bytenr,
- 		  (unsigned long long)__entry->num_bytes,
- 		  show_ref_action(__entry->action),
- 		  show_root_type(__entry->parent),
- 		  show_root_type(__entry->ref_root),
--		  __entry->level, show_ref_type(__entry->type))
-+		  __entry->level, show_ref_type(__entry->type),
-+		  (unsigned long long)__entry->seq)
- );
+-	ret = extent_from_logical(fs_info, logical, path,
+-					&found_key);
++	ret = extent_from_logical(fs_info, logical, path, &found_key, &flags);
+ 	btrfs_release_path(path);
+ 	if (ret < 0)
+ 		return ret;
+-	if (ret & BTRFS_EXTENT_FLAG_TREE_BLOCK)
++	if (flags & BTRFS_EXTENT_FLAG_TREE_BLOCK)
+ 		return -EINVAL;
  
- TRACE_EVENT(btrfs_delayed_data_ref,
-@@ -485,6 +488,7 @@ TRACE_EVENT(btrfs_delayed_data_ref,
- 		__field(	u64,  owner		)
- 		__field(	u64,  offset		)
- 		__field(	int,  type		)
-+		__field(	u64,  seq		)
- 	),
+ 	extent_item_pos = logical - found_key.objectid;
+diff --git a/fs/btrfs/backref.h b/fs/btrfs/backref.h
+index 032f4dc..4fda5d8 100644
+--- a/fs/btrfs/backref.h
++++ b/fs/btrfs/backref.h
+@@ -40,7 +40,8 @@ int inode_item_info(u64 inum, u64 ioff, struct btrfs_root *fs_root,
+ 			struct btrfs_path *path);
  
- 	TP_fast_assign(
-@@ -496,11 +500,12 @@ TRACE_EVENT(btrfs_delayed_data_ref,
- 		__entry->owner		= full_ref->objectid;
- 		__entry->offset		= full_ref->offset;
- 		__entry->type		= ref->type;
-+		__entry->seq		= ref->seq;
- 	),
+ int extent_from_logical(struct btrfs_fs_info *fs_info, u64 logical,
+-			struct btrfs_path *path, struct btrfs_key *found_key);
++			struct btrfs_path *path, struct btrfs_key *found_key,
++			u64 *flags);
  
- 	TP_printk("bytenr = %llu, num_bytes = %llu, action = %s, "
- 		  "parent = %llu(%s), ref_root = %llu(%s), owner = %llu, "
--		  "offset = %llu, type = %s",
-+		  "offset = %llu, type = %s, seq = %llu",
- 		  (unsigned long long)__entry->bytenr,
- 		  (unsigned long long)__entry->num_bytes,
- 		  show_ref_action(__entry->action),
-@@ -508,7 +513,8 @@ TRACE_EVENT(btrfs_delayed_data_ref,
- 		  show_root_type(__entry->ref_root),
- 		  (unsigned long long)__entry->owner,
- 		  (unsigned long long)__entry->offset,
--		  show_ref_type(__entry->type))
-+		  show_ref_type(__entry->type),
-+		  (unsigned long long)__entry->seq)
- );
+ int tree_backref_for_extent(unsigned long *ptr, struct extent_buffer *eb,
+ 				struct btrfs_extent_item *ei, u32 item_size,
+diff --git a/fs/btrfs/ioctl.c b/fs/btrfs/ioctl.c
+index 2fd5455..365e3e4 100644
+--- a/fs/btrfs/ioctl.c
++++ b/fs/btrfs/ioctl.c
+@@ -3219,6 +3219,7 @@ static long btrfs_ioctl_logical_to_ino(struct btrfs_root *root,
+ 	int ret = 0;
+ 	int size;
+ 	u64 extent_item_pos;
++	u64 flags = 0;
+ 	struct btrfs_ioctl_logical_ino_args *loi;
+ 	struct btrfs_data_container *inodes = NULL;
+ 	struct btrfs_path *path = NULL;
+@@ -3248,10 +3249,11 @@ static long btrfs_ioctl_logical_to_ino(struct btrfs_root *root,
+ 		goto out;
+ 	}
  
- TRACE_EVENT(btrfs_delayed_ref_head,
+-	ret = extent_from_logical(root->fs_info, loi->logical, path, &key);
++	ret = extent_from_logical(root->fs_info, loi->logical, path, &key,
++				  &flags);
+ 	btrfs_release_path(path);
+ 
+-	if (ret & BTRFS_EXTENT_FLAG_TREE_BLOCK)
++	if (flags & BTRFS_EXTENT_FLAG_TREE_BLOCK)
+ 		ret = -ENOENT;
+ 	if (ret < 0)
+ 		goto out;
+diff --git a/fs/btrfs/scrub.c b/fs/btrfs/scrub.c
+index b223620..5def223 100644
+--- a/fs/btrfs/scrub.c
++++ b/fs/btrfs/scrub.c
+@@ -352,13 +352,14 @@ static void scrub_print_warning(const char *errstr, struct scrub_block *sblock)
+ 	struct extent_buffer *eb;
+ 	struct btrfs_extent_item *ei;
+ 	struct scrub_warning swarn;
+-	u32 item_size;
+-	int ret;
++	unsigned long ptr = 0;
++	u64 extent_item_pos;
++	u64 flags = 0;
+ 	u64 ref_root;
++	u32 item_size;
+ 	u8 ref_level;
+-	unsigned long ptr = 0;
+ 	const int bufsize = 4096;
+-	u64 extent_item_pos;
++	int ret;
+ 
+ 	path = btrfs_alloc_path();
+ 
+@@ -375,7 +376,8 @@ static void scrub_print_warning(const char *errstr, struct scrub_block *sblock)
+ 	if (!path || !swarn.scratch_buf || !swarn.msg_buf)
+ 		goto out;
+ 
+-	ret = extent_from_logical(fs_info, swarn.logical, path, &found_key);
++	ret = extent_from_logical(fs_info, swarn.logical, path, &found_key,
++				  &flags);
+ 	if (ret < 0)
+ 		goto out;
+ 
+@@ -387,7 +389,7 @@ static void scrub_print_warning(const char *errstr, struct scrub_block *sblock)
+ 	item_size = btrfs_item_size_nr(eb, path->slots[0]);
+ 	btrfs_release_path(path);
+ 
+-	if (ret & BTRFS_EXTENT_FLAG_TREE_BLOCK) {
++	if (flags & BTRFS_EXTENT_FLAG_TREE_BLOCK) {
+ 		do {
+ 			ret = tree_backref_for_extent(&ptr, eb, ei, item_size,
+ 							&ref_root, &ref_level);
+diff --git a/fs/btrfs/send.c b/fs/btrfs/send.c
+index fb5ffe9..7186ae8 100644
+--- a/fs/btrfs/send.c
++++ b/fs/btrfs/send.c
+@@ -1143,6 +1143,7 @@ static int find_extent_clone(struct send_ctx *sctx,
+ 	u64 logical;
+ 	u64 num_bytes;
+ 	u64 extent_item_pos;
++	u64 flags = 0;
+ 	struct btrfs_file_extent_item *fi;
+ 	struct extent_buffer *eb = path->nodes[0];
+ 	struct backref_ctx backref_ctx;
+@@ -1181,13 +1182,13 @@ static int find_extent_clone(struct send_ctx *sctx,
+ 	}
+ 	logical += btrfs_file_extent_offset(eb, fi);
+ 
+-	ret = extent_from_logical(sctx->send_root->fs_info,
+-			logical, tmp_path, &found_key);
++	ret = extent_from_logical(sctx->send_root->fs_info, logical, tmp_path,
++				  &found_key, &flags);
+ 	btrfs_release_path(tmp_path);
+ 
+ 	if (ret < 0)
+ 		goto out;
+-	if (ret & BTRFS_EXTENT_FLAG_TREE_BLOCK) {
++	if (flags & BTRFS_EXTENT_FLAG_TREE_BLOCK) {
+ 		ret = -EIO;
+ 		goto out;
+ 	}
 -- 
 1.7.7.6
 

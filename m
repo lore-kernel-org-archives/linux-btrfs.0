@@ -1,59 +1,92 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-pb0-f46.google.com ([209.85.160.46]:59825 "EHLO
-	mail-pb0-f46.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1751460Ab2IJXVJ (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 10 Sep 2012 19:21:09 -0400
-Received: by pbbrr13 with SMTP id rr13so3187685pbb.19
-        for <linux-btrfs@vger.kernel.org>; Mon, 10 Sep 2012 16:21:09 -0700 (PDT)
-Message-ID: <504E75E1.5060304@gmail.com>
-Date: Tue, 11 Sep 2012 07:21:05 +0800
-From: ching <lsching17@gmail.com>
+Received: from ares07.inai.de ([5.9.24.206]:34793 "EHLO seven.medozas.de"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1751460Ab2IJXia (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Mon, 10 Sep 2012 19:38:30 -0400
+Date: Tue, 11 Sep 2012 01:38:27 +0200 (CEST)
+From: Jan Engelhardt <jengelh@inai.de>
+To: Martin Steigerwald <Martin@lichtvoll.de>
+cc: linux-btrfs@vger.kernel.org, "Fajar A. Nugraha" <list@fajar.net>
+Subject: Re: Workaround for hardlink count problem?
+In-Reply-To: <201209110109.17604.Martin@lichtvoll.de>
+Message-ID: <alpine.LNX.2.01.1209110121050.22773@frira.zrqbmnf.qr>
+References: <20120908165620.GA17951@merlins.org> <201209101112.34839.Martin@lichtvoll.de> <CAG1y0scP+O9kTLiF5ZpxRwZTbOFQWctQDquCu4ATSwYyE3SZmQ@mail.gmail.com> (sfid-20120910_140743_108130_BF222C36) <201209110109.17604.Martin@lichtvoll.de>
 MIME-Version: 1.0
-To: Liu Bo <bo.li.liu@oracle.com>
-CC: linux-btrfs@vger.kernel.org
-Subject: Re: enquiry about defrag
-References: <504BDCE0.8020407@gmail.com> <CAMQ-g0d3iF-0RCGWd3RD_buXXa3j3DS2PwyUgXSAJ95=-F=c+Q@mail.gmail.com> <504C49F7.2070201@gmail.com> <CAG1y0sdFTKLX8N1VnSYzxZ-Xr4kDPtYGG6ixMrPwBWQPRVAGgg@mail.gmail.com> <504C861D.2020009@gmail.com> <504DDAD5.8010908@gmail.com> <504DE6B3.2010900@oracle.com>
-In-Reply-To: <504DE6B3.2010900@oracle.com>
-Content-Type: text/plain; charset=UTF-8
+Content-Type: TEXT/PLAIN; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 09/10/2012 09:10 PM, Liu Bo wrote:
-> On 09/10/2012 08:19 PM, ching wrote:
->> On 09/09/2012 08:05 PM, ching wrote:
->>> On 09/09/2012 05:11 PM, Fajar A. Nugraha wrote:
->>>> On Sun, Sep 9, 2012 at 2:49 PM, ching <lsching17@gmail.com> wrote:
->>>>> On 09/09/2012 08:30 AM, Jan Steffens wrote:
->>>>>> On Sun, Sep 9, 2012 at 2:03 AM, ching <lsching17@gmail.com> wrote:
->>>>>>> 2. Is there any command for the fragmentation status of a file/dir ? e.g. fragment size, number of fragments.
->>>>>> Use the "filefrag" command, part of e2fsprogs.
->>>>>>
->>>>> my image is a 16G sparse file, after defragment, it still has 101387 extents, is it normal?
->>>> Is compression enabled? If so, yes, it's normal.
->>>>
->>> compression with lzo.
->>>
->>> thanks. i will retry with compression disabled when 3.6 is stable.
->> i just realize that it is possible to control compression per file by file attribute
->>
->> http://radudi.com/index.php/2011/08/31/using-btrfs-per-file-and-per-directory-compression/
->>
->> when i try to follow example above, no file attribute is shown (my mount option is rw,noatime,compress-force=lzo,space_cache,inode_cache)
->>
->> $lsattr -V Linux.raw_image
->> lsattr 1.42.5 (29-Jul-2012)
->> ---------------- Linux.raw_image
->>
->> is there any official resource/web page for control compression per file by file attribute?
->>
-> FYI, git://git.kernel.org/pub/scm/fs/ext2/e2fsprogs.git
->
->> --
->> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
->> the body of a message to majordomo@vger.kernel.org
->> More majordomo info at  http://vger.kernel.org/majordomo-info.html
->>
->
 
-may i ask a stupid question, if i remove my "compress-force=lzo" option, will compression disabled for new written data?
+On Tuesday 2012-09-11 01:09, Martin Steigerwald wrote:
+>> > What about:
+>> > 
+>> > - copy first backup version
+>> > - btrfs subvol create first next
+>> > - copy next backup version
+>> > - btrfs subvol create previous next
+>> 
+>> Wouldn't "btrfs subvolume snapshot", plus "rsync --inplace" more
+>> useful here? That is. if the original hardlink is caused by multiple
+>> versions of backup of the same file.
+>
+>Sure, I meant subvol snapshot in above example. Thanks for noticing.
+>
+>But I do not use --inplace as it conflicts with some other rsync options I 
+>like to use:
+
+It is a tradeoff.
+
+rsync "--inplace" leads to fragmentation which is detrimental for the
+speed of reads (and read-write-cycles as used by rsync) of big files
+(multi-GB) that are regularly updated, but it is probably even worse
+for smaller-than-GB files because percent-wise, they are even more
+fragmented.
+
+$ filefrag */vm/intranet.dsk
+snap-2012-08-15/vm/intranet.dsk: 23 extents found
+snap-2012-08-16/vm/intranet.dsk: 23 extents found
+snap-2012-08-17/vm/intranet.dsk: 4602 extents found
+snap-2012-08-18/vm/intranet.dsk: 6221 extents found
+snap-2012-08-19/vm/intranet.dsk: 6604 extents found
+snap-2012-08-20/vm/intranet.dsk: 6694 extents found
+snap-2012-08-21/vm/intranet.dsk: 6650 extents found
+snap-2012-08-22/vm/intranet.dsk: 6760 extents found
+snap-2012-08-23/vm/intranet.dsk: 7226 extents found
+snap-2012-08-24/vm/intranet.dsk: 7159 extents found
+snap-2012-08-25/vm/intranet.dsk: 7464 extents found
+snap-2012-08-26/vm/intranet.dsk: 7746 extents found
+snap-2012-08-27/vm/intranet.dsk: 8017 extents found
+snap-2012-08-28/vm/intranet.dsk: 8145 extents found
+snap-2012-08-29/vm/intranet.dsk: 8393 extents found
+snap-2012-08-30/vm/intranet.dsk: 8474 extents found
+snap-2012-08-31/vm/intranet.dsk: 9150 extents found
+snap-2012-09-01/vm/intranet.dsk: 8900 extents found
+snap-2012-09-02/vm/intranet.dsk: 9218 extents found
+snap-2012-09-03/vm/intranet.dsk: 9575 extents found
+snap-2012-09-04/vm/intranet.dsk: 9760 extents found
+snap-2012-09-05/vm/intranet.dsk: 9839 extents found
+snap-2012-09-06/vm/intranet.dsk: 9907 extents found
+snap-2012-09-07/vm/intranet.dsk: 10006 extents found
+snap-2012-09-08/vm/intranet.dsk: 10248 extents found
+snap-2012-09-09/vm/intranet.dsk: 10488 extents found
+
+Without --inplace (prerequisite to use -S) however, it will recreate
+a file if it has been touched. While this easily avoids fragmentation
+(since it won't share any data blocks with the old one), it can take
+up more space with the big files.
+
+>-ax --acls --xattrs --sparse --hard-links --del --delete-excluded --
+
+I knew short options would be helpful here: -axAXSH
+(why don't they just become the standard... they are in like almost
+every other rsync invocation I ever had)
+
+>       -S, --sparse
+>              Try to handle sparse files efficiently so they  take  up
+>              less space on the destination.  Conflicts with --inplace
+>              because it’s not possible to overwrite data in a  sparse
+>              fashion.
+
+Oh and if anybody from the rsync camp reads it: with hole-punching
+now supported in Linux, there is no reason not to support "-S" with
+"--inplace", I think.

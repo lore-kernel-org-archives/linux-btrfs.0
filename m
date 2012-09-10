@@ -1,91 +1,80 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-ie0-f174.google.com ([209.85.223.174]:38719 "EHLO
-	mail-ie0-f174.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1758297Ab2IJTX6 (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 10 Sep 2012 15:23:58 -0400
-Received: by mail-ie0-f174.google.com with SMTP id e11so3917475iej.19
-        for <linux-btrfs@vger.kernel.org>; Mon, 10 Sep 2012 12:23:58 -0700 (PDT)
-Message-ID: <1347305070.2360.20.camel@cwalton-XPS-8300>
-Subject: Re: Seagate Momentus XT and btrfs corruption
-From: Calvin Walton <calvin.walton@kepstin.ca>
-To: Adam Ryczkowski <adam.ryczkowski@statystyka.net>
-Cc: linux-btrfs@vger.kernel.org
-Date: Mon, 10 Sep 2012 15:24:30 -0400
-In-Reply-To: <5047DD0F.9040501@statystyka.net>
-References: <5047DD0F.9040501@statystyka.net>
-Content-Type: text/plain; charset="UTF-8"
-Mime-Version: 1.0
+Received: from mx2.fusionio.com ([66.114.96.31]:36894 "EHLO mx2.fusionio.com"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1751669Ab2IJTxT (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Mon, 10 Sep 2012 15:53:19 -0400
+Date: Mon, 10 Sep 2012 15:18:03 -0400
+From: Josef Bacik <jbacik@fusionio.com>
+To: Liu Bo <bo.li.liu@oracle.com>
+CC: "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>,
+        Josef Bacik <JBacik@fusionio.com>, "dave@jikos.cz" <dave@jikos.cz>
+Subject: Re: [PATCH v2 1/6] Btrfs: fix a bug of per-file nocow
+Message-ID: <20120910191803.GG2270@localhost.localdomain>
+References: <1347069690-30223-1-git-send-email-bo.li.liu@oracle.com>
+ <1347069690-30223-2-git-send-email-bo.li.liu@oracle.com>
+MIME-Version: 1.0
+Content-Type: text/plain; charset="us-ascii"
+In-Reply-To: <1347069690-30223-2-git-send-email-bo.li.liu@oracle.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Thu, 2012-09-06 at 01:15 +0200, Adam Ryczkowski wrote:
-> Welcome,
+On Fri, Sep 07, 2012 at 08:01:25PM -0600, Liu Bo wrote:
+> Users report a bug, the reproducer is:
+> $ mkfs.btrfs /dev/loop0
+> $ mount /dev/loop0 /mnt/btrfs/
+> $ mkdir /mnt/btrfs/dir
+> $ chattr +C /mnt/btrfs/dir/
+> $ dd if=/dev/zero of=/mnt/btrfs/dir/foo bs=4K count=10;
+> $ lsattr /mnt/btrfs/dir/foo
+> ---------------C- /mnt/btrfs/dir/foo
+> $ filefrag /mnt/btrfs/dir/foo
+> /mnt/btrfs/dir/foo: 1 extent found    ---> an extent
+> $ dd if=/dev/zero of=/mnt/btrfs/dir/foo bs=4K count=1 seek=5 conv=notrunc,nocreat; sync
+> $ filefrag /mnt/btrfs/dir/foo
+> /mnt/btrfs/dir/foo: 3 extents found   ---> with nocow, btrfs breaks the extent into three parts
 > 
-> I experience continuus degradation of btrfs system partition on hybrid 
-> 750GB Seagate Momentus XT-2  (ATA ST750LX003-1AC15, rev. SM12). dmesg 
-> fills with hundreds of errors like "btrfs csum failed ino 93608 off 
-> 425984 csum 2316250426 private 3579463503".
+> The new created file should not only inherit the NODATACOW flag, but also
+> honor NODATASUM flag, because we must do COW on a file extent with checksum.
 > 
-> I had simmilar problems with the older model, Seagate Momentus XT bought 
-> two years ago, where firmware update didn't solve them (cf. 
-> http://superuser.com/questions/313447/seagate-momentus-xt-corrupting-files-linux-and-mac 
-> and 
-> http://forums.seagate.com/t5/Momentus-XT-Momentus-Momentus/Momentus-XT-corrupting-large-files-Linux/m-p/109008). 
+> Signed-off-by: Liu Bo <bo.li.liu@oracle.com>
+> ---
+> v1->v2: add check for only regular file
 > 
+>  fs/btrfs/inode.c |    3 +--
+>  fs/btrfs/ioctl.c |    7 +++++--
+>  2 files changed, 6 insertions(+), 4 deletions(-)
 > 
-> Now I want to give Linux another try on this amazingly fast hardrive. 
-> Yes - the drive perfectly well under default drivers on Windows XP. I 
-> use it everyday and I never lost a single byte under Windows.
+> diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
+> index b2c3514..9bce6e9 100644
+> --- a/fs/btrfs/inode.c
+> +++ b/fs/btrfs/inode.c
+> @@ -4720,8 +4720,7 @@ static struct inode *btrfs_new_inode(struct btrfs_trans_handle *trans,
+>  	if (S_ISREG(mode)) {
+>  		if (btrfs_test_opt(root, NODATASUM))
+>  			BTRFS_I(inode)->flags |= BTRFS_INODE_NODATASUM;
+> -		if (btrfs_test_opt(root, NODATACOW) ||
+> -		    (BTRFS_I(dir)->flags & BTRFS_INODE_NODATACOW))
+> +		if (btrfs_test_opt(root, NODATACOW))
+>  			BTRFS_I(inode)->flags |= BTRFS_INODE_NODATACOW;
+>  	}
+>  
+> diff --git a/fs/btrfs/ioctl.c b/fs/btrfs/ioctl.c
+> index 00ddf22..2fd5455 100644
+> --- a/fs/btrfs/ioctl.c
+> +++ b/fs/btrfs/ioctl.c
+> @@ -140,8 +140,11 @@ void btrfs_inherit_iflags(struct inode *inode, struct inode *dir)
+>  		BTRFS_I(inode)->flags |= BTRFS_INODE_COMPRESS;
+>  	}
+>  
+> -	if (flags & BTRFS_INODE_NODATACOW)
+> -		BTRFS_I(inode)->flags |= BTRFS_INODE_NODATACOW;
+> +	if (flags & BTRFS_INODE_NODATACOW) {
+> +		BTRFS_I(inode)->flags |= BTRFS_INODE_NODATACOW |
+> +		if (S_ISREG(inode->i_mode))
+> +			BTRFS_I(inode)->flags |= BTRFS_INODE_NODATASUM;
+> +	}
+>  
 
-Hi,
-I was seeing similar corruption issues with an older Linux version on my
-Momentus XT 500gb, but with recent kernel versions (and the latest drive
-firmware, I think I have SD28 right now) I haven't seen any issues at
-all. It's been quite solid. Please make sure that you're running the
-latest stable kernel, also... I'm currently using 3.5.3.
-(I have no idea what the new revision XT-2 is like, I hope they haven't
-duplicated the firmware issue! It's still so new there doesn't seem to
-be much feedback.)
+This doesn't compile.  Thanks,
 
-> What can I do on my part to help you troubleshoot the problem? I guess I 
-> might do some sort of tripwiring files to see that their contents 
-> actually degrades, but I think it the result is obvious and not very 
-> helpful to you.
-
-I still don't know the actual root cause of the problem; but from the
-posts on the seagate forums it may have had something to do with the
-Linux ram disk caching or possibly a drive NCQ bug. Is there any chance
-you could attempt to reproduce the issue with the latest linux kernel
-and a freshly formatted filesystem?
-
-> If you can't help me, please advise me, how to heal the partition - the 
-> offline btrfsck (from btrfs-tools 0.19 available on Mint 13) doesn't fix 
-> anything here.
-
-I'm not currently aware of any fix, other than deleting/rewriting the
-offending files. Assuming you have backups of your personal data, it
-might be fastest to just reformat and reinstall. It might be possible to
-hack btrfs to ignore the checksum errors to allow you to read the
-corrupted files? I'm not sure.
-
-> Is there any way to tell which files are getting broken?
-
-The kernel log message prints an inode number in the log:
-
-> "btrfs csum failed ino 93608 off 425984 csum 2316250426 private 3579463503".
-
-You can use the 'find' command to track this inode number to a file (or
-files, if there are hardlinks involved:
-
-find /btrfs/mountpoint -inum 93608
-
-> I use Mint 13, 3.2.0-30-generic 64-bit kernel.
-
-3.2 is old! Keep in mind that given the current state of btrfs
-development, fixes for btrfs are usually not backported to old stable or
-longterm kernel releases, although some distributions have done so.
-
--- 
-Calvin Walton <calvin.walton@kepstin.ca>
-
+Josef

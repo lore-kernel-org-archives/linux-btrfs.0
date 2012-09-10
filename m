@@ -1,119 +1,82 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-wi0-f178.google.com ([209.85.212.178]:49937 "EHLO
-	mail-wi0-f178.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1756534Ab2IJVp6 (ORCPT
+Received: from mondschein.lichtvoll.de ([194.150.191.11]:39599 "EHLO
+	mail.lichtvoll.de" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1757284Ab2IJXJV convert rfc822-to-8bit (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 10 Sep 2012 17:45:58 -0400
-Received: by wibhr14 with SMTP id hr14so2808666wib.1
-        for <linux-btrfs@vger.kernel.org>; Mon, 10 Sep 2012 14:45:56 -0700 (PDT)
+	Mon, 10 Sep 2012 19:09:21 -0400
+From: Martin Steigerwald <Martin@lichtvoll.de>
+To: linux-btrfs@vger.kernel.org
+Subject: Re: Workaround for hardlink count problem?
+Date: Tue, 11 Sep 2012 01:09:17 +0200
+Cc: "Fajar A. Nugraha" <list@fajar.net>
+References: <20120908165620.GA17951@merlins.org> <201209101112.34839.Martin@lichtvoll.de> <CAG1y0scP+O9kTLiF5ZpxRwZTbOFQWctQDquCu4ATSwYyE3SZmQ@mail.gmail.com> (sfid-20120910_140743_108130_BF222C36)
+In-Reply-To: <CAG1y0scP+O9kTLiF5ZpxRwZTbOFQWctQDquCu4ATSwYyE3SZmQ@mail.gmail.com>
 MIME-Version: 1.0
-In-Reply-To: <504E31D3.3020609@gmx.net>
-References: <504A4CBF.7000605@gmail.com>
-	<504A6F67.3060506@gmx.net>
-	<504E2DE1.8060405@gmail.com>
-	<504E31D3.3020609@gmx.net>
-Date: Mon, 10 Sep 2012 23:45:56 +0200
-Message-ID: <CAKVY-+_LG9_+9-5ucEJNKp2DUw=KnA0Tgn4v-Wej4+-CgB=zUQ@mail.gmail.com>
-Subject: Re: Cannot create subvolume with quota enabled
-From: Andreas Philipp <philipp.andreas@gmail.com>
-To: Arne Jansen <sensille@gmx.net>
-Cc: linux-btrfs <linux-btrfs@vger.kernel.org>
-Content-Type: text/plain; charset=ISO-8859-1
+Content-Type: Text/Plain;
+  charset="windows-1252"
+Message-Id: <201209110109.17604.Martin@lichtvoll.de>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-2012/9/10 Arne Jansen <sensille@gmx.net>:
-> On 09/10/2012 08:13 PM, Andreas Philipp wrote:
->> Hi Arne,
->>
->> On 08.09.2012 00:04, Arne Jansen wrote:
->>> Hi Andreas,
->>>
->>> On 09/07/2012 09:36 PM, Andreas Philipp wrote:
->>>> Hi,
->>>>
->>>> The following steps reproduce the error. My kernel is 3.6-rc4 and
->>>> btrfs-progs are at commit 89fe5b5f666c247aa3173745fb87c710f3a71a4a
->>>> from
->>>> git://git.kernel.org/pub/scm/linux/kernel/git/mason/btrfs-progs.git
->>>>
->>>>
->>> master.
->>>> thor ~ # mkfs.btrfs -L test /dev/vg1/test
->>>>
->>>> WARNING! - Btrfs Btrfs v0.19 IS EXPERIMENTAL WARNING! - see
->>>> http://btrfs.wiki.kernel.org before using
->>>>
->>>> fs created label test on /dev/vg1/test nodesize 4096 leafsize 4096
->>>> sectorsize 4096 size 20.00GB Btrfs Btrfs v0.19 thor ~ # mount
->>>> /dev/vg1/test /mnt/tmp thor ~ # btrfs quota enable /mnt/tmp thor ~
->>>> # btrfs subvolume create /mnt/tmp/test Create subvolume
->>>> '/mnt/tmp/test' ERROR: cannot create subvolume - Invalid argument
->>> Thanks for giving quota a try. I sent a fix separately with
->>> the subject
->>>
->>> [PATCH] Btrfs: btrfs_qgroup_inherit wrongly returns an error
->>>
->>> Could you please see if it fixes the problem?
->> With the patch applied (on top of either 3.6-rc4 or 3.6-rc5) I can
->> create subvolumes as you see below.
->>
->> root@debian:~# mkfs.btrfs /dev/sdb
->>
->> WARNING! - Btrfs Btrfs v0.19 IS EXPERIMENTAL
->> WARNING! - see http://btrfs.wiki.kernel.org before using
->>
->> fs created label (null) on /dev/sdb
->>         nodesize 4096 leafsize 4096 sectorsize 4096 size 3.00GB
->> Btrfs Btrfs v0.19
->> root@debian:~# mount /dev/sdb /mnt/test
->> root@debian:~# btrfs quota enable /mnt/test
->> root@debian:~# btrfs subvolume create /mnt/test/subvolume
->> Create subvolume '/mnt/test/subvolume'
->> root@debian:~# btrfs qgroup show /mnt/test
->> 0/257 4096 4096
->> root@debian:~# dd if=/dev/urandom of=/mnt/test/subvolume/testfile
->> bs=1024k count=25
->> 25+0 records in
->> 25+0 records out
->> 26214400 bytes (26 MB) copied, 2.95321 s, 8.9 MB/s
->> root@debian:~# btrfs qgroup show /mnt/test
->> 0/257 4096 4096
->> root@debian:~# du -hs /mnt/test/*
->> 25M     /mnt/test/subvolume
->>
->> At least I expected that the output of ' btrfs qgroup show' changes
->> after some data got written to a subvolume which is assigned to a
->> qgroup. (Hope, I got it right.)
->
-> due to delayed-*, the accounting also sometimes shows up delayed.
-> After a sync you should see the changes.
+Am Montag, 10. September 2012 schrieb Fajar A. Nugraha:
+> On Mon, Sep 10, 2012 at 4:12 PM, Martin Steigerwald 
+<Martin@lichtvoll.de> wrote:
+> > Am Samstag, 8. September 2012 schrieb Marc MERLIN:
+> >> I was migrating a backup disk to a new btrfs disk, and the backup
+> >> had a lot of hardlinks to collapse identical files to cut down on
+> >> inode count and disk space.
+> > 
+> >> Then, I started seeing:
+> > […]
+> > 
+> >> Has someone come up with a cool way to work around the too many link
+> >> error and only when that happens, turn the hardlink into a file copy
+> >> instead? (that is when copying an entire tree with millions of
+> >> files).
+> > 
+> > What about:
+> > 
+> > - copy first backup version
+> > - btrfs subvol create first next
+> > - copy next backup version
+> > - btrfs subvol create previous next
+> 
+> Wouldn't "btrfs subvolume snapshot", plus "rsync --inplace" more
+> useful here? That is. if the original hardlink is caused by multiple
+> versions of backup of the same file.
 
-Sorry, I forgot to check with umount & mount or sync. It works.
+Sure, I meant subvol snapshot in above example. Thanks for noticing.
 
-Thanks,
-Andreas
+But I do not use --inplace as it conflicts with some other rsync options I 
+like to use:
 
->
->>
->> Thanks,
->> Andreas
->>
->>>
->>> Thanks,
->>> Arne
->>>> Please, do not hesitate to contact me for any further information
->>>> etc.
->>>>
->>>> Thanks, Andreas -- To unsubscribe from this list: send the line
->>>> "unsubscribe linux-btrfs" in the body of a message to
->>>> majordomo@vger.kernel.org More majordomo info at
->>>> http://vger.kernel.org/majordomo-info.html
->>>>
->>
->> --
->> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
->> the body of a message to majordomo@vger.kernel.org
->> More majordomo info at  http://vger.kernel.org/majordomo-info.html
->>
->
+-ax --acls --xattrs --sparse --hard-links --del --delete-excluded --
+exclude-from "debian-exclude"
+
+Yes, it was --sparse:
+
+       -S, --sparse
+              Try to handle sparse files efficiently so they  take  up
+              less space on the destination.  Conflicts with --inplace
+              because it’s not possible to overwrite data in a  sparse
+              fashion.
+
+As I have some pretty big sparse files, I went without --inplace:
+
+martin@merkaba:~/Amiga> du -sch M-Archiv.hardfile Messages.hardfile 
+241M    M-Archiv.hardfile
+726M    Messages.hardfile
+966M    insgesamt
+martin@merkaba:~/Amiga> ls -lh M-Archiv.hardfile Messages.hardfile 
+-rw-r----- 1 martin martin 1,0G Mär 27  2005 M-Archiv.hardfile
+-rw-r----- 1 martin martin 1,0G Sep 10 17:33 Messages.hardfile
+martin@merkaba:~/Amiga>
+
+(my old mails when I used Amiga as my main machine, still accessible via 
+e-uae ;)
+
+Anyway, I think that will be solved by btrfs send/receive.
+
+-- 
+Martin 'Helios' Steigerwald - http://www.Lichtvoll.de
+GPG: 03B0 0D6C 0040 0710 4AFA  B82F 991B EAAC A599 84C7

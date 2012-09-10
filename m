@@ -1,50 +1,48 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-ob0-f174.google.com ([209.85.214.174]:37852 "EHLO
-	mail-ob0-f174.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1753300Ab2IJJ25 convert rfc822-to-8bit (ORCPT
+Received: from mail-pz0-f46.google.com ([209.85.210.46]:62832 "EHLO
+	mail-pz0-f46.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1757566Ab2IJMTh (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 10 Sep 2012 05:28:57 -0400
-Received: by obbuo13 with SMTP id uo13so2580913obb.19
-        for <linux-btrfs@vger.kernel.org>; Mon, 10 Sep 2012 02:28:56 -0700 (PDT)
+	Mon, 10 Sep 2012 08:19:37 -0400
+Received: by dady13 with SMTP id y13so1355343dad.19
+        for <linux-btrfs@vger.kernel.org>; Mon, 10 Sep 2012 05:19:37 -0700 (PDT)
+Message-ID: <504DDAD5.8010908@gmail.com>
+Date: Mon, 10 Sep 2012 20:19:33 +0800
+From: ching <lsching17@gmail.com>
 MIME-Version: 1.0
-In-Reply-To: <201209101112.34839.Martin@lichtvoll.de>
-References: <20120908165620.GA17951@merlins.org>
-	<201209101112.34839.Martin@lichtvoll.de>
-Date: Mon, 10 Sep 2012 16:21:55 +0700
-Message-ID: <CAG1y0scP+O9kTLiF5ZpxRwZTbOFQWctQDquCu4ATSwYyE3SZmQ@mail.gmail.com>
-Subject: Re: Workaround for hardlink count problem?
-From: "Fajar A. Nugraha" <list@fajar.net>
-To: linux-btrfs <linux-btrfs@vger.kernel.org>
-Content-Type: text/plain; charset=windows-1252
+To: "Fajar A. Nugraha" <list@fajar.net>
+CC: linux-btrfs@vger.kernel.org
+Subject: Re: enquiry about defrag
+References: <504BDCE0.8020407@gmail.com> <CAMQ-g0d3iF-0RCGWd3RD_buXXa3j3DS2PwyUgXSAJ95=-F=c+Q@mail.gmail.com> <504C49F7.2070201@gmail.com> <CAG1y0sdFTKLX8N1VnSYzxZ-Xr4kDPtYGG6ixMrPwBWQPRVAGgg@mail.gmail.com> <504C861D.2020009@gmail.com>
+In-Reply-To: <504C861D.2020009@gmail.com>
+Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Mon, Sep 10, 2012 at 4:12 PM, Martin Steigerwald <Martin@lichtvoll.de> wrote:
-> Am Samstag, 8. September 2012 schrieb Marc MERLIN:
->> I was migrating a backup disk to a new btrfs disk, and the backup had a
->> lot of hardlinks to collapse identical files to cut down on inode
->> count and disk space.
+On 09/09/2012 08:05 PM, ching wrote:
+> On 09/09/2012 05:11 PM, Fajar A. Nugraha wrote:
+>> On Sun, Sep 9, 2012 at 2:49 PM, ching <lsching17@gmail.com> wrote:
+>>> On 09/09/2012 08:30 AM, Jan Steffens wrote:
+>>>> On Sun, Sep 9, 2012 at 2:03 AM, ching <lsching17@gmail.com> wrote:
+>>>>> 2. Is there any command for the fragmentation status of a file/dir ? e.g. fragment size, number of fragments.
+>>>> Use the "filefrag" command, part of e2fsprogs.
+>>>>
+>>> my image is a 16G sparse file, after defragment, it still has 101387 extents, is it normal?
+>> Is compression enabled? If so, yes, it's normal.
 >>
->> Then, I started seeing:
-> […]
->> Has someone come up with a cool way to work around the too many link
->> error and only when that happens, turn the hardlink into a file copy
->> instead? (that is when copying an entire tree with millions of files).
+> compression with lzo.
 >
-> What about:
->
-> - copy first backup version
-> - btrfs subvol create first next
-> - copy next backup version
-> - btrfs subvol create previous next
+> thanks. i will retry with compression disabled when 3.6 is stable.
 
-Wouldn't "btrfs subvolume snapshot", plus "rsync --inplace" more
-useful here? That is. if the original hardlink is caused by multiple
-versions of backup of the same file.
+i just realize that it is possible to control compression per file by file attribute
 
-Personally, if I need a feature not currently impelented yet in btrfs,
-I'd just switch to something else for now, like zfs. And revisit btrfs
-later when it has the needed features have been merged.
+http://radudi.com/index.php/2011/08/31/using-btrfs-per-file-and-per-directory-compression/
 
--- 
-Fajar
+when i try to follow example above, no file attribute is shown (my mount option is rw,noatime,compress-force=lzo,space_cache,inode_cache)
+
+$lsattr -V Linux.raw_image
+lsattr 1.42.5 (29-Jul-2012)
+---------------- Linux.raw_image
+
+is there any official resource/web page for control compression per file by file attribute?
+

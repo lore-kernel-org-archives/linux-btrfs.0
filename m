@@ -1,82 +1,59 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mondschein.lichtvoll.de ([194.150.191.11]:39599 "EHLO
-	mail.lichtvoll.de" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1757284Ab2IJXJV convert rfc822-to-8bit (ORCPT
+Received: from mail-pb0-f46.google.com ([209.85.160.46]:59825 "EHLO
+	mail-pb0-f46.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1751460Ab2IJXVJ (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 10 Sep 2012 19:09:21 -0400
-From: Martin Steigerwald <Martin@lichtvoll.de>
-To: linux-btrfs@vger.kernel.org
-Subject: Re: Workaround for hardlink count problem?
-Date: Tue, 11 Sep 2012 01:09:17 +0200
-Cc: "Fajar A. Nugraha" <list@fajar.net>
-References: <20120908165620.GA17951@merlins.org> <201209101112.34839.Martin@lichtvoll.de> <CAG1y0scP+O9kTLiF5ZpxRwZTbOFQWctQDquCu4ATSwYyE3SZmQ@mail.gmail.com> (sfid-20120910_140743_108130_BF222C36)
-In-Reply-To: <CAG1y0scP+O9kTLiF5ZpxRwZTbOFQWctQDquCu4ATSwYyE3SZmQ@mail.gmail.com>
+	Mon, 10 Sep 2012 19:21:09 -0400
+Received: by pbbrr13 with SMTP id rr13so3187685pbb.19
+        for <linux-btrfs@vger.kernel.org>; Mon, 10 Sep 2012 16:21:09 -0700 (PDT)
+Message-ID: <504E75E1.5060304@gmail.com>
+Date: Tue, 11 Sep 2012 07:21:05 +0800
+From: ching <lsching17@gmail.com>
 MIME-Version: 1.0
-Content-Type: Text/Plain;
-  charset="windows-1252"
-Message-Id: <201209110109.17604.Martin@lichtvoll.de>
+To: Liu Bo <bo.li.liu@oracle.com>
+CC: linux-btrfs@vger.kernel.org
+Subject: Re: enquiry about defrag
+References: <504BDCE0.8020407@gmail.com> <CAMQ-g0d3iF-0RCGWd3RD_buXXa3j3DS2PwyUgXSAJ95=-F=c+Q@mail.gmail.com> <504C49F7.2070201@gmail.com> <CAG1y0sdFTKLX8N1VnSYzxZ-Xr4kDPtYGG6ixMrPwBWQPRVAGgg@mail.gmail.com> <504C861D.2020009@gmail.com> <504DDAD5.8010908@gmail.com> <504DE6B3.2010900@oracle.com>
+In-Reply-To: <504DE6B3.2010900@oracle.com>
+Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Am Montag, 10. September 2012 schrieb Fajar A. Nugraha:
-> On Mon, Sep 10, 2012 at 4:12 PM, Martin Steigerwald 
-<Martin@lichtvoll.de> wrote:
-> > Am Samstag, 8. September 2012 schrieb Marc MERLIN:
-> >> I was migrating a backup disk to a new btrfs disk, and the backup
-> >> had a lot of hardlinks to collapse identical files to cut down on
-> >> inode count and disk space.
-> > 
-> >> Then, I started seeing:
-> > […]
-> > 
-> >> Has someone come up with a cool way to work around the too many link
-> >> error and only when that happens, turn the hardlink into a file copy
-> >> instead? (that is when copying an entire tree with millions of
-> >> files).
-> > 
-> > What about:
-> > 
-> > - copy first backup version
-> > - btrfs subvol create first next
-> > - copy next backup version
-> > - btrfs subvol create previous next
-> 
-> Wouldn't "btrfs subvolume snapshot", plus "rsync --inplace" more
-> useful here? That is. if the original hardlink is caused by multiple
-> versions of backup of the same file.
+On 09/10/2012 09:10 PM, Liu Bo wrote:
+> On 09/10/2012 08:19 PM, ching wrote:
+>> On 09/09/2012 08:05 PM, ching wrote:
+>>> On 09/09/2012 05:11 PM, Fajar A. Nugraha wrote:
+>>>> On Sun, Sep 9, 2012 at 2:49 PM, ching <lsching17@gmail.com> wrote:
+>>>>> On 09/09/2012 08:30 AM, Jan Steffens wrote:
+>>>>>> On Sun, Sep 9, 2012 at 2:03 AM, ching <lsching17@gmail.com> wrote:
+>>>>>>> 2. Is there any command for the fragmentation status of a file/dir ? e.g. fragment size, number of fragments.
+>>>>>> Use the "filefrag" command, part of e2fsprogs.
+>>>>>>
+>>>>> my image is a 16G sparse file, after defragment, it still has 101387 extents, is it normal?
+>>>> Is compression enabled? If so, yes, it's normal.
+>>>>
+>>> compression with lzo.
+>>>
+>>> thanks. i will retry with compression disabled when 3.6 is stable.
+>> i just realize that it is possible to control compression per file by file attribute
+>>
+>> http://radudi.com/index.php/2011/08/31/using-btrfs-per-file-and-per-directory-compression/
+>>
+>> when i try to follow example above, no file attribute is shown (my mount option is rw,noatime,compress-force=lzo,space_cache,inode_cache)
+>>
+>> $lsattr -V Linux.raw_image
+>> lsattr 1.42.5 (29-Jul-2012)
+>> ---------------- Linux.raw_image
+>>
+>> is there any official resource/web page for control compression per file by file attribute?
+>>
+> FYI, git://git.kernel.org/pub/scm/fs/ext2/e2fsprogs.git
+>
+>> --
+>> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
+>> the body of a message to majordomo@vger.kernel.org
+>> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+>>
+>
 
-Sure, I meant subvol snapshot in above example. Thanks for noticing.
-
-But I do not use --inplace as it conflicts with some other rsync options I 
-like to use:
-
--ax --acls --xattrs --sparse --hard-links --del --delete-excluded --
-exclude-from "debian-exclude"
-
-Yes, it was --sparse:
-
-       -S, --sparse
-              Try to handle sparse files efficiently so they  take  up
-              less space on the destination.  Conflicts with --inplace
-              because it’s not possible to overwrite data in a  sparse
-              fashion.
-
-As I have some pretty big sparse files, I went without --inplace:
-
-martin@merkaba:~/Amiga> du -sch M-Archiv.hardfile Messages.hardfile 
-241M    M-Archiv.hardfile
-726M    Messages.hardfile
-966M    insgesamt
-martin@merkaba:~/Amiga> ls -lh M-Archiv.hardfile Messages.hardfile 
--rw-r----- 1 martin martin 1,0G Mär 27  2005 M-Archiv.hardfile
--rw-r----- 1 martin martin 1,0G Sep 10 17:33 Messages.hardfile
-martin@merkaba:~/Amiga>
-
-(my old mails when I used Amiga as my main machine, still accessible via 
-e-uae ;)
-
-Anyway, I think that will be solved by btrfs send/receive.
-
--- 
-Martin 'Helios' Steigerwald - http://www.Lichtvoll.de
-GPG: 03B0 0D6C 0040 0710 4AFA  B82F 991B EAAC A599 84C7
+may i ask a stupid question, if i remove my "compress-force=lzo" option, will compression disabled for new written data?

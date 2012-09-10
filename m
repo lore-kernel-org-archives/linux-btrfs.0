@@ -1,110 +1,54 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cobra.newdream.net ([66.33.216.30]:54412 "EHLO
-	cobra.newdream.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1753292Ab2IJDwi (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Sun, 9 Sep 2012 23:52:38 -0400
-Date: Sun, 9 Sep 2012 20:52:37 -0700 (PDT)
-From: Sage Weil <sage@inktank.com>
-To: Josef Bacik <jbacik@fusionio.com>
-cc: linux-btrfs@vger.kernel.org
-Subject: Re: [PATCH] Btrfs: move the sb_end_intwrite until after the throttle
- logic
-In-Reply-To: <1346854110-26909-1-git-send-email-jbacik@fusionio.com>
-Message-ID: <alpine.DEB.2.00.1209092051250.32347@cobra.newdream.net>
-References: <1346854110-26909-1-git-send-email-jbacik@fusionio.com>
+Received: from mondschein.lichtvoll.de ([194.150.191.11]:51236 "EHLO
+	mail.lichtvoll.de" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1756760Ab2IJJMg convert rfc822-to-8bit (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>);
+	Mon, 10 Sep 2012 05:12:36 -0400
+Received: from merkaba.localnet (ppp-93-104-152-209.dynamic.mnet-online.de [93.104.152.209])
+	by mail.lichtvoll.de (Postfix) with ESMTPSA id 6B75918E
+	for <linux-btrfs@vger.kernel.org>; Mon, 10 Sep 2012 11:12:35 +0200 (CEST)
+From: Martin Steigerwald <Martin@lichtvoll.de>
+To: linux-btrfs@vger.kernel.org
+Subject: Re: Workaround for hardlink count problem?
+Date: Mon, 10 Sep 2012 11:12:34 +0200
+References: <20120908165620.GA17951@merlins.org> (sfid-20120908_190409_427728_9FF73D4B)
+In-Reply-To: <20120908165620.GA17951@merlins.org>
 MIME-Version: 1.0
-Content-Type: TEXT/PLAIN; charset=US-ASCII
+Content-Type: Text/Plain;
+  charset="utf-8"
+Message-Id: <201209101112.34839.Martin@lichtvoll.de>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Wed, 5 Sep 2012, Josef Bacik wrote:
-> Sage reported the following lockdep backtrace
+Am Samstag, 8. September 2012 schrieb Marc MERLIN:
+> I read the discussions on hardlinks, and saw that there was a proposed
+> patch (although I'm not sure if it's due in 3.6 or not, or whether I
+> can apply it to my 3.5.3 tree).
 > 
-> =====================================
-> [ BUG: bad unlock balance detected! ]
-> 3.6.0-rc2-ceph-00171-gc7ed62d #1 Not tainted
-> -------------------------------------
-> btrfs-cleaner/7607 is trying to release lock (sb_internal) at:
-> [<ffffffffa00422ae>] btrfs_commit_transaction+0xa6e/0xb20 [btrfs]
-> but there are no more locks to release!
+> I was migrating a backup disk to a new btrfs disk, and the backup had a
+> lot of hardlinks to collapse identical files to cut down on inode
+> count and disk space.
 > 
-> other info that might help us debug this:
-> 1 lock held by btrfs-cleaner/7607:
->  #0:  (&fs_info->cleaner_mutex){+.+...}, at: [<ffffffffa003b405>] cleaner_kthread+0x95/0x120 [btrfs]
-> 
-> stack backtrace:
-> Pid: 7607, comm: btrfs-cleaner Not tainted 3.6.0-rc2-ceph-00171-gc7ed62d #1
-> Call Trace:
->  [<ffffffffa00422ae>] ? btrfs_commit_transaction+0xa6e/0xb20 [btrfs]
->  [<ffffffff810afa9e>] print_unlock_inbalance_bug+0xfe/0x110
->  [<ffffffff810b289e>] lock_release_non_nested+0x1ee/0x310
->  [<ffffffff81172f9b>] ? kmem_cache_free+0x7b/0x160
->  [<ffffffffa004106c>] ? put_transaction+0x8c/0x130 [btrfs]
->  [<ffffffffa00422ae>] ? btrfs_commit_transaction+0xa6e/0xb20 [btrfs]
->  [<ffffffff810b2a95>] lock_release+0xd5/0x220
->  [<ffffffff81173071>] ? kmem_cache_free+0x151/0x160
->  [<ffffffff8117d9ed>] __sb_end_write+0x7d/0x90
->  [<ffffffffa00422ae>] btrfs_commit_transaction+0xa6e/0xb20 [btrfs]
->  [<ffffffff81079850>] ? __init_waitqueue_head+0x60/0x60
->  [<ffffffff81634c6b>] ? _raw_spin_unlock+0x2b/0x40
->  [<ffffffffa0042758>] __btrfs_end_transaction+0x368/0x3c0 [btrfs]
->  [<ffffffffa0042808>] btrfs_end_transaction_throttle+0x18/0x20 [btrfs]
->  [<ffffffffa00318f0>] btrfs_drop_snapshot+0x410/0x600 [btrfs]
->  [<ffffffff8132babd>] ? do_raw_spin_unlock+0x5d/0xb0
->  [<ffffffffa00430ef>] btrfs_clean_old_snapshots+0xaf/0x150 [btrfs]
->  [<ffffffffa003b405>] ? cleaner_kthread+0x95/0x120 [btrfs]
->  [<ffffffffa003b419>] cleaner_kthread+0xa9/0x120 [btrfs]
->  [<ffffffffa003b370>] ? btrfs_destroy_delayed_refs.isra.102+0x220/0x220 [btrfs]
->  [<ffffffff810791ee>] kthread+0xae/0xc0
->  [<ffffffff810b379d>] ? trace_hardirqs_on+0xd/0x10
->  [<ffffffff8163e744>] kernel_thread_helper+0x4/0x10
->  [<ffffffff81635430>] ? retint_restore_args+0x13/0x13
->  [<ffffffff81079140>] ? flush_kthread_work+0x1a0/0x1a0
->  [<ffffffff8163e740>] ? gs_change+0x13/0x13
-> 
-> This is because the throttle stuff can commit the transaction, which expects to
-> be the one stopping the intwrite stuff, but we've already done it in the
-> __btrfs_end_transaction.  Moving the sb_end_intewrite after this logic makes the
-> lockdep go away.  Thanks,
-> 
-> Signed-off-by: Josef Bacik <jbacik@fusionio.com>
+> Then, I started seeing:
+[…]
+> Has someone come up with a cool way to work around the too many link
+> error and only when that happens, turn the hardlink into a file copy
+> instead? (that is when copying an entire tree with millions of files).
 
-This appears to have done the trick (at least so far).  I'm running it on 
-top of -rc5 and the 3 patches I posted on Aug 30th.
+What about:
 
-Tested-by: Sage Weil <sage@inktank.com>
+- copy first backup version
+- btrfs subvol create first next
+- copy next backup version
+- btrfs subvol create previous next
 
-Thanks!
-sage
+I use this scheme for my backup since quite a while. Except that first 
+backup, then create a read only snapshot. And at some time remove old 
+snapshots.
 
+Works like a charm and is easily scriptable.
 
-> ---
->  fs/btrfs/transaction.c | 4 ++--
->  1 file changed, 2 insertions(+), 2 deletions(-)
-> 
-> diff --git a/fs/btrfs/transaction.c b/fs/btrfs/transaction.c
-> index a86fc72..0163afa 100644
-> --- a/fs/btrfs/transaction.c
-> +++ b/fs/btrfs/transaction.c
-> @@ -551,8 +551,6 @@ static int __btrfs_end_transaction(struct btrfs_trans_handle *trans,
->  	btrfs_trans_release_metadata(trans, root);
->  	trans->block_rsv = NULL;
->  
-> -	sb_end_intwrite(root->fs_info->sb);
-> -
->  	if (lock && !atomic_read(&root->fs_info->open_ioctl_trans) &&
->  	    should_end_transaction(trans, root)) {
->  		trans->transaction->blocked = 1;
-> @@ -573,6 +571,8 @@ static int __btrfs_end_transaction(struct btrfs_trans_handle *trans,
->  		}
->  	}
->  
-> +	sb_end_intwrite(root->fs_info->sb);
-> +
->  	WARN_ON(cur_trans != info->running_transaction);
->  	WARN_ON(atomic_read(&cur_trans->num_writers) < 1);
->  	atomic_dec(&cur_trans->num_writers);
-> -- 
-> 1.7.11.4
-> 
-> 
+Ciao,
+-- 
+Martin 'Helios' Steigerwald - http://www.Lichtvoll.de
+GPG: 03B0 0D6C 0040 0710 4AFA  B82F 991B EAAC A599 84C7

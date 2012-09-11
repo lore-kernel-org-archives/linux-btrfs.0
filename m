@@ -1,135 +1,191 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-da0-f46.google.com ([209.85.210.46]:57668 "EHLO
-	mail-da0-f46.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1752232Ab2I1ACP (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 27 Sep 2012 20:02:15 -0400
-Received: by dady13 with SMTP id y13so512431dad.19
-        for <linux-btrfs@vger.kernel.org>; Thu, 27 Sep 2012 17:02:14 -0700 (PDT)
+Received: from smtp207.alice.it ([82.57.200.103]:46430 "EHLO smtp207.alice.it"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1751844Ab2IKRam (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Tue, 11 Sep 2012 13:30:42 -0400
+Message-ID: <504F7582.8040902@libero.it>
+Date: Tue, 11 Sep 2012 19:31:46 +0200
+From: Goffredo Baroncelli <kreijack@libero.it>
+Reply-To: kreijack@inwind.it
 MIME-Version: 1.0
-Date: Fri, 28 Sep 2012 02:02:14 +0200
-Message-ID: <CAKZ=RP8V7J=vYerLGzavq5GBFmNtmyRYeautEoAyWqOud9b3Pw@mail.gmail.com>
-Subject: [PATCH] btrfs-convert: show progress
-From: Alfredo Esteban <aedelatorre@gmail.com>
-To: Linux Btrfs <linux-btrfs@vger.kernel.org>
-Content-Type: multipart/mixed; boundary=047d7b339bf1b0abe904cab7c409
+To: Chris Mason <chris.mason@oracle.com>
+CC: Yan Zheng <zheng.yan@oracle.com>, M G Berberich <btrfs@oss.m-berberich.de>,
+        linux-btrfs@vger.kernel.org
+Subject: [RESPOST][BTRFS-PROGS][PATCH] btrfs_read_dev_super(): uninitialized
+ variable
+References: <20120828195244.GA15021@invalid> <503FAFF5.80204@libero.it> <50410BBE.6030601@libero.it>
+In-Reply-To: <50410BBE.6030601@libero.it>
+Content-Type: multipart/mixed;
+ boundary="------------060008070009020701020804"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
---047d7b339bf1b0abe904cab7c409
-Content-Type: text/plain; charset=ISO-8859-1
+This is a multi-part message in MIME format.
+--------------060008070009020701020804
+Content-Type: text/plain; charset=UTF-8; format=flowed
+Content-Transfer-Encoding: 8bit
 
-Hello,
+This is a repost because I rebased the change. The first attempt was 
+done with the email "[BTRFS-PROGS][BUG][PATCH] Incorrect detection of a 
+removed device  [was Re: “Bug”-report: inconsistency kernel <-> tools]" 
+dated 08/31/2012.
 
-I'm sending a patch to show progress of btrfs-convert command. I put a
-progress bar in the only heavy process: the btrfs metadata creation
-(due to CRC calculation):
+In the function btrfs_read_dev_super() it is possible to use the 
+variable fsid without initialisation.
 
-> ./btrfs-convert /dev/loop1
-Creating btrfs metadata [================================================] 100%
-Creating ext2fs image file... [DONE]
-Cleaning up system chunk... [DONE]
-Conversion complete.
+In btrfs_read_dev_super(), during the scan of the superblock the 
+variable fsid is initialised with the value of fsid of the first 
+superblock. But if the first superblock contains an incorrect signature 
+this initialisation is skipped.
 
-I just used "\r". I think it is a simple but effective approach
-without ncurses either other dependencies.
+int btrfs_read_dev_super(int fd, struct btrfs_super_block *sb, u64 
+sb_bytenr)
+{
+          u8 fsid[BTRFS_FSID_SIZE];
+[...]
 
-Suggestions are welcome.
+line 933:
 
-Alfredo
+          for (i = 0; i < BTRFS_SUPER_MIRROR_MAX; i++) {
+                  bytenr = btrfs_sb_offset(i);
+                  ret = pread64(fd, &buf, sizeof(buf), bytenr);
+                  if (ret < sizeof(buf))
+                          break;
 
---047d7b339bf1b0abe904cab7c409
-Content-Type: application/octet-stream; name="convert-progress-bar.patch"
-Content-Disposition: attachment; filename="convert-progress-bar.patch"
-Content-Transfer-Encoding: base64
-X-Attachment-Id: f_h7miadnc0
+                  if (btrfs_super_bytenr(&buf) != bytenr ||
+                      strncmp((char *)(&buf.magic), BTRFS_MAGIC,
+                              sizeof(buf.magic)))
+                          continue;
 
-ZGlmZiAtLWdpdCBhL2NvbnZlcnQuYyBiL2NvbnZlcnQuYwppbmRleCBmYTdiZjhjLi5mMzg0ZWZk
-IDEwMDY0NAotLS0gYS9jb252ZXJ0LmMKKysrIGIvY29udmVydC5jCkBAIC00Niw2ICs0NiwyMSBA
-QAogI2RlZmluZSBTVFJJUEVfTEVOICg2NCAqIDEwMjQpCiAjZGVmaW5lIEVYVDJfSU1BR0VfU1VC
-Vk9MX09CSkVDVElEIEJUUkZTX0ZJUlNUX0ZSRUVfT0JKRUNUSUQKIAorI2RlZmluZSBQUk9HUkVT
-U19CQVJfTEVOR1RIIDQ4CisKK3R5cGVkZWYgc3RydWN0IHsKKwlfX3UzMiBpbm9pbnVzZTsKKwlf
-X3UzMiBpbm9jb3BpZWQ7CisJX191MzIgcHJvZ3Jlc3N1bml0OworCV9fdTMyIGhhbGZwcm9ndW5p
-dDsKKwlfX3UzMiBwcm9ncmVzc3BlcmM7CisJaW50IHByb2dyZXNzOworCWludCBmbGFncHJpbnQ7
-CisJZmxvYXQgcGVyYzsKKwljaGFyIG1zZ1sxMjhdOworCWNoYXIgYmFyWzI1Nl07Cit9IHByb2dy
-ZXNzX2JhcjsKKwogLyoKICAqIE9wZW4gRXh0MmZzIGluIHJlYWRvbmx5IG1vZGUsIHJlYWQgYmxv
-Y2sgYWxsb2NhdGlvbiBiaXRtYXAgYW5kCiAgKiBpbm9kZSBiaXRtYXAgaW50byBtZW1vcnkuCkBA
-IC0xMTE5LDYgKzExMzQsNjkgQEAgZmFpbDoKIAkJcmV0ID0gLTE7CiAJcmV0dXJuIHJldDsKIH0K
-KworLyoKKyAqIGluaXQgdmFsdWVzIG9mIHByb2dyZXNzIGJhci4KKyAqLworc3RhdGljIHZvaWQg
-aW5pdF9wcm9ncmVzc19iYXIoZXh0Ml9maWxzeXMgZXh0Ml9mcywgcHJvZ3Jlc3NfYmFyICpwYikK
-K3sKKwlpbnQgaTsKKwlzcHJpbnRmKHBiLT5tc2csICJDcmVhdGluZyBidHJmcyBtZXRhZGF0YSIp
-OworCQorCXBiLT5pbm9pbnVzZSA9IGV4dDJfZnMtPnN1cGVyLT5zX2lub2Rlc19jb3VudAorCQkt
-IGV4dDJfZnMtPnN1cGVyLT5zX2ZyZWVfaW5vZGVzX2NvdW50OworCXBiLT5pbm9jb3BpZWQgPSAw
-OworCXBiLT5wcm9ncmVzc3VuaXQgPSBwYi0+aW5vaW51c2UgLyBQUk9HUkVTU19CQVJfTEVOR1RI
-OworCXBiLT5oYWxmcHJvZ3VuaXQgPSAoaW50KShwYi0+cHJvZ3Jlc3N1bml0LzIpOworCXBiLT5w
-cm9ncmVzc3BlcmMgPSBwYi0+aW5vaW51c2UgLyAxMDA7CisJcGItPnByb2dyZXNzID0gMDsKKwlw
-Yi0+ZmxhZ3ByaW50ID0gMDsKKwlwYi0+cGVyYyA9IDA7CisJcGItPmJhclswXSA9ICdbJzsKKwlm
-b3IgKGkgPSAxOyBpIDwgUFJPR1JFU1NfQkFSX0xFTkdUSCsxOyBpKyspIHBiLT5iYXJbaV0gPSAn
-ICc7CisJcGItPmJhcltQUk9HUkVTU19CQVJfTEVOR1RIKzFdID0gJ10nOworCXBiLT5iYXJbUFJP
-R1JFU1NfQkFSX0xFTkdUSCsyXSA9ICdcMCc7CisJcHJpbnRmKCJcZVs/MjVsIik7IC8vIGhpZGUg
-dGhlIGN1cnNvcgorCXByaW50ZigiXHIlcyAlcyAlM2QlJSAiLCBwYi0+bXNnLCBwYi0+YmFyLCAo
-aW50KXBiLT5wZXJjKTsKKwlmZmx1c2goc3Rkb3V0KTsJCit9CisKKy8qCisgKiBzaG93IHByb2dy
-ZXNzIGluIGJhci4KKyAqLworc3RhdGljIHZvaWQgdXBkYXRlX3Byb2dyZXNzX2Jhcihwcm9ncmVz
-c19iYXIgKnBiKQoreworCXBiLT5mbGFncHJpbnQgPSAwOworCWlmIChwYi0+aW5vY29waWVkICUg
-cGItPnByb2dyZXNzdW5pdCA9PSAwKSB7CisJCXBiLT5mbGFncHJpbnQgPSAxOworCQlwYi0+cHJv
-Z3Jlc3MgKz0gMTsKKwkJaWYgKHBiLT5wcm9ncmVzcyA8IFBST0dSRVNTX0JBUl9MRU5HVEgrMSkg
-cGItPmJhcltwYi0+cHJvZ3Jlc3NdID0gJz0nOworCX0gZWxzZSBpZiAocGItPmlub2NvcGllZCAl
-IHBiLT5wcm9ncmVzc3VuaXQgPT0gcGItPmhhbGZwcm9ndW5pdCkgeworCQlwYi0+ZmxhZ3ByaW50
-ID0gMTsKKwkJaWYgKHBiLT5wcm9ncmVzcysxIDwgUFJPR1JFU1NfQkFSX0xFTkdUSCsxKSBwYi0+
-YmFyW3BiLT5wcm9ncmVzcysxXSA9ICctJzsKKwl9CisJaWYgKHBiLT5pbm9jb3BpZWQgJSBwYi0+
-cHJvZ3Jlc3NwZXJjID09IDApIHsKKwkJcGItPmZsYWdwcmludCA9IDE7CisJCXBiLT5wZXJjID0g
-KChmbG9hdClwYi0+aW5vY29waWVkIC8gKGZsb2F0KXBiLT5pbm9pbnVzZSkgKiAxMDA7CisJfQor
-CWlmIChwYi0+ZmxhZ3ByaW50KSB7CisJCXByaW50ZigiXHIlcyAlcyAlM2QlJSIsIHBiLT5tc2cs
-IHBiLT5iYXIsIChpbnQpcGItPnBlcmMpOworCQlmZmx1c2goc3Rkb3V0KTsKKwl9Cit9CisKKy8q
-CisgKiBzaG93IHByb2Nlc3MgaXMgY29tcGxldGUgaW4gcHJvZ3Jlc3MgYmFyLgorICovCitzdGF0
-aWMgdm9pZCBjbG9zZV9wcm9ncmVzc19iYXIocHJvZ3Jlc3NfYmFyICpwYikKK3sKKwlwYi0+cHJv
-Z3Jlc3MrKzsKKwlmb3IgKDsgcGItPnByb2dyZXNzIDwgUFJPR1JFU1NfQkFSX0xFTkdUSCsxOyBw
-Yi0+cHJvZ3Jlc3MrKykgcGItPmJhcltwYi0+cHJvZ3Jlc3NdID0gJz0nOworCXByaW50ZigiXHIl
-cyAlcyAxMDAlJVxuIiwgcGItPm1zZywgcGItPmJhcik7CisJcHJpbnRmKCJcZVs/MjVoIik7IC8v
-IHNob3cgdGhlIGN1cnNvcgorCWZmbHVzaChzdGRvdXQpOworfQorCiAvKgogICogc2NhbiBleHQy
-J3MgaW5vZGUgYml0bWFwIGFuZCBjb3B5IGFsbCB1c2VkIGlub2Rlcy4KICAqLwpAQCAtMTEzMiw2
-ICsxMjEwLDcgQEAgc3RhdGljIGludCBjb3B5X2lub2RlcyhzdHJ1Y3QgYnRyZnNfcm9vdCAqcm9v
-dCwgZXh0Ml9maWxzeXMgZXh0Ml9mcywKIAlleHQyX2lub190IGV4dDJfaW5vOwogCXU2NCBvYmpl
-Y3RpZDsKIAlzdHJ1Y3QgYnRyZnNfdHJhbnNfaGFuZGxlICp0cmFuczsKKwlwcm9ncmVzc19iYXIg
-cGI7CiAKIAl0cmFucyA9IGJ0cmZzX3N0YXJ0X3RyYW5zYWN0aW9uKHJvb3QsIDEpOwogCWlmICgh
-dHJhbnMpCkBAIC0xMTQxLDYgKzEyMjAsOCBAQCBzdGF0aWMgaW50IGNvcHlfaW5vZGVzKHN0cnVj
-dCBidHJmc19yb290ICpyb290LCBleHQyX2ZpbHN5cyBleHQyX2ZzLAogCQlmcHJpbnRmKHN0ZGVy
-ciwgImV4dDJmc19vcGVuX2lub2RlX3NjYW46ICVzXG4iLCBlcnJvcl9tZXNzYWdlKGVycikpOwog
-CQlyZXR1cm4gLTE7CiAJfQorCQorCWluaXRfcHJvZ3Jlc3NfYmFyKGV4dDJfZnMsICZwYik7CiAJ
-d2hpbGUgKCEoZXJyID0gZXh0MmZzX2dldF9uZXh0X2lub2RlKGV4dDJfc2NhbiwgJmV4dDJfaW5v
-LAogCQkJCQkgICAgICZleHQyX2lub2RlKSkpIHsKIAkJLyogbm8gbW9yZSBpbm9kZXMgKi8KQEAg
-LTExNjMsMTMgKzEyNDQsMTcgQEAgc3RhdGljIGludCBjb3B5X2lub2RlcyhzdHJ1Y3QgYnRyZnNf
-cm9vdCAqcm9vdCwgZXh0Ml9maWxzeXMgZXh0Ml9mcywKIAkJCXRyYW5zID0gYnRyZnNfc3RhcnRf
-dHJhbnNhY3Rpb24ocm9vdCwgMSk7CiAJCQlCVUdfT04oIXRyYW5zKTsKIAkJfQorCQlwYi5pbm9j
-b3BpZWQgKz0gMTsKKwkJdXBkYXRlX3Byb2dyZXNzX2JhcigmcGIpOwogCX0KIAlpZiAoZXJyKSB7
-CisJCXByaW50ZigiXGVbPzI1aCIpOyAvLyBzaG93IHRoZSBjdXJzb3IKIAkJZnByaW50ZihzdGRl
-cnIsICJleHQyZnNfZ2V0X25leHRfaW5vZGU6ICVzXG4iLCBlcnJvcl9tZXNzYWdlKGVycikpOwog
-CQlyZXR1cm4gLTE7CiAJfQogCXJldCA9IGJ0cmZzX2NvbW1pdF90cmFuc2FjdGlvbih0cmFucywg
-cm9vdCk7CiAJQlVHX09OKHJldCk7CisJY2xvc2VfcHJvZ3Jlc3NfYmFyKCZwYik7CiAKIAlyZXR1
-cm4gcmV0OwogfQpAQCAtMjM0NywxMyArMjQzMiwxNCBAQCBpbnQgZG9fY29udmVydChjb25zdCBj
-aGFyICpkZXZuYW1lLCBpbnQgZGF0YWNzdW0sIGludCBwYWNraW5nLCBpbnQgbm94YXR0cikKIAkJ
-ZnByaW50ZihzdGRlcnIsICJ1bmFibGUgdG8gc2V0dXAgdGhlIHJvb3QgdHJlZVxuIik7CiAJCWdv
-dG8gZmFpbDsKIAl9Ci0JcHJpbnRmKCJjcmVhdGluZyBidHJmcyBtZXRhZGF0YS5cbiIpOworCXBy
-aW50ZigiQ3JlYXRpbmcgYnRyZnMgbWV0YWRhdGEuLi4iKTsKIAlyZXQgPSBjb3B5X2lub2Rlcyhy
-b290LCBleHQyX2ZzLCBkYXRhY3N1bSwgcGFja2luZywgbm94YXR0cik7CiAJaWYgKHJldCkgewog
-CQlmcHJpbnRmKHN0ZGVyciwgImVycm9yIGR1cmluZyBjb3B5X2lub2RlcyAlZFxuIiwgcmV0KTsK
-IAkJZ290byBmYWlsOwogCX0KLQlwcmludGYoImNyZWF0aW5nIGV4dDJmcyBpbWFnZSBmaWxlLlxu
-Iik7CisJcHJpbnRmKCJDcmVhdGluZyBleHQyZnMgaW1hZ2UgZmlsZS4uLiIpOworCWZmbHVzaChz
-dGRvdXQpOwogCWV4dDJfcm9vdCA9IGxpbmtfc3Vidm9sKHJvb3QsICJleHQyX3NhdmVkIiwgRVhU
-Ml9JTUFHRV9TVUJWT0xfT0JKRUNUSUQpOwogCWlmICghZXh0Ml9yb290KSB7CiAJCWZwcmludGYo
-c3RkZXJyLCAidW5hYmxlIHRvIGNyZWF0ZSBzdWJ2b2xcbiIpOwpAQCAtMjM2NCw3ICsyNDUwLDkg
-QEAgaW50IGRvX2NvbnZlcnQoY29uc3QgY2hhciAqZGV2bmFtZSwgaW50IGRhdGFjc3VtLCBpbnQg
-cGFja2luZywgaW50IG5veGF0dHIpCiAJCWZwcmludGYoc3RkZXJyLCAiZXJyb3IgZHVyaW5nIGNy
-ZWF0ZV9leHQyX2ltYWdlICVkXG4iLCByZXQpOwogCQlnb3RvIGZhaWw7CiAJfQotCXByaW50Zigi
-Y2xlYW5pbmcgdXAgc3lzdGVtIGNodW5rLlxuIik7CisJcHJpbnRmKCIgW0RPTkVdXG4iKTsKKwlw
-cmludGYoIkNsZWFuaW5nIHVwIHN5c3RlbSBjaHVuay4uLiIpOworCWZmbHVzaChzdGRvdXQpOwog
-CXJldCA9IGNsZWFudXBfc3lzX2NodW5rKHJvb3QsIGV4dDJfcm9vdCk7CiAJaWYgKHJldCkgewog
-CQlmcHJpbnRmKHN0ZGVyciwgImVycm9yIGR1cmluZyBjbGVhbnVwX3N5c19jaHVuayAlZFxuIiwg
-cmV0KTsKQEAgLTI0MDAsMTEgKzI0ODgsMTIgQEAgaW50IGRvX2NvbnZlcnQoY29uc3QgY2hhciAq
-ZGV2bmFtZSwgaW50IGRhdGFjc3VtLCBpbnQgcGFja2luZywgaW50IG5veGF0dHIpCiAJfQogCXJl
-dCA9IGNsb3NlX2N0cmVlKHJvb3QpOwogCWNsb3NlKGZkKTsKKwlwcmludGYoIiBbRE9ORV1cbiIp
-OwogCi0JcHJpbnRmKCJjb252ZXJzaW9uIGNvbXBsZXRlLlxuIik7CisJcHJpbnRmKCJDb252ZXJz
-aW9uIGNvbXBsZXRlLlxuIik7CiAJcmV0dXJuIDA7CiBmYWlsOgotCWZwcmludGYoc3RkZXJyLCAi
-Y29udmVyc2lvbiBhYm9ydGVkLlxuIik7CisJZnByaW50ZihzdGRlcnIsICJDb252ZXJzaW9uIGFi
-b3J0ZWQuXG4iKTsKIAlyZXR1cm4gLTE7CiB9CiAK
---047d7b339bf1b0abe904cab7c409--
+                  if (i == 0)
+                          memcpy(fsid, buf.fsid, sizeof(fsid));
+                  else if (memcmp(fsid, buf.fsid, sizeof(fsid)))
+                          continue;
+
+                 [...]
+          }
+
+This bug could be triggered by the command "btrfs device delete", which 
+zeros the signature of the first superblock.
+
+The enclosed patch corrects the initialisation of the fsid variable; 
+moreover if the fsid are different between the superblocks (the original 
+one and its backups) the function fails because the device cannot be 
+trusted. Finally it is handled the special case when the magic fields is 
+zeroed in the *first* superblock. In this case the device is skipped.
+
+Please apply, thank.
+
+You can pull from
+	http://cassiopea.homelinux.net/git/btrfs-progs-unstable.git
+branch
+	btrfs_read_dev_super-bug
+	
+
+BR
+G.Baroncelli
+
+-- 
+Signed-off-by: Goffredo Baroncelli <kreijack@inwind.it>
+
+diff --git a/disk-io.c b/disk-io.c
+index b21a87f..82fc3b8 100644
+--- a/disk-io.c
++++ b/disk-io.c
+@@ -910,6 +910,7 @@ struct btrfs_root *open_ctree_fd(int fp, const char 
+*path, u64 sb_bytenr,
+  int btrfs_read_dev_super(int fd, struct btrfs_super_block *sb, u64 
+sb_bytenr)
+  {
+  	u8 fsid[BTRFS_FSID_SIZE];
++	int fsid_is_initialized = 0;
+  	struct btrfs_super_block buf;
+  	int i;
+  	int ret;
+@@ -936,15 +937,26 @@ int btrfs_read_dev_super(int fd, struct 
+btrfs_super_block *sb, u64 sb_bytenr)
+  		if (ret < sizeof(buf))
+  			break;
+
+-		if (btrfs_super_bytenr(&buf) != bytenr ||
+-		    strncmp((char *)(&buf.magic), BTRFS_MAGIC,
++		if (btrfs_super_bytenr(&buf) != bytenr )
++			continue;
++		/* if magic is NULL, the device was removed */
++		if (buf.magic == 0 && i==0)
++			return -1;
++		if (strncmp((char *)(&buf.magic), BTRFS_MAGIC,
+  			    sizeof(buf.magic)))
+  			continue;
+
+-		if (i == 0)
++		if (!fsid_is_initialized){
+  			memcpy(fsid, buf.fsid, sizeof(fsid));
+-		else if (memcmp(fsid, buf.fsid, sizeof(fsid)))
+-			continue;
++			fsid_is_initialized = 1;
++		} else if (memcmp(fsid, buf.fsid, sizeof(fsid))) {
++			/*
++			 * the superblocks (the original one and
++			 * its backups) contain data of different
++			 * filesystems -> the disk cannot be trusted
++			 */
++			return -1;
++		}
+
+  		if (btrfs_super_generation(&buf) > transid) {
+  			memcpy(sb, &buf, sizeof(*sb));
+
+--------------060008070009020701020804
+Content-Type: text/x-patch;
+ name="btrfs_read_dev_super-bug.diff"
+Content-Transfer-Encoding: 7bit
+Content-Disposition: inline;
+ filename="btrfs_read_dev_super-bug.diff"
+
+diff --git a/disk-io.c b/disk-io.c
+index b21a87f..82fc3b8 100644
+--- a/disk-io.c
++++ b/disk-io.c
+@@ -910,6 +910,7 @@ struct btrfs_root *open_ctree_fd(int fp, const char *path, u64 sb_bytenr,
+ int btrfs_read_dev_super(int fd, struct btrfs_super_block *sb, u64 sb_bytenr)
+ {
+ 	u8 fsid[BTRFS_FSID_SIZE];
++	int fsid_is_initialized = 0;
+ 	struct btrfs_super_block buf;
+ 	int i;
+ 	int ret;
+@@ -936,15 +937,26 @@ int btrfs_read_dev_super(int fd, struct btrfs_super_block *sb, u64 sb_bytenr)
+ 		if (ret < sizeof(buf))
+ 			break;
+ 
+-		if (btrfs_super_bytenr(&buf) != bytenr ||
+-		    strncmp((char *)(&buf.magic), BTRFS_MAGIC,
++		if (btrfs_super_bytenr(&buf) != bytenr )
++			continue;
++		/* if magic is NULL, the device was removed */
++		if (buf.magic == 0 && i==0)
++			return -1;
++		if (strncmp((char *)(&buf.magic), BTRFS_MAGIC,
+ 			    sizeof(buf.magic)))
+ 			continue;
+ 
+-		if (i == 0)
++		if (!fsid_is_initialized){
+ 			memcpy(fsid, buf.fsid, sizeof(fsid));
+-		else if (memcmp(fsid, buf.fsid, sizeof(fsid)))
+-			continue;
++			fsid_is_initialized = 1;
++		} else if (memcmp(fsid, buf.fsid, sizeof(fsid))) {
++			/* 
++			 * the superblocks (the original one and
++			 * its backups) contain data of different
++			 * filesystems -> the disk cannot be trusted
++			 */
++			return -1;
++		}
+ 
+ 		if (btrfs_super_generation(&buf) > transid) {
+ 			memcpy(sb, &buf, sizeof(*sb));
+
+--------------060008070009020701020804--

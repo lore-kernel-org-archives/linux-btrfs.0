@@ -1,108 +1,81 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mailout-de.gmx.net ([213.165.64.23]:46244 "HELO
-	mailout-de.gmx.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with SMTP id S1751630Ab2IKOUw (ORCPT
+Received: from acsinet15.oracle.com ([141.146.126.227]:42231 "EHLO
+	acsinet15.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1756483Ab2IKPBL (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 11 Sep 2012 10:20:52 -0400
-Message-ID: <504F48C1.3020603@gmx.net>
-Date: Tue, 11 Sep 2012 16:20:49 +0200
-From: Arne Jansen <sensille@gmx.net>
+	Tue, 11 Sep 2012 11:01:11 -0400
+Message-ID: <504F5225.6050404@oracle.com>
+Date: Tue, 11 Sep 2012 23:00:53 +0800
+From: Liu Bo <bo.li.liu@oracle.com>
 MIME-Version: 1.0
-To: Jan Engelhardt <jengelh@inai.de>
-CC: Linux Btrfs <linux-btrfs@vger.kernel.org>
-Subject: Re: Workaround for hardlink count problem?
-References: <20120908165620.GA17951@merlins.org> <201209101112.34839.Martin@lichtvoll.de> <CAG1y0scP+O9kTLiF5ZpxRwZTbOFQWctQDquCu4ATSwYyE3SZmQ@mail.gmail.com> (sfid-20120910_140743_108130_BF222C36) <201209110109.17604.Martin@lichtvoll.de> <alpine.LNX.2.01.1209110121050.22773@frira.zrqbmnf.qr>
-In-Reply-To: <alpine.LNX.2.01.1209110121050.22773@frira.zrqbmnf.qr>
-Content-Type: text/plain; charset=windows-1252
+To: dave@jikos.cz
+CC: linux-btrfs@vger.kernel.org
+Subject: Re: [PATCH v2 2/2] Btrfs: snapshot-aware defrag
+References: <1346893852-9815-1-git-send-email-bo.li.liu@oracle.com> <1346893852-9815-2-git-send-email-bo.li.liu@oracle.com> <20120910234911.GU17430@twin.jikos.cz>
+In-Reply-To: <20120910234911.GU17430@twin.jikos.cz>
+Content-Type: text/plain; charset=ISO-8859-1
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 11.09.2012 01:38, Jan Engelhardt wrote:
-> 
-> On Tuesday 2012-09-11 01:09, Martin Steigerwald wrote:
->>>> What about:
->>>>
->>>> - copy first backup version
->>>> - btrfs subvol create first next
->>>> - copy next backup version
->>>> - btrfs subvol create previous next
->>>
->>> Wouldn't "btrfs subvolume snapshot", plus "rsync --inplace" more
->>> useful here? That is. if the original hardlink is caused by multiple
->>> versions of backup of the same file.
+On 09/11/2012 07:49 AM, David Sterba wrote:
+> On Thu, Sep 06, 2012 at 09:10:52AM +0800, Liu Bo wrote:
+>> This comes from one of btrfs's project ideas,
+>> As we defragment files, we break any sharing from other snapshots.
+>> The balancing code will preserve the sharing, and defrag needs to grow this
+>> as well.
 >>
->> Sure, I meant subvol snapshot in above example. Thanks for noticing.
+>> Now we're able to fill the blank with this patch, in which we make full use of
+>> backref walking stuff.
 >>
->> But I do not use --inplace as it conflicts with some other rsync options I 
->> like to use:
+>> Here is the basic idea,
+>> o  set the writeback ranges started by defragment with flag EXTENT_DEFRAG
+>> o  at endio, after we finish updating fs tree, we use backref walking to find
+>>    all parents of the ranges and re-link them with the new COWed file layout by
+>>    adding corresponding backrefs.
+>>
+>> Original-Signed-off-by: Li Zefan <lizf@cn.fujitsu.com>
 > 
-> It is a tradeoff.
+> This is a non-standard tag, I think Li will not object against
+> Signed-off-by as his original submission covers most of this patch. And
+> more S-O-B lines is allowed and understood.
 > 
-> rsync "--inplace" leads to fragmentation which is detrimental for the
-> speed of reads (and read-write-cycles as used by rsync) of big files
-> (multi-GB) that are regularly updated, but it is probably even worse
-> for smaller-than-GB files because percent-wise, they are even more
-> fragmented.
-> 
-> $ filefrag */vm/intranet.dsk
-> snap-2012-08-15/vm/intranet.dsk: 23 extents found
-> snap-2012-08-16/vm/intranet.dsk: 23 extents found
-> snap-2012-08-17/vm/intranet.dsk: 4602 extents found
-> snap-2012-08-18/vm/intranet.dsk: 6221 extents found
-> snap-2012-08-19/vm/intranet.dsk: 6604 extents found
-> snap-2012-08-20/vm/intranet.dsk: 6694 extents found
-> snap-2012-08-21/vm/intranet.dsk: 6650 extents found
-> snap-2012-08-22/vm/intranet.dsk: 6760 extents found
-> snap-2012-08-23/vm/intranet.dsk: 7226 extents found
-> snap-2012-08-24/vm/intranet.dsk: 7159 extents found
-> snap-2012-08-25/vm/intranet.dsk: 7464 extents found
-> snap-2012-08-26/vm/intranet.dsk: 7746 extents found
-> snap-2012-08-27/vm/intranet.dsk: 8017 extents found
-> snap-2012-08-28/vm/intranet.dsk: 8145 extents found
-> snap-2012-08-29/vm/intranet.dsk: 8393 extents found
-> snap-2012-08-30/vm/intranet.dsk: 8474 extents found
-> snap-2012-08-31/vm/intranet.dsk: 9150 extents found
-> snap-2012-09-01/vm/intranet.dsk: 8900 extents found
-> snap-2012-09-02/vm/intranet.dsk: 9218 extents found
-> snap-2012-09-03/vm/intranet.dsk: 9575 extents found
-> snap-2012-09-04/vm/intranet.dsk: 9760 extents found
-> snap-2012-09-05/vm/intranet.dsk: 9839 extents found
-> snap-2012-09-06/vm/intranet.dsk: 9907 extents found
-> snap-2012-09-07/vm/intranet.dsk: 10006 extents found
-> snap-2012-09-08/vm/intranet.dsk: 10248 extents found
-> snap-2012-09-09/vm/intranet.dsk: 10488 extents found
-> 
-> Without --inplace (prerequisite to use -S) however, it will recreate
-> a file if it has been touched. While this easily avoids fragmentation
-> (since it won't share any data blocks with the old one), it can take
-> up more space with the big files.
-> 
->> -ax --acls --xattrs --sparse --hard-links --del --delete-excluded --
-> 
-> I knew short options would be helpful here: -axAXSH
-> (why don't they just become the standard... they are in like almost
-> every other rsync invocation I ever had)
-> 
->>       -S, --sparse
->>              Try to handle sparse files efficiently so they  take  up
->>              less space on the destination.  Conflicts with --inplace
->>              because it’s not possible to overwrite data in a  sparse
->>              fashion.
-> 
-> Oh and if anybody from the rsync camp reads it: with hole-punching
-> now supported in Linux, there is no reason not to support "-S" with
-> "--inplace", I think.
 
-I sent a patch for this quite some time ago:
+So I googled for a standard tag 'Original-patch-by' suggested by Tejun Heo, is it ok?
 
-https://bugzilla.samba.org/show_bug.cgi?id=7194
+>> Signed-off-by: Liu Bo <bo.li.liu@oracle.com>
+>> ---
+>> v2: rebase against the latest btrfs-repo
+>>
 
-Feel free to push it :)
+>> +		if (btrfs_file_extent_disk_bytenr(leaf, fi) == new->bytenr &&
+>> +		    btrfs_file_extent_type(leaf, fi) == BTRFS_FILE_EXTENT_REG &&
+>> +		    !btrfs_file_extent_compression(leaf, fi) &&
+>> +		    !btrfs_file_extent_encryption(leaf, fi) &&
+>> +		    !btrfs_file_extent_other_encoding(leaf, fi) &&
+>> +		    extent_len + found_key.offset == start) {
+> 
+> so no cow-aware defrag for compressed files?
+> 
 
--Arne
+hmm, it just disable merging adjacent compressed extents, and it may leave some space to improve.
 
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+> 
+> general notes:
+> * the error handling or reporting could be improved, I wouldn't mind the
+>   more WARN_ONs or BUG_ONs for testing purposes, but for a finalized
+>   versiont the practice of transaction abort or at least an attempt to
+>   minimize number of BUG_ONs should be done
+> * I didn't review the math over the extent lengths and starts
+> 
+> ohterwise ok, passed 1st round :)
+> 
+> david
+> 
+
+Will address the comments in a new version.
+
+I'd say a huge thank you for reviewing this :)
+
+thanks,
+liubo
 

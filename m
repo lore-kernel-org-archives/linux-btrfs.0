@@ -1,49 +1,28 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from acsinet15.oracle.com ([141.146.126.227]:46554 "EHLO
-	acsinet15.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1753311Ab2IKKVR (ORCPT
+Received: from mail-pb0-f46.google.com ([209.85.160.46]:56473 "EHLO
+	mail-pb0-f46.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1757783Ab2IKLMT (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 11 Sep 2012 06:21:17 -0400
-Date: Tue, 11 Sep 2012 13:21:02 +0300
-From: Dan Carpenter <dan.carpenter@oracle.com>
-To: Marios Titas <redneb8888@gmail.com>
-Cc: Arne Jansen <sensille@gmx.net>,
-        Andreas Philipp <philipp.andreas@gmail.com>,
-        linux-btrfs <linux-btrfs@vger.kernel.org>
-Subject: Re: Cannot create subvolume with quota enabled
-Message-ID: <20120911102102.GC19410@mwanda>
-References: <504A4CBF.7000605@gmail.com>
- <504A6F67.3060506@gmx.net>
- <CAAdM646auV2U43HnoYG=32RipWU8hzaKa5RBNia+krCYWY6muA@mail.gmail.com>
- <504ED7EA.903@gmx.net>
- <CAAdM645dJhB8O0uXkCmDNWTnZ93rRN4r5nBgqyO9iSrdxUH4fA@mail.gmail.com>
+	Tue, 11 Sep 2012 07:12:19 -0400
+Received: by pbbrr13 with SMTP id rr13so633410pbb.19
+        for <linux-btrfs@vger.kernel.org>; Tue, 11 Sep 2012 04:12:19 -0700 (PDT)
+Message-ID: <504F1C8F.10307@gmail.com>
+Date: Tue, 11 Sep 2012 19:12:15 +0800
+From: ching <lsching17@gmail.com>
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <CAAdM645dJhB8O0uXkCmDNWTnZ93rRN4r5nBgqyO9iSrdxUH4fA@mail.gmail.com>
+To: Li Zefan <lizefan@huawei.com>
+CC: Liu Bo <bo.li.liu@oracle.com>, linux-btrfs@vger.kernel.org
+Subject: Re: enquiry about defrag
+References: <504BDCE0.8020407@gmail.com> <CAMQ-g0d3iF-0RCGWd3RD_buXXa3j3DS2PwyUgXSAJ95=-F=c+Q@mail.gmail.com> <504C49F7.2070201@gmail.com> <CAG1y0sdFTKLX8N1VnSYzxZ-Xr4kDPtYGG6ixMrPwBWQPRVAGgg@mail.gmail.com> <504C861D.2020009@gmail.com> <504DDAD5.8010908@gmail.com> <504DE6B3.2010900@oracle.com> <504E75E1.5060304@gmail.com> <504E93BF.9080907@huawei.com>
+In-Reply-To: <504E93BF.9080907@huawei.com>
+Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Tue, Sep 11, 2012 at 04:35:26AM -0400, Marios Titas wrote:
-> On Tue, Sep 11, 2012 at 2:19 AM, Arne Jansen <sensille@gmx.net> wrote:
-> >
-> > instead of applying my patch, could you please just revert
-> >
-> > commit 5986802c2fcc754040bb7ed95f30bb16c4a843b7
-> > Author: Dan Carpenter <dan.carpenter@oracle.com>
-> > Date:   Mon Jul 30 02:16:10 2012 -0600
-> >
-> >     Btrfs: fix some error codes in btrfs_qgroup_inherit()
-> >
-> > It introduces both faulty return codes.
-> 
-> Yes, reverting 5986802 and completely ignoring your earlier patch
-> works.
+On 09/11/2012 09:28 AM, Li Zefan wrote:
+>> may i ask a stupid question, if i remove my "compress-force=lzo" option, will compression disabled for new written data?
+> the answer is yes. :)
+>
+>
 
-Sorry for that.
-
-Arne, you reviewed the patch when I sent it originally right?  You
-were in the To: field and your btrfs_qgroup_inherit() code had just
-hit linux-next the day before.
-
-regards,
-dan carpenter
+The problem seems fixed. The number of extent decrease to 14055 after defrag with compression off.

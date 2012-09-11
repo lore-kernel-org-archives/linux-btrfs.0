@@ -1,104 +1,83 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx1.fusionio.com ([66.114.96.30]:40526 "EHLO mx1.fusionio.com"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1759174Ab2IKTgq (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 11 Sep 2012 15:36:46 -0400
-Received: from mail1.int.fusionio.com (mail1.int.fusionio.com [10.101.1.21]) by mx1.fusionio.com with ESMTP id s4UYgCiJoGZ2Fnxb (version=TLSv1 cipher=AES128-SHA bits=128 verify=NO) for <linux-btrfs@vger.kernel.org>; Tue, 11 Sep 2012 13:36:45 -0600 (MDT)
-From: Josef Bacik <jbacik@fusionio.com>
-To: <linux-btrfs@vger.kernel.org>
-Subject: [PATCH] Btrfs: create a pinned em when writing to a prealloc range in DIO
-Date: Tue, 11 Sep 2012 15:42:11 -0400
-Message-ID: <1347392531-10863-1-git-send-email-jbacik@fusionio.com>
-MIME-Version: 1.0
-Content-Type: text/plain
+Received: from mail-pb0-f46.google.com ([209.85.160.46]:35324 "EHLO
+	mail-pb0-f46.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1751245Ab2IKUXY (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>);
+	Tue, 11 Sep 2012 16:23:24 -0400
+Received: by pbbrr13 with SMTP id rr13so1278698pbb.19
+        for <linux-btrfs@vger.kernel.org>; Tue, 11 Sep 2012 13:23:23 -0700 (PDT)
+From: Kent Overstreet <koverstreet@google.com>
+To: linux-btrfs@vger.kernel.org
+Cc: Kent Overstreet <koverstreet@google.com>,
+        Chris Mason <chris.mason@oracle.com>,
+        Stefan Behrens <sbehrens@giantdisaster.de>
+Subject: [PATCH] btrfs: Kill some bi_idx references
+Date: Tue, 11 Sep 2012 13:23:05 -0700
+Message-Id: <1347394985-13396-1-git-send-email-koverstreet@google.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Wade Cline reported a problem where he was getting garbage and warnings when
-writing to a preallocated range via O_DIRECT.  This is because we weren't
-creating our normal pinned extent_map for the range we were writing to,
-which was causing all sorts of issues.  This patch fixes the problem and
-makes his testcase much happier.  Thanks,
+For immutable bio vecs, I've been auditing and removing bi_idx
+references. These were harmless, but removing them will make auditing
+easier.
 
-Reported-by: Wade Cline <clinew@linux.vnet.ibm.com>
-Signed-off-by: Josef Bacik <jbacik@fusionio.com>
+scrub_bio_end_io_worker() was open coding a bio_reset() - but this
+doesn't appear to have been needed for anything as right after it does a
+bio_put(), and perusing the code it doesn't appear anything else was
+holding a reference to the bio.
+
+The other use end_bio_extent_readpage() was just for a pr_debug() -
+changed it to something that might be a bit more useful.
+
+Signed-off-by: Kent Overstreet <koverstreet@google.com>
+CC: Chris Mason <chris.mason@oracle.com>
+CC: Stefan Behrens <sbehrens@giantdisaster.de>
 ---
- fs/btrfs/inode.c |   55 ++++++++++++++++++++++++++++++++++++++++++++++++++++++
- 1 files changed, 55 insertions(+), 0 deletions(-)
+ fs/btrfs/extent_io.c |  4 ++--
+ fs/btrfs/scrub.c     | 15 ---------------
+ 2 files changed, 2 insertions(+), 17 deletions(-)
 
-diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
-index e7107bd..ccc3310 100644
---- a/fs/btrfs/inode.c
-+++ b/fs/btrfs/inode.c
-@@ -6513,6 +6513,48 @@ static int lock_extent_direct(struct inode *inode, u64 lockstart, u64 lockend,
- 	return ret;
- }
+diff --git a/fs/btrfs/extent_io.c b/fs/btrfs/extent_io.c
+index 4c87847..8d7fb96 100644
+--- a/fs/btrfs/extent_io.c
++++ b/fs/btrfs/extent_io.c
+@@ -2298,8 +2298,8 @@ static void end_bio_extent_readpage(struct bio *bio, int err)
+ 		struct extent_state *cached = NULL;
+ 		struct extent_state *state;
  
-+static struct extent_map *create_pinned_em(struct inode *inode, u64 start,
-+					   u64 len, u64 orig_start,
-+					   u64 block_start, u64 block_len,
-+					   int type)
-+{
-+	struct extent_map_tree *em_tree;
-+	struct extent_map *em;
-+	struct btrfs_root *root = BTRFS_I(inode)->root;
-+	int ret;
-+
-+	em_tree = &BTRFS_I(inode)->extent_tree;
-+	em = alloc_extent_map();
-+	if (!em)
-+		return ERR_PTR(-ENOMEM);
-+
-+	em->start = start;
-+	em->orig_start = orig_start;
-+	em->len = len;
-+	em->block_len = block_len;
-+	em->block_start = block_start;
-+	em->bdev = root->fs_info->fs_devices->latest_bdev;
-+	set_bit(EXTENT_FLAG_PINNED, &em->flags);
-+	if (type == BTRFS_ORDERED_PREALLOC)
-+		set_bit(EXTENT_FLAG_PREALLOC, &em->flags);
-+
-+	do {
-+		btrfs_drop_extent_cache(inode, em->start,
-+				em->start + em->len - 1, 0);
-+		write_lock(&em_tree->lock);
-+		ret = add_extent_mapping(em_tree, em);
-+		write_unlock(&em_tree->lock);
-+	} while (ret == -EEXIST);
-+
-+	if (ret) {
-+		free_extent_map(em);
-+		return ERR_PTR(ret);
-+	}
-+
-+	return em;
-+}
-+
-+
- static int btrfs_get_blocks_direct(struct inode *inode, sector_t iblock,
- 				   struct buffer_head *bh_result, int create)
- {
-@@ -6627,6 +6669,19 @@ static int btrfs_get_blocks_direct(struct inode *inode, sector_t iblock,
- 			goto must_cow;
+-		pr_debug("end_bio_extent_readpage: bi_vcnt=%d, idx=%d, err=%d, "
+-			 "mirror=%ld\n", bio->bi_vcnt, bio->bi_idx, err,
++		pr_debug("end_bio_extent_readpage: bi_sector=%llu, err=%d, "
++			 "mirror=%ld\n", (u64)bio->bi_sector, err,
+ 			 (long int)bio->bi_bdev);
+ 		tree = &BTRFS_I(page->mapping->host)->io_tree;
  
- 		if (can_nocow_odirect(trans, inode, start, len) == 1) {
-+			u64 orig_start = em->start;
-+
-+			if (type == BTRFS_ORDERED_PREALLOC) {
-+				free_extent_map(em);
-+				em = create_pinned_em(inode, start, len,
-+						       orig_start,
-+						       block_start, len, type);
-+				if (IS_ERR(em)) {
-+					btrfs_end_transaction(trans, root);
-+					goto unlock_err;
-+				}
-+			}
-+
- 			ret = btrfs_add_ordered_extent_dio(inode, start,
- 					   block_start, len, len, type);
- 			btrfs_end_transaction(trans, root);
+diff --git a/fs/btrfs/scrub.c b/fs/btrfs/scrub.c
+index b223620..2683ea7 100644
+--- a/fs/btrfs/scrub.c
++++ b/fs/btrfs/scrub.c
+@@ -1666,21 +1666,6 @@ static void scrub_bio_end_io_worker(struct btrfs_work *work)
+ 		scrub_block_put(sblock);
+ 	}
+ 
+-	if (sbio->err) {
+-		/* what is this good for??? */
+-		sbio->bio->bi_flags &= ~(BIO_POOL_MASK - 1);
+-		sbio->bio->bi_flags |= 1 << BIO_UPTODATE;
+-		sbio->bio->bi_phys_segments = 0;
+-		sbio->bio->bi_idx = 0;
+-
+-		for (i = 0; i < sbio->page_count; i++) {
+-			struct bio_vec *bi;
+-			bi = &sbio->bio->bi_io_vec[i];
+-			bi->bv_offset = 0;
+-			bi->bv_len = PAGE_SIZE;
+-		}
+-	}
+-
+ 	bio_put(sbio->bio);
+ 	sbio->bio = NULL;
+ 	spin_lock(&sdev->list_lock);
 -- 
-1.7.7.6
+1.7.12
 

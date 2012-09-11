@@ -1,81 +1,66 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from acsinet15.oracle.com ([141.146.126.227]:42231 "EHLO
-	acsinet15.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1756483Ab2IKPBL (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 11 Sep 2012 11:01:11 -0400
-Message-ID: <504F5225.6050404@oracle.com>
-Date: Tue, 11 Sep 2012 23:00:53 +0800
-From: Liu Bo <bo.li.liu@oracle.com>
-MIME-Version: 1.0
-To: dave@jikos.cz
-CC: linux-btrfs@vger.kernel.org
-Subject: Re: [PATCH v2 2/2] Btrfs: snapshot-aware defrag
-References: <1346893852-9815-1-git-send-email-bo.li.liu@oracle.com> <1346893852-9815-2-git-send-email-bo.li.liu@oracle.com> <20120910234911.GU17430@twin.jikos.cz>
-In-Reply-To: <20120910234911.GU17430@twin.jikos.cz>
-Content-Type: text/plain; charset=ISO-8859-1
+Received: from plane.gmane.org ([80.91.229.3]:51146 "EHLO plane.gmane.org"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1758378Ab2IKRZD (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Tue, 11 Sep 2012 13:25:03 -0400
+Received: from list by plane.gmane.org with local (Exim 4.69)
+	(envelope-from <gcfb-btrfs-devel-moved1@m.gmane.org>)
+	id 1TBUCu-0003Rr-3t
+	for linux-btrfs@vger.kernel.org; Tue, 11 Sep 2012 19:25:04 +0200
+Received: from wpis-64-140-209-221.worldpath.net ([64.140.209.221])
+        by main.gmane.org with esmtp (Gmexim 0.1 (Debian))
+        id 1AlnuQ-0007hv-00
+        for <linux-btrfs@vger.kernel.org>; Tue, 11 Sep 2012 19:25:04 +0200
+Received: from caleb by wpis-64-140-209-221.worldpath.net with local (Gmexim 0.1 (Debian))
+        id 1AlnuQ-0007hv-00
+        for <linux-btrfs@vger.kernel.org>; Tue, 11 Sep 2012 19:25:04 +0200
+To: linux-btrfs@vger.kernel.org
+From: "Caleb O'Connell" <caleb@privacyassociation.org>
+Subject: advice for testing fileserver
+Date: Tue, 11 Sep 2012 13:19:47 -0400
+Message-ID: <k2nrrj$voq$1@ger.gmane.org>
+Reply-To: caleb@privacyassociation.org
+Mime-Version: 1.0
+Content-Type: text/plain; charset="ISO-8859-1"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 09/11/2012 07:49 AM, David Sterba wrote:
-> On Thu, Sep 06, 2012 at 09:10:52AM +0800, Liu Bo wrote:
->> This comes from one of btrfs's project ideas,
->> As we defragment files, we break any sharing from other snapshots.
->> The balancing code will preserve the sharing, and defrag needs to grow this
->> as well.
->>
->> Now we're able to fill the blank with this patch, in which we make full use of
->> backref walking stuff.
->>
->> Here is the basic idea,
->> o  set the writeback ranges started by defragment with flag EXTENT_DEFRAG
->> o  at endio, after we finish updating fs tree, we use backref walking to find
->>    all parents of the ranges and re-link them with the new COWed file layout by
->>    adding corresponding backrefs.
->>
->> Original-Signed-off-by: Li Zefan <lizf@cn.fujitsu.com>
-> 
-> This is a non-standard tag, I think Li will not object against
-> Signed-off-by as his original submission covers most of this patch. And
-> more S-O-B lines is allowed and understood.
-> 
+I'm building a test file server using samba 3.6 to see if BTRFS is a good 
+fit.  I want to stress that this is a test setup for now.
 
-So I googled for a standard tag 'Original-patch-by' suggested by Tejun Heo, is it ok?
+I'm trying to get an idea of the sub-volume concept and how it relates to 
+the LVM concept.  Trying to see what might be the best practice.
 
->> Signed-off-by: Liu Bo <bo.li.liu@oracle.com>
->> ---
->> v2: rebase against the latest btrfs-repo
->>
+I was going to create one of two configs.
+-----------------------------------------------------------------------------
+##
+option 1
+sda1 -> /boot using ext4
+sda2 is LV sysvg, this will include:
+  lvroot -> / using ext4
+  lvvar -> /var using ext4
+  lvopt -> /opt using ext4
+  lvhome -> /home using btrfs
+  lvsrv -> /srv using btrfs
 
->> +		if (btrfs_file_extent_disk_bytenr(leaf, fi) == new->bytenr &&
->> +		    btrfs_file_extent_type(leaf, fi) == BTRFS_FILE_EXTENT_REG &&
->> +		    !btrfs_file_extent_compression(leaf, fi) &&
->> +		    !btrfs_file_extent_encryption(leaf, fi) &&
->> +		    !btrfs_file_extent_other_encoding(leaf, fi) &&
->> +		    extent_len + found_key.offset == start) {
-> 
-> so no cow-aware defrag for compressed files?
-> 
+I could create sub-volumes in srv for each samba share.
 
-hmm, it just disable merging adjacent compressed extents, and it may leave some space to improve.
+##
+option 2
+sda1 -> /boot using ext4
+sda2 is LV sysvg, this will include:
+  lvroot -> / using ext4
+  lvvar -> /var using ext4
+  lvopt -> /opt using ext4
+sda3 -> /home using btrfs
+sda4 -> /srv using btrfs
 
-> 
-> general notes:
-> * the error handling or reporting could be improved, I wouldn't mind the
->   more WARN_ONs or BUG_ONs for testing purposes, but for a finalized
->   versiont the practice of transaction abort or at least an attempt to
->   minimize number of BUG_ONs should be done
-> * I didn't review the math over the extent lengths and starts
-> 
-> ohterwise ok, passed 1st round :)
-> 
-> david
-> 
+both /home and /srv can create their own sub-volumes for each homedir and 
+each share.
+____________________________________________________________________________
+Does BTRFS work fine within a LV?  Is there an advantage to keep BTRDS out 
+or in a LV?  Does all this make no sense? and I really should just create 
+one big BTRFS partition and only use sub-volumes?
 
-Will address the comments in a new version.
 
-I'd say a huge thank you for reviewing this :)
-
-thanks,
-liubo
 

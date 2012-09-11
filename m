@@ -1,23 +1,42 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from szxga02-in.huawei.com ([119.145.14.65]:54900 "EHLO
-	szxga02-in.huawei.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1754374Ab2IKBaG (ORCPT
+Received: from mail-lb0-f174.google.com ([209.85.217.174]:52188 "EHLO
+	mail-lb0-f174.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1751073Ab2IKFYi (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 10 Sep 2012 21:30:06 -0400
-Message-ID: <504E93BF.9080907@huawei.com>
-Date: Tue, 11 Sep 2012 09:28:31 +0800
-From: Li Zefan <lizefan@huawei.com>
+	Tue, 11 Sep 2012 01:24:38 -0400
+Received: by lbbgj3 with SMTP id gj3so115788lbb.19
+        for <linux-btrfs@vger.kernel.org>; Mon, 10 Sep 2012 22:24:37 -0700 (PDT)
 MIME-Version: 1.0
-To: ching <lsching17@gmail.com>
-CC: Liu Bo <bo.li.liu@oracle.com>, <linux-btrfs@vger.kernel.org>
-Subject: Re: enquiry about defrag
-References: <504BDCE0.8020407@gmail.com> <CAMQ-g0d3iF-0RCGWd3RD_buXXa3j3DS2PwyUgXSAJ95=-F=c+Q@mail.gmail.com> <504C49F7.2070201@gmail.com> <CAG1y0sdFTKLX8N1VnSYzxZ-Xr4kDPtYGG6ixMrPwBWQPRVAGgg@mail.gmail.com> <504C861D.2020009@gmail.com> <504DDAD5.8010908@gmail.com> <504DE6B3.2010900@oracle.com> <504E75E1.5060304@gmail.com>
-In-Reply-To: <504E75E1.5060304@gmail.com>
-Content-Type: text/plain; charset="UTF-8"
+In-Reply-To: <504A6F67.3060506@gmx.net>
+References: <504A4CBF.7000605@gmail.com>
+	<504A6F67.3060506@gmx.net>
+Date: Tue, 11 Sep 2012 01:24:37 -0400
+Message-ID: <CAAdM646auV2U43HnoYG=32RipWU8hzaKa5RBNia+krCYWY6muA@mail.gmail.com>
+Subject: Re: Cannot create subvolume with quota enabled
+From: Marios Titas <redneb8888@gmail.com>
+To: Arne Jansen <sensille@gmx.net>
+Cc: Andreas Philipp <philipp.andreas@gmail.com>,
+        linux-btrfs <linux-btrfs@vger.kernel.org>
+Content-Type: text/plain; charset=ISO-8859-1
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-> may i ask a stupid question, if i remove my "compress-force=lzo" option, will compression disabled for new written data?
+On Fri, Sep 7, 2012 at 6:04 PM, Arne Jansen <sensille@gmx.net> wrote:
+> Hi Andreas,
+>
+>
+> Thanks for giving quota a try. I sent a fix separately with
+> the subject
+>
+> [PATCH] Btrfs: btrfs_qgroup_inherit wrongly returns an error
+>
+> Could you please see if it fixes the problem?
 
-the answer is yes. :)
+Even with this patch I still have a similar problem: When I try to
+create a snapshot of an old subvolume that was created before I
+enabled quotas, it fails. For new subvolumes it works just fine.
+Here's an example ouput:
 
+virtual ~ # btrfs sub snap /mnt/butter/old /mnt/butter/old-snap
+Create a snapshot of '/mnt/butter/old' in '/mnt/butter/old-snap'
+ERROR: cannot snapshot '/mnt/butter/old' - Invalid argument

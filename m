@@ -1,59 +1,35 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([222.73.24.84]:19683 "EHLO song.cn.fujitsu.com"
-	rhost-flags-OK-FAIL-OK-OK) by vger.kernel.org with ESMTP
-	id S1752955Ab2IMDgE (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 12 Sep 2012 23:36:04 -0400
-Message-ID: <5051549B.7070206@cn.fujitsu.com>
-Date: Thu, 13 Sep 2012 11:35:55 +0800
-From: Miao Xie <miaox@cn.fujitsu.com>
-Reply-To: miaox@cn.fujitsu.com
+Received: from mail-ob0-f174.google.com ([209.85.214.174]:44246 "EHLO
+	mail-ob0-f174.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1754910Ab2IMGCE (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>);
+	Thu, 13 Sep 2012 02:02:04 -0400
+Received: by obbuo13 with SMTP id uo13so3963126obb.19
+        for <linux-btrfs@vger.kernel.org>; Wed, 12 Sep 2012 23:02:04 -0700 (PDT)
 MIME-Version: 1.0
-To: Josef Bacik <jbacik@fusionio.com>
-CC: linux-btrfs@vger.kernel.org
-Subject: Re: [PATCH] Btrfs: delay block group item insertion
-References: <1347473053-3158-1-git-send-email-jbacik@fusionio.com>
-In-Reply-To: <1347473053-3158-1-git-send-email-jbacik@fusionio.com>
+Date: Thu, 13 Sep 2012 14:02:04 +0800
+Message-ID: <CACHiF8Bg+od7tyq_5QeXAN1uo+Gs+D_Mnof00RPJZRoP2RC6ZA@mail.gmail.com>
+Subject: ssd alignment and btrfs sector size
+From: ching lu <lsching17@gmail.com>
+To: linux-btrfs@vger.kernel.org
 Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 	wed, 12 Sep 2012 14:04:13 -0400, Josef Bacik wrote:
-> So we have lots of places where we try to preallocate chunks in order to
-> make sure we have enough space as we make our allocations.  This has
-> historically meant that we're constantly tweaking when we should allocate a
-> new chunk, and historically we have gotten this horribly wrong so we way
-> over allocate either metadata or data.  To try and keep this from happening
-> we are going to make it so that the block group item insertion is done out
-> of band at the end of a transaction.  This will allow us to create chunks
-> even if we are trying to make an allocation for the extent tree.  With this
-> patch my enospc tests run faster (didn't expect this) and more efficiently
-> use the disk space (this is what I wanted).  Thanks,
+I am trying to test btrfs on my ssd, i am studying about btrfs and alignment.
 
-This patch also fixes a deadlock problem that happened when we add two or
-more small devices(< 4G) into a seed fs(the profile of metadata is RAID1),
-and a enospc problem when we add a small device (< 256M) into a big empty
-seed fs(> 60G).
+I have read this old mail:
+http://www.mail-archive.com/linux-btrfs@vger.kernel.org/msg16177.html
 
-(My fix patch which is similar to this one is on the way, I'm a bit slow :) )
+According to the thread, 3 parameters should be tuned
 
-> @@ -1400,6 +1407,9 @@ int btrfs_commit_transaction(struct btrfs_trans_handle *trans,
->  	 */
->  	cur_trans->delayed_refs.flushing = 1;
->  
-> +	if (!list_empty(&trans->new_bgs))
-> +		btrfs_create_pending_block_groups(trans, root);
-> +
->  	ret = btrfs_run_delayed_refs(trans, root, 0);
->  	if (ret)
->  		goto cleanup_transaction;
+1. leafsize
+2. nodesize
+3. sectorsize
 
-I think we can not make sure we won't allocate new chunks when we
-create the pending snapshots and write out the space cache and inode
-cache, so we should check ->new_bgs and call btrfs_create_pending_block_groups()
-when committing the cowonly tree roots.
+The first two parameters are easy to understand, but how does
+"sectorsize" affect the alignment?
 
-And beside that, We'd better add a BUG_ON() after we update the root tree to
-make sure there is no pending block group item left in the list.
-
-Thanks
-Miao
+If the erase block size of my SSD is 16k, and i set
+leafsize=nodesize=16k, leave the sectorsize=4k (default), will it
+causes misalignment?

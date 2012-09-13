@@ -1,25 +1,25 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.fusionio.com ([66.114.96.31]:41712 "EHLO mx2.fusionio.com"
+Received: from mx2.fusionio.com ([66.114.96.31]:40816 "EHLO mx2.fusionio.com"
 	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1755032Ab2IMMfb (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 13 Sep 2012 08:35:31 -0400
-Date: Thu, 13 Sep 2012 08:35:27 -0400
+	id S1751280Ab2IMMhX (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Thu, 13 Sep 2012 08:37:23 -0400
+Date: Thu, 13 Sep 2012 08:37:20 -0400
 From: Josef Bacik <jbacik@fusionio.com>
-To: Miao Xie <miaox@cn.fujitsu.com>
+To: Liu Bo <bo.li.liu@oracle.com>
 CC: Josef Bacik <JBacik@fusionio.com>,
         "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
 Subject: Re: [PATCH] Btrfs: delay block group item insertion
-Message-ID: <20120913123527.GA12994@localhost.localdomain>
+Message-ID: <20120913123720.GB12994@localhost.localdomain>
 References: <1347473053-3158-1-git-send-email-jbacik@fusionio.com>
- <5051549B.7070206@cn.fujitsu.com>
+ <20120913013205.GA12929@liubo>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
-In-Reply-To: <5051549B.7070206@cn.fujitsu.com>
+In-Reply-To: <20120913013205.GA12929@liubo>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Wed, Sep 12, 2012 at 09:35:55PM -0600, Miao Xie wrote:
-> On 	wed, 12 Sep 2012 14:04:13 -0400, Josef Bacik wrote:
+On Wed, Sep 12, 2012 at 07:32:05PM -0600, Liu Bo wrote:
+> On Wed, Sep 12, 2012 at 02:04:13PM -0400, Josef Bacik wrote:
 > > So we have lots of places where we try to preallocate chunks in order to
 > > make sure we have enough space as we make our allocations.  This has
 > > historically meant that we're constantly tweaking when we should allocate a
@@ -30,36 +30,33 @@ On Wed, Sep 12, 2012 at 09:35:55PM -0600, Miao Xie wrote:
 > > even if we are trying to make an allocation for the extent tree.  With this
 > > patch my enospc tests run faster (didn't expect this) and more efficiently
 > > use the disk space (this is what I wanted).  Thanks,
+> >
 > 
-> This patch also fixes a deadlock problem that happened when we add two or
-> more small devices(< 4G) into a seed fs(the profile of metadata is RAID1),
-> and a enospc problem when we add a small device (< 256M) into a big empty
-> seed fs(> 60G).
+> I'm afraid this does not perform good enough in normal case, here is the
+> compilebench test:
 > 
-> (My fix patch which is similar to this one is on the way, I'm a bit slow :) )
+> # cat btrfs-makej/result-4k
+> intial create total runs 30 avg 51.99 MB/s (user 0.50s sys 0.85s)
+> compile total runs 30 avg 98.45 MB/s (user 0.12s sys 0.38s)
+> read compiled tree total runs 3 avg 19.89 MB/s (user 1.55s sys 3.07s)
+> delete compiled tree total runs 30 avg 12.15 seconds (user 0.66s sys 2.15s)
 > 
-> > @@ -1400,6 +1407,9 @@ int btrfs_commit_transaction(struct btrfs_trans_handle *trans,
-> >  	 */
-> >  	cur_trans->delayed_refs.flushing = 1;
-> >  
-> > +	if (!list_empty(&trans->new_bgs))
-> > +		btrfs_create_pending_block_groups(trans, root);
-> > +
-> >  	ret = btrfs_run_delayed_refs(trans, root, 0);
-> >  	if (ret)
-> >  		goto cleanup_transaction;
+> # cat btrfs-josef-makej/result
+> intial create total runs 30 avg 49.79 MB/s (user 0.52s sys 0.87s)
+> compile total runs 30 avg 70.01 MB/s (user 0.14s sys 0.44s)
+> read compiled tree total runs 3 avg 18.46 MB/s (user 1.57s sys 3.16s)
+> delete compiled tree total runs 30 avg 13.88 seconds (user 0.67s sys 2.18s)
 > 
-> I think we can not make sure we won't allocate new chunks when we
-> create the pending snapshots and write out the space cache and inode
-> cache, so we should check ->new_bgs and call btrfs_create_pending_block_groups()
-> when committing the cowonly tree roots.
+> And the blktrace shows that it makes us do more seeks in create and
+> compile section.
 > 
-> And beside that, We'd better add a BUG_ON() after we update the root tree to
-> make sure there is no pending block group item left in the list.
+> The patch overall looks clean and good though.
 > 
 
-We're also running this in run_delayed_refs when we want to run all delayed refs
-so we should be pretty safe, but a BUG_ON() would definitely make sure we are.
+Yeah mostly what I'm looking for is more efficient metadata chunk allocation,
+and I expected it to have a performance impact somwhere (I just never hit one in
+my ENOSPC tests).  This drop is within reason for me and I'm willing to eat a
+slight performance drop to not allocate an entire disk with metadata ;).
 Thanks,
 
 Josef

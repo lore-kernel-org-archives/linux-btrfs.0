@@ -1,64 +1,65 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([222.73.24.84]:63237 "EHLO song.cn.fujitsu.com"
-	rhost-flags-OK-FAIL-OK-OK) by vger.kernel.org with ESMTP
-	id S1757526Ab2IMLAk (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 13 Sep 2012 07:00:40 -0400
-Received: from fnstmail02.fnst.cn.fujitsu.com (tang.cn.fujitsu.com [127.0.0.1])
-	by tang.cn.fujitsu.com (8.14.3/8.13.1) with ESMTP id q8DArrfF031096
-	for <linux-btrfs@vger.kernel.org>; Thu, 13 Sep 2012 18:53:53 +0800
-Message-ID: <5051BB3B.5020201@cn.fujitsu.com>
-Date: Thu, 13 Sep 2012 18:53:47 +0800
-From: Miao Xie <miaox@cn.fujitsu.com>
-Reply-To: miaox@cn.fujitsu.com
+Received: from mx2.fusionio.com ([66.114.96.31]:41712 "EHLO mx2.fusionio.com"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1755032Ab2IMMfb (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Thu, 13 Sep 2012 08:35:31 -0400
+Date: Thu, 13 Sep 2012 08:35:27 -0400
+From: Josef Bacik <jbacik@fusionio.com>
+To: Miao Xie <miaox@cn.fujitsu.com>
+CC: Josef Bacik <JBacik@fusionio.com>,
+        "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
+Subject: Re: [PATCH] Btrfs: delay block group item insertion
+Message-ID: <20120913123527.GA12994@localhost.localdomain>
+References: <1347473053-3158-1-git-send-email-jbacik@fusionio.com>
+ <5051549B.7070206@cn.fujitsu.com>
 MIME-Version: 1.0
-To: Linux Btrfs <linux-btrfs@vger.kernel.org>
-Subject: [PATCH 2/2] Revert "Btrfs: do not do filemap_write_and_wait_range
- in fsync"
-Content-Type: text/plain; charset=UTF-8
+Content-Type: text/plain; charset="us-ascii"
+In-Reply-To: <5051549B.7070206@cn.fujitsu.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-This reverts commit 0885ef5b5601e9b007c383e77c172769b1f214fd
+On Wed, Sep 12, 2012 at 09:35:55PM -0600, Miao Xie wrote:
+> On 	wed, 12 Sep 2012 14:04:13 -0400, Josef Bacik wrote:
+> > So we have lots of places where we try to preallocate chunks in order to
+> > make sure we have enough space as we make our allocations.  This has
+> > historically meant that we're constantly tweaking when we should allocate a
+> > new chunk, and historically we have gotten this horribly wrong so we way
+> > over allocate either metadata or data.  To try and keep this from happening
+> > we are going to make it so that the block group item insertion is done out
+> > of band at the end of a transaction.  This will allow us to create chunks
+> > even if we are trying to make an allocation for the extent tree.  With this
+> > patch my enospc tests run faster (didn't expect this) and more efficiently
+> > use the disk space (this is what I wanted).  Thanks,
+> 
+> This patch also fixes a deadlock problem that happened when we add two or
+> more small devices(< 4G) into a seed fs(the profile of metadata is RAID1),
+> and a enospc problem when we add a small device (< 256M) into a big empty
+> seed fs(> 60G).
+> 
+> (My fix patch which is similar to this one is on the way, I'm a bit slow :) )
+> 
+> > @@ -1400,6 +1407,9 @@ int btrfs_commit_transaction(struct btrfs_trans_handle *trans,
+> >  	 */
+> >  	cur_trans->delayed_refs.flushing = 1;
+> >  
+> > +	if (!list_empty(&trans->new_bgs))
+> > +		btrfs_create_pending_block_groups(trans, root);
+> > +
+> >  	ret = btrfs_run_delayed_refs(trans, root, 0);
+> >  	if (ret)
+> >  		goto cleanup_transaction;
+> 
+> I think we can not make sure we won't allocate new chunks when we
+> create the pending snapshots and write out the space cache and inode
+> cache, so we should check ->new_bgs and call btrfs_create_pending_block_groups()
+> when committing the cowonly tree roots.
+> 
+> And beside that, We'd better add a BUG_ON() after we update the root tree to
+> make sure there is no pending block group item left in the list.
+> 
 
-After applying the above patch, the performance slowed down because the dirty
-page flush can only be done by one task, so revert it.
+We're also running this in run_delayed_refs when we want to run all delayed refs
+so we should be pretty safe, but a BUG_ON() would definitely make sure we are.
+Thanks,
 
-The following is the test result of sysbench:
-	Before		After
-	24MB/s		39MB/s
-
-Signed-off-by: Miao Xie <miaox@cn.fujitsu.com>
----
- fs/btrfs/file.c |   14 +++++++++++---
- 1 files changed, 11 insertions(+), 3 deletions(-)
-
-diff --git a/fs/btrfs/file.c b/fs/btrfs/file.c
-index 1a5f76b..1ea5c39 100644
---- a/fs/btrfs/file.c
-+++ b/fs/btrfs/file.c
-@@ -1513,12 +1513,20 @@ int btrfs_sync_file(struct file *file, loff_t start, loff_t end, int datasync)
- 
- 	trace_btrfs_sync_file(file, datasync);
- 
-+	/*
-+	 * We write the dirty pages in the range and wait until they complete
-+	 * out of the ->i_mutex. If so, we can flush the dirty pages by
-+	 * multi-task, and make the performance up.
-+	 */
-+	ret = filemap_write_and_wait_range(inode->i_mapping, start, end);
-+	if (ret)
-+		return ret;
-+
- 	mutex_lock(&inode->i_mutex);
- 
- 	/*
--	 * we wait first, since the writeback may change the inode, also wait
--	 * ordered range does a filemape_write_and_wait_range which is why we
--	 * don't do it above like other file systems.
-+	 * We flush the dirty pages again to avoid some dirty pages in the
-+	 * range being left.
- 	 */
- 	atomic_inc(&root->log_batch);
- 	btrfs_wait_ordered_range(inode, start, end);
--- 
-1.7.6.5
+Josef

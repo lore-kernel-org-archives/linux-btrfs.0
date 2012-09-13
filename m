@@ -1,33 +1,31 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.fusionio.com ([66.114.96.31]:40825 "EHLO mx2.fusionio.com"
+Received: from mx2.fusionio.com ([66.114.96.31]:56679 "EHLO mx2.fusionio.com"
 	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1757852Ab2IMMih (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 13 Sep 2012 08:38:37 -0400
-Date: Thu, 13 Sep 2012 08:38:34 -0400
+	id S1757858Ab2IMM4V (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Thu, 13 Sep 2012 08:56:21 -0400
+Date: Thu, 13 Sep 2012 08:56:18 -0400
 From: Josef Bacik <jbacik@fusionio.com>
-To: Miao Xie <miaox@cn.fujitsu.com>
-CC: Linux Btrfs <linux-btrfs@vger.kernel.org>
-Subject: Re: [PATCH 2/2] Revert "Btrfs: do not do
- filemap_write_and_wait_range in fsync"
-Message-ID: <20120913123834.GC12994@localhost.localdomain>
-References: <5051BB3B.5020201@cn.fujitsu.com>
+To: Roman Mamedov <rm@romanrm.ru>
+CC: "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
+Subject: Re: "Task blocked for more than 120 seconds" on file copy
+Message-ID: <20120913125618.GD12994@localhost.localdomain>
+References: <20120913031623.1e2d18f5@natsu>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
-In-Reply-To: <5051BB3B.5020201@cn.fujitsu.com>
+In-Reply-To: <20120913031623.1e2d18f5@natsu>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Thu, Sep 13, 2012 at 04:53:47AM -0600, Miao Xie wrote:
-> This reverts commit 0885ef5b5601e9b007c383e77c172769b1f214fd
+On Wed, Sep 12, 2012 at 03:16:23PM -0600, Roman Mamedov wrote:
+> Hello,
 > 
-> After applying the above patch, the performance slowed down because the dirty
-> page flush can only be done by one task, so revert it.
-> 
-> The following is the test result of sysbench:
-> 	Before		After
-> 	24MB/s		39MB/s
+> I was copying a 60 GB file onto btrfs, and at the same time tried to stop/restart Squid,
+> which has its cache on the same partition. Squid locked up until the copying was finished.
+> This filesystem was resized by about +100% just before, if this could matter.
+> The kernel is 3.6.0-rc5. From dmesg:
 > 
 
-Ah I didn't think about that, good point, thanks!
+When you get these sort of lockups we need sysrq+w to get all of the blocked
+tasks, not just hte ones that the hung task timer catches.  Thanks,
 
 Josef

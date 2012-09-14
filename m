@@ -1,111 +1,72 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from acsinet15.oracle.com ([141.146.126.227]:17691 "EHLO
-	acsinet15.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1750737Ab2INLad (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Fri, 14 Sep 2012 07:30:33 -0400
-Message-ID: <50531550.9070204@oracle.com>
-Date: Fri, 14 Sep 2012 19:30:24 +0800
-From: Liu Bo <bo.li.liu@oracle.com>
+Received: from twin.jikos.cz ([89.185.236.188]:56028 "EHLO twin.jikos.cz"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1751539Ab2INLhG (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Fri, 14 Sep 2012 07:37:06 -0400
+Date: Fri, 14 Sep 2012 13:36:59 +0200
+From: David Sterba <dave@jikos.cz>
+To: Liu Bo <bo.li.liu@oracle.com>
+Cc: linux-btrfs@vger.kernel.org
+Subject: Re: [PATCH 3/5] Btrfs: cleanup for duplicated code in
+ find_free_extent
+Message-ID: <20120914113659.GH17430@twin.jikos.cz>
+Reply-To: dave@jikos.cz
+References: <1347613087-3489-1-git-send-email-bo.li.liu@oracle.com>
+ <1347613087-3489-3-git-send-email-bo.li.liu@oracle.com>
 MIME-Version: 1.0
-To: miaox@cn.fujitsu.com
-CC: linux-btrfs@vger.kernel.org
-Subject: Re: [PATCH 1/5] Btrfs: fix deadlock with freeze and sync
-References: <1347613087-3489-1-git-send-email-bo.li.liu@oracle.com> <505301F5.9020802@cn.fujitsu.com>
-In-Reply-To: <505301F5.9020802@cn.fujitsu.com>
-Content-Type: text/plain; charset=UTF-8
+Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <1347613087-3489-3-git-send-email-bo.li.liu@oracle.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 09/14/2012 06:07 PM, Miao Xie wrote:
-> On 	fri, 14 Sep 2012 16:58:03 +0800, Liu Bo wrote:
->> While testing xfstests 068, I realized that
->>
->> commit bd7de2c9a449e26a5493d918618eb20ae60d56bd
->> (Btrfs: fix deadlock with freeze and sync V2)
->>
->> did not fix the bug yet, since someone might jump in between checking
->> running transaction and joining transaction, and we may still run into
->> deadlock between freeze and sync.
+On Fri, Sep 14, 2012 at 04:58:05PM +0800, Liu Bo wrote:
+> There is already an 'add free space' phrase in front of this one, we
+> needn't to redo it.
 > 
-> Did you meet the problem by test? 
-> I think it is impossible to happen, because nobody can start a new transaction
-> after the filesystem is froze, so the ->running_transaction check must be false
-> when syncing the filesystem. And beside that this patch is wrong(Please see below).
+> Signed-off-by: Liu Bo <bo.li.liu@oracle.com>
+
+Yes, the check is duplicate and the values cannot change inbetween,
+moreover this calls the add_free_space twice, to it's likely to fix
+things (or not, the whole function is a mess and I'm not sticking my
+reviewed-by tag).
+
+Also, the return value of btrfs_add_free_space should be checked, as it
+may silently fail in case of ENOMEM, and fail loudly if there's failure
+in:
+
+  btrfs_add_free_space
+    __btrfs_add_free_space
+      - either link_free_space
+      - or insert_into_bitmap
+        fail with -EEXIST
+      BUG_ON
+
+I saw the crash inside insert_into_bitmap in logs from yesterday, I
+haven't processed them yet, but it looks that it matches this situation.
+
+> ---
+>  fs/btrfs/extent-tree.c |    4 ----
+>  1 files changed, 0 insertions(+), 4 deletions(-)
 > 
-
-Yes, I knew the reason but I did run into the same deadlock.
-
->> So IMO the safest and most efficient way is to check running transaction
->> in joining a transaction directly.
->>
->> With this patch, I tested xfstests 068 for 120 times and it did not get
->> into deadlock at least here.
->>
->> Signed-off-by: Liu Bo <bo.li.liu@oracle.com>
->> ---
->>  fs/btrfs/super.c       |    9 +--------
->>  fs/btrfs/transaction.c |   11 ++++++++++-
->>  fs/btrfs/transaction.h |    1 +
->>  3 files changed, 12 insertions(+), 9 deletions(-)
->>
->> diff --git a/fs/btrfs/super.c b/fs/btrfs/super.c
->> index abb9081..02a3961 100644
->> --- a/fs/btrfs/super.c
->> +++ b/fs/btrfs/super.c
->> @@ -852,14 +852,7 @@ int btrfs_sync_fs(struct super_block *sb, int wait)
->>  
->>  	btrfs_wait_ordered_extents(root, 0, 0);
->>  
->> -	spin_lock(&fs_info->trans_lock);
->> -	if (!fs_info->running_transaction) {
->> -		spin_unlock(&fs_info->trans_lock);
->> -		return 0;
->> -	}
->> -	spin_unlock(&fs_info->trans_lock);
->> -
->> -	trans = btrfs_join_transaction(root);
->> +	trans = btrfs_join_transaction_only(root);
->>  	if (IS_ERR(trans))
->>  		return PTR_ERR(trans);
->>  	return btrfs_commit_transaction(trans, root);
->> diff --git a/fs/btrfs/transaction.c b/fs/btrfs/transaction.c
->> index 27c2600..0c17d9e 100644
->> --- a/fs/btrfs/transaction.c
->> +++ b/fs/btrfs/transaction.c
->> @@ -272,6 +272,7 @@ enum btrfs_trans_type {
->>  	TRANS_JOIN,
->>  	TRANS_USERSPACE,
->>  	TRANS_JOIN_NOLOCK,
->> +	TRANS_JOIN_ONLY,
->>  };
->>  
->>  static int may_wait_transaction(struct btrfs_root *root, int type)
->> @@ -302,12 +303,15 @@ static struct btrfs_trans_handle *start_transaction(struct btrfs_root *root,
->>  		return ERR_PTR(-EROFS);
->>  
->>  	if (current->journal_info) {
->> -		WARN_ON(type != TRANS_JOIN && type != TRANS_JOIN_NOLOCK);
->> +		WARN_ON(type != TRANS_JOIN && type != TRANS_JOIN_NOLOCK &&
->> +			type != TRANS_JOIN_ONLY);
->>  		h = current->journal_info;
->>  		h->use_count++;
->>  		h->orig_rsv = h->block_rsv;
->>  		h->block_rsv = NULL;
->>  		goto got_it;
->> +	} else if (type == TRANS_JOIN_ONLY) {
->> +		return ERR_PTR(-ENOENT);
->>  	}
+> diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
+> index ba58024..6575f89 100644
+> --- a/fs/btrfs/extent-tree.c
+> +++ b/fs/btrfs/extent-tree.c
+> @@ -5806,10 +5806,6 @@ checks:
+>  
+>  		trace_btrfs_reserve_extent(orig_root, block_group,
+>  					   search_start, num_bytes);
+> -		if (offset < search_start)
+> -			btrfs_add_free_space(used_block_group, offset,
+> -					     search_start - offset);
+> -		BUG_ON(offset > search_start);
+>  		if (used_block_group != block_group)
+>  			btrfs_put_block_group(used_block_group);
+>  		btrfs_put_block_group(block_group);
+> -- 
+> 1.7.7.6
 > 
-> the code here is wrong, it makes the sync task skip the transaction commit because
-> ->journal_info of the sync task is always NULL(Only ->journal_info of the task which
-> starts transaction before it end the current transaction is !0).
-> 
-
-I've double checked this and realized what you're saying is reasonable.
-So there must be something wrong elsewhere, I'll look into it :)
-
-Thanks a LOT!
-
-- liubo
-
+> --
+> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
+> the body of a message to majordomo@vger.kernel.org
+> More majordomo info at  http://vger.kernel.org/majordomo-info.html

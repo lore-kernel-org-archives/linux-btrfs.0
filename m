@@ -1,101 +1,81 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([222.73.24.84]:5860 "EHLO song.cn.fujitsu.com"
-	rhost-flags-OK-FAIL-OK-OK) by vger.kernel.org with ESMTP
-	id S1751275Ab2INKpa (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Fri, 14 Sep 2012 06:45:30 -0400
-Message-ID: <505301F5.9020802@cn.fujitsu.com>
-Date: Fri, 14 Sep 2012 18:07:49 +0800
-From: Miao Xie <miaox@cn.fujitsu.com>
-Reply-To: miaox@cn.fujitsu.com
-MIME-Version: 1.0
+Received: from twin.jikos.cz ([89.185.236.188]:55662 "EHLO twin.jikos.cz"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1752166Ab2INLPW (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Fri, 14 Sep 2012 07:15:22 -0400
+Date: Fri, 14 Sep 2012 13:15:16 +0200
+From: David Sterba <dave@jikos.cz>
 To: Liu Bo <bo.li.liu@oracle.com>
-CC: linux-btrfs@vger.kernel.org
-Subject: Re: [PATCH 1/5] Btrfs: fix deadlock with freeze and sync
+Cc: linux-btrfs@vger.kernel.org
+Subject: Re: [PATCH 2/5] Btrfs: fix trans block rsv regression
+Message-ID: <20120914111516.GF17430@twin.jikos.cz>
+Reply-To: dave@jikos.cz
 References: <1347613087-3489-1-git-send-email-bo.li.liu@oracle.com>
-In-Reply-To: <1347613087-3489-1-git-send-email-bo.li.liu@oracle.com>
-Content-Type: text/plain; charset=UTF-8
+ <1347613087-3489-2-git-send-email-bo.li.liu@oracle.com>
+MIME-Version: 1.0
+Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <1347613087-3489-2-git-send-email-bo.li.liu@oracle.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 	fri, 14 Sep 2012 16:58:03 +0800, Liu Bo wrote:
-> While testing xfstests 068, I realized that
-> 
-> commit bd7de2c9a449e26a5493d918618eb20ae60d56bd
-> (Btrfs: fix deadlock with freeze and sync V2)
-> 
-> did not fix the bug yet, since someone might jump in between checking
-> running transaction and joining transaction, and we may still run into
-> deadlock between freeze and sync.
-
-Did you meet the problem by test? 
-I think it is impossible to happen, because nobody can start a new transaction
-after the filesystem is froze, so the ->running_transaction check must be false
-when syncing the filesystem. And beside that this patch is wrong(Please see below).
-
-> So IMO the safest and most efficient way is to check running transaction
-> in joining a transaction directly.
-> 
-> With this patch, I tested xfstests 068 for 120 times and it did not get
-> into deadlock at least here.
-> 
-> Signed-off-by: Liu Bo <bo.li.liu@oracle.com>
-> ---
->  fs/btrfs/super.c       |    9 +--------
->  fs/btrfs/transaction.c |   11 ++++++++++-
->  fs/btrfs/transaction.h |    1 +
->  3 files changed, 12 insertions(+), 9 deletions(-)
-> 
-> diff --git a/fs/btrfs/super.c b/fs/btrfs/super.c
-> index abb9081..02a3961 100644
-> --- a/fs/btrfs/super.c
-> +++ b/fs/btrfs/super.c
-> @@ -852,14 +852,7 @@ int btrfs_sync_fs(struct super_block *sb, int wait)
->  
->  	btrfs_wait_ordered_extents(root, 0, 0);
->  
-> -	spin_lock(&fs_info->trans_lock);
-> -	if (!fs_info->running_transaction) {
-> -		spin_unlock(&fs_info->trans_lock);
-> -		return 0;
-> -	}
-> -	spin_unlock(&fs_info->trans_lock);
-> -
-> -	trans = btrfs_join_transaction(root);
-> +	trans = btrfs_join_transaction_only(root);
->  	if (IS_ERR(trans))
->  		return PTR_ERR(trans);
->  	return btrfs_commit_transaction(trans, root);
-> diff --git a/fs/btrfs/transaction.c b/fs/btrfs/transaction.c
-> index 27c2600..0c17d9e 100644
+On Fri, Sep 14, 2012 at 04:58:04PM +0800, Liu Bo wrote:
 > --- a/fs/btrfs/transaction.c
 > +++ b/fs/btrfs/transaction.c
-> @@ -272,6 +272,7 @@ enum btrfs_trans_type {
->  	TRANS_JOIN,
->  	TRANS_USERSPACE,
->  	TRANS_JOIN_NOLOCK,
-> +	TRANS_JOIN_ONLY,
+> @@ -306,9 +306,17 @@ static struct btrfs_trans_handle *start_transaction(struct btrfs_root *root,
+>  		WARN_ON(type != TRANS_JOIN && type != TRANS_JOIN_NOLOCK &&
+>  			type != TRANS_JOIN_ONLY);
+>  		h = current->journal_info;
+> -		h->use_count++;
+> -		h->orig_rsv = h->block_rsv;
+> +		if (h->block_rsv) {
+> +			struct btrfs_trans_rsv_item *item;
+> +			item = kmalloc(sizeof(*item), GFP_NOFS);
+
+I'd rather avoid the kmalloc here and add a list hook into
+btrfs_block_rsv itself (used only for this purpose).
+
+It also does not increase the failure surface and we don't have to
+handle error conditions from deep callchains.
+
+> +			if (!item)
+> +				return ERR_PTR(-ENOMEM);
+> +			item->rsv = h->block_rsv;
+> +			INIT_LIST_HEAD(&item->list);
+> +			list_add(&item->list, &h->blk_rsv_list);
+> +		}
+>  		h->block_rsv = NULL;
+> +		h->use_count++;
+>  		goto got_it;
+>  	} else if (type == TRANS_JOIN_ONLY) {
+>  		return ERR_PTR(-ENOENT);
+> --- a/fs/btrfs/transaction.h
+> +++ b/fs/btrfs/transaction.h
+> @@ -57,7 +57,6 @@ struct btrfs_trans_handle {
+>  	unsigned long delayed_ref_updates;
+>  	struct btrfs_transaction *transaction;
+>  	struct btrfs_block_rsv *block_rsv;
+> -	struct btrfs_block_rsv *orig_rsv;
+>  	int aborted;
+>  	int adding_csums;
+>  	/*
+> @@ -68,6 +67,12 @@ struct btrfs_trans_handle {
+>  	struct btrfs_root *root;
+>  	struct seq_list delayed_ref_elem;
+>  	struct list_head qgroup_ref_list;
+> +	struct list_head blk_rsv_list;
+
+Does it refer to chain of orig_rsv's ? Ie. naming it orig_blk_rsv_list
+
+> +};
+> +
+> +struct btrfs_trans_rsv_item {
+> +	struct btrfs_block_rsv *rsv;
+> +	struct list_head list;
+
+Generally, for such 'list of single pointers' structs I'd evaluate the
+possibility of embedding the hook inside the struct, the overhead
+(memory, processing) is not desirable.
+
 >  };
 >  
->  static int may_wait_transaction(struct btrfs_root *root, int type)
-> @@ -302,12 +303,15 @@ static struct btrfs_trans_handle *start_transaction(struct btrfs_root *root,
->  		return ERR_PTR(-EROFS);
->  
->  	if (current->journal_info) {
-> -		WARN_ON(type != TRANS_JOIN && type != TRANS_JOIN_NOLOCK);
-> +		WARN_ON(type != TRANS_JOIN && type != TRANS_JOIN_NOLOCK &&
-> +			type != TRANS_JOIN_ONLY);
->  		h = current->journal_info;
->  		h->use_count++;
->  		h->orig_rsv = h->block_rsv;
->  		h->block_rsv = NULL;
->  		goto got_it;
-> +	} else if (type == TRANS_JOIN_ONLY) {
-> +		return ERR_PTR(-ENOENT);
->  	}
-
-the code here is wrong, it makes the sync task skip the transaction commit because
-->journal_info of the sync task is always NULL(Only ->journal_info of the task which
-starts transaction before it end the current transaction is !0).
-
-Thanks
-Miao
+>  struct btrfs_pending_snapshot {

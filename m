@@ -1,122 +1,76 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.fusionio.com ([66.114.96.31]:35835 "EHLO mx2.fusionio.com"
+Received: from mx2.fusionio.com ([66.114.96.31]:52702 "EHLO mx2.fusionio.com"
 	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1757503Ab2INRWo (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Fri, 14 Sep 2012 13:22:44 -0400
-Received: from mail1.int.fusionio.com (mail1.int.fusionio.com [10.101.1.21]) by mx2.fusionio.com with ESMTP id jtJcPNRcPyZUFbm9 (version=TLSv1 cipher=AES128-SHA bits=128 verify=NO) for <linux-btrfs@vger.kernel.org>; Fri, 14 Sep 2012 11:22:42 -0600 (MDT)
+	id S1759580Ab2INRkY (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Fri, 14 Sep 2012 13:40:24 -0400
+Received: from mail1.int.fusionio.com (mail1.int.fusionio.com [10.101.1.21]) by mx2.fusionio.com with ESMTP id mlPA1DRTMGKtEjFs (version=TLSv1 cipher=AES128-SHA bits=128 verify=NO) for <linux-btrfs@vger.kernel.org>; Fri, 14 Sep 2012 11:40:23 -0600 (MDT)
 From: Josef Bacik <jbacik@fusionio.com>
 To: <linux-btrfs@vger.kernel.org>
-Subject: [PATCH] Btrfs: do not hold the write_lock on the extent tree while logging
-Date: Fri, 14 Sep 2012 13:28:08 -0400
-Message-ID: <1347643688-1701-1-git-send-email-jbacik@fusionio.com>
+Subject: [PATCH] Btrfs: fix race when getting the eb out of page->private
+Date: Fri, 14 Sep 2012 13:45:49 -0400
+Message-ID: <1347644749-4950-1-git-send-email-jbacik@fusionio.com>
 MIME-Version: 1.0
 Content-Type: text/plain
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Dave Sterba pointed out a sleeping while atomic bug while doing fsync.  This
-is because I'm an idiot and didn't realize that rwlock's were spin locks, so
-we've been holding this thing while doing allocations and such which is not
-good.  This patch fixes this by dropping the write lock before we do
-anything heavy and re-acquire it when it is done.  We also need to take a
-ref on the em's in case their corresponding pages are evicted and mark them
-as being logged so that releasepage does not remove them and doesn't remove
-them from our local list.  Thanks,
+We can race when checking wether PagePrivate is set on a page and we
+actually have an eb saved in the pages private pointer.  We could have
+easily written out this page and released it in the time that we did the
+pagevec lookup and actually got around to looking at this page.  So use
+mapping->private_lock to ensure we get a consistent view of the
+page->private pointer.  This is inline with the alloc and releasepage paths
+which use private_lock when manipulating page->private.  Thanks,
 
-Reported-by: Dave Sterba <dave@jikos.cz>
+Reported-by: David Sterba <dave@jikos.cz>
 Signed-off-by: Josef Bacik <jbacik@fusionio.com>
 ---
- fs/btrfs/extent_map.c |    3 ++-
- fs/btrfs/extent_map.h |    1 +
- fs/btrfs/tree-log.c   |   16 +++++++++++++---
- 3 files changed, 16 insertions(+), 4 deletions(-)
+ fs/btrfs/extent_io.c |   23 +++++++++++++++++++----
+ 1 files changed, 19 insertions(+), 4 deletions(-)
 
-diff --git a/fs/btrfs/extent_map.c b/fs/btrfs/extent_map.c
-index 8d1364d..b8cbc8d 100644
---- a/fs/btrfs/extent_map.c
-+++ b/fs/btrfs/extent_map.c
-@@ -407,7 +407,8 @@ int remove_extent_mapping(struct extent_map_tree *tree, struct extent_map *em)
+diff --git a/fs/btrfs/extent_io.c b/fs/btrfs/extent_io.c
+index d48599f..263c392 100644
+--- a/fs/btrfs/extent_io.c
++++ b/fs/btrfs/extent_io.c
+@@ -3256,19 +3256,34 @@ retry:
+ 				break;
+ 			}
  
- 	WARN_ON(test_bit(EXTENT_FLAG_PINNED, &em->flags));
- 	rb_erase(&em->rb_node, &tree->map);
--	list_del_init(&em->list);
-+	if (!test_bit(EXTENT_FLAG_LOGGING, &em->flags))
-+		list_del_init(&em->list);
- 	em->in_tree = 0;
- 	return ret;
- }
-diff --git a/fs/btrfs/extent_map.h b/fs/btrfs/extent_map.h
-index 8e6294b..6792255 100644
---- a/fs/btrfs/extent_map.h
-+++ b/fs/btrfs/extent_map.h
-@@ -13,6 +13,7 @@
- #define EXTENT_FLAG_COMPRESSED 1
- #define EXTENT_FLAG_VACANCY 2 /* no file extent item found */
- #define EXTENT_FLAG_PREALLOC 3 /* pre-allocated extent */
-+#define EXTENT_FLAG_LOGGING 4 /* Logging this extent */
- 
- struct extent_map {
- 	struct rb_node rb_node;
-diff --git a/fs/btrfs/tree-log.c b/fs/btrfs/tree-log.c
-index 038a522..60c96d1 100644
---- a/fs/btrfs/tree-log.c
-+++ b/fs/btrfs/tree-log.c
-@@ -2945,6 +2945,9 @@ static int btrfs_log_changed_extents(struct btrfs_trans_handle *trans,
- 		list_del_init(&em->list);
- 		if (em->generation <= test_gen)
- 			continue;
-+		/* Need a ref to keep it from getting evicted from cache */
-+		atomic_inc(&em->refs);
-+		set_bit(EXTENT_FLAG_LOGGING, &em->flags);
- 		list_add_tail(&em->list, &extents);
- 	}
- 
-@@ -2954,6 +2957,7 @@ static int btrfs_log_changed_extents(struct btrfs_trans_handle *trans,
- 		em = list_entry(extents.next, struct extent_map, list);
- 
- 		list_del_init(&em->list);
-+		clear_bit(EXTENT_FLAG_LOGGING, &em->flags);
- 
- 		/*
- 		 * If we had an error we just need to delete everybody from our
-@@ -2962,6 +2966,8 @@ static int btrfs_log_changed_extents(struct btrfs_trans_handle *trans,
- 		if (ret)
- 			continue;
- 
-+		write_unlock(&tree->lock);
++			spin_lock(&mapping->private_lock);
++			if (!PagePrivate(page)) {
++				spin_unlock(&mapping->private_lock);
++				continue;
++			}
 +
- 		/*
- 		 * If the previous EM and the last extent we left off on aren't
- 		 * sequential then we need to copy the items we have and redo
-@@ -2971,21 +2977,25 @@ static int btrfs_log_changed_extents(struct btrfs_trans_handle *trans,
- 			ret = copy_items(trans, inode, dst_path, args.src,
- 					 args.start_slot, args.nr,
- 					 LOG_INODE_ALL);
--			if (ret)
-+			if (ret) {
-+				free_extent_map(em);
+ 			eb = (struct extent_buffer *)page->private;
++
++			/*
++			 * Shouldn't happen and normally this would be a BUG_ON
++			 * but no sense in crashing the users box for something
++			 * we can survive anyway.
++			 */
+ 			if (!eb) {
++				spin_unlock(&mapping->private_lock);
+ 				WARN_ON(1);
+ 				continue;
+ 			}
+ 
+-			if (eb == prev_eb)
++			if (eb == prev_eb) {
++				spin_unlock(&mapping->private_lock);
  				continue;
 +			}
- 			btrfs_release_path(path);
- 			args.nr = 0;
- 		}
  
- 		ret = log_one_extent(trans, inode, root, em, path, dst_path, &args);
-+		free_extent_map(em);
-+		write_lock(&tree->lock);
- 	}
-+	WARN_ON(!list_empty(&extents));
-+	write_unlock(&tree->lock);
+-			if (!atomic_inc_not_zero(&eb->refs)) {
+-				WARN_ON(1);
++			ret = atomic_inc_not_zero(&eb->refs);
++			spin_unlock(&mapping->private_lock);
++			if (!ret)
+ 				continue;
+-			}
  
- 	if (!ret && args.nr)
- 		ret = copy_items(trans, inode, dst_path, args.src,
- 				 args.start_slot, args.nr, LOG_INODE_ALL);
- 	btrfs_release_path(path);
--	WARN_ON(!list_empty(&extents));
--	write_unlock(&tree->lock);
- 	return ret;
- }
- 
+ 			prev_eb = eb;
+ 			ret = lock_extent_buffer_for_io(eb, fs_info, &epd);
 -- 
 1.7.7.6
 

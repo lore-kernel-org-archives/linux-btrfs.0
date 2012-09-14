@@ -1,46 +1,55 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx1.fusionio.com ([66.114.96.30]:60990 "EHLO mx1.fusionio.com"
+Received: from mx2.fusionio.com ([66.114.96.31]:38002 "EHLO mx2.fusionio.com"
 	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1752876Ab2INPDc (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Fri, 14 Sep 2012 11:03:32 -0400
-Date: Fri, 14 Sep 2012 11:03:29 -0400
+	id S1756732Ab2INPU4 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Fri, 14 Sep 2012 11:20:56 -0400
+Received: from mail1.int.fusionio.com (mail1.int.fusionio.com [10.101.1.21]) by mx2.fusionio.com with ESMTP id zwTuuHuoBXlTt0mk (version=TLSv1 cipher=AES128-SHA bits=128 verify=NO) for <linux-btrfs@vger.kernel.org>; Fri, 14 Sep 2012 09:20:55 -0600 (MDT)
 From: Josef Bacik <jbacik@fusionio.com>
-To: Liu Bo <bo.li.liu@oracle.com>
-CC: Josef Bacik <JBacik@fusionio.com>,
-        "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
-Subject: Re: [PATCH] Btrfs: fix race in sync and freeze again
-Message-ID: <20120914150329.GN12994@localhost.localdomain>
-References: <1347633426-13674-1-git-send-email-jbacik@fusionio.com>
- <50534510.1080101@oracle.com>
+To: <linux-btrfs@vger.kernel.org>
+Subject: [PATCH] Btrfs: fix race with freeze and free space inodes
+Date: Fri, 14 Sep 2012 11:26:20 -0400
+Message-ID: <1347636380-30185-1-git-send-email-jbacik@fusionio.com>
 MIME-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-In-Reply-To: <50534510.1080101@oracle.com>
+Content-Type: text/plain
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Fri, Sep 14, 2012 at 08:54:08AM -0600, Liu Bo wrote:
-> On 09/14/2012 10:37 PM, Josef Bacik wrote:
-> > I screwed this up, there is a race between checking if there is a running
-> > transaction and actually starting a transaction in sync where we could race
-> > with a freezer and get ourselves into trouble.  To fix this we need to make
-> > a new join type to only do the try lock on the freeze stuff.  If it fails
-> > we'll return EPERM and just return from sync.  This fixes a hang Liu Bo
-> > reported when running xfstest 68 in a loop.  Thanks,
-> > 
-> 
-> This is also a trylock, why don't we just add a trylock for sb_start_intwrite directly
-> just as what I've done before, that'd be cleaner:
-> 
-> https://patchwork.kernel.org/patch/1318131/
-> 
+So we start our freeze, somebody comes in and does an fsync() on a file
+where we have to commit a transaction for whatever reason, and we will
+deadlock because the freeze is waiting on FS_FREEZE people to stop writing
+to the file system, but the transaction is waiting for its free space inodes
+to be written out, which are in turn waiting on sb_start_intwrite while
+trying to write the file extents.  To fix this we'll just skip the
+sb_start_intwrite() if we TRANS_JOIN_NOLOCK since we're being waited on by a
+transaction commit so we're safe wrt to freeze and this will keep us from
+deadlocking.  Thanks,
 
-Yeah if we get a sb_start_intwrite_trylock() then we can switch to using that in
-the future, but for now I'm not going to block behind something needing to be
-accepted into someone elses tree in order to get this fixed in btrfs.  Also the
-patch you've posted isn't right because we hold the rwsem and an ref, so we have
-to drop the rwsem before calling btrfs_join_transaction and then we need to make
-sure to do sb_end_intwrite() after we do the commit to clean up our ref, my
-approach is cleaner since it still lets the transaction deal with all of that
-cleanup and we don't have to play with the freeze rwsem.  Thanks,
+Signed-off-by: Josef Bacik <jbacik@fusionio.com>
+---
+ fs/btrfs/transaction.c |   10 +++++++++-
+ 1 files changed, 9 insertions(+), 1 deletions(-)
 
-Josef
+diff --git a/fs/btrfs/transaction.c b/fs/btrfs/transaction.c
+index c9265a6..ba74dfb 100644
+--- a/fs/btrfs/transaction.c
++++ b/fs/btrfs/transaction.c
+@@ -342,7 +342,15 @@ again:
+ 	if (!h)
+ 		return ERR_PTR(-ENOMEM);
+ 
+-	if (!__sb_start_write(root->fs_info->sb, SB_FREEZE_FS, false)) {
++	/*
++	 * If we are JOIN_NOLOCK we're already committing a transaction and
++	 * waiting on this guy, so we don't need to do the sb_start_intwrite
++	 * because we're already holding a ref.  We need this because we could
++	 * have raced in and did an fsync() on a file which can kick a commit
++	 * and then we deadlock with somebody doing a freeze.
++	 */
++	if (type != TRANS_JOIN_NOLOCK &&
++	    !__sb_start_write(root->fs_info->sb, SB_FREEZE_FS, false)) {
+ 		if (type == TRANS_JOIN_FREEZE)
+ 			return ERR_PTR(-EPERM);
+ 		sb_start_intwrite(root->fs_info->sb);
+-- 
+1.7.7.6
+

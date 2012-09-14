@@ -1,72 +1,80 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from twin.jikos.cz ([89.185.236.188]:56028 "EHLO twin.jikos.cz"
+Received: from twin.jikos.cz ([89.185.236.188]:56535 "EHLO twin.jikos.cz"
 	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1751539Ab2INLhG (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Fri, 14 Sep 2012 07:37:06 -0400
-Date: Fri, 14 Sep 2012 13:36:59 +0200
+	id S1759627Ab2INMHU (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Fri, 14 Sep 2012 08:07:20 -0400
+Date: Fri, 14 Sep 2012 14:07:11 +0200
 From: David Sterba <dave@jikos.cz>
 To: Liu Bo <bo.li.liu@oracle.com>
-Cc: linux-btrfs@vger.kernel.org
-Subject: Re: [PATCH 3/5] Btrfs: cleanup for duplicated code in
- find_free_extent
-Message-ID: <20120914113659.GH17430@twin.jikos.cz>
+Cc: David Sterba <dave@jikos.cz>, linux-btrfs@vger.kernel.org
+Subject: Re: [PATCH 2/5] Btrfs: fix trans block rsv regression
+Message-ID: <20120914120711.GI17430@twin.jikos.cz>
 Reply-To: dave@jikos.cz
 References: <1347613087-3489-1-git-send-email-bo.li.liu@oracle.com>
- <1347613087-3489-3-git-send-email-bo.li.liu@oracle.com>
+ <1347613087-3489-2-git-send-email-bo.li.liu@oracle.com>
+ <20120914111516.GF17430@twin.jikos.cz>
+ <50531439.5080303@oracle.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <1347613087-3489-3-git-send-email-bo.li.liu@oracle.com>
+In-Reply-To: <50531439.5080303@oracle.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Fri, Sep 14, 2012 at 04:58:05PM +0800, Liu Bo wrote:
-> There is already an 'add free space' phrase in front of this one, we
-> needn't to redo it.
+On Fri, Sep 14, 2012 at 07:25:45PM +0800, Liu Bo wrote:
+> On 09/14/2012 07:15 PM, David Sterba wrote:
+> > On Fri, Sep 14, 2012 at 04:58:04PM +0800, Liu Bo wrote:
+> >> --- a/fs/btrfs/transaction.c
+> >> +++ b/fs/btrfs/transaction.c
+> >> @@ -306,9 +306,17 @@ static struct btrfs_trans_handle *start_transaction(struct btrfs_root *root,
+> >>  		WARN_ON(type != TRANS_JOIN && type != TRANS_JOIN_NOLOCK &&
+> >>  			type != TRANS_JOIN_ONLY);
+> >>  		h = current->journal_info;
+> >> -		h->use_count++;
+> >> -		h->orig_rsv = h->block_rsv;
+> >> +		if (h->block_rsv) {
+> >> +			struct btrfs_trans_rsv_item *item;
+> >> +			item = kmalloc(sizeof(*item), GFP_NOFS);
+> > 
+> > I'd rather avoid the kmalloc here and add a list hook into
+> > btrfs_block_rsv itself (used only for this purpose).
+> > 
+> > It also does not increase the failure surface and we don't have to
+> > handle error conditions from deep callchains.
+> > 
 > 
-> Signed-off-by: Liu Bo <bo.li.liu@oracle.com>
+> Actually I placed a list hook at first, but I found the same block_rsv could be inserted into
+> the list chain twice, which will cause list_head's terrible warnings.
 
-Yes, the check is duplicate and the values cannot change inbetween,
-moreover this calls the add_free_space twice, to it's likely to fix
-things (or not, the whole function is a mess and I'm not sticking my
-reviewed-by tag).
+Is it expected and correct to add the rsv twice? I know the transaction
+joins and commits are sometimes wildly nested so it does not mean that's
+necessarily a bug. Then it is not possible to embed the list hook, we
+need to keep the full track of the blk_rsv stack.
 
-Also, the return value of btrfs_add_free_space should be checked, as it
-may silently fail in case of ENOMEM, and fail loudly if there's failure
-in:
+I'm counting two other similar structs used inside btrfs
+(list_head + 8B value), we could make a shared separate slab for them.
 
-  btrfs_add_free_space
-    __btrfs_add_free_space
-      - either link_free_space
-      - or insert_into_bitmap
-        fail with -EEXIST
-      BUG_ON
+struct delayed_iput {
+        struct list_head           list;                 /*     0    16 */
+        struct inode *             inode;                /*    16     8 */
 
-I saw the crash inside insert_into_bitmap in logs from yesterday, I
-haven't processed them yet, but it looks that it matches this situation.
+        /* size: 24, cachelines: 1, members: 2 */
+        /* last cacheline: 24 bytes */
+};
 
-> ---
->  fs/btrfs/extent-tree.c |    4 ----
->  1 files changed, 0 insertions(+), 4 deletions(-)
-> 
-> diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
-> index ba58024..6575f89 100644
-> --- a/fs/btrfs/extent-tree.c
-> +++ b/fs/btrfs/extent-tree.c
-> @@ -5806,10 +5806,6 @@ checks:
->  
->  		trace_btrfs_reserve_extent(orig_root, block_group,
->  					   search_start, num_bytes);
-> -		if (offset < search_start)
-> -			btrfs_add_free_space(used_block_group, offset,
-> -					     search_start - offset);
-> -		BUG_ON(offset > search_start);
->  		if (used_block_group != block_group)
->  			btrfs_put_block_group(used_block_group);
->  		btrfs_put_block_group(block_group);
-> -- 
-> 1.7.7.6
-> 
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+truct seq_list {
+        struct list_head           list;                 /*     0    16 */
+        u64                        seq;                  /*    16     8 */
+
+        /* size: 24, cachelines: 1, members: 2 */
+        /* last cacheline: 24 bytes */
+};
+
+seq_list is never allocated, only embedded inside tree_mod_log structures.
+
+delayed_iput is allocated on every add_delayed_iput and freed quite
+frequently (once per-commit at least), so this is a short-lived object
+as well as the proposed btrfs_trans_rsv_item. IMO this justifies using
+the slab. Does this sound good to you?
+
+
+david

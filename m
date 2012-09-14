@@ -1,145 +1,101 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from rcsinet15.oracle.com ([148.87.113.117]:23677 "EHLO
-	rcsinet15.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1756751Ab2INJAF (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Fri, 14 Sep 2012 05:00:05 -0400
-Received: from ucsinet22.oracle.com (ucsinet22.oracle.com [156.151.31.94])
-	by rcsinet15.oracle.com (Sentrion-MTA-4.2.2/Sentrion-MTA-4.2.2) with ESMTP id q8E9046u007433
-	(version=TLSv1/SSLv3 cipher=DHE-RSA-AES256-SHA bits=256 verify=OK)
-	for <linux-btrfs@vger.kernel.org>; Fri, 14 Sep 2012 09:00:05 GMT
-Received: from acsmt356.oracle.com (acsmt356.oracle.com [141.146.40.156])
-	by ucsinet22.oracle.com (8.14.4+Sun/8.14.4) with ESMTP id q8E9046U004323
-	(version=TLSv1/SSLv3 cipher=DHE-RSA-AES256-SHA bits=256 verify=NO)
-	for <linux-btrfs@vger.kernel.org>; Fri, 14 Sep 2012 09:00:04 GMT
-Received: from abhmt110.oracle.com (abhmt110.oracle.com [141.146.116.62])
-	by acsmt356.oracle.com (8.12.11.20060308/8.12.11) with ESMTP id q8E903Vr025573
-	for <linux-btrfs@vger.kernel.org>; Fri, 14 Sep 2012 04:00:03 -0500
-From: Liu Bo <bo.li.liu@oracle.com>
-To: linux-btrfs@vger.kernel.org
-Subject: [PATCH 5/5] Btrfs: kill obsolete arguments in btrfs_wait_ordered_extents
-Date: Fri, 14 Sep 2012 16:58:07 +0800
-Message-Id: <1347613087-3489-5-git-send-email-bo.li.liu@oracle.com>
-In-Reply-To: <1347613087-3489-1-git-send-email-bo.li.liu@oracle.com>
+Received: from cn.fujitsu.com ([222.73.24.84]:5860 "EHLO song.cn.fujitsu.com"
+	rhost-flags-OK-FAIL-OK-OK) by vger.kernel.org with ESMTP
+	id S1751275Ab2INKpa (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Fri, 14 Sep 2012 06:45:30 -0400
+Message-ID: <505301F5.9020802@cn.fujitsu.com>
+Date: Fri, 14 Sep 2012 18:07:49 +0800
+From: Miao Xie <miaox@cn.fujitsu.com>
+Reply-To: miaox@cn.fujitsu.com
+MIME-Version: 1.0
+To: Liu Bo <bo.li.liu@oracle.com>
+CC: linux-btrfs@vger.kernel.org
+Subject: Re: [PATCH 1/5] Btrfs: fix deadlock with freeze and sync
 References: <1347613087-3489-1-git-send-email-bo.li.liu@oracle.com>
+In-Reply-To: <1347613087-3489-1-git-send-email-bo.li.liu@oracle.com>
+Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-nocow_only is now an obsolete argument.
+On 	fri, 14 Sep 2012 16:58:03 +0800, Liu Bo wrote:
+> While testing xfstests 068, I realized that
+> 
+> commit bd7de2c9a449e26a5493d918618eb20ae60d56bd
+> (Btrfs: fix deadlock with freeze and sync V2)
+> 
+> did not fix the bug yet, since someone might jump in between checking
+> running transaction and joining transaction, and we may still run into
+> deadlock between freeze and sync.
 
-Signed-off-by: Liu Bo <bo.li.liu@oracle.com>
----
- fs/btrfs/extent-tree.c  |    4 ++--
- fs/btrfs/ordered-data.c |   12 +-----------
- fs/btrfs/ordered-data.h |    3 +--
- fs/btrfs/relocation.c   |    2 +-
- fs/btrfs/super.c        |    2 +-
- fs/btrfs/transaction.c  |    2 +-
- 6 files changed, 7 insertions(+), 18 deletions(-)
+Did you meet the problem by test? 
+I think it is impossible to happen, because nobody can start a new transaction
+after the filesystem is froze, so the ->running_transaction check must be false
+when syncing the filesystem. And beside that this patch is wrong(Please see below).
 
-diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
-index 6575f89..2d2aa04 100644
---- a/fs/btrfs/extent-tree.c
-+++ b/fs/btrfs/extent-tree.c
-@@ -3693,7 +3693,7 @@ static void shrink_delalloc(struct btrfs_root *root, u64 to_reclaim, u64 orig,
- 	if (delalloc_bytes == 0) {
- 		if (trans)
- 			return;
--		btrfs_wait_ordered_extents(root, 0, 0);
-+		btrfs_wait_ordered_extents(root, 0);
- 		return;
- 	}
- 
-@@ -3715,7 +3715,7 @@ static void shrink_delalloc(struct btrfs_root *root, u64 to_reclaim, u64 orig,
- 
- 		loops++;
- 		if (wait_ordered && !trans) {
--			btrfs_wait_ordered_extents(root, 0, 0);
-+			btrfs_wait_ordered_extents(root, 0);
- 		} else {
- 			time_left = schedule_timeout_killable(1);
- 			if (time_left)
-diff --git a/fs/btrfs/ordered-data.c b/fs/btrfs/ordered-data.c
-index 643335a..7efedee 100644
---- a/fs/btrfs/ordered-data.c
-+++ b/fs/btrfs/ordered-data.c
-@@ -466,8 +466,7 @@ void btrfs_remove_ordered_extent(struct inode *inode,
-  * wait for all the ordered extents in a root.  This is done when balancing
-  * space between drives.
-  */
--void btrfs_wait_ordered_extents(struct btrfs_root *root,
--				int nocow_only, int delay_iput)
-+void btrfs_wait_ordered_extents(struct btrfs_root *root, int delay_iput)
- {
- 	struct list_head splice;
- 	struct list_head *cur;
-@@ -482,15 +481,6 @@ void btrfs_wait_ordered_extents(struct btrfs_root *root,
- 		cur = splice.next;
- 		ordered = list_entry(cur, struct btrfs_ordered_extent,
- 				     root_extent_list);
--		if (nocow_only &&
--		    !test_bit(BTRFS_ORDERED_NOCOW, &ordered->flags) &&
--		    !test_bit(BTRFS_ORDERED_PREALLOC, &ordered->flags)) {
--			list_move(&ordered->root_extent_list,
--				  &root->fs_info->ordered_extents);
--			cond_resched_lock(&root->fs_info->ordered_extent_lock);
--			continue;
--		}
--
- 		list_del_init(&ordered->root_extent_list);
- 		atomic_inc(&ordered->refs);
- 
-diff --git a/fs/btrfs/ordered-data.h b/fs/btrfs/ordered-data.h
-index e03c560..fd36800 100644
---- a/fs/btrfs/ordered-data.h
-+++ b/fs/btrfs/ordered-data.h
-@@ -183,6 +183,5 @@ void btrfs_run_ordered_operations(struct btrfs_root *root, int wait);
- void btrfs_add_ordered_operation(struct btrfs_trans_handle *trans,
- 				 struct btrfs_root *root,
- 				 struct inode *inode);
--void btrfs_wait_ordered_extents(struct btrfs_root *root,
--				int nocow_only, int delay_iput);
-+void btrfs_wait_ordered_extents(struct btrfs_root *root, int delay_iput);
- #endif
-diff --git a/fs/btrfs/relocation.c b/fs/btrfs/relocation.c
-index 4da0865..cf56929 100644
---- a/fs/btrfs/relocation.c
-+++ b/fs/btrfs/relocation.c
-@@ -4057,7 +4057,7 @@ int btrfs_relocate_block_group(struct btrfs_root *extent_root, u64 group_start)
- 	       (unsigned long long)rc->block_group->flags);
- 
- 	btrfs_start_delalloc_inodes(fs_info->tree_root, 0);
--	btrfs_wait_ordered_extents(fs_info->tree_root, 0, 0);
-+	btrfs_wait_ordered_extents(fs_info->tree_root, 0);
- 
- 	while (1) {
- 		mutex_lock(&fs_info->cleaner_mutex);
-diff --git a/fs/btrfs/super.c b/fs/btrfs/super.c
-index 02a3961..f4b4368 100644
---- a/fs/btrfs/super.c
-+++ b/fs/btrfs/super.c
-@@ -850,7 +850,7 @@ int btrfs_sync_fs(struct super_block *sb, int wait)
- 		return 0;
- 	}
- 
--	btrfs_wait_ordered_extents(root, 0, 0);
-+	btrfs_wait_ordered_extents(root, 0);
- 
- 	trans = btrfs_join_transaction_only(root);
- 	if (IS_ERR(trans))
-diff --git a/fs/btrfs/transaction.c b/fs/btrfs/transaction.c
-index a36ae05..cb791d4 100644
---- a/fs/btrfs/transaction.c
-+++ b/fs/btrfs/transaction.c
-@@ -1429,7 +1429,7 @@ int btrfs_commit_transaction(struct btrfs_trans_handle *trans,
- 
- 		if (flush_on_commit || snap_pending) {
- 			btrfs_start_delalloc_inodes(root, 1);
--			btrfs_wait_ordered_extents(root, 0, 1);
-+			btrfs_wait_ordered_extents(root, 1);
- 		}
- 
- 		ret = btrfs_run_delayed_items(trans, root);
--- 
-1.7.7.6
+> So IMO the safest and most efficient way is to check running transaction
+> in joining a transaction directly.
+> 
+> With this patch, I tested xfstests 068 for 120 times and it did not get
+> into deadlock at least here.
+> 
+> Signed-off-by: Liu Bo <bo.li.liu@oracle.com>
+> ---
+>  fs/btrfs/super.c       |    9 +--------
+>  fs/btrfs/transaction.c |   11 ++++++++++-
+>  fs/btrfs/transaction.h |    1 +
+>  3 files changed, 12 insertions(+), 9 deletions(-)
+> 
+> diff --git a/fs/btrfs/super.c b/fs/btrfs/super.c
+> index abb9081..02a3961 100644
+> --- a/fs/btrfs/super.c
+> +++ b/fs/btrfs/super.c
+> @@ -852,14 +852,7 @@ int btrfs_sync_fs(struct super_block *sb, int wait)
+>  
+>  	btrfs_wait_ordered_extents(root, 0, 0);
+>  
+> -	spin_lock(&fs_info->trans_lock);
+> -	if (!fs_info->running_transaction) {
+> -		spin_unlock(&fs_info->trans_lock);
+> -		return 0;
+> -	}
+> -	spin_unlock(&fs_info->trans_lock);
+> -
+> -	trans = btrfs_join_transaction(root);
+> +	trans = btrfs_join_transaction_only(root);
+>  	if (IS_ERR(trans))
+>  		return PTR_ERR(trans);
+>  	return btrfs_commit_transaction(trans, root);
+> diff --git a/fs/btrfs/transaction.c b/fs/btrfs/transaction.c
+> index 27c2600..0c17d9e 100644
+> --- a/fs/btrfs/transaction.c
+> +++ b/fs/btrfs/transaction.c
+> @@ -272,6 +272,7 @@ enum btrfs_trans_type {
+>  	TRANS_JOIN,
+>  	TRANS_USERSPACE,
+>  	TRANS_JOIN_NOLOCK,
+> +	TRANS_JOIN_ONLY,
+>  };
+>  
+>  static int may_wait_transaction(struct btrfs_root *root, int type)
+> @@ -302,12 +303,15 @@ static struct btrfs_trans_handle *start_transaction(struct btrfs_root *root,
+>  		return ERR_PTR(-EROFS);
+>  
+>  	if (current->journal_info) {
+> -		WARN_ON(type != TRANS_JOIN && type != TRANS_JOIN_NOLOCK);
+> +		WARN_ON(type != TRANS_JOIN && type != TRANS_JOIN_NOLOCK &&
+> +			type != TRANS_JOIN_ONLY);
+>  		h = current->journal_info;
+>  		h->use_count++;
+>  		h->orig_rsv = h->block_rsv;
+>  		h->block_rsv = NULL;
+>  		goto got_it;
+> +	} else if (type == TRANS_JOIN_ONLY) {
+> +		return ERR_PTR(-ENOENT);
+>  	}
 
+the code here is wrong, it makes the sync task skip the transaction commit because
+->journal_info of the sync task is always NULL(Only ->journal_info of the task which
+starts transaction before it end the current transaction is !0).
+
+Thanks
+Miao

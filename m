@@ -1,40 +1,39 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from twin.jikos.cz ([89.185.236.188]:42602 "EHLO twin.jikos.cz"
+Received: from twin.jikos.cz ([89.185.236.188]:58353 "EHLO twin.jikos.cz"
 	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1758289Ab2IMPmX (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 13 Sep 2012 11:42:23 -0400
-Date: Thu, 13 Sep 2012 17:42:15 +0200
+	id S1755187Ab2INNyc (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Fri, 14 Sep 2012 09:54:32 -0400
+Date: Fri, 14 Sep 2012 15:54:18 +0200
 From: David Sterba <dave@jikos.cz>
-To: Liu Bo <bo.li.liu@oracle.com>
-Cc: linux-btrfs@vger.kernel.org, jbacik@fusionio.com
-Subject: Re: [PATCH v3] Btrfs: fix a bug of per-file nocow
-Message-ID: <20120913154215.GC17430@twin.jikos.cz>
+To: Miao Xie <miaox@cn.fujitsu.com>
+Cc: Linux Btrfs <linux-btrfs@vger.kernel.org>
+Subject: Re: [PATCH 1/2] Btrfs: cleanup duplicated division functions
+Message-ID: <20120914135418.GM17430@twin.jikos.cz>
 Reply-To: dave@jikos.cz
-References: <1347374030-5832-1-git-send-email-bo.li.liu@oracle.com>
+References: <5051BAB8.7080200@cn.fujitsu.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <1347374030-5832-1-git-send-email-bo.li.liu@oracle.com>
+In-Reply-To: <5051BAB8.7080200@cn.fujitsu.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Tue, Sep 11, 2012 at 10:33:50PM +0800, Liu Bo wrote:
-> Users report a bug, the reproducer is:
-> $ mkfs.btrfs /dev/loop0
-> $ mount /dev/loop0 /mnt/btrfs/
-> $ mkdir /mnt/btrfs/dir
-> $ chattr +C /mnt/btrfs/dir/
-> $ dd if=/dev/zero of=/mnt/btrfs/dir/foo bs=4K count=10;
-> $ lsattr /mnt/btrfs/dir/foo
-> ---------------C- /mnt/btrfs/dir/foo
-> $ filefrag /mnt/btrfs/dir/foo
-> /mnt/btrfs/dir/foo: 1 extent found    ---> an extent
-> $ dd if=/dev/zero of=/mnt/btrfs/dir/foo bs=4K count=1 seek=5 conv=notrunc,nocreat; sync
-> $ filefrag /mnt/btrfs/dir/foo
-> /mnt/btrfs/dir/foo: 3 extents found   ---> with nocow, btrfs breaks the extent into three parts
-> 
-> The new created file should not only inherit the NODATACOW flag, but also
-> honor NODATASUM flag, because we must do COW on a file extent with checksum.
-> 
-> Signed-off-by: Liu Bo <bo.li.liu@oracle.com>
+On Thu, Sep 13, 2012 at 06:51:36PM +0800, Miao Xie wrote:
+> div_factor{_fine} has been implemented for two times, cleanup it.
+> And I move them into a independent file named math.h because they are
+> common math functions.
 
-Reviewed-by: David Sterba <dsterba@suse.cz>
+You removed the sanity checks:
+
+-       if (factor <= 0)
+-               return 0;
+-       if (factor >= 100)
+-               return num;
+
+in new version. And I don't think it's necessary to add an extra include
+with a rather generic name and trivial code. A separate .h/.c with
+non-filesystem related support code like this looks more suitable.
+
+Do you intend to use the functions out of extent-tree.c ?
+
+
+david

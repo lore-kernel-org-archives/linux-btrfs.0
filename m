@@ -1,48 +1,64 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.fusionio.com ([66.114.96.31]:35835 "EHLO mx2.fusionio.com"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1753619Ab2IZNLq (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 26 Sep 2012 09:11:46 -0400
-Date: Wed, 26 Sep 2012 09:11:43 -0400
-From: Josef Bacik <jbacik@fusionio.com>
-To: Ahmet Inan <ainan@mathematik.uni-freiburg.de>
-CC: Josef Bacik <JBacik@fusionio.com>, David Sterba <dave@jikos.cz>,
-        "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
-Subject: Re: ENOSPC design issues
-Message-ID: <20120926131143.GC2328@localhost.localdomain>
-References: <20120920190306.GG2272@localhost.localdomain>
- <20120925164335.GZ14582@twin.jikos.cz>
- <20120925170239.GA2328@localhost.localdomain>
- <CAFDW0jLuvH9rMisDz-Y=Y_nwxzzO5K64uixd6mAiaQRmja3izA@mail.gmail.com>
+Received: from mho-04-ewr.mailhop.org ([204.13.248.74]:14985 "EHLO
+	mho-02-ewr.mailhop.org" rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org
+	with ESMTP id S1752241Ab2IOLCr convert rfc822-to-8bit (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>);
+	Sat, 15 Sep 2012 07:02:47 -0400
+Received: from 193.30.77.188.dynamic.jazztel.es ([188.77.30.193] helo=mail.viric.name)
+	by mho-02-ewr.mailhop.org with esmtpsa (TLSv1:AES256-SHA:256)
+	(Exim 4.72)
+	(envelope-from <viric@viric.name>)
+	id 1TCq98-0005rD-JR
+	for linux-btrfs@vger.kernel.org; Sat, 15 Sep 2012 11:02:46 +0000
+Date: Sat, 15 Sep 2012 13:02:43 +0200
+From: =?iso-8859-1?Q?Llu=EDs?= Batlle i Rossell <viric@viric.name>
+To: Btrfs mailing list <linux-btrfs@vger.kernel.org>
+Subject: Re: State of btrfs on ARM
+Message-ID: <20120915110243.GA1943@vicerveza.homeunix.net>
+References: <20120819221335.GB1960@vicerveza.homeunix.net>
 MIME-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-In-Reply-To: <CAFDW0jLuvH9rMisDz-Y=Y_nwxzzO5K64uixd6mAiaQRmja3izA@mail.gmail.com>
+Content-Type: text/plain; charset=iso-8859-1
+In-Reply-To: <20120819221335.GB1960@vicerveza.homeunix.net>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Wed, Sep 26, 2012 at 01:55:47AM -0600, Ahmet Inan wrote:
-> when testing, please also do something like this:
+On Mon, Aug 20, 2012 at 12:13:35AM +0200, Lluís Batlle i Rossell wrote:
+> Hello,
 > 
-> # create big squashfs image somewhere:
-> # mksquashfs / /big.img -noappend -no-sparse -e big.img
+> I just tried to mount a btrfs on 3.4.6, on armv5tel, and it wrote an oops.
+> Should it work on btrfsnext? Anyone working on that, if not?
 > 
-> # then unpack into fresh filesystem with (and no) compression:
-> # unsquashfs -f -d /subvol /big.img
-> 
-> this is how i was always able to trigger ENOSPC while trying to
-> make a full system installation from squashfs image.
-> 
-> you should also try different compression algos (i only use lzo)
-> 
-> btw: i was able to trigger ENOSPC with for-linus on 3.5.4 on a
-> i686 Pentium M Notebook with only 1GB of Memory and
-> fresh FSthis way, otherwise havent seen ENOSPC for long time.
->
+> I tried "mount -o compress=lzo myfile-with-holes /mnt/btrfs".
 
-Have you actually seen this problem on 3.5 with no compression?  I fixed a
-problem in the 3.5 timeframe that should have fixed this for no-compression, and
-then I've since fixed the compression part of it in btrfs-next.  Can you retest
-with btrfs-next and see if you still see the problem?  In the meantime I'm
-running mksquashfs, but it's going to take a few years to complete ;).  Thanks,
+After investigating a bit, I saw the problem is related to running 'mkfs.btrfs'
+on ARM. If 'mkfs.btrfs' is run on another platform, it works fine.
 
-Josef 
+But, the problem appears only if the ARM system has "unaligned access kernel
+traps" disabled for userland code. That happens to be set by default, it seems.
+Setting the kernel to fixup userland unaligned accesses (echo 3 >
+/proc/cpu/alignment, for exmaple), then mkfs.btrfs works fine.
+
+I think the kernel mode code has *always* unaligned access fixup, while userland
+code is disabled by default. That'd explain the same code was harmless in the
+kernel, while it was failing on userland (on a system without fixup enabled).
+
+Nevertheless, those kernel traps on unaligned accesses are very unefficient. So
+the best would be to get gcc generate proper code.
+
+There was a slightly dirty patch sent to this list, to avoid gcc generating
+instructions that do unaligned accesses:
+http://www.spinics.net/lists/linux-btrfs/msg16007.html
+
+I don't know the best way to solve that problem; I think that gcc assumes that
+structs are always on unaligned places, and so generates code as if all pointers
+to structs are properly aligned. I think that 'memcpy' (gcc builtin) may run
+faster than the trap, there. But how to write something faster than a memcpy
+call, I don't know.
+
+In fact, looking at the counter of traps run in system-mode in
+/proc/cpu/alignment, it increases a lot at every operation I run, either it
+writes to btrfs or not. So there should be quite a big amount of code saved by
+traps, in the kernel.
+
+Regards,
+Lluís.

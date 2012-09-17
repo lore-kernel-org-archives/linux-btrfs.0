@@ -1,85 +1,36 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-ie0-f174.google.com ([209.85.223.174]:43579 "EHLO
-	mail-ie0-f174.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1755007Ab2IQIpJ (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 17 Sep 2012 04:45:09 -0400
-Received: by ieak13 with SMTP id k13so175325iea.19
-        for <linux-btrfs@vger.kernel.org>; Mon, 17 Sep 2012 01:45:08 -0700 (PDT)
-MIME-Version: 1.0
-Date: Mon, 17 Sep 2012 10:45:08 +0200
-Message-ID: <CALdWcbiW2ctG50ZCSzpTHA8t1CAhwTj66=GCoLcAFjGsjFBQJw@mail.gmail.com>
-Subject: Experiences: Why BTRFS had to yield for ZFS
-From: Casper Bang <casper.bang@gmail.com>
+Received: from mail2.charite.de ([141.42.206.200]:37197 "EHLO mail2.charite.de"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1750752Ab2IQJZQ (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Mon, 17 Sep 2012 05:25:16 -0400
+Received: from localhost (localhost [127.0.0.1])
+	by mail2.charite.de (Postfix) with ESMTP id 3XL1sF4dFPz1tL2
+	for <linux-btrfs@vger.kernel.org>; Mon, 17 Sep 2012 11:15:45 +0200 (CEST)
+Received: from postamt.charite.de (postamt.charite.de [141.42.206.36])
+	(using TLSv1 with cipher AECDH-AES256-SHA (256/256 bits))
+	(No client certificate requested)
+	by mail2.charite.de (Postfix) with ESMTPS
+	for <linux-btrfs@vger.kernel.org>; Mon, 17 Sep 2012 11:15:44 +0200 (CEST)
+Date: Mon, 17 Sep 2012 11:15:43 +0200
+From: Ralf Hildebrandt <Ralf.Hildebrandt@charite.de>
 To: linux-btrfs@vger.kernel.org
-Content-Type: text/plain; charset=ISO-8859-1
+Subject: Re: Experiences: Why BTRFS had to yield for ZFS
+Message-ID: <20120917091543.GC29881@charite.de>
+References: <CALdWcbiW2ctG50ZCSzpTHA8t1CAhwTj66=GCoLcAFjGsjFBQJw@mail.gmail.com>
+MIME-Version: 1.0
+Content-Type: text/plain; charset=utf-8
+In-Reply-To: <CALdWcbiW2ctG50ZCSzpTHA8t1CAhwTj66=GCoLcAFjGsjFBQJw@mail.gmail.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Abstract
-For database testing purposes, a COW filesystem was needed in order to
-facilitate snapshotting and rollback, such as to provide mirrors of
-our production database at fixed intervals (every night and by
-demand).
+* Casper Bang <casper.bang@gmail.com>:
 
-Platform
-An HP Proliant 380P (2x Intel Xeon E5-2620 with 12 cores for a total
-of 24 threads) with build-in Smart Array SAS/SATA (Gen8) controllers,
-was combined with 10x consumer Samsung 830 512GB SSD (SATAIII, 6Gb/s).
-Oracle (Unbreakable) Linux x64 2.6.39-200.29.3.el6uek.x86_64 #1 SMP
-Tue Aug 28 13:03:31 EDT 2012 and Oracle database standard edition
-10.2.0.4 64bit.
+> Oracle (Unbreakable) Linux x64 2.6.39-200.29.3.el6uek.x86_64 #1 SMP
 
-Setup
-OS was installed on fist disk (sda) and the remaining 9 (sdb - sdj)
-were pooled into some 4.4TB, for containing Oracle datafiles. An
-initial backup of the 1.5TB large prod database would get restored as
-a (shut down) sync instance on the test server on the COW filesystem.
-A script on the test server, would then apply Oracle archive files
-from the production environment to this Oracle sync database, every
-10'th minute, effectively making it near up-to-date with production.
-The most reliable way to do this was with a simple NFS mount (rather
-than rsync or samba). The idea then was, that it would be very fast
-and easy to make a new snapshot of the sync database, start it up, and
-voila you'd have a new instance ready to play with. A desktop machine
-with ext4 partitions proved lower boundary for applying archivelog
-data at around 1200 kb/s - we expected an order of magnitude higher
-performance on the server.
+And the btrfs was that from vanilla 2.6.39 (i.e. over a year old)?
 
-BTRFS experiences
-We used native BTRFS from kernel; with atime off, ssd mode. BTRFS
-proved to be very fast at reading for a large TRDBMS (2x speedup
-compared to a SAN). However, applying archivelog on a BTRFS filesystem
-proved to scale poorly, by starting out with a decent apply rate it
-would eventually end down around 400-500 kb/s. BTRFS had to be
-abandoned due to this, since the script would never be able to finish
-applying archivelog as new ones arrived. The desktop machine with
-traditional spinning drives formatted for BTRFS showed a similar
-scenario, so hardware (server, controller and disks) was excluded as a
-cause.
-
-ZFS experiences
-We then tried using ZFS via custom-built SPL/ZFS 0.6.0-rc10 modules
-with recordsize equal to that of Oracle database (8K); compression
-off, quota off, dedup off, checksum on and atime on.
-ZFS proved to be on-pair with a SAN, when it comes to reading for a
-large TRDBMS. Thankfully, ZFS did not degrade much in archivelog apply
-performance, and proved to have a lower-boundary of 15MB/s.
-
-Conclusion
-We had hoped to be able to utilize BTRFS, due to it's license and
-inclusion in the Linux mainline kernel. However, for practical
-purposes, we're not able to make use of BTRFS due to its performance
-when writing -especially considering this is even without mixing in
-shapshotting. While ZFS doesn't give us quite the boost in read
-performance we had expected from SSD's, it seems more optimized for
-writting and will allow us to complete our project of getting clones
-of a production database environment up and running in a snap.
-
-Take it for what it's worth, a couple of developers experiences with
-BTRFS. We are not likely to go back and change things now it works,
-but we are curious as to why we see such big differences between the
-two file-systems. Any comments and/or feedback appreciated.
-
-Regards,
-Jesper and Casper
+-- 
+Ralf Hildebrandt                   Charite Universitätsmedizin Berlin
+ralf.hildebrandt@charite.de        Campus Benjamin Franklin
+http://www.charite.de              Hindenburgdamm 30, 12203 Berlin
+Geschäftsbereich IT, Abt. Netzwerk fon: +49-30-450.570.155

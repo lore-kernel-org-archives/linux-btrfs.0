@@ -1,126 +1,71 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx1.fusionio.com ([66.114.96.30]:48413 "EHLO mx1.fusionio.com"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S932502Ab2IQTgI (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 17 Sep 2012 15:36:08 -0400
-Received: from mail1.int.fusionio.com (mail1.int.fusionio.com [10.101.1.21]) by mx1.fusionio.com with ESMTP id evVex4CCZxVUqAgm (version=TLSv1 cipher=AES128-SHA bits=128 verify=NO) for <linux-btrfs@vger.kernel.org>; Mon, 17 Sep 2012 13:36:06 -0600 (MDT)
-From: Josef Bacik <jbacik@fusionio.com>
-To: <linux-btrfs@vger.kernel.org>
-Subject: [PATCH] Btrfs: do not hold the write_lock on the extent tree while logging V2
-Date: Mon, 17 Sep 2012 15:41:34 -0400
-Message-ID: <1347910894-5031-1-git-send-email-jbacik@fusionio.com>
+Received: from kim.monte-stello.com ([91.121.114.170]:38888 "EHLO
+	kim.monte-stello.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1752274Ab2IQU33 (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>);
+	Mon, 17 Sep 2012 16:29:29 -0400
+Date: Mon, 17 Sep 2012 21:29:23 +0100
+From: Antoine Sirinelli <antoine@monte-stello.com>
+To: Liu Bo <bo.li.liu@oracle.com>
+Cc: Btrfs mailing list <linux-btrfs@vger.kernel.org>
+Subject: Re: Oops with a "degraded" volume
+Message-ID: <20120917202922.GA14962@speedy>
+References: <20120915141737.GA4784@kabis>
+ <5056C728.40606@oracle.com>
 MIME-Version: 1.0
-Content-Type: text/plain
+Content-Type: multipart/signed; micalg=pgp-sha256;
+	protocol="application/pgp-signature"; boundary="wRRV7LY7NUeQGEoC"
+In-Reply-To: <5056C728.40606@oracle.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Dave Sterba pointed out a sleeping while atomic bug while doing fsync.  This
-is because I'm an idiot and didn't realize that rwlock's were spin locks, so
-we've been holding this thing while doing allocations and such which is not
-good.  This patch fixes this by dropping the write lock before we do
-anything heavy and re-acquire it when it is done.  We also need to take a
-ref on the em's in case their corresponding pages are evicted and mark them
-as being logged so that releasepage does not remove them and doesn't remove
-them from our local list.  Thanks,
 
-Reported-by: Dave Sterba <dave@jikos.cz>
-Signed-off-by: Josef Bacik <jbacik@fusionio.com>
----
-V1->V2: drop our ref if we had an error
- fs/btrfs/extent_map.c |    3 ++-
- fs/btrfs/extent_map.h |    1 +
- fs/btrfs/tree-log.c   |   20 ++++++++++++++++----
- 3 files changed, 19 insertions(+), 5 deletions(-)
+--wRRV7LY7NUeQGEoC
+Content-Type: text/plain; charset=utf-8
+Content-Disposition: inline
+Content-Transfer-Encoding: quoted-printable
 
-diff --git a/fs/btrfs/extent_map.c b/fs/btrfs/extent_map.c
-index 8d1364d..b8cbc8d 100644
---- a/fs/btrfs/extent_map.c
-+++ b/fs/btrfs/extent_map.c
-@@ -407,7 +407,8 @@ int remove_extent_mapping(struct extent_map_tree *tree, struct extent_map *em)
- 
- 	WARN_ON(test_bit(EXTENT_FLAG_PINNED, &em->flags));
- 	rb_erase(&em->rb_node, &tree->map);
--	list_del_init(&em->list);
-+	if (!test_bit(EXTENT_FLAG_LOGGING, &em->flags))
-+		list_del_init(&em->list);
- 	em->in_tree = 0;
- 	return ret;
- }
-diff --git a/fs/btrfs/extent_map.h b/fs/btrfs/extent_map.h
-index 8e6294b..6792255 100644
---- a/fs/btrfs/extent_map.h
-+++ b/fs/btrfs/extent_map.h
-@@ -13,6 +13,7 @@
- #define EXTENT_FLAG_COMPRESSED 1
- #define EXTENT_FLAG_VACANCY 2 /* no file extent item found */
- #define EXTENT_FLAG_PREALLOC 3 /* pre-allocated extent */
-+#define EXTENT_FLAG_LOGGING 4 /* Logging this extent */
- 
- struct extent_map {
- 	struct rb_node rb_node;
-diff --git a/fs/btrfs/tree-log.c b/fs/btrfs/tree-log.c
-index 038a522..a3e88cf 100644
---- a/fs/btrfs/tree-log.c
-+++ b/fs/btrfs/tree-log.c
-@@ -2945,6 +2945,9 @@ static int btrfs_log_changed_extents(struct btrfs_trans_handle *trans,
- 		list_del_init(&em->list);
- 		if (em->generation <= test_gen)
- 			continue;
-+		/* Need a ref to keep it from getting evicted from cache */
-+		atomic_inc(&em->refs);
-+		set_bit(EXTENT_FLAG_LOGGING, &em->flags);
- 		list_add_tail(&em->list, &extents);
- 	}
- 
-@@ -2954,13 +2957,18 @@ static int btrfs_log_changed_extents(struct btrfs_trans_handle *trans,
- 		em = list_entry(extents.next, struct extent_map, list);
- 
- 		list_del_init(&em->list);
-+		clear_bit(EXTENT_FLAG_LOGGING, &em->flags);
- 
- 		/*
- 		 * If we had an error we just need to delete everybody from our
- 		 * private list.
- 		 */
--		if (ret)
-+		if (ret) {
-+			free_extent_map(em);
- 			continue;
-+		}
-+
-+		write_unlock(&tree->lock);
- 
- 		/*
- 		 * If the previous EM and the last extent we left off on aren't
-@@ -2971,21 +2979,25 @@ static int btrfs_log_changed_extents(struct btrfs_trans_handle *trans,
- 			ret = copy_items(trans, inode, dst_path, args.src,
- 					 args.start_slot, args.nr,
- 					 LOG_INODE_ALL);
--			if (ret)
-+			if (ret) {
-+				free_extent_map(em);
- 				continue;
-+			}
- 			btrfs_release_path(path);
- 			args.nr = 0;
- 		}
- 
- 		ret = log_one_extent(trans, inode, root, em, path, dst_path, &args);
-+		free_extent_map(em);
-+		write_lock(&tree->lock);
- 	}
-+	WARN_ON(!list_empty(&extents));
-+	write_unlock(&tree->lock);
- 
- 	if (!ret && args.nr)
- 		ret = copy_items(trans, inode, dst_path, args.src,
- 				 args.start_slot, args.nr, LOG_INODE_ALL);
- 	btrfs_release_path(path);
--	WARN_ON(!list_empty(&extents));
--	write_unlock(&tree->lock);
- 	return ret;
- }
- 
--- 
-1.7.7.6
+On Mon, Sep 17, 2012 at 02:46:00PM +0800, Liu Bo wrote:
+> On 09/15/2012 10:17 PM, Antoine Sirinelli wrote:
+> > I have experienced a very reproducible Oops within the btrfs driver. On
+> > a linux 3.5.4, if I mount a volume with the option "degraded" because
+> > one of the device is missing, I would get an Oops when I unmount it (or
+> > even before). You can see attached the kernel log.
+>=20
+> Thanks for the report.  And this has been fixed by
+>=20
+> commit 99f5944b8477914406173b47b4f261356286730b
+>     Btrfs: do not strdup non existent strings
+>=20
+> You can find this commit in 3.6.0-rc5. :)
 
+That's right, I have done the same test with rc6 and it does not crash
+anymore.
+
+Many thanks,
+
+Antoine
+
+--wRRV7LY7NUeQGEoC
+Content-Type: application/pgp-signature; name="signature.asc"
+Content-Description: Digital signature
+
+-----BEGIN PGP SIGNATURE-----
+Version: GnuPG v1.4.12 (GNU/Linux)
+
+iQIcBAEBCAAGBQJQV4giAAoJENprakT/0XU0TqgP/jaU3vP/egGgkyE2bPxfRaCD
+wsvDHDQ0lRoSydnDkQ9KdFQXcHNEluL3Gs3c0RKJSqFyOlTLhDFKLr9gQXofvHYL
+rw1ZpZuMSXlvmReidwyiv0eBr9338WfEiarmfbdRJGicLyEKn3bHDVkZmPLme/FR
+Esl6BEKaasn8cz7AKB+nYgS5zt8avGehEPntEx6InjjBsMz+4xd+1DKbzIcNJSxz
+z0+JEu4+3V8FipUymXXA+ni+R9J3WJC7yUirUMDdbVtN8Qa1mOWzkr8MXvb92H9A
+Fx/eBH1WiNknH9gdDbj/sRwMusWCJpGtIQwMH4ggV5/JO6+dF1AwuvgykNSBkMAW
+CG+l6hwFTjRrcSuirNxv+T0EmXAqhYYk7x2TexchZvW1A1SPpqCSRBZQT2s+9QFU
+ICCmGsroqkWH7v5DbR6ujcOnVfxZuVnC63tq5+t7MxJUkh1pOizPSYQ8UNc45JAt
+Q9OiNAOoM9zNQrgvWKpc4sxGn4fBDqjA9EYBlsnLZKRhHprWq6CNxty/A6P7twow
+2/FDM7ZgKTrdkUF6MnHprdcBhoH/Ef4l/302MhCSqidUF1Hmse4joLXDXaVOL7W5
+JDBgJ/fJgu+7085lgHfSRxkHGpK3WDTGVejkk8P/EWgj+EQjQmIbOuT7HycSGk15
+vEbzs2i9koMl1L2mMBZU
+=NICp
+-----END PGP SIGNATURE-----
+
+--wRRV7LY7NUeQGEoC--

@@ -1,43 +1,38 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.fusionio.com ([66.114.96.31]:41410 "EHLO mx2.fusionio.com"
+Received: from mx1.fusionio.com ([66.114.96.30]:43991 "EHLO mx1.fusionio.com"
 	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1754875Ab2IQRPy (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 17 Sep 2012 13:15:54 -0400
-Date: Mon, 17 Sep 2012 13:15:51 -0400
+	id S932343Ab2IQRTh (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Mon, 17 Sep 2012 13:19:37 -0400
+Date: Mon, 17 Sep 2012 13:19:34 -0400
 From: Josef Bacik <jbacik@fusionio.com>
-To: Liu Bo <bo.li.liu@oracle.com>
-CC: "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>,
-        "dave@jikos.cz" <dave@jikos.cz>
-Subject: Re: [PATCH 2/2 v3] Btrfs: snapshot-aware defrag
-Message-ID: <20120917171551.GC3143@localhost.localdomain>
-References: <1347875936-14165-1-git-send-email-bo.li.liu@oracle.com>
- <1347875936-14165-2-git-send-email-bo.li.liu@oracle.com>
+To: Kay Sievers <kay@vrfy.org>
+CC: btrfs <linux-btrfs@vger.kernel.org>,
+        Lennart Poettering <lennart@poettering.net>
+Subject: Re: 'umount' of multi-device volume hangs until the device is
+ physically un-plugged
+Message-ID: <20120917171934.GD3143@localhost.localdomain>
+References: <CAPXgP104Cc1q6+TkG6R1VzbqxqMBrMWJfF6X6VYpWPkg8jyK=g@mail.gmail.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
-In-Reply-To: <1347875936-14165-2-git-send-email-bo.li.liu@oracle.com>
+In-Reply-To: <CAPXgP104Cc1q6+TkG6R1VzbqxqMBrMWJfF6X6VYpWPkg8jyK=g@mail.gmail.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Mon, Sep 17, 2012 at 03:58:56AM -0600, Liu Bo wrote:
-> This comes from one of btrfs's project ideas,
-> As we defragment files, we break any sharing from other snapshots.
-> The balancing code will preserve the sharing, and defrag needs to grow this
-> as well.
+On Sun, Sep 16, 2012 at 10:07:39PM -0600, Kay Sievers wrote:
+> I'm currently playing around with native btrfs multi-device support in
+> systemd. There might be a few "hotplug issues" to solve, here is the
+> first one:
 > 
-> Now we're able to fill the blank with this patch, in which we make full use of
-> backref walking stuff.
+> A mounted (otherwise unused) multi-device volume (USB multi-slot card
+> reader), hangs at:
+>   $ umount /mnt
+> with (fedora) kernel
+>   3.6.0-0.rc5.git0.1.fc18.x86_64
 > 
-> Here is the basic idea,
-> o  set the writeback ranges started by defragment with flag EXTENT_DEFRAG
-> o  at endio, after we finish updating fs tree, we use backref walking to find
->    all parents of the ranges and re-link them with the new COWed file layout by
->    adding corresponding backrefs.
+> Any idea what to look for or what to try?
 > 
-> Originally patch by Li Zefan <lizf@cn.fujitsu.com>
-> Signed-off-by: Liu Bo <bo.li.liu@oracle.com>
 
-I was trying to fixup the rejects on this patch when I noticed there were no
-tabs, only spaces.  Thats not going to work and now I have to go back and make
-sure none of your other patches did this.  Thanks,
+Can I see the whole sysrq+w?  Also can you try btrfs-next and see if you have
+the same problems?  Thanks,
 
 Josef

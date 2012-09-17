@@ -1,36 +1,61 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-oa0-f46.google.com ([209.85.219.46]:57789 "EHLO
-	mail-oa0-f46.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1751912Ab2IQGMn (ORCPT
+Received: from acsinet15.oracle.com ([141.146.126.227]:43411 "EHLO
+	acsinet15.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1751462Ab2IQGqL (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 17 Sep 2012 02:12:43 -0400
-Received: by oago6 with SMTP id o6so4402945oag.19
-        for <linux-btrfs@vger.kernel.org>; Sun, 16 Sep 2012 23:12:43 -0700 (PDT)
+	Mon, 17 Sep 2012 02:46:11 -0400
+Message-ID: <5056C728.40606@oracle.com>
+Date: Mon, 17 Sep 2012 14:46:00 +0800
+From: Liu Bo <bo.li.liu@oracle.com>
 MIME-Version: 1.0
-Date: Mon, 17 Sep 2012 14:12:43 +0800
-Message-ID: <CACHiF8D44zK4Y9jEAvLk975G2=GjOW3hvdNMgP_ZHScVa_LH+Q@mail.gmail.com>
-Subject: enquiry about autodefrag option
-From: ching lu <lsching17@gmail.com>
-To: linux-btrfs@vger.kernel.org
+To: Antoine Sirinelli <antoine@monte-stello.com>
+CC: Btrfs mailing list <linux-btrfs@vger.kernel.org>
+Subject: Re: Oops with a "degraded" volume
+References: <20120915141737.GA4784@kabis>
+In-Reply-To: <20120915141737.GA4784@kabis>
 Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-I am testing btrfs for long-term storage and backup, and i would like
-to know more about "autodefrag" option:
+On 09/15/2012 10:17 PM, Antoine Sirinelli wrote:
+> Hi,
+> 
+> I have experienced a very reproducible Oops within the btrfs driver. On
+> a linux 3.5.4, if I mount a volume with the option "degraded" because
+> one of the device is missing, I would get an Oops when I unmount it (or
+> even before). You can see attached the kernel log.
+> 
 
-1. Will "autodefrag" option benefit ssd?
+Thanks for the report.  And this has been fixed by
 
-    My understanding is:
+commit 99f5944b8477914406173b47b4f261356286730b
+    Btrfs: do not strdup non existent strings
 
-       autodrag -> number of extent decrease -> metadata decrease -> a
-"healthier" filesystem in the long run
+You can find this commit in 3.6.0-rc5. :)
 
-   (P.S. I am aware that autodefrag will introduce extra write I/O)
+thanks,
+liubo
 
-2. AFAIK, "autodefrag" detects small random writes into files and
-queues them up for an automatic defrag process, so the filesystem will
-defragment itself while it's used.
+> Here is how I create my btrfs volume:
+> 
+> # mkfs.btrfs /dev/vdb /dev/vdc
+> # mount /dev/vdb /mnt
+> # dd if=/dev/zero of=/mnt/zeros count=1M
+> # umount /mnt
+> # shutdown -h now
+> 
+> I am then wiping one volume (/dev/vdc) and restarting the system. To
+> get a crash, here is what I am doing:
+> 
+> # mount -o degraded /dev/vdb /mnt
+> # umount /mnt
+> 
+> I recognise the volume is not usable after having erased one drive but I
+> would expect no to crash the kernel in such circumstances. I am not an
+> expert, I am just reporting a crash from an user point of view.
+> 
+> Antoine
+> 
 
-    If the system reboot/crash/remount-ro, will the autodefrag process
-continue after resume?
+
+

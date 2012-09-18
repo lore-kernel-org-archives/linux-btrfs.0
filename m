@@ -1,39 +1,48 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mho-03-ewr.mailhop.org ([204.13.248.66]:44359 "EHLO
-	mho-01-ewr.mailhop.org" rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org
-	with ESMTP id S1756403Ab2IRPsn convert rfc822-to-8bit (ORCPT
+Received: from affinityvision.com.au ([58.96.65.76]:51400 "EHLO
+	mail.affinityvision.com.au" rhost-flags-OK-OK-OK-OK)
+	by vger.kernel.org with ESMTP id S1751386Ab2IRRF6 (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 18 Sep 2012 11:48:43 -0400
-Received: from 193.30.77.188.dynamic.jazztel.es ([188.77.30.193] helo=mail.viric.name)
-	by mho-01-ewr.mailhop.org with esmtpsa (TLSv1:AES256-SHA:256)
-	(Exim 4.72)
-	(envelope-from <viric@viric.name>)
-	id 1TE02U-000P5P-54
-	for linux-btrfs@vger.kernel.org; Tue, 18 Sep 2012 15:48:42 +0000
-Date: Tue, 18 Sep 2012 17:48:38 +0200
-From: =?iso-8859-1?Q?Llu=EDs?= Batlle i Rossell <viric@viric.name>
-To: Btrfs mailing list <linux-btrfs@vger.kernel.org>
-Subject: Scrub status, finished?
-Message-ID: <20120918154838.GE8632@vicerveza.homeunix.net>
+	Tue, 18 Sep 2012 13:05:58 -0400
+Message-ID: <5058A5C8.8080107@affinityvision.com.au>
+Date: Wed, 19 Sep 2012 02:48:08 +1000
+From: Andrew McGlashan <andrew.mcglashan@affinityvision.com.au>
 MIME-Version: 1.0
-Content-Type: text/plain; charset=iso-8859-1
+To: Avi Miller <avi.miller@oracle.com>
+CC: Casper Bnag <casper.bang@gmail.com>, linux-btrfs@vger.kernel.org
+References: <CALdWcbiW2ctG50ZCSzpTHA8t1CAhwTj66=GCoLcAFjGsjFBQJw@mail.gmail.com> <20120917091543.GC29881@charite.de> <loom.20120917T113953-444@post.gmane.org> <55422103-3EA7-4DE9-9C47-351CBD006871@oracle.com>
+In-Reply-To: <55422103-3EA7-4DE9-9C47-351CBD006871@oracle.com>
+Content-Type: text/plain; charset=ISO-8859-1
+Subject: Re: Experiences: Why BTRFS had to yield for ZFS
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hello,
+Hi,
 
-I run a scrub on a 2-disc btrfs, then cancelled it, then resumed. At the end, I
-expected it telling about it having finished.
+On 17/09/2012 8:05 PM, Avi Miller wrote:
+> Oracle Database is not certified to run on either btrfs or ZFS on Linux, so if certification is an issue, you can't use either filesystem. Out of interest, have you done a performance benchmark with ASM using ASMlib on the same platform? 
 
-But the only I get on 'btrfs scrub status /' is:
-scrub status for 2ebf9e90-104c-47a4-adff-fada1ce3b682
-        scrub resumed at Tue Sep 18 15:27:45 2012, running for 5721 seconds
-        total bytes scrubbed: 744.41GB with 0 errors
+I thought that Oracle considered BTRFS to be production ready.  It
+surprises me that running an Oracle database on BTRFS is not a supported
+configuration.
 
-The numbers don't change anymore though. No disc activity, no seconds
-increasing.
+Cheers
 
-Maybe there is a bug reporting the 'finished' situation?
+-- 
+Kind Regards
+AndrewM
 
-Regards,
-Lluís.
+Andrew McGlashan
+Broadband Solutions now including VoIP
+
+Current Land Line No: 03 9012 2102
+Mobile: 04 2574 1827 Fax: 03 9012 2178
+
+National No: 1300 85 3804
+
+Affinity Vision Australia Pty Ltd
+http://affinityvision.com.au
+http://securemywireless.com.au
+http://adsl2choice.net.au
+
+In Case of Emergency --  http://affinityvision.com.au/ice.html

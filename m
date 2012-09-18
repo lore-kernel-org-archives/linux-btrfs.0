@@ -1,162 +1,90 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([222.73.24.84]:7349 "EHLO song.cn.fujitsu.com"
-	rhost-flags-OK-FAIL-OK-OK) by vger.kernel.org with ESMTP
-	id S1754613Ab2IRFwm (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 18 Sep 2012 01:52:42 -0400
-Message-ID: <50580C26.5030803@cn.fujitsu.com>
-Date: Tue, 18 Sep 2012 13:52:38 +0800
-From: Miao Xie <miaox@cn.fujitsu.com>
-Reply-To: miaox@cn.fujitsu.com
-MIME-Version: 1.0
-To: Linux Btrfs <linux-btrfs@vger.kernel.org>
-CC: David Sterba <dave@jikos.cz>
-Subject: [PATCH] Btrfs: fix the missing error information in create_pending_snapshot()
-Content-Type: text/plain; charset=UTF-8
+Received: from acsinet15.oracle.com ([141.146.126.227]:33606 "EHLO
+	acsinet15.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1751189Ab2IRJym (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>);
+	Tue, 18 Sep 2012 05:54:42 -0400
+Received: from ucsinet22.oracle.com (ucsinet22.oracle.com [156.151.31.94])
+	by acsinet15.oracle.com (Sentrion-MTA-4.2.2/Sentrion-MTA-4.2.2) with ESMTP id q8I9seIE008378
+	(version=TLSv1/SSLv3 cipher=DHE-RSA-AES256-SHA bits=256 verify=OK)
+	for <linux-btrfs@vger.kernel.org>; Tue, 18 Sep 2012 09:54:41 GMT
+Received: from acsmt358.oracle.com (acsmt358.oracle.com [141.146.40.158])
+	by ucsinet22.oracle.com (8.14.4+Sun/8.14.4) with ESMTP id q8I9sdr8023620
+	(version=TLSv1/SSLv3 cipher=DHE-RSA-AES256-SHA bits=256 verify=NO)
+	for <linux-btrfs@vger.kernel.org>; Tue, 18 Sep 2012 09:54:40 GMT
+Received: from abhmt119.oracle.com (abhmt119.oracle.com [141.146.116.71])
+	by acsmt358.oracle.com (8.12.11.20060308/8.12.11) with ESMTP id q8I9sdEO002663
+	for <linux-btrfs@vger.kernel.org>; Tue, 18 Sep 2012 04:54:39 -0500
+From: Liu Bo <bo.li.liu@oracle.com>
+To: linux-btrfs@vger.kernel.org
+Subject: [PATCH] Btrfs: fix off-by-one in file clone
+Date: Tue, 18 Sep 2012 17:52:23 +0800
+Message-Id: <1347961943-18185-1-git-send-email-bo.li.liu@oracle.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-The macro btrfs_abort_transaction() can get the line number of the code
-where the problem happens, so we should invoke it in the place that the
-error occurs, or we will lose the line number.
+Btrfs uses inclusive range end for lock_extent(), unlock_extent() and
+related functions, so we made off-by-one errors in file clone.
 
-Reported-by: David Sterba <dave@jikos.cz>
-Signed-off-by: Miao Xie <miaox@cn.fujitsu.com>
+This fixes it and also fixes some style problems.
+
+Signed-off-by: Liu Bo <bo.li.liu@oracle.com>
 ---
- fs/btrfs/transaction.c |   57 +++++++++++++++++++++++++++++------------------
- 1 files changed, 35 insertions(+), 22 deletions(-)
+ fs/btrfs/ioctl.c |   18 +++++++++---------
+ 1 files changed, 9 insertions(+), 9 deletions(-)
 
-diff --git a/fs/btrfs/transaction.c b/fs/btrfs/transaction.c
-index 7d3fc93..cf98dbc 100644
---- a/fs/btrfs/transaction.c
-+++ b/fs/btrfs/transaction.c
-@@ -1042,7 +1042,8 @@ static noinline int create_pending_snapshot(struct btrfs_trans_handle *trans,
- 		goto fail;
- 	} else if (IS_ERR(dir_item)) {
- 		ret = PTR_ERR(dir_item);
--		goto abort_trans;
-+		btrfs_abort_transaction(trans, root, ret);
-+		goto fail;
- 	}
+diff --git a/fs/btrfs/ioctl.c b/fs/btrfs/ioctl.c
+index 00ddf22..225761c 100644
+--- a/fs/btrfs/ioctl.c
++++ b/fs/btrfs/ioctl.c
+@@ -2463,13 +2463,13 @@ static noinline long btrfs_ioctl_clone(struct file *file, unsigned long srcfd,
+ 	   another, and lock file content */
+ 	while (1) {
+ 		struct btrfs_ordered_extent *ordered;
+-		lock_extent(&BTRFS_I(src)->io_tree, off, off+len);
+-		ordered = btrfs_lookup_first_ordered_extent(src, off+len);
++		lock_extent(&BTRFS_I(src)->io_tree, off, off + len - 1);
++		ordered = btrfs_lookup_first_ordered_extent(src, off + len - 1);
+ 		if (!ordered &&
+-		    !test_range_bit(&BTRFS_I(src)->io_tree, off, off+len,
+-				   EXTENT_DELALLOC, 0, NULL))
++		    !test_range_bit(&BTRFS_I(src)->io_tree, off, off + len - 1,
++				    EXTENT_DELALLOC, 0, NULL))
+ 			break;
+-		unlock_extent(&BTRFS_I(src)->io_tree, off, off+len);
++		unlock_extent(&BTRFS_I(src)->io_tree, off, off + len - 1);
+ 		if (ordered)
+ 			btrfs_put_ordered_extent(ordered);
+ 		btrfs_wait_ordered_range(src, off, len);
+@@ -2543,7 +2543,7 @@ static noinline long btrfs_ioctl_clone(struct file *file, unsigned long srcfd,
+ 			btrfs_release_path(path);
+ 
+ 			if (key.offset + datal <= off ||
+-			    key.offset >= off+len)
++			    key.offset >= off + len - 1)
+ 				goto next;
+ 
+ 			memcpy(&new_key, &key, sizeof(new_key));
+@@ -2644,8 +2644,8 @@ static noinline long btrfs_ioctl_clone(struct file *file, unsigned long srcfd,
+ 					new_key.offset += skip;
+ 				}
+ 
+-				if (key.offset + datal > off+len)
+-					trim = key.offset + datal - (off+len);
++				if (key.offset + datal > off + len)
++					trim = key.offset + datal - (off + len);
+ 
+ 				if (comp && (skip || trim)) {
+ 					ret = -EINVAL;
+@@ -2722,7 +2722,7 @@ next:
+ 	ret = 0;
+ out:
  	btrfs_release_path(path);
- 
-@@ -1053,8 +1054,10 @@ static noinline int create_pending_snapshot(struct btrfs_trans_handle *trans,
- 	 * snapshot
- 	 */
- 	ret = btrfs_run_delayed_items(trans, root);
--	if (ret)	/* Transaction aborted */
--		goto abort_trans;
-+	if (ret) {	/* Transaction aborted */
-+		btrfs_abort_transaction(trans, root, ret);
-+		goto fail;
-+	}
- 
- 	record_root_in_trans(trans, root);
- 	btrfs_set_root_last_snapshot(&root->root_item, trans->transid);
-@@ -1087,7 +1090,8 @@ static noinline int create_pending_snapshot(struct btrfs_trans_handle *trans,
- 	if (ret) {
- 		btrfs_tree_unlock(old);
- 		free_extent_buffer(old);
--		goto abort_trans;
-+		btrfs_abort_transaction(trans, root, ret);
-+		goto fail;
- 	}
- 
- 	btrfs_set_lock_blocking(old);
-@@ -1096,8 +1100,10 @@ static noinline int create_pending_snapshot(struct btrfs_trans_handle *trans,
- 	/* clean up in any case */
- 	btrfs_tree_unlock(old);
- 	free_extent_buffer(old);
--	if (ret)
--		goto abort_trans;
-+	if (ret) {
-+		btrfs_abort_transaction(trans, root, ret);
-+		goto fail;
-+	}
- 
- 	/* see comments in should_cow_block() */
- 	root->force_cow = 1;
-@@ -1109,8 +1115,10 @@ static noinline int create_pending_snapshot(struct btrfs_trans_handle *trans,
- 	ret = btrfs_insert_root(trans, tree_root, &key, new_root_item);
- 	btrfs_tree_unlock(tmp);
- 	free_extent_buffer(tmp);
--	if (ret)
--		goto abort_trans;
-+	if (ret) {
-+		btrfs_abort_transaction(trans, root, ret);
-+		goto fail;
-+	}
- 
- 	/*
- 	 * insert root back/forward references
-@@ -1119,23 +1127,30 @@ static noinline int create_pending_snapshot(struct btrfs_trans_handle *trans,
- 				 parent_root->root_key.objectid,
- 				 btrfs_ino(parent_inode), index,
- 				 dentry->d_name.name, dentry->d_name.len);
--	if (ret)
--		goto abort_trans;
-+	if (ret) {
-+		btrfs_abort_transaction(trans, root, ret);
-+		goto fail;
-+	}
- 
- 	key.offset = (u64)-1;
- 	pending->snap = btrfs_read_fs_root_no_name(root->fs_info, &key);
- 	if (IS_ERR(pending->snap)) {
- 		ret = PTR_ERR(pending->snap);
--		goto abort_trans;
-+		btrfs_abort_transaction(trans, root, ret);
-+		goto fail;
- 	}
- 
- 	ret = btrfs_reloc_post_snapshot(trans, pending);
--	if (ret)
--		goto abort_trans;
-+	if (ret) {
-+		btrfs_abort_transaction(trans, root, ret);
-+		goto fail;
-+	}
- 
- 	ret = btrfs_run_delayed_refs(trans, root, (unsigned long)-1);
--	if (ret)
--		goto abort_trans;
-+	if (ret) {
-+		btrfs_abort_transaction(trans, root, ret);
-+		goto fail;
-+	}
- 
- 	ret = btrfs_insert_dir_item(trans, parent_root,
- 				    dentry->d_name.name, dentry->d_name.len,
-@@ -1143,15 +1158,17 @@ static noinline int create_pending_snapshot(struct btrfs_trans_handle *trans,
- 				    BTRFS_FT_DIR, index);
- 	/* We have check then name at the beginning, so it is impossible. */
- 	BUG_ON(ret == -EEXIST);
--	if (ret)
--		goto abort_trans;
-+	if (ret) {
-+		btrfs_abort_transaction(trans, root, ret);
-+		goto fail;
-+	}
- 
- 	btrfs_i_size_write(parent_inode, parent_inode->i_size +
- 					 dentry->d_name.len * 2);
- 	parent_inode->i_mtime = parent_inode->i_ctime = CURRENT_TIME;
- 	ret = btrfs_update_inode(trans, parent_root, parent_inode);
- 	if (ret)
--		goto abort_trans;
-+		btrfs_abort_transaction(trans, root, ret);
- fail:
- 	dput(parent);
- 	trans->block_rsv = rsv;
-@@ -1162,10 +1179,6 @@ root_item_alloc_fail:
- path_alloc_fail:
- 	btrfs_block_rsv_release(root, &pending->block_rsv, (u64)-1);
- 	return ret;
--
--abort_trans:
--	btrfs_abort_transaction(trans, root, ret);
--	goto fail;
- }
- 
- /*
+-	unlock_extent(&BTRFS_I(src)->io_tree, off, off+len);
++	unlock_extent(&BTRFS_I(src)->io_tree, off, off + len - 1);
+ out_unlock:
+ 	mutex_unlock(&src->i_mutex);
+ 	mutex_unlock(&inode->i_mutex);
 -- 
-1.7.6.5
+1.7.7.6
+

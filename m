@@ -1,65 +1,77 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx1.fusionio.com ([66.114.96.30]:44528 "EHLO mx1.fusionio.com"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1758624Ab2INRzM (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Fri, 14 Sep 2012 13:55:12 -0400
-Received: from mail1.int.fusionio.com (mail1.int.fusionio.com [10.101.1.21]) by mx1.fusionio.com with ESMTP id S1ADEk7J6cZFPIt7 (version=TLSv1 cipher=AES128-SHA bits=128 verify=NO) for <linux-btrfs@vger.kernel.org>; Fri, 14 Sep 2012 11:55:11 -0600 (MDT)
-From: Josef Bacik <jbacik@fusionio.com>
-To: <linux-btrfs@vger.kernel.org>
-Subject: [PATCH] Btrfs: remove our ->freeze_fs and ->unfreeze_fs
-Date: Fri, 14 Sep 2012 14:00:37 -0400
-Message-ID: <1347645637-1616-1-git-send-email-jbacik@fusionio.com>
+Received: from fgwmail5.fujitsu.co.jp ([192.51.44.35]:48094 "EHLO
+	fgwmail5.fujitsu.co.jp" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S932074Ab2IRB3B (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>);
+	Mon, 17 Sep 2012 21:29:01 -0400
+Received: from m1.gw.fujitsu.co.jp (unknown [10.0.50.71])
+	by fgwmail5.fujitsu.co.jp (Postfix) with ESMTP id 717353EE0BC
+	for <linux-btrfs@vger.kernel.org>; Tue, 18 Sep 2012 10:29:00 +0900 (JST)
+Received: from smail (m1 [127.0.0.1])
+	by outgoing.m1.gw.fujitsu.co.jp (Postfix) with ESMTP id 5A5EB45DE58
+	for <linux-btrfs@vger.kernel.org>; Tue, 18 Sep 2012 10:29:00 +0900 (JST)
+Received: from s1.gw.fujitsu.co.jp (s1.gw.fujitsu.co.jp [10.0.50.91])
+	by m1.gw.fujitsu.co.jp (Postfix) with ESMTP id 437D545DE55
+	for <linux-btrfs@vger.kernel.org>; Tue, 18 Sep 2012 10:29:00 +0900 (JST)
+Received: from s1.gw.fujitsu.co.jp (localhost.localdomain [127.0.0.1])
+	by s1.gw.fujitsu.co.jp (Postfix) with ESMTP id 36D1F1DB804F
+	for <linux-btrfs@vger.kernel.org>; Tue, 18 Sep 2012 10:29:00 +0900 (JST)
+Received: from ml14.s.css.fujitsu.com (ml14.s.css.fujitsu.com [10.240.81.134])
+	by s1.gw.fujitsu.co.jp (Postfix) with ESMTP id E5A2B1DB804A
+	for <linux-btrfs@vger.kernel.org>; Tue, 18 Sep 2012 10:28:59 +0900 (JST)
+Message-ID: <5057CE50.1050706@jp.fujitsu.com>
+Date: Tue, 18 Sep 2012 10:28:48 +0900
+From: Hidetoshi Seto <seto.hidetoshi@jp.fujitsu.com>
 MIME-Version: 1.0
-Content-Type: text/plain
+To: linux-btrfs@vger.kernel.org
+Subject: [PATCH 1/2] Btrfs: make space to keep default mount options
+References: <5057CDA7.3090201@jp.fujitsu.com>
+In-Reply-To: <5057CDA7.3090201@jp.fujitsu.com>
+Content-Type: text/plain; charset=ISO-2022-JP
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-We do not need to do anything special to freeze or unfreeze, it's all taken
-care of by the generic work, and what we currently have is wrong anyway
-since we shouldn't be returnning to userspace with mutexes held anyway.
-Thanks,
+This patch create space to hold default mount option,
+and to use saved default mount option change super.c
+to read default mount option first when mount devices.
 
-Signed-off-by: Josef Bacik <jbacik@fusionio.com>
+Signed-off-by: Hidetoshi Seto <seto.hidetoshi@jp.fujitsu.com>
 ---
- fs/btrfs/super.c |   18 ------------------
- 1 files changed, 0 insertions(+), 18 deletions(-)
+ fs/btrfs/ctree.h |    5 ++++-
+ fs/btrfs/super.c |    2 ++
+ 2 files changed, 6 insertions(+), 1 deletions(-)
 
+diff --git a/fs/btrfs/ctree.h b/fs/btrfs/ctree.h
+index fa5c45b..3eb0551 100644
+--- a/fs/btrfs/ctree.h
++++ b/fs/btrfs/ctree.h
+@@ -458,8 +458,11 @@ struct btrfs_super_block {
+ 
+ 	__le64 cache_generation;
+ 
++	/* default mount options */
++	unsigned long default_mount_opt;
++
+ 	/* future expansion */
+-	__le64 reserved[31];
++	__le64 reserved[30];
+ 	u8 sys_chunk_array[BTRFS_SYSTEM_CHUNK_ARRAY_SIZE];
+ 	struct btrfs_root_backup super_roots[BTRFS_NUM_BACKUP_ROOTS];
+ } __attribute__ ((__packed__));
 diff --git a/fs/btrfs/super.c b/fs/btrfs/super.c
-index 5aa3b81..fa80e2d 100644
+index e239915..7ef4a2e 100644
 --- a/fs/btrfs/super.c
 +++ b/fs/btrfs/super.c
-@@ -1509,22 +1509,6 @@ static long btrfs_control_ioctl(struct file *file, unsigned int cmd,
- 	return ret;
- }
+@@ -340,6 +340,8 @@ int btrfs_parse_options(struct btrfs_root *root, char *options)
+ 	char *compress_type;
+ 	bool compress_force = false;
  
--static int btrfs_freeze(struct super_block *sb)
--{
--	struct btrfs_fs_info *fs_info = btrfs_sb(sb);
--	mutex_lock(&fs_info->transaction_kthread_mutex);
--	mutex_lock(&fs_info->cleaner_mutex);
--	return 0;
--}
--
--static int btrfs_unfreeze(struct super_block *sb)
--{
--	struct btrfs_fs_info *fs_info = btrfs_sb(sb);
--	mutex_unlock(&fs_info->cleaner_mutex);
--	mutex_unlock(&fs_info->transaction_kthread_mutex);
--	return 0;
--}
--
- static int btrfs_show_devname(struct seq_file *m, struct dentry *root)
- {
- 	struct btrfs_fs_info *fs_info = btrfs_sb(root->d_sb);
-@@ -1570,8 +1554,6 @@ static const struct super_operations btrfs_super_ops = {
- 	.destroy_inode	= btrfs_destroy_inode,
- 	.statfs		= btrfs_statfs,
- 	.remount_fs	= btrfs_remount,
--	.freeze_fs	= btrfs_freeze,
--	.unfreeze_fs	= btrfs_unfreeze,
- };
- 
- static const struct file_operations btrfs_ctl_fops = {
++	info->mount_opt = info->super_copy->default_mount_opt;
++
+ 	cache_gen = btrfs_super_cache_generation(root->fs_info->super_copy);
+ 	if (cache_gen)
+ 		btrfs_set_opt(info->mount_opt, SPACE_CACHE);
 -- 
 1.7.7.6
+
 

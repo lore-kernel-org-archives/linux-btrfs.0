@@ -1,75 +1,42 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([222.73.24.84]:33439 "EHLO song.cn.fujitsu.com"
-	rhost-flags-OK-FAIL-OK-OK) by vger.kernel.org with ESMTP
-	id S1757156Ab2IRLMK (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 18 Sep 2012 07:12:10 -0400
-Received: from fnstmail02.fnst.cn.fujitsu.com (tang.cn.fujitsu.com [127.0.0.1])
-	by tang.cn.fujitsu.com (8.14.3/8.13.1) with ESMTP id q8IBC87Z017050
-	for <linux-btrfs@vger.kernel.org>; Tue, 18 Sep 2012 19:12:08 +0800
-Message-ID: <50585707.9010009@cn.fujitsu.com>
-Date: Tue, 18 Sep 2012 19:12:07 +0800
-From: Miao Xie <miaox@cn.fujitsu.com>
-Reply-To: miaox@cn.fujitsu.com
+Received: from mondschein.lichtvoll.de ([194.150.191.11]:46940 "EHLO
+	mail.lichtvoll.de" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1753027Ab2IRPLV (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>);
+	Tue, 18 Sep 2012 11:11:21 -0400
+From: Martin Steigerwald <Martin@lichtvoll.de>
+To: linux-btrfs@vger.kernel.org, miaox@cn.fujitsu.com
+Subject: Re: [PATCH V4 6/7] Btrfs-progs: enhance btrfs subvol list only to show read-only snapshots
+Date: Tue, 18 Sep 2012 17:11:19 +0200
+References: <50584E6D.8000602@cn.fujitsu.com> <50585674.9090501@cn.fujitsu.com> (sfid-20120918_132127_153756_1F72F0E7)
+In-Reply-To: <50585674.9090501@cn.fujitsu.com>
 MIME-Version: 1.0
-To: Linux Btrfs <linux-btrfs@vger.kernel.org>
-Subject: [PATCH V4 7/7] Btrfs-progs: update the manpage entries for the btrfs
- subvolume list
-References: <50584E6D.8000602@cn.fujitsu.com>
-In-Reply-To: <50584E6D.8000602@cn.fujitsu.com>
-Content-Type: text/plain; charset=UTF-8
+Content-Type: Text/Plain;
+  charset="utf-8"
+Message-Id: <201209181711.19321.Martin@lichtvoll.de>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-From: Zhou Bo <zhoub-fnst@cn.fujitsu.com>
+Am Dienstag, 18. September 2012 schrieb Miao Xie:
+>  static const char * const cmd_subvol_list_usage[] = {
+> -       "btrfs subvolume list [-pu] [-s 0|1] <path>",
+> +       "btrfs subvolume list [-pur] [-s 0|1] <path>",
+>         "List subvolumes (and snapshots)",
+>         "",
+>         "-p           print parent ID",
+>         "-u           print the uuid of subvolumes (and snapshots)",
+>         "-s value     list snapshots with generation in ascending/descending order",
+>         "             (1: ascending, 0: descending)",
+> +       "-r           list readonly subvolumes(including snapshots)",
 
-This patch adds the introduction of the new option '-r' into the man page of
-'btrfs subvolume list' command.
+I would add an space between "subvolumes" and "(including snapshots)" here.
 
-Signed-off-by: Zhou Bo <zhoub-fnst@cn.fujitsu.com>
-Signed-off-by: Miao Xie <miaox@cn.fujitsu.com>
----
-Changelog v3 -> v4:
-- No change.
+>         NULL
+>  };
 
-Changelog v2 -> v3:
-- No change.
+(No kernel developer, thus not commenting on the code.)
 
-Changelog v1 -> v2:
-- new patch
----
- man/btrfs.8.in |    5 +++--
- 1 files changed, 3 insertions(+), 2 deletions(-)
-
-diff --git a/man/btrfs.8.in b/man/btrfs.8.in
-index 4b0a9f9..0845b4d 100644
---- a/man/btrfs.8.in
-+++ b/man/btrfs.8.in
-@@ -11,7 +11,7 @@ btrfs \- control a btrfs filesystem
- .PP
- \fBbtrfs\fP \fBsubvolume create\fP\fI [<dest>/]<name>\fP
- .PP
--\fBbtrfs\fP \fBsubvolume list\fP\fI [-p] <path>\fP
-+\fBbtrfs\fP \fBsubvolume list\fP\fI [-pr] <path>\fP
- .PP
- \fBbtrfs\fP \fBsubvolume set-default\fP\fI <id> <path>\fP
- .PP
-@@ -108,7 +108,7 @@ Create a subvolume in \fI<dest>\fR (or in the current directory if
- \fI<dest>\fR is omitted).
- .TP
- 
--\fBsubvolume list\fR\fI [-p] <path>\fR
-+\fBsubvolume list\fR\fI [-pr] <path>\fR
- List the subvolumes present in the filesystem \fI<path>\fR. For every
- subvolume the following information is shown by default.
- ID <ID> top level <ID> path <path>
-@@ -119,6 +119,7 @@ at mount time via the \fIsubvol=\fR option.
- If \fI-p\fR is given, then \fIparent <ID>\fR is added to the output between ID
- and top level. The parent's ID may be used at mount time via the
- \fIsubvolrootid=\fR option.
-+If \fI-r\fR is given, only readonly subvolumes in the filesystem will be listed.
- .TP
- 
- \fBsubvolume set-default\fR\fI <id> <path>\fR
+Thanks,
 -- 
-1.7.6.5
-
+Martin 'Helios' Steigerwald - http://www.Lichtvoll.de
+GPG: 03B0 0D6C 0040 0710 4AFA  B82F 991B EAAC A599 84C7

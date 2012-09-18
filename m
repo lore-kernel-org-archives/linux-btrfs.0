@@ -1,64 +1,35 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from fgwmail6.fujitsu.co.jp ([192.51.44.36]:51497 "EHLO
-	fgwmail6.fujitsu.co.jp" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1751007Ab2ILEar (ORCPT
+Received: from rcsinet15.oracle.com ([148.87.113.117]:44908 "EHLO
+	rcsinet15.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1755222Ab2IRFy2 (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 12 Sep 2012 00:30:47 -0400
-Received: from m3.gw.fujitsu.co.jp (unknown [10.0.50.73])
-	by fgwmail6.fujitsu.co.jp (Postfix) with ESMTP id 4A2723EE0BB
-	for <linux-btrfs@vger.kernel.org>; Wed, 12 Sep 2012 13:30:46 +0900 (JST)
-Received: from smail (m3 [127.0.0.1])
-	by outgoing.m3.gw.fujitsu.co.jp (Postfix) with ESMTP id 3332045DEB5
-	for <linux-btrfs@vger.kernel.org>; Wed, 12 Sep 2012 13:30:46 +0900 (JST)
-Received: from s3.gw.fujitsu.co.jp (s3.gw.fujitsu.co.jp [10.0.50.93])
-	by m3.gw.fujitsu.co.jp (Postfix) with ESMTP id 1CB9E45DEB7
-	for <linux-btrfs@vger.kernel.org>; Wed, 12 Sep 2012 13:30:46 +0900 (JST)
-Received: from s3.gw.fujitsu.co.jp (localhost.localdomain [127.0.0.1])
-	by s3.gw.fujitsu.co.jp (Postfix) with ESMTP id F354C1DB803B
-	for <linux-btrfs@vger.kernel.org>; Wed, 12 Sep 2012 13:30:45 +0900 (JST)
-Received: from m1000.s.css.fujitsu.com (m1000.s.css.fujitsu.com [10.240.81.136])
-	by s3.gw.fujitsu.co.jp (Postfix) with ESMTP id AC59CE08003
-	for <linux-btrfs@vger.kernel.org>; Wed, 12 Sep 2012 13:30:45 +0900 (JST)
-Received: from m1000.css.fujitsu.com (m1000 [127.0.0.1])
-	by m1000.s.css.fujitsu.com (Postfix) with ESMTP id 84B2260FF9
-	for <linux-btrfs@vger.kernel.org>; Wed, 12 Sep 2012 13:30:45 +0900 (JST)
-Received: from FM-323941448.jp.fujitsu.com (unknown [10.124.101.87])
-	by m1000.s.css.fujitsu.com (Postfix) with SMTP id 452E760F43
-	for <linux-btrfs@vger.kernel.org>; Wed, 12 Sep 2012 13:30:45 +0900 (JST)
-Message-Id: <201209120430.AA00006@FM-323941448.jp.fujitsu.com>
-From: Tsutomu Itoh <t-itoh@jp.fujitsu.com>
-Date: Wed, 12 Sep 2012 13:30:19 +0900
-To: linux-btrfs@vger.kernel.org
-Subject: [PATCH] Btrfs-progs: fix arguments check of qgroup limit
+	Tue, 18 Sep 2012 01:54:28 -0400
+Message-ID: <50580D1C.9020303@oracle.com>
+Date: Tue, 18 Sep 2012 13:56:44 +0800
+From: Anand Jain <Anand.Jain@oracle.com>
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
+To: miaox@cn.fujitsu.com
+CC: Linux Btrfs <linux-btrfs@vger.kernel.org>
+Subject: Re: [PATCH V3 4/7] Btrfs-progs: fix wrong way to check if the root
+ item contains otime and uuid
+References: <50487FD8.1000804@cn.fujitsu.com>
+In-Reply-To: <50487FD8.1000804@cn.fujitsu.com>
+Content-Type: text/plain; charset=UTF-8; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Segmentation fault occurred in the following command.
 
- # btrfs qgroup limit
- Segmentation fault
 
-So, we should check a minimum number of arguments.
+> -				if(ri->generation == ri->generation_v2) {
+> +				if(sh->len == sizeof(struct btrfs_root_item)) {
+>   					t = ri->otime.sec;
 
-Signed-off-by: Tsutomu Itoh <t-itoh@jp.fujitsu.com>
----
- cmds-qgroup.c |    3 +++
- 1 files changed, 3 insertions(+), 0 deletions(-)
+  This looks fine now but should this work when we
+  move to v3 and still have access to v2 introduced
+  members.?
 
-diff --git a/cmds-qgroup.c b/cmds-qgroup.c
-index 15534ea..1525c11 100644
---- a/cmds-qgroup.c
-+++ b/cmds-qgroup.c
-@@ -374,6 +374,9 @@ static int cmd_qgroup_limit(int argc, char **argv)
- 		}
- 	}
- 
-+	if (check_argc_min(argc - optind, 2))
-+		usage(cmd_qgroup_limit_usage);
-+
- 	if (!parse_limit(argv[optind], &size)) {
- 		fprintf(stderr, "Invalid size argument given\n");
- 		return 1;
+  ker cli
+  v3  v2  v2 introduced members are unnecessarily blocked
+  v2  v3  --as above--
 
+Thanks, Anand

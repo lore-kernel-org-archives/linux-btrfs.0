@@ -1,58 +1,75 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from twin.jikos.cz ([89.185.236.188]:48856 "EHLO twin.jikos.cz"
+Received: from twin.jikos.cz ([89.185.236.188]:48978 "EHLO twin.jikos.cz"
 	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1753971Ab2IRMH2 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 18 Sep 2012 08:07:28 -0400
-Date: Tue, 18 Sep 2012 14:06:58 +0200
+	id S932773Ab2IRMKq (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Tue, 18 Sep 2012 08:10:46 -0400
+Date: Tue, 18 Sep 2012 14:10:36 +0200
 From: David Sterba <dave@jikos.cz>
-To: Hugo Mills <hugo@carfax.org.uk>, Roman Mamedov <rm@romanrm.ru>,
-        miaox@cn.fujitsu.com, Hidetoshi Seto <seto.hidetoshi@jp.fujitsu.com>,
-        linux-btrfs@vger.kernel.org
-Subject: Re: [PATCH 2/2] Btrfs-progs: add mount-option command
-Message-ID: <20120918120657.GY17430@twin.jikos.cz>
+To: Hidetoshi Seto <seto.hidetoshi@jp.fujitsu.com>
+Cc: linux-btrfs@vger.kernel.org
+Subject: Re: [PATCH 1/2] Btrfs: make space to keep default mount options
+Message-ID: <20120918121035.GZ17430@twin.jikos.cz>
 Reply-To: dave@jikos.cz
 References: <5057CDA7.3090201@jp.fujitsu.com>
- <5057CEA9.3070707@jp.fujitsu.com>
- <5057DD0D.1070201@cn.fujitsu.com>
- <20120918101930.6f3edb3c@natsu>
- <20120918081940.GH1129@carfax.org.uk>
+ <5057CE50.1050706@jp.fujitsu.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <20120918081940.GH1129@carfax.org.uk>
+In-Reply-To: <5057CE50.1050706@jp.fujitsu.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Tue, Sep 18, 2012 at 09:19:40AM +0100, Hugo Mills wrote:
-> On Tue, Sep 18, 2012 at 10:19:30AM +0600, Roman Mamedov wrote:
-> > On Tue, 18 Sep 2012 10:31:41 +0800
-> > Miao Xie <miaox@cn.fujitsu.com> wrote:
-> > 
-> > > On tue, 18 Sep 2012 10:30:17 +0900, Hidetoshi Seto wrote:
-> > > > This patch adds mount-option command.
-> > > > The command can set/get default mount options.
-> > > > Now, the command can set/get 24 options.
-> > > > These options are equal to mount options which store
-> > > > in fs_info/mount-opt.
-> > > 
-> > > I don't think we need implement a separate command to do this,
-> > > we can add it into btrfstune just like ext3/4. If so, the users
-> > > who used ext3/4 before can be familiar with btrfs command as soon
-> > > as possible.
-> > 
-> > btrfstune currently only does one thing:
-> > 
-> > $ sudo btrfstune
-> > usage: btrfstune [options] device
-> > 	-S value	enable/disable seeding
-> > 
-> > To me it'd seem more logical the other way, why not move this operation to the
-> > base "btrfs" utility under some command, and remove "btrfstune" completely.
+On Tue, Sep 18, 2012 at 10:28:48AM +0900, Hidetoshi Seto wrote:
+> This patch create space to hold default mount option,
+> and to use saved default mount option change super.c
+> to read default mount option first when mount devices.
 > 
->    I would suggest picking up and extending Alex Block's "btrfs
-> property set/get" idea for this.
+> Signed-off-by: Hidetoshi Seto <seto.hidetoshi@jp.fujitsu.com>
+> ---
+>  fs/btrfs/ctree.h |    5 ++++-
+>  fs/btrfs/super.c |    2 ++
+>  2 files changed, 6 insertions(+), 1 deletions(-)
+> 
+> diff --git a/fs/btrfs/ctree.h b/fs/btrfs/ctree.h
+> index fa5c45b..3eb0551 100644
+> --- a/fs/btrfs/ctree.h
+> +++ b/fs/btrfs/ctree.h
+> @@ -458,8 +458,11 @@ struct btrfs_super_block {
+>  
+>  	__le64 cache_generation;
+>  
+> +	/* default mount options */
+> +	unsigned long default_mount_opt;
 
-And I'm with you here. I'm not sure if btrfstune has widespread use, the
-functionality should go into a single management tool that everybody
-uses.
+you need to use __le64 here, unsigned long has not fixed size
+
+> +
+>  	/* future expansion */
+> -	__le64 reserved[31];
+> +	__le64 reserved[30];
+>  	u8 sys_chunk_array[BTRFS_SYSTEM_CHUNK_ARRAY_SIZE];
+>  	struct btrfs_root_backup super_roots[BTRFS_NUM_BACKUP_ROOTS];
+>  } __attribute__ ((__packed__));
+> diff --git a/fs/btrfs/super.c b/fs/btrfs/super.c
+> index e239915..7ef4a2e 100644
+> --- a/fs/btrfs/super.c
+> +++ b/fs/btrfs/super.c
+> @@ -340,6 +340,8 @@ int btrfs_parse_options(struct btrfs_root *root, char *options)
+>  	char *compress_type;
+>  	bool compress_force = false;
+>  
+> +	info->mount_opt = info->super_copy->default_mount_opt;
+
+the options have to respect some priority, eg. when I set default
+options to a filesystem, but mount with a different set, I expect that
+the explicit flags apply and override the defaults.
+
+I don't remember if this was discussed in the mailinglist or on IRC
+only, should be easy to dig up if needed.
+
+> +
+>  	cache_gen = btrfs_super_cache_generation(root->fs_info->super_copy);
+>  	if (cache_gen)
+>  		btrfs_set_opt(info->mount_opt, SPACE_CACHE);
+
 
 david

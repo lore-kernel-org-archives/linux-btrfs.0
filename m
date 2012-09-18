@@ -1,87 +1,107 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from frost.carfax.org.uk ([85.119.82.111]:46264 "EHLO
-	frost.carfax.org.uk" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1751656Ab2IRITx (ORCPT
+Received: from outrelay03.libero.it ([212.52.84.103]:49938 "EHLO
+	outrelay03.libero.it" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1754527Ab2IRKDw (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 18 Sep 2012 04:19:53 -0400
-Date: Tue, 18 Sep 2012 09:19:40 +0100
-From: Hugo Mills <hugo@carfax.org.uk>
-To: Roman Mamedov <rm@romanrm.ru>
-Cc: miaox@cn.fujitsu.com, Hidetoshi Seto <seto.hidetoshi@jp.fujitsu.com>,
-        linux-btrfs@vger.kernel.org
-Subject: Re: [PATCH 2/2] Btrfs-progs: add mount-option command
-Message-ID: <20120918081940.GH1129@carfax.org.uk>
-References: <5057CDA7.3090201@jp.fujitsu.com>
- <5057CEA9.3070707@jp.fujitsu.com>
- <5057DD0D.1070201@cn.fujitsu.com>
- <20120918101930.6f3edb3c@natsu>
+	Tue, 18 Sep 2012 06:03:52 -0400
+Message-ID: <26356142.2062531347962627486.JavaMail.root@wmail62>
+Date: Tue, 18 Sep 2012 12:03:47 +0200 (CEST)
+From: "Goffredo Baroncelli <kreijack@libero.it>" <kreijack@libero.it>
+Reply-To: "Goffredo Baroncelli <kreijack@libero.it>" <kreijack@libero.it>
+To: <seto.hidetoshi@jp.fujitsu.com>, <linux-btrfs@vger.kernel.org>
+Subject: R: [PATCH 2/2] Btrfs-progs: add mount-option command
 MIME-Version: 1.0
-Content-Type: multipart/signed; micalg=pgp-sha1;
-	protocol="application/pgp-signature"; boundary="Dx9iWuMxHO1cCoFc"
-In-Reply-To: <20120918101930.6f3edb3c@natsu>
+Content-Type: text/plain;charset="UTF-8"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
+In-Reply-To: <5057CDA7.3090201@jp.fujitsu.com>
+
+Hi Seto,
+
+please could you update also the man page too ? 
+Why it was not provided a way to clear a *single* flag ? To me it seems a bit 
+too long to clear all the flag (btrfs mount-option clear) and then set the 
+right one.
+
+As user interface I suggest something like chmod:
+
+   btrfs mount-option set +ssd,skip_balance -nodatacow /dev/sdX
+
+or
+
+   btrfs mount-option set =ssd,skip_balance,nodatacow /dev/sdX
 
 
---Dx9iWuMxHO1cCoFc
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
+Finally I have some small concern about two macro (see below)
 
-On Tue, Sep 18, 2012 at 10:19:30AM +0600, Roman Mamedov wrote:
-> On Tue, 18 Sep 2012 10:31:41 +0800
-> Miao Xie <miaox@cn.fujitsu.com> wrote:
-> 
-> > On tue, 18 Sep 2012 10:30:17 +0900, Hidetoshi Seto wrote:
-> > > This patch adds mount-option command.
-> > > The command can set/get default mount options.
-> > > Now, the command can set/get 24 options.
-> > > These options are equal to mount options which store
-> > > in fs_info/mount-opt.
-> > 
-> > I don't think we need implement a separate command to do this,
-> > we can add it into btrfstune just like ext3/4. If so, the users
-> > who used ext3/4 before can be familiar with btrfs command as soon
-> > as possible.
-> 
-> btrfstune currently only does one thing:
-> 
-> $ sudo btrfstune
-> usage: btrfstune [options] device
-> 	-S value	enable/disable seeding
-> 
-> To me it'd seem more logical the other way, why not move this operation to the
-> base "btrfs" utility under some command, and remove "btrfstune" completely.
+>----Messaggio originale----
+>Da: seto.hidetoshi@jp.fujitsu.com
+>Data: 18/09/2012 3.30
+>A: <linux-btrfs@vger.kernel.org>
+>Ogg: [PATCH 2/2] Btrfs-progs: add mount-option command
+>
+[...]
+>+/*
+>+ * Flags for mount options.
+>+ *
+>+ * Note: don't forget to add new options to btrfs_show_options()
+>+ */
+>+#define BTRFS_MOUNT_NODATASUM		(1 << 0)
+>+#define BTRFS_MOUNT_NODATACOW		(1 << 1)
+>+#define BTRFS_MOUNT_NOBARRIER		(1 << 2)
+>+#define BTRFS_MOUNT_SSD			(1 << 3)
+>+#define BTRFS_MOUNT_DEGRADED		(1 << 4)
+>+#define BTRFS_MOUNT_COMPRESS		(1 << 5)
+>+#define BTRFS_MOUNT_NOTREELOG           (1 << 6)
+>+#define BTRFS_MOUNT_FLUSHONCOMMIT       (1 << 7)
+>+#define BTRFS_MOUNT_SSD_SPREAD		(1 << 8)
+>+#define BTRFS_MOUNT_NOSSD		(1 << 9)
+>+#define BTRFS_MOUNT_DISCARD		(1 << 10)
+>+#define BTRFS_MOUNT_FORCE_COMPRESS      (1 << 11)
+>+#define BTRFS_MOUNT_SPACE_CACHE		(1 << 12)
+>+#define BTRFS_MOUNT_CLEAR_CACHE		(1 << 13)
+>+#define BTRFS_MOUNT_USER_SUBVOL_RM_ALLOWED (1 << 14)
+>+#define BTRFS_MOUNT_ENOSPC_DEBUG	 (1 << 15)
+>+#define BTRFS_MOUNT_AUTO_DEFRAG		(1 << 16)
+>+#define BTRFS_MOUNT_INODE_MAP_CACHE	(1 << 17)
+>+#define BTRFS_MOUNT_RECOVERY		(1 << 18)
+>+#define BTRFS_MOUNT_SKIP_BALANCE	(1 << 19)
+>+#define BTRFS_MOUNT_CHECK_INTEGRITY	(1 << 20)
+>+#define BTRFS_MOUNT_CHECK_INTEGRITY_INCLUDING_EXTENT_DATA (1 << 21)
+>+#define BTRFS_MOUNT_PANIC_ON_FATAL_ERROR	(1 << 22)
+>+
+>+#define btrfs_clear_opt(o, opt)		((o) &= ~BTRFS_MOUNT_##opt)
+>+#define btrfs_set_opt(o, opt)		((o) |= BTRFS_MOUNT_##opt)
+>+#define btrfs_test_opt(root, opt)	((root)->fs_info->mount_opt& \
+>+					 BTRFS_MOUNT_##opt)
 
-   I would suggest picking up and extending Alex Block's "btrfs
-property set/get" idea for this.
+I think that the macro names are too generic, I suggest to rename the three 
+macros above as
 
-   Hugo.
+#define btrfs_mount_XXXX_opt
 
--- 
-=== Hugo Mills: hugo@... carfax.org.uk | darksatanic.net | lug.org.uk ===
-  PGP key: 515C238D from wwwkeys.eu.pgp.net or http://www.carfax.org.uk
-              --- Welcome to Rivendell,  Mr Anderson... ---              
+Also, the last one should be 
 
---Dx9iWuMxHO1cCoFc
-Content-Type: application/pgp-signature; name="signature.asc"
-Content-Description: Digital signature
+#define btrfs_test_opt(o, opt)	( o & BTRFS_MOUNT_##opt)
 
------BEGIN PGP SIGNATURE-----
-Version: GnuPG v1.4.12 (GNU/Linux)
+Or better the other two
 
-iQIVAwUBUFgunL9z9OVl50rAAQK61Q/+I+u+kJnsigJu0gVZSI3xJmx7hylwY6IN
-ceaE7hmUxivy9juAc3rh5UrYPueCyulgGCZy31ZPhkKMxsGO2ljpX7w1KaXcC34S
-C9X6W3eWNbtboolXXElhteoFObNdUv5ptS9noU49fMDYGTcnY91Kc/AInLpJY13T
-Ph+uCFoIwpoFd4vauArFZPE9QklYtmV1VJi6q7mrqqRcFkuCQtKiV5Q4Yhx6l3IB
-9t1eGwAsQNMmx8l4pEjPWT//4evx+DCTCeU0UQcxqgl10H3UaxO/Qktcp2sqoc5n
-nnGp+9k8jzSTjnMh6JnJlYAhmfwyEzjZ1mgTpI7XQ+4LTBh86KJv4JWmeAseR5G2
-FVYNQYTbxVZM536tlyg1B+wUcRj3I0Lt/vvwKb4nfynR0zf0iOKsyNP9U8tgAeyB
-y1tNF6Z4KOYd2ByvzK09ACAivU1l+mqKXIpTkBe0JhvmHix0ZAOL9bbbg9ChaLZ7
-m5P7rhzikm2LSC/+1zU63qSlA8gBYeV3sEeXPG5Lm0yy5H/BdrsOQFUC7OgHbspn
-ev6Ft/jZuxPDByZC2iprFly2WpkSfcJcBhNw5dn3bCkUQQaKo6svbZVasZRhIC1F
-qnNST0Lbhan6pnfYnofLXCHsa6v3KYwXiK9KNrFSYiRuiBy7cvwcbzvTqiVFEx2R
-LHn7Y/tAx0s=
-=Xy4H
------END PGP SIGNATURE-----
+#define btrfs_mount_clear_opt(root, opt)		(((root)->fs_info->mount_opt) &= 
+~BTRFS_MOUNT_##opt)
+#define btrfs_mount_set_opt(root, opt)		(((root)->fs_info->mount_opt) |= 
+BTRFS_MOUNT_##opt)
 
---Dx9iWuMxHO1cCoFc--
+
+
+
+>-- 
+>1.7.7.6
+>
+>
+>--
+>To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
+>the body of a message to majordomo@vger.kernel.org
+>More majordomo info at  http://vger.kernel.org/majordomo-info.html
+>
+
+

@@ -1,38 +1,36 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from twin.jikos.cz ([89.185.236.188]:34784 "EHLO twin.jikos.cz"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1756127Ab2IQPAD (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 17 Sep 2012 11:00:03 -0400
-Date: Mon, 17 Sep 2012 16:59:57 +0200
-From: David Sterba <dave@jikos.cz>
-To: Anand Jain <Anand.Jain@oracle.com>
-Cc: linux-btrfs@vger.kernel.org
-Subject: Re: [PATCH] Btrfs + Btrfs-progs:  make pipe functions re-usable
-Message-ID: <20120917145957.GQ17430@twin.jikos.cz>
-Reply-To: dave@jikos.cz
-References: <5052C5A0.4090803@oracle.com>
- <20120914110432.GE17430@twin.jikos.cz>
- <5056AB8A.6000500@oracle.com>
+Received: from acsinet15.oracle.com ([141.146.126.227]:16518 "EHLO
+	acsinet15.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S932678Ab2IRDhQ (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>);
+	Mon, 17 Sep 2012 23:37:16 -0400
+Message-ID: <5057ECFB.5000900@oracle.com>
+Date: Tue, 18 Sep 2012 11:39:39 +0800
+From: Anand Jain <Anand.Jain@oracle.com>
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <5056AB8A.6000500@oracle.com>
+To: Hugo Mills <hugo@carfax.org.uk>, linux-btrfs@vger.kernel.org
+Subject: Re: [PATCH] Btrfs + Btrfs-progs:  make pipe functions re-usable
+References: <5052C5A0.4090803@oracle.com> <20120914110432.GE17430@twin.jikos.cz> <5056AB8A.6000500@oracle.com> <20120917102808.GE1129@carfax.org.uk>
+In-Reply-To: <20120917102808.GE1129@carfax.org.uk>
+Content-Type: text/plain; charset=ISO-8859-1; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Mon, Sep 17, 2012 at 12:48:10PM +0800, Anand Jain wrote:
-> >>  btrfs send introduced a part of code to read kernel-data
-> >>  from user-end using pipe. We need this part of code to be
-> >>  useable outside of send sub-cmd, so that developing
-> >>  service sub-cmd can use it.
-> >
-> >What's 'service sub-cmd' please?
-> 
->   at the moment 'btrfs service history <mnt>|<dev>'
->   to show logs of maintenance.
->   comments/suggestions welcome.
 
-Sorry, but without a more detailed description I can hardly give useful
-comments.  The patch looks ok but stands alone, you can post it with
-your proposed feature together.
+>     As I said in our private email exchange some months ago, I don't
+> think this is the right way to be doing this. For example, if you use
+> an alternative tool (such as btrfs-gui) which uses the ioctls
+> directly, you've lost that logging information.
 
-david
+  I agree with that Hugo. Thanks. These changes are partly for
+  the same reason.
+
+>     Keeping a log of what's been done to the FS is much better done by
+> extending the available logging in the kernel
+
+  Could you please point out the modules you are talking about.
+  I reviewed some but just in case if I have missed out any.
+
+
+
+Thanks,  Anand

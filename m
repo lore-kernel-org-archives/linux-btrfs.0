@@ -1,18 +1,18 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([222.73.24.84]:45341 "EHLO song.cn.fujitsu.com"
+Received: from cn.fujitsu.com ([222.73.24.84]:48972 "EHLO song.cn.fujitsu.com"
 	rhost-flags-OK-FAIL-OK-OK) by vger.kernel.org with ESMTP
-	id S1753369Ab2IFKsa (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 6 Sep 2012 06:48:30 -0400
+	id S1751619Ab2IRKf1 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Tue, 18 Sep 2012 06:35:27 -0400
 Received: from fnstmail02.fnst.cn.fujitsu.com (tang.cn.fujitsu.com [127.0.0.1])
-	by tang.cn.fujitsu.com (8.14.3/8.13.1) with ESMTP id q86AmTuc019711
-	for <linux-btrfs@vger.kernel.org>; Thu, 6 Sep 2012 18:48:29 +0800
-Message-ID: <50487F6E.6060001@cn.fujitsu.com>
-Date: Thu, 06 Sep 2012 18:48:14 +0800
+	by tang.cn.fujitsu.com (8.14.3/8.13.1) with ESMTP id q8IAZPbX015779
+	for <linux-btrfs@vger.kernel.org>; Tue, 18 Sep 2012 18:35:26 +0800
+Message-ID: <50584E6D.8000602@cn.fujitsu.com>
+Date: Tue, 18 Sep 2012 18:35:25 +0800
 From: Miao Xie <miaox@cn.fujitsu.com>
 Reply-To: miaox@cn.fujitsu.com
 MIME-Version: 1.0
 To: Linux Btrfs <linux-btrfs@vger.kernel.org>
-Subject: [PATCH V3 0/7 ] Btrfs-progs: enhance btrfs subvol list only to show
+Subject: [PATCH V4 0/7 ] Btrfs-progs: enhance btrfs subvol list only to show
  read-only snapshots
 Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
@@ -24,6 +24,13 @@ introduces a new option 'r' to implement it.
 You can use the command like that:
 
 	btrfs subvolume list -r <mnt>
+
+Changelog v3 -> v4:
+- modify the check method which is used to check if btrfs_root_item contains otime and uuid
+  or not.
+- add filter set and comparer set which are used to manage the filters and comparers specified
+  by the users.
+- re-base the read-only subvolume list function.
 
 Changelog v2 -> v3:
 - re-implement list_subvols()
@@ -56,11 +63,11 @@ Zhou Bo (2):
       Btrfs-progs: move the function declarations to a new head file
       Btrfs-progs: update the manpage entries for the btrfs subvolume list
 
- btrfs-list.c     |  931 ++++++++++++++++++++++++++++++------------------------
- btrfs-list.h     |   76 +++++
+ btrfs-list.c     | 1023 ++++++++++++++++++++++++++++++++----------------------
+ btrfs-list.h     |   88 +++++
  cmds-inspect.c   |    6 +-
- cmds-subvolume.c |   82 ++++--
- ctree.h          |    2 +
+ cmds-subvolume.c |   78 ++++-
+ ctree.h          |   17 +
  man/btrfs.8.in   |    5 +-
  send-utils.c     |    7 +-
- 7 files changed, 669 insertions(+), 440 deletions(-)
+ 7 files changed, 786 insertions(+), 438 deletions(-)

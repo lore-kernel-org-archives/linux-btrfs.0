@@ -1,116 +1,56 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx1.fusionio.com ([66.114.96.30]:41929 "EHLO mx1.fusionio.com"
+Received: from plane.gmane.org ([80.91.229.3]:55815 "EHLO plane.gmane.org"
 	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1751225Ab2ISTkG (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 19 Sep 2012 15:40:06 -0400
-Received: from mail1.int.fusionio.com (mail1.int.fusionio.com [10.101.1.21]) by mx1.fusionio.com with ESMTP id NW7OSct3T7gDem6P (version=TLSv1 cipher=AES128-SHA bits=128 verify=NO) for <linux-btrfs@vger.kernel.org>; Wed, 19 Sep 2012 13:40:04 -0600 (MDT)
-From: Josef Bacik <jbacik@fusionio.com>
-To: <linux-btrfs@vger.kernel.org>
-Subject: [PATCH] Btrfs: handle not finding the extent exactly when logging changed extents
-Date: Wed, 19 Sep 2012 15:45:14 -0400
-Message-ID: <1348083914-32171-1-git-send-email-jbacik@fusionio.com>
-MIME-Version: 1.0
-Content-Type: text/plain
+	id S1750755Ab2ISTnu (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Wed, 19 Sep 2012 15:43:50 -0400
+Received: from list by plane.gmane.org with local (Exim 4.69)
+	(envelope-from <gcfb-btrfs-devel-moved1@m.gmane.org>)
+	id 1TEQBb-00023P-W6
+	for linux-btrfs@vger.kernel.org; Wed, 19 Sep 2012 21:43:52 +0200
+Received: from 50C58B65.flatrate.dk ([80.197.139.101])
+        by main.gmane.org with esmtp (Gmexim 0.1 (Debian))
+        id 1AlnuQ-0007hv-00
+        for <linux-btrfs@vger.kernel.org>; Wed, 19 Sep 2012 21:43:51 +0200
+Received: from casper.bang by 50C58B65.flatrate.dk with local (Gmexim 0.1 (Debian))
+        id 1AlnuQ-0007hv-00
+        for <linux-btrfs@vger.kernel.org>; Wed, 19 Sep 2012 21:43:51 +0200
+To: linux-btrfs@vger.kernel.org
+From: Casper Bang <casper.bang@gmail.com>
+Subject: Re: Experiences: Why BTRFS had to yield for ZFS
+Date: Wed, 19 Sep 2012 19:43:35 +0000 (UTC)
+Message-ID: <loom.20120919T211827-915@post.gmane.org>
+References: <CALdWcbiW2ctG50ZCSzpTHA8t1CAhwTj66=GCoLcAFjGsjFBQJw@mail.gmail.com> <20120919152550.GA15242@shiny.207.47.4.2>
+Mime-Version: 1.0
+Content-Type: text/plain; charset=us-ascii
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-I started hitting warnings when running xfstest 68 in a loop because there
-were EM's that were not lined up properly with the physical extents.  This
-is ok, if we do something like punch a hole or write to a preallocated space
-or something like that we can have an EM that doesn't cover the entire
-physical extent.  So fix the tree logging stuff to cope with this case so we
-don't just commit the transaction.  With this patch I no longer see the
-warnings from the tree logging code.  Thanks,
+Chris Mason <chris.mason <at> fusionio.com> writes:
+> There are three basic problems with the database workloads on btrfs.
+> First is that we have higher latencies on writes because we are feeding
+> everything through helper threads for crcs.  Usually the extra latencies
+> don't show up because we have enough work in the pipeline to keep the
+> drive busy.
+> 
+> I don't believe the UEK kernels have the recent changes to do some of
+> the crc work inline (without handing off) for smaller synchronous IOs.
+> 
+> Second, on O_SYNC writes btrfs will write both the file metadata and
+> data into a special tree so we can be crash safe.  For big files this
+> tends to spend a lot of time looking for the extents in the file that
+> have changed.
+> 
+> Josef fixed that up and it is queued for the next merge window.
+> 
+> The third problem is that lots of random writes tend to make lots of
+> metadata.  If this doesn't fit in ram, we can end up doing many reads
+> that slow things down.  We're working on this now as well, but recent
+> kernels change how we cache things and should improve the results.
 
-Signed-off-by: Josef Bacik <jbacik@fusionio.com>
----
- fs/btrfs/tree-log.c |   46 ++++++++++++++++++++++++++++++++++++++++------
- 1 files changed, 40 insertions(+), 6 deletions(-)
+That's good to hear - personally I'd rather use btrfs than ZFS, but it seems we 
+were a tad bit early to the party with this kind of workload. Interesting nobody 
+commented on block-size, I kind of expected that when writing my initial post 
+(database using 8KB blocks, tweakable in ZFS but apparently not in btrfs).
 
-diff --git a/fs/btrfs/tree-log.c b/fs/btrfs/tree-log.c
-index ed1f7ce..e0ef92f 100644
---- a/fs/btrfs/tree-log.c
-+++ b/fs/btrfs/tree-log.c
-@@ -2833,6 +2833,7 @@ static int log_one_extent(struct btrfs_trans_handle *trans,
- 	struct btrfs_file_extent_item *fi;
- 	struct btrfs_key key;
- 	u64 start = em->mod_start;
-+	u64 search_start = start;
- 	u64 len = em->mod_len;
- 	u64 num_bytes;
- 	int nritems;
-@@ -2848,23 +2849,55 @@ static int log_one_extent(struct btrfs_trans_handle *trans,
- 	while (len) {
- 		if (args->nr)
- 			goto next_slot;
-+again:
- 		key.objectid = btrfs_ino(inode);
- 		key.type = BTRFS_EXTENT_DATA_KEY;
--		key.offset = start;
-+		key.offset = search_start;
- 
- 		ret = btrfs_search_slot(NULL, root, &key, path, 0, 0);
- 		if (ret < 0)
- 			return ret;
-+
- 		if (ret) {
- 			/*
--			 * This shouldn't happen, but it might so warn and
--			 * return an error.
-+			 * A rare case were we can have an em for a section of a
-+			 * larger extent so we need to make sure that this em
-+			 * falls within the extent we've found.  If not we just
-+			 * bail and go back to ye-olde way of doing things but
-+			 * it happens often enough in testing that we need to do
-+			 * this dance to make sure.
- 			 */
--			WARN_ON(1);
--			return -ENOENT;
-+			do {
-+				if (path->slots[0] == 0) {
-+					btrfs_release_path(path);
-+					if (search_start == 0)
-+						return -ENOENT;
-+					search_start--;
-+					goto again;
-+				}
-+
-+				path->slots[0]--;
-+				btrfs_item_key_to_cpu(path->nodes[0], &key,
-+						      path->slots[0]);
-+				if (key.objectid != btrfs_ino(inode) ||
-+				    key.type != BTRFS_EXTENT_DATA_KEY) {
-+					btrfs_release_path(path);
-+					return -ENOENT;
-+				}
-+			} while (key.offset > start);
-+
-+			fi = btrfs_item_ptr(path->nodes[0], path->slots[0],
-+					    struct btrfs_file_extent_item);
-+			num_bytes = btrfs_file_extent_num_bytes(path->nodes[0],
-+								fi);
-+			if (key.offset + num_bytes <= start) {
-+				btrfs_release_path(path);
-+				return -ENOENT;
-+			}
- 		}
- 		args->src = path->nodes[0];
- next_slot:
-+		btrfs_item_key_to_cpu(path->nodes[0], &key, path->slots[0]);
- 		fi = btrfs_item_ptr(args->src, path->slots[0],
- 				    struct btrfs_file_extent_item);
- 		if (args->nr &&
-@@ -2898,8 +2931,9 @@ next_slot:
- 		} else {
- 			len -= num_bytes;
- 		}
--		start += btrfs_file_extent_num_bytes(args->src, fi);
-+		start = key.offset + num_bytes;
- 		args->next_offset = start;
-+		search_start = start;
- 
- 		if (path->slots[0] < nritems) {
- 			if (len)
--- 
-1.7.7.6
+/Casper
 

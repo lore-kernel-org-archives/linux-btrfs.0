@@ -1,32 +1,28 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from twin.jikos.cz ([89.185.236.188]:49535 "EHLO twin.jikos.cz"
+Received: from twin.jikos.cz ([89.185.236.188]:44993 "EHLO twin.jikos.cz"
 	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S932928Ab2IRMkz (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 18 Sep 2012 08:40:55 -0400
-Date: Tue, 18 Sep 2012 14:40:29 +0200
+	id S1755830Ab2ISQuZ (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Wed, 19 Sep 2012 12:50:25 -0400
+Date: Wed, 19 Sep 2012 18:50:18 +0200
 From: David Sterba <dave@jikos.cz>
-To: Miao Xie <miaox@cn.fujitsu.com>
-Cc: Linux Btrfs <linux-btrfs@vger.kernel.org>, David Sterba <dave@jikos.cz>
-Subject: Re: [PATCH] Btrfs: fix the missing error information in
- create_pending_snapshot()
-Message-ID: <20120918124028.GB17430@twin.jikos.cz>
+To: Liu Bo <bo.li.liu@oracle.com>
+Cc: linux-btrfs@vger.kernel.org
+Subject: Re: [PATCH] Btrfs: fix off-by-one in file clone
+Message-ID: <20120919165018.GC17430@twin.jikos.cz>
 Reply-To: dave@jikos.cz
-References: <50580C26.5030803@cn.fujitsu.com>
+References: <1347961943-18185-1-git-send-email-bo.li.liu@oracle.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <50580C26.5030803@cn.fujitsu.com>
+In-Reply-To: <1347961943-18185-1-git-send-email-bo.li.liu@oracle.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Tue, Sep 18, 2012 at 01:52:38PM +0800, Miao Xie wrote:
-> The macro btrfs_abort_transaction() can get the line number of the code
-> where the problem happens, so we should invoke it in the place that the
-> error occurs, or we will lose the line number.
+On Tue, Sep 18, 2012 at 05:52:23PM +0800, Liu Bo wrote:
+> Btrfs uses inclusive range end for lock_extent(), unlock_extent() and
+> related functions, so we made off-by-one errors in file clone.
 
-Thanks, that's it! AFAICS it's based on
+We're lucky that it's off-by-one in a way that it locks more than it
+should. The function is full of such calculations, I didn't spot any
+other instances, but another review round would not harm.
 
-  [PATCH V4 01/12] Btrfs: fix error path in create_pending_snapshot()
-
-so I'll base my patch on top of these two.
-
-david
+Reviewed-by: David Sterba <dsterba@suse.cz>

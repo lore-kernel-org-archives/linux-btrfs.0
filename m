@@ -1,84 +1,126 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from fgwmail5.fujitsu.co.jp ([192.51.44.35]:58109 "EHLO
-	fgwmail5.fujitsu.co.jp" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1755337Ab2ISIcG (ORCPT
+Received: from fgwmail6.fujitsu.co.jp ([192.51.44.36]:48355 "EHLO
+	fgwmail6.fujitsu.co.jp" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1753487Ab2ISIcP (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 19 Sep 2012 04:32:06 -0400
-Received: from m2.gw.fujitsu.co.jp (unknown [10.0.50.72])
-	by fgwmail5.fujitsu.co.jp (Postfix) with ESMTP id 008A83EE0C3
-	for <linux-btrfs@vger.kernel.org>; Wed, 19 Sep 2012 17:32:03 +0900 (JST)
-Received: from smail (m2 [127.0.0.1])
-	by outgoing.m2.gw.fujitsu.co.jp (Postfix) with ESMTP id D820D45DE4E
-	for <linux-btrfs@vger.kernel.org>; Wed, 19 Sep 2012 17:32:02 +0900 (JST)
-Received: from s2.gw.fujitsu.co.jp (s2.gw.fujitsu.co.jp [10.0.50.92])
-	by m2.gw.fujitsu.co.jp (Postfix) with ESMTP id C275045DE4D
-	for <linux-btrfs@vger.kernel.org>; Wed, 19 Sep 2012 17:32:02 +0900 (JST)
-Received: from s2.gw.fujitsu.co.jp (localhost.localdomain [127.0.0.1])
-	by s2.gw.fujitsu.co.jp (Postfix) with ESMTP id AF25A1DB803F
-	for <linux-btrfs@vger.kernel.org>; Wed, 19 Sep 2012 17:32:02 +0900 (JST)
-Received: from ml14.s.css.fujitsu.com (ml14.s.css.fujitsu.com [10.240.81.134])
-	by s2.gw.fujitsu.co.jp (Postfix) with ESMTP id 664B11DB803E
-	for <linux-btrfs@vger.kernel.org>; Wed, 19 Sep 2012 17:32:02 +0900 (JST)
-Received: from ml14.css.fujitsu.com (ml14 [127.0.0.1])
-	by ml14.s.css.fujitsu.com (Postfix) with ESMTP id 3E8229F78F3
-	for <linux-btrfs@vger.kernel.org>; Wed, 19 Sep 2012 17:32:02 +0900 (JST)
-Received: from [127.0.0.1] (unknown [10.124.101.112])
-	by ml14.s.css.fujitsu.com (Postfix) with ESMTP id E21F39F78DF
-	for <linux-btrfs@vger.kernel.org>; Wed, 19 Sep 2012 17:32:01 +0900 (JST)
-Message-ID: <505982DD.8030408@jp.fujitsu.com>
-Date: Wed, 19 Sep 2012 17:31:25 +0900
+	Wed, 19 Sep 2012 04:32:15 -0400
+Received: from m1.gw.fujitsu.co.jp (unknown [10.0.50.71])
+	by fgwmail6.fujitsu.co.jp (Postfix) with ESMTP id 03B543EE0B6
+	for <linux-btrfs@vger.kernel.org>; Wed, 19 Sep 2012 17:32:14 +0900 (JST)
+Received: from smail (m1 [127.0.0.1])
+	by outgoing.m1.gw.fujitsu.co.jp (Postfix) with ESMTP id D5A2645DE58
+	for <linux-btrfs@vger.kernel.org>; Wed, 19 Sep 2012 17:32:13 +0900 (JST)
+Received: from s1.gw.fujitsu.co.jp (s1.gw.fujitsu.co.jp [10.0.50.91])
+	by m1.gw.fujitsu.co.jp (Postfix) with ESMTP id AE9A745DE54
+	for <linux-btrfs@vger.kernel.org>; Wed, 19 Sep 2012 17:32:13 +0900 (JST)
+Received: from s1.gw.fujitsu.co.jp (localhost.localdomain [127.0.0.1])
+	by s1.gw.fujitsu.co.jp (Postfix) with ESMTP id 9E1411DB8046
+	for <linux-btrfs@vger.kernel.org>; Wed, 19 Sep 2012 17:32:13 +0900 (JST)
+Received: from m1001.s.css.fujitsu.com (m1001.s.css.fujitsu.com [10.240.81.139])
+	by s1.gw.fujitsu.co.jp (Postfix) with ESMTP id 3AEE41DB8042
+	for <linux-btrfs@vger.kernel.org>; Wed, 19 Sep 2012 17:32:13 +0900 (JST)
+Message-ID: <505982FF.407@jp.fujitsu.com>
+Date: Wed, 19 Sep 2012 17:31:59 +0900
 From: Hidetoshi Seto <seto.hidetoshi@jp.fujitsu.com>
 MIME-Version: 1.0
-To: linux-btrfs@vger.kernel.org
-Subject: Re: [PATCH 1/2] Btrfs: make space to keep default mount options
-References: <5057CDA7.3090201@jp.fujitsu.com> <5057CE50.1050706@jp.fujitsu.com> <20120918121035.GZ17430@twin.jikos.cz>
-In-Reply-To: <20120918121035.GZ17430@twin.jikos.cz>
-Content-Type: text/plain; charset=ISO-8859-1
+To: "Goffredo Baroncelli <kreijack@libero.it>" <kreijack@libero.it>
+CC: linux-btrfs@vger.kernel.org
+Subject: Re: R: [PATCH 2/2] Btrfs-progs: add mount-option command
+In-Reply-To: <26356142.2062531347962627486.JavaMail.root@wmail62>
+Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
+References: <26356142.2062531347962627486.JavaMail.root@wmail62>
 
-(2012/09/18 21:10), David Sterba wrote:
-> On Tue, Sep 18, 2012 at 10:28:48AM +0900, Hidetoshi Seto wrote:
->> diff --git a/fs/btrfs/ctree.h b/fs/btrfs/ctree.h
->> index fa5c45b..3eb0551 100644
->> --- a/fs/btrfs/ctree.h
->> +++ b/fs/btrfs/ctree.h
->> @@ -458,8 +458,11 @@ struct btrfs_super_block {
->>  
->>  	__le64 cache_generation;
->>  
->> +	/* default mount options */
->> +	unsigned long default_mount_opt;
+(2012/09/18 19:03), Goffredo Baroncelli <kreijack@libero.it> wrote:
+> Hi Seto,
 > 
-> you need to use __le64 here, unsigned long has not fixed size
+> please could you update also the man page too ? 
 
-Indeed. I'll use __le64 next time.
+Sure. I'll update it next time.
 
->> diff --git a/fs/btrfs/super.c b/fs/btrfs/super.c
->> index e239915..7ef4a2e 100644
->> --- a/fs/btrfs/super.c
->> +++ b/fs/btrfs/super.c
->> @@ -340,6 +340,8 @@ int btrfs_parse_options(struct btrfs_root *root, char *options)
->>  	char *compress_type;
->>  	bool compress_force = false;
->>  
->> +	info->mount_opt = info->super_copy->default_mount_opt;
+> Why it was not provided a way to clear a *single* flag ? To me it seems a bit 
+> too long to clear all the flag (btrfs mount-option clear) and then set the 
+> right one.
+
+Good point. We should have a way to clear defaults, by "clear" or
+"set none" or so on. 
+
 > 
-> the options have to respect some priority, eg. when I set default
-> options to a filesystem, but mount with a different set, I expect that
-> the explicit flags apply and override the defaults.
+> As user interface I suggest something like chmod:
 > 
-> I don't remember if this was discussed in the mailinglist or on IRC
-> only, should be easy to dig up if needed.
+>    btrfs mount-option set +ssd,skip_balance -nodatacow /dev/sdX
+> 
+> or
+> 
+>    btrfs mount-option set =ssd,skip_balance,nodatacow /dev/sdX
 
-At least I don't know whether this was already disscussed or not.
-Now my code gives priority to the default options, and it would not
-be so difficult in case if we have opposing options like "ssd" vs
-"nossd", and "space_cache" vs "no_space_cache"...
-Or we could use the default options only if there is no options
-specified when it is being mount, but it will make the default
-options useless. Humm, I'll try to pull together my thoughts
-prior to my next post.
+Interesting. I guess you mean that "=<options>" will reset defaults
+by specified options, while "+<options>" and "-<options>" will be
+used to add/delete option to/from current defaults.
+
+> 
+> Finally I have some small concern about two macro (see below)
+> 
+>> ----Messaggio originale----
+>> Da: seto.hidetoshi@jp.fujitsu.com
+>> Data: 18/09/2012 3.30
+>> A: <linux-btrfs@vger.kernel.org>
+>> Ogg: [PATCH 2/2] Btrfs-progs: add mount-option command
+>>
+> [...]
+>> +/*
+>> + * Flags for mount options.
+>> + *
+>> + * Note: don't forget to add new options to btrfs_show_options()
+>> + */
+>> +#define BTRFS_MOUNT_NODATASUM		(1 << 0)
+>> +#define BTRFS_MOUNT_NODATACOW		(1 << 1)
+>> +#define BTRFS_MOUNT_NOBARRIER		(1 << 2)
+>> +#define BTRFS_MOUNT_SSD			(1 << 3)
+>> +#define BTRFS_MOUNT_DEGRADED		(1 << 4)
+>> +#define BTRFS_MOUNT_COMPRESS		(1 << 5)
+>> +#define BTRFS_MOUNT_NOTREELOG           (1 << 6)
+>> +#define BTRFS_MOUNT_FLUSHONCOMMIT       (1 << 7)
+>> +#define BTRFS_MOUNT_SSD_SPREAD		(1 << 8)
+>> +#define BTRFS_MOUNT_NOSSD		(1 << 9)
+>> +#define BTRFS_MOUNT_DISCARD		(1 << 10)
+>> +#define BTRFS_MOUNT_FORCE_COMPRESS      (1 << 11)
+>> +#define BTRFS_MOUNT_SPACE_CACHE		(1 << 12)
+>> +#define BTRFS_MOUNT_CLEAR_CACHE		(1 << 13)
+>> +#define BTRFS_MOUNT_USER_SUBVOL_RM_ALLOWED (1 << 14)
+>> +#define BTRFS_MOUNT_ENOSPC_DEBUG	 (1 << 15)
+>> +#define BTRFS_MOUNT_AUTO_DEFRAG		(1 << 16)
+>> +#define BTRFS_MOUNT_INODE_MAP_CACHE	(1 << 17)
+>> +#define BTRFS_MOUNT_RECOVERY		(1 << 18)
+>> +#define BTRFS_MOUNT_SKIP_BALANCE	(1 << 19)
+>> +#define BTRFS_MOUNT_CHECK_INTEGRITY	(1 << 20)
+>> +#define BTRFS_MOUNT_CHECK_INTEGRITY_INCLUDING_EXTENT_DATA (1 << 21)
+>> +#define BTRFS_MOUNT_PANIC_ON_FATAL_ERROR	(1 << 22)
+>> +
+>> +#define btrfs_clear_opt(o, opt)		((o) &= ~BTRFS_MOUNT_##opt)
+>> +#define btrfs_set_opt(o, opt)		((o) |= BTRFS_MOUNT_##opt)
+>> +#define btrfs_test_opt(root, opt)	((root)->fs_info->mount_opt& \
+>> +					 BTRFS_MOUNT_##opt)
+> 
+> I think that the macro names are too generic, I suggest to rename the three 
+> macros above as
+> 
+> #define btrfs_mount_XXXX_opt
+> 
+> Also, the last one should be 
+> 
+> #define btrfs_test_opt(o, opt)	( o & BTRFS_MOUNT_##opt)
+> 
+> Or better the other two
+> 
+> #define btrfs_mount_clear_opt(root, opt)		(((root)->fs_info->mount_opt) &= 
+> ~BTRFS_MOUNT_##opt)
+> #define btrfs_mount_set_opt(root, opt)		(((root)->fs_info->mount_opt) |= 
+> BTRFS_MOUNT_##opt)
+
+Right. I'll fix it.
+
 
 Thanks,
 H.Seto

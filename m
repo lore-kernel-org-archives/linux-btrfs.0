@@ -1,37 +1,60 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from relay3-d.mail.gandi.net ([217.70.183.195]:42947 "EHLO
-	relay3-d.mail.gandi.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1751100Ab2ISIGB (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 19 Sep 2012 04:06:01 -0400
-Received: from mfilter13-d.gandi.net (mfilter13-d.gandi.net [217.70.178.141])
-	by relay3-d.mail.gandi.net (Postfix) with ESMTP id 4180BA80D5
-	for <linux-btrfs@vger.kernel.org>; Wed, 19 Sep 2012 10:05:59 +0200 (CEST)
-Received: from relay3-d.mail.gandi.net ([217.70.183.195])
-	by mfilter13-d.gandi.net (mfilter13-d.gandi.net [10.0.15.180]) (amavisd-new, port 10024)
-	with ESMTP id tKb30jKn+j5N for <linux-btrfs@vger.kernel.org>;
-	Wed, 19 Sep 2012 10:05:57 +0200 (CEST)
-Received: from [192.168.1.66] (AMontpellier-156-1-36-171.w90-0.abo.wanadoo.fr [90.0.67.171])
-	(Authenticated sender: swami@petaramesh.org)
-	by relay3-d.mail.gandi.net (Postfix) with ESMTPSA id 49541A807A
-	for <linux-btrfs@vger.kernel.org>; Wed, 19 Sep 2012 10:05:52 +0200 (CEST)
-Message-ID: <50597CD5.5060001@petaramesh.org>
-Date: Wed, 19 Sep 2012 10:05:41 +0200
-From: =?ISO-8859-1?Q?Sw=E2mi_Petaramesh?= <swami@petaramesh.org>
-MIME-Version: 1.0
-To: Linux Btrfs <linux-btrfs@vger.kernel.org>
-Subject: "free space cache generation" ?
-Content-Type: text/plain; charset=ISO-8859-1; format=flowed
+Received: from plane.gmane.org ([80.91.229.3]:36248 "EHLO plane.gmane.org"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1751637Ab2ISIKA (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Wed, 19 Sep 2012 04:10:00 -0400
+Received: from list by plane.gmane.org with local (Exim 4.69)
+	(envelope-from <gcfb-btrfs-devel-moved1@m.gmane.org>)
+	id 1TEFM9-0007jM-Hs
+	for linux-btrfs@vger.kernel.org; Wed, 19 Sep 2012 10:10:01 +0200
+Received: from 50C58B65.flatrate.dk ([80.197.139.101])
+        by main.gmane.org with esmtp (Gmexim 0.1 (Debian))
+        id 1AlnuQ-0007hv-00
+        for <linux-btrfs@vger.kernel.org>; Wed, 19 Sep 2012 10:10:01 +0200
+Received: from casper.bang by 50C58B65.flatrate.dk with local (Gmexim 0.1 (Debian))
+        id 1AlnuQ-0007hv-00
+        for <linux-btrfs@vger.kernel.org>; Wed, 19 Sep 2012 10:10:01 +0200
+To: linux-btrfs@vger.kernel.org
+From: Casper Bang <casper.bang@gmail.com>
+Subject: Re: Experiences: Why BTRFS had to yield for ZFS
+Date: Wed, 19 Sep 2012 08:09:47 +0000 (UTC)
+Message-ID: <loom.20120919T094704-616@post.gmane.org>
+References: <CALdWcbiW2ctG50ZCSzpTHA8t1CAhwTj66=GCoLcAFjGsjFBQJw@mail.gmail.com> <5058068C.4040704@oracle.com> <loom.20120919T083653-817@post.gmane.org> <CAG1y0sfmGczX1u+JApcB3Dz_gd9g=mT6JGDKkqJR5fRfSViOTg@mail.gmail.com>
+Mime-Version: 1.0
+Content-Type: text/plain; charset=us-ascii
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hi there,
+> IIRC there were some patches post-3.0 which relates to sync. If oracle
+> db uses sync writes (or call sync somewhere, which it should), it
+> might help to re-run the test with more recent kernel. kernel-ml
+> repository might help.
 
-I noticed my syslog is filling up with tons of:
+Yeah there doesn't seem to be a shortage of patches coming into btrfs
+ (just looking around the mailing-list) so that doesn't surprise me. 
+Indeed, reading about race conditions, deadlocks and locks being held too 
+long, does not serve to promote btrfs as particular production ready.
 
-btrfs: free space inode generation (0) did not match free space cache 
-generation (25326)
+> > Ext4 starts out with a realtime to SCN ratio of about 3.4 and ends down 
+around a
+> > factor 2.2.
+> >
+> > ZFS starts out with a realtime to SCN ratio of about 7.5 and ends down 
+around 
+a
+> > factor 4.4.
+> 
+> So zfsonlinux is actually faster than ext4 for that purpuse? coool !
 
-...any clue ?
+Yes, rather amazingly fast - again, seems to us ZFS is optimized for write 
+while btrfs is optimized for read.
 
-TIA.
+> Just wondering, did you use "discard" option by any chance? In my
+> experience it makes btrfs MUCH slower.
+
+I actually don't remember when we added this (we started out without it), 
+but I don't recall seeing a major difference. We should disable it however,
+since the stupid fancy HP RAID controller refuses to pass on TRIM and Smart
+commands anyway (and the propriatary HP SSD tools refuse to access 
+non-enterprise HP SSD's.
+

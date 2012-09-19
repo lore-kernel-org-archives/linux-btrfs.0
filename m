@@ -1,64 +1,51 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from rcsinet15.oracle.com ([148.87.113.117]:43872 "EHLO
-	rcsinet15.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1751087Ab2ISOMq (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 19 Sep 2012 10:12:46 -0400
-Message-ID: <5059D2D3.3050303@oracle.com>
-Date: Wed, 19 Sep 2012 22:12:35 +0800
-From: Liu Bo <bo.li.liu@oracle.com>
-MIME-Version: 1.0
-To: ching <lsching17@gmail.com>
+Received: from mx2.fusionio.com ([66.114.96.31]:42052 "EHLO mx2.fusionio.com"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1756339Ab2ISPZw (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Wed, 19 Sep 2012 11:25:52 -0400
+Date: Wed, 19 Sep 2012 11:25:50 -0400
+From: Chris Mason <chris.mason@fusionio.com>
+To: Casper Bang <casper.bang@gmail.com>
 CC: "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
-Subject: Re: enquiry about autodefrag option
-References: <50570652.4060200@gmail.com> <5059AC5E.1030003@gmail.com>
-In-Reply-To: <5059AC5E.1030003@gmail.com>
-Content-Type: text/plain; charset=UTF-8
+Subject: Re: Experiences: Why BTRFS had to yield for ZFS
+Message-ID: <20120919152550.GA15242@shiny.207.47.4.2>
+References: <CALdWcbiW2ctG50ZCSzpTHA8t1CAhwTj66=GCoLcAFjGsjFBQJw@mail.gmail.com>
+MIME-Version: 1.0
+Content-Type: text/plain; charset="us-ascii"
+In-Reply-To: <CALdWcbiW2ctG50ZCSzpTHA8t1CAhwTj66=GCoLcAFjGsjFBQJw@mail.gmail.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 09/19/2012 07:28 PM, ching wrote:
-> can anybody helps?
-> 
-> On 09/17/2012 07:15 PM, ching wrote:
->> I am testing btrfs for long-term storage and backup, and i would like
->> to know more about "autodefrag" option:
->>
->> 1. Will "autodefrag" option benefit ssd?
->>
->>     My understanding is:
->>
->>        autodrag -> number of extent decrease -> metadata decrease -> a
->> "healthier" filesystem in the long run
->>
->>    (P.S. I am aware that autodefrag will introduce extra write I/O)
->>
+On Mon, Sep 17, 2012 at 02:45:08AM -0600, Casper Bang wrote:
+> Abstract
+> For database testing purposes, a COW filesystem was needed in order to
+> facilitate snapshotting and rollback, such as to provide mirrors of
+> our production database at fixed intervals (every night and by
+> demand).
 
-Yes, your understanding is right, random write workloads will benefit from it.
+Thanks for taking the time to write this up follow through the thread.
+It's always interesting to hear situations where btrfs doesn't work
+well.
 
->> 2. AFAIK, "autodefrag" detects small random writes into files and
->> queues them up for an automatic defrag process, so the filesystem will
->> defragment itself while it's used.
->>
->>     If the system reboot/crash/remount-ro, will the autodefrag process
->> continue after resume?
->>
+There are three basic problems with the database workloads on btrfs.
+First is that we have higher latencies on writes because we are feeding
+everything through helper threads for crcs.  Usually the extra latencies
+don't show up because we have enough work in the pipeline to keep the
+drive busy.
 
-For reboot, autodefrag will be waited to finish during umounting btrfs.
+I don't believe the UEK kernels have the recent changes to do some of
+the crc work inline (without handing off) for smaller synchronous IOs.
 
-For crash and remount-ro, it won't resume since it is not that necessary and we're all
-COWed so that the data is ok.
+Second, on O_SYNC writes btrfs will write both the file metadata and
+data into a special tree so we can be crash safe.  For big files this
+tends to spend a lot of time looking for the extents in the file that
+have changed.
 
-And autodefrag will only take effect when taking the 'autodefrag' mount option.
+Josef fixed that up and it is queued for the next merge window.
 
-thanks,
-liubo
+The third problem is that lots of random writes tend to make lots of
+metadata.  If this doesn't fit in ram, we can end up doing many reads
+that slow things down.  We're working on this now as well, but recent
+kernels change how we cache things and should improve the results.
 
->>
-> 
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
-> 
-
+-chris

@@ -1,54 +1,85 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.fusionio.com ([66.114.96.31]:43183 "EHLO mx2.fusionio.com"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1753473Ab2IRNJG (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 18 Sep 2012 09:09:06 -0400
-Date: Tue, 18 Sep 2012 09:09:03 -0400
-From: Josef Bacik <jbacik@fusionio.com>
-To: Kay Sievers <kay@vrfy.org>
-CC: btrfs <linux-btrfs@vger.kernel.org>,
-        Lennart Poettering <lennart@poettering.net>,
-        Harald Hoyer <harald@redhat.com>
-Subject: Re: BTRFS_IOC_DEVICES_READY and removed devices
-Message-ID: <20120918130903.GA2272@localhost.localdomain>
-References: <CAPXgP10p_26o3Xw9UEqaPs5=1VAZNkFqZnkXmphzvapcSca5ZQ@mail.gmail.com>
+Received: from fgwmail5.fujitsu.co.jp ([192.51.44.35]:58109 "EHLO
+	fgwmail5.fujitsu.co.jp" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1755337Ab2ISIcG (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>);
+	Wed, 19 Sep 2012 04:32:06 -0400
+Received: from m2.gw.fujitsu.co.jp (unknown [10.0.50.72])
+	by fgwmail5.fujitsu.co.jp (Postfix) with ESMTP id 008A83EE0C3
+	for <linux-btrfs@vger.kernel.org>; Wed, 19 Sep 2012 17:32:03 +0900 (JST)
+Received: from smail (m2 [127.0.0.1])
+	by outgoing.m2.gw.fujitsu.co.jp (Postfix) with ESMTP id D820D45DE4E
+	for <linux-btrfs@vger.kernel.org>; Wed, 19 Sep 2012 17:32:02 +0900 (JST)
+Received: from s2.gw.fujitsu.co.jp (s2.gw.fujitsu.co.jp [10.0.50.92])
+	by m2.gw.fujitsu.co.jp (Postfix) with ESMTP id C275045DE4D
+	for <linux-btrfs@vger.kernel.org>; Wed, 19 Sep 2012 17:32:02 +0900 (JST)
+Received: from s2.gw.fujitsu.co.jp (localhost.localdomain [127.0.0.1])
+	by s2.gw.fujitsu.co.jp (Postfix) with ESMTP id AF25A1DB803F
+	for <linux-btrfs@vger.kernel.org>; Wed, 19 Sep 2012 17:32:02 +0900 (JST)
+Received: from ml14.s.css.fujitsu.com (ml14.s.css.fujitsu.com [10.240.81.134])
+	by s2.gw.fujitsu.co.jp (Postfix) with ESMTP id 664B11DB803E
+	for <linux-btrfs@vger.kernel.org>; Wed, 19 Sep 2012 17:32:02 +0900 (JST)
+Received: from ml14.css.fujitsu.com (ml14 [127.0.0.1])
+	by ml14.s.css.fujitsu.com (Postfix) with ESMTP id 3E8229F78F3
+	for <linux-btrfs@vger.kernel.org>; Wed, 19 Sep 2012 17:32:02 +0900 (JST)
+Received: from [127.0.0.1] (unknown [10.124.101.112])
+	by ml14.s.css.fujitsu.com (Postfix) with ESMTP id E21F39F78DF
+	for <linux-btrfs@vger.kernel.org>; Wed, 19 Sep 2012 17:32:01 +0900 (JST)
+Message-ID: <505982DD.8030408@jp.fujitsu.com>
+Date: Wed, 19 Sep 2012 17:31:25 +0900
+From: Hidetoshi Seto <seto.hidetoshi@jp.fujitsu.com>
 MIME-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-In-Reply-To: <CAPXgP10p_26o3Xw9UEqaPs5=1VAZNkFqZnkXmphzvapcSca5ZQ@mail.gmail.com>
+To: linux-btrfs@vger.kernel.org
+Subject: Re: [PATCH 1/2] Btrfs: make space to keep default mount options
+References: <5057CDA7.3090201@jp.fujitsu.com> <5057CE50.1050706@jp.fujitsu.com> <20120918121035.GZ17430@twin.jikos.cz>
+In-Reply-To: <20120918121035.GZ17430@twin.jikos.cz>
+Content-Type: text/plain; charset=ISO-8859-1
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Mon, Sep 17, 2012 at 04:46:08PM -0600, Kay Sievers wrote:
-> We are currently playing around with native btrfs multi-device support
-> in systemd. We already committed the needed pieces to systemd git, to
-> register all detected btrfs filesystems with the kernel.
+(2012/09/18 21:10), David Sterba wrote:
+> On Tue, Sep 18, 2012 at 10:28:48AM +0900, Hidetoshi Seto wrote:
+>> diff --git a/fs/btrfs/ctree.h b/fs/btrfs/ctree.h
+>> index fa5c45b..3eb0551 100644
+>> --- a/fs/btrfs/ctree.h
+>> +++ b/fs/btrfs/ctree.h
+>> @@ -458,8 +458,11 @@ struct btrfs_super_block {
+>>  
+>>  	__le64 cache_generation;
+>>  
+>> +	/* default mount options */
+>> +	unsigned long default_mount_opt;
 > 
-> For volumes which are listed in fstab for mounting, we delay the
-> actual mount-attempt of a multi-device volume until we see READY
-> returned from BTRFS_IOC_DEVICES_READY. A line with UUID= in /etc/fstab
-> with "nofail" in the options field, and we can boot up without any
-> device plugged in. Now plugging in devices one-after-the-other until
-> the volume has a full tree of devices; with the last device there,
-> systemd just mounts the volume as expected.
-> 
-> This seems to work very well so far, unless a device which is already
-> registered disappears, which is a kind of valid hotplug scenario we
-> should handle better:
-> 
-> If one device of a 2-device volume is registered with the in-kernel
-> cache, and then the device is unplugged from the system, the cache
-> state does not get updated. If then the other device of the 2-device
-> volume is registered, BTRFS_IOC_DEVICES_READY indicates ready; but in
-> fact only one of two needed devices are available at that time, and
-> mounting fails.
-> 
-> Can we somehow subscribe to device media-changes/removal to prevent
-> the stale device state in the in-kernel cache?
-> 
-> Or alternatively make BTRFS_IOC_DEVICES_READY re-validate all involved
-> block devices before it returns READY?
+> you need to use __le64 here, unsigned long has not fixed size
 
-Hrm excellent question, I'll look at what options we have in kernel to check and
-see if a device is still present and figure something out.  Thanks,
+Indeed. I'll use __le64 next time.
 
-Josef
+>> diff --git a/fs/btrfs/super.c b/fs/btrfs/super.c
+>> index e239915..7ef4a2e 100644
+>> --- a/fs/btrfs/super.c
+>> +++ b/fs/btrfs/super.c
+>> @@ -340,6 +340,8 @@ int btrfs_parse_options(struct btrfs_root *root, char *options)
+>>  	char *compress_type;
+>>  	bool compress_force = false;
+>>  
+>> +	info->mount_opt = info->super_copy->default_mount_opt;
+> 
+> the options have to respect some priority, eg. when I set default
+> options to a filesystem, but mount with a different set, I expect that
+> the explicit flags apply and override the defaults.
+> 
+> I don't remember if this was discussed in the mailinglist or on IRC
+> only, should be easy to dig up if needed.
+
+At least I don't know whether this was already disscussed or not.
+Now my code gives priority to the default options, and it would not
+be so difficult in case if we have opposing options like "ssd" vs
+"nossd", and "space_cache" vs "no_space_cache"...
+Or we could use the default options only if there is no options
+specified when it is being mount, but it will make the default
+options useless. Humm, I'll try to pull together my thoughts
+prior to my next post.
+
+Thanks,
+H.Seto
+

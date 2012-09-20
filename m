@@ -1,195 +1,253 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([222.73.24.84]:60402 "EHLO song.cn.fujitsu.com"
+Received: from cn.fujitsu.com ([222.73.24.84]:28248 "EHLO song.cn.fujitsu.com"
 	rhost-flags-OK-FAIL-OK-OK) by vger.kernel.org with ESMTP
-	id S1751558Ab2ITHwG (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 20 Sep 2012 03:52:06 -0400
-Message-ID: <505ACB1F.1060603@cn.fujitsu.com>
-Date: Thu, 20 Sep 2012 15:51:59 +0800
+	id S1753351Ab2ITHyC (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Thu, 20 Sep 2012 03:54:02 -0400
+Message-ID: <505ACB98.3060400@cn.fujitsu.com>
+Date: Thu, 20 Sep 2012 15:54:00 +0800
 From: Miao Xie <miaox@cn.fujitsu.com>
 Reply-To: miaox@cn.fujitsu.com
 MIME-Version: 1.0
 To: Josef Bacik <jbacik@fusionio.com>
 CC: Linux Btrfs <linux-btrfs@vger.kernel.org>
-Subject: [PATCH 1/2] Btrfs: add a type field for the transaction handle
+Subject: [PATCH 2/2] Btrfs: fix orphan transaction on the freezed filesystem
 Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-This patch add a type field into the transaction handle structure,
-in this way, we needn't implement various end-transaction functions
-and can make the code more simple and readable.
+With the following debug patch:
+
+ static int btrfs_freeze(struct super_block *sb)
+ {
++ 	struct btrfs_fs_info *fs_info = btrfs_sb(sb);
++	struct btrfs_transaction *trans;
++
++	spin_lock(&fs_info->trans_lock);
++	trans = fs_info->running_transaction;
++	if (trans) {
++		printk("Transid %llu, use_count %d, num_writer %d\n",
++			trans->transid, atomic_read(&trans->use_count),
++			atomic_read(&trans->num_writers));
++	}
++	spin_unlock(&fs_info->trans_lock);
+ 	return 0;
+ }
+
+I found there was a orphan transaction after the freeze operation was done.
+
+It is because the transaction may not be committed when the transaction handle
+end even though it is the last handle of the current transaction. This design
+avoid committing the transaction frequently, but also introduce the above
+problem.
+
+So I add btrfs_attach_transaction() which can catch the current transaction
+and commit it. If there is no transaction, it will return ENOENT, and do not
+anything.
+
+This function also can be used to instead of btrfs_join_transaction_freeze()
+because it don't increase the writer counter and don't start a new transaction,
+so it also can fix the deadlock between sync and freeze.
+
+Besides that, it is used to instead of btrfs_join_transaction() in
+transaction_kthread(), because if there is no transaction, the transaction
+kthread needn't anything.
 
 Signed-off-by: Miao Xie <miaox@cn.fujitsu.com>
 ---
 This patch is based on btrfs-next tree.
 ---
- fs/btrfs/inode.c       |   19 ++++---------------
- fs/btrfs/transaction.c |   29 ++++++-----------------------
- fs/btrfs/transaction.h |   15 +++++++++++----
- 3 files changed, 21 insertions(+), 42 deletions(-)
+ fs/btrfs/disk-io.c     |    5 +++--
+ fs/btrfs/super.c       |   18 ++++++++++++++----
+ fs/btrfs/transaction.c |   45 ++++++++++++++++++++++++++++++---------------
+ fs/btrfs/transaction.h |    4 ++--
+ 4 files changed, 49 insertions(+), 23 deletions(-)
 
-diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
-index 212dc3a..6c117d1 100644
---- a/fs/btrfs/inode.c
-+++ b/fs/btrfs/inode.c
-@@ -1364,11 +1364,7 @@ out_check:
+diff --git a/fs/btrfs/disk-io.c b/fs/btrfs/disk-io.c
+index 34717ac..e8dd01d 100644
+--- a/fs/btrfs/disk-io.c
++++ b/fs/btrfs/disk-io.c
+@@ -1667,9 +1667,10 @@ static int transaction_kthread(void *arg)
+ 		spin_unlock(&root->fs_info->trans_lock);
+ 
+ 		/* If the file system is aborted, this will always fail. */
+-		trans = btrfs_join_transaction(root);
++		trans = btrfs_attach_transaction(root);
+ 		if (IS_ERR(trans)) {
+-			cannot_commit = true;
++			if (PTR_ERR(trans) != -ENOENT)
++				cannot_commit = true;
+ 			goto sleep;
+ 		}
+ 		if (transid == trans->transid) {
+diff --git a/fs/btrfs/super.c b/fs/btrfs/super.c
+index 4be4758..a6afb42 100644
+--- a/fs/btrfs/super.c
++++ b/fs/btrfs/super.c
+@@ -854,10 +854,10 @@ int btrfs_sync_fs(struct super_block *sb, int wait)
+ 
+ 	btrfs_wait_ordered_extents(root, 0, 0);
+ 
+-	trans = btrfs_join_transaction_freeze(root);
++	trans = btrfs_attach_transaction(root);
+ 	if (IS_ERR(trans)) {
+-		/* Frozen, don't bother */
+-		if (PTR_ERR(trans) == -EPERM)
++		/* no transaction, don't bother */
++		if (PTR_ERR(trans) == -ENOENT)
+ 			return 0;
+ 		return PTR_ERR(trans);
  	}
+@@ -1511,7 +1511,17 @@ static long btrfs_control_ioctl(struct file *file, unsigned int cmd,
  
- error:
--	if (nolock) {
--		err = btrfs_end_transaction_nolock(trans, root);
--	} else {
--		err = btrfs_end_transaction(trans, root);
--	}
-+	err = btrfs_end_transaction(trans, root);
- 	if (!ret)
- 		ret = err;
- 
-@@ -1958,12 +1954,8 @@ out_unlock:
- out:
- 	if (root != root->fs_info->tree_root)
- 		btrfs_delalloc_release_metadata(inode, ordered_extent->len);
--	if (trans) {
--		if (nolock)
--			btrfs_end_transaction_nolock(trans, root);
--		else
--			btrfs_end_transaction(trans, root);
--	}
-+	if (trans)
-+		btrfs_end_transaction(trans, root);
- 
- 	if (ret)
- 		clear_extent_uptodate(io_tree, ordered_extent->file_offset,
-@@ -4470,10 +4462,7 @@ int btrfs_write_inode(struct inode *inode, struct writeback_control *wbc)
- 			trans = btrfs_join_transaction(root);
- 		if (IS_ERR(trans))
- 			return PTR_ERR(trans);
--		if (nolock)
--			ret = btrfs_end_transaction_nolock(trans, root);
--		else
--			ret = btrfs_commit_transaction(trans, root);
-+		ret = btrfs_commit_transaction(trans, root);
- 	}
- 	return ret;
+ static int btrfs_freeze(struct super_block *sb)
+ {
+-	return 0;
++	struct btrfs_trans_handle *trans;
++	struct btrfs_root *root = btrfs_sb(sb)->tree_root;
++
++	trans = btrfs_attach_transaction(root);
++	if (IS_ERR(trans)) {
++		/* no transaction, don't bother */
++		if (PTR_ERR(trans) == -ENOENT)
++			return 0;
++		return PTR_ERR(trans);
++	}
++	return btrfs_commit_transaction(trans, root);
  }
+ 
+ static int btrfs_unfreeze(struct super_block *sb)
 diff --git a/fs/btrfs/transaction.c b/fs/btrfs/transaction.c
-index 9bf9f6f..5eb4adf 100644
+index 5eb4adf..577f636 100644
 --- a/fs/btrfs/transaction.c
 +++ b/fs/btrfs/transaction.c
-@@ -267,14 +267,6 @@ static void wait_current_trans(struct btrfs_root *root)
- 	}
- }
- 
--enum btrfs_trans_type {
--	TRANS_START,
--	TRANS_JOIN,
--	TRANS_USERSPACE,
--	TRANS_JOIN_NOLOCK,
--	TRANS_JOIN_FREEZE,
--};
--
- static int may_wait_transaction(struct btrfs_root *root, int type)
- {
- 	if (root->fs_info->log_root_recovering)
-@@ -388,6 +380,7 @@ again:
- 	h->aborted = 0;
- 	h->qgroup_reserved = qgroup_reserved;
- 	h->delayed_ref_elem.seq = 0;
-+	h->type = type;
- 	INIT_LIST_HEAD(&h->qgroup_ref_list);
- 
- 	smp_mb();
-@@ -539,11 +532,12 @@ int btrfs_should_end_transaction(struct btrfs_trans_handle *trans,
- }
- 
- static int __btrfs_end_transaction(struct btrfs_trans_handle *trans,
--			  struct btrfs_root *root, int throttle, int lock)
-+			  struct btrfs_root *root, int throttle)
- {
- 	struct btrfs_transaction *cur_trans = trans->transaction;
- 	struct btrfs_fs_info *info = root->fs_info;
- 	int count = 0;
-+	int lock = (trans->type != TRANS_JOIN_NOLOCK);
- 	int err = 0;
- 
- 	if (--trans->use_count) {
-@@ -638,7 +632,7 @@ int btrfs_end_transaction(struct btrfs_trans_handle *trans,
- {
- 	int ret;
- 
--	ret = __btrfs_end_transaction(trans, root, 0, 1);
-+	ret = __btrfs_end_transaction(trans, root, 0);
- 	if (ret)
- 		return ret;
- 	return 0;
-@@ -649,18 +643,7 @@ int btrfs_end_transaction_throttle(struct btrfs_trans_handle *trans,
- {
- 	int ret;
- 
--	ret = __btrfs_end_transaction(trans, root, 1, 1);
--	if (ret)
--		return ret;
--	return 0;
--}
--
--int btrfs_end_transaction_nolock(struct btrfs_trans_handle *trans,
--				 struct btrfs_root *root)
--{
--	int ret;
--
--	ret = __btrfs_end_transaction(trans, root, 0, 0);
-+	ret = __btrfs_end_transaction(trans, root, 1);
- 	if (ret)
- 		return ret;
- 	return 0;
-@@ -669,7 +652,7 @@ int btrfs_end_transaction_nolock(struct btrfs_trans_handle *trans,
- int btrfs_end_transaction_dmeta(struct btrfs_trans_handle *trans,
- 				struct btrfs_root *root)
- {
--	return __btrfs_end_transaction(trans, root, 1, 1);
-+	return __btrfs_end_transaction(trans, root, 1);
- }
- 
+@@ -53,7 +53,7 @@ static noinline void switch_commit_root(struct btrfs_root *root)
  /*
+  * either allocate a new transaction or hop into the existing one
+  */
+-static noinline int join_transaction(struct btrfs_root *root, int nofail)
++static noinline int join_transaction(struct btrfs_root *root, int type)
+ {
+ 	struct btrfs_transaction *cur_trans;
+ 	struct btrfs_fs_info *fs_info = root->fs_info;
+@@ -67,7 +67,13 @@ loop:
+ 	}
+ 
+ 	if (fs_info->trans_no_join) {
+-		if (!nofail) {
++		/* 
++		 * If we are JOIN_NOLOCK we're already committing a current
++		 * transaction, we just need a handle to deal with something
++		 * when committing the transaction, such as inode cache and
++		 * space cache. It is a special case.
++		 */
++		if (type != TRANS_JOIN_NOLOCK) {
+ 			spin_unlock(&fs_info->trans_lock);
+ 			return -EBUSY;
+ 		}
+@@ -87,6 +93,13 @@ loop:
+ 	}
+ 	spin_unlock(&fs_info->trans_lock);
+ 
++	/*
++	 * If we are ATTACH, we just want to catch the current transaction,
++	 * and commit it. If there is no transaction, just return ENOENT.
++	 */
++	if (type == TRANS_ATTACH)
++		return -ENOENT;
++
+ 	cur_trans = kmem_cache_alloc(btrfs_transaction_cachep, GFP_NOFS);
+ 	if (!cur_trans)
+ 		return -ENOMEM;
+@@ -340,27 +353,28 @@ again:
+ 	 * because we're already holding a ref.  We need this because we could
+ 	 * have raced in and did an fsync() on a file which can kick a commit
+ 	 * and then we deadlock with somebody doing a freeze.
++	 *
++	 * If we are ATTACH, it means we just want to catch the current
++	 * transaction and commit it, so we needn't do sb_start_intwrite(). 
+ 	 */
+-	if (type != TRANS_JOIN_NOLOCK &&
+-	    !__sb_start_write(root->fs_info->sb, SB_FREEZE_FS, false)) {
+-		if (type == TRANS_JOIN_FREEZE) {
+-			kmem_cache_free(btrfs_trans_handle_cachep, h);
+-			return ERR_PTR(-EPERM);
+-		}
++	if (type < TRANS_JOIN_NOLOCK)
+ 		sb_start_intwrite(root->fs_info->sb);
+-	}
+ 
+ 	if (may_wait_transaction(root, type))
+ 		wait_current_trans(root);
+ 
+ 	do {
+-		ret = join_transaction(root, type == TRANS_JOIN_NOLOCK);
++		ret = join_transaction(root, type);
+ 		if (ret == -EBUSY)
+ 			wait_current_trans(root);
+ 	} while (ret == -EBUSY);
+ 
+ 	if (ret < 0) {
+-		sb_end_intwrite(root->fs_info->sb);
++		/* We must get the transaction if we are JOIN_NOLOCK. */
++		BUG_ON(type == TRANS_JOIN_NOLOCK);
++
++		if (type < TRANS_JOIN_NOLOCK)
++			sb_end_intwrite(root->fs_info->sb);
+ 		kmem_cache_free(btrfs_trans_handle_cachep, h);
+ 		return ERR_PTR(ret);
+ 	}
+@@ -431,9 +445,9 @@ struct btrfs_trans_handle *btrfs_start_ioctl_transaction(struct btrfs_root *root
+ 	return start_transaction(root, 0, TRANS_USERSPACE, 0);
+ }
+ 
+-struct btrfs_trans_handle *btrfs_join_transaction_freeze(struct btrfs_root *root)
++struct btrfs_trans_handle *btrfs_attach_transaction(struct btrfs_root *root)
+ {
+-	return start_transaction(root, 0, TRANS_JOIN_FREEZE, 0);
++	return start_transaction(root, 0, TRANS_ATTACH, 0);
+ }
+ 
+ /* wait for a transaction commit to be fully complete */
+@@ -598,7 +612,7 @@ static int __btrfs_end_transaction(struct btrfs_trans_handle *trans,
+ 		}
+ 	}
+ 
+-	if (lock)
++	if (trans->type < TRANS_JOIN_NOLOCK)
+ 		sb_end_intwrite(root->fs_info->sb);
+ 
+ 	WARN_ON(cur_trans != info->running_transaction);
+@@ -1650,7 +1664,8 @@ int btrfs_commit_transaction(struct btrfs_trans_handle *trans,
+ 	put_transaction(cur_trans);
+ 	put_transaction(cur_trans);
+ 
+-	sb_end_intwrite(root->fs_info->sb);
++	if (trans->type < TRANS_JOIN_NOLOCK)
++		sb_end_intwrite(root->fs_info->sb);
+ 
+ 	trace_btrfs_transaction_commit(root);
+ 
 diff --git a/fs/btrfs/transaction.h b/fs/btrfs/transaction.h
-index 7a551d3..1052397 100644
+index 1052397..9303e37 100644
 --- a/fs/btrfs/transaction.h
 +++ b/fs/btrfs/transaction.h
-@@ -47,6 +47,14 @@ struct btrfs_transaction {
- 	int aborted;
+@@ -52,7 +52,7 @@ enum btrfs_trans_type {
+ 	TRANS_JOIN,
+ 	TRANS_USERSPACE,
+ 	TRANS_JOIN_NOLOCK,
+-	TRANS_JOIN_FREEZE,
++	TRANS_ATTACH,
  };
  
-+enum btrfs_trans_type {
-+	TRANS_START,
-+	TRANS_JOIN,
-+	TRANS_USERSPACE,
-+	TRANS_JOIN_NOLOCK,
-+	TRANS_JOIN_FREEZE,
-+};
-+
  struct btrfs_trans_handle {
- 	u64 transid;
- 	u64 bytes_reserved;
-@@ -58,8 +66,9 @@ struct btrfs_trans_handle {
- 	struct btrfs_transaction *transaction;
- 	struct btrfs_block_rsv *block_rsv;
- 	struct btrfs_block_rsv *orig_rsv;
--	int aborted;
--	int adding_csums;
-+	short aborted;
-+	short adding_csums;
-+	enum btrfs_trans_type type;
- 	/*
- 	 * this root is only needed to validate that the root passed to
- 	 * start_transaction is the same as the one passed to end_transaction.
-@@ -92,8 +101,6 @@ static inline void btrfs_set_inode_last_trans(struct btrfs_trans_handle *trans,
- 
- int btrfs_end_transaction(struct btrfs_trans_handle *trans,
- 			  struct btrfs_root *root);
--int btrfs_end_transaction_nolock(struct btrfs_trans_handle *trans,
--				 struct btrfs_root *root);
- struct btrfs_trans_handle *btrfs_start_transaction(struct btrfs_root *root,
- 						   int num_items);
- struct btrfs_trans_handle *btrfs_start_transaction_noflush(
+@@ -107,7 +107,7 @@ struct btrfs_trans_handle *btrfs_start_transaction_noflush(
+ 					struct btrfs_root *root, int num_items);
+ struct btrfs_trans_handle *btrfs_join_transaction(struct btrfs_root *root);
+ struct btrfs_trans_handle *btrfs_join_transaction_nolock(struct btrfs_root *root);
+-struct btrfs_trans_handle *btrfs_join_transaction_freeze(struct btrfs_root *root);
++struct btrfs_trans_handle *btrfs_attach_transaction(struct btrfs_root *root);
+ struct btrfs_trans_handle *btrfs_start_ioctl_transaction(struct btrfs_root *root);
+ int btrfs_wait_for_commit(struct btrfs_root *root, u64 transid);
+ int btrfs_write_and_wait_transaction(struct btrfs_trans_handle *trans,
 -- 
 1.7.6.5

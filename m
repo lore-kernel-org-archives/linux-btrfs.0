@@ -1,54 +1,51 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from twin.jikos.cz ([89.185.236.188]:60087 "EHLO twin.jikos.cz"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1753951Ab2ITL3J (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 20 Sep 2012 07:29:09 -0400
-Date: Thu, 20 Sep 2012 13:28:55 +0200
-From: David Sterba <dave@jikos.cz>
-To: "Goffredo Baroncelli <kreijack@libero.it>" <kreijack@libero.it>
-Cc: seto.hidetoshi@jp.fujitsu.com, linux-btrfs@vger.kernel.org
-Subject: Re: R: [PATCH 2/2] Btrfs-progs: add mount-option command
-Message-ID: <20120920112855.GI17430@twin.jikos.cz>
-Reply-To: dave@jikos.cz
-References: <5057CDA7.3090201@jp.fujitsu.com>
- <26356142.2062531347962627486.JavaMail.root@wmail62>
+Received: from rcsinet15.oracle.com ([148.87.113.117]:16399 "EHLO
+	rcsinet15.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1753102Ab2ITPMk (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>);
+	Thu, 20 Sep 2012 11:12:40 -0400
+Message-ID: <505B325D.4020802@oracle.com>
+Date: Thu, 20 Sep 2012 23:12:29 +0800
+From: Liu Bo <bo.li.liu@oracle.com>
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <26356142.2062531347962627486.JavaMail.root@wmail62>
+To: Wang Sheng-Hui <shhuiw@gmail.com>
+CC: chris.mason@fusionio.com, linux-btrfs@vger.kernel.org,
+        linux-kernel@vger.kernel.org
+Subject: Re: [PATCH] Btrfs: small fix the commment for the action flags in
+ delayed-ref.h
+References: <505B3117.9040603@gmail.com>
+In-Reply-To: <505B3117.9040603@gmail.com>
+Content-Type: text/plain; charset=ISO-8859-1
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Tue, Sep 18, 2012 at 12:03:47PM +0200, Goffredo Baroncelli <kreijack@libero.it> wrote:
-> Why it was not provided a way to clear a *single* flag ? To me it seems a bit 
-> too long to clear all the flag (btrfs mount-option clear) and then set the 
-> right one.
+On 09/20/2012 11:07 PM, Wang Sheng-Hui wrote:
+> The action has been merged into struct btrfs_delayed_ref_node,
+> and no struct btrfs_delayed_ref is available now.
 > 
-> As user interface I suggest something like chmod:
+
+You can consider sending this kind of typo fix patch to trivial list instead.
+
+thanks,
+liubo
+
+> Signed-off-by: Wang Sheng-Hui <shhuiw@gmail.com>
+> ---
+>  fs/btrfs/delayed-ref.h |    2 +-
+>  1 files changed, 1 insertions(+), 1 deletions(-)
 > 
->    btrfs mount-option set +ssd,skip_balance -nodatacow /dev/sdX
+> diff --git a/fs/btrfs/delayed-ref.h b/fs/btrfs/delayed-ref.h
+> index ab53005..c9d7036 100644
+> --- a/fs/btrfs/delayed-ref.h
+> +++ b/fs/btrfs/delayed-ref.h
+> @@ -18,7 +18,7 @@
+>  #ifndef __DELAYED_REF__
+>  #define __DELAYED_REF__
+>  
+> -/* these are the possible values of struct btrfs_delayed_ref->action */
+> +/* these are the possible values of struct btrfs_delayed_ref_node->action */
+>  #define BTRFS_ADD_DELAYED_REF    1 /* add one backref to the tree */
+>  #define BTRFS_DROP_DELAYED_REF   2 /* delete one backref from the tree */
+>  #define BTRFS_ADD_DELAYED_EXTENT 3 /* record a full extent allocation */
 > 
-> or
-> 
->    btrfs mount-option set =ssd,skip_balance,nodatacow /dev/sdX
 
-I agree with the +/-/= syntax, it's quite intuitive and already seen
-(chattr).
-
-I'd drop the 'set' command here, with some options specified it's
-implied.
-
-Without any it's 'get'
-
-  btrfs mount-option /dev/...
-
-And the 'clear' subcommand could be also dropped with this syntax
-
-  btrfs mount-option = /dev/...
-
-:)
-
-
-BTW, this modifies the defaults only for the unmounted filesystem, but
-the same should be possible for a mounted one in the future.
-
-david

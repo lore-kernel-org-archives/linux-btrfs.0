@@ -1,33 +1,33 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from twin.jikos.cz ([89.185.236.188]:33439 "EHLO twin.jikos.cz"
+Received: from twin.jikos.cz ([89.185.236.188]:35232 "EHLO twin.jikos.cz"
 	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1754553Ab2ITMe2 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 20 Sep 2012 08:34:28 -0400
-Date: Thu, 20 Sep 2012 14:34:19 +0200
+	id S1755320Ab2ITOPJ (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Thu, 20 Sep 2012 10:15:09 -0400
+Date: Thu, 20 Sep 2012 16:15:04 +0200
 From: David Sterba <dave@jikos.cz>
-To: Anand Jain <Anand.Jain@oracle.com>
-Cc: dave@jikos.cz, linux-btrfs@vger.kernel.org
-Subject: Re: [PATCH] Btrfs + Btrfs-progs:  make pipe functions re-usable
-Message-ID: <20120920123419.GL17430@twin.jikos.cz>
+To: Wade Cline <clinew@linux.vnet.ibm.com>
+Cc: linux-btrfs@vger.kernel.org, cmm@linux.vnet.ibm.com
+Subject: Re: [RFC][PATCH] Btrfs-progs: Fix compiler warnings on PPC64.
+Message-ID: <20120920141504.GP17430@twin.jikos.cz>
 Reply-To: dave@jikos.cz
-References: <5052C5A0.4090803@oracle.com>
- <20120914110432.GE17430@twin.jikos.cz>
- <5056AB8A.6000500@oracle.com>
- <20120917145957.GQ17430@twin.jikos.cz>
- <505807A9.8060401@oracle.com>
+References: <1347492116-16317-1-git-send-email-clinew@linux.vnet.ibm.com>
+ <20120914135919.GN17430@twin.jikos.cz>
+ <505365A9.2080900@linux.vnet.ibm.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <505807A9.8060401@oracle.com>
+In-Reply-To: <505365A9.2080900@linux.vnet.ibm.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Tue, Sep 18, 2012 at 01:33:29PM +0800, Anand Jain wrote:
->   'btrfs service history <mnt>|<dev>'
->  is basically to show the list of cli/gui commands which are
->  successfully run on the btrfs as part of its -
->  creation (may be), configuration and maintenance.
+On Fri, Sep 14, 2012 at 10:13:13AM -0700, Wade Cline wrote:
+> By the time kerncompat.h is included, u64 is almost always defined to
+> the non-compatible value. So either kerncompat.h needs to be defined as the
+> -first-
 
-Is it modelled after ZFS 'zpool history' command? AFAICS it captures
-actions modifiying the pools, there's nothing similar for btrfs.
+This makes most sense to me.
+
+Although the include files should go in the order 1. system 2. local,
+and kernecompat.h is local, it's special in it's own way and i don't see
+any problem with that.
 
 david

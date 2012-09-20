@@ -1,48 +1,28 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([222.73.24.84]:13314 "EHLO song.cn.fujitsu.com"
-	rhost-flags-OK-FAIL-OK-OK) by vger.kernel.org with ESMTP
-	id S1750908Ab2ISC6t (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 18 Sep 2012 22:58:49 -0400
-Message-ID: <505934E3.8040307@cn.fujitsu.com>
-Date: Wed, 19 Sep 2012 10:58:43 +0800
-From: Miao Xie <miaox@cn.fujitsu.com>
-Reply-To: miaox@cn.fujitsu.com
+Received: from twin.jikos.cz ([89.185.236.188]:60891 "EHLO twin.jikos.cz"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1751349Ab2ITMJU (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Thu, 20 Sep 2012 08:09:20 -0400
+Date: Thu, 20 Sep 2012 14:09:14 +0200
+From: David Sterba <dave@jikos.cz>
+To: Miao Xie <miaox@cn.fujitsu.com>
+Cc: Linux Btrfs <linux-btrfs@vger.kernel.org>
+Subject: Re: [PATCH V4 5/7] Btrfs-progs: restructure list_subvolumes
+Message-ID: <20120920120914.GK17430@twin.jikos.cz>
+Reply-To: dave@jikos.cz
+References: <50584E6D.8000602@cn.fujitsu.com>
+ <505855C9.9010207@cn.fujitsu.com>
 MIME-Version: 1.0
-To: Anand Jain <Anand.Jain@oracle.com>
-CC: Linux Btrfs <linux-btrfs@vger.kernel.org>
-Subject: Re: [PATCH V4 4/7] Btrfs-progs: fix wrong way to check if the root
- item contains otime and uuid
-References: <50584E6D.8000602@cn.fujitsu.com> <50585420.6060407@cn.fujitsu.com> <50592607.709@oracle.com>
-In-Reply-To: <50592607.709@oracle.com>
-Content-Type: text/plain; charset=UTF-8
+Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <505855C9.9010207@cn.fujitsu.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 	wed, 19 Sep 2012 09:55:19 +0800, Anand Jain wrote:
-> 
-> Miao,
-> 
->> wrong because it is possbile that ->generation may equal to the first
->> variant of the next item.
-> 
->  When can this happen ?  Can you provide a scenario to run through. ?
+On Tue, Sep 18, 2012 at 07:06:49PM +0800, Miao Xie wrote:
+> The current code of list_subvols() has very bad scalability, if we want to
+> add new filter conditions or new sort methods, we have to modify lots of code.
 
-On the old kernel:
-# mkfs.btrfs <partition>
-# mount <partition> <mnt>
-# btrfs sub snap <mnt> <mnt>/snap0
-# btrfs sub snap <mnt> <mnt>/snap1
-# btrfs sub list -u <mnt>
+I've briefly skimmed through the patch, not a short one, IMO the right
+way to go.
 
-Thanks
-Miao
-
-> 
-> Thanks, Anand
-> -- 
-> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
-> 
-
-
+david

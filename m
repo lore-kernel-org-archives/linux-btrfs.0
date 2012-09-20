@@ -1,51 +1,36 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from rcsinet15.oracle.com ([148.87.113.117]:16399 "EHLO
-	rcsinet15.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1753102Ab2ITPMk (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 20 Sep 2012 11:12:40 -0400
-Message-ID: <505B325D.4020802@oracle.com>
-Date: Thu, 20 Sep 2012 23:12:29 +0800
-From: Liu Bo <bo.li.liu@oracle.com>
+Received: from mx2.fusionio.com ([66.114.96.31]:53909 "EHLO mx2.fusionio.com"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1754046Ab2ITTDK (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Thu, 20 Sep 2012 15:03:10 -0400
+Received: from mail1.int.fusionio.com (mail1.int.fusionio.com [10.101.1.21]) by mx2.fusionio.com with ESMTP id CGPJum3Eoevv1isM (version=TLSv1 cipher=AES128-SHA bits=128 verify=NO) for <linux-btrfs@vger.kernel.org>; Thu, 20 Sep 2012 13:03:09 -0600 (MDT)
+Date: Thu, 20 Sep 2012 15:03:06 -0400
+From: Josef Bacik <jbacik@fusionio.com>
+To: <linux-btrfs@vger.kernel.org>
+Subject: ENOSPC design issues
+Message-ID: <20120920190306.GG2272@localhost.localdomain>
 MIME-Version: 1.0
-To: Wang Sheng-Hui <shhuiw@gmail.com>
-CC: chris.mason@fusionio.com, linux-btrfs@vger.kernel.org,
-        linux-kernel@vger.kernel.org
-Subject: Re: [PATCH] Btrfs: small fix the commment for the action flags in
- delayed-ref.h
-References: <505B3117.9040603@gmail.com>
-In-Reply-To: <505B3117.9040603@gmail.com>
-Content-Type: text/plain; charset=ISO-8859-1
+Content-Type: text/plain; charset="us-ascii"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 09/20/2012 11:07 PM, Wang Sheng-Hui wrote:
-> The action has been merged into struct btrfs_delayed_ref_node,
-> and no struct btrfs_delayed_ref is available now.
-> 
+Hello,
 
-You can consider sending this kind of typo fix patch to trivial list instead.
+I'm going to look at fixing some of the performance issues that crop up because
+of our reservation system.  Before I go and do a whole lot of work I want some
+feedback.  I've done a brain dump here
 
-thanks,
-liubo
+https://btrfs.wiki.kernel.org/index.php/ENOSPC
 
-> Signed-off-by: Wang Sheng-Hui <shhuiw@gmail.com>
-> ---
->  fs/btrfs/delayed-ref.h |    2 +-
->  1 files changed, 1 insertions(+), 1 deletions(-)
-> 
-> diff --git a/fs/btrfs/delayed-ref.h b/fs/btrfs/delayed-ref.h
-> index ab53005..c9d7036 100644
-> --- a/fs/btrfs/delayed-ref.h
-> +++ b/fs/btrfs/delayed-ref.h
-> @@ -18,7 +18,7 @@
->  #ifndef __DELAYED_REF__
->  #define __DELAYED_REF__
->  
-> -/* these are the possible values of struct btrfs_delayed_ref->action */
-> +/* these are the possible values of struct btrfs_delayed_ref_node->action */
->  #define BTRFS_ADD_DELAYED_REF    1 /* add one backref to the tree */
->  #define BTRFS_DROP_DELAYED_REF   2 /* delete one backref from the tree */
->  #define BTRFS_ADD_DELAYED_EXTENT 3 /* record a full extent allocation */
-> 
+This has an explanation of how our reservation system currently works and the
+problems I think there are with it, and the solutions I'm going to try.  If
+somebody has any better ideas please put them on that page along with your IRC
+nick so I can find you and we can chat about your idea.  Once we have a few
+things we all agree on I'll start hammering away at them.  Some of these things
+I'm going to go ahead and do because they are just correct, but the bigger
+things such as the flusher thread I'd like some more input on.  Any crazy ideas
+welcome, but if your idea involves completely scrapping the current system it
+will have to be an awesome idea since I don't really want to spend the next year
+fixing early enospc problems again.  Thanks,
 
+Josef

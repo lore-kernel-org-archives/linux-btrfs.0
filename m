@@ -1,24 +1,21 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-iy0-f174.google.com ([209.85.210.174]:59935 "EHLO
-	mail-iy0-f174.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1752853Ab2IUAVL (ORCPT
+Received: from mail-pb0-f46.google.com ([209.85.160.46]:63518 "EHLO
+	mail-pb0-f46.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1752129Ab2ITPHO (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 20 Sep 2012 20:21:11 -0400
-Received: by iahk25 with SMTP id k25so2091649iah.19
-        for <linux-btrfs@vger.kernel.org>; Thu, 20 Sep 2012 17:21:10 -0700 (PDT)
-Message-ID: <505BB2ED.6030906@gmail.com>
-Date: Fri, 21 Sep 2012 08:21:01 +0800
+	Thu, 20 Sep 2012 11:07:14 -0400
+Message-ID: <505B3117.9040603@gmail.com>
+Date: Thu, 20 Sep 2012 23:07:03 +0800
 From: Wang Sheng-Hui <shhuiw@gmail.com>
 MIME-Version: 1.0
-To: trivial@kernel.org, Liu Bo <bo.li.liu@oracle.com>,
-        linux-btrfs@vger.kernel.org
-Subject: [RESEND][PATCH] Btrfs: small fix the commment for the action flags
- in delayed-ref.h
+To: chris.mason@fusionio.com, linux-btrfs@vger.kernel.org,
+        linux-kernel@vger.kernel.org
+Subject: [PATCH] Btrfs: small fix the commment for the action flags in delayed-ref.h
 Content-Type: text/plain; charset=ISO-8859-1
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-The action field has been merged into struct btrfs_delayed_ref_node,
+The action has been merged into struct btrfs_delayed_ref_node,
 and no struct btrfs_delayed_ref is available now.
 
 Signed-off-by: Wang Sheng-Hui <shhuiw@gmail.com>
@@ -41,3 +38,4 @@ index ab53005..c9d7036 100644
  #define BTRFS_ADD_DELAYED_EXTENT 3 /* record a full extent allocation */
 -- 
 1.7.1
+

@@ -1,108 +1,55 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from twin.jikos.cz ([89.185.236.188]:35063 "EHLO twin.jikos.cz"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1752931Ab2ITOFI (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 20 Sep 2012 10:05:08 -0400
-Date: Thu, 20 Sep 2012 16:05:00 +0200
-From: David Sterba <dave@jikos.cz>
-To: Martin Steigerwald <Martin@lichtvoll.de>
-Cc: linux-btrfs@vger.kernel.org, Liu Bo <bo.li.liu@oracle.com>,
-        ching <lsching17@gmail.com>
-Subject: Re: enquiry about autodefrag option
-Message-ID: <20120920140500.GO17430@twin.jikos.cz>
-Reply-To: dave@jikos.cz
-References: <50570652.4060200@gmail.com>
- <5059AC5E.1030003@gmail.com>
- <5059D2D3.3050303@oracle.com>
- <201209191939.43182.Martin@lichtvoll.de>
+Received: from magic.merlins.org ([209.81.13.136]:58539 "EHLO
+	mail1.merlins.org" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1751484Ab2ITRRr (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>);
+	Thu, 20 Sep 2012 13:17:47 -0400
+Received: from merlin by mail1.merlins.org with local (Exim 4.77 #2)
+	id 1TEkNn-0007SO-8p
+	for <linux-btrfs@vger.kernel.org>; Thu, 20 Sep 2012 10:17:47 -0700
+Date: Thu, 20 Sep 2012 10:17:47 -0700
+From: Marc MERLIN <marc@merlins.org>
+To: linux-btrfs@vger.kernel.org
+Subject: 3.5.3: kernel BUG at fs/btrfs/ctree.c:3451!
+Message-ID: <20120920171747.GG26105@merlins.org>
 MIME-Version: 1.0
-Content-Type: text/plain; charset=iso-8859-1
-In-Reply-To: <201209191939.43182.Martin@lichtvoll.de>
+Content-Type: text/plain; charset=us-ascii
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Wed, Sep 19, 2012 at 07:39:42PM +0200, Martin Steigerwald wrote:
-> > >>    (P.S. I am aware that autodefrag will introduce extra write I/O)
-> > 
-> > Yes, your understanding is right, random write workloads will benefit
-> > from it.
-> 
-> What about the extra I/O? And the greatly reduced seek times on SSDs?
-> 
-> Upto now I kept away from defragmenting on SSD.
-> 
-> I wonder about a good way to decide whether autodefrag makes things better 
-> or worse for a specific workload. What are the criteria on rotating media 
-> and what are they on SSD?
+I had a btrfs built on top of 5 drives (dmcrypt devices).
 
-Reducing data block fragmentation is accompanied by decreased metadata
-usage that's needed to maintan the data blocks, and this means less
-cpu processing and less memory usage.
+The drive then died while I was writing to the filesystem and my system
+crashed and rebooted:
 
-Blocks in larger contiguous chunks are also more friendly to the SSD
-garbage collection. A full filesystem defrag & fstrim once in a while
-may improve performance and device lifetime.
+[384555.534020] sd 10:0:0:0: rejecting I/O to offline device                    
+[384555.535057] sd 10:0:0:0: rejecting I/O to offline device                    
+[384556.666885] ------------[ cut here ]------------                            
+[384556.667909] sd 10:0:0:0: [sdj] Synchronizing SCSI cache                     
+[384556.677509] kernel BUG at fs/btrfs/ctree.c:3451!                            
+[384556.682551] invalid opcode: 0000 [#1] PREEMPT SMP                           
+[384556.687878] CPU 2                                                           
 
-> [??? informational part about a BTRFS on SSD that should have an age of at 
-> least 8 months with almost daily upgrades  ???]
-> 
-> I only have / running on SSD, but this since quite some time. And it does 
-> not seem to have gotten much worse ??? however this is only subjective 
-> feeling of performance.
-> 
-> Except for fstrim times. fstrim take way more time than in the beginning¹. 
-> So there seems to be free space fragmentation. Which makes sense for a 
-> root filesystem on a Debian Sid machine with lots of upgrade activity and 
-> way over 50% usage.
+	/* push data from right to left */
+	copy_extent_buffer(left, right,
+			   btrfs_item_nr_offset(btrfs_header_nritems(left)),
+			   btrfs_item_nr_offset(0),
+			   push_items * sizeof(struct btrfs_item));
 
-I'm roughly counting:
+	push_space = BTRFS_LEAF_DATA_SIZE(root) -
+		     btrfs_item_offset_nr(right, push_items - 1);
 
-used: 11 + 2*0.688           = 12
-touched blocks: 15 + 2* 1.75 = 18.5
+	copy_extent_buffer(left, right, btrfs_leaf_data(left) +
+		     leaf_data_end(root, left) - push_space,
+		     btrfs_leaf_data(right) +
+		     btrfs_item_offset_nr(right, push_items - 1),
+		     push_space);
+	old_left_nritems = btrfs_header_nritems(left);
+	BUG_ON(old_left_nritems <= 0);  <<<<<<< 3451
 
-of 19, ~90%, this may be problematic even on a SSD regarding the erase
-block related specifics.
-
-> merkaba:~> df -hT /          
-> Dateisystem    Typ   Größe Benutzt Verf. Verw% Eingehängt auf
-> /dev/dm-0      btrfs   19G     13G  3,6G   79% /
-> 
-> merkaba:~> btrfs fi sh       
-> failed to read /dev/sr0
-> Label: 'debian'  uuid: [???]
->         Total devices 1 FS bytes used 12.25GB
->         devid    1 size 18.62GB used 18.62GB path /dev/dm-0
-> 
-> merkaba:~> btrfs fi df /
-> Data: total=15.10GB, used=11.58GB
-> System, DUP: total=8.00MB, used=4.00KB
-> System: total=4.00MB, used=0.00
-> Metadata, DUP: total=1.75GB, used=688.96MB
-> Metadata: total=8.00MB, used=0.00
-> 
-> I think I get rid of that duplicate metadata once I redo the fs with 8 or 
-> 16 KiB metadata blocks.
-> 
-> I thought about rebalancing it, but last time boot time doubled after a 
-> complete rebalance. The effect of a rebalance of just the metadata tree to 
-> one instead of two might be different tough.
-> 
-> Intel SSD 320 300GB on Kernel 3.6-rc5.
-> 
-> 
-> [1] It has been a second or two in the beginning I think. Then it grew 
-> over time.
-> 
-> merkaba:~> time fstrim -v /
-> /: 5877809152 bytes were trimmed
-> fstrim -v /  0,00s user 5,74s system 14% cpu 39,920 total
-> merkaba:~> time fstrim -v /
-> /: 5875712000 bytes were trimmed
-> fstrim -v /  0,00s user 5,55s system 14% cpu 39,095 total
-> merkaba:~> time fstrim -v /
-> /: 5875712000 bytes were trimmed
-> fstrim -v /  0,00s user 5,62s system 14% cpu 38,538 total
-
-Looks like the issued TRIM commands actually did no work.
-
-david
+Marc
+-- 
+"A mouse is a device used to point at the xterm you want to type in" - A.S.R.
+Microsoft is to operating systems ....
+                                      .... what McDonalds is to gourmet cooking
+Home page: http://marc.merlins.org/  

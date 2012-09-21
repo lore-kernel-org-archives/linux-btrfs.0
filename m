@@ -1,50 +1,43 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mho-03-ewr.mailhop.org ([204.13.248.66]:18371 "EHLO
-	mho-01-ewr.mailhop.org" rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org
-	with ESMTP id S1757890Ab2IXTnL convert rfc822-to-8bit (ORCPT
+Received: from mail-iy0-f174.google.com ([209.85.210.174]:59935 "EHLO
+	mail-iy0-f174.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1752853Ab2IUAVL (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 24 Sep 2012 15:43:11 -0400
-Received: from 100.111.77.188.dynamic.jazztel.es ([188.77.111.100] helo=mail.viric.name)
-	by mho-01-ewr.mailhop.org with esmtpsa (TLSv1:AES256-SHA:256)
-	(Exim 4.72)
-	(envelope-from <viric@viric.name>)
-	id 1TGEYe-000H7u-78
-	for linux-btrfs@vger.kernel.org; Mon, 24 Sep 2012 19:43:08 +0000
-Date: Mon, 24 Sep 2012 21:43:03 +0200
-From: =?iso-8859-1?Q?Llu=EDs?= Batlle i Rossell <viric@viric.name>
-To: Btrfs mailing list <linux-btrfs@vger.kernel.org>
-Subject: Resize, off by 1024 bytes
-Message-ID: <20120924194303.GA1972@vicerveza.homeunix.net>
+	Thu, 20 Sep 2012 20:21:11 -0400
+Received: by iahk25 with SMTP id k25so2091649iah.19
+        for <linux-btrfs@vger.kernel.org>; Thu, 20 Sep 2012 17:21:10 -0700 (PDT)
+Message-ID: <505BB2ED.6030906@gmail.com>
+Date: Fri, 21 Sep 2012 08:21:01 +0800
+From: Wang Sheng-Hui <shhuiw@gmail.com>
 MIME-Version: 1.0
-Content-Type: text/plain; charset=iso-8859-1
+To: trivial@kernel.org, Liu Bo <bo.li.liu@oracle.com>,
+        linux-btrfs@vger.kernel.org
+Subject: [RESEND][PATCH] Btrfs: small fix the commment for the action flags
+ in delayed-ref.h
+Content-Type: text/plain; charset=ISO-8859-1
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hello,
+The action field has been merged into struct btrfs_delayed_ref_node,
+and no struct btrfs_delayed_ref is available now.
 
-I wanted to resize my filesystem to 512MiB less. I had created the btrfs
-after I had set the partitions some days ago, and it was like this:
-# cat /sys/class/block/sda1/size
-234436482
+Signed-off-by: Wang Sheng-Hui <shhuiw@gmail.com>
+---
+ fs/btrfs/delayed-ref.h |    2 +-
+ 1 files changed, 1 insertions(+), 1 deletions(-)
 
-Getting in bytes:
-234436482*512 = 120031478784
-
-I run:
-# btrfs fi resize -512m /
-
-And I see in dmesg:
-btrfs: new size for /dev/sda1 is 119494606848
-
-But that's not the previous size - 512MiB. It is:
-120031478784 - 119494606848 = 536871936 = 512*1024*1024 + 1024
-
-So, there is an 'off by +1024'. I shrinked the partition to +1024 bytes bigger
-than would be by subtracting 512MiB, just in case.
-
-What is that off by 1024?
-
-This is 3.5.4.
-
-Regards,
-Lluís.
+diff --git a/fs/btrfs/delayed-ref.h b/fs/btrfs/delayed-ref.h
+index ab53005..c9d7036 100644
+--- a/fs/btrfs/delayed-ref.h
++++ b/fs/btrfs/delayed-ref.h
+@@ -18,7 +18,7 @@
+ #ifndef __DELAYED_REF__
+ #define __DELAYED_REF__
+ 
+-/* these are the possible values of struct btrfs_delayed_ref->action */
++/* these are the possible values of struct btrfs_delayed_ref_node->action */
+ #define BTRFS_ADD_DELAYED_REF    1 /* add one backref to the tree */
+ #define BTRFS_DROP_DELAYED_REF   2 /* delete one backref from the tree */
+ #define BTRFS_ADD_DELAYED_EXTENT 3 /* record a full extent allocation */
+-- 
+1.7.1

@@ -1,106 +1,155 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-da0-f46.google.com ([209.85.210.46]:64350 "EHLO
-	mail-da0-f46.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1755482Ab2I1DCs (ORCPT
+Received: from rcsinet15.oracle.com ([148.87.113.117]:35279 "EHLO
+	rcsinet15.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1753360Ab2IUGve (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 27 Sep 2012 23:02:48 -0400
-Received: by dady13 with SMTP id y13so549445dad.19
-        for <linux-btrfs@vger.kernel.org>; Thu, 27 Sep 2012 20:02:48 -0700 (PDT)
-From: Robin Dong <robin.k.dong@gmail.com>
+	Fri, 21 Sep 2012 02:51:34 -0400
+Received: from acsinet21.oracle.com (acsinet21.oracle.com [141.146.126.237])
+	by rcsinet15.oracle.com (Sentrion-MTA-4.2.2/Sentrion-MTA-4.2.2) with ESMTP id q8L6pWsu007197
+	(version=TLSv1/SSLv3 cipher=DHE-RSA-AES256-SHA bits=256 verify=OK)
+	for <linux-btrfs@vger.kernel.org>; Fri, 21 Sep 2012 06:51:33 GMT
+Received: from acsmt357.oracle.com (acsmt357.oracle.com [141.146.40.157])
+	by acsinet21.oracle.com (8.14.4+Sun/8.14.4) with ESMTP id q8L6pW7w024415
+	(version=TLSv1/SSLv3 cipher=DHE-RSA-AES256-SHA bits=256 verify=NO)
+	for <linux-btrfs@vger.kernel.org>; Fri, 21 Sep 2012 06:51:32 GMT
+Received: from abhmt113.oracle.com (abhmt113.oracle.com [141.146.116.65])
+	by acsmt357.oracle.com (8.12.11.20060308/8.12.11) with ESMTP id q8L6pW9H028525
+	for <linux-btrfs@vger.kernel.org>; Fri, 21 Sep 2012 01:51:32 -0500
+From: Anand jain <Anand.Jain@oracle.com>
 To: linux-btrfs@vger.kernel.org
-Cc: Robin Dong <sanbai@taobao.com>
-Subject: [PATCH v2 1/2] btrfs-progs: limit the max value of leafsize and nodesize
-Date: Fri, 28 Sep 2012 11:02:39 +0800
-Message-Id: <1348801360-1851-1-git-send-email-robin.k.dong@gmail.com>
+Subject: [PATCH] Btrfs-progs: btrfs subvolume delete could delete subvolumes
+Date: Fri, 21 Sep 2012 14:54:08 +0800
+Message-Id: <1348210448-29616-1-git-send-email-Anand.Jain@oracle.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-From: Robin Dong <sanbai@taobao.com>
+From: Anand Jain <anand.jain@oracle.com>
 
-Using mkfs.btrfs like:
+With this user will be able to provide more than one subvolume
+to delete.
+eg: btrfs subvolume delete <subvol1> <subvol2>
 
-        mkfs.btrfs -l 131072 /dev/sda
-
-will return no error, but after mount it, the dmesg will report:
-
-	BTRFS: couldn't mount because metadata blocksize (131072) was too large
-
-The leafsize and nodesize are equal at present, so we just use one function
-"check_leaf_or_node_size" to limit leaf and node size below BTRFS_MAX_METADATA_BLOCKSIZE.
-
-Signed-off-by: Robin Dong <sanbai@taobao.com>
-Reviewed-by: David Sterba <dave@jikos.cz>
+Signed-off-by: Anand Jain <anand.jain@oracle.com>
 ---
- ctree.h |    6 ++++++
- mkfs.c  |   29 +++++++++++++++++++++++------
- 2 files changed, 29 insertions(+), 6 deletions(-)
+ cmds-subvolume.c |   36 ++++++++++++++++++++++++------------
+ man/btrfs.8.in   |    4 ++--
+ 2 files changed, 26 insertions(+), 14 deletions(-)
 
-diff --git a/ctree.h b/ctree.h
-index 7f55229..75c1e0a 100644
---- a/ctree.h
-+++ b/ctree.h
-@@ -111,6 +111,12 @@ struct btrfs_trans_handle;
- #define BTRFS_DEV_ITEMS_OBJECTID 1ULL
- 
- /*
-+ * the max metadata block size.  This limit is somewhat artificial,
-+ * but the memmove costs go through the roof for larger blocks.
-+ */
-+#define BTRFS_MAX_METADATA_BLOCKSIZE 65536
-+
-+/*
-  * we can actually store much bigger names, but lets not confuse the rest
-  * of linux
-  */
-diff --git a/mkfs.c b/mkfs.c
-index dff5eb8..8420482 100644
---- a/mkfs.c
-+++ b/mkfs.c
-@@ -1201,6 +1201,27 @@ static int zero_output_file(int out_fd, u64 size, u32 sectorsize)
- 	return ret;
+diff --git a/cmds-subvolume.c b/cmds-subvolume.c
+index f4aa80f..cfeaa8d 100644
+--- a/cmds-subvolume.c
++++ b/cmds-subvolume.c
+@@ -188,31 +188,34 @@ int test_issubvolume(char *path)
  }
  
-+static int check_leaf_or_node_size(u32 size, u32 sectorsize)
-+{
-+	if (size < sectorsize) {
-+		fprintf(stderr,
-+			"Illegal leafsize (or nodesize) %u (smaller than %u)\n",
-+			size, sectorsize);
-+		return -1;
-+	} else if (size > BTRFS_MAX_METADATA_BLOCKSIZE) {
-+		fprintf(stderr,
-+			"Illegal leafsize (or nodesize) %u (larger than %u)\n",
-+			size, BTRFS_MAX_METADATA_BLOCKSIZE);
-+		return -1;
-+	} else if (size & (sectorsize - 1)) {
-+		fprintf(stderr,
-+			"Illegal leafsize (or nodesize) %u (not align to %u)\n",
-+			size, sectorsize);
-+		return -1;
-+	}
-+	return 0;
-+}
-+
- int main(int ac, char **av)
+ static const char * const cmd_subvol_delete_usage[] = {
+-	"btrfs subvolume delete <name>",
+-	"Delete a subvolume",
++	"btrfs subvolume delete <subvolume> [<subvolume>...]",
++	"Delete subvolume(s)",
+ 	NULL
+ };
+ 
+ static int cmd_subvol_delete(int argc, char **argv)
  {
- 	char *file;
-@@ -1291,14 +1312,10 @@ int main(int ac, char **av)
- 		}
+-	int	res, fd, len, e;
++	int	res, fd, len, e, cnt = 1, ret = 0;
+ 	struct btrfs_ioctl_vol_args	args;
+ 	char	*dname, *vname, *cpath;
+ 	char	*path;
+ 
+-	if (check_argc_exact(argc, 2))
++	if (argc < 2)
+ 		usage(cmd_subvol_delete_usage);
+ 
+-	path = argv[1];
++again:
++	path = argv[cnt];
+ 
+ 	res = test_issubvolume(path);
+ 	if(res<0){
+ 		fprintf(stderr, "ERROR: error accessing '%s'\n", path);
+-		return 12;
++		ret = 12;
++		goto out;
  	}
- 	sectorsize = max(sectorsize, (u32)getpagesize());
--	if (leafsize < sectorsize || (leafsize & (sectorsize - 1))) {
--		fprintf(stderr, "Illegal leafsize %u\n", leafsize);
-+	if (check_leaf_or_node_size(leafsize, sectorsize))
- 		exit(1);
--	}
--	if (nodesize < sectorsize || (nodesize & (sectorsize - 1))) {
--		fprintf(stderr, "Illegal nodesize %u\n", nodesize);
-+	if (check_leaf_or_node_size(nodesize, sectorsize))
- 		exit(1);
--	}
- 	ac = ac - optind;
- 	if (ac == 0)
- 		print_usage();
+ 	if(!res){
+ 		fprintf(stderr, "ERROR: '%s' is not a subvolume\n", path);
+-		return 13;
++		ret = 13;
++		goto out;
+ 	}
+ 
+ 	cpath = realpath(path, 0);
+@@ -226,21 +229,24 @@ static int cmd_subvol_delete(int argc, char **argv)
+ 	     strchr(vname, '/') ){
+ 		fprintf(stderr, "ERROR: incorrect subvolume name ('%s')\n",
+ 			vname);
+-		return 14;
++		ret = 14;
++		goto out;
+ 	}
+ 
+ 	len = strlen(vname);
+ 	if (len == 0 || len >= BTRFS_VOL_NAME_MAX) {
+ 		fprintf(stderr, "ERROR: snapshot name too long ('%s)\n",
+ 			vname);
+-		return 14;
++		ret = 14;
++		goto out;
+ 	}
+ 
+ 	fd = open_file_or_dir(dname);
+ 	if (fd < 0) {
+ 		close(fd);
+ 		fprintf(stderr, "ERROR: can't access to '%s'\n", dname);
+-		return 12;
++		ret = 12;
++		goto out;
+ 	}
+ 
+ 	printf("Delete subvolume '%s/%s'\n", dname, vname);
+@@ -254,10 +260,16 @@ static int cmd_subvol_delete(int argc, char **argv)
+ 	if(res < 0 ){
+ 		fprintf( stderr, "ERROR: cannot delete '%s/%s' - %s\n",
+ 			dname, vname, strerror(e));
+-		return 11;
++		ret = 11;
++		goto out;
+ 	}
+ 
+-	return 0;
++out:
++	cnt++;
++	if (cnt < argc)
++		goto again;
++
++	return ret;
+ }
+ 
+ static const char * const cmd_subvol_list_usage[] = {
+diff --git a/man/btrfs.8.in b/man/btrfs.8.in
+index 4b0a9f9..a1f172e 100644
+--- a/man/btrfs.8.in
++++ b/man/btrfs.8.in
+@@ -7,7 +7,7 @@ btrfs \- control a btrfs filesystem
+ .SH SYNOPSIS
+ \fBbtrfs\fP \fBsubvolume snapshot\fP\fI [-r] <source> [<dest>/]<name>\fP
+ .PP
+-\fBbtrfs\fP \fBsubvolume delete\fP\fI <subvolume>\fP
++\fBbtrfs\fP \fBsubvolume delete\fP\fI <subvolume> [<subvolume>...]\fP
+ .PP
+ \fBbtrfs\fP \fBsubvolume create\fP\fI [<dest>/]<name>\fP
+ .PP
+@@ -98,7 +98,7 @@ subvolume, \fBbtrfs\fR returns an error. If \fI-r\fR is given, the snapshot
+ will be readonly.
+ .TP
+ 
+-\fBsubvolume delete\fR\fI <subvolume>\fR
++\fBsubvolume delete\fR\fI <subvolume> [<subvolume>...]\fR
+ Delete the subvolume \fI<subvolume>\fR. If \fI<subvolume>\fR is not a
+ subvolume, \fBbtrfs\fR returns an error.
+ .TP
 -- 
-1.7.3.2
+1.7.1
 

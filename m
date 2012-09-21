@@ -1,36 +1,38 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from magic.merlins.org ([209.81.13.136]:36347 "EHLO
-	mail1.merlins.org" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1753936Ab2IUFnP (ORCPT
+Received: from mail-pb0-f46.google.com ([209.85.160.46]:52797 "EHLO
+	mail-pb0-f46.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1751932Ab2IUQXh (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Fri, 21 Sep 2012 01:43:15 -0400
-Date: Thu, 20 Sep 2012 22:43:14 -0700
-From: Marc MERLIN <marc@merlins.org>
-To: Stefan Behrens <sbehrens@giantdisaster.de>
-Cc: linux-btrfs@vger.kernel.org
-Subject: Re: kernel BUG at fs/btrfs/extent_io.c:1884!
-Message-ID: <20120921054314.GB9170@merlins.org>
-References: <20120920171747.GG26105@merlins.org> <20120921034652.GA871@merlins.org> <505BF3BC.1030304@giantdisaster.de>
+	Fri, 21 Sep 2012 12:23:37 -0400
+Received: by pbbrr4 with SMTP id rr4so2959255pbb.19
+        for <linux-btrfs@vger.kernel.org>; Fri, 21 Sep 2012 09:23:36 -0700 (PDT)
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <505BF3BC.1030304@giantdisaster.de>
+Date: Fri, 21 Sep 2012 18:23:36 +0200
+Message-ID: <CAKZ=RP8D04kxn4_YX8xKtjcqWd=BiuWC-DEYD+f4iekwt3WDtw@mail.gmail.com>
+Subject: Userland commands repository in wiki
+From: Alfredo Esteban <aedelatorre@gmail.com>
+To: Linux Btrfs <linux-btrfs@vger.kernel.org>
+Content-Type: text/plain; charset=ISO-8859-1
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Fri, Sep 21, 2012 at 06:57:32AM +0200, Stefan Behrens wrote:
-> >	    BUG_ON(!mirror_num); <<<<<
-> >
-> 
-> This was fixed with commit c0901581ad077004145c9ee80e843fba71c100b8 and 
-> is included in Linux 3.6 RC1.
+Hi,
 
-Congrats for all having a time machine and fixing my reported bugs in the
-past :)
+Yesterday, I modified the URL of the userland commands repository in
+this wiki page:
 
-Thanks for the fix and the link,
-Marc
--- 
-"A mouse is a device used to point at the xterm you want to type in" - A.S.R.
-Microsoft is to operating systems ....
-                                      .... what McDonalds is to gourmet cooking
-Home page: http://marc.merlins.org/  
+https://btrfs.wiki.kernel.org/index.php/Debugging_Btrfs_with_GDB
+
+Former URL doesn't work:
+
+git://git.kernel.org/pub/scm/linux/kernel/git/mason/btrfs-progs-unstable.git
+
+I think the correct one is:
+
+git://git.kernel.org/pub/scm/linux/kernel/git/mason/btrfs-progs.git
+
+Please, confirm that my modification is ok.
+
+Thanks,
+
+Alfredo

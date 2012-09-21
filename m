@@ -1,59 +1,56 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from twin.jikos.cz ([89.185.236.188]:39627 "EHLO twin.jikos.cz"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1753216Ab2I0IyY (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 27 Sep 2012 04:54:24 -0400
-Date: Thu, 27 Sep 2012 10:54:16 +0200
-From: David Sterba <dave@jikos.cz>
-To: Robin Dong <robin.k.dong@gmail.com>
-Cc: linux-btrfs@vger.kernel.org, Robin Dong <sanbai@taobao.com>
-Subject: Re: [PATCH 1/2] btrfs-progs: limit the max value of leafsize and
- nodesize
-Message-ID: <20120927085416.GF14582@twin.jikos.cz>
-Reply-To: dave@jikos.cz
-References: <1348645928-3432-1-git-send-email-robin.k.dong@gmail.com>
-MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <1348645928-3432-1-git-send-email-robin.k.dong@gmail.com>
+Received: from acsinet15.oracle.com ([141.146.126.227]:51200 "EHLO
+	acsinet15.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1755354Ab2IUG5l (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>);
+	Fri, 21 Sep 2012 02:57:41 -0400
+Received: from ucsinet22.oracle.com (ucsinet22.oracle.com [156.151.31.94])
+	by acsinet15.oracle.com (Sentrion-MTA-4.2.2/Sentrion-MTA-4.2.2) with ESMTP id q8L6vcXj023998
+	(version=TLSv1/SSLv3 cipher=DHE-RSA-AES256-SHA bits=256 verify=OK)
+	for <linux-btrfs@vger.kernel.org>; Fri, 21 Sep 2012 06:57:39 GMT
+Received: from acsmt358.oracle.com (acsmt358.oracle.com [141.146.40.158])
+	by ucsinet22.oracle.com (8.14.4+Sun/8.14.4) with ESMTP id q8L6vcqd018640
+	(version=TLSv1/SSLv3 cipher=DHE-RSA-AES256-SHA bits=256 verify=NO)
+	for <linux-btrfs@vger.kernel.org>; Fri, 21 Sep 2012 06:57:38 GMT
+Received: from abhmt118.oracle.com (abhmt118.oracle.com [141.146.116.70])
+	by acsmt358.oracle.com (8.12.11.20060308/8.12.11) with ESMTP id q8L6vcPl017380
+	for <linux-btrfs@vger.kernel.org>; Fri, 21 Sep 2012 01:57:38 -0500
+From: Anand jain <Anand.Jain@oracle.com>
+To: linux-btrfs@vger.kernel.org
+Subject: [PATCH] Btrfs-progs: correct the mkfs.btrfs man page
+Date: Fri, 21 Sep 2012 15:00:15 +0800
+Message-Id: <1348210815-29719-1-git-send-email-Anand.Jain@oracle.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Wed, Sep 26, 2012 at 03:52:07PM +0800, Robin Dong wrote:
-> Using mkfs.btrfs like:
-> 	mkfs.btrfs -l 131072 /dev/sda
-> 
-> will return no error, but after mount it, the dmesg will report:
-> 	BTRFS: couldn't mount because metadata blocksize (131072) was too large
-> 
-> The user tools should use BTRFS_MAX_METADATA_BLOCKSIZE to limit leaf and node size.
+From: Anand Jain <anand.jain@oracle.com>
 
-Good catch.
+Signed-off-by: Anand Jain <anand.jain@oracle.com>
+---
+ man/mkfs.btrfs.8.in |    4 ++--
+ 1 files changed, 2 insertions(+), 2 deletions(-)
 
-> @@ -1291,11 +1291,13 @@ int main(int ac, char **av)
->  		}
->  	}
->  	sectorsize = max(sectorsize, (u32)getpagesize());
-> -	if (leafsize < sectorsize || (leafsize & (sectorsize - 1))) {
-> +	if (leafsize < sectorsize || leafsize > BTRFS_MAX_METADATA_BLOCKSIZE ||
-> +			(leafsize & (sectorsize - 1))) {
-
-Could you please separate the BTRFS_MAX_METADATA_BLOCKSIZE check and add
-appropriate error message that actually informs the user what kind of
-error happened?
-
->  		fprintf(stderr, "Illegal leafsize %u\n", leafsize);
->  		exit(1);
->  	}
-> -	if (nodesize < sectorsize || (nodesize & (sectorsize - 1))) {
-> +	if (nodesize < sectorsize || nodesize > BTRFS_MAX_METADATA_BLOCKSIZE ||
-> +			(nodesize & (sectorsize - 1))) {
-
-(same here)
-
->  		fprintf(stderr, "Illegal nodesize %u\n", nodesize);
->  		exit(1);
->  	}
-
-Thanks!
-david
+diff --git a/man/mkfs.btrfs.8.in b/man/mkfs.btrfs.8.in
+index fc2e1d2..d425c33 100644
+--- a/man/mkfs.btrfs.8.in
++++ b/man/mkfs.btrfs.8.in
+@@ -1,6 +1,6 @@
+ .TH MKFS.BTRFS 8
+ .SH NAME
+-mkfs.btrfs \- create an btrfs filesystem
++mkfs.btrfs \- create a btrfs filesystem
+ .SH SYNOPSIS
+ .B mkfs.btrfs
+ [ \fB\-A\fP\fI alloc-start\fP ]
+@@ -18,7 +18,7 @@ mkfs.btrfs \- create an btrfs filesystem
+ \fI device\fP [ \fIdevice ...\fP ]
+ .SH DESCRIPTION
+ .B mkfs.btrfs
+-is used to create an btrfs filesystem (usually in a disk partition, or an array
++is used to create a btrfs filesystem (usually in a disk partition, or an array
+ of disk partitions).
+ .I device
+ is the special file corresponding to the device (e.g \fI/dev/sdXX\fP ).
+-- 
+1.7.1
 

@@ -1,98 +1,62 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from magic.merlins.org ([209.81.13.136]:35590 "EHLO
-	mail1.merlins.org" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1750818Ab2IUELP (ORCPT
+Received: from mail-qa0-f53.google.com ([209.85.216.53]:36392 "EHLO
+	mail-qa0-f53.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1750850Ab2IUEmC (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Fri, 21 Sep 2012 00:11:15 -0400
-Date: Thu, 20 Sep 2012 21:11:13 -0700
-From: Marc MERLIN <marc@merlins.org>
-To: cwillu <cwillu@cwillu.com>, Liu Bo <bo.li.liu@oracle.com>
-Cc: linux-btrfs@vger.kernel.org
-Subject: Re: kernel BUG at fs/btrfs/extent_io.c:1884!
-Message-ID: <20120921041113.GA9170@merlins.org>
-References: <20120920171747.GG26105@merlins.org> <20120921034652.GA871@merlins.org> <505BE4AF.60809@oracle.com> <20120920171747.GG26105@merlins.org> <20120921034652.GA871@merlins.org> <CAE5mzvh9kjSm6LK=Oja66eaVWTa0AhfrDrK1809j6oEE8XdSiA@mail.gmail.com>
+	Fri, 21 Sep 2012 00:42:02 -0400
+Received: by qaas11 with SMTP id s11so976327qaa.19
+        for <linux-btrfs@vger.kernel.org>; Thu, 20 Sep 2012 21:42:02 -0700 (PDT)
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <505BE4AF.60809@oracle.com> <CAE5mzvh9kjSm6LK=Oja66eaVWTa0AhfrDrK1809j6oEE8XdSiA@mail.gmail.com>
+Date: Fri, 21 Sep 2012 12:42:02 +0800
+Message-ID: <CAPgLHd-ikKq2V2aZ-u1AJAdaxma19DEifui+q+FxmX0pAh_mLA@mail.gmail.com>
+Subject: [PATCH] Btrfs: fix return value check in btrfs_ioctl_send()
+From: Wei Yongjun <weiyj.lk@gmail.com>
+To: chris.mason@fusionio.com
+Cc: yongjun_wei@trendmicro.com.cn, linux-btrfs@vger.kernel.org
+Content-Type: text/plain; charset=ISO-8859-1
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Thu, Sep 20, 2012 at 09:51:59PM -0600, cwillu wrote:
-> > Oh my, now I'm trying again with a new drive, and a big cp from an
-> > existing array to a new one dies with:
-> > [32042.079411] ------------[ cut here ]------------
-> > [32042.085799] kernel BUG at fs/btrfs/extent_io.c:1884!
-> > [32042.092528] invalid opcode: 0000 [#1] PREEMPT SMP
-> > [32042.099227] CPU 1
-> > [32042.101095] Modules linked in:[32042.105950]  raid456 async_raid6_recov async
-> > _pq raid6_pq async_xor xor async_memcpy async_tx ppdev lp tun autofs4 kl5kusb105
-> >  ftdi_sio keyspan nfsd nfs lockd fscache auth_rpcgss nfs_acl sunrpc rc_ati_x10 s
-> > nd_timer i915 usbserial snd drm_kms_helper eeepc_wmi drm ati_remote asus_wmi rc_
-> > core sparse_keymap
-> >
-> >     int repair_io_failure(struct btrfs_mapping_tree *map_tree, u64 start,
-> >                             u64 length, u64 logical, struct page *page,
-> >                             int mirror_num)
-> >     {
-> >             struct bio *bio;
-> >             struct btrfs_device *dev;
-> >             DECLARE_COMPLETION_ONSTACK(compl);
-> >             u64 map_length = 0;
-> >             u64 sector;
-> >             struct btrfs_bio *bbio = NULL;
-> >             int ret;
-> >
-> >             BUG_ON(!mirror_num); <<<<<
-> >
-> > This is more of a problem since I can't backup my filesystem (source is
-> > ext4 and destination is btrfs).
-> >
-> > Any suggestion on what went wrong here?
-> 
-> There should have been a stack trace as well as a couple other things,
-> can you post those as well please?
+From: Wei Yongjun <yongjun_wei@trendmicro.com.cn>
 
-Actually, I found a few more lines in syslog just before the crash:
- kernel: [32008.938796] lost page write due to I/O error on /dev/mapper/crypt_e0e810c2-0d8f-409f-9674-e05763083a45
- kernel: [32008.938800] btrfs: bdev /dev/mapper/crypt_e0e810c2-0d8f-409f-9674-e05763083a45 errs: wr 1933, rd 0, flush 32, corrupt 0, gen 0
- kernel: [32008.954383] lost page write due to I/O error on /dev/dm-6
- kernel: [32008.954386] btrfs: bdev /dev/dm-6 errs: wr 1490, rd 0, flush 18, corrupt 0, gen 0
- kernel: [32008.969038] lost page write due to I/O error on /dev/dm-6
- kernel: [32008.969043] btrfs: bdev /dev/dm-6 errs: wr 1491, rd 0, flush 18, corrupt 0, gen 0
- kernel: [32008.979997] lost page write due to I/O error on /dev/dm-6
- kernel: [32008.980002] btrfs: bdev /dev/dm-6 errs: wr 1492, rd 0, flush 18, corrupt 0, gen 0
+In case of error, the function btrfs_read_fs_root_no_name() returns
+ERR_PTR() and never returns NULL pointer. The NULL test in the return
+value check should be replaced with IS_ERR(), and remove useless
+NULL test.
 
-That helps answer my question: disk error caused the crash.
+dpatch engine is used to auto generated this patch.
+(https://github.com/weiyj/dpatch)
 
-As for a stack trace, I was suprised that I didn't get one, but the lines I posted
-are the last ones I got on my serial console (they didn't even make it to syslog).
+Signed-off-by: Wei Yongjun <yongjun_wei@trendmicro.com.cn>
+---
+ fs/btrfs/send.c | 8 ++------
+ 1 file changed, 2 insertions(+), 6 deletions(-)
 
-to be more clear, all I got is:
-[32042.079411] ------------[ cut here ]------------                             
-[32042.085799] kernel BUG at fs/btrfs/extent_io.c:1884!                         
-[32042.092528] invalid opcode: 0000 [#1] PREEMPT SMP                            
-[32042.099227] CPU 1                                                            
-[32042.101095] Modules linked in:[32042.105950]  raid456 async_raid6_recov async
-_pq raid6_pq async_xor xor async_memcpy async_tx ppdev lp tun autofs4 kl5kusb105
- ftdi_sio keyspan nfsd nfs lockd fscache auth_rpcgss nfs_acl sunrpc rc_ati_x10 s
-nd_timer i915 usbserial snd drm_kms_helper eeepc_wmi drm ati_remote asus_wmi rc_
-core sparse_keymap                                                              
-LILO 23.2 boot:                                                                 
-Loading linux...........................................................        
-BIOS data check successful   
+diff --git a/fs/btrfs/send.c b/fs/btrfs/send.c
+index fb5ffe9..a617451 100644
+--- a/fs/btrfs/send.c
++++ b/fs/btrfs/send.c
+@@ -4501,10 +4501,6 @@ long btrfs_ioctl_send(struct file *mnt_file, void __user *arg_)
+ 			key.type = BTRFS_ROOT_ITEM_KEY;
+ 			key.offset = (u64)-1;
+ 			clone_root = btrfs_read_fs_root_no_name(fs_info, &key);
+-			if (!clone_root) {
+-				ret = -EINVAL;
+-				goto out;
+-			}
+ 			if (IS_ERR(clone_root)) {
+ 				ret = PTR_ERR(clone_root);
+ 				goto out;
+@@ -4520,8 +4516,8 @@ long btrfs_ioctl_send(struct file *mnt_file, void __user *arg_)
+ 		key.type = BTRFS_ROOT_ITEM_KEY;
+ 		key.offset = (u64)-1;
+ 		sctx->parent_root = btrfs_read_fs_root_no_name(fs_info, &key);
+-		if (!sctx->parent_root) {
+-			ret = -EINVAL;
++		if (IS_ERR(sctx->parent_root)) {
++			ret = PTR_ERR(sctx->parent_root);
+ 			goto out;
+ 		}
+ 	}
 
-I'm booting with:
-auto BOOT_IMAGE=linux ro root=900 panic=20 console=tty0 console=ttyS0,115200n8 elevator=cfq pcie_aspm=force edd=off irqpoll
 
-Is panic=20 causing the stack trace not to be printed somehow?
-
-If not, is one of my config options set wrong?
-http://marc.merlins.org/tmp/config-3.5.3-amd64-preempt-noide-20120903
-
-Thanks,
-Marc
--- 
-"A mouse is a device used to point at the xterm you want to type in" - A.S.R.
-Microsoft is to operating systems ....
-                                      .... what McDonalds is to gourmet cooking
-Home page: http://marc.merlins.org/  

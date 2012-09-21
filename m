@@ -1,50 +1,59 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([222.73.24.84]:21231 "EHLO song.cn.fujitsu.com"
+Received: from cn.fujitsu.com ([222.73.24.84]:14537 "EHLO song.cn.fujitsu.com"
 	rhost-flags-OK-FAIL-OK-OK) by vger.kernel.org with ESMTP
-	id S1751929Ab2ITC56 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 19 Sep 2012 22:57:58 -0400
+	id S932072Ab2IUJHs (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Fri, 21 Sep 2012 05:07:48 -0400
 Received: from fnstmail02.fnst.cn.fujitsu.com (tang.cn.fujitsu.com [127.0.0.1])
-	by tang.cn.fujitsu.com (8.14.3/8.13.1) with ESMTP id q8K2vraY023818
-	for <linux-btrfs@vger.kernel.org>; Thu, 20 Sep 2012 10:57:53 +0800
-Message-ID: <505A8632.10101@cn.fujitsu.com>
-Date: Thu, 20 Sep 2012 10:57:54 +0800
+	by tang.cn.fujitsu.com (8.14.3/8.13.1) with ESMTP id q8L97hbS006315
+	for <linux-btrfs@vger.kernel.org>; Fri, 21 Sep 2012 17:07:43 +0800
+Message-ID: <505C2E62.2000400@cn.fujitsu.com>
+Date: Fri, 21 Sep 2012 17:07:46 +0800
 From: Miao Xie <miaox@cn.fujitsu.com>
 Reply-To: miaox@cn.fujitsu.com
 MIME-Version: 1.0
 To: Linux Btrfs <linux-btrfs@vger.kernel.org>
-Subject: [PATCH V2 1/2] Btrfs: cleanup duplicated division functions
-References: <5051BAB8.7080200@cn.fujitsu.com>
-In-Reply-To: <5051BAB8.7080200@cn.fujitsu.com>
+Subject: [PATCH V3 1/2] Btrfs: cleanup duplicated division functions
+References: <5051BAB8.7080200@cn.fujitsu.com> <505A8632.10101@cn.fujitsu.com>
+In-Reply-To: <505A8632.10101@cn.fujitsu.com>
 Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-div_factor{_fine} has been implemented for two times, cleanup it.
-And I move them into a independent file named math.h because they are
-common math functions.
+div_factor{_fine} has been implemented for two times, and these two functions
+are very similar, so cleanup the reduplicate implement and drop the original
+div_factor(), and then rename div_factor_fine() to div_factor(). So the divisor
+of the new div_factor() is 100, not 10.
 
-Because those functions are mostly used on the hot path, and we are sure
+And I move div_factor into a independent file named math.h because it is a
+common math function, may be used by every composition of btrfs.
+
+Because these functions are mostly used on the hot path, and we are sure
 the parameters are right in the most cases, we don't add complex checks
 for the parameters. But in the other place, we must check and make sure
 the parameters are right. So besides the code cleanup, this patch also
 add a check for the usage of the space balance, it is the only place that
-we need add check to make sure the parameters of div_factor{_fine} are
-right till now.
+we need add check to make sure the parameters of div_factor are right till now.
 
 Signed-off-by: Miao Xie <miaox@cn.fujitsu.com>
 ---
+Changelog v2 -> v3:
+- drop the original div_factor and rename div_factor_fine to div_factor
+- drop the check of the factor
+
 Changelog v1 -> v2:
 - add missing check
 ---
- fs/btrfs/extent-tree.c |   19 +------------------
+ fs/btrfs/extent-tree.c |   29 ++++++-----------------------
  fs/btrfs/ioctl.c       |   18 ++++++++++++++++++
- fs/btrfs/math.h        |   44 ++++++++++++++++++++++++++++++++++++++++++++
- fs/btrfs/volumes.c     |   23 +----------------------
- 4 files changed, 64 insertions(+), 40 deletions(-)
+ fs/btrfs/math.h        |   33 +++++++++++++++++++++++++++++++++
+ fs/btrfs/relocation.c  |    2 +-
+ fs/btrfs/transaction.c |    2 +-
+ fs/btrfs/volumes.c     |   30 +++++-------------------------
+ 6 files changed, 64 insertions(+), 50 deletions(-)
  create mode 100644 fs/btrfs/math.h
 
 diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
-index a010234..5f6bae1 100644
+index a010234..bcb9ced 100644
 --- a/fs/btrfs/extent-tree.c
 +++ b/fs/btrfs/extent-tree.c
 @@ -33,6 +33,7 @@
@@ -80,6 +89,48 @@ index a010234..5f6bae1 100644
  u64 btrfs_find_block_group(struct btrfs_root *root,
  			   u64 search_start, u64 search_hint, int owner)
  {
+@@ -674,7 +657,7 @@ u64 btrfs_find_block_group(struct btrfs_root *root,
+ 	u64 last = max(search_hint, search_start);
+ 	u64 group_start = 0;
+ 	int full_search = 0;
+-	int factor = 9;
++	int factor = 90;
+ 	int wrapped = 0;
+ again:
+ 	while (1) {
+@@ -708,7 +691,7 @@ again:
+ 	if (!full_search && factor < 10) {
+ 		last = search_start;
+ 		full_search = 1;
+-		factor = 10;
++		factor = 100;
+ 		goto again;
+ 	}
+ found:
+@@ -3513,7 +3496,7 @@ static int should_alloc_chunk(struct btrfs_root *root,
+ 	if (force == CHUNK_ALLOC_LIMITED) {
+ 		thresh = btrfs_super_total_bytes(root->fs_info->super_copy);
+ 		thresh = max_t(u64, 64 * 1024 * 1024,
+-			       div_factor_fine(thresh, 1));
++			       div_factor(thresh, 1));
+ 
+ 		if (num_bytes - num_allocated < thresh)
+ 			return 1;
+@@ -3521,12 +3504,12 @@ static int should_alloc_chunk(struct btrfs_root *root,
+ 	thresh = btrfs_super_total_bytes(root->fs_info->super_copy);
+ 
+ 	/* 256MB or 2% of the FS */
+-	thresh = max_t(u64, 256 * 1024 * 1024, div_factor_fine(thresh, 2));
++	thresh = max_t(u64, 256 * 1024 * 1024, div_factor(thresh, 2));
+ 	/* system chunks need a much small threshold */
+ 	if (sinfo->flags & BTRFS_BLOCK_GROUP_SYSTEM)
+ 		thresh = 32 * 1024 * 1024;
+ 
+-	if (num_bytes > thresh && sinfo->bytes_used < div_factor(num_bytes, 8))
++	if (num_bytes > thresh && sinfo->bytes_used < div_factor(num_bytes, 80))
+ 		return 0;
+ 	return 1;
+ }
 diff --git a/fs/btrfs/ioctl.c b/fs/btrfs/ioctl.c
 index 9384a2a..d8d53f7 100644
 --- a/fs/btrfs/ioctl.c
@@ -111,10 +162,10 @@ index 9384a2a..d8d53f7 100644
  	}
 diff --git a/fs/btrfs/math.h b/fs/btrfs/math.h
 new file mode 100644
-index 0000000..b7816ce
+index 0000000..a157665
 --- /dev/null
 +++ b/fs/btrfs/math.h
-@@ -0,0 +1,44 @@
+@@ -0,0 +1,33 @@
 +
 +/*
 + * Copyright (C) 2012 Fujitsu.  All rights reserved.
@@ -142,25 +193,40 @@ index 0000000..b7816ce
 +
 +static inline u64 div_factor(u64 num, int factor)
 +{
-+	if (factor == 10)
-+		return num;
-+	num *= factor;
-+	do_div(num, 10);
-+	return num;
-+}
-+
-+static inline u64 div_factor_fine(u64 num, int factor)
-+{
-+	if (factor == 100)
-+		return num;
 +	num *= factor;
 +	do_div(num, 100);
 +	return num;
 +}
 +
 +#endif
+diff --git a/fs/btrfs/relocation.c b/fs/btrfs/relocation.c
+index f193096..2254478 100644
+--- a/fs/btrfs/relocation.c
++++ b/fs/btrfs/relocation.c
+@@ -3813,7 +3813,7 @@ restart:
+ 			}
+ 		}
+ 
+-		ret = btrfs_block_rsv_check(rc->extent_root, rc->block_rsv, 5);
++		ret = btrfs_block_rsv_check(rc->extent_root, rc->block_rsv, 50);
+ 		if (ret < 0) {
+ 			if (ret != -ENOSPC) {
+ 				err = ret;
+diff --git a/fs/btrfs/transaction.c b/fs/btrfs/transaction.c
+index cf98dbc..115f054 100644
+--- a/fs/btrfs/transaction.c
++++ b/fs/btrfs/transaction.c
+@@ -489,7 +489,7 @@ static int should_end_transaction(struct btrfs_trans_handle *trans,
+ {
+ 	int ret;
+ 
+-	ret = btrfs_block_rsv_check(root, &root->fs_info->global_block_rsv, 5);
++	ret = btrfs_block_rsv_check(root, &root->fs_info->global_block_rsv, 50);
+ 	return ret ? 1 : 0;
+ }
+ 
 diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
-index 3f4e70e..2558fc0 100644
+index 3f4e70e..1fd43a4 100644
 --- a/fs/btrfs/volumes.c
 +++ b/fs/btrfs/volumes.c
 @@ -25,7 +25,6 @@
@@ -198,7 +264,17 @@ index 3f4e70e..2558fc0 100644
  static int chunk_usage_filter(struct btrfs_fs_info *fs_info, u64 chunk_offset,
  			      struct btrfs_balance_args *bargs)
  {
-@@ -2501,15 +2489,6 @@ static int should_balance_chunk(struct btrfs_root *root,
+@@ -2347,7 +2335,8 @@ static int chunk_usage_filter(struct btrfs_fs_info *fs_info, u64 chunk_offset,
+ 	cache = btrfs_lookup_block_group(fs_info, chunk_offset);
+ 	chunk_used = btrfs_block_group_used(&cache->item);
+ 
+-	user_thresh = div_factor_fine(cache->key.offset, bargs->usage);
++	BUG_ON(bargs->usage < 0 || bargs->usage > 100);
++	user_thresh = div_factor(cache->key.offset, bargs->usage);
+ 	if (chunk_used < user_thresh)
+ 		ret = 0;
+ 
+@@ -2501,15 +2490,6 @@ static int should_balance_chunk(struct btrfs_root *root,
  	return 1;
  }
  
@@ -214,6 +290,24 @@ index 3f4e70e..2558fc0 100644
  static int __btrfs_balance(struct btrfs_fs_info *fs_info)
  {
  	struct btrfs_balance_control *bctl = fs_info->balance_ctl;
+@@ -2534,7 +2514,7 @@ static int __btrfs_balance(struct btrfs_fs_info *fs_info)
+ 	devices = &fs_info->fs_devices->devices;
+ 	list_for_each_entry(device, devices, dev_list) {
+ 		old_size = device->total_bytes;
+-		size_to_free = div_factor(old_size, 1);
++		size_to_free = div_factor(old_size, 10);
+ 		size_to_free = min(size_to_free, (u64)1 * 1024 * 1024);
+ 		if (!device->writeable ||
+ 		    device->total_bytes - device->bytes_used > size_to_free)
+@@ -3284,7 +3264,7 @@ static int __btrfs_alloc_chunk(struct btrfs_trans_handle *trans,
+ 	}
+ 
+ 	/* we don't want a chunk larger than 10% of writeable space */
+-	max_chunk_size = min(div_factor(fs_devices->total_rw_bytes, 1),
++	max_chunk_size = min(div_factor(fs_devices->total_rw_bytes, 10),
+ 			     max_chunk_size);
+ 
+ 	devices_info = kzalloc(sizeof(*devices_info) * fs_devices->rw_devices,
 -- 
 1.7.6.5
 

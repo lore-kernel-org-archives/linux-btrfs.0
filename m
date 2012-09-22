@@ -1,38 +1,47 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-pb0-f46.google.com ([209.85.160.46]:52797 "EHLO
-	mail-pb0-f46.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1751932Ab2IUQXh (ORCPT
+Received: from mx194.callplus.net.nz ([202.180.66.194]:55072 "EHLO
+	mxi2.callplus.net.nz" rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org
+	with ESMTP id S1752176Ab2IVDs5 (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Fri, 21 Sep 2012 12:23:37 -0400
-Received: by pbbrr4 with SMTP id rr4so2959255pbb.19
-        for <linux-btrfs@vger.kernel.org>; Fri, 21 Sep 2012 09:23:36 -0700 (PDT)
+	Fri, 21 Sep 2012 23:48:57 -0400
+Received: from [192.168.1.106] (125-239-118-176.jetstream.xtra.co.nz [125.239.118.176])
+	(authenticated bits=0)
+	by mx.theflat.net.nz (8.14.4/8.14.4) with ESMTP id q8M3cgsB016016
+	(version=TLSv1/SSLv3 cipher=DHE-RSA-CAMELLIA256-SHA bits=256 verify=NO)
+	for <linux-btrfs@vger.kernel.org>; Sat, 22 Sep 2012 15:38:48 +1200
+Message-ID: <505D32C2.8070105@theflat.net.nz>
+Date: Sat, 22 Sep 2012 15:38:42 +1200
+From: Jp Wise <jpwise@theflat.net.nz>
 MIME-Version: 1.0
-Date: Fri, 21 Sep 2012 18:23:36 +0200
-Message-ID: <CAKZ=RP8D04kxn4_YX8xKtjcqWd=BiuWC-DEYD+f4iekwt3WDtw@mail.gmail.com>
-Subject: Userland commands repository in wiki
-From: Alfredo Esteban <aedelatorre@gmail.com>
-To: Linux Btrfs <linux-btrfs@vger.kernel.org>
-Content-Type: text/plain; charset=ISO-8859-1
+To: linux-btrfs@vger.kernel.org
+Subject: Identifying reflink / CoW files
+Content-Type: text/plain; charset=ISO-8859-1; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hi,
+Good morning, I'm working on an offline deduplication script intended to 
+work around the copy-on-write functionality of BTRFS.
 
-Yesterday, I modified the URL of the userland commands repository in
-this wiki page:
+Simply put - is there any existing utility to compare two files (or 
+dirs) and output if the files share the same physical extents / data 
+blocks on disk?
+- aka - they're CoW copies.
 
-https://btrfs.wiki.kernel.org/index.php/Debugging_Btrfs_with_GDB
+I'm not actively working with BTRFS yet, but for the project i'm working 
+on it's looking to the be most suitable candidate, and the CoW 
+functionality avoids issues with file changes that hardlinks would create.
+ From reading other posts, aware the information could be pulled out via 
+btrfs-debug-tree, but it would then involve parsing the entire output to 
+locate the required files inodes and their extents which seems like 
+quite a roundabout way to retrieve the information.
 
-Former URL doesn't work:
+Also my programming skills aren't  up to the task of trying to pull the 
+tree data directly from the filesystem to do it, and I'd like to avoid 
+doing byte-by-byte comparisons on all files as it's inefficient if the 
+file can instead be identified as a CoW copy.
 
-git://git.kernel.org/pub/scm/linux/kernel/git/mason/btrfs-progs-unstable.git
+Open to suggestions of other tools that could be used to acheive the 
+desired result.
 
-I think the correct one is:
-
-git://git.kernel.org/pub/scm/linux/kernel/git/mason/btrfs-progs.git
-
-Please, confirm that my modification is ok.
-
-Thanks,
-
-Alfredo
+Thanks.
+Jp.

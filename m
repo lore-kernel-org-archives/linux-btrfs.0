@@ -1,12 +1,12 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from e5.ny.us.ibm.com ([32.97.182.145]:53747 "EHLO e5.ny.us.ibm.com"
+Received: from e1.ny.us.ibm.com ([32.97.182.141]:44896 "EHLO e1.ny.us.ibm.com"
 	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1753870Ab2IWM52 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Sun, 23 Sep 2012 08:57:28 -0400
+	id S1753607Ab2IWM6U (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Sun, 23 Sep 2012 08:58:20 -0400
 Received: from /spool/local
-	by e5.ny.us.ibm.com with IBM ESMTP SMTP Gateway: Authorized Use Only! Violators will be prosecuted
+	by e1.ny.us.ibm.com with IBM ESMTP SMTP Gateway: Authorized Use Only! Violators will be prosecuted
 	for <linux-btrfs@vger.kernel.org> from <zwu.kernel@gmail.com>;
-	Sun, 23 Sep 2012 08:57:27 -0400
+	Sun, 23 Sep 2012 08:58:19 -0400
 From: zwu.kernel@gmail.com
 To: linux-fsdevel@vger.kernel.org
 Cc: linux-kernel@vger.kernel.org, linux-btrfs@vger.kernel.org,
@@ -15,9 +15,9 @@ Cc: linux-kernel@vger.kernel.org, linux-btrfs@vger.kernel.org,
         marco.stornelli@gmail.com, david@fromorbit.com,
         stroetmann@ontolinux.com, diegocg@gmail.com, chris@csamuel.org,
         Zhi Yong Wu <wuzhy@linux.vnet.ibm.com>
-Subject: [RFC v2 05/10] vfs: introduce one hash table
-Date: Sun, 23 Sep 2012 20:56:30 +0800
-Message-Id: <1348404995-14372-6-git-send-email-zwu.kernel@gmail.com>
+Subject: [RFC v2 10/10] vfs: add documentation
+Date: Sun, 23 Sep 2012 20:56:35 +0800
+Message-Id: <1348404995-14372-11-git-send-email-zwu.kernel@gmail.com>
 In-Reply-To: <1348404995-14372-1-git-send-email-zwu.kernel@gmail.com>
 References: <1348404995-14372-1-git-send-email-zwu.kernel@gmail.com>
 Sender: linux-btrfs-owner@vger.kernel.org
@@ -25,239 +25,124 @@ List-ID: <linux-btrfs.vger.kernel.org>
 
 From: Zhi Yong Wu <wuzhy@linux.vnet.ibm.com>
 
-  Adds a hash table structure which contains
-a lot of hash list and is used to efficiently
-look up the data temperature of a file or its
-ranges.
-  In each hash list of hash table, the hash node
-will keep track of temperature info.
-
 Signed-off-by: Zhi Yong Wu <wuzhy@linux.vnet.ibm.com>
 ---
- fs/hot_tracking.c            |   77 ++++++++++++++++++++++++++++++++++++++++-
- include/linux/hot_tracking.h |   35 +++++++++++++++++++
- 2 files changed, 110 insertions(+), 2 deletions(-)
+ Documentation/filesystems/hot_tracking.txt |  106 ++++++++++++++++++++++++++++
+ 1 files changed, 106 insertions(+), 0 deletions(-)
+ create mode 100644 Documentation/filesystems/hot_tracking.txt
 
-diff --git a/fs/hot_tracking.c b/fs/hot_tracking.c
-index fa89f70..5f96442 100644
---- a/fs/hot_tracking.c
-+++ b/fs/hot_tracking.c
-@@ -16,6 +16,7 @@
- #include <linux/module.h>
- #include <linux/spinlock.h>
- #include <linux/hardirq.h>
-+#include <linux/hash.h>
- #include <linux/fs.h>
- #include <linux/blkdev.h>
- #include <linux/types.h>
-@@ -24,6 +25,9 @@
- /* kmem_cache pointers for slab caches */
- static struct kmem_cache *hot_inode_item_cache;
- static struct kmem_cache *hot_range_item_cache;
-+static struct kmem_cache *hot_hash_node_cache;
+diff --git a/Documentation/filesystems/hot_tracking.txt b/Documentation/filesystems/hot_tracking.txt
+new file mode 100644
+index 0000000..340df45
+--- /dev/null
++++ b/Documentation/filesystems/hot_tracking.txt
+@@ -0,0 +1,106 @@
++Hot Data Tracking
 +
-+static void hot_hash_node_init(void *_node);
- 
- /*
-  * Initialize the inode tree. Should be called for each new inode
-@@ -57,6 +61,10 @@ void hot_rb_inode_item_init(void *_item)
- 	memset(he, 0, sizeof(*he));
- 	kref_init(&he->refs);
- 	spin_lock_init(&he->lock);
-+	he->heat_node = kmem_cache_alloc(hot_hash_node_cache,
-+					GFP_KERNEL | GFP_NOFS);
-+	hot_hash_node_init(he->heat_node);
-+	he->heat_node->hot_freq_data = &he->hot_freq_data;
- 	he->hot_freq_data.avg_delta_reads = (u64) -1;
- 	he->hot_freq_data.avg_delta_writes = (u64) -1;
- 	he->hot_freq_data.flags = FREQ_DATA_TYPE_INODE;
-@@ -75,6 +83,10 @@ static void hot_rb_range_item_init(void *_item)
- 	memset(hr, 0, sizeof(*hr));
- 	kref_init(&hr->refs);
- 	spin_lock_init(&hr->lock);
-+	hr->heat_node = kmem_cache_alloc(hot_hash_node_cache,
-+				GFP_KERNEL | GFP_NOFS);
-+	hot_hash_node_init(hr->heat_node);
-+	hr->heat_node->hot_freq_data = &hr->hot_freq_data;
- 	hr->hot_freq_data.avg_delta_reads = (u64) -1;
- 	hr->hot_freq_data.avg_delta_writes = (u64) -1;
- 	hr->hot_freq_data.flags = FREQ_DATA_TYPE_RANGE;
-@@ -105,6 +117,18 @@ inode_err:
- 	return -ENOMEM;
- }
- 
-+static void hot_rb_inode_item_exit(void)
-+{
-+	if (hot_inode_item_cache)
-+		kmem_cache_destroy(hot_inode_item_cache);
-+}
++Introduction
++-------------------------------------------------------------------------------
 +
-+static void hot_rb_range_item_exit(void)
-+{
-+	if (hot_range_item_cache)
-+		kmem_cache_destroy(hot_range_item_cache);
-+}
++  The feature adds experimental support for tracking data temperature
++information in VFS layer.  Essentially, this means maintaining some key
++stats(like number of reads/writes, last read/write time, frequency of
++reads/writes), then distilling those numbers down to a single
++"temperature" value that reflects what data is "hot," and using that
++temperature to move data to SSDs.
 +
- /*
-  * Drops the reference out on hot_inode_item by one and free the structure
-  * if the reference count hits zero
-@@ -510,6 +534,48 @@ void hot_rb_update_freqs(struct inode *inode, u64 start,
- }
- 
- /*
-+ * Initialize hash node.
-+ */
-+static void hot_hash_node_init(void *_node)
-+{
-+	struct hot_hash_node *node = _node;
++  The long-term goal of the feature is to allow some FSs,
++e.g. Btrfs to intelligently utilize SSDs in a heterogenous volume.
++Incidentally, this project has been motivated by
++the Project Ideas page on the Btrfs wiki.
 +
-+	memset(node, 0, sizeof(*node));
-+	INIT_HLIST_NODE(&node->hashnode);
-+	node->hot_freq_data = NULL;
-+	node->hlist = NULL;
-+	spin_lock_init(&node->lock);
-+	kref_init(&node->refs);
-+}
++  Of course, users are warned not to run this code outside of development
++environments. These patches are EXPERIMENTAL, and as such they might eat
++your data and/or memory. That said, the code should be relatively safe
++when the hottrack mount option are disabled.
 +
-+static int __init hot_hash_node_cache_init(void)
-+{
-+	hot_hash_node_cache = kmem_cache_create("hot_hash_node",
-+				sizeof(struct hot_hash_node),
-+				0,
-+				SLAB_RECLAIM_ACCOUNT | SLAB_MEM_SPREAD,
-+				hot_hash_node_init);
-+	if (!hot_hash_node_cache)
-+		return -ENOMEM;
++Motivation
++-------------------------------------------------------------------------------
 +
-+	return 0;
-+}
++  The overall goal of enabling hot data relocation to SSD has been
++motivated by the Project Ideas page on the Btrfs wiki at
++<https://btrfs.wiki.kernel.org/index.php/Project_ideas>.
++It will divide into two steps. VFS provide hot data tracking function
++while specific FS will provide hot data relocation function.
++So as the first step of this goal, it is hoped that the patchset
++for hot data tracking will eventually mature into VFS.
 +
-+/*
-+ * Initialize inode/range hash lists.
-+ */
-+static void hot_hash_table_init(struct hot_info *root)
-+{
-+	int i;
-+	for (i = 0; i < HEAT_HASH_SIZE; i++) {
-+		root->heat_inode_hl[i].temperature = i;
-+		root->heat_range_hl[i].temperature = i;
-+		rwlock_init(&root->heat_inode_hl[i].rwlock);
-+		rwlock_init(&root->heat_range_hl[i].rwlock);
-+	}
-+}
++  This is essentially the traditional cache argument: SSD is fast and
++expensive; HDD is cheap but slow. ZFS, for example, can already take
++advantage of SSD caching. Btrfs should also be able to take advantage of
++hybrid storage without many broad, sweeping changes to existing code.
 +
-+/*
-  * Regular mount options parser for -hottrack option.
-  * return false if no -hottrack is specified;
-  * otherwise return true. And the -hottrack will be
-@@ -544,13 +610,18 @@ bool hot_track_parse_options(char *options)
- }
- 
- /*
-- * Initialize kmem cache for hot_inode_item
-- * and hot_range_item
-+ * Initialize kmem cache for hot_inode_item,
-+ * hot_range_item and hot_hash_node
-  */
- void __init hot_track_cache_init(void)
- {
- 	if (hot_rb_item_cache_init())
- 		return;
++Main Parts Description
++-------------------------------------------------------------------------------
 +
-+	if (hot_hash_node_cache_init()) {
-+		hot_rb_inode_item_exit();
-+		hot_rb_range_item_exit();
-+	}
- }
- 
- /*
-@@ -560,10 +631,12 @@ void hot_track_init(struct super_block *sb, const char *name)
- {
- 	sb->s_hotinfo.mount_opt |= HOT_MOUNT_HOT_TRACK;
- 	hot_rb_inode_tree_init(&sb->s_hotinfo.hot_inode_tree);
-+	hot_hash_table_init(&sb->s_hotinfo);
- }
- 
- void hot_track_exit(struct super_block *sb)
- {
- 	sb->s_hotinfo.mount_opt &= ~HOT_MOUNT_HOT_TRACK;
-+	hot_hash_table_free(&sb->s_hotinfo);
- 	hot_rb_inode_tree_free(&sb->s_hotinfo);
- }
-diff --git a/include/linux/hot_tracking.h b/include/linux/hot_tracking.h
-index bb2a41c..635ffb6 100644
---- a/include/linux/hot_tracking.h
-+++ b/include/linux/hot_tracking.h
-@@ -20,6 +20,9 @@
- #include <linux/rbtree.h>
- #include <linux/kref.h>
- 
-+#define HEAT_HASH_BITS 8
-+#define HEAT_HASH_SIZE (1 << HEAT_HASH_BITS)
++These include the following parts:
++    * Hooks in existing vfs functions to track data access frequency
++    * New rbtrees for tracking access frequency of inodes and sub-file
++ranges (hot_rb.c)
++    The relationship between super_block and rbtree is as below:
++super_block->s_hotinfo.hot_inode_tree
++    In include/linux/fs.h, one struct hot_info s_hotinfo is added to
++super_block struct. Each FS instance can find hot tracking info
++s_hotinfo via its super_block. In this hot_info, it store a lot of hot
++tracking info such as hot_inode_tree, inode and range hash list, etc.
++    * A hash list for indexing data by its temperature (hot_hash.c)
++    * A debugfs interface for dumping data from the rbtrees (hot_debugfs.c)
++    * A background kthread for updating inode heat info
++    * Mount options for enabling temperature tracking(-o hottrack,
++default mean disabled) (hot_track.c)
++    * An ioctl to retrieve the frequency information collected for a certain
++file
++    * Ioctls to enable/disable frequency tracking per inode.
 +
- /*
-  * Flags for hot data tracking mount options.
-  */
-@@ -52,6 +55,28 @@ struct hot_freq_data {
- 	u32 last_temperature;
- };
- 
-+/* Hash list heads for hot hash table */
-+struct hot_hash_head {
-+	struct hlist_head hashhead;
-+	rwlock_t rwlock;
-+	u32 temperature;
-+};
++Git Development Tree
++-------------------------------------------------------------------------------
 +
-+/* Nodes stored in each hash list of hash table */
-+struct hot_hash_node {
-+	struct hlist_node hashnode;
-+	struct list_head node;
-+	struct hot_freq_data *hot_freq_data;
-+	struct hot_hash_head *hlist;
-+	spinlock_t lock; /* protects hlist */
++  The feature is still on development and review, so if you're interested,
++you can pull from the git repository at the following location:
++  https://github.com/wuzhy/kernel.git hot_tracking
++  git://github.com/wuzhy/kernel.git hot_tracking
 +
-+	/*
-+	 * number of references to this node
-+	 * equals 1 (hashlist entry)
-+	 */
-+	struct kref refs;
-+};
++Usage Example
++-------------------------------------------------------------------------------
++To use hot tracking, you should mount like this:
 +
- /* An item representing an inode and its access frequency */
- struct hot_inode_item {
- 	/* node for hot_inode_tree rb_tree */
-@@ -68,6 +93,8 @@ struct hot_inode_item {
- 	spinlock_t lock;
- 	/* prevents kfree */
- 	struct kref refs;
-+	/* hashlist node for this inode */
-+	struct hot_hash_node *heat_node;
- };
- 
- /*
-@@ -91,6 +118,8 @@ struct hot_range_item {
- 	spinlock_t lock;
- 	/* prevents kfree */
- 	struct kref refs;
-+	/* hashlist node for this range */
-+	struct hot_hash_node *heat_node;
- };
- 
- struct hot_info {
-@@ -98,6 +127,12 @@ struct hot_info {
- 
- 	/* red-black tree that keeps track of fs-wide hot data */
- 	struct hot_inode_tree hot_inode_tree;
++$ mount -o hottrack /dev/sdb /mnt
++[ 1505.894078] device label test devid 1 transid 29 /dev/sdb
++[ 1505.952977] btrfs: disk space caching is enabled
++[ 1506.069678] vfs: turning on hot data tracking
 +
-+	/* hash map of inode temperature */
-+	struct hot_hash_head heat_inode_hl[HEAT_HASH_SIZE];
++Mount debugfs at first:
 +
-+	/* hash map of range temperature */
-+	struct hot_hash_head heat_range_hl[HEAT_HASH_SIZE];
- };
- 
- #endif  /* _LINUX_HOTTRACK_H */
++$ mount -t debugfs none /sys/kernel/debug
++$ ls -l /sys/kernel/debug/vfs_hotdata/
++total 0
++drwxr-xr-x 2 root root 0 Aug  8 04:40 sdb
++$ ls -l /sys/kernel/debug/vfs_hotdata/sdb
++total 0
++-rw-r--r-- 1 root root 0 Aug  8 04:40 inode_data
++-rw-r--r-- 1 root root 0 Aug  8 04:40 range_data
++
++View information about hot tracking from debugfs:
++
++$ echo "hot tracking test" > /mnt/file
++$ cat /sys/kernel/debug/hot_track/sdb/inode_data
++inode #279, reads 0, writes 1, avg read time 18446744073709551615,
++avg write time 5251566408153596, temp 109
++$ cat /sys/kernel/debug/hot_track/sdb/range_data
++inode #279, range start 0 (range len 1048576) reads 0, writes 1,
++avg read time 18446744073709551615, avg write time 1128690176623144209, temp 64
++
++$ echo "hot data tracking test" >> /mnt/file
++$ cat /sys/kernel/debug/hot_track/sdb/inode_data
++inode #279, reads 0, writes 2, avg read time 18446744073709551615,
++avg write time 4923343766042451, temp 109
++$ cat /sys/kernel/debug/hot_track/sdb/range_data
++inode #279, range start 0 (range len 1048576) reads 0, writes 2,
++avg read time 18446744073709551615, avg write time 1058147040842596150, temp 64
++
 -- 
 1.7.6.5
 

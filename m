@@ -1,13 +1,13 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from e38.co.us.ibm.com ([32.97.110.159]:54633 "EHLO
-	e38.co.us.ibm.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1753842Ab2IWM5V (ORCPT
+Received: from e37.co.us.ibm.com ([32.97.110.158]:48033 "EHLO
+	e37.co.us.ibm.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1753803Ab2IWM5Q (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Sun, 23 Sep 2012 08:57:21 -0400
+	Sun, 23 Sep 2012 08:57:16 -0400
 Received: from /spool/local
-	by e38.co.us.ibm.com with IBM ESMTP SMTP Gateway: Authorized Use Only! Violators will be prosecuted
+	by e37.co.us.ibm.com with IBM ESMTP SMTP Gateway: Authorized Use Only! Violators will be prosecuted
 	for <linux-btrfs@vger.kernel.org> from <zwu.kernel@gmail.com>;
-	Sun, 23 Sep 2012 06:57:20 -0600
+	Sun, 23 Sep 2012 06:57:15 -0600
 From: zwu.kernel@gmail.com
 To: linux-fsdevel@vger.kernel.org
 Cc: linux-kernel@vger.kernel.org, linux-btrfs@vger.kernel.org,
@@ -16,9 +16,9 @@ Cc: linux-kernel@vger.kernel.org, linux-btrfs@vger.kernel.org,
         marco.stornelli@gmail.com, david@fromorbit.com,
         stroetmann@ontolinux.com, diegocg@gmail.com, chris@csamuel.org,
         Zhi Yong Wu <wuzhy@linux.vnet.ibm.com>
-Subject: [RFC v2 04/10] vfs: add init and exit support
-Date: Sun, 23 Sep 2012 20:56:29 +0800
-Message-Id: <1348404995-14372-5-git-send-email-zwu.kernel@gmail.com>
+Subject: [RFC v2 03/10] vfs: add one new mount option '-o hottrack'
+Date: Sun, 23 Sep 2012 20:56:28 +0800
+Message-Id: <1348404995-14372-4-git-send-email-zwu.kernel@gmail.com>
 In-Reply-To: <1348404995-14372-1-git-send-email-zwu.kernel@gmail.com>
 References: <1348404995-14372-1-git-send-email-zwu.kernel@gmail.com>
 Sender: linux-btrfs-owner@vger.kernel.org
@@ -26,151 +26,134 @@ List-ID: <linux-btrfs.vger.kernel.org>
 
 From: Zhi Yong Wu <wuzhy@linux.vnet.ibm.com>
 
-  Add initialization function to create some
-key data structures when hot tracking is enabled;
-Clean up them when hot tracking is disabled
+  Introduce one new mount option '-o hottrack',
+and add its parsing support.
+  Its usage looks like:
+   mount -o hottrack
+   mount -o nouser,hottrack
+   mount -o nouser,hottrack,loop
+   mount -o hottrack,nouser
 
 Signed-off-by: Zhi Yong Wu <wuzhy@linux.vnet.ibm.com>
 ---
- fs/hot_tracking.c |   60 +++++++++++++++++++++++++++++++++++++++++++++++++++++
- fs/hot_tracking.h |    2 +
- fs/namespace.c    |    4 +++
- fs/super.c        |    6 +++++
- 4 files changed, 72 insertions(+), 0 deletions(-)
+ fs/hot_tracking.c            |   34 ++++++++++++++++++++++++++++++++++
+ fs/hot_tracking.h            |    1 +
+ fs/super.c                   |    5 +++++
+ include/linux/hot_tracking.h |    7 +++++++
+ 4 files changed, 47 insertions(+), 0 deletions(-)
 
 diff --git a/fs/hot_tracking.c b/fs/hot_tracking.c
-index f97e8a6..fa89f70 100644
+index 52ed926..f97e8a6 100644
 --- a/fs/hot_tracking.c
 +++ b/fs/hot_tracking.c
-@@ -135,6 +135,51 @@ static void hot_rb_free_hot_range_item(struct hot_range_item *hr)
- 	}
+@@ -465,6 +465,40 @@ void hot_rb_update_freqs(struct inode *inode, u64 start,
  }
  
-+static int hot_rb_remove_hot_inode_item(struct hot_inode_tree *tree,
-+                                struct hot_inode_item *he)
+ /*
++ * Regular mount options parser for -hottrack option.
++ * return false if no -hottrack is specified;
++ * otherwise return true. And the -hottrack will be
++ * removed from options.
++ */
++bool hot_track_parse_options(char *options)
 +{
-+        int ret = 0;
-+        rb_erase(&he->rb_node, &tree->map);
-+        he->in_tree = 0;
-+        return ret;
-+}
++	long len;
++	char *p;
++	static char opts_hot[] = "hottrack";
 +
-+static int hot_rb_remove_hot_range_item(struct hot_range_tree *tree,
-+                                struct hot_range_item *hr)
-+{
-+        int ret = 0;
-+        rb_erase(&hr->rb_node, &tree->map);
-+        hr->in_tree = 0;
-+        return ret;
-+}
++	if (!options)
++		return false;
 +
-+/* Frees the entire hot_inode_tree. */
-+static void hot_rb_inode_tree_free(struct hot_info *root)
-+{
-+	struct rb_node *node, *node2;
-+	struct hot_inode_item *he;
-+	struct hot_range_item *hr;
++	p = strstr(options, opts_hot);
++	if (!p)
++		return false;
 +
-+	/* Free hot inode and range trees on fs root */
-+	node = rb_first(&root->hot_inode_tree.map);
-+
-+	while (node) {
-+		he = rb_entry(node, struct hot_inode_item, rb_node);
-+
-+		node2 = rb_first(&he->hot_range_tree.map);
-+		while (node2) {
-+			hr = rb_entry(node2, struct hot_range_item, rb_node);
-+			hot_rb_remove_hot_range_item(&he->hot_range_tree, hr);
-+			hot_rb_free_hot_range_item(hr);
-+			node2 = rb_first(&he->hot_range_tree.map);
++	while (p) {
++		len = options + strlen(options) - (p + strlen(opts_hot));
++		if (len == 0) {
++			options[0] = '\0';
++			break;
 +		}
 +
-+		hot_rb_remove_hot_inode_item(&root->hot_inode_tree, he);
-+		hot_rb_free_hot_inode_item(he);
-+		node = rb_first(&root->hot_inode_tree.map);
++		memmove(p, p + strlen(opts_hot) + 1, len);
++		p = strstr(options, opts_hot);
 +	}
-+}
 +
- static struct rb_node *hot_rb_insert_hot_inode_item(struct rb_root *root,
- 						unsigned long inode_num,
- 						struct rb_node *node)
-@@ -507,3 +552,18 @@ void __init hot_track_cache_init(void)
- 	if (hot_rb_item_cache_init())
- 		return;
- }
++	printk(KERN_INFO "vfs: turning on hot data tracking\n");
++	return true;
++}
 +
 +/*
-+ * Initialize the data structures for hot data tracking.
-+ */
-+void hot_track_init(struct super_block *sb, const char *name)
-+{
-+	sb->s_hotinfo.mount_opt |= HOT_MOUNT_HOT_TRACK;
-+	hot_rb_inode_tree_init(&sb->s_hotinfo.hot_inode_tree);
-+}
-+
-+void hot_track_exit(struct super_block *sb)
-+{
-+	sb->s_hotinfo.mount_opt &= ~HOT_MOUNT_HOT_TRACK;
-+	hot_rb_inode_tree_free(&sb->s_hotinfo);
-+}
+  * Initialize kmem cache for hot_inode_item
+  * and hot_range_item
+  */
 diff --git a/fs/hot_tracking.h b/fs/hot_tracking.h
-index 6bd09eb..3a8d398 100644
+index 2ba29e4..6bd09eb 100644
 --- a/fs/hot_tracking.h
 +++ b/fs/hot_tracking.h
-@@ -39,5 +39,7 @@ void hot_rb_update_freqs(struct inode *inode, u64 start, u64 len,
+@@ -37,6 +37,7 @@ void hot_rb_free_hot_inode_item(struct hot_inode_item *he);
+ void hot_rb_update_freqs(struct inode *inode, u64 start, u64 len,
+ 			int rw);
  
- bool hot_track_parse_options(char *options);
++bool hot_track_parse_options(char *options);
  void __init hot_track_cache_init(void);
-+void hot_track_init(struct super_block *sb, const char *name);
-+void hot_track_exit(struct super_block *sb);
  
  #endif /* __HOT_TRACKING__ */
-diff --git a/fs/namespace.c b/fs/namespace.c
-index 4d31f73..55006c8 100644
---- a/fs/namespace.c
-+++ b/fs/namespace.c
-@@ -20,6 +20,7 @@
- #include <linux/fs_struct.h>	/* get_fs_root et.al. */
- #include <linux/fsnotify.h>	/* fsnotify_vfsmount_delete */
- #include <linux/uaccess.h>
-+#include "hot_tracking.h"
- #include "pnode.h"
- #include "internal.h"
- 
-@@ -1215,6 +1216,9 @@ static int do_umount(struct mount *mnt, int flags)
- 		return retval;
- 	}
- 
-+	if (sb->s_hotinfo.mount_opt & HOT_MOUNT_HOT_TRACK)
-+		hot_track_exit(sb);
-+
- 	down_write(&namespace_sem);
- 	br_write_lock(&vfsmount_lock);
- 	event++;
 diff --git a/fs/super.c b/fs/super.c
-index 7eb3b0c..0999d5c 100644
+index 0902cfa..7eb3b0c 100644
 --- a/fs/super.c
 +++ b/fs/super.c
-@@ -1153,6 +1153,9 @@ mount_fs(struct file_system_type *type, int flags, const char *name, void *data)
- 	WARN_ON(sb->s_bdi == &default_backing_dev_info);
- 	sb->s_flags |= MS_BORN;
+@@ -34,6 +34,7 @@
+ #include <linux/cleancache.h>
+ #include <linux/fsnotify.h>
+ #include <linux/lockdep.h>
++#include "hot_tracking.h"
+ #include "internal.h"
  
-+	if (hottrack)
-+		hot_track_init(sb, name);
+ 
+@@ -1125,6 +1126,7 @@ mount_fs(struct file_system_type *type, int flags, const char *name, void *data)
+ 	struct dentry *root;
+ 	struct super_block *sb;
+ 	char *secdata = NULL;
++	bool hottrack = false;
+ 	int error = -ENOMEM;
+ 
+ 	if (data && !(type->fs_flags & FS_BINARY_MOUNTDATA)) {
+@@ -1137,6 +1139,9 @@ mount_fs(struct file_system_type *type, int flags, const char *name, void *data)
+ 			goto out_free_secdata;
+ 	}
+ 
++	if (data && hot_track_parse_options(data))
++		hottrack = true;
 +
- 	error = security_sb_kern_mount(sb, flags, secdata);
- 	if (error)
- 		goto out_sb;
-@@ -1170,6 +1173,9 @@ mount_fs(struct file_system_type *type, int flags, const char *name, void *data)
- 	free_secdata(secdata);
- 	return root;
- out_sb:
-+	if (hottrack)
-+		hot_track_exit(sb);
+ 	root = type->mount(type, flags, name, data);
+ 	if (IS_ERR(root)) {
+ 		error = PTR_ERR(root);
+diff --git a/include/linux/hot_tracking.h b/include/linux/hot_tracking.h
+index a566f91..bb2a41c 100644
+--- a/include/linux/hot_tracking.h
++++ b/include/linux/hot_tracking.h
+@@ -20,6 +20,11 @@
+ #include <linux/rbtree.h>
+ #include <linux/kref.h>
+ 
++/*
++ * Flags for hot data tracking mount options.
++ */
++#define HOT_MOUNT_HOT_TRACK		(1 << 0)
 +
- 	dput(root);
- 	deactivate_locked_super(sb);
- out_free_secdata:
+ /* A tree that sits on the hot_info */
+ struct hot_inode_tree {
+ 	struct rb_root map;
+@@ -89,6 +94,8 @@ struct hot_range_item {
+ };
+ 
+ struct hot_info {
++	unsigned long mount_opt;
++
+ 	/* red-black tree that keeps track of fs-wide hot data */
+ 	struct hot_inode_tree hot_inode_tree;
+ };
 -- 
 1.7.6.5
 

@@ -1,85 +1,94 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx194.callplus.net.nz ([202.180.66.194]:24657 "EHLO
-	mxi2.callplus.net.nz" rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org
-	with ESMTP id S1752503Ab2IVV5G (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Sat, 22 Sep 2012 17:57:06 -0400
-Message-ID: <505E3412.4010900@theflat.net.nz>
-Date: Sun, 23 Sep 2012 09:56:34 +1200
-From: Jp Wise <jpwise@theflat.net.nz>
-Reply-To: jpwise@theflat.net.nz
-MIME-Version: 1.0
-To: Arne Jansen <sensille@gmx.net>
-CC: linux-btrfs@vger.kernel.org
-Subject: Re: Identifying reflink / CoW files
-References: <505D32C2.8070105@theflat.net.nz> <505D6D87.1070403@gmx.net>
-In-Reply-To: <505D6D87.1070403@gmx.net>
-Content-Type: text/plain; charset=ISO-8859-1; format=flowed
+Received: from e3.ny.us.ibm.com ([32.97.182.143]:43569 "EHLO e3.ny.us.ibm.com"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1753409Ab2IWM46 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Sun, 23 Sep 2012 08:56:58 -0400
+Received: from /spool/local
+	by e3.ny.us.ibm.com with IBM ESMTP SMTP Gateway: Authorized Use Only! Violators will be prosecuted
+	for <linux-btrfs@vger.kernel.org> from <zwu.kernel@gmail.com>;
+	Sun, 23 Sep 2012 08:56:57 -0400
+From: zwu.kernel@gmail.com
+To: linux-fsdevel@vger.kernel.org
+Cc: linux-kernel@vger.kernel.org, linux-btrfs@vger.kernel.org,
+        linux-ext4@vger.kernel.org, linuxram@linux.vnet.ibm.com,
+        viro@zeniv.linux.org.uk, cmm@us.ibm.com, tytso@mit.edu,
+        marco.stornelli@gmail.com, david@fromorbit.com,
+        stroetmann@ontolinux.com, diegocg@gmail.com, chris@csamuel.org,
+        Zhi Yong Wu <wuzhy@linux.vnet.ibm.com>
+Subject: [RFC v2 00/10] vfs: hot data tracking
+Date: Sun, 23 Sep 2012 20:56:25 +0800
+Message-Id: <1348404995-14372-1-git-send-email-zwu.kernel@gmail.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
+From: Zhi Yong Wu <wuzhy@linux.vnet.ibm.com>
 
-On 22/09/2012 7:49 p.m., Arne Jansen wrote:
-> On 09/22/12 05:38, Jp Wise wrote:
->> Good morning, I'm working on an offline deduplication script intended to
->> work around the copy-on-write functionality of BTRFS.
->>
->> Simply put - is there any existing utility to compare two files (or
->> dirs) and output if the files share the same physical extents / data
->> blocks on disk?
->> - aka - they're CoW copies.
->>
->> I'm not actively working with BTRFS yet, but for the project i'm working
->> on it's looking to the be most suitable candidate, and the CoW
->> functionality avoids issues with file changes that hardlinks would create.
->>  From reading other posts, aware the information could be pulled out via
->> btrfs-debug-tree, but it would then involve parsing the entire output to
->> locate the required files inodes and their extents which seems like
->> quite a roundabout way to retrieve the information.
->>
->> Also my programming skills aren't  up to the task of trying to pull the
->> tree data directly from the filesystem to do it, and I'd like to avoid
->> doing byte-by-byte comparisons on all files as it's inefficient if the
->> file can instead be identified as a CoW copy.
-> The information is available in the kernel, but to find a good way to
-> extract it you have to describe in much more detail what you intend to
-> do. What I, first of all, don't understand, is, why you need the
-> information of already shared (=deduped) blocks to build a dedup. Don't
-> you want to find data that is identical, but not shared, instead?
-Hi Arne, that's exactly my issue. I want to filter out files that have 
-already been de-duped to avoid re-checking two files that already share 
-the same data blocks.
-  In this usecase, I can identify potential duplicates via filename data 
-(this dataset also stores a basic checksum as part of the filename), but 
-rather than then doing a secondary checksum/cmp, I'd like to instead 
-check if it's already sharing the same data blocks (ie: already 
-de-duped). If two files share the same data blocks, I can safely say 
-it's already de-duped and move onto the next potential match with doing 
-the additional crunching of checksum/cmp to verify the match.
+NOTE:
 
-Logically there should also be usecases where someone has made a data 
-copy in the past and may be uncertain if they made a reflink copy or a 
-full copy and wants to recheck if they share the same data blocks.
->> Open to suggestions of other tools that could be used to acheive the
->> desired result.
->>
-> Afaik without playing with it myself fiemap can give you information
-> about the mappings of each file. If the mappings of 2 files match,
-> the data is shared.
-OK, have just done some searching on fiemap and located a code example 
-using it to pull the file extent data.
-http://smackerelofopinion.blogspot.com/2010/01/using-fiemap-ioctl-to-get-file-extents.html
-Will have a play around to see if i might be able to hack it up to 
-compare two files, or just parse it's output between two files to 
-identify matches.  Thank you for the pointer. :)
+  The patchset is currently post out mainly to make sure
+it is going in the correct direction and hope to get some
+helpful comments from other guys.
+  For more infomation, please check hot_tracking.txt in Documentation
 
-Likewise if anyone else knows of an existing utility to do a 
-non-bytewise compare between two files, and just check if they share the 
-same datablocks please let me know. :)
->> Thanks.
->> Jp.
->> -- 
->> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
->> the body of a message to majordomo@vger.kernel.org
->> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+TODO List:
+
+ 1.) Need to do scalability or performance tests.
+ 2.) Turn some Micro into be tunable
+       TIME_TO_KICK, and HEAT_UPDATE_DELAY
+ 3.) Rafactor hot_hash_is_aging()
+       If you just made the timeout value a timespec and compared
+     the _timespecs_, you would be doing a lot fewer conversions.
+ 4.) Cleanup some unnecessary lock protect
+ 5.) Add more comments to explain how to calc temperature
+       How to "read" the avg read/write time (nanoseconds,
+     microseconds, jiffies....??)
+ 6.) Make updating tempreture more parallel
+ 7.) How to save the file tempreture among the umount to be able to
+     preserve the file tempreture after reboot
+ 8.) Add one new ioctl inteface to set temperature value.
+
+Ben Chociej, Matt Lupfer and Conor Scott originally wrote this code to
+ be very btrfs-specific.  I've taken their code and attempted to
+make it more generic and integrate it at the VFS level.
+
+Changelog from v1:
+ 1.) Reduce new files and put all in fs/hot_tracking.[ch] [Dave Chinner]
+ 2.) The first three patches can probably just be flattened into one.
+					[Marco Stornelli , Dave Chinner]
+
+Zhi Yong Wu (10):
+  vfs: introduce private rb structures
+  vfs: add support for updating access frequency
+  vfs: add one new mount option '-o hottrack'
+  vfs: add init and exit support
+  vfs: introduce one hash table
+  vfs: enable hot data tracking
+  vfs: fork one kthread to update data temperature
+  vfs: add 3 new ioctl interfaces
+  vfs: add debugfs support
+  vfs: add documentation
+
+ Documentation/filesystems/hot_tracking.txt |  106 ++
+ fs/Makefile                                |    2 +-
+ fs/compat_ioctl.c                          |    8 +
+ fs/dcache.c                                |    2 +
+ fs/direct-io.c                             |   10 +
+ fs/hot_tracking.c                          | 1563 ++++++++++++++++++++++++++++
+ fs/hot_tracking.h                          |  163 +++
+ fs/ioctl.c                                 |  130 +++
+ fs/namespace.c                             |   10 +
+ fs/super.c                                 |   11 +
+ include/linux/fs.h                         |   15 +
+ include/linux/hot_tracking.h               |  164 +++
+ mm/filemap.c                               |    8 +
+ mm/page-writeback.c                        |   21 +
+ mm/readahead.c                             |    9 +
+ 15 files changed, 2221 insertions(+), 1 deletions(-)
+ create mode 100644 Documentation/filesystems/hot_tracking.txt
+ create mode 100644 fs/hot_tracking.c
+ create mode 100644 fs/hot_tracking.h
+ create mode 100644 include/linux/hot_tracking.h
+
+-- 
+1.7.6.5
 

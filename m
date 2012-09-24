@@ -1,16 +1,16 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.fusionio.com ([66.114.96.31]:44410 "EHLO mx2.fusionio.com"
+Received: from mx2.fusionio.com ([66.114.96.31]:51162 "EHLO mx2.fusionio.com"
 	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1757616Ab2IXSdx (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 24 Sep 2012 14:33:53 -0400
-Date: Mon, 24 Sep 2012 14:33:50 -0400
-From: Josef Bacik <jbacik@fusionio.com>
+	id S1756378Ab2IXS6L (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Mon, 24 Sep 2012 14:58:11 -0400
+Date: Mon, 24 Sep 2012 14:58:08 -0400
+From: Chris Mason <chris.mason@fusionio.com>
 To: Arne Jansen <sensille@gmx.net>
 CC: Josef Bacik <JBacik@fusionio.com>,
         "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
 Subject: Re: [PATCH] Btrfs: do not async metadata csums if we have hardware
  crc32c
-Message-ID: <20120924183350.GL2272@localhost.localdomain>
+Message-ID: <20120924185808.GO4630@shiny>
 References: <1348510264-5781-1-git-send-email-jbacik@fusionio.com>
  <5060A428.80302@gmx.net>
 MIME-Version: 1.0
@@ -58,9 +58,14 @@ On Mon, Sep 24, 2012 at 12:19:20PM -0600, Arne Jansen wrote:
 > > +		printk(KERN_ERR "doing it the fast way\n");
 > 
 > You'll probably go to hell for the printk...
-> 
 
-Hahah oops, at least I remembered to take out the other printk, it had much more
-colorful language ;).  Thanks,
+;)
 
-Josef
+Testing with dd on my recent intel box, I can hardware crc32c at
+1.3GB/s.  Anything beyond that and you really want more cpus jumping
+into the mix.
+
+I wanted to use this test for data crcs too, but I suppose the helpers
+only really hurt for the synchronous IO.
+
+-chris

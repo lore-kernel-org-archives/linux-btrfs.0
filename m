@@ -1,49 +1,77 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from eu1sys200aog103.obsmtp.com ([207.126.144.115]:55511 "HELO
-	eu1sys200aog103.obsmtp.com" rhost-flags-OK-OK-OK-OK)
-	by vger.kernel.org with SMTP id S1753909Ab2IXN2b (ORCPT
+Received: from mail-qc0-f174.google.com ([209.85.216.174]:57388 "EHLO
+	mail-qc0-f174.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1754570Ab2IXNkB (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 24 Sep 2012 09:28:31 -0400
-Received: by weyt9 with SMTP id t9so208122wey.19
-        for <linux-btrfs@vger.kernel.org>; Mon, 24 Sep 2012 06:28:29 -0700 (PDT)
+	Mon, 24 Sep 2012 09:40:01 -0400
+Received: by qcro28 with SMTP id o28so4298363qcr.19
+        for <linux-btrfs@vger.kernel.org>; Mon, 24 Sep 2012 06:40:00 -0700 (PDT)
 MIME-Version: 1.0
-From: Sami Haahtinen <sami@haahtinen.name>
-Date: Mon, 24 Sep 2012 16:28:08 +0300
-Message-ID: <CA+nK0aON8yROCGwetiXdEphUf+Ju-BVJ54ooeMOZyUpHy9KDGA@mail.gmail.com>
-Subject: Rebuilding chunk root?
-To: linux-btrfs@vger.kernel.org
-Content-Type: text/plain; charset=UTF-8
+Date: Mon, 24 Sep 2012 21:40:00 +0800
+Message-ID: <CAPgLHd8z-dQPB=vGe2wH+5mw0sUkr4-RrihtWx2bnzTc5y3Vjw@mail.gmail.com>
+Subject: Re: [PATCH] Btrfs: fix return value check in btrfs_ioctl_send()
+From: Wei Yongjun <weiyj.lk@gmail.com>
+To: chris.mason@fusionio.com, yongjun_wei@trendmicro.com.cn,
+        linux-btrfs@vger.kernel.org
+Content-Type: text/plain; charset=ISO-8859-1
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hi,
+On 09/24/2012 08:42 PM, David Sterba wrote:
+> On Fri, Sep 21, 2012 at 12:42:02PM +0800, Wei Yongjun wrote:
+>> From: Wei Yongjun <yongjun_wei@trendmicro.com.cn>
+>>
+>> In case of error, the function btrfs_read_fs_root_no_name() returns
+>> ERR_PTR() and never returns NULL pointer. The NULL test in the return
+>> value check should be replaced with IS_ERR(), and remove useless
+>> NULL test.
+> Good catch.  Also please update the other remaining case in
+> disk-io.c:open_ctree()
+>
+> 2587         fs_info->fs_root = btrfs_read_fs_root_no_name(fs_info, &location);
+> 2588         if (!fs_info->fs_root)
+> 2589                 goto fail_qgroup;
+> 2590         if (IS_ERR(fs_info->fs_root)) {
+> 2591                 err = PTR_ERR(fs_info->fs_root);
+> 2592                 goto fail_qgroup;
+> 2593         }
+>
+>
 
-Due to certain unfortunate chain of events, I managed to overwrite a
-small portion of my btrfs array which had only single redundancy for
-metadata. The data itself is present and only a small portion (2.5%)
-of the array was overwritten.
+will do in the patch v2.
 
-After quite a bit of debugging and tinkering, I realized that my chunk
-root was in the portion that was overwritten. After reading through
-the documentation I was able to pull together it's still unclear to me
-whether chunk root is something that can be rebuilt.
+>> dpatch engine is used to auto generated this patch.
+>> (https://github.com/weiyj/dpatch)
+> I've played with it, looks nice, although it's full of hardcoded paths.
 
-A transcript of btrfsck trying to recover with superblock 2 which is
-uncorrupted by itself:
+Yes, it is current hardcoded path, because I used the linux.git and
+linux-next.git, and dpatch will update the git tree every day.
 
-root@sysresccd /root/btrfs-progs % ./btrfsck --super 2 /dev/patience/home
-using SB copy 2, bytenr 274877906944
-Check tree block failed, want=139264, have=0
-Check tree block failed, want=139264, have=0
-Check tree block failed, want=139264, have=0
-read block failed check_tree_block
-Couldn't read chunk root
+After login, you can change the git url in the web.
 
-If I'm interpreting the output correctly, it's trying to read bytes
-from address 139264, which would fall into the corrupted area.
+> I'd like to run it directly from the git repo. Can you please fix that?
+> No patch from me, because I hadcoded my paths :)
+
+Do you mean does not need auto update git repo, only scan the
+change under your git repo?
+
+>
+> It would be great if we can run a set of .cocci scripts that would
+> verify code invariants (limited to cocci capabilities, but eg. the
+> IS_ERR is a good example) and add new ones eventually over time.
+
+By default, It does not include cocci scripts, only include dup include,
+useless 'linux/version.h' check engine, and is disabled.
+
+I am now testing some cocci scripts, and will add them to the github,
+so, everyone can import those cocci scripts to dpatch, also they can
+add the cocci scripts create by themself.
+^_^
+
+Thanks very much for you advise.
 
 Regards,
---
-Sami Haahtinen
-Bad Wolf Oy
-+358443302775
+Yongjun Wei
+
+
+

@@ -1,48 +1,94 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from twin.jikos.cz ([89.185.236.188]:32919 "EHLO twin.jikos.cz"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1754211Ab2IXNyh (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 24 Sep 2012 09:54:37 -0400
-Date: Mon, 24 Sep 2012 15:53:52 +0200
-From: David Sterba <dave@jikos.cz>
-To: Jp Wise <jpwise@theflat.net.nz>
-Cc: Arne Jansen <sensille@gmx.net>, linux-btrfs@vger.kernel.org
-Subject: Re: Identifying reflink / CoW files
-Message-ID: <20120924135352.GF14582@twin.jikos.cz>
-Reply-To: dave@jikos.cz
-References: <505D32C2.8070105@theflat.net.nz>
- <505D6D87.1070403@gmx.net>
- <505E3412.4010900@theflat.net.nz>
+Received: from frost.carfax.org.uk ([85.119.82.111]:46987 "EHLO
+	frost.carfax.org.uk" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1755463Ab2IXOCm (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>);
+	Mon, 24 Sep 2012 10:02:42 -0400
+Date: Mon, 24 Sep 2012 15:02:39 +0100
+From: Hugo Mills <hugo@carfax.org.uk>
+To: Sami Haahtinen <sami@haahtinen.name>
+Cc: linux-btrfs@vger.kernel.org
+Subject: Re: Rebuilding chunk root?
+Message-ID: <20120924140239.GB6136@carfax.org.uk>
+References: <CA+nK0aON8yROCGwetiXdEphUf+Ju-BVJ54ooeMOZyUpHy9KDGA@mail.gmail.com>
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <505E3412.4010900@theflat.net.nz>
+Content-Type: multipart/signed; micalg=pgp-sha1;
+	protocol="application/pgp-signature"; boundary="jho1yZJdad60DJr+"
+In-Reply-To: <CA+nK0aON8yROCGwetiXdEphUf+Ju-BVJ54ooeMOZyUpHy9KDGA@mail.gmail.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Sun, Sep 23, 2012 at 09:56:34AM +1200, Jp Wise wrote:
-> >Afaik without playing with it myself fiemap can give you information
-> >about the mappings of each file. If the mappings of 2 files match,
-> >the data is shared.
-> OK, have just done some searching on fiemap and located a code example using
-> it to pull the file extent data.
-> http://smackerelofopinion.blogspot.com/2010/01/using-fiemap-ioctl-to-get-file-extents.html
-> Will have a play around to see if i might be able to hack it up to compare
-> two files, or just parse it's output between two files to identify matches.
-> Thank you for the pointer. :)
+
+--jho1yZJdad60DJr+
+Content-Type: text/plain; charset=us-ascii
+Content-Disposition: inline
+
+On Mon, Sep 24, 2012 at 04:28:08PM +0300, Sami Haahtinen wrote:
+> Due to certain unfortunate chain of events, I managed to overwrite a
+> small portion of my btrfs array which had only single redundancy for
+> metadata. The data itself is present and only a small portion (2.5%)
+> of the array was overwritten.
 > 
-> Likewise if anyone else knows of an existing utility to do a non-bytewise
-> compare between two files, and just check if they share the same datablocks
-> please let me know. :)
+> After quite a bit of debugging and tinkering, I realized that my chunk
+> root was in the portion that was overwritten. After reading through
+> the documentation I was able to pull together it's still unclear to me
+> whether chunk root is something that can be rebuilt.
 
-The FIEMAP is a way with stable and defined interface to show file
-extents, there's the filefrag utility (from e2fsprogs). It does not
-have a parser-friendly output, so you may want to call the ioctl
-directly. The key information is in the (struct
-fiemap_extent)->fe_physical field. If physical block ranges from two
-files overlap, they're shared.
+   Chris had some experimental code for doing it in btrfsck which
+never saw the light of day (because it was too unreliable). He may
+be able to offer you something to help, though.
 
-There's another way how to get the extent info, via btrfs' SEARCH_TREE
-ioctl, but it's more low-level and needs basic knowledge about the
-internal b-tree items and how they're linked together.
+> A transcript of btrfsck trying to recover with superblock 2 which is
+> uncorrupted by itself:
+> 
+> root@sysresccd /root/btrfs-progs % ./btrfsck --super 2 /dev/patience/home
+> using SB copy 2, bytenr 274877906944
+> Check tree block failed, want=139264, have=0
+> Check tree block failed, want=139264, have=0
+> Check tree block failed, want=139264, have=0
+> read block failed check_tree_block
+> Couldn't read chunk root
+> 
+> If I'm interpreting the output correctly, it's trying to read bytes
+> from address 139264, which would fall into the corrupted area.
 
-david
+   No, I believe the "want=, have=" text is referring to a generation
+ID, not a block number. That's not to say that your chunk tree isn't
+damaged, though -- I'm just clarifying your interpretation of the
+numbers.
+
+   Out of interest, does mounting with -o recovery help at all? (I'm
+not expecting it to do much if your chunk tree's gone, but it might do
+something).
+
+   Hugo.
+
+-- 
+=== Hugo Mills: hugo@... carfax.org.uk | darksatanic.net | lug.org.uk ===
+  PGP key: 515C238D from wwwkeys.eu.pgp.net or http://www.carfax.org.uk
+      --- Eighth Army Push Bottles Up Germans -- WWII newspaper ---      
+                     headline (possibly apocryphal)                      
+
+--jho1yZJdad60DJr+
+Content-Type: application/pgp-signature; name="signature.asc"
+Content-Description: Digital signature
+
+-----BEGIN PGP SIGNATURE-----
+Version: GnuPG v1.4.12 (GNU/Linux)
+
+iQIVAwUBUGBn/79z9OVl50rAAQIqLQ//bnFrf4aT7w6NY0up3QVaRhHAW4OAJWCC
+GVPPm+ykRt3TRcfPghWfad8UluWPXELr4zMRAVMBXfYIycu28Qg4qsSfZb7xBa0N
+MlFT0Ixdy30dc+H6jfKzMV7EPheFMTDq97erF/imC1n7XU5GJMwfCIvkIDmARnQj
+R8DC6u+16T+pQfX1g3aRSZ6Mzc2dneU/4adN3a5RdUoPeqG/NuOQm46Lhyxn4YGy
+eW+TtwIqC//CREHZuBELKLRrr7xEgh26TL0t3sqANRiHRvH7yUNbruxj0+ZSyA/e
+7VjwtbtYbnCx7d60EW0Mpjx5WuHsLLkaKCKdsYyGYUQ/TGPHp8N1huR54ChzczcD
+5ZcLIJlT6g9fbEIDpAj29vIQEaXKvoPa4t2IroD/0uzmfiIARLLE0oYrv1DMVTKA
+1pQzFTFf+Vuy3ijaX+Xl4QeO+z3AFpomYii3NwWZjiWVqV+SXh8w1iue97nsuFs2
+v6p4Rxi7EiI6sKtEzui4BKnrz/uoaJqntygyWqsCwkFxEd+5KkADoBxB2qGH03Cy
+cJrEM9Yy1StPcNAVKSLQqswzn40Tn8jnVlZepNPKJeSuPjrkLardJtOq2X3m/p1G
+/QtEcKhUvxKSKD+5eGKWcw5Qltvfm2wO2osMBNhmSYYszzG1KRonvyEPAVjExabc
+1TZgqyQHfLc=
+=3FpF
+-----END PGP SIGNATURE-----
+
+--jho1yZJdad60DJr+--

@@ -1,43 +1,55 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from twin.jikos.cz ([89.185.236.188]:36381 "EHLO twin.jikos.cz"
+Received: from twin.jikos.cz ([89.185.236.188]:36580 "EHLO twin.jikos.cz"
 	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1756738Ab2IXQdf (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 24 Sep 2012 12:33:35 -0400
-Date: Mon, 24 Sep 2012 18:33:26 +0200
+	id S1756797Ab2IXQru (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Mon, 24 Sep 2012 12:47:50 -0400
+Date: Mon, 24 Sep 2012 18:47:42 +0200
 From: David Sterba <dave@jikos.cz>
 To: Miao Xie <miaox@cn.fujitsu.com>
-Cc: Linux Btrfs <linux-btrfs@vger.kernel.org>
+Cc: Ilya Dryomov <idryomov@gmail.com>,
+        Linux Btrfs <linux-btrfs@vger.kernel.org>
 Subject: Re: [PATCH V3 1/2] Btrfs: cleanup duplicated division functions
-Message-ID: <20120924163326.GM14582@twin.jikos.cz>
+Message-ID: <20120924164742.GN14582@twin.jikos.cz>
 Reply-To: dave@jikos.cz
 References: <5051BAB8.7080200@cn.fujitsu.com>
  <505A8632.10101@cn.fujitsu.com>
  <505C2E62.2000400@cn.fujitsu.com>
- <20120921152444.GV17430@twin.jikos.cz>
- <505EDC4A.1060709@cn.fujitsu.com>
+ <20120923114924.GA1975@zambezi.lan>
+ <505FBFCE.3010503@cn.fujitsu.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <505EDC4A.1060709@cn.fujitsu.com>
+In-Reply-To: <505FBFCE.3010503@cn.fujitsu.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Sun, Sep 23, 2012 at 05:54:18PM +0800, Miao Xie wrote:
-> >> @@ -2347,7 +2335,8 @@ static int chunk_usage_filter(struct btrfs_fs_info *fs_info, u64 chunk_offset,
-> >>  	cache = btrfs_lookup_block_group(fs_info, chunk_offset);
-> >>  	chunk_used = btrfs_block_group_used(&cache->item);
-> >>  
-> >> -	user_thresh = div_factor_fine(cache->key.offset, bargs->usage);
-> >> +	BUG_ON(bargs->usage < 0 || bargs->usage > 100);
+On Mon, Sep 24, 2012 at 10:05:02AM +0800, Miao Xie wrote:
+> Generally, we should check the value when it is input. If not, we might
+> run our program with the wrong value, and it is possible to cause unknown
+> problems. So I think the above chunk is necessary.
+
+The difference is that giving an invalid value will exit early (your
+version), while Ilya's version will clamp the 'usage' to the allowed
+range during processing. From usability POV, I'd prefer to let the
+command fail early with a verbose error eg. that the range is invalid.
+
+> > (diff is on top of the patch in question)
 > > 
-> > otherwise it reliably crashes here
+> > This is the most straightforward transformation I can think of.  It
+> > doesn't result in an unnecessary BUG_ON, keeps churn to a minimum and
 > 
-> Sorry, I don't know why it will crash here if we input 0. I tried to input 0,
-> and it worked well.
+> agree with you.
+> 
+> > doesn't change the "style" of the balance ioctl.  (If I were to check
+> > every filter argument that way, btrfs_balance_ioctl() would be very long
+> > and complicated.)
+> 
+> I think the check in btrfs_balance_ioctl() is necessary, the reason is above.
 
-My oversight, sorry.
+btrfs_balance_ioctl does not seem as the right place, it does the
+processing related to the state of balance (resume/cancel etc). Look at
+btrfs_balance() itself, it does lot more sanity checks of the
+parameters. We can put the extra checks into helpers (and not only this
+one) if clarity and readability of the function becomes a concern.
 
-> I think the only case we must take into account is the users might input the wrong value (>100 or <0)
-> on the old kernel, and it can be stored into the filesystem. If we mount this filesystem
-> on the new kernel, some problems may happen.
 
-So better avoid a BUG_ON.
+david

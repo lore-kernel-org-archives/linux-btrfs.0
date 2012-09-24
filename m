@@ -1,79 +1,48 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-qa0-f46.google.com ([209.85.216.46]:37256 "EHLO
-	mail-qa0-f46.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1754286Ab2IXNm0 (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 24 Sep 2012 09:42:26 -0400
-Received: by qadc26 with SMTP id c26so821562qad.19
-        for <linux-btrfs@vger.kernel.org>; Mon, 24 Sep 2012 06:42:26 -0700 (PDT)
+Received: from twin.jikos.cz ([89.185.236.188]:32919 "EHLO twin.jikos.cz"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1754211Ab2IXNyh (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Mon, 24 Sep 2012 09:54:37 -0400
+Date: Mon, 24 Sep 2012 15:53:52 +0200
+From: David Sterba <dave@jikos.cz>
+To: Jp Wise <jpwise@theflat.net.nz>
+Cc: Arne Jansen <sensille@gmx.net>, linux-btrfs@vger.kernel.org
+Subject: Re: Identifying reflink / CoW files
+Message-ID: <20120924135352.GF14582@twin.jikos.cz>
+Reply-To: dave@jikos.cz
+References: <505D32C2.8070105@theflat.net.nz>
+ <505D6D87.1070403@gmx.net>
+ <505E3412.4010900@theflat.net.nz>
 MIME-Version: 1.0
-Date: Mon, 24 Sep 2012 21:42:26 +0800
-Message-ID: <CAPgLHd8F8r4i5HpAaDR_GKwxuw6At4nyKJKCp2Tk4k2xUG14fg@mail.gmail.com>
-Subject: [PATCH v2] Btrfs: fix return value check
-From: Wei Yongjun <weiyj.lk@gmail.com>
-To: chris.mason@fusionio.com
-Cc: yongjun_wei@trendmicro.com.cn, linux-btrfs@vger.kernel.org
-Content-Type: text/plain; charset=ISO-8859-1
+Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <505E3412.4010900@theflat.net.nz>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-From: Wei Yongjun <yongjun_wei@trendmicro.com.cn>
+On Sun, Sep 23, 2012 at 09:56:34AM +1200, Jp Wise wrote:
+> >Afaik without playing with it myself fiemap can give you information
+> >about the mappings of each file. If the mappings of 2 files match,
+> >the data is shared.
+> OK, have just done some searching on fiemap and located a code example using
+> it to pull the file extent data.
+> http://smackerelofopinion.blogspot.com/2010/01/using-fiemap-ioctl-to-get-file-extents.html
+> Will have a play around to see if i might be able to hack it up to compare
+> two files, or just parse it's output between two files to identify matches.
+> Thank you for the pointer. :)
+> 
+> Likewise if anyone else knows of an existing utility to do a non-bytewise
+> compare between two files, and just check if they share the same datablocks
+> please let me know. :)
 
-In case of error, the function btrfs_read_fs_root_no_name() returns
-ERR_PTR() and never returns NULL pointer. The NULL test in the return
-value check should be replaced with IS_ERR(), and remove useless
-NULL test.
+The FIEMAP is a way with stable and defined interface to show file
+extents, there's the filefrag utility (from e2fsprogs). It does not
+have a parser-friendly output, so you may want to call the ioctl
+directly. The key information is in the (struct
+fiemap_extent)->fe_physical field. If physical block ranges from two
+files overlap, they're shared.
 
-dpatch engine is used to auto generate this patch.
-(https://github.com/weiyj/dpatch)
+There's another way how to get the extent info, via btrfs' SEARCH_TREE
+ioctl, but it's more low-level and needs basic knowledge about the
+internal b-tree items and how they're linked together.
 
-Signed-off-by: Wei Yongjun <yongjun_wei@trendmicro.com.cn>
----
-v1 -> v2: remove null test from fs/btrfs/disk-io.c 
----
- fs/btrfs/disk-io.c | 2 --
- fs/btrfs/send.c    | 8 ++------
- 2 files changed, 2 insertions(+), 8 deletions(-)
-
-diff --git a/fs/btrfs/disk-io.c b/fs/btrfs/disk-io.c
-index 22e98e0..1405620 100644
---- a/fs/btrfs/disk-io.c
-+++ b/fs/btrfs/disk-io.c
-@@ -2593,8 +2593,6 @@ retry_root_backup:
- 	location.offset = (u64)-1;
- 
- 	fs_info->fs_root = btrfs_read_fs_root_no_name(fs_info, &location);
--	if (!fs_info->fs_root)
--		goto fail_qgroup;
- 	if (IS_ERR(fs_info->fs_root)) {
- 		err = PTR_ERR(fs_info->fs_root);
- 		goto fail_qgroup;
-
-diff --git a/fs/btrfs/send.c b/fs/btrfs/send.c
-index fb5ffe9..a617451 100644
---- a/fs/btrfs/send.c
-+++ b/fs/btrfs/send.c
-@@ -4501,10 +4501,6 @@ long btrfs_ioctl_send(struct file *mnt_file, void __user *arg_)
- 			key.type = BTRFS_ROOT_ITEM_KEY;
- 			key.offset = (u64)-1;
- 			clone_root = btrfs_read_fs_root_no_name(fs_info, &key);
--			if (!clone_root) {
--				ret = -EINVAL;
--				goto out;
--			}
- 			if (IS_ERR(clone_root)) {
- 				ret = PTR_ERR(clone_root);
- 				goto out;
-@@ -4520,8 +4516,8 @@ long btrfs_ioctl_send(struct file *mnt_file, void __user *arg_)
- 		key.type = BTRFS_ROOT_ITEM_KEY;
- 		key.offset = (u64)-1;
- 		sctx->parent_root = btrfs_read_fs_root_no_name(fs_info, &key);
--		if (!sctx->parent_root) {
--			ret = -EINVAL;
-+		if (IS_ERR(sctx->parent_root)) {
-+			ret = PTR_ERR(sctx->parent_root);
- 			goto out;
- 		}
- 	}
-
-
+david

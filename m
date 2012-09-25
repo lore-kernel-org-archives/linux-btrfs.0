@@ -1,44 +1,74 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from twin.jikos.cz ([89.185.236.188]:54155 "EHLO twin.jikos.cz"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1753808Ab2IYMzH (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 25 Sep 2012 08:55:07 -0400
-Date: Tue, 25 Sep 2012 14:55:02 +0200
-From: David Sterba <dave@jikos.cz>
-To: ching <lsching17@gmail.com>
-Cc: Josef Bacik <jbacik@fusionio.com>, linux-btrfs@vger.kernel.org
-Subject: Re: [PATCH] Btrfs: do not async metadata csums if we have hardware
- crc32c
-Message-ID: <20120925125502.GV14582@twin.jikos.cz>
-Reply-To: dave@jikos.cz
-References: <1348510264-5781-1-git-send-email-jbacik@fusionio.com>
- <20120924210349.GP14582@twin.jikos.cz>
- <20120925105154.GS14582@twin.jikos.cz>
- <50619821.60609@gmail.com>
+Received: from mail-ob0-f174.google.com ([209.85.214.174]:44113 "EHLO
+	mail-ob0-f174.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1757675Ab2IYRjz (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>);
+	Tue, 25 Sep 2012 13:39:55 -0400
+Received: by obbuo13 with SMTP id uo13so6114228obb.19
+        for <linux-btrfs@vger.kernel.org>; Tue, 25 Sep 2012 10:39:54 -0700 (PDT)
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <50619821.60609@gmail.com>
+In-Reply-To: <1347875936-14165-2-git-send-email-bo.li.liu@oracle.com>
+References: <1347875936-14165-1-git-send-email-bo.li.liu@oracle.com>
+	<1347875936-14165-2-git-send-email-bo.li.liu@oracle.com>
+Date: Tue, 25 Sep 2012 12:39:54 -0500
+Message-ID: <CAKcLGm_4iUB1B8DPOx1D7i8eMa7po9fWFUYVOqp1N9nmZ1ExHQ@mail.gmail.com>
+Subject: Re: [PATCH 2/2 v3] Btrfs: snapshot-aware defrag
+From: Mitch Harder <mitch.harder@sabayonlinux.org>
+To: Liu Bo <bo.li.liu@oracle.com>
+Cc: linux-btrfs@vger.kernel.org, dave@jikos.cz
+Content-Type: text/plain; charset=ISO-8859-1
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Tue, Sep 25, 2012 at 07:40:17PM +0800, ching wrote:
-> How about enhancing the "*thread_pool=/number" mount option instead?
-> 
-> thread_pool=n     enable threadpool/**/for compression and checksum, MAY improve bandwidth/*
-> */thread_pool=0     disable threadpool for compression and checksum, MIGHT reduce latency
-> thread_pool=-1 or not provided    automatically managed (current behaviour and default choice)
+On Mon, Sep 17, 2012 at 4:58 AM, Liu Bo <bo.li.liu@oracle.com> wrote:
+> This comes from one of btrfs's project ideas,
+> As we defragment files, we break any sharing from other snapshots.
+> The balancing code will preserve the sharing, and defrag needs to grow this
+> as well.
+>
+> Now we're able to fill the blank with this patch, in which we make full use of
+> backref walking stuff.
+>
+> Here is the basic idea,
+> o  set the writeback ranges started by defragment with flag EXTENT_DEFRAG
+> o  at endio, after we finish updating fs tree, we use backref walking to find
+>    all parents of the ranges and re-link them with the new COWed file layout by
+>    adding corresponding backrefs.
+>
+> Originally patch by Li Zefan <lizf@cn.fujitsu.com>
+> Signed-off-by: Liu Bo <bo.li.liu@oracle.com>
 
-Sorry, I don't understand the syntax, can you please write it more
-clearly? Thanks.
+I'm hitting the WARN_ON in record_extent_backrefs() indicating a
+problem with the return value from iterate_inodes_from_logical().
 
-> This should allow user to tradeoff between latency and bandwidth,
-> furthermore, you do not need to assume that btrfs may use crc32c
-> algorithm only forever.
+[ 6865.184782] ------------[ cut here ]------------
+[ 6865.184819] WARNING: at fs/btrfs/inode.c:2062
+record_extent_backrefs+0xe5/0xe7 [btrfs]()
+[ 6865.184823] Hardware name: OptiPlex 745
+[ 6865.184825] Modules linked in: lpc_ich mfd_core xts gf128mul cryptd
+aes_x86_64 sha256_generic btrfs libcrc32c
+[ 6865.184841] Pid: 4239, comm: btrfs-endio-wri Not tainted 3.5.4-git-local+ #1
+[ 6865.184844] Call Trace:
+[ 6865.184856]  [<ffffffff81031d6a>] warn_slowpath_common+0x74/0xa2
+[ 6865.184862]  [<ffffffff81031db2>] warn_slowpath_null+0x1a/0x1c
+[ 6865.184884]  [<ffffffffa003356b>] record_extent_backrefs+0xe5/0xe7 [btrfs]
+[ 6865.184908]  [<ffffffffa003cf3a>] btrfs_finish_ordered_io+0x131/0xa4b [btrfs]
+[ 6865.184930]  [<ffffffffa003d869>] finish_ordered_fn+0x15/0x17 [btrfs]
+[ 6865.184951]  [<ffffffffa005882f>] worker_loop+0x145/0x516 [btrfs]
+[ 6865.184959]  [<ffffffff81059727>] ? __wake_up_common+0x54/0x84
+[ 6865.184983]  [<ffffffffa00586ea>] ? btrfs_queue_worker+0x2d3/0x2d3 [btrfs]
+[ 6865.184989]  [<ffffffff810516bb>] kthread+0x93/0x98
+[ 6865.184996]  [<ffffffff817d7934>] kernel_thread_helper+0x4/0x10
+[ 6865.185001]  [<ffffffff81051628>] ? kthread_freezable_should_stop+0x6a/0x6a
+[ 6865.185021]  [<ffffffff817d7930>] ? gs_change+0xb/0xb
+[ 6865.185025] ---[ end trace 26cc0e186efc79d8 ]---
 
-Some sort of finer control over the threads makes sense, we should
-distinguish for cpu-bound processing where paralelism wins and io-bound
-where it is not helpful to add more and more threads that hammer a
-single device (namely in case of HDD, so this should be tunable for the
-devices with cheap seeks).
 
-david
+I'm testing a 3.5.4 kernel merged with 3.6_rc patchset as well as the
+send_recv patches and most of the btrfs-next patches.
+
+I'm running into this issue when mounting with autodefrag, and running
+some snapshot tests.
+
+This may be related to a problem elsewhere, because I've been
+encountering other backref issues even before testing this patch.

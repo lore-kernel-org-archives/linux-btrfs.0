@@ -1,13 +1,13 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-pa0-f46.google.com ([209.85.220.46]:38242 "EHLO
-	mail-pa0-f46.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1754964Ab2IYLkV (ORCPT
+Received: from mail-pb0-f46.google.com ([209.85.160.46]:59658 "EHLO
+	mail-pb0-f46.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1754553Ab2IYLyq (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 25 Sep 2012 07:40:21 -0400
-Received: by padhz1 with SMTP id hz1so1601451pad.19
-        for <linux-btrfs@vger.kernel.org>; Tue, 25 Sep 2012 04:40:20 -0700 (PDT)
-Message-ID: <50619821.60609@gmail.com>
-Date: Tue, 25 Sep 2012 19:40:17 +0800
+	Tue, 25 Sep 2012 07:54:46 -0400
+Received: by pbbrr4 with SMTP id rr4so8952446pbb.19
+        for <linux-btrfs@vger.kernel.org>; Tue, 25 Sep 2012 04:54:45 -0700 (PDT)
+Message-ID: <50619B82.6040906@gmail.com>
+Date: Tue, 25 Sep 2012 19:54:42 +0800
 From: ching <lsching17@gmail.com>
 MIME-Version: 1.0
 To: Josef Bacik <jbacik@fusionio.com>, linux-btrfs@vger.kernel.org
@@ -34,16 +34,13 @@ On 09/25/2012 06:51 PM, David Sterba wrote:
 > More majordomo info at  http://vger.kernel.org/majordomo-info.html
 >
 
-How about enhancing the "*thread_pool=/number" mount option instead?
+How about enhancing the "thread_pool=number" mount option instead?
 
-thread_pool=n     enable threadpool/**/for compression and checksum, MAY improve bandwidth/*
-*/thread_pool=0     disable threadpool for compression and checksum, MIGHT reduce latency
-thread_pool=-1 or not provided    automatically managed (current behaviour and default choice)
+thread_pool=n                     enable threadpool for compression and checksum, MAY improve bandwidth
+thread_pool=0                     disable threadpool for compression and checksum, MIGHT reduce latency
+thread_pool=-1 or not provided    automatically managed (current behavior and default choice)
 
 
 This should allow user to tradeoff between latency and bandwidth, furthermore, you do not need to assume that btrfs may use crc32c algorithm only forever.
 
 
-
-
-/*

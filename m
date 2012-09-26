@@ -1,131 +1,150 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([222.73.24.84]:56256 "EHLO song.cn.fujitsu.com"
+Received: from cn.fujitsu.com ([222.73.24.84]:52224 "EHLO song.cn.fujitsu.com"
 	rhost-flags-OK-FAIL-OK-OK) by vger.kernel.org with ESMTP
-	id S1755325Ab2IZLiG (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 26 Sep 2012 07:38:06 -0400
+	id S1755945Ab2IZLjK (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Wed, 26 Sep 2012 07:39:10 -0400
 Received: from fnstmail02.fnst.cn.fujitsu.com (tang.cn.fujitsu.com [127.0.0.1])
-	by tang.cn.fujitsu.com (8.14.3/8.13.1) with ESMTP id q8QBc4Oi026054
-	for <linux-btrfs@vger.kernel.org>; Wed, 26 Sep 2012 19:38:04 +0800
-Message-ID: <5062E924.1040201@cn.fujitsu.com>
-Date: Wed, 26 Sep 2012 19:38:12 +0800
+	by tang.cn.fujitsu.com (8.14.3/8.13.1) with ESMTP id q8QBd8UQ026073
+	for <linux-btrfs@vger.kernel.org>; Wed, 26 Sep 2012 19:39:08 +0800
+Message-ID: <5062E964.9050701@cn.fujitsu.com>
+Date: Wed, 26 Sep 2012 19:39:16 +0800
 From: Miao Xie <miaox@cn.fujitsu.com>
 Reply-To: miaox@cn.fujitsu.com
 MIME-Version: 1.0
 To: Linux Btrfs <linux-btrfs@vger.kernel.org>
-Subject: [RFC][PATCH V2 3/4] Btrfs: introduce extent buffer cache for delayed
- inode
+Subject: [RFC][PATCH V2 4/4] Btrfs: introduce extent buffer cache for delayed
+ reference
 References: <5062E563.7090105@cn.fujitsu.com>
 In-Reply-To: <5062E563.7090105@cn.fujitsu.com>
 Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-This patch introduces extent buffer for the delayed inode, it can
-reduce the search time and the contentions of the extent buffer's
-lock when doing delayed inode operations.
+This patch introduces extent buffer cache for the delayed reference.
+It can reduce the search time and the contentions of the extent buffer's
+lock when dealing with the delayed references.
+
+Implementation:
+- add a extent buffer cache into the transaction handle
+- when dealing with the delayed references, we get the cache from the transaction
+  handle and pass the cache into btrfs_search_slot().
+- release the cached extent buffer when the transaction handle ends or we commit
+  the transaction.
 
 Signed-off-by: Miao Xie <miaox@cn.fujitsu.com>
 ---
- fs/btrfs/delayed-inode.c |   23 +++++++++++++++++++++++
- 1 file changed, 23 insertions(+)
+ fs/btrfs/extent-tree.c |    5 +++++
+ fs/btrfs/transaction.c |   10 ++++++++++
+ fs/btrfs/transaction.h |    3 +++
+ 3 files changed, 18 insertions(+)
 
-diff --git a/fs/btrfs/delayed-inode.c b/fs/btrfs/delayed-inode.c
-index 07d5eeb..5e116b6 100644
---- a/fs/btrfs/delayed-inode.c
-+++ b/fs/btrfs/delayed-inode.c
-@@ -21,6 +21,7 @@
- #include "delayed-inode.h"
- #include "disk-io.h"
- #include "transaction.h"
-+#include "extent_io.h"
+diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
+index af0ea25..815876b 100644
+--- a/fs/btrfs/extent-tree.c
++++ b/fs/btrfs/extent-tree.c
+@@ -1918,6 +1918,7 @@ static int __btrfs_inc_extent_ref(struct btrfs_trans_handle *trans,
  
- #define BTRFS_DELAYED_WRITEBACK		400
- #define BTRFS_DELAYED_BACKGROUND	100
-@@ -1122,6 +1123,7 @@ static int __btrfs_run_delayed_items(struct btrfs_trans_handle *trans,
- 	struct btrfs_delayed_node *curr_node, *prev_node;
- 	struct btrfs_path *path;
- 	struct btrfs_block_rsv *block_rsv;
-+	struct extent_buffer_cache cache;
- 	int ret = 0;
- 	bool count = (nr > 0);
- 
-@@ -1133,6 +1135,9 @@ static int __btrfs_run_delayed_items(struct btrfs_trans_handle *trans,
- 		return -ENOMEM;
+ 	path->reada = 1;
  	path->leave_spinning = 1;
++	path->eb_cache = &trans->eb_cache;
+ 	/* this will setup the path even if it fails to insert the back ref */
+ 	ret = insert_inline_extent_backref(trans, root->fs_info->extent_root,
+ 					   path, bytenr, num_bytes, parent,
+@@ -2049,6 +2050,7 @@ static int run_delayed_extent_op(struct btrfs_trans_handle *trans,
  
-+	extent_buffer_cache_init(&cache);
-+	path->eb_cache = &cache;
-+
- 	block_rsv = trans->block_rsv;
- 	trans->block_rsv = &root->fs_info->delayed_block_rsv;
- 
-@@ -1149,6 +1154,11 @@ static int __btrfs_run_delayed_items(struct btrfs_trans_handle *trans,
- 		if (!ret)
- 			ret = btrfs_update_delayed_inode(trans, curr_root,
- 						path, curr_node);
-+
-+		if (cache.cached_eb)
-+			free_extent_buffer(cache.cached_eb);
-+		extent_buffer_cache_init(&cache);
-+
- 		if (ret) {
- 			btrfs_release_delayed_node(curr_node);
- 			curr_node = NULL;
-@@ -1186,6 +1196,7 @@ static int __btrfs_commit_inode_delayed_items(struct btrfs_trans_handle *trans,
- {
- 	struct btrfs_path *path;
- 	struct btrfs_block_rsv *block_rsv;
-+	struct extent_buffer_cache cache;
- 	int ret;
- 
- 	path = btrfs_alloc_path();
-@@ -1193,6 +1204,9 @@ static int __btrfs_commit_inode_delayed_items(struct btrfs_trans_handle *trans,
- 		return -ENOMEM;
+ 	path->reada = 1;
  	path->leave_spinning = 1;
++	path->eb_cache = &trans->eb_cache;
+ 	ret = btrfs_search_slot(trans, root->fs_info->extent_root, &key,
+ 				path, 0, 1);
+ 	if (ret < 0) {
+@@ -5067,6 +5069,7 @@ static int __btrfs_free_extent(struct btrfs_trans_handle *trans,
+ 	is_data = owner_objectid >= BTRFS_FIRST_FREE_OBJECTID;
+ 	BUG_ON(!is_data && refs_to_drop != 1);
  
-+	extent_buffer_cache_init(&cache);
-+	path->eb_cache = &cache;
++	path->eb_cache = &trans->eb_cache;
+ 	ret = lookup_extent_backref(trans, extent_root, path, &iref,
+ 				    bytenr, num_bytes, parent,
+ 				    root_objectid, owner_objectid,
+@@ -6062,6 +6065,7 @@ static int alloc_reserved_file_extent(struct btrfs_trans_handle *trans,
+ 		return -ENOMEM;
+ 
+ 	path->leave_spinning = 1;
++	path->eb_cache = &trans->eb_cache;
+ 	ret = btrfs_insert_empty_item(trans, fs_info->extent_root, path,
+ 				      ins, size);
+ 	if (ret) {
+@@ -6126,6 +6130,7 @@ static int alloc_reserved_tree_block(struct btrfs_trans_handle *trans,
+ 		return -ENOMEM;
+ 
+ 	path->leave_spinning = 1;
++	path->eb_cache = &trans->eb_cache;
+ 	ret = btrfs_insert_empty_item(trans, fs_info->extent_root, path,
+ 				      ins, size);
+ 	if (ret) {
+diff --git a/fs/btrfs/transaction.c b/fs/btrfs/transaction.c
+index 109c26c..845898d 100644
+--- a/fs/btrfs/transaction.c
++++ b/fs/btrfs/transaction.c
+@@ -363,6 +363,7 @@ again:
+ 	h->block_rsv = NULL;
+ 	h->orig_rsv = NULL;
+ 	h->aborted = 0;
++	extent_buffer_cache_init(&h->eb_cache);
+ 	h->qgroup_reserved = qgroup_reserved;
+ 	h->delayed_ref_elem.seq = 0;
+ 	INIT_LIST_HEAD(&h->qgroup_ref_list);
+@@ -590,6 +591,9 @@ static int __btrfs_end_transaction(struct btrfs_trans_handle *trans,
+ 	}
+ 	assert_qgroups_uptodate(trans);
+ 
++	if (trans->eb_cache.cached_eb)
++		free_extent_buffer(trans->eb_cache.cached_eb);
 +
- 	block_rsv = trans->block_rsv;
- 	trans->block_rsv = &node->root->fs_info->delayed_block_rsv;
+ 	memset(trans, 0, sizeof(*trans));
+ 	kmem_cache_free(btrfs_trans_handle_cachep, trans);
+ 	return err;
+@@ -1299,6 +1303,9 @@ static void cleanup_transaction(struct btrfs_trans_handle *trans,
+ 	if (current->journal_info == trans)
+ 		current->journal_info = NULL;
  
-@@ -1203,6 +1217,9 @@ static int __btrfs_commit_inode_delayed_items(struct btrfs_trans_handle *trans,
- 		ret = btrfs_update_delayed_inode(trans, node->root, path, node);
- 	btrfs_free_path(path);
- 
-+	if (cache.cached_eb)
-+		free_extent_buffer(cache.cached_eb);
++	if (trans->eb_cache.cached_eb)
++		free_extent_buffer(trans->eb_cache.cached_eb);
 +
- 	trans->block_rsv = block_rsv;
- 	return ret;
+ 	kmem_cache_free(btrfs_trans_handle_cachep, trans);
  }
-@@ -1255,6 +1272,7 @@ static void btrfs_async_run_delayed_node_done(struct btrfs_work *work)
- 	struct btrfs_delayed_node *delayed_node = NULL;
- 	struct btrfs_root *root;
- 	struct btrfs_block_rsv *block_rsv;
-+	struct extent_buffer_cache cache;
- 	unsigned long nr = 0;
- 	int need_requeue = 0;
- 	int ret;
-@@ -1266,6 +1284,9 @@ static void btrfs_async_run_delayed_node_done(struct btrfs_work *work)
- 		goto out;
- 	path->leave_spinning = 1;
  
-+	extent_buffer_cache_init(&cache);
-+	path->eb_cache = &cache;
+@@ -1587,6 +1594,9 @@ int btrfs_commit_transaction(struct btrfs_trans_handle *trans,
+ 	if (current->journal_info == trans)
+ 		current->journal_info = NULL;
+ 
++	if (trans->eb_cache.cached_eb)
++		free_extent_buffer(trans->eb_cache.cached_eb);
 +
- 	delayed_node = async_node->delayed_node;
- 	root = delayed_node->root;
+ 	kmem_cache_free(btrfs_trans_handle_cachep, trans);
  
-@@ -1284,6 +1305,8 @@ static void btrfs_async_run_delayed_node_done(struct btrfs_work *work)
- 	if (!ret)
- 		btrfs_update_delayed_inode(trans, root, path, delayed_node);
+ 	if (current != root->fs_info->transaction_kthread)
+diff --git a/fs/btrfs/transaction.h b/fs/btrfs/transaction.h
+index 65e2282..fe1bf95 100644
+--- a/fs/btrfs/transaction.h
++++ b/fs/btrfs/transaction.h
+@@ -46,6 +46,8 @@ struct btrfs_transaction {
+ 	int aborted;
+ };
  
-+	if (cache.cached_eb)
-+		free_extent_buffer(cache.cached_eb);
++struct extent_buffer_cache;
++
+ struct btrfs_trans_handle {
+ 	u64 transid;
+ 	u64 bytes_reserved;
+@@ -57,6 +59,7 @@ struct btrfs_trans_handle {
+ 	struct btrfs_transaction *transaction;
+ 	struct btrfs_block_rsv *block_rsv;
+ 	struct btrfs_block_rsv *orig_rsv;
++	struct extent_buffer_cache eb_cache;
+ 	int aborted;
+ 	int adding_csums;
  	/*
- 	 * Maybe new delayed items have been inserted, so we need requeue
- 	 * the work. Besides that, we must dequeue the empty delayed nodes
 -- 
 1.7.10.2
 

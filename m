@@ -1,75 +1,38 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-bk0-f46.google.com ([209.85.214.46]:62038 "EHLO
-	mail-bk0-f46.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1755961Ab2I0HVN (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 27 Sep 2012 03:21:13 -0400
+Received: from twin.jikos.cz ([89.185.236.188]:38679 "EHLO twin.jikos.cz"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1755514Ab2I0Hzf (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Thu, 27 Sep 2012 03:55:35 -0400
+Date: Thu, 27 Sep 2012 09:55:32 +0200
+From: David Sterba <dave@jikos.cz>
+To: ching <lsching17@gmail.com>
+Cc: "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
+Subject: Re: typo in inode.c
+Message-ID: <20120927075531.GC14582@twin.jikos.cz>
+Reply-To: dave@jikos.cz
+References: <5062EB9F.4080507@gmail.com>
+ <20120926152313.GB14582@twin.jikos.cz>
+ <50636DC2.5070700@gmail.com>
 MIME-Version: 1.0
-In-Reply-To: <20120927070508.GS15236@dastard>
-References: <1348404995-14372-1-git-send-email-zwu.kernel@gmail.com>
-	<1348404995-14372-4-git-send-email-zwu.kernel@gmail.com>
-	<20120925092819.GC29154@dastard>
-	<CAEH94LimEZcAFKFMVNUzBcTeDxvkgeD3jCO3AgmkEKXVE4ym+A@mail.gmail.com>
-	<20120927070508.GS15236@dastard>
-Date: Thu, 27 Sep 2012 15:21:11 +0800
-Message-ID: <CAEH94LhZWUHiA9gJQGc8Zn9c9xOSmWsg_stXyXQjnQ3kntTGbA@mail.gmail.com>
-Subject: Re: [RFC v2 03/10] vfs: add one new mount option '-o hottrack'
-From: Zhi Yong Wu <zwu.kernel@gmail.com>
-To: Dave Chinner <david@fromorbit.com>
-Cc: linux-fsdevel@vger.kernel.org, linux-kernel@vger.kernel.org,
-        linux-btrfs@vger.kernel.org, linux-ext4@vger.kernel.org,
-        linuxram@linux.vnet.ibm.com, viro@zeniv.linux.org.uk, cmm@us.ibm.com,
-        tytso@mit.edu, marco.stornelli@gmail.com, stroetmann@ontolinux.com,
-        diegocg@gmail.com, chris@csamuel.org,
-        Zhi Yong Wu <wuzhy@linux.vnet.ibm.com>
-Content-Type: text/plain; charset=ISO-8859-1
+Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <50636DC2.5070700@gmail.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Thu, Sep 27, 2012 at 3:05 PM, Dave Chinner <david@fromorbit.com> wrote:
-> On Thu, Sep 27, 2012 at 01:25:34PM +0800, Zhi Yong Wu wrote:
->> On Tue, Sep 25, 2012 at 5:28 PM, Dave Chinner <david@fromorbit.com> wrote:
->> > On Sun, Sep 23, 2012 at 08:56:28PM +0800, zwu.kernel@gmail.com wrote:
->> >> From: Zhi Yong Wu <wuzhy@linux.vnet.ibm.com>
->> >>
->> >>   Introduce one new mount option '-o hottrack',
->> >> and add its parsing support.
->> >>   Its usage looks like:
->> >>    mount -o hottrack
->> >>    mount -o nouser,hottrack
->> >>    mount -o nouser,hottrack,loop
->> >>    mount -o hottrack,nouser
->> >
->> > I think that this option parsing should be done by the filesystem,
->> > even though the tracking functionality is in the VFS. That way ony
->> > the filesystems that can use the tracking information will turn it
->> > on, rather than being able to turn it on for everything regardless
->> > of whether it is useful or not.
->> >
->> > Along those lines, just using a normal superblock flag to indicate
->> > it is active (e.g. MS_HOT_INODE_TRACKING in sb->s_flags) means you
->> > don't need to allocate the sb->s_hot_info structure just to be able
->> If we don't allocate one sb->s_hot_info, where will those hash list
->> head and btree roots locate?
->
-> I wrote that thinking (mistakenly) that s-hot)info was dynamically
-> allocated rather than being embedded in the struct super_block.
->
-> Indeed, if the mount option is held in s_flags, then it could be
-> dynamically allocated, but I don't think that's really necessary...
-ah, you prefer allocating it, OK, let me try. thanks for your explaination.
+On Thu, Sep 27, 2012 at 05:04:02AM +0800, ching wrote:
+> On 09/26/2012 11:23 PM, David Sterba wrote:
+> > On Wed, Sep 26, 2012 at 07:48:47PM +0800, ching wrote:
+> >> There is a typo (?) in inode.c (git)
+> > What's the top commit and what git tree?
+> >
+> > This has been fixed in 3.6-rc4 via
+> > 287082b0bd10060e9c6b32ed9605174ddf2f672a
+> >
+> This mistake is in
+> 
+> http://git.kernel.org/?p=linux/kernel/git/mason/linux-btrfs.git;a=summary
 
->
-> Cheers,
->
-> Dave.
-> --
-> Dave Chinner
-> david@fromorbit.com
+I see, this is because the fix was merged into linus' tree via the
+trivial tree. If unsure, you may want to check btrfs-next first.
 
-
-
--- 
-Regards,
-
-Zhi Yong Wu
+david

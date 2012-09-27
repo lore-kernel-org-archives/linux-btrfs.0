@@ -1,63 +1,70 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from ipmail07.adl2.internode.on.net ([150.101.137.131]:18358 "EHLO
-	ipmail07.adl2.internode.on.net" rhost-flags-OK-OK-OK-OK)
-	by vger.kernel.org with ESMTP id S1751452Ab2I0EED (ORCPT
+Received: from mail-bk0-f46.google.com ([209.85.214.46]:44097 "EHLO
+	mail-bk0-f46.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1751885Ab2I0FZg (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 27 Sep 2012 00:04:03 -0400
-Date: Thu, 27 Sep 2012 14:03:57 +1000
-From: Dave Chinner <david@fromorbit.com>
-To: zwu.kernel@gmail.com
+	Thu, 27 Sep 2012 01:25:36 -0400
+MIME-Version: 1.0
+In-Reply-To: <20120925092819.GC29154@dastard>
+References: <1348404995-14372-1-git-send-email-zwu.kernel@gmail.com>
+	<1348404995-14372-4-git-send-email-zwu.kernel@gmail.com>
+	<20120925092819.GC29154@dastard>
+Date: Thu, 27 Sep 2012 13:25:34 +0800
+Message-ID: <CAEH94LimEZcAFKFMVNUzBcTeDxvkgeD3jCO3AgmkEKXVE4ym+A@mail.gmail.com>
+Subject: Re: [RFC v2 03/10] vfs: add one new mount option '-o hottrack'
+From: Zhi Yong Wu <zwu.kernel@gmail.com>
+To: Dave Chinner <david@fromorbit.com>
 Cc: linux-fsdevel@vger.kernel.org, linux-kernel@vger.kernel.org,
         linux-btrfs@vger.kernel.org, linux-ext4@vger.kernel.org,
         linuxram@linux.vnet.ibm.com, viro@zeniv.linux.org.uk, cmm@us.ibm.com,
         tytso@mit.edu, marco.stornelli@gmail.com, stroetmann@ontolinux.com,
         diegocg@gmail.com, chris@csamuel.org,
         Zhi Yong Wu <wuzhy@linux.vnet.ibm.com>
-Subject: Re: [RFC v2 07/10] vfs: fork one kthread to update data temperature
-Message-ID: <20120927040357.GO15236@dastard>
-References: <1348404995-14372-1-git-send-email-zwu.kernel@gmail.com>
- <1348404995-14372-8-git-send-email-zwu.kernel@gmail.com>
-MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <1348404995-14372-8-git-send-email-zwu.kernel@gmail.com>
+Content-Type: text/plain; charset=ISO-8859-1
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Sun, Sep 23, 2012 at 08:56:32PM +0800, zwu.kernel@gmail.com wrote:
-> From: Zhi Yong Wu <wuzhy@linux.vnet.ibm.com>
-> 
->   Fork and run one kernel kthread to calculate
-> that temperature based on some metrics kept
-> in custom frequency data structs, and store
-> the info in the hash table.
+On Tue, Sep 25, 2012 at 5:28 PM, Dave Chinner <david@fromorbit.com> wrote:
+> On Sun, Sep 23, 2012 at 08:56:28PM +0800, zwu.kernel@gmail.com wrote:
+>> From: Zhi Yong Wu <wuzhy@linux.vnet.ibm.com>
+>>
+>>   Introduce one new mount option '-o hottrack',
+>> and add its parsing support.
+>>   Its usage looks like:
+>>    mount -o hottrack
+>>    mount -o nouser,hottrack
+>>    mount -o nouser,hottrack,loop
+>>    mount -o hottrack,nouser
+>
+> I think that this option parsing should be done by the filesystem,
+> even though the tracking functionality is in the VFS. That way ony
+> the filesystems that can use the tracking information will turn it
+> on, rather than being able to turn it on for everything regardless
+> of whether it is useful or not.
+>
+> Along those lines, just using a normal superblock flag to indicate
+> it is active (e.g. MS_HOT_INODE_TRACKING in sb->s_flags) means you
+> don't need to allocate the sb->s_hot_info structure just to be able
+If we don't allocate one sb->s_hot_info, where will those hash list
+head and btree roots locate?
 
-No new kthreads, please. Use a per-superblock workqueue and a struct
-delayed_work to run periodic work on each superblock.
+> to check whether we are tracking hot inodes or not.
+>
+> This then means the hot inode tracking for the superblock can be
+> initialised by the filesystem as part of it's fill_super method,
+> along with the filesystem specific code that will use the hot
+> tracking information the VFS gathers....
+>
+> Cheers,
+>
+> Dave.
+> --
+> Dave Chinner
+> david@fromorbit.com
 
-That will also remove all the nasty, nasty
-!hot_track_temperature_update_kthread checks from the code, too.
 
-Also, I'd separate the work that the workqueue does from the patch
-that introduces the work queue. That way there is only one new thing
-to comment on in the patch. Further, I'd separate the aging code
-from the code that updates the temperature map into it's own patch
-as well..
 
-Finally, you're going to need a shrinker to control the amount of
-memory that is used in tracking hot regions - if we are throwing
-inodes out of memory due to memory pressure, we most definitely are
-going to need to reduce the amount of memory the tracking code is
-using, even if it means losing useful information (i.e. the shrinker
-accelerates the aging process).
-
-Given the above, and the other comments earlier in the series,
-there's not a lot of point in me spending time commenting on ethe
-code in detail here as it will change significantly as a result of
-all the earlier comments....
-
-Cheers,
-
-Dave.
 -- 
-Dave Chinner
-david@fromorbit.com
+Regards,
+
+Zhi Yong Wu

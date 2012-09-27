@@ -1,57 +1,80 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cantor2.suse.de ([195.135.220.15]:59383 "EHLO mx2.suse.de"
+Received: from smtp205.alice.it ([82.57.200.101]:46264 "EHLO smtp205.alice.it"
 	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1753585Ab2I0TuB (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 27 Sep 2012 15:50:01 -0400
-Date: Thu, 27 Sep 2012 12:49:57 -0700
-From: Mark Fasheh <mfasheh@suse.de>
-To: Chris Mason <chris.mason@fusionio.com>,
-        "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>,
-        "Chris L. Mason" <clmason@fusionio.com>,
-        Jan Schmidt <list.btrfs@jan-o-sch.net>
-Subject: Re: [PATCH v4 0/4] btrfs: extended inode refs
-Message-ID: <20120927194957.GS8097@wotan.suse.de>
-Reply-To: Mark Fasheh <mfasheh@suse.de>
-References: <1345494561-28758-1-git-send-email-mfasheh@suse.de> <20120925200446.GD6596@shiny>
+	id S1752697Ab2I0Uiy (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Thu, 27 Sep 2012 16:38:54 -0400
+Message-ID: <5064B96B.7060502@libero.it>
+Date: Thu, 27 Sep 2012 22:39:07 +0200
+From: Goffredo Baroncelli <kreijack@libero.it>
+Reply-To: kreijack@inwind.it
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <20120925200446.GD6596@shiny>
+To: =?UTF-8?B?U8OpYmFzdGllbiBNYXVyeQ==?= <sebastien.maury@inserm.fr>
+CC: linux-btrfs@vger.kernel.org, Hugo Mills <hugo@carfax.org.uk>
+Subject: [RFC] btrfs fi df output [Was Re: BTRF - Storage Usage]
+References: <20120927124427.6014ddq7wg88cc0o@imp.inserm.fr>
+In-Reply-To: <20120927124427.6014ddq7wg88cc0o@imp.inserm.fr>
+Content-Type: text/plain; charset=UTF-8; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Tue, Sep 25, 2012 at 04:04:46PM -0400, Chris Mason wrote:
-> On Mon, Aug 20, 2012 at 02:29:17PM -0600, Mark Fasheh wrote:
-> > 
-> > Testing wise, the basic namespace operations work well (link, unlink, etc).
-> > The rest has gotten less debugging (and I really don't have a great way of
-> > testing the code in tree-log.c) Attached to this e-mail are btrfs-progs
-> > patches which make testing of the changes possible.
-> 
-> Hi Mark,
-> 
-> I hit a few problems testing this, so I have the patch below that I plan
-> on folding into your commits (to keep bisect from crashing in tree log).
-> 
-> Just let me know if this is a problem, or if you see any bugs in there.
-> I'm still doing a last round of checks on it, but I wanted to send along
-> early for comments.
-> 
-> The biggest change in here is to always check the ref_objectid when
-> returning a backref.  Hash collisions mean we may return a ref for a
-> completely different parent id otherwise.  I think I caught all the
-> places missing that logic, but please double check me.
+On 09/27/2012 12:44 PM, Sébastien Maury wrote:
+> Hi,
+>
+> I've installed a new server using btrfs for my root partition ("/").
+>
+> It uses snapper for snapshots management and all seems to work pretty fine.
+>
+> My problem is to be able to know the remaining REAL free space in my
+> partition.
+>
+> Using different commands, i have different results, and i don't know how
+> to interpret them correctly :
+> poivron:~ # btrfs filesystem df /
+> Data: total=4.01GB, used=2.16GB
+> System, DUP: total=8.00MB, used=4.00KB
+> System: total=4.00MB, used=0.00
+> Metadata, DUP: total=3.00GB, used=429.16MB
+> Metadata: total=8.00MB, used=0.00
 
-Ahh yes of course. I missed that in a couple key areas. Thanks for fixing
-it.
+In effect the output of "btrfs filesystem df /" is not very friendly. 
+What about changing the output as below:
+
+$ btrfs filesystem disk-free /
+Summary:
+   Total: 			135.00GB
+   Allocated:			 10.51GB
+   Unallocated:			124.49GB
+   Free_(Estimated)	   	 86.56GB
+   Average_disk_efficiency:  	    62 %
+
+Details:
+   Chunk-type      Mode       Allocated        Used        Free
+   ----------      ----       ---------    --------   ---------
+   Data		  Single        4.01GB	    2.16GB      1.87GB
+   System	  DUP	       16.00MB	    4.00KB      7.99MB
+   System	  Single	4.00MB	      0.00      4.00MB
+   Metadata	  DUP	        6.00GB    429.16MB      2.57GB
+   Metadata	  Single        8.00MB        0.00      8.00MB
 
 
-> Other than that I went through and fixed up bugs in
-> tree-log.c.  __add_inode_ref had a bunch of cut and paste errors, and you
-> carefully preserved a huge use-after-free bug in the original
-> add_inode_ref.
 
-Cool, everything in there looks good to me. Thanks again Chris!
-	--Mark
+Where the "Free_(Estimated)" and "Average_disk_efficency" are computed as:
+   Average_disk_efficency = ratio of average disk usage =
+	(sum(ChunkUsed)+sum(ChunkFree))/sum(ChunkAllocated)
 
---
-Mark Fasheh
+   Estimated_available = Average_disk_efficency *
+				Unallocated+sum(ChunkFree)
+
+I am open to suggestion about the terms: Used vs Allocated and Free vs 
+Available, or a better description of "Average disk efficiency"
+
+
+BR
+G.Baroncelli
+
+P.S. the source could be find at
+
+	http://cassiopea.homelinux.net/git/btrfs-progs-unstable.git
+
+branch
+	disk_free

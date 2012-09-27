@@ -1,64 +1,116 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mho-04-ewr.mailhop.org ([204.13.248.74]:14985 "EHLO
-	mho-02-ewr.mailhop.org" rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org
-	with ESMTP id S1752241Ab2IOLCr convert rfc822-to-8bit (ORCPT
+Received: from mail-vb0-f46.google.com ([209.85.212.46]:50713 "EHLO
+	mail-vb0-f46.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1755384Ab2I0PjV (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Sat, 15 Sep 2012 07:02:47 -0400
-Received: from 193.30.77.188.dynamic.jazztel.es ([188.77.30.193] helo=mail.viric.name)
-	by mho-02-ewr.mailhop.org with esmtpsa (TLSv1:AES256-SHA:256)
-	(Exim 4.72)
-	(envelope-from <viric@viric.name>)
-	id 1TCq98-0005rD-JR
-	for linux-btrfs@vger.kernel.org; Sat, 15 Sep 2012 11:02:46 +0000
-Date: Sat, 15 Sep 2012 13:02:43 +0200
-From: =?iso-8859-1?Q?Llu=EDs?= Batlle i Rossell <viric@viric.name>
-To: Btrfs mailing list <linux-btrfs@vger.kernel.org>
-Subject: Re: State of btrfs on ARM
-Message-ID: <20120915110243.GA1943@vicerveza.homeunix.net>
-References: <20120819221335.GB1960@vicerveza.homeunix.net>
+	Thu, 27 Sep 2012 11:39:21 -0400
+Received: by vbbff1 with SMTP id ff1so2039939vbb.19
+        for <linux-btrfs@vger.kernel.org>; Thu, 27 Sep 2012 08:39:20 -0700 (PDT)
 MIME-Version: 1.0
-Content-Type: text/plain; charset=iso-8859-1
-In-Reply-To: <20120819221335.GB1960@vicerveza.homeunix.net>
+In-Reply-To: <20120926131143.GC2328@localhost.localdomain>
+References: <20120920190306.GG2272@localhost.localdomain>
+	<20120925164335.GZ14582@twin.jikos.cz>
+	<20120925170239.GA2328@localhost.localdomain>
+	<CAFDW0jLuvH9rMisDz-Y=Y_nwxzzO5K64uixd6mAiaQRmja3izA@mail.gmail.com>
+	<20120926131143.GC2328@localhost.localdomain>
+Date: Thu, 27 Sep 2012 17:39:19 +0200
+Message-ID: <CAFDW0jJqHgEU+E68NMumC9s-bG4iExZ3gE8NS856Ye-5JJpv+g@mail.gmail.com>
+Subject: Re: ENOSPC design issues
+From: Ahmet Inan <ainan@mathematik.uni-freiburg.de>
+To: Josef Bacik <jbacik@fusionio.com>
+Cc: David Sterba <dave@jikos.cz>,
+        "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
+Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Mon, Aug 20, 2012 at 12:13:35AM +0200, Lluís Batlle i Rossell wrote:
-> Hello,
-> 
-> I just tried to mount a btrfs on 3.4.6, on armv5tel, and it wrote an oops.
-> Should it work on btrfsnext? Anyone working on that, if not?
-> 
-> I tried "mount -o compress=lzo myfile-with-holes /mnt/btrfs".
+Josef,
 
-After investigating a bit, I saw the problem is related to running 'mkfs.btrfs'
-on ARM. If 'mkfs.btrfs' is run on another platform, it works fine.
+> Have you actually seen this problem on 3.5 with no compression?
+youre right, no problems with no compression.
 
-But, the problem appears only if the ARM system has "unaligned access kernel
-traps" disabled for userland code. That happens to be set by default, it seems.
-Setting the kernel to fixup userland unaligned accesses (echo 3 >
-/proc/cpu/alignment, for exmaple), then mkfs.btrfs works fine.
+> problem in the 3.5 timeframe that should have fixed this for no-compression, and
+> then I've since fixed the compression part of it in btrfs-next.  Can you retest
+i cherry picked on top of 3.5.4 + for-linus all enospc patches
+and dependencies from your btrfs-next in that order:
 
-I think the kernel mode code has *always* unaligned access fixup, while userland
-code is disabled by default. That'd explain the same code was harmless in the
-kernel, while it was failing on userland (on a system without fixup enabled).
+ddabdd663aa819f206aaaf689b12475b1b11d71e
+Btrfs: do not allocate chunks as agressively
 
-Nevertheless, those kernel traps on unaligned accesses are very unefficient. So
-the best would be to get gcc generate proper code.
+dd314c3ef057dde30d1c8ae67c98019a71713ea4
+Btrfs: turbo charge fsync
 
-There was a slightly dirty patch sent to this list, to avoid gcc generating
-instructions that do unaligned accesses:
-http://www.spinics.net/lists/linux-btrfs/msg16007.html
+4d9f18a35d456c27e81c8e0de29c858f85d35c91
+Btrfs: do not needlessly restart the transaction for enospc
 
-I don't know the best way to solve that problem; I think that gcc assumes that
-structs are always on unaligned places, and so generates code as if all pointers
-to structs are properly aligned. I think that 'memcpy' (gcc builtin) may run
-faster than the trap, there. But how to write something faster than a memcpy
-call, I don't know.
+82b8aa2bef5c5267d74ad8e5a82572d4fa85bf89
+Btrfs: wait on async pages when shrinking delalloc
 
-In fact, looking at the counter of traps run in system-mode in
-/proc/cpu/alignment, it increases a lot at every operation I run, either it
-writes to btrfs or not. So there should be quite a big amount of code saved by
-traps, in the kernel.
+4af89eb8ce93a1ec64fc698f82f67a0e3bd8cbef
+Btrfs: delay block group item insertion
 
-Regards,
-Lluís.
+i hope those are the patches you wanted me to test.
+
+> with btrfs-next and see if you still see the problem?
+did and got some nice results: no problems and its faster!
+
+these results are from an old i686 Pentium M Notebook
+with 30GB HDD and 1.2GB RAM:
+
+3.5.4 + for-linus + lzo: 6x enospc problems at 30% unsquashfs
+*snip*
+[================|                                         ] 269645/910412  29%
+Write on output file failed because No space left on device
+writer: failed to write data block 0
+Failed to write /mnt/point/something, skipping
+*snip*
+
+# df -h /mnt/point/
+Filesystem      Size  Used Avail Use% Mounted on
+/dev/sda2        28G   12G   16G  43% /mnt/point
+
+one run:
+real    28m44.882s
+user    7m4.542s
+sys     4m18.353s
+
+3.5.4 + for-linus + no compression: no problems
+# df -h /mnt/point/
+Filesystem      Size  Used Avail Use% Mounted on
+/dev/sda2        28G   18G  9.0G  67% /mnt/point
+
+one run:
+real    20m57.157s
+user    5m37.915s
+sys     3m23.913s
+
+3.5.4 + for-linus + enospc patches + lzo: no problems
+# df -h /mnt/point/
+Filesystem      Size  Used Avail Use% Mounted on
+/dev/sda2        28G   12G   17G  42% /mnt/point
+
+first run:
+real    19m35.852s
+user    4m33.359s
+sys     3m2.808s
+
+second run:
+real    23m12.371s
+user    5m37.398s
+sys     3m47.525s
+
+3.5.4 + for-linus + enospc patches + no compression: no problems
+# df -h /mnt/point/
+Filesystem      Size  Used Avail Use% Mounted on
+/dev/sda2        28G   18G  9.5G  66% /mnt/point
+
+one run:
+real    22m56.940s
+user    4m53.571s
+sys     3m4.188s
+
+great work.
+im gonna keep those patches and deploy it on my systems here soon
+after some more testing.
+
+Ahmet

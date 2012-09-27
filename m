@@ -1,10 +1,10 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from ipmail07.adl2.internode.on.net ([150.101.137.131]:62947 "EHLO
+Received: from ipmail07.adl2.internode.on.net ([150.101.137.131]:17757 "EHLO
 	ipmail07.adl2.internode.on.net" rhost-flags-OK-OK-OK-OK)
-	by vger.kernel.org with ESMTP id S1751790Ab2I0G74 (ORCPT
+	by vger.kernel.org with ESMTP id S1755624Ab2I0HFL (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 27 Sep 2012 02:59:56 -0400
-Date: Thu, 27 Sep 2012 16:59:53 +1000
+	Thu, 27 Sep 2012 03:05:11 -0400
+Date: Thu, 27 Sep 2012 17:05:08 +1000
 From: Dave Chinner <david@fromorbit.com>
 To: Zhi Yong Wu <zwu.kernel@gmail.com>
 Cc: linux-fsdevel@vger.kernel.org, linux-kernel@vger.kernel.org,
@@ -13,69 +13,48 @@ Cc: linux-fsdevel@vger.kernel.org, linux-kernel@vger.kernel.org,
         tytso@mit.edu, marco.stornelli@gmail.com, stroetmann@ontolinux.com,
         diegocg@gmail.com, chris@csamuel.org,
         Zhi Yong Wu <wuzhy@linux.vnet.ibm.com>
-Subject: Re: [RFC v2 06/10] vfs: enable hot data tracking
-Message-ID: <20120927065953.GQ15236@dastard>
+Subject: Re: [RFC v2 03/10] vfs: add one new mount option '-o hottrack'
+Message-ID: <20120927070508.GS15236@dastard>
 References: <1348404995-14372-1-git-send-email-zwu.kernel@gmail.com>
- <1348404995-14372-7-git-send-email-zwu.kernel@gmail.com>
- <20120927035425.GN15236@dastard>
- <CAEH94LgxOLhyP50hyjQxsECZP1knkYB+11N4=UtJ4mTb5Bmm1g@mail.gmail.com>
+ <1348404995-14372-4-git-send-email-zwu.kernel@gmail.com>
+ <20120925092819.GC29154@dastard>
+ <CAEH94LimEZcAFKFMVNUzBcTeDxvkgeD3jCO3AgmkEKXVE4ym+A@mail.gmail.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <CAEH94LgxOLhyP50hyjQxsECZP1knkYB+11N4=UtJ4mTb5Bmm1g@mail.gmail.com>
+In-Reply-To: <CAEH94LimEZcAFKFMVNUzBcTeDxvkgeD3jCO3AgmkEKXVE4ym+A@mail.gmail.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Thu, Sep 27, 2012 at 02:28:12PM +0800, Zhi Yong Wu wrote:
-> On Thu, Sep 27, 2012 at 11:54 AM, Dave Chinner <david@fromorbit.com> wrote:
-> > On Sun, Sep 23, 2012 at 08:56:31PM +0800, zwu.kernel@gmail.com wrote:
+On Thu, Sep 27, 2012 at 01:25:34PM +0800, Zhi Yong Wu wrote:
+> On Tue, Sep 25, 2012 at 5:28 PM, Dave Chinner <david@fromorbit.com> wrote:
+> > On Sun, Sep 23, 2012 at 08:56:28PM +0800, zwu.kernel@gmail.com wrote:
 > >> From: Zhi Yong Wu <wuzhy@linux.vnet.ibm.com>
 > >>
-> >>   Miscellaneous features that implement hot data tracking
-> >> and generally make the hot data functions a bit more friendly.
-> >>
-> >> Signed-off-by: Zhi Yong Wu <wuzhy@linux.vnet.ibm.com>
-> >> ---
-> >>  fs/direct-io.c               |   10 ++++++++++
-> >>  include/linux/hot_tracking.h |   11 +++++++++++
-> >>  mm/filemap.c                 |    8 ++++++++
-> >>  mm/page-writeback.c          |   21 +++++++++++++++++++++
-> >>  mm/readahead.c               |    9 +++++++++
-> >>  5 files changed, 59 insertions(+), 0 deletions(-)
-> >>
-> >> diff --git a/fs/direct-io.c b/fs/direct-io.c
-> >> index f86c720..3773f44 100644
-> >> --- a/fs/direct-io.c
-> >> +++ b/fs/direct-io.c
-> >> @@ -37,6 +37,7 @@
-> >>  #include <linux/uio.h>
-> >>  #include <linux/atomic.h>
-> >>  #include <linux/prefetch.h>
-> >> +#include "hot_tracking.h"
-> >>
-> >>  /*
-> >>   * How many user pages to map in one call to get_user_pages().  This determines
-> >> @@ -1297,6 +1298,15 @@ __blockdev_direct_IO(int rw, struct kiocb *iocb, struct inode *inode,
-> >>       prefetch(bdev->bd_queue);
-> >>       prefetch((char *)bdev->bd_queue + SMP_CACHE_BYTES);
-> >>
-> >> +     /* Hot data tracking */
-> >> +     if (TRACK_THIS_INODE(iocb->ki_filp->f_mapping->host)
-> >> +                     && iov_length(iov, nr_segs) > 0) {
-> >> +             hot_rb_update_freqs(iocb->ki_filp->f_mapping->host,
-> >> +                             (u64)offset,
-> >> +                             (u64)iov_length(iov, nr_segs),
-> >> +                             rw & WRITE);
-> >> +     }
+> >>   Introduce one new mount option '-o hottrack',
+> >> and add its parsing support.
+> >>   Its usage looks like:
+> >>    mount -o hottrack
+> >>    mount -o nouser,hottrack
+> >>    mount -o nouser,hottrack,loop
+> >>    mount -o hottrack,nouser
 > >
-> > That's a bit messy. I'd prefer a static inline function that hides
-> > all this. e.g.
-> Do you think of moving the condition into hot_inode_udate_freqs(), not
-> adding another new function?
+> > I think that this option parsing should be done by the filesystem,
+> > even though the tracking functionality is in the VFS. That way ony
+> > the filesystems that can use the tracking information will turn it
+> > on, rather than being able to turn it on for everything regardless
+> > of whether it is useful or not.
+> >
+> > Along those lines, just using a normal superblock flag to indicate
+> > it is active (e.g. MS_HOT_INODE_TRACKING in sb->s_flags) means you
+> > don't need to allocate the sb->s_hot_info structure just to be able
+> If we don't allocate one sb->s_hot_info, where will those hash list
+> head and btree roots locate?
 
-Moving it into hot_inode_udate_freqs() will add a function call
-overhead even when tracking is not enabled. a static inline function
-will just result in no extra overhead other than the if
-statement....
+I wrote that thinking (mistakenly) that s-hot)info was dynamically
+allocated rather than being embedded in the struct super_block.
+
+Indeed, if the mount option is held in s_flags, then it could be
+dynamically allocated, but I don't think that's really necessary...
 
 Cheers,
 

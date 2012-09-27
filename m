@@ -1,51 +1,88 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([222.73.24.84]:38290 "EHLO song.cn.fujitsu.com"
-	rhost-flags-OK-FAIL-OK-OK) by vger.kernel.org with ESMTP
-	id S1755644Ab2I0KqR (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 27 Sep 2012 06:46:17 -0400
-Message-ID: <50642746.3050902@cn.fujitsu.com>
-Date: Thu, 27 Sep 2012 18:15:34 +0800
-From: Miao Xie <miaox@cn.fujitsu.com>
-Reply-To: miaox@cn.fujitsu.com
+Received: from mail-wi0-f178.google.com ([209.85.212.178]:50235 "EHLO
+	mail-wi0-f178.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1751140Ab2I0Q4a (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>);
+	Thu, 27 Sep 2012 12:56:30 -0400
+Received: by wibhr7 with SMTP id hr7so2302785wib.1
+        for <linux-btrfs@vger.kernel.org>; Thu, 27 Sep 2012 09:56:29 -0700 (PDT)
+Date: Thu, 27 Sep 2012 19:56:24 +0300
+From: Ilya Dryomov <idryomov@gmail.com>
+To: Miao Xie <miaox@cn.fujitsu.com>
+Cc: Linux Btrfs <linux-btrfs@vger.kernel.org>
+Subject: Re: [PATCH V4 1/2] Btrfs: cleanup duplicated division functions
+Message-ID: <20120927165624.GA2024@zambezi.lan>
+References: <5051BAB8.7080200@cn.fujitsu.com>
+ <505A8632.10101@cn.fujitsu.com>
+ <505C2E62.2000400@cn.fujitsu.com>
+ <5064284E.9020504@cn.fujitsu.com>
 MIME-Version: 1.0
-To: Ilya Dryomov <idryomov@gmail.com>,
-        Linux Btrfs <linux-btrfs@vger.kernel.org>
-Subject: Re: [PATCH V3 1/2] Btrfs: cleanup duplicated division functions
-References: <5051BAB8.7080200@cn.fujitsu.com> <505A8632.10101@cn.fujitsu.com> <505C2E62.2000400@cn.fujitsu.com> <20120923114924.GA1975@zambezi.lan> <505FBFCE.3010503@cn.fujitsu.com> <20120924164742.GN14582@twin.jikos.cz>
-In-Reply-To: <20120924164742.GN14582@twin.jikos.cz>
-Content-Type: text/plain; charset=ISO-8859-1
+Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <5064284E.9020504@cn.fujitsu.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Sorry to reply late.
+Hi Miao,
 
-On Mon, 24 Sep 2012 18:47:42 +0200, David Sterba wrote:
->>> This is the most straightforward transformation I can think of.  It
->>> doesn't result in an unnecessary BUG_ON, keeps churn to a minimum and
->>
->> agree with you.
->>
->>> doesn't change the "style" of the balance ioctl.  (If I were to check
->>> every filter argument that way, btrfs_balance_ioctl() would be very long
->>> and complicated.)
->>
->> I think the check in btrfs_balance_ioctl() is necessary, the reason is above.
-> 
-> btrfs_balance_ioctl does not seem as the right place, it does the
-> processing related to the state of balance (resume/cancel etc). Look at
-> btrfs_balance() itself, it does lot more sanity checks of the parameters
+You haven't addressed any of my concerns with v3.
 
-I think we should not put the check in btrfs_balance(), because the arguments
-are valid forever if they pass the check when they are input, if we put the
-check in btrfs_balance(), the check will be done every time we resume the balance.
-it is unnecessary.
+On Thu, Sep 27, 2012 at 06:19:58PM +0800, Miao Xie wrote:
 
-> We can put the extra checks into helpers (and not only this
-> one) if clarity and readability of the function becomes a concern.
+(snipped)
 
-Agree. I will put this check into a helper in the next version of this patch.
-And I will make a separate patch to move the current check in btrfs_balance
-from btrfs_balance to the above helper after this patch is received.
+> the parameters are right. So besides the code cleanup, this patch also
+> add a check for the usage of the space balance, it is the only place that
+> we need add check to make sure the parameters of div_factor are right till
+> now. Besides that, the old kernel may hold the wrong usage value, so we
+> must rectify it.
 
-Thanks
-Miao
+Cleaning up/unifying duplicated functions and changing the existing
+logic are two very different things.  If you, in the course of writing
+this patch, became unhappy with the way balancing ioctl deals with
+"invalid" input, please send a separate patch.
+
+Before your patch, volumes.c had its own copy of div_factor_fine():
+
+static u64 div_factor_fine(u64 num, int factor)
+{
+	if (factor <= 0)
+		return 0;
+	if (factor >= 100)
+		return num;
+
+	num *= factor;
+	do_div(num, 100);
+	return num;
+}
+
+which was called from chunk_usage_filter() on unvalidated user input.
+As far as the cleanup part of your patch goes, you've dropped
+factor <= 0 / factor >= 100 logic, merged volumes.c's copy with
+extent-tree.c's copy and renamed div_factor_fine() to div_factor().  To
+make chunk_usage_filter() happy again, it's enough to move the dropped
+logic directly to the call site:
+
+static int chunk_usage_filter(struct btrfs_fs_info *fs_info, u64 chunk_offset,
+			      struct btrfs_balance_args *bargs)
+{
+	...
+
+-	user_thresh = div_factor_fine(cache->key.offset, bargs->usage);
++	if (bargs->usage == 0)
++		user_thresh = 0;
++	else if (bargs->usage >= 100)
++		user_thresh = cache->key.offset;
++	else
++		user_thresh = div_factor(cache->key.offset, bargs->usage);
+
+	...
+}
+
+So I would suggest you drop all hunks related to changing the way
+balancing ioctl works and make the above change to chunk_usage_filter()
+instead.  Once again, if you are unhappy with usage filter argument
+handling, send a separate patch.
+
+Thanks,
+
+		Ilya

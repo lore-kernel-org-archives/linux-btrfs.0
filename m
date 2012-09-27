@@ -1,58 +1,51 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from twin.jikos.cz ([89.185.236.188]:54052 "EHLO twin.jikos.cz"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1753936Ab2IYMvK (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 25 Sep 2012 08:51:10 -0400
-Date: Tue, 25 Sep 2012 14:50:59 +0200
-From: David Sterba <dave@jikos.cz>
-To: Liu Bo <bo.li.liu@oracle.com>
-Cc: David Sterba <dave@jikos.cz>, linux-btrfs@vger.kernel.org
-Subject: Re: [PATCH] Btrfs: limit thread pool size when remounting
-Message-ID: <20120925125059.GU14582@twin.jikos.cz>
-Reply-To: dave@jikos.cz
-References: <1348555713-7518-1-git-send-email-bo.li.liu@oracle.com>
- <20120925113938.GT14582@twin.jikos.cz>
- <50619E64.1040808@oracle.com>
+Received: from cn.fujitsu.com ([222.73.24.84]:38290 "EHLO song.cn.fujitsu.com"
+	rhost-flags-OK-FAIL-OK-OK) by vger.kernel.org with ESMTP
+	id S1755644Ab2I0KqR (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Thu, 27 Sep 2012 06:46:17 -0400
+Message-ID: <50642746.3050902@cn.fujitsu.com>
+Date: Thu, 27 Sep 2012 18:15:34 +0800
+From: Miao Xie <miaox@cn.fujitsu.com>
+Reply-To: miaox@cn.fujitsu.com
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <50619E64.1040808@oracle.com>
+To: Ilya Dryomov <idryomov@gmail.com>,
+        Linux Btrfs <linux-btrfs@vger.kernel.org>
+Subject: Re: [PATCH V3 1/2] Btrfs: cleanup duplicated division functions
+References: <5051BAB8.7080200@cn.fujitsu.com> <505A8632.10101@cn.fujitsu.com> <505C2E62.2000400@cn.fujitsu.com> <20120923114924.GA1975@zambezi.lan> <505FBFCE.3010503@cn.fujitsu.com> <20120924164742.GN14582@twin.jikos.cz>
+In-Reply-To: <20120924164742.GN14582@twin.jikos.cz>
+Content-Type: text/plain; charset=ISO-8859-1
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Tue, Sep 25, 2012 at 08:07:00PM +0800, Liu Bo wrote:
-> On 09/25/2012 07:39 PM, David Sterba wrote:
-> > On Tue, Sep 25, 2012 at 02:48:33PM +0800, Liu Bo wrote:
-> >> --- a/fs/btrfs/super.c
-> >> +++ b/fs/btrfs/super.c
-> >> @@ -1158,17 +1158,20 @@ static void btrfs_resize_thread_pool(struct btrfs_fs_info *fs_info,
-> >>  	printk(KERN_INFO "btrfs: resize thread pool %d -> %d\n",
-> >>  	       old_pool_size, new_pool_size);
-> >>  
-> >> -	btrfs_set_max_workers(&fs_info->generic_worker, new_pool_size);
-> >> +	btrfs_set_max_workers(&fs_info->generic_worker, min(1, new_pool_size));
-> > 
-> > How could new_pool_size be < 1 ?
-> > 
-> > There's a check in super.c to pick only values > 0
+Sorry to reply late.
+
+On Mon, 24 Sep 2012 18:47:42 +0200, David Sterba wrote:
+>>> This is the most straightforward transformation I can think of.  It
+>>> doesn't result in an unnecessary BUG_ON, keeps churn to a minimum and
+>>
+>> agree with you.
+>>
+>>> doesn't change the "style" of the balance ioctl.  (If I were to check
+>>> every filter argument that way, btrfs_balance_ioctl() would be very long
+>>> and complicated.)
+>>
+>> I think the check in btrfs_balance_ioctl() is necessary, the reason is above.
 > 
-> I think we just need only 1 generic_worker
+> btrfs_balance_ioctl does not seem as the right place, it does the
+> processing related to the state of balance (resume/cancel etc). Look at
+> btrfs_balance() itself, it does lot more sanity checks of the parameters
 
-I got it reversed, sorry for the noise.
+I think we should not put the check in btrfs_balance(), because the arguments
+are valid forever if they pass the check when they are input, if we put the
+check in btrfs_balance(), the check will be done every time we resume the balance.
+it is unnecessary.
 
-> >>  	btrfs_set_max_workers(&fs_info->workers, new_pool_size);
-> >>  	btrfs_set_max_workers(&fs_info->delalloc_workers, new_pool_size);
-> >> -	btrfs_set_max_workers(&fs_info->submit_workers, new_pool_size);
-> >> -	btrfs_set_max_workers(&fs_info->caching_workers, new_pool_size);
-> >> -	btrfs_set_max_workers(&fs_info->fixup_workers, new_pool_size);
-> >> +	btrfs_set_max_workers(&fs_info->submit_workers,
-> >> +			      min_t(u64, fs_info->fs_devices->num_devices,
-> >> +			      new_pool_size));
-> > 
-> > This ask for update also when a new device is added/removed.
-> > 
-> 
-> Oh, yes, but we should do it in another new patch instead.
+> We can put the extra checks into helpers (and not only this
+> one) if clarity and readability of the function becomes a concern.
 
-Yes, this was just a hint to pair the remount/thread_pool capabilities.
+Agree. I will put this check into a helper in the next version of this patch.
+And I will make a separate patch to move the current check in btrfs_balance
+from btrfs_balance to the above helper after this patch is received.
 
-david
+Thanks
+Miao

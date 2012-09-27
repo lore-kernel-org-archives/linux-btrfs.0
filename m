@@ -1,27 +1,27 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([222.73.24.84]:14537 "EHLO song.cn.fujitsu.com"
+Received: from cn.fujitsu.com ([222.73.24.84]:24026 "EHLO song.cn.fujitsu.com"
 	rhost-flags-OK-FAIL-OK-OK) by vger.kernel.org with ESMTP
-	id S932072Ab2IUJHs (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Fri, 21 Sep 2012 05:07:48 -0400
+	id S1755620Ab2I0KqP (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Thu, 27 Sep 2012 06:46:15 -0400
 Received: from fnstmail02.fnst.cn.fujitsu.com (tang.cn.fujitsu.com [127.0.0.1])
-	by tang.cn.fujitsu.com (8.14.3/8.13.1) with ESMTP id q8L97hbS006315
-	for <linux-btrfs@vger.kernel.org>; Fri, 21 Sep 2012 17:07:43 +0800
-Message-ID: <505C2E62.2000400@cn.fujitsu.com>
-Date: Fri, 21 Sep 2012 17:07:46 +0800
+	by tang.cn.fujitsu.com (8.14.3/8.13.1) with ESMTP id q8RAJnk9022011
+	for <linux-btrfs@vger.kernel.org>; Thu, 27 Sep 2012 18:19:51 +0800
+Message-ID: <5064284E.9020504@cn.fujitsu.com>
+Date: Thu, 27 Sep 2012 18:19:58 +0800
 From: Miao Xie <miaox@cn.fujitsu.com>
 Reply-To: miaox@cn.fujitsu.com
 MIME-Version: 1.0
 To: Linux Btrfs <linux-btrfs@vger.kernel.org>
-Subject: [PATCH V3 1/2] Btrfs: cleanup duplicated division functions
-References: <5051BAB8.7080200@cn.fujitsu.com> <505A8632.10101@cn.fujitsu.com>
-In-Reply-To: <505A8632.10101@cn.fujitsu.com>
+Subject: [PATCH V4 1/2] Btrfs: cleanup duplicated division functions
+References: <5051BAB8.7080200@cn.fujitsu.com> <505A8632.10101@cn.fujitsu.com> <505C2E62.2000400@cn.fujitsu.com>
+In-Reply-To: <505C2E62.2000400@cn.fujitsu.com>
 Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
 div_factor{_fine} has been implemented for two times, and these two functions
 are very similar, so cleanup the reduplicate implement and drop the original
-div_factor(), and then rename div_factor_fine() to div_factor(). So the divisor
+div_factor(), and then rename div_factor_fine() to div_factor(). So the factor
 of the new div_factor() is 100, not 10.
 
 And I move div_factor into a independent file named math.h because it is a
@@ -32,10 +32,15 @@ the parameters are right in the most cases, we don't add complex checks
 for the parameters. But in the other place, we must check and make sure
 the parameters are right. So besides the code cleanup, this patch also
 add a check for the usage of the space balance, it is the only place that
-we need add check to make sure the parameters of div_factor are right till now.
+we need add check to make sure the parameters of div_factor are right till
+now. Besides that, the old kernel may hold the wrong usage value, so we
+must rectify it.
 
 Signed-off-by: Miao Xie <miaox@cn.fujitsu.com>
 ---
+Changelog v3 -> v4:
+- deal with the wrong usage that was input on the old kernel
+
 Changelog v2 -> v3:
 - drop the original div_factor and rename div_factor_fine to div_factor
 - drop the check of the factor
@@ -43,13 +48,13 @@ Changelog v2 -> v3:
 Changelog v1 -> v2:
 - add missing check
 ---
- fs/btrfs/extent-tree.c |   29 ++++++-----------------------
- fs/btrfs/ioctl.c       |   18 ++++++++++++++++++
- fs/btrfs/math.h        |   33 +++++++++++++++++++++++++++++++++
+ fs/btrfs/extent-tree.c |   29 +++++--------------------
+ fs/btrfs/ioctl.c       |   21 ++++++++++++++++++
+ fs/btrfs/math.h        |   35 ++++++++++++++++++++++++++++++
  fs/btrfs/relocation.c  |    2 +-
  fs/btrfs/transaction.c |    2 +-
- fs/btrfs/volumes.c     |   30 +++++-------------------------
- 6 files changed, 64 insertions(+), 50 deletions(-)
+ fs/btrfs/volumes.c     |   55 ++++++++++++++++++++++++++---------------------
+ 6 files changed, 94 insertions(+), 50 deletions(-)
  create mode 100644 fs/btrfs/math.h
 
 diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
@@ -132,40 +137,50 @@ index a010234..bcb9ced 100644
  	return 1;
  }
 diff --git a/fs/btrfs/ioctl.c b/fs/btrfs/ioctl.c
-index 9384a2a..d8d53f7 100644
+index 9384a2a..121339c 100644
 --- a/fs/btrfs/ioctl.c
 +++ b/fs/btrfs/ioctl.c
-@@ -3335,6 +3335,24 @@ static long btrfs_ioctl_balance(struct file *file, void __user *arg)
+@@ -3297,6 +3297,23 @@ void update_ioctl_balance_args(struct btrfs_fs_info *fs_info, int lock,
+ 	}
+ }
+ 
++static int btrfs_check_balance_args(struct btrfs_ioctl_balance_args *bargs)
++{
++	if ((bargs->data.flags & BTRFS_BALANCE_ARGS_USAGE) &&
++	    (bargs->data.usage < 0 || bargs->data.usage > 100))
++		return -EINVAL;
++
++	if ((bargs->meta.flags & BTRFS_BALANCE_ARGS_USAGE) &&
++	    (bargs->meta.usage < 0 || bargs->meta.usage > 100))
++		return -EINVAL;
++
++	if ((bargs->sys.flags & BTRFS_BALANCE_ARGS_USAGE) &&
++	    (bargs->sys.usage < 0 || bargs->sys.usage > 100))
++		return -EINVAL;
++
++	return 0;
++}
++
+ static long btrfs_ioctl_balance(struct file *file, void __user *arg)
+ {
+ 	struct btrfs_root *root = BTRFS_I(fdentry(file)->d_inode)->root;
+@@ -3335,6 +3352,10 @@ static long btrfs_ioctl_balance(struct file *file, void __user *arg)
  
  			goto do_balance;
  		}
 +
-+		if ((bargs->data.flags & BTRFS_BALANCE_ARGS_USAGE) &&
-+		    (bargs->data.usage < 0 || bargs->data.usage > 100)) {
-+			ret = -EINVAL;
++		ret = btrfs_check_balance_args(bargs);
++		if (ret)
 +			goto out_bargs;
-+		}
-+
-+		if ((bargs->meta.flags & BTRFS_BALANCE_ARGS_USAGE) &&
-+		    (bargs->meta.usage < 0 || bargs->meta.usage > 100)) {
-+			ret = -EINVAL;
-+			goto out_bargs;
-+		}
-+
-+		if ((bargs->sys.flags & BTRFS_BALANCE_ARGS_USAGE) &&
-+		    (bargs->sys.usage < 0 || bargs->sys.usage > 100)) {
-+			ret = -EINVAL;
-+			goto out_bargs;
-+		}
  	} else {
  		bargs = NULL;
  	}
 diff --git a/fs/btrfs/math.h b/fs/btrfs/math.h
 new file mode 100644
-index 0000000..a157665
+index 0000000..4fef49f
 --- /dev/null
 +++ b/fs/btrfs/math.h
-@@ -0,0 +1,33 @@
+@@ -0,0 +1,35 @@
 +
 +/*
 + * Copyright (C) 2012 Fujitsu.  All rights reserved.
@@ -193,6 +208,8 @@ index 0000000..a157665
 +
 +static inline u64 div_factor(u64 num, int factor)
 +{
++	WARN_ON(factor > 100 || factor < 0);
++
 +	num *= factor;
 +	do_div(num, 100);
 +	return num;
@@ -226,7 +243,7 @@ index cf98dbc..115f054 100644
  }
  
 diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
-index 3f4e70e..1fd43a4 100644
+index 3f4e70e..dc25431 100644
 --- a/fs/btrfs/volumes.c
 +++ b/fs/btrfs/volumes.c
 @@ -25,7 +25,6 @@
@@ -264,17 +281,16 @@ index 3f4e70e..1fd43a4 100644
  static int chunk_usage_filter(struct btrfs_fs_info *fs_info, u64 chunk_offset,
  			      struct btrfs_balance_args *bargs)
  {
-@@ -2347,7 +2335,8 @@ static int chunk_usage_filter(struct btrfs_fs_info *fs_info, u64 chunk_offset,
+@@ -2347,7 +2335,7 @@ static int chunk_usage_filter(struct btrfs_fs_info *fs_info, u64 chunk_offset,
  	cache = btrfs_lookup_block_group(fs_info, chunk_offset);
  	chunk_used = btrfs_block_group_used(&cache->item);
  
 -	user_thresh = div_factor_fine(cache->key.offset, bargs->usage);
-+	BUG_ON(bargs->usage < 0 || bargs->usage > 100);
 +	user_thresh = div_factor(cache->key.offset, bargs->usage);
  	if (chunk_used < user_thresh)
  		ret = 0;
  
-@@ -2501,15 +2490,6 @@ static int should_balance_chunk(struct btrfs_root *root,
+@@ -2501,15 +2489,6 @@ static int should_balance_chunk(struct btrfs_root *root,
  	return 1;
  }
  
@@ -290,7 +306,7 @@ index 3f4e70e..1fd43a4 100644
  static int __btrfs_balance(struct btrfs_fs_info *fs_info)
  {
  	struct btrfs_balance_control *bctl = fs_info->balance_ctl;
-@@ -2534,7 +2514,7 @@ static int __btrfs_balance(struct btrfs_fs_info *fs_info)
+@@ -2534,7 +2513,7 @@ static int __btrfs_balance(struct btrfs_fs_info *fs_info)
  	devices = &fs_info->fs_devices->devices;
  	list_for_each_entry(device, devices, dev_list) {
  		old_size = device->total_bytes;
@@ -299,7 +315,40 @@ index 3f4e70e..1fd43a4 100644
  		size_to_free = min(size_to_free, (u64)1 * 1024 * 1024);
  		if (!device->writeable ||
  		    device->total_bytes - device->bytes_used > size_to_free)
-@@ -3284,7 +3264,7 @@ static int __btrfs_alloc_chunk(struct btrfs_trans_handle *trans,
+@@ -2939,6 +2918,32 @@ int btrfs_recover_balance(struct btrfs_fs_info *fs_info)
+ 	btrfs_balance_sys(leaf, item, &disk_bargs);
+ 	btrfs_disk_balance_args_to_cpu(&bctl->sys, &disk_bargs);
+ 
++	/*
++	 * Now we check the balanace argument to make sure the usage is in
++	 * the range [0, 100], but the old kernel didn't do it, it is possible
++	 * that the users might input the wrong usage, we must rectify it.
++	 */
++	if (bctl->data.flags & BTRFS_BALANCE_ARGS_USAGE) {
++		if (bctl->data.usage < 0)
++			bctl->data.usage = 0;
++		if (bctl->data.usage > 100)
++			bctl->data.usage = 100;
++	}
++
++	if (bctl->meta.flags & BTRFS_BALANCE_ARGS_USAGE) {
++		if (bctl->meta.usage < 0)
++			bctl->meta.usage = 0;
++		if (bctl->meta.usage > 100)
++			bctl->meta.usage = 100;
++	}
++
++	if (bctl->sys.flags & BTRFS_BALANCE_ARGS_USAGE) {
++		if (bctl->sys.usage < 0)
++			bctl->sys.usage = 0;
++		if (bctl->sys.usage > 100)
++			bctl->sys.usage = 100;
++	}
++
+ 	mutex_lock(&fs_info->volume_mutex);
+ 	mutex_lock(&fs_info->balance_mutex);
+ 
+@@ -3284,7 +3289,7 @@ static int __btrfs_alloc_chunk(struct btrfs_trans_handle *trans,
  	}
  
  	/* we don't want a chunk larger than 10% of writeable space */

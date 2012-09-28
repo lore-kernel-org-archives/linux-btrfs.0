@@ -1,73 +1,42 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([222.73.24.84]:48972 "EHLO song.cn.fujitsu.com"
-	rhost-flags-OK-FAIL-OK-OK) by vger.kernel.org with ESMTP
-	id S1751619Ab2IRKf1 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 18 Sep 2012 06:35:27 -0400
-Received: from fnstmail02.fnst.cn.fujitsu.com (tang.cn.fujitsu.com [127.0.0.1])
-	by tang.cn.fujitsu.com (8.14.3/8.13.1) with ESMTP id q8IAZPbX015779
-	for <linux-btrfs@vger.kernel.org>; Tue, 18 Sep 2012 18:35:26 +0800
-Message-ID: <50584E6D.8000602@cn.fujitsu.com>
-Date: Tue, 18 Sep 2012 18:35:25 +0800
-From: Miao Xie <miaox@cn.fujitsu.com>
-Reply-To: miaox@cn.fujitsu.com
+Received: from mail-pa0-f46.google.com ([209.85.220.46]:34493 "EHLO
+	mail-pa0-f46.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1752232Ab2I1ARA (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>);
+	Thu, 27 Sep 2012 20:17:00 -0400
+Received: by padhz1 with SMTP id hz1so1778017pad.19
+        for <linux-btrfs@vger.kernel.org>; Thu, 27 Sep 2012 17:17:00 -0700 (PDT)
 MIME-Version: 1.0
-To: Linux Btrfs <linux-btrfs@vger.kernel.org>
-Subject: [PATCH V4 0/7 ] Btrfs-progs: enhance btrfs subvol list only to show
- read-only snapshots
+In-Reply-To: <CAKZ=RP8V7J=vYerLGzavq5GBFmNtmyRYeautEoAyWqOud9b3Pw@mail.gmail.com>
+References: <CAKZ=RP8V7J=vYerLGzavq5GBFmNtmyRYeautEoAyWqOud9b3Pw@mail.gmail.com>
+Date: Thu, 27 Sep 2012 18:17:00 -0600
+Message-ID: <CAE5mzvj-rOzVfuhUsNjd5=GyZrN4W-gGJ-yqdSJFemAyC=8e=w@mail.gmail.com>
+Subject: Re: [PATCH] btrfs-convert: show progress
+From: cwillu <cwillu@cwillu.com>
+To: Alfredo Esteban <aedelatorre@gmail.com>
+Cc: Linux Btrfs <linux-btrfs@vger.kernel.org>
 Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-We want 'btrfs subvolume list' only to list readonly subvolumes, this patch set
-introduces a new option 'r' to implement it.
+On Thu, Sep 27, 2012 at 6:02 PM, Alfredo Esteban <aedelatorre@gmail.com> wrote:
+> Hello,
+>
+> I'm sending a patch to show progress of btrfs-convert command. I put a
+> progress bar in the only heavy process: the btrfs metadata creation
+> (due to CRC calculation):
 
-You can use the command like that:
+Please include patches inline in the email, not as an attachment.
 
-	btrfs subvolume list -r <mnt>
+>> ./btrfs-convert /dev/loop1
+> Creating btrfs metadata [================================================] 100%
+> Creating ext2fs image file... [DONE]
+> Cleaning up system chunk... [DONE]
+> Conversion complete.
+>
+> I just used "\r". I think it is a simple but effective approach
+> without ncurses either other dependencies.
 
-Changelog v3 -> v4:
-- modify the check method which is used to check if btrfs_root_item contains otime and uuid
-  or not.
-- add filter set and comparer set which are used to manage the filters and comparers specified
-  by the users.
-- re-base the read-only subvolume list function.
-
-Changelog v2 -> v3:
-- re-implement list_subvols()
-- re-implement this read-only subvolume list function based on the new list_subvols()
-
-Changelog v1 -> v2:
-- address the comments from Goffredo Baroncelli
-  i,   change the changelog of the patches and make them more elaborate.
-  ii,  move the function declarations to a new head file.
-  iii, add the introduction of the new option 'r' into the man page
-
-We can pull the patches from the URL
-
-	git://github.com/miaoxie/btrfs-progs.git master
-
-This patchset is against the patches of Liu Bo, Anand Jain and mine which were sent by several
-days ago. And we also can pull those patches from the above URL.
-
-Thanks
-Miao
----
-Miao Xie (5):
-      Btrfs-progs: fix compile warning of implicit declaration of "list_snapshots"
-      Btrfs-progs: fix wrong usage of btrfs subvolume list command
-      Btrfs-progs: fix wrong way to check if the root item contains otime and uuid
-      Btrfs-progs: restructure list_subvolumes
-      Btrfs-progs: enhance btrfs subvol list only to show read-only snapshots
-
-Zhou Bo (2):
-      Btrfs-progs: move the function declarations to a new head file
-      Btrfs-progs: update the manpage entries for the btrfs subvolume list
-
- btrfs-list.c     | 1023 ++++++++++++++++++++++++++++++++----------------------
- btrfs-list.h     |   88 +++++
- cmds-inspect.c   |    6 +-
- cmds-subvolume.c |   78 ++++-
- ctree.h          |   17 +
- man/btrfs.8.in   |    5 +-
- send-utils.c     |    7 +-
- 7 files changed, 786 insertions(+), 438 deletions(-)
+There should probably be some way to disable the progress bar (ideally
+defaulting to a istty check) so that log files don't capture hundreds
+if not thousands of lines of "[========          ]".

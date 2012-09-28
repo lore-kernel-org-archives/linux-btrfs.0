@@ -1,48 +1,81 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from acsinet15.oracle.com ([141.146.126.227]:49933 "EHLO
-	acsinet15.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1758043Ab2I1Myq (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Fri, 28 Sep 2012 08:54:46 -0400
-Received: from ucsinet21.oracle.com (ucsinet21.oracle.com [156.151.31.93])
-	by acsinet15.oracle.com (Sentrion-MTA-4.2.2/Sentrion-MTA-4.2.2) with ESMTP id q8SCshI4023506
-	(version=TLSv1/SSLv3 cipher=DHE-RSA-AES256-SHA bits=256 verify=OK)
-	for <linux-btrfs@vger.kernel.org>; Fri, 28 Sep 2012 12:54:44 GMT
-Received: from acsmt358.oracle.com (acsmt358.oracle.com [141.146.40.158])
-	by ucsinet21.oracle.com (8.14.4+Sun/8.14.4) with ESMTP id q8SCshF5027872
-	(version=TLSv1/SSLv3 cipher=DHE-RSA-AES256-SHA bits=256 verify=NO)
-	for <linux-btrfs@vger.kernel.org>; Fri, 28 Sep 2012 12:54:43 GMT
-Received: from abhmt101.oracle.com (abhmt101.oracle.com [141.146.116.53])
-	by acsmt358.oracle.com (8.12.11.20060308/8.12.11) with ESMTP id q8SCsgT2010750
-	for <linux-btrfs@vger.kernel.org>; Fri, 28 Sep 2012 07:54:42 -0500
-From: Anand jain <Anand.Jain@oracle.com>
-To: linux-btrfs@vger.kernel.org
-Subject: [PATCH] Btrfs-progs: put find_mount_root() in commands.h
-Date: Fri, 28 Sep 2012 20:57:35 +0800
-Message-Id: <1348837055-19608-1-git-send-email-Anand.Jain@oracle.com>
-In-Reply-To: <1348836993-19573-1-git-send-email-Anand.Jain@oracle.com>
-References: <1348836993-19573-1-git-send-email-Anand.Jain@oracle.com>
+Received: from mx2.fusionio.com ([66.114.96.31]:60994 "EHLO mx2.fusionio.com"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1756195Ab2I1PxF (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Fri, 28 Sep 2012 11:53:05 -0400
+Received: from mail1.int.fusionio.com (mail1.int.fusionio.com [10.101.1.21]) by mx2.fusionio.com with ESMTP id XHim3BZ9aY5bSWGi (version=TLSv1 cipher=AES128-SHA bits=128 verify=NO) for <linux-btrfs@vger.kernel.org>; Fri, 28 Sep 2012 09:53:03 -0600 (MDT)
+From: Josef Bacik <jbacik@fusionio.com>
+To: <linux-btrfs@vger.kernel.org>
+Subject: [PATCH] Btrfs: be smarter about dropping things from the tree log
+Date: Fri, 28 Sep 2012 11:58:34 -0400
+Message-ID: <1348847914-2192-1-git-send-email-jbacik@fusionio.com>
+MIME-Version: 1.0
+Content-Type: text/plain
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-From: Anand Jain <anand.jain@oracle.com>
+When we truncate existing items in the tree log we've been searching for
+each individual item and removing them.  This is unnecessary churn and
+searching, just keep track of the slot we are on and how many items we need
+to delete and delete them all at once.  Thanks,
 
-Signed-off-by: Anand Jain <anand.jain@oracle.com>
+Signed-off-by: Josef Bacik <jbacik@fusionio.com>
 ---
- commands.h |    3 +++
- 1 files changed, 3 insertions(+), 0 deletions(-)
+ fs/btrfs/tree-log.c |   16 ++++++++++++++--
+ 1 files changed, 14 insertions(+), 2 deletions(-)
 
-diff --git a/commands.h b/commands.h
-index bb6d2dd..eb9147a 100644
---- a/commands.h
-+++ b/commands.h
-@@ -106,3 +106,6 @@ int cmd_qgroup(int argc, char **argv);
+diff --git a/fs/btrfs/tree-log.c b/fs/btrfs/tree-log.c
+index 4e468a0..90e1c28 100644
+--- a/fs/btrfs/tree-log.c
++++ b/fs/btrfs/tree-log.c
+@@ -2872,12 +2872,15 @@ static int drop_objectid_items(struct btrfs_trans_handle *trans,
+ 	int ret;
+ 	struct btrfs_key key;
+ 	struct btrfs_key found_key;
++	int start_slot;
++	int del_nr = 0;
  
- /* subvolume exported functions */
- int test_issubvolume(char *path);
+ 	key.objectid = objectid;
+ 	key.type = max_key_type;
+ 	key.offset = (u64)-1;
+ 
+ 	while (1) {
++		del_nr = 0;
+ 		ret = btrfs_search_slot(trans, log, &key, path, -1, 1);
+ 		BUG_ON(ret == 0);
+ 		if (ret < 0)
+@@ -2885,20 +2888,29 @@ static int drop_objectid_items(struct btrfs_trans_handle *trans,
+ 
+ 		if (path->slots[0] == 0)
+ 			break;
+-
++next_slot:
+ 		path->slots[0]--;
 +
-+/* send.c */
-+int find_mount_root(const char *path, char **mount_root);
+ 		btrfs_item_key_to_cpu(path->nodes[0], &found_key,
+ 				      path->slots[0]);
+ 
+ 		if (found_key.objectid != objectid)
+ 			break;
+ 
+-		ret = btrfs_del_item(trans, log, path);
++		start_slot = path->slots[0];
++		del_nr++;
++		if (start_slot)
++			goto next_slot;
++
++		ret = btrfs_del_items(trans, log, path, start_slot, del_nr);
+ 		if (ret)
+ 			break;
+ 		btrfs_release_path(path);
+ 	}
++	if (!ret && del_nr)
++		ret = btrfs_del_items(trans, log, path, start_slot, del_nr);
+ 	btrfs_release_path(path);
++
+ 	if (ret > 0)
+ 		ret = 0;
+ 	return ret;
 -- 
-1.7.1
+1.7.7.6
 

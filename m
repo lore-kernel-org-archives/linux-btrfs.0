@@ -1,42 +1,60 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-da0-f46.google.com ([209.85.210.46]:58381 "EHLO
-	mail-da0-f46.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1756035Ab2IXOgs (ORCPT
+Received: from mail-pb0-f46.google.com ([209.85.160.46]:35711 "EHLO
+	mail-pb0-f46.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1755482Ab2I1DCu (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 24 Sep 2012 10:36:48 -0400
-Received: by dady13 with SMTP id y13so166427dad.19
-        for <linux-btrfs@vger.kernel.org>; Mon, 24 Sep 2012 07:36:47 -0700 (PDT)
-MIME-Version: 1.0
-In-Reply-To: <20120924120232.GB14582@twin.jikos.cz>
-References: <1348210448-29616-1-git-send-email-Anand.Jain@oracle.com>
-	<20120921152051.GU17430@twin.jikos.cz>
-	<505FCC96.8030703@oracle.com>
-	<20120924120232.GB14582@twin.jikos.cz>
-Date: Mon, 24 Sep 2012 08:36:47 -0600
-Message-ID: <CAE5mzvh7qx1m-6DhaNe5LH-JpFwUpNxtsC9VKM-deJ3GwFGn5g@mail.gmail.com>
-Subject: Re: [PATCH] Btrfs-progs: btrfs subvolume delete could delete subvolumes
-From: cwillu <cwillu@cwillu.com>
-To: dave@jikos.cz, Anand Jain <Anand.Jain@oracle.com>,
-        linux-btrfs@vger.kernel.org
-Content-Type: text/plain; charset=UTF-8
+	Thu, 27 Sep 2012 23:02:50 -0400
+Received: by pbbrr4 with SMTP id rr4so4493761pbb.19
+        for <linux-btrfs@vger.kernel.org>; Thu, 27 Sep 2012 20:02:50 -0700 (PDT)
+From: Robin Dong <robin.k.dong@gmail.com>
+To: linux-btrfs@vger.kernel.org
+Cc: Robin Dong <sanbai@taobao.com>
+Subject: [PATCH v2 2/2] btrfs-progs: limit the min value of total_bytes
+Date: Fri, 28 Sep 2012 11:02:40 +0800
+Message-Id: <1348801360-1851-2-git-send-email-robin.k.dong@gmail.com>
+In-Reply-To: <1348801360-1851-1-git-send-email-robin.k.dong@gmail.com>
+References: <1348801360-1851-1-git-send-email-robin.k.dong@gmail.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Mon, Sep 24, 2012 at 6:02 AM, David Sterba <dave@jikos.cz> wrote:
-> On Mon, Sep 24, 2012 at 10:59:34AM +0800, Anand Jain wrote:
->> > Yes, this is useful, thanks. I'm thinking if it's ok to stop on
->> > first error, ie. when the subvolume does not exist or is a directory.
->>
->>  I am fine with either ways. I shall just keep it as it is as of now.
->
-> Yes, I'm ok with that. The usecase I had in mind was something like
->
->   btrfs subvol del *
->
-> but I should know the dir I'm in and what I'm doing there, errors are
-> to be expected.
+From: Robin Dong <sanbai@taobao.com>
 
-For what it's worth, rmdir's behaviour is to continue after errors
-(i.e., "mkdir 1; mkdir 3; rmdir 1 2 3" deletes 1 and 3, and exits with
-a non-zero exit code); unless there's a good reason to do otherwise,
-matching that behaviour is probably best.
+Using mkfs.btrfs like:
+
+        mkfs.btrfs -b 1048576 /dev/sda
+
+will report error:
+
+	mkfs.btrfs: volumes.c:796: btrfs_alloc_chunk: Assertion `!(ret)' failed.
+	Aborted
+
+because the length of dev_extent is 4MB.
+
+But if we use mkfs.btrfs with 8MB total bytes, the newly mounted btrfs filesystem
+would not contain even one empty file. So 12MB will be good min-value for block_count.
+
+Signed-off-by: Robin Dong <sanbai@taobao.com>
+---
+ mkfs.c |    6 +++++-
+ 1 files changed, 5 insertions(+), 1 deletions(-)
+
+diff --git a/mkfs.c b/mkfs.c
+index 8420482..496faa8 100644
+--- a/mkfs.c
++++ b/mkfs.c
+@@ -1345,7 +1345,11 @@ int main(int ac, char **av)
+ 				&dev_block_count, &mixed, nodiscard);
+ 		if (block_count == 0)
+ 			block_count = dev_block_count;
+-		else if (block_count > dev_block_count) {
++		else if (block_count < 3 * BTRFS_MKFS_SYSTEM_GROUP_SIZE) {
++			fprintf(stderr, "Illegal total number of bytes %u\n",
++					block_count);
++			exit(1);
++		} else if (block_count > dev_block_count) {
+ 			fprintf(stderr, "%s is smaller than requested size\n", file);
+ 			exit(1);
+ 		}
+-- 
+1.7.3.2
+

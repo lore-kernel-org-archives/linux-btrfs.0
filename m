@@ -1,243 +1,135 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-pa0-f46.google.com ([209.85.220.46]:40417 "EHLO
-	mail-pa0-f46.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S964919Ab2I2BIR (ORCPT
+Received: from mail-da0-f46.google.com ([209.85.210.46]:57668 "EHLO
+	mail-da0-f46.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1752232Ab2I1ACP (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Fri, 28 Sep 2012 21:08:17 -0400
-Received: by padhz1 with SMTP id hz1so2716715pad.19
-        for <linux-btrfs@vger.kernel.org>; Fri, 28 Sep 2012 18:08:17 -0700 (PDT)
+	Thu, 27 Sep 2012 20:02:15 -0400
+Received: by dady13 with SMTP id y13so512431dad.19
+        for <linux-btrfs@vger.kernel.org>; Thu, 27 Sep 2012 17:02:14 -0700 (PDT)
 MIME-Version: 1.0
-In-Reply-To: <CAE5mzvj-rOzVfuhUsNjd5=GyZrN4W-gGJ-yqdSJFemAyC=8e=w@mail.gmail.com>
-References: <CAKZ=RP8V7J=vYerLGzavq5GBFmNtmyRYeautEoAyWqOud9b3Pw@mail.gmail.com>
-	<CAE5mzvj-rOzVfuhUsNjd5=GyZrN4W-gGJ-yqdSJFemAyC=8e=w@mail.gmail.com>
-Date: Sat, 29 Sep 2012 03:08:16 +0200
-Message-ID: <CAKZ=RP8KpCBUL=Q51rTp7WEPuqiXnxBXjXkjDLTCZgdMeHEumw@mail.gmail.com>
-Subject: Re: [PATCH] btrfs-convert: show progress
+Date: Fri, 28 Sep 2012 02:02:14 +0200
+Message-ID: <CAKZ=RP8V7J=vYerLGzavq5GBFmNtmyRYeautEoAyWqOud9b3Pw@mail.gmail.com>
+Subject: [PATCH] btrfs-convert: show progress
 From: Alfredo Esteban <aedelatorre@gmail.com>
-To: cwillu <cwillu@cwillu.com>, Linux Btrfs <linux-btrfs@vger.kernel.org>
-Content-Type: text/plain; charset=ISO-8859-1
+To: Linux Btrfs <linux-btrfs@vger.kernel.org>
+Content-Type: multipart/mixed; boundary=047d7b339bf1b0abe904cab7c409
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-2012/9/28 cwillu <cwillu@cwillu.com>
->
-> On Thu, Sep 27, 2012 at 6:02 PM, Alfredo Esteban <aedelatorre@gmail.com>
-> wrote:
-> > Hello,
-> >
-> > I'm sending a patch to show progress of btrfs-convert command. I put a
-> > progress bar in the only heavy process: the btrfs metadata creation
-> > (due to CRC calculation):
->
-> Please include patches inline in the email, not as an attachment.
->
+--047d7b339bf1b0abe904cab7c409
+Content-Type: text/plain; charset=ISO-8859-1
 
-Ok
+Hello,
 
-> >> ./btrfs-convert /dev/loop1
-> > Creating btrfs metadata
-> > [================================================] 100%
-> > Creating ext2fs image file... [DONE]
-> > Cleaning up system chunk... [DONE]
-> > Conversion complete.
-> >
-> > I just used "\r". I think it is a simple but effective approach
-> > without ncurses either other dependencies.
->
-> There should probably be some way to disable the progress bar (ideally
-> defaulting to a istty check) so that log files don't capture hundreds
-> if not thousands of lines of "[========          ]".
+I'm sending a patch to show progress of btrfs-convert command. I put a
+progress bar in the only heavy process: the btrfs metadata creation
+(due to CRC calculation):
 
-Here it is the new patch:
+> ./btrfs-convert /dev/loop1
+Creating btrfs metadata [================================================] 100%
+Creating ext2fs image file... [DONE]
+Cleaning up system chunk... [DONE]
+Conversion complete.
 
-diff --git a/convert.c b/convert.c
-index fa7bf8c..522b021 100644
---- a/convert.c
-+++ b/convert.c
-@@ -46,6 +46,22 @@
- #define STRIPE_LEN (64 * 1024)
- #define EXT2_IMAGE_SUBVOL_OBJECTID BTRFS_FIRST_FREE_OBJECTID
+I just used "\r". I think it is a simple but effective approach
+without ncurses either other dependencies.
 
-+#define PROGRESS_BAR_LENGTH 48
-+
-+typedef struct {
-+	__u32 inoinuse;
-+	__u32 inocopied;
-+	__u32 progressunit;
-+	__u32 halfprogunit;
-+	__u32 progressperc;
-+	int istty;
-+	int progress;
-+	int flagprint;
-+	float perc;
-+	char msg[128];
-+	char bar[256];
-+} progress_bar;
-+
- /*
-  * Open Ext2fs in readonly mode, read block allocation bitmap and
-  * inode bitmap into memory.
-@@ -1119,6 +1135,78 @@ fail:
- 		ret = -1;
- 	return ret;
- }
-+
-+/*
-+ * init values of progress bar.
-+ */
-+static void init_progress_bar(ext2_filsys ext2_fs, progress_bar *pb)
-+{
-+	int i;
-+	sprintf(pb->msg, "Creating btrfs metadata");
-+	
-+	if (isatty(fileno(stdout)) != 0)
-+		pb->istty = 1;
-+	else
-+		pb->istty = 0;
-+	pb->inoinuse = ext2_fs->super->s_inodes_count
-+		- ext2_fs->super->s_free_inodes_count;
-+	pb->inocopied = 0;
-+	pb->progressunit = pb->inoinuse / PROGRESS_BAR_LENGTH;
-+	pb->halfprogunit = (int)(pb->progressunit/2);
-+	pb->progressperc = pb->inoinuse / 100;
-+	pb->progress = 0;
-+	pb->flagprint = 0;
-+	pb->perc = 0;
-+	pb->bar[0] = '[';
-+	for (i = 1; i < PROGRESS_BAR_LENGTH+1; i++) pb->bar[i] = ' ';
-+	pb->bar[PROGRESS_BAR_LENGTH+1] = ']';
-+	pb->bar[PROGRESS_BAR_LENGTH+2] = '\0';
-+	if (pb->istty) {
-+		printf("\e[?25l"); // hide the cursor
-+		printf("\r%s %s %3d%% ", pb->msg, pb->bar, (int)pb->perc);
-+		fflush(stdout);
-+	}
-+}
-+
-+/*
-+ * show progress in bar.
-+ */
-+static void update_progress_bar(progress_bar *pb)
-+{
-+	pb->flagprint = 0;
-+	if (pb->inocopied % pb->progressunit == 0) {
-+		pb->flagprint = 1;
-+		pb->progress += 1;
-+		if (pb->progress < PROGRESS_BAR_LENGTH+1) pb->bar[pb->progress] = '=';
-+	} else if (pb->inocopied % pb->progressunit == pb->halfprogunit) {
-+		pb->flagprint = 1;
-+		if (pb->progress+1 < PROGRESS_BAR_LENGTH+1) pb->bar[pb->progress+1] = '-';
-+	}
-+	if (pb->inocopied % pb->progressperc == 0) {
-+		pb->flagprint = 1;
-+		pb->perc = ((float)pb->inocopied / (float)pb->inoinuse) * 100;
-+	}
-+	if (pb->flagprint) {
-+		printf("\r%s %s %3d%%", pb->msg, pb->bar, (int)pb->perc);
-+		fflush(stdout);
-+	}
-+}
-+
-+/*
-+ * show process is complete in progress bar.
-+ */
-+static void close_progress_bar(progress_bar *pb)
-+{
-+	pb->progress++;
-+	for (; pb->progress < PROGRESS_BAR_LENGTH+1; pb->progress++)
-pb->bar[pb->progress] = '=';
-+	if (pb->istty) {
-+		printf("\r%s %s 100%%\n", pb->msg, pb->bar);
-+		printf("\e[?25h"); // show the cursor
-+	} else
-+		printf("%s %s 100%%\n", pb->msg, pb->bar);
-+	fflush(stdout);
-+}
-+
- /*
-  * scan ext2's inode bitmap and copy all used inodes.
-  */
-@@ -1132,6 +1220,7 @@ static int copy_inodes(struct btrfs_root *root,
-ext2_filsys ext2_fs,
- 	ext2_ino_t ext2_ino;
- 	u64 objectid;
- 	struct btrfs_trans_handle *trans;
-+	progress_bar pb;
+Suggestions are welcome.
 
- 	trans = btrfs_start_transaction(root, 1);
- 	if (!trans)
-@@ -1141,6 +1230,8 @@ static int copy_inodes(struct btrfs_root *root,
-ext2_filsys ext2_fs,
- 		fprintf(stderr, "ext2fs_open_inode_scan: %s\n", error_message(err));
- 		return -1;
- 	}
-+	
-+	init_progress_bar(ext2_fs, &pb);
- 	while (!(err = ext2fs_get_next_inode(ext2_scan, &ext2_ino,
- 					     &ext2_inode))) {
- 		/* no more inodes */
-@@ -1163,13 +1254,19 @@ static int copy_inodes(struct btrfs_root
-*root, ext2_filsys ext2_fs,
- 			trans = btrfs_start_transaction(root, 1);
- 			BUG_ON(!trans);
- 		}
-+		if (pb.istty) {
-+			pb.inocopied += 1;
-+			update_progress_bar(&pb);
-+		}
- 	}
- 	if (err) {
-+		printf("\e[?25h"); // show the cursor
- 		fprintf(stderr, "ext2fs_get_next_inode: %s\n", error_message(err));
- 		return -1;
- 	}
- 	ret = btrfs_commit_transaction(trans, root);
- 	BUG_ON(ret);
-+	close_progress_bar(&pb);
+Alfredo
 
- 	return ret;
- }
-@@ -2347,13 +2444,13 @@ int do_convert(const char *devname, int
-datacsum, int packing, int noxattr)
- 		fprintf(stderr, "unable to setup the root tree\n");
- 		goto fail;
- 	}
--	printf("creating btrfs metadata.\n");
- 	ret = copy_inodes(root, ext2_fs, datacsum, packing, noxattr);
- 	if (ret) {
- 		fprintf(stderr, "error during copy_inodes %d\n", ret);
- 		goto fail;
- 	}
--	printf("creating ext2fs image file.\n");
-+	printf("Creating ext2fs image file...");
-+	fflush(stdout);
- 	ext2_root = link_subvol(root, "ext2_saved", EXT2_IMAGE_SUBVOL_OBJECTID);
- 	if (!ext2_root) {
- 		fprintf(stderr, "unable to create subvol\n");
-@@ -2364,7 +2461,9 @@ int do_convert(const char *devname, int
-datacsum, int packing, int noxattr)
- 		fprintf(stderr, "error during create_ext2_image %d\n", ret);
- 		goto fail;
- 	}
--	printf("cleaning up system chunk.\n");
-+	printf(" [DONE]\n");
-+	printf("Cleaning up system chunk...");
-+	fflush(stdout);
- 	ret = cleanup_sys_chunk(root, ext2_root);
- 	if (ret) {
- 		fprintf(stderr, "error during cleanup_sys_chunk %d\n", ret);
-@@ -2400,11 +2499,12 @@ int do_convert(const char *devname, int
-datacsum, int packing, int noxattr)
- 	}
- 	ret = close_ctree(root);
- 	close(fd);
-+	printf(" [DONE]\n");
+--047d7b339bf1b0abe904cab7c409
+Content-Type: application/octet-stream; name="convert-progress-bar.patch"
+Content-Disposition: attachment; filename="convert-progress-bar.patch"
+Content-Transfer-Encoding: base64
+X-Attachment-Id: f_h7miadnc0
 
--	printf("conversion complete.\n");
-+	printf("Conversion complete.\n");
- 	return 0;
- fail:
--	fprintf(stderr, "conversion aborted.\n");
-+	fprintf(stderr, "Conversion aborted.\n");
- 	return -1;
- }
+ZGlmZiAtLWdpdCBhL2NvbnZlcnQuYyBiL2NvbnZlcnQuYwppbmRleCBmYTdiZjhjLi5mMzg0ZWZk
+IDEwMDY0NAotLS0gYS9jb252ZXJ0LmMKKysrIGIvY29udmVydC5jCkBAIC00Niw2ICs0NiwyMSBA
+QAogI2RlZmluZSBTVFJJUEVfTEVOICg2NCAqIDEwMjQpCiAjZGVmaW5lIEVYVDJfSU1BR0VfU1VC
+Vk9MX09CSkVDVElEIEJUUkZTX0ZJUlNUX0ZSRUVfT0JKRUNUSUQKIAorI2RlZmluZSBQUk9HUkVT
+U19CQVJfTEVOR1RIIDQ4CisKK3R5cGVkZWYgc3RydWN0IHsKKwlfX3UzMiBpbm9pbnVzZTsKKwlf
+X3UzMiBpbm9jb3BpZWQ7CisJX191MzIgcHJvZ3Jlc3N1bml0OworCV9fdTMyIGhhbGZwcm9ndW5p
+dDsKKwlfX3UzMiBwcm9ncmVzc3BlcmM7CisJaW50IHByb2dyZXNzOworCWludCBmbGFncHJpbnQ7
+CisJZmxvYXQgcGVyYzsKKwljaGFyIG1zZ1sxMjhdOworCWNoYXIgYmFyWzI1Nl07Cit9IHByb2dy
+ZXNzX2JhcjsKKwogLyoKICAqIE9wZW4gRXh0MmZzIGluIHJlYWRvbmx5IG1vZGUsIHJlYWQgYmxv
+Y2sgYWxsb2NhdGlvbiBiaXRtYXAgYW5kCiAgKiBpbm9kZSBiaXRtYXAgaW50byBtZW1vcnkuCkBA
+IC0xMTE5LDYgKzExMzQsNjkgQEAgZmFpbDoKIAkJcmV0ID0gLTE7CiAJcmV0dXJuIHJldDsKIH0K
+KworLyoKKyAqIGluaXQgdmFsdWVzIG9mIHByb2dyZXNzIGJhci4KKyAqLworc3RhdGljIHZvaWQg
+aW5pdF9wcm9ncmVzc19iYXIoZXh0Ml9maWxzeXMgZXh0Ml9mcywgcHJvZ3Jlc3NfYmFyICpwYikK
+K3sKKwlpbnQgaTsKKwlzcHJpbnRmKHBiLT5tc2csICJDcmVhdGluZyBidHJmcyBtZXRhZGF0YSIp
+OworCQorCXBiLT5pbm9pbnVzZSA9IGV4dDJfZnMtPnN1cGVyLT5zX2lub2Rlc19jb3VudAorCQkt
+IGV4dDJfZnMtPnN1cGVyLT5zX2ZyZWVfaW5vZGVzX2NvdW50OworCXBiLT5pbm9jb3BpZWQgPSAw
+OworCXBiLT5wcm9ncmVzc3VuaXQgPSBwYi0+aW5vaW51c2UgLyBQUk9HUkVTU19CQVJfTEVOR1RI
+OworCXBiLT5oYWxmcHJvZ3VuaXQgPSAoaW50KShwYi0+cHJvZ3Jlc3N1bml0LzIpOworCXBiLT5w
+cm9ncmVzc3BlcmMgPSBwYi0+aW5vaW51c2UgLyAxMDA7CisJcGItPnByb2dyZXNzID0gMDsKKwlw
+Yi0+ZmxhZ3ByaW50ID0gMDsKKwlwYi0+cGVyYyA9IDA7CisJcGItPmJhclswXSA9ICdbJzsKKwlm
+b3IgKGkgPSAxOyBpIDwgUFJPR1JFU1NfQkFSX0xFTkdUSCsxOyBpKyspIHBiLT5iYXJbaV0gPSAn
+ICc7CisJcGItPmJhcltQUk9HUkVTU19CQVJfTEVOR1RIKzFdID0gJ10nOworCXBiLT5iYXJbUFJP
+R1JFU1NfQkFSX0xFTkdUSCsyXSA9ICdcMCc7CisJcHJpbnRmKCJcZVs/MjVsIik7IC8vIGhpZGUg
+dGhlIGN1cnNvcgorCXByaW50ZigiXHIlcyAlcyAlM2QlJSAiLCBwYi0+bXNnLCBwYi0+YmFyLCAo
+aW50KXBiLT5wZXJjKTsKKwlmZmx1c2goc3Rkb3V0KTsJCit9CisKKy8qCisgKiBzaG93IHByb2dy
+ZXNzIGluIGJhci4KKyAqLworc3RhdGljIHZvaWQgdXBkYXRlX3Byb2dyZXNzX2Jhcihwcm9ncmVz
+c19iYXIgKnBiKQoreworCXBiLT5mbGFncHJpbnQgPSAwOworCWlmIChwYi0+aW5vY29waWVkICUg
+cGItPnByb2dyZXNzdW5pdCA9PSAwKSB7CisJCXBiLT5mbGFncHJpbnQgPSAxOworCQlwYi0+cHJv
+Z3Jlc3MgKz0gMTsKKwkJaWYgKHBiLT5wcm9ncmVzcyA8IFBST0dSRVNTX0JBUl9MRU5HVEgrMSkg
+cGItPmJhcltwYi0+cHJvZ3Jlc3NdID0gJz0nOworCX0gZWxzZSBpZiAocGItPmlub2NvcGllZCAl
+IHBiLT5wcm9ncmVzc3VuaXQgPT0gcGItPmhhbGZwcm9ndW5pdCkgeworCQlwYi0+ZmxhZ3ByaW50
+ID0gMTsKKwkJaWYgKHBiLT5wcm9ncmVzcysxIDwgUFJPR1JFU1NfQkFSX0xFTkdUSCsxKSBwYi0+
+YmFyW3BiLT5wcm9ncmVzcysxXSA9ICctJzsKKwl9CisJaWYgKHBiLT5pbm9jb3BpZWQgJSBwYi0+
+cHJvZ3Jlc3NwZXJjID09IDApIHsKKwkJcGItPmZsYWdwcmludCA9IDE7CisJCXBiLT5wZXJjID0g
+KChmbG9hdClwYi0+aW5vY29waWVkIC8gKGZsb2F0KXBiLT5pbm9pbnVzZSkgKiAxMDA7CisJfQor
+CWlmIChwYi0+ZmxhZ3ByaW50KSB7CisJCXByaW50ZigiXHIlcyAlcyAlM2QlJSIsIHBiLT5tc2cs
+IHBiLT5iYXIsIChpbnQpcGItPnBlcmMpOworCQlmZmx1c2goc3Rkb3V0KTsKKwl9Cit9CisKKy8q
+CisgKiBzaG93IHByb2Nlc3MgaXMgY29tcGxldGUgaW4gcHJvZ3Jlc3MgYmFyLgorICovCitzdGF0
+aWMgdm9pZCBjbG9zZV9wcm9ncmVzc19iYXIocHJvZ3Jlc3NfYmFyICpwYikKK3sKKwlwYi0+cHJv
+Z3Jlc3MrKzsKKwlmb3IgKDsgcGItPnByb2dyZXNzIDwgUFJPR1JFU1NfQkFSX0xFTkdUSCsxOyBw
+Yi0+cHJvZ3Jlc3MrKykgcGItPmJhcltwYi0+cHJvZ3Jlc3NdID0gJz0nOworCXByaW50ZigiXHIl
+cyAlcyAxMDAlJVxuIiwgcGItPm1zZywgcGItPmJhcik7CisJcHJpbnRmKCJcZVs/MjVoIik7IC8v
+IHNob3cgdGhlIGN1cnNvcgorCWZmbHVzaChzdGRvdXQpOworfQorCiAvKgogICogc2NhbiBleHQy
+J3MgaW5vZGUgYml0bWFwIGFuZCBjb3B5IGFsbCB1c2VkIGlub2Rlcy4KICAqLwpAQCAtMTEzMiw2
+ICsxMjEwLDcgQEAgc3RhdGljIGludCBjb3B5X2lub2RlcyhzdHJ1Y3QgYnRyZnNfcm9vdCAqcm9v
+dCwgZXh0Ml9maWxzeXMgZXh0Ml9mcywKIAlleHQyX2lub190IGV4dDJfaW5vOwogCXU2NCBvYmpl
+Y3RpZDsKIAlzdHJ1Y3QgYnRyZnNfdHJhbnNfaGFuZGxlICp0cmFuczsKKwlwcm9ncmVzc19iYXIg
+cGI7CiAKIAl0cmFucyA9IGJ0cmZzX3N0YXJ0X3RyYW5zYWN0aW9uKHJvb3QsIDEpOwogCWlmICgh
+dHJhbnMpCkBAIC0xMTQxLDYgKzEyMjAsOCBAQCBzdGF0aWMgaW50IGNvcHlfaW5vZGVzKHN0cnVj
+dCBidHJmc19yb290ICpyb290LCBleHQyX2ZpbHN5cyBleHQyX2ZzLAogCQlmcHJpbnRmKHN0ZGVy
+ciwgImV4dDJmc19vcGVuX2lub2RlX3NjYW46ICVzXG4iLCBlcnJvcl9tZXNzYWdlKGVycikpOwog
+CQlyZXR1cm4gLTE7CiAJfQorCQorCWluaXRfcHJvZ3Jlc3NfYmFyKGV4dDJfZnMsICZwYik7CiAJ
+d2hpbGUgKCEoZXJyID0gZXh0MmZzX2dldF9uZXh0X2lub2RlKGV4dDJfc2NhbiwgJmV4dDJfaW5v
+LAogCQkJCQkgICAgICZleHQyX2lub2RlKSkpIHsKIAkJLyogbm8gbW9yZSBpbm9kZXMgKi8KQEAg
+LTExNjMsMTMgKzEyNDQsMTcgQEAgc3RhdGljIGludCBjb3B5X2lub2RlcyhzdHJ1Y3QgYnRyZnNf
+cm9vdCAqcm9vdCwgZXh0Ml9maWxzeXMgZXh0Ml9mcywKIAkJCXRyYW5zID0gYnRyZnNfc3RhcnRf
+dHJhbnNhY3Rpb24ocm9vdCwgMSk7CiAJCQlCVUdfT04oIXRyYW5zKTsKIAkJfQorCQlwYi5pbm9j
+b3BpZWQgKz0gMTsKKwkJdXBkYXRlX3Byb2dyZXNzX2JhcigmcGIpOwogCX0KIAlpZiAoZXJyKSB7
+CisJCXByaW50ZigiXGVbPzI1aCIpOyAvLyBzaG93IHRoZSBjdXJzb3IKIAkJZnByaW50ZihzdGRl
+cnIsICJleHQyZnNfZ2V0X25leHRfaW5vZGU6ICVzXG4iLCBlcnJvcl9tZXNzYWdlKGVycikpOwog
+CQlyZXR1cm4gLTE7CiAJfQogCXJldCA9IGJ0cmZzX2NvbW1pdF90cmFuc2FjdGlvbih0cmFucywg
+cm9vdCk7CiAJQlVHX09OKHJldCk7CisJY2xvc2VfcHJvZ3Jlc3NfYmFyKCZwYik7CiAKIAlyZXR1
+cm4gcmV0OwogfQpAQCAtMjM0NywxMyArMjQzMiwxNCBAQCBpbnQgZG9fY29udmVydChjb25zdCBj
+aGFyICpkZXZuYW1lLCBpbnQgZGF0YWNzdW0sIGludCBwYWNraW5nLCBpbnQgbm94YXR0cikKIAkJ
+ZnByaW50ZihzdGRlcnIsICJ1bmFibGUgdG8gc2V0dXAgdGhlIHJvb3QgdHJlZVxuIik7CiAJCWdv
+dG8gZmFpbDsKIAl9Ci0JcHJpbnRmKCJjcmVhdGluZyBidHJmcyBtZXRhZGF0YS5cbiIpOworCXBy
+aW50ZigiQ3JlYXRpbmcgYnRyZnMgbWV0YWRhdGEuLi4iKTsKIAlyZXQgPSBjb3B5X2lub2Rlcyhy
+b290LCBleHQyX2ZzLCBkYXRhY3N1bSwgcGFja2luZywgbm94YXR0cik7CiAJaWYgKHJldCkgewog
+CQlmcHJpbnRmKHN0ZGVyciwgImVycm9yIGR1cmluZyBjb3B5X2lub2RlcyAlZFxuIiwgcmV0KTsK
+IAkJZ290byBmYWlsOwogCX0KLQlwcmludGYoImNyZWF0aW5nIGV4dDJmcyBpbWFnZSBmaWxlLlxu
+Iik7CisJcHJpbnRmKCJDcmVhdGluZyBleHQyZnMgaW1hZ2UgZmlsZS4uLiIpOworCWZmbHVzaChz
+dGRvdXQpOwogCWV4dDJfcm9vdCA9IGxpbmtfc3Vidm9sKHJvb3QsICJleHQyX3NhdmVkIiwgRVhU
+Ml9JTUFHRV9TVUJWT0xfT0JKRUNUSUQpOwogCWlmICghZXh0Ml9yb290KSB7CiAJCWZwcmludGYo
+c3RkZXJyLCAidW5hYmxlIHRvIGNyZWF0ZSBzdWJ2b2xcbiIpOwpAQCAtMjM2NCw3ICsyNDUwLDkg
+QEAgaW50IGRvX2NvbnZlcnQoY29uc3QgY2hhciAqZGV2bmFtZSwgaW50IGRhdGFjc3VtLCBpbnQg
+cGFja2luZywgaW50IG5veGF0dHIpCiAJCWZwcmludGYoc3RkZXJyLCAiZXJyb3IgZHVyaW5nIGNy
+ZWF0ZV9leHQyX2ltYWdlICVkXG4iLCByZXQpOwogCQlnb3RvIGZhaWw7CiAJfQotCXByaW50Zigi
+Y2xlYW5pbmcgdXAgc3lzdGVtIGNodW5rLlxuIik7CisJcHJpbnRmKCIgW0RPTkVdXG4iKTsKKwlw
+cmludGYoIkNsZWFuaW5nIHVwIHN5c3RlbSBjaHVuay4uLiIpOworCWZmbHVzaChzdGRvdXQpOwog
+CXJldCA9IGNsZWFudXBfc3lzX2NodW5rKHJvb3QsIGV4dDJfcm9vdCk7CiAJaWYgKHJldCkgewog
+CQlmcHJpbnRmKHN0ZGVyciwgImVycm9yIGR1cmluZyBjbGVhbnVwX3N5c19jaHVuayAlZFxuIiwg
+cmV0KTsKQEAgLTI0MDAsMTEgKzI0ODgsMTIgQEAgaW50IGRvX2NvbnZlcnQoY29uc3QgY2hhciAq
+ZGV2bmFtZSwgaW50IGRhdGFjc3VtLCBpbnQgcGFja2luZywgaW50IG5veGF0dHIpCiAJfQogCXJl
+dCA9IGNsb3NlX2N0cmVlKHJvb3QpOwogCWNsb3NlKGZkKTsKKwlwcmludGYoIiBbRE9ORV1cbiIp
+OwogCi0JcHJpbnRmKCJjb252ZXJzaW9uIGNvbXBsZXRlLlxuIik7CisJcHJpbnRmKCJDb252ZXJz
+aW9uIGNvbXBsZXRlLlxuIik7CiAJcmV0dXJuIDA7CiBmYWlsOgotCWZwcmludGYoc3RkZXJyLCAi
+Y29udmVyc2lvbiBhYm9ydGVkLlxuIik7CisJZnByaW50ZihzdGRlcnIsICJDb252ZXJzaW9uIGFi
+b3J0ZWQuXG4iKTsKIAlyZXR1cm4gLTE7CiB9CiAK
+--047d7b339bf1b0abe904cab7c409--

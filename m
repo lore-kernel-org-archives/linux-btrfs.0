@@ -1,148 +1,119 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from frost.carfax.org.uk ([85.119.82.111]:40873 "EHLO
-	frost.carfax.org.uk" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1752352Ab2I1I6r (ORCPT
+Received: from acsinet15.oracle.com ([141.146.126.227]:49320 "EHLO
+	acsinet15.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1754973Ab2I1Mxn (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Fri, 28 Sep 2012 04:58:47 -0400
-Date: Fri, 28 Sep 2012 09:58:40 +0100
-From: Hugo Mills <hugo@carfax.org.uk>
-To: Roman Mamedov <rm@romanrm.ru>
-Cc: kreijack@inwind.it, kreijack@libero.it,
-        =?iso-8859-1?Q?S=E9bastien?= Maury <sebastien.maury@inserm.fr>,
-        linux-btrfs@vger.kernel.org
-Subject: Re: [RFC] btrfs fi df output [Was Re: BTRF - Storage Usage]
-Message-ID: <20120928085840.GE6136@carfax.org.uk>
-References: <20120927124427.6014ddq7wg88cc0o@imp.inserm.fr>
- <5064B96B.7060502@libero.it>
- <5064BEEB.1090707@libero.it>
- <20120928091759.6d096016@natsu>
-MIME-Version: 1.0
-Content-Type: multipart/signed; micalg=pgp-sha1;
-	protocol="application/pgp-signature"; boundary="qOrJKOH36bD5yhNe"
-In-Reply-To: <20120928091759.6d096016@natsu>
+	Fri, 28 Sep 2012 08:53:43 -0400
+Received: from acsinet22.oracle.com (acsinet22.oracle.com [141.146.126.238])
+	by acsinet15.oracle.com (Sentrion-MTA-4.2.2/Sentrion-MTA-4.2.2) with ESMTP id q8SCrfiS022484
+	(version=TLSv1/SSLv3 cipher=DHE-RSA-AES256-SHA bits=256 verify=OK)
+	for <linux-btrfs@vger.kernel.org>; Fri, 28 Sep 2012 12:53:41 GMT
+Received: from acsmt357.oracle.com (acsmt357.oracle.com [141.146.40.157])
+	by acsinet22.oracle.com (8.14.4+Sun/8.14.4) with ESMTP id q8SCreXt010868
+	(version=TLSv1/SSLv3 cipher=DHE-RSA-AES256-SHA bits=256 verify=NO)
+	for <linux-btrfs@vger.kernel.org>; Fri, 28 Sep 2012 12:53:41 GMT
+Received: from abhmt113.oracle.com (abhmt113.oracle.com [141.146.116.65])
+	by acsmt357.oracle.com (8.12.11.20060308/8.12.11) with ESMTP id q8SCreJO000501
+	for <linux-btrfs@vger.kernel.org>; Fri, 28 Sep 2012 07:53:40 -0500
+From: Anand jain <Anand.Jain@oracle.com>
+To: linux-btrfs@vger.kernel.org
+Subject: [PATCH] Btrfs-progs: end user may like full path for the subvol list display
+Date: Fri, 28 Sep 2012 20:56:33 +0800
+Message-Id: <1348836993-19573-1-git-send-email-Anand.Jain@oracle.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
+From: Anand Jain <anand.jain@oracle.com>
 
---qOrJKOH36bD5yhNe
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
+Signed-off-by: Anand Jain <anand.jain@oracle.com>
+---
+ btrfs-list.c     |   10 +++++-----
+ cmds-subvolume.c |   12 +++++++++---
+ 2 files changed, 14 insertions(+), 8 deletions(-)
 
-On Fri, Sep 28, 2012 at 09:17:59AM +0600, Roman Mamedov wrote:
-> On Thu, 27 Sep 2012 23:02:35 +0200
-> Goffredo Baroncelli <kreijack@libero.it> wrote:
-> 
-> > Sorry for the space error:
-> > Below a more correct example
-> > 
-> > $ btrfs filesystem disk-free /
-> > Summary:
-> >     Total:             	        135.00GB
-> >     Allocated:             	 10.51GB
-> >     Unallocated:            	124.49GB
-> >     Free_(Estimated)              86.56GB
-> >     Average_disk_efficiency:         62 %
-> 
-> How do you estimate "Free" here? Sorry I didn't check the source code in git,
-> but from the "Details" below nothing leads me to believe that this FS is
-> doomed to only be able to usefully utilize only ~86GB of the partition, and not
-> more.
-> 
-> Are you ready to answer the flood of questions from people why their disk is
-> only 62% efficient, and how to tune it to 100%? :-)
-
-   Data_to_disk_ratio, maybe?
-
-> Why use underscores instead of spaces?
-
-   So that you can use, say, "read" in the shell to extract data from
-each line. To that end, there should be a space between the value and
-the unit throughout.
-
-> > Details:
-> >     Chunk-type    Mode       Allocated        Used        Free
-> >     ----------    ----       ---------    --------   ---------
-
-   Minor thing: The underlines are largely superfluous. Few basic CL
-tools I can think of use them.
-
-> >     Data          Single        4.01GB      2.16GB      1.87GB
-> >     System        DUP          16.00MB      4.00KB      7.99MB
-> >     System        Single        4.00MB        0.00      4.00MB
-> >     Metadata      DUP           6.00GB    429.16MB      2.57GB
-> >     Metadata      Single        8.00MB        0.00      8.00MB
-
-   I think we need another column here, to indicate how much *actual*
-disk space is used by each row, so adding up that column will give you
-the "Allocated" value in the first clause. I think that's probably the
-biggest cause of confusion. "Raw alloc.", maybe, and use the term
-"raw" somewhere in the first clause to hammer the point home.
-
-   My only concern here is that we're a bit too close to the existing
-solution (albeit merging the two sets of output), which has proven
-itself over time to be somewhat confusing. I think the Alloc_Raw
-column is the minimum necessary to link the two in some easily
-determinable way. Adding totals to Alloc_Raw, and Used (but not Free
-or Alloc) would help, I think. I don't think it's useful to add them
-to the Free or Alloc columns, because those figures change as the FS
-allocates chunks, and we'll end up with people querying the fact that
-the total of Free doesn't add up to any of the figures in the
-summary.
-
-   Say, something like this:
-
-Summary_(Raw):
-  Total:                    135.00 GiB
-  Allocated:            	 10.51 GiB
-  Unallocated:            	124.49 GiB
-  Free_(Estimated):          86.56 GiB
-  Average_disk_efficiency:      62 %
-
-Details:
-  Chunk_type  Mode    Alloc_Raw  Alloc      Used        Free
-  Data        Single   4.01 GiB   4.01 GiB    2.16 GiB  1.87 GiB
-  System      DUP     32.00 MiB  16.00 MiB    4.00 KiB  7.99 MiB
-  System      Single   4.00 MiB   4.00 MiB    0.00 B    4.00 MiB
-  Metadata    DUP     12.00 GiB   6.00 GiB  429.16 MiB  2.57 GiB
-  Metadata    Single   8.00 MiB   8.00 MiB    0.00 B    8.00 MiB
-  Total               16.04 GiB               2.59 GiB
-
-   The other thing is that there should be a switch (or possibly two)
-to give highly machine-readable versions of the output -- no units
-(units as bytes by default, with other units settable by a switch),
-tab-separated, possibly a different option for each of the above
-output clauses.
-
-   Ultimately, I think the bikeshed should be turquoise.
-
-   Hugo.
-
+diff --git a/btrfs-list.c b/btrfs-list.c
+index c53d016..9191b7c 100644
+--- a/btrfs-list.c
++++ b/btrfs-list.c
+@@ -719,7 +719,7 @@ static int __list_subvol_fill_paths(int fd, struct root_lookup *root_lookup)
+ 	return 0;
+ }
+ 
+-int list_subvols(int fd, int print_parent, int get_default)
++int list_subvols(int fd, int print_parent, int get_default, char *mntp)
+ {
+ 	struct root_lookup root_lookup;
+ 	struct rb_node *n;
+@@ -779,14 +779,14 @@ int list_subvols(int fd, int print_parent, int get_default)
+ 
+ 		resolve_root(&root_lookup, entry, &parent_id, &level, &path);
+ 		if (print_parent) {
+-			printf("ID %llu parent %llu top level %llu path %s\n",
++			printf("ID %llu parent %llu top level %llu path %s/%s\n",
+ 				(unsigned long long)entry->root_id,
+ 				(unsigned long long)parent_id,
+-				(unsigned long long)level, path);
++				(unsigned long long)level, mntp, path);
+ 		} else {
+-			printf("ID %llu top level %llu path %s\n",
++			printf("ID %llu top level %llu path %s/%s\n",
+ 				(unsigned long long)entry->root_id,
+-				(unsigned long long)level, path);
++				(unsigned long long)level, mntp, path);
+ 		}
+ 
+ 		free(path);
+diff --git a/cmds-subvolume.c b/cmds-subvolume.c
+index f4aa80f..0725d2d 100644
+--- a/cmds-subvolume.c
++++ b/cmds-subvolume.c
+@@ -31,7 +31,7 @@
+ #include "commands.h"
+ 
+ /* btrfs-list.c */
+-int list_subvols(int fd, int print_parent, int get_default);
++int list_subvols(int fd, int print_parent, int get_default, char *mntp);
+ int find_updated_files(int fd, u64 root_id, u64 oldest_gen);
+ 
+ static const char * const subvolume_cmd_group_usage[] = {
+@@ -274,6 +274,7 @@ static int cmd_subvol_list(int argc, char **argv)
+ 	int ret;
+ 	int print_parent = 0;
+ 	char *subvol;
++	char *mntp = NULL;
+ 
+ 	optind = 1;
+ 	while(1) {
+@@ -310,7 +311,9 @@ static int cmd_subvol_list(int argc, char **argv)
+ 		fprintf(stderr, "ERROR: can't access '%s'\n", subvol);
+ 		return 12;
+ 	}
+-	ret = list_subvols(fd, print_parent, 0);
++	find_mount_root(subvol, &mntp);
++	ret = list_subvols(fd, print_parent, 0, mntp);
++	free(mntp);
+ 	if (ret)
+ 		return 19;
+ 	return 0;
+@@ -470,6 +473,7 @@ static int cmd_subvol_get_default(int argc, char **argv)
+ 	int fd;
+ 	int ret;
+ 	char *subvol;
++	char *mntp = NULL;
+ 
+ 	if (check_argc_exact(argc, 2))
+ 		usage(cmd_subvol_get_default_usage);
+@@ -491,7 +495,9 @@ static int cmd_subvol_get_default(int argc, char **argv)
+ 		fprintf(stderr, "ERROR: can't access '%s'\n", subvol);
+ 		return 12;
+ 	}
+-	ret = list_subvols(fd, 0, 1);
++	find_mount_root(subvol, &mntp);
++	ret = list_subvols(fd, 0, 1, mntp);
++	free(mntp);
+ 	if (ret)
+ 		return 19;
+ 	return 0;
 -- 
-=== Hugo Mills: hugo@... carfax.org.uk | darksatanic.net | lug.org.uk ===
-  PGP key: 515C238D from wwwkeys.eu.pgp.net or http://www.carfax.org.uk
-              --- Python is executable pseudocode; perl ---              
-                        is executable line-noise.                        
+1.7.1
 
---qOrJKOH36bD5yhNe
-Content-Type: application/pgp-signature; name="signature.asc"
-Content-Description: Digital signature
-
------BEGIN PGP SIGNATURE-----
-Version: GnuPG v1.4.12 (GNU/Linux)
-
-iQIVAwUBUGVmv79z9OVl50rAAQLibw/+J/LlGXN/MUlWWacPeZxECFQeiHReHdw1
-ISfrCjn/9Lm3DX32WeYLwLwlK6RSdbmsZrOXhrEEzfGxWXjl571CGfTTTgUYULc1
-dk5Xoyx20DH+3N/EBzas6gAZm066f/uPeAsneMASSqrzqxUksIE3c8U8pAQ/IUlh
-8/qM6ZN+k3SWwcSTnbAOIGMad0VppJB0N3vfSLSaniAhmDulWrkS0VLPw3nUTtfR
-CbY9faAAaS8MkQwzmXNkFQnkgJmUgk99Oe/vzAwol/7mwuHsW/ETEGx+d8lpW9bj
-btYVE/lz79SuHAJRm8NqmFaExwz+QzMtNWWHG4l6Q7gvuGtAnTCG4O3tHc6GwbnE
-hDPt1JAF7WNeOJTskiRYqNl1rFHr84K8IAz4u1uqYWRWnGaIpCJcv0Kuv1sU4mkx
-kl+1aqgVhfWGwKvHQ2T7iJ26rp2QQVUa+lVn6YmJNWedyYTWgpGGt+alt3AS0pQw
-4WbzmMHQd3sLgwWaxNBslYzV3NFgjmxOIt4gdMPFYApwWtGM0HUgSIczpcRLMnIT
-yU/MXjMx46jD2egBLUSw3txCkjwjBEa4jdu8yikH0G7SPRy6WOLA35imyWu91zvx
-WnGK8CvkWB24QaBXua8Qo2X4s7qQAxg9oXjzxdVDCLModKXdPbBN5mC/v6ExXrzn
-addVsg+77so=
-=Rt9c
------END PGP SIGNATURE-----
-
---qOrJKOH36bD5yhNe--

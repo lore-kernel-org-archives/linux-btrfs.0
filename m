@@ -1,25 +1,27 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from acsinet15.oracle.com ([141.146.126.227]:49320 "EHLO
+Received: from acsinet15.oracle.com ([141.146.126.227]:49933 "EHLO
 	acsinet15.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1754973Ab2I1Mxn (ORCPT
+	with ESMTP id S1758043Ab2I1Myq (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Fri, 28 Sep 2012 08:53:43 -0400
-Received: from acsinet22.oracle.com (acsinet22.oracle.com [141.146.126.238])
-	by acsinet15.oracle.com (Sentrion-MTA-4.2.2/Sentrion-MTA-4.2.2) with ESMTP id q8SCrfiS022484
+	Fri, 28 Sep 2012 08:54:46 -0400
+Received: from ucsinet21.oracle.com (ucsinet21.oracle.com [156.151.31.93])
+	by acsinet15.oracle.com (Sentrion-MTA-4.2.2/Sentrion-MTA-4.2.2) with ESMTP id q8SCshI4023506
 	(version=TLSv1/SSLv3 cipher=DHE-RSA-AES256-SHA bits=256 verify=OK)
-	for <linux-btrfs@vger.kernel.org>; Fri, 28 Sep 2012 12:53:41 GMT
-Received: from acsmt357.oracle.com (acsmt357.oracle.com [141.146.40.157])
-	by acsinet22.oracle.com (8.14.4+Sun/8.14.4) with ESMTP id q8SCreXt010868
+	for <linux-btrfs@vger.kernel.org>; Fri, 28 Sep 2012 12:54:44 GMT
+Received: from acsmt358.oracle.com (acsmt358.oracle.com [141.146.40.158])
+	by ucsinet21.oracle.com (8.14.4+Sun/8.14.4) with ESMTP id q8SCshF5027872
 	(version=TLSv1/SSLv3 cipher=DHE-RSA-AES256-SHA bits=256 verify=NO)
-	for <linux-btrfs@vger.kernel.org>; Fri, 28 Sep 2012 12:53:41 GMT
-Received: from abhmt113.oracle.com (abhmt113.oracle.com [141.146.116.65])
-	by acsmt357.oracle.com (8.12.11.20060308/8.12.11) with ESMTP id q8SCreJO000501
-	for <linux-btrfs@vger.kernel.org>; Fri, 28 Sep 2012 07:53:40 -0500
+	for <linux-btrfs@vger.kernel.org>; Fri, 28 Sep 2012 12:54:43 GMT
+Received: from abhmt101.oracle.com (abhmt101.oracle.com [141.146.116.53])
+	by acsmt358.oracle.com (8.12.11.20060308/8.12.11) with ESMTP id q8SCsgT2010750
+	for <linux-btrfs@vger.kernel.org>; Fri, 28 Sep 2012 07:54:42 -0500
 From: Anand jain <Anand.Jain@oracle.com>
 To: linux-btrfs@vger.kernel.org
-Subject: [PATCH] Btrfs-progs: end user may like full path for the subvol list display
-Date: Fri, 28 Sep 2012 20:56:33 +0800
-Message-Id: <1348836993-19573-1-git-send-email-Anand.Jain@oracle.com>
+Subject: [PATCH] Btrfs-progs: put find_mount_root() in commands.h
+Date: Fri, 28 Sep 2012 20:57:35 +0800
+Message-Id: <1348837055-19608-1-git-send-email-Anand.Jain@oracle.com>
+In-Reply-To: <1348836993-19573-1-git-send-email-Anand.Jain@oracle.com>
+References: <1348836993-19573-1-git-send-email-Anand.Jain@oracle.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
@@ -27,93 +29,20 @@ From: Anand Jain <anand.jain@oracle.com>
 
 Signed-off-by: Anand Jain <anand.jain@oracle.com>
 ---
- btrfs-list.c     |   10 +++++-----
- cmds-subvolume.c |   12 +++++++++---
- 2 files changed, 14 insertions(+), 8 deletions(-)
+ commands.h |    3 +++
+ 1 files changed, 3 insertions(+), 0 deletions(-)
 
-diff --git a/btrfs-list.c b/btrfs-list.c
-index c53d016..9191b7c 100644
---- a/btrfs-list.c
-+++ b/btrfs-list.c
-@@ -719,7 +719,7 @@ static int __list_subvol_fill_paths(int fd, struct root_lookup *root_lookup)
- 	return 0;
- }
+diff --git a/commands.h b/commands.h
+index bb6d2dd..eb9147a 100644
+--- a/commands.h
++++ b/commands.h
+@@ -106,3 +106,6 @@ int cmd_qgroup(int argc, char **argv);
  
--int list_subvols(int fd, int print_parent, int get_default)
-+int list_subvols(int fd, int print_parent, int get_default, char *mntp)
- {
- 	struct root_lookup root_lookup;
- 	struct rb_node *n;
-@@ -779,14 +779,14 @@ int list_subvols(int fd, int print_parent, int get_default)
- 
- 		resolve_root(&root_lookup, entry, &parent_id, &level, &path);
- 		if (print_parent) {
--			printf("ID %llu parent %llu top level %llu path %s\n",
-+			printf("ID %llu parent %llu top level %llu path %s/%s\n",
- 				(unsigned long long)entry->root_id,
- 				(unsigned long long)parent_id,
--				(unsigned long long)level, path);
-+				(unsigned long long)level, mntp, path);
- 		} else {
--			printf("ID %llu top level %llu path %s\n",
-+			printf("ID %llu top level %llu path %s/%s\n",
- 				(unsigned long long)entry->root_id,
--				(unsigned long long)level, path);
-+				(unsigned long long)level, mntp, path);
- 		}
- 
- 		free(path);
-diff --git a/cmds-subvolume.c b/cmds-subvolume.c
-index f4aa80f..0725d2d 100644
---- a/cmds-subvolume.c
-+++ b/cmds-subvolume.c
-@@ -31,7 +31,7 @@
- #include "commands.h"
- 
- /* btrfs-list.c */
--int list_subvols(int fd, int print_parent, int get_default);
-+int list_subvols(int fd, int print_parent, int get_default, char *mntp);
- int find_updated_files(int fd, u64 root_id, u64 oldest_gen);
- 
- static const char * const subvolume_cmd_group_usage[] = {
-@@ -274,6 +274,7 @@ static int cmd_subvol_list(int argc, char **argv)
- 	int ret;
- 	int print_parent = 0;
- 	char *subvol;
-+	char *mntp = NULL;
- 
- 	optind = 1;
- 	while(1) {
-@@ -310,7 +311,9 @@ static int cmd_subvol_list(int argc, char **argv)
- 		fprintf(stderr, "ERROR: can't access '%s'\n", subvol);
- 		return 12;
- 	}
--	ret = list_subvols(fd, print_parent, 0);
-+	find_mount_root(subvol, &mntp);
-+	ret = list_subvols(fd, print_parent, 0, mntp);
-+	free(mntp);
- 	if (ret)
- 		return 19;
- 	return 0;
-@@ -470,6 +473,7 @@ static int cmd_subvol_get_default(int argc, char **argv)
- 	int fd;
- 	int ret;
- 	char *subvol;
-+	char *mntp = NULL;
- 
- 	if (check_argc_exact(argc, 2))
- 		usage(cmd_subvol_get_default_usage);
-@@ -491,7 +495,9 @@ static int cmd_subvol_get_default(int argc, char **argv)
- 		fprintf(stderr, "ERROR: can't access '%s'\n", subvol);
- 		return 12;
- 	}
--	ret = list_subvols(fd, 0, 1);
-+	find_mount_root(subvol, &mntp);
-+	ret = list_subvols(fd, 0, 1, mntp);
-+	free(mntp);
- 	if (ret)
- 		return 19;
- 	return 0;
+ /* subvolume exported functions */
+ int test_issubvolume(char *path);
++
++/* send.c */
++int find_mount_root(const char *path, char **mount_root);
 -- 
 1.7.1
 

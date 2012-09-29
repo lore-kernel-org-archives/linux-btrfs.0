@@ -1,85 +1,87 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-bk0-f46.google.com ([209.85.214.46]:61177 "EHLO
-	mail-bk0-f46.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1757182Ab2I2HTj (ORCPT
+Received: from mail-da0-f46.google.com ([209.85.210.46]:58222 "EHLO
+	mail-da0-f46.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1755259Ab2I2IH6 (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Sat, 29 Sep 2012 03:19:39 -0400
-Received: by bkcjk13 with SMTP id jk13so4012079bkc.19
-        for <linux-btrfs@vger.kernel.org>; Sat, 29 Sep 2012 00:19:38 -0700 (PDT)
-Message-ID: <5066A11C.5080106@gmail.com>
-Date: Sat, 29 Sep 2012 09:19:56 +0200
-From: Goffredo Baroncelli <kreijack@gmail.com>
-MIME-Version: 1.0
-To: Hugo Mills <hugo@carfax.org.uk>, Roman Mamedov <rm@romanrm.ru>,
-        =?ISO-8859-1?Q?S=E9bastien_Maury?= <sebastien.maury@inserm.fr>,
-        linux-btrfs@vger.kernel.org
-Subject: Re: [RFC] btrfs fi df output [Was Re: BTRF - Storage Usage]
-References: <20120927124427.6014ddq7wg88cc0o@imp.inserm.fr> <5064B96B.7060502@libero.it> <5064BEEB.1090707@libero.it> <20120928091759.6d096016@natsu> <20120928085840.GE6136@carfax.org.uk> <5065DDF4.8010907@gmail.com> <20120928201332.GF6136@carfax.org.uk>
-In-Reply-To: <20120928201332.GF6136@carfax.org.uk>
-Content-Type: text/plain; charset=ISO-8859-1; format=flowed
+	Sat, 29 Sep 2012 04:07:58 -0400
+Received: by dady13 with SMTP id y13so899022dad.19
+        for <linux-btrfs@vger.kernel.org>; Sat, 29 Sep 2012 01:07:58 -0700 (PDT)
+From: Robin Dong <robin.k.dong@gmail.com>
+To: linux-btrfs@vger.kernel.org
+Cc: Robin Dong <sanbai@taobao.com>
+Subject: [PATCH 2/2] btrfs: move inline function code to header file
+Date: Sat, 29 Sep 2012 16:07:47 +0800
+Message-Id: <1348906067-9348-2-git-send-email-robin.k.dong@gmail.com>
+In-Reply-To: <1348906067-9348-1-git-send-email-robin.k.dong@gmail.com>
+References: <1348906067-9348-1-git-send-email-robin.k.dong@gmail.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 09/28/2012 10:13 PM, Hugo Mills wrote:
->> Summary:
->> >      Disk_size:     	         135.00 GiB
->> >      Disk_allocated:          	  10.51 GiB
->> >      Disk_unallocated:		 124.49 GiB
->> >      Used:			   2.59 GiB
->> >      Free_(Estimated):         	  91.93 GiB
->> >      Average_disk_efficiency:          70 %
->> >
->> >  Details:
->> >         Chunk-type    Mode     Disk-allocated     Used   Available
->> >         Data          Single        4.01GB      2.16GB      1.87GB
->> >         System        DUP          16.00MB      4.00KB      7.99MB
->> >         System        Single        4.00MB        0.00      4.00MB
->> >         Metadata      DUP           6.00GB    429.16MB      2.57GB
->> >         Metadata      Single        8.00MB        0.00      8.00MB
->> >
->> >
->> >
->> >  Where:
->> >     Disk-allocated	->  space used on the disk by the chunk
->> >     Disk-size		->  size of the disk
->> >     Disk-unallocated	->  disk not used in any chunk
->> >     Used 			->  space used by the files/metadata
->     The problem here is that if you're using raw storage, the Used
-> value in the second stanza grows twice as fast as the user expects.
+From: Robin Dong <sanbai@taobao.com>
 
-This is the misunderstanding whom I talked before.
+When building btrfs from kernel code, it will report:
 
-If you give a look at the line "Metadata DUP", you can see that the 
-disk-allocated are about 6GB, instead if you sum Used and Available you 
-got 3GB.
+	fs/btrfs/extent_io.h:281: warning: 'extent_buffer_page' declared inline after being called
+	fs/btrfs/extent_io.h:281: warning: previous declaration of 'extent_buffer_page' was here
+	fs/btrfs/extent_io.h:280: warning: 'num_extent_pages' declared inline after being called
+	fs/btrfs/extent_io.h:280: warning: previous declaration of 'num_extent_pages' was here
 
-I.e. if you create a 1GB file, "Used" ever increased of 1GB, and 
-Available ever decrease 1GB, whichever you are using DUP or Single or RAID*
+because of the wrong declaration of inline functions.
 
+Signed-off-by: Robin Dong <sanbai@taobao.com>
+---
+ fs/btrfs/extent_io.c |   12 ------------
+ fs/btrfs/extent_io.h |   14 ++++++++++++--
+ 2 files changed, 12 insertions(+), 14 deletions(-)
 
-I
-> think this second stanza should at minimum include the "cooked" values
-> used in btrfs fi df, because those reflect the user's experience. Then
-> adding [some of?] the raw values you've got here to help connect the
-> values to the raw data in the first stanza of output.
+diff --git a/fs/btrfs/extent_io.c b/fs/btrfs/extent_io.c
+index 4c87847..82abd4e 100644
+--- a/fs/btrfs/extent_io.c
++++ b/fs/btrfs/extent_io.c
+@@ -3914,18 +3914,6 @@ out:
+ 	return ret;
+ }
+ 
+-inline struct page *extent_buffer_page(struct extent_buffer *eb,
+-					      unsigned long i)
+-{
+-	return eb->pages[i];
+-}
+-
+-inline unsigned long num_extent_pages(u64 start, u64 len)
+-{
+-	return ((start + len + PAGE_CACHE_SIZE - 1) >> PAGE_CACHE_SHIFT) -
+-		(start >> PAGE_CACHE_SHIFT);
+-}
+-
+ static void __free_extent_buffer(struct extent_buffer *eb)
+ {
+ #if LEAK_DEBUG
+diff --git a/fs/btrfs/extent_io.h b/fs/btrfs/extent_io.h
+index 25900af..0ebe4b5 100644
+--- a/fs/btrfs/extent_io.h
++++ b/fs/btrfs/extent_io.h
+@@ -277,8 +277,18 @@ void free_extent_buffer_stale(struct extent_buffer *eb);
+ int read_extent_buffer_pages(struct extent_io_tree *tree,
+ 			     struct extent_buffer *eb, u64 start, int wait,
+ 			     get_extent_t *get_extent, int mirror_num);
+-unsigned long num_extent_pages(u64 start, u64 len);
+-struct page *extent_buffer_page(struct extent_buffer *eb, unsigned long i);
++
++static inline unsigned long num_extent_pages(u64 start, u64 len)
++{
++	return ((start + len + PAGE_CACHE_SIZE - 1) >> PAGE_CACHE_SHIFT) -
++		(start >> PAGE_CACHE_SHIFT);
++}
++
++static inline struct page *extent_buffer_page(struct extent_buffer *eb,
++					      unsigned long i)
++{
++	return eb->pages[i];
++}
+ 
+ static inline void extent_buffer_get(struct extent_buffer *eb)
+ {
+-- 
+1.7.3.2
 
-The only raw values are the one "prefixed" with disk. The other ones are 
-at the net of the DUP/Single/Raid....
-
->
->     As I said above, it's the connection between "I wrote a 1GiB file
-> to my filesystem" and "why have my numbers increased/decreased by
-> 2GiB(*)/1.2GiB(**)?"
-
-I repeat, if the chunk is DUP-ed, if you create 1GB file:
-- Disk-allocate increase 2GB (supposing that all the chunks are full)
-- Used increase 1GB
-- Available decrease 1GB
-
-
->
-> (*) RAID-1
-> (**) RAID-5-ish
->
-Ciao
-Goffredo

@@ -1,45 +1,69 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-pa0-f46.google.com ([209.85.220.46]:41194 "EHLO
-	mail-pa0-f46.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S933519Ab2JaVRH (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 31 Oct 2012 17:17:07 -0400
-Received: by mail-pa0-f46.google.com with SMTP id hz1so1241053pad.19
-        for <linux-btrfs@vger.kernel.org>; Wed, 31 Oct 2012 14:17:06 -0700 (PDT)
-Message-ID: <50919550.3090800@gmail.com>
-Date: Thu, 01 Nov 2012 05:17:04 +0800
-From: ching <lsching17@gmail.com>
+Received: from twin.jikos.cz ([89.185.236.188]:35057 "EHLO twin.jikos.cz"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1751716Ab2I3WqO (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Sun, 30 Sep 2012 18:46:14 -0400
+Date: Mon, 1 Oct 2012 00:46:05 +0200
+From: David Sterba <dave@jikos.cz>
+To: Robin Dong <robin.k.dong@gmail.com>
+Cc: linux-btrfs@vger.kernel.org, Robin Dong <sanbai@taobao.com>
+Subject: Re: [PATCH v2 1/2] btrfs-progs: limit the max value of leafsize and
+ nodesize
+Message-ID: <20120930224605.GL14582@twin.jikos.cz>
+Reply-To: dave@jikos.cz
+References: <1348801360-1851-1-git-send-email-robin.k.dong@gmail.com>
 MIME-Version: 1.0
-To: "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
-Subject: Re: btrfs defrag problem
-References: <508FBE50.6070300@gmail.com> <20121031004027.GE3102@twin.jikos.cz>
-In-Reply-To: <20121031004027.GE3102@twin.jikos.cz>
-Content-Type: text/plain; charset=UTF-8
+Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <1348801360-1851-1-git-send-email-robin.k.dong@gmail.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
+On Fri, Sep 28, 2012 at 11:02:39AM +0800, Robin Dong wrote:
+> From: Robin Dong <sanbai@taobao.com>
+> --- a/mkfs.c
+> +++ b/mkfs.c
+> @@ -1201,6 +1201,27 @@ static int zero_output_file(int out_fd, u64 size, u32 sectorsize)
+>  	return ret;
+>  }
+>  
+> +static int check_leaf_or_node_size(u32 size, u32 sectorsize)
+> +{
+> +	if (size < sectorsize) {
+> +		fprintf(stderr,
+> +			"Illegal leafsize (or nodesize) %u (smaller than %u)\n",
+> +			size, sectorsize);
 
->>     It seems that locked files cannot be defragged, is it expected behaviour?
-> Yes.
+First looking at the message, the absolute limit value might be
+confusing, the condition is really 'if node/leaf is smaller than
+sectorsize', and sectorsize will become a varaible eventually (though
+now it's fixed to the system's PAGE_SIZE and 4k in most cases).
 
-but i am defragging a file, not modify it.
+So, even if this will make the erro message more verbose, I suggest to
+enhance the explanation with
 
->> 2. Btrfs Wiki mentions that defrag directory will defrag metadata, is symlink/hardlink considered as metadata?
->>     P.S. inline data is already disabled by "max_inline=0"
-> Both -links are metadata and also stored inside metadata blocks without
-> any chance to move to data blocks, so max_inline does not affect this.
+"... (smaller than sectorsize %u)"
 
-thank you for your explanation.
+(If you se a better way how to format the value and the word, please don't
+hasitate to change it.)
 
->> 3. Is any possible to online defrag a btrfs partition without hindered by mount point/polyinstantied directories?
-> Sorry, I do not understand the question.
->
+> +		return -1;
+> +	} else if (size > BTRFS_MAX_METADATA_BLOCKSIZE) {
+> +		fprintf(stderr,
+> +			"Illegal leafsize (or nodesize) %u (larger than %u)\n",
+> +			size, BTRFS_MAX_METADATA_BLOCKSIZE);
+> +		return -1;
+> +	} else if (size & (sectorsize - 1)) {
+> +		fprintf(stderr,
+> +			"Illegal leafsize (or nodesize) %u (not align to %u)\n",
 
-when a device is mounted under a directory, files in the directory is "hidden", and files in the device is "available", right?
-when a directory is polyinstantied, files in the original directory is "hidden", and files in the polyinstantied directory is "available",
+align -> aligned
 
-How to get past them and pass those "hidden" files to defrag command?
+> +			size, sectorsize);
+> +		return -1;
+> +	}
+> +	return 0;
+> +}
+> +
 
-
-ching
-
+thanks,
+david

@@ -1,62 +1,62 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-we0-f174.google.com ([74.125.82.174]:62237 "EHLO
-	mail-we0-f174.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1751949Ab2I2W0l (ORCPT
+Received: from mail-lb0-f174.google.com ([209.85.217.174]:34086 "EHLO
+	mail-lb0-f174.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1752072Ab2I3B2q (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Sat, 29 Sep 2012 18:26:41 -0400
-Received: by weyt9 with SMTP id t9so2154007wey.19
-        for <linux-btrfs@vger.kernel.org>; Sat, 29 Sep 2012 15:26:39 -0700 (PDT)
-Message-ID: <5067759C.4090302@statystyka.net>
-Date: Sun, 30 Sep 2012 00:26:36 +0200
-From: Adam Ryczkowski <adam.ryczkowski@statystyka.net>
+	Sat, 29 Sep 2012 21:28:46 -0400
+Received: by lbon3 with SMTP id n3so3096086lbo.19
+        for <linux-btrfs@vger.kernel.org>; Sat, 29 Sep 2012 18:28:44 -0700 (PDT)
 MIME-Version: 1.0
+In-Reply-To: <20120929162140.GI14582@twin.jikos.cz>
+References: <CANW9uyu_-DFmggZUyAc1OOd0knMxEp-O3GPcs_8ZsoXAxm0DZg@mail.gmail.com>
+	<20120929162140.GI14582@twin.jikos.cz>
+Date: Sun, 30 Sep 2012 10:28:44 +0900
+Message-ID: <CANW9uys+9BHixw-sG3xbH5AyaOCFYW_o5XyAgBTiioczygcsfg@mail.gmail.com>
+Subject: Re: [PATCH] Btrfs: shrink_delalloc check bdi write congested
+From: Itaru Kitayama <kitayama@cl.bb4u.ne.jp>
 To: linux-btrfs@vger.kernel.org
-Subject: Btrfsck: "root 256 inode 581419 errors 100". Can I heal this file
- system?
-Content-Type: text/plain; charset=ISO-8859-1; format=flowed
+Cc: dave@jikos.cz
+Content-Type: text/plain; charset=ISO-8859-1
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Welcome.
+Resubmit this after the checkpatch test.
 
-I was using this btrfs file system on kernel 3.6 rc4 and rc5 and 3.5.4 
-on Mint 13 (which is based on Ubuntu 12.04). Now, I found the following 
-output of btrfsck /dev/sda8 (which was of course off-line at that time):
-> checking extents
-> checking fs roots
-> root 256 inode 581419 errors 100
-> found 97398079488 bytes used err is 1
-> total csum bytes: 94539548
-> total tree bytes: 589582336
-> total fs tree bytes: 412663808
-> btree space waste bytes: 128744572
-> file data blocks allocated: 870320693248
->  referenced 102221803520
-> Btrfs Btrfs v0.19
-I understand, that the line "root 256 inode 581419 errors 100" tries to 
-tell me, that there is a problem with inode 581419. (Which happen to be 
-mountpoint/@/var/cache/hald/fdi-cache; I use btrfs as a root file system 
-for Linux mint 13). I pulled the recent btrfs-tools from Ubuntu 12.10 
-(https://launchpad.net/ubuntu/quantal/+package/btrfs-tools; version 
-0.19+20120328-7ubuntu1 
-<https://launchpad.net/ubuntu/quantal/+source/btrfs-tools/0.19+20120328-7ubuntu1>). 
-The btrfsck doesn't make the error disapear. I don't experience any 
-problems with the file system, but maybe I am only lucky.
+In srhink_delalloc(), writeback starts if idle, also check the bdi is
+not write congested.
+The patch is against the head of the btrfs-next.
 
-What exactly does this error mean?
+Signed-off-by: Itaru Kitayama <kitayama@cl.bb4.ne.jp>
 
-Is there any way to heal the file system?
+diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
+index efb044e..1aae046 100644
+--- a/fs/btrfs/extent-tree.c
++++ b/fs/btrfs/extent-tree.c
+@@ -3712,8 +3712,9 @@ static void shrink_delalloc(struct btrfs_root
+*root, u64 to_reclaim, u64 orig,
+        while (delalloc_bytes && loops < 3) {
+                max_reclaim = min(delalloc_bytes, to_reclaim);
+                nr_pages = max_reclaim >> PAGE_CACHE_SHIFT;
+-               writeback_inodes_sb_nr_if_idle(root->fs_info->sb, nr_pages,
+-                                              WB_REASON_FS_FREE_SPACE);
++               if (!bdi_write_congested(root->fs_info->sb->s_bdi))
++                       writeback_inodes_sb_nr_if_idle(root->fs_info, nr_page,
++                                                      WB_REASON_FS_FREE_SPACE);
 
-I can read the file just fine. But I can't confirm if the contents are 
-valid though; they definitely don't look random. Would deleting the file 
-help? Or re-writing it?
+                /*
+                 * We need to wait for the async pages to actually start before
 
-Is there any way of recovering from this error, or should I rebuild the 
-file system from scratch?
 
-I will gladly assist you with providing any debugging information you 
-need. Just give me clear instructions, what to do. The file system is 
-not in production.
-
-Adam Ryczkowski
-
+On Sun, Sep 30, 2012 at 1:21 AM, David Sterba <dave@jikos.cz> wrote:
+> On Sat, Sep 29, 2012 at 10:20:09PM +0900, Itaru Kitayama wrote:
+>> --- a/fs/btrfs/extent-tree.c
+>> +++ b/fs/btrfs/extent-tree.c
+>> @@ -3712,7 +3712,7 @@ static void shrink_delalloc(struct btrfs_root *root, u64 t
+>>         while (delalloc_bytes && loops < 3) {
+>>                 max_reclaim = min(delalloc_bytes, to_reclaim);
+>>                 nr_pages = max_reclaim >> PAGE_CACHE_SHIFT;
+>> -               writeback_inodes_sb_nr_if_idle(root->fs_info->sb, nr_pages,
+>> +               if (!bdi_write_congested(root->fs_info->sb->s_bdi)) writeback_in
+>>                                                WB_REASON_FS_FREE_SPACE);
+>
+> malformed patch

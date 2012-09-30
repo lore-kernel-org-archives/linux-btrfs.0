@@ -1,70 +1,71 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-ob0-f174.google.com ([209.85.214.174]:57699 "EHLO
-	mail-ob0-f174.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1750754Ab2JEGnn (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Fri, 5 Oct 2012 02:43:43 -0400
-Received: by mail-ob0-f174.google.com with SMTP id uo13so1370452obb.19
-        for <linux-btrfs@vger.kernel.org>; Thu, 04 Oct 2012 23:43:42 -0700 (PDT)
+Received: from twin.jikos.cz ([89.185.236.188]:35005 "EHLO twin.jikos.cz"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1751563Ab2I3W3Z (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Sun, 30 Sep 2012 18:29:25 -0400
+Date: Mon, 1 Oct 2012 00:29:16 +0200
+From: David Sterba <dave@jikos.cz>
+To: Itaru Kitayama <itaru.kitayama@gmail.com>
+Cc: linux-btrfs@vger.kernel.org, dave@jikos.cz
+Subject: Re: [PATCH] Btrfs: shrink_delalloc check bdi write congested
+Message-ID: <20120930222916.GK14582@twin.jikos.cz>
+Reply-To: dave@jikos.cz
+References: <CANW9uyu_-DFmggZUyAc1OOd0knMxEp-O3GPcs_8ZsoXAxm0DZg@mail.gmail.com>
+ <20120929162140.GI14582@twin.jikos.cz>
+ <CANW9uys+9BHixw-sG3xbH5AyaOCFYW_o5XyAgBTiioczygcsfg@mail.gmail.com>
+ <CANW9uytWQ2DmpkAEg+Q=ZOenqdhe=NiRL9=Yq-7-Y6QVXQRFLQ@mail.gmail.com>
 MIME-Version: 1.0
-In-Reply-To: <CAG1y0scP8zMd0moJp_Ajk=NovFhkqRn_wvbS3hM+L=-tp_Ptrw@mail.gmail.com>
-References: <BANLkTinjKR0PwvL0pcseP7ReEeSOUpObBQ@mail.gmail.com>
- <BANLkTimHUcOpSGfWKtAcTMGnZ5Gr41jrzw@mail.gmail.com> <CAG1y0scP8zMd0moJp_Ajk=NovFhkqRn_wvbS3hM+L=-tp_Ptrw@mail.gmail.com>
-From: Joel Pearson <japearson@agiledigital.com.au>
-Date: Fri, 5 Oct 2012 16:43:22 +1000
-Message-ID: <CAN6mLwkAhfpVoFji5mBrweJF5_N_C1RWLZKgp0W4F+tkxJXi4Q@mail.gmail.com>
-Subject: Re: btrfs causing reboots and kernel oops on SL 6 (RHEL 6)
-To: "Fajar A. Nugraha" <list@fajar.net>
-Cc: linux-btrfs@vger.kernel.org
-Content-Type: text/plain; charset=ISO-8859-1
+Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <CANW9uytWQ2DmpkAEg+Q=ZOenqdhe=NiRL9=Yq-7-Y6QVXQRFLQ@mail.gmail.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 5 October 2012 13:29, Fajar A. Nugraha <list@fajar.net> wrote:
->
-> On Sat, Jun 4, 2011 at 11:33 AM, Joel Pearson
-> <japearson@agiledigital.com.au> wrote:
-> > Hi,
-> >
-> > I'm using SL 6 (RHEL 6) and I've been playing around with running
-> > PostgreSQL on btrfs. Snapshotting works ok, but the computer keeps
-> > rebooting without warning (can be 5 mins or 1.5 hours), finally I
-> > actually managed to get a Kernel Crash instead of just a reboot.
-> >
-> > I took a picture of the screen:
-> > http://imageshack.us/photo/my-images/716/img0143y.jpg/
-> >
-> > The important bits are:
-> >
-> > IP: [<ffffffffa032c471>] btrfs_print_leaf +0x31/0x820 [btrfs]
-> > PGD 0
-> > Oops: 0000 [#1] SMP
-> > last sysfs file: /sys/devices/virtual/block/dm-3/dm/name
-> >
-> > The crashes aren't predictable either. Like it doesn't always happen
-> > when I do a snapshot or anything like that.
-> >
-> > Is this a known problem, that is fixed in a later kernel or something like that?
->
->
-> Which kernel is this?
->
-> If it's the default SL/RHEL 2.6.32 kernel, then you should try upgrade
-> first. http://elrepo.org/tiki/kernel-ml is a good choice.
+Hi again,
 
-Yes it was the stock kernel, I didn't know you could get recent
-kernels on RHEL 6, that's good to know.
+On Sun, Sep 30, 2012 at 11:11:10AM +0900, Itaru Kitayama wrote:
+> This is the correct one.
+> 
+> Signed-off-by: Itaru Kitayama <kitayama@cl.bb4.ne.jp>
+> 
+> diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
+> index efb044e..c032dbe 100644
+> --- a/fs/btrfs/extent-tree.c
+> +++ b/fs/btrfs/extent-tree.c
+> @@ -3712,8 +3712,9 @@ static void shrink_delalloc(struct btrfs_root
+> *root, u64 to_reclaim, u64 orig,
+>         while (delalloc_bytes && loops < 3) {
+>                 max_reclaim = min(delalloc_bytes, to_reclaim);
+>                 nr_pages = max_reclaim >> PAGE_CACHE_SHIFT;
+> -               writeback_inodes_sb_nr_if_idle(root->fs_info->sb, nr_pages,
+> -                                              WB_REASON_FS_FREE_SPACE);
+> +               if (!bdi_write_congested(root->fs_info->sb->s_bdi))
+> +                       writeback_inodes_sb_nr_if_idle(root->fs_info, nr_pages,
+> +                                                      WB_REASON_FS_FREE_SPACE);
 
->
-> It's highly unlikely that anyone would be willing to look at bugs on
-> that "archaic" (in btrfs world) kernel.
+You don't pass the same argument to writeback_inodes_sb_nr_if_idle in
+the changed code, this would not compile (root->fs_info->sb), but it's
+a minor thing.
 
-Yep fair enough.  We moved to ZFS in the end, which was able to do the
-same things we needed btrfs to do.
+I'm more interested in the background motivation of the change, it's
+clear that it tries to avoid writing data if the devices are congested,
+have you measured an improvement against original behaviour?
 
->
-> --
-> Fajar
+writeback_inodes_sb_nr_if_idle checks if writeback is in progress and
+does not start if this is true. That way this will not hammer the device
+unnecessarily.
 
-Cheers,
+Your code tries to avoid even more hammering of the device when the
+writes do not come from writeback. This may or may not be a good thing
+(and hard to guess without a few tests, or at least I don't see that).
 
--Joel
+Shrink delalloc starts the writeback for a given number of pages and
+then hopes they'll be flushed so the reserved space can be reclaimed
+back. If the device is congested, this will not start the writeback and
+it would be very unlikely that total delalloc bytes shrinks. The rest of
+the function relies on asynchronous behaviour, it's even less clear what
+it would do without the writeback call. In the worst case it could block
+on 'wait_event' or at 'btrfs_wait_ordered_extents' in some case, though
+this is just more of a speculation.
+
+
+david

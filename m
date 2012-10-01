@@ -1,55 +1,61 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from fgwmail5.fujitsu.co.jp ([192.51.44.35]:50875 "EHLO
-	fgwmail5.fujitsu.co.jp" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1752402Ab2JAJHo (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Mon, 1 Oct 2012 05:07:44 -0400
-Received: from m3.gw.fujitsu.co.jp (unknown [10.0.50.73])
-	by fgwmail5.fujitsu.co.jp (Postfix) with ESMTP id 404C43EE0BD
-	for <linux-btrfs@vger.kernel.org>; Mon,  1 Oct 2012 18:07:43 +0900 (JST)
-Received: from smail (m3 [127.0.0.1])
-	by outgoing.m3.gw.fujitsu.co.jp (Postfix) with ESMTP id 26C8045DEBC
-	for <linux-btrfs@vger.kernel.org>; Mon,  1 Oct 2012 18:07:43 +0900 (JST)
-Received: from s3.gw.fujitsu.co.jp (s3.gw.fujitsu.co.jp [10.0.50.93])
-	by m3.gw.fujitsu.co.jp (Postfix) with ESMTP id 0218245DEB6
-	for <linux-btrfs@vger.kernel.org>; Mon,  1 Oct 2012 18:07:43 +0900 (JST)
-Received: from s3.gw.fujitsu.co.jp (localhost.localdomain [127.0.0.1])
-	by s3.gw.fujitsu.co.jp (Postfix) with ESMTP id EA5F81DB803E
-	for <linux-btrfs@vger.kernel.org>; Mon,  1 Oct 2012 18:07:42 +0900 (JST)
-Received: from ml14.s.css.fujitsu.com (ml14.s.css.fujitsu.com [10.240.81.134])
-	by s3.gw.fujitsu.co.jp (Postfix) with ESMTP id 9B9B11DB803C
-	for <linux-btrfs@vger.kernel.org>; Mon,  1 Oct 2012 18:07:42 +0900 (JST)
-Message-Id: <201210010907.AA00012@FM-323941448.jp.fujitsu.com>
-From: Tsutomu Itoh <t-itoh@jp.fujitsu.com>
-Date: Mon, 01 Oct 2012 18:07:15 +0900
-To: linux-btrfs@vger.kernel.org
-Cc: chris.mason@fusionio.com
-Subject: [PATCH] Btrfs: remove unnecessary IS_ERR in bio_readpage_error()
+Received: from nm31.bullet.mail.gq1.yahoo.com ([98.136.217.14]:26352 "HELO
+	nm31.bullet.mail.gq1.yahoo.com" rhost-flags-OK-OK-OK-OK)
+	by vger.kernel.org with SMTP id S1751777Ab2JANe4 (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>);
+	Mon, 1 Oct 2012 09:34:56 -0400
+Message-ID: <50699A40.2030603@yahoo.com.br>
+Date: Mon, 01 Oct 2012 10:27:28 -0300
+From: Cesar Inacio Martins <cesar_inacio_martins@yahoo.com.br>
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
+To: linux-btrfs@vger.kernel.org
+Subject: Tunning - cache write (database)
+References: <1349098002.208.YahooMailNeo@web31801.mail.mud.yahoo.com>
+In-Reply-To: <1349098002.208.YahooMailNeo@web31801.mail.mud.yahoo.com>
+Content-Type: text/plain; charset=ISO-8859-1; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Because the value of extent_map is only a correct value or NULL,
-so IS_ERR is unnecessary.
+Hi,
 
-Signed-off-by: Tsutomu Itoh <t-itoh@jp.fujitsu.com>
----
- fs/btrfs/extent_io.c | 2 +-
- 1 file changed, 1 insertion(+), 1 deletion(-)
+First, sorry if this isn't the place to get this kind of help...
+If not, I appreciate some link , forum, where I can try get some answers...
 
-diff --git a/fs/btrfs/extent_io.c b/fs/btrfs/extent_io.c
-index 979fa0d..576ed9f 100644
---- a/fs/btrfs/extent_io.c
-+++ b/fs/btrfs/extent_io.c
-@@ -2071,7 +2071,7 @@ static int bio_readpage_error(struct bio *failed_bio, struct page *page,
- 		}
- 		read_unlock(&em_tree->lock);
- 
--		if (!em || IS_ERR(em)) {
-+		if (!em) {
- 			kfree(failrec);
- 			return -EIO;
- 		}
--- 
-1.7.11.4
+My problem:
+* Using btrfs + compression , flush of 60 MB/s take 4 minutes....
+(on this 4 minutes they keep constatly I/O of +- 4MB/s no disks)
+(flush from Informix database)
+
+The enviroment :
+* Virtualized environment
+* OpenSuse 12.1 64bits, running over VmWare ESXi 5
+* Btrfs version : btrfsprogs-0.19-43.1.2.x86_64
+* Kernel : Linux jdivm06 3.1.10-1.16-desktop #1 SMP PREEMPT Wed Jun 27 
+05:21:40 UTC 2012 (d016078) x86_64 x86_64 x86_64 GNU/Linux
+* The file system is used to keep the Informix database data (chunks).
+* 8 cores (intel i7) , so,  all btrfs threads able to work parallel.
+
+The file system mount :
+   root@jdivm06:/proc/sys/fs# mount |grep ifx
+   /dev/sdb1 on /ifxdados type btrfs 
+(rw,nosuid,nodev,noexec,noatime,compress=zlib,space_cache)
+
+My question, what I believed will help to avoid this long flush :
+* Have some way to force this flush all in memory cache and then use the 
+btrfs background process to flush to disk ...
+   Security and recover aren't a priority for now, because this is part 
+of a database bulkload ...after finish , integrity will be desirable 
+(not a obligation, since this is a test environment)
+
+For now, performance is the mainly requirement...
+
+A plus :
+root@jdivm06:/proc/sys/fs# cat /proc/sys/vm/dirty_ratio
+50
+root@jdivm06:/proc/sys/fs# cat /proc/sys/vm/dirty_background_ratio
+10
+
+Thanks
+Cesar
+
 

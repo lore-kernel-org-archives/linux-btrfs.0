@@ -1,66 +1,81 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx1.fusionio.com ([66.114.96.30]:43829 "EHLO mx1.fusionio.com"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1751828Ab2JAR4e (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 1 Oct 2012 13:56:34 -0400
-Received: from mail1.int.fusionio.com (mail1.int.fusionio.com [10.101.1.21]) by mx1.fusionio.com with ESMTP id azPfPVTJKqN1bmGK (version=TLSv1 cipher=AES128-SHA bits=128 verify=NO) for <linux-btrfs@vger.kernel.org>; Mon, 01 Oct 2012 11:56:32 -0600 (MDT)
-From: Josef Bacik <jbacik@fusionio.com>
-To: <linux-btrfs@vger.kernel.org>
-Subject: [PATCH] Btrfs: be smarter about dropping things from the tree log V2
-Date: Mon, 1 Oct 2012 14:02:07 -0400
-Message-ID: <1349114527-4440-1-git-send-email-jbacik@fusionio.com>
-MIME-Version: 1.0
-Content-Type: text/plain
+Received: from mail-bk0-f46.google.com ([209.85.214.46]:64239 "EHLO
+	mail-bk0-f46.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1752076Ab2JAULx (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Mon, 1 Oct 2012 16:11:53 -0400
+Received: by bkcjk13 with SMTP id jk13so5179865bkc.19
+        for <linux-btrfs@vger.kernel.org>; Mon, 01 Oct 2012 13:11:51 -0700 (PDT)
+From: Goffredo Baroncelli <kreijack@gmail.com>
+To: linux-btrfs@vger.kernel.org
+Cc: Chris Mason <clmason@fusionio.com>,
+        Goffredo Baroncelli <kreijack@inwind.it>
+Subject: [BTRFS-PROGS][PATCH] pretty_sizes() returns incorrect values
+Date: Mon,  1 Oct 2012 22:11:27 +0200
+Message-Id: <1349122287-6078-1-git-send-email-kreijack@gmail.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-When we truncate existing items in the tree log we've been searching for
-each individual item and removing them.  This is unnecessary churn and
-searching, just keep track of the slot we are on and how many items we need
-to delete and delete them all at once.  Thanks,
+From: Goffredo Baroncelli <kreijack@inwind.it>
 
-Signed-off-by: Josef Bacik <jbacik@fusionio.com>
+pretty_sizes() returns incorrect values if the argument is < 1024.
+
+pretty_sizes(0) -> 0.00		OK
+pretty_sizes(102) -> 0.10	WRONG
+pretty_sizes(1023) -> 1.00	WRONG
+pretty_sizes(1024) -> 1.00KB	OK
+
+Signed-off-by: Goffredo Baroncelli <kreijack@inwind.it>
+
 ---
-V1->V2: do as zach suggested and bin search down to the lowest key in this leaf
-and delete from there.  In practice this won't be more than 2 or 3 items, but if
-you have lots of xattrs it could be a lot more.
+ utils.c |   30 ++++++++++++++++--------------
+ 1 file changed, 16 insertions(+), 14 deletions(-)
 
- fs/btrfs/tree-log.c |   15 +++++++++++++--
- 1 files changed, 13 insertions(+), 2 deletions(-)
-
-diff --git a/fs/btrfs/tree-log.c b/fs/btrfs/tree-log.c
-index 4e468a0..a5dcf71 100644
---- a/fs/btrfs/tree-log.c
-+++ b/fs/btrfs/tree-log.c
-@@ -2872,6 +2872,7 @@ static int drop_objectid_items(struct btrfs_trans_handle *trans,
- 	int ret;
- 	struct btrfs_key key;
- 	struct btrfs_key found_key;
-+	int start_slot;
+diff --git a/utils.c b/utils.c
+index aade9e2..04c3e82 100644
+--- a/utils.c
++++ b/utils.c
+@@ -1097,25 +1097,27 @@ char *pretty_sizes(u64 size)
+ {
+ 	int num_divs = 0;
+         int pretty_len = 16;
+-	u64 last_size = size;
+-	u64 fract_size = size;
+ 	float fraction;
+ 	char *pretty;
  
- 	key.objectid = objectid;
- 	key.type = max_key_type;
-@@ -2893,8 +2894,18 @@ static int drop_objectid_items(struct btrfs_trans_handle *trans,
- 		if (found_key.objectid != objectid)
- 			break;
+-	while(size > 0) {
+-		fract_size = last_size;
+-		last_size = size;
+-		size /= 1024;
+-		num_divs++;
+-	}
+-	if (num_divs == 0)
+-		num_divs = 1;
+-	if (num_divs > ARRAY_SIZE(size_strs))
+-		return NULL;
++	if( size < 1024 ){
++		fraction = size;
++		num_divs = 0;
++	} else {
++		u64 last_size = size;
++		num_divs = 0;
++		while(size >= 1024){
++			last_size = size;
++			size /= 1024;
++			num_divs ++;
++		}
  
--		ret = btrfs_del_item(trans, log, path);
--		if (ret)
-+		found_key.offset = 0;
-+		found_key.type = 0;
-+		ret = btrfs_bin_search(path->nodes[0], &found_key, 0,
-+				       &start_slot);
-+
-+		ret = btrfs_del_items(trans, log, path, start_slot,
-+				      path->slots[0] - start_slot + 1);
-+		/*
-+		 * If start slot isn't 0 then we don't need to re-search, we've
-+		 * found the last guy with the objectid in this tree.
-+		 */
-+		if (ret || start_slot != 0)
- 			break;
- 		btrfs_release_path(path);
- 	}
+-	fraction = (float)fract_size / 1024;
++		if (num_divs > ARRAY_SIZE(size_strs))
++			return NULL;
++		fraction = (float)last_size / 1024;
++	}
+ 	pretty = malloc(pretty_len);
+-	snprintf(pretty, pretty_len, "%.2f%s", fraction, size_strs[num_divs-1]);
++	snprintf(pretty, pretty_len, "%.2f%s", fraction, size_strs[num_divs]);
+ 	return pretty;
+ }
+ 
 -- 
-1.7.7.6
+1.7.10.4
 

@@ -1,63 +1,57 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from twin.jikos.cz ([89.185.236.188]:35383 "EHLO twin.jikos.cz"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1751298Ab2JAAAM (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Sun, 30 Sep 2012 20:00:12 -0400
-Date: Mon, 1 Oct 2012 02:00:05 +0200
-From: David Sterba <dave@jikos.cz>
-To: Josef Bacik <jbacik@fusionio.com>
-Cc: David Sterba <dave@jikos.cz>,
-        "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
-Subject: Re: ENOSPC design issues
-Message-ID: <20121001000005.GR14582@twin.jikos.cz>
-Reply-To: dave@jikos.cz
-References: <20120920190306.GG2272@localhost.localdomain>
- <20120925164335.GZ14582@twin.jikos.cz>
- <20120925170239.GA2328@localhost.localdomain>
+Received: from fgwmail6.fujitsu.co.jp ([192.51.44.36]:48552 "EHLO
+	fgwmail6.fujitsu.co.jp" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1752363Ab2JAJJE (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Mon, 1 Oct 2012 05:09:04 -0400
+Received: from m3.gw.fujitsu.co.jp (unknown [10.0.50.73])
+	by fgwmail6.fujitsu.co.jp (Postfix) with ESMTP id DC6E83EE0B6
+	for <linux-btrfs@vger.kernel.org>; Mon,  1 Oct 2012 18:09:02 +0900 (JST)
+Received: from smail (m3 [127.0.0.1])
+	by outgoing.m3.gw.fujitsu.co.jp (Postfix) with ESMTP id BFD3D45DEBC
+	for <linux-btrfs@vger.kernel.org>; Mon,  1 Oct 2012 18:09:02 +0900 (JST)
+Received: from s3.gw.fujitsu.co.jp (s3.gw.fujitsu.co.jp [10.0.50.93])
+	by m3.gw.fujitsu.co.jp (Postfix) with ESMTP id 6753D45DEBA
+	for <linux-btrfs@vger.kernel.org>; Mon,  1 Oct 2012 18:09:00 +0900 (JST)
+Received: from s3.gw.fujitsu.co.jp (localhost.localdomain [127.0.0.1])
+	by s3.gw.fujitsu.co.jp (Postfix) with ESMTP id 581D21DB803B
+	for <linux-btrfs@vger.kernel.org>; Mon,  1 Oct 2012 18:09:00 +0900 (JST)
+Received: from ml14.s.css.fujitsu.com (ml14.s.css.fujitsu.com [10.240.81.134])
+	by s3.gw.fujitsu.co.jp (Postfix) with ESMTP id 0E3A81DB8038
+	for <linux-btrfs@vger.kernel.org>; Mon,  1 Oct 2012 18:09:00 +0900 (JST)
+Message-Id: <201210010908.AA00013@FM-323941448.jp.fujitsu.com>
+From: Tsutomu Itoh <t-itoh@jp.fujitsu.com>
+Date: Mon, 01 Oct 2012 18:08:37 +0900
+To: linux-btrfs@vger.kernel.org
+Cc: chris.mason@fusionio.com
+Subject: [PATCH] Btrfs: confirmation of value is added before trace_btrfs_get_extent() is called
 MIME-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <20120925170239.GA2328@localhost.localdomain>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Tue, Sep 25, 2012 at 01:02:39PM -0400, Josef Bacik wrote:
-> > implemented as follows on top of next/master, in short:
-> > * disable overcommit completely
-> > * do the optimistically best guess for the metadata and reserve only up
-> >   to the current tree height
-> 
-> So I had tried to do this before, the problem is when height changes our reserve
-> changes.  So for things like delalloc we say we have X number of extents and we
-> reserve that much space, but then when we run delalloc we re-calculate the
-> metadata size for X number extents we've removed and that number could come out
-> differently since the height of the tree would have changed.
+We should confirm the value of extent_map before calling
+trace_btrfs_get_extent() because the value of extent_map has the
+possibility of NULL.
 
-Understood, I did not came accross this during testing because I did not
-reproduce the required conditions that do not seem frequent but
-definetelly are possible.
+Signed-off-by: Tsutomu Itoh <t-itoh@jp.fujitsu.com>
+---
+ fs/btrfs/inode.c | 3 ++-
+ 1 file changed, 2 insertions(+), 1 deletion(-)
 
-Let me proceed with V2:
+diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
+index cad0c57..b8f53e8 100644
+--- a/fs/btrfs/inode.c
++++ b/fs/btrfs/inode.c
+@@ -6123,7 +6123,8 @@ insert:
+ 	write_unlock(&em_tree->lock);
+ out:
+ 
+-	trace_btrfs_get_extent(root, em);
++	if (em)
++		trace_btrfs_get_extent(root, em);
+ 
+ 	if (path)
+ 		btrfs_free_path(path);
+-- 
+1.7.11.4
 
-* disable overcommit completely
-* reserve only up to the current tree height + 1
-
-You can object that the tree height may grow by 2, namely at the early
-stage from 0 -> 2 if the number of operations is quite high and all of
-this finishes within one transaction.
-
-So improvement that also covers that:
-
-* reserve up to MIN( BTRFS_MAX_LEVEL, max(tree->height + 1, 3) )
-
-with the assumption that growing three from 3->4 will take more
-operations that could fit into one transaction period even on a fast
-device. (More accurate analysis required, but this should give the
-idea).
-
-The estimated savings in metadata block reservations start at 3/8 (and
-decreases with the larger filesystem use). This estimate does not have
-the property of being 'almost exact' as the V1 proposal, so some sort of
-overcommit math should also take place. I leave this out for now.
-
-thanks,
-david

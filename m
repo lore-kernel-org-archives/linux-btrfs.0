@@ -1,42 +1,63 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from psi.thgersdorf.net ([176.9.98.78]:57765 "EHLO mail.psioc.net"
+Received: from twin.jikos.cz ([89.185.236.188]:35383 "EHLO twin.jikos.cz"
 	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1754594Ab2JHTIK (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 8 Oct 2012 15:08:10 -0400
-From: Dieter Ries <mail@dieterries.net>
-To: chris.mason@fusionio.com, linux-btrfs@vger.kernel.org
-Cc: Dieter Ries <mail@dieterries.net>
-Subject: [PATCH 0/4] Resend: btrfs-progs: Some cosmetic changes (mainly) to btrfsck
-Date: Mon,  8 Oct 2012 21:07:46 +0200
-Message-Id: <1349723270-12773-1-git-send-email-mail@dieterries.net>
+	id S1751298Ab2JAAAM (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Sun, 30 Sep 2012 20:00:12 -0400
+Date: Mon, 1 Oct 2012 02:00:05 +0200
+From: David Sterba <dave@jikos.cz>
+To: Josef Bacik <jbacik@fusionio.com>
+Cc: David Sterba <dave@jikos.cz>,
+        "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
+Subject: Re: ENOSPC design issues
+Message-ID: <20121001000005.GR14582@twin.jikos.cz>
+Reply-To: dave@jikos.cz
+References: <20120920190306.GG2272@localhost.localdomain>
+ <20120925164335.GZ14582@twin.jikos.cz>
+ <20120925170239.GA2328@localhost.localdomain>
+MIME-Version: 1.0
+Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <20120925170239.GA2328@localhost.localdomain>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hi,
+On Tue, Sep 25, 2012 at 01:02:39PM -0400, Josef Bacik wrote:
+> > implemented as follows on top of next/master, in short:
+> > * disable overcommit completely
+> > * do the optimistically best guess for the metadata and reserve only up
+> >   to the current tree height
+> 
+> So I had tried to do this before, the problem is when height changes our reserve
+> changes.  So for things like delalloc we say we have X number of extents and we
+> reserve that much space, but then when we run delalloc we re-calculate the
+> metadata size for X number extents we've removed and that number could come out
+> differently since the height of the tree would have changed.
 
-I sent an earlier version of this patchset before, and didn't get any response,
-so here is the next try:
+Understood, I did not came accross this during testing because I did not
+reproduce the required conditions that do not seem frequent but
+definetelly are possible.
 
-This patch series implements some mainly cosmetic changes to.
-btrfs-progs, most in btrfsck.
+Let me proceed with V2:
 
-As this is my first contribution here, I'd kindly ask you for feedback,
-and if work like this is appreciated in general.
+* disable overcommit completely
+* reserve only up to the current tree height + 1
 
-Cheers,
+You can object that the tree height may grow by 2, namely at the early
+stage from 0 -> 2 if the number of operations is quite high and all of
+this finishes within one transaction.
 
-Dieter
+So improvement that also covers that:
 
-Dieter Ries (4):
-  btrfs-progs: Remove redundant "Btrfs" string from version string
-  btrfs-progs: btrfsck: Print which filesystem to be checked to stdout
-  btrfs-progs: btrfsck: Print feedback about fscking to stdout.
-  btrfs-progs: btrfsck: Remove binary error code output
+* reserve up to MIN( BTRFS_MAX_LEVEL, max(tree->height + 1, 3) )
 
- btrfsck.c  |   29 ++++++++++++++++++++++-------
- version.sh |    2 +-
- 2 files changed, 23 insertions(+), 8 deletions(-)
+with the assumption that growing three from 3->4 will take more
+operations that could fit into one transaction period even on a fast
+device. (More accurate analysis required, but this should give the
+idea).
 
--- 
-1.7.3.GIT
+The estimated savings in metadata block reservations start at 3/8 (and
+decreases with the larger filesystem use). This estimate does not have
+the property of being 'almost exact' as the V1 proposal, so some sort of
+overcommit math should also take place. I leave this out for now.
 
+thanks,
+david

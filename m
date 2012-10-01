@@ -1,38 +1,71 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.fusionio.com ([66.114.96.31]:49920 "EHLO mx2.fusionio.com"
+Received: from mx2.fusionio.com ([66.114.96.31]:57200 "EHLO mx2.fusionio.com"
 	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1752825Ab2JAQpS (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 1 Oct 2012 12:45:18 -0400
-Date: Mon, 1 Oct 2012 12:45:14 -0400
+	id S1753276Ab2JAQrX (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Mon, 1 Oct 2012 12:47:23 -0400
+Date: Mon, 1 Oct 2012 12:47:20 -0400
 From: Josef Bacik <jbacik@fusionio.com>
-To: Alex Lyakas <alex.bolshoy.btrfs@gmail.com>
+To: Zach Brown <zab@zabbo.net>
 CC: Josef Bacik <JBacik@fusionio.com>,
         "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
-Subject: Re: [PATCH] Btrfs: try to avoid doing a search in btrfs_next_leaf
-Message-ID: <20121001164514.GA2370@localhost.localdomain>
-References: <1348516979-2343-1-git-send-email-jbacik@fusionio.com>
- <CAHf9xvbZTizo6nbDbX8vjbT2RrwzPm=JMm-ms2MB-SVVcDKRhQ@mail.gmail.com>
+Subject: Re: [PATCH] Btrfs: be smarter about dropping things from the tree log
+Message-ID: <20121001164720.GB2370@localhost.localdomain>
+References: <1348847914-2192-1-git-send-email-jbacik@fusionio.com>
+ <20120928174521.GA9424@lenny.home.zabbo.net>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
-In-Reply-To: <CAHf9xvbZTizo6nbDbX8vjbT2RrwzPm=JMm-ms2MB-SVVcDKRhQ@mail.gmail.com>
+In-Reply-To: <20120928174521.GA9424@lenny.home.zabbo.net>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Sun, Sep 30, 2012 at 05:28:23AM -0600, Alex Lyakas wrote:
-> Hi Josef,
-> I guess I am missing something, but I thought btrfs_next_leaf() should
-> just jump to the next leaf (or item, if it was added meanwhile)
-> irrespective of the key that is in the last slot of the current leaf.
-> The change you added is effective when there is a next leaf, but you
-> refuse to go there unless its first key has the same objectid. (I
-> think you use the ctree property that the key in the first node/leaf
-> of a tree block is equal to its parent's key).
-> Can you pls explain why you insist on the same objectid?
+On Fri, Sep 28, 2012 at 11:45:21AM -0600, Zach Brown wrote:
+> > When we truncate existing items in the tree log we've been searching for
+> > each individual item and removing them.  This is unnecessary churn and
+> > searching, just keep track of the slot we are on and how many items we need
+> > to delete and delete them all at once.  Thanks,
+> 
+> (speaking of unnecessary churn :))
+> 
+> > +next_slot:
+> >  		path->slots[0]--;
+> > +
+> >  		btrfs_item_key_to_cpu(path->nodes[0], &found_key,
+> >  				      path->slots[0]);
+> >  
+> >  		if (found_key.objectid != objectid)
+> >  			break;
+> >  
+> > -		ret = btrfs_del_item(trans, log, path);
+> > +		start_slot = path->slots[0];
+> > +		del_nr++;
+> > +		if (start_slot)
+> > +			goto next_slot;
+> 
+> A linear backwards scan?  Of potentially 64k leaves?
+> 
+> Can you use bin_search() to look for the first key >= [objectid,0,0] in
+> the leaf?  And probably a single comparison of slot 0 to fast path the
+> case where the whole leaf contains the object id?
 > 
 
-It's to avoid another search forward.  Unless I missed something everybody who
-calls btrfs_next_leaf() only wants to walk forward based on a particular item.
-If I've missed something and that's not the case then this needs to be dropped,
-or we can set some flag in path to ignore this logic, either way.  Thanks,
+Yeah I can do that.
+
+> > +		ret = btrfs_del_items(trans, log, path, start_slot, del_nr);
+> >  		if (ret)
+> >  			break;
+> >  		btrfs_release_path(path);
+> >  	}
+> > +	if (!ret && del_nr)
+> > +		ret = btrfs_del_items(trans, log, path, start_slot, del_nr);
+> >  	btrfs_release_path(path);
+> 
+> You shouldn't have to duplicate deletion and releasing the path if you
+> wrap the calculation of start_slot and nr in a helper.  Something like:
+> 
+> 	nr = find_nr_and_slot_doo_de_doo(, &start_slot);
+> 	if (nr > 0)
+> 		btrfs_del_items(, start_slot, nr);
+
+K, I'll fix that up, thanks.
 
 Josef

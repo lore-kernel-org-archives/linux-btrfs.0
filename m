@@ -1,57 +1,68 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from fgwmail6.fujitsu.co.jp ([192.51.44.36]:48552 "EHLO
-	fgwmail6.fujitsu.co.jp" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1752363Ab2JAJJE (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Mon, 1 Oct 2012 05:09:04 -0400
-Received: from m3.gw.fujitsu.co.jp (unknown [10.0.50.73])
-	by fgwmail6.fujitsu.co.jp (Postfix) with ESMTP id DC6E83EE0B6
-	for <linux-btrfs@vger.kernel.org>; Mon,  1 Oct 2012 18:09:02 +0900 (JST)
-Received: from smail (m3 [127.0.0.1])
-	by outgoing.m3.gw.fujitsu.co.jp (Postfix) with ESMTP id BFD3D45DEBC
-	for <linux-btrfs@vger.kernel.org>; Mon,  1 Oct 2012 18:09:02 +0900 (JST)
-Received: from s3.gw.fujitsu.co.jp (s3.gw.fujitsu.co.jp [10.0.50.93])
-	by m3.gw.fujitsu.co.jp (Postfix) with ESMTP id 6753D45DEBA
-	for <linux-btrfs@vger.kernel.org>; Mon,  1 Oct 2012 18:09:00 +0900 (JST)
-Received: from s3.gw.fujitsu.co.jp (localhost.localdomain [127.0.0.1])
-	by s3.gw.fujitsu.co.jp (Postfix) with ESMTP id 581D21DB803B
-	for <linux-btrfs@vger.kernel.org>; Mon,  1 Oct 2012 18:09:00 +0900 (JST)
-Received: from ml14.s.css.fujitsu.com (ml14.s.css.fujitsu.com [10.240.81.134])
-	by s3.gw.fujitsu.co.jp (Postfix) with ESMTP id 0E3A81DB8038
-	for <linux-btrfs@vger.kernel.org>; Mon,  1 Oct 2012 18:09:00 +0900 (JST)
-Message-Id: <201210010908.AA00013@FM-323941448.jp.fujitsu.com>
-From: Tsutomu Itoh <t-itoh@jp.fujitsu.com>
-Date: Mon, 01 Oct 2012 18:08:37 +0900
+Received: from plane.gmane.org ([80.91.229.3]:53154 "EHLO plane.gmane.org"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1753509Ab2JARAR (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Mon, 1 Oct 2012 13:00:17 -0400
+Received: from list by plane.gmane.org with local (Exim 4.69)
+	(envelope-from <gcfb-btrfs-devel-moved1@m.gmane.org>)
+	id 1TIjLk-0007XE-4U
+	for linux-btrfs@vger.kernel.org; Mon, 01 Oct 2012 19:00:08 +0200
+Received: from jfdmzpr03-ext.jf.intel.com ([134.134.139.72])
+        by main.gmane.org with esmtp (Gmexim 0.1 (Debian))
+        id 1AlnuQ-0007hv-00
+        for <linux-btrfs@vger.kernel.org>; Mon, 01 Oct 2012 19:00:08 +0200
+Received: from tim.c.chen by jfdmzpr03-ext.jf.intel.com with local (Gmexim 0.1 (Debian))
+        id 1AlnuQ-0007hv-00
+        for <linux-btrfs@vger.kernel.org>; Mon, 01 Oct 2012 19:00:08 +0200
 To: linux-btrfs@vger.kernel.org
-Cc: chris.mason@fusionio.com
-Subject: [PATCH] Btrfs: confirmation of value is added before trace_btrfs_get_extent() is called
-MIME-Version: 1.0
+From: Tim Chen <tim.c.chen@linux.intel.com>
+Subject: Re: [RFC][PATCH V2 0/4] Btrfs: introduce extent buffer cache to btrfs
+Date: Mon, 1 Oct 2012 16:53:19 +0000 (UTC)
+Message-ID: <loom.20121001T182737-438@post.gmane.org>
+References: <5062E563.7090105@cn.fujitsu.com>
+Mime-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-We should confirm the value of extent_map before calling
-trace_btrfs_get_extent() because the value of extent_map has the
-possibility of NULL.
+Miao Xie <miaox <at> cn.fujitsu.com> writes:
 
-Signed-off-by: Tsutomu Itoh <t-itoh@jp.fujitsu.com>
----
- fs/btrfs/inode.c | 3 ++-
- 1 file changed, 2 insertions(+), 1 deletion(-)
+> 
+> This patchset introduce extent buffer cache to btrfs. The basic idea
+> is to reduce the search time and the contentions of the extent buffer
+> lock by re-using the last search result.
+> 
+> I ran stress.sh, xfstests and some other tools to test it, all of them
+> worked well.
+> 
+> As a performance improvement patchset, of course we did performance test.
+> Because this patchset is to improve the b+ tree search, in other words,
+> it improves the performance of the metadata operations, we use file creation
+> test to measure it. So we ran 10 tasks, and all of them created 100000 files
+> in their own directories at the same time. As the result, we found this 
+patchset
+> makes btrfs ~20% faster(98s -> 77s).
+> 
+> we can pull this patchset from the URL
+> 
+> 	git://github.com/miaoxie/linux-btrfs.git extent-buffer-cache
+> 
+> Thanks
+> Miao
+> ---
 
-diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
-index cad0c57..b8f53e8 100644
---- a/fs/btrfs/inode.c
-+++ b/fs/btrfs/inode.c
-@@ -6123,7 +6123,8 @@ insert:
- 	write_unlock(&em_tree->lock);
- out:
- 
--	trace_btrfs_get_extent(root, em);
-+	if (em)
-+		trace_btrfs_get_extent(root, em);
- 
- 	if (path)
- 		btrfs_free_path(path);
--- 
-1.7.11.4
+I tested the patchset with aim7's fileserver test with 16 processes on RAM 
+emulated SCSI btrfs file system.  I got about 18% speedup in throughput.  The 
+workload is a mix of file copy, read, write and file sync.
+
+The contention on btrfs_tree_lock operation is reduced with the patchset, by 
+about 8.4% of cpu cycles (from 48.3% to 39.9%).
+
+Miao, I can send you the detailed profile if you are interested.
+
+Thanks.
+
+Tim Chen
+
+
 

@@ -1,81 +1,73 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-bk0-f46.google.com ([209.85.214.46]:64239 "EHLO
-	mail-bk0-f46.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1752076Ab2JAULx (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Mon, 1 Oct 2012 16:11:53 -0400
-Received: by bkcjk13 with SMTP id jk13so5179865bkc.19
-        for <linux-btrfs@vger.kernel.org>; Mon, 01 Oct 2012 13:11:51 -0700 (PDT)
-From: Goffredo Baroncelli <kreijack@gmail.com>
+Received: from mail-ia0-f174.google.com ([209.85.210.174]:51500 "EHLO
+	mail-ia0-f174.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1750848Ab2JAUQa (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Mon, 1 Oct 2012 16:16:30 -0400
+Received: by iagy32 with SMTP id y32so494862iag.19
+        for <linux-btrfs@vger.kernel.org>; Mon, 01 Oct 2012 13:16:29 -0700 (PDT)
+MIME-Version: 1.0
+In-Reply-To: <CAG1y0sf=dN_p4BWHa5h=BjXnC7U+5D=01XEa1iFFzKdJJTFmyg@mail.gmail.com>
+References: <1349098002.208.YahooMailNeo@web31801.mail.mud.yahoo.com>
+	<50699A40.2030603@yahoo.com.br>
+	<CAG1y0sf=dN_p4BWHa5h=BjXnC7U+5D=01XEa1iFFzKdJJTFmyg@mail.gmail.com>
+Date: Mon, 1 Oct 2012 22:16:29 +0200
+Message-ID: <CAFvQSYTySBdZrZkbp_SBPUzr_he=a5FM+caSyADoUt2DiADdvw@mail.gmail.com>
+Subject: Re: Tunning - cache write (database)
+From: Clemens Eisserer <linuxhippy@gmail.com>
 To: linux-btrfs@vger.kernel.org
-Cc: Chris Mason <clmason@fusionio.com>,
-        Goffredo Baroncelli <kreijack@inwind.it>
-Subject: [BTRFS-PROGS][PATCH] pretty_sizes() returns incorrect values
-Date: Mon,  1 Oct 2012 22:11:27 +0200
-Message-Id: <1349122287-6078-1-git-send-email-kreijack@gmail.com>
+Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-From: Goffredo Baroncelli <kreijack@inwind.it>
+> I suggest you start by reading
+> http://www.mail-archive.com/linux-btrfs@vger.kernel.org/msg18827.html
+>
+> After that, PROBABLY start your database by preloading libeatmydata to
+> disable fsync completely.
 
-pretty_sizes() returns incorrect values if the argument is < 1024.
+Which will cure the sympthoms, not the issue itself - I remember the
+same advice was given for Reiser4 back then ;)
+Usually for non-toy use-cases data is too valueable to just disable fsync.
 
-pretty_sizes(0) -> 0.00		OK
-pretty_sizes(102) -> 0.10	WRONG
-pretty_sizes(1023) -> 1.00	WRONG
-pretty_sizes(1024) -> 1.00KB	OK
+- Clemens
 
-Signed-off-by: Goffredo Baroncelli <kreijack@inwind.it>
-
----
- utils.c |   30 ++++++++++++++++--------------
- 1 file changed, 16 insertions(+), 14 deletions(-)
-
-diff --git a/utils.c b/utils.c
-index aade9e2..04c3e82 100644
---- a/utils.c
-+++ b/utils.c
-@@ -1097,25 +1097,27 @@ char *pretty_sizes(u64 size)
- {
- 	int num_divs = 0;
-         int pretty_len = 16;
--	u64 last_size = size;
--	u64 fract_size = size;
- 	float fraction;
- 	char *pretty;
- 
--	while(size > 0) {
--		fract_size = last_size;
--		last_size = size;
--		size /= 1024;
--		num_divs++;
--	}
--	if (num_divs == 0)
--		num_divs = 1;
--	if (num_divs > ARRAY_SIZE(size_strs))
--		return NULL;
-+	if( size < 1024 ){
-+		fraction = size;
-+		num_divs = 0;
-+	} else {
-+		u64 last_size = size;
-+		num_divs = 0;
-+		while(size >= 1024){
-+			last_size = size;
-+			size /= 1024;
-+			num_divs ++;
-+		}
- 
--	fraction = (float)fract_size / 1024;
-+		if (num_divs > ARRAY_SIZE(size_strs))
-+			return NULL;
-+		fraction = (float)last_size / 1024;
-+	}
- 	pretty = malloc(pretty_len);
--	snprintf(pretty, pretty_len, "%.2f%s", fraction, size_strs[num_divs-1]);
-+	snprintf(pretty, pretty_len, "%.2f%s", fraction, size_strs[num_divs]);
- 	return pretty;
- }
- 
--- 
-1.7.10.4
-
+2012/10/1 Fajar A. Nugraha <list@fajar.net>:
+> On Mon, Oct 1, 2012 at 8:27 PM, Cesar Inacio Martins
+> <cesar_inacio_martins@yahoo.com.br> wrote:
+>
+>> My problem:
+>> * Using btrfs + compression , flush of 60 MB/s take 4 minutes....
+>> (on this 4 minutes they keep constatly I/O of +- 4MB/s no disks)
+>> (flush from Informix database)
+>
+>
+>> * OpenSuse 12.1 64bits, running over VmWare ESXi 5
+>> * Btrfs version : btrfsprogs-0.19-43.1.2.x86_64
+>> * Kernel : Linux jdivm06 3.1.10-1.16-desktop #1 SMP PREEMPT Wed Jun 27
+>
+>
+>> My question, what I believed will help to avoid this long flush :
+>> * Have some way to force this flush all in memory cache and then use the
+>> btrfs background process to flush to disk ...
+>>   Security and recover aren't a priority for now, because this is part of a
+>> database bulkload ...after finish , integrity will be desirable (not a
+>> obligation, since this is a test environment)
+>>
+>> For now, performance is the mainly requirement...
+>
+>
+> I suggest you start by reading
+> http://www.mail-archive.com/linux-btrfs@vger.kernel.org/msg18827.html
+>
+> After that, PROBABLY start your database by preloading libeatmydata to
+> disable fsync completely.
+>
+> On a side note, zfs has "sync" property, which when set to "disabled",
+> have pretty much the same effect as libeatmydata.
+>
+> --
+> Fajar
+> --
+> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
+> the body of a message to majordomo@vger.kernel.org
+> More majordomo info at  http://vger.kernel.org/majordomo-info.html

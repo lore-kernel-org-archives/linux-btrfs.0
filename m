@@ -1,43 +1,54 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-oa0-f46.google.com ([209.85.219.46]:40573 "EHLO
-	mail-oa0-f46.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1753204Ab2JBAqh (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Mon, 1 Oct 2012 20:46:37 -0400
-Received: by oagh16 with SMTP id h16so5736558oag.19
-        for <linux-btrfs@vger.kernel.org>; Mon, 01 Oct 2012 17:46:36 -0700 (PDT)
+Received: from mail-ob0-f174.google.com ([209.85.214.174]:63398 "EHLO
+	mail-ob0-f174.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1754301Ab2JBIRf (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Tue, 2 Oct 2012 04:17:35 -0400
+Received: by obbuo13 with SMTP id uo13so5872678obb.19
+        for <linux-btrfs@vger.kernel.org>; Tue, 02 Oct 2012 01:17:34 -0700 (PDT)
 MIME-Version: 1.0
-In-Reply-To: <CAFvQSYTySBdZrZkbp_SBPUzr_he=a5FM+caSyADoUt2DiADdvw@mail.gmail.com>
-References: <1349098002.208.YahooMailNeo@web31801.mail.mud.yahoo.com>
-	<50699A40.2030603@yahoo.com.br>
-	<CAG1y0sf=dN_p4BWHa5h=BjXnC7U+5D=01XEa1iFFzKdJJTFmyg@mail.gmail.com>
-	<CAFvQSYTySBdZrZkbp_SBPUzr_he=a5FM+caSyADoUt2DiADdvw@mail.gmail.com>
-Date: Tue, 2 Oct 2012 07:46:36 +0700
-Message-ID: <CAG1y0scO3NSwL7Yf6ukb2NWfR9jFBnv7Yv1S=eHJn=4tc3SDBA@mail.gmail.com>
-Subject: Re: Tunning - cache write (database)
-From: "Fajar A. Nugraha" <list@fajar.net>
-To: Clemens Eisserer <linuxhippy@gmail.com>
-Cc: linux-btrfs@vger.kernel.org
+In-Reply-To: <20121001164514.GA2370@localhost.localdomain>
+References: <1348516979-2343-1-git-send-email-jbacik@fusionio.com>
+	<CAHf9xvbZTizo6nbDbX8vjbT2RrwzPm=JMm-ms2MB-SVVcDKRhQ@mail.gmail.com>
+	<20121001164514.GA2370@localhost.localdomain>
+Date: Tue, 2 Oct 2012 10:17:34 +0200
+Message-ID: <CAHf9xvYrNPj7W_VfjA7H8k6xojSGRFjnxOP1sEUGze1JWvOMJQ@mail.gmail.com>
+Subject: Re: [PATCH] Btrfs: try to avoid doing a search in btrfs_next_leaf
+From: Alex Lyakas <alex.bolshoy.btrfs@gmail.com>
+To: Josef Bacik <jbacik@fusionio.com>
+Cc: "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
 Content-Type: text/plain; charset=ISO-8859-1
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Tue, Oct 2, 2012 at 3:16 AM, Clemens Eisserer <linuxhippy@gmail.com> wrote:
->> I suggest you start by reading
->> http://www.mail-archive.com/linux-btrfs@vger.kernel.org/msg18827.html
+Hi Josef,
+thanks for clarifying.
+By "wants to walk forward based on a particular item" you mean - find
+all items that have the same objectid, until objectid changes? I wrote
+some code once (for educational purposes) that just walked the tree
+irrespective of a particular objectid, so that's why I was somewhat
+puzzled by your change. If you decide to keep your change, can you pls
+update the comment of btrfs_next_leaf()/next_old_leaf().
+
+Thanks again,
+Alex.
+
+
+On Mon, Oct 1, 2012 at 6:45 PM, Josef Bacik <jbacik@fusionio.com> wrote:
+> On Sun, Sep 30, 2012 at 05:28:23AM -0600, Alex Lyakas wrote:
+>> Hi Josef,
+>> I guess I am missing something, but I thought btrfs_next_leaf() should
+>> just jump to the next leaf (or item, if it was added meanwhile)
+>> irrespective of the key that is in the last slot of the current leaf.
+>> The change you added is effective when there is a next leaf, but you
+>> refuse to go there unless its first key has the same objectid. (I
+>> think you use the ctree property that the key in the first node/leaf
+>> of a tree block is equal to its parent's key).
+>> Can you pls explain why you insist on the same objectid?
 >>
->> After that, PROBABLY start your database by preloading libeatmydata to
->> disable fsync completely.
 >
-> Which will cure the sympthoms, not the issue itself - I remember the
-> same advice was given for Reiser4 back then ;)
-> Usually for non-toy use-cases data is too valueable to just disable fsync.
-
-The OP DID say he doesn't really care about security, recovery, nor
-integrity (or at least, it's not an obligatiion) :D
-
-Other than trying latest -rc and using libeatmydata, I can't see what
-else can be done to improve current db performance on btrfs. As the
-list archive shows, zfs is currently MUCH more suitable for that.
-
--- 
-Fajar
+> It's to avoid another search forward.  Unless I missed something everybody who
+> calls btrfs_next_leaf() only wants to walk forward based on a particular item.
+> If I've missed something and that's not the case then this needs to be dropped,
+> or we can set some flag in path to ignore this logic, either way.  Thanks,
+>
+> Josef

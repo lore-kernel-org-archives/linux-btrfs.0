@@ -1,81 +1,43 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail.servus.at ([193.170.194.20]:43022 "EHLO mail.servus.at"
+Received: from mx2.fusionio.com ([66.114.96.31]:58183 "EHLO mx2.fusionio.com"
 	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1754750Ab2JCKyS (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 3 Oct 2012 06:54:18 -0400
-Message-ID: <506C14BA.70006@oberhumer.com>
-Date: Wed, 03 Oct 2012 12:34:34 +0200
-From: "Markus F.X.J. Oberhumer" <markus@oberhumer.com>
+	id S1753744Ab2JCLWR (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Wed, 3 Oct 2012 07:22:17 -0400
+Date: Wed, 3 Oct 2012 07:22:14 -0400
+From: Chris Mason <chris.mason@fusionio.com>
+To: Goffredo Baroncelli <kreijack@gmail.com>
+CC: Chris Mason <clmason@fusionio.com>,
+        "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>,
+        Hugo Mills <hugo@carfax.org.uk>, Roman Mamedov <rm@romanrm.ru>,
+        =?iso-8859-1?Q?S=E9bastien?= Maury <sebastien.maury@inserm.fr>,
+        Goffredo Baroncelli <kreijack@inwind.it>
+Subject: Re: [PATCH][BTRFS-PROGS] btrfs filesystem disk-usage
+Message-ID: <20121003112214.GK3214@shiny>
+References: <1349202970-6700-1-git-send-email-kreijack@gmail.com>
+ <20121002234637.GF3214@shiny>
+ <CAJHuE_BmvmEteSg8YgcHH3cuB27Bi-j-B=yS7Y2NFhb1L5_Aog@mail.gmail.com>
 MIME-Version: 1.0
-To: linux-kernel@vger.kernel.org
-CC: Andi Kleen <andi@firstfloor.org>, chris.mason@fusionio.com,
-        linux-btrfs@vger.kernel.org, Nitin Gupta <ngupta@vflare.org>,
-        richard -rw- weinberger <richard.weinberger@gmail.com>,
-        Johannes Stezenbach <js@sig21.net>
-Subject: Re: [GIT PULL v2] Update LZO compression
-References: <5033A78E.3080703@oberhumer.com>
-In-Reply-To: <5033A78E.3080703@oberhumer.com>
-Content-Type: text/plain; charset=ISO-8859-1
+Content-Type: text/plain; charset="us-ascii"
+In-Reply-To: <CAJHuE_BmvmEteSg8YgcHH3cuB27Bi-j-B=yS7Y2NFhb1L5_Aog@mail.gmail.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hi all,
+On Wed, Oct 03, 2012 at 12:22:06AM -0600, Goffredo Baroncelli wrote:
+> On Wed, Oct 3, 2012 at 1:46 AM, Chris Mason <chris.mason@fusionio.com> wrote:
+> [...]
+> > I like it, thanks.  Could you please update btrfs fi df to show this
+> > instead of adding a new command though?
+> 
+> Hi Chris,
+> no problem to update the patches, however I have one suggestion:
+> - leave "btrfs fi df" as is to no break any script (if any) which
+> would uses it. Hide it from the help and deprecating it in the man
+> page. This because the output is very different.
+> - renaming "btrfs fi disk-usage" in "btrfs fi disk-free", which make sense.
+> 
+> Let me know which choiche you prefer.
 
-is there some official maintainer who feels responsible for
-pushing the LZO update to Linus?
+I think it is better to replace btrfs fi df.  There should not be many
+scripts relying on it yet.
 
-Otherwise I also could issue a pull-request on github, but somehow I
-don't think that this is the preferred workflow.
-
-Cheers,
-Markus
-
-On 2012-08-21 17:21, Markus F.X.J. Oberhumer wrote:
-> Hi all,
-> 
-> as suggested on the mailing list I have converted the updated LZO
-> code into git, so please pull my "lzo-update" branch from
-> 
->   git://github.com/markus-oberhumer/linux.git lzo-update
-> 
-> You can browse the branch at
-> 
->   https://github.com/markus-oberhumer/linux/compare/lzo-update
-> 
-> I'd ask some official kernel maintainer for review and to push this into
-> linux-next so that it will hopefully land in the 3.7 release.
-> 
-> Share and enjoy,
-> Markus
-> 
-> Signed-off-by: Markus F.X.J. Oberhumer <markus@oberhumer.com>
-> 
-> 
-> [ Changes in v2: Optimize code for CPUs with inefficient unaligned
->   access => significant speed increase on ARM ]
-> 
-> 
-> On 2012-07-16 20:30, Markus F.X.J. Oberhumer wrote:
->> Hi all,
->>
->> I finally have prepared a small package that updates the LZO version
->> in the Linux kernel. Please get it from:
->>
->> http://www.oberhumer.com/opensource/lzo/download/Testing/linux-kernel-lzo-20120716.tar.gz
->>
->> As stated in the README this version is significantly faster (typically more
->> than 2 times faster!) than the current version, has been thoroughly tested on
->> x86_64/i386/powerpc platforms and is intended to get included into the
->> official Linux 3.6 or 3.7 release.
->>
->> I encourage all compression users to test and benchmark this new version,
->> and I also would ask some official LZO maintainer to convert the updated
->> source files into a GIT commit and possibly push it to Linus or linux-next.
->>
->> Share and enjoy,
->> Markus
->>
->> Signed-off-by: Markus F.X.J. Oberhumer" <markus@oberhumer.com>
-
--- 
-Markus Oberhumer, <markus@oberhumer.com>, http://www.oberhumer.com/
+-chris

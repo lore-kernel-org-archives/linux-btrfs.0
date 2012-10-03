@@ -1,51 +1,39 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from smtp208.alice.it ([82.57.200.104]:50312 "EHLO smtp208.alice.it"
+Received: from mail48.e.nsc.no ([193.213.115.48]:40688 "EHLO mail48.e.nsc.no"
 	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S964823Ab2JCRKB (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 3 Oct 2012 13:10:01 -0400
-Message-ID: <506C7153.4020004@inwind.it>
-Date: Wed, 03 Oct 2012 19:09:39 +0200
-From: Goffredo Baroncelli <kreijack@inwind.it>
-Reply-To: kreijack@inwind.it
+	id S964823Ab2JCRKV (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Wed, 3 Oct 2012 13:10:21 -0400
+Received: from [10.0.0.22] (ti0036a380-dhcp1045.bb.online.no [85.164.250.26])
+	by mail48.nsc.no (8.14.4/8.14.4) with ESMTP id q93GZ1qK003121
+	(version=TLSv1/SSLv3 cipher=DHE-RSA-AES256-SHA bits=256 verify=NOT)
+	for <linux-btrfs@vger.kernel.org>; Wed, 3 Oct 2012 18:35:02 +0200 (MEST)
+Message-ID: <506C6934.5010904@middelthun.no>
+Date: Wed, 03 Oct 2012 18:35:00 +0200
+From: =?ISO-8859-1?Q?=D8ystein_S=E6ttem_Middelthun?=
+	<oystein@middelthun.no>
 MIME-Version: 1.0
-To: Ilya Dryomov <idryomov@gmail.com>
-CC: "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
-Subject: Re: [PATCH 1/2] Update btrfs filesystem df command
-References: <1349264596-9383-1-git-send-email-kreijack@inwind.it> <1349264596-9383-2-git-send-email-kreijack@inwind.it> <20121003150219.GB1978@zambezi.lan>
-In-Reply-To: <20121003150219.GB1978@zambezi.lan>
+To: "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
+Subject: tree root
 Content-Type: text/plain; charset=ISO-8859-1; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 10/03/2012 05:02 PM, Ilya Dryomov wrote:
->> +static int cmd_disk_free(int argc, char **argv)
->> >  +{
->> >  +
->> >  +	int 	flags=DF_SHOW_SUMMARY|DF_SHOW_DETAIL|DF_HUMAN_UNIT;
->> >  +	int	i, more_than_one=0;
->> >  +
->> >  +	if (check_argc_min(argc, 2))
->> >  +		usage(cmd_disk_free_usage);
->> >  +
->> >  +	for(i=1; i<  argc ; i++){
->> >  +		if(!strcmp(argv[i],"-d"))
->> >  +			flags&= ~DF_SHOW_DETAIL;
->> >  +		else if(!strcmp(argv[i],"-s"))
->> >  +			flags&= ~DF_SHOW_SUMMARY;
->> >  +		else if(!strcmp(argv[i],"-k"))
->> >  +			flags&= ~DF_HUMAN_UNIT;
->> >  +		else{
->> >  +			int r;
->> >  +			if(more_than_one)
->> >  +				printf("\n");
->> >  +			r = _cmd_disk_free(argv[i], flags);
->> >  +			if( r ) return r;
->> >  +			more_than_one=1;
->> >  +		}
-> Is there any reason getopt(), or better yet, getopt_long() won't work?
+Hi!
 
-I re-changed idea: I will use getopt()
+I have a broken btrfs unable to mount because it is unable to find the 
+tree root. Using find-root I find the following:
+
+Well block 14102764707840 seems great, but generation doesn't match, 
+have=109268, want=109269
+
+Because the filesystem was last in use with a pre 3.2-kernel I am unable 
+to use mount -o recovery, but restore seems to work when I specify the 
+previous tree-root. My problem is however that the btrfs is so large I 
+have nowhere to temporarily put all the files. I am currently running 
+kernel 3.5. Does mount have an option to manually tell it to use the 
+tree root at block 14102764707840?
 
 
->
-
+-- 
+Best regards
+Øystein Middelthun

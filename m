@@ -1,98 +1,58 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([222.73.24.84]:63749 "EHLO song.cn.fujitsu.com"
-	rhost-flags-OK-FAIL-OK-OK) by vger.kernel.org with ESMTP
-	id S1759109Ab2JYB7h (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 24 Oct 2012 21:59:37 -0400
-Message-ID: <50889D1D.2050609@cn.fujitsu.com>
-Date: Thu, 25 Oct 2012 09:59:57 +0800
-From: Miao Xie <miaox@cn.fujitsu.com>
-Reply-To: miaox@cn.fujitsu.com
+Received: from mx1.fusionio.com ([66.114.96.30]:54546 "EHLO mx1.fusionio.com"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S932747Ab2JCADH (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Tue, 2 Oct 2012 20:03:07 -0400
+Date: Tue, 2 Oct 2012 20:03:04 -0400
+From: Chris Mason <chris.mason@fusionio.com>
+To: Miao Xie <miaox@cn.fujitsu.com>
+CC: Linux Btrfs <linux-btrfs@vger.kernel.org>
+Subject: Re: [PATCH V4 0/7 ] Btrfs-progs: enhance btrfs subvol list only to
+ show read-only snapshots
+Message-ID: <20121003000304.GH3214@shiny>
+References: <50584E6D.8000602@cn.fujitsu.com>
 MIME-Version: 1.0
-To: kreijack@inwind.it
-CC: Goffredo Baroncelli <kreijack@gmail.com>,
-        Linux Btrfs <linux-btrfs@vger.kernel.org>
-Subject: Re: [PATCH 1/2] Btrfs: don't check the permission of the subvolume
- which we want to delete
-References: <50853040.1030404@cn.fujitsu.com> <50857BA2.90403@gmail.com>
-In-Reply-To: <50857BA2.90403@gmail.com>
-Content-Type: text/plain; charset=UTF-8
+Content-Type: text/plain; charset="us-ascii"
+In-Reply-To: <50584E6D.8000602@cn.fujitsu.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Mon, 22 Oct 2012 19:00:18 +0200, Goffredo Baroncelli wrote:
-> On 2012-10-22 13:38, Miao Xie wrote:
->> Step to reproduce:
->>  # mkfs.btrfs <disk>
->>  # mount -o user_subvol_rm_allowed <disk> <mnt>
->>  # mkdir <mnt>/dir0
->>  # chmod 777 <mnt>/dir0
->>  # btrfs sub snap <mnt> <mnt>/dir0/snap0
->>  # su -c "btrfs sub del <mnt>/dir0/snap0" -s /bin/bash nobody
->>  ERROR: cannot delete '<mnt>/dir0/snap0' - Permission denied
->>
->> This is because we checked the permission of the subvolume that we want to
->> delete, and found the user - nobody have no WRITE permission of this subvolume.
->>
->> I think we need not check the permission of the subvolume we want to delete,
->> because we have the right to clean up the directory since we have WRITE and
->> EXECUTE permission, just like rmdir command.
+On Tue, Sep 18, 2012 at 04:35:25AM -0600, Miao Xie wrote:
+> We want 'btrfs subvolume list' only to list readonly subvolumes, this patch set
+> introduces a new option 'r' to implement it.
 > 
-> I think that removing a subvolume is a bit different than removing a
-> directory.
-> With "user_subvol_rm_allowed" allow an ordinary user to remove  things
-> that an plain "rm -rf" is not allowed.
+> You can use the command like that:
 > 
-> For example if inside a directories tree there is a directory with
-> permission 700 (uid==root) an ordinary user is not able to remove this
-> directory.
-> Instead with the subvolumes (and the flag user_subvol_rm_allowed) an
-> ordinary user would be allowed to do it.
-> As mitigation it is required that user has WX permission on subvolume.
-> IIRC this is what we discussed at time.
+> 	btrfs subvolume list -r <mnt>
 > 
-> See the thread "[PATCH] Btrfs: allow subvol deletion by unprivileged
-> user with -o user_subvol_rm_allowed"
+> Changelog v3 -> v4:
+> - modify the check method which is used to check if btrfs_root_item contains otime and uuid
+>   or not.
+> - add filter set and comparer set which are used to manage the filters and comparers specified
+>   by the users.
+> - re-base the read-only subvolume list function.
 > 
-> http://www.mail-archive.com/linux-btrfs@vger.kernel.org/msg06525.html
+> Changelog v2 -> v3:
+> - re-implement list_subvols()
+> - re-implement this read-only subvolume list function based on the new list_subvols()
+> 
+> Changelog v1 -> v2:
+> - address the comments from Goffredo Baroncelli
+>   i,   change the changelog of the patches and make them more elaborate.
+>   ii,  move the function declarations to a new head file.
+>   iii, add the introduction of the new option 'r' into the man page
+> 
+> We can pull the patches from the URL
+> 
+> 	git://github.com/miaoxie/btrfs-progs.git master
+> 
+> This patchset is against the patches of Liu Bo, Anand Jain and mine which were sent by several
+> days ago. And we also can pull those patches from the above URL.
 
-I don't think this mitigation is reasonable, it will make the user be
-confused. As I said in another mail:
+These are all really useful additions!  How do you plan on using the
+table option? (just curious).
 
->> I don't think we can identify "btrfs sub del" with "rm -rf", because "rm -rf"
->> will check the permission of the parent directory of each file/directory which
->> is going to be deleted, but "btrfs sub del" doesn't do it, it will see all the
->> file/directory in the subvolume as one, so I think it seems like a special
->> "rmdir".
+I've got it pulled in here and it is working properly on my send/receive
+backup volume (with lots of snapshots).
 
-So I think we needn't the permission of the subvolume which is going to be deleted.
-
-Thanks
-Miao
-
-> 
-> 
->>
->> Signed-off-by: Miao Xie <miaox@cn.fujitsu.com>
->> ---
->>  fs/btrfs/ioctl.c |    4 ----
->>  1 files changed, 0 insertions(+), 4 deletions(-)
->>
->> diff --git a/fs/btrfs/ioctl.c b/fs/btrfs/ioctl.c
->> index f5a2e6c..29fb07c 100644
->> --- a/fs/btrfs/ioctl.c
->> +++ b/fs/btrfs/ioctl.c
->> @@ -2062,10 +2062,6 @@ static noinline int btrfs_ioctl_snap_destroy(struct file *file,
->>  		if (root == dest)
->>  			goto out_dput;
->>  
->> -		err = inode_permission(inode, MAY_WRITE | MAY_EXEC);
->> -		if (err)
->> -			goto out_dput;
->> -
->>  		/* check if subvolume may be deleted by a non-root user */
->>  		err = btrfs_may_delete(dir, dentry, 1);
->>  		if (err)
-> 
-> 
-
-
+-chris

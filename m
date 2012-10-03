@@ -1,39 +1,69 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from li9-11.members.linode.com ([67.18.176.11]:53616 "EHLO
-	imap.thunk.org" rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1756529Ab2JCSyv (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 3 Oct 2012 14:54:51 -0400
-Date: Wed, 3 Oct 2012 14:54:45 -0400
-From: "Theodore Ts'o" <tytso@mit.edu>
-To: Wade Cline <clinew@linux.vnet.ibm.com>
-Cc: "cmm@linux.vnet.ibm.com" <cmm@linux.vnet.ibm.com>,
-        linux-btrfs@vger.kernel.org
-Subject: Re: [e2fsprogs] ext2_dir_entry To ext2_dir_entry_2 Casting
-Message-ID: <20121003185445.GA5160@thunk.org>
-References: <506B31B7.40405@linux.vnet.ibm.com>
- <506B3A3E.1060003@linux.vnet.ibm.com>
- <20121002210836.GA15277@thunk.org>
- <506C786B.4080704@linux.vnet.ibm.com>
- <20121003175831.GC4237@thunk.org>
- <506C8426.4010008@linux.vnet.ibm.com>
+Received: from twin.jikos.cz ([89.185.236.188]:51836 "EHLO twin.jikos.cz"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1751132Ab2JCTcV (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Wed, 3 Oct 2012 15:32:21 -0400
+Date: Wed, 3 Oct 2012 21:32:12 +0200
+From: David Sterba <dave@jikos.cz>
+To: Goffredo Baroncelli <kreijack@gmail.com>
+Cc: linux-btrfs@vger.kernel.org, Hugo Mills <hugo@carfax.org.uk>,
+        Roman Mamedov <rm@romanrm.ru>,
+        =?iso-8859-1?Q?S=E9bastien?= Maury <sebastien.maury@inserm.fr>,
+        Ilya Dryomov <idryomov@gmail.com>
+Subject: Re: [PATCH][BTRFS-PROGS][V2] btrfs filesystem df
+Message-ID: <20121003193211.GX14582@twin.jikos.cz>
+Reply-To: dave@jikos.cz
+References: <1349284952-6865-1-git-send-email-kreijack@inwind.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <506C8426.4010008@linux.vnet.ibm.com>
+In-Reply-To: <1349284952-6865-1-git-send-email-kreijack@inwind.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Wed, Oct 03, 2012 at 11:29:58AM -0700, Wade Cline wrote:
-> In this case, dir_iterate_proc() is being passed into
-> ext2_dir_iterate2() and is called from ext2fs_process_dir_block(),
-> not readdir(2). It looks like the main issue would be detecting if the
-> EXT2_FEATURE_INCOMPAT_FILETYPE flag is -unset- and manually
-> setting the file type to EXT2_FT_UNKNOWN (there appears to be a case for
-> handling EXT2_FT_UNKNOWN; so long as the file type is not set to an
-> undefined value it should be okay).
+On Wed, Oct 03, 2012 at 07:22:30PM +0200, Goffredo Baroncelli wrote:
+> $ ./btrfs filesystem df /
+> Path: /
+> Summary:
+>   Disk_size:                 72.57GB
+>   Disk_allocated:            25.10GB
+>   Disk_unallocated:          47.48GB
+>   Logical_size:              23.06GB
+>   Used:                      11.01GB
+>   Free_(Estimated):          55.66GB    (Max: 59.52GB, Min: 35.78GB)
+>   Data_to_disk_ratio:           92 %
+> 
+> Details:
+>   Chunk-type  Mode      Chunk_size Logical_size        Used
+>   Data        Single       21.01GB      21.01GB     10.34GB
+>   System      DUP          80.00MB      40.00MB      4.00KB
+>   System      Single        4.00MB       4.00MB        0.00
+>   Metadata    DUP           4.00GB       2.00GB    686.93MB
+>   Metadata    Single        8.00MB       8.00MB        0.00
 
-EXT2_FT_UNKNOWN == DT_UNKNOWN == 0
+Please snip the following help text from basic output, eg. when I'm
+running the 'df' command before/after some actions from scripts, this
+is unnecessary.
 
-Since we've always enforced that name_len < 256, the high 8 bits
-of name_len will always be zero, even if !EXT2_FEATURE_INCOMPAT_FILETYPE.
+> Where:
+>         Disk_size                       -> sum of sizes of teh disks
+>         Disk_allocated                  -> sum of chunk sizes
+>         Disk_unallocated                -> Disk_size - Disk_allocated
+>         Logical_size                    -> sum of logical area sizes
+>         Used                            -> logical area used
+>         Free_(Estimated)                -> on the basis of allocated
+>                                            chunk, an estrapolation of
+>                                            the free space
+>         Data_to_disk_ratio              -> ration between the space occuped
+>                                            by a chunk and the real space
+>                                            available ( due to duplication
+>                                            and/or RAID level)
+>         Chunk_type                      -> kind of chunk
+>         Mode                            -> allocation policy of a chunk
+>         Chunk_size                      -> area of disk(s) occuped by the
+>                                            chunk (see it as raw space used)
+>         Logical_size                    -> logical area size of the chunk
+>         Used                            -> portion of the logical area
+>                                            used by the filesystem
 
-							- Ted
+
+david

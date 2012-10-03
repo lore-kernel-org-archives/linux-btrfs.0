@@ -1,56 +1,61 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from smtp209.alice.it ([82.57.200.105]:44983 "EHLO smtp209.alice.it"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1754480Ab2JCUx4 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 3 Oct 2012 16:53:56 -0400
-Message-ID: <506CA5DD.9000808@inwind.it>
-Date: Wed, 03 Oct 2012 22:53:49 +0200
-From: Goffredo Baroncelli <kreijack@inwind.it>
-Reply-To: kreijack@inwind.it
-MIME-Version: 1.0
-To: Hugo Mills <hugo@carfax.org.uk>, Ilya Dryomov <idryomov@gmail.com>,
-        linux-btrfs@vger.kernel.org, Roman Mamedov <rm@romanrm.ru>,
-        =?ISO-8859-1?Q?S=E9bastien_Maury?= <sebastien.maury@inserm.fr>
-Subject: Re: [PATCH 1/2] Update btrfs filesystem df command
-References: <1349284952-6865-1-git-send-email-kreijack@inwind.com> <1349284952-6865-2-git-send-email-kreijack@inwind.com> <20121003203400.GD2890@zambezi.lan> <20121003203852.GE25498@carfax.org.uk>
-In-Reply-To: <20121003203852.GE25498@carfax.org.uk>
-Content-Type: text/plain; charset=ISO-8859-1; format=flowed
+Received: from mail.linuxfoundation.org ([140.211.169.12]:33774 "EHLO
+	mail.linuxfoundation.org" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1754390Ab2JCVBh (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Wed, 3 Oct 2012 17:01:37 -0400
+Date: Wed, 3 Oct 2012 14:01:36 -0700
+From: Andrew Morton <akpm@linux-foundation.org>
+To: richard -rw- weinberger <richard.weinberger@gmail.com>
+Cc: "Markus F.X.J. Oberhumer" <markus@oberhumer.com>,
+        linux-kernel@vger.kernel.org, Andi Kleen <andi@firstfloor.org>,
+        chris.mason@fusionio.com, linux-btrfs@vger.kernel.org,
+        Nitin Gupta <ngupta@vflare.org>, Johannes Stezenbach <js@sig21.net>
+Subject: Re: [GIT PULL v2] Update LZO compression
+Message-Id: <20121003140136.f2b071df.akpm@linux-foundation.org>
+In-Reply-To: <CAFLxGvw3OqOb0UVhjtwC+CD+wtubH-O1FM7=fYFT8ztWPVPd6w@mail.gmail.com>
+References: <5033A78E.3080703@oberhumer.com>
+	<506C14BA.70006@oberhumer.com>
+	<CAFLxGvw3OqOb0UVhjtwC+CD+wtubH-O1FM7=fYFT8ztWPVPd6w@mail.gmail.com>
+Mime-Version: 1.0
+Content-Type: text/plain; charset=US-ASCII
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 10/03/2012 10:38 PM, Hugo Mills wrote:
->>> +	if( !(flags&  (DF_SHOW_SUMMARY|DF_SHOW_DETAIL)) ){
->>> >  >  +		fprintf(stderr, "btrfs filesystem df: it is not possible to specify -s AND -d\n");
->> >
->> >  This doesn't look right at all.  You are adding two switches and
->> >  specifying both of them is an error?  A little too much for a command
->> >  whose job is to do some basic math and pretty-print the result.
->> >
->> >  How about displaying just the summary by default and then adding a
->> >  *single*  switch (-v or whatever) for summary+details?
->     I'd prefer to see both sections by default. The reason for this is
-> that without both sections, people tend to get confused because they
-> don't know they're looking at half the story (e.g. some numbers change
-> twice as fast as they think they should).
+On Wed, 3 Oct 2012 12:48:46 +0200
+richard -rw- weinberger <richard.weinberger@gmail.com> wrote:
 
-I agree with Hugo. As default both the section should be showed.
+> CC'in akpm.
 
->     I think supplying both options should probably show both sections
-> again, and make it not an error to do so, but I'm happy either way.
+Thanks.
 
-Because the default is to show both the sections, passing a switch means 
-"hide the other section". So passing both the switches means: "hide both 
-the sections"...
+> >>> Hi all,
+> >>>
+> >>> I finally have prepared a small package that updates the LZO version
+> >>> in the Linux kernel. Please get it from:
+> >>>
+> >>> http://www.oberhumer.com/opensource/lzo/download/Testing/linux-kernel-lzo-20120716.tar.gz
+> >>>
+> >>> As stated in the README this version is significantly faster (typically more
+> >>> than 2 times faster!) than the current version, has been thoroughly tested on
+> >>> x86_64/i386/powerpc platforms and is intended to get included into the
+> >>> official Linux 3.6 or 3.7 release.
+> >>>
+> >>> I encourage all compression users to test and benchmark this new version,
+> >>> and I also would ask some official LZO maintainer to convert the updated
+> >>> source files into a GIT commit and possibly push it to Linus or linux-next.
 
-This is the reason of the check.
+No, lib/lzo has no identifiable maintainer.  I suggest you proceed as
+follows:
 
-I am thinking to remove both the switches... But today is too late...
-Now I am seeing a reply by Ilya which reached this same conclusion... 
-But today is still to late. Tomorrow I will rearrange the patch...
+- Post the entire patch series to lkml for review (I'd like a cc please)
 
+- After that process has played out, ask Stephen to add this git tree
+  to linux-next.
 
+- After that process has played out, ask Linus to pull the tree
+  during a merge window.
 
->
->     Hugo.
+I haven't actually looked at the patches yet, but if they are as
+extensive as they sound, it would be appropriate for you become the
+formal maintainer of lib/lzo.
 
-Goffredp

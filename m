@@ -1,68 +1,85 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-bk0-f46.google.com ([209.85.214.46]:54599 "EHLO
-	mail-bk0-f46.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1752994Ab2JCRi4 (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Wed, 3 Oct 2012 13:38:56 -0400
-Received: by bkcjk13 with SMTP id jk13so6289711bkc.19
-        for <linux-btrfs@vger.kernel.org>; Wed, 03 Oct 2012 10:38:54 -0700 (PDT)
-Message-ID: <506C7831.6050701@gmail.com>
-Date: Wed, 03 Oct 2012 19:38:57 +0200
-From: Goffredo Baroncelli <kreijack@gmail.com>
+Received: from e36.co.us.ibm.com ([32.97.110.154]:50832 "EHLO
+	e36.co.us.ibm.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1754758Ab2JCRlD (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Wed, 3 Oct 2012 13:41:03 -0400
+Received: from /spool/local
+	by e36.co.us.ibm.com with IBM ESMTP SMTP Gateway: Authorized Use Only! Violators will be prosecuted
+	for <linux-btrfs@vger.kernel.org> from <clinew@linux.vnet.ibm.com>;
+	Wed, 3 Oct 2012 11:40:59 -0600
+Received: from d03relay04.boulder.ibm.com (d03relay04.boulder.ibm.com [9.17.195.106])
+	by d03dlp02.boulder.ibm.com (Postfix) with ESMTP id E17D73E4005E
+	for <linux-btrfs@vger.kernel.org>; Wed,  3 Oct 2012 11:40:51 -0600 (MDT)
+Received: from d03av04.boulder.ibm.com (d03av04.boulder.ibm.com [9.17.195.170])
+	by d03relay04.boulder.ibm.com (8.13.8/8.13.8/NCO v10.0) with ESMTP id q93HelaV178038
+	for <linux-btrfs@vger.kernel.org>; Wed, 3 Oct 2012 11:40:47 -0600
+Received: from d03av04.boulder.ibm.com (loopback [127.0.0.1])
+	by d03av04.boulder.ibm.com (8.14.4/8.13.1/NCO v10.0 AVout) with ESMTP id q93HeZFu020075
+	for <linux-btrfs@vger.kernel.org>; Wed, 3 Oct 2012 11:40:37 -0600
+Message-ID: <506C786B.4080704@linux.vnet.ibm.com>
+Date: Wed, 03 Oct 2012 10:39:55 -0700
+From: Wade Cline <clinew@linux.vnet.ibm.com>
 MIME-Version: 1.0
-To: Ilya Dryomov <idryomov@gmail.com>
-CC: Chris Mason <chris.mason@fusionio.com>,
-        "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>,
-        Goffredo Baroncelli <kreijack@inwind.it>
-Subject: Re: [PATCH 1/2] Update btrfs filesystem df command
-References: <1349264596-9383-1-git-send-email-kreijack@inwind.it> <1349264596-9383-2-git-send-email-kreijack@inwind.it> <20121003150219.GB1978@zambezi.lan> <506C691E.6020506@gmail.com> <20121003172007.GA2890@zambezi.lan>
-In-Reply-To: <20121003172007.GA2890@zambezi.lan>
+To: "Theodore Ts'o" <tytso@mit.edu>
+CC: "cmm@linux.vnet.ibm.com" <cmm@linux.vnet.ibm.com>,
+        linux-btrfs@vger.kernel.org
+Subject: Re: [e2fsprogs] ext2_dir_entry To ext2_dir_entry_2 Casting
+References: <506B31B7.40405@linux.vnet.ibm.com> <506B3A3E.1060003@linux.vnet.ibm.com> <20121002210836.GA15277@thunk.org>
+In-Reply-To: <20121002210836.GA15277@thunk.org>
 Content-Type: text/plain; charset=ISO-8859-1; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hi,
-On 10/03/2012 07:20 PM, Ilya Dryomov wrote:
->>>>   	filesystem_cmd_group_usage, NULL, {
->>>> >  >>-		{ "df", cmd_df, cmd_df_usage, NULL, 0 },
->>>> >  >>+		{ "df", cmd_disk_free, cmd_disk_free_usage, NULL, 0 },
->>> >  >
->>> >  >If this command is going to replace df, you should change the function
->>> >  >name back to cmd_df.
->> >
->> >  I was never convinced to use 'df'. At the beginning when I wrote the
->> >  first parser of btrfs, was suggested (not by me) to use "long"
->> >  command and allow the parser to match a contracted command until
->> >  there was any ambiguity. I suggested to use disk-free, but everybody
->> >  were confortable with df.. so I leaved it as "official name". But I
->> >  prefer for the internal code a more verbose name.
-> Well, all your patch is doing is extending the functionality of an
-> existing command.  The "official name" for that command is "df", and you
-> are not changing its name.
+On 10/02/2012 02:08 PM, Theodore Ts'o wrote:
 
-I would like change the name of the command from df to disk-free. 
-Unfortunately (for me) Chris ask to leaved the old name...
-
- > Why change the name of an existing function?
-
-Strictly speaking, I never changed the name of the function. At the 
-beginning I added another command (who was named disk-usage), then Chris 
-asked to replace df with the new one. So I removed the old one.
-Seeing the patch it seems that I changed the name, but the truth is that 
-I added a new one then  removed the old one. Due to how the patch is 
-generated it seems another thing.
-But this doesn't change too much.
-
-The point is that the function name doesn't match the command name. It 
-is not the single case: look at the function cmd_send_start() 
-(associated to the send command), cmd_defrag() )associated to the 
-command defragment....)
-
-
-BR
-G.Baroncelli
+> On Tue, Oct 02, 2012 at 12:02:22PM -0700, Wade Cline wrote:
+>> Hello Theodore Ts'o,
+>>
+>> Is there a function similar to ext2fs_dir_iterate2() that will call a hook
+>> function on an ext2_dir_entry_2 structure and not an ext2_dir_entry
+>> structure?
+>>
+>> The reason I ask is because btrfs-convert currently tries to do a cast
+>> between the two structures as such:
+>>
+>> 	static int dir_iterate_proc(..., struct ext2_dir_entry *old, ...)
+>> 	{
+>> 	...
+>> 		struct ext2_dir_entry_2 *dirent = (struct ext2_dir_entry_2 *)old;
+>>
+>> which works fine on little-endian machines, but breaks on big-endian machines.
+> The reason why we don't have that function today is because what most
+> programs (especially inside e2fsprogs) have done is to use the
+> ext2_dir_entry structure and just simply used (name_len&  0xff) to get
+> the actual name length, and in the case of e2fsck (which is the only
+> program which in practice has cared about the file type) to get the
+> file type by doing (name_len>>  8).
 >
-> Thanks,
+I see. That should work fine, too.
+
+>> If there isn't, would you be interested in a patch that adds a
+>> function, say, ext2_dir_entry_upgrade(struct ext2_dir_entry *old,
+>> struct ext2_dir_entry_2 *new) that will convert one structure to the
+>> other and take into account the endianness of the machine? This
+>> would be better than just ad-hoc fixing the code in btrfs.
+> We could do that, but that would mean needing to copy the data
+> structure somewhere else, which means you would have to allocate
+> memory for the new data structure, and then you'd have to release that
+> memory later, etc.
 >
-> 		Ilya
+> I would think that using (name_len&  0xFF) is a much simpler solution,
+> and my suggestion is to not depend on the file type in the directory
+> entry (since there might be some very old ext2 file systems that don't
+> set the file type), and to use the inode's mode bits as authoratative
+> for the file type of the inode.
 >
+> Regards,
+>
+> 							- Ted
+Interesting compatibility issue. Will keep it in mind.
+
+Thank you for the help.
+
+Sincerely,
+Wade
 

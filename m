@@ -1,74 +1,89 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-ee0-f46.google.com ([74.125.83.46]:39823 "EHLO
+Received: from mail-ee0-f46.google.com ([74.125.83.46]:57592 "EHLO
 	mail-ee0-f46.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1756313Ab2JCPBW (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Wed, 3 Oct 2012 11:01:22 -0400
-Received: by eekb15 with SMTP id b15so4084034eek.19
-        for <linux-btrfs@vger.kernel.org>; Wed, 03 Oct 2012 08:01:20 -0700 (PDT)
-Date: Wed, 3 Oct 2012 18:01:17 +0300
+	with ESMTP id S1755958Ab2JCPCX (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Wed, 3 Oct 2012 11:02:23 -0400
+Received: by eekb15 with SMTP id b15so4084981eek.19
+        for <linux-btrfs@vger.kernel.org>; Wed, 03 Oct 2012 08:02:22 -0700 (PDT)
+Date: Wed, 3 Oct 2012 18:02:19 +0300
 From: Ilya Dryomov <idryomov@gmail.com>
 To: Goffredo Baroncelli <kreijack@gmail.com>
 Cc: Chris Mason <chris.mason@fusionio.com>,
         "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>,
         Goffredo Baroncelli <kreijack@inwind.it>
-Subject: Re: [PATCH][BTRFS-PROGS][V1] btrfs filesystem df
-Message-ID: <20121003150117.GA1978@zambezi.lan>
+Subject: Re: [PATCH 1/2] Update btrfs filesystem df command
+Message-ID: <20121003150219.GB1978@zambezi.lan>
 References: <1349264596-9383-1-git-send-email-kreijack@inwind.it>
+ <1349264596-9383-2-git-send-email-kreijack@inwind.it>
 MIME-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <1349264596-9383-1-git-send-email-kreijack@inwind.it>
+In-Reply-To: <1349264596-9383-2-git-send-email-kreijack@inwind.it>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Wed, Oct 03, 2012 at 01:43:14PM +0200, Goffredo Baroncelli wrote:
-> This serie of patches updated the command "btrfs filesystem
-> df". I update this command because it is not so easy to get
-> the information about the disk usage from the command "fi df" and "fi show".
-> 
-> >>From the man page (see 2nd patch):
-> 
-> [...]
+On Wed, Oct 03, 2012 at 01:43:15PM +0200, Goffredo Baroncelli wrote:
 > The  command  btrfs  filesystem  df is used to query the
 > status of the chunks, how many space on the disk(s) are used  by
 > the  chunks,  how many space are available in the chunks, and an
 > estimation of the free space of the filesystem.
-> [...]
+> ---
+>  cmds-filesystem.c |  264 +++++++++++++++++++++++++++++++++++++++++++----------
+>  1 file changed, 215 insertions(+), 49 deletions(-)
 > 
-> $ ./btrfs filesystem df --help
-> usage: btrfs filesystem disk-usage [-d][-s][-k] <path> [<path>..]
-> 
->     Show space usage information for a mount point(s).
-> 
->     -k  Set KB (1024 bytes) as unit
->     -s  Don't show the summary section
->     -d  Don't show the detail section
+> diff --git a/cmds-filesystem.c b/cmds-filesystem.c
+> index b1457de..6c3ebdc 100644
+> --- a/cmds-filesystem.c
+> +++ b/cmds-filesystem.c
 
-Hi Goffredo,
+(snipped)
 
-Why not show just the summary section by default and have a flag (-v)
-for the details section?
+> +static int cmd_disk_free(int argc, char **argv)
+> +{
+> +
+> +	int 	flags=DF_SHOW_SUMMARY|DF_SHOW_DETAIL|DF_HUMAN_UNIT;
+> +	int	i, more_than_one=0;
+> +
+> +	if (check_argc_min(argc, 2))
+> +		usage(cmd_disk_free_usage);
+> +
+> +	for(i=1; i< argc ; i++){
+> +		if(!strcmp(argv[i],"-d"))
+> +			flags &= ~DF_SHOW_DETAIL;
+> +		else if(!strcmp(argv[i],"-s"))
+> +			flags &= ~DF_SHOW_SUMMARY;
+> +		else if(!strcmp(argv[i],"-k"))
+> +			flags &= ~DF_HUMAN_UNIT;
+> +		else{
+> +			int r;
+> +			if(more_than_one)
+> +				printf("\n");
+> +			r = _cmd_disk_free(argv[i], flags);
+> +			if( r ) return r;
+> +			more_than_one=1;
+> +		}
 
-> $ ./btrfs filesystem df /
-> Path: /
-> Summary:
->   Disk_size:                 72.57GB
->   Disk_allocated:            25.10GB
->   Disk_unallocated:          47.48GB
->   Logical_size:              23.06GB
->   Used:                      11.01GB
->   Free_(Estimated):          55.66GB    (Max: 59.52GB, Min: 35.78GB)
->   Data_to_disk_ratio:           92 %
-> 
-> Details:
->   Chunk-type  Mode      Chunk-size Logical-size        Used
+Is there any reason getopt(), or better yet, getopt_long() won't work?
 
-"Type" for the first column is probably enough.
+> +
+> +	}
+> +
+> +	return 0;
+> +}	
+> +	
+> +
+> +	
+>  static int uuid_search(struct btrfs_fs_devices *fs_devices, char *search)
+>  {
+>  	char uuidbuf[37];
+> @@ -529,7 +695,7 @@ static int cmd_label(int argc, char **argv)
+>  
+>  const struct cmd_group filesystem_cmd_group = {
+>  	filesystem_cmd_group_usage, NULL, {
+> -		{ "df", cmd_df, cmd_df_usage, NULL, 0 },
+> +		{ "df", cmd_disk_free, cmd_disk_free_usage, NULL, 0 },
 
-Why is the third column called Chunk-size?  If my understanding is
-correct, it's just a break down of Disk_allocated from the summary
-section.  If so, why not call it Disk_allocated to avoid confusion?
-
-Also, why do you use dashes instead of underbars for table headers?
+If this command is going to replace df, you should change the function
+name back to cmd_df.
 
 Thanks,
 

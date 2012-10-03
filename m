@@ -1,86 +1,76 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-wg0-f44.google.com ([74.125.82.44]:35004 "EHLO
-	mail-wg0-f44.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1753590Ab2JCUnj (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Wed, 3 Oct 2012 16:43:39 -0400
-Received: by wgbdr13 with SMTP id dr13so6466774wgb.1
-        for <linux-btrfs@vger.kernel.org>; Wed, 03 Oct 2012 13:43:38 -0700 (PDT)
-Date: Wed, 3 Oct 2012 23:43:35 +0300
-From: Ilya Dryomov <idryomov@gmail.com>
-To: Hugo Mills <hugo@carfax.org.uk>, Goffredo Baroncelli <kreijack@gmail.com>,
-        linux-btrfs@vger.kernel.org, Roman Mamedov <rm@romanrm.ru>,
-        =?utf-8?Q?S=C3=A9bastien?= Maury <sebastien.maury@inserm.fr>,
-        Goffredo Baroncelli <kreijack@inwind.it>
-Subject: Re: [PATCH 1/2] Update btrfs filesystem df command
-Message-ID: <20121003204335.GE2890@zambezi.lan>
-References: <1349284952-6865-1-git-send-email-kreijack@inwind.com>
- <1349284952-6865-2-git-send-email-kreijack@inwind.com>
- <20121003203400.GD2890@zambezi.lan>
- <20121003203852.GE25498@carfax.org.uk>
+Received: from mx1.fusionio.com ([66.114.96.30]:53800 "EHLO mx1.fusionio.com"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1753736Ab2JCUxT (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Wed, 3 Oct 2012 16:53:19 -0400
+Date: Wed, 3 Oct 2012 16:52:47 -0400
+From: Josef Bacik <jbacik@fusionio.com>
+To: =?iso-8859-1?B?Suly9G1l?= Poulin <jeromepoulin@gmail.com>
+CC: linux-btrfs <linux-btrfs@vger.kernel.org>
+Subject: Re: Out of memory condition
+Message-ID: <20121003205247.GO2370@localhost.localdomain>
+References: <CALJXSJrtf7wid5xS4H5+E6ws_SjcgjB48ppoU_9+24JSkggKUw@mail.gmail.com>
+ <CALJXSJoKW=7ev8obh3d_XYux0JjwJ+bVAwj_ps7Eih9eYxOQ3w@mail.gmail.com>
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <20121003203852.GE25498@carfax.org.uk>
+Content-Type: text/plain; charset="iso-8859-1"
+In-Reply-To: <CALJXSJoKW=7ev8obh3d_XYux0JjwJ+bVAwj_ps7Eih9eYxOQ3w@mail.gmail.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Wed, Oct 03, 2012 at 09:38:52PM +0100, Hugo Mills wrote:
-> On Wed, Oct 03, 2012 at 11:34:00PM +0300, Ilya Dryomov wrote:
-> > On Wed, Oct 03, 2012 at 07:22:31PM +0200, Goffredo Baroncelli wrote:
-> [snip]
-> > > +static const char * const cmd_disk_free_usage[] = {
-> > > +	"btrfs filesystem df [-d|-s][-k] <path> [<path>..]",
-> > > +	"Show space usage information for a mount point(s).",
-> > > +	"",
-> > > +	"-k\tSet KB (1024 bytes) as unit",
-> > > +	"-s\tShow the summary section only",
-> > > +	"-d\tShow the detail section only",
-> > > +	NULL
-> > > +};
-> > > +
-> > > +static int cmd_disk_free(int argc, char **argv)
-> > > +{
-> > > +
-> > > +	int 	flags=DF_SHOW_SUMMARY|DF_SHOW_DETAIL|DF_HUMAN_UNIT;
-> > > +	int	i, more_than_one=0;
-> > > +
-> > > +	optind = 1;
-> > > +	while(1){
-> > > +		char	c = getopt(argc, argv, "dsk");
-> > > +		if(c<0)
-> > > +			break;
-> > > +		switch(c){
-> > > +			case 'd':
-> > > +				flags &= ~DF_SHOW_SUMMARY;
-> > > +				break;
-> > > +			case 's':
-> > > +				flags &= ~DF_SHOW_DETAIL;
-> > > +				break;
-> > > +			case 'k':
-> > > +				flags &= ~DF_HUMAN_UNIT;
-> > > +				break;
-> > > +			default:
-> > > +				usage(cmd_disk_free_usage);
-> > > +		}
-> > > +	}
-> > > +
-> > > +	if( !(flags & (DF_SHOW_SUMMARY|DF_SHOW_DETAIL)) ){
-> > > +		fprintf(stderr, "btrfs filesystem df: it is not possible to specify -s AND -d\n");
-> > 
-> > This doesn't look right at all.  You are adding two switches and
-> > specifying both of them is an error?  A little too much for a command
-> > whose job is to do some basic math and pretty-print the result.
-> > 
-> > How about displaying just the summary by default and then adding a
-> > *single* switch (-v or whatever) for summary+details?
+On Wed, Oct 03, 2012 at 08:25:11AM -0600, Jérôme Poulin wrote:
+> I don't know how to diagnose the problem, but now it is the second
+> time. After starting a VM in VirtualBox and filling the memory, Chrome
+> stopped loading any pages. After logging out and on, it still wasn't
+> working, reboot fixed it.
 > 
->    I'd prefer to see both sections by default. The reason for this is
-> that without both sections, people tend to get confused because they
-> don't know they're looking at half the story (e.g. some numbers change
-> twice as fast as they think they should).
+> This time, I've had the same problem and took the backtrace. Chrome
+> starts but doesn't load any pages, I guess it is stuck reading a file
+> as many chrome process are in state 'Ds' but are still killable,
+> Chrome seems really hard to strace bu anyway strace freezes in D state
+> too when attached to a running process.
+> 
+> The whole filesystem is BTRFS.
+> 
 
-If we want both sections by default, there is no need for any switches
-whatsoever, I think.
+Can you give this a try please?  Thanks,
 
-Thanks,
+Josef
 
-		Ilya
+diff --git a/fs/btrfs/compression.c b/fs/btrfs/compression.c
+index 43d1c5a..36eb5f2 100644
+--- a/fs/btrfs/compression.c
++++ b/fs/btrfs/compression.c
+@@ -577,6 +577,7 @@ int btrfs_submit_compressed_read(struct inode *inode, struct bio *bio,
+ 	u64 em_start;
+ 	struct extent_map *em;
+ 	int ret = -ENOMEM;
++	int faili = 0;
+ 	u32 *sums;
+ 
+ 	tree = &BTRFS_I(inode)->io_tree;
+@@ -626,8 +627,11 @@ int btrfs_submit_compressed_read(struct inode *inode, struct bio *bio,
+ 	for (pg_index = 0; pg_index < nr_pages; pg_index++) {
+ 		cb->compressed_pages[pg_index] = alloc_page(GFP_NOFS |
+ 							      __GFP_HIGHMEM);
+-		if (!cb->compressed_pages[pg_index])
++		if (!cb->compressed_pages[pg_index]) {
++			faili = pg_index - 1;
++			ret = -ENOMEM;
+ 			goto fail2;
++		}
+ 	}
+ 	cb->nr_pages = nr_pages;
+ 
+@@ -713,8 +717,10 @@ int btrfs_submit_compressed_read(struct inode *inode, struct bio *bio,
+ 	return 0;
+ 
+ fail2:
+-	for (pg_index = 0; pg_index < nr_pages; pg_index++)
+-		free_page((unsigned long)cb->compressed_pages[pg_index]);
++	while (faili >= 0) {
++		__free_page(cb->compressed_pages[pg_index]);
++		faili--;
++	}
+ 
+ 	kfree(cb->compressed_pages);
+ fail1:

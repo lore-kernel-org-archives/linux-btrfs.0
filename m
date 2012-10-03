@@ -1,90 +1,66 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-ee0-f46.google.com ([74.125.83.46]:57592 "EHLO
-	mail-ee0-f46.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1755958Ab2JCPCX (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Wed, 3 Oct 2012 11:02:23 -0400
-Received: by eekb15 with SMTP id b15so4084981eek.19
-        for <linux-btrfs@vger.kernel.org>; Wed, 03 Oct 2012 08:02:22 -0700 (PDT)
-Date: Wed, 3 Oct 2012 18:02:19 +0300
-From: Ilya Dryomov <idryomov@gmail.com>
-To: Goffredo Baroncelli <kreijack@gmail.com>
-Cc: Chris Mason <chris.mason@fusionio.com>,
-        "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>,
-        Goffredo Baroncelli <kreijack@inwind.it>
-Subject: Re: [PATCH 1/2] Update btrfs filesystem df command
-Message-ID: <20121003150219.GB1978@zambezi.lan>
-References: <1349264596-9383-1-git-send-email-kreijack@inwind.it>
- <1349264596-9383-2-git-send-email-kreijack@inwind.it>
-MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <1349264596-9383-2-git-send-email-kreijack@inwind.it>
+Received: from cartman.its.monash.edu.au ([130.194.13.166]:49757 "EHLO
+	cartman.its.monash.edu.au" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S964792Ab2JCP3p (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Wed, 3 Oct 2012 11:29:45 -0400
+Received: from jones.its.monash.edu.au ([130.194.13.86])
+ by cartman.its.monash.edu.au
+ (Sun Java System Messaging Server 6.2-4.03 (built Sep 22 2005))
+ with ESMTP id <0MBB00305PPIGQB0@cartman.its.monash.edu.au> for
+ linux-btrfs@vger.kernel.org; Thu, 04 Oct 2012 01:29:42 +1000 (EST)
+Received: from jones.its.monash.edu.au (localhost.localdomain [127.0.0.1])
+	by localhost (Postfix) with SMTP id B60F98BDE53	for
+ <linux-btrfs@vger.kernel.org>; Thu, 04 Oct 2012 01:29:42 +1000 (EST)
+Received: from mail-ie0-f174.google.com
+ (mail-ie0-f174.google.com [209.85.223.174])
+	(using TLSv1 with cipher RC4-SHA (128/128 bits))
+	(No client certificate requested)	by jones.its.monash.edu.au (Postfix)
+ with ESMTPS id 2C40B8BDE59	for <linux-btrfs@vger.kernel.org>; Thu,
+ 04 Oct 2012 01:29:41 +1000 (EST)
+Received: by ieak13 with SMTP id k13so17456835iea.19 for
+ <linux-btrfs@vger.kernel.org>; Wed, 03 Oct 2012 08:29:38 -0700 (PDT)
+Date: Thu, 04 Oct 2012 01:29:38 +1000
+From: Gordon Ng <gfng1@student.monash.edu>
+Subject: Re: [Btrfs-next] bulid failure at fs/btrfs/ctree.h
+In-reply-to: <20121002141404.GU14582@twin.jikos.cz>
+To: dave@jikos.cz, Gordon Ng <gfng1@student.monash.edu>,
+        linux-btrfs@vger.kernel.org
+Message-id: <CAJ09SM_j7==v_CH0O5v+GKEXdWGVgzNYQ6o4ADnF+2y=3Kt=Uw@mail.gmail.com>
+MIME-version: 1.0
+Content-type: text/plain; charset=ISO-8859-1
+References: <CAJ09SM8fTkek=jN1QY1SHOs0uRiuUf4ug4+DRwJBYd0Yj3axfg@mail.gmail.com>
+ <20121002141404.GU14582@twin.jikos.cz>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Wed, Oct 03, 2012 at 01:43:15PM +0200, Goffredo Baroncelli wrote:
-> The  command  btrfs  filesystem  df is used to query the
-> status of the chunks, how many space on the disk(s) are used  by
-> the  chunks,  how many space are available in the chunks, and an
-> estimation of the free space of the filesystem.
-> ---
->  cmds-filesystem.c |  264 +++++++++++++++++++++++++++++++++++++++++++----------
->  1 file changed, 215 insertions(+), 49 deletions(-)
-> 
-> diff --git a/cmds-filesystem.c b/cmds-filesystem.c
-> index b1457de..6c3ebdc 100644
-> --- a/cmds-filesystem.c
-> +++ b/cmds-filesystem.c
-
-(snipped)
-
-> +static int cmd_disk_free(int argc, char **argv)
-> +{
-> +
-> +	int 	flags=DF_SHOW_SUMMARY|DF_SHOW_DETAIL|DF_HUMAN_UNIT;
-> +	int	i, more_than_one=0;
-> +
-> +	if (check_argc_min(argc, 2))
-> +		usage(cmd_disk_free_usage);
-> +
-> +	for(i=1; i< argc ; i++){
-> +		if(!strcmp(argv[i],"-d"))
-> +			flags &= ~DF_SHOW_DETAIL;
-> +		else if(!strcmp(argv[i],"-s"))
-> +			flags &= ~DF_SHOW_SUMMARY;
-> +		else if(!strcmp(argv[i],"-k"))
-> +			flags &= ~DF_HUMAN_UNIT;
-> +		else{
-> +			int r;
-> +			if(more_than_one)
-> +				printf("\n");
-> +			r = _cmd_disk_free(argv[i], flags);
-> +			if( r ) return r;
-> +			more_than_one=1;
-> +		}
-
-Is there any reason getopt(), or better yet, getopt_long() won't work?
-
-> +
-> +	}
-> +
-> +	return 0;
-> +}	
-> +	
-> +
-> +	
->  static int uuid_search(struct btrfs_fs_devices *fs_devices, char *search)
->  {
->  	char uuidbuf[37];
-> @@ -529,7 +695,7 @@ static int cmd_label(int argc, char **argv)
->  
->  const struct cmd_group filesystem_cmd_group = {
->  	filesystem_cmd_group_usage, NULL, {
-> -		{ "df", cmd_df, cmd_df_usage, NULL, 0 },
-> +		{ "df", cmd_disk_free, cmd_disk_free_usage, NULL, 0 },
-
-If this command is going to replace df, you should change the function
-name back to cmd_df.
+Hello David,
+I compared the source code and found that I did have a merge conflict.
+This is now resolved and now builds fine.
 
 Thanks,
+Gordon
 
-		Ilya
+On 3 October 2012 00:14, David Sterba <dave@jikos.cz> wrote:
+> On Tue, Oct 02, 2012 at 10:50:26PM +1000, Gordon Ng wrote:
+>> Hello Josef,
+>>
+>> FYI build failure occured in fs/btrfs/ctree.h.
+>>   CC      fs/btrfs/super.o
+>> In file included from fs/btrfs/delayed-inode.h:30:0,
+>>                  from fs/btrfs/super.c:45:
+>> fs/btrfs/ctree.h:3235:1: error: expected identifier or ?(? before ?<<? token
+>
+> Can you please paste the sources from your tree? It's possible that it's
+> leftover from a local merge conflict.
+>
+> From my fresh 3.6 tree:
+>
+> 3232 static inline void btrfs_force_ra(struct address_space *mapping,
+> 3233                                   struct file_ra_state *ra, struct file *file,
+> 3234                                   pgoff_t offset, unsigned long req_size)
+> 3235 {
+> 3236         page_cache_sync_readahead(mapping, ra, file, offset, req_size);
+> 3237 }
+>
+>
+> david

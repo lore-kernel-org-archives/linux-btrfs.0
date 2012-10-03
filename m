@@ -1,33 +1,49 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx1.fusionio.com ([66.114.96.30]:44535 "EHLO mx1.fusionio.com"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1756827Ab2JBXtB (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 2 Oct 2012 19:49:01 -0400
-Date: Tue, 2 Oct 2012 19:48:58 -0400
-From: Chris Mason <chris.mason@fusionio.com>
-To: David Sterba <dsterba@suse.cz>
-CC: Chris Mason <clmason@fusionio.com>,
-        "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
-Subject: Re: [GIT PULL] btrfs-progs: Handful of fixes for 0.20-rc1
-Message-ID: <20121002234858.GG3214@shiny>
-References: <20121002112707.GH4545@ds.suse.cz>
+Received: from mail-ee0-f46.google.com ([74.125.83.46]:62867 "EHLO
+	mail-ee0-f46.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1751665Ab2JCGWH (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Wed, 3 Oct 2012 02:22:07 -0400
+Received: by eekb15 with SMTP id b15so3658390eek.19
+        for <linux-btrfs@vger.kernel.org>; Tue, 02 Oct 2012 23:22:06 -0700 (PDT)
 MIME-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-In-Reply-To: <20121002112707.GH4545@ds.suse.cz>
+In-Reply-To: <20121002234637.GF3214@shiny>
+References: <1349202970-6700-1-git-send-email-kreijack@gmail.com>
+	<20121002234637.GF3214@shiny>
+Date: Wed, 3 Oct 2012 08:22:06 +0200
+Message-ID: <CAJHuE_BmvmEteSg8YgcHH3cuB27Bi-j-B=yS7Y2NFhb1L5_Aog@mail.gmail.com>
+Subject: Re: [PATCH][BTRFS-PROGS] btrfs filesystem disk-usage
+From: Goffredo Baroncelli <kreijack@gmail.com>
+To: Chris Mason <chris.mason@fusionio.com>,
+        Goffredo Baroncelli <kreijack@gmail.com>,
+        "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>,
+        Hugo Mills <hugo@carfax.org.uk>, Roman Mamedov <rm@romanrm.ru>,
+        =?ISO-8859-1?Q?S=E9bastien_Maury?= <sebastien.maury@inserm.fr>,
+        Goffredo Baroncelli <kreijack@inwind.it>
+Content-Type: text/plain; charset=ISO-8859-1
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Tue, Oct 02, 2012 at 05:27:07AM -0600, David Sterba wrote:
-> Hi Chris,
-> 
-> please pull a few fixes to the 0.20-rc series, these are easy to review and fix
-> problems that people reported. There are more fixes in the mailinglist, but
-> they do not IMHO fit current -rc period, the crowd is waiting for 0.20.
-> 
->   git://repo.or.cz/btrfs-progs-unstable/devel.git for-chris/rc2
-> 
-> Based on top of master commit d88f33152f3d69240b6c690188b5d832a1663c07.
+On Wed, Oct 3, 2012 at 1:46 AM, Chris Mason <chris.mason@fusionio.com> wrote:
+[...]
+> I like it, thanks.  Could you please update btrfs fi df to show this
+> instead of adding a new command though?
 
-Thanks Dave, pulled.
+Hi Chris,
+no problem to update the patches, however I have one suggestion:
+- leave "btrfs fi df" as is to no break any script (if any) which
+would uses it. Hide it from the help and deprecating it in the man
+page. This because the output is very different.
+- renaming "btrfs fi disk-usage" in "btrfs fi disk-free", which make sense.
 
--chris
+Let me know which choiche you prefer.
+
+BR
+G.Baroncelli
+
+
+
+
+
+
+>
+> -chris

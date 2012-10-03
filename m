@@ -1,121 +1,94 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-ee0-f46.google.com ([74.125.83.46]:52744 "EHLO
-	mail-ee0-f46.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1752664Ab2JCRUN (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Wed, 3 Oct 2012 13:20:13 -0400
-Received: by eekb15 with SMTP id b15so4212831eek.19
-        for <linux-btrfs@vger.kernel.org>; Wed, 03 Oct 2012 10:20:11 -0700 (PDT)
-Date: Wed, 3 Oct 2012 20:20:08 +0300
-From: Ilya Dryomov <idryomov@gmail.com>
-To: Goffredo Baroncelli <kreijack@gmail.com>
-Cc: Chris Mason <chris.mason@fusionio.com>,
-        "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>,
-        Goffredo Baroncelli <kreijack@inwind.it>
-Subject: Re: [PATCH 1/2] Update btrfs filesystem df command
-Message-ID: <20121003172007.GA2890@zambezi.lan>
-References: <1349264596-9383-1-git-send-email-kreijack@inwind.it>
- <1349264596-9383-2-git-send-email-kreijack@inwind.it>
- <20121003150219.GB1978@zambezi.lan>
- <506C691E.6020506@gmail.com>
-MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <506C691E.6020506@gmail.com>
+Received: from mail-bk0-f46.google.com ([209.85.214.46]:34268 "EHLO
+	mail-bk0-f46.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S964969Ab2JCRWf (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Wed, 3 Oct 2012 13:22:35 -0400
+Received: by bkcjk13 with SMTP id jk13so6281168bkc.19
+        for <linux-btrfs@vger.kernel.org>; Wed, 03 Oct 2012 10:22:34 -0700 (PDT)
+From: Goffredo Baroncelli <kreijack@gmail.com>
+To: linux-btrfs@vger.kernel.org
+Cc: Hugo Mills <hugo@carfax.org.uk>, Roman Mamedov <rm@romanrm.ru>,
+        =?UTF-8?B?U8OpYmFzdGllbiBNYXVyeQ==?= <sebastien.maury@inserm.fr>,
+        Ilya Dryomov <idryomov@gmail.com>
+Subject: [PATCH][BTRFS-PROGS][V2] btrfs filesystem df
+Date: Wed,  3 Oct 2012 19:22:30 +0200
+Message-Id: <1349284952-6865-1-git-send-email-kreijack@inwind.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Wed, Oct 03, 2012 at 06:34:38PM +0200, Goffredo Baroncelli wrote:
-> On 10/03/2012 05:02 PM, Ilya Dryomov wrote:
-> >On Wed, Oct 03, 2012 at 01:43:15PM +0200, Goffredo Baroncelli wrote:
-> >>The  command  btrfs  filesystem  df is used to query the
-> >>status of the chunks, how many space on the disk(s) are used  by
-> >>the  chunks,  how many space are available in the chunks, and an
-> >>estimation of the free space of the filesystem.
-> >>---
-> >>  cmds-filesystem.c |  264 +++++++++++++++++++++++++++++++++++++++++++----------
-> >>  1 file changed, 215 insertions(+), 49 deletions(-)
-> >>
-> >>diff --git a/cmds-filesystem.c b/cmds-filesystem.c
-> >>index b1457de..6c3ebdc 100644
-> >>--- a/cmds-filesystem.c
-> >>+++ b/cmds-filesystem.c
-> >
-> >(snipped)
-> >
-> >>+static int cmd_disk_free(int argc, char **argv)
-> >>+{
-> >>+
-> >>+	int 	flags=DF_SHOW_SUMMARY|DF_SHOW_DETAIL|DF_HUMAN_UNIT;
-> >>+	int	i, more_than_one=0;
-> >>+
-> >>+	if (check_argc_min(argc, 2))
-> >>+		usage(cmd_disk_free_usage);
-> >>+
-> >>+	for(i=1; i<  argc ; i++){
-> >>+		if(!strcmp(argv[i],"-d"))
-> >>+			flags&= ~DF_SHOW_DETAIL;
-> >>+		else if(!strcmp(argv[i],"-s"))
-> >>+			flags&= ~DF_SHOW_SUMMARY;
-> >>+		else if(!strcmp(argv[i],"-k"))
-> >>+			flags&= ~DF_HUMAN_UNIT;
-> >>+		else{
-> >>+			int r;
-> >>+			if(more_than_one)
-> >>+				printf("\n");
-> >>+			r = _cmd_disk_free(argv[i], flags);
-> >>+			if( r ) return r;
-> >>+			more_than_one=1;
-> >>+		}
-> >
-> >Is there any reason getopt(), or better yet, getopt_long() won't work?
-> 
-> In the beginning there were also the switches +d, +s, +k, then I
-> dropped them. So I leaved this style. The code is simple enough to
-> not justify a change.
+>From the man page (see 2nd patch):
 
-It's not a matter of style.  It is generally expected that several short
-options can be specified after one dash.  Further, if somebody else were
-to add an option with an optional parameter, they'd have to spend time
-rewriting your stuff.
+[...]
+The  command  btrfs  filesystem  df is used to query the
+status of the chunks, how many space on the disk(s) are used  by
+the  chunks,  how many space are available in the chunks, and an
+estimation of the free space of the filesystem.
+[...]
 
-In addition to that, other parts of progs already use getopt() in
-similar situations.  One example would be the scrub subgroup: scrub
-commands are equally simple (a few short switches, no parameters), and
-yet getopt() is used.
+$ ./btrfs filesystem df --help
+usage: btrfs filesystem disk-usage [-d|-s][-k] <path> [<path>..]
 
-> 
-> >
-> >>+
-> >>+	}
-> >>+
-> >>+	return 0;
-> >>+}	
-> >>+	
-> >>+
-> >>+	
-> >>  static int uuid_search(struct btrfs_fs_devices *fs_devices, char *search)
-> >>  {
-> >>  	char uuidbuf[37];
-> >>@@ -529,7 +695,7 @@ static int cmd_label(int argc, char **argv)
-> >>
-> >>  const struct cmd_group filesystem_cmd_group = {
-> >>  	filesystem_cmd_group_usage, NULL, {
-> >>-		{ "df", cmd_df, cmd_df_usage, NULL, 0 },
-> >>+		{ "df", cmd_disk_free, cmd_disk_free_usage, NULL, 0 },
-> >
-> >If this command is going to replace df, you should change the function
-> >name back to cmd_df.
-> 
-> I was never convinced to use 'df'. At the beginning when I wrote the
-> first parser of btrfs, was suggested (not by me) to use "long"
-> command and allow the parser to match a contracted command until
-> there was any ambiguity. I suggested to use disk-free, but everybody
-> were confortable with df.. so I leaved it as "official name". But I
-> prefer for the internal code a more verbose name.
+    Show space usage information for a mount point(s).
 
-Well, all your patch is doing is extending the functionality of an
-existing command.  The "official name" for that command is "df", and you
-are not changing its name.  Why change the name of an existing function?
+    -k  Set KB (1024 bytes) as unit
+    -s  Show the summary section only
+    -d  Show the detail section only
 
-Thanks,
+$ ./btrfs filesystem df /
+Path: /
+Summary:
+  Disk_size:                 72.57GB
+  Disk_allocated:            25.10GB
+  Disk_unallocated:          47.48GB
+  Logical_size:              23.06GB
+  Used:                      11.01GB
+  Free_(Estimated):          55.66GB    (Max: 59.52GB, Min: 35.78GB)
+  Data_to_disk_ratio:           92 %
 
-		Ilya
+Details:
+  Chunk-type  Mode      Chunk_size Logical_size        Used
+  Data        Single       21.01GB      21.01GB     10.34GB
+  System      DUP          80.00MB      40.00MB      4.00KB
+  System      Single        4.00MB       4.00MB        0.00
+  Metadata    DUP           4.00GB       2.00GB    686.93MB
+  Metadata    Single        8.00MB       8.00MB        0.00
+
+Where:
+        Disk_size                       -> sum of sizes of teh disks
+        Disk_allocated                  -> sum of chunk sizes
+        Disk_unallocated                -> Disk_size - Disk_allocated
+        Logical_size                    -> sum of logical area sizes
+        Used                            -> logical area used
+        Free_(Estimated)                -> on the basis of allocated
+                                           chunk, an estrapolation of
+                                           the free space
+        Data_to_disk_ratio              -> ration between the space occuped
+                                           by a chunk and the real space
+                                           available ( due to duplication
+                                           and/or RAID level)
+        Chunk_type                      -> kind of chunk
+        Mode                            -> allocation policy of a chunk
+        Chunk_size                      -> area of disk(s) occuped by the
+                                           chunk (see it as raw space used)
+        Logical_size                    -> logical area size of the chunk
+        Used                            -> portion of the logical area
+                                           used by the filesystem
+
+
+
+You can pull this change from
+   http://cassiopea.homelinux.net/git/btrfs-progs-unstable.git
+branch
+   disk_free
+
+Please pull.
+
+BR
+Goffredo Baroncelli
+
+Changelog:
+V0->V1          Change the name of command from disk-usage to df
+V1->V2		Uses getopt(); replace "-" with "_"; change the behaviour
+		of the switches '-s' and '-d'.
+
+Signed-off-by: Goffredo Baroncelli <kreijack@inwind.it>

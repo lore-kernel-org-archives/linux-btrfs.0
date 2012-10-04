@@ -1,56 +1,54 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mailout-de.gmx.net ([213.165.64.22]:48155 "HELO
-	mailout-de.gmx.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with SMTP id S1751009Ab2JDJoE (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Thu, 4 Oct 2012 05:44:04 -0400
-Message-ID: <506D5A60.6040208@gmx.net>
-Date: Thu, 04 Oct 2012 11:44:00 +0200
-From: Arne Jansen <sensille@gmx.net>
+Received: from rcsinet15.oracle.com ([148.87.113.117]:21745 "EHLO
+	rcsinet15.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S964926Ab2JDOXY (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Thu, 4 Oct 2012 10:23:24 -0400
+Message-ID: <506D9BC2.1050508@oracle.com>
+Date: Thu, 04 Oct 2012 22:22:58 +0800
+From: Liu Bo <bo.li.liu@oracle.com>
 MIME-Version: 1.0
-To: Rock Lee <zimilo@code-trick.com>, chris.mason@fusionio.com,
-        linux-btrfs@vger.kernel.org, linux-kernel@vger.kernel.org
-Subject: Re: [PATCH] btrfs ulist use rbtree instead
-References: <1349341866-29320-1-git-send-email-zimilo@code-trick.com> <20121004092644.GB14582@twin.jikos.cz>
-In-Reply-To: <20121004092644.GB14582@twin.jikos.cz>
+To: Mitch Harder <mitch.harder@sabayonlinux.org>
+CC: Chris Mason <chris.mason@fusionio.com>,
+        "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>,
+        "dave@jikos.cz" <dave@jikos.cz>
+Subject: Re: [PATCH 2/2 v3] Btrfs: snapshot-aware defrag
+References: <1347875936-14165-1-git-send-email-bo.li.liu@oracle.com> <1347875936-14165-2-git-send-email-bo.li.liu@oracle.com> <CAKcLGm_4iUB1B8DPOx1D7i8eMa7po9fWFUYVOqp1N9nmZ1ExHQ@mail.gmail.com> <50625569.9040102@oracle.com> <20121003140259.GA4458@shiny>
+In-Reply-To: <20121003140259.GA4458@shiny>
 Content-Type: text/plain; charset=ISO-8859-1
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 04.10.2012 11:26, David Sterba wrote:
->> @@ -207,16 +266,23 @@ EXPORT_SYMBOL(ulist_add);
->>   * end is reached. No guarantee is made with respect to the order in which
->>   * the elements are returned. They might neither be returned in order of
->>   * addition nor in ascending order.
->> - * It is allowed to call ulist_add during an enumeration. Newly added items
->> - * are guaranteed to show up in the running enumeration.
->>   */
->>  struct ulist_node *ulist_next(struct ulist *ulist, struct ulist_iterator *uiter)
+On 10/03/2012 10:02 PM, Chris Mason wrote:
+> On Tue, Sep 25, 2012 at 07:07:53PM -0600, Liu Bo wrote:
+>> On 09/26/2012 01:39 AM, Mitch Harder wrote:
+>>> On Mon, Sep 17, 2012 at 4:58 AM, Liu Bo <bo.li.liu@oracle.com> wrote:
+>>>> This comes from one of btrfs's project ideas,
+>>>> As we defragment files, we break any sharing from other snapshots.
+>>>> The balancing code will preserve the sharing, and defrag needs to grow this
+>>>> as well.
+>>>>
+>>>> Now we're able to fill the blank with this patch, in which we make full use of
+>>>> backref walking stuff.
+>>>>
+>>>> Here is the basic idea,
+>>>> o  set the writeback ranges started by defragment with flag EXTENT_DEFRAG
+>>>> o  at endio, after we finish updating fs tree, we use backref walking to find
+>>>>    all parents of the ranges and re-link them with the new COWed file layout by
+>>>>    adding corresponding backrefs.
+>>>>
+>>>> Originally patch by Li Zefan <lizf@cn.fujitsu.com>
+>>>> Signed-off-by: Liu Bo <bo.li.liu@oracle.com>
+>>>
+>>> I'm hitting the WARN_ON in record_extent_backrefs() indicating a
+>>> problem with the return value from iterate_inodes_from_logical().
 > 
-> Quick observation:
+> Me too.  It triggers reliably with mount -o autodefrag, and then crashes
+> a in the next function ;)
 > 
-> If there's code relying on the behaviour stated in the removed part of
-> the comment, it will break. Have you verified this is not the case?
-
-It's a good thing to use rb-trees when the small inline cache is exhausted,
-but of course it should keep the semantics. We heavily rely on the removed
-part.
-It should be possible to keep the semantics if the elements are also kept
-in a linked list. As it inflates the size of struct ulist_node even more,
-it might make sense to use a smaller struct for the inline cache to keep
-the footprint low.
-
-Also, a commit message might be good that explains the motivation for the
-change. Have you done any measurements?
-
-Thanks for working on this.
-
--Arne
-
+> -chris
 > 
-> 
-> david
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
 
+Good news, I'm starting hitting the crash (a NULL pointer crash) ;)
+
+thanks,
+liubo

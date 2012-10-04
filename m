@@ -1,46 +1,40 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mailout-de.gmx.net ([213.165.64.22]:43720 "HELO
-	mailout-de.gmx.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with SMTP id S1754441Ab2JDHun (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Thu, 4 Oct 2012 03:50:43 -0400
-Message-ID: <506D3FCF.3070900@gmx.net>
-Date: Thu, 04 Oct 2012 09:50:39 +0200
-From: Arne Jansen <sensille@gmx.net>
+Received: from twin.jikos.cz ([89.185.236.188]:59039 "EHLO twin.jikos.cz"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S932089Ab2JDIHb (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Thu, 4 Oct 2012 04:07:31 -0400
+Date: Thu, 4 Oct 2012 10:07:27 +0200
+From: David Sterba <dave@jikos.cz>
+To: =?iso-8859-1?Q?=D8ystein_S=E6ttem?= Middelthun
+	<oystein@middelthun.no>
+Cc: "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
+Subject: Re: tree root
+Message-ID: <20121004080727.GZ14582@twin.jikos.cz>
+Reply-To: dave@jikos.cz
+References: <506C6934.5010904@middelthun.no>
 MIME-Version: 1.0
-To: Diego Calleja <diegocg@gmail.com>
-CC: Jan Schmidt <list.btrfs@jan-o-sch.net>, chris.mason@fusionio.com,
-        linux-btrfs@vger.kernel.org
-Subject: Re: [PATCH] Btrfs progs: quota groups support
-References: <1344606667-11727-1-git-send-email-list.btrfs@jan-o-sch.net> <13935395.XAQ18AOY2E@diego-arch>
-In-Reply-To: <13935395.XAQ18AOY2E@diego-arch>
-Content-Type: text/plain; charset=ISO-8859-1
+Content-Type: text/plain; charset=iso-8859-1
+In-Reply-To: <506C6934.5010904@middelthun.no>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 29.09.2012 23:48, Diego Calleja wrote:
-> On Viernes, 10 de agosto de 2012 15:51:07 Jan Schmidt escribió:
->> From: Arne Jansen <sensille@gmx.net>
->>
->> Signed-off-by: Jan Schmidt <list.btrfs@jan-o-sch.net>
->> Signed-off-by: Arne Jansen <sensille@gmx.net>
->> ---
->> This is the rebased version of Arne's qgroup patch set. He's the
->> original author, which is why I'm sending with his author tag.
+On Wed, Oct 03, 2012 at 06:35:00PM +0200, Øystein Sættem Middelthun wrote:
+> Well block 14102764707840 seems great, but generation doesn't match,
+> have=109268, want=109269
 > 
-> A small suggestion, it would be nice to have a man page update.
+> Because the filesystem was last in use with a pre 3.2-kernel I am unable to
+> use mount -o recovery, but restore seems to work when I specify the previous
+> tree-root. My problem is however that the btrfs is so large I have nowhere
+> to temporarily put all the files. I am currently running kernel 3.5. Does
+> mount have an option to manually tell it to use the tree root at block
+> 14102764707840?
 
-I thought Goffredo had already compiled a man page, with his
-patch
-
-[PATCH 6/7] qgroup/quota info for man page
-
-If it hasn't been merged it might be time to do so.
-
--Arne
+It's not possible to supply the tree_root via mount option, but it
+should be possible to modify the superblock to point the tree_root to
+the one you've found, in a similar way that the -o recovery does that,
+but this hasn't been done before and "minor" details may make it
+complicated (like getting the transaction number in sync, as the
+tree_root has latest-1).
 
 
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
-
+david

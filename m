@@ -1,148 +1,67 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-bk0-f46.google.com ([209.85.214.46]:48842 "EHLO
-	mail-bk0-f46.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1751614Ab2JDR2I (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Thu, 4 Oct 2012 13:28:08 -0400
-Received: by mail-bk0-f46.google.com with SMTP id jk13so464290bkc.19
-        for <linux-btrfs@vger.kernel.org>; Thu, 04 Oct 2012 10:28:07 -0700 (PDT)
-From: Goffredo Baroncelli <kreijack@gmail.com>
-To: Chris Mason <chris.mason@fusionio.com>
-Cc: Hugo Mills <hugo@carfax.org.uk>, Roman Mamedov <rm@romanrm.ru>,
-        =?UTF-8?B?U8OpYmFzdGllbiBNYXVyeQ==?= <sebastien.maury@inserm.fr>,
-        Ilya Dryomov <idryomov@gmail.com>, linux-btrfs@vger.kernel.org,
-        Goffredo Baroncelli <kreijack@inwind.it>
-Subject: [PATCH 2/2] Update help page
-Date: Thu,  4 Oct 2012 19:27:59 +0200
-Message-Id: <1349371679-10775-3-git-send-email-kreijack@inwind.com>
-In-Reply-To: <1349371679-10775-1-git-send-email-kreijack@inwind.com>
-References: <1349371679-10775-1-git-send-email-kreijack@inwind.com>
+Received: from mail-ob0-f174.google.com ([209.85.214.174]:50508 "EHLO
+	mail-ob0-f174.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1756606Ab2JDTk2 (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Thu, 4 Oct 2012 15:40:28 -0400
+Received: by mail-ob0-f174.google.com with SMTP id uo13so874257obb.19
+        for <linux-btrfs@vger.kernel.org>; Thu, 04 Oct 2012 12:40:28 -0700 (PDT)
+MIME-Version: 1.0
+In-Reply-To: <506D9BC2.1050508@oracle.com>
+References: <1347875936-14165-1-git-send-email-bo.li.liu@oracle.com>
+	<1347875936-14165-2-git-send-email-bo.li.liu@oracle.com>
+	<CAKcLGm_4iUB1B8DPOx1D7i8eMa7po9fWFUYVOqp1N9nmZ1ExHQ@mail.gmail.com>
+	<50625569.9040102@oracle.com>
+	<20121003140259.GA4458@shiny>
+	<506D9BC2.1050508@oracle.com>
+Date: Thu, 4 Oct 2012 14:40:28 -0500
+Message-ID: <CAKcLGm-xxf4UahskmssDCPVYunEKJWz4EgVY8E1pR1_mUxpbiw@mail.gmail.com>
+Subject: Re: [PATCH 2/2 v3] Btrfs: snapshot-aware defrag
+From: Mitch Harder <mitch.harder@sabayonlinux.org>
+To: Liu Bo <bo.li.liu@oracle.com>
+Cc: Chris Mason <chris.mason@fusionio.com>,
+        "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>,
+        "dave@jikos.cz" <dave@jikos.cz>
+Content-Type: text/plain; charset=ISO-8859-1
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-From: Goffredo Baroncelli <kreijack@inwind.it>
+On Thu, Oct 4, 2012 at 9:22 AM, Liu Bo <bo.li.liu@oracle.com> wrote:
+> On 10/03/2012 10:02 PM, Chris Mason wrote:
+>> On Tue, Sep 25, 2012 at 07:07:53PM -0600, Liu Bo wrote:
+>>> On 09/26/2012 01:39 AM, Mitch Harder wrote:
+>>>> On Mon, Sep 17, 2012 at 4:58 AM, Liu Bo <bo.li.liu@oracle.com> wrote:
+>>>>> This comes from one of btrfs's project ideas,
+>>>>> As we defragment files, we break any sharing from other snapshots.
+>>>>> The balancing code will preserve the sharing, and defrag needs to grow this
+>>>>> as well.
+>>>>>
+>>>>> Now we're able to fill the blank with this patch, in which we make full use of
+>>>>> backref walking stuff.
+>>>>>
+>>>>> Here is the basic idea,
+>>>>> o  set the writeback ranges started by defragment with flag EXTENT_DEFRAG
+>>>>> o  at endio, after we finish updating fs tree, we use backref walking to find
+>>>>>    all parents of the ranges and re-link them with the new COWed file layout by
+>>>>>    adding corresponding backrefs.
+>>>>>
+>>>>> Originally patch by Li Zefan <lizf@cn.fujitsu.com>
+>>>>> Signed-off-by: Liu Bo <bo.li.liu@oracle.com>
+>>>>
+>>>> I'm hitting the WARN_ON in record_extent_backrefs() indicating a
+>>>> problem with the return value from iterate_inodes_from_logical().
+>>
+>> Me too.  It triggers reliably with mount -o autodefrag, and then crashes
+>> a in the next function ;)
+>>
+>> -chris
+>>
+>
+> Good news, I'm starting hitting the crash (a NULL pointer crash) ;)
+>
+> thanks,
+> liubo
 
----
- man/btrfs.8.in |  100 ++++++++++++++++++++++++++++++++++++++++++++++++++++++++
- 1 file changed, 100 insertions(+)
+I'm also starting to hit this crash while balancing a test partition.
 
-diff --git a/man/btrfs.8.in b/man/btrfs.8.in
-index 4b0a9f9..96c9239 100644
---- a/man/btrfs.8.in
-+++ b/man/btrfs.8.in
-@@ -27,6 +27,8 @@ btrfs \- control a btrfs filesystem
- .PP
- \fBbtrfs\fP \fBfilesystem label\fP\fI <dev> [newlabel]\fP
- .PP
-+\fBbtrfs\fP \fBfilesystem df\fP\fI [-k] \fIpath [path..]\fR\fP
-+.PP
- \fBbtrfs\fP \fBsubvolume find-new\fP\fI <subvolume> <last_gen>\fP
- .PP
- \fBbtrfs\fP \fBfilesystem balance\fP\fI <path> \fP
-@@ -214,6 +216,104 @@ NOTE: Currently there are the following limitations:
- - the filesystem should not have more than one device.
- .TP
- 
-+\fBfilesystem df\fP [-k] \fIpath [path..]\fR
-+
-+Show space usage information for a mount point.
-+
-+\fIOptions\fP
-+
-+\fB-k\fP Set KB (1024 bytes) as unit
-+
-+\fIUsage information\fP
-+
-+.\"
-+.\" this section is extract from 
-+.\"	http://en.wikipedia.org/wiki/Btrfs#Chunk_and_device_trees
-+The disk(s) of a btrfs filesystem are divided into chunks of 256 MB or more. 
-+Chunks may be mirrored or striped across multiple devices, depending by
-+the allocation policy.
-+The mirroring/striping arrangement is transparent to the rest of the 
-+file system, which simply sees the single, logical address space that 
-+chunks are mapped into.
-+Chunks are allocated on demand. In the default allocation policy 
-+the data chunks are not duplicated and the metadata chunks
-+are duplicated. This default can be changed during the filesystem
-+creation, and in general the chunks allocation policy may change
-+during the filesystem life. 
-+
-+Depending by the allocation policy a chunk may require a space on
-+the disk greater than the logical space that it provides. E.g.
-+a chunk DUPlicated or with a RAID1/RAID10 level 
-+requires a space on the disk 
-+two times greater than the logical space provided. 
-+Different RAID levels
-+have a different ratio disk-usage / logical space offered.
-+
-+Normally the file contents are stored in the Data chunks; however
-+small files (which fit into a btree leaf) are stored in the 
-+metadata chunks. So the computation of the \fIfree space\fP 
-+and \fIused space\fP
-+is complex: depending by the file size different 
-+allocation policies are used.
-+
-+The command \fBbtrfs filesystem df\fP is used to query the status
-+of the chunks, how many space on the disk(s) are used by the chunks, 
-+how many space are available in the chunks, and an estimation of the free
-+space of the filesystem.
-+The output of the command \fBbtrfs filesystem df\fP shows:
-+
-+.RS
-+.IP \fBDisk\ size\fP
-+the total size of the disks which compose the filesystem.
-+
-+.IP \fBDisk\ allocated\fP\ or\ \fBSize_(disk)\fP
-+the size of the area of the disks used by the chunks.
-+
-+.IP \fBDisk\ unallocated\fP 
-+the size of the area of the disks which is free (i.e.
-+the differences of the values above).
-+
-+.IP \fBLogical\ size\fP\ or\ \fBSize_(logical)\fP
-+the available logical space of chunk. 
-+
-+.IP \fBUsed\fP
-+the portion of the logical space used by the file and metadata.
-+
-+.IP \fBFree\ (estimated)\fP
-+the estimated free space available. The evaluation 
-+cannot be rigorous because it depends by the allocation policy (DUP,Single,
-+RAID1...) of the metadata and data chunks. If every chunks is stored as
-+"Single" the sum of the \fBfree (estimated)\fP space and the \fBused\fP 
-+space  is equal to the \fBdisk size\fP.
-+Otherwise if all the chunk are mirrored (raid1 or raid10) or duplicated
-+the sum of the \fBfree (estimated)\fP space and the \fBused\fP space is
-+half of the \fBdisk size\fP. Normally the \fBfree (estimated)\fP is between
-+these two limits.
-+
-+.IP \fBData\ to\ disk\ ratio\fP
-+the ratio betwen the \fBlogical size\fP and the \fBdisk allocated\fP.
-+
-+.IP \fBMode\fP
-+the kind of allocation policy used by the chunk (e.g. DUPlicated,
-+RAID1, RAID10, Single....)
-+
-+.IP \fBChunk\ type\fP
-+the kind of chunk (Data, Metdata, System...)
-+
-+.RE
-+.RS
-+\fINOTE\fP
-+
-+When a chunk is allocated, its disk-area is used and its allocation
-+policy is fixed.
-+A rebalance operation could rearrange the chunks, moving data in the chunks
-+and resizing the allocated chunks. This causes the change of all the values 
-+discussed above, with the exception of the \fBused\fP and 
-+\fBdisk size\fP values.
-+
-+.RE
-+.TP
-+
- \fBfilesystem show\fR [--all-devices|<uuid>|<label>]\fR
- Show the btrfs filesystem with some additional info. If no \fIUUID\fP or 
- \fIlabel\fP is passed, \fBbtrfs\fR show info of all the btrfs filesystem.
--- 
-1.7.10.4
-
+I guess this isn't surprising since both autodefrag and balancing make
+use of relocation.

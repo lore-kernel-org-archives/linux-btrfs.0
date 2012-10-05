@@ -1,79 +1,57 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx1.fusionio.com ([66.114.96.30]:53788 "EHLO mx1.fusionio.com"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1756134Ab2JEOur (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Fri, 5 Oct 2012 10:50:47 -0400
-Date: Fri, 5 Oct 2012 10:50:44 -0400
-From: Chris Mason <chris.mason@fusionio.com>
-To: Stefan Behrens <sbehrens@giantdisaster.de>
-CC: Chris Mason <clmason@fusionio.com>, Josef Bacik <JBacik@fusionio.com>,
-        "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>,
-        <axboe@kernel.dk>
-Subject: Re: [PATCH] Btrfs: make filesystem read-only when submitting barrier
- fails
-Message-ID: <20121005145044.GB9134@shiny>
-References: <1344605915-22526-1-git-send-email-sbehrens@giantdisaster.de>
- <20121005125159.GP2370@localhost.localdomain>
- <20121005130911.GA9134@shiny>
- <506EE919.1030903@giantdisaster.de>
+Received: from fgwmail5.fujitsu.co.jp ([192.51.44.35]:56989 "EHLO
+	fgwmail5.fujitsu.co.jp" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1756985Ab2JEQ77 (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Fri, 5 Oct 2012 12:59:59 -0400
+Message-ID: <506F11F1.5010803@jp.fujitsu.com>
+Date: Sat, 06 Oct 2012 01:59:29 +0900
+From: Tsutomu Itoh <t-itoh@jp.fujitsu.com>
 MIME-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-In-Reply-To: <506EE919.1030903@giantdisaster.de>
+To: dave@jikos.cz
+CC: linux-btrfs@vger.kernel.org
+Subject: Re: [PATCH] Btrfs: fix error processing in btrfs_set_acl()
+References: <201210050935.AA00014@FM-323941448.jp.fujitsu.com> <20121005100255.GC14582@twin.jikos.cz>
+In-Reply-To: <20121005100255.GC14582@twin.jikos.cz>
+Content-Type: text/plain; charset=ISO-8859-1; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-[ Adding Jens to the cc ]
+(2012/10/05 19:02), David Sterba wrote:
+> Hi,
+>
+> On Fri, Oct 05, 2012 at 06:35:07PM +0900, Tsutomu Itoh wrote:
+>> The error is only returned when kmalloc() fails.
+>> Therefore, to return the error to the caller directly here, I changed the code.
+>
+>    "fix error processing in btrfs_set_acl()"
+>
+> what bug does it 'fix' ? IMHO this is a minor cleanup that is not much
 
-Jens, we have a proposed patch for btrfs to treat EIO errors on cache
-flushes as fatal events (forcing the FS to readonly).  It really seems
-like the right idea, except for the part where we trust the devices to
-only return EIOs on cache flushes when things went horribly wrong.
+Yes, this is a "cleanup". sorry.
 
-Can you see any reason for EIOs to come back from cache flushes when we
-might not want to declare a metadata emergency?
+- Tsutomu
 
-[ more context below ]
+> needed. The return path after 'posix_acl_to_xattr' uses the if/goto
+> pattern in the same if (acl) { ... } block, visually this does not help
+> the original code is correct and "looks ok".
+>
+>> --- a/fs/btrfs/acl.c
+>> +++ b/fs/btrfs/acl.c
+>> @@ -136,10 +136,8 @@ static int btrfs_set_acl(struct btrfs_trans_handle *trans,
+>>   	if (acl) {
+>>   		size = posix_acl_xattr_size(acl->a_count);
+>>   		value = kmalloc(size, GFP_NOFS);
+>> -		if (!value) {
+>> -			ret = -ENOMEM;
+>> -			goto out;
+>> -		}
+>> +		if (!value)
+>> +			return -ENOMEM;
+>>
+>>   		ret = posix_acl_to_xattr(acl, value, size);
+>>   		if (ret < 0)
+>
+>
+> david
 
--chris
 
-On Fri, Oct 05, 2012 at 08:05:13AM -0600, Stefan Behrens wrote:
-> On Fri, 5 Oct 2012 09:09:11 -0400, Chris Mason wrote:
-> > On Fri, Oct 05, 2012 at 06:51:59AM -0600, Josef Bacik wrote:
-> >>
-> >> So we're going from EOPNOTSUPP resulting in barriers just being turned off to
-> >> the file system being mounted read only?  This is not inline with what every
-> >> other linux file system does, which isn't necessarily a problem but I'm not sure
-> >> it's the kind of change we want to make.  Think about somebody formatting a
-> >> cheap usb stick as btrfs and not understanding why they can't write to it.  I'm
-> >> fine either way, I just want to make sure that we think about the consequences
-> >> of this before we pull it in.  Thanks,
-> 
-> (Just for the matter of completeness: A few minutes ago Josef agreed on
-> IRC that this is not the case, EOPNOTSUPP is not seen as an error.)
-> 
-> > 
-> > In the past I haven't really trusted the drives to return good errors
-> > when there are problems with cache flushes.  It might be that drives
-> > (and the block layer) are really smart about this now, I know that
-> > Christoph thought any EIOs coming up from a barrier really were eios.
-> > 
-> > But I still have my doubts, mostly because I don't think anyone tests
-> > these conditions on a regular basis.
-> 
-> Looking at the risk of this patch, the worst thing that can happen is
-> that a flush request results in an EIO although there is no error at
-> all. Then the filesystem is switched read-only and the user is not
-> amused. All I can say is that I have not seen this so far, which does
-> not mean that it cannot happen.
-> 
-> But I have seen two cases (on IRC and on mailing list) where drives that
-> transitioned to offline caused flush errors and write errors. When we
-> ignore the flush errors, the super blocks referring to the new tree
-> roots are written to those disks that are still online, and the state of
-> the filesystem is not correct. The trees refer to data that is not on
-> disk (since it is not flushed and the write EOIs can be delayed since
-> we're talking of hardware issues like hot unplugged USB drives). In this
-> case, the user is not amused as well. And additionally, he needs to go
-> back to a previous tree root revision which can mean to lose data.
-
-Jens

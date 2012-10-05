@@ -1,57 +1,66 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx1.fusionio.com ([66.114.96.30]:52601 "EHLO mx1.fusionio.com"
+Received: from mx1.fusionio.com ([66.114.96.30]:52664 "EHLO mx1.fusionio.com"
 	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1753192Ab2JERnT (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Fri, 5 Oct 2012 13:43:19 -0400
-Date: Fri, 5 Oct 2012 13:43:16 -0400
+	id S1752414Ab2JERnq (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Fri, 5 Oct 2012 13:43:46 -0400
+Received: from mail1.int.fusionio.com (mail1.int.fusionio.com [10.101.1.21]) by mx1.fusionio.com with ESMTP id gDgiRPe22P0A3RHo (version=TLSv1 cipher=AES128-SHA bits=128 verify=NO) for <linux-btrfs@vger.kernel.org>; Fri, 05 Oct 2012 11:43:44 -0600 (MDT)
 From: Josef Bacik <jbacik@fusionio.com>
-To: =?iso-8859-1?B?Suly9G1l?= Poulin <jeromepoulin@gmail.com>
-CC: Josef Bacik <JBacik@fusionio.com>,
-        linux-btrfs <linux-btrfs@vger.kernel.org>
-Subject: Re: Out of memory condition
-Message-ID: <20121005174316.GQ2370@localhost.localdomain>
-References: <CALJXSJrtf7wid5xS4H5+E6ws_SjcgjB48ppoU_9+24JSkggKUw@mail.gmail.com>
- <CALJXSJoKW=7ev8obh3d_XYux0JjwJ+bVAwj_ps7Eih9eYxOQ3w@mail.gmail.com>
- <20121003205247.GO2370@localhost.localdomain>
- <CALJXSJrbe62q6XCOf5xB6ra1kwSOnVyL6DvYqS7ncyUQndfkgw@mail.gmail.com>
+To: <linux-btrfs@vger.kernel.org>
+Subject: [PATCH] Btrfs: cleanup pages properly when ENOMEM in compression
+Date: Fri, 5 Oct 2012 13:49:19 -0400
+Message-ID: <1349459359-2298-1-git-send-email-jbacik@fusionio.com>
 MIME-Version: 1.0
-Content-Type: text/plain; charset="iso-8859-1"
-In-Reply-To: <CALJXSJrbe62q6XCOf5xB6ra1kwSOnVyL6DvYqS7ncyUQndfkgw@mail.gmail.com>
+Content-Type: text/plain; charset="UTF-8"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Fri, Oct 05, 2012 at 11:20:37AM -0600, JÈrÙme Poulin wrote:
-> I was able to reproduce the problem with the patch, now it fails in
-> extens_io.c instead of the compression module.
-> 
+We were freeing non-existent pages which was causing a panic for a user who
+was suffering from ENOMEM.  This patch fixes the problem.  Thanks,
 
-Yeah so I fixed the compression side, and now it's erroring out further down.
-So leave the patch I gave you applied as it is correct, and apply this patch and
-see if it helps.  Thanks,
+Reported-by: J√©r√¥me Poulin <jeromepoulin@gmail.com>
+Signed-off-by: Josef Bacik <jbacik@fusionio.com>
+---
+ fs/btrfs/compression.c |   12 +++++++++---
+ 1 files changed, 9 insertions(+), 3 deletions(-)
 
-Josef
-
-diff --git a/fs/btrfs/extent_io.c b/fs/btrfs/extent_io.c
-index b82d244..8c37cb6 100644
---- a/fs/btrfs/extent_io.c
-+++ b/fs/btrfs/extent_io.c
-@@ -2751,12 +2751,15 @@ static int __extent_read_full_page(struct extent_io_tree *tree,
- 					 end_bio_extent_readpage, mirror_num,
- 					 *bio_flags,
- 					 this_bio_flag);
--			BUG_ON(ret == -ENOMEM);
--			nr++;
--			*bio_flags = this_bio_flag;
-+			if (!ret) {
-+				nr++;
-+				*bio_flags = this_bio_flag;
-+			}
- 		}
--		if (ret)
-+		if (ret) {
- 			SetPageError(page);
-+			unlock_extent(tree, cur, cur + iosize - 1);
+diff --git a/fs/btrfs/compression.c b/fs/btrfs/compression.c
+index 43d1c5a..36eb5f2 100644
+--- a/fs/btrfs/compression.c
++++ b/fs/btrfs/compression.c
+@@ -577,6 +577,7 @@ int btrfs_submit_compressed_read(struct inode *inode, struct bio *bio,
+ 	u64 em_start;
+ 	struct extent_map *em;
+ 	int ret = -ENOMEM;
++	int faili = 0;
+ 	u32 *sums;
+ 
+ 	tree = &BTRFS_I(inode)->io_tree;
+@@ -626,8 +627,11 @@ int btrfs_submit_compressed_read(struct inode *inode, struct bio *bio,
+ 	for (pg_index = 0; pg_index < nr_pages; pg_index++) {
+ 		cb->compressed_pages[pg_index] = alloc_page(GFP_NOFS |
+ 							      __GFP_HIGHMEM);
+-		if (!cb->compressed_pages[pg_index])
++		if (!cb->compressed_pages[pg_index]) {
++			faili = pg_index - 1;
++			ret = -ENOMEM;
+ 			goto fail2;
 +		}
- 		cur = cur + iosize;
- 		pg_offset += iosize;
  	}
+ 	cb->nr_pages = nr_pages;
+ 
+@@ -713,8 +717,10 @@ int btrfs_submit_compressed_read(struct inode *inode, struct bio *bio,
+ 	return 0;
+ 
+ fail2:
+-	for (pg_index = 0; pg_index < nr_pages; pg_index++)
+-		free_page((unsigned long)cb->compressed_pages[pg_index]);
++	while (faili >= 0) {
++		__free_page(cb->compressed_pages[pg_index]);
++		faili--;
++	}
+ 
+ 	kfree(cb->compressed_pages);
+ fail1:
+-- 
+1.7.7.6
+

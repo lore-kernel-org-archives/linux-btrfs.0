@@ -1,41 +1,55 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx1.fusionio.com ([66.114.96.30]:46258 "EHLO mx1.fusionio.com"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1757185Ab2JEUtZ (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Fri, 5 Oct 2012 16:49:25 -0400
-Received: from mail1.int.fusionio.com (mail1.int.fusionio.com [10.101.1.21]) by mx1.fusionio.com with ESMTP id k2SE9x84IHbukuWH (version=TLSv1 cipher=AES128-SHA bits=128 verify=NO) for <linux-btrfs@vger.kernel.org>; Fri, 05 Oct 2012 14:49:24 -0600 (MDT)
-From: Josef Bacik <jbacik@fusionio.com>
-To: <linux-btrfs@vger.kernel.org>
-Subject: [PATCH] Btrfs: fix page leakage
-Date: Fri, 5 Oct 2012 16:55:00 -0400
-Message-ID: <1349470500-7328-1-git-send-email-jbacik@fusionio.com>
+Received: from mondschein.lichtvoll.de ([194.150.191.11]:52623 "EHLO
+	mail.lichtvoll.de" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1751566Ab2JFJbo convert rfc822-to-8bit (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Sat, 6 Oct 2012 05:31:44 -0400
+From: Martin Steigerwald <Martin@lichtvoll.de>
+To: linux-btrfs@vger.kernel.org
+Subject: Re: Help understanding btrfsck output...
+Date: Sat, 6 Oct 2012 11:31:42 +0200
+Cc: =?iso-8859-1?q?Sw=E2mi_Petaramesh?= <swami@petaramesh.org>
+References: <506EA718.9080604@petaramesh.org> (sfid-20121005_184508_100097_E50D6A19)
+In-Reply-To: <506EA718.9080604@petaramesh.org>
 MIME-Version: 1.0
-Content-Type: text/plain
+Content-Type: Text/Plain;
+  charset="iso-8859-1"
+Message-Id: <201210061131.42896.Martin@lichtvoll.de>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Alloc_dummy_extent_buffer will not free the first page in the eb array if we
-fail to allocate a page, fix this.  Thanks,
+Am Freitag, 5. Oktober 2012 schrieb Swâmi Petaramesh:
+> Hi there,
+> 
+> I have a system on which btrfsck gives the following output... I don't
+> understand the meaning of the reported errors, so any clue would be
+> appreciated. Is this something I should worry about, or not ?
+> 
+> Would I be advised to try "--repair" ? (Last time I tried this one, it
+> completely b0rked a filesystem, beyond repair, and my wife would kill
+> me ifever I trash this one, for that's her machine, so please help !
+> ;-))
+> 
+> root@PartedMagic:~# btrfsck /dev/sda6
+> checking extents
+> checking fs roots
+> root 258 inode 772 errors 400
+> root 258 inode 1025 errors 400
 
-Reported-by: David Sterba <dave@jikos.cz>
-Signed-off-by: Josef Bacik <jbacik@fusionio.com>
----
- fs/btrfs/extent_io.c |    2 +-
- 1 files changed, 1 insertions(+), 1 deletions(-)
+I dunno about those errors.
 
-diff --git a/fs/btrfs/extent_io.c b/fs/btrfs/extent_io.c
-index 7dc69b3..64dc93f 100644
---- a/fs/btrfs/extent_io.c
-+++ b/fs/btrfs/extent_io.c
-@@ -4104,7 +4104,7 @@ struct extent_buffer *alloc_dummy_extent_buffer(u64 start, unsigned long len)
- 
- 	return eb;
- err:
--	for (i--; i > 0; i--)
-+	for (i--; i >= 0; i--)
- 		__free_page(eb->pages[i]);
- 	__free_extent_buffer(eb);
- 	return NULL;
+What you can always do:
+
+1) Update your backup - you have a backup, don´t you? Use a file based 
+backup via rsync -aAXHSP or so.
+
+2) Try repairing the filesystem.
+
+3) If it fails redo the filesystem from scratch by formatting it and 
+replaying your backup.
+
+Maybe someone else can help with the meaning of the errors.
+
+Ciao,
 -- 
-1.7.7.6
-
+Martin 'Helios' Steigerwald - http://www.Lichtvoll.de
+GPG: 03B0 0D6C 0040 0710 4AFA  B82F 991B EAAC A599 84C7

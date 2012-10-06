@@ -1,55 +1,46 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mondschein.lichtvoll.de ([194.150.191.11]:52623 "EHLO
+Received: from mondschein.lichtvoll.de ([194.150.191.11]:54152 "EHLO
 	mail.lichtvoll.de" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1751566Ab2JFJbo convert rfc822-to-8bit (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Sat, 6 Oct 2012 05:31:44 -0400
+	with ESMTP id S1753119Ab2JFJk2 (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Sat, 6 Oct 2012 05:40:28 -0400
 From: Martin Steigerwald <Martin@lichtvoll.de>
 To: linux-btrfs@vger.kernel.org
-Subject: Re: Help understanding btrfsck output...
-Date: Sat, 6 Oct 2012 11:31:42 +0200
-Cc: =?iso-8859-1?q?Sw=E2mi_Petaramesh?= <swami@petaramesh.org>
-References: <506EA718.9080604@petaramesh.org> (sfid-20121005_184508_100097_E50D6A19)
-In-Reply-To: <506EA718.9080604@petaramesh.org>
+Subject: Re: btrfs send/receive review by vfs folks
+Date: Sat, 6 Oct 2012 11:40:26 +0200
+Cc: Alex Lyakas <alex.bolshoy.btrfs@gmail.com>,
+        Jan Schmidt <list.btrfs@jan-o-sch.net>,
+        Alexander Block <ablock84@googlemail.com>
+References: <CAB9VWqAcwCTDi=pV03CpuXaG0kCE6bT1+NbJJJUdzuwVdR-e-Q@mail.gmail.com> <50602781.9010009@jan-o-sch.net> <CAHf9xvY1TSNa-zY82whUrK6DtnFYiNx1BEF6R1kGQj1HU+wbxA@mail.gmail.com> (sfid-20121004_215441_555726_00843E2C)
+In-Reply-To: <CAHf9xvY1TSNa-zY82whUrK6DtnFYiNx1BEF6R1kGQj1HU+wbxA@mail.gmail.com>
 MIME-Version: 1.0
 Content-Type: Text/Plain;
   charset="iso-8859-1"
-Message-Id: <201210061131.42896.Martin@lichtvoll.de>
+Message-Id: <201210061140.26936.Martin@lichtvoll.de>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Am Freitag, 5. Oktober 2012 schrieb Swâmi Petaramesh:
-> Hi there,
+Am Donnerstag, 4. Oktober 2012 schrieb Alex Lyakas:
+> Hi Jan,
+> as I promised, here is some code for you to look at.
 > 
-> I have a system on which btrfsck gives the following output... I don't
-> understand the meaning of the reported errors, so any clue would be
-> appreciated. Is this something I should worry about, or not ?
+> First I will describe the approach in general.
 > 
-> Would I be advised to try "--repair" ? (Last time I tried this one, it
-> completely b0rked a filesystem, beyond repair, and my wife would kill
-> me ifever I trash this one, for that's her machine, so please help !
-> ;-))
-> 
-> root@PartedMagic:~# btrfsck /dev/sda6
-> checking extents
-> checking fs roots
-> root 258 inode 772 errors 400
-> root 258 inode 1025 errors 400
+> # Get rid of the pipe. Instead, user-space passes a buffer and kernel
+> fills the specified user-space buffer with commands.
+> # When the buffer is full, kernel stops generating commands and
+> returns a checkpoint to the user-space.
 
-I dunno about those errors.
+Can it just fill a second buffer while userspace command handles the first?
 
-What you can always do:
+> # User-space does whatever it wants with the returned buffer, and then
+> calls the kernel again, with a buffer and a checkpoint that was
+> returned by the kernel from previous SEND ioctl().
+> # Kernel re-arms itself to the specified checkpoint, and fills the
+> specified buffer with commands, attaches a new checkpoint and so on.
+> # Eventually kernel signals to the user that there are no more
+> commands.
 
-1) Update your backup - you have a backup, don´t you? Use a file based 
-backup via rsync -aAXHSP or so.
-
-2) Try repairing the filesystem.
-
-3) If it fails redo the filesystem from scratch by formatting it and 
-replaying your backup.
-
-Maybe someone else can help with the meaning of the errors.
-
-Ciao,
+Thanks,
 -- 
 Martin 'Helios' Steigerwald - http://www.Lichtvoll.de
 GPG: 03B0 0D6C 0040 0710 4AFA  B82F 991B EAAC A599 84C7

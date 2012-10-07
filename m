@@ -1,128 +1,208 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-bk0-f46.google.com ([209.85.214.46]:46834 "EHLO
-	mail-bk0-f46.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1754767Ab2JFNra (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Sat, 6 Oct 2012 09:47:30 -0400
-Received: by mail-bk0-f46.google.com with SMTP id jk13so1377675bkc.19
-        for <linux-btrfs@vger.kernel.org>; Sat, 06 Oct 2012 06:47:28 -0700 (PDT)
-Message-ID: <50703676.20608@gmail.com>
-Date: Sat, 06 Oct 2012 15:47:34 +0200
-From: Goffredo Baroncelli <kreijack@gmail.com>
-MIME-Version: 1.0
-To: Martin Steigerwald <Martin@lichtvoll.de>
-CC: linux-btrfs@vger.kernel.org, Chris Mason <chris.mason@fusionio.com>,
-        Hugo Mills <hugo@carfax.org.uk>, Roman Mamedov <rm@romanrm.ru>,
-        =?UTF-8?B?U8OpYmFzdGllbiBNYXVyeQ==?= <sebastien.maury@inserm.fr>,
-        Ilya Dryomov <idryomov@gmail.com>
-Subject: Re: [PATCH][BTRFS-PROGS][V3] btrfs filesystem df
-References: <1349371679-10775-1-git-send-email-kreijack@inwind.com> (sfid-20121004_215416_819357_23AF71B8) <201210061157.03992.Martin@lichtvoll.de>
-In-Reply-To: <201210061157.03992.Martin@lichtvoll.de>
-Content-Type: text/plain; charset=UTF-8; format=flowed
+Received: from mail-da0-f46.google.com ([209.85.210.46]:55782 "EHLO
+	mail-da0-f46.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1751971Ab2JGIgu (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Sun, 7 Oct 2012 04:36:50 -0400
+From: Namjae Jeon <linkinjeon@gmail.com>
+To: akpm@linux-foundation.org, viro@zeniv.linux.org.uk, mfasheh@suse.com,
+        jlbec@evilplan.org, ocfs2-devel@oss.oracle.com,
+        chris.mason@fusionio.com, linux-btrfs@vger.kernel.org,
+        fengguang.wu@intel.com
+Cc: linux-kernel@vger.kernel.org, Namjae Jeon <linkinjeon@gmail.com>,
+        Vivek Trivedi <vtrivedi018@gmail.com>
+Subject: [PATCH RESEND] writeback: change nr_pages_dirtied argument into local variable
+Date: Sun,  7 Oct 2012 04:36:34 -0400
+Message-Id: <1349598994-3386-1-git-send-email-linkinjeon@gmail.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 10/06/2012 11:57 AM, Martin Steigerwald wrote:
-> Am Donnerstag, 4. Oktober 2012 schrieb Goffredo Baroncelli:
->> Hi Chris,
->>
->
->
-> Works nicely here:
->
-> merkaba:/home/[…]>  ./btrfs fi df /
-> Path: /
-> Summary:
->    Disk_size:                 18.62GB
->    Disk_allocated:            18.62GB
->    Disk_unallocated:             0.00
->    Logical_size:              16.87GB
->    Used:                      12.46GB
->    Free_(Estimated):           4.41GB    (Max: 4.41GB, Min: 4.41GB)
->    Data_to_disk_ratio:           91 %
->
-> Details:
->    Chunk_type  Mode     Size_(disk) Size_(logical)     Used
->    Data        Single       15.10GB     15.10GB     11.78GB
->    System      DUP          16.00MB      8.00MB      4.00KB
->    System      Single        4.00MB      4.00MB        0.00
->    Metadata    DUP           3.50GB      1.75GB    693.97MB
->    Metadata    Single        8.00MB      8.00MB        0.00
->
->
-> merkaba:/home/[…]>  ./btrfs fi df /mnt/amazon
-> Path: /mnt/amazon
-> Summary:
->    Disk_size:                465.76GB
->    Disk_allocated:           465.76GB
->    Disk_unallocated:           4.00KB
->    Logical_size:             455.75GB
->    Used:                     368.83GB
->    Free_(Estimated):          86.93GB    (Max: 86.93GB, Min: 86.93GB)
->    Data_to_disk_ratio:           98 %
->
-> Details:
->    Chunk_type  Mode     Size_(disk) Size_(logical)     Used
->    Data        Single      445.73GB    445.73GB    368.24GB
->    System      DUP          16.00MB      8.00MB     64.00KB
->    System      Single        4.00MB      4.00MB        0.00
->    Metadata    DUP          20.00GB     10.00GB    598.84MB
->    Metadata    Single        8.00MB      8.00MB        0.00
->
->
-> I wonder about free size estimation minimum and maximum are the same tough.
->
-> Do you have a explaination for this?
+There is no reason nr_pages_dirtied is argument anymore.
+because nr_pages_dirtied value from caller is not used in
+balance_dirty_pages_ratelimited_nr function.
 
-Yes, the explanation is quite simple: the unallocated sector are zero; 
-all the disks are mapped in the chunk. So the allocation policy is 
-stabilised and fixed. The free space is the sum of the free space of the 
-metadata and the free space of the data (445.73-368.24 + 10-0.598 = ~86GB).
-If some disk areas had un-allocated sectors, depending by the 
-destination them would be DUPlicated or Single. This lead to have not 
-*one* "free value" but a range.
-In your case there is no choice because there is no allocation area 
-available anymore.
+Signed-off-by: Namjae Jeon <linkinjeon@gmail.com>
+Signed-off-by: Vivek Trivedi <vtrivedi018@gmail.com>
+---
+ fs/btrfs/disk-io.c        |    8 ++++----
+ fs/btrfs/file.c           |    3 +--
+ fs/btrfs/ioctl.c          |    2 +-
+ fs/ocfs2/file.c           |    5 +----
+ fs/splice.c               |    5 +----
+ include/linux/writeback.h |    9 +--------
+ mm/page-writeback.c       |   11 +++++------
+ 7 files changed, 14 insertions(+), 29 deletions(-)
 
-
->
-> Otherwise:
->
-> Tested-By: Martin Steigerwald<martin@lichtvoll.de>
->
-> (as of commit c3f7fa95f3aa29972b79eed71ec063b6a3019017 from your repo.)
->
->
-> The data to disk ratio on bigger disk is lower due to less duplicated meta
-> data involved, I bet. I want to recreate / anyway with 16 KiB leaf and node
-> size and then I think I will use single for metadata as its an SSD. The
-> bigger one is external eSATA harddisk.
->
->
-> I can test and post outputs of a few other disks including my oldest BTRFS
-> filesystems on a ThinkPad T23 which are at least one, possible almost 2
-> years old. Is there are way to tell filesystem creation date? And a 2 TiB
-> backup disk with three or for subvolumes and>10 snapshots of all of them
-> together.
->
->> Where:
->>          Disk_size                       ->  sum of sizes of teh disks
->>          Disk_allocated                  ->  sum of chunk sizes
->>          Disk_unallocated                ->  Disk_size - Disk_allocated
->>          Logical_size                    ->  sum of logical area sizes
->>          Used                            ->  logical area used
->>          Free_(Estimated)                ->  on the basis of allocated
->>                                             chunk, an estrapolation of
->>                                             the free space
->>          Data_to_disk_ratio              ->  ration between the space occuped
->>                                             by a chunk and the real space
->>                                             available ( due to duplication
->>                                             and/or RAID level)
->>          Chunk_type                      ->  kind of chunk
->>          Mode                            ->  allocation policy of a chunk
->>          Size_(disk)                     ->  area of disk(s) occuped by the
->>                                             chunk (see it as raw space used)
->>          Size_(logical)                  ->  logical area size of the chunk
->>          Used                            ->  portion of the logical area
->>                                             used by the filesystem
-> […]
+diff --git a/fs/btrfs/disk-io.c b/fs/btrfs/disk-io.c
+index c699955..9dae7f3 100644
+--- a/fs/btrfs/disk-io.c
++++ b/fs/btrfs/disk-io.c
+@@ -3337,8 +3337,8 @@ void btrfs_btree_balance_dirty(struct btrfs_root *root, unsigned long nr)
+ 	num_dirty = root->fs_info->dirty_metadata_bytes;
+ 
+ 	if (num_dirty > thresh) {
+-		balance_dirty_pages_ratelimited_nr(
+-				   root->fs_info->btree_inode->i_mapping, 1);
++		balance_dirty_pages_ratelimited(
++				   root->fs_info->btree_inode->i_mapping);
+ 	}
+ 	return;
+ }
+@@ -3358,8 +3358,8 @@ void __btrfs_btree_balance_dirty(struct btrfs_root *root, unsigned long nr)
+ 	num_dirty = root->fs_info->dirty_metadata_bytes;
+ 
+ 	if (num_dirty > thresh) {
+-		balance_dirty_pages_ratelimited_nr(
+-				   root->fs_info->btree_inode->i_mapping, 1);
++		balance_dirty_pages_ratelimited(
++				   root->fs_info->btree_inode->i_mapping);
+ 	}
+ 	return;
+ }
+diff --git a/fs/btrfs/file.c b/fs/btrfs/file.c
+index 9ab1bed..a8ee75c 100644
+--- a/fs/btrfs/file.c
++++ b/fs/btrfs/file.c
+@@ -1346,8 +1346,7 @@ static noinline ssize_t __btrfs_buffered_write(struct file *file,
+ 
+ 		cond_resched();
+ 
+-		balance_dirty_pages_ratelimited_nr(inode->i_mapping,
+-						   dirty_pages);
++		balance_dirty_pages_ratelimited(inode->i_mapping);
+ 		if (dirty_pages < (root->leafsize >> PAGE_CACHE_SHIFT) + 1)
+ 			btrfs_btree_balance_dirty(root, 1);
+ 
+diff --git a/fs/btrfs/ioctl.c b/fs/btrfs/ioctl.c
+index 19d51a2..a2a4b44 100644
+--- a/fs/btrfs/ioctl.c
++++ b/fs/btrfs/ioctl.c
+@@ -1223,7 +1223,7 @@ int btrfs_defrag_file(struct inode *inode, struct file *file,
+ 		}
+ 
+ 		defrag_count += ret;
+-		balance_dirty_pages_ratelimited_nr(inode->i_mapping, ret);
++		balance_dirty_pages_ratelimited(inode->i_mapping);
+ 		mutex_unlock(&inode->i_mutex);
+ 
+ 		if (newer_than) {
+diff --git a/fs/ocfs2/file.c b/fs/ocfs2/file.c
+index 5a4ee77..dda0898 100644
+--- a/fs/ocfs2/file.c
++++ b/fs/ocfs2/file.c
+@@ -2513,18 +2513,15 @@ static ssize_t ocfs2_file_splice_write(struct pipe_inode_info *pipe,
+ 		ret = sd.num_spliced;
+ 
+ 	if (ret > 0) {
+-		unsigned long nr_pages;
+ 		int err;
+ 
+-		nr_pages = (ret + PAGE_CACHE_SIZE - 1) >> PAGE_CACHE_SHIFT;
+-
+ 		err = generic_write_sync(out, *ppos, ret);
+ 		if (err)
+ 			ret = err;
+ 		else
+ 			*ppos += ret;
+ 
+-		balance_dirty_pages_ratelimited_nr(mapping, nr_pages);
++		balance_dirty_pages_ratelimited(mapping);
+ 	}
+ 
+ 	return ret;
+diff --git a/fs/splice.c b/fs/splice.c
+index 13e5b47..8890604 100644
+--- a/fs/splice.c
++++ b/fs/splice.c
+@@ -1024,17 +1024,14 @@ generic_file_splice_write(struct pipe_inode_info *pipe, struct file *out,
+ 		ret = sd.num_spliced;
+ 
+ 	if (ret > 0) {
+-		unsigned long nr_pages;
+ 		int err;
+ 
+-		nr_pages = (ret + PAGE_CACHE_SIZE - 1) >> PAGE_CACHE_SHIFT;
+-
+ 		err = generic_write_sync(out, *ppos, ret);
+ 		if (err)
+ 			ret = err;
+ 		else
+ 			*ppos += ret;
+-		balance_dirty_pages_ratelimited_nr(mapping, nr_pages);
++		balance_dirty_pages_ratelimited(mapping);
+ 	}
+ 	sb_end_write(inode->i_sb);
+ 
+diff --git a/include/linux/writeback.h b/include/linux/writeback.h
+index 50c3e8f..b82a83a 100644
+--- a/include/linux/writeback.h
++++ b/include/linux/writeback.h
+@@ -161,14 +161,7 @@ void __bdi_update_bandwidth(struct backing_dev_info *bdi,
+ 			    unsigned long start_time);
+ 
+ void page_writeback_init(void);
+-void balance_dirty_pages_ratelimited_nr(struct address_space *mapping,
+-					unsigned long nr_pages_dirtied);
+-
+-static inline void
+-balance_dirty_pages_ratelimited(struct address_space *mapping)
+-{
+-	balance_dirty_pages_ratelimited_nr(mapping, 1);
+-}
++void balance_dirty_pages_ratelimited(struct address_space *mapping);
+ 
+ typedef int (*writepage_t)(struct page *page, struct writeback_control *wbc,
+ 				void *data);
+diff --git a/mm/page-writeback.c b/mm/page-writeback.c
+index 830893b..6f42712 100644
+--- a/mm/page-writeback.c
++++ b/mm/page-writeback.c
+@@ -1069,7 +1069,7 @@ static void bdi_update_bandwidth(struct backing_dev_info *bdi,
+ }
+ 
+ /*
+- * After a task dirtied this many pages, balance_dirty_pages_ratelimited_nr()
++ * After a task dirtied this many pages, balance_dirty_pages_ratelimited()
+  * will look to see if it needs to start dirty throttling.
+  *
+  * If dirty_poll_interval is too low, big NUMA machines will call the expensive
+@@ -1436,9 +1436,8 @@ static DEFINE_PER_CPU(int, bdp_ratelimits);
+ DEFINE_PER_CPU(int, dirty_throttle_leaks) = 0;
+ 
+ /**
+- * balance_dirty_pages_ratelimited_nr - balance dirty memory state
++ * balance_dirty_pages_ratelimited - balance dirty memory state
+  * @mapping: address_space which was dirtied
+- * @nr_pages_dirtied: number of pages which the caller has just dirtied
+  *
+  * Processes which are dirtying memory should call in here once for each page
+  * which was newly dirtied.  The function will periodically check the system's
+@@ -1449,8 +1448,7 @@ DEFINE_PER_CPU(int, dirty_throttle_leaks) = 0;
+  * limit we decrease the ratelimiting by a lot, to prevent individual processes
+  * from overshooting the limit by (ratelimit_pages) each.
+  */
+-void balance_dirty_pages_ratelimited_nr(struct address_space *mapping,
+-					unsigned long nr_pages_dirtied)
++void balance_dirty_pages_ratelimited(struct address_space *mapping)
+ {
+ 	struct backing_dev_info *bdi = mapping->backing_dev_info;
+ 	int ratelimit;
+@@ -1484,6 +1482,7 @@ void balance_dirty_pages_ratelimited_nr(struct address_space *mapping,
+ 	 */
+ 	p = &__get_cpu_var(dirty_throttle_leaks);
+ 	if (*p > 0 && current->nr_dirtied < ratelimit) {
++		unsigned long nr_pages_dirtied;
+ 		nr_pages_dirtied = min(*p, ratelimit - current->nr_dirtied);
+ 		*p -= nr_pages_dirtied;
+ 		current->nr_dirtied += nr_pages_dirtied;
+@@ -1493,7 +1492,7 @@ void balance_dirty_pages_ratelimited_nr(struct address_space *mapping,
+ 	if (unlikely(current->nr_dirtied >= ratelimit))
+ 		balance_dirty_pages(mapping, current->nr_dirtied);
+ }
+-EXPORT_SYMBOL(balance_dirty_pages_ratelimited_nr);
++EXPORT_SYMBOL(balance_dirty_pages_ratelimited);
+ 
+ void throttle_vm_writeout(gfp_t gfp_mask)
+ {
+-- 
+1.7.9.5
 

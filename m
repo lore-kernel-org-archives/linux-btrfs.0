@@ -1,43 +1,39 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from smtp12.smtpout.orange.fr ([80.12.242.134]:37710 "EHLO
+Received: from smtp12.smtpout.orange.fr ([80.12.242.134]:16730 "EHLO
 	smtp.smtpout.orange.fr" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1750952Ab2JGNOJ (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Sun, 7 Oct 2012 09:14:09 -0400
-Message-ID: <5071801B.4090704@petaramesh.org>
-Date: Sun, 07 Oct 2012 15:14:03 +0200
-From: =?ISO-8859-1?Q?Sw=E2mi_Petaramesh?= <swami@petaramesh.org>
+	with ESMTP id S1750952Ab2JGNTR (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Sun, 7 Oct 2012 09:19:17 -0400
+Message-ID: <50718151.8090506@petaramesh.org>
+Date: Sun, 07 Oct 2012 15:19:13 +0200
+From: =?UTF-8?B?U3fDom1pIFBldGFyYW1lc2g=?= <swami@petaramesh.org>
 MIME-Version: 1.0
-To: Martin Steigerwald <Martin@lichtvoll.de>
+To: Alex <alex@bpmit.com>
 CC: linux-btrfs@vger.kernel.org
 Subject: Re: BTRFS, getting darn slower everyday
-References: <50714AC8.4010100@petaramesh.org> (sfid-20121007_121057_935818_E179B3F4) <201210071500.43204.Martin@lichtvoll.de>
-In-Reply-To: <201210071500.43204.Martin@lichtvoll.de>
-Content-Type: text/plain; charset=ISO-8859-1
+References: <50714AC8.4010100@petaramesh.org> <loom.20121007T141248-114@post.gmane.org>
+In-Reply-To: <loom.20121007T141248-114@post.gmane.org>
+Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Le 07/10/2012 15:00, Martin Steigerwald a Ècrit :
-> I forgot to mention mount options? Which one do you use?
-root@tethys:/etc# grep btrfs fstab
-/dev/VG1/BTR_POOL    /    btrfs   
-subvol=UBUNTU/@,space_cache,autodefrag,compress=lzo,relatime        0 0
-/dev/sda2        /boot    btrfs   
-subvol=UBUNTU/@boot,space_cache,autodefrag,relatime            0 0
-/dev/VG1/BTR_POOL    /tmp    btrfs   
-subvol=UBUNTU/@tmp,space_cache,autodefrag,compress=lzo,relatime        0 0
-/dev/VG1/BTR_POOL    /home    btrfs   
-subvol=UBUNTU/@home,space_cache,autodefrag,compress=lzo,relatime    0 0
-/dev/VG1/BTR_POOL    /storage    btrfs   
-subvol=STORAGE,space_cache,autodefrag,compress=lzo,relatime    0 0
-/dev/VG1/BTR_POOL    /data/BIG        btrfs   
-subvol=DATA/BIG,space_cache,compress=lzo,noatime    0 0
-/dev/VG1/BTR_POOL    /data/VBOX_HIDDEN    btrfs   
-subvol=DATA/VBOX_HIDDEN,space_cache,compress=lzo,noatime    0 0
-/dev/VG1/BTR_POOL    /data/VBOX_VMS        btrfs   
-subvol=DATA/VBOX_VMS,space_cache,compress=lzo,noatime    0 0
+Hi again ;-)
+Le 07/10/2012 14:33, Alex a √©crit :
+>
+> 1. Convert to a 16k or 32k leafsize.
+How should I do this ? Can I do this on a live FS, and isn't this going
+to double my on-disk used space (I have active snapshots...)
+> 2. defragment (each non-trivial file) every now and again
+I believed that the "autodefrag" mount option was supposed to avoid the
+need for manual defrags...?
 
+Plus, with respect to snapshots, isn't this going to increase a lot my
+used disk space ?
+
+> 3. Note that btrfs in kernel 3.6 (vs 3.5) does appear to be quite a bit quicker.
+I'm not sure that "a bit" quicker will be enough, when I see my BTRFS is
+currently about 8x slower than what ext4 user to...
 
 -- 
-Sw‚mi Petaramesh <swami@petaramesh.org> http://petaramesh.org PGP 9076E32E
+Sw√¢mi Petaramesh <swami@petaramesh.org> http://petaramesh.org PGP 9076E32E
 Ne cherchez pas : Je ne suis pas sur Facebook.
 

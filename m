@@ -1,36 +1,48 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-wg0-f44.google.com ([74.125.82.44]:43811 "EHLO
-	mail-wg0-f44.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1752310Ab2JGWrA (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Sun, 7 Oct 2012 18:47:00 -0400
-Received: by mail-wg0-f44.google.com with SMTP id dr13so3208354wgb.1
-        for <linux-btrfs@vger.kernel.org>; Sun, 07 Oct 2012 15:46:59 -0700 (PDT)
-Message-ID: <5072066B.4020604@gmail.com>
-Date: Mon, 08 Oct 2012 00:47:07 +0200
-From: Goffredo Baroncelli <kreijack@gmail.com>
-MIME-Version: 1.0
-To: Martin Steigerwald <Martin@lichtvoll.de>
-CC: linux-btrfs@vger.kernel.org,
-        =?UTF-8?B?U3fDom1pIFBldGFyYW1lc2g=?= <swami@petaramesh.org>,
-        Alex <alex@bpmit.com>, Liu Bo <bo.li.liu@oracle.com>
-Subject: Re: BTRFS, getting darn slower everyday
-References: <50714AC8.4010100@petaramesh.org> <loom.20121007T141248-114@post.gmane.org> <50718151.8090506@petaramesh.org> (sfid-20121007_163445_311645_DBA4D8EF) <201210071644.19815.Martin@lichtvoll.de>
-In-Reply-To: <201210071644.19815.Martin@lichtvoll.de>
-Content-Type: text/plain; charset=UTF-8; format=flowed
+Received: from plane.gmane.org ([80.91.229.3]:51696 "EHLO plane.gmane.org"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1751497Ab2JGWvn (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Sun, 7 Oct 2012 18:51:43 -0400
+Received: from list by plane.gmane.org with local (Exim 4.69)
+	(envelope-from <gcfb-btrfs-devel-moved1@m.gmane.org>)
+	id 1TKzhM-0005uL-AS
+	for linux-btrfs@vger.kernel.org; Mon, 08 Oct 2012 00:51:48 +0200
+Received: from 78-32-127-104.static.enta.net ([78-32-127-104.static.enta.net])
+        by main.gmane.org with esmtp (Gmexim 0.1 (Debian))
+        id 1AlnuQ-0007hv-00
+        for <linux-btrfs@vger.kernel.org>; Mon, 08 Oct 2012 00:51:48 +0200
+Received: from alex by 78-32-127-104.static.enta.net with local (Gmexim 0.1 (Debian))
+        id 1AlnuQ-0007hv-00
+        for <linux-btrfs@vger.kernel.org>; Mon, 08 Oct 2012 00:51:48 +0200
+To: linux-btrfs@vger.kernel.org
+From: Alex <alex@bpmit.com>
+Subject: Re: Wiki (scrub)
+Date: Sun, 7 Oct 2012 22:51:32 +0000 (UTC)
+Message-ID: <loom.20121008T004828-403@post.gmane.org>
+References: <loom.20121007T140200-885@post.gmane.org> <20121007223941.GE4405@twin.jikos.cz>
+Mime-Version: 1.0
+Content-Type: text/plain; charset=us-ascii
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 10/07/2012 04:44 PM, Martin Steigerwald wrote:
->> Plus, with respect to snapshots, isn't this going to increase a lot my
->> >  used disk space ?
-> I don´t think so, but I will leave this to a developer to answer.
->
-IIRC the defrag is not [fully] snapshot aware, so de-frag-ging a 
-snapshot-ted file should break the COW link.
-Liu Bo is working to patch on that: see " Btrfs: use flag EXTENT_DEFRAG 
-for snapshot-aware defrag" dated 2012/09/17.
+David Sterba <dave <at> jikos.cz> writes:
 
-Please could you clarify if you are using the "autodefrag" options when 
-you have the performance problem ? Are you in position to to reduce the 
-number of snapshot from hundreds to few  ?
+> 
+> Hi,
+> 
+> On Sun, Oct 07, 2012 at 12:07:43PM +0000, Alex wrote:
+> > The official wiki seems to have lost references to "scrub" if not other
+> > commands.
+
+Sorry, I felt sure that scrub was listed on
+https://btrfs.wiki.kernel.org/index.php/Btrfs%28command%29
+ 
+> I'm using the a filter to see only page changes:
+> * select 'User' namespace
+> * [x] Invert selection
+> * Go
+> 
+
+Thanks for this!
+
 

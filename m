@@ -1,48 +1,36 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from twin.jikos.cz ([89.185.236.188]:46843 "EHLO twin.jikos.cz"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1751220Ab2JGWjo (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Sun, 7 Oct 2012 18:39:44 -0400
-Date: Mon, 8 Oct 2012 00:39:41 +0200
-From: David Sterba <dave@jikos.cz>
-To: Alex <alex@bpmit.com>
-Cc: linux-btrfs@vger.kernel.org
-Subject: Re: Wiki (scrub)
-Message-ID: <20121007223941.GE4405@twin.jikos.cz>
-Reply-To: dave@jikos.cz
-References: <loom.20121007T140200-885@post.gmane.org>
+Received: from mail-wg0-f44.google.com ([74.125.82.44]:43811 "EHLO
+	mail-wg0-f44.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1752310Ab2JGWrA (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Sun, 7 Oct 2012 18:47:00 -0400
+Received: by mail-wg0-f44.google.com with SMTP id dr13so3208354wgb.1
+        for <linux-btrfs@vger.kernel.org>; Sun, 07 Oct 2012 15:46:59 -0700 (PDT)
+Message-ID: <5072066B.4020604@gmail.com>
+Date: Mon, 08 Oct 2012 00:47:07 +0200
+From: Goffredo Baroncelli <kreijack@gmail.com>
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <loom.20121007T140200-885@post.gmane.org>
+To: Martin Steigerwald <Martin@lichtvoll.de>
+CC: linux-btrfs@vger.kernel.org,
+        =?UTF-8?B?U3fDom1pIFBldGFyYW1lc2g=?= <swami@petaramesh.org>,
+        Alex <alex@bpmit.com>, Liu Bo <bo.li.liu@oracle.com>
+Subject: Re: BTRFS, getting darn slower everyday
+References: <50714AC8.4010100@petaramesh.org> <loom.20121007T141248-114@post.gmane.org> <50718151.8090506@petaramesh.org> (sfid-20121007_163445_311645_DBA4D8EF) <201210071644.19815.Martin@lichtvoll.de>
+In-Reply-To: <201210071644.19815.Martin@lichtvoll.de>
+Content-Type: text/plain; charset=UTF-8; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hi,
+On 10/07/2012 04:44 PM, Martin Steigerwald wrote:
+>> Plus, with respect to snapshots, isn't this going to increase a lot my
+>> >  used disk space ?
+> I don´t think so, but I will leave this to a developer to answer.
+>
+IIRC the defrag is not [fully] snapshot aware, so de-frag-ging a 
+snapshot-ted file should break the COW link.
+Liu Bo is working to patch on that: see " Btrfs: use flag EXTENT_DEFRAG 
+for snapshot-aware defrag" dated 2012/09/17.
 
-On Sun, Oct 07, 2012 at 12:07:43PM +0000, Alex wrote:
-> The official wiki seems to have lost references to "scrub" if not other
-> commands.
+Please could you clarify if you are using the "autodefrag" options when 
+you have the performance problem ? Are you in position to to reduce the 
+number of snapshot from hundreds to few  ?
 
-AFAIK there was no separate page for scrub, it is not covered in the
-FAQ section but has an entry in the Glossary.
-
-> The last changes iss filled with account creation so I can't see
-> easily when that happened.
-
-Yeah, the user-creation spam is awful, the brave wiki admin at least
-blocks the users that get past the authentication and pollute pages.
-
-I'm using the a filter to see only page changes:
-* select 'User' namespace
-* [x] Invert selection
-* Go
-
-> Have I missed a policy change go through which is not reflected in the
-> (Debian/Siduction) btrfs userland program yet or has something else happened?
-
-Are you asking about 'scrub' support in the progs? Oterwise I don't
-understand the question and tend to answer 'Yes', because it answers the
-second part.
-
-
-david

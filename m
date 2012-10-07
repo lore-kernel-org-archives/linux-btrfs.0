@@ -1,47 +1,50 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from smtp05.smtpout.orange.fr ([80.12.242.127]:24806 "EHLO
-	smtp.smtpout.orange.fr" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1750721Ab2JGJ0f (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Sun, 7 Oct 2012 05:26:35 -0400
-Message-ID: <50714AC8.4010100@petaramesh.org>
-Date: Sun, 07 Oct 2012 11:26:32 +0200
-From: =?ISO-8859-1?Q?Sw=E2mi_Petaramesh?= <swami@petaramesh.org>
+Received: from mail-oa0-f46.google.com ([209.85.219.46]:58064 "EHLO
+	mail-oa0-f46.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1751471Ab2JGKs2 (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Sun, 7 Oct 2012 06:48:28 -0400
+Received: by mail-oa0-f46.google.com with SMTP id h16so2984469oag.19
+        for <linux-btrfs@vger.kernel.org>; Sun, 07 Oct 2012 03:48:26 -0700 (PDT)
 MIME-Version: 1.0
-To: linux-btrfs@vger.kernel.org
-Subject: BTRFS, getting darn slower everyday
+In-Reply-To: <201210061140.26936.Martin@lichtvoll.de>
+References: <CAB9VWqAcwCTDi=pV03CpuXaG0kCE6bT1+NbJJJUdzuwVdR-e-Q@mail.gmail.com>
+	<50602781.9010009@jan-o-sch.net>
+	<CAHf9xvY1TSNa-zY82whUrK6DtnFYiNx1BEF6R1kGQj1HU+wbxA@mail.gmail.com>
+	<201210061140.26936.Martin@lichtvoll.de>
+Date: Sun, 7 Oct 2012 12:48:26 +0200
+Message-ID: <CAHf9xvb8Oz+9TOQ_HJk8Qh5W==RKRme=u=QVvnBd-7E0oBW-gg@mail.gmail.com>
+Subject: Re: btrfs send/receive review by vfs folks
+From: Alex Lyakas <alex.bolshoy.btrfs@gmail.com>
+To: Martin Steigerwald <Martin@lichtvoll.de>
+Cc: linux-btrfs@vger.kernel.org
 Content-Type: text/plain; charset=ISO-8859-1
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hi,
+Matrin,
 
-I have 4 machines, all converted to BTRFS about 6 months ago, now all
-running Ubuntu Quantal with kernel 3.5.0-17
+On Sat, Oct 6, 2012 at 11:40 AM, Martin Steigerwald <Martin@lichtvoll.de> wrote:
+> Am Donnerstag, 4. Oktober 2012 schrieb Alex Lyakas:
+>> Hi Jan,
+>> as I promised, here is some code for you to look at.
+>>
+>> First I will describe the approach in general.
+>>
+>> # Get rid of the pipe. Instead, user-space passes a buffer and kernel
+>> fills the specified user-space buffer with commands.
+>> # When the buffer is full, kernel stops generating commands and
+>> returns a checkpoint to the user-space.
+>
+> Can it just fill a second buffer while userspace command handles the first?
+No, at this point kernel receives only one buffer and fills it up.
+Can you pls elaborate more what improvement you have in mind? Like
+user-space sending a list of buffers to the kernel in one shot? Or
+that user-space handles kind of producer-consumer pool of buffers and
+works on full buffers while kernel fills the empty ones (this, of
+course, can work).
 
-The matter is that all these machines are now getting slower and slower
-everyday, every disk access causing the disk to be 100% busy for long
-periods, to the point that I'm now seriously considering migrating
-everything back to ext4...
+In general, my direction was to make the kernel call stateless, which
+makes the user-space part more flexible.
 
->From the start BTRFS was "not very fast", still satisfactory, but now it
-becomes truly unusable.
-
-On one machine, I know have a typical complete boot time to a usable GUI
-that is over 4 minutes, with the HD still very busy for a couple more
-minutes afterwards, where it used to be around 35-40 seconds in ext4 !
-
-Is there anything I could do to speed things back (without losing all my
-snapshots or doubling the size of data on disk)...?
-
-I already had made the move back from BTRFS to ext4 about 18 months ago,
-I found it had improved so was back to BTRFS, and I wouldn't have to
-revert back again :-/
-
-Any advice or help greatly appreciated.
-
-TIA.
-
--- 
-Swâmi Petaramesh <swami@petaramesh.org> http://petaramesh.org PGP 9076E32E
-Ne cherchez pas : Je ne suis pas sur Facebook.
-
+Thanks,
+Alex.

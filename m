@@ -1,51 +1,43 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mondschein.lichtvoll.de ([194.150.191.11]:42680 "EHLO
-	mail.lichtvoll.de" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1750794Ab2JGNAo convert rfc822-to-8bit (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Sun, 7 Oct 2012 09:00:44 -0400
-From: Martin Steigerwald <Martin@lichtvoll.de>
-To: linux-btrfs@vger.kernel.org
-Subject: Re: BTRFS, getting darn slower everyday
-Date: Sun, 7 Oct 2012 15:00:42 +0200
-Cc: =?iso-8859-1?q?Sw=E2mi_Petaramesh?= <swami@petaramesh.org>
-References: <50714AC8.4010100@petaramesh.org> (sfid-20121007_121057_935818_E179B3F4)
-In-Reply-To: <50714AC8.4010100@petaramesh.org>
+Received: from smtp12.smtpout.orange.fr ([80.12.242.134]:37710 "EHLO
+	smtp.smtpout.orange.fr" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1750952Ab2JGNOJ (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Sun, 7 Oct 2012 09:14:09 -0400
+Message-ID: <5071801B.4090704@petaramesh.org>
+Date: Sun, 07 Oct 2012 15:14:03 +0200
+From: =?ISO-8859-1?Q?Sw=E2mi_Petaramesh?= <swami@petaramesh.org>
 MIME-Version: 1.0
-Content-Type: Text/Plain;
-  charset="iso-8859-1"
-Message-Id: <201210071500.43204.Martin@lichtvoll.de>
+To: Martin Steigerwald <Martin@lichtvoll.de>
+CC: linux-btrfs@vger.kernel.org
+Subject: Re: BTRFS, getting darn slower everyday
+References: <50714AC8.4010100@petaramesh.org> (sfid-20121007_121057_935818_E179B3F4) <201210071500.43204.Martin@lichtvoll.de>
+In-Reply-To: <201210071500.43204.Martin@lichtvoll.de>
+Content-Type: text/plain; charset=ISO-8859-1
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Am Sonntag, 7. Oktober 2012 schrieb Swâmi Petaramesh:
-> Hi,
-> 
-> I have 4 machines, all converted to BTRFS about 6 months ago, now all
-> running Ubuntu Quantal with kernel 3.5.0-17
-> 
-> The matter is that all these machines are now getting slower and slower
-> everyday, every disk access causing the disk to be 100% busy for long
-> periods, to the point that I'm now seriously considering migrating
-> everything back to ext4...
-> 
-> From the start BTRFS was "not very fast", still satisfactory, but now
-> it becomes truly unusable.
-> 
-> On one machine, I know have a typical complete boot time to a usable
-> GUI that is over 4 minutes, with the HD still very busy for a couple
-> more minutes afterwards, where it used to be around 35-40 seconds in
-> ext4 !
-> 
-> Is there anything I could do to speed things back (without losing all
-> my snapshots or doubling the size of data on disk)...?
+Le 07/10/2012 15:00, Martin Steigerwald a écrit :
+> I forgot to mention mount options? Which one do you use?
+root@tethys:/etc# grep btrfs fstab
+/dev/VG1/BTR_POOL    /    btrfs   
+subvol=UBUNTU/@,space_cache,autodefrag,compress=lzo,relatime        0 0
+/dev/sda2        /boot    btrfs   
+subvol=UBUNTU/@boot,space_cache,autodefrag,relatime            0 0
+/dev/VG1/BTR_POOL    /tmp    btrfs   
+subvol=UBUNTU/@tmp,space_cache,autodefrag,compress=lzo,relatime        0 0
+/dev/VG1/BTR_POOL    /home    btrfs   
+subvol=UBUNTU/@home,space_cache,autodefrag,compress=lzo,relatime    0 0
+/dev/VG1/BTR_POOL    /storage    btrfs   
+subvol=STORAGE,space_cache,autodefrag,compress=lzo,relatime    0 0
+/dev/VG1/BTR_POOL    /data/BIG        btrfs   
+subvol=DATA/BIG,space_cache,compress=lzo,noatime    0 0
+/dev/VG1/BTR_POOL    /data/VBOX_HIDDEN    btrfs   
+subvol=DATA/VBOX_HIDDEN,space_cache,compress=lzo,noatime    0 0
+/dev/VG1/BTR_POOL    /data/VBOX_VMS        btrfs   
+subvol=DATA/VBOX_VMS,space_cache,compress=lzo,noatime    0 0
 
-I forgot to mention mount options? Which one do you use?
 
-Please always include all details that may be important.
-
-space_cache, inode_cache?
-
-Thanks,
 -- 
-Martin 'Helios' Steigerwald - http://www.Lichtvoll.de
-GPG: 03B0 0D6C 0040 0710 4AFA  B82F 991B EAAC A599 84C7
+Swâmi Petaramesh <swami@petaramesh.org> http://petaramesh.org PGP 9076E32E
+Ne cherchez pas : Je ne suis pas sur Facebook.
+

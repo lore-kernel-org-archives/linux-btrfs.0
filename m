@@ -1,67 +1,78 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mondschein.lichtvoll.de ([194.150.191.11]:47127 "EHLO
+Received: from mondschein.lichtvoll.de ([194.150.191.11]:36840 "EHLO
 	mail.lichtvoll.de" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1751471Ab2JGKxp (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Sun, 7 Oct 2012 06:53:45 -0400
+	with ESMTP id S1751700Ab2JGK7H convert rfc822-to-8bit (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Sun, 7 Oct 2012 06:59:07 -0400
 From: Martin Steigerwald <Martin@lichtvoll.de>
-To: Alex Lyakas <alex.bolshoy.btrfs@gmail.com>
-Subject: Re: btrfs send/receive review by vfs folks
-Date: Sun, 7 Oct 2012 12:53:43 +0200
-Cc: linux-btrfs@vger.kernel.org
-References: <CAB9VWqAcwCTDi=pV03CpuXaG0kCE6bT1+NbJJJUdzuwVdR-e-Q@mail.gmail.com> <201210061140.26936.Martin@lichtvoll.de> <CAHf9xvb8Oz+9TOQ_HJk8Qh5W==RKRme=u=QVvnBd-7E0oBW-gg@mail.gmail.com> (sfid-20121007_124846_782088_3512D00A)
-In-Reply-To: <CAHf9xvb8Oz+9TOQ_HJk8Qh5W==RKRme=u=QVvnBd-7E0oBW-gg@mail.gmail.com>
+To: linux-btrfs@vger.kernel.org
+Subject: Re: BTRFS, getting darn slower everyday
+Date: Sun, 7 Oct 2012 12:59:05 +0200
+References: <50714AC8.4010100@petaramesh.org> (sfid-20121007_121057_935818_E179B3F4)
+In-Reply-To: <50714AC8.4010100@petaramesh.org>
+Cc: =?iso-8859-1?q?Sw=E2mi_Petaramesh?= <swami@petaramesh.org>
 MIME-Version: 1.0
 Content-Type: Text/Plain;
   charset="iso-8859-1"
-Message-Id: <201210071253.43538.Martin@lichtvoll.de>
+Message-Id: <201210071259.05801.Martin@lichtvoll.de>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Am Sonntag, 7. Oktober 2012 schrieb Alex Lyakas:
-> Matrin,
-
-Martin, but bet was just a typo.
-
-> On Sat, Oct 6, 2012 at 11:40 AM, Martin Steigerwald 
-<Martin@lichtvoll.de> wrote:
-> > Am Donnerstag, 4. Oktober 2012 schrieb Alex Lyakas:
-> >> Hi Jan,
-> >> as I promised, here is some code for you to look at.
-> >> 
-> >> First I will describe the approach in general.
-> >> 
-> >> # Get rid of the pipe. Instead, user-space passes a buffer and
-> >> kernel fills the specified user-space buffer with commands.
-> >> # When the buffer is full, kernel stops generating commands and
-> >> returns a checkpoint to the user-space.
-> > 
-> > Can it just fill a second buffer while userspace command handles the
-> > first?
+Am Sonntag, 7. Oktober 2012 schrieb Swâmi Petaramesh:
+> Hi,
 > 
-> No, at this point kernel receives only one buffer and fills it up.
-> Can you pls elaborate more what improvement you have in mind? Like
-> user-space sending a list of buffers to the kernel in one shot? Or
-> that user-space handles kind of producer-consumer pool of buffers and
-> works on full buffers while kernel fills the empty ones (this, of
-> course, can work).
+> I have 4 machines, all converted to BTRFS about 6 months ago, now all
+> running Ubuntu Quantal with kernel 3.5.0-17
 > 
-> In general, my direction was to make the kernel call stateless, which
-> makes the user-space part more flexible.
+> The matter is that all these machines are now getting slower and slower
+> everyday, every disk access causing the disk to be 100% busy for long
+> periods, to the point that I'm now seriously considering migrating
+> everything back to ext4...
+> 
+> From the start BTRFS was "not very fast", still satisfactory, but now
+> it becomes truly unusable.
+> 
+> On one machine, I know have a typical complete boot time to a usable
+> GUI that is over 4 minutes, with the HD still very busy for a couple
+> more minutes afterwards, where it used to be around 35-40 seconds in
+> ext4 !
+> 
+> Is there anything I could do to speed things back (without losing all
+> my snapshots or doubling the size of data on disk)...?
+> 
+> I already had made the move back from BTRFS to ext4 about 18 months
+> ago, I found it had improved so was back to BTRFS, and I wouldn't have
+> to revert back again :-/
+> 
+> Any advice or help greatly appreciated.
 
-Hmmm, okay. So the kernel has only one buffer.
+I experienced this on my oldest BTRFS filesystems on a ThinkPad T23 as 
+well. Especially with fsync() based workloads like apt / aptitude dist-
+upgrade. I use eatmydata for these operations for now on this laptop.
 
-Well I had some kind of double buffering in mind. The kernel fills one buffer 
-while the userspace application handles the other buffer. Then kernel and 
-userspace swap buffers.
+A balance didn´t work. I considering to redo those as node and leaf size 
+16 KiB. But then anything above kernel 3.3 doesn´t resume reliably on the 
+machine and I did not yet get into to finding out why. A kernel bisect 
+would take ages on this machine unless I compile the kernels somewhere 
+else.
 
-Just an idea of mine. I do not do kernel development, so I do not know 
-whether its feasible. Was happy enough that I wrote a C program that uses 
-some kernel functions some weeks ago that actually worked :)
+Anyway, I think to better see what your issue is, it would be good to have 
+some more information about free space and state of your BTRFS filesystem.
 
-So would using two buffers and swapping them make sense?
+Such as
 
-I do not understand what you mean by producer-consumer, but it seems like 
-thats basically what I described as double buffering here.
+btrfs fi df (preferably with btrfs tools from Goffredo)
+btrfs fi show
+
+for starters.
+
+
+[1] See Goffredo Baroncelli,
+[PATCH][BTRFS-PROGS][V3] btrfs filesystem df last thursday:
+
+You can pull this change from
+   http://cassiopea.homelinux.net/git/btrfs-progs-unstable.git
+branch
+   disk_free
 
 Thanks,
 -- 

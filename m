@@ -1,16 +1,18 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-da0-f46.google.com ([209.85.210.46]:54399 "EHLO
+Received: from mail-da0-f46.google.com ([209.85.210.46]:40606 "EHLO
 	mail-da0-f46.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1753899Ab2JHIKx (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Mon, 8 Oct 2012 04:10:53 -0400
-Received: by mail-da0-f46.google.com with SMTP id n41so1433320dak.19
-        for <linux-btrfs@vger.kernel.org>; Mon, 08 Oct 2012 01:10:52 -0700 (PDT)
+	with ESMTP id S1754036Ab2JHIKy (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Mon, 8 Oct 2012 04:10:54 -0400
+Received: by mail-da0-f46.google.com with SMTP id n41so1433328dak.19
+        for <linux-btrfs@vger.kernel.org>; Mon, 08 Oct 2012 01:10:53 -0700 (PDT)
 From: Robin Dong <robin.k.dong@gmail.com>
 To: linux-btrfs@vger.kernel.org
 Cc: Robin Dong <sanbai@taobao.com>
-Subject: [PATCH v3 1/2] btrfs-progs: limit the max value of leafsize and nodesize
-Date: Mon,  8 Oct 2012 16:10:40 +0800
-Message-Id: <1349683841-27981-1-git-send-email-robin.k.dong@gmail.com>
+Subject: [PATCH v3 2/2] btrfs-progs: limit the min value of total_bytes
+Date: Mon,  8 Oct 2012 16:10:41 +0800
+Message-Id: <1349683841-27981-2-git-send-email-robin.k.dong@gmail.com>
+In-Reply-To: <1349683841-27981-1-git-send-email-robin.k.dong@gmail.com>
+References: <1349683841-27981-1-git-send-email-robin.k.dong@gmail.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
@@ -18,88 +20,64 @@ From: Robin Dong <sanbai@taobao.com>
 
 Using mkfs.btrfs like:
 
-	mkfs.btrfs -l 131072 /dev/sda
+	mkfs.btrfs -b 1048576 /dev/sda
 
-will return no error, but after mount it, the dmesg will report:
+will report error:
 
-	BTRFS: couldn't mount because metadata blocksize (131072) was too large
+	mkfs.btrfs: volumes.c:796: btrfs_alloc_chunk: Assertion `!(ret)' failed.
+	Aborted
 
-The leafsize and nodesize are equal at present, so we just use one function
-"check_leaf_or_node_size" to limit leaf and node size below BTRFS_MAX_METADATA_BLOCKSIZE.
+because the length of dev_extent is 4MB.
+
+For the single/single case it's 5MB but
+for the dup/dup it's 156MB. It's due to the known bug in the blockgroup
+creation with multiple devices (applies on dup as well here) that leads to:
+
+# btrfs fi df .
+System, DUP: total=8.00MB, used=4.00KB
+System: total=4.00MB, used=0.00
+Data+Metadata, DUP: total=64.00MB, used=24.00KB
+Data+Metadata: total=8.00MB, used=0.00
+
+8*2 + 4 + 64*2 + 8 = 156
 
 Signed-off-by: Robin Dong <sanbai@taobao.com>
 Reviewed-by: David Sterba <dave@jikos.cz>
 ---
- ctree.h |    6 ++++++
- mkfs.c  |   29 +++++++++++++++++++++++------
- 2 files changed, 29 insertions(+), 6 deletions(-)
+ mkfs.c  |    7 ++++++-
+ utils.h |    1 +
+ 2 files changed, 7 insertions(+), 1 deletions(-)
 
-diff --git a/ctree.h b/ctree.h
-index 7f55229..75c1e0a 100644
---- a/ctree.h
-+++ b/ctree.h
-@@ -111,6 +111,12 @@ struct btrfs_trans_handle;
- #define BTRFS_DEV_ITEMS_OBJECTID 1ULL
- 
- /*
-+ * the max metadata block size.  This limit is somewhat artificial,
-+ * but the memmove costs go through the roof for larger blocks.
-+ */
-+#define BTRFS_MAX_METADATA_BLOCKSIZE 65536
-+
-+/*
-  * we can actually store much bigger names, but lets not confuse the rest
-  * of linux
-  */
 diff --git a/mkfs.c b/mkfs.c
-index dff5eb8..93672b9 100644
+index 93672b9..982a113 100644
 --- a/mkfs.c
 +++ b/mkfs.c
-@@ -1201,6 +1201,27 @@ static int zero_output_file(int out_fd, u64 size, u32 sectorsize)
- 	return ret;
- }
- 
-+static int check_leaf_or_node_size(u32 size, u32 sectorsize)
-+{
-+	if (size < sectorsize) {
-+		fprintf(stderr,
-+			"Illegal leafsize (or nodesize) %u (smaller than sectorsize %u)\n",
-+			size, sectorsize);
-+		return -1;
-+	} else if (size > BTRFS_MAX_METADATA_BLOCKSIZE) {
-+		fprintf(stderr,
-+			"Illegal leafsize (or nodesize) %u (larger than %u)\n",
-+			size, BTRFS_MAX_METADATA_BLOCKSIZE);
-+		return -1;
-+	} else if (size & (sectorsize - 1)) {
-+		fprintf(stderr,
-+			"Illegal leafsize (or nodesize) %u (not aligned to %u)\n",
-+			size, sectorsize);
-+		return -1;
-+	}
-+	return 0;
-+}
-+
- int main(int ac, char **av)
- {
- 	char *file;
-@@ -1291,14 +1312,10 @@ int main(int ac, char **av)
+@@ -1345,7 +1345,12 @@ int main(int ac, char **av)
+ 				&dev_block_count, &mixed, nodiscard);
+ 		if (block_count == 0)
+ 			block_count = dev_block_count;
+-		else if (block_count > dev_block_count) {
++		else if (block_count < BTRFS_MKFS_SYSTEM_MAX_SIZE) {
++			fprintf(stderr, "Illegal total number of bytes %u "
++				"(smaller than %u)\n",
++				block_count, BTRFS_MKFS_SYSTEM_MAX_SIZE);
++			exit(1);
++		} else if (block_count > dev_block_count) {
+ 			fprintf(stderr, "%s is smaller than requested size\n", file);
+ 			exit(1);
  		}
- 	}
- 	sectorsize = max(sectorsize, (u32)getpagesize());
--	if (leafsize < sectorsize || (leafsize & (sectorsize - 1))) {
--		fprintf(stderr, "Illegal leafsize %u\n", leafsize);
-+	if (check_leaf_or_node_size(leafsize, sectorsize))
- 		exit(1);
--	}
--	if (nodesize < sectorsize || (nodesize & (sectorsize - 1))) {
--		fprintf(stderr, "Illegal nodesize %u\n", nodesize);
-+	if (check_leaf_or_node_size(nodesize, sectorsize))
- 		exit(1);
--	}
- 	ac = ac - optind;
- 	if (ac == 0)
- 		print_usage();
+diff --git a/utils.h b/utils.h
+index c147c12..b63f69a 100644
+--- a/utils.h
++++ b/utils.h
+@@ -20,6 +20,7 @@
+ #define __UTILS__
+ 
+ #define BTRFS_MKFS_SYSTEM_GROUP_SIZE (4 * 1024 * 1024)
++#define BTRFS_MKFS_SYSTEM_MAX_SIZE   (156 * 1024 * 1024)
+ 
+ int make_btrfs(int fd, const char *device, const char *label,
+ 	       u64 blocks[6], u64 num_bytes, u32 nodesize,
 -- 
 1.7.3.2
 

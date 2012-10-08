@@ -1,48 +1,41 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from plane.gmane.org ([80.91.229.3]:51696 "EHLO plane.gmane.org"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1751497Ab2JGWvn (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Sun, 7 Oct 2012 18:51:43 -0400
-Received: from list by plane.gmane.org with local (Exim 4.69)
-	(envelope-from <gcfb-btrfs-devel-moved1@m.gmane.org>)
-	id 1TKzhM-0005uL-AS
-	for linux-btrfs@vger.kernel.org; Mon, 08 Oct 2012 00:51:48 +0200
-Received: from 78-32-127-104.static.enta.net ([78-32-127-104.static.enta.net])
-        by main.gmane.org with esmtp (Gmexim 0.1 (Debian))
-        id 1AlnuQ-0007hv-00
-        for <linux-btrfs@vger.kernel.org>; Mon, 08 Oct 2012 00:51:48 +0200
-Received: from alex by 78-32-127-104.static.enta.net with local (Gmexim 0.1 (Debian))
-        id 1AlnuQ-0007hv-00
-        for <linux-btrfs@vger.kernel.org>; Mon, 08 Oct 2012 00:51:48 +0200
-To: linux-btrfs@vger.kernel.org
-From: Alex <alex@bpmit.com>
-Subject: Re: Wiki (scrub)
-Date: Sun, 7 Oct 2012 22:51:32 +0000 (UTC)
-Message-ID: <loom.20121008T004828-403@post.gmane.org>
-References: <loom.20121007T140200-885@post.gmane.org> <20121007223941.GE4405@twin.jikos.cz>
-Mime-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
+Received: from smtp06.smtpout.orange.fr ([80.12.242.128]:19436 "EHLO
+	smtp.smtpout.orange.fr" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1750773Ab2JHGIh (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Mon, 8 Oct 2012 02:08:37 -0400
+Message-ID: <50726DE1.20101@petaramesh.org>
+Date: Mon, 08 Oct 2012 08:08:33 +0200
+From: =?UTF-8?B?U3fDom1pIFBldGFyYW1lc2g=?= <swami@petaramesh.org>
+MIME-Version: 1.0
+To: Goffredo Baroncelli <kreijack@gmail.com>
+CC: linux-btrfs@vger.kernel.org
+Subject: Re: BTRFS, getting darn slower everyday
+References: <50714AC8.4010100@petaramesh.org> <loom.20121007T141248-114@post.gmane.org> <50718151.8090506@petaramesh.org> (sfid-20121007_163445_311645_DBA4D8EF) <201210071644.19815.Martin@lichtvoll.de> <5072066B.4020604@gmail.com>
+In-Reply-To: <5072066B.4020604@gmail.com>
+Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-David Sterba <dave <at> jikos.cz> writes:
+Le 08/10/2012 00:47, Goffredo Baroncelli a écrit :
+> Please could you clarify if you are using the "autodefrag" options
+> when you have the performance problem ?
 
-> 
-> Hi,
-> 
-> On Sun, Oct 07, 2012 at 12:07:43PM +0000, Alex wrote:
-> > The official wiki seems to have lost references to "scrub" if not other
-> > commands.
+I use autodefrag on all volumes systematically, except on volumes that I
+use for really big files that would always be defragmenting (i.e.
+virtual machines, but I seldom use virtual machines, and my performance
+problem is general, I don't take VMs into consideration in this respect...)
 
-Sorry, I felt sure that scrub was listed on
-https://btrfs.wiki.kernel.org/index.php/Btrfs%28command%29
- 
-> I'm using the a filter to see only page changes:
-> * select 'User' namespace
-> * [x] Invert selection
-> * Go
-> 
+> Are you in position to to reduce the number of snapshot from hundreds
+> to few  ?
 
-Thanks for this!
+I might do this as an experiment, but it would defeat one of the
+prominent purposes for which I use BTRFS, and the number of snapshots
+would grow immediately again, as I use the excellent OpenSuSE "snapper"
+tool, that makes a snapshot every single hour...
 
+Kind regards.
+
+-- 
+Swâmi Petaramesh <swami@petaramesh.org> http://petaramesh.org PGP 9076E32E
+Ne cherchez pas : Je ne suis pas sur Facebook.
 

@@ -1,50 +1,40 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-da0-f46.google.com ([209.85.210.46]:45922 "EHLO
-	mail-da0-f46.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1752749Ab2JHN00 (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Mon, 8 Oct 2012 09:26:26 -0400
-Message-ID: <5072D477.3070303@gmail.com>
-Date: Mon, 08 Oct 2012 21:26:15 +0800
-From: Wang Sheng-Hui <shhuiw@gmail.com>
+Received: from smtp07.smtpout.orange.fr ([80.12.242.129]:20288 "EHLO
+	smtp.smtpout.orange.fr" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1750933Ab2JHNgf (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Mon, 8 Oct 2012 09:36:35 -0400
+Message-ID: <5072D6DE.1030600@petaramesh.org>
+Date: Mon, 08 Oct 2012 15:36:30 +0200
+From: =?ISO-8859-1?Q?Sw=E2mi_Petaramesh?= <swami@petaramesh.org>
 MIME-Version: 1.0
-To: chris.mason@fusionio.com, linux-btrfs@vger.kernel.org,
-        linux-kernel@vger.kernel.org
-Subject: [PATCH] Btrfs: remove repeated eb->pages check in, disk-io.c/csum_dirty_buffer
+To: Goffredo Baroncelli <kreijack@gmail.com>
+CC: linux-btrfs@vger.kernel.org
+Subject: Re: BTRFS, getting darn slower everyday
+References: <50714AC8.4010100@petaramesh.org> <loom.20121007T141248-114@post.gmane.org> <50718151.8090506@petaramesh.org> <201210071644.19815.Martin@lichtvoll.de> <5072066B.4020604@gmail.com> <50726DE1.20101@petaramesh.org> <CAJHuE_CjXaSmWRagSLxOCQpnEkpc1_S_sxSm0pVbXLiGocVA9w@mail.gmail.com>
+In-Reply-To: <CAJHuE_CjXaSmWRagSLxOCQpnEkpc1_S_sxSm0pVbXLiGocVA9w@mail.gmail.com>
 Content-Type: text/plain; charset=ISO-8859-1
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-In csum_dirty_buffer, we first get eb from page->private.
-Then we check if the page is the first page of eb. Later
-we check it again. Remove the repeated check here.
+Le 08/10/2012 13:38, Goffredo Baroncelli a écrit :
+> The autodefrag option is per filesystem not per subvolume. The settings
+> of the first subvolueme is used also for the other ones.
+Uh !
 
-Signed-off-by: Wang Sheng-Hui <shhuiw@gmail.com>
----
- fs/btrfs/disk-io.c |    8 +++-----
- 1 files changed, 3 insertions(+), 5 deletions(-)
+So there is no interest in creating several subvols, some for which
+files should be autodefragged, and some not ? That's to bad :-(
 
-diff --git a/fs/btrfs/disk-io.c b/fs/btrfs/disk-io.c
-index 22e98e0..8919c56 100644
---- a/fs/btrfs/disk-io.c
-+++ b/fs/btrfs/disk-io.c
-@@ -432,14 +432,12 @@ static int csum_dirty_buffer(struct btrfs_root *root, struct page *page)
- 	tree = &BTRFS_I(page->mapping->host)->io_tree;
+> I fear that both the combination of autodefrag and the high number of
+> snapshot could be the root-cause of the the bad performance. 
 
- 	eb = (struct extent_buffer *)page->private;
--	if (page != eb->pages[0])
--		return 0;
--	found_start = btrfs_header_bytenr(eb);
--	if (found_start != start) {
-+	if (page != eb->pages[0]) {
- 		WARN_ON(1);
- 		return 0;
- 	}
--	if (eb->pages[0] != page) {
-+	found_start = btrfs_header_bytenr(eb);
-+	if (found_start != start) {
- 		WARN_ON(1);
- 		return 0;
- 	}
+As a test, I will try to remove *most* of my snapshots and see if it
+helps...
+
+Thanks for the suggestion !
+
+Kind regards.
+
 -- 
-1.7.5.4
+Swâmi Petaramesh <swami@petaramesh.org> http://petaramesh.org PGP 9076E32E
+Ne cherchez pas : Je ne suis pas sur Facebook.
 

@@ -1,44 +1,105 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from smtp06.smtpout.orange.fr ([80.12.242.128]:58302 "EHLO
-	smtp.smtpout.orange.fr" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1750825Ab2JHGWc (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Mon, 8 Oct 2012 02:22:32 -0400
-Message-ID: <50727125.4010501@petaramesh.org>
-Date: Mon, 08 Oct 2012 08:22:29 +0200
-From: =?UTF-8?B?U3fDom1pIFBldGFyYW1lc2g=?= <swami@petaramesh.org>
-MIME-Version: 1.0
-To: Martin Steigerwald <Martin@lichtvoll.de>
-CC: linux-btrfs@vger.kernel.org
-Subject: Re: BTRFS, getting darn slower everyday
-References: <50714AC8.4010100@petaramesh.org> <loom.20121007T141248-114@post.gmane.org> <50718151.8090506@petaramesh.org> (sfid-20121007_163445_311645_DBA4D8EF) <201210071644.19815.Martin@lichtvoll.de>
-In-Reply-To: <201210071644.19815.Martin@lichtvoll.de>
-Content-Type: text/plain; charset=UTF-8
+Received: from mail-da0-f46.google.com ([209.85.210.46]:54399 "EHLO
+	mail-da0-f46.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1753899Ab2JHIKx (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Mon, 8 Oct 2012 04:10:53 -0400
+Received: by mail-da0-f46.google.com with SMTP id n41so1433320dak.19
+        for <linux-btrfs@vger.kernel.org>; Mon, 08 Oct 2012 01:10:52 -0700 (PDT)
+From: Robin Dong <robin.k.dong@gmail.com>
+To: linux-btrfs@vger.kernel.org
+Cc: Robin Dong <sanbai@taobao.com>
+Subject: [PATCH v3 1/2] btrfs-progs: limit the max value of leafsize and nodesize
+Date: Mon,  8 Oct 2012 16:10:40 +0800
+Message-Id: <1349683841-27981-1-git-send-email-robin.k.dong@gmail.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Le 07/10/2012 16:44, Martin Steigerwald a écrit :
-> I think you need to backup, reformat and restore from backup for now. 
-No way. 4 machines on each of which 2 to 4 different OSes are sharing
-the same BTRFS volume !
+From: Robin Dong <sanbai@taobao.com>
 
-If I ever need to reformat/reinstall all this, the new format won't be
-BTRFS ! I would be pissed off to a point where I would stick to either
-ext4 or ZFS, all of which work nicely (I have a complex system that has
-been running very fine on ZFS for 1.5 year)...
+Using mkfs.btrfs like:
 
-> How did you measure this? Is this just the boot times you mentioned in
-> the original article? 
+	mkfs.btrfs -l 131072 /dev/sda
 
-No highly scientific measurement. I don't live with benchmarks, but with
-the impression that my machine is nicely swift or painfully slow.
+will return no error, but after mount it, the dmesg will report:
 
-When it comes to 4 minutes for boot, 40 seconds for opening a brower, 1+
-minute for Thunderbird... 15 minutes for installing an innocent set of
-updates... I'm under the impression that it's painfully slow.
+	BTRFS: couldn't mount because metadata blocksize (131072) was too large
 
-Kind regards.
+The leafsize and nodesize are equal at present, so we just use one function
+"check_leaf_or_node_size" to limit leaf and node size below BTRFS_MAX_METADATA_BLOCKSIZE.
 
+Signed-off-by: Robin Dong <sanbai@taobao.com>
+Reviewed-by: David Sterba <dave@jikos.cz>
+---
+ ctree.h |    6 ++++++
+ mkfs.c  |   29 +++++++++++++++++++++++------
+ 2 files changed, 29 insertions(+), 6 deletions(-)
+
+diff --git a/ctree.h b/ctree.h
+index 7f55229..75c1e0a 100644
+--- a/ctree.h
++++ b/ctree.h
+@@ -111,6 +111,12 @@ struct btrfs_trans_handle;
+ #define BTRFS_DEV_ITEMS_OBJECTID 1ULL
+ 
+ /*
++ * the max metadata block size.  This limit is somewhat artificial,
++ * but the memmove costs go through the roof for larger blocks.
++ */
++#define BTRFS_MAX_METADATA_BLOCKSIZE 65536
++
++/*
+  * we can actually store much bigger names, but lets not confuse the rest
+  * of linux
+  */
+diff --git a/mkfs.c b/mkfs.c
+index dff5eb8..93672b9 100644
+--- a/mkfs.c
++++ b/mkfs.c
+@@ -1201,6 +1201,27 @@ static int zero_output_file(int out_fd, u64 size, u32 sectorsize)
+ 	return ret;
+ }
+ 
++static int check_leaf_or_node_size(u32 size, u32 sectorsize)
++{
++	if (size < sectorsize) {
++		fprintf(stderr,
++			"Illegal leafsize (or nodesize) %u (smaller than sectorsize %u)\n",
++			size, sectorsize);
++		return -1;
++	} else if (size > BTRFS_MAX_METADATA_BLOCKSIZE) {
++		fprintf(stderr,
++			"Illegal leafsize (or nodesize) %u (larger than %u)\n",
++			size, BTRFS_MAX_METADATA_BLOCKSIZE);
++		return -1;
++	} else if (size & (sectorsize - 1)) {
++		fprintf(stderr,
++			"Illegal leafsize (or nodesize) %u (not aligned to %u)\n",
++			size, sectorsize);
++		return -1;
++	}
++	return 0;
++}
++
+ int main(int ac, char **av)
+ {
+ 	char *file;
+@@ -1291,14 +1312,10 @@ int main(int ac, char **av)
+ 		}
+ 	}
+ 	sectorsize = max(sectorsize, (u32)getpagesize());
+-	if (leafsize < sectorsize || (leafsize & (sectorsize - 1))) {
+-		fprintf(stderr, "Illegal leafsize %u\n", leafsize);
++	if (check_leaf_or_node_size(leafsize, sectorsize))
+ 		exit(1);
+-	}
+-	if (nodesize < sectorsize || (nodesize & (sectorsize - 1))) {
+-		fprintf(stderr, "Illegal nodesize %u\n", nodesize);
++	if (check_leaf_or_node_size(nodesize, sectorsize))
+ 		exit(1);
+-	}
+ 	ac = ac - optind;
+ 	if (ac == 0)
+ 		print_usage();
 -- 
-Swâmi Petaramesh <swami@petaramesh.org> http://petaramesh.org PGP 9076E32E
-Ne cherchez pas : Je ne suis pas sur Facebook.
+1.7.3.2
 

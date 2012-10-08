@@ -1,87 +1,39 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx.mylinuxtime.de ([80.190.48.209]:38321 "EHLO
-	mx.mylinuxtime.de" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1752750Ab2JHOZV (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Mon, 8 Oct 2012 10:25:21 -0400
-Received: from leda (unknown [10.5.1.215])
-	(using TLSv1 with cipher DHE-RSA-AES128-SHA (128/128 bits))
-	(No client certificate requested)
-	by mx.mylinuxtime.de (Postfix) with ESMTPSA id 9A42EBDC001
-	for <linux-btrfs@vger.kernel.org>; Mon,  8 Oct 2012 16:17:17 +0200 (CEST)
-Date: Mon, 8 Oct 2012 16:17:13 +0200
-From: Christian Hesse <list@eworm.de>
-To: linux-btrfs@vger.kernel.org
-Subject: fix btrfs-progs build
-Message-ID: <20121008161713.218a6eb1@leda>
-Mime-Version: 1.0
-Content-Type: multipart/mixed; boundary="MP_/9E8u6ic0gsRwW.zLpEcwrrL"
+Received: from mx1.fusionio.com ([66.114.96.30]:42398 "EHLO mx1.fusionio.com"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1750779Ab2JHO2A (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Mon, 8 Oct 2012 10:28:00 -0400
+Date: Mon, 8 Oct 2012 10:27:57 -0400
+From: Chris Mason <chris.mason@fusionio.com>
+To: "Richard W.M. Jones" <rjones@redhat.com>
+CC: "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
+Subject: Re: Anyone seeing lots of "Check tree block failed" and other errors
+ with latest kernel?
+Message-ID: <20121008142757.GB4132@shiny>
+References: <20121008141642.GC24071@rhmail.home.annexia.org>
+MIME-Version: 1.0
+Content-Type: text/plain; charset="us-ascii"
+In-Reply-To: <20121008141642.GC24071@rhmail.home.annexia.org>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
---MP_/9E8u6ic0gsRwW.zLpEcwrrL
-Content-Type: text/plain; charset=US-ASCII
-Content-Transfer-Encoding: 7bit
-Content-Disposition: inline
+On Mon, Oct 08, 2012 at 08:16:42AM -0600, Richard W.M. Jones wrote:
+> 
+> I'm tracking this bug here:
+> 
+> https://bugzilla.redhat.com/show_bug.cgi?id=863978
+> 
+> Since approx. last week I'm seeing lots of failures in btrfs.  The
+> common factor seems to be that the filesystem is created (mkfs.btrfs
+> /dev/sda1) and then it is immediately used -- eg.  mounted or some
+> btrfs subtool is run on it.  There is no pause or sync between the
+> operations.
 
-Hello everybody,
+This was a problem on older btrfs-progs, but this commit:
 
-man pages for btrfs-progs are compressed by gzip by default. In Makefile the
-variable GZIP is use, this evaluates to 'gzip gzip' on my system. From man
-gzip:
+btrfs-progs-0.19.20120817git043a639-1.fc19.i686
 
-> The environment variable GZIP can hold a set of default options for gzip.
-> These options are interpreted first and can be overwritten by explicit
-> command line parameters.
+(043a639) has long had the fixes to flush things after mkfs.  Is there
+any change the guest you're testing had an ancient progs on it?
 
-So using any other variable name fixes this. Patch is attached.
--- 
-main(a){char*c=/*    Schoene Gruesse                         */"B?IJj;MEH"
-"CX:;",b;for(a/*    Chris           get my mail address:    */=0;b=c[a++];)
-putchar(b-1/(/*               gcc -o sig sig.c && ./sig    */b/42*2-3)*42);}
-
---MP_/9E8u6ic0gsRwW.zLpEcwrrL
-Content-Type: text/x-patch
-Content-Transfer-Encoding: 7bit
-Content-Disposition: attachment; filename=btrfs-progs.diff
-
-diff --git a/man/Makefile b/man/Makefile
-index 4a90b75..f7b57f7 100644
---- a/man/Makefile
-+++ b/man/Makefile
-@@ -1,4 +1,4 @@
--GZIP=gzip
-+GZIPCMD=gzip
- INSTALL= install
- 
- prefix ?= /usr/local
-@@ -12,22 +12,22 @@ MANPAGES = mkfs.btrfs.8.gz btrfsctl.8.gz btrfsck.8.gz btrfs-image.8.gz \
- all: $(MANPAGES)
- 
- mkfs.btrfs.8.gz: mkfs.btrfs.8.in
--	$(GZIP) -n -c mkfs.btrfs.8.in > mkfs.btrfs.8.gz
-+	$(GZIPCMD) -n -c mkfs.btrfs.8.in > mkfs.btrfs.8.gz
- 
- btrfs.8.gz: btrfs.8.in
--	$(GZIP) -n -c btrfs.8.in > btrfs.8.gz
-+	$(GZIPCMD) -n -c btrfs.8.in > btrfs.8.gz
- 
- btrfsctl.8.gz: btrfsctl.8.in
--	$(GZIP) -n -c btrfsctl.8.in > btrfsctl.8.gz
-+	$(GZIPCMD) -n -c btrfsctl.8.in > btrfsctl.8.gz
- 
- btrfsck.8.gz: btrfsck.8.in
--	$(GZIP) -n -c btrfsck.8.in > btrfsck.8.gz
-+	$(GZIPCMD) -n -c btrfsck.8.in > btrfsck.8.gz
- 
- btrfs-image.8.gz: btrfs-image.8.in
--	$(GZIP) -n -c btrfs-image.8.in > btrfs-image.8.gz
-+	$(GZIPCMD) -n -c btrfs-image.8.in > btrfs-image.8.gz
- 
- btrfs-show.8.gz: btrfs-show.8.in
--	$(GZIP) -n -c btrfs-show.8.in > btrfs-show.8.gz
-+	$(GZIPCMD) -n -c btrfs-show.8.in > btrfs-show.8.gz
- 
- clean :
- 	rm -f $(MANPAGES)
-
---MP_/9E8u6ic0gsRwW.zLpEcwrrL--
+-chris

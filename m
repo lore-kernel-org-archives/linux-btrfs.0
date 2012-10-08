@@ -1,77 +1,43 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.fusionio.com ([66.114.96.31]:42458 "EHLO mx2.fusionio.com"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1753529Ab2JHPSz (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 8 Oct 2012 11:18:55 -0400
-Date: Mon, 8 Oct 2012 11:18:53 -0400
-From: Chris Mason <chris.mason@fusionio.com>
-To: "Richard W.M. Jones" <rjones@redhat.com>
-CC: Chris Mason <clmason@fusionio.com>,
-        "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
-Subject: Re: Anyone seeing lots of "Check tree block failed" and other errors
- with latest kernel?
-Message-ID: <20121008151853.GF4132@shiny>
-References: <20121008141642.GC24071@rhmail.home.annexia.org>
- <20121008142757.GB4132@shiny>
- <20121008145730.GD24071@rhmail.home.annexia.org>
- <20121008150419.GE4132@shiny>
- <20121008151513.GE24071@rhmail.home.annexia.org>
+Received: from smtp04.smtpout.orange.fr ([80.12.242.126]:55817 "EHLO
+	smtp.smtpout.orange.fr" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1752858Ab2JHPuX (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Mon, 8 Oct 2012 11:50:23 -0400
+Message-ID: <5072F63B.5060608@petaramesh.org>
+Date: Mon, 08 Oct 2012 17:50:19 +0200
+From: =?ISO-8859-1?Q?Sw=E2mi_Petaramesh?= <swami@petaramesh.org>
 MIME-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-In-Reply-To: <20121008151513.GE24071@rhmail.home.annexia.org>
+To: Goffredo Baroncelli <kreijack@gmail.com>
+CC: linux-btrfs@vger.kernel.org
+Subject: Re: BTRFS, getting darn slower everyday
+References: <50714AC8.4010100@petaramesh.org> <loom.20121007T141248-114@post.gmane.org> <50718151.8090506@petaramesh.org> <201210071644.19815.Martin@lichtvoll.de> <5072066B.4020604@gmail.com> <50726DE1.20101@petaramesh.org> <CAJHuE_CjXaSmWRagSLxOCQpnEkpc1_S_sxSm0pVbXLiGocVA9w@mail.gmail.com>
+In-Reply-To: <CAJHuE_CjXaSmWRagSLxOCQpnEkpc1_S_sxSm0pVbXLiGocVA9w@mail.gmail.com>
+Content-Type: text/plain; charset=ISO-8859-1
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Mon, Oct 08, 2012 at 09:15:14AM -0600, Richard W.M. Jones wrote:
-> On Mon, Oct 08, 2012 at 11:04:19AM -0400, Chris Mason wrote:
-> > On Mon, Oct 08, 2012 at 08:57:30AM -0600, Richard W.M. Jones wrote:
-> > > On Mon, Oct 08, 2012 at 10:27:57AM -0400, Chris Mason wrote:
-> > > > On Mon, Oct 08, 2012 at 08:16:42AM -0600, Richard W.M. Jones wrote:
-> > > > > 
-> > > > > I'm tracking this bug here:
-> > > > > 
-> > > > > https://bugzilla.redhat.com/show_bug.cgi?id=863978
-> > > > > 
-> > > > > Since approx. last week I'm seeing lots of failures in btrfs.  The
-> > > > > common factor seems to be that the filesystem is created (mkfs.btrfs
-> > > > > /dev/sda1) and then it is immediately used -- eg.  mounted or some
-> > > > > btrfs subtool is run on it.  There is no pause or sync between the
-> > > > > operations.
-> > > > 
-> > > > This was a problem on older btrfs-progs, but this commit:
-> > > > 
-> > > > btrfs-progs-0.19.20120817git043a639-1.fc19.i686
-> > > > 
-> > > > (043a639) has long had the fixes to flush things after mkfs.  Is there
-> > > > any change the guest you're testing had an ancient progs on it?
-> > > 
-> > > We have a couple of guests where this fails.  One has
-> > > btrfs-progs-0.19.20120817git043a639-1.fc19.i686.  The other has
-> > > btrfs-progs-0.19-20.fc18 which appears to be based on
-> > > btrfs-progs-0.19.20120817git043a639.tar.bz2 plus some upstream
-> > > patches.
-> > > 
-> > > What is the commit which we need?  I can't see anything related to
-> > > this in the btrfs-progs git log.
-> > 
-> > Sorry, I was remembering wrong.  I fixed this up in the kernel by
-> > running invalidate_bdev during mount.  I just double checked and the
-> > invalidates look right, so something strange must be going on.
-> > 
-> > If it is possible to reproduce this reliably, could you please check and
-> > see if syncs do fix it?  We saw this often with xfstests in the past,
-> > but haven't seen it since the invalidates were added.
-> 
-> Unfortunately I'm struggling to reproduce this outside of our build
-> system (Koji).  I will keep you informed if I do manage to reproduce
-> it locally.  Adding fsync /dev/sda1 was also my first instinct :-)
+Hi again Goffredo,
 
-When we saw this during xfstests, the fsync wasn't sufficient.  It was
-really pretty maddening and the invalidate was a nuke it from orbit
-style solution.
+Le 08/10/2012 13:38, Goffredo Baroncelli a écrit :
+> I fear that both the combination of autodefrag and the high number of
+> snapshot could be the root-cause of the the bad performance.
+I've removed, on one of my machines, all snapshots but three per subvol
+(keeping the oldests and newest), going from about 30 per subvol to 3,
+for the complete filesystem from 120+ to about a dozen.
 
-The kernel side of the invalidate may have changed, so your first
-instinct of a kernel change is probably right.
+Then I let btrfs-cleaner do its job
 
--chris
+After that the machine boots to GUI in a bit less than 2 minutes, where
+it was more than 4 minutes previously.
+
+The machine now seems much more reactive and swift.
+
+So it seems that the number or active snapshots (or is it the number of
+subvols whatsoever ??) dramatically impacts performance...
+
+Thanks for the suggestion.
+
+-- 
+Swâmi Petaramesh <swami@petaramesh.org> http://petaramesh.org PGP 9076E32E
+Ne cherchez pas : Je ne suis pas sur Facebook.
 

@@ -1,98 +1,62 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from brockman.in8.de ([85.214.220.56]:57361 "EHLO mail.in8.de"
+Received: from mx1.redhat.com ([209.132.183.28]:61861 "EHLO mx1.redhat.com"
 	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1750876Ab2JHNhw (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 8 Oct 2012 09:37:52 -0400
-Message-ID: <5072D72F.5000907@jan-o-sch.net>
-Date: Mon, 08 Oct 2012 15:37:51 +0200
-From: Jan Schmidt <list.btrfs@jan-o-sch.net>
+	id S1750845Ab2JHOQq (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Mon, 8 Oct 2012 10:16:46 -0400
+Received: from int-mx02.intmail.prod.int.phx2.redhat.com (int-mx02.intmail.prod.int.phx2.redhat.com [10.5.11.12])
+	by mx1.redhat.com (8.14.4/8.14.4) with ESMTP id q98EGjhI006989
+	(version=TLSv1/SSLv3 cipher=DHE-RSA-AES256-SHA bits=256 verify=OK)
+	for <linux-btrfs@vger.kernel.org>; Mon, 8 Oct 2012 10:16:45 -0400
+Received: from localhost (vpn1-6-178.ams2.redhat.com [10.36.6.178])
+	by int-mx02.intmail.prod.int.phx2.redhat.com (8.13.8/8.13.8) with ESMTP id q98EGiaB002737
+	for <linux-btrfs@vger.kernel.org>; Mon, 8 Oct 2012 10:16:45 -0400
+Date: Mon, 8 Oct 2012 15:16:42 +0100
+From: "Richard W.M. Jones" <rjones@redhat.com>
+To: linux-btrfs@vger.kernel.org
+Subject: Anyone seeing lots of "Check tree block failed" and other errors
+ with latest kernel?
+Message-ID: <20121008141642.GC24071@rhmail.home.annexia.org>
 MIME-Version: 1.0
-To: Alex Lyakas <alex.btrfs@zadarastorage.com>
-CC: linux-btrfs <linux-btrfs@vger.kernel.org>,
-        Alexander Block <ablock84@googlemail.com>
-Subject: Re: btrfs send/receive review by vfs folks
-References: <CAB9VWqAcwCTDi=pV03CpuXaG0kCE6bT1+NbJJJUdzuwVdR-e-Q@mail.gmail.com>	<CAHf9xvaH6HoapVVqdTAXdFAZsEfvN7-xjoGtj31Lw=fUbY3LXA@mail.gmail.com>	<50602781.9010009@jan-o-sch.net>	<CAHf9xvY1TSNa-zY82whUrK6DtnFYiNx1BEF6R1kGQj1HU+wbxA@mail.gmail.com>	<50729C4F.4010801@jan-o-sch.net> <CAOcd+r2gbMRTfbUJXFrnzc3L_jf-Hpabsw9McNQ-b-c7toTyCQ@mail.gmail.com>
-In-Reply-To: <CAOcd+r2gbMRTfbUJXFrnzc3L_jf-Hpabsw9McNQ-b-c7toTyCQ@mail.gmail.com>
-Content-Type: text/plain; charset=ISO-8859-1
+Content-Type: text/plain; charset=us-ascii
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Mon, October 08, 2012 at 13:38 (+0200), Alex Lyakas wrote:
->>> I realize this is a big change, and a new IOCTL has to be introduced
->>> in order not to break current user-kernel protocol.
->>> The pros as I see them:
->>> # One data-copy is avoided (no pipe). For WRITE commands two
->>> data-copies are avoided (no read_buf needed)
->>
->> I'm not sure I understand those correctly. If you're talking about the user mode
->> part, we could simply pass stdout to the kernel, saving the unnecessary pipe and
->> copy operations in between without introducing a new buffer.
-> What I meant is the following:
-> # For non-WRITE commands the flow is: put the command onto send_buf,
-> copy to pipe, then user-space copies it out from the pipe. With my
-> code: put command onto send_buf, then copy to user-space buffer
-> (copy_to_user). So one data-copy is avoided (2 vs 3).
-> # For WRITE commands: read data onto read_buf, then copy to send_buf,
-> then copy to pipe, then user-mode copies to its buffer. With my code:
-> read onto send_buf, then copy to user-space buffer. So 2 data-copies
-> are avoided (2 vs 4).
-> Does it make sense?
 
-I'd rather just focus on the ERESTARTSYS issue for now.
+I'm tracking this bug here:
 
->> On Wed, August 01, 2012 at 14:09 (+0200), Alexander Block wrote:
->>> I have two possible solutions in my mind.
->>> 1. Store some kind of state in the ioctl arguments so that we can
->>> continue where we stopped when the ioctl reenters. This would however
->>> complicate the code a lot.
->>> 2. Spawn a thread when the ioctl is called and leave the ioctl
->>> immediately. I don't know if ERESTARTSYS can happen in vfs_xxx calls
->>> if they happen from a non syscall thread.
->>
->> What do you think about those two?
-> I am not familiar enough with Linux kernel - will the second one work?
+https://bugzilla.redhat.com/show_bug.cgi?id=863978
 
-I not an expert here, either. My uneducated guess is that even a spawned kernel
-thread can have signals pending, in which case we would be in the same trouble.
+Since approx. last week I'm seeing lots of failures in btrfs.  The
+common factor seems to be that the filesystem is created (mkfs.btrfs
+/dev/sda1) and then it is immediately used -- eg.  mounted or some
+btrfs subtool is run on it.  There is no pause or sync between the
+operations.
 
->> I like the first suggestion. Combining single-ioctl with signal handling
->> capabilities feels like the right choice. When we get ERESTARTSYS, we know
->> exactly how many bytes made it to user mode. To reach a comfortable state for a
->> restart, we can store part of the stream together with the meta information in
->> our internal state before returning to user mode.
-> I thought that ERESTARTSYS never returns to user mode (this is what I
-> saw in my tests also).
+Typical errors include:
 
-That error isn't returned to a user process, that's correct. From a kernel
-developer's perspective, we're returning to user space, though, waiting for the
-pending signal to be processed.
+mkfs.btrfs /dev/sda1
+mount -o  /dev/sda1 /sysroot/
+[   96.384211] device fsid 962db3c0-4153-450b-9ca7-c9216e81afe3 devid 1 transid 3 /dev/sda1
+[   96.385314] device fsid 962db3c0-4153-450b-9ca7-c9216e81afe3 devid 1 transid 3 /dev/sda1
+[   96.394158] btrfs: disk space caching is enabled
+[   96.428656] btrfs: failed to recover relocation
+[   96.437190] btrfs: open_ctree failed
 
->> The ioctl will be restarted sooner or later and our internal state tells us where to proceed.
-> 
-> Ok, so you say that we should maintain checkpoint-like information and
-> use it if the ioctl is automatically restarted. This is quite close to
-> what I have done, I believe; we still need all the capabilities of
-> re-arming tree search, saving context, skipping commands etc, that I
-> have written. Did I understand your proposal correctly?
+and:
 
-In some way, yes. If possible, I'd like to (with decreasing priority)
-- stick with the stream format
-- maintain ioctl-compatibility
-- have a much smaller patch
-- store less state
-- stick with the pipe
+btrfsck /dev/sda1
+Check tree block failed, want=139264, have=0
+Check tree block failed, want=139264, have=0
+Check tree block failed, want=139264, have=0
+read block failed check_tree_block
+Couldn't read chunk root
 
-I haven't had time to completely understand your checkpoint concept, and
-one-big-chunk patches are hard to read. But the size of the added data
-structures scares me. Shouldn't we be able to do this with as little information
-as a single btrfs key and a buffer of generated but not yet pushed stream data?
-This would also save us skipping commands or output bytes.
+(There are plenty of others, see the above bug link)
 
-> But tell me one thing: let's say we call vfs_write() and it returns
-> -ERESTARTSYS. Can we be sure that it wrote 0 bytes to the pipe in this
-> call?
+Rich.
 
->From the version of fs/pipe.c in my working directory: yes. If we rely on this,
-we'd better check if this is something to rely on, but I hope it is.
-
--Jan
+-- 
+Richard Jones, Virtualization Group, Red Hat http://people.redhat.com/~rjones
+virt-top is 'top' for virtual machines.  Tiny program with many
+powerful monitoring features, net stats, disk stats, logging, etc.
+http://et.redhat.com/~rjones/virt-top

@@ -1,87 +1,81 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mo-p05-ob.rzone.de ([81.169.146.181]:56309 "EHLO
-	mo-p05-ob.rzone.de" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1751999Ab2JHJ0n (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Mon, 8 Oct 2012 05:26:43 -0400
-Message-ID: <50729C4F.4010801@jan-o-sch.net>
-Date: Mon, 08 Oct 2012 11:26:39 +0200
-From: Jan Schmidt <list.btrfs@jan-o-sch.net>
-MIME-Version: 1.0
-To: Alex Lyakas <alex.bolshoy.btrfs@gmail.com>
-CC: linux-btrfs@vger.kernel.org, Alexander Block <ablock84@googlemail.com>
-Subject: Re: btrfs send/receive review by vfs folks
-References: <CAB9VWqAcwCTDi=pV03CpuXaG0kCE6bT1+NbJJJUdzuwVdR-e-Q@mail.gmail.com>	<CAHf9xvaH6HoapVVqdTAXdFAZsEfvN7-xjoGtj31Lw=fUbY3LXA@mail.gmail.com>	<50602781.9010009@jan-o-sch.net> <CAHf9xvY1TSNa-zY82whUrK6DtnFYiNx1BEF6R1kGQj1HU+wbxA@mail.gmail.com>
-In-Reply-To: <CAHf9xvY1TSNa-zY82whUrK6DtnFYiNx1BEF6R1kGQj1HU+wbxA@mail.gmail.com>
-Content-Type: text/plain; charset=ISO-8859-1
+Received: from mail-pa0-f46.google.com ([209.85.220.46]:46967 "EHLO
+	mail-pa0-f46.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1750709Ab2JHJb3 (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Mon, 8 Oct 2012 05:31:29 -0400
+Received: by mail-pa0-f46.google.com with SMTP id hz1so3782131pad.19
+        for <linux-btrfs@vger.kernel.org>; Mon, 08 Oct 2012 02:31:29 -0700 (PDT)
+From: Robin Dong <robin.k.dong@gmail.com>
+To: linux-btrfs@vger.kernel.org
+Cc: Robin Dong <sanbai@taobao.com>
+Subject: [PATCH v3 2/2] btrfs-progs: limit the min value of total_bytes
+Date: Mon,  8 Oct 2012 17:31:20 +0800
+Message-Id: <1349688680-28470-1-git-send-email-robin.k.dong@gmail.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hi Alex,
+From: Robin Dong <sanbai@taobao.com>
 
-On Thu, October 04, 2012 at 17:59 (+0200), Alex Lyakas wrote:
-> as I promised, here is some code for you to look at.
+Using mkfs.btrfs like:
 
-And quite a lot of it. I hadn't thought of such a big change when I wrote
-"preferably in form of a patch".
+	mkfs.btrfs -b 1048576 /dev/sda
 
-As a side note, your patch doesn't follow the general kernel coding style (but
-read on before you rework this one).
+will report error:
 
-> First I will describe the approach in general.
->
-> # Get rid of the pipe. Instead, user-space passes a buffer and kernel
-> fills the specified user-space buffer with commands.
-> # When the buffer is full, kernel stops generating commands and
-> returns a checkpoint to the user-space.
-> # User-space does whatever it wants with the returned buffer, and then
-> calls the kernel again, with a buffer and a checkpoint that was
-> returned by the kernel from previous SEND ioctl().
-> # Kernel re-arms itself to the specified checkpoint, and fills the
-> specified buffer with commands, attaches a new checkpoint and so on.
-> # Eventually kernel signals to the user that there are no more commands.
+	mkfs.btrfs: volumes.c:796: btrfs_alloc_chunk: Assertion `!(ret)' failed.
+	Aborted
 
-We had that in the very beginning of btrfs send. Having only a single ioctl
-saves a whole lot of system calls.
+because the length of dev_extent is 4MB.
 
-> I realize this is a big change, and a new IOCTL has to be introduced
-> in order not to break current user-kernel protocol.
-> The pros as I see them:
-> # One data-copy is avoided (no pipe). For WRITE commands two
-> data-copies are avoided (no read_buf needed)
+For the single/single case it's 5MB but
+for the dup/dup it's 156MB. It's due to the known bug in the blockgroup
+creation with multiple devices (applies on dup as well here) that leads to:
 
-I'm not sure I understand those correctly. If you're talking about the user mode
-part, we could simply pass stdout to the kernel, saving the unnecessary pipe and
-copy operations in between without introducing a new buffer.
+# btrfs fi df .
+System, DUP: total=8.00MB, used=4.00KB
+System: total=4.00MB, used=0.00
+Data+Metadata, DUP: total=64.00MB, used=24.00KB
+Data+Metadata: total=8.00MB, used=0.00
 
-> # ERESTARTSYS issue disappears. If needed, ioctl is restarted, but
-> there is no problem with that, it will simply refill the buffer from
-> the same checkpoint.
+8*2 + 4 + 64*2 + 8 = 156
 
-This is the subject of this thread and the thing I'd like to focus on currently.
+Signed-off-by: Robin Dong <sanbai@taobao.com>
+Reviewed-by: David Sterba <dave@jikos.cz>
+---
+ mkfs.c  |    7 ++++++-
+ utils.h |    1 +
+ 2 files changed, 7 insertions(+), 1 deletions(-)
 
-> Cons:
-> # Instead of one ioctl(), many ioctls() are issued to finish the send.
-> # Big code change
+diff --git a/mkfs.c b/mkfs.c
+index 93672b9..982a113 100644
+--- a/mkfs.c
++++ b/mkfs.c
+@@ -1345,7 +1345,12 @@ int main(int ac, char **av)
+ 				&dev_block_count, &mixed, nodiscard);
+ 		if (block_count == 0)
+ 			block_count = dev_block_count;
+-		else if (block_count > dev_block_count) {
++		else if (block_count < BTRFS_MKFS_SYSTEM_MAX_SIZE) {
++			fprintf(stderr, "Illegal total number of bytes %u "
++				"(smaller than %u)\n",
++				block_count, BTRFS_MKFS_SYSTEM_MAX_SIZE);
++			exit(1);
++		} else if (block_count > dev_block_count) {
+ 			fprintf(stderr, "%s is smaller than requested size\n", file);
+ 			exit(1);
+ 		}
+diff --git a/utils.h b/utils.h
+index c147c12..b63f69a 100644
+--- a/utils.h
++++ b/utils.h
+@@ -20,6 +20,7 @@
+ #define __UTILS__
+ 
+ #define BTRFS_MKFS_SYSTEM_GROUP_SIZE (4 * 1024 * 1024)
++#define BTRFS_MKFS_SYSTEM_MAX_SIZE   (156 * 1024 * 1024)
+ 
+ int make_btrfs(int fd, const char *device, const char *label,
+ 	       u64 blocks[6], u64 num_bytes, u32 nodesize,
+-- 
+1.7.3.2
 
-Two big cons. I'd like to quota Alexander's suggestions again:
-
-On Wed, August 01, 2012 at 14:09 (+0200), Alexander Block wrote:
-> I have two possible solutions in my mind.
-> 1. Store some kind of state in the ioctl arguments so that we can
-> continue where we stopped when the ioctl reenters. This would however
-> complicate the code a lot.
-> 2. Spawn a thread when the ioctl is called and leave the ioctl
-> immediately. I don't know if ERESTARTSYS can happen in vfs_xxx calls
-> if they happen from a non syscall thread.
-
-What do you think about those two?
-
-I like the first suggestion. Combining single-ioctl with signal handling
-capabilities feels like the right choice. When we get ERESTARTSYS, we know
-exactly how many bytes made it to user mode. To reach a comfortable state for a
-restart, we can store part of the stream together with the meta information in
-our internal state before returning to user mode. The ioctl will be restarted
-sooner or later and our internal state tells us where to proceed.
-
-Thanks,
--Jan

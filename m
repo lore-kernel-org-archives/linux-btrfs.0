@@ -1,40 +1,98 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from smtp07.smtpout.orange.fr ([80.12.242.129]:20288 "EHLO
-	smtp.smtpout.orange.fr" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1750933Ab2JHNgf (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Mon, 8 Oct 2012 09:36:35 -0400
-Message-ID: <5072D6DE.1030600@petaramesh.org>
-Date: Mon, 08 Oct 2012 15:36:30 +0200
-From: =?ISO-8859-1?Q?Sw=E2mi_Petaramesh?= <swami@petaramesh.org>
+Received: from brockman.in8.de ([85.214.220.56]:57361 "EHLO mail.in8.de"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1750876Ab2JHNhw (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Mon, 8 Oct 2012 09:37:52 -0400
+Message-ID: <5072D72F.5000907@jan-o-sch.net>
+Date: Mon, 08 Oct 2012 15:37:51 +0200
+From: Jan Schmidt <list.btrfs@jan-o-sch.net>
 MIME-Version: 1.0
-To: Goffredo Baroncelli <kreijack@gmail.com>
-CC: linux-btrfs@vger.kernel.org
-Subject: Re: BTRFS, getting darn slower everyday
-References: <50714AC8.4010100@petaramesh.org> <loom.20121007T141248-114@post.gmane.org> <50718151.8090506@petaramesh.org> <201210071644.19815.Martin@lichtvoll.de> <5072066B.4020604@gmail.com> <50726DE1.20101@petaramesh.org> <CAJHuE_CjXaSmWRagSLxOCQpnEkpc1_S_sxSm0pVbXLiGocVA9w@mail.gmail.com>
-In-Reply-To: <CAJHuE_CjXaSmWRagSLxOCQpnEkpc1_S_sxSm0pVbXLiGocVA9w@mail.gmail.com>
+To: Alex Lyakas <alex.btrfs@zadarastorage.com>
+CC: linux-btrfs <linux-btrfs@vger.kernel.org>,
+        Alexander Block <ablock84@googlemail.com>
+Subject: Re: btrfs send/receive review by vfs folks
+References: <CAB9VWqAcwCTDi=pV03CpuXaG0kCE6bT1+NbJJJUdzuwVdR-e-Q@mail.gmail.com>	<CAHf9xvaH6HoapVVqdTAXdFAZsEfvN7-xjoGtj31Lw=fUbY3LXA@mail.gmail.com>	<50602781.9010009@jan-o-sch.net>	<CAHf9xvY1TSNa-zY82whUrK6DtnFYiNx1BEF6R1kGQj1HU+wbxA@mail.gmail.com>	<50729C4F.4010801@jan-o-sch.net> <CAOcd+r2gbMRTfbUJXFrnzc3L_jf-Hpabsw9McNQ-b-c7toTyCQ@mail.gmail.com>
+In-Reply-To: <CAOcd+r2gbMRTfbUJXFrnzc3L_jf-Hpabsw9McNQ-b-c7toTyCQ@mail.gmail.com>
 Content-Type: text/plain; charset=ISO-8859-1
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Le 08/10/2012 13:38, Goffredo Baroncelli a écrit :
-> The autodefrag option is per filesystem not per subvolume. The settings
-> of the first subvolueme is used also for the other ones.
-Uh !
+On Mon, October 08, 2012 at 13:38 (+0200), Alex Lyakas wrote:
+>>> I realize this is a big change, and a new IOCTL has to be introduced
+>>> in order not to break current user-kernel protocol.
+>>> The pros as I see them:
+>>> # One data-copy is avoided (no pipe). For WRITE commands two
+>>> data-copies are avoided (no read_buf needed)
+>>
+>> I'm not sure I understand those correctly. If you're talking about the user mode
+>> part, we could simply pass stdout to the kernel, saving the unnecessary pipe and
+>> copy operations in between without introducing a new buffer.
+> What I meant is the following:
+> # For non-WRITE commands the flow is: put the command onto send_buf,
+> copy to pipe, then user-space copies it out from the pipe. With my
+> code: put command onto send_buf, then copy to user-space buffer
+> (copy_to_user). So one data-copy is avoided (2 vs 3).
+> # For WRITE commands: read data onto read_buf, then copy to send_buf,
+> then copy to pipe, then user-mode copies to its buffer. With my code:
+> read onto send_buf, then copy to user-space buffer. So 2 data-copies
+> are avoided (2 vs 4).
+> Does it make sense?
 
-So there is no interest in creating several subvols, some for which
-files should be autodefragged, and some not ? That's to bad :-(
+I'd rather just focus on the ERESTARTSYS issue for now.
 
-> I fear that both the combination of autodefrag and the high number of
-> snapshot could be the root-cause of the the bad performance. 
+>> On Wed, August 01, 2012 at 14:09 (+0200), Alexander Block wrote:
+>>> I have two possible solutions in my mind.
+>>> 1. Store some kind of state in the ioctl arguments so that we can
+>>> continue where we stopped when the ioctl reenters. This would however
+>>> complicate the code a lot.
+>>> 2. Spawn a thread when the ioctl is called and leave the ioctl
+>>> immediately. I don't know if ERESTARTSYS can happen in vfs_xxx calls
+>>> if they happen from a non syscall thread.
+>>
+>> What do you think about those two?
+> I am not familiar enough with Linux kernel - will the second one work?
 
-As a test, I will try to remove *most* of my snapshots and see if it
-helps...
+I not an expert here, either. My uneducated guess is that even a spawned kernel
+thread can have signals pending, in which case we would be in the same trouble.
 
-Thanks for the suggestion !
+>> I like the first suggestion. Combining single-ioctl with signal handling
+>> capabilities feels like the right choice. When we get ERESTARTSYS, we know
+>> exactly how many bytes made it to user mode. To reach a comfortable state for a
+>> restart, we can store part of the stream together with the meta information in
+>> our internal state before returning to user mode.
+> I thought that ERESTARTSYS never returns to user mode (this is what I
+> saw in my tests also).
 
-Kind regards.
+That error isn't returned to a user process, that's correct. From a kernel
+developer's perspective, we're returning to user space, though, waiting for the
+pending signal to be processed.
 
--- 
-Swâmi Petaramesh <swami@petaramesh.org> http://petaramesh.org PGP 9076E32E
-Ne cherchez pas : Je ne suis pas sur Facebook.
+>> The ioctl will be restarted sooner or later and our internal state tells us where to proceed.
+> 
+> Ok, so you say that we should maintain checkpoint-like information and
+> use it if the ioctl is automatically restarted. This is quite close to
+> what I have done, I believe; we still need all the capabilities of
+> re-arming tree search, saving context, skipping commands etc, that I
+> have written. Did I understand your proposal correctly?
 
+In some way, yes. If possible, I'd like to (with decreasing priority)
+- stick with the stream format
+- maintain ioctl-compatibility
+- have a much smaller patch
+- store less state
+- stick with the pipe
+
+I haven't had time to completely understand your checkpoint concept, and
+one-big-chunk patches are hard to read. But the size of the added data
+structures scares me. Shouldn't we be able to do this with as little information
+as a single btrfs key and a buffer of generated but not yet pushed stream data?
+This would also save us skipping commands or output bytes.
+
+> But tell me one thing: let's say we call vfs_write() and it returns
+> -ERESTARTSYS. Can we be sure that it wrote 0 bytes to the pipe in this
+> call?
+
+>From the version of fs/pipe.c in my working directory: yes. If we rely on this,
+we'd better check if this is something to rely on, but I hope it is.
+
+-Jan

@@ -1,62 +1,87 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx1.redhat.com ([209.132.183.28]:61861 "EHLO mx1.redhat.com"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1750845Ab2JHOQq (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 8 Oct 2012 10:16:46 -0400
-Received: from int-mx02.intmail.prod.int.phx2.redhat.com (int-mx02.intmail.prod.int.phx2.redhat.com [10.5.11.12])
-	by mx1.redhat.com (8.14.4/8.14.4) with ESMTP id q98EGjhI006989
-	(version=TLSv1/SSLv3 cipher=DHE-RSA-AES256-SHA bits=256 verify=OK)
-	for <linux-btrfs@vger.kernel.org>; Mon, 8 Oct 2012 10:16:45 -0400
-Received: from localhost (vpn1-6-178.ams2.redhat.com [10.36.6.178])
-	by int-mx02.intmail.prod.int.phx2.redhat.com (8.13.8/8.13.8) with ESMTP id q98EGiaB002737
-	for <linux-btrfs@vger.kernel.org>; Mon, 8 Oct 2012 10:16:45 -0400
-Date: Mon, 8 Oct 2012 15:16:42 +0100
-From: "Richard W.M. Jones" <rjones@redhat.com>
+Received: from mx.mylinuxtime.de ([80.190.48.209]:38321 "EHLO
+	mx.mylinuxtime.de" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1752750Ab2JHOZV (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Mon, 8 Oct 2012 10:25:21 -0400
+Received: from leda (unknown [10.5.1.215])
+	(using TLSv1 with cipher DHE-RSA-AES128-SHA (128/128 bits))
+	(No client certificate requested)
+	by mx.mylinuxtime.de (Postfix) with ESMTPSA id 9A42EBDC001
+	for <linux-btrfs@vger.kernel.org>; Mon,  8 Oct 2012 16:17:17 +0200 (CEST)
+Date: Mon, 8 Oct 2012 16:17:13 +0200
+From: Christian Hesse <list@eworm.de>
 To: linux-btrfs@vger.kernel.org
-Subject: Anyone seeing lots of "Check tree block failed" and other errors
- with latest kernel?
-Message-ID: <20121008141642.GC24071@rhmail.home.annexia.org>
-MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
+Subject: fix btrfs-progs build
+Message-ID: <20121008161713.218a6eb1@leda>
+Mime-Version: 1.0
+Content-Type: multipart/mixed; boundary="MP_/9E8u6ic0gsRwW.zLpEcwrrL"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
+--MP_/9E8u6ic0gsRwW.zLpEcwrrL
+Content-Type: text/plain; charset=US-ASCII
+Content-Transfer-Encoding: 7bit
+Content-Disposition: inline
 
-I'm tracking this bug here:
+Hello everybody,
 
-https://bugzilla.redhat.com/show_bug.cgi?id=863978
+man pages for btrfs-progs are compressed by gzip by default. In Makefile the
+variable GZIP is use, this evaluates to 'gzip gzip' on my system. From man
+gzip:
 
-Since approx. last week I'm seeing lots of failures in btrfs.  The
-common factor seems to be that the filesystem is created (mkfs.btrfs
-/dev/sda1) and then it is immediately used -- eg.  mounted or some
-btrfs subtool is run on it.  There is no pause or sync between the
-operations.
+> The environment variable GZIP can hold a set of default options for gzip.
+> These options are interpreted first and can be overwritten by explicit
+> command line parameters.
 
-Typical errors include:
-
-mkfs.btrfs /dev/sda1
-mount -o  /dev/sda1 /sysroot/
-[   96.384211] device fsid 962db3c0-4153-450b-9ca7-c9216e81afe3 devid 1 transid 3 /dev/sda1
-[   96.385314] device fsid 962db3c0-4153-450b-9ca7-c9216e81afe3 devid 1 transid 3 /dev/sda1
-[   96.394158] btrfs: disk space caching is enabled
-[   96.428656] btrfs: failed to recover relocation
-[   96.437190] btrfs: open_ctree failed
-
-and:
-
-btrfsck /dev/sda1
-Check tree block failed, want=139264, have=0
-Check tree block failed, want=139264, have=0
-Check tree block failed, want=139264, have=0
-read block failed check_tree_block
-Couldn't read chunk root
-
-(There are plenty of others, see the above bug link)
-
-Rich.
-
+So using any other variable name fixes this. Patch is attached.
 -- 
-Richard Jones, Virtualization Group, Red Hat http://people.redhat.com/~rjones
-virt-top is 'top' for virtual machines.  Tiny program with many
-powerful monitoring features, net stats, disk stats, logging, etc.
-http://et.redhat.com/~rjones/virt-top
+main(a){char*c=/*    Schoene Gruesse                         */"B?IJj;MEH"
+"CX:;",b;for(a/*    Chris           get my mail address:    */=0;b=c[a++];)
+putchar(b-1/(/*               gcc -o sig sig.c && ./sig    */b/42*2-3)*42);}
+
+--MP_/9E8u6ic0gsRwW.zLpEcwrrL
+Content-Type: text/x-patch
+Content-Transfer-Encoding: 7bit
+Content-Disposition: attachment; filename=btrfs-progs.diff
+
+diff --git a/man/Makefile b/man/Makefile
+index 4a90b75..f7b57f7 100644
+--- a/man/Makefile
++++ b/man/Makefile
+@@ -1,4 +1,4 @@
+-GZIP=gzip
++GZIPCMD=gzip
+ INSTALL= install
+ 
+ prefix ?= /usr/local
+@@ -12,22 +12,22 @@ MANPAGES = mkfs.btrfs.8.gz btrfsctl.8.gz btrfsck.8.gz btrfs-image.8.gz \
+ all: $(MANPAGES)
+ 
+ mkfs.btrfs.8.gz: mkfs.btrfs.8.in
+-	$(GZIP) -n -c mkfs.btrfs.8.in > mkfs.btrfs.8.gz
++	$(GZIPCMD) -n -c mkfs.btrfs.8.in > mkfs.btrfs.8.gz
+ 
+ btrfs.8.gz: btrfs.8.in
+-	$(GZIP) -n -c btrfs.8.in > btrfs.8.gz
++	$(GZIPCMD) -n -c btrfs.8.in > btrfs.8.gz
+ 
+ btrfsctl.8.gz: btrfsctl.8.in
+-	$(GZIP) -n -c btrfsctl.8.in > btrfsctl.8.gz
++	$(GZIPCMD) -n -c btrfsctl.8.in > btrfsctl.8.gz
+ 
+ btrfsck.8.gz: btrfsck.8.in
+-	$(GZIP) -n -c btrfsck.8.in > btrfsck.8.gz
++	$(GZIPCMD) -n -c btrfsck.8.in > btrfsck.8.gz
+ 
+ btrfs-image.8.gz: btrfs-image.8.in
+-	$(GZIP) -n -c btrfs-image.8.in > btrfs-image.8.gz
++	$(GZIPCMD) -n -c btrfs-image.8.in > btrfs-image.8.gz
+ 
+ btrfs-show.8.gz: btrfs-show.8.in
+-	$(GZIP) -n -c btrfs-show.8.in > btrfs-show.8.gz
++	$(GZIPCMD) -n -c btrfs-show.8.in > btrfs-show.8.gz
+ 
+ clean :
+ 	rm -f $(MANPAGES)
+
+--MP_/9E8u6ic0gsRwW.zLpEcwrrL--

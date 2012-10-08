@@ -1,54 +1,99 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-bk0-f46.google.com ([209.85.214.46]:36573 "EHLO
-	mail-bk0-f46.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1751823Ab2JHQqO (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Mon, 8 Oct 2012 12:46:14 -0400
-Received: by mail-bk0-f46.google.com with SMTP id jk13so2170500bkc.19
-        for <linux-btrfs@vger.kernel.org>; Mon, 08 Oct 2012 09:46:13 -0700 (PDT)
-Message-ID: <5073035F.6000600@gmail.com>
-Date: Mon, 08 Oct 2012 18:46:23 +0200
-From: Goffredo Baroncelli <kreijack@gmail.com>
+Received: from mx1.workshopit.co.uk ([93.191.37.100]:54017 "EHLO
+	mx1.workshopit.co.uk" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1754166Ab2JHROv (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Mon, 8 Oct 2012 13:14:51 -0400
+Received: from campbell-lange.net ([93.191.37.68])
+	by mx1.workshopit.co.uk with esmtp (Exim 4.72)
+	(envelope-from <rory@campbell-lange.net>)
+	id 1TLGCp-0000ZP-Bx
+	for linux-btrfs@vger.kernel.org; Mon, 08 Oct 2012 17:29:23 +0100
+Received: from 46-65-49-47.zone16.bethere.co.uk ([46.65.49.47] helo=orchard)
+	by campbell-lange.net with esmtpsa (TLS1.2:DHE_RSA_AES_128_CBC_SHA1:128)
+	(Exim 4.80)
+	(envelope-from <rory@campbell-lange.net>)
+	id 1TLGDh-0008NN-2h
+	for linux-btrfs@vger.kernel.org; Mon, 08 Oct 2012 17:30:17 +0100
+Received: from rory by orchard with local (Exim 4.80)
+	(envelope-from <rory@roryt42os.office.campbell-lange.net>)
+	id 1TLGDb-0005wd-1Y
+	for linux-btrfs@vger.kernel.org; Mon, 08 Oct 2012 17:30:11 +0100
+Date: Mon, 8 Oct 2012 17:30:10 +0100
+From: Rory Campbell-Lange <rory@campbell-lange.net>
+To: linux-btrfs@vger.kernel.org
+Subject: btrfs receive to subdirectory
+Message-ID: <20121008163010.GA22763@campbell-lange.net>
 MIME-Version: 1.0
-To: =?ISO-8859-1?Q?Sw=E2mi_Petaramesh?= <swami@petaramesh.org>
-CC: linux-btrfs@vger.kernel.org
-Subject: Re: BTRFS, getting darn slower everyday
-References: <50714AC8.4010100@petaramesh.org> <loom.20121007T141248-114@post.gmane.org> <50718151.8090506@petaramesh.org> <201210071644.19815.Martin@lichtvoll.de> <5072066B.4020604@gmail.com> <50726DE1.20101@petaramesh.org> <CAJHuE_CjXaSmWRagSLxOCQpnEkpc1_S_sxSm0pVbXLiGocVA9w@mail.gmail.com> <5072F63B.5060608@petaramesh.org>
-In-Reply-To: <5072F63B.5060608@petaramesh.org>
-Content-Type: text/plain; charset=ISO-8859-1; format=flowed
+Content-Type: text/plain; charset=us-ascii
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 10/08/2012 05:50 PM, Swâmi Petaramesh wrote:
-> Hi again Goffredo,
->
-> Le 08/10/2012 13:38, Goffredo Baroncelli a écrit :
->> I fear that both the combination of autodefrag and the high number of
->> snapshot could be the root-cause of the the bad performance.
-> I've removed, on one of my machines, all snapshots but three per subvol
-> (keeping the oldests and newest), going from about 30 per subvol to 3,
-> for the complete filesystem from 120+ to about a dozen.
->
-> Then I let btrfs-cleaner do its job
->
-> After that the machine boots to GUI in a bit less than 2 minutes, where
-> it was more than 4 minutes previously.
->
-> The machine now seems much more reactive and swift.
->
-> So it seems that the number or active snapshots (or is it the number of
-> subvols whatsoever ??) dramatically impacts performance...
+I can send snapshots to <volume>, but not <volume>/<dir>. Please advise
+if what I am doing is incorrect.
 
-Does the autodefrag options still alive ?
-I believe that the snapshot is quite cheap, except if you update the 
-shared files one at time. Which should be the case of the autodefrag.
-But it is only a my supposition....
+Rory
 
-Could you please try to avoid the autodefrag option in a machine with an 
-high number of snapshot ? I am curios...
+Format usb3 disk and mount
+	root@orchard:/bkp# mkfs.btrfs /dev/sdb1
+	> WARNING! - Btrfs v0.20-rc1-37-g91d9eec IS EXPERIMENTAL
+	> WARNING! - see http://btrfs.wiki.kernel.org before using
+	> fs created label (null) on /dev/sdb1
+	> 	nodesize 4096 leafsize 4096 sectorsize 4096 size 698.64GB
+	> Btrfs v0.20-rc1-37-g91d9eec
+	mount /dev/sdb1 /mnt
 
 
+Create snapshots on /bkp share
+	root@orchard:/bkp# btrfs subvolume snapshot -r subvol snaps/snap_081012_1715
+	> Create a readonly snapshot of 'subvol' in 'snaps/snap_081012_1715'
+	root@orchard:/bkp# mutt -f subvol/INBOX/
+    > 1561 kept, 18 deleted.
+	root@orchard:/bkp# btrfs subvolume snapshot -r subvol snaps/snap_081012_1716
+    > Create a readonly snapshot of 'subvol' in 'snaps/snap_081012_1716'
 
->
-> Thanks for the suggestion.
->
+Send base backup to /mnt
+	root@orchard:/bkp# btrfs send snaps/snap_081012_1715 | btrfs receive /mnt
+	> At subvol snaps/snap_081012_1715
+	> At subvol snap_081012_1715
 
+Send incremental backup to /mnt
+	root@orchard:/bkp# btrfs send -p snaps/snap_081012_1715 \
+                       snaps/snap_081012_1716 | btrfs receive /mnt
+	> At subvol snaps/snap_081012_1716
+	> At snapshot snap_081012_1716
+
+	root@orchard:/bkp# ls /mnt
+	snap_081012_1715  snap_081012_1716
+
+Results:
+	root@orchard:/bkp# btrfs subvolume list /bkp 
+	> ID 259 gen 62 top level 5 path subvol
+	> ID 278 gen 60 top level 5 path snaps/snap_081012_1715
+	> ID 279 gen 62 top level 5 path snaps/snap_081012_1716
+	root@orchard:/bkp# btrfs subvolume list /mnt 
+	> ID 256 gen 8 top level 5 path snap_081012_1715
+	> ID 259 gen 9 top level 5 path snap_081012_1716
+
+Restart:
+	root@orchard:/bkp# btrfs subvolume del /mnt/snap_081012_171*
+	> Delete subvolume '/mnt/snap_081012_1715'
+	> Delete subvolume '/mnt/snap_081012_1716'
+
+Try and snap to /mnt/<subdir>
+	root@orchard:/bkp# mkdir /mnt/snaps
+	root@orchard:/bkp# btrfs send snaps/snap_081012_1715 | btrfs receive /mnt/snaps
+	> At subvol snaps/snap_081012_1715
+	> At subvol snap_081012_1715
+	root@orchard:/bkp# btrfs send -p snaps/snap_081012_1715 \
+	                   snaps/snap_081012_1716 | btrfs receive /mnt/snaps
+	> At subvol snaps/snap_081012_1716
+	> At snapshot snap_081012_1716
+	> ERROR: open snaps/snap_081012_1715 failed. No such file or directory
+    root@orchard:/bkp# ls /mnt/snaps
+    > snap_081012_1715
+
+
+
+-- 
+Rory Campbell-Lange
+rory@campbell-lange.net

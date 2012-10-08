@@ -1,44 +1,50 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-ob0-f174.google.com ([209.85.214.174]:65379 "EHLO
-	mail-ob0-f174.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1753088Ab2JHRlI (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Mon, 8 Oct 2012 13:41:08 -0400
-Received: by mail-ob0-f174.google.com with SMTP id uo13so3793257obb.19
-        for <linux-btrfs@vger.kernel.org>; Mon, 08 Oct 2012 10:41:07 -0700 (PDT)
+Received: from mx1.redhat.com ([209.132.183.28]:33458 "EHLO mx1.redhat.com"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1754486Ab2JHRyd (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Mon, 8 Oct 2012 13:54:33 -0400
+Date: Mon, 8 Oct 2012 18:01:55 +0100
+From: "Richard W.M. Jones" <rjones@redhat.com>
+To: Chris Mason <chris.mason@fusionio.com>, Chris Mason <clmason@fusionio.com>,
+        "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
+Subject: Re: Anyone seeing lots of "Check tree block failed" and other errors
+ with latest kernel?
+Message-ID: <20121008170155.GF24071@rhmail.home.annexia.org>
+References: <20121008141642.GC24071@rhmail.home.annexia.org>
+ <20121008142757.GB4132@shiny>
+ <20121008145730.GD24071@rhmail.home.annexia.org>
+ <20121008150419.GE4132@shiny>
+ <20121008151513.GE24071@rhmail.home.annexia.org>
+ <20121008164227.GH4405@twin.jikos.cz>
 MIME-Version: 1.0
-Date: Mon, 8 Oct 2012 12:41:07 -0500
-Message-ID: <CAKcLGm8-FYv7CSZ+W9DKtL95fA3nt0Uv9xK77AvqqPeeefySsw@mail.gmail.com>
-Subject: Two Issues with Btrfs Delayed Cleaner Process (linux-next)
-From: Mitch Harder <mitch.harder@sabayonlinux.org>
-To: linux-btrfs <linux-btrfs@vger.kernel.org>
-Content-Type: text/plain; charset=ISO-8859-1
+Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <20121008164227.GH4405@twin.jikos.cz>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-I've run across two issues with the delayed cleaner process running a
-kernel based on the 3.6.0 btrfs-next branch in Josef's git repository.
+On Mon, Oct 08, 2012 at 06:42:27PM +0200, David Sterba wrote:
+> On Mon, Oct 08, 2012 at 04:15:14PM +0100, Richard W.M. Jones wrote:
+> > Unfortunately I'm struggling to reproduce this outside of our build
+> > system (Koji).  I will keep you informed if I do manage to reproduce
+> > it locally.  Adding fsync /dev/sda1 was also my first instinct :-)
+> 
+> Have you updated the VM/guest related packages recently? This may be a
+> bug in the VM drivers.
 
-(1)  I'm getting an error when trying to list my subvolumes whenever
-the cleaner thread is running:
+qemu hasn't been updated for over a week.  However I'm having a hard
+time understanding how even a change to qemu's caching would in any
+way affect only btrfs and nothing else.  The libguestfs test suite is
+extremely comprehensive and tests many other filesystems, and none of
+them are failing.
 
-# btrfs su li /mnt/benchmark/
-ERROR: Failed to lookup path for root 0 - No such file or directory
+These guests are built on the fly from the latest packages in Fedora,
+so any other package might be the cause, but it seems like the kernel
+is the most likely candidate.
 
-As long as the cleaner thread is idle, I can run this command without error.
+Rich.
 
-(2)  I ran into an issue on a slower x86 machine (AMD Athlon XP 2600+)
-where the cleaner thread literally required an hour to finish deleting
-a subvolume that contained the sources for a kernel I had previously
-built.
-
-The machine was responsive the whole time, and the cleaner thread
-never required much more than 5-10% of the CPU, leaving ample idle
-time.
-
-Interestingly, every attempt to replicate this behaviour resulted in
-the cleaner thread finishing in a few seconds.
-
-My first issue replicates every time the cleaner thread is running.
-
-I'll need to work on the second issue for a while to see if I can get
-it to replicate.
+-- 
+Richard Jones, Virtualization Group, Red Hat http://people.redhat.com/~rjones
+virt-df lists disk usage of guests without needing to install any
+software inside the virtual machine.  Supports Linux and Windows.
+http://et.redhat.com/~rjones/virt-df/

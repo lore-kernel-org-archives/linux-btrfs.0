@@ -1,62 +1,64 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([222.73.24.84]:62097 "EHLO song.cn.fujitsu.com"
-	rhost-flags-OK-FAIL-OK-OK) by vger.kernel.org with ESMTP
-	id S1751089Ab2JIGrL (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 9 Oct 2012 02:47:11 -0400
-Message-ID: <5073BDAE.7090908@cn.fujitsu.com>
-Date: Tue, 09 Oct 2012 14:01:18 +0800
-From: Miao Xie <miaox@cn.fujitsu.com>
-Reply-To: miaox@cn.fujitsu.com
+Received: from twin.jikos.cz ([89.185.236.188]:51987 "EHLO twin.jikos.cz"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1756163Ab2JIPoZ (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Tue, 9 Oct 2012 11:44:25 -0400
+Date: Tue, 9 Oct 2012 17:44:19 +0200
+From: David Sterba <dave@jikos.cz>
+To: Anand jain <Anand.Jain@oracle.com>
+Cc: linux-btrfs@vger.kernel.org
+Subject: Re: [PATCH V2] Btrfs-progs: add parent uuid for snapshots
+Message-ID: <20121009154418.GV4405@twin.jikos.cz>
+Reply-To: dave@jikos.cz
+References: <50584E6D.8000602@cn.fujitsu.com>
+ <1349403922-4583-1-git-send-email-Anand.Jain@oracle.com>
+ <1349403922-4583-3-git-send-email-Anand.Jain@oracle.com>
 MIME-Version: 1.0
-To: Chris Mason <chris.mason@fusionio.com>,
-        Linux Btrfs <linux-btrfs@vger.kernel.org>
-Subject: Re: [PATCH V4 0/7 ] Btrfs-progs: enhance btrfs subvol list only to
- show read-only snapshots
-References: <50584E6D.8000602@cn.fujitsu.com> <20121003000304.GH3214@shiny>
-In-Reply-To: <20121003000304.GH3214@shiny>
-Content-Type: text/plain; charset=ISO-8859-1
+Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <1349403922-4583-3-git-send-email-Anand.Jain@oracle.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Tue, 2 Oct 2012 20:03:04 -0400, Chris Mason wrote:
-> On Tue, Sep 18, 2012 at 04:35:25AM -0600, Miao Xie wrote:
->> We want 'btrfs subvolume list' only to list readonly subvolumes, this patch set
->> introduces a new option 'r' to implement it.
->>
->> You can use the command like that:
->>
->> 	btrfs subvolume list -r <mnt>
->>
->> Changelog v3 -> v4:
->> - modify the check method which is used to check if btrfs_root_item contains otime and uuid
->>   or not.
->> - add filter set and comparer set which are used to manage the filters and comparers specified
->>   by the users.
->> - re-base the read-only subvolume list function.
->>
->> Changelog v2 -> v3:
->> - re-implement list_subvols()
->> - re-implement this read-only subvolume list function based on the new list_subvols()
->>
->> Changelog v1 -> v2:
->> - address the comments from Goffredo Baroncelli
->>   i,   change the changelog of the patches and make them more elaborate.
->>   ii,  move the function declarations to a new head file.
->>   iii, add the introduction of the new option 'r' into the man page
->>
->> We can pull the patches from the URL
->>
->> 	git://github.com/miaoxie/btrfs-progs.git master
->>
->> This patchset is against the patches of Liu Bo, Anand Jain and mine which were sent by several
->> days ago. And we also can pull those patches from the above URL.
-> 
-> These are all really useful additions!  How do you plan on using the
-> table option? (just curious).
+On Fri, Oct 05, 2012 at 10:25:22AM +0800, Anand jain wrote:
+> @@ -128,6 +129,11 @@ struct {
+>  		.need_print	= 0,
+>  	},
+>  	{
+> +		.name		= "puuid",
+> +		.column_name	= "PUUID",
 
-It is just used to make the output be read easily. The old output always throw
-out lots of inessential repeated strings, it is very ugly and make us giddy. So
-we add this option to make the users happy.
+the capitalized 'P' looks like it's part of the UUID abbreviation. The
+UUIDs are long, I think you can print 'parent UUID' in the header, the
+name for command line argument 'puuid' is understable.
 
-Thanks
-Miao
+> +		.need_print	= 0,
+> +	},
+> +	{
+>  		.name		= "uuid",
+>  		.column_name	= "UUID",
+>  		.need_print	= 0,
+
+> --- a/cmds-subvolume.c
+> +++ b/cmds-subvolume.c
+> @@ -267,6 +267,7 @@ static const char * const cmd_subvol_list_usage[] = {
+>  	"-p           print parent ID",
+>  	"-a           print all the subvolumes in the filesystem.",
+>  	"-u           print the uuid of subvolumes (and snapshots)",
+> +	"-P           print the parent uuid of snapshots",
+
+This clashes with my efforts to make the options consistent so that we
+can have a lowercase for column selection and uppercase for filter. In
+case of the parent UUID,  it makes sense to filter by it, eg when we
+have a hierarchy of subvolumes that keep the same structure but is
+replicated several times.
+
+I suggest to pick a different letter than 'P', say 'q'. (-q is usually
+used for 'no verbose output' in utilities, but it does not make much
+sense in context of 'subvol list' so I hope it's ok from the UI POV).
+
+>  	"-t           print the result as a table",
+>  	"-s           list snapshots only in the filesystem",
+>  	"-r           list readonly subvolumes (including snapshots)",
+
+Thanks,
+david

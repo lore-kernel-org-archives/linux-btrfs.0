@@ -1,33 +1,54 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-we0-f174.google.com ([74.125.82.174]:56401 "EHLO
-	mail-we0-f174.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1753427Ab2JIIHf (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Tue, 9 Oct 2012 04:07:35 -0400
-Received: by mail-we0-f174.google.com with SMTP id t9so3062322wey.19
-        for <linux-btrfs@vger.kernel.org>; Tue, 09 Oct 2012 01:07:34 -0700 (PDT)
+Received: from twin.jikos.cz ([89.185.236.188]:45019 "EHLO twin.jikos.cz"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1752725Ab2JIIl2 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Tue, 9 Oct 2012 04:41:28 -0400
+Date: Tue, 9 Oct 2012 10:39:10 +0200
+From: David Sterba <dave@jikos.cz>
+To: Andi Kleen <andi@firstfloor.org>
+Cc: "Markus F.X.J. Oberhumer" <markus@oberhumer.com>,
+        linux-kernel@vger.kernel.org, chris.mason@fusionio.com,
+        linux-btrfs@vger.kernel.org, Nitin Gupta <ngupta@vflare.org>,
+        Richard Purdie <rpurdie@openedhand.com>, David Sterba <dave@jikos.cz>
+Subject: Re: ANN: linux-kernel-lzo-2.06.20120123 - update LZO to v2.06
+Message-ID: <20121009083910.GI4405@twin.jikos.cz>
+Reply-To: dave@jikos.cz
+References: <1326414530-10789-1-git-send-email-andi@firstfloor.org>
+ <4F16DFB0.2060404@oberhumer.com>
+ <4F1D889C.2050706@oberhumer.com>
+ <20120125013618.GA11715@one.firstfloor.org>
 MIME-Version: 1.0
-In-Reply-To: <d33ad0cb427c4885092e4440b5a140cb@jots.org>
-References: <d33ad0cb427c4885092e4440b5a140cb@jots.org>
-From: Bart Noordervliet <bart@noordervliet.net>
-Date: Tue, 9 Oct 2012 10:07:13 +0200
-Message-ID: <CAGy7UtjLBuAN6HXxWsZFOAERbkqaC-h9Pb3CgLv_-R796h+0Ng@mail.gmail.com>
-Subject: Re: Will RAID have issues with disks that spin down?
-To: "Ken D'Ambrosio" <ken@jots.org>
-Cc: linux-btrfs@vger.kernel.org
-Content-Type: text/plain; charset=UTF-8
+Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <20120125013618.GA11715@one.firstfloor.org>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Thu, Oct 4, 2012 at 4:36 PM, Ken D'Ambrosio <ken@jots.org> wrote:
-> Hi.  I know that several hardware RAID solutions have issues with disks that
-> spin down when idle; the time to spin back up -- usually on the order of
-> five seconds -- causes unhappy timeouts, etc.  I was wondering if that would
-> be an issue with RAID a-la btrfs?
+On Wed, Jan 25, 2012 at 02:36:18AM +0100, Andi Kleen wrote:
+> I ran benchmarks on the new miniLZO and LZ4 on 64bit. LZ4 is generally slower 
+> than snappy/lzo in the micro benchmarks.
 
-I run btrfs on my home server with the disks set to spin down when
-idle. One of them (a Samsung 1TB) takes a whopping 10 seconds to spin
-up, but btrfs has no problem with that whatsoever.
+And the reason why you measured worse speed for LZ4 although (AFAICT)
+everybody else's measurements claim the opposite is quite simple:
+likely due to a copy&paste error you did not benchmark LZ4 at all:
 
-Regards,
+https://github.com/andikleen/snappy-c/blob/master/glue.c#L282
 
-Bart
+274 void test_lz4(char *map, size_t size, char *fn)
+275 {
+276         int i;
+277         int err;
+278         size_t outlen = size * 2;
+279         char *out = xmalloc(outlen);
+280         char *buf2 = xmalloc(size);
+281
+282         BENCH(fastlz, "lz4", fn, NULL);
+                  ^^^^^^
+
+283
+284         free(out);
+285         free(buf2);
+286 }
+
+(LZ4 is on it's track towards kernel)
+
+david

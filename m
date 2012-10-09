@@ -1,89 +1,61 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-ee0-f46.google.com ([74.125.83.46]:61518 "EHLO
-	mail-ee0-f46.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1752651Ab2JILiQ (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Tue, 9 Oct 2012 07:38:16 -0400
-Received: by mail-ee0-f46.google.com with SMTP id b15so3429195eek.19
-        for <linux-btrfs@vger.kernel.org>; Tue, 09 Oct 2012 04:38:15 -0700 (PDT)
+Received: from twin.jikos.cz ([89.185.236.188]:48630 "EHLO twin.jikos.cz"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1753707Ab2JIMcx (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Tue, 9 Oct 2012 08:32:53 -0400
+Date: Tue, 9 Oct 2012 14:32:49 +0200
+From: David Sterba <dave@jikos.cz>
+To: Olivier Bonvalet <btrfs.list@daevel.fr>
+Cc: linux-btrfs@vger.kernel.org
+Subject: Re: Frozen transaction
+Message-ID: <20121009123249.GO4405@twin.jikos.cz>
+Reply-To: dave@jikos.cz
+References: <5073D44C.7000601@daevel.fr>
+ <20121009095205.GL4405@twin.jikos.cz>
+ <5073F758.6080507@daevel.fr>
 MIME-Version: 1.0
-In-Reply-To: <CAGy7Uti=kJKQ=Su1NqjOanQ+QCgsac=Au4HxibXgaa6j+as8NQ@mail.gmail.com>
-References: <1349264596-9383-1-git-send-email-kreijack@inwind.it>
-	<20121003115615.GB25498@carfax.org.uk>
-	<CAGy7Uti=kJKQ=Su1NqjOanQ+QCgsac=Au4HxibXgaa6j+as8NQ@mail.gmail.com>
-Date: Tue, 9 Oct 2012 13:38:14 +0200
-Message-ID: <CAJHuE_BCt=tXuD7mjLh_JTe+FBq=n=7tEU+3X16tUpqcsw46uA@mail.gmail.com>
-Subject: Re: [PATCH][BTRFS-PROGS][V1] btrfs filesystem df
-From: Goffredo Baroncelli <kreijack@gmail.com>
-To: Bart Noordervliet <bart@noordervliet.net>
-Cc: "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>,
-        Hugo Mills <hugo@carfax.org.uk>
-Content-Type: text/plain; charset=ISO-8859-1
+Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <5073F758.6080507@daevel.fr>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hi Bart,
+On Tue, Oct 09, 2012 at 12:07:20PM +0200, Olivier Bonvalet wrote:
+> I didn't see any "stack" entry in /proc/$PID/ ; I will try to find which
+> kernel option export that.
 
-On Tue, Oct 9, 2012 at 11:43 AM, Bart Noordervliet
-<bart@noordervliet.net> wrote:
-> Hi Goffredo,
->
-> thank you very much for your work on making the btrfs filesystem df
-> output that much more understandable. It is a real improvement
-> already. I would however like to bring this comment from Hugo to your
-> attention once again:
->
-> On Wed, Oct 3, 2012 at 1:56 PM, Hugo Mills <hugo@carfax.org.uk> wrote:
->>> $ ./btrfs filesystem df /
->>> Path: /
->>> Summary:
->>>   Disk_size:                 72.57GB
->>
->>    Also, use kB, MB, GB, TB for powers-of-ten based units, and KiB,
->> MiB, GiB, TiB for powers-of-two based units, please. I don't care
->> which you report in, but please do make the distinction. (And note
->> that it's kB with a lower case k, but KiB with an upper case K). This
->> brings us in line with the relevant ISO and IEEE standards.
->
-> I strongly support this suggestion. With terabyte-disks being the norm
-> and the difference between TB and TiB being 10%, we really can't
-> afford ignoring the difference any longer. Contrary to Hugo, I also
-> have a strong preference to change the calculations to use
-> powers-of-ten. There is nothing binary about disk space; it's just a
-> function of how many bits they reliably manage to cram onto a platter.
-> And while the raw size of an SSD does tend to be binary, after
-> reservation of the garbage-collection/spare area the effective size is
-> also completely arbitrary. Any reference to powers-of-two is
-> completely artificial in these areas. But if you don't want to change
-> the calculation, please do change the units as Hugo requested.
+CONFIG_STACKTRACE
 
-I replayed in another email to Hugo about that. Basically I am not contrary
-to the change, only it is unrelated to my patches. In may patches I use the
-function pretty_sizes() which adds the suffix KB, MB, and this function was
-here from 2008....
+> >If the problem persists accross reboots, how long after mount does it
+> >take to get to this state? Cleaner usually kicks in after the 30 second
+> >transaction commit period, so this should be easy to verify if it's
+> >immediate or if it requires some load to get into the dead state.
+> 
+> The cleaner process get it's state D between 30 and 60 seconds after the
+> reboot. But that cleaner process should not throw a lot of write access ?
 
-I am reviewing this function to change the suffix. However I noticed
-that it needs
-more work, because often the results are returned as:
+It needs to update the references so does both reads and writes.
 
-> $ sudo btrfs fi show
-> Label: 'antares-btrfs'  uuid: c0b83ac2-ded6-4b1a-a038-2d52ced11bba
->        Total devices 1 FS bytes used 20.60GB
->        devid    1 size 250.68GB used 39.79GB path /dev/vdb
+> This time I tried to remount with the space-cache enabled, there is a lot of
+> read access now. Does that space cache will help to find "free locations" ?
 
-Note " FS bytes used 20.60GB". To me the unit is or byte (the 2nd
-word) or MB....
+Yes.
 
-Regarding which unit we should use (MB or MiB), my feels is mixed. From one side
-I am used to use the unit MiB, KiB; however from the other side the hard disks
-are measured as GB and not GiB. For example an hard disk of 60GB
-contains 60*10^9 bytes and not 60*2^30 bytes....
+As for the reads, the free space needs to fill the memory structures, if
+the disk is almost full there are also quite some data to read before
+it's complete. But reads are not the problem.
 
-We could leave it configurable via a environmental variable. But this
-could open
-the door for a configuration file for the btrfs utility...
+> I suppose I can't resize the FS without solving that cleanup deadlock before
+> ?
+
+Probably no, although if you're fast enough and add another device before
+the cleaner starts, it could work :)
+
+Other than that, these are the patches that should fix the deadlock:
+
+https://patchwork.kernel.org/patch/1383951/
+https://patchwork.kernel.org/patch/1383941/
+
+(it touches vfs and needs recompiling whole kernel, not just btrfs)
 
 
->
-> Kind regards,
->
-> Bart Noordervliet
+david

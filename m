@@ -1,67 +1,38 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-pb0-f46.google.com ([209.85.160.46]:39003 "EHLO
-	mail-pb0-f46.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1753630Ab2JHHKu (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Mon, 8 Oct 2012 03:10:50 -0400
-Received: by mail-pb0-f46.google.com with SMTP id rr4so3734715pbb.19
-        for <linux-btrfs@vger.kernel.org>; Mon, 08 Oct 2012 00:10:50 -0700 (PDT)
+Received: from cn.fujitsu.com ([222.73.24.84]:19579 "EHLO song.cn.fujitsu.com"
+	rhost-flags-OK-FAIL-OK-OK) by vger.kernel.org with ESMTP
+	id S1753067Ab2JIDqG (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Mon, 8 Oct 2012 23:46:06 -0400
+Message-ID: <50739E0C.9070300@cn.fujitsu.com>
+Date: Tue, 09 Oct 2012 11:46:20 +0800
+From: Miao Xie <miaox@cn.fujitsu.com>
+Reply-To: miaox@cn.fujitsu.com
 MIME-Version: 1.0
-In-Reply-To: <20120930230525.GM14582@twin.jikos.cz>
-References: <1348801360-1851-1-git-send-email-robin.k.dong@gmail.com>
-	<1348801360-1851-2-git-send-email-robin.k.dong@gmail.com>
-	<20120930230525.GM14582@twin.jikos.cz>
-Date: Mon, 8 Oct 2012 15:10:50 +0800
-Message-ID: <CANsebLGmq8mCdrTm=5EOsHMLpQmzfGsWv3=WyhYndrrbL6mj3w@mail.gmail.com>
-Subject: Re: [PATCH v2 2/2] btrfs-progs: limit the min value of total_bytes
-From: Robin Dong <robin.k.dong@gmail.com>
-To: dave@jikos.cz, Robin Dong <robin.k.dong@gmail.com>,
-        linux-btrfs@vger.kernel.org, Robin Dong <sanbai@taobao.com>
+To: Chris Mason <chris.mason@fusionio.com>,
+        Linux Btrfs <linux-btrfs@vger.kernel.org>,
+        Chen Yang <chenyang.fnst@cn.fujitsu.com>
+Subject: Re: [RFC][PATCH] Btrfs-progs, btrfsck: add block group check function
+References: <501A530D.2020107@cn.fujitsu.com> <20121003002156.GI3214@shiny>
+In-Reply-To: <20121003002156.GI3214@shiny>
 Content-Type: text/plain; charset=ISO-8859-1
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-2012/10/1 David Sterba <dave@jikos.cz>:
-> On Fri, Sep 28, 2012 at 11:02:40AM +0800, Robin Dong wrote:
->> From: Robin Dong <sanbai@taobao.com>
+On Tue, 2 Oct 2012 20:21:56 -0400, Chris Mason wrote:
+> On Thu, Aug 02, 2012 at 04:14:37AM -0600, Miao Xie wrote:
+>> From: Chen Yang <chenyang.fnst@cn.fujitsu.com>
 >>
->> Using mkfs.btrfs like:
->>
->>         mkfs.btrfs -b 1048576 /dev/sda
->>
->> will report error:
->>
->>       mkfs.btrfs: volumes.c:796: btrfs_alloc_chunk: Assertion `!(ret)' failed.
->>       Aborted
->>
->> because the length of dev_extent is 4MB.
->>
->> But if we use mkfs.btrfs with 8MB total bytes, the newly mounted btrfs filesystem
->> would not contain even one empty file. So 12MB will be good min-value for block_count.
->
-> I'm not able to create a single file even on a 12MB filesystem
-> (with -d single -m single --mixed), so any limit that would let the mkfs
-> finish normally should be fine. For the single/single case it's 5MB but
-> for the dup/dup it's 156MB. It's due to the known bug in the blockgroup
-> creation with multiple devices (applies on dup as well here) that leads
-> to:
->
-> # btrfs fi df .
-> System, DUP: total=8.00MB, used=4.00KB
-> System: total=4.00MB, used=0.00
-> Data+Metadata, DUP: total=64.00MB, used=24.00KB
-> Data+Metadata: total=8.00MB, used=0.00
->
-> 8*2 + 4 + 64*2 + 8 = 156
->
-> so, 12M is too small to avoid the mkfs crash.
+>> This patch adds the function to check correspondence between block group,
+>> chunk and device extent.
+> 
+> Excellent, thank you.  Could you please put this into a git tree?  I'm
+> having trouble with whitespace (tabs -> spaces) in the patch.
 
-Thanks for your notice!
->
-> david
+You can pull it by
 
+	git://github.com/miaoxie/btrfs-progs.git block-group-check
 
+I have re-based it on the latest tree
 
--- 
---
-Best Regard
-Robin Dong
+Thanks
+Miao

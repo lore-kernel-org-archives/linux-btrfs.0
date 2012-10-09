@@ -1,51 +1,46 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-we0-f174.google.com ([74.125.82.174]:46726 "EHLO
-	mail-we0-f174.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1752363Ab2JIMwP (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Tue, 9 Oct 2012 08:52:15 -0400
-Received: by mail-we0-f174.google.com with SMTP id t9so3206319wey.19
-        for <linux-btrfs@vger.kernel.org>; Tue, 09 Oct 2012 05:52:14 -0700 (PDT)
+Received: from brockman.in8.de ([85.214.220.56]:36171 "EHLO mail.in8.de"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1753986Ab2JIMwb (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Tue, 9 Oct 2012 08:52:31 -0400
+Message-ID: <50741E0D.30505@jan-o-sch.net>
+Date: Tue, 09 Oct 2012 14:52:29 +0200
+From: Jan Schmidt <list.btrfs@jan-o-sch.net>
 MIME-Version: 1.0
-In-Reply-To: <CAJHuE_BCt=tXuD7mjLh_JTe+FBq=n=7tEU+3X16tUpqcsw46uA@mail.gmail.com>
-References: <1349264596-9383-1-git-send-email-kreijack@inwind.it>
- <20121003115615.GB25498@carfax.org.uk> <CAGy7Uti=kJKQ=Su1NqjOanQ+QCgsac=Au4HxibXgaa6j+as8NQ@mail.gmail.com>
- <CAJHuE_BCt=tXuD7mjLh_JTe+FBq=n=7tEU+3X16tUpqcsw46uA@mail.gmail.com>
-From: Bart Noordervliet <bart@noordervliet.net>
-Date: Tue, 9 Oct 2012 14:51:53 +0200
-Message-ID: <CAGy7UthpCQhXVsVKqrdqgnN3vYrRNHnuE79KF79CqKsmGZM-Ag@mail.gmail.com>
-Subject: Re: [PATCH][BTRFS-PROGS][V1] btrfs filesystem df
-To: Goffredo Baroncelli <kreijack@gmail.com>
-Cc: "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>,
-        Hugo Mills <hugo@carfax.org.uk>
-Content-Type: text/plain; charset=UTF-8
+To: Chris Mason <chris.mason@fusionio.com>
+CC: Mark Fasheh <mfasheh@suse.de>, linux-btrfs@vger.kernel.org
+Subject: Re: [PATCH v4 3/4] btrfs: extended inode refs
+References: <1345494561-28758-1-git-send-email-mfasheh@suse.de> <1345494561-28758-4-git-send-email-mfasheh@suse.de>
+In-Reply-To: <1345494561-28758-4-git-send-email-mfasheh@suse.de>
+Content-Type: text/plain; charset=ISO-8859-1
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Tue, Oct 9, 2012 at 1:38 PM, Goffredo Baroncelli <kreijack@gmail.com> wrote:
-> Hi Bart,
->
-> I replayed in another email to Hugo about that. Basically I am not contrary
-> to the change, only it is unrelated to my patches. In may patches I use the
-> function pretty_sizes() which adds the suffix KB, MB, and this function was
-> here from 2008....
+Hi Chris, Hi Mark,
 
-What we could do is change all callers to use pretty_sizes_r(), which
-most already do. We could then add a mode flag for SI units, say
-DF_HUMAN_SI_UNIT. I would then propose that we enable it by default,
-like the human-readable mode itself, and create an option to disable
-it.
+I'm currently working on extended inode refs for btrfs send, reading the version
+of fs/btrfs/backref.c in Chris' next branch. Concerning commit
+f8728be56e48e4a64ed49a71c66b3e6436869838 ...
 
-I like options a lot, but I like sensible defaults as well. We're
-hoping btrfs will be the next major filesystem for linux. If we
-succeed, it will have a long lifespan and be used on petabyte and
-maybe exabyte storage systems. If we keep showing binary bytes, the
-discrepancy between what the drive's box says and what 'df' says will
-become ever larger. This is probably the last chance we'll get to make
-btrfs set a good example by getting rid of this outdated method of
-display.
+On Mon, August 20, 2012 at 22:29 (+0200), Mark Fasheh wrote:
+> Teach tree-log.c about extended inode refs. In particular, we have to adjust
+> the behavior of inode ref replay as well as log tree recovery to account for
+> the existence of extended refs.
+> 
+> Signed-off-by: Mark Fasheh <mfasheh@suse.de>
+> ---
+>  fs/btrfs/backref.c  |   68 +++++++++++
+>  fs/btrfs/backref.h  |    5 +
+>  fs/btrfs/tree-log.c |  316 ++++++++++++++++++++++++++++++++++++++++++---------
+>  3 files changed, 337 insertions(+), 52 deletions(-)
 
-I can make the changes to btrfs-progs if you like.
+I had made comments on v3 of this one, which were obviously ignored for v4. I
+did not reply to v4, which is the version in "next". Despite that, this commit
+has got a
 
-Best regards,
+    Reviewed-by: Jan Schmidt <list.btrfs@jan-o-sch.net
 
-Bart
+Chris, can you please remove that tag from the commit mentioned?
+
+Thanks,
+-Jan

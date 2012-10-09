@@ -1,102 +1,69 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from twin.jikos.cz ([89.185.236.188]:49970 "EHLO twin.jikos.cz"
+Received: from twin.jikos.cz ([89.185.236.188]:50258 "EHLO twin.jikos.cz"
 	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1755686Ab2JINvu (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 9 Oct 2012 09:51:50 -0400
-Date: Tue, 9 Oct 2012 15:51:38 +0200
+	id S1754184Ab2JIOHU (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Tue, 9 Oct 2012 10:07:20 -0400
+Date: Tue, 9 Oct 2012 16:07:16 +0200
 From: David Sterba <dave@jikos.cz>
-To: Goffredo Baroncelli <kreijack@gmail.com>
-Cc: Chris Mason <chris.mason@fusionio.com>, Hugo Mills <hugo@carfax.org.uk>,
-        Roman Mamedov <rm@romanrm.ru>,
-        =?iso-8859-1?Q?S=E9bastien?= Maury <sebastien.maury@inserm.fr>,
-        Ilya Dryomov <idryomov@gmail.com>, linux-btrfs@vger.kernel.org
-Subject: Re: [PATCH][BTRFS-PROGS][V3] btrfs filesystem df
-Message-ID: <20121009135138.GP4405@twin.jikos.cz>
+To: Olivier Bonvalet <btrfs.list@daevel.fr>
+Cc: linux-btrfs@vger.kernel.org
+Subject: Re: [solved] Re: Frozen transaction
+Message-ID: <20121009140716.GQ4405@twin.jikos.cz>
 Reply-To: dave@jikos.cz
-References: <1349371679-10775-1-git-send-email-kreijack@inwind.com>
+References: <5073D44C.7000601@daevel.fr>
+ <20121009095205.GL4405@twin.jikos.cz>
+ <5073F758.6080507@daevel.fr>
+ <20121009123249.GO4405@twin.jikos.cz>
+ <50742B4D.5060600@daevel.fr>
 MIME-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <1349371679-10775-1-git-send-email-kreijack@inwind.com>
+In-Reply-To: <50742B4D.5060600@daevel.fr>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hi,
+On Tue, Oct 09, 2012 at 03:49:01PM +0200, Olivier Bonvalet wrote:
+> On 09/10/2012 14:32, David Sterba wrote:
+> >On Tue, Oct 09, 2012 at 12:07:20PM +0200, Olivier Bonvalet wrote:
+> >>I didn't see any "stack" entry in /proc/$PID/ ; I will try to find which
+> >>kernel option export that.
+> >
+> >CONFIG_STACKTRACE
+> 
+> CONFIG_STACKTRACE_SUPPORT=y
+> CONFIG_HAVE_REGS_AND_STACK_ACCESS_API=y
+> CONFIG_CC_STACKPROTECTOR=y
+> # CONFIG_DEBUG_STACK_USAGE is not set
+> CONFIG_USER_STACKTRACE_SUPPORT=y
+> # CONFIG_DEBUG_STACKOVERFLOW is not set
+> 
+> I suppose it's CONFIG_DEBUG_STACK_USAGE ?
 
-I hope I'm not late to the bikeshedding party, I've tried to use the
-proposed version and here are my observations/wishes, and also issues,
-pointed out in the threads, that were not addressed:
+I looked into the sources which config option enables the /proc/./stack
+output, but I don't know which one is it in the menuconfig.
 
-* I'd like to re-add the -s -d options in some way that I can choose
-  which sections I'll see; the previous output matches the 'details'
-  section and contains the valuable information for me
-  More flexibility via options will satisfy more users, currently I have
-  no choice than only ignore the summary section, not to say that this
-  consumes half of my terminal
+> Well... I don't know if it is related to that space cache, but the cleanup
+> process is now working : it makes a lot of write requests, and I have now
+> 30Go of free space. So it will be solved soon.
 
-UI details (that make human-parsing of the output more pleasant experience):
+Great, looks like it was able to do some progress and free more space
+for further work.
 
-* the 'Path' should contain full path, not just the argument that was
-  given (otherwise it's useless)
-* I'm with Hugo that there should be space between numbers and units
-* show the byte units
-* the short form for metadata in --mixed filesystem
-  current:  Data+M.data
-  proposed: Data+Meta
-* Chunk_type -> Type ?
-* Size_(logical) is misaligned with the numbers underneath
-* Used (in the summary) is in logical units, I needed to hand calculate
-  the number to find this out -- any idea how to make it more clear?
-  like Used_(logical) similar to size
-* revert the order of Min and Max in Free_(Estimated)
-* in code: function is still named cmd_disk_free
-* in code: although you've removed -s -d the getopt string still
-  contains them (but this is not an objection because I want them back :)
+> Any chance that it can be related to that space cache feature ?
 
-Also, I've noticed that you refuse to fix minor things in code that
-you're not touching directly for 'df', but this renders the (much
-needed!) updates to df as only half-finished (IMHO). It's fine to add a
-separate patch to fix up the non-df things. Let's fix it in one go :)
+The problem is that if the space is tight, it slows down operations that
+depend on it. I've seen very slow snapshot cleaning in similar
+situation, free-space was constantly working. So it is related, but also
+expected and IMHO unavoidable.
 
-thanks,
+> >Probably no, although if you're fast enough and add another device before
+> >the cleaner starts, it could work :)
+> 
+> Ho it's possible, it's a virtualized system, so the device can easily grow.
+
+That makes a difference of course :)
+
+> I was starting to patch my kernel before to see it's now solved.
+
+
+Glad to hear that,
 david
-
-[Sample output for quick reference]
-> $ ./btrfs filesystem df /
-> Path: /
-> Summary:
->   Disk_size:                 72.57GB
->   Disk_allocated:            25.10GB
->   Disk_unallocated:          47.48GB
->   Logical_size:              23.06GB
->   Used:                      11.01GB
->   Free_(Estimated):          55.66GB    (Max: 59.52GB, Min: 35.78GB)
->   Data_to_disk_ratio:           92 %
-> 
-> Details:
->   Chunk_type  Mode     Size_(disk) Size_(logical)     Used
->   Data        Single       21.01GB      21.01GB     10.34GB
->   System      DUP          80.00MB      40.00MB      4.00KB
->   System      Single        4.00MB       4.00MB        0.00
->   Metadata    DUP           4.00GB       2.00GB    686.93MB
->   Metadata    Single        8.00MB       8.00MB        0.00
-> 
-> Where:
->         Disk_size                       -> sum of sizes of teh disks
->         Disk_allocated                  -> sum of chunk sizes
->         Disk_unallocated                -> Disk_size - Disk_allocated
->         Logical_size                    -> sum of logical area sizes
->         Used                            -> logical area used
->         Free_(Estimated)                -> on the basis of allocated
->                                            chunk, an estrapolation of
->                                            the free space
->         Data_to_disk_ratio              -> ration between the space occuped
->                                            by a chunk and the real space
->                                            available ( due to duplication
->                                            and/or RAID level)
->         Chunk_type                      -> kind of chunk
->         Mode                            -> allocation policy of a chunk
->         Size_(disk)                     -> area of disk(s) occuped by the
->                                            chunk (see it as raw space used)
->         Size_(logical)                  -> logical area size of the chunk
->         Used                            -> portion of the logical area
->                                            used by the filesystem

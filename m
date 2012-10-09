@@ -1,54 +1,68 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-wg0-f42.google.com ([74.125.82.42]:49750 "EHLO
-	mail-wg0-f42.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1754551Ab2JIJne (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Tue, 9 Oct 2012 05:43:34 -0400
-Received: by mail-wg0-f42.google.com with SMTP id fm10so2586195wgb.1
-        for <linux-btrfs@vger.kernel.org>; Tue, 09 Oct 2012 02:43:32 -0700 (PDT)
+Received: from twin.jikos.cz ([89.185.236.188]:46315 "EHLO twin.jikos.cz"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1754519Ab2JIJwJ (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Tue, 9 Oct 2012 05:52:09 -0400
+Date: Tue, 9 Oct 2012 11:52:05 +0200
+From: David Sterba <dave@jikos.cz>
+To: Olivier Bonvalet <btrfs.list@daevel.fr>
+Cc: linux-btrfs@vger.kernel.org
+Subject: Re: Frozen transaction
+Message-ID: <20121009095205.GL4405@twin.jikos.cz>
+Reply-To: dave@jikos.cz
+References: <5073D44C.7000601@daevel.fr>
 MIME-Version: 1.0
-In-Reply-To: <20121003115615.GB25498@carfax.org.uk>
-References: <1349264596-9383-1-git-send-email-kreijack@inwind.it> <20121003115615.GB25498@carfax.org.uk>
-From: Bart Noordervliet <bart@noordervliet.net>
-Date: Tue, 9 Oct 2012 11:43:12 +0200
-Message-ID: <CAGy7Uti=kJKQ=Su1NqjOanQ+QCgsac=Au4HxibXgaa6j+as8NQ@mail.gmail.com>
-Subject: Re: [PATCH][BTRFS-PROGS][V1] btrfs filesystem df
-To: Goffredo Baroncelli <kreijack@gmail.com>
-Cc: "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
-Content-Type: text/plain; charset=UTF-8
+Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <5073D44C.7000601@daevel.fr>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hi Goffredo,
+On Tue, Oct 09, 2012 at 09:37:48AM +0200, Olivier Bonvalet wrote:
+> on one system I have a "frozen transaction" since more than 24 hours,
+> without any IO.
+> I can't umount the partition, delete a snapshot or write anything.
+> I try to reboot the system, but the problem is still present.
 
-thank you very much for your work on making the btrfs filesystem df
-output that much more understandable. It is a real improvement
-already. I would however like to bring this comment from Hugo to your
-attention once again:
+The processes could point at the cleaner deadlock, though I'm not
+completely sure without looking at the process stacks (/proc/PID/stack).
 
-On Wed, Oct 3, 2012 at 1:56 PM, Hugo Mills <hugo@carfax.org.uk> wrote:
->> $ ./btrfs filesystem df /
->> Path: /
->> Summary:
->>   Disk_size:                 72.57GB
->
->    Also, use kB, MB, GB, TB for powers-of-ten based units, and KiB,
-> MiB, GiB, TiB for powers-of-two based units, please. I don't care
-> which you report in, but please do make the distinction. (And note
-> that it's kB with a lower case k, but KiB with an upper case K). This
-> brings us in line with the relevant ISO and IEEE standards.
+If the problem persists accross reboots, how long after mount does it
+take to get to this state? Cleaner usually kicks in after the 30 second
+transaction commit period, so this should be easy to verify if it's
+immediate or if it requires some load to get into the dead state.
 
-I strongly support this suggestion. With terabyte-disks being the norm
-and the difference between TB and TiB being 10%, we really can't
-afford ignoring the difference any longer. Contrary to Hugo, I also
-have a strong preference to change the calculations to use
-powers-of-ten. There is nothing binary about disk space; it's just a
-function of how many bits they reliably manage to cram onto a platter.
-And while the raw size of an SSD does tend to be binary, after
-reservation of the garbage-collection/spare area the effective size is
-also completely arbitrary. Any reference to powers-of-two is
-completely artificial in these areas. But if you don't want to change
-the calculation, please do change the units as Hugo requested.
+> The partition is mounted with this options :
+> # mount | grep btrfs
+> /dev/mapper/vg--sofia-backup on /backup type btrfs
+> (rw,noatime,compress-force=zlib,nossd)
 
-Kind regards,
+So you don't mount with autodefrag, hmm. The deadlock I had in mind
+is more likely with autodefrag but also requires umount.
 
-Bart Noordervliet
+> The disk is near full :
+> # btrfs fi df /backup/
+> Data: total=482.68GB, used=480.89GB
+
+Quite full.
+
+> System, DUP: total=32.00MB, used=72.00KB
+> System: total=4.00MB, used=0.00
+> Metadata, DUP: total=10.12GB, used=8.82GB
+> 
+> But one of the last actions was the removing of some big subvolumes (near
+> 50GB).
+
+Given the amount of free space left, this creates high pressure on data
+writes and makes the deadlock more likely.
+
+> There is no error in logs, the frozen transaction was started from a 3.5*
+> kernel (from GIT), and the system is now running on a 3.6.1 kernel
+> (vanilla).
+> 
+> Is there something I can do to solve that problem ?
+
+No, there's a patch sent out in order to fix the deadlocks but it's
+unfortunatelly still unmerged.
+
+
+david

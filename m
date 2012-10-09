@@ -1,47 +1,76 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mailout-de.gmx.net ([213.165.64.23]:53022 "HELO
-	mailout-de.gmx.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with SMTP id S1752605Ab2JHTvJ (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Mon, 8 Oct 2012 15:51:09 -0400
-Message-ID: <50732ED1.9030005@gmx.net>
-Date: Mon, 08 Oct 2012 21:51:45 +0200
-From: Arne Jansen <sensille@gmx.net>
+Received: from mail-vc0-f174.google.com ([209.85.220.174]:51129 "EHLO
+	mail-vc0-f174.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1751235Ab2JIHNp convert rfc822-to-8bit (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Tue, 9 Oct 2012 03:13:45 -0400
+Received: by mail-vc0-f174.google.com with SMTP id fo13so5898340vcb.19
+        for <linux-btrfs@vger.kernel.org>; Tue, 09 Oct 2012 00:13:44 -0700 (PDT)
 MIME-Version: 1.0
-To: =?ISO-8859-1?Q?matthieu_Barth=E9lemy?= <bonsouere@gmail.com>
-CC: Linux Btrfs <linux-btrfs@vger.kernel.org>
+In-Reply-To: <50732ED1.9030005@gmx.net>
+References: <CAK=A7Ef2jTckd216+EVmYZhiArMWZrnWxe2K_aAF2C7ZL3pDHw@mail.gmail.com>
+ <5072CEB6.6030709@gmx.net> <CAK=A7Ee84dXpc4DenR7-Sn8UPG-qTiRRS0fdvRCWT+hF1bPaSQ@mail.gmail.com>
+ <50732ED1.9030005@gmx.net>
+From: =?ISO-8859-1?Q?matthieu_Barth=E9lemy?= <bonsouere@gmail.com>
+Date: Tue, 9 Oct 2012 09:13:02 +0200
+Message-ID: <CAK=A7Efzgu8pS0P_i=qK-Fqahb4KENBrV-Fq_FHKHDm-GxCBjA@mail.gmail.com>
 Subject: Re: working quota example?
-References: <CAK=A7Ef2jTckd216+EVmYZhiArMWZrnWxe2K_aAF2C7ZL3pDHw@mail.gmail.com> <5072CEB6.6030709@gmx.net> <CAK=A7Ee84dXpc4DenR7-Sn8UPG-qTiRRS0fdvRCWT+hF1bPaSQ@mail.gmail.com>
-In-Reply-To: <CAK=A7Ee84dXpc4DenR7-Sn8UPG-qTiRRS0fdvRCWT+hF1bPaSQ@mail.gmail.com>
+To: Arne Jansen <sensille@gmx.net>
+Cc: Linux Btrfs <linux-btrfs@vger.kernel.org>
 Content-Type: text/plain; charset=ISO-8859-1
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 10/08/12 21:31, matthieu Barthélemy wrote:
+On Mon, Oct 8, 2012 at 9:51 PM, Arne Jansen <sensille@gmx.net> wrote:
+> On 10/08/12 21:31, matthieu Barthélemy wrote:
+>
+>>
+>> Are there any plan to maybe get a better 'btrfs quota show' output?
+>
+> Definitely. The first priority was to get the kernel part running, when
+> that is settled, we can improve the user mode part. There's also still
+> some work to do to make the tracking qgroups more presentable.
+>
+Yes, and it seems to run well, I confirm that I was able to set a
+quota on a test subvolume and have it trigger as expected.
 
-> 
-> Are there any plan to maybe get a better 'btrfs quota show' output?
+But now I'm stuck again, though maybe the problem is as obvious as the
+one that made me post first...
+After having created a file that triggered a "quota exceeded" error, I
+created a snapshot of my subvolume. No problem here.
+Then I tried to remove the original 'big' test file :
 
-Definitely. The first priority was to get the kernel part running, when
-that is settled, we can improve the user mode part. There's also still
-some work to do to make the tracking qgroups more presentable.
+rm: cannot remove `/btrfs/test/bigFile': Disk quota exceeded
 
-> Maybe with more details, maybe a simple ' 1 subvolume + all its
-> snapshots'  accounting.
 
-Well, there's no such thing as 'the snapshot of a subvolume'. As in
-btrfs each snapshot instantly is a subvolume in it's own right. Btrfs
-doesn't really keep track which snapshot is a descendant of which.
+I then tried to delete the snapshot subvol to see if it helped:
 
-> Maybe I missed something, and I admit I didn't read all the btrfs-progs
-> patches related to qgroups, but there doesn't seem to have an option to
-> show a subvolume's quota limit (not the referenced/exclusive usage
-> counters). Am I right?
+# ./btrfs sub delete /btrfs/test/.snap1/
+Delete subvolume '/btrfs/test/.snap1'
+# rm /btrfs/test/bigFile
+rm: cannot remove `/btrfs/roger/bigFile': Disk quota exceeded
 
-Probably, I don't remember :) That should be easy to fix anyway.
+# ./btrfs qgroup show /btrfs/
+0/257 1073725440 4096
+0/261 1073725440 4096
 
-> 
-> Thanks again Arne for your help!
-> 
-> 
-> 
+261 was the snap that I just removed. Why is it still there?
 
+No problem, let's remove it:
+# ./btrfs qgroup destroy 0/261 /btrfs/
+
+# rm /btrfs/test/bigFile
+rm: cannot remove `/btrfs/test/bigFile': Disk quota exceeded
+
+# ls -lsha /btrfs/test/
+total 1.0G
+   0 drwxr-xr-x 1 root root   14 Oct  9 09:00 .
+4.0K drwxr-xr-x 1 root root   10 Oct  8 19:56 ..
+1.0G -rw-r--r-- 1 root root 1.0G Oct  8 19:58 bigFile
+
+
+
+I have to destroy my subvolume qgroup (0/257) to be able to 'rm' my
+file.  Is this the expected behavior?
+Of course I did something wrong again, but where?
+
+Thanks for your help,

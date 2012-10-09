@@ -1,64 +1,35 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from twin.jikos.cz ([89.185.236.188]:51987 "EHLO twin.jikos.cz"
+Received: from twin.jikos.cz ([89.185.236.188]:52133 "EHLO twin.jikos.cz"
 	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1756163Ab2JIPoZ (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 9 Oct 2012 11:44:25 -0400
-Date: Tue, 9 Oct 2012 17:44:19 +0200
+	id S1753058Ab2JIP5N (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Tue, 9 Oct 2012 11:57:13 -0400
+Date: Tue, 9 Oct 2012 17:57:02 +0200
 From: David Sterba <dave@jikos.cz>
-To: Anand jain <Anand.Jain@oracle.com>
-Cc: linux-btrfs@vger.kernel.org
-Subject: Re: [PATCH V2] Btrfs-progs: add parent uuid for snapshots
-Message-ID: <20121009154418.GV4405@twin.jikos.cz>
+To: Miao Xie <miaox@cn.fujitsu.com>
+Cc: Chris Mason <chris.mason@fusionio.com>,
+        Linux Btrfs <linux-btrfs@vger.kernel.org>
+Subject: Re: [PATCH V4 0/7 ] Btrfs-progs: enhance btrfs subvol list only to
+ show read-only snapshots
+Message-ID: <20121009155701.GW4405@twin.jikos.cz>
 Reply-To: dave@jikos.cz
 References: <50584E6D.8000602@cn.fujitsu.com>
- <1349403922-4583-1-git-send-email-Anand.Jain@oracle.com>
- <1349403922-4583-3-git-send-email-Anand.Jain@oracle.com>
+ <20121003000304.GH3214@shiny>
+ <5073BDAE.7090908@cn.fujitsu.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <1349403922-4583-3-git-send-email-Anand.Jain@oracle.com>
+In-Reply-To: <5073BDAE.7090908@cn.fujitsu.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Fri, Oct 05, 2012 at 10:25:22AM +0800, Anand jain wrote:
-> @@ -128,6 +129,11 @@ struct {
->  		.need_print	= 0,
->  	},
->  	{
-> +		.name		= "puuid",
-> +		.column_name	= "PUUID",
+On Tue, Oct 09, 2012 at 02:01:18PM +0800, Miao Xie wrote:
+> On Tue, 2 Oct 2012 20:03:04 -0400, Chris Mason wrote:
+> > These are all really useful additions!  How do you plan on using the
+> > table option? (just curious).
+> 
+> It is just used to make the output be read easily. The old output always throw
+> out lots of inessential repeated strings, it is very ugly and make us giddy. So
+> we add this option to make the users happy.
 
-the capitalized 'P' looks like it's part of the UUID abbreviation. The
-UUIDs are long, I think you can print 'parent UUID' in the header, the
-name for command line argument 'puuid' is understable.
+I really like the tabular output, thanks!
 
-> +		.need_print	= 0,
-> +	},
-> +	{
->  		.name		= "uuid",
->  		.column_name	= "UUID",
->  		.need_print	= 0,
-
-> --- a/cmds-subvolume.c
-> +++ b/cmds-subvolume.c
-> @@ -267,6 +267,7 @@ static const char * const cmd_subvol_list_usage[] = {
->  	"-p           print parent ID",
->  	"-a           print all the subvolumes in the filesystem.",
->  	"-u           print the uuid of subvolumes (and snapshots)",
-> +	"-P           print the parent uuid of snapshots",
-
-This clashes with my efforts to make the options consistent so that we
-can have a lowercase for column selection and uppercase for filter. In
-case of the parent UUID,  it makes sense to filter by it, eg when we
-have a hierarchy of subvolumes that keep the same structure but is
-replicated several times.
-
-I suggest to pick a different letter than 'P', say 'q'. (-q is usually
-used for 'no verbose output' in utilities, but it does not make much
-sense in context of 'subvol list' so I hope it's ok from the UI POV).
-
->  	"-t           print the result as a table",
->  	"-s           list snapshots only in the filesystem",
->  	"-r           list readonly subvolumes (including snapshots)",
-
-Thanks,
 david

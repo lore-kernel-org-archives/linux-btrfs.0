@@ -1,42 +1,51 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-qa0-f53.google.com ([209.85.216.53]:35911 "EHLO
-	mail-qa0-f53.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1752786Ab2JIMeH convert rfc822-to-8bit (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Tue, 9 Oct 2012 08:34:07 -0400
-Received: by mail-qa0-f53.google.com with SMTP id s11so2824810qaa.19
-        for <linux-btrfs@vger.kernel.org>; Tue, 09 Oct 2012 05:34:06 -0700 (PDT)
+Received: from mail-we0-f174.google.com ([74.125.82.174]:46726 "EHLO
+	mail-we0-f174.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1752363Ab2JIMwP (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Tue, 9 Oct 2012 08:52:15 -0400
+Received: by mail-we0-f174.google.com with SMTP id t9so3206319wey.19
+        for <linux-btrfs@vger.kernel.org>; Tue, 09 Oct 2012 05:52:14 -0700 (PDT)
 MIME-Version: 1.0
-In-Reply-To: <20121005204407.GA12424@localhost.localdomain>
-References: <CALJXSJrtf7wid5xS4H5+E6ws_SjcgjB48ppoU_9+24JSkggKUw@mail.gmail.com>
-	<CALJXSJoKW=7ev8obh3d_XYux0JjwJ+bVAwj_ps7Eih9eYxOQ3w@mail.gmail.com>
-	<20121003205247.GO2370@localhost.localdomain>
-	<CALJXSJrbe62q6XCOf5xB6ra1kwSOnVyL6DvYqS7ncyUQndfkgw@mail.gmail.com>
-	<20121005174316.GQ2370@localhost.localdomain>
-	<CALJXSJpxgjy6cEGhpnKQby0b_GE0XgajN9B5PSrLm7kZv7jtZw@mail.gmail.com>
-	<20121005204407.GA12424@localhost.localdomain>
-Date: Tue, 9 Oct 2012 08:34:06 -0400
-Message-ID: <CALJXSJqJrVu2sU=s1_b05AZ4zQqjBMyNeV0s819VKcnCT7YYfA@mail.gmail.com>
-Subject: Re: Out of memory condition
-From: =?UTF-8?B?SsOpcsO0bWUgUG91bGlu?= <jeromepoulin@gmail.com>
-To: Josef Bacik <jbacik@fusionio.com>
-Cc: linux-btrfs <linux-btrfs@vger.kernel.org>
+In-Reply-To: <CAJHuE_BCt=tXuD7mjLh_JTe+FBq=n=7tEU+3X16tUpqcsw46uA@mail.gmail.com>
+References: <1349264596-9383-1-git-send-email-kreijack@inwind.it>
+ <20121003115615.GB25498@carfax.org.uk> <CAGy7Uti=kJKQ=Su1NqjOanQ+QCgsac=Au4HxibXgaa6j+as8NQ@mail.gmail.com>
+ <CAJHuE_BCt=tXuD7mjLh_JTe+FBq=n=7tEU+3X16tUpqcsw46uA@mail.gmail.com>
+From: Bart Noordervliet <bart@noordervliet.net>
+Date: Tue, 9 Oct 2012 14:51:53 +0200
+Message-ID: <CAGy7UthpCQhXVsVKqrdqgnN3vYrRNHnuE79KF79CqKsmGZM-Ag@mail.gmail.com>
+Subject: Re: [PATCH][BTRFS-PROGS][V1] btrfs filesystem df
+To: Goffredo Baroncelli <kreijack@gmail.com>
+Cc: "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>,
+        Hugo Mills <hugo@carfax.org.uk>
 Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Right now, with the patches applied on 3.5.0, Chrome didn't freeze
-under out of memory conditions (2 OOM killer invocation).
+On Tue, Oct 9, 2012 at 1:38 PM, Goffredo Baroncelli <kreijack@gmail.com> wrote:
+> Hi Bart,
+>
+> I replayed in another email to Hugo about that. Basically I am not contrary
+> to the change, only it is unrelated to my patches. In may patches I use the
+> function pretty_sizes() which adds the suffix KB, MB, and this function was
+> here from 2008....
 
-On Fri, Oct 5, 2012 at 4:44 PM, Josef Bacik <jbacik@fusionio.com> wrote:
-> On Fri, Oct 05, 2012 at 02:23:25PM -0600, Jérôme Poulin wrote:
->> I guess I'll be the guy who will test out of memory conditions! Here's
->> another stack further down the code.
->>
->
-> Ok that was just a warning, did the box keep going after that?  I've fixed it up
-> and sent a patch, unapply all the patches I've given you and apply the new ones
-> I've just sent (there are 3) and see how that works for you.  If you don't get
-> any BUG()'s but it's still hung then I'll need sysrq+w to see where you are
-> hung, we probably screw up unlocking in these codepaths somewhere.  Thanks,
->
-> Josef
+What we could do is change all callers to use pretty_sizes_r(), which
+most already do. We could then add a mode flag for SI units, say
+DF_HUMAN_SI_UNIT. I would then propose that we enable it by default,
+like the human-readable mode itself, and create an option to disable
+it.
+
+I like options a lot, but I like sensible defaults as well. We're
+hoping btrfs will be the next major filesystem for linux. If we
+succeed, it will have a long lifespan and be used on petabyte and
+maybe exabyte storage systems. If we keep showing binary bytes, the
+discrepancy between what the drive's box says and what 'df' says will
+become ever larger. This is probably the last chance we'll get to make
+btrfs set a good example by getting rid of this outdated method of
+display.
+
+I can make the changes to btrfs-progs if you like.
+
+Best regards,
+
+Bart

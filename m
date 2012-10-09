@@ -1,104 +1,44 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from licorne.daevel.fr ([178.32.94.222]:33011 "EHLO
-	licorne.daevel.fr" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1755276Ab2JIKHY (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Tue, 9 Oct 2012 06:07:24 -0400
-Received: from local.plusdinfo.com ([82.232.160.30] helo=[192.168.0.10])
-	by licorne.daevel.fr with esmtpsa (TLS1.0:RSA_AES_256_CBC_SHA1:32)
-	(Exim 4.72)
-	(envelope-from <btrfs.list@daevel.fr>)
-	id 1TLWig-0004rV-AB
-	for linux-btrfs@vger.kernel.org; Tue, 09 Oct 2012 12:07:22 +0200
-Message-ID: <5073F758.6080507@daevel.fr>
-Date: Tue, 09 Oct 2012 12:07:20 +0200
-From: Olivier Bonvalet <btrfs.list@daevel.fr>
+Received: from twin.jikos.cz ([89.185.236.188]:46838 "EHLO twin.jikos.cz"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1753257Ab2JIKZY (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Tue, 9 Oct 2012 06:25:24 -0400
+Date: Tue, 9 Oct 2012 12:25:04 +0200
+From: David Sterba <dave@jikos.cz>
+To: Miao Xie <miaox@cn.fujitsu.com>,
+        Linux Kernel <linux-kernel@vger.kernel.org>,
+        Linux Btrfs <linux-btrfs@vger.kernel.org>,
+        Linux Fsdevel <linux-fsdevel@vger.kernel.org>,
+        Linux Ext4 <linux-ext4@vger.kernel.org>,
+        viro <viro@zeniv.linux.org.uk>, Christoph Hellwig <hch@infradead.org>,
+        Kamal Mostafa <kamal@canonical.com>
+Subject: Re: [PATCH 1/2 RESEND] vfs: re-implement
+ writeback_inodes_sb(_nr)_if_idle() and rename them
+Message-ID: <20121009102504.GM4405@twin.jikos.cz>
+Reply-To: dave@jikos.cz
+References: <503DB3E8.1000308@cn.fujitsu.com>
+ <20120905155403.GL17430@twin.jikos.cz>
 MIME-Version: 1.0
-To: linux-btrfs@vger.kernel.org
-Subject: Re: Frozen transaction
-References: <5073D44C.7000601@daevel.fr> <20121009095205.GL4405@twin.jikos.cz>
-In-Reply-To: <20121009095205.GL4405@twin.jikos.cz>
-Content-Type: text/plain; charset=ISO-8859-1; format=flowed
+Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <20120905155403.GL17430@twin.jikos.cz>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Thanks for your reply.
+On Wed, Sep 05, 2012 at 05:54:04PM +0200, David Sterba wrote:
+> > Many users who use btrfs met the deadlock problem caused by writeback_inodes_sb(_nr)_if_idle(),
+> > so I send this patch again and hope it will be received as soon as possible if nobody objects.
+> 
+> Yes please, this makes testing of the 'autodefrag' mount option hard as
+> the deadlock occurs frequently upon umount (when there's a background
+> snapshot cleanup in progress).
 
-On 09/10/2012 11:52, David Sterba wrote:
-> On Tue, Oct 09, 2012 at 09:37:48AM +0200, Olivier Bonvalet wrote:
->> on one system I have a "frozen transaction" since more than 24 hours,
->> without any IO.
->> I can't umount the partition, delete a snapshot or write anything.
->> I try to reboot the system, but the problem is still present.
->
-> The processes could point at the cleaner deadlock, though I'm not
-> completely sure without looking at the process stacks (/proc/PID/stack).
+We have another report of the deadlock and it's without 'autodefrag'
+mount, triggered by snapshot cleaning under low space conditions.
 
-I didn't see any "stack" entry in /proc/$PID/ ; I will try to find which 
-kernel option export that.
+I have added the patch to SLES kernel some time ago and haven't observed
+the deadlock since.
 
+Please queue the patch for 3.7, we cannot fix it locally within btrfs.
 
->
-> If the problem persists accross reboots, how long after mount does it
-> take to get to this state? Cleaner usually kicks in after the 30 second
-> transaction commit period, so this should be easy to verify if it's
-> immediate or if it requires some load to get into the dead state.
-
-The cleaner process get it's state D between 30 and 60 seconds after the 
-reboot. But that cleaner process should not throw a lot of write access ?
-
-This time I tried to remount with the space-cache enabled, there is a 
-lot of read access now. Does that space cache will help to find "free 
-locations" ?
-
-
->
->> The partition is mounted with this options :
->> # mount | grep btrfs
->> /dev/mapper/vg--sofia-backup on /backup type btrfs
->> (rw,noatime,compress-force=zlib,nossd)
->
-> So you don't mount with autodefrag, hmm. The deadlock I had in mind
-> is more likely with autodefrag but also requires umount.
->
->> The disk is near full :
->> # btrfs fi df /backup/
->> Data: total=482.68GB, used=480.89GB
->
-> Quite full.
-
-Yes, it's the problem.
-
-
->
->> System, DUP: total=32.00MB, used=72.00KB
->> System: total=4.00MB, used=0.00
->> Metadata, DUP: total=10.12GB, used=8.82GB
->>
->> But one of the last actions was the removing of some big subvolumes (near
->> 50GB).
->
-> Given the amount of free space left, this creates high pressure on data
-> writes and makes the deadlock more likely.
->
->> There is no error in logs, the frozen transaction was started from a 3.5*
->> kernel (from GIT), and the system is now running on a 3.6.1 kernel
->> (vanilla).
->>
->> Is there something I can do to solve that problem ?
->
-> No, there's a patch sent out in order to fix the deadlocks but it's
-> unfortunatelly still unmerged.
->
->
-
-I suppose I can't resize the FS without solving that cleanup deadlock 
-before ?
-
-
-> david
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
->
-
+Thanks,
+david

@@ -1,55 +1,54 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx1.redhat.com ([209.132.183.28]:37398 "EHLO mx1.redhat.com"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1751907Ab2JIJ0n (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 9 Oct 2012 05:26:43 -0400
-Received: from int-mx10.intmail.prod.int.phx2.redhat.com (int-mx10.intmail.prod.int.phx2.redhat.com [10.5.11.23])
-	by mx1.redhat.com (8.14.4/8.14.4) with ESMTP id q999QgH4029772
-	(version=TLSv1/SSLv3 cipher=DHE-RSA-AES256-SHA bits=256 verify=OK)
-	for <linux-btrfs@vger.kernel.org>; Tue, 9 Oct 2012 05:26:42 -0400
-Received: from localhost (vpn1-7-176.ams2.redhat.com [10.36.7.176])
-	by int-mx10.intmail.prod.int.phx2.redhat.com (8.14.4/8.14.4) with ESMTP id q999QeHF022135
-	for <linux-btrfs@vger.kernel.org>; Tue, 9 Oct 2012 05:26:42 -0400
-Date: Tue, 9 Oct 2012 10:26:38 +0100
-From: "Richard W.M. Jones" <rjones@redhat.com>
-To: "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
-Subject: Re: Anyone seeing lots of "Check tree block failed" and other errors
- with latest kernel?
-Message-ID: <20121009092638.GN24071@rhmail.home.annexia.org>
-References: <20121008141642.GC24071@rhmail.home.annexia.org>
- <20121008142757.GB4132@shiny>
- <20121008145730.GD24071@rhmail.home.annexia.org>
- <20121008150419.GE4132@shiny>
- <20121008151513.GE24071@rhmail.home.annexia.org>
- <20121008212230.GA13692@rhmail.home.annexia.org>
- <20121009000051.GA12735@shiny>
- <20121009072002.GJ24071@rhmail.home.annexia.org>
- <20121009091657.GK4405@twin.jikos.cz>
+Received: from mail-wg0-f42.google.com ([74.125.82.42]:49750 "EHLO
+	mail-wg0-f42.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1754551Ab2JIJne (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Tue, 9 Oct 2012 05:43:34 -0400
+Received: by mail-wg0-f42.google.com with SMTP id fm10so2586195wgb.1
+        for <linux-btrfs@vger.kernel.org>; Tue, 09 Oct 2012 02:43:32 -0700 (PDT)
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <20121009091657.GK4405@twin.jikos.cz>
+In-Reply-To: <20121003115615.GB25498@carfax.org.uk>
+References: <1349264596-9383-1-git-send-email-kreijack@inwind.it> <20121003115615.GB25498@carfax.org.uk>
+From: Bart Noordervliet <bart@noordervliet.net>
+Date: Tue, 9 Oct 2012 11:43:12 +0200
+Message-ID: <CAGy7Uti=kJKQ=Su1NqjOanQ+QCgsac=Au4HxibXgaa6j+as8NQ@mail.gmail.com>
+Subject: Re: [PATCH][BTRFS-PROGS][V1] btrfs filesystem df
+To: Goffredo Baroncelli <kreijack@gmail.com>
+Cc: "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
+Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Tue, Oct 09, 2012 at 11:16:57AM +0200, David Sterba wrote:
-> On Tue, Oct 09, 2012 at 08:20:02AM +0100, Richard W.M. Jones wrote:
-> > On my local machine, I'm reproducing this with what Fedora calls
-> > 3.7.0-0.rc0.git2.4.fc19.x86_64 (note I found an unrelated but very
-> > serious bug in this kernel:
-> > http://marc.info/?l=linux-kernel&m=134973394826408&w=2 )
-> 
-> And it's going to be fixed
-> 
-> http://marc.info/?l=linux-fsdevel&m=134973493227376&w=2
+Hi Goffredo,
 
-And this one too ...
+thank you very much for your work on making the btrfs filesystem df
+output that much more understandable. It is a real improvement
+already. I would however like to bring this comment from Hugo to your
+attention once again:
 
-http://marc.info/?l=linux-fsdevel&m=134977414011004&w=2
+On Wed, Oct 3, 2012 at 1:56 PM, Hugo Mills <hugo@carfax.org.uk> wrote:
+>> $ ./btrfs filesystem df /
+>> Path: /
+>> Summary:
+>>   Disk_size:                 72.57GB
+>
+>    Also, use kB, MB, GB, TB for powers-of-ten based units, and KiB,
+> MiB, GiB, TiB for powers-of-two based units, please. I don't care
+> which you report in, but please do make the distinction. (And note
+> that it's kB with a lower case k, but KiB with an upper case K). This
+> brings us in line with the relevant ISO and IEEE standards.
 
-Rich.
+I strongly support this suggestion. With terabyte-disks being the norm
+and the difference between TB and TiB being 10%, we really can't
+afford ignoring the difference any longer. Contrary to Hugo, I also
+have a strong preference to change the calculations to use
+powers-of-ten. There is nothing binary about disk space; it's just a
+function of how many bits they reliably manage to cram onto a platter.
+And while the raw size of an SSD does tend to be binary, after
+reservation of the garbage-collection/spare area the effective size is
+also completely arbitrary. Any reference to powers-of-two is
+completely artificial in these areas. But if you don't want to change
+the calculation, please do change the units as Hugo requested.
 
--- 
-Richard Jones, Virtualization Group, Red Hat http://people.redhat.com/~rjones
-Read my programming blog: http://rwmj.wordpress.com
-Fedora now supports 80 OCaml packages (the OPEN alternative to F#)
-http://cocan.org/getting_started_with_ocaml_on_red_hat_and_fedora
+Kind regards,
+
+Bart Noordervliet

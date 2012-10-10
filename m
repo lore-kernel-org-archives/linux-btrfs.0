@@ -1,56 +1,110 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from rcsinet15.oracle.com ([148.87.113.117]:32622 "EHLO
-	rcsinet15.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1755787Ab2JLFRe (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Fri, 12 Oct 2012 01:17:34 -0400
-Received: from ucsinet22.oracle.com (ucsinet22.oracle.com [156.151.31.94])
-	by rcsinet15.oracle.com (Sentrion-MTA-4.2.2/Sentrion-MTA-4.2.2) with ESMTP id q9C5HXhq031191
-	(version=TLSv1/SSLv3 cipher=DHE-RSA-AES256-SHA bits=256 verify=OK)
-	for <linux-btrfs@vger.kernel.org>; Fri, 12 Oct 2012 05:17:34 GMT
-Received: from acsmt357.oracle.com (acsmt357.oracle.com [141.146.40.157])
-	by ucsinet22.oracle.com (8.14.4+Sun/8.14.4) with ESMTP id q9C5HWkP015378
-	(version=TLSv1/SSLv3 cipher=DHE-RSA-AES256-SHA bits=256 verify=NO)
-	for <linux-btrfs@vger.kernel.org>; Fri, 12 Oct 2012 05:17:33 GMT
-Received: from abhmt109.oracle.com (abhmt109.oracle.com [141.146.116.61])
-	by acsmt357.oracle.com (8.12.11.20060308/8.12.11) with ESMTP id q9C5HWlD024712
-	for <linux-btrfs@vger.kernel.org>; Fri, 12 Oct 2012 00:17:32 -0500
-From: Anand jain <Anand.Jain@oracle.com>
+Received: from mail-pa0-f46.google.com ([209.85.220.46]:43288 "EHLO
+	mail-pa0-f46.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1755250Ab2JJBwk (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Tue, 9 Oct 2012 21:52:40 -0400
+Received: by mail-pa0-f46.google.com with SMTP id hz1so13979pad.19
+        for <linux-btrfs@vger.kernel.org>; Tue, 09 Oct 2012 18:52:39 -0700 (PDT)
+From: Robin Dong <robin.k.dong@gmail.com>
 To: linux-btrfs@vger.kernel.org
-Cc: Anand Jain <anand.jain@oracle.com>
-Subject: [PATCH 0/4] Add show sub command to btrfs subvolume
-Date: Fri, 12 Oct 2012 13:20:50 +0800
-Message-Id: <1350019254-22036-1-git-send-email-Anand.Jain@oracle.com>
+Cc: Robin Dong <sanbai@taobao.com>
+Subject: [PATCH v3 1/2] btrfs-progs: limit the max value of leafsize and nodesize
+Date: Wed, 10 Oct 2012 09:52:27 +0800
+Message-Id: <1349833948-11465-1-git-send-email-robin.k.dong@gmail.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-From: Anand Jain <anand.jain@oracle.com>
+From: Robin Dong <sanbai@taobao.com>
 
-This set of patch will add show sub-command to 
-btrfs subvolume, which is to show more information
-about a given subvol or snapshot. At present it shows
-3 info, I hope this will be further useful if enhanced
-as needed.
+Using mkfs.btrfs like:
 
-eg:
-# btrfs su show /btrfs/sssv3
-/btrfs/sssv3
-	uuid: 		c5d646b5-a749-c646-b082-6d9a3ca870be
-	Parent uuid: 	34bc8edd-113f-5141-a814-f6dfae069b01
-	Creation time: 	2012-10-12 11:37:00
+	mkfs.btrfs -l 131072 /dev/sda
 
+will return no error, but after mount it, the dmesg will report:
 
-Thanks
+	BTRFS: couldn't mount because metadata blocksize (131072) was too large
 
-Anand Jain (4):
-  Btrfs-progs: introduce btrfs_get_subvols function
-  Btrfs-progs: need struct root_info to be accesible
-  Btrfs-progs: method to fetch root info for subvol
-  Btrfs-progs: add btrfs subvol show cli
+The leafsize and nodesize are equal at present, so we just use one function
+"check_leaf_or_node_size" to limit leaf and node size below BTRFS_MAX_METADATA_BLOCKSIZE.
 
- btrfs-list.c     |  119 ++++++++++++++++++++++++++---------------------------
- btrfs-list.h     |   49 ++++++++++++++++++++++-
- cmds-subvolume.c |  113 +++++++++++++++++++++++++++++++++++++++++++++++++++
- man/btrfs.8.in   |    6 +++
- 4 files changed, 225 insertions(+), 62 deletions(-)
+Signed-off-by: Robin Dong <sanbai@taobao.com>
+---
+v2 <- v1:
+ - add function check_leaf_or_node_size to limit leafsize and nodesize.
+
+v3 <- v2:
+ - add quota string "sectorsize".
+
+ ctree.h |    6 ++++++
+ mkfs.c  |   29 +++++++++++++++++++++++------
+ 2 files changed, 29 insertions(+), 6 deletions(-)
+
+diff --git a/ctree.h b/ctree.h
+index 7f55229..75c1e0a 100644
+--- a/ctree.h
++++ b/ctree.h
+@@ -111,6 +111,12 @@ struct btrfs_trans_handle;
+ #define BTRFS_DEV_ITEMS_OBJECTID 1ULL
+ 
+ /*
++ * the max metadata block size.  This limit is somewhat artificial,
++ * but the memmove costs go through the roof for larger blocks.
++ */
++#define BTRFS_MAX_METADATA_BLOCKSIZE 65536
++
++/*
+  * we can actually store much bigger names, but lets not confuse the rest
+  * of linux
+  */
+diff --git a/mkfs.c b/mkfs.c
+index dff5eb8..93672b9 100644
+--- a/mkfs.c
++++ b/mkfs.c
+@@ -1201,6 +1201,27 @@ static int zero_output_file(int out_fd, u64 size, u32 sectorsize)
+ 	return ret;
+ }
+ 
++static int check_leaf_or_node_size(u32 size, u32 sectorsize)
++{
++	if (size < sectorsize) {
++		fprintf(stderr,
++			"Illegal leafsize (or nodesize) %u (smaller than sectorsize %u)\n",
++			size, sectorsize);
++		return -1;
++	} else if (size > BTRFS_MAX_METADATA_BLOCKSIZE) {
++		fprintf(stderr,
++			"Illegal leafsize (or nodesize) %u (larger than %u)\n",
++			size, BTRFS_MAX_METADATA_BLOCKSIZE);
++		return -1;
++	} else if (size & (sectorsize - 1)) {
++		fprintf(stderr,
++			"Illegal leafsize (or nodesize) %u (not aligned to %u)\n",
++			size, sectorsize);
++		return -1;
++	}
++	return 0;
++}
++
+ int main(int ac, char **av)
+ {
+ 	char *file;
+@@ -1291,14 +1312,10 @@ int main(int ac, char **av)
+ 		}
+ 	}
+ 	sectorsize = max(sectorsize, (u32)getpagesize());
+-	if (leafsize < sectorsize || (leafsize & (sectorsize - 1))) {
+-		fprintf(stderr, "Illegal leafsize %u\n", leafsize);
++	if (check_leaf_or_node_size(leafsize, sectorsize))
+ 		exit(1);
+-	}
+-	if (nodesize < sectorsize || (nodesize & (sectorsize - 1))) {
+-		fprintf(stderr, "Illegal nodesize %u\n", nodesize);
++	if (check_leaf_or_node_size(nodesize, sectorsize))
+ 		exit(1);
+-	}
+ 	ac = ac - optind;
+ 	if (ac == 0)
+ 		print_usage();
+-- 
+1.7.3.2
 

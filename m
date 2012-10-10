@@ -1,21 +1,21 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from e5.ny.us.ibm.com ([32.97.182.145]:58688 "EHLO e5.ny.us.ibm.com"
+Received: from e5.ny.us.ibm.com ([32.97.182.145]:58642 "EHLO e5.ny.us.ibm.com"
 	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1755564Ab2JJKKD (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 10 Oct 2012 06:10:03 -0400
+	id S1754978Ab2JJKJx (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Wed, 10 Oct 2012 06:09:53 -0400
 Received: from /spool/local
 	by e5.ny.us.ibm.com with IBM ESMTP SMTP Gateway: Authorized Use Only! Violators will be prosecuted
 	for <linux-btrfs@vger.kernel.org> from <zwu.kernel@gmail.com>;
-	Wed, 10 Oct 2012 06:09:53 -0400
+	Wed, 10 Oct 2012 06:09:51 -0400
 From: zwu.kernel@gmail.com
 To: linux-fsdevel@vger.kernel.org
 Cc: linux-ext4@vger.kernel.org, linux-btrfs@vger.kernel.org,
         linux-kernel@vger.kernel.org, linuxram@linux.vnet.ibm.com,
         viro@zeniv.linux.org.uk, david@fromorbit.com, dave@jikos.cz,
         tytso@mit.edu, cmm@us.ibm.com, Zhi Yong Wu <wuzhy@linux.vnet.ibm.com>
-Subject: [RFC v3 09/13] vfs: add one wq to update map info periodically
-Date: Wed, 10 Oct 2012 18:07:31 +0800
-Message-Id: <1349863655-29320-10-git-send-email-zwu.kernel@gmail.com>
+Subject: [RFC v3 07/13] vfs: add function for updating map arrays
+Date: Wed, 10 Oct 2012 18:07:29 +0800
+Message-Id: <1349863655-29320-8-git-send-email-zwu.kernel@gmail.com>
 In-Reply-To: <1349863655-29320-1-git-send-email-zwu.kernel@gmail.com>
 References: <1349863655-29320-1-git-send-email-zwu.kernel@gmail.com>
 Sender: linux-btrfs-owner@vger.kernel.org
@@ -23,173 +23,254 @@ List-ID: <linux-btrfs.vger.kernel.org>
 
 From: Zhi Yong Wu <wuzhy@linux.vnet.ibm.com>
 
-  Add a per-superblock workqueue and a work_struct
- to run periodic work to update map info on each superblock.
-
 Signed-off-by: Zhi Yong Wu <wuzhy@linux.vnet.ibm.com>
 ---
- fs/hot_tracking.c            |   94 ++++++++++++++++++++++++++++++++++++++++++
- fs/hot_tracking.h            |    3 +
- include/linux/hot_tracking.h |    2 +
- 3 files changed, 99 insertions(+), 0 deletions(-)
+ fs/hot_tracking.c |  153 +++++++++++++++++++++++++++++++++++++++++++++++++++++
+ fs/hot_tracking.h |   60 +++++++++++++++++++++
+ 2 files changed, 213 insertions(+), 0 deletions(-)
 
 diff --git a/fs/hot_tracking.c b/fs/hot_tracking.c
-index a8dc599..f333c47 100644
+index 08c42c5..717faa7 100644
 --- a/fs/hot_tracking.c
 +++ b/fs/hot_tracking.c
-@@ -15,6 +15,8 @@
- #include <linux/module.h>
- #include <linux/spinlock.h>
- #include <linux/hardirq.h>
-+#include <linux/kthread.h>
-+#include <linux/freezer.h>
- #include <linux/fs.h>
- #include <linux/blkdev.h>
- #include <linux/types.h>
-@@ -623,6 +625,88 @@ static void hot_map_array_exit(struct hot_info *root)
+@@ -376,6 +376,159 @@ inline void hot_update_freqs(struct hot_info *root,
+ 	hot_inode_item_put(he);
  }
  
- /*
-+ * Update temperatures for each hot inode item and
-+ * hot range item for aging purposes
-+ */
-+static void hot_temperature_update_work(struct work_struct *work)
++static u64 hot_raw_shift(u64 counter, u32 bits, bool dir)
 +{
-+	struct hot_update_work *hot_work =
-+			container_of(work, struct hot_update_work, work);
-+	struct hot_info *root = hot_work->hot_info;
-+	struct hot_inode_item *hi_nodes[8];
-+	unsigned long delay = HZ * HEAT_UPDATE_DELAY;
-+	u64 ino = 0;
-+	int i, n;
-+
-+	do {
-+		while (1) {
-+			spin_lock(&root->lock);
-+			n = radix_tree_gang_lookup(&root->hot_inode_tree,
-+					   (void **)hi_nodes, ino,
-+					   ARRAY_SIZE(hi_nodes));
-+			if (!n) {
-+				spin_unlock(&root->lock);
-+				break;
-+			}
-+
-+			ino = hi_nodes[n - 1]->i_ino + 1;
-+			for (i = 0; i < n; i++) {
-+				kref_get(&hi_nodes[i]->hot_inode.refs);
-+				hot_map_array_update(
-+					&hi_nodes[i]->hot_inode.hot_freq_data, root);
-+				hot_range_update(hi_nodes[i], root);
-+				hot_inode_item_put(hi_nodes[i]);
-+			}
-+			spin_unlock(&root->lock);
-+		}
-+
-+		if (unlikely(freezing(current))) {
-+			__refrigerator(true);
-+		} else {
-+			set_current_state(TASK_INTERRUPTIBLE);
-+			if (!kthread_should_stop()) {
-+				schedule_timeout(delay);
-+			}
-+			__set_current_state(TASK_RUNNING);
-+		}
-+	} while (!kthread_should_stop());
-+}
-+
-+static int hot_wq_init(struct hot_info *root)
-+{
-+	struct hot_update_work *hot_work;
-+	int ret = 0;
-+
-+	root->update_wq = alloc_workqueue(
-+		"hot_temperature_update", WQ_MEM_RECLAIM | WQ_UNBOUND, 1);
-+	if (!root->update_wq) {
-+		printk(KERN_ERR "%s: failed to create "
-+			"temperature update workqueue\n",
-+			__func__);
-+		return 1;
-+	}
-+
-+	hot_work = kmalloc(sizeof(*hot_work), GFP_NOFS);
-+	if (hot_work) {
-+		hot_work->hot_info = root;
-+		INIT_WORK(&hot_work->work, hot_temperature_update_work);
-+		queue_work(root->update_wq, &hot_work->work);
-+	} else {
-+		printk(KERN_ERR "%s: failed to create update work\n",
-+				__func__);
-+		ret = 1;
-+	}
-+
-+	return ret;
-+}
-+
-+static void hot_wq_exit(struct workqueue_struct *wq)
-+{
-+	flush_workqueue(wq);
-+	destroy_workqueue(wq);
++	if (dir)
++		return counter << bits;
++	else
++		return counter >> bits;
 +}
 +
 +/*
-  * Initialize kmem cache for hot_inode_item and hot_range_item.
-  */
- static int __init hot_cache_init(void)
-@@ -686,10 +770,19 @@ void hot_track_init(struct super_block *sb)
- 	hot_inode_tree_init(root);
- 	hot_map_array_init(root);
- 
-+	err = hot_wq_init(root);
-+	if (err)
-+		goto failed_wq;
++ * hot_temperature_calculate() is responsible for distilling the six heat
++ * criteria, which are described in detail in hot_tracking.h) down into a single
++ * temperature value for the data, which is an integer between 0
++ * and HEAT_MAX_VALUE.
++ *
++ * To accomplish this, the raw values from the hot_freq_data structure
++ * are shifted various ways in order to make the temperature calculation more
++ * or less sensitive to each value.
++ *
++ * Once this calibration has happened, we do some additional normalization and
++ * make sure that everything fits nicely in a u32. From there, we take a very
++ * rudimentary kind of "average" of each of the values, where the *_COEFF_POWER
++ * values act as weights for the average.
++ *
++ * Finally, we use the HEAT_HASH_BITS value, which determines the size of the
++ * heat list array, to normalize the temperature to the proper granularity.
++ */
++int hot_temperature_calculate(struct hot_freq_data *freq_data)
++{
++	u64 result = 0;
 +
- 	printk(KERN_INFO "vfs: turning on hot data tracking\n");
- 
- 	return;
- 
-+failed_wq:
-+	hot_map_array_exit(root);
-+	hot_inode_tree_exit(root);
-+	sb->hot_flags &= ~MS_HOT_TRACKING;
-+	kfree(root);
- failed_root:
- 	hot_cache_exit();
- }
-@@ -698,6 +791,7 @@ void hot_track_exit(struct super_block *sb)
- {
- 	struct hot_info *root = global_hot_tracking_info;
- 
-+	hot_wq_exit(root->update_wq);
- 	hot_map_array_exit(root);
- 	hot_inode_tree_exit(root);
- 	sb->hot_flags &= ~MS_HOT_TRACKING;
-diff --git a/fs/hot_tracking.h b/fs/hot_tracking.h
-index d19e64a..7a79a6d 100644
---- a/fs/hot_tracking.h
-+++ b/fs/hot_tracking.h
-@@ -36,6 +36,9 @@
-  */
- #define TIME_TO_KICK 400
- 
-+/* set how often to update temperatures (seconds) */
-+#define HEAT_UPDATE_DELAY 400
++	struct timespec ckt = current_kernel_time();
++	u64 cur_time = timespec_to_ns(&ckt);
++
++	u32 nrr_heat = (u32)hot_raw_shift((u64)freq_data->nr_reads,
++					NRR_MULTIPLIER_POWER, true);
++	u32 nrw_heat = (u32)hot_raw_shift((u64)freq_data->nr_writes,
++					NRW_MULTIPLIER_POWER, true);
++
++	u64 ltr_heat =
++	hot_raw_shift((cur_time - timespec_to_ns(&freq_data->last_read_time)),
++			LTR_DIVIDER_POWER, false);
++	u64 ltw_heat =
++	hot_raw_shift((cur_time - timespec_to_ns(&freq_data->last_write_time)),
++			LTW_DIVIDER_POWER, false);
++
++	u64 avr_heat =
++	hot_raw_shift((((u64) -1) - freq_data->avg_delta_reads),
++			AVR_DIVIDER_POWER, false);
++	u64 avw_heat =
++	hot_raw_shift((((u64) -1) - freq_data->avg_delta_writes),
++			AVW_DIVIDER_POWER, false);
++
++	/* ltr_heat is now guaranteed to be u32 safe */
++	if (ltr_heat >= hot_raw_shift((u64) 1, 32, true))
++		ltr_heat = 0;
++	else
++		ltr_heat = hot_raw_shift((u64) 1, 32, true) - ltr_heat;
++
++	/* ltw_heat is now guaranteed to be u32 safe */
++	if (ltw_heat >= hot_raw_shift((u64) 1, 32, true))
++		ltw_heat = 0;
++	else
++		ltw_heat = hot_raw_shift((u64) 1, 32, true) - ltw_heat;
++
++	/* avr_heat is now guaranteed to be u32 safe */
++	if (avr_heat >= hot_raw_shift((u64) 1, 32, true))
++		avr_heat = (u32) -1;
++
++	/* avw_heat is now guaranteed to be u32 safe */
++	if (avw_heat >= hot_raw_shift((u64) 1, 32, true))
++		avw_heat = (u32) -1;
++
++	nrr_heat = (u32)hot_raw_shift((u64)nrr_heat,
++		(3 - NRR_COEFF_POWER), false);
++	nrw_heat = (u32)hot_raw_shift((u64)nrw_heat,
++		(3 - NRW_COEFF_POWER), false);
++	ltr_heat = hot_raw_shift(ltr_heat, (3 - LTR_COEFF_POWER), false);
++	ltw_heat = hot_raw_shift(ltw_heat, (3 - LTW_COEFF_POWER), false);
++	avr_heat = hot_raw_shift(avr_heat, (3 - AVR_COEFF_POWER), false);
++	avw_heat = hot_raw_shift(avw_heat, (3 - AVW_COEFF_POWER), false);
++
++	result = nrr_heat + nrw_heat + (u32) ltr_heat +
++		(u32) ltw_heat + (u32) avr_heat + (u32) avw_heat;
++
++	return result >> (32 - HEAT_MAP_BITS);
++}
++
++/*
++ * Calculate a new temperature and, if necessary,
++ * move the list_head corresponding to this inode or range
++ * to the proper list with the new temperature
++ */
++static void hot_map_array_update(struct hot_freq_data *freq_data,
++				struct hot_info *root)
++{
++	struct hot_map_head *buckets, *cur_bucket;
++	struct hot_comm_item *comm_item;
++	struct hot_inode_item *he;
++	struct hot_range_item *hr;
++	u32 temperature = 0;
++
++	comm_item = container_of(freq_data,
++			struct hot_comm_item, hot_freq_data);
++
++	if (freq_data->flags & FREQ_DATA_TYPE_INODE) {
++		he = container_of(comm_item,
++			struct hot_inode_item, hot_inode);
++		buckets = root->heat_inode_map;
++
++		spin_lock(&he->hot_inode.lock);
++		temperature = hot_temperature_calculate(freq_data);
++		spin_unlock(&he->hot_inode.lock);
++
++		if (he == NULL)
++			return;
++
++		spin_lock(&he->hot_inode.lock);
++		if (list_empty(&he->hot_inode.n_list)
++			|| (freq_data->last_temperature != temperature)) {
++			if (!list_empty(&he->hot_inode.n_list))
++				list_del_init(&he->hot_inode.n_list);
++
++			cur_bucket = buckets + temperature;
++			list_add_tail(&he->hot_inode.n_list, &cur_bucket->node_list);
++			freq_data->last_temperature = temperature;
++		}
++		spin_unlock(&he->hot_inode.lock);
++	} else if (freq_data->flags & FREQ_DATA_TYPE_RANGE) {
++		hr = container_of(comm_item,
++			struct hot_range_item, hot_range);
++		buckets = root->heat_range_map;
++
++		spin_lock(&hr->hot_range.lock);
++		temperature = hot_temperature_calculate(freq_data);
++		spin_unlock(&hr->hot_range.lock);
++
++		if (hr == NULL)
++			return;
++
++		spin_lock(&hr->hot_range.lock);
++		if (list_empty(&hr->hot_range.n_list)
++			|| (freq_data->last_temperature != temperature)) {
++			if (!list_empty(&hr->hot_range.n_list))
++				list_del_init(&hr->hot_range.n_list);
++
++			cur_bucket = buckets + temperature;
++			list_add_tail(&hr->hot_range.n_list, &cur_bucket->node_list);
++			freq_data->last_temperature = temperature;
++		}
++		spin_unlock(&hr->hot_range.lock);
++	}
++}
 +
  /*
-  * The following comments explain what exactly comprises a unit of heat.
-  *
-diff --git a/include/linux/hot_tracking.h b/include/linux/hot_tracking.h
-index 7114179..b37e0f8 100644
---- a/include/linux/hot_tracking.h
-+++ b/include/linux/hot_tracking.h
-@@ -84,6 +84,8 @@ struct hot_info {
+  * Initialize inode and range map arrays.
+  */
+diff --git a/fs/hot_tracking.h b/fs/hot_tracking.h
+index 42e0273..5a9517b 100644
+--- a/fs/hot_tracking.h
++++ b/fs/hot_tracking.h
+@@ -30,6 +30,64 @@
  
- 	/* map of range temperature */
- 	struct hot_map_head heat_range_map[HEAT_MAP_SIZE];
+ #define FREQ_POWER 4
+ 
++/*
++ * The following comments explain what exactly comprises a unit of heat.
++ *
++ * Each of six values of heat are calculated and combined in order to form an
++ * overall temperature for the data:
++ *
++ * NRR - number of reads since mount
++ * NRW - number of writes since mount
++ * LTR - time elapsed since last read (ns)
++ * LTW - time elapsed since last write (ns)
++ * AVR - average delta between recent reads (ns)
++ * AVW - average delta between recent writes (ns)
++ *
++ * These values are divided (right-shifted) according to the *_DIVIDER_POWER
++ * values defined below to bring the numbers into a reasonable range. You can
++ * modify these values to fit your needs. However, each heat unit is a u32 and
++ * thus maxes out at 2^32 - 1. Therefore, you must choose your dividers quite
++ * carefully or else they could max out or be stuck at zero quite easily.
++ *
++ * (E.g., if you chose AVR_DIVIDER_POWER = 0, nothing less than 4s of atime
++ * delta would bring the temperature above zero, ever.)
++ *
++ * Finally, each value is added to the overall temperature between 0 and 8
++ * times, depending on its *_COEFF_POWER value. Note that the coefficients are
++ * also actually implemented with shifts, so take care to treat these values
++ * as powers of 2. (I.e., 0 means we'll add it to the temp once; 1 = 2x, etc.)
++ */
 +
-+	struct workqueue_struct *update_wq;
- };
++/* NRR/NRW heat unit = 2^X accesses */
++#define NRR_MULTIPLIER_POWER 20
++#define NRR_COEFF_POWER 0
++#define NRW_MULTIPLIER_POWER 20
++#define NRW_COEFF_POWER 0
++
++/* LTR/LTW heat unit = 2^X ns of age */
++#define LTR_DIVIDER_POWER 30
++#define LTR_COEFF_POWER 1
++#define LTW_DIVIDER_POWER 30
++#define LTW_COEFF_POWER 1
++
++/*
++ * AVR/AVW cold unit = 2^X ns of average delta
++ * AVR/AVW heat unit = HEAT_MAX_VALUE - cold unit
++ *
++ * E.g., data with an average delta between 0 and 2^X ns
++ * will have a cold value of 0, which means a heat value
++ * equal to HEAT_MAX_VALUE.
++ */
++#define AVR_DIVIDER_POWER 40
++#define AVR_COEFF_POWER 0
++#define AVW_DIVIDER_POWER 40
++#define AVW_COEFF_POWER 0
++
++struct hot_update_work {
++	struct work_struct work;
++	struct hot_info *hot_info;
++};
++
+ struct hot_inode_item
+ *hot_inode_item_find(struct hot_info *root, u64 ino);
+ void hot_inode_item_put(struct hot_inode_item *he);
+@@ -37,6 +95,8 @@ inline void hot_update_freqs(struct hot_info *root,
+                         struct inode *inode, u64 start,
+                         u64 len, int rw);
  
- extern struct hot_info *global_hot_tracking_info;
++int hot_temperature_calculate(struct hot_freq_data *freq_data);
++
+ void hot_track_init(struct super_block *sb);
+ void hot_track_exit(struct super_block *sb);
+ 
 -- 
 1.7.6.5
 

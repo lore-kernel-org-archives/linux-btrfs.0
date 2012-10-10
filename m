@@ -1,9 +1,9 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from twin.jikos.cz ([89.185.236.188]:46086 "EHLO twin.jikos.cz"
+Received: from twin.jikos.cz ([89.185.236.188]:46203 "EHLO twin.jikos.cz"
 	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1753421Ab2JJQxj (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 10 Oct 2012 12:53:39 -0400
-Date: Wed, 10 Oct 2012 18:53:18 +0200
+	id S1755615Ab2JJRDS (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Wed, 10 Oct 2012 13:03:18 -0400
+Date: Wed, 10 Oct 2012 18:28:42 +0200
 From: David Sterba <dave@jikos.cz>
 To: zwu.kernel@gmail.com
 Cc: linux-fsdevel@vger.kernel.org, linux-ext4@vger.kernel.org,
@@ -11,69 +11,70 @@ Cc: linux-fsdevel@vger.kernel.org, linux-ext4@vger.kernel.org,
         linuxram@linux.vnet.ibm.com, viro@zeniv.linux.org.uk,
         david@fromorbit.com, dave@jikos.cz, tytso@mit.edu, cmm@us.ibm.com,
         Zhi Yong Wu <wuzhy@linux.vnet.ibm.com>
-Subject: Re: [RFC v3 12/13] vfs: add debugfs support
-Message-ID: <20121010165318.GA4405@twin.jikos.cz>
+Subject: Re: [RFC v3 01/13] btrfs: add one new mount option '-o hot_track'
+Message-ID: <20121010162842.GZ4405@twin.jikos.cz>
 Reply-To: dave@jikos.cz
 References: <1349863655-29320-1-git-send-email-zwu.kernel@gmail.com>
- <1349863655-29320-13-git-send-email-zwu.kernel@gmail.com>
+ <1349863655-29320-2-git-send-email-zwu.kernel@gmail.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <1349863655-29320-13-git-send-email-zwu.kernel@gmail.com>
+In-Reply-To: <1349863655-29320-2-git-send-email-zwu.kernel@gmail.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Wed, Oct 10, 2012 at 06:07:34PM +0800, zwu.kernel@gmail.com wrote:
-> +static int hot_debugfs_log_init(struct debugfs_vol_data *data)
-> +{
-> +	int err = 0;
-> +	struct lstring *debugfs_log = data->debugfs_log;
-> +
-> +	spin_lock(&data->log_lock);
-> +	debugfs_log->str = vmalloc(INIT_LOG_ALLOC_SIZE);
+Hi,
 
-vmalloc __might_sleep(), do the allocation outside of the lock and assign
-the value inside. Also, you may use vzalloc and drop the following memset.
+On Wed, Oct 10, 2012 at 06:07:23PM +0800, zwu.kernel@gmail.com wrote:
+> --- a/fs/btrfs/ctree.h
+> +++ b/fs/btrfs/ctree.h
+> @@ -1726,6 +1726,7 @@ struct btrfs_ioctl_defrag_range_args {
+>  #define BTRFS_MOUNT_CHECK_INTEGRITY	(1 << 20)
+>  #define BTRFS_MOUNT_CHECK_INTEGRITY_INCLUDING_EXTENT_DATA (1 << 21)
+>  #define BTRFS_MOUNT_PANIC_ON_FATAL_ERROR	(1 << 22)
+> +#define BTRFS_MOUNT_HOT_TRACK		(1 << 23)
 
-dmesg:
+Please don't forget to add new options to btrfs_show_options(),
+otherwise we can't tell what filesystems have hot tracking enabled.
 
-vfs: turning on hot data tracking
-BUG: sleeping function called from invalid context at mm/slab.c:3220
-in_atomic(): 1, irqs_disabled(): 0, pid: 3103, name: mc
-1 lock held by mc/3103:
- #0:  (&(&inode_data->log_lock)->rlock){+.+.+.}, at: [<ffffffff8118c656>] __hot_debugfs_comm_read+0x216/0x280
-Pid: 3103, comm: mc Tainted: G        W    3.6.0hottrack-default+ #208
-Call Trace:
- [<ffffffff8108068c>] __might_sleep+0xfc/0x130
- [<ffffffff8114f7c1>] kmem_cache_alloc_trace+0xe1/0x270
- [<ffffffff81142005>] __get_vm_area_node+0x95/0x1a0
- [<ffffffff8108630f>] ? local_clock+0x6f/0x80
- [<ffffffff8118c660>] ? __hot_debugfs_comm_read+0x220/0x280
- [<ffffffff8114283d>] __vmalloc_node_range+0x6d/0x200
- [<ffffffff8118c660>] ? __hot_debugfs_comm_read+0x220/0x280
- [<ffffffff8118b810>] ? hot_debugfs_log+0xe0/0xe0
- [<ffffffff81142a05>] __vmalloc_node+0x35/0x40
- [<ffffffff8118c660>] ? __hot_debugfs_comm_read+0x220/0x280
- [<ffffffff81142bcc>] vmalloc+0x2c/0x30
- [<ffffffff8118c660>] __hot_debugfs_comm_read+0x220/0x280
- [<ffffffff8191fd58>] ? __do_page_fault+0x238/0x590
- [<ffffffff810ab825>] ? trace_hardirqs_on_caller+0x155/0x1d0
- [<ffffffff8138d01e>] ? trace_hardirqs_on_thunk+0x3a/0x3f
- [<ffffffff8118c6d5>] __hot_debugfs_inode_read+0x15/0x20
- [<ffffffff8115a19b>] vfs_read+0xcb/0x190
- [<ffffffff8115a2c2>] sys_read+0x62/0xb0
- [<ffffffff8138d01e>] ? trace_hardirqs_on_thunk+0x3a/0x3f
- [<ffffffff81924979>] system_call_fastpath+0x16/0x1b
+> --- a/fs/btrfs/super.c
+> +++ b/fs/btrfs/super.c
+> @@ -303,7 +304,7 @@ enum {
+>  	Opt_notreelog, Opt_ratio, Opt_flushoncommit, Opt_discard,
+>  	Opt_space_cache, Opt_clear_cache, Opt_user_subvol_rm_allowed,
+>  	Opt_enospc_debug, Opt_subvolrootid, Opt_defrag, Opt_inode_cache,
+> -	Opt_no_space_cache, Opt_recovery, Opt_skip_balance,
+> +	Opt_no_space_cache, Opt_recovery, Opt_skip_balance, Opt_hot_track,
 
-> +	if (debugfs_log->str) {
-> +		memset(debugfs_log->str, 0, INIT_LOG_ALLOC_SIZE);
-> +		data->log_alloc_size = INIT_LOG_ALLOC_SIZE;
-> +	} else {
-> +		err = -ENOMEM;
-> +	}
-> +	spin_unlock(&data->log_lock);
-> +
-> +	return err;
-> +}
+Please add the new option to the end.
 
-I'm now playing with it, and haven't gone through the code yet,
+>  	Opt_check_integrity, Opt_check_integrity_including_extent_data,
+>  	Opt_check_integrity_print_mask, Opt_fatal_errors,
+>  	Opt_err,
+> @@ -342,6 +343,7 @@ static match_table_t tokens = {
+>  	{Opt_no_space_cache, "nospace_cache"},
+>  	{Opt_recovery, "recovery"},
+>  	{Opt_skip_balance, "skip_balance"},
+> +	{Opt_hot_track, "hot_track"},
+
+(also this one)
+
+>  	{Opt_check_integrity, "check_int"},
+>  	{Opt_check_integrity_including_extent_data, "check_int_data"},
+>  	{Opt_check_integrity_print_mask, "check_int_print_mask=%d"},
+> @@ -553,6 +555,9 @@ int btrfs_parse_options(struct btrfs_root *root, char *options)
+>  		case Opt_skip_balance:
+>  			btrfs_set_opt(info->mount_opt, SKIP_BALANCE);
+>  			break;
+> +		case Opt_hot_track:
+
+It's a common patter in the surrounding code that a message is printed
+when enabling options, but the vfs prints its own, so I'm not sure if
+it's needed here as well. Just thinking, leave it as it is now.
+
+> +			btrfs_set_opt(info->mount_opt, HOT_TRACK);
+> +			break;
+>  #ifdef CONFIG_BTRFS_FS_CHECK_INTEGRITY
+>  		case Opt_check_integrity_including_extent_data:
+>  			printk(KERN_INFO "btrfs: enabling check integrity"
+
 david

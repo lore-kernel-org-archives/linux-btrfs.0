@@ -1,22 +1,21 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from e34.co.us.ibm.com ([32.97.110.152]:42840 "EHLO
-	e34.co.us.ibm.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1755271Ab2JJKIv (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 10 Oct 2012 06:08:51 -0400
+Received: from e3.ny.us.ibm.com ([32.97.182.143]:34482 "EHLO e3.ny.us.ibm.com"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1755141Ab2JJKIw (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Wed, 10 Oct 2012 06:08:52 -0400
 Received: from /spool/local
-	by e34.co.us.ibm.com with IBM ESMTP SMTP Gateway: Authorized Use Only! Violators will be prosecuted
+	by e3.ny.us.ibm.com with IBM ESMTP SMTP Gateway: Authorized Use Only! Violators will be prosecuted
 	for <linux-btrfs@vger.kernel.org> from <zwu.kernel@gmail.com>;
-	Wed, 10 Oct 2012 04:08:50 -0600
+	Wed, 10 Oct 2012 06:08:51 -0400
 From: zwu.kernel@gmail.com
 To: linux-fsdevel@vger.kernel.org
 Cc: linux-ext4@vger.kernel.org, linux-btrfs@vger.kernel.org,
         linux-kernel@vger.kernel.org, linuxram@linux.vnet.ibm.com,
         viro@zeniv.linux.org.uk, david@fromorbit.com, dave@jikos.cz,
         tytso@mit.edu, cmm@us.ibm.com, Zhi Yong Wu <wuzhy@linux.vnet.ibm.com>
-Subject: [RFC v3 06/13] vfs: add hooks to enable hot data tracking
-Date: Wed, 10 Oct 2012 18:07:28 +0800
-Message-Id: <1349863655-29320-7-git-send-email-zwu.kernel@gmail.com>
+Subject: [RFC v3 04/13] vfs: add function for collecting raw access info
+Date: Wed, 10 Oct 2012 18:07:26 +0800
+Message-Id: <1349863655-29320-5-git-send-email-zwu.kernel@gmail.com>
 In-Reply-To: <1349863655-29320-1-git-send-email-zwu.kernel@gmail.com>
 References: <1349863655-29320-1-git-send-email-zwu.kernel@gmail.com>
 Sender: linux-btrfs-owner@vger.kernel.org
@@ -24,148 +23,253 @@ List-ID: <linux-btrfs.vger.kernel.org>
 
 From: Zhi Yong Wu <wuzhy@linux.vnet.ibm.com>
 
-  Miscellaneous features that implement hot data tracking
-and generally make the hot data functions a bit more friendly.
+  Add some utils helpers to update access frequencies
+for one file or its range.
 
 Signed-off-by: Zhi Yong Wu <wuzhy@linux.vnet.ibm.com>
 ---
- fs/direct-io.c      |    8 ++++++++
- fs/hot_tracking.h   |    5 +++++
- mm/filemap.c        |    7 +++++++
- mm/page-writeback.c |   13 +++++++++++++
- mm/readahead.c      |    7 +++++++
- 5 files changed, 40 insertions(+), 0 deletions(-)
+ fs/hot_tracking.c            |  190 ++++++++++++++++++++++++++++++++++++++++++
+ fs/hot_tracking.h            |   12 +++
+ include/linux/hot_tracking.h |    4 +
+ 3 files changed, 206 insertions(+), 0 deletions(-)
 
-diff --git a/fs/direct-io.c b/fs/direct-io.c
-index f86c720..8960024 100644
---- a/fs/direct-io.c
-+++ b/fs/direct-io.c
-@@ -37,6 +37,7 @@
- #include <linux/uio.h>
- #include <linux/atomic.h>
- #include <linux/prefetch.h>
-+#include "hot_tracking.h"
+diff --git a/fs/hot_tracking.c b/fs/hot_tracking.c
+index 5fd993e..86c87c7 100644
+--- a/fs/hot_tracking.c
++++ b/fs/hot_tracking.c
+@@ -174,6 +174,196 @@ static void hot_inode_tree_exit(struct hot_info *root)
+ 	}
+ }
  
- /*
-  * How many user pages to map in one call to get_user_pages().  This determines
-@@ -1297,6 +1298,13 @@ __blockdev_direct_IO(int rw, struct kiocb *iocb, struct inode *inode,
- 	prefetch(bdev->bd_queue);
- 	prefetch((char *)bdev->bd_queue + SMP_CACHE_BYTES);
- 
-+	/* Hot data tracking */
-+	hot_update_freqs(global_hot_tracking_info,
-+			iocb->ki_filp->f_mapping->host,
-+			(u64)offset,
-+			(u64)iov_length(iov, nr_segs),
-+			rw & WRITE);
++struct hot_inode_item
++*hot_inode_item_find(struct hot_info *root, u64 ino)
++{
++	struct hot_inode_item *he;
++	int ret;
 +
- 	return do_blockdev_direct_IO(rw, iocb, inode, bdev, iov, offset,
- 				     nr_segs, get_block, end_io,
- 				     submit_io, flags);
++again:
++	spin_lock(&root->lock);
++	he = radix_tree_lookup(&root->hot_inode_tree, ino);
++	if (he) {
++		kref_get(&he->hot_inode.refs);
++		spin_unlock(&root->lock);
++		return he;
++	}
++	spin_unlock(&root->lock);
++
++	he = kmem_cache_zalloc(hot_inode_item_cachep,
++				GFP_KERNEL | GFP_NOFS);
++	if (!he)
++		return ERR_PTR(-ENOMEM);
++
++	hot_inode_item_init(he, ino, &root->hot_inode_tree);
++
++	ret = radix_tree_preload(GFP_NOFS & ~__GFP_HIGHMEM);
++	if (ret) {
++		kmem_cache_free(hot_inode_item_cachep, he);
++		return ERR_PTR(ret);
++	}
++
++	spin_lock(&root->lock);
++	ret = radix_tree_insert(&root->hot_inode_tree, ino, he);
++	if (ret == -EEXIST) {
++		kmem_cache_free(hot_inode_item_cachep, he);
++		spin_unlock(&root->lock);
++		radix_tree_preload_end();
++		goto again;
++	}
++	spin_unlock(&root->lock);
++	radix_tree_preload_end();
++
++	kref_get(&he->hot_inode.refs);
++	return he;
++}
++
++static struct hot_range_item
++*hot_range_item_find(struct hot_inode_item *he,
++			u32 start)
++{
++	struct hot_range_item *hr;
++	int ret;
++
++again:
++	spin_lock(&he->lock);
++	hr = radix_tree_lookup(&he->hot_range_tree, start);
++	if (hr) {
++		kref_get(&hr->hot_range.refs);
++		spin_unlock(&he->lock);
++		return hr;
++	}
++	spin_unlock(&he->lock);
++
++	hr = kmem_cache_zalloc(hot_range_item_cachep,
++				GFP_KERNEL | GFP_NOFS);
++	if (!hr)
++		return ERR_PTR(-ENOMEM);
++
++	hot_range_item_init(hr, start, he);
++
++	ret = radix_tree_preload(GFP_NOFS & ~__GFP_HIGHMEM);
++	if (ret) {
++		kmem_cache_free(hot_range_item_cachep, hr);
++		return ERR_PTR(ret);
++	}
++
++	spin_lock(&he->lock);
++	ret = radix_tree_insert(&he->hot_range_tree, start, hr);
++	if (ret == -EEXIST) {
++		kmem_cache_free(hot_range_item_cachep, hr);
++		spin_unlock(&he->lock);
++		radix_tree_preload_end();
++		goto again;
++	}
++	spin_unlock(&he->lock);
++	radix_tree_preload_end();
++
++	kref_get(&hr->hot_range.refs);
++	return hr;
++}
++
++/*
++ * This function does the actual work of updating the frequency numbers,
++ * whatever they turn out to be. FREQ_POWER determines how many atime
++ * deltas we keep track of (as a power of 2). So, setting it to anything above
++ * 16ish is probably overkill. Also, the higher the power, the more bits get
++ * right shifted out of the timestamp, reducing precision, so take note of that
++ * as well.
++ *
++ * The caller should have already locked freq_data's parent's spinlock.
++ *
++ * FREQ_POWER, defined immediately below, determines how heavily to weight
++ * the current frequency numbers against the newest access. For example, a value
++ * of 4 means that the new access information will be weighted 1/16th (ie 2^-4)
++ * as heavily as the existing frequency info. In essence, this is a kludged-
++ * together version of a weighted average, since we can't afford to keep all of
++ * the information that it would take to get a _real_ weighted average.
++ */
++static u64 hot_average_update(struct timespec old_atime,
++		struct timespec cur_time, u64 old_avg)
++{
++	struct timespec delta_ts;
++	u64 new_avg;
++	u64 new_delta;
++
++	delta_ts = timespec_sub(cur_time, old_atime);
++	new_delta = timespec_to_ns(&delta_ts) >> FREQ_POWER;
++
++	new_avg = (old_avg << FREQ_POWER) - old_avg + new_delta;
++	new_avg = new_avg >> FREQ_POWER;
++
++	return new_avg;
++}
++
++static void hot_freq_data_update(struct hot_freq_data *freq_data, bool write)
++{
++	struct timespec cur_time = current_kernel_time();
++
++	if (write) {
++		freq_data->nr_writes += 1;
++		freq_data->avg_delta_writes = hot_average_update(
++				freq_data->last_write_time,
++				cur_time,
++				freq_data->avg_delta_writes);
++		freq_data->last_write_time = cur_time;
++	} else {
++		freq_data->nr_reads += 1;
++		freq_data->avg_delta_reads = hot_average_update(
++				freq_data->last_read_time,
++				cur_time,
++				freq_data->avg_delta_reads);
++		freq_data->last_read_time = cur_time;
++	}
++}
++
++/*
++ * Main function to update access frequency from read/writepage(s) hooks
++ */
++inline void hot_update_freqs(struct hot_info *root,
++			struct inode *inode, u64 start,
++			u64 len, int rw)
++{
++	struct hot_inode_item *he;
++	struct hot_range_item *hr;
++	u32 cur, end;
++
++	if (!TRACK_THIS_INODE(inode) || (len == 0))
++		return;
++
++	he = hot_inode_item_find(root, inode->i_ino);
++	if (IS_ERR(he)) {
++		WARN_ON(1);
++		return;
++	}
++
++	spin_lock(&he->hot_inode.lock);
++	hot_freq_data_update(&he->hot_inode.hot_freq_data, rw);
++	spin_unlock(&he->hot_inode.lock);
++
++	/*
++	 * Align ranges on RANGE_SIZE boundary
++	 * to prevent proliferation of range structs
++	 */
++	end = (start + len + RANGE_SIZE - 1) >> RANGE_BITS;
++	for (cur = (start >> RANGE_BITS); cur < end; cur++) {
++		hr = hot_range_item_find(he, cur);
++		if (IS_ERR(hr)) {
++			WARN_ON(1);
++			hot_inode_item_put(he);
++			return;
++		}
++
++		spin_lock(&hr->hot_range.lock);
++		hot_freq_data_update(&hr->hot_range.hot_freq_data, rw);
++		spin_unlock(&hr->hot_range.lock);
++
++		hot_range_item_put(hr);
++	}
++
++	hot_inode_item_put(he);
++}
++
+ /*
+  * Initialize kmem cache for hot_inode_item and hot_range_item.
+  */
 diff --git a/fs/hot_tracking.h b/fs/hot_tracking.h
-index 37f69ee..42e0273 100644
+index 4e8aa77..37f69ee 100644
 --- a/fs/hot_tracking.h
 +++ b/fs/hot_tracking.h
-@@ -16,6 +16,11 @@
- #include <linux/workqueue.h>
- #include <linux/hot_tracking.h>
- 
-+/* Hot data tracking -- guard macros */
-+#define TRACK_THIS_INODE(inode) \
-+                ((inode->i_sb->hot_flags & MS_HOT_TRACKING) && \
-+                !(inode->i_flags & S_NOHOTDATATRACK))
-+
+@@ -19,6 +19,18 @@
  /* values for hot_freq_data flags */
  #define FREQ_DATA_TYPE_INODE (1 << 0)
  #define FREQ_DATA_TYPE_RANGE (1 << 1)
-diff --git a/mm/filemap.c b/mm/filemap.c
-index 83efee7..6b63b77 100644
---- a/mm/filemap.c
-+++ b/mm/filemap.c
-@@ -33,6 +33,7 @@
- #include <linux/hardirq.h> /* for BUG_ON(!in_atomic()) only */
- #include <linux/memcontrol.h>
- #include <linux/cleancache.h>
-+#include <linux/hot_tracking.h>
- #include "internal.h"
- 
- /*
-@@ -1224,6 +1225,12 @@ readpage:
- 		 * PG_error will be set again if readpage fails.
- 		 */
- 		ClearPageError(page);
++/* size of sub-file ranges */
++#define RANGE_BITS 20
++#define RANGE_SIZE (1 << RANGE_BITS)
 +
-+		/* Hot data tracking */
-+		hot_update_freqs(global_hot_tracking_info, inode,
-+				(u64)page->index << PAGE_CACHE_SHIFT,
-+				PAGE_CACHE_SIZE, 0);
++#define FREQ_POWER 4
 +
- 		/* Start the actual read. The read will unlock the page. */
- 		error = mapping->a_ops->readpage(filp, page);
++struct hot_inode_item
++*hot_inode_item_find(struct hot_info *root, u64 ino);
++void hot_inode_item_put(struct hot_inode_item *he);
++inline void hot_update_freqs(struct hot_info *root,
++                        struct inode *inode, u64 start,
++                        u64 len, int rw);
  
-diff --git a/mm/page-writeback.c b/mm/page-writeback.c
-index 5ad5ce2..cf5a1c8 100644
---- a/mm/page-writeback.c
-+++ b/mm/page-writeback.c
-@@ -35,6 +35,7 @@
- #include <linux/buffer_head.h> /* __set_page_dirty_buffers */
- #include <linux/pagevec.h>
- #include <linux/timer.h>
-+#include <linux/hot_tracking.h>
- #include <trace/events/writeback.h>
+ void hot_track_init(struct super_block *sb);
+ void hot_track_exit(struct super_block *sb);
+diff --git a/include/linux/hot_tracking.h b/include/linux/hot_tracking.h
+index 13aa54b..1e0aed5 100644
+--- a/include/linux/hot_tracking.h
++++ b/include/linux/hot_tracking.h
+@@ -75,4 +75,8 @@ extern struct hot_info *global_hot_tracking_info;
+ extern void hot_track_init(struct super_block *sb);
+ extern void hot_track_exit(struct super_block *sb);
  
- /*
-@@ -1895,13 +1896,25 @@ EXPORT_SYMBOL(generic_writepages);
- int do_writepages(struct address_space *mapping, struct writeback_control *wbc)
- {
- 	int ret;
-+	pgoff_t start = 0;
-+	u64 count = 0;
- 
- 	if (wbc->nr_to_write <= 0)
- 		return 0;
++extern inline void hot_update_freqs(struct hot_info *root,
++                        struct inode *inode, u64 start,
++                        u64 len, int rw);
 +
-+	start = mapping->writeback_index << PAGE_CACHE_SHIFT;
-+	count = (u64)wbc->nr_to_write;
-+
- 	if (mapping->a_ops->writepages)
- 		ret = mapping->a_ops->writepages(mapping, wbc);
- 	else
- 		ret = generic_writepages(mapping, wbc);
-+
-+	/* Hot data tracking */
-+	hot_update_freqs(global_hot_tracking_info,
-+			mapping->host, (u64)start,
-+			(count - (u64)wbc->nr_to_write) * PAGE_CACHE_SIZE, 1);
-+
- 	return ret;
- }
- 
-diff --git a/mm/readahead.c b/mm/readahead.c
-index 7963f23..b62f1bb 100644
---- a/mm/readahead.c
-+++ b/mm/readahead.c
-@@ -19,6 +19,7 @@
- #include <linux/pagemap.h>
- #include <linux/syscalls.h>
- #include <linux/file.h>
-+#include <linux/hot_tracking.h>
- 
- /*
-  * Initialise a struct file's readahead state.  Assumes that the caller has
-@@ -138,6 +139,12 @@ static int read_pages(struct address_space *mapping, struct file *filp,
- out:
- 	blk_finish_plug(&plug);
- 
-+	/* Hot data tracking */
-+	hot_update_freqs(global_hot_tracking_info,
-+			mapping->host, (u64)(list_entry(pages->prev,\
-+				struct page, lru)->index) << PAGE_CACHE_SHIFT,
-+			(u64)nr_pages * PAGE_CACHE_SIZE, 0);
-+
- 	return ret;
- }
- 
+ #endif  /* _LINUX_HOTTRACK_H */
 -- 
 1.7.6.5
 

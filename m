@@ -1,129 +1,73 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx1.workshopit.co.uk ([93.191.37.100]:36353 "EHLO
-	mx1.workshopit.co.uk" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1758351Ab2JKLeV (ORCPT
+Received: from moutng.kundenserver.de ([212.227.17.8]:49951 "EHLO
+	moutng.kundenserver.de" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1758422Ab2JKLlw (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 11 Oct 2012 07:34:21 -0400
-Date: Thu, 11 Oct 2012 12:33:59 +0100
-From: Rory Campbell-Lange <rory@campbell-lange.net>
-To: Alex Lyakas <alex.btrfs@zadarastorage.com>
-Cc: Arne Jansen <sensille@gmx.net>, linux-btrfs@vger.kernel.org
-Subject: Re: btrfs receive to subdirectory
-Message-ID: <20121011113359.GD22640@campbell-lange.net>
-References: <20121008163010.GA22763@campbell-lange.net>
- <50733D66.5020600@gmx.net>
- <20121009111830.GC31743@campbell-lange.net>
- <CAOcd+r2DwTz_F3VHLRiQ7+fafqLrSTvib=P38hHYqYCY-5gGkA@mail.gmail.com>
- <20121010221107.GA19266@campbell-lange.net>
- <CAOcd+r20CmNtpWvJ1KzgiyfTuUk=KMeM9b0okgQRefEhEyGPfA@mail.gmail.com>
+	Thu, 11 Oct 2012 07:41:52 -0400
+From: Arnd Bergmann <arnd@arndb.de>
+To: "Markus F.X.J. Oberhumer" <markus@oberhumer.com>
+Subject: Re: [PATCH 0/3] Update LZO compression
+Date: Thu, 11 Oct 2012 11:41:27 +0000
+Cc: Stephen Rothwell <sfr@canb.auug.org.au>,
+        Andrew Morton <akpm@linux-foundation.org>,
+        linux-kernel@vger.kernel.org, Andi Kleen <andi@firstfloor.org>,
+        Johannes Stezenbach <js@sig21.net>,
+        "richard -rw- weinberger" <richard.weinberger@gmail.com>,
+        linux-btrfs@vger.kernel.org, linux-crypto@vger.kernel.org,
+        Artem Bityutskiy <dedekind1@gmail.com>,
+        Adrian Hunter <adrian.hunter@intel.com>,
+        David Woodhouse <dwmw2@infradead.org>,
+        Phillip Lougher <phillip@squashfs.org.uk>,
+        Dan Magenheimer <dan.magenheimer@oracle.com>,
+        Dan Carpenter <dan.carpenter@oracle.com>
+References: <cover.1349621096.git.markus@oberhumer.com> <20121009122614.569b9535.akpm@linux-foundation.org> <50748113.80408@oberhumer.com>
+In-Reply-To: <50748113.80408@oberhumer.com>
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <CAOcd+r20CmNtpWvJ1KzgiyfTuUk=KMeM9b0okgQRefEhEyGPfA@mail.gmail.com>
+Content-Type: Text/Plain;
+  charset="iso-8859-1"
+Message-Id: <201210111141.27270.arnd@arndb.de>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 11/10/12, Alex Lyakas (alex.btrfs@zadarastorage.com) wrote:
-> I am using the latest code from Chris's repo (
-> git://git.kernel.org/pub/scm/linux/kernel/git/mason/btrfs-progs.git),
-> which has been updated recently (latest commit
-> 91d9eec1ff044394f2b98ee7fcb76713dd33b994).
-> Do you think you can try the following patch on top of this commit? (I
-> made another small fix).
+On Tuesday 09 October 2012, Markus F.X.J. Oberhumer wrote:
+> > 
+> > : This commit updates the kernel LZO code to the current upsteam version
+> > : which features a significant speed improvement - benchmarking the Calgary
+> > : and Silesia test corpora typically shows a doubled performance in
+> > : both compression and decompression on modern i386/x86_64/powerpc machines.
+> > 
+> > There are significant clients of the LZO library - crypto, btrfs,
+> > jffs2, ubifs, squashfs and zcache.  So let's give all those people a cc
+> > and ask that they test the LZO changes once they land in linux-next. 
+> > For correctness and performance, please.
+> 
+> The core compression and decompression code has been thoroughly tested, so I
+> do not expect major problems.
+> 
+> Good testing after the merge and feedback about build or performance issues
+> (and improvements!) is highly appreciated.
 
-I had to fix the line wrapping, but your patch applies fine now.
+The addition of the lzo tree to linux-next caused this problem for ARM
+imx_v6_v7_defconfig:
 
-> Basically, the idea is that the path that you give to "btrfs receive"
-> should be the destination directory, in which the received subvolume
-> will be created. And this directory should be somewhere under a mount
-> point, where destination btrfs is mounted (it can also be the same as
-> the mount point, but not above it). Does this make sense?
-> Also it should not matter where the sent subvolume resided in the
-> source fs, and, if this is a diff-send, where you have received the
-> parent snapshot to (as long as it is on/under the same mount point).
+In file included from /home/arnd/linux-arm/arch/arm/boot/compressed/decompress.c:40:0:
+/home/arnd/linux-arm/arch/arm/boot/compressed/../../../../lib/decompress_unlzo.c:34:34: fatal error: lzo/lzo1x_decompress.c: No such file or directory
 
-I don't think the receive pathing works. Please note below the following issues:
-    [aa] ERROR: open snapdir/subvol_20121011_1214 failed. No such file or directory
-    [bb] ERROR: open <FS_TREE>/snapdir/subvol_20121011_1214 failed. No such file or directory
-    [cc] ERROR: open <FS_TREE>/snapdir/subvol_20121011_1214 failed. No such file or directory
+Since the file was renamed, anything including it needs to be updated to the
+new file name.
 
-I tested this with the following:
+Signed-off-by: Arnd Bergmann <arnd@arndb.de>
 
-    send mount point /bkp
-    receive mount point /mnt
-
-The 'send' mount point has the following structure:
-
-    root@orchard:/bkp# ls
-    > snaps  subvol
-    (subvol a btrfs subvolume, snaps a directory for holding snapshots)
-
-I then made a directory and two subvolumes in /mnt to receive 'sends':
-
-    root@orchard:/bkp# ls /mnt
-    > arbitrary_subvol  snapdir  subvol
-
-I applied your patch to progs 91d9eec1, then did the following rooted in /bkp:
-
-    1. Create snapshots
-
-    root@orchard:/bkp# btrfs subvolume snapshot -r subvol snaps/subvol_20121011_1214
-    > Create a readonly snapshot of 'subvol' in 'snaps/subvol_20121011_1214'
-
-    root@orchard:/bkp# mutt -f subvol/INBOX
-    > 1573 kept, 39 deleted.
-
-    root@orchard:/bkp# btrfs subvolume snapshot -r subvol snaps/subvol_20121011_1216
-    > Create a readonly snapshot of 'subvol' in 'snaps/subvol_20121011_1216'
-
-    2. Send base snapshots to /mnt/{snapdir,arbitrary_subvol,subvol}
-
-    root@orchard:/bkp# btrfs send snaps/subvol_20121011_1214 | btrfs receive /mnt/snapdir
-    > At subvol snaps/subvol_20121011_1214
-    > At subvol subvol_20121011_1214
-
-    root@orchard:/bkp# btrfs send snaps/subvol_20121011_1214 | btrfs receive /mnt/arbitrary_subvol
-    > At subvol snaps/subvol_20121011_1214
-    > At subvol subvol_20121011_1214
-
-    root@orchard:/bkp# btrfs send snaps/subvol_20121011_1214 | btrfs receive /mnt/subvol
-    > At subvol snaps/subvol_20121011_1214
-    > At subvol subvol_20121011_1214
-
-    3. Send incremental changes
-
-    root@orchard:/bkp# btrfs send -p snaps/subvol_20121011_1214 
-                       snaps/subvol_20121011_1216/ | btrfs receive /mnt/snapdir
-    At subvol snaps/subvol_20121011_1216/
-    At snapshot subvol_20121011_1216
-    ERROR: open snapdir/subvol_20121011_1214 failed. No such file or directory [aa]
-
-    root@orchard:/bkp# btrfs send -p snaps/subvol_20121011_1214 
-                             snaps/subvol_20121011_1216/ | btrfs receive /mnt/arbitrary_subvol
-    At subvol snaps/subvol_20121011_1216/
-    At snapshot subvol_20121011_1216
-    ERROR: open <FS_TREE>/snapdir/subvol_20121011_1214 failed. No such file or directory [bb]
-
-    root@orchard:/bkp# btrfs send -p snaps/subvol_20121011_1214 
-                             snaps/subvol_20121011_1216/ | btrfs receive /mnt/subvol
-    At subvol snaps/subvol_20121011_1216/
-    At snapshot subvol_20121011_1216
-    ERROR: open <FS_TREE>/snapdir/subvol_20121011_1214 failed. No such file or directory [cc]
-
-
-    root@orchard:/bkp# btrfs subvolume list /bkp
-    ID 256 gen 9 top level 5 path subvol
-    ID 260 gen 7 top level 5 path snaps/subvol_20121011_1214
-    ID 261 gen 9 top level 5 path snaps/subvol_20121011_1216
-
-    root@orchard:/bkp# btrfs subvolume list /mnt
-    ID 301 gen 66 top level 5 path arbitrary_subvol
-    ID 302 gen 69 top level 5 path subvol
-    ID 303 gen 66 top level 5 path snapdir/subvol_20121011_1214
-    ID 304 gen 69 top level 5 path arbitrary_subvol/subvol_20121011_1214
-    ID 305 gen 72 top level 5 path subvol/subvol_20121011_1214
-
-
-
--- 
-Rory Campbell-Lange
-rory@campbell-lange.net
+diff --git a/lib/decompress_unlzo.c b/lib/decompress_unlzo.c
+index 4531294..960183d 100644
+--- a/lib/decompress_unlzo.c
++++ b/lib/decompress_unlzo.c
+@@ -31,7 +31,7 @@
+  */
+ 
+ #ifdef STATIC
+-#include "lzo/lzo1x_decompress.c"
++#include "lzo/lzo1x_decompress_safe.c"
+ #else
+ #include <linux/decompress/unlzo.h>
+ #endif

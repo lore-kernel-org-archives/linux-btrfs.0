@@ -1,50 +1,83 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx1.workshopit.co.uk ([93.191.37.100]:37182 "EHLO
-	mx1.workshopit.co.uk" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1754569Ab2JKO4Z (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 11 Oct 2012 10:56:25 -0400
-Date: Thu, 11 Oct 2012 15:56:01 +0100
-From: Rory Campbell-Lange <rory@campbell-lange.net>
-To: Alex Lyakas <alex.btrfs@zadarastorage.com>
-Cc: Arne Jansen <sensille@gmx.net>, linux-btrfs@vger.kernel.org
-Subject: Re: btrfs receive to subdirectory
-Message-ID: <20121011145601.GA29841@campbell-lange.net>
-References: <20121008163010.GA22763@campbell-lange.net>
- <50733D66.5020600@gmx.net>
- <20121009111830.GC31743@campbell-lange.net>
- <CAOcd+r2DwTz_F3VHLRiQ7+fafqLrSTvib=P38hHYqYCY-5gGkA@mail.gmail.com>
- <20121010221107.GA19266@campbell-lange.net>
- <CAOcd+r20CmNtpWvJ1KzgiyfTuUk=KMeM9b0okgQRefEhEyGPfA@mail.gmail.com>
- <20121011113359.GD22640@campbell-lange.net>
- <CAOcd+r3E=vhtHwenmHbqV_i3FN5e4rK0x+CkOOHz3WHKVAQi1A@mail.gmail.com>
+Received: from mail.servus.at ([193.170.194.20]:45710 "EHLO mail.servus.at"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1758817Ab2JKQ3i (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Thu, 11 Oct 2012 12:29:38 -0400
+Message-ID: <5076F3AC.8020304@oberhumer.com>
+Date: Thu, 11 Oct 2012 18:28:28 +0200
+From: "Markus F.X.J. Oberhumer" <markus@oberhumer.com>
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <CAOcd+r3E=vhtHwenmHbqV_i3FN5e4rK0x+CkOOHz3WHKVAQi1A@mail.gmail.com>
+To: Arnd Bergmann <arnd@arndb.de>
+CC: Stephen Rothwell <sfr@canb.auug.org.au>,
+        Andrew Morton <akpm@linux-foundation.org>,
+        linux-kernel@vger.kernel.org, Andi Kleen <andi@firstfloor.org>,
+        Johannes Stezenbach <js@sig21.net>,
+        richard -rw- weinberger <richard.weinberger@gmail.com>,
+        linux-btrfs@vger.kernel.org, linux-crypto@vger.kernel.org,
+        Artem Bityutskiy <dedekind1@gmail.com>,
+        Adrian Hunter <adrian.hunter@intel.com>,
+        David Woodhouse <dwmw2@infradead.org>,
+        Phillip Lougher <phillip@squashfs.org.uk>,
+        Dan Magenheimer <dan.magenheimer@oracle.com>,
+        Dan Carpenter <dan.carpenter@oracle.com>
+Subject: Re: [PATCH 0/3] Update LZO compression
+References: <cover.1349621096.git.markus@oberhumer.com> <20121009122614.569b9535.akpm@linux-foundation.org> <50748113.80408@oberhumer.com> <201210111141.27270.arnd@arndb.de>
+In-Reply-To: <201210111141.27270.arnd@arndb.de>
+Content-Type: text/plain; charset=ISO-8859-1
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 11/10/12, Alex Lyakas (alex.btrfs@zadarastorage.com) wrote:
-> Hi Rory,
-> all your tests work perfectly for me (really, I swear:)), with exact
-> same mount points and subvol/snap/dir names.
-> Just to make that the patch some how did not get messed up in the
-> mail, I attach it.
+Thanks Arnd,
 
-... happy to try things further. Please confirm your btrfs/kernel
-version. I'm on 
+On 2012-10-11 13:41, Arnd Bergmann wrote:
+> On Tuesday 09 October 2012, Markus F.X.J. Oberhumer wrote:
+>>>
+>>> : This commit updates the kernel LZO code to the current upsteam version
+>>> : which features a significant speed improvement - benchmarking the Calgary
+>>> : and Silesia test corpora typically shows a doubled performance in
+>>> : both compression and decompression on modern i386/x86_64/powerpc machines.
+>>>
+>>> There are significant clients of the LZO library - crypto, btrfs,
+>>> jffs2, ubifs, squashfs and zcache.  So let's give all those people a cc
+>>> and ask that they test the LZO changes once they land in linux-next. 
+>>> For correctness and performance, please.
+>>
+>> The core compression and decompression code has been thoroughly tested, so I
+>> do not expect major problems.
+>>
+>> Good testing after the merge and feedback about build or performance issues
+>> (and improvements!) is highly appreciated.
+> 
+> The addition of the lzo tree to linux-next caused this problem for ARM
+> imx_v6_v7_defconfig:
+> 
+> In file included from /home/arnd/linux-arm/arch/arm/boot/compressed/decompress.c:40:0:
+> /home/arnd/linux-arm/arch/arm/boot/compressed/../../../../lib/decompress_unlzo.c:34:34: fatal error: lzo/lzo1x_decompress.c: No such file or directory
+> 
+> Since the file was renamed, anything including it needs to be updated to the
+> new file name.
 
-    5c4e935f44e1aace28988fdc06f233ef5c184103 refs/heads/send-recv
+I will add that patch to my tree.
 
-Cheers
-Rory
+Cheers,
+Markus
+
+> 
+> Signed-off-by: Arnd Bergmann <arnd@arndb.de>
+> 
+> diff --git a/lib/decompress_unlzo.c b/lib/decompress_unlzo.c
+> index 4531294..960183d 100644
+> --- a/lib/decompress_unlzo.c
+> +++ b/lib/decompress_unlzo.c
+> @@ -31,7 +31,7 @@
+>   */
+>  
+>  #ifdef STATIC
+> -#include "lzo/lzo1x_decompress.c"
+> +#include "lzo/lzo1x_decompress_safe.c"
+>  #else
+>  #include <linux/decompress/unlzo.h>
+>  #endif
 
 -- 
-Rory Campbell-Lange
-rory@campbell-lange.net
-
-Campbell-Lange Workshop
-www.campbell-lange.net
-0207 6311 555
-3 Tottenham Street London W1T 2AF
-Registered in England No. 04551928
+Markus Oberhumer, <markus@oberhumer.com>, http://www.oberhumer.com/

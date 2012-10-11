@@ -1,43 +1,82 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx1.workshopit.co.uk ([93.191.37.100]:34523 "EHLO
-	mx1.workshopit.co.uk" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1756649Ab2JJWL2 (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 10 Oct 2012 18:11:28 -0400
-Date: Wed, 10 Oct 2012 23:11:07 +0100
-From: Rory Campbell-Lange <rory@campbell-lange.net>
-To: Alex Lyakas <alex.btrfs@zadarastorage.com>
-Cc: Arne Jansen <sensille@gmx.net>, linux-btrfs@vger.kernel.org
-Subject: Re: btrfs receive to subdirectory
-Message-ID: <20121010221107.GA19266@campbell-lange.net>
-References: <20121008163010.GA22763@campbell-lange.net>
- <50733D66.5020600@gmx.net>
- <20121009111830.GC31743@campbell-lange.net>
- <CAOcd+r2DwTz_F3VHLRiQ7+fafqLrSTvib=P38hHYqYCY-5gGkA@mail.gmail.com>
+Received: from mx1.redhat.com ([209.132.183.28]:46650 "EHLO mx1.redhat.com"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1753028Ab2JKH2b (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Thu, 11 Oct 2012 03:28:31 -0400
+Date: Thu, 11 Oct 2012 08:28:21 +0100
+From: "Richard W.M. Jones" <rjones@redhat.com>
+To: Chris Mason <chris.mason@fusionio.com>, Chris Mason <clmason@fusionio.com>,
+        David Sterba <dave@jikos.cz>,
+        "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
+Subject: Re: Anyone seeing lots of "Check tree block failed" and other errors
+ with latest kernel?
+Message-ID: <20121011072821.GA4605@rhmail.home.annexia.org>
+References: <20121008151513.GE24071@rhmail.home.annexia.org>
+ <20121008212230.GA13692@rhmail.home.annexia.org>
+ <20121009000051.GA12735@shiny>
+ <20121009072002.GJ24071@rhmail.home.annexia.org>
+ <20121009073357.GB13692@rhmail.home.annexia.org>
+ <20121009090012.GJ4405@twin.jikos.cz>
+ <20121010123808.GA31317@shiny>
+ <20121010193853.GV24071@rhmail.home.annexia.org>
+ <20121010194113.GA687@shiny>
+ <20121010194641.GW24071@rhmail.home.annexia.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <CAOcd+r2DwTz_F3VHLRiQ7+fafqLrSTvib=P38hHYqYCY-5gGkA@mail.gmail.com>
+In-Reply-To: <20121010194641.GW24071@rhmail.home.annexia.org>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 09/10/12, Alex Lyakas (alex.btrfs@zadarastorage.com) wrote:
-> Hi Rory, Arne,
-> I think the problem is that currently mnt_fd in struct btrfs_receive
-> is used both as "mount root" and "directory in which the
-> subvolume/snapshot needs to be created".
-> Arne, does the following patch make sense? It uses Jan's
-> find_mount_root function. With this patch both Rory's tests seem to
-> work for me.
+Well the bad news is that the bug happened again overnight, even
+though we were definitely using btrfs-progs with the 6eba90029 patch
+added, _and_ it was doing a sync + fsync between the mkfs and the
+mount.
 
-Hi Alex
+Here is the log:
 
-I haven't had a chance to test this. I'm also on 89fe5b5f of progs
-recommended to my by Chris for send/receive testing and your patch
-doesn't apply for me. Are you using another revision?
+modprobe btrfs
+[   15.716610] Btrfs loaded
+grep ^[[:space:]]*btrfs$ /proc/filesystems
+mkfs.btrfs /dev/sda1 /dev/sdb1
 
-Regards
-Rory
+[   16.656467] device fsid fb238b09-83b9-4b18-9545-d1fae8f5d489 devid 1 transid 1 /dev/sda1
+[   16.657467] device fsid fb238b09-83b9-4b18-9545-d1fae8f5d489 devid 1 transid 1 /dev/sda1
+[   17.227381] device fsid fb238b09-83b9-4b18-9545-d1fae8f5d489 devid 2 transid 3 /dev/sdb1
+fsync /dev/sda
+fsync /dev/sdb
+fsync /dev/sdc
+fsync /dev/sdd
+libguestfs: recv_from_daemon: 40 bytes: 20 00 f5 f5 | 00 00 00 04 | 00 00 01 3d | 00 00 00 01 | 00 12 34 04 | ...
+libguestfs: trace: mkfs_btrfs = 0
+libguestfs: trace: mount "/dev/sda1" "/"
+libguestfs: send_to_daemon: 68 bytes: 00 00 00 40 | 20 00 f5 f5 | 00 00 00 04 | 00 00 00 01 | 00 00 00 00 | ...
+guestfsd: main_loop: proc 317 (mkfs_btrfs) took 2.22 seconds
+guestfsd: main_loop: new request, len 0x40
+mount -o  /dev/sda1 /sysroot/
+[   17.512337] device fsid fb238b09-83b9-4b18-9545-d1fae8f5d489 devid 1 transid 4 /dev/sda1
+[   17.758300] device fsid fb238b09-83b9-4b18-9545-d1fae8f5d489 devid 2 transid 4 /dev/sdb1
+[   17.857285] device fsid fb238b09-83b9-4b18-9545-d1fae8f5d489 devid 1 transid 4 /dev/sda1
+[   17.893279] device fsid fb238b09-83b9-4b18-9545-d1fae8f5d489 devid 1 transid 4 /dev/sda1
+[   17.909277] btrfs: disk space caching is enabled
+[   17.943272] btrfs bad tree block start 0 135168
+[   17.955270] btrfs: open_ctree failed
+mount: wrong fs type, bad option, bad superblock on /dev/sda1,
+       missing codepage or helper program, or other error
+       In some cases useful info is found in syslog - try
+       dmesg | tail or so
+guestfsd: error: /dev/sda1 on / (options: ''): mount: wrong fs type, bad option, bad superblock on /dev/sda1,
+       missing codepage or helper program, or other error
+       In some cases useful info is found in syslog - try
+       dmesg | tail or so
+libguestfs: recv_from_daemon: 284 bytes: 20 00 f5 f5 | 00 00 00 04 | 00 00 00 01 | 00 00 00 01 | 00 12 34 05 | ...
+libguestfs: trace: mount = -1 (error)
+
+http://kojipkgs.fedoraproject.org//work/tasks/9775/4579775/build.log
+
+Rich.
 
 -- 
-Rory Campbell-Lange
-rory@campbell-lange.net
+Richard Jones, Virtualization Group, Red Hat http://people.redhat.com/~rjones
+New in Fedora 11: Fedora Windows cross-compiler. Compile Windows
+programs, test, and build Windows installers. Over 70 libraries supprt'd
+http://fedoraproject.org/wiki/MinGW http://www.annexia.org/fedora_mingw

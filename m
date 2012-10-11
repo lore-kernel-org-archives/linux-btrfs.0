@@ -1,33 +1,48 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from bhuna.collabora.co.uk ([93.93.135.160]:37205 "EHLO
-	bhuna.collabora.co.uk" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S932996Ab2JLN40 (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Fri, 12 Oct 2012 09:56:26 -0400
-From: nirbheek.chauhan@collabora.co.uk
+Received: from mx.anti-virus.by ([93.125.111.29]:42726 "EHLO tux.vba.com.by"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1750954Ab2JKIuJ (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Thu, 11 Oct 2012 04:50:09 -0400
+From: Sergei Trofimovich <slyich@gmail.com>
 To: linux-btrfs@vger.kernel.org
-Cc: Nirbheek Chauhan <nirbheek.chauhan@collabora.co.uk>
-Subject: [PATCH] Btrfs-progs: loopback files cannot be used if the path is too long
-Date: Fri, 12 Oct 2012 19:25:33 +0530
-Message-Id: <1350050134-12151-1-git-send-email-nirbheek.chauhan@collabora.co.uk>
+Cc: Chris Mason <chris.mason@fusionio.com>, Josef Bacik <jbacik@fusionio.com>,
+        Sergei Trofimovich <slyfox@gentoo.org>
+Subject: [btrfs-progs: PATCH] version.sh: fix version when built from tarball
+Date: Thu, 11 Oct 2012 11:43:48 +0300
+Message-Id: <1349945028-19523-1-git-send-email-slyich@gmail.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-From: Nirbheek Chauhan <nirbheek.chauhan@collabora.co.uk>
+From: Sergei Trofimovich <slyfox@gentoo.org>
 
-If the path to a given loopback file is longer than 64 characters, none of the
-Btrfs-progs tools can use it. This is because the size of loopinfo.lo_name
-returned by the LOOP_GET_STATUS ioctl is 64.
+[from 0.20-rc1 tarball]
 
-The attached patch fixes this by fetching the backing file for a loopback device
-from /sys/block; which is how `losetup` from util-linux does it as well.
+Before the patch:
+  $ ./btrfs --version
+  Btrfs Btrfs v0.19
 
-Nirbheek Chauhan (1):
-  Btrfs-progs: fix resolving of loop devices
+After the patch:
+  $ ./btrfs --version
+  Btrfs v0.20-rc1
 
- utils.c |   26 ++++++++++++++------------
- 1 files changed, 14 insertions(+), 12 deletions(-)
+Signed-off-by: Sergei Trofimovich <slyfox@gentoo.org>
+---
+ version.sh | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
 
+diff --git a/version.sh b/version.sh
+index af3e441..b81040e 100644
+--- a/version.sh
++++ b/version.sh
+@@ -6,7 +6,7 @@
+ # Copyright 2008, Oracle
+ # Released under the GNU GPLv2
+  
+-v="Btrfs v0.19"
++v="v0.20-rc1"
+ 
+ which git &> /dev/null
+ if [ $? == 0 -a -d .git ]; then
 -- 
-1.7.8.6
+1.7.12
 

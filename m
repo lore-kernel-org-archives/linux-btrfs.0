@@ -1,83 +1,48 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail.servus.at ([193.170.194.20]:45710 "EHLO mail.servus.at"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1758817Ab2JKQ3i (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 11 Oct 2012 12:29:38 -0400
-Message-ID: <5076F3AC.8020304@oberhumer.com>
-Date: Thu, 11 Oct 2012 18:28:28 +0200
-From: "Markus F.X.J. Oberhumer" <markus@oberhumer.com>
+Received: from cdptpa-omtalb.mail.rr.com ([75.180.132.120]:5217 "EHLO
+	cdptpa-omtalb.mail.rr.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1755263Ab2JKR6w (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>);
+	Thu, 11 Oct 2012 13:58:52 -0400
+Message-ID: <507708DA.3040804@ubuntu.com>
+Date: Thu, 11 Oct 2012 13:58:50 -0400
+From: Phillip Susi <psusi@ubuntu.com>
 MIME-Version: 1.0
-To: Arnd Bergmann <arnd@arndb.de>
-CC: Stephen Rothwell <sfr@canb.auug.org.au>,
-        Andrew Morton <akpm@linux-foundation.org>,
-        linux-kernel@vger.kernel.org, Andi Kleen <andi@firstfloor.org>,
-        Johannes Stezenbach <js@sig21.net>,
-        richard -rw- weinberger <richard.weinberger@gmail.com>,
-        linux-btrfs@vger.kernel.org, linux-crypto@vger.kernel.org,
-        Artem Bityutskiy <dedekind1@gmail.com>,
-        Adrian Hunter <adrian.hunter@intel.com>,
-        David Woodhouse <dwmw2@infradead.org>,
-        Phillip Lougher <phillip@squashfs.org.uk>,
-        Dan Magenheimer <dan.magenheimer@oracle.com>,
-        Dan Carpenter <dan.carpenter@oracle.com>
-Subject: Re: [PATCH 0/3] Update LZO compression
-References: <cover.1349621096.git.markus@oberhumer.com> <20121009122614.569b9535.akpm@linux-foundation.org> <50748113.80408@oberhumer.com> <201210111141.27270.arnd@arndb.de>
-In-Reply-To: <201210111141.27270.arnd@arndb.de>
+To: Josef Bacik <jbacik@fusionio.com>
+CC: Mitch Harder <mitch.harder@sabayonlinux.org>,
+        linux-btrfs <linux-btrfs@vger.kernel.org>
+Subject: Re: Varying Leafsize and Nodesize in Btrfs
+References: <CAKcLGm_MKEdTiHFBd-b-v2sN5gJmgFRqsykzWRXTVqUw4O6Acw@mail.gmail.com> <20120830162512.GA2879@localhost.localdomain>
+In-Reply-To: <20120830162512.GA2879@localhost.localdomain>
 Content-Type: text/plain; charset=ISO-8859-1
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Thanks Arnd,
+-----BEGIN PGP SIGNED MESSAGE-----
+Hash: SHA1
 
-On 2012-10-11 13:41, Arnd Bergmann wrote:
-> On Tuesday 09 October 2012, Markus F.X.J. Oberhumer wrote:
->>>
->>> : This commit updates the kernel LZO code to the current upsteam version
->>> : which features a significant speed improvement - benchmarking the Calgary
->>> : and Silesia test corpora typically shows a doubled performance in
->>> : both compression and decompression on modern i386/x86_64/powerpc machines.
->>>
->>> There are significant clients of the LZO library - crypto, btrfs,
->>> jffs2, ubifs, squashfs and zcache.  So let's give all those people a cc
->>> and ask that they test the LZO changes once they land in linux-next. 
->>> For correctness and performance, please.
->>
->> The core compression and decompression code has been thoroughly tested, so I
->> do not expect major problems.
->>
->> Good testing after the merge and feedback about build or performance issues
->> (and improvements!) is highly appreciated.
+On 8/30/2012 12:25 PM, Josef Bacik wrote:
+> Once you cross some hardware dependant threshold (usually past 32k)
+> you start incurring high memmove() overhead in most workloads.
+> Like all benchmarking its good to test your workload and see what
+> works best, but 16k should generally be the best option.  Thanks,
 > 
-> The addition of the lzo tree to linux-next caused this problem for ARM
-> imx_v6_v7_defconfig:
-> 
-> In file included from /home/arnd/linux-arm/arch/arm/boot/compressed/decompress.c:40:0:
-> /home/arnd/linux-arm/arch/arm/boot/compressed/../../../../lib/decompress_unlzo.c:34:34: fatal error: lzo/lzo1x_decompress.c: No such file or directory
-> 
-> Since the file was renamed, anything including it needs to be updated to the
-> new file name.
+> Josef
 
-I will add that patch to my tree.
+Why are memmove()s neccesary, can they be avoided, and why do they
+incur more overhead with 32k+ sizes?
 
-Cheers,
-Markus
 
-> 
-> Signed-off-by: Arnd Bergmann <arnd@arndb.de>
-> 
-> diff --git a/lib/decompress_unlzo.c b/lib/decompress_unlzo.c
-> index 4531294..960183d 100644
-> --- a/lib/decompress_unlzo.c
-> +++ b/lib/decompress_unlzo.c
-> @@ -31,7 +31,7 @@
->   */
->  
->  #ifdef STATIC
-> -#include "lzo/lzo1x_decompress.c"
-> +#include "lzo/lzo1x_decompress_safe.c"
->  #else
->  #include <linux/decompress/unlzo.h>
->  #endif
 
--- 
-Markus Oberhumer, <markus@oberhumer.com>, http://www.oberhumer.com/
+-----BEGIN PGP SIGNATURE-----
+Version: GnuPG v2.0.17 (MingW32)
+Comment: Using GnuPG with Mozilla - http://www.enigmail.net/
+
+iQEcBAEBAgAGBQJQdwjZAAoJEJrBOlT6nu75rkYH/RYXBbAJfIG2KmmmFA8kSIiL
+EEvdA9KRnVH08h2lnB26xNdCPbf59M7GrH2hZK48gM9x4OQPzKXf8eCTYTy4mFKy
+mqTPFsgcPveTFtgoRXkuhZvUXMpFV4M8I7MLZRCcxk5KWTwA/slcunQxG7BMz/V4
+tBxE8ya2Hxej2VJe4AbLR6PJbvCGsFXNlxBpUy9Qh7q0TmDeGzsoaZ1We1itNjQZ
+wWjTerka2qe9dyP8EOUp/uZqGUQXu1TUKbTLygsfMb11/vGMkoUkZtTa0f9lQosw
+10UlA8TyqAkLX3gpQzsJVCwiRuNWQBbQqvdYq3dCQOgzBbvOdvD6TtmeS1saO4o=
+=qV0c
+-----END PGP SIGNATURE-----

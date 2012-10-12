@@ -1,26 +1,26 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from fgwmail6.fujitsu.co.jp ([192.51.44.36]:43511 "EHLO
-	fgwmail6.fujitsu.co.jp" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1755788Ab2JLFgA (ORCPT
+Received: from fgwmail5.fujitsu.co.jp ([192.51.44.35]:34206 "EHLO
+	fgwmail5.fujitsu.co.jp" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1755779Ab2JLIWF (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Fri, 12 Oct 2012 01:36:00 -0400
-Received: from m1.gw.fujitsu.co.jp (unknown [10.0.50.71])
-	by fgwmail6.fujitsu.co.jp (Postfix) with ESMTP id 2E8A23EE0B6
-	for <linux-btrfs@vger.kernel.org>; Fri, 12 Oct 2012 14:35:58 +0900 (JST)
-Received: from smail (m1 [127.0.0.1])
-	by outgoing.m1.gw.fujitsu.co.jp (Postfix) with ESMTP id 11A2D45DE56
-	for <linux-btrfs@vger.kernel.org>; Fri, 12 Oct 2012 14:35:58 +0900 (JST)
-Received: from s1.gw.fujitsu.co.jp (s1.gw.fujitsu.co.jp [10.0.50.91])
-	by m1.gw.fujitsu.co.jp (Postfix) with ESMTP id EFEC245DE55
-	for <linux-btrfs@vger.kernel.org>; Fri, 12 Oct 2012 14:35:57 +0900 (JST)
-Received: from s1.gw.fujitsu.co.jp (localhost.localdomain [127.0.0.1])
-	by s1.gw.fujitsu.co.jp (Postfix) with ESMTP id E493C1DB8042
-	for <linux-btrfs@vger.kernel.org>; Fri, 12 Oct 2012 14:35:57 +0900 (JST)
+	Fri, 12 Oct 2012 04:22:05 -0400
+Received: from m2.gw.fujitsu.co.jp (unknown [10.0.50.72])
+	by fgwmail5.fujitsu.co.jp (Postfix) with ESMTP id E5C8A3EE081
+	for <linux-btrfs@vger.kernel.org>; Fri, 12 Oct 2012 17:22:03 +0900 (JST)
+Received: from smail (m2 [127.0.0.1])
+	by outgoing.m2.gw.fujitsu.co.jp (Postfix) with ESMTP id C264345DD78
+	for <linux-btrfs@vger.kernel.org>; Fri, 12 Oct 2012 17:22:03 +0900 (JST)
+Received: from s2.gw.fujitsu.co.jp (s2.gw.fujitsu.co.jp [10.0.50.92])
+	by m2.gw.fujitsu.co.jp (Postfix) with ESMTP id A225545DE53
+	for <linux-btrfs@vger.kernel.org>; Fri, 12 Oct 2012 17:22:03 +0900 (JST)
+Received: from s2.gw.fujitsu.co.jp (localhost.localdomain [127.0.0.1])
+	by s2.gw.fujitsu.co.jp (Postfix) with ESMTP id 92258E08003
+	for <linux-btrfs@vger.kernel.org>; Fri, 12 Oct 2012 17:22:03 +0900 (JST)
 Received: from m1001.s.css.fujitsu.com (m1001.s.css.fujitsu.com [10.240.81.139])
-	by s1.gw.fujitsu.co.jp (Postfix) with ESMTP id 980751DB8043
-	for <linux-btrfs@vger.kernel.org>; Fri, 12 Oct 2012 14:35:57 +0900 (JST)
-Message-ID: <5077AC2E.1090900@jp.fujitsu.com>
-Date: Fri, 12 Oct 2012 14:35:42 +0900
+	by s2.gw.fujitsu.co.jp (Postfix) with ESMTP id 3EBC21DB802C
+	for <linux-btrfs@vger.kernel.org>; Fri, 12 Oct 2012 17:22:03 +0900 (JST)
+Message-ID: <5077D31C.3080006@jp.fujitsu.com>
+Date: Fri, 12 Oct 2012 17:21:48 +0900
 From: Tsutomu Itoh <t-itoh@jp.fujitsu.com>
 MIME-Version: 1.0
 To: Hidetoshi Seto <seto.hidetoshi@jp.fujitsu.com>
@@ -32,7 +32,7 @@ Content-Type: text/plain; charset=ISO-2022-JP
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hi, Seto-san,
+Hi,
 
 (2012/10/12 12:24), Hidetoshi Seto wrote:
 > This patch adds mount-option command that can set/get/clear default
@@ -190,11 +190,6 @@ Hi, Seto-san,
 > --- /dev/null
 > +++ b/btrfs-parse-mntopt.h
 > @@ -0,0 +1,66 @@
-
-Please add
- #ifndef _BTRFS_PARSE_MNTOPT_H
- #define _BTRFS_PARSE_MNTOPT_H
-
 > +/* btrfs-parse-mntopt.h */
 > +
 > +struct match_token {
@@ -261,12 +256,6 @@ Please add
 > +
 > +void btrfs_parse_string2mntopt(u64 *optval, int optnum, char **options);
 > +void btrfs_parse_mntopt2string(u64 optval);
-
- #endif /* _BTRFS_PARSE_MNTOPT_H */
-
-Thanks,
-Tsutomu
-
 > diff --git a/btrfs.c b/btrfs.c
 > index a229cee..608869d 100644
 > --- a/btrfs.c
@@ -321,6 +310,13 @@ Tsutomu
 > +		fprintf(stderr, "%s is mounted\n", device);
 > +		return 1;
 > +	}
+
+I think that "btrfs mount-option get <device>" command should not be an error
+even if the device is mounted.
+
+Thanks,
+Tsutomu
+
 > +	if (ret < 0) {
 > +		fprintf(stderr, "error checking %s mount status with %d(%s)\n",
 > +			device, ret, strerror(-1*ret));
@@ -328,194 +324,5 @@ Tsutomu
 > +	}
 > +	return 0;
 > +}
-> +
-> +static int mount_set_common(char *device, int numopts, char **options)
-> +{
-> +	struct btrfs_root *root;
-> +	struct btrfs_trans_handle *trans;
-> +	u64 optval = 0;
-> +	int ret;
-> +
-> +	root = open_ctree(device, 0, 1);
-> +	if (!root) {
-> +		fprintf(stderr, "error opening ctree of %s\n", device);
-> +		return 1;
-> +	}
-> +
-> +	if (numopts) {
-> +		optval = btrfs_super_default_mount_opt(&root->fs_info->super_copy);
-> +		btrfs_parse_string2mntopt(&optval, numopts, options);
-> +	}
-> +
-> +	trans = btrfs_start_transaction(root, 1);
-> +	btrfs_set_super_default_mount_opt(&root->fs_info->super_copy, optval);
-> +	ret = btrfs_commit_transaction(trans, root);
-> +
-> +	close_ctree(root);
-> +
-> +	return ret;
-> +}
-> +
-> +static int mount_show_common(char *device)
-> +{
-> +	struct btrfs_root *root;
-> +	u64 def_opt;
-> +
-> +	root = open_ctree(device, 0, 0);
-> +	if (!root) {
-> +		fprintf(stderr, "error opening ctree of %s\n", device);
-> +		return 1;
-> +	}
-> +
-> +	def_opt = btrfs_super_default_mount_opt(&root->fs_info->super_copy);
-> +	btrfs_parse_mntopt2string(def_opt);
-> +
-> +	close_ctree(root);
-> +
-> +	return 0;
-> +}
-> +
-> +static const char * const cmd_set_mntopt_usage[] = {
-> +	"btrfs mount-option set [[+-=]<mount-option>,...] <device>",
-> +	"Set default mount options",
-> +	NULL
-> +};
-> +
-> +static int cmd_set_mntopt(int argc, char **argv)
-> +{
-> +	char *device;
-> +
-> +	if (check_argc_min(argc, 2)) {
-> +		usage(cmd_set_mntopt_usage);
-> +		return 1;
-> +	}
-> +
-> +	device = argv[argc - 1];
-> +	if (mount_check_device(device))
-> +		return 1;
-> +
-> +	if (argc == 2) {
-> +		/* get mount option */
-> +		return mount_show_common(device);
-> +	}
-> +	/* set mount option */
-> +	/*
-> +	 * Note:
-> +	 *	argv[0] = "btrfs mount-option set"
-> +	 *	argv[*] = <options>
-> +	 *	argv[n] = <device>
-> +	 */
-> +	return mount_set_common(device, argc - 2, &argv[1]);
-> +}
-> +
-> +static const char * const cmd_get_mntopt_usage[] = {
-> +	"btrfs mount-option get <device>",
-> +	"Get default mount options",
-> +	NULL
-> +};
-> +
-> +static int cmd_get_mntopt(int argc, char **argv)
-> +{
-> +	char *device;
-> +
-> +	if (check_argc_exact(argc, 2)) {
-> +		usage(cmd_get_mntopt_usage);
-> +		return 1;
-> +	}
-> +
-> +	device = argv[argc - 1];
-> +	if (mount_check_device(device))
-> +		return 1;
-> +
-> +	return mount_show_common(device);
-> +};
-> +
-> +static const char * const cmd_clear_mntopt_usage[] = {
-> +	"btrfs mount-option clear <device>",
-> +	"Clear default mount options",
-> +	NULL
-> +};
-> +
-> +static int cmd_clear_mntopt(int argc, char **argv)
-> +{
-> +	char *device;
-> +
-> +	if (check_argc_exact(argc, 2)) {
-> +		usage(cmd_clear_mntopt_usage);
-> +		return 1;
-> +	}
-> +
-> +	device = argv[argc - 1];
-> +	if (mount_check_device(device))
-> +		return 1;
-> +
-> +	return mount_set_common(device, 0, NULL);
-> +};
-> +
-> +static const char * const mount_cmd_group_usage[] = {
-> +	"btrfs mount-option <command> [<args>]",
-> +	NULL
-> +};
-> +
-> +const struct cmd_group mount_cmd_group = {
-> +	mount_cmd_group_usage, NULL, {
-> +		{ "set", cmd_set_mntopt, cmd_set_mntopt_usage, NULL, 0 },
-> +		{ "get", cmd_get_mntopt, cmd_get_mntopt_usage, NULL, 0 },
-> +		{ "clear", cmd_clear_mntopt, cmd_clear_mntopt_usage, NULL, 0},
-> +		{0, 0, 0, 0, 0 }
-> +	}
-> +};
-> +
-> +int cmd_mount(int argc, char **argv)
-> +{
-> +	return handle_command_group(&mount_cmd_group, argc, argv);
-> +}
-> diff --git a/commands.h b/commands.h
-> index bb6d2dd..fea30fd 100644
-> --- a/commands.h
-> +++ b/commands.h
-> @@ -92,6 +92,7 @@ extern const struct cmd_group send_cmd_group;
->   extern const struct cmd_group receive_cmd_group;
->   extern const struct cmd_group quota_cmd_group;
->   extern const struct cmd_group qgroup_cmd_group;
-> +extern const struct cmd_group mount_cmd_group;
->   
->   int cmd_subvolume(int argc, char **argv);
->   int cmd_filesystem(int argc, char **argv);
-> @@ -103,6 +104,7 @@ int cmd_send(int argc, char **argv);
->   int cmd_receive(int argc, char **argv);
->   int cmd_quota(int argc, char **argv);
->   int cmd_qgroup(int argc, char **argv);
-> +int cmd_mount(int argc, char **argv);
->   
->   /* subvolume exported functions */
->   int test_issubvolume(char *path);
-> diff --git a/ctree.h b/ctree.h
-> index 7f55229..363a118 100644
-> --- a/ctree.h
-> +++ b/ctree.h
-> @@ -402,8 +402,11 @@ struct btrfs_super_block {
->   
->   	__le64 cache_generation;
->   
-> +	/* default mount options */
-> +	__le64 default_mount_opt;
-> +
->   	/* future expansion */
-> -	__le64 reserved[31];
-> +	__le64 reserved[30];
->   	u8 sys_chunk_array[BTRFS_SYSTEM_CHUNK_ARRAY_SIZE];
->   	struct btrfs_root_backup super_roots[BTRFS_NUM_BACKUP_ROOTS];
->   } __attribute__ ((__packed__));
-> @@ -1820,6 +1823,8 @@ BTRFS_SETGET_STACK_FUNCS(super_csum_type, struct btrfs_super_block,
->   			 csum_type, 16);
->   BTRFS_SETGET_STACK_FUNCS(super_cache_generation, struct btrfs_super_block,
->   			 cache_generation, 64);
-> +BTRFS_SETGET_STACK_FUNCS(super_default_mount_opt, struct btrfs_super_block,
-> +			 default_mount_opt, 64);
->   
->   static inline int btrfs_super_csum_size(struct btrfs_super_block *s)
->   {
-> 
 
 

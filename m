@@ -1,51 +1,457 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mondschein.lichtvoll.de ([194.150.191.11]:48901 "EHLO
-	mail.lichtvoll.de" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S932292Ab2JLMwF (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Fri, 12 Oct 2012 08:52:05 -0400
-From: Martin Steigerwald <Martin@lichtvoll.de>
+Received: from mort.rzone.de ([81.169.144.234]:9753 "EHLO mort.rzone.de"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S932311Ab2JLNcz (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Fri, 12 Oct 2012 09:32:55 -0400
+Received: from gargravarr.store (gargravarr.store [192.168.42.236])
+	by mort.rzone.de (Postfix) with ESMTP id 6163FC7F
+	for <linux-btrfs@vger.kernel.org>; Fri, 12 Oct 2012 15:32:53 +0200 (MEST)
+From: Arne Jansen <sensille@gmx.net>
 To: linux-btrfs@vger.kernel.org
-Subject: Re: Varying Leafsize and Nodesize in Btrfs
-Date: Fri, 12 Oct 2012 14:52:03 +0200
-Cc: Mitch Harder <mitch.harder@sabayonlinux.org>
-References: <CAKcLGm_MKEdTiHFBd-b-v2sN5gJmgFRqsykzWRXTVqUw4O6Acw@mail.gmail.com> <201210121232.55415.Martin@lichtvoll.de> (sfid-20121012_130619_891962_9D9D5E27)
-In-Reply-To: <201210121232.55415.Martin@lichtvoll.de>
-MIME-Version: 1.0
-Content-Type: Text/Plain;
-  charset="iso-8859-1"
-Message-Id: <201210121452.03569.Martin@lichtvoll.de>
+Subject: [PATCH] Fits: tool to parse stream
+Date: Fri, 12 Oct 2012 15:32:52 +0200
+Message-Id: <1350048772-20658-1-git-send-email-sensille@gmx.net>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Am Freitag, 12. Oktober 2012 schrieb Martin Steigerwald:
-> > Time (seconds) to finish 7 simultaneous copy operations on a set of
-> > Linux kernel git sources.
-> >
-> > 
-> >
-> > Leafsize/
-> > Nodesize    Time (Std Dev%)
-> > 4096         124.7 (1.25%)
-> > 8192         115.2 (0.69%)
-> > 16384        114.8 (0.53%)
-> > 65536        130.5 (0.3%)
-> 
-> Thanks for your testing, Mitch.
-> 
-> I would be interested in results for 32768 bytes as well.
-> 
-> Why?
-> 
-> It improves until 16384 bytes but then it gets worse with 65536 bytes.
-> It  would be interesting to know whether it improves for 32768 or
-> already gets worse with that value :)
+Simple tool to parse a fits-stream from stdout.
 
-Please ignore. I was answering to a old thread that was shown on top of 
-message list to answer to Phillip again. We had that topic already.
+Signed-off-by: Arne Jansen <sensille@gmx.net>
+---
 
-Sorry for noise.
+The idea of the btrfs send stream format was to generate it in a way that
+it is easy to receive on different platforms. Thus the proposed name FITS, for
+Filesystem Incremental Backup Stream. We should also build the tools to
+receive the stream on different platforms.
+As a place to collect those I created at git at 
 
+git://git.kernel.org/pub/scm/linux/kernel/git/arne/fits-progs.git
+---
+
+ Makefile    |    4 +
+ fitsparse.c |  402 +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+ 2 files changed, 406 insertions(+), 0 deletions(-)
+ create mode 100644 Makefile
+ create mode 100644 fitsparse.c
+
+diff --git a/Makefile b/Makefile
+new file mode 100644
+index 0000000..1c56476
+--- /dev/null
++++ b/Makefile
+@@ -0,0 +1,4 @@
++all: fitsparse
++
++fitsparse: fitsparse.c
++	gcc -Wall fitsparse.c -o fitsparse
+diff --git a/fitsparse.c b/fitsparse.c
+new file mode 100644
+index 0000000..3a52250
+--- /dev/null
++++ b/fitsparse.c
+@@ -0,0 +1,402 @@
++/*
++ * Copyright (C) 2012 STRATO.  All rights reserved.
++ *
++ * This program is free software; you can redistribute it and/or
++ * modify it under the terms of the GNU General Public
++ * License v2 as published by the Free Software Foundation.
++ *
++ * This program is distributed in the hope that it will be useful,
++ * but WITHOUT ANY WARRANTY; without even the implied warranty of
++ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
++ * General Public License for more details.
++ *
++ * You should have received a copy of the GNU General Public
++ * License along with this program; if not, write to the
++ * Free Software Foundation, Inc., 59 Temple Place - Suite 330,
++ * Boston, MA 021110-1307, USA.
++ */
++
++#include <stdio.h>
++#include <stdlib.h>
++#include <stdint.h>
++#include <string.h>
++#include <errno.h>
++#include <time.h>
++
++int print_binary = 0;
++
++/*
++ * stream definitions taken from send.h, (C) Alexander Block
++ */
++#define BTRFS_SEND_STREAM_MAGIC "btrfs-stream"
++#define BTRFS_SEND_STREAM_VERSION 1
++#define BTRFS_SEND_BUF_SIZE (1024 * 64)
++
++struct btrfs_stream_header {
++	char magic[sizeof(BTRFS_SEND_STREAM_MAGIC)];
++	uint32_t version;
++} __attribute__ ((__packed__));
++
++struct btrfs_cmd_header {
++	/* len excluding the header */
++	uint32_t len;
++	uint16_t cmd;
++	/* crc including the header with zero crc field */
++	uint32_t crc;
++} __attribute__ ((__packed__));
++
++struct btrfs_tlv_header {
++	uint16_t tlv_type;
++	/* len excluding the header */
++	uint16_t tlv_len;
++} __attribute__ ((__packed__));
++
++char *cmd_names[] = {
++	"UNSPEC",
++	"SUBVOL",
++	"SNAPSHOT",
++	"MKFILE",
++	"MKDIR",
++	"MKNOD",
++	"MKFIFO",
++	"MKSOCK",
++	"SYMLINK",
++	"RENAME",
++	"LINK",
++	"UNLINK",
++	"RMDIR",
++	"SET_XATTR",
++	"REMOVE_XATTR",
++	"WRITE",
++	"CLONE",
++	"TRUNCATE",
++	"CHMOD",
++	"CHOWN",
++	"UTIMES",
++	"END"
++};
++#define MAX_CMDS (sizeof(cmd_names) / sizeof(char *))
++
++#define TYPE_UNDEF	0
++#define TYPE_INT	1
++#define TYPE_STRING	2
++#define TYPE_BINARY	3
++#define TYPE_TIME	4
++#define TYPE_HEX	5
++#define TYPE_OCTAL	6
++#define TYPE_LEN_ONLY	7
++
++struct attr_types {
++	const char	*name;
++	int		type;
++} attrs[] = {
++	{ "UNSPEC", TYPE_UNDEF },
++	{ "UUID", TYPE_BINARY },
++	{ "CTRANSID", TYPE_INT },
++	{ "INO", TYPE_INT },
++	{ "SIZE", TYPE_INT },
++	{ "MODE", TYPE_OCTAL },
++	{ "UID", TYPE_INT },
++	{ "GID", TYPE_INT },
++	{ "RDEV", TYPE_HEX },
++	{ "CTIME", TYPE_TIME },
++	{ "MTIME", TYPE_TIME },
++	{ "ATIME", TYPE_TIME },
++	{ "OTIME", TYPE_TIME },
++	{ "XATTR_NAME", TYPE_STRING },
++	{ "XATTR_DATA", TYPE_BINARY },
++	{ "PATH", TYPE_STRING },
++	{ "PATH_TO", TYPE_STRING },
++	{ "PATH_LINK", TYPE_STRING },
++	{ "FILE_OFFSET", TYPE_INT },
++	{ "DATA", TYPE_LEN_ONLY },
++	{ "CLONE_UUID", TYPE_BINARY },
++	{ "CLONE_CTRANSID", TYPE_INT },
++	{ "CLONE_PATH", TYPE_STRING },
++	{ "CLONE_OFFSET", TYPE_INT },
++	{ "CLONE_LEN", TYPE_INT }
++};
++#define MAX_ATTRS (sizeof(attrs) / sizeof(struct attr_types))
++
++uint16_t
++read16(const void *d)
++{
++	const uint8_t *data = d;
++
++	return data[0] + (1 << 8) * (uint16_t)data[1];
++}
++
++uint32_t
++read32(const void *d)
++{
++	const uint8_t *data = d;
++
++	return read16(data) + (1 << 16) * (uint32_t)read16(data + 2);
++}
++
++uint64_t
++read64(const void *d)
++{
++	const uint8_t *data = d;
++
++	return read32(data) + (1ull << 32) * (uint64_t)read32(data + 2);
++}
++
++/* 
++ * Extracted from the linux kernel source code, lib/libcrc32c.c.
++ * 
++ */
++static const uint32_t crc32c_table[256] = {
++	0x00000000L, 0xF26B8303L, 0xE13B70F7L, 0x1350F3F4L,
++	0xC79A971FL, 0x35F1141CL, 0x26A1E7E8L, 0xD4CA64EBL,
++	0x8AD958CFL, 0x78B2DBCCL, 0x6BE22838L, 0x9989AB3BL,
++	0x4D43CFD0L, 0xBF284CD3L, 0xAC78BF27L, 0x5E133C24L,
++	0x105EC76FL, 0xE235446CL, 0xF165B798L, 0x030E349BL,
++	0xD7C45070L, 0x25AFD373L, 0x36FF2087L, 0xC494A384L,
++	0x9A879FA0L, 0x68EC1CA3L, 0x7BBCEF57L, 0x89D76C54L,
++	0x5D1D08BFL, 0xAF768BBCL, 0xBC267848L, 0x4E4DFB4BL,
++	0x20BD8EDEL, 0xD2D60DDDL, 0xC186FE29L, 0x33ED7D2AL,
++	0xE72719C1L, 0x154C9AC2L, 0x061C6936L, 0xF477EA35L,
++	0xAA64D611L, 0x580F5512L, 0x4B5FA6E6L, 0xB93425E5L,
++	0x6DFE410EL, 0x9F95C20DL, 0x8CC531F9L, 0x7EAEB2FAL,
++	0x30E349B1L, 0xC288CAB2L, 0xD1D83946L, 0x23B3BA45L,
++	0xF779DEAEL, 0x05125DADL, 0x1642AE59L, 0xE4292D5AL,
++	0xBA3A117EL, 0x4851927DL, 0x5B016189L, 0xA96AE28AL,
++	0x7DA08661L, 0x8FCB0562L, 0x9C9BF696L, 0x6EF07595L,
++	0x417B1DBCL, 0xB3109EBFL, 0xA0406D4BL, 0x522BEE48L,
++	0x86E18AA3L, 0x748A09A0L, 0x67DAFA54L, 0x95B17957L,
++	0xCBA24573L, 0x39C9C670L, 0x2A993584L, 0xD8F2B687L,
++	0x0C38D26CL, 0xFE53516FL, 0xED03A29BL, 0x1F682198L,
++	0x5125DAD3L, 0xA34E59D0L, 0xB01EAA24L, 0x42752927L,
++	0x96BF4DCCL, 0x64D4CECFL, 0x77843D3BL, 0x85EFBE38L,
++	0xDBFC821CL, 0x2997011FL, 0x3AC7F2EBL, 0xC8AC71E8L,
++	0x1C661503L, 0xEE0D9600L, 0xFD5D65F4L, 0x0F36E6F7L,
++	0x61C69362L, 0x93AD1061L, 0x80FDE395L, 0x72966096L,
++	0xA65C047DL, 0x5437877EL, 0x4767748AL, 0xB50CF789L,
++	0xEB1FCBADL, 0x197448AEL, 0x0A24BB5AL, 0xF84F3859L,
++	0x2C855CB2L, 0xDEEEDFB1L, 0xCDBE2C45L, 0x3FD5AF46L,
++	0x7198540DL, 0x83F3D70EL, 0x90A324FAL, 0x62C8A7F9L,
++	0xB602C312L, 0x44694011L, 0x5739B3E5L, 0xA55230E6L,
++	0xFB410CC2L, 0x092A8FC1L, 0x1A7A7C35L, 0xE811FF36L,
++	0x3CDB9BDDL, 0xCEB018DEL, 0xDDE0EB2AL, 0x2F8B6829L,
++	0x82F63B78L, 0x709DB87BL, 0x63CD4B8FL, 0x91A6C88CL,
++	0x456CAC67L, 0xB7072F64L, 0xA457DC90L, 0x563C5F93L,
++	0x082F63B7L, 0xFA44E0B4L, 0xE9141340L, 0x1B7F9043L,
++	0xCFB5F4A8L, 0x3DDE77ABL, 0x2E8E845FL, 0xDCE5075CL,
++	0x92A8FC17L, 0x60C37F14L, 0x73938CE0L, 0x81F80FE3L,
++	0x55326B08L, 0xA759E80BL, 0xB4091BFFL, 0x466298FCL,
++	0x1871A4D8L, 0xEA1A27DBL, 0xF94AD42FL, 0x0B21572CL,
++	0xDFEB33C7L, 0x2D80B0C4L, 0x3ED04330L, 0xCCBBC033L,
++	0xA24BB5A6L, 0x502036A5L, 0x4370C551L, 0xB11B4652L,
++	0x65D122B9L, 0x97BAA1BAL, 0x84EA524EL, 0x7681D14DL,
++	0x2892ED69L, 0xDAF96E6AL, 0xC9A99D9EL, 0x3BC21E9DL,
++	0xEF087A76L, 0x1D63F975L, 0x0E330A81L, 0xFC588982L,
++	0xB21572C9L, 0x407EF1CAL, 0x532E023EL, 0xA145813DL,
++	0x758FE5D6L, 0x87E466D5L, 0x94B49521L, 0x66DF1622L,
++	0x38CC2A06L, 0xCAA7A905L, 0xD9F75AF1L, 0x2B9CD9F2L,
++	0xFF56BD19L, 0x0D3D3E1AL, 0x1E6DCDEEL, 0xEC064EEDL,
++	0xC38D26C4L, 0x31E6A5C7L, 0x22B65633L, 0xD0DDD530L,
++	0x0417B1DBL, 0xF67C32D8L, 0xE52CC12CL, 0x1747422FL,
++	0x49547E0BL, 0xBB3FFD08L, 0xA86F0EFCL, 0x5A048DFFL,
++	0x8ECEE914L, 0x7CA56A17L, 0x6FF599E3L, 0x9D9E1AE0L,
++	0xD3D3E1ABL, 0x21B862A8L, 0x32E8915CL, 0xC083125FL,
++	0x144976B4L, 0xE622F5B7L, 0xF5720643L, 0x07198540L,
++	0x590AB964L, 0xAB613A67L, 0xB831C993L, 0x4A5A4A90L,
++	0x9E902E7BL, 0x6CFBAD78L, 0x7FAB5E8CL, 0x8DC0DD8FL,
++	0xE330A81AL, 0x115B2B19L, 0x020BD8EDL, 0xF0605BEEL,
++	0x24AA3F05L, 0xD6C1BC06L, 0xC5914FF2L, 0x37FACCF1L,
++	0x69E9F0D5L, 0x9B8273D6L, 0x88D28022L, 0x7AB90321L,
++	0xAE7367CAL, 0x5C18E4C9L, 0x4F48173DL, 0xBD23943EL,
++	0xF36E6F75L, 0x0105EC76L, 0x12551F82L, 0xE03E9C81L,
++	0x34F4F86AL, 0xC69F7B69L, 0xD5CF889DL, 0x27A40B9EL,
++	0x79B737BAL, 0x8BDCB4B9L, 0x988C474DL, 0x6AE7C44EL,
++	0xBE2DA0A5L, 0x4C4623A6L, 0x5F16D052L, 0xAD7D5351L
++};
++
++uint32_t crc32c(uint32_t crc, unsigned char const *data, int size)
++{
++	while (size--)
++		crc = crc32c_table[(crc ^ *data++) & 0xffl] ^ (crc >> 8);
++	return crc;
++}
++
++int
++print_attr(int type, char *buf, int len)
++{
++	switch (type) {
++	case TYPE_UNDEF:
++		break;
++	case TYPE_INT:
++	case TYPE_HEX:
++	case TYPE_OCTAL:;
++		uint64_t v;
++		char *format;
++
++		if (len != 8) {
++			printf("invalid length for integer type attribute\n");
++			return -1;
++		}
++		if (type == TYPE_INT)
++			format = "%lld";
++		else if (type == TYPE_HEX)
++			format = "%llx";
++		else if (type == TYPE_OCTAL)
++			format = "%llo";
++		v = read64(buf);
++		printf(format, v);
++		break;
++	case TYPE_STRING:
++		printf("%.*s", len, buf);
++		break;
++	case TYPE_BINARY:;
++		int i;
++		if (print_binary)
++			for (i = 0; i < len; ++i)
++				printf("%02x", (unsigned char)buf[i]);
++		else
++			printf("<blob len %d>", len);
++		break;
++	case TYPE_TIME:;
++		uint64_t sec;
++		uint32_t nsec;
++		struct tm *t;
++		time_t	tim;
++
++		if (len != 12) {
++			printf("invalid length for timespec attribute\n");
++			return -1;
++		}
++		sec = read64(buf);
++		nsec = read32(buf + 8);
++		tim = sec; /* XXX lossy */
++		t = localtime(&tim);
++		printf("%04d-%02d-%02d %02d:%02d:%02d.%09d",
++			t->tm_year + 1900, t->tm_mon + 1, t->tm_mday,
++			t->tm_hour, t->tm_min, t->tm_sec, nsec);
++		break;
++	case TYPE_LEN_ONLY:
++		printf("length %d", len);
++		break;
++	}
++
++	return 0;
++}
++
++int
++do_read(void *buf, int len)
++{
++	int ret;
++
++	if (len == 0)
++		return 0;
++
++	ret = fread(buf, 1, len, stdin);
++	if (ret == 0)
++		return 1;
++
++	if (ret != len) {
++		printf("read error on stdin: %d=%s\n", errno, strerror(errno));
++		return -1;
++	}
++	return 0;
++}
++
++int
++main(int argc, char **argv)
++{
++	int ret;
++	unsigned char buf[BTRFS_SEND_BUF_SIZE];
++	struct btrfs_stream_header h;
++	struct btrfs_cmd_header cmd;
++	unsigned char *p;
++
++	if (argc == 2 && strcmp(argv[1], "-v") == 0)
++		print_binary = 1;
++
++	ret = do_read(&h, sizeof(h));
++	if (ret) {
++		printf("failed to read header\n");
++		goto out;
++	}
++	if (strncmp(h.magic, BTRFS_SEND_STREAM_MAGIC, sizeof(h.magic))) {
++		printf("bad magic\n");
++		goto out;
++	}
++	if (read32(&h.version) != BTRFS_SEND_STREAM_VERSION) {
++		printf("invalid version %d\n", read32(&h.version));
++		goto out;
++	}
++	printf("stream header, version %d\n", read32(&h.version));
++
++	while (1) {
++		uint32_t clen;
++		uint32_t crc_is;
++		uint32_t crc_should;
++		uint32_t c;
++
++		ret = do_read(&cmd, sizeof(cmd));
++		if (ret == 1)
++			break;
++		if (ret) {
++			printf("failed to read command header\n");	
++			goto out;
++		}
++		clen = read32(&cmd.len);
++		if (clen > sizeof(buf)) {
++			printf("cmd too long for buf, clen=%d\n", clen);
++			goto out;
++		}
++		ret = do_read(buf, clen);
++		if (ret) {
++			printf("failed to read command contents\n");
++			goto out;
++		}
++		crc_is = read32(&cmd.crc);
++		cmd.crc = 0;
++		crc_should = crc32c(0, (unsigned char *)&cmd, sizeof(cmd));
++		crc_should = crc32c(crc_should, buf, clen);
++		if (crc_is != crc_should) {
++			printf("crcs don't match, 0x%x != 0x%x\n",
++				crc_is, crc_should);
++			goto out;
++		}
++		c = read16(&cmd.cmd);
++		if (c < 1 || c >= MAX_CMDS) {
++			printf("cmd %d out of range\n", c);
++			goto out;
++		}
++		printf("%s: ", cmd_names[c]);
++		p = buf;
++		int first = 1;
++		while (clen) {
++			struct btrfs_tlv_header *tlv;
++			uint16_t type;
++			uint16_t len;
++
++			tlv = (struct btrfs_tlv_header *)p;
++			type = read16(&tlv->tlv_type);
++			len = read16(&tlv->tlv_len);
++
++			if (type < 1 || type >= MAX_ATTRS) {
++				printf("attr %d out of range\n", type);
++				goto out;
++			}
++			if (!first)
++				printf(", ");
++			first = 0;
++		
++			printf("%s ", attrs[type].name);
++			ret = print_attr(attrs[type].type,
++					 (void *)(tlv + 1), len);
++			if (ret)
++				goto out;
++
++			p += sizeof(*tlv) + len;
++			clen -= sizeof(*tlv) + len;
++		}
++		printf("\n");
++	}
++
++out:
++	exit(0);
++}
 -- 
-Martin 'Helios' Steigerwald - http://www.Lichtvoll.de
-GPG: 03B0 0D6C 0040 0710 4AFA  B82F 991B EAAC A599 84C7
+1.7.7
+

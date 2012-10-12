@@ -1,69 +1,68 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mondschein.lichtvoll.de ([194.150.191.11]:45374 "EHLO
+Received: from mondschein.lichtvoll.de ([194.150.191.11]:53865 "EHLO
 	mail.lichtvoll.de" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1757855Ab2JLJzE convert rfc822-to-8bit (ORCPT
+	with ESMTP id S933710Ab2JLKBf (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Fri, 12 Oct 2012 05:55:04 -0400
+	Fri, 12 Oct 2012 06:01:35 -0400
 From: Martin Steigerwald <Martin@lichtvoll.de>
 To: linux-btrfs@vger.kernel.org
 Subject: Re: [PATCH][BTRFS-PROGS][V1] btrfs filesystem df
-Date: Fri, 12 Oct 2012 11:55:02 +0200
+Date: Fri, 12 Oct 2012 12:01:34 +0200
 Cc: Ilya Dryomov <idryomov@gmail.com>,
         Goffredo Baroncelli <kreijack@gmail.com>,
         Chris Mason <chris.mason@fusionio.com>,
         Goffredo Baroncelli <kreijack@inwind.it>
-References: <1349264596-9383-1-git-send-email-kreijack@inwind.it> <20121003150117.GA1978@zambezi.lan> (sfid-20121003_220039_939865_34137DD2)
-In-Reply-To: <20121003150117.GA1978@zambezi.lan>
+References: <1349264596-9383-1-git-send-email-kreijack@inwind.it> <506C6BC8.5050809@gmail.com> <20121003174643.GB2890@zambezi.lan> (sfid-20121003_220020_097175_EDF4F210)
+In-Reply-To: <20121003174643.GB2890@zambezi.lan>
 MIME-Version: 1.0
 Content-Type: Text/Plain;
-  charset="utf-8"
-Message-Id: <201210121155.03108.Martin@lichtvoll.de>
+  charset="iso-8859-1"
+Message-Id: <201210121201.34490.Martin@lichtvoll.de>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
 Am Mittwoch, 3. Oktober 2012 schrieb Ilya Dryomov:
-> > $ ./btrfs filesystem df /
-> > Path: /
+> On Wed, Oct 03, 2012 at 06:46:00PM +0200, Goffredo Baroncelli wrote:
+> > On 10/03/2012 05:01 PM, Ilya Dryomov wrote:
+> > >"Type" for the first column is probably enough.
+> > >
+> > >Why is the third column called Chunk-size?  If my understanding is
+> > >correct, it's just a break down of Disk_allocated from the summary
+> > >section.  If so, why not call it Disk_allocated to avoid confusion?
 > >
-> > Summary:
-> >   Disk_size:                 72.57GB
-> >   Disk_allocated:            25.10GB
-> >   Disk_unallocated:          47.48GB
-> >   Logical_size:              23.06GB
-> >   Used:                      11.01GB
-> >   Free_(Estimated):          55.66GB    (Max: 59.52GB, Min: 35.78GB)
-> >   Data_to_disk_ratio:           92 %
 > > 
 > >
-> > Details:
-
-How about calling this "Chunks:"?
-
-Its actually what is being displayed.
-
-> >   Chunk-type  Mode      Chunk-size Logical-size        Used
+> > Using everywhere Disk_<something> was my first attempt. But after
+> > some thoughts I decided that these are two different kind of
+> > information. It is true that Disk_allocated is the sum of
+> > Chunk-Sizes... But my feels is that this is a kind of
+> > "implementation details". If some other type of allocation unit will
+> > be added to BTRFS, then these will be added to Disk_allocated, but
+> > not to Chunk list...
+> > I prefer to not change the wording until an enough critical mass of
+> > people converge to a unique solution .
 > 
-> "Type" for the first column is probably enough.
+> It is the chunks that is the implementation detail that we want to
+> hide. Average Btrfs user wouldn't want to know anything about chunks,
+> the only thing he'd be interested in is Disk_allocated and similar
+> fields.
 
-Then Chunk-type can become "Type"...
+Hmm, thats an argument as well.
 
-> Why is the third column called Chunk-size?  If my understanding is
-> correct, it's just a break down of Disk_allocated from the summary
-> section.  If so, why not call it Disk_allocated to avoid confusion?
+But how to name it differently without completely hiding aways what it is.
 
-... and "Chunk-size" just "Size".
+One could speak of data types or so. So we have Data, Metadata and System 
+data areas on the disk. That are made of several chunks. But since the 
+command displays the summary of all chunks, one could speak about data 
+areas.
 
-> Also, why do you use dashes instead of underbars for table headers?
+Anybody a better name for the summary of all chunks of one type?
 
-I prefer dashes, or even spaces, but spaces are more difficult to parse.
+Anyway, I like it as it is in this patch set way more than before. So from 
+my point of view: Put it in and probably change output a bit later when 
+there is some more feedback about it available.
 
-So or so I think scripts better do not parse a user formatted output – it 
-sets the output format thats intended for the users viewing pleasure in 
-stone. Then its better to provide an option to get all of this in 
-parseable format. fio 2.0.10 has a JSON outputter for easy parsing, maybe 
-some of that can be used – in a different patch set.
-
-Ciao,
+Thanks,
 -- 
 Martin 'Helios' Steigerwald - http://www.Lichtvoll.de
 GPG: 03B0 0D6C 0040 0710 4AFA  B82F 991B EAAC A599 84C7

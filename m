@@ -1,113 +1,56 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-ee0-f46.google.com ([74.125.83.46]:34879 "EHLO
-	mail-ee0-f46.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1754011Ab2JMTOq (ORCPT
+Received: from rcsinet15.oracle.com ([148.87.113.117]:32622 "EHLO
+	rcsinet15.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1755787Ab2JLFRe (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Sat, 13 Oct 2012 15:14:46 -0400
-Received: by mail-ee0-f46.google.com with SMTP id b15so2404120eek.19
-        for <linux-btrfs@vger.kernel.org>; Sat, 13 Oct 2012 12:14:45 -0700 (PDT)
-From: Goffredo Baroncelli <kreijack@gmail.com>
-To: Chris Mason <chris.mason@fusionio.com>
-Cc: Goffredo Baroncelli <kreijack@gmail.com>, Hugo Mills <hugo@carfax.org.uk>,
-        Roman Mamedov <rm@romanrm.ru>,
-        =?UTF-8?B?U8OpYmFzdGllbiBNYXVyeQ==?= <sebastien.maury@inserm.fr>,
-        Ilya Dryomov <idryomov@gmail.com>, linux-btrfs@vger.kernel.org,
-        Martin Steigerwald <Martin@lichtvoll.de>
-Subject: [PATCH][BTRFS-PROGS][V6] btrfs filesystem df
-Date: Sat, 13 Oct 2012 21:14:57 +0200
-Message-Id: <1350155699-14338-1-git-send-email-kreijack@gmail.com>
+	Fri, 12 Oct 2012 01:17:34 -0400
+Received: from ucsinet22.oracle.com (ucsinet22.oracle.com [156.151.31.94])
+	by rcsinet15.oracle.com (Sentrion-MTA-4.2.2/Sentrion-MTA-4.2.2) with ESMTP id q9C5HXhq031191
+	(version=TLSv1/SSLv3 cipher=DHE-RSA-AES256-SHA bits=256 verify=OK)
+	for <linux-btrfs@vger.kernel.org>; Fri, 12 Oct 2012 05:17:34 GMT
+Received: from acsmt357.oracle.com (acsmt357.oracle.com [141.146.40.157])
+	by ucsinet22.oracle.com (8.14.4+Sun/8.14.4) with ESMTP id q9C5HWkP015378
+	(version=TLSv1/SSLv3 cipher=DHE-RSA-AES256-SHA bits=256 verify=NO)
+	for <linux-btrfs@vger.kernel.org>; Fri, 12 Oct 2012 05:17:33 GMT
+Received: from abhmt109.oracle.com (abhmt109.oracle.com [141.146.116.61])
+	by acsmt357.oracle.com (8.12.11.20060308/8.12.11) with ESMTP id q9C5HWlD024712
+	for <linux-btrfs@vger.kernel.org>; Fri, 12 Oct 2012 00:17:32 -0500
+From: Anand jain <Anand.Jain@oracle.com>
+To: linux-btrfs@vger.kernel.org
+Cc: Anand Jain <anand.jain@oracle.com>
+Subject: [PATCH 0/4] Add show sub command to btrfs subvolume
+Date: Fri, 12 Oct 2012 13:20:50 +0800
+Message-Id: <1350019254-22036-1-git-send-email-Anand.Jain@oracle.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hi Chris,
+From: Anand Jain <anand.jain@oracle.com>
 
-this serie of patches updated the command "btrfs filesystem
-df". I update this command because it is not so easy to get
-the information about the disk usage from the command "fi df" and "fi show".
-This patch was the result of some discussions on the btrfs 
-mailing list. Many thanks to all the contributors.
+This set of patch will add show sub-command to 
+btrfs subvolume, which is to show more information
+about a given subvol or snapshot. At present it shows
+3 info, I hope this will be further useful if enhanced
+as needed.
 
-from the man page (see 2nd patch):
-
-[...]
-The  command  btrfs  filesystem  df is used to query the
-status of the chunks, how many space on the disk(s) are used  by
-the  chunks,  how many space are available in the chunks, and an
-estimation of the free space of the filesystem.
-[...]
-
-$ ./btrfs filesystem df --help
-usage: btrfs filesystem disk-usage [-k] <path> [<path>..]
-
-    Show space usage information for a mount point(s).
-
-    -k  Set KB (1024 bytes) as unit
-
-$ ./btrfs filesystem df /
-Path: /
-Summary:
-  Disk_size:                 72.57GB
-  Disk_allocated:            25.10GB
-  Disk_unallocated:          47.48GB
-  Logical_size:              23.06GB
-  Used:                      11.01GB
-  Free_(Estimated):          55.66GB    (Max: 59.52GB, Min: 35.78GB)
-  Data_to_disk_ratio:           92 %
-
-Allocated_area:
-  Type        Mode       Size_(disk)    Size_(logical)          Used
-  Data        Single         21.01GB           21.01GB       12.77GB
-  System      DUP            80.00MB           40.00MB        4.00KB
-  System      Single          4.00MB            4.00MB          0.00
-  Metadata    DUP             4.00GB            2.00GB      709.63MB
-  Metadata    Single          8.00MB            8.00MB          0.00
-
-Where:
-        Disk_size                       -> sum of sizes of teh disks
-        Disk_allocated                  -> sum of chunk sizes
-        Disk_unallocated                -> Disk_size - Disk_allocated
-        Logical_size                    -> sum of logical area sizes
-        Used                            -> logical area used
-        Free_(Estimated)                -> on the basis of allocated
-                                           chunk, an estrapolation of
-                                           the free space
-        Data_to_disk_ratio              -> ration between the space occuped
-                                           by a chunk and the real space
-                                           available ( due to duplication
-                                           and/or RAID level)
-        Type				-> kind of chunk
-        Mode                            -> allocation policy of a chunk
-        Size_(disk)                     -> area of disk(s) occuped by the
-                                           chunk (see it as raw space used)
-        Size_(logical)                  -> logical area size of the chunk
-        Used                            -> portion of the logical area
-                                           used by the filesystem
+eg:
+# btrfs su show /btrfs/sssv3
+/btrfs/sssv3
+	uuid: 		c5d646b5-a749-c646-b082-6d9a3ca870be
+	Parent uuid: 	34bc8edd-113f-5141-a814-f6dfae069b01
+	Creation time: 	2012-10-12 11:37:00
 
 
+Thanks
 
-You can pull this change from
-   http://cassiopea.homelinux.net/git/btrfs-progs-unstable.git
-branch
-   disk_free
+Anand Jain (4):
+  Btrfs-progs: introduce btrfs_get_subvols function
+  Btrfs-progs: need struct root_info to be accesible
+  Btrfs-progs: method to fetch root info for subvol
+  Btrfs-progs: add btrfs subvol show cli
 
-Please pull.
-
-Signed-off-by: Goffredo Baroncelli <kreijack@gmail.com>
-
-BR
-Goffredo Baroncelli
-
-Changelog:
-V5->V6		Th V5 was a wrong patch, please discard it.
-V4->V5		Add a close(fd) to avoid file descriptor leaking
-V3->V4		Removed the switch -d -s from getopt(), aligned the
-		column Size_(logical), renamed the fields:
-		- Details -> Allocated_area
-		- Chunk_type -> Type
-V2->V3          Removed the options '-s' and '-d'; replaced Chunk-size 
-                and Logical-size with Size_(disk) and Size_(logical).
-                Update the man page.
-V1->V2          Uses getopt(); replace "-" with "_"; change the behaviour
-                of the switches '-s' and '-d'.
-V0->V1          Change the name of command from disk-usage to df
+ btrfs-list.c     |  119 ++++++++++++++++++++++++++---------------------------
+ btrfs-list.h     |   49 ++++++++++++++++++++++-
+ cmds-subvolume.c |  113 +++++++++++++++++++++++++++++++++++++++++++++++++++
+ man/btrfs.8.in   |    6 +++
+ 4 files changed, 225 insertions(+), 62 deletions(-)
 

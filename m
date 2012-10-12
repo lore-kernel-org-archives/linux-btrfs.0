@@ -1,68 +1,71 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mondschein.lichtvoll.de ([194.150.191.11]:53865 "EHLO
-	mail.lichtvoll.de" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S933710Ab2JLKBf (ORCPT
+Received: from mail-lb0-f174.google.com ([209.85.217.174]:43470 "EHLO
+	mail-lb0-f174.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1757937Ab2JLKG1 (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Fri, 12 Oct 2012 06:01:35 -0400
-From: Martin Steigerwald <Martin@lichtvoll.de>
-To: linux-btrfs@vger.kernel.org
-Subject: Re: [PATCH][BTRFS-PROGS][V1] btrfs filesystem df
-Date: Fri, 12 Oct 2012 12:01:34 +0200
-Cc: Ilya Dryomov <idryomov@gmail.com>,
-        Goffredo Baroncelli <kreijack@gmail.com>,
-        Chris Mason <chris.mason@fusionio.com>,
-        Goffredo Baroncelli <kreijack@inwind.it>
-References: <1349264596-9383-1-git-send-email-kreijack@inwind.it> <506C6BC8.5050809@gmail.com> <20121003174643.GB2890@zambezi.lan> (sfid-20121003_220020_097175_EDF4F210)
-In-Reply-To: <20121003174643.GB2890@zambezi.lan>
+	Fri, 12 Oct 2012 06:06:27 -0400
+Received: by mail-lb0-f174.google.com with SMTP id n3so1950879lbo.19
+        for <linux-btrfs@vger.kernel.org>; Fri, 12 Oct 2012 03:06:25 -0700 (PDT)
 MIME-Version: 1.0
-Content-Type: Text/Plain;
-  charset="iso-8859-1"
-Message-Id: <201210121201.34490.Martin@lichtvoll.de>
+In-Reply-To: <CAKcLGm8-FYv7CSZ+W9DKtL95fA3nt0Uv9xK77AvqqPeeefySsw@mail.gmail.com>
+References: <CAKcLGm8-FYv7CSZ+W9DKtL95fA3nt0Uv9xK77AvqqPeeefySsw@mail.gmail.com>
+Date: Fri, 12 Oct 2012 12:06:25 +0200
+Message-ID: <CAOcd+r3stdeUUN=YJyMj3dgb5qYht5OaFvD-rJJmsqvNhfBV8A@mail.gmail.com>
+Subject: Re: Two Issues with Btrfs Delayed Cleaner Process (linux-next)
+From: Alex Lyakas <alex.btrfs@zadarastorage.com>
+To: Mitch Harder <mitch.harder@sabayonlinux.org>
+Cc: linux-btrfs <linux-btrfs@vger.kernel.org>, miaox@cn.fujitsu.com
+Content-Type: text/plain; charset=ISO-8859-1
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Am Mittwoch, 3. Oktober 2012 schrieb Ilya Dryomov:
-> On Wed, Oct 03, 2012 at 06:46:00PM +0200, Goffredo Baroncelli wrote:
-> > On 10/03/2012 05:01 PM, Ilya Dryomov wrote:
-> > >"Type" for the first column is probably enough.
-> > >
-> > >Why is the third column called Chunk-size?  If my understanding is
-> > >correct, it's just a break down of Disk_allocated from the summary
-> > >section.  If so, why not call it Disk_allocated to avoid confusion?
-> >
-> > 
-> >
-> > Using everywhere Disk_<something> was my first attempt. But after
-> > some thoughts I decided that these are two different kind of
-> > information. It is true that Disk_allocated is the sum of
-> > Chunk-Sizes... But my feels is that this is a kind of
-> > "implementation details". If some other type of allocation unit will
-> > be added to BTRFS, then these will be added to Disk_allocated, but
-> > not to Chunk list...
-> > I prefer to not change the wording until an enough critical mass of
-> > people converge to a unique solution .
-> 
-> It is the chunks that is the implementation detail that we want to
-> hide. Average Btrfs user wouldn't want to know anything about chunks,
-> the only thing he'd be interested in is Disk_allocated and similar
-> fields.
+Hi Mitch,
+for issue (1) I proposed a small patch here:
+http://www.spinics.net/lists/linux-btrfs/msg19574.html
+which resolves it for me. The problem is that there are subvolumes
+that still exist in the root tree, but don't have their ROOT_BACKREF
+entry anymore.
 
-Hmm, thats an argument as well.
-
-But how to name it differently without completely hiding aways what it is.
-
-One could speak of data types or so. So we have Data, Metadata and System 
-data areas on the disk. That are made of several chunks. But since the 
-command displays the summary of all chunks, one could speak about data 
-areas.
-
-Anybody a better name for the summary of all chunks of one type?
-
-Anyway, I like it as it is in this patch set way more than before. So from 
-my point of view: Put it in and probably change output a bit later when 
-there is some more feedback about it available.
+However, Miao's rework of the subvolume listing code was to improve
+its scalability, which my quick patch somewhat breaks....So you can
+try the patch meanwhile, but Miao will probably want to something
+smarter...
 
 Thanks,
--- 
-Martin 'Helios' Steigerwald - http://www.Lichtvoll.de
-GPG: 03B0 0D6C 0040 0710 4AFA  B82F 991B EAAC A599 84C7
+Alex.
+
+
+
+On Mon, Oct 8, 2012 at 7:41 PM, Mitch Harder
+<mitch.harder@sabayonlinux.org> wrote:
+> I've run across two issues with the delayed cleaner process running a
+> kernel based on the 3.6.0 btrfs-next branch in Josef's git repository.
+>
+> (1)  I'm getting an error when trying to list my subvolumes whenever
+> the cleaner thread is running:
+>
+> # btrfs su li /mnt/benchmark/
+> ERROR: Failed to lookup path for root 0 - No such file or directory
+>
+> As long as the cleaner thread is idle, I can run this command without error.
+>
+> (2)  I ran into an issue on a slower x86 machine (AMD Athlon XP 2600+)
+> where the cleaner thread literally required an hour to finish deleting
+> a subvolume that contained the sources for a kernel I had previously
+> built.
+>
+> The machine was responsive the whole time, and the cleaner thread
+> never required much more than 5-10% of the CPU, leaving ample idle
+> time.
+>
+> Interestingly, every attempt to replicate this behaviour resulted in
+> the cleaner thread finishing in a few seconds.
+>
+> My first issue replicates every time the cleaner thread is running.
+>
+> I'll need to work on the second issue for a while to see if I can get
+> it to replicate.
+> --
+> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
+> the body of a message to majordomo@vger.kernel.org
+> More majordomo info at  http://vger.kernel.org/majordomo-info.html

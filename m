@@ -1,71 +1,66 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-lb0-f174.google.com ([209.85.217.174]:43470 "EHLO
-	mail-lb0-f174.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1757937Ab2JLKG1 (ORCPT
+Received: from mondschein.lichtvoll.de ([194.150.191.11]:56283 "EHLO
+	mail.lichtvoll.de" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1751132Ab2JLKc5 (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Fri, 12 Oct 2012 06:06:27 -0400
-Received: by mail-lb0-f174.google.com with SMTP id n3so1950879lbo.19
-        for <linux-btrfs@vger.kernel.org>; Fri, 12 Oct 2012 03:06:25 -0700 (PDT)
+	Fri, 12 Oct 2012 06:32:57 -0400
+From: Martin Steigerwald <Martin@lichtvoll.de>
+To: linux-btrfs@vger.kernel.org
+Subject: Re: Varying Leafsize and Nodesize in Btrfs
+Date: Fri, 12 Oct 2012 12:32:55 +0200
+Cc: Mitch Harder <mitch.harder@sabayonlinux.org>
+References: <CAKcLGm_MKEdTiHFBd-b-v2sN5gJmgFRqsykzWRXTVqUw4O6Acw@mail.gmail.com> (sfid-20120830_172515_413469_B4014793)
+In-Reply-To: <CAKcLGm_MKEdTiHFBd-b-v2sN5gJmgFRqsykzWRXTVqUw4O6Acw@mail.gmail.com>
 MIME-Version: 1.0
-In-Reply-To: <CAKcLGm8-FYv7CSZ+W9DKtL95fA3nt0Uv9xK77AvqqPeeefySsw@mail.gmail.com>
-References: <CAKcLGm8-FYv7CSZ+W9DKtL95fA3nt0Uv9xK77AvqqPeeefySsw@mail.gmail.com>
-Date: Fri, 12 Oct 2012 12:06:25 +0200
-Message-ID: <CAOcd+r3stdeUUN=YJyMj3dgb5qYht5OaFvD-rJJmsqvNhfBV8A@mail.gmail.com>
-Subject: Re: Two Issues with Btrfs Delayed Cleaner Process (linux-next)
-From: Alex Lyakas <alex.btrfs@zadarastorage.com>
-To: Mitch Harder <mitch.harder@sabayonlinux.org>
-Cc: linux-btrfs <linux-btrfs@vger.kernel.org>, miaox@cn.fujitsu.com
-Content-Type: text/plain; charset=ISO-8859-1
+Content-Type: Text/Plain;
+  charset="iso-8859-1"
+Message-Id: <201210121232.55415.Martin@lichtvoll.de>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hi Mitch,
-for issue (1) I proposed a small patch here:
-http://www.spinics.net/lists/linux-btrfs/msg19574.html
-which resolves it for me. The problem is that there are subvolumes
-that still exist in the root tree, but don't have their ROOT_BACKREF
-entry anymore.
+Am Donnerstag, 30. August 2012 schrieb Mitch Harder:
+> I've been trying out different leafsize/nodesize settings by
+> benchmarking some typical operations.
+> 
+> These changes had more impact than I expected.  Using a
+> leafsize/nodesize of either 8192 or 16384 provided a noticeable
+> improvement in my limited testing.
+> 
+> These results are similar to some that Chris Mason has already
+> reported:  https://oss.oracle.com/~mason/blocksizes/
+> 
+> I noticed that metadata allocation was more efficient with bigger
+> block sizes.  My data was git kernel sources, which will utilize
+> btrfs' inlining.  This may have tilted the scales.
+> 
+> Read operations seemed to benefit the most.  Write operations seemed
+> to get punished when the leafsize/nodesize was increased to 64K.
+> 
+> Are there any known downsides to using a leafsize/nodesize bigger than
+> the default 4096?
+> 
+> 
+> Time (seconds) to finish 7 simultaneous copy operations on a set of
+> Linux kernel git sources.
+> 
+> Leafsize/
+> Nodesize    Time (Std Dev%)
+> 4096         124.7 (1.25%)
+> 8192         115.2 (0.69%)
+> 16384        114.8 (0.53%)
+> 65536        130.5 (0.3%)
 
-However, Miao's rework of the subvolume listing code was to improve
-its scalability, which my quick patch somewhat breaks....So you can
-try the patch meanwhile, but Miao will probably want to something
-smarter...
+Thanks for your testing, Mitch.
 
-Thanks,
-Alex.
+I would be interested in results for 32768 bytes as well.
 
+Why?
 
+It improves until 16384 bytes but then it gets worse with 65536 bytes. It 
+would be interesting to know whether it improves for 32768 or already gets 
+worse with that value :)
 
-On Mon, Oct 8, 2012 at 7:41 PM, Mitch Harder
-<mitch.harder@sabayonlinux.org> wrote:
-> I've run across two issues with the delayed cleaner process running a
-> kernel based on the 3.6.0 btrfs-next branch in Josef's git repository.
->
-> (1)  I'm getting an error when trying to list my subvolumes whenever
-> the cleaner thread is running:
->
-> # btrfs su li /mnt/benchmark/
-> ERROR: Failed to lookup path for root 0 - No such file or directory
->
-> As long as the cleaner thread is idle, I can run this command without error.
->
-> (2)  I ran into an issue on a slower x86 machine (AMD Athlon XP 2600+)
-> where the cleaner thread literally required an hour to finish deleting
-> a subvolume that contained the sources for a kernel I had previously
-> built.
->
-> The machine was responsive the whole time, and the cleaner thread
-> never required much more than 5-10% of the CPU, leaving ample idle
-> time.
->
-> Interestingly, every attempt to replicate this behaviour resulted in
-> the cleaner thread finishing in a few seconds.
->
-> My first issue replicates every time the cleaner thread is running.
->
-> I'll need to work on the second issue for a while to see if I can get
-> it to replicate.
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+Ciao,
+-- 
+Martin 'Helios' Steigerwald - http://www.Lichtvoll.de
+GPG: 03B0 0D6C 0040 0710 4AFA  B82F 991B EAAC A599 84C7

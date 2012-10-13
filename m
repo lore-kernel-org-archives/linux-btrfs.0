@@ -1,209 +1,397 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from acsinet15.oracle.com ([141.146.126.227]:19348 "EHLO
-	acsinet15.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S932467Ab2JLFRl (ORCPT
+Received: from mail-ea0-f174.google.com ([209.85.215.174]:39494 "EHLO
+	mail-ea0-f174.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1753929Ab2JMRsZ (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Fri, 12 Oct 2012 01:17:41 -0400
-Received: from acsinet21.oracle.com (acsinet21.oracle.com [141.146.126.237])
-	by acsinet15.oracle.com (Sentrion-MTA-4.2.2/Sentrion-MTA-4.2.2) with ESMTP id q9C5Hdcr002069
-	(version=TLSv1/SSLv3 cipher=DHE-RSA-AES256-SHA bits=256 verify=OK)
-	for <linux-btrfs@vger.kernel.org>; Fri, 12 Oct 2012 05:17:39 GMT
-Received: from acsmt356.oracle.com (acsmt356.oracle.com [141.146.40.156])
-	by acsinet21.oracle.com (8.14.4+Sun/8.14.4) with ESMTP id q9C5Hcop012351
-	(version=TLSv1/SSLv3 cipher=DHE-RSA-AES256-SHA bits=256 verify=NO)
-	for <linux-btrfs@vger.kernel.org>; Fri, 12 Oct 2012 05:17:39 GMT
-Received: from abhmt109.oracle.com (abhmt109.oracle.com [141.146.116.61])
-	by acsmt356.oracle.com (8.12.11.20060308/8.12.11) with ESMTP id q9C5HcTY015338
-	for <linux-btrfs@vger.kernel.org>; Fri, 12 Oct 2012 00:17:38 -0500
-From: Anand jain <Anand.Jain@oracle.com>
-To: linux-btrfs@vger.kernel.org
-Cc: Anand Jain <anand.jain@oracle.com>
-Subject: [PATCH 4/4] Btrfs-progs: add btrfs subvol show cli
-Date: Fri, 12 Oct 2012 13:20:54 +0800
-Message-Id: <1350019254-22036-5-git-send-email-Anand.Jain@oracle.com>
-In-Reply-To: <1350019254-22036-1-git-send-email-Anand.Jain@oracle.com>
-References: <1350019254-22036-1-git-send-email-Anand.Jain@oracle.com>
+	Sat, 13 Oct 2012 13:48:25 -0400
+Received: by mail-ea0-f174.google.com with SMTP id c13so832598eaa.19
+        for <linux-btrfs@vger.kernel.org>; Sat, 13 Oct 2012 10:48:24 -0700 (PDT)
+From: Goffredo Baroncelli <kreijack@gmail.com>
+To: Chris Mason <chris.mason@fusionio.com>
+Cc: Hugo Mills <hugo@carfax.org.uk>, Roman Mamedov <rm@romanrm.ru>,
+        =?UTF-8?B?U8OpYmFzdGllbiBNYXVyeQ==?= <sebastien.maury@inserm.fr>,
+        Ilya Dryomov <idryomov@gmail.com>, linux-btrfs@vger.kernel.org,
+        Martin Steigerwald <Martin@lichtvoll.de>,
+        Goffredo Baroncelli <kreijack@inwind.it>
+Subject: [PATCH 1/2] Update btrfs filesystem df command
+Date: Sat, 13 Oct 2012 19:47:40 +0200
+Message-Id: <1350150461-11099-2-git-send-email-kreijack@gmail.com>
+In-Reply-To: <1350150461-11099-1-git-send-email-kreijack@gmail.com>
+References: <1350150461-11099-1-git-send-email-kreijack@gmail.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-From: Anand Jain <anand.jain@oracle.com>
+From: Goffredo Baroncelli <kreijack@inwind.it>
 
-This will add a sub command to show information about a subvol.
-eg:
-btrfs su show /btrfs/sssv3
-/btrfs/sssv3
-	uuid: 		c5d646b5-a749-c646-b082-6d9a3ca870be
-	Parent uuid: 	34bc8edd-113f-5141-a814-f6dfae069b01
-	Creation time: 	2012-10-12 11:37:00
-
-Signed-off-by: Anand Jain <anand.jain@oracle.com>
+The  command  btrfs  filesystem  df is used to query the
+status of the chunks, how many space on the disk(s) are used  by
+the  chunks,  how many space are available in the chunks, and an
+estimation of the free space of the filesystem.
 ---
- cmds-subvolume.c |  113 ++++++++++++++++++++++++++++++++++++++++++++++++++++++
- man/btrfs.8.in   |    6 +++
- 2 files changed, 119 insertions(+), 0 deletions(-)
+ cmds-filesystem.c |  308 ++++++++++++++++++++++++++++++++++++++++++++---------
+ 1 file changed, 259 insertions(+), 49 deletions(-)
 
-diff --git a/cmds-subvolume.c b/cmds-subvolume.c
-index 92b69d1..13defa9 100644
---- a/cmds-subvolume.c
-+++ b/cmds-subvolume.c
-@@ -24,6 +24,7 @@
- #include <libgen.h>
- #include <limits.h>
- #include <getopt.h>
-+#include <uuid/uuid.h>
+diff --git a/cmds-filesystem.c b/cmds-filesystem.c
+index b1457de..509e393 100644
+--- a/cmds-filesystem.c
++++ b/cmds-filesystem.c
+@@ -22,6 +22,7 @@
+ #include <errno.h>
+ #include <uuid/uuid.h>
+ #include <ctype.h>
++#include <sys/vfs.h>
  
  #include "kerncompat.h"
- #include "ioctl.h"
-@@ -703,6 +704,117 @@ static int cmd_find_new(int argc, char **argv)
+ #include "ctree.h"
+@@ -39,25 +40,86 @@ static const char * const filesystem_cmd_group_usage[] = {
+ 	NULL
+ };
+ 
+-static const char * const cmd_df_usage[] = {
+-	"btrfs filesystem df <path>",
+-	"Show space usage information for a mount point",
+-	NULL
+-};
++static u64 disk_size( char *path){
++	struct statfs	sfs;
++
++	if( statfs(path, &sfs) < 0 )
++		return 0;
++	else
++		return sfs.f_bsize * sfs.f_blocks;
++
++}
++
++static void **strings_to_free=0;
++static int count_string_to_free=0;
++
++static void add_strings_to_free(char *s)
++{
++	int  size;
++
++	size = sizeof(void*) * ++count_string_to_free;
++	strings_to_free = realloc( strings_to_free, size);
++
++	/* if we don't have enough memory, we have more serius
++	   problem than that a wrong handling of not enough memory */
++	if(!strings_to_free){
++		fprintf(stderr, "add_string_to_free(): Not enough memory\n");
++		strings_to_free=0;
++		count_string_to_free=0;
++	}
++
++	strings_to_free[count_string_to_free-1] = s;
++}
++
++static void free_strings_to_free( )
++{
++	int	i;
++	for( i = 0 ; i < count_string_to_free ; i++ )
++		free(strings_to_free[i]);
++
++	free(strings_to_free);
++
++	strings_to_free=0;
++	count_string_to_free=0;
++}
++
++#define DF_SHOW_SUMMARY 	(1<<1)
++#define DF_SHOW_DETAIL		(1<<2)
++#define DF_HUMAN_UNIT		(1<<3)
+ 
+-static int cmd_df(int argc, char **argv)
++static char *df_pretty_sizes(u64 size, int mode)
++{
++	char *s;
++
++	if( mode & DF_HUMAN_UNIT ){
++		s = pretty_sizes(size);
++		if(!s) return NULL;
++	} else {
++		s = malloc(20);
++		if(!s) return NULL;
++		sprintf(s, "%llu", size/1024);
++	}
++
++	add_strings_to_free(s);
++	return s;
++}
++
++
++static int _cmd_disk_free(char *path, int mode)
+ {
+ 	struct btrfs_ioctl_space_args *sargs;
+ 	u64 count = 0, i;
+ 	int ret;
+ 	int fd;
+-	int e;
+-	char *path;
+-
+-	if (check_argc_exact(argc, 2))
+-		usage(cmd_df_usage);
+-
+-	path = argv[1];
++	int e, width, width_sl;
++	u64  total_disk;		/* filesystem size == sum of
++					   disks sizes */
++	u64  total_chunks;		/* sum of chunks sizes on disk(s) */
++	u64  total_used;		/* logical space used */
++	u64  total_free;		/* logical space un-used */
++	double K;
++	char	*rpath;
++	
+ 
+ 	fd = open_file_or_dir(path);
+ 	if (fd < 0) {
+@@ -103,56 +165,204 @@ static int cmd_df(int argc, char **argv)
+ 		return ret;
+ 	}
+ 
+-	for (i = 0; i < sargs->total_spaces; i++) {
+-		char description[80];
+-		char *total_bytes;
+-		char *used_bytes;
+-		int written = 0;
+-		u64 flags = sargs->spaces[i].flags;
++	total_disk = disk_size(path);
++	e = errno;
++	if( total_disk == 0 ){
++		fprintf(stderr, "ERROR: couldn't get space info on '%s' - %s\n",
++			path, strerror(e));
++		close(fd);
++		free(sargs);
++		return 19;
++	}
++		
++	total_chunks = total_used = total_free = 0;
+ 
+-		memset(description, 0, 80);
++	for (i = 0; i < sargs->total_spaces; i++) {
++		int  ratio=1;
++		u64  allocated;
+ 
+-		if (flags & BTRFS_BLOCK_GROUP_DATA) {
+-			if (flags & BTRFS_BLOCK_GROUP_METADATA) {
+-				snprintf(description, 14, "%s",
+-					 "Data+Metadata");
+-				written += 13;
+-			} else {
+-				snprintf(description, 5, "%s", "Data");
+-				written += 4;
+-			}
+-		} else if (flags & BTRFS_BLOCK_GROUP_SYSTEM) {
+-			snprintf(description, 7, "%s", "System");
+-			written += 6;
+-		} else if (flags & BTRFS_BLOCK_GROUP_METADATA) {
+-			snprintf(description, 9, "%s", "Metadata");
+-			written += 8;
+-		}
++		u64 flags = sargs->spaces[i].flags;
+ 
+ 		if (flags & BTRFS_BLOCK_GROUP_RAID0) {
+-			snprintf(description+written, 8, "%s", ", RAID0");
+-			written += 7;
++			ratio=1;
+ 		} else if (flags & BTRFS_BLOCK_GROUP_RAID1) {
+-			snprintf(description+written, 8, "%s", ", RAID1");
+-			written += 7;
++			ratio=2;
+ 		} else if (flags & BTRFS_BLOCK_GROUP_DUP) {
+-			snprintf(description+written, 6, "%s", ", DUP");
+-			written += 5;
++			ratio=2;
+ 		} else if (flags & BTRFS_BLOCK_GROUP_RAID10) {
+-			snprintf(description+written, 9, "%s", ", RAID10");
+-			written += 8;
++			ratio=2;
++		} else {
++			ratio=1;
+ 		}
+ 
+-		total_bytes = pretty_sizes(sargs->spaces[i].total_bytes);
+-		used_bytes = pretty_sizes(sargs->spaces[i].used_bytes);
+-		printf("%s: total=%s, used=%s\n", description, total_bytes,
+-		       used_bytes);
++		allocated = sargs->spaces[i].total_bytes * ratio;
++
++		total_chunks += allocated;
++		total_used += sargs->spaces[i].used_bytes;
++		total_free += (sargs->spaces[i].total_bytes - 
++					sargs->spaces[i].used_bytes);
++
++	}
++	K = ((double)total_used + (double)total_free) /
++	                (double)total_chunks;
++
++	if( mode & DF_HUMAN_UNIT ){
++		width = 14;
++		width_sl = 18;
++	} else {
++		width = 18;
++		width_sl = 18;
+ 	}
++
++	rpath = realpath(path, 0);
++	printf("Path: %s\n", rpath);
++	free(rpath);
++
++	if( mode & DF_SHOW_SUMMARY ){
++		printf("Summary:\n");
++		printf("  Disk_size:\t\t%*s\n", width,
++			df_pretty_sizes(total_disk, mode));
++		printf("  Disk_allocated:\t%*s\n", width,
++			df_pretty_sizes(total_chunks, mode));
++		printf("  Disk_unallocated:\t%*s\n", width,
++			df_pretty_sizes(total_disk-total_chunks, mode));
++		printf("  Logical_size:\t\t%*s\n", width,
++			df_pretty_sizes(total_used+total_free, mode));
++		printf("  Used:\t\t\t%*s\n", width, 
++			df_pretty_sizes(total_used, mode));
++		printf("  Free_(Estimated):\t%*s\t(Max: %s, min: %s)\n",
++			width, 
++			df_pretty_sizes((u64)(K*total_disk-total_used),  mode),
++			df_pretty_sizes(total_disk-total_chunks+total_free, 
++				mode ),
++			df_pretty_sizes((total_disk-total_chunks)/2+total_free, 
++				mode ));
++		printf("  Data_to_disk_ratio:\t%*.0f %%\n",
++			width-2, K*100);
++	}
++
++	if( ( mode & DF_SHOW_DETAIL ) && ( mode & DF_SHOW_SUMMARY ) )
++		printf("\n");
++
++	if( mode & DF_SHOW_DETAIL ){
++		/* Remember: the terminals have maximum 80 columns
++		   do not believe to who says otherwise */
++		printf("Allocated_area:\n");
++		printf("  %-12s%-8s%*s%*s%*s\n",
++			"Type", 
++			"Mode",
++			width, "Size_(disk)", 
++			width_sl, "Size_(logical)", 
++			width, "Used"
++		);
++
++		for (i = 0; i < sargs->total_spaces; i++) {
++			char *description="";
++			int  ratio=1;
++			char *r_mode;
++			u64 allocated;
++
++			u64 flags = sargs->spaces[i].flags;
++
++			if (flags & BTRFS_BLOCK_GROUP_DATA) {
++				if (flags & BTRFS_BLOCK_GROUP_METADATA){
++					description = "Data+M.data";
++				} else {
++					description = "Data";
++				}
++			} else if (flags & BTRFS_BLOCK_GROUP_SYSTEM) {
++				description = "System";
++			} else if (flags & BTRFS_BLOCK_GROUP_METADATA) {
++				description = "Metadata";
++			}
++
++			if (flags & BTRFS_BLOCK_GROUP_RAID0) {
++				r_mode = "RAID0";
++				ratio=1;
++			} else if (flags & BTRFS_BLOCK_GROUP_RAID1) {
++				r_mode = "RAID1";
++				ratio=2;
++			} else if (flags & BTRFS_BLOCK_GROUP_DUP) {
++				r_mode = "DUP";
++				ratio=2;
++			} else if (flags & BTRFS_BLOCK_GROUP_RAID10) {
++				r_mode = "RAID10";
++				ratio=2;
++			} else {
++				r_mode = "Single";
++				ratio=1;
++			}
++
++			allocated = sargs->spaces[i].total_bytes * ratio;
++
++			printf("  %-12s%-8s%*s%*s%*s\n",
++				description,
++				r_mode,
++				width, 
++				df_pretty_sizes(allocated, mode),
++				width_sl,
++				df_pretty_sizes(sargs->spaces[i].total_bytes ,
++				    mode),
++				width,
++				df_pretty_sizes(sargs->spaces[i].used_bytes, 
++						mode));
++
++		}
++	}
++	free_strings_to_free();
+ 	free(sargs);
+ 
  	return 0;
  }
  
-+static const char * const cmd_subvol_show_usage[] = {
-+	"btrfs subvolume show <subvol-path>",
-+	"Show information about the given subvolume",
++static const char * const cmd_disk_free_usage[] = {
++	"btrfs filesystem df [-k] <path> [<path>..]",
++	"Show space usage information for a mount point(s).",
++	"",
++	"-k\tSet KB (1024 bytes) as unit",
 +	NULL
 +};
 +
-+static int cmd_subvol_show(int argc, char **argv)
++static int cmd_disk_free(int argc, char **argv)
 +{
-+	int ret, fd;
-+	char *subvol, *mnt = NULL;
-+	struct root_info get_ri;
-+	char tstr[256];
-+	char uuidparse[37];
 +
-+	if (check_argc_exact(argc, 2))
-+		usage(cmd_subvol_show_usage);
++	int 	flags=DF_SHOW_SUMMARY|DF_SHOW_DETAIL|DF_HUMAN_UNIT;
++	int	i, more_than_one=0;
 +
-+	subvol = argv[1];
-+
-+	ret = test_issubvolume(subvol);
-+	if (ret < 0) {
-+		fprintf(stderr, "ERROR: error accessing '%s'\n", subvol);
-+		return 12;
-+	}
-+	if (!ret) {
-+		fprintf(stderr, "ERROR: '%s' is not a subvolume\n", subvol);
-+		return 13;
++	optind = 1;
++	while(1){
++		char	c = getopt(argc, argv, "k");
++		if(c<0)
++			break;
++		switch(c){
++			case 'k':
++				flags &= ~DF_HUMAN_UNIT;
++				break;
++			default:
++				usage(cmd_disk_free_usage);
++		}
 +	}
 +
-+	ret = find_mount_root(subvol, &mnt);
-+	if (ret < 0) {
-+		fprintf(stderr, "ERROR: find_mount_root failed on %s: "
-+				"%s\n", subvol, strerror(-ret));
-+		return 12;
-+	}
-+	if (!strcmp(subvol, mnt))
-+		return 0;
-+
-+	/* +1 will point after the "/" */
-+	get_ri.full_path = subvol+strlen(mnt)+1;
-+
-+	if (!strcmp(get_ri.full_path, ""))
-+		return 0;
-+
-+	fd = open_file_or_dir(mnt);
-+	if (fd < 0) {
-+		fprintf(stderr, "ERROR: can't access '%s'\n", subvol);
-+		return 12;
++	if (check_argc_min(argc - optind, 1)){
++		usage(cmd_disk_free_usage);
++		return 21;
 +	}
 +
-+	if (btrfs_get_a_subvol(fd, &get_ri)) {
-+		fprintf(stderr, "ERROR: can't find '%s'\n",
-+			get_ri.full_path);
-+		close(fd);
-+		return 13;
++	for(i=optind; i< argc ; i++){
++		int r;
++		if(more_than_one)
++			printf("\n");
++		r = _cmd_disk_free(argv[i], flags);
++		if( r ) return r;
++		more_than_one=1;
++
 +	}
 +
-+	/* print the info */
-+	printf("%s/%s", mnt, get_ri.full_path);
-+	printf("\n");
-+	if (uuid_is_null(get_ri.uuid))
-+		strcpy(uuidparse, "-");
-+	else
-+		uuid_unparse(get_ri.uuid, uuidparse);
-+	printf("\t");
-+	printf("uuid: \t\t%s", uuidparse);
-+	printf("\n");
-+	if (uuid_is_null(get_ri.puuid))
-+		strcpy(uuidparse, "-");
-+	else
-+		uuid_unparse(get_ri.puuid, uuidparse);
-+	printf("\t");
-+	printf("Parent uuid: \t%s", uuidparse);
-+	printf("\n");
-+	if (get_ri.otime)
-+		strftime(tstr, 256, "%Y-%m-%d %X",
-+			 localtime(&get_ri.otime));
-+	else
-+		strcpy(tstr, "-");
-+	printf("\t");
-+	printf("Creation time: \t%s", tstr);
-+	printf("\n");
-+
-+/*	if in case we decide to have more available data
-+	to be shown we can use it as below.
-+
-+	printf("Object ID: %llu", get_ri.root_id);
-+	printf("\n");
-+	printf("Generation: %llu", get_ri.gen);
-+	printf("\n");
-+	printf("OGeneration: %llu", get_ri.ogen);
-+	printf("\n");
-+	printf("Parent: %llu", get_ri.ref_tree);
-+	printf("\n");
-+	printf("Top Level: %llu", get_ri.top_id);
-+	printf("\n");
-+*/
-+
-+	/* clean up */
-+	if (get_ri.path)
-+		free(get_ri.path);
-+	if (get_ri.name)
-+		free(get_ri.name);
-+	if (get_ri.full_path)
-+		free(get_ri.full_path);
-+
-+	close(fd);
-+	free(mnt);
 +	return 0;
-+}
++}	
++	
 +
- const struct cmd_group subvolume_cmd_group = {
- 	subvolume_cmd_group_usage, NULL, {
- 		{ "create", cmd_subvol_create, cmd_subvol_create_usage, NULL, 0 },
-@@ -714,6 +826,7 @@ const struct cmd_group subvolume_cmd_group = {
- 		{ "set-default", cmd_subvol_set_default,
- 			cmd_subvol_set_default_usage, NULL, 0 },
- 		{ "find-new", cmd_find_new, cmd_find_new_usage, NULL, 0 },
-+		{ "show", cmd_subvol_show, cmd_subvol_show_usage, NULL, 0 },
- 		{ 0, 0, 0, 0, 0 }
- 	}
- };
-diff --git a/man/btrfs.8.in b/man/btrfs.8.in
-index 9222580..57c25b0 100644
---- a/man/btrfs.8.in
-+++ b/man/btrfs.8.in
-@@ -17,6 +17,8 @@ btrfs \- control a btrfs filesystem
- .PP
- \fBbtrfs\fP \fBsubvolume get-default\fP\fI <path>\fP
- .PP
-+\fBbtrfs\fP \fBsubvolume show\fP\fI <path>\fP
-+.PP
- \fBbtrfs\fP \fBfilesystem defragment\fP -c[zlib|lzo] [-l \fIlen\fR] \
- [-s \fIstart\fR] [-t \fIsize\fR] -[vf] <\fIfile\fR>|<\fIdir\fR> \
- [<\fIfile\fR>|<\fIdir\fR>...]
-@@ -160,6 +162,10 @@ Get the default subvolume of the filesystem \fI<path>\fR. The output format
- is similar to \fBsubvolume list\fR command.
- .TP
++	
+ static int uuid_search(struct btrfs_fs_devices *fs_devices, char *search)
+ {
+ 	char uuidbuf[37];
+@@ -529,7 +739,7 @@ static int cmd_label(int argc, char **argv)
  
-+\fBsubvolume show\fR\fI <path>\fR
-+Show information of a given subvolume in the \fI<path>\fR.
-+.TP
-+
- \fBfilesystem defragment\fP -c[zlib|lzo] [-l \fIlen\fR] [-s \fIstart\fR] \
- [-t \fIsize\fR] -[vf] <\fIfile\fR>|<\fIdir\fR> [<\fIfile\fR>|<\fIdir\fR>...]
- 
+ const struct cmd_group filesystem_cmd_group = {
+ 	filesystem_cmd_group_usage, NULL, {
+-		{ "df", cmd_df, cmd_df_usage, NULL, 0 },
++		{ "df", cmd_disk_free, cmd_disk_free_usage, NULL, 0 },
+ 		{ "show", cmd_show, cmd_show_usage, NULL, 0 },
+ 		{ "sync", cmd_sync, cmd_sync_usage, NULL, 0 },
+ 		{ "defragment", cmd_defrag, cmd_defrag_usage, NULL, 0 },
 -- 
-1.7.1
+1.7.10.4
 

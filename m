@@ -1,68 +1,108 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-pa0-f46.google.com ([209.85.220.46]:37948 "EHLO
-	mail-pa0-f46.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1751094Ab2JPMEk (ORCPT
+Received: from mail-ee0-f46.google.com ([74.125.83.46]:64447 "EHLO
+	mail-ee0-f46.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1753929Ab2JMRsX (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 16 Oct 2012 08:04:40 -0400
-Received: by mail-pa0-f46.google.com with SMTP id hz1so5846278pad.19
-        for <linux-btrfs@vger.kernel.org>; Tue, 16 Oct 2012 05:04:40 -0700 (PDT)
-Message-ID: <507D4D4F.10807@gmail.com>
-Date: Tue, 16 Oct 2012 20:04:31 +0800
-From: Wang Sheng-Hui <shhuiw@gmail.com>
-MIME-Version: 1.0
-To: linux-btrfs@vger.kernel.org
-Subject: [PATCH] btrfs-progs: check non-digit character in the size value
- for mkfs options
-Content-Type: text/plain; charset=ISO-8859-1
+	Sat, 13 Oct 2012 13:48:23 -0400
+Received: by mail-ee0-f46.google.com with SMTP id b15so2383989eek.19
+        for <linux-btrfs@vger.kernel.org>; Sat, 13 Oct 2012 10:48:22 -0700 (PDT)
+From: Goffredo Baroncelli <kreijack@gmail.com>
+To: Chris Mason <chris.mason@fusionio.com>
+Cc: Hugo Mills <hugo@carfax.org.uk>, Roman Mamedov <rm@romanrm.ru>,
+        =?UTF-8?B?U8OpYmFzdGllbiBNYXVyeQ==?= <sebastien.maury@inserm.fr>,
+        Ilya Dryomov <idryomov@gmail.com>, linux-btrfs@vger.kernel.org,
+        Martin Steigerwald <Martin@lichtvoll.de>
+Subject: [PATCH][BTRFS-PROGS][V4] btrfs filesystem df
+Date: Sat, 13 Oct 2012 19:47:39 +0200
+Message-Id: <1350150461-11099-1-git-send-email-kreijack@gmail.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-When we run mkfs.btrfs, we can specify the size value for leafsize, etc.
-Current the limit is 65536, and the lower limit is 4096. Also, the size
-should be 4096 aligned. When we specify such value, parse_size just check
-the tailing non-digit character, but doesn't check other characters.
+Hi Chris,
 
-For example, run "mkfs.btrfs -l 40960b btrfs.img" will get nodesize 40960,
-leafsize 40960 and sectorsize 4096, which is expected. But if we typo
-4096bb, "mkfs.btrfs -l 4096bb btrfs.img", the result is nodesize 4096,
-leafsize 4096 and sectorsize 4096, which maybe not what we want and what
-we really want to type is 40960b.
+this serie of patches updated the command "btrfs filesystem
+df". I update this command because it is not so easy to get
+the information about the disk usage from the command "fi df" and "fi show".
+This patch was the result of some discussions on the btrfs 
+mailing list. Many thanks to all the contributors.
 
-Add check in parse_size to deal with the non-tailing non-digit characters.
+from the man page (see 2nd patch):
 
-Signed-off-by: Wang Sheng-Hui <shhuiw@gmail.com>
----
- mkfs.c |   11 +++++++++++
- 1 files changed, 11 insertions(+), 0 deletions(-)
+[...]
+The  command  btrfs  filesystem  df is used to query the
+status of the chunks, how many space on the disk(s) are used  by
+the  chunks,  how many space are available in the chunks, and an
+estimation of the free space of the filesystem.
+[...]
 
-diff --git a/mkfs.c b/mkfs.c
-index 2cc6051..11e64d2 100644
---- a/mkfs.c
-+++ b/mkfs.c
-@@ -60,6 +60,7 @@ static u64 parse_size(char *s)
- 	char c;
- 	u64 mult = 1;
- 	u64 ret;
-+	int i;
+$ ./btrfs filesystem df --help
+usage: btrfs filesystem disk-usage [-k] <path> [<path>..]
 
- 	s = strdup(s);
+    Show space usage information for a mount point(s).
 
-@@ -80,6 +81,16 @@ static u64 parse_size(char *s)
- 		}
- 		s[len - 1] = '\0';
- 	}
-+
-+	len = strlen(s);
-+	for (i = 0; i < len; i++) {
-+		if (!isdigit(s[i])) {
-+			fprintf(stderr, "Illegal size value contains "
-+				"non-digit character %c\n", s[i]);
-+			exit(1);
-+		}
-+	}
-+
- 	ret = atol(s) * mult;
- 	free(s);
- 	return ret;
--- 
-1.7.5.4
+    -k  Set KB (1024 bytes) as unit
+
+$ ./btrfs filesystem df /
+Path: /
+Summary:
+  Disk_size:                 72.57GB
+  Disk_allocated:            25.10GB
+  Disk_unallocated:          47.48GB
+  Logical_size:              23.06GB
+  Used:                      11.01GB
+  Free_(Estimated):          55.66GB    (Max: 59.52GB, Min: 35.78GB)
+  Data_to_disk_ratio:           92 %
+
+Allocated_area:
+  Type        Mode       Size_(disk)    Size_(logical)          Used
+  Data        Single         21.01GB           21.01GB       12.77GB
+  System      DUP            80.00MB           40.00MB        4.00KB
+  System      Single          4.00MB            4.00MB          0.00
+  Metadata    DUP             4.00GB            2.00GB      709.63MB
+  Metadata    Single          8.00MB            8.00MB          0.00
+
+Where:
+        Disk_size                       -> sum of sizes of teh disks
+        Disk_allocated                  -> sum of chunk sizes
+        Disk_unallocated                -> Disk_size - Disk_allocated
+        Logical_size                    -> sum of logical area sizes
+        Used                            -> logical area used
+        Free_(Estimated)                -> on the basis of allocated
+                                           chunk, an estrapolation of
+                                           the free space
+        Data_to_disk_ratio              -> ration between the space occuped
+                                           by a chunk and the real space
+                                           available ( due to duplication
+                                           and/or RAID level)
+        Type				-> kind of chunk
+        Mode                            -> allocation policy of a chunk
+        Size_(disk)                     -> area of disk(s) occuped by the
+                                           chunk (see it as raw space used)
+        Size_(logical)                  -> logical area size of the chunk
+        Used                            -> portion of the logical area
+                                           used by the filesystem
+
+
+
+You can pull this change from
+   http://cassiopea.homelinux.net/git/btrfs-progs-unstable.git
+branch
+   disk_free
+
+Please pull.
+
+BR
+Goffredo Baroncelli
+
+Changelog:
+V3->V4		Removed the switch -d -s from getopt(), aligned the
+		column Size_(logical), renamed the fields:
+		- Details -> Allocated_area
+		- Chunk_type -> Type
+V2->V3          Removed the options '-s' and '-d'; replaced Chunk-size 
+                and Logical-size with Size_(disk) and Size_(logical).
+                Update the man page.
+V1->V2          Uses getopt(); replace "-" with "_"; change the behaviour
+                of the switches '-s' and '-d'.
+V0->V1          Change the name of command from disk-usage to df
+

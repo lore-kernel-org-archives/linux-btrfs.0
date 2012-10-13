@@ -1,11 +1,11 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-ee0-f46.google.com ([74.125.83.46]:38375 "EHLO
+Received: from mail-ee0-f46.google.com ([74.125.83.46]:34879 "EHLO
 	mail-ee0-f46.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1753984Ab2JMSv5 (ORCPT
+	with ESMTP id S1754011Ab2JMTOq (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Sat, 13 Oct 2012 14:51:57 -0400
-Received: by mail-ee0-f46.google.com with SMTP id b15so2399159eek.19
-        for <linux-btrfs@vger.kernel.org>; Sat, 13 Oct 2012 11:51:56 -0700 (PDT)
+	Sat, 13 Oct 2012 15:14:46 -0400
+Received: by mail-ee0-f46.google.com with SMTP id b15so2404120eek.19
+        for <linux-btrfs@vger.kernel.org>; Sat, 13 Oct 2012 12:14:45 -0700 (PDT)
 From: Goffredo Baroncelli <kreijack@gmail.com>
 To: Chris Mason <chris.mason@fusionio.com>
 Cc: Goffredo Baroncelli <kreijack@gmail.com>, Hugo Mills <hugo@carfax.org.uk>,
@@ -13,9 +13,9 @@ Cc: Goffredo Baroncelli <kreijack@gmail.com>, Hugo Mills <hugo@carfax.org.uk>,
         =?UTF-8?B?U8OpYmFzdGllbiBNYXVyeQ==?= <sebastien.maury@inserm.fr>,
         Ilya Dryomov <idryomov@gmail.com>, linux-btrfs@vger.kernel.org,
         Martin Steigerwald <Martin@lichtvoll.de>
-Subject: [PATCH][BTRFS-PROGS][V5] btrfs filesystem df
-Date: Sat, 13 Oct 2012 20:52:10 +0200
-Message-Id: <1350154331-12886-1-git-send-email-kreijack@gmail.com>
+Subject: [PATCH][BTRFS-PROGS][V6] btrfs filesystem df
+Date: Sat, 13 Oct 2012 21:14:57 +0200
+Message-Id: <1350155699-14338-1-git-send-email-kreijack@gmail.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
@@ -98,6 +98,7 @@ BR
 Goffredo Baroncelli
 
 Changelog:
+V5->V6		Th V5 was a wrong patch, please discard it.
 V4->V5		Add a close(fd) to avoid file descriptor leaking
 V3->V4		Removed the switch -d -s from getopt(), aligned the
 		column Size_(logical), renamed the fields:
@@ -109,5 +110,4 @@ V2->V3          Removed the options '-s' and '-d'; replaced Chunk-size
 V1->V2          Uses getopt(); replace "-" with "_"; change the behaviour
                 of the switches '-s' and '-d'.
 V0->V1          Change the name of command from disk-usage to df
-
 

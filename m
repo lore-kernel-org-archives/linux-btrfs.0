@@ -1,106 +1,124 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-ee0-f46.google.com ([74.125.83.46]:35451 "EHLO
-	mail-ee0-f46.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1753535Ab2JNQLi (ORCPT
+Received: from static-96-231-53-14.washdc.fios.verizon.net ([96.231.53.14]:55613
+	"EHLO www.bluelavalamp.net" rhost-flags-OK-OK-OK-OK)
+	by vger.kernel.org with ESMTP id S1751603Ab2JNQS6 (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Sun, 14 Oct 2012 12:11:38 -0400
-Received: by mail-ee0-f46.google.com with SMTP id b15so2602195eek.19
-        for <linux-btrfs@vger.kernel.org>; Sun, 14 Oct 2012 09:11:37 -0700 (PDT)
-Message-ID: <507AE44E.4040008@gmail.com>
-Date: Sun, 14 Oct 2012 18:11:58 +0200
-From: Goffredo Baroncelli <kreijack@gmail.com>
-MIME-Version: 1.0
-To: Tommy Pettersson <ptp@lysator.liu.se>
-CC: linux-btrfs@vger.kernel.org
-Subject: Re: btrfs suddenly lost all om my huge free space
-References: <20121014001912.GA1247@fruity>
-In-Reply-To: <20121014001912.GA1247@fruity>
-Content-Type: text/plain; charset=ISO-8859-1; format=flowed
+	Sun, 14 Oct 2012 12:18:58 -0400
+Received: from zee.bluelavalamp.net (zee.bluelavalamp.net [10.0.0.2])
+	by www.bluelavalamp.net (Postfix) with ESMTP id F317D3A716C
+	for <linux-btrfs@vger.kernel.org>; Sun, 14 Oct 2012 12:11:30 -0400 (EDT)
+Date: Sun, 14 Oct 2012 12:11:30 -0400
+From: Kevin <kevin@bluelavalamp.net>
+To: linux-btrfs@vger.kernel.org
+Subject: segfault mounting btrfs after drive failure
+Message-ID: <20121014121130.04710db1@zee.bluelavalamp.net>
+Mime-Version: 1.0
+Content-Type: text/plain; charset=US-ASCII
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hi,
+Hi everyone,
 
-did you used the latest kernel version ?
-The other thing that you could try is a scrub looking for a defective 
-page.. but I don't think so....
+	I have a btrfs filesystem that I can't mount after having a
+drive failure.  It's made up of 10 drives (9 now that the one has
+failed).  Right now I'm booting the system with the failed drive
+disconnected, if I try to boot with the drive connected I get a
+kernel OOPs during boot.  So with only 9 drives connected here's the
+make-up:
 
-BR
-G.Baroncelli
+./btrfs fi sh
+Label: none  uuid: 07b2c489-3e9b-4a99-977d-3b877f75dc84
+        Total devices 9 FS bytes used 5.57TB
+        devid    8 size 1.82TB used 1.82TB path /dev/sdk1
+        devid    7 size 1.36TB used 1.36TB path /dev/sdi1
+        devid   10 size 1.36TB used 1.36TB path /dev/sdh1
+        devid    6 size 1.82TB used 1.82TB path /dev/sdg1
+        devid    5 size 1.82TB used 1.82TB path /dev/sdf1
+        devid    9 size 1.36TB used 1.36TB path /dev/sde1
+        devid    3 size 1.82TB used 1.82TB path /dev/sdd1
+        devid    2 size 1.82TB used 1.82TB path /dev/sdc1
+        devid    1 size 819.51GB used 819.51GB path /dev/sda3
+
+Btrfs v0.20-rc1-37-g91d9eec
+
+
+	I'm pretty certain I made the filesystem with RAID1 for
+metadata and data, but since I can't mount the filesystem I can't
+check.  Is there anyone to check and see?
+
+
+	If I try to mount the filesystem I get this:
+
+mount /dev/sdd1 /mnt
+Segmentation fault
+www:# 
+Message from syslogd@www at Sun Oct 14 12:01:34 2012 ...
+www kernel: Process mount (pid: 8573, ti=f35e2000 task=f355e3d0
+task.ti=f35e2000)
+
+Message from syslogd@www at Sun Oct 14 12:01:34 2012 ...
+www kernel: Call Trace:
+
+Message from syslogd@www at Sun Oct 14 12:01:34 2012 ...
+www kernel: Stack:
+
+Message from syslogd@www at Sun Oct 14 12:01:34 2012 ...
+www kernel: Code: 97 8b 5d 10 8b 03 8b 53 04 c7 04 24 9c bc 5a c1 89
+44 24 0c 8b 45 08 89 54 24 10 8b 55 0c 89 44 24 04 89 54 24 08 e8 0c
+38 2a 00 <0f> 0b 0f 0b c7 45 18 01 00 00 00 c7 45 e4 00 00 00 00 e9
+b5 fa
+
+Message from syslogd@www at Sun Oct 14 12:01:34 2012 ...
+www kernel: EIP: [<c1234d08>] __btrfs_map_block+0xa28/0xa50 SS:ESP
+0068:f35e3b74
 
 
 
-On 2012-10-14 02:19, Tommy Pettersson wrote:
-> Hi,
->
-> (I'm not subscribed to the list, so please CC me.)
->
-> I have a btrfs with raid1 on two identical unpartitioned disks.
-> Today I noticed that df (normal df) said I am 77 % full. This
-> was a chock, because since forever it has been around 12 %.
->
->
-> # btrfs fi show
-> Label: 'green'  uuid: dd83031c-2447-4736-a8f6-9bd9cdeea879
->          Total devices 2 FS bytes used 212.88GB
->          devid    2 size 1.82TB used 356.04GB path /dev/sdb
->          devid    1 size 1.82TB used 356.06GB path /dev/sda
->
-> # btrfs fi df /
-> Data, RAID1: total=276.00GB, used=209.02GB
-> Data: total=8.00M, used=0.00
-> System, RAID1: total=40.00MB, used=64.00KB
-> System: total=4.00MB, used=0.00
-> Metadata, RAID1: total=80.00GB, used=3.88GB
-> Metadata: total=8.00MB, used=0.00
->
-> # df -h
-> Filesystem      Size  Used Avail Use% Mounted on
-> rootfs          3.7T  426G   134G  77% /
->
->
-> The thing that has drastically changed is Avail in the output
-> from df.
->
-> I tried a btrfs balance, which self-aborted after some hours
-> with No space left on device. I deleted two snapshots, so I got
-> some free space and could use the system again.
->
-> The balance, although it didn't finish, seems to have reduced
-> the used space, but it also reduced the "available" space:
->
->
-> # btrfs fi show
-> Label: 'green'  uuid: dd83031c-2447-4736-a8f6-9bd9cdeea879
->          Total devices 2 FS bytes used 212.88GB
->          devid    2 size 1.82TB used 356.04GB path /dev/sdb
->          devid    1 size 1.82TB used 215.01GB path /dev/sda
->
-> # btrfs fi df /
-> Data, RAID1: total=210.00GB, used=197.97GB
-> System, RAID1: total=8.00MB, used=44.00KB
-> System: total=4.00MB, used=0.00
-> Metadata, RAID1: total=5.00GB, used=3.41GB
->
-> # df -h
-> Filesystem      Size  Used Avail Use% Mounted on
-> rootfs          3.7T  403G   25G  95% /
->
->
-> I made an unqualified guess that the space cache was corrupted,
-> and tried to mount with option clear_cache and nospace_cache.
-> Both of them caused btrfs to scan my disks for a couple of
-> minutes at boot, but the amount of available space did not
-> improve.
->
-> What can I do to help locate the cause of this problem?
->
->
-> Regards,
-> Tommy
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
->
+	If I try to mount in degraded mode I get this:
 
+mount -o degraded /dev/sdd1 /mnt
+Segmentation fault
+www:# 
+Message from syslogd@www at Sun Oct 14 12:04:02 2012 ...
+www kernel: Process mount (pid: 4105, ti=f1608000 task=ecc43b50
+task.ti=f1608000)
+
+Message from syslogd@www at Sun Oct 14 12:04:02 2012 ...
+www kernel: Stack:
+
+Message from syslogd@www at Sun Oct 14 12:04:02 2012 ...
+www kernel: Call Trace:
+
+Message from syslogd@www at Sun Oct 14 12:04:02 2012 ...
+www kernel: Code: 97 8b 5d 10 8b 03 8b 53 04 c7 04 24 9c bc 5a c1 89
+44 24 0c 8b 45 08 89 54 24 10 8b 55 0c 89 44 24 04 89 54 24 08 e8 0c
+38 2a 00 <0f> 0b 0f 0b c7 45 18 01 00 00 00 c7 45 e4 00 00 00 00 e9
+b5 fa
+
+Message from syslogd@www at Sun Oct 14 12:04:02 2012 ...
+www kernel: EIP: [<c1234d08>] __btrfs_map_block+0xa28/0xa50 SS:ESP
+0068:f1609b74
+
+
+
+	And doing an fsck on the filesystem:
+
+btrfsck /dev/sdd1
+checksum verify failed on 17592485027840 wanted E22DE269 found 58
+checksum verify failed on 17592485027840 wanted E22DE269 found 58
+checksum verify failed on 17592485027840 wanted E22DE269 found 58
+checksum verify failed on 17592485027840 wanted E22DE269 found 58
+Csum didn't match
+Couldn't read tree root
+Critical roots corrupted, unable to fsck the FS
+
+
+
+	Losing the data isn't the worst thing, it's mostly backup
+data, but it's still 7TB of backup data that I'd like to try and
+recover instead of having to copy over to a backup again.  Any
+suggestions on how to get this filesystem back up and running again?
+
+
+	Thanks,
+	Kevin

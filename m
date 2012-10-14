@@ -1,87 +1,29 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail.lysator.liu.se ([130.236.254.3]:45704 "EHLO
-	mail.lysator.liu.se" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1753086Ab2JNA0I (ORCPT
+Received: from smtp12.smtpout.orange.fr ([80.12.242.134]:44247 "EHLO
+	smtp.smtpout.orange.fr" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1752505Ab2JNLY3 (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Sat, 13 Oct 2012 20:26:08 -0400
-Received: from mail.lysator.liu.se (localhost [127.0.0.1])
-	by mail.lysator.liu.se (Postfix) with ESMTP id AC0F44000C
-	for <linux-btrfs@vger.kernel.org>; Sun, 14 Oct 2012 02:18:49 +0200 (CEST)
-Date: Sun, 14 Oct 2012 02:19:12 +0200
-From: Tommy Pettersson <ptp@lysator.liu.se>
-To: linux-btrfs@vger.kernel.org
-Cc: ptp@lysator.liu.se
-Subject: btrfs suddenly lost all om my huge free space
-Message-ID: <20121014001912.GA1247@fruity>
+	Sun, 14 Oct 2012 07:24:29 -0400
+Message-ID: <507AA0E7.30706@petaramesh.org>
+Date: Sun, 14 Oct 2012 13:24:23 +0200
+From: =?ISO-8859-1?Q?Sw=E2mi_Petaramesh?= <swami@petaramesh.org>
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
+To: "BTRFS, Linux" <linux-btrfs@vger.kernel.org>
+Subject: inode_cache
+Content-Type: text/plain; charset=ISO-8859-1
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hi,
+Hi there,
 
-(I'm not subscribed to the list, so please CC me.)
+On a performance standpoint - and on Ubuntu Quantall kernel 3.5.0-17 -
+is it advisable to mount BTRFS with "inode_cache" ?
 
-I have a btrfs with raid1 on two identical unpartitioned disks.
-Today I noticed that df (normal df) said I am 77 % full. This
-was a chock, because since forever it has been around 12 %.
+Is there any risk or counterpart doing so ?
 
+TIA, kind regards.
 
-# btrfs fi show
-Label: 'green'  uuid: dd83031c-2447-4736-a8f6-9bd9cdeea879
-        Total devices 2 FS bytes used 212.88GB
-        devid    2 size 1.82TB used 356.04GB path /dev/sdb
-        devid    1 size 1.82TB used 356.06GB path /dev/sda
+-- 
+Swâmi Petaramesh <swami@petaramesh.org> http://petaramesh.org PGP 9076E32E
+Ne cherchez pas : Je ne suis pas sur Facebook.
 
-# btrfs fi df /
-Data, RAID1: total=276.00GB, used=209.02GB
-Data: total=8.00M, used=0.00
-System, RAID1: total=40.00MB, used=64.00KB
-System: total=4.00MB, used=0.00
-Metadata, RAID1: total=80.00GB, used=3.88GB
-Metadata: total=8.00MB, used=0.00
-
-# df -h
-Filesystem      Size  Used Avail Use% Mounted on
-rootfs          3.7T  426G   134G  77% /
-
-
-The thing that has drastically changed is Avail in the output
-from df.
-
-I tried a btrfs balance, which self-aborted after some hours
-with No space left on device. I deleted two snapshots, so I got
-some free space and could use the system again.
-
-The balance, although it didn't finish, seems to have reduced
-the used space, but it also reduced the "available" space:
-
-
-# btrfs fi show
-Label: 'green'  uuid: dd83031c-2447-4736-a8f6-9bd9cdeea879
-        Total devices 2 FS bytes used 212.88GB
-        devid    2 size 1.82TB used 356.04GB path /dev/sdb
-        devid    1 size 1.82TB used 215.01GB path /dev/sda
-
-# btrfs fi df /
-Data, RAID1: total=210.00GB, used=197.97GB
-System, RAID1: total=8.00MB, used=44.00KB
-System: total=4.00MB, used=0.00
-Metadata, RAID1: total=5.00GB, used=3.41GB
-
-# df -h
-Filesystem      Size  Used Avail Use% Mounted on
-rootfs          3.7T  403G   25G  95% /
-
-
-I made an unqualified guess that the space cache was corrupted,
-and tried to mount with option clear_cache and nospace_cache.
-Both of them caused btrfs to scan my disks for a couple of
-minutes at boot, but the amount of available space did not
-improve.
-
-What can I do to help locate the cause of this problem?
-
-
-Regards,
-Tommy

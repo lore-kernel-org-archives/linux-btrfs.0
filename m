@@ -1,43 +1,40 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx1.fusionio.com ([66.114.96.30]:51476 "EHLO mx1.fusionio.com"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1750898Ab2JOOc0 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 15 Oct 2012 10:32:26 -0400
-Date: Mon, 15 Oct 2012 10:32:22 -0400
-From: Chris Mason <chris.mason@fusionio.com>
-To: David Sterba <dave@jikos.cz>
-CC: Rory Campbell-Lange <rory@campbell-lange.net>,
-        Arne Jansen <sensille@gmx.net>,
-        "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
-Subject: Re: [PATCH] Fits: tool to parse stream
-Message-ID: <20121015143222.GA31310@shiny>
-References: <1350048772-20658-1-git-send-email-sensille@gmx.net>
- <50791203.6060406@gmx.net>
- <20121013080857.GA1491@campbell-lange.net>
- <20121013154128.GA10679@twin.jikos.cz>
+Received: from srv2.trombetti.net ([65.254.53.252]:1654 "EHLO
+	srv2.trombetti.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1754124Ab2JORTq (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>);
+	Mon, 15 Oct 2012 13:19:46 -0400
+Received: from localhost (localhost [127.0.0.1])
+	(using TLSv1 with cipher DHE-RSA-AES256-SHA (256/256 bits))
+	(No client certificate requested)
+	(Authenticated sender: SASL)
+	by srv2.trombetti.net (Postfix) with ESMTPSA id 615855436E
+	for <linux-btrfs@vger.kernel.org>; Mon, 15 Oct 2012 13:09:11 -0400 (EDT)
+Message-ID: <507C4343.6060305@shiftmail.org>
+Date: Mon, 15 Oct 2012 19:09:23 +0200
+From: Bob Marley <bobmarley@shiftmail.org>
 MIME-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-In-Reply-To: <20121013154128.GA10679@twin.jikos.cz>
+To: linux-btrfs <linux-btrfs@vger.kernel.org>
+Subject: Systemcall for offline deduplication
+Content-Type: text/plain; charset=UTF-8; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Sat, Oct 13, 2012 at 09:41:28AM -0600, David Sterba wrote:
-> On Sat, Oct 13, 2012 at 09:08:57AM +0100, Rory Campbell-Lange wrote:
-> > Perhaps "BTRFS Incremental Stream" or "Backup Incremental Stream" should
-> > be considered, with the file extension ".bis".
-> 
-> From the brainstorming we had about the name, the intention behind the
-> stream is to be filesystem independent.
-> 
-> So this might be named FIS with .fis extension, that is not far from the
-> proposed name. However, this hasn't been approved by the Slang committee
-> yet :)
+Hello all btrfs developers
 
-urbandictionary has some entries for fis, although I'm not really sure
-that matters.  .fs is still my favorite, or .fss if you want to have the
-word stream in there.
+I would really appreciate a systemcall (or ioctl or the like) to allow 
+deduplication of a block of a file against a block of another file.
+(ok if blocks need to be aligned to filesystem blocks)
 
-The stream parser is really cool though, thanks Arne.
+So that if I know that bytes 32768...65536 of FileA  are identical to 
+bytes 131072...163840 of FileB I can call that syscall to have the 
+regions deduplicated one against the other atomically and with the 
+filesystem running.
+The syscall should presumably check that the regions are really equal 
+and perform the deduplication atomically.
 
--chris
+This would be the start for a lot of deduplication algorithms in userspace.
+It would be a killer feature for backup systems.
 
+Thank you,
+Bob

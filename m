@@ -1,59 +1,48 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-bk0-f46.google.com ([209.85.214.46]:56671 "EHLO
-	mail-bk0-f46.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1756155Ab2JVUR1 (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 22 Oct 2012 16:17:27 -0400
-Received: by mail-bk0-f46.google.com with SMTP id jk13so1245989bkc.19
-        for <linux-btrfs@vger.kernel.org>; Mon, 22 Oct 2012 13:17:26 -0700 (PDT)
-From: Goffredo Baroncelli <kreijack@gmail.com>
+Received: from xp-ob.rzone.de ([81.169.146.140]:59235 "EHLO xp-ob.rzone.de"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1752249Ab2JOLTF (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Mon, 15 Oct 2012 07:19:05 -0400
+Received: from pizpot.store ([192.168.43.236])
+	by josoe.store (josoe xp3) (RZmta 30.20 OK)
+	with ESMTP id p03966o9EKhXnS for <linux-btrfs@vger.kernel.org>;
+	Mon, 15 Oct 2012 13:19:02 +0200 (CEST)
+From: Stefan Behrens <sbehrens@giantdisaster.de>
 To: linux-btrfs@vger.kernel.org
-Cc: Stefan Behrens <sbehrens@giantdisaster.de>,
-        Wang Sheng-Hui <shhuiw@gmail.com>,
-        Goffredo Baroncelli <kreijack@inwind.it>
-Subject: [PATCH 5/5] Update the man page with the new prefixes.
-Date: Mon, 22 Oct 2012 22:17:48 +0200
-Message-Id: <1350937068-10080-6-git-send-email-kreijack@inwind.com>
-In-Reply-To: <1350937068-10080-1-git-send-email-kreijack@inwind.com>
-References: <1350937068-10080-1-git-send-email-kreijack@inwind.com>
+Subject: [PATCH] Btrfs-progs: use atoll() for mkfs.btrfs size option
+Date: Mon, 15 Oct 2012 13:19:02 +0200
+Message-Id: <1350299942-23468-1-git-send-email-sbehrens@giantdisaster.de>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-From: Goffredo Baroncelli <kreijack@inwind.it>
+On 32 bit systems, a numerical parameter of 2147483648 or above to
+the mkfs.btrfs -b option does not work. The parameter is stored in
+an u64 but is read using atol() and thus not read correctly.
+This patch changes it to use atoll().
+Specifying a multiplier (k, m or g) like "100g" in the mkfs.btrfs
+parameter list would also be a working workaround.
 
+Signed-off-by: Stefan Behrens <sbehrens@giantdisaster.de>
 ---
- man/btrfs.8.in      |    3 +++
- man/mkfs.btrfs.8.in |    3 +++
- 2 files changed, 6 insertions(+)
+The patch is based on the master branch of
+git://git.kernel.org/pub/scm/linux/kernel/git/mason/btrfs-progs.git
 
-diff --git a/man/btrfs.8.in b/man/btrfs.8.in
-index 9222580..33bd78d 100644
---- a/man/btrfs.8.in
-+++ b/man/btrfs.8.in
-@@ -184,6 +184,9 @@ defragment operations.
- 
- \fB-t size\fP defragment only files at least \fIsize\fR bytes big
- 
-+For \fBstart\fP, \fBlen\fP, \fBsize\fP it is possible to append a prefix
-+like \fBk\fP for 1 KBytes, \fBm\fP for 1 MBytes...
-+
- NOTE: defragmenting with kernels up to 2.6.37 will unlink COW-ed copies of data,
- don't use it if you use snapshots, have de-duplicated your data or made
- copies with \fBcp --reflink\fP.
-diff --git a/man/mkfs.btrfs.8.in b/man/mkfs.btrfs.8.in
-index 72025ed..6f37cd8 100644
---- a/man/mkfs.btrfs.8.in
-+++ b/man/mkfs.btrfs.8.in
-@@ -69,6 +69,9 @@ Do not perform whole device TRIM operation by default.
- .TP
- \fB\-V\fR, \fB\-\-version\fR
- Print the \fBmkfs.btrfs\fP version and exit.
-+.SH UNIT
-+As default the unit is the byte, however it is possible to append a suffix
-+to the arguments like \fBk\fP for KBytes, \fBm\fP for MBytes...
- .SH AVAILABILITY
- .B mkfs.btrfs
- is part of btrfs-progs. Btrfs is currently under heavy development,
+ mkfs.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/mkfs.c b/mkfs.c
+index 47f0c9c..e62f0e4 100644
+--- a/mkfs.c
++++ b/mkfs.c
+@@ -80,7 +80,7 @@ static u64 parse_size(char *s)
+ 		}
+ 		s[len - 1] = '\0';
+ 	}
+-	ret = atol(s) * mult;
++	ret = atoll(s) * mult;
+ 	free(s);
+ 	return ret;
+ }
 -- 
-1.7.10.4
+1.7.12.3
 

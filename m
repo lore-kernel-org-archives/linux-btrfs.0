@@ -1,54 +1,64 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mo-p05-ob.rzone.de ([81.169.146.181]:8170 "EHLO
+Received: from mo-p05-ob.rzone.de ([81.169.146.180]:52993 "EHLO
 	mo-p05-ob.rzone.de" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1752643Ab2JOGqM (ORCPT
+	with ESMTP id S1752200Ab2JOGuE (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 15 Oct 2012 02:46:12 -0400
-Message-ID: <507BB123.7090206@jan-o-sch.net>
-Date: Mon, 15 Oct 2012 08:45:55 +0200
+	Mon, 15 Oct 2012 02:50:04 -0400
+Message-ID: <507BB21A.4020700@jan-o-sch.net>
+Date: Mon, 15 Oct 2012 08:50:02 +0200
 From: Jan Schmidt <list.btrfs@jan-o-sch.net>
 MIME-Version: 1.0
-To: Alex Lyakas <alex.btrfs@zadarastorage.com>
-CC: linux-btrfs@vger.kernel.org
+To: Mark Fasheh <mfasheh@suse.de>
+CC: chris.mason@fusionio.com, linux-btrfs@vger.kernel.org
 Subject: Re: [PATCH] Btrfs: extended inode refs support for send mechanism
-References: <1349868091-23041-1-git-send-email-list.btrfs@jan-o-sch.net> <CAOcd+r2BXcrKxRZgf2Rx4n61wW2KHXLFoGZwd3AYFTVBni0FWQ@mail.gmail.com>
-In-Reply-To: <CAOcd+r2BXcrKxRZgf2Rx4n61wW2KHXLFoGZwd3AYFTVBni0FWQ@mail.gmail.com>
+References: <1349868091-23041-1-git-send-email-list.btrfs@jan-o-sch.net> <20121011213928.GY8097@wotan.suse.de>
+In-Reply-To: <20121011213928.GY8097@wotan.suse.de>
 Content-Type: text/plain; charset=ISO-8859-1
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hi Alex,
+Hi Mark,
 
-On Thu, October 11, 2012 at 13:11 (+0200), Alex Lyakas wrote:
->> @@ -993,12 +1010,17 @@ static int get_inode_path(struct send_ctx *sctx, struct btrfs_root *root,
->>         if (ret < 0)
->>                 goto out;
->>         if (ret) {
->> -               ret = 1;
->> -               goto out;
->> +               key.type = BTRFS_INODE_EXTREF_KEY;
-> According to code, btrfs_search_slot_for_read(INODE_REF,
-> find_higher=1, return_any=0) returns 1, only in case btrfs_next_leaf()
-> returns 1, which means there are no more items at all (or, if you have
-> Josef's patch, no more items with the same objectid). Otherwise, it
-> may bring us to INODE_EXTREF, but key.type will still be INODE_REF,
-> while found_key.type will be INODE_EXTREF. So the test below that
-> compares key and found_key will make us return -ENOENT. And in case
-> btrfs_search_slot_for_read() returns 1, we don't have to search more,
-> I think.
-> So shouldn't it be something like:
-> ret = btrfs_search_slot_for_read(INODE_REF, find_higher=1, return_any=0)
-> if (ret) {
->     ret =1
->     goto out;
-> }
-> btrfs_item_key_to_cpu(p->nodes[0], &found_key, p->slots[0]);
-> if (found_key.objectid != ino || (found_key.type!= INODE_REF &&
-> found_key.type != INODE_EXTREF))
-> ...
+On Thu, October 11, 2012 at 23:39 (+0200), Mark Fasheh wrote:
+> On Wed, Oct 10, 2012 at 01:21:31PM +0200, Jan Schmidt wrote:
+>> @@ -1574,11 +1599,22 @@ static int get_first_ref(struct send_ctx *sctx,
+>>  		goto out;
+>>  	}
+>>  
+>> -	iref = btrfs_item_ptr(path->nodes[0], path->slots[0],
+>> -			struct btrfs_inode_ref);
+>> -	len = btrfs_inode_ref_name_len(path->nodes[0], iref);
+>> -	ret = fs_path_add_from_extent_buffer(name, path->nodes[0],
+>> -			(unsigned long)(iref + 1), len);
+>> +	if (key.type == BTRFS_INODE_REF_KEY) {
+>> +		struct btrfs_inode_ref *iref;
+>> +		iref = btrfs_item_ptr(path->nodes[0], path->slots[0],
+>> +				      struct btrfs_inode_ref);
+>> +		len = btrfs_inode_ref_name_len(path->nodes[0], iref);
+>> +		ret = fs_path_add_from_extent_buffer(name, path->nodes[0],
+>> +						     (unsigned long)(iref + 1),
+>> +						     len);
+>> +	} else {
+>> +		struct btrfs_inode_extref *extref;
+>> +		extref = btrfs_item_ptr(path->nodes[0], path->slots[0],
+>> +					struct btrfs_inode_extref);
+>> +		len = btrfs_inode_extref_name_len(path->nodes[0], extref);
+>> +		ret = fs_path_add_from_extent_buffer(name, path->nodes[0],
+>> +					(unsigned long)&extref->name, len);
+>> +	}
+>>  	if (ret < 0)
+>>  		goto out;
+>>  	btrfs_release_path(path);
+> 
+> Ok there's the following line in get_first_ref() which I believe was missed:
+> 
+> 	*dir = found_key.offset;
+> 
+> that will have to account for an extended ref.
 
-You're right, good catch. I forgot btrfs_search_slot_for_read is actually pretty
-different. I'll make a fix.
+Oops. I will fix that.
 
-Thanks!
+> The rest of the patch looks pretty good to me. Thanks for writing this up!
+
+Thanks for taking a look!
 -Jan

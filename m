@@ -1,57 +1,45 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from ipmail04.adl6.internode.on.net ([150.101.137.141]:15643 "EHLO
+Received: from ipmail04.adl6.internode.on.net ([150.101.137.141]:37851 "EHLO
 	ipmail04.adl6.internode.on.net" rhost-flags-OK-OK-OK-OK)
-	by vger.kernel.org with ESMTP id S1750744Ab2JOHsP (ORCPT
+	by vger.kernel.org with ESMTP id S1751483Ab2JOHzi (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 15 Oct 2012 03:48:15 -0400
-Date: Mon, 15 Oct 2012 18:48:11 +1100
+	Mon, 15 Oct 2012 03:55:38 -0400
+Date: Mon, 15 Oct 2012 18:55:30 +1100
 From: Dave Chinner <david@fromorbit.com>
 To: zwu.kernel@gmail.com
 Cc: linux-fsdevel@vger.kernel.org, linux-ext4@vger.kernel.org,
         linux-btrfs@vger.kernel.org, linux-kernel@vger.kernel.org,
         linuxram@linux.vnet.ibm.com, viro@zeniv.linux.org.uk, dave@jikos.cz,
         tytso@mit.edu, cmm@us.ibm.com, Zhi Yong Wu <wuzhy@linux.vnet.ibm.com>
-Subject: Re: [RFC v3 11/13] vfs: add 3 new ioctl interfaces
-Message-ID: <20121015074811.GY2739@dastard>
+Subject: Re: [RFC v3 12/13] vfs: add debugfs support
+Message-ID: <20121015075530.GZ2739@dastard>
 References: <1349863655-29320-1-git-send-email-zwu.kernel@gmail.com>
- <1349863655-29320-12-git-send-email-zwu.kernel@gmail.com>
+ <1349863655-29320-13-git-send-email-zwu.kernel@gmail.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <1349863655-29320-12-git-send-email-zwu.kernel@gmail.com>
+In-Reply-To: <1349863655-29320-13-git-send-email-zwu.kernel@gmail.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Wed, Oct 10, 2012 at 06:07:33PM +0800, zwu.kernel@gmail.com wrote:
+On Wed, Oct 10, 2012 at 06:07:34PM +0800, zwu.kernel@gmail.com wrote:
 > From: Zhi Yong Wu <wuzhy@linux.vnet.ibm.com>
 > 
->   FS_IOC_GET_HEAT_INFO: return a struct containing the various
-> metrics collected in btrfs_freq_data structs, and also return a
-> calculated data temperature based on those metrics. Optionally, retrieve
-> the temperature from the hot data hash list instead of recalculating it.
-> 
->   FS_IOC_GET_HEAT_OPTS: return an integer representing the current
-> state of hot data tracking and migration:
-> 
-> 0 = do nothing
-> 1 = track frequency of access
-> 
->   FS_IOC_SET_HEAT_OPTS: change the state of hot data tracking and
-> migration, as described above.
-.....
-> +struct hot_heat_info {
-> +	__u64 avg_delta_reads;
-> +	__u64 avg_delta_writes;
-> +	__u64 last_read_time;
-> +	__u64 last_write_time;
-> +	__u32 num_reads;
-> +	__u32 num_writes;
-> +	__u32 temperature;
-> +	__u8 live;
-> +	char filename[PATH_MAX];
+>   Add a /sys/kernel/debug/hot_track/<device_name>/ directory for each
+> volume that contains two files. The first, `inode_data', contains the
+> heat information for inodes that have been brought into the hot data map
+> structures. The second, `range_data', contains similar information for
+> subfile ranges.
+....
+> +	/* create debugfs range_data file */
+> +	debugfs_range_entry = debugfs_create_file("range_data",
+> +				S_IFREG | S_IRUSR | S_IWUSR | S_IRUGO,
+> +				debugfs_volume_entry,
+> +				(void *) range_data,
+> +				&hot_debugfs_range_fops);
 
-Don't put the filename in the ioctl and open the file in the kernel.
-Have userspace open the file directly and issue the ioctl on the fd
-that is returned.
+These should not be world readable. 0600 is probably the correct
+permissions for them as we do not want random users to be able to
+infer what files users are accessing from this information.
 
 Cheers,
 

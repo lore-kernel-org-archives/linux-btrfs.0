@@ -1,73 +1,43 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-we0-f174.google.com ([74.125.82.174]:58932 "EHLO
-	mail-we0-f174.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S932085Ab2JOUO6 (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 15 Oct 2012 16:14:58 -0400
-Received: by mail-we0-f174.google.com with SMTP id t9so3284793wey.19
-        for <linux-btrfs@vger.kernel.org>; Mon, 15 Oct 2012 13:14:57 -0700 (PDT)
+Received: from twin.jikos.cz ([89.185.236.188]:40354 "EHLO twin.jikos.cz"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1754945Ab2JOUPW (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Mon, 15 Oct 2012 16:15:22 -0400
+Date: Mon, 15 Oct 2012 22:15:16 +0200
+From: David Sterba <dave@jikos.cz>
+To: Bob Marley <bobmarley@shiftmail.org>
+Cc: linux-btrfs <linux-btrfs@vger.kernel.org>
+Subject: Re: Systemcall for offline deduplication
+Message-ID: <20121015201516.GB10679@twin.jikos.cz>
+Reply-To: dave@jikos.cz
+References: <507C4343.6060305@shiftmail.org>
 MIME-Version: 1.0
-In-Reply-To: <507C6CC8.9060100@profihost.ag>
-References: <50771F22.3070501@profihost.ag>
-	<20121011194335.GE4405@twin.jikos.cz>
-	<50772408.9040303@profihost.ag>
-	<507BE264.1060500@cn.fujitsu.com>
-	<507C6239.1030208@profihost.ag>
-	<CAOcd+r2sZYxxNRQS2h-LY9Fpd791JRKiVq2gT-xBpkPY8=FsQQ@mail.gmail.com>
-	<507C6CC8.9060100@profihost.ag>
-Date: Mon, 15 Oct 2012 22:14:57 +0200
-Message-ID: <CAOcd+r226xqjvsF3H_B3=zxfQ3fkY3YP7FMeXP3b-fnO0Bqobw@mail.gmail.com>
-Subject: Re: problems with btrfs send / restore
-From: Alex Lyakas <alex.btrfs@zadarastorage.com>
-To: Stefan Priebe <s.priebe@profihost.ag>
-Cc: miaox@cn.fujitsu.com,
-        "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>,
-        Josef Bacik <jbacik@fusionio.com>
-Content-Type: text/plain; charset=ISO-8859-1
+Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <507C4343.6060305@shiftmail.org>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Stefan,
-the second issue you're seeing was discussed here:
-http://www.spinics.net/lists/linux-btrfs/msg19672.html
+On Mon, Oct 15, 2012 at 07:09:23PM +0200, Bob Marley wrote:
+> I would really appreciate a systemcall (or ioctl or the like) to allow
+> deduplication of a block of a file against a block of another file.
+> (ok if blocks need to be aligned to filesystem blocks)
 
-You can apply the patch I sent there meanwhile, but as Miao pointed
-out, I will need to make a better patch (hope will do it soon,
-together with this one).
+It exists, is called
 
-Thanks,
-Alex.
+BTRFS_IOC_CLONE_RANGE
+(http://lxr.free-electrons.com/source/fs/btrfs/ioctl.h#L399)
 
+btrfs_ioctl_clone_range_args
+http://lxr.free-electrons.com/source/fs/btrfs/ioctl.h#L254
 
-On Mon, Oct 15, 2012 at 10:06 PM, Stefan Priebe <s.priebe@profihost.ag> wrote:
-> Am 15.10.2012 21:42, schrieb Alex Lyakas:
->
->> Is /btrfs/target/\@snapshot/ a subvolume or a directory?
->
-> A simple directory.
->
->
->> can you pls try the patch that I posted here:
->> http://www.spinics.net/lists/linux-btrfs/msg19583.html
->>
->> I feel that you're hitting a similar issue here. Before you apply the
->> patch, please verify that you have /etc/mtab on your system (I will
->> make a more formal patch later).
->
->
-> With your patch it works FINE!! Great!
->
-> Another problem i'm seeing is:
->
-> # btrfs send -i /btrfs/src/\@snapshot/1 /btrfs/src/\@snapshot/2 | btrfs
-> receive /btrfs/target/\@snapshot/
-> At subvol /btrfs/src/@snapshot/2
-> ERROR: Failed to lookup path for root 0 - No such file or directory
-> ERROR: unable to resolve path for root 350
->
-> Then i have to wait some seconds and the same command works fine. I see the
-> same with btrfs subvolume list PATH
->
-> and it is unrelated to your patch.
->
-> Stefan
+> The syscall should presumably check that the regions are really equal and
+> perform the deduplication atomically.
+> 
+> This would be the start for a lot of deduplication algorithms in userspace.
+> It would be a killer feature for backup systems.
+
+It doesn't do any checks if the range contents match, but for a backup
+system, the ranges can be merged at a calm state, ie not new data in
+flight.
+
+david

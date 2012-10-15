@@ -1,47 +1,151 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from acsinet15.oracle.com ([141.146.126.227]:25107 "EHLO
-	acsinet15.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1751605Ab2JOI7r (ORCPT
+Received: from mondschein.lichtvoll.de ([194.150.191.11]:44441 "EHLO
+	mail.lichtvoll.de" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1752286Ab2JOLv5 convert rfc822-to-8bit (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 15 Oct 2012 04:59:47 -0400
-Message-ID: <507BD155.7000609@oracle.com>
-Date: Mon, 15 Oct 2012 17:03:17 +0800
-From: Anand Jain <Anand.Jain@oracle.com>
+	Mon, 15 Oct 2012 07:51:57 -0400
+From: Martin Steigerwald <Martin@lichtvoll.de>
+To: linux-btrfs@vger.kernel.org
+Subject: Re: [PATCH][BTRFS-PROGS][V6] btrfs filesystem df
+Date: Mon, 15 Oct 2012 13:51:55 +0200
+Cc: Goffredo Baroncelli <kreijack@gmail.com>,
+        Chris Mason <chris.mason@fusionio.com>,
+        Hugo Mills <hugo@carfax.org.uk>, Roman Mamedov <rm@romanrm.ru>,
+        =?utf-8?q?S=C3=A9bastien_Maury?= <sebastien.maury@inserm.fr>,
+        Ilya Dryomov <idryomov@gmail.com>
+References: <1350155699-14338-1-git-send-email-kreijack@gmail.com> (sfid-20121014_015032_778513_83D735AD)
+In-Reply-To: <1350155699-14338-1-git-send-email-kreijack@gmail.com>
 MIME-Version: 1.0
-To: Goffredo Baroncelli <kreijack@gmail.com>
-CC: linux-btrfs@vger.kernel.org
-Subject: Re: [PATCH 0/4] Add show sub command to btrfs subvolume
-References: <1350019254-22036-1-git-send-email-Anand.Jain@oracle.com> <5079CADA.4050604@gmail.com>
-In-Reply-To: <5079CADA.4050604@gmail.com>
-Content-Type: text/plain; charset=ISO-8859-1; format=flowed
+Content-Type: Text/Plain;
+  charset="utf-8"
+Message-Id: <201210151351.55680.Martin@lichtvoll.de>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
+Am Samstag, 13. Oktober 2012 schrieb Goffredo Baroncelli:
+> Hi Chris,
+> 
+> this serie of patches updated the command "btrfs filesystem
+> df". I update this command because it is not so easy to get
+> the information about the disk usage from the command "fi df" and "fi show".
+> This patch was the result of some discussions on the btrfs 
+> mailing list. Many thanks to all the contributors.
+> 
+> from the man page (see 2nd patch):
+> 
+> [...]
+> The  command  btrfs  filesystem  df is used to query the
+> status of the chunks, how many space on the disk(s) are used  by
+> the  chunks,  how many space are available in the chunks, and an
+> estimation of the free space of the filesystem.
+> [...]
+> 
+> $ ./btrfs filesystem df --help
+> usage: btrfs filesystem disk-usage [-k] <path> [<path>..]
+> 
+>     Show space usage information for a mount point(s).
+> 
+>     -k  Set KB (1024 bytes) as unit
+> 
+> $ ./btrfs filesystem df /
+> Path: /
+> Summary:
+>   Disk_size:                 72.57GB
+>   Disk_allocated:            25.10GB
+>   Disk_unallocated:          47.48GB
+>   Logical_size:              23.06GB
+>   Used:                      11.01GB
+>   Free_(Estimated):          55.66GB    (Max: 59.52GB, Min: 35.78GB)
+>   Data_to_disk_ratio:           92 %
+> 
+> Allocated_area:
+>   Type        Mode       Size_(disk)    Size_(logical)          Used
+>   Data        Single         21.01GB           21.01GB       12.77GB
+>   System      DUP            80.00MB           40.00MB        4.00KB
+>   System      Single          4.00MB            4.00MB          0.00
+>   Metadata    DUP             4.00GB            2.00GB      709.63MB
+>   Metadata    Single          8.00MB            8.00MB          0.00
+> 
+> Where:
+>         Disk_size                       -> sum of sizes of teh disks
+>         Disk_allocated                  -> sum of chunk sizes
+>         Disk_unallocated                -> Disk_size - Disk_allocated
+>         Logical_size                    -> sum of logical area sizes
+>         Used                            -> logical area used
+>         Free_(Estimated)                -> on the basis of allocated
+>                                            chunk, an estrapolation of
+>                                            the free space
+>         Data_to_disk_ratio              -> ration between the space occuped
+>                                            by a chunk and the real space
+>                                            available ( due to duplication
+>                                            and/or RAID level)
+>         Type				-> kind of chunk
+>         Mode                            -> allocation policy of a chunk
+>         Size_(disk)                     -> area of disk(s) occuped by the
+>                                            chunk (see it as raw space used)
+>         Size_(logical)                  -> logical area size of the chunk
+>         Used                            -> portion of the logical area
+>                                            used by the filesystem
+
+Works nicely:
+
+merkaba:/home/martin/[…]/btrfs-progs-unstable> ./btrfs fi df /
+Path: /
+Summary:
+  Disk_size:                   18.62GB
+  Disk_allocated:              18.62GB
+  Disk_unallocated:               0.00
+  Logical_size:                16.87GB
+  Used:                        12.53GB
+  Free_(Estimated):             4.34GB  (Max: 4.34GB, min: 4.34GB)
+  Data_to_disk_ratio:             91 %
+
+Allocated_area:
+  Type        Mode       Size_(disk)    Size_(logical)          Used
+  Data        Single         15.10GB           15.10GB       11.84GB
+  System      DUP            16.00MB            8.00MB        4.00KB
+  System      Single          4.00MB            4.00MB          0.00
+  Metadata    DUP             3.50GB            1.75GB      696.70MB
+  Metadata    Single          8.00MB            8.00MB          0.00
+
+Tested-By: Martin Steigerwald <martin@lichtvoll.de>
+
+Thanks,
+Martin
+
+> You can pull this change from
+>    http://cassiopea.homelinux.net/git/btrfs-progs-unstable.git
+> branch
+>    disk_free
+> 
+> Please pull.
+> 
+> Signed-off-by: Goffredo Baroncelli <kreijack@gmail.com>
+> 
+> BR
+> Goffredo Baroncelli
+> 
+> Changelog:
+> V5->V6		Th V5 was a wrong patch, please discard it.
+> V4->V5		Add a close(fd) to avoid file descriptor leaking
+> V3->V4		Removed the switch -d -s from getopt(), aligned the
+> 		column Size_(logical), renamed the fields:
+> 		- Details -> Allocated_area
+> 		- Chunk_type -> Type
+> V2->V3          Removed the options '-s' and '-d'; replaced Chunk-size 
+>                 and Logical-size with Size_(disk) and Size_(logical).
+>                 Update the man page.
+> V1->V2          Uses getopt(); replace "-" with "_"; change the behaviour
+>                 of the switches '-s' and '-d'.
+> V0->V1          Change the name of command from disk-usage to df
+> 
+> --
+> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
+> the body of a message to majordomo@vger.kernel.org
+> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+> 
 
 
-> Thanks for working on that; do you think that is it feasible to merge
-> the works on "btrfs sub list" and "btrfs sub show" ?
-> To date the output of "btrfs sub list" is quite cryptic: a lot of
-> information on only on row, which is difficult to read. However it has
-> the capability to traverse the filesystem to list the subvolumes, to
-> sort the output, to filter it...
-> Instead your work has not the capability to traverse/filter/sort but has
-> a very nice output.
->
-> The ideal is to extend the actual command (btrfs sub list) to have your
-> output (as default) and the current one (as option) when used in script...
-
-
-  Thanks for the comments.
-
-  (just for note: this patch is on top the latest subvol
-  list framework).
-  generally multi-line output isn't suitable for the list
-  kind of output, right? since it makes scripting difficult.
-  So here the plan is to have both list and show. List is
-  to see all the items and show is know more about an item.
-
-  Show will be more exciting when we could add size info for
-  each subvol/snapshot.
-
--Anand
+-- 
+Martin 'Helios' Steigerwald - http://www.Lichtvoll.de
+GPG: 03B0 0D6C 0040 0710 4AFA  B82F 991B EAAC A599 84C7

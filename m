@@ -1,60 +1,40 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-bk0-f46.google.com ([209.85.214.46]:52616 "EHLO
-	mail-bk0-f46.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1753650Ab2JKOqs (ORCPT
+Received: from mail-da0-f46.google.com ([209.85.210.46]:34493 "EHLO
+	mail-da0-f46.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1752091Ab2JOAY3 (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 11 Oct 2012 10:46:48 -0400
-MIME-Version: 1.0
-In-Reply-To: <20121011144141.GD4405@twin.jikos.cz>
-References: <1349863655-29320-1-git-send-email-zwu.kernel@gmail.com>
-	<1349863655-29320-2-git-send-email-zwu.kernel@gmail.com>
-	<20121010162842.GZ4405@twin.jikos.cz>
-	<CAEH94LgJDhB+-mjhBScQnQybqYWE1rJ6ViuqeWNisLjC=8yMkA@mail.gmail.com>
-	<20121011144141.GD4405@twin.jikos.cz>
-Date: Thu, 11 Oct 2012 22:46:46 +0800
-Message-ID: <CAEH94LjZ2pLszJhU_XSNR0=crOBQVHRgv6hHxqVwrYmhesz-PQ@mail.gmail.com>
-Subject: Re: [RFC v3 01/13] btrfs: add one new mount option '-o hot_track'
-From: Zhi Yong Wu <zwu.kernel@gmail.com>
-To: dave@jikos.cz, Zhi Yong Wu <zwu.kernel@gmail.com>,
-        linux-fsdevel@vger.kernel.org, linux-ext4@vger.kernel.org,
+	Sun, 14 Oct 2012 20:24:29 -0400
+Date: Mon, 15 Oct 2012 08:35:27 +0800
+From: Zheng Liu <gnehzuil.liu@gmail.com>
+To: zwu.kernel@gmail.com
+Cc: linux-fsdevel@vger.kernel.org, linux-ext4@vger.kernel.org,
         linux-btrfs@vger.kernel.org, linux-kernel@vger.kernel.org,
         linuxram@linux.vnet.ibm.com, viro@zeniv.linux.org.uk,
-        david@fromorbit.com, tytso@mit.edu, cmm@us.ibm.com,
+        david@fromorbit.com, dave@jikos.cz, tytso@mit.edu, cmm@us.ibm.com,
         Zhi Yong Wu <wuzhy@linux.vnet.ibm.com>
-Content-Type: text/plain; charset=ISO-8859-1
+Subject: Re: [RFC v3 13/13] vfs: add documentation
+Message-ID: <20121015003527.GA23324@gmail.com>
+References: <1349863655-29320-1-git-send-email-zwu.kernel@gmail.com>
+ <1349863655-29320-14-git-send-email-zwu.kernel@gmail.com>
+MIME-Version: 1.0
+Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <1349863655-29320-14-git-send-email-zwu.kernel@gmail.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Thu, Oct 11, 2012 at 10:41 PM, David Sterba <dave@jikos.cz> wrote:
-> On Thu, Oct 11, 2012 at 10:35:28PM +0800, Zhi Yong Wu wrote:
->> >> --- a/fs/btrfs/super.c
->> >> +++ b/fs/btrfs/super.c
->> >> @@ -303,7 +304,7 @@ enum {
->> >>       Opt_notreelog, Opt_ratio, Opt_flushoncommit, Opt_discard,
->> >>       Opt_space_cache, Opt_clear_cache, Opt_user_subvol_rm_allowed,
->> >>       Opt_enospc_debug, Opt_subvolrootid, Opt_defrag, Opt_inode_cache,
->> >> -     Opt_no_space_cache, Opt_recovery, Opt_skip_balance,
->> >> +     Opt_no_space_cache, Opt_recovery, Opt_skip_balance, Opt_hot_track,
->> >
->> > Please add the new option to the end.
->> To be honest, it can't be added to the end, if you check Opt_err's
->> pattern value, you will find it is NULL, it will cause match_one()
->> return 1. So if we add Opt_hot_track to the end of this array, it will
->> be covered by match_token(), so i prefer to add it to
->> Opt_fatal_errors. Do you think of it?
->
-> Ah, sorry, I was not clear what the 'end' means here. The Opt_err is a
-> end-of-the-list token, so yes please add hot_track between
-> Opt_fatal_errors and Opt_err.
-Done, thanks. It will be appreciated if you can make comments on other
-patches of this series.:)
+Hi Zhi Yong,
 
->
-> david
+[cut...]
+> +3. The Design
+> +
+> +These include the following parts:
+> +
+> +    * Hooks in existing vfs functions to track data access frequency
+> +
+> +    * New rbtrees for tracking access frequency of inodes and sub-file
+             ^^^^^^^ s/rbtrees/radix-trees
+> +ranges (hot_rb.c)
+           ^^^^^^^^ Now it seems that all codes are in the same file.
 
-
-
--- 
 Regards,
-
-Zhi Yong Wu
+Zheng

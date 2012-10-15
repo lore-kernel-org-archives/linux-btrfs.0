@@ -1,47 +1,56 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail.profihost.ag ([85.158.179.208]:59295 "EHLO
-	mail.profihost.ag" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1754661Ab2JOUGY (ORCPT
+Received: from mail-wi0-f178.google.com ([209.85.212.178]:38284 "EHLO
+	mail-wi0-f178.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1754729Ab2JOULT (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 15 Oct 2012 16:06:24 -0400
-Message-ID: <507C6CC8.9060100@profihost.ag>
-Date: Mon, 15 Oct 2012 22:06:32 +0200
-From: Stefan Priebe <s.priebe@profihost.ag>
+	Mon, 15 Oct 2012 16:11:19 -0400
+Received: by mail-wi0-f178.google.com with SMTP id hr7so2571452wib.1
+        for <linux-btrfs@vger.kernel.org>; Mon, 15 Oct 2012 13:11:18 -0700 (PDT)
 MIME-Version: 1.0
-To: Alex Lyakas <alex.btrfs@zadarastorage.com>
-CC: miaox@cn.fujitsu.com,
-        "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>,
-        Josef Bacik <jbacik@fusionio.com>
-Subject: Re: problems with btrfs send / restore
-References: <50771F22.3070501@profihost.ag> <20121011194335.GE4405@twin.jikos.cz> <50772408.9040303@profihost.ag> <507BE264.1060500@cn.fujitsu.com> <507C6239.1030208@profihost.ag> <CAOcd+r2sZYxxNRQS2h-LY9Fpd791JRKiVq2gT-xBpkPY8=FsQQ@mail.gmail.com>
-In-Reply-To: <CAOcd+r2sZYxxNRQS2h-LY9Fpd791JRKiVq2gT-xBpkPY8=FsQQ@mail.gmail.com>
-Content-Type: text/plain; charset=ISO-8859-1; format=flowed
+In-Reply-To: <20121015143222.GA31310@shiny>
+References: <1350048772-20658-1-git-send-email-sensille@gmx.net>
+	<50791203.6060406@gmx.net>
+	<20121013080857.GA1491@campbell-lange.net>
+	<20121013154128.GA10679@twin.jikos.cz>
+	<20121015143222.GA31310@shiny>
+Date: Mon, 15 Oct 2012 22:11:18 +0200
+Message-ID: <CAOcd+r27HqW71ty+ogCDgVFtNWLYWx7Kt75k8x7WatPT9QrbLA@mail.gmail.com>
+Subject: Re: [PATCH] Fits: tool to parse stream
+From: Alex Lyakas <alex.btrfs@zadarastorage.com>
+To: Arne Jansen <sensille@gmx.net>,
+        "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
+Content-Type: text/plain; charset=ISO-8859-1
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Am 15.10.2012 21:42, schrieb Alex Lyakas:
-> Is /btrfs/target/\@snapshot/ a subvolume or a directory?
-A simple directory.
+Thanks, Arne,
+it will definitely help to debug issues.
 
-> can you pls try the patch that I posted here:
-> http://www.spinics.net/lists/linux-btrfs/msg19583.html
+Alex.
+
+
+On Mon, Oct 15, 2012 at 4:32 PM, Chris Mason <chris.mason@fusionio.com> wrote:
+> On Sat, Oct 13, 2012 at 09:41:28AM -0600, David Sterba wrote:
+>> On Sat, Oct 13, 2012 at 09:08:57AM +0100, Rory Campbell-Lange wrote:
+>> > Perhaps "BTRFS Incremental Stream" or "Backup Incremental Stream" should
+>> > be considered, with the file extension ".bis".
+>>
+>> From the brainstorming we had about the name, the intention behind the
+>> stream is to be filesystem independent.
+>>
+>> So this might be named FIS with .fis extension, that is not far from the
+>> proposed name. However, this hasn't been approved by the Slang committee
+>> yet :)
 >
-> I feel that you're hitting a similar issue here. Before you apply the
-> patch, please verify that you have /etc/mtab on your system (I will
-> make a more formal patch later).
-
-With your patch it works FINE!! Great!
-
-Another problem i'm seeing is:
-# btrfs send -i /btrfs/src/\@snapshot/1 /btrfs/src/\@snapshot/2 | btrfs 
-receive /btrfs/target/\@snapshot/
-At subvol /btrfs/src/@snapshot/2
-ERROR: Failed to lookup path for root 0 - No such file or directory
-ERROR: unable to resolve path for root 350
-
-Then i have to wait some seconds and the same command works fine. I see 
-the same with btrfs subvolume list PATH
-
-and it is unrelated to your patch.
-
-Stefan
+> urbandictionary has some entries for fis, although I'm not really sure
+> that matters.  .fs is still my favorite, or .fss if you want to have the
+> word stream in there.
+>
+> The stream parser is really cool though, thanks Arne.
+>
+> -chris
+>
+> --
+> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
+> the body of a message to majordomo@vger.kernel.org
+> More majordomo info at  http://vger.kernel.org/majordomo-info.html

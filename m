@@ -1,40 +1,39 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from srv2.trombetti.net ([65.254.53.252]:1654 "EHLO
-	srv2.trombetti.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1754124Ab2JORTq (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 15 Oct 2012 13:19:46 -0400
-Received: from localhost (localhost [127.0.0.1])
-	(using TLSv1 with cipher DHE-RSA-AES256-SHA (256/256 bits))
-	(No client certificate requested)
-	(Authenticated sender: SASL)
-	by srv2.trombetti.net (Postfix) with ESMTPSA id 615855436E
-	for <linux-btrfs@vger.kernel.org>; Mon, 15 Oct 2012 13:09:11 -0400 (EDT)
-Message-ID: <507C4343.6060305@shiftmail.org>
-Date: Mon, 15 Oct 2012 19:09:23 +0200
-From: Bob Marley <bobmarley@shiftmail.org>
-MIME-Version: 1.0
-To: linux-btrfs <linux-btrfs@vger.kernel.org>
-Subject: Systemcall for offline deduplication
-Content-Type: text/plain; charset=UTF-8; format=flowed
+Received: from ysabell.rzone.de ([81.169.144.237]:8498 "EHLO ysabell.rzone.de"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1754092Ab2JOS2s (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Mon, 15 Oct 2012 14:28:48 -0400
+From: Arne Jansen <sensille@gmx.net>
+To: linux-btrfs@vger.kernel.org
+Cc: chris.mason@fusionio.com
+Subject: [PATCH] Btrfs: send correct rdev and mode in btrfs-send
+Date: Mon, 15 Oct 2012 20:28:46 +0200
+Message-Id: <1350325726-6306-1-git-send-email-sensille@gmx.net>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hello all btrfs developers
+When sending a device file, the stream was missing the mode. Also the
+rdev was encoded wrongly.
 
-I would really appreciate a systemcall (or ioctl or the like) to allow 
-deduplication of a block of a file against a block of another file.
-(ok if blocks need to be aligned to filesystem blocks)
+Signed-off-by: Arne Jansen <sensille@gmx.net>
+---
+ fs/btrfs/send.c |    3 ++-
+ 1 files changed, 2 insertions(+), 1 deletions(-)
 
-So that if I know that bytes 32768...65536 of FileA  are identical to 
-bytes 131072...163840 of FileB I can call that syscall to have the 
-regions deduplicated one against the other atomically and with the 
-filesystem running.
-The syscall should presumably check that the regions are really equal 
-and perform the deduplication atomically.
+diff --git a/fs/btrfs/send.c b/fs/btrfs/send.c
+index c7beb54..57933e8 100644
+--- a/fs/btrfs/send.c
++++ b/fs/btrfs/send.c
+@@ -2430,7 +2430,8 @@ verbose_printk("btrfs: send_create_inode %llu\n", ino);
+ 		TLV_PUT_PATH(sctx, BTRFS_SEND_A_PATH_LINK, p);
+ 	} else if (S_ISCHR(mode) || S_ISBLK(mode) ||
+ 		   S_ISFIFO(mode) || S_ISSOCK(mode)) {
+-		TLV_PUT_U64(sctx, BTRFS_SEND_A_RDEV, rdev);
++		TLV_PUT_U64(sctx, BTRFS_SEND_A_RDEV, new_encode_dev(rdev));
++		TLV_PUT_U64(sctx, BTRFS_SEND_A_MODE, mode);
+ 	}
+ 
+ 	ret = send_cmd(sctx);
+-- 
+1.7.3.4
 
-This would be the start for a lot of deduplication algorithms in userspace.
-It would be a killer feature for backup systems.
-
-Thank you,
-Bob

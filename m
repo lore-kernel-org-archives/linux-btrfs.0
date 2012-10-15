@@ -1,62 +1,54 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cantor2.suse.de ([195.135.220.15]:47412 "EHLO mx2.suse.de"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1759382Ab2JKVja (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 11 Oct 2012 17:39:30 -0400
-Date: Thu, 11 Oct 2012 14:39:29 -0700
-From: Mark Fasheh <mfasheh@suse.de>
-To: Jan Schmidt <list.btrfs@jan-o-sch.net>
-Cc: chris.mason@fusionio.com, linux-btrfs@vger.kernel.org
-Subject: Re: [PATCH] Btrfs: extended inode refs support for send mechanism
-Message-ID: <20121011213928.GY8097@wotan.suse.de>
-Reply-To: Mark Fasheh <mfasheh@suse.de>
-References: <1349868091-23041-1-git-send-email-list.btrfs@jan-o-sch.net>
+Received: from mo-p05-ob.rzone.de ([81.169.146.181]:8170 "EHLO
+	mo-p05-ob.rzone.de" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1752643Ab2JOGqM (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>);
+	Mon, 15 Oct 2012 02:46:12 -0400
+Message-ID: <507BB123.7090206@jan-o-sch.net>
+Date: Mon, 15 Oct 2012 08:45:55 +0200
+From: Jan Schmidt <list.btrfs@jan-o-sch.net>
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <1349868091-23041-1-git-send-email-list.btrfs@jan-o-sch.net>
+To: Alex Lyakas <alex.btrfs@zadarastorage.com>
+CC: linux-btrfs@vger.kernel.org
+Subject: Re: [PATCH] Btrfs: extended inode refs support for send mechanism
+References: <1349868091-23041-1-git-send-email-list.btrfs@jan-o-sch.net> <CAOcd+r2BXcrKxRZgf2Rx4n61wW2KHXLFoGZwd3AYFTVBni0FWQ@mail.gmail.com>
+In-Reply-To: <CAOcd+r2BXcrKxRZgf2Rx4n61wW2KHXLFoGZwd3AYFTVBni0FWQ@mail.gmail.com>
+Content-Type: text/plain; charset=ISO-8859-1
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hi Jan!
+Hi Alex,
 
-On Wed, Oct 10, 2012 at 01:21:31PM +0200, Jan Schmidt wrote:
-> @@ -1574,11 +1599,22 @@ static int get_first_ref(struct send_ctx *sctx,
->  		goto out;
->  	}
->  
-> -	iref = btrfs_item_ptr(path->nodes[0], path->slots[0],
-> -			struct btrfs_inode_ref);
-> -	len = btrfs_inode_ref_name_len(path->nodes[0], iref);
-> -	ret = fs_path_add_from_extent_buffer(name, path->nodes[0],
-> -			(unsigned long)(iref + 1), len);
-> +	if (key.type == BTRFS_INODE_REF_KEY) {
-> +		struct btrfs_inode_ref *iref;
-> +		iref = btrfs_item_ptr(path->nodes[0], path->slots[0],
-> +				      struct btrfs_inode_ref);
-> +		len = btrfs_inode_ref_name_len(path->nodes[0], iref);
-> +		ret = fs_path_add_from_extent_buffer(name, path->nodes[0],
-> +						     (unsigned long)(iref + 1),
-> +						     len);
-> +	} else {
-> +		struct btrfs_inode_extref *extref;
-> +		extref = btrfs_item_ptr(path->nodes[0], path->slots[0],
-> +					struct btrfs_inode_extref);
-> +		len = btrfs_inode_extref_name_len(path->nodes[0], extref);
-> +		ret = fs_path_add_from_extent_buffer(name, path->nodes[0],
-> +					(unsigned long)&extref->name, len);
-> +	}
->  	if (ret < 0)
->  		goto out;
->  	btrfs_release_path(path);
+On Thu, October 11, 2012 at 13:11 (+0200), Alex Lyakas wrote:
+>> @@ -993,12 +1010,17 @@ static int get_inode_path(struct send_ctx *sctx, struct btrfs_root *root,
+>>         if (ret < 0)
+>>                 goto out;
+>>         if (ret) {
+>> -               ret = 1;
+>> -               goto out;
+>> +               key.type = BTRFS_INODE_EXTREF_KEY;
+> According to code, btrfs_search_slot_for_read(INODE_REF,
+> find_higher=1, return_any=0) returns 1, only in case btrfs_next_leaf()
+> returns 1, which means there are no more items at all (or, if you have
+> Josef's patch, no more items with the same objectid). Otherwise, it
+> may bring us to INODE_EXTREF, but key.type will still be INODE_REF,
+> while found_key.type will be INODE_EXTREF. So the test below that
+> compares key and found_key will make us return -ENOENT. And in case
+> btrfs_search_slot_for_read() returns 1, we don't have to search more,
+> I think.
+> So shouldn't it be something like:
+> ret = btrfs_search_slot_for_read(INODE_REF, find_higher=1, return_any=0)
+> if (ret) {
+>     ret =1
+>     goto out;
+> }
+> btrfs_item_key_to_cpu(p->nodes[0], &found_key, p->slots[0]);
+> if (found_key.objectid != ino || (found_key.type!= INODE_REF &&
+> found_key.type != INODE_EXTREF))
+> ...
 
-Ok there's the following line in get_first_ref() which I believe was missed:
+You're right, good catch. I forgot btrfs_search_slot_for_read is actually pretty
+different. I'll make a fix.
 
-	*dir = found_key.offset;
-
-that will have to account for an extended ref.
-
-The rest of the patch looks pretty good to me. Thanks for writing this up!
-	--Mark
-
---
-Mark Fasheh
+Thanks!
+-Jan

@@ -1,68 +1,43 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-pb0-f46.google.com ([209.85.160.46]:59205 "EHLO
-	mail-pb0-f46.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1755301Ab2JPS6M (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 16 Oct 2012 14:58:12 -0400
-Received: by mail-pb0-f46.google.com with SMTP id rr4so6259986pbb.19
-        for <linux-btrfs@vger.kernel.org>; Tue, 16 Oct 2012 11:58:12 -0700 (PDT)
-From: raghu.prabhu13@gmail.com
-To: zheng.yan@oracle.com, fengguang.wu@intel.com
-Cc: linux-mm@kvack.org, linux-btrfs@vger.kernel.org,
-        Raghavendra D Prabhu <rprabhu@wnohang.net>
-Subject: [PATCH] Change the check for PageReadahead into an else-if
-Date: Wed, 17 Oct 2012 00:28:05 +0530
-Message-Id: <08589dd39c78346ec2ed2fedfd6e3121ca38acda.1350413420.git.rprabhu@wnohang.net>
+Received: from cantor2.suse.de ([195.135.220.15]:46621 "EHLO mx2.suse.de"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1752896Ab2JPULg (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Tue, 16 Oct 2012 16:11:36 -0400
+Date: Tue, 16 Oct 2012 13:11:34 -0700
+From: Mark Fasheh <mfasheh@suse.de>
+To: Jan Schmidt <list.btrfs@jan-o-sch.net>
+Cc: chris.mason@fusionio.com, linux-btrfs@vger.kernel.org,
+        alex.btrfs@zadarastorage.com
+Subject: Re: [PATCH v2] Btrfs: extended inode refs support for send
+	mechanism
+Message-ID: <20121016201134.GZ8097@wotan.suse.de>
+Reply-To: Mark Fasheh <mfasheh@suse.de>
+References: <1350289845-18604-1-git-send-email-list.btrfs@jan-o-sch.net>
+MIME-Version: 1.0
+Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <1350289845-18604-1-git-send-email-list.btrfs@jan-o-sch.net>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-From: Raghavendra D Prabhu <rprabhu@wnohang.net>
+On Mon, Oct 15, 2012 at 10:30:45AM +0200, Jan Schmidt wrote:
+> This adds support for the new extended inode refs to btrfs send.
+> 
+> Signed-off-by: Jan Schmidt <list.btrfs@jan-o-sch.net>
+> ---
+>  fs/btrfs/backref.c |   22 ++++-----
+>  fs/btrfs/backref.h |    4 ++
+>  fs/btrfs/send.c    |  126 +++++++++++++++++++++++++++++++++-------------------
+>  3 files changed, 94 insertions(+), 58 deletions(-)
+> ---
+> Changes for v2:
+> - Re-understood how btrfs_search_slot_for_read works (3 places, reported
+>   by Alex Lyakas)
+> - Fixed extref handling in get_first_ref (reported by Mark Fasheh)
 
->From 51daa88ebd8e0d437289f589af29d4b39379ea76, page_sync_readahead coalesces
-async readahead into its readahead window, so another checking for that again is
-not required.
+Looks good to my eyes.
 
-Signed-off-by: Raghavendra D Prabhu <rprabhu@wnohang.net>
----
- fs/btrfs/relocation.c | 10 ++++------
- mm/filemap.c          |  3 +--
- 2 files changed, 5 insertions(+), 8 deletions(-)
+Reviewed-by: Mark Fasheh <mfasheh@suse.de>
+	--Mark
 
-diff --git a/fs/btrfs/relocation.c b/fs/btrfs/relocation.c
-index 4da0865..6362003 100644
---- a/fs/btrfs/relocation.c
-+++ b/fs/btrfs/relocation.c
-@@ -2996,12 +2996,10 @@ static int relocate_file_extent_cluster(struct inode *inode,
- 				ret = -ENOMEM;
- 				goto out;
- 			}
--		}
--
--		if (PageReadahead(page)) {
--			page_cache_async_readahead(inode->i_mapping,
--						   ra, NULL, page, index,
--						   last_index + 1 - index);
-+		} else if (PageReadahead(page)) {
-+				page_cache_async_readahead(inode->i_mapping,
-+							ra, NULL, page, index,
-+							last_index + 1 - index);
- 		}
- 
- 		if (!PageUptodate(page)) {
-diff --git a/mm/filemap.c b/mm/filemap.c
-index 3843445..d703224 100644
---- a/mm/filemap.c
-+++ b/mm/filemap.c
-@@ -1113,8 +1113,7 @@ find_page:
- 			page = find_get_page(mapping, index);
- 			if (unlikely(page == NULL))
- 				goto no_cached_page;
--		}
--		if (PageReadahead(page)) {
-+		} else if (PageReadahead(page)) {
- 			page_cache_async_readahead(mapping,
- 					ra, filp, page,
- 					index, last_index - index);
--- 
-1.7.12.3
-
+--
+Mark Fasheh

@@ -1,86 +1,68 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-wi0-f172.google.com ([209.85.212.172]:64938 "EHLO
-	mail-wi0-f172.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1753123Ab2JPPVb (ORCPT
+Received: from mail-pb0-f46.google.com ([209.85.160.46]:59205 "EHLO
+	mail-pb0-f46.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1755301Ab2JPS6M (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 16 Oct 2012 11:21:31 -0400
-Received: by mail-wi0-f172.google.com with SMTP id hq12so3737267wib.1
-        for <linux-btrfs@vger.kernel.org>; Tue, 16 Oct 2012 08:21:29 -0700 (PDT)
-MIME-Version: 1.0
-Reply-To: dakinsh00@staff.nctschools.org
-In-Reply-To: <CAAuL=cogLsjmGcW5BiPx14P_tjzQCxXfeKXvP4jnQA6DkvfP4w@mail.gmail.com>
-References: <CAAuL=cqf2yU0ofXpZc-N1y9FtL2h7OmRU8S03hyzs=MsyFFj7w@mail.gmail.com>
- <20121015201717.GR25498@carfax.org.uk> <CAAuL=cogLsjmGcW5BiPx14P_tjzQCxXfeKXvP4jnQA6DkvfP4w@mail.gmail.com>
-From: Shawn Dakin <dakinsh00@staff.nctschools.org>
-Date: Tue, 16 Oct 2012 11:21:08 -0400
-Message-ID: <CAAuL=cpbwKhYK3oyu055WYO9yy6suZtLBLeWthYNEUe_c2yk2Q@mail.gmail.com>
-Subject: Re: Can not Mount btrfs No Space left
-To: Hugo Mills <hugo@carfax.org.uk>,
-        Shawn Dakin <dakinsh00@staff.nctschools.org>,
-        linux-btrfs@vger.kernel.org
-Content-Type: text/plain; charset=ISO-8859-1
+	Tue, 16 Oct 2012 14:58:12 -0400
+Received: by mail-pb0-f46.google.com with SMTP id rr4so6259986pbb.19
+        for <linux-btrfs@vger.kernel.org>; Tue, 16 Oct 2012 11:58:12 -0700 (PDT)
+From: raghu.prabhu13@gmail.com
+To: zheng.yan@oracle.com, fengguang.wu@intel.com
+Cc: linux-mm@kvack.org, linux-btrfs@vger.kernel.org,
+        Raghavendra D Prabhu <rprabhu@wnohang.net>
+Subject: [PATCH] Change the check for PageReadahead into an else-if
+Date: Wed, 17 Oct 2012 00:28:05 +0530
+Message-Id: <08589dd39c78346ec2ed2fedfd6e3121ca38acda.1350413420.git.rprabhu@wnohang.net>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Well, I mounted the volume ro and copied that data to another device.
-Then I cleaned the junk out and then copied the data back to the
-original device which I had wiped.
-Total recovery time 4 hours.
-Thanks for the hint Hugo, I don't know why it never occurred to me to
-mount it read only.
+From: Raghavendra D Prabhu <rprabhu@wnohang.net>
 
+>From 51daa88ebd8e0d437289f589af29d4b39379ea76, page_sync_readahead coalesces
+async readahead into its readahead window, so another checking for that again is
+not required.
 
-On Mon, Oct 15, 2012 at 4:27 PM, Shawn Dakin
-<dakinsh00@staff.nctschools.org> wrote:
-> Hugo,
-> Thanks, I had not thought of that.
-> It does mount fine ro so I can access the files.
-> Any ideas on getting access to delete a few log files or snapshots so
-> I can mount the volume rw?
-> If not I will just copy it off onto another, but that will be time consuming.
->
->
-> On Mon, Oct 15, 2012 at 4:17 PM, Hugo Mills <hugo@carfax.org.uk> wrote:
->> On Mon, Oct 15, 2012 at 03:52:15PM -0400, Shawn Dakin wrote:
->>> I have a btrfs volume that will not mount due to "No space on device"
->>> I would gladly free up some space if I could only mount the volume.
->>> Does anyone have a trick to getting this volume back up and running?
->>> Any help would be great!!
->>
->>    Start with a 3.6 kernel (which has lots of ENOSPC fixes in it). Try
->> mounting with -o ro, which won't allow you to modify anything but may
->> show you if the FS is at least mountable in that state (and will give
->> you the capability to copy the data elsewhere in extremis). If you're
->> lucky, that mount may then allow you to mount it again without the -o
->> ro.
->>
->>    Hugo.
->>
->> --
->> === Hugo Mills: hugo@... carfax.org.uk | darksatanic.net | lug.org.uk ===
->>   PGP key: 515C238D from wwwkeys.eu.pgp.net or http://www.carfax.org.uk
->>        --- Great oxymorons of the world, no. 6: Mature Student ---
->
->
->
-> --
-> Shawn Dakin (CNE)
-> Director of Technology
-> Newcomerstown Schools
->
-> 659 S. Beaver St.
-> Newcomerstown Oh, 43832
-> Office 740-498-4999
-> Cell 740-227-0339
+Signed-off-by: Raghavendra D Prabhu <rprabhu@wnohang.net>
+---
+ fs/btrfs/relocation.c | 10 ++++------
+ mm/filemap.c          |  3 +--
+ 2 files changed, 5 insertions(+), 8 deletions(-)
 
-
-
+diff --git a/fs/btrfs/relocation.c b/fs/btrfs/relocation.c
+index 4da0865..6362003 100644
+--- a/fs/btrfs/relocation.c
++++ b/fs/btrfs/relocation.c
+@@ -2996,12 +2996,10 @@ static int relocate_file_extent_cluster(struct inode *inode,
+ 				ret = -ENOMEM;
+ 				goto out;
+ 			}
+-		}
+-
+-		if (PageReadahead(page)) {
+-			page_cache_async_readahead(inode->i_mapping,
+-						   ra, NULL, page, index,
+-						   last_index + 1 - index);
++		} else if (PageReadahead(page)) {
++				page_cache_async_readahead(inode->i_mapping,
++							ra, NULL, page, index,
++							last_index + 1 - index);
+ 		}
+ 
+ 		if (!PageUptodate(page)) {
+diff --git a/mm/filemap.c b/mm/filemap.c
+index 3843445..d703224 100644
+--- a/mm/filemap.c
++++ b/mm/filemap.c
+@@ -1113,8 +1113,7 @@ find_page:
+ 			page = find_get_page(mapping, index);
+ 			if (unlikely(page == NULL))
+ 				goto no_cached_page;
+-		}
+-		if (PageReadahead(page)) {
++		} else if (PageReadahead(page)) {
+ 			page_cache_async_readahead(mapping,
+ 					ra, filp, page,
+ 					index, last_index - index);
 -- 
-Shawn Dakin (CNE)
-Director of Technology
-Newcomerstown Schools
+1.7.12.3
 
-659 S. Beaver St.
-Newcomerstown Oh, 43832
-Office 740-498-4999
-Cell 740-227-0339

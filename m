@@ -1,18 +1,18 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from ipmail07.adl2.internode.on.net ([150.101.137.131]:2431 "EHLO
-	ipmail07.adl2.internode.on.net" rhost-flags-OK-OK-OK-OK)
-	by vger.kernel.org with ESMTP id S1754583Ab2JOUmv (ORCPT
+Received: from ipmail05.adl6.internode.on.net ([150.101.137.143]:28991 "EHLO
+	ipmail05.adl6.internode.on.net" rhost-flags-OK-OK-OK-OK)
+	by vger.kernel.org with ESMTP id S1754771Ab2JPAEW (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 15 Oct 2012 16:42:51 -0400
-Date: Tue, 16 Oct 2012 07:42:17 +1100
+	Mon, 15 Oct 2012 20:04:22 -0400
+Date: Tue, 16 Oct 2012 11:04:05 +1100
 From: Dave Chinner <david@fromorbit.com>
 To: zwu.kernel@gmail.com
 Cc: linux-fsdevel@vger.kernel.org, linux-ext4@vger.kernel.org,
         linux-btrfs@vger.kernel.org, linux-kernel@vger.kernel.org,
         linuxram@linux.vnet.ibm.com, viro@zeniv.linux.org.uk, dave@jikos.cz,
         tytso@mit.edu, cmm@us.ibm.com, Zhi Yong Wu <wuzhy@linux.vnet.ibm.com>
-Subject: Re: [RFC v3 00/13] vfs: hot data tracking
-Message-ID: <20121015204217.GB2739@dastard>
+Subject: [PATCH] xfs: add hot tracking support.
+Message-ID: <20121016000405.GA2864@dastard>
 References: <1349863655-29320-1-git-send-email-zwu.kernel@gmail.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
@@ -20,71 +20,75 @@ In-Reply-To: <1349863655-29320-1-git-send-email-zwu.kernel@gmail.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Wed, Oct 10, 2012 at 06:07:22PM +0800, zwu.kernel@gmail.com wrote:
-> From: Zhi Yong Wu <wuzhy@linux.vnet.ibm.com>
-> 
-> NOTE:
-> 
->   The patchset is currently post out mainly to make sure
-> it is going in the correct direction and hope to get some
-> helpful comments from other guys.
->   For more infomation, please check hot_tracking.txt in Documentation
-> 
-> TODO List:
 
-1) Fix OOM issues - the hot inode tracking caches grow very large
-and don't get trimmed under memory pressure. From slabtop, after
-creating roughly 24 million single byte files(*) on a machine with
-8GB RAM:
+From: Dave Chinner <dchinner@redhat.com>
 
-  OBJS ACTIVE  USE OBJ SIZE  SLABS OBJ/SLAB CACHE SIZE NAME                   
-23859510 23859476  99%    0.12K 795317       30   3181268K hot_range_item
-23859441 23859439  99%    0.16K 1037367       23   4149468K hot_inode_item
-572530 572530 100%    0.55K  81790        7    327160K radix_tree_node
-241706 241406  99%    0.22K  14218       17     56872K xfs_ili
-241206 241204  99%    1.06K  80402        3    321608K xfs_inode
+Connect up the VFS hot tracking support so XFS filesystems can make
+use of it.
 
-The inode tracking is trying to track all 24 million inodes even
-though they have been written only once, and there are only 240,000
-inodes in the cache at this point in time. That was the last update
-that slabtop got, so it is indicative of the impending OOM situation
-that occurred.
+Signed-off-by: Dave Chinner <dchinner@redhat.com>
+---
+ fs/xfs/xfs_mount.h |    1 +
+ fs/xfs/xfs_super.c |    9 +++++++++
+ 2 files changed, 10 insertions(+)
 
-> Changelog from v2:
->  1.) Converted to Radix trees, not RB-tree [Zhiyong, Dave Chinner]
->  2.) Added memory shrinker [Dave Chinner]
-
-I haven't looked at the shrinker, but clearly it is not working,
-otherwise the above OOM situation would not be occurring.
-
-Cheers,
-
-Dave.
-
-(*) Tested on an empty 17TB XFS filesystem with:
-
-$ sudo mkfs.xfs -f -l size=131072b,sunit=8 /dev/vdc
-meta-data=/dev/vdc               isize=256    agcount=17, agsize=268435455 blks
-         =                       sectsz=512   attr=2, projid32bit=0
-data     =                       bsize=4096   blocks=4563402735, imaxpct=5
-         =                       sunit=0      swidth=0 blks
-naming   =version 2              bsize=4096   ascii-ci=0
-log      =internal log           bsize=4096   blocks=131072, version=2
-         =                       sectsz=512   sunit=1 blks, lazy-count=1
-realtime =none                   extsz=4096   blocks=0, rtextents=0
-$ sudo mount -o logbsize=256k /dev/vdc /mnt/scratch
-$ sudo chmod 777 /mnt/scratch
-$ fs_mark  -D  10000  -S0  -n  100000  -s  1  -L  63  -d \
-/mnt/scratch/0  -d  /mnt/scratch/1  -d  /mnt/scratch/2  -d \
-/mnt/scratch/3  -d  /mnt/scratch/4  -d  /mnt/scratch/5  -d \
-/mnt/scratch/6  -d  /mnt/scratch/7
-.....
-     0     21600000            1      16679.3         12552262
-     0     22400000            1      15412.4         12588587
-     0     23200000            1      16367.6         14199322
-     0     24000000            1      15680.4         15741205
-<hangs here w/ OOM>
-
--- 
-Dave Chinner
-david@fromorbit.com
+diff --git a/fs/xfs/xfs_mount.h b/fs/xfs/xfs_mount.h
+index a631ca3..d5e7277 100644
+--- a/fs/xfs/xfs_mount.h
++++ b/fs/xfs/xfs_mount.h
+@@ -215,6 +215,7 @@ typedef struct xfs_mount {
+ #define XFS_MOUNT_WSYNC		(1ULL << 0)	/* for nfs - all metadata ops
+ 						   must be synchronous except
+ 						   for space allocations */
++#define XFS_MOUNT_HOTTRACK	(1ULL << 1)	/* hot inode tracking */
+ #define XFS_MOUNT_WAS_CLEAN	(1ULL << 3)
+ #define XFS_MOUNT_FS_SHUTDOWN	(1ULL << 4)	/* atomic stop of all filesystem
+ 						   operations, typically for
+diff --git a/fs/xfs/xfs_super.c b/fs/xfs/xfs_super.c
+index 56c2537..17786ff 100644
+--- a/fs/xfs/xfs_super.c
++++ b/fs/xfs/xfs_super.c
+@@ -61,6 +61,7 @@
+ #include <linux/kthread.h>
+ #include <linux/freezer.h>
+ #include <linux/parser.h>
++#include <linux/hot_tracking.h>
+ 
+ static const struct super_operations xfs_super_operations;
+ static kmem_zone_t *xfs_ioend_zone;
+@@ -114,6 +115,7 @@ mempool_t *xfs_ioend_pool;
+ #define MNTOPT_NODELAYLOG  "nodelaylog"	/* Delayed logging disabled */
+ #define MNTOPT_DISCARD	   "discard"	/* Discard unused blocks */
+ #define MNTOPT_NODISCARD   "nodiscard"	/* Do not discard unused blocks */
++#define MNTOPT_HOTTRACK	"hot_track"	/* hot inode tracking */
+ 
+ /*
+  * Table driven mount option parser.
+@@ -371,6 +373,8 @@ xfs_parseargs(
+ 			mp->m_flags |= XFS_MOUNT_DISCARD;
+ 		} else if (!strcmp(this_char, MNTOPT_NODISCARD)) {
+ 			mp->m_flags &= ~XFS_MOUNT_DISCARD;
++		} else if (!strcmp(this_char, MNTOPT_HOTTRACK)) {
++			mp->m_flags |= XFS_MOUNT_HOTTRACK;
+ 		} else if (!strcmp(this_char, "ihashsize")) {
+ 			xfs_warn(mp,
+ 	"ihashsize no longer used, option is deprecated.");
+@@ -1040,6 +1044,9 @@ xfs_fs_put_super(
+ {
+ 	struct xfs_mount	*mp = XFS_M(sb);
+ 
++	if (mp->m_flags & XFS_MOUNT_HOTTRACK)
++		hot_track_exit(sb);
++
+ 	xfs_filestream_unmount(mp);
+ 	xfs_unmountfs(mp);
+ 
+@@ -1470,6 +1477,8 @@ xfs_fs_fill_super(
+ 		error = ENOMEM;
+ 		goto out_unmount;
+ 	}
++	if (mp->m_flags & XFS_MOUNT_HOTTRACK)
++		hot_track_init(sb);
+ 
+ 	return 0;
+ 

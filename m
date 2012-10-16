@@ -1,88 +1,68 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([222.73.24.84]:46540 "EHLO song.cn.fujitsu.com"
-	rhost-flags-OK-FAIL-OK-OK) by vger.kernel.org with ESMTP
-	id S1756889Ab2JSI7V (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Fri, 19 Oct 2012 04:59:21 -0400
-Message-ID: <50811681.2000702@cn.fujitsu.com>
-Date: Fri, 19 Oct 2012 16:59:45 +0800
-From: Miao Xie <miaox@cn.fujitsu.com>
-Reply-To: miaox@cn.fujitsu.com
+Received: from mail-pa0-f46.google.com ([209.85.220.46]:37948 "EHLO
+	mail-pa0-f46.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1751094Ab2JPMEk (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>);
+	Tue, 16 Oct 2012 08:04:40 -0400
+Received: by mail-pa0-f46.google.com with SMTP id hz1so5846278pad.19
+        for <linux-btrfs@vger.kernel.org>; Tue, 16 Oct 2012 05:04:40 -0700 (PDT)
+Message-ID: <507D4D4F.10807@gmail.com>
+Date: Tue, 16 Oct 2012 20:04:31 +0800
+From: Wang Sheng-Hui <shhuiw@gmail.com>
 MIME-Version: 1.0
-To: Anand jain <Anand.Jain@oracle.com>
-CC: linux-btrfs@vger.kernel.org
-Subject: Re: [PATCH 2/4] Btrfs-progs: fix irrelevant string in the subvol
- path
-References: <1350627837-27639-1-git-send-email-Anand.Jain@oracle.com> <1350627837-27639-3-git-send-email-Anand.Jain@oracle.com>
-In-Reply-To: <1350627837-27639-3-git-send-email-Anand.Jain@oracle.com>
-Content-Type: text/plain; charset=UTF-8
+To: linux-btrfs@vger.kernel.org
+Subject: [PATCH] btrfs-progs: check non-digit character in the size value
+ for mkfs options
+Content-Type: text/plain; charset=ISO-8859-1
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 	fri, 19 Oct 2012 14:23:55 +0800, Anand jain wrote:
-> From: Anand Jain <anand.jain@oracle.com>
-> 
-> btrfs su list -a /btrfs/sv1
-> ID 256 gen 6 top level 5 path <FS_TREE>/sv1
-> ID 258 gen 6 top level 5 path <FS_TREE>/ss1
+When we run mkfs.btrfs, we can specify the size value for leafsize, etc.
+Current the limit is 65536, and the lower limit is 4096. Also, the size
+should be 4096 aligned. When we specify such value, parse_size just check
+the tailing non-digit character, but doesn't check other characters.
 
-I don't agree with this patch, because after applying this patch, the output of 'btrfs su list'
-is the same as 'btrfs su list'. I hope 'btrfs su list' just list the subvolumes in the specified
-path. In this way, the user can find the path of the subvolume easily (the specified path + the
-path in the result of 'btrfs su list').
+For example, run "mkfs.btrfs -l 40960b btrfs.img" will get nodesize 40960,
+leafsize 40960 and sectorsize 4096, which is expected. But if we typo
+4096bb, "mkfs.btrfs -l 4096bb btrfs.img", the result is nodesize 4096,
+leafsize 4096 and sectorsize 4096, which maybe not what we want and what
+we really want to type is 40960b.
 
-Could you make it output the path which is relative to the path that the user specified? 
+Add check in parse_size to deal with the non-tailing non-digit characters.
 
-Thanks
-Miao
+Signed-off-by: Wang Sheng-Hui <shhuiw@gmail.com>
+---
+ mkfs.c |   11 +++++++++++
+ 1 files changed, 11 insertions(+), 0 deletions(-)
 
-> 
-> Signed-off-by: Anand Jain <anand.jain@oracle.com>
-> ---
->  cmds-subvolume.c |   15 +++++++++++++--
->  1 files changed, 13 insertions(+), 2 deletions(-)
-> 
-> diff --git a/cmds-subvolume.c b/cmds-subvolume.c
-> index a33c352..f8beecc 100644
-> --- a/cmds-subvolume.c
-> +++ b/cmds-subvolume.c
-> @@ -306,7 +306,7 @@ static int cmd_subvol_list(int argc, char **argv)
->  	u64 top_id;
->  	int ret;
->  	int c;
-> -	char *subvol;
-> +	char *subvol, *mnt = NULL;
->  	int is_tab_result = 0;
->  	int is_list_all = 0;
->  	struct option long_options[] = {
-> @@ -398,9 +398,18 @@ static int cmd_subvol_list(int argc, char **argv)
->  		return 13;
->  	}
->  
-> -	fd = open_file_or_dir(subvol);
-> +	ret = find_mount_root(subvol, &mnt);
-> +	if (ret < 0) {
-> +		fprintf(stderr, "ERROR: find_mount_root failed on %s: "
-> +				"%s\n", subvol,
-> +			strerror(-ret));
-> +		return 12;
-> +	}
-> +
-> +	fd = open_file_or_dir(mnt);
->  	if (fd < 0) {
->  		fprintf(stderr, "ERROR: can't access '%s'\n", subvol);
-> +		free(mnt);
->  		return 12;
->  	}
->  
-> @@ -412,6 +421,8 @@ static int cmd_subvol_list(int argc, char **argv)
->  
->  	ret = btrfs_list_subvols(fd, filter_set, comparer_set,
->  				is_tab_result);
-> +
-> +	free(mnt);
->  	if (ret)
->  		return 19;
->  	return 0;
-> 
+diff --git a/mkfs.c b/mkfs.c
+index 2cc6051..11e64d2 100644
+--- a/mkfs.c
++++ b/mkfs.c
+@@ -60,6 +60,7 @@ static u64 parse_size(char *s)
+ 	char c;
+ 	u64 mult = 1;
+ 	u64 ret;
++	int i;
 
+ 	s = strdup(s);
 
+@@ -80,6 +81,16 @@ static u64 parse_size(char *s)
+ 		}
+ 		s[len - 1] = '\0';
+ 	}
++
++	len = strlen(s);
++	for (i = 0; i < len; i++) {
++		if (!isdigit(s[i])) {
++			fprintf(stderr, "Illegal size value contains "
++				"non-digit character %c\n", s[i]);
++			exit(1);
++		}
++	}
++
+ 	ret = atol(s) * mult;
+ 	free(s);
+ 	return ret;
+-- 
+1.7.5.4

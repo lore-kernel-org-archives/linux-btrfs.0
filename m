@@ -1,151 +1,61 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mondschein.lichtvoll.de ([194.150.191.11]:44441 "EHLO
-	mail.lichtvoll.de" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1752286Ab2JOLv5 convert rfc822-to-8bit (ORCPT
+Received: from rcsinet15.oracle.com ([148.87.113.117]:46590 "EHLO
+	rcsinet15.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1754074Ab2JPG5X (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 15 Oct 2012 07:51:57 -0400
-From: Martin Steigerwald <Martin@lichtvoll.de>
+	Tue, 16 Oct 2012 02:57:23 -0400
+Received: from ucsinet22.oracle.com (ucsinet22.oracle.com [156.151.31.94])
+	by rcsinet15.oracle.com (Sentrion-MTA-4.2.2/Sentrion-MTA-4.2.2) with ESMTP id q9G6vMHj010497
+	(version=TLSv1/SSLv3 cipher=DHE-RSA-AES256-SHA bits=256 verify=OK)
+	for <linux-btrfs@vger.kernel.org>; Tue, 16 Oct 2012 06:57:22 GMT
+Received: from acsmt357.oracle.com (acsmt357.oracle.com [141.146.40.157])
+	by ucsinet22.oracle.com (8.14.4+Sun/8.14.4) with ESMTP id q9G6vLK5001156
+	(version=TLSv1/SSLv3 cipher=DHE-RSA-AES256-SHA bits=256 verify=NO)
+	for <linux-btrfs@vger.kernel.org>; Tue, 16 Oct 2012 06:57:21 GMT
+Received: from abhmt115.oracle.com (abhmt115.oracle.com [141.146.116.67])
+	by acsmt357.oracle.com (8.12.11.20060308/8.12.11) with ESMTP id q9G6vLXF015241
+	for <linux-btrfs@vger.kernel.org>; Tue, 16 Oct 2012 01:57:21 -0500
+From: Anand jain <Anand.Jain@oracle.com>
 To: linux-btrfs@vger.kernel.org
-Subject: Re: [PATCH][BTRFS-PROGS][V6] btrfs filesystem df
-Date: Mon, 15 Oct 2012 13:51:55 +0200
-Cc: Goffredo Baroncelli <kreijack@gmail.com>,
-        Chris Mason <chris.mason@fusionio.com>,
-        Hugo Mills <hugo@carfax.org.uk>, Roman Mamedov <rm@romanrm.ru>,
-        =?utf-8?q?S=C3=A9bastien_Maury?= <sebastien.maury@inserm.fr>,
-        Ilya Dryomov <idryomov@gmail.com>
-References: <1350155699-14338-1-git-send-email-kreijack@gmail.com> (sfid-20121014_015032_778513_83D735AD)
-In-Reply-To: <1350155699-14338-1-git-send-email-kreijack@gmail.com>
-MIME-Version: 1.0
-Content-Type: Text/Plain;
-  charset="utf-8"
-Message-Id: <201210151351.55680.Martin@lichtvoll.de>
+Cc: Anand Jain <anand.jain@oracle.com>
+Subject: [PATCH] Btrfs-progs: make use of column_name
+Date: Tue, 16 Oct 2012 15:00:46 +0800
+Message-Id: <1350370847-20262-2-git-send-email-Anand.Jain@oracle.com>
+In-Reply-To: <1350370847-20262-1-git-send-email-Anand.Jain@oracle.com>
+References: <20121009154418.GV4405@twin.jikos.cz>
+ <1350370847-20262-1-git-send-email-Anand.Jain@oracle.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Am Samstag, 13. Oktober 2012 schrieb Goffredo Baroncelli:
-> Hi Chris,
-> 
-> this serie of patches updated the command "btrfs filesystem
-> df". I update this command because it is not so easy to get
-> the information about the disk usage from the command "fi df" and "fi show".
-> This patch was the result of some discussions on the btrfs 
-> mailing list. Many thanks to all the contributors.
-> 
-> from the man page (see 2nd patch):
-> 
-> [...]
-> The  command  btrfs  filesystem  df is used to query the
-> status of the chunks, how many space on the disk(s) are used  by
-> the  chunks,  how many space are available in the chunks, and an
-> estimation of the free space of the filesystem.
-> [...]
-> 
-> $ ./btrfs filesystem df --help
-> usage: btrfs filesystem disk-usage [-k] <path> [<path>..]
-> 
->     Show space usage information for a mount point(s).
-> 
->     -k  Set KB (1024 bytes) as unit
-> 
-> $ ./btrfs filesystem df /
-> Path: /
-> Summary:
->   Disk_size:                 72.57GB
->   Disk_allocated:            25.10GB
->   Disk_unallocated:          47.48GB
->   Logical_size:              23.06GB
->   Used:                      11.01GB
->   Free_(Estimated):          55.66GB    (Max: 59.52GB, Min: 35.78GB)
->   Data_to_disk_ratio:           92 %
-> 
-> Allocated_area:
->   Type        Mode       Size_(disk)    Size_(logical)          Used
->   Data        Single         21.01GB           21.01GB       12.77GB
->   System      DUP            80.00MB           40.00MB        4.00KB
->   System      Single          4.00MB            4.00MB          0.00
->   Metadata    DUP             4.00GB            2.00GB      709.63MB
->   Metadata    Single          8.00MB            8.00MB          0.00
-> 
-> Where:
->         Disk_size                       -> sum of sizes of teh disks
->         Disk_allocated                  -> sum of chunk sizes
->         Disk_unallocated                -> Disk_size - Disk_allocated
->         Logical_size                    -> sum of logical area sizes
->         Used                            -> logical area used
->         Free_(Estimated)                -> on the basis of allocated
->                                            chunk, an estrapolation of
->                                            the free space
->         Data_to_disk_ratio              -> ration between the space occuped
->                                            by a chunk and the real space
->                                            available ( due to duplication
->                                            and/or RAID level)
->         Type				-> kind of chunk
->         Mode                            -> allocation policy of a chunk
->         Size_(disk)                     -> area of disk(s) occuped by the
->                                            chunk (see it as raw space used)
->         Size_(logical)                  -> logical area size of the chunk
->         Used                            -> portion of the logical area
->                                            used by the filesystem
+From: Anand Jain <anand.jain@oracle.com>
 
-Works nicely:
+Signed-off-by: Anand Jain <anand.jain@oracle.com>
+---
+ btrfs-list.c |    4 ++--
+ 1 files changed, 2 insertions(+), 2 deletions(-)
 
-merkaba:/home/martin/[…]/btrfs-progs-unstable> ./btrfs fi df /
-Path: /
-Summary:
-  Disk_size:                   18.62GB
-  Disk_allocated:              18.62GB
-  Disk_unallocated:               0.00
-  Logical_size:                16.87GB
-  Used:                        12.53GB
-  Free_(Estimated):             4.34GB  (Max: 4.34GB, min: 4.34GB)
-  Data_to_disk_ratio:             91 %
-
-Allocated_area:
-  Type        Mode       Size_(disk)    Size_(logical)          Used
-  Data        Single         15.10GB           15.10GB       11.84GB
-  System      DUP            16.00MB            8.00MB        4.00KB
-  System      Single          4.00MB            4.00MB          0.00
-  Metadata    DUP             3.50GB            1.75GB      696.70MB
-  Metadata    Single          8.00MB            8.00MB          0.00
-
-Tested-By: Martin Steigerwald <martin@lichtvoll.de>
-
-Thanks,
-Martin
-
-> You can pull this change from
->    http://cassiopea.homelinux.net/git/btrfs-progs-unstable.git
-> branch
->    disk_free
-> 
-> Please pull.
-> 
-> Signed-off-by: Goffredo Baroncelli <kreijack@gmail.com>
-> 
-> BR
-> Goffredo Baroncelli
-> 
-> Changelog:
-> V5->V6		Th V5 was a wrong patch, please discard it.
-> V4->V5		Add a close(fd) to avoid file descriptor leaking
-> V3->V4		Removed the switch -d -s from getopt(), aligned the
-> 		column Size_(logical), renamed the fields:
-> 		- Details -> Allocated_area
-> 		- Chunk_type -> Type
-> V2->V3          Removed the options '-s' and '-d'; replaced Chunk-size 
->                 and Logical-size with Size_(disk) and Size_(logical).
->                 Update the man page.
-> V1->V2          Uses getopt(); replace "-" with "_"; change the behaviour
->                 of the switches '-s' and '-d'.
-> V0->V1          Change the name of command from disk-usage to df
-> 
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
-> 
-
-
+diff --git a/btrfs-list.c b/btrfs-list.c
+index 74782b8..9cfdb35 100644
+--- a/btrfs-list.c
++++ b/btrfs-list.c
+@@ -1432,7 +1432,7 @@ static void print_all_volume_info_tab_head()
+ 
+ 	for (i = 0; i < BTRFS_LIST_ALL; i++) {
+ 		if (btrfs_list_columns[i].need_print)
+-			printf("%s\t", btrfs_list_columns[i].name);
++			printf("%s\t", btrfs_list_columns[i].column_name);
+ 
+ 		if (i == BTRFS_LIST_ALL-1)
+ 			printf("\n");
+@@ -1442,7 +1442,7 @@ static void print_all_volume_info_tab_head()
+ 		memset(barrier, 0, sizeof(barrier));
+ 
+ 		if (btrfs_list_columns[i].need_print) {
+-			len = strlen(btrfs_list_columns[i].name);
++			len = strlen(btrfs_list_columns[i].column_name);
+ 			while (len--)
+ 				strcat(barrier, "-");
+ 
 -- 
-Martin 'Helios' Steigerwald - http://www.Lichtvoll.de
-GPG: 03B0 0D6C 0040 0710 4AFA  B82F 991B EAAC A599 84C7
+1.7.1
+

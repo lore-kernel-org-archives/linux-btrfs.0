@@ -1,120 +1,27 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from eu1sys200aog104.obsmtp.com ([207.126.144.117]:40606 "HELO
-	eu1sys200aog104.obsmtp.com" rhost-flags-OK-OK-OK-OK)
-	by vger.kernel.org with SMTP id S1752251Ab2JPU0K (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 16 Oct 2012 16:26:10 -0400
-Received: by mail-we0-f198.google.com with SMTP id z53so4272700wey.1
-        for <linux-btrfs@vger.kernel.org>; Tue, 16 Oct 2012 13:26:08 -0700 (PDT)
+Received: from mx2.fusionio.com ([66.114.96.31]:60081 "EHLO mx2.fusionio.com"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1751875Ab2JPU6m (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Tue, 16 Oct 2012 16:58:42 -0400
+Date: Tue, 16 Oct 2012 16:58:36 -0400
+From: Chris Mason <chris.mason@fusionio.com>
+To: Jan Schmidt <list.btrfs@jan-o-sch.net>
+CC: Chris Mason <clmason@fusionio.com>,
+        "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>,
+        "mfasheh@suse.de" <mfasheh@suse.de>,
+        "alex.btrfs@zadarastorage.com" <alex.btrfs@zadarastorage.com>
+Subject: Re: [PATCH v2] Btrfs: extended inode refs support for send mechanism
+Message-ID: <20121016205836.GC7339@shiny>
+References: <1350289845-18604-1-git-send-email-list.btrfs@jan-o-sch.net>
 MIME-Version: 1.0
-From: Sami Haahtinen <sami@haahtinen.name>
-Date: Tue, 16 Oct 2012 23:25:47 +0300
-Message-ID: <CA+nK0aMXO31DZOz3q279wuswY4Sa6GqP7Ad6MG73E-AWP2+rNw@mail.gmail.com>
-Subject: filesystem in such a state that btrfsck crashes
-To: linux-btrfs@vger.kernel.org
-Content-Type: multipart/mixed; boundary=bcaec54ee10acff67b04cc32f624
+Content-Type: text/plain; charset="us-ascii"
+In-Reply-To: <1350289845-18604-1-git-send-email-list.btrfs@jan-o-sch.net>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
---bcaec54ee10acff67b04cc32f624
-Content-Type: text/plain; charset=UTF-8
+On Mon, Oct 15, 2012 at 02:30:45AM -0600, Jan Schmidt wrote:
+> This adds support for the new extended inode refs to btrfs send.
 
-Hi,
+Thanks, pulling this in.
 
-A few days ago I started experiencing some major slowdowns in my main
-btrfs filesystem and when inspecting the errors I noticed an error
-during balance:
-
-btrfs: block rsv returned -28
-
-After a while I started seeing worse and worse problems with the
-filesystem. Eventually I was forced to revert to a LiveCD to attempt a
-fix. I downloaded the latest version of btrfs-progs from git and ran
-btrfsck against the filesystem and btrfsck dies with a segfault after
-quite some time.
-
-The kernel I started seeing the problems is 3.6.0 and I was on 3.6.2
-during the few final moments. I have backups of the filesystem, but
-I'm a bit curious what is causing this. I've seen mentions of other
-segfault causing problems, so if there is anything I can do to help
-debug the cause for the segfault, I'd be happy to help.
-
-Filesystem info:
-
-Label: none  uuid: 6dab592a-72a2-41bd-a773-c16614c56f51
-	Total devices 2 FS bytes used 843.64GB
-	devid    2 size 1.80TB used 1.32TB path /dev/sdb2
-	devid    1 size 1.80TB used 1.32TB path /dev/sda2
-
-Data, RAID1: total=1.25TB, used=809.41GB
-System, RAID1: total=32.00MB, used=196.00KB
-System: total=4.00MB, used=0.00
-Metadata, RAID1: total=74.00GB, used=34.23GB
-
-
-Regards,
---
-Sami Haahtinen
-Bad Wolf Oy
-+358443302775
-
---bcaec54ee10acff67b04cc32f624
-Content-Type: text/plain; charset=US-ASCII; name="captureout.txt"
-Content-Disposition: attachment; filename="captureout.txt"
-Content-Transfer-Encoding: base64
-X-Attachment-Id: f_h8dglhp80
-
-cm9vdEBzeXNyZXNjY2QgL3Jvb3QgJSBidHJmc2NrIC9kZXYvc2RhMgpjaGVja2luZyBleHRlbnRz
-CnJlZiBtaXNtYXRjaCBvbiBbMjgyMjk1MTc3MjE2IDQwOTZdIGV4dGVudCBpdGVtIDEyLCBmb3Vu
-ZCA4CkJhY2tyZWYgMjgyMjk1MTc3MjE2IHBhcmVudCAyNzY2NTYzMDQxMjggbm90IHJlZmVyZW5j
-ZWQgYmFjayAweDEyMDc2OTE4CkJhY2tyZWYgMjgyMjk1MTc3MjE2IHBhcmVudCAyNzY2NTYyOTU5
-MzYgbm90IHJlZmVyZW5jZWQgYmFjayAweGMzNmIzNzgKQmFja3JlZiAyODIyOTUxNzcyMTYgcGFy
-ZW50IDI3Njc0MzA5ODM2OCBub3QgcmVmZXJlbmNlZCBiYWNrIDB4YmY4MDhkOApJbmNvcnJlY3Qg
-Z2xvYmFsIGJhY2tyZWYgY291bnQgb24gMjgyMjk1MTc3MjE2IGZvdW5kIDExIHdhbnRlZCA4CmJh
-Y2twb2ludGVyIG1pc21hdGNoIG9uIFsyODIyOTUxNzcyMTYgNDA5Nl0KcmVmIG1pc21hdGNoIG9u
-IFsyODkzMDQ1NTU1MjAgNDA5Nl0gZXh0ZW50IGl0ZW0gMiwgZm91bmQgMQpCYWNrcmVmIDI4OTMw
-NDU1NTUyMCBwYXJlbnQgMjc2NDUzMzUxNDI0IG5vdCByZWZlcmVuY2VkIGJhY2sgMHg4MmE1NmVh
-MApJbmNvcnJlY3QgZ2xvYmFsIGJhY2tyZWYgY291bnQgb24gMjg5MzA0NTU1NTIwIGZvdW5kIDIg
-d2FudGVkIDEKYmFja3BvaW50ZXIgbWlzbWF0Y2ggb24gWzI4OTMwNDU1NTUyMCA0MDk2XQpyZWYg
-bWlzbWF0Y2ggb24gWzI4OTMzMDE2MzcxMiA0MDk2XSBleHRlbnQgaXRlbSAyLCBmb3VuZCAxCkJh
-Y2tyZWYgMjg5MzMwMTYzNzEyIHBhcmVudCAyNzY0NTMzNTE0MjQgbm90IHJlZmVyZW5jZWQgYmFj
-ayAweDgxYjJlMmUwCkluY29ycmVjdCBnbG9iYWwgYmFja3JlZiBjb3VudCBvbiAyODkzMzAxNjM3
-MTIgZm91bmQgMiB3YW50ZWQgMQpiYWNrcG9pbnRlciBtaXNtYXRjaCBvbiBbMjg5MzMwMTYzNzEy
-IDQwOTZdCnJlZiBtaXNtYXRjaCBvbiBbMjg5MzMyMTc0ODQ4IDQwOTZdIGV4dGVudCBpdGVtIDIs
-IGZvdW5kIDEKQmFja3JlZiAyODkzMzIxNzQ4NDggcGFyZW50IDI3NjQ1MzM1MTQyNCBub3QgcmVm
-ZXJlbmNlZCBiYWNrIDB4ODJjM2IwNzAKSW5jb3JyZWN0IGdsb2JhbCBiYWNrcmVmIGNvdW50IG9u
-IDI4OTMzMjE3NDg0OCBmb3VuZCAyIHdhbnRlZCAxCmJhY2twb2ludGVyIG1pc21hdGNoIG9uIFsy
-ODkzMzIxNzQ4NDggNDA5Nl0KcmVmIG1pc21hdGNoIG9uIFsyODkzMzM2MjA3MzYgNDA5Nl0gZXh0
-ZW50IGl0ZW0gMiwgZm91bmQgMQpCYWNrcmVmIDI4OTMzMzYyMDczNiBwYXJlbnQgMjc2NDUzMzUx
-NDI0IG5vdCByZWZlcmVuY2VkIGJhY2sgMHg4MTJmZTk1MApJbmNvcnJlY3QgZ2xvYmFsIGJhY2ty
-ZWYgY291bnQgb24gMjg5MzMzNjIwNzM2IGZvdW5kIDIgd2FudGVkIDEKYmFja3BvaW50ZXIgbWlz
-bWF0Y2ggb24gWzI4OTMzMzYyMDczNiA0MDk2XQpyZWYgbWlzbWF0Y2ggb24gWzI4OTMzNDEwODE2
-MCA0MDk2XSBleHRlbnQgaXRlbSAyLCBmb3VuZCAxCkJhY2tyZWYgMjg5MzM0MTA4MTYwIHBhcmVu
-dCAyNzY2NTYyOTU5MzYgbm90IHJlZmVyZW5jZWQgYmFjayAweDg1ZDFkZGU4CkluY29ycmVjdCBn
-bG9iYWwgYmFja3JlZiBjb3VudCBvbiAyODkzMzQxMDgxNjAgZm91bmQgMiB3YW50ZWQgMQpiYWNr
-cG9pbnRlciBtaXNtYXRjaCBvbiBbMjg5MzM0MTA4MTYwIDQwOTZdCnJlZiBtaXNtYXRjaCBvbiBb
-Mjg5Mzk2MTE3NTA0IDQwOTZdIGV4dGVudCBpdGVtIDUsIGZvdW5kIDQKQmFja3JlZiAyODkzOTYx
-MTc1MDQgcGFyZW50IDI3NjQ1MzMzOTEzNiBub3QgcmVmZXJlbmNlZCBiYWNrIDB4YjI0M2NhMApJ
-bmNvcnJlY3QgZ2xvYmFsIGJhY2tyZWYgY291bnQgb24gMjg5Mzk2MTE3NTA0IGZvdW5kIDUgd2Fu
-dGVkIDQKYmFja3BvaW50ZXIgbWlzbWF0Y2ggb24gWzI4OTM5NjExNzUwNCA0MDk2XQpyZWYgbWlz
-bWF0Y2ggb24gWzI4OTQ4NDM3ODExMiA0MDk2XSBleHRlbnQgaXRlbSAyLCBmb3VuZCAxCkJhY2ty
-ZWYgMjg5NDg0Mzc4MTEyIHBhcmVudCAyNzY0NTMzMzkxMzYgbm90IHJlZmVyZW5jZWQgYmFjayAw
-eDg0MDE0ZjIwCkluY29ycmVjdCBnbG9iYWwgYmFja3JlZiBjb3VudCBvbiAyODk0ODQzNzgxMTIg
-Zm91bmQgMiB3YW50ZWQgMQpiYWNrcG9pbnRlciBtaXNtYXRjaCBvbiBbMjg5NDg0Mzc4MTEyIDQw
-OTZdCnJlZiBtaXNtYXRjaCBvbiBbMjg5NDg4NDI5MDU2IDQwOTZdIGV4dGVudCBpdGVtIDIsIGZv
-dW5kIDEKQmFja3JlZiAyODk0ODg0MjkwNTYgcGFyZW50IDI3NjQ1MzMzOTEzNiBub3QgcmVmZXJl
-bmNlZCBiYWNrIDB4ODJkZDUxYjgKSW5jb3JyZWN0IGdsb2JhbCBiYWNrcmVmIGNvdW50IG9uIDI4
-OTQ4ODQyOTA1NiBmb3VuZCAyIHdhbnRlZCAxCmJhY2twb2ludGVyIG1pc21hdGNoIG9uIFsyODk0
-ODg0MjkwNTYgNDA5Nl0KcmVmIG1pc21hdGNoIG9uIFsyODk0OTAxMzI5OTIgNDA5Nl0gZXh0ZW50
-IGl0ZW0gMiwgZm91bmQgMQpCYWNrcmVmIDI4OTQ5MDEzMjk5MiBwYXJlbnQgMjc2NDUzMzM5MTM2
-IG5vdCByZWZlcmVuY2VkIGJhY2sgMHg4MjgxMDMxMApJbmNvcnJlY3QgZ2xvYmFsIGJhY2tyZWYg
-Y291bnQgb24gMjg5NDkwMTMyOTkyIGZvdW5kIDIgd2FudGVkIDEKYmFja3BvaW50ZXIgbWlzbWF0
-Y2ggb24gWzI4OTQ5MDEzMjk5MiA0MDk2XQpyZWYgbWlzbWF0Y2ggb24gWzI4OTQ5MDU5MTc0NCA0
-MDk2XSBleHRlbnQgaXRlbSAyLCBmb3VuZCAxCkJhY2tyZWYgMjg5NDkwNTkxNzQ0IHBhcmVudCAy
-NzY2NTYzMDQxMjggbm90IHJlZmVyZW5jZWQgYmFjayAweDg0OTMxMGM4CkluY29ycmVjdCBnbG9i
-YWwgYmFja3JlZiBjb3VudCBvbiAyODk0OTA1OTE3NDQgZm91bmQgMiB3YW50ZWQgMQpiYWNrcG9p
-bnRlciBtaXNtYXRjaCBvbiBbMjg5NDkwNTkxNzQ0IDQwOTZdCkVycm9ycyBmb3VuZCBpbiBleHRl
-bnQgYWxsb2NhdGlvbiB0cmVlCmNoZWNraW5nIGZzIHJvb3RzCnJvb3QgMjU3IGlub2RlIDE3NjYz
-MTYgZXJyb3JzIDQwMAp6c2g6IGFib3J0ICAgICAgYnRyZnNjayAvZGV2L3NkYTIKcm9vdEBzeXNy
-ZXNjY2QgL3Jvb3QgJQo=
---bcaec54ee10acff67b04cc32f624--
+-chris

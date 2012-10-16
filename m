@@ -1,28 +1,29 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from acsinet15.oracle.com ([141.146.126.227]:35760 "EHLO
+Received: from acsinet15.oracle.com ([141.146.126.227]:35779 "EHLO
 	acsinet15.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1753813Ab2JPG5X (ORCPT
+	with ESMTP id S1754319Ab2JPG5n (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 16 Oct 2012 02:57:23 -0400
+	Tue, 16 Oct 2012 02:57:43 -0400
 Received: from ucsinet22.oracle.com (ucsinet22.oracle.com [156.151.31.94])
-	by acsinet15.oracle.com (Sentrion-MTA-4.2.2/Sentrion-MTA-4.2.2) with ESMTP id q9G6vKJG027421
+	by acsinet15.oracle.com (Sentrion-MTA-4.2.2/Sentrion-MTA-4.2.2) with ESMTP id q9G6vNDA027459
 	(version=TLSv1/SSLv3 cipher=DHE-RSA-AES256-SHA bits=256 verify=OK)
-	for <linux-btrfs@vger.kernel.org>; Tue, 16 Oct 2012 06:57:21 GMT
-Received: from acsmt357.oracle.com (acsmt357.oracle.com [141.146.40.157])
-	by ucsinet22.oracle.com (8.14.4+Sun/8.14.4) with ESMTP id q9G6vJeW001130
+	for <linux-btrfs@vger.kernel.org>; Tue, 16 Oct 2012 06:57:24 GMT
+Received: from acsmt356.oracle.com (acsmt356.oracle.com [141.146.40.156])
+	by ucsinet22.oracle.com (8.14.4+Sun/8.14.4) with ESMTP id q9G6vMFu001173
 	(version=TLSv1/SSLv3 cipher=DHE-RSA-AES256-SHA bits=256 verify=NO)
-	for <linux-btrfs@vger.kernel.org>; Tue, 16 Oct 2012 06:57:20 GMT
+	for <linux-btrfs@vger.kernel.org>; Tue, 16 Oct 2012 06:57:23 GMT
 Received: from abhmt115.oracle.com (abhmt115.oracle.com [141.146.116.67])
-	by acsmt357.oracle.com (8.12.11.20060308/8.12.11) with ESMTP id q9G6vJsa015235
-	for <linux-btrfs@vger.kernel.org>; Tue, 16 Oct 2012 01:57:19 -0500
+	by acsmt356.oracle.com (8.12.11.20060308/8.12.11) with ESMTP id q9G6vMN0002206
+	for <linux-btrfs@vger.kernel.org>; Tue, 16 Oct 2012 01:57:22 -0500
 From: Anand jain <Anand.Jain@oracle.com>
 To: linux-btrfs@vger.kernel.org
 Cc: Anand Jain <anand.jain@oracle.com>
-Subject: [PATCH V3] Btrfs-progs: add parent uuid for snapshots
-Date: Tue, 16 Oct 2012 15:00:45 +0800
-Message-Id: <1350370847-20262-1-git-send-email-Anand.Jain@oracle.com>
-In-Reply-To: <20121009154418.GV4405@twin.jikos.cz>
+Subject: [PATCH] Btrfs-progs: update man page for -u and -q option in subvol list
+Date: Tue, 16 Oct 2012 15:00:47 +0800
+Message-Id: <1350370847-20262-3-git-send-email-Anand.Jain@oracle.com>
+In-Reply-To: <1350370847-20262-1-git-send-email-Anand.Jain@oracle.com>
 References: <20121009154418.GV4405@twin.jikos.cz>
+ <1350370847-20262-1-git-send-email-Anand.Jain@oracle.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
@@ -30,177 +31,42 @@ From: Anand Jain <anand.jain@oracle.com>
 
 Signed-off-by: Anand Jain <anand.jain@oracle.com>
 ---
- btrfs-list.c     |   32 +++++++++++++++++++++++++++-----
- btrfs-list.h     |    1 +
- cmds-subvolume.c |    6 +++++-
- 3 files changed, 33 insertions(+), 6 deletions(-)
+ man/btrfs.8.in |    8 ++++++--
+ 1 files changed, 6 insertions(+), 2 deletions(-)
 
-diff --git a/btrfs-list.c b/btrfs-list.c
-index e5f0f96..5314ced 100644
---- a/btrfs-list.c
-+++ b/btrfs-list.c
-@@ -80,6 +80,7 @@ struct root_info {
- 	time_t otime;
+diff --git a/man/btrfs.8.in b/man/btrfs.8.in
+index 57c25b0..91f2af2 100644
+--- a/man/btrfs.8.in
++++ b/man/btrfs.8.in
+@@ -11,7 +11,7 @@ btrfs \- control a btrfs filesystem
+ .PP
+ \fBbtrfs\fP \fBsubvolume create\fP\fI [<dest>/]<name>\fP
+ .PP
+-\fBbtrfs\fP \fBsubvolume list\fP\fI [-aprts] [-g [+|-]value] [-c [+|-]value] [--rootid=rootid,gen,ogen,path] <path>\fP
++\fBbtrfs\fP \fBsubvolume list\fP\fI [-apruqts] [-g [+|-]value] [-c [+|-]value] [--rootid=rootid,gen,ogen,path] <path>\fP
+ .PP
+ \fBbtrfs\fP \fBsubvolume set-default\fP\fI <id> <path>\fP
+ .PP
+@@ -110,7 +110,7 @@ Create a subvolume in \fI<dest>\fR (or in the current directory if
+ \fI<dest>\fR is omitted).
+ .TP
  
- 	u8 uuid[BTRFS_UUID_SIZE];
-+	u8 puuid[BTRFS_UUID_SIZE];
+-\fBsubvolume list\fR\fI [-aprts][-g [+|-]value] [-c [+|-]value] [--sort=gen,ogen,rootid,path] <path>\fR
++\fBsubvolume list\fR\fI [-apruqts][-g [+|-]value] [-c [+|-]value] [--sort=gen,ogen,rootid,path] <path>\fR
+ .RS
+ List the subvolumes present in the filesystem \fI<path>\fR. For every
+ subvolume the following information is shown by default.
+@@ -132,6 +132,10 @@ and top level. The parent's ID may be used at mount time via the
  
- 	/* path from the subvol we live in to this root, including the
- 	 * root's name.  This is null until we do the extra lookup ioctl.
-@@ -128,6 +129,11 @@ struct {
- 		.need_print	= 0,
- 	},
- 	{
-+		.name		= "parent UUID",
-+		.column_name	= "Parent UUID",
-+		.need_print	= 0,
-+	},
-+	{
- 		.name		= "uuid",
- 		.column_name	= "UUID",
- 		.need_print	= 0,
-@@ -435,7 +441,7 @@ static struct root_info *root_tree_search(struct root_lookup *root_tree,
- static int update_root(struct root_lookup *root_lookup,
- 		       u64 root_id, u64 ref_tree, u64 root_offset, u64 flags,
- 		       u64 dir_id, char *name, int name_len, u64 ogen, u64 gen,
--		       time_t ot, void *uuid)
-+		       time_t ot, void *uuid, void *puuid)
- {
- 	struct root_info *ri;
+ \fB-s\fP only snapshot subvolumes in the filesystem will  be listed.
  
-@@ -472,6 +478,8 @@ static int update_root(struct root_lookup *root_lookup,
- 		ri->otime = ot;
- 	if (uuid)
- 		memcpy(&ri->uuid, uuid, BTRFS_UUID_SIZE);
-+	if (puuid)
-+		memcpy(&ri->puuid, puuid, BTRFS_UUID_SIZE);
- 
- 	return 0;
- }
-@@ -489,17 +497,18 @@ static int update_root(struct root_lookup *root_lookup,
-  * gen: the current generation of the root
-  * ot: the original time(create time) of the root
-  * uuid: uuid of the root
-+ * puuid: uuid of the root parent if any
-  */
- static int add_root(struct root_lookup *root_lookup,
- 		    u64 root_id, u64 ref_tree, u64 root_offset, u64 flags,
- 		    u64 dir_id, char *name, int name_len, u64 ogen, u64 gen,
--		    time_t ot, void *uuid)
-+		    time_t ot, void *uuid, void *puuid)
- {
- 	struct root_info *ri;
- 	int ret;
- 
- 	ret = update_root(root_lookup, root_id, ref_tree, root_offset, flags,
--			  dir_id, name, name_len, ogen, gen, ot, uuid);
-+			  dir_id, name, name_len, ogen, gen, ot, uuid, puuid);
- 	if (!ret)
- 		return 0;
- 
-@@ -540,6 +549,9 @@ static int add_root(struct root_lookup *root_lookup,
- 	if (uuid) 
- 		memcpy(&ri->uuid, uuid, BTRFS_UUID_SIZE);
- 
-+	if (puuid)
-+		memcpy(&ri->puuid, puuid, BTRFS_UUID_SIZE);
++\fB-u\fP print UUID of the subvolume.
 +
- 	ret = root_tree_insert(root_lookup, ri);
- 	if (ret) {
- 		printf("failed to insert tree %llu\n", (unsigned long long)root_id);
-@@ -1022,6 +1034,7 @@ static int __list_subvol_search(int fd, struct root_lookup *root_lookup)
- 	int i;
- 	time_t t;
- 	u8 uuid[BTRFS_UUID_SIZE];
-+	u8 puuid[BTRFS_UUID_SIZE];
- 
- 	root_lookup_init(root_lookup);
- 	memset(&args, 0, sizeof(args));
-@@ -1075,7 +1088,7 @@ static int __list_subvol_search(int fd, struct root_lookup *root_lookup)
- 
- 				add_root(root_lookup, sh->objectid, sh->offset,
- 					 0, 0, dir_id, name, name_len, 0, 0, 0,
--					 NULL);
-+					 NULL, NULL);
- 			} else if (sh->type == BTRFS_ROOT_ITEM_KEY) {
- 				ri = (struct btrfs_root_item *)(args.buf + off);
- 				gen = btrfs_root_generation(ri);
-@@ -1085,15 +1098,17 @@ static int __list_subvol_search(int fd, struct root_lookup *root_lookup)
- 					t = ri->otime.sec;
- 					ogen = btrfs_root_otransid(ri);
- 					memcpy(uuid, ri->uuid, BTRFS_UUID_SIZE);
-+					memcpy(puuid, ri->parent_uuid, BTRFS_UUID_SIZE);
- 				} else {
- 					t = 0;
- 					ogen = 0;
- 					memset(uuid, 0, BTRFS_UUID_SIZE);
-+					memset(puuid, 0, BTRFS_UUID_SIZE);
- 				}
- 
- 				add_root(root_lookup, sh->objectid, 0,
- 					 sh->offset, flags, 0, NULL, 0, ogen,
--					 gen, t, uuid);
-+					 gen, t, uuid, puuid);
- 			}
- 
- 			off += sh->len;
-@@ -1347,6 +1362,13 @@ static void print_subvolume_column(struct root_info *subv,
- 			uuid_unparse(subv->uuid, uuidparse);
- 		printf("%s", uuidparse);
- 		break;
-+	case BTRFS_LIST_PUUID:
-+		if (uuid_is_null(subv->puuid))
-+			strcpy(uuidparse, "-");
-+		else
-+			uuid_unparse(subv->puuid, uuidparse);
-+		printf("%s", uuidparse);
-+		break;
- 	case BTRFS_LIST_PATH:
- 		BUG_ON(!subv->full_path);
- 		printf("%s", subv->full_path);
-diff --git a/btrfs-list.h b/btrfs-list.h
-index cde4b3c..a32545f 100644
---- a/btrfs-list.h
-+++ b/btrfs-list.h
-@@ -53,6 +53,7 @@ enum btrfs_list_column_enum {
- 	BTRFS_LIST_PARENT,
- 	BTRFS_LIST_TOP_LEVEL,
- 	BTRFS_LIST_OTIME,
-+	BTRFS_LIST_PUUID,
- 	BTRFS_LIST_UUID,
- 	BTRFS_LIST_PATH,
- 	BTRFS_LIST_ALL,
-diff --git a/cmds-subvolume.c b/cmds-subvolume.c
-index ac39f7b..427263a 100644
---- a/cmds-subvolume.c
-+++ b/cmds-subvolume.c
-@@ -279,6 +279,7 @@ static const char * const cmd_subvol_list_usage[] = {
- 	"-p           print parent ID",
- 	"-a           print all the subvolumes in the filesystem.",
- 	"-u           print the uuid of subvolumes (and snapshots)",
-+	"-q           print the parent uuid of snapshots",
- 	"-t           print the result as a table",
- 	"-s           list snapshots only in the filesystem",
- 	"-r           list readonly subvolumes (including snapshots)",
-@@ -318,7 +319,7 @@ static int cmd_subvol_list(int argc, char **argv)
- 	optind = 1;
- 	while(1) {
- 		c = getopt_long(argc, argv,
--				    "apsurg:c:t", long_options, NULL);
-+				    "apsuqrg:c:t", long_options, NULL);
- 		if (c < 0)
- 			break;
- 
-@@ -342,6 +343,9 @@ static int cmd_subvol_list(int argc, char **argv)
- 		case 'u':
- 			btrfs_list_setup_print_column(BTRFS_LIST_UUID);
- 			break;
-+		case 'q':
-+			btrfs_list_setup_print_column(BTRFS_LIST_PUUID);
-+			break;
- 		case 'r':
- 			flags |= BTRFS_ROOT_SUBVOL_RDONLY;
- 			break;
++\fB-q\fP print parent UUID of the subvolume.
++
+ \fB-g [+|-]value\fP
+ list subvolumes in the filesystem that its generation is
+ >=, <= or = value. '+' means >= value, '-' means <= value, If there is
 -- 
 1.7.1
 
